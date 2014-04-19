@@ -187,7 +187,7 @@ function enable_url_1(){
 	if(document.form.url_enable_x_1[1].checked == 1)
 		$("url_time_1").style.display = "none";
 	else 
-		$("url_time_1").style.display = "";	
+		$("url_time_1").style.display = "";
 	return change_common_radio(this, 'FirewallConfig', 'url_enable_x_1', '1')
 }
 

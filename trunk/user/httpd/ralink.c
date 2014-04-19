@@ -976,7 +976,11 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 	if (wl_ioctl(IFNAME_5G_MAIN, RT_PRIV_IOCTL, &wrq2) < 0)
 		return ret;
 
+#if BOARD_HAS_5G_11AC
+	if (wrq2.u.mode > PHY_11VHT_N_MIXED)
+#else
 	if (wrq2.u.mode > PHY_11N_5G)
+#endif
 		phy_mode = *(unsigned long*)wrq2.u.data.pointer;
 	else
 		phy_mode = wrq2.u.mode;
@@ -990,9 +994,9 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 		if (channel < 0)
 			return ret;
 	}
-	
+
 	caption = "Operation Mode";
-	
+
 	if (wl_mode_x == 1)
 	{
 		ret+=websWrite(wp, "%s	: WDS\n", caption);
@@ -1016,31 +1020,21 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 	{
 		ret+=websWrite(wp, "%s	: AP\n", caption);
 	}
-	
+
 	caption = "HT PHY Mode";
-	
-	if (phy_mode==PHY_11BG_MIXED)
-		ret+=websWrite(wp, "%s	: 11b/g\n", caption);
-	else if (phy_mode==PHY_11B)
-		ret+=websWrite(wp, "%s	: 11b\n", caption);
-	else if (phy_mode==PHY_11A)
+
+	if (phy_mode==PHY_11A)
 		ret+=websWrite(wp, "%s	: 11a\n", caption);
-	else if (phy_mode==PHY_11ABG_MIXED)
-		ret+=websWrite(wp, "%s	: 11a/b/g\n", caption);
-	else if (phy_mode==PHY_11G)
-		ret+=websWrite(wp, "%s	: 11g\n", caption);
-	else if (phy_mode==PHY_11ABGN_MIXED)
-		ret+=websWrite(wp, "%s	: 11a/b/g/n\n", caption);
 	else if (phy_mode==PHY_11N || phy_mode==PHY_11N_5G)
 		ret+=websWrite(wp, "%s	: 11n\n", caption);
-	else if (phy_mode==PHY_11GN_MIXED)
-		ret+=websWrite(wp, "%s	: 11g/n\n", caption);
 	else if (phy_mode==PHY_11AN_MIXED)
 		ret+=websWrite(wp, "%s	: 11a/n\n", caption);
-	else if (phy_mode==PHY_11BGN_MIXED)
-		ret+=websWrite(wp, "%s	: 11b/g/n\n", caption);
-	else if (phy_mode==PHY_11AGN_MIXED)
-		ret+=websWrite(wp, "%s	: 11a/g/n\n", caption);
+#if BOARD_HAS_5G_11AC
+	else if (phy_mode==PHY_11VHT_N_A_MIXED)
+		ret+=websWrite(wp, "%s	: 11a/n/ac\n", caption);
+	else if (phy_mode==PHY_11VHT_N_MIXED)
+		ret+=websWrite(wp, "%s	: 11n/ac\n", caption);
+#endif
 
 	ret+=websWrite(wp, "Channel Main	: %d\n", channel);
 

@@ -2525,6 +2525,7 @@ static int firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 		"function support_switch_type() { return %d;}\n"
 		"function support_2g_apcli_only() { return %d;}\n"
 		"function support_5g_radio() { return %d;}\n"
+		"function support_5g_11ac() { return %d;}\n"
 		"function support_5g_stream_tx() { return %d;}\n"
 		"function support_5g_stream_rx() { return %d;}\n"
 		"function support_2g_stream_tx() { return %d;}\n"
@@ -2541,6 +2542,7 @@ static int firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 		use_switch_type,
 		(has_inic_mii) ? 0 : 1,
 		BOARD_HAS_5G_RADIO,
+		BOARD_HAS_5G_11AC,
 		BOARD_NUM_ANT_5G_TX,
 		BOARD_NUM_ANT_5G_RX,
 		BOARD_NUM_ANT_2G_TX,

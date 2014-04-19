@@ -119,6 +119,7 @@ rm -rf "$dir_wifi_dst/rt3090"
 rm -rf "$dir_wifi_dst/rt5392"
 rm -rf "$dir_wifi_dst/rt5592"
 rm -rf "$dir_wifi_dst/rt3593"
+rm -rf "$dir_wifi_dst/mt7610"
 if [ -n "$CONFIG_RT2860V2_AP" ] ; then
 	dir_wifi_ver="2.7.X.X"
 	if [ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "2.4" ] && [ "$CONFIG_RALINK_RT3883" = "y" ] ; then
@@ -154,6 +155,11 @@ if [ -n "$CONFIG_RT3593_AP" ] ; then
 	dir_wifi_ver="2.7.X.X"
 	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/rt3593" "$dir_wifi_dst/"
 	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/rt3593_ap" "$dir_wifi_dst/"
+fi
+if [ -n "$CONFIG_MT7610_AP" ] ; then
+	dir_wifi_ver="3.0.X.X"
+	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt7610" "$dir_wifi_dst/"
+	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt7610_ap" "$dir_wifi_dst/"
 fi
 ############################ HWNAT ####################################
 dir_ppe_src="$ROOTDIR/proprietary/rt_ppe"

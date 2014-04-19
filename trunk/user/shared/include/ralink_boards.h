@@ -39,7 +39,7 @@
  #define BOARD_GPIO_LED_WAN	27
  #define BOARD_GPIO_LED_USB	24
  #define BOARD_HAS_5G_RADIO	1
- #define BOARD_HAS_5G_80MHZ	0
+ #define BOARD_HAS_5G_11AC	0
  #define BOARD_5G_IN_SOC	1
  #define BOARD_2G_IN_SOC	0
  #define BOARD_NUM_ANT_5G_TX	2
@@ -66,7 +66,7 @@
  #define BOARD_GPIO_LED_WAN	27
  #define BOARD_GPIO_LED_USB	24
  #define BOARD_HAS_5G_RADIO	1
- #define BOARD_HAS_5G_80MHZ	0
+ #define BOARD_HAS_5G_11AC	0
  #define BOARD_5G_IN_SOC	1
  #define BOARD_2G_IN_SOC	0
  #define BOARD_NUM_ANT_5G_TX	3
@@ -93,11 +93,38 @@
  #define BOARD_GPIO_LED_WAN	40
  #define BOARD_GPIO_LED_USB	42
  #define BOARD_HAS_5G_RADIO	0
- #define BOARD_HAS_5G_80MHZ	0
+ #define BOARD_HAS_5G_11AC	0
  #define BOARD_5G_IN_SOC	0
  #define BOARD_2G_IN_SOC	1
  #define BOARD_NUM_ANT_5G_TX	2
  #define BOARD_NUM_ANT_5G_RX	2
+ #define BOARD_NUM_ANT_2G_TX	2
+ #define BOARD_NUM_ANT_2G_RX	2
+ #define BOARD_NUM_ETH_LEDS	0
+ #define BOARD_NUM_USB_PORTS	1
+ #define BOARD_HAS_EPHY_1000	0
+#elif defined(BOARD_AC52U)
+ #define BOARD_PID		"RT-AC52U"
+ #define BOARD_NAME		"RT-AC52U"
+ #define BOARD_DESC		"ASUS RT-AC52U Wireless Router"
+ #define BOARD_VENDOR_NAME	"ASUSTek Computer Inc."
+ #define BOARD_VENDOR_URL	"http://www.asus.com/"
+ #define BOARD_MODEL_URL	"http://www.asus.com/Networking/RTAC52U/"
+ #define BOARD_GPIO_BTN_RESET	1
+ #define BOARD_GPIO_BTN_WPS	2
+ #define BOARD_GPIO_BTN_WLTOG	13
+ #define BOARD_GPIO_LED_ALL	10
+ #undef  BOARD_GPIO_LED_WIFI
+ #define BOARD_GPIO_LED_POWER	9
+ #define BOARD_GPIO_LED_LAN	12
+ #define BOARD_GPIO_LED_WAN	8
+ #define BOARD_GPIO_LED_USB	14
+ #define BOARD_HAS_5G_RADIO	1
+ #define BOARD_HAS_5G_11AC	1
+ #define BOARD_5G_IN_SOC	0
+ #define BOARD_2G_IN_SOC	1
+ #define BOARD_NUM_ANT_5G_TX	1
+ #define BOARD_NUM_ANT_5G_RX	1
  #define BOARD_NUM_ANT_2G_TX	2
  #define BOARD_NUM_ANT_2G_RX	2
  #define BOARD_NUM_ETH_LEDS	0
@@ -120,7 +147,7 @@
  #undef  BOARD_GPIO_LED_WAN
  #define BOARD_GPIO_LED_USB	25
  #define BOARD_HAS_5G_RADIO	1
- #define BOARD_HAS_5G_80MHZ	0
+ #define BOARD_HAS_5G_11AC	0
  #define BOARD_5G_IN_SOC	1
  #define BOARD_2G_IN_SOC	0
  #define BOARD_NUM_ANT_5G_TX	2
@@ -147,7 +174,7 @@
  #define BOARD_GPIO_LED_WAN	12
  #define BOARD_GPIO_LED_USB	9
  #define BOARD_HAS_5G_RADIO	1
- #define BOARD_HAS_5G_80MHZ	0
+ #define BOARD_HAS_5G_11AC	0
  #define BOARD_5G_IN_SOC	1
  #define BOARD_2G_IN_SOC	0
  #define BOARD_NUM_ANT_5G_TX	3

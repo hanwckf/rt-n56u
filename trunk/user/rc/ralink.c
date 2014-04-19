@@ -677,7 +677,11 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 			break;
 		}
 	} else {
+#if BOARD_HAS_5G_11AC
+		i_val = PHY_11VHT_N_A_MIXED;
+#else
 		i_val = PHY_11AN_MIXED;
+#endif
 		switch (i_gmode)
 		{
 		case 0:  // A
@@ -686,6 +690,17 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		case 1:  // N
 			i_val = PHY_11N_5G;
 			break;
+		case 2:  // A/N
+			i_val = PHY_11AN_MIXED;
+			break;
+#if BOARD_HAS_5G_11AC
+		case 3:  // N/AC
+			i_val = PHY_11VHT_N_MIXED;
+			break;
+		case 4:  // A/N/AC
+			i_val = PHY_11VHT_N_A_MIXED;
+			break;
+#endif
 		}
 	}
 	fprintf(fp, "WirelessMode=%d\n", i_val);
@@ -736,9 +751,9 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	//DisableOLBC
 	fprintf(fp, "DisableOLBC=%d\n", 0);
 
-	//BGProtection (Always OFF for 5GHz and for 2.4GHz 11B)
+	//BGProtection (Always OFF for 5GHz)
 	i_val = 2; // off
-	if (!is_aband && i_gmode != 0) {
+	if (!is_aband && (i_gmode == 1 || i_gmode == 2)) {
 		p_str = nvram_wlan_get(prefix, "gmode_protection");
 		if (!strcmp(p_str, "auto"))
 			i_val = 0;
@@ -796,10 +811,10 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	if (!i_wmm)
 		i_val = 0;
 	if (!is_aband) {
-		if (i_gmode == 5 || i_gmode == 3 || i_gmode == 2) // g/n, n, b/g/n
+		if (i_gmode != 0 && i_gmode != 1 && i_gmode != 4) // != (B, B/G, G)
 			i_val = 0;
 	} else {
-		if (i_gmode == 2 || i_gmode == 1) // auto, n only
+		if (i_gmode != 0) // != A only
 			i_val = 0;
 	}
 	list[0] = 0;
@@ -1066,8 +1081,8 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		if (i_gmode != 3)
 			i_val = 0; // GreenField only for N only
 	} else {
-		if (i_gmode != 1)
-			i_val = 0; // GreenField only for N only
+		if (i_gmode != 1 && i_gmode != 3)
+			i_val = 0; // GreenField only for N, N/AC only
 	}
 	fprintf(fp, "HT_OpMode=%d\n", i_val);
 
@@ -1139,7 +1154,7 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 
 	//HT_BW
 	i_val = nvram_wlan_get_int(prefix, "HT_BW");
-	if (i_val) i_val = 1;
+	if (i_val > 1) i_val = 1;
 	if (i_HTBW_MAX == 0) i_val = 0;
 	fprintf(fp, "HT_BW=%d\n", i_val);
 
@@ -1235,6 +1250,26 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 
 	//HT_DisallowTKIP
 	fprintf(fp, "HT_DisallowTKIP=%d\n", 0);
+
+#if BOARD_HAS_5G_11AC
+	if (is_aband) {
+		//VHT_BW
+		i_val = nvram_wlan_get_int(prefix, "HT_BW");
+		i_val = (i_val > 1) ? 1 : 0;
+		if (i_HTBW_MAX == 0) i_val = 0;
+		if (i_gmode != 3 && i_gmode != 4) i_val = 0;
+		fprintf(fp, "VHT_BW=%d\n", i_val);
+		
+		//VHT_SGI
+		fprintf(fp, "VHT_SGI=%d\n", 1);
+		
+		//VHT_DisallowNonVHT
+		i_val = nvram_wlan_get_int(prefix, "VHT_Only");
+		if (i_val) i_val = 1;
+		if (i_gmode != 3 && i_gmode != 4) i_val = 0;
+		fprintf(fp, "VHT_DisallowNonVHT=%d\n", i_val);
+	}
+#endif
 
 	//Wsc
 	fprintf(fp, "WscConfMode=%d\n", 0);

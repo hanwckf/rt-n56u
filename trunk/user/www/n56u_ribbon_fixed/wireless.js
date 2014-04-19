@@ -1,18 +1,18 @@
 ﻿var wep1, wep2, wep3, wep4;
 
 function automode_hint() {
-    if (document.form.wl_gmode.value == "2" &&
+    var gmode = document.form.wl_gmode.value;
+    if ((gmode == "2" || gmode == "3" || gmode == "4") &&
        (document.form.wl_wep_x.value == 1 || document.form.wl_wep_x.value == 2 || document.form.wl_auth_mode.value == "radius" ||
-            (document.form.wl_crypto.value.indexOf("tkip") == 0 && !document.form.wl_crypto.disabled))) {
+            (document.form.wl_crypto.value.indexOf("tkip") == 0 && !document.form.wl_crypto.disabled)))
         $("wl_gmode_hint").style.display = "block";
-    }
-    else {
+    else
         $("wl_gmode_hint").style.display = "none";
-    }
 }
 
 function nmode_limitation() {
-    if (document.form.wl_gmode.value == "1") {
+    var gmode = document.form.wl_gmode.value;
+    if (gmode == "1" || gmode == "3") {
         if (document.form.wl_auth_mode.selectedIndex == 0 && (document.form.wl_wep_x.selectedIndex == "1" || document.form.wl_wep_x.selectedIndex == "2")) {
             alert("<#WLANConfig11n_nmode_limition_hint#>");
             document.form.wl_auth_mode.selectedIndex = 0;
@@ -96,18 +96,8 @@ function change_common_wl(o, s, v) {
     else if (s == "WLANConfig11a" && v == "wl_HT_BW") {
         insertExtChannelOption();
     }
-    else if (s == "WLANConfig11a" && v == "wl_gmode_check") {
-        if (document.form.wl_gmode_check.checked == true)
-            document.form.wl_gmode_protection.value = "auto";
-        else
-            document.form.wl_gmode_protection.value = "off";
-    }
     else if (s == "WLANConfig11a" && v == "wl_gmode") {
-        if (o.value == "2" || o.value == "1")
-            inputCtrl(document.form.wl_HT_BW, 1);
-        else
-            inputCtrl(document.form.wl_HT_BW, 0);
-
+        enableExtChRows(o);
         insertExtChannelOption();
         nmode_limitation();
         automode_hint();
@@ -470,6 +460,20 @@ function change_wep_type(mode, isload) {
     change_wlweptype(document.form.wl_wep_x, "WLANConfig11a", isload);
 }
 
+function enableExtChRows(o) {
+    if (o.value == "0"){
+        $("row_HT_BW").style.display = "none";
+        $("row_HT_EXTCHA").style.display = "none";
+    }else{
+        $("row_HT_BW").style.display = "";
+        $("row_HT_EXTCHA").style.display = "";
+    }
+    if (o.value == "3" || o.value == "4")
+        insert_vht_bw(1);
+    else
+        insert_vht_bw(0);
+}
+
 function insertExtChannelOption() {
     var country = document.form.wl_country_code.value;
     var orig = document.form.wl_channel.value;
@@ -596,6 +600,25 @@ function insertExtChannelOption() {
         channels[0] = "Auto";
 
     add_options_x2(document.form.wl_channel, channels, ch_v, orig);
+}
+
+function insert_vht_bw(ins){
+    var o = document.form.wl_HT_BW;
+    var v = o.value;
+    var l = o.options.length;
+
+    if (!ins){
+        if (l < 3)
+            return;
+        o.remove(2);
+        if (v == "2")
+            o.options[1].selected = 1;
+    }else{
+        if (l > 2)
+            return;
+        o.options[2] = new Option("20/40/80 MHz");
+        o.options[2].value = "2";
+    }
 }
 
 function wl_auth_mode_change(isload) {
@@ -736,11 +759,11 @@ function validate_wlkey(key_obj){
 		iscurrect = true;	// do nothing
 	else if(wep_type == "1"){
 		if(key_obj.value.length == 5 && validate_string(key_obj)){
-			document.form.wl_key_type.value = 1; /*Lock Add 11.25 for ralink platform*/
+			document.form.wl_key_type.value = 1;
 			iscurrect = true;
 		}
 		else if(key_obj.value.length == 10 && validate_hex(key_obj)){
-			document.form.wl_key_type.value = 0; /*Lock Add 11.25 for ralink platform*/
+			document.form.wl_key_type.value = 0;
 			iscurrect = true;
 		}
 		else{
@@ -751,11 +774,11 @@ function validate_wlkey(key_obj){
 	}
 	else if(wep_type == "2"){
 		if(key_obj.value.length == 13 && validate_string(key_obj)){
-			document.form.wl_key_type.value = 1; /*Lock Add 11.25 for ralink platform*/
+			document.form.wl_key_type.value = 1;
 			iscurrect = true;
 		}
 		else if(key_obj.value.length == 26 && validate_hex(key_obj)){
-			document.form.wl_key_type.value = 0; /*Lock Add 11.25 for ralink platform*/
+			document.form.wl_key_type.value = 0;
 			iscurrect = true;
 		}
 		else{

@@ -6,6 +6,7 @@
 # Board PID # Board Name       # PRODUCT # Note
 ##################################################################
 # RT-N14U   # ASUS RT-N14U     # MT7620  #
+# RT-AC52U  # ASUS RT-AC52U    # MT7620  #
 # RT-N56U   # ASUS RT-N56U     # RT3883  #
 # RT-N65U   # ASUS RT-N65U     # RT3883  #
 # SWR1100   # Samsung SWR-1100 # RT3883  #
@@ -14,6 +15,9 @@
 
 ifeq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-N14U")
 CFLAGS += -DBOARD_N14U
+endif
+ifeq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-AC52U")
+CFLAGS += -DBOARD_AC52U
 endif
 ifeq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-N56U")
 CFLAGS += -DBOARD_N56U

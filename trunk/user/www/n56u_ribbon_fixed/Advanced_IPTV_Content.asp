@@ -386,13 +386,13 @@ function on_xupnpd_link(){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="rt_IgmpSnEnable_on_of">
-                                                        <input type="checkbox" id="rt_IgmpSnEnable_fake" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="rt_IgmpSnEnable_fake" <% nvram_match_x("", "rt_IgmpSnEnable", "1", "value=1 checked"); %><% nvram_match_x("", "rt_IgmpSnEnable", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="rt_IgmpSnEnable" id="rt_IgmpSnEnable_1" class="input" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="rt_IgmpSnEnable" id="rt_IgmpSnEnable_0" class="input" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="rt_IgmpSnEnable" id="rt_IgmpSnEnable_1" class="input" <% nvram_match_x("", "rt_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="rt_IgmpSnEnable" id="rt_IgmpSnEnable_0" class="input" <% nvram_match_x("", "rt_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -400,16 +400,16 @@ function on_xupnpd_link(){
                                             <th><#WLANConfig11b_MultiRateAll_itemname#></th>
                                             <td>
                                                 <select name="rt_mcastrate" class="input">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "0", "selected"); %>>HTMIX (1S) 15 Mbps</option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "1", "selected"); %>>HTMIX (1S) 30 Mbps</option>
-                                                    <option value="2" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "2", "selected"); %>>HTMIX (1S) 45 Mbps</option>
-                                                    <option value="3" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "3", "selected"); %>>HTMIX (2S) 30 Mbps</option>
-                                                    <option value="4" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "4", "selected"); %>>HTMIX (2S) 60 Mbps</option>
-                                                    <option value="5" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "5", "selected"); %>>OFDM 9 Mbps</option>
-                                                    <option value="6" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "6", "selected"); %>>OFDM 12 Mbps (*)</option>
-                                                    <option value="7" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "7", "selected"); %>>OFDM 18 Mbps</option>
-                                                    <option value="8" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "8", "selected"); %>>OFDM 24 Mbps</option>
-                                                    <option value="9" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "9", "selected"); %>>CCK 11 Mbps</option>
+                                                    <option value="0" <% nvram_match_x("", "rt_mcastrate", "0", "selected"); %>>HTMIX (1S) 15 Mbps</option>
+                                                    <option value="1" <% nvram_match_x("", "rt_mcastrate", "1", "selected"); %>>HTMIX (1S) 30 Mbps</option>
+                                                    <option value="2" <% nvram_match_x("", "rt_mcastrate", "2", "selected"); %>>HTMIX (1S) 45 Mbps</option>
+                                                    <option value="3" <% nvram_match_x("", "rt_mcastrate", "3", "selected"); %>>HTMIX (2S) 30 Mbps</option>
+                                                    <option value="4" <% nvram_match_x("", "rt_mcastrate", "4", "selected"); %>>HTMIX (2S) 60 Mbps</option>
+                                                    <option value="5" <% nvram_match_x("", "rt_mcastrate", "5", "selected"); %>>OFDM 9 Mbps</option>
+                                                    <option value="6" <% nvram_match_x("", "rt_mcastrate", "6", "selected"); %>>OFDM 12 Mbps (*)</option>
+                                                    <option value="7" <% nvram_match_x("", "rt_mcastrate", "7", "selected"); %>>OFDM 18 Mbps</option>
+                                                    <option value="8" <% nvram_match_x("", "rt_mcastrate", "8", "selected"); %>>OFDM 24 Mbps</option>
+                                                    <option value="9" <% nvram_match_x("", "rt_mcastrate", "9", "selected"); %>>CCK 11 Mbps</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -424,13 +424,13 @@ function on_xupnpd_link(){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="wl_IgmpSnEnable_on_of">
-                                                        <input type="checkbox" id="wl_IgmpSnEnable_fake" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="wl_IgmpSnEnable_fake" <% nvram_match_x("", "wl_IgmpSnEnable", "1", "value=1 checked"); %><% nvram_match_x("", "wl_IgmpSnEnable", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="wl_IgmpSnEnable" id="wl_IgmpSnEnable_1" class="input" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="wl_IgmpSnEnable" id="wl_IgmpSnEnable_0" class="input" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="wl_IgmpSnEnable" id="wl_IgmpSnEnable_1" class="input" <% nvram_match_x("", "wl_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="wl_IgmpSnEnable" id="wl_IgmpSnEnable_0" class="input" <% nvram_match_x("", "wl_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -438,15 +438,15 @@ function on_xupnpd_link(){
                                             <th><#WLANConfig11b_MultiRateAll_itemname#></th>
                                             <td>
                                                 <select name="wl_mcastrate" class="input">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "0", "selected"); %>>HTMIX (1S) 15 Mbps</option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "1", "selected"); %>>HTMIX (1S) 30 Mbps (*)</option>
-                                                    <option value="2" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "2", "selected"); %>>HTMIX (1S) 45 Mbps</option>
-                                                    <option value="3" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "3", "selected"); %>>HTMIX (2S) 30 Mbps</option>
-                                                    <option value="4" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "4", "selected"); %>>HTMIX (2S) 60 Mbps</option>
-                                                    <option value="5" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "5", "selected"); %>>OFDM 9 Mbps</option>
-                                                    <option value="6" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "6", "selected"); %>>OFDM 12 Mbps</option>
-                                                    <option value="7" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "7", "selected"); %>>OFDM 18 Mbps</option>
-                                                    <option value="8" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "8", "selected"); %>>OFDM 24 Mbps</option>
+                                                    <option value="0" <% nvram_match_x("", "wl_mcastrate", "0", "selected"); %>>HTMIX (1S) 15 Mbps</option>
+                                                    <option value="1" <% nvram_match_x("", "wl_mcastrate", "1", "selected"); %>>HTMIX (1S) 30 Mbps (*)</option>
+                                                    <option value="2" <% nvram_match_x("", "wl_mcastrate", "2", "selected"); %>>HTMIX (1S) 45 Mbps</option>
+                                                    <option value="3" <% nvram_match_x("", "wl_mcastrate", "3", "selected"); %>>HTMIX (2S) 30 Mbps</option>
+                                                    <option value="4" <% nvram_match_x("", "wl_mcastrate", "4", "selected"); %>>HTMIX (2S) 60 Mbps</option>
+                                                    <option value="5" <% nvram_match_x("", "wl_mcastrate", "5", "selected"); %>>OFDM 9 Mbps</option>
+                                                    <option value="6" <% nvram_match_x("", "wl_mcastrate", "6", "selected"); %>>OFDM 12 Mbps</option>
+                                                    <option value="7" <% nvram_match_x("", "wl_mcastrate", "7", "selected"); %>>OFDM 18 Mbps</option>
+                                                    <option value="8" <% nvram_match_x("", "wl_mcastrate", "8", "selected"); %>>OFDM 24 Mbps</option>
                                                 </select>
                                             </td>
                                         </tr>

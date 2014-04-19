@@ -1062,13 +1062,13 @@ function is_portrange(o) {
         }
         return true;
     }
-    else if (keyPressed == 44) {  // can be type in first charAt  ::: 0220 Lock add
+    else if (keyPressed == 44) {
         if (o.value.length == 0)
             return false;
         else
             return true;
     }
-    else if (keyPressed == 60 || keyPressed == 62) {  //">" and "<" only can be type in first charAt ::: 0220 Lock add
+    else if (keyPressed == 60 || keyPressed == 62) {
         if (o.value.length == 0)
             return true;
         else
@@ -1143,7 +1143,7 @@ function validate_portrange(o, v) {
             else o.value = "1:" + (num - 1);     //ex. o.value="<2000", it will change to 1:1999
         }
         else if (prev == -4) {
-            if (document.form.current_page.value == "Advanced_VirtualServer_Content.asp") {  //2008.10.09 Lock add Allow input "," in Virtual Server page
+            if (document.form.current_page.value == "Advanced_VirtualServer_Content.asp") {
                 multi_vts_port = o.value.split(",");
                 //o.value = multi_vts_port[0];
                 split_vts_rule(multi_vts_port);

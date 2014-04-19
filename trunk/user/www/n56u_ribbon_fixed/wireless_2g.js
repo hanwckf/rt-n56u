@@ -1,7 +1,8 @@
 ﻿var wep1, wep2, wep3, wep4;
 
 function automode_hint() {
-    if (document.form.rt_gmode.value == "2" &&
+    var gmode = document.form.rt_gmode.value;
+    if ((gmode == "2" || gmode == "5") &&
         (document.form.rt_wep_x.value == 1 || document.form.rt_wep_x.value == 2 || document.form.rt_auth_mode.value == "radius" ||
             (document.form.rt_crypto.value.indexOf("tkip") == 0 && !document.form.rt_crypto.disabled))) {
         $("rt_gmode_hint").style.display = "block";
@@ -118,16 +119,7 @@ function change_common_rt(o, s, v) {
     else if (s == "WLANConfig11b" && v == "rt_gmode_protection") {
     }
     else if (s == "WLANConfig11b" && v == "rt_gmode") {
-        if (o.value == '0') {
-            $("bg_protect_tr").style.display = "none";
-        } else {
-            $("bg_protect_tr").style.display = "";
-        }
-        if (o.value == "2" || o.value == "3" || o.value == "5")
-            inputCtrl(document.form.rt_HT_BW, 1);
-        else
-            inputCtrl(document.form.rt_HT_BW, 0);
-
+        enableExtChRows(o);
         insertExtChannelOption();
         nmode_limitation();
         automode_hint();
@@ -491,6 +483,21 @@ function change_wep_type(mode, isload) {
     change_wlweptype(document.form.rt_wep_x, "WLANConfig11b", isload);
 }
 
+function enableExtChRows(o) {
+    if (o.value == "1" || o.value == "2")
+        $("row_protect").style.display = "";
+    else
+        $("row_protect").style.display = "none";
+
+    if (o.value == "0" || o.value == "1" || o.value == "4"){
+        $("row_HT_BW").style.display = "none";
+        $("row_HT_EXTCHA").style.display = "none";
+    }else{
+        $("row_HT_BW").style.display = "";
+        $("row_HT_EXTCHA").style.display = "";
+    }
+}
+
 function insertExtChannelOption() {
     var wmode = document.form.rt_gmode.value;
     var CurrentCh = document.form.rt_channel.value;
@@ -691,14 +698,14 @@ function validate_wlkey(key_obj){
 	var str = "<#JS_wepkey#>";
 
 	if(wep_type == "0")
-		iscurrect = true;	// do nothing
+		iscurrect = true;
 	else if(wep_type == "1"){
 		if(key_obj.value.length == 5 && validate_string(key_obj)){
-			document.form.rt_key_type.value = 1; /*Lock Add 11.25 for ralink platform*/
+			document.form.rt_key_type.value = 1;
 			iscurrect = true;
 		}
 		else if(key_obj.value.length == 10 && validate_hex(key_obj)){
-			document.form.rt_key_type.value = 0; /*Lock Add 11.25 for ralink platform*/
+			document.form.rt_key_type.value = 0;
 			iscurrect = true;
 		}
 		else{
@@ -709,11 +716,11 @@ function validate_wlkey(key_obj){
 	}
 	else if(wep_type == "2"){
 		if(key_obj.value.length == 13 && validate_string(key_obj)){
-			document.form.rt_key_type.value = 1; /*Lock Add 11.25 for ralink platform*/
+			document.form.rt_key_type.value = 1;
 			iscurrect = true;
 		}
 		else if(key_obj.value.length == 26 && validate_hex(key_obj)){
-			document.form.rt_key_type.value = 0; /*Lock Add 11.25 for ralink platform*/
+			document.form.rt_key_type.value = 0;
 			iscurrect = true;
 		}
 		else{

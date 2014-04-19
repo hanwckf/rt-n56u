@@ -69,7 +69,14 @@ function initial(){
 	show_banner(1);
 	show_menu(5,2,1);
 	show_footer();
-	
+
+	if (!support_5g_11ac()){
+		var o1 = document.form.wl_gmode;
+		o1.remove(0);
+		o1.remove(0);
+		insert_vht_bw(0);
+	}
+
 	document.form.wl_radio_date_x_Sun.checked = getDateCheck(document.form.wl_radio_date_x.value, 0);
 	document.form.wl_radio_date_x_Mon.checked = getDateCheck(document.form.wl_radio_date_x.value, 1);
 	document.form.wl_radio_date_x_Tue.checked = getDateCheck(document.form.wl_radio_date_x.value, 2);
@@ -85,7 +92,7 @@ function initial(){
 	document.form.wl_radio_time2_x_startmin.value = getTimeRange(document.form.wl_radio_time2_x.value, 1);
 	document.form.wl_radio_time2_x_endhour.value = getTimeRange(document.form.wl_radio_time2_x.value, 2);
 	document.form.wl_radio_time2_x_endmin.value = getTimeRange(document.form.wl_radio_time2_x.value, 3);
-	
+
 	document.form.wl_ssid.value = decodeURIComponent(document.form.wl_ssid2.value);
 	document.form.wl_wpa_psk.value = decodeURIComponent(document.form.wl_wpa_psk_org.value);
 	document.form.wl_key1.value = decodeURIComponent(document.form.wl_key1_org.value);
@@ -93,21 +100,24 @@ function initial(){
 	document.form.wl_key3.value = decodeURIComponent(document.form.wl_key3_org.value);
 	document.form.wl_key4.value = decodeURIComponent(document.form.wl_key4_org.value);
 	document.form.wl_phrase_x.value = decodeURIComponent(document.form.wl_phrase_x_org.value);
-	
-	if(document.form.wl_wpa_psk.value.length <= 0)
+
+	if(document.form.wl_wpa_psk.value.length < 1)
 		document.form.wl_wpa_psk.value = "Please type Password";
-	
+
 	wl_nband_select(1);
 	wl_auth_mode_change(1);
+
 	document.form.wl_channel.value = document.form.wl_channel_orig.value;
-	
+
 	load_body();
+
 	automode_hint();
+	enableExtChRows(document.form.wl_gmode);
 }
 
 function applyRule(){
 	var auth_mode = document.form.wl_auth_mode.value;
-	
+
 	if(document.form.wl_wpa_psk.value == "Please type Password")
 		document.form.wl_wpa_psk.value = "";
 
@@ -266,13 +276,11 @@ function validate_wlphrase(s, v, obj){
 
 function wl_nband_select(ch){
 	if(ch == "1"){
-//		showtext($("wl_channel_select"), "5 GHz <#WLANConfig11b_Channel_itemname#>");
 		document.form.wl_nband.value = 1;
 		insertExtChannelOption();
 		return change_common_radio(this, 'WLANConfig11a', 'wl_nband', '1');
 	}
 	else{
-//		showtext($("wl_channel_select"), "2.4 GHz <#WLANConfig11b_Channel_itemname#>");
 		document.form.wl_nband.value = 2;
 		insertExtChannelOption();
 		return change_common_radio(this, 'WLANConfig11a', 'wl_nband', '2');
@@ -307,26 +315,22 @@ function wl_nband_select(ch){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
 
-    <input type="hidden" name="wl_radio_date_x" value="<% nvram_get_x("WLANConfig11a","wl_radio_date_x"); %>">
-    <input type="hidden" name="wl_radio_time_x" value="<% nvram_get_x("WLANConfig11a","wl_radio_time_x"); %>">
-    <input type="hidden" name="wl_radio_time2_x" value="<% nvram_get_x("WLANConfig11a","wl_radio_time2_x"); %>">
-
-    <input type="hidden" name="wl_ssid2" value="<% nvram_char_to_ascii("WLANConfig11a",  "wl_ssid"); %>">
-    <input type="hidden" name="wl_wpa_mode" value="<% nvram_get_x("WLANConfig11a","wl_wpa_mode"); %>">
-    <input type="hidden" name="wl_wpa_psk_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_wpa_psk"); %>">
-    <input type="hidden" name="wl_key1_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key1"); %>">
-    <input type="hidden" name="wl_key2_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key2"); %>">
-    <input type="hidden" name="wl_key3_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key3"); %>">
-    <input type="hidden" name="wl_key4_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key4"); %>">
-    <input type="hidden" name="wl_phrase_x_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_phrase_x"); %>">
-
-    <input type="hidden" maxlength="15" size="15" name="x_RegulatoryDomain" value="<% nvram_get_x("Regulatory","x_RegulatoryDomain"); %>" readonly="1">
-    <input type="hidden" name="wl_mode_x" value="<% nvram_get_x("WLANConfig11a","wl_mode_x"); %>">
-    <input type="hidden" name="wl_nmode" value="<% nvram_get_x("WLANConfig11a","wl_nmode"); %>">
-
+    <input type="hidden" name="wl_radio_date_x" value="<% nvram_get_x("","wl_radio_date_x"); %>">
+    <input type="hidden" name="wl_radio_time_x" value="<% nvram_get_x("","wl_radio_time_x"); %>">
+    <input type="hidden" name="wl_radio_time2_x" value="<% nvram_get_x("","wl_radio_time2_x"); %>">
+    <input type="hidden" name="wl_ssid2" value="<% nvram_char_to_ascii("",  "wl_ssid"); %>">
+    <input type="hidden" name="wl_wpa_mode" value="<% nvram_get_x("","wl_wpa_mode"); %>">
+    <input type="hidden" name="wl_wpa_psk_org" value="<% nvram_char_to_ascii("", "wl_wpa_psk"); %>">
+    <input type="hidden" name="wl_key1_org" value="<% nvram_char_to_ascii("", "wl_key1"); %>">
+    <input type="hidden" name="wl_key2_org" value="<% nvram_char_to_ascii("", "wl_key2"); %>">
+    <input type="hidden" name="wl_key3_org" value="<% nvram_char_to_ascii("", "wl_key3"); %>">
+    <input type="hidden" name="wl_key4_org" value="<% nvram_char_to_ascii("", "wl_key4"); %>">
+    <input type="hidden" name="wl_phrase_x_org" value="<% nvram_char_to_ascii("", "wl_phrase_x"); %>">
+    <input type="hidden" name="wl_mode_x" value="<% nvram_get_x("","wl_mode_x"); %>">
+    <input type="hidden" name="wl_nmode" value="<% nvram_get_x("","wl_nmode"); %>">
     <input type="hidden" name="wl_nband" value="1">
-    <input type="hidden" name="wl_key_type" value='<% nvram_get_x("WLANConfig11a","wl_key_type"); %>'> <!--Lock Add 2009.03.10 for ralink platform-->
-    <input type="hidden" name="wl_channel_orig" value='<% nvram_get_x("WLANConfig11a","wl_channel"); %>'>
+    <input type="hidden" name="wl_key_type" value='<% nvram_get_x("","wl_key_type"); %>'>
+    <input type="hidden" name="wl_channel_orig" value='<% nvram_get_x("","wl_channel"); %>'>
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -359,12 +363,12 @@ function wl_nband_select(ch){
                                             <td style="border-top: 0 none;">
                                                 <div class="main_itoggle">
                                                     <div id="radio_on_of">
-                                                        <input type="checkbox" id="wl_radio_x_fake" <% nvram_match_x("WLANConfig11a","wl_radio_x", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a","wl_radio_x", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="wl_radio_x_fake" <% nvram_match_x("","wl_radio_x", "1", "value=1 checked"); %><% nvram_match_x("","wl_radio_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="wl_radio_x" id="wl_radio_x_1" value="1" <% nvram_match_x("WLANConfig11a","wl_radio_x", "1", "checked"); %> /><#checkbox_Yes#>
-                                                    <input type="radio" name="wl_radio_x" id="wl_radio_x_0" value="0" <% nvram_match_x("WLANConfig11a","wl_radio_x", "0", "checked"); %> /><#checkbox_No#>
+                                                    <input type="radio" name="wl_radio_x" id="wl_radio_x_1" value="1" <% nvram_match_x("","wl_radio_x", "1", "checked"); %> /><#checkbox_Yes#>
+                                                    <input type="radio" name="wl_radio_x" id="wl_radio_x_0" value="0" <% nvram_match_x("","wl_radio_x", "0", "checked"); %> /><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -416,13 +420,13 @@ function wl_nband_select(ch){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="wl_closed_on_of">
-                                                        <input type="checkbox" id="wl_closed_fake" <% nvram_match_x("WLANConfig11a", "wl_closed", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_closed", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="wl_closed_fake" <% nvram_match_x("", "wl_closed", "1", "value=1 checked"); %><% nvram_match_x("", "wl_closed", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" id="wl_closed_1" name="wl_closed" onClick="return change_common_radio(this, 'WLANConfig11a', 'wl_closed', '1')" <% nvram_match_x("WLANConfig11a", "wl_closed", "1", "checked"); %> /><#checkbox_Yes#>
-                                                    <input type="radio" value="0" id="wl_closed_0" name="wl_closed" onClick="return change_common_radio(this, 'WLANConfig11a', 'wl_closed', '0')" <% nvram_match_x("WLANConfig11a", "wl_closed", "0", "checked"); %> /><#checkbox_No#>
+                                                    <input type="radio" value="1" id="wl_closed_1" name="wl_closed" onClick="return change_common_radio(this, 'WLANConfig11a', 'wl_closed', '1')" <% nvram_match_x("", "wl_closed", "1", "checked"); %> /><#checkbox_Yes#>
+                                                    <input type="radio" value="0" id="wl_closed_0" name="wl_closed" onClick="return change_common_radio(this, 'WLANConfig11a', 'wl_closed', '0')" <% nvram_match_x("", "wl_closed", "0", "checked"); %> /><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -430,19 +434,22 @@ function wl_nband_select(ch){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 4);"><#WLANConfig11b_x_Mode11g_itemname#></a></th>
                                             <td>
                                                 <select name="wl_gmode" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_gmode')">
-                                                    <option value="2" <% nvram_match_x("WLANConfig11a","wl_gmode", "2","selected"); %>>a/n Mixed</option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a","wl_gmode", "1","selected"); %>>n Only</option>
-                                                    <option value="0" <% nvram_match_x("WLANConfig11a","wl_gmode", "0","selected"); %>>a Only</option>
+                                                    <option value="4" <% nvram_match_x("","wl_gmode", "4","selected"); %>>a/n/ac Mixed</option>
+                                                    <option value="3" <% nvram_match_x("","wl_gmode", "3","selected"); %>>n/ac Mixed</option>
+                                                    <option value="2" <% nvram_match_x("","wl_gmode", "2","selected"); %>>a/n Mixed</option>
+                                                    <option value="1" <% nvram_match_x("","wl_gmode", "1","selected"); %>>n Only</option>
+                                                    <option value="0" <% nvram_match_x("","wl_gmode", "0","selected"); %>>a Only</option>
                                                 </select>
                                                 <span id="wl_gmode_hint" style="display:none;color:#F75"><#WLANConfig11n_automode_limition_hint#></span>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_HT_BW">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 14);"><#WLANConfig11b_ChannelBW_itemname#></a></th>
                                             <td>
                                                 <select name="wl_HT_BW" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_HT_BW')">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11a","wl_HT_BW", "0","selected"); %>>20 MHz</option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a","wl_HT_BW", "1","selected"); %>>20/40 MHz</option>
+                                                    <option value="0" <% nvram_match_x("","wl_HT_BW", "0","selected"); %>>20 MHz</option>
+                                                    <option value="1" <% nvram_match_x("","wl_HT_BW", "1","selected"); %>>20/40 MHz</option>
+                                                    <option value="2" <% nvram_match_x("","wl_HT_BW", "2","selected"); %>>20/40/80 MHz</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -454,7 +461,7 @@ function wl_nband_select(ch){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_HT_EXTCHA">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 15);"><#WLANConfig11b_EChannel_itemname#></a></th>
                                             <td>
                                                 <select name="wl_HT_EXTCHA" class="input">
@@ -466,15 +473,15 @@ function wl_nband_select(ch){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
                                             <td>
                                                 <select name="wl_auth_mode" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_auth_mode');">
-                                                    <option value="open" <% nvram_match_x("WLANConfig11a", "wl_auth_mode", "open", "selected"); %>>Open System</option>
-                                                    <option value="shared" <% nvram_match_x("WLANConfig11a", "wl_auth_mode", "shared", "selected"); %>>Shared Key</option>
-                                                    <option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "psk", "WLANConfig11a", "wl_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
-                                                    <option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "psk", "WLANConfig11a", "wl_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
-                                                    <option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "psk", "WLANConfig11a", "wl_wpa_mode", "0", "selected"); %>>WPA-Auto-Personal</option>
-                                                    <option value="wpa" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "wpa", "WLANConfig11a", "wl_wpa_mode", "3", "selected"); %>>WPA-Enterprise (Radius)</option>
-                                                    <option value="wpa2" <% nvram_match_x("WLANConfig11a", "wl_auth_mode", "wpa2", "selected"); %>>WPA2-Enterprise (Radius)</option>
-                                                    <option value="wpa" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "wpa", "WLANConfig11a", "wl_wpa_mode", "4", "selected"); %>>WPA-Auto-Enterprise (Radius)</option>
-                                                    <option value="radius" <% nvram_match_x("WLANConfig11a", "wl_auth_mode", "radius", "selected"); %>>Radius with 802.1x</option>
+                                                    <option value="open" <% nvram_match_x("", "wl_auth_mode", "open", "selected"); %>>Open System</option>
+                                                    <option value="shared" <% nvram_match_x("", "wl_auth_mode", "shared", "selected"); %>>Shared Key</option>
+                                                    <option value="psk" <% nvram_double_match_x("", "wl_auth_mode", "psk", "", "wl_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
+                                                    <option value="psk" <% nvram_double_match_x("", "wl_auth_mode", "psk", "", "wl_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
+                                                    <option value="psk" <% nvram_double_match_x("", "wl_auth_mode", "psk", "", "wl_wpa_mode", "0", "selected"); %>>WPA-Auto-Personal</option>
+                                                    <option value="wpa" <% nvram_double_match_x("", "wl_auth_mode", "wpa", "", "wl_wpa_mode", "3", "selected"); %>>WPA-Enterprise (Radius)</option>
+                                                    <option value="wpa2" <% nvram_match_x("", "wl_auth_mode", "wpa2", "selected"); %>>WPA2-Enterprise (Radius)</option>
+                                                    <option value="wpa" <% nvram_double_match_x("", "wl_auth_mode", "wpa", "", "wl_wpa_mode", "4", "selected"); %>>WPA-Auto-Enterprise (Radius)</option>
+                                                    <option value="radius" <% nvram_match_x("", "wl_auth_mode", "radius", "selected"); %>>Radius with 802.1x</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -482,9 +489,8 @@ function wl_nband_select(ch){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
                                             <td>
                                                 <select name="wl_crypto" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_crypto')">
-                                                    <!-- the options was defined in general2g.js, plz grep "TKIP" -->
-                                                    <option value="aes" <% nvram_match_x("WLANConfig11a", "wl_crypto", "aes", "selected"); %>>AES</option>
-                                                    <option value="tkip+aes" <% nvram_match_x("WLANConfig11a", "wl_crypto", "tkip+aes", "selected"); %>>TKIP+AES</option>
+                                                    <option value="aes" <% nvram_match_x("", "wl_crypto", "aes", "selected"); %>>AES</option>
+                                                    <option value="tkip+aes" <% nvram_match_x("", "wl_crypto", "tkip+aes", "selected"); %>>TKIP+AES</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -501,9 +507,9 @@ function wl_nband_select(ch){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 9);"><#WLANConfig11b_WEPType_itemname#></a></th>
                                             <td>
                                                 <select name="wl_wep_x" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_wep_x');">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "0", "selected"); %>>None</option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "1", "selected"); %>>WEP-64bits</option>
-                                                    <option value="2" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "2", "selected"); %>>WEP-128bits</option>
+                                                    <option value="0" <% nvram_match_x("", "wl_wep_x", "0", "selected"); %>>None</option>
+                                                    <option value="1" <% nvram_match_x("", "wl_wep_x", "1", "selected"); %>>WEP-64bits</option>
+                                                    <option value="2" <% nvram_match_x("", "wl_wep_x", "2", "selected"); %>>WEP-128bits</option>
                                                 </select>
                                                 <br>
                                                 <span name="key_des" style="color:#888"></span>
@@ -513,10 +519,10 @@ function wl_nband_select(ch){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 10);"><#WLANConfig11b_WEPDefaultKey_itemname#></a></th>
                                             <td>
                                                 <select name="wl_key" class="input"  onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_key');">
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a","wl_key", "1","selected"); %>>1</option>
-                                                    <option value="2" <% nvram_match_x("WLANConfig11a","wl_key", "2","selected"); %>>2</option>
-                                                    <option value="3" <% nvram_match_x("WLANConfig11a","wl_key", "3","selected"); %>>3</option>
-                                                    <option value="4" <% nvram_match_x("WLANConfig11a","wl_key", "4","selected"); %>>4</option>
+                                                    <option value="1" <% nvram_match_x("","wl_key", "1","selected"); %>>1</option>
+                                                    <option value="2" <% nvram_match_x("","wl_key", "2","selected"); %>>2</option>
+                                                    <option value="3" <% nvram_match_x("","wl_key", "3","selected"); %>>3</option>
+                                                    <option value="4" <% nvram_match_x("","wl_key", "4","selected"); %>>4</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -545,14 +551,14 @@ function wl_nband_select(ch){
                                         <tr id="row_wpa3">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 11);"><#WLANConfig11b_x_Rekey_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="7" size="7" name="wl_wpa_gtk_rekey" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_wpa_gtk_rekey"); %>" onKeyPress="return is_number(this)">
+                                                <input type="text" maxlength="7" size="7" name="wl_wpa_gtk_rekey" class="input" value="<% nvram_get_x("", "wl_wpa_gtk_rekey"); %>" onKeyPress="return is_number(this)">
                                                 &nbsp;<span style="color:#888;">[0..2592000]</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 17);"><#WLANConfig11b_TxPower_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="3" size="3" name="wl_TxPower" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_TxPower"); %>" onblur="return validate_range(this, 0, 100)" onKeyPress="return is_number(this)">
+                                                <input type="text" maxlength="3" size="3" name="wl_TxPower" class="input" value="<% nvram_get_x("", "wl_TxPower"); %>" onblur="return validate_range(this, 0, 100)" onKeyPress="return is_number(this)">
                                                 &nbsp;<span style="color:#888;">[0..100]</span>
                                             </td>
                                         </tr>
@@ -560,15 +566,15 @@ function wl_nband_select(ch){
                                             <th><#WIFIRegionCode#></th>
                                             <td>
                                                 <select name="wl_country_code" class="input">
-                                                    <option value="US" <% nvram_match_x("WLANConfig11a", "wl_country_code", "US","selected"); %>>USA (channels 36,40,44,48,149,153,157,161,165)</option>
-                                                    <option value="NO" <% nvram_match_x("WLANConfig11a", "wl_country_code", "NO","selected"); %>>Norway (channels 36,40,44,48,149,153,157,161,165)</option>
-                                                    <option value="FR" <% nvram_match_x("WLANConfig11a", "wl_country_code", "FR","selected"); %>>France (channels 36,40,44,48)</option>
-                                                    <option value="GB" <% nvram_match_x("WLANConfig11a", "wl_country_code", "GB","selected"); %>>Europe (channels 36,40,44,48)</option>
-                                                    <option value="TW" <% nvram_match_x("WLANConfig11a", "wl_country_code", "TW","selected"); %>>Taiwan (channels 149,153,157,161)</option>
-                                                    <option value="KR" <% nvram_match_x("WLANConfig11a", "wl_country_code", "KR","selected"); %>>Korea (channels 149,153,157,161)</option>
-                                                    <option value="CN" <% nvram_match_x("WLANConfig11a", "wl_country_code", "CN","selected"); %>>China (channels 149,153,157,161,165)</option>
-                                                    <option value="JP" <% nvram_match_x("WLANConfig11a", "wl_country_code", "JP","selected"); %>>Japan (channels 36,40,44,48)</option>
-                                                    <option value="DB" <% nvram_match_x("WLANConfig11a", "wl_country_code", "DB","selected"); %>>Debug (all channels)</option>
+                                                    <option value="US" <% nvram_match_x("", "wl_country_code", "US","selected"); %>>USA (channels 36,40,44,48,149,153,157,161,165)</option>
+                                                    <option value="NO" <% nvram_match_x("", "wl_country_code", "NO","selected"); %>>Norway (channels 36,40,44,48,149,153,157,161,165)</option>
+                                                    <option value="FR" <% nvram_match_x("", "wl_country_code", "FR","selected"); %>>France (channels 36,40,44,48)</option>
+                                                    <option value="GB" <% nvram_match_x("", "wl_country_code", "GB","selected"); %>>Europe (channels 36,40,44,48)</option>
+                                                    <option value="TW" <% nvram_match_x("", "wl_country_code", "TW","selected"); %>>Taiwan (channels 149,153,157,161)</option>
+                                                    <option value="KR" <% nvram_match_x("", "wl_country_code", "KR","selected"); %>>Korea (channels 149,153,157,161)</option>
+                                                    <option value="CN" <% nvram_match_x("", "wl_country_code", "CN","selected"); %>>China (channels 149,153,157,161,165)</option>
+                                                    <option value="JP" <% nvram_match_x("", "wl_country_code", "JP","selected"); %>>Japan (channels 36,40,44,48)</option>
+                                                    <option value="DB" <% nvram_match_x("", "wl_country_code", "DB","selected"); %>>Debug (all channels)</option>
                                                 </select>
                                             </td>
                                         </tr>

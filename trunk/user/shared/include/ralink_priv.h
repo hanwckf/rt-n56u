@@ -47,6 +47,10 @@ typedef enum _RT_802_11_PHY_MODE {
 	PHY_11BGN_MIXED,    // if check 802.11b.      9
 	PHY_11AGN_MIXED,    // if check 802.11b.      10
 	PHY_11N_5G,         // 11n-only with 5G band  11
+	PHY_11VHT_N_ABG_MIXED = 12, /* 12 -> AC/A/AN/B/G/GN mixed */
+	PHY_11VHT_N_AG_MIXED = 13, /* 13 -> AC/A/AN/G/GN mixed  */
+	PHY_11VHT_N_A_MIXED = 14, /* 14 -> AC/AN/A mixed in 5G band */
+	PHY_11VHT_N_MIXED = 15, /* 15 -> AC/AN mixed in 5G band */
 } RT_802_11_PHY_MODE;
 
 // MIMO Tx parameter, ShortGI, MCS, STBC, etc.  these are fields in TXWI. Don't change this definition!!!

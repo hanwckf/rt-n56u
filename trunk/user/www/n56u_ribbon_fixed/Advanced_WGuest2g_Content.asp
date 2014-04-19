@@ -348,12 +348,12 @@ function change_guest_auth_mode(mflag) {
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="rt_country_code" value="<% nvram_get_x("","rt_country_code"); %>">
 
-    <input type="hidden" name="rt_guest_ssid_org" value="<% nvram_char_to_ascii("WLANConfig11b", "rt_guest_ssid"); %>">
-    <input type="hidden" name="rt_guest_wpa_mode" value="<% nvram_get_x("WLANConfig11b","rt_guest_wpa_mode"); %>">
-    <input type="hidden" name="rt_guest_wpa_psk_org" value="<% nvram_char_to_ascii("WLANConfig11b", "rt_guest_wpa_psk"); %>">
-    <input type="hidden" name="rt_guest_date_x" value="<% nvram_get_x("WLANConfig11b","rt_guest_date_x"); %>">
-    <input type="hidden" name="rt_guest_time_x" value="<% nvram_get_x("WLANConfig11b","rt_guest_time_x"); %>">
-    <input type="hidden" name="rt_guest_time2_x" value="<% nvram_get_x("WLANConfig11b","rt_guest_time2_x"); %>">
+    <input type="hidden" name="rt_guest_ssid_org" value="<% nvram_char_to_ascii("", "rt_guest_ssid"); %>">
+    <input type="hidden" name="rt_guest_wpa_mode" value="<% nvram_get_x("","rt_guest_wpa_mode"); %>">
+    <input type="hidden" name="rt_guest_wpa_psk_org" value="<% nvram_char_to_ascii("", "rt_guest_wpa_psk"); %>">
+    <input type="hidden" name="rt_guest_date_x" value="<% nvram_get_x("","rt_guest_date_x"); %>">
+    <input type="hidden" name="rt_guest_time_x" value="<% nvram_get_x("","rt_guest_time_x"); %>">
+    <input type="hidden" name="rt_guest_time2_x" value="<% nvram_get_x("","rt_guest_time2_x"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -386,13 +386,13 @@ function change_guest_auth_mode(mflag) {
                                             <td style="border-top: 0 none;">
                                                 <div class="main_itoggle">
                                                     <div id="rt_guest_enable_on_of">
-                                                        <input type="checkbox" id="rt_guest_enable_fake" <% nvram_match_x("WLANConfig11b", "rt_guest_enable", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11b", "rt_guest_enable", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="rt_guest_enable_fake" <% nvram_match_x("", "rt_guest_enable", "1", "value=1 checked"); %><% nvram_match_x("", "rt_guest_enable", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" id="rt_guest_enable_1" name="rt_guest_enable" class="input" onClick="change_guest_enabled(1);" <% nvram_match_x("WLANConfig11b","rt_guest_enable", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" id="rt_guest_enable_0" name="rt_guest_enable" class="input" onClick="change_guest_enabled(1);" <% nvram_match_x("WLANConfig11b","rt_guest_enable", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" id="rt_guest_enable_1" name="rt_guest_enable" class="input" onClick="change_guest_enabled(1);" <% nvram_match_x("","rt_guest_enable", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" id="rt_guest_enable_0" name="rt_guest_enable" class="input" onClick="change_guest_enabled(1);" <% nvram_match_x("","rt_guest_enable", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -444,13 +444,13 @@ function change_guest_auth_mode(mflag) {
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="rt_guest_closed_on_of">
-                                                        <input type="checkbox" id="rt_guest_closed_fake" <% nvram_match_x("WLANConfig11b", "rt_guest_closed", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11b", "rt_guest_closed", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="rt_guest_closed_fake" <% nvram_match_x("", "rt_guest_closed", "1", "value=1 checked"); %><% nvram_match_x("", "rt_guest_closed", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" id="rt_guest_closed_1" name="rt_guest_closed" class="input" <% nvram_match_x("WLANConfig11b","rt_guest_closed", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" id="rt_guest_closed_0" name="rt_guest_closed" class="input" <% nvram_match_x("WLANConfig11b","rt_guest_closed", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" id="rt_guest_closed_1" name="rt_guest_closed" class="input" <% nvram_match_x("","rt_guest_closed", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" id="rt_guest_closed_0" name="rt_guest_closed" class="input" <% nvram_match_x("","rt_guest_closed", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -459,13 +459,13 @@ function change_guest_auth_mode(mflag) {
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="rt_guest_lan_isolate_on_of">
-                                                        <input type="checkbox" id="rt_guest_lan_isolate_fake" <% nvram_match_x("WLANConfig11b", "rt_guest_lan_isolate", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11b", "rt_guest_lan_isolate", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="rt_guest_lan_isolate_fake" <% nvram_match_x("", "rt_guest_lan_isolate", "1", "value=1 checked"); %><% nvram_match_x("", "rt_guest_lan_isolate", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" id="rt_guest_lan_isolate_1" name="rt_guest_lan_isolate" class="input" <% nvram_match_x("WLANConfig11b","rt_guest_lan_isolate", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" id="rt_guest_lan_isolate_0" name="rt_guest_lan_isolate" class="input" <% nvram_match_x("WLANConfig11b","rt_guest_lan_isolate", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" id="rt_guest_lan_isolate_1" name="rt_guest_lan_isolate" class="input" <% nvram_match_x("","rt_guest_lan_isolate", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" id="rt_guest_lan_isolate_0" name="rt_guest_lan_isolate" class="input" <% nvram_match_x("","rt_guest_lan_isolate", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -474,13 +474,13 @@ function change_guest_auth_mode(mflag) {
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="rt_guest_ap_isolate_on_of">
-                                                        <input type="checkbox" id="rt_guest_ap_isolate_fake" <% nvram_match_x("WLANConfig11b", "rt_guest_ap_isolate", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11b", "rt_guest_ap_isolate", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="rt_guest_ap_isolate_fake" <% nvram_match_x("", "rt_guest_ap_isolate", "1", "value=1 checked"); %><% nvram_match_x("", "rt_guest_ap_isolate", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" id="rt_guest_ap_isolate_1" name="rt_guest_ap_isolate" class="input" <% nvram_match_x("WLANConfig11b","rt_guest_ap_isolate", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" id="rt_guest_ap_isolate_0" name="rt_guest_ap_isolate" class="input" <% nvram_match_x("WLANConfig11b","rt_guest_ap_isolate", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" id="rt_guest_ap_isolate_1" name="rt_guest_ap_isolate" class="input" <% nvram_match_x("","rt_guest_ap_isolate", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" id="rt_guest_ap_isolate_0" name="rt_guest_ap_isolate" class="input" <% nvram_match_x("","rt_guest_ap_isolate", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -488,16 +488,16 @@ function change_guest_auth_mode(mflag) {
                                             <th><#WIFIGuestMCS#></th>
                                             <td>
                                                 <select name="rt_guest_mcs_mode" class="input">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "0", "selected"); %>><#checkbox_No#> (*)</option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "1", "selected"); %>>HTMIX (1S) 45 Mbps</option>
-                                                    <option value="2" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "2", "selected"); %>>HTMIX (1S) 30 Mbps</option>
-                                                    <option value="3" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "3", "selected"); %>>HTMIX (1S) 15 Mbps</option>
-                                                    <option value="4" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "4", "selected"); %>>OFDM 12 Mbps</option>
-                                                    <option value="5" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "5", "selected"); %>>OFDM 9 Mbps</option>
-                                                    <option value="6" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "6", "selected"); %>>OFDM 6 Mbps</option>
-                                                    <option value="7" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "7", "selected"); %>>CCK 5.5 Mbps</option>
-                                                    <option value="8" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "8", "selected"); %>>CCK 2 Mbps</option>
-                                                    <option value="9" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "9", "selected"); %>>CCK 1 Mbps</option>
+                                                    <option value="0" <% nvram_match_x("", "rt_guest_mcs_mode", "0", "selected"); %>><#checkbox_No#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("", "rt_guest_mcs_mode", "1", "selected"); %>>HTMIX (1S) 45 Mbps</option>
+                                                    <option value="2" <% nvram_match_x("", "rt_guest_mcs_mode", "2", "selected"); %>>HTMIX (1S) 30 Mbps</option>
+                                                    <option value="3" <% nvram_match_x("", "rt_guest_mcs_mode", "3", "selected"); %>>HTMIX (1S) 15 Mbps</option>
+                                                    <option value="4" <% nvram_match_x("", "rt_guest_mcs_mode", "4", "selected"); %>>OFDM 12 Mbps</option>
+                                                    <option value="5" <% nvram_match_x("", "rt_guest_mcs_mode", "5", "selected"); %>>OFDM 9 Mbps</option>
+                                                    <option value="6" <% nvram_match_x("", "rt_guest_mcs_mode", "6", "selected"); %>>OFDM 6 Mbps</option>
+                                                    <option value="7" <% nvram_match_x("", "rt_guest_mcs_mode", "7", "selected"); %>>CCK 5.5 Mbps</option>
+                                                    <option value="8" <% nvram_match_x("", "rt_guest_mcs_mode", "8", "selected"); %>>CCK 2 Mbps</option>
+                                                    <option value="9" <% nvram_match_x("", "rt_guest_mcs_mode", "9", "selected"); %>>CCK 1 Mbps</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -505,10 +505,10 @@ function change_guest_auth_mode(mflag) {
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
                                             <td>
                                                 <select name="rt_guest_auth_mode" class="input" onChange="change_guest_auth_mode(1);">
-                                                    <option value="open" <% nvram_match_x("WLANConfig11b", "rt_guest_auth_mode", "open", "selected"); %>>Open System</option>
-                                                    <option value="psk" <% nvram_double_match_x("WLANConfig11b", "rt_guest_auth_mode", "psk", "WLANConfig11b", "rt_guest_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
-                                                    <option value="psk" <% nvram_double_match_x("WLANConfig11b", "rt_guest_auth_mode", "psk", "WLANConfig11b", "rt_guest_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
-                                                    <option value="psk" <% nvram_double_match_x("WLANConfig11b", "rt_guest_auth_mode", "psk", "WLANConfig11b", "rt_guest_wpa_mode", "0", "selected"); %>>WPA-Auto-Personal</option>
+                                                    <option value="open" <% nvram_match_x("", "rt_guest_auth_mode", "open", "selected"); %>>Open System</option>
+                                                    <option value="psk" <% nvram_double_match_x("", "rt_guest_auth_mode", "psk", "", "rt_guest_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
+                                                    <option value="psk" <% nvram_double_match_x("", "rt_guest_auth_mode", "psk", "", "rt_guest_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
+                                                    <option value="psk" <% nvram_double_match_x("", "rt_guest_auth_mode", "psk", "", "rt_guest_wpa_mode", "0", "selected"); %>>WPA-Auto-Personal</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -516,9 +516,9 @@ function change_guest_auth_mode(mflag) {
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
                                             <td>
                                                 <select name="rt_guest_crypto" class="input">
-                                                    <option value="tkip" <% nvram_match_x("WLANConfig11b", "rt_guest_crypto", "tkip", "selected"); %>>TKIP</option>
-                                                    <option value="aes" <% nvram_match_x("WLANConfig11b", "rt_guest_crypto", "aes", "selected"); %>>AES</option>
-                                                    <option value="tkip+aes" <% nvram_match_x("WLANConfig11b", "rt_guest_crypto", "tkip+aes", "selected"); %>>TKIP+AES</option>
+                                                    <option value="tkip" <% nvram_match_x("", "rt_guest_crypto", "tkip", "selected"); %>>TKIP</option>
+                                                    <option value="aes" <% nvram_match_x("", "rt_guest_crypto", "aes", "selected"); %>>AES</option>
+                                                    <option value="tkip+aes" <% nvram_match_x("", "rt_guest_crypto", "tkip+aes", "selected"); %>>TKIP+AES</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -536,13 +536,13 @@ function change_guest_auth_mode(mflag) {
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="rt_guest_macrule_on_of">
-                                                        <input type="checkbox" id="rt_guest_macrule_fake" <% nvram_match_x("WLANConfig11b", "rt_guest_macrule", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11b", "rt_guest_macrule", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="rt_guest_macrule_fake" <% nvram_match_x("", "rt_guest_macrule", "1", "value=1 checked"); %><% nvram_match_x("", "rt_guest_macrule", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" id="rt_guest_macrule_1" name="rt_guest_macrule" class="input" <% nvram_match_x("WLANConfig11b","rt_guest_macrule", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" id="rt_guest_macrule_0" name="rt_guest_macrule" class="input" <% nvram_match_x("WLANConfig11b","rt_guest_macrule", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" id="rt_guest_macrule_1" name="rt_guest_macrule" class="input" <% nvram_match_x("","rt_guest_macrule", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" id="rt_guest_macrule_0" name="rt_guest_macrule" class="input" <% nvram_match_x("","rt_guest_macrule", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

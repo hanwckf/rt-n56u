@@ -101,6 +101,8 @@ load_wireless_modules(void)
 	doSystem("modprobe %s", "rt5592_ap");
 #elif defined (USE_RT3593_AP)
 	doSystem("modprobe %s", "rt3593_ap");
+#elif defined (USE_MT7610_AP)
+	doSystem("modprobe %s", "mt7610_ap");
 #endif
 }
 

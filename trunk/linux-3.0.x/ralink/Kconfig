@@ -86,6 +86,9 @@ endmenu
 menu "AP MODE Ralink PCIe RT3593 wireless driver"
 source "drivers/net/wireless/rt3593_ap/Kconfig"
 endmenu
+menu "AP MODE Ralink PCIe MT7610E wireless driver"
+source "drivers/net/wireless/mt7610_ap/Kconfig"
+endmenu
 menu "AP MODE Ralink iNIC MII RT3352 wireless driver"
 source "drivers/net/wireless/rt3352_mii/Kconfig"
 endmenu

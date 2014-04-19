@@ -370,13 +370,12 @@ function hideClients_Block(){
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="rt_country_code" value="<% nvram_get_x("","rt_country_code"); %>">
     <input type="hidden" name="rt_HT_BW" value="<% nvram_get_x("",  "rt_HT_BW"); %>">
-    <input type="hidden" maxlength="15" size="15" name="x_RegulatoryDomain" value="<% nvram_get_x("Regulatory","x_RegulatoryDomain"); %>" readonly="1">
-    <input type="hidden" name="rt_wdsnum_x_0" value="<% nvram_get_x("WLANConfig11b", "rt_wdsnum_x"); %>" readonly="1">
-    <input type="hidden" name="rt_channel_org" value="<% nvram_get_x("WLANConfig11b","rt_channel"); %>">
-    <input type="hidden" name="rt_wdsapply_x_org" value="<% nvram_get_x("WLANConfig11b","rt_wdsapply_x"); %>">
-    <input type="hidden" name="rt_sta_ssid_org" value="<% nvram_char_to_ascii("WLANConfig11b", "rt_sta_ssid"); %>">
-    <input type="hidden" name="rt_sta_wpa_mode" value="<% nvram_get_x("WLANConfig11b","rt_sta_wpa_mode"); %>">
-    <input type="hidden" name="rt_sta_wpa_psk_org" value="<% nvram_char_to_ascii("WLANConfig11b", "rt_sta_wpa_psk"); %>">
+    <input type="hidden" name="rt_wdsnum_x_0" value="<% nvram_get_x("", "rt_wdsnum_x"); %>" readonly="1">
+    <input type="hidden" name="rt_channel_org" value="<% nvram_get_x("","rt_channel"); %>">
+    <input type="hidden" name="rt_wdsapply_x_org" value="<% nvram_get_x("","rt_wdsapply_x"); %>">
+    <input type="hidden" name="rt_sta_ssid_org" value="<% nvram_char_to_ascii("", "rt_sta_ssid"); %>">
+    <input type="hidden" name="rt_sta_wpa_mode" value="<% nvram_get_x("","rt_sta_wpa_mode"); %>">
+    <input type="hidden" name="rt_sta_wpa_psk_org" value="<% nvram_char_to_ascii("", "rt_sta_wpa_psk"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -415,11 +414,11 @@ function hideClients_Block(){
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);"  onmouseover="openTooltip(this, 1, 1);"><#WLANConfig11b_x_APMode_itemname#></a></th>
                                             <td>
                                                 <select name="rt_mode_x" class="input" onChange="change_wireless_bridge(1);">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11b","rt_mode_x", "0","selected"); %>>AP only</option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11b","rt_mode_x", "1","selected"); %>>WDS only</option>
-                                                    <option value="2" <% nvram_match_x("WLANConfig11b","rt_mode_x", "2","selected"); %>>AP & WDS</option>
-                                                    <option value="3" <% nvram_match_x("WLANConfig11b","rt_mode_x", "3","selected"); %>>AP-Client only</option>
-                                                    <option value="4" <% nvram_match_x("WLANConfig11b","rt_mode_x", "4","selected"); %>>AP & AP-Client</option>
+                                                    <option value="0" <% nvram_match_x("","rt_mode_x", "0","selected"); %>>AP only</option>
+                                                    <option value="1" <% nvram_match_x("","rt_mode_x", "1","selected"); %>>WDS only</option>
+                                                    <option value="2" <% nvram_match_x("","rt_mode_x", "2","selected"); %>>AP & WDS</option>
+                                                    <option value="3" <% nvram_match_x("","rt_mode_x", "3","selected"); %>>AP-Client only</option>
+                                                    <option value="4" <% nvram_match_x("","rt_mode_x", "4","selected"); %>>AP & AP-Client</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -434,8 +433,8 @@ function hideClients_Block(){
                                         <tr id="row_wds_1" style="display:none;">
                                             <th width="50%" style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 1, 3);"><#WLANConfig11b_x_BRApply_itemname#></a></th>
                                             <td style="border-top: 0 none;">
-                                                <label class="radio inline"><input type="radio" value="1" name="rt_wdsapply_x" class="input" onClick="change_wdsapply();" <% nvram_match_x("WLANConfig11b","rt_wdsapply_x", "1", "checked"); %>><#checkbox_Yes#></label>
-                                                <label class="radio inline"><input type="radio" value="0" name="rt_wdsapply_x" class="input" onClick="change_wdsapply();" <% nvram_match_x("WLANConfig11b","rt_wdsapply_x", "0", "checked"); %>><#checkbox_No#></label>
+                                                <label class="radio inline"><input type="radio" value="1" name="rt_wdsapply_x" class="input" onClick="change_wdsapply();" <% nvram_match_x("","rt_wdsapply_x", "1", "checked"); %>><#checkbox_Yes#></label>
+                                                <label class="radio inline"><input type="radio" value="0" name="rt_wdsapply_x" class="input" onClick="change_wdsapply();" <% nvram_match_x("","rt_wdsapply_x", "0", "checked"); %>><#checkbox_No#></label>
                                             </td>
                                         </tr>
                                     </table>
@@ -470,9 +469,9 @@ function hideClients_Block(){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
                                             <td>
                                                 <select name="rt_sta_auth_mode" class="input" onChange="change_sta_auth_mode(1);">
-                                                    <option value="open" <% nvram_match_x("WLANConfig11b", "rt_sta_auth_mode", "open", "selected"); %>>Open System</option>
-                                                    <option value="psk" <% nvram_double_match_x("WLANConfig11b", "rt_sta_auth_mode", "psk", "WLANConfig11b", "rt_sta_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
-                                                    <option value="psk" <% nvram_double_match_x("WLANConfig11b", "rt_sta_auth_mode", "psk", "WLANConfig11b", "rt_sta_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
+                                                    <option value="open" <% nvram_match_x("", "rt_sta_auth_mode", "open", "selected"); %>>Open System</option>
+                                                    <option value="psk" <% nvram_double_match_x("", "rt_sta_auth_mode", "psk", "", "rt_sta_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
+                                                    <option value="psk" <% nvram_double_match_x("", "rt_sta_auth_mode", "psk", "", "rt_sta_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -480,8 +479,8 @@ function hideClients_Block(){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
                                             <td>
                                                 <select name="rt_sta_crypto" class="input">
-                                                    <option value="tkip" <% nvram_match_x("WLANConfig11b", "rt_sta_crypto", "tkip", "selected"); %>>TKIP</option>
-                                                    <option value="aes" <% nvram_match_x("WLANConfig11b", "rt_sta_crypto", "aes", "selected"); %>>AES</option>
+                                                    <option value="tkip" <% nvram_match_x("", "rt_sta_crypto", "tkip", "selected"); %>>TKIP</option>
+                                                    <option value="aes" <% nvram_match_x("", "rt_sta_crypto", "aes", "selected"); %>>AES</option>
                                                 </select>
                                             </td>
                                         </tr>

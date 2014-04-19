@@ -1,0 +1,139 @@
+config MT7610_AP
+	tristate "Ralink MT7610E 802.11ac AP support"
+	select WIRELESS_EXT
+	select WEXT_SPY
+	select WEXT_PRIV
+
+config  MT7610_AP_LED
+	bool "LED Support"
+	depends on MT7610_AP
+
+config  MT7610_AP_WSC
+	bool "WSC (WiFi Simple Config)"
+	depends on MT7610_AP
+
+config  MT7610_AP_WSC_V2
+	bool "WSC V2 (WiFi Simple Config Version 2)"
+	default n
+	depends on MT7610_AP_WSC
+
+config  MT7610_AP_LLTD
+	bool "LLTD (Link Layer Topology Discovery Protocol)"
+	depends on MT7610_AP
+
+config  MT7610_AP_WDS
+	bool "WDS"
+	depends on MT7610_AP
+
+config  MT7610_AP_MBSS
+	bool "MBSSID"
+	depends on MT7610_AP
+	default y
+
+config  MT7610_AP_MBSS_NEW_MBSSID_MODE
+	bool "New MBSSID mode support"
+	default n
+	depends on MT7610_AP
+	depends on MT7610_AP_MBSS
+
+config  MT7610_AP_APCLI
+	bool "AP-CLient Support"
+	depends on MT7610_AP
+
+config  MT7610_AP_MAC_REPEATER
+	bool "MAC Repeater Mode Support"
+	depends on MT7610_AP
+	depends on MT7610_AP_APCLI
+	default n
+
+config  MT7610_AP_IGMP_SNOOP
+	bool "IGMP snooping"
+	depends on MT7610_AP
+
+config  MT7610_AP_NETIF_BLOCK
+	bool "NETIF Block"
+	depends on MT7610_AP
+	help
+	Support Net interface block while Tx-Sw queue full
+
+config  MT7610_AP_DFS
+	bool "DFS support"
+	depends on MT7610_AP
+
+config  MT7610_AP_CARRIER
+	bool "Carrier Detection support"
+	depends on MT7610_AP
+
+#config  MT7610_AP_EXT_CHANNEL_LIST
+#	bool "Extension Channel List"
+#	depends on MT7610_AP
+
+config  MT7610_AP_VIDEO_TURBINE
+	bool "Video Turbine support"
+	depends on MT7610_AP
+
+config  MT7610_AP_GREENAP
+	bool "Green AP mode support"
+	depends on MT7610_AP
+
+config  MT7610_AP_DLS
+	bool "DLS (Direct-Link Setup) Support"
+	depends on MT7610_AP
+
+config  MT7610_AP_IDS
+	bool "IDS (Intrusion Detection System) Support"
+	depends on MT7610_AP
+
+#config MT7610_AP_CON_WPS_SUPPORT
+#	bool "Concurrent WPS Support"
+#	depends on MT7610_AP
+#	depends on MT7610_AP_APCLI
+#	depends on MT7610_AP_WSC
+#	depends on MT7610_AP_WSC_V2
+#	default n
+
+config  MT7610_AP_AUTO_CH_SELECT_ENHANCE
+	bool "Auto Channel Selection Enhancement"
+	depends on MT7610_AP
+
+config  MT7610_AP_80211N_DRAFT3
+	bool "802.11n Draft3"
+	depends on MT7610_AP
+	default n
+
+config  MT7610_AP_MCAST_RATE_SPECIFIC
+	bool "User specific TX rate of mcast packets"
+	default y
+	depends on MT7610_AP
+
+config  MT7610_AP_TSSI_COMPENSATION
+	bool "TSSI DC Calibration & TSSI compensation Support"
+	depends on MT7610_AP
+
+config  MT7610_AP_TEMPERATURE_COMPENSATION
+	bool "Tx Power Temperature Compensation"
+	depends on MT7610_AP
+
+config  MT7610_AP_SINGLE_SKU
+	bool "Single SKU"
+	depends on MT7610_AP
+
+#config  MT7610_AP_HDR_TRANS
+#	bool "Header Translation Rx Support"
+#	depends on MT7610_AP
+
+config  MT7610_AP_ATE
+	bool "Provide ATE testmode commands support"
+	default n
+	depends on MT7610_AP
+
+config  MT7610_AP_QA
+	bool "Provide QA tool support"
+	default n
+	depends on MT7610_AP
+	depends on MT7610_AP_ATE
+
+config  MT7610_AP_DBG
+	bool "Debug support for AP mode"
+	default n
+	depends on MT7610_AP

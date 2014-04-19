@@ -111,11 +111,14 @@ struct nvram_pair router_defaults[] = {
 	/* 5G Wireless parameters */
 	{ "wl_country_code", "GB" },		/* Country Code (default obtained from driver) */
 	{ "wl_ssid", "ASUS_5G" },		/* Service set ID (network name) */
-	{ "wl_gmode", "2" },			/* 54g mode */
+#if BOARD_HAS_5G_11AC
+	{ "wl_gmode", "4" },			/* A/N/AC Mixed */
+#else
+	{ "wl_gmode", "2" },			/* A/N Mixed */
+#endif
 	{ "wl_channel", "0" },			/* Channel number */
 	{ "wl_bcn", "100" },			/* Beacon interval */
 	{ "wl_dtim", "1" },			/* DTIM period */
-	{ "wl_gmode_protection", "off" },	/* 802.11g RTS/CTS protection (off|auto) */
 	{ "wl_rts", "2347" },			/* RTS threshold */
 	{ "wl_frag", "2346" },			/* Fragmentation threshold */
 	{ "wl_ap_isolate", "0" },		/* AP isolate mode */
@@ -148,6 +151,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_APSDCapable", "0" },
 	{ "wl_HT_OpMode", "0" },
 	{ "wl_HT_BW", "1" },
+	{ "wl_VHT_Only", "0" },
 	{ "wl_txbf", "0" },
 	{ "wl_ssid2", "ASUS_5G" },
 	{ "wl_mode_x", "0" },
@@ -164,7 +168,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_wpa_mode", "0" },
 	{ "wl_stream_tx", STR(BOARD_NUM_ANT_5G_TX) },
 	{ "wl_stream_rx", STR(BOARD_NUM_ANT_5G_RX) },
-	{ "wl_preamble", "0" },
+	{ "wl_preamble", "1" },
 	{ "wl_greenap", "0" },
 	{ "wl_HT_RDG", "0" },
 	{ "wl_HT_AMSDU", "0" },

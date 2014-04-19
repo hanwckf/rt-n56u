@@ -101,16 +101,15 @@ function change_wmm() {
 	if (document.form.wl_wme.value == "0") {
 		$("row_wme_no_ack").style.display = "none";
 		$("row_apsd_cap").style.display = "none";
-	}
-	else {
-		if (gmode == "2" || gmode == "1") { // A/N, N only
+	}else{
+		if (gmode != "0") { // != A only
 			$("row_wme_no_ack").style.display = "none";
 		} else {
 			$("row_wme_no_ack").style.display = "";
 		}
 		$("row_apsd_cap").style.display = "";
 	}
-	if(gmode == "1") { // N only
+	if(gmode == "1" || gmode == "3") { // N, N/AC
 		$("row_greenfield").style.display = "";
 	}else{
 		$("row_greenfield").style.display = "none";
@@ -171,8 +170,7 @@ function done_validating(action){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="wl_gmode" value="<% nvram_get_x("WLANConfig11a","wl_gmode"); %>">
-    <input type="hidden" name="wl_gmode_protection" value="<% nvram_get_x("WLANConfig11a","wl_gmode_protection"); %>">
+    <input type="hidden" name="wl_gmode" value="<% nvram_get_x("","wl_gmode"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -205,9 +203,9 @@ function done_validating(action){
                                             <th width="50%"><#WIFIStreamTX#></th>
                                             <td>
                                                 <select name="wl_stream_tx" class="input">
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a", "wl_stream_tx", "1", "selected"); %>>1T (150Mbps)</option>
-                                                    <option value="2" <% nvram_match_x("WLANConfig11a", "wl_stream_tx", "2", "selected"); %>>2T (300Mbps)</option>
-                                                    <option value="3" <% nvram_match_x("WLANConfig11a", "wl_stream_tx", "3", "selected"); %>>3T (450Mbps)</option>
+                                                    <option value="1" <% nvram_match_x("", "wl_stream_tx", "1", "selected"); %>>1T (150Mbps)</option>
+                                                    <option value="2" <% nvram_match_x("", "wl_stream_tx", "2", "selected"); %>>2T (300Mbps)</option>
+                                                    <option value="3" <% nvram_match_x("", "wl_stream_tx", "3", "selected"); %>>3T (450Mbps)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -215,9 +213,9 @@ function done_validating(action){
                                             <th><#WIFIStreamRX#></th>
                                             <td>
                                                 <select name="wl_stream_rx" class="input">
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a", "wl_stream_rx", "1", "selected"); %>>1R (150Mbps)</option>
-                                                    <option value="2" <% nvram_match_x("WLANConfig11a", "wl_stream_rx", "2", "selected"); %>>2R (300Mbps)</option>
-                                                    <option value="3" <% nvram_match_x("WLANConfig11a", "wl_stream_rx", "3", "selected"); %>>3R (450Mbps)</option>
+                                                    <option value="1" <% nvram_match_x("", "wl_stream_rx", "1", "selected"); %>>1R (150Mbps)</option>
+                                                    <option value="2" <% nvram_match_x("", "wl_stream_rx", "2", "selected"); %>>2R (300Mbps)</option>
+                                                    <option value="3" <% nvram_match_x("", "wl_stream_rx", "3", "selected"); %>>3R (450Mbps)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -226,13 +224,13 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="wl_greenap_on_of">
-                                                        <input type="checkbox" id="wl_greenap_fake" <% nvram_match_x("WLANConfig11a", "wl_greenap", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_greenap", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="wl_greenap_fake" <% nvram_match_x("", "wl_greenap", "1", "value=1 checked"); %><% nvram_match_x("", "wl_greenap", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="wl_greenap" id="wl_greenap_1" class="input" <% nvram_match_x("WLANConfig11a", "wl_greenap", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="wl_greenap" id="wl_greenap_0" class="input" <% nvram_match_x("WLANConfig11a", "wl_greenap", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="wl_greenap" id="wl_greenap_1" class="input" <% nvram_match_x("", "wl_greenap", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="wl_greenap" id="wl_greenap_0" class="input" <% nvram_match_x("", "wl_greenap", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -241,13 +239,13 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="wl_ap_isolate_on_of">
-                                                        <input type="checkbox" id="wl_ap_isolate_fake" <% nvram_match_x("WLANConfig11a","wl_ap_isolate", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a","wl_ap_isolate", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="wl_ap_isolate_fake" <% nvram_match_x("","wl_ap_isolate", "1", "value=1 checked"); %><% nvram_match_x("","wl_ap_isolate", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="wl_ap_isolate" id="wl_ap_isolate_1" value="1" <% nvram_match_x("WLANConfig11a","wl_ap_isolate", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" name="wl_ap_isolate" id="wl_ap_isolate_0" value="0" <% nvram_match_x("WLANConfig11a","wl_ap_isolate", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" name="wl_ap_isolate" id="wl_ap_isolate_1" value="1" <% nvram_match_x("","wl_ap_isolate", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" name="wl_ap_isolate" id="wl_ap_isolate_0" value="0" <% nvram_match_x("","wl_ap_isolate", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -256,13 +254,13 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="wl_mbssid_isolate_on_of">
-                                                        <input type="checkbox" id="wl_mbssid_isolate_fake" <% nvram_match_x("WLANConfig11a","wl_mbssid_isolate", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a","wl_mbssid_isolate", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="wl_mbssid_isolate_fake" <% nvram_match_x("","wl_mbssid_isolate", "1", "value=1 checked"); %><% nvram_match_x("","wl_mbssid_isolate", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" id="wl_mbssid_isolate_1" name="wl_mbssid_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_mbssid_isolate", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" id="wl_mbssid_isolate_0" name="wl_mbssid_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_mbssid_isolate", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" id="wl_mbssid_isolate_1" name="wl_mbssid_isolate" class="input" <% nvram_match_x("","wl_mbssid_isolate", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" id="wl_mbssid_isolate_0" name="wl_mbssid_isolate" class="input" <% nvram_match_x("","wl_mbssid_isolate", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -270,36 +268,36 @@ function done_validating(action){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 4);"><#WLANConfig11n_PremblesType_itemname#></a></th>
                                             <td>
                                                 <select name="wl_preamble" class="input">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11a","wl_preamble", "0","selected"); %>>Long (*)</option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a","wl_preamble", "1","selected"); %>>Short</option>
+                                                    <option value="0" <% nvram_match_x("","wl_preamble", "0","selected"); %>>Long</option>
+                                                    <option value="1" <% nvram_match_x("","wl_preamble", "1","selected"); %>>Short (*)</option>
                                                 </select>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 9);"><#WLANConfig11b_x_Frag_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="4" size="5" name="wl_frag" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_frag"); %>" onKeyPress="return is_number(this)" onChange="page_changed()" onBlur="validate_range(this, 256, 2346)">
+                                                <input type="text" maxlength="4" size="5" name="wl_frag" class="input" value="<% nvram_get_x("", "wl_frag"); %>" onKeyPress="return is_number(this)" onChange="page_changed()" onBlur="validate_range(this, 256, 2346)">
                                                 &nbsp;<span style="color:#888;">[256..2346]</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 10);"><#WLANConfig11b_x_RTS_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="4" size="5" name="wl_rts" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_rts"); %>" onKeyPress="return is_number(this)">
+                                                <input type="text" maxlength="4" size="5" name="wl_rts" class="input" value="<% nvram_get_x("", "wl_rts"); %>" onKeyPress="return is_number(this)">
                                                 &nbsp;<span style="color:#888;">[1..2347]</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this, 3, 11);"><#WLANConfig11b_x_DTIM_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="3" size="5" name="wl_dtim" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_dtim"); %>" onKeyPress="return is_number(this)"  onBlur="validate_range(this, 1, 255)">
+                                                <input type="text" maxlength="3" size="5" name="wl_dtim" class="input" value="<% nvram_get_x("", "wl_dtim"); %>" onKeyPress="return is_number(this)"  onBlur="validate_range(this, 1, 255)">
                                                 &nbsp;<span style="color:#888;">[1..255]</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 12);"><#WLANConfig11b_x_Beacon_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="4" size="5" name="wl_bcn" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_bcn"); %>" onKeyPress="return is_number(this)" onBlur="validate_range(this, 20, 1000)">
+                                                <input type="text" maxlength="4" size="5" name="wl_bcn" class="input" value="<% nvram_get_x("", "wl_bcn"); %>" onKeyPress="return is_number(this)" onBlur="validate_range(this, 20, 1000)">
                                                 &nbsp;<span style="color:#888;">[20..1000]</span>
                                             </td>
                                         </tr>
@@ -307,8 +305,8 @@ function done_validating(action){
                                             <th><#SwitchIgmp#></th>
                                             <td>
                                                 <select name="wl_IgmpSnEnable" class="input">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11a","wl_IgmpSnEnable", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a","wl_IgmpSnEnable", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#> (*)</option>
+                                                    <option value="0" <% nvram_match_x("","wl_IgmpSnEnable", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+                                                    <option value="1" <% nvram_match_x("","wl_IgmpSnEnable", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#> (*)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -316,15 +314,15 @@ function done_validating(action){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 7);"><#WLANConfig11b_MultiRateAll_itemname#></a></th>
                                             <td>
                                                 <select name="wl_mcastrate" class="input">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "0", "selected"); %>>HTMIX (1S) 15 Mbps</option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "1", "selected"); %>>HTMIX (1S) 30 Mbps (*)</option>
-                                                    <option value="2" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "2", "selected"); %>>HTMIX (1S) 45 Mbps</option>
-                                                    <option value="3" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "3", "selected"); %>>HTMIX (2S) 30 Mbps</option>
-                                                    <option value="4" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "4", "selected"); %>>HTMIX (2S) 60 Mbps</option>
-                                                    <option value="5" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "5", "selected"); %>>OFDM 9 Mbps</option>
-                                                    <option value="6" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "6", "selected"); %>>OFDM 12 Mbps</option>
-                                                    <option value="7" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "7", "selected"); %>>OFDM 18 Mbps</option>
-                                                    <option value="8" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "8", "selected"); %>>OFDM 24 Mbps</option>
+                                                    <option value="0" <% nvram_match_x("", "wl_mcastrate", "0", "selected"); %>>HTMIX (1S) 15 Mbps</option>
+                                                    <option value="1" <% nvram_match_x("", "wl_mcastrate", "1", "selected"); %>>HTMIX (1S) 30 Mbps (*)</option>
+                                                    <option value="2" <% nvram_match_x("", "wl_mcastrate", "2", "selected"); %>>HTMIX (1S) 45 Mbps</option>
+                                                    <option value="3" <% nvram_match_x("", "wl_mcastrate", "3", "selected"); %>>HTMIX (2S) 30 Mbps</option>
+                                                    <option value="4" <% nvram_match_x("", "wl_mcastrate", "4", "selected"); %>>HTMIX (2S) 60 Mbps</option>
+                                                    <option value="5" <% nvram_match_x("", "wl_mcastrate", "5", "selected"); %>>OFDM 9 Mbps</option>
+                                                    <option value="6" <% nvram_match_x("", "wl_mcastrate", "6", "selected"); %>>OFDM 12 Mbps</option>
+                                                    <option value="7" <% nvram_match_x("", "wl_mcastrate", "7", "selected"); %>>OFDM 18 Mbps</option>
+                                                    <option value="8" <% nvram_match_x("", "wl_mcastrate", "8", "selected"); %>>OFDM 24 Mbps</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -332,8 +330,8 @@ function done_validating(action){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 13);"><#WLANConfig11b_x_TxBurst_itemname#></a></th>
                                             <td>
                                                 <select name="wl_TxBurst" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_TxBurst')">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11a","wl_TxBurst", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a","wl_TxBurst", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#> (*)</option>
+                                                    <option value="0" <% nvram_match_x("","wl_TxBurst", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+                                                    <option value="1" <% nvram_match_x("","wl_TxBurst", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#> (*)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -341,8 +339,8 @@ function done_validating(action){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 16);"><#WLANConfig11b_x_PktAggregate_itemname#></a></th>
                                             <td>
                                                 <select name="wl_PktAggregate" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_PktAggregate')">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11a","wl_PktAggregate", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a","wl_PktAggregate", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#> (*)</option>
+                                                    <option value="0" <% nvram_match_x("","wl_PktAggregate", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+                                                    <option value="1" <% nvram_match_x("","wl_PktAggregate", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#> (*)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -350,8 +348,8 @@ function done_validating(action){
                                             <th><#WIFIRDG#></th>
                                             <td>
                                                 <select name="wl_HT_RDG" class="input">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11a","wl_HT_RDG", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#> (*)</option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a","wl_HT_RDG", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#> (Ralink clients only)</option>
+                                                    <option value="0" <% nvram_match_x("","wl_HT_RDG", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("","wl_HT_RDG", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#> (Ralink clients only)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -359,8 +357,8 @@ function done_validating(action){
                                             <th><#WIFIAutoBA#></th>
                                             <td>
                                                 <select name="wl_HT_AutoBA" class="input">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11a","wl_HT_AutoBA", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a","wl_HT_AutoBA", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#> (*)</option>
+                                                    <option value="0" <% nvram_match_x("","wl_HT_AutoBA", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+                                                    <option value="1" <% nvram_match_x("","wl_HT_AutoBA", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#> (*)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -368,8 +366,8 @@ function done_validating(action){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 19);"><#WLANConfig11b_x_HT_OpMode_itemname#></a></th>
                                             <td>
                                                 <select class="input" id="wl_HT_OpMode" name="wl_HT_OpMode" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_HT_OpMode')">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11a","wl_HT_OpMode", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#> (*)</option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a","wl_HT_OpMode", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
+                                                    <option value="0" <% nvram_match_x("","wl_HT_OpMode", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("","wl_HT_OpMode", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -377,8 +375,8 @@ function done_validating(action){
                                           <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this, 3, 14);"><#WLANConfig11b_x_WMM_itemname#></a></th>
                                           <td>
                                             <select name="wl_wme" id="wl_wme" class="input" onChange="change_wmm();">
-                                              <option value="0" <% nvram_match_x("WLANConfig11a", "wl_wme", "0", "selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-                                              <option value="1" <% nvram_match_x("WLANConfig11a", "wl_wme", "1", "selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#> (*)</option>
+                                              <option value="0" <% nvram_match_x("", "wl_wme", "0", "selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+                                              <option value="1" <% nvram_match_x("", "wl_wme", "1", "selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#> (*)</option>
                                             </select>
                                           </td>
                                         </tr>
@@ -386,8 +384,8 @@ function done_validating(action){
                                           <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 15);"><#WLANConfig11b_x_NOACK_itemname#></a></th>
                                           <td>
                                             <select name="wl_wme_no_ack" id="wl_wme_no_ack" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_wme_no_ack')">
-                                              <option value="off" <% nvram_match_x("WLANConfig11a","wl_wme_no_ack", "off","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#> (*)</option>
-                                              <option value="on" <% nvram_match_x("WLANConfig11a","wl_wme_no_ack", "on","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
+                                              <option value="off" <% nvram_match_x("","wl_wme_no_ack", "off","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#> (*)</option>
+                                              <option value="on" <% nvram_match_x("","wl_wme_no_ack", "on","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                             </select>
                                           </td>
                                         </tr>
@@ -395,8 +393,8 @@ function done_validating(action){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 17);"><#WLANConfig11b_x_APSD_itemname#></a></th>
                                             <td>
                                               <select name="wl_APSDCapable" class="input" onchange="return change_common_wl(this, 'WLANConfig11a', 'wl_APSDCapable')">
-                                                <option value="0" <% nvram_match_x("WLANConfig11a","wl_APSDCapable", "0","selected"); %> ><#WLANConfig11b_WirelessCtrl_buttonname#> (*)</option>
-                                                <option value="1" <% nvram_match_x("WLANConfig11a","wl_APSDCapable", "1","selected"); %> ><#WLANConfig11b_WirelessCtrl_button1name#></option>
+                                                <option value="0" <% nvram_match_x("","wl_APSDCapable", "0","selected"); %> ><#WLANConfig11b_WirelessCtrl_buttonname#> (*)</option>
+                                                <option value="1" <% nvram_match_x("","wl_APSDCapable", "1","selected"); %> ><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                               </select>
                                             </td>
                                         </tr>

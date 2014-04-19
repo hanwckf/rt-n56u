@@ -60,7 +60,7 @@ int ends_with(const char * haystack, const char * needle);
 char *trim(char *str);
 char *strstrc(const char *s, const char *p, const char t);
 char *strcasestrc(const char *s, const char *p, const char t);
-char *modifyString(char * string, const char * before, const char * after);
+char *modifyString(char *string, const char *before, const char *after, int noalloc);
 char *escape_tag(const char *tag, int force_alloc);
 char *unescape_tag(const char *tag, int force_alloc);
 void strip_ext(char * name);

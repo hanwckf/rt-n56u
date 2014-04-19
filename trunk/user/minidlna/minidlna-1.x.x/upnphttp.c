@@ -1284,21 +1284,25 @@ send_file(struct upnphttp * h, int sendfd, off_t offset, off_t end_offset)
 		/* Fall back to regular I/O */
 		if( !buf )
 			buf = malloc(MIN_BUFFER_SIZE);
-		send_size = ( ((end_offset - offset) < MIN_BUFFER_SIZE) ? (end_offset - offset + 1) : MIN_BUFFER_SIZE);
+		send_size = (((end_offset - offset) < MIN_BUFFER_SIZE) ? (end_offset - offset + 1) : MIN_BUFFER_SIZE);
 		lseek(sendfd, offset, SEEK_SET);
 		ret = read(sendfd, buf, send_size);
 		if( ret == -1 ) {
 			DPRINTF(E_DEBUG, L_HTTP, "read error :: error no. %d [%s]\n", errno, strerror(errno));
-			if( errno != EAGAIN )
+			if( errno == EAGAIN )
+				continue;
+			else
 				break;
 		}
 		ret = write(h->socket, buf, ret);
 		if( ret == -1 ) {
 			DPRINTF(E_DEBUG, L_HTTP, "write error :: error no. %d [%s]\n", errno, strerror(errno));
-			if( errno != EAGAIN )
+			if( errno == EAGAIN )
+				continue;
+			else
 				break;
 		}
-		offset+=ret;
+		offset += ret;
 	}
 	free(buf);
 }
@@ -1813,8 +1817,13 @@ SendResp_dlnafile(struct upnphttp *h, char *object)
 		{
 			char *art;
 			art = sql_get_text_field(db, "SELECT ALBUM_ART from DETAILS where ID = '%lld'", id);
-			SendResp_albumArt(h, art);
-			sqlite3_free(art);
+			if (art)
+			{
+				SendResp_albumArt(h, art);
+				sqlite3_free(art);
+			}
+			else
+				Send404(h);
 			return;
 		}
 	}

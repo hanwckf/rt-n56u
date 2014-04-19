@@ -33,8 +33,8 @@ sql_exec(sqlite3 *db, const char *fmt, ...)
 	//DPRINTF(E_DEBUG, L_DB_SQL, "SQL: %s\n", sql);
 
 	va_start(ap, fmt);
-
 	sql = sqlite3_vmprintf(fmt, ap);
+	va_end(ap);
 	ret = sqlite3_exec(db, sql, 0, 0, &errMsg);
 	if( ret != SQLITE_OK )
 	{
@@ -75,8 +75,8 @@ sql_get_int_field(sqlite3 *db, const char *fmt, ...)
 	sqlite3_stmt	*stmt;
 	
 	va_start(ap, fmt);
-
 	sql = sqlite3_vmprintf(fmt, ap);
+	va_end(ap);
 
 	//DPRINTF(E_DEBUG, L_DB_SQL, "sql: %s\n", sql);
 
@@ -118,9 +118,9 @@ sql_get_int_field(sqlite3 *db, const char *fmt, ...)
 			ret = -1;
 			break;
  	}
-
 	sqlite3_free(sql);
 	sqlite3_finalize(stmt);
+
 	return ret;
 }
 
@@ -133,15 +133,15 @@ sql_get_text_field(sqlite3 *db, const char *fmt, ...)
 	char            *str;
 	sqlite3_stmt    *stmt;
 
-	va_start(ap, fmt);
-
 	if (db == NULL)
 	{
 		DPRINTF(E_WARN, L_DB_SQL, "db is NULL\n");
 		return NULL;
 	}
 
+	va_start(ap, fmt);
 	sql = sqlite3_vmprintf(fmt, ap);
+	va_end(ap);
 
 	//DPRINTF(E_DEBUG, L_DB_SQL, "sql: %s\n", sql);
 
@@ -195,8 +195,8 @@ sql_get_text_field(sqlite3 *db, const char *fmt, ...)
 			str = NULL;
 			break;
 	}
-
 	sqlite3_finalize(stmt);
+
 	return str;
 }
 

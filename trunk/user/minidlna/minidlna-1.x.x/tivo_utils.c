@@ -153,7 +153,7 @@ is_tivo_file(const char *path)
 
 	/* read file header */
 	fd = open(path, O_RDONLY);
-	if( !fd )
+	if( fd < 0 )
 		return 0;
 	if( read(fd, buf, 5) < 5 )
 		buf[0] = 'X';

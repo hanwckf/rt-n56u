@@ -364,7 +364,7 @@ ParseUPnPClient(char *location)
 	{
 		nread += n;
 		buf[nread] = '\0';
-		n = nread;
+		n = nread - 4;
 		p = buf;
 
 		while (!off && (n-- > 0))

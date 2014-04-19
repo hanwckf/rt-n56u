@@ -1081,8 +1081,6 @@ main(int argc, char **argv)
 		tivo_bcast.sin_addr.s_addr = htonl(getBcastAddress());
 		tivo_bcast.sin_port = htons(2190);
 	}
-	else
-		sbeacon = -1;
 #endif
 
 	reload_ifaces(0);
@@ -1128,7 +1126,7 @@ main(int argc, char **argv)
 					timeout.tv_usec = lastnotifytime.tv_usec - timeofday.tv_usec;
 			}
 #ifdef TIVO_SUPPORT
-			if (GETFLAG(TIVO_MASK))
+			if (sbeacon >= 0)
 			{
 				if (timeofday.tv_sec >= (lastbeacontime.tv_sec + beacon_interval))
 				{

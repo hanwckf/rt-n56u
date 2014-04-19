@@ -118,11 +118,11 @@ SendFormats(struct upnphttp *h, const char *sformat)
 static char *
 tivo_unescape_tag(char *tag)
 {
-	modifyString(tag, "&amp;amp;", "&amp;");
-	modifyString(tag, "&amp;amp;lt;", "&lt;");
-	modifyString(tag, "&amp;lt;", "&lt;");
-	modifyString(tag, "&amp;amp;gt;", "&gt;");
-	modifyString(tag, "&amp;gt;", "&gt;");
+	modifyString(tag, "&amp;amp;", "&amp;", 1);
+	modifyString(tag, "&amp;amp;lt;", "&lt;", 1);
+	modifyString(tag, "&amp;lt;", "&lt;", 1);
+	modifyString(tag, "&amp;amp;gt;", "&gt;", 1);
+	modifyString(tag, "&amp;gt;", "&gt;", 1);
 	return tag;
 }
 

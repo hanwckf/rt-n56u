@@ -1198,8 +1198,8 @@ static inline void __RtmpOSFSInfoChange(OS_FS_INFO * pOSFSInfo,
 		pOSFSInfo->fsgid = current->fsgid;
 		current->fsuid = current->fsgid = 0;
 #else
-		pOSFSInfo->fsuid = 0;//current_fsuid();  
-		pOSFSInfo->fsgid = 0;//current_fsgid();
+		pOSFSInfo->fsuid = current_fsuid();
+		pOSFSInfo->fsgid = current_fsgid();
 #endif
 		pOSFSInfo->fs = get_fs();
 		set_fs(KERNEL_DS);

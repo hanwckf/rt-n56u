@@ -91,14 +91,13 @@
 #define MGMT_RING_SIZE          32
 #define RX_RING_SIZE            64
 #else
-#define TX_RING_SIZE            64 //64
+#define TX_RING_SIZE            128 //64
 #define MGMT_RING_SIZE          128
 #define RX_RING_SIZE            128 //64
 #endif
 #define MAX_TX_PROCESS          TX_RING_SIZE //8
 #define MAX_DMA_DONE_PROCESS    TX_RING_SIZE
 #define MAX_TX_DONE_PROCESS     TX_RING_SIZE //8
-#define LOCAL_TXBUF_SIZE        2
 #endif // RTMP_MAC_PCI //
 
 #define PCI_VIRT_TO_PHYS(__Addr)	(((UINT32)(__Addr)) & 0x0FFFFFFF)

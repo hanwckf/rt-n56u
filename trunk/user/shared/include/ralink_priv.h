@@ -22,8 +22,7 @@
 #define ETHER_ADDR_LEN		6
 #endif
 
-#define MAX_NUMBER_OF_MAC	32
-#define MAX_NUMBER_OF_MAC_2G	64
+#define MAX_NUMBER_OF_MAC	64
 
 #define MODE_CCK		0
 #define MODE_OFDM		1
@@ -114,7 +113,7 @@ typedef struct _RT_802_11_MAC_TABLE {
 
 typedef struct _RT_802_11_MAC_TABLE_2G {
     unsigned long	Num;
-    RT_802_11_MAC_ENTRY_2G Entry[MAX_NUMBER_OF_MAC_2G];
+    RT_802_11_MAC_ENTRY_2G Entry[MAX_NUMBER_OF_MAC];
 } RT_802_11_MAC_TABLE_2G, *PRT_802_11_MAC_TABLE_2G;
 
 typedef struct _SITE_SURVEY 

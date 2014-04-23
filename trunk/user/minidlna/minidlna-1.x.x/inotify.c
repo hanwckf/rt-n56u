@@ -297,7 +297,7 @@ inotify_insert_file(char * name, const char * path)
 	/* Is it cover art for another file? */
 	if( is_image(path) )
 		update_if_album_art(path);
-	else if( ends_with(path, ".srt") )
+	else if( is_caption(path) )
 		check_for_captions(path, 0);
 
 	/* Check if we're supposed to be scanning for this file type in this directory */
@@ -540,7 +540,7 @@ inotify_remove_file(const char * path)
 	int64_t detailID;
 	int rows, playlist;
 
-	if( ends_with(path, ".srt") )
+	if( is_caption(path) )
 	{
 		return sql_exec(db, "DELETE from CAPTIONS where PATH = '%q'", path);
 	}

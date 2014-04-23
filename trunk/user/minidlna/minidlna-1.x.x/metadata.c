@@ -157,41 +157,42 @@ dlna_timestamp_is_present(const char *filename, int *raw_packet_size)
 void
 check_for_captions(const char *path, int64_t detailID)
 {
-	char *file = malloc(MAXPATHLEN);
-	char *id = NULL;
+	char file[MAXPATHLEN];
+	char *p;
+	int ret;
 
-	sprintf(file, "%s", path);
-	strip_ext(file);
+	strncpyt(file, path, sizeof(file));
+	p = strip_ext(file);
+	if (!p)
+		p = strrchr(file, '\0');
 
 	/* If we weren't given a detail ID, look for one. */
-	if( !detailID )
+	if (!detailID)
 	{
-		id = sql_get_text_field(db, "SELECT ID from DETAILS where (PATH > '%q.' and PATH <= '%q.z')"
+		detailID = sql_get_int64_field(db, "SELECT ID from DETAILS where (PATH > '%q.' and PATH <= '%q.z')"
 		                            " and MIME glob 'video/*' limit 1", file, file);
-		if( id )
-		{
-			//DPRINTF(E_MAXDEBUG, L_METADATA, "New file %s looks like a caption file.\n", path);
-			detailID = strtoll(id, NULL, 10);
-		}
-		else
+		if (detailID <= 0)
 		{
 			//DPRINTF(E_MAXDEBUG, L_METADATA, "No file found for caption %s.\n", path);
-			goto no_source_video;
+			return;
 		}
 	}
 
-	strcat(file, ".srt");
-	if( access(file, R_OK) == 0 )
+	strcpy(p, ".srt");
+	ret = access(file, R_OK);
+	if (ret != 0)
+	{
+		strcpy(p, ".smi");
+		ret = access(file, R_OK);
+	}
+
+	if (ret == 0)
 	{
 		sql_exec(db, "INSERT into CAPTIONS"
 		             " (ID, PATH) "
 		             "VALUES"
 		             " (%lld, %Q)", detailID, file);
 	}
-no_source_video:
-	if( id )
-		sqlite3_free(id);
-	free(file);
 }
 
 void

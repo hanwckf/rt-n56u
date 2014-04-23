@@ -227,14 +227,16 @@ escape_tag(const char *tag, int force_alloc)
 	return esc_tag;
 }
 
-void
-strip_ext(char * name)
+char *
+strip_ext(char *name)
 {
-	char * period;
+	char *period;
 
 	period = strrchr(name, '.');
-	if( period )
+	if (period)
 		*period = '\0';
+
+	return period;
 }
 
 /* Code basically stolen from busybox */
@@ -407,6 +409,12 @@ int
 is_playlist(const char * file)
 {
 	return (ends_with(file, ".m3u") || ends_with(file, ".pls"));
+}
+
+int
+is_caption(const char * file)
+{
+	return (ends_with(file, ".srt") || ends_with(file, ".smi"));
 }
 
 int

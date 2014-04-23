@@ -632,12 +632,8 @@ int set_permission(const char *account,
 		}
 		fclose(fp);
 		
-		if (!strcmp(protocol, "cifs")) {
-			result = system("/sbin/run_samba");
-			if (result != 0) {
-				return -1;
-			}
-		}
+		if (!strcmp(protocol, "cifs"))
+			system("/sbin/run_samba");
 		
 		return 0;
 	}
@@ -690,12 +686,8 @@ int set_permission(const char *account,
 	
 	free(var_info);
 	
-	if (!strcmp(protocol, "cifs")) {
-		result = system("/sbin/run_samba");
-		if (result != 0) {
-			return -1;
-		}
-	}
+	if (!strcmp(protocol, "cifs"))
+		system("/sbin/run_samba");
 	
 	return 0;
 }
@@ -749,9 +741,8 @@ int add_account(const char *const account, const char *const password) {
 	
 	// 3. find every pool
 	disk_list = read_disk_data();
-	if (disk_list == NULL) {
-		return -1;
-	}
+	if (!disk_list)
+		return 0;
 	
 	for (follow_disk = disk_list; follow_disk != NULL; follow_disk = follow_disk->next) {			
 		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
@@ -765,10 +756,7 @@ int add_account(const char *const account, const char *const password) {
 	free_disk_data(disk_list);
 	
 	// 6. re-run samba
-	result = system("/sbin/run_samba");
-	if (result != 0) {
-		return -1;
-	}
+	system("/sbin/run_samba");
 	
 	return 0;
 }
@@ -831,9 +819,8 @@ int del_account(const char *const account) {
 	
 	// 4. find every pool
 	disk_list = read_disk_data();
-	if (disk_list == NULL) {
-		return -1;
-	}
+	if (!disk_list)
+		return 0;
 	
 	for (follow_disk = disk_list; follow_disk != NULL; follow_disk = follow_disk->next) {
 		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
@@ -849,10 +836,7 @@ int del_account(const char *const account) {
 	free_disk_data(disk_list);
 	
 	// 6. re-run ftp and samba
-	result = system("/sbin/run_ftpsamba");
-	if (result != 0) {
-		return -1;
-	}
+	system("/sbin/run_ftpsamba");
 	
 	return 0;
 }
@@ -923,9 +907,8 @@ int mod_account(const char *const account, const char *const new_account, const 
 		goto rerun;
 
 	disk_list = read_disk_data();
-	if (disk_list == NULL) {
-		return -1;
-	}
+	if (!disk_list)
+		return 0;
 	
 	for (follow_disk = disk_list; follow_disk != NULL; follow_disk = follow_disk->next) {
 		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
@@ -942,10 +925,7 @@ int mod_account(const char *const account, const char *const new_account, const 
 	}
 rerun:
 	// 6. re-run ftp and samba
-	result = system("/sbin/run_ftpsamba");
-	if (result != 0) {
-		return -1;
-	}
+	system("/sbin/run_ftpsamba");
 	
 	return 0;
 }

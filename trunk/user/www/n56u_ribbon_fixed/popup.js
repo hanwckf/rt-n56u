@@ -1,6 +1,8 @@
 ﻿// JavaScript Document
 var winH,winW;
 
+<% get_flash_time(); %>
+
 function winW_H(){
 	if(parseInt(navigator.appVersion) > 3){
 		winW = document.documentElement.scrollWidth;
@@ -14,7 +16,7 @@ function winW_H(){
 function LoadingTime(seconds, flag){
 	showtext($("proceeding_main_txt"), "<#Main_alert_proceeding_desc1#>");
 	$("Loading").style.visibility = "visible";
-	
+
 	y = y+progress;
 	if(typeof(seconds) == "number" && seconds >= 0){
 		if(seconds != 0){
@@ -23,8 +25,7 @@ function LoadingTime(seconds, flag){
 			$("proceeding_bar").style.width=Math.round(y)+"%";
 			--seconds;
 			setTimeout("LoadingTime("+seconds+", '"+flag+"');", 1000);
-		}
-		else{
+		}else{
 			showtext($("proceeding_main_txt"), translate("<#Main_alert_proceeding_desc3#>"));
 			showtext($("proceeding_txt"), "");
 			y = 0;
@@ -56,10 +57,10 @@ function LoadingProgress(seconds){
 
 function showLoading(seconds, flag){
 	disableCheckChangedStatus();
-	
+
 	htmlbodyforIE = document.getElementsByTagName("html");  //this both for IE&FF, use "html" but not "body" because <!DOCTYPE html PUBLIC.......>
 	htmlbodyforIE[0].style.overflow = "hidden";	  //hidden the Y-scrollbar for preventing from user scroll it.
-	
+
 	winW_H();
 	var blockmarginTop;
 	var sheight = document.documentElement.scrollHeight;
@@ -67,36 +68,44 @@ function showLoading(seconds, flag){
 
 	//blockmarginTop = (navigator.userAgent.indexOf("Safari")>=0)?document.documentElement.scrollHeight - document.documentElement.clientHeight+200:document.documentElement.scrollTop+200;
 	blockmarginTop = (navigator.userAgent.indexOf("Safari")>=0)?(sheight-cheight<=0)?200:sheight-cheight+200:document.documentElement.scrollTop+200;
-	
+
 	//Lock modified it for Safari4 display issue.
 	$("loadingBlock").style.marginTop = blockmarginTop+"px";
 	$("Loading").style.width = winW+"px";
 	$("Loading").style.height = winH+"px";
-	
+
 	loadingSeconds = seconds;
 	progress = 100/loadingSeconds;
 	y = 0;
-	
+
 	LoadingTime(seconds, flag);
 }
 
 function showLoadingBar(seconds){
 	disableCheckChangedStatus();
-	
-	htmlbodyforIE = document.getElementsByTagName("html");  //this both for IE&FF, use "html" but not "body" because <!DOCTYPE html PUBLIC.......>
-	htmlbodyforIE[0].style.overflow = "hidden";	  //hidden the Y-scrollbar for preventing from user scroll it.
-	
+
+	htmlbodyforIE = document.getElementsByTagName("html");
+	htmlbodyforIE[0].style.overflow = "hidden";
+
 	winW_H();
 	//var blockmarginTop;
 	//blockmarginTop = document.documentElement.scrollTop + 200;
 	//$("loadingBarBlock").style.marginTop = blockmarginTop+"px";
 	$("LoadingBar").style.width = winW+"px";
 	$("LoadingBar").style.height = winH+"px";
-	
+
 	loadingSeconds = seconds;
 	progress = 100/loadingSeconds;
 	y = 0;
 	LoadingProgress(seconds);
+}
+
+function showResetBar(){
+	showLoadingBar(40);
+}
+
+function showUpgradeBar(){
+	showLoadingBar(board_flash_time());
 }
 
 function hideLoadingBar(){
@@ -110,13 +119,12 @@ function stopLoadingBar(){
 
 function hideLoading(flag){
 	enableCheckChangedStatus();
-	
 	$("Loading").style.visibility = "hidden";
 }
 
 function simpleSSID(obj){
 	var SSID = document.loginform.wl_ssid.value;
-	
+
 	if(SSID.length < 16)
 		showtext(obj, SSID);
 	else{

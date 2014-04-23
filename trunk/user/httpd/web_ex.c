@@ -2848,6 +2848,12 @@ static int ej_get_static_ccount(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
+static int ej_get_flash_time(int eid, webs_t wp, int argc, char_t **argv)
+{
+	websWrite(wp, "function board_flash_time() { return %d;}\n", BOARD_FLASH_TIME);
+
+	return 0;
+}
 
 static int ej_get_vpns_client(int eid, webs_t wp, int argc, char_t **argv) 
 {
@@ -6093,6 +6099,7 @@ struct ej_handler ej_handlers[] = {
 	{ "login_state_hook", login_state_hook},
 	{ "get_nvram_list", ej_get_nvram_list},
 	{ "dhcp_leases", ej_dhcp_leases},
+	{ "get_flash_time", ej_get_flash_time},
 	{ "get_static_client", ej_get_static_client},
 	{ "get_static_ccount", ej_get_static_ccount},
 	{ "get_vpns_client", ej_get_vpns_client},

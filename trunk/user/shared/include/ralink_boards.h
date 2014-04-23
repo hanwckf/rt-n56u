@@ -29,6 +29,7 @@
  #define BOARD_VENDOR_NAME	"ASUSTek Computer Inc."
  #define BOARD_VENDOR_URL	"http://www.asus.com/"
  #define BOARD_MODEL_URL	"http://www.asus.com/Networking/RTN56U/"
+ #define BOARD_FLASH_TIME	180
  #define BOARD_GPIO_BTN_RESET	13
  #define BOARD_GPIO_BTN_WPS	26
  #undef  BOARD_GPIO_BTN_WLTOG
@@ -56,6 +57,7 @@
  #define BOARD_VENDOR_NAME	"ASUSTek Computer Inc."
  #define BOARD_VENDOR_URL	"http://www.asus.com/"
  #define BOARD_MODEL_URL	"http://www.asus.com/Networking/RTN65U/"
+ #define BOARD_FLASH_TIME	150
  #define BOARD_GPIO_BTN_RESET	13
  #define BOARD_GPIO_BTN_WPS	26
  #undef  BOARD_GPIO_BTN_WLTOG
@@ -83,6 +85,7 @@
  #define BOARD_VENDOR_NAME	"ASUSTek Computer Inc."
  #define BOARD_VENDOR_URL	"http://www.asus.com/"
  #define BOARD_MODEL_URL	"http://www.asus.com/Networking/RTN14U/"
+ #define BOARD_FLASH_TIME	120
  #define BOARD_GPIO_BTN_RESET	1
  #define BOARD_GPIO_BTN_WPS	2
  #undef  BOARD_GPIO_BTN_WLTOG
@@ -110,6 +113,7 @@
  #define BOARD_VENDOR_NAME	"ASUSTek Computer Inc."
  #define BOARD_VENDOR_URL	"http://www.asus.com/"
  #define BOARD_MODEL_URL	"http://www.asus.com/Networking/RTAC52U/"
+ #define BOARD_FLASH_TIME	90
  #define BOARD_GPIO_BTN_RESET	1
  #define BOARD_GPIO_BTN_WPS	2
  #define BOARD_GPIO_BTN_WLTOG	13
@@ -137,6 +141,7 @@
  #define BOARD_VENDOR_NAME	"Samsung Electronics Co."
  #define BOARD_VENDOR_URL	"http://www.samsung.com/us/"
  #define BOARD_MODEL_URL	"http://www.samsung.com/us/video/tvs-accessories/CY-SWR1100/ZA"
+ #define BOARD_FLASH_TIME	180
  #define BOARD_GPIO_BTN_RESET	6
  #define BOARD_GPIO_BTN_WPS	3
  #undef  BOARD_GPIO_BTN_WLTOG
@@ -164,6 +169,7 @@
  #define BOARD_VENDOR_NAME	"Belkin International Inc."
  #define BOARD_VENDOR_URL	"http://www.belkin.com/us/"
  #define BOARD_MODEL_URL	"http://www.belkin.com/us/p/P-F9K1103/"
+ #define BOARD_FLASH_TIME	150
  #define BOARD_GPIO_BTN_RESET	25
  #define BOARD_GPIO_BTN_WPS	26
  #undef  BOARD_GPIO_BTN_WLTOG
@@ -186,12 +192,17 @@
  #define BOARD_HAS_EPHY_1000	1
 #endif
 
+
 #define BTN_PRESSED	0
 #define LED_ON		0
 #define LED_OFF		1
 
 #define FW_MTD_NAME	"Firmware_Stub"
 #define FW_IMG_NAME	"/tmp/linux.trx"
+
+#ifndef BOARD_FLASH_TIME
+#define BOARD_FLASH_TIME	150
+#endif
 
 #endif
 

@@ -1,4 +1,4 @@
-/* $Id: getifaddr.c,v 1.21 2014/03/15 09:56:21 nanard Exp $ */
+/* $Id: getifaddr.c,v 1.22 2014/04/18 08:10:57 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2014 Thomas Bernard
@@ -43,17 +43,21 @@ getifaddr(const char * ifname, char * buf, int len,
 	s = socket(PF_INET, SOCK_DGRAM, 0);
 	if(s < 0)
 	{
-		syslog(LOG_DEBUG, "socket(PF_INET, SOCK_DGRAM): %m");
+		syslog(LOG_ERR, "socket(PF_INET, SOCK_DGRAM): %m");
 		return -1;
 	}
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
-	if(ioctl(s, SIOCGIFFLAGS, &ifr) < 0)
+	if(ioctl(s, SIOCGIFFLAGS, &ifr, &ifrlen) < 0)
 	{
 		syslog(LOG_DEBUG, "ioctl(s, SIOCGIFFLAGS, ...): %m");
 		goto err;
-	} else
+	}
 	if ((ifr.ifr_flags & IFF_UP) == 0)
+	{
+		syslog(LOG_DEBUG, "network interface %s is down", ifname);
 		goto err;
+	}
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	if(ioctl(s, SIOCGIFADDR, &ifr, &ifrlen) < 0)
 	{
 		syslog(LOG_DEBUG, "ioctl(s, SIOCGIFADDR, ...): %m");
@@ -65,7 +69,7 @@ getifaddr(const char * ifname, char * buf, int len,
 	{
 		if(!inet_ntop(AF_INET, &ifaddr->sin_addr, buf, len))
 		{
-			syslog(LOG_DEBUG, "inet_ntop(): %m");
+			syslog(LOG_ERR, "inet_ntop(): %m");
 			goto err;
 		}
 	}

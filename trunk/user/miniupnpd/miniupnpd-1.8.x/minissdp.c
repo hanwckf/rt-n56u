@@ -1,4 +1,4 @@
-/* $Id: minissdp.c,v 1.62 2014/03/24 09:31:23 nanard Exp $ */
+/* $Id: minissdp.c,v 1.66 2014/04/20 16:34:26 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2014 Thomas Bernard
@@ -32,6 +32,14 @@
 #define SSDP_MCAST_ADDR ("239.255.255.250")
 #define LL_SSDP_MCAST_ADDR "FF02::C"
 #define SL_SSDP_MCAST_ADDR "FF05::C"
+
+/* maximum lenght of SSDP packets we are generating
+ * (reception is done in a 1500byte buffer) */
+#ifdef ENABLE_HTTPS
+#define SSDP_PACKET_MAX_LEN 768
+#else
+#define SSDP_PACKET_MAX_LEN 512
+#endif
 
 /* AddMulticastMembership()
  * param s		socket
@@ -339,11 +347,14 @@ EXT:
 static void
 SendSSDPResponse(int s, const struct sockaddr * addr,
                  const char * st, int st_len, const char * suffix,
-                 const char * host, unsigned short port, const char * uuidvalue,
-                 unsigned int delay)
+                 const char * host, unsigned short http_port,
+#ifdef ENABLE_HTTPS
+                 unsigned short https_port,
+#endif
+                 const char * uuidvalue, unsigned int delay)
 {
 	int l, n;
-	char buf[512];
+	char buf[SSDP_PACKET_MAX_LEN];
 	char addr_str[64];
 	socklen_t addrlen;
 	int st_is_uuid;
@@ -378,6 +389,9 @@ SendSSDPResponse(int s, const struct sockaddr * addr,
 		"EXT:\r\n"
 		"SERVER: " MINIUPNPD_SERVER_STRING "\r\n"
 		"LOCATION: http://%s:%u" ROOTDESC_PATH "\r\n"
+#ifdef ENABLE_HTTPS
+		"SECURELOCATION.UPNP.ORG: https://%s:%u" ROOTDESC_PATH "\r\n"
+#endif
 		"OPT: \"http://schemas.upnp.org/upnp/1/0/\"; ns=01\r\n" /* UDA v1.1 */
 		"01-NLS: %u\r\n" /* same as BOOTID. UDA v1.1 */
 		"BOOTID.UPNP.ORG: %u\r\n" /* UDA v1.1 */
@@ -389,7 +403,10 @@ SendSSDPResponse(int s, const struct sockaddr * addr,
 		st_len, st, suffix,
 		uuidvalue, st_is_uuid ? "" : "::",
 		st_is_uuid ? 0 : st_len, st, suffix,
-		host, (unsigned int)port,
+		host, (unsigned int)http_port,
+#ifdef ENABLE_HTTPS
+		host, (unsigned int)https_port,
+#endif
 		upnp_bootid, upnp_bootid, upnp_configid);
 	if(l<0)
 	{
@@ -399,8 +416,8 @@ SendSSDPResponse(int s, const struct sockaddr * addr,
 	}
 	else if((unsigned)l>=sizeof(buf))
 	{
-		syslog(LOG_WARNING, "%s: truncated output",
-		       "SendSSDPResponse()");
+		syslog(LOG_WARNING, "%s: truncated output (%u>=%u)",
+		       "SendSSDPResponse()", (unsigned)l, (unsigned)sizeof(buf));
 		l = sizeof(buf) - 1;
 	}
 	addrlen = (addr->sa_family == AF_INET6)
@@ -450,24 +467,33 @@ static struct {
 #ifdef ENABLE_6FC_SERVICE
 	{"url:schemas-upnp-org:service:WANIPv6FirewallControl:", 1, uuidvalue_wcd},
 #endif
+/* we might want to support urn:schemas-wifialliance-org:device:WFADevice:1
+ * urn:schemas-wifialliance-org:device:WFADevice:1
+ * in the future */
 	{0, 0, 0}
 };
 
 static void
 SendSSDPNotify(int s, const struct sockaddr * dest,
-               const char * host, unsigned short port,
+               const char * host, unsigned short http_port,
+#ifdef ENABLE_HTTPS
+               unsigned short https_port,
+#endif
                const char * nt, const char * suffix,
                const char * usn1, const char * usn2, const char * usn3,
                unsigned int lifetime, int ipv6)
 {
-	char bufr[512];
+	char bufr[SSDP_PACKET_MAX_LEN];
 	int n, l;
 
 	l = snprintf(bufr, sizeof(bufr),
 		"NOTIFY * HTTP/1.1\r\n"
 		"HOST: %s:%d\r\n"
 		"CACHE-CONTROL: max-age=%u\r\n"
-		"LOCATION: http://%s:%d" ROOTDESC_PATH"\r\n"
+		"LOCATION: http://%s:%u" ROOTDESC_PATH "\r\n"
+#ifdef ENABLE_HTTPS
+		"SECURELOCATION.UPNP.ORG: https://%s:%u" ROOTDESC_PATH "\r\n"
+#endif
 		"SERVER: " MINIUPNPD_SERVER_STRING "\r\n"
 		"NT: %s%s\r\n"
 		"USN: %s%s%s%s\r\n"
@@ -480,18 +506,22 @@ SendSSDPNotify(int s, const struct sockaddr * dest,
 		ipv6 ? "[" LL_SSDP_MCAST_ADDR "]" : SSDP_MCAST_ADDR,
 		SSDP_PORT,
 		lifetime,
-		host, port,
+		host, (unsigned int)http_port,
+#ifdef ENABLE_HTTPS
+		host, (unsigned int)https_port,
+#endif
 		nt, suffix, /* NT: */
 		usn1, usn2, usn3, suffix, /* USN: */
 		upnp_bootid, upnp_bootid, upnp_configid );
 	if(l<0)
 	{
-		syslog(LOG_ERR, "SendSSDPNotify() snprintf error");
+		syslog(LOG_ERR, "%s: snprintf error", "SendSSDPNotify()");
 		return;
 	}
 	else if((unsigned int)l >= sizeof(bufr))
 	{
-		syslog(LOG_WARNING, "SendSSDPNotify(): truncated output");
+		syslog(LOG_WARNING, "%s: truncated output (%u>=%u)",
+		       "SendSSDPNotify()", (unsigned)l, (unsigned)sizeof(bufr));
 		l = sizeof(bufr) - 1;
 	}
 	n = sendto_or_schedule(s, bufr, l, 0, dest,
@@ -528,9 +558,16 @@ SendSSDPNotify(int s, const struct sockaddr * dest,
 	}
 }
 
+#ifdef ENABLE_HTTPS
 static void
-SendSSDPNotifies(int s, const char * host, unsigned short port,
+SendSSDPNotifies(int s, const char * host, unsigned short http_port,
+                 unsigned short https_port,
                  unsigned int lifetime, int ipv6)
+#else
+static void
+SendSSDPNotifies(int s, const char * host, unsigned short http_port,
+                 unsigned int lifetime, int ipv6)
+#endif
 {
 #ifdef ENABLE_IPV6
 	struct sockaddr_storage sockname;
@@ -564,7 +601,10 @@ SendSSDPNotifies(int s, const char * host, unsigned short port,
 			ver_str[0] = '\0';
 		else
 			snprintf(ver_str, sizeof(ver_str), "%d", known_service_types[i].version);
-		SendSSDPNotify(s, (struct sockaddr *)&sockname, host, port,
+		SendSSDPNotify(s, (struct sockaddr *)&sockname, host, http_port,
+#ifdef ENABLE_HTTPS
+		               https_port,
+#endif
 		               known_service_types[i].s, ver_str,	/* NT: */
 		               known_service_types[i].uuid, "::",
 		               known_service_types[i].s, /* ver_str,	USN: */
@@ -572,7 +612,10 @@ SendSSDPNotifies(int s, const char * host, unsigned short port,
 		if(0==memcmp(known_service_types[i].s,
 		             "urn:schemas-upnp-org:device", sizeof("urn:schemas-upnp-org:device")-1))
 		{
-			SendSSDPNotify(s, (struct sockaddr *)&sockname, host, port,
+			SendSSDPNotify(s, (struct sockaddr *)&sockname, host, http_port,
+#ifdef ENABLE_HTTPS
+			               https_port,
+#endif
 			               known_service_types[i].uuid, "",	/* NT: */
 			               known_service_types[i].uuid, "", "", /* ver_str,	USN: */
 			               lifetime, ipv6);
@@ -583,7 +626,10 @@ SendSSDPNotifies(int s, const char * host, unsigned short port,
 
 void
 SendSSDPNotifies2(int * sockets,
-                  unsigned short port,
+                  unsigned short http_port,
+#ifdef ENABLE_HTTPS
+                  unsigned short https_port,
+#endif
                   unsigned int lifetime)
 {
 	int i;
@@ -592,13 +638,19 @@ SendSSDPNotifies2(int * sockets,
 	    lan_addr != NULL;
 	    lan_addr = lan_addr->list.le_next)
 	{
-		SendSSDPNotifies(sockets[i], lan_addr->str, port,
+		SendSSDPNotifies(sockets[i], lan_addr->str, http_port,
+#ifdef ENABLE_HTTPS
+		                 https_port,
+#endif
 		                 lifetime, 0);
 		i++;
 #ifdef ENABLE_IPV6
 		if(sockets[i] >= 0)
 		{
-			SendSSDPNotifies(sockets[i], ipv6_addr_for_http_with_brackets, port,
+			SendSSDPNotifies(sockets[i], ipv6_addr_for_http_with_brackets, http_port,
+#ifdef ENABLE_HTTPS
+			                 https_port,
+#endif
 			                 lifetime, 1);
 		}
 		i++;
@@ -609,7 +661,11 @@ SendSSDPNotifies2(int * sockets,
 /* ProcessSSDPRequest()
  * process SSDP M-SEARCH requests and responds to them */
 void
-ProcessSSDPRequest(int s, unsigned short port)
+#ifdef ENABLE_HTTPS
+ProcessSSDPRequest(int s, unsigned short http_port, unsigned short https_port)
+#else
+ProcessSSDPRequest(int s, unsigned short http_port)
+#endif
 {
 	int n;
 	char bufr[1500];
@@ -636,13 +692,28 @@ ProcessSSDPRequest(int s, unsigned short port)
 		}
 		return;
 	}
-	ProcessSSDPData(s, bufr, n, (struct sockaddr *)&sendername, port);
+#ifdef ENABLE_HTTPS
+	ProcessSSDPData(s, bufr, n, (struct sockaddr *)&sendername,
+	                http_port, https_port);
+#else
+	ProcessSSDPData(s, bufr, n, (struct sockaddr *)&sendername,
+	                http_port);
+#endif
 
 }
 
+#ifdef ENABLE_HTTPS
 void
 ProcessSSDPData(int s, const char *bufr, int n,
-                const struct sockaddr * sender, unsigned short port) {
+                const struct sockaddr * sender,
+                unsigned short http_port, unsigned short https_port)
+#else
+void
+ProcessSSDPData(int s, const char *bufr, int n,
+                const struct sockaddr * sender,
+                unsigned short http_port)
+#endif
+{
 	int i, l;
 	struct lan_addr_s * lan_addr = NULL;
 	const char * st = NULL;
@@ -851,7 +922,10 @@ ProcessSSDPData(int s, const char *bufr, int n,
 #else
 					                 known_service_types[i].s, l, ver_str,
 #endif
-					                 announced_host, port,
+					                 announced_host, http_port,
+#ifdef ENABLE_HTTPS
+					                 https_port,
+#endif
 					                 known_service_types[i].uuid,
 					                 delay);
 					break;
@@ -877,7 +951,10 @@ ProcessSSDPData(int s, const char *bufr, int n,
 					l = (int)strlen(known_service_types[i].s);
 					SendSSDPResponse(s, sender,
 					                 known_service_types[i].s, l, ver_str,
-					                 announced_host, port,
+					                 announced_host, http_port,
+#ifdef ENABLE_HTTPS
+					                 https_port,
+#endif
 					                 known_service_types[i].uuid,
 					                 delay);
 				}
@@ -886,17 +963,29 @@ ProcessSSDPData(int s, const char *bufr, int n,
 					delay += delay_increment;
 #endif
 				SendSSDPResponse(s, sender, uuidvalue_igd, strlen(uuidvalue_igd), "",
-				                 announced_host, port, uuidvalue_igd, delay);
+				                 announced_host, http_port,
+#ifdef ENABLE_HTTPS
+				                 https_port,
+#endif
+				                 uuidvalue_igd, delay);
 #ifdef DELAY_MSEARCH_RESPONSE
 					delay += delay_increment;
 #endif
 				SendSSDPResponse(s, sender, uuidvalue_wan, strlen(uuidvalue_wan), "",
-				                 announced_host, port, uuidvalue_wan, delay);
+				                 announced_host, http_port,
+#ifdef ENABLE_HTTPS
+				                 https_port,
+#endif
+				                 uuidvalue_wan, delay);
 #ifdef DELAY_MSEARCH_RESPONSE
 					delay += delay_increment;
 #endif
 				SendSSDPResponse(s, sender, uuidvalue_wcd, strlen(uuidvalue_wcd), "",
-				                 announced_host, port, uuidvalue_wcd, delay);
+				                 announced_host, http_port,
+#ifdef ENABLE_HTTPS
+				                 https_port,
+#endif
+				                 uuidvalue_wcd, delay);
 			}
 			/* responds to request by UUID value */
 			l = (int)strlen(uuidvalue_igd);
@@ -909,22 +998,31 @@ ProcessSSDPData(int s, const char *bufr, int n,
 				{
 					syslog(LOG_INFO, "ssdp:uuid (IGD) found");
 					SendSSDPResponse(s, sender, st, st_len, "",
-					                 announced_host, port, uuidvalue_igd,
-					                 delay);
+					                 announced_host, http_port,
+#ifdef ENABLE_HTTPS
+					                 https_port,
+#endif
+					                 uuidvalue_igd, delay);
 				}
 				else if(0 == memcmp(st, uuidvalue_wan, l))
 				{
 					syslog(LOG_INFO, "ssdp:uuid (WAN) found");
 					SendSSDPResponse(s, sender, st, st_len, "",
-					                 announced_host, port, uuidvalue_wan,
-					                 delay);
+					                 announced_host, http_port,
+#ifdef ENABLE_HTTPS
+					                 https_port,
+#endif
+					                 uuidvalue_wan, delay);
 				}
 				else if(0 == memcmp(st, uuidvalue_wcd, l))
 				{
 					syslog(LOG_INFO, "ssdp:uuid (WCD) found");
 					SendSSDPResponse(s, sender, st, st_len, "",
-					                 announced_host, port, uuidvalue_wcd,
-					                 delay);
+					                 announced_host, http_port,
+#ifdef ENABLE_HTTPS
+					                 https_port,
+#endif
+					                 uuidvalue_wcd, delay);
 				}
 			}
 		}
@@ -946,7 +1044,7 @@ SendSSDPbyebye(int s, const struct sockaddr * dest,
                int ipv6)
 {
 	int n, l;
-	char bufr[512];
+	char bufr[SSDP_PACKET_MAX_LEN];
 
 	l = snprintf(bufr, sizeof(bufr),
 	             "NOTIFY * HTTP/1.1\r\n"
@@ -966,12 +1064,13 @@ SendSSDPbyebye(int s, const struct sockaddr * dest,
 	             upnp_bootid, upnp_bootid, upnp_configid);
 	if(l<0)
 	{
-		syslog(LOG_ERR, "SendSSDPbyebye() snprintf error");
+		syslog(LOG_ERR, "%s: snprintf error", "SendSSDPbyebye()");
 		return -1;
 	}
 	else if((unsigned int)l >= sizeof(bufr))
 	{
-		syslog(LOG_WARNING, "SendSSDPbyebye(): truncated output");
+		syslog(LOG_WARNING, "%s: truncated output (%u>=%u)",
+		       "SendSSDPbyebye()", (unsigned)l, (unsigned)sizeof(bufr));
 		l = sizeof(bufr) - 1;
 	}
 	n = sendto_or_schedule(s, bufr, l, 0, dest,

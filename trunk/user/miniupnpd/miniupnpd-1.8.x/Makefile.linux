@@ -1,4 +1,4 @@
-# $Id: Makefile.linux,v 1.85 2014/03/28 12:03:27 nanard Exp $
+# $Id: Makefile.linux,v 1.86 2014/04/09 07:22:28 nanard Exp $
 # MiniUPnP project
 # (c) 2006-2014 Thomas Bernard
 # http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
@@ -44,6 +44,7 @@ ifeq ($(ENABLE_IPV6),1)
 LIBS += $(IPTABLESPATH)/libiptc/.libs/libip6tc.a
 LIBS += $(STAGEDIR)/lib/libnfnetlink.a
 endif
+#LIBS += lssl
 CFLAGS += -DIPTABLES_143 -I$(IPTABLESPATH)/include
 LDFLAGS += -L$(IPTABLESPATH)/libiptc/.libs
 

@@ -1,10 +1,13 @@
 #! /bin/sh
-# $Id: iptables_init.sh,v 1.7 2013/12/13 12:15:24 nanard Exp $
-IPTABLES=/sbin/iptables
+# $Id: iptables_init.sh,v 1.8 2014/04/15 13:45:08 nanard Exp $
+IPTABLES="`which iptables`" || exit 1
+IP="`which ip`" || exit 1
 
 #change this parameters :
-EXTIF=eth0
-EXTIP="`LC_ALL=C /sbin/ifconfig $EXTIF | grep 'inet ' | awk '{print $2}' | sed -e 's/.*://'`"
+#EXTIF=eth0
+EXTIF="`LC_ALL=C $IP -4 route | grep 'default' | sed -e 's/.*dev[[:space:]]*//' -e 's/[[:space:]].*//'`" || exit 1
+EXTIP="`LC_ALL=C $IP -4 addr show $EXTIF | awk '/inet/ { print $2 }' | cut -d "/" -f 1`"
+
 echo "External IP = $EXTIP"
 
 #adding the MINIUPNPD chain for nat

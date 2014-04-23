@@ -60,35 +60,6 @@ int rand_seed_by_time(void)
 	return rand();
 }
 
-// oleg patch ~
-in_addr_t
-inet_addr_(const char *cp)
-{
-       struct in_addr a;
-
-       if (!inet_aton(cp, &a))
-	       return INADDR_ANY;
-       else
-	       return a.s_addr;
-}
-// ~ oleg patch
-
-/* remove space in the end of string */
-char *trim_r(char *str)
-{
-	int i;
-
-	i=strlen(str);
-
-	while (i>=1)
-	{
-		if (*(str+i-1) == ' ' || *(str+i-1) == 0x0a || *(str+i-1) == 0x0d) *(str+i-1)=0x0;
-		else break;
-		i--;
-	}
-	return (str);
-}
-
 /* convert mac address format from XXXXXXXXXXXX to XX:XX:XX:XX:XX:XX */
 char *mac_conv(char *mac_name, int idx, char *buf)
 {

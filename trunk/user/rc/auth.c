@@ -43,7 +43,7 @@ int start_auth_kabinet(void)
 		return -1;
 	}
 	
-	if (inet_addr_(gateip) != INADDR_ANY)
+	if (is_valid_ipv4(gateip))
 	{
 		ret = eval("/usr/sbin/lanauth", "-s", gateip, "-p", passwd);
 	}

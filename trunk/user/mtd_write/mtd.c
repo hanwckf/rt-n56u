@@ -54,6 +54,35 @@ int quiet;
 int verbose;
 int write_check=1;
 
+int
+mtd_open(const char *mtd, int flags)
+{
+	FILE *fp;
+	char line[128], bnm[64];
+	int i, ret;
+
+	if ((fp = fopen("/proc/mtd", "r"))) {
+		fgets(line, sizeof(line), fp); //skip the 1st line
+		while (fgets(line, sizeof(line), fp)) {
+			if (sscanf(line, "mtd%d: %*s %*s \"%s\"", &i, bnm) > 1) {
+				/* strip tailed " character, if present. */
+				char *p = strchr(bnm, '"');
+				if (p)
+					*p = '\0';
+				if (!strcmp(bnm, mtd)) {
+					snprintf(bnm, sizeof(bnm), "/dev/mtd%d", i);
+					ret = open(bnm, flags);
+					fclose(fp);
+					return ret;
+				}
+			}
+		}
+		fclose(fp);
+	}
+
+	return open(mtd, flags);
+}
+
 int mtd_check(char *mtd)
 {
 	struct mtd_info_user mtdInfo;
@@ -103,32 +132,6 @@ mtd_unlock(const char *mtd)
 		
 	close(fd);
 	return 0;
-}
-
-int
-mtd_open(const char *mtd, int flags)
-{
-	FILE *fp;
-	char dev[PATH_MAX];
-	int i;
-	int ret;
-
-	if ((fp = fopen("/proc/mtd", "r"))) {
-		while (fgets(dev, sizeof(dev), fp)) {
-			if (sscanf(dev, "mtd%d:", &i) && strstr(dev, mtd)) {
-				snprintf(dev, sizeof(dev), "/dev/mtd/%d", i);
-				if ((ret=open(dev, flags))<0) {
-					snprintf(dev, sizeof(dev), "/dev/mtd%d", i);
-					ret=open(dev, flags);
-				}
-				fclose(fp);
-				return ret;
-			}
-		}
-		fclose(fp);
-	}
-
-	return open(mtd, flags);
 }
 
 

@@ -135,11 +135,14 @@ enum {
 	IPV6_6RD
 };
 
-extern int  get_ap_mode(void);
-extern int  get_wan_phy_connected(void);
-extern int  get_usb_modem_wan(int unit);
-extern int  get_usb_modem_dev_wan(int unit, int devnum);
-extern void set_usb_modem_dev_wan(int unit, int devnum);
+extern in_addr_t inet_addr_safe(const char *cp);
+extern int       is_valid_ipv4(const char *cp);
+extern int       is_valid_hostname(const char *hname);
+extern int       get_ap_mode(void);
+extern int       get_wan_phy_connected(void);
+extern int       get_usb_modem_wan(int unit);
+extern int       get_usb_modem_dev_wan(int unit, int devnum);
+extern void      set_usb_modem_dev_wan(int unit, int devnum);
 
 extern int  get_ipv6_type(void);
 

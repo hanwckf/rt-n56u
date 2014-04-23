@@ -277,7 +277,7 @@ vpnc_route_to_remote_lan(int add)
 	char *rnet = nvram_safe_get("vpnc_rnet");
 	char *rmsk = nvram_safe_get("vpnc_rmsk");
 
-	if (inet_addr_(rnet) != INADDR_ANY && inet_addr_(rmsk) != INADDR_ANY) {
+	if (is_valid_ipv4(rnet) && is_valid_ipv4(rmsk)) {
 		char *lnet = nvram_safe_get("lan_ipaddr");
 		char *lmsk = nvram_safe_get("lan_netmask");
 		char *ifnm = safe_getenv("IFNAME");

@@ -352,3 +352,8 @@ ERROR:
 	return NULL;
 }
 
+const char*
+ssl_server_get_ssl_ver(void)
+{
+	return SSLeay_version(SSLEAY_VERSION);
+}

@@ -606,7 +606,7 @@ include_vts_filter(FILE *fp, char *lan_ip, char *logaccept, int forward_chain)
 		g_buf_init();
 		
 		dstip = ip_conv("vts_ipaddr_x", i);
-		if (inet_addr_(dstip) == INADDR_ANY)
+		if (!is_valid_ipv4(dstip))
 			continue;
 		
 		if (forward_chain)
@@ -660,7 +660,7 @@ include_vts_nat(FILE *fp)
 		g_buf_init();
 		
 		dstip = ip_conv("vts_ipaddr_x", i);
-		if (inet_addr_(dstip) == INADDR_ANY)
+		if (!is_valid_ipv4(dstip))
 			continue;
 		
 		proto = proto_conv("vts_proto_x", i);
@@ -1071,7 +1071,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 #else
 			/* Accept to exposed station (DMZ) */
 			dmz_ip = nvram_safe_get("dmz_ip");
-			if (inet_addr_(dmz_ip))
+			if (is_valid_ipv4(dmz_ip))
 				fprintf(fp, "-A %s -d %s -j %s\n", dtype, dmz_ip, logaccept);
 			
 			/* Accept to Virtual Servers */
@@ -1625,7 +1625,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 	// VSERVER chain
 	dtype = "VSERVER";
 
-	if (nvram_invmatch("wan0_proto", "static") && nvram_invmatch("wan0_ifname", wan_if) && inet_addr_(nvram_safe_get("wanx_ipaddr")))
+	if (nvram_invmatch("wan0_proto", "static") && nvram_invmatch("wan0_ifname", wan_if) && is_valid_ipv4(nvram_safe_get("wanx_ipaddr")))
 		wanx_ipaddr = nvram_safe_get("wanx_ipaddr");
 
 	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
@@ -1639,18 +1639,18 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 	fprintf(fp, ":%s - [0:0]\n", "VSERVER");
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP4_NAT);
 
-	if (inet_addr_(wan_ip))
+	if (is_valid_ipv4(wan_ip))
 		fprintf(fp, "-A PREROUTING -d %s -j %s\n", wan_ip, dtype);
 
 	if (wanx_ipaddr)
 		fprintf(fp, "-A PREROUTING -d %s -j %s\n", wanx_ipaddr, dtype);
 
 	if (is_nat_enabled) {
-		strcpy(dmz_ip, nvram_safe_get("dmz_ip"));
-		is_use_dmz = (inet_addr_(dmz_ip) == INADDR_ANY) ? 0 : 1;
+		snprintf(dmz_ip, sizeof(dmz_ip), "%s", nvram_safe_get("dmz_ip"));
+		is_use_dmz = (is_valid_ipv4(dmz_ip)) ? 1 : 0;
 		
 		/* BattleNET (PREROUTING) */
-		use_battlenet = (nvram_match("sp_battle_ips", "1") && inet_addr_(wan_ip)) ? 1 : 0;
+		use_battlenet = (nvram_match("sp_battle_ips", "1") && is_valid_ipv4(wan_ip)) ? 1 : 0;
 		if (use_battlenet)
 			fprintf(fp, "-A PREROUTING -p udp -d %s --sport %d -j NETMAP --to %s\n", wan_ip, BATTLENET_PORT, lan_class);
 		
@@ -1660,7 +1660,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 		
 		/* use SNAT instead of MASQUERADE (more fast) */
 		/* masquerade WAN connection */
-		if (inet_addr_(wan_ip)) {
+		if (is_valid_ipv4(wan_ip)) {
 			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", wan_if, lan_class, wan_ip);
 			
 			if (i_vpns_enable) {

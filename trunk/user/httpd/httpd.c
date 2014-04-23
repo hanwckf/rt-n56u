@@ -1291,8 +1291,10 @@ int main(int argc, char **argv)
 
 	if (http_port[0] && listen_fd[0] >= 0)
 		httpd_log("Server listening port %d (%s).", http_port[0], "HTTP");
+#if defined (SUPPORT_HTTPS)
 	if (http_port[1] && listen_fd[1] >= 0)
-		httpd_log("Server listening port %d (%s).", http_port[1], "HTTPS");
+		httpd_log("Server listening port %d (%s). %s.", http_port[1], "HTTPS", ssl_server_get_ssl_ver());
+#endif
 
 	while (!daemon_exit) {
 		fd_set rfds;

@@ -61,7 +61,6 @@ static void
 chk_udhcpc(int ap_mode)
 {
 	char *gateway_str;
-	in_addr_t gateway_ip;
 	in_addr_t ip;
 
 	if ( (!ap_mode && nvram_match("wan0_proto", "dhcp")) || ap_mode)
@@ -77,9 +76,7 @@ chk_udhcpc(int ap_mode)
 			ip = get_lan_ipaddr();
 		}
 		
-		gateway_ip = inet_addr_(gateway_str);
-		
-		if (gateway_ip == INADDR_ANY || ip == INADDR_ANY || !pids("udhcpc"))
+		if (!is_valid_ipv4(gateway_str) || ip == INADDR_ANY || !pids("udhcpc"))
 		{
 			return;
 		}
@@ -109,13 +106,13 @@ arpping_gateway(int ap_mode)
 
 	if (!ap_mode)
 	{
-		gateway_ip = inet_addr_(nvram_safe_get("wan_gateway_t"));
+		gateway_ip = inet_addr_safe(nvram_safe_get("wan_gateway_t"));
 		ip = get_wan_ipaddr(1);
 		strcpy(wanmac, nvram_safe_get("wan0_hwaddr"));	// WAN MAC address
 	}
 	else
 	{
-		gateway_ip = inet_addr_(nvram_safe_get("lan_gateway_t"));
+		gateway_ip = inet_addr_safe(nvram_safe_get("lan_gateway_t"));
 		ip = get_lan_ipaddr();
 		strcpy(wanmac, nvram_safe_get("lan_hwaddr"));	// br0 MAC address
 	}

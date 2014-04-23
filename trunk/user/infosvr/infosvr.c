@@ -30,12 +30,11 @@
 #include <fcntl.h>
 #include <net/if.h>
 
+#include <include/ibox.h>
 #include "infosvr.h"
 
 #define SRV_ADDR INADDR_ANY
-#define SRV_PORT 9999
 #define CLN_ADDR INADDR_BROADCAST
-#define CLN_PORT 9999
 
 static const char* g_pidfile = "/var/run/infosvr.pid";
 static int g_fd4 = -1;
@@ -64,7 +63,7 @@ int open_socket4(char *ifname)
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = htonl(SRV_ADDR);
-	addr.sin_port = htons(SRV_PORT);
+	addr.sin_port = htons(IBOX_SRV_PORT);
 	if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0 )
 		goto error;
 
@@ -96,9 +95,9 @@ int send_packet(int fd, void *packet, int size)
 
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = htonl(CLN_ADDR);
-	addr.sin_port = htons(CLN_PORT);
+	addr.sin_port = htons(IBOX_CLI_PORT);
 
-	while ((res = sendto(fd , packet, size, 0 ,(struct sockaddr *) &addr, sizeof(addr))) < 0 && errno == EINTR)
+	while ((res = sendto(fd, packet, size, 0, (struct sockaddr *)&addr, sizeof(addr))) < 0 && errno == EINTR)
 		continue;
 
 	return res;

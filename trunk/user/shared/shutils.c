@@ -632,21 +632,45 @@ int doSystem(const char *fmt, ...)
 	return system(cmd_buf);
 }
 
-//int
 unsigned long
-swap_check()
+get_swap_size(void)
 {
 	struct sysinfo info;
 
 	sysinfo(&info);
 	if (info.totalswap > 0)
-	{
 		return info.totalswap;
+
+	return 0;
+}
+
+unsigned int
+get_mtd_size(const char *mtd)
+{
+	FILE *fp;
+	char line[128], bnm[64];
+	int idx;
+	unsigned int mtd_size = 0;
+
+	if ((fp = fopen("/proc/mtd", "r"))) {
+		fgets(line, sizeof(line), fp); //skip the 1st line
+		while (fgets(line, sizeof(line), fp)) {
+			unsigned int bsz = 0;
+			if (sscanf(line, "mtd%d: %x %*s \"%s\"", &idx, &bsz, bnm) > 2) {
+				/* strip tailed " character, if present. */
+				char *p = strchr(bnm, '"');
+				if (p)
+					*p = '\0';
+				if (!strcmp(bnm, mtd) && bsz > 0) {
+					mtd_size = bsz;
+					break;
+				}
+			}
+		}
+		fclose(fp);
 	}
-	else
-	{
-		return 0;
-	}
+
+	return mtd_size;
 }
 
 /* 
@@ -684,6 +708,24 @@ int
 kill_pidfile(char *pidfile)
 {
 	return kill_pidfile_s(pidfile, SIGTERM);
+}
+
+/* remove space in the end of string */
+char *
+trim_r(char *str)
+{
+	int i = strlen(str);
+
+	while (i>=1)
+	{
+		if (*(str+i-1) == ' ' || *(str+i-1) == 0x0a || *(str+i-1) == 0x0d)
+			*(str+i-1)=0x0;
+		else
+			break;
+		i--;
+	}
+
+	return (str);
 }
 
 int

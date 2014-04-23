@@ -142,7 +142,7 @@ openvpn_create_server_acl(FILE *fp, const char *ccd)
 		acl_user = nvram_safe_get(acl_user_var);
 		acl_rnet = nvram_safe_get(acl_rnet_var);
 		acl_rmsk = nvram_safe_get(acl_rmsk_var);
-		if (*acl_user && inet_addr_(acl_rnet) != INADDR_ANY && inet_addr_(acl_rmsk) != INADDR_ANY)
+		if (*acl_user && is_valid_ipv4(acl_rnet) && is_valid_ipv4(acl_rmsk))
 		{
 			FILE *fp_ccf;
 			char ccf[80];
@@ -255,11 +255,11 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 			if (i_dhcp == 1) {
 				dns1 = nvram_safe_get("dhcp_dns1_x");
 				dns2 = nvram_safe_get("dhcp_dns2_x");
-				if ((inet_addr_(dns1) != INADDR_ANY) && (strcmp(dns1, lanip))) {
+				if (is_valid_ipv4(dns1) && (strcmp(dns1, lanip))) {
 					i_dns++;
 					fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", dns1);
 				}
-				if ((inet_addr_(dns2) != INADDR_ANY) && (strcmp(dns2, lanip)) && (strcmp(dns2, dns1))) {
+				if (is_valid_ipv4(dns2) && (strcmp(dns2, lanip)) && (strcmp(dns2, dns1))) {
 					i_dns++;
 					fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", dns2);
 				}
@@ -272,7 +272,7 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 		if (i_dhcp == 1)
 		{
 			wins = nvram_safe_get("dhcp_wins_x");
-			if (inet_addr_(wins) != INADDR_ANY)
+			if (is_valid_ipv4(wins))
 				fprintf(fp, "push \"dhcp-option %s %s\"\n", "WINS", wins);
 		}
 		

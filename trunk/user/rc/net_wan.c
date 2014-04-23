@@ -208,7 +208,7 @@ reset_wan_vars(int full_reset)
 		set_wan0_param("ppp_pppd");
 		
 		set_wan0_value("pppoe_ipaddr", nvram_safe_get("wan0_ipaddr"));
-		set_wan0_value("pppoe_netmask", (inet_addr_(nvram_safe_get("wan0_ipaddr")) && inet_addr_(nvram_safe_get("wan0_netmask"))) ? nvram_safe_get("wan0_netmask") : NULL);
+		set_wan0_value("pppoe_netmask", (is_valid_ipv4(nvram_safe_get("wan0_ipaddr")) && is_valid_ipv4(nvram_safe_get("wan0_netmask"))) ? nvram_safe_get("wan0_netmask") : NULL);
 		set_wan0_value("pppoe_gateway", nvram_safe_get("wan0_gateway"));
 		
 		nvram_set_temp("wanx_ipaddr", nvram_safe_get("wan0_ipaddr"));
@@ -470,7 +470,7 @@ launch_wanx(char *wan_ifname, char *ppp_ifname, char *prefix, int unit, int wait
 	/* Bring up physical WAN interface */
 	ifconfig(wan_ifname, IFUP, ip_addr, netmask);
 	
-	if (use_zcip || inet_addr_(ip_addr) == INADDR_ANY)
+	if (use_zcip || !is_valid_ipv4(ip_addr))
 	{
 		/* PPPoE connection not needed WAN physical address first, skip wait DHCP lease */
 		/* PPTP and L2TP needed WAN physical first for create VPN tunnel, wait DHCP lease */
@@ -495,7 +495,7 @@ launch_wanx(char *wan_ifname, char *ppp_ifname, char *prefix, int unit, int wait
 		add_static_man_routes(wan_ifname);
 		
 		/* and set default route if specified with metric 1 */
-		if ( inet_addr_(gateway) != INADDR_ANY )
+		if (is_valid_ipv4(gateway))
 		{
 			route_add(wan_ifname, 2, "0.0.0.0", gateway, "0.0.0.0");
 		}
@@ -905,7 +905,7 @@ wan_up(char *wan_ifname)
 		gateway = nvram_safe_get("wanx_gateway");
 		
 		/* and default route with metric 1 */
-		if (inet_addr_(gateway) != INADDR_ANY) {
+		if (is_valid_ipv4(gateway)) {
 			char word[100], *next;
 			in_addr_t addr = inet_addr(nvram_safe_get("wanx_ipaddr"));
 			in_addr_t mask = inet_addr(nvram_safe_get("wanx_netmask"));
@@ -1271,7 +1271,7 @@ update_hosts(void)
 				sprintf(dhcp_name, "dhcp_staticname_x%d", i);
 				sip = nvram_safe_get(dhcp_ip);
 				sname = nvram_safe_get(dhcp_name);
-				if (inet_addr_(sip) != INADDR_ANY && inet_addr_(sip) != inet_addr_(ipaddr) && is_valid_hostname(sname))
+				if (is_valid_ipv4(sip) && inet_addr_safe(sip) != inet_addr_safe(ipaddr) && is_valid_hostname(sname))
 				{
 					fprintf(fp, "%s %s\n", sip, sname);
 				}
@@ -1314,7 +1314,7 @@ add_dhcp_routes(char *rt, char *rt_rfc, char *rt_ms, char *ifname, int metric)
 	{
 		ipaddr = strsep(&tmp, "/");
 		gateway = strsep(&tmp, " ");
-		if (gateway && inet_addr_(ipaddr) != INADDR_ANY) {
+		if (gateway && is_valid_ipv4(ipaddr)) {
 			route_add(ifname, metric + 1, ipaddr, gateway, netmask);
 		}
 	}

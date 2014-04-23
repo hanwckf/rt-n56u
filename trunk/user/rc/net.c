@@ -110,7 +110,7 @@ route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *gen
 	if (gateway) {
 		inet_aton(gateway, &sin_addr(&rt.rt_gateway));
 	}
-	if (genmask) {	
+	if (genmask) {
 		inet_aton(genmask, &sin_addr(&rt.rt_genmask));
 	}
 	rt.rt_metric = metric;
@@ -181,7 +181,7 @@ control_static_routes(char *ift, char *ifname, int is_add)
 		gateway = strsep(&metric, ":");
 		if (!gateway || !metric)
 			continue;
-		if (inet_addr_(gateway) == INADDR_ANY) 			// oleg patch
+		if (!is_valid_ipv4(gateway))
 			gateway = nvram_safe_get("wanx_gateway");	// oleg patch
 		
 		if (is_add)
@@ -193,46 +193,6 @@ control_static_routes(char *ift, char *ifname, int is_add)
 	free(route_buf);
 
 	return 0;
-}
-
-static int
-is_invalid_char_for_hostname(char c)
-{
-	int ret = 0;
-
-	if (c < 0x20)
-		ret = 1;
-	else if (c >= 0x21 && c <= 0x2c)
-		ret = 1;
-	else if (c >= 0x2e && c <= 0x2f)
-		ret = 1;
-	else if (c >= 0x3a && c <= 0x40)
-		ret = 1;
-	else if (c >= 0x5b && c <= 0x5e)
-		ret = 1;
-	else if (c == 0x60)
-		ret = 1;
-	else if (c >= 0x7b)
-		ret = 1;
-
-	return ret;
-}
-
-int
-is_valid_hostname(const char *hname)
-{
-	int len, i;
-
-	len = strlen(hname);
-	if (len < 1)
-		return 0;
-
-	for (i = 0; i < len; i++) {
-		if (is_invalid_char_for_hostname(hname[i]))
-			return 0;
-	}
-
-	return 1;
 }
 
 char*
@@ -335,7 +295,10 @@ void start_xupnpd(char *wan_ifname)
 		snprintf(tmp2, sizeof(tmp2), "%s/%s", dir_dst, xdir2[i]);
 		if (!check_if_dir_exist(tmp2)) {
 			snprintf(tmp1, sizeof(tmp1), "%s/%s", dir_src, xdir2[i]);
-			symlink(tmp1, tmp2);
+			if (get_mtd_size("Storage") > 0x10000)
+				doSystem("cp -rf %s %s", tmp1, tmp2);
+			else
+				symlink(tmp1, tmp2);
 		}
 	}
 

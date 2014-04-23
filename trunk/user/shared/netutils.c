@@ -69,6 +69,66 @@ const char* get_ifname_descriptor(const char* ifname)
 	return NULL;
 }
 
+static int
+is_invalid_char_for_hostname(char c)
+{
+	int ret = 0;
+
+	if (c < 0x20)
+		ret = 1;
+	else if (c >= 0x21 && c <= 0x2c)
+		ret = 1;
+	else if (c >= 0x2e && c <= 0x2f)
+		ret = 1;
+	else if (c >= 0x3a && c <= 0x40)
+		ret = 1;
+	else if (c >= 0x5b && c <= 0x5e)
+		ret = 1;
+	else if (c == 0x60)
+		ret = 1;
+	else if (c >= 0x7b)
+		ret = 1;
+
+	return ret;
+}
+
+int
+is_valid_hostname(const char *hname)
+{
+	int len, i;
+
+	len = strlen(hname);
+	if (len < 1)
+		return 0;
+
+	for (i = 0; i < len; i++) {
+		if (is_invalid_char_for_hostname(hname[i]))
+			return 0;
+	}
+
+	return 1;
+}
+
+in_addr_t
+inet_addr_safe(const char *cp)
+{
+	struct in_addr a;
+
+	if (!cp)
+		return INADDR_ANY;
+
+	if (!inet_aton(cp, &a))
+		return INADDR_ANY;
+	else
+		return a.s_addr;
+}
+
+int
+is_valid_ipv4(const char *cp)
+{
+	return (inet_addr_safe(cp) != INADDR_ANY) ? 1 : 0;
+}
+
 int get_ap_mode(void)
 {
 	if (nvram_match("wan_route_x", "IP_Bridged"))

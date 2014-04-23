@@ -144,25 +144,6 @@ void char_to_ascii(char *output, char *input)
 	*ptr = '\0';
 }
 
-/* remove space in the end of string */
-char *trim_r(char *str)
-{
-	int i;
-
-	i = strlen(str);
-
-	while (i >= 1)
-	{
-		if (*(str+i-1) == ' ' || *(str+i-1) == 0x0a || *(str+i-1) == 0x0d)
-			*(str+i-1)=0x0;
-		else
-			break;
-
-		i--;
-	}
-	return (str);
-}
-
 void do_f(char *path, webs_t wp)
 {
 	FILE *fp;

@@ -767,25 +767,6 @@ ej_uptime(int eid, webs_t wp, int argc, char_t **argv)
 	return ret;	    
 }
 
-static int
-ej_sysuptime(int eid, webs_t wp, int argc, char_t **argv)
-{
-	int ret=0;
-	char *str = file2str("/proc/uptime");
-
-	if (str) {
-		unsigned long up = atoi(str);
-		free(str);
-
-		char lease_buf[128];
-		memset(lease_buf, 0, sizeof(lease_buf));
-		reltime(up, lease_buf);
-		ret = websWrite(wp, "%s since boot", lease_buf);
-	}
-
-	return ret;
-}
-
 int
 websWriteCh(webs_t wp, char *ch, int count)
 {
@@ -833,7 +814,7 @@ static int
 ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 {	
 	char filename[128];
-	char *file,*script;
+	char *file, *script;
 	int ret;
 
 	if (ejArgs(argc, argv, "%s %s", &file, &script) < 2) {
@@ -842,8 +823,9 @@ ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 	}
 	
 	// run scrip first to update some status
-	if (strcmp(script,"")!=0) sys_script(script); 
- 
+	if (strlen(script) > 1)
+		sys_script(script);
+
 	if (strcmp(file, "wlan11b.log")==0)
 		return (ej_wl_status_5g(eid, wp, 0, NULL));
 	else if (strcmp(file, "wlan11b_2g.log")==0)
@@ -889,21 +871,6 @@ ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 	return ret;
 }
 
-static int
-ej_load(int eid, webs_t wp, int argc, char_t **argv)
-{
-	char *script;
-
-	if (ejArgs(argc, argv, "%s", &script) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return -1;
-	}
-
-	sys_script(script);
-
-	return (websWrite(wp, "%s", ""));
-}
-
 static void
 validate_cgi(webs_t wp, int sid)
 {
@@ -922,12 +889,6 @@ validate_cgi(webs_t wp, int sid)
 	}
     }
 }
-
-enum {
-	NOTHING,
-	REBOOT,
-	RESTART,
-};
 
 char *svc_pop_list(char *value, char key)
 {
@@ -1861,19 +1822,6 @@ static int detect_if_wan(int eid, webs_t wp, int argc, char_t **argv) {
 	return 0;
 }
 
-static int detect_dhcp_pppoe(int eid, webs_t wp, int argc, char_t **argv) {
-	if (!get_ap_mode()) {
-		if (get_usb_modem_wan(0))
-			websWrite(wp, "modem");
-		else
-			websWrite(wp, "dhcp");
-	} else {
-		websWrite(wp, "AP mode");
-	}
-
-	return 0;
-}
-
 int file_to_buf(char *path, char *buf, int len) {
 	FILE *fp;
 	memset(buf, 0 , len);
@@ -2356,7 +2304,7 @@ static int nf_values_hook(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
-static int firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv) 
+static int ej_firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv) 
 {
 #if defined(UTL_HDPARM)
 	int found_utl_hdparm = 1;
@@ -2855,7 +2803,7 @@ static int ej_get_flash_time(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
-static int ej_get_vpns_client(int eid, webs_t wp, int argc, char_t **argv) 
+static int ej_get_vpns_client(int eid, webs_t wp, int argc, char_t **argv)
 {
 	FILE *fp;
 	int first_client;
@@ -3929,29 +3877,6 @@ static void
 do_apply_cgi(char *url, FILE *stream)
 {
 	apply_cgi(stream, NULL, NULL, 0, url, NULL, NULL);
-}
-
-static unsigned int 
-get_mtd_size(const char *mtd)
-{
-	FILE *fp;
-	char dev[PATH_MAX];
-	int i;
-	unsigned int mtd_size;
-
-	if ((fp = fopen("/proc/mtd", "r"))) {
-		while (fgets(dev, sizeof(dev), fp)) {
-			if ((sscanf(dev, "mtd%d: %x", &i, &mtd_size) > 1) && 
-			    (mtd_size > (65536*10)) && 
-			    (strstr(dev, mtd))) {
-				fclose(fp);
-				return mtd_size;
-			}
-		}
-		fclose(fp);
-	}
-
-	return 0;
 }
 
 #define SWAP_LONG(x) \
@@ -5969,96 +5894,6 @@ ej_backup_nvram(int eid, webs_t wp, int argc, char_t **argv)
 }
 // end svg support by Viz ^^^^^^^^^^^^^^^^^^^^
 
-static int
-ej_select_list(int eid, webs_t wp, int argc, char_t **argv)
-{
-	char *id;
-	int ret = 0;	
-	char out[64], idxstr[12], tmpstr[64], tmpstr1[64];
-	int i, curr, hit, noneFlag;
-	char *ref1, *ref2, *refnum;
-
-	if (ejArgs(argc, argv, "%s", &id) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return -1;
-	}
-
-	if (strcmp(id, "Storage_x_SharedPath")==0)
-	{
-		ref1 = "sh_path_x";
-		ref2 = "sh_path";
-		refnum = "sh_num";
-		curr = atoi(nvram_get(ref1));
-		sprintf(idxstr, "%d", curr);
-		strcpy(tmpstr1, nvram_get(strcat_r(ref2, idxstr, tmpstr)));
-		sprintf(out, "%s", tmpstr1);
-		ret += websWrite(wp, out);
-		return ret;
-	}
-	else if (strncmp(id, "Storage_x_AccUser", 17)==0)
-	{
-		sprintf(tmpstr, "sh_accuser_x%s", id + 17);
-		ref2 = "acc_username";
-		refnum = "acc_num";
-
-		curr = atoi(nvram_get(tmpstr));
-		noneFlag =1;
-	}
-	else if (strcmp(id, "Storage_x_AccAny")==0)
-	{
-		
-		 ret = websWrite(wp, "<option value=\"Guest\">Guest</option>");
-		 return ret;
-	}
-	else if (strcmp(id, "Storage_AllUser_List")==0)
-	{
-
-		strcpy(out, "<option value=\"Guest\">Guest</option>");
-		ret += websWrite(wp, out);
-
-		for (i=0;i<atoi(nvram_get("acc_num"));i++)
-		{
-			 sprintf(idxstr, "%d", i);
-			 strcpy(tmpstr1, nvram_get(strcat_r("acc_username", idxstr, tmpstr)));
-			 sprintf(out, "<option value=\"%s\">%s</option>", tmpstr1, tmpstr1);
-			 ret += websWrite(wp, out);
-		}
-		return ret;
-	}
-	else 
-	{
-		 return ret;     
-	}
-	
-	hit = 0;
- 
-	for (i=0;i<atoi(nvram_get(refnum));i++)
-	{     
- 		 sprintf(idxstr, "%d", i);
-		 strcpy(tmpstr1, nvram_get(strcat_r(ref2, idxstr, tmpstr)));
-	     	 sprintf(out, "<option value=\"%d\"", i);
-
-		 if (i==curr) 
-		 {
-			hit = 1;
-			sprintf(out, "%s selected", out);
-		 }
-		 sprintf(out,"%s>%s</option>", out, tmpstr1);       
- 
-		 ret += websWrite(wp, out);
-	}     
-
-	if (noneFlag)
-	{
-		cprintf("hit : %d\n", hit);
-		if (!hit) sprintf(out, "<option value=\"99\" selected>None</option>");
-		else sprintf(out, "<option value=\"99\">None</option>");
-
-		ret += websWrite(wp, out);
-	}	
-	return ret;
-}
-
 struct ej_handler ej_handlers[] = {
 	{ "nvram_get_x", ej_nvram_get_x},
 	{ "nvram_get_list_x", ej_nvram_get_list_x},
@@ -6068,27 +5903,22 @@ struct ej_handler ej_handlers[] = {
 	{ "nvram_double_match_x", ej_nvram_double_match_x},
 	{ "nvram_match_both_x", ej_nvram_match_both_x},
 	{ "nvram_match_list_x", ej_nvram_match_list_x},
-	{ "select_channel", ej_select_channel},
 	{ "uptime", ej_uptime},
-	{ "sysuptime", ej_sysuptime},
 	{ "nvram_dump", ej_dump},
-	{ "load_script", ej_load},
-	{ "select_list", ej_select_list},
-	{ "firmware_caps_hook", firmware_caps_hook},
+	{ "firmware_caps_hook", ej_firmware_caps_hook},
+	{ "ej_system_status", ej_system_status_hook},
 
-//tomato qosvvvvvvvvvvv 2010.08 Viz
-        { "netdev", ej_netdev},
-        { "bandwidth", ej_bandwidth},
-        { "nvram", ej_backup_nvram},
-//tomato qos^^^^^^^^^^^^ end Viz
+	{ "netdev", ej_netdev},
+	{ "bandwidth", ej_bandwidth},
+	{ "nvram", ej_backup_nvram},
 
 	{ "nvram_get_ddns", ej_nvram_get_ddns},
 	{ "nvram_char_to_ascii", ej_nvram_char_to_ascii},
 	{ "update_variables", update_variables_ex},
 	{ "asus_nvram_commit", asus_nvram_commit},
 	{ "notify_services", ej_notify_services},
+	{ "login_state_hook", login_state_hook},
 	{ "detect_if_wan", detect_if_wan},
-	{ "detect_dhcp_pppoe", detect_dhcp_pppoe},
 	{ "wanlink", wanlink_hook},
 	{ "lanlink", lanlink_hook},
 	{ "wan_action", wan_action_hook},
@@ -6096,19 +5926,18 @@ struct ej_handler ej_handlers[] = {
 	{ "nvram_action", nvram_action_hook},
 	{ "nf_values", nf_values_hook},
 	{ "get_parameter", ej_get_parameter},
-	{ "login_state_hook", login_state_hook},
 	{ "get_nvram_list", ej_get_nvram_list},
 	{ "dhcp_leases", ej_dhcp_leases},
 	{ "get_flash_time", ej_get_flash_time},
 	{ "get_static_client", ej_get_static_client},
 	{ "get_static_ccount", ej_get_static_ccount},
 	{ "get_vpns_client", ej_get_vpns_client},
+	{ "select_channel", ej_select_channel},
 	{ "wl_auth_list", ej_wl_auth_list},
 	{ "wl_scan_5g", ej_wl_scan_5g},
 	{ "wl_scan_2g", ej_wl_scan_2g},
 	{ "wl_bssid_5g", ej_wl_bssid_5g},
 	{ "wl_bssid_2g", ej_wl_bssid_2g},
-	{ "ej_system_status", ej_system_status_hook},
 	{ "shown_language_option", ej_shown_language_option},
 	{ "disk_pool_mapping_info", ej_disk_pool_mapping_info},
 	{ "available_disk_names_and_sizes", ej_available_disk_names_and_sizes},

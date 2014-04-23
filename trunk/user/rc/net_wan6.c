@@ -198,7 +198,7 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 	struct in6_addr addr6;
 
 	size4 = 0;
-	addr4.s_addr = inet_addr_(wan_addr4);
+	addr4.s_addr = inet_addr_safe(wan_addr4);
 	if (addr4.s_addr == INADDR_ANY)
 		return; // cannot start SIT tunnel w/o IPv4 WAN addr
 

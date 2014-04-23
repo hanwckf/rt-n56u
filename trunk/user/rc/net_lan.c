@@ -644,7 +644,7 @@ lan_up_manual(char *lan_ifname)
 	gateway_ip = nvram_safe_get("lan_gateway");
 
 	/* Set default route to gateway if specified */
-	if (inet_addr_(gateway_ip) != INADDR_ANY)
+	if (is_valid_ipv4(gateway_ip))
 		route_add(lan_ifname, 0, "0.0.0.0", gateway_ip, "0.0.0.0");
 
 	lock = file_lock("resolv");
@@ -653,18 +653,18 @@ lan_up_manual(char *lan_ifname)
 	fp = fopen("/etc/resolv.conf", "w+");
 	if (fp) {
 		dns_ip = nvram_safe_get("lan_dns1");
-		if (inet_addr_(dns_ip) != INADDR_ANY) {
+		if (is_valid_ipv4(dns_ip)) {
 			fprintf(fp, "nameserver %s\n", dns_ip);
 			dns_count++;
 		}
 		
 		dns_ip = nvram_safe_get("lan_dns2");
-		if (inet_addr_(dns_ip) != INADDR_ANY) {
+		if (is_valid_ipv4(dns_ip)) {
 			fprintf(fp, "nameserver %s\n", dns_ip);
 			dns_count++;
 		}
 		
-		if (!dns_count && inet_addr_(gateway_ip) != INADDR_ANY)
+		if (!dns_count && is_valid_ipv4(gateway_ip))
 			fprintf(fp, "nameserver %s\n", gateway_ip);
 		
 		fclose(fp);
@@ -689,7 +689,7 @@ lan_up_auto(char *lan_ifname)
 	gateway_ip = nvram_safe_get("lan_gateway_t");
 
 	/* Set default route to gateway if specified */
-	if (inet_addr_(gateway_ip) != INADDR_ANY)
+	if (is_valid_ipv4(gateway_ip))
 		route_add(lan_ifname, 0, "0.0.0.0", gateway_ip, "0.0.0.0");
 
 	/* Open resolv.conf */
@@ -698,13 +698,13 @@ lan_up_auto(char *lan_ifname)
 		if (nvram_get_int("lan_dns_x") == 0)
 		{
 			dns_ip = nvram_safe_get("lan_dns1");
-			if (inet_addr_(dns_ip) != INADDR_ANY) {
+			if (is_valid_ipv4(dns_ip)) {
 				fprintf(fp, "nameserver %s\n", dns_ip);
 				dns_count++;
 			}
 			
 			dns_ip = nvram_safe_get("lan_dns2");
-			if (inet_addr_(dns_ip) != INADDR_ANY) {
+			if (is_valid_ipv4(dns_ip)) {
 				fprintf(fp, "nameserver %s\n", dns_ip);
 				dns_count++;
 			}
@@ -712,14 +712,14 @@ lan_up_auto(char *lan_ifname)
 		else
 		{
 			foreach(word, nvram_safe_get("lan_dns_t"), next) {
-				if (inet_addr_(word) != INADDR_ANY) {
+				if (is_valid_ipv4(word)) {
 					fprintf(fp, "nameserver %s\n", word);
 					dns_count++;
 				}
 			}
 		}
 		
-		if (!dns_count && inet_addr_(gateway_ip) != INADDR_ANY)
+		if (!dns_count && is_valid_ipv4(gateway_ip))
 			fprintf(fp, "nameserver %s\n", gateway_ip);
 		
 		fclose(fp);

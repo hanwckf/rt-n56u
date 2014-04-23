@@ -26,6 +26,7 @@
 #include <fcntl.h>
 
 #include "infosvr.h"
+#include <include/ibox.h>
 #include <nvram/bcmnvram.h>
 #include <shutils.h>
 

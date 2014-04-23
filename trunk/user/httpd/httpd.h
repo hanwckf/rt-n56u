@@ -120,7 +120,6 @@ extern int f_exists(const char *path);
 extern int f_wait_exists(const char *name, int max);
 extern void do_f(char *path, webs_t wp);
 extern void char_to_ascii(char *output, char *input);
-extern char *trim_r(char *str);
 
 // cgi.c
 extern void set_cgi(char *name, char *value);
@@ -165,6 +164,7 @@ extern int ej_eth_status_lan4(int eid, webs_t wp, int argc, char_t **argv);
 extern int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_file, char *ssl_cipher_list);
 extern void ssl_server_uninit(void);
 extern FILE *ssl_server_fopen(int sd);
+extern const char* ssl_server_get_ssl_ver(void);
 #endif
 
 extern char log_header[];

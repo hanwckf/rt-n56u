@@ -170,11 +170,11 @@ start_vpn_server(void)
 	if (i_dhcp == 1) {
 		dns1 = nvram_safe_get("dhcp_dns1_x");
 		dns2 = nvram_safe_get("dhcp_dns2_x");
-		if ((inet_addr_(dns1) != INADDR_ANY) && (strcmp(dns1, lanip))) {
+		if (is_valid_ipv4(dns1) && (strcmp(dns1, lanip))) {
 			i_dns++;
 			fprintf(fp, "ms-dns %s\n", dns1);
 		}
-		if ((inet_addr_(dns2) != INADDR_ANY) && (strcmp(dns2, lanip)) && (strcmp(dns2, dns1))) {
+		if (is_valid_ipv4(dns2) && (strcmp(dns2, lanip)) && (strcmp(dns2, dns1))) {
 			i_dns++;
 			fprintf(fp, "ms-dns %s\n", dns2);
 		}
@@ -186,7 +186,7 @@ start_vpn_server(void)
 	if (i_dhcp == 1) {
 		// WINS Server
 		wins = nvram_safe_get("dhcp_wins_x");
-		if (inet_addr_(wins) != INADDR_ANY) 
+		if (is_valid_ipv4(wins))
 			fprintf(fp, "ms-wins %s\n", wins);
 	}
 
@@ -331,7 +331,7 @@ vpns_route_to_remote_lan(const char *cname, const char *ifname, const char *gw, 
 		acl_user = nvram_safe_get(acl_user_var);
 		acl_rnet = nvram_safe_get(acl_rnet_var);
 		acl_rmsk = nvram_safe_get(acl_rmsk_var);
-		if (*acl_user && strcmp(acl_user, cname) == 0 && inet_addr_(acl_rnet) != INADDR_ANY && inet_addr_(acl_rmsk) != INADDR_ANY)
+		if (*acl_user && strcmp(acl_user, cname) == 0 && is_valid_ipv4(acl_rnet) && is_valid_ipv4(acl_rmsk))
 		{
 			if (!is_same_subnet2(acl_rnet, lnet, acl_rmsk, lmsk)) {
 				if (add)

@@ -48,6 +48,9 @@ extern void time_zone_x_mapping();
 
 extern int doSystem(const char *fmt, ...);
 
+extern unsigned long get_swap_size(void);
+extern unsigned int get_mtd_size(const char *mtd);
+
 extern void change_passwd_unix(char *user, char *pass);
 extern void recreate_passwd_unix(int force_create);
 
@@ -134,6 +137,8 @@ static inline char * strcat_r(const char *s1, const char *s2, char *buf)
 	strcat(buf, s2);
 	return buf;
 }
+
+extern char *trim_r(char *str);
 
 extern int get_param_int(char *line, const char *param, int base, int defval);
 extern char *get_param_str(char *line, const char *param, int dups);

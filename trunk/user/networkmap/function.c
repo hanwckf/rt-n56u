@@ -250,6 +250,8 @@ nbns_query(struct in_addr *src_ip, struct in_addr *dst_ip, NET_CLIENT *pnet_clie
 					memcpy(device_name, nbns_rsp->device_name2, 16);
 				else if ( nbns_rsp->number_of_names > 2 && !(nbns_rsp->name_flags3[0] & 0x80) )
 					memcpy(device_name, nbns_rsp->device_name3, 16);
+				else if ( nbns_rsp->number_of_names > 3 && !(nbns_rsp->name_flags4[0] & 0x80) )
+					memcpy(device_name, nbns_rsp->device_name4, 16);
 				
 				break;
 			}

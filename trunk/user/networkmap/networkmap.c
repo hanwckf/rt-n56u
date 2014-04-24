@@ -321,7 +321,8 @@ resolve_hostname(struct in_addr *dst_ip, NET_CLIENT *pnet_client)
 	dst_saddr.sin_family = AF_INET;
 
 	bzero(hname, sizeof(hname));
-	if (getnameinfo((struct sockaddr *)&dst_saddr, sizeof(dst_saddr), hname, sizeof(hname), NULL, 0, NI_NAMEREQD) != 0)
+	if (getnameinfo((struct sockaddr *)&dst_saddr, sizeof(dst_saddr),
+			 hname, sizeof(hname), NULL, 0, NI_NAMEREQD|NI_NOFQDN) != 0)
 		return -1;
 
 	strncpy(pnet_client->device_name, hname, 17);

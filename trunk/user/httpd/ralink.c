@@ -1379,11 +1379,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 			else
 				ret+=websWrite(wp, ", ");
 			
-			ret+=websWrite(wp, "[");
 			ret+=websWrite(wp, "\"%s\"", mac);
-			ret+=websWrite(wp, ", \"%s\"", "YES");
-			ret+=websWrite(wp, ", \"%s\"", "");
-			ret+=websWrite(wp, "]");
 		}
 	}
 #endif
@@ -1417,11 +1413,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 			else
 				ret+=websWrite(wp, ", ");
 			
-			ret+=websWrite(wp, "[");
 			ret+=websWrite(wp, "\"%s\"", mac);
-			ret+=websWrite(wp, ", \"%s\"", "YES");
-			ret+=websWrite(wp, ", \"%s\"", "");
-			ret+=websWrite(wp, "]");
 		}
 	}
 

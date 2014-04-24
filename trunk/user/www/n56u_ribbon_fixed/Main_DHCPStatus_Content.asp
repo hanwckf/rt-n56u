@@ -75,7 +75,7 @@
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <td style="border-top: 0 none; padding-bottom: 0px;">
-                                                <textarea cols="63" rows="23" class="span12" style="font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off"><% nvram_dump("leases.log", "leases.sh"); %></textarea>
+                                                <textarea cols="63" rows="23" class="span12" style="font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off"><% nvram_dump("leases.log", ""); %></textarea>
                                             </td>
                                         </tr>
                                         <tr>

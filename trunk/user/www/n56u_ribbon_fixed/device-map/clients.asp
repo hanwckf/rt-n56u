@@ -17,73 +17,85 @@
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/client_function.js"></script>
 <script>
+var $j = jQuery.noConflict();
 
 <% login_state_hook(); %>
 
 var ipmonitor = [<% get_static_client(); %>];
 var wireless = [<% wl_auth_list(); %>];
-var leases = [<% dhcp_leases(); %>];
-var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
+var list_type = '<% nvram_get_x("", "macfilter_enable_x"); %>';
 var list_of_BlockedClient = [<% get_nvram_list("FirewallConfig", "MFList"); %>];
-var networkmap_fullscan = '<% nvram_match_x("", "networkmap_fullscan", "0", "done"); %>';
 
-var clients = getclients(1);
+var nmap_fullscan = '<% nvram_get_x("", "networkmap_fullscan"); %>';
+
+var DEVICE_TYPE = ["", "<#Device_type_01_PC#>", "<#Device_type_02_RT#>", "<#Device_type_03_AP#>", "<#Device_type_04_NAS#>", "<#Device_type_05_IC#>", "<#Device_type_06_OD#>"];
+
+var clients = getclients(1,0);
 var unblocked_clients = new Array();
 var blocked_clients = new Array();
 var page_modified = 0;
 
 function initial(){
+	if (sw_mode == "3") {
+		list_type = '0';
+	}
 	flash_button();
-	parent.show_client_status(clients.length);
-	isFullscanDone();
-	
-	set_client_is_blocked();
+	prepare_clients();
 	show_clients();
+	check_full_scan_done();
 	parent.hideLoading();
 }
 
-function isFullscanDone(){
-	if(networkmap_fullscan == "done"){
-		$("LoadingBar").style.display = "none";
-		$("refresh_list").disabled = false;
-	}
-	else{
-		$("LoadingBar").style.display = "block";
-		setTimeout("location.href='clients.asp';",5000);
-		$("refresh_list").disabled = true;
-	}
-}
+function prepare_clients(){
+	var i;
 
-function set_client_is_blocked(){
-	if(list_type == '1'){
-		for(var i = 0; i < clients.length; ++i){
+	parent.show_client_status(clients.length);
+
+	if(list_type == '0'){
+		for(i = 0; i < clients.length; ++i){
+			clients[i][7] = "u";
+			unblocked_clients[i] = i;
+		}
+		$("alert_block").style.display = "none";
+	}
+	else if(list_type == '1'){
+		for(i = 0; i < clients.length; ++i){
 			if(checkDuplicateName(clients[i][2], list_of_BlockedClient)){
-				clients[i][9] = "u";
+				clients[i][7] = "u";
 				unblocked_clients[i] = i;
 			}
 			else{
-				clients[i][9] = "b";
+				clients[i][7] = "b";
 				blocked_clients[i] = i;
 			}
 		}
 		$("alert_block").style.display = "block";
 	}
-	else if(list_type == '0'){
-		for(var i = 0; i < clients.length; ++i){
-			clients[i][9] = "u";
-			unblocked_clients[i] = i;
-		}
-		$("alert_block").style.display = "none";
-	}
 	else{
-		for(var i = 0; i < clients.length; ++i){
+		for(i = 0; i < list_of_BlockedClient.length; ++i){
+			if(!checkDuplicateName(list_of_BlockedClient[i][0], clients)){
+				var k = clients.length;
+				clients[k] = new Array(8);
+				
+				clients[k][0] = "*";
+				clients[k][1] = "*";
+				clients[k][2] = list_of_BlockedClient[i][0];
+				clients[k][3] = null;
+				clients[k][4] = null;
+				clients[k][5] = "6";
+				clients[k][6] = "0";
+				clients[k][7] = "b";
+			}
+		}
+		
+		for(i = 0; i < clients.length; ++i){
 			if(!checkDuplicateName(clients[i][2], list_of_BlockedClient)){
-				clients[i][9] = "u";
+				clients[i][7] = "u";
 				unblocked_clients[i] = i;
 			}
 			else{
-				clients[i][9] = "b";
+				clients[i][7] = "b";
 				blocked_clients[i] = i;
 			}
 		}
@@ -91,108 +103,122 @@ function set_client_is_blocked(){
 	}
 }
 
-function simplyName(orig_name, index){
-	if(orig_name != null){
-		if(orig_name.length > 17)
-			shown_client_name = orig_name.substring(0, 15) + "...";
-		else
-			shown_client_name = orig_name;
+function check_full_scan_done(){
+	if(nmap_fullscan != "1"){
+		$("LoadingBar").style.display = "none";
+		$("refresh_list").disabled = false;
+		$j('.popover_top').popover({placement: 'right'});
+		$j('.popover_bottom').popover({placement: 'right'});
+	}else{
+		$("LoadingBar").style.display = "block";
+		$("refresh_list").disabled = true;
+		setTimeout("update_clients();", 2000);
 	}
-	else
-		shown_client_name = clients[index][2];
 }
 
-var DEVICE_TYPE = ["", "<#Device_type_01_PC#>", "<#Device_type_02_RT#>", "<#Device_type_03_AP#>", "<#Device_type_04_NAS#>", "<#Device_type_05_IC#>", "<#Device_type_06_OD#>"];
-var shown_client_name = "";
+function update_clients(e) {
+	$j.ajax({
+		url: '/lan_clients.asp',
+		dataType: 'script',
+		error: function(xhr) {
+			;
+		},
+		success: function(response) {
+			ipmonitor = ipmonitor_last;
+			nmap_fullscan = nmap_fullscan_last;
+			clients = [];
+			clients = getclients(0,0);
+			prepare_clients();
+			show_clients();
+			check_full_scan_done();
+		}
+	});
+}
 
 function show_clients(){
+	var i, j, k;
+	var table1, table2;
 	var addClient, clientType, clientName, clientIP, clientMAC, clientBlock;
 	
-	for(var j=0, i=0, k=0; j < clients.length; j++){
-		if(clients[j][9] == "u" || sw_mode == "3"){
-			var isPrt = "";
-			addClient = $('Clients_table').insertRow(k+2);
+	table1 = $('Clients_table');
+	table2 = $('xClients_table');
+	
+	while (table1.rows.length > 2)
+		table1.deleteRow(-1);
+	while (table2.rows.length > 2)
+		table2.deleteRow(-1);
+	
+	for(j=0, i=0, k=0; j < clients.length; j++){
+		var fMAC = mac_add_delimiters(clients[j][2]);
+		if(clients[j][7] == "u" || sw_mode == "3"){
+			addClient = table1.insertRow(k+2);
 			clientType = addClient.insertCell(0);
 			clientName = addClient.insertCell(1);
 			clientIP = addClient.insertCell(2);
 			clientMAC = addClient.insertCell(3);
-			clients[j][5] = (clients[j][5] == undefined)?6:clients[j][5];
-			switch(clients[j][7]){
-				case "1":
-					isPrt = "<br/><strong><#Device_service_Printer#> </strong>YES(LPR)";
-					break;
-				case "2":
-					isPrt = "<br/><strong><#Device_service_Printer#> </strong>YES(RAW)";
-					break;
-				case "3":
-					isPrt = "<br/><strong><#Device_service_Printer#> </strong>YES(SMB)";
-					break;
-				default:
-					;
-			};
+			clientBlock = addClient.insertCell(4);
 			
-			var isITu = (clients[j][8] == "1")?"<br/><strong><#Device_service_iTune#> </strong>YES":"";
-			var isWL = (clients[j][3] == "10")?"<br/><strong><#Device_service_Wireless#> </strong>YES":"";
+			var isWL = (clients[j][3] == 10)?"<br/><strong><#Device_service_Wireless#></strong> YES":"";
+			
 			clientType.style.textAlign = "center";
 			clientType.innerHTML = "<img title='"+ DEVICE_TYPE[clients[j][5]]+"' src='/bootstrap/img/wl_device/" + clients[j][5] +".gif'>";
-			clientName.innerHTML = "<div class='"+(j == 0 ? 'popover_bottom' : 'popover_top' ) + "' data-original-title='<font size=-1>MAC: " + clients[j][2] + isPrt + isITu + isWL+ "</font>' data-content='"+("Name: " + clients[j][0])+"'>" + clients[j][0] + "</div>";
+			clientName.innerHTML = "<div class='"+(j == 0 ? 'popover_bottom' : 'popover_top' ) + "' data-original-title='<font size=-1><#MAC_Address#>: " + fMAC + isWL + "</font>' data-content='"+("<#Computer_Name#>: " + clients[j][0])+"'>" + clients[j][0] + "</div>";
 			clientIP.innerHTML = (clients[j][6] == "1") ? "<a href=http://" + clients[j][1] + " target='blank'>" + clients[j][1] + "</a>" : clients[j][1];
 			clientMAC.innerHTML = "<a target='_blank' href='http://standards.ieee.org/cgi-bin/ouisearch?" + clients[j][2].substr(0,6) + "'>" + clients[j][2] + "</a>";
 			
 			if(list_type != "1" && sw_mode != "3"){
-				clientBlock = addClient.insertCell(4);
 				clientBlock.style.textAlign = "center";
-				clientBlock.innerHTML = '<div class="icon icon-remove" id=unblock_client'+j+' onClick="blockClient('+j+')" style="cursor:pointer;"></div>\n';
+				clientBlock.innerHTML = "<div class='icon icon-remove' onClick='blockClient("+j+")' style='cursor:pointer;'></div>\n";
 			}
 			k++;
 		}
-		else if(clients[j][9] == "b"){
-			simplyName(clients[j][0], j);
-			
-			add_xClient = $('xClients_table').insertRow(i+2); //here use i for create row
+		else if(clients[j][7] == "b"){
+			add_xClient = table2.insertRow(i+2);
 			xClientType = add_xClient.insertCell(0);
 			xClientName = add_xClient.insertCell(1);
 			xClientIP = add_xClient.insertCell(2);
 			xClientMAC = add_xClient.insertCell(3);
+			xClientunBlock = add_xClient.insertCell(4);
 			
-			var isPrt = (clients[j][7] == "1")?"<br/><strong><#Device_service_Printer#> </strong>YES":"";
-			var isITu = (clients[j][8] == "1")?"<br/><strong><#Device_service_iTune#> </strong>YES":"";
-			var isWL = (clients[j][3] == "10")?"<br/><strong><#Device_service_Wireless#> </strong>YES":"";
-			
-			clients[j][5] = (clients[j][5] == undefined)?6:clients[j][5];
-			clients[j][0] = (clients[j][0] == null)?"":clients[j][0];
+			var isWL = (clients[j][3] == 10)?"<br/><strong><#Device_service_Wireless#></strong> YES":"";
 			
 			xClientType.style.textAlign = "center";
 			xClientType.innerHTML = "<img title='" +DEVICE_TYPE[clients[j][5]]+"' src='/bootstrap/img/wl_device/" + clients[j][5] +".gif'>";
-			xClientName.innerHTML = "<div class='"+(j == 0 ? 'popover_bottom' : 'popover_top' ) + "' data-original-title='<font size=-1>MAC: " + clients[j][2] + isPrt + isITu + isWL+ "</font>' data-content='"+("Name: " + clients[j][0])+"'>" + clients[j][0] + "</div>";
-			
+			xClientName.innerHTML = "<div class='"+(j == 0 ? 'popover_bottom' : 'popover_top' ) + "' data-original-title='<font size=-1><#MAC_Address#>: " + fMAC + isWL + "</font>' data-content='"+("<#Computer_Name#>: " + clients[j][0])+"'>" + clients[j][0] + "</div>";
 			xClientIP.innerHTML = clients[j][1];
 			xClientMAC.innerHTML = "<a target='_blank' href='http://standards.ieee.org/cgi-bin/ouisearch?" + clients[j][2].substr(0,6) + "'>" + clients[j][2] + "</a>";
 			
 			if(list_type != "1"){
-				xClientunBlock = add_xClient.insertCell(4);
 				xClientunBlock.style.textAlign = "center";
-				xClientunBlock.innerHTML = '<div class="icon icon-plus" onClick="unBlockClient('+j+')" style="cursor:pointer;"></div>\n'
+				xClientunBlock.innerHTML = "<div class='icon icon-plus' onClick='unBlockClient("+j+")' style='cursor:pointer;'></div>\n";
 			}
 			i++;
 		}
 	}
+
+	var NDRow = "<tr><td colspan='5'><div class='alert alert-info'><#Nodata#></div></td></tr>";
+
+	if (table1.rows.length < 3)
+		$j("#Clients_table tbody").append(NDRow);
+
+	if (table2.rows.length < 3 && sw_mode != "3")
+		$j("#xClients_table tbody").append(NDRow);
 }
 
 function blockClient(unBlockedClient_order){
 	var str = "";
-	
+
 	if(list_type == "1"){
 		alert("<#macfilter_alert_str1#>");
 		return;
 	}
 	this.selectedClientOrder = unBlockedClient_order;
-	
-	str += '<#block_Comfirm1#>" ';
+
+	str += '<#block_Comfirm1#> "';
 	str += (clients[unBlockedClient_order][0] == null)?clients[unBlockedClient_order][2]:clients[unBlockedClient_order][0];
 	str += '" ?\n';
 	str += '<#block_Comfirm2#>';
-	
+
 	if(confirm(str)){
 		set_filter_rule("add");
 		do_block_client();
@@ -201,18 +227,18 @@ function blockClient(unBlockedClient_order){
 
 function unBlockClient(blockedClient_order){
 	var str = "";
-	
+
 	if(list_type == "1"){
 		alert("<#macfilter_alert_str1#>");
 		return;
 	}
-	
+
 	this.selectedClientOrder = blockedClient_order;
-	
-	str += '<#unblock_Comfirm1#>" ';
+
+	str += '<#unblock_Comfirm1#> "';
 	str += (clients[blockedClient_order][0] == null)?clients[blockedClient_order][2]:clients[blockedClient_order][0];
-	str += ' "<#unblock_Comfirm2#>';
-	
+	str += '" "<#unblock_Comfirm2#>';
+
 	if(confirm(str)){
 		set_filter_rule("del");
 		do_unblock_client();
@@ -326,13 +352,10 @@ function networkmap_update(s){
 <input type="hidden" name="current_page" value="/device-map/clients.asp">
 <input type="hidden" name="next_page" value="/device-map/clients.asp">
 <input type="hidden" name="modified" value="<% nvram_get_x("", "MFList"); %>">
-<!-- for enable rule in MACfilter -->
 <input type="hidden" name="macfilter_enable_x" value="2">
-<!-- for add rule in MACfilter -->
 <input type="hidden" name="macfilter_list_x_0" value="">
 <input type="hidden" name="macfilter_time_x_0" value="00002359">
 <input type="hidden" name="macfilter_date_x_0" value="1111111">
-<!-- for del rule in MACfilter -->
 <select name="MFList_s" id="MFList_s" multiple="true" style="visibility:hidden; width:0px; height:0px;"></select>
 </form>
 
@@ -342,6 +365,13 @@ function networkmap_update(s){
     <thead>
         <tr>
             <th colspan="5" style="text-align: center;"><#ConnectedClient#></th>
+        </tr>
+        <tr>
+            <th width="6%"><#Type#></th>
+            <th id="col_hname" width="50%"><#Computer_Name#></th>
+            <th width="22%"><#LAN_IP#></th>
+            <th width="22%"><#MAC_Address#></th>
+            <th id="col_block"></th>
         </tr>
     </thead>
     <tbody>
@@ -355,6 +385,13 @@ function networkmap_update(s){
         <tr>
             <th colspan="5" style="text-align: center;"><#BlockedClient#></th>
         </tr>
+        <tr>
+            <th width="6%"><#Type#></th>
+            <th id="col_unhname" width="50%"><#Computer_Name#></th>
+            <th width="22%"><#LAN_IP#></th>
+            <th width="22%"><#MAC_Address#></th>
+            <th id="col_unblock"></th>
+        </tr>
     </thead>
     <tbody>
     </tbody>
@@ -366,7 +403,7 @@ function networkmap_update(s){
 </center>
 
 <p><div id="alert_block" class="alert alert-danger" style="margin-top:40px; display: none;">
-	<a href="/Advanced_MACFilter_Content.asp" target="_parent"><#menu5_5_3#></a> <#macfilter_alert_str1#>
+    <a href="/Advanced_MACFilter_Content.asp" target="_parent"><#menu5_5_3#></a> <#macfilter_alert_str1#>
 </div></p>
 
 
@@ -381,35 +418,21 @@ function networkmap_update(s){
 </form>
 
 <script>
-	var $j = jQuery.noConflict();
-
-	$j(document).ready(function() {
-		$j('.popover_top').popover({placement: 'right'});
-		$j('.popover_bottom').popover({placement: 'right'});
-	});
-
-	var th  = "<th width='6%'><#Type#></th>";
-	th += "<th width='35%'><#Computer_Name#></th>";
-	th += "<th width='22%'><#LAN_IP#></th>";
-	th += "<th width='22%'><#MAC_Address#></th>";
-
 	if (sw_mode != "3") {
-		var list_type = '<% nvram_get_x("", "macfilter_enable_x"); %>';
-		var list_of_BlockedClient = [<% get_nvram_list("FirewallConfig", "MFList"); %>];
-		$j("#Clients_table thead").append("<tr>" + th + (list_type != "1" ? '<th><#Block#></th>' : '') + "</tr>");
-		$j("#xClients_table thead").append("<tr>" + th + (list_type != "1" ? '<th><#unBlock#></th>' : '') + "</tr>");
-		if(list_of_BlockedClient.length == 0)
-			$j("#xClients_table tbody").append("<tr><td colspan='5'><div class='alert alert-info'><#Nodata#></div></td></tr>");
+		if (list_type != "1"){
+			$("col_hname").width = "35%";
+			$("col_unhname").width = "35%";
+			$("col_block").innerHTML = "<#Block#>";
+			$("col_unblock").innerHTML = "<#unBlock#>";
+		}
 	} else {
 		$("applyClient").style.display = "none";
 		$("xClients_table").style.display = "none";
-		$j("#Clients_table thead").append("<tr>" + th + "</tr>");
 	}
 </script>
 
 <script>
 	initial();
-
 	function loading() {
 		$("loadingBarBlock").style.display = "none";
 	}

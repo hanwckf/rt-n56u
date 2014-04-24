@@ -1,1 +1,1 @@
-<% nvram_dump("syslog.log","syslog.sh"); %>
+<% nvram_dump("syslog.log",""); %>

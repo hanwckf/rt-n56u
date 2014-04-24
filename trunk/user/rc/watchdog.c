@@ -66,7 +66,6 @@ enum
 static int svcStatus[ACTIVEITEMS] = {-1, -1, -1, -1};
 
 static int watchdog_period = 0;
-static int nmap_timer = 1;
 static int ntpc_timer = -1;
 static int ntpc_server_idx = 0;
 static int ntpc_tries = 0;
@@ -408,18 +407,6 @@ inet_handler(int is_ap_mode)
 	{
 		if (nvram_invmatch("lan_gateway_t", ""))
 			ntpc_handler();
-	}
-}
-
-static void 
-nmap_handler(void)
-{
-	// update network map every 3 hours
-	nmap_timer = (nmap_timer + 1) % 1080;
-	if (nmap_timer == 0)
-	{
-		// update network map
-		restart_networkmap();
 	}
 }
 
@@ -968,11 +955,6 @@ void notify_watchdog_wifi(int is_5ghz)
 	doSystem("killall %s %s", "-SIGUSR1", "watchdog");
 }
 
-void notify_watchdog_nmap(void)
-{
-	doSystem("killall %s %s", "-SIGUSR2", "watchdog");
-}
-
 static void catch_sig(int sig)
 {
 	if (sig == SIGTERM)
@@ -997,7 +979,7 @@ static void catch_sig(int sig)
 	}
 	else if (sig == SIGUSR2)
 	{
-		nmap_timer = 1;
+		;
 	}
 }
 
@@ -1042,7 +1024,6 @@ static void watchdog(int sig)
 	if (!is_ap_mode)
 		dnsmasq_process_check();
 
-	nmap_handler();
 	inet_handler(is_ap_mode);
 
 	storage_save_time(10);

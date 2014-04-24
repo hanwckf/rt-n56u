@@ -23,7 +23,6 @@ var $j = jQuery.noConflict();
 <% login_state_hook(); %>
 
 var ipmonitor = [<% get_static_client(); %>];
-var leases = [<% dhcp_leases(); %>];
 var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
 var staticClients = get_resolved_clients();
@@ -56,18 +55,8 @@ function get_resolved_clients()
         clients[i][1] = ipmonitor[i][1];
         clients[i][2] = ipmonitor[i][2];
 
-        for(var j = leases.length-1; j >= 0; --j) {
-            if(leases[j][0] == null || leases[j][0].length == 0)
-                continue;
-            if(ipmonitor[i][1] == leases[j][1]){
-                if(clients[i][2] != leases[j][0])
-                    clients[i][2] = leases[j][0];
-                break;
-            }
-        }
-
         if(clients[i][2] == null || clients[i][2].length == 0)
-            clients[i][2] = "???";
+            clients[i][2] = "*";
     }
     return clients;
 }
@@ -215,7 +204,7 @@ $j(document).ready(function() {
         });
         $j('#wol_table').append(t_body);
 
-        setTimeout("getVendors()", 100);
+        setTimeout("getVendors()", 200);
     }
 
     // event click "Wake up"

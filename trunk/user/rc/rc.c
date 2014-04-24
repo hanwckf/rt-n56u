@@ -272,7 +272,6 @@ convert_misc_values()
 	nvram_set_temp("ntpc_counter", "0000000000");
 
 	nvram_set_int_temp("networkmap_fullscan", 0);
-	nvram_set_int_temp("fullscan_timestamp", 0);
 	nvram_set_int_temp("link_internet", 2);
 
 	nvram_set_int_temp("reload_svc_wl", 0);

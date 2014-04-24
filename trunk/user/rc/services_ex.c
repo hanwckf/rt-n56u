@@ -1882,9 +1882,9 @@ void restart_aria(void)
 }
 #endif
 
-int start_networkmap(void)
+int start_networkmap(int first_call)
 {
-	return eval("/usr/sbin/networkmap");
+	return eval("/usr/sbin/networkmap", (first_call) ? "-w" : "");
 }
 
 void stop_networkmap(void)
@@ -1898,9 +1898,7 @@ void restart_networkmap(void)
 	if (pids("networkmap"))
 		doSystem("killall %s %s", "-SIGUSR1", "networkmap");
 	else
-		start_networkmap();
-
-	notify_watchdog_nmap();
+		start_networkmap(0);
 }
 
 void

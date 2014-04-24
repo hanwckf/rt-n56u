@@ -30,10 +30,8 @@ var smac = client_mac.split(":");
 
 var ipmonitor = [<% get_static_client(); %>];
 var wireless = [<% wl_auth_list(); %>];
-var leases = [<% dhcp_leases(); %>];
-var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
-var clients_info = getclients(1);
+var clients_info = getclients(1,0);
 
 var ACLList = [<% get_nvram_list("DeviceSecurity11a", "ACLList"); %>];
 

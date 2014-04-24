@@ -627,7 +627,7 @@ full_restart_lan(void)
 #endif
 
 	/* start ARP network scanner */
-	start_networkmap();
+	start_networkmap(1);
 
 	/* force httpd logout */
 	doSystem("killall %s %s", "-SIGUSR1", "httpd");

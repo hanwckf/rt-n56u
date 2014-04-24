@@ -821,7 +821,7 @@ ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 		websError(wp, 400, "Insufficient args\n");
 		return -1;
 	}
-	
+
 	// run scrip first to update some status
 	if (strlen(script) > 1)
 		sys_script(script);
@@ -2667,67 +2667,20 @@ static int ej_get_nvram_list(int eid, webs_t wp, int argc, char_t **argv) {
 	return 0;
 }
 
-static int ej_dhcp_leases(int eid, webs_t wp, int argc, char_t **argv) {
-	FILE *fp = NULL;
-	int i, firstRow;
-	char buff[256], dh_lease[32], dh_mac[32], dh_ip[32], dh_host[64], dh_sid[32];
-	
-	/* Write out leases file */
-	if (!(fp = fopen("/tmp/dnsmasq.leases", "r")))
-		return 0;
-	
-	firstRow = 1;
-	buff[0] = 0;
-	while (fgets(buff, sizeof(buff), fp))
-	{
-		dh_lease[0] = 0;
-		dh_mac[0] = 0;
-		dh_ip[0] = 0;
-		dh_host[0] = 0;
-		dh_sid[0] = 0;
-		if (sscanf(buff, "%s %s %s %s %s", dh_lease, dh_mac, dh_ip, dh_host, dh_sid) != 5)
-			continue;
-		
-		if (!dh_mac[0] || !strcmp(dh_mac, "00:00:00:00:00:00"))
-			continue;
-		
-		if (firstRow == 1)
-			firstRow = 0;
-		else
-			websWrite(wp, ", ");
-		
-		if (!strcmp(dh_host, "*"))
-			dh_host[0] = 0;
-		
-		// cut hostname to 18 chars
-		dh_host[18] = 0;
-		
-		// convert MAC to upper case
-		for (i=0; i<strlen(dh_mac); i++)
-			dh_mac[i] = toupper(dh_mac[i]);
-		
-		websWrite(wp, "[\"%s\", \"%s\", \"%s\"]", dh_host, dh_mac, dh_ip);
-	}
-	
-	fclose(fp);
-	
-	return 0;
-}
-
 // for detect static IP's client.
-static int ej_get_static_client(int eid, webs_t wp, int argc, char_t **argv) 
+static int ej_get_static_client(int eid, webs_t wp, int argc, char_t **argv)
 {
 	FILE *fp;
-	char buf[1024], *head, *tail, field[1024];
+	char buf[512], *head, *tail, field[512];
 	int i, lock, len, first_client, first_field;
 
 	lock = file_lock("networkmap");
 
+	first_client = 1;
 	fp = fopen("/tmp/static_ip.inf", "r");
 	if (fp) {
-		first_client = 1;
 		while (fgets(buf, sizeof(buf), fp)) {
-			if (first_client == 1)
+			if (first_client)
 				first_client = 0;
 			else
 				websWrite(wp, ", ");
@@ -2736,18 +2689,17 @@ static int ej_get_static_client(int eid, webs_t wp, int argc, char_t **argv)
 			buf[len-1] = ',';
 			head = buf;
 			first_field = 1;
-			for (i = 0; i < 7; ++i) {
+			for (i = 0; i < 6; ++i) {
 				tail = strchr(head, ',');
 				if (tail != NULL) {
 					memset(field, 0, sizeof(field));
 					strncpy(field, head, (tail-head));
 				}
 				
-				if (first_field == 1) {
+				if (first_field) {
 					first_field = 0;
 					websWrite(wp, "[");
-				}
-				else
+				} else
 					websWrite(wp, ", ");
 				
 				if (strlen(field) > 0)
@@ -2755,10 +2707,9 @@ static int ej_get_static_client(int eid, webs_t wp, int argc, char_t **argv)
 				else
 					websWrite(wp, "null");
 				
-				//if (tail+1 != NULL)
-					head = tail+1;
+				head = tail+1;
 				
-				if (i == 6)
+				if (i == 5)
 					websWrite(wp, "]");
 			}
 		}
@@ -2771,27 +2722,27 @@ static int ej_get_static_client(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
-static int ej_get_static_ccount(int eid, webs_t wp, int argc, char_t **argv) 
+static int ej_get_static_ccount(int eid, webs_t wp, int argc, char_t **argv)
 {
 	FILE *fp;
-	char buf[1024];
-	int lock, ccount;
+	char buf[32];
+	int lock;
+	unsigned int vcount;
 
-	ccount = 0;
+	vcount = 0;
 
 	lock = file_lock("networkmap");
 
-	fp = fopen("/tmp/static_ip.inf", "r");
+	fp = fopen("/tmp/static_ip.num", "r");
 	if (fp) {
-		while (fgets(buf, sizeof(buf), fp))
-			ccount++;
-		
+		if (fgets(buf, sizeof(buf), fp))
+			vcount = strtoul(buf, NULL, 0);
 		fclose(fp);
 	}
 
 	file_unlock(lock);
 
-	websWrite(wp, "%d", ccount);
+	websWrite(wp, "%u", vcount);
 
 	return 0;
 }
@@ -5927,7 +5878,6 @@ struct ej_handler ej_handlers[] = {
 	{ "nf_values", nf_values_hook},
 	{ "get_parameter", ej_get_parameter},
 	{ "get_nvram_list", ej_get_nvram_list},
-	{ "dhcp_leases", ej_dhcp_leases},
 	{ "get_flash_time", ej_get_flash_time},
 	{ "get_static_client", ej_get_static_client},
 	{ "get_static_ccount", ej_get_static_ccount},

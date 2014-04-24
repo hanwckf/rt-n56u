@@ -432,7 +432,7 @@ start_services_once(void)
 
 	start_watchdog_cpu();
 
-	start_networkmap();
+	start_networkmap(1);
 
 	return 0;
 }

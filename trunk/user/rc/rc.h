@@ -465,6 +465,7 @@ void stop_aria(void);
 void run_aria(void);
 void restart_aria(void);
 #endif
+int start_networkmap(int first_call);
 void stop_networkmap(void);
 void restart_networkmap(void);
 int start_dns_dhcpd(void);
@@ -500,7 +501,6 @@ int check_if_dev_exist(const char *devpath);
 void umount_dev(char *sd_dev);
 void umount_dev_all(char *sd_dev);
 void umount_sddev_all(void);
-int start_networkmap(void);
 void stop_syslogd();
 void stop_klogd();
 int start_syslogd();
@@ -531,7 +531,6 @@ int  ntpc_updated_main(int argc, char *argv[]);
 int  watchdog_main(int argc, char *argv[]);
 int  start_watchdog(void);
 void notify_watchdog_time(void);
-void notify_watchdog_nmap(void);
 void notify_watchdog_wifi(int is_5ghz);
 
 #if defined(USE_RT3352_MII)

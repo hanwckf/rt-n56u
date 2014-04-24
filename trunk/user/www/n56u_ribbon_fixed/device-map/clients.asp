@@ -127,7 +127,7 @@ function update_clients(e) {
 			ipmonitor = ipmonitor_last;
 			nmap_fullscan = nmap_fullscan_last;
 			clients = [];
-			clients = getclients(0,0);
+			clients = getclients(1,0);
 			prepare_clients();
 			show_clients();
 			check_full_scan_done();

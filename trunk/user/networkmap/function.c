@@ -275,6 +275,8 @@ nbns_query(struct in_addr *src_ip, struct in_addr *dst_ip, NET_CLIENT *pnet_clie
 		NMP_DEBUG("NBNS Name: %s\n", device_name);
 		if (!pnet_client->device_name[0])
 			memcpy(pnet_client->device_name, device_name, 17);
+	} else {
+		NMP_DEBUG("NBNS: NO hostname!\n");
 	}
 
 	return 0;

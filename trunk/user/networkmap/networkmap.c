@@ -501,8 +501,11 @@ nmap_receive_arp(void)
 			}
 			
 			if (nmap_changed || !net_clients[ip_index].device_name[0]) {
-				if (resolve_hostname(&src_addr, &net_clients[ip_index]) == 0)
-					need_update_file |= 1;
+				if (resolve_hostname(&src_addr, &net_clients[ip_index]) == 0) {
+					fixup_hostname(&net_clients[ip_index]);
+					if (net_clients[ip_index].device_name[0])
+						need_update_file |= 1;
+				}
 			}
 			
 			if (nmap_changed) {

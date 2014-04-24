@@ -90,7 +90,7 @@ asus_dd_query(struct in_addr *dst_ip, NET_CLIENT *pnet_client)
 				pnet_client->type = 3; // ASUS AP
 				
 				NMP_DEBUG_M("DD: productID=%s\n", dd_info->ProductID);
-				if (!pnet_client->device_name[0]) {
+				if (!pnet_client->device_name[0] && is_valid_hostname(dd_info->ProductID)) {
 					memcpy(pnet_client->device_name, dd_info->ProductID, 16);
 					pnet_client->device_name[16] = 0;
 				}
@@ -273,7 +273,7 @@ nbns_query(struct in_addr *src_ip, struct in_addr *dst_ip, NET_CLIENT *pnet_clie
 	if (device_name[0]) {
 		device_name[16] = 0;
 		NMP_DEBUG("NBNS Name: %s\n", device_name);
-		if (!pnet_client->device_name[0])
+		if (!pnet_client->device_name[0] && is_valid_hostname(device_name))
 			memcpy(pnet_client->device_name, device_name, 17);
 	} else {
 		NMP_DEBUG("NBNS: NO hostname!\n");

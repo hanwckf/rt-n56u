@@ -279,10 +279,7 @@ fixup_hostname(NET_CLIENT* pnet_client)
 	}
 
 	hname[17] = '\0';
-	if (is_valid_hostname(hname))
-		trim_r(hname);
-	else
-		hname[0] = '\0';
+	trim_r(hname);
 }
 
 static void
@@ -328,7 +325,10 @@ resolve_hostname(struct in_addr *dst_ip, NET_CLIENT *pnet_client)
 		return -1;
 
 	strncpy(pnet_client->device_name, hname, 17);
-	pnet_client->device_name[17] = 0;
+	fixup_hostname(pnet_client);
+
+	if (!pnet_client->device_name[0])
+		return -1;
 
 	return 0;
 }
@@ -501,11 +501,8 @@ nmap_receive_arp(void)
 			}
 			
 			if (nmap_changed || !net_clients[ip_index].device_name[0]) {
-				if (resolve_hostname(&src_addr, &net_clients[ip_index]) == 0) {
-					fixup_hostname(&net_clients[ip_index]);
-					if (net_clients[ip_index].device_name[0])
-						need_update_file |= 1;
-				}
+				if (resolve_hostname(&src_addr, &net_clients[ip_index]) == 0)
+					need_update_file |= 1;
 			}
 			
 			if (nmap_changed) {

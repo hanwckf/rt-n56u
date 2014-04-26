@@ -377,7 +377,6 @@ function networkmap_update(s){
     <tbody>
     </tbody>
 </table>
-<br />
 
 <div id="blockedClients_table"></div>
 <table id="xClients_table" width="100%" align="center" class="table">

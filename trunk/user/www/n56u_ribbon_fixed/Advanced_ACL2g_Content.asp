@@ -31,7 +31,7 @@ var smac = client_mac.split(":");
 var ipmonitor = [<% get_static_client(); %>];
 var wireless = [<% wl_auth_list(); %>];
 
-var clients_info = getclients(1,1);
+var clients_info = getclients(1,0);
 
 var ACLList = [<% get_nvram_list("DeviceSecurity11b", "rt_ACLList"); %>];
 

@@ -91,7 +91,7 @@ var client_mac = login_mac_str();
 var ipmonitor = [<% get_static_client(); %>];
 var wireless = [<% wl_auth_list(); %>];
 
-var clients_info = getclients(0,1);
+var clients_info = getclients(0,0);
 
 var VSList = [<% get_nvram_list("IPConnection", "VSList"); %>];
 

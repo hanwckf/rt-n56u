@@ -26,6 +26,7 @@ var wireless = [<% wl_auth_list(); %>];
 
 var list_type = '<% nvram_get_x("", "macfilter_enable_x"); %>';
 var list_of_BlockedClient = [<% get_nvram_list("FirewallConfig", "MFList"); %>];
+var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
 var nmap_fullscan = '<% nvram_get_x("", "networkmap_fullscan"); %>';
 
@@ -48,7 +49,7 @@ function initial(){
 }
 
 function prepare_clients(){
-	var i;
+	var i, j, k;
 
 	parent.show_client_status(clients.length);
 
@@ -75,7 +76,7 @@ function prepare_clients(){
 	else{
 		for(i = 0; i < list_of_BlockedClient.length; ++i){
 			if(!checkDuplicateName(list_of_BlockedClient[i][0], clients)){
-				var k = clients.length;
+				k = clients.length;
 				clients[k] = new Array(8);
 				
 				clients[k][0] = "*";
@@ -86,6 +87,17 @@ function prepare_clients(){
 				clients[k][5] = "6";
 				clients[k][6] = "0";
 				clients[k][7] = "b";
+				
+				var mac_up = list_of_BlockedClient[i][0].toUpperCase();
+				
+				for(j = 0; j < m_dhcp.length; ++j){
+					if (mac_up == m_dhcp[j][0].toUpperCase()){
+						if (m_dhcp[j][2] != null && m_dhcp[j][2].length > 0)
+							clients[k][0] = m_dhcp[j][2];
+						clients[k][1] = m_dhcp[j][1];
+						break;
+					}
+				}
 			}
 		}
 		

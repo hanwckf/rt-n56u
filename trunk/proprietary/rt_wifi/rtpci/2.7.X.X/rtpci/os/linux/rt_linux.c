@@ -2185,9 +2185,10 @@ VOID RtmpOsPktNatMagicTag(IN PNDIS_PACKET pNetPkt) {
 }
 
 VOID RtmpOsPktNatNone(IN PNDIS_PACKET pNetPkt) {
-#if defined(CONFIG_RA_NAT_NONE)
+#if !defined(CONFIG_RA_NAT_NONE)
 #if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
-	FOE_AI(((struct sk_buff *)pNetPkt)) = UN_HIT;
+	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
+	FOE_AI(pRxPkt) = UN_HIT;
 #endif /* CONFIG_RA_HW_NAT || CONFIG_RA_HW_NAT_MODULE */
 #endif /* CONFIG_RA_NAT_NONE */
 }

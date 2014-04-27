@@ -466,29 +466,17 @@ void tbtt_tasklet(unsigned long data)
 #endif /* CONFIG_AP_SUPPORT */
 }
 
-
 void announce_802_3_packet(
-	IN	VOID			*pAdSrc,
-	IN	PNDIS_PACKET	pPacket,
-	IN	UCHAR			OpMode)
+	IN	VOID		*pAdSrc,
+	IN	PNDIS_PACKET	pRxPkt,
+	IN	UCHAR		OpMode)
 {
-	PRTMP_ADAPTER	pAd = (PRTMP_ADAPTER)pAdSrc;
-/*	struct sk_buff	*pRxPkt; */
-	PNDIS_PACKET pRxPkt;
-#ifdef INF_PPA_SUPPORT
-        int             ret = 0;
-        unsigned int ppa_flags = 0; /* reserved for now */
-#endif /* INF_PPA_SUPPORT */
+	PRTMP_ADAPTER pAd;
+	pAd = (RTMP_ADAPTER *)pAdSrc;
 
-	pAd = pAd; /* avoid compile warning */
+	ASSERT(pRxPkt);
+	MEM_DBG_PKT_FREE_INC(pRxPkt);
 
-	MEM_DBG_PKT_FREE_INC(pPacket);
-
-
-	ASSERT(pPacket);
-
-/*	pRxPkt = RTPKT_TO_OSPKT(pPacket); */
-	pRxPkt = pPacket;
 #ifdef CONFIG_AP_SUPPORT
 #ifdef APCLI_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -496,16 +484,14 @@ void announce_802_3_packet(
 		if (RTMP_MATPktRxNeedConvert(pAd, RtmpOsPktNetDevGet(pRxPkt)))
 		{
 			RTMP_MATEngineRxHandle(pAd, pRxPkt, 0);
-	}
+		}
 	}
 #endif /* APCLI_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
-
-    /* Push up the protocol stack */
+	/* Push up the protocol stack */
 #ifdef CONFIG_AP_SUPPORT
 #if defined(PLATFORM_BL2348) || defined(PLATFORM_BL23570)
-
 {
 	extern int (*pToUpperLayerPktSent)(PNDIS_PACKET *pSkb);
 	RtmpOsPktProtocolAssign(pRxPkt);
@@ -519,9 +505,6 @@ void announce_802_3_packet(
 	IKANOS_DataFrameRx(pAd, pRxPkt);
 	return;
 #endif /* IKANOS_VX_1X0 */
-
-	/* mark for bridge fast path, 2009/06/22 */
-	/* pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev); */
 
 #ifdef INF_PPA_SUPPORT
 	if (ppa_hook_directpath_send_fn && pAd->PPAEnable==TRUE ) 
@@ -546,19 +529,20 @@ void announce_802_3_packet(
 			RtmpOsPktNatNone(pRxPkt);
 			RtmpOsPktRcvHandle(pRxPkt);
 		}
+		
+		return;
 	}
-	else
 #endif
-	{
+
 #ifdef CONFIG_AP_SUPPORT
 #ifdef BG_FT_SUPPORT
-		if (BG_FTPH_PacketFromApHandle(pRxPkt) == 0)
-			return;
+	if (BG_FTPH_PacketFromApHandle(pRxPkt) == 0)
+		return;
 #endif /* BG_FT_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
-		RtmpOsPktProtocolAssign(pRxPkt);
-		RtmpOsPktRcvHandle(pRxPkt);
-	}
+
+	RtmpOsPktProtocolAssign(pRxPkt);
+	RtmpOsPktRcvHandle(pRxPkt);
 }
 
 

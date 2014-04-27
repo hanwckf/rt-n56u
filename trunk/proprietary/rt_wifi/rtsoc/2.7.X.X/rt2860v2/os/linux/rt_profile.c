@@ -512,27 +512,16 @@ void tbtt_tasklet(unsigned long data)
 
 
 void announce_802_3_packet(
-	IN	VOID			*pAdSrc,
-	IN	PNDIS_PACKET	pPacket,
-	IN	UCHAR			OpMode)
+	IN	VOID		*pAdSrc,
+	IN	PNDIS_PACKET	pRxPkt,
+	IN	UCHAR		OpMode)
 {
-	PRTMP_ADAPTER	pAd = (PRTMP_ADAPTER)pAdSrc;
-/*	struct sk_buff	*pRxPkt; */
-	PNDIS_PACKET pRxPkt;
-#ifdef INF_PPA_SUPPORT
-        int             ret = 0;
-        unsigned int ppa_flags = 0; /* reserved for now */
-#endif /* INF_PPA_SUPPORT */
+	PRTMP_ADAPTER pAd;
+	pAd = (RTMP_ADAPTER *)pAdSrc;
 
-	pAd = pAd; /* avoid compile warning */
+	ASSERT(pRxPkt);
+	MEM_DBG_PKT_FREE_INC(pRxPkt);
 
-	MEM_DBG_PKT_FREE_INC(pPacket);
-
-
-	ASSERT(pPacket);
-
-/*	pRxPkt = RTPKT_TO_OSPKT(pPacket); */
-	pRxPkt = pPacket;
 #ifdef CONFIG_AP_SUPPORT
 #ifdef APCLI_SUPPORT
 #ifdef P2P_SUPPORT
@@ -555,10 +544,8 @@ void announce_802_3_packet(
     /* Push up the protocol stack */
 #ifdef CONFIG_AP_SUPPORT
 #if defined(PLATFORM_BL2348) || defined(PLATFORM_BL23570)
-
 {
 	extern int (*pToUpperLayerPktSent)(PNDIS_PACKET *pSkb);
-/*	pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev); */
 	RtmpOsPktProtocolAssign(pRxPkt);
 	pToUpperLayerPktSent(pRxPkt);
 	return;
@@ -571,19 +558,13 @@ void announce_802_3_packet(
 	return;
 #endif /* IKANOS_VX_1X0 */
 
-
-	/* mark for bridge fast path, 2009/06/22 */
-	/* pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev); */
-
 #ifdef INF_PPA_SUPPORT
 	if (ppa_hook_directpath_send_fn && pAd->PPAEnable==TRUE ) 
 	{
 		RtmpOsPktInfPpaSend(pRxPkt);
-
 		pRxPkt=NULL;
 		return;
-
-	}	  	
+	}
 #endif /* INF_PPA_SUPPORT */
 
 #ifdef RTMP_RBUS_SUPPORT

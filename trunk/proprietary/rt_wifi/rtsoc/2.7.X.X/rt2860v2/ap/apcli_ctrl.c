@@ -1336,7 +1336,7 @@ static VOID ApCliCtrlPeerDeAssocReqAction(
 			{
 				RTMPCancelTimer(&pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[index].ApCliAuthTimer, &Cancelled);
 				RTMPCancelTimer(&pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[index].ApCliAssocTimer, &Cancelled);
-				if (pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].CliValid)
+				if (pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[index].CliValid)
 					ApCliLinkDown(pAd, (64 + MAX_EXT_MAC_ADDR_SIZE*ifIndex + index));
 				pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[index].CliValid = FALSE;
 				pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[index].CliEnable = FALSE;

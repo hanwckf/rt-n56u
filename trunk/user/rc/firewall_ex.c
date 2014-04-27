@@ -925,7 +925,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 		}
 		
 		/* Accept to VPN client */
-		if (i_vpnc_enable && i_vpnc_sfw == 0) {
+		if (i_vpnc_enable && i_vpnc_sfw != 1) {
 #if defined(APP_OPENVPN)
 			if (i_vpnc_type == 2) {
 				if (nvram_get_int("vpnc_ov_mode") == 1)
@@ -1011,7 +1011,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	}
 
 	/* Accept via VPN client */
-	if (is_fw_enabled && i_vpnc_enable && i_vpnc_sfw == 0) {
+	if (is_fw_enabled && i_vpnc_enable && i_vpnc_sfw != 1) {
 #if defined(APP_OPENVPN)
 		if (i_vpnc_type == 2) {
 			if (nvram_get_int("vpnc_ov_mode") == 1)
@@ -1609,7 +1609,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 {
 	FILE *fp;
 	int wport, lport, is_nat_enabled, is_fw_enabled, is_use_dmz, use_battlenet;
-	int i_vpns_enable, i_vpnc_enable, i_vpns_type, i_vpnc_type, i_http_proto;
+	int i_vpns_enable, i_vpnc_enable, i_vpns_type, i_vpnc_type, i_vpnc_sfw, i_http_proto;
 	char dmz_ip[32], lan_class[32];
 	char *dtype, *wanx_ipaddr = NULL;
 	const char *ipt_file = "/tmp/ipt_nat.rules";
@@ -1621,6 +1621,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 	i_vpnc_enable = nvram_get_int("vpnc_enable");
 	i_vpns_type = nvram_get_int("vpns_type");
 	i_vpnc_type = nvram_get_int("vpnc_type");
+	i_vpnc_sfw = nvram_get_int("vpnc_sfw");
 
 	// VSERVER chain
 	dtype = "VSERVER";
@@ -1686,7 +1687,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", nvram_safe_get("wan0_ifname"), lan_class, wanx_ipaddr);
 		
 		/* masquerade vpn client */
-		if (i_vpnc_enable) {
+		if (i_vpnc_enable && i_vpnc_sfw != 2) {
 #if defined(APP_OPENVPN)
 			if (i_vpnc_type == 2) {
 				if (nvram_get_int("vpnc_ov_mode") == 1)
@@ -1700,7 +1701,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 			}
 		}
 		
-		// masquerade lan to lan (NAT loopback)
+		/* masquerade lan to lan (NAT loopback) */
 		if (nvram_match("nf_nat_loop", "1"))
 			fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n", lan_if, lan_class, lan_class, lan_ip);
 		
@@ -1885,7 +1886,7 @@ ipt_nat_default(void)
 	if (is_nat_enabled) {
 		/* use SNAT instead of MASQUERADE (more fast) */
 		
-		// masquerade lan to lan (NAT loopback)
+		/* masquerade lan to lan (NAT loopback) */
 		if (nvram_match("nf_nat_loop", "1")) {
 			lan_ip = nvram_safe_get("lan_ipaddr");
 			ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);

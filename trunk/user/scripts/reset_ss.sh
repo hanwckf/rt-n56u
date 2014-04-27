@@ -20,8 +20,6 @@ echo 64       > /proc/sys/net/unix/max_dgram_qlen
 
 # igmp
 echo 30       > /proc/sys/net/ipv4/igmp_max_memberships
-echo 2        > /proc/sys/net/ipv4/conf/all/force_igmp_version
-echo 2        > /proc/sys/net/ipv4/conf/default/force_igmp_version
 
 # arp
 echo 1        > /proc/sys/net/ipv4/conf/all/arp_filter

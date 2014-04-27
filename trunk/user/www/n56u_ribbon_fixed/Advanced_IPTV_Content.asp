@@ -320,6 +320,16 @@ function on_xupnpd_link(){
                                                 </select>
                                             </td>
                                         </tr>
+                                        <tr>
+                                            <th><#IPTVIGMP#></th>
+                                            <td colspan="2">
+                                                <select name="force_igmp" class="input">
+                                                    <option value="0" <% nvram_match_x("", "force_igmp", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "force_igmp", "1", "selected"); %>>IGMPv1</option>
+                                                    <option value="2" <% nvram_match_x("", "force_igmp", "2", "selected"); %>>IGMPv2 (*)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
                                     </table>
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">

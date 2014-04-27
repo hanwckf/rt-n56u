@@ -682,6 +682,7 @@ start_wan(int is_first_run)
 		if (unit == 0)
 		{
 			set_ipv4_forward();
+			set_force_igmp_mld();
 			set_pppoe_passthrough();
 		}
 		

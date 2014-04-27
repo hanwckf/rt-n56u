@@ -368,8 +368,11 @@ void convert_asus_values(int skipflag)
 
 void restart_all_sysctl(void)
 {
-	set_pppoe_passthrough();
-	
+	if (!get_ap_mode()) {
+		set_force_igmp_mld();
+		set_pppoe_passthrough();
+	}
+
 	set_pagecache_reclaim();
 }
 

@@ -721,11 +721,42 @@ void set_ipv4_forward(void)
 	fput_int("/proc/sys/net/ipv4/ip_forward", 1);
 }
 
+void set_force_igmp_mld(void)
+{
+	char tmp[64];
+	char *ifname = get_man_ifname(0);
+	int force_value;
+
+	force_value = nvram_safe_get_int("force_igmp", 2, 0, 2);
+
+	sprintf(tmp, "/proc/sys/net/%s/conf/%s/%s", "ipv4", "all", "force_igmp_version");
+	fput_int(tmp, force_value);
+
+	sprintf(tmp, "/proc/sys/net/%s/conf/%s/%s", "ipv4", ifname, "force_igmp_version");
+	fput_int(tmp, force_value);
+
+	sprintf(tmp, "/proc/sys/net/%s/conf/%s/%s", "ipv4", IFNAME_BR, "force_igmp_version");
+	fput_int(tmp, force_value);
+
+#if defined (USE_IPV6)
+	force_value = nvram_safe_get_int("force_mld", 0, 0, 1);
+
+	sprintf(tmp, "/proc/sys/net/%s/conf/%s/%s", "ipv6", "all", "force_mld_version");
+	fput_int(tmp, force_value);
+
+	sprintf(tmp, "/proc/sys/net/%s/conf/%s/%s", "ipv6", ifname, "force_mld_version");
+	fput_int(tmp, force_value);
+
+	sprintf(tmp, "/proc/sys/net/%s/conf/%s/%s", "ipv6", IFNAME_BR, "force_mld_version");
+	fput_int(tmp, force_value);
+#endif
+}
+
 void set_pppoe_passthrough(void)
 {
 	char pthrough[32];
 
-	if (nvram_match("fw_pt_pppoe", "1") && !get_ap_mode())
+	if (nvram_match("fw_pt_pppoe", "1"))
 		sprintf(pthrough, "%s,%s\n", IFNAME_BR, get_man_ifname(0));
 	else
 		strcpy(pthrough, "null,null\n");

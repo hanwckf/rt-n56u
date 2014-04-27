@@ -310,6 +310,7 @@ IPTVMulticast=Multicast traffic
 IPTVTTL=TTL correction for multicast packets?
 IPTVXUA=eXtensible UPnP agent (xupnpd), Web port:
 IPTVXExt=Use external udpxy for xupnpd?
+IPTVIGMP=Force IGMP protocol version:
 Switch_desc=Physical WAN and LAN Ethernet ports configuration on internal switch.
 SwitchBase=Base settings
 SwitchJumbo=Accept Jumbo frames between ports:

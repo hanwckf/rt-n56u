@@ -393,6 +393,10 @@
 			{"lan_dns2", "", NULL, RESTART_LAN},
 			{"lan_stp", "", NULL, RESTART_LAN},
 			{"lan_domain", "", NULL, RESTART_DHCPD},
+			{"force_igmp", "", NULL, RESTART_SYSCTL},
+#if defined (USE_IPV6)
+			{"force_mld", "", NULL, RESTART_SYSCTL},
+#endif
 			{"udpxy_enable_x", "", NULL, RESTART_IPTV},
 			{"xupnpd_enable_x", "", NULL, RESTART_IPTV},
 			{"xupnpd_udpxy", "", NULL, RESTART_IPTV},

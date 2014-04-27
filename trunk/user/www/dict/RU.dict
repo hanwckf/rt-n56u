@@ -310,6 +310,7 @@ IPTVMulticast=Multicast трафик
 IPTVTTL=Корректировать TTL для Multicast пакетов?
 IPTVXUA=eXtensible UPnP агент (xUPNPd), Веб-порт:
 IPTVXExt=Подключать внешний udpxy для xUPNPd?
+IPTVIGMP=Форсирование версии протокола IGMP:
 Switch_desc=Настройка физических WAN и LAN Ethernet портов встроенного свитча.
 SwitchBase=Основные параметры
 SwitchJumbo=Пропуск больших фреймов между портами:

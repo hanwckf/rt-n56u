@@ -157,6 +157,10 @@ void hwnat_load(void);
 void hwnat_configure(void);
 void reload_nat_modules(void);
 void restart_firewall(void);
+void set_ipv4_forward(void);
+void set_force_igmp_mld(void);
+void set_pppoe_passthrough(void);
+void disable_all_passthrough(void);
 in_addr_t get_ipv4_addr(char* ifname);
 
 /* net_lan.c */
@@ -235,9 +239,6 @@ int start_zcip_viptv(const char *man_ifname);
 /* net_ppp.c */
 int start_pppd(char *prefix);
 int safe_start_xl2tpd(void);
-void set_ipv4_forward(void);
-void set_pppoe_passthrough(void);
-void disable_all_passthrough(void);
 int ipup_main(int argc, char **argv);
 int ipdown_main(int argc, char **argv);
 int ppp_ifunit(char *ifname);

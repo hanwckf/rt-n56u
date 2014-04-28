@@ -1062,7 +1062,7 @@ int write_smb_conf(void)
 	fprintf(fp, "max log size = 5\n");
 	
 	/* share mode */
-	if (i_smb_mode == 1) {
+	if (i_smb_mode == 1 || i_smb_mode == 3) {
 		char *rootnm = nvram_safe_get("http_username");
 		if (!(*rootnm)) rootnm = "admin";
 		
@@ -1131,7 +1131,7 @@ int write_smb_conf(void)
 				mount_folder = strrchr(follow_partition->mount_point, '/')+1;
 				
 				fprintf(fp, "[%s]\n", mount_folder);
-				fprintf(fp, "comment = %s's %s\n", follow_disk->tag, mount_folder);//*/
+				fprintf(fp, "comment = %s's %s\n", follow_disk->tag, mount_folder);
 				fprintf(fp, "path = %s\n", follow_partition->mount_point);
 				fprintf(fp, "guest ok = yes\n");
 				fprintf(fp, "writeable = yes\n");
@@ -1141,12 +1141,23 @@ int write_smb_conf(void)
 				fprintf(fp, "map hidden = no\n");
 				fprintf(fp, "map read only = no\n");
 				fprintf(fp, "map system = no\n");
-				fprintf(fp, "store dos attributes = yes\n");
-				fprintf(fp, "\n");
+				fprintf(fp, "store dos attributes = yes\n\n");
 			}
 		}
-	}
-	else {
+	} else if (i_smb_mode == 3) {
+		fprintf(fp, "[%s]\n", "Media");
+		fprintf(fp, "comment = %s\n", "Root share for all media");
+		fprintf(fp, "path = %s\n", POOL_MOUNT_ROOT);
+		fprintf(fp, "guest ok = yes\n");
+		fprintf(fp, "writeable = yes\n");
+		fprintf(fp, "directory mode = 0777\n");
+		fprintf(fp, "create mask = 0777\n");
+		fprintf(fp, "map archive = no\n");
+		fprintf(fp, "map hidden = no\n");
+		fprintf(fp, "map read only = no\n");
+		fprintf(fp, "map system = no\n");
+		fprintf(fp, "store dos attributes = yes\n\n");
+	} else {
 		int n, acc_num = 0, sh_num=0;
 		char **account_list;
 		
@@ -1269,7 +1280,7 @@ int write_smb_conf(void)
 	}
 	
 confpage:
-	if(fp != NULL)
+	if(fp)
 		fclose(fp);
 	free_disk_data(disks_info);
 	return 0;

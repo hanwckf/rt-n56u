@@ -115,6 +115,7 @@ function showAccountMenu(){
 function showAccountControl(){
 	switch(this.AM_to_cifs){
 		case 1:
+		case 3:
 			$("accountMask").style.display = "block";
 			break;
 		case 2:

@@ -808,9 +808,16 @@ int del_account(const char *const account) {
 	}
 	
 	// 3. change to the share mode when no account
-	if (acc_num <= 0) {
-		nvram_set_int("st_samba_mode", 1);
-		nvram_set_int("st_ftp_mode", 1);
+	if (acc_num < 1) {
+		int i_mode;
+		
+		i_mode = nvram_get_int("st_samba_mode");
+		if (i_mode != 1 && i_mode != 3)
+			nvram_set_int("st_samba_mode", 1);
+		
+		i_mode = nvram_get_int("st_ftp_mode");
+		if (i_mode != 1 && i_mode != 3)
+			nvram_set_int("st_ftp_mode", 1);
 	}
 	
 	nvram_commit_safe();

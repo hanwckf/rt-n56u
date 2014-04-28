@@ -725,13 +725,6 @@ lan_up_auto(char *lan_ifname)
 		fclose(fp);
 	}
 
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-	if (!pids("detect_wan"))
-	{
-		eval("detect_wan");
-	}
-#endif
-
 	/* sync time */
 	notify_watchdog_time();
 

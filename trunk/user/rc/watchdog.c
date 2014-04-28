@@ -102,7 +102,6 @@ alarmtimer(unsigned long sec, unsigned long usec)
 static int
 httpd_check_v2()
 {
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
 	int i, httpd_live, http_port;
 	FILE *fp = NULL;
 	char line[80];
@@ -178,11 +177,7 @@ httpd_check_v2()
 	}
 	
 	return 1;
-#else
-	return 1;
-#endif
 }
-
 #endif
 
 static void 

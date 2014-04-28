@@ -149,6 +149,7 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_tty
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_wdm
 	cd $(INSTALLDIR)/sbin && ln -sf rc zerocd
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_restart
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle_off
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle_on
@@ -158,6 +159,7 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_guest_disable
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_eeprom_mac
 ifneq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-N14U")
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_restart
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_toggle
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_toggle_off
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_toggle_on

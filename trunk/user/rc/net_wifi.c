@@ -66,8 +66,7 @@ mlme_radio_wl(int is_on)
 
 	doSystem("iwpriv %s set RadioOn=%d", ifname_ap, (is_on) ? 1 : 0);
 	if (is_on) {
-		i_val = nvram_get_int("wl_TxPower");
-		if (i_val < 0 || i_val > 100) i_val = 100;
+		i_val = nvram_safe_get_int("wl_TxPower", 100, 0, 100);
 		doSystem("iwpriv %s set TxPower=%d", ifname_ap, i_val);
 	}
 #endif
@@ -82,8 +81,7 @@ mlme_radio_rt(int is_on)
 
 	doSystem("iwpriv %s set RadioOn=%d", ifname_ap, (is_on) ? 1 : 0);
 	if (is_on) {
-		i_val = nvram_get_int("rt_TxPower");
-		if (i_val < 0 || i_val > 100) i_val = 100;
+		i_val = nvram_safe_get_int("rt_TxPower", 100, 0, 100);
 		doSystem("iwpriv %s set TxPower=%d", ifname_ap, i_val);
 	}
 

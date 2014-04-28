@@ -1230,6 +1230,12 @@ main(int argc, char **argv)
 			ret = get_wireless_mac(0);
 		}
 	}
+	else if (!strcmp(base, "radio2_restart")) {
+		int radio_on = get_enabled_radio_rt();
+		if (radio_on)
+			radio_on = is_radio_allowed_rt();
+		restart_wifi_rt(radio_on, 1);
+	}
 #if BOARD_HAS_5G_RADIO
 	else if (!strcmp(base, "radio5_toggle")) {
 		manual_toggle_radio_wl(-1);
@@ -1259,6 +1265,12 @@ main(int argc, char **argv)
 			printf("Usage: %s XX:XX:XX:XX:XX:XX\n\n", base);
 			ret = get_wireless_mac(1);
 		}
+	}
+	else if (!strcmp(base, "radio5_restart")) {
+		int radio_on = get_enabled_radio_wl();
+		if (radio_on)
+			radio_on = is_radio_allowed_wl();
+		restart_wifi_wl(radio_on, 1);
 	}
 #endif
 #if (BOARD_NUM_USB_PORTS > 0)

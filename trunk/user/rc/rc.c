@@ -162,9 +162,7 @@ init_gpio_leds_buttons(void)
 #endif
 
 #if defined (BOARD_GPIO_LED_WIFI)
-#if !defined (CONFIG_RALINK_MT7620)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_WIFI, 1);
-#endif
 	LED_CONTROL(BOARD_GPIO_LED_WIFI, LED_ON);
 #endif
 
@@ -446,8 +444,10 @@ LED_CONTROL(int led, int flag)
 	}
 
 #if defined (BOARD_GPIO_LED_WIFI) && defined (CONFIG_RALINK_MT7620)
-	if (led == BOARD_GPIO_LED_WIFI)
+	if (led == BOARD_GPIO_LED_WIFI) {
 		cpu_gpio_mode_set_bit(13, (flag == LED_OFF) ? 1 : 0); // change GPIO Mode for WLED
+		cpu_gpio_set_pin(led, LED_OFF); // always set GPIO to high
+	}
 	else
 #endif
 	cpu_gpio_set_pin(led, flag);

@@ -526,19 +526,19 @@ int show_mib_counters(unsigned int cmd)
 		}
 		
 		printf("%s MIB counters:\n"
-			"  TxGoodOctets: %u\n"
+			"  TxGoodOctets: %llu\n"
 			"  TxGoodFrames: %u\n"
 			"  TxBadOctets: %u\n"
 			"  TxBadFrames: %u\n"
 			"  TxDropFrames: %u\n"
-			"  RxGoodOctets: %u\n"
+			"  RxGoodOctets: %llu\n"
 			"  RxGoodFrames: %u\n"
 			"  RxBadOctets: %u\n"
 			"  RxBadFrames: %u\n"
 			"  RxDropFramesFilter: %u\n"
+			"  RxDropFramesLimiter: %u\n"
 			"  RxDropFramesIngress: %u\n"
 			"  RxDropFramesControl: %u\n"
-			"  RxDropFramesLimiter: %u\n"
 			,
 			portname,
 			mibc.TxGoodOctets,
@@ -551,9 +551,9 @@ int show_mib_counters(unsigned int cmd)
 			mibc.RxBadOctets,
 			mibc.RxBadFrames,
 			mibc.RxDropFramesFilter,
+			mibc.RxDropFramesLimiter,
 			mibc.RxDropFramesIngress,
-			mibc.RxDropFramesControl,
-			mibc.RxDropFramesLimiter
+			mibc.RxDropFramesControl
 			);
 	}
 

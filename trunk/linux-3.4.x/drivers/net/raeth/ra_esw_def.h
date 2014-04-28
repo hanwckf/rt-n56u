@@ -116,10 +116,28 @@ typedef struct vlan_entry_s
 	u32 unused2:24;
 } vlan_entry_t;
 
+typedef struct mib_threshold_s
+{
+	u32 tx_goct_thr;
+	u32 rx_goct_thr;
+	u16 tx_good_thr;
+	u16 rx_good_thr;
+	u16 tx_bad_thr;
+	u16 rx_bad_thr;
+	u16 rx_arl_drop_thr;
+	u16 rx_filter_thr;
+
+} mib_threshold_t;
+
+typedef union _ULARGE_INTEGER {
+	struct {
+		uint32_t LowPart;
+		uint32_t HighPart;
+	} u;
+	uint64_t QuadPart;
+} ULARGE_INTEGER;
+
 ////////////////////////////////////////////////////////////////////////////////////
-
-
-
 
 #endif
 

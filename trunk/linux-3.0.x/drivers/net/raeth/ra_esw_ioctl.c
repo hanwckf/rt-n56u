@@ -68,6 +68,8 @@ static atomic_t g_port_link_changed              = ATOMIC_INIT(0);
 
 static bwan_member_t g_bwan_member[SWAPI_WAN_BRIDGE_NUM][ESW_PHY_ID_MAX+1];
 
+static mib_threshold_t g_mib_thr[ESW_PORT_ID_MAX+1];
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 const char *g_port_desc_cpu   = "CPU";
@@ -993,26 +995,42 @@ static u32 esw_status_link_changed(void)
 
 static void esw_status_mib_port(u32 port_id, arl_mib_counters_t *mibc)
 {
-	u32 reg_tgpc  = _ESW_REG(REG_ESW_MIB_TGPC_P0 + 0x100*port_id);
-	u32 reg_rgpc  = _ESW_REG(REG_ESW_MIB_RGPC_P0 + 0x100*port_id);
-	u32 reg_repc1 = _ESW_REG(REG_ESW_MIB_REPC1_P0 + 0x100*port_id);
-	u32 reg_repc2 = _ESW_REG(REG_ESW_MIB_REPC2_P0 + 0x100*port_id);
+	ULARGE_INTEGER rx_goct, tx_goct;
+	u32 reg_tgpc, reg_rgpc, reg_repc1, reg_repc2;
 
-	mibc->TxGoodOctets    = _ESW_REG(REG_ESW_MIB_TGOC_P0 + 0x100*port_id);
-	mibc->TxGoodFrames    = (reg_tgpc & 0xffff);
-	mibc->TxBadOctets     = _ESW_REG(REG_ESW_MIB_TBOC_P0 + 0x100*port_id);
-	mibc->TxBadFrames     = (reg_tgpc >> 16);
-	mibc->TxDropFrames    = (_ESW_REG(REG_ESW_MIB_TEPC_P0 + 0x100*port_id)) & 0xffff;
+	tx_goct.u.LowPart  = _ESW_REG(REG_ESW_MIB_TGOC_P0 + 0x100*port_id);
+	tx_goct.u.HighPart = g_mib_thr[port_id].tx_goct_thr;
 
-	mibc->RxGoodOctets    = _ESW_REG(REG_ESW_MIB_RGOC_P0 + 0x100*port_id);
-	mibc->RxGoodFrames    = (reg_rgpc & 0xffff);
-	mibc->RxBadOctets     = _ESW_REG(REG_ESW_MIB_RBOC_P0 + 0x100*port_id);
-	mibc->RxBadFrames     = (reg_rgpc >> 16);
+	rx_goct.u.LowPart  = _ESW_REG(REG_ESW_MIB_RGOC_P0 + 0x100*port_id);
+	rx_goct.u.HighPart = g_mib_thr[port_id].rx_goct_thr;
 
-	mibc->RxDropFramesFilter  = (reg_repc2 & 0xffff);
-	mibc->RxDropFramesIngress = (reg_repc1 & 0xffff);
-	mibc->RxDropFramesControl = (reg_repc1 >> 16);
-	mibc->RxDropFramesLimiter = (reg_repc2 >> 16);
+	reg_tgpc  = _ESW_REG(REG_ESW_MIB_TGPC_P0 + 0x100*port_id);
+	reg_rgpc  = _ESW_REG(REG_ESW_MIB_RGPC_P0 + 0x100*port_id);
+	reg_repc1 = _ESW_REG(REG_ESW_MIB_REPC1_P0 + 0x100*port_id);
+	reg_repc2 = _ESW_REG(REG_ESW_MIB_REPC2_P0 + 0x100*port_id);
+
+	mibc->TxGoodOctets         = tx_goct.QuadPart;
+	mibc->TxGoodFrames         = (reg_tgpc & 0xffff);
+	mibc->TxBadOctets          = _ESW_REG(REG_ESW_MIB_TBOC_P0 + 0x100*port_id);
+	mibc->TxBadFrames          = (reg_tgpc >> 16);
+	mibc->TxDropFrames         = (_ESW_REG(REG_ESW_MIB_TEPC_P0 + 0x100*port_id)) & 0xffff;
+
+	mibc->RxGoodOctets         = rx_goct.QuadPart;
+	mibc->RxGoodFrames         = (reg_rgpc & 0xffff);
+	mibc->RxBadOctets          = _ESW_REG(REG_ESW_MIB_RBOC_P0 + 0x100*port_id);
+	mibc->RxBadFrames          = (reg_rgpc >> 16);
+
+	mibc->RxDropFramesFilter   = (reg_repc2 & 0xffff);
+	mibc->RxDropFramesLimiter  = (reg_repc2 >> 16);
+	mibc->RxDropFramesIngress  = (reg_repc1 & 0xffff);
+	mibc->RxDropFramesControl  = (reg_repc1 >> 16);
+
+	mibc->TxGoodFrames        |= ((u32)g_mib_thr[port_id].tx_good_thr) << 16;
+	mibc->RxGoodFrames        |= ((u32)g_mib_thr[port_id].rx_good_thr) << 16;
+	mibc->TxBadFrames         |= ((u32)g_mib_thr[port_id].tx_bad_thr) << 16;
+	mibc->RxBadFrames         |= ((u32)g_mib_thr[port_id].rx_bad_thr) << 16;
+	mibc->RxDropFramesFilter  |= ((u32)g_mib_thr[port_id].rx_filter_thr) << 16;
+	mibc->RxDropFramesLimiter |= ((u32)g_mib_thr[port_id].rx_arl_drop_thr) << 16;
 }
 
 static void change_ports_power(u32 power_on, u32 port_mask)
@@ -1322,38 +1340,93 @@ static void esw_link_status_changed(u32 port_id)
 
 irqreturn_t esw_interrupt(int irq, void *dev_id)
 {
-	u32 reg_int_val;
+	u32 val_isr;
 
-	reg_int_val = sysRegRead(ESW_ISR);
-	if (!reg_int_val)
+	val_isr = _ESW_REG(REG_ESW_ISR);
+	if (!val_isr)
 		return IRQ_NONE;
 
-	sysRegWrite(ESW_ISR, reg_int_val);
+	_ESW_REG(REG_ESW_ISR) = val_isr;
 
-	if (reg_int_val & ACL_INT) {
-		unsigned int acl_int_val = sysRegRead(ESW_AISR);
-		sysRegWrite(ESW_AISR, acl_int_val);
+	if (val_isr & ACL_INT) {
+		u32 val_aisr = _ESW_REG(REG_ESW_AISR);
+		_ESW_REG(REG_ESW_AISR) = val_aisr;
 	}
 
-	if (reg_int_val & P5_LINK_CH)
-		esw_link_status_changed(5);
+	if (val_isr & MIB_INT) {
+		u32 i, val_mibs;
+		for (i = 0; i <= ESW_PORT_ID_MAX; i++) {
+			val_mibs = _ESW_REG(REG_ESW_MIB_INTS_P0 + 0x100*i);
+			if (val_mibs) {
+				_ESW_REG(REG_ESW_MIB_INTS_P0 + 0x100*i) = val_mibs;
+				
+				if (val_mibs & MSK_TX_GOOD_CNT)
+					g_mib_thr[i].tx_good_thr++;
+				if (val_mibs & MSK_RX_GOOD_CNT)
+					g_mib_thr[i].rx_good_thr++;
+				if (val_mibs & MSK_TX_GOCT_CNT)
+					g_mib_thr[i].tx_goct_thr++;
+				if (val_mibs & MSK_RX_GOCT_CNT)
+					g_mib_thr[i].rx_goct_thr++;
+				if (val_mibs & MSK_TX_BAD_CNT)
+					g_mib_thr[i].tx_bad_thr++;
+				if (val_mibs & MSK_RX_BAD_CNT)
+					g_mib_thr[i].rx_bad_thr++;
+				if (val_mibs & MSK_RX_FILTER_CNT)
+					g_mib_thr[i].rx_filter_thr++;
+				if (val_mibs & MSK_RX_ARL_DROP_CNT)
+					g_mib_thr[i].rx_arl_drop_thr++;
+			}
+		}
+	}
 
-	if (reg_int_val & P4_LINK_CH)
+	if (val_isr & P4_LINK_CHG)
 		esw_link_status_changed(4);
 
-	if (reg_int_val & P3_LINK_CH)
+	if (val_isr & P3_LINK_CHG)
 		esw_link_status_changed(3);
 
-	if (reg_int_val & P2_LINK_CH)
+	if (val_isr & P2_LINK_CHG)
 		esw_link_status_changed(2);
 
-	if (reg_int_val & P1_LINK_CH)
+	if (val_isr & P1_LINK_CHG)
 		esw_link_status_changed(1);
 
-	if (reg_int_val & P0_LINK_CH)
+	if (val_isr & P0_LINK_CHG)
 		esw_link_status_changed(0);
 
 	return IRQ_HANDLED;
+}
+
+void esw_interrupt_init(void)
+{
+	u32 i, reg_val;
+
+	memset(g_mib_thr, 0, sizeof(g_mib_thr));
+
+	/* clear pending MIB int bits */
+	for (i = 0; i <= ESW_PORT_ID_MAX; i++) {
+		reg_val = _ESW_REG(REG_ESW_MIB_INTS_P0 + 0x100*i);
+		if (reg_val)
+			_ESW_REG(REG_ESW_MIB_INTS_P0 + 0x100*i) = reg_val;
+	}
+
+	/* clear pending ACL int bits */
+	reg_val = _ESW_REG(REG_ESW_AISR);
+	if (reg_val)
+		_ESW_REG(REG_ESW_AISR) = reg_val;
+
+	/* clear pending int bits */
+	reg_val = _ESW_REG(REG_ESW_ISR);
+	if (reg_val)
+		_ESW_REG(REG_ESW_ISR) = reg_val;
+
+	/* enable MIB int mask */
+	for (i = 0; i <= ESW_PORT_ID_MAX; i++)
+		_ESW_REG(REG_ESW_MIB_INTM_P0 + 0x100*i) &= ~(ESW_MIB_INT_ALL);
+
+	/* enable int mask */
+	_ESW_REG(REG_ESW_IMR) &= ~(ESW_INT_ALL);
 }
 
 int esw_control_post_init(void)
@@ -1653,17 +1726,27 @@ int mtk_esw_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsi
 
 int esw_get_traffic_port_wan(struct rtnl_link_stats64 *stats)
 {
-	u32 TxGoodOctetsCount = _ESW_REG(REG_ESW_MIB_TGOC_P0 + 0x100*WAN_PORT_X);
-	u32 TxGoodFramesCount = (_ESW_REG(REG_ESW_MIB_TGPC_P0 + 0x100*WAN_PORT_X) & 0xffff);
+	ULARGE_INTEGER rx_goct, tx_goct;
 
-	u32 RxGoodOctetsCount = _ESW_REG(REG_ESW_MIB_RGOC_P0 + 0x100*WAN_PORT_X);
-	u32 RxGoodFramesCount = (_ESW_REG(REG_ESW_MIB_RGPC_P0 + 0x100*WAN_PORT_X) & 0xffff);
+	rx_goct.u.LowPart  = _ESW_REG(REG_ESW_MIB_RGOC_P0 + 0x100*WAN_PORT_X);
+	rx_goct.u.HighPart = g_mib_thr[WAN_PORT_X].rx_goct_thr;
 
-	stats->rx_bytes = (RxGoodOctetsCount - (RxGoodFramesCount * 4)); // cut FCS
-	stats->rx_packets = RxGoodFramesCount;
+	tx_goct.u.LowPart  = _ESW_REG(REG_ESW_MIB_TGOC_P0 + 0x100*WAN_PORT_X);
+	tx_goct.u.HighPart = g_mib_thr[WAN_PORT_X].tx_goct_thr;
 
-	stats->tx_bytes = (TxGoodOctetsCount - (TxGoodFramesCount * 4)); // cut FCS
-	stats->tx_packets = TxGoodFramesCount;
+	stats->rx_packets  = (_ESW_REG(REG_ESW_MIB_RGPC_P0 + 0x100*WAN_PORT_X) & 0xffff);
+	stats->rx_packets |= ((u32)g_mib_thr[WAN_PORT_X].rx_good_thr) << 16;
+
+	stats->tx_packets  = (_ESW_REG(REG_ESW_MIB_TGPC_P0 + 0x100*WAN_PORT_X) & 0xffff);
+	stats->tx_packets |= ((u32)g_mib_thr[WAN_PORT_X].tx_good_thr) << 16;
+
+	stats->rx_bytes = rx_goct.QuadPart;
+	if (stats->rx_packets)
+		stats->rx_bytes -= (stats->rx_packets * 4); // cut FCS
+
+	stats->tx_bytes = tx_goct.QuadPart;
+	if (stats->tx_packets)
+		stats->tx_bytes -= (stats->tx_packets * 4); // cut FCS
 
 	return 0;
 }

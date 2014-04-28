@@ -13,8 +13,8 @@
 #define PHYS_TO_K1(physaddr)		KSEG1ADDR(physaddr)
 #define phys_to_bus(a)			(a & 0x1FFFFFFF)
 
-#define sysRegRead(phys)		(*(volatile unsigned int *)PHYS_TO_K1(phys))
-#define sysRegWrite(phys, val)		((*(volatile unsigned int *)PHYS_TO_K1(phys)) = (val))
+#define sysRegRead(phys)		(*(volatile u32 *)PHYS_TO_K1(phys))
+#define sysRegWrite(phys, val)		((*(volatile u32 *)PHYS_TO_K1(phys)) = (val))
 
 #define u_long				unsigned long
 #define u32				unsigned int
@@ -74,52 +74,6 @@
 #define RX_DLY_INT			BIT(0)
 #endif
 
-/*
- * SW_INT_STATUS
- */
-#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
-#define PORT0_QUEUE_FULL		BIT(14) //port0 queue full
-#define PORT1_QUEUE_FULL		BIT(15) //port1 queue full
-#define PORT2_QUEUE_FULL		BIT(16) //port2 queue full
-#define PORT3_QUEUE_FULL		BIT(17) //port3 queue full
-#define PORT4_QUEUE_FULL		BIT(18) //port4 queue full
-#define PORT5_QUEUE_FULL		BIT(19) //port5 queue full
-#define PORT6_QUEUE_FULL		BIT(20) //port6 queue full
-#define SHARED_QUEUE_FULL		BIT(23) //shared queue full
-#define QUEUE_EXHAUSTED			BIT(24) //global queue is used up and all packets are dropped
-#define BC_STROM			BIT(25) //the device is undergoing broadcast storm
-#define PORT_ST_CHG			BIT(26) //Port status change
-#define UNSECURED_ALERT			BIT(27) //Intruder alert
-#define ABNORMAL_ALERT			BIT(28) //Abnormal
-
-#define ESW_ISR				(RALINK_ETH_SW_BASE + 0x00)
-#define ESW_IMR				(RALINK_ETH_SW_BASE + 0x04)
-#define ESW_INT_ALL			(PORT_ST_CHG)
-
-#elif defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
-      defined (CONFIG_RALINK_MT7620)
-
-#define ACL_INT				BIT(15)
-#define P5_LINK_CH			BIT(5)
-#define P4_LINK_CH			BIT(4)
-#define P3_LINK_CH			BIT(3)
-#define P2_LINK_CH			BIT(2)
-#define P1_LINK_CH			BIT(1)
-#define P0_LINK_CH			BIT(0)
-#define ESW_INT_ALL			(P0_LINK_CH | P1_LINK_CH | P2_LINK_CH | P3_LINK_CH | P4_LINK_CH | P5_LINK_CH | ACL_INT)
-
-#define ESW_IMR				(RALINK_ETH_SW_BASE + 0x7000 + 0x8)
-#define ESW_ISR				(RALINK_ETH_SW_BASE + 0x7000 + 0xC)
-#define ESW_AISR			(RALINK_ETH_SW_BASE + 0x8)
-
-#define ESW_PHY_POLLING			(RALINK_ETH_SW_BASE + 0x7000)
-
-#elif defined (CONFIG_RALINK_MT7621)
-
-#define ESW_PHY_POLLING			(RALINK_ETH_SW_BASE + 0x0000)
-
-#endif
-
 /* ESW Registers */
 #define _ESW_REG(x)			(*((volatile u32 *)(RALINK_ETH_SW_BASE + x)))
 
@@ -127,6 +81,7 @@
     defined (CONFIG_RALINK_MT7620)
 
 #define REG_ESW_PFC			0x04
+#define REG_ESW_AISR			0x08
 #define REG_ESW_AGC			0x0C
 #define REG_ESW_MFC			0x10
 #define REG_ESW_VTC			0x14
@@ -168,6 +123,8 @@
 #define REG_ESW_MAC_CKGCR		0x3FF0
 
 #define REG_ESW_MIB_ESR_P0		0x4000
+#define REG_ESW_MIB_INTS_P0		0x4004
+#define REG_ESW_MIB_INTM_P0		0x4008
 #define REG_ESW_MIB_TGPC_P0		0x4010
 #define REG_ESW_MIB_TBOC_P0		0x4014
 #define REG_ESW_MIB_TGOC_P0		0x4018
@@ -179,14 +136,47 @@
 #define REG_ESW_MIB_REPC2_P0		0x4030
 #define REG_ESW_MIB_MIBCNTEN		0x4800
 
+#define REG_ESW_PPSC			0x7000
+#define REG_ESW_IMR			0x7008
+#define REG_ESW_ISR			0x700C
 #define REG_ESW_CPC			0x7010
 #define REG_ESW_GPC1			0x7014
 #define REG_ESW_GPC2			0x701C
 
 #define REG_ESW_MAX			0x7FFFF
 
-#else
+#define ESW_PHY_POLLING			(RALINK_ETH_SW_BASE + REG_ESW_PPSC)
 
+/* ESW interrupt mask */
+#define MIB_INT				BIT(25)
+#define ACL_INT				BIT(24)
+#define P6_LINK_CHG			BIT(6)
+#define P5_LINK_CHG			BIT(5)
+#define P4_LINK_CHG			BIT(4)
+#define P3_LINK_CHG			BIT(3)
+#define P2_LINK_CHG			BIT(2)
+#define P1_LINK_CHG			BIT(1)
+#define P0_LINK_CHG			BIT(0)
+#define ESW_INT_ALL			(P0_LINK_CHG | P1_LINK_CHG | P2_LINK_CHG | P3_LINK_CHG | P4_LINK_CHG | \
+					 ACL_INT | MIB_INT)
+
+#define MSK_RX_FILTER_CNT		BIT(0)
+#define MSK_RX_ARL_DROP_CNT		BIT(1)
+#define MSK_RX_GOCT_CNT			BIT(4)
+#define MSK_RX_GOOD_CNT			BIT(6)
+#define MSK_RX_BAD_CNT			BIT(7)
+#define MSK_TX_GOCT_CNT			BIT(17)
+#define MSK_TX_GOOD_CNT			BIT(19)
+#define MSK_TX_BAD_CNT			BIT(20)
+#define ESW_MIB_INT_ALL			(MSK_RX_FILTER_CNT | MSK_RX_ARL_DROP_CNT | \
+					 MSK_RX_GOCT_CNT | MSK_RX_GOOD_CNT | MSK_RX_BAD_CNT | \
+					 MSK_TX_GOCT_CNT | MSK_TX_GOOD_CNT | MSK_TX_BAD_CNT)
+
+#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
+      defined (CONFIG_RALINK_RT5350)
+
+#define REG_ESW_ISR			0x00
+#define REG_ESW_IMR			0x04
 #define REG_ESW_TABLE_SEARCH		0x24
 #define REG_ESW_TABLE_STATUS0		0x28
 #define REG_ESW_TABLE_STATUS1		0x2C
@@ -204,6 +194,22 @@
 #else //RT305x, RT3350
 #define REG_ESW_MAX			0xFC
 #endif
+
+/* ESW interrupt mask */
+#define PORT0_QUEUE_FULL		BIT(14) //port0 queue full
+#define PORT1_QUEUE_FULL		BIT(15) //port1 queue full
+#define PORT2_QUEUE_FULL		BIT(16) //port2 queue full
+#define PORT3_QUEUE_FULL		BIT(17) //port3 queue full
+#define PORT4_QUEUE_FULL		BIT(18) //port4 queue full
+#define PORT5_QUEUE_FULL		BIT(19) //port5 queue full
+#define PORT6_QUEUE_FULL		BIT(20) //port6 queue full
+#define SHARED_QUEUE_FULL		BIT(23) //shared queue full
+#define QUEUE_EXHAUSTED			BIT(24) //global queue is used up and all packets are dropped
+#define BC_STROM			BIT(25) //the device is undergoing broadcast storm
+#define PORT_ST_CHG			BIT(26) //Port status change
+#define UNSECURED_ALERT			BIT(27) //Intruder alert
+#define ABNORMAL_ALERT			BIT(28) //Abnormal
+#define ESW_INT_ALL			(PORT_ST_CHG)
 
 #endif
 

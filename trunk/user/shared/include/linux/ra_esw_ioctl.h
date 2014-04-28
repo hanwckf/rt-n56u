@@ -191,21 +191,21 @@
 
 typedef struct arl_mib_counters_s
 {
-    uint32_t TxGoodOctets;
-    uint16_t TxGoodFrames;
+    uint64_t TxGoodOctets;
+    uint32_t TxGoodFrames;
     uint32_t TxBadOctets;
-    uint16_t TxBadFrames;
-    uint16_t TxDropFrames;
+    uint32_t TxBadFrames;
+    uint32_t TxDropFrames;
 
-    uint32_t RxGoodOctets;
-    uint16_t RxGoodFrames;
+    uint64_t RxGoodOctets;
+    uint32_t RxGoodFrames;
     uint32_t RxBadOctets;
-    uint16_t RxBadFrames;
+    uint32_t RxBadFrames;
 
-    uint16_t RxDropFramesFilter;
-    uint16_t RxDropFramesIngress;
-    uint16_t RxDropFramesControl;
-    uint16_t RxDropFramesLimiter;
+    uint32_t RxDropFramesFilter;
+    uint32_t RxDropFramesLimiter;
+    uint32_t RxDropFramesIngress;
+    uint32_t RxDropFramesControl;
 
 } arl_mib_counters_t;
 

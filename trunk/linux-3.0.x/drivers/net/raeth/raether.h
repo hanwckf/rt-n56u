@@ -119,6 +119,7 @@ int VirtualIF_ioctl(struct net_device * net_dev, struct ifreq * ifr, int cmd);
 #if defined (CONFIG_RAETH_ESW_CONTROL)
 int  esw_ioctl_init(void);
 void esw_ioctl_uninit(void);
+void esw_interrupt_init(void);
 irqreturn_t esw_interrupt(int irq, void *dev_id);
 #endif
 

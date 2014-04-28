@@ -46,7 +46,7 @@ unsigned int vlan_tx_idx15 = 0xF;
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
 static int hw_offload_csg = 1;
 #if defined (CONFIG_RAETH_SG_DMA_TX)
-static int hw_offload_sgs = 1;
+static int hw_offload_gso = 1;
 #if defined (CONFIG_RAETH_TSO)
 static int hw_offload_tso = 1;
 #endif
@@ -370,7 +370,7 @@ static void forward_config(struct net_device *dev)
 	}
 
 #if defined (CONFIG_RAETH_SG_DMA_TX)
-	if (hw_offload_sgs && hw_offload_csg) {
+	if (hw_offload_gso && hw_offload_csg) {
 		dev->features |= NETIF_F_SG;
 		printk("%s: HW Scatter/Gather TX offload enabled\n", RAETH_DEV_NAME);
 #if defined (CONFIG_RAETH_TSO)
@@ -1265,7 +1265,7 @@ static void fill_dev_features(struct net_device *dev)
 	if (hw_offload_csg)
 		dev->hw_features |= NETIF_F_IP_CSUM; /* Can generate TX checksum TCP/UDP over IPv4 */
 #if defined (CONFIG_RAETH_SG_DMA_TX)
-	if (hw_offload_sgs && hw_offload_csg) {
+	if (hw_offload_gso && hw_offload_csg) {
 		dev->hw_features |= NETIF_F_SG;
 #if defined (CONFIG_RAETH_TSO)
 		if (hw_offload_tso) {
@@ -1354,7 +1354,7 @@ int VirtualIF_open(struct net_device *dev)
 		dev->features &= ~NETIF_F_IP_CSUM;
 
 #if defined (CONFIG_RAETH_SG_DMA_TX)
-	if (hw_offload_sgs && hw_offload_csg) {
+	if (hw_offload_gso && hw_offload_csg) {
 		dev->features |= NETIF_F_SG;
 #if defined (CONFIG_RAETH_TSO)
 		if (hw_offload_tso) {
@@ -1690,9 +1690,8 @@ int ei_open(struct net_device *dev)
 #endif
 
 #if defined (CONFIG_RAETH_ESW_CONTROL)
-	*((volatile u32 *)(RALINK_INTCL_BASE + 0x34)) = (1<<17);
-	*((volatile u32 *)(ESW_ISR)) = ESW_INT_ALL;
-	*((volatile u32 *)(ESW_IMR)) &= ~(ESW_INT_ALL);
+	*((volatile u32 *)(RALINK_INTCL_BASE + 0x34)) = RALINK_INTCTL_ESW;
+	esw_interrupt_init();
 	err = request_irq(SURFBOARDINT_ESW, esw_interrupt, IRQF_DISABLED, "Ralink_ESW", dev);
 #endif
 
@@ -1849,7 +1848,7 @@ int __init raeth_init(void)
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
 		hw_offload_csg = 0;
 #if defined (CONFIG_RAETH_SG_DMA_TX)
-		hw_offload_sgs = 0;
+		hw_offload_gso = 0;
 #if defined (CONFIG_RAETH_TSO)
 		hw_offload_tso = 0;
 #endif

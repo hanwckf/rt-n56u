@@ -74,6 +74,7 @@ extern int		udp_offload;
 extern int		ip6_offload;
 #endif
 static int		ppe_udp_bug = 0;
+static uint32_t		chip_rev_id;
 
 struct FoeEntry		*PpeFoeBase = NULL;
 uint32_t		PpeFoeTblSize = FOE_4TB_SIZ;
@@ -912,18 +913,6 @@ uint32_t PpeSetExtIfNum(struct sk_buff *skb, struct FoeEntry* foe_entry)
 #if defined (CONFIG_HNAT_V2)
 static void PpeSetInfoBlk2(struct _info_blk2 *iblk2, uint32_t fpidx, uint32_t port_mg, uint32_t port_ag)
 {
-#ifdef FORCE_UP_TEST
-	uint32_t reg;
-
-	iblk2->fp = 1;
-	iblk2->up = 7;
-
-	//Replace 802.Q priority by user priority
-	reg = RegRead(RALINK_ETH_SW_BASE + 0x2704);
-	reg |= (0x1 << 11);
-	RegWrite(RALINK_ETH_SW_BASE + 0x2704, reg);
-#endif
-
 #if defined (CONFIG_RALINK_MT7621)
 	if (fpidx == 8 && port_ag == 1) { //LAN traffic
 		iblk2->dp = 1;
@@ -933,6 +922,7 @@ static void PpeSetInfoBlk2(struct _info_blk2 *iblk2, uint32_t fpidx, uint32_t po
 		iblk2->dp = 0; //PDMA (0) or QDMA (5)
 	}
 #elif defined (CONFIG_RALINK_MT7620)
+	/* 6: force to CPU, 8: no force port */
 	iblk2->fpidx = fpidx;
 #endif
 	iblk2->port_mg = port_mg;
@@ -1619,7 +1609,7 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 		return 0;
 #ifdef HWNAT_DEBUG
 	} else if (foe_ai == HIT_UNBIND_RATE_REACH && FOE_ALG(skb) == 1) {
-		if (DebugLevel >= 2) {
+		if (DebugLevel >= 3) {
 			NAT_PRINT ("FOE_ALG=1 (Entry=%d)\n", FOE_ENTRY_NUM(skb));
 		}
 #endif
@@ -2079,9 +2069,6 @@ static int32_t PpeEngStart(void)
 	/* Set PPE Flow Set */
 	PpeSetFoeEbl(1);
 
-	/* Set PPE FOE Hash Mode */
-	PpeSetFoeHashMode(DFL_FOE_HASH_MODE);
-
 #if !defined (CONFIG_HNAT_V2)
 	/* Set default index in policy table */
 	PpeSetPreAclEbl(0);
@@ -2269,9 +2256,9 @@ void PpeSetDstPort(uint32_t Ebl)
 
 uint32_t SetGdmaFwd(uint32_t Ebl)
 {
-#if defined (CONFIG_RALINK_MT7620)
-	uint32_t data = 0;
+	uint32_t data;
 
+#if defined (CONFIG_RALINK_MT7620)
 	data = RegRead(GDM2_FWD_CFG);
 	if (Ebl) {
 		data &= ~0x7777;
@@ -2282,13 +2269,10 @@ uint32_t SetGdmaFwd(uint32_t Ebl)
 	} else {
 		data |= 0x7777;
 	}
-
 	RegWrite(GDM2_FWD_CFG, data);
 #else
-	uint32_t data = 0;
-
 	data = RegRead(FE_GDMA1_FWD_CFG);
-
+	data &= ~0x7777;
 	if (Ebl) {
 		//Uni-cast frames forward to PPE
 		data |= GDM1_UFRC_P_PPE;
@@ -2300,20 +2284,19 @@ uint32_t SetGdmaFwd(uint32_t Ebl)
 		data |= GDM1_OFRC_P_PPE;
 	} else {
 		//Uni-cast frames forward to CPU
-		data &= ~GDM1_UFRC_P_PPE;
+		data |= GDM1_UFRC_P_CPU;
 		//Broad-cast MAC address frames forward to CPU
-		data &= ~GDM1_BFRC_P_PPE;
+		data |= GDM1_BFRC_P_CPU;
 		//Multi-cast MAC address frames forward to CPU
-		data &= ~GDM1_MFRC_P_PPE;
+		data |= GDM1_MFRC_P_CPU;
 		//Other MAC address frames forward to CPU
-		data &= ~GDM1_OFRC_P_PPE;
+		data |= GDM1_OFRC_P_CPU;
 	}
-
 	RegWrite(FE_GDMA1_FWD_CFG, data);
 
 #if defined (CONFIG_RAETH_GMAC2)
 	data = RegRead(FE_GDMA2_FWD_CFG);
-
+	data &= ~0x7777;
 	if (Ebl) {
 		//Uni-cast frames forward to PPE
 		data |= GDM1_UFRC_P_PPE;
@@ -2325,13 +2308,13 @@ uint32_t SetGdmaFwd(uint32_t Ebl)
 		data |= GDM1_OFRC_P_PPE;
 	} else {
 		//Uni-cast frames forward to CPU
-		data &= ~GDM1_UFRC_P_PPE;
+		data |= GDM1_UFRC_P_CPU;
 		//Broad-cast MAC address frames forward to CPU
-		data &= ~GDM1_BFRC_P_PPE;
+		data |= GDM1_BFRC_P_CPU;
 		//Multi-cast MAC address frames forward to CPU
-		data &= ~GDM1_MFRC_P_PPE;
+		data |= GDM1_MFRC_P_CPU;
 		//Other MAC address frames forward to CPU
-		data &= ~GDM1_OFRC_P_PPE;
+		data |= GDM1_OFRC_P_CPU;
 	}
 	RegWrite(FE_GDMA2_FWD_CFG, data);
 #endif
@@ -2419,15 +2402,15 @@ static void PpeSetIpProt(void)
 static int __init PpeInitMod(void)
 {
 	char chip_id[8];
-	uint32_t rev_id;
 
 	*(uint32_t *)&chip_id[0] = RegRead(CHIPID);
 	*(uint32_t *)&chip_id[4] = RegRead(CHIPID + 0x4);
 	chip_id[6] = '\0';
-	rev_id = RegRead(REVID);
+
+	chip_rev_id = RegRead(REVID);
 
 #if defined (CONFIG_RALINK_MT7620)
-	if (rev_id & 0x10000)
+	if (chip_rev_id & 0x10000)
 		chip_id[6] = 'A';
 	else
 		chip_id[6] = 'N';
@@ -2435,7 +2418,7 @@ static int __init PpeInitMod(void)
 	chip_id[7] = '\0';
 #endif
 
-	rev_id &= 0xFFFF;
+	chip_rev_id &= 0xFFFF;
 
 #if defined (CONFIG_RALINK_RT3052)
 	/* RT3052 with RF_REG0 > 0x53 has no bug UDP w/o checksum */
@@ -2444,14 +2427,18 @@ static int __init PpeInitMod(void)
 	ppe_udp_bug = ((phy_val & 0xFF) > 0x53) ? 0 : 1;
 #elif defined (CONFIG_RALINK_RT3352)
 	/* RT3352 rev 0105 has no bug UDP w/o checksum */
-	ppe_udp_bug = (rev_id > 0x0104) ? 0 : 1;
+	ppe_udp_bug = (chip_rev_id < 0x0105) ? 1 : 0;
 #elif defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT2883) || defined (CONFIG_RALINK_RT3883)
 	/* RT3883/RT3662 at least rev 0105 has bug UDP w/o checksum :-( */
 	ppe_udp_bug = 1;
 #elif defined (CONFIG_RALINK_MT7620)
-	/* MT7620 at least rev 0203 has bug UDP w/o checksum :-( */
-	ppe_udp_bug = 1;
+	/* MT7620 rev 0205 has no bug UDP w/o checksum */
+	ppe_udp_bug = ((chip_rev_id & 0xF) < 5) ? 1 : 0;
 #endif
+
+	/* Set PPE FOE Hash Mode */
+	if (PpeSetFoeHashMode(DFL_FOE_HASH_MODE) != 0)
+		return -ENOMEM;
 
 	// Get net_device structure of Dest Port 
 	memset(DstPort, 0, sizeof(DstPort));
@@ -2484,10 +2471,23 @@ static int __init PpeInitMod(void)
 	ra_sw_nat_hook_rx = PpeRxHandler;
 	ra_sw_nat_hook_rs = PpeRsHandler;
 
+#if defined (CONFIG_RALINK_MT7620)
+	if ((chip_rev_id & 0xF) < 5) {
+//		SetAclFwd(1);
+		;
+	} else {
+		/* Turn On UDP Control */
+		uint32_t reg = RegRead(RALINK_PPE_BASE + 0x380);
+		reg &= ~(0x1 << 30);
+		RegWrite(RALINK_PPE_BASE + 0x380, reg);
+	}
+#endif
+
 	/* Set GMAC fowrards packet to PPE */
 	SetGdmaFwd(1);
 
-	printk("Ralink HW NAT %s Module Enabled, ASIC: %s, REV: %04X, FoE Size: %d\n", HW_NAT_MODULE_VER, chip_id, rev_id, PpeFoeTblSize);
+	printk("Ralink HW NAT %s Module Enabled, ASIC: %s, REV: %04X, FoE Size: %d\n",
+		HW_NAT_MODULE_VER, chip_id, chip_rev_id, PpeFoeTblSize);
 
 	return 0;
 }

@@ -875,6 +875,13 @@ udhcpc_lan_leasefail(char *lan_ifname)
 	return 0;
 }
 
+static int 
+udhcpc_lan_noack(char *lan_ifname)
+{
+	logmessage("DHCP LAN Client", "Received NAK for %s", lan_ifname);
+	return 0;
+}
+
 int
 udhcpc_lan_main(int argc, char **argv)
 {
@@ -897,8 +904,8 @@ udhcpc_lan_main(int argc, char **argv)
 		ret = udhcpc_lan_bound(lan_ifname, 1);
 	else if (!strcmp(argv[1], "leasefail"))
 		ret = udhcpc_lan_leasefail(lan_ifname);
-	else
-		ret = udhcpc_lan_deconfig(lan_ifname);
+	else if (!strcmp(argv[1], "nak"))
+		ret = udhcpc_lan_noack(lan_ifname);
 
 	return ret;
 }

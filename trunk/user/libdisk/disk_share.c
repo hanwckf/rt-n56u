@@ -695,9 +695,8 @@ int set_permission(const char *account,
 int add_account(const char *const account, const char *const password) {
 	disk_info_t *disk_list, *follow_disk;
 	partition_info_t *follow_partition;
-	int acc_num = 0;
+	int i, acc_num = 0;
 	char **account_list = NULL;
-	int result, i;
 	char nvram_name[32];
 	
 	if (account == NULL || strlen(account) <= 0) {
@@ -852,9 +851,8 @@ int del_account(const char *const account) {
 int mod_account(const char *const account, const char *const new_account, const char *const new_password) {
 	disk_info_t *disk_list, *follow_disk;
 	partition_info_t *follow_partition;
-	int acc_num = 0;
+	int i, acc_num = 0;
 	char **account_list = NULL;
-	int result, i;
 	char nvram_name[16];
 	int account_order = -1;
 	char var_file[256], new_var_file[256];

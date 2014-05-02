@@ -402,7 +402,7 @@ void stop_lltd(void)
 }
 
 int
-start_services_once(void)
+start_services_once(int is_ap_mode)
 {
 	start_8021x_wl();
 	start_8021x_rt();
@@ -416,7 +416,7 @@ start_services_once(void)
 	start_watchdog();
 	start_infosvr();
 
-	if (!get_ap_mode()) {
+	if (!is_ap_mode) {
 		if (!is_upnp_run())
 			start_upnp();
 		

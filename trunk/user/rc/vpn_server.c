@@ -32,7 +32,6 @@
 #define VPNS_PPP_UP_SCRIPT	"/tmp/ppp/ip-up.vpns"
 #define VPNS_PPP_DW_SCRIPT	"/tmp/ppp/ip-down.vpns"
 #define VPNS_CLIENT_SCRIPT	"/etc/storage/vpns_client_script.sh"
-#define VPNS_PPP_UNIT		10
 
 static int xl2tpd_killed_vpns = 0;
 
@@ -210,7 +209,7 @@ start_vpn_server(void)
 
 	fprintf(fp, "ip-up-script %s\n", VPNS_PPP_UP_SCRIPT);
 	fprintf(fp, "ip-down-script %s\n", VPNS_PPP_DW_SCRIPT);
-	fprintf(fp, "minunit %d\n", VPNS_PPP_UNIT);
+	fprintf(fp, "minunit %d\n", VPN_SERVER_PPP_UNIT);
 
 	fclose(fp);
 
@@ -281,7 +280,7 @@ stop_vpn_server(void)
 
 	/* force kill all clients pppd */
 	for (i=0; i<MAX_CLIENTS_NUM; i++) {
-		sprintf(pppd_pid, "/var/run/ppp%d.pid", VPNS_PPP_UNIT+i);
+		sprintf(pppd_pid, "/var/run/ppp%d.pid", VPN_SERVER_PPP_UNIT+i);
 		kill_pidfile_s(pppd_pid, SIGKILL);
 	}
 
@@ -310,6 +309,30 @@ restart_vpn_server(void)
 	/* restore L2TP WAN client or L2TP VPNC */
 	if (xl2tpd_killed_vpns && (nvram_match("l2tp_wan_t", "1") || nvram_match("l2tp_cli_t", "1")))
 		safe_start_xl2tpd();
+}
+
+void
+vpns_firewall_permission(const char *ifname, int add)
+{
+	char *logaccept;
+
+	if (!nvram_match("fw_enable_x", "1"))
+		return;
+
+	logaccept = "ACCEPT";
+
+	if (add) {
+		int manual_idx;
+		
+		manual_idx = nvram_safe_get_int("ipt_input_t", 5, 5, 10);
+		doSystem("%s -I %s %d -i %s -j %s", "/bin/iptables", "INPUT", manual_idx, ifname, logaccept);
+		
+		manual_idx = nvram_safe_get_int("ipt_forward_t", 4, 4, 10);
+		doSystem("%s -I %s %d -i %s -j %s", "/bin/iptables", "FORWARD", manual_idx, ifname, logaccept);
+	} else {
+		doSystem("%s -D %s -i %s -j %s", "/bin/iptables", "INPUT", ifname, logaccept);
+		doSystem("%s -D %s -i %s -j %s", "/bin/iptables", "FORWARD", ifname, logaccept);
+	}
 }
 
 void
@@ -363,20 +386,19 @@ ipup_vpns_main(int argc, char **argv)
 
 	umask(0000);
 
-	i_vuse = nvram_get_int("vpns_vuse");
+	vpns_firewall_permission(argv[1], 1);
 
+	i_vuse = nvram_get_int("vpns_vuse");
 	if (i_vuse)
 		vpns_route_to_remote_lan(peer_name, argv[1], NULL, 1);
 
 	fp = fopen(VPN_SERVER_LEASE_FILE, "a+");
-	if (fp)
-	{
+	if (fp) {
 		fprintf(fp, "%s %s %s %s\n", argv[1], argv[5], argv[6], peer_name);
 		fclose(fp);
 	}
 
-	if (!i_vuse && !pids("bcrelay"))
-	{
+	if (!i_vuse && !pids("bcrelay")) {
 		i_cast = nvram_get_int("vpns_cast");
 		if (i_cast == 1 || i_cast == 3)
 			eval("/usr/sbin/bcrelay", "-d", "-i", IFNAME_BR, "-o", "ppp[1-5][0-9]", "-n");
@@ -394,7 +416,7 @@ int
 ipdown_vpns_main(int argc, char **argv)
 {
 	FILE *fp1, *fp2;
-	int i_clients, i_vuse;
+	int i_clients;
 	char ifname[16], addr_l[32], addr_r[64], name_p[64];
 	char *peer_name;
 	char *clients_l1 = VPN_SERVER_LEASE_FILE;
@@ -411,20 +433,17 @@ ipdown_vpns_main(int argc, char **argv)
 
 	umask(0000);
 
-	i_vuse = nvram_get_int("vpns_vuse");
+	vpns_firewall_permission(argv[1], 0);
 
-	if (i_vuse)
+	if (nvram_get_int("vpns_vuse"))
 		vpns_route_to_remote_lan(peer_name, argv[1], NULL, 0);
 
 	i_clients = 0;
 	fp1 = fopen(clients_l1, "r");
 	fp2 = fopen(clients_l2, "w");
-	if (fp1)
-	{
-		while(fscanf(fp1, "%s %s %s %[^\n]\n", ifname, addr_l, addr_r, name_p) == 4)
-		{
-			if (strcmp(ifname, argv[1]))
-			{
+	if (fp1) {
+		while(fscanf(fp1, "%s %s %s %[^\n]\n", ifname, addr_l, addr_r, name_p) == 4) {
+			if (strcmp(ifname, argv[1])) {
 				i_clients++;
 				if (fp2)
 					fprintf(fp2, "%s %s %s %s\n", ifname, addr_l, addr_r, name_p);
@@ -434,8 +453,7 @@ ipdown_vpns_main(int argc, char **argv)
 		fclose(fp1);
 	}
 
-	if (fp2)
-	{
+	if (fp2) {
 		fclose(fp2);
 		rename(clients_l2, clients_l1);
 		unlink(clients_l2);

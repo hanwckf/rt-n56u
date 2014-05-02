@@ -53,6 +53,7 @@
 
 #define VPN_SERVER_LEASE_FILE		"/tmp/vpns.leases"
 #define VPN_SERVER_SUBNET_MASK		"255.255.255.0"
+#define VPN_SERVER_PPP_UNIT		10
 
 #define VPN_SERVER_PPPD_OPTIONS		"/tmp/ppp/options.vpns"
 #define VPN_CLIENT_PPPD_OPTIONS		"/tmp/ppp/options.vpnc"
@@ -308,6 +309,7 @@ void ip6t_filter_default(void);
 int start_vpn_server(void);
 void stop_vpn_server(void);
 void restart_vpn_server(void);
+void vpns_firewall_permission(const char *ifname, int add);
 void vpns_route_to_remote_lan(const char *cname, const char *ifname, const char *gw, int add);
 int ipup_vpns_main(int argc, char **argv);
 int ipdown_vpns_main(int argc, char **argv);
@@ -398,7 +400,7 @@ int start_lltd(void);
 void stop_lltd(void);
 void stop_rstats(void);
 void start_rstats(void);
-int start_services_once(void);
+int start_services_once(int is_ap_mode);
 void stop_services(int stopall);
 void stop_services_lan_wan(void);
 void write_storage_to_mtd(void);

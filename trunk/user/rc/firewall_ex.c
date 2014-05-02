@@ -465,19 +465,18 @@ include_mac_filter(FILE *fp, char *logdrop)
 	return mac_filter;
 }
 
-
 static int
 include_webstr_filter(FILE *fp)
 {
-	int i, url_enable, url_enable_1, use_webstr;
+	int i, url_enable, url_enable_1, webstr_items;
 	char url_timematch[128], url_timematch_1[128], nvname[32], *filterstr, *dtype;
-	
-	use_webstr = 0;
-	
+
+	webstr_items = 0;
+
 	if (is_valid_filter_time("url_time_x", "url_time_x_1", "url_enable_x", "url_enable_x_1") && 
 	    is_valid_filter_date("url_date_x"))
 	{
-		dtype = "FORWARD";
+		dtype = "urllist";
 		
 		url_enable = nvram_get_int("url_enable_x");
 		url_enable_1 = nvram_get_int("url_enable_x_1");
@@ -501,19 +500,40 @@ include_webstr_filter(FILE *fp)
 				if (url_enable == 1)
 				{
 					fprintf(fp, "-A %s -p tcp%s -m webstr --url \"%s\" -j REJECT --reject-with tcp-reset\n", dtype, url_timematch, filterstr);
-					use_webstr = 1;
+					webstr_items++;
 				}
 				
 				if (url_enable_1 == 1)
 				{
 					fprintf(fp, "-A %s -p tcp%s -m webstr --url \"%s\" -j REJECT --reject-with tcp-reset\n", dtype, url_timematch_1, filterstr);
-					use_webstr = 1;
+					webstr_items++;
 				}
 			}
 		}
 	}
 
-	return use_webstr;
+	return webstr_items;
+}
+
+static void
+include_vpns_clients(FILE *fp, int forward_chain)
+{
+	FILE *fpls;
+	char *dtype, *logaccept;
+	char ifname[64] = {0};
+
+	dtype = (forward_chain) ? "FORWARD" : "INPUT";
+	logaccept = "ACCEPT"; // manual compat
+
+	fpls = fopen(VPN_SERVER_LEASE_FILE, "r");
+	if (fpls) {
+		while(fscanf(fpls, "%s %*s %*s %*s\n", ifname) > 0) {
+			if (ppp_ifunit(ifname) >= VPN_SERVER_PPP_UNIT)
+				fprintf(fp, "-A %s -i %s -j %s\n", dtype, ifname, logaccept);
+		}
+		
+		fclose(fpls);
+	}
 }
 
 static void
@@ -596,10 +616,7 @@ include_vts_filter(FILE *fp, char *lan_ip, char *logaccept, int forward_chain)
 	char *proto, *protono, *port, *lport, *dstip, *dtype;
 	char dstports[32];
 
-	if (forward_chain)
-		dtype = "FORWARD";
-	else
-		dtype = "INPUT";
+	dtype = (forward_chain) ? "FORWARD" : "INPUT";
 
 	foreach_x("vts_num_x")
 	{
@@ -730,7 +747,8 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	char *ftype, *dtype;
 	char lan_class[32];
 	const char *ipt_file = "/tmp/ipt_filter.rules";
-	int i_mac_filter, is_nat_enabled, is_fw_enabled, ret, wport, lport;
+	int ret, input_idx, forward_idx, wport, lport;
+	int i_mac_filter, is_nat_enabled, is_fw_enabled;
 	int i_vpns_enable, i_vpns_type, i_http_proto, i_bfplimit_ref;
 	int i_vpnc_enable, i_vpnc_type, i_vpnc_sfw;
 #if defined (USE_IPV6)
@@ -750,7 +768,8 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	i_vpnc_type = nvram_get_int("vpnc_type");
 	i_vpnc_sfw = nvram_get_int("vpnc_sfw");
 
-	if (!(fp=fopen(ipt_file, "w"))) return 0;
+	if (!(fp=fopen(ipt_file, "w")))
+		return 0;
 
 	fprintf(fp, "*%s\n", "filter");
 	fprintf(fp, ":%s %s [0:0]\n", "INPUT", "ACCEPT");
@@ -758,6 +777,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	fprintf(fp, ":%s %s [0:0]\n", "OUTPUT", "ACCEPT");
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP4_FORWARD);
 	fprintf(fp, ":%s - [0:0]\n", "maclist");
+	fprintf(fp, ":%s - [0:0]\n", "urllist");
 	fprintf(fp, ":%s - [0:0]\n", "doslimit");
 	fprintf(fp, ":%s - [0:0]\n", "bfplimit");
 	fprintf(fp, ":%s - [0:0]\n", "logaccept");
@@ -768,10 +788,13 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 
 	// INPUT chain
 	dtype = "INPUT";
+	input_idx = 5;
 
 	/* Policy for all traffic from MAC-filtered LAN clients */
-	if (i_mac_filter > 0 && nvram_match("fw_mac_drop", "1"))
-		fprintf(fp, "-A %s -i %s -j maclist\n", dtype, lan_if);
+	if (i_mac_filter > 0 && nvram_match("fw_mac_drop", "1")) {
+		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, "maclist");
+		input_idx++;
+	}
 
 	/* Accept related connections, skip rest of checks */
 	fprintf(fp, "-A %s -m %s %s -j %s\n", dtype, CT_STATE, "ESTABLISHED,RELATED", "ACCEPT");
@@ -784,8 +807,10 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 
 #if defined (USE_IPV6)
 	/* Accept SIT packets (IPv6-in-IPv4) */
-	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD)
+	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD) {
 		fprintf(fp, "-A %s -p %d -j %s\n", dtype, 41, logaccept);
+		input_idx++;
+	}
 #endif
 
 	/* Drop the wrong state, INVALID, packets */
@@ -799,6 +824,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	) {
 		fprintf(fp, "-A %s -p 2 -d 224.0.0.0/4 -j %s\n", dtype, logaccept);
 		fprintf(fp, "-A %s -p udp -d 224.0.0.0/4 ! --dport %d -j %s\n", dtype, 1900, "ACCEPT");
+		input_idx += 2;
 	}
 
 	/* DoS attack limits */
@@ -915,12 +941,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 			} else
 #endif
 			{
-				if (nvram_get_int("vpns_vuse")) {
-					char vpn_class[32];
-					ip2class(nvram_safe_get("vpns_vnet"), VPN_SERVER_SUBNET_MASK, vpn_class);
-					fprintf(fp, "-A %s -i %s -s %s -j %s\n", dtype, "ppp+", vpn_class, logaccept);
-				} else
-					fprintf(fp, "-A %s -i %s -s %s -j %s\n", dtype, "ppp+", lan_class, logaccept);
+				include_vpns_clients(fp, 0);
 			}
 		}
 		
@@ -968,8 +989,12 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 
 	// FORWARD section
 	dtype = "FORWARD";
-	if (i_mac_filter > 0)
-		fprintf(fp, "-A %s -i %s -j maclist\n", dtype, lan_if);
+	forward_idx = 4;
+
+	if (i_mac_filter > 0) {
+		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, "maclist");
+		forward_idx++;
+	}
 
 	/* Accept the redirect, might be seen as INVALID, packets */
 	fprintf(fp, "-A %s -i %s -o %s -j %s\n", dtype, lan_if, lan_if, logaccept);
@@ -978,19 +1003,26 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	fprintf(fp, "-A %s -m %s %s -j %s\n", dtype, CT_STATE, "INVALID", "DROP");
 
 	/* use url filter before accepting ESTABLISHED packets */
-	if (include_webstr_filter(fp))
+	if (include_webstr_filter(fp) > 0) {
+		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, "urllist");
 		ret |= MODULE_WEBSTR_MASK;
+		forward_idx++;
+	}
 
 	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets */
-	if (is_need_tcp_mss())
+	if (is_need_tcp_mss()) {
 		fprintf(fp, "-A %s ! -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype, lan_if);
+		forward_idx++;
+	}
 
 	/* Accept related connections, skip rest of checks */
 	fprintf(fp, "-A %s -m %s %s -j %s\n", dtype, CT_STATE, "ESTABLISHED,RELATED", "ACCEPT");
 
 	/* Pass multicast */
-	if (nvram_match("mr_enable_x", "1"))
+	if (nvram_match("mr_enable_x", "1")) {
 		fprintf(fp, "-A %s -p udp -d 224.0.0.0/4 -j %s\n", dtype, "ACCEPT");
+		forward_idx++;
+	}
 
 	/* Pass VPN server's clients traffic */
 	if (is_fw_enabled && i_vpns_enable) {
@@ -1001,12 +1033,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 		} else
 #endif
 		{
-			if (nvram_get_int("vpns_vuse")) {
-				char vpn_class[32];
-				ip2class(nvram_safe_get("vpns_vnet"), VPN_SERVER_SUBNET_MASK, vpn_class);
-				fprintf(fp, "-A %s -i %s -s %s -j %s\n", dtype, "ppp+", vpn_class, logaccept);
-			} else
-				fprintf(fp, "-A %s -i %s -s %s -j %s\n", dtype, "ppp+", lan_class, logaccept);
+			include_vpns_clients(fp, 1);
 		}
 	}
 
@@ -1128,6 +1155,9 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	if (ret & MODULE_WEBSTR_MASK)
 		doSystem("modprobe %s", "xt_webstr");
 
+	nvram_set_int_temp("ipt_input_t", input_idx);
+	nvram_set_int_temp("ipt_forward_t", forward_idx);
+
 	doSystem("iptables-restore %s", ipt_file);
 
 	return ret;
@@ -1141,11 +1171,10 @@ ipt_filter_default(void)
 	int is_fw_enabled;
 	const char *ipt_file = "/tmp/ipt_filter.default";
 
-	if (get_ap_mode()) return;
-
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
 
-	if ((fp=fopen(ipt_file, "w"))==NULL) return;
+	if (!(fp=fopen(ipt_file, "w")))
+		return;
 
 	fprintf(fp, "*%s\n", "filter");
 	fprintf(fp, ":%s %s [0:0]\n", "INPUT", "ACCEPT");
@@ -1153,6 +1182,7 @@ ipt_filter_default(void)
 	fprintf(fp, ":%s %s [0:0]\n", "OUTPUT", "ACCEPT");
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP4_FORWARD);
 	fprintf(fp, ":%s - [0:0]\n", "maclist");
+	fprintf(fp, ":%s - [0:0]\n", "urllist");
 	fprintf(fp, ":%s - [0:0]\n", "doslimit");
 	fprintf(fp, ":%s - [0:0]\n", "bfplimit");
 	fprintf(fp, ":%s - [0:0]\n", "logaccept");
@@ -1196,6 +1226,9 @@ ipt_filter_default(void)
 	fprintf(fp, "COMMIT\n\n");
 	fclose(fp);
 
+	nvram_set_int_temp("ipt_input_t", 5);
+	nvram_set_int_temp("ipt_forward_t", 4);
+
 	doSystem("iptables-restore %s", ipt_file);
 }
 
@@ -1215,7 +1248,8 @@ ipt_mangle_rules(char *wan_if)
 		module_smart_load("xt_HL", NULL);
 	}
 
-	if ((fp=fopen(ipt_file, "w"))==NULL) return;
+	if (!(fp=fopen(ipt_file, "w")))
+		return;
 
 	fprintf(fp, "*%s\n", "mangle");
 	fprintf(fp, ":%s %s [0:0]\n", "PREROUTING", "ACCEPT");
@@ -1251,7 +1285,8 @@ ipt_raw_rules(char *wan_if)
 	FILE *fp;
 	const char *ipt_file = "/tmp/ipt_raw.rules";
 
-	if ((fp=fopen(ipt_file, "w"))==NULL) return;
+	if (!(fp=fopen(ipt_file, "w")))
+		return;
 
 	fprintf(fp, "*%s\n", "raw");
 	fprintf(fp, ":%s %s [0:0]\n", "PREROUTING", "ACCEPT");
@@ -1270,7 +1305,8 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 {
 	FILE *fp;
 	char *ftype, *dtype;
-	int i_mac_filter, is_fw_enabled, wport, lport, ipv6_type, ret;
+	int ret, input_idx, forward_idx, wport, lport;
+	int i_mac_filter, is_fw_enabled, ipv6_type;
 	int i_http_proto, i_bfplimit_ref;
 	const char *ipt_file = "/tmp/ip6t_filter.rules";
 
@@ -1281,7 +1317,8 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
 
-	if (!(fp=fopen(ipt_file, "w"))) return 0;
+	if (!(fp=fopen(ipt_file, "w")))
+		return 0;
 
 	fprintf(fp, "*%s\n", "filter");
 	fprintf(fp, ":%s %s [0:0]\n", "INPUT", "ACCEPT");
@@ -1291,6 +1328,7 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP6_FORWARD);
 #endif
 	fprintf(fp, ":%s - [0:0]\n", "maclist");
+	fprintf(fp, ":%s - [0:0]\n", "urllist");
 	fprintf(fp, ":%s - [0:0]\n", "bfplimit");
 	fprintf(fp, ":%s - [0:0]\n", "logaccept");
 	fprintf(fp, ":%s - [0:0]\n", "logdrop");
@@ -1300,10 +1338,13 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 
 	// INPUT chain (accept_source_route=0 by default, no needed drop RH0 packet)
 	dtype = "INPUT";
+	input_idx = 6;
 
 	/* Policy for all traffic from MAC-filtered LAN clients */
-	if (i_mac_filter > 0 && nvram_match("fw_mac_drop", "1"))
-		fprintf(fp, "-A %s -i %s -j maclist\n", dtype, lan_if);
+	if (i_mac_filter > 0 && nvram_match("fw_mac_drop", "1")) {
+		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, "maclist");
+		input_idx++;
+	}
 
 	/* Accept related connections, skip rest of checks */
 	fprintf(fp, "-A %s -m %s %s -j %s\n", dtype, CT_STATE, "ESTABLISHED,RELATED", "ACCEPT");
@@ -1324,8 +1365,10 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 	fprintf(fp, "-A %s -m %s %s -j %s\n", dtype, CT_STATE, "INVALID", "DROP");
 
 	/* Accept all multicast */
-	if (nvram_match("mr_enable_x", "1"))
+	if (nvram_match("mr_enable_x", "1")) {
 		fprintf(fp, "-A %s -d ff00::/8 -j %s\n", dtype, "ACCEPT");
+		input_idx++;
+	}
 
 	if (is_fw_enabled) {
 		/* Accept DHCPv6 */
@@ -1425,9 +1468,12 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 
 	// FORWARD chain (accept_source_route=0 by default, no needed drop RH0 packet)
 	dtype = "FORWARD";
+	forward_idx = 5;
 
-	if (i_mac_filter > 0)
-		fprintf(fp, "-A %s -i %s -j maclist\n", dtype, lan_if);
+	if (i_mac_filter > 0) {
+		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, "maclist");
+		forward_idx++;
+	}
 
 	/* Pass the redirect, might be seen as INVALID, packets */
 	fprintf(fp, "-A %s -i %s -o %s -j %s\n", dtype, lan_if, lan_if, logaccept);
@@ -1442,19 +1488,26 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 	fprintf(fp, "-A %s -m %s %s -j %s\n", dtype, CT_STATE, "INVALID", "DROP");
 
 	/* use url filter before accepting ESTABLISHED packets */
-	if (include_webstr_filter(fp))
+	if (include_webstr_filter(fp) > 0) {
+		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, "urllist");
 		ret |= MODULE_WEBSTR_MASK;
+		forward_idx++;
+	}
 
 	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets  */
-	if ((ipv6_type != IPV6_NATIVE_STATIC && ipv6_type != IPV6_NATIVE_DHCP6) || is_need_tcp_mss())
+	if ((ipv6_type != IPV6_NATIVE_STATIC && ipv6_type != IPV6_NATIVE_DHCP6) || is_need_tcp_mss()) {
 		fprintf(fp, "-A %s ! -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype, lan_if);
+		forward_idx++;
+	}
 
 	/* Pass related connections, skip rest of checks */
 	fprintf(fp, "-A %s -m %s %s -j %s\n", dtype, CT_STATE, "ESTABLISHED,RELATED", "ACCEPT");
 
 	/* Pass multicast */
-	if (nvram_match("mr_enable_x", "1"))
+	if (nvram_match("mr_enable_x", "1")) {
 		fprintf(fp, "-A %s -d ff00::/8 -j %s\n", dtype, "ACCEPT");
+		forward_idx++;
+	}
 
 #if 0
 	/* Filter out invalid WAN->WAN connections */
@@ -1506,6 +1559,9 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 	if (ret & MODULE_WEBSTR_MASK)
 		doSystem("modprobe %s", "xt_webstr");
 
+	nvram_set_int_temp("ip6t_input_t", input_idx);
+	nvram_set_int_temp("ip6t_forward_t", forward_idx);
+
 	doSystem("ip6tables-restore %s", ipt_file);
 
 	return ret;
@@ -1519,11 +1575,10 @@ ip6t_filter_default(void)
 	int is_fw_enabled;
 	const char *ipt_file = "/tmp/ip6t_filter.default";
 
-	if (get_ap_mode()) return;
-
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
 
-	if ((fp=fopen(ipt_file, "w"))==NULL) return;
+	if (!(fp=fopen(ipt_file, "w")))
+		return;
 
 	fprintf(fp, "*%s\n", "filter");
 	fprintf(fp, ":%s %s [0:0]\n", "INPUT", "ACCEPT");
@@ -1533,6 +1588,7 @@ ip6t_filter_default(void)
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP6_FORWARD);
 #endif
 	fprintf(fp, ":%s - [0:0]\n", "maclist");
+	fprintf(fp, ":%s - [0:0]\n", "urllist");
 	fprintf(fp, ":%s - [0:0]\n", "bfplimit");
 	fprintf(fp, ":%s - [0:0]\n", "logaccept");
 	fprintf(fp, ":%s - [0:0]\n", "logdrop");
@@ -1578,6 +1634,9 @@ ip6t_filter_default(void)
 	fprintf(fp, "COMMIT\n\n");
 	fclose(fp);
 
+	nvram_set_int_temp("ip6t_input_t", 6);
+	nvram_set_int_temp("ip6t_forward_t", 5);
+
 	doSystem("ip6tables-restore %s", ipt_file);
 }
 
@@ -1587,7 +1646,8 @@ ip6t_mangle_rules(char *wan_if)
 	FILE *fp;
 	const char *ipt_file = "/tmp/ip6t_mangle.rules";
 
-	if ((fp=fopen(ipt_file, "w"))==NULL) return;
+	if (!(fp=fopen(ipt_file, "w")))
+		return;
 
 	fprintf(fp, "*%s\n", "mangle");
 	fprintf(fp, ":%s %s [0:0]\n", "PREROUTING", "ACCEPT");
@@ -1631,7 +1691,8 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 
 	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
 
-	if ((fp=fopen(ipt_file, "w"))==NULL) return 0;
+	if (!(fp=fopen(ipt_file, "w")))
+		return 0;
 
 	fprintf(fp, "*%s\n", "nat");
 	fprintf(fp, ":%s %s [0:0]\n", "PREROUTING", "ACCEPT");
@@ -1874,7 +1935,8 @@ ipt_nat_default(void)
 
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
 
-	if ((fp=fopen(ipt_file, "w"))==NULL) return;
+	if (!(fp=fopen(ipt_file, "w")))
+		return;
 
 	fprintf(fp, "*%s\n", "nat");
 	fprintf(fp, ":%s %s [0:0]\n", "PREROUTING", "ACCEPT");
@@ -1909,15 +1971,15 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 	char *lan_if, *lan_ip;
 	char *opt_iptables_script = "/opt/bin/update_iptables.sh";
 	char *int_iptables_script = SCRIPT_POST_FIREWALL;
-	
+
 	if (get_ap_mode())
 		return -1;
-	
+
 	i_modules = 0;
-	
+
 	lan_if = IFNAME_BR;
 	lan_ip = nvram_safe_get("lan_ipaddr");
-	
+
 	/* mcast needs rp filter to be turned off only for non default iface */
 	sprintf(rp_path, "/proc/sys/net/ipv4/conf/%s/rp_filter", get_man_ifname(0));
 	if (nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0")
@@ -1928,7 +1990,7 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 		fput_int(rp_path, 0);
 	else
 		fput_int(rp_path, 1);
-	
+
 	/* Determine the log type */
 	if (nvram_match("fw_log_x", "accept") || nvram_match("fw_log_x", "both"))
 		strcpy(logaccept, "logaccept");

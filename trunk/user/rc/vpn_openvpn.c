@@ -425,10 +425,10 @@ on_server_client_connect(int is_tun)
 	char *common_name = safe_getenv("common_name");
 	char *peer_addr_r = safe_getenv("trusted_ip");
 	char *peer_addr_l = safe_getenv("ifconfig_pool_remote_ip");
-	
+
 	logmessage(SERVER_LOG_NAME, "peer %s (%s) connected - local IP: %s",
 		peer_addr_r, common_name, peer_addr_l);
-	
+
 	fp = fopen(VPN_SERVER_LEASE_FILE, "a+");
 	if (fp) {
 		fprintf(fp, "%s %s %s %s\n", "-", peer_addr_l, peer_addr_r, common_name);

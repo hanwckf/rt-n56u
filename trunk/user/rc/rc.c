@@ -456,7 +456,7 @@ LED_CONTROL(int led, int flag)
 void 
 init_router(void)
 {
-	int log_remote, nvram_need_commit;
+	int log_remote, is_ap_mode, nvram_need_commit;
 
 #if defined (USE_RTL8367)
 	rtl8367_node();
@@ -490,6 +490,8 @@ init_router(void)
 
 	storage_load_time();
 
+	is_ap_mode = get_ap_mode();
+
 	log_remote = nvram_invmatch("log_ipaddr", "");
 	if (!log_remote)
 		start_logger(1);
@@ -506,13 +508,16 @@ init_router(void)
 	if (log_remote)
 		start_logger(1);
 
-	ipt_filter_default();
-	ipt_nat_default();
+	if (!is_ap_mode) {
+		ipt_nat_default();
+		ipt_filter_default();
 #if defined (USE_IPV6)
-	ip6t_filter_default();
+		ip6t_filter_default();
 #endif
-	start_wan(1);
-	start_services_once();
+		start_wan(1);
+	}
+
+	start_services_once(is_ap_mode);
 
 	// system ready
 	system("/etc/storage/started_script.sh &");

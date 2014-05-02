@@ -633,28 +633,24 @@ start_wan(int is_first_run)
 	int unit, is_pppoe, wan_auth_mode;
 	char *wan_ifname, *ppp_ifname, *wan_proto;
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
-	
-	/* check if we need to setup WAN */
-	if (get_ap_mode())
-		return;
-	
+
 	/* Create links */
 	create_cb_links();
-	
+
 	reload_nat_modules();
-	
+
 	config_vinet_wan();
 	launch_viptv_wan();
-	
+
 	update_wan_status(0);
-	
+
 	update_resolvconf(1, 0);
-	
+
 	if (!is_first_run)
 		smart_restart_upnp();
-	
+
 	wan_auth_mode = nvram_get_int("wan_auth_mode");
-	
+
 	/* Start each configured and enabled wan connection and its undelying i/f */
 	for (unit = 0; unit < 2; unit ++)
 	{

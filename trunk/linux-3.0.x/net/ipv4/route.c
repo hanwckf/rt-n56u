@@ -3233,13 +3233,6 @@ static ctl_table ipv4_route_table[] = {
 		.proc_handler	= proc_dointvec_jiffies,
 	},
 	{
-		.procname	= "gc_interval",
-		.data		= &ip_rt_gc_interval,
-		.maxlen		= sizeof(int),
-		.mode		= 0644,
-		.proc_handler	= proc_dointvec_jiffies,
-	},
-	{
 		.procname	= "redirect_load",
 		.data		= &ip_rt_redirect_load,
 		.maxlen		= sizeof(int),

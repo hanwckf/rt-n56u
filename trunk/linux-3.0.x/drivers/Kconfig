@@ -1,10 +1,6 @@
 menu "Device Drivers"
 
-#addey bu Jiahao
 source "drivers/nvram/Kconfig"
-
-#use MTD instead
-#source "drivers/flash/Kconfig"
 
 source "drivers/base/Kconfig"
 

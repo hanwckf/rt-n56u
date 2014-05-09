@@ -5,12 +5,7 @@
 # Rewritten to use lists instead of if-statements.
 #
 
-#added by Jiahao
 obj-$(CONFIG_ASUS_NVRAM_API)    += nvram/
-
-#added by Steven Liu
-obj-$(CONFIG_RALINK_FLASH_API) += flash/
-#--
 
 obj-y				+= gpio/
 obj-$(CONFIG_PCI)		+= pci/

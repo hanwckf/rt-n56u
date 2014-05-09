@@ -393,12 +393,6 @@ config INET_LRO
 
 	  If unsure, say Y.
 
-config IPSEC_NAT_TRAVERSAL
-       bool "IPSEC NAT-Traversal (KLIPS compatible)"
-       depends on INET
-       ---help---
-       Includes support for RFC3947/RFC3948 NAT-Traversal of ESP over UDP.
-
 config INET_DIAG
 	tristate "INET: socket monitoring interface"
 	default y

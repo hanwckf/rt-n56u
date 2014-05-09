@@ -1,4 +1,4 @@
-SRC_NAME=openvpn-2.3.3
+SRC_NAME=openvpn-2.3.4
 
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections

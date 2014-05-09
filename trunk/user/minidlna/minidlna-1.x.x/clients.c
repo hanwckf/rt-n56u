@@ -206,6 +206,13 @@ struct client_type_s client_types[] =
 	  EUserAgent
 	},
 
+	{ EBubbleUPnP,
+	  FLAG_CAPTION_RES,
+	  "BubbleUPnP",
+	  "BubbleUPnP",
+	  EUserAgent
+	},
+
 	{ EStandardDLNA150,
 	  FLAG_DLNA | FLAG_MIME_AVI_AVI,
 	  "Generic DLNA 1.5",

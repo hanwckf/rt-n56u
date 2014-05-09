@@ -159,7 +159,7 @@ update_if_album_art(const char *path)
 }
 
 char *
-check_embedded_art(const char *path, const char *image_data, int image_size)
+check_embedded_art(const char *path, uint8_t *image_data, int image_size)
 {
 	int width = 0, height = 0;
 	char *art_path = NULL;
@@ -346,7 +346,7 @@ found_file:
 }
 
 int64_t
-find_album_art(const char *path, const char *image_data, int image_size)
+find_album_art(const char *path, uint8_t *image_data, int image_size)
 {
 	char *album_art = NULL;
 	int64_t ret = 0;

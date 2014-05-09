@@ -341,6 +341,7 @@ GetCurrentConnectionInfo(struct upnphttp * h, const char * action)
 #define FILTER_SEC_DCM_INFO                      0x02000000
 #define FILTER_PV_SUBTITLE_FILE_TYPE             0x04000000
 #define FILTER_PV_SUBTITLE_FILE_URI              0x08000000
+#define FILTER_PV_SUBTITLE                       0x0C000000
 #define FILTER_AV_MEDIA_CLASS                    0x10000000
 
 static uint32_t
@@ -662,7 +663,7 @@ add_res(char *size, char *duration, char *bitrate, char *sampleFrequency,
 	if( resolution && (args->filter & FILTER_RES_RESOLUTION) ) {
 		strcatf(args->str, "resolution=\"%s\" ", resolution);
 	}
-	if( args->filter & (FILTER_PV_SUBTITLE_FILE_TYPE|FILTER_PV_SUBTITLE_FILE_URI) )
+	if( args->filter & FILTER_PV_SUBTITLE )
 	{
 		if( args->flags & FLAG_HAS_CAPTIONS )
 		{
@@ -773,7 +774,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 				}
 			}
 			if( (passed_args->flags & FLAG_CAPTION_RES) ||
-			    (passed_args->filter & (FILTER_SEC_CAPTION_INFO_EX|FILTER_PV_SUBTITLE_FILE_TYPE|FILTER_PV_SUBTITLE_FILE_URI)) )
+			    (passed_args->filter & (FILTER_SEC_CAPTION_INFO_EX|FILTER_PV_SUBTITLE)) )
 			{
 				if( sql_get_int_field(db, "SELECT ID from CAPTIONS where ID = '%s'", detailID) > 0 )
 					passed_args->flags |= FLAG_HAS_CAPTIONS;
@@ -1159,7 +1160,7 @@ BrowseContentDirectory(struct upnphttp * h, const char * action)
 	args.filter = set_filter_flags(Filter, h);
 	if( args.filter & FILTER_DLNA_NAMESPACE )
 		ret = strcatf(&str, DLNA_NAMESPACE);
-	if( args.filter & (FILTER_PV_SUBTITLE_FILE_TYPE|FILTER_PV_SUBTITLE_FILE_URI) )
+	if( args.filter & FILTER_PV_SUBTITLE )
 		ret = strcatf(&str, PV_NAMESPACE);
 	strcatf(&str, "&gt;\n");
 

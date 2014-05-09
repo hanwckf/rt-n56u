@@ -112,7 +112,7 @@ gen_dir_hash(const char *path)
 		return 0;
 	
 
-	return DJBHash(dir, len);
+	return DJBHash((uint8_t *)dir, len);
 }
 
 int

@@ -63,11 +63,13 @@ AddMulticastMembership(int s, struct lan_addr_s *iface)
 #ifdef HAVE_STRUCT_IP_MREQN
 	struct ip_mreqn imr;	/* Ip multicast membership */
 	/* setting up imr structure */
+	memset(&imr, '\0', sizeof(imr));
 	imr.imr_multiaddr.s_addr = inet_addr(SSDP_MCAST_ADDR);
 	imr.imr_ifindex = iface->ifindex;
 #else
 	struct ip_mreq imr;	/* Ip multicast membership */
 	/* setting up imr structure */
+	memset(&imr, '\0', sizeof(imr));
 	imr.imr_multiaddr.s_addr = inet_addr(SSDP_MCAST_ADDR);
 	imr.imr_interface.s_addr = iface->addr.s_addr;
 #endif

@@ -424,7 +424,7 @@ inotify_insert_file(char * name, const char * path)
 	if( !depth )
 	{
 		//DEBUG DPRINTF(E_DEBUG, L_INOTIFY, "Inserting %s\n", name);
-		insert_file(name, path, id+2, get_next_available_id("OBJECTS", id));
+		insert_file(name, path, id+2, get_next_available_id("OBJECTS", id), types);
 		sqlite3_free(id);
 		if( (is_audio(path) || is_playlist(path)) && next_pl_fill != 1 )
 		{

@@ -290,14 +290,14 @@ make_dir(char * path, mode_t mode)
 
 /* Simple, efficient hash function from Daniel J. Bernstein */
 unsigned int
-DJBHash(const char *str, int len)
+DJBHash(uint8_t *data, int len)
 {
 	unsigned int hash = 5381;
 	unsigned int i = 0;
 
-	for(i = 0; i < len; str++, i++)
+	for(i = 0; i < len; data++, i++)
 	{
-		hash = ((hash << 5) + hash) + (*str);
+		hash = ((hash << 5) + hash) + (*data);
 	}
 
 	return hash;

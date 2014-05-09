@@ -700,7 +700,8 @@ init(int argc, char **argv)
 				runtime_vars.root_container = IMAGE_ID;
 				break;
 			default:
-				DPRINTF(E_ERROR, L_GENERAL, "Invalid root container! [%s]\n",
+				runtime_vars.root_container = ary_options[i].value;
+				DPRINTF(E_WARN, L_GENERAL, "Using arbitrary root container [%s]\n",
 					ary_options[i].value);
 				break;
 			}

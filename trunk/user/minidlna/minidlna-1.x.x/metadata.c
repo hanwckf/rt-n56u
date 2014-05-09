@@ -388,7 +388,7 @@ GetAudioMetadata(const char *path, char *name)
 	}
 	else
 	{
-		DPRINTF(E_WARN, L_GENERAL, "Unhandled file extension on %s\n", path);
+		DPRINTF(E_WARN, L_METADATA, "Unhandled file extension on %s\n", path);
 		return 0;
 	}
 
@@ -402,7 +402,7 @@ GetAudioMetadata(const char *path, char *name)
 
 	if( readtags((char *)path, &song, &file, lang, type) != 0 )
 	{
-		DPRINTF(E_WARN, L_GENERAL, "Cannot extract tags from %s!\n", path);
+		DPRINTF(E_WARN, L_METADATA, "Cannot extract tags from %s!\n", path);
         	freetags(&song);
 		free_metadata(&m, free_flags);
 		return 0;
@@ -508,7 +508,7 @@ GetAudioMetadata(const char *path, char *name)
 	                   m.dlna_pn, song.mime?song.mime:m.mime, album_art);
 	if( ret != SQLITE_OK )
 	{
-		fprintf(stderr, "Error inserting details for '%s'!\n", path);
+		DPRINTF(E_ERROR, L_METADATA, "Error inserting details for '%s'!\n", path);
 		ret = 0;
 	}
 	else
@@ -632,7 +632,7 @@ GetImageMetadata(const char *path, char *name)
 		{
 			if( ed->size < 60000 )
 			{
-				imsrc = image_new_from_jpeg(NULL, 0, (char *)ed->data, ed->size, 1, ROTATE_NONE);
+				imsrc = image_new_from_jpeg(NULL, 0, ed->data, ed->size, 1, ROTATE_NONE);
 				if( imsrc )
 				{
 					if( (imsrc->width <= 160) && (imsrc->height <= 160) )
@@ -694,7 +694,7 @@ no_exifdata:
 	                   m.rotation, thumb, m.creator, m.dlna_pn, m.mime);
 	if( ret != SQLITE_OK )
 	{
-		fprintf(stderr, "Error inserting details for '%s'!\n", path);
+		DPRINTF(E_ERROR, L_METADATA, "Error inserting details for '%s'!\n", path);
 		ret = 0;
 	}
 	else
@@ -1606,7 +1606,7 @@ video_no_dlna:
                            m.mime, album_art);
 	if( ret != SQLITE_OK )
 	{
-		fprintf(stderr, "Error inserting details for '%s'!\n", path);
+		DPRINTF(E_ERROR, L_METADATA, "Error inserting details for '%s'!\n", path);
 		ret = 0;
 	}
 	else

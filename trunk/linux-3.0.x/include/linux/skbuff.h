@@ -193,8 +193,6 @@ enum {
 	/* device driver is going to provide hardware time stamp */
 	SKBTX_IN_PROGRESS = 1 << 2,
 
-	/* ensure the originating sk reference is available on driver level */
-	SKBTX_DRV_NEEDS_SK_REF = 1 << 3,
 };
 
 /* This data is invariant across clones and lives at
@@ -324,6 +322,9 @@ typedef unsigned char *sk_buff_data_t;
  *	@tc_index: Traffic control index
  *	@tc_verd: traffic control verdict
  *	@ndisc_nodetype: router type (from link layer)
+ *	@ooo_okay: allow the mapping of a socket to a queue to be changed
+ *	@l4_rxhash: indicate rxhash is a canonical 4-tuple hash over transport
+ *		ports.
  *	@dma_cookie: a cookie to one of several possible DMA operations
  *		done by skb DMA functions
  *	@secmark: security marking
@@ -422,11 +423,11 @@ struct sk_buff {
 
 	__u16			queue_mapping;
 	kmemcheck_bitfield_begin(flags2);
-#if defined(CONFIG_IPV6_NDISC_NODETYPE) || defined(CONFIG_RTDEV_MII)
-	/* Needed ON for iNIC_mii.obj compatible */
+#if defined(CONFIG_IPV6_NDISC_NODETYPE)
 	__u8			ndisc_nodetype:2;
 #endif
 	__u8			ooo_okay:1;
+	__u8			l4_rxhash:1;
 	kmemcheck_bitfield_end(flags2);
 
 	/* 0/13 bit hole */
@@ -447,6 +448,7 @@ struct sk_buff {
 	union {
 		__u32		mark;
 		__u32		dropcount;
+		__u32		reserved_tailroom;
 	};
 
 	__u16			vlan_tci;
@@ -597,11 +599,11 @@ extern unsigned int   skb_find_text(struct sk_buff *skb, unsigned int from,
 				    unsigned int to, struct ts_config *config,
 				    struct ts_state *state);
 
-extern __u32 __skb_get_rxhash(struct sk_buff *skb);
+extern void __skb_get_rxhash(struct sk_buff *skb);
 static inline __u32 skb_get_rxhash(struct sk_buff *skb)
 {
 	if (!skb->rxhash)
-		skb->rxhash = __skb_get_rxhash(skb);
+		__skb_get_rxhash(skb);
 
 	return skb->rxhash;
 }
@@ -857,9 +859,9 @@ static inline struct sk_buff *skb_unshare(struct sk_buff *skb,
  *	The reference count is not incremented and the reference is therefore
  *	volatile. Use with caution.
  */
-static inline struct sk_buff *skb_peek(struct sk_buff_head *list_)
+static inline struct sk_buff *skb_peek(const struct sk_buff_head *list_)
 {
-	struct sk_buff *list = ((struct sk_buff *)list_)->next;
+	struct sk_buff *list = ((const struct sk_buff *)list_)->next;
 	if (list == (struct sk_buff *)list_)
 		list = NULL;
 	return list;
@@ -878,9 +880,9 @@ static inline struct sk_buff *skb_peek(struct sk_buff_head *list_)
  *	The reference count is not incremented and the reference is therefore
  *	volatile. Use with caution.
  */
-static inline struct sk_buff *skb_peek_tail(struct sk_buff_head *list_)
+static inline struct sk_buff *skb_peek_tail(const struct sk_buff_head *list_)
 {
-	struct sk_buff *list = ((struct sk_buff *)list_)->prev;
+	struct sk_buff *list = ((const struct sk_buff *)list_)->prev;
 	if (list == (struct sk_buff *)list_)
 		list = NULL;
 	return list;
@@ -1300,6 +1302,21 @@ static inline int skb_tailroom(const struct sk_buff *skb)
 }
 
 /**
+ *	skb_availroom - bytes at buffer end
+ *	@skb: buffer to check
+ *
+ *	Return the number of bytes of free space at the tail of an sk_buff
+ *	allocated by sk_stream_alloc()
+ */
+static inline int skb_availroom(const struct sk_buff *skb)
+{
+	if (skb_is_nonlinear(skb))
+		return 0;
+
+	return skb->end - skb->tail - skb->reserved_tailroom;
+}
+
+/**
  *	skb_reserve - adjust headroom
  *	@skb: buffer to alter
  *	@len: bytes to move
@@ -1508,7 +1525,7 @@ static inline int pskb_network_may_pull(struct sk_buff *skb, unsigned int len)
  */
 #ifndef NET_SKB_PAD
 #if defined (CONFIG_PPTP) || defined (CONFIG_PPTP_MODULE) || defined(CONFIG_PPPOL2TP) || defined(CONFIG_PPPOL2TP_MODULE)
-#define NET_SKB_PAD		80
+#define NET_SKB_PAD		96
 #define NET_SKB_PAD_ORIG	max(32, L1_CACHE_BYTES)
 #else
 #define NET_SKB_PAD		max(32, L1_CACHE_BYTES)
@@ -1691,7 +1708,7 @@ static inline void netdev_free_page(struct net_device *dev, struct page *page)
  *	Returns true if modifying the header part of the cloned buffer
  *	does not requires the data to be copied.
  */
-static inline int skb_clone_writable(struct sk_buff *skb, unsigned int len)
+static inline int skb_clone_writable(const struct sk_buff *skb, unsigned int len)
 {
 	return !skb_header_cloned(skb) &&
 	       skb_headroom(skb) + len <= skb->hdr_len;
@@ -2328,7 +2345,8 @@ static inline bool skb_warn_if_lro(const struct sk_buff *skb)
 {
 	/* LRO sets gso_size but not gso_type, whereas if GSO is really
 	 * wanted then gso_type will be set. */
-	struct skb_shared_info *shinfo = skb_shinfo(skb);
+	const struct skb_shared_info *shinfo = skb_shinfo(skb);
+
 	if (skb_is_nonlinear(skb) && shinfo->gso_size != 0 &&
 	    unlikely(shinfo->gso_type == 0)) {
 		__skb_warn_lro_forwarding(skb);
@@ -2352,7 +2370,7 @@ static inline void skb_forward_csum(struct sk_buff *skb)
  * Instead of forcing ip_summed to CHECKSUM_NONE, we can
  * use this helper, to document places where we make this assertion.
  */
-static inline void skb_checksum_none_assert(struct sk_buff *skb)
+static inline void skb_checksum_none_assert(const struct sk_buff *skb)
 {
 #ifdef DEBUG
 	BUG_ON(skb->ip_summed != CHECKSUM_NONE);

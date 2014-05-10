@@ -433,7 +433,8 @@ exit:
 	NET_INC_STATS_BH(sock_net(sk), LINUX_MIB_LISTENDROPS);
 	return NULL;
 put_and_exit:
-	sock_put(newsk);
+	inet_csk_prepare_forced_close(newsk);
+	dccp_done(newsk);
 	goto exit;
 }
 

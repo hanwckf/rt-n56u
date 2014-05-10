@@ -873,10 +873,14 @@ static int nfs_write_rpcsetup(struct nfs_page *req,
 	data->args.context = get_nfs_open_context(req->wb_context);
 	data->args.lock_context = req->wb_lock_context;
 	data->args.stable  = NFS_UNSTABLE;
-	if (how & (FLUSH_STABLE | FLUSH_COND_STABLE)) {
-		data->args.stable = NFS_DATA_SYNC;
-		if (!nfs_need_commit(NFS_I(inode)))
-			data->args.stable = NFS_FILE_SYNC;
+	switch (how & (FLUSH_STABLE | FLUSH_COND_STABLE)) {
+	case 0:
+		break;
+	case FLUSH_COND_STABLE:
+		if (nfs_need_commit(NFS_I(inode)))
+			break;
+	default:
+		data->args.stable = NFS_FILE_SYNC;
 	}
 
 	data->res.fattr   = &data->fattr;
@@ -995,7 +999,7 @@ static int nfs_flush_one(struct nfs_pageio_descriptor *desc)
 	struct nfs_write_data	*data;
 	struct list_head *head = &desc->pg_list;
 	struct pnfs_layout_segment *lseg = desc->pg_lseg;
-	int ret;
+	int ret = 0;
 
 	data = nfs_writedata_alloc(nfs_page_array_len(desc->pg_base,
 						      desc->pg_count));

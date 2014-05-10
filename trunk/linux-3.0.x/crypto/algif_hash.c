@@ -68,8 +68,10 @@ static int hash_sendmsg(struct kiocb *unused, struct socket *sock,
 			int newlen;
 
 			newlen = af_alg_make_sg(&ctx->sgl, from, len, 0);
-			if (newlen < 0)
+			if (newlen < 0) {
+				err = copied ? 0 : newlen;
 				goto unlock;
+			}
 
 			ahash_request_set_crypt(&ctx->req, ctx->sgl.sg, NULL,
 						newlen);
@@ -111,6 +113,9 @@ static ssize_t hash_sendpage(struct socket *sock, struct page *page,
 	struct alg_sock *ask = alg_sk(sk);
 	struct hash_ctx *ctx = ask->private;
 	int err;
+
+	if (flags & MSG_SENDPAGE_NOTLAST)
+		flags |= MSG_MORE;
 
 	lock_sock(sk);
 	sg_init_table(ctx->sgl.sg, 1);
@@ -158,8 +163,6 @@ static int hash_recvmsg(struct kiocb *unused, struct socket *sock,
 		len = ds;
 	else if (len < ds)
 		msg->msg_flags |= MSG_TRUNC;
-
-	msg->msg_namelen = 0;
 
 	lock_sock(sk);
 	if (ctx->more) {

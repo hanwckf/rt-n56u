@@ -575,7 +575,7 @@ static unsigned int tun_chr_poll(struct file *file, poll_table * wait)
 
 /* prepad is the amount to reserve at front.  len is length after that.
  * linear is a hint as to how much to copy (usually headers). */
-static inline struct sk_buff *tun_alloc_skb(struct tun_struct *tun,
+static struct sk_buff *tun_alloc_skb(struct tun_struct *tun,
 					    size_t prepad, size_t len,
 					    size_t linear, int noblock)
 {
@@ -603,7 +603,7 @@ static inline struct sk_buff *tun_alloc_skb(struct tun_struct *tun,
 }
 
 /* Get packet from user space buffer */
-static __inline__ ssize_t tun_get_user(struct tun_struct *tun,
+static ssize_t tun_get_user(struct tun_struct *tun,
 				       const struct iovec *iv, size_t count,
 				       int noblock)
 {
@@ -756,7 +756,7 @@ static ssize_t tun_chr_aio_write(struct kiocb *iocb, const struct iovec *iv,
 }
 
 /* Put packet to the user space buffer */
-static __inline__ ssize_t tun_put_user(struct tun_struct *tun,
+static ssize_t tun_put_user(struct tun_struct *tun,
 				       struct sk_buff *skb,
 				       const struct iovec *iv, int len)
 {

@@ -97,7 +97,6 @@ static struct nf_hook_ops ebt_ops_nat[] __read_mostly = {
 		.priority	= NF_BR_PRI_NAT_DST_BRIDGED,
 	},
 };
-#endif
 
 static int __net_init frame_nat_net_init(struct net *net)
 {
@@ -116,6 +115,7 @@ static struct pernet_operations frame_nat_net_ops = {
 	.init = frame_nat_net_init,
 	.exit = frame_nat_net_exit,
 };
+#endif
 
 static int __init ebtable_nat_init(void)
 {

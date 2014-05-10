@@ -36,8 +36,7 @@ static int arc4_set_key(struct crypto_tfm *tfm, const u8 *in_key,
 	for(i = 0; i < 256; i++)
 		ctx->S[i] = i;
 
-	for(i = 0; i < 256; i++)
-	{
+	for(i = 0; i < 256; i++) {
 		u8 a = ctx->S[i];
 		j = (j + in_key[k] + a) & 0xff;
 		ctx->S[i] = ctx->S[j];

@@ -127,11 +127,23 @@ static u32 *fake_cow_metrics(struct dst_entry *dst, unsigned long old)
 	return NULL;
 }
 
+static struct neighbour *fake_neigh_lookup(const struct dst_entry *dst, const void *daddr)
+{
+	return NULL;
+}
+
+static unsigned int fake_mtu(const struct dst_entry *dst)
+{
+	return dst->dev->mtu;
+}
+
 static struct dst_ops fake_dst_ops = {
 	.family =		AF_INET,
 	.protocol =		cpu_to_be16(ETH_P_IP),
 	.update_pmtu =		fake_update_pmtu,
 	.cow_metrics =		fake_cow_metrics,
+	.neigh_lookup =		fake_neigh_lookup,
+	.mtu =			fake_mtu,
 };
 
 /*
@@ -153,7 +165,7 @@ void br_netfilter_rtable_init(struct net_bridge *br)
 	rt->dst.dev = br->dev;
 	rt->dst.path = &rt->dst;
 	dst_init_metrics(&rt->dst, br_dst_default_metrics, true);
-	rt->dst.flags	= DST_NOXFRM;
+	rt->dst.flags	= DST_NOXFRM | DST_NOPEER | DST_FAKE_RTABLE;
 	rt->dst.ops = &fake_dst_ops;
 }
 
@@ -377,18 +389,18 @@ static int br_nf_pre_routing_finish_bridge(struct sk_buff *skb)
 		goto free_skb;
 	dst = skb_dst(skb);
 	neigh = dst_get_neighbour(dst);
-	if (dst->hh) {
-		neigh_hh_bridge(dst->hh, skb);
+	if (neigh->hh.hh_len) {
+		neigh_hh_bridge(&neigh->hh, skb);
 		skb->dev = nf_bridge->physindev;
 		return br_handle_frame_finish(skb);
-	} else if (neigh) {
+	} else {
 		/* the neighbour function below overwrites the complete
 		 * MAC header, so we save the Ethernet source address and
 		 * protocol number. */
 		skb_copy_from_linear_data_offset(skb, -(ETH_HLEN-ETH_ALEN), skb->nf_bridge->data, ETH_HLEN-ETH_ALEN);
 		/* tell br_dev_xmit to continue with forwarding */
 		nf_bridge->mask |= BRNF_BRIDGED_DNAT;
-		return neigh->output(skb);
+		return neigh->output(neigh, skb);
 	}
 free_skb:
 	kfree_skb(skb);
@@ -701,11 +713,7 @@ static unsigned int br_nf_local_in(unsigned int hook, struct sk_buff *skb,
 				   const struct net_device *out,
 				   int (*okfn)(struct sk_buff *))
 {
-	struct rtable *rt = skb_rtable(skb);
-
-	if (rt && rt == bridge_parent_rtable(in))
-		skb_dst_drop(skb);
-
+	br_drop_fake_rtable(skb);
 	return NF_ACCEPT;
 }
 

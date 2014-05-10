@@ -476,8 +476,11 @@ static int fib_nl_delrule(struct sk_buff *skb, struct nlmsghdr* nlh, void *arg)
 
 		list_del_rcu(&rule->list);
 
-		if (rule->action == FR_ACT_GOTO)
+		if (rule->action == FR_ACT_GOTO) {
 			ops->nr_goto_rules--;
+			if (rtnl_dereference(rule->ctarget) == NULL)
+				ops->unresolved_rules--;
+		}
 
 		/*
 		 * Check if this rule is a target to any of them. If so,
@@ -712,6 +715,13 @@ static int fib_rules_event(struct notifier_block *this, unsigned long event,
 	case NETDEV_REGISTER:
 		list_for_each_entry(ops, &net->rules_ops, list)
 			attach_rules(&ops->rules_list, dev);
+		break;
+
+	case NETDEV_CHANGENAME:
+		list_for_each_entry(ops, &net->rules_ops, list) {
+			detach_rules(&ops->rules_list, dev);
+			attach_rules(&ops->rules_list, dev);
+		}
 		break;
 
 	case NETDEV_UNREGISTER:

@@ -258,21 +258,8 @@ struct netdev_hw_addr_list {
 	netdev_hw_addr_list_for_each(ha, &(dev)->mc)
 
 struct hh_cache {
-	struct hh_cache *hh_next;	/* Next entry			     */
-	atomic_t	hh_refcnt;	/* number of users                   */
-/*
- * We want hh_output, hh_len, hh_lock and hh_data be a in a separate
- * cache line on SMP.
- * They are mostly read, but hh_refcnt may be changed quite frequently,
- * incurring cache line ping pongs.
- */
-	__be16		hh_type ____cacheline_aligned_in_smp;
-					/* protocol identifier, f.e ETH_P_IP
-                                         *  NOTE:  For VLANs, this will be the
-                                         *  encapuslated type. --BLG
-                                         */
-	u16		hh_len;		/* length of header */
-	int		(*hh_output)(struct sk_buff *skb);
+	u16		hh_len;
+	u16		__pad;
 	seqlock_t	hh_lock;
 
 	/* cached hardware header; allow for machine alignment needs.        */
@@ -283,12 +270,6 @@ struct hh_cache {
 	(((__len)+(HH_DATA_MOD-1))&~(HH_DATA_MOD - 1))
 	unsigned long	hh_data[HH_DATA_ALIGN(LL_MAX_HEADER) / sizeof(long)];
 };
-
-static inline void hh_cache_put(struct hh_cache *hh)
-{
-	if (atomic_dec_and_test(&hh->hh_refcnt))
-		kfree(hh);
-}
 
 /* Reserve HH_DATA_MOD byte aligned hard_header_len, but at least that much.
  * Alternative is:
@@ -314,8 +295,7 @@ struct header_ops {
 			   const void *saddr, unsigned len);
 	int	(*parse)(const struct sk_buff *skb, unsigned char *haddr);
 	int	(*rebuild)(struct sk_buff *skb);
-#define HAVE_HEADER_CACHE
-	int	(*cache)(const struct neighbour *neigh, struct hh_cache *hh);
+	int	(*cache)(const struct neighbour *neigh, struct hh_cache *hh, __be16 type);
 	void	(*cache_update)(struct hh_cache *hh,
 				const struct net_device *dev,
 				const unsigned char *haddr);
@@ -556,7 +536,7 @@ struct netdev_queue {
 	struct Qdisc		*qdisc;
 	unsigned long		state;
 	struct Qdisc		*qdisc_sleeping;
-#ifdef CONFIG_RPS
+#if defined(CONFIG_RPS) || defined(CONFIG_XPS)
 	struct kobject		kobj;
 #endif
 #if defined(CONFIG_XPS) && defined(CONFIG_NUMA)
@@ -794,12 +774,6 @@ struct netdev_tc_txq {
  *	3. Update dev->stats asynchronously and atomically, and define
  *	   neither operation.
  *
- * void (*ndo_vlan_rx_register)(struct net_device *dev, struct vlan_group *grp);
- *	If device support VLAN receive acceleration
- *	(ie. dev->features & NETIF_F_HW_VLAN_RX), then this function is called
- *	when vlan groups for the device changes.  Note: grp is NULL
- *	if no vlan's groups are being used.
- *
  * void (*ndo_vlan_rx_add_vid)(struct net_device *dev, unsigned short vid);
  *	If device support VLAN filtering (dev->features & NETIF_F_HW_VLAN_FILTER)
  *	this function is called when a VLAN id is registered.
@@ -918,9 +892,11 @@ struct net_device_ops {
 	struct rtnl_link_stats64* (*ndo_get_stats64)(struct net_device *dev,
 						     struct rtnl_link_stats64 *storage);
 	struct net_device_stats* (*ndo_get_stats)(struct net_device *dev);
-
-	void			(*ndo_vlan_rx_register)(struct net_device *dev,
+#if defined(CONFIG_RTDEV_MII)
+	/* Needed ON for iNIC_mii.obj compatible */
+	void			(*ndo_vlan_rx_register_fake)(struct net_device *dev,
 						        struct vlan_group *grp);
+#endif
 	void			(*ndo_vlan_rx_add_vid)(struct net_device *dev,
 						       unsigned short vid);
 	void			(*ndo_vlan_rx_kill_vid)(struct net_device *dev,
@@ -1214,7 +1190,7 @@ struct net_device {
 
 	unsigned char		broadcast[MAX_ADDR_LEN];	/* hw bcast add	*/
 
-#ifdef CONFIG_RPS
+#if defined(CONFIG_RPS) || defined(CONFIG_XPS)
 	struct kset		*queues_kset;
 
 	struct netdev_rx_queue	*_rx;
@@ -1785,8 +1761,6 @@ static inline void input_queue_tail_incr_save(struct softnet_data *sd,
 
 DECLARE_PER_CPU_ALIGNED(struct softnet_data, softnet_data);
 
-#define HAVE_NETIF_QUEUE
-
 extern void __netif_schedule(struct Qdisc *q);
 
 static inline void netif_schedule_queue(struct netdev_queue *txq)
@@ -2062,10 +2036,8 @@ extern void dev_kfree_skb_irq(struct sk_buff *skb);
  */
 extern void dev_kfree_skb_any(struct sk_buff *skb);
 
-#define HAVE_NETIF_RX 1
 extern int		netif_rx(struct sk_buff *skb);
 extern int		netif_rx_ni(struct sk_buff *skb);
-#define HAVE_NETIF_RECEIVE_SKB 1
 extern int		netif_receive_skb(struct sk_buff *skb);
 extern gro_result_t	dev_gro_receive(struct napi_struct *napi,
 					struct sk_buff *skb);
@@ -2245,8 +2217,6 @@ extern void netif_device_attach(struct net_device *dev);
 /*
  * Network interface message level settings
  */
-#define HAVE_NETIF_MSG 1
-
 enum {
 	NETIF_MSG_DRV		= 0x0001,
 	NETIF_MSG_PROBE		= 0x0002,
@@ -2563,7 +2533,6 @@ static inline u32 netdev_get_wanted_features(struct net_device *dev)
 	return (dev->features & ~dev->hw_features) | dev->wanted_features;
 }
 u32 netdev_increment_features(u32 all, u32 one, u32 mask);
-u32 netdev_fix_features(struct net_device *dev, u32 features);
 int __netdev_update_features(struct net_device *dev);
 void netdev_update_features(struct net_device *dev);
 void netdev_change_features(struct net_device *dev);

@@ -1772,7 +1772,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 					if (wl_modified & WIFI_COMMON_CHANGE_BIT)
 						notify_rc("restart_wifi_wl");
 					else {
-						if (rt_modified & WIFI_RADIO_CONTROL_BIT)
+						if (wl_modified & WIFI_RADIO_CONTROL_BIT)
 							notify_rc("control_wifi_radio_wl");
 						
 						if (wl_modified & WIFI_GUEST_CONTROL_BIT)

@@ -9,8 +9,8 @@ ROMFSDIR=$(ROOTDIR)/romfs
 endif
 
 UCLINUX_BUILD_USER=1
+-include $(LINUX_CONFIG)
 include $(CONFIG_CONFIG)
-include $(LINUX_CONFIG)
 include $(ARCH_CONFIG)
 include $(ROOTDIR)/vendors/$(CONFIG_VENDOR)/boards.mk
 

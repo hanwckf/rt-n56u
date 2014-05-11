@@ -1019,10 +1019,11 @@ static void clean_error_msg() {
 	return;
 }
 
-#define WIFI_COMMON_CHANGE_BIT	(1<<0)
-#define WIFI_RADIO_CONTROL_BIT	(1<<1)
-#define WIFI_GUEST_CONTROL_BIT	(1<<2)
-#define WIFI_SCHED_CONTROL_BIT	(1<<3)
+#define WIFI_IWPRIV_CHANGE_BIT	(1<<0)
+#define WIFI_COMMON_CHANGE_BIT	(1<<1)
+#define WIFI_RADIO_CONTROL_BIT	(1<<2)
+#define WIFI_GUEST_CONTROL_BIT	(1<<3)
+#define WIFI_SCHED_CONTROL_BIT	(1<<4)
 
 static int nvram_modified = 0;
 static int wl_modified = 0;
@@ -1242,32 +1243,46 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						char_to_ascii(buff, value);
 						nvram_set("wl_ssid2", buff);
 						set_wifi_ssid(IFNAME_5G_MAIN, value);
+						
+						wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
 					else if (!strcmp(v->name, "wl_guest_ssid"))
 					{
 						set_wifi_ssid(IFNAME_5G_GUEST, value);
+						
+						wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
 					else
 #endif
 					if (!strcmp(v->name, "wl_TxPower"))
 					{
 						set_wifi_param_int(IFNAME_5G_MAIN, "TxPower", value, 0, 100);
+						
+						wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
 					else if (!strcmp(v->name, "wl_greenap"))
 					{
 						set_wifi_param_int(IFNAME_5G_MAIN, "GreenAP", value, 0, 1);
+						
+						wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
 					else if (!strcmp(v->name, "wl_IgmpSnEnable"))
 					{
 						set_wifi_param_int(IFNAME_5G_MAIN, "IgmpSnEnable", value, 0, 1);
+						
+						wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
 					else if (!strcmp(v->name, "wl_mcastrate"))
 					{
 						set_wifi_mrate(IFNAME_5G_MAIN, value);
+						
+						wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
 					else if (!strcmp(v->name, "wl_guest_mcs_mode"))
 					{
 						set_wifi_mcs_mode(IFNAME_5G_GUEST, value);
+						
+						wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
 					else if (!strcmp(v->name, "wl_guest_enable") ||
 					         !strcmp(v->name, "wl_guest_time_x") ||
@@ -1306,32 +1321,46 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						char_to_ascii(buff, value);
 						nvram_set("rt_ssid2", buff);
 						set_wifi_ssid(IFNAME_2G_MAIN, value);
+						
+						rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
 					else if (!strcmp(v->name, "rt_guest_ssid"))
 					{
 						set_wifi_ssid(IFNAME_2G_GUEST, value);
+						
+						rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
 					else
 #endif
 					if (!strcmp(v->name, "rt_TxPower"))
 					{
 						set_wifi_param_int(IFNAME_2G_MAIN, "TxPower", value, 0, 100);
+						
+						rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
 					else if (!strcmp(v->name, "rt_greenap"))
 					{
 						set_wifi_param_int(IFNAME_2G_MAIN, "GreenAP", value, 0, 1);
+						
+						rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
 					else if (!strcmp(v->name, "rt_IgmpSnEnable"))
 					{
 						set_wifi_param_int(IFNAME_2G_MAIN, "IgmpSnEnable", value, 0, 1);
+						
+						rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
 					else if (!strcmp(v->name, "rt_mcastrate"))
 					{
 						set_wifi_mrate(IFNAME_2G_MAIN, value);
+						
+						rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
 					else if (!strcmp(v->name, "rt_guest_mcs_mode"))
 					{
 						set_wifi_mcs_mode(IFNAME_2G_GUEST, value);
+						
+						rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
 					else if (!strcmp(v->name, "rt_guest_enable") ||
 					         !strcmp(v->name, "rt_guest_time_x") ||
@@ -1772,6 +1801,9 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 					if (wl_modified & WIFI_COMMON_CHANGE_BIT)
 						notify_rc("restart_wifi_wl");
 					else {
+						if (wl_modified & WIFI_IWPRIV_CHANGE_BIT)
+							notify_rc("control_wifi_config_wl");
+						
 						if (wl_modified & WIFI_RADIO_CONTROL_BIT)
 							notify_rc("control_wifi_radio_wl");
 						
@@ -1788,6 +1820,9 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 					if (rt_modified & WIFI_COMMON_CHANGE_BIT)
 						notify_rc("restart_wifi_rt");
 					else {
+						if (rt_modified & WIFI_IWPRIV_CHANGE_BIT)
+							notify_rc("control_wifi_config_rt");
+						
 						if (rt_modified & WIFI_RADIO_CONTROL_BIT)
 							notify_rc("control_wifi_radio_rt");
 						

@@ -915,6 +915,14 @@ handle_notifications(void)
 		{
 			control_radio_rt(0, 0);
 		}
+		else if (!strcmp(entry->d_name, "control_wifi_config_wl"))
+		{
+			gen_ralink_config_5g(0);
+		}
+		else if (!strcmp(entry->d_name, "control_wifi_config_rt"))
+		{
+			gen_ralink_config_2g(0);
+		}
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_storage"))
 		{
 			// deferred run usb apps

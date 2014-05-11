@@ -1,6 +1,4 @@
 [Language type]
-CHAR_set=UTF-8
-PASS_LANG=Выбор языка Web интерфейса:
 LANG_EN=English
 LANG_CZ=Česky
 LANG_PL=Polski
@@ -13,6 +11,8 @@ LANG_DA=Dansk
 LANG_SV=Svensk
 LANG_BR=Brazil
 LANG_ES=Español
+LANG_UK=Українська
+PASS_LANG=Выбор языка Web интерфейса:
 [VPN Passthrough]
 VPN_PPTP_Passthrough=Пропускать пакеты PPTP?
 VPN_L2TP_Passthrough=Пропускать пакеты L2TP?
@@ -1641,7 +1641,7 @@ HSDPAConfig_password_itemdesc=Пожалуйста введите пароль.
 HSDPAConfig_usbadaptor_itemdesc=Пожалуйста выберите Ваш USB-адаптер.
 HSDPAConfig_safely_remove=Безопасное извлечение USB-модема
 LANHostConfig_IPRouters_itemdesc=IP-адрес LAN ZVMODELVZ. Значение по умолчанию – 192.168.1.1.
-HSDPAConfig_hsdpa_mode_itemdesc=Выберите тип USB-модема, соответствующий Вашим требованиям. Для безопасного отключения USB-модема пожалуйста перейдите на <a href='/index.asp' target=\'_blank\'>«Карта сети»</a> и нажмите «Извлечь».
+HSDPAConfig_hsdpa_mode_itemdesc=Выберите тип USB-модема, соответствующий Вашим требованиям. Для безопасного отключения USB-модема пожалуйста перейдите на <a href='/index.asp' target='_blank'>«Карта сети»</a> и нажмите «Извлечь».
 Not_authpage_login_again=Если Вы хотите войти снова, сначала закройте это окно. 
 GO_HSDPA_SETTING=Перейти к настройкам модема
 [new strings - translated]

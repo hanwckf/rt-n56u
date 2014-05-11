@@ -3392,54 +3392,64 @@ static int ej_get_usb_ports_info(int eid, webs_t wp, int argc, char_t **argv){
 	return 0;
 }
 
-
+#define MAX_DICT_LANGS (15)
 int ej_shown_language_option(int eid, webs_t wp, int argc, char **argv) {
-	struct language_table *pLang = NULL;
-	char lang[4];
+	FILE *fp;
 	int i, len;
-	FILE *fp = fopen("EN.dict", "r");
-	char buffer[1024], key[16], target[16];
-	char *follow_info, *follow_info_end;
+	struct language_table *pLang = NULL;
+	char buffer[256], key[16], target[32];
+	char *follow_info, *follow_info_end, *selected, *lang_set;
 
-	if (fp == NULL) {
+	lang_set = nvram_safe_get("preferred_lang");
+
+	fp = fopen("EN.dict", "r");
+	if (!fp) {
 		fprintf(stderr, "No English dictionary!\n");
 		return 0;
 	}
 
-	memset(lang, 0, 4);
-	strcpy(lang, nvram_safe_get("preferred_lang"));
-
-	for (i = 0; i < 21; ++i) {
-		memset(buffer, 0, sizeof(buffer));
-		if ((follow_info = fgets(buffer, sizeof(buffer), fp)) != NULL) {
-			if (strncmp(follow_info, "LANG_", 5))    // 5 = strlen("LANG_")
-				continue;
-
-			follow_info += 5;
-			follow_info_end = strstr(follow_info, "=");
-			len = follow_info_end-follow_info;
-			memset(key, 0, sizeof(key));
-			strncpy(key, follow_info, len);
-
-			for (pLang = language_tables; pLang->Lang != NULL; ++pLang) {
-				if (strcmp(key, pLang->Target_Lang))
-					continue;
-				follow_info = follow_info_end+1;
-				follow_info_end = strstr(follow_info, "\n");
-				len = follow_info_end-follow_info;
-				memset(target, 0, sizeof(target));
-				strncpy(target, follow_info, len);
-
-				if (!strcmp(key, lang))
-					websWrite(wp, "<option value=\"%s\" selected>%s</option>\\n", key, target);
-				else
-					websWrite(wp, "<option value=\"%s\">%s</option>\\n", key, target);
-				break;
-			}
-		}
-		else
+	for (i = 0; i <= MAX_DICT_LANGS; ++i) {
+		follow_info = fgets(buffer, sizeof(buffer), fp);
+		if (!follow_info)
 			break;
+		
+		if (strncmp(follow_info, "LANG_", 5))    // 5 = strlen("LANG_")
+			continue;
+		
+		follow_info += 5;
+		follow_info_end = strstr(follow_info, "=");
+		len = follow_info_end-follow_info;
+		if (len < 1 || len >= sizeof(key))
+			continue;
+		
+		strncpy(key, follow_info, len);
+		key[len] = 0;
+		
+		follow_info = follow_info_end+1;
+		follow_info_end = strstr(follow_info, "\n");
+		len = follow_info_end-follow_info;
+		if (len < 1)
+			continue;
+		
+		if (len >= sizeof(target))
+			len = sizeof(target) - 1;
+		strncpy(target, follow_info, len);
+		target[len] = 0;
+		
+		for (pLang = language_tables; pLang->Lang != NULL; ++pLang) {
+			if (strcmp(key, pLang->Target_Lang))
+				continue;
+			
+			selected = "";
+			if (!strcmp(key, lang_set))
+				selected = " selected";
+			
+			websWrite(wp, "<option value=\"%s\"%s>%s</option>\\n", key, selected, target);
+			
+			break;
+		}
 	}
+
 	fclose(fp);
 
 	return 0;

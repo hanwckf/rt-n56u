@@ -131,6 +131,8 @@ struct language_table language_tables[] = {
 	{"en", "EN"},
 	{"ru-ru", "RU"},
 	{"ru", "RU"},
+	{"uk-UA", "UK"},
+	{"uk", "UK"},
 	{"fr", "FR"},
 	{"fr-fr", "FR"},
 	{"de-at", "DE"},

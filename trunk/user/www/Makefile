@@ -85,6 +85,12 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_LANG_SV),y)
 	sed $(BOARD_PATTERN) -i $(ROMFS_DIR)/www/SV.dict
 	sed $(COPYR_PATTERN) -i $(ROMFS_DIR)/www/SV.dict
 endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_LANG_UK),y)
+	echo "LANG_UK=Українська" >> $(ROMFS_DIR)/www/EN.header
+	cp dict/UK.dict $(ROMFS_DIR)/www
+	sed $(BOARD_PATTERN) -i $(ROMFS_DIR)/www/UK.dict
+	sed $(COPYR_PATTERN) -i $(ROMFS_DIR)/www/UK.dict
+endif
 	cat $(ROMFS_DIR)/www/EN.header dict/EN.footer > $(ROMFS_DIR)/www/EN.dict
 	sed $(BOARD_PATTERN) -i $(ROMFS_DIR)/www/EN.dict
 	sed $(COPYR_PATTERN) -i $(ROMFS_DIR)/www/EN.dict

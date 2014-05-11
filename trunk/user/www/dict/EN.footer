@@ -1,3 +1,4 @@
+PASS_LANG=Select Language:
 [VPN Passthrough]
 VPN_PPTP_Passthrough=PPTP Passthrough?
 VPN_L2TP_Passthrough=L2TP Passthrough?

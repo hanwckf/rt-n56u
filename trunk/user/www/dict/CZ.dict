@@ -1,6 +1,4 @@
 [Language type]
-CHAR_set=UTF-8
-PASS_LANG=Zvolte Jazyk:
 LANG_EN=English
 LANG_CZ=Česky
 LANG_PL=Polski
@@ -13,6 +11,8 @@ LANG_DA=Dansk
 LANG_SV=Svensk
 LANG_BR=Brazil
 LANG_ES=Español
+LANG_UK=Українська
+PASS_LANG=Zvolte Jazyk:
 [VPN Passthrough]
 VPN_PPTP_Passthrough=Průchod PPTP
 VPN_L2TP_Passthrough=Průchod L2TP

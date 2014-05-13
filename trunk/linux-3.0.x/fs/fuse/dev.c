@@ -19,9 +19,6 @@
 #include <linux/pipe_fs_i.h>
 #include <linux/swap.h>
 #include <linux/splice.h>
-#ifdef CONFIG_MIPS
-#include <asm/cacheflush.h>
-#endif
 
 MODULE_ALIAS_MISCDEV(FUSE_MINOR);
 MODULE_ALIAS("devname:fuse");
@@ -658,9 +655,6 @@ static int fuse_copy_fill(struct fuse_copy_state *cs)
 static int fuse_copy_do(struct fuse_copy_state *cs, void **val, unsigned *size)
 {
 	unsigned ncpy = min(*size, cs->len);
-#ifdef CONFIG_MIPS
-	__flush_cache_all();
-#endif
 	if (val) {
 		if (cs->write)
 			memcpy(cs->buf, *val, ncpy);

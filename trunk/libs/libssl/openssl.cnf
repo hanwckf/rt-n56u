@@ -90,25 +90,34 @@ unstructuredName		= An optional company name
 
 [ usr_cert ]
 basicConstraints=CA:FALSE
-nsComment			= "OpenSSL Generated Certificate"
+nsComment="OpenSSL Generated Certificate"
 subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid,issuer:always
 
+[ server ]
+basicConstraints=CA:FALSE
+nsCertType=server
+nsComment="OpenSSL Generated Certificate"
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid,issuer:always
+extendedKeyUsage=serverAuth
+keyUsage=digitalSignature, keyEncipherment
+
 [ v3_req ]
-basicConstraints = CA:FALSE
-keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+basicConstraints=CA:FALSE
+keyUsage=nonRepudiation, digitalSignature, keyEncipherment
 
 [ v3_ca ]
+basicConstraints=CA:true
 subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid:always,issuer:always
-basicConstraints = CA:true
 
 [ crl_ext ]
 authorityKeyIdentifier=keyid:always,issuer:always
 
 [ proxy_cert_ext ]
 basicConstraints=CA:FALSE
-nsComment			= "OpenSSL Generated Certificate"
+nsComment="OpenSSL Generated Certificate"
 subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid,issuer:always
 proxyCertInfo=critical,language:id-ppl-anyLanguage,pathlen:3,policy:foo

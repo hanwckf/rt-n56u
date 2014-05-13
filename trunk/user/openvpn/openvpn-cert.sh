@@ -204,11 +204,11 @@ echo -e ". done ] \033[0m"
 
 echo -en "\033[1m [ Generating ${CRT_CN} certificate ."
 sed '6s/.*/'${CRT_CN}'/' "ca.raw" | sed '$ a .' | sed 8p | \
-	openssl req -new -nodes -key ${CRT_CN}.key \
+	openssl req -new -nodes $1 -key ${CRT_CN}.key \
 	-out ${CRT_CN}.csr > /dev/null 2>&1
 
 echo -n "."
-openssl ca -batch -config ${ssldir}/openssl.cnf -in ${CRT_CN}.csr \
+openssl ca -batch -config ${ssldir}/openssl.cnf $1 -in ${CRT_CN}.csr \
 	-out ${CRT_CN}.crt > /dev/null 2>&1
 if [ -f ${CRT_CN}.crt ]; then
 	chmod 644 ${CRT_CN}.crt
@@ -260,7 +260,7 @@ do_check_cfg
 do_create_CA
 
 ## Create certificate and key for router
-CRT_CN="server" ; do_create_x_509
+CRT_CN="server" ; do_create_x_509 "-extensions server"
 
 ## Create certificate and key for client
 CRT_CN="client" ; do_create_x_509

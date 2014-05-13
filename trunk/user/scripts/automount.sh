@@ -90,8 +90,16 @@ elif [ "$ID_FS_TYPE" == "ntfs" ] ; then
 	if [ "$achk_enable" != "0" ] && [ -x /sbin/chkntfs ] ; then
 		/sbin/chkntfs -a -f --verbose "$dev_full" > "/tmp/chkntfs_result_$1" 2>&1
 	fi
-	func_load_module ufsd
-	mount -t ufsd -o noatime,sparse,nls=utf8,force "$dev_full" "$dev_mount"
+	kernel_ufsd=`modprobe -l | grep ufsd`
+	if [ -n "$kernel_ufsd" ] ; then
+		func_load_module ufsd
+		mount -t ufsd "$dev_full" "$dev_mount" -o noatime,sparse,nls=utf8,force
+	elif [ -x /sbin/ntfs-3g ] ; then
+		/sbin/ntfs-3g "$dev_full" "$dev_mount" -o noatime,umask=0,big_writes
+		if [ $? -ne 0 ] ; then
+			/sbin/ntfs-3g "$dev_full" "$dev_mount" -o noatime,umask=0,ro
+		fi
+	fi
 elif [ "$ID_FS_TYPE" == "hfsplus" -o "$ID_FS_TYPE" == "hfs" ] ; then
 	kernel_hfsplus=`modprobe -l | grep hfsplus`
 	if [ -n "$kernel_hfsplus" ] ; then

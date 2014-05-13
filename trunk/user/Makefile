@@ -17,6 +17,7 @@ include $(ROOTDIR)/vendors/$(CONFIG_VENDOR)/boards.mk
 INSTALLDIR = $(ROOTDIR)/romfs
 
 FS_FAT_ENABLED=n
+FS_NTFS_ENABLED=n
 OPENSSH_ENABLED=n
 DROPBEAR_ENABLED=n
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSH),y)
@@ -35,6 +36,9 @@ FS_FAT_ENABLED=y
 endif
 ifeq ($(CONFIG_FIRMWARE_ENABLE_EXFAT),y)
 FS_FAT_ENABLED=y
+endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_NTFS_3G),y)
+FS_NTFS_ENABLED=y
 endif
 
 dir_y =
@@ -80,6 +84,7 @@ dir_y							+= rp-l2tp
 dir_y							+= usb-modeswitch
 dir_y							+= tcpcheck
 dir_$(FS_FAT_ENABLED)					+= dosfstools
+dir_$(FS_NTFS_ENABLED)					+= ntfs-3g
 dir_y							+= lldt
 dir_$(CONFIG_FIRMWARE_INCLUDE_LPRD)			+= LPRng
 dir_$(CONFIG_FIRMWARE_INCLUDE_U2EC)			+= u2ec

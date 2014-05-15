@@ -140,7 +140,6 @@ static int xhci_pci_setup(struct usb_hcd *hcd)
 		xhci->quirks |= XHCI_AMD_PLL_FIX;
 	if (pdev->vendor == PCI_VENDOR_ID_INTEL &&
 			pdev->device == PCI_DEVICE_ID_INTEL_PANTHERPOINT_XHCI) {
-		xhci->quirks |= XHCI_SPURIOUS_SUCCESS;
 		xhci->quirks |= XHCI_EP_LIMIT_QUIRK;
 		xhci->limit_active_eps = 64;
 		/*
@@ -162,6 +161,13 @@ static int xhci_pci_setup(struct usb_hcd *hcd)
 	}
 	if (pdev->vendor == PCI_VENDOR_ID_VIA)
 		xhci->quirks |= XHCI_RESET_ON_RESUME;
+
+	/* In xhci controllers which follow xhci 1.0 spec gives a spurious
+	 * success event after a short transfer. This quirk will ignore such
+	 * spurious event.
+	 */
+	if (xhci->hci_version > 0x96)
+		xhci->quirks |= XHCI_SPURIOUS_SUCCESS;
 
 	/* Make sure the HC is halted. */
 	retval = xhci_halt(xhci);

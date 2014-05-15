@@ -86,8 +86,9 @@ struct compressor {
 /*
  * The return value from decompress routine is the length of the
  * decompressed packet if successful, otherwise DECOMP_ERROR
- * or DECOMP_FATALERROR if an error occurred.
- * 
+ * or DECOMP_FATALERROR if an error occurred but don't want the
+ * PPP generic layer to drop the packet.
+ *
  * We need to make this distinction so that we can disable certain
  * useful functionality, namely sending a CCP reset-request as a result
  * of an error detected after decompression.  This is to avoid infringing
@@ -97,6 +98,7 @@ struct compressor {
 
 #define DECOMP_ERROR		-1	/* error detected before decomp. */
 #define DECOMP_FATALERROR	-2	/* error detected after decomp. */
+#define DECOMP_DROPERROR	-3	/* error detected, drop packet. */
 
 /*
  * CCP codes.

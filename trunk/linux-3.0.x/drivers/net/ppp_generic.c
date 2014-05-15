@@ -1720,8 +1720,12 @@ ppp_receive_nonmp_frame(struct ppp *ppp, struct sk_buff *skb)
 	 * that come in as well as compressed frames.
 	 */
 	if (ppp->rc_state && (ppp->rstate & SC_DECOMP_RUN) &&
-	    (ppp->rstate & (SC_DC_FERROR | SC_DC_ERROR)) == 0)
+	    (ppp->rstate & (SC_DC_FERROR | SC_DC_ERROR)) == 0) {
 		skb = ppp_decompress_frame(ppp, skb);
+		/* Packet dropped */
+		if (!skb)
+			return;
+	}
 
 	if (ppp->flags & SC_MUST_COMP && ppp->rstate & SC_DC_FERROR)
 		goto err;
@@ -1891,6 +1895,14 @@ ppp_decompress_frame(struct ppp *ppp, struct sk_buff *skb)
 		len = ppp->rcomp->decompress(ppp->rc_state, skb->data - 2,
 				skb->len + 2, ns->data, obuff_size);
 		if (len < 0) {
+			/* Drop the packet and continue */
+			if (len == DECOMP_DROPERROR) {
+				kfree_skb(ns);
+				kfree_skb(skb);
+				skb = NULL;
+				++ppp->dev->stats.rx_dropped;
+				goto err_drop;
+			}
 			/* Pass the compressed frame to pppd as an
 			   error indication. */
 			if (len == DECOMP_FATALERROR)
@@ -1921,6 +1933,7 @@ ppp_decompress_frame(struct ppp *ppp, struct sk_buff *skb)
 
  err:
 	ppp->rstate |= SC_DC_ERROR;
+ err_drop:
 	ppp_receive_error(ppp);
 	return skb;
 }

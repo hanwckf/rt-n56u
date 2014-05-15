@@ -55,6 +55,7 @@
 #include <linux/ppp_defs.h>
 #include <linux/ppp-comp.h>
 #include <linux/scatterlist.h>
+#include <linux/net.h>
 #include <asm/unaligned.h>
 
 #include "ppp_mppe.h"
@@ -125,7 +126,10 @@ struct ppp_mppe_state {
 
 #define MPPE_BITS(p) ((p)[4] & 0xf0)
 #define MPPE_CCOUNT(p) ((((p)[4] & 0x0f) << 8) + (p)[5])
-#define MPPE_CCOUNT_SPACE 0x1000	/* The size of the ccount space */
+#define MPPE_CCOUNT_BITS 12	/* MPPE coherency count bits */
+/* The size of the ccount space */
+#define MPPE_CCOUNT_SPACE (1 << MPPE_CCOUNT_BITS)
+#define MPPE_CCOUNT_SHIFT ((sizeof(int) * 8) - MPPE_CCOUNT_BITS)
 
 #define MPPE_OVHD	2	/* MPPE overhead/packet */
 #define SANITY_MAX	1600	/* Max bogon factor we will tolerate */
@@ -468,6 +472,12 @@ static void mppe_decomp_reset(void *arg)
 	return;
 }
 
+/* Compares two coherency counter values. */
+static int mppe_cmp_ccount(unsigned int a, unsigned int b)
+{
+	return (int)((a << MPPE_CCOUNT_SHIFT) - (b << MPPE_CCOUNT_SHIFT));
+}
+
 /*
  * Decompress (decrypt) an MPPE packet.
  */
@@ -547,6 +557,13 @@ mppe_decompress(void *arg, unsigned char *ibuf, int isize, unsigned char *obuf,
 	 */
 
 	if (!state->stateful) {
+		if (mppe_cmp_ccount(ccount, state->ccount) < 0) {
+			if (state->debug && net_ratelimit())
+				pr_warn("%s[%d]: Dropping out-of-order packet with ccount %u, expecting %u!\n",
+					     __func__, state->unit, ccount, state->ccount);
+			return DECOMP_DROPERROR;
+		}
+
 		/* RFC 3078, sec 8.1.  Rekey for every packet. */
 		while (state->ccount != ccount) {
 			mppe_rekey(state, 0);

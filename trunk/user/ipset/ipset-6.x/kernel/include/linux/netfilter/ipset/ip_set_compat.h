@@ -39,10 +39,13 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 5, 0)
 #include <linux/etherdevice.h>
 
+#if 0
+/* ether_addr_equal is already backported to our branch */
 static inline bool ether_addr_equal(const u8 *addr1, const u8 *addr2)
 {
 	return !compare_ether_addr(addr1, addr2);
 }
+#endif
 
 static inline int nla_put_be64(struct sk_buff *skb, int attrtype, __be64 value)
 {

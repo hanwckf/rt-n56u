@@ -672,8 +672,8 @@ struct xhci_stream_info *xhci_alloc_stream_info(struct xhci_hcd *xhci,
 		addr = cur_ring->first_seg->dma |
 			SCT_FOR_CTX(SCT_PRI_TR) |
 			cur_ring->cycle_state;
-		stream_info->stream_ctx_array[cur_stream].
-			stream_ring = cpu_to_le64(addr);
+		stream_info->stream_ctx_array[cur_stream].stream_ring =
+			cpu_to_le64(addr);
 		xhci_dbg(xhci, "Setting stream %d ring ptr to 0x%08llx\n",
 				cur_stream, (unsigned long long) addr);
 
@@ -909,7 +909,7 @@ int xhci_alloc_virt_device(struct xhci_hcd *xhci, int slot_id,
 	xhci_dbg(xhci, "Set slot id %d dcbaa entry %p to 0x%llx\n",
 		 slot_id,
 		 &xhci->dcbaa->dev_context_ptrs[slot_id],
-		 (unsigned long long) le64_to_cpu(xhci->dcbaa->dev_context_ptrs[slot_id]));
+		 le64_to_cpu(xhci->dcbaa->dev_context_ptrs[slot_id]));
 
 	return 1;
 fail:
@@ -1008,19 +1008,19 @@ int xhci_setup_addressable_virt_dev(struct xhci_hcd *xhci, struct usb_device *ud
 	slot_ctx = xhci_get_slot_ctx(xhci, dev->in_ctx);
 
 	/* 3) Only the control endpoint is valid - one endpoint context */
-	slot_ctx->dev_info |= cpu_to_le32(LAST_CTX(1) | (u32) udev->route);
+	slot_ctx->dev_info |= cpu_to_le32(LAST_CTX(1) | udev->route);
 	switch (udev->speed) {
 	case USB_SPEED_SUPER:
-		slot_ctx->dev_info |= cpu_to_le32((u32) SLOT_SPEED_SS);
+		slot_ctx->dev_info |= cpu_to_le32(SLOT_SPEED_SS);
 		break;
 	case USB_SPEED_HIGH:
-		slot_ctx->dev_info |= cpu_to_le32((u32) SLOT_SPEED_HS);
+		slot_ctx->dev_info |= cpu_to_le32(SLOT_SPEED_HS);
 		break;
 	case USB_SPEED_FULL:
-		slot_ctx->dev_info |= cpu_to_le32((u32) SLOT_SPEED_FS);
+		slot_ctx->dev_info |= cpu_to_le32(SLOT_SPEED_FS);
 		break;
 	case USB_SPEED_LOW:
-		slot_ctx->dev_info |= cpu_to_le32((u32) SLOT_SPEED_LS);
+		slot_ctx->dev_info |= cpu_to_le32(SLOT_SPEED_LS);
 		break;
 	case USB_SPEED_WIRELESS:
 		xhci_dbg(xhci, "FIXME xHCI doesn't support wireless speeds\n");
@@ -1034,7 +1034,7 @@ int xhci_setup_addressable_virt_dev(struct xhci_hcd *xhci, struct usb_device *ud
 	port_num = xhci_find_real_port_number(xhci, udev);
 	if (!port_num)
 		return -EINVAL;
-	slot_ctx->dev_info2 |= cpu_to_le32((u32) ROOT_HUB_PORT(port_num));
+	slot_ctx->dev_info2 |= cpu_to_le32(ROOT_HUB_PORT(port_num));
 	/* Set the port number in the virtual_device to the faked port number */
 	for (top_dev = udev; top_dev->parent && top_dev->parent->parent;
 			top_dev = top_dev->parent)

@@ -1668,10 +1668,8 @@ static void handle_port_status(struct xhci_hcd *xhci,
 
 		if (DEV_SUPERSPEED(temp)) {
 			xhci_dbg(xhci, "resume SS port %d\n", port_id);
-			temp = xhci_port_state_to_neutral(temp);
-			temp &= ~PORT_PLS_MASK;
-			temp |= PORT_LINK_STROBE | XDEV_U0;
-			xhci_writel(xhci, temp, port_array[faked_port_index]);
+			xhci_set_link_state(xhci, port_array, faked_port_index,
+						XDEV_U0);
 			slot_id = xhci_find_slot_id_by_port(hcd, xhci,
 					faked_port_index + 1);
 			if (!slot_id) {

@@ -1569,10 +1569,12 @@ static __net_init int ipv4_mib_init_net(struct net *net)
 			  sizeof(struct udp_mib),
 			  __alignof__(struct udp_mib)) < 0)
 		goto err_udp_mib;
+#if defined (CONFIG_INET_UDPLITE)
 	if (snmp_mib_init((void __percpu **)net->mib.udplite_statistics,
 			  sizeof(struct udp_mib),
 			  __alignof__(struct udp_mib)) < 0)
 		goto err_udplite_mib;
+#endif
 	if (snmp_mib_init((void __percpu **)net->mib.icmp_statistics,
 			  sizeof(struct icmp_mib),
 			  __alignof__(struct icmp_mib)) < 0)
@@ -1588,8 +1590,10 @@ static __net_init int ipv4_mib_init_net(struct net *net)
 err_icmpmsg_mib:
 	snmp_mib_free((void __percpu **)net->mib.icmp_statistics);
 err_icmp_mib:
+#if defined (CONFIG_INET_UDPLITE)
 	snmp_mib_free((void __percpu **)net->mib.udplite_statistics);
 err_udplite_mib:
+#endif
 	snmp_mib_free((void __percpu **)net->mib.udp_statistics);
 err_udp_mib:
 	snmp_mib_free((void __percpu **)net->mib.net_statistics);
@@ -1605,7 +1609,9 @@ static __net_exit void ipv4_mib_exit_net(struct net *net)
 {
 	kfree(net->mib.icmpmsg_statistics);
 	snmp_mib_free((void __percpu **)net->mib.icmp_statistics);
+#if defined (CONFIG_INET_UDPLITE)
 	snmp_mib_free((void __percpu **)net->mib.udplite_statistics);
+#endif
 	snmp_mib_free((void __percpu **)net->mib.udp_statistics);
 	snmp_mib_free((void __percpu **)net->mib.net_statistics);
 	snmp_mib_free((void __percpu **)net->mib.ip_statistics);
@@ -1720,8 +1726,10 @@ static int __init inet_init(void)
 	/* Setup UDP memory threshold */
 	udp_init();
 
+#if defined (CONFIG_INET_UDPLITE)
 	/* Add UDP-Lite (RFC 3828) */
 	udplite4_register();
+#endif
 
 	ping_init();
 

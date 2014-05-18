@@ -50,6 +50,10 @@
 #include <linux/seq_file.h>
 #include "udp_impl.h"
 
+#if !defined (CONFIG_INET_UDPLITE)
+#define is_udplite 0
+#endif
+
 int ipv6_rcv_saddr_equal(const struct sock *sk, const struct sock *sk2)
 {
 	const struct in6_addr *sk_rcv_saddr6 = &inet6_sk(sk)->rcv_saddr;
@@ -344,7 +348,9 @@ int udpv6_recvmsg(struct kiocb *iocb, struct sock *sk,
 	unsigned int ulen, copied;
 	int peeked, off = 0;
 	int err;
+#if defined (CONFIG_INET_UDPLITE)
 	int is_udplite = IS_UDPLITE(sk);
+#endif
 	int is_udp4;
 	bool slow;
 
@@ -375,7 +381,11 @@ try_again:
 	 * coverage checksum (UDP-Lite), do it before the copy.
 	 */
 
-	if (copied < ulen || UDP_SKB_CB(skb)->partial_cov) {
+	if (copied < ulen
+#if defined (CONFIG_INET_UDPLITE)
+	    || UDP_SKB_CB(skb)->partial_cov
+#endif
+	    ) {
 		if (udp_lib_checksum_complete(skb))
 			goto csum_copy_err;
 	}
@@ -502,9 +512,11 @@ static __inline__ void udpv6_err(struct sk_buff *skb,
 
 int udpv6_queue_rcv_skb(struct sock * sk, struct sk_buff *skb)
 {
-	struct udp_sock *up = udp_sk(sk);
 	int rc;
+#if defined (CONFIG_INET_UDPLITE)
+	struct udp_sock *up = udp_sk(sk);
 	int is_udplite = IS_UDPLITE(sk);
+#endif
 
 	if (!ipv6_addr_any(&inet6_sk(sk)->daddr))
 		sock_rps_save_rxhash(sk, skb);
@@ -512,6 +524,7 @@ int udpv6_queue_rcv_skb(struct sock * sk, struct sk_buff *skb)
 	if (!xfrm6_policy_check(sk, XFRM_POLICY_IN, skb))
 		goto drop;
 
+#if defined (CONFIG_INET_UDPLITE)
 	/*
 	 * UDP-Lite specific tests, ignored on UDP sockets (see net/ipv4/udp.c).
 	 */
@@ -530,6 +543,7 @@ int udpv6_queue_rcv_skb(struct sock * sk, struct sk_buff *skb)
 			goto drop;
 		}
 	}
+#endif
 
 	if (rcu_access_pointer(sk->sk_filter)) {
 		if (udp_lib_checksum_complete(skb))
@@ -682,16 +696,16 @@ static int __udp6_lib_mcast_deliver(struct net *net, struct sk_buff *skb,
 static inline int udp6_csum_init(struct sk_buff *skb, struct udphdr *uh,
 				 int proto)
 {
-	int err;
-
+#if defined (CONFIG_INET_UDPLITE)
 	UDP_SKB_CB(skb)->partial_cov = 0;
 	UDP_SKB_CB(skb)->cscov = skb->len;
 
 	if (proto == IPPROTO_UDPLITE) {
-		err = udplite_checksum_init(skb, uh);
+		int err = udplite_checksum_init(skb, uh);
 		if (err)
 			return err;
 	}
+#endif
 
 	if (uh->check == 0) {
 		/* RFC 2460 section 8.1 says that we SHOULD log
@@ -894,7 +908,9 @@ static int udp_v6_push_pending_frames(struct sock *sk)
 	struct inet_sock *inet = inet_sk(sk);
 	struct flowi6 *fl6;
 	int err = 0;
+#if defined (CONFIG_INET_UDPLITE)
 	int is_udplite = IS_UDPLITE(sk);
+#endif
 	__wsum csum = 0;
 
 	if (up->pending == AF_INET)
@@ -915,9 +931,12 @@ static int udp_v6_push_pending_frames(struct sock *sk)
 	uh->len = htons(up->len);
 	uh->check = 0;
 
+#if defined (CONFIG_INET_UDPLITE)
 	if (is_udplite)
 		csum = udplite_csum_outgoing(sk, skb);
-	else if (skb->ip_summed == CHECKSUM_PARTIAL) { /* UDP hardware csum */
+	else
+#endif
+	if (skb->ip_summed == CHECKSUM_PARTIAL) { /* UDP hardware csum */
 		udp6_hwcsum_outgoing(sk, skb, &fl6->saddr, &fl6->daddr,
 				     up->len);
 		goto send;
@@ -968,7 +987,9 @@ int udpv6_sendmsg(struct kiocb *iocb, struct sock *sk,
 	int corkreq = up->corkflag || msg->msg_flags&MSG_MORE;
 	int err;
 	int connected = 0;
+#if defined (CONFIG_INET_UDPLITE)
 	int is_udplite = IS_UDPLITE(sk);
+#endif
 	int (*getfrag)(void *, char *, int, int, int, struct sk_buff *);
 
 	/* destination address check */
@@ -1177,7 +1198,11 @@ back_from_confirm:
 
 do_append_data:
 	up->len += ulen;
+#if defined (CONFIG_INET_UDPLITE)
 	getfrag  =  is_udplite ?  udplite_getfrag : ip_generic_getfrag;
+#else
+	getfrag  =  ip_generic_getfrag;
+#endif
 	err = ip6_append_data(sk, getfrag, msg->msg_iov, ulen,
 		sizeof(struct udphdr), hlimit, tclass, opt, &fl6,
 		(struct rt6_info*)dst,

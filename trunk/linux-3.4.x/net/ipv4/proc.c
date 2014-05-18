@@ -67,8 +67,10 @@ static int sockstat_seq_show(struct seq_file *seq, void *v)
 	seq_printf(seq, "UDP: inuse %d mem %ld\n",
 		   sock_prot_inuse_get(net, &udp_prot),
 		   proto_memory_allocated(&udp_prot));
+#if defined (CONFIG_INET_UDPLITE)
 	seq_printf(seq, "UDPLITE: inuse %d\n",
 		   sock_prot_inuse_get(net, &udplite_prot));
+#endif
 	seq_printf(seq, "RAW: inuse %d\n",
 		   sock_prot_inuse_get(net, &raw_prot));
 	seq_printf(seq,  "FRAG: inuse %d memory %d\n",
@@ -385,6 +387,7 @@ static int snmp_seq_show(struct seq_file *seq, void *v)
 			   snmp_fold_field((void __percpu **)net->mib.udp_statistics,
 					   snmp4_udp_list[i].entry));
 
+#if defined (CONFIG_INET_UDPLITE)
 	/* the UDP and UDP-Lite MIBs are the same */
 	seq_puts(seq, "\nUdpLite:");
 	for (i = 0; snmp4_udp_list[i].name != NULL; i++)
@@ -395,6 +398,7 @@ static int snmp_seq_show(struct seq_file *seq, void *v)
 		seq_printf(seq, " %lu",
 			   snmp_fold_field((void __percpu **)net->mib.udplite_statistics,
 					   snmp4_udp_list[i].entry));
+#endif
 
 	seq_putc(seq, '\n');
 	return 0;

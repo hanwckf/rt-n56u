@@ -9,7 +9,9 @@
 
 extern struct proto rawv6_prot;
 extern struct proto udpv6_prot;
+#if defined (CONFIG_INET_UDPLITE)
 extern struct proto udplitev6_prot;
+#endif
 extern struct proto tcpv6_prot;
 
 struct flowi6;
@@ -25,8 +27,10 @@ extern int				rawv6_init(void);
 extern void				rawv6_exit(void);
 extern int				udpv6_init(void);
 extern void				udpv6_exit(void);
+#if defined (CONFIG_INET_UDPLITE)
 extern int 				udplitev6_init(void);
 extern void 				udplitev6_exit(void);
+#endif
 extern int				tcpv6_init(void);
 extern void				tcpv6_exit(void);
 

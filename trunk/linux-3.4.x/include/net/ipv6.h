@@ -653,8 +653,10 @@ extern int  tcp6_proc_init(struct net *net);
 extern void tcp6_proc_exit(struct net *net);
 extern int  udp6_proc_init(struct net *net);
 extern void udp6_proc_exit(struct net *net);
+#if defined (CONFIG_INET_UDPLITE)
 extern int  udplite6_proc_init(void);
 extern void udplite6_proc_exit(void);
+#endif
 extern int  ipv6_misc_proc_init(void);
 extern void ipv6_misc_proc_exit(void);
 extern int snmp6_register_dev(struct inet6_dev *idev);

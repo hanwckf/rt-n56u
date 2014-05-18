@@ -66,6 +66,7 @@ struct udp_sock {
 	 * when the socket is uncorked.
 	 */
 	__u16		 len;		/* total length of pending frames */
+#if defined (CONFIG_INET_UDPLITE)
 	/*
 	 * Fields specific to UDP-Lite.
 	 */
@@ -77,6 +78,7 @@ struct udp_sock {
 #define UDPLITE_RECV_CC  0x4		/* set via udplite setsocktopt        */
 	__u8		 pcflag;        /* marks socket as UDP-Lite if > 0    */
 	__u8		 unused[3];
+#endif
 	/*
 	 * For encapsulation sockets.
 	 */
@@ -94,7 +96,11 @@ static inline struct udp_sock *udp_sk(const struct sock *sk)
 #define udp_portaddr_for_each_entry_rcu(__sk, node, list) \
 	hlist_nulls_for_each_entry_rcu(__sk, node, list, __sk_common.skc_portaddr_node)
 
+#if defined (CONFIG_INET_UDPLITE)
 #define IS_UDPLITE(__sk) (udp_sk(__sk)->pcflag)
+#else
+#define IS_UDPLITE(__sk) (0)
+#endif
 
 #endif
 

@@ -31,6 +31,7 @@
 #include <linux/seq_file.h>
 #include <linux/poll.h>
 
+#if defined (CONFIG_INET_UDPLITE)
 /**
  *	struct udp_skb_cb  -  UDP(-Lite) private variables
  *
@@ -49,6 +50,7 @@ struct udp_skb_cb {
 	__u8		partial_cov;
 };
 #define UDP_SKB_CB(__skb)	((struct udp_skb_cb *)((__skb)->cb))
+#endif
 
 /**
  *	struct udp_hslot - UDP hash slot
@@ -119,7 +121,11 @@ struct sk_buff;
  */
 static inline __sum16 __udp_lib_checksum_complete(struct sk_buff *skb)
 {
+#if defined (CONFIG_INET_UDPLITE)
 	return __skb_checksum_complete_head(skb, UDP_SKB_CB(skb)->cscov);
+#else
+	return __skb_checksum_complete_head(skb, skb->len);
+#endif
 }
 
 static inline int udp_lib_checksum_complete(struct sk_buff *skb)
@@ -202,9 +208,12 @@ extern struct sock *udp6_lib_lookup(struct net *net, const struct in6_addr *sadd
 /*
  * 	SNMP statistics for UDP and UDP-Lite
  */
+#if defined (CONFIG_INET_UDPLITE)
+
 #define UDP_INC_STATS_USER(net, field, is_udplite)	      do { \
 	if (is_udplite) SNMP_INC_STATS_USER((net)->mib.udplite_statistics, field);       \
 	else		SNMP_INC_STATS_USER((net)->mib.udp_statistics, field);  }  while(0)
+
 #define UDP_INC_STATS_BH(net, field, is_udplite) 	      do { \
 	if (is_udplite) SNMP_INC_STATS_BH((net)->mib.udplite_statistics, field);         \
 	else		SNMP_INC_STATS_BH((net)->mib.udp_statistics, field);    }  while(0)
@@ -213,10 +222,27 @@ extern struct sock *udp6_lib_lookup(struct net *net, const struct in6_addr *sadd
 	if (is_udplite) SNMP_INC_STATS_BH((net)->mib.udplite_stats_in6, field);\
 	else		SNMP_INC_STATS_BH((net)->mib.udp_stats_in6, field);  \
 } while(0)
+
 #define UDP6_INC_STATS_USER(net, field, __lite)		    do { \
 	if (__lite) SNMP_INC_STATS_USER((net)->mib.udplite_stats_in6, field);  \
 	else	    SNMP_INC_STATS_USER((net)->mib.udp_stats_in6, field);      \
 } while(0)
+
+#else
+
+#define UDP_INC_STATS_USER(net, field, is_udplite)	\
+	SNMP_INC_STATS_USER((net)->mib.udp_statistics, field)
+
+#define UDP_INC_STATS_BH(net, field, is_udplite)	\
+	SNMP_INC_STATS_BH((net)->mib.udp_statistics, field)
+
+#define UDP6_INC_STATS_BH(net, field, is_udplite)	\
+	SNMP_INC_STATS_BH((net)->mib.udp_stats_in6, field)
+
+#define UDP6_INC_STATS_USER(net, field, __lite)		\
+	SNMP_INC_STATS_USER((net)->mib.udp_stats_in6, field)
+
+#endif
 
 #if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
 #define UDPX_INC_STATS_BH(sk, field) \

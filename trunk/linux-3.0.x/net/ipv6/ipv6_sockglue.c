@@ -202,9 +202,10 @@ static int do_ipv6_setsockopt(struct sock *sk, int level, int optname,
 				tcp_sync_mss(sk, icsk->icsk_pmtu_cookie);
 			} else {
 				struct proto *prot = &udp_prot;
-
+#if defined (CONFIG_INET_UDPLITE)
 				if (sk->sk_protocol == IPPROTO_UDPLITE)
 					prot = &udplite_prot;
+#endif
 				local_bh_disable();
 				sock_prot_inuse_add(net, sk->sk_prot, -1);
 				sock_prot_inuse_add(net, prot, 1);

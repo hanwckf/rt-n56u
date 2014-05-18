@@ -1141,11 +1141,6 @@ netdev_tx_t usbnet_start_xmit (struct sk_buff *skb,
 	if (skb)
 		skb_tx_timestamp(skb);
 
-#if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
-	if ((ra_sw_nat_hook_tx != NULL) && !(info->flags & FLAG_MULTI_PACKET)) {
-		ra_sw_nat_hook_tx(skb, 0);
-	}
-#endif
 	// some devices want funky USB-level framing, for
 	// win32 driver (usually) and/or hardware quirks
 	if (info->tx_fixup) {
@@ -1164,6 +1159,15 @@ netdev_tx_t usbnet_start_xmit (struct sk_buff *skb,
 		netif_dbg(dev, tx_err, dev->net, "no urb\n");
 		goto drop;
 	}
+
+#if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
+	if ((ra_sw_nat_hook_tx != NULL) && !(info->flags & FLAG_MULTI_PACKET)) {
+		u8 *skb_data = skb->data;
+		skb->data = skb->mac_header; //pointer to DA
+		ra_sw_nat_hook_tx(skb, 0);
+		skb->data = skb_data;
+	}
+#endif
 
 	entry = (struct skb_data *) skb->cb;
 	entry->urb = urb;

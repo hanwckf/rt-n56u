@@ -331,8 +331,8 @@ refresh_ntp(void)
 
 	kill_services(svcs, 3, 1);
 
-	ntp_addr[0] = nvram_safe_get("ntp_server1");
-	ntp_addr[1] = nvram_safe_get("ntp_server2");
+	ntp_addr[0] = nvram_safe_get("ntp_server0");
+	ntp_addr[1] = nvram_safe_get("ntp_server1");
 
 	if (strlen(ntp_addr[0]) < 3)
 		ntp_addr[0] = ntp_addr[1];

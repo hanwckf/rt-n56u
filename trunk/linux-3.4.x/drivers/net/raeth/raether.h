@@ -10,7 +10,7 @@
 
 #include "ra_ethreg.h"
 
-#define RAETH_VERSION		"v3.0.7"
+#define RAETH_VERSION		"v3.0.8"
 #define RAETH_DEV_NAME		"raeth"
 
 #if defined (CONFIG_RALINK_RT6855A)
@@ -49,6 +49,21 @@
 #define PSE_PORT_PPE		4
 #else
 #define PSE_PORT_PPE		6
+#endif
+
+#if defined (CONFIG_RAETH_JUMBOFRAME)
+#define MAX_RX_LENGTH		4096
+#else
+#define MAX_RX_LENGTH		1536
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+#define NETIF_F_HW_VLAN_CTAG_TX	NETIF_F_HW_VLAN_TX
+#define NETIF_F_HW_VLAN_CTAG_RX	NETIF_F_HW_VLAN_RX
+#endif
+
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#define RAETH_PDMA_V2
 #endif
 
 #ifdef RAETH_DEBUG
@@ -114,6 +129,11 @@ typedef struct _PSEUDO_ADAPTER {
 int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd);
 #ifdef CONFIG_PSEUDO_SUPPORT
 int VirtualIF_ioctl(struct net_device * net_dev, struct ifreq * ifr, int cmd);
+#endif
+
+#if defined (CONFIG_RAETH_HW_VLAN_TX)
+u32  get_map_hw_vlan_tx(u32 idx);
+void set_map_hw_vlan_tx(u32 idx, u32 vid);
 #endif
 
 #if defined (CONFIG_RAETH_ESW_CONTROL)

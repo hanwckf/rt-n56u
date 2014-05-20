@@ -45,24 +45,6 @@ alarmtimer(unsigned long sec, unsigned long usec)
 	setitimer(ITIMER_REAL, &itv, NULL);
 }
 
-static void check_inic_radio(void)
-{
-	if (get_mlme_radio_rt()) {
-		int rt_mode_x = nvram_get_int("rt_mode_x");
-		
-		/* start guest AP */
-		if (rt_mode_x != 1 && rt_mode_x != 3 &&
-		   !is_interface_up(IFNAME_INIC_GUEST) && is_guest_allowed_rt()) {
-			doSystem("ifconfig %s %s 2>/dev/null", IFNAME_INIC_GUEST, "up");
-			if (is_interface_up(IFNAME_INIC_GUEST))
-				restart_guest_lan_isolation();
-		}
-	} else {
-		/* disable mlme radio */
-		doSystem("iwpriv %s set RadioOn=%d", IFNAME_INIC_MAIN, 0);
-	}
-}
-
 static void catch_sig_inicd(int sig)
 {
 	if (sig == SIGTERM)
@@ -73,7 +55,7 @@ static void catch_sig_inicd(int sig)
 	}
 	else if (sig == SIGALRM)
 	{
-		check_inic_radio();
+		check_inic_mii_rebooted();
 	}
 }
 
@@ -111,8 +93,8 @@ inicd_main(int argc, char *argv[])
 		fclose(fp);
 	}
 
-	/* set timer 10s */
-	alarmtimer(10, 0);
+	/* set timer 15s */
+	alarmtimer(15, 0);
 
 	/* Most of time it goes to sleep */
 	while (1)

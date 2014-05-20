@@ -267,33 +267,11 @@ get_vlan_vid_wan(void)
 	return vlan_vid;
 }
 
-void
+static void
 remove_vlan_iface(char *vlan_ifname)
 {
 	doSystem("ifconfig %s %s", vlan_ifname, "down");
 	doSystem("vconfig rem %s", vlan_ifname);
-}
-
-static void
-update_hw_vlan_tx(int inet_vid, int iptv_vid)
-{
-	int vidx14, vidx15;
-	char vlan_tx_info[32];
-
-#if !defined (USE_SINGLE_MAC)
-	// 2xRGMII mode used untag for Internet source, no needed tagged output
-	inet_vid = 0;
-#endif
-	/* send VLAN VID for IDX 14/15 to raeth (for support RT3883/MT7620 HW_VLAN_TX with VID > 15) */
-	vidx14 = (inet_vid > 13) ? inet_vid : 14;
-	vidx15 = (iptv_vid > 13 && iptv_vid != vidx14) ? iptv_vid : 15;
-	snprintf(vlan_tx_info, sizeof(vlan_tx_info), "%d %d", vidx14, vidx15);
-
-#if defined (CONFIG_RALINK_RT3883)
-	fput_string("/proc/rt3883/vlan_tx", vlan_tx_info);
-#elif defined (CONFIG_RALINK_MT7620)
-	fput_string("/proc/mt7620/vlan_tx", vlan_tx_info);
-#endif
 }
 
 static void
@@ -377,7 +355,8 @@ launch_viptv_wan(void)
 	if (is_vlan_vid_iptv_valid(vlan_vid[0], vlan_vid[1]))
 	{
 		/* update VLAN for raeth */
-		update_hw_vlan_tx(vlan_vid[0], vlan_vid[1]);
+		hw_vlan_tx_map(10, vlan_vid[0]);
+		hw_vlan_tx_map(11, vlan_vid[1]);
 		
 		/* create VLAN for IPTV */
 #ifdef USE_SINGLE_MAC
@@ -413,7 +392,7 @@ launch_viptv_wan(void)
 	else
 	{
 		/* update VLAN for raeth */
-		update_hw_vlan_tx(vlan_vid[0], 0);
+		hw_vlan_tx_map(10, vlan_vid[0]);
 		
 		if (is_vlan_vid_inet_valid(vlan_vid[0]) && vlan_vid[0] != vlan_vid[1])
 		{

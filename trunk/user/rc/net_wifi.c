@@ -130,11 +130,12 @@ get_enabled_guest_rt(void)
 }
 
 #if defined(USE_RT3352_MII)
-static void update_inic_mii(void)
+static void
+update_inic_mii(void)
 {
-//	char *ifname_inic = IFNAME_INIC_MAIN;
 #if 0
 	int i;
+	char *ifname_inic = IFNAME_INIC_MAIN;
 
 	// below params always set in new iNIC_mii.obj
 	doSystem("iwpriv %s set asiccheck=%d", ifname_inic, 1);
@@ -150,12 +151,13 @@ static void update_inic_mii(void)
 	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "01:00:5e:7f:ff:fa"); // SSDP IPv4
 	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "01:00:5e:00:00:fb"); // mDNS IPv4
 	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "01:00:5e:00:00:09"); // RIP  IPv4
-#endif
 //	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "33:33:00:00:00:0c"); // SSDP IPv6
 //	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "33:33:00:00:00:fb"); // mDNS IPv6
+#endif
 }
 
-static void start_inic_mii(void)
+static void
+start_inic_mii(void)
 {
 	char *ifname_inic = IFNAME_INIC_MAIN;
 
@@ -198,6 +200,27 @@ static void start_inic_mii(void)
 		cpu_gpio_set_pin(1, 0);
 		
 		logmessage(LOGNAME, "iNIC module disabled! (NVRAM %s=1)", "inic_disable");
+	}
+}
+
+void
+check_inic_mii_rebooted(void)
+{
+	int rt_mode_x;
+
+	if (!get_mlme_radio_rt()) {
+		doSystem("iwpriv %s set RadioOn=%d", IFNAME_INIC_MAIN, 0);
+		return;
+	}
+
+	rt_mode_x = nvram_get_int("rt_mode_x");
+	if (rt_mode_x != 1 && rt_mode_x != 3) {
+		/* check guest AP */
+		if (!is_interface_up(IFNAME_INIC_GUEST) && is_guest_allowed_rt()) {
+			wif_control(IFNAME_INIC_GUEST, 1);
+			if (is_interface_up(IFNAME_INIC_GUEST))
+				restart_guest_lan_isolation();
+		}
 	}
 }
 #endif
@@ -703,8 +726,8 @@ control_guest_wl(int guest_on, int manual)
 int
 control_guest_rt(int guest_on, int manual)
 {
-	char *ifname_ap;
 	int is_ap_changed = 0;
+	char *ifname_ap;
 	int radio_on = get_enabled_radio_rt();
 	int i_mode_x = nvram_get_int("rt_mode_x");
 #if defined(USE_RT3352_MII)

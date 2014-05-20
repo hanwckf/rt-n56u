@@ -156,6 +156,7 @@ int  is_interface_exist(const char *ifname);
 int  found_default_route(int only_broadband_wan);
 void hwnat_load(void);
 void hwnat_configure(void);
+void hw_vlan_tx_map(int idx, int vid);
 void reload_nat_modules(void);
 void restart_firewall(void);
 void set_ipv4_forward(void);
@@ -333,6 +334,9 @@ int ovpn_client_script_main(int argc, char **argv);
 #endif
 
 /* net_wifi.c */
+#if defined(USE_RT3352_MII)
+void check_inic_mii_rebooted(void);
+#endif
 void mlme_state_wl(int is_on);
 void mlme_state_rt(int is_on);
 void mlme_radio_wl(int is_on);

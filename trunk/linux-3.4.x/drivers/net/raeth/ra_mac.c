@@ -17,6 +17,7 @@
 
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
+#include <linux/if_vlan.h>
 #include <linux/skbuff.h>
 
 #include <linux/init.h>
@@ -67,13 +68,10 @@ static struct proc_dir_entry *procGmac;
 #ifdef RAETH_DEBUG
 static struct proc_dir_entry *procSysCP0, *procTxRing, *procRxRing, *procEswCnt;
 #endif
-#if defined(CONFIG_RAETH_SNMPD)
+#if defined (CONFIG_RAETH_SNMPD)
 static struct proc_dir_entry *procRaSnmp;
 #endif
-#ifdef CONFIG_RAETH_HW_VLAN_TX
-extern unsigned int vlan_tx_idx14;
-extern unsigned int vlan_tx_idx15;
-extern void update_hw_vlan_tx(void);
+#if defined (CONFIG_RAETH_HW_VLAN_TX)
 static struct proc_dir_entry *procVlanTx;
 #endif
 
@@ -224,8 +222,11 @@ static const struct file_operations ra_snmp_seq_fops = {
 #if defined(CONFIG_RAETH_HW_VLAN_TX)
 static int ra_vlan_tx_seq_show(struct seq_file *m, void *v)
 {
-	seq_printf(m, "HW_VLAN_TX VID14=%d\n", vlan_tx_idx14);
-	seq_printf(m, "HW_VLAN_TX VID15=%d\n", vlan_tx_idx15);
+	u32 i;
+
+	seq_printf(m, "IDX VID\n");
+	for (i = 0; i < 16; i++)
+		seq_printf(m, "%2d: %d\n", i, get_map_hw_vlan_tx(i));
 
 	return 0;
 }
@@ -233,8 +234,8 @@ static int ra_vlan_tx_seq_show(struct seq_file *m, void *v)
 static ssize_t ra_vlan_tx_seq_write(struct file *file, const char __user *buffer, size_t count, loff_t *ppos)
 {
 	char buf[32];
-	unsigned int vidx14 = 0;
-	unsigned int vidx15 = 0;
+	u32 idx = 16;
+	u32 vid = VLAN_N_VID;
 
 	if (count > (sizeof(buf) - 1))
 		count = (sizeof(buf) - 1);
@@ -242,14 +243,10 @@ static ssize_t ra_vlan_tx_seq_write(struct file *file, const char __user *buffer
 		return -EFAULT;
 
 	buf[count] = '\0';
-	sscanf(buf, "%d %d", &vidx14, &vidx15);
+	sscanf(buf, "%d: %d", &idx, &vid);
 
-	if (vidx14 > 0)
-		vlan_tx_idx14 = (vidx14 & 0xFFF);
-	if (vidx15 > 0)
-		vlan_tx_idx15 = (vidx15 & 0xFFF);
-
-	update_hw_vlan_tx();
+	if (idx < 16 && vid < VLAN_N_VID)
+		set_map_hw_vlan_tx(idx, vid);
 
 	return count;
 }

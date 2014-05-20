@@ -596,6 +596,24 @@ void hwnat_configure(void)
 #endif
 }
 
+void hw_vlan_tx_map(int idx, int vid)
+{
+	char vlan_tx_data[16];
+
+	/* use slots 10..14 for custom VID */
+	if (vid < 10 || idx < 10 || idx > 14)
+		return;
+
+	/* map VLAN VID to raeth (for support RT3883/MT7620 HW_VLAN_TX with VID > 15) */
+	snprintf(vlan_tx_data, sizeof(vlan_tx_data), "%d: %d", idx, vid);
+
+#if defined (CONFIG_RALINK_RT3883)
+	fput_string("/proc/rt3883/vlan_tx", vlan_tx_data);
+#elif defined (CONFIG_RALINK_MT7620)
+	fput_string("/proc/mt7620/vlan_tx", vlan_tx_data);
+#endif
+}
+
 void reload_nat_modules(void)
 {
 	int loaded_ftp;

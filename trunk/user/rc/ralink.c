@@ -535,12 +535,14 @@ static int nvram_wlan_get_int(const char* prefix, const char* param)
 static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 {
 	FILE *fp;
-	char *p_str, *dat_file, *sku_file, *sku_link, *prefix, *c_val_mbss[2];
+	char *p_str, *dat_file, *sku_file, *sku_link, *prefix;
 	char macbuf[36], list[2048];
-	int i, i_num,  i_val, i_wmm, i_val_mbss[2];
+	int i, i_num,  i_val, i_wmm;
 	int i_mode_x, i_gmode, i_auth, i_encr, i_wep, i_wds;
 	int i_ssid_num, i_channel, i_channel_max, i_HTBW_MAX;
 	int i_stream_tx, i_stream_rx, i_mphy, i_mmcs, i_fix, i_mcs;
+	int i_val_mbss[2];
+	char *c_val_mbss[2];
 
 	i_ssid_num = 2; // AP+GuestAP
 	i_channel_max = 13;

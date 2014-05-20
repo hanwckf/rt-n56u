@@ -25,22 +25,9 @@
 #include "../../../net/nat/hw_nat/foe_fdb.h"
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
-#define NETIF_F_HW_VLAN_CTAG_TX		NETIF_F_HW_VLAN_TX
-#define NETIF_F_HW_VLAN_CTAG_RX		NETIF_F_HW_VLAN_RX
-#endif
-
-#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
-#define RAETH_PDMA_V2
-#endif
-
-#if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
-extern int vlan_double_tag;
-#endif
-
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
-unsigned int vlan_tx_idx14 = 0xE;
-unsigned int vlan_tx_idx15 = 0xF;
+static u8  vlan_4k_map[VLAN_N_VID];
+static u16 vlan_id_map[16];
 #endif
 
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
@@ -73,12 +60,8 @@ extern int32_t mcast_rx(struct sk_buff * skb);
 extern int32_t mcast_tx(struct sk_buff * skb);
 #endif
 
-/* gmac driver feature set config */
-
-#if defined (CONFIG_RAETH_JUMBOFRAME)
-#define MAX_RX_LENGTH		4096
-#else
-#define MAX_RX_LENGTH		1536
+#if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
+extern int vlan_double_tag;
 #endif
 
 #if defined (CONFIG_ETHTOOL)
@@ -229,27 +212,65 @@ err_cleanup:
 }
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
-void update_hw_vlan_tx(void)
+static void fill_hw_vlan_tx(void)
 {
+	u32 i;
+
+	/* init vlan_4k map table by index 15 */
+	memset(vlan_4k_map, 0x0F, sizeof(vlan_4k_map));
+
+	for (i = 0; i < 16; i++)
+	{
+		vlan_id_map[i] = (u16)i;
+		vlan_4k_map[i] = (u8)i;
+	}
+}
+
+static void update_hw_vlan_tx(void)
+{
+	u32 i, reg_vlan;
+
+	for (i = 0; i < 8; i++)
+	{
+		reg_vlan = ((u32)vlan_id_map[(i*2)+1] << 16) | (u32)vlan_id_map[i*2];
 #if defined (CONFIG_RALINK_MT7620)
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0x430) = 0x00010000;
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0x434) = 0x00030002;
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0x438) = 0x00050004;
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0x43c) = 0x00070006;
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0x440) = 0x00090008;
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0x444) = 0x000b000a;
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0x448) = 0x000d000c;
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0x44c) = ((vlan_tx_idx15 << 16) | vlan_tx_idx14);
+		*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0x430 + i*4) = reg_vlan;
 #elif !defined (CONFIG_RALINK_RT5350) && !defined (CONFIG_RALINK_MT7621)
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0xa8) = 0x00010000;
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0xac) = 0x00030002;
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0xb0) = 0x00050004;
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0xb4) = 0x00070006;
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0xb8) = 0x00090008;
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0xbc) = 0x000b000a;
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0xc0) = 0x000d000c;
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0xc4) = ((vlan_tx_idx15 << 16) | vlan_tx_idx14);
+		*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0xa8 + i*4) = reg_vlan;
 #endif
+	}
+}
+
+u32 get_map_hw_vlan_tx(u32 idx)
+{
+	return (u32)vlan_id_map[(idx & 0xF)];
+}
+
+void set_map_hw_vlan_tx(u32 idx, u32 vid)
+{
+	u32 i, vid_old;
+
+	idx &= 0xF;
+	vid &= VLAN_VID_MASK;
+
+	vid_old = (u32)vlan_id_map[idx] & VLAN_VID_MASK;
+
+	vlan_id_map[idx] = (u16)vid;
+	vlan_4k_map[vid] = (u8)idx;
+
+	/* remap old VID pointer */
+	if (vid != vid_old) {
+		for (i = 0; i < 16; i++) {
+			if ((u32)vlan_id_map[i] == vid_old) {
+				vlan_4k_map[vid_old] = (u8)i;
+				break;
+			}
+		}
+		if (i > 15)
+			vlan_4k_map[vid_old] = 0xF;
+	}
+
+	update_hw_vlan_tx();
 }
 #endif
 
@@ -1043,13 +1064,8 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 	if (vlan_tx_tag_present(skb)) {
 #if !defined (CONFIG_RALINK_MT7621)
 		unsigned int vlan_tci = vlan_tx_tag_get(skb);
-		if ((vlan_tci & VLAN_VID_MASK) == vlan_tx_idx14)
-			txd_info4 |= (0x8E | TX4_DMA_VPRI(vlan_tci));
-		else
-		if ((vlan_tci & VLAN_VID_MASK) == vlan_tx_idx15)
-			txd_info4 |= (0x8F | TX4_DMA_VPRI(vlan_tci));
-		else
-			txd_info4 |= (TX4_DMA_INSV | TX4_DMA_VPRI(vlan_tci) | TX4_DMA_VIDX(vlan_tci));
+		txd_info4 |= (TX4_DMA_INSV | TX4_DMA_VPRI(vlan_tci));
+		txd_info4 |= (u32)vlan_4k_map[(vlan_tci & VLAN_VID_MASK)];
 #else
 		txd_info4 |= (0x10000 | vlan_tx_tag_get(skb));
 #endif
@@ -1856,7 +1872,6 @@ int __init raeth_init(void)
 #endif
 	}
 #endif
-
 	dev = alloc_etherdev(sizeof(END_DEVICE));
 	if (!dev)
 		return -ENOMEM;
@@ -1885,6 +1900,9 @@ int __init raeth_init(void)
 #endif
 	dev->watchdog_timeo	= 5*HZ;
 
+#if defined (CONFIG_RAETH_HW_VLAN_TX)
+	fill_hw_vlan_tx();
+#endif
 	fill_dev_features(dev);
 
 	/* Register net device (eth2) for the driver */

@@ -47,6 +47,7 @@ typedef enum
 	HE_DYNDNS,
 	CHANGEIP_DEFAULT,
 	DYNSIP_DEFAULT,
+	DUCKDNS_DEFAULT,
 	ASUS_REGISTER,
 	ASUS_UPDATE,
 	LAST_DNS_SYSTEM = -1
@@ -193,6 +194,15 @@ typedef enum
 	"Host: %s\r\n"							\
 	"Authorization: Basic %s\r\n"					\
 	"User-Agent: " DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR "\r\n\r\n"
+
+#define DUCKDNS_UPDATE_IP_REQUEST					\
+	"GET %s?"							\
+	"domains=%s&"							\
+	"token=%s&"							\
+	"ip=%s& "							\
+	"HTTP/1.0\r\n"							\
+	"Host: %s\r\n"							\
+	"User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"
 
 #define ASUS_PROCESS_MY_IP_REQUEST_FORMAT \
 	"GET %s?" \

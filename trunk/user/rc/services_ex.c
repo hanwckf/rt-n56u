@@ -366,6 +366,7 @@ static const struct inadyn_system_t {
 } inadyn_systems[] = {
 	{ "WWW.ASUS.COM",         "update@asus.com"            },
 	{ "WWW.DYNDNS.ORG",       "default@dyndns.org"         },
+	{ "WWW.DUCKDNS.ORG",      "default@duckdns.org"        },
 	{ "WWW.TZO.COM",          "default@tzo.com"            },
 	{ "WWW.ZONEEDIT.COM",     "default@zoneedit.com"       },
 	{ "WWW.EASYDNS.COM",      "default@easydns.com"        },

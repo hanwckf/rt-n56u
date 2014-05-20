@@ -1854,6 +1854,8 @@ function openLink(s) {
     if (s == 'x_DDNSServer') {
         if (document.form.ddns_server_x.value.indexOf("WWW.DYNDNS.ORG") != -1)
             tourl = "https://www.dyndns.com/account/create.html";
+        else if (document.form.ddns_server_x.value == 'WWW.DUCKDNS.ORG')
+            tourl = "http://duckdns.org/login";
         else if (document.form.ddns_server_x.value == 'WWW.ZONEEDIT.COM')
             tourl = "http://www.zoneedit.com/signUp.html";
         else if (document.form.ddns_server_x.value == 'WWW.TZO.COM')

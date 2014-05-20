@@ -109,7 +109,7 @@ function ddns_load_body(){
 
 	valid_wan_ip();
 
-	var ddns_hostname_x = '<% nvram_get_x("LANHostConfig","ddns_hostname_x"); %>';
+	var ddns_hostname_x = '<% nvram_get_x("","ddns_hostname_x"); %>';
 	var ddns_return_code = '<% nvram_get_ddns("","ddns_return_code"); %>';
 	var ddns_server_x = '<% nvram_get_x("","ddns_server_x"); %>';
 	var wan_ipaddr_t='<% nvram_get_x("","wan_ipaddr_t"); %>';
@@ -319,8 +319,8 @@ function checkDDNSReturnCode(){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="ddns_enable_x" id="ddns_enable_x_1" onClick="return change_common_radio(this, 'LANHostConfig', 'ddns_enable_x', '1')" <% nvram_match_x("LANHostConfig","ddns_enable_x", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="ddns_enable_x" id="ddns_enable_x_0" onClick="return change_common_radio(this, 'LANHostConfig', 'ddns_enable_x', '0')" <% nvram_match_x("LANHostConfig","ddns_enable_x", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="ddns_enable_x" id="ddns_enable_x_1" onClick="return change_common_radio(this, 'LANHostConfig', 'ddns_enable_x', '1')" <% nvram_match_x("","ddns_enable_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="ddns_enable_x" id="ddns_enable_x_0" onClick="return change_common_radio(this, 'LANHostConfig', 'ddns_enable_x', '0')" <% nvram_match_x("","ddns_enable_x", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -328,18 +328,19 @@ function checkDDNSReturnCode(){
                                             <th><#LANHostConfig_x_DDNSServer_itemname#></th>
                                             <td>
                                                 <select name="ddns_server_x"class="input"onchange="return change_common(this, 'LANHostConfig', 'ddns_server_x')">
-                                                    <option value="WWW.ASUS.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.ASUS.COM","selected"); %>>WWW.ASUS.COM</option>
-                                                    <option value="WWW.DYNDNS.ORG" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.DYNDNS.ORG","selected"); %>>WWW.DYNDNS.ORG</option>
-                                                    <option value="WWW.TZO.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.TZO.COM","selected"); %>>WWW.TZO.COM</option>
-                                                    <option value="WWW.ZONEEDIT.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.ZONEEDIT.COM","selected"); %>>WWW.ZONEEDIT.COM</option>
-                                                    <option value="WWW.EASYDNS.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.EASYDNS.COM","selected"); %>>WWW.EASYDNS.COM</option>
-                                                    <option value="WWW.NO-IP.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.NO-IP.COM","selected"); %>>WWW.NO-IP.COM</option>
-                                                    <option value="WWW.DNSOMATIC.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.DNSOMATIC.COM","selected"); %>>WWW.DNSOMATIC.COM</option>
-                                                    <option value="WWW.DNSEXIT.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.DNSEXIT.COM","selected"); %>>WWW.DNSEXIT.COM</option>
-                                                    <option value="WWW.CHANGEIP.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.CHANGEIP.COM","selected"); %>>WWW.CHANGEIP.COM</option>
-                                                    <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.TUNNELBROKER.NET","selected"); %>>WWW.TUNNELBROKER.NET</option>
-                                                    <option value="DNS.HE.NET" <% nvram_match_x("LANHostConfig","ddns_server_x", "DNS.HE.NET","selected"); %>>DNS.HE.NET</option>
-                                                    <option value="FREEDNS.AFRAID.ORG" <% nvram_match_x("LANHostConfig","ddns_server_x", "FREEDNS.AFRAID.ORG","selected"); %>>FREEDNS.AFRAID.ORG</option>
+                                                    <option value="WWW.ASUS.COM" <% nvram_match_x("","ddns_server_x", "WWW.ASUS.COM","selected"); %>>WWW.ASUS.COM</option>
+                                                    <option value="WWW.DYNDNS.ORG" <% nvram_match_x("","ddns_server_x", "WWW.DYNDNS.ORG","selected"); %>>WWW.DYNDNS.ORG</option>
+                                                    <option value="WWW.DUCKDNS.ORG" <% nvram_match_x("","ddns_server_x", "WWW.DUCKDNS.ORG","selected"); %>>WWW.DUCKDNS.ORG</option>
+                                                    <option value="WWW.TZO.COM" <% nvram_match_x("","ddns_server_x", "WWW.TZO.COM","selected"); %>>WWW.TZO.COM</option>
+                                                    <option value="WWW.ZONEEDIT.COM" <% nvram_match_x("","ddns_server_x", "WWW.ZONEEDIT.COM","selected"); %>>WWW.ZONEEDIT.COM</option>
+                                                    <option value="WWW.EASYDNS.COM" <% nvram_match_x("","ddns_server_x", "WWW.EASYDNS.COM","selected"); %>>WWW.EASYDNS.COM</option>
+                                                    <option value="WWW.NO-IP.COM" <% nvram_match_x("","ddns_server_x", "WWW.NO-IP.COM","selected"); %>>WWW.NO-IP.COM</option>
+                                                    <option value="WWW.DNSOMATIC.COM" <% nvram_match_x("","ddns_server_x", "WWW.DNSOMATIC.COM","selected"); %>>WWW.DNSOMATIC.COM</option>
+                                                    <option value="WWW.DNSEXIT.COM" <% nvram_match_x("","ddns_server_x", "WWW.DNSEXIT.COM","selected"); %>>WWW.DNSEXIT.COM</option>
+                                                    <option value="WWW.CHANGEIP.COM" <% nvram_match_x("","ddns_server_x", "WWW.CHANGEIP.COM","selected"); %>>WWW.CHANGEIP.COM</option>
+                                                    <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("","ddns_server_x", "WWW.TUNNELBROKER.NET","selected"); %>>WWW.TUNNELBROKER.NET</option>
+                                                    <option value="DNS.HE.NET" <% nvram_match_x("","ddns_server_x", "DNS.HE.NET","selected"); %>>DNS.HE.NET</option>
+                                                    <option value="FREEDNS.AFRAID.ORG" <% nvram_match_x("","ddns_server_x", "FREEDNS.AFRAID.ORG","selected"); %>>FREEDNS.AFRAID.ORG</option>
                                                 </select>
                                                 <div id="link">
                                                     <a href="javascript:openLink('x_DDNSServer')" class="content_input_link" name="x_DDNSServer_link">
@@ -352,7 +353,7 @@ function checkDDNSReturnCode(){
                                             <th><#LANHostConfig_x_DDNSHostNames_itemname#></th>
                                             <td>
                                                 <div id="ddnsname_input" class="aidiskdesc" style="display:none;">
-                                                    <input type="text" maxlength="64" class="input" size="48" id="ddns_hostname_x" name="ddns_hostname_x" value="<% nvram_get_x("LANHostConfig","ddns_hostname_x"); %>" onKeyPress="return is_string(this)">
+                                                    <input type="text" maxlength="64" class="input" size="48" id="ddns_hostname_x" name="ddns_hostname_x" value="<% nvram_get_x("","ddns_hostname_x"); %>" onKeyPress="return is_string(this)">
                                                 </div>
                                                 <div id="asusddnsname_input" class="aidiskdesc" style="display:none;">
                                                     <input type="text" name="DDNSName" id="DDNSName" style="width: 110px;">.asuscomm.com&nbsp;
@@ -365,24 +366,24 @@ function checkDDNSReturnCode(){
                                         <tr id="ddnsname2_row">
                                             <th><#LANHostConfig_x_DDNSHostNames_itemname#></th>
                                             <td>
-                                                <input type="text" maxlength="64" class="input" size="48" name="ddns_hostname2_x" value="<% nvram_get_x("LANHostConfig","ddns_hostname2_x"); %>" onKeyPress="return is_string(this)">
+                                                <input type="text" maxlength="64" class="input" size="48" name="ddns_hostname2_x" value="<% nvram_get_x("","ddns_hostname2_x"); %>" onKeyPress="return is_string(this)">
                                             </td>
                                         </tr>
                                         <tr id="ddnsname3_row">
                                             <th><#LANHostConfig_x_DDNSHostNames_itemname#></th>
                                             <td>
-                                                <input type="text" maxlength="64" class="input" size="48" name="ddns_hostname3_x" value="<% nvram_get_x("LANHostConfig","ddns_hostname3_x"); %>" onKeyPress="return is_string(this)">
+                                                <input type="text" maxlength="64" class="input" size="48" name="ddns_hostname3_x" value="<% nvram_get_x("","ddns_hostname3_x"); %>" onKeyPress="return is_string(this)">
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><#LANHostConfig_x_DDNSUserName_itemname#></th>
-                                            <td><input type="text" maxlength="32" class="input" size="32" name="ddns_username_x" value="<% nvram_get_x("LANHostConfig","ddns_username_x"); %>" onKeyPress="return is_string(this)"></td>
+                                            <td><input type="text" maxlength="32" class="input" size="32" name="ddns_username_x" value="<% nvram_get_x("","ddns_username_x"); %>" onKeyPress="return is_string(this)"></td>
                                         </tr>
                                         <tr>
                                             <th><#LANHostConfig_x_DDNSPassword_itemname#></th>
                                             <td>
                                                 <div class="input-append">
-                                                    <input type="password" maxlength="64" class="input" size="32" name="ddns_passwd_x" id="ddns_passwd_x" style="width: 175px;" value="<% nvram_get_x("LANHostConfig","ddns_passwd_x"); %>">
+                                                    <input type="password" maxlength="64" class="input" size="32" name="ddns_passwd_x" id="ddns_passwd_x" style="width: 175px;" value="<% nvram_get_x("","ddns_passwd_x"); %>">
                                                     <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('ddns_passwd_x')"><i class="icon-eye-close"></i></button>
                                                 </div>
                                             </td>

@@ -57,6 +57,7 @@ static int get_req_for_sitelutions_server(DYN_DNS_CLIENT *p_self, int infcnt, in
 static int get_req_for_dnsexit_server(DYN_DNS_CLIENT *p_self, int infcnt, int alcnt);
 static int get_req_for_he_ipv6tb_server(DYN_DNS_CLIENT *p_self, int infcnt, int alcnt);
 static int get_req_for_changeip_server(DYN_DNS_CLIENT *this, int infcnt, int alcnt);
+static int get_req_for_duckdns_server(DYN_DNS_CLIENT *p_self, int infcnt, int alcnt);
 static int get_req_for_asus_server(DYN_DNS_CLIENT *p_self, int infcnt, int alcnt);
 
 static RC_TYPE is_dyndns_server_rsp_ok(DYN_DNS_CLIENT *p_self, HTTP_TRANSACTION *p_tr, int infcnt);
@@ -171,6 +172,13 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
 	  (DNS_SYSTEM_REQUEST_FUNC)get_req_for_dyndns_server,
 	  DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL,
 	  "dynsip.org", "/nic/update"}},
+
+	{DUCKDNS_DEFAULT,
+	 {"default@duckdns.org",
+	  (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC) is_generic_server_rsp_ok,
+	  (DNS_SYSTEM_REQUEST_FUNC) get_req_for_duckdns_server,
+	  "ipv4.wtfismyip.com", "/text",
+	  "duckdns.org", "/update"}},
 
 	{ASUS_REGISTER,
 	{"register@asus.com",
@@ -499,6 +507,22 @@ static int get_req_for_changeip_server(DYN_DNS_CLIENT *p_self, int infcnt, int a
 		       p_self->info[infcnt].my_ip_address.name,
 		       p_self->info[infcnt].dyndns_server_name.name,
 		       p_self->info[infcnt].credentials.p_enc_usr_passwd_buffer);
+}
+
+static int get_req_for_duckdns_server(DYN_DNS_CLIENT *p_self, int infcnt, int alcnt)
+{
+	if (p_self == NULL)
+	{
+		/* 0 == "No characters written" */
+		return 0;
+	}
+
+	return sprintf(p_self->p_req_buffer, DUCKDNS_UPDATE_IP_REQUEST,
+		       p_self->info[infcnt].dyndns_server_url,
+		       p_self->info[infcnt].alias_info[alcnt].names.name,
+		       p_self->info[infcnt].credentials.my_username,
+		       p_self->info[infcnt].my_ip_address.name,
+		       p_self->info[infcnt].dyndns_server_name.name);
 }
 
 /*

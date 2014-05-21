@@ -377,7 +377,7 @@ function checkDDNSReturnCode(){
                                         </tr>
                                         <tr>
                                             <th><#LANHostConfig_x_DDNSUserName_itemname#></th>
-                                            <td><input type="text" maxlength="32" class="input" size="32" name="ddns_username_x" value="<% nvram_get_x("","ddns_username_x"); %>" onKeyPress="return is_string(this)"></td>
+                                            <td><input type="text" maxlength="64" class="input" size="32" name="ddns_username_x" value="<% nvram_get_x("","ddns_username_x"); %>" onKeyPress="return is_string(this)"></td>
                                         </tr>
                                         <tr>
                                             <th><#LANHostConfig_x_DDNSPassword_itemname#></th>

@@ -393,8 +393,8 @@ function done_validating(action){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 17);"><#WLANConfig11b_x_APSD_itemname#></a></th>
                                             <td>
                                               <select name="wl_APSDCapable" class="input" onchange="return change_common_wl(this, 'WLANConfig11a', 'wl_APSDCapable')">
-                                                <option value="0" <% nvram_match_x("","wl_APSDCapable", "0","selected"); %> ><#WLANConfig11b_WirelessCtrl_buttonname#> (*)</option>
-                                                <option value="1" <% nvram_match_x("","wl_APSDCapable", "1","selected"); %> ><#WLANConfig11b_WirelessCtrl_button1name#></option>
+                                                <option value="0" <% nvram_match_x("","wl_APSDCapable", "0","selected"); %> ><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+                                                <option value="1" <% nvram_match_x("","wl_APSDCapable", "1","selected"); %> ><#WLANConfig11b_WirelessCtrl_button1name#> (*)</option>
                                               </select>
                                             </td>
                                         </tr>

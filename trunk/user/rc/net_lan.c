@@ -467,6 +467,7 @@ reset_lan_temp(void)
 	nvram_set_temp("lan_ipaddr_t", "");
 	nvram_set_temp("lan_netmask_t", "");
 	nvram_set_temp("lan_gateway_t", "");
+	nvram_set_temp("lan_domain_t", "");
 	nvram_set_temp("lan_dns_t", "");
 }
 
@@ -474,6 +475,38 @@ void
 reset_lan_vars(void)
 {
 	nvram_set("lan_hwaddr", nvram_safe_get("il0macaddr"));
+}
+
+static void
+create_hosts_lan(const char *lan_ipaddr, const char *lan_dname)
+{
+	FILE *fp;
+	char *lan_hname = get_our_hostname();
+
+	sethostname(lan_hname, strlen(lan_hname));
+	setdomainname(lan_dname, strlen(lan_dname));
+
+	fp = fopen("/etc/hostname", "w+");
+	if (fp) {
+		fprintf(fp, "%s\n", lan_hname);
+		fclose(fp);
+	}
+
+	fp = fopen("/etc/hosts", "w+");
+	if (fp) {
+		fprintf(fp, "%s %s %s\n", "127.0.0.1", "localhost.localdomain", "localhost");
+		if (strlen(lan_dname) > 0)
+			fprintf(fp, "%s %s.%s %s\n", lan_ipaddr, lan_hname, lan_dname, lan_hname);
+		else
+			fprintf(fp, "%s %s\n", lan_ipaddr, lan_hname);
+		fclose(fp);
+	}
+}
+
+void
+update_hosts_ap(void)
+{
+	create_hosts_lan(nvram_safe_get("lan_ipaddr_t"), nvram_safe_get("lan_domain_t"));
 }
 
 void
@@ -492,19 +525,19 @@ start_lan(void)
 	{
 		nvram_set("lan_netmask", "255.255.255.0");
 	}
-	
-	doSystem("hostname %s", get_our_hostname());
-	
+
 	lan_ipaddr = nvram_safe_get("lan_ipaddr");
 	lan_netmsk = nvram_safe_get("lan_netmask");
-	
-	/* 
+
+	/*
 	* Configure DHCP connection. The DHCP client will run 
 	* 'udhcpc bound'/'udhcpc deconfig' upon finishing IP address 
 	* renew and release.
 	*/
 	if (get_ap_mode())
 	{
+		create_hosts_lan(lan_ipaddr, nvram_safe_get("lan_domain"));
+		
 		if (nvram_match("lan_proto_x", "1"))
 		{
 			/* bring up and configure LAN interface */
@@ -679,18 +712,16 @@ lan_up_manual(char *lan_ifname)
 	update_lan_status(0);
 }
 
-void
-lan_up_auto(char *lan_ifname)
+static void
+lan_up_auto(char *lan_ifname, char *lan_gateway)
 {
 	FILE *fp;
 	int dns_count = 0;
-	char word[100], *next, *dns_ip, *gateway_ip;
-
-	gateway_ip = nvram_safe_get("lan_gateway_t");
+	char word[100], *next, *dns_ip;
 
 	/* Set default route to gateway if specified */
-	if (is_valid_ipv4(gateway_ip))
-		route_add(lan_ifname, 0, "0.0.0.0", gateway_ip, "0.0.0.0");
+	if (is_valid_ipv4(lan_gateway))
+		route_add(lan_ifname, 0, "0.0.0.0", lan_gateway, "0.0.0.0");
 
 	/* Open resolv.conf */
 	fp = fopen("/etc/resolv.conf", "w+");
@@ -719,8 +750,8 @@ lan_up_auto(char *lan_ifname)
 			}
 		}
 		
-		if (!dns_count && is_valid_ipv4(gateway_ip))
-			fprintf(fp, "nameserver %s\n", gateway_ip);
+		if (!dns_count && is_valid_ipv4(lan_gateway))
+			fprintf(fp, "nameserver %s\n", lan_gateway);
 		
 		fclose(fp);
 	}
@@ -732,11 +763,11 @@ lan_up_auto(char *lan_ifname)
 	update_lan_status(1);
 }
 
-void
+static void
 lan_down_auto(char *lan_ifname)
 {
 	FILE *fp;
-	
+
 	/* Remove default route to gateway if specified */
 	route_del(lan_ifname, 0, "0.0.0.0", 
 			nvram_safe_get("lan_gateway_t"),
@@ -746,7 +777,7 @@ lan_down_auto(char *lan_ifname)
 	fp = fopen("/etc/resolv.conf", "w+");
 	if (fp)
 		fclose(fp);
-	
+
 	/* fill XXX_t fields */
 	update_lan_status(0);
 }
@@ -759,6 +790,7 @@ update_lan_status(int isup)
 	if (!isup) {
 		nvram_set_temp("lan_ipaddr_t", nvram_safe_get("lan_ipaddr"));
 		nvram_set_temp("lan_netmask_t", nvram_safe_get("lan_netmask"));
+		nvram_set_temp("lan_domain_t", nvram_safe_get("lan_domain"));
 		
 		if (!get_ap_mode()) {
 			if (nvram_match("dhcp_enable_x", "1")) {
@@ -773,13 +805,12 @@ update_lan_status(int isup)
 		else
 			nvram_set_temp("lan_gateway_t", nvram_safe_get("lan_gateway"));
 	}
-	
+
 	snprintf(lan_subnet, sizeof(lan_subnet), "0x%x", 
 		inet_network(nvram_safe_get("lan_ipaddr_t"))&inet_network(nvram_safe_get("lan_netmask_t")));
 
 	nvram_set_temp("lan_subnet_t", lan_subnet);
 }
-
 
 static int 
 udhcpc_lan_deconfig(char *lan_ifname)
@@ -827,33 +858,35 @@ udhcpc_lan_bound(char *lan_ifname, int is_renew)
 		is_changed |= nvram_invmatch(param, value);
 		nvram_set_temp(param, value);
 	}
+	if ((value = getenv("domain"))) {
+		param = strcat_r(prefix, "domain_t", tmp);
+		is_changed |= nvram_invmatch(param, value);
+		nvram_set_temp(param, value);
+	}
 	if ((value = getenv("wins")))
 		nvram_set_temp(strcat_r(prefix, "wins_t", tmp), value);
-#if 0
-	if ((value = getenv("hostname")))
-		sethostname(value, strlen(value) + 1);
-#endif
-	if ((value = getenv("domain")))
-		nvram_set_temp(strcat_r(prefix, "domain_t", tmp), value);
 	if ((value = getenv("lease"))) {
 		lease_dur = atoi(value);
 		nvram_set_temp(strcat_r(prefix, "lease_t", tmp), value);
 	}
 
 	if (is_changed || !is_renew) {
+		char *lan_ipaddr  = nvram_safe_get(strcat_r(prefix, "ipaddr_t", tmp));
+		char *lan_ipmask  = nvram_safe_get(strcat_r(prefix, "netmask_t", tmp));
+		char *lan_gateway = nvram_safe_get(strcat_r(prefix, "gateway_t", tmp));
+		char *lan_domain  = nvram_safe_get(strcat_r(prefix, "domain_t", tmp));
+		
 		if (ip_changed)
 			ifconfig(lan_ifname, IFUP, "0.0.0.0", NULL);
 		
-		ifconfig(lan_ifname, IFUP,
-			 nvram_safe_get(strcat_r(prefix, "ipaddr_t", tmp)),
-			 nvram_safe_get(strcat_r(prefix, "netmask_t", tmp)));
+		ifconfig(lan_ifname, IFUP, lan_ipaddr, lan_ipmask);
 		
-		lan_up_auto(lan_ifname);
+		create_hosts_lan(lan_ipaddr, lan_domain);
 		
-		logmessage("DHCP LAN Client", "%s, IP: %s, GW: %s, lease time: %d",
-			udhcpc_lan_state,
-			nvram_safe_get(strcat_r(prefix, "ipaddr_t", tmp)),
-			nvram_safe_get(strcat_r(prefix, "gateway_t", tmp)), lease_dur);
+		lan_up_auto(lan_ifname, lan_gateway);
+		
+		logmessage("DHCP LAN Client", "%s, IP: %s/%s, GW: %s, lease time: %d",
+			udhcpc_lan_state, lan_ipaddr, lan_ipmask, lan_gateway, lease_dur);
 	}
 
 	if (!is_renew)

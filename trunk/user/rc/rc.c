@@ -503,12 +503,12 @@ init_router(void)
 #endif
 	start_detect_link();
 	start_lan();
-	start_dns_dhcpd();
 
 	if (log_remote)
 		start_logger(1);
 
 	if (!is_ap_mode) {
+		start_dns_dhcpd();
 		ipt_nat_default();
 		ipt_filter_default();
 #if defined (USE_IPV6)
@@ -771,7 +771,10 @@ handle_notifications(void)
 #endif
 		else if (strcmp(entry->d_name, "restart_dhcpd") == 0)
 		{
-			restart_dhcpd();
+			if (get_ap_mode())
+				update_hosts_ap();
+			else
+				restart_dhcpd();
 		}
 		else if (strcmp(entry->d_name, "restart_upnp") == 0)
 		{

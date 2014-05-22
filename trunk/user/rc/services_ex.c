@@ -122,7 +122,7 @@ start_dns_dhcpd(void)
 		return 0;
 
 	/* create /etc/hosts */
-	update_hosts();
+	update_hosts_router();
 
 	/* touch resolv.conf if not exist */
 	create_file(resolv_conf);

@@ -108,16 +108,13 @@ function applyRule(){
 
 function validForm(){
 	var re = new RegExp('^[a-zA-Z0-9][a-zA-Z0-9\-\_\.]*[a-zA-Z0-9\-\_]$','gi');
-	if(!re.test(document.form.lan_domain.value) && document.form.lan_domain.value != ""){
+	if((document.form.lan_domain.value != "") && (!re.test(document.form.lan_domain.value))){
 		alert("<#JS_validchar#>");
 		document.form.lan_domain.focus();
 		document.form.lan_domain.select();
 		return false;
 	}
-	
-	if(!validate_string(document.form.lan_domain))
-		return false;
-	
+
 	if(!validate_ipaddr_final(document.form.dhcp_start, 'dhcp_start') ||
 			!validate_ipaddr_final(document.form.dhcp_end, 'dhcp_end') ||
 			!validate_ipaddr_final(document.form.dhcp_gateway_x, 'dhcp_gateway_x') ||
@@ -417,7 +414,7 @@ function get_default_pool(ip, netmask){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,2);"><#LANHostConfig_DomainName_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="32" class="input" size="32" name="lan_domain" value="<% nvram_get_x("", "lan_domain"); %>" onblur="is_string(this);">
+                                                <input type="text" maxlength="32" class="input" size="32" name="lan_domain" value="<% nvram_get_x("", "lan_domain"); %>">
                                             </td>
                                         </tr>
                                         <tr>

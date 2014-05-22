@@ -1055,7 +1055,7 @@ wan_down(char *wan_ifname)
 		doSystem("%s %s %s", script_postw, "down", wan_ifname);
 }
 
-void 
+void
 full_restart_wan(void)
 {
 	if (get_ap_mode())
@@ -1090,7 +1090,7 @@ full_restart_wan(void)
 		safe_start_xl2tpd();
 }
 
-void 
+void
 try_wan_reconnect(int try_use_modem)
 {
 	if (get_ap_mode())
@@ -1219,50 +1219,63 @@ update_resolvconf(int is_first_run, int do_not_notify)
 	return 0;
 }
 
-int 
-update_hosts(void)
+int
+update_hosts_router(void)
 {
 	FILE *fp;
 	int i, i_max, i_sdhcp;
 	char dhcp_ip[32], dhcp_name[32], *sip, *sname;
-	char *ipaddr;
-	char *host_name_nbt;
+	char *lan_ipaddr, *lan_hname, *lan_dname;
 
-	ipaddr = nvram_safe_get("lan_ipaddr");
+	lan_hname = get_our_hostname();
+	lan_dname = nvram_safe_get("lan_domain");
 
-	host_name_nbt = get_our_hostname();
+	sethostname(lan_hname, strlen(lan_hname));
+	setdomainname(lan_dname, strlen(lan_dname));
 
 	i_sdhcp = nvram_get_int("dhcp_static_x");
 	i_max  = nvram_get_int("dhcp_staticnum_x");
 	if (i_max > 64) i_max = 64;
 
+	lan_ipaddr = nvram_safe_get("lan_ipaddr");
+
+	fp = fopen("/etc/hostname", "w+");
+	if (fp) {
+		fprintf(fp, "%s\n", lan_hname);
+		fclose(fp);
+	}
+
 	fp = fopen("/etc/hosts", "w+");
 	if (fp) {
-		fprintf(fp, "127.0.0.1 %s %s\n", "localhost.localdomain", "localhost");
-		fprintf(fp, "%s my.router\n", ipaddr);
-		fprintf(fp, "%s %s\n", ipaddr, host_name_nbt);
+		fprintf(fp, "%s %s %s\n", "127.0.0.1", "localhost.localdomain", "localhost");
+		if (strlen(lan_dname) > 0)
+			fprintf(fp, "%s %s.%s %s\n", lan_ipaddr, lan_hname, lan_dname, lan_hname);
+		else
+			fprintf(fp, "%s %s\n", lan_ipaddr, lan_hname);
+		fprintf(fp, "%s %s\n", lan_ipaddr, "my.router");
 		if (i_sdhcp == 1) {
 			for (i = 0; i < i_max; i++) {
 				sprintf(dhcp_ip, "dhcp_staticip_x%d", i);
 				sprintf(dhcp_name, "dhcp_staticname_x%d", i);
 				sip = nvram_safe_get(dhcp_ip);
 				sname = nvram_safe_get(dhcp_name);
-				if (is_valid_ipv4(sip) && inet_addr_safe(sip) != inet_addr_safe(ipaddr) && is_valid_hostname(sname))
+				if (is_valid_ipv4(sip) && inet_addr_safe(sip) != inet_addr_safe(lan_ipaddr) && is_valid_hostname(sname))
 				{
 					fprintf(fp, "%s %s\n", sip, sname);
 				}
 			}
 		}
-		
 #if defined (USE_IPV6)
 		if (get_ipv6_type() != IPV6_DISABLED) {
-			fprintf(fp, "::1 %s %s\n", "localhost.localdomain", "localhost");
+			fprintf(fp, "%s %s %s\n", "::1", "localhost.localdomain", "localhost");
 			char addr6s[INET6_ADDRSTRLEN];
 			char* lan_addr6_host = get_lan_addr6_host(addr6s);
 			if (lan_addr6_host) {
-				fprintf(fp, "%s my.router\n", lan_addr6_host);
-				fprintf(fp, "%s my.%s\n", lan_addr6_host, nvram_safe_get("productid"));
-				fprintf(fp, "%s %s\n", lan_addr6_host, host_name_nbt);
+				if (strlen(lan_dname) > 0)
+					fprintf(fp, "%s %s.%s %s\n", lan_addr6_host, lan_hname, lan_dname, lan_hname);
+				else
+					fprintf(fp, "%s %s\n", lan_addr6_host, lan_hname);
+				fprintf(fp, "%s %s\n", lan_addr6_host, "my.router");
 			}
 		}
 #endif
@@ -1753,10 +1766,6 @@ udhcpc_bound(char *wan_ifname)	// udhcpc bound here, also call wanup
 	nvram_set_temp(strcat_r(prefix, "routes", tmp), safe_getenv("routes"));
 	nvram_set_temp(strcat_r(prefix, "routes_ms", tmp), safe_getenv("msstaticroutes"));
 	nvram_set_temp(strcat_r(prefix, "routes_rfc", tmp), safe_getenv("staticroutes"));
-#if 0
-	if ((value = getenv("hostname")))
-		sethostname(trim_r(value), strlen(value) + 1);
-#endif
 	if ((value = getenv("domain")))
 		nvram_set_temp(strcat_r(prefix, "domain", tmp), trim_r(value));
 	if ((value = getenv("lease"))) {
@@ -1936,10 +1945,6 @@ udhcpc_renew(char *wan_ifname)
 	}
 	if ((value = getenv("wins")))
 		nvram_set_temp(strcat_r(prefix, "wins", tmp), trim_r(value));
-#if 0
-	if ((value = getenv("hostname")))
-		sethostname(trim_r(value), strlen(value) + 1);
-#endif
 	if ((value = getenv("domain")))
 		nvram_set_temp(strcat_r(prefix, "domain", tmp), trim_r(value));
 	if ((value = getenv("lease")))

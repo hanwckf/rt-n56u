@@ -64,8 +64,8 @@
 <script>
 
 function initial(){
-	final_flag = 1;	// for the function in general.js
-	
+	final_flag = 1;
+
 	show_banner(1);
 	show_menu(5,3,1);
 	show_footer();
@@ -73,37 +73,32 @@ function initial(){
 	on_change_lan_dhcpc();
 }
 
-
 function on_change_lan_dhcpc(){
-    var en_ip = 1;
-    if(document.form.lan_proto_x[0].checked){
-        en_ip = 0;
-        $j('input[name="lan_dns_x"]').removeAttr('disabled');
-        $("row_lan_dns_x").style.display = "";
-    }
-    else {
-        $("row_lan_dns_x").style.display = "none";
-        $j('input[name="lan_dns_x"]').attr('disabled','disabled');
-    }
-
-    inputCtrl(document.form.lan_ipaddr, en_ip);
-    inputCtrl(document.form.lan_netmask, en_ip);
-    inputCtrl(document.form.lan_gateway, en_ip);
-
-    on_change_lan_dns();
+	var en_ip = 1;
+	if(document.form.lan_proto_x[0].checked){
+		en_ip = 0;
+		$j('input[name="lan_dns_x"]').removeAttr('disabled');
+		$("row_lan_dns_x").style.display = "";
+	}else{
+		$("row_lan_dns_x").style.display = "none";
+		$j('input[name="lan_dns_x"]').attr('disabled','disabled');
+	}
+	inputCtrl(document.form.lan_ipaddr, en_ip);
+	inputCtrl(document.form.lan_netmask, en_ip);
+	inputCtrl(document.form.lan_gateway, en_ip);
+	inputCtrl(document.form.lan_domain, en_ip);
+	on_change_lan_dns();
 }
 
-
 function on_change_lan_dns(){
-    var en_dns = 1;
-    if(!document.form.lan_dns_x[0].disabled &&
-       document.form.lan_dns_x[0].checked &&
-       document.form.lan_proto_x[0].checked) {
-        en_dns = 0;
-    }
-
-    inputCtrl(document.form.lan_dns1, en_dns);
-    inputCtrl(document.form.lan_dns2, en_dns);
+	var en_dns = 1;
+	if(!document.form.lan_dns_x[0].disabled &&
+		document.form.lan_dns_x[0].checked &&
+		document.form.lan_proto_x[0].checked) {
+		en_dns = 0;
+	}
+	inputCtrl(document.form.lan_dns1, en_dns);
+	inputCtrl(document.form.lan_dns2, en_dns);
 }
 
 function checkIP(){
@@ -147,68 +142,65 @@ function applyRule(){
 	}
 }
 
-// test if WAN IP & Gateway & DNS IP is a valid IP
-// DNS IP allows to input nothing
 function valid_IP(obj_name, obj_flag){
-		// A : 1.0.0.0~126.255.255.255
-		// B : 127.0.0.0~127.255.255.255 (forbidden)
-		// C : 128.0.0.0~255.255.255.254
-		var A_class_start = inet_network("1.0.0.0");
-		var A_class_end = inet_network("126.255.255.255");
-		var B_class_start = inet_network("127.0.0.0");
-		var B_class_end = inet_network("127.255.255.255");
-		var C_class_start = inet_network("128.0.0.0");
-		var C_class_end = inet_network("255.255.255.255");
-		
-		var ip_obj = obj_name;
-		var ip_num = inet_network(ip_obj.value);
+	// A : 1.0.0.0~126.255.255.255
+	// B : 127.0.0.0~127.255.255.255 (forbidden)
+	// C : 128.0.0.0~255.255.255.254
+	var A_class_start = inet_network("1.0.0.0");
+	var A_class_end = inet_network("126.255.255.255");
+	var B_class_start = inet_network("127.0.0.0");
+	var B_class_end = inet_network("127.255.255.255");
+	var C_class_start = inet_network("128.0.0.0");
+	var C_class_end = inet_network("255.255.255.255");
+	
+	var ip_obj = obj_name;
+	var ip_num = inet_network(ip_obj.value);
 
-		if(obj_flag == "DNS" && ip_num == -1){ //DNS allows to input nothing
-			return true;
-		}
-		
-		if(obj_flag == "GW" && ip_num == -1){ //GW allows to input nothing
-			return true;
-		}
-		
-		if(ip_num > A_class_start && ip_num < A_class_end)
-			return true;
-		else if(ip_num > B_class_start && ip_num < B_class_end){
-			alert(ip_obj.value+" <#JS_validip#>");
-			ip_obj.focus();
-			ip_obj.select();
-			return false;
-		}
-		else if(ip_num > C_class_start && ip_num < C_class_end)
-			return true;
-		else{
-			alert(ip_obj.value+" <#JS_validip#>");
-			ip_obj.focus();
-			ip_obj.select();
-			return false;
-		}
+	if(obj_flag == "DNS" && ip_num == -1){
+		return true;
+	}
+
+	if(obj_flag == "GW" && ip_num == -1){
+		return true;
+	}
+
+	if(ip_num > A_class_start && ip_num < A_class_end)
+		return true;
+	else if(ip_num > B_class_start && ip_num < B_class_end){
+		alert(ip_obj.value+" <#JS_validip#>");
+		ip_obj.focus();
+		ip_obj.select();
+		return false;
+	}
+	else if(ip_num > C_class_start && ip_num < C_class_end)
+		return true;
+	else{
+		alert(ip_obj.value+" <#JS_validip#>");
+		ip_obj.focus();
+		ip_obj.select();
+		return false;
+	}
 }
 
 function validForm(){
 	if(document.form.lan_proto_x[0].checked == 1)
 		return true;
-	
-//  Viz 2012.01  {
-	
+
 	var ip_obj = document.form.lan_ipaddr;
 	var ip_num = inet_network(ip_obj.value);
-	var ip_class = "";		
-	if(!valid_IP(ip_obj, "")) return false;  //LAN IP
-	if(!valid_IP(document.form.lan_gateway, "GW"))return false;  //Parent Gateway IP
+	var ip_class = "";
+	if(!valid_IP(ip_obj, ""))
+		return false;
+	if(!valid_IP(document.form.lan_gateway, "GW"))
+		return false;
 
-	// test if netmask is valid.
 	var netmask_obj = document.form.lan_netmask;
 	var netmask_num = inet_network(netmask_obj.value);
 	var netmask_reverse_num = ~netmask_num;
 	var default_netmask = "";
 	var wrong_netmask = 0;
 
-	if(netmask_num < 0) wrong_netmask = 1;	
+	if(netmask_num < 0) wrong_netmask = 1;
 
 	if(ip_class == 'A')
 		default_netmask = "255.0.0.0";
@@ -216,7 +208,7 @@ function validForm(){
 		default_netmask = "255.255.0.0";
 	else
 		default_netmask = "255.255.255.0";
-	
+
 	var test_num = netmask_reverse_num;
 	while(test_num != 0){
 		if((test_num+1)%2 == 0)
@@ -226,15 +218,23 @@ function validForm(){
 			break;
 		}
 	}
+
 	if(wrong_netmask == 1){
 		alert(netmask_obj.value+" <#JS_validip#>");
 		netmask_obj.value = default_netmask;
 		netmask_obj.focus();
 		netmask_obj.select();
 		return false;
-	}	
-//  Viz 2012.01  }			
-	
+	}
+
+	var re = new RegExp('^[a-zA-Z0-9][a-zA-Z0-9\-\_\.]*[a-zA-Z0-9\-\_]$','gi');
+	if((document.form.lan_domain.value != "") && (!re.test(document.form.lan_domain.value))){
+		alert("<#JS_validchar#>");
+		document.form.lan_domain.focus();
+		document.form.lan_domain.select();
+		return false;
+	}
+
 	return true;
 }
 
@@ -364,14 +364,20 @@ function done_validating(action){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,4,2);"><#LANHostConfig_SubnetMask_itemname#></a></th>
                                             <td>
-                                                <input type="text" name="lan_netmask" value="<% nvram_get_x("", "lan_netmask"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+                                                <input type="text" maxlength="15" class="input" size="15" name="lan_netmask" value="<% nvram_get_x("", "lan_netmask"); %>" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
                                                 &nbsp;<span style="color:#888;">255.255.255.0</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,4,3);"><#LANHostConfig_x_Gateway_itemname#></a></th>
                                             <td>
-                                                <input type="text" name="lan_gateway" value="<% nvram_get_x("", "lan_gateway"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+                                                <input type="text" maxlength="15" class="input" size="15" name="lan_gateway" value="<% nvram_get_x("", "lan_gateway"); %>" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#LANHostConfig_DomainName_itemname#></th>
+                                            <td>
+                                                <input type="text" maxlength="32" class="input" size="32" name="lan_domain" value="<% nvram_get_x("", "lan_domain"); %>">
                                             </td>
                                         </tr>
                                         <tr id="row_lan_dns_x">

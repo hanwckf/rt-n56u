@@ -48,7 +48,6 @@ typedef u_int8_t u8;
 
 #include <iwlib.h>
 #include <ralink_priv.h>
-#include <netconf.h>
 
 #include "common.h"
 #include "httpd.h"

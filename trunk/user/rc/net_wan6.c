@@ -18,17 +18,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <net/route.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <time.h>
 #include <unistd.h>
 #include <signal.h>
+#include <netinet/in.h>
+#include <net/route.h>
+#include <net/ethernet.h>
 
 #include <nvram/bcmnvram.h>
-#include <netconf.h>
 
 #include "rc.h"
 

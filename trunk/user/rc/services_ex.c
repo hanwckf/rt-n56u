@@ -29,11 +29,11 @@
 #include <errno.h>
 #include <time.h>
 #include <sys/ioctl.h>
+#include <net/ethernet.h>
 
 #include <nvram/bcmnvram.h>
 
 #include "rc.h"
-#include <ralink_priv.h>
 
 #define DHCPD_LEASE_FILE	"/tmp/dnsmasq.leases"
 #define UPNPD_LEASE_FILE	"/tmp/miniupnpd.leases"

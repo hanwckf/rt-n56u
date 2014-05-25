@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <net/route.h>
+#include <net/if.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -30,7 +31,6 @@
 #include <ctype.h>
 
 #include <nvram/bcmnvram.h>
-#include <netconf.h>
 
 #include "rc.h"
 

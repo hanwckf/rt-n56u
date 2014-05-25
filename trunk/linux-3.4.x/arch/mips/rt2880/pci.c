@@ -239,7 +239,7 @@ struct pci_fixup pcibios_fixups[] = {
 	{0}
 };
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,2,0)
 int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 #else
 int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)

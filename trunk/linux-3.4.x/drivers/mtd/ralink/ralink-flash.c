@@ -211,7 +211,7 @@ static int __init rt2880_mtd_init(void)
 		ralink_mtd[i] = do_map_probe("cfi_probe", &ralink_map[i]);
 		if (ralink_mtd[i]) {
 			ralink_mtd[i]->owner = THIS_MODULE;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
 			ralink_mtd[i]->_lock = ralink_lock;
 			ralink_mtd[i]->_unlock = ralink_unlock;
 #else
@@ -298,7 +298,7 @@ int ra_mtd_write_nm(char *name, loff_t to, size_t len, const u_char *buf)
 		goto out;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
 	ret = mtd_read(mtd, 0, mtd->erasesize, &rdlen, bak);
 #else
 	ret = mtd->read(mtd, 0, mtd->erasesize, &rdlen, bak);
@@ -318,7 +318,7 @@ int ra_mtd_write_nm(char *name, loff_t to, size_t len, const u_char *buf)
 	ei.len = mtd->erasesize;
 	ei.priv = 0;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
 	ret = mtd_erase(mtd, &ei);
 #else
 	ret = mtd->erase(mtd, &ei);
@@ -326,7 +326,7 @@ int ra_mtd_write_nm(char *name, loff_t to, size_t len, const u_char *buf)
 	if (ret != 0)
 		goto free_out;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
 	ret = mtd_write(mtd, 0, mtd->erasesize, &wrlen, bak);
 #else
 	ret = mtd->write(mtd, 0, mtd->erasesize, &wrlen, bak);
@@ -354,7 +354,7 @@ int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf)
 	if (IS_ERR(mtd))
 		return (int)mtd;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
 	ret = mtd_read(mtd, from, len, &rdlen, buf);
 #else
 	ret = mtd->read(mtd, from, len, &rdlen, buf);

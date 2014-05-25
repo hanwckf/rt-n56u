@@ -1210,7 +1210,7 @@ static int raspi_probe(void)
 	flash->mtd.flags = MTD_CAP_NORFLASH;
 	flash->mtd.size = chip->sector_size * chip->n_sectors;
 	flash->mtd.erasesize = chip->sector_size;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
 	flash->mtd._erase = ramtd_erase;
 	flash->mtd._read = ramtd_read;
 	flash->mtd._write = ramtd_write;

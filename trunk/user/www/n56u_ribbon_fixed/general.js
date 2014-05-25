@@ -1510,14 +1510,12 @@ function onSubmitApply(s) {
                 return false;
             }
             document.form.ddns_hostname_x.value = document.form.DDNSName.value+".asuscomm.com";
-            showLoading();
         }
-        document.form.action_mode.value = "Update";
-        document.form.action_script.value = s;
-    } else {
-        document.form.action_mode.value = "Update";
-        document.form.action_script.value = s;
+        showLoading();
     }
+
+    document.form.action_mode.value = "Update";
+    document.form.action_script.value = s;
 
     return true;
 }
@@ -1540,41 +1538,8 @@ function change_common(o, s, v) {
         if (o.value == "DROP")
             alert("<#JS_LanWanAlert#>");
     }
-    else if (v == "ddns_server_x") {
-        change_ddns_setting(o.value);
-    }
 
     return true;
-}
-
-function change_ddns_setting(v) {
-    if (v == "WWW.ASUS.COM") {
-        inputCtrl(document.form.ddns_username_x, 0);
-        inputCtrl(document.form.ddns_passwd_x, 0);
-    } else {
-        inputCtrl(document.form.ddns_username_x, 1);
-        inputCtrl(document.form.ddns_passwd_x, 1);
-    }
-
-    if (v == "WWW.ASUS.COM") {
-        showhide("ddnsname_input", 0);
-        showhide("asusddnsname_input", 1);
-        document.getElementById("ddnsname2_row").style.display = "none";
-        document.getElementById("ddnsname3_row").style.display = "none";
-        document.form.ddns_wildcard_x[0].disabled = 1;
-        document.form.ddns_wildcard_x[1].disabled = 1;
-        document.form.LANHostConfig_x_DDNSHostnameCheck_button.disabled = 0;
-        showhide("link", 0);
-    } else {
-        showhide("ddnsname_input", 1);
-        showhide("asusddnsname_input", 0);
-        document.getElementById("ddnsname2_row").style.display = "";
-        document.getElementById("ddnsname3_row").style.display = "";
-        document.form.ddns_wildcard_x[0].disabled = 0;
-        document.form.ddns_wildcard_x[1].disabled = 0;
-        document.form.LANHostConfig_x_DDNSHostnameCheck_button.disabled = 1;
-        showhide("link", 1);
-    }
 }
 
 function change_common_radio(o, s, v, r) {
@@ -1850,30 +1815,38 @@ function updateDateTime(s) {
 }
 
 function openLink(s) {
+    var tourl = "";
     var link_params = "toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=640,height=480";
-    if (s == 'x_DDNSServer') {
-        if (document.form.ddns_server_x.value.indexOf("WWW.DYNDNS.ORG") != -1)
-            tourl = "https://www.dyndns.com/account/create.html";
-        else if (document.form.ddns_server_x.value == 'WWW.DUCKDNS.ORG')
-            tourl = "http://duckdns.org/login";
-        else if (document.form.ddns_server_x.value == 'WWW.ZONEEDIT.COM')
-            tourl = "http://www.zoneedit.com/signUp.html";
-        else if (document.form.ddns_server_x.value == 'WWW.TZO.COM')
+    if (s == 'x_DDNSServer' || s == 'x_DDNSServer2') {
+        var o1 = (s == 'x_DDNSServer2') ? document.form.ddns2_server : document.form.ddns_server_x;
+        if (o1.value == "WWW.DYNDNS.ORG")
+            tourl = "https://account.dyn.com/entrance/";
+        else if (o1.value == 'WWW.TZO.COM')
             tourl = "http://signup.tzo.com";
-        else if (document.form.ddns_server_x.value == 'WWW.EASYDNS.COM')
+        else if (o1.value == 'WWW.ZONEEDIT.COM')
+            tourl = "http://www.zoneedit.com/signUp.html";
+        else if (o1.value == 'WWW.EASYDNS.COM')
             tourl = "https://web.easydns.com/Open_Account/";
-        else if (document.form.ddns_server_x.value == 'WWW.NO-IP.COM')
+        else if (o1.value == 'WWW.NO-IP.COM')
             tourl = "http://www.noip.com/newUser.php";
-        else if (document.form.ddns_server_x.value == 'WWW.TUNNELBROKER.NET')
+        else if (o1.value == 'WWW.TUNNELBROKER.NET')
             tourl = "http://www.tunnelbroker.net/register.php";
-        else if (document.form.ddns_server_x.value == 'DNS.HE.NET')
+        else if (o1.value == 'DNS.HE.NET')
             tourl = "http://ipv6.he.net/certification/register.php";
-        else if (document.form.ddns_server_x.value == 'WWW.DNSEXIT.COM')
+        else if (o1.value == 'WWW.DNSEXIT.COM')
             tourl = "https://www.dnsexit.com/Direct.sv?cmd=signup";
-        else if (document.form.ddns_server_x.value == 'WWW.CHANGEIP.COM')
-            tourl = "https://www.changeip.com/signup.asp?";
-        else if (document.form.ddns_server_x.value == 'FREEDNS.AFRAID.ORG')
-            tourl = "http://freedns.afraid.org/signup";
+        else if (o1.value == 'WWW.CHANGEIP.COM')
+            tourl = "https://www.changeip.com/accounts/register.php";
+        else if (o1.value == 'WWW.DNSOMATIC.COM')
+            tourl = "https://www.dnsomatic.com/create/";
+        else if (o1.value == 'WWW.SITELUTIONS.COM')
+            tourl = "https://sitelutions.com/signup";
+        else if (o1.value == 'WWW.DUCKDNS.ORG')
+            tourl = "https://duckdns.org/login/";
+        else if (o1.value == 'WWW.DHIS.ORG')
+            tourl = "http://dhis.org/WebEngine.ipo?context=dhis.website.register";
+        else if (o1.value == 'FREEDNS.AFRAID.ORG')
+            tourl = "http://freedns.afraid.org/signup/";
         else
             return;
         link = window.open(tourl, "DDNSLink", link_params);
@@ -1919,21 +1892,30 @@ function blur_body() {
 
 function showhide(element, sh) {
     var status;
-    if (sh == 1) {
-        status = "block";
-    }
-    else {
+    if (sh == 0)
         status = "none"
-    }
+    else
+        status = "block";
 
-    if (document.getElementById) {
+    if (document.getElementById)
         document.getElementById(element).style.display = status;
-    }
-    else if (document.all) {
+    else if (document.all)
         document.all[element].style.display = status;
-    }
-    else if (document.layers) {
+    else if (document.layers)
         document.layers[element].display = status;
-    }
 }
 
+function showhide_div(element, sh) {
+    var status;
+    if (sh == 0)
+        status = "none"
+    else
+        status = "";
+
+    if (document.getElementById)
+        document.getElementById(element).style.display = status;
+    else if (document.all)
+        document.all[element].style.display = status;
+    else if (document.layers)
+        document.layers[element].display = status;
+}

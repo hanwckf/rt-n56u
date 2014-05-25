@@ -110,11 +110,11 @@ function initial(){
 
 	loadAppOptions();
 	loadGameOptions();
-	
+
 	change_upnp_enabled();
 	change_vts_enabled();
 	change_proto();
-	
+
 	showLANIPList();
 	showVSList();
 }

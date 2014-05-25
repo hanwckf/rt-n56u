@@ -96,7 +96,7 @@ int start_auth_eapol(const char *ifname, int eap_algo)
 		return -1;
 	}
 
-#if defined(EAP_PEAP)
+#if defined(SUPPORT_PEAP_SSL)
 	if (eap_algo == 5) {
 		eap_type = "PEAP";
 		log_prefix = "EAPoL-PEAP";
@@ -120,7 +120,7 @@ int start_auth_eapol(const char *ifname, int eap_algo)
 		nvram_safe_get("wan_auth_user"),
 		nvram_safe_get("wan_auth_pass"));
 
-#if defined(EAP_PEAP)
+#if defined(SUPPORT_PEAP_SSL)
 	if (eap_algo == 5) {
 		fprintf(fp,
 			"	phase1=\"peaplabel=0\"\n"
@@ -170,7 +170,7 @@ int wpacli_main(int argc, char **argv)
 	if (eap_algo < 0)
 		return 0;
 
-#if defined(EAP_PEAP)
+#if defined(SUPPORT_PEAP_SSL)
 	if (eap_algo == 5)
 		log_prefix = "EAPoL-PEAP";
 	else if (eap_algo == 4 || eap_algo == 3 || eap_algo == 2 || eap_algo == 1)

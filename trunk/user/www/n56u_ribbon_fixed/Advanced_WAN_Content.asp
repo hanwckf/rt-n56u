@@ -128,7 +128,7 @@ function initial(){
 	show_menu(5,4,1);
 	show_footer();
 
-	if (!support_peap()){
+	if (!support_peap_ssl()){
 		var o1 = document.form.wan_auth_mode;
 		o1.remove(3);
 		o1.remove(3);

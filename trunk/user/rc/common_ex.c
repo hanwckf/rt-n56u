@@ -442,6 +442,30 @@ unsigned int get_param_int_hex(const char *param)
 	return retVal;
 }
 
+void load_user_config(FILE *fp, const char *dir_name, const char *file_name)
+{
+	FILE *fp_user;
+	char line[256], real_path[128];
+	
+	snprintf(real_path, sizeof(real_path), "%s/%s", dir_name, file_name);
+	fp_user = fopen(real_path, "r");
+	if (fp_user) {
+		while (fgets(line, sizeof(line), fp_user)) {
+			if (line[0] == '\0' ||
+			    line[0] == '\r' ||
+			    line[0] == '\n' ||
+			    line[0] == '#' ||
+			    line[0] == ';')
+				continue;
+			
+			line[strlen(line) - 1] = '\n';
+			fprintf(fp, line);
+		}
+		
+		fclose(fp_user);
+	}
+}
+
 int is_module_loaded(char *module_name)
 {
 	DIR *dir_to_open = NULL;

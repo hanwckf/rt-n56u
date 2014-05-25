@@ -245,7 +245,7 @@ function initial(){
 	if(found_app_aria())
 		$("row_aria").style.display = "";
 
-	if (support_https()){
+	if (support_http_ssl()){
 		if (http_proto == "0" || http_proto == "2"){
 			if (sw_mode != "4")
 				http_wopen_changed();
@@ -279,7 +279,7 @@ function validForm(){
 	if (sw_mode == "4")
 		return true;
 
-	if (support_https()){
+	if (support_http_ssl()){
 		if (http_proto == "0" || http_proto == "2"){
 			if(!validate_range(document.form.misc_httpport_x, 80, 65535))
 				return false;

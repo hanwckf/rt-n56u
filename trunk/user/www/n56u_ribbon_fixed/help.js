@@ -1,4 +1,4 @@
-﻿var helpcontent = new Array(24);
+﻿var helpcontent = new Array(25);
 var help_enable = '<% nvram_get_x("", "help_enable"); %>';
 
 helpcontent[0] = new Array("");
@@ -163,9 +163,17 @@ helpcontent[22] = new Array("",
 				"<#OP_GW_desc1#>",
 				"<#OP_GW_desc1#>",
 				"<#OP_AP_desc1#>");
-// title ssid
+// Tweaks
 helpcontent[23] = new Array("",
 				"<#TweaksWdg_desc#>");
+
+// DDNS
+helpcontent[24] = new Array("",
+				"<#LANHostConfig_x_DDNSUserName_itemdesc#>",
+				"<#LANHostConfig_x_DDNSPassword_itemdesc#>",
+				"<#LANHostConfig_x_DDNSHostNames_itemdesc#>",
+				"<#LANHostConfig_x_DDNSWildcard_itemdesc#>",
+				"<#LANHostConfig_x_DDNSStatus_itemdesc#>");
 
 
 function openTooltip(obj, hint_array_id, hint_show_id)

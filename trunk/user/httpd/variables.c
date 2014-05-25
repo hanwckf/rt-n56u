@@ -514,8 +514,18 @@
 			{"ddns_hostname3_x", "", NULL, RESTART_DDNS},
 			{"ddns_wildcard_x", "", NULL, RESTART_DDNS},
 			{"ddns_period", "", NULL, RESTART_DDNS },
+			{"ddns_forced", "", NULL, RESTART_DDNS },
 			{"ddns_verbose", "", NULL, RESTART_DDNS },
 			{"ddns_source", "", NULL, RESTART_DDNS },
+			{"ddns_checkip", "", NULL, RESTART_DDNS },
+#if defined (SUPPORT_DDNS_SSL)
+			{"ddns_ssl", "", NULL, RESTART_DDNS },
+			{"ddns2_ssl", "", NULL, RESTART_DDNS },
+#endif
+			{"ddns2_server", "", NULL, RESTART_DDNS },
+			{"ddns2_hname", "", NULL, RESTART_DDNS },
+			{"ddns2_user", "", NULL, RESTART_DDNS },
+			{"ddns2_pass", "", NULL, RESTART_DDNS },
 			{"ManualDHCPList", "Group", ARGV((char*)variables_LANHostConfig_ManualDHCPList, "8", "55", "dhcp_staticnum_x"), RESTART_DHCPD},
 			{"VPNSACLList", "Group", ARGV((char*)variables_LANHostConfig_VPNSACLList, "8", "107", "vpns_num_x"), RESTART_VPNSVR},
 			{0,0,0,0}

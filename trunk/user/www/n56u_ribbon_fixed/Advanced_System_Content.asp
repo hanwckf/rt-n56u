@@ -72,7 +72,7 @@ function initial(){
 	else
 		sshd_auth_change();
 
-	if (!support_https()) {
+	if (!support_http_ssl()) {
 		document.form.http_proto.value = "0";
 		$("row_http_proto").style.display = "none";
 		$("row_https_lport").style.display = "none";
@@ -135,7 +135,7 @@ function validForm(){
 	if(!validate_range(document.form.http_lanport, 80, 65535))
 		return false;
 
-	if (support_https()){
+	if (support_http_ssl()){
 		var mode = document.form.http_proto.value;
 		if (mode == "0" || mode == "2"){
 			if(!validate_range(document.form.http_lanport, 80, 65535))

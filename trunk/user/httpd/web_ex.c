@@ -296,7 +296,8 @@ void sys_script(char *name)
 	}
 	else if (strcmp(name,"ddnsclient")==0)
 	{
-		eval("start_ddns");
+		if (pids("inadyn"))
+			doSystem("killall %s %s", "-SIGUSR1", "inadyn");
 	}
 	else if (strcmp(name,"hostname_check") == 0)
 	{
@@ -812,7 +813,7 @@ static int dump_file(webs_t wp, char *filename)
 
 static int
 ej_dump(int eid, webs_t wp, int argc, char_t **argv)
-{	
+{
 	char filename[128];
 	char *file, *script;
 	int ret;
@@ -1459,6 +1460,8 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			}
 			else if (!strcmp(action_mode, "Update")) {
 				validate_asp_apply(wp, sid);
+				/* block restart signal (only nvram update + call script) */
+				restart_needed_bits = 0;
 			}
 			else {
 				char group_id[64];
@@ -1617,7 +1620,7 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 		
 		websWrite(wp, "<script>restart_needed_time(%d);</script>\n", restart_total_time);
 	}
-	
+
 	return 0;
 }
 
@@ -1840,7 +1843,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 		}
 		restart_needed_bits = 0;
 	}
-	
+
 	return 0;
 }
 
@@ -2425,20 +2428,30 @@ static int ej_firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #else
 	int min_vlan_ext = 3;
 #endif
+#if (BOARD_NUM_USB_PORTS > 0)
+	int has_usb = 1;
+#else
+	int has_usb = 0;
+#endif
 #if defined(USE_USB3)
 	int has_usb3 = 1;
 #else
 	int has_usb3 = 0;
 #endif
-#if defined(EAP_PEAP)
-	int has_peap = 1;
+#if defined(SUPPORT_PEAP_SSL)
+	int has_peap_ssl = 1;
 #else
-	int has_peap = 0;
+	int has_peap_ssl = 0;
 #endif
 #if defined(SUPPORT_HTTPS)
-	int has_https = 1;
+	int has_http_ssl = 1;
 #else
-	int has_https = 0;
+	int has_http_ssl = 0;
+#endif
+#if defined(SUPPORT_DDNS_SSL)
+	int has_ddns_ssl = 1;
+#else
+	int has_ddns_ssl = 0;
 #endif
 #if defined(BOARD_GPIO_LED_ALL)
 	int has_led_all = 1;
@@ -2498,10 +2511,12 @@ static int ej_firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 	websWrite(wp,
 		"function support_ipv6() { return %d;}\n"
 		"function support_ipv6_ppe() { return %d;}\n"
-		"function support_peap() { return %d;}\n"
-		"function support_https() { return %d;}\n"
+		"function support_peap_ssl() { return %d;}\n"
+		"function support_http_ssl() { return %d;}\n"
+		"function support_ddns_ssl() { return %d;}\n"
 		"function support_min_vlan() { return %d;}\n"
-		"function support_pcie_usb3() { return %d;}\n"
+		"function support_usb() { return %d;}\n"
+		"function support_usb3() { return %d;}\n"
 		"function support_but_wps() { return %d;}\n"
 		"function support_led_phy() { return %d;}\n"
 		"function support_led_all() { return %d;}\n"
@@ -2515,9 +2530,11 @@ static int ej_firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 		"function support_2g_stream_rx() { return %d;}\n",
 		has_ipv6,
 		has_ipv6_ppe,
-		has_peap,
-		has_https,
+		has_peap_ssl,
+		has_http_ssl,
+		has_ddns_ssl,
 		min_vlan_ext,
+		has_usb,
 		has_usb3,
 		has_but_wps,
 		BOARD_NUM_ETH_LEDS,

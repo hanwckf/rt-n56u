@@ -752,7 +752,7 @@ handle_notifications(void)
 		else if (strcmp(entry->d_name, "restart_ddns") == 0)
 		{
 			stop_ddns();
-			start_ddns();
+			start_ddns(1);
 		}
 		else if (strcmp(entry->d_name, "restart_httpd") == 0)
 		{
@@ -1194,7 +1194,7 @@ main(int argc, char **argv)
 	}
 #endif
 	else if (!strcmp(base, "start_ddns")) {
-		start_ddns();
+		start_ddns(1);
 	}
 	else if (!strcmp(base, "restart_wan")) {
 		notify_rc("manual_wan_connect");

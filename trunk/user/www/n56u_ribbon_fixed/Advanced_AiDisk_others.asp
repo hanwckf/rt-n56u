@@ -169,7 +169,7 @@ function initial(){
 		$("row_apm").style.display = "none";
 	}
 
-	if(support_pcie_usb3()){
+	if(support_usb3()){
 		$("row_usb3_disable").style.display = "";
 	}
 

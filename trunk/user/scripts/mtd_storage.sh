@@ -116,18 +116,20 @@ func_fill()
 	dir_dnsmasq="$dir_storage/dnsmasq"
 	dir_ovpnsvr="$dir_storage/openvpn/server"
 	dir_ovpncli="$dir_storage/openvpn/client"
-	
+	dir_inadyn="$dir_storage/inadyn"
+
 	script_start="$dir_storage/start_script.sh"
 	script_started="$dir_storage/started_script.sh"
 	script_postf="$dir_storage/post_iptables_script.sh"
 	script_postw="$dir_storage/post_wan_script.sh"
 	script_vpnsc="$dir_storage/vpns_client_script.sh"
 	script_vpncs="$dir_storage/vpnc_server_script.sh"
-	
+
 	user_hosts="$dir_dnsmasq/hosts"
 	user_dnsmasq_conf="$dir_dnsmasq/dnsmasq.conf"
 	user_ovpnsvr_conf="$dir_ovpnsvr/server.conf"
 	user_ovpncli_conf="$dir_ovpncli/client.conf"
+	user_inadyn_conf="$dir_inadyn/inadyn.conf"
 
 	# create https dir
 	[ ! -d "$dir_httpssl" ] && mkdir -p -m 700 "$dir_httpssl"
@@ -316,12 +318,34 @@ EOF
 		chmod 644 "$user_dnsmasq_conf"
 	fi
 
+	# create user inadyn.conf"
+	[ ! -d "$dir_inadyn" ] && mkdir -p -m 755 "$dir_inadyn"
+	if [ ! -f "$user_inadyn_conf" ] ; then
+		cat > "$user_inadyn_conf" <<EOF
+# Custom user conf file for inadyn DDNS client
+# Please add only new custom system!
+
+### Example for twoDNS.de:
+
+#system custom@http_srv_basic_auth
+#  ssl
+#  checkip-url checkip.two-dns.de /
+#  server-name update.twodns.de
+#  server-url /update\?hostname=
+#  username account
+#  password secret
+#  alias example.dd-dns.de
+
+EOF
+		chmod 644 "$user_inadyn_conf"
+	fi
+
 	# create user hosts
 	if [ ! -f "$user_hosts" ] ; then
 		cat > "$user_hosts" <<EOF
 # Custom user hosts file
 # Example:
-# 192.168.1.100		Obi-Wan
+# 192.168.1.100		Boo
 EOF
 		chmod 644 "$user_hosts"
 	fi

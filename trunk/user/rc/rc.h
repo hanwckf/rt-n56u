@@ -68,9 +68,8 @@
 #define FLAG_FILE_WWAN_GONE		"/tmp/.wwan_gone"
 
 #define DDNS_CONF_FILE			"/etc/inadyn.conf"
-#define DDNS_CACHE_FILE			"/tmp/ddns.cache"
 #define DDNS_DONE_SCRIPT		"/sbin/ddns_updated"
-#define DDNS_FORCE_DAYS			(7)
+#define DDNS_CACHE_DIR			"/tmp/inadyn"
 
 #define NTPC_DONE_SCRIPT		"/sbin/ntpc_updated"
 
@@ -119,6 +118,7 @@ char *mac_conv2(char *mac_name, int idx, char *buf);
 void get_eeprom_params(void);
 void char_to_ascii(char *output, char *input);
 unsigned int get_param_int_hex(const char *param);
+void load_user_config(FILE *fp, const char *dir_name, const char *file_name);
 int is_module_loaded(char *module_name);
 int module_smart_load(char *module_name, char *module_param);
 int module_smart_unload(char *module_name, int recurse_unload);
@@ -479,7 +479,7 @@ void stop_dns_dhcpd(void);
 int is_dns_dhcpd_run(void);
 int ddns_updated_main(int argc, char *argv[]);
 int update_ddns(void);
-int start_ddns(void);
+int start_ddns(int clear_cache);
 void stop_ddns(void);
 void stop_misc(void);
 void stop_usb(void);

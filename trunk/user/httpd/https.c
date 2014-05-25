@@ -200,6 +200,8 @@ void ssl_server_uninit(void)
 		SSL_CTX_free(ssl_ctx);
 		ssl_ctx = NULL;
 	}
+
+	ERR_free_strings();
 }
 
 int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_file, char *ssl_cipher_list)

@@ -5,26 +5,13 @@ THISDIR = $(shell pwd)
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
-E2FS_ENABLED=
-ifeq ($(CONFIG_FIRMWARE_ENABLE_EXT2),y)
-E2FS_ENABLED=y
-endif
-ifeq ($(CONFIG_FIRMWARE_ENABLE_EXT3),y)
-E2FS_ENABLED=y
-endif
-ifeq ($(CONFIG_FIRMWARE_ENABLE_EXT4),y)
-E2FS_ENABLED=y
-endif
-
-all:	config_test
-ifeq ($(E2FS_ENABLED),y)
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
-endif
 
 config_test:
 	( if [ -f ./config_done ]; then \
 		echo "the same configuration"; \
-	elif [ "$(E2FS_ENABLED)" = "y" ] ; then \
+	else \
 		make configure && touch config_done; \
 	fi )
 
@@ -60,7 +47,6 @@ clean:
 	rm -f config_done
 
 romfs:
-ifeq ($(E2FS_ENABLED),y)
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/e2fsck/e2fsck /sbin/e2fsck
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/misc/mke2fs /sbin/mke2fs
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/misc/tune2fs /sbin/tune2fs
@@ -71,7 +57,6 @@ ifeq ($(E2FS_ENABLED),y)
 	$(ROMFSINST) -s libcom_err.so.2.1 /lib/libcom_err.so.2
 	$(ROMFSINST) -s libext2fs.so.2.4 /lib/libext2fs.so.2
 	$(ROMFSINST) /etc_ro/e2fsck.conf
-endif
 ifeq ($(CONFIG_FIRMWARE_ENABLE_EXT2),y)
 	$(ROMFSINST) -s mke2fs /sbin/mkfs.ext2
 	$(ROMFSINST) -s e2fsck /sbin/fsck.ext2

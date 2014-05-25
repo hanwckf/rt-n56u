@@ -1,8 +1,8 @@
+USERDIR = $(ROOTDIR)/user
+SHDIR = $(ROOTDIR)/user/shared
+
 EXEC = networkmap
 OBJS = function.o networkmap.o
-
-SHDIR = $(ROOTDIR)/user/shared
-USERDIR = $(ROOTDIR)/user
 
 CFLAGS  += -Wall -I. -I$(SHDIR) -I$(SHDIR)/include
 CFLAGS  += -s -DNO_PARALLEL

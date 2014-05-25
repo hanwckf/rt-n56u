@@ -91,13 +91,13 @@ nvram_get(const char *name)
 char *
 nvram_safe_get(const char *name)
 {
-	static char nvram_empty[4] = {0};
+	static const char nvram_empty[4] = {0};
 
 	char *value = nvram_get_(name);
 	if (value)
 		return value;
 	else
-		return nvram_empty;
+		return (char *)nvram_empty;
 }
 
 int

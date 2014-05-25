@@ -1,74 +1,10 @@
 USERDIR = $(ROOTDIR)/user
 SHDIR = $(ROOTDIR)/user/shared
-HTTPDIR = $(ROOTDIR)/user/httpd
 INSTALLDIR = $(ROOTDIR)/romfs
 
-CFLAGS += -s -I. -I$(SHDIR) -I$(SHDIR)/include -I$(HTTPDIR)
-CFLAGS += $(if $(CONFIG_FIRMWARE_BUILDS_VER),-DFWBLDSTR=\"$(CONFIG_FIRMWARE_BUILDS_VER)\",)
-CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_LPRD),-DSRV_LPRD,)
-CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_U2EC),-DSRV_U2EC,)
-CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_OPENVPN),-DAPP_OPENVPN,)
-CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_XUPNPD),-DAPP_XUPNPD,)
-CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_MINIDLNA),-DAPP_MINIDLNA,)
-CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_FIREFLY),-DAPP_FIREFLY,)
-CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION),-DAPP_TRMD,)
-CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_ARIA),-DAPP_ARIA,)
-CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_SMBD),-DAPP_SMBD,)
-CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_FTPD),-DAPP_FTPD,)
-CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_NFSD),-DAPP_NFSD,)
-CFLAGS += $(if $(CONFIG_IPV6),-DUSE_IPV6,)
-CFLAGS += $(if $(CONFIG_NETFILTER_XT_MATCH_STATE),,-DUSE_MATCH_CONNTRACK)
-CFLAGS += $(if $(CONFIG_RAETH_GMAC2),,-DUSE_SINGLE_MAC)
-CFLAGS += $(if $(CONFIG_USB_XHCI_HCD),-DUSE_USB3,)
-CFLAGS += $(if $(CONFIG_RT2860V2_AP),-DUSE_RT2860V2_AP,)
-CFLAGS += $(if $(CONFIG_RT3090_AP),-DUSE_RT3090_AP,)
-CFLAGS += $(if $(CONFIG_RT5392_AP),-DUSE_RT5392_AP,)
-CFLAGS += $(if $(CONFIG_RT5592_AP),-DUSE_RT5592_AP,)
-CFLAGS += $(if $(CONFIG_RT3593_AP),-DUSE_RT3593_AP,)
-CFLAGS += $(if $(CONFIG_MT7610_AP),-DUSE_MT7610_AP,)
-CFLAGS += $(if $(CONFIG_RT3352_INIC_MII),-DUSE_RT3352_MII,)
-CFLAGS += $(if $(CONFIG_HNAT_V2),-DUSE_HW_NAT_V2,)
-CFLAGS += $(if $(CONFIG_RA_HW_NAT_IPV6),-DUSE_IPV6_HW_NAT,)
-CFLAGS += $(if $(CONFIG_RA_HW_NAT_PCI),-DUSE_WWAN_HW_NAT,)
+CFLAGS += -s -I. -I$(SHDIR) -I$(SHDIR)/include
 
-ifdef CONFIG_RALINK_RT3883
-CFLAGS += -DCONFIG_RALINK_RT3883
-else
-ifdef CONFIG_RALINK_MT7620
-CFLAGS += -DCONFIG_RALINK_MT7620
-CFLAGS += -DAP_MODE_LAN_TAGGED
-endif
-endif
-
-ifdef CONFIG_RTL8367
-CFLAGS += -DUSE_RTL8367
-CFLAGS += $(if $(CONFIG_RTL8367_API_8367B),-DUSE_RTL8367_API_8367B,)
-CFLAGS += $(if $(CONFIG_RTL8367_IGMP_SNOOPING),-DUSE_RTL8367_IGMP_SNOOPING,)
-else
-ifdef CONFIG_RAETH_ESW
-CFLAGS += -DUSE_MTK_ESW
-endif
-endif
-
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_EAP_PEAP),y)
-CFLAGS += -DSUPPORT_PEAP_SSL
-endif
-
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_DDNS_SSL),y)
-CFLAGS += -DSUPPORT_DDNS_SSL
-endif
-
-ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSH),y)
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_DROPBEAR),y)
-CFLAGS += -DAPP_SSHD
-endif
-else
-CFLAGS += -DAPP_SSHD
-endif
-
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_HTTPS),y)
-CFLAGS += -DSUPPORT_HTTPS
-endif
+include ../shared/cflags.mk
 
 # Disable/Enable ugly httpd_check
 #CFLAGS += -DHTTPD_CHECK
@@ -86,10 +22,13 @@ EXEC = rc
 
 OBJS  = rc.o init.o auth.o services.o watchdog.o firewall_ex.o common_ex.o
 OBJS += net.o net_lan.o net_wan.o net_wifi.o net_ppp.o services_ex.o rstats.o
-OBJS += ralink.o detect_link.o detect_internet.o detect_wan.o usb_devices.o usb_modem.o
+OBJS += ralink.o detect_link.o detect_internet.o detect_wan.o
 OBJS += vpn_server.o vpn_client.o
-ifdef CONFIG_FIRMWARE_INCLUDE_OPENVPN
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENVPN),y)
 OBJS += vpn_openvpn.o
+endif
+ifneq ($(BOARD_NUM_USB_PORTS),0)
+OBJS +=  usb_devices.o usb_modem.o services_usb.o
 endif
 ifdef CONFIG_RTL8367
 OBJS += switch_rtl8367.o
@@ -129,9 +68,6 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_ddns
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dhcpd
-	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug
-	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb
-	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb1
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_telnetd
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_telnetd
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_firewall
@@ -143,14 +79,6 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc detect_internet
 	cd $(INSTALLDIR)/sbin && ln -sf rc detect_wan
 	cd $(INSTALLDIR)/sbin && ln -sf rc reset_to_defaults
-	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sg
-	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sd
-	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sr
-	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_lp
-	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_net
-	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_tty
-	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_wdm
-	cd $(INSTALLDIR)/sbin && ln -sf rc zerocd
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_restart
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle_off
@@ -160,7 +88,7 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_guest_enable
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_guest_disable
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_eeprom_mac
-ifneq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-N14U")
+ifeq ($(BOARD_HAS_5G_RADIO),1)
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_restart
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_toggle
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_toggle_off
@@ -170,6 +98,20 @@ ifneq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-N14U")
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_guest_enable
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_guest_disable
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_eeprom_mac
+endif
+ifneq ($(BOARD_NUM_USB_PORTS),0)
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sg
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sd
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sr
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_lp
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_net
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_tty
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_wdm
+	cd $(INSTALLDIR)/sbin && ln -sf rc zerocd
+	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb
+	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb1
+endif
+ifeq ($(BOARD_NUM_USB_PORTS),2)
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb2
 endif
 ifdef CONFIG_RAETH_ESW
@@ -181,37 +123,37 @@ endif
 ifdef CONFIG_RT3352_INIC_MII
 	cd $(INSTALLDIR)/sbin && ln -sf rc inicd
 endif
-ifdef CONFIG_FIRMWARE_INCLUDE_MINIDLNA
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_MINIDLNA),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_minidlna
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_minidlna
 endif
-ifdef CONFIG_FIRMWARE_INCLUDE_FIREFLY
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_FIREFLY),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_firefly
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_firefly
 endif
-ifdef CONFIG_FIRMWARE_INCLUDE_TRANSMISSION
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_transmission
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_transmission
 endif
-ifdef CONFIG_FIRMWARE_INCLUDE_ARIA
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_aria
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_aria
 endif
-ifdef CONFIG_FIRMWARE_INCLUDE_SMBD
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SMBD),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_samba
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_samba
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_ftpsamba
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_ftpsamba
 endif
-ifdef CONFIG_FIRMWARE_INCLUDE_FTPD
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_FTPD),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_ftp
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_ftp
-ifndef CONFIG_FIRMWARE_INCLUDE_SMBD
+ifneq ($(CONFIG_FIRMWARE_INCLUDE_SMBD),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_ftpsamba
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_ftpsamba
 endif
 endif
-ifdef CONFIG_FIRMWARE_INCLUDE_NFSD
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_NFSD),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_nfsd
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_nfsd
 endif

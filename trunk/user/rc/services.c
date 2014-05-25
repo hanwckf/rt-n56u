@@ -28,16 +28,84 @@
 
 #include "rc.h"
 
-#define UPNPD_LEASE_FILE	"/tmp/miniupnpd.leases"
+void
+stop_syslogd()
+{
+	char* svcs[] = { "syslogd", NULL };
+	kill_services(svcs, 3, 1);
+}
 
-void 
+void
+stop_klogd()
+{
+	char* svcs[] = { "klogd", NULL };
+	kill_services(svcs, 3, 1);
+}
+
+int
+start_syslogd()
+{
+	setenv_tz();
+	
+	if (nvram_invmatch("log_ipaddr", ""))
+	{
+		return eval("/sbin/syslogd", "-b0", "-s256", "-S", "-O", "/tmp/syslog.log", "-R", nvram_safe_get("log_ipaddr"), "-L");
+	}
+	else
+	{
+		return eval("/sbin/syslogd", "-b0", "-s256", "-S", "-D", "-O", "/tmp/syslog.log");
+	}
+}
+
+int
+start_klogd()
+{
+	return eval("/sbin/klogd");
+}
+
+void
+stop_infosvr(void)
+{
+	char* svcs[] = { "infosvr", NULL };
+	kill_services(svcs, 3, 1);
+}
+
+void
+start_infosvr(void)
+{
+	eval("/usr/sbin/infosvr", IFNAME_BR);
+}
+
+int
+start_networkmap(int first_call)
+{
+	return eval("/usr/sbin/networkmap", (first_call) ? "-w" : "");
+}
+
+void
+stop_networkmap(void)
+{
+	char* svcs[] = { "networkmap", NULL };
+	kill_services(svcs, 3, 1);
+}
+
+void
+restart_networkmap(void)
+{
+	if (pids("networkmap"))
+		doSystem("killall %s %s", "-SIGUSR1", "networkmap");
+	else
+		start_networkmap(0);
+}
+
+void
 stop_telnetd(void)
 {
 	char* svcs[] = { "telnetd", NULL };
 	kill_services(svcs, 3, 1);
 }
 
-void 
+void
 run_telnetd(void)
 {
 	stop_telnetd();
@@ -216,177 +284,6 @@ start_rstats(void)
 	}
 }
 
-int
-is_upnp_run(void)
-{
-	return pids("miniupnpd");
-}
-
-int
-start_upnp(void)
-{
-	FILE *fp;
-	int ret, i_proto_use, i_clean_min, i_clean_int, i_iports[2], i_eports[2];
-	char *lan_addr, *lan_mask, *lan_url, *proto_upnp, *proto_npmp, *secured;
-	char var[100];
-	char wan_ifname[16];
-	char lan_class[32];
-	uint8_t lan_mac[16];
-
-	if (!nvram_get_int("upnp_enable_x") || !nvram_get_int("wan_nat_x") || get_ap_mode())
-		return 0;
-
-	i_proto_use = nvram_get_int("upnp_proto");
-	i_clean_min = nvram_safe_get_int("upnp_clean_min", 10, 1, 999);
-	i_clean_int = nvram_safe_get_int("upnp_clean_int", 600, 0, 86400);
-	i_iports[0] = nvram_safe_get_int("upnp_iport_min", 21, 1, 65535);
-	i_iports[1] = nvram_safe_get_int("upnp_iport_max", 65535, 1, 65535);
-	i_eports[0] = nvram_safe_get_int("upnp_eport_min", 21, 1, 65535);
-	i_eports[1] = nvram_safe_get_int("upnp_eport_max", 65535, 1, 65535);
-
-	if (i_iports[0] > i_iports[1])
-		i_iports[0] = i_iports[1];
-	if (i_eports[0] > i_eports[1])
-		i_eports[0] = i_eports[1];
-
-	wan_ifname[0] = 0;
-	get_wan_ifname(wan_ifname);
-
-	lan_addr = nvram_safe_get("lan_ipaddr");
-	lan_mask = nvram_safe_get("lan_netmask");
-	ip2class(lan_addr, lan_mask, lan_class);
-	memset(lan_mac, 0, sizeof(lan_mac));
-	ether_atoe(nvram_safe_get("lan_hwaddr"), lan_mac);
-
-	lan_url = lan_addr;
-	ret = nvram_get_int("http_lanport");
-	if (ret && ret != 80) {
-		sprintf(var, "%s:%d", lan_addr, ret);
-		lan_url = var;
-	}
-
-	if (i_proto_use == 2) {
-		proto_upnp = "yes";
-		proto_npmp = "yes";
-	} else if (i_proto_use == 1) {
-		proto_upnp = "no";
-		proto_npmp = "yes";
-	} else {
-		proto_upnp = "yes";
-		proto_npmp = "no";
-	}
-
-	secured = (nvram_get_int("upnp_secure")) ? "yes" : "no";
-
-	/* Write configuration file */
-	if (!(fp = fopen("/etc/miniupnpd.conf", "w"))) {
-		return errno;
-	}
-
-	fprintf(fp, "# automagically generated\n"
-		"ext_ifname=%s\n"
-		"listening_ip=%s\n"
-		"port=%d\n"
-		"enable_upnp=%s\n"
-		"enable_natpmp=%s\n"
-		"upnp_forward_chain=%s\n"
-		"upnp_nat_chain=%s\n"
-		"secure_mode=%s\n"
-		"lease_file=%s\n"
-		"presentation_url=http://%s/\n"
-		"system_uptime=yes\n"
-		"notify_interval=%d\n"
-		"clean_ruleset_interval=%d\n"
-		"clean_ruleset_threshold=%d\n"
-		"uuid=75802409-bccb-40e7-8e6c-%02x%02x%02x%02x%02x%02x\n"
-		"friendly_name=%s\n"
-		"manufacturer_name=%s\n"
-		"manufacturer_url=%s\n"
-		"model_name=%s\n"
-		"model_description=%s\n"
-		"model_url=%s\n"
-		"model_number=%s\n"
-		"serial=%s\n"
-		"bitrate_up=%d\n"
-		"bitrate_down=%d\n"
-		"allow %d-%d %s %d-%d\n"
-		"deny 0-65535 0.0.0.0/0 0-65535\n",
-		wan_ifname,
-		IFNAME_BR, /*lan_addr, lan_mask,*/
-		0,
-		proto_upnp,
-		proto_npmp,
-		MINIUPNPD_CHAIN_IP4_FORWARD,
-		MINIUPNPD_CHAIN_IP4_NAT,
-		secured,
-		UPNPD_LEASE_FILE,
-		lan_url,
-		60,
-		i_clean_int,
-		i_clean_min,
-		lan_mac[0], lan_mac[1], lan_mac[2], lan_mac[3], lan_mac[4], lan_mac[5],
-		BOARD_DESC,
-		BOARD_VENDOR_NAME,
-		BOARD_VENDOR_URL,
-		"Wireless Router",
-		BOARD_DESC,
-		BOARD_MODEL_URL,
-		BOARD_NAME,
-		"1.0",
-		100000000,
-		100000000,
-		i_eports[0], i_eports[1], lan_class, i_iports[0], i_iports[1]);
-
-	fclose(fp);
-
-	return eval("/usr/bin/miniupnpd");
-}
-
-void
-stop_upnp(void)
-{
-	char* svcs[] = { "miniupnpd", NULL };
-	kill_services(svcs, 3, 1);
-}
-
-void
-smart_restart_upnp(void)
-{
-	char wan_ifname[16];
-	
-	if (!is_upnp_run())
-	{
-		start_upnp();
-		
-		return;
-	}
-	
-	wan_ifname[0] = 0;
-	get_wan_ifname(wan_ifname);
-	
-	/* restart miniupnpd only if wan interface changed */
-	if (strcmp(wan_ifname, nvram_safe_get("wan_ifname_t")) != 0) {
-		stop_upnp();
-		start_upnp();
-	}
-}
-
-void
-update_upnp(void)
-{
-	if (!is_upnp_run())
-	{
-		start_upnp();
-		
-		return;
-	}
-	
-	/* update upnp forwards from lease file */
-	if (check_if_file_exist(UPNPD_LEASE_FILE)) {
-		doSystem("killall %s %s", "-SIGUSR1", "miniupnpd");
-	}
-}
-
 int start_lltd(void)
 {
 	if (pids("lld2d"))
@@ -399,6 +296,48 @@ void stop_lltd(void)
 {
 	char* svcs[] = { "lld2d", NULL };
 	kill_services(svcs, 2, 1);
+}
+
+int 
+start_logger(int showinfo)
+{
+	start_syslogd();
+
+	if (showinfo)
+	{
+		// wait for logger daemon started
+		usleep(250000);
+		
+		logmessage(LOGNAME, "bootloader version: %s", nvram_safe_get("blver"));
+		logmessage(LOGNAME, "firmware version: %s", nvram_safe_get("firmver_sub"));
+	}
+
+	start_klogd();
+
+	return 0;
+}
+
+void
+stop_logger(void)
+{
+	char* svcs[] = { "klogd", "syslogd", NULL };
+	kill_services(svcs, 3, 1);
+}
+
+void
+start_watchdog_cpu(void)
+{
+	if (nvram_get_int("watchdog_cpu") != 0)
+		module_smart_load("rt_timer_wdg", NULL);
+}
+
+void
+restart_watchdog_cpu(void)
+{
+	if (nvram_get_int("watchdog_cpu") == 0)
+		module_smart_unload("rt_timer_wdg", 0);
+	else
+		module_smart_load("rt_timer_wdg", NULL);
 }
 
 int
@@ -427,11 +366,8 @@ start_services_once(int is_ap_mode)
 	}
 
 	start_lltd();
-
 	start_rstats();
-
 	start_watchdog_cpu();
-
 	start_networkmap(1);
 
 	return 0;
@@ -447,12 +383,14 @@ stop_services(int stopall)
 #endif
 		stop_vpn_server();
 	}
+#if (BOARD_NUM_USB_PORTS > 0)
 	stop_p910nd();
 #if defined(SRV_LPRD)
 	stop_lpd();
 #endif
 #if defined(SRV_U2EC)
 	stop_u2ec();
+#endif
 #endif
 	stop_lltd();
 	stop_detect_internet();
@@ -463,7 +401,6 @@ stop_services(int stopall)
 #endif
 }
 
-
 void
 stop_services_lan_wan(void)
 {
@@ -473,76 +410,14 @@ stop_services_lan_wan(void)
 }
 
 void
-write_storage_to_mtd(void)
+stop_misc(void)
 {
-	doSystem("/sbin/mtd_storage.sh %s", "save");
-}
+	char* svcs[] = {"ntpd",
+			"tcpcheck",
+			"detect_wan",
+			"watchdog",
+			NULL
+			};
 
-void
-erase_storage(void)
-{
-	doSystem("/sbin/mtd_storage.sh %s", "erase");
-}
-
-void
-erase_nvram(void)
-{
-	doSystem("/bin/mtd_write %s %s", "erase", "Config");
-}
-
-int 
-start_logger(int showinfo)
-{
-	start_syslogd();
-	
-	if (showinfo)
-	{
-		// wait for logger daemon started
-		sleep(1);
-		
-		logmessage(LOGNAME, "bootloader version: %s", nvram_safe_get("blver"));
-		logmessage(LOGNAME, "firmware version: %s", nvram_safe_get("firmver_sub"));
-	}
-	
-	start_klogd();
-	
-	return 0;
-}
-
-void
-stop_logger(void)
-{
-	char* svcs[] = { "klogd", "syslogd", NULL };
 	kill_services(svcs, 3, 1);
 }
-
-void
-set_pagecache_reclaim(void)
-{
-	int pagecache_ratio = 100;
-	int pagecache_reclaim = nvram_get_int("pcache_reclaim");
-
-	if (pagecache_reclaim == 1)
-		pagecache_ratio = 50;
-	else if (pagecache_reclaim == 2)
-		pagecache_ratio = 30;
-
-	fput_int("/proc/sys/vm/pagecache_ratio", pagecache_ratio);
-}
-
-void
-start_watchdog_cpu(void)
-{
-	if (nvram_get_int("watchdog_cpu") != 0)
-		module_smart_load("rt_timer_wdg", NULL);
-}
-
-void
-restart_watchdog_cpu(void)
-{
-	if (nvram_get_int("watchdog_cpu") == 0)
-		module_smart_unload("rt_timer_wdg", 0);
-	else
-		module_smart_load("rt_timer_wdg", NULL);
-}
-

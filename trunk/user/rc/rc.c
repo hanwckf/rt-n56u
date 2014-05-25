@@ -106,10 +106,10 @@ load_wireless_modules(void)
 #endif
 }
 
+#if (BOARD_NUM_USB_PORTS > 0)
 static void
 load_usb_modules(void)
 {
-#if (BOARD_NUM_USB_PORTS > 0)
 	/* load usb printer module before storage */
 	doSystem("modprobe %s", "usblp");
 
@@ -127,8 +127,8 @@ load_usb_modules(void)
 	doSystem("modprobe %s", "ehci-hcd");
 	doSystem("modprobe %s", "ohci-hcd");
 #endif
-#endif
 }
+#endif
 
 static void
 set_timezone(void)
@@ -295,6 +295,24 @@ convert_misc_values()
 }
 
 static void
+write_storage_to_mtd(void)
+{
+	doSystem("/sbin/mtd_storage.sh %s", "save");
+}
+
+void
+erase_storage(void)
+{
+	doSystem("/sbin/mtd_storage.sh %s", "erase");
+}
+
+void
+erase_nvram(void)
+{
+	doSystem("/bin/mtd_write %s %s", "erase", "Config");
+}
+
+static void
 flash_firmware(void)
 {
 	char* svcs[] = { "l2tpd",
@@ -306,7 +324,9 @@ flash_firmware(void)
 
 	stop_misc();
 	stop_services(0); // don't stop telnetd/sshd/vpn
+#if (BOARD_NUM_USB_PORTS > 0)
 	stop_usb();
+#endif
 	stop_igmpproxy("");
 	stop_networkmap();
 
@@ -322,7 +342,6 @@ flash_firmware(void)
 		start_watchdog();
 	}
 }
-
 
 static void
 storage_load_time(void)
@@ -481,8 +500,9 @@ init_router(void)
 	gen_ralink_config_2g(0);
 	gen_ralink_config_5g(0);
 	load_wireless_modules();
+#if (BOARD_NUM_USB_PORTS > 0)
 	load_usb_modules();
-
+#endif
 	recreate_passwd_unix(1);
 
 	set_timezone();
@@ -529,7 +549,9 @@ shutdown_router(void)
 	stop_misc();
 	stop_services(1);
 	
+#if (BOARD_NUM_USB_PORTS > 0)
 	stop_usb();
+#endif
 #if defined(BOARD_GPIO_LED_USB)
 	LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
 #endif
@@ -606,7 +628,41 @@ handle_notifications(void)
 			full_restart_ipv6(nvram_ipv6_type);
 			nvram_ipv6_type = get_ipv6_type();
 		}
+		else if (strcmp(entry->d_name, "restart_radvd") == 0)
+		{
+			restart_dhcpd();
+			restart_radvd();
+		}
 #endif
+		else if (!strcmp(entry->d_name, "restart_whole_wan"))
+		{
+			full_restart_wan();
+		}
+		else if (!strcmp(entry->d_name, "restart_whole_lan"))
+		{
+			full_restart_lan();
+		}
+		else if (!strcmp(entry->d_name, "stop_whole_wan"))
+		{
+			stop_wan();
+		}
+		else if (!strcmp(entry->d_name, "restart_iptv"))
+		{
+			restart_iptv();
+			restart_firewall();
+		}
+		else if(!strcmp(entry->d_name, "manual_wan_connect"))
+		{
+			manual_wan_connect();
+		}
+		else if(!strcmp(entry->d_name, "manual_wan_disconnect"))
+		{
+			manual_wan_disconnect();
+		}
+		else if(!strcmp(entry->d_name, "manual_ddns_hostname_check"))
+		{
+			manual_ddns_hostname_check();
+		}
 #if (BOARD_NUM_USB_PORTS > 0)
 		else if (!strcmp(entry->d_name, "restart_modem"))
 		{
@@ -640,35 +696,13 @@ handle_notifications(void)
 			if (need_restart_wan)
 				full_restart_wan();
 		}
-#endif
-		else if (!strcmp(entry->d_name, "restart_whole_wan"))
+		else if (strcmp(entry->d_name, "restart_spooler") == 0)
 		{
-			full_restart_wan();
+			restart_usb_printer_spoolers();
 		}
-		else if (!strcmp(entry->d_name, "restart_whole_lan"))
+		else if (strcmp(entry->d_name, "restart_hddtune") == 0)
 		{
-			full_restart_lan();
-		}
-		else if (!strcmp(entry->d_name, "stop_whole_wan"))
-		{
-			stop_wan();
-		}
-		else if (!strcmp(entry->d_name, "restart_iptv"))
-		{
-			restart_iptv();
-			restart_firewall();
-		}
-		else if(!strcmp(entry->d_name, "manual_wan_connect"))
-		{
-			manual_wan_connect();
-		}
-		else if(!strcmp(entry->d_name, "manual_wan_disconnect"))
-		{
-			manual_wan_disconnect();
-		}
-		else if(!strcmp(entry->d_name, "manual_ddns_hostname_check"))
-		{
-			manual_ddns_hostname_check();
+			system("/sbin/hddtune.sh");
 		}
 		else if (strcmp(entry->d_name, "restart_cifs") == 0)
 		{
@@ -729,6 +763,41 @@ handle_notifications(void)
 			restart_aria();
 		}
 #endif
+		else if (!strcmp(entry->d_name, "on_hotplug_usb_storage"))
+		{
+			// deferred run usb apps
+			nvram_set_int_temp("usb_hotplug_ms", 1);
+			alarm(5);
+		}
+		else if (!strcmp(entry->d_name, "on_unplug_usb_storage"))
+		{
+			umount_ejected();
+		}
+		else if (!strcmp(entry->d_name, "on_hotplug_usb_printer"))
+		{
+			// deferred run usb printer daemons
+			nvram_set_int_temp("usb_hotplug_lp", 1);
+			alarm(5);
+		}
+		else if (!strcmp(entry->d_name, "on_unplug_usb_printer"))
+		{
+			// deferred stop usb printer daemons
+			nvram_set_int_temp("usb_unplug_lp", 1);
+			alarm(5);
+		}
+		else if (!strcmp(entry->d_name, "on_hotplug_usb_modem"))
+		{
+			// deferred run usb modem to wan
+			nvram_set_int_temp("usb_hotplug_md", 1);
+			alarm(5);
+		}
+		else if (!strcmp(entry->d_name, "on_unplug_usb_modem"))
+		{
+			// deferred restart wan
+			nvram_set_int_temp("usb_unplug_md", 1);
+			alarm(5);
+		}
+#endif
 		else if (strcmp(entry->d_name, "restart_term") == 0)
 		{
 			restart_term();
@@ -762,13 +831,6 @@ handle_notifications(void)
 		{
 			restart_dns();
 		}
-#if defined (USE_IPV6)
-		else if (strcmp(entry->d_name, "restart_radvd") == 0)
-		{
-			restart_dhcpd();
-			restart_radvd();
-		}
-#endif
 		else if (strcmp(entry->d_name, "restart_dhcpd") == 0)
 		{
 			if (get_ap_mode())
@@ -835,14 +897,6 @@ handle_notifications(void)
 			notify_watchdog_time();
 			notify_rstats_time();
 			start_logger(0);
-		}
-		else if (strcmp(entry->d_name, "restart_spooler") == 0)
-		{
-			restart_usb_printer_spoolers();
-		}
-		else if (strcmp(entry->d_name, "restart_hddtune") == 0)
-		{
-			system("/sbin/hddtune.sh");
 		}
 		else if (strcmp(entry->d_name, "restart_sysctl") == 0)
 		{
@@ -926,40 +980,6 @@ handle_notifications(void)
 		{
 			gen_ralink_config_2g(0);
 		}
-		else if (!strcmp(entry->d_name, "on_hotplug_usb_storage"))
-		{
-			// deferred run usb apps
-			nvram_set_int_temp("usb_hotplug_ms", 1);
-			alarm(5);
-		}
-		else if (!strcmp(entry->d_name, "on_unplug_usb_storage"))
-		{
-			umount_ejected();
-		}
-		else if (!strcmp(entry->d_name, "on_hotplug_usb_printer"))
-		{
-			// deferred run usb printer daemons
-			nvram_set_int_temp("usb_hotplug_lp", 1);
-			alarm(5);
-		}
-		else if (!strcmp(entry->d_name, "on_unplug_usb_printer"))
-		{
-			// deferred stop usb printer daemons
-			nvram_set_int_temp("usb_unplug_lp", 1);
-			alarm(5);
-		}
-		else if (!strcmp(entry->d_name, "on_hotplug_usb_modem"))
-		{
-			// deferred run usb modem to wan
-			nvram_set_int_temp("usb_hotplug_md", 1);
-			alarm(5);
-		}
-		else if (!strcmp(entry->d_name, "on_unplug_usb_modem"))
-		{
-			// deferred restart wan
-			nvram_set_int_temp("usb_unplug_md", 1);
-			alarm(5);
-		}
 		else
 		{
 			dbg("WARNING: rc notified of unrecognized event `%s'.\n", entry->d_name);
@@ -988,7 +1008,7 @@ handle_notifications(void)
 		if (stop_handle)
 			break;
 	}
-	
+
 	closedir(directory);
 }
 
@@ -1022,6 +1042,7 @@ static const applet_rc_t applets_rc[] = {
 	{ SCRIPT_OVPN_SERVER,	ovpn_server_script_main	},
 	{ SCRIPT_OVPN_CLIENT,	ovpn_client_script_main	},
 #endif
+#if (BOARD_NUM_USB_PORTS > 0)
 	{ "mdev_sg",		mdev_sg_main		},
 	{ "mdev_sd",		mdev_sd_main		},
 	{ "mdev_sr",		mdev_sr_main		},
@@ -1029,9 +1050,8 @@ static const applet_rc_t applets_rc[] = {
 	{ "mdev_tty",		mdev_tty_main		},
 	{ "mdev_wdm",		mdev_wdm_main		},
 	{ "mdev_net",		mdev_net_main		},
-
 	{ "zerocd",		zerocd_main		},
-
+#endif
 	{ "ddns_updated",	ddns_updated_main	},
 	{ "ntpc_updated",	ntpc_updated_main	},
 

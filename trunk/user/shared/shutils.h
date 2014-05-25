@@ -22,6 +22,9 @@
 
 #define MAX_FILE_LINE_SIZE	2048
 
+#define SYS_USER_NOBODY		"nobody"
+#define SYS_GROUP_NOGROUP	"nogroup"
+
 /*
  * Reads file and returns contents
  * @param	fd	file descriptor

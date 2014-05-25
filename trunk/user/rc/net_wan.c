@@ -538,6 +538,7 @@ wait_ppp_up(char *prefix, char *ppp_ifname)
 	return 1;
 }
 
+#if (BOARD_NUM_USB_PORTS > 0)
 static void
 launch_wan_usbnet(int unit)
 {
@@ -567,6 +568,7 @@ stop_wan_usbnet(void)
 			ifconfig(ndis_ifname, 0, "0.0.0.0", NULL);
 	}
 }
+#endif
 
 static void
 create_cb_links(void)
@@ -666,6 +668,7 @@ start_wan(int is_first_run)
 		* ip-up/ip-down scripts upon link's connect/disconnect.
 		*/
 		
+#if (BOARD_NUM_USB_PORTS > 0)
 		if (get_usb_modem_wan(unit))
 		{
 			if (nvram_match("modem_type", "3"))
@@ -696,6 +699,7 @@ start_wan(int is_first_run)
 			}
 		}
 		else
+#endif
 		if (is_wan_ppp(wan_proto))
 		{
 			int demand;
@@ -835,8 +839,10 @@ stop_wan(void)
 	/* Bring down WAN interfaces */
 	ifconfig(man_ifname, 0, "0.0.0.0", NULL);
 	
+#if (BOARD_NUM_USB_PORTS > 0)
 	/* Bring down usbnet interface */
 	stop_wan_usbnet();
+#endif
 	
 	/* Remove dynamically created links */
 	remove_cb_links();
@@ -1109,6 +1115,39 @@ try_wan_reconnect(int try_use_modem)
 	/* restore L2TP VPN server after L2TP WAN client closed */
 	if (nvram_match("l2tp_srv_t", "1"))
 		safe_start_xl2tpd();
+}
+
+void
+manual_wan_disconnect(void)
+{
+	logmessage("wan", "perform manual disconnect");
+	
+	if (get_usb_modem_wan(0)){
+		if(nvram_match("modem_type", "3"))
+			stop_wan();
+		else
+			stop_wan_ppp();
+	}
+	else if (nvram_match("wan0_proto", "pptp")  ||
+		 nvram_match("wan0_proto", "pppoe") ||
+		 nvram_match("wan0_proto", "l2tp"))
+	{
+		/* pptp, l2tp, pppoe */
+		stop_wan_ppp();
+	}
+	else
+	{
+		/* dhcp, static */
+		stop_wan();
+	}
+}
+
+void
+manual_wan_connect(void)
+{
+	logmessage("wan", "perform manual connect");
+
+	try_wan_reconnect(1);
 }
 
 int
@@ -1385,6 +1424,7 @@ select_usb_modem_to_wan(void)
 {
 	int modem_devnum = 0;
 
+#if (BOARD_NUM_USB_PORTS > 0)
 	// Check modem enabled
 	if (nvram_get_int("modem_rule") > 0)
 	{
@@ -1399,7 +1439,7 @@ select_usb_modem_to_wan(void)
 				modem_devnum = 0;
 		}
 	}
-
+#endif
 	set_usb_modem_dev_wan(0, modem_devnum);
 }
 
@@ -1766,6 +1806,7 @@ udhcpc_bound(char *wan_ifname)	// udhcpc bound here, also call wanup
 	nvram_set_temp(strcat_r(prefix, "routes", tmp), safe_getenv("routes"));
 	nvram_set_temp(strcat_r(prefix, "routes_ms", tmp), safe_getenv("msstaticroutes"));
 	nvram_set_temp(strcat_r(prefix, "routes_rfc", tmp), safe_getenv("staticroutes"));
+
 	if ((value = getenv("domain")))
 		nvram_set_temp(strcat_r(prefix, "domain", tmp), trim_r(value));
 	if ((value = getenv("lease"))) {

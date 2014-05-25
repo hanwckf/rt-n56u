@@ -2,7 +2,7 @@
 
 mount -t proc proc /proc
 mount -t sysfs sysfs /sys
-mount -t usbfs usbfs /proc/bus/usb
+[ -d /proc/bus/usb ] && mount -t usbfs usbfs /proc/bus/usb
 
 mount -t tmpfs tmpfs /dev   -o size=8K
 mount -t tmpfs tmpfs /etc   -o size=2M,noatime
@@ -25,29 +25,6 @@ mknod /dev/hwnat0	c	220	0
 mknod /dev/nvram	c	228	0
 mknod /dev/gpio		c	252	0
 mknod /dev/rdm0		c	253	0
-
-# create mdev links
-cat > /etc/mdev.conf <<EOF
-# <device regex> <uid>:<gid> <octal permissions> [<@|$|*> <command>]
-# The special characters have the meaning:
-# @ Run after creating the device.
-# $ Run before removing the device.
-# * Run both after creating and before removing the device.
-usb/lp[0-9] 0:0 0660 */sbin/mdev_lp \$MDEV \$ACTION
-sd[a-z] 0:0 0660 */sbin/mdev_sd \$MDEV \$ACTION
-sd[a-z][0-9] 0:0 0660 */sbin/mdev_sd \$MDEV \$ACTION
-sg[0-9] 0:0 0660 @/sbin/mdev_sg \$MDEV \$ACTION
-sr[0-9] 0:0 0660 @/sbin/mdev_sr \$MDEV \$ACTION
-weth[0-9] 0:0 0660 */sbin/mdev_net \$MDEV \$ACTION
-wwan[0-9] 0:0 0660 */sbin/mdev_net \$MDEV \$ACTION
-cdc-wdm[0-9] 0:0 0660 */sbin/mdev_wdm \$MDEV \$ACTION
-ttyUSB[0-9] 0:0 0660 */sbin/mdev_tty \$MDEV \$ACTION
-ttyACM[0-9] 0:0 0660 */sbin/mdev_tty \$MDEV \$ACTION
-video[0-9] 0:0 0660
-EOF
-
-# enable usb hot-plug feature
-echo "/sbin/mdev" > /proc/sys/kernel/hotplug
 
 # create dirs
 mkdir -p -m 777 "/var/lock"

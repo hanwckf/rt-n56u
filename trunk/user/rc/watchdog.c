@@ -663,9 +663,11 @@ ez_action_change_guest_wifi5(void)
 static void 
 ez_action_usb_saferemoval(void)
 {
+#if (BOARD_NUM_USB_PORTS > 0)
 	logmessage("watchdog", "Perform ez-button safe-removal USB...");
 	
 	safe_remove_usb_device(0, NULL);
+#endif
 }
 
 static void 

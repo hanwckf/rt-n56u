@@ -319,7 +319,6 @@ qmi_start_network(const char* control_node)
 			return 0;
 		sleep(1);
 	}
-
 	return 1;
 }
 
@@ -418,7 +417,6 @@ connect_ndis(int devnum)
 		else
 			return qmi_start_network(control_node);
 	}
-
 	return 1;
 }
 
@@ -453,7 +451,6 @@ disconnect_ndis(int devnum)
 		else
 			return qmi_stop_network(control_node);
 	}
-
 	return 1;
 }
 
@@ -512,7 +509,6 @@ void
 unload_modem_modules(void)
 {
 	unlink(QMI_CLIENT_ID);
-#if (BOARD_NUM_USB_PORTS > 0)
 	int ret = 0;
 	ret |= module_smart_unload("rndis_host", 1);
 	ret |= module_smart_unload("qmi_wwan", 1);
@@ -525,14 +521,12 @@ unload_modem_modules(void)
 	ret |= module_smart_unload("option", 1);
 	if (ret)
 		sleep(1);
-#endif
 }
 
 void
 reload_modem_modules(int modem_type, int reload)
 {
 	unlink(QMI_CLIENT_ID);
-#if (BOARD_NUM_USB_PORTS > 0)
 	int ret = 0;
 	if (modem_type == 3) {
 		ret |= module_smart_unload("cdc_acm", 1);
@@ -559,7 +553,6 @@ reload_modem_modules(int modem_type, int reload)
 	module_smart_load("sierra", NULL);
 	if (reload)
 		sleep(1);
-#endif
 }
 
 void
@@ -616,7 +609,6 @@ launch_modem_ras_pppd(int unit)
 
 	return 1;
 }
-
 
 int
 launch_usb_modeswitch(int vid, int pid, int inquire)

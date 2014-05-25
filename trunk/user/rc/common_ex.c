@@ -24,6 +24,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <sys/sysinfo.h>
+#include <sys/stat.h>
 #include <syslog.h>
 #include <stdarg.h>
 #include <unistd.h>
@@ -366,6 +367,19 @@ void convert_asus_values(int skipflag)
 	time_zone_x_mapping();
 }
 
+void set_pagecache_reclaim(void)
+{
+	int pagecache_ratio = 100;
+	int pagecache_reclaim = nvram_get_int("pcache_reclaim");
+
+	if (pagecache_reclaim == 1)
+		pagecache_ratio = 50;
+	else if (pagecache_reclaim == 2)
+		pagecache_ratio = 30;
+
+	fput_int("/proc/sys/vm/pagecache_ratio", pagecache_ratio);
+}
+
 void restart_all_sysctl(void)
 {
 	if (!get_ap_mode()) {
@@ -605,3 +619,115 @@ int create_file(const char *fn)
 
 	return 1;
 }
+
+int
+check_if_dir_exist(const char *dirpath)
+{
+	struct stat stat_buf;
+
+	if (!stat(dirpath, &stat_buf))
+		return S_ISDIR(stat_buf.st_mode);
+	else
+		return 0;
+}
+
+int
+check_if_file_exist(const char *filepath)
+{
+	struct stat stat_buf;
+
+	if (!stat(filepath, &stat_buf))
+		return S_ISREG(stat_buf.st_mode);
+	else
+		return 0;
+}
+
+int
+check_if_dev_exist(const char *devpath)
+{
+	struct stat stat_buf;
+
+	if (!stat(devpath, &stat_buf))
+		return (S_ISCHR(stat_buf.st_mode) | S_ISBLK(stat_buf.st_mode));
+	else
+		return 0;
+}
+
+int
+mkdir_if_none(char *dir)
+{
+	DIR *dp;
+	if (!(dp=opendir(dir)))
+	{
+		umask(0000);
+		return !mkdir(dir, 0777);
+	}
+	closedir(dp);
+	return 0;
+}
+
+int rename_if_dir_exist(const char *dir, const char *subdir)
+{
+	DIR *dirp;
+	struct dirent *direntp;
+	char oldpath[64], newpath[64];
+
+	if (!dir || !subdir)
+		return 0;
+
+	if ((dirp = opendir(dir)))
+	{
+		while (dirp && (direntp = readdir(dirp)))
+		{
+			if (!strcasecmp(direntp->d_name, subdir) && strcmp(direntp->d_name, subdir))
+			{
+				sprintf(oldpath, "%s/%s", dir, direntp->d_name);
+				sprintf(newpath, "%s/%s", dir, subdir);
+				rename(oldpath, newpath);
+				return 1;
+			}
+		}
+
+		closedir(dirp);
+	}
+
+	return 0;
+}
+
+char *if_dircase_exist(const char *dir, const char *subdir)
+{
+	DIR *dirp;
+	struct dirent *direntp;
+	char oldpath[64];
+
+	if (!dir || !subdir)
+		return NULL;
+
+	if ((dirp = opendir(dir)))
+	{
+		while (dirp && (direntp = readdir(dirp)))
+		{
+			if (!strcasecmp(direntp->d_name, subdir) && strcmp(direntp->d_name, subdir))
+			{
+				sprintf(oldpath, "%s/%s", dir, direntp->d_name);
+				return strdup(oldpath);
+			}
+		}
+
+		closedir(dirp);
+	}
+
+	return NULL;
+}
+
+unsigned long
+file_size(const char *filepath)
+{
+	struct stat stat_buf;
+
+	if (!stat(filepath, &stat_buf) && S_ISREG(stat_buf.st_mode))
+		return ((unsigned long) stat_buf.st_size);
+	else
+		return 0;
+}
+

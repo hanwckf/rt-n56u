@@ -74,9 +74,35 @@ static const char *const environment[] = {
 	NULL
 };
 
+static void
+mdev_init(void)
+{
+	FILE *fp;
+
+	fp = fopen("/etc/mdev.conf", "w");
+	if (fp) {
+		fprintf(fp, "%s\n", "# <device regex> <uid>:<gid> <octal permissions> [<@|$|*> <command>]");
+#if (BOARD_NUM_USB_PORTS > 0)
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "usb/lp[0-9]",  "*", "mdev_lp");
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "sd[a-z]",      "*", "mdev_sd");
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "sd[a-z][0-9]", "*", "mdev_sd");
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "sg[0-9]",      "@", "mdev_sg");
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "sr[0-9]",      "@", "mdev_sr");
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "weth[0-9]",    "*", "mdev_net");
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "wwan[0-9]",    "*", "mdev_net");
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "cdc-wdm[0-9]", "*", "mdev_wdm");
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "ttyUSB[0-9]",  "*", "mdev_tty");
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "ttyACM[0-9]",  "*", "mdev_tty");
+		fprintf(fp, "%s 0:0 0660\n", "video[0-9]");
+#endif
+		fclose(fp);
+	}
+
+	fput_string("/proc/sys/kernel/hotplug", "/sbin/mdev");
+}
 
 /* Set terminal settings to reasonable defaults */
-static void 
+static void
 set_term(int fd)
 {
 	struct termios tty;
@@ -254,7 +280,7 @@ reap(int sig)
 		dprintf("Reaped %d\n", pid);
 }
 
-void
+static void
 signal_init(void)
 {
 	int i;
@@ -264,7 +290,6 @@ signal_init(void)
 
 	signal(SIGCHLD, reap);
 }
-
 
 /* Signal handling */
 static void
@@ -308,6 +333,8 @@ void init_main_loop(void)
 	mknod("/dev/ac0", S_IFCHR | 0666, makedev(240, 0));
 	mknod("/dev/mtr0", S_IFCHR | 0666, makedev(250, 0));
 #endif
+
+	mdev_init();
 
 	fput_int("/proc/sys/net/ipv4/conf/all/rp_filter", 0); // new logic for new kernels
 #if BOARD_RAM_SIZE > 128
@@ -358,8 +385,10 @@ void init_main_loop(void)
 			state = IDLE;
 			break;
 		case TIMER:
+#if (BOARD_NUM_USB_PORTS > 0)
 			if (!is_system_down())
 				on_deferred_hotplug_usb();
+#endif
 			state = IDLE;
 			break;
 		case IDLE:

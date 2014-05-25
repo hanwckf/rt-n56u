@@ -261,8 +261,8 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 		
 		fprintf(fp, "persist-key\n");
 		fprintf(fp, "persist-tun\n");
-		fprintf(fp, "user %s\n", "nobody");
-		fprintf(fp, "group %s\n", "nogroup");
+		fprintf(fp, "user %s\n", SYS_USER_NOBODY);
+		fprintf(fp, "group %s\n", SYS_GROUP_NOGROUP);
 		fprintf(fp, "script-security %d\n", 2);
 		fprintf(fp, "tmp-dir %s\n", COMMON_TEMP_DIR);
 		fprintf(fp, "writepid %s\n", SERVER_PID_FILE);

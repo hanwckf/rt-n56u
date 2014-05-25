@@ -1,4 +1,4 @@
+*.o
+config.h
 miniupnpd
 miniupnpdctl
-config.h
-*.o

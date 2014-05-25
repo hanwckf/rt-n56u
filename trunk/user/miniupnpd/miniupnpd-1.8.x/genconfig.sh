@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: genconfig.sh,v 1.75 2014/04/11 08:16:07 nanard Exp $
+# $Id: genconfig.sh,v 1.76 2014/05/15 09:22:54 nanard Exp $
 # miniupnp daemon
 # http://miniupnp.free.fr or http://miniupnp.tuxfamily.org/
 # (c) 2006-2014 Thomas Bernard
@@ -519,6 +519,13 @@ else
 	echo "/*#define ENABLE_MANUFACTURER_INFO_CONFIGURATION*/" >> ${CONFIGFILE}
 fi
 echo "" >> ${CONFIGFILE}
+
+cat >> ${CONFIGFILE} <<EOF
+#if defined(ENABLE_6FC_SERVICE) || (defined(ENABLE_PCP) && defined(ENABLE_IPV6))
+#define ENABLE_UPNPPINHOLE
+#endif
+
+EOF
 
 echo "#endif /* ${CONFIGMACRO} */" >> ${CONFIGFILE}
 

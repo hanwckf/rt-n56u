@@ -1,4 +1,4 @@
-/* $Id: options.c,v 1.29 2014/04/20 16:44:46 nanard Exp $ */
+/* $Id: options.c,v 1.32 2014/05/22 07:52:45 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * author: Ryan Wagoner
@@ -31,6 +31,9 @@ static const struct {
 	{ UPNPEXT_IFNAME, "ext_ifname" },
 	{ UPNPEXT_IP,	"ext_ip" },
 	{ UPNPLISTENING_IP, "listening_ip" },
+#ifdef ENABLE_IPV6
+	{ UPNPIPV6_LISTENING_IP, "ipv6_listening_ip" },
+#endif /* ENABLE_IPV6 */
 	{ UPNPPORT, "port" },
 	{ UPNPPORT, "http_port" },	/* "port" and "http_port" are synonims */
 #ifdef ENABLE_HTTPS
@@ -65,6 +68,7 @@ static const struct {
 #ifdef ENABLE_PCP
 	{ UPNPPCPMINLIFETIME, "min_lifetime"},
 	{ UPNPPCPMAXLIFETIME, "max_lifetime"},
+	{ UPNPPCPALLOWTHIRDPARTY, "pcp_allow_thirdparty"},
 #endif
 	{ UPNPENABLE, "enable_upnp"},
 #ifdef USE_PF

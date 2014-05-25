@@ -1,4 +1,4 @@
-/* $Id: pcpserver.h,v 1.3 2014/03/24 10:49:46 nanard Exp $ */
+/* $Id: pcpserver.h,v 1.4 2014/05/19 13:38:04 nanard Exp $ */
 /* MiniUPnP project
  * Website : http://miniupnp.free.fr/
  * Author : Peter Tatrai
@@ -39,10 +39,13 @@ POSSIBILITY OF SUCH DAMAGE.
 struct sockaddr;
 
 /*
+ * receiveraddr is only used for IPV6
+ *
  * returns 0 upon success 1 otherwise
  */
 int ProcessIncomingPCPPacket(int s, unsigned char *msg_buff, int len,
-                             const struct sockaddr *senderaddr);
+                             const struct sockaddr *senderaddr,
+                             const struct sockaddr_in6 *receiveraddr);
 
 /*
  * returns the socket

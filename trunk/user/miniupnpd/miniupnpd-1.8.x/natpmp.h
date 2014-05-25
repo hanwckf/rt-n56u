@@ -1,4 +1,4 @@
-/* $Id: natpmp.h,v 1.12 2014/03/24 10:49:46 nanard Exp $ */
+/* $Id: natpmp.h,v 1.13 2014/05/19 13:38:03 nanard Exp $ */
 /* MiniUPnP project
  * author : Thomas Bernard
  * website : http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
@@ -20,8 +20,10 @@
 
 int OpenAndConfNATPMPSockets(int * sockets);
 
+/* receiveraddr is only used with IPV6 sockets */
 int ReceiveNATPMPOrPCPPacket(int s, struct sockaddr * senderaddr,
                              socklen_t * senderaddrlen,
+                             struct sockaddr_in6 * receiveraddr,
                              unsigned char * msg_buff, size_t msg_buff_size);
 
 void ProcessIncomingNATPMPPacket(int s, unsigned char * msg_buff, int len,

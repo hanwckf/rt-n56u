@@ -1,4 +1,4 @@
-# $Id: Makefile.linux,v 1.86 2014/04/09 07:22:28 nanard Exp $
+# $Id: Makefile.linux,v 1.87 2014/05/06 14:42:08 nanard Exp $
 # MiniUPnP project
 # (c) 2006-2014 Thomas Bernard
 # http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
@@ -34,17 +34,18 @@ CC ?= gcc
 RM = rm -f
 INSTALL = install
 STRIP ?= strip
+PKG_CONFIG ?= pkg-config
 CP = cp
 
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
-LIBS  = $(IPTABLESPATH)/libiptc/.libs/libip4tc.a
+LDLIBS  = $(IPTABLESPATH)/libiptc/.libs/libip4tc.a
 ifeq ($(ENABLE_IPV6),1)
-LIBS += $(IPTABLESPATH)/libiptc/.libs/libip6tc.a
-LIBS += $(STAGEDIR)/lib/libnfnetlink.a
+LDLIBS += $(IPTABLESPATH)/libiptc/.libs/libip6tc.a
+LDLIBS += $(STAGEDIR)/lib/libnfnetlink.a
 endif
-#LIBS += lssl
+#LDLIBS += lssl
 CFLAGS += -DIPTABLES_143 -I$(IPTABLESPATH)/include
 LDFLAGS += -L$(IPTABLESPATH)/libiptc/.libs
 
@@ -113,7 +114,7 @@ else
 	sed -i -e "s/^uuid=[-0-9a-f]*/uuid=`($(STAGING_DIR_HOST)/bin/genuuid||$(STAGING_DIR_HOST)/bin/uuidgen||$(STAGING_DIR_HOST)/bin/uuid) 2>/dev/null`/" miniupnpd.conf
 endif
 
-miniupnpd:	$(BASEOBJS) $(LNXOBJS) $(NETFILTEROBJS) $(LIBS)
+miniupnpd:	$(BASEOBJS) $(LNXOBJS) $(NETFILTEROBJS)
 
 testupnpdescgen:	$(TESTUPNPDESCGENOBJS)
 
@@ -123,13 +124,13 @@ testupnppermissions:	testupnppermissions.o upnppermissions.o
 
 testgetifaddr:	testgetifaddr.o getifaddr.o
 
-testgetroute:	testgetroute.o linux/getroute.o upnputils.o -lnfnetlink
+testgetroute:	testgetroute.o linux/getroute.o upnputils.o
 
 testasyncsendto:	testasyncsendto.o asyncsendto.o upnputils.o \
-	linux/getroute.o -lnfnetlink
+	linux/getroute.o
 
 testportinuse:	testportinuse.o portinuse.o getifaddr.o \
-	netfilter/iptcrdr.o $(LIBS)
+	netfilter/iptcrdr.o
 
 miniupnpdctl:	miniupnpdctl.o
 

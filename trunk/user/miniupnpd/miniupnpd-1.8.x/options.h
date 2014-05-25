@@ -1,4 +1,4 @@
-/* $Id: options.h,v 1.24 2014/04/20 16:44:46 nanard Exp $ */
+/* $Id: options.h,v 1.26 2014/05/22 07:52:45 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * author: Ryan Wagoner
@@ -18,6 +18,9 @@ enum upnpconfigoptions {
 	UPNPEXT_IFNAME = 1,		/* ext_ifname */
 	UPNPEXT_IP,				/* ext_ip */
 	UPNPLISTENING_IP,		/* listening_ip */
+#ifdef ENABLE_IPV6
+	UPNPIPV6_LISTENING_IP,		/* listening address for IPv6 */
+#endif /* ENABLE_IPV6 */
 	UPNPPORT,				/* "port" / "http_port" */
 #ifdef ENABLE_HTTPS
 	UPNPHTTPSPORT,			/* "https_port" */
@@ -44,6 +47,7 @@ enum upnpconfigoptions {
 	UPNPENABLENATPMP,		/* enable_natpmp */
 	UPNPPCPMINLIFETIME,		/* minimum lifetime for PCP mapping */
 	UPNPPCPMAXLIFETIME,		/* maximum lifetime for PCP mapping */
+	UPNPPCPALLOWTHIRDPARTY,		/* allow third-party requests */
 #ifdef USE_NETFILTER
 	UPNPFORWARDCHAIN,
 	UPNPNATCHAIN,

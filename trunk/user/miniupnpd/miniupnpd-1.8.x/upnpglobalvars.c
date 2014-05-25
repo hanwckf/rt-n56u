@@ -1,4 +1,4 @@
-/* $Id: upnpglobalvars.c,v 1.35 2014/03/10 11:04:53 nanard Exp $ */
+/* $Id: upnpglobalvars.c,v 1.37 2014/05/22 07:51:08 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2014 Thomas Bernard
@@ -95,7 +95,7 @@ const char * tag = 0;
 const char * miniupnpd_nat_chain = "UPNP";
 const char * miniupnpd_peer_chain = "UPNP-PEER";
 const char * miniupnpd_forward_chain = "UPNP";
-#ifdef ENABLE_6FC_SERVICE
+#ifdef ENABLE_UPNPPINHOLE
 const char * miniupnpd_v6_filter_chain = "UPNP";
 #endif
 
@@ -110,6 +110,9 @@ struct lan_addr_list lan_addrs;
 #ifdef ENABLE_IPV6
 /* ipv6 address used for HTTP */
 char ipv6_addr_for_http_with_brackets[64];
+
+/* address used to bind local services */
+struct in6_addr ipv6_bind_addr;
 #endif
 
 /* Path of the Unix socket used to communicate with MiniSSDPd */

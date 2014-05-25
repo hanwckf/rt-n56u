@@ -862,7 +862,7 @@ BOOLEAN ScanRunning(
 
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-			rv = ((pAd->Mlme.ApSyncMachine.CurrState == AP_SCAN_LISTEN) ? TRUE : FALSE);
+			rv = ((pAd->Mlme.ApSyncMachine.CurrState != AP_SYNC_IDLE) ? TRUE : FALSE);
 #endif // CONFIG_AP_SUPPORT //
 
 	return rv;

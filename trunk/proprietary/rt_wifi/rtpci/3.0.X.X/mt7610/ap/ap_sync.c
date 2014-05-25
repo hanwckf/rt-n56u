@@ -1479,7 +1479,7 @@ void build_ext_channel_switch_ie(
 	pIE->ChannelSwitchMode = 1;	/*no further frames */
 	pIE->NewRegClass = get_regulatory_class(pAd);
 	pIE->NewChannelNum = pAd->CommonCfg.Channel;
-    pIE->ChannelSwitchCount = (pAd->Dot11_H.CSPeriod - pAd->Dot11_H.CSCount - 1);
+	pIE->ChannelSwitchCount = (pAd->Dot11_H.CSPeriod - pAd->Dot11_H.CSCount - 1);
 }
 #endif /* DOT11_N_SUPPORT */
 

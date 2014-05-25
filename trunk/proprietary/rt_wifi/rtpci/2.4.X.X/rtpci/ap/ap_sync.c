@@ -1400,7 +1400,7 @@ VOID ApSiteSurvey(
 BOOLEAN ApScanRunning(
 		IN PRTMP_ADAPTER pAd)
 {
-	return (pAd->Mlme.ApSyncMachine.CurrState == AP_SCAN_LISTEN) ? TRUE : FALSE;
+	return (pAd->Mlme.ApSyncMachine.CurrState != AP_SYNC_IDLE) ? TRUE : FALSE;
 }
 #endif // AP_SCAN_SUPPORT //
 

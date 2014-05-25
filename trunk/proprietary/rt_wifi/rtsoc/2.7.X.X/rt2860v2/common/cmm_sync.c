@@ -1200,7 +1200,7 @@ BOOLEAN ScanRunning(
 
 #ifdef CONFIG_STA_SUPPORT
 #ifdef P2P_SUPPORT
-		rv = ((pAd->Mlme.ApSyncMachine.CurrState == AP_SCAN_LISTEN) ? TRUE : FALSE);
+		rv = ((pAd->Mlme.ApSyncMachine.CurrState != AP_SYNC_IDLE) ? TRUE : FALSE);
 
 		if (rv == FALSE)
 		{
@@ -1218,7 +1218,7 @@ BOOLEAN ScanRunning(
 #ifdef CONFIG_AP_SUPPORT
 #ifdef AP_SCAN_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-			rv = ((pAd->Mlme.ApSyncMachine.CurrState == AP_SCAN_LISTEN) ? TRUE : FALSE);
+			rv = ((pAd->Mlme.ApSyncMachine.CurrState != AP_SYNC_IDLE) ? TRUE : FALSE);
 #endif /* AP_SCAN_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 

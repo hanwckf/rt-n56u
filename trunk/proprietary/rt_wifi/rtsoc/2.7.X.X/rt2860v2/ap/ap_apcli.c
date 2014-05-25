@@ -2091,7 +2091,9 @@ BOOLEAN  ApCliHandleRxBroadcastFrame(
 {
 	PRT28XX_RXD_STRUC	pRxD = &(pRxBlk->RxD);
 	PHEADER_802_11		pHeader = pRxBlk->pHeader;
-	PRXWI_STRUC			pRxWI = pRxBlk->pRxWI;		
+#ifndef MAC_APCLI_SUPPORT
+	PRXWI_STRUC		pRxWI = pRxBlk->pRxWI;
+#endif
 	PAPCLI_STRUCT   	pApCliEntry = NULL;
 #ifdef MAC_REPEATER_SUPPORT
 	REPEATER_CLIENT_ENTRY *pReptEntry = NULL;

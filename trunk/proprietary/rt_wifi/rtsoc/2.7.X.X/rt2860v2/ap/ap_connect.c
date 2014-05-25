@@ -111,7 +111,7 @@ VOID APMakeBssBeacon(
 	PUCHAR        pBeaconFrame = (PUCHAR)pAd->ApCfg.MBSSID[apidx].BeaconBuf;
 	UCHAR  *ptr;
 	UINT  i;
-	UINT32 longValue;
+	UINT32 longValue, reg_base;
 	HTTRANSMIT_SETTING	BeaconTransmit;   /* MGMT frame PHY rate setting when operatin at Ht rate. */
 	UCHAR PhyMode, SupRateLen;
 	UINT8 TXWISize = pAd->chipCap.TXWISize;
@@ -322,10 +322,11 @@ VOID APMakeBssBeacon(
 #endif
 
 
+	reg_base = pAd->BeaconOffset[pAd->ApCfg.MBSSID[apidx].BcnBufIdx];
 	for (i=0; i < TXWISize; i+=4)
 	{
 		longValue =  *ptr + (*(ptr+1)<<8) + (*(ptr+2)<<16) + (*(ptr+3)<<24);
-		RTMP_CHIP_UPDATE_BEACON(pAd, pAd->BeaconOffset[pAd->ApCfg.MBSSID[apidx].BcnBufIdx] + i, longValue, 4);
+		RTMP_CHIP_UPDATE_BEACON(pAd, reg_base + i, longValue, 4);
 		ptr += 4;
 	}
 
@@ -335,10 +336,11 @@ VOID APMakeBssBeacon(
     RTMPFrameEndianChange(pAd, ptr, DIR_WRITE, FALSE);
 #endif
 
+	reg_base = pAd->BeaconOffset[pAd->ApCfg.MBSSID[apidx].BcnBufIdx] + TXWISize;
 	for (i= 0; i< FrameLen; i+=4)
 	{
 		longValue =  *ptr + (*(ptr+1)<<8) + (*(ptr+2)<<16) + (*(ptr+3)<<24);
-		RTMP_CHIP_UPDATE_BEACON(pAd, pAd->BeaconOffset[pAd->ApCfg.MBSSID[apidx].BcnBufIdx] + TXWISize + i, longValue, 4);
+		RTMP_CHIP_UPDATE_BEACON(pAd, reg_base + i, longValue, 4);
 		ptr += 4;
 	}
 

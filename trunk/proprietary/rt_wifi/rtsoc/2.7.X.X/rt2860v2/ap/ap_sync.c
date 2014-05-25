@@ -1645,7 +1645,7 @@ VOID ApSiteSurvey(
 BOOLEAN ApScanRunning(
 		IN PRTMP_ADAPTER pAd)
 {
-	return (pAd->Mlme.ApSyncMachine.CurrState == AP_SCAN_LISTEN) ? TRUE : FALSE;
+	return (pAd->Mlme.ApSyncMachine.CurrState != AP_SYNC_IDLE) ? TRUE : FALSE;
 }
 #endif /* AP_SCAN_SUPPORT */
 
@@ -1778,7 +1778,7 @@ void build_ext_channel_switch_ie(
 	pIE->ChannelSwitchMode = 1;	/*no further frames */
 	pIE->NewRegClass = get_regulatory_class(pAd);
 	pIE->NewChannelNum = pAd->CommonCfg.Channel;
-    pIE->ChannelSwitchCount = pAd->Dot11_H.CSCount;
+	pIE->ChannelSwitchCount = (pAd->Dot11_H.CSPeriod - pAd->Dot11_H.CSCount - 1);
 }
 #endif /* DOT11_N_SUPPORT */
 

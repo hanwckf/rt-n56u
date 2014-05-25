@@ -111,7 +111,7 @@ VOID APMakeBssBeacon(
 	PUCHAR        pBeaconFrame = (PUCHAR)pAd->ApCfg.MBSSID[apidx].BeaconBuf;
 	UCHAR  *ptr;
 	UINT  i;
-	UINT32 longValue;
+	UINT32 longValue, reg_base;
 	HTTRANSMIT_SETTING	BeaconTransmit;   // MGMT frame PHY rate setting when operatin at Ht rate.
 #ifdef SPECIFIC_BCN_BUF_SUPPORT
 	unsigned long irqFlag;
@@ -300,10 +300,11 @@ VOID APMakeBssBeacon(
 	RTMP_MAC_SHR_MSEL_LOCK(pAd, HIGHER_SHRMEM, irqFlag);
 #endif // SPECIFIC_BCN_BUF_SUPPORT //
 
+	reg_base = pAd->BeaconOffset[pAd->ApCfg.MBSSID[apidx].BcnBufIdx];
 	for (i=0; i<TXWI_SIZE; i+=4)  // 16-byte TXWI field
 	{
 		longValue =  *ptr + (*(ptr+1)<<8) + (*(ptr+2)<<16) + (*(ptr+3)<<24);
-		RTMP_IO_WRITE32(pAd, pAd->BeaconOffset[pAd->ApCfg.MBSSID[apidx].BcnBufIdx] + i, longValue);
+		RTMP_IO_WRITE32(pAd, reg_base + i, longValue);
 		ptr += 4;
 	}
 
@@ -313,10 +314,11 @@ VOID APMakeBssBeacon(
     RTMPFrameEndianChange(pAd, ptr, DIR_WRITE, FALSE);
 #endif
 
+	reg_base = pAd->BeaconOffset[pAd->ApCfg.MBSSID[apidx].BcnBufIdx] + TXWI_SIZE;
 	for (i= 0; i< FrameLen; i+=4)
 	{
 		longValue =  *ptr + (*(ptr+1)<<8) + (*(ptr+2)<<16) + (*(ptr+3)<<24);
-		RTMP_IO_WRITE32(pAd, pAd->BeaconOffset[pAd->ApCfg.MBSSID[apidx].BcnBufIdx] + TXWI_SIZE + i, longValue);
+		RTMP_IO_WRITE32(pAd, reg_base + i, longValue);
 		ptr += 4;
 	}
 

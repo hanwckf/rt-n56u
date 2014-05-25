@@ -1,33 +1,58 @@
-# Makefile for INADYN, a simple and small ddns client.          -*-Makefile-*-
-
-VERSION      ?= 1.99.2
+VERSION       = 1.99.9
 NAME          = inadyn
 EXEC          = src/$(NAME)
-OBJS          = src/base64.o src/md5.o src/dyndns.o src/errorcode.o src/get_cmd.o \
-                src/http_client.o src/ip.o src/main.o src/os_unix.o src/os_windows.o   \
-                src/os.o src/os_psos.o src/tcp.o src/inadyn_cmd.o src/sha1.o
+RM           ?= rm -f
 SHAREDIR      = $(ROOTDIR)/user/shared
+
+PLUGIN_OBJS   = src/plugin.o		plugins/common.o	\
+		plugins/asuscomm.o	plugins/duckdns.o	\
+		plugins/dyndns.o	plugins/changeip.o	\
+		plugins/dnsexit.o	plugins/easydns.o	\
+		plugins/freedns.o	plugins/generic.o	\
+		plugins/sitelutions.o	plugins/tunnelbroker.o	\
+		plugins/tzo.o		plugins/zoneedit.o	\
+		plugins/zerigo.o	plugins/dhis.o
+
+BASE_OBJS     = src/main.o	src/ddns.o	src/cache.o	\
+		src/cmd.o	src/os.o	src/error.o	\
+		src/http.o	src/ssl.o	src/tcp.o	\
+		src/ip.o	src/sha1.o	src/base64.o	\
+		src/md5.o
+
+OBJS          = $(BASE_OBJS) $(PLUGIN_OBJS)
+SRCS          = $(OBJS:.o=.c)
+DEPS          = $(SRCS:.c=.d)
+
 CFLAGS       += -W -Wall
-CFLAGS       += -Iinclude -I$(SHAREDIR)/include -DVERSION_STRING=\"$(VERSION)\"
+CFLAGS       += -D_BSD_SOURCE -D_GNU_SOURCE
+CFLAGS       += -Iinclude -DVERSION=\"$(VERSION)\"
+CFLAGS       += -Iinclude -I$(SHAREDIR)/include
 CFLAGS       += -ffunction-sections -fdata-sections
-LDFLAGS       = -L$(SHAREDIR) -lshared
+
+LDFLAGS      += -L$(SHAREDIR) -lshared
 LDFLAGS      += -Wl,--gc-sections
-LDLIBS       += -lresolv
+
+LDLIBS       += -ldl
+
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_DDNS_SSL),y)
+CFLAGS       += -DCONFIG_OPENSSL
+LDLIBS       += -lssl -lcrypto
+endif
 
 # Pattern rules
 .c.o:
-	@printf "  CC      $@\n"
-	@$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 # Build rules
 all: $(EXEC)
 
 $(EXEC): $(OBJS)
-	@printf "  LINK    $@\n"
-	@$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
 
 clean:
-	rm -f $(OBJS) core $(EXEC) *.o *.map .*.d *.out tags TAGS
+	-@$(RM) $(OBJS) $(DEPS) $(EXEC)
 
 romfs:
 	$(ROMFSINST) $(EXEC) /bin/inadyn
+
+

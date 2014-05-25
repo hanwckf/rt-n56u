@@ -1,4 +1,4 @@
-/* Interface for TCP functions
+/* Interface functions for CMD options parsing system
  *
  * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
  * Copyright (C) 2010-2014  Joachim Nilsson <troglobit@gmail.com>
@@ -20,42 +20,33 @@
  * Boston, MA  02110-1301, USA.
 */
 
-#ifndef INADYN_TCP_H_
-#define INADYN_TCP_H_
+#ifndef INADYN_CMD_H_
+#define INADYN_CMD_H_
 
-#include "os.h"
 #include "error.h"
-#include "ip.h"
+typedef struct {
+	int argc;
+	char **argv;
+} cmd_data_t;
 
-#define TCP_DEFAULT_TIMEOUT	20000	/* msec */
+typedef int (*cmd_fn_t) (cmd_data_t *cmd, int no, void *context);
 
 typedef struct {
-	ip_sock_t ip;
-	int       initialized;
-} tcp_sock_t;
+	cmd_fn_t func;
+	void *context;
+} cmd_handler_t;
 
-int tcp_construct          (tcp_sock_t *tcp);
-int tcp_destruct           (tcp_sock_t *tcp);
+typedef struct {
+	char *option;
+	int argno;
+	cmd_handler_t handler;
+	char *description;
+} cmd_desc_t;
 
-int tcp_init               (tcp_sock_t *tcp, char *msg, int verbose);
-int tcp_exit               (tcp_sock_t *tcp);
+int get_cmd_parse_data(char **argv, int argc, cmd_desc_t *desc);
+int cmd_add_val(cmd_data_t *cmd, char *val);
 
-int tcp_send               (tcp_sock_t *tcp, const char *buf, int len);
-int tcp_recv               (tcp_sock_t *tcp,       char *buf, int len, int *recv_len);
-
-int tcp_set_port           (tcp_sock_t *tcp, int  port);
-int tcp_get_port           (tcp_sock_t *tcp, int *port);
-
-int tcp_set_remote_name    (tcp_sock_t *tcp, const char  *name);
-int tcp_get_remote_name    (tcp_sock_t *tcp, const char **name);
-
-int tcp_set_remote_timeout (tcp_sock_t *tcp, int  timeout);
-int tcp_get_remote_timeout (tcp_sock_t *tcp, int *timeout);
-
-int tcp_set_bind_iface     (tcp_sock_t *tcp, char  *ifname);
-int tcp_get_bind_iface     (tcp_sock_t *tcp, char **ifname);
-
-#endif /* INADYN_TCP_H_ */
+#endif /* INADYN_CMD_H_ */
 
 /**
  * Local Variables:

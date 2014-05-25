@@ -9,7 +9,7 @@
 .\" You may modify and distribute this document for any purpose, as
 .\" long as this copyright notice remains intact.
 .\"
-.Dd October 31, 2010
+.Dd November 27, 2013
 .Dt INADYN 5 SMM
 .Os
 .Sh NAME
@@ -30,52 +30,85 @@ The
 .Dq #\&
 character denotes a comment. 
 .It
-Long options (those with
+Settings are currently the same as the long command line options (those
+with
 .Dq \-\-
-in front) can also be placed at the 
-beginning of the line without
-.Dq \-\-
-signs.
+), only without the dashes.  See example below.
 .It
 The \\ character can be used as an escape character.
 .El
-.Sh EXAMPLES
-.Ss 1.  Config file with long options
-# Some comments about the inadyn conf file
+.Sh EXAMPLE
 .br
---username test
+background
 .br
---password test
+verbose        1
 .br
---period 60
+period         300
 .br
---alias test.homeip.net
+startup-delay  60
 .br
---alias my.second.domain
-.Ss 2.  Config file without Dq \-\-
-username test # user
+# logfile      /var/log/inadyn.log
 .br
-password test 
+# pidfile      /var/run/inadyn.pid
 .br
-period 60  # some other param without '\-\-'
+cache-dir      /etc/inadyn
+.Pp
+# Primary account, used for most operations
 .br
-alias test.homeip.net 
+system default@dyndns.org
+.br
+    ssl
+.br
+    username account
+.br
+    password secret
+.br
+    alias my.example.com
+.br
+    alias other.example.org
+.Pp
+# Secondary account, on another DDNS provider,
+.br
+# also updated on IP change
+.br
+system default@no-ip.com
+.br
+    username account
+.br
+    password secret
+.br
+    alias example.no-ip.com
+.Pp
+# Generic example for twoDNS.de
+.br
+system custom@http_srv_basic_auth
+.br
+    ssl
+.br
+    checkip-url checkip.two-dns.de /
+.br
+    server-name update.twodns.de
+.br
+    server-url /update?hostname=
+.br
+    username account
+.br
+    password secret
+.br
+    alias example.dd-dns.de
+.br
 .Sh "SEE ALSO"
 .Xr inadyn 8
-.Ss "Internet resources"
+.Pp
 The
 .Nm inadyn
-home page is http://troglobit.com/inadyn.shtml.
+home page is http://github.com/troglobit/inadyn
 .Sh AUTHORS
-.Nm inadyn
-was written by
-.An -nosplit
-.An Narcis Ilisei Aq inarcis2002@hotpop.com ,
-.An Steve Horbachuk and later
-.An Joachim Nilsson Aq troglobit@vmlinux.org .
-.Pp
 This manual page was initially written for the
 .Em Debian GNU/Linux
 system by
+.An -nosplit
 .An Shaul Karl Aq shaul@debian.org .
-Later Joachim Nilsson picked up maintenance.
+Currently maintained by
+.An -nosplit
+.An Joachim Nilsson Aq troglobit@gmail.com .

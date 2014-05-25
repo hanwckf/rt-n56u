@@ -1,5 +1,7 @@
-/*
+/* Interface for TCP functions
+ *
  * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
+ * Copyright (C) 2010-2014  Joachim Nilsson <troglobit@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,301 +14,253 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- */
+ * along with this program; if not, visit the Free Software Foundation
+ * website at http://www.gnu.org/licenses/gpl-2.0.html or write to the
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA  02110-1301, USA.
+*/
 
-#define MODULE_TAG ""
+#include <poll.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "debug_if.h"
+#include "debug.h"
 #include "tcp.h"
 
-/* basic resource allocations for the tcp object */
-RC_TYPE tcp_construct(TCP_SOCKET *p_self)
+int tcp_construct(tcp_sock_t *tcp)
 {
-	RC_TYPE rc;
+	ASSERT(tcp);
 
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	DO(ip_construct(&tcp->ip));
 
-	rc = ip_construct(&p_self->super);
-	if (rc != RC_OK)
-	{
-		return rc;
-	}
+	/* Reset its part of the struct (skip IP part) */
+	memset(((char *)tcp + sizeof(tcp->ip)), 0, sizeof(*tcp) - sizeof(tcp->ip));
+	tcp->initialized = 0;
 
-	/*reset its part of the struct (skip IP part)*/
-	memset(((char*)p_self + sizeof(p_self->super)) , 0, sizeof(*p_self) - sizeof(p_self->super));
-	p_self->initialized = FALSE;
-
-	return RC_OK;
+	return 0;
 }
 
-/*
-  Resource free.
-*/
-RC_TYPE tcp_destruct(TCP_SOCKET *p_self)
+int tcp_destruct(tcp_sock_t *tcp)
 {
-	if (p_self == NULL)
-	{
-		return RC_OK;
-	}
+	ASSERT(tcp);
 
-	if (p_self->initialized == TRUE)
-	{
-		tcp_shutdown(p_self);
-	}
+	if (tcp->initialized == 1)
+		tcp_exit(tcp);
 
-	return ip_destruct(&p_self->super);
+	return ip_destruct(&tcp->ip);
 }
 
-static RC_TYPE local_set_params(TCP_SOCKET *p_self)
+static int local_set_params(tcp_sock_t *tcp)
 {
 	int timeout;
 
 	/* Set default TCP specififc params */
-	tcp_get_remote_timeout(p_self, &timeout);
-
+	tcp_get_remote_timeout(tcp, &timeout);
 	if (timeout == 0)
-	{
-		tcp_set_remote_timeout(p_self, TCP_DEFAULT_TIMEOUT);
-	}
+		tcp_set_remote_timeout(tcp, TCP_DEFAULT_TIMEOUT);
 
-	return RC_OK;
+	return 0;
 }
 
-/*
-  Sets up the object.
-
-  - ...
-*/
-RC_TYPE tcp_initialize(TCP_SOCKET *p_self, char *msg)
+/* Check for socket error */
+static int soerror(int sd)
 {
-	RC_TYPE rc;
-	struct timeval sv;
-	int svlen = sizeof(sv);
+	int code = 0;
+	socklen_t len = sizeof(code);
+
+	if (getsockopt(sd, SOL_SOCKET, SO_ERROR, &code, &len))
+		return 1;
+
+	errno = code;
+
+	return code;
+}
+
+/* In the wonderful world of network programming the manual states that
+ * EINPROGRESS is only a possible error on non-blocking sockets.  Real world
+ * experience, however, suggests otherwise.  Simply poll() for completion and
+ * then continue. --Joachim */
+static int check_error(int sd, int msec)
+{
+	struct pollfd pfd = { sd, POLLOUT, 0 };
+
+	if (EINPROGRESS == errno) {
+		logit(LOG_INFO, "Waiting (%d sec) for three-way handshake to complete ...", msec / 1000);
+		if (poll (&pfd, 1, msec) > 0 && !soerror(sd)) {
+			logit(LOG_INFO, "Connected.");
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+/* On error tcp_exit() is called by upper layers. */
+int tcp_init(tcp_sock_t *tcp, char *msg, int verbose)
+{
+	int rc = 0;
 	char host[NI_MAXHOST];
+	struct timeval sv;
+	struct sockaddr sa;
+	socklen_t salen;
 
-	do
-	{
-		local_set_params(p_self);
+	ASSERT(tcp);
 
-		/*call the super*/
-		rc = ip_initialize(&p_self->super);
-		if (rc != RC_OK)
-		{
+	do {
+		int sd;
+
+		TRY(local_set_params(tcp));
+		TRY(ip_init(&tcp->ip));
+
+		if (tcp->ip.type != TYPE_TCP)
+			return RC_IP_BAD_PARAMETER;
+
+		sd = socket(AF_INET, SOCK_STREAM, 0);
+		if (sd == -1) {
+			logit(LOG_ERR, "Error creating client socket: %s", strerror(errno));
+			rc = RC_IP_SOCKET_CREATE_ERROR;
 			break;
 		}
 
-		/* local object initalizations */
-		if (p_self->super.type == TYPE_TCP)
-		{
-			p_self->super.socket = socket(AF_INET, SOCK_STREAM, 0);
-			if (p_self->super.socket == -1)
-			{
-				int code = os_get_socket_error();
+		/* Call to socket() OK, allow tcp_exit() to run to
+		 * prevent socket leak if any of the below calls fail. */
+		tcp->ip.socket = sd;
+		tcp->initialized  = 1;
 
-				logit(LOG_ERR, MODULE_TAG "Error creating client socket: %s", strerror(code));
-				rc = RC_IP_SOCKET_CREATE_ERROR;
+		if (tcp->ip.bound == 1) {
+			if (bind(sd, (struct sockaddr *)&tcp->ip.local_addr, sizeof(struct sockaddr_in)) < 0) {
+				logit(LOG_WARNING, "Failed binding client socket to local address: %s", strerror(errno));
+				rc = RC_IP_SOCKET_BIND_ERROR;
 				break;
 			}
+		}
 
-			/* Call to socket() OK, allow tcp_shutdown() to run to
-			 * prevent socket leak if any of the below calls fail. */
-			p_self->initialized = TRUE;
+		/* Attempt to set TCP timers, silently fall back to OS defaults */
+		sv.tv_sec  =  tcp->ip.timeout / 1000;
+		sv.tv_usec = (tcp->ip.timeout % 1000) * 1000;
+		setsockopt(tcp->ip.socket, SOL_SOCKET, SO_RCVTIMEO, &sv, sizeof(sv));
+		setsockopt(tcp->ip.socket, SOL_SOCKET, SO_SNDTIMEO, &sv, sizeof(sv));
 
-			if (p_self->super.bound == TRUE)
-			{
-				if (bind(p_self->super.socket, (struct sockaddr *)&p_self->super.local_addr, sizeof(struct sockaddr_in)) < 0)
-				{
-					int code = os_get_socket_error();
-
-					logit(LOG_WARNING, MODULE_TAG "Failed binding client socket to local address: %s", strerror(code));
-					rc = RC_IP_SOCKET_BIND_ERROR;
-					break;
-				}
-			}
+		sa    = tcp->ip.remote_addr;
+		salen = tcp->ip.remote_len;
+		if (!getnameinfo(&sa, salen, host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST)) {
+			if (verbose > 0)
+				logit(LOG_INFO, "%s, connecting to %s (%s:%d)", msg, tcp->ip.p_remote_host_name, host, tcp->ip.port);
 		}
 		else
-		{
-			p_self->initialized = TRUE; /* Allow tcp_shutdown() to run. */
-			rc = RC_IP_BAD_PARAMETER;
-		}
+			logit(LOG_ERR, "%s, failed resolving %s!", msg, host);
 
-		/* set timeouts */
-		sv.tv_sec  = p_self->super.timeout / 1000;	    /* msec to sec */
-		sv.tv_usec = (p_self->super.timeout % 1000) * 1000; /* reminder to usec */
-		setsockopt(p_self->super.socket, SOL_SOCKET, SO_RCVTIMEO, &sv, svlen);
-		setsockopt(p_self->super.socket, SOL_SOCKET, SO_SNDTIMEO, &sv, svlen);
+		if (connect(sd, &sa, salen)) {
+			if (!check_error(sd, tcp->ip.timeout))
+				break; /* OK */
 
-		if (!getnameinfo(&p_self->super.remote_addr, p_self->super.remote_len, host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST))
-		{
-			if (msg && *msg)
-				logit(LOG_INFO, "%s, connecting to %s(%s)", msg, p_self->super.p_remote_host_name, host);
-		}
-
-		if (0 != connect(p_self->super.socket, &p_self->super.remote_addr, p_self->super.remote_len))
-		{
-			int code = os_get_socket_error();
-
-			logit(LOG_WARNING, MODULE_TAG "Failed connecting to remote server: %s", strerror(code));
+			logit(LOG_WARNING, "Failed connecting to remote server: %s", strerror(errno));
 			rc = RC_IP_CONNECT_FAILED;
 			break;
 		}
-	}
-	while (0);
+	} while (0);
 
-	if (rc != RC_OK)
-	{
-		tcp_shutdown(p_self);
+	if (rc) {
+		tcp_exit(tcp);
 		return rc;
 	}
 
-	return RC_OK;
-}
-/*
-  Disconnect and some other clean up.
-*/
-RC_TYPE tcp_shutdown(TCP_SOCKET *p_self)
-{
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
-
-	if (!p_self->initialized)
-	{
-		return RC_OK;
-	}
-
-	p_self->initialized = FALSE;
-
-	return ip_shutdown(&p_self->super);
+	return 0;
 }
 
-
-/* send data*/
-RC_TYPE tcp_send(TCP_SOCKET *p_self, const char *p_buf, int len)
+int tcp_exit(tcp_sock_t *tcp)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(tcp);
 
-	if (!p_self->initialized)
-	{
+	if (!tcp->initialized)
+		return 0;
+
+	tcp->initialized = 0;
+
+	return ip_exit(&tcp->ip);
+}
+
+int tcp_send(tcp_sock_t *tcp, const char *buf, int len)
+{
+	ASSERT(tcp);
+
+	if (!tcp->initialized)
 		return RC_TCP_OBJECT_NOT_INITIALIZED;
-	}
 
-	return ip_send(&p_self->super, p_buf, len);
+	return ip_send(&tcp->ip, buf, len);
 }
 
-/* receive data*/
-RC_TYPE tcp_recv(TCP_SOCKET *p_self,char *p_buf, int max_recv_len, int *p_recv_len)
+int tcp_recv(tcp_sock_t *tcp, char *buf, int buf_len, int *recv_len)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(tcp);
 
-	if (!p_self->initialized)
-	{
+	if (!tcp->initialized)
 		return RC_TCP_OBJECT_NOT_INITIALIZED;
-	}
-	return ip_recv(&p_self->super, p_buf, max_recv_len, p_recv_len);
+
+	return ip_recv(&tcp->ip, buf, buf_len, recv_len);
 }
 
-
-/* Accessors*/
-RC_TYPE tcp_set_port(TCP_SOCKET *p_self, int p)
+int tcp_set_port(tcp_sock_t *tcp, int port)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(tcp);
 
-	return ip_set_port(&p_self->super, p);
+	return ip_set_port(&tcp->ip, port);
 }
 
-RC_TYPE tcp_set_remote_name(TCP_SOCKET *p_self, const char* p)
+int tcp_get_port(tcp_sock_t *tcp, int *port)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(tcp);
 
-	return ip_set_remote_name(&p_self->super, p);
+	return ip_get_port(&tcp->ip, port);
 }
 
-RC_TYPE tcp_set_remote_timeout(TCP_SOCKET *p_self, int p)
+int tcp_set_remote_name(tcp_sock_t *tcp, const char *p)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(tcp);
 
-	return ip_set_remote_timeout(&p_self->super, p);
+	return ip_set_remote_name(&tcp->ip, p);
 }
 
-RC_TYPE tcp_set_bind_iface(TCP_SOCKET *p_self, char *ifname)
+int tcp_get_remote_name(tcp_sock_t *tcp, const char **p)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(tcp);
 
-	return ip_set_bind_iface(&p_self->super, ifname);
+	return ip_get_remote_name(&tcp->ip, p);
 }
 
-RC_TYPE tcp_get_port(TCP_SOCKET *p_self, int *p)
+int tcp_set_remote_timeout(tcp_sock_t *tcp, int p)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(tcp);
 
-	return ip_get_port(&p_self->super, p);
+	return ip_set_remote_timeout(&tcp->ip, p);
 }
 
-RC_TYPE tcp_get_remote_name(TCP_SOCKET *p_self, const char **p)
+int tcp_get_remote_timeout(tcp_sock_t *tcp, int *p)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(tcp);
 
-	return ip_get_remote_name(&p_self->super, p);
+	return ip_get_remote_timeout(&tcp->ip, p);
 }
 
-RC_TYPE tcp_get_remote_timeout(TCP_SOCKET *p_self, int *p)
+int tcp_set_bind_iface(tcp_sock_t *tcp, char *ifname)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(tcp);
 
-	return ip_get_remote_timeout(&p_self->super, p);
+	return ip_set_bind_iface(&tcp->ip, ifname);
 }
 
-RC_TYPE tcp_get_bind_iface(TCP_SOCKET *p_self, char **ifname)
+int tcp_get_bind_iface(tcp_sock_t *tcp, char **ifname)
 {
-	if (p_self == NULL || ifname == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(tcp);
+	ASSERT(ifname);
 
-	return ip_get_bind_iface(&p_self->super, ifname);
+	return ip_get_bind_iface(&tcp->ip, ifname);
 }
 
 /**
  * Local Variables:
  *  version-control: t
  *  indent-tabs-mode: t
- *  c-file-style: "ellemtel"
- *  c-basic-offset: 8
+ *  c-file-style: "linux"
  * End:
  */

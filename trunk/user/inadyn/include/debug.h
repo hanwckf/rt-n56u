@@ -1,6 +1,7 @@
-/* Interface for TCP functions
+/* Custom error logging system
  *
  * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
+ * Copyright (C) 2006       Steve Horbachuk
  * Copyright (C) 2010-2014  Joachim Nilsson <troglobit@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -18,44 +19,34 @@
  * website at http://www.gnu.org/licenses/gpl-2.0.html or write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301, USA.
-*/
+ */
 
-#ifndef INADYN_TCP_H_
-#define INADYN_TCP_H_
+#ifndef _DEBUG_IF_INCLUDED
+#define _DEBUG_IF_INCLUDED
 
+#include <stdio.h>
 #include "os.h"
-#include "error.h"
-#include "ip.h"
-
-#define TCP_DEFAULT_TIMEOUT	20000	/* msec */
 
 typedef struct {
-	ip_sock_t ip;
-	int       initialized;
-} tcp_sock_t;
+	int level;
+	int verbose;
+	char p_logfilename[1024];
+	FILE *p_file;
+} ddns_dbg_t;
 
-int tcp_construct          (tcp_sock_t *tcp);
-int tcp_destruct           (tcp_sock_t *tcp);
+int get_dbg_dest(void);
+void set_dbg_dest(int dest);
+void os_printf(int prio, char *fmt, ...);
 
-int tcp_init               (tcp_sock_t *tcp, char *msg, int verbose);
-int tcp_exit               (tcp_sock_t *tcp);
+#ifndef DBG_PRINT_DISABLED
+#ifndef logit
+#define logit(prio, fmt, args...) os_printf(prio, fmt, ##args)
+#endif
+#else
+#define logit(fmt, args...)
+#endif
 
-int tcp_send               (tcp_sock_t *tcp, const char *buf, int len);
-int tcp_recv               (tcp_sock_t *tcp,       char *buf, int len, int *recv_len);
-
-int tcp_set_port           (tcp_sock_t *tcp, int  port);
-int tcp_get_port           (tcp_sock_t *tcp, int *port);
-
-int tcp_set_remote_name    (tcp_sock_t *tcp, const char  *name);
-int tcp_get_remote_name    (tcp_sock_t *tcp, const char **name);
-
-int tcp_set_remote_timeout (tcp_sock_t *tcp, int  timeout);
-int tcp_get_remote_timeout (tcp_sock_t *tcp, int *timeout);
-
-int tcp_set_bind_iface     (tcp_sock_t *tcp, char  *ifname);
-int tcp_get_bind_iface     (tcp_sock_t *tcp, char **ifname);
-
-#endif /* INADYN_TCP_H_ */
+#endif				/* _DEBUG_IF_INCLUDED */
 
 /**
  * Local Variables:

@@ -1,5 +1,7 @@
-/*
+/* Interface for IP functions
+ *
  * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
+ * Copyright (C) 2010-2014  Joachim Nilsson <troglobit@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,11 +14,15 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, visit the Free Software Foundation
+ * website at http://www.gnu.org/licenses/gpl-2.0.html or write to the
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301, USA.
  */
 
-#define MODULE_TAG ""
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/nameser.h>
 #include <resolv.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,112 +32,87 @@
 #include <errno.h>
 #include <stdio.h>
 
-#include "debug_if.h"
+#include "debug.h"
 #include "ip.h"
 
-/* basic resource allocations for the ip object */
-RC_TYPE ip_construct(IP_SOCKET *p_self)
+
+int ip_construct(ip_sock_t *ip)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(ip);
 
-	memset(p_self, 0, sizeof(IP_SOCKET));
+	memset(ip, 0, sizeof(ip_sock_t));
 
-	p_self->initialized = FALSE;
-	p_self->bound = FALSE;
-	p_self->socket = -1;	/* Initialize to 'error', not a possible socket id. */
-	memset(&p_self->local_addr, 0, sizeof(p_self->local_addr));
-	memset(&p_self->remote_addr, 0, sizeof(p_self->remote_addr));
-	p_self->timeout = IP_DEFAULT_TIMEOUT;
+	ip->initialized = 0;
+	ip->bound       = 0;
+	ip->socket      = -1; /* Initialize to 'error', not a possible socket id. */
+	ip->timeout     = IP_DEFAULT_TIMEOUT;
+	memset(&ip->local_addr,  0, sizeof(ip->local_addr));
+	memset(&ip->remote_addr, 0, sizeof(ip->remote_addr));
 
-	return RC_OK;
+	return 0;
 }
 
-/*
-  Resource free.
-*/
-RC_TYPE ip_destruct(IP_SOCKET *p_self)
+/* Resource free. */
+int ip_destruct(ip_sock_t *ip)
 {
-	if (p_self == NULL)
-	{
-		return RC_OK;
-	}
+	ASSERT(ip);
 
-	if (p_self->initialized == TRUE)
-	{
-		ip_shutdown(p_self);
-	}
+	if (ip->initialized == 1)
+		ip_exit(ip);
 
-	return RC_OK;
+	return 0;
 }
 
-
-
-/*
-  Sets up the object.
-
-  - ...
-*/
-RC_TYPE ip_initialize(IP_SOCKET *p_self)
+/* Sets up the object. */
+int ip_init(ip_sock_t *ip)
 {
-	RC_TYPE rc = RC_OK;
+	int rc = 0;
 	struct ifreq ifr;
 	struct sockaddr_in *addrp = NULL;
 
-	if (p_self->initialized == TRUE)
-	{
-		return RC_OK;
-	}
+	ASSERT(ip);
 
-	do
-	{
-		rc = os_ip_support_startup();
-		if (rc != RC_OK)
-		{
-			break;
-		}
+	if (ip->initialized == 1)
+		return 0;
+
+	do {
+		TRY(os_ip_support_startup());
 
 		/* local bind, to interface */
-		if (p_self->ifname)
-		{
+		if (ip->ifname) {
 			int sd = socket(PF_INET, SOCK_DGRAM, 0);
 
-			if (sd < 0)
-			{
+			if (sd < 0) {
 				int code = os_get_socket_error();
 
-				logit(LOG_WARNING, MODULE_TAG "Failed opening network socket: %s", strerror(code));
+				logit(LOG_WARNING, "Failed opening network socket: %s", strerror(code));
 				rc = RC_IP_OS_SOCKET_INIT_FAILED;
 				break;
 			}
 
 			memset(&ifr, 0, sizeof(struct ifreq));
-			strncpy(ifr.ifr_name, p_self->ifname, IFNAMSIZ);
-			if (ioctl(sd, SIOCGIFADDR, &ifr) != -1)
-			{
-				p_self->local_addr.sin_family = AF_INET;
-				p_self->local_addr.sin_port = htons(0);
+			strncpy(ifr.ifr_name, ip->ifname, IFNAMSIZ);
+			if (ioctl(sd, SIOCGIFADDR, &ifr) != -1) {
+				ip->local_addr.sin_family = AF_INET;
+				ip->local_addr.sin_port = htons(0);
 				addrp = (struct sockaddr_in *)&(ifr.ifr_addr);
-				p_self->local_addr.sin_addr.s_addr = addrp->sin_addr.s_addr;
-				p_self->bound = TRUE;
+				ip->local_addr.sin_addr.s_addr = addrp->sin_addr.s_addr;
+				ip->bound = 1;
 
-				logit(LOG_INFO, MODULE_TAG "Bound to interface %s (IP# %s)", p_self->ifname, inet_ntoa(p_self->local_addr.sin_addr));
-			}
-			else
-			{
+				logit(LOG_INFO, "Bound to interface %s (IP# %s)",
+				      ip->ifname, inet_ntoa(ip->local_addr.sin_addr));
+			} else {
 				int code = os_get_socket_error();
 
-				logit(LOG_ERR, MODULE_TAG "Failed reading IP address of interface %s: %s", p_self->ifname, strerror(code));
-				p_self->bound = FALSE;
+				logit(LOG_ERR, "Failed reading IP address of interface %s: %s",
+				      ip->ifname, strerror(code));
+				ip->bound = 0;
 			}
 			close(sd);
 		}
 
 		/* remote address */
-		if (p_self->p_remote_host_name != NULL)
-		{
+		if (ip->p_remote_host_name) {
 			int s;
 			char port[10];
 			struct addrinfo hints, *result;
@@ -141,14 +122,14 @@ RC_TYPE ip_initialize(IP_SOCKET *p_self)
 
 			/* Obtain address(es) matching host/port */
 			memset(&hints, 0, sizeof(struct addrinfo));
-			hints.ai_family = AF_INET; /* Use AF_UNSPEC to allow IPv4 or IPv6 */
-			hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
-			snprintf(port, sizeof(port), "%d", p_self->port);
+			hints.ai_family = AF_INET;	/* Use AF_UNSPEC to allow IPv4 or IPv6 */
+			hints.ai_socktype = SOCK_DGRAM;	/* Datagram socket */
+			snprintf(port, sizeof(port), "%d", ip->port);
 
-			s = getaddrinfo(p_self->p_remote_host_name, port, &hints, &result);
-			if (s != 0 || !result)
-			{
-				logit(LOG_WARNING, MODULE_TAG "Failed resolving hostname %s: %s", p_self->p_remote_host_name, gai_strerror(s));
+			s = getaddrinfo(ip->p_remote_host_name, port, &hints, &result);
+			if (s != 0 || !result) {
+				logit(LOG_WARNING, "Failed resolving hostname %s: %s",
+				      ip->p_remote_host_name, gai_strerror(s));
 				rc = RC_IP_INVALID_REMOTE_ADDR;
 				break;
 			}
@@ -156,74 +137,59 @@ RC_TYPE ip_initialize(IP_SOCKET *p_self)
 			/* XXX: Here we should iterate over all of the records returned by
 			 * getaddrinfo(), but with this code here in ip.c and connect() being
 			 * in tcp.c that's hardly feasible.  Needs refactoring!  --Troglobit */
-			p_self->remote_addr = *result->ai_addr;
-			p_self->remote_len = result->ai_addrlen;
+			ip->remote_addr = *result->ai_addr;
+			ip->remote_len = result->ai_addrlen;
 
-			freeaddrinfo(result);           /* No longer needed */
+			freeaddrinfo(result);	/* No longer needed */
 		}
 	}
 	while (0);
 
-	if (rc != RC_OK)
-	{
-		ip_shutdown(p_self);
+	if (rc) {
+		ip_exit(ip);
 		return rc;
 	}
 
-	p_self->initialized = TRUE;
+	ip->initialized = 1;
 
-	return RC_OK;
+	return 0;
 }
 
-/*
-  Disconnect and some other clean up.
-*/
-RC_TYPE ip_shutdown(IP_SOCKET *p_self)
+/* Disconnect and some other clean up. */
+int ip_exit(ip_sock_t *ip)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(ip);
 
-	if (!p_self->initialized)
-	{
-		return RC_OK;
-	}
+	if (!ip->initialized)
+		return 0;
 
-	if (p_self->socket > -1)
-	{
-		closesocket(p_self->socket);
-		p_self->socket = -1;
+	if (ip->socket > -1) {
+		close(ip->socket);
+		ip->socket = -1;
 	}
 
 	os_ip_support_cleanup();
 
-	p_self->initialized = FALSE;
+	ip->initialized = 0;
 
-	return RC_OK;
+	return 0;
 }
 
-RC_TYPE ip_send(IP_SOCKET *p_self, const char *p_buf, int len)
+int ip_send(ip_sock_t *ip, const char *buf, int len)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(ip);
 
-	if (!p_self->initialized)
-	{
+	if (!ip->initialized)
 		return RC_IP_OBJECT_NOT_INITIALIZED;
-	}
 
-	if (send(p_self->socket, (char*) p_buf, len, 0) == SOCKET_ERROR)
-	{
+	if (send(ip->socket, buf, len, 0) == -1) {
 		int code = os_get_socket_error();
 
-		logit(LOG_WARNING, MODULE_TAG "Network error while sending query/update: %s", strerror(code));
+		logit(LOG_WARNING, "Network error while sending query/update: %s", strerror(code));
 		return RC_IP_SEND_ERROR;
 	}
 
-	return RC_OK;
+	return 0;
 }
 
 /*
@@ -235,165 +201,126 @@ RC_TYPE ip_send(IP_SOCKET *p_self, const char *p_buf, int len)
   Note:
   if the recv_len is bigger than 0, no error is returned.
 */
-RC_TYPE ip_recv(IP_SOCKET *p_self, char *p_buf, int max_recv_len, int *p_recv_len)
+int ip_recv(ip_sock_t *ip, char *buf, int len, int *recv_len)
 {
-	RC_TYPE rc = RC_OK;
-	int remaining_buf_len = max_recv_len;
-	int total_recv_len = 0;
-	int recv_len = 0;
+	int rc = 0;
+	int remaining_bytes = len;
+	int total_bytes = 0;
 
-	if (p_self == NULL || p_buf == NULL || p_recv_len == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(ip);
+	ASSERT(buf);
+	ASSERT(recv_len);
 
-	if (!p_self->initialized)
-	{
+	if (!ip->initialized)
 		return RC_IP_OBJECT_NOT_INITIALIZED;
-	}
 
-	while (remaining_buf_len > 0)
-	{
-		int chunk_size = remaining_buf_len > IP_DEFAULT_READ_CHUNK_SIZE ?
-			IP_DEFAULT_READ_CHUNK_SIZE : remaining_buf_len;
+	while (remaining_bytes > 0) {
+		int bytes;
+		int chunk_size = remaining_bytes > IP_DEFAULT_READ_CHUNK_SIZE
+			? IP_DEFAULT_READ_CHUNK_SIZE
+			: remaining_bytes;
 
-		recv_len = recv(p_self->socket, p_buf + total_recv_len, chunk_size, 0);
-		if (recv_len < 0)
-		{
+		bytes = recv(ip->socket, buf + total_bytes, chunk_size, 0);
+		if (bytes < 0) {
 			int code = os_get_socket_error();
-
-			logit(LOG_WARNING, MODULE_TAG "Network error while waiting for reply: %s", strerror(code));
+			logit(LOG_WARNING, "Network error while waiting for reply: %s",
+			      strerror(code));
 			rc = RC_IP_RECV_ERROR;
 			break;
 		}
 
-		if (recv_len == 0)
-		{
-			if (total_recv_len == 0)
-			{
+		if (bytes == 0) {
+			if (total_bytes == 0)
 				rc = RC_IP_RECV_ERROR;
-			}
 			break;
 		}
 
-		total_recv_len += recv_len;
-		remaining_buf_len = max_recv_len - total_recv_len;
+		total_bytes    += bytes;
+		remaining_bytes = len - total_bytes;
 	}
 
-	*p_recv_len = total_recv_len;
+	*recv_len = total_bytes;
 
 	return rc;
 }
 
-
-/*Accessors */
-
-RC_TYPE ip_set_port(IP_SOCKET *p_self, int p)
+/* Accessors */
+int ip_set_port(ip_sock_t *ip, int port)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(ip);
 
-	if (p < 0 || p > IP_SOCKET_MAX_PORT)
-	{
+	if (port < 0 || port > IP_SOCKET_MAX_PORT)
 		return RC_IP_BAD_PARAMETER;
-	}
 
-	p_self->port = p;
+	ip->port = port;
 
-	return RC_OK;
+	return 0;
 }
 
-RC_TYPE ip_set_remote_name(IP_SOCKET *p_self, const char *p)
+int ip_get_port(ip_sock_t *ip, int *port)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(ip);
+	ASSERT(port);
+	*port = ip->port;
 
-	p_self->p_remote_host_name = p;
-
-	return RC_OK;
+	return 0;
 }
 
-RC_TYPE ip_set_remote_timeout(IP_SOCKET *p_self, int t)
+int ip_set_remote_name(ip_sock_t *ip, const char *name)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(ip);
+	ip->p_remote_host_name = name;
 
-	p_self->timeout = t;
-
-	return RC_OK;
+	return 0;
 }
 
-RC_TYPE ip_set_bind_iface(IP_SOCKET *p_self, char *ifname)
+int ip_get_remote_name(ip_sock_t *ip, const char **name)
 {
-	if (p_self == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(ip);
+	ASSERT(name);
+	*name = ip->p_remote_host_name;
 
-	p_self->ifname = ifname;
-
-	return RC_OK;
+	return 0;
 }
 
-RC_TYPE ip_get_port(IP_SOCKET *p_self, int *p_port)
+int ip_set_remote_timeout(ip_sock_t *ip, int timeout)
 {
-	if (p_self == NULL || p_port == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(ip);
+	ip->timeout = timeout;
 
-	*p_port = p_self->port;
-
-	return RC_OK;
+	return 0;
 }
 
-RC_TYPE ip_get_remote_name(IP_SOCKET *p_self, const char **p)
+int ip_get_remote_timeout(ip_sock_t *ip, int *timeout)
 {
-	if (p_self == NULL || p == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(ip);
+	ASSERT(timeout);
+	*timeout = ip->timeout;
 
-	*p = p_self->p_remote_host_name;
-
-	return RC_OK;
+	return 0;
 }
 
-RC_TYPE ip_get_remote_timeout(IP_SOCKET *p_self, int *p)
+int ip_set_bind_iface(ip_sock_t *ip, char *ifname)
 {
-	if (p_self == NULL || p == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(ip);
+	ip->ifname = ifname;
 
-	*p = p_self->timeout;
-
-	return RC_OK;
+	return 0;
 }
 
-RC_TYPE ip_get_bind_iface(IP_SOCKET *p_self, char **ifname)
+int ip_get_bind_iface(ip_sock_t *ip, char **ifname)
 {
-	if (p_self == NULL || ifname == NULL)
-	{
-		return RC_INVALID_POINTER;
-	}
+	ASSERT(ip);
+	ASSERT(ifname);
+	*ifname = ip->ifname;
 
-	*ifname = p_self->ifname;
-
-	return RC_OK;
+	return 0;
 }
 
 /**
  * Local Variables:
  *  version-control: t
  *  indent-tabs-mode: t
- *  c-file-style: "ellemtel"
- *  c-basic-offset: 8
+ *  c-file-style: "linux"
  * End:
  */

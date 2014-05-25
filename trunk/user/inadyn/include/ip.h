@@ -1,109 +1,84 @@
-/*
-Copyright (C) 2003-2004 Narcis Ilisei
+/* Interface for IP functions
+ *
+ * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
+ * Copyright (C) 2010-2014  Joachim Nilsson <troglobit@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, visit the Free Software Foundation
+ * website at http://www.gnu.org/licenses/gpl-2.0.html or write to the
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA  02110-1301, USA.
+ */
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-*/
-
-/* interface for tcp functions */
-
-#ifndef _IP_H_INCLUDED
-#define _IP_H_INCLUDED
+#ifndef INADYN_IP_H_
+#define INADYN_IP_H_
 
 #include "os.h"
-#include "errorcode.h"
+#include "error.h"
 
-/* SOME DEFAULT CONFIGURATIONS */
-#define IP_DEFAULT_TIMEOUT		20000 /* ms */
+#define IP_DEFAULT_TIMEOUT		20000	/* msec */
 #define IP_SOCKET_MAX_PORT		65535
 #define IP_DEFAULT_READ_CHUNK_SIZE	100
 
-/* typedefs */
-typedef enum
-{
+enum {
 	TYPE_TCP = 0,
 	TYPE_UDP
-} IP_TYPES;
+};
 
-typedef struct
-{
-	BOOL initialized;
+typedef struct {
+	int                 initialized;
 
-	char *ifname;
-	BOOL bound;             /* When bound to an interface */
+	char               *ifname;
+	int                 bound;		/* When bound to an interface */
 
-	int type;
-	SOCKET socket;
-	struct sockaddr_in local_addr;
-	struct sockaddr remote_addr;
-	socklen_t remote_len;
-	const char *p_remote_host_name;
+	int                 type;
+	int                 socket;
+	struct sockaddr_in  local_addr;
+	struct sockaddr     remote_addr;
+	socklen_t           remote_len;
+	const char         *p_remote_host_name;
 
-	unsigned short port;
-	int timeout;
-} IP_SOCKET;
+	unsigned short      port;
+	int                 timeout;
+} ip_sock_t;
 
+int ip_construct          (ip_sock_t *ip);
+int ip_destruct           (ip_sock_t *ip);
 
-/*public functions*/
+int ip_init               (ip_sock_t *ip);
+int ip_exit               (ip_sock_t *ip);
 
-/*
-	 basic resource allocations for the  object
-*/
-RC_TYPE ip_construct(IP_SOCKET *p_self);
+int ip_send               (ip_sock_t *ip, const char *buf, int len);
+int ip_recv               (ip_sock_t *ip,       char *buf, int len, int *recv_len);
 
-/*
-	Resource free .
-*/
-RC_TYPE ip_destruct(IP_SOCKET *p_self);
+int ip_set_port           (ip_sock_t *ip, int  port);
+int ip_get_port           (ip_sock_t *ip, int *port);
 
-/*
-	Sets up the object.
+int ip_set_remote_name    (ip_sock_t *ip, const char  *name);
+int ip_get_remote_name    (ip_sock_t *ip, const char **name);
 
-	- ...
-*/
-RC_TYPE ip_initialize(IP_SOCKET *p_self);
+int ip_set_remote_timeout (ip_sock_t *ip, int  timeout);
+int ip_get_remote_timeout (ip_sock_t *ip, int *timeout);
 
-/*
-	Disconnect and some other clean up.
-*/
-RC_TYPE ip_shutdown(IP_SOCKET *p_self);
+int ip_set_bind_iface     (ip_sock_t *ip, char  *ifname);
+int ip_get_bind_iface     (ip_sock_t *ip, char **ifname);
 
-/* send data*/
-RC_TYPE ip_send(IP_SOCKET *p_self, const char *p_buf, int len);
-
-/* receive data*/
-RC_TYPE ip_recv(IP_SOCKET *p_self, char *p_buf, int max_recv_len, int *p_recv_len);
-
-
-/*Accessors */
-RC_TYPE ip_set_port(IP_SOCKET *p_self, int p);
-RC_TYPE ip_set_remote_name(IP_SOCKET *p_self, const char *p);
-RC_TYPE ip_set_remote_timeout(IP_SOCKET *p_self, int t);
-RC_TYPE ip_set_bind_iface(IP_SOCKET *p_self, char *ifname);
-
-RC_TYPE ip_get_port(IP_SOCKET *p_self, int *p_port);
-RC_TYPE ip_get_remote_name(IP_SOCKET *p_self, const char **p);
-RC_TYPE ip_get_remote_timeout(IP_SOCKET *p_self, int *p);
-RC_TYPE ip_get_bind_iface(IP_SOCKET *p_self, char **ifname);
-
-#endif /*_IP_H_INCLUDED*/
+#endif /* INADYN_IP_H_ */
 
 /**
  * Local Variables:
  *  version-control: t
  *  indent-tabs-mode: t
- *  c-file-style: "ellemtel"
- *  c-basic-offset: 8
+ *  c-file-style: "linux"
  * End:
  */

@@ -12,7 +12,6 @@ UCLINUX_BUILD_LIB=1
 -include $(LINUX_CONFIG)
 include $(CONFIG_CONFIG)
 include $(ARCH_CONFIG)
-include $(ROOTDIR)/user/shared/boards.mk
 
 CFLAGS  += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
@@ -48,7 +47,7 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSH),y)
 LIBS_INCLUDE_LIBSSL=y
 endif
 
-ifneq ($(BOARD_NUM_USB_PORTS),0)
+ifdef CONFIG_USB_SUPPORT
 LIBS_INCLUDE_LIBUSB_1=y
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_U2EC),y)
 LIBS_INCLUDE_LIBUSB_0=y

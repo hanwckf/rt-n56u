@@ -3,6 +3,7 @@ SHDIR = $(ROOTDIR)/user/shared
 
 CFLAGS += -Wall -I. -I$(SHDIR) -I$(SHDIR)/include -I$(USERDIR)/libdisk -I$(USERDIR)/wireless_tools
 
+include ../shared/boards.mk
 include ../shared/cflags.mk
 
 LDFLAGS  = -L$(SHDIR) -L$(USERDIR)/libdisk -L$(USERDIR)/wireless_tools

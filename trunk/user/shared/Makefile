@@ -1,6 +1,7 @@
 CFLAGS += -fPIC
 CFLAGS += -Wall -I. -I./include
 
+include boards.mk
 include cflags.mk
 
 LDFLAGS += -L.

@@ -4,6 +4,7 @@ INSTALLDIR = $(ROOTDIR)/romfs
 
 CFLAGS += -s -I. -I$(SHDIR) -I$(SHDIR)/include
 
+include ../shared/boards.mk
 include ../shared/cflags.mk
 
 # Disable/Enable ugly httpd_check

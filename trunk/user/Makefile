@@ -12,7 +12,6 @@ UCLINUX_BUILD_USER=1
 -include $(LINUX_CONFIG)
 include $(CONFIG_CONFIG)
 include $(ARCH_CONFIG)
-include shared/boards.mk
 
 INSTALLDIR = $(ROOTDIR)/romfs
 
@@ -33,7 +32,7 @@ else
 OPENSSH_ENABLED=y
 endif
 
-ifneq ($(BOARD_NUM_USB_PORTS),0)
+ifdef CONFIG_USB_SUPPORT
 USB_ENABLED=y
 ifeq ($(CONFIG_FIRMWARE_ENABLE_EXT2),y)
 FS_EXT_ENABLED=y

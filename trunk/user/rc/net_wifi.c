@@ -27,7 +27,6 @@
 #include <net/if.h>
 
 #include <nvram/bcmnvram.h>
-#include <ralink_priv.h>
 
 #include "rc.h"
 #include "switch.h"

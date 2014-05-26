@@ -179,7 +179,8 @@ static cmd_desc_t cmd_options_table[] = {
 	 "\t\t\to For zerigo.com:         default@zerigo.com\n"
 	 "\t\t\to For dhis.org:           default@dhis.org\n"
 	 "\t\t\to For duckdns.org:        default@duckdns.org\n"
-	 "\t\t\to For asus.com:           update@asus.com, register@asus.com\n"
+	 "\t\t\to For asuscomm.com:       update@asus.com, register@asus.com\n"
+	 "\t\t\to For tb.netassist.ua:    ipv6tb@netassist.ua\n"
 	 "\t\t\to For generic:            custom@http_srv_basic_auth\n\n"
 	 "\t\t\tDefault value:            default@dyndns.org"},
 	{"--dyndns_system", 1, {get_dyndns_system_handler, NULL}, NULL},

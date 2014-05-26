@@ -392,6 +392,7 @@ function checkDDNSReturnCode(){
                                                     <option value="WWW.DUCKDNS.ORG"      <% nvram_match_x("","ddns_server_x", "WWW.DUCKDNS.ORG","selected"); %>>www.duckdns.org</option>
                                                     <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("","ddns_server_x", "WWW.TUNNELBROKER.NET","selected"); %>>www.tunnelbroker.net (HE)</option>
                                                     <option value="DNS.HE.NET"           <% nvram_match_x("","ddns_server_x", "DNS.HE.NET","selected"); %>>dns.he.net (HE)</option>
+                                                    <option value="TB.NETASSIST.UA"      <% nvram_match_x("","ddns_server_x", "TB.NETASSIST.UA","selected"); %>>tb.netassist.ua</option>
                                                     <option value="FREEDNS.AFRAID.ORG"   <% nvram_match_x("","ddns_server_x", "FREEDNS.AFRAID.ORG","selected"); %>>freedns.afraid.org</option>
                                                 </select>&nbsp;
                                                 <a id="ddns_link" href="javascript:openLink('x_DDNSServer')" class="label label-info" name="x_DDNS_link"><#LANHostConfig_x_DDNSServer_linkname#></a>
@@ -478,6 +479,7 @@ function checkDDNSReturnCode(){
                                                     <option value="WWW.DUCKDNS.ORG"      <% nvram_match_x("","ddns2_server", "WWW.DUCKDNS.ORG","selected"); %>>www.duckdns.org</option>
                                                     <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("","ddns2_server", "WWW.TUNNELBROKER.NET","selected"); %>>www.tunnelbroker.net (HE)</option>
                                                     <option value="DNS.HE.NET"           <% nvram_match_x("","ddns2_server", "DNS.HE.NET","selected"); %>>dns.he.net (HE)</option>
+                                                    <option value="TB.NETASSIST.UA"      <% nvram_match_x("","ddns2_server", "TB.NETASSIST.UA","selected"); %>>tb.netassist.ua</option>
                                                     <option value="FREEDNS.AFRAID.ORG"   <% nvram_match_x("","ddns2_server", "FREEDNS.AFRAID.ORG","selected"); %>>freedns.afraid.org</option>
                                                 </select>&nbsp;
                                                 <a id="ddns2_link" href="javascript:openLink('x_DDNSServer2')" class="label label-info" name="x_DDNS2_link"><#LANHostConfig_x_DDNSServer_linkname#></a>

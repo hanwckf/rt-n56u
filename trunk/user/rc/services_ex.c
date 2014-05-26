@@ -514,6 +514,7 @@ static const struct inadyn_system_t {
 	{ "WWW.DUCKDNS.ORG",      "default@duckdns.org"        },
 	{ "WWW.TUNNELBROKER.NET", "ipv6tb@he.net"              },
 	{ "DNS.HE.NET",           "dyndns@he.net"              },
+	{ "TB.NETASSIST.UA",      "ipv6tb@netassist.ua"        },
 	{ "FREEDNS.AFRAID.ORG",   "default@freedns.afraid.org" },
 	{ NULL, NULL }
 };

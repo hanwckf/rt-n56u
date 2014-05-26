@@ -1845,6 +1845,8 @@ function openLink(s) {
             tourl = "https://duckdns.org/login/";
         else if (o1.value == 'WWW.DHIS.ORG')
             tourl = "http://dhis.org/WebEngine.ipo?context=dhis.website.register";
+        else if (o1.value == 'TB.NETASSIST.UA')
+            tourl = "http://tb.netassist.ua/reg.php";
         else if (o1.value == 'FREEDNS.AFRAID.ORG')
             tourl = "http://freedns.afraid.org/signup/";
         else

@@ -37,8 +37,6 @@ choice
 
 config  RT3352_ASIC
 	bool "RT3352-ASIC"
-	select USB_ARCH_HAS_OHCI
-	select USB_ARCH_HAS_EHCI
 endchoice
 
 endif
@@ -67,8 +65,6 @@ choice
 
 config  RT3883_ASIC
 	bool "RT3883/RT3662-ASIC"
-	select USB_ARCH_HAS_OHCI
-	select USB_ARCH_HAS_EHCI
 endchoice
 
 choice
@@ -97,8 +93,6 @@ choice
 
 config  RT5350_ASIC
 	bool "RT5350-ASIC"
-	select USB_ARCH_HAS_OHCI
-	select USB_ARCH_HAS_EHCI
 endchoice
 
 endif
@@ -113,8 +107,6 @@ choice
 
 config  MT7620_ASIC
 	bool "MT7620-ASIC"
-	select USB_ARCH_HAS_OHCI
-	select USB_ARCH_HAS_EHCI
 endchoice
 
 endif

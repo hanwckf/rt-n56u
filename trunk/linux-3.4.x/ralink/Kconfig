@@ -118,7 +118,7 @@ endmenu
 #######
 menu "Ralink Devices"
 config RT3XXX_EHCI_OHCI
-	bool "Ralink USB EHCI/OHCI controller support"
+	bool "Ralink USB2 EHCI/OHCI controller support"
 	depends on (RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620)
 	select USB_ARCH_HAS_OHCI
 	select USB_ARCH_HAS_EHCI

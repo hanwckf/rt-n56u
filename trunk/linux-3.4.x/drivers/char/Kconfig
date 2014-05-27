@@ -72,6 +72,11 @@ config RALINK_GPIOMODE_SPI
 	bool "Configure SPI as GPIO mode (3~6)"
 	depends on RALINK_GPIO
 	default n
+config RALINK_GPIOMODE_SPI_REFCLK
+	bool "Configure SPI CS1 as REFCLK_OUT (37)"
+	depends on RALINK_GPIO && !RALINK_GPIOMODE_SPI
+	depends on RALINK_MT7620
+	default y
 config RALINK_GPIOMODE_I2C
 	bool "Configure I2C as GPIO mode (1~2)"
 	depends on RALINK_GPIO

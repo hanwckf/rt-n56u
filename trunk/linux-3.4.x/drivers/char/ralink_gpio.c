@@ -2935,24 +2935,27 @@ int __init ralink_gpio_init(void)
 
 	//config these pins to gpio mode
 	gpiomode = le32_to_cpu(*(volatile u32 *)(RALINK_REG_GPIOMODE));
-	gpiomode &= ~(RALINK_GPIOMODE_UARTF); // clear bit[2:4]UARTF_SHARE_MODE
-#if defined(CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
-	gpiomode &= ~(RALINK_GPIOMODE_WLED);  //clear bit[13] WLAN_LED
+	gpiomode &= ~(RALINK_GPIOMODE_UARTF);		// clear bit[2:4] UARTF_SHARE_MODE
+#if defined(CONFIG_RALINK_MT7620)
+	gpiomode &= ~(RALINK_GPIOMODE_SPI_REFCLK);	// clear bit[12] SPI_REFCLK0_MODE
+	gpiomode &= ~(RALINK_GPIOMODE_WLED);		// clear bit[13] WLAN_LED
 #endif
 	gpiomode |= RALINK_GPIOMODE_DFT;
 #ifdef CONFIG_RALINK_GPIOMODE_I2C
 #ifdef CONFIG_RALINK_I2C
-#error "Please disable Ralink I2C (RALINK_I2C) to support GPIO mode."
+ #error "Please disable Ralink I2C (RALINK_I2C) to support GPIO mode."
 #else
 	gpiomode |= RALINK_GPIOMODE_I2C;
 #endif
 #endif
 #ifdef CONFIG_RALINK_GPIOMODE_SPI
 #ifdef CONFIG_RALINK_SPI
-#error "Please disable Ralink SPI (RALINK_SPI) to support GPIO mode."
+ #error "Please disable Ralink SPI (RALINK_SPI) to support GPIO mode."
 #else
 	gpiomode |= RALINK_GPIOMODE_SPI;
 #endif
+#elif defined(CONFIG_RALINK_GPIOMODE_SPI_REFCLK) && defined(RALINK_GPIOMODE_SPI_REFCLK)
+	gpiomode |= RALINK_GPIOMODE_SPI_REFCLK;
 #endif
 #ifdef CONFIG_RALINK_GPIOMODE_UARTF
 	gpiomode |= RALINK_GPIOMODE_UARTF;

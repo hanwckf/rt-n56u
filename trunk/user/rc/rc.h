@@ -64,7 +64,6 @@
 #define QMI_CLIENT_ID			"/tmp/qmi-client-id"
 #define QMI_HANDLE_OK			"/tmp/qmi-handle"
 
-#define FLAG_FILE_REBOOT		"/tmp/.reboot"
 #define FLAG_FILE_WWAN_GONE		"/tmp/.wwan_gone"
 
 #define DDNS_CONF_FILE			"/etc/inadyn.conf"
@@ -101,8 +100,9 @@ void erase_nvram(void);
 
 /* init.c */
 void init_main_loop(void);
-void sys_exit(void);
 int  is_system_down(void);
+int  sys_exit(void);
+int  sys_stop(void);
 
 /* auth.c */
 int  wpacli_main(int argc, char **argv);

@@ -25,6 +25,8 @@
 #define SYS_USER_NOBODY		"nobody"
 #define SYS_GROUP_NOGROUP	"nogroup"
 
+#define ARRAY_SIZE(x)		((unsigned)(sizeof(x) / sizeof((x)[0])))
+
 /*
  * Reads file and returns contents
  * @param	fd	file descriptor

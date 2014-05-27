@@ -716,8 +716,8 @@ static void
 ez_action_shutdown(void)
 {
 	logmessage("watchdog", "Perform ez-button shutdown...");
-	
-	notify_rc("shutdown_prepare");
+
+	sys_stop();
 }
 
 static void 

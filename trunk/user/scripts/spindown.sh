@@ -5,9 +5,6 @@
 # check param
 [ -z "$1" ] && exit 1
 
-# check system reboot performed
-[ -f /tmp/.reboot ] && exit 0
-
 # check device is mounted
 grep -q /dev/$1 /proc/mounts && exit 1
 

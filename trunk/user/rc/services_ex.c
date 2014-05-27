@@ -560,7 +560,7 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 	else if (i_ddns_source == 2)
 		strcpy(wan_ifname, get_man_ifname(0));
 
-	i_max = (sizeof(inadyn_checkip_url)/sizeof(inadyn_checkip_url[0])) - 1;
+	i_max = ARRAY_SIZE(inadyn_checkip_url) - 1;
 	i_ddns_checkip = nvram_safe_get_int("ddns_checkip", 0, 0, i_max);
 
 	ddns1_srv = nvram_safe_get("ddns_server_x");

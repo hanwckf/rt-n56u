@@ -381,6 +381,7 @@ stop_services(int stopall)
 #if defined(APP_SSHD)
 		stop_sshd();
 #endif
+		stop_httpd();
 		stop_vpn_server();
 	}
 #if (BOARD_NUM_USB_PORTS > 0)
@@ -392,6 +393,7 @@ stop_services(int stopall)
 	stop_u2ec();
 #endif
 #endif
+	stop_networkmap();
 	stop_lltd();
 	stop_detect_internet();
 	stop_rstats();

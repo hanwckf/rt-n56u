@@ -17,15 +17,6 @@ mount -t devpts devpts /dev/pts
 
 mdev -s
 
-# create nodes for loadable modules
-mknod /dev/flash0	c	200	0
-mknod /dev/spiS0	c	217	0
-mknod /dev/i2cM0	c	218	0
-mknod /dev/hwnat0	c	220	0
-mknod /dev/nvram	c	228	0
-mknod /dev/gpio		c	252	0
-mknod /dev/rdm0		c	253	0
-
 # create dirs
 mkdir -p -m 777 "/var/lock"
 mkdir -p -m 777 "/var/locks"
@@ -77,9 +68,8 @@ ln -sf "/etc_ro/ipkg.conf" "/etc/ipkg.conf"
 ln -sf "/etc_ro/ld.so.conf" "/etc/ld.so.conf"
 
 # tune linux kernel
-echo "1024 65535" > /proc/sys/net/ipv4/ip_local_port_range
-echo 1            > /proc/sys/kernel/panic
 echo 65536        > /proc/sys/fs/file-max
+echo "1024 65535" > /proc/sys/net/ipv4/ip_local_port_range
 
 # fill storage
 mtd_storage.sh fill

@@ -323,12 +323,11 @@ flash_firmware(void)
 			 NULL };
 
 	stop_misc();
-	stop_services(0); // don't stop telnetd/sshd/vpn
+	stop_services(0); // don't stop httpd/telnetd/sshd/vpn
 #if (BOARD_NUM_USB_PORTS > 0)
 	stop_usb();
 #endif
 	stop_igmpproxy("");
-	stop_networkmap();
 
 	kill_services(svcs, 6, 1);
 
@@ -548,23 +547,23 @@ shutdown_router(void)
 {
 	stop_misc();
 	stop_services(1);
-	
+
 #if (BOARD_NUM_USB_PORTS > 0)
 	stop_usb();
 #endif
 #if defined(BOARD_GPIO_LED_USB)
 	LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
 #endif
-	
+
 	stop_wan();
 	stop_services_lan_wan();
 #if defined(BOARD_GPIO_LED_WAN)
 	LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
 #endif
-	
+
 	storage_save_time(10);
 	write_storage_to_mtd();
-	
+
 	stop_8021x_all();
 	stop_wifi_all_wl();
 	stop_wifi_all_rt();
@@ -575,6 +574,8 @@ shutdown_router(void)
 	LED_CONTROL(BOARD_GPIO_LED_LAN, LED_OFF);
 #endif
 	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_OFF);
+
+	module_smart_unload("rt_timer_wdg", 0);
 }
 
 void 
@@ -582,10 +583,11 @@ handle_notifications(void)
 {
 	int i, stop_handle = 0;
 	char notify_name[256];
+
 	DIR *directory = opendir("/tmp/rc_notification");
 	if (!directory)
 		return;
-	
+
 	// handle max 10 requests at once (prevent deadlock)
 	for (i=0; i < 10; i++)
 	{
@@ -611,11 +613,6 @@ handle_notifications(void)
 		{
 			stop_handle = 1;
 			sys_exit();
-		}
-		else if (!strcmp(entry->d_name, "shutdown_prepare"))
-		{
-			stop_handle = 1;
-			shutdown_router();
 		}
 		else if (!strcmp(entry->d_name, "flash_firmware"))
 		{
@@ -1084,32 +1081,35 @@ main(int argc, char **argv)
 
 	/* init */
 	if (!strcmp(base, "init")) {
+		if (getpid() != 1 ) {
+			dbg("error: %s must be run as PID 1!\n", base);
+			return -1;
+		}
 		init_main_loop();
 		return 0;
 	}
-	
+
 	/* stub for early kernel hotplug */
 	if (!strcmp(base, "hotplug")) {
 		return 0;
 	}
-	
-	if (!strcmp(base, "shutdown") || !strcmp(base, "halt")) {
-		notify_rc("shutdown_prepare");
-		return 0;
-	}
-	
+
 	if (!strcmp(base, "reboot")) {
-		return kill(1, SIGTERM);
+		return sys_exit();
 	}
-	
+
+	if (!strcmp(base, "shutdown") || !strcmp(base, "halt")) {
+		return sys_stop();
+	}
+
 	if (!strcmp(base, "rc")) {
 		dbg("error: cannot run rc directly!\n");
 		return EINVAL;
 	}
-	
+
 	/* Set TZ for all rc programs */
 	setenv_tz();
-	
+
 	/* Start applets */
 	for (app = applets_rc; app->name; app++) {
 		if (strcmp(base, app->name) == 0)

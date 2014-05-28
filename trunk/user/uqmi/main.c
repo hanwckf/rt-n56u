@@ -31,7 +31,6 @@ static int usage(const char *progname)
 		"Options:\n"
 		"  --device=NAME, -d NAME:           Set device name to NAME (required)\n"
 		"  --keep-client-id <name>:          Keep Client ID for service <name>\n"
-		"                                    (implies --keep-client-id)\n"
 		"  --release-client-id <name>:       Release Client ID after exiting\n"
 		"\n"
 		"Services:                           dms, nas, pds, wds, wms\n"
@@ -39,6 +38,7 @@ static int usage(const char *progname)
 		"Actions:\n"
 		"  --get-versions:                   Get service versions\n"
 		"  --set-client-id <name>,<id>:      Set Client ID for service <name> to <id>\n"
+		"                                    (implies --keep-client-id)\n"
 		"  --get-client-id <name>:           Connect and get Client ID for service <name>\n"
 		"                                    (implies --keep-client-id)\n"
 		wds_helptext

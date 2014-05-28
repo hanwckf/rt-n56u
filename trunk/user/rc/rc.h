@@ -62,7 +62,7 @@
 #define PPP_PEERS_DIR			"/tmp/ppp/peers"
 
 #define QMI_CLIENT_ID			"/tmp/qmi-client-id"
-#define QMI_HANDLE_OK			"/tmp/qmi-handle"
+#define QMI_HANDLE_PDH			"/tmp/qmi-handle"
 
 #define FLAG_FILE_WWAN_GONE		"/tmp/.wwan_gone"
 

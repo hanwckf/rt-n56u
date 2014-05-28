@@ -1,9 +1,12 @@
+#include <stdlib.h>
+
 #include "qmi-message.h"
 
 static struct qmi_wds_start_network_request wds_sn_req = {
 	QMI_INIT(authentication_preference,
 	         QMI_WDS_AUTHENTICATION_PAP | QMI_WDS_AUTHENTICATION_CHAP),
 };
+static struct qmi_wds_stop_network_request wds_stn_req;
 
 #define cmd_wds_set_auth_cb no_cb
 static enum qmi_cmd_result
@@ -52,7 +55,8 @@ cmd_wds_set_password_prepare(struct qmi_dev *qmi, struct qmi_request *req, struc
 static enum qmi_cmd_result
 cmd_wds_set_autoconnect_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
-	qmi_set_ptr(&wds_sn_req, enable_autoconnect, true);
+	qmi_set(&wds_sn_req, enable_autoconnect, true);
+	qmi_set(&wds_stn_req, disable_autoconnect, true);
 	return QMI_CMD_DONE;
 }
 
@@ -77,6 +81,17 @@ cmd_wds_start_network_prepare(struct qmi_dev *qmi, struct qmi_request *req, stru
 {
 	qmi_set_ptr(&wds_sn_req, apn, arg);
 	qmi_set_wds_start_network_request(msg, &wds_sn_req);
+	return QMI_CMD_REQUEST;
+}
+
+#define cmd_wds_stop_network_cb no_cb
+static enum qmi_cmd_result
+cmd_wds_stop_network_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	uint32_t pdh = strtoul(arg, NULL, 0);
+
+	qmi_set(&wds_stn_req, packet_data_handle, pdh);
+	qmi_set_wds_stop_network_request(msg, &wds_stn_req);
 	return QMI_CMD_REQUEST;
 }
 

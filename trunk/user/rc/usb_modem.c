@@ -311,11 +311,11 @@ qmi_start_network(const char* control_node)
 	if (*usr_name && *usr_pass)
 		snprintf(auth_cmd, sizeof(auth_cmd), " --auth-type both --username \"%s\" --password \"%s\"", usr_name, usr_pass);
 
-	unlink(QMI_HANDLE_OK);
+	unlink(QMI_HANDLE_PDH);
 	for (i = 0; i < 3; i++) {
 		doSystem("/bin/uqmi -d /dev/%s%s --keep-client-id wds%s --start-network \"%s\"", 
 				control_node, clid_cmd, auth_cmd, nvram_safe_get("modem_apn"));
-		if (check_if_file_exist(QMI_HANDLE_OK))
+		if (check_if_file_exist(QMI_HANDLE_PDH))
 			return 0;
 		sleep(1);
 	}
@@ -325,22 +325,21 @@ qmi_start_network(const char* control_node)
 static int
 qmi_stop_network(const char* control_node)
 {
-#if 0
 	FILE *fp;
-	int i, qmi_client_id = -1;
+	unsigned int qmi_pdh = 0;
 
 	/* try to get previous client id */
-	fp = fopen(QMI_CLIENT_ID, "r");
-	if (fp) {
-		fscanf(fp, "%d", &qmi_client_id);
-		fclose(fp);
-	}
+	fp = fopen(QMI_HANDLE_PDH, "r");
+	if (!fp)
+		return 0;
 
-	if (qmi_client_id > 0)
-		doSystem("/bin/uqmi -d /dev/%s --set-client-id wds,%d --release-client-id wds", control_node, qmi_client_id);
+	fscanf(fp, "%u", &qmi_pdh);
+	fclose(fp);
 
-	unlink(QMI_CLIENT_ID);
-#endif
+	doSystem("/bin/uqmi -d /dev/%s --stop-network %u", control_node, qmi_pdh);
+
+	unlink(QMI_HANDLE_PDH);
+
 	return 0;
 }
 

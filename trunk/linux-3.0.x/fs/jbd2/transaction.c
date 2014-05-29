@@ -1112,7 +1112,7 @@ int jbd2_journal_dirty_metadata(handle_t *handle, struct buffer_head *bh)
 			     journal->j_running_transaction)) {
 			printk(KERN_EMERG "JBD: %s: "
 			       "jh->b_transaction (%llu, %p, %u) != "
-			       "journal->j_running_transaction (%p, %u)",
+			       "journal->j_running_transaction (%p, %u)\n",
 			       journal->j_devname,
 			       (unsigned long long) bh->b_blocknr,
 			       jh->b_transaction,
@@ -1139,7 +1139,7 @@ int jbd2_journal_dirty_metadata(handle_t *handle, struct buffer_head *bh)
 			     journal->j_committing_transaction)) {
 			printk(KERN_EMERG "JBD: %s: "
 			       "jh->b_transaction (%llu, %p, %u) != "
-			       "journal->j_committing_transaction (%p, %u)",
+			       "journal->j_committing_transaction (%p, %u)\n",
 			       journal->j_devname,
 			       (unsigned long long) bh->b_blocknr,
 			       jh->b_transaction,
@@ -1152,7 +1152,7 @@ int jbd2_journal_dirty_metadata(handle_t *handle, struct buffer_head *bh)
 		if (unlikely(jh->b_next_transaction != transaction)) {
 			printk(KERN_EMERG "JBD: %s: "
 			       "jh->b_next_transaction (%llu, %p, %u) != "
-			       "transaction (%p, %u)",
+			       "transaction (%p, %u)\n",
 			       journal->j_devname,
 			       (unsigned long long) bh->b_blocknr,
 			       jh->b_next_transaction,

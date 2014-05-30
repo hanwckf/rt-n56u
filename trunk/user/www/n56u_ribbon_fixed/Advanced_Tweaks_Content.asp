@@ -182,20 +182,20 @@ function change_ez_short(ez_short){
                                             <th width="50%"><#TweaksWPSEventShort#></th>
                                             <td>
                                                 <select name="ez_action_short" class="input" onchange="change_ez_short(this.value);">
-                                                    <option value="0" <% nvram_match_x("", "ez_action_short", "0","selected"); %>>Nothing</option>
-                                                    <option value="1" <% nvram_match_x("", "ez_action_short", "1","selected"); %>>WiFi trigger On/Off</option>
-                                                    <option value="2" <% nvram_match_x("", "ez_action_short", "2","selected"); %>>WiFi 2.4GHz force Enable/Disable</option>
-                                                    <option value="3" <% nvram_match_x("", "ez_action_short", "3","selected"); %>>WiFi 5GHz force Enable/Disable</option>
-                                                    <option value="4" <% nvram_match_x("", "ez_action_short", "4","selected"); %>>WiFi 2.4 & 5GHz force Enable/Disable</option>
+                                                    <option value="0"  <% nvram_match_x("", "ez_action_short", "0","selected"); %>>Nothing</option>
+                                                    <option value="1"  <% nvram_match_x("", "ez_action_short", "1","selected"); %>>WiFi trigger On/Off</option>
+                                                    <option value="2"  <% nvram_match_x("", "ez_action_short", "2","selected"); %>>WiFi 2.4GHz force Enable/Disable</option>
+                                                    <option value="3"  <% nvram_match_x("", "ez_action_short", "3","selected"); %>>WiFi 5GHz force Enable/Disable</option>
+                                                    <option value="4"  <% nvram_match_x("", "ez_action_short", "4","selected"); %>>WiFi 2.4 & 5GHz force Enable/Disable</option>
                                                     <option value="11" <% nvram_match_x("", "ez_action_short", "11","selected"); %>>WiFi AP Guest 2.4GHz Enable/Disable</option>
                                                     <option value="12" <% nvram_match_x("", "ez_action_short", "12","selected"); %>>WiFi AP Guest 5GHz Enable/Disable</option>
                                                     <option value="13" <% nvram_match_x("", "ez_action_short", "13","selected"); %>>WiFi AP Guest 2.4 & 5GHz Enable/Disable</option>
-                                                    <option value="5" <% nvram_match_x("", "ez_action_short", "5","selected"); %>>Safe removal all USB</option>
-                                                    <option value="6" <% nvram_match_x("", "ez_action_short", "6","selected"); %>>WAN down</option>
-                                                    <option value="7" <% nvram_match_x("", "ez_action_short", "7","selected"); %>>WAN reconnect</option>
-                                                    <option value="8" <% nvram_match_x("", "ez_action_short", "8","selected"); %>>WAN up/down toggle</option>
+                                                    <option value="5"  <% nvram_match_x("", "ez_action_short", "5","selected"); %>>Safe removal all USB</option>
+                                                    <option value="6"  <% nvram_match_x("", "ez_action_short", "6","selected"); %>>WAN down</option>
+                                                    <option value="7"  <% nvram_match_x("", "ez_action_short", "7","selected"); %>>WAN reconnect</option>
+                                                    <option value="8"  <% nvram_match_x("", "ez_action_short", "8","selected"); %>>WAN up/down toggle</option>
                                                     <option value="10" <% nvram_match_x("", "ez_action_short", "10","selected"); %>>Front LED On/Off trigger</option>
-                                                    <option value="9" <% nvram_match_x("", "ez_action_short", "9","selected"); %>>Run user script (/opt/bin/on_wps.sh 1)</option>
+                                                    <option value="9"  <% nvram_match_x("", "ez_action_short", "9","selected"); %>>Run user script (/opt/bin/on_wps.sh 1)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -203,20 +203,20 @@ function change_ez_short(ez_short){
                                             <th><#TweaksWPSEventLong#></th>
                                             <td>
                                                 <select name="ez_action_long" class="input">
-                                                    <option value="0" <% nvram_match_x("", "ez_action_long", "0","selected"); %>>Nothing</option>
-                                                    <option value="1" <% nvram_match_x("", "ez_action_long", "1","selected"); %>>WiFi 2.4GHz force Enable/Disable</option>
-                                                    <option value="2" <% nvram_match_x("", "ez_action_long", "2","selected"); %>>WiFi 5GHz force Enable/Disable</option>
-                                                    <option value="3" <% nvram_match_x("", "ez_action_long", "3","selected"); %>>WiFi 2.4 & 5GHz force Enable/Disable</option>
-                                                    <option value="12" <% nvram_match_x("", "ez_action_short", "12","selected"); %>>WiFi AP Guest 2.4GHz Enable/Disable</option>
-                                                    <option value="13" <% nvram_match_x("", "ez_action_short", "13","selected"); %>>WiFi AP Guest 5GHz Enable/Disable</option>
-                                                    <option value="14" <% nvram_match_x("", "ez_action_short", "14","selected"); %>>WiFi AP Guest 2.4 & 5GHz Enable/Disable</option>
-                                                    <option value="4" <% nvram_match_x("", "ez_action_long", "4","selected"); %>>Safe removal all USB</option>
-                                                    <option value="5" <% nvram_match_x("", "ez_action_long", "5","selected"); %>>WAN down</option>
-                                                    <option value="6" <% nvram_match_x("", "ez_action_long", "6","selected"); %>>WAN reconnect</option>
-                                                    <option value="9" <% nvram_match_x("", "ez_action_long", "9","selected"); %>>WAN up/down toggle</option>
+                                                    <option value="0"  <% nvram_match_x("", "ez_action_long", "0","selected"); %>>Nothing</option>
+                                                    <option value="1"  <% nvram_match_x("", "ez_action_long", "1","selected"); %>>WiFi 2.4GHz force Enable/Disable</option>
+                                                    <option value="2"  <% nvram_match_x("", "ez_action_long", "2","selected"); %>>WiFi 5GHz force Enable/Disable</option>
+                                                    <option value="3"  <% nvram_match_x("", "ez_action_long", "3","selected"); %>>WiFi 2.4 & 5GHz force Enable/Disable</option>
+                                                    <option value="12" <% nvram_match_x("", "ez_action_long", "12","selected"); %>>WiFi AP Guest 2.4GHz Enable/Disable</option>
+                                                    <option value="13" <% nvram_match_x("", "ez_action_long", "13","selected"); %>>WiFi AP Guest 5GHz Enable/Disable</option>
+                                                    <option value="14" <% nvram_match_x("", "ez_action_long", "14","selected"); %>>WiFi AP Guest 2.4 & 5GHz Enable/Disable</option>
+                                                    <option value="4"  <% nvram_match_x("", "ez_action_long", "4","selected"); %>>Safe removal all USB</option>
+                                                    <option value="5"  <% nvram_match_x("", "ez_action_long", "5","selected"); %>>WAN down</option>
+                                                    <option value="6"  <% nvram_match_x("", "ez_action_long", "6","selected"); %>>WAN reconnect</option>
+                                                    <option value="9"  <% nvram_match_x("", "ez_action_long", "9","selected"); %>>WAN up/down toggle</option>
                                                     <option value="11" <% nvram_match_x("", "ez_action_long", "11","selected"); %>>Front LED On/Off trigger</option>
-                                                    <option value="7" <% nvram_match_x("", "ez_action_long", "7","selected"); %>>Router reboot</option>
-                                                    <option value="8" <% nvram_match_x("", "ez_action_long", "8","selected"); %>>Router shutdown (prepare)</option>
+                                                    <option value="7"  <% nvram_match_x("", "ez_action_long", "7","selected"); %>>Router reboot</option>
+                                                    <option value="8"  <% nvram_match_x("", "ez_action_long", "8","selected"); %>>Router shutdown (prepare)</option>
                                                     <option value="10" <% nvram_match_x("", "ez_action_long", "10","selected"); %>>Run user script (/opt/bin/on_wps.sh 2)</option>
                                                 </select>
                                             </td>

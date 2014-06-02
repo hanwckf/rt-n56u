@@ -1472,6 +1472,12 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		fprintf(fp, "ApCliKey%dStr=\n", i);
 	}
 
+	//ApCliAPSDCapable
+	i_val = nvram_wlan_get_int(prefix, "APSDCapable");
+	if (i_val) i_val = 1;
+	if (!i_wmm) i_val = 0;
+	fprintf(fp, "ApCliAPSDCapable=%d\n", i_val);
+
 	//RadioOn
 	fprintf(fp, "RadioOn=%d\n", 1);
 

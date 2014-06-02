@@ -20,11 +20,9 @@
 
 #include <string.h>
 
+#include "defaults.h"
+
 #define MAX_FILE_LINE_SIZE	2048
-
-#define SYS_USER_NOBODY		"nobody"
-#define SYS_GROUP_NOGROUP	"nogroup"
-
 #define ARRAY_SIZE(x)		((unsigned)(sizeof(x) / sizeof((x)[0])))
 
 /*

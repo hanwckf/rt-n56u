@@ -38,7 +38,8 @@
 
 #include "rc.h"
 
-#define SHELL "/bin/sh"
+#define CONSOLE_TERMINAL	"vt100"
+#define INIT_HOME_PATH		"/home/root"
 
 static volatile sig_atomic_t sig_term_received = 0;
 static volatile sig_atomic_t sig_usr1_received = 0;
@@ -67,10 +68,10 @@ static const int signals_event[] = {
 };
 
 static const char *const environment[] = {
-	"HOME=/",
-	"PATH=/sbin:/usr/sbin:/bin:/usr/bin",
-	"SHELL=" SHELL,
-	"USER=admin",
+	"PATH=" SYS_EXEC_PATH,
+	"SHELL=" SYS_SHELL,
+	"USER=" SYS_USER_ROOT,
+	"HOME=" INIT_HOME_PATH,
 	NULL
 };
 
@@ -235,11 +236,12 @@ run_shell(int timeout, int nowait)
 	pid_t pid;
 	char tz[128];
 	char *envp[] = {
-		"TERM=vt100",
-		"HOME=/",
-		"PATH=/sbin:/usr/sbin:/bin:/usr/bin",
-		"SHELL=" SHELL,
-		"USER=admin",
+		"TERM=" CONSOLE_TERMINAL,
+		"TERMINFO=/usr/share/terminfo",
+		"PATH=" SYS_EXEC_PATH,
+		"SHELL=" SYS_SHELL,
+		"USER=" SYS_USER_ROOT,
+		"HOME=" INIT_HOME_PATH,
 		tz,
 		NULL
 	};
@@ -265,10 +267,10 @@ run_shell(int timeout, int nowait)
 
 		/* Now run it.  The new program will take over this PID, 
 		 * so nothing further in init.c should be run. */
-		execve(SHELL, (char *[]) { SHELL, NULL }, envp);
+		execve(SYS_SHELL, (char *[]) { SYS_SHELL, NULL }, envp);
 
 		/* We're still here?  Some error happened. */
-		perror(SHELL);
+		perror(SYS_SHELL);
 		exit(errno);
 	default:
 		if (nowait)

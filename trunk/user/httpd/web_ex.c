@@ -217,6 +217,9 @@ void sys_script(char *name)
 	{
 		if (SystemCmd[0])
 		{
+			char path_env[64];
+			snprintf(path_env, sizeof(path_env), "PATH=%s", SYS_EXEC_PATH_OPT);
+			putenv(path_env);
 			doSystem("%s >/tmp/syscmd.log 2>&1\n", SystemCmd);
 			SystemCmd[0] = '\0';
 		}

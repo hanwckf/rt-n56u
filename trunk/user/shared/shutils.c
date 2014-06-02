@@ -44,9 +44,6 @@
 #include "nvram/bcmnvram.h"
 #include "shutils.h"
 
-//#define PRIVATE_HANDS_OFF_syscall_retval syscall_retval
-//#define PRIVATE_HANDS_OFF_exit_status exit_status
-
 /* Activate 64-bit file support on Linux/32bit plus others */
 #define _FILE_OFFSET_BITS 64
 #define _LARGEFILE_SOURCE 1
@@ -127,129 +124,6 @@ waitfor (int fd, int timeout)
 	return select(fd + 1, &rfds, NULL, NULL, (timeout > 0) ? &tv : NULL);
 }
 
-/* 
- * Concatenates NULL-terminated list of arguments into a single
- * commmand and executes it
- * @param	argv	argument list
- * @param	path	NULL, ">output", or ">>output"
- * @param	timeout	seconds to wait before timing out or 0 for no timeout
- * @param	ppid	NULL to wait for child termination or pointer to pid
- * @return	return value of executed command or errno
- */
-
-int
-simple_eval(char *const argv[], char *path, int timeout, int *ppid)
-{
-	pid_t pid;
-	int status;
-	int fd;
-	int flags;
-	int sig;
-	int i;
-
-	switch (pid = fork()) {
-	case -1:	// error
-		perror("fork");
-		return errno;
-	case 0:		// child
-		// Reset signal handlers set for parent process
-		for (sig = 0; sig < (_NSIG-1); sig++)
-			signal(sig, SIG_DFL);
-
-		// Clean up
-		//ioctl(0, TIOCNOTTY, 0);
-		//close(STDIN_FILENO);
-		setsid();
-
-		for (i=3; i<256; ++i)    // close un-needed fd
-			close(i);
-
-		// Redirect stdout to <path>
-		if (path) {
-			flags = O_WRONLY | O_CREAT;
-			if (!strncmp(path, ">>", 2)) {
-				// append to <path>
-				flags |= O_APPEND;
-				path += 2;
-			} else if (!strncmp(path, ">", 1)) {
-				// overwrite <path>
-				flags |= O_TRUNC;
-				path += 1;
-			}
-			if ((fd = open(path, flags, 0644)) < 0)
-				perror(path);
-			else {
-				dup2(fd, STDOUT_FILENO);
-				dup2(fd, STDERR_FILENO);
-				close(fd);
-			}
-		}
-
-		// execute command 
-		dprintf("%s\n", argv[0]);
-		setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
-		alarm(timeout);
-		execvp(argv[0], argv);
-		perror(argv[0]);
-		exit(errno);
-	default:	// parent
-		if (ppid) {
-			*ppid = pid;
-			return 0;
-		} else {
-			if (waitpid(pid, &status, 0) == -1) {
-				perror("waitpid");
-				return errno;
-			}
-			if (WIFEXITED(status))
-				return WEXITSTATUS(status);
-			else
-				return status;
-		}
-	}
-}
-
-int
-s_eval2(char *const argv[], char *path, int timeout, int *ppid)
-{
-	pid_t pid;
-	int status;
-	int sig;
-	int i;
-
-	switch (pid = fork()) {
-	case -1:	// error
-		perror("fork");
-		return errno;
-	case 0:	 // child
-		for (sig = 0; sig < (_NSIG-1); sig++)
-			signal(sig, SIG_DFL);
-
-		for (i=3; i<256; ++i)    // close un-needed fd
-			close(i);
-
-		setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
-		execvp(argv[0], argv);
-		perror(argv[0]);
-		exit(errno);
-	default:	// parent
-		if (ppid) {
-			*ppid = pid;
-			return 0;
-		} else {
-			if (waitpid(pid, &status, 0) == -1) {
-				perror("waitpid");
-				return errno;
-			}
-			if (WIFEXITED(status))
-				return WEXITSTATUS(status);
-			else
-				return status;
-		}
-	}
-}
-
-
 void time_zone_x_mapping()
 {
 	char tmpstr[32];
@@ -304,25 +178,25 @@ void change_passwd_unix(char *user, char *pass)
 	FILE *fp;
 	char cmdbuf[64];
 	char *tmpfile = "/tmp/tmpchpw";
-	
+
 	if (!user || !*user)
-		user = "admin";
-	
+		user = SYS_USER_ROOT;
+
 	if (!pass)
-		pass = "admin";
-	
+		pass = DEF_ROOT_PASSWORD;
+
 	fp=fopen(tmpfile, "w");
 	if (fp)
 	{
 		fprintf(fp, "%s:%s\n", user, pass);
 		fclose(fp);
 	}
-	
+
 	sprintf(cmdbuf, "/usr/sbin/chpasswd -m < %s", tmpfile);
 	system(cmdbuf);
 	sprintf(cmdbuf, "rm -f %s", tmpfile);
 	system(cmdbuf);
-	
+
 	chmod("/etc/shadow", 0640);
 }
 
@@ -332,17 +206,18 @@ void recreate_passwd_unix(int force_create)
 	int i, uid, sh_num;
 	char tmpusernm[32];
 	char *rootnm, *usernm;
-	
+
 	rootnm = nvram_safe_get("http_username");
-	if (!*rootnm) rootnm = "admin";
-	
+	if (strlen(rootnm) < 1)
+		rootnm = SYS_USER_ROOT;
+
 	fp1 = fopen("/etc/passwd", "w");
 	fp2 = fopen("/etc/group", "w");
 	if (fp1 && fp2)
 	{
-		fprintf(fp1, "%s:x:%d:%d::%s:%s\n", rootnm, 0, 0, "/home/admin", "/bin/sh");
+		fprintf(fp1, "%s:x:%d:%d::%s:%s\n", rootnm, 0, 0, SYS_HOME_PATH_ROOT, SYS_SHELL);
 		fprintf(fp1, "%s:x:%d:%d::%s:%s\n", SYS_USER_NOBODY, 99, 99, "/media", "/bin/false");
-		fprintf(fp2, "%s:x:%d:%s\n", rootnm, 0, rootnm);
+		fprintf(fp2, "%s:x:%d:%s\n", SYS_GROUP_ROOT, 0, rootnm);
 		fprintf(fp2, "%s:x:%d:\n", SYS_GROUP_NOGROUP, 99);
 		
 		sh_num = nvram_get_int("acc_num");
@@ -361,10 +236,10 @@ void recreate_passwd_unix(int force_create)
 			}
 		}
 	}
-	
+
 	if (fp1) fclose(fp1);
 	if (fp2) fclose(fp2);
-	
+
 	chmod("/etc/passwd", 0644);
 	chmod("/etc/group", 0644);
 	

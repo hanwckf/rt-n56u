@@ -133,8 +133,11 @@ is_valid_ipv4(const char *cp)
 int
 is_man_wisp(const char *ifname)
 {
-	if (strcmp(ifname, IFNAME_2G_APCLI) == 0 ||
-	    strcmp(ifname, IFNAME_5G_APCLI) == 0)
+	if (strcmp(ifname, IFNAME_2G_APCLI) == 0
+#if BOARD_HAS_5G_RADIO
+	 || strcmp(ifname, IFNAME_5G_APCLI) == 0
+#endif
+	   )
 		return 1;
 	return 0;
 }

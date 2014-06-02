@@ -214,16 +214,20 @@ check_apcli_wan(int is_5g, int radio_on)
 	man_ifname = get_man_ifname(0);
 	if (strcmp(man_ifname, IFNAME_2G_APCLI) == 0)
 		man_id = 0;
+#if BOARD_HAS_5G_RADIO
 	else if (strcmp(man_ifname, IFNAME_5G_APCLI) == 0)
 		man_id = 1;
+#endif
 
 	wisp_id = -1;
 	wisp_ifname = get_apcli_wisp_ifname();
 	if (wisp_ifname) {
 		if (strcmp(wisp_ifname, IFNAME_2G_APCLI) == 0)
 			wisp_id = 0;
+#if BOARD_HAS_5G_RADIO
 		else if (strcmp(wisp_ifname, IFNAME_5G_APCLI) == 0)
 			wisp_id = 1;
+#endif
 	}
 
 	if (man_id != wisp_id) {

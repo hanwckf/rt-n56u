@@ -1032,9 +1032,11 @@ static int nvram_modified = 0;
 static int wl_modified = 0;
 static int rt_modified = 0;
 
-static const char* wifn_list[2][3] = {
+static const char* wifn_list[][3] = {
 	{IFNAME_2G_MAIN, IFNAME_2G_APCLI, IFNAME_2G_WDS0},
+#if BOARD_HAS_5G_RADIO
 	{IFNAME_5G_MAIN, IFNAME_5G_APCLI, IFNAME_5G_WDS0}
+#endif
 };
 
 static char* get_wifi_ifname(int is_5g)

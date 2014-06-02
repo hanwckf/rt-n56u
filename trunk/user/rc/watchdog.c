@@ -697,7 +697,7 @@ ez_action_wan_toggle(void)
 {
 	if (get_ap_mode())
 		return;
-	
+
 	if (is_interface_up(get_man_ifname(0)))
 	{
 		logmessage("watchdog", "Perform ez-button WAN %s", "down...");

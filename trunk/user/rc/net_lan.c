@@ -39,7 +39,7 @@ static char udhcpc_lan_state[16] = {0};
 
 in_addr_t get_lan_ipaddr(void)
 {
-	return get_ipv4_addr(IFNAME_BR);
+	return get_interface_addr4(IFNAME_BR);
 }
 
 int
@@ -69,10 +69,12 @@ init_bridge(void)
 {
 	int ap_mode = get_ap_mode();
 	int rt_radio_on = get_enabled_radio_rt();
-	int rt_mode_x = nvram_get_int("rt_mode_x");
+#if !defined(USE_RT3352_MII)
+	int rt_mode_x = get_mode_radio_rt();
+#endif
 #if BOARD_HAS_5G_RADIO
 	int wl_radio_on = get_enabled_radio_wl();
-	int wl_mode_x = nvram_get_int("wl_mode_x");
+	int wl_mode_x = get_mode_radio_wl();
 #endif
 	char *lan_hwaddr = nvram_safe_get("lan_hwaddr");
 
@@ -785,8 +787,6 @@ lan_down_auto(char *lan_ifname)
 void 
 update_lan_status(int isup)
 {
-	char lan_subnet[32];
-
 	if (!isup) {
 		nvram_set_temp("lan_ipaddr_t", nvram_safe_get("lan_ipaddr"));
 		nvram_set_temp("lan_netmask_t", nvram_safe_get("lan_netmask"));
@@ -805,11 +805,6 @@ update_lan_status(int isup)
 		else
 			nvram_set_temp("lan_gateway_t", nvram_safe_get("lan_gateway"));
 	}
-
-	snprintf(lan_subnet, sizeof(lan_subnet), "0x%x", 
-		inet_network(nvram_safe_get("lan_ipaddr_t"))&inet_network(nvram_safe_get("lan_netmask_t")));
-
-	nvram_set_temp("lan_subnet_t", lan_subnet);
 }
 
 static int 
@@ -918,7 +913,7 @@ udhcpc_lan_main(int argc, char **argv)
 		return EINVAL;
 
 	lan_ifname = safe_getenv("interface");
-	strncpy(udhcpc_lan_state, argv[1], sizeof(udhcpc_lan_state));
+	snprintf(udhcpc_lan_state, sizeof(udhcpc_lan_state), "%s", argv[1]);
 
 	umask(0000);
 

@@ -622,6 +622,7 @@
 			{"wl_sta_wpa_mode", "", NULL, RESTART_WIFI},
 			{"wl_sta_crypto", "", NULL, RESTART_WIFI},
 			{"wl_sta_wpa_psk", "", NULL, RESTART_WIFI},
+			{"wl_sta_wisp", "", NULL, RESTART_WIFI},
 			{"wl_guest_enable", "", NULL, RESTART_WIFI},
 			{"wl_guest_date_x", "", NULL, RESTART_WIFI},
 			{"wl_guest_time_x", "", NULL, RESTART_WIFI},
@@ -701,6 +702,9 @@
 			{"rt_sta_wpa_mode", "", NULL, RESTART_WIFI},
 			{"rt_sta_crypto", "", NULL, RESTART_WIFI},
 			{"rt_sta_wpa_psk", "", NULL, RESTART_WIFI},
+#if !defined(USE_RT3352_MII)
+			{"rt_sta_wisp", "", NULL, RESTART_WIFI},
+#endif
 			{"rt_guest_enable", "", NULL, RESTART_WIFI},
 			{"rt_guest_date_x", "", NULL, RESTART_WIFI},
 			{"rt_guest_time_x", "", NULL, RESTART_WIFI},

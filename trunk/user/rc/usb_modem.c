@@ -609,6 +609,36 @@ launch_modem_ras_pppd(int unit)
 	return 1;
 }
 
+void
+launch_wan_usbnet(int unit)
+{
+	int modem_devnum = 0;
+	char ndis_ifname[16] = {0};
+	
+	if (get_modem_ndis_ifname(ndis_ifname, &modem_devnum) && is_interface_exist(ndis_ifname)) {
+		int ndis_mtu = nvram_safe_get_int("modem_mtu", 1500, 1000, 1500);
+		doSystem("ifconfig %s mtu %d up %s", ndis_ifname, ndis_mtu, "0.0.0.0");
+		connect_ndis(modem_devnum);
+		start_udhcpc_wan(ndis_ifname, unit, 0);
+		nvram_set_temp("wan_ifname_t", ndis_ifname);
+	}
+	else
+		nvram_set_temp("wan_ifname_t", "");
+}
+
+void
+stop_wan_usbnet(void)
+{
+	int modem_devnum = 0;
+	char ndis_ifname[16] = {0};
+	
+	if (get_modem_ndis_ifname(ndis_ifname, &modem_devnum)) {
+		disconnect_ndis(modem_devnum);
+		if (is_interface_exist(ndis_ifname))
+			ifconfig(ndis_ifname, 0, "0.0.0.0", NULL);
+	}
+}
+
 int
 launch_usb_modeswitch(int vid, int pid, int inquire)
 {

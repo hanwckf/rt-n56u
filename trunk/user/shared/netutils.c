@@ -29,6 +29,7 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 
+#include <net/if.h>
 #include <net/ethernet.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
@@ -129,7 +130,17 @@ is_valid_ipv4(const char *cp)
 	return (inet_addr_safe(cp) != INADDR_ANY) ? 1 : 0;
 }
 
-int get_ap_mode(void)
+int
+is_man_wisp(const char *ifname)
+{
+	if (strcmp(ifname, IFNAME_2G_APCLI) == 0 ||
+	    strcmp(ifname, IFNAME_5G_APCLI) == 0)
+		return 1;
+	return 0;
+}
+
+int
+get_ap_mode(void)
 {
 	if (nvram_match("wan_route_x", "IP_Bridged"))
 		return 1;
@@ -137,10 +148,40 @@ int get_ap_mode(void)
 	return 0;
 }
 
-int get_usb_modem_wan(int unit)
+int
+get_wan_proto(int unit)
 {
-	char tmp[100];
-	char prefix[16];
+	char tmp[32], prefix[16], *proto;
+
+	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+	proto = nvram_safe_get(strcat_r(prefix, "proto", tmp));
+
+	if (strcmp(proto, "pppoe") == 0)
+		return IPV4_WAN_PROTO_PPPOE;
+	if (strcmp(proto, "pptp") == 0)
+		return IPV4_WAN_PROTO_PPTP;
+	if (strcmp(proto, "l2tp") == 0)
+		return IPV4_WAN_PROTO_L2TP;
+	if (strcmp(proto, "dhcp") == 0)
+		return IPV4_WAN_PROTO_IPOE_DHCP;
+	if (strcmp(proto, "static") == 0)
+		return IPV4_WAN_PROTO_IPOE_STATIC;
+	return -1;
+}
+
+char*
+get_man_ifname(int unit)
+{
+	char tmp[32], prefix[16];
+
+	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+	return nvram_safe_get(strcat_r(prefix, "ifname", tmp));
+}
+
+int
+get_usb_modem_wan(int unit)
+{
+	char tmp[32], prefix[16];
 
 	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 	if (nvram_get_int(strcat_r(prefix, "modem_dev", tmp)) != 0)
@@ -149,10 +190,10 @@ int get_usb_modem_wan(int unit)
 		return 0;
 }
 
-int get_usb_modem_dev_wan(int unit, int devnum)
+int
+get_usb_modem_dev_wan(int unit, int devnum)
 {
-	char tmp[100];
-	char prefix[16];
+	char tmp[32], prefix[16];
 
 	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 	if (nvram_get_int(strcat_r(prefix, "modem_dev", tmp)) == devnum)
@@ -161,28 +202,111 @@ int get_usb_modem_dev_wan(int unit, int devnum)
 		return 0;
 }
 
-void set_usb_modem_dev_wan(int unit, int devnum)
+void
+set_usb_modem_dev_wan(int unit, int devnum)
 {
-	char tmp[100];
-	char prefix[16];
+	char tmp[32], prefix[16];
 
 	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 	nvram_set_int_temp(strcat_r(prefix, "modem_dev", tmp), devnum);
 }
 
-int get_wan_phy_connected(void)
+int
+get_ethernet_phy_link(int links_wan)
 {
-	int ret = 0;
-
-	if (nvram_match("link_wan", "1"))
-		ret |= 1;
-
-	if ((nvram_get_int("modem_rule") > 0) && get_usb_modem_wan(0))
-		ret |= 1<<1;
-
-	return ret;
+	return nvram_get_int( (links_wan) ? "link_wan" : "link_lan");
 }
 
+int
+is_interface_exist(const char *ifname)
+{
+	if (get_interface_flags(ifname) < 0)
+		return 0;
+
+	return 1;
+}
+
+int
+is_interface_up(const char *ifname)
+{
+	int iflags = get_interface_flags(ifname);
+	if (iflags < 0)
+		return 0;
+
+	if (iflags & IFF_UP)
+		return 1;
+
+	return 0;
+}
+
+int
+get_interface_flags(const char *ifname)
+{
+	struct ifreq ifr;
+	int sockfd, iflags;
+
+	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+		return -1;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	if (ioctl(sockfd, SIOCGIFFLAGS, &ifr) < 0)
+		iflags = -1;
+	else
+		iflags = ifr.ifr_flags;
+
+	close(sockfd);
+
+	return iflags;
+}
+
+int
+get_interface_hwaddr(const char *ifname, unsigned char mac[6])
+{
+	struct ifreq ifr;
+	int sockfd, result = 0;
+
+	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+		return -1;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) < 0)
+		result = -1;
+	else
+		memcpy(mac, ifr.ifr_hwaddr.sa_data, 6);
+
+	close(sockfd);
+
+	return result;
+}
+
+in_addr_t
+get_interface_addr4(const char *ifname)
+{
+	int sockfd;
+	struct ifreq ifr;
+	in_addr_t ipv4_addr = INADDR_ANY;
+
+	/* Retrieve IP info */
+	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+		return INADDR_ANY;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
+	/* Get IPv4 address */
+	if (ioctl(sockfd, SIOCGIFADDR, &ifr) == 0) {
+		struct sockaddr_in *ipv4_inaddr = (struct sockaddr_in *)&ifr.ifr_addr;
+		if (ipv4_inaddr->sin_addr.s_addr != INADDR_ANY &&
+		    ipv4_inaddr->sin_addr.s_addr != INADDR_NONE)
+			ipv4_addr = ipv4_inaddr->sin_addr.s_addr;
+	}
+
+	close(sockfd);
+
+	return ipv4_addr;
+}
 
 int get_ipv6_type(void)
 {

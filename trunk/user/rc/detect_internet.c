@@ -97,13 +97,13 @@ try_detect_internet(void)
 	int link_internet;
 	char *login_timestamp = nvram_safe_get("login_timestamp");
 
-	if (!(*login_timestamp))
+	if (strlen(login_timestamp) < 1)
 		return;
 
-	if (!get_wan_phy_connected() || !has_wan_ip(0) || !found_default_route(0))
+	if (!has_wan_ip(0) || !found_default_route(0))
 	{
 #ifdef DEBUG
-		dbg("[di] link down, no WAN IP, or no default route!\n");
+		dbg("[di] no WAN IP, or no default route!\n");
 #endif
 		skip_last = 3;
 		nvram_set_int_temp("link_internet", 0);

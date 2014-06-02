@@ -21,8 +21,9 @@
 
 <% login_state_hook(); %>
 
-var wds_aplist = [["", "", ""]];
 var $j = jQuery.noConflict();
+
+var wds_aplist = [["", "", ""]];
 
 function initial(){
 	show_banner(1);
@@ -57,38 +58,34 @@ function wl_nband_select(ch){
 }
 
 function applyRule(){
-    var m = document.form.wl_mode_x.value;
-
-    if (validForm()){
-        showLoading();
-        if (m == "1" || m == "2")
-            document.form.action_mode.value = " Restart ";
-        else
-            document.form.action_mode.value = " Apply ";
-        document.form.current_page.value = "/Advanced_WMode_Content.asp";
-        document.form.next_page.value = "";
-        document.form.submit();
-    }
+	var m = document.form.wl_mode_x.value;
+	if (validForm()){
+		showLoading();
+		if (m == "1" || m == "2")
+			document.form.action_mode.value = " Restart ";
+		else
+			document.form.action_mode.value = " Apply ";
+		document.form.current_page.value = "/Advanced_WMode_Content.asp";
+		document.form.next_page.value = "";
+		document.form.submit();
+	}
 }
 
 function validForm(){
-    var m = document.form.wl_mode_x.value;
-
-    if (m == "3" || m == "4") {
-        if(!validate_string_ssid(document.form.wl_sta_ssid))
-            return false;
-
-        if(document.form.wl_sta_ssid.value == "") {
-            document.form.wl_sta_ssid.focus();
-            return false;
-        }
-
-        if(document.form.wl_sta_auth_mode.value == "psk"){
-            if(!validate_psk(document.form.wl_sta_wpa_psk))
-                return false;
-        }
-    }
-    return true;
+	var m = document.form.wl_mode_x.value;
+	if (m == "3" || m == "4") {
+		if(!validate_string_ssid(document.form.wl_sta_ssid))
+			return false;
+		if(document.form.wl_sta_ssid.value == "") {
+			document.form.wl_sta_ssid.focus();
+			return false;
+		}
+		if(document.form.wl_sta_auth_mode.value == "psk"){
+			if(!validate_psk(document.form.wl_sta_wpa_psk))
+				return false;
+		}
+	}
+	return true;
 }
 
 function done_validating(action){
@@ -109,171 +106,115 @@ function wds_scan(){
 	});
 }
 
-function change_wireless_bridge(mflag) {
-    var m = document.form.wl_mode_x.value;
-
-    if (m != "0")
-    {
-        if (mflag == 1 && document.form.wl_channel.value == "0")
-        {
-            alert("<#JS_fixchannel#>");
-            document.form.wl_channel.options[0].selected = 0;
-            document.form.wl_channel.options[1].selected = 1;
-        }
-    }
-
-    if (m == "0") // AP only
-    {
-        inputRCtrl2(document.form.wl_wdsapply_x, 1);
-        inputRCtrl1(document.form.wl_wdsapply_x, 0);
-
-        $("row_wds_1").style.display = "none";
-        $("row_wds_2").style.display = "none";
-        $("row_wds_apc").style.display = "none";
-
-        $("row_apc_1").style.display = "none";
-        $("row_apc_2").style.display = "none";
-        $("row_apc_3").style.display = "none";
-    }
-    else if (m == "1") // WDS only
-    {
-        inputRCtrl2(document.form.wl_wdsapply_x, 0);
-        inputRCtrl1(document.form.wl_wdsapply_x, 0);
-
-        $("row_wds_1").style.display = "";
-        $("row_wds_2").style.display = "";
-        $("row_wds_apc").style.display = "";
-
-        $("ctl_wds_1").style.display = "";
-        //$("ctl_wds_2").style.display = ""; $j("#ctl_wds_1, #ctl_apc_2").css('width', '170px'); $j("#ctl_wds_2").parent().addClass('input-append');
-        $("ctl_wds_3").style.display = "";
-        $("ctl_apc_1").style.display = "none";
-        $("ctl_apc_2").style.display = "none";
-
-        $("row_apc_1").style.display = "none";
-        $("row_apc_2").style.display = "none";
-        $("row_apc_3").style.display = "none";
-        $("RBRList").style.display = "";
-    }
-    else if (m == "2") // AP & WDS
-    {
-        $("row_wds_1").style.display = "";
-
-        if (document.form.wl_wdsapply_x_org.value == "0")
-        {
-            inputRCtrl2(document.form.wl_wdsapply_x, 1);
-            $("row_wds_2").style.display = "none";
-            $("row_wds_apc").style.display = "none";
-        }
-        else
-        {
-            inputRCtrl2(document.form.wl_wdsapply_x, 0);
-            $("row_wds_2").style.display = "";
-            $("row_wds_apc").style.display = "";
-        }
-
-        inputRCtrl1(document.form.wl_wdsapply_x, 1);
-
-        $("ctl_wds_1").style.display = "";
-        //$("ctl_wds_2").style.display = ""; $j("#ctl_wds_1, #ctl_apc_2").css('width', '170px'); $j("#ctl_wds_2").parent().addClass('input-append');
-        $("ctl_wds_3").style.display = "";
-        $("ctl_apc_1").style.display = "none";
-        $("ctl_apc_2").style.display = "none";
-
-        $("row_apc_1").style.display = "none";
-        $("row_apc_2").style.display = "none";
-        $("row_apc_3").style.display = "none";
-        $("RBRList").style.display = "";
-    }
-    else if (m == "3") // AP-Client only
-    {
-        $("row_wds_1").style.display = "none";
-        $("row_wds_2").style.display = "none";
-        $("row_wds_apc").style.display = "";
-
-        $("ctl_wds_1").style.display = "none";
-        //$("ctl_wds_2").style.display = "none"; $j("#ctl_wds_1, #ctl_apc_2").css('width', '210px'); $j("#ctl_wds_2").parent().removeClass('input-append');
-        $("ctl_wds_3").style.display = "none";
-        $("ctl_apc_1").style.display = "";
-        $("ctl_apc_2").style.display = "";
-
-        $("row_apc_1").style.display = "";
-        $("row_apc_2").style.display = "";
-        $("row_apc_3").style.display = "";
-        $("RBRList").style.display = "none";
-    }
-    else if (m == "4") // AP & AP-Client
-    {
-        $("row_wds_1").style.display = "none";
-        $("row_wds_2").style.display = "none";
-        $("row_wds_apc").style.display = "";
-
-        $("ctl_wds_1").style.display = "none";
-        //$("ctl_wds_2").style.display = "none"; $j("#ctl_wds_1, #ctl_apc_2").css('width', '210px'); $j("#ctl_wds_2").parent().removeClass('input-append');
-        $("ctl_wds_3").style.display = "none";
-        $("ctl_apc_1").style.display = "";
-        $("ctl_apc_2").style.display = "";
-
-        $("row_apc_1").style.display = "";
-        $("row_apc_2").style.display = "";
-        $("row_apc_3").style.display = "";
-        $("RBRList").style.display = "none";
-    }
+function change_wireless_bridge(mflag){
+	var m = document.form.wl_mode_x.value;
+	if (m != "0")
+	{
+		if (mflag == 1 && document.form.wl_channel.value == "0")
+		{
+			alert("<#JS_fixchannel#>");
+			document.form.wl_channel.options[0].selected = 0;
+			document.form.wl_channel.options[1].selected = 1;
+		}
+	}
+	if (m == "0")
+	{
+		inputRCtrl2(document.form.wl_wdsapply_x, 1);
+		inputRCtrl1(document.form.wl_wdsapply_x, 0);
+		
+		showhide_div("row_wds_1", 0);
+		showhide_div("row_wds_2", 0);
+		showhide_div("row_wds_apc", 0);
+		
+		showhide_div("row_apc_wisp", 0);
+		showhide_div("row_apc_1", 0);
+		showhide_div("row_apc_2", 0);
+		showhide_div("row_apc_3", 0);
+	}
+	else if (m == "1" || m == "2")
+	{
+		var e1 = 1;
+		var e2 = 0;
+		if (m == "2"){
+			e1 = (document.form.wl_wdsapply_x_org.value == "0") ? 0 : 1;
+			e2 = 1;
+		}
+		
+		showhide_div("ctl_apc_1", 0);
+		showhide_div("ctl_apc_2", 0);
+		showhide_div("row_apc_wisp", 0);
+		showhide_div("row_apc_1", 0);
+		showhide_div("row_apc_2", 0);
+		showhide_div("row_apc_3", 0);
+		
+		inputRCtrl2(document.form.wl_wdsapply_x, !e1);
+		inputRCtrl1(document.form.wl_wdsapply_x, e2);
+		showhide_div("ctl_wds_1", 1);
+		showhide_div("ctl_wds_3", 1);
+		showhide_div("row_wds_1", 1);
+		showhide_div("row_wds_2", e1);
+		showhide_div("row_wds_apc", e1);
+		showhide_div("RBRList", 1);
+	}
+	else if (m == "3" || m == "4")
+	{
+		showhide_div("RBRList", 0);
+		showhide_div("ctl_wds_1", 0);
+		showhide_div("ctl_wds_3", 0);
+		showhide_div("row_wds_1", 0);
+		showhide_div("row_wds_2", 0);
+		
+		showhide_div("row_wds_apc", 1);
+		showhide_div("ctl_apc_1", 1);
+		showhide_div("ctl_apc_2", 1);
+		showhide_div("row_apc_wisp", (sw_mode == "3") ? 0 : 1);
+		showhide_div("row_apc_1", 1);
+		showhide_div("row_apc_2", 1);
+		showhide_div("row_apc_3", 1);
+	}
 }
 
 function change_wdsapply(){
-    var m = document.form.wl_mode_x.value;
-    var a = rcheck(document.form.wl_wdsapply_x);
-
-    if (m == "2") // AP & WDS
-    {
-        if (a == "0")
-        {
-            $("row_wds_2").style.display = "none";
-            $("row_wds_apc").style.display = "none";
-        }
-        else
-        {
-            $("row_wds_2").style.display = "";
-            $("row_wds_apc").style.display = "";
-        }
-    }
+	var m = document.form.wl_mode_x.value;
+	if (m == "2")
+	{
+		var e1 = (rcheck(document.form.wl_wdsapply_x) == "0") ? 0 : 1;
+		showhide_div("row_wds_2", e1);
+		showhide_div("row_wds_apc", e1);
+	}
 }
 
 function change_sta_auth_mode(mflag){
-    var mode = document.form.wl_sta_auth_mode.value;
-    var opts = document.form.wl_sta_auth_mode.options;
-
-    if(mode == "psk")
-    {
-        inputCtrl(document.form.wl_sta_crypto, 1);
-        inputCtrl(document.form.wl_sta_wpa_psk, 1);
-
-        if(opts[opts.selectedIndex].text == "WPA2-Personal")
-        {
-            if (mflag == 1) {
-                document.form.wl_sta_crypto.options[0].selected = 0;
-                document.form.wl_sta_crypto.options[1].selected = 1;
-                document.form.wl_sta_wpa_mode.value = "2";
-            }
-        }
-        else
-        {
-            if (mflag == 1) {
-                document.form.wl_sta_crypto.options[1].selected = 0;
-                document.form.wl_sta_crypto.options[0].selected = 1;
-                document.form.wl_sta_wpa_mode.value = "1";
-            }
-        }
-    }
-    else
-    {
-        inputCtrl(document.form.wl_sta_crypto, 0);
-        inputCtrl(document.form.wl_sta_wpa_psk, 0);
-    }
+	var mode = document.form.wl_sta_auth_mode.value;
+	var opts = document.form.wl_sta_auth_mode.options;
+	if(mode == "psk")
+	{
+		inputCtrl(document.form.wl_sta_crypto, 1);
+		inputCtrl(document.form.wl_sta_wpa_psk, 1);
+		if(opts[opts.selectedIndex].text == "WPA2-Personal")
+		{
+			if (mflag == 1) {
+				document.form.wl_sta_crypto.options[0].selected = 0;
+				document.form.wl_sta_crypto.options[1].selected = 1;
+				document.form.wl_sta_wpa_mode.value = "2";
+			}
+		}
+		else
+		{
+			if (mflag == 1) {
+				document.form.wl_sta_crypto.options[1].selected = 0;
+				document.form.wl_sta_crypto.options[0].selected = 1;
+				document.form.wl_sta_wpa_mode.value = "1";
+			}
+		}
+	}
+	else
+	{
+		inputCtrl(document.form.wl_sta_crypto, 0);
+		inputCtrl(document.form.wl_sta_wpa_psk, 0);
+	}
 }
 
-/*------------ Mouse event of fake LAN IP select menu {-----------------*/
 function setClientIP(num){
 	var smac = wds_aplist[num][1].split(":");
 	var mode = document.form.wl_mode_x.value;
@@ -320,6 +261,8 @@ function showLANIPList(){
 	document.getElementById("WDSAPList").innerHTML = code;
 }
 
+var isMenuopen = 0;
+
 function pullLANIPList(obj){
 	if(isMenuopen == 0){
 		$j(obj).children('i').removeClass('icon-chevron-down').addClass('icon-chevron-up');
@@ -331,14 +274,11 @@ function pullLANIPList(obj){
 		hideClients_Block();
 }
 
-var isMenuopen = 0;
-
 function hideClients_Block(){
 	$j("#ctl_wds_2").children('i').removeClass('icon-chevron-up').addClass('icon-chevron-down');
 	document.getElementById('WDSAPList').style.display='none';
 	isMenuopen = 0;
 }
-/*----------} Mouse event of fake LAN IP select menu-----------------*/
 </script>
 </head>
 
@@ -419,6 +359,15 @@ function hideClients_Block(){
                                                     <option value="2" <% nvram_match_x("","wl_mode_x", "2","selected"); %>>AP & WDS</option>
                                                     <option value="3" <% nvram_match_x("","wl_mode_x", "3","selected"); %>>AP-Client only</option>
                                                     <option value="4" <% nvram_match_x("","wl_mode_x", "4","selected"); %>>AP & AP-Client</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_apc_wisp" style="display:none;">
+                                            <th><#APCliRole#></th>
+                                            <td>
+                                                <select name="wl_sta_wisp" class="input">
+                                                    <option value="0" <% nvram_match_x("","wl_sta_wisp", "0","selected"); %>>LAN bridge</option>
+                                                    <option value="1" <% nvram_match_x("","wl_sta_wisp", "1","selected"); %>>WAN (Wireless ISP)</option>
                                                 </select>
                                             </td>
                                         </tr>

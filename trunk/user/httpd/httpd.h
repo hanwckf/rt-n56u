@@ -136,7 +136,7 @@ extern const char *get_login_mac(void);
 struct ifreq;
 struct iwreq;
 extern void reltime(unsigned long seconds, char *buf);
-extern int get_if_hwaddr(char *ifname, struct ifreq *p_ifr);
+extern int get_apcli_peer_connected(const char *ifname, struct iwreq *p_wrq);
 extern int is_mac_in_sta_list(const unsigned char* p_mac);
 extern int ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_vpns_leases(int eid, webs_t wp, int argc, char_t **argv);

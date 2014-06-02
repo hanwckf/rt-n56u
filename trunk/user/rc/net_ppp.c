@@ -246,20 +246,17 @@ static int start_rpl2tp(void)
 	return system("/usr/sbin/l2tp-control \"start-session 0.0.0.0\"");
 }
 
-int start_pppd(char *prefix)
+int start_pppd(char *prefix, int unit, int wan_proto)
 {
-#define PPP_PROTO_PPPOE 0
-#define PPP_PROTO_PPTP  1
-#define PPP_PROTO_L2TP  2
 	FILE *fp;
-	int unit, proto_int, auth_type;
+	int auth_type;
 	char tmp[100], options[64];
-	char *ppp_proto;
 	char *svcs[] = { NULL, NULL };
 
-	unit = nvram_get_int(strcat_r(prefix, "unit", tmp));
-	if (unit < 0 || unit > WAN_PPP_UNIT_MAX) unit = WAN_PPP_UNIT;
-	sprintf(options, "/tmp/ppp/options.wan%d", unit);
+	if (unit < 0 || unit > WAN_PPP_UNIT_MAX)
+		return -1;
+
+	snprintf(options, sizeof(options), "/tmp/ppp/options.wan%d", unit);
 
 	/* Generate options file */
 	if (!(fp = fopen(options, "w"))) {
@@ -293,15 +290,7 @@ int start_pppd(char *prefix)
 		fprintf(fp, "refuse-mschap-v2\n");
 	}
 
-	ppp_proto = nvram_safe_get(strcat_r(prefix, "proto", tmp));
-	if (strcmp(ppp_proto, "l2tp") == 0)
-		proto_int = PPP_PROTO_L2TP;
-	else if (strcmp(ppp_proto, "pptp") == 0)
-		proto_int = PPP_PROTO_PPTP;
-	else
-		proto_int = PPP_PROTO_PPPOE;
-
-	if (proto_int == PPP_PROTO_PPTP) {
+	if (wan_proto == IPV4_WAN_PROTO_PPTP) {
 		fprintf(fp, "plugin pptp.so\n");
 		fprintf(fp, "pptp_server '%s'\n", get_wan_ppp_peer(prefix));
 		fprintf(fp, "route2man %d\n", 1);
@@ -309,7 +298,7 @@ int start_pppd(char *prefix)
 		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "pptp_mru", tmp), 1400, 1000, 1500));
 	}
 
-	if (proto_int == PPP_PROTO_L2TP) {
+	if (wan_proto == IPV4_WAN_PROTO_L2TP) {
 		fprintf(fp, "mtu %d\n", nvram_safe_get_int(strcat_r(prefix, "l2tp_mtu", tmp), 1460, 1000, 1460));
 		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "l2tp_mru", tmp), 1460, 1000, 1500));
 		
@@ -317,7 +306,7 @@ int start_pppd(char *prefix)
 		fprintf(fp, "lcp-max-terminate %d\n", 0);
 	}
 
-	if (proto_int == PPP_PROTO_PPPOE) {
+	if (wan_proto == IPV4_WAN_PROTO_PPPOE) {
 		int demand;
 		char *pppoe_ac = nvram_safe_get(strcat_r(prefix, "pppoe_ac", tmp));
 		char *pppoe_sv = nvram_safe_get(strcat_r(prefix, "pppoe_service", tmp));
@@ -343,7 +332,7 @@ int start_pppd(char *prefix)
 		}
 	}
 
-	if (proto_int != PPP_PROTO_L2TP)
+	if (wan_proto != IPV4_WAN_PROTO_L2TP)
 		fprintf(fp, "persist\n");
 
 	fprintf(fp, "maxfail %d\n", 0);		// pppd re-call count (0=infinite)
@@ -365,7 +354,7 @@ int start_pppd(char *prefix)
 	/* ccp should still be enabled - mppe/mppc requires this */
 	fprintf(fp, "novj nobsdcomp nodeflate\n");
 
-	if (proto_int != PPP_PROTO_PPPOE) {
+	if (wan_proto != IPV4_WAN_PROTO_PPPOE) {
 		int mppe_mode = nvram_get_int(strcat_r(prefix, "ppp_mppe", tmp));
 		if (mppe_mode == 0) {
 			fprintf(fp, "nomppe nomppc\n");
@@ -411,7 +400,7 @@ int start_pppd(char *prefix)
 
 	chmod(options, 0600);
 
-	if (proto_int == PPP_PROTO_L2TP)
+	if (wan_proto == IPV4_WAN_PROTO_L2TP)
 	{
 		if (nvram_match("wan_l2tpd", "0"))
 		{

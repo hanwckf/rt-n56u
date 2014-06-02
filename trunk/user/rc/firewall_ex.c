@@ -712,10 +712,14 @@ static int
 is_need_tcp_mss(void)
 {
 	if (get_usb_modem_wan(0) ) {
-		if (nvram_safe_get_int("modem_mtu", 1500, 1000, 1500) != 1500)
+		int modem_mtu = nvram_safe_get_int("modem_mtu", 1500, 1000, 1500);
+		if (modem_mtu != 1500)
 			return 1;
 	} else {
-		if (is_wan_ppp(nvram_safe_get("wan_proto")))
+		int wan_proto = get_wan_proto(0);
+		if (wan_proto == IPV4_WAN_PROTO_PPPOE ||
+		    wan_proto == IPV4_WAN_PROTO_PPTP ||
+		    wan_proto == IPV4_WAN_PROTO_L2TP)
 			return 1;
 	}
 
@@ -1263,7 +1267,7 @@ ipt_mangle_rules(char *wan_if)
 		if (*viptv_iflast && is_interface_exist(viptv_iflast))
 			man_if = viptv_iflast;
 		else
-			man_if = nvram_safe_get("wan0_ifname");
+			man_if = get_man_ifname(0);
 		
 		if (i_ttl_fixup == 2)
 			fprintf(fp, "-A %s -i %s -p udp -d 224.0.0.0/4 -j TTL %s %d\n", "PREROUTING", man_if, "--ttl-set", 64);
@@ -1670,7 +1674,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 	int wport, lport, is_nat_enabled, is_fw_enabled, is_use_dmz, use_battlenet;
 	int i_vpns_enable, i_vpnc_enable, i_vpns_type, i_vpnc_type, i_vpnc_sfw, i_http_proto;
 	char dmz_ip[32], lan_class[32];
-	char *dtype, *wanx_ipaddr = NULL;
+	char *dtype, *man_ifname, *wanx_ipaddr = NULL;
 	const char *ipt_file = "/tmp/ipt_nat.rules";
 
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
@@ -1685,7 +1689,8 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 	// VSERVER chain
 	dtype = "VSERVER";
 
-	if (nvram_invmatch("wan0_proto", "static") && nvram_invmatch("wan0_ifname", wan_if) && is_valid_ipv4(nvram_safe_get("wanx_ipaddr")))
+	man_ifname = get_man_ifname(0);
+	if (nvram_invmatch("wan0_proto", "static") && strcmp(man_ifname, wan_if) && is_valid_ipv4(nvram_safe_get("wanx_ipaddr")))
 		wanx_ipaddr = nvram_safe_get("wanx_ipaddr");
 
 	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
@@ -1744,7 +1749,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 		
 		/* masquerade physical WAN port connection */
 		if (wanx_ipaddr)
-			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", nvram_safe_get("wan0_ifname"), lan_class, wanx_ipaddr);
+			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", man_ifname, lan_class, wanx_ipaddr);
 		
 		/* masquerade vpn client */
 		if (i_vpnc_enable && i_vpnc_sfw != 2) {

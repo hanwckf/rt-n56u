@@ -63,7 +63,7 @@ chk_udhcpc(int ap_mode)
 	char *gateway_str;
 	in_addr_t ip;
 
-	if ( (!ap_mode && nvram_match("wan0_proto", "dhcp")) || ap_mode)
+	if (ap_mode || get_wan_proto(0) == IPV4_WAN_PROTO_IPOE_DHCP)
 	{
 		if (!ap_mode)
 		{
@@ -222,25 +222,6 @@ arpping_gateway(int ap_mode)
 }
 
 static int
-has_phy_link(int ap_mode)
-{
-	if (!ap_mode)
-	{
-		if (nvram_match("link_wan", "1"))
-			return 1;
-		else
-			return 0;
-	}
-	else
-	{
-		if (nvram_match("link_lan", "1"))
-			return 1;
-		else
-			return 0;
-	}
-}
-
-static int
 poll_gateway(void)
 {
 	int count;
@@ -252,7 +233,7 @@ poll_gateway(void)
 		
 		while (count < MAX_ARP_RETRY)
 		{
-			if (!ap_mode && !has_phy_link(ap_mode))
+			if (!ap_mode && !get_ethernet_phy_link(1))
 			{
 				count++;
 				sleep(2);
@@ -270,7 +251,7 @@ poll_gateway(void)
 			}
 		}
 		
-		if (has_phy_link(ap_mode) && (count >= MAX_ARP_RETRY))
+		if (get_ethernet_phy_link(!ap_mode) && (count >= MAX_ARP_RETRY))
 		{
 			chk_udhcpc(ap_mode);
 		}

@@ -32,7 +32,6 @@
 #include <time.h>
 #include <sys/mount.h>
 #include <sys/ioctl.h>
-#include <net/ethernet.h>
 #include <linux/cdrom.h>
 #include <scsi/scsi.h>
 #include <scsi/scsi_ioctl.h>

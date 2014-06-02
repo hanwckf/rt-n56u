@@ -706,24 +706,26 @@ getRate_2g(MACHTTRANSMIT_SETTING_2G HTSetting)
 	return (MCSMappingRateTable[rate_index] * 5)/10;
 }
 
-int get_if_hwaddr(char *ifname, struct ifreq *p_ifr)
+int
+get_apcli_peer_connected(const char *ifname, struct iwreq *p_wrq)
 {
-	int sockfd;
-	int result = 0;
-	
-	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
-		return -1;
+	int apcli_con = 0;
+
+	if (wl_ioctl(ifname, SIOCGIWAP, p_wrq) >= 0)
+	{
+		p_wrq->u.ap_addr.sa_family = ARPHRD_ETHER;
+		if (p_wrq->u.ap_addr.sa_data[0] ||
+		    p_wrq->u.ap_addr.sa_data[1] ||
+		    p_wrq->u.ap_addr.sa_data[2] ||
+		    p_wrq->u.ap_addr.sa_data[3] ||
+		    p_wrq->u.ap_addr.sa_data[4] ||
+		    p_wrq->u.ap_addr.sa_data[5] )
+		{
+			apcli_con = 1;
+		}
 	}
-	
-	memset(p_ifr, 0, sizeof(struct ifreq));
-	strncpy(p_ifr->ifr_name, ifname, IFNAMSIZ);
-	if (ioctl(sockfd, SIOCGIFHWADDR, p_ifr) < 0) {
-		result = -1;
-	}
-	
-	close(sockfd);
-	
-	return result;
+
+	return apcli_con;
 }
 
 int
@@ -881,11 +883,10 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 #if BOARD_HAS_5G_RADIO
 	int channel;
 	int wl_mode_x;
-	int connected;
 	char *caption;
 	struct iw_range	range;
 	double freq;
-	struct ifreq ifr;
+	unsigned char mac[8];
 	struct iwreq wrq0;
 	struct iwreq wrq1;
 	struct iwreq wrq2;
@@ -940,15 +941,10 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 
 	if (wl_mode_x == 3 || wl_mode_x == 4)
 	{
-		if (get_if_hwaddr(IFNAME_5G_APCLI, &ifr) == 0)
+		if (get_interface_hwaddr(IFNAME_5G_APCLI, mac) == 0)
 		{
 			ret+=websWrite(wp, "MAC (STA)	: %02X:%02X:%02X:%02X:%02X:%02X\n",
-				(unsigned char)ifr.ifr_hwaddr.sa_data[0],
-				(unsigned char)ifr.ifr_hwaddr.sa_data[1],
-				(unsigned char)ifr.ifr_hwaddr.sa_data[2],
-				(unsigned char)ifr.ifr_hwaddr.sa_data[3],
-				(unsigned char)ifr.ifr_hwaddr.sa_data[4],
-				(unsigned char)ifr.ifr_hwaddr.sa_data[5]);
+				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 		}
 	}
 
@@ -1039,22 +1035,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 
 	if (wl_mode_x == 3 || wl_mode_x == 4)
 	{
-		connected = 0;
-		if (wl_ioctl(IFNAME_5G_APCLI, SIOCGIWAP, &wrq0) >= 0)
-		{
-			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
-			if (wrq0.u.ap_addr.sa_data[0] ||
-			    wrq0.u.ap_addr.sa_data[1] ||
-			    wrq0.u.ap_addr.sa_data[2] ||
-			    wrq0.u.ap_addr.sa_data[3] ||
-			    wrq0.u.ap_addr.sa_data[4] ||
-			    wrq0.u.ap_addr.sa_data[5] )
-			{
-				connected = 1;
-			}
-		}
-		
-		if (connected)
+		if (get_apcli_peer_connected(IFNAME_5G_APCLI, &wrq0))
 		{
 			ret+=websWrite(wp, "STA Connected	: YES -> [%02X:%02X:%02X:%02X:%02X:%02X]\n",
 					(unsigned char)wrq0.u.ap_addr.sa_data[0],
@@ -1102,11 +1083,10 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 	int ret = 0;
 	int channel;
 	int rt_mode_x;
-	int connected;
 	char *caption;
 	struct iw_range	range;
 	double freq;
-	struct ifreq ifr;
+	unsigned char mac[8];
 	struct iwreq wrq0;
 	struct iwreq wrq1;
 	struct iwreq wrq2;
@@ -1160,15 +1140,10 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 
 	if (rt_mode_x == 3 || rt_mode_x == 4)
 	{
-		if (get_if_hwaddr(IFNAME_2G_APCLI, &ifr) == 0)
+		if (get_interface_hwaddr(IFNAME_2G_APCLI, mac) == 0)
 		{
 			ret+=websWrite(wp, "MAC (STA)	: %02X:%02X:%02X:%02X:%02X:%02X\n",
-				(unsigned char)ifr.ifr_hwaddr.sa_data[0],
-				(unsigned char)ifr.ifr_hwaddr.sa_data[1],
-				(unsigned char)ifr.ifr_hwaddr.sa_data[2],
-				(unsigned char)ifr.ifr_hwaddr.sa_data[3],
-				(unsigned char)ifr.ifr_hwaddr.sa_data[4],
-				(unsigned char)ifr.ifr_hwaddr.sa_data[5]);
+				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 		}
 	}
 
@@ -1285,22 +1260,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 
 	if (rt_mode_x == 3 || rt_mode_x == 4)
 	{
-		connected = 0;
-		if (wl_ioctl(IFNAME_2G_APCLI, SIOCGIWAP, &wrq0) >= 0)
-		{
-			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
-			if (wrq0.u.ap_addr.sa_data[0] ||
-			    wrq0.u.ap_addr.sa_data[1] ||
-			    wrq0.u.ap_addr.sa_data[2] ||
-			    wrq0.u.ap_addr.sa_data[3] ||
-			    wrq0.u.ap_addr.sa_data[4] ||
-			    wrq0.u.ap_addr.sa_data[5] )
-			{
-				connected = 1;
-			}
-		}
-		
-		if (connected)
+		if (get_apcli_peer_connected(IFNAME_2G_APCLI, &wrq0))
 		{
 			ret+=websWrite(wp, "STA Connected	: YES -> [%02X:%02X:%02X:%02X:%02X:%02X]\n",
 					(unsigned char)wrq0.u.ap_addr.sa_data[0],
@@ -1630,21 +1590,15 @@ ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv)
 {
 	char bssid[32] = {0};
 #if BOARD_HAS_5G_RADIO
-	struct ifreq ifr;
-	const char *fmt_mac = "%02X:%02X:%02X:%02X:%02X:%02X";
+	unsigned char mac[8];
 #endif
 
-	strcpy(bssid, nvram_safe_get("wl_macaddr"));
+	snprintf(bssid, sizeof(bssid), "%s", nvram_safe_get("wl_macaddr"));
 #if BOARD_HAS_5G_RADIO
-	if (get_if_hwaddr(IFNAME_5G_MAIN, &ifr) == 0)
+	if (get_interface_hwaddr(IFNAME_5G_MAIN, mac) == 0)
 	{
-		sprintf(bssid, fmt_mac,
-			(unsigned char)ifr.ifr_hwaddr.sa_data[0],
-			(unsigned char)ifr.ifr_hwaddr.sa_data[1],
-			(unsigned char)ifr.ifr_hwaddr.sa_data[2],
-			(unsigned char)ifr.ifr_hwaddr.sa_data[3],
-			(unsigned char)ifr.ifr_hwaddr.sa_data[4],
-			(unsigned char)ifr.ifr_hwaddr.sa_data[5]);
+		sprintf(bssid, "%02X:%02X:%02X:%02X:%02X:%02X",
+			mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	}
 #endif
 
@@ -1656,26 +1610,20 @@ ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv)
 int 
 ej_wl_bssid_2g(int eid, webs_t wp, int argc, char_t **argv)
 {
-	struct ifreq ifr;
 	char bssid[32] = {0};
-	const char *fmt_mac = "%02X:%02X:%02X:%02X:%02X:%02X";
+	unsigned char mac[8];
 
-	strcpy(bssid, nvram_safe_get("rt_macaddr"));
+	snprintf(bssid, sizeof(bssid), "%s", nvram_safe_get("rt_macaddr"));
 
 #if defined(USE_RT3352_MII)
 	if (nvram_get_int("inic_disable") != 1)
 	{
 #endif
-	if (get_if_hwaddr(IFNAME_2G_MAIN, &ifr) == 0)
-	{
-		sprintf(bssid, fmt_mac,
-			(unsigned char)ifr.ifr_hwaddr.sa_data[0],
-			(unsigned char)ifr.ifr_hwaddr.sa_data[1],
-			(unsigned char)ifr.ifr_hwaddr.sa_data[2],
-			(unsigned char)ifr.ifr_hwaddr.sa_data[3],
-			(unsigned char)ifr.ifr_hwaddr.sa_data[4],
-			(unsigned char)ifr.ifr_hwaddr.sa_data[5]);
-	}
+		if (get_interface_hwaddr(IFNAME_2G_MAIN, mac) == 0)
+		{
+			sprintf(bssid, "%02X:%02X:%02X:%02X:%02X:%02X",
+				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+		}
 #if defined(USE_RT3352_MII)
 	}
 #endif

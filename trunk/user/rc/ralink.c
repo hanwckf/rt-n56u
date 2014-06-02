@@ -507,31 +507,6 @@ int getCountryRegionABand(const char *str)
 	return i_code;
 }
 
-static void nvram_wlan_set(const char* prefix, const char* param, char *value)
-{
-	char wlan_param[64];
-
-	snprintf(wlan_param, sizeof(wlan_param), "%s_%s", prefix, param);
-	nvram_set(wlan_param, value);
-}
-
-static char* nvram_wlan_get(const char* prefix, const char* param)
-{
-	char wlan_param[64];
-
-	snprintf(wlan_param, sizeof(wlan_param), "%s_%s", prefix, param);
-	return nvram_safe_get(wlan_param);
-}
-
-static int nvram_wlan_get_int(const char* prefix, const char* param)
-{
-	char *value = nvram_wlan_get(prefix, param);
-	if (value)
-		return atoi(value);
-	else
-		return 0;
-}
-
 static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 {
 	FILE *fp;

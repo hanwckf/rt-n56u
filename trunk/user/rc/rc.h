@@ -33,10 +33,6 @@
 /* do not set current year, it used for ntp done check! */
 #define SYS_START_YEAR			2010
 
-#define IFUP				(IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
-
-#define sin_addr(s)			(((struct sockaddr_in *)(s))->sin_addr)
-
 #define SCRIPT_UDHCPC_LAN		"/tmp/udhcpc_lan.script"
 #define SCRIPT_UDHCPC_WAN		"/tmp/udhcpc.script"
 #define SCRIPT_UDHCPC_VIPTV		"/tmp/udhcpc_viptv.script"
@@ -142,7 +138,6 @@ int  control_static_routes(char *ift, char *ifname, int is_add);
 int  route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
 int  route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
 int  ifconfig(char *ifname, int flags, char *addr, char *netmask);
-int  is_interface_up(const char *ifname);
 char* sanity_hostname(char *hname);
 char* get_our_hostname(void);
 int  is_same_subnet(char *ip1, char *ip2, char *msk);
@@ -162,7 +157,6 @@ int  is_hwnat_allow(void);
 int  is_hwnat_loaded(void);
 int  is_fastnat_allow(void);
 int  is_ftp_conntrack_loaded(int ftp_port0, int ftp_port1);
-int  is_interface_exist(const char *ifname);
 int  found_default_route(int only_broadband_wan);
 void hwnat_load(void);
 void hwnat_configure(void);
@@ -173,7 +167,6 @@ void set_ipv4_forward(void);
 void set_force_igmp_mld(void);
 void set_pppoe_passthrough(void);
 void disable_all_passthrough(void);
-in_addr_t get_ipv4_addr(char* ifname);
 
 /* net_lan.c */
 in_addr_t get_lan_ipaddr(void);
@@ -205,7 +198,6 @@ void reset_wan_temp(void);
 void reset_man_vars(void);
 void reset_wan_vars(int full_reset);
 void set_man_ifname(char *man_ifname, int unit);
-char*get_man_ifname(int unit);
 int  get_vlan_vid_wan(void);
 void start_wan(int is_first_run);
 void stop_wan(void);
@@ -227,7 +219,6 @@ int  update_resolvconf(int is_first_run, int do_not_notify);
 int  update_hosts_router(void);
 int  wan_ifunit(char *ifname);
 int  wan_primary_ifunit(void);
-int  is_wan_ppp(char *wan_proto);
 int  wan_prefix(char *ifname, char *prefix);
 void get_wan_ifname(char wan_ifname[16]);
 void update_wan_status(int isup);
@@ -250,7 +241,7 @@ int start_zcip_wan(const char *wan_ifname);
 int start_zcip_viptv(const char *man_ifname);
 
 /* net_ppp.c */
-int start_pppd(char *prefix);
+int start_pppd(char *prefix, int unit, int wan_proto);
 int safe_start_xl2tpd(void);
 int ipup_main(int argc, char **argv);
 int ipdown_main(int argc, char **argv);
@@ -345,9 +336,9 @@ int ovpn_client_script_main(int argc, char **argv);
 #endif
 
 /* net_wifi.c */
-#if defined(USE_RT3352_MII)
-void check_inic_mii_rebooted(void);
-#endif
+void  nvram_wlan_set(const char* prefix, const char* param, char *value);
+char* nvram_wlan_get(const char* prefix, const char* param);
+int   nvram_wlan_get_int(const char* prefix, const char* param);
 void mlme_state_wl(int is_on);
 void mlme_state_rt(int is_on);
 void mlme_radio_wl(int is_on);
@@ -358,6 +349,14 @@ int  get_enabled_radio_wl(void);
 int  get_enabled_radio_rt(void);
 int  get_enabled_guest_wl(void);
 int  get_enabled_guest_rt(void);
+int  get_mode_radio_wl(void);
+int  get_mode_radio_rt(void);
+int  is_apcli_wisp_wl(void);
+int  is_apcli_wisp_rt(void);
+char* get_apcli_wisp_ifname(void);
+#if defined(USE_RT3352_MII)
+void check_inic_mii_rebooted(void);
+#endif
 void start_wifi_ap_wl(int radio_on);
 void start_wifi_ap_rt(int radio_on);
 void start_wifi_wds_wl(int radio_on);
@@ -581,6 +580,8 @@ void safe_remove_usb_modem(void);
 void unload_modem_modules(void);
 void reload_modem_modules(int modem_type, int reload);
 int  launch_modem_ras_pppd(int unit);
+void launch_wan_usbnet(int unit);
+void stop_wan_usbnet(void);
 int  zerocd_main(int argc, char **argv);
 
 /* usb_devices.c */

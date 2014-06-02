@@ -3,7 +3,7 @@
 # If running interactively, then
 if [ "$PS1" ] ; then
 
-    export PATH=/opt/sbin:/usr/sbin:/sbin:/opt/bin:/usr/bin:/bin
+    export PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin
     export HOSTNAME=`/bin/hostname`
     export TERMINFO=/usr/share/terminfo
     export TERM=xterm

@@ -11,7 +11,7 @@ mountpoint -q /opt || exit 0
 logger -t "${self_name}" "call /opt/etc/init.d"
 
 # extend path to /opt
-export PATH=/opt/sbin:/usr/sbin:/sbin:/opt/bin:/usr/bin:/bin
+export PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # start all services S* in /opt/etc/init.d
 for i in `ls /opt/etc/init.d/S??* 2>/dev/null` ; do

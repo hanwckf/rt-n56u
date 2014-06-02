@@ -8,7 +8,7 @@ if ! grep -q /opt /proc/mounts ; then
 	exit 1
 fi
 
-export PATH=/opt/sbin:/usr/sbin:/sbin:/opt/bin:/usr/bin:/bin
+export PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # check opkg installed
 if [ ! -f /opt/bin/opkg ] ; then

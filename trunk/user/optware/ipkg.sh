@@ -21,7 +21,7 @@ if [ -f /opt/bin/opkg ] ; then
 	exit 1
 fi
 
-PATH=/sbin:/usr/sbin:/bin:/usr/bin
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
 export PATH
 
 # By default do not do globbing. Any command wanting globbing should

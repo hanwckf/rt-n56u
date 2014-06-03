@@ -76,8 +76,8 @@
 #define L2TP_SLFLAG_S	   0x40000000
 #define L2TP_SL_SEQ_MASK   0x00ffffff
 
-#define L2TP_HDR_SIZE_SEQ		10
-#define L2TP_HDR_SIZE_NOSEQ		6
+#define L2TP_HDR_SIZE_SEQ		12
+#define L2TP_HDR_SIZE_NOSEQ		8
 
 /* Default trace flags */
 #define L2TP_DEFAULT_DEBUG_FLAGS	0
@@ -1549,9 +1549,7 @@ EXPORT_SYMBOL_GPL(l2tp_session_delete);
 void l2tp_session_set_header_len(struct l2tp_session *session, int version)
 {
 	if (version == L2TP_HDR_VER_2) {
-		session->hdr_len = 8;
-		if (session->send_seq)
-			session->hdr_len += 4;
+		session->hdr_len = (session->send_seq) ? L2TP_HDR_SIZE_SEQ : L2TP_HDR_SIZE_NOSEQ;
 	} else {
 		session->hdr_len = 4 + session->cookie_len + session->l2specific_len + session->offset;
 		if (session->tunnel->encap == L2TP_ENCAPTYPE_UDP)

@@ -258,11 +258,13 @@ static void pppol2tp_recv(struct l2tp_session *session, struct sk_buff *skb, int
 		ppp_input(&po->chan, skb);
 	} else {
 		PRINTK(session->debug, PPPOL2TP_MSG_DATA, KERN_INFO,
-		       "%s: socket not bound\n", session->name);
+			 "%s: recv %d byte data frame, passing to L2TP socket\n",
+			 session->name, data_len);
 
-		/* Not bound. Nothing we can do, so discard. */
-		session->stats.rx_errors++;
-		kfree_skb(skb);
+		if (sock_queue_rcv_skb(sk, skb) < 0) {
+			session->stats.rx_errors++;
+			kfree_skb(skb);
+		}
 	}
 
 	return;

@@ -887,7 +887,7 @@ static int l2tp_build_l2tpv2_header(struct l2tp_session *session, void *buf)
 	struct l2tp_tunnel *tunnel = session->tunnel;
 	__be16 *bufp = buf;
 	__be16 *optr = buf;
-	u16 flags = L2TP_HDR_VER_2;
+	u16 flags = L2TP_HDR_VER_2 | L2TP_HDRFLAG_O;
 	u32 tunnel_id = tunnel->peer_tunnel_id;
 	u32 session_id = session->peer_session_id;
 
@@ -906,6 +906,7 @@ static int l2tp_build_l2tpv2_header(struct l2tp_session *session, void *buf)
 		PRINTK(session->debug, L2TP_MSG_SEQ, KERN_DEBUG,
 		       "%s: updated ns to %u\n", session->name, session->ns);
 	}
+	*bufp++ = 0; // offset 2B
 
 	return bufp - optr;
 }

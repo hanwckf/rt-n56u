@@ -116,8 +116,8 @@
  * Unfortunately the size is different depending on whether sequence numbers
  * are enabled.
  */
-#define PPPOL2TP_L2TP_HDR_SIZE_SEQ		10
-#define PPPOL2TP_L2TP_HDR_SIZE_NOSEQ		6
+#define PPPOL2TP_L2TP_HDR_SIZE_SEQ		12
+#define PPPOL2TP_L2TP_HDR_SIZE_NOSEQ		8
 
 /* Private data of each session. This data lives at the end of struct
  * l2tp_session, referenced via session->priv[].

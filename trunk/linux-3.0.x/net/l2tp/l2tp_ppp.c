@@ -1299,6 +1299,7 @@ static int pppol2tp_session_setsockopt(struct sock *sk,
 			po->chan.hdrlen += NET_SKB_PAD_ORIG + sizeof(struct iphdr) +
 				sizeof(struct udphdr) + 2;
 		}
+		l2tp_session_set_header_len(session, session->tunnel->version);
 		PRINTK(session->debug, PPPOL2TP_MSG_CONTROL, KERN_INFO,
 		       "%s: set send_seq=%d\n", session->name, session->send_seq);
 		break;

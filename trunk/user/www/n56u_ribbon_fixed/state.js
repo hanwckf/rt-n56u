@@ -468,7 +468,7 @@ function reboot(){
 }
 
 function commit(){
-	if(!confirm('<#Commit_confirm#>'))
+	if(!confirm("<#Commit_confirm#>"))
 		return;
 	var $j = jQuery.noConflict();
 	$j.getJSON('/nvram_action.asp', {nvram_action: "commit_nvram"},
@@ -649,7 +649,7 @@ function is_string(o){
 	else if(keyPressed >= 0 && keyPressed <= 126)
 		return true;
 
-	alert('<#JS_validchar#>');
+	alert("<#JS_validchar#>");
 	return false;
 }
 

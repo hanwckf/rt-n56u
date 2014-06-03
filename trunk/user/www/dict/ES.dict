@@ -475,7 +475,6 @@ Browser_action_addfavorite_hint2=Por lo tanto, se recomienda que agregue esta di
 Browser_action_addfavorite=Agregar a favoritos
 Browser_action_not_support_addfavorite=El explorador no admite esta función.
 page_not_support_mode_hint=Esta función está deshabilitará
-ajax_disconnect=La conexión a ZVMODELVZ está desconectada. Compruebe la configuración IP de su equipo y de su ZVMODELVZ.
 APSurvey_action_ConnectingStatus0=Error de conexión. La red la que está intentando conectarse puede no asistir. Seleccione otra red a la que conectarse.
 APSurvey_action_ConnectingStatus1=Error de conexión. Especifique de nuevo la clave de seguridad o haga clic en [Cancelar] para seleccionar otra red a la que conectarse.
 APSurvey_action_ConnectingStatus24=La conexión inalámbrica se estableció correctamente.

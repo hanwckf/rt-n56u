@@ -475,7 +475,6 @@ Browser_action_addfavorite_hint2=Recomendamos que você adicione o endereço da 
 Browser_action_addfavorite=Adicionar aos Favoritos
 Browser_action_not_support_addfavorite=Seu navegador não suporta esta função.
 page_not_support_mode_hint=Esta função está desativada ou desabilitada.
-ajax_disconnect=Você está desconectado do ZVMODELVZ. Por favor verifique as configurações de IP do seu computador e do ZVMODELVZ.
 APSurvey_action_ConnectingStatus0=A conexão falhou. A rede que você está tentando se conectar não existe. Por favor selecione outra rede.
 APSurvey_action_ConnectingStatus1=A conexão falhou. Por favor digite a senha da rede novamente ou clique em [Cancel] para selecionar outra rede.
 APSurvey_action_ConnectingStatus24=Conexão com a rede sem fio efetuada com sucesso.

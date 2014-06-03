@@ -475,7 +475,6 @@ Browser_action_addfavorite_hint2=Dlatego, zaleca się dodanie tego adresu URL do
 Browser_action_addfavorite=Dodaj do Ulubionych
 Browser_action_not_support_addfavorite=Przeglądarka nie obsługuje tej funkcji.
 page_not_support_mode_hint=Ta funkcja jest wyłączona.
-ajax_disconnect=Rozłączone zostało połączenie z ZVMODELVZ. Sprawdź ustawienia IP komputera i ZVMODELVZ.
 APSurvey_action_ConnectingStatus0=Nawiązanie połączenia nie powiodło się. Sieć z którą nawiązywane jest połączenie może nie istnieć. Wybierz inną sieć do połączenia.
 APSurvey_action_ConnectingStatus1=Nawiązanie połączenia nie powiodło się. Wprowadź ponownie klucz zabezpieczenia lub kliknij [Anuluj], aby wybrać inną sieć do połączenia.
 APSurvey_action_ConnectingStatus24=Powiodło się ustanowienie połączenia bezprzewodowego.

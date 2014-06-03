@@ -475,7 +475,6 @@ Browser_action_addfavorite_hint2=Derfor anbefaler vi at du legger denne URL-adre
 Browser_action_addfavorite=Legg til i Favoritter
 Browser_action_not_support_addfavorite=Nettleseren din støtter ikke denne funksjonen.
 page_not_support_mode_hint=Funksjonen er deaktivert.
-ajax_disconnect=Tilkoblingen din til ZVMODELVZ er koblet fra. Sjekk IP-innstillingene til datamaskinen og ZVMODELVZ.
 APSurvey_action_ConnectingStatus0=Tilkobling mislykkes. Nettverket som du prøver å koble til eksisterer kanskje ikke. Velg et annet nettverk å koble til.
 APSurvey_action_ConnectingStatus1=Tilkobling mislykkes. Tast inn sikkerhetsnøkkelen igjen eller klikk på [Cancel] (Avbryt) for å velge et annet nettverk å koble til.
 APSurvey_action_ConnectingStatus24=Etablerte den trådløse tilkoblingen uten feil.

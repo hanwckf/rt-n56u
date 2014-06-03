@@ -475,7 +475,6 @@ Browser_action_addfavorite_hint2=Derfor anbefaler vi, at du tilføjer denne URL-
 Browser_action_addfavorite=Føj til Foretrukne
 Browser_action_not_support_addfavorite=Browseren understøtter ikke denne funktion.
 page_not_support_mode_hint=Denne funktion er deaktiveret.
-ajax_disconnect=Forbindelsen til ZVMODELVZ'en er afbrudt. Kontroller computerens og ZVMODELVZ'ens IP-indstillinger.
 APSurvey_action_ConnectingStatus0=Der kunne ikke oprettes forbindelse. Det netværk, du prøver at oprette forbindelse til, findes muligvis ikke. Vælg et andet netværk til at oprette forbindelse til.
 APSurvey_action_ConnectingStatus1=Der kunne ikke oprettes forbindelse. Indtast sikkerhedsnøglen igen, eller klik på [Annuller] for at vælge et andet netværk at oprette forbindelse til.
 APSurvey_action_ConnectingStatus24=Der blev oprettet trådløs forbindelse.

@@ -475,7 +475,6 @@ Browser_action_addfavorite_hint2=Z tohoto důvodu doporučujeme přidat tuto adr
 Browser_action_addfavorite=Přidat k oblíbeným položkám
 Browser_action_not_support_addfavorite=Váš prohlížeč tuto funkci nepodporuje.
 page_not_support_mode_hint=Tato funkce je deaktivována.
-ajax_disconnect=Připojení k ZVMODELVZ je odpojeno. Zkontrolujte nastavení IP počítače a zařízení ZVMODELVZ.
 APSurvey_action_ConnectingStatus0=Připojení se nezdařilo. Síť, ke které se pokoušíte připojit, pravděpodobně neexistuje. Vyberte jinou síť pro připojení.
 APSurvey_action_ConnectingStatus1=Připojení se nezdařilo. Znovu zadejte bezpečnostní klíč nebo klepněte na [Cancel] (Storno) a vyberte jinou síť pro připojení.
 APSurvey_action_ConnectingStatus24=Bezdrátové připojení bylo úspěšně navázáno.

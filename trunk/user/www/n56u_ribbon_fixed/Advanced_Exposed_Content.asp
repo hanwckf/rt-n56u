@@ -178,7 +178,7 @@ function done_validating(action){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#IPConnection_BattleNet_sectionname#></th>
                                         </tr>
                                         <tr>
-                                            <td colspan="2"><#IPConnection_BattleNet_sectiondesc#></td>
+                                            <td colspan="2"><div class="alert alert-info" style="margin: 2px;"><#IPConnection_BattleNet_sectiondesc#></div></td>
                                         </tr>
                                         <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,21);"><#IPConnection_BattleNet_itemname#></a></th>

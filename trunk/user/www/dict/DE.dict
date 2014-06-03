@@ -476,7 +476,6 @@ Browser_action_addfavorite_hint2=Wir empfehlen Ihnen deshalb, dass Sie diese URL
 Browser_action_addfavorite=Zu Favoriten hinzufügen
 Browser_action_not_support_addfavorite=Ihr Browser unterstützt diese Funktion nicht.
 page_not_support_mode_hint=Diese Funktion ist deaktiviert.
-ajax_disconnect=Ihre Verbindung zum ZVMODELVZ ist unterbrochen. Überprüfen Sie bitte die IP-Einstellungen Ihres Computers und des ZVMODELVZ.
 APSurvey_action_ConnectingStatus0=Verbindung fehlgeschlagen. Das Netzwerk, mit dem Sie sich verbinden wollen existiert möglicherweise nicht. Wählen Sie bitte ein anderes Netzwerk, mit dem Sie sich verbinden wollen aus.
 APSurvey_action_ConnectingStatus1=Verbindung fehlgeschlagen. Geben Sie bitte den Sicherheitsschlüssel erneut ein oder klicken Sie auf [Abbrechen], um ein anderes Netzwerk für eine Verbindung auszuwählen.
 APSurvey_action_ConnectingStatus24=Wireless-Verbindung erfolgreich hergestellt.

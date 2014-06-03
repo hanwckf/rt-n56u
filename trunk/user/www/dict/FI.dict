@@ -475,7 +475,6 @@ Browser_action_addfavorite_hint2=Siksi on suositeltavaa, että lisäät tämän 
 Browser_action_addfavorite=Lisää suosikkeihin
 Browser_action_not_support_addfavorite=Selaimesi ei tue tätä toimintoa.
 page_not_support_mode_hint=Tämä toiminto on otettu pois käytöstä.
-ajax_disconnect=Yhteys ZVMODELVZ-reitittimeen on katkennut. Tarkista tietokoneen ja ZVMODELVZ:n IP-asetukset.
 APSurvey_action_ConnectingStatus0=Yhteyden muodostaminen epäonnistui. Verkkoa, johon yrität muodostaa yhteyden, ei ehkä ole. Valitse toinen verkko, johon muodostat yhteyden.
 APSurvey_action_ConnectingStatus1=Yhteyden muodostaminen epäonnistui. Anna suojausavain uudelleen tai napsauta [Cancel] (Peruuta) valitaksesi toisen verkon, johon muodostat yhteyden.
 APSurvey_action_ConnectingStatus24=Langattoman yhteyden muodostaminen onnistui.

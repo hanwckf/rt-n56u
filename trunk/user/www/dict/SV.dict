@@ -475,7 +475,6 @@ Browser_action_addfavorite_hint2=Vi rekommenderar därför att du lägger till d
 Browser_action_addfavorite=Lägg till i Favoriter
 Browser_action_not_support_addfavorite=Din webbläsare stöder inte den här funktionen.
 page_not_support_mode_hint=Den här funktionen är inaktiverad.
-ajax_disconnect=Din anslutning till ZVMODELVZ har brutits. Kontrollera IP-inställningarna i datorn och ZVMODELVZ.
 APSurvey_action_ConnectingStatus0=Anslutning misslyckades. Det nätverk du försöker ansluta till kanske inte finns. Välj ett annat nätverk att ansluta till.
 APSurvey_action_ConnectingStatus1=Anslutning misslyckades. Ange säkerhetsnyckeln en gång till eller klicka på [Avbryt] för att välja ett annat nätverk att ansluta till.
 APSurvey_action_ConnectingStatus24=Trådlös anslutning har etablerats.

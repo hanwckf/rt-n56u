@@ -475,7 +475,6 @@ Browser_action_addfavorite_hint2=Du coup, nous vous recommandons d'ajouter cet U
 Browser_action_addfavorite=Ajouter aux Favoris
 Browser_action_not_support_addfavorite=Votre navigateur Internet ne supporte pas cette fonction
 page_not_support_mode_hint=Cette fonction est désactivée.
-ajax_disconnect=La connexion au ZVMODELVZ est coupée. Vérifiez les paramètres IP de votre ordinateur et de votre ZVMODELVZ.
 APSurvey_action_ConnectingStatus0=Echec de la connexion. Le réseau auquel vous essayez de vous connecter n'existe pas. Sélectionnez un autre réseau.
 APSurvey_action_ConnectingStatus1=Echec de la connexion. Veuillez saisir à nouveau la clé de sécurité ou cliquez sur  réseau auquel vous essayez de vous connecter n'existe pas. Sélectionnez un autre réseau ou cliquez sur [Cancel] pour sélectionner un autre réseau.
 APSurvey_action_ConnectingStatus24=La connexion sans fil a été établie avec succès.

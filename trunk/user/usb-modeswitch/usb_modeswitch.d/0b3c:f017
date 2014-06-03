@@ -1,0 +1,4 @@
+# Olivetti Olicard 500
+TargetVendor=0x0b3c
+TargetProduct=0xc00b
+StandardEject=1

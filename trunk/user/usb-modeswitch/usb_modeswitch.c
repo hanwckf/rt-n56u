@@ -1,8 +1,8 @@
 /*
   Mode switching tool for controlling mode of 'multi-state' USB devices
-  Version 2.1.1, 2014/03/27
+  Version 2.2.0, 2014/05/29
 
-  Copyright (C) 2007 - 2014 Josua Dietze (mail to "usb_admin" at the domain
+  Copyright (C) 2007 - 2014 Josua Dietze (mail to "digidietze" at the domain
   of the home page; or write a personal message through the forum to "Josh".
   NO SUPPORT VIA E-MAIL - please use the forum for that)
 
@@ -45,7 +45,7 @@
 
 /* Recommended tab size: 4 */
 
-#define VERSION "2.1.1"
+#define VERSION "2.2.0"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -136,6 +136,7 @@ unsigned int ModeMap = 0;
 #define QUANTA_MODE			0x00000400
 #define BLACKBERRY_MODE		0x00000800
 #define PANTECH_MODE		0x00001000
+#define HUAWEINEW_MODE		0x00002000
 
 char verbose=0, show_progress=1, ResetUSB=0, CheckSuccess=0, config_read=0;
 char NeedResponse=0, NoDriverLoading=0, InquireDevice=0, sysmode=0, mbim=0;
@@ -216,6 +217,7 @@ void readConfigFile(const char *configFilename)
 	ParseParamHex(configFilename, DefaultProduct);
 	ParseParamBoolMap(configFilename, DetachStorageOnly, ModeMap, DETACHONLY_MODE);
 	ParseParamBoolMap(configFilename, HuaweiMode, ModeMap, HUAWEI_MODE);
+	ParseParamBoolMap(configFilename, HuaweiNewMode, ModeMap, HUAWEINEW_MODE);
 	ParseParamBoolMap(configFilename, SierraMode, ModeMap, SIERRA_MODE);
 	ParseParamBoolMap(configFilename, SonyMode, ModeMap, SONY_MODE);
 	ParseParamBoolMap(configFilename, GCTMode, ModeMap, GCT_MODE);
@@ -273,6 +275,8 @@ void printConfig()
 		fprintf (output,"\nDetachStorageOnly=1\n");
 	if (ModeMap & HUAWEI_MODE)
 		fprintf (output,"HuaweiMode=1\n");
+	if (ModeMap & HUAWEINEW_MODE)
+		fprintf (output,"HuaweiNewMode=1\n");
 	if (ModeMap & SIERRA_MODE)
 		fprintf (output,"SierraMode=1\n");
 	if (ModeMap & SONY_MODE)
@@ -334,8 +338,8 @@ int readArguments(int argc, char **argv)
 
 	while (1)
 	{
-		c = getopt_long (argc, argv, "hejWQDndKHSOBEGTNALZFRItv:p:V:P:C:m:M:2:3:w:r:c:i:u:a:s:f:b:g:",
-						long_options, &option_index);
+		c = getopt_long (argc, argv, "hejWQDndKHJSOBEGTNALZFRItv:p:V:P:C:m:M:2:3:w:r:c:i:u:a:s:f:b:g:",
+					long_options, &option_index);
 
 		/* Detect the end of the options. */
 		if (c == -1)
@@ -359,6 +363,7 @@ int readArguments(int argc, char **argv)
 			case 'K': StandardEject = 1; break;
 			case 'd': ModeMap = ModeMap + DETACHONLY_MODE; break;
 			case 'H': ModeMap = ModeMap + HUAWEI_MODE; break;
+			case 'J': ModeMap = ModeMap + HUAWEINEW_MODE; break;
 			case 'S': ModeMap = ModeMap + SIERRA_MODE; break;
 			case 'O': ModeMap = ModeMap + SONY_MODE; break;; break;
 			case 'B': ModeMap = ModeMap + QISDA_MODE; break;
@@ -552,7 +557,7 @@ int main(int argc, char **argv)
 	interfaceClass = get_interface_class();
 
 	/* Check or get endpoints */
-	if (strlen(MessageContent) || StandardEject || InquireDevice || ModeMap & CISCO_MODE) {
+	if (strlen(MessageContent) || StandardEject || InquireDevice || ModeMap & CISCO_MODE || ModeMap & HUAWEINEW_MODE) {
 		if (!MessageEndpoint)
 			MessageEndpoint = find_first_bulk_endpoint(LIBUSB_ENDPOINT_OUT);
 		if (!ResponseEndpoint)
@@ -708,6 +713,12 @@ int main(int argc, char **argv)
 		strcpy(MessageContent,"5553424312345678000000000000061e000000000000000000000000000000");
 		strcpy(MessageContent2,"5553424312345679000000000000061b000000020000000000000000000000");
 		NeedResponse = 1;
+		switchSendMessage();
+	} else if (ModeMap & HUAWEINEW_MODE) {
+		SHOW_PROGRESS(output,"Using standard Huawei switching message\n");
+		detachDriver();
+		strcpy(MessageContent,"55534243123456780000000000000011062000000101000100000000000000");
+		NeedResponse = 0;
 		switchSendMessage();
 	} else if (strlen(MessageContent)) {
 		if (InquireDevice != 2)
@@ -1989,6 +2000,7 @@ void printHelp()
 	" -K, --std-eject               send standard EJECT sequence\n"
 	" -d, --detach-only             detach the active driver, no further action\n"
 	" -H, --huawei-mode             apply a special procedure\n"
+	" -J, --huawei-new-mode         apply a special procedure\n"
 	" -S, --sierra-mode             apply a special procedure\n"
 	" -O, --sony-mode               apply a special procedure\n"
 	" -G, --gct-mode                apply a special procedure\n"

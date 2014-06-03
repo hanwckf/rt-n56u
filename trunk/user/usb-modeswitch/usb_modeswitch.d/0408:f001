@@ -1,0 +1,4 @@
+# SpeedUp SU-8500U
+TargetVendor=0x0408
+TargetProduct=0xea03
+QuantaMode=1

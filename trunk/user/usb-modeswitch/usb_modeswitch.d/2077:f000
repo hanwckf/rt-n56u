@@ -1,4 +1,5 @@
-# Telenet 3G dongle (T&W WU160)
+# Telenet 3G dongle (T&W WU160) and others
 TargetVendor=0x2077
-TargetProduct=0x9000
+TargetProductList="9000,a000"
 StandardEject=1
+MessageContent="55534243123456700000000000000616aa0000000000000000000000000000"

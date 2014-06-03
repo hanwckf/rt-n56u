@@ -1,0 +1,4 @@
+# Olivetti Olicard 160
+TargetVendor=0x0b3c
+TargetProduct=0xc00a
+MessageContent="55534243123456788000000080000606f50402527000000000000000000000"

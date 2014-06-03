@@ -2,6 +2,13 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.2.0, 2014/05/29
+    Introduction of parameter "HuaweiNewMode", wrapping the standard bulk
+    message for all newer Huawei devices; support for generic fall-back
+    config files, combined with OS switch (per vendor ID), implementation
+    to use a specific switching command on Android for all Huawei devices
+    (see README of data package for details); this change was suggested
+    by Huawei
 Version 2.1.1, 2014/03/27
     Code cleanup, better use of libusb1; this also fixes problems with
     determination of the active USB configuration (Samsung, Option modems);

@@ -1,0 +1,4 @@
+# Novatel MiFi 4082
+TargetVendor=0x1410
+TargetProduct=0x6032
+StandardEject=1

@@ -1,0 +1,4 @@
+# Vodafone / Huawei W5101 Router
+TargetVendor=0x12d1
+TargetProduct=0x1589
+HuaweiNewMode=1

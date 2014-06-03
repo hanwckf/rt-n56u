@@ -1550,7 +1550,7 @@ EXPORT_SYMBOL_GPL(l2tp_session_delete);
 static void l2tp_session_set_header_len(struct l2tp_session *session, int version)
 {
 	if (version == L2TP_HDR_VER_2) {
-		session->hdr_len = 6;
+		session->hdr_len = 8;
 		if (session->send_seq)
 			session->hdr_len += 4;
 	} else {

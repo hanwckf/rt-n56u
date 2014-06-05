@@ -220,6 +220,8 @@ int yylex(void);
 int check_ip6_forwarding(void);
 void reload_config(void);
 void reset_prefix_lifetimes(void);
+void config_interface(void);
+void kickoff_adverts(void);
 
 /* timer.c */
 struct timeval next_timeval(double next);

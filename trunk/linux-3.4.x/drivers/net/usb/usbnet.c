@@ -1414,7 +1414,7 @@ static void usbnet_bh (unsigned long param)
 		   netif_device_present (dev->net) &&
 		   !timer_pending (&dev->delay) &&
 		   !test_bit (EVENT_RX_HALT, &dev->flags)) {
-		int	temp = dev->rxq.qlen;
+		__u32 temp = dev->rxq.qlen;
 
 		if (temp < RX_QLEN(dev)) {
 			if (rx_alloc_submit(dev, GFP_ATOMIC) == -ENOLINK)

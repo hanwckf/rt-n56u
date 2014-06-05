@@ -1563,7 +1563,7 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 	netif_device_attach (net);
 
 	if (dev->driver_info->flags & FLAG_LINK_INTR)
-		netif_carrier_off(net);
+		usbnet_link_change(dev, 0, 0);
 
 #if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
 	if (ra_sw_nat_hook_rs != NULL) {
@@ -1701,6 +1701,19 @@ int usbnet_manage_power(struct usbnet *dev, int on)
 	return 0;
 }
 EXPORT_SYMBOL(usbnet_manage_power);
+
+void usbnet_link_change(struct usbnet *dev, bool link, bool need_reset)
+{
+	/* update link after link is reseted */
+	if (link && !need_reset)
+		netif_carrier_on(dev->net);
+	else
+		netif_carrier_off(dev->net);
+
+	if (need_reset && link)
+		usbnet_defer_kevent(dev, EVENT_LINK_RESET);
+}
+EXPORT_SYMBOL(usbnet_link_change);
 
 /*-------------------------------------------------------------------------*/
 

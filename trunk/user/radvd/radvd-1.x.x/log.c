@@ -45,23 +45,24 @@ int log_open(int method, char *ident, char *log, int facility)
 	case L_LOGFILE:
 		if (!log) {
 			fprintf(stderr, "%s: no logfile specified\n", log_ident);
-			return (-1);
+			return -1;
 		}
 		log_file = log;
 		if ((log_file_fd = fopen(log_file, "a")) == NULL) {
 			fprintf(stderr, "%s: can't open %s: %s\n", log_ident, log_file, strerror(errno));
-			return (-1);
+			return -1;
 		}
 		break;
 	default:
 		fprintf(stderr, "%s: unknown logging method: %d\n", log_ident, log_method);
 		log_method = L_NONE;
-		return (-1);
+		return -1;
 	}
 	return 0;
 }
 
 /* note: [dfv]log() is also called from root context */
+__attribute__ ((format (printf, 2, 0)))
 static int vlog(int prio, char *format, va_list ap)
 {
 	char tstamp[64], buff[1024];
@@ -99,7 +100,7 @@ static int vlog(int prio, char *format, va_list ap)
 	default:
 		fprintf(stderr, "%s: unknown logging method: %d\n", log_ident, log_method);
 		log_method = L_NONE;
-		return (-1);
+		return -1;
 	}
 	return 0;
 }
@@ -141,7 +142,7 @@ int log_close(void)
 	default:
 		fprintf(stderr, "%s: unknown logging method: %d\n", log_ident, log_method);
 		log_method = L_NONE;
-		return (-1);
+		return -1;
 	}
 	return 0;
 }

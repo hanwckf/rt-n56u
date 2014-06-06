@@ -187,7 +187,7 @@ config USB_NET_CDCETHER
 
 config USB_NET_CDC_EEM
 	tristate "CDC EEM support"
-	depends on USB_USBNET && EXPERIMENTAL
+	depends on USB_USBNET
 	help
 	  This option supports devices conforming to the Communication Device
 	  Class (CDC) Ethernet Emulation Model, a specification that's easy to
@@ -217,6 +217,21 @@ config USB_NET_CDC_NCM
 	    * ST-Ericsson M570 HSPA+ Mobile Broadband Modem (reference design)
 	    * ST-Ericsson M343 HSPA Mobile Broadband Modem (reference design)
 	    * Ericsson F5521gw Mobile Broadband Module
+
+config USB_NET_HUAWEI_CDC_NCM
+	tristate "Huawei NCM embedded AT channel support"
+	depends on USB_USBNET
+	select USB_WDM
+	select USB_NET_CDC_NCM
+	help
+		This driver supports huawei-style NCM devices, that use NCM as a
+		transport for other protocols, usually an embedded AT channel.
+		Good examples are:
+		* Huawei E3131
+		* Huawei E3251
+
+		To compile this driver as a module, choose M here: the module will be
+		called huawei_cdc_ncm.ko.
 
 config USB_NET_CDC_MBIM
 	tristate "CDC MBIM support"
@@ -296,8 +311,8 @@ config USB_NET_MCS7830
 	  adapters marketed under the DeLOCK brand.
 
 config USB_NET_RNDIS_HOST
-	tristate "Host for RNDIS and ActiveSync devices (EXPERIMENTAL)"
-	depends on USB_USBNET && EXPERIMENTAL
+	tristate "Host for RNDIS and ActiveSync devices"
+	depends on USB_USBNET
 	select USB_NET_CDCETHER
 	help
 	  This option enables hosting "Remote NDIS" USB networking links,

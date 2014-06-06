@@ -554,7 +554,7 @@ static void __ndisc_send(struct net_device *dev,
 	ndisc_send_skb(skb, dev, neigh, daddr, saddr, icmp6h);
 }
 
-static void ndisc_send_na(struct net_device *dev, struct neighbour *neigh,
+void ndisc_send_na(struct net_device *dev, struct neighbour *neigh,
 			  const struct in6_addr *daddr,
 			  const struct in6_addr *solicited_addr,
 			  int router, int solicited, int override, int inc_opt)
@@ -590,6 +590,7 @@ static void ndisc_send_na(struct net_device *dev, struct neighbour *neigh,
 		     &icmp6h, solicited_addr,
 		     inc_opt ? ND_OPT_TARGET_LL_ADDR : 0);
 }
+EXPORT_SYMBOL(ndisc_send_na);
 
 static void ndisc_send_unsol_na(struct net_device *dev)
 {

@@ -512,6 +512,7 @@ unload_modem_modules(void)
 	ret |= module_smart_unload("rndis_host", 1);
 	ret |= module_smart_unload("qmi_wwan", 1);
 	ret |= module_smart_unload("cdc_mbim", 1);
+	ret |= module_smart_unload("huawei_cdc_ncm", 1);
 	ret |= module_smart_unload("cdc_ncm", 1);
 	ret |= module_smart_unload("cdc_ether", 1);
 	ret |= module_smart_unload("cdc_acm", 1);
@@ -536,11 +537,13 @@ reload_modem_modules(int modem_type, int reload)
 		module_smart_load("qmi_wwan", NULL);
 		module_smart_load("cdc_mbim", NULL);
 		module_smart_load("cdc_ncm", NULL);
+		module_smart_load("huawei_cdc_ncm", NULL);
 		module_smart_load("sierra_net", NULL);
 	} else {
 		ret |= module_smart_unload("rndis_host", 1);
 		ret |= module_smart_unload("qmi_wwan", 1);
 		ret |= module_smart_unload("cdc_mbim", 1);
+		ret |= module_smart_unload("huawei_cdc_ncm", 1);
 		ret |= module_smart_unload("cdc_ncm", 1);
 		ret |= module_smart_unload("cdc_ether", 1);
 		ret |= module_smart_unload("sierra_net", 1);

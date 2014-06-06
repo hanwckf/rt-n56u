@@ -61,12 +61,12 @@ get_xl2tpd_vpnc_active(void)
 		 nvram_match("l2tp_cli_t", "1"));
 }
 
-int 
+int
 start_vpn_client(void)
 {
 	FILE *fp;
 	int i_type, i_mppe, i_auth;
-	char *vpnc_peer, *vpnc_opt;
+	char *vpnc_peer, *vpnc_opt, tmp[256];
 
 	if (nvram_invmatch("vpnc_enable", "1") || get_ap_mode())
 		return 1;
@@ -100,8 +100,8 @@ start_vpn_client(void)
 	}
 	
 	fprintf(fp, "noauth\n");
-	fprintf(fp, "user '%s'\n", nvram_safe_get("vpnc_user"));
-	fprintf(fp, "password '%s'\n", nvram_safe_get("vpnc_pass"));
+	fprintf(fp, "user '%s'\n", safe_pppd_line(nvram_safe_get("vpnc_user"), tmp, sizeof(tmp)));
+	fprintf(fp, "password '%s'\n", safe_pppd_line(nvram_safe_get("vpnc_pass"), tmp, sizeof(tmp)));
 	fprintf(fp, "refuse-eap\n");
 
 	if (i_auth == 1) {

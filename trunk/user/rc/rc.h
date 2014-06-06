@@ -241,6 +241,7 @@ int start_zcip_wan(const char *wan_ifname);
 int start_zcip_viptv(const char *man_ifname);
 
 /* net_ppp.c */
+char *safe_pppd_line(const char *line, char *tmp, size_t tmp_size);
 int start_pppd(char *prefix, int unit, int wan_proto);
 int safe_start_xl2tpd(void);
 int ipup_main(int argc, char **argv);

@@ -214,7 +214,8 @@ write_rpl2tp_conf(char *l2tp_conf)
 	return 0;
 }
 
-int safe_start_xl2tpd(void)
+int
+safe_start_xl2tpd(void)
 {
 	char *l2tp_conf = "/etc/xl2tpd.conf";
 	
@@ -228,7 +229,8 @@ int safe_start_xl2tpd(void)
 	return 1;
 }
 
-static int start_rpl2tp(void)
+static int
+start_rpl2tp(void)
 {
 	char *l2tp_conf = "/etc/l2tp/l2tp.conf";
 
@@ -246,11 +248,40 @@ static int start_rpl2tp(void)
 	return system("/usr/sbin/l2tp-control \"start-session 0.0.0.0\"");
 }
 
-int start_pppd(char *prefix, int unit, int wan_proto)
+char *
+safe_pppd_line(const char *line, char *tmp, size_t tmp_size)
+{
+	const char special_chars[] = "'\\";
+	char *src, *dst;
+	size_t dst_len;
+
+	if (!tmp || tmp_size <= strlen(line))
+		return (char *)line;
+
+	dst = tmp;
+	dst_len = tmp_size;
+	src = (char *)line;
+
+	while (*src != '\0' && dst_len > 2) {
+		if (strchr(special_chars, *src)) {
+			*dst++ = '\\';
+			dst_len--;
+		}
+		*dst++ = *src++;
+		dst_len--;
+	}
+
+	*dst = '\0';
+
+	return tmp;
+}
+
+int
+start_pppd(char *prefix, int unit, int wan_proto)
 {
 	FILE *fp;
 	int auth_type;
-	char tmp[100], options[64];
+	char options[64], tmp[64], tmp2[256];
 	char *svcs[] = { NULL, NULL };
 
 	if (unit < 0 || unit > WAN_PPP_UNIT_MAX)
@@ -266,8 +297,8 @@ int start_pppd(char *prefix, int unit, int wan_proto)
 
 	/* do not authenticate peer and do not use eap */
 	fprintf(fp, "noauth\n");
-	fprintf(fp, "user '%s'\n", nvram_safe_get(strcat_r(prefix, "pppoe_username", tmp)));
-	fprintf(fp, "password '%s'\n", nvram_safe_get(strcat_r(prefix, "pppoe_passwd", tmp)));
+	fprintf(fp, "user '%s'\n", safe_pppd_line(nvram_safe_get(strcat_r(prefix, "pppoe_username", tmp)), tmp2, sizeof(tmp2)));
+	fprintf(fp, "password '%s'\n", safe_pppd_line(nvram_safe_get(strcat_r(prefix, "pppoe_passwd", tmp)), tmp2, sizeof(tmp2)));
 	fprintf(fp, "refuse-eap\n");
 
 	auth_type = nvram_get_int(strcat_r(prefix, "ppp_auth", tmp));
@@ -394,7 +425,7 @@ int start_pppd(char *prefix, int unit, int wan_proto)
 #endif
 
 	/* user specific options */
-	fprintf(fp, "%s\n", nvram_safe_get(strcat_r(prefix, "ppp_pppd", tmp)));
+	fprintf(fp, "%s\n", safe_pppd_line(nvram_safe_get(strcat_r(prefix, "ppp_pppd", tmp)), tmp2, sizeof(tmp2)));
 
 	fclose(fp);
 

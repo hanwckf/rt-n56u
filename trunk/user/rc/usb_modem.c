@@ -64,28 +64,28 @@ write_pppd_ras_conf(const char* call_path, const char *modem_node, int ppp_unit)
 {
 	FILE *fp;
 	int modem_type, vid = 0, pid = 0;
-	char *user, *pass, *isp;
-	
+	char *user, *pass, *isp, tmp[256];
+
 	if (!get_modem_vid_pid(modem_node, &vid, &pid))
 		return 0;
-	
+
 	if (!(fp = fopen(call_path, "w+")))
 		return 0;
-	
+
 	modem_type = nvram_get_int("modem_type");
 	user = nvram_safe_get("modem_user");
 	pass = nvram_safe_get("modem_pass");
 	isp = nvram_safe_get("modem_isp");
-	
+
 	fprintf(fp, "/dev/%s\n", modem_node);
 	fprintf(fp, "modem\n");
 	fprintf(fp, "crtscts\n");
 	fprintf(fp, "noauth\n");
 
 	if(strlen(user) > 0)
-		fprintf(fp, "user '%s'\n", user);
+		fprintf(fp, "user '%s'\n", safe_pppd_line(user, tmp, sizeof(tmp)));
 	if(strlen(pass) > 0)
-		fprintf(fp, "password '%s'\n", pass);
+		fprintf(fp, "password '%s'\n", safe_pppd_line(pass, tmp, sizeof(tmp)));
 
 	if(!strcmp(isp, "Virgin") || !strcmp(isp, "CDMA-UA")){
 		fprintf(fp, "refuse-chap\n");

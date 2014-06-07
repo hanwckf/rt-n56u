@@ -143,11 +143,9 @@ int http_transaction(http_t *client, http_trans_t *trans)
 	trans->rsp_len = 0;
 	do {
 		if (client->ssl_enabled) {
-#ifdef CONFIG_OPENSSL
 			TRY(ssl_send(client, trans->p_req, trans->req_len));
 			TRY(ssl_recv(client, trans->p_rsp, trans->max_rsp_len, &trans->rsp_len));
 		} else {
-#endif
 			TRY(tcp_send(&client->tcp, trans->p_req, trans->req_len));
 			TRY(tcp_recv(&client->tcp, trans->p_rsp, trans->max_rsp_len, &trans->rsp_len));
 		}

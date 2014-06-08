@@ -46,13 +46,13 @@ function initial(){
 	show_middle_status();
 	show_client_status(ccount);
 	set_default_choice();
-	
+
 	if(sw_mode == "3"){
 		showMapWANStatus(3);
 		MapUnderAPmode();
 	}
 	else
-		showMapWANStatus(2);
+		update_internet_status();
 }
 
 function detect_update_info(){

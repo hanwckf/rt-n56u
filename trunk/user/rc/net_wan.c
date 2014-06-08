@@ -784,6 +784,8 @@ stop_wan_ppp()
 	set_wan0_value("time", "0");
 	nvram_set_int_temp("l2tp_wan_t", 0);
 	nvram_set_temp("wan_status_t", "Disconnected");
+	
+	notify_detect_internet();
 }
 
 void
@@ -847,6 +849,8 @@ stop_wan(void)
 	nvram_set_int_temp("l2tp_wan_t", 0);
 	
 	update_wan_status(0);
+	
+	notify_detect_internet();
 }
 
 void

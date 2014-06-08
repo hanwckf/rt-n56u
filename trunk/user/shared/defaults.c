@@ -494,6 +494,15 @@ struct nvram_pair router_defaults[] = {
 	{ "asus_debug", "0" },
 	{ "di_debug", "0" },
 
+	{ "di4_addr0", "8.8.8.8" },
+	{ "di4_addr1", "208.67.220.220" },
+	{ "di4_addr2", "8.8.4.4" },
+	{ "di4_addr3", "208.67.222.222" },
+	{ "di4_port0", "53" },
+	{ "di4_port1", "53" },
+	{ "di4_port2", "53" },
+	{ "di4_port3", "53" },
+
 	{ "fw_pt_pptp", "1" },
 	{ "fw_pt_l2tp", "1" },
 	{ "fw_pt_ipsec", "1" },

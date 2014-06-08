@@ -31,40 +31,80 @@
 //#define DEBUG		1
 #define DI_RES_FILE	"/tmp/internet_check_result"
 #define DI_PID_FILE	"/var/run/detect_internet.pid"
+#define DI_MAX_HOSTS	4
 
-static long detect_last = 0;
+static long detect_last_time = 0;
 static unsigned long skip_last = 3;
 
-void stop_detect_internet(void)
+void
+stop_detect_internet(void)
 {
 	doSystem("killall %s %s", "-q", "detect_internet");
 }
 
-int start_detect_internet(void)
+int
+start_detect_internet(void)
 {
-	stop_detect_internet();
-
-	if (get_ap_mode())
-		return 1;
-
 	return eval("detect_internet");
+}
+
+void
+notify_detect_internet(void)
+{
+	if (get_ap_mode())
+		return;
+
+	if (!pids("detect_internet"))
+		start_detect_internet();
+	else
+		kill_pidfile_s(DI_PID_FILE, SIGUSR1);
+}
+
+static void
+reset_internet_status(void)
+{
+	skip_last = 3;
+	nvram_set_int_temp("link_internet", 2);
 }
 
 static int
 is_internet_detected(void)
 {
 	FILE *fp = NULL;
-	char line[128];
-	char *detect_host[] = {"8.8.8.8", "208.67.220.220", "8.8.4.4", "208.67.222.222"};
-	int i;
+	char line[128], nvram_addr[16], nvram_port[16];
+	char *di_host[DI_MAX_HOSTS][32] = {0};
+	int i, max_items;
 
 #ifdef DEBUG
 	dbg("## detect internet status ##\n");
 #endif
 	remove(DI_RES_FILE);
 
-	i = rand_seed_by_time() % 4;
-	doSystem("/usr/sbin/tcpcheck 4 %s:53 %s:53 >%s", detect_host[i], detect_host[(i+1)%4], DI_RES_FILE);
+	max_items = 0;
+	for (i = 0; i < DI_MAX_HOSTS; i++) {
+		char *di_addr;
+		int di_port;
+		snprintf(nvram_addr, sizeof(nvram_addr), "di4_addr%d", i);
+		snprintf(nvram_port, sizeof(nvram_port), "di4_port%d", i);
+		di_addr = nvram_safe_get(nvram_addr);
+		di_port = nvram_safe_get_int(nvram_port, 53, 1, 65535);
+		if (is_valid_ipv4(di_addr)) {
+			sprintf(di_host[max_items], "%s:%d", di_addr, di_port);
+			max_items++;
+		}
+	}
+
+	if (max_items < 1) {
+		sprintf(di_host[0], "%s:%d", "8.8.8.8", 53);
+		max_items = 1;
+	}
+
+	if (max_items > 1) {
+		i = rand_seed_by_time() % max_items;
+		doSystem("/usr/sbin/tcpcheck %d %s %s >%s", 4, di_host[i], di_host[(i+1)%max_items], DI_RES_FILE);
+	} else {
+		doSystem("/usr/sbin/tcpcheck %d %s >%s", 4, di_host[0], DI_RES_FILE);
+	}
 
 	if ((fp = fopen(DI_RES_FILE, "r")) != NULL)
 	{
@@ -112,10 +152,10 @@ try_detect_internet(void)
 	}
 
 	now = uptime();
-	if ((unsigned long)(now - detect_last) < skip_last)
+	if ((unsigned long)(now - detect_last_time) < skip_last)
 		return;
 
-	detect_last = now;
+	detect_last_time = now;
 	link_internet = is_internet_detected();
 
 	skip_last = (link_internet) ? 55 : 3;
@@ -134,18 +174,33 @@ static void catch_sig_detect_internet(int sig)
 	{
 		try_detect_internet();
 	}
+	else if (sig == SIGUSR1)
+	{
+		reset_internet_status();
+	}
 }
 
 int
 detect_internet_main(int argc, char *argv[])
 {
 	FILE *fp;
+	struct sigaction sa;
 
-	signal(SIGPIPE, SIG_IGN);
-	signal(SIGHUP,  catch_sig_detect_internet);
-	signal(SIGUSR1, SIG_IGN);
-	signal(SIGUSR2, SIG_IGN);
-	signal(SIGTERM, catch_sig_detect_internet);
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = catch_sig_detect_internet;
+	sigemptyset(&sa.sa_mask);
+	sigaddset(&sa.sa_mask, SIGHUP);
+	sigaddset(&sa.sa_mask, SIGUSR1);
+	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = SIG_IGN;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGUSR2, &sa, NULL);
+	sigaction(SIGPIPE, &sa, NULL);
+	sigaction(SIGALRM, &sa, NULL);
 
 	if (daemon(0, 0) < 0) {
 		perror("daemon");
@@ -159,7 +214,7 @@ detect_internet_main(int argc, char *argv[])
 		fclose(fp);
 	}
 
-	nvram_set_int_temp("link_internet", 2);
+	reset_internet_status();
 
 	while (1)
 	{

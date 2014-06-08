@@ -564,6 +564,7 @@ void stop_flash_usbled(void);
 int detect_internet_main(int argc, char *argv[]);
 int start_detect_internet(void);
 void stop_detect_internet(void);
+void notify_detect_internet(void);
 
 /* detect_wan.c */
 int detect_wan_main(int argc, char *argv[]);

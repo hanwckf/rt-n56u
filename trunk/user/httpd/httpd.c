@@ -372,12 +372,15 @@ void http_reset_login(void)
 	memcpy(&last_login_ip, &login_ip, sizeof(uaddr));
 	memset(&login_ip, 0, sizeof(uaddr));
 	login_timestamp = 0;
-	
+
 	// load new acl mode
 	http_acl_mode = nvram_get_int("http_access");
-	
+
 	nvram_set_temp("login_timestamp", "");
-	
+
+	/* notify about HTTP logout */
+	kill_pidfile_s("/var/run/detect_internet.pid", SIGUSR1);
+
 	if (change_passwd == 1) {
 		change_passwd = 0;
 		reget_passwd = 1;

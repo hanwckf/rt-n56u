@@ -345,7 +345,6 @@ start_services_once(int is_ap_mode)
 {
 	start_8021x_wl();
 	start_8021x_rt();
-	start_detect_internet();
 	start_httpd(0);
 	start_telnetd();
 #if defined(APP_SSHD)
@@ -356,6 +355,8 @@ start_services_once(int is_ap_mode)
 	start_infosvr();
 
 	if (!is_ap_mode) {
+		start_detect_internet();
+		
 		if (!is_upnp_run())
 			start_upnp();
 		

@@ -1,5 +1,5 @@
-var sw_mode = '<% nvram_get_x("", "sw_mode"); %>';
 var productid = '<% nvram_get_x("", "productid"); %>';
+var sw_mode = '<% nvram_get_x("", "sw_mode"); %>';
 var wan_route_x = '<% nvram_get_x("", "wan_route_x"); %>';
 var wan_nat_x = '<% nvram_get_x("", "wan_nat_x"); %>';
 var wan_proto = '<% nvram_get_x("", "wan_proto"); %>';
@@ -15,7 +15,7 @@ var uagent = navigator.userAgent.toLowerCase();
 var is_ie11p = (/trident\/7\./).test(uagent);
 var is_mobile = (/iphone|ipod|ipad|iemobile|android|blackberry|fennec/).test(uagent);
 
-var new_wan_internet = "2";
+var new_wan_internet = '<% nvram_get_x("", "link_internet"); %>';
 var id_of_check_changed_status = 0;
 
 <% firmware_caps_hook(); %>
@@ -32,9 +32,9 @@ function enableCheckChangedStatus(flag){
 
 	disableCheckChangedStatus();
 
-	if (new_wan_internet == "0")
+	if (new_wan_internet == '0')
 		tm_int_sec = 3;
-	else if (new_wan_internet == "1")
+	else if (new_wan_internet == '1')
 		tm_int_sec = 5;
 
 	id_of_check_changed_status = setTimeout("get_changed_status();", tm_int_sec * 1000);
@@ -45,16 +45,18 @@ function disableCheckChangedStatus(){
 	id_of_check_changed_status = 0;
 }
 
+function update_internet_status(){
+	if (new_wan_internet == '1')
+		showMapWANStatus(1);
+	else if(new_wan_internet == '2')
+		showMapWANStatus(2);
+	else
+		showMapWANStatus(0);
+}
+
 function check_changed_status(){
-	if(location.pathname == "/" || location.pathname == "/index.asp"){
-		if (new_wan_internet == "1")
-			showMapWANStatus(1);
-		else if(new_wan_internet == "2")
-			showMapWANStatus(2);
-		else
-			showMapWANStatus(0);
-	}
-	
+	if(location.pathname == "/" || location.pathname == "/index.asp")
+		update_internet_status();
 	enableCheckChangedStatus();
 }
 

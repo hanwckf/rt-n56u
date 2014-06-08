@@ -167,7 +167,7 @@ lav_get_interlaced(AVCodecContext *vc, AVStream *s)
 static inline int
 lav_is_thumbnail_stream(AVStream *s, uint8_t **data, int *size)
 {
-#if LIBAVFORMAT_VERSION_INT >= ((54<<16)+(6<<8))
+#if LIBAVFORMAT_VERSION_INT >= ((54<<16)+(7<<8))
 	if (s->disposition & AV_DISPOSITION_ATTACHED_PIC &&
 	    s->codec->codec_id == AV_CODEC_ID_MJPEG)
 	{

@@ -25,16 +25,21 @@
 #include <nvram/bcmnvram.h>
 #include <bin_sem_asus.h>
 
-NET_CLIENT net_clients[256];
+#define MAX_SUBNET  (23) /* 22..24 */
+#define NUM_CLIENTS (1U << (32U - MAX_SUBNET))
+#define MAX_CLIENTS (NUM_CLIENTS - 1)
+
+NET_CLIENT net_clients[NUM_CLIENTS];
 unsigned char my_hwaddr[8];
 struct in_addr my_ipaddr;
 struct in_addr my_ipmask;
 
-unsigned int scan_max = 255;
-unsigned int scan_now = 0;
-int networkmap_fullscan = 1;
-int daemon_exit = 0;
-int scan_block = 0;
+unsigned int scan_max = MAX_CLIENTS;
+unsigned int scan_net = 0xC0A80A00;
+volatile unsigned int scan_now = 0;
+volatile int networkmap_fullscan = 1;
+volatile int daemon_exit = 0;
+volatile int scan_block = 0;
 int arp_sockfd = -1;
 
 /******** Build ARP Socket Function *********/
@@ -223,9 +228,9 @@ void net_clients_reset()
 void net_clients_update()
 {
 	FILE *fp;
-	int i, lock;
+	int lock;
 	struct in_addr in;
-	unsigned int vcount;
+	unsigned int i, vcount;
 
 	vcount = 0;
 
@@ -233,7 +238,7 @@ void net_clients_update()
 
 	fp = fopen("/tmp/static_ip.inf", "w");
 	if (fp) {
-		for (i=1; i<255; i++) {
+		for (i=1; i<scan_max; i++) {
 			if (net_clients[i].ip_addr && net_clients[i].macval) {
 				in.s_addr = net_clients[i].ip_addr;
 				
@@ -337,7 +342,7 @@ resolve_hostname(struct in_addr *dst_ip, NET_CLIENT *pnet_client)
 static void
 nmap_init(void)
 {
-	unsigned int lan_nm;
+	unsigned int lan_pool;
 	struct timeval arp_timeout = {2, 0};
 
 	scan_block = 1;
@@ -351,10 +356,11 @@ nmap_init(void)
 	if (!inet_aton(nvram_safe_get("lan_netmask_t"), &my_ipmask))
 		goto error_exit;
 
-	lan_nm = ntohl(my_ipmask.s_addr);
+	scan_net = ntohl(my_ipaddr.s_addr) & ntohl(my_ipmask.s_addr);
+	lan_pool = ~(ntohl(my_ipmask.s_addr));
 
-	if ((lan_nm >> 8) == 0x00ffffff) {
-		scan_max = ~(lan_nm) & 0xFF;
+	if (lan_pool < NUM_CLIENTS) {
+		scan_max = lan_pool;
 		scan_block = 0;
 		arp_timeout.tv_sec = 0;
 		arp_timeout.tv_usec = 60000;
@@ -376,10 +382,11 @@ is_same_subnet(struct in_addr *ip1, struct in_addr *ip2, struct in_addr *msk)
 static int
 nmap_ping_hosts_again(void)
 {
-	int i, need_update_file = 0;
+	int need_update_file = 0;
+	unsigned int i;
 	struct in_addr in;
 
-	for (i=1; i<255; i++) {
+	for (i=1; i<scan_max; i++) {
 		if (!net_clients[i].ip_addr || net_clients[i].staled)
 			continue;
 		
@@ -416,13 +423,13 @@ nmap_receive_arp(void)
 {
 	char buffer[64] = {0};
 	struct in_addr src_addr;
-	int arp_count, ip_index, nmap_changed, need_update_file;
-	unsigned int nm_mask;
+	int arp_count, nmap_changed, need_update_file;
+	unsigned int ip_index, lan_pool;
 	ARP_HEADER *arp_ptr;
 
 	arp_count = 0;
 	need_update_file = 0;
-	nm_mask = ~(ntohl(my_ipmask.s_addr)) & 0xFF;
+	lan_pool = ~(ntohl(my_ipmask.s_addr)) & MAX_CLIENTS;
 
 	while (!daemon_exit)
 	{
@@ -466,8 +473,8 @@ nmap_receive_arp(void)
 			continue;
 		
 		// Check valid source IP
-		ip_index = (int)(ntohl(src_addr.s_addr) & nm_mask);
-		if (ip_index < 1 || ip_index > 254)
+		ip_index = ntohl(src_addr.s_addr) & lan_pool;
+		if (ip_index < 1 || ip_index >= scan_max)
 			continue;
 		
 		// ARP Response packet to router
@@ -551,15 +558,13 @@ nmap_iterate(void)
 			net_clients_reset();
 		}
 		
-		scan_addr = (ntohl(my_ipaddr.s_addr) & ntohl(my_ipmask.s_addr));
-		
 		scan_now++;
-		scan_addr |= scan_now;
+		scan_addr = scan_net | scan_now;
 		
 		// Skip our address
 		if (scan_addr == ntohl(my_ipaddr.s_addr)) {
 			scan_now++;
-			scan_addr |= scan_now;
+			scan_addr = scan_net | scan_now;
 		}
 		
 		if (scan_now < scan_max && !scan_block) {

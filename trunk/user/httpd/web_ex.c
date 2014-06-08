@@ -1569,11 +1569,15 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 	}
 
 	if (restart_needed_bits != 0 && (!strcmp(action_mode, " Apply ") || !strcmp(action_mode, " Restart ") || !strcmp(action_mode, " WPS_Apply "))) {
-		unsigned int max_time = 1;
 		if ((restart_needed_bits & RESTART_REBOOT) != 0)
 			restart_total_time = MAX(ITVL_RESTART_REBOOT, restart_total_time);
-		if ((restart_needed_bits & RESTART_IPV6) != 0)
-			restart_total_time = MAX(ITVL_RESTART_IPV6, restart_total_time);
+		if ((restart_needed_bits & (RESTART_WAN | RESTART_IPV6)) != 0) {
+			unsigned int max_time = ITVL_RESTART_WAN;
+			int wan_proto = get_wan_proto(0);
+			if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC || wan_proto == IPV4_WAN_PROTO_IPOE_DHCP)
+				max_time = 3;
+			restart_total_time = MAX(max_time, restart_total_time);
+		}
 		if ((restart_needed_bits & RESTART_LAN) != 0)
 			restart_total_time = MAX(ITVL_RESTART_LAN, restart_total_time);
 		if ((restart_needed_bits & RESTART_DHCPD) != 0)
@@ -1582,8 +1586,6 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			restart_total_time = MAX(ITVL_RESTART_RADVD, restart_total_time);
 		if ((restart_needed_bits & RESTART_MODEM) != 0)
 			restart_total_time = MAX(ITVL_RESTART_MODEM, restart_total_time);
-		if ((restart_needed_bits & RESTART_WAN) != 0)
-			restart_total_time = MAX(ITVL_RESTART_WAN, restart_total_time);
 		if ((restart_needed_bits & RESTART_IPTV) != 0)
 			restart_total_time = MAX(ITVL_RESTART_IPTV, restart_total_time);
 		if ((restart_needed_bits & RESTART_FTPSAMBA) != 0)
@@ -1633,6 +1635,7 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 		if ((restart_needed_bits & RESTART_SYSCTL) != 0)
 			restart_total_time = MAX(ITVL_RESTART_SYSCTL, restart_total_time);
 		if ((restart_needed_bits & RESTART_WIFI) != 0) {
+			unsigned int max_time = 1;
 			if (wl_modified) {
 				if ((wl_modified & WIFI_COMMON_CHANGE_BIT) && nvram_get_int("wl_radio_x"))
 					max_time = ITVL_RESTART_WIFI;

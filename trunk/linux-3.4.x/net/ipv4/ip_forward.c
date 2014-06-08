@@ -39,13 +39,13 @@
 #include <net/route.h>
 #include <net/xfrm.h>
 
-static bool ip_may_fragment(const struct sk_buff *skb)
+static inline bool ip_may_fragment(const struct sk_buff *skb)
 {
 	return unlikely((ip_hdr(skb)->frag_off & htons(IP_DF)) == 0) ||
 		skb->local_df;
 }
 
-static bool ip_exceeds_mtu(const struct sk_buff *skb, unsigned int mtu)
+static inline bool ip_exceeds_mtu(const struct sk_buff *skb, unsigned int mtu)
 {
 	if (skb->len <= mtu)
 		return false;
@@ -56,7 +56,7 @@ static bool ip_exceeds_mtu(const struct sk_buff *skb, unsigned int mtu)
 	return true;
 }
 
-static bool ip_gso_exceeds_dst_mtu(const struct sk_buff *skb)
+static inline bool ip_gso_exceeds_dst_mtu(const struct sk_buff *skb)
 {
 	unsigned int mtu;
 

@@ -401,7 +401,7 @@ static inline int ip6_forward_finish(struct sk_buff *skb)
 	return dst_output(skb);
 }
 
-static bool ip6_pkt_too_big(const struct sk_buff *skb, unsigned int mtu)
+static inline bool ip6_pkt_too_big(const struct sk_buff *skb, unsigned int mtu)
 {
 	if (skb->len <= mtu || skb->local_df)
 		return false;

@@ -48,7 +48,7 @@ function applyRule(){
 }
 
 function validForm(){
-	if(!validate_ipaddr(document.form.rt_radius_ipaddr, 'rt_radius_ipaddr'))
+	if(!validate_ipaddr_final(document.form.rt_radius_ipaddr, 'radius_ipaddr'))
 		return false;
 
 	if(!validate_range(document.form.rt_radius_port, 0, 65535))
@@ -122,20 +122,20 @@ function done_validating(action){
                                         <tr>
                                             <th width="50%" style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,2,1);"><#WLANAuthentication11a_ExAuthDBIPAddr_itemname#></a></th>
                                             <td width="50%" style="border-top: 0 none;">
-                                                <input type="text" maxlength="15" class="input" size="15" name="rt_radius_ipaddr" value="<% nvram_get_x("WLANAuthentication11b","rt_radius_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)">
+                                                <input type="text" maxlength="15" class="input" size="15" name="rt_radius_ipaddr" value="<% nvram_get_x("","rt_radius_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)">
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);"  onmouseover="openTooltip(this,2,2);"><#WLANAuthentication11a_ExAuthDBPortNumber_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="5" class="input" size="5" name="rt_radius_port" value="<% nvram_get_x("WLANAuthentication11b","rt_radius_port"); %>" onkeypress="return is_number(this)" onblur="return validate_portrange(this, '')"/>
+                                                <input type="text" maxlength="5" class="input" size="5" name="rt_radius_port" value="<% nvram_get_x("","rt_radius_port"); %>" onkeypress="return is_number(this)" onblur="return validate_portrange(this, '')"/>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);"  onmouseover="openTooltip(this,2,3);"><#WLANAuthentication11a_ExAuthDBPassword_itemname#></a></th>
                                             <td>
                                                 <div class="input-append">
-                                                    <input type="password" name="rt_radius_key" id="rt_radius_key" maxlength="64" size="32" style="width: 175px;" value="<% nvram_get_x("WLANAuthentication11b","rt_radius_key"); %>">
+                                                    <input type="password" name="rt_radius_key" id="rt_radius_key" maxlength="64" size="32" style="width: 175px;" value="<% nvram_get_x("","rt_radius_key"); %>">
                                                     <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('rt_radius_key')"><i class="icon-eye-close"></i></button>
                                                 </div>
                                             </td>

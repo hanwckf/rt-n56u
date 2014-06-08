@@ -66,20 +66,19 @@ write_xl2tpd_conf(char *l2tp_conf)
 	{
 		int i_cli0, i_cli1;
 		char pooll[32], pool1[32], pool2[32];
-		unsigned int laddr, lmask;
+		unsigned int laddr, lmask, lsnet;
 		struct in_addr pool_in;
 		
 		if (!nvram_get_int("vpns_vuse"))
 		{
 			laddr = ntohl(inet_addr(nvram_safe_get("lan_ipaddr")));
 			lmask = ntohl(inet_addr(nvram_safe_get("lan_netmask")));
+			lsnet = (~lmask) - 1;
 			
-			i_cli0 = nvram_get_int("vpns_cli0");
-			i_cli1 = nvram_get_int("vpns_cli1");
-			if (i_cli0 <   2) i_cli0 =   2;
-			if (i_cli0 > 254) i_cli0 = 254;
-			if (i_cli1 <   2) i_cli1 =   2;
-			if (i_cli1 > 254) i_cli1 = 254;
+			i_cli0 = nvram_safe_get_int("vpns_cli0", 245, 1, 254);
+			i_cli1 = nvram_safe_get_int("vpns_cli1", 254, 2, 254);
+			if (i_cli0 > (int)lsnet) i_cli0 = (int)lsnet;
+			if (i_cli1 > (int)lsnet) i_cli1 = (int)lsnet;
 			if (i_cli1 < i_cli0) i_cli1 = i_cli0;
 		}
 		else

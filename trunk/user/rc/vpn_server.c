@@ -49,7 +49,7 @@ start_vpn_server(void)
 	int i, i_cli0, i_cli1, i_dns, i_dhcp;
 	char *vpns_cfg, *vpns_opt, *vpns_sec, *lanip, *wins, *dns1, *dns2;
 	struct in_addr pool_in;
-	unsigned int laddr, lmask;
+	unsigned int laddr, lmask, lsnet;
 	FILE *fp;
 
 	if (nvram_invmatch("vpns_enable", "1") || get_ap_mode())
@@ -82,13 +82,12 @@ start_vpn_server(void)
 	{
 		laddr = ntohl(inet_addr(lanip));
 		lmask = ntohl(inet_addr(nvram_safe_get("lan_netmask")));
+		lsnet = (~lmask) - 1;
 		
-		i_cli0 = nvram_get_int("vpns_cli0");
-		i_cli1 = nvram_get_int("vpns_cli1");
-		if (i_cli0 <   2) i_cli0 =   2;
-		if (i_cli0 > 254) i_cli0 = 254;
-		if (i_cli1 <   2) i_cli1 =   2;
-		if (i_cli1 > 254) i_cli1 = 254;
+		i_cli0 = nvram_safe_get_int("vpns_cli0", 245, 1, 254);
+		i_cli1 = nvram_safe_get_int("vpns_cli1", 254, 2, 254);
+		if (i_cli0 > (int)lsnet) i_cli0 = (int)lsnet;
+		if (i_cli1 > (int)lsnet) i_cli1 = (int)lsnet;
 		if (i_cli1 < i_cli0) i_cli1 = i_cli0;
 	}
 	else

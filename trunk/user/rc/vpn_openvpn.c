@@ -158,7 +158,7 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 {
 	FILE *fp;
 	int i, i_prot, i_atls, i_rdgw, i_dhcp, i_dns, i_cli0, i_cli1;
-	unsigned int laddr, lmask;
+	unsigned int laddr, lmask, lsnet;
 	struct in_addr pool_in;
 	char pooll[32], pool1[32], pool2[32];
 	char *lanip, *lannm, *wins, *dns1, *dns2;
@@ -174,8 +174,8 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 
 	i_prot = nvram_get_int("vpns_ov_prot");
 	i_rdgw = nvram_get_int("vpns_ov_rdgw");
-	i_cli0 = nvram_get_int("vpns_cli0");
-	i_cli1 = nvram_get_int("vpns_cli1");
+	i_cli0 = nvram_safe_get_int("vpns_cli0", 245, 1, 254);
+	i_cli1 = nvram_safe_get_int("vpns_cli1", 254, 2, 254);
 
 	i_dns = 0;
 	i_dhcp = nvram_get_int("dhcp_enable_x");
@@ -183,14 +183,14 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 	lanip = nvram_safe_get("lan_ipaddr");
 	lannm = nvram_safe_get("lan_netmask");
 
-	if (i_cli0 <   2) i_cli0 =   2;
-	if (i_cli0 > 254) i_cli0 = 254;
-	if (i_cli1 <   2) i_cli1 =   2;
-	if (i_cli1 > 254) i_cli1 = 254;
-	if (i_cli1 < i_cli0) i_cli1 = i_cli0;
-
 	laddr = ntohl(inet_addr(lanip));
 	lmask = ntohl(inet_addr(lannm));
+	lsnet = (~lmask) - 1;
+
+	if (i_cli0 > (int)lsnet) i_cli0 = (int)lsnet;
+	if (i_cli1 > (int)lsnet) i_cli1 = (int)lsnet;
+	if (i_cli1 < i_cli0) i_cli1 = i_cli0;
+
 	pool_in.s_addr = htonl(laddr & lmask);
 	strcpy(pooll, inet_ntoa(pool_in));
 	pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli0);

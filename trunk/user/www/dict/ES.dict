@@ -1047,6 +1047,8 @@ Main_content_Login_Item7=El reinicio del enrutador tarda aproximadamente 60 segu
 [QIS-general.js]
 JS_fieldblank=¡Los campos no pueden estar en blanco!
 JS_validip=no es una dirección IP válida.
+JS_validmask=is not a valid IP Mask!
+JS_validsubnet=WAN and LAN should have different IP addresses and subnets!
 JS_itemlimit1=Esta tabla solamente permite
 JS_itemlimit2=elementos.
 JS_duplicate=Esta entrada ha estado en la lista.
@@ -1065,7 +1067,6 @@ JS_AES2=Si desea habilitar AES único, la autenticación debe estar establecida 
 JS_AES3=Si desea habilitar AES único, WEP también debe estar habilitado.
 JS_RESET=Advertencia:\nToda la configuración se perderá.\n¿Desea continuar?
 JS_DHCP1=La máscara de subred ha cambiado y el conjunto de direcciones IP de su ZVMODELVZ debe cambiarse. ¿Desea cambiarlo automáticamente?
-JS_DHCP2=La configuración del servidor DHCP no coincide con la dirección IP actual del firewall inalámbrico. ¿Desea cambiarla automáticamente?
 JS_DHCP3=El nuevo conjunto de direcciones IP no coincide con la máscara de subred. ¿Desea permitir que su ZVMODELVZ cambie el conjunto de direcciones IP automáticamente?
 BOP_isp_desc=Nombre de host proporcionado por su ISP:
 OP_desc1=Su ZVMODELVZ admite tres modos de funcionamiento para satisfacer distintos requisitos. Seleccione el modo que se adapte a su situación.

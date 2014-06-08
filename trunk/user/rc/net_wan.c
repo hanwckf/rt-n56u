@@ -57,61 +57,6 @@ set_wan0_value(const char* param_name, const char* value)
 	nvram_set_temp(wan0_param, value);
 }
 
-static void
-wan_netmask_check(void)
-{
-	int wan_proto;
-	unsigned int ip, gw, nm, lip, lnm;
-
-	wan_proto = get_wan_proto(0);
-	if ( wan_proto == IPV4_WAN_PROTO_IPOE_STATIC ||
-	     wan_proto == IPV4_WAN_PROTO_L2TP ||
-	     wan_proto == IPV4_WAN_PROTO_PPTP ||
-	    (wan_proto == IPV4_WAN_PROTO_PPPOE && nvram_match("pppoe_dhcp_route", "1")) )
-	{
-		ip = inet_addr(nvram_safe_get("wan0_ipaddr"));
-		gw = inet_addr(nvram_safe_get("wan0_gateway"));
-		nm = inet_addr(nvram_safe_get("wan0_netmask"));
-		
-		lip = inet_addr(nvram_safe_get("lan_ipaddr"));
-		lnm = inet_addr(nvram_safe_get("lan_netmask"));
-		
-		if (ip==0x0 && wan_proto != IPV4_WAN_PROTO_IPOE_STATIC)
-			return;
-		
-		if (ip==0x0 || ip==0xffffffff || (ip&lnm)==(lip&lnm))
-		{
-			set_wan0_value("ipaddr", "1.1.1.1");
-			set_wan0_value("netmask", "255.0.0.0");
-		}
-		
-		// check netmask here
-		if (gw!=0 && gw!=0xffffffff && (ip&nm)!=(gw&nm))
-		{
-			for (nm=0xffffffff;nm!=0;nm=(nm>>8))
-			{
-				if ((ip&nm)==(gw&nm))
-					break;
-			}
-			
-			if (nm==0xffffffff)
-				set_wan0_value("netmask", "255.255.255.255");
-			else if (nm==0xffffff)
-				set_wan0_value("netmask", "255.255.255.0");
-			else if (nm==0xffff)
-				set_wan0_value("netmask", "255.255.0.0");
-			else if (nm==0xff)
-				set_wan0_value("netmask", "255.0.0.0");
-			else
-				set_wan0_value("netmask", "0.0.0.0");
-		}
-		
-		nvram_set_temp("wanx_ipaddr", nvram_safe_get("wan0_ipaddr"));	// oleg patch, he suggests to mark the following 3 lines
-		nvram_set_temp("wanx_netmask", nvram_safe_get("wan0_netmask"));
-		nvram_set_temp("wanx_gateway", nvram_safe_get("wan0_gateway"));
-	}
-}
-
 void 
 reset_wan_temp(void)
 {
@@ -179,13 +124,13 @@ reset_wan_vars(int full_reset)
 		set_wan0_value("gateway", "0.0.0.0");
 	}
 
-	wan_netmask_check();
-
 	set_wan0_param("dnsenable_x");
 	set_wan0_param("hostname");
 
 	if (nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "l2tp"))
 	{
+		char *wan_addr, *wan_mask, *wan_gate;
+		
 		set_wan0_value("pppoe_ifname", IFNAME_PPP);
 		
 		set_wan0_param("pppoe_username");
@@ -212,11 +157,19 @@ reset_wan_vars(int full_reset)
 		set_wan0_param("ppp_alcp");
 		set_wan0_param("ppp_pppd");
 		
-		set_wan0_value("pppoe_ipaddr", nvram_safe_get("wan0_ipaddr"));
-		set_wan0_value("pppoe_netmask", (is_valid_ipv4(nvram_safe_get("wan0_ipaddr")) && is_valid_ipv4(nvram_safe_get("wan0_netmask"))) ? nvram_safe_get("wan0_netmask") : NULL);
-		set_wan0_value("pppoe_gateway", nvram_safe_get("wan0_gateway"));
+		wan_addr = nvram_safe_get("wan0_ipaddr");
+		wan_mask = nvram_safe_get("wan0_netmask");
+		wan_gate = nvram_safe_get("wan0_gateway");
 		
-		nvram_set_temp("wanx_ipaddr", nvram_safe_get("wan0_ipaddr"));
+		set_wan0_value("pppoe_ipaddr", wan_addr);
+		set_wan0_value("pppoe_netmask", (is_valid_ipv4(wan_addr) && is_valid_ipv4(wan_mask)) ? wan_mask : "");
+		set_wan0_value("pppoe_gateway", wan_gate);
+		
+		nvram_set_temp("wanx_ipaddr", wan_addr);
+		if (is_valid_ipv4(wan_addr) && is_valid_ipv4(wan_mask))
+			nvram_set_temp("wanx_netmask", wan_mask);
+		if (is_valid_ipv4(wan_gate))
+			nvram_set_temp("wanx_gateway", wan_gate);
 	}
 
 	mac_conv("wan_hwaddr_x", -1, macbuf);

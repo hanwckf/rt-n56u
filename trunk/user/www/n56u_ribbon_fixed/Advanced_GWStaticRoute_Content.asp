@@ -108,9 +108,9 @@ function GWStatic_markGroup(o, s, c, b) {
 			alert("<#JS_itemlimit1#> " + c + " <#JS_itemlimit2#>");
 			return false;
 		}
-		else if (!validate_ipaddr(document.form.sr_ipaddr_x_0, "") ||
-				 !validate_ipaddr(document.form.sr_netmask_x_0, "") ||
-				 !validate_ipaddr(document.form.sr_gateway_x_0, "")){
+		else if (!validate_ipaddr_final(document.form.sr_ipaddr_x_0, '') ||
+				 !validate_ipaddr_final(document.form.sr_netmask_x_0, '') ||
+				 !validate_ipaddr_final(document.form.sr_gateway_x_0, '')){
 				 return false;
 		}
 		else if (document.form.sr_ipaddr_x_0.value == ""){

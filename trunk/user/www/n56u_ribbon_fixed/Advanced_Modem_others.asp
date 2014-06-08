@@ -277,11 +277,11 @@ function validForm(){
 		return false;
 
 	if(!document.form.modem_dnsa[0].checked){
-		if(!validate_ipaddr_final(document.form.wan_dns1_x, 'wan_dns1_x'))
+		if(!validate_ipaddr_final(document.form.wan_dns1_x, 'wan_dns_x'))
 			return false;
-		if(!validate_ipaddr_final(document.form.wan_dns2_x, 'wan_dns1_x'))
+		if(!validate_ipaddr_final(document.form.wan_dns2_x, 'wan_dns_x'))
 			return false;
-		if(!validate_ipaddr_final(document.form.wan_dns3_x, 'wan_dns1_x'))
+		if(!validate_ipaddr_final(document.form.wan_dns3_x, 'wan_dns_x'))
 			return false;
 	}
 

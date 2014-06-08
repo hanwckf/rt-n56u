@@ -258,7 +258,7 @@ function markGroup2(o, s, c, b) {
 			document.form.vts_port_x_0.select();
 			return false;
 		}else if (document.form.vts_proto_x_0.value == "OTHER"){
-			if (!validate_ipaddr(document.form.vts_ipaddr_x_0, "") ||
+			if (!validate_ipaddr_final(document.form.vts_ipaddr_x_0, '') ||
 					!validate_range(document.form.vts_protono_x_0, 0, 255)) return false;
 			else if (document.form.vts_protono_x_0.value==""){
 				alert("<#JS_fieldblank#>");
@@ -277,7 +277,7 @@ function markGroup2(o, s, c, b) {
 			
 			document.form.vts_port_x_0.value = "";
 		}else{
-				if (!validate_ipaddr(document.form.vts_ipaddr_x_0, "") ||
+				if (!validate_ipaddr_final(document.form.vts_ipaddr_x_0, '') ||
 						!validate_portrange(document.form.vts_port_x_0, "") ||
 						!validate_range_sp(document.form.vts_lport_x_0, 1, 65535)) return false;
 				else if (document.form.vts_port_x_0.value==""){ 

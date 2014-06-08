@@ -42,16 +42,15 @@
 <script>
 
 <% login_state_hook(); %>
-var old_lan_ipaddr = "<% nvram_get_x("LANHostConfig","lan_ipaddr"); %>";
+
+var old_lan_addr = "<% nvram_get_x("","lan_ipaddr"); %>";
+var old_lan_mask = "<% nvram_get_x("","lan_netmask"); %>";
 
 function initial(){
-	final_flag = 1;	// for the function in general.js
-	
 	show_banner(1);
 	show_menu(5,3,1);
 	show_footer();
 }
-
 
 function applyRule(){
 	if(validForm()){
@@ -65,134 +64,91 @@ function applyRule(){
 	}
 }
 
-// test if WAN IP & Gateway & DNS IP is a valid IP
-// DNS IP allows to input nothing
-function valid_IP(obj_name, obj_flag){
-		// A : 1.0.0.0~126.255.255.255
-		// B : 127.0.0.0~127.255.255.255 (forbidden)
-		// C : 128.0.0.0~255.255.255.254
-		var A_class_start = inet_network("1.0.0.0");
-		var A_class_end = inet_network("126.255.255.255");
-		var B_class_start = inet_network("127.0.0.0");
-		var B_class_end = inet_network("127.255.255.255");
-		var C_class_start = inet_network("128.0.0.0");
-		var C_class_end = inet_network("255.255.255.255");
-		
-		var ip_obj = obj_name;
-		var ip_num = inet_network(ip_obj.value);
+function valid_LAN_IP(ip_obj){
+	// A : 1.0.0.0~126.255.255.255
+	// B : 127.0.0.0~127.255.255.255 (forbidden)
+	// C : 128.0.0.0~255.255.255.254
+	var A_class_min = inet_network("1.0.0.0");
+	var A_class_max = inet_network("126.255.255.255");
+	var B_class_min = inet_network("127.0.0.0");
+	var B_class_max = inet_network("127.255.255.255");
+	var C_class_min = inet_network("128.0.0.0");
+	var C_class_max = inet_network("255.255.255.255");
 
-		if(obj_flag == "DNS" && ip_num == -1){ //DNS allows to input nothing
-			return true;
-		}
-		
-		if(obj_flag == "GW" && ip_num == -1){ //GW allows to input nothing
-			return true;
-		}
-		
-		if(ip_num > A_class_start && ip_num < A_class_end)
-			return true;
-		else if(ip_num > B_class_start && ip_num < B_class_end){
-			alert(ip_obj.value+" <#JS_validip#>");
-			ip_obj.focus();
-			ip_obj.select();
-			return false;
-		}
-		else if(ip_num > C_class_start && ip_num < C_class_end)
-			return true;
-		else{
-			alert(ip_obj.value+" <#JS_validip#>");
-			ip_obj.focus();
-			ip_obj.select();
-			return false;
-		}
+	var ip_num = inet_network(ip_obj.value);
+
+	if(ip_num > A_class_min && ip_num < A_class_max)
+		return true;
+	else if(ip_num > B_class_min && ip_num < B_class_max)
+		return false;
+	else if(ip_num > C_class_min && ip_num < C_class_max)
+		return true;
+	return false;
 }
 
 function validForm(){
-	var ip_obj = document.form.lan_ipaddr;
-	var ip_num = inet_network(ip_obj.value);
-	var ip_class = "";		
-	if(!valid_IP(ip_obj, "")) return false;
+	var addr_obj = document.form.lan_ipaddr;
+	var mask_obj = document.form.lan_netmask;
+	var addr_num = inet_network(addr_obj.value);
 
-	// test if netmask is valid.
-	var netmask_obj = document.form.lan_netmask;
-	var netmask_num = inet_network(netmask_obj.value);
-	var netmask_reverse_num = ~netmask_num;
-	var default_netmask = "";
-	var wrong_netmask = 0;
+	if(!validate_ipaddr_final(addr_obj, 'lan_ipaddr') ||
+			!validate_ipaddr_final(mask_obj, 'lan_netmask'))
+		return false;
 
-	if(netmask_num < 0) wrong_netmask = 1;
-
-	if(ip_class == 'A')
-		default_netmask = "255.0.0.0";
-	else if(ip_class == 'B')
-		default_netmask = "255.255.0.0";
-	else
-		default_netmask = "255.255.255.0";
-	
-	var test_num = netmask_reverse_num;
-	while(test_num != 0){
-		if((test_num+1)%2 == 0)
-			test_num = (test_num+1)/2-1;
-		else{
-			wrong_netmask = 1;
-			break;
-		}
-	}
-	if(wrong_netmask == 1){
-		alert(netmask_obj.value+" <#JS_validip#>");
-		netmask_obj.value = default_netmask;
-		netmask_obj.focus();
-		netmask_obj.select();
+	if(!valid_LAN_IP(addr_obj)) {
+		alert(addr_obj.value+" <#JS_validip#>");
+		addr_obj.focus();
+		addr_obj.select();
 		return false;
 	}
-	
-	var subnet_head = getSubnet(ip_obj.value, netmask_obj.value, "head");
-	var subnet_end = getSubnet(ip_obj.value, netmask_obj.value, "end");
-	
-	if(ip_num == subnet_head || ip_num == subnet_end){
-		alert(ip_obj.value+" <#JS_validip#>");
-		ip_obj.focus();
-		ip_obj.select();
+
+	var snet_min = get_subnet_num(addr_obj.value, mask_obj.value, 0);
+	var snet_max = get_subnet_num(addr_obj.value, mask_obj.value, 1);
+
+	if(addr_num == snet_min || addr_num == snet_max){
+		alert(addr_obj.value+"/"+mask_obj.value+" <#JS_validip#>");
+		addr_obj.focus();
+		addr_obj.select();
 		return false;
 	}
-	
-	// check IP changed or not
-	// No matter it changes or not, it will submit the form
-	if(sw_mode == "1"){
-		var pool_change = changed_DHCP_IP_pool();
-		if(!pool_change)
+
+	var wan_addr = document.form.wan_ipaddr.value;
+	var wan_mask = document.form.wan_netmask.value;
+
+	if(wan_addr != "0.0.0.0" && wan_addr != "" && wan_mask != "0.0.0.0" && wan_mask != ""){
+		if(matchSubnet2(wan_addr, wan_mask, addr_obj.value, mask_obj.value)){
+			alert("<#JS_validsubnet#>");
+			mask_obj.focus();
+			mask_obj.select();
 			return false;
+		}
 	}
 
-	if(document.form.wan_ipaddr.value != "0.0.0.0" && document.form.wan_ipaddr.value != "" && 
-	   document.form.wan_netmask.value != "0.0.0.0" && document.form.wan_netmask.value != ""){
-			if(matchSubnet2(document.form.wan_ipaddr.value, document.form.wan_netmask.value, document.form.lan_ipaddr.value, document.form.lan_netmask.value)){
-					document.form.lan_ipaddr.focus();
-					alert("WAN and LAN should have different IP addresses and subnet.");
-					return false;
-			}
-	}
-
-	changed_hint();
-	
-	return true;
-}
-
-// step1. check IP changed. // step2. check Subnet is the same 
-
-function changed_DHCP_IP_pool(){
-	if(document.form.lan_ipaddr.value != old_lan_ipaddr){ // IP changed
-		if(!matchSubnet(document.form.lan_ipaddr.value, document.form.dhcp_start.value, 3) ||
-				!matchSubnet(document.form.lan_ipaddr.value, document.form.dhcp_end.value, 3)){ // Different Subnet or same
+	if(addr_obj.value != old_lan_addr || mask_obj.value != old_lan_mask){
+		var o_min = document.form.dhcp_start;
+		var o_max = document.form.dhcp_end;
+		if(!matchSubnet(o_min.value, addr_obj.value, mask_obj.value) ||
+				!matchSubnet(o_max.value, addr_obj.value, mask_obj.value) ||
+				inet_network(o_min.value) <= snet_min ||
+				inet_network(o_max.value) >= snet_max) {
 			if(confirm("<#JS_DHCP1#>")){
-				document.form.dhcp_start.value = subnetPrefix(document.form.lan_ipaddr.value, document.form.dhcp_start.value, 3);
-				document.form.dhcp_end.value = subnetPrefix(document.form.lan_ipaddr.value, document.form.dhcp_end.value, 3);
+				var snet_pool = snet_max-snet_min;
+				o_min.value = num2ip4(snet_min+2);
+				if (snet_pool > 30)
+					o_max.value=num2ip4(snet_max-11);
+				else
+					o_max.value=num2ip4(snet_max-1);
 			}else{
-					return false;
+				mask_obj.focus();
+				mask_obj.select();
+				return false;
 			}
 		}
 	}
-	
+
+	if(addr_obj.value != old_lan_addr)
+		alert("<#LANHostConfig_lanipaddr_changed_hint#>");
+
 	return true;
 }
 
@@ -200,15 +156,6 @@ function done_validating(action){
 	refreshpage();
 }
 
-var old_lan_ipaddr = "<% nvram_get_x("LANHostConfig","lan_ipaddr"); %>";
-function changed_hint(){
-
-		if(document.form.lan_ipaddr.value != old_lan_ipaddr){
-				alert("<#LANHostConfig_lanipaddr_changed_hint#>");
-		}
-	
-		return true;
-}
 </script>
 </head>
 
@@ -238,9 +185,11 @@ function changed_hint(){
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="wan_ipaddr" value="<% nvram_get_x("", "wan_ipaddr_t"); %>">
-    <input type="hidden" name="wan_netmask" value="<% nvram_get_x("", "wan_netmask_t"); %>" >
-    <input type="hidden" name="wan_gateway" value="<% nvram_get_x("", "wan_gateway_t"); %>">
+    <input type="hidden" name="wan_ipaddr" value="<% nvram_get_x("", "wan_ipaddr_t"); %>" readonly="1">
+    <input type="hidden" name="wan_netmask" value="<% nvram_get_x("", "wan_netmask_t"); %>" readonly="1">
+    <input type="hidden" name="wan_gateway" value="<% nvram_get_x("", "wan_gateway_t"); %>" readonly="1">
+    <input type="hidden" name="dhcp_start" value="<% nvram_get_x("", "dhcp_start"); %>">
+    <input type="hidden" name="dhcp_end" value="<% nvram_get_x("", "dhcp_end"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -280,8 +229,6 @@ function changed_hint(){
                                             <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this, 4,2);"><#LANHostConfig_SubnetMask_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="lan_netmask" value="<% nvram_get_x("LANHostConfig","lan_netmask"); %>" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
-                                                <input type="hidden" name="dhcp_start" value="<% nvram_get_x("LANHostConfig", "dhcp_start"); %>">
-                                                <input type="hidden" name="dhcp_end" value="<% nvram_get_x("LANHostConfig", "dhcp_end"); %>">
                                                 &nbsp;<span style="color:#888;">255.255.255.0</span>
                                             </td>
                                         </tr>

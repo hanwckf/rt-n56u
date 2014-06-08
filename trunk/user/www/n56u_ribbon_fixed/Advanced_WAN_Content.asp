@@ -159,40 +159,51 @@ function validForm(){
 	var wan_proto = document.form.wan_proto.value;
 	var wan_stb_x = document.form.wan_stb_x.value;
 	var min_vlan = support_min_vlan();
-	
+
 	if(!document.form.x_DHCPClient[0].checked){
-		if(!validate_ipaddr_final(document.form.wan_ipaddr, 'wan_ipaddr')
-				|| !validate_ipaddr_final(document.form.wan_netmask, 'wan_netmask')
-				|| !validate_ipaddr_final(document.form.wan_gateway, 'wan_gateway')
+		var addr_obj = document.form.wan_ipaddr;
+		var mask_obj = document.form.wan_netmask;
+		var gate_obj = document.form.wan_gateway;
+		
+		if(!validate_ipaddr_final(addr_obj, 'wan_ipaddr')
+				|| !validate_ipaddr_final(mask_obj, 'wan_netmask')
+				|| !validate_ipaddr_final(gate_obj, 'wan_gateway')
 				)
 			return false;
 		
-		if(document.form.wan_gateway.value == document.form.wan_ipaddr.value){
+		if(gate_obj.value == addr_obj.value){
 			alert("<#IPConnection_warning_WANIPEQUALGatewayIP#>");
-			document.form.wan_gateway.select();
-			document.form.wan_gateway.focus();
+			gate_obj.select();
+			gate_obj.focus();
 			return false;
 		}
 		
-		if(!wan_netmask_check(document.form.wan_netmask))
+		var lan_addr = document.form.lan_ipaddr.value;
+		var lan_mask = document.form.lan_netmask.value;
+		
+		if(matchSubnet2(lan_addr, lan_mask, addr_obj.value, mask_obj.value)){
+			alert("<#JS_validsubnet#>");
+			mask_obj.focus();
+			mask_obj.select();
 			return false;
+		}
 	}
-	
+
 	if(!document.form.wan_dnsenable_x[0].checked){
-		if(!validate_ipaddr_final(document.form.wan_dns1_x, 'wan_dns1_x'))
+		if(!validate_ipaddr_final(document.form.wan_dns1_x, 'wan_dns_x'))
 			return false;
-		if(!validate_ipaddr_final(document.form.wan_dns2_x, 'wan_dns1_x'))
+		if(!validate_ipaddr_final(document.form.wan_dns2_x, 'wan_dns_x'))
 			return false;
-		if(!validate_ipaddr_final(document.form.wan_dns3_x, 'wan_dns1_x'))
+		if(!validate_ipaddr_final(document.form.wan_dns3_x, 'wan_dns_x'))
 			return false;
 	}
-	
+
 	if(wan_proto == "pppoe" || wan_proto == "pptp" || wan_proto == "l2tp"){
 		if(!validate_string(document.form.wan_pppoe_username)
 				|| !validate_string(document.form.wan_pppoe_passwd))
 			return false;
 	}
-	
+
 	if(wan_proto == "pppoe"){
 		if(!validate_range(document.form.wan_pppoe_mtu, 1000, 1492)
 				|| !validate_range(document.form.wan_pppoe_mru, 1000, 1492))
@@ -223,15 +234,15 @@ function validForm(){
 			if(!validate_string(document.form.wan_ppp_peer))
 				return false;
 	}
-	
+
 	if(document.form.wan_hostname.value.length > 0)
 		if(!validate_string(document.form.wan_hostname))
 			return false;
-	
+
 	if(document.form.wan_hwaddr_x.value.length > 0)
 		if(!validate_hwaddr(document.form.wan_hwaddr_x))
 			return false;
-	
+
 	if(document.form.vlan_filter[0].checked){
 		if(document.form.vlan_vid_cpu.value.length > 0){
 			if(!validate_range(document.form.vlan_vid_cpu, min_vlan, 4094))
@@ -283,7 +294,7 @@ function validForm(){
 			}
 		}
 	}
-	
+
 	return true;
 }
 
@@ -488,7 +499,6 @@ function change_wan_dhcp_auto(use_auto){
 		$("row_wan_gateway").style.display = "";
 	}
 }
-
 
 function change_wan_dhcp_enable(wan_type){
 	if (wan_type == "pppoe" || wan_type == "pptp" || wan_type == "l2tp"){
@@ -792,8 +802,8 @@ function simplyMAC(fullMAC){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="lan_ipaddr" value="<% nvram_get_x("", "lan_ipaddr"); %>" />
-    <input type="hidden" name="lan_netmask" value="<% nvram_get_x("", "lan_netmask"); %>" />
+    <input type="hidden" name="lan_ipaddr" value="<% nvram_get_x("", "lan_ipaddr"); %>" readonly="1" />
+    <input type="hidden" name="lan_netmask" value="<% nvram_get_x("", "lan_netmask"); %>" readonly="1" />
     <input type="hidden" name="vlan_tag_lan1" value="<% nvram_get_x("", "vlan_tag_lan1"); %>" />
     <input type="hidden" name="vlan_tag_lan2" value="<% nvram_get_x("", "vlan_tag_lan2"); %>" />
     <input type="hidden" name="vlan_tag_lan3" value="<% nvram_get_x("", "vlan_tag_lan3"); %>" />

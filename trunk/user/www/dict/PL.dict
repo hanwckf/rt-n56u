@@ -1050,6 +1050,8 @@ Main_content_Login_Item7=Restart urządzenia potrwa około 30 sekund. Czy chcesz
 [QIS-general.js]
 JS_fieldblank=Pole nie może być puste
 JS_validip=nie jest poprawnym adresem IP!
+JS_validmask=is not a valid IP Mask!
+JS_validsubnet=WAN and LAN should have different IP addresses and subnets!
 JS_itemlimit1=Tabela pozwala tylko
 JS_itemlimit2=elementy!
 JS_duplicate=Ten wpis znajduje się na liście
@@ -1068,7 +1070,6 @@ JS_AES2=Jeżeli chcesz wybrać unikalny AES, szyfrowanie powinno być ustawione 
 JS_AES3=Jeżeli chcesz wybrać unikalny AES, WEP powinien być również odblokowany!
 JS_RESET=UWAGA:\nWszystkie ustawienia zostaną skasowane!\nCzy chcesz kontynuować?
 JS_DHCP1=Została zmieniona maska podsieci i należy zmienić pulę IP ZVMODELVZ. Czy chcesz wykonać zmianę automatycznie?
-JS_DHCP2=Ustawienia serwera DHCP nie pasują do bieżącego adresu IP. Czy chcesz automatycznie dopasowac ustawienia ?
 JS_DHCP3=Nowa pula IP nie pasuje do maski podsieci. Czy chcesz zezwolić ZVMODELVZ na automatyczną zmianę puli IP?
 BOP_isp_desc=Nazwa hosta przydzielona przez ISP:
 OP_desc1=ZVMODELVZ obsługuje 3 tryby pracy. Wybierz pożądany przez Ciebie tryb:

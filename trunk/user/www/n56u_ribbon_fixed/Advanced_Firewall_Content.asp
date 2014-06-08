@@ -254,7 +254,7 @@ function valid_IP_subnet(obj){
 function valid_IP_form(obj){
 	if(obj.value == ""){
 		return true;
-	}else{	//without netMask
+	}else{
 		if(!validate_ipaddr_final(obj, obj.name)){
 			obj.focus();
 			obj.select();

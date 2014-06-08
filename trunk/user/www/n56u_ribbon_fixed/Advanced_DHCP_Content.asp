@@ -78,7 +78,8 @@ function initial(){
 	show_footer();
 	showtext($("LANIP"), '<% nvram_get_x("", "lan_ipaddr"); %>');
 
-	if((inet_network(document.form.lan_ipaddr.value)>=inet_network(document.form.dhcp_start.value))&&(inet_network(document.form.lan_ipaddr.value)<=inet_network(document.form.dhcp_end.value)))
+	if((inet_network(document.form.lan_ipaddr.value)>=inet_network(document.form.dhcp_start.value))&&
+	   (inet_network(document.form.lan_ipaddr.value)<=inet_network(document.form.dhcp_end.value)))
 		$('router_in_pool').style.display="";
 
 	showMDHCPList();
@@ -115,35 +116,62 @@ function validForm(){
 		return false;
 	}
 
-	if(!validate_ipaddr_final(document.form.dhcp_start, 'dhcp_start') ||
-			!validate_ipaddr_final(document.form.dhcp_end, 'dhcp_end') ||
+	var o_min = document.form.dhcp_start;
+	var o_max = document.form.dhcp_end;
+
+	if(!validate_ipaddr_final(o_min, 'dhcp_start') ||
+			!validate_ipaddr_final(o_max, 'dhcp_end') ||
 			!validate_ipaddr_final(document.form.dhcp_gateway_x, 'dhcp_gateway_x') ||
-			!validate_ipaddr_final(document.form.dhcp_dns1_x, 'dhcp_dns1_x') ||
-			!validate_ipaddr_final(document.form.dhcp_dns2_x, 'dhcp_dns1_x') ||
-			!validate_ipaddr_final(document.form.dhcp_dns3_x, 'dhcp_dns1_x') ||
+			!validate_ipaddr_final(document.form.dhcp_dns1_x, 'dhcp_dns_x') ||
+			!validate_ipaddr_final(document.form.dhcp_dns2_x, 'dhcp_dns_x') ||
+			!validate_ipaddr_final(document.form.dhcp_dns3_x, 'dhcp_dns_x') ||
 			!validate_ipaddr_final(document.form.dhcp_wins_x, 'dhcp_wins_x'))
 		return false;
-	
+
 	if(!validate_range(document.form.dhcp_lease, 120, 604800))
 		return false;
-	
-	if(intoa(document.form.dhcp_start.value) > intoa(document.form.dhcp_end.value)){
-		tmp = document.form.dhcp_start.value;
-		document.form.dhcp_start.value = document.form.dhcp_end.value;
-		document.form.dhcp_end.value = tmp;
+
+	var lan_addr = document.form.lan_ipaddr.value;
+	var lan_mask = document.form.lan_netmask.value;
+
+	var snet_min = get_subnet_num(lan_addr, lan_mask, 0);
+	var snet_max = get_subnet_num(lan_addr, lan_mask, 1);
+
+	if(inet_network(o_min.value) > inet_network(o_max.value)){
+		var tmp = o_min.value;
+		o_min.value = o_max.value;
+		o_max.value = tmp;
 	}
-	
-	var default_pool = new Array();
-	default_pool =get_default_pool(document.form.lan_ipaddr.value, document.form.lan_netmask.value);
-	if((inet_network(document.form.dhcp_start.value) < inet_network(default_pool[0])) || (inet_network(document.form.dhcp_end.value) > inet_network(default_pool[1]))){
-			if(confirm("<#JS_DHCP3#>")){ //Acceptable DHCP ip pool : "+default_pool[0]+"~"+default_pool[1]+"\n
-				document.form.dhcp_start.value=default_pool[0];
-				document.form.dhcp_end.value=default_pool[1];
-			}else{return false;}
-	}
-	
-	if(!validate_ipaddr(document.form.dhcp_wins_x, 'dhcp_wins_x'))
+
+	if(inet_network(o_min.value) == snet_min){
+		alert(o_min.value+"/"+lan_mask+" <#JS_validip#>");
+		o_min.focus();
+		o_min.select();
 		return false;
+	}
+
+	if(inet_network(o_max.value) == snet_max){
+		alert(o_max.value+"/"+lan_mask+" <#JS_validip#>");
+		o_max.focus();
+		o_max.select();
+		return false;
+	}
+
+	if (!matchSubnet(o_min.value, lan_addr, lan_mask) ||
+	    !matchSubnet(o_max.value, lan_addr, lan_mask)) {
+		if(confirm("<#JS_DHCP3#>")){
+			var snet_pool = snet_max-snet_min;
+			o_min.value=num2ip4(snet_min+2);
+			if (snet_pool > 30)
+				o_max.value=num2ip4(snet_max-11);
+			else
+				o_max.value=num2ip4(snet_max-1);
+		}else{
+			o_min.focus();
+			o_min.select();
+			return false;
+		}
+	}
 
 	return true;
 }
@@ -231,7 +259,7 @@ function markGroupMDHCP(o, c, b) {
 			return false;
 		}else if (!validate_hwaddr(document.form.dhcp_staticmac_x_0)){
 			return false;
-		}else if (!validate_ipaddr_final(document.form.dhcp_staticip_x_0, "staticip")){
+		}else if (!validate_ipaddr_final(document.form.dhcp_staticip_x_0, 'staticip')){
 			return false;
 		}else{
 			for(i=0; i<m_dhcp.length; i++){
@@ -286,53 +314,6 @@ function changeBgColor(obj, num){
 		$("row" + num).style.background='#D9EDF7';
 	else
 		$("row" + num).style.background='whiteSmoke';
-}
-
-
-function get_default_pool(ip, netmask){
-	// --- get lan_ipaddr post set .xxx  By Viz 2011.10
-	z=0;
-	tmp_ip=0;
-	for(i=0;i<document.form.lan_ipaddr.value.length;i++){
-		if (document.form.lan_ipaddr.value.charAt(i) == '.')
-			z++;
-		if (z==3){
-			tmp_ip=i+1;
-			break;
-		}
-	}
-	post_lan_ipaddr = document.form.lan_ipaddr.value.substr(tmp_ip,3);
-	c=0;
-	tmp_nm=0;
-	for(i=0;i<document.form.lan_netmask.value.length;i++){
-		if (document.form.lan_netmask.value.charAt(i) == '.')
-			c++;
-		if (c==3){
-			tmp_nm=i+1;
-			break;
-		}
-	}
-	var post_lan_netmask = document.form.lan_netmask.value.substr(tmp_nm,3);
-	
-	var nm = new Array("0", "128", "192", "224", "240", "248", "252");
-	for(i=0;i<nm.length;i++){
-		 if(post_lan_netmask==nm[i]){
-			gap=256-Number(nm[i]);
-			subnet_set = 256/gap;
-			for(j=1;j<=subnet_set;j++){
-				if(post_lan_ipaddr < j*gap){
-					pool_start=(j-1)*gap+1;
-					pool_end=j*gap-2;
-					break;
-				}
-			}
-			var default_pool_start = subnetPostfix(document.form.dhcp_start.value, pool_start, 3);
-			var default_pool_end = subnetPostfix(document.form.dhcp_end.value, pool_end, 3);
-			var default_pool = new Array(default_pool_start, default_pool_end);
-			return default_pool;
-			break;
-		}
-	}
 }
 
 </script>

@@ -1050,6 +1050,8 @@ Main_content_Login_Item7=Omstart av ruteren tar omtrent 30 sekunder. Er du sikke
 [QIS-general.js] 
 JS_fieldblank=Felter kan ikke være tomme!
 JS_validip=er ikke en gyldig IP-adresse!
+JS_validmask=is not a valid IP Mask!
+JS_validsubnet=WAN and LAN should have different IP addresses and subnets!
 JS_itemlimit1=Denne tabellen tillater bare
 JS_itemlimit2=elementer!
 JS_duplicate=Denne oppføringen har vært i liste.
@@ -1068,7 +1070,6 @@ JS_AES2=Hvis du vil aktivere AES-unik, bør godkjenning stilles inn som Open Sys
 JS_AES3=Hvis du vil aktivere AES-unik, bør WEP også være aktivert!
 JS_RESET=ADVARSEL: \ nAlle innstillingene dine vil gå tapt!\nVil du fortsette?
 JS_DHCP1=Nettverksmasken er endret og IP-utvalget til ZVMODELVZ bør endres. Vil du endre dette automatisk?
-JS_DHCP2=Innstillingen til DHCP-server samsvarer ikke med gjeldende IP-adresse for trådløs brannmur. Vil du endre den automatisk?
 JS_DHCP3=Det nye IP-utvalget samsvarer ikke med nettverksmasken. Vil du gi ZVMODELVZ tillatelse til å endre IP-utvalget automatisk?
 BOP_isp_desc=Vertsnavn levert av ISP:
 OP_desc1=ZVMODELVZ støtter tre driftsmoduser for å møte ulike krav. Velg modusen som passer din situasjon.

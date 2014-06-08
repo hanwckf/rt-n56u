@@ -1050,6 +1050,8 @@ Main_content_Login_Item7=Det tar ungefär 30 sekunder att starta om routern. Är
 [QIS-general.js] 
 JS_fieldblank=Fälten måste fyllas i!
 JS_validip=är inte en giltig IP-adress.
+JS_validmask=is not a valid IP Mask!
+JS_validsubnet=WAN and LAN should have different IP addresses and subnets!
 JS_itemlimit1=Den här tabellen tillåter endast
 JS_itemlimit2=föremål!
 JS_duplicate=Den här posten har funnits i listan.
@@ -1068,7 +1070,6 @@ JS_AES2=Om du vill aktivera unik AES måste verifiering ställas till Öppet sys
 JS_AES3=Om du vill aktivera unik AES måste WEP också aktiveras!
 JS_RESET=VARNING:\nAlla inställningar kommer att gå förlorade!\nVill du fortsätta?
 JS_DHCP1=Subnetmasken är ändrad och IP-poolen för ZVMODELVZ bör ändras. Vill du ändra den automatiskt?
-JS_DHCP2=DHCP-serverns inställningar överensstämmer inte med den trådlösa brandväggens nuvarande IP-adress. Vill du ändra den automatiskt?
 JS_DHCP3=Den nya IP Pool matchar inte subnetmasken. Vill du tillåta att ZVMODELVZ ändrar IP pool automatiskt?
 BOP_isp_desc=Värdnamn givet av ISP:n:
 OP_desc1=ZVMODELVZ stöder tre driftlägen för att möta olika krav. Välj det läge som motsvarar din situation.

@@ -167,7 +167,7 @@ function valid_rlan_subnet(oa, om){
 		return false;
 	}
 	if (ip4rm == null || isMask(om.value) <= 0){
-		alert(om.value + " <#JS_validip#>");
+		alert(om.value + " <#JS_validmask#>");
 		om.focus();
 		om.select();
 		return false;
@@ -212,30 +212,43 @@ function validForm(){
 			return valid_vpn_subnet(document.form.vpns_vnet);
 	}
 
-	var vpns_cli0_ip = parseInt(document.form.vpns_cli0.value);
-	var vpns_cli1_ip = parseInt(document.form.vpns_cli1.value);
+	var o_cli0 = document.form.vpns_cli0;
+	var o_cli1 = document.form.vpns_cli1;
 
-	if(vpns_cli0_ip < 2 || vpns_cli0_ip > 254){
-		alert("Start IP value should be between 2 and 254!");
-		document.form.vpns_cli0.focus();
+	var vpns_cli0_ip = parseInt(o_cli0.value);
+	var vpns_cli1_ip = parseInt(o_cli1.value);
+
+	var snet_min = get_subnet_num(lan_ipaddr_x, lan_netmask_x, 0);
+	var snet_max = get_subnet_num(lan_ipaddr_x, lan_netmask_x, 1);
+	var snet_pool = (snet_max-snet_min) - 1;
+	if (snet_pool > 254)
+		snet_pool = 254;
+
+	if(vpns_cli0_ip < 1 || vpns_cli0_ip > snet_pool){
+		alert("Start IP value should be between 1 and "+snet_pool+"!");
+		o_cli0.focus();
+		o_cli0.select();
 		return false;
 	}
 
-	if(vpns_cli1_ip < 2 || vpns_cli1_ip > 254){
-		alert("End IP value should be between 2 and 254!");
-		document.form.vpns_cli1.focus();
+	if(vpns_cli1_ip < 2 || vpns_cli1_ip > snet_pool){
+		alert("End IP value should be between 2 and "+snet_pool+"!");
+		o_cli1.focus();
+		o_cli1.select();
 		return false;
 	}
 
 	if(vpns_cli0_ip > vpns_cli1_ip){
 		alert("End IP value should higher or equal than Start IP!");
-		document.form.vpns_cli1.focus();
+		o_cli1.focus();
+		o_cli1.select();
 		return false;
 	}
 
 	if((vpns_cli1_ip - vpns_cli0_ip) >= 50){
 		alert("VPN server allow max 50 clients!");
-		document.form.vpns_cli1.focus();
+		o_cli1.focus();
+		o_cli1.select();
 		return false;
 	}
 

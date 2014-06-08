@@ -1050,6 +1050,8 @@ Main_content_Login_Item7=Restartování routeru potrvá přibližně 30 vteřin.
 [QIS-general.js]
 JS_fieldblank=Pole nesmí být prázdná!
 JS_validip=není platná IP adresa!
+JS_validmask=is not a valid IP Mask!
+JS_validsubnet=WAN and LAN should have different IP addresses and subnets!
 JS_itemlimit1=Tato tabulka umožňuje pouze
 JS_itemlimit2=položky!
 JS_duplicate=Tento přístup byl v seznamu.
@@ -1068,7 +1070,6 @@ JS_AES2=Pokud chcete povolit AES unique, přihlašování by mělo být nastaven
 JS_AES3=Pokud chcete povolit AES unique, WEP by mělo být povoleno také!
 JS_RESET=Varování: \n Všechna vaše nastavení budou ztracena! \nOpravdu chcete pokračovat?
 JS_DHCP1=Maska podsítě byla změněna a je třeba změnit fond adres IP zařízení ZVMODELVZ. Chcete jej změnit automaticky?
-JS_DHCP2=Nastavení DHCP serveru nesouhlasí se stávající IP adresou ve firewallu. Chcete ji změnit automaticky?
 JS_DHCP3=Nový fond adres IP se neshoduje s maskou podsítě. Chcete dovolit zařízení ZVMODELVZ automaticky změnit fond adres IP?
 BOP_isp_desc=Jméno hostitele poskytnuté vašim ISP:
 OP_desc1=ZVMODELVZ podporuje 3 režimy provozu pro různé požadavky. Prosím vyberte nejvhodnější režim pro svou situaci.

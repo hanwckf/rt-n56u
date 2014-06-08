@@ -1050,6 +1050,8 @@ Main_content_Login_Item7=Reitittimen uudelleenkäynnistys kestää 30 sekuntia. 
 [QIS-general.js]
 JS_fieldblank=Kentät eivät voi olla tyhjiä!
 JS_validip=ei ole kelvollinen IP-osoite!
+JS_validmask=is not a valid IP Mask!
+JS_validsubnet=WAN and LAN should have different IP addresses and subnets!
 JS_itemlimit1=Vain tämä taulukko sallii
 JS_itemlimit2=kohteita!
 JS_duplicate=Tämä syöte on ollut luettelossa.
@@ -1068,7 +1070,6 @@ JS_AES2=Jos haluat ottaa käyttöön AES unique -salauksen, Todennus tulee asett
 JS_AES3=Jos haluat ottaa käyttöön AES unique -salauksen, myös WEP on otettava käyttöön!
 JS_RESET=VAROITUS:\nKaikki asetuksesi menetetään!\nHaluatko jatkaa?
 JS_DHCP1=Aliverkon peite on muutettu, joten ZVMODELVZ:n IP-ryhmä on muutettava. Haluatko muuttaa sen automaattisesti?
-JS_DHCP2=DHCP-palvelimen asetus ei vastaa nykyistä langattoman palomuurin IP-asetusta. Haluatko muuttaa sen automaattisesti?
 JS_DHCP3=Uusi IP-ryhmä ei vastaa uutta aliverkon peitettä. Haluatko sallia ZVMODELVZ:n muuttaa IP-ryhmää automaattisesti?
 BOP_isp_desc=Internet-palveluntarjoajan toimittama isäntänimi:
 OP_desc1=ZVMODELVZ tukee kolmea käyttötilaa voidakseen vastata erilaisiin vaatimuksiin. Valitse tilannettasi vastaava tila.

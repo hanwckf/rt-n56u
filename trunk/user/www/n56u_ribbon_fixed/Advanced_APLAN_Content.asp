@@ -63,9 +63,10 @@
 
 <script>
 
-function initial(){
-	final_flag = 1;
+var old_lan_addr = "<% nvram_get_x("","lan_ipaddr"); %>";
+var old_lan_mask = "<% nvram_get_x("","lan_netmask"); %>";
 
+function initial(){
 	show_banner(1);
 	show_menu(5,3,1);
 	show_footer();
@@ -101,34 +102,6 @@ function on_change_lan_dns(){
 	inputCtrl(document.form.lan_dns2, en_dns);
 }
 
-function checkIP(){
-	var strIP = $('lan_ipaddr').value;
-	var re=/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/g;
-	if(document.form.lan_proto_x[1].checked == 1){
-		if(re.test(strIP)){
-			if( RegExp.$1 == 192 && RegExp.$2 == 168 && RegExp.$3 < 256 && RegExp.$4 < 256){
-				applyRule();
-				re.test(strIP);
-			}
-			else if( RegExp.$1 == 172 && RegExp.$2 > 15 && RegExp.$2 < 32 && RegExp.$3 < 256 && RegExp.$4 < 256){
-				applyRule();
-				re.test(strIP);
-			}
-			else if( RegExp.$1 == 10 && RegExp.$2 < 256 && RegExp.$3 < 256 && RegExp.$4 < 256){
-				applyRule();
-				re.test(strIP);
-			}
-			else{
-				alert('"'+strIP+'"'+" <#BM_alert_IP2#>");
-				re.test(strIP);
-			}
-		}
-		else alert('"'+strIP+'"'+" <#JS_validip#>");
-	}
-	else
-		applyRule();
-}
-
 function applyRule(){
 	if(validForm()){
 		showLoading();
@@ -136,94 +109,85 @@ function applyRule(){
 		document.form.action_mode.value = " Apply ";
 		document.form.current_page.value = "Advanced_APLAN_Content.asp";
 		document.form.next_page.value = "/as.asp";
-		get_dhcp_range();
 		
 		document.form.submit();
 	}
 }
 
-function valid_IP(obj_name, obj_flag){
+function valid_LAN_IP(ip_obj,flag){
 	// A : 1.0.0.0~126.255.255.255
 	// B : 127.0.0.0~127.255.255.255 (forbidden)
 	// C : 128.0.0.0~255.255.255.254
-	var A_class_start = inet_network("1.0.0.0");
-	var A_class_end = inet_network("126.255.255.255");
-	var B_class_start = inet_network("127.0.0.0");
-	var B_class_end = inet_network("127.255.255.255");
-	var C_class_start = inet_network("128.0.0.0");
-	var C_class_end = inet_network("255.255.255.255");
-	
-	var ip_obj = obj_name;
+	var A_class_min = inet_network("1.0.0.0");
+	var A_class_max = inet_network("126.255.255.255");
+	var B_class_min = inet_network("127.0.0.0");
+	var B_class_max = inet_network("127.255.255.255");
+	var C_class_min = inet_network("128.0.0.0");
+	var C_class_max = inet_network("255.255.255.255");
+
 	var ip_num = inet_network(ip_obj.value);
 
-	if(obj_flag == "DNS" && ip_num == -1){
+	if(ip_num < 0 && (flag == "GW" || flag == "DNS"))
 		return true;
-	}
 
-	if(obj_flag == "GW" && ip_num == -1){
+	if(ip_num > A_class_min && ip_num < A_class_max)
 		return true;
-	}
-
-	if(ip_num > A_class_start && ip_num < A_class_end)
-		return true;
-	else if(ip_num > B_class_start && ip_num < B_class_end){
-		alert(ip_obj.value+" <#JS_validip#>");
-		ip_obj.focus();
-		ip_obj.select();
+	else if(ip_num > B_class_min && ip_num < B_class_max)
 		return false;
-	}
-	else if(ip_num > C_class_start && ip_num < C_class_end)
+	else if(ip_num > C_class_min && ip_num < C_class_max)
 		return true;
-	else{
-		alert(ip_obj.value+" <#JS_validip#>");
-		ip_obj.focus();
-		ip_obj.select();
-		return false;
-	}
+	return false;
 }
 
 function validForm(){
-	if(document.form.lan_proto_x[0].checked == 1)
-		return true;
-
-	var ip_obj = document.form.lan_ipaddr;
-	var ip_num = inet_network(ip_obj.value);
-	var ip_class = "";
-	if(!valid_IP(ip_obj, ""))
-		return false;
-	if(!valid_IP(document.form.lan_gateway, "GW"))
-		return false;
-
-	var netmask_obj = document.form.lan_netmask;
-	var netmask_num = inet_network(netmask_obj.value);
-	var netmask_reverse_num = ~netmask_num;
-	var default_netmask = "";
-	var wrong_netmask = 0;
-
-	if(netmask_num < 0) wrong_netmask = 1;
-
-	if(ip_class == 'A')
-		default_netmask = "255.0.0.0";
-	else if(ip_class == 'B')
-		default_netmask = "255.255.0.0";
-	else
-		default_netmask = "255.255.255.0";
-
-	var test_num = netmask_reverse_num;
-	while(test_num != 0){
-		if((test_num+1)%2 == 0)
-			test_num = (test_num+1)/2-1;
-		else{
-			wrong_netmask = 1;
-			break;
+	if(document.form.lan_proto_x[0].checked){
+		if (!document.form.lan_dns_x[0].checked){
+			if(!validate_ipaddr_final(document.form.lan_dns1, 'lan_dns'))
+				return false;
+			if(!validate_ipaddr_final(document.form.lan_dns2, 'lan_dns'))
+				return false;
 		}
+		return true;
 	}
 
-	if(wrong_netmask == 1){
-		alert(netmask_obj.value+" <#JS_validip#>");
-		netmask_obj.value = default_netmask;
-		netmask_obj.focus();
-		netmask_obj.select();
+	var addr_obj = document.form.lan_ipaddr;
+	var mask_obj = document.form.lan_netmask;
+	var gate_obj = document.form.lan_gateway;
+	var addr_num = inet_network(addr_obj.value);
+
+	if(!validate_ipaddr_final(addr_obj, 'lan_ipaddr') ||
+			!validate_ipaddr_final(mask_obj, 'lan_netmask') ||
+			!validate_ipaddr_final(gate_obj, 'lan_gateway'))
+		return false;
+
+	if(!valid_LAN_IP(addr_obj, '')) {
+		alert(addr_obj.value+" <#JS_validip#>");
+		addr_obj.focus();
+		addr_obj.select();
+		return false;
+	}
+
+	var snet_min = get_subnet_num(addr_obj.value, mask_obj.value, 0);
+	var snet_max = get_subnet_num(addr_obj.value, mask_obj.value, 1);
+
+	if(addr_num == snet_min || addr_num == snet_max){
+		alert(addr_obj.value+"/"+mask_obj.value+" <#JS_validip#>");
+		addr_obj.focus();
+		addr_obj.select();
+		return false;
+	}
+
+	if(!valid_LAN_IP(gate_obj, 'GW')) {
+		alert(gate_obj.value+" <#JS_validip#>");
+		gate_obj.focus();
+		gate_obj.select();
+		return false;
+	}
+
+	if(gate_obj.value == addr_obj.value){
+		alert(gate_obj.value+" <#JS_validip#>");
+		gate_obj.select();
+		gate_obj.focus();
 		return false;
 	}
 
@@ -235,46 +199,31 @@ function validForm(){
 		return false;
 	}
 
-	return true;
-}
+	if(!validate_ipaddr_final(document.form.lan_dns1, 'lan_dns'))
+		return false;
+	if(!validate_ipaddr_final(document.form.lan_dns2, 'lan_dns'))
+		return false;
 
-function get_dhcp_range(){
-	var lan_ip = document.form.lan_ipaddr.value.split(".");
-	var netmask = document.form.lan_netmask.value.split(".");
-	var dhcp_start = new Array(4);
-	var dhcp_end = new Array(4);
-	var dhcp_range = new Array(2);
-	
-	for(var i = 0; i < 4; ++i){
-		if(netmask[i] == 255){
-			dhcp_start[i] = lan_ip[i];
-			dhcp_end[i] = lan_ip[i];
-		}
-		else if(netmask[i] == 0){
-			if(i != 3){
-				dhcp_start[i] = 0;
-				dhcp_end[i] = 255;
-			}
-			else{
-				dhcp_start[i] = 2;
-				dhcp_end[i] = 254;
-			}
-		}
-		else{
-			dhcp_start[i] = 0;
-			dhcp_end[i] = 255-netmask[i];
+	if(addr_obj.value != old_lan_addr || mask_obj.value != old_lan_mask){
+		var o_min = document.form.dhcp_start;
+		var o_max = document.form.dhcp_end;
+		if(!matchSubnet(o_min.value, addr_obj.value, mask_obj.value) ||
+				!matchSubnet(o_max.value, addr_obj.value, mask_obj.value) ||
+				inet_network(o_min.value) <= snet_min ||
+				inet_network(o_max.value) >= snet_max) {
+			var snet_pool = snet_max-snet_min;
+			o_min.value = num2ip4(snet_min+2);
+			if (snet_pool > 30)
+				o_max.value=num2ip4(snet_max-11);
+			else
+				o_max.value=num2ip4(snet_max-1);
 		}
 	}
-	
-	dhcp_range[0] = dhcp_start.toString(".");
-	dhcp_range[1] = dhcp_end.toString(".");
-	for(var i = 0; i < 3; ++i){
-		dhcp_range[0] = dhcp_range[0].replace(",", ".");
-		dhcp_range[1] = dhcp_range[1].replace(",", ".");
-	}
-	
-	document.form.dhcp_start.value = dhcp_range[0];
-	document.form.dhcp_end.value = dhcp_range[1];
+
+	if(addr_obj.value != old_lan_addr)
+		alert("<#LANHostConfig_lanipaddr_changed_hint#>");
+
+	return true;
 }
 
 function done_validating(action){
@@ -410,7 +359,7 @@ function done_validating(action){
                                         <tr>
                                             <td colspan="2" style="border-top: 0 none;">
                                                 <br/>
-                                                <center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="checkIP()" /></center>
+                                                <center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>
                                             </td>
                                         </tr>
                                     </table>

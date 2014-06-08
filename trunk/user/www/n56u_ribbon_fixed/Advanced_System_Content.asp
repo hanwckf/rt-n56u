@@ -158,7 +158,7 @@ function validForm(){
 			return false;
 	}
 
-	if(!validate_ipaddr(document.form.log_ipaddr, 'log_ipaddr') || !validate_string(document.form.ntp_server0))
+	if(!validate_ipaddr_final(document.form.log_ipaddr, 'log_ipaddr') || !validate_string(document.form.ntp_server0))
 		return false;
 
 	if(document.form.http_passwd2.value.length > 0)

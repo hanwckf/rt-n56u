@@ -58,8 +58,6 @@
 <% lanlink(); %>
 
 function initial(){
-	final_flag = 1;	// for the function in general.js
-
 	show_banner(1);
 
 	if(sw_mode == "3")

@@ -1050,6 +1050,8 @@ Main_content_Login_Item7=Le redémarrage du ZVMODELVZ dure environ 30 secondes, 
 [QIS-general.js]
 JS_fieldblank=Ces champs sont obligatoires!
 JS_validip=n'est pas une adresse IP valide!
+JS_validmask=is not a valid IP Mask!
+JS_validsubnet=WAN and LAN should have different IP addresses and subnets!
 JS_itemlimit1=Ce tableau accepte uniquement
 JS_itemlimit2=éléments!
 JS_duplicate=Cette entrée figure déjà dans la liste.
@@ -1068,7 +1070,6 @@ JS_AES2=Si vous souhaitez activer AES unique, vous devez régler la méthode d'a
 JS_AES3=Si vous souhaitez activer AES unique, vous devez également activer le WEP!
 JS_RESET=AVERTISSEMENT:\nTous vos paramètres seront perdus!\n Voulez-vous continuer ?
 JS_DHCP1=L'adresse de masque de sous-réseau a été modifiée et la plage d'adresses IP du ZVMODELVZ doit être également mise à jour. Souhaitez-le faire automatiquement ?
-JS_DHCP2=La configuration du serveur DHCP ne correspond pas à l'adresse IP actuelle du pare-feu sans fil. Souhaitez-vous modifier les paramètres automatiquement ?
 JS_DHCP3=La nouvelle plage d'adresses IP ne correspond pas au masque de sous-réseau. Souhaitez-vous autoriser le ZVMODELVZ à modifier la plage d'adresses IP automatiquement ?
 BOP_isp_desc=Nom d'hôte fourni par votre fournisseur d'accès à Internet:
 OP_desc1=Le ZVMODELVZ supporte trois modes de fonctionnement pour répondre à différents scénarios. Sélectionnez le mode correspondant à vos besoins.

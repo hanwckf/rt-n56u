@@ -117,7 +117,7 @@ function valid_rlan_subnet(oa, om){
 		return false;
 	}
 	if (ip4rm == null || isMask(om.value) <= 0){
-		alert(om.value + " <#JS_validip#>");
+		alert(om.value + " <#JS_validmask#>");
 		om.focus();
 		om.select();
 		return false;

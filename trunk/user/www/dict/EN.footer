@@ -1036,6 +1036,8 @@ Main_content_Login_Item7=Rebooting the router takes about 30 seconds. Are you su
 [QIS-general.js]
 JS_fieldblank=Fields cannot be blank!
 JS_validip=is not a valid IP Address!
+JS_validmask=is not a valid IP Mask!
+JS_validsubnet=WAN and LAN should have different IP addresses and subnets!
 JS_itemlimit1=This table only allow
 JS_itemlimit2=items!
 JS_duplicate=This entry has been in list.
@@ -1054,7 +1056,6 @@ JS_AES2=If you would like to enable AES unique, Authentication should be set as 
 JS_AES3=If you would like to enable AES unique, WEP should be enabled too!
 JS_RESET=WARNING.\nAll your settings will be lost!\nDo you want to continue?
 JS_DHCP1=The subnet mask is changed and the IP pool of ZVMODELVZ should be changed. Would you like to change it automatically?
-JS_DHCP2=The setting of DHCP Server does not match current IP Address of wireless Firewall. Would you like to change it automatically?
 JS_DHCP3=The new IP Pool does not match the subnet mask. Do you want to allow ZVMODELVZ to change the IP pool automatically?
 BOP_isp_desc=Host Name provided by ISP:
 OP_desc1=Router supports three operation modes to meet different requirements. Please select the mode that match your situation.

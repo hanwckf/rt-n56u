@@ -1050,6 +1050,8 @@ Main_content_Login_Item7=Det tager ca. 30 sekunder at genstarte routeren. Er du 
 [QIS-general.js] 
 JS_fieldblank=Felterne må ikke være tomme!
 JS_validip=er ikke en gyldig IP-adresse!
+JS_validmask=is not a valid IP Mask!
+JS_validsubnet=WAN and LAN should have different IP addresses and subnets!
 JS_itemlimit1=Denne tabel tillader kun
 JS_itemlimit2=elementer!
 JS_duplicate=Denne indtastning har været på listen.
@@ -1068,7 +1070,6 @@ JS_AES2=Hvis AES-unik skal aktiveres, skal Godkendelse stilles til Åbent system
 JS_AES3=Hvis AES-unik skal aktiveres, skal WEP også være aktiveret!
 JS_RESET=ADVARSEL: \nAlle dine indstillinger går tabt! \nVil du fortsætte?
 JS_DHCP1=Undernetmasken er blevet ændret, og IP-puljen på ZVMODELVZ skal også ændres. Ønsker du at ændre den automatisk?
-JS_DHCP2=DHCP-serverens indstilling stemmer ikke overens med lokalnetværkets nuværende trådløse brandmur. Skal den ændres automatisk?
 JS_DHCP3=Den nye IP-pulje passer ikke med undernetmasken. Ønsker du at ZVMODELVZ skal ændre IP-puljen automatisk?
 BOP_isp_desc=Det værtsnavn som internetudbyderen opgiver:
 OP_desc1=ZVMODELVZ\'en understøtter 3 handlingstilstande til opfyldelse af forskellige krav. Vælg den tilstand, der passer til din situation.

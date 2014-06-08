@@ -1051,6 +1051,8 @@ Main_content_Login_Item7=Der Neustart des Routers braucht etwa 30 Sekunden. Moch
 [QIS-general.js]
 JS_fieldblank=Felder dürfen nicht leer sein!
 JS_validip=ist keine gültige IP-Adresse!
+JS_validmask=is not a valid IP Mask!
+JS_validsubnet=WAN and LAN should have different IP addresses and subnets!
 JS_itemlimit1=Diese Tabelle lasst nur
 JS_itemlimit2=Eintrage zu!
 JS_duplicate=Dieser Eintrag war in der Liste vorhanden.
@@ -1069,7 +1071,6 @@ JS_AES2=Wenn Sie eindeutiges AES aktivieren möchten, sollte die Authentisierung
 JS_AES3=Wenn Sie eindeutiges AES aktivieren möchten, sollte auch WEP aktiviert sein!
 JS_RESET=WARNUNG:\nAll Ihre Einstellungen gehen verloren!\nMöchten Sie fortsetzen?
 JS_DHCP1=Die Subnetzmaske wurde geändert und der IP-Bereich des ZVMODELVZ sollte ebenfalls geändert werden. Wollen Sie die Änderung automatisch vornehmen?
-JS_DHCP2=Die Einstellungen des DHCP-Servers stimmen nicht mit der aktuellen IP-Adresse der Wireless-Firewall überein. Mochten Sie dies automatisch andern lassen?
 JS_DHCP3=Der neue IP-Bereich stimmt nicht mit der Subnetzmaske überein. Wollen Sie den ZVMODELVZ erlauben den IP-Bereich automatisch zu ändern?
 BOP_isp_desc=Vom Internetanbieter zugewiesener Hostname:
 OP_desc1=Der ZVMODELVZ unterstützt drei Betriebsmodi für unterschiedliche Einsatzbedingungen. Bitte wählen Sie den Modus, der am besten zu Ihrer Situation passt.

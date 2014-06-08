@@ -1050,6 +1050,8 @@ Main_content_Login_Item7=A reinicialização do roteador demora aproximadamente 
 [QIS-general.js]
 JS_fieldblank=Os campos não podem estar em branco !
 JS_validip=não é um endereço IP válido !
+JS_validmask=is not a valid IP Mask!
+JS_validsubnet=WAN and LAN should have different IP addresses and subnets!
 JS_itemlimit1=Esta tabela apenas permite
 JS_itemlimit2=itens !
 JS_duplicate=Esta entrada não está na lista.
@@ -1068,7 +1070,6 @@ JS_AES2=Se você quiser habilitar AES original a autenticação deve ser definid
 JS_AES3=Se você quiser habilitar AES original o WEP deve estar habilitado também !
 JS_RESET=ATENÇÃO:\nTodas as configurações serão perdias !\nVocê quer continuar ?
 JS_DHCP1=A máscara de subrede está alterada e o grupo de IP pool do ZVMODELVZ deve ser mudado. Deseja alterá-lo automaticamente?
-JS_DHCP2=A configuração do servidor DHCP não corresponde ao endereço IP do firewall da rede sem fio. Você gostaria de mudar automaticamente ?
 JS_DHCP3=O novo grupo de IP não combina com a máscara de subrede. Deseja permitir que o ZVMODELVZ altere o grupo de IP automaticamente?
 BOP_isp_desc=Nome do host fornecido pelo provedor de Internet:
 OP_desc1=O ZVMODELVZ suporta três modos de operação para atender diferentes necessidades. Por favor selecione o modo que corresponde à sua situação.

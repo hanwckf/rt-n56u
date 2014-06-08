@@ -375,9 +375,9 @@ _asf_load_string(FILE *fp, int type, int size, char *buf, int len)
 	unsigned char data[2048];
 	uint16_t wc;
 	int i, j;
+	int16_t *wd16;
 	int32_t *wd32;
 	int64_t *wd64;
-	int16_t *wd16;
 
 	i = 0;
 	if(size && (size <= sizeof(data)) && (size == fread(data, 1, size, fp)))
@@ -413,11 +413,7 @@ _asf_load_string(FILE *fp, int type, int size, char *buf, int len)
 			if(size >= 8)
 			{
 				wd64 = (int64_t *) &data[0];
-#if __WORDSIZE == 64
-				i = snprintf(buf, len, "%ld", le64_to_cpu(*wd64));
-#else
-				i = snprintf(buf, len, "%lld", le64_to_cpu(*wd64));
-#endif
+				i = snprintf(buf, len, "%lld", (long long)le64_to_cpu(*wd64));
 			}
 			break;
 		case ASF_VT_WORD:

@@ -25,6 +25,7 @@
 #define __UTILS_H__
 
 #include <stdarg.h>
+#include <dirent.h>
 #include <sys/param.h>
 
 #include "minidlnatypes.h"
@@ -54,6 +55,22 @@ static inline void strncpyt(char *dst, const char *src, size_t len)
 {
 	strncpy(dst, src, len);
 	dst[len-1] = '\0';
+}
+static inline int is_reg(const struct dirent *d)
+{
+#if HAVE_STRUCT_DIRENT_D_TYPE
+	return (d->d_type == DT_REG);
+#else
+	return -1;
+#endif
+}
+static inline int is_dir(const struct dirent *d)
+{
+#if HAVE_STRUCT_DIRENT_D_TYPE
+	return (d->d_type == DT_DIR);
+#else
+	return -1;
+#endif
 }
 int xasprintf(char **strp, char *fmt, ...) __attribute__((__format__ (__printf__, 2, 3)));
 int ends_with(const char * haystack, const char * needle);

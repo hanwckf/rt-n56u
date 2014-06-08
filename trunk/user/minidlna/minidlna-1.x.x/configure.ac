@@ -14,7 +14,7 @@
 # License along with MiniDLNA; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA.
-AC_INIT(MiniDLNA,1.1.2,,minidlna)
+AC_INIT(MiniDLNA,1.1.3,,minidlna)
 #LT_INIT
 
 AC_CANONICAL_TARGET
@@ -58,6 +58,7 @@ m4_ifdef([AC_TYPE_INT32_T], [AC_TYPE_INT32_T])
 m4_ifdef([AC_TYPE_UINT32_T], [AC_TYPE_UINT32_T])
 m4_ifdef([AC_TYPE_UINT64_T], [AC_TYPE_UINT64_T])
 m4_ifdef([AC_TYPE_SSIZE_T], [AC_TYPE_SSIZE_T])
+AC_STRUCT_DIRENT_D_TYPE
 AC_STRUCT_ST_BLOCKS
 AC_HEADER_STDBOOL
 AC_C_BIGENDIAN

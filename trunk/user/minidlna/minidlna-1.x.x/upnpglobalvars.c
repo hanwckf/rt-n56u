@@ -49,6 +49,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/param.h>
+#include <limits.h>
 
 #include "config.h"
 #include "upnpglobalvars.h"

@@ -173,7 +173,7 @@ getsyshwaddr(char *buf, int len)
 {
 	unsigned char mac[6];
 	int ret = -1;
-#if defined(HAVE_GETIFADDRS) && !defined (__linux__)
+#if defined(HAVE_GETIFADDRS) && !defined (__linux__) && !defined (__sun__)
 	struct ifaddrs *ifap, *p;
 	struct sockaddr_in *addr_in;
 	uint8_t a;
@@ -191,7 +191,7 @@ getsyshwaddr(char *buf, int len)
 			a = (htonl(addr_in->sin_addr.s_addr) >> 0x18) & 0xFF;
 			if (a == 127)
 				continue;
-#ifdef __linux__
+#if defined(__linux__)
 			struct ifreq ifr;
 			int fd;
 			fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -242,9 +242,15 @@ getsyshwaddr(char *buf, int len)
 			continue;
 		if (ioctl(fd, SIOCGIFHWADDR, &ifr) < 0)
 			continue;
+#ifdef __sun__
+		if (MACADDR_IS_ZERO(ifr.ifr_addr.sa_data))
+			continue;
+		memcpy(mac, ifr.ifr_addr.sa_data, 6);
+#else
 		if (MACADDR_IS_ZERO(ifr.ifr_hwaddr.sa_data))
 			continue;
 		memcpy(mac, ifr.ifr_hwaddr.sa_data, 6);
+#endif
 		ret = 0;
 		break;
 	}

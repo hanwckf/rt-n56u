@@ -25,6 +25,7 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/param.h>
+#include <limits.h>
 #include <libgen.h>
 #include <setjmp.h>
 #include <errno.h>
@@ -127,23 +128,22 @@ update_if_album_art(const char *path)
 		return;
 	while ((dp = readdir(dh)) != NULL)
 	{
-		switch( dp->d_type )
+		if (is_reg(dp) == 1)
 		{
-			case DT_REG:
-				type = TYPE_FILE;
-				break;
-			case DT_LNK:
-			case DT_UNKNOWN:
-				snprintf(file, sizeof(file), "%s/%s", dir, dp->d_name);
-				type = resolve_unknown_type(file, ALL_MEDIA);
-				break;
-			default:
-				type = TYPE_UNKNOWN;
-				break;
+			type = TYPE_FILE;
+		}
+		else if (is_dir(dp) == 1)
+		{
+			type = TYPE_DIR;
+		}
+		else
+		{
+			snprintf(file, sizeof(file), "%s/%s", dir, dp->d_name);
+			type = resolve_unknown_type(file, ALL_MEDIA);
 		}
 		if( type != TYPE_FILE )
 			continue;
-		if( (*(dp->d_name) != '.') &&
+		if( (dp->d_name[0] != '.') &&
 		    (is_video(dp->d_name) || is_audio(dp->d_name)) &&
 		    (album_art || strncmp(dp->d_name, match, ncmp) == 0) )
 		{

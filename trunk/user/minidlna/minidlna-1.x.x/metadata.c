@@ -55,11 +55,6 @@
 #define FLAG_MIME	0x00000100
 #define FLAG_DURATION	0x00000200
 #define FLAG_RESOLUTION	0x00000400
-#define FLAG_BITRATE	0x00000800
-#define FLAG_FREQUENCY	0x00001000
-#define FLAG_BPS	0x00002000
-#define FLAG_CHANNELS	0x00004000
-#define FLAG_ROTATION	0x00008000
 
 /* Audio profile flags */
 enum audio_profiles {
@@ -75,40 +70,6 @@ enum audio_profiles {
 	PROFILE_AUDIO_AAC_MULT5,
 	PROFILE_AUDIO_AMR
 };
-
-static inline int
-lav_open(AVFormatContext **ctx, const char *filename)
-{
-	int ret;
-#if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(17<<8)+0)
-	ret = avformat_open_input(ctx, filename, NULL, NULL);
-	if (ret == 0)
-		avformat_find_stream_info(*ctx, NULL);
-#else
-	ret = av_open_input_file(ctx, filename, NULL, 0, NULL);
-	if (ret == 0)
-		av_find_stream_info(*ctx);
-#endif
-	return ret;
-}
-
-static inline void
-lav_close(AVFormatContext *ctx)
-{
-#if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(17<<8)+0)
-	avformat_close_input(&ctx);
-#else
-	av_close_input_file(ctx);
-#endif
-}
-
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(31<<8)+0)
-# if LIBAVUTIL_VERSION_INT < ((51<<16)+(5<<8)+0) && !defined(FF_API_OLD_METADATA2)
-#define AV_DICT_IGNORE_SUFFIX AV_METADATA_IGNORE_SUFFIX
-#define av_dict_get av_metadata_get
-typedef AVMetadataTag AVDictionaryEntry;
-# endif
-#endif
 
 /* This function shamelessly copied from libdlna */
 #define MPEG_TS_SYNC_CODE 0x47
@@ -296,16 +257,6 @@ free_metadata(metadata_t *m, uint32_t flags)
 		free(m->duration);
 	if( flags & FLAG_RESOLUTION )
 		free(m->resolution);
-	if( flags & FLAG_BITRATE )
-		free(m->bitrate);
-	if( flags & FLAG_FREQUENCY )
-		free(m->frequency);
-	if( flags & FLAG_BPS )
-		free(m->bps);
-	if( flags & FLAG_CHANNELS )
-		free(m->channels);
-	if( flags & FLAG_ROTATION )
-		free(m->rotation);
 }
 
 int64_t
@@ -605,24 +556,21 @@ GetImageMetadata(const char *path, char *name)
 	e = exif_content_get_entry(ed->ifd[EXIF_IFD_0], EXIF_TAG_ORIENTATION);
 	if( e )
 	{
-		int rotate;
 		switch( exif_get_short(e->data, exif_data_get_byte_order(ed)) )
 		{
 		case 3:
-			rotate = 180;
+			m.rotation = 180;
 			break;
 		case 6:
-			rotate = 90;
+			m.rotation = 90;
 			break;
 		case 8:
-			rotate = 270;
+			m.rotation = 270;
 			break;
 		default:
-			rotate = 0;
+			m.rotation = 0;
 			break;
 		}
-		if( rotate )
-			xasprintf(&m.rotation, "%d", rotate);
 	}
 
 	if( ed->size )
@@ -689,7 +637,7 @@ no_exifdata:
 	                   " (PATH, TITLE, SIZE, TIMESTAMP, DATE, RESOLUTION,"
 	                    " ROTATION, THUMBNAIL, CREATOR, DLNA_PN, MIME) "
 	                   "VALUES"
-	                   " (%Q, '%q', %lld, %ld, %Q, %Q, %Q, %d, %Q, %Q, %Q);",
+	                   " (%Q, '%q', %lld, %ld, %Q, %Q, %u, %d, %Q, %Q, %Q);",
 	                   path, name, (long long)file.st_size, file.st_mtime, m.date, m.resolution,
 	                   m.rotation, thumb, m.creator, m.dlna_pn, m.mime);
 	if( ret != SQLITE_OK )
@@ -752,6 +700,7 @@ GetVideoMetadata(const char *path, char *name)
 			continue;
 		}
 		else if( video_stream == -1 &&
+		         !lav_is_thumbnail_stream(ctx->streams[i], &m.thumb_data, &m.thumb_size) &&
 			 ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO )
 		{
 			video_stream = i;
@@ -776,10 +725,10 @@ GetVideoMetadata(const char *path, char *name)
 		aac_object_type_t aac_type = AAC_INVALID;
 		switch( ac->codec_id )
 		{
-			case CODEC_ID_MP3:
+			case AV_CODEC_ID_MP3:
 				audio_profile = PROFILE_AUDIO_MP3;
 				break;
-			case CODEC_ID_AAC:
+			case AV_CODEC_ID_AAC:
 				if( !ac->extradata_size ||
 				    !ac->extradata )
 				{
@@ -820,12 +769,12 @@ GetVideoMetadata(const char *path, char *name)
 						break;
 				}
 				break;
-			case CODEC_ID_AC3:
-			case CODEC_ID_DTS:
+			case AV_CODEC_ID_AC3:
+			case AV_CODEC_ID_DTS:
 				audio_profile = PROFILE_AUDIO_AC3;
 				break;
-			case CODEC_ID_WMAV1:
-			case CODEC_ID_WMAV2:
+			case AV_CODEC_ID_WMAV1:
+			case AV_CODEC_ID_WMAV2:
 				/* WMA Baseline: stereo, up to 48 KHz, up to 192,999 bps */
 				if ( ac->bit_rate <= 193000 )
 					audio_profile = PROFILE_AUDIO_WMA_BASE;
@@ -833,32 +782,25 @@ GetVideoMetadata(const char *path, char *name)
 				else if ( ac->bit_rate <= 385000 )
 					audio_profile = PROFILE_AUDIO_WMA_FULL;
 				break;
-			#if LIBAVCODEC_VERSION_INT > ((51<<16)+(50<<8)+1)
-			case CODEC_ID_WMAPRO:
+			case AV_CODEC_ID_WMAPRO:
 				audio_profile = PROFILE_AUDIO_WMA_PRO;
 				break;
-			#endif
-			case CODEC_ID_MP2:
+			case AV_CODEC_ID_MP2:
 				audio_profile = PROFILE_AUDIO_MP2;
 				break;
-			case CODEC_ID_AMR_NB:
+			case AV_CODEC_ID_AMR_NB:
 				audio_profile = PROFILE_AUDIO_AMR;
 				break;
 			default:
-				if( (ac->codec_id >= CODEC_ID_PCM_S16LE) &&
-				    (ac->codec_id < CODEC_ID_ADPCM_IMA_QT) )
+				if( (ac->codec_id >= AV_CODEC_ID_PCM_S16LE) &&
+				    (ac->codec_id < AV_CODEC_ID_ADPCM_IMA_QT) )
 					audio_profile = PROFILE_AUDIO_PCM;
 				else
 					DPRINTF(E_DEBUG, L_METADATA, "Unhandled audio codec [0x%X]\n", ac->codec_id);
 				break;
 		}
-		xasprintf(&m.frequency, "%u", ac->sample_rate);
-		#if LIBAVCODEC_VERSION_INT < (52<<16)
-		xasprintf(&m.bps, "%u", ac->bits_per_sample);
-		#else
-		xasprintf(&m.bps, "%u", ac->bits_per_coded_sample);
-		#endif
-		xasprintf(&m.channels, "%u", ac->channels);
+		m.frequency = ac->sample_rate;
+		m.channels = ac->channels;
 	}
 	if( vc )
 	{
@@ -868,7 +810,7 @@ GetVideoMetadata(const char *path, char *name)
 		DPRINTF(E_DEBUG, L_METADATA, "Container: '%s' [%s]\n", ctx->iformat->name, basepath);
 		xasprintf(&m.resolution, "%dx%d", vc->width, vc->height);
 		if( ctx->bit_rate > 8 )
-			xasprintf(&m.bitrate, "%u", ctx->bit_rate / 8);
+			m.bitrate = ctx->bit_rate / 8;
 		if( ctx->duration > 0 ) {
 			duration = (int)(ctx->duration / AV_TIME_BASE);
 			hours = (int)(duration / 3600);
@@ -883,7 +825,7 @@ GetVideoMetadata(const char *path, char *name)
 		if( strcmp(ctx->iformat->name, "avi") == 0 )
 		{
 			xasprintf(&m.mime, "video/x-msvideo");
-			if( vc->codec_id == CODEC_ID_MPEG4 )
+			if( vc->codec_id == AV_CODEC_ID_MPEG4 )
 			{
         			fourcc[0] = vc->codec_tag     & 0xff;
 			        fourcc[1] = vc->codec_tag>>8  & 0xff;
@@ -907,7 +849,7 @@ GetVideoMetadata(const char *path, char *name)
 
 		switch( vc->codec_id )
 		{
-			case CODEC_ID_MPEG1VIDEO:
+			case AV_CODEC_ID_MPEG1VIDEO:
 				if( strcmp(ctx->iformat->name, "mpeg") == 0 )
 				{
 					if( (vc->width  == 352) &&
@@ -918,7 +860,7 @@ GetVideoMetadata(const char *path, char *name)
 					xasprintf(&m.mime, "video/mpeg");
 				}
 				break;
-			case CODEC_ID_MPEG2VIDEO:
+			case AV_CODEC_ID_MPEG2VIDEO:
 				m.dlna_pn = malloc(64);
 				off = sprintf(m.dlna_pn, "MPEG_");
 				if( strcmp(ctx->iformat->name, "mpegts") == 0 )
@@ -991,7 +933,7 @@ GetVideoMetadata(const char *path, char *name)
 					m.dlna_pn = NULL;
 				}
 				break;
-			case CODEC_ID_H264:
+			case AV_CODEC_ID_H264:
 				m.dlna_pn = malloc(128);
 				off = sprintf(m.dlna_pn, "AVC_");
 
@@ -1009,11 +951,8 @@ GetVideoMetadata(const char *path, char *name)
 						          vc->height * vc->sample_aspect_ratio.den,
 						          1024*1024);
 					}
-					if (ctx->streams[video_stream]->r_frame_rate.den)
-						fps = ctx->streams[video_stream]->r_frame_rate.num / ctx->streams[video_stream]->r_frame_rate.den;
-					else
-						fps = 0;
-					interlaced = vc->time_base.den ? (ctx->streams[video_stream]->r_frame_rate.num / vc->time_base.den) : 0;
+					fps = lav_get_fps(ctx->streams[video_stream]);
+					interlaced = lav_get_interlaced(vc, ctx->streams[video_stream]);
 					if( ((((vc->width == 1920 || vc->width == 1440) && vc->height == 1080) ||
 					      (vc->width == 720 && vc->height == 480)) && fps == 59 && interlaced) ||
 					    ((vc->width == 1280 && vc->height == 720) && fps == 59 && !interlaced) )
@@ -1302,7 +1241,7 @@ GetVideoMetadata(const char *path, char *name)
 				}
 				DPRINTF(E_DEBUG, L_METADATA, "Stream %d of %s is h.264\n", video_stream, basepath);
 				break;
-			case CODEC_ID_MPEG4:
+			case AV_CODEC_ID_MPEG4:
         			fourcc[0] = vc->codec_tag     & 0xff;
 			        fourcc[1] = vc->codec_tag>>8  & 0xff;
 			        fourcc[2] = vc->codec_tag>>16 & 0xff;
@@ -1365,7 +1304,7 @@ GetVideoMetadata(const char *path, char *name)
 					}
 				}
 				break;
-			case CODEC_ID_WMV3:
+			case AV_CODEC_ID_WMV3:
 				/* I'm not 100% sure this is correct, but it works on everything I could get my hands on */
 				if( vc->extradata_size > 0 )
 				{
@@ -1374,7 +1313,7 @@ GetVideoMetadata(const char *path, char *name)
 					if( !((vc->extradata[0] >> 6) & 1) )
 						vc->profile = 0;
 				}
-			case CODEC_ID_VC1:
+			case AV_CODEC_ID_VC1:
 				if( strcmp(ctx->iformat->name, "asf") != 0 )
 				{
 					DPRINTF(E_DEBUG, L_METADATA, "Skipping DLNA parsing for non-ASF VC1 file %s\n", path);
@@ -1473,7 +1412,7 @@ GetVideoMetadata(const char *path, char *name)
 					}
 				}
 				break;
-			case CODEC_ID_MSMPEG4V3:
+			case AV_CODEC_ID_MSMPEG4V3:
 				xasprintf(&m.mime, "video/x-msvideo");
 			default:
 				DPRINTF(E_DEBUG, L_METADATA, "Stream %d of %s is %s [type %d]\n",
@@ -1506,6 +1445,11 @@ GetVideoMetadata(const char *path, char *name)
 			{
 				m.creator = m.artist;
 				free_flags &= ~FLAG_CREATOR;
+			}
+			if (!m.thumb_data)
+			{
+				m.thumb_data = video.image;
+				m.thumb_size = video.image_size;
 			}
 		}
 	}
@@ -1580,7 +1524,6 @@ video_no_dlna:
 		else
 			DPRINTF(E_WARN, L_METADATA, "%s: Unhandled format: %s\n", path, ctx->iformat->name);
 	}
-	lav_close(ctx);
 
 	if( !m.date )
 	{
@@ -1592,14 +1535,15 @@ video_no_dlna:
 	if( !m.title )
 		m.title = strdup(name);
 
-	album_art = find_album_art(path, video.image, video.image_size);
+	album_art = find_album_art(path, m.thumb_data, m.thumb_size);
 	freetags(&video);
+	lav_close(ctx);
 
 	ret = sql_exec(db, "INSERT into DETAILS"
 	                   " (PATH, SIZE, TIMESTAMP, DURATION, DATE, CHANNELS, BITRATE, SAMPLERATE, RESOLUTION,"
 	                   "  TITLE, CREATOR, ARTIST, GENRE, COMMENT, DLNA_PN, MIME, ALBUM_ART) "
 	                   "VALUES"
-	                   " (%Q, %lld, %ld, %Q, %Q, %Q, %Q, %Q, %Q, '%q', %Q, %Q, %Q, %Q, %Q, '%q', %lld);",
+	                   " (%Q, %lld, %ld, %Q, %Q, %u, %u, %u, %Q, '%q', %Q, %Q, %Q, %Q, %Q, '%q', %lld);",
 	                   path, (long long)file.st_size, file.st_mtime, m.duration,
 	                   m.date, m.channels, m.bitrate, m.frequency, m.resolution,
 			   m.title, m.creator, m.artist, m.genre, m.comment, m.dlna_pn,

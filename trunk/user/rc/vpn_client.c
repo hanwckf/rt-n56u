@@ -220,16 +220,16 @@ stop_vpn_client(void)
 	sprintf(pppd_pid, "/var/run/ppp-%s.pid", VPNC_PPP_LINK_NAME);
 	kill_process_pidfile(pppd_pid, 5, 1);
 
+#if defined(APP_OPENVPN)
+	stop_openvpn_client();
+#endif
+
 	nvram_set_int_temp("l2tp_cli_t", 0);
 	nvram_set_int_temp("vpnc_state_t", 0);
 	nvram_set_temp("vpnc_dns_t", "");
 
 	unlink(VPNC_PPP_UP_SCRIPT);
 	unlink(VPNC_PPP_DW_SCRIPT);
-
-#if defined(APP_OPENVPN)
-	stop_openvpn_client();
-#endif
 }
 
 static void 

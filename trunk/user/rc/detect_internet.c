@@ -72,13 +72,15 @@ is_internet_detected(void)
 {
 	FILE *fp = NULL;
 	char line[128], nvram_addr[16], nvram_port[16];
-	char *di_host[DI_MAX_HOSTS][32] = {0};
+	char di_host[DI_MAX_HOSTS][32];
 	int i, max_items;
 
 #ifdef DEBUG
 	dbg("## detect internet status ##\n");
 #endif
 	remove(DI_RES_FILE);
+
+	memset(di_host, 0, sizeof(di_host));
 
 	max_items = 0;
 	for (i = 0; i < DI_MAX_HOSTS; i++) {

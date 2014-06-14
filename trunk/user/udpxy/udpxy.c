@@ -733,7 +733,7 @@ udp_relay( int sockfd, struct server_ctx* ctx )
     } while(0);
 
     if( 0 != rc ) {
-        (void) send_http_response( sockfd, 500, "Service error" );
+        (void) send_http_response( sockfd, 400, "Invalid address" );
         return rc;
     }
 
@@ -924,7 +924,7 @@ process_command( int new_sockfd, struct server_ctx* ctx )
             rc = udp_relay( new_sockfd, ctx );
         }
         else {
-            send_http_response( new_sockfd, 401, "Bad request" );
+            send_http_response( new_sockfd, 503, "Client limit reached" );
             (void)tmfprintf( g_flog, "Client limit [%d] has been reached.\n",
                     ctx->clmax);
         }
@@ -941,7 +941,7 @@ process_command( int new_sockfd, struct server_ctx* ctx )
     else {
         TRACE( (void)tmfprintf( g_flog, "Unrecognized command [%s]"
                     " - ignoring.\n", ctx->rq.cmd) );
-        send_http_response( new_sockfd, 401, "Unrecognized request" );
+        send_http_response( new_sockfd, 400, "Unrecognized request" );
     }
 
     return rc;

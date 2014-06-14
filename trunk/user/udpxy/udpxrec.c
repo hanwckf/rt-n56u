@@ -287,7 +287,7 @@ record()
     struct dstream_ctx ds;
     ssize_t nmsgs = 0;
     ssize_t nrcv = -1, lrcv = -1, t_delta = 0;
-    int64_t n_total = 0;
+    uint64_t n_total = 0;
     ssize_t nwr = -1, lwr = -1;
     sig_atomic_t quit = 0;
     struct rdata_opt ropt;
@@ -393,7 +393,7 @@ record()
 
         if( nrcv > 0 ) {
             if( g_recopt.max_fsize &&
-                ((n_total + nrcv) >= g_recopt.max_fsize) ) {
+                ((size_t)(n_total + nrcv) >= g_recopt.max_fsize) ) {
                 break;
             }
 

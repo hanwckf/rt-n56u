@@ -82,9 +82,19 @@ config RALINK_GPIOMODE_I2C
 	depends on RALINK_GPIO
 	default n
 
+config RALINK_GPIO_IRQ
+	bool "Ralink GPIO IRQ Support"
+	depends on RALINK_GPIO
+	default y
+
 config RALINK_GPIO_LED
 	bool "Ralink GPIO LED Support"
 	depends on RALINK_GPIO
+	default n
+
+config RALINK_GPIO_LED_USB
+	bool "Ralink GPIO USB LED Support"
+	depends on RALINK_GPIO_LED && USB
 	default n
 
 config RALINK_GDMA

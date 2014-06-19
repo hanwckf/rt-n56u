@@ -53,10 +53,6 @@
 #include <asm/rt2880/rt_mmap.h>
 #include <asm/rt2880/eureka_ep430.h>
 
-#ifdef CONFIG_RALINK_GPIO
-extern void __init ralink_gpio_init_irq(void);
-#endif
-
 #ifdef CONFIG_KGDB
 extern void breakpoint(void);
 extern int remote_debug;
@@ -184,10 +180,6 @@ void __init arch_init_irq(void)
 
 	for (i = 0; i <= SURFBOARDINT_END; i++)
 		irq_set_chip_and_handler(i, &ralink_irq_chip, handle_level_irq);
-
-#ifdef CONFIG_RALINK_GPIO
-	ralink_gpio_init_irq();
-#endif
 
 #ifdef CONFIG_KGDB
 	if (remote_debug) {

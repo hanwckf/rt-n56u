@@ -38,9 +38,25 @@
 #include <asm/rt2880/rt_mmap.h>
 #endif
 
-#define NAME			"ralink_gpio"
-#define RALINK_GPIO_DEVNAME	"gpio"
-#define GPIO_DEV		"/dev/gpio"	//userlevel devname
+#define NAME				"ralink_gpio"
+#define RALINK_GPIO_DEVNAME		"gpio"
+#define GPIO_DEV			"/dev/gpio"	//userlevel devname
+
+/*
+ * ioctl commands
+ */
+#define IOCTL_GPIO_CMD_LENGTH_BITS	(8)
+
+#define IOCTL_GPIO_DIR_OUT		0x01
+#define IOCTL_GPIO_READ			0x02
+#define IOCTL_GPIO_WRITE		0x03
+
+#define IOCTL_GPIO_IRQ_SET		0x10
+#define IOCTL_GPIO_IRQ_INT_ENABLED	0x11
+
+#define IOCTL_GPIO_LED_SET		0x20
+#define IOCTL_GPIO_LED_TIMER_ENABLED	0x21
+
 
 #if defined (CONFIG_RALINK_RT3052)
 #define RALINK_GPIO_HAS_5124		1
@@ -52,6 +68,8 @@
 #define RALINK_GPIO_HAS_7224		1
 #elif defined (CONFIG_RALINK_MT7621)
 #define RALINK_GPIO_HAS_9532		1
+#elif defined (CONFIG_RALINK_MT7628)
+//#define RALINK_GPIO_HAS_7224		1 // To do
 #elif defined (CONFIG_RALINK_RT5350)
 #define RALINK_GPIO_HAS_2722		1
 #endif
@@ -59,136 +77,8 @@
 #if !defined (CONFIG_RALINK_RT5350)
 #define RALINK_GPIO_LED_LOW_ACT		1
 #endif
+
 #define RALINK_GPIO_LED_INFINITY	4000
-
-#if defined (CONFIG_RALINK_RT2880)
-#define GPIO_POWER_LED		12
-#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883)
-#define GPIO_POWER_LED		9
-#elif defined (CONFIG_RALINK_RT3883)
-#define GPIO_POWER_LED		0
-#endif
-
-/*
- * ioctl commands
- */
-#define	RALINK_GPIO_SET_DIR		0x01
-#define RALINK_GPIO_SET_DIR_IN		0x11
-#define RALINK_GPIO_SET_DIR_OUT		0x12
-#define	RALINK_GPIO_READ		0x02
-#define	RALINK_GPIO_WRITE		0x03
-#define	RALINK_GPIO_SET			0x21
-#define	RALINK_GPIO_CLEAR		0x31
-#define	RALINK_GPIO_READ_INT		0x02 //same as read
-#define	RALINK_GPIO_WRITE_INT		0x03 //same as write
-#define	RALINK_GPIO_SET_INT		0x21 //same as set
-#define	RALINK_GPIO_CLEAR_INT		0x31 //same as clear
-#define RALINK_GPIO_ENABLE_INTP		0x08
-#define RALINK_GPIO_DISABLE_INTP	0x09
-#define RALINK_GPIO_REG_IRQ		0x0A
-#define RALINK_GPIO_LED_SET		0x41
-
-#if defined (RALINK_GPIO_HAS_2722)
-
-#define	RALINK_GPIO2722_SET_DIR		0x51
-#define RALINK_GPIO2722_SET_DIR_IN	0x13
-#define RALINK_GPIO2722_SET_DIR_OUT	0x14
-#define	RALINK_GPIO2722_READ		0x52
-#define	RALINK_GPIO2722_WRITE		0x53
-#define	RALINK_GPIO2722_SET		0x22
-#define	RALINK_GPIO2722_CLEAR		0x32
-
-#elif defined (RALINK_GPIO_HAS_4524)
-
-#define	RALINK_GPIO3924_SET_DIR		0x51
-#define RALINK_GPIO3924_SET_DIR_IN	0x13
-#define RALINK_GPIO3924_SET_DIR_OUT	0x14
-#define	RALINK_GPIO3924_READ		0x52
-#define	RALINK_GPIO3924_WRITE		0x53
-#define	RALINK_GPIO3924_SET		0x22
-#define	RALINK_GPIO3924_CLEAR		0x32
-
-#define	RALINK_GPIO4540_SET_DIR		0x61
-#define RALINK_GPIO4540_SET_DIR_IN	0x15
-#define RALINK_GPIO4540_SET_DIR_OUT	0x16
-#define	RALINK_GPIO4540_READ		0x62
-#define	RALINK_GPIO4540_WRITE		0x63
-#define	RALINK_GPIO4540_SET		0x23
-#define	RALINK_GPIO4540_CLEAR		0x33
-
-#elif defined (RALINK_GPIO_HAS_5124)
-
-#define	RALINK_GPIO3924_SET_DIR		0x51
-#define RALINK_GPIO3924_SET_DIR_IN	0x13
-#define RALINK_GPIO3924_SET_DIR_OUT	0x14
-#define	RALINK_GPIO3924_READ		0x52
-#define	RALINK_GPIO3924_WRITE		0x53
-#define	RALINK_GPIO3924_SET		0x22
-#define	RALINK_GPIO3924_CLEAR		0x32
-
-#define	RALINK_GPIO5140_SET_DIR		0x61
-#define RALINK_GPIO5140_SET_DIR_IN	0x15
-#define RALINK_GPIO5140_SET_DIR_OUT	0x16
-#define	RALINK_GPIO5140_READ		0x62
-#define	RALINK_GPIO5140_WRITE		0x63
-#define	RALINK_GPIO5140_SET		0x23
-#define	RALINK_GPIO5140_CLEAR		0x33
-
-#elif defined (RALINK_GPIO_HAS_9524) || defined (RALINK_GPIO_HAS_7224)
-
-#define	RALINK_GPIO3924_SET_DIR		0x51
-#define RALINK_GPIO3924_SET_DIR_IN	0x13
-#define RALINK_GPIO3924_SET_DIR_OUT	0x14
-#define	RALINK_GPIO3924_READ		0x52
-#define	RALINK_GPIO3924_WRITE		0x53
-#define	RALINK_GPIO3924_SET		0x22
-#define	RALINK_GPIO3924_CLEAR		0x32
-
-#define	RALINK_GPIO7140_SET_DIR		0x61
-#define RALINK_GPIO7140_SET_DIR_IN	0x15
-#define RALINK_GPIO7140_SET_DIR_OUT	0x16
-#define	RALINK_GPIO7140_READ		0x62
-#define	RALINK_GPIO7140_WRITE		0x63
-#define	RALINK_GPIO7140_SET		0x23
-#define	RALINK_GPIO7140_CLEAR		0x33
-
-#if defined (RALINK_GPIO_HAS_7224)
-#define	RALINK_GPIO72_SET_DIR		0x71
-#define RALINK_GPIO72_SET_DIR_IN	0x17
-#define RALINK_GPIO72_SET_DIR_OUT	0x18
-#define	RALINK_GPIO72_READ		0x72
-#define	RALINK_GPIO72_WRITE		0x73
-#define	RALINK_GPIO72_SET		0x24
-#define	RALINK_GPIO72_CLEAR		0x34
-#else
-#define	RALINK_GPIO9572_SET_DIR		0x71
-#define RALINK_GPIO9572_SET_DIR_IN	0x17
-#define RALINK_GPIO9572_SET_DIR_OUT	0x18
-#define	RALINK_GPIO9572_READ		0x72
-#define	RALINK_GPIO9572_WRITE		0x73
-#define	RALINK_GPIO9572_SET		0x24
-#define	RALINK_GPIO9572_CLEAR		0x34
-#endif
-
-#elif defined (RALINK_GPIO_HAS_9532)
-
-#define	RALINK_GPIO6332_SET_DIR		0x51
-#define RALINK_GPIO6332_SET_DIR_IN	0x13
-#define RALINK_GPIO6332_SET_DIR_OUT	0x14
-#define	RALINK_GPIO6332_READ		0x52
-#define	RALINK_GPIO6332_WRITE		0x53
-#define	RALINK_GPIO6332_SET		0x22
-#define	RALINK_GPIO6332_CLEAR		0x32
-
-#define	RALINK_GPIO9564_SET_DIR		0x61
-#define RALINK_GPIO9564_SET_DIR_IN	0x15
-#define RALINK_GPIO9564_SET_DIR_OUT	0x16
-#define	RALINK_GPIO9564_READ		0x62
-#define	RALINK_GPIO9564_WRITE		0x63
-#define	RALINK_GPIO9564_SET		0x23
-#define	RALINK_GPIO9564_CLEAR		0x33
-
-#endif
 
 /*
  * Address of RALINK_ Registers
@@ -199,7 +89,7 @@
 #define RALINK_IRQ_ADDR			RALINK_INTCL_BASE
 #define RALINK_PRGIO_ADDR		RALINK_PIO_BASE // Programmable I/O
 
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 #define RALINK_REG_INTENA		(RALINK_IRQ_ADDR   + 0x80)
 #define RALINK_REG_INTDIS		(RALINK_IRQ_ADDR   + 0x78)
 
@@ -464,18 +354,37 @@
 
 #elif defined (CONFIG_RALINK_MT7621)
 
-#define RALINK_GPIOMODE_I2C		0x01
-#define RALINK_GPIOMODE_UARTF		0x1C
-#define RALINK_GPIOMODE_UARTL		0x20
-#define RALINK_GPIOMODE_JTAG		0x40
-#define RALINK_GPIOMODE_MDIO		0x80
-#define RALINK_GPIOMODE_GE1		0x200
-#define RALINK_GPIOMODE_GE2		0x400
-#define RALINK_GPIOMODE_SPI		0x800
-#define RALINK_GPIOMODE_SPI_REFCLK	0x1000
-#define RALINK_GPIOMODE_WLED		0x2000
-#define RALINK_GPIOMODE_EPHY		0x8000
-#define RALINK_GPIOMODE_PA_G		0x100000
+#define RALINK_GPIOMODE_UART1		0x02
+#define RALINK_GPIOMODE_I2C		0x04
+#define RALINK_GPIOMODE_UART3		0x08
+#define RALINK_GPIOMODE_UART2		0x20
+#define RALINK_GPIOMODE_JTAG		0x80
+#define RALINK_GPIOMODE_WDT		0x100
+#define RALINK_GPIOMODE_PERST		0x400
+#define RALINK_GPIOMODE_MDIO		0x1000
+#define RALINK_GPIOMODE_GE1		0x4000
+#define RALINK_GPIOMODE_GE2		0x8000
+#define RALINK_GPIOMODE_SPI		0x10000
+#define RALINK_GPIOMODE_SDXC		0x40000
+#define RALINK_GPIOMODE_ESWINT		0x100000
+
+#elif defined (CONFIG_RALINK_MT7628)
+
+#define RALINK_GPIOMODE_SPI		0x06
+#define RALINK_GPIOMODE_I2S		0x30
+#define RALINK_GPIOMODE_UART1		0xC0
+#define RALINK_GPIOMODE_WDT		0x100
+#define RALINK_GPIOMODE_PERST		0x200
+#define RALINK_GPIOMODE_REFCLK		0x800
+#define RALINK_GPIOMODE_I2C		0x3000
+#define RALINK_GPIOMODE_EPHY		0xC000
+#define RALINK_GPIOMODE_WLED		0x30000
+#define RALINK_GPIOMODE_UART2		0xC0000
+#define RALINK_GPIOMODE_SPI_SLAVE	0x1000000
+#define RALINK_GPIOMODE_PWM		0x6000000
+#define RALINK_GPIOMODE_UART3		0x18000000
+#define RALINK_GPIOMODE_SDXC		0x20000000
+#define RALINK_GPIOMODE_AGPIO		0x80000000
 
 #else
 #error Please Choose System Type
@@ -483,7 +392,13 @@
 
 // if you would like to enable GPIO mode for other pins, please modify this value
 // !! Warning: changing this value may make other features(MDIO, PCI, etc) lose efficacy
+#if defined (CONFIG_RALINK_MT7621)
+#define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_UART2 | RALINK_GPIOMODE_UART3 | RALINK_GPIOMODE_WDT)
+#elif defined (CONFIG_RALINK_MT7628)
+#define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_UART2 | RALINK_GPIOMODE_UART3)
+#else
 #define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_UARTF)
+#endif
 
 /*
  * bit is the unit of length
@@ -499,42 +414,34 @@
 #elif defined (RALINK_GPIO_HAS_9524)
 #define RALINK_GPIO_NUMBER		96
 #elif defined (RALINK_GPIO_HAS_9532)
-#define RALINK_GPIO_NUMBER		73
+#define RALINK_GPIO_NUMBER		96
 #else
 #define RALINK_GPIO_NUMBER		24
 #endif
 
-
 #define RALINK_GPIO_DIR_IN		0
 #define RALINK_GPIO_DIR_OUT		1
-#define RALINK_GPIO_DIR_ALLIN		0
-#if defined (CONFIG_RALINK_MT7621)
-#define RALINK_GPIO_DATA_MASK		0xFFFFFFFF
-#define RALINK_GPIO_DIR_ALLOUT		0xFFFFFFFF
-#else
-#define RALINK_GPIO_DATA_MASK		0x00FFFFFF
-#define RALINK_GPIO_DIR_ALLOUT		0x00FFFFFF
-#endif
 
-#define RALINK_GPIO(x)			(1 << x)
+#define RALINK_GPIO(x)			(1u << x)
 
 /*
  * structure used at regsitration
  */
 typedef struct {
-	unsigned int irq;		//request irq pin number
-	pid_t pid;			//process id to notify
-} ralink_gpio_reg_info;
+	unsigned int gpio: 30;		// request irq gpio number
+	unsigned int rise: 1;		// notify rising edge
+	unsigned int fall: 1;		// notify falling edge
+	pid_t pid;			// process id to notify
+} ralink_gpio_irq_info;
 
 typedef struct {
-	int gpio;			//gpio number (0 ~ 23)
-	unsigned int on;		//interval of led on
-	unsigned int off;		//interval of led off
-	unsigned int blinks;		//number of blinking cycles
-	unsigned int rests;		//number of break cycles
-	unsigned int times;		//blinking times
+	int gpio;			// gpio number
+	unsigned int on;		// interval of led on
+	unsigned int off;		// interval of led off
+	unsigned int blinks;		// number of blinking cycles
+	unsigned int rests;		// number of break cycles
+	unsigned int times;		// blinking times
 } ralink_gpio_led_info;
-
 
 #ifdef __KERNEL__
 extern void ralink_gpio_set_pin_direction(u32 pin, u32 is_output);

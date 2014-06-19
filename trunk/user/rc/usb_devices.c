@@ -32,10 +32,10 @@
 
 #include "rc.h"
 
-static const char*
-_basename(const char *name)
+static char *
+_basename(char *name)
 {
-	const char *cp = strrchr(name, '/');
+	char *cp = strrchr(name, '/');
 	if (cp)
 		return cp + 1;
 	return name;
@@ -151,7 +151,7 @@ int mdev_sd_main(int argc, char **argv)
 {
 	char aidisk_cmd[64];
 	int isLock, mount_result;
-	const char *device_name, *action;
+	char *device_name, *action;
 
 	if(argc != 3){
 		printf("Usage: %s [device_name] [action]\n", argv[0]);
@@ -169,7 +169,7 @@ int mdev_sd_main(int argc, char **argv)
 	}
 
 	// Check Lock.
-	if((isLock = file_lock((char *)device_name)) == -1){
+	if((isLock = file_lock(device_name)) == -1){
 		usb_dbg("(%s): Can't set the file lock!\n", device_name);
 		return 0;
 	}
@@ -177,7 +177,7 @@ int mdev_sd_main(int argc, char **argv)
 	// If remove the device?
 	if(!check_hotplug_action(action)){
 		if (device_name[3] != '\0')
-			detach_swap_partition((char*)device_name);
+			detach_swap_partition(device_name);
 		else
 			notify_rc("on_unplug_usb_storage");
 		
@@ -223,7 +223,7 @@ No_Need_To_Mount:
 int mdev_lp_main(int argc, char **argv)
 {
 	int isLock;
-	const char *device_name, *action;
+	char *device_name, *action;
 
 	if(argc != 3){
 		printf("Usage: %s [device_name] [action]\n", argv[0]);
@@ -241,7 +241,7 @@ int mdev_lp_main(int argc, char **argv)
 	}
 
 	// Check Lock.
-	if((isLock = file_lock((char *)device_name)) == -1){
+	if((isLock = file_lock(device_name)) == -1){
 		usb_dbg("(%s): Can't set the file lock!\n", device_name);
 		return 0;
 	}
@@ -266,7 +266,7 @@ int mdev_lp_main(int argc, char **argv)
 int mdev_sg_main(int argc, char **argv)
 {
 	int isLock;
-	const char *device_name, *action;
+	char *device_name, *action;
 
 	if(argc < 3){
 		printf("Usage: %s [device_name] [action]\n", argv[0]);
@@ -288,7 +288,7 @@ int mdev_sg_main(int argc, char **argv)
 	}
 
 	// Check Lock.
-	if((isLock = file_lock((char *)device_name)) == -1){
+	if((isLock = file_lock(device_name)) == -1){
 		usb_dbg("(%s): Can't set the file lock!\n", device_name);
 		return 0;
 	}
@@ -314,7 +314,7 @@ int mdev_sg_main(int argc, char **argv)
 int mdev_sr_main(int argc, char **argv)
 {
 	int isLock;
-	const char *device_name, *action;
+	char *device_name, *action;
 
 	if(argc != 3){
 		printf("Usage: %s [device_name] [action]\n", argv[0]);
@@ -338,7 +338,7 @@ int mdev_sr_main(int argc, char **argv)
 	}
 
 	// Check Lock.
-	if((isLock = file_lock((char *)device_name)) == -1){
+	if((isLock = file_lock(device_name)) == -1){
 		usb_dbg("(%s): Can't set the file lock!\n", device_name);
 		return 0;
 	}
@@ -358,7 +358,7 @@ int mdev_wdm_main(int argc, char **argv)
 	FILE *fp;
 	int isLock;
 	char node_fname[64];
-	const char *device_name, *action;
+	char *device_name, *action;
 
 	if(argc != 3){
 		printf("Usage: %s [device_name] [action]\n", argv[0]);
@@ -376,7 +376,7 @@ int mdev_wdm_main(int argc, char **argv)
 	sprintf(node_fname, "%s/%s", MODEM_NODE_DIR, device_name);
 	
 	// Check Lock.
-	if((isLock = file_lock((char *)device_name)) == -1)
+	if((isLock = file_lock(device_name)) == -1)
 		return 0;
 	
 	unlink(QMI_CLIENT_ID);
@@ -409,7 +409,7 @@ int mdev_net_main(int argc, char **argv)
 	FILE *fp;
 	int isLock, devnum;
 	char usb_port_id[64], node_fname[64];
-	const char *device_name, *action;
+	char *device_name, *action;
 
 	if(argc != 3){
 		printf("Usage: %s [device_name] [action]\n", argv[0]);
@@ -427,7 +427,7 @@ int mdev_net_main(int argc, char **argv)
 	sprintf(node_fname, "%s/%s", MODEM_NODE_DIR, device_name);
 	
 	// Check Lock.
-	if((isLock = file_lock((char *)device_name)) == -1)
+	if((isLock = file_lock(device_name)) == -1)
 		return 0;
 	
 	// If remove the device?
@@ -436,7 +436,7 @@ int mdev_net_main(int argc, char **argv)
 		
 		create_file(FLAG_FILE_WWAN_GONE);
 		
-		ifconfig((char*)device_name, 0, "0.0.0.0", NULL);
+		ifconfig(device_name, 0, "0.0.0.0", NULL);
 		
 		if (get_usb_modem_wan(0))
 			notify_rc("on_unplug_usb_modem");
@@ -460,7 +460,7 @@ int mdev_net_main(int argc, char **argv)
 		fclose(fp);
 	}
 
-	if (nvram_invmatch("modem_arun", "0") && nvram_match("modem_rule", "1") && nvram_match("modem_type", "3"))
+	if (nvram_invmatch("modem_prio", "0") && nvram_match("modem_rule", "1") && nvram_match("modem_type", "3"))
 		notify_rc("on_hotplug_usb_modem");
 
 	usb_dbg("(%s): Success!\n", device_name);
@@ -476,7 +476,7 @@ int mdev_tty_main(int argc, char **argv)
 	FILE *fp;
 	int isLock, devnum, has_int_pipe;
 	char usb_port_id[64], usb_interface_id[64], node_fname[64];
-	const char *device_name, *action;
+	char *device_name, *action;
 
 	if(argc != 3){
 		printf("Usage: %s [device_name] [action]\n", argv[0]);
@@ -493,7 +493,7 @@ int mdev_tty_main(int argc, char **argv)
 	sprintf(node_fname, "%s/%s", MODEM_NODE_DIR, device_name);
 
 	// Check Lock.
-	if((isLock = file_lock((char *)device_name)) == -1)
+	if((isLock = file_lock(device_name)) == -1)
 		return 0;
 	
 	// If remove the device?
@@ -530,9 +530,9 @@ int mdev_tty_main(int argc, char **argv)
 		fclose(fp);
 	}
 
-	if (nvram_invmatch("modem_arun", "0") && nvram_match("modem_rule", "1") && nvram_invmatch("modem_type", "3"))
+	if (nvram_invmatch("modem_prio", "0") && nvram_match("modem_rule", "1") && nvram_invmatch("modem_type", "3"))
 		notify_rc("on_hotplug_usb_modem");
-	
+
 	usb_dbg("(%s): Success!\n", device_name);
 
 out_unlock:

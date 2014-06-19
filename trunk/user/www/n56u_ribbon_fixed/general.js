@@ -451,7 +451,6 @@ function validate_range(o, min, max) {
     for (i = 0; i < o.value.length; i++) {
         if (o.value.charAt(i) < '0' || o.value.charAt(i) > '9') {
             alert('<#JS_validrange#> ' + min + ' <#JS_validrange_to#> ' + max);
-            //o.value = max;
             o.focus();
             o.select();
             return false;
@@ -459,7 +458,6 @@ function validate_range(o, min, max) {
     }
     if (o.value < min || o.value > max) {
         alert('<#JS_validrange#> ' + min + ' <#JS_validrange_to#> ' + max);
-        o.value = "";
         o.focus();
         o.select();
         return false;

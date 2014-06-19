@@ -1394,14 +1394,16 @@ count_sddev_partition(void)
 	return count;
 }
 
-void stop_usb(void)
+void
+stop_usb(void)
 {
 	stop_usb_printer_spoolers();
-	
+
 	safe_remove_usb_device(0, NULL);
 }
 
-void stop_usb_apps(void)
+void
+stop_usb_apps(void)
 {
 	int need_restart_fw = 0;
 
@@ -1435,7 +1437,8 @@ void stop_usb_apps(void)
 		restart_firewall();
 }
 
-void start_usb_apps(void)
+void
+start_usb_apps(void)
 {
 	int need_restart_fw = 0;
 
@@ -1509,7 +1512,8 @@ exec_printer_daemons(int call_fw)
 	}
 }
 
-void stop_usb_printer_spoolers(void)
+void
+stop_usb_printer_spoolers(void)
 {
 #if defined(SRV_U2EC)
 	stop_u2ec();
@@ -1520,7 +1524,8 @@ void stop_usb_printer_spoolers(void)
 	stop_p910nd();
 }
 
-void restart_usb_printer_spoolers(void)
+void
+restart_usb_printer_spoolers(void)
 {
 	stop_usb_printer_spoolers();
 	exec_printer_daemons(0);
@@ -1536,42 +1541,45 @@ try_start_usb_printer_spoolers(void)
 static void
 try_start_usb_modem_to_wan(void)
 {
-	int link_wan = 0;
-	int modem_rule = nvram_get_int("modem_rule");
-	int modem_arun = nvram_get_int("modem_arun");
-	
+	int modem_prio;
+
 	if (get_ap_mode())
 		return;
-	
-	if (modem_rule < 1 || modem_arun < 1)
+
+	/* check modem prio mode  */
+	modem_prio = nvram_get_int("modem_prio");
+	if (modem_prio < 1)
 		return;
-	
+
+	/* check modem already selected to WAN */
 	if (get_usb_modem_wan(0))
 		return;
-	
-	if (nvram_match("modem_type", "3"))
-	{
-		if ( !is_ready_modem_ndis(NULL) )
+
+	/* check modem enabled and ready */
+	if (!get_modem_devnum())
+		return;
+
+	if (modem_prio > 1) {
+		if (get_apcli_wisp_ifname())
 			return;
+		
+		if (modem_prio == 2) {
+			int has_link = get_ethernet_wan_phy_link(0);
+			if (has_link < 0)
+				has_link = 0;
+			
+			if (has_link)
+				return;
+		}
 	}
-	else
-	{
-		if ( !is_ready_modem_ras(NULL) )
-			return;
-	}
-	
-	if (modem_arun == 2)
-	{
-		if (phy_status_port_link_wan(&link_wan) == 0 && link_wan && has_wan_ip(1) && found_default_route(1))
-			return;
-	}
-	
-	logmessage("usb modem hotplug", "try autorun modem wan connection...");
-	
+
+	logmessage("USB hotplug", "try start USB Modem as WAN connection...");
+
 	try_wan_reconnect(1);
 }
 
-void on_deferred_hotplug_usb(void)
+void
+on_deferred_hotplug_usb(void)
 {
 	int plug_modem = 0;
 	int unplug_modem = 0;

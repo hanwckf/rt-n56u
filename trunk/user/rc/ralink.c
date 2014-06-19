@@ -34,6 +34,45 @@
 
 #define MAX_FRW 64
 
+struct cc_region_t {
+	const char *cc;
+	const int region;
+};
+
+static const struct cc_region_t
+cc_region2g[] = {
+	{ "CA", 0 },
+	{ "CO", 0 },
+	{ "DO", 0 },
+	{ "GT", 0 },
+	{ "MX", 0 },
+	{ "NO", 0 },
+	{ "PA", 0 },
+	{ "PR", 0 },
+	{ "TW", 0 },
+	{ "US", 0 },
+	{ "UZ", 0 },
+	{ "DB", 5 },
+	{ NULL, 1 }
+};
+
+static const struct cc_region_t
+cc_region5g[] = {
+	{ "CA", 0 },
+	{ "CO", 0 },
+	{ "DO", 0 },
+	{ "GT", 0 },
+	{ "MX", 0 },
+	{ "NO", 0 },
+	{ "PA", 0 },
+	{ "PR", 0 },
+	{ "TW", 0 },
+	{ "US", 0 },
+	{ "UZ", 0 },
+	{ "DB", 5 },
+	{ NULL, 1 }
+};
+
 int
 get_wireless_mac(int is_5ghz)
 {
@@ -108,7 +147,7 @@ get_wireless_cc(void)
 	if (CC[0] == 0xff && CC[1] == 0xff)	// 0xffff is default
 		printf("EEPROM CC: %s\n", "Undefined");
 	else
-		printf("EEPROM CC: %s\n", (char*)CC);
+		printf("EEPROM CC: %s\n", (char *)CC);
 
 	return 0;
 }
@@ -322,7 +361,7 @@ setPIN(const char *pin)
 {
 	if (pincheck(pin) && !pinvalidate(pin))
 	{
-		FWrite((char*)pin, OFFSET_PIN_CODE, 8);
+		FWrite((char *)pin, OFFSET_PIN_CODE, 8);
 		char PIN[9];
 		memset(PIN, 0, 9);
 		memcpy(PIN, pin, 8);

@@ -474,12 +474,6 @@ init_main_loop(void)
 }
 
 int
-is_system_down(void)
-{
-	return (int)sig_term_received;
-}
-
-int
 sys_exit(void)
 {
 	return kill(1, SIGTERM);

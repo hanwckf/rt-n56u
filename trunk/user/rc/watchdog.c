@@ -40,21 +40,21 @@
 #include "gpio_pins.h"
 
 
-#define RESET_WAIT		5		/* seconds */
-#define RESET_WAIT_COUNT	RESET_WAIT * 10 /* 10 times a second */
+#define WD_NORMAL_PERIOD	10		/* 10s */
+#define WD_URGENT_PERIOD	(100 * 1000)	/* 100ms */
 
-#define NORMAL_PERIOD		1		/* second */
-#define URGENT_PERIOD		100 * 1000	/* microsecond */
+#define BTN_RESET_WAIT		5		/* 5 s */
+#define BTN_RESET_WAIT_COUNT	(BTN_RESET_WAIT * 10)
 
-#if defined(BOARD_GPIO_BTN_WPS)
-#define WPS_WAIT		3
-#define WPS_WAIT_COUNT		WPS_WAIT * 10
-#endif
+#define BTN_EZ_WAIT		3		/* 3 s */
+#define BTN_EZ_WAIT_COUNT	(BTN_EZ_WAIT * 10)
 
 #define WD_NOTIFY_ID_WIFI2	1
 #define WD_NOTIFY_ID_WIFI5	2
 
-enum 
+#define WD_PID_FILE		"/var/run/watchdog.pid"
+
+enum
 {
 	RADIO5_ACTIVE = 0,
 	GUEST5_ACTIVE,
@@ -65,7 +65,6 @@ enum
 
 static int svcStatus[ACTIVEITEMS] = {-1, -1, -1, -1};
 
-static int watchdog_period = 0;
 static int ntpc_timer = -1;
 static int ntpc_server_idx = 0;
 static int ntpc_tries = 0;
@@ -73,19 +72,23 @@ static int ntpc_tries = 0;
 static int httpd_missing = 0;
 static int dnsmasq_missing = 0;
 
-struct itimerval itv;
+static struct itimerval itv;
 
+#if defined (BOARD_GPIO_BTN_RESET)
 static int btn_pressed_reset = 0;
 static int btn_count_reset = 0;
-
-#if defined(BOARD_GPIO_BTN_WPS)
+#endif
+#if defined (BOARD_GPIO_BTN_WPS)
 static int btn_pressed_wps = 0;
 static int btn_count_wps = 0;
+#endif
+#if defined (BOARD_GPIO_BTN_WLTOG)
+static int btn_pressed_wlt = 0;
+static int btn_count_wlt = 0;
 #endif
 
 void ez_event_short();
 void ez_event_long();
-
 
 static void
 alarmtimer(unsigned long sec, unsigned long usec)
@@ -98,7 +101,6 @@ alarmtimer(unsigned long sec, unsigned long usec)
 
 #ifdef HTTPD_CHECK
 #define DETECT_HTTPD_FILE "/tmp/httpd_check_result"
-
 static int
 httpd_check_v2()
 {
@@ -180,44 +182,65 @@ httpd_check_v2()
 }
 #endif
 
-static void 
+#if defined (BOARD_GPIO_BTN_RESET)
+static int
 btn_check_reset(void)
 {
 	unsigned int i_button_value = 1;
 
-#if defined(BOARD_GPIO_BTN_WPS)
+#if defined (BOARD_GPIO_BTN_WPS)
 	// check WPS pressed
-	if (btn_pressed_wps != 0) return;
+	if (btn_pressed_wps != 0)
+		return 0;
 #endif
-
+#if defined (BOARD_GPIO_BTN_WLTOG)
+	// check WLTOG pressed
+	if (btn_pressed_wlt != 0)
+		return 0;
+#endif
 	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_RESET, &i_button_value) < 0)
-		return;
+		return 0;
 
 	// reset button is on low phase
 	if (!i_button_value)
 	{
 		// "RESET" pressed
-		if (!btn_pressed_reset)
+		int i_led0, i_led1;
+		if (nvram_get_int("front_led_pwr") == 0)
+		{
+			// POWER always OFF
+			i_led0 = LED_ON;
+			i_led1 = LED_OFF;
+		}
+		else
+		{
+			// POWER always ON
+			i_led0 = LED_OFF;
+			i_led1 = LED_ON;
+		}
+		
+		if (btn_pressed_reset == 0)
 		{
 			btn_pressed_reset = 1;
 			btn_count_reset = 0;
-			alarmtimer(0, URGENT_PERIOD);
+			
+			// toggle power LED
+#if defined (BOARD_GPIO_LED_POWER)
+			cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, i_led0);
+#endif
 		}
 		else
 		{	/* Whenever it is pushed steady */
-			if (++btn_count_reset > RESET_WAIT_COUNT)
+			if (++btn_count_reset > BTN_RESET_WAIT_COUNT)
 			{
 				dbg("You can release RESET button now!\n");
 				btn_pressed_reset = 2;
 			}
 			
+#if defined (BOARD_GPIO_LED_POWER)
 			if (btn_pressed_reset == 2)
-			{
-				if (btn_count_reset % 2)
-					cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, LED_OFF);
-				else
-					cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, LED_ON);
-			}
+				cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, (btn_count_reset % 2) ? i_led1 : i_led0);
+#endif
 		}
 	}
 	else
@@ -228,40 +251,46 @@ btn_check_reset(void)
 			// pressed < 5sec, cancel
 			btn_count_reset = 0;
 			btn_pressed_reset = 0;
+#if defined (BOARD_GPIO_LED_POWER)
 			LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
-			alarmtimer(NORMAL_PERIOD, 0);
+#endif
 		}
 		else if (btn_pressed_reset == 2)
 		{
 			// pressed >= 5sec, reset!
-			LED_CONTROL(BOARD_GPIO_LED_POWER, LED_OFF);
 			alarmtimer(0, 0);
+#if defined (BOARD_GPIO_LED_POWER)
+			cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, LED_OFF);
+#endif
 			erase_nvram();
 			erase_storage();
 			sys_exit();
 		}
 	}
-}
 
-static void 
-btn_check_ez(void)
+	return (i_button_value) ? 0 : 1;
+}
+#endif
+
+#if defined (BOARD_GPIO_BTN_WPS)
+static int
+btn_check_wps(void)
 {
-#if defined(BOARD_GPIO_BTN_WPS)
-	int i_front_leds, i_led0, i_led1;
 	unsigned int i_button_value = 1;
 
+#if defined (BOARD_GPIO_BTN_RESET)
 	// check RESET pressed
-	if (btn_pressed_reset != 0) return;
-
+	if (btn_pressed_reset != 0)
+		return 0;
+#endif
 	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_WPS, &i_button_value) < 0)
-		return;
+		return 0;
 
 	if (!i_button_value)
 	{
 		// WPS pressed
-		
-		i_front_leds = nvram_get_int("front_leds");
-		if (i_front_leds == 2 || i_front_leds == 4)
+		int i_led0, i_led1;
+		if (nvram_get_int("front_led_pwr") == 0)
 		{
 			// POWER always OFF
 			i_led0 = LED_ON;
@@ -278,26 +307,22 @@ btn_check_ez(void)
 		{
 			btn_pressed_wps = 1;
 			btn_count_wps = 0;
-			alarmtimer(0, URGENT_PERIOD);
 			
 			// toggle power LED
+#if defined (BOARD_GPIO_LED_POWER)
 			cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, i_led0);
+#endif
 		}
 		else
 		{
-			if (++btn_count_wps > WPS_WAIT_COUNT)
-			{
+			if (++btn_count_wps > BTN_EZ_WAIT_COUNT)
 				btn_pressed_wps = 2;
-			}
 			
+			// flash power LED
+#if defined (BOARD_GPIO_LED_POWER)
 			if (btn_pressed_wps == 2)
-			{
-				// flash power LED
-				if (btn_count_wps % 2)
-					cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, i_led1);
-				else
-					cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, i_led0);
-			}
+				cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, (btn_count_wps % 2) ? i_led1 : i_led0);
+#endif
 		}
 	}
 	else
@@ -308,6 +333,8 @@ btn_check_ez(void)
 			btn_pressed_wps = 0;
 			btn_count_wps = 0;
 			
+			alarmtimer(0, 0);
+			
 			// pressed < 3sec
 			ez_event_short();
 		}
@@ -316,12 +343,97 @@ btn_check_ez(void)
 			btn_pressed_wps = 0;
 			btn_count_wps = 0;
 			
+			alarmtimer(0, 0);
+			
 			// pressed >= 3sec
 			ez_event_long();
 		}
 	}
-#endif
+
+	return (i_button_value) ? 0 : 1;
 }
+#endif
+
+#if defined (BOARD_GPIO_BTN_WLTOG)
+static int
+btn_check_wlt(void)
+{
+	unsigned int i_button_value = 1;
+
+#if defined (BOARD_GPIO_BTN_RESET)
+	// check RESET pressed
+	if (btn_pressed_reset != 0)
+		return 0;
+#endif
+	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_WLTOG, &i_button_value) < 0)
+		return 0;
+
+	if (!i_button_value)
+	{
+		// WLTOG pressed
+		int i_led0, i_led1;
+		if (nvram_get_int("front_led_pwr") == 0)
+		{
+			// POWER always OFF
+			i_led0 = LED_ON;
+			i_led1 = LED_OFF;
+		}
+		else
+		{
+			// POWER always ON
+			i_led0 = LED_OFF;
+			i_led1 = LED_ON;
+		}
+		
+		if (btn_pressed_wlt == 0)
+		{
+			btn_pressed_wlt = 1;
+			btn_count_wlt = 0;
+			
+			// toggle power LED
+#if defined (BOARD_GPIO_LED_POWER)
+			cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, i_led0);
+#endif
+		}
+		else
+		{
+			if (++btn_count_wlt > BTN_EZ_WAIT_COUNT)
+				btn_pressed_wlt = 2;
+			
+			// flash power LED
+#if defined (BOARD_GPIO_LED_POWER)
+			if (btn_pressed_wlt == 2)
+				cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, (btn_count_wlt % 2) ? i_led1 : i_led0);
+#endif
+		}
+	}
+	else
+	{
+		// WLTOG released
+		if (btn_pressed_wlt == 1)
+		{
+			btn_pressed_wlt = 0;
+			btn_count_wlt = 0;
+			
+			alarmtimer(0, 0);
+			
+			// pressed < 3sec
+		}
+		else if (btn_pressed_wlt == 2)
+		{
+			btn_pressed_wlt = 0;
+			btn_count_wlt = 0;
+			
+			alarmtimer(0, 0);
+			
+			// pressed >= 3sec
+		}
+	}
+
+	return (i_button_value) ? 0 : 1;
+}
+#endif
+
 
 static void
 refresh_ntp(void)
@@ -359,7 +471,7 @@ reset_ntpc_tries(void)
 		ntpc_tries = 30; // 10 times, total 5min
 }
 
-static void 
+static void
 ntpc_handler(void)
 {
 	int ntp_period = nvram_get_int("ntp_period");
@@ -393,12 +505,12 @@ ntpc_handler(void)
 	setkernel_tz();
 }
 
-static void 
+static void
 inet_handler(int is_ap_mode)
 {
 	if (!is_ap_mode)
 	{
-		if (nvram_invmatch("wan_gateway_t", "") && has_wan_ip(0))
+		if (has_wan_ip(0) && has_wan_gateway())
 		{
 			/* sync time to ntp server if necessary */
 			ntpc_handler();
@@ -406,7 +518,7 @@ inet_handler(int is_ap_mode)
 	}
 	else
 	{
-		if (nvram_invmatch("lan_gateway_t", ""))
+		if (has_lan_ip() && has_lan_gateway())
 			ntpc_handler();
 	}
 }
@@ -578,11 +690,11 @@ ez_action_change_wifi2(void)
 		i_radio_state = 1;
 		update_svc_status_wifi2();
 	}
-	
+
 	nvram_set_int("rt_radio_x", i_radio_state);
-	
+
 	logmessage("watchdog", "Perform ez-button %s %s %s", (i_radio_state) ? "enable" : "disable", "2.4GHz", "radio");
-	
+
 #if defined(USE_RT3352_MII)
 	mlme_radio_rt(i_radio_state);
 #else
@@ -605,11 +717,11 @@ ez_action_change_wifi5(void)
 		i_radio_state = 1;
 		update_svc_status_wifi5();
 	}
-	
+
 	nvram_set_int("wl_radio_x", i_radio_state);
-	
+
 	logmessage("watchdog", "Perform ez-button %s %s %s", (i_radio_state) ? "enable" : "disable", "5GHz", "radio");
-	
+
 	restart_wifi_wl(i_radio_state, 0);
 #endif
 }
@@ -664,8 +776,8 @@ static void
 ez_action_usb_saferemoval(void)
 {
 #if (BOARD_NUM_USB_PORTS > 0)
-	logmessage("watchdog", "Perform ez-button safe-removal USB...");
-	
+	logmessage("watchdog", "Perform ez-button %s...", "safe-removal USB");
+
 	safe_remove_usb_device(0, NULL);
 #endif
 }
@@ -675,9 +787,9 @@ ez_action_wan_down(void)
 {
 	if (get_ap_mode())
 		return;
-	
-	logmessage("watchdog", "Perform ez-button WAN down...");
-	
+
+	logmessage("watchdog", "Perform ez-button %s...", "WAN disconnect");
+
 	stop_wan();
 }
 
@@ -686,9 +798,9 @@ ez_action_wan_reconnect(void)
 {
 	if (get_ap_mode())
 		return;
-	
-	logmessage("watchdog", "Perform ez-button WAN reconnect...");
-	
+
+	logmessage("watchdog", "Perform ez-button %s...", "WAN reconnect");
+
 	full_restart_wan();
 }
 
@@ -700,13 +812,13 @@ ez_action_wan_toggle(void)
 
 	if (is_interface_up(get_man_ifname(0)))
 	{
-		logmessage("watchdog", "Perform ez-button WAN %s", "down...");
+		logmessage("watchdog", "Perform ez-button %s...", "WAN disconnect");
 		
 		stop_wan();
 	}
 	else
 	{
-		logmessage("watchdog", "Perform ez-button WAN %s", "reconnect...");
+		logmessage("watchdog", "Perform ez-button %s...", "WAN reconnect");
 		
 		full_restart_wan();
 	}
@@ -715,7 +827,7 @@ ez_action_wan_toggle(void)
 static void 
 ez_action_shutdown(void)
 {
-	logmessage("watchdog", "Perform ez-button shutdown...");
+	logmessage("watchdog", "Perform ez-button %s...", "shutdown");
 
 	sys_stop();
 }
@@ -733,33 +845,35 @@ ez_action_user_script(int script_param)
 	}
 }
 
-#if defined(BOARD_GPIO_LED_ALL) || defined(BOARD_GPIO_LED_WIFI)
- #define LED_FULL_OFF 4
-#else
- #define LED_FULL_OFF 2
-#endif
-
-static void 
+static void
 ez_action_led_toggle(void)
 {
-	int i_front_leds = nvram_get_int("front_leds");
-	if (i_front_leds != LED_FULL_OFF)
-		i_front_leds = LED_FULL_OFF;
-	else
-		i_front_leds = 0;
-	nvram_set_int("front_leds", i_front_leds);
-	
-	doSystem("killall %s %s", "-SIGALRM", "detect_link");
+	int front_led_x = (nvram_get_int("front_led_all")) ? 0 : 1;
+
+	nvram_set_int("front_led_all", front_led_x);
+	nvram_set_int("front_led_pwr", front_led_x);
+
+	detect_link_update_leds();
 }
 
-void 
+void
 ez_event_short(void)
 {
 	int ez_action = nvram_get_int("ez_action_short");
-	
-	alarmtimer(NORMAL_PERIOD, 0);
-	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
-	
+#if defined (BOARD_GPIO_LED_POWER)
+	int led_state = LED_ON;
+
+	switch (ez_action)
+	{
+	case 10: // Front LED toggle
+		led_state = -1;
+		break;
+	}
+
+	if (led_state >= 0)
+		LED_CONTROL(BOARD_GPIO_LED_POWER, led_state);
+#endif
+
 	switch (ez_action)
 	{
 	case 1: // WiFi radio ON/OFF trigger
@@ -811,19 +925,24 @@ void
 ez_event_long(void)
 {
 	int ez_action = nvram_get_int("ez_action_long");
+#if defined (BOARD_GPIO_LED_POWER)
+	int led_state = LED_ON;
+
 	switch (ez_action)
 	{
-	case 7:
-	case 8:
-		alarmtimer(0, 0);
-		LED_CONTROL(BOARD_GPIO_LED_POWER, LED_OFF);
+	case 7: // Router reboot
+	case 8: // Router shutdown
+		led_state = LED_OFF;
 		break;
-	default:
-		alarmtimer(NORMAL_PERIOD, 0);
-		LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
+	case 11: // Front LED toggle
+		led_state = -1;
 		break;
 	}
-	
+
+	if (led_state >= 0)
+		LED_CONTROL(BOARD_GPIO_LED_POWER, led_state);
+#endif
+
 	switch (ez_action)
 	{
 	case 1: // WiFi 2.4GHz force Enable/Disable trigger
@@ -848,7 +967,7 @@ ez_event_long(void)
 	case 7: // Router reboot
 		sys_exit();
 		break;
-	case 8: // Router shutdown prepare
+	case 8: // Router shutdown
 		ez_action_shutdown();
 		break;
 	case 9: // WAN up/down toggle
@@ -943,77 +1062,82 @@ ntpc_updated_main(int argc, char *argv[])
 
 int start_watchdog(void)
 {
+	if (pids("watchdog"))
+		return 0;
+
 	return eval("/sbin/watchdog");
 }
 
 void notify_watchdog_time(void)
 {
-	doSystem("killall %s %s", "-SIGHUP", "watchdog");
+	if (pids("watchdog"))
+		kill_pidfile_s(WD_PID_FILE, SIGHUP);
+	else
+		eval("/sbin/watchdog");
 }
 
 void notify_watchdog_wifi(int is_5ghz)
 {
 	int wd_notify_id = (is_5ghz) ? WD_NOTIFY_ID_WIFI5 : WD_NOTIFY_ID_WIFI2;
+
 	nvram_set_int_temp("wd_notify_id", wd_notify_id);
-	doSystem("killall %s %s", "-SIGUSR1", "watchdog");
+	kill_pidfile_s(WD_PID_FILE, SIGUSR1);
 }
 
-static void catch_sig(int sig)
+static void
+watchdog_on_sighup(void)
 {
-	if (sig == SIGTERM)
-	{
-		alarmtimer(0, 0);
-		remove("/var/run/watchdog.pid");
-		exit(0);
-	}
-	else if (sig == SIGHUP)
-	{
-		reset_ntpc_tries();
-		ntpc_timer = -1; // want call now
-	}
-	else if (sig == SIGUSR1)
-	{
-		int wd_notify_id = nvram_get_int("wd_notify_id");
-		if (wd_notify_id == WD_NOTIFY_ID_WIFI2) {
-			update_svc_status_wifi2();
-		} else if (wd_notify_id == WD_NOTIFY_ID_WIFI5) {
-			update_svc_status_wifi5();
-		}
-	}
-	else if (sig == SIGUSR2)
-	{
-		;
+	reset_ntpc_tries();
+	ntpc_timer = -1; // want call now
+}
+
+static void
+watchdog_on_sigusr1(void)
+{
+	int wd_notify_id = nvram_get_int("wd_notify_id");
+	if (wd_notify_id == WD_NOTIFY_ID_WIFI2) {
+		update_svc_status_wifi2();
+	} else if (wd_notify_id == WD_NOTIFY_ID_WIFI5) {
+		update_svc_status_wifi5();
 	}
 }
 
-/* wathchdog is runned in NORMAL_PERIOD, 1 seconds
- * check in each NORMAL_PERIOD
- *	1. button
- *
- * check in each NORAML_PERIOD*10
- *
- *      1. ntptime 
- *      2. time-dependent service
- *      3. http-process
- */
-static void watchdog(int sig)
+static void
+watchdog_on_sigusr2(void)
+{
+	/* GPIO pins interrupt */
+	if (itv.it_value.tv_usec != WD_URGENT_PERIOD)
+		alarmtimer(0, WD_URGENT_PERIOD);
+}
+
+static void
+watchdog_on_timer(void)
 {
 	int is_ap_mode;
 
-	/* handle button */
-	btn_check_reset();
-	btn_check_ez();
-
-	/* if timer is set to less than 1 sec, then bypass the following */
-	if (itv.it_value.tv_sec == 0) return;
-
-	// watchdog interval = 10s
-	watchdog_period = (watchdog_period + 1) % 10;
-	if (watchdog_period)
+	/* if timer is set to less than 1 sec, then check buttons only */
+	if (itv.it_value.tv_sec == 0) {
+		int i_ret = 0;
+		
+		/* handle buttons */
+#if defined (BOARD_GPIO_BTN_RESET)
+		i_ret |= btn_check_reset();
+#endif
+#if defined (BOARD_GPIO_BTN_WPS)
+		i_ret |= btn_check_wps();
+#endif
+#if defined (BOARD_GPIO_BTN_WLTOG)
+		i_ret |= btn_check_wlt();
+#endif
+		if (i_ret) {
+			if (itv.it_value.tv_usec != WD_URGENT_PERIOD)
+				alarmtimer(0, WD_URGENT_PERIOD);
+		} else {
+			alarmtimer(WD_NORMAL_PERIOD, 0);
+		}
+		
 		return;
-
-	if (is_system_down())
-		return;
+	}
 
 	is_ap_mode = get_ap_mode();
 
@@ -1032,27 +1156,65 @@ static void watchdog(int sig)
 	storage_save_time(10);
 }
 
-int 
+static void
+catch_sig_watchdog(int sig)
+{
+	switch (sig)
+	{
+	case SIGALRM:
+		watchdog_on_timer();
+		break;
+	case SIGHUP:
+		watchdog_on_sighup();
+		break;
+	case SIGUSR1:
+		watchdog_on_sigusr1();
+		break;
+	case SIGUSR2:
+		watchdog_on_sigusr2();
+		break;
+	case SIGTERM:
+		remove(WD_PID_FILE);
+#if defined (BOARD_GPIO_BTN_WPS)
+		cpu_gpio_irq_set(BOARD_GPIO_BTN_WPS, 0, 0, 0);
+#endif
+#if defined (BOARD_GPIO_BTN_WLTOG)
+		cpu_gpio_irq_set(BOARD_GPIO_BTN_WLTOG, 0, 0, 0);
+#endif
+#if defined (BOARD_GPIO_BTN_RESET)
+		cpu_gpio_irq_set(BOARD_GPIO_BTN_RESET, 0, 0, 0);
+#endif
+		cpu_gpio_irq_enable(0);
+		alarmtimer(0, 0);
+		exit(0);
+		break;
+	}
+}
+
+int
 watchdog_main(int argc, char *argv[])
 {
 	FILE *fp;
-	sigset_t sigs_to_catch;
+	pid_t pid;
+	struct sigaction sa;
 
-	/* set the signal handler */
-	sigemptyset(&sigs_to_catch);
-	sigaddset(&sigs_to_catch, SIGHUP);
-	sigaddset(&sigs_to_catch, SIGTERM);
-	sigaddset(&sigs_to_catch, SIGUSR1);
-	sigaddset(&sigs_to_catch, SIGUSR2);
-	sigaddset(&sigs_to_catch, SIGALRM);
-	sigprocmask(SIG_UNBLOCK, &sigs_to_catch, NULL);
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = catch_sig_watchdog;
+	sigemptyset(&sa.sa_mask);
+	sigaddset(&sa.sa_mask, SIGALRM);
+	sigaddset(&sa.sa_mask, SIGHUP);
+	sigaddset(&sa.sa_mask, SIGUSR1);
+	sigaddset(&sa.sa_mask, SIGUSR2);
+	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGUSR2, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGALRM, &sa, NULL);
 
-	signal(SIGPIPE, SIG_IGN);
-	signal(SIGHUP,  catch_sig);
-	signal(SIGTERM, catch_sig);
-	signal(SIGUSR1, catch_sig);
-	signal(SIGUSR2, catch_sig);
-	signal(SIGALRM, watchdog);
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = SIG_IGN;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGPIPE, &sa, NULL);
 
 	if (daemon(0, 0) < 0) {
 		perror("daemon");
@@ -1062,15 +1224,28 @@ watchdog_main(int argc, char *argv[])
 	reset_ntpc_tries();
 	nvram_set_int_temp("wd_notify_id", 0);
 
+	pid = getpid();
+
 	/* write pid */
-	if ((fp = fopen("/var/run/watchdog.pid", "w")) != NULL)
+	if ((fp = fopen(WD_PID_FILE, "w")) != NULL)
 	{
-		fprintf(fp, "%d", getpid());
+		fprintf(fp, "%d", pid);
 		fclose(fp);
 	}
 
+#if defined (BOARD_GPIO_BTN_WPS)
+	cpu_gpio_irq_set(BOARD_GPIO_BTN_WPS, 0, 1, pid);
+#endif
+#if defined (BOARD_GPIO_BTN_WLTOG)
+	cpu_gpio_irq_set(BOARD_GPIO_BTN_WLTOG, 0, 1, pid);
+#endif
+#if defined (BOARD_GPIO_BTN_RESET)
+	cpu_gpio_irq_set(BOARD_GPIO_BTN_RESET, 0, 1, pid);
+#endif
+	cpu_gpio_irq_enable(1);
+
 	/* set timer */
-	alarmtimer(NORMAL_PERIOD, 0);
+	alarmtimer(WD_NORMAL_PERIOD, 0);
 
 	/* Most of time it goes to sleep */
 	while (1)

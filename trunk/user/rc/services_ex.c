@@ -452,7 +452,7 @@ smart_restart_upnp(void)
 	get_wan_ifname(wan_ifname);
 
 	/* restart miniupnpd only if wan interface changed */
-	if (strcmp(wan_ifname, nvram_safe_get("wan_ifname_t")) != 0) {
+	if (strcmp(wan_ifname, get_wan_unit_value(0, "ifname_t")) != 0) {
 		stop_upnp();
 		start_upnp();
 	}
@@ -614,9 +614,8 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 	ddns2_user  = nvram_safe_get("ddns2_user");
 	ddns2_pass  = nvram_safe_get("ddns2_pass");
 
-	if (use_delay) {
-		use_delay = (nvram_get_int("ntpc_counter") < 1) ? 10 : 3;
-	}
+	if (use_delay)
+		use_delay = (nvram_get_int("ntpc_counter") < 1) ? 15 : 3;
 
 	fp = fopen(conf_file, "w");
 	if (fp) {
@@ -674,10 +673,13 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 int
 start_ddns(int clear_cache)
 {
-	if (!nvram_match("ddns_enable_x", "1") || get_ap_mode())
+	if (get_ap_mode())
 		return -1;
 
 	stop_ddns();
+
+	if (!nvram_match("ddns_enable_x", "1"))
+		return -1;
 
 	if (clear_cache)
 		doSystem("rm -rf %s", DDNS_CACHE_DIR);
@@ -690,7 +692,7 @@ start_ddns(int clear_cache)
 }
 
 int
-update_ddns(void)
+notify_ddns_update(void)
 {
 	if (pids("inadyn"))
 	{
@@ -719,7 +721,10 @@ manual_ddns_hostname_check(void)
 		NULL
 	};
 
-	if (!is_valid_ipv4(nvram_safe_get("wan_ipaddr_t"))) {
+	if (get_ap_mode())
+		return;
+
+	if (!has_wan_ip(0) || !has_wan_gateway()) {
 		nvram_set_temp(nvram_key, "connect_fail");
 		return;
 	}

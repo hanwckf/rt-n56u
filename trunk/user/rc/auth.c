@@ -34,29 +34,22 @@ int start_auth_kabinet(void)
 	int ret;
 	char *gateip = nvram_safe_get("wan_auth_host");
 	char *passwd = nvram_safe_get("wan_auth_pass");
-	
+
 	stop_auth_kabinet();
-	
-	if ( !passwd[0] )
-	{
+
+	if (strlen(passwd) < 1) {
 		logmessage("lanauth", "password is empty, unable to start!");
 		return -1;
 	}
-	
+
 	if (is_valid_ipv4(gateip))
-	{
 		ret = eval("/usr/sbin/lanauth", "-s", gateip, "-p", passwd);
-	}
 	else
-	{
 		ret = eval("/usr/sbin/lanauth", "-p", passwd);
-	}
-	
+
 	if (ret == 0)
-	{
 		logmessage("lanauth", "start authentication...");
-	}
-	
+
 	return ret;
 }
 
@@ -66,7 +59,7 @@ void stop_auth_eapol(void)
 	kill_services(svcs, 3, 1);
 }
 
-int start_auth_eapol(const char *ifname, int eap_algo)
+int start_auth_eapol(char *ifname, int unit, int eap_algo)
 {
 	FILE *fp;
 	int ret;
@@ -76,14 +69,14 @@ int start_auth_eapol(const char *ifname, int eap_algo)
 	char *wpa_argv[] = {"/usr/sbin/wpa_supplicant",
 		"-B", "-W",
 		"-D", "wired",
-		"-i", (char *)ifname,
+		"-i", ifname,
 		"-c", (char *)wpa_conf,
 		NULL
 	};
 
 	char *cli_argv[] = {"/usr/sbin/wpa_cli",
 		"-B",
-		"-i", (char *)ifname,
+		"-i", ifname,
 		"-a", SCRIPT_WPACLI_WAN,
 		NULL
 	};
@@ -117,8 +110,8 @@ int start_auth_eapol(const char *ifname, int eap_algo)
 		"	password=\"%s\"\n"
 		,
 		eap_type,
-		nvram_safe_get("wan_auth_user"),
-		nvram_safe_get("wan_auth_pass"));
+		get_wan_unit_value(unit, "auth_user"),
+		get_wan_unit_value(unit, "auth_pass"));
 
 #if defined(SUPPORT_PEAP_SSL)
 	if (eap_algo == 5) {
@@ -157,32 +150,17 @@ int start_auth_eapol(const char *ifname, int eap_algo)
 
 int wpacli_main(int argc, char **argv)
 {
-	int eap_algo;
-	char *log_prefix = "EAPoL-MD5";
-
 	if (argc < 3)
 		return EINVAL;
 
 	if (!argv[1])
 		return EINVAL;
 
-	eap_algo = nvram_get_int("wan_auth_mode") - 2;
-	if (eap_algo < 0)
-		return 0;
-
-#if defined(SUPPORT_PEAP_SSL)
-	if (eap_algo == 5)
-		log_prefix = "EAPoL-PEAP";
-	else if (eap_algo == 4 || eap_algo == 3 || eap_algo == 2 || eap_algo == 1)
-		log_prefix = "EAPoL-TTLS";
-#endif
-
-	if (strncmp(argv[2], "EAP-SUCCESS", 11) != 0)
-		logmessage(log_prefix, "%s", argv[2]);
-
+	if (strcmp(argv[2], "EAP-SUCCESS") != 0)
+		logmessage("EAPoL", "Authentication: %s", argv[2]);
 #if 0
 	/* disable DHCP lease force renew by issues with some ISP (lease losted after force renew) */
-	else if (nvram_match("wan0_proto", "dhcp"))
+	else if (get_wan_proto(unit) == IPV4_WAN_PROTO_IPOE_DHCP)
 	{
 		/* Renew DHCP lease */
 		doSystem("killall %s %s", "-SIGUSR1", "udhcpc");

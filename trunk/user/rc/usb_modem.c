@@ -60,7 +60,7 @@ get_modem_vid_pid(const char *modem_node, int *vid, int *pid)
 }
 
 static int
-write_pppd_ras_conf(const char* call_path, const char *modem_node, int ppp_unit)
+write_pppd_ras_conf(const char* call_path, const char *modem_node, int unit)
 {
 	FILE *fp;
 	int modem_type, vid = 0, pid = 0;
@@ -108,7 +108,8 @@ write_pppd_ras_conf(const char* call_path, const char *modem_node, int ppp_unit)
 	if (nvram_invmatch("modem_dnsa", "0"))
 		fprintf(fp, "usepeerdns\n");
 
-	fprintf(fp, "minunit %d\n", ppp_unit);
+	fprintf(fp, "minunit %d\n", RAS_PPP_UNIT);
+	fprintf(fp, "linkname wan%d\n", unit);
 
 	if(modem_type == 2){
 		fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/td.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
@@ -343,7 +344,7 @@ qmi_stop_network(const char* control_node)
 	return 0;
 }
 
-int
+static int
 is_ready_modem_ras(int *devnum_out)
 {
 	char node_name[16];
@@ -354,15 +355,34 @@ is_ready_modem_ras(int *devnum_out)
 	return 0;
 }
 
-int
+static int
 is_ready_modem_ndis(int *devnum_out)
 {
 	char ndis_ifname[16];
-	
+
 	if (get_modem_ndis_ifname(ndis_ifname, devnum_out) && is_interface_exist(ndis_ifname))
 		return 1;
-	
+
 	return 0;
+}
+
+int
+get_modem_devnum(void)
+{
+	int modem_devnum = 0;
+
+	/* check modem enabled and ready */
+	if (nvram_get_int("modem_rule") > 0) {
+		if (nvram_get_int("modem_type") == 3) {
+			if (!is_ready_modem_ndis(&modem_devnum))
+				modem_devnum = 0;
+		} else {
+			if (!is_ready_modem_ras(&modem_devnum))
+				modem_devnum = 0;
+		}
+	}
+
+	return modem_devnum;
 }
 
 int
@@ -453,56 +473,45 @@ disconnect_ndis(int devnum)
 	return 1;
 }
 
-void
-stop_modem_ras(void)
+#if 0
+static void
+unlink_modem_ras(void)
 {
 	int i;
 	char node_fname[64];
 
-	doSystem("killall %s %s", "-q", "usb_modeswitch");
-	doSystem("killall %s %s", "-q", "eject");
-
 	for (i=0; i<MAX_USB_NODE; i++)
 	{
-		sprintf(node_fname, "%s/ttyUSB%d", MODEM_NODE_DIR, i);
+		snprintf(node_fname, sizeof(node_fname), "%s/ttyUSB%d", MODEM_NODE_DIR, i);
 		unlink(node_fname);
 		
-		sprintf(node_fname, "%s/ttyACM%d", MODEM_NODE_DIR, i);
+		snprintf(node_fname, sizeof(node_fname), "%s/ttyACM%d", MODEM_NODE_DIR, i);
 		unlink(node_fname);
 	}
 }
 
-void
-stop_modem_ndis(void)
+static void
+unlink_modem_ndis(void)
 {
-	int i, modem_devnum = 0;
+	int i;
 	char node_fname[64];
-	char ndis_ifname[16] = {0};
-
-	doSystem("killall %s %s", "-q", "usb_modeswitch");
-	doSystem("killall %s %s", "-q", "eject");
-
-	if (get_modem_ndis_ifname(ndis_ifname, &modem_devnum)) {
-		disconnect_ndis(modem_devnum);
-		if (is_interface_exist(ndis_ifname))
-			ifconfig(ndis_ifname, 0, "0.0.0.0", NULL);
-	}
 
 	for (i=0; i<MAX_USB_NODE; i++)
 	{
-		sprintf(node_fname, "%s/ttyUSB%d", MODEM_NODE_DIR, i);
+		snprintf(node_fname, sizeof(node_fname), "%s/ttyUSB%d", MODEM_NODE_DIR, i);
 		unlink(node_fname);
 		
-		sprintf(node_fname, "%s/cdc-wdm%d", MODEM_NODE_DIR, i);
+		snprintf(node_fname, sizeof(node_fname), "%s/cdc-wdm%d", MODEM_NODE_DIR, i);
 		unlink(node_fname);
 		
-		sprintf(node_fname, "%s/weth%d", MODEM_NODE_DIR, i);
+		snprintf(node_fname, sizeof(node_fname), "%s/weth%d", MODEM_NODE_DIR, i);
 		unlink(node_fname);
 		
-		sprintf(node_fname, "%s/wwan%d", MODEM_NODE_DIR, i);
+		snprintf(node_fname, sizeof(node_fname), "%s/wwan%d", MODEM_NODE_DIR, i);
 		unlink(node_fname);
 	}
 }
+#endif
 
 void
 unload_modem_modules(void)
@@ -558,35 +567,62 @@ reload_modem_modules(int modem_type, int reload)
 }
 
 void
+notify_modem_on_wan_link_changed(int has_link)
+{
+	int modem_used, link_wan;
+
+	if (nvram_get_int("modem_prio") != 2)
+		return;
+
+	if (get_apcli_wisp_ifname())
+		return;
+
+	if (!get_modem_devnum())
+		return;
+
+	link_wan = (has_link) ? 1 : 0;
+	modem_used = (get_usb_modem_wan(0)) ? 1 : 0;
+
+	if (modem_used == link_wan)
+		notify_rc("auto_wan_reconnect");
+}
+
+void
 safe_remove_usb_modem(void)
 {
-	char* svcs[] = { "pppd", NULL };
+	doSystem("killall %s %s", "-q", "usb_modeswitch");
+	doSystem("killall %s %s", "-q", "eject");
 
-	if (nvram_match("modem_type", "3"))
+	if (nvram_get_int("modem_type") == 3)
 	{
-		if (pids("udhcpc"))
+		char* svcs[] = { "udhcpc", NULL };
+		
+		if (pids(svcs[0]))
 		{
-			doSystem("killall %s %s", "-SIGUSR2", "udhcpc");
-			usleep(250000);
+			doSystem("killall %s %s", "-SIGUSR2", svcs[0]);
+			usleep(300000);
 			
-			svcs[0] = "udhcpc";
 			kill_services(svcs, 3, 1);
 		}
 		
-		stop_modem_ndis();
+		stop_wan_usbnet();
+		
+//		unlink_modem_ndis();
 	}
 	else
 	{
-		kill_services(svcs, 10, 1);
+		char* svcs_ppp[] = { "pppd", NULL };
 		
-		stop_modem_ras();
+		kill_services(svcs_ppp, 10, 1);
+		
+//		unlink_modem_ras();
 	}
 
 	set_usb_modem_dev_wan(0, 0);
 }
 
 int
-launch_modem_ras_pppd(int unit)
+launch_wan_modem_ras(int unit)
 {
 	char node_name[16] = {0};
 	char call_file[16];
@@ -599,14 +635,14 @@ launch_modem_ras_pppd(int unit)
 	unlink(call_path);
 
 	if (get_modem_node_ras(node_name, NULL)) {
-		if (write_pppd_ras_conf(call_path, node_name, RAS_PPP_UNIT)) {
+		if (write_pppd_ras_conf(call_path, node_name, unit)) {
 			
 			logmessage(LOGNAME, "select RAS modem interface %s to pppd", node_name);
 			
 			return eval("/usr/sbin/pppd", "call", call_file);
 		}
 	}
-	
+
 	logmessage(LOGNAME, "unable to open RAS modem script!");
 
 	return 1;
@@ -617,16 +653,17 @@ launch_wan_usbnet(int unit)
 {
 	int modem_devnum = 0;
 	char ndis_ifname[16] = {0};
-	
+
 	if (get_modem_ndis_ifname(ndis_ifname, &modem_devnum) && is_interface_exist(ndis_ifname)) {
 		int ndis_mtu = nvram_safe_get_int("modem_mtu", 1500, 1000, 1500);
+		
+		set_wan_unit_value(unit, "ifname_t", ndis_ifname);
 		doSystem("ifconfig %s mtu %d up %s", ndis_ifname, ndis_mtu, "0.0.0.0");
 		connect_ndis(modem_devnum);
 		start_udhcpc_wan(ndis_ifname, unit, 0);
-		nvram_set_temp("wan_ifname_t", ndis_ifname);
 	}
 	else
-		nvram_set_temp("wan_ifname_t", "");
+		set_wan_unit_value(unit, "ifname_t", "");
 }
 
 void
@@ -634,7 +671,7 @@ stop_wan_usbnet(void)
 {
 	int modem_devnum = 0;
 	char ndis_ifname[16] = {0};
-	
+
 	if (get_modem_ndis_ifname(ndis_ifname, &modem_devnum)) {
 		disconnect_ndis(modem_devnum);
 		if (is_interface_exist(ndis_ifname))
@@ -694,7 +731,8 @@ launch_usb_modeswitch(int vid, int pid, int inquire)
 	return doSystem("/bin/usb_modeswitch %s-v 0x%04x -p 0x%04x -c %s", arg_inq, vid, pid, eject_file);
 }
 
-static int find_usb_device(int vid, int pid)
+static int
+find_usb_device(int vid, int pid)
 {
 	int i_found = 0;
 	usb_info_t *usb_info, *follow_usb;
@@ -711,7 +749,8 @@ static int find_usb_device(int vid, int pid)
 	return i_found;
 }
 
-static void catch_sig_zerocd(int sig)
+static void
+catch_sig_zerocd(int sig)
 {
 	if (sig == SIGTERM)
 	{
@@ -719,7 +758,8 @@ static void catch_sig_zerocd(int sig)
 	}
 }
 
-int zerocd_main(int argc, char **argv)
+int
+zerocd_main(int argc, char **argv)
 {
 	int i, i_vid, i_pid, res;
 

@@ -57,6 +57,8 @@
 
 <% lanlink(); %>
 
+<% hardware_pins_hook(); %>
+
 function initial(){
 	show_banner(1);
 

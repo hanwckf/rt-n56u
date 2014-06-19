@@ -142,7 +142,8 @@ typedef struct mib_counters_s
 // IOCTL
 ////////////////////////////////////////////////////////////////////////////////
 
-int rtl8367_ioctl(unsigned int cmd, unsigned int par, unsigned int *value)
+static int
+rtl8367_ioctl(unsigned int cmd, unsigned int par, unsigned int *value)
 {
 	int fd, retVal = 0;
 
@@ -152,15 +153,14 @@ int rtl8367_ioctl(unsigned int cmd, unsigned int par, unsigned int *value)
 		return errno;
 	}
 
-	cmd &= ((1L << RTL8367_IOCTL_CMD_LENGTH_BITS) - 1);
+	cmd &= ((1u << RTL8367_IOCTL_CMD_LENGTH_BITS) - 1);
 	cmd |= (par << RTL8367_IOCTL_CMD_LENGTH_BITS);
 
-	if(ioctl(fd, cmd, value) < 0)
-	{
+	if (ioctl(fd, cmd, value) < 0) {
 		perror("ioctl");
 		retVal = errno;
 	}
-	
+
 	close(fd);
 
 	return retVal;
@@ -458,7 +458,8 @@ int show_usage(char *cmd)
 	"   50 [0..8] [0..3] Config WAN bridge mode and isolation\n"
 #if defined (USE_RT3352_MII)
 	"   51 [0|1]         Toggle iNIC isolation from LAN ports\n"
-	"   52 [0|1]         Toggle iNIC disable RGMII port link\n\n"
+	"   52 [0|1]         Toggle iNIC disable RGMII port link\n"
+	"   53 [0|1]         Toggle iNIC WISP mode\n\n"
 #endif
 	"   60               Reset VLAN table and init VLAN1\n"
 	"   61 [MASK]        Set VLAN ingress enabled for ports mask\n"

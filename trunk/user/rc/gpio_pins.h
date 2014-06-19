@@ -26,5 +26,11 @@ int cpu_gpio_set_pin_direction(int pin, unsigned int use_output_direction);
 int cpu_gpio_set_pin(int pin, unsigned int value);
 int cpu_gpio_get_pin(int pin, unsigned int *p_value);
 
+////////////////////////////////////////////////////////////////////////////////
+
+int cpu_gpio_led_timer(int timer_on);
+int cpu_gpio_irq_enable(int irq_on);
+int cpu_gpio_irq_set(unsigned int irq_pin, unsigned int rising_edge, unsigned int falling_edge, pid_t pid);
+
 
 #endif

@@ -66,12 +66,12 @@
 
 <% login_state_hook(); %>
 
-var country = '<% nvram_get_x("General", "modem_country"); %>';
-var isp = '<% nvram_get_x("General", "modem_isp"); %>';
-var apn = '<% nvram_get_x("General", "modem_apn"); %>';
-var dialnum = '<% nvram_get_x("General", "modem_dialnum"); %>';
-var user = '<% nvram_get_x("General", "modem_user"); %>';
-var pass = '<% nvram_get_x("General", "modem_pass"); %>';
+var country = '<% nvram_get_x("", "modem_country"); %>';
+var isp = '<% nvram_get_x("", "modem_isp"); %>';
+var apn = '<% nvram_get_x("", "modem_apn"); %>';
+var dialnum = '<% nvram_get_x("", "modem_dialnum"); %>';
+var user = '<% nvram_get_x("", "modem_user"); %>';
+var pass = '<% nvram_get_x("", "modem_pass"); %>';
 
 var countrylist = new Array();
 var protolist = new Array();
@@ -358,13 +358,13 @@ function done_validating(action){
                                             <td style="padding-bottom: 0px; border-top: 0 none;">
                                                 <div class="main_itoggle">
                                                     <div id="modem_rule_on_of">
-                                                        <input type="checkbox" id="modem_rule_fake" <% nvram_match_x("General", "modem_rule", "1", "value=1 checked"); %><% nvram_match_x("General", "modem_rule", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="modem_rule_fake" <% nvram_match_x("", "modem_rule", "1", "value=1 checked"); %><% nvram_match_x("", "modem_rule", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="modem_rule" id="modem_rule_1" class="input" <% nvram_match_x("General", "modem_rule", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="modem_rule" id="modem_rule_0" class="input" <% nvram_match_x("General", "modem_rule", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" name="modem_rule" id="modem_rule_1" class="input" <% nvram_match_x("", "modem_rule", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="modem_rule" id="modem_rule_0" class="input" <% nvram_match_x("", "modem_rule", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -378,10 +378,10 @@ function done_validating(action){
                                             <th width="50%"><#ModemType#></th>
                                             <td>
                                                 <select name="modem_type" class="input" onchange="switch_modem_type();">
-                                                    <option value="0" <% nvram_match_x("General", "modem_type", "0", "selected"); %>>RAS: WCDMA (UMTS)</option>
-                                                    <option value="1" <% nvram_match_x("General", "modem_type", "1", "selected"); %>>RAS: CDMA2000 (EVDO)</option>
-                                                    <option value="2" <% nvram_match_x("General", "modem_type", "2", "selected"); %>>RAS: TD-SCDMA</option>
-                                                    <option value="3" <% nvram_match_x("General", "modem_type", "3", "selected"); %>>NDIS: LTE and other</option>
+                                                    <option value="0" <% nvram_match_x("", "modem_type", "0", "selected"); %>>RAS: WCDMA (UMTS)</option>
+                                                    <option value="1" <% nvram_match_x("", "modem_type", "1", "selected"); %>>RAS: CDMA2000 (EVDO)</option>
+                                                    <option value="2" <% nvram_match_x("", "modem_type", "2", "selected"); %>>RAS: TD-SCDMA</option>
+                                                    <option value="3" <% nvram_match_x("", "modem_type", "3", "selected"); %>>NDIS: LTE and other</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -510,15 +510,15 @@ function done_validating(action){
                                             <th width="50%"><#COM_Port_Node#></th>
                                             <td>
                                                 <select name="modem_node" class="input">
-                                                    <option value="0" <% nvram_match_x("General", "modem_node", "0", "selected"); %>>Auto</option>
-                                                    <option value="1" <% nvram_match_x("General", "modem_node", "1", "selected"); %>>ttyUSB0/ttyACM0</option>
-                                                    <option value="2" <% nvram_match_x("General", "modem_node", "2", "selected"); %>>ttyUSB1/ttyACM1</option>
-                                                    <option value="3" <% nvram_match_x("General", "modem_node", "3", "selected"); %>>ttyUSB2</option>
-                                                    <option value="4" <% nvram_match_x("General", "modem_node", "4", "selected"); %>>ttyUSB3</option>
-                                                    <option value="5" <% nvram_match_x("General", "modem_node", "5", "selected"); %>>ttyUSB4</option>
-                                                    <option value="6" <% nvram_match_x("General", "modem_node", "6", "selected"); %>>ttyUSB5</option>
-                                                    <option value="7" <% nvram_match_x("General", "modem_node", "7", "selected"); %>>ttyUSB6</option>
-                                                    <option value="8" <% nvram_match_x("General", "modem_node", "8", "selected"); %>>ttyUSB7</option>
+                                                    <option value="0" <% nvram_match_x("", "modem_node", "0", "selected"); %>>Auto</option>
+                                                    <option value="1" <% nvram_match_x("", "modem_node", "1", "selected"); %>>ttyUSB0/ttyACM0</option>
+                                                    <option value="2" <% nvram_match_x("", "modem_node", "2", "selected"); %>>ttyUSB1/ttyACM1</option>
+                                                    <option value="3" <% nvram_match_x("", "modem_node", "3", "selected"); %>>ttyUSB2</option>
+                                                    <option value="4" <% nvram_match_x("", "modem_node", "4", "selected"); %>>ttyUSB3</option>
+                                                    <option value="5" <% nvram_match_x("", "modem_node", "5", "selected"); %>>ttyUSB4</option>
+                                                    <option value="6" <% nvram_match_x("", "modem_node", "6", "selected"); %>>ttyUSB5</option>
+                                                    <option value="7" <% nvram_match_x("", "modem_node", "7", "selected"); %>>ttyUSB6</option>
+                                                    <option value="8" <% nvram_match_x("", "modem_node", "8", "selected"); %>>ttyUSB7</option>
                                                 </select>
                                                 &nbsp;<span id="hint_node" style="color:#888;"></span>
                                             </td>
@@ -534,22 +534,13 @@ function done_validating(action){
                                             <th><#ModemZCD#></th>
                                             <td>
                                                 <select name="modem_zcd" class="input">
-                                                    <option value="0" <% nvram_match_x("General", "modem_zcd", "0", "selected"); %>>usb-modeswitch</option>
-                                                    <option value="1" <% nvram_match_x("General", "modem_zcd", "1", "selected"); %>>legacy eject</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><#ModemARun#></th>
-                                            <td>
-                                                <select name="modem_arun" class="input">
-                                                    <option value="0" <% nvram_match_x("General", "modem_arun", "0", "selected"); %>><#checkbox_No#></option>
-                                                    <option value="1" <% nvram_match_x("General", "modem_arun", "1", "selected"); %>><#checkbox_Yes#></option>
-                                                    <option value="2" <% nvram_match_x("General", "modem_arun", "2", "selected"); %>><#ModemARunItem2#></option>
+                                                    <option value="0" <% nvram_match_x("", "modem_zcd", "0", "selected"); %>>usb-modeswitch</option>
+                                                    <option value="1" <% nvram_match_x("", "modem_zcd", "1", "selected"); %>>legacy eject</option>
                                                 </select>
                                             </td>
                                         </tr>
                                     </table>
+
                                     <table class="table">
                                         <tr>
                                             <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>

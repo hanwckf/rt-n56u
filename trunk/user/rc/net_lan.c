@@ -43,6 +43,24 @@ in_addr_t get_lan_ipaddr(void)
 }
 
 int
+has_lan_ip(void)
+{
+	if (get_lan_ipaddr() != INADDR_ANY)
+		return 1;
+
+	return 0;
+}
+
+int
+has_lan_gateway(void)
+{
+	if (is_valid_ipv4(nvram_safe_get("lan_gateway_t")))
+		return 1;
+
+	return 0;
+}
+
+int
 add_static_lan_routes(char *lan_ifname)
 {
 	return control_static_routes(SR_PREFIX_LAN, lan_ifname, 1);
@@ -463,7 +481,7 @@ is_vlan_vid_iptv_valid(int vlan_vid_inet, int vlan_vid_iptv)
 	return (vlan_vid_iptv >= MIN_EXT_VLAN_VID && vlan_vid_iptv < 4095 && vlan_vid_iptv != vlan_vid_inet) ? 1 : 0;
 }
 
-void 
+void
 reset_lan_temp(void)
 {
 	nvram_set_temp("lan_ipaddr_t", "");
@@ -473,7 +491,7 @@ reset_lan_temp(void)
 	nvram_set_temp("lan_dns_t", "");
 }
 
-void 
+void
 reset_lan_vars(void)
 {
 	nvram_set("lan_hwaddr", nvram_safe_get("il0macaddr"));
@@ -769,11 +787,11 @@ static void
 lan_down_auto(char *lan_ifname)
 {
 	FILE *fp;
+	char *lan_gateway = nvram_safe_get("lan_gateway_t");
 
 	/* Remove default route to gateway if specified */
-	route_del(lan_ifname, 0, "0.0.0.0", 
-			nvram_safe_get("lan_gateway_t"),
-			"0.0.0.0");
+	if (is_valid_ipv4(lan_gateway))
+		route_del(lan_ifname, 0, "0.0.0.0", lan_gateway, "0.0.0.0");
 
 	/* Clear resolv.conf */
 	fp = fopen("/etc/resolv.conf", "w+");
@@ -932,12 +950,12 @@ udhcpc_lan_main(int argc, char **argv)
 }
 
 int 
-start_udhcpc_lan(const char *lan_ifname)
+start_udhcpc_lan(char *lan_ifname)
 {
 	char *lan_hostname = get_our_hostname();
 	char *dhcp_argv[] = {
 		"/sbin/udhcpc",
-		"-i", (char *)lan_ifname,
+		"-i", lan_ifname,
 		"-s", SCRIPT_UDHCPC_LAN,
 		"-p", "/var/run/udhcpc_lan.pid",
 		"-t4",

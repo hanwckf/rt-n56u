@@ -87,8 +87,10 @@ typedef unsigned char   bool;
 static int apply_cgi_group(webs_t wp, int sid, struct variable *var, char *groupName, int flag);
 static int nvram_generate_table(webs_t wp, char *serviceId, char *groupName);
 
+static int nvram_modified = 0;
+static int wl_modified = 0;
+static int rt_modified = 0;
 static unsigned long restart_needed_bits = 0;
-static unsigned int restart_total_time = 0; 
 
 int action;
 char *serviceId;
@@ -106,7 +108,7 @@ nvram_commit_safe()
 {
 	if (nvram_get_int("nvram_manual") == 1)
 		return;
-	
+
 	nvram_commit();
 }
 
@@ -1028,9 +1030,6 @@ static void clean_error_msg() {
 #define WIFI_GUEST_CONTROL_BIT	(1<<3)
 #define WIFI_SCHED_CONTROL_BIT	(1<<4)
 
-static int nvram_modified = 0;
-static int wl_modified = 0;
-static int rt_modified = 0;
 
 static const char* wifn_list[][3] = {
 	{IFNAME_2G_MAIN, IFNAME_2G_APCLI, IFNAME_2G_WDS0},
@@ -1462,6 +1461,8 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 	char *sid_list;
 	char *script;
 	int result;
+	unsigned int restart_total_time = 0;
+
 	restart_needed_bits = 0;
 
 	// assign control variables
@@ -1573,8 +1574,7 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			restart_total_time = MAX(ITVL_RESTART_REBOOT, restart_total_time);
 		if ((restart_needed_bits & (RESTART_WAN | RESTART_IPV6)) != 0) {
 			unsigned int max_time = ITVL_RESTART_WAN;
-			int wan_proto = get_wan_proto(0);
-			if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC || wan_proto == IPV4_WAN_PROTO_IPOE_DHCP)
+			if (nvram_match("wan_proto", "dhcp") || nvram_match("wan_proto", "static"))
 				max_time = 3;
 			restart_total_time = MAX(max_time, restart_total_time);
 		}
@@ -1618,8 +1618,8 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			restart_total_time = MAX(ITVL_RESTART_SWITCH_VLAN, restart_total_time);
 		if ((restart_needed_bits & RESTART_SYSLOG) != 0)
 			restart_total_time = MAX(ITVL_RESTART_SYSLOG, restart_total_time);
-		if ((restart_needed_bits & RESTART_WDG_CPU) != 0)
-			restart_total_time = MAX(ITVL_RESTART_WDG_CPU, restart_total_time);
+		if ((restart_needed_bits & RESTART_TWEAKS) != 0)
+			restart_total_time = MAX(ITVL_RESTART_TWEAKS, restart_total_time);
 		if ((restart_needed_bits & RESTART_FIREWALL) != 0)
 			restart_total_time = MAX(ITVL_RESTART_FIREWALL, restart_total_time);
 		if ((restart_needed_bits & RESTART_NTPC) != 0)
@@ -1663,10 +1663,7 @@ static int asus_nvram_commit(int eid, webs_t wp, int argc, char_t **argv) {
 	return 0;
 }
 
-extern long uptime(void);
-
 static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
-	restart_total_time = 0;
 	if (restart_needed_bits != 0) {
 		if ((restart_needed_bits & RESTART_REBOOT) != 0) {
 			if (nvram_get_int("nvram_manual") == 1)
@@ -1819,9 +1816,9 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				notify_rc("restart_syslog");
 				restart_needed_bits &= ~(u32)RESTART_SYSLOG;
 			}
-			if ((restart_needed_bits & RESTART_WDG_CPU) != 0) {
-				notify_rc("restart_wdg_cpu");
-				restart_needed_bits &= ~(u32)RESTART_WDG_CPU;
+			if ((restart_needed_bits & RESTART_TWEAKS) != 0) {
+				notify_rc("restart_tweaks");
+				restart_needed_bits &= ~(u32)RESTART_TWEAKS;
 			}
 			if ((restart_needed_bits & RESTART_SYSCTL) != 0) {
 				notify_rc("restart_sysctl");
@@ -1967,8 +1964,7 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 	ppp_mode = 0;
 
 	/* current unit */
-	if ((unit = nvram_get_int("wan_unit")) < 0)
-		unit = 0;
+	unit = 0;
 
 	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 	snprintf(wan_mac, sizeof(wan_mac), "%s", nvram_safe_get("wan_hwaddr"));
@@ -1991,8 +1987,9 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 
 #if (BOARD_NUM_USB_PORTS > 0)
 	if (get_usb_modem_wan(0)) {
-		if (nvram_match("modem_type", "3")) {
-			char *ndis_ifname = nvram_safe_get("wan_ifname_t");
+		int modem_prio = nvram_get_int("modem_prio");
+		if (nvram_get_int("modem_type") == 3) {
+			char *ndis_ifname = nvram_safe_get("wan0_ifname_t");
 			if (isUsbNetIf(ndis_ifname)) {
 				ifstate_wan = get_if_state(ndis_ifname, addr4_wan);
 				if (ifstate_wan > 0) {
@@ -2003,7 +2000,8 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 					}
 				}
 			}
-			etherlink[0] = 0; // hide ethernet link
+			if (modem_prio < 2)
+				etherlink[0] = 0; // hide ethernet link
 			strcpy(wan_desc, "USB Modem (NDIS/RNDIS)");
 		} else {
 #if defined (USE_IPV6)
@@ -2011,7 +2009,7 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 				wan6_ifname = IFNAME_RAS;
 #endif
 			ifstate_wan = get_if_state(IFNAME_RAS, addr4_wan);
-			ppp_time = nvram_get_int(strcat_r(prefix, "time", tmp));
+			ppp_time = nvram_get_int(strcat_r(prefix, "time_ppp", tmp));
 			ppp_mode = 1;
 			
 			// Dual access with RAS Modem
@@ -2020,7 +2018,8 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 			    wan_proto == IPV4_WAN_PROTO_L2TP) {
 				ifstate_man = get_if_state(man_ifname, addr4_man);
 			} else {
-				etherlink[0] = 0; // hide ethernet link
+				if (modem_prio < 2)
+					etherlink[0] = 0; // hide ethernet link
 			}
 			strcpy(wan_desc, "USB Modem (RAS)");
 		}
@@ -2051,7 +2050,7 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 			
 			etherlink[0] = 0; // hide ethernet link
 		} else {
-			if (!get_ethernet_phy_link(1)) {
+			if (!get_wan_phy_link()) {
 				phy_failed = 1; // No port link
 			}
 		}
@@ -2065,7 +2064,7 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 #endif
 			ifstate_wan = get_if_state(IFNAME_PPP, addr4_wan);
 			ifstate_man = get_if_state(man_ifname, addr4_man);
-			ppp_time = nvram_get_int(strcat_r(prefix, "time", tmp));
+			ppp_time = nvram_get_int(strcat_r(prefix, "time_ppp", tmp));
 			ppp_mode = (wan_proto == IPV4_WAN_PROTO_L2TP) ? 2 : 1;
 		} else {
 			ifstate_wan = get_if_state(man_ifname, addr4_wan);
@@ -2212,31 +2211,55 @@ lanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static int
-wan_action_hook(int eid, webs_t wp, int argc, char_t **argv) 
+wan_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 {
-	char *action;
-	int needed_seconds = 0;
-	
-	// assign control variables
-	action = websGetVar(wp, "wanaction", "");
-	if (strlen(action) <= 0) {
-		fprintf(stderr, "No connect action in wan_action_hook!\n");
-		return -1;
-	}
-	
-	fprintf(stderr, "wan action: %s\n", action);
-	
-	if (!strcmp(action, "Connect")) {
-		notify_rc("manual_wan_connect");
+	int unit, needed_seconds = 1;
+	char *wan_action = websGetVar(wp, "wan_action", "");
+
+	unit = 0;
+
+	if (!strcmp(wan_action, "Connect")) {
 		needed_seconds = 5;
+		if (nvram_match("wan_proto", "dhcp"))
+			needed_seconds = 3;
+		else if (nvram_match("wan_proto", "static"))
+			needed_seconds = 2;
+		notify_rc("manual_wan_reconnect");
 	}
-	else if (!strcmp(action, "Disconnect")) {
-		notify_rc("manual_wan_disconnect");
+	else if (!strcmp(wan_action, "Disconnect")) {
 		needed_seconds = 3;
+		if (nvram_match("wan_proto", "static"))
+			needed_seconds = 2;
+		notify_rc("manual_wan_disconnect");
 	}
-	
+#if (BOARD_NUM_USB_PORTS > 0)
+	else if (!strcmp(wan_action, "ModemPrio")) {
+		int modem_prio = atoi(websGetVar(wp, "modem_prio", ""));
+		int modem_used = (get_usb_modem_wan(unit)) ? 1 : 0;
+		if (modem_prio >= 0 && modem_prio < 4 && nvram_get_int("modem_prio") != modem_prio) {
+			int need_restart_wan = 0;
+			
+			nvram_set_int("modem_prio", modem_prio);
+			nvram_commit_safe();
+			
+			if (!is_man_wisp(get_man_ifname(unit))) {
+				if (modem_prio > 1) {
+					int link_wan = (nvram_get_int("link_wan")) ? 1 : 0;
+					need_restart_wan = (modem_used == link_wan);
+				} else {
+					need_restart_wan = (modem_used != modem_prio);
+				}
+				
+				if (need_restart_wan) {
+					notify_rc("auto_wan_reconnect");
+					needed_seconds = 3;
+				}
+			}
+		}
+	}
+#endif
+
 	websWrite(wp, "<script>restart_needed_time(%d);</script>\n", needed_seconds);
-	
 	return 0;
 }
 
@@ -2451,21 +2474,6 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #else
 	int has_ddns_ssl = 0;
 #endif
-#if defined(BOARD_GPIO_LED_ALL)
-	int has_led_all = 1;
-#else
-	int has_led_all = 0;
-#endif
-#if defined(BOARD_GPIO_LED_WIFI)
-	int has_led_wifi = 1;
-#else
-	int has_led_wifi = 0;
-#endif
-#if defined(BOARD_GPIO_BTN_WPS)
-	int has_but_wps = 1;
-#else
-	int has_but_wps = 0;
-#endif
 #if defined(USE_RT3352_MII)
 	int has_inic_mii = 1;
 #else
@@ -2515,9 +2523,6 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 		"function support_min_vlan() { return %d;}\n"
 		"function support_usb() { return %d;}\n"
 		"function support_usb3() { return %d;}\n"
-		"function support_but_wps() { return %d;}\n"
-		"function support_led_phy() { return %d;}\n"
-		"function support_led_all() { return %d;}\n"
 		"function support_switch_type() { return %d;}\n"
 		"function support_2g_apcli_only() { return %d;}\n"
 		"function support_5g_radio() { return %d;}\n"
@@ -2534,9 +2539,6 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 		min_vlan_ext,
 		has_usb,
 		has_usb3,
-		has_but_wps,
-		BOARD_NUM_ETH_LEDS,
-		has_led_all|has_led_wifi,
 		use_switch_type,
 		(has_inic_mii) ? 0 : 1,
 		BOARD_HAS_5G_RADIO,
@@ -2550,7 +2552,76 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
-static int openvpn_srv_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
+static int
+ej_hardware_pins_hook(int eid, webs_t wp, int argc, char_t **argv)
+{
+#if defined (BOARD_GPIO_BTN_WPS)
+	int has_but_wps = 1;
+#else
+	int has_but_wps = 0;
+#endif
+#if defined (BOARD_GPIO_BTN_WLTOG)
+	int has_but_wlt = 1;
+#else
+	int has_but_wlt = 0;
+#endif
+#if defined (BOARD_GPIO_LED_ALL)
+	int has_led_all = 1;
+#else
+	int has_led_all = 0;
+#endif
+#if defined (BOARD_GPIO_LED_WAN)
+	int has_led_wan = 1;
+#else
+	int has_led_wan = 0;
+#endif
+#if defined (BOARD_GPIO_LED_LAN)
+	int has_led_lan = 1;
+#else
+	int has_led_lan = 0;
+#endif
+#if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
+	int has_led_usb = 1;
+#else
+	int has_led_usb = 0;
+#endif
+#if defined (BOARD_GPIO_LED_WIFI)
+	int has_led_wif = 1;
+#else
+	int has_led_wif = 0;
+#endif
+#if defined (BOARD_GPIO_LED_POWER)
+	int has_led_pwr = 1;
+#else
+	int has_led_pwr = 0;
+#endif
+
+	websWrite(wp,
+		"function support_but_wps() { return %d;}\n"
+		"function support_but_wlt() { return %d;}\n"
+		"function support_led_all() { return %d;}\n"
+		"function support_led_wan() { return %d;}\n"
+		"function support_led_lan() { return %d;}\n"
+		"function support_led_usb() { return %d;}\n"
+		"function support_led_wif() { return %d;}\n"
+		"function support_led_pwr() { return %d;}\n"
+		"function support_led_phy() { return %d;}\n",
+		has_but_wps,
+		has_but_wlt,
+		has_led_all,
+		has_led_wan,
+		has_led_lan,
+		has_led_usb,
+		has_led_wif,
+		has_led_pwr,
+		BOARD_NUM_ETH_LEDS
+	);
+
+	return 0;
+}
+
+static int
+openvpn_srv_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
 {
 	int has_found_cert = 0;
 #if defined(APP_OPENVPN)
@@ -4499,24 +4570,12 @@ static int ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv)
 	return 0;
 }
 
-static void start_flash_usbled()
-{
-	doSystem("killall %s %s", "-SIGUSR1", "detect_link");
-}
-
-static void stop_flash_usbled()
-{
-	doSystem("killall %s %s", "-SIGUSR2", "detect_link");
-}
-
 static int ej_safely_remove_disk(int eid, webs_t wp, int argc, char_t **argv)
 {
 	int result;
 	int port_num = 0;
 	char *disk_port = websGetVar(wp, "port", "");
 	char *disk_devn = websGetVar(wp, "devn", "");
-
-	start_flash_usbled();
 
 	if (atoi(disk_port) == 1)
 		port_num = 1;
@@ -4526,17 +4585,11 @@ static int ej_safely_remove_disk(int eid, webs_t wp, int argc, char_t **argv)
 	result = doSystem("/sbin/ejusb %d %s", port_num, disk_devn);
 	if (result != 0) {
 		show_error_msg("Action9");
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "safely_remove_disk_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
+		websWrite(wp, "<script>safely_remove_disk_error(\'%s\');</script>\n", error_msg);
 		clean_error_msg();
 	} else {
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "safely_remove_disk_success();\n");
-		websWrite(wp, "</script>\n");
+		websWrite(wp, "<script>safely_remove_disk_success();</script>\n");
 	}
-
-	stop_flash_usbled();
 
 	return 0;
 }
@@ -5924,6 +5977,7 @@ struct ej_handler ej_handlers[] = {
 	{ "wl_bssid_5g", ej_wl_bssid_5g},
 	{ "wl_bssid_2g", ej_wl_bssid_2g},
 	{ "shown_language_option", ej_shown_language_option},
+	{ "hardware_pins_hook", ej_hardware_pins_hook},
 	{ "disk_pool_mapping_info", ej_disk_pool_mapping_info},
 	{ "available_disk_names_and_sizes", ej_available_disk_names_and_sizes},
 	{ "get_usb_ports_info", ej_get_usb_ports_info},

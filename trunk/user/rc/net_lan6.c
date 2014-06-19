@@ -205,7 +205,7 @@ int reload_radvd(void)
 	adv_prefix = "::/64";
 	adv_rdnss = get_lan_addr6_host(rdns6s);
 	if (!adv_rdnss)
-		adv_rdnss = nvram_safe_get("wan0_dns6");
+		adv_rdnss = get_wan_unit_value(0, "dns6");
 
 	if (ipv6_type == IPV6_6TO4) {
 		get_wan_ifname(wan_ifname);

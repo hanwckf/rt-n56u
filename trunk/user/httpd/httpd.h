@@ -128,6 +128,7 @@ extern void set_cgi(char *name, char *value);
 extern unsigned long crc32_sp (unsigned long, const unsigned char *, unsigned int);
 
 // httpd.c
+extern long uptime(void);
 extern int http_login_check(void);
 extern void fill_login_ip(char *p_out_ip, size_t out_ip_len);
 extern const char *get_login_mac(void);

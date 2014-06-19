@@ -311,7 +311,7 @@ restart_vpn_server(void)
 }
 
 void
-vpns_firewall_permission(const char *ifname, int add)
+vpns_firewall_permission(char *ifname, int add)
 {
 	char *logaccept;
 
@@ -335,7 +335,7 @@ vpns_firewall_permission(const char *ifname, int add)
 }
 
 void
-vpns_route_to_remote_lan(const char *cname, const char *ifname, const char *gw, int add)
+vpns_route_to_remote_lan(const char *cname, char *ifname, char *gw, int add)
 {
 	int i, i_max;
 	char *acl_user, *acl_rnet, *acl_rmsk, *lnet, *lmsk;
@@ -357,9 +357,9 @@ vpns_route_to_remote_lan(const char *cname, const char *ifname, const char *gw, 
 		{
 			if (!is_same_subnet2(acl_rnet, lnet, acl_rmsk, lmsk)) {
 				if (add)
-					route_add((char *)ifname, 0, acl_rnet, (char *)gw, acl_rmsk);
+					route_add(ifname, 0, acl_rnet, gw, acl_rmsk);
 				else
-					route_del((char *)ifname, 0, acl_rnet, (char *)gw, acl_rmsk);
+					route_del(ifname, 0, acl_rnet, gw, acl_rmsk);
 			}
 			
 			break;

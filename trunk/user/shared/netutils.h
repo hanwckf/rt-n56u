@@ -30,7 +30,8 @@
 #define HAVE_GETIFADDRS 1
 #endif
 
-#define IFUP				(IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
+//#define IFUP				(IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
+#define IFUP				(IFF_UP | IFF_RUNNING)
 #define sin_addr(s)			(((struct sockaddr_in *)(s))->sin_addr)
 
 #define IFNAME_BR			"br0"
@@ -156,10 +157,12 @@ extern char*     get_man_ifname(int unit);
 extern int       get_usb_modem_wan(int unit);
 extern int       get_usb_modem_dev_wan(int unit, int devnum);
 extern void      set_usb_modem_dev_wan(int unit, int devnum);
-extern int       get_ethernet_phy_link(int links_wan);
+extern int       get_wan_phy_link(void);
+extern int       ifconfig(char *ifname, int flags, char *addr, char *mask);
 extern int       is_interface_exist(const char *ifname);
 extern int       is_interface_up(const char *ifname);
 extern int       get_interface_flags(const char *ifname);
+extern int       get_interface_mtu(const char *ifname);
 extern int       get_interface_hwaddr(const char *ifname, unsigned char mac[6]);
 extern in_addr_t get_interface_addr4(const char *ifname);
 extern int       get_ipv6_type(void);

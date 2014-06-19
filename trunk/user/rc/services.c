@@ -279,7 +279,7 @@ stop_rstats(void)
 void
 start_rstats(void)
 {
-	if (!get_ap_mode() && nvram_match("rstats_enable", "1")) {
+	if (nvram_match("rstats_enable", "1")) {
 		eval("/sbin/rstats");
 	}
 }
@@ -306,7 +306,7 @@ start_logger(int showinfo)
 	if (showinfo)
 	{
 		// wait for logger daemon started
-		usleep(250000);
+		usleep(300000);
 		
 		logmessage(LOGNAME, "bootloader version: %s", nvram_safe_get("blver"));
 		logmessage(LOGNAME, "firmware version: %s", nvram_safe_get("firmver_sub"));
@@ -364,10 +364,11 @@ start_services_once(int is_ap_mode)
 			doSystem("brctl stp %s %d", IFNAME_BR, 1);
 			doSystem("brctl setfd %s %d", IFNAME_BR, 15);
 		}
+		
+		start_rstats();
 	}
 
 	start_lltd();
-	start_rstats();
 	start_watchdog_cpu();
 	start_networkmap(1);
 
@@ -415,12 +416,13 @@ stop_services_lan_wan(void)
 void
 stop_misc(void)
 {
-	char* svcs[] = {"ntpd",
-			"tcpcheck",
-			"detect_wan",
-			"watchdog",
-			NULL
-			};
+	char* svcs[] = {
+		"ntpd",
+		"tcpcheck",
+		"detect_wan",
+		"watchdog",
+		NULL
+	};
 
 	kill_services(svcs, 3, 1);
 }

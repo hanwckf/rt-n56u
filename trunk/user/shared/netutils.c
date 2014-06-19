@@ -147,7 +147,7 @@ get_ap_mode(void)
 {
 	if (nvram_match("wan_route_x", "IP_Bridged"))
 		return 1;
-	
+
 	return 0;
 }
 
@@ -215,10 +215,82 @@ set_usb_modem_dev_wan(int unit, int devnum)
 }
 
 int
-get_ethernet_phy_link(int links_wan)
+get_wan_phy_link(void)
 {
-	return nvram_get_int( (links_wan) ? "link_wan" : "link_lan");
+	return nvram_get_int("link_wan");
 }
+
+int
+ifconfig(char *ifname, int flags, char *addr, char *mask)
+{
+	int sockfd, ret = 0;
+	struct ifreq ifr;
+	struct in_addr addr_in, mask_in;
+
+	/* Open a socket to the kernel */
+	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+		return -1;
+
+	/* Set interface name */
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
+	/* Get interface flags */
+	if (ioctl(sockfd, SIOCGIFFLAGS, &ifr) < 0) {
+		ret = errno;
+		goto err;
+	}
+
+	/* Set interface flags */
+	if (!flags)
+		ifr.ifr_flags &= ~(IFF_UP);
+	else
+		ifr.ifr_flags |= flags;
+
+	if (ioctl(sockfd, SIOCSIFFLAGS, &ifr) < 0) {
+		ret = errno;
+		goto err;
+	}
+
+	/* Set IP address */
+	if (addr) {
+		if (!inet_aton(addr, &addr_in))
+			addr_in.s_addr = INADDR_ANY;
+		sin_addr(&ifr.ifr_addr).s_addr = addr_in.s_addr;
+		ifr.ifr_addr.sa_family = AF_INET;
+		if (ioctl(sockfd, SIOCSIFADDR, &ifr) < 0) {
+			ret = errno;
+			goto err;
+		}
+	}
+
+	/* Set IP netmask and broadcast */
+	if (addr && mask) {
+		if (!inet_aton(mask, &mask_in))
+			mask_in.s_addr = INADDR_ANY;
+		if (addr_in.s_addr != INADDR_ANY && mask_in.s_addr != INADDR_ANY) {
+			sin_addr(&ifr.ifr_netmask).s_addr = mask_in.s_addr;
+			ifr.ifr_netmask.sa_family = AF_INET;
+			if (ioctl(sockfd, SIOCSIFNETMASK, &ifr) < 0) {
+				ret = errno;
+				goto err;
+			}
+			
+			sin_addr(&ifr.ifr_broadaddr).s_addr = htonl((ntohl(addr_in.s_addr) & ntohl(mask_in.s_addr)) | ~(ntohl(mask_in.s_addr)));
+			ifr.ifr_broadaddr.sa_family = AF_INET;
+			if (ioctl(sockfd, SIOCSIFBRDADDR, &ifr) < 0) {
+				ret = errno;
+				goto err;
+			}
+		}
+	}
+
+err:
+	close(sockfd);
+
+	return ret;
+}
+
 
 int
 is_interface_exist(const char *ifname)
@@ -264,6 +336,28 @@ get_interface_flags(const char *ifname)
 }
 
 int
+get_interface_mtu(const char *ifname)
+{
+	int sockfd;
+	struct ifreq ifr;
+	int imtu = 1500;
+
+	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+		return INADDR_ANY;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
+	/* Get MTU */
+	if (ioctl(sockfd, SIOCGIFMTU, &ifr) == 0)
+		imtu = ifr.ifr_mtu;
+
+	close(sockfd);
+
+	return imtu;
+}
+
+int
 get_interface_hwaddr(const char *ifname, unsigned char mac[6])
 {
 	struct ifreq ifr;
@@ -291,7 +385,6 @@ get_interface_addr4(const char *ifname)
 	struct ifreq ifr;
 	in_addr_t ipv4_addr = INADDR_ANY;
 
-	/* Retrieve IP info */
 	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 		return INADDR_ANY;
 

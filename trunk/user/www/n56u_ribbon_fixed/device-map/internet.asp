@@ -22,6 +22,7 @@
 var $j = jQuery.noConflict();
 var id_update_wanip = 0;
 var status_code = wanlink_status();
+var modem_devnum_array = parent.modem_devnum();
 
 function initial(){
 	flash_button();
@@ -32,6 +33,9 @@ function initial(){
 		$j("#domore")[0].remove(3);
 		$j("#domore")[0].remove(2);
 	}
+
+	if(modem_devnum_array.length > 0)
+		$("row_modem_prio").style.display = "";
 
 	var wantime = wanlink_time();
 	if (wantime > 0){
@@ -126,34 +130,35 @@ function update_wanip() {
 	});
 }
 
-function submitWANAction(status){
-	switch(status){
-		case 0:
-			parent.showLoading();
-			setTimeout('location.href = "/device-map/wan_action.asp?wanaction=Connect";', 1);
-			break;
-		case 1:
-			parent.showLoading();
-			setTimeout('location.href = "/device-map/wan_action.asp?wanaction=Disconnect";', 1);
-			break;
-		default:
-			alert("No change!");
-	}
+function submitInternet(v){
+	parent.showLoading();
+	document.internetForm.action = "wan_action.asp";
+	document.internetForm.wan_action.value = v;
+	document.internetForm.modem_prio.value = $("modem_prio").value;
+	document.internetForm.submit();
 }
 
 </script>
 </head>
 
 <body class="body_iframe" onload="initial();">
-<br>
-<form method="post" name="internetForm">
 <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
   <tr>
     <th width="50%" style="border-top: 0 none;"><#InetControl#></th>
     <td style="border-top: 0 none;">
     <div style="display:none"></div>
-      <input type="button" id="connectbutton_link" class="btn btn-info" value="<#Connect#>" onclick="submitWANAction(0);">
-      <input type="button" id="connectbutton_nolink" class="btn btn-danger" value="<#Disconnect#>" onclick="submitWANAction(1);">
+      <input type="button" id="btn_connect_1" class="btn btn-info" value="<#Connect#>" onclick="submitInternet('Connect');">
+      <input type="button" id="btn_connect_0" class="btn btn-danger" value="<#Disconnect#>" onclick="submitInternet('Disconnect');">
+    </td>
+  </tr>
+  <tr id="row_modem_prio" style="display:none">
+    <th><#ModemPrio#></th>
+    <td>
+        <select id="modem_prio" class="input" style="width: 260px;" onchange="submitInternet('ModemPrio');">
+            <option value="0" <% nvram_match_x("", "modem_prio", "0", "selected"); %>><#ModemPrioItem0#></option>
+            <option value="1" <% nvram_match_x("", "modem_prio", "1", "selected"); %>><#ModemPrioItem1#></option>
+            <option value="2" <% nvram_match_x("", "modem_prio", "2", "selected"); %>><#ModemPrioItem2#></option>
+        </select>
     </td>
   </tr>
   <tr id="row_link_ether" style="display:none">
@@ -208,23 +213,24 @@ function submitWANAction(status){
     <th><#MAC_Address#></th>
     <td><span id="WANMAC"></span></td>
   </tr>
+  <tr>
+    <td>&nbsp;</td>
+    <td>
+        <select id="domore" class="domore" style="width: 260px;" onchange="domore_link(this);">
+          <option selected="selected"><#MoreConfig#>...</option>
+          <option value="../Advanced_WAN_Content.asp"><#menu5_3_1#></option>
+          <option value="../Advanced_VirtualServer_Content.asp"><#menu5_3_4#></option>
+          <option value="../Advanced_Exposed_Content.asp"><#menu5_3_5#></option>
+          <option value="../Advanced_ASUSDDNS_Content.asp"><#menu5_3_6#></option>
+        </select>
+    </td>
+  </tr>
 </table>
+
+<form method="post" name="internetForm" action="">
+<input type="hidden" name="wan_action" value="">
+<input type="hidden" name="modem_prio" value="">
 </form>
 
-<table width="100%" align="center" class="table">
-    <tr>
-        <td width="50%">&nbsp;</td>
-        <td>
-            <select id="domore" class="domore" onchange="domore_link(this);">
-              <option selected="selected"><#MoreConfig#>...</option>
-              <option value="../Advanced_WAN_Content.asp"><#menu5_3_1#></option>
-              <option value="../Advanced_VirtualServer_Content.asp"><#menu5_3_4#></option>
-              <option value="../Advanced_Exposed_Content.asp"><#menu5_3_5#></option>
-              <option value="../Advanced_ASUSDDNS_Content.asp"><#menu5_3_6#></option>
-            </select>
-        </td>
-    </tr>
-</table>
 </body>
 </html>
-

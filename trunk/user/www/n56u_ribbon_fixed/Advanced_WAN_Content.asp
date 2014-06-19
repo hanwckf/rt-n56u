@@ -187,6 +187,9 @@ function validForm(){
 			mask_obj.select();
 			return false;
 		}
+		
+		if(!validate_range(document.form.wan_mtu, 1300, 1500))
+			return false;
 	}
 
 	if(!document.form.wan_dnsenable_x[0].checked){
@@ -473,31 +476,21 @@ function change_wan_dns_auto(use_auto){
 	inputCtrl(document.form.wan_dns2_x, !use_auto);
 	inputCtrl(document.form.wan_dns3_x, !use_auto);
 
-	if (use_auto == 1){
-		$("row_wan_dns1").style.display = "none";
-		$("row_wan_dns2").style.display = "none";
-		$("row_wan_dns3").style.display = "none";
-	} else {
-		$("row_wan_dns1").style.display = "";
-		$("row_wan_dns2").style.display = "";
-		$("row_wan_dns3").style.display = "";
-	}
+	showhide_div("row_wan_dns1", !use_auto);
+	showhide_div("row_wan_dns2", !use_auto);
+	showhide_div("row_wan_dns3", !use_auto);
 }
 
 function change_wan_dhcp_auto(use_auto){
 	inputCtrl(document.form.wan_ipaddr, !use_auto);
 	inputCtrl(document.form.wan_netmask, !use_auto);
 	inputCtrl(document.form.wan_gateway, !use_auto);
+	inputCtrl(document.form.wan_mtu, !use_auto);
 
-	if (use_auto == 1){
-		$("row_wan_ipaddr").style.display = "none";
-		$("row_wan_netmask").style.display = "none";
-		$("row_wan_gateway").style.display = "none";
-	} else {
-		$("row_wan_ipaddr").style.display = "";
-		$("row_wan_netmask").style.display = "";
-		$("row_wan_gateway").style.display = "";
-	}
+	showhide_div("row_wan_ipaddr", !use_auto);
+	showhide_div("row_wan_netmask", !use_auto);
+	showhide_div("row_wan_gateway", !use_auto);
+	showhide_div("row_wan_mtu", !use_auto);
 }
 
 function change_wan_dhcp_enable(wan_type){
@@ -849,7 +842,7 @@ function simplyMAC(fullMAC){
                                             </td>
                                         </tr>
                                         <tr id="row_pppoe_dhcp" style="display:none;">
-                                            <th>PPPoE VPN + MAN:</th>
+                                            <th><#MAN_PPPoE#></th>
                                             <td>
                                                 <select name="pppoe_dhcp_route" class="input" onchange="change_pppoe_man(this.value);">
                                                     <option value="0" <% nvram_match_x("", "pppoe_dhcp_route", "0", "selected"); %>><#checkbox_No#></option>
@@ -932,6 +925,13 @@ function simplyMAC(fullMAC){
                                         <tr id="row_wan_gateway">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,3);"><#IPConnection_x_ExternalGateway_itemname#></a></th>
                                             <td><input type="text" name="wan_gateway" maxlength="15" class="input" size="15" value="<% nvram_get_x("","wan_gateway"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);"/></td>
+                                        </tr>
+                                        <tr id="row_wan_mtu">
+                                            <th>MTU:</th>
+                                            <td>
+                                                <input type="text" name="wan_mtu" maxlength="4" class="input" size="5" value="<% nvram_get_x("","wan_mtu"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[1300..1500]</span>
+                                            </td>
                                         </tr>
                                     </table>
 
@@ -1033,43 +1033,43 @@ function simplyMAC(fullMAC){
                                         <tr id="row_pppoe_mtu">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,7);"><#PPPConnection_x_PPPoEMTU_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="5" size="5" name="wan_pppoe_mtu" class="input" value="<% nvram_get_x("", "wan_pppoe_mtu"); %>" onkeypress="return is_number(this)"/>
-                                               &nbsp;<span style="color:#888;">[1000..1492]</span>
+                                                <input type="text" maxlength="4" size="5" name="wan_pppoe_mtu" class="input" value="<% nvram_get_x("", "wan_pppoe_mtu"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[1000..1492]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_pppoe_mru">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,8);"><#PPPConnection_x_PPPoEMRU_itemname#></a></th>
                                             <td>
-                                               <input type="text" maxlength="5" size="5" name="wan_pppoe_mru" class="input" value="<% nvram_get_x("", "wan_pppoe_mru"); %>" onkeypress="return is_number(this)"/>
-                                               &nbsp;<span style="color:#888;">[1000..1492]</span>
+                                                <input type="text" maxlength="4" size="5" name="wan_pppoe_mru" class="input" value="<% nvram_get_x("", "wan_pppoe_mru"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[1000..1492]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_pptp_mtu" style="display:none">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,7);"><#PPPConnection_x_PPPoEMTU_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="5" size="5" name="wan_pptp_mtu" class="input" value="<% nvram_get_x("", "wan_pptp_mtu"); %>" onkeypress="return is_number(this)"/>
-                                               &nbsp;<span style="color:#888;">[1000..1476]</span>
+                                                <input type="text" maxlength="4" size="5" name="wan_pptp_mtu" class="input" value="<% nvram_get_x("", "wan_pptp_mtu"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[1000..1476]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_pptp_mru" style="display:none">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,8);"><#PPPConnection_x_PPPoEMRU_itemname#></a></th>
                                             <td>
-                                               <input type="text" maxlength="5" size="5" name="wan_pptp_mru" class="input" value="<% nvram_get_x("", "wan_pptp_mru"); %>" onkeypress="return is_number(this)"/>
-                                               &nbsp;<span style="color:#888;">[1000..1500]</span>
+                                                <input type="text" maxlength="4" size="5" name="wan_pptp_mru" class="input" value="<% nvram_get_x("", "wan_pptp_mru"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[1000..1500]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_l2tp_mtu" style="display:none">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,7);"><#PPPConnection_x_PPPoEMTU_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="5" size="5" name="wan_l2tp_mtu" class="input" value="<% nvram_get_x("", "wan_l2tp_mtu"); %>" onkeypress="return is_number(this)"/>
-                                               &nbsp;<span style="color:#888;">[1000..1460]</span>
+                                                <input type="text" maxlength="4" size="5" name="wan_l2tp_mtu" class="input" value="<% nvram_get_x("", "wan_l2tp_mtu"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[1000..1460]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_l2tp_mru" style="display:none">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,8);"><#PPPConnection_x_PPPoEMRU_itemname#></a></th>
                                             <td>
-                                               <input type="text" maxlength="5" size="5" name="wan_l2tp_mru" class="input" value="<% nvram_get_x("", "wan_l2tp_mru"); %>" onkeypress="return is_number(this)"/>
-                                               &nbsp;<span style="color:#888;">[1000..1500]</span>
+                                                <input type="text" maxlength="4" size="5" name="wan_l2tp_mru" class="input" value="<% nvram_get_x("", "wan_l2tp_mru"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[1000..1500]</span>
                                             </td>
                                         </tr>
                                         <tr>

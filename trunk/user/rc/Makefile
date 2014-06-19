@@ -23,7 +23,7 @@ EXEC = rc
 
 OBJS  = rc.o init.o auth.o services.o watchdog.o firewall_ex.o common_ex.o
 OBJS += net.o net_lan.o net_wan.o net_wifi.o net_ppp.o services_ex.o rstats.o
-OBJS += ralink.o detect_link.o detect_internet.o detect_wan.o
+OBJS += ralink.o gpio_pins.o detect_link.o detect_internet.o detect_wan.o
 OBJS += vpn_server.o vpn_client.o
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENVPN),y)
 OBJS += vpn_openvpn.o

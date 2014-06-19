@@ -819,7 +819,6 @@ window.onunload  = function(){
     </td>
   </tr>
  </table>
-  
  <table class="table">
     <th width="50%"><#LAN_IP#></th>
     <td id="LANIP"></td>
@@ -828,24 +827,21 @@ window.onunload  = function(){
     <th><#MAC_Address#></th>
     <td id="MAC"></td>
   </tr>
+  <tr>
+    <th>&nbsp;</th>
+    <td>
+        <select id="Router_domore" class="domore" onchange="domore_link(this);">
+            <option><#MoreConfig#>...</option>
+            <option value="../Advanced_Wireless_Content.asp"><#menu5_1#>-<#menu5_1_1#></option>
+            <option value="../Advanced_LAN_Content.asp"><#menu5_2_1#></option>
+            <option value="../Advanced_DHCP_Content.asp"><#menu5_2_2#></option>
+            <option value="../Advanced_GWStaticRoute_Content.asp"><#menu5_2_3#></option>
+            <option value="../Main_LogStatus_Content.asp"><#menu5_7_2#></option>
+        </select>
+    </td>
+  </tr>
 </table>
 </form>
-
-<table class="table">
-    <tr>
-        <th width="50%">&nbsp;</th>
-        <td>
-            <select id="Router_domore" class="domore" onchange="domore_link(this);">
-                <option><#MoreConfig#>...</option>
-                <option value="../Advanced_Wireless_Content.asp"><#menu5_1#>-<#menu5_1_1#></option>
-                <option value="../Advanced_LAN_Content.asp"><#menu5_2_1#></option>
-                <option value="../Advanced_DHCP_Content.asp"><#menu5_2_2#></option>
-                <option value="../Advanced_GWStaticRoute_Content.asp"><#menu5_2_3#></option>
-                <option value="../Main_LogStatus_Content.asp"><#menu5_7_2#></option>
-            </select>
-        </td>
-    </tr>
-</table>
 
 </body>
 </html>

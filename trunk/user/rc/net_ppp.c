@@ -35,26 +35,28 @@
 #include "rc.h"
 
 static char *
-get_wan_ppp_peer(const char *prefix)
+get_wan_ppp_peer(int unit)
 {
-	char tmp[100];
-	char *ppp_peer = nvram_safe_get(strcat_r(prefix, "ppp_peer", tmp));
-	if (!(*ppp_peer))
-		ppp_peer = nvram_safe_get(strcat_r(prefix, "pppoe_gateway", tmp));
+	char *ppp_peer = get_wan_unit_value(unit, "ppp_peer");
+
+	if (strlen(ppp_peer) < 1)
+		ppp_peer = get_wan_unit_value(unit, "man_gateway");
 	return ppp_peer;
 }
 
-static int
-write_xl2tpd_conf(char *l2tp_conf)
+int
+safe_start_xl2tpd(void)
 {
 	FILE *fp;
-	char *prefix = "wan0_";
-	char tmp[100];
-	int has_work = 0;
+	int unit, has_lac_lns;
+	const char *l2tp_conf = "/etc/xl2tpd.conf";
 
 	if (!(fp = fopen(l2tp_conf, "w"))) {
+		perror(l2tp_conf);
 		return -1;
 	}
+
+	has_lac_lns = 0;
 
 	fprintf(fp,
 		"[global]\n"
@@ -115,23 +117,21 @@ write_xl2tpd_conf(char *l2tp_conf)
 			    "require chap = yes\n"
 			    "refuse pap = yes\n\n");
 		
-		has_work++;
+		has_lac_lns++;
 	}
 
-	if (nvram_match("wan_l2tpd", "0") && nvram_match(strcat_r(prefix, "proto", tmp), "l2tp"))
+	unit = 0; // todo
+	if (nvram_match("wan_l2tpd", "0") && get_wan_proto(unit) == IPV4_WAN_PROTO_L2TP)
 	{
-		int unit;
 		char options[64], lac_name[8];
 		
-		unit = nvram_get_int(strcat_r(prefix, "unit", tmp));
-		if (unit < 0 || unit > WAN_PPP_UNIT_MAX) unit = WAN_PPP_UNIT;
-		sprintf(lac_name, "ISP%d", unit);
-		sprintf(options, "/tmp/ppp/options.wan%d", unit);
+		snprintf(lac_name, sizeof(lac_name), "ISP%d", unit);
+		snprintf(options, sizeof(options), "/tmp/ppp/options.wan%d", unit);
 		
 		fprintf(fp, "[lac %s]\n", lac_name);
 		fprintf(fp, "pppoptfile = %s\n", options);
-		fprintf(fp, "lns = %s\n", get_wan_ppp_peer(prefix));
-		fprintf(fp, "name = %s\n", nvram_safe_get(strcat_r(prefix, "pppoe_username", tmp)));
+		fprintf(fp, "lns = %s\n", get_wan_ppp_peer(unit));
+		fprintf(fp, "name = %s\n", get_wan_unit_value(unit, "pppoe_username"));
 		fprintf(fp, "require authentication = no\n");
 		fprintf(fp, "tunnel rws = %d\n", 8);
 		fprintf(fp, "route2man = %s\n", "yes");
@@ -142,7 +142,7 @@ write_xl2tpd_conf(char *l2tp_conf)
 			    "tx bps = 100000000\n"
 			    "rx bps = 100000000\n\n");
 		
-		has_work++;
+		has_lac_lns++;
 	}
 
 	if (nvram_match("vpnc_enable", "1") && nvram_match("vpnc_type", "1"))
@@ -163,29 +163,33 @@ write_xl2tpd_conf(char *l2tp_conf)
 		
 		nvram_set_int_temp("l2tp_cli_t", 1);
 		
-		has_work++;
+		has_lac_lns++;
 	}
 
 	fclose(fp);
 
 	chmod(l2tp_conf, 0644);
 
-	return has_work;
+	/* launch xl2tpd */
+	if (!pids("xl2tpd"))
+		return eval("/usr/sbin/xl2tpd", "-c", (char *)l2tp_conf);
+
+	return 1;
 }
 
 static int
-write_rpl2tp_conf(char *l2tp_conf)
+start_rpl2tp(int unit)
 {
 	FILE *fp;
-	int unit;
-	char tmp[100], options[64];
-	char *prefix = "wan0_";
+	char options[64];
+	const char *l2tp_conf = "/etc/l2tp/l2tp.conf";
 
-	unit = nvram_get_int(strcat_r(prefix, "unit", tmp));
-	if (unit < 0 || unit > WAN_PPP_UNIT_MAX) unit = WAN_PPP_UNIT;
-	sprintf(options, "/tmp/ppp/options.wan%d", unit);
+	mkdir_if_none("/etc/l2tp");
+
+	snprintf(options, sizeof(options), "/tmp/ppp/options.wan%d", unit);
 
 	if (!(fp = fopen(l2tp_conf, "w"))) {
+		perror(l2tp_conf);
 		return -1;
 	}
 
@@ -204,39 +208,11 @@ write_rpl2tp_conf(char *l2tp_conf)
 		"route2man yes\n"
 		"hide-avps no\n\n"
 		"section cmd\n\n",
-		options, get_wan_ppp_peer(prefix));
+		options, get_wan_ppp_peer(unit));
 
 	fclose(fp);
 
 	chmod(l2tp_conf, 0644);
-
-	return 0;
-}
-
-int
-safe_start_xl2tpd(void)
-{
-	char *l2tp_conf = "/etc/xl2tpd.conf";
-	
-	if (write_xl2tpd_conf(l2tp_conf) < 0)
-		return -1;
-	
-	/* launch xl2tpd */
-	if (!pids("xl2tpd"))
-		return eval("/usr/sbin/xl2tpd", "-c", l2tp_conf);
-	
-	return 1;
-}
-
-static int
-start_rpl2tp(void)
-{
-	char *l2tp_conf = "/etc/l2tp/l2tp.conf";
-
-	mkdir_if_none("/etc/l2tp");
-
-	if (write_rpl2tp_conf(l2tp_conf) < 0)
-		return -1;
 
 	/* launch rp-l2tp */
 	eval("/usr/sbin/l2tpd");
@@ -248,17 +224,17 @@ start_rpl2tp(void)
 }
 
 char *
-safe_pppd_line(const char *line, char *tmp, size_t tmp_size)
+safe_pppd_line(const char *line, char *buf, size_t buf_size)
 {
 	const char special_chars[] = "'\\";
 	char *src, *dst;
 	size_t dst_len;
 
-	if (!tmp || tmp_size <= strlen(line))
+	if (!buf || buf_size <= strlen(line))
 		return (char *)line;
 
-	dst = tmp;
-	dst_len = tmp_size;
+	dst = buf;
+	dst_len = buf_size;
 	src = (char *)line;
 
 	while (*src != '\0' && dst_len > 2) {
@@ -272,18 +248,18 @@ safe_pppd_line(const char *line, char *tmp, size_t tmp_size)
 
 	*dst = '\0';
 
-	return tmp;
+	return buf;
 }
 
 int
-start_pppd(char *prefix, int unit, int wan_proto)
+launch_wan_pppd(int unit, int wan_proto)
 {
 	FILE *fp;
-	int auth_type;
-	char options[64], tmp[64], tmp2[256];
+	int auth_type, mtu, mru, mtu_max, mru_max, mtu_def, mru_def;
+	char options[64], tmp[256];
 	char *svcs[] = { NULL, NULL };
 
-	if (unit < 0 || unit > WAN_PPP_UNIT_MAX)
+	if (unit < 0)
 		return -1;
 
 	snprintf(options, sizeof(options), "/tmp/ppp/options.wan%d", unit);
@@ -296,11 +272,11 @@ start_pppd(char *prefix, int unit, int wan_proto)
 
 	/* do not authenticate peer and do not use eap */
 	fprintf(fp, "noauth\n");
-	fprintf(fp, "user '%s'\n", safe_pppd_line(nvram_safe_get(strcat_r(prefix, "pppoe_username", tmp)), tmp2, sizeof(tmp2)));
-	fprintf(fp, "password '%s'\n", safe_pppd_line(nvram_safe_get(strcat_r(prefix, "pppoe_passwd", tmp)), tmp2, sizeof(tmp2)));
+	fprintf(fp, "user '%s'\n", safe_pppd_line(get_wan_unit_value(unit, "pppoe_username"), tmp, sizeof(tmp)));
+	fprintf(fp, "password '%s'\n", safe_pppd_line(get_wan_unit_value(unit, "pppoe_passwd"), tmp, sizeof(tmp)));
 	fprintf(fp, "refuse-eap\n");
 
-	auth_type = nvram_get_int(strcat_r(prefix, "ppp_auth", tmp));
+	auth_type = get_wan_unit_value_int(unit, "ppp_auth");
 	if (auth_type == 3) {
 		/* MS-CHAPv2 */
 		fprintf(fp, "refuse-pap\n");
@@ -320,17 +296,34 @@ start_pppd(char *prefix, int unit, int wan_proto)
 		fprintf(fp, "refuse-mschap-v2\n");
 	}
 
+	mtu     = 1492;
+	mtu_def = 1492;
+	mtu_max = 1492;
+
+	mru     = 1492;
+	mru_def = 1492;
+	mru_max = 1492;
+
 	if (wan_proto == IPV4_WAN_PROTO_PPTP) {
+		mtu_def = 1400;
+		mtu_max = 1476;
+		mru_def = 1400;
+		mru_max = 1500;
+		mtu = get_wan_unit_value_int(unit, "pptp_mtu");
+		mru = get_wan_unit_value_int(unit, "pptp_mru");
+		
 		fprintf(fp, "plugin pptp.so\n");
-		fprintf(fp, "pptp_server '%s'\n", get_wan_ppp_peer(prefix));
+		fprintf(fp, "pptp_server '%s'\n", get_wan_ppp_peer(unit));
 		fprintf(fp, "route2man %d\n", 1);
-		fprintf(fp, "mtu %d\n", nvram_safe_get_int(strcat_r(prefix, "pptp_mtu", tmp), 1400, 1000, 1476));
-		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "pptp_mru", tmp), 1400, 1000, 1500));
 	}
 
 	if (wan_proto == IPV4_WAN_PROTO_L2TP) {
-		fprintf(fp, "mtu %d\n", nvram_safe_get_int(strcat_r(prefix, "l2tp_mtu", tmp), 1460, 1000, 1460));
-		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "l2tp_mru", tmp), 1460, 1000, 1500));
+		mtu_def = 1460;
+		mtu_max = 1460;
+		mru_def = 1460;
+		mru_max = 1500;
+		mtu = get_wan_unit_value_int(unit, "l2tp_mtu");
+		mru = get_wan_unit_value_int(unit, "l2tp_mru");
 		
 		// L2TP: Don't wait for LCP term responses; exit immediately when killed
 		fprintf(fp, "lcp-max-terminate %d\n", 0);
@@ -338,25 +331,26 @@ start_pppd(char *prefix, int unit, int wan_proto)
 
 	if (wan_proto == IPV4_WAN_PROTO_PPPOE) {
 		int demand;
-		char *pppoe_ac = nvram_safe_get(strcat_r(prefix, "pppoe_ac", tmp));
-		char *pppoe_sv = nvram_safe_get(strcat_r(prefix, "pppoe_service", tmp));
+		char *pppoe_ac, *pppoe_sv;
+		
+		mtu = get_wan_unit_value_int(unit, "pppoe_mtu");
+		mru = get_wan_unit_value_int(unit, "pppoe_mru");
 		
 		fprintf(fp, "plugin rp-pppoe.so\n");
-		fprintf(fp, "nic-%s\n", nvram_safe_get(strcat_r(prefix, "ifname", tmp)));
+		fprintf(fp, "nic-%s\n", get_man_ifname(unit));
 		
+		pppoe_ac = get_wan_unit_value(unit, "pppoe_ac");
 		if (*pppoe_ac)
 			fprintf(fp, "rp_pppoe_ac '%s'\n", pppoe_ac);
 		
+		pppoe_sv = get_wan_unit_value(unit, "pppoe_service");
 		if (*pppoe_sv)
 			fprintf(fp, "rp_pppoe_service '%s'\n", pppoe_sv);
 		
-		fprintf(fp, "mtu %d\n", nvram_safe_get_int(strcat_r(prefix, "pppoe_mtu", tmp), 1492, 1000, 1492));
-		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "pppoe_mru", tmp), 1492, 1000, 1492));
-		
-		demand = nvram_get_int(strcat_r(prefix, "pppoe_idletime", tmp));
-		if (demand > 0 && nvram_get_int(strcat_r(prefix, "pppoe_demand", tmp))) {
+		demand = get_wan_unit_value_int(unit, "pppoe_idletime");
+		if (demand > 0 && get_wan_unit_value_int(unit, "pppoe_demand") > 0) {
 			fprintf(fp, "idle %d ", demand);
-			if (nvram_invmatch(strcat_r(prefix, "pppoe_txonly_x", tmp), "0"))
+			if (get_wan_unit_value_int(unit, "pppoe_txonly_x") > 0)
 				fprintf(fp, "tx_only ");
 			fprintf(fp, "demand\n");
 		}
@@ -371,7 +365,14 @@ start_pppd(char *prefix, int unit, int wan_proto)
 	fprintf(fp, "ipcp-accept-remote ipcp-accept-local\n");
 	fprintf(fp, "noipdefault\n");
 
-	if (!nvram_match(strcat_r(prefix, "dnsenable_x", tmp), "0"))
+	if (mtu < 1000) mtu = mtu_def;
+	if (mtu > mtu_max) mtu = mtu_max;
+	if (mru < 1000) mru = mru_def;
+	if (mru > mru_max) mru = mru_max;
+	fprintf(fp, "mtu %d\n", mtu);
+	fprintf(fp, "mru %d\n", mru);
+
+	if (get_wan_unit_value_int(unit, "dnsenable_x") > 0)
 		fprintf(fp, "usepeerdns\n");
 
 	fprintf(fp, "default-asyncmap\n");
@@ -385,7 +386,7 @@ start_pppd(char *prefix, int unit, int wan_proto)
 	fprintf(fp, "novj nobsdcomp nodeflate\n");
 
 	if (wan_proto != IPV4_WAN_PROTO_PPPOE) {
-		int mppe_mode = nvram_get_int(strcat_r(prefix, "ppp_mppe", tmp));
+		int mppe_mode = get_wan_unit_value_int(unit, "ppp_mppe");
 		if (mppe_mode == 0) {
 			fprintf(fp, "nomppe nomppc\n");
 		} else {
@@ -411,10 +412,11 @@ start_pppd(char *prefix, int unit, int wan_proto)
 	fprintf(fp, "lcp-echo-interval %d\n", 20);
 	fprintf(fp, "lcp-echo-failure %d\n", 6);
 
-	if (nvram_get_int(strcat_r(prefix, "ppp_alcp", tmp)) == 1)
+	if (get_wan_unit_value_int(unit, "ppp_alcp") > 0)
 		fprintf(fp, "lcp-echo-adaptive\n");
 
-	fprintf(fp, "unit %d\n", unit);
+	fprintf(fp, "minunit %d\n", unit);
+	fprintf(fp, "linkname wan%d\n", unit);
 	fprintf(fp, "ktune\n");
 
 #if defined (USE_IPV6)
@@ -424,7 +426,7 @@ start_pppd(char *prefix, int unit, int wan_proto)
 #endif
 
 	/* user specific options */
-	fprintf(fp, "%s\n", safe_pppd_line(nvram_safe_get(strcat_r(prefix, "ppp_pppd", tmp)), tmp2, sizeof(tmp2)));
+	fprintf(fp, "%s\n", safe_pppd_line(get_wan_unit_value(unit, "ppp_pppd"), tmp, sizeof(tmp)));
 
 	fclose(fp);
 
@@ -448,7 +450,7 @@ start_pppd(char *prefix, int unit, int wan_proto)
 			
 			nvram_set_int_temp("l2tp_wan_t", 0);
 			
-			start_rpl2tp();
+			start_rpl2tp(unit);
 		}
 	}
 	else
@@ -459,42 +461,76 @@ start_pppd(char *prefix, int unit, int wan_proto)
 	return 0;
 }
 
+void
+preset_wan_ppp_routes(char *ppp_ifname, int unit)
+{
+	/* Set default route to gateway if specified */
+	if (get_wan_unit_value_int(unit, "primary") == 1)
+		route_add(ppp_ifname, 0, "0.0.0.0", "0.0.0.0", "0.0.0.0");
+
+	/* Install interface dependent static routes */
+	add_static_wan_routes(ppp_ifname);
+}
+
 int
-ppp_ifunit(char *ifname)
+ppp_ifindex(char *ifname)
 {
 	if (strncmp(ifname, "ppp", 3))
 		return -1;
 	if (!isdigit(ifname[3]))
 		return -1;
-	return atoi(&ifname[3]);
+	return atoi(ifname+3);
+}
+
+static int
+ppp_wan_unit(char *linkname)
+{
+	if (strncmp(linkname, "wan", 3))
+		return -1;
+	if (!isdigit(linkname[3]))
+		return -1;
+	return atoi(linkname+3);
+}
+
+static int
+is_valid_wan_ppp_idx(int ifindex)
+{
+	if (ifindex < 0 || ifindex >= VPNC_PPP_UNIT)
+		return 0;
+	return 1;
 }
 
 int
 ipup_main(int argc, char **argv)
 {
-	char *wan_ifname = safe_getenv("IFNAME");
-	char *value;
-	char buf[256];
-	int unit;
-	char tmp[100], prefix[16];
+	int unit, ppp_idx;
+	char buf[256], *value;
+	char *ppp_ifname = safe_getenv("IFNAME");
+	char *ppp_linkname = safe_getenv("LINKNAME");
+	char *ppp_mask = "255.255.255.255";
 
-	if (ppp_ifunit(wan_ifname) < 0)
+	ppp_idx = ppp_ifindex(ppp_ifname);
+	if (!is_valid_wan_ppp_idx(ppp_idx))
 		return -1;
+
+	unit = ppp_wan_unit(ppp_linkname);
+	if (unit < 0)
+		return -1;
+
+	/* update ifname_t */
+	set_wan_unit_value(unit, "ifname_t", ppp_ifname);
 
 	umask(0000);
 
-	unit = 0;
-	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-
 	if ((value = getenv("IPLOCAL"))) {
-		ifconfig(wan_ifname, IFUP,
-			 value, "255.255.255.255");
-		nvram_set_temp(strcat_r(prefix, "ipaddr", tmp), value);
-		nvram_set_temp(strcat_r(prefix, "netmask", tmp), "255.255.255.255");
+		ifconfig(ppp_ifname, IFUP, value, ppp_mask);
+		
+		set_wan_unit_value(unit, "ipaddr", value);
+		set_wan_unit_value(unit, "netmask", ppp_mask);
 	}
 
 	if ((value = getenv("IPREMOTE")))
-		nvram_set_temp(strcat_r(prefix, "gateway", tmp), value);
+		set_wan_unit_value(unit, "gateway", value);
 
 	buf[0] = 0;
 	value = getenv("DNS1");
@@ -505,13 +541,14 @@ ipup_main(int argc, char **argv)
 		int buf_len = strlen(buf);
 		snprintf(buf + buf_len, sizeof(buf) - buf_len, "%s%s", (buf_len) ? " " : "", value);
 	}
-	nvram_set_temp(strcat_r(prefix, "dns", tmp), buf);
+	set_wan_unit_value(unit, "dns", buf);
 
-	nvram_set_int_temp(strcat_r(prefix, "time", tmp), uptime());
+	snprintf(buf, sizeof(buf), "%ld", uptime());
+	set_wan_unit_value(unit, "time_ppp", buf);
 
-	wan_up(wan_ifname);
+	wan_up(ppp_ifname, unit);
 
-	logmessage(nvram_safe_get("wan_proto_t"), "Connected to ISP");
+	logmessage(get_wan_unit_value(unit, "proto_t"), "Connected");
 
 	return 0;
 }
@@ -519,28 +556,30 @@ ipup_main(int argc, char **argv)
 int
 ipdown_main(int argc, char **argv)
 {
-	char *wan_ifname = safe_getenv("IFNAME");
-	int unit;
-	char tmp[100], prefix[16];
+	int unit, ppp_idx;
+	char *ppp_ifname = safe_getenv("IFNAME");
+	char *ppp_linkname = safe_getenv("LINKNAME");
 
-	if (ppp_ifunit(wan_ifname) < 0)
+	ppp_idx = ppp_ifindex(ppp_ifname);
+	if (!is_valid_wan_ppp_idx(ppp_idx))
+		return -1;
+
+	unit = ppp_wan_unit(ppp_linkname);
+	if (unit < 0)
 		return -1;
 
 	umask(0000);
 
-	if (strcmp(wan_ifname, IFNAME_RAS) == 0)
+	if (ppp_idx >= RAS_PPP_UNIT)
 		create_file(FLAG_FILE_WWAN_GONE);
 
-	unit = 0;
-	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+	set_wan_unit_value(unit, "time_ppp", "0");
 
-	nvram_set_int_temp(strcat_r(prefix, "time", tmp), 0);
+	wan_down(ppp_ifname, unit);
 
-	wan_down(wan_ifname);
+	preset_wan_ppp_routes(ppp_ifname, unit);
 
-	preset_wan_routes(wan_ifname);
-
-	logmessage(nvram_safe_get("wan_proto_t"), "Disconnected");
+	logmessage(get_wan_unit_value(unit, "proto_t"), "Disconnected");
 
 	return 0;
 }
@@ -549,10 +588,16 @@ ipdown_main(int argc, char **argv)
 int
 ipv6up_main(int argc, char **argv)
 {
-	char *wan_ifname;
+	int unit, ppp_idx;
+	char *ppp_ifname = safe_getenv("IFNAME");
+	char *ppp_linkname = safe_getenv("LINKNAME");
 
-	wan_ifname = safe_getenv("IFNAME");
-	if (ppp_ifunit(wan_ifname) < 0)
+	ppp_idx = ppp_ifindex(ppp_ifname);
+	if (!is_valid_wan_ppp_idx(ppp_idx))
+		return -1;
+
+	unit = ppp_wan_unit(ppp_linkname);
+	if (unit < 0)
 		return -1;
 
 	if (!is_wan_ipv6_if_ppp())
@@ -560,7 +605,7 @@ ipv6up_main(int argc, char **argv)
 
 	umask(0000);
 
-	wan6_up(wan_ifname);
+	wan6_up(ppp_ifname, unit);
 
 	return 0;
 }
@@ -568,10 +613,16 @@ ipv6up_main(int argc, char **argv)
 int
 ipv6down_main(int argc, char **argv)
 {
-	char *wan_ifname;
+	int unit, ppp_idx;
+	char *ppp_ifname = safe_getenv("IFNAME");
+	char *ppp_linkname = safe_getenv("LINKNAME");
 
-	wan_ifname = safe_getenv("IFNAME");
-	if (ppp_ifunit(wan_ifname) < 0)
+	ppp_idx = ppp_ifindex(ppp_ifname);
+	if (!is_valid_wan_ppp_idx(ppp_idx))
+		return -1;
+
+	unit = ppp_wan_unit(ppp_linkname);
+	if (unit < 0)
 		return -1;
 
 	if (!is_wan_ipv6_if_ppp())
@@ -579,7 +630,7 @@ ipv6down_main(int argc, char **argv)
 
 	umask(0000);
 
-	wan6_down(wan_ifname);
+	wan6_down(ppp_ifname, unit);
 
 	update_resolvconf(0, 0);
 

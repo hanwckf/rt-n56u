@@ -40,59 +40,8 @@
 
 #define SR_BUF_LEN (8192)
 
-int
-ifconfig(char *name, int flags, char *addr, char *netmask)
-{
-	int s;
-	struct ifreq ifr;
-	struct in_addr in_addr, in_netmask, in_broadaddr;
-
-	/* Open a raw socket to the kernel */
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
-		goto err;
-
-	/* Set interface name */
-	strncpy(ifr.ifr_name, name, IFNAMSIZ);
-
-	/* Set interface flags */
-	ifr.ifr_flags = flags;
-	if (ioctl(s, SIOCSIFFLAGS, &ifr) < 0)
-		goto err;
-
-	/* Set IP address */
-	if (addr) {
-		inet_aton(addr, &in_addr);
-		sin_addr(&ifr.ifr_addr).s_addr = in_addr.s_addr;
-		ifr.ifr_addr.sa_family = AF_INET;
-		if (ioctl(s, SIOCSIFADDR, &ifr) < 0)
-			goto err;
-	}
-	/* Set IP netmask and broadcast */
-	if (addr && netmask) {
-		inet_aton(netmask, &in_netmask);
-		sin_addr(&ifr.ifr_netmask).s_addr = in_netmask.s_addr;
-		ifr.ifr_netmask.sa_family = AF_INET;
-		if (ioctl(s, SIOCSIFNETMASK, &ifr) < 0)
-			goto err;
-
-		in_broadaddr.s_addr = (in_addr.s_addr & in_netmask.s_addr) | ~in_netmask.s_addr;
-		sin_addr(&ifr.ifr_broadaddr).s_addr = in_broadaddr.s_addr;
-		ifr.ifr_broadaddr.sa_family = AF_INET;
-		if (ioctl(s, SIOCSIFBRDADDR, &ifr) < 0)
-			goto err;
-	}
-
-	close(s);
-
-	return 0;
-
- err:
-	close(s);
-	return errno;
-}
-
 static int
-route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask)
+route_manip(int cmd, char *ifname, int metric, char *dst, char *gateway, char *genmask)
 {
 	int s;
 	struct rtentry rt;
@@ -121,7 +70,7 @@ route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *gen
 	if (sin_addr(&rt.rt_genmask).s_addr == INADDR_BROADCAST) {
 		rt.rt_flags |= RTF_HOST;
 	}
-	rt.rt_dev = name;
+	rt.rt_dev = ifname;
 
 	/* Force address family to AF_INET */
 	rt.rt_dst.sa_family = AF_INET;
@@ -141,15 +90,15 @@ route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *gen
 }
 
 int
-route_add(char *name, int metric, char *dst, char *gateway, char *genmask)
+route_add(char *ifname, int metric, char *dst, char *gateway, char *genmask)
 {
-	return route_manip(SIOCADDRT, name, metric, dst, gateway, genmask);
+	return route_manip(SIOCADDRT, ifname, metric, dst, gateway, genmask);
 }
 
 int
-route_del(char *name, int metric, char *dst, char *gateway, char *genmask)
+route_del(char *ifname, int metric, char *dst, char *gateway, char *genmask)
 {
-	return route_manip(SIOCDELRT, name, metric, dst, gateway, genmask);
+	return route_manip(SIOCDELRT, ifname, metric, dst, gateway, genmask);
 }
 
 int
@@ -162,7 +111,7 @@ control_static_routes(char *ift, char *ifname, int is_add)
 	if (is_add && nvram_invmatch("sr_enable_x", "1"))
 		return 0;
 
-	route_buf = (char*)malloc(SR_BUF_LEN*sizeof(char));
+	route_buf = (char *)malloc(SR_BUF_LEN*sizeof(char));
 	if (!route_buf)
 		return -1;
 
@@ -404,8 +353,8 @@ start_igmpproxy(char *wan_ifname)
 
 	if (nvram_get_int("udpxy_enable_x") > 1023)
 	{
-		eval("/usr/sbin/udpxy", 
-			"-m", wan_ifname, 
+		eval("/usr/sbin/udpxy",
+			"-m", wan_ifname,
 			"-p", nvram_safe_get("udpxy_enable_x"),
 			"-B", "65536",
 			"-c", "5"
@@ -720,15 +669,19 @@ void reload_nat_modules(void)
 
 void restart_firewall(void)
 {
-	char wan_ifname[16];
-	
-	wan_ifname[0] = 0;
-	strncpy(wan_ifname, nvram_safe_get("wan_ifname_t"), sizeof(wan_ifname));
-	if (strlen(wan_ifname) == 0)
-		get_wan_ifname(wan_ifname);
-	
-	start_firewall_ex(wan_ifname, nvram_safe_get("wan0_ipaddr"));
-	
+	char man_if[16], wan_if[16], wan_ip[32];
+
+	int unit = 0; // todo
+
+	snprintf(man_if, sizeof(man_if), "%s", get_man_ifname(unit));
+	snprintf(wan_if, sizeof(wan_if), "%s", get_wan_unit_value(unit, "ifname_t"));
+	snprintf(wan_ip, sizeof(wan_ip), "%s", get_wan_unit_value(unit, "ipaddr"));
+
+	if (strlen(wan_if) < 1)
+		get_wan_ifname(wan_if);
+
+	start_firewall_ex(man_if, wan_if, wan_ip);
+
 	/* update upnp forwards from lease file */
 	update_upnp();
 }

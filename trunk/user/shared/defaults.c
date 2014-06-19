@@ -54,26 +54,55 @@ struct nvram_pair router_defaults[] = {
 
 	/* WAN H/W parameters */
 	{ "wan_ifname", IFNAME_WAN },		/* WAN interface name */
-	{ "wan_hwname", "" },			/* WAN driver name (e.g. et1) */
 	{ "wan_hwaddr", "" },			/* WAN interface MAC address */
 
 	/* WAN TCP/IP parameters */
-	{ "wan_proto", "dhcp" },		/* [static|dhcp|pppoe|disabled] */
+	{ "wan_proto", "dhcp" },		/* [static|dhcp|pppoe|pptp|l2tp|disabled] */
 	{ "wan_ipaddr", "0.0.0.0" },		/* WAN IP address */
 	{ "wan_netmask", "0.0.0.0" },		/* WAN netmask */
 	{ "wan_gateway", "0.0.0.0" },		/* WAN gateway */
-	{ "wan_dns", "" },			/* x.x.x.x x.x.x.x ... */
-	{ "wan_wins", "" },			/* x.x.x.x x.x.x.x ... */
+	{ "wan_dnsenable_x", "1" },
+	{ "wan_dns1_x", "" },
+	{ "wan_dns2_x", "" },
+	{ "wan_dns3_x", "" },
 	{ "wan_hostname", "" },			/* WAN hostname */
-	{ "wan_domain", "" },			/* WAN domain name */
-	{ "wan_lease", "86400" },		/* WAN lease time in seconds */
+	{ "wan_hwaddr_x", "" },
+	{ "wan_nat_x", "1" },
+	{ "wan_mtu", "1500" },
+	{ "wan_auth_mode", "0" },
+	{ "wan_auth_user", "" },
+	{ "wan_auth_pass", "" },
+	{ "wan_auth_host", "10.0.0.1" },
+	{ "wan_route_x", "IP_Routed" },
+	{ "wan_src_phy", "0" },
+	{ "wan_stb_x", "0" },
+	{ "wan_stb_iso", "0" },
+	{ "vlan_filter", "0" },
+	{ "vlan_vid_cpu", "" },
+	{ "vlan_pri_cpu", "0" },
+	{ "vlan_vid_iptv", "" },
+	{ "vlan_pri_iptv", "0" },
+	{ "vlan_vid_lan1", "" },
+	{ "vlan_pri_lan1", "0" },
+	{ "vlan_tag_lan1", "0" },
+	{ "vlan_vid_lan2", "" },
+	{ "vlan_pri_lan2", "0" },
+	{ "vlan_tag_lan2", "0" },
+	{ "vlan_vid_lan3", "" },
+	{ "vlan_pri_lan3", "0" },
+	{ "vlan_tag_lan3", "0" },
+	{ "vlan_vid_lan4", "" },
+	{ "vlan_pri_lan4", "0" },
+	{ "vlan_tag_lan4", "0" },
+	{ "x_DHCPClient", "1" },
+	{ "pppoe_dhcp_route", "1" },
 
 	/* PPP VPN parameters */
-	{ "wan_pppoe_ifname", IFNAME_PPP },	/* PPPoE enslaved interface */
 	{ "wan_pppoe_username", "" },		/* PPP username */
 	{ "wan_pppoe_passwd", "" },		/* PPP password */
 	{ "wan_pppoe_idletime", "0" },		/* PPP idle time */
 	{ "wan_pppoe_demand", "0" },		/* Dial on demand */
+	{ "wan_pppoe_txonly_x", "0" },
 	{ "wan_pppoe_service", "" },		/* PPPoE service name */
 	{ "wan_pppoe_ac", "" },			/* PPPoE access concentrator name */
 	{ "wan_pppoe_mtu", "1492" },		/* Negotiate MTU to the smaller of this value or the peer MRU */
@@ -88,10 +117,6 @@ struct nvram_pair router_defaults[] = {
 	{ "wan_ppp_mppe", "0" },		/* MPPE encryption */
 	{ "wan_ppp_alcp", "0" },		/* Adaptive LCP Echo */
 	{ "wan_ppp_pppd", "" },			/* Custom PPPD options */
-
-	/* Misc WAN parameters */
-	{ "wan_primary", "0" },			/* Primary wan connection */
-	{ "wan_unit", "0" },			/* Last configured connection */
 
 	/* Exposed station */
 	{ "dmz_ip", "" },
@@ -306,13 +331,35 @@ struct nvram_pair router_defaults[] = {
 	{ "sh_num", "0" },
 	{ "machine_name", BOARD_NAME },
 	{ "computer_name", BOARD_NAME },
-
 #if BOARD_RAM_SIZE < 128
 	{ "pcache_reclaim", "2" },
 #else
 	{ "pcache_reclaim", "0" },
 #endif
 	{ "usb3_disable", "0" },
+	{ "u2ec_enable", "1" },
+	{ "lprd_enable", "1" },
+	{ "rawd_enable", "1" },
+	{ "achk_enable", "0" },
+	{ "nfsd_enable", "0" },
+	{ "optw_enable", "0" },
+	{ "dlna_disc", "895" },
+	{ "dlna_root", "0" },
+	{ "dlna_sort", "0" },
+	{ "dlna_src1", "A,/media/AiDisk_a1/Audio" },
+	{ "dlna_src2", "V,/media/AiDisk_a1/Video" },
+	{ "dlna_src3", "P,/media/AiDisk_a1/Photo" },
+	{ "dlna_rescan", "0"},
+	{ "trmd_enable", "0" },
+	{ "trmd_pport", "51413" },
+	{ "trmd_rport", "9091" },
+	{ "trmd_ropen", "0" },
+	{ "aria_enable", "0" },
+	{ "aria_pport", "16888" },
+	{ "aria_rport", "6800" },
+	{ "aria_ropen", "0" },
+	{ "hdd_spindt", "0" },
+	{ "hdd_apmoff", "0" },
 
 	{ "ip6_service", "" },
 	{ "ip6_ppe_on", "0" },
@@ -346,22 +393,6 @@ struct nvram_pair router_defaults[] = {
 	{ "ip6_lan_sfps", "4096" }, // 0x1000
 	{ "ip6_lan_sfpe", "4352" }, // 0x1100
 
-	{ "x_DHCPClient", "1" },
-	{ "wan_mode_x", "2" },
-	{ "wan_route_x", "IP_Routed" },
-	{ "wan_nat_x", "1" },
-	{ "wan_dnsenable_x", "1" },
-	{ "wan_dns1_x", "" },
-	{ "wan_dns2_x", "" },
-	{ "wan_dns3_x", "" },
-	{ "wan_pppoe_txonly_x", "0" },
-	{ "wan_hwaddr_x", "" },
-	{ "wan_proto_t", "" },
-	{ "wan_ipaddr_t", "" },
-	{ "wan_netmask_t", "" },
-	{ "wan_gateway_t", "" },
-	{ "wan_dns_t", "" },
-	{ "wan_status_t", "" },
 	{ "upnp_enable_x", "1" },
 	{ "upnp_proto", "0" },
 	{ "upnp_secure", "1" },
@@ -459,6 +490,7 @@ struct nvram_pair router_defaults[] = {
 	{ "preferred_lang", "" },
 
 	{ "modem_rule", "0" },
+	{ "modem_prio", "1" },
 	{ "modem_type", "0" },
 	{ "modem_country", "" },
 	{ "modem_isp", "" },
@@ -470,7 +502,6 @@ struct nvram_pair router_defaults[] = {
 	{ "modem_dnsa", "1" },
 	{ "modem_node", "0" },
 	{ "modem_nets", "0" },
-	{ "modem_arun", "2" },
 	{ "modem_zcd", "0" },
 	{ "modem_cmd", "" },
 	{ "modem_mtu", "1500" },
@@ -508,62 +539,11 @@ struct nvram_pair router_defaults[] = {
 	{ "fw_pt_ipsec", "1" },
 	{ "fw_pt_pppoe", "0" },
 
-	{ "wan_src_phy", "0" },
-	{ "wan_stb_x", "0" },
-	{ "wan_stb_iso", "0" },
-	{ "vlan_filter", "0" },
-	{ "vlan_vid_cpu", "" },
-	{ "vlan_pri_cpu", "0" },
-	{ "vlan_vid_iptv", "" },
-	{ "vlan_pri_iptv", "0" },
-	{ "vlan_vid_lan1", "" },
-	{ "vlan_pri_lan1", "0" },
-	{ "vlan_tag_lan1", "0" },
-	{ "vlan_vid_lan2", "" },
-	{ "vlan_pri_lan2", "0" },
-	{ "vlan_tag_lan2", "0" },
-	{ "vlan_vid_lan3", "" },
-	{ "vlan_pri_lan3", "0" },
-	{ "vlan_tag_lan3", "0" },
-	{ "vlan_vid_lan4", "" },
-	{ "vlan_pri_lan4", "0" },
-	{ "vlan_tag_lan4", "0" },
-
-	{ "pppoe_dhcp_route", "1" },
 	{ "sw_mode", "1" },
 
 	{ "telnetd", "1" },
 	{ "sshd_enable", "0" },
 
-	{ "u2ec_enable", "1" },
-	{ "lprd_enable", "1" },
-	{ "rawd_enable", "1" },
-	{ "achk_enable", "0" },
-	{ "nfsd_enable", "0" },
-	{ "optw_enable", "0" },
-	{ "dlna_disc", "895" },
-	{ "dlna_root", "0" },
-	{ "dlna_sort", "0" },
-	{ "dlna_src1", "A,/media/AiDisk_a1/Audio" },
-	{ "dlna_src2", "V,/media/AiDisk_a1/Video" },
-	{ "dlna_src3", "P,/media/AiDisk_a1/Photo" },
-	{ "dlna_rescan", "0"},
-	{ "trmd_enable", "0" },
-	{ "trmd_pport", "51413" },
-	{ "trmd_rport", "9091" },
-	{ "trmd_ropen", "0" },
-	{ "aria_enable", "0" },
-	{ "aria_pport", "16888" },
-	{ "aria_rport", "6800" },
-	{ "aria_ropen", "0" },
-	{ "hdd_spindt", "0" },
-	{ "hdd_apmoff", "0" },
-	{ "stb_cpu_iso", "0" },
-
-	{ "wan_auth_mode", "0" },
-	{ "wan_auth_user", "" },
-	{ "wan_auth_pass", "" },
-	{ "wan_auth_host", "10.0.0.1" },
 
 #if defined(BOARD_N65U)
 	{ "inic_disable", "0" },
@@ -574,7 +554,12 @@ struct nvram_pair router_defaults[] = {
 	{ "ez_action_short", "0" },
 	{ "ez_action_long", "0" },
 	{ "watchdog_cpu", "0" },
-	{ "front_leds", "0" },
+	{ "front_led_all", "1" },
+	{ "front_led_wan", "2" },
+	{ "front_led_lan", "1" },
+	{ "front_led_wif", "1" },
+	{ "front_led_usb", "1" },
+	{ "front_led_pwr", "1" },
 	{ "ether_led0", "3" },
 	{ "ether_led1", "0" },
 	{ "ether_igmp", "1" },

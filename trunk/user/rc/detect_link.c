@@ -30,28 +30,27 @@
 
 #include "rc.h"
 #include "switch.h"
+#include "gpio_pins.h"
 
-#define LINK_POLL_INTERVAL	2      // 2s
-#define LED_FLASH_INTERVAL	150000 // 150 ms
-#define LED_FLASH_DURATION	20     // 20 * 150 ms = 3 s
+#define DL_POLL_INTERVAL	2 /* every 2 seconds  */
+#define DL_PID_FILE		"/var/run/detect_link.pid"
 
-static unsigned int linkstatus_wan = 0;
-static unsigned int linkstatus_wan_old = 0;
-static unsigned int linkstatus_lan = 0;
-static unsigned int linkstatus_lan_old = 0;
-#if defined(BOARD_GPIO_LED_USB)
-static unsigned int linkstatus_usb = 0;
-static unsigned int linkstatus_usb_old = 0;
-static int usb_led_flash_countdown = -1;
+static unsigned long dl_counter_total = 0;
+static unsigned long dl_counter_wan_down = 0;
+static unsigned long dl_counter_dhcpc_renew = 0;
+static unsigned long dl_counter_modem_check = 0;
+
+static int dl_status_wan = 0;
+static int dl_status_wan_old = 0;
+static int dl_status_lan = 0;
+static int dl_status_lan_old = 0;
+#if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
+static int dl_status_usb = 0;
+static int dl_status_usb_old = 0;
 #endif
+static int is_ap_mode = 0;
 
-static unsigned long counter_total = 0;
-static unsigned long counter_wan_down = 0;
-static unsigned long counter_wan_renew = 0;
-
-static int front_leds_old = 0;
-
-struct itimerval itv;
+static struct itimerval itv;
 
 static void
 alarmtimer(unsigned long sec, unsigned long usec)
@@ -62,285 +61,329 @@ alarmtimer(unsigned long sec, unsigned long usec)
 	setitimer(ITIMER_REAL, &itv, NULL);
 }
 
-int start_detect_link(void)
-{
-	return eval("detect_link");
-}
-
-void stop_detect_link(void)
+void
+stop_detect_link(void)
 {
 	doSystem("killall %s %s", "-q", "detect_link");
 }
 
-void reset_detect_link(void)
+int
+start_detect_link(void)
 {
-	doSystem("killall %s %s", "-SIGHUP", "detect_link");
+	return eval("detect_link");
 }
 
-void start_flash_usbled(void)
+void
+detect_link_reset(void)
 {
-#if defined(BOARD_GPIO_LED_USB)
-	doSystem("killall %s %s", "-SIGUSR1", "detect_link");
-#endif
-}
-
-void stop_flash_usbled(void)
-{
-#if defined(BOARD_GPIO_LED_USB)
-	doSystem("killall %s %s", "-SIGUSR2", "detect_link");
-#endif
-}
-
-#if defined(BOARD_GPIO_LED_USB)
-int usb_status()
-{
-	return has_usb_devices();
-}
-#endif
-
-void linkstatus_on_alarm(int first_call)
-{
-	int i_result, i_router_mode, i_front_leds, i_wan_src_phy;
-	unsigned int i_link = 0, i_link_changed = 0;
-
-#if defined(BOARD_GPIO_LED_USB)
-	if (usb_led_flash_countdown >= 0)
-	{
-		if (!(usb_led_flash_countdown % 2))
-		{
-			LED_CONTROL(BOARD_GPIO_LED_USB, LED_ON);
-			linkstatus_usb_old = 1;
-		}
-		else
-		{
-			LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
-			linkstatus_usb_old = 0;
-		}
-		
-		usb_led_flash_countdown--;
-		
-		alarmtimer(0, LED_FLASH_INTERVAL);
-		
-		return;
-	}
-#endif
-	
-	counter_total++;
-	
-	i_front_leds = nvram_get_int("front_leds");
-	i_router_mode = !get_ap_mode();
-	if (i_router_mode)
-		i_wan_src_phy = nvram_get_int("wan_src_phy");
+	if (!pids("detect_link"))
+		start_detect_link();
 	else
-		i_wan_src_phy = 0;
-	
-	phy_status_port_link_changed(&i_link_changed);
-	if (i_link_changed || first_call)
-	{
-		switch (i_wan_src_phy)
-		{
-		case 4:
-			i_result = phy_status_port_link_lan4(&i_link);
-			break;
-		case 3:
-			i_result = phy_status_port_link_lan3(&i_link);
-			break;
-		case 2:
-			i_result = phy_status_port_link_lan2(&i_link);
-			break;
-		case 1:
-			i_result = phy_status_port_link_lan1(&i_link);
-			break;
-		default:
-			i_result = phy_status_port_link_wan(&i_link);
-			break;
-		}
-		
-		if (i_result == 0)
-			linkstatus_wan = i_link;
-		
-		i_result = phy_status_port_link_lan_all(&i_link);
-		if (i_result == 0)
-			linkstatus_lan = i_link;
-		if (!i_router_mode)
-			linkstatus_lan |= linkstatus_wan;
-	}
-	
-	if ((counter_wan_renew > 0) && (counter_total >= counter_wan_renew))
-	{
-		if (i_router_mode && linkstatus_wan && is_physical_wan_dhcp() && pids("udhcpc") )
-		{
-			logmessage("detect_link", "Perform WAN DHCP renew...");
-			
-			doSystem("killall %s %s", "-SIGUSR1", "udhcpc");
-		}
-		
-		counter_wan_renew = 0;
-	}
-	
-	if (linkstatus_wan != linkstatus_wan_old)
-	{
-		if (i_router_mode)
-		{
-			if (linkstatus_wan)
-			{
-				nvram_set_int_temp("link_wan", 1);
-#if defined(BOARD_GPIO_LED_WAN)
-				LED_CONTROL(BOARD_GPIO_LED_WAN, LED_ON);
-#endif
-				logmessage("detect_link", "WAN link restored!");
-				
-				if ((counter_total > 7) && ((counter_total-counter_wan_down) > 3))
-				{
-					counter_wan_renew = (counter_total + 2);
-				}
-			}
-			else
-			{
-				counter_wan_down = counter_total;
-				counter_wan_renew = 0;
-				nvram_set_int_temp("link_wan", 0);
-#if defined(BOARD_GPIO_LED_WAN)
-				LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
-#endif
-				logmessage("detect_link", "WAN link down detected!");
-			}
-		}
-		
-		linkstatus_wan_old = linkstatus_wan;
-	}
-	
-	if (linkstatus_lan != linkstatus_lan_old)
-	{
-		if (linkstatus_lan)
-		{
-			nvram_set_int_temp("link_lan", 1);
-#if defined(BOARD_GPIO_LED_LAN)
-			LED_CONTROL(BOARD_GPIO_LED_LAN, LED_ON);
-#endif
-		}
-		else
-		{
-			nvram_set_int_temp("link_lan", 0);
-#if defined(BOARD_GPIO_LED_LAN)
-			LED_CONTROL(BOARD_GPIO_LED_LAN, LED_OFF);
-#endif
-		}
-		
-		linkstatus_lan_old = linkstatus_lan;
-	}
-	
-#if defined(BOARD_GPIO_LED_USB)
-	if (i_front_leds == 0)
-		linkstatus_usb = usb_status();
-	if (linkstatus_usb != linkstatus_usb_old)
-	{
-		LED_CONTROL(BOARD_GPIO_LED_USB, (linkstatus_usb) ? LED_ON : LED_OFF);
-		
-		linkstatus_usb_old = linkstatus_usb;
-	}
-#endif
-	if (front_leds_old != i_front_leds)
-	{
-		front_leds_old = i_front_leds;
-		
-		LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
-		
-#if defined(BOARD_GPIO_LED_ALL)
-		LED_CONTROL(BOARD_GPIO_LED_ALL, LED_ON);
-#endif
-#if defined(BOARD_GPIO_LED_WIFI)
-		LED_CONTROL(BOARD_GPIO_LED_WIFI, LED_ON);
-#endif
-#if defined(BOARD_GPIO_LED_WAN)
-		if (linkstatus_wan && i_router_mode)
-			LED_CONTROL(BOARD_GPIO_LED_WAN, LED_ON);
-		else
-			LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
-#endif
-#if defined(BOARD_GPIO_LED_LAN)
-		if (linkstatus_lan)
-			LED_CONTROL(BOARD_GPIO_LED_LAN, LED_ON);
-		else
-			LED_CONTROL(BOARD_GPIO_LED_LAN, LED_OFF);
-#endif
-#if defined(BOARD_GPIO_LED_USB)
-		if (linkstatus_usb)
-			LED_CONTROL(BOARD_GPIO_LED_USB, LED_ON);
-		else
-			LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
-#endif
-	}
-	
-	alarmtimer(LINK_POLL_INTERVAL, 0);
+		kill_pidfile_s(DL_PID_FILE, SIGUSR1);
 }
 
-static void catch_sig_linkstatus(int sig)
+void
+detect_link_update_leds(void)
 {
-	if (sig == SIGALRM)
+	kill_pidfile_s(DL_PID_FILE, SIGHUP);
+}
+
+int
+get_ethernet_wan_phy_link(int is_ap_mode)
+{
+	int ret = 0, wan_src_phy = 0;
+	unsigned int phy_link = 0;
+
+	if (!is_ap_mode)
+		wan_src_phy = nvram_get_int("wan_src_phy");
+
+	switch (wan_src_phy)
 	{
-		linkstatus_on_alarm(0);
+	case 4:
+		ret = phy_status_port_link_lan4(&phy_link);
+		break;
+	case 3:
+		ret = phy_status_port_link_lan3(&phy_link);
+		break;
+	case 2:
+		ret = phy_status_port_link_lan2(&phy_link);
+		break;
+	case 1:
+		ret = phy_status_port_link_lan1(&phy_link);
+		break;
+	default:
+		ret = phy_status_port_link_wan(&phy_link);
+		break;
 	}
-	else if (sig == SIGHUP)
-	{
-		counter_total = 0;
-		counter_wan_down = 0;
-		counter_wan_renew = 0;
-	}
-#if defined(BOARD_GPIO_LED_USB)
-	else if (sig == SIGUSR1)
-	{
-		usb_led_flash_countdown = LED_FLASH_DURATION+1;
-		alarmtimer(0, LED_FLASH_INTERVAL);
-	}
-	else if (sig == SIGUSR2)
-	{
-		if (usb_led_flash_countdown > 0)
-		{
-			usb_led_flash_countdown = -1;
-			alarmtimer(0, LED_FLASH_INTERVAL);
+
+	if (ret != 0)
+		return -1;
+
+	return (phy_link) ? 1 : 0;
+}
+
+static void
+handle_link_wan(int is_first_call)
+{
+	int front_led_x;
+
+	if (dl_status_wan_old != dl_status_wan) {
+		dl_status_wan_old = dl_status_wan;
+		
+		nvram_set_int_temp("link_wan", (dl_status_wan) ? 1 : 0);
+#if defined (BOARD_GPIO_LED_WAN)
+		front_led_x = nvram_get_int("front_led_wan");
+		if (front_led_x == 1)
+			LED_CONTROL(BOARD_GPIO_LED_WAN, (dl_status_wan) ? LED_ON : LED_OFF);
+#endif
+#if defined (BOARD_GPIO_LED_LAN)
+		front_led_x = nvram_get_int("front_led_lan");
+		if (front_led_x == 1)
+			LED_CONTROL(BOARD_GPIO_LED_LAN, (dl_status_wan) ? LED_ON : LED_OFF);
+		else if (front_led_x == 3)
+			LED_CONTROL(BOARD_GPIO_LED_LAN, (dl_status_lan || dl_status_wan) ? LED_ON : LED_OFF);
+#endif
+		if (dl_status_wan) {
+			dl_counter_modem_check = 0;
+			
+			if (dl_counter_total > 5) {
+				/* link missing some time (> 10s) */
+				if ((dl_counter_total - dl_counter_wan_down) > 5)
+					dl_counter_dhcpc_renew = (dl_counter_total + 2); // 4s after link up
+				
+				dl_counter_modem_check = (dl_counter_total + 10); // 20s after link up
+			}
+		} else {
+			dl_counter_wan_down = dl_counter_total;
+			dl_counter_dhcpc_renew = 0;
+			dl_counter_modem_check = 0;
+			
+			if (dl_counter_total > 5) {
+				dl_counter_modem_check = (dl_counter_total + 10); // 20s after link down
+			}
 		}
+		
+		if (!is_first_call)
+			logmessage("detect_link", "WAN port link %s!", (dl_status_wan) ? "restored" : "down detected");
+	}
+
+	if ((dl_counter_dhcpc_renew > 0) && (dl_counter_total >= dl_counter_dhcpc_renew)) {
+		dl_counter_dhcpc_renew = 0;
+		
+		if (dl_status_wan)
+			notify_on_wan_link_restored();
+	}
+
+#if (BOARD_NUM_USB_PORTS > 0)
+	if ((dl_counter_modem_check > 0) && (dl_counter_total >= dl_counter_modem_check)) {
+		dl_counter_modem_check = 0;
+		
+		notify_modem_on_wan_link_changed(dl_status_wan);
 	}
 #endif
-	else if (sig == SIGTERM)
-	{
-		alarmtimer(0, 0);
-		remove("/var/run/detect_link.pid");
-		exit(0);
+}
+
+static void
+handle_link_lan(void)
+{
+	int front_led_lan;
+
+	if (dl_status_lan_old != dl_status_lan) {
+		dl_status_lan_old = dl_status_lan;
+		
+#if defined (BOARD_GPIO_LED_LAN)
+		front_led_lan = nvram_get_int("front_led_lan");
+		if (front_led_lan == 2)
+			LED_CONTROL(BOARD_GPIO_LED_LAN, (dl_status_lan) ? LED_ON : LED_OFF);
+		else if (front_led_lan == 3)
+			LED_CONTROL(BOARD_GPIO_LED_LAN, (dl_status_lan || dl_status_wan) ? LED_ON : LED_OFF);
+#endif
 	}
 }
 
-int detect_link_main(int argc, char *argv[])
+#if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
+static void
+handle_link_usb(void)
+{
+	int front_led_usb = nvram_get_int("front_led_usb");
+
+	if (front_led_usb > 1)
+		return;
+
+	if (front_led_usb == 1)
+		dl_status_usb = has_usb_devices();
+	else
+		dl_status_usb = 0;
+
+	if (dl_status_usb_old != dl_status_usb) {
+		dl_status_usb_old = dl_status_usb;
+		
+		LED_CONTROL(BOARD_GPIO_LED_USB, (dl_status_usb) ? LED_ON : LED_OFF);
+	}
+}
+#endif
+
+static void
+linkstatus_poll(int is_first_call)
+{
+	unsigned int is_link_changed;
+
+	dl_counter_total++;
+
+	is_link_changed = 0;
+	phy_status_port_link_changed(&is_link_changed);
+	if (is_link_changed || is_first_call) {
+		int phy_link;
+		
+		phy_link = get_ethernet_wan_phy_link(is_ap_mode);
+		if (phy_link >= 0)
+			dl_status_wan = phy_link;
+		
+		phy_link = 0;
+		if (phy_status_port_link_lan_all(&phy_link) == 0)
+			dl_status_lan = phy_link;
+		
+		if (is_ap_mode)
+			dl_status_lan |= dl_status_wan;
+	}
+
+	if (!is_ap_mode)
+		handle_link_wan(is_first_call);
+
+	handle_link_lan();
+#if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
+	handle_link_usb();
+#endif
+
+	alarmtimer(DL_POLL_INTERVAL, 0);
+}
+
+static void
+linkstatus_reset(void)
+{
+	is_ap_mode = get_ap_mode();
+
+	dl_counter_total = 0;
+	dl_counter_wan_down = 0;
+	dl_counter_dhcpc_renew = 0;
+	dl_counter_modem_check = 0;
+}
+
+static void
+linkstatus_check_leds(void)
+{
+	int dl_state, front_led_x;
+
+#if defined (BOARD_GPIO_LED_WAN)
+	front_led_x = nvram_get_int("front_led_wan");
+	if (front_led_x < 2) {
+		dl_state = (!is_ap_mode && dl_status_wan) ? 1 : 0;
+		LED_CONTROL(BOARD_GPIO_LED_WAN, (dl_state) ? LED_ON : LED_OFF);
+	} else if (front_led_x == 2) {
+		dl_state = (!is_ap_mode && has_wan_ip(0) && has_wan_gateway()) ? 1 : 0;
+		LED_CONTROL(BOARD_GPIO_LED_WAN, (dl_state) ? LED_ON : LED_OFF);
+	}
+#endif
+#if defined (BOARD_GPIO_LED_LAN)
+	front_led_x = nvram_get_int("front_led_lan");
+	dl_state = 0;
+	if (front_led_x == 1)
+		dl_state = dl_status_wan;
+	else if (front_led_x == 2)
+		dl_state = dl_status_lan;
+	else if (front_led_x == 3)
+		dl_state |= (dl_status_lan | dl_status_wan);
+	LED_CONTROL(BOARD_GPIO_LED_LAN, (dl_state) ? LED_ON : LED_OFF);
+#endif
+#if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
+	front_led_x = nvram_get_int("front_led_usb");
+	if (nvram_get_int("front_led_all") == 0)
+		front_led_x = 0;
+	if (front_led_x == 2) {
+		LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
+		cpu_gpio_led_timer(1);
+		module_param_set_int("usbcore", "usb_led_gpio", BOARD_GPIO_LED_USB);
+	} else {
+		module_param_set_int("usbcore", "usb_led_gpio", -1);
+		cpu_gpio_led_timer(0);
+		LED_CONTROL(BOARD_GPIO_LED_USB, (dl_status_usb) ? LED_ON : LED_OFF);
+	}
+#endif
+#if defined (BOARD_GPIO_LED_WIFI)
+	LED_CONTROL(BOARD_GPIO_LED_WIFI, LED_ON);
+#endif
+#if defined (BOARD_GPIO_LED_ALL)
+	LED_CONTROL(BOARD_GPIO_LED_ALL, LED_ON);
+#endif
+#if defined (BOARD_GPIO_LED_POWER)
+	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
+#endif
+}
+
+static void
+catch_sig_linkstatus(int sig)
+{
+	switch (sig)
+	{
+	case SIGALRM:
+		linkstatus_poll(0);
+		break;
+	case SIGHUP:
+		linkstatus_check_leds();
+		break;
+	case SIGUSR1:
+		linkstatus_reset();
+		break;
+	case SIGTERM:
+		alarmtimer(0, 0);
+		remove(DL_PID_FILE);
+		exit(0);
+		break;
+	}
+}
+
+int
+detect_link_main(int argc, char *argv[])
 {
 	FILE *fp;
-	
-	signal(SIGPIPE, SIG_IGN);
-	signal(SIGHUP,  catch_sig_linkstatus);
-	signal(SIGUSR1, catch_sig_linkstatus);
-	signal(SIGUSR2, catch_sig_linkstatus);
-	signal(SIGTERM, catch_sig_linkstatus);
-	signal(SIGALRM, catch_sig_linkstatus);
-	
+	struct sigaction sa;
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = catch_sig_linkstatus;
+	sigemptyset(&sa.sa_mask);
+	sigaddset(&sa.sa_mask, SIGALRM);
+	sigaddset(&sa.sa_mask, SIGHUP);
+	sigaddset(&sa.sa_mask, SIGUSR1);
+	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGALRM, &sa, NULL);
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = SIG_IGN;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGPIPE, &sa, NULL);
+	sigaction(SIGUSR2, &sa, NULL);
+
 	if (daemon(0, 0) < 0) {
 		perror("daemon");
 		exit(errno);
 	}
-	
+
 	/* write pid */
-	if ((fp=fopen("/var/run/detect_link.pid", "w"))!=NULL)
+	if ((fp=fopen(DL_PID_FILE, "w"))!=NULL)
 	{
 		fprintf(fp, "%d", getpid());
 		fclose(fp);
 	}
-	
-	front_leds_old = nvram_get_int("front_leds");
-	
-	linkstatus_on_alarm(1);
-	
+
+	linkstatus_reset();
+	linkstatus_poll(1);
+
 	while (1)
 	{
 		pause();
 	}
-	
+
 	return 0;
 }

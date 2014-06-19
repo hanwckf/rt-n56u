@@ -293,7 +293,7 @@ start_inic_mii(void)
 		}
 		
 		/* add rai0 to bridge (needed for RADIUS) */
-		wif_bridge(ifname_inic, is_need_8021x(nvram_safe_get("rt_auth_mode")));
+		wif_bridge(ifname_inic, is_need_8021x(nvram_wlan_get("rt", "auth_mode")));
 	} else {
 		/* force disable iNIC (e.g. broken module) */
 		

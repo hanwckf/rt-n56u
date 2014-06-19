@@ -459,7 +459,6 @@ int show_usage(char *cmd)
 #if defined (USE_RT3352_MII)
 	"   51 [0|1]         Toggle iNIC isolation from LAN ports\n"
 	"   52 [0|1]         Toggle iNIC disable RGMII port link\n"
-	"   53 [0|1]         Toggle iNIC WISP mode\n\n"
 #endif
 	"   60               Reset VLAN table and init VLAN1\n"
 	"   61 [MASK]        Set VLAN ingress enabled for ports mask\n"

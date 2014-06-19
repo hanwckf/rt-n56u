@@ -34,45 +34,6 @@
 
 #define MAX_FRW 64
 
-struct cc_region_t {
-	const char *cc;
-	const int region;
-};
-
-static const struct cc_region_t
-cc_region2g[] = {
-	{ "CA", 0 },
-	{ "CO", 0 },
-	{ "DO", 0 },
-	{ "GT", 0 },
-	{ "MX", 0 },
-	{ "NO", 0 },
-	{ "PA", 0 },
-	{ "PR", 0 },
-	{ "TW", 0 },
-	{ "US", 0 },
-	{ "UZ", 0 },
-	{ "DB", 5 },
-	{ NULL, 1 }
-};
-
-static const struct cc_region_t
-cc_region5g[] = {
-	{ "CA", 0 },
-	{ "CO", 0 },
-	{ "DO", 0 },
-	{ "GT", 0 },
-	{ "MX", 0 },
-	{ "NO", 0 },
-	{ "PA", 0 },
-	{ "PR", 0 },
-	{ "TW", 0 },
-	{ "US", 0 },
-	{ "UZ", 0 },
-	{ "DB", 5 },
-	{ NULL, 1 }
-};
-
 int
 get_wireless_mac(int is_5ghz)
 {

@@ -1,0 +1,23 @@
+--- a/gcc/configure.ac	2010-12-13 20:19:43.000000000 +0200
++++ b/gcc/configure.ac	2014-05-26 01:59:34.557418966 +0300
+@@ -859,7 +859,7 @@
+ *** Info documentation will not be built.])
+   BUILD_INFO=
+ else
+-  BUILD_INFO=info
++  BUILD_INFO=
+ fi
+ AC_SUBST(BUILD_INFO)
+ 
+--- a/gcc/configure	2010-12-13 20:19:43.000000000 +0200
++++ b/gcc/configure	2014-05-26 01:59:34.557418966 +0300
+@@ -8586,7 +8586,7 @@
+ *** Info documentation will not be built." >&2;}
+   BUILD_INFO=
+ else
+-  BUILD_INFO=info
++  BUILD_INFO=
+ fi
+ 
+ 
+--

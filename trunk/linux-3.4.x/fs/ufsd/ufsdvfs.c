@@ -5174,8 +5174,8 @@ ufsd_file_read(
       size_t  read;
       unsigned long rem = ((unsigned long)pos) & ( RW_BUFFER_SIZE - 1 );
       size_t to_read = min_t(unsigned int, RW_BUFFER_SIZE - rem,  count - ret);
-      C_ASSERT( sizeof(pos) == 8 );
       int err;
+      C_ASSERT( sizeof(pos) == 8 );
 
       LockUfsd( sbi );
 

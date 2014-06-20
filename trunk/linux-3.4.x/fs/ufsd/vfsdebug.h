@@ -71,6 +71,8 @@ EXTERN_C UFSDAPI_CALL void CloseTrace( void );
 EXTERN_C UFSDAPI_CALL void SetTrace( const char* TraceFile );
 EXTERN_C UFSDAPI_CALL void SetCycle( int CycleBytes );
 
+#define C_ASSERT(e) typedef char _C_ASSERT_[(e)?1:-1]
+
 #else
 
 #define ASSERT(cond) NOTHING;
@@ -84,9 +86,9 @@ EXTERN_C UFSDAPI_CALL void SetCycle( int CycleBytes );
 #define SetTrace(x)   NOTHING
 #define SetCycle(x)   NOTHING
 
-#endif //UFSD_DEBUG
+#define C_ASSERT(e)   NOTHING
 
-#define C_ASSERT(e) typedef char _C_ASSERT_[(e)?1:-1]
+#endif //UFSD_DEBUG
 
 
 #ifndef UNREFERENCED_PARAMETER

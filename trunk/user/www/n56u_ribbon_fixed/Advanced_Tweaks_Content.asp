@@ -370,7 +370,7 @@ function change_led_all(){
                                         <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 23, 1);"><#TweaksWdg#></a></th>
                                             <td>
-                                                <select name="watchdog_cpu" class="input">
+                                                <select name="watchdog_cpu" class="input" style="width: 320px;">
                                                     <option value="0" <% nvram_match_x("", "watchdog_cpu", "0","selected"); %>><#checkbox_No#> (*)</option>
                                                     <option value="1" <% nvram_match_x("", "watchdog_cpu", "1","selected"); %>><#checkbox_Yes#> <#TweaksWdg_item#></option>
                                                 </select>

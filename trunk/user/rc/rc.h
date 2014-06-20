@@ -111,8 +111,6 @@ long uptime(void);
 int rand_seed_by_time(void);
 void set_pagecache_reclaim(void);
 void restart_all_sysctl(void);
-void convert_asus_values(int skipflag);
-void init_router_mode();
 void update_router_mode();
 char *mac_conv(char *mac_name, int idx, char *buf);
 char *mac_conv2(char *mac_name, int idx, char *buf);

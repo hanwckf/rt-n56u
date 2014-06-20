@@ -204,8 +204,28 @@ set_wan0_vars(void)
 static void 
 convert_misc_values()
 {
-	char buff[128];
-	char *test_value;
+	char buff[64], *test_value;
+	int sw_mode;
+
+	/* check router mode */
+	sw_mode = nvram_get_int("sw_mode");
+	if (sw_mode == 1) {
+		/* Internet gateway mode */
+		nvram_set_int("wan_nat_x", 1);
+		nvram_set("wan_route_x", "IP_Routed");
+	} else if (sw_mode == 4) {
+		/* Pure router mode */
+		nvram_set_int("wan_nat_x", 0);
+		nvram_set("wan_route_x", "IP_Routed");
+	} else if (sw_mode == 3) {
+		/* AP mode (Ethernet convertor) */
+		nvram_set_int("wan_nat_x", 0);
+		nvram_set("wan_route_x", "IP_Bridged");
+	} else {
+		nvram_set_int("sw_mode", 1);
+		nvram_set_int("wan_nat_x", 1);
+		nvram_set("wan_route_x", "IP_Routed");
+	}
 
 	/* remove old unused params */
 	nvram_unset("lan_route");
@@ -222,37 +242,50 @@ convert_misc_values()
 	nvram_unset("lan_subnet_t");
 	nvram_unset("link_lan");
 
-	test_value = nvram_safe_get("wan_heartbeat_x");
-	if (*test_value && strlen(nvram_safe_get("wan_ppp_peer")) == 0)
-		nvram_set("wan_ppp_peer", test_value);
+	test_value = nvram_get("front_leds");
+	if (test_value) {
+		int front_leds = atoi(test_value);
+		if (front_leds > 2)
+			nvram_set_int("front_led_all", 0);
+		if (front_leds == 4 || front_leds == 2)
+			nvram_set_int("front_led_pwr", 0);
+		nvram_unset("front_leds");
+	}
+
+	test_value = nvram_get("wan_heartbeat_x");
+	if (test_value) {
+		if (strlen(test_value) > 0 && strlen(nvram_safe_get("wan_ppp_peer")) == 0)
+			nvram_set("wan_ppp_peer", test_value);
+		nvram_unset("wan_heartbeat_x");
+	}
 
 	if (nvram_match("modem_pin", "") && nvram_invmatch("wan_3g_pin", ""))
 		nvram_set("modem_pin", nvram_safe_get("wan_3g_pin"));
 	nvram_unset("wan_3g_pin");
 	nvram_unset("wan0_3g_pin");
 
-	if (!strcmp(nvram_safe_get("wl_ssid"), ""))
-		nvram_set("wl_ssid", "ASUS_5G");
+	if (strlen(nvram_wlan_get("wl", "ssid")) < 1)
+		nvram_wlan_set("wl", "ssid", DEF_WLAN_5G_SSID);
 
-	if (!strcmp(nvram_safe_get("rt_ssid"), ""))
-		nvram_set("rt_ssid", "ASUS");
-
-	memset(buff, 0, sizeof(buff));
-	char_to_ascii(buff, nvram_safe_get("wl_ssid"));
-	nvram_set("wl_ssid2", buff);
+	if (strlen(nvram_wlan_get("rt", "ssid")) < 1)
+		nvram_wlan_set("rt", "ssid", DEF_WLAN_5G_SSID);
 
 	memset(buff, 0, sizeof(buff));
-	char_to_ascii(buff, nvram_safe_get("rt_ssid"));
-	nvram_set("rt_ssid2", buff);
+	char_to_ascii(buff, nvram_wlan_get("wl", "ssid"));
+	nvram_wlan_set("wl", "ssid2", buff);
 
-	if (nvram_match("wl_wpa_mode", ""))
-		nvram_set("wl_wpa_mode", "0");
+	memset(buff, 0, sizeof(buff));
+	char_to_ascii(buff, nvram_wlan_get("rt", "ssid"));
+	nvram_wlan_set("rt", "ssid2", buff);
 
-	if (!strcmp(nvram_safe_get("wl_gmode"), ""))
-		nvram_set("wl_gmode", "2");
+	if (strlen(nvram_safe_get("wl_wpa_mode")) < 1)
+		nvram_set_int("wl_wpa_mode", 0);
 
-	if (!strcmp(nvram_safe_get("rt_gmode"), ""))
-		nvram_set("rt_gmode", "2");
+	if (strlen(nvram_safe_get("wl_gmode")) < 1)
+		nvram_set_int("wl_gmode", 2); // a/n Mixed
+
+	if (strlen(nvram_safe_get("rt_gmode")) < 1)
+		nvram_set_int("rt_gmode", 2); // b/g/n Mixed
 
 	if (nvram_get_int("wl_HT_BW") > 1)
 		nvram_set_int("wl_HT_BW", 1);
@@ -272,20 +305,15 @@ convert_misc_values()
 	if (nvram_get_int("rt_stream_rx") > BOARD_NUM_ANT_2G_RX)
 		nvram_set_int("rt_stream_rx", BOARD_NUM_ANT_2G_RX);
 
-	reset_lan_temp();
-	reset_man_vars();
-
-	nvram_set_temp("viptv_ifname", "");
-
 	nvram_set_temp("ntpc_counter", "0000000000");
+	nvram_set_temp("login_timestamp", "0000000000");
 
 	nvram_set_int_temp("networkmap_fullscan", 0);
 	nvram_set_int_temp("link_internet", 2);
+	nvram_set_int_temp("link_wan", 0);
 
 	nvram_set_int_temp("reload_svc_wl", 0);
 	nvram_set_int_temp("reload_svc_rt", 0);
-
-	nvram_set_int_temp("link_wan", 0);
 
 	nvram_set_int_temp("usb_hotplug_ms", 0);
 	nvram_set_int_temp("usb_hotplug_lp", 0);
@@ -299,9 +327,19 @@ convert_misc_values()
 	nvram_set_int_temp("l2tp_srv_t", 0);
 	nvram_set_int_temp("vpnc_state_t", 0);
 	nvram_set_temp("vpnc_dns_t", "");
+	nvram_set_temp("viptv_ifname", "");
 
-	/* Setup wan0 variables if necessary */
+	/* setup wan0 variables */
 	set_wan0_vars();
+	set_wan_unit_value(0, "time_ppp", "0000000000");
+	set_usb_modem_dev_wan(0, 0);
+	reset_wan_vars(1);
+
+	/* setup lan variables */
+	reset_lan_vars();
+	reset_lan_temp();
+
+	time_zone_x_mapping();
 }
 
 static void
@@ -341,11 +379,11 @@ flash_firmware(void)
 
 	kill_services(svcs, 6, 1);
 
-	sync();
-
 	/* save storage (if changed) */
 	storage_save_time(60);
 	write_storage_to_mtd();
+
+	sync();
 
 	if (eval("/tmp/mtd_write", "-r", "write", FW_IMG_NAME, FW_MTD_NAME) != 0) {
 		start_watchdog();
@@ -511,9 +549,7 @@ init_router(void)
 
 	get_eeprom_params();
 
-	init_router_mode();
-	convert_misc_values(); //  convert_misc_values must be run first!!! (wanx_... cleared)
-	convert_asus_values(0);
+	convert_misc_values();
 
 	if (nvram_need_commit)
 		nvram_commit();

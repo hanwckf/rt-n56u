@@ -74,16 +74,20 @@ set_wan_unit_param(int unit, const char* param_name)
 }
 
 static void
+control_wan_led_isp_state(int is_show_led)
+{
+#if defined (BOARD_GPIO_LED_WAN)
+	if (nvram_get_int("front_led_wan") == 2)
+		LED_CONTROL(BOARD_GPIO_LED_WAN, (is_show_led) ? LED_ON : LED_OFF);
+#endif
+}
+
+static void
 clear_wan_state(void)
 {
 	set_wan_unit_value(0, "time_ppp", "0");
 	nvram_set_int_temp("l2tp_wan_t", 0);
 	nvram_set_temp("vpnc_dns_t", "");
-
-#if defined (BOARD_GPIO_LED_WAN)
-	if (nvram_get_int("front_led_wan") == 2)
-		LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
-#endif
 }
 
 void
@@ -759,6 +763,8 @@ stop_wan_ppp(void)
 
 	clear_wan_state();
 	notify_detect_internet();
+
+	control_wan_led_isp_state(0);
 }
 
 void
@@ -836,6 +842,8 @@ stop_wan(void)
 	clear_wan_state();
 	flush_conntrack_caches();
 	notify_detect_internet();
+
+	control_wan_led_isp_state(0);
 }
 
 static int
@@ -1044,10 +1052,8 @@ wan_up(char *wan_ifname, int unit)
 			eval("detect_wan");
 	}
 
-#if defined (BOARD_GPIO_LED_WAN)
-	if (nvram_get_int("front_led_wan") == 2 && has_wan_gateway())
-		LED_CONTROL(BOARD_GPIO_LED_WAN, LED_ON);
-#endif
+	if (has_wan_gateway())
+		control_wan_led_isp_state(1);
 
 	/* call custom user script */
 	if (check_if_file_exist(script_postw))
@@ -1107,10 +1113,7 @@ wan_down(char *wan_ifname, int unit)
 	/* flush conntrack caches */
 	flush_conntrack_caches();
 
-#if defined (BOARD_GPIO_LED_WAN)
-	if (nvram_get_int("front_led_wan") == 2)
-		LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
-#endif
+	control_wan_led_isp_state(0);
 
 	if (check_if_file_exist(script_postw))
 		doSystem("%s %s %s", script_postw, "down", wan_ifname);
@@ -1231,6 +1234,8 @@ notify_on_wan_link_restored(void)
 
 	if (get_apcli_wisp_ifname())
 		return;
+
+	logmessage(LOGNAME, "force WAN DHCP client renew...");
 
 	renew_udhcpc_wan(unit);
 }

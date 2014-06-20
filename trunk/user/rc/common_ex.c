@@ -314,32 +314,6 @@ void get_eeprom_params(void)
 #endif
 }
 
-void init_router_mode(void)
-{
-	int sw_mode = nvram_get_int("sw_mode");
-	if (sw_mode == 1)		// Gateway mode
-	{
-		nvram_set_int("wan_nat_x", 1);
-		nvram_set("wan_route_x", "IP_Routed");
-	}
-	else if (sw_mode == 4)		// Router mode
-	{
-		nvram_set_int("wan_nat_x", 0);
-		nvram_set("wan_route_x", "IP_Routed");
-	}
-	else if (sw_mode == 3)		// AP mode
-	{
-		nvram_set_int("wan_nat_x", 0);
-		nvram_set("wan_route_x", "IP_Bridged");
-	}
-	else
-	{
-		nvram_set_int("sw_mode", 1);
-		nvram_set_int("wan_nat_x", 1);
-		nvram_set("wan_route_x", "IP_Routed");
-	}
-}
-
 void update_router_mode(void)
 {
 	if (nvram_get_int("sw_mode") != 3)
@@ -349,23 +323,6 @@ void update_router_mode(void)
 		else
 			nvram_set_int("sw_mode", 1);	// Router mode
 	}
-}
-
-void convert_asus_values(int skipflag)
-{
-	if (!skipflag)
-	{
-		set_usb_modem_dev_wan(0, 0);
-		
-		/* Direct copy value */
-		/* LAN Section */
-		reset_lan_vars();
-		
-		// WAN section
-		reset_wan_vars(1);
-	}
-
-	time_zone_x_mapping();
 }
 
 void set_pagecache_reclaim(void)

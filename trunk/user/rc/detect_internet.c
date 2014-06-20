@@ -137,8 +137,10 @@ try_detect_internet(void)
 {
 	long now;
 	int link_internet;
-	char *login_timestamp = nvram_safe_get("login_timestamp");
+	char *login_timestamp;
 
+	/* check last http login */
+	login_timestamp = nvram_safe_get("login_timestamp");
 	if (strlen(login_timestamp) < 1)
 		return;
 

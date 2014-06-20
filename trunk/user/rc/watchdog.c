@@ -104,40 +104,46 @@ alarmtimer(unsigned long sec, unsigned long usec)
 static int
 httpd_check_v2()
 {
-	int i, httpd_live, http_port;
 	FILE *fp = NULL;
-	char line[80];
+	int i, httpd_live, http_port;
+	char line[80], *login_timestamp;
 	time_t now;
 	static int check_count_down = 3;
 	static int httpd_timer = 0;
-	
-	// skip 30 seconds after start watchdog
+
+	/* skip 30 seconds after start watchdog */
 	if (check_count_down)
 	{
 		check_count_down--;
 		return 1;
 	}
-	
-	// check every 30 seconds
+
+	/* check every 30 seconds */
 	httpd_timer = (httpd_timer + 1) % 3;
-	if (httpd_timer) return 1;
-	
-	now = uptime();
-	if (nvram_get("login_timestamp") && ((unsigned long)(now - strtoul(nvram_safe_get("login_timestamp"), NULL, 10)) < 60))
+	if (httpd_timer)
 		return 1;
-	
+
+	/* check last http login */
+	login_timestamp = nvram_safe_get("login_timestamp");
+	if (strlen(login_timestamp) < 1)
+		return 1;
+
+	now = uptime();
+	if (((unsigned long)(now - strtoul(login_timestamp, NULL, 10)) < 60))
+		return 1;
+
 #if defined (SUPPORT_HTTPS)
 	/* check HTTPS only */
 	if (nvram_get_int("http_proto") == 1)
 		return 1;
 #endif
 	remove(DETECT_HTTPD_FILE);
-	
+
 	http_port = nvram_get_int("http_lanport");
-	
+
 	/* httpd will not count 127.0.0.1 */
 	doSystem("wget -q http://127.0.0.1:%d/httpd_check.htm -O %s &", http_port, DETECT_HTTPD_FILE);
-	
+
 	httpd_live = 0;
 	for (i=0; i < 3; i++)
 	{
@@ -167,7 +173,7 @@ httpd_check_v2()
 		
 		sleep(1);
 	}
-	
+
 	if (!httpd_live)
 	{
 		if (pids("wget"))
@@ -177,7 +183,7 @@ httpd_check_v2()
 		
 		return 0;
 	}
-	
+
 	return 1;
 }
 #endif

@@ -15,10 +15,6 @@
 #
 ############################################################################
 
-ifndef CONSOLE_BAUD_RATE
-  CONSOLE_BAUD_RATE = 57600
-endif
-
 ifeq ($(ROOTDIR)/modules,$(wildcard $(ROOTDIR)/modules))
   EXTRA_MODULE_DIRS = $(ROOTDIR)/modules
 endif
@@ -32,9 +28,9 @@ ifndef VERSIONSTR
 endif
 
 ifndef RELFILES
-  RELFILES =	boot/boot.bin boot/boot.elf	\
-  		images/image.bin images/flash.bin \
-		$(LINUXDIR)/linux
+  RELFILES = boot/boot.bin boot/boot.elf \
+             images/image.bin images/flash.bin \
+             $(LINUXDIR)/linux
 endif
 
 ############################################################################
@@ -44,40 +40,48 @@ endif
 #
 # First settings we always want for all build
 #
+############################################################################
 
 ENDIAN        ?= little
-MACHINE       = mips
-ARCH          = mips
-CROSS_COMPILE = $(CONFIG_CROSS_COMPILER_PATH)/mipsel-linux-uclibc-
-CROSS         = $(CROSS_COMPILE)
+HOST_TARGET   ?= mipsel-linux
+
+MACHINE        = mips
+ARCH           = mips
+CROSS_COMPILE  = $(CONFIG_CROSS_COMPILER_PATH)/mipsel-linux-uclibc-
+CROSS          = $(CROSS_COMPILE)
 CONFIGURE_HOST = $(CONFIG_CROSS_COMPILER_PATH)/mipsel-linux-uclibc-
 
-CC        = $(CROSS_COMPILE)gcc $(CPUFLAGS)
-GCC       = $(CROSS_COMPILE)gcc $(CPUFLAGS)
-CXX       = $(CROSS_COMPILE)g++ $(CPUFLAGS)
-AS        = $(CROSS_COMPILE)as $(CPUFLAGS)
-AR        = $(CROSS_COMPILE)ar
-LD        = $(CROSS_COMPILE)ld
-NM        = $(CROSS_COMPILE)nm
-OBJCOPY   = $(CROSS_COMPILE)objcopy
-RANLIB    = $(CROSS_COMPILE)ranlib
-ELF2FLT   = elf2flt
-STRIPTOOL = $(CROSS_COMPILE)strip
-STRIP     = $(STRIPTOOL)
+CC             = $(CROSS_COMPILE)gcc $(CPUFLAGS)
+GCC            = $(CROSS_COMPILE)gcc $(CPUFLAGS)
+CXX            = $(CROSS_COMPILE)g++ $(CPUFLAGS)
+AS             = $(CROSS_COMPILE)as $(CPUFLAGS)
+AR             = $(CROSS_COMPILE)ar
+LD             = $(CROSS_COMPILE)ld
+NM             = $(CROSS_COMPILE)nm
+OBJCOPY        = $(CROSS_COMPILE)objcopy
+RANLIB         = $(CROSS_COMPILE)ranlib
+ELF2FLT        = elf2flt
+STRIPTOOL      = $(CROSS_COMPILE)strip
+STRIP          = $(STRIPTOOL)
 
-GCC_DIR   = $(shell $(CC) -v 2>&1|grep specs|sed -e 's/.* \(.*\)specs/\1\./')
-MACH_DIR  = $(shell $(CC) -print-multi-directory)
+GCC_DIR        = $(shell $(CC) -v 2>&1|grep specs|sed -e 's/.* \(.*\)specs/\1\./')
+MACH_DIR       = $(shell $(CC) -print-multi-directory)
 
-UCLINUX_BUILD_SET = 0					# have we set a special config below
+# have we set a special config below
+UCLINUX_BUILD_SET = 0
 
 # Pull in common definitions
 include $(ROOTDIR)/vendors/config/common/config.arch
+
+# clear flags
+CFLAGS :=
 
 ############################################################################
 #
 # General purpose lib building rules,  uClibc.config uses these when
 # possible
 #
+############################################################################
 
 ifdef UCLINUX_BUILD_LIB
   ifdef CONFIG_LIB_DEBUG
@@ -101,6 +105,7 @@ endif
 #
 # Settings for building user apps
 #
+############################################################################
 
 ifdef UCLINUX_BUILD_USER
   ifdef CONFIG_USER_DEBUG
@@ -114,10 +119,7 @@ ifdef UCLINUX_BUILD_USER
 	CFLAGS  += -I$(ROOTDIR)/stage/include
 	LDFLAGS += -L$(ROOTDIR)/stage/lib
 
-	CXXFLAGS := $(CFLAGS) $(INCCXX)
-
 #	LDLIBS   = $(LIBC) $(LIBGCC) $(CRTN)
-	CXXLIBS  = -Wl,-Bdynamic $(LIBC) $(LIBGCC) $(CRTN)
 
 	FLTFLAGS :=
 	export FLTFLAGS
@@ -130,11 +132,52 @@ endif
 
 ############################################################################
 #
-# fall through,  do other config options perhaps
+# fall through, do other config options perhaps
 #
+############################################################################
 
 ifeq ($(UCLINUX_BUILD_SET),1)
 	EXTRA_CFLAGS := -Dlinux $(CPUFLAGS)
 endif
 
 ############################################################################
+#
+# Common warnings
+#
+############################################################################
+
+CFLAGS += -Wall -Wno-trigraphs -Wno-strict-aliasing -Wno-format-security
+
+# disable unused variable warnings in gcc >= 4.6.x
+CFLAGS += $(call check-gcc-nowarn,unused-but-set-variable,)
+
+############################################################################
+#
+# gcc version specific flags
+#
+############################################################################
+
+# fix ~10% performance regression in gcc >= 4.8.x
+CFLAGS += $(call check-gcc-flag,-fno-tree-slsr,)
+
+# disable new loop optimization mode in gcc >= 4.8.x (fix loop regressions)
+#CFLAGS += $(call check-gcc-flag,-fno-aggressive-loop-optimizations,)
+
+############################################################################
+#
+# C++ flags
+#
+############################################################################
+
+CXXFLAGS := $(CFLAGS) $(INCCXX)
+CXXLIBS   = -Wl,-Bdynamic $(LIBC) $(LIBGCC) $(CRTN)
+
+############################################################################
+#
+# C specific flags (not C++)
+#
+############################################################################
+
+# disable pointer signed/unsigned warnings in gcc >= 4.x
+CFLAGS += -Wno-pointer-sign
+

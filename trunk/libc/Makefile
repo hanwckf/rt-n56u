@@ -8,8 +8,8 @@ ifndef ROMFSDIR
 ROMFSDIR=$(ROOTDIR)/romfs
 endif
 
--include $(CONFIG_CONFIG)
--include $(ARCH_CONFIG)
+include $(CONFIG_CONFIG)
+include $(ARCH_CONFIG)
 
 DESTDIR=$(ROOTDIR)/stage
 

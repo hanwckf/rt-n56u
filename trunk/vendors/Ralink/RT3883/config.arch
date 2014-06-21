@@ -1,7 +1,5 @@
 .EXPORT_ALL_VARIABLES:
 
-CONSOLE_BAUD_RATE = 57600
-
 ###########################################################################
 
 ENDIAN = little
@@ -10,31 +8,11 @@ CPUFLAGS = -mips32r2 -march=mips32r2
 VENDOR_CFLAGS =
 UOPT = -Os
 LOPT = -Os
-HOST_BUILD = $(shell (uname -m) 2>/dev/null || echo unknown)-pc-linux-gnu
 HOST_TARGET = mipsel-linux
 
 ###########################################################################
 
 include $(ROOTDIR)/vendors/config/mips/config.arch
-
-############################ WARN/ERROR ###################################
-
-# base flags for warnings
-CFLAGS += -Wall -Wno-trigraphs
-CXXFLAGS += -Wall -Wno-trigraphs
-
-# dereferencing type-punned pointer will break strict-aliasing rules
-CFLAGS += -Wno-strict-aliasing
-CXXFLAGS += -Wno-strict-aliasing
-
-# disable pointer signed / unsigned warnings in gcc 4.x
-CFLAGS += -Wno-pointer-sign
-
-# disable variable unused warnings in gcc 4.6.x
-#CFLAGS += -Wno-unused-but-set-variable
-
-# disable new loop optimization mode in 4.8.x - fix regressions
-#CFLAGS += -fno-aggressive-loop-optimizations
 
 ###########################################################################
 

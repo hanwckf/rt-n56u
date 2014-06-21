@@ -571,6 +571,12 @@ ifndef CONFIG_CC_STACKPROTECTOR
 KBUILD_CFLAGS += $(call cc-option, -fno-stack-protector)
 endif
 
+# fix ~10% performance regression in gcc >= 4.8.x
+KBUILD_CFLAGS += $(call cc-option,-fno-tree-slsr)
+
+# disable new loop optimization mode in gcc >= 4.8.x (fix loop regressions)
+#KBUILD_CFLAGS += $(call cc-option,-fno-aggressive-loop-optimizations)
+
 # This warning generated too much noise in a regular build.
 # Use make W=1 to enable this warning (see scripts/Makefile.build)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)

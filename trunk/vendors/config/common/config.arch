@@ -1,8 +1,18 @@
 # Common definitions for all architectures
 # Included from the various <arch>/config.arch files
 
-# We could include a lot more here, but for now, just the libraries
+HOST_BUILD = $(shell (uname -m) 2>/dev/null || echo unknown)-pc-linux-gnu
 
+# A macro to make testing gcc features easier
+check-gcc-flag = $(shell \
+	if $(CC) $(strip $(1)) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
+	then echo "$(strip $(1))"; else echo "$(strip $(2))"; fi)
+
+check-gcc-nowarn = $(shell \
+	if $(CC) -W$(strip $(1)) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
+	then echo "-Wno-$(strip $(1))"; else echo "$(strip $(2))"; fi)
+
+# We could include a lot more here, but for now, just the libraries
 UCLINUX_COMMON_LIB = 0
 
 ifdef UCLINUX_BUILD_LIB

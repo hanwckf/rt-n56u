@@ -566,6 +566,12 @@ ifneq ($(CONFIG_FRAME_WARN),0)
 KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
 endif
 
+# fix ~10% performance regression in gcc >= 4.8.x
+KBUILD_CFLAGS += $(call cc-option,-fno-tree-slsr)
+
+# disable new loop optimization mode in gcc >= 4.8.x (fix loop regressions)
+#KBUILD_CFLAGS += $(call cc-option,-fno-aggressive-loop-optimizations)
+
 # Force gcc to behave correct even for buggy distributions
 ifndef CONFIG_CC_STACKPROTECTOR
 KBUILD_CFLAGS += $(call cc-option, -fno-stack-protector)

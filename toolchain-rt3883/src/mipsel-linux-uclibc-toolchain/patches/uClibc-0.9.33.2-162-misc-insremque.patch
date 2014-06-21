@@ -14,7 +14,7 @@ Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
 diff --git a/libc/misc/search/insremque.c b/libc/misc/search/insremque.c
 --- a/libc/misc/search/insremque.c
 +++ b/libc/misc/search/insremque.c
-@@ -26,12 +26,20 @@
+@@ -27,12 +27,20 @@
  void
  insque (void *elem, void *prev)
  {

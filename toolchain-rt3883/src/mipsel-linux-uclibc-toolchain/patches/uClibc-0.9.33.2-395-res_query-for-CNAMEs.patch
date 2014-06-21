@@ -20,7 +20,7 @@ Signed-off-by: Natanael Copa <ncopa@alpinelinux.org>
 diff --git a/libc/inet/resolv.c b/libc/inet/resolv.c
 --- a/libc/inet/resolv.c
 +++ b/libc/inet/resolv.c
-@@ -3740,11 +3740,9 @@ int res_query(const char *dname, int class, int type,
+@@ -3786,11 +3786,9 @@ int res_query(const char *dname, int class, int type,
  
  	free(a.dotted);
  

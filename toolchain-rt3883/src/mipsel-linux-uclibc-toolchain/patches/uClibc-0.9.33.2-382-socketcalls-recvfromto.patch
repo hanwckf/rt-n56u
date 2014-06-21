@@ -12,7 +12,7 @@ Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
 diff --git a/libc/inet/socketcalls.c b/libc/inet/socketcalls.c
 --- a/libc/inet/socketcalls.c
 +++ b/libc/inet/socketcalls.c
-@@ -267,6 +267,11 @@ ssize_t __libc_recv(int sockfd, __ptr_t buffer, size_t len, int flags)
+@@ -269,6 +269,11 @@ ssize_t __libc_recv(int sockfd, __ptr_t buffer, size_t len, int flags)
  	return result;
  #endif
  }
@@ -24,7 +24,7 @@ diff --git a/libc/inet/socketcalls.c b/libc/inet/socketcalls.c
  #elif defined(__NR_socketcall)
  /* recv, recvfrom added by bir7@leland.stanford.edu */
  ssize_t __libc_recv(int sockfd, __ptr_t buffer, size_t len, int flags)
-@@ -288,11 +293,6 @@ ssize_t __libc_recv(int sockfd, __ptr_t buffer, size_t len, int flags)
+@@ -290,11 +295,6 @@ ssize_t __libc_recv(int sockfd, __ptr_t buffer, size_t len, int flags)
  	return result;
  #endif
  }
@@ -36,7 +36,7 @@ diff --git a/libc/inet/socketcalls.c b/libc/inet/socketcalls.c
  #endif
  weak_alias(__libc_recv,recv)
  libc_hidden_weak(recv)
-@@ -407,6 +407,11 @@ ssize_t __libc_send(int sockfd, const void *buffer, size_t len, int flags)
+@@ -409,6 +409,11 @@ ssize_t __libc_send(int sockfd, const void *buffer, size_t len, int flags)
  	return result;
  #endif
  }
@@ -48,7 +48,7 @@ diff --git a/libc/inet/socketcalls.c b/libc/inet/socketcalls.c
  #elif defined(__NR_socketcall)
  /* send, sendto added by bir7@leland.stanford.edu */
  ssize_t __libc_send(int sockfd, const void *buffer, size_t len, int flags)
-@@ -429,11 +434,6 @@ ssize_t __libc_send(int sockfd, const void *buffer, size_t len, int flags)
+@@ -431,11 +436,6 @@ ssize_t __libc_send(int sockfd, const void *buffer, size_t len, int flags)
  #endif
  }
  

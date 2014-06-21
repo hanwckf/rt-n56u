@@ -19,7 +19,7 @@ Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
 diff --git a/libc/inet/resolv.c b/libc/inet/resolv.c
 --- a/libc/inet/resolv.c
 +++ b/libc/inet/resolv.c
-@@ -2170,6 +2170,7 @@ int gethostbyname_r(const char *name,
+@@ -2390,6 +2390,7 @@ int gethostbyname_r(const char *name,
  	}
  
  	*h_errnop = HOST_NOT_FOUND;

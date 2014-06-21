@@ -29,7 +29,7 @@ diff -uBp a/include/fcntl.h b/include/fcntl.h
 diff -urNBp uClibc-0.9.32.orig/libc/sysdeps/linux/common/Makefile.in uClibc-0.9.32/libc/sysdeps/linux/common/Makefile.in
 --- uClibc-0.9.32.orig/libc/sysdeps/linux/common/Makefile.in	2011-10-02 09:55:25.000000000 +0400
 +++ uClibc-0.9.32/libc/sysdeps/linux/common/Makefile.in	2011-10-02 15:06:05.000000000 +0400
-@@ -46,7 +46,8 @@ CSRC-$(UCLIBC_HAS_REALTIME) += clock_get
+@@ -81,7 +81,8 @@ CSRC-$(UCLIBC_HAS_REALTIME) += clock_get
  	sched_get_priority_max.c sched_get_priority_min.c sched_getscheduler.c \
  	sched_rr_get_interval.c sched_setparam.c sched_setscheduler.c sigqueue.c
  # clock_getcpuclockid|clock_nanosleep|mq_timedreceive|mq_timedsend|posix_fadvise|posix_fallocate|posix_madvise|posix_memalign|posix_mem_offset|posix_spawnattr_destroy|posix_spawnattr_init|posix_spawnattr_getflags|posix_spawnattr_setflags|posix_spawnattr_getpgroup|posix_spawnattr_setpgroup|posix_spawnattr_getschedparam|posix_spawnattr_setschedparam|posix_spawnattr_getschedpolicy|posix_spawnattr_setschedpolicy|posix_spawnattr_getsigdefault|posix_spawnattr_setsigdefault|posix_spawnattr_getsigmask|posix_spawnattr_setsigmask|posix_spawnattr_init|posix_spawnattr_setflags|posix_spawnattr_setpgroup|posix_spawnattr_setschedparam|posix_spawnattr_setschedpolicy|posix_spawnattr_setsigdefault|posix_spawnattr_setsigmask|posix_spawn_file_actions_addclose|posix_spawn_file_actions_addopen|posix_spawn_file_actions_adddup2|posix_spawn_file_actions_addopen|posix_spawn_file_actions_destroy|posix_spawn_file_actions_init|posix_spawn_file_actions_init|posix_spawn|posix_spawnp|posix_spawnp|posix_typed_mem_get_info|pthread_mutex_timedlock|sem_timedwait

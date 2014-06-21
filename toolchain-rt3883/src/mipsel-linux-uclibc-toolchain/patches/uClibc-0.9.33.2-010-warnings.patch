@@ -1,0 +1,14 @@
+--- a/Rules.mak	2014-06-21 01:59:19.914438988 +0800
++++ b/Rules.mak	2014-06-21 19:47:56.000000000 +0800
+@@ -606,6 +609,11 @@ WARNING_FLAGS += $(WARNING_FLAGS-gcc-$(G
+ $(foreach w,$(WARNING_FLAGS),$(eval $(call check-gcc-var,$(w))))
+ XWARNINGS = $(call qstrip,$(WARNINGS)) $(foreach w,$(WARNING_FLAGS),$(CFLAG_$(w)))
+ 
++$(eval $(call check-gcc-var,-Wunused-but-set-variable))
++ifneq ($(CFLAG_-Wunused-but-set-variable),)
++XWARNINGS += -Wno-unused-but-set-variable
++endif
++
+ CPU_CFLAGS=$(call qstrip,$(CPU_CFLAGS-y))
+ 
+ # Save the tested flag in a single variable and force it to be

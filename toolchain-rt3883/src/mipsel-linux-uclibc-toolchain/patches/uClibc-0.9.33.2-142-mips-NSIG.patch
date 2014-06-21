@@ -12,7 +12,7 @@ Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
 diff --git a/libc/sysdeps/linux/mips/bits/signum.h b/libc/sysdeps/linux/mips/bits/signum.h
 --- a/libc/sysdeps/linux/mips/bits/signum.h
 +++ b/libc/sysdeps/linux/mips/bits/signum.h
-@@ -53,7 +53,20 @@
+@@ -54,7 +54,20 @@
  #define SIGXCPU		30	/* CPU limit exceeded (4.2 BSD).  */
  #define SIGXFSZ		31	/* File size limit exceeded (4.2 BSD).  */
  

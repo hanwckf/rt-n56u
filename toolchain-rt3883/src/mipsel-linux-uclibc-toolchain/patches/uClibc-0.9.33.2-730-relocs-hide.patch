@@ -9,7 +9,7 @@ hide relocations
 diff --git a/include/pwd.h b/include/pwd.h
 --- a/include/pwd.h
 +++ b/include/pwd.h
-@@ -114,6 +114,7 @@ extern struct passwd *getpwuid (__uid_t __uid);
+@@ -115,6 +115,7 @@ extern struct passwd *getpwuid (__uid_t __uid);
     This function is a possible cancellation point and therefore not
     marked with __THROW.  */
  extern struct passwd *getpwnam (__const char *__name);

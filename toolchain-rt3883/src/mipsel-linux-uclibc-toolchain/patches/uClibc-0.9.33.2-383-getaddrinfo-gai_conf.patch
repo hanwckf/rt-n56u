@@ -147,7 +147,7 @@ diff --git a/libc/inet/getaddrinfo.c b/libc/inet/getaddrinfo.c
  void
  freeaddrinfo(struct addrinfo *ai)
  {
-@@ -843,6 +911,7 @@ getaddrinfo(const char *name, const char
+@@ -836,6 +904,7 @@ getaddrinfo(const char *name, const char
  	} else
  		pservice = NULL;
  
@@ -158,7 +158,7 @@ diff --git a/libc/inet/getaddrinfo.c b/libc/inet/getaddrinfo.c
 diff --git a/libc/inet/resolv.c b/libc/inet/resolv.c
 --- a/libc/inet/resolv.c
 +++ b/libc/inet/resolv.c
-@@ -936,7 +936,8 @@ const struct sockaddr_in6 __local_namese
+@@ -929,7 +929,8 @@ const struct sockaddr_in6 __local_namese
  #endif
  
  /* Helpers. Both stop on EOL, if it's '\n', it is converted to NUL first */
@@ -168,7 +168,7 @@ diff --git a/libc/inet/resolv.c b/libc/inet/resolv.c
  {
  	while (*p != '\0' && !isspace(*p)) {
  		if (*p == '\n') {
-@@ -947,7 +948,8 @@ static char *skip_nospace(char *p)
+@@ -940,7 +941,8 @@ static char *skip_nospace(char *p)
  	}
  	return p;
  }

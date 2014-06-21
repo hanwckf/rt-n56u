@@ -1,7 +1,7 @@
 diff -urbpB a/include/string.h b/include/string.h
 --- a/include/string.h	2006-11-30 00:12:13.000000000 +0300
 +++ b/include/string.h	2009-01-13 13:09:23.000000000 +0300
-@@ -230,7 +230,9 @@ extern void *memmem (__const void *__hay
+@@ -259,7 +259,9 @@ extern void *memmem (__const void *__hay
  
  /* Copy N bytes of SRC to DEST, return pointer to bytes after the
     last written byte.  */
@@ -15,7 +15,7 @@ diff -urbpB a/include/string.h b/include/string.h
 diff -urbpB a/libc/string/generic/mempcpy.c b/libc/string/generic/mempcpy.c
 --- a/libc/string/generic/mempcpy.c	2006-03-22 18:49:22.000000000 +0300
 +++ b/libc/string/generic/mempcpy.c	2009-01-13 13:04:37.000000000 +0300
-@@ -17,4 +17,5 @@ void *mempcpy (void *dstpp, const void *
+@@ -16,4 +16,5 @@ void *mempcpy (void *dstpp, const void *
    return (void *)(((char *)dstpp) + len);
  }
  libc_hidden_weak(mempcpy)

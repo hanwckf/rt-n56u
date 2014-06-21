@@ -25,7 +25,7 @@ diff --git a/libc/inet/resolv.c b/libc/inet/resolv.c
 index 47bab75..d935b76 100644
 --- a/libc/inet/resolv.c
 +++ b/libc/inet/resolv.c
-@@ -2193,12 +2193,13 @@ int gethostbyname2_r(const char *name,
+@@ -2216,12 +2216,13 @@ int gethostbyname2_r(const char *name,
  		? gethostbyname_r(name, result_buf, buf, buflen, result, h_errnop)
  		: HOST_NOT_FOUND;
  #else
@@ -41,7 +41,7 @@ index 47bab75..d935b76 100644
  	int wrong_af = 0;
  
  	if (family == AF_INET)
-@@ -2213,10 +2214,9 @@ int gethostbyname2_r(const char *name,
+@@ -2236,10 +2237,9 @@ int gethostbyname2_r(const char *name,
  
  	/* do /etc/hosts first */
  	{
@@ -55,7 +55,7 @@ index 47bab75..d935b76 100644
  				buf, buflen, result, h_errnop);
  		if (i == NETDB_SUCCESS) {
  			__set_errno(old_errno);
-@@ -2237,42 +2237,58 @@ int gethostbyname2_r(const char *name,
+@@ -2260,42 +2260,58 @@ int gethostbyname2_r(const char *name,
  		}
  		__set_errno(old_errno);
  	}
@@ -136,7 +136,7 @@ index 47bab75..d935b76 100644
  	}
  
  	/* what if /etc/hosts has it but it's not IPv6?
-@@ -2284,51 +2300,79 @@ int gethostbyname2_r(const char *name,
+@@ -2307,51 +2323,79 @@ int gethostbyname2_r(const char *name,
  	}
  
  	/* talk to DNS servers */

@@ -257,6 +257,9 @@ OPTIMIZATION += $(CFLAG_-fno-tree-dominator-opts)
 # 0.1%
 $(eval $(call check-gcc-var,-fno-strength-reduce))
 OPTIMIZATION += $(CFLAG_-fno-strength-reduce)
+# fix ~10% performance regression at gcc 4.8.x
+$(eval $(call check-gcc-var,-fno-tree-slsr))
+OPTIMIZATION += $(CFLAG_-fno-tree-slsr)
 endif
 
 
@@ -605,6 +608,11 @@ endif
 WARNING_FLAGS += $(WARNING_FLAGS-gcc-$(GCC_MAJOR_VER))
 $(foreach w,$(WARNING_FLAGS),$(eval $(call check-gcc-var,$(w))))
 XWARNINGS = $(call qstrip,$(WARNINGS)) $(foreach w,$(WARNING_FLAGS),$(CFLAG_$(w)))
+
+$(eval $(call check-gcc-var,-Wunused-but-set-variable))
+ifneq ($(CFLAG_-Wunused-but-set-variable),)
+XWARNINGS += -Wno-unused-but-set-variable
+endif
 
 CPU_CFLAGS=$(call qstrip,$(CPU_CFLAGS-y))
 

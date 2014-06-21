@@ -1,6 +1,6 @@
 --- uClibc-0.9.30.orig/include/sys/cdefs.h	2008-01-06 03:04:02.000000000 +0300
 +++ uClibc/include/sys/cdefs.h	2010-02-21 18:46:31.000000000 +0300
-@@ -226,6 +226,12 @@
+@@ -218,6 +218,12 @@
  # define __attribute_pure__ /* Ignore */
  #endif
  

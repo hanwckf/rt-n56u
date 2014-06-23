@@ -144,7 +144,7 @@ try_detect_internet(void)
 	if (strlen(login_timestamp) < 1)
 		return;
 
-	if (!has_wan_ip(0) || !has_wan_gateway())
+	if (!has_wan_ip4(0) || !has_wan_gw4())
 	{
 #ifdef DEBUG
 		dbg("[di] no WAN IP, or no default route!\n");

@@ -74,11 +74,18 @@ set_wan_unit_param(int unit, const char* param_name)
 }
 
 static void
-control_wan_led_isp_state(int is_show_led)
+control_wan_led_isp_state(int is_wan_up, int is_modem_unit)
 {
 #if defined (BOARD_GPIO_LED_WAN)
-	if (nvram_get_int("front_led_wan") == 2)
-		LED_CONTROL(BOARD_GPIO_LED_WAN, (is_show_led) ? LED_ON : LED_OFF);
+	if (nvram_get_int("front_led_wan") == 2) {
+		int has_link = 0;
+		if (is_wan_up) {
+			has_link = 1;
+			if (!get_wan_wisp_active(&has_link) && !is_modem_unit)
+				has_link = get_wan_ether_link_cached();
+		}
+		LED_CONTROL(BOARD_GPIO_LED_WAN, (is_wan_up && has_link) ? LED_ON : LED_OFF);
+	}
 #endif
 }
 
@@ -302,13 +309,14 @@ config_vinet_wan(void)
 static void
 config_apcli_wisp(void)
 {
+	int unit = 0;
 	char *man_ifname;
 	char *wisp_ifname = get_apcli_wisp_ifname();
 
 	if (!wisp_ifname)
 		return;
 
-	man_ifname = get_man_ifname(0);
+	man_ifname = get_man_ifname(unit);
 #if defined (USE_SINGLE_MAC)
 	if (strlen(man_ifname) > 0 && !is_man_wisp(man_ifname))
 #else
@@ -764,7 +772,7 @@ stop_wan_ppp(void)
 	clear_wan_state();
 	notify_detect_internet();
 
-	control_wan_led_isp_state(0);
+	control_wan_led_isp_state(0, 0);
 }
 
 void
@@ -843,7 +851,7 @@ stop_wan(void)
 	flush_conntrack_caches();
 	notify_detect_internet();
 
-	control_wan_led_isp_state(0);
+	control_wan_led_isp_state(0, 0);
 }
 
 static int
@@ -1052,8 +1060,8 @@ wan_up(char *wan_ifname, int unit)
 			eval("detect_wan");
 	}
 
-	if (has_wan_gateway())
-		control_wan_led_isp_state(1);
+	if (wan_gate)
+		control_wan_led_isp_state(1, modem_unit_id);
 
 	/* call custom user script */
 	if (check_if_file_exist(script_postw))
@@ -1113,7 +1121,7 @@ wan_down(char *wan_ifname, int unit)
 	/* flush conntrack caches */
 	flush_conntrack_caches();
 
-	control_wan_led_isp_state(0);
+	control_wan_led_isp_state(0, 0);
 
 	if (check_if_file_exist(script_postw))
 		doSystem("%s %s %s", script_postw, "down", wan_ifname);
@@ -1221,7 +1229,7 @@ auto_wan_reconnect(void)
 }
 
 void
-notify_on_wan_link_restored(void)
+notify_on_wan_ether_link_restored(void)
 {
 	int unit = 0;
 	int wan_proto = get_wan_proto(unit);
@@ -1232,7 +1240,7 @@ notify_on_wan_link_restored(void)
 	if (isUsbNetIf(get_wan_unit_value(unit, "ifname_t")))
 		return;
 
-	if (get_apcli_wisp_ifname())
+	if (get_wan_wisp_active(NULL))
 		return;
 
 	logmessage(LOGNAME, "force WAN DHCP client renew...");
@@ -1256,7 +1264,7 @@ update_resolvconf(int is_first_run, int do_not_notify)
 	lock = file_lock("resolv");
 
 	i_pdns = nvram_get_int("vpnc_pdns");
-	dns_static = is_dns_static();
+	dns_static = get_wan_dns_static();
 
 	fp = fopen((is_first_run) ? resolv_conf : resolv_temp, "w+");
 	if (fp) {
@@ -1511,7 +1519,7 @@ select_usb_modem_to_wan(void)
 		} else if (modem_prio > 1) {
 			if (!get_apcli_wisp_ifname()) {
 				if (modem_prio == 2) {
-					int has_link = get_ethernet_wan_phy_link(0);
+					int has_link = get_wan_ether_link_direct(0);
 					if (has_link < 0)
 						has_link = 0;
 					
@@ -1527,7 +1535,7 @@ select_usb_modem_to_wan(void)
 }
 
 int
-is_dns_static(void)
+get_wan_dns_static(void)
 {
 	int unit = 0;
 
@@ -1541,6 +1549,22 @@ is_dns_static(void)
 		return 1;
 
 	return 0;
+}
+
+int
+get_wan_wisp_active(int *p_has_link)
+{
+	int unit = 0;
+	char *man_ifname;
+
+	man_ifname = get_man_ifname(unit);
+	if (!is_man_wisp(man_ifname))
+		return 0;
+
+	if (p_has_link)
+		*p_has_link = get_apcli_connected(man_ifname);
+
+	return 1;
 }
 
 void
@@ -1576,7 +1600,7 @@ get_wan_ifname(char wan_ifname[16])
 }
 
 in_addr_t
-get_wan_ipaddr(int only_broadband_wan)
+get_wan_ip4(int only_broadband_wan)
 {
 	int unit = 0;
 	char *ifname, *ifname_temp;
@@ -1584,7 +1608,7 @@ get_wan_ipaddr(int only_broadband_wan)
 	if (get_ap_mode())
 		return INADDR_ANY;
 
-	ifname = get_man_ifname(0);
+	ifname = get_man_ifname(unit);
 	ifname_temp = get_wan_unit_value(unit, "ifname_t");
 
 	if (!only_broadband_wan && get_usb_modem_wan(unit)) {
@@ -1605,16 +1629,16 @@ get_wan_ipaddr(int only_broadband_wan)
 }
 
 int
-has_wan_ip(int only_broadband_wan)
+has_wan_ip4(int only_broadband_wan)
 {
-	if (get_wan_ipaddr(only_broadband_wan) != INADDR_ANY)
+	if (get_wan_ip4(only_broadband_wan) != INADDR_ANY)
 		return 1;
 
 	return 0;
 }
 
 int
-has_wan_gateway(void)
+has_wan_gw4(void)
 {
 	int unit = 0;
 

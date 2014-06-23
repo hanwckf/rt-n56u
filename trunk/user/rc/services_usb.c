@@ -1564,7 +1564,7 @@ try_start_usb_modem_to_wan(void)
 			return;
 		
 		if (modem_prio == 2) {
-			int has_link = get_ethernet_wan_phy_link(0);
+			int has_link = get_wan_ether_link_direct(0);
 			if (has_link < 0)
 				has_link = 0;
 			

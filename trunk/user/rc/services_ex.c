@@ -724,7 +724,7 @@ manual_ddns_hostname_check(void)
 	if (get_ap_mode())
 		return;
 
-	if (!has_wan_ip(0) || !has_wan_gateway()) {
+	if (!has_wan_ip4(0) || !has_wan_gw4()) {
 		nvram_set_temp(nvram_key, "connect_fail");
 		return;
 	}

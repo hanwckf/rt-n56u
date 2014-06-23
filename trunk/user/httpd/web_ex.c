@@ -2050,7 +2050,7 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 			
 			etherlink[0] = 0; // hide ethernet link
 		} else {
-			if (!get_wan_phy_link()) {
+			if (!get_wan_ether_link_cached()) {
 				phy_failed = 1; // No port link
 			}
 		}

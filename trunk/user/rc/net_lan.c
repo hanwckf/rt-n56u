@@ -37,22 +37,22 @@
 
 static char udhcpc_lan_state[16] = {0};
 
-in_addr_t get_lan_ipaddr(void)
+in_addr_t get_lan_ip4(void)
 {
 	return get_interface_addr4(IFNAME_BR);
 }
 
 int
-has_lan_ip(void)
+has_lan_ip4(void)
 {
-	if (get_lan_ipaddr() != INADDR_ANY)
+	if (get_lan_ip4() != INADDR_ANY)
 		return 1;
 
 	return 0;
 }
 
 int
-has_lan_gateway(void)
+has_lan_gw4(void)
 {
 	if (is_valid_ipv4(nvram_safe_get("lan_gateway_t")))
 		return 1;

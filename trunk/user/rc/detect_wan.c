@@ -67,12 +67,12 @@ chk_udhcpc(int ap_mode)
 	{
 		if (!ap_mode)
 		{
-			ip = get_wan_ipaddr(1);
+			ip = get_wan_ip4(1);
 			gateway_str = get_wan_unit_value(0, "gateway");
 		}
 		else
 		{
-			ip = get_lan_ipaddr();
+			ip = get_lan_ip4();
 			gateway_str = nvram_safe_get("lan_gateway_t");
 		}
 		
@@ -106,13 +106,13 @@ arpping_gateway(int ap_mode)
 
 	if (!ap_mode)
 	{
-		ip = get_wan_ipaddr(1);
+		ip = get_wan_ip4(1);
 		gateway_ip = inet_addr_safe(get_wan_unit_value(0, "gateway"));
 		snprintf(wanmac, sizeof(wanmac), "%s", get_wan_unit_value(0, "hwaddr"));	// WAN MAC address
 	}
 	else
 	{
-		ip = get_lan_ipaddr();
+		ip = get_lan_ip4();
 		gateway_ip = inet_addr_safe(nvram_safe_get("lan_gateway_t"));
 		snprintf(wanmac, sizeof(wanmac), "%s", nvram_safe_get("lan_hwaddr"));	// br0 MAC address
 	}
@@ -233,7 +233,7 @@ poll_gateway(void)
 		
 		while (count < MAX_ARP_RETRY)
 		{
-			if (!ap_mode && !get_wan_phy_link())
+			if (!ap_mode && !get_wan_ether_link_cached())
 			{
 				count++;
 				sleep(2);
@@ -251,7 +251,7 @@ poll_gateway(void)
 			}
 		}
 		
-		if ((count >= MAX_ARP_RETRY) && (ap_mode || get_wan_phy_link()))
+		if ((count >= MAX_ARP_RETRY) && (ap_mode || get_wan_ether_link_cached()))
 		{
 			chk_udhcpc(ap_mode);
 		}

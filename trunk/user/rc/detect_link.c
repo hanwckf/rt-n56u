@@ -44,21 +44,23 @@ static int dl_status_wan = 0;
 static int dl_status_wan_old = 0;
 static int dl_status_lan = 0;
 static int dl_status_lan_old = 0;
+static int dl_status_wisp = 0;
+static int dl_status_wisp_old = 0;
 #if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
 static int dl_status_usb = 0;
 static int dl_status_usb_old = 0;
 #endif
-static int is_ap_mode = 0;
+static int dl_is_ap_mode = 0;
 
-static struct itimerval itv;
+static struct itimerval dl_itv;
 
 static void
 alarmtimer(unsigned long sec, unsigned long usec)
 {
-	itv.it_value.tv_sec  = sec;
-	itv.it_value.tv_usec = usec;
-	itv.it_interval = itv.it_value;
-	setitimer(ITIMER_REAL, &itv, NULL);
+	dl_itv.it_value.tv_sec  = sec;
+	dl_itv.it_value.tv_usec = usec;
+	dl_itv.it_interval = dl_itv.it_value;
+	setitimer(ITIMER_REAL, &dl_itv, NULL);
 }
 
 void
@@ -89,7 +91,7 @@ detect_link_update_leds(void)
 }
 
 int
-get_ethernet_wan_phy_link(int is_ap_mode)
+get_wan_ether_link_direct(int is_ap_mode)
 {
 	int ret = 0, wan_src_phy = 0;
 	unsigned int phy_link = 0;
@@ -135,6 +137,12 @@ handle_link_wan(int is_first_call)
 		front_led_x = nvram_get_int("front_led_wan");
 		if (front_led_x == 1)
 			LED_CONTROL(BOARD_GPIO_LED_WAN, (dl_status_wan) ? LED_ON : LED_OFF);
+		else if (front_led_x == 2) {
+			if (!get_wan_wisp_active(NULL) && !get_usb_modem_wan(0)) {
+				int dl_state = (dl_status_wan && has_wan_gw4() && has_wan_ip4(1)) ? 1 : 0;
+				LED_CONTROL(BOARD_GPIO_LED_WAN, (dl_state) ? LED_ON : LED_OFF);
+			}
+		}
 #endif
 #if defined (BOARD_GPIO_LED_LAN)
 		front_led_x = nvram_get_int("front_led_lan");
@@ -171,14 +179,14 @@ handle_link_wan(int is_first_call)
 		dl_counter_dhcpc_renew = 0;
 		
 		if (dl_status_wan)
-			notify_on_wan_link_restored();
+			notify_on_wan_ether_link_restored();
 	}
 
 #if (BOARD_NUM_USB_PORTS > 0)
 	if ((dl_counter_modem_check > 0) && (dl_counter_total >= dl_counter_modem_check)) {
 		dl_counter_modem_check = 0;
 		
-		notify_modem_on_wan_link_changed(dl_status_wan);
+		notify_modem_on_wan_ether_link_changed(dl_status_wan);
 	}
 #endif
 }
@@ -197,6 +205,24 @@ handle_link_lan(void)
 			LED_CONTROL(BOARD_GPIO_LED_LAN, (dl_status_lan) ? LED_ON : LED_OFF);
 		else if (front_led_lan == 3)
 			LED_CONTROL(BOARD_GPIO_LED_LAN, (dl_status_lan || dl_status_wan) ? LED_ON : LED_OFF);
+#endif
+	}
+}
+
+static void
+handle_link_wisp(void)
+{
+	int front_led_wan;
+
+	if (dl_status_wisp_old != dl_status_wisp) {
+		dl_status_wisp_old = dl_status_wisp;
+		
+#if defined (BOARD_GPIO_LED_WAN)
+		front_led_wan = nvram_get_int("front_led_wan");
+		if (front_led_wan == 2) {
+			int dl_state = (dl_status_wisp && has_wan_gw4() && has_wan_ip4(1)) ? 1 : 0;
+			LED_CONTROL(BOARD_GPIO_LED_WAN, (dl_state) ? LED_ON : LED_OFF);
+		}
 #endif
 	}
 }
@@ -226,6 +252,7 @@ handle_link_usb(void)
 static void
 linkstatus_poll(int is_first_call)
 {
+	int is_ap_mode = dl_is_ap_mode;
 	unsigned int is_link_changed;
 
 	dl_counter_total++;
@@ -235,7 +262,7 @@ linkstatus_poll(int is_first_call)
 	if (is_link_changed || is_first_call) {
 		int phy_link;
 		
-		phy_link = get_ethernet_wan_phy_link(is_ap_mode);
+		phy_link = get_wan_ether_link_direct(is_ap_mode);
 		if (phy_link >= 0)
 			dl_status_wan = phy_link;
 		
@@ -247,8 +274,12 @@ linkstatus_poll(int is_first_call)
 			dl_status_lan |= dl_status_wan;
 	}
 
-	if (!is_ap_mode)
+	if (!is_ap_mode) {
 		handle_link_wan(is_first_call);
+		
+		if (get_wan_wisp_active(&dl_status_wisp))
+			handle_link_wisp();
+	}
 
 	handle_link_lan();
 #if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
@@ -261,12 +292,15 @@ linkstatus_poll(int is_first_call)
 static void
 linkstatus_reset(void)
 {
-	is_ap_mode = get_ap_mode();
+	dl_is_ap_mode = get_ap_mode();
 
 	dl_counter_total = 0;
 	dl_counter_wan_down = 0;
 	dl_counter_dhcpc_renew = 0;
 	dl_counter_modem_check = 0;
+
+	dl_status_wisp = 0;
+	dl_status_wisp_old = 0;
 }
 
 static void
@@ -276,13 +310,23 @@ linkstatus_check_leds(void)
 
 #if defined (BOARD_GPIO_LED_WAN)
 	front_led_x = nvram_get_int("front_led_wan");
-	if (front_led_x < 2) {
-		dl_state = (!is_ap_mode && dl_status_wan) ? 1 : 0;
-		LED_CONTROL(BOARD_GPIO_LED_WAN, (dl_state) ? LED_ON : LED_OFF);
-	} else if (front_led_x == 2) {
-		dl_state = (!is_ap_mode && has_wan_ip(0) && has_wan_gateway()) ? 1 : 0;
-		LED_CONTROL(BOARD_GPIO_LED_WAN, (dl_state) ? LED_ON : LED_OFF);
+	dl_state = 0;
+	if (!dl_is_ap_mode) {
+		if (front_led_x == 1) {
+			dl_state = dl_status_wan;
+		} else if (front_led_x == 2) {
+			if (get_wan_wisp_active(&dl_status_wisp))
+				dl_state = (dl_status_wisp && has_wan_gw4() && has_wan_ip4(1)) ? 1 : 0;
+			else if (!get_usb_modem_wan(0))
+				dl_state = (dl_status_wan  && has_wan_gw4() && has_wan_ip4(1)) ? 1 : 0;
+			else
+				dl_state = (                  has_wan_gw4() && has_wan_ip4(0)) ? 1 : 0;
+		}
+	} else {
+		if (front_led_x == 1)
+			dl_state = dl_status_wan;
 	}
+	LED_CONTROL(BOARD_GPIO_LED_WAN, (dl_state) ? LED_ON : LED_OFF);
 #endif
 #if defined (BOARD_GPIO_LED_LAN)
 	front_led_x = nvram_get_int("front_led_lan");
@@ -292,7 +336,7 @@ linkstatus_check_leds(void)
 	else if (front_led_x == 2)
 		dl_state = dl_status_lan;
 	else if (front_led_x == 3)
-		dl_state |= (dl_status_lan | dl_status_wan);
+		dl_state = (dl_status_wan | dl_status_lan);
 	LED_CONTROL(BOARD_GPIO_LED_LAN, (dl_state) ? LED_ON : LED_OFF);
 #endif
 #if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)

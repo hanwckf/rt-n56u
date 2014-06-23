@@ -164,9 +164,9 @@ void set_pppoe_passthrough(void);
 void disable_all_passthrough(void);
 
 /* net_lan.c */
-in_addr_t get_lan_ipaddr(void);
-int  has_lan_ip(void);
-int  has_lan_gateway(void);
+in_addr_t get_lan_ip4(void);
+int  has_lan_ip4(void);
+int  has_lan_gw4(void);
 int  add_static_lan_routes(char *lan_ifname);
 int  del_static_lan_routes(char *lan_ifname);
 void reset_lan_temp(void);
@@ -209,7 +209,7 @@ void try_wan_reconnect(int try_use_modem);
 void auto_wan_reconnect(void);
 void manual_wan_reconnect(void);
 void manual_wan_disconnect(void);
-void notify_on_wan_link_restored(void);
+void notify_on_wan_ether_link_restored(void);
 void add_dhcp_routes(char *rt, char *rt_rfc, char *rt_ms, char *ifname, int metric);
 void add_dhcp_routes_by_prefix(char *prefix, char *ifname, int metric);
 int  add_static_wan_routes(char *wan_ifname);
@@ -218,12 +218,14 @@ int  add_static_man_routes(char *man_ifname);
 int  del_static_man_routes(char *man_ifname);
 int  update_resolvconf(int is_first_run, int do_not_notify);
 int  update_hosts_router(void);
+int  get_wan_dns_static(void);
+int  get_wan_wisp_active(int *p_has_link);
 void get_wan_ifname(char wan_ifname[16]);
 void update_wan_status(int unit);
-in_addr_t get_wan_ipaddr(int only_broadband_wan);
-int  has_wan_ip(int only_broadband_wan);
-int  has_wan_gateway(void);
-int  is_dns_static(void);
+in_addr_t get_wan_ip4(int only_broadband_wan);
+int  has_wan_ip4(int only_broadband_wan);
+int  has_wan_gw4(void);
+int  has_wan_phy_link(void);
 int udhcpc_main(int argc, char **argv);
 int udhcpc_viptv_main(int argc, char **argv);
 int zcip_main(int argc, char **argv);
@@ -531,6 +533,8 @@ int setPIN(const char *pin);
 int getBootVer(void);
 int getCountryRegion(const char *str);
 int getCountryRegionABand(const char *str);
+int get_apcli_connected(char *ifname);
+
 
 /* watchdog.c */
 int  ntpc_updated_main(int argc, char *argv[]);
@@ -552,7 +556,7 @@ void notify_rstats_time(void);
 
 /* detect_link.c */
 int detect_link_main(int argc, char *argv[]);
-int get_ethernet_wan_phy_link(int is_ap_mode);
+int get_wan_ether_link_direct(int is_ap_mode);
 int start_detect_link(void);
 void stop_detect_link(void);
 void detect_link_reset(void);
@@ -573,7 +577,7 @@ int  get_modem_devnum(void);
 int  connect_ndis(int devnum);
 int  disconnect_ndis(int devnum);
 int  get_modem_ndis_ifname(char ndis_ifname[16], int *devnum_out);
-void notify_modem_on_wan_link_changed(int has_link);
+void notify_modem_on_wan_ether_link_changed(int has_link);
 void safe_remove_usb_modem(void);
 void unload_modem_modules(void);
 void reload_modem_modules(int modem_type, int reload);

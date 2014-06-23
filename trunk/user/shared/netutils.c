@@ -215,7 +215,7 @@ set_usb_modem_dev_wan(int unit, int devnum)
 }
 
 int
-get_wan_phy_link(void)
+get_wan_ether_link_cached(void)
 {
 	return nvram_get_int("link_wan");
 }

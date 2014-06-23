@@ -567,14 +567,14 @@ reload_modem_modules(int modem_type, int reload)
 }
 
 void
-notify_modem_on_wan_link_changed(int has_link)
+notify_modem_on_wan_ether_link_changed(int has_link)
 {
 	int modem_used, link_wan;
 
 	if (nvram_get_int("modem_prio") != 2)
 		return;
 
-	if (get_apcli_wisp_ifname())
+	if (get_wan_wisp_active(NULL))
 		return;
 
 	if (!get_modem_devnum())

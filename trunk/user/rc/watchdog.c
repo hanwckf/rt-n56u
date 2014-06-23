@@ -516,7 +516,7 @@ inet_handler(int is_ap_mode)
 {
 	if (!is_ap_mode)
 	{
-		if (has_wan_ip(0) && has_wan_gateway())
+		if (has_wan_ip4(0) && has_wan_gw4())
 		{
 			/* sync time to ntp server if necessary */
 			ntpc_handler();
@@ -524,7 +524,7 @@ inet_handler(int is_ap_mode)
 	}
 	else
 	{
-		if (has_lan_ip() && has_lan_gateway())
+		if (has_lan_ip4() && has_lan_gw4())
 			ntpc_handler();
 	}
 }

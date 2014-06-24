@@ -621,7 +621,7 @@ static void netlbl_unlhsh_condremove_iface(struct netlbl_unlhsh_iface *iface)
 	if (iface->ifindex > 0)
 		list_del_rcu(&iface->list);
 	else
-		rcu_assign_pointer(netlbl_unlhsh_def, NULL);
+		RCU_INIT_POINTER(netlbl_unlhsh_def, NULL);
 	spin_unlock(&netlbl_unlhsh_lock);
 
 	call_rcu(&iface->rcu, netlbl_unlhsh_free_iface);
@@ -1442,11 +1442,9 @@ int __init netlbl_unlabel_init(u32 size)
 	for (iter = 0; iter < hsh_tbl->size; iter++)
 		INIT_LIST_HEAD(&hsh_tbl->tbl[iter]);
 
-	rcu_read_lock();
 	spin_lock(&netlbl_unlhsh_lock);
 	rcu_assign_pointer(netlbl_unlhsh, hsh_tbl);
 	spin_unlock(&netlbl_unlhsh_lock);
-	rcu_read_unlock();
 
 	register_netdevice_notifier(&netlbl_unlhsh_netdev_notifier);
 

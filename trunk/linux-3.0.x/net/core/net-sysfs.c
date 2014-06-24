@@ -717,13 +717,13 @@ static void rx_queue_release(struct kobject *kobj)
 	struct rps_dev_flow_table *flow_table;
 
 
-	map = rcu_dereference_raw(queue->rps_map);
+	map = rcu_dereference_protected(queue->rps_map, 1);
 	if (map) {
 		RCU_INIT_POINTER(queue->rps_map, NULL);
 		kfree_rcu(map, rcu);
 	}
 
-	flow_table = rcu_dereference_raw(queue->rps_flow_table);
+	flow_table = rcu_dereference_protected(queue->rps_flow_table, 1);
 	if (flow_table) {
 		RCU_INIT_POINTER(queue->rps_flow_table, NULL);
 		call_rcu(&flow_table->rcu, rps_dev_flow_table_release);
@@ -991,11 +991,11 @@ static ssize_t store_xps_map(struct netdev_queue *queue,
 			nonempty = 1;
 	}
 
-	if (nonempty)
+	if (nonempty) {
 		rcu_assign_pointer(dev->xps_maps, new_dev_maps);
-	else {
+	} else {
 		kfree(new_dev_maps);
-		rcu_assign_pointer(dev->xps_maps, NULL);
+		RCU_INIT_POINTER(dev->xps_maps, NULL);
 	}
 
 	if (dev_maps)

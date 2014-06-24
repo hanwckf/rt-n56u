@@ -85,7 +85,7 @@ int nf_unregister_queue_handler(u_int8_t pf, const struct nf_queue_handler *qh)
 		return -EINVAL;
 	}
 
-	rcu_assign_pointer(queue_handler[pf], NULL);
+	RCU_INIT_POINTER(queue_handler[pf], NULL);
 	mutex_unlock(&queue_handler_mutex);
 
 	synchronize_rcu();
@@ -104,7 +104,7 @@ void nf_unregister_queue_handlers(const struct nf_queue_handler *qh)
 				queue_handler[pf],
 				lockdep_is_held(&queue_handler_mutex)
 				) == qh)
-			rcu_assign_pointer(queue_handler[pf], NULL);
+			RCU_INIT_POINTER(queue_handler[pf], NULL);
 	}
 	mutex_unlock(&queue_handler_mutex);
 

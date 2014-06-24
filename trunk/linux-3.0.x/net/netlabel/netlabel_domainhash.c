@@ -520,7 +520,7 @@ int netlbl_domhsh_remove_entry(struct netlbl_dom_map *entry,
 		if (entry != rcu_dereference(netlbl_domhsh_def))
 			list_del_rcu(&entry->list);
 		else
-			rcu_assign_pointer(netlbl_domhsh_def, NULL);
+			RCU_INIT_POINTER(netlbl_domhsh_def, NULL);
 	} else
 		ret_val = -ENOENT;
 	spin_unlock(&netlbl_domhsh_lock);

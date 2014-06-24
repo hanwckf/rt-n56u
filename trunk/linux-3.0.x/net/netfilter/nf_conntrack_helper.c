@@ -131,7 +131,7 @@ int __nf_ct_try_assign_helper(struct nf_conn *ct, struct nf_conn *tmpl,
 		helper = __nf_ct_helper_find(&ct->tuplehash[IP_CT_DIR_REPLY].tuple);
 	if (helper == NULL) {
 		if (help)
-			rcu_assign_pointer(help->helper, NULL);
+			RCU_INIT_POINTER(help->helper, NULL);
 		goto out;
 	}
 
@@ -162,7 +162,7 @@ static inline int unhelp(struct nf_conntrack_tuple_hash *i,
 			lockdep_is_held(&nf_conntrack_lock)
 			) == me) {
 		nf_conntrack_event(IPCT_HELPER, ct);
-		rcu_assign_pointer(help->helper, NULL);
+		RCU_INIT_POINTER(help->helper, NULL);
 	}
 	return 0;
 }

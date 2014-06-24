@@ -112,7 +112,7 @@ void nf_conntrack_unregister_notifier(struct nf_ct_event_notifier *new)
 	notify = rcu_dereference_protected(nf_conntrack_event_cb,
 					   lockdep_is_held(&nf_ct_ecache_mutex));
 	BUG_ON(notify != new);
-	rcu_assign_pointer(nf_conntrack_event_cb, NULL);
+	RCU_INIT_POINTER(nf_conntrack_event_cb, NULL);
 	mutex_unlock(&nf_ct_ecache_mutex);
 }
 EXPORT_SYMBOL_GPL(nf_conntrack_unregister_notifier);
@@ -147,7 +147,7 @@ void nf_ct_expect_unregister_notifier(struct nf_exp_event_notifier *new)
 	notify = rcu_dereference_protected(nf_expect_event_cb,
 					   lockdep_is_held(&nf_ct_ecache_mutex));
 	BUG_ON(notify != new);
-	rcu_assign_pointer(nf_expect_event_cb, NULL);
+	RCU_INIT_POINTER(nf_expect_event_cb, NULL);
 	mutex_unlock(&nf_ct_ecache_mutex);
 }
 EXPORT_SYMBOL_GPL(nf_ct_expect_unregister_notifier);

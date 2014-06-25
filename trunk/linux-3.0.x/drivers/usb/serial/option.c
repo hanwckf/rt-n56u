@@ -496,6 +496,7 @@ static void option_instat_callback(struct urb *urb);
 /* Inovia */
 #define INOVIA_VENDOR_ID			0x20a6
 #define INOVIA_SEW858				0x1105
+#define INOVIA_TEW120				0x1106
 
 /* some devices interfaces need special handling due to a number of reasons */
 enum option_blacklist_reason {
@@ -1738,6 +1739,7 @@ static const struct usb_device_id option_ids[] = {
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x07d1, 0x3e01, 0xff, 0xff, 0xff) }, /* D-Link DWM-152/C1 */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x07d1, 0x3e02, 0xff, 0xff, 0xff) }, /* D-Link DWM-156/C1 */
 	{ USB_DEVICE(INOVIA_VENDOR_ID, INOVIA_SEW858) },
+	{ USB_DEVICE(INOVIA_VENDOR_ID, INOVIA_TEW120) },
 	{ USB_DEVICE(0x22de, 0x6801) },						/* CDMA WeTelecom WM-D200/D300 */
 	{ } /* Terminating entry */
 };

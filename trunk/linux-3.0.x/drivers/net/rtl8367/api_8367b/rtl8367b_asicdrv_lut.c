@@ -9,8 +9,8 @@
  * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER
  * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED.
  *
- * $Revision: 19745 $
- * $Date: 2011-07-18 10:10:37 +0800 (?��?一, 18 七�? 2011) $
+ * $Revision: 29975 $
+ * $Date: 2012-06-15 17:53:20 +0800 (星期五, 15 六月 2012) $
  *
  * Purpose : RTL8367B switch high-level API for RTL8367B
  * Feature : LUT related functions
@@ -389,23 +389,30 @@ void _rtl8367b_fdbStSmi2User( rtl8367b_luttb *pLutSt, rtl8367b_fdbtb *pFdbSmi)
     /*L3 lookup*/
     if(pFdbSmi->smi_ipmul.l3lookup)
     {
+#ifdef _LITTLE_ENDIAN
 		pLutSt->sip            	= pFdbSmi->smi_ipmul.sip0;
 		pLutSt->sip            	= (pLutSt->sip << 8) | pFdbSmi->smi_ipmul.sip1;
 		pLutSt->sip            	= (pLutSt->sip << 8) | pFdbSmi->smi_ipmul.sip2;
 		pLutSt->sip            	= (pLutSt->sip << 8) | pFdbSmi->smi_ipmul.sip3;
 
-#ifdef _LITTLE_ENDIAN
-		pLutSt->dip            	= pFdbSmi->smi_ipmul.dip0;
-#else
-        pLutSt->dip            	= pFdbSmi->smi_ipmul.dip0 | 0xE0;
-#endif
+        pLutSt->dip            	= pFdbSmi->smi_ipmul.dip0;
 		pLutSt->dip            	= (pLutSt->dip << 8) | pFdbSmi->smi_ipmul.dip1;
 		pLutSt->dip            	= (pLutSt->dip << 8) | pFdbSmi->smi_ipmul.dip2;
-#ifdef _LITTLE_ENDIAN
 		pLutSt->dip            	= (pLutSt->dip << 8) | pFdbSmi->smi_ipmul.dip3 | 0xE0;
 #else
-		pLutSt->dip            	= (pLutSt->dip << 8) | pFdbSmi->smi_ipmul.dip3;
+		pLutSt->sip            	= pFdbSmi->smi_ipmul.sip3;
+		pLutSt->sip            	= (pLutSt->sip << 8) | pFdbSmi->smi_ipmul.sip2;
+		pLutSt->sip            	= (pLutSt->sip << 8) | pFdbSmi->smi_ipmul.sip1;
+		pLutSt->sip            	= (pLutSt->sip << 8) | pFdbSmi->smi_ipmul.sip0;
+
+        pLutSt->dip            	= pFdbSmi->smi_ipmul.dip3 | 0xE0;
+		pLutSt->dip            	= (pLutSt->dip << 8) | pFdbSmi->smi_ipmul.dip2;
+		pLutSt->dip            	= (pLutSt->dip << 8) | pFdbSmi->smi_ipmul.dip1;
+		pLutSt->dip            	= (pLutSt->dip << 8) | pFdbSmi->smi_ipmul.dip0;
 #endif
+
+
+
         pLutSt->lut_pri        	= pFdbSmi->smi_ipmul.lut_pri;
         pLutSt->fwd_en         	= pFdbSmi->smi_ipmul.fwd_en;
 
@@ -689,7 +696,7 @@ ret_t rtl8367b_getAsicL2LookupTb(rtk_uint32 method, rtl8367b_luttb *pL2Table)
 
 	retVal = rtl8367b_getAsicRegBit(RTL8367B_TABLE_ACCESS_STATUS_REG, RTL8367B_HIT_STATUS_OFFSET,&regData);
 	if(retVal != RT_ERR_OK)
-        return retVal;
+        	return retVal;
 	pL2Table->lookup_hit = regData;
 	if(!pL2Table->lookup_hit)
 	{
@@ -699,7 +706,7 @@ ret_t rtl8367b_getAsicL2LookupTb(rtk_uint32 method, rtl8367b_luttb *pL2Table)
 	        return retVal;
 
 		pL2Table->address = regData;
-		
+
 		if(pL2Table->address >= 0x800)
 		{
 			retVal = rtl8367b_getAsicReg(RTL8367B_TABLE_ACCESS_RDDATA_BASE + 5 , &regData);
@@ -708,7 +715,7 @@ ret_t rtl8367b_getAsicL2LookupTb(rtk_uint32 method, rtl8367b_luttb *pL2Table)
 			/*valid bit in CAM is invalid*/
 			if(!(regData & 0xFFC0))
 			{
-    	return RT_ERR_L2_ENTRY_NOTFOUND;
+				return RT_ERR_L2_ENTRY_NOTFOUND;
 			}
 
 		}

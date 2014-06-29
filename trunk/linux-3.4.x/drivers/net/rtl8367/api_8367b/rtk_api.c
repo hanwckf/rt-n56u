@@ -9,8 +9,8 @@
  * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER
  * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED.
  *
- * $Revision: 8252 $
- * $Date: 2010-01-29 14:04:02 +0800 (?��?�? 29 一??2010) $
+ * $Revision: 28620 $
+ * $Date: 2012-05-07 13:16:01 +0800 (星期一, 07 五月 2012) $
  *
  * Purpose : RTK switch high-level API for RTL8367/RTL8367B
  * Feature : Here is a list of all functions and variables in this module.
@@ -321,7 +321,7 @@ rtk_uint16 ChipData01[][2]= {
 /*End of ChipData01[][2]*/
 #endif
 
-#if defined(CHIP_RTL8365MB) || defined(RTK_X86_ASICDRV) || defined(RTK_ASICDRV_INIT)
+#if defined(CHIP_RTL8365MB) || defined(RTK_X86_ASICDRV) || defined(RTK_ASICDRV_INIT) || defined(CHIP_AUTO_DETECT)
 rtk_uint16 ChipData10[][2]= {
 /*Code of Func*/
 {0x1B03, 0x0876}, {0x1200, 0x7FC4}, {0x0301, 0x0026}, {0x1722, 0x0E14},
@@ -1932,7 +1932,7 @@ rtk_uint16 ChipData71[][2]= {
 
 #endif
 
-#if defined(CHIP_RTL8305MB) || defined(RTK_X86_ASICDRV) || defined(RTK_ASICDRV_INIT)
+#if defined(CHIP_RTL8305MB) || defined(RTK_X86_ASICDRV) || defined(RTK_ASICDRV_INIT) || defined(CHIP_AUTO_DETECT)
 rtk_uint16 ChipData80[][2]= {
 /*Code of Func*/
 {0x1B03, 0x0876}, {0x1200, 0x7FC4}, {0x0301, 0x0026}, {0x1722, 0x0E14},
@@ -3610,7 +3610,7 @@ rtk_api_ret_t rtk_qos_schedulingQueue_get(rtk_port_t port, rtk_qos_queue_weights
         {
             if ((retVal = rtl8367b_getAsicWFQWeight(port, qid, &qweight)) != RT_ERR_OK)
                 return retVal;
-            pQweights->weights[qid] = qweight + 1;
+            pQweights->weights[qid] = qweight;
         }
     }
     return RT_ERR_OK;
@@ -4335,6 +4335,8 @@ rtk_api_ret_t rtk_trap_unknownMcastPktAction_set(rtk_port_t port, rtk_mcast_type
     switch (type)
     {
         case MCAST_L2:
+            if (MCAST_ACTION_ROUTER_PORT == mcast_action)
+                return RT_ERR_INPUT;
             if ((retVal = rtl8367b_setAsicUnknownL2MulticastBehavior(port, mcast_action)) != RT_ERR_OK)
                 return retVal;
             break;
@@ -7044,6 +7046,100 @@ rtk_api_ret_t rtk_port_phyComboPortMedia_get(rtk_port_t port, rtk_port_media_t *
 #if !defined(_REDUCE_CODE)
 
 /* Function Name:
+ *      rtk_port_rtctEnable_set
+ * Description:
+ *      Enable RTCT test
+ * Input:
+ *      portmask    - Port mask of RTCT enabled port
+ * Output:
+ *      None
+ * Return:
+ *      RT_ERR_OK               - OK
+ *      RT_ERR_FAILED           - Failed
+ *      RT_ERR_SMI              - SMI access error
+ *      RT_ERR_PORT_MASK        - Invalid port mask.
+ * Note:
+ *      The API can enable RTCT Test
+ */
+rtk_api_ret_t rtk_port_rtctEnable_set(rtk_portmask_t portmask)
+{
+    rtk_api_ret_t   retVal;
+
+    if (portmask.bits[0] >= (0x0001 << RTL8367B_PHYNO))
+        return RT_ERR_PORT_MASK;
+
+    if ((retVal = rtl8367b_setAsicPortRTCT(portmask.bits[0]))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_port_rtctResult_get
+ * Description:
+ *      Get the result of RTCT test
+ * Input:
+ *      port        - Port ID
+ * Output:
+ *      pRtctResult - The result of RTCT result
+ * Return:
+ *      RT_ERR_OK                   - OK
+ *      RT_ERR_FAILED               - Failed
+ *      RT_ERR_SMI                  - SMI access error
+ *      RT_ERR_PORT_ID              - Invalid port ID.
+ *      RT_ERR_PHY_RTCT_NOT_FINISH  - Testing does not finish.
+ * Note:
+ *      The API can get RTCT test result.
+ *      RTCT test may takes 4.8 seconds to finish its test at most.
+ *      Thus, if this API return RT_ERR_PHY_RTCT_NOT_FINISH or
+ *      other error code, the result can not be referenced and
+ *      user should call this API again until this API returns
+ *      a RT_ERR_OK.
+ *      The result is stored at pRtctResult->ge_result
+ *      pRtctResult->linkType is unused.
+ *      The unit of channel length is 2.5cm. Ex. 300 means 300 * 2.5 = 750cm = 7.5M
+ */
+rtk_api_ret_t rtk_port_rtctResult_get(rtk_port_t port, rtk_rtctResult_t *pRtctResult)
+{
+    rtk_api_ret_t               retVal;
+    rtl8367b_port_rtct_result_t result;
+
+    if (port > RTL8367B_PHYIDMAX)
+        return RT_ERR_PORT_ID;
+
+    memset(pRtctResult, 0x00, sizeof(rtk_rtctResult_t));
+    if ((retVal = rtl8367b_getAsicPortRTCTResult(port, &result))!=RT_ERR_OK)
+        return retVal;
+
+    pRtctResult->result.ge_result.channelALen = result.channelALen;
+    pRtctResult->result.ge_result.channelBLen = result.channelBLen;
+    pRtctResult->result.ge_result.channelCLen = result.channelCLen;
+    pRtctResult->result.ge_result.channelDLen = result.channelDLen;
+
+    pRtctResult->result.ge_result.channelALinedriver = result.channelALinedriver;
+    pRtctResult->result.ge_result.channelBLinedriver = result.channelBLinedriver;
+    pRtctResult->result.ge_result.channelCLinedriver = result.channelCLinedriver;
+    pRtctResult->result.ge_result.channelDLinedriver = result.channelDLinedriver;
+
+    pRtctResult->result.ge_result.channelAMismatch = result.channelAMismatch;
+    pRtctResult->result.ge_result.channelBMismatch = result.channelBMismatch;
+    pRtctResult->result.ge_result.channelCMismatch = result.channelCMismatch;
+    pRtctResult->result.ge_result.channelDMismatch = result.channelDMismatch;
+
+    pRtctResult->result.ge_result.channelAOpen = result.channelAOpen;
+    pRtctResult->result.ge_result.channelBOpen = result.channelBOpen;
+    pRtctResult->result.ge_result.channelCOpen = result.channelCOpen;
+    pRtctResult->result.ge_result.channelDOpen = result.channelDOpen;
+
+    pRtctResult->result.ge_result.channelAShort = result.channelAShort;
+    pRtctResult->result.ge_result.channelBShort = result.channelBShort;
+    pRtctResult->result.ge_result.channelCShort = result.channelCShort;
+    pRtctResult->result.ge_result.channelDShort = result.channelDShort;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
  *      rtk_leaky_vlan_set
  * Description:
  *      Set VLAN leaky.
@@ -7651,6 +7747,96 @@ rtk_api_ret_t rtk_vlan_get(rtk_vlan_t vid, rtk_portmask_t *pMbrmsk, rtk_portmask
         *pFid = RTK_IVL_MODE_FID;
     else
         *pFid = vlan4K.fid_msti;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_vlan_mbrCfg_set
+ * Description:
+ *      Set a VLAN Member Configuration entry by index.
+ * Input:
+ *      idx     - Index of VLAN Member Configuration.
+ *      pMbrcfg - VLAN member Configuration.
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK           - OK
+ *      RT_ERR_FAILED       - Failed
+ *      RT_ERR_SMI          - SMI access error
+ *      RT_ERR_INPUT 		- Invalid input parameters.
+ *      RT_ERR_VLAN_VID     - Invalid VID parameter.
+ * Note:
+ *     Set a VLAN Member Configuration entry by index.
+ */
+rtk_api_ret_t rtk_vlan_mbrCfg_set(rtk_uint32 idx, rtk_vlan_mbrcfg_t *pMbrcfg)
+{
+    rtk_api_ret_t           retVal;
+
+    /* Error check */
+    if(pMbrcfg == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if(idx > RTL8367B_CVIDXMAX)
+        return RT_ERR_INPUT;
+
+    if(pMbrcfg->evid > RTL8367B_EVIDMAX)
+        return RT_ERR_INPUT;
+
+    if(pMbrcfg->mbr > RTL8367B_PORTMASK)
+        return RT_ERR_PORT_MASK;
+
+    if(pMbrcfg->fid_msti > RTL8367B_FIDMAX)
+        return RT_ERR_L2_FID;
+
+    if(pMbrcfg->envlanpol >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pMbrcfg->meteridx > RTL8367B_METERMAX)
+        return RT_ERR_FILTER_METER_ID;
+
+    if(pMbrcfg->vbpen >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pMbrcfg->vbpri > RTL8367B_PRIMAX)
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    if ((retVal = rtl8367b_setAsicVlanMemberConfig(idx, (rtl8367b_vlanconfiguser *)pMbrcfg)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_vlan_mbrCfg_get
+ * Description:
+ *      Get a VLAN Member Configuration entry by index.
+ * Input:
+ *      idx - Index of VLAN Member Configuration.
+ * Output:
+ *      pMbrcfg - VLAN member Configuration.
+ * Return:
+ *      RT_ERR_OK           - OK
+ *      RT_ERR_FAILED       - Failed
+ *      RT_ERR_SMI          - SMI access error
+ *      RT_ERR_INPUT 		- Invalid input parameters.
+ *      RT_ERR_VLAN_VID     - Invalid VID parameter.
+ * Note:
+ *     Get a VLAN Member Configuration entry by index.
+ */
+rtk_api_ret_t rtk_vlan_mbrCfg_get(rtk_uint32 idx, rtk_vlan_mbrcfg_t *pMbrcfg)
+{
+    rtk_api_ret_t           retVal;
+
+    /* Error check */
+    if(pMbrcfg == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if(idx > RTL8367B_CVIDXMAX)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367b_getAsicVlanMemberConfig(idx, (rtl8367b_vlanconfiguser *)pMbrcfg)) != RT_ERR_OK)
+        return retVal;
 
     return RT_ERR_OK;
 }
@@ -9790,6 +9976,106 @@ rtk_api_ret_t rtk_l2_flushType_set(rtk_l2_flushType_t type, rtk_vlan_t vid, rtk_
 }
 
 /* Function Name:
+ *      rtk_l2_ucastAddr_flush
+ * Description:
+ *      Flush L2 mac address by type in the specified device (both dynamic and static).
+ * Input:
+ *      pConfig - flush configuration
+ * Output:
+ *      None
+ * Return:
+ *      RT_ERR_OK           - OK
+ *      RT_ERR_FAILED       - Failed
+ *      RT_ERR_SMI          - SMI access error
+ *      RT_ERR_PORT_ID      - Invalid port number.
+ *      RT_ERR_VLAN_VID     - Invalid VID parameter.
+ *      RT_ERR_INPUT        - Invalid input parameters.
+ * Note:
+ *      flushByVid          - 1: Flush by VID, 0: Don't flush by VID
+ *      vid                 - VID (0 ~ 4095)
+ *      flushByPort         - 1: Flush by Port, 0: Don't flush by Port
+ *      reserved            - Unused
+ *      port                - Port ID
+ *      flushByMac          - Not Supported
+ *      ucastAddr           - Not Supported
+ *      flushStaticAddr     - 1: Flush both Static and Dynamic entries, 0: Flush only Dynamic entries
+ *      flushAddrOnAllPorts - 1: Flush VID-matched entries at all ports, 0: Flush VID-matched entries per port.
+ */
+rtk_api_ret_t rtk_l2_ucastAddr_flush(rtk_l2_flushCfg_t *pConfig)
+{
+    rtk_api_ret_t   retVal;
+
+    if(pConfig == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if(pConfig->flushByVid >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pConfig->flushByPort >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pConfig->flushByMac >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pConfig->flushStaticAddr >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pConfig->flushAddrOnAllPorts >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pConfig->vid >= RTL8367B_VIDMAX)
+        return RT_ERR_VLAN_VID;
+
+    if(pConfig->port >= RTL8367B_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(pConfig->flushByVid == ENABLED)
+    {
+        if ((retVal = rtl8367b_setAsicLutFlushMode(FLUSHMDOE_VID)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367b_setAsicLutFlushVid(pConfig->vid)) != RT_ERR_OK)
+                return retVal;
+
+        if ((retVal = rtl8367b_setAsicLutFlushType((pConfig->flushStaticAddr == ENABLED) ? FLUSHTYPE_BOTH : FLUSHTYPE_DYNAMIC)) != RT_ERR_OK)
+            return retVal;
+
+        if(pConfig->flushAddrOnAllPorts == ENABLED)
+        {
+            if ((retVal = rtl8367b_setAsicLutForceFlush(RTL8367B_PORTMASK)) != RT_ERR_OK)
+                return retVal;
+        }
+        else if(pConfig->flushByPort == ENABLED)
+        {
+            if ((retVal = rtl8367b_setAsicLutForceFlush(1<<pConfig->port)) != RT_ERR_OK)
+                return retVal;
+        }
+        else
+            return RT_ERR_INPUT;
+    }
+    else if(pConfig->flushByPort == ENABLED)
+    {
+        if ((retVal = rtl8367b_setAsicLutFlushType((pConfig->flushStaticAddr == ENABLED) ? FLUSHTYPE_BOTH : FLUSHTYPE_DYNAMIC)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367b_setAsicLutFlushMode(FLUSHMDOE_PORT)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367b_setAsicLutForceFlush(1<<pConfig->port)) != RT_ERR_OK)
+            return retVal;
+    }
+    else if(pConfig->flushByMac == ENABLED)
+    {
+        /* Should use API "rtk_l2_addr_del" to remove a specified entry*/
+        return RT_ERR_CHIP_NOT_SUPPORTED;
+    }
+    else
+        return RT_ERR_INPUT;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
  *      rtk_l2_flushLinkDownPortAddrEnable_set
  * Description:
  *      Set HW flush linkdown port mac configuration of the specified device.
@@ -10363,7 +10649,11 @@ rtk_api_ret_t rtk_l2_aging_get(rtk_l2_age_time_t *pAging_time)
  *      RT_ERR_FAILED      - Failed
  *      RT_ERR_SMI         - SMI access error
  * Note:
- *      None.
+ *      This API can work with rtk_l2_ipMcastAddrLookupException_add.
+ *      If users set the lookup type to DIP, the group in exception table
+ *      will be lookup by DIP+SIP
+ *      If users set the lookup type to DIP+SIP, the group in exception table
+ *      will be lookup by only DIP
  */
 rtk_api_ret_t rtk_l2_ipMcastAddrLookup_set(rtk_l2_lookup_type_t type)
 {
@@ -10433,6 +10723,95 @@ rtk_api_ret_t rtk_l2_ipMcastAddrLookup_get(rtk_l2_lookup_type_t *pType)
         *pType = LOOKUP_MAC;
 
     return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_l2_ipMcastAddrLookupException_add
+ * Description:
+ *      Add an IP Multicast Exception group
+ * Input:
+ *      ip_addr     - IP address
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK          - OK
+ *      RT_ERR_FAILED      - Failed
+ *      RT_ERR_SMI         - SMI access error
+ *      RT_ERR_TBL_FULL    - Table Full
+ * Note:
+ *      Add an entry to IP Multicast exception table.
+ */
+rtk_api_ret_t rtk_l2_ipMcastAddrLookupException_add(ipaddr_t ip_addr)
+{
+    rtk_uint32      empty_idx = 0xFFFF;
+    rtk_int32       index;
+    ipaddr_t        group_addr;
+    rtk_api_ret_t   retVal;
+
+    if( (ip_addr & 0xF0000000) != 0xE0000000)    /* not in 224.0.0.0 ~ 239.255.255.255 */
+        return RT_ERR_INPUT;
+
+    for(index = RTL8367B_LUT_IPMCGRP_TABLE_MAX; index >= 0; index--)
+    {
+        if ((retVal = rtl8367b_getAsicLutIPMCGroup((rtk_uint32)index, &group_addr))!=RT_ERR_OK)
+            return retVal;
+
+        if(group_addr == ip_addr)
+            return RT_ERR_OK;
+
+        if(group_addr == 0xE0000000) /* Unused */
+            empty_idx = (rtk_uint32)index;
+    }
+
+    if(empty_idx == 0xFFFF)
+        return RT_ERR_TBL_FULL;
+
+    if ((retVal = rtl8367b_setAsicLutIPMCGroup(empty_idx, ip_addr))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_l2_ipMcastAddrLookupException_del
+ * Description:
+ *      Delete an IP Multicast Exception group
+ * Input:
+ *      ip_addr     - IP address
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK          - OK
+ *      RT_ERR_FAILED      - Failed
+ *      RT_ERR_SMI         - SMI access error
+ *      RT_ERR_TBL_FULL    - Table Full
+ * Note:
+ *      Delete an entry to IP Multicast exception table.
+ */
+rtk_api_ret_t rtk_l2_ipMcastAddrLookupException_del(ipaddr_t ip_addr)
+{
+    rtk_uint32      index;
+    ipaddr_t        group_addr;
+    rtk_api_ret_t   retVal;
+
+    if( (ip_addr & 0xF0000000) != 0xE0000000)    /* not in 224.0.0.0 ~ 239.255.255.255 */
+        return RT_ERR_INPUT;
+
+    for(index = 0; index <= RTL8367B_LUT_IPMCGRP_TABLE_MAX; index++)
+    {
+        if ((retVal = rtl8367b_getAsicLutIPMCGroup(index, &group_addr))!=RT_ERR_OK)
+            return retVal;
+
+        if(group_addr == ip_addr)
+        {
+            if ((retVal = rtl8367b_setAsicLutIPMCGroup(index, 0xE0000000))!=RT_ERR_OK)
+                return retVal;
+
+            return RT_ERR_OK;
+        }
+    }
+
+    return RT_ERR_FAILED;
 }
 
 /* Function Name:
@@ -10898,7 +11277,11 @@ rtk_api_ret_t rtk_svlan_memberPortEntry_set(rtk_vlan_t svid, rtk_svlan_memberCfg
 
         if (svid == svlanMemConf.vs_svid)
         {
-            svlanMemConf.vs_svid        = pSvlan_cfg->svid;
+            if(pSvlan_cfg->memberport == 0x00)
+                svlanMemConf.vs_svid    = 0;
+            else
+                svlanMemConf.vs_svid    = pSvlan_cfg->svid;
+
             svlanMemConf.vs_member      = pSvlan_cfg->memberport;
             svlanMemConf.vs_untag       = pSvlan_cfg->untagport;
             svlanMemConf.vs_force_fid   = pSvlan_cfg->fiden;
@@ -10990,6 +11373,120 @@ rtk_api_ret_t rtk_svlan_memberPortEntry_get(rtk_vlan_t svid, rtk_svlan_memberCfg
     }
 
     return RT_ERR_SVLAN_ENTRY_NOT_FOUND;
+
+}
+
+/* Function Name:
+ *      rtk_svlan_memberPortEntry_adv_set
+ * Description:
+ *      Configure system SVLAN member by index
+ * Input:
+ *      idx         - Index (0 ~ 63)
+ *      psvlan_cfg  - SVLAN member configuration
+ * Output:
+ *      None
+ * Return:
+ *      RT_ERR_OK               - OK
+ *      RT_ERR_FAILED           - Failed
+ *      RT_ERR_SMI              - SMI access error
+ *      RT_ERR_INPUT            - Invalid input parameter.
+ *      RT_ERR_SVLAN_VID        - Invalid SVLAN VID parameter.
+ *      RT_ERR_PORT_MASK        - Invalid portmask.
+ *      RT_ERR_SVLAN_TABLE_FULL - SVLAN configuration is full.
+ * Note:
+ *      The API can set system 64 accepted s-tag frame format by index.
+ *      - rtk_svlan_memberCfg_t->svid is SVID of SVLAN member configuration.
+ *      - rtk_svlan_memberCfg_t->memberport is member port mask of SVLAN member configuration.
+ *      - rtk_svlan_memberCfg_t->fid is filtering database of SVLAN member configuration.
+ *      - rtk_svlan_memberCfg_t->priority is priority of SVLAN member configuration.
+ */
+rtk_api_ret_t rtk_svlan_memberPortEntry_adv_set(rtk_uint32 idx, rtk_svlan_memberCfg_t *pSvlan_cfg)
+{
+    rtk_api_ret_t retVal;
+    rtl8367b_svlan_memconf_t svlanMemConf;
+
+    if (idx > RTL8367B_SVIDXMAX)
+        return RT_ERR_SVLAN_ENTRY_INDEX;
+
+    if (pSvlan_cfg->svid>RTL8367B_VIDMAX)
+        return RT_ERR_SVLAN_VID;
+
+    if (pSvlan_cfg->memberport > RTK_MAX_PORT_MASK)
+        return RT_ERR_PORT_MASK;
+
+    if (pSvlan_cfg->untagport > RTK_MAX_PORT_MASK)
+        return RT_ERR_PORT_MASK;
+
+    if (pSvlan_cfg->fiden > ENABLED)
+        return RT_ERR_ENABLE;
+
+    if (pSvlan_cfg->fid > RTL8367B_FIDMAX)
+        return RT_ERR_L2_FID;
+
+    if (pSvlan_cfg->priority > RTL8367B_PRIMAX)
+        return RT_ERR_VLAN_PRIORITY;
+
+    if (pSvlan_cfg->efiden > ENABLED)
+        return RT_ERR_ENABLE;
+
+    if (pSvlan_cfg->efid > RTL8367B_FIDMAX)
+        return RT_ERR_L2_FID;
+
+    memset(&svlanMemConf, 0, sizeof(rtl8367b_svlan_memconf_t));
+    svlanMemConf.vs_svid        = pSvlan_cfg->svid;
+    svlanMemConf.vs_member      = pSvlan_cfg->memberport;
+    svlanMemConf.vs_untag       = pSvlan_cfg->untagport;
+    svlanMemConf.vs_force_fid   = pSvlan_cfg->fiden;
+    svlanMemConf.vs_fid_msti    = pSvlan_cfg->fid;
+    svlanMemConf.vs_priority    = pSvlan_cfg->priority;
+    svlanMemConf.vs_efiden      = pSvlan_cfg->efiden;
+    svlanMemConf.vs_efid        = pSvlan_cfg->efid;
+
+    if ((retVal = rtl8367b_setAsicSvlanMemberConfiguration(idx, &svlanMemConf)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_svlan_memberPortEntry_adv_get
+ * Description:
+ *      Get SVLAN member Configure by index.
+ * Input:
+ *      idx         - Index (0 ~ 63)
+ * Output:
+ *      pSvlan_cfg  - SVLAN member configuration
+ * Return:
+ *      RT_ERR_OK                       - OK
+ *      RT_ERR_FAILED                   - Failed
+ *      RT_ERR_SMI                      - SMI access error
+ *      RT_ERR_SVLAN_ENTRY_NOT_FOUND    - specified svlan entry not found.
+ *      RT_ERR_INPUT                    - Invalid input parameters.
+ * Note:
+ *      The API can get system 64 accepted s-tag frame format. Only 64 SVID S-tag frame will be accpeted
+ *      to receiving from uplink ports. Other SVID S-tag frame or S-untagged frame will be droped.
+ */
+rtk_api_ret_t rtk_svlan_memberPortEntry_adv_get(rtk_uint32 idx, rtk_svlan_memberCfg_t *pSvlan_cfg)
+{
+    rtk_api_ret_t retVal;
+    rtl8367b_svlan_memconf_t svlanMemConf;
+
+    if (idx > RTL8367B_SVIDXMAX)
+        return RT_ERR_SVLAN_ENTRY_INDEX;
+
+    if ((retVal = rtl8367b_getAsicSvlanMemberConfiguration(idx, &svlanMemConf)) != RT_ERR_OK)
+        return retVal;
+
+    pSvlan_cfg->svid        = svlanMemConf.vs_svid;
+    pSvlan_cfg->memberport  = svlanMemConf.vs_member;
+    pSvlan_cfg->untagport   = svlanMemConf.vs_untag;
+    pSvlan_cfg->fiden       = svlanMemConf.vs_force_fid;
+    pSvlan_cfg->fid         = svlanMemConf.vs_fid_msti;
+    pSvlan_cfg->priority    = svlanMemConf.vs_priority;
+    pSvlan_cfg->efiden      = svlanMemConf.vs_efiden;
+    pSvlan_cfg->efid        = svlanMemConf.vs_efid;
+
+    return RT_ERR_OK;
 
 }
 
@@ -13360,6 +13857,11 @@ rtk_api_ret_t rtk_switch_init(void)
     rtk_uint16      i;
     rtk_uint32      data;
     rtk_api_ret_t   retVal;
+    rtk_uint32      phy;
+#if defined(CHIP_AUTO_DETECT)
+    rtk_uint32      polling_time;
+    rtk_uint32      chip_idx = 0;
+#endif
 
     if((retVal = rtl8367b_setAsicReg(0x13C2, 0x0249)) != RT_ERR_OK)
         return retVal;
@@ -13367,7 +13869,94 @@ rtk_api_ret_t rtk_switch_init(void)
     if((retVal = rtl8367b_getAsicReg(0x1301, &data)) != RT_ERR_OK)
         return retVal;
 
-#if defined(RTK_X86_ASICDRV)
+#if defined(CHIP_AUTO_DETECT)
+    if((retVal = rtl8367b_setAsicReg(0x1371, 0x000F)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367b_setAsicReg(0x1370, 0x0002)) != RT_ERR_OK)
+        return retVal;
+
+    polling_time = 0;
+    while(polling_time < 10000)
+    {
+        if((retVal = rtl8367b_getAsicReg(0x1370, &data)) != RT_ERR_OK)
+            return retVal;
+
+        if((data & 0x0004) == 0)
+            break;
+
+        polling_time++;
+    }
+
+    if(polling_time >= 10000)
+        return RT_ERR_BUSYWAIT_TIMEOUT;
+
+    if((retVal = rtl8367b_getAsicReg(0x1373, &data)) != RT_ERR_OK)
+        return retVal;
+
+    chip_idx |= ((data & 0x000F) << 4);
+
+    if((retVal = rtl8367b_setAsicReg(0x1371, 0x000D)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367b_setAsicReg(0x1370, 0x0002)) != RT_ERR_OK)
+        return retVal;
+
+    polling_time = 0;
+    while(polling_time < 10000)
+    {
+        if((retVal = rtl8367b_getAsicReg(0x1370, &data)) != RT_ERR_OK)
+            return retVal;
+
+        if((data & 0x0004) == 0)
+            break;
+
+        polling_time++;
+    }
+
+    if(polling_time >= 10000)
+        return RT_ERR_BUSYWAIT_TIMEOUT;
+
+    if((retVal = rtl8367b_getAsicReg(0x1373, &data)) != RT_ERR_OK)
+        return retVal;
+
+    chip_idx |= (data & 0x000F);
+
+
+    if((chip_idx & 0x00F0) == 0x0000)
+    {
+        /* RTL8365MB & RTL8305MB */
+        if((chip_idx & 0x000F) >> 3)
+        {
+            /* RTL8305MB */
+            init_para = ChipData81;
+            init_size = (sizeof(ChipData81) / ((sizeof(rtk_uint16))*2));
+        }
+        else if((chip_idx & 0x000F) >> 2)
+        {
+            /* RTL8365MB */
+            init_para = ChipData11;
+            init_size = (sizeof(ChipData11) / ((sizeof(rtk_uint16))*2));
+        }
+        else if((chip_idx & 0x000F) >> 1)
+        {
+            /* RTL8305MB */
+            init_para = ChipData81;
+            init_size = (sizeof(ChipData81) / ((sizeof(rtk_uint16))*2));
+        }
+        else if(chip_idx & 0x000F)
+        {
+            /* RTL8365MB */
+            init_para = ChipData11;
+            init_size = (sizeof(ChipData11) / ((sizeof(rtk_uint16))*2));
+        }
+        else
+            return RT_ERR_CHIP_NOT_SUPPORTED;
+    }
+    else
+        return RT_ERR_CHIP_NOT_SUPPORTED;
+
+#elif defined(RTK_X86_ASICDRV)
     if(init_para == ChipData00)
     {
         if(data & 0xF000)
@@ -13596,11 +14185,43 @@ rtk_api_ret_t rtk_switch_init(void)
     if(init_para == NULL)
         return RT_ERR_CHIP_NOT_SUPPORTED;
 
+    /* Analog parameter update. ID:0001 */
+    for(phy = 0; phy <= RTK_PHY_ID_MAX; phy++)
+    {
+        if((retVal = rtl8367b_setAsicPHYReg(phy, RTL8367B_PHY_PAGE_ADDRESS, 0x7)) != RT_ERR_OK)
+            return retVal;
+
+        if((retVal = rtl8367b_setAsicPHYReg(phy, 30, 0x2c)) != RT_ERR_OK)
+            return retVal;
+
+        if((retVal = rtl8367b_setAsicPHYReg(phy, 25, 0x0504)) != RT_ERR_OK)
+            return retVal;
+
+        if((retVal = rtl8367b_setAsicPHYReg(phy, RTL8367B_PHY_PAGE_ADDRESS, 0x0)) != RT_ERR_OK)
+            return retVal;
+    }
+
     for(i = 0; i < init_size; i++)
     {
         if((retVal = _rtk_switch_init_setreg((rtk_uint32)init_para[i][0], (rtk_uint32)init_para[i][1])) != RT_ERR_OK)
             return retVal;
     }
+
+    /* Analog parameter update. ID:0002 */
+    if((retVal = rtl8367b_setAsicPHYReg(1, RTL8367B_PHY_PAGE_ADDRESS, 0x2)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367b_getAsicPHYReg(1, 17, &data)) != RT_ERR_OK)
+        return retVal;
+
+    data |= 0x01E0;
+
+    if((retVal = rtl8367b_setAsicPHYReg(1, 17, data)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367b_setAsicPHYReg(1, RTL8367B_PHY_PAGE_ADDRESS, 0x0)) != RT_ERR_OK)
+        return retVal;
+
 
     if((retVal = rtl8367b_setAsicRegBit(0x18e0, 0, 0)) != RT_ERR_OK)
         return retVal;
@@ -14447,6 +15068,156 @@ rtk_api_ret_t rtk_stat_port_getAll(rtk_port_t port, rtk_stat_port_cntr_t *pPort_
 }
 
 #endif
+
+/* Function Name:
+ *      rtk_stat_logging_counterCfg_set
+ * Description:
+ *      Set the type and mode of Logging Counter
+ * Input:
+ *      idx     - The index of Logging Counter. Should be even number only.(0,2,4,6,8.....30)
+ *      mode    - 32 bits or 64 bits mode
+ *      type    - Packet counter or byte counter
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK           - OK
+ *      RT_ERR_OUT_OF_RANGE - Out of range.
+ *      RT_ERR_FAILED       - Failed
+ *      RT_ERR_SMI          - SMI access error
+ *      RT_ERR_INPUT 		- Invalid input parameters.
+ * Note:
+ *      Set the type and mode of Logging Counter.
+ */
+rtk_api_ret_t rtk_stat_logging_counterCfg_set(rtk_uint32 idx, rtk_logging_counter_mode_t mode, rtk_logging_counter_type_t type)
+{
+    rtk_api_ret_t retVal;
+
+    if(idx > RTL8367B_MIB_MAX_LOG_CNT_IDX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if((idx % 2) == 1)
+        return RT_ERR_INPUT;
+
+    if(mode >= LOGGING_MODE_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(type >= LOGGING_TYPE_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if((retVal = rtl8367b_setAsicMIBsLoggingType((idx / 2), (rtk_uint32)type)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367b_setAsicMIBsLoggingMode((idx / 2), (rtk_uint32)mode)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_stat_logging_counterCfg_get
+ * Description:
+ *      Get the type and mode of Logging Counter
+ * Input:
+ *      idx     - The index of Logging Counter. Should be even number only.(0,2,4,6,8.....30)
+ * Output:
+ *      pMode   - 32 bits or 64 bits mode
+ *      pType   - Packet counter or byte counter
+ * Return:
+ *      RT_ERR_OK           - OK
+ *      RT_ERR_OUT_OF_RANGE - Out of range.
+ *      RT_ERR_FAILED       - Failed
+ *      RT_ERR_NULL_POINTER - NULL Pointer
+ *      RT_ERR_SMI          - SMI access error
+ *      RT_ERR_INPUT 		- Invalid input parameters.
+ * Note:
+ *      Get the type and mode of Logging Counter.
+ */
+rtk_api_ret_t rtk_stat_logging_counterCfg_get(rtk_uint32 idx, rtk_logging_counter_mode_t *pMode, rtk_logging_counter_type_t *pType)
+{
+    rtk_api_ret_t   retVal;
+    rtk_uint32      type, mode;
+
+    if(idx > RTL8367B_MIB_MAX_LOG_CNT_IDX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if((idx % 2) == 1)
+        return RT_ERR_INPUT;
+
+    if(pMode == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if(pType == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if((retVal = rtl8367b_getAsicMIBsLoggingType((idx / 2), &type)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367b_getAsicMIBsLoggingMode((idx / 2), &mode)) != RT_ERR_OK)
+        return retVal;
+
+    *pMode = (rtk_logging_counter_mode_t)mode;
+    *pType = (rtk_logging_counter_type_t)type;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_stat_logging_counter_reset
+ * Description:
+ *      Reset Logging Counter
+ * Input:
+ *      idx     - The index of Logging Counter. (0~31)
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK           - OK
+ *      RT_ERR_OUT_OF_RANGE - Out of range.
+ *      RT_ERR_FAILED       - Failed
+ *      RT_ERR_SMI          - SMI access error
+ * Note:
+ *      Reset Logging Counter.
+ */
+rtk_api_ret_t rtk_stat_logging_counter_reset(rtk_uint32 idx)
+{
+    rtk_api_ret_t   retVal;
+
+    if(idx > RTL8367B_MIB_MAX_LOG_CNT_IDX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if((retVal = rtl8367b_setAsicMIBsResetLoggingCounter(idx)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_stat_logging_counter_get
+ * Description:
+ *      Get Logging Counter
+ * Input:
+ *      idx     - The index of Logging Counter. (0~31)
+ * Output:
+ *      pCnt    - Logging counter value
+ * Return:
+ *      RT_ERR_OK           - OK
+ *      RT_ERR_OUT_OF_RANGE - Out of range.
+ *      RT_ERR_FAILED       - Failed
+ *      RT_ERR_SMI          - SMI access error
+ * Note:
+ *      Get Logging Counter.
+ */
+rtk_api_ret_t rtk_stat_logging_counter_get(rtk_uint32 idx, rtk_uint32 *pCnt)
+{
+    rtk_api_ret_t   retVal;
+
+    if(idx > RTL8367B_MIB_MAX_LOG_CNT_IDX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if((retVal = rtl8367b_getAsicMIBsLogCounter(idx, pCnt)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}
 
 /* Function Name:
  *      rtk_int_polarity_set
@@ -15946,7 +16717,7 @@ rtk_api_ret_t rtk_filter_igrAcl_cfg_add(rtk_filter_id_t filter_id, rtk_filter_cf
                 aclActCtrl |= FILTER_ENACT_CVLAN_MASK;
                 break;
              case FILTER_ENACT_POLICING_1:
-                if(pFilter_action->filterPolicingIdx[1] > RTL8367B_METERMAX)
+                if(pFilter_action->filterPolicingIdx[1] >= (RTL8367B_METERNO * 2))
                     return RT_ERR_INPUT;
 
                 aclAct.cact = FILTER_ENACT_CVLAN_TYPE(actType);
@@ -15990,7 +16761,7 @@ rtk_api_ret_t rtk_filter_igrAcl_cfg_add(rtk_filter_id_t filter_id, rtk_filter_cf
                 aclActCtrl |= FILTER_ENACT_SVLAN_MASK;
 				break;
             case FILTER_ENACT_POLICING_2:
-                if(pFilter_action->filterPolicingIdx[2] > RTL8367B_METERMAX)
+                if(pFilter_action->filterPolicingIdx[2] >= (RTL8367B_METERNO * 2))
                     return RT_ERR_INPUT;
 
                 aclAct.sact = FILTER_ENACT_SVLAN_TYPE(actType);
@@ -15998,7 +16769,7 @@ rtk_api_ret_t rtk_filter_igrAcl_cfg_add(rtk_filter_id_t filter_id, rtk_filter_cf
                 aclActCtrl |= FILTER_ENACT_SVLAN_MASK;
                 break;
             case FILTER_ENACT_POLICING_0:
-                if(pFilter_action->filterPolicingIdx[0] > RTL8367B_METERMAX)
+                if(pFilter_action->filterPolicingIdx[0] >= (RTL8367B_METERNO * 2))
                     return RT_ERR_INPUT;
 
                 aclAct.aclmeteridx = pFilter_action->filterPolicingIdx[0];
@@ -16022,7 +16793,7 @@ rtk_api_ret_t rtk_filter_igrAcl_cfg_add(rtk_filter_id_t filter_id, rtk_filter_cf
                 aclActCtrl |= FILTER_ENACT_PRIORITY_MASK;
                 break;
             case FILTER_ENACT_POLICING_3:
-                if(pFilter_action->filterPriority > RTL8367B_METERMAX)
+                if(pFilter_action->filterPriority >= (RTL8367B_METERNO * 2))
                     return RT_ERR_INPUT;
 
                 aclAct.priact = FILTER_ENACT_PRI_TYPE(actType);
@@ -17090,6 +17861,7 @@ rtk_api_ret_t rtk_eee_portEnable_get(rtk_port_t port, rtk_enable_t *pEnable)
 rtk_api_ret_t rtk_igmp_init(void)
 {
     rtk_api_ret_t retVal;
+    rtk_port_t port;
 
     if ((retVal = rtl8367b_setAsicLutIpMulticastLookup(ENABLED))!=RT_ERR_OK)
         return retVal;
@@ -17099,6 +17871,24 @@ rtk_api_ret_t rtk_igmp_init(void)
 
     if ((retVal = rtl8367b_setAsicIgmp(ENABLED))!=RT_ERR_OK)
         return retVal;
+
+    for(port = 0; port <= RTK_PORT_ID_MAX; port++)
+    {
+        if ((retVal = rtl8367b_setAsicIGMPv1Opeartion(port, PROTOCOL_OP_ASIC))!=RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367b_setAsicIGMPv2Opeartion(port, PROTOCOL_OP_ASIC))!=RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367b_setAsicIGMPv3Opeartion(port, PROTOCOL_OP_FLOOD))!=RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367b_setAsicMLDv1Opeartion(port, PROTOCOL_OP_ASIC))!=RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367b_setAsicMLDv2Opeartion(port, PROTOCOL_OP_FLOOD))!=RT_ERR_OK)
+            return retVal;
+    }
 
     return RT_ERR_OK;
 }
@@ -17257,7 +18047,10 @@ rtk_api_ret_t rtk_igmp_protocol_set(rtk_port_t port, rtk_igmp_protocol_t protoco
             operation = PROTOCOL_OP_DROP;
             break;
         case IGMP_ACTION_ASIC:
-            operation = PROTOCOL_OP_ASIC;
+            if( (protocol == PROTOCOL_IGMPv3) || (protocol == PROTOCOL_MLDv2) )
+                return RT_ERR_CHIP_NOT_SUPPORTED;
+            else
+                operation = PROTOCOL_OP_ASIC;
             break;
         default:
             return RT_ERR_INPUT;
@@ -17376,6 +18169,166 @@ rtk_api_ret_t rtk_igmp_protocol_get(rtk_port_t port, rtk_igmp_protocol_t protoco
         default:
             return RT_ERR_FAILED;
     }
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_igmp_fastLeave_set
+ * Description:
+ *      set IGMP/MLD FastLeave state
+ * Input:
+ *      state       - ENABLED: Enable FastLeave, DISABLED: disable FastLeave
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_INPUT           - Error Input
+ *      RT_ERR_FAILED          - Failed
+ *      RT_ERR_SMI             - SMI access error
+ * Note:
+ *      This API set IGMP/MLD FastLeave state
+ */
+rtk_api_ret_t rtk_igmp_fastLeave_set(rtk_enable_t state)
+{
+    rtk_api_ret_t   retVal;
+
+    if(state >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367b_setAsicIGMPFastLeaveEn((rtk_uint32)state))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_igmp_fastLeave_get
+ * Description:
+ *      get IGMP/MLD FastLeave state
+ * Input:
+ *      None
+ * Output:
+ *      pState      - ENABLED: Enable FastLeave, DISABLED: disable FastLeave
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_NULL_POINTER    - NULL pointer
+ *      RT_ERR_FAILED          - Failed
+ *      RT_ERR_SMI             - SMI access error
+ * Note:
+ *      This API get IGMP/MLD FastLeave state
+ */
+rtk_api_ret_t rtk_igmp_fastLeave_get(rtk_enable_t *pState)
+{
+    rtk_uint32      fast_leave;
+    rtk_api_ret_t   retVal;
+
+    if(pState == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367b_getAsicIGMPFastLeaveEn(&fast_leave))!=RT_ERR_OK)
+        return retVal;
+
+    *pState = ((fast_leave == 1) ? ENABLED : DISABLED);
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_igmp_maxGroup_set
+ * Description:
+ *      Set per port multicast group learning limit.
+ * Input:
+ *      port        - Port ID
+ *      group       - The number of multicast group learning limit.
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_PORT_ID         - Error Port ID
+ *      RT_ERR_OUT_OF_RANGE    - parameter out of range
+ *      RT_ERR_FAILED          - Failed
+ *      RT_ERR_SMI             - SMI access error
+ * Note:
+ *      This API set per port multicast group learning limit.
+ */
+rtk_api_ret_t rtk_igmp_maxGroup_set(rtk_port_t port, rtk_uint32 group)
+{
+    rtk_api_ret_t   retVal;
+
+    if (port > RTK_PORT_ID_MAX)
+        return RT_ERR_PORT_ID;
+
+    if(group > RTL8367B_IGMP_MAX_GOUP)
+		return RT_ERR_OUT_OF_RANGE;
+
+    if ((retVal = rtl8367b_setAsicIGMPPortMAXGroup(port, group))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_igmp_maxGroup_get
+ * Description:
+ *      Get per port multicast group learning limit.
+ * Input:
+ *      port        - Port ID
+ * Output:
+ *      pGroup      - The number of multicast group learning limit.
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_PORT_ID         - Error Port ID
+ *      RT_ERR_NULL_POINTER    - Null pointer
+ *      RT_ERR_FAILED          - Failed
+ *      RT_ERR_SMI             - SMI access error
+ * Note:
+ *      This API get per port multicast group learning limit.
+ */
+rtk_api_ret_t rtk_igmp_maxGroup_get(rtk_port_t port, rtk_uint32 *pGroup)
+{
+    rtk_api_ret_t   retVal;
+
+    if (port > RTK_PORT_ID_MAX)
+        return RT_ERR_PORT_ID;
+
+    if(pGroup == NULL)
+		return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367b_getAsicIGMPPortMAXGroup(port, pGroup))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_igmp_currentGroup_get
+ * Description:
+ *      Get per port multicast group learning count.
+ * Input:
+ *      port        - Port ID
+ * Output:
+ *      pGroup      - The number of multicast group learning count.
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_PORT_ID         - Error Port ID
+ *      RT_ERR_NULL_POINTER    - Null pointer
+ *      RT_ERR_FAILED          - Failed
+ *      RT_ERR_SMI             - SMI access error
+ * Note:
+ *      This API get per port multicast group learning count.
+ */
+rtk_api_ret_t rtk_igmp_currentGroup_get(rtk_port_t port, rtk_uint32 *pGroup)
+{
+    rtk_api_ret_t   retVal;
+
+    if (port > RTK_PORT_ID_MAX)
+        return RT_ERR_PORT_ID;
+
+    if(pGroup == NULL)
+		return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367b_getAsicIGMPPortCurrentGroup(port, pGroup))!=RT_ERR_OK)
+        return retVal;
 
     return RT_ERR_OK;
 }

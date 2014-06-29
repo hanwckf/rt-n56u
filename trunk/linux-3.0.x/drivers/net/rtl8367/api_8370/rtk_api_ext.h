@@ -2,8 +2,8 @@
  * Copyright(c) Realtek Semiconductor Corporation, 2008
  * All rights reserved.
  *
- * $Revision$
- * $Date$
+ * $Revision: 1.1.1.1 $
+ * $Date: 2010/12/02 04:34:44 $
  *
  * Purpose : Definition the error number in the SDK.
  *

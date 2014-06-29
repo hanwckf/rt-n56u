@@ -1,16 +1,16 @@
 /*
- * Copyright (C) 2009 Realtek Semiconductor Corp. 
+ * Copyright (C) 2009 Realtek Semiconductor Corp.
  * All Rights Reserved.
  *
  * This program is the proprietary software of Realtek Semiconductor
- * Corporation and/or its licensors, and only be used, duplicated, 
- * modified or distributed under the authorized license from Realtek. 
+ * Corporation and/or its licensors, and only be used, duplicated,
+ * modified or distributed under the authorized license from Realtek.
  *
- * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER 
- * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED. 
+ * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER
+ * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED.
  *
- * $Revision: 15363 $
- * $Date: 2011-01-13 21:09:50 +0800 (星期四, 13 一月 2011) $
+ * $Revision: 28599 $
+ * $Date: 2012-05-07 09:41:37 +0800 (星期一, 07 五月 2012) $
  *
  * Purpose : RTL8367B switch high-level API for RTL8367B
  * Feature : SVLAN related functions
@@ -72,9 +72,9 @@ ret_t rtl8367b_getAsicSvlanUplinkPortMask(rtk_uint32* pPortmask)
  *      RT_ERR_OK 	- Success
  *      RT_ERR_SMI  - SMI access error
  * Note:
- *      Ether type of S-tag in 802.1ad is 0x88a8 and there are existed ether type 0x9100 and 0x9200 
+ *      Ether type of S-tag in 802.1ad is 0x88a8 and there are existed ether type 0x9100 and 0x9200
  * 		for Q-in-Q SLAN design. User can set mathced ether type as service provider supported protocol
- */ 
+ */
 ret_t rtl8367b_setAsicSvlanTpid(rtk_uint32 protocolType)
 {
     return rtl8367b_setAsicReg(RTL8367B_REG_VS_TPID, protocolType);
@@ -116,7 +116,7 @@ ret_t rtl8367b_setAsicSvlanPrioritySel(rtk_uint32 priSel)
 {
     if(priSel >= SPRISEL_END)
         return RT_ERR_INPUT;
-    
+
     return rtl8367b_setAsicRegBits(RTL8367B_REG_SVLAN_CFG, RTL8367B_VS_SPRISEL_MASK, priSel);
 }
 /* Function Name:
@@ -155,7 +155,7 @@ ret_t rtl8367b_getAsicSvlanPrioritySel(rtk_uint32* pPriSel)
 ret_t rtl8367b_setAsicSvlanTrapPriority(rtk_uint32 priority)
 {
     if(priority > RTL8367B_PRIMAX)
-        return RT_ERR_QOS_INT_PRIORITY; 
+        return RT_ERR_QOS_INT_PRIORITY;
 
     return rtl8367b_setAsicRegBits(RTL8367B_REG_QOS_TRAP_PRIORITY0, RTL8367B_SVLAN_PRIOIRTY_MASK, priority);
 }
@@ -205,11 +205,11 @@ ret_t rtl8367b_setAsicSvlanDefaultVlan(rtk_uint32 port, rtk_uint32 index)
         return RT_ERR_SVLAN_ENTRY_INDEX;
 
 	if(port & 1)
-    	retVal = rtl8367b_setAsicRegBits(RTL8367B_REG_SVLAN_PORTBASED_SVIDX_CTRL0 + (port >> 1), RTL8367B_VS_PORT1_SVIDX_MASK,index);        
+    	retVal = rtl8367b_setAsicRegBits(RTL8367B_REG_SVLAN_PORTBASED_SVIDX_CTRL0 + (port >> 1), RTL8367B_VS_PORT1_SVIDX_MASK,index);
 	else
-    	retVal = rtl8367b_setAsicRegBits(RTL8367B_REG_SVLAN_PORTBASED_SVIDX_CTRL0 + (port >> 1), RTL8367B_VS_PORT0_SVIDX_MASK,index);        
-		
-    return retVal;  
+    	retVal = rtl8367b_setAsicRegBits(RTL8367B_REG_SVLAN_PORTBASED_SVIDX_CTRL0 + (port >> 1), RTL8367B_VS_PORT0_SVIDX_MASK,index);
+
+    return retVal;
 }
 /* Function Name:
  *      rtl8367b_getAsicSvlanDefaultVlan
@@ -233,13 +233,13 @@ ret_t rtl8367b_getAsicSvlanDefaultVlan(rtk_uint32 port, rtk_uint32* pIndex)
 
 	if(port > RTL8367B_PORTIDMAX)
 		return RT_ERR_PORT_ID;
-	
+
 	if(port & 1)
-    	retVal = rtl8367b_getAsicRegBits(RTL8367B_REG_SVLAN_PORTBASED_SVIDX_CTRL0 + (port >> 1), RTL8367B_VS_PORT1_SVIDX_MASK,pIndex);        
+    	retVal = rtl8367b_getAsicRegBits(RTL8367B_REG_SVLAN_PORTBASED_SVIDX_CTRL0 + (port >> 1), RTL8367B_VS_PORT1_SVIDX_MASK,pIndex);
 	else
-    	retVal = rtl8367b_getAsicRegBits(RTL8367B_REG_SVLAN_PORTBASED_SVIDX_CTRL0 + (port >> 1), RTL8367B_VS_PORT0_SVIDX_MASK,pIndex);        
-		
-    return retVal;  
+    	retVal = rtl8367b_getAsicRegBits(RTL8367B_REG_SVLAN_PORTBASED_SVIDX_CTRL0 + (port >> 1), RTL8367B_VS_PORT0_SVIDX_MASK,pIndex);
+
+    return retVal;
 }
 /* Function Name:
  *      rtl8367b_setAsicSvlanIngressUntag
@@ -275,7 +275,7 @@ ret_t rtl8367b_setAsicSvlanIngressUntag(rtk_uint32 mode)
  */
 ret_t rtl8367b_getAsicSvlanIngressUntag(rtk_uint32* pMode)
 {
-    return rtl8367b_getAsicRegBits(RTL8367B_REG_SVLAN_CFG, RTL8367B_VS_UNTAG_MASK, pMode);  
+    return rtl8367b_getAsicRegBits(RTL8367B_REG_SVLAN_CFG, RTL8367B_VS_UNTAG_MASK, pMode);
 }
 /* Function Name:
  *      rtl8367b_setAsicSvlanIngressUnmatch
@@ -300,7 +300,7 @@ ret_t rtl8367b_setAsicSvlanIngressUnmatch(rtk_uint32 mode)
  * Description:
  *      Get action received unmatched Stag frame from unplink port
  * Input:
- *      pMode 		- 0:Drop 1:Trap 2:Assign SVLAN 
+ *      pMode 		- 0:Drop 1:Trap 2:Assign SVLAN
  * Output:
  *      None
  * Return:
@@ -312,7 +312,7 @@ ret_t rtl8367b_setAsicSvlanIngressUnmatch(rtk_uint32 mode)
 ret_t rtl8367b_getAsicSvlanIngressUnmatch(rtk_uint32* pMode)
 {
     return rtl8367b_getAsicRegBits(RTL8367B_REG_SVLAN_CFG, RTL8367B_VS_UNMAT_MASK, pMode);
-    
+
 }
 /* Function Name:
  *      rtl8367b_setAsicSvlanEgressUnassign
@@ -353,7 +353,7 @@ ret_t rtl8367b_getAsicSvlanEgressUnassign(rtk_uint32* pEnabled)
 
 void _rtl8367b_svlanConfStUser2Smi( rtl8367b_svlan_memconf_t *pUserSt, rtl8367b_svlan_memconf_smi_t *pSmiSt)
 {
-    
+
     pSmiSt->vs_member 		= pUserSt->vs_member;
     pSmiSt->vs_untag		= pUserSt->vs_untag;
 
@@ -364,7 +364,7 @@ void _rtl8367b_svlanConfStUser2Smi( rtl8367b_svlan_memconf_t *pUserSt, rtl8367b_
     pSmiSt->vs_svid			= pUserSt->vs_svid;
     pSmiSt->vs_efiden		= pUserSt->vs_efiden;
     pSmiSt->vs_efid			= pUserSt->vs_efid;
-	
+
     pSmiSt->vs_force_fid	= pUserSt->vs_force_fid;
 
 }
@@ -372,7 +372,7 @@ void _rtl8367b_svlanConfStSmi2User( rtl8367b_svlan_memconf_t *pUserSt, rtl8367b_
 {
     pUserSt->vs_member 		= pSmiSt->vs_member;
     pUserSt->vs_untag 		= pSmiSt->vs_untag;
-	
+
     pUserSt->vs_fid_msti	= pSmiSt->vs_fid_msti;
 
     pUserSt->vs_priority	= pSmiSt->vs_priority;
@@ -418,7 +418,7 @@ ret_t rtl8367b_setAsicSvlanMemberConfiguration(rtk_uint32 index, rtl8367b_svlan_
 
     accessPtr = (rtk_uint16*)&smiSvlanMemConf;
 
-    
+
     regData = *accessPtr;
     for(i = 0; i < 3; i++)
     {
@@ -429,10 +429,10 @@ ret_t rtl8367b_setAsicSvlanMemberConfiguration(rtk_uint32 index, rtl8367b_svlan_
         accessPtr ++;
         regData = *accessPtr;
     }
-    
-    
-    return retVal;  
-}   
+
+
+    return retVal;
+}
 /* Function Name:
  *      rtl8367b_getAsicSvlanMemberConfiguration
  * Description:
@@ -484,7 +484,7 @@ ret_t rtl8367b_getAsicSvlanMemberConfiguration(rtk_uint32 index,rtl8367b_svlan_m
 /* Function Name:
  *      rtl8367b_setAsicSvlanC2SConf
  * Description:
- *      Set SVLAN C2S table 
+ *      Set SVLAN C2S table
  * Input:
  *      index 	- index of 128 Svlan C2S configuration
  *      evid 	- Enhanced VID
@@ -512,17 +512,17 @@ ret_t rtl8367b_setAsicSvlanC2SConf(rtk_uint32 index, rtk_uint32 evid, rtk_uint32
         return RT_ERR_ENTRY_INDEX;
 
     memset(&smiSvlanC2SConf, 0x00, sizeof(smiSvlanC2SConf));
-    
+
     smiSvlanC2SConf.svidx = svidx;
 
     smiSvlanC2SConf.c2senPmsk= portmask;
 
     smiSvlanC2SConf.evid = evid;
 
-    
+
     accessPtr =  (rtk_uint16*)&smiSvlanC2SConf;
 
-    
+
     regData = *accessPtr;
     for(i = 0; i < 3; i++)
     {
@@ -533,14 +533,14 @@ ret_t rtl8367b_setAsicSvlanC2SConf(rtk_uint32 index, rtk_uint32 evid, rtk_uint32
         accessPtr ++;
         regData = *accessPtr;
     }
-    
-    
-    return retVal;  
-}   
+
+
+    return retVal;
+}
 /* Function Name:
  *      rtl8367b_getAsicSvlanC2SConf
  * Description:
- *      Get SVLAN C2S table 
+ *      Get SVLAN C2S table
  * Input:
  *      index 	- index of 128 Svlan C2S configuration
  *      pEvid 	- Enhanced VID
@@ -578,24 +578,24 @@ ret_t rtl8367b_getAsicSvlanC2SConf(rtk_uint32 index, rtk_uint32* pEvid, rtk_uint
         if(retVal != RT_ERR_OK)
             return retVal;
 
-        *accessPtr = regData;
+        *accessPtr = (rtk_uint16)regData;
 
         accessPtr ++;
     }
 
     *pSvidx = smiSvlanC2SConf.svidx;
-    
+
     *pPortmask= smiSvlanC2SConf.c2senPmsk;
-    
+
     *pEvid = smiSvlanC2SConf.evid;
-    
-    return retVal;  
-}   
+
+    return retVal;
+}
 
 void _rtl8367b_svlanMc2sStUser2Smi(rtl8367b_svlan_mc2s_t *pUserSt, rtl8367b_svlan_mc2s_smi_t *pSmiSt)
 {
     pSmiSt->svidx= pUserSt->svidx;
-	
+
     pSmiSt->mask0 = pUserSt->smask & 0x000000FF;
     pSmiSt->mask1 = (pUserSt->smask & 0x0000FF00) >> 8;
     pSmiSt->mask2 = (pUserSt->smask & 0x00FF0000) >> 16;
@@ -604,8 +604,8 @@ void _rtl8367b_svlanMc2sStUser2Smi(rtl8367b_svlan_mc2s_t *pUserSt, rtl8367b_svla
     pSmiSt->data0 = pUserSt->sdata & 0x000000FF;
     pSmiSt->data1 = (pUserSt->sdata & 0x0000FF00) >> 8;
     pSmiSt->data2 = (pUserSt->sdata & 0x00FF0000) >> 16;
-    pSmiSt->data3 = (pUserSt->sdata & 0xFF000000) >> 24;   
-	
+    pSmiSt->data3 = (pUserSt->sdata & 0xFF000000) >> 24;
+
     pSmiSt->format = pUserSt->format;
 
     pSmiSt->valid = pUserSt->valid;
@@ -615,11 +615,11 @@ void _rtl8367b_svlanMc2sStSmi2User(rtl8367b_svlan_mc2s_t *pUserSt, rtl8367b_svla
     pUserSt->svidx = pSmiSt->svidx;
 
     pUserSt->smask = (pSmiSt->mask3 << 24) | (pSmiSt->mask2 << 16) | (pSmiSt->mask1 << 8) | pSmiSt->mask0;
-	
+
     pUserSt->sdata = (pSmiSt->data3 << 24) | (pSmiSt->data2 << 16) | (pSmiSt->data1 << 8) | pSmiSt->data0;
 
     pUserSt->format = pSmiSt->format;
-    
+
     pUserSt->valid = pSmiSt->valid;
 }
 /* Function Name:
@@ -636,7 +636,7 @@ void _rtl8367b_svlanMc2sStSmi2User(rtl8367b_svlan_mc2s_t *pUserSt, rtl8367b_svla
  *      RT_ERR_SMI  		- SMI access error
  *      RT_ERR_ENTRY_INDEX  - Invalid entry index
  * Note:
- *      If upstream packet is L2 multicast or IPv4 multicast packet and DMAC/DIP is matched MC2S 
+ *      If upstream packet is L2 multicast or IPv4 multicast packet and DMAC/DIP is matched MC2S
  * 		configuration, ASIC will assign egress SVID to the packet
  */
 ret_t rtl8367b_setAsicSvlanMC2SConf(rtk_uint32 index,rtl8367b_svlan_mc2s_t* pSvlanMc2sCfg)
@@ -656,7 +656,7 @@ ret_t rtl8367b_setAsicSvlanMC2SConf(rtk_uint32 index,rtl8367b_svlan_mc2s_t* pSvl
 
     accessPtr =  (rtk_uint16*)&smiSvlanMC2S;
 
-    
+
     regData = *accessPtr;
     for(i = 0; i < 5; i++)
     {
@@ -667,10 +667,10 @@ ret_t rtl8367b_setAsicSvlanMC2SConf(rtk_uint32 index,rtl8367b_svlan_mc2s_t* pSvl
         accessPtr ++;
         regData = *accessPtr;
     }
-    
-    
-    return retVal;  
-}   
+
+
+    return retVal;
+}
 /* Function Name:
  *      rtl8367b_getAsicSvlanMC2SConf
  * Description:
@@ -723,14 +723,14 @@ ret_t rtl8367b_getAsicSvlanMC2SConf(rtk_uint32 index, rtl8367b_svlan_mc2s_t* pSv
 void _rtl8367b_svlanSp2cStUser2Smi(rtl8367b_svlan_s2c_t *pUserSt, rtl8367b_svlan_s2c_smi_t *pSmiSt)
 {
     pSmiSt->svidx 		= pUserSt->svidx;
-    pSmiSt->dstport 	= pUserSt->dstport;   	
+    pSmiSt->dstport 	= pUserSt->dstport;
     pSmiSt->valid 		= pUserSt->valid;
     pSmiSt->vid  		= pUserSt->vid;
 }
 void _rtl8367b_svlanSp2cStSmi2User(rtl8367b_svlan_s2c_t *pUserSt, rtl8367b_svlan_s2c_smi_t *pSmiSt)
 {
     pUserSt->svidx 		= pSmiSt->svidx;
-    pUserSt->dstport 	= pSmiSt->dstport;   	
+    pUserSt->dstport 	= pSmiSt->dstport;
     pUserSt->valid 		= pSmiSt->valid;
     pUserSt->vid 		= pSmiSt->vid;
 }
@@ -767,7 +767,7 @@ ret_t rtl8367b_setAsicSvlanSP2CConf(rtk_uint32 index, rtl8367b_svlan_s2c_t* pSvl
 
     accessPtr = (rtk_uint16*)&smiSvlanSP2C;
 
-    
+
     regData = *accessPtr;
     for(i = 0; i < 2; i++)
     {
@@ -778,10 +778,10 @@ ret_t rtl8367b_setAsicSvlanSP2CConf(rtk_uint32 index, rtl8367b_svlan_s2c_t* pSvl
         accessPtr ++;
         regData = *accessPtr;
     }
-    
-    
-    return retVal;  
-}   
+
+
+    return retVal;
+}
 /* Function Name:
  *      rtl8367b_getAsicSvlanSP2CConf
  * Description:
@@ -850,7 +850,7 @@ ret_t rtl8367b_setAsicSvlanDmacCvidSel(rtk_uint32 port, rtk_uint32 enabled)
 	if(port > RTL8367B_PORTIDMAX)
 		return RT_ERR_PORT_ID;
 
-    return rtl8367b_setAsicRegBit(RTL8367B_REG_SVLAN_CFG, RTL8367B_VS_PORT0_DMACVIDSEL_OFFSET + port, enabled);  
+    return rtl8367b_setAsicRegBit(RTL8367B_REG_SVLAN_CFG, RTL8367B_VS_PORT0_DMACVIDSEL_OFFSET + port, enabled);
 }
 /* Function Name:
  *      rtl8367b_getAsicSvlanDmacCvidSel
@@ -872,8 +872,8 @@ ret_t rtl8367b_getAsicSvlanDmacCvidSel(rtk_uint32 port, rtk_uint32* pEnabled)
 {
 	if(port > RTL8367B_PORTIDMAX)
 		return RT_ERR_PORT_ID;
-	
-    return rtl8367b_getAsicRegBit(RTL8367B_REG_SVLAN_CFG, RTL8367B_VS_PORT0_DMACVIDSEL_OFFSET + port, pEnabled);;  
+
+    return rtl8367b_getAsicRegBit(RTL8367B_REG_SVLAN_CFG, RTL8367B_VS_PORT0_DMACVIDSEL_OFFSET + port, pEnabled);;
 }
 /* Function Name:
  *      rtl8367b_setAsicSvlanUntagVlan
@@ -895,7 +895,7 @@ ret_t rtl8367b_setAsicSvlanUntagVlan(rtk_uint32 index)
     if(index > RTL8367B_SVIDXMAX)
         return RT_ERR_SVLAN_ENTRY_INDEX;
 
-    return rtl8367b_setAsicRegBits(RTL8367B_REG_SVLAN_UNTAG_UNMAT_CFG, RTL8367B_VS_UNTAG_SVIDX_MASK, index);        
+    return rtl8367b_setAsicRegBits(RTL8367B_REG_SVLAN_UNTAG_UNMAT_CFG, RTL8367B_VS_UNTAG_SVIDX_MASK, index);
 }
 /* Function Name:
  *      rtl8367b_getAsicSvlanUntagVlan
@@ -913,7 +913,7 @@ ret_t rtl8367b_setAsicSvlanUntagVlan(rtk_uint32 index)
  */
 ret_t rtl8367b_getAsicSvlanUntagVlan(rtk_uint32* pIndex)
 {
-    return rtl8367b_getAsicRegBits(RTL8367B_REG_SVLAN_UNTAG_UNMAT_CFG, RTL8367B_VS_UNTAG_SVIDX_MASK, pIndex);        
+    return rtl8367b_getAsicRegBits(RTL8367B_REG_SVLAN_UNTAG_UNMAT_CFG, RTL8367B_VS_UNTAG_SVIDX_MASK, pIndex);
 }
 
 /* Function Name:
@@ -936,7 +936,7 @@ ret_t rtl8367b_setAsicSvlanUnmatchVlan(rtk_uint32 index)
     if(index > RTL8367B_SVIDXMAX)
         return RT_ERR_SVLAN_ENTRY_INDEX;
 
-    return rtl8367b_setAsicRegBits(RTL8367B_REG_SVLAN_UNTAG_UNMAT_CFG, RTL8367B_VS_UNMAT_SVIDX_MASK, index);        
+    return rtl8367b_setAsicRegBits(RTL8367B_REG_SVLAN_UNTAG_UNMAT_CFG, RTL8367B_VS_UNMAT_SVIDX_MASK, index);
 }
 /* Function Name:
  *      rtl8367b_getAsicSvlanUnmatchVlan
@@ -954,6 +954,6 @@ ret_t rtl8367b_setAsicSvlanUnmatchVlan(rtk_uint32 index)
  */
 ret_t rtl8367b_getAsicSvlanUnmatchVlan(rtk_uint32* pIndex)
 {
-    return rtl8367b_getAsicRegBits(RTL8367B_REG_SVLAN_UNTAG_UNMAT_CFG, RTL8367B_VS_UNMAT_SVIDX_MASK, pIndex);        
+    return rtl8367b_getAsicRegBits(RTL8367B_REG_SVLAN_UNTAG_UNMAT_CFG, RTL8367B_VS_UNMAT_SVIDX_MASK, pIndex);
 }
 

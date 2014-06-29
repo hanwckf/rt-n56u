@@ -9,8 +9,8 @@
  * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER 
  * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED. 
  *
- * $Revision: 14202 $
- * $Date: 2010-11-16 15:13:00 +0800 (星期二, 16 十一月 2010) $
+ * $Revision: 28599 $
+ * $Date: 2012-05-07 09:41:37 +0800 (星期一, 07 五月 2012) $
  *
  * Purpose : RTL8367B switch high-level API for RTL8367B
  * Feature : Ingress bandwidth control related functions

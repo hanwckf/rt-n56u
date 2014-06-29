@@ -14273,7 +14273,7 @@ auto-generated register address and field data
 
 #define    RTL8367B_REG_SYNC_ETH_CFG    0x13e0
 #define    RTL8367B_DUMMY1_OFFSET    6
-#define    RTL8367B_DUMMY1_MASK    0xFFC0
+#define    RTL8367B_DUMMY1_MASK    0xC0
 #define    RTL8367B_SYNC_ETH_EN_RTT2_OFFSET    5
 #define    RTL8367B_SYNC_ETH_EN_RTT2_MASK    0x20
 #define    RTL8367B_SYNC_ETH_EN_RTT1_OFFSET    4

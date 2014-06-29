@@ -9,8 +9,8 @@
  * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER
  * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED.
  *
- * $Revision: 14649 $
- * $Date: 2010-12-08 18:46:56 +0800 (星期三, 08 十二月 2010) $
+ * $Revision: 28599 $
+ * $Date: 2012-05-07 09:41:37 +0800 (星期一, 07 五月 2012) $
  *
  * Purpose : RTL8367B switch high-level API for RTL8367B
  * Feature : PHY related functions
@@ -225,7 +225,6 @@ ret_t rtl8367b_getAsicPHYReg(rtk_uint32 phyNo, rtk_uint32 phyAddr, rtk_uint32 *p
 	checkCounter = 5;
 	while(checkCounter)
 	{
-    //	retVal = rtl8367b_getAsicRegBit(RTL8367B_REG_INDRECT_ACCESS_STATUS, RTL8367B_INDRECT_ACCESS_STATUS_OFFSET,&busyFlag);
     	retVal = rtl8367b_getAsicReg(RTL8367B_REG_INDRECT_ACCESS_STATUS,&busyFlag);
 		if((retVal != RT_ERR_OK) || busyFlag)
 		{

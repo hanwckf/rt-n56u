@@ -2554,6 +2554,51 @@ extern rtk_api_ret_t rtk_port_phyComboPortMedia_set(rtk_port_t port, rtk_port_me
  */
 extern rtk_api_ret_t rtk_port_phyComboPortMedia_get(rtk_port_t port, rtk_port_media_t *pMedia);
 
+/* Function Name:
+ *      rtk_port_rtctEnable_set
+ * Description:
+ *      Enable RTCT test
+ * Input:
+ *      portmask    - Port mask of RTCT enabled port
+ * Output:
+ *      None
+ * Return:
+ *      RT_ERR_OK               - OK
+ *      RT_ERR_FAILED           - Failed
+ *      RT_ERR_SMI              - SMI access error
+ *      RT_ERR_PORT_MASK        - Invalid port mask.
+ * Note:
+ *      The API can enable RTCT Test
+ */
+extern rtk_api_ret_t rtk_port_rtctEnable_set(rtk_portmask_t portmask);
+
+/* Function Name:
+ *      rtk_port_rtctResult_get
+ * Description:
+ *      Get the result of RTCT test
+ * Input:
+ *      port        - Port ID
+ * Output:
+ *      pRtctResult - The result of RTCT result
+ * Return:
+ *      RT_ERR_OK                   - OK
+ *      RT_ERR_FAILED               - Failed
+ *      RT_ERR_SMI                  - SMI access error
+ *      RT_ERR_PORT_ID              - Invalid port ID.
+ *      RT_ERR_PHY_RTCT_NOT_FINISH  - Testing does not finish.
+ * Note:
+ *      The API can get RTCT test result.
+ *      RTCT test may takes 4.8 seconds to finish its test at most.
+ *      Thus, if this API return RT_ERR_PHY_RTCT_NOT_FINISH or
+ *      other error code, the result can not be referenced and
+ *      user should call this API again until this API returns
+ *      a RT_ERR_OK.
+ *      The result is stored at pRtctResult->ge_result
+ *      pRtctResult->linkType is unused.
+ *      The unit of channel length is 2.5cm. Ex. 300 means 300 * 2.5 = 750cm = 7.5M
+ */
+extern rtk_api_ret_t rtk_port_rtctResult_get(rtk_port_t port, rtk_rtctResult_t *pRtctResult);
+
 /* CVLAN */
 /* Function Name:
  *      rtk_vlan_init
@@ -2621,6 +2666,45 @@ extern rtk_api_ret_t rtk_vlan_set(rtk_vlan_t vid, rtk_portmask_t mbrmsk, rtk_por
  *     The API can get the member set, untag set and fid settings for specified vid.
  */
 extern rtk_api_ret_t rtk_vlan_get(rtk_vlan_t vid, rtk_portmask_t *pMbrmsk, rtk_portmask_t *pUntagmsk, rtk_fid_t *pFid);
+
+/* Function Name:
+ *      rtk_vlan_mbrCfg_set
+ * Description:
+ *      Set a VLAN Member Configuration entry by index.
+ * Input:
+ *      idx     - Index of VLAN Member Configuration.
+ *      pMbrcfg - VLAN member Configuration.
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK           - OK
+ *      RT_ERR_FAILED       - Failed
+ *      RT_ERR_SMI          - SMI access error
+ *      RT_ERR_INPUT 		- Invalid input parameters.
+ *      RT_ERR_VLAN_VID     - Invalid VID parameter.
+ * Note:
+ *     Set a VLAN Member Configuration entry by index.
+ */
+extern rtk_api_ret_t rtk_vlan_mbrCfg_set(rtk_uint32 idx, rtk_vlan_mbrcfg_t *pMbrcfg);
+
+/* Function Name:
+ *      rtk_vlan_mbrCfg_get
+ * Description:
+ *      Get a VLAN Member Configuration entry by index.
+ * Input:
+ *      idx - Index of VLAN Member Configuration.
+ * Output:
+ *      pMbrcfg - VLAN member Configuration.
+ * Return:
+ *      RT_ERR_OK           - OK
+ *      RT_ERR_FAILED       - Failed
+ *      RT_ERR_SMI          - SMI access error
+ *      RT_ERR_INPUT 		- Invalid input parameters.
+ *      RT_ERR_VLAN_VID     - Invalid VID parameter.
+ * Note:
+ *     Get a VLAN Member Configuration entry by index.
+ */
+extern rtk_api_ret_t rtk_vlan_mbrCfg_get(rtk_uint32 idx, rtk_vlan_mbrcfg_t *pMbrcfg);
 
 /* Function Name:
  *     rtk_vlan_portPvid_set
@@ -3473,6 +3557,34 @@ extern rtk_api_ret_t rtk_l2_ipMcastAddr_del(ipaddr_t sip, ipaddr_t dip);
 extern rtk_api_ret_t rtk_l2_flushType_set(rtk_l2_flushType_t type, rtk_vlan_t vid, rtk_uint32 portOrTid);
 
 /* Function Name:
+ *      rtk_l2_ucastAddr_flush
+ * Description:
+ *      Flush L2 mac address by type in the specified device (both dynamic and static).
+ * Input:
+ *      pConfig - flush configuration
+ * Output:
+ *      None
+ * Return:
+ *      RT_ERR_OK           - OK
+ *      RT_ERR_FAILED       - Failed
+ *      RT_ERR_SMI          - SMI access error
+ *      RT_ERR_PORT_ID      - Invalid port number.
+ *      RT_ERR_VLAN_VID     - Invalid VID parameter.
+ *      RT_ERR_INPUT        - Invalid input parameters.
+ * Note:
+ *      flushByVid          - 1: Flush by VID, 0: Don't flush by VID
+ *      vid                 - VID (0 ~ 4095)
+ *      flushByPort         - 1: Flush by Port, 0: Don't flush by Port
+ *      reserved            - Unused
+ *      port                - Port ID
+ *      flushByMac          - Not Supported
+ *      ucastAddr           - Not Supported
+ *      flushStaticAddr     - 1: Flush both Static and Dynamic entries, 0: Flush only Dynamic entries
+ *      flushAddrOnAllPorts - 1: Flush VID-matched entries at all ports, 0: Flush VID-matched entries per port.
+ */
+extern rtk_api_ret_t rtk_l2_ucastAddr_flush(rtk_l2_flushCfg_t *pConfig);
+
+/* Function Name:
  *      rtk_l2_flushLinkDownPortAddrEnable_set
  * Description:
  *      Set HW flush linkdown port mac configuration of the specified device.
@@ -3788,7 +3900,11 @@ extern rtk_api_ret_t rtk_l2_aging_get(rtk_l2_age_time_t *pAging_time);
  *      RT_ERR_FAILED      - Failed
  *      RT_ERR_SMI         - SMI access error
  * Note:
- *      None.
+ *      This API can work with rtk_l2_ipMcastAddrLookupException_add.
+ *      If users set the lookup type to DIP, the group in exception table
+ *      will be lookup by DIP+SIP
+ *      If users set the lookup type to DIP+SIP, the group in exception table
+ *      will be lookup by only DIP
  */
 extern rtk_api_ret_t rtk_l2_ipMcastAddrLookup_set(rtk_l2_lookup_type_t type);
 
@@ -3808,6 +3924,42 @@ extern rtk_api_ret_t rtk_l2_ipMcastAddrLookup_set(rtk_l2_lookup_type_t type);
  *      None.
  */
 extern rtk_api_ret_t rtk_l2_ipMcastAddrLookup_get(rtk_l2_lookup_type_t *pType);
+
+/* Function Name:
+ *      rtk_l2_ipMcastAddrLookupException_add
+ * Description:
+ *      Add an IP Multicast Exception group
+ * Input:
+ *      ip_addr     - IP address
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK          - OK
+ *      RT_ERR_FAILED      - Failed
+ *      RT_ERR_SMI         - SMI access error
+ *      RT_ERR_TBL_FULL    - Table Full
+ * Note:
+ *      Add an entry to IP Multicast exception table.
+ */
+extern rtk_api_ret_t rtk_l2_ipMcastAddrLookupException_add(ipaddr_t ip_addr);
+
+/* Function Name:
+ *      rtk_l2_ipMcastAddrLookupException_del
+ * Description:
+ *      Delete an IP Multicast Exception group
+ * Input:
+ *      ip_addr     - IP address
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK          - OK
+ *      RT_ERR_FAILED      - Failed
+ *      RT_ERR_SMI         - SMI access error
+ *      RT_ERR_TBL_FULL    - Table Full
+ * Note:
+ *      Delete an entry to IP Multicast exception table.
+ */
+extern rtk_api_ret_t rtk_l2_ipMcastAddrLookupException_del(ipaddr_t ip_addr);
 
 /* Function Name:
  *      rtk_l2_entry_get
@@ -4029,6 +4181,52 @@ extern rtk_api_ret_t rtk_svlan_memberPortEntry_set(rtk_uint32 svid_idx, rtk_svla
  *      to receiving from uplink ports. Other SVID S-tag frame or S-untagged frame will be droped.
  */
 extern rtk_api_ret_t rtk_svlan_memberPortEntry_get(rtk_uint32 svid_idx, rtk_svlan_memberCfg_t *pSvlan_cfg);
+
+/* Function Name:
+ *      rtk_svlan_memberPortEntry_adv_set
+ * Description:
+ *      Configure system SVLAN member by index
+ * Input:
+ *      idx         - Index (0 ~ 63)
+ *      psvlan_cfg  - SVLAN member configuration
+ * Output:
+ *      None
+ * Return:
+ *      RT_ERR_OK               - OK
+ *      RT_ERR_FAILED           - Failed
+ *      RT_ERR_SMI              - SMI access error
+ *      RT_ERR_INPUT            - Invalid input parameter.
+ *      RT_ERR_SVLAN_VID        - Invalid SVLAN VID parameter.
+ *      RT_ERR_PORT_MASK        - Invalid portmask.
+ *      RT_ERR_SVLAN_TABLE_FULL - SVLAN configuration is full.
+ * Note:
+ *      The API can set system 64 accepted s-tag frame format by index.
+ *      - rtk_svlan_memberCfg_t->svid is SVID of SVLAN member configuration.
+ *      - rtk_svlan_memberCfg_t->memberport is member port mask of SVLAN member configuration.
+ *      - rtk_svlan_memberCfg_t->fid is filtering database of SVLAN member configuration.
+ *      - rtk_svlan_memberCfg_t->priority is priority of SVLAN member configuration.
+ */
+extern rtk_api_ret_t rtk_svlan_memberPortEntry_adv_set(rtk_uint32 idx, rtk_svlan_memberCfg_t *pSvlan_cfg);
+
+/* Function Name:
+ *      rtk_svlan_memberPortEntry_adv_get
+ * Description:
+ *      Get SVLAN member Configure by index.
+ * Input:
+ *      idx         - Index (0 ~ 63)
+ * Output:
+ *      pSvlan_cfg  - SVLAN member configuration
+ * Return:
+ *      RT_ERR_OK                       - OK
+ *      RT_ERR_FAILED                   - Failed
+ *      RT_ERR_SMI                      - SMI access error
+ *      RT_ERR_SVLAN_ENTRY_NOT_FOUND    - specified svlan entry not found.
+ *      RT_ERR_INPUT                    - Invalid input parameters.
+ * Note:
+ *      The API can get system 64 accepted s-tag frame format. Only 64 SVID S-tag frame will be accpeted
+ *      to receiving from uplink ports. Other SVID S-tag frame or S-untagged frame will be droped.
+ */
+extern rtk_api_ret_t rtk_svlan_memberPortEntry_adv_get(rtk_uint32 idx, rtk_svlan_memberCfg_t *pSvlan_cfg);
 
 /* Function Name:
  *      rtk_svlan_defaultSvlan_set
@@ -5294,6 +5492,84 @@ extern rtk_api_ret_t rtk_stat_port_get(rtk_port_t port, rtk_stat_port_type_t cnt
 extern rtk_api_ret_t rtk_stat_port_getAll(rtk_port_t port, rtk_stat_port_cntr_t *pPort_cntrs);
 #endif
 
+/* Function Name:
+ *      rtk_stat_logging_counterCfg_set
+ * Description:
+ *      Set the type and mode of Logging Counter
+ * Input:
+ *      idx     - The index of Logging Counter. Should be even number only.(0,2,4,6,8.....30)
+ *      mode    - 32 bits or 64 bits mode
+ *      type    - Packet counter or byte counter
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK           - OK
+ *      RT_ERR_OUT_OF_RANGE - Out of range.
+ *      RT_ERR_FAILED       - Failed
+ *      RT_ERR_SMI          - SMI access error
+ *      RT_ERR_INPUT 		- Invalid input parameters.
+ * Note:
+ *      Set the type and mode of Logging Counter.
+ */
+extern rtk_api_ret_t rtk_stat_logging_counterCfg_set(rtk_uint32 idx, rtk_logging_counter_mode_t mode, rtk_logging_counter_type_t type);
+
+/* Function Name:
+ *      rtk_stat_logging_counterCfg_get
+ * Description:
+ *      Get the type and mode of Logging Counter
+ * Input:
+ *      idx     - The index of Logging Counter. Should be even number only.(0,2,4,6,8.....30)
+ * Output:
+ *      pMode   - 32 bits or 64 bits mode
+ *      pType   - Packet counter or byte counter
+ * Return:
+ *      RT_ERR_OK           - OK
+ *      RT_ERR_OUT_OF_RANGE - Out of range.
+ *      RT_ERR_FAILED       - Failed
+ *      RT_ERR_NULL_POINTER - NULL Pointer
+ *      RT_ERR_SMI          - SMI access error
+ *      RT_ERR_INPUT 		- Invalid input parameters.
+ * Note:
+ *      Get the type and mode of Logging Counter.
+ */
+extern rtk_api_ret_t rtk_stat_logging_counterCfg_get(rtk_uint32 idx, rtk_logging_counter_mode_t *pMode, rtk_logging_counter_type_t *pType);
+
+/* Function Name:
+ *      rtk_stat_logging_counter_reset
+ * Description:
+ *      Reset Logging Counter
+ * Input:
+ *      idx     - The index of Logging Counter. (0~31)
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK           - OK
+ *      RT_ERR_OUT_OF_RANGE - Out of range.
+ *      RT_ERR_FAILED       - Failed
+ *      RT_ERR_SMI          - SMI access error
+ * Note:
+ *      Reset Logging Counter.
+ */
+extern rtk_api_ret_t rtk_stat_logging_counter_reset(rtk_uint32 idx);
+
+/* Function Name:
+ *      rtk_stat_logging_counter_get
+ * Description:
+ *      Get Logging Counter
+ * Input:
+ *      idx     - The index of Logging Counter. (0~31)
+ * Output:
+ *      pCnt    - Logging counter value
+ * Return:
+ *      RT_ERR_OK           - OK
+ *      RT_ERR_OUT_OF_RANGE - Out of range.
+ *      RT_ERR_FAILED       - Failed
+ *      RT_ERR_SMI          - SMI access error
+ * Note:
+ *      Get Logging Counter.
+ */
+extern rtk_api_ret_t rtk_stat_logging_counter_get(rtk_uint32 idx, rtk_uint32 *pCnt);
+
 /* Interrupt */
 /* Function Name:
  *      rtk_int_polarity_set
@@ -6386,6 +6662,100 @@ extern rtk_api_ret_t rtk_igmp_protocol_set(rtk_port_t port, rtk_igmp_protocol_t 
  *      This API set IGMP/MLD protocol action
  */
 extern rtk_api_ret_t rtk_igmp_protocol_get(rtk_port_t port, rtk_igmp_protocol_t protocol, rtk_trap_igmp_action_t *pAction);
+
+/* Function Name:
+ *      rtk_igmp_fastLeave_set
+ * Description:
+ *      set IGMP/MLD FastLeave state
+ * Input:
+ *      state       - ENABLED: Enable FastLeave, DISABLED: disable FastLeave
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_INPUT           - Error Input
+ *      RT_ERR_FAILED          - Failed
+ *      RT_ERR_SMI             - SMI access error
+ * Note:
+ *      This API set IGMP/MLD FastLeave state
+ */
+extern rtk_api_ret_t rtk_igmp_fastLeave_set(rtk_enable_t state);
+
+/* Function Name:
+ *      rtk_igmp_fastLeave_get
+ * Description:
+ *      get IGMP/MLD FastLeave state
+ * Input:
+ *      None
+ * Output:
+ *      pState      - ENABLED: Enable FastLeave, DISABLED: disable FastLeave
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_NULL_POINTER    - NULL pointer
+ *      RT_ERR_FAILED          - Failed
+ *      RT_ERR_SMI             - SMI access error
+ * Note:
+ *      This API get IGMP/MLD FastLeave state
+ */
+extern rtk_api_ret_t rtk_igmp_fastLeave_get(rtk_enable_t *pState);
+
+/* Function Name:
+ *      rtk_igmp_maxGroup_set
+ * Description:
+ *      Set per port multicast group learning limit.
+ * Input:
+ *      port        - Port ID
+ *      group       - The number of multicast group learning limit.
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_PORT_ID         - Error Port ID
+ *      RT_ERR_OUT_OF_RANGE    - parameter out of range
+ *      RT_ERR_FAILED          - Failed
+ *      RT_ERR_SMI             - SMI access error
+ * Note:
+ *      This API set per port multicast group learning limit.
+ */
+extern rtk_api_ret_t rtk_igmp_maxGroup_set(rtk_port_t port, rtk_uint32 group);
+
+/* Function Name:
+ *      rtk_igmp_maxGroup_get
+ * Description:
+ *      Get per port multicast group learning limit.
+ * Input:
+ *      port        - Port ID
+ * Output:
+ *      pGroup      - The number of multicast group learning limit.
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_PORT_ID         - Error Port ID
+ *      RT_ERR_NULL_POINTER    - Null pointer
+ *      RT_ERR_FAILED          - Failed
+ *      RT_ERR_SMI             - SMI access error
+ * Note:
+ *      This API get per port multicast group learning limit.
+ */
+extern rtk_api_ret_t rtk_igmp_maxGroup_get(rtk_port_t port, rtk_uint32 *pGroup);
+
+/* Function Name:
+ *      rtk_igmp_currentGroup_get
+ * Description:
+ *      Get per port multicast group learning count.
+ * Input:
+ *      port        - Port ID
+ * Output:
+ *      pGroup      - The number of multicast group learning count.
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_PORT_ID         - Error Port ID
+ *      RT_ERR_NULL_POINTER    - Null pointer
+ *      RT_ERR_FAILED          - Failed
+ *      RT_ERR_SMI             - SMI access error
+ * Note:
+ *      This API get per port multicast group learning count.
+ */
+extern rtk_api_ret_t rtk_igmp_currentGroup_get(rtk_port_t port, rtk_uint32 *pGroup);
 
 #endif /* __RTK_API_EXT_H__ */
 

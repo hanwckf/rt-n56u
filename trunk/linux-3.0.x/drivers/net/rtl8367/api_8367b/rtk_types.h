@@ -1,5 +1,5 @@
-#ifndef _RTK_TYPES_H_
-#define _RTK_TYPES_H_
+#ifndef _RTL8367B_TYPES_H_
+#define _RTL8367B_TYPES_H_
 
 #include <linux/kernel.h>
 #include <linux/string.h>
@@ -68,4 +68,4 @@ typedef rtk_uint64                  rtk_u_long_t;
 #define PRINT rtlglue_printf
 
 
-#endif /* _RTK_TYPES_H_ */
+#endif /* _RTL8367B_TYPES_H_ */

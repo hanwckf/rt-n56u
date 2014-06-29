@@ -9,8 +9,8 @@
  * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER 
  * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED. 
  *
- * $Revision: 10458 $
- * $Date: 2010-06-25 18:59:16 +0800 (?Ÿæ?äº? 25 ?­æ? 2010) $
+ * $Revision: 1.1.1.1 $
+ * $Date: 2010/12/02 04:34:37 $
  *
  * Purpose : RTK switch high-level API for RTL8370/RTL8367
  * Feature : Here is a list of all functions and variables in this module.

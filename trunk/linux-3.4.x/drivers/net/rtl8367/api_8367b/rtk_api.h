@@ -2,8 +2,8 @@
  * Copyright(c) Realtek Semiconductor Corporation, 2008
  * All rights reserved.
  *
- * $Revision$
- * $Date$
+ * $Revision: 28599 $
+ * $Date: 2012-05-07 09:41:37 +0800 (星期一, 07 五月 2012) $
  *
  * Purpose : Definition function prototype of RTK API.
  *
@@ -794,6 +794,20 @@ typedef enum rtk_l2_flood_type_e
 
 typedef rtk_uint32 rtk_l2_flushItem_t;
 
+typedef rtk_uint32  rtk_vlan_t;        /* vlan id type */
+typedef struct  rtk_vlan_mbrcfg_s
+{
+    rtk_uint16 	evid;
+	rtk_uint16 	mbr;
+    rtk_uint16  fid_msti;
+    rtk_uint16  envlanpol;
+    rtk_uint16  meteridx;
+    rtk_uint16  vbpen;
+    rtk_uint16  vbpri;
+}rtk_vlan_mbrcfg_t;
+
+typedef rtk_uint32  rtk_port_t;        /* port is type */
+
 typedef enum rtk_l2_flushType_e
 {
     FLUSH_TYPE_BY_PORT = 0,       /* physical port       */
@@ -801,6 +815,18 @@ typedef enum rtk_l2_flushType_e
     FLUSH_TYPE_END
 } rtk_l2_flushType_t;
 
+typedef struct rtk_l2_flushCfg_s
+{
+    rtk_enable_t    flushByVid;
+    rtk_vlan_t      vid;
+    rtk_enable_t    flushByPort;
+    rtk_enable_t    reserved;
+    rtk_port_t      port;
+    rtk_enable_t    flushByMac;
+    rtk_mac_t       ucastAddr;
+    rtk_enable_t    flushStaticAddr;
+    rtk_enable_t    flushAddrOnAllPorts; /* this is used when flushByVid */
+} rtk_l2_flushCfg_t;
 
 typedef enum rtk_l2_hash_method_e
 {
@@ -1026,8 +1052,6 @@ typedef enum rtk_mode_e
     MODE_END
 } rtk_mode_t;
 
-typedef rtk_uint32  rtk_port_t;        /* port is type */
-
 typedef enum rtk_port_duplex_e
 {
     PORT_HALF_DUPLEX = 0,
@@ -1128,6 +1152,55 @@ typedef struct rtk_portmask_s
 {
     rtk_uint32  bits[RTK_TOTAL_NUM_OF_WORD_FOR_1BIT_PORT_LIST];
 } rtk_portmask_t;
+
+typedef struct rtk_rtctResult_s
+{
+    rtk_port_speed_t    linkType;
+    union
+    {
+        struct fe_result_s
+        {
+            rtk_uint32      isRxShort;
+            rtk_uint32      isTxShort;
+            rtk_uint32      isRxOpen;
+            rtk_uint32      isTxOpen;
+            rtk_uint32      isRxMismatch;
+            rtk_uint32      isTxMismatch;
+            rtk_uint32      isRxLinedriver;
+            rtk_uint32      isTxLinedriver;
+            rtk_uint32      rxLen;
+            rtk_uint32      txLen;
+        } fe_result;
+
+        struct ge_result_s
+        {
+            rtk_uint32      channelAShort;
+            rtk_uint32      channelBShort;
+            rtk_uint32      channelCShort;
+            rtk_uint32      channelDShort;
+
+            rtk_uint32      channelAOpen;
+            rtk_uint32      channelBOpen;
+            rtk_uint32      channelCOpen;
+            rtk_uint32      channelDOpen;
+
+            rtk_uint32      channelAMismatch;
+            rtk_uint32      channelBMismatch;
+            rtk_uint32      channelCMismatch;
+            rtk_uint32      channelDMismatch;
+
+            rtk_uint32      channelALinedriver;
+            rtk_uint32      channelBLinedriver;
+            rtk_uint32      channelCLinedriver;
+            rtk_uint32      channelDLinedriver;
+
+            rtk_uint32      channelALen;
+            rtk_uint32      channelBLen;
+            rtk_uint32      channelCLen;
+            rtk_uint32      channelDLen;
+        } ge_result;
+    }result;
+} rtk_rtctResult_t;
 
 typedef rtk_uint32  rtk_pri_t;         /* priority vlaue */
 
@@ -1327,6 +1400,20 @@ typedef enum rtk_stat_port_type_e
     STAT_PORT_CNTR_END
 }rtk_stat_port_type_t;
 
+typedef enum rtk_logging_counter_mode_e
+{
+    LOGGING_MODE_32BIT = 0,
+    LOGGING_MODE_64BIT,
+    LOGGING_MODE_END
+}rtk_logging_counter_mode_t;
+
+typedef enum rtk_logging_counter_type_e
+{
+    LOGGING_TYPE_PACKET = 0,
+    LOGGING_TYPE_BYTE,
+    LOGGING_TYPE_END
+}rtk_logging_counter_type_t;
+
 typedef rtk_uint32  rtk_stg_t;        /* spanning tree instance id type */
 
 typedef enum rtk_storm_bypass_e
@@ -1458,6 +1545,7 @@ typedef enum rtk_trap_mcast_action_e
     MCAST_ACTION_FORWARD = 0,
     MCAST_ACTION_DROP,
     MCAST_ACTION_TRAP2CPU,
+    MCAST_ACTION_ROUTER_PORT,
     MCAST_ACTION_END
 } rtk_trap_mcast_action_t;
 
@@ -1545,8 +1633,6 @@ typedef enum rtk_vlan_protoVlan_frameType_e
     FRAME_TYPE_RFC1042,
     FRAME_TYPE_END
 } rtk_vlan_protoVlan_frameType_t;
-
-typedef rtk_uint32  rtk_vlan_t;        /* vlan id type */
 
 /* Protocol-and-port-based Vlan structure */
 typedef struct rtk_vlan_protoAndPortInfo_s

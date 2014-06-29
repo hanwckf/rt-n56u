@@ -3,6 +3,7 @@
 
 #include "rtl8367b_asicdrv.h"
 #include "rtl8367b_asicdrv_unknownMulticast.h"
+#include "rtl8367b_asicdrv_phy.h"
 
 /****************************************************************/
 /* Type Definition                                              */
@@ -10,6 +11,13 @@
 
 #define	RTL8367B_MAC7		7
 #define RTL8367B_EXTNO       3
+
+#define RTL8367B_RTCT_PAGE          (11)
+#define RTL8367B_RTCT_RESULT_A_REG  (27)
+#define RTL8367B_RTCT_RESULT_B_REG  (28)
+#define RTL8367B_RTCT_RESULT_C_REG  (29)
+#define RTL8367B_RTCT_RESULT_D_REG  (30)
+#define RTL8367B_RTCT_STATUS_REG    (26)
 
 enum L2_SECURITY_BEHAVE
 {
@@ -149,6 +157,34 @@ typedef struct  rtl8367b_port_status_s{
 #endif
 }rtl8367b_port_status_t;
 
+typedef struct rtct_result_s
+{
+    rtk_uint32      channelAShort;
+    rtk_uint32      channelBShort;
+    rtk_uint32      channelCShort;
+    rtk_uint32      channelDShort;
+
+    rtk_uint32      channelAOpen;
+    rtk_uint32      channelBOpen;
+    rtk_uint32      channelCOpen;
+    rtk_uint32      channelDOpen;
+
+    rtk_uint32      channelAMismatch;
+    rtk_uint32      channelBMismatch;
+    rtk_uint32      channelCMismatch;
+    rtk_uint32      channelDMismatch;
+
+    rtk_uint32      channelALinedriver;
+    rtk_uint32      channelBLinedriver;
+    rtk_uint32      channelCLinedriver;
+    rtk_uint32      channelDLinedriver;
+
+    rtk_uint32      channelALen;
+    rtk_uint32      channelBLen;
+    rtk_uint32      channelCLen;
+    rtk_uint32      channelDLen;
+} rtl8367b_port_rtct_result_t;
+
 
 /****************************************************************/
 /* Driver Proto Type Definition                                 */
@@ -182,6 +218,8 @@ extern ret_t rtl8367b_setAsicPortSmallIpg(rtk_uint32 port, rtk_uint32 enable);
 extern ret_t rtl8367b_getAsicPortSmallIpg(rtk_uint32 port, rtk_uint32* pEnable);
 extern ret_t rtl8367b_setAsicPortLoopback(rtk_uint32 port, rtk_uint32 enable);
 extern ret_t rtl8367b_getAsicPortLoopback(rtk_uint32 port, rtk_uint32 *pEnable);
+extern ret_t rtl8367b_setAsicPortRTCT(rtk_uint32 portmask);
+extern ret_t rtl8367b_getAsicPortRTCTResult(rtk_uint32 port, rtl8367b_port_rtct_result_t *pResult);
 
 #endif /*_RTL8367B_ASICDRV_PORTSECURITY_H_*/
 

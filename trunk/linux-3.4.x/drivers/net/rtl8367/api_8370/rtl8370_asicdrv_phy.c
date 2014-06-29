@@ -9,8 +9,8 @@
  * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER 
  * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED. 
  *
- * $Revision: 6927 $
- * $Date: 2009-11-10 19:12:30 +0800 (Tue, 10 Nov 2009) $
+ * $Revision: 1.1.1.1 $
+ * $Date: 2010/12/02 04:34:25 $
  *
  * Purpose : RTL8370 switch high-level API for RTL8367B
  * Feature : 

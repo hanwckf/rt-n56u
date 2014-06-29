@@ -2,8 +2,8 @@
  * Copyright(c) Realtek Semiconductor Corporation, 2008
  * All rights reserved.
  *
- * $Revision$
- * $Date$
+ * $Revision: 28599 $
+ * $Date: 2012-05-07 09:41:37 +0800 (星期一, 07 五月 2012) $
  *
  * Purpose : Definition the error number in the SDK.
  *
@@ -17,7 +17,6 @@
 /*
  * Include Files
  */
-//#include <common/rt_type.h>
 
 /*
  * Data Type Declaration
@@ -188,7 +187,8 @@ typedef enum rt_error_code_e
     RT_ERR_PHY_FORCE_ABILITY,                       /* 0x000e0006, invalid PHY force mode ability parameter                             */
     RT_ERR_PHY_FORCE_1000,                          /* 0x000e0007, invalid PHY force mode 1G speed setting                              */
     RT_ERR_PHY_TXRX,                                /* 0x000e0008, invalid PHY tx/rx                                                    */
-    RT_ERR_PHY_ID,                                  /* 0x000e0009, invalid PHY id                                                   */
+    RT_ERR_PHY_ID,                                  /* 0x000e0009, invalid PHY id                                                       */
+    RT_ERR_PHY_RTCT_NOT_FINISH,                     /* 0x000e000a, PHY RTCT in progress                                                 */
 
     /* 0x000fxxxx for mirror */
     RT_ERR_MIRROR_DIRECTION = 0x000f0000,           /* 0x000f0000, invalid error mirror direction                                       */

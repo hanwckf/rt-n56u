@@ -238,8 +238,8 @@ struct fdb_ipmulticast_st{
 	rtk_uint16 dip1:8;
 	rtk_uint16 dip0:8;
 
-	rtk_uint16 l3lookup:1;
     rtk_uint16 reserved:3;
+	rtk_uint16 l3lookup:1;
 	rtk_uint16 dip3:4;
 	rtk_uint16 dip2:8;
 

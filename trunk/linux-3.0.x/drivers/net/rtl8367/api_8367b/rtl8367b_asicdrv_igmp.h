@@ -78,14 +78,14 @@ typedef struct
  * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER
  * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED.
  *
- * $Revision: 6657 $
- * $Date: 2009-10-30 14:48:32 +0800 (星期五, 30 十月 2009) $
+ * $Revision: 28599 $
+ * $Date: 2012-05-07 09:41:37 +0800 (星期一, 07 五月 2012) $
  *
  * Purpose : RTL8367B switch high-level API for RTL8367B
  * Feature : IGMP related functions
  *
  */
-#include "rtl8367b_asicdrv_igmp.h"
+#include <rtl8367b_asicdrv_igmp.h>
 
 ret_t rtl8367b_setAsicIgmp(rtk_uint32 enabled);
 ret_t rtl8367b_getAsicIgmp(rtk_uint32 *pEnabled);

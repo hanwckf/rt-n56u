@@ -9,8 +9,8 @@
  * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER
  * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED.
  *
- * $Revision: 18037 $
- * $Date: 2011-05-20 16:23:49 +0800 (星期五, 20 五月 2011) $
+ * $Revision: 28599 $
+ * $Date: 2012-05-07 09:41:37 +0800 (星期一, 07 五月 2012) $
  *
  * Purpose : RTL8367B switch high-level API for RTL8367B
  * Feature : Port security related functions
@@ -581,7 +581,12 @@ ret_t rtl8367b_setAsicPortExtMode(rtk_uint32 id, rtk_uint32 mode)
 
     if( (mode == EXT_TMII_MAC) || (mode == EXT_TMII_PHY) )
     {
-        if( (retVal = rtl8367b_setAsicReg(RTL8367B_REG_BYPASS_LINE_RATE, 0x0007)) != RT_ERR_OK)
+        if( (retVal = rtl8367b_setAsicRegBit(RTL8367B_REG_BYPASS_LINE_RATE, id, 1)) != RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        if( (retVal = rtl8367b_setAsicRegBit(RTL8367B_REG_BYPASS_LINE_RATE, id, 0)) != RT_ERR_OK)
             return retVal;
     }
 
@@ -764,3 +769,128 @@ ret_t rtl8367b_getAsicPortLoopback(rtk_uint32 port, rtk_uint32 *pEnable)
     return rtl8367b_getAsicRegBit(RTL8367B_PORT_MISC_CFG_REG(port), RTL8367B_PORT0_MISC_CFG_MAC_LOOPBACK_OFFSET, pEnable);
 }
 
+/* Function Name:
+ *      rtl8367b_setAsicPortRTCT
+ * Description:
+ *      Set RTCT
+ * Input:
+ *      portmask 	- Port mask of RTCT enabled (0-4)
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK 		    - Success
+ *      RT_ERR_SMI  	    - SMI access error
+ *      RT_ERR_PORT_MASK    - Invalid port mask
+ * Note:
+ *      RTCT test takes 4.8 seconds at most.
+ */
+ret_t rtl8367b_setAsicPortRTCT(rtk_uint32 portmask)
+{
+    ret_t       retVal;
+
+    if(portmask > (0x0001 << RTL8367B_PHYNO))
+		return RT_ERR_PORT_MASK;
+
+    if((retVal = rtl8367b_setAsicRegBits(RTL8367B_REG_RTCT_ENABLE, RTL8367B_RTCT_ENABLE_PORT_MASK_MASK, portmask)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367b_setAsicRegBit(RTL8367B_REG_SEL_RTCT_PARA, RTL8367B_EN_RTCT_TIMOUT_OFFSET, 1)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367b_setAsicRegBit(RTL8367B_REG_SEL_RTCT_PARA, RTL8367B_EN_ALL_RTCT_OFFSET, 0)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367b_setAsicRegBit(RTL8367B_REG_SEL_RTCT_PARA, RTL8367B_DO_RTCT_COMMAND_OFFSET, 0)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367b_setAsicRegBit(RTL8367B_REG_SEL_RTCT_PARA, RTL8367B_DO_RTCT_COMMAND_OFFSET, 1)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtl8367b_getAsicPortRTCTResult
+ * Description:
+ *      Get RTCT result
+ * Input:
+ *      port 	- Port ID of RTCT result
+ * Output:
+ *      pResult - The result of port ID
+ * Return:
+ *      RT_ERR_OK 		            - Success
+ *      RT_ERR_SMI  	            - SMI access error
+ *      RT_ERR_PORT_MASK            - Invalid port mask
+ *      RT_ERR_PHY_RTCT_NOT_FINISH  - RTCT test doesn't finish.
+ * Note:
+ *      RTCT test takes 4.8 seconds at most.
+ *      If this API returns RT_ERR_PHY_RTCT_NOT_FINISH,
+ *      users should wait a whole then read it again.
+ */
+ret_t rtl8367b_getAsicPortRTCTResult(rtk_uint32 port, rtl8367b_port_rtct_result_t *pResult)
+{
+    ret_t       retVal;
+    rtk_uint32  regData, finish = 1;
+
+    if(port >= RTL8367B_PHYNO)
+		return RT_ERR_PORT_ID;
+
+    if((retVal = rtl8367b_setAsicPHYReg(port, RTL8367B_PHY_PAGE_ADDRESS, RTL8367B_RTCT_PAGE)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367b_getAsicPHYReg(port, RTL8367B_RTCT_RESULT_A_REG, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    if((regData & 0x4000) == 0x4000)
+    {
+        pResult->channelALen = regData & 0x1FFF;
+
+        if((retVal = rtl8367b_getAsicPHYReg(port, RTL8367B_RTCT_RESULT_B_REG, &regData)) != RT_ERR_OK)
+            return retVal;
+
+        pResult->channelBLen = regData & 0x1FFF;
+
+        if((retVal = rtl8367b_getAsicPHYReg(port, RTL8367B_RTCT_RESULT_C_REG, &regData)) != RT_ERR_OK)
+            return retVal;
+
+        pResult->channelCLen = regData & 0x1FFF;
+
+        if((retVal = rtl8367b_getAsicPHYReg(port, RTL8367B_RTCT_RESULT_D_REG, &regData)) != RT_ERR_OK)
+            return retVal;
+
+        pResult->channelDLen = regData & 0x1FFF;
+
+        if((retVal = rtl8367b_getAsicPHYReg(port, RTL8367B_RTCT_STATUS_REG, &regData)) != RT_ERR_OK)
+            return retVal;
+
+        pResult->channelALinedriver = (regData & 0x0001);
+        pResult->channelBLinedriver = (regData & 0x0002);
+        pResult->channelCLinedriver = (regData & 0x0004);
+        pResult->channelDLinedriver = (regData & 0x0008);
+
+        pResult->channelAMismatch   = (regData & 0x0010);
+        pResult->channelBMismatch   = (regData & 0x0020);
+        pResult->channelCMismatch   = (regData & 0x0040);
+        pResult->channelDMismatch   = (regData & 0x0080);
+
+        pResult->channelAOpen       = (regData & 0x0100);
+        pResult->channelBOpen       = (regData & 0x0200);
+        pResult->channelCOpen       = (regData & 0x0400);
+        pResult->channelDOpen       = (regData & 0x0800);
+
+        pResult->channelAShort      = (regData & 0x1000);
+        pResult->channelBShort      = (regData & 0x2000);
+        pResult->channelCShort      = (regData & 0x4000);
+        pResult->channelDShort      = (regData & 0x8000);
+    }
+    else
+        finish = 0;
+
+    if((retVal = rtl8367b_setAsicPHYReg(port, RTL8367B_PHY_PAGE_ADDRESS, 0)) != RT_ERR_OK)
+        return retVal;
+
+    if(finish == 0)
+        return RT_ERR_PHY_RTCT_NOT_FINISH;
+    else
+        return RT_ERR_OK;
+}

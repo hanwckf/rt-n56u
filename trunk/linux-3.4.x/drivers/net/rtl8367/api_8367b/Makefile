@@ -33,15 +33,10 @@ obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv.o
 ifneq ($(API_8367B_REDUCE_CODE),y)
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_eav.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_eee.o
-obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_eeelldp.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_fc.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_inbwctrl.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_mirror.o
-obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_oam.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_qos.o
-obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_rldp.o
-obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_rrcp.o
-obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_specialCongest.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_igmp.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_rma.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_scheduling.o

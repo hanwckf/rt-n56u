@@ -13,6 +13,11 @@ ifdef CONFIG_RAETH_ESW
 utils_dir_y			+= switch
 endif
 
+# hub-ctrl
+ifdef CONFIG_USB_SUPPORT
+utils_dir_y			+= hub-ctrl
+endif
+
 all romfs:
 	for i in $(utils_dir_y) ; do make -C $$i $@ || exit $?; done
 

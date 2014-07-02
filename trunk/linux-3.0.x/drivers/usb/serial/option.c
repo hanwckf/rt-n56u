@@ -28,7 +28,6 @@
   device features.
 */
 
-#define DRIVER_VERSION "v0.7.2"
 #define DRIVER_AUTHOR "Matthias Urlichs <smurf@smurf.noris.de>"
 #define DRIVER_DESC "USB Driver for GSM modems"
 
@@ -1792,8 +1791,6 @@ static struct usb_serial_driver option_1port_device = {
 #endif
 };
 
-static int debug;
-
 /* Functions used by new usb-serial code. */
 static int __init option_init(void)
 {
@@ -1806,8 +1803,7 @@ static int __init option_init(void)
 	if (retval)
 		goto failed_driver_register;
 
-	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_VERSION ":"
-	       DRIVER_DESC "\n");
+	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_DESC "\n");
 
 	return 0;
 
@@ -1998,8 +1994,4 @@ static int option_send_setup(struct usb_serial_port *port)
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
-MODULE_VERSION(DRIVER_VERSION);
 MODULE_LICENSE("GPL");
-
-module_param(debug, bool, S_IRUGO | S_IWUSR);
-MODULE_PARM_DESC(debug, "Debug messages");

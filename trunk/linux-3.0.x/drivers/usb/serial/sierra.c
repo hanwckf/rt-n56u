@@ -18,7 +18,7 @@
 */
 /* Uncomment to log function calls */
 /* #define DEBUG */
-#define DRIVER_VERSION "v.1.7.16"
+
 #define DRIVER_AUTHOR "Kevin Lloyd, Elina Pasheva, Matthew Safar, Rory Filer"
 #define DRIVER_DESC "USB Driver for Sierra Wireless USB modems"
 
@@ -46,7 +46,6 @@
    allocations > PAGE_SIZE and the number of packets in a page
    is an integer 512 is the largest possible packet on EHCI */
 
-static int debug;
 static int nmea;
 
 /* Used in interface blacklisting */
@@ -511,7 +510,7 @@ static int sierra_write(struct tty_struct *tty, struct usb_serial_port *port,
 
 	memcpy(buffer, buf, writesize);
 
-	usb_serial_debug_data(debug, &port->dev, __func__, writesize, buffer);
+	usb_serial_debug_data(false, &port->dev, __func__, writesize, buffer);
 
 	usb_fill_bulk_urb(urb, serial->dev,
 			  usb_sndbulkpipe(serial->dev,
@@ -588,7 +587,7 @@ static void sierra_indat_callback(struct urb *urb)
 				tty_flip_buffer_push(tty);
 
 				tty_kref_put(tty);
-				usb_serial_debug_data(debug, &port->dev,
+				usb_serial_debug_data(false, &port->dev,
 					__func__, urb->actual_length, data);
 			}
 		} else {
@@ -1138,8 +1137,7 @@ static int __init sierra_init(void)
 	if (retval)
 		goto failed_driver_register;
 
-	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_VERSION ":"
-	       DRIVER_DESC "\n");
+	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_DESC "\n");
 
 	return 0;
 
@@ -1160,11 +1158,8 @@ module_exit(sierra_exit);
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
-MODULE_VERSION(DRIVER_VERSION);
 MODULE_LICENSE("GPL");
 
 module_param(nmea, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(nmea, "NMEA streaming");
 
-module_param(debug, bool, S_IRUGO | S_IWUSR);
-MODULE_PARM_DESC(debug, "Debug messages");

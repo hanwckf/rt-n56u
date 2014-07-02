@@ -18,6 +18,7 @@
 */
 /* Uncomment to log function calls */
 /* #define DEBUG */
+
 #define DRIVER_AUTHOR "Kevin Lloyd, Elina Pasheva, Matthew Safar, Rory Filer"
 #define DRIVER_DESC "USB Driver for Sierra Wireless USB modems"
 

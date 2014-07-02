@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: peer-msgs.c 14266 2014-04-27 23:10:01Z jordan $
+ * $Id: peer-msgs.c 14302 2014-06-29 01:42:38Z jordan $
  */
 
 #include <assert.h>
@@ -32,6 +32,10 @@
 #include "utils.h"
 #include "variant.h"
 #include "version.h"
+
+#ifndef EBADMSG
+ #define EBADMSG EINVAL
+#endif
 
 /**
 ***
@@ -1692,6 +1696,12 @@ clientGotBlock (tr_peerMsgs                * msgs,
 
     assert (msgs);
     assert (req);
+
+    if (!requestIsValid (msgs, req)) {
+        dbgmsg (msgs, "dropping invalid block %u:%u->%u",
+                req->index, req->offset, req->length);
+        return EBADMSG;
+    }
 
     if (req->length != tr_torBlockCountBytes (msgs->torrent, block)) {
         dbgmsg (msgs, "wrong block size -- expected %u, got %d",

@@ -91,6 +91,7 @@
 #if ENABLE_HUSH_CASE
 # include <fnmatch.h>
 #endif
+#include <sys/utsname.h> /* for setting $HOSTNAME */
 
 #include "busybox.h"  /* for APPLET_IS_NOFORK/NOEXEC */
 #include "unicode.h"
@@ -7785,6 +7786,14 @@ int hush_main(int argc, char **argv)
 
 	/* Export PWD */
 	set_pwd_var(/*exp:*/ 1);
+
+#if ENABLE_HUSH_BASH_COMPAT
+	/* Set (but not export) HOSTNAME unless already set */
+	if (!get_local_var_value("HOSTNAME")) {
+		struct utsname uts;
+		uname(&uts);
+		set_local_var_from_halves("HOSTNAME", uts.nodename);
+	}
 	/* bash also exports SHLVL and _,
 	 * and sets (but doesn't export) the following variables:
 	 * BASH=/bin/bash
@@ -7793,7 +7802,6 @@ int hush_main(int argc, char **argv)
 	 * HOSTTYPE=i386
 	 * MACHTYPE=i386-pc-linux-gnu
 	 * OSTYPE=linux-gnu
-	 * HOSTNAME=<xxxxxxxxxx>
 	 * PPID=<NNNNN> - we also do it elsewhere
 	 * EUID=<NNNNN>
 	 * UID=<NNNNN>
@@ -7821,6 +7829,7 @@ int hush_main(int argc, char **argv)
 	 * PS2='> '
 	 * PS4='+ '
 	 */
+#endif
 
 #if ENABLE_FEATURE_EDITING
 	G.line_input_state = new_line_input_t(FOR_SHELL);

@@ -30,9 +30,12 @@ char* FAST_FUNC bb_ask(const int fd, int timeout, const char *prompt)
 	struct sigaction sa, oldsa;
 	struct termios tio, oldtio;
 
+	tcflush(fd, TCIFLUSH);
+	/* Was buggy: was printing prompt *before* flushing input,
+	 * which was upsetting "expect" based scripts of some users.
+	 */
 	fputs(prompt, stdout);
 	fflush_all();
-	tcflush(fd, TCIFLUSH);
 
 	tcgetattr(fd, &oldtio);
 	tio = oldtio;

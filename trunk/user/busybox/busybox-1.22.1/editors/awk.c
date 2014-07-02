@@ -1540,12 +1540,14 @@ static void chain_group(void)
 			debug_printf_parse("%s: OC_BREAK\n", __func__);
 			n = chain_node(OC_EXEC);
 			n->a.n = break_ptr;
+			chain_expr(t_info);
 			break;
 
 		case OC_CONTINUE:
 			debug_printf_parse("%s: OC_CONTINUE\n", __func__);
 			n = chain_node(OC_EXEC);
 			n->a.n = continue_ptr;
+			chain_expr(t_info);
 			break;
 
 		/* delete, next, nextfile, return, exit */

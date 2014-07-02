@@ -295,6 +295,22 @@ testing "awk -e and ARGC" \
 	""
 SKIP=
 
+# The examples are in fact not valid awk programs (break/continue
+# can only be used inside loops).
+# But we do accept them outside of loops.
+# We had a bug with misparsing "break ; else" sequence.
+# Test that *that* bug is fixed, using simplest possible scripts:
+testing "awk break" \
+	"awk -f - 2>&1; echo \$?" \
+	"0\n" \
+	"" \
+	'BEGIN { if (1) break; else a = 1 }'
+testing "awk continue" \
+	"awk -f - 2>&1; echo \$?" \
+	"0\n" \
+	"" \
+	'BEGIN { if (1) continue; else a = 1 }'
+
 # testing "description" "command" "result" "infile" "stdin"
 
 exit $FAILCOUNT

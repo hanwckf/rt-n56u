@@ -22,6 +22,19 @@
 #ifndef	__LINUX_USB_USBNET_H
 #define	__LINUX_USB_USBNET_H
 
+#include <linux/u64_stats_sync.h>
+
+/*
+ * Data structure to hold primary network 64 bit stats.
+ */
+struct usbnet_stats64 {
+	struct u64_stats_sync syncp;
+	u64 rx_packets;
+	u64 tx_packets;
+	u64 rx_bytes;
+	u64 tx_bytes;
+};
+
 /* interface from usbnet core to each USB networking link we handle */
 struct usbnet {
 	/* housekeeping */
@@ -35,6 +48,7 @@ struct usbnet {
 	unsigned char		suspend_count;
 	unsigned char		pkt_cnt, pkt_err;
 	unsigned short		rx_qlen, tx_qlen;
+	struct usbnet_stats64 __percpu *stats64;
 
 	/* i/o info: pipes etc */
 	unsigned		in, out;
@@ -225,6 +239,8 @@ extern netdev_tx_t usbnet_start_xmit(struct sk_buff *skb,
 				     struct net_device *net);
 extern void usbnet_tx_timeout(struct net_device *net);
 extern int usbnet_change_mtu(struct net_device *net, int new_mtu);
+extern struct rtnl_link_stats64*
+usbnet_get_stats64(struct net_device *net, struct rtnl_link_stats64 *stats64);
 
 extern int usbnet_get_endpoints(struct usbnet *, struct usb_interface *);
 extern int usbnet_get_ethernet_addr(struct usbnet *, int);

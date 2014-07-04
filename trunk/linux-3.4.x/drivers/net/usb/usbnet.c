@@ -325,6 +325,7 @@ static void __usbnet_status_stop_force(struct usbnet *dev)
 void usbnet_skb_return (struct usbnet *dev, struct sk_buff *skb)
 {
 	int	status;
+	struct usbnet_stats64 *stats;
 
 	if (test_bit(EVENT_RX_PAUSED, &dev->flags)) {
 		skb_queue_tail(&dev->rxq_pause, skb);
@@ -332,8 +333,12 @@ void usbnet_skb_return (struct usbnet *dev, struct sk_buff *skb)
 	}
 
 	skb->protocol = eth_type_trans (skb, dev->net);
-	dev->net->stats.rx_packets++;
-	dev->net->stats.rx_bytes += skb->len;
+
+	stats = this_cpu_ptr(dev->stats64);
+	u64_stats_update_begin(&stats->syncp);
+	stats->rx_packets++;
+	stats->rx_bytes += skb->len;
+	u64_stats_update_end(&stats->syncp);
 
 	netif_dbg(dev, rx_status, dev->net, "< rx, len %zu, type 0x%x\n",
 		  skb->len + sizeof (struct ethhdr), skb->protocol);
@@ -400,6 +405,44 @@ EXPORT_SYMBOL_GPL(usbnet_update_max_qlen);
  * Network Device Driver (peer link to "Host Device", from USB host)
  *
  *-------------------------------------------------------------------------*/
+
+struct rtnl_link_stats64*
+usbnet_get_stats64(struct net_device *net, struct rtnl_link_stats64 *stats64)
+{
+	struct usbnet *dev = netdev_priv(net);
+	unsigned int start;
+	int cpu;
+
+	for_each_possible_cpu(cpu) {
+		struct usbnet_stats64 *stats = per_cpu_ptr(dev->stats64, cpu);
+		u64 tpackets, tbytes, rpackets, rbytes;
+
+		do {
+			start = u64_stats_fetch_begin(&stats->syncp);
+			rpackets = stats->rx_packets;
+			tpackets = stats->tx_packets;
+			rbytes   = stats->rx_bytes;
+			tbytes   = stats->tx_bytes;
+		} while (u64_stats_fetch_retry(&stats->syncp, start));
+
+		stats64->rx_packets += rpackets;
+		stats64->tx_packets += tpackets;
+		stats64->rx_bytes   += rbytes;
+		stats64->tx_bytes   += tbytes;
+	}
+
+	stats64->rx_errors         = dev->net->stats.rx_errors;
+	stats64->tx_errors         = dev->net->stats.tx_errors;
+	stats64->rx_dropped        = dev->net->stats.rx_dropped;
+	stats64->tx_dropped        = dev->net->stats.tx_dropped;
+	stats64->rx_length_errors  = dev->net->stats.rx_length_errors;
+	stats64->rx_over_errors    = dev->net->stats.rx_over_errors;
+	stats64->rx_frame_errors   = dev->net->stats.rx_frame_errors;
+	stats64->tx_carrier_errors = dev->net->stats.tx_carrier_errors;
+
+	return stats64;
+}
+EXPORT_SYMBOL_GPL(usbnet_get_stats64);
 
 int usbnet_change_mtu (struct net_device *net, int new_mtu)
 {
@@ -812,8 +855,8 @@ int usbnet_stop (struct net_device *net)
 	netif_stop_queue (net);
 
 	netif_info(dev, ifdown, dev->net,
-		   "stop stats: rx/tx %lu/%lu, errs %lu/%lu\n",
-		   net->stats.rx_packets, net->stats.tx_packets,
+		   "stop stats: rx/tx %llu/%llu, errs %lu/%lu\n",
+		   dev->stats64->rx_packets, dev->stats64->tx_packets,
 		   net->stats.rx_errors, net->stats.tx_errors);
 
 	/* to not race resume */
@@ -1166,9 +1209,12 @@ static void tx_complete (struct urb *urb)
 	struct usbnet		*dev = entry->dev;
 
 	if (urb->status == 0) {
+		struct usbnet_stats64 *stats = this_cpu_ptr(dev->stats64);
+		u64_stats_update_begin(&stats->syncp);
 		if (!(dev->driver_info->flags & FLAG_MULTI_PACKET))
-			dev->net->stats.tx_packets++;
-		dev->net->stats.tx_bytes += entry->length;
+			stats->tx_packets++;
+		stats->tx_bytes += entry->length;
+		u64_stats_update_end(&stats->syncp);
 	} else {
 		dev->net->stats.tx_errors++;
 
@@ -1477,6 +1523,8 @@ void usbnet_disconnect (struct usb_interface *intf)
 	usb_kill_urb(dev->interrupt);
 	usb_free_urb(dev->interrupt);
 
+	free_percpu(dev->stats64);
+
 	free_netdev(net);
 }
 EXPORT_SYMBOL_GPL(usbnet_disconnect);
@@ -1486,8 +1534,9 @@ static const struct net_device_ops usbnet_netdev_ops = {
 	.ndo_stop		= usbnet_stop,
 	.ndo_start_xmit		= usbnet_start_xmit,
 	.ndo_tx_timeout		= usbnet_tx_timeout,
+	.ndo_get_stats64	= usbnet_get_stats64,
 	.ndo_change_mtu		= usbnet_change_mtu,
-	.ndo_set_mac_address 	= eth_mac_addr,
+	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_validate_addr	= eth_validate_addr,
 };
 
@@ -1653,9 +1702,15 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 	/* initialize max rx_qlen and tx_qlen */
 	usbnet_update_max_qlen(dev);
 
+	dev->stats64 = alloc_percpu(struct usbnet_stats64);
+	if (!dev->stats64) {
+		status = -ENOMEM;
+		goto out4;
+	}
+
 	status = register_netdev (net);
 	if (status)
-		goto out4;
+		goto out5;
 	netif_info(dev, probe, dev->net,
 		   "register '%s' at usb-%s-%s, %s, %pM\n",
 		   udev->dev.driver->name,
@@ -1680,6 +1735,8 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 
 	return 0;
 
+out5:
+	free_percpu(dev->stats64);
 out4:
 	usb_free_urb(dev->interrupt);
 out3:

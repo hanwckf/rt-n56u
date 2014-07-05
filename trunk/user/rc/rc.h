@@ -574,8 +574,6 @@ int detect_wan_main(int argc, char *argv[]);
 #if (BOARD_NUM_USB_PORTS > 0)
 /* usb_modem.c */
 int  get_modem_devnum(void);
-int  connect_ndis(int devnum);
-int  disconnect_ndis(int devnum);
 int  get_modem_ndis_ifname(char ndis_ifname[16], int *devnum_out);
 void notify_modem_on_wan_ether_link_changed(int has_link);
 void safe_remove_usb_modem(void);

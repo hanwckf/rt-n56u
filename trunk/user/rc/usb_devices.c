@@ -369,24 +369,24 @@ int mdev_wdm_main(int argc, char **argv)
 	action = argv[2];
 
 	usb_dbg("(%s): action=%s.\n", device_name, action);
-	
-	if(!isWDMNode(device_name))
+
+	if (!isWDMNode(device_name))
 		return 0;
-	
+
 	sprintf(node_fname, "%s/%s", MODEM_NODE_DIR, device_name);
-	
+
 	// Check Lock.
 	if((isLock = file_lock(device_name)) == -1)
 		return 0;
-	
+
 	unlink(QMI_CLIENT_ID);
-	
+
 	// If remove the device?
 	if(!check_hotplug_action(action)){
 		unlink(node_fname);
 		goto out_unlock;
 	}
-	
+
 	// Write node file.
 	mkdir_if_none(MODEM_NODE_DIR);
 	fp = fopen(node_fname, "w+");
@@ -395,12 +395,12 @@ int mdev_wdm_main(int argc, char **argv)
 		fprintf(fp, "devnum=%d\n", 0); // todo
 		fclose(fp);
 	}
-	
+
 	usb_dbg("(%s): Success!\n", device_name);
-	
+
 out_unlock:
 	file_unlock(isLock);
-	
+
 	return 1;
 }
 
@@ -420,16 +420,16 @@ int mdev_net_main(int argc, char **argv)
 	action = argv[2];
 
 	usb_dbg("(%s): action=%s.\n", device_name, action);
-	
+
 	if (!isUsbNetIf(device_name))
 		return 0;
-	
+
 	sprintf(node_fname, "%s/%s", MODEM_NODE_DIR, device_name);
-	
+
 	// Check Lock.
 	if((isLock = file_lock(device_name)) == -1)
 		return 0;
-	
+
 	// If remove the device?
 	if(!check_hotplug_action(action)){
 		unlink(node_fname);
@@ -495,7 +495,7 @@ int mdev_tty_main(int argc, char **argv)
 	// Check Lock.
 	if((isLock = file_lock(device_name)) == -1)
 		return 0;
-	
+
 	// If remove the device?
 	if(!check_hotplug_action(action)){
 		unlink(node_fname);

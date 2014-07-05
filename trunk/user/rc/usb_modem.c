@@ -33,8 +33,9 @@
 
 #include "rc.h"
 
-#define MODEM_SCRIPTS_DIR "/etc_ro"
-#define MAX_USB_NODE  (15)
+#define MODEM_SCRIPTS_DIR	"/etc_ro"
+#define MAX_USB_NODE		(15)
+#define MAX_QMI_TRIES		(3)
 
 static int
 get_modem_vid_pid(const char *modem_node, int *vid, int *pid)
@@ -64,7 +65,7 @@ write_pppd_ras_conf(const char* call_path, const char *modem_node, int unit)
 {
 	FILE *fp;
 	int modem_type, vid = 0, pid = 0;
-	char *user, *pass, *isp, tmp[256];
+	char tmp[256], *user, *pass, *isp, *connect;
 
 	if (!get_modem_vid_pid(modem_node, &vid, &pid))
 		return 0;
@@ -78,8 +79,8 @@ write_pppd_ras_conf(const char* call_path, const char *modem_node, int unit)
 	isp = nvram_safe_get("modem_isp");
 
 	fprintf(fp, "/dev/%s\n", modem_node);
-	fprintf(fp, "modem\n");
 	fprintf(fp, "crtscts\n");
+	fprintf(fp, "modem\n");
 	fprintf(fp, "noauth\n");
 
 	if(strlen(user) > 0)
@@ -111,31 +112,31 @@ write_pppd_ras_conf(const char* call_path, const char *modem_node, int unit)
 	fprintf(fp, "minunit %d\n", RAS_PPP_UNIT);
 	fprintf(fp, "linkname wan%d\n", unit);
 
-	if(modem_type == 2){
-		fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/td.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
-		fprintf(fp, "disconnect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/Generic_disconn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
-	}
-	else if(modem_type == 1){
-		fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/EVDO_conn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
-		fprintf(fp, "disconnect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/EVDO_disconn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
-	}
-	else {
+	if (nvram_get_int("modem_dbg") == 1)
+		fprintf(fp, "debug\n");
+
+	connect = "Generic_conn.scr";
+
+	if (modem_type == 1) {
+		connect = "EVDO_conn.scr";
+	} else if( modem_type == 2) {
+		connect = "td_conn.scr";
+	} else {
 		if (vid == 0x0b05 && pid == 0x0302) // T500
-			fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/t500_conn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
-		else if(vid == 0x0421 && pid == 0x0612) // CS-15
-			fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/t500_conn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
-		else if(vid == 0x106c && pid == 0x3716)
-			fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/verizon_conn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
-		else if(vid == 0x1410 && pid == 0x4400)
-			fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/rogers_conn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
-		else
-			fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/Generic_conn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
-		
-		fprintf(fp, "disconnect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/Generic_disconn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
+			connect = "t500_conn.scr";
+		else if (vid == 0x0421 && pid == 0x0612) // CS-15
+			connect = "t500_conn.scr";
+		else if (vid == 0x106c && pid == 0x3716)
+			connect = "verizon_conn.scr";
+		else if (vid == 0x1410 && pid == 0x4400)
+			connect = "rogers_conn.scr";
 	}
-	
+
+	fprintf(fp, "%s \"/bin/comgt -d /dev/%s -s %s/ppp/3g/%s\"\n", "connect", modem_node, MODEM_SCRIPTS_DIR, connect);
+	fprintf(fp, "%s \"/bin/comgt -d /dev/%s -s %s/ppp/3g/%s\"\n", "disconnect", modem_node, MODEM_SCRIPTS_DIR, "Generic_disconn.scr");
+
 	fclose(fp);
-	
+
 	return 1;
 }
 
@@ -238,110 +239,20 @@ get_modem_node_ras(char node_name[16], int *devnum_out)
 }
 
 static int
-qmi_start_network(const char* control_node)
+is_usbnet_has_module(char* ndis_ifname, const char *module_name)
 {
-	FILE *fp;
-	int i, qmi_client_id = -1;
-	char *qmi_nets, *pin_code, *usr_name, *usr_pass;
-	char clid_cmd[64], auth_cmd[64];
+	DIR *dir;
+	int has_module = 0;
+	char driver_path[128];
 
-	/* enter PIN-code */
-	pin_code = nvram_safe_get("modem_pin");
-	if (*pin_code)
-		doSystem("/bin/uqmi -d /dev/%s %s %s", control_node, "--verify-pin1", pin_code);
-
-	/* setup network */
-	qmi_nets = "all";
-	switch (nvram_get_int("modem_nets"))
-	{
-	case 9:
-		qmi_nets = "td-scdma";
-		break;
-	case 8:
-		qmi_nets = "cdma";
-		break;
-	case 7:
-		qmi_nets = "gsm";
-		break;
-	case 6:
-		qmi_nets = "gsm,umts";
-		break;
-	case 5:
-		qmi_nets = "umts,gsm";
-		break;
-	case 4:
-		qmi_nets = "umts";
-		break;
-	case 3:
-		qmi_nets = "lte,umts,gsm";
-		break;
-	case 2:
-		qmi_nets = "lte,umts";
-		break;
-	case 1:
-		qmi_nets = "lte";
-		break;
-	}
-	doSystem("/bin/uqmi -d /dev/%s %s %s", control_node, "--set-network-modes", qmi_nets);
-
-	/* try to use previous client id */
-	fp = fopen(QMI_CLIENT_ID, "r");
-	if (fp) {
-		fscanf(fp, "%d", &qmi_client_id);
-		fclose(fp);
+	snprintf(driver_path, sizeof(driver_path), "/sys/class/net/%s/device/driver/module/drivers/usb:%s", ndis_ifname, module_name);
+	dir = opendir(driver_path);
+	if (dir) {
+		has_module = 1;
+		closedir(dir);
 	}
 
-	if (qmi_client_id < 0) {
-		/* fail, obtain new client id */
-		doSystem("/bin/uqmi -d /dev/%s %s %s", control_node, "--get-client-id", "wds");
-		fp = fopen(QMI_CLIENT_ID, "r");
-		if (fp) {
-			fscanf(fp, "%d", &qmi_client_id);
-			fclose(fp);
-		}
-	}
-
-	clid_cmd[0] = 0;
-	if (qmi_client_id >= 0)
-		snprintf(clid_cmd, sizeof(clid_cmd), " --set-client-id wds,%d", qmi_client_id);
-
-	usr_name = nvram_safe_get("modem_user");
-	usr_pass = nvram_safe_get("modem_pass");
-
-	auth_cmd[0] = 0;
-	if (*usr_name && *usr_pass)
-		snprintf(auth_cmd, sizeof(auth_cmd), " --auth-type both --username \"%s\" --password \"%s\"", usr_name, usr_pass);
-
-	unlink(QMI_HANDLE_PDH);
-	for (i = 0; i < 3; i++) {
-		doSystem("/bin/uqmi -d /dev/%s%s --keep-client-id wds%s --start-network \"%s\"", 
-				control_node, clid_cmd, auth_cmd, nvram_safe_get("modem_apn"));
-		if (check_if_file_exist(QMI_HANDLE_PDH))
-			return 0;
-		sleep(1);
-	}
-	return 1;
-}
-
-static int
-qmi_stop_network(const char* control_node)
-{
-	FILE *fp;
-	unsigned int qmi_pdh = 0;
-
-	/* try to get previous client id */
-	fp = fopen(QMI_HANDLE_PDH, "r");
-	if (!fp)
-		return 0;
-
-	fscanf(fp, "%u", &qmi_pdh);
-	fclose(fp);
-
-	doSystem("/bin/uqmi -d /dev/%s --stop-network %u", control_node, qmi_pdh);
-
-	unlink(QMI_HANDLE_PDH);
-
-	return 0;
+	return has_module;
 }
 
 static int
@@ -405,71 +316,215 @@ get_modem_ndis_ifname(char ndis_ifname[16], int *devnum_out)
 	return 0;
 }
 
-int
-connect_ndis(int devnum)
+static int
+qmi_control_network(const char* control_node, int is_start)
 {
-	int valid_node, qmi_mode = 0;
-	char control_node[16] = {0};
+	FILE *fp;
 
-	// check wdm device
-	valid_node = find_modem_node("cdc-wdm", 0, 0, -1, NULL); // todo (need devnode for cdc-wdm)
-	if (valid_node >= 0) {
-		qmi_mode = 1;
-		sprintf(control_node, "cdc-wdm%d", valid_node);
-	}
-	else {
-		// check serial device
-		valid_node = get_modem_node("ttyUSB", devnum, NULL);
-		if (valid_node >= 0)
-			sprintf(control_node, "ttyUSB%d", valid_node);
-	}
-
-	if (strlen(control_node) > 0) {
-		if (!qmi_mode) {
-			int vid = 0, pid = 0;
-			get_modem_vid_pid(control_node, &vid, &pid);
-			if ( (vid == 0x1199 || vid == 0x0f3d) && (pid == 0x68a3 || pid == 0x68aa) )
-				return doSystem("/bin/comgt -d /dev/%s -s %s/ppp/3g/%s", control_node, MODEM_SCRIPTS_DIR, "Sierra_conn.scr");
-			else
-				return doSystem("/bin/comgt -d /dev/%s -s %s/ppp/3g/%s", control_node, MODEM_SCRIPTS_DIR, "NDIS_conn.scr");
+	if (is_start) {
+		int i, qmi_client_id = -1;
+		char *qmi_nets, *pin_code, *usr_name, *usr_pass;
+		char clid_cmd[32], auth_cmd[128];
+		
+		/* enter PIN-code */
+		pin_code = nvram_safe_get("modem_pin");
+		if (strlen(pin_code) > 0) {
+			doSystem("%s -d /dev/%s %s %s",
+				"/bin/uqmi", control_node, "--verify-pin1", pin_code);
 		}
-		else
-			return qmi_start_network(control_node);
+		
+		/* setup network */
+		qmi_nets = "all";
+		switch (nvram_get_int("modem_nets"))
+		{
+		case 9:
+			qmi_nets = "td-scdma";
+			break;
+		case 8:
+			qmi_nets = "cdma";
+			break;
+		case 7:
+			qmi_nets = "gsm";
+			break;
+		case 6:
+			qmi_nets = "gsm,umts";
+			break;
+		case 5:
+			qmi_nets = "umts,gsm";
+			break;
+		case 4:
+			qmi_nets = "umts";
+			break;
+		case 3:
+			qmi_nets = "lte,umts,gsm";
+			break;
+		case 2:
+			qmi_nets = "lte,umts";
+			break;
+		case 1:
+			qmi_nets = "lte";
+			break;
+		}
+		doSystem("%s -d /dev/%s %s %s",
+			"/bin/uqmi", control_node, "--set-network-modes", qmi_nets);
+		
+		/* try to use previous client id */
+		fp = fopen(QMI_CLIENT_ID, "r");
+		if (fp) {
+			fscanf(fp, "%d", &qmi_client_id);
+			fclose(fp);
+		}
+		
+		if (qmi_client_id < 0) {
+			/* fail, obtain new client id */
+			doSystem("%s -d /dev/%s %s %s",
+				"/bin/uqmi", control_node, "--get-client-id", "wds");
+			
+			fp = fopen(QMI_CLIENT_ID, "r");
+			if (fp) {
+				fscanf(fp, "%d", &qmi_client_id);
+				fclose(fp);
+			}
+		}
+		
+		clid_cmd[0] = 0;
+		if (qmi_client_id >= 0)
+			snprintf(clid_cmd, sizeof(clid_cmd), " --set-client-id wds,%d", qmi_client_id);
+		
+		usr_name = nvram_safe_get("modem_user");
+		usr_pass = nvram_safe_get("modem_pass");
+		
+		auth_cmd[0] = 0;
+		if (strlen(usr_name) > 0 && strlen(usr_pass) > 0)
+			snprintf(auth_cmd, sizeof(auth_cmd), " --auth-type both --username \"%s\" --password \"%s\"", usr_name, usr_pass);
+		
+		unlink(QMI_HANDLE_PDH);
+		for (i = 0; i < MAX_QMI_TRIES; i++) {
+			doSystem("%s -d /dev/%s%s --keep-client-id wds%s --start-network \"%s\"",
+					"/bin/uqmi", control_node, clid_cmd, auth_cmd, nvram_safe_get("modem_apn"));
+			
+			if (check_if_file_exist(QMI_HANDLE_PDH))
+				return 0;
+			
+			sleep(1);
+		}
+	} else {
+		unsigned int qmi_pdh = 0;
+		
+		/* try to get handle */
+		fp = fopen(QMI_HANDLE_PDH, "r");
+		if (!fp)
+			return 1;
+		
+		fscanf(fp, "%u", &qmi_pdh);
+		fclose(fp);
+		
+		doSystem("%s -d /dev/%s --stop-network %u",
+			"/bin/uqmi", control_node, qmi_pdh);
+		
+		unlink(QMI_CLIENT_ID);
+		unlink(QMI_HANDLE_PDH);
+		
+		return 0;
 	}
+
 	return 1;
 }
 
-int
-disconnect_ndis(int devnum)
+static int
+mbim_control_network(const char* control_node, int is_start)
 {
-	int valid_node, qmi_mode = 0;
-	char control_node[16] = {0};
+	/* MBIM device control not supported yet (libmbim depends from large libglib) */
+	return 1;
+}
 
-	// check wdm device
+static int
+ncm_control_network(const char* control_node, int is_start)
+{
+	return doSystem("/bin/comgt -d /dev/%s -s %s/ppp/3g/%s",
+		control_node, MODEM_SCRIPTS_DIR, (is_start) ? "NCM_conn.scr" : "NCM_disconn.scr");
+}
+
+static int
+sierra_control_network(const char* control_node, int is_start)
+{
+	return doSystem("/bin/comgt -d /dev/%s -s %s/ppp/3g/%s",
+		control_node, MODEM_SCRIPTS_DIR, (is_start) ? "Sierra_conn.scr" : "Sierra_disconn.scr");
+}
+
+#if 0
+static int
+ncm_control_network(const char* control_node, int is_start)
+{
+	FILE *fp;
+	int result = 1;
+	char node_path[32], node_msg[64];
+
+	if (is_start) {
+		char *apn = nvram_safe_get("modem_apn");
+		if (strlen(apn) < 1)
+			apn = "internet";
+		snprintf(node_msg, sizeof(node_msg), "AT^NDISDUP=1,%d,\"%s\"\r\n", 1, apn);
+	} else
+		snprintf(node_msg, sizeof(node_msg), "AT^NDISDUP=1,%d\r\n", 0);
+
+	snprintf(node_path, sizeof(node_path), "/dev/%s", control_node);
+	fp = fopen(node_path, "wb");
+	if (fp) {
+		if (fwrite(node_msg, 1, strlen(node_msg), fp) > 0)
+			result = 0;
+		
+		fclose(fp);
+	}
+
+	node_msg[strlen(node_msg) - 2] = 0; /* get rid of '\r\n' */
+
+	if (!result) {
+		if (is_start)
+			sleep(1);
+	} else {
+		logmessage(LOGNAME, "NCM message %s to node %s: %s", node_msg, node_path, "FAILED!");
+	}
+
+	return result;
+}
+#endif
+
+static int
+ndis_control_network(char *ndis_ifname, int devnum, int is_start)
+{
+	int valid_node;
+	char control_node_wdm[16] = {0}, control_node_tty[16] = {0};
+
+	/* check wdm device */
 	valid_node = find_modem_node("cdc-wdm", 0, 0, -1, NULL); // todo (need devnode for cdc-wdm)
-	if (valid_node >= 0) {
-		qmi_mode = 1;
-		sprintf(control_node, "cdc-wdm%d", valid_node);
-	}
-	else {
-		// check serial device
-		valid_node = get_modem_node("ttyUSB", devnum, NULL);
-		if (valid_node >= 0)
-			sprintf(control_node, "ttyUSB%d", valid_node);
+	if (valid_node >= 0)
+		sprintf(control_node_wdm, "cdc-wdm%d", valid_node);
+
+	/* check tty device */
+	valid_node = get_modem_node("ttyUSB", devnum, NULL);
+	if (valid_node >= 0)
+		sprintf(control_node_tty, "ttyUSB%d", valid_node);
+
+	if (strlen(control_node_wdm) > 0) {
+		if (is_usbnet_has_module(ndis_ifname, "qmi_wwan"))
+			return qmi_control_network(control_node_wdm, is_start);
+		
+		if (is_usbnet_has_module(ndis_ifname, "cdc_mbim"))
+			return mbim_control_network(control_node_wdm, is_start);
+		
+		if (is_usbnet_has_module(ndis_ifname, "huawei_cdc_ncm"))
+			return ncm_control_network(control_node_wdm, is_start);
 	}
 
-	if (strlen(control_node) > 0) {
-		if (!qmi_mode) {
-			int vid = 0, pid = 0;
-			get_modem_vid_pid(control_node, &vid, &pid);
-			if ( (vid == 0x1199 || vid == 0x0f3d) && (pid == 0x68a3 || pid == 0x68aa) )
-				return doSystem("/bin/comgt -d /dev/%s -s %s/ppp/3g/%s", control_node, MODEM_SCRIPTS_DIR, "Sierra_disconn.scr");
-			else
-				return doSystem("/bin/comgt -d /dev/%s -s %s/ppp/3g/%s", control_node, MODEM_SCRIPTS_DIR, "NDIS_disconn.scr");
-		}
-		else
-			return qmi_stop_network(control_node);
+	if (strlen(control_node_tty) > 0) {
+		if (is_usbnet_has_module(ndis_ifname, "cdc_ncm"))
+			return ncm_control_network(control_node_tty, is_start);
+		
+		if (is_usbnet_has_module(ndis_ifname, "sierra_net"))
+			return sierra_control_network(control_node_tty, is_start);
 	}
+
 	return 1;
 }
 
@@ -591,6 +646,26 @@ notify_modem_on_wan_ether_link_changed(int has_link)
 		notify_rc("auto_wan_reconnect");
 }
 
+#if 0
+void
+notify_modem_on_internet_state_changed(int has_internet)
+{
+	if (has_internet)
+		return;
+
+	if (nvram_get_int("modem_prio") != 3)
+		return;
+
+	if (get_usb_modem_wan(0))
+		return;
+
+	if (!get_modem_devnum())
+		return;
+
+	notify_rc("auto_wan_reconnect");
+}
+#endif
+
 void
 safe_remove_usb_modem(void)
 {
@@ -610,7 +685,6 @@ safe_remove_usb_modem(void)
 		}
 		
 		stop_wan_usbnet();
-		
 //		unlink_modem_ndis();
 	}
 	else
@@ -618,7 +692,6 @@ safe_remove_usb_modem(void)
 		char* svcs_ppp[] = { "pppd", NULL };
 		
 		kill_services(svcs_ppp, 10, 1);
-		
 //		unlink_modem_ras();
 	}
 
@@ -663,7 +736,8 @@ launch_wan_usbnet(int unit)
 		
 		set_wan_unit_value(unit, "ifname_t", ndis_ifname);
 		doSystem("ifconfig %s mtu %d up %s", ndis_ifname, ndis_mtu, "0.0.0.0");
-		connect_ndis(modem_devnum);
+		if (ndis_control_network(ndis_ifname, modem_devnum, 1) == 0)
+			sleep(1);
 		start_udhcpc_wan(ndis_ifname, unit, 0);
 	}
 	else
@@ -677,7 +751,7 @@ stop_wan_usbnet(void)
 	char ndis_ifname[16] = {0};
 
 	if (get_modem_ndis_ifname(ndis_ifname, &modem_devnum)) {
-		disconnect_ndis(modem_devnum);
+		ndis_control_network(ndis_ifname, modem_devnum, 0);
 		if (is_interface_exist(ndis_ifname))
 			ifconfig(ndis_ifname, 0, "0.0.0.0", NULL);
 	}

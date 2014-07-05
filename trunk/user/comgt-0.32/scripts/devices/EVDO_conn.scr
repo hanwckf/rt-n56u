@@ -1,72 +1,92 @@
 opengt
-set com 460800n81
-set senddelay 0.05
-waitquiet 1 0.2
-let $x=$rpipe("nvram get modem_pin")
-let a=len($x)
-if a<4 goto ready
-if a>8 goto ready
-let c=0
+ set com 460800n81
+ set senddelay 0.03
+ waitquiet 1 0.2
+
+ let $x=$rpipe("nvram get modem_pin")
+ let a=len($x)
+ if a<4 goto ready
+ if a>8 goto ready
+ let c=0
+
 :test
-let $c=$mid($x,c,1)
-if $c<"0" goto ready
-if $c>"9" goto ready
-inc c
-if c<a goto test
-send "AT+CPIN?^m"
-waitfor 10 "SIM PIN","SIM PUK","READY","ERROR","ERR","COMMAND NOT SUPPORT"
-if % = 0 goto enterpin
-goto ready
+ let $c=$mid($x,c,1)
+ if $c<"0" goto ready
+ if $c>"9" goto ready
+ inc c
+ if c<a goto test
+
+ send "AT+CPIN?^m"
+ waitfor 10 "SIM PIN","SIM PUK","READY","ERROR","ERR","COMMAND NOT SUPPORT"
+ if % = 0 goto enterpin
+ goto ready
+
 :enterpin
-send "AT+CPIN=\""+$x+"\"^m"
-waitfor 10 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
-if % = -1 goto pintimeerror
-if % = 0 goto ready
+ send "AT+CPIN=\""+$x+"\"^m"
+ waitfor 10 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
+ if % = -1 goto pintimeerror
+ if % = 0 goto ready
+
 :pinerror
-let $e="PIN Error! Caution - entering the wrong PIN code three times will lock the SIM!"
-print $e+"\n"
-system "logger -t comgt \""+$e+"\""
-send "ATH^m"
-exit 1
+ let $e="PIN Error! Caution - entering the wrong PIN code three times will lock the SIM!"
+ print $e+"\n"
+ system "logger -t comgt \""+$e+"\""
+ send "ATH^m"
+ exit 1
+
 :pintimeerror
-let $e="ERROR: timeout, device did not respond to PIN command entry!"
-print $e+"\n"
-system "logger -t comgt \""+$e+"\""
-send "ATH^m"
-exit 1
+ let $e="ERROR: timeout, device did not respond to PIN command entry!"
+ print $e+"\n"
+ system "logger -t comgt \""+$e+"\""
+ send "ATH^m"
+ exit 1
+
 :ready
-let $x=$rpipe("nvram get modem_cmd")
-let a=len($x)
-if a<3 goto dial
-send $x+"^m"
-waitfor 10 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
-if % = 0 goto dial
-let $e="ERROR sending user AT command! Try to continue..."
-print $e+"\n"
-system "logger -t comgt \""+$e+"\""
+ send "ATZ^m"
+ waitfor 10 "OK","ERR","ERROR"
+ if % = -1 goto timeerror
+ if % = 0 goto atcmd
+ goto error
+
+:atcmd
+ let $x=$rpipe("nvram get modem_cmd")
+ let a=len($x)
+ if a<3 goto dial
+
+ send $x+"^m"
+ waitfor 10 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
+ if % = 0 goto dial
+ let $e="ERROR sending user AT command! Try to continue..."
+ print $e+"\n"
+ system "logger -t comgt \""+$e+"\""
+
 :dial
-let $x=$rpipe("nvram get modem_dialnum")
-let a=len($x)
-if a=0 goto error
-send "ATD"+$x+"^m"
-waitfor 15 "CONNECT","ERR","ERROR"
-if % = -1 goto timeerror
-if % = 0 goto dialok
-goto error
+ let $x=$rpipe("nvram get modem_dialnum")
+ let a=len($x)
+ if a=0 goto error
+
+ send "ATD"+$x+"^m"
+ waitfor 20 "CONNECT","ERR","ERROR"
+ if % = -1 goto timeerror
+ if % = 0 goto dialok
+ goto error
+
 :dialok
-let $e="CONNECTION ESTABLISHED!"
-print $e+"\n"
-exit 0
+ let $e="CONNECTION ESTABLISHED!"
+ print $e+"\n"
+ exit 0
+
 :error
-let $e="ERROR: CONNECT ERROR!"
-print $e+"\n"
-system "logger -t comgt \""+$e+"\""
-send "ATH^m"
-exit 1
+ let $e="ERROR: CONNECT ERROR!"
+ print $e+"\n"
+ system "logger -t comgt \""+$e+"\""
+ send "ATH^m"
+ exit 1
+
 :timeerror
-let $e="ERROR: CONNECT TIMEOUT!"
-print $e+"\n"
-system "logger -t comgt \""+$e+"\""
-send "ATH^m"
-exit 1
+ let $e="ERROR: CONNECT TIMEOUT!"
+ print $e+"\n"
+ system "logger -t comgt \""+$e+"\""
+ send "ATH^m"
+ exit 1
 

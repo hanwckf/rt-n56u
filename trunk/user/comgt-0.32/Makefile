@@ -23,14 +23,18 @@
 #
 #
 
-CPROG	= comgt
-CFLAGS  := -c $(CFLAGS) -ffunction-sections -fdata-sections
+EXEC     = comgt
+OBJS     = comgt.c
+CFLAGS  := $(CFLAGS) -ffunction-sections -fdata-sections
 LDFLAGS := $(LDFLAGS) -Wl,--gc-sections
 
-all: $(CPROG)
+all: $(EXEC)
+
+$(EXEC): $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $@
 
 romfs:
-	$(ROMFSINST) /bin/$(CPROG)
+	$(ROMFSINST) /bin/$(EXEC)
 	$(ROMFSINST) scripts/devices /etc_ro/ppp/3g
 	$(ROMFSINST) scripts/command /etc_ro/ppp/3g/command
 	$(ROMFSINST) scripts/dump /etc_ro/ppp/3g/dump
@@ -40,14 +44,4 @@ romfs:
 	$(ROMFSINST) scripts/send_sms /etc_ro/ppp/3g/send_sms
 
 clean:
-	-rm -f *.o 
-	-rm -f $(CPROG) 
-	-rm -f *~
-	-rm -f $(SCRIPTSRC)*~
-
-comgt: comgt.o
-	$(CC) comgt.o $(LDFLAGS) -o comgt
-
-comgt.o: comgt.c comgt.h
-	$(CC) comgt.c $(CFLAGS) 
-
+	-rm -f $(EXEC) *.o *~

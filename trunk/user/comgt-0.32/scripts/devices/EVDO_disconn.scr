@@ -1,7 +1,0 @@
-opengt
-set com 460800n81
-set senddelay 0.05
-waitquiet 1 0.2
-send "ATH^m"
-exit 0
-

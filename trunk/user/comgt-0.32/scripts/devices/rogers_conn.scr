@@ -1,27 +1,33 @@
 opengt
-set com 115200n81
-set senddelay 0.05
-waitquiet 1 0.2
-let $x=$rpipe("nvram get modem_cmd")
-let a=len($x)
-if a<3 goto ready
-send $x+"^m"
-waitfor 10 "OK","ERR","ERROR"
-if % = -1 goto timeerror
+ set com 115200n81
+ set senddelay 0.03
+ waitquiet 1 0.2
+
+ let $x=$rpipe("nvram get modem_cmd")
+ let a=len($x)
+ if a<3 goto ready
+
+ send $x+"^m"
+ waitfor 10 "OK","ERR","ERROR"
+ if % = -1 goto timeerror
+
 :ready
-let $x=$rpipe("nvram get modem_dialnum")
-let a=len($x)
-if a=0 goto dialerror
-send "ATD"+$x+"^m"
-waitfor 10 "CONNECT HSDPA 7.2","ERR","ERROR"
-print "CONNECTED\n"
-exit 0
+ let $x=$rpipe("nvram get modem_dialnum")
+ let a=len($x)
+ if a=0 goto dialerror
+
+ send "ATD"+$x+"^m"
+ waitfor 10 "CONNECT HSDPA 7.2","ERR","ERROR"
+ print "CONNECTED\n"
+ exit 0
+
 dialerror:
-print "Dial number is wrong!\n"
-send "ATH^m"
-exit 1
+ print "Dial number is wrong!\n"
+ send "ATH^m"
+ exit 1
+
 :timeerror
-print "CONNECT TIMEOUT\n"
-send "ATH^m"
-exit 1
+ print "CONNECT TIMEOUT\n"
+ send "ATH^m"
+ exit 1
 

@@ -1,12 +1,15 @@
 opengt
-set com 115200n81
-set senddelay 0.02
-waitquiet 1 0.2
-send "AT!SCDFTPROF=3^m"
-waitfor 5 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
-send "AT!SCPROF=3,\"\",0,0,0,0^m"
-waitfor 5 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
-send "AT!SCACT=0,3^m"
-waitquiet 1 0.2
-exit 0
+ set com 115200n81
+ set senddelay 0.03
+ waitquiet 1 0.2
+
+ send "AT!SCDFTPROF=3^m"
+ waitfor 5 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
+
+ send "AT!SCPROF=3,\"\",0,0,0,0^m"
+ waitfor 5 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
+
+ send "AT!SCACT=0,3^m"
+ waitquiet 1 0.2
+ exit 0
 

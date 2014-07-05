@@ -15,36 +15,21 @@ opengt
  system "logger -t comgt \""+$e+"\""
 
 :ready
- send "AT+CFUN=1^m"
- waitfor 10 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
- if % = -1 goto timeerror
  let $x=$rpipe("nvram get modem_apn")
-
- send "AT+CGDCONT=3,\"IP\",\""+$x+"\"^m"
+ send "AT\^NDISDUP=1,1,\""+$x+"\"^m"
  waitfor 10 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
- if % = -1 goto timeerror
- if % = 0 goto apnok
- goto apnerror
-
-:apnok
- send "AT!SCDFTPROF=3^m"
- waitfor 10 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
- if % = -1 goto timeerror
-
- send "AT!SCPROF=3,\"\",1,0,0,0^m"
- waitfor 15 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
  if % = -1 goto timeerror
  if % = 0 goto dialok
  goto apnerror
 
 :dialok
- let $e="WWAN CONNECTION ESTABLISHED!"
+ let $e="NCM CONNECTION ESTABLISHED!"
  print $e+"\n"
  system "logger -t comgt \""+$e+"\""
  exit 0
 
 :apnerror
- let $e="ERROR: APN ERROR!"
+ let $e="ERROR: NDISDUP ERROR!"
  print $e+"\n"
  system "logger -t comgt \""+$e+"\""
  exit 1

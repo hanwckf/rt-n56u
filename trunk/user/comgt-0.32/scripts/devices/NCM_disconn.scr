@@ -3,6 +3,7 @@ opengt
  set senddelay 0.03
  waitquiet 1 0.2
 
- send "ATH^m"
+ send "AT\^NDISDUP=1,0^m"
+ waitquiet 1 0.2
  exit 0
 

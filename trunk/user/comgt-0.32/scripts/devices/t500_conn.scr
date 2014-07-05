@@ -1,40 +1,47 @@
 opengt
-set com 115200n81
-set senddelay 0.05
-waitquiet 1 0.2
-send "ATZ^m"
-waitfor 10 "OK","ERR","ERROR"
-if % = -1 goto timeerror
-if % = 0 goto next1
-goto error
+ set com 115200n81
+ set senddelay 0.03
+ waitquiet 1 0.2
+
+ send "ATZ^m"
+ waitfor 10 "OK","ERR","ERROR"
+ if % = -1 goto timeerror
+ if % = 0 goto next1
+ goto error
+
 :next1
-let $x=$rpipe("nvram get modem_cmd")
-let a=len($x)
-if a<3 goto next2
-send $x+"^m"
-waitfor 10 "OK","ERR","ERROR"
-if % = -1 goto timeerror
+ let $x=$rpipe("nvram get modem_cmd")
+ let a=len($x)
+ if a<3 goto next2
+ send $x+"^m"
+ waitfor 10 "OK","ERR","ERROR"
+ if % = -1 goto timeerror
+
 :next2
-send "AT+CFUN=1;+CGDCONT=1,\"IP\",\"internet\"^m"
-waitfor 10 "OK","ERR","ERROR"
-if % = -1 goto timeerror
-if % = 0 goto next3
-goto error
+ send "AT+CFUN=1;+CGDCONT=1,\"IP\",\"internet\"^m"
+ waitfor 10 "OK","ERR","ERROR"
+ if % = -1 goto timeerror
+ if % = 0 goto next3
+ goto error
+
 :next3
-send "ATD*99#^m"
-waitfor 10 "CONNECT","ERR","ERROR"
-if % = -1 goto timeerror
-if % = 0 goto next4
-goto error
+ send "ATD*99#^m"
+ waitfor 10 "CONNECT","ERR","ERROR"
+ if % = -1 goto timeerror
+ if % = 0 goto next4
+ goto error
+
 :next4
-print "CONNECTED\n"
-exit 0
+ print "CONNECTED\n"
+ exit 0
+
 :error
-print "CONNECT ERROR\n"
-send "ATH^m"
-exit 1
+ print "CONNECT ERROR\n"
+ send "ATH^m"
+ exit 1
+
 :timeerror
-print "CONNECT TIMEOUT\n"
-send "ATH^m"
-exit 1
+ print "CONNECT TIMEOUT\n"
+ send "ATH^m"
+ exit 1
 

@@ -527,6 +527,7 @@ unload_modem_modules(void)
 	ret |= module_smart_unload("cdc_acm", 1);
 	ret |= module_smart_unload("sierra_net", 1);
 	ret |= module_smart_unload("sierra", 1);
+	ret |= module_smart_unload("qcserial", 1);
 	ret |= module_smart_unload("option", 1);
 	if (ret)
 		sleep(1);
@@ -537,9 +538,11 @@ reload_modem_modules(int modem_type, int reload)
 {
 	unlink(QMI_CLIENT_ID);
 	int ret = 0;
+	ret |= module_smart_unload("cdc_acm", 1);
+	ret |= module_smart_unload("sierra", 1);
+	ret |= module_smart_unload("qcserial", 1);
+	ret |= module_smart_unload("option", 1);
 	if (modem_type == 3) {
-		ret |= module_smart_unload("cdc_acm", 1);
-		ret |= module_smart_unload("option", 1);
 		if (ret)
 			sleep(1);
 		module_smart_load("rndis_host", NULL);
@@ -560,8 +563,9 @@ reload_modem_modules(int modem_type, int reload)
 			sleep(1);
 		module_smart_load("cdc_acm", NULL);
 	}
-	module_smart_load("option", NULL);
+	module_smart_load("qcserial", NULL);
 	module_smart_load("sierra", NULL);
+	module_smart_load("option", NULL);
 	if (reload)
 		sleep(1);
 }

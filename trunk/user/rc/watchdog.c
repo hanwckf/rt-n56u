@@ -1040,7 +1040,7 @@ static void dnsmasq_process_check(void)
 	if (dnsmasq_missing > 1) {
 		dnsmasq_missing = 0;
 		logmessage("watchdog", "dnsmasq is missing, start again!");
-		start_dns_dhcpd();
+		start_dns_dhcpd(0);
 	}
 }
 

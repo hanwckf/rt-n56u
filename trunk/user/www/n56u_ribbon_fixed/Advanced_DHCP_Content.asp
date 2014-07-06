@@ -40,6 +40,22 @@
         });
         $j("#dhcp_enable_x_on_of label.itoggle").css("background-position", $j("input#dhcp_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
+        $j('#lan_dhcpd_x_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#lan_dhcpd_x_fake").attr("checked", "checked").attr("value", 1);
+                $j("#lan_dhcpd_x_1").attr("checked", "checked");
+                $j("#lan_dhcpd_x_0").removeAttr("checked");
+            },
+            onClickOff: function(){
+                $j("#lan_dhcpd_x_fake").removeAttr("checked").attr("value", 0);
+                $j("#lan_dhcpd_x_0").attr("checked", "checked");
+                $j("#lan_dhcpd_x_1").removeAttr("checked");
+            }
+        });
+        $j("#lan_dhcpd_x_on_of label.itoggle").css("background-position", $j("input#lan_dhcpd_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
         $j('#dhcp_static_x_on_of').iToggle({
             easing: 'linear',
             speed: 70,
@@ -70,13 +86,18 @@ var clients_info = getclients(1,0);
 
 var isMenuopen = 0;
 
-<% login_state_hook(); %>
-
 function initial(){
 	show_banner(1);
 	show_menu(5,3,2);
 	show_footer();
 	showtext($("LANIP"), '<% nvram_get_x("", "lan_ipaddr"); %>');
+
+	if(get_ap_mode()){
+		showhide_div('row_dhcpd_rt', 0);
+		showhide_div('row_dhcpd_ap', 1);
+		showhide_div('row_domain', 0);
+		showhide_div('row_hosts', 0);
+	}
 
 	if((inet_network(document.form.lan_ipaddr.value)>=inet_network(document.form.dhcp_start.value))&&
 	   (inet_network(document.form.lan_ipaddr.value)<=inet_network(document.form.dhcp_end.value)))
@@ -225,16 +246,11 @@ function pullLANIPList(obj){
 }
 
 function change_dhcp_static_enabled(){
-	var a = rcheck(document.form.dhcp_static_x);
-	if (a == "0"){
-		$("row_static_caption").style.display = "none";
-		$("row_static_header").style.display = "none";
-		$("row_static_body").style.display = "none";
-	} else {
-		$("row_static_caption").style.display = "";
-		$("row_static_header").style.display = "";
-		$("row_static_body").style.display = "";
-	}
+	var v = (rcheck(document.form.dhcp_static_x) == "0") ? 0 : 1;
+	
+	showhide_div('row_static_caption', v);
+	showhide_div('row_static_header', v);
+	showhide_div('row_static_body', v);
 }
 
 function done_validating(action){
@@ -377,8 +393,8 @@ function changeBgColor(obj, num){
                                     <div id="router_in_pool" class="alert alert-danger" style="display:none; margin: 10px;"><b><#LANHostConfig_DHCPServerConfigurable_sectiondesc2#> <span id="LANIP"></span></b></div>
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
-                                        <tr>
-                                            <th width="50%" style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 5, 1);"><#LANHostConfig_DHCPServerConfigurable_itemname#></a></th>
+                                        <tr id="row_dhcpd_rt">
+                                            <th style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 5, 1);"><#LANHostConfig_DHCPServerConfigurable_itemname#></a></th>
                                             <td style="border-top: 0 none;">
                                                 <div class="main_itoggle">
                                                     <div id="dhcp_enable_x_on_of">
@@ -387,19 +403,34 @@ function changeBgColor(obj, num){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="dhcp_enable_x" id="dhcp_enable_x_1" <% nvram_match_x("LANHostConfig","dhcp_enable_x", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="dhcp_enable_x" id="dhcp_enable_x_0" <% nvram_match_x("LANHostConfig","dhcp_enable_x", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="dhcp_enable_x" id="dhcp_enable_x_1" <% nvram_match_x("","dhcp_enable_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="dhcp_enable_x" id="dhcp_enable_x_0" <% nvram_match_x("","dhcp_enable_x", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_dhcpd_ap" style="display:none;">
+                                            <th style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 5, 1);"><#LANHostConfig_DHCPServerConfigurable_itemname#></a></th>
+                                            <td style="border-top: 0 none;">
+                                                <div class="main_itoggle">
+                                                    <div id="lan_dhcpd_x_on_of">
+                                                        <input type="checkbox" id="lan_dhcpd_x_fake" <% nvram_match_x("", "lan_dhcpd_x", "1", "value=1 checked"); %><% nvram_match_x("", "lan_dhcpd_x", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="lan_dhcpd_x" id="lan_dhcpd_x_1" <% nvram_match_x("","lan_dhcpd_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="lan_dhcpd_x" id="lan_dhcpd_x_0" <% nvram_match_x("","lan_dhcpd_x", "0", "checked"); %>><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_domain">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,2);"><#LANHostConfig_DomainName_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="32" class="input" size="32" name="lan_domain" value="<% nvram_get_x("", "lan_domain"); %>">
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,3);"><#LANHostConfig_MinAddress_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,3);"><#LANHostConfig_MinAddress_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="dhcp_start" value="<% nvram_get_x("", "dhcp_start"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
                                             </td>
@@ -454,6 +485,7 @@ function changeBgColor(obj, num){
                                             </td>
                                         </tr>
                                     </table>
+
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#t2Advanced#></th>
@@ -477,7 +509,7 @@ function changeBgColor(obj, num){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_hosts">
                                             <td colspan="2" style="padding-bottom: 0px;">
                                                 <a href="javascript:spoiler_toggle('spoiler_hosts')"><span><#CustomConf#> "hosts"</span></a>
                                                 <div id="spoiler_hosts" style="display:none;">
@@ -486,6 +518,7 @@ function changeBgColor(obj, num){
                                             </td>
                                         </tr>
                                     </table>
+
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th colspan="4" id="GWStatic" style="background-color: #E3E3E3;"><#LANHostConfig_ManualDHCPList_groupitemdesc#></th>
@@ -535,6 +568,7 @@ function changeBgColor(obj, num){
                                             </td>
                                         </tr>
                                     </table>
+
                                     <table class="table">
                                         <tr>
                                             <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>

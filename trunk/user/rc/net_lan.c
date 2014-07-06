@@ -85,7 +85,7 @@ init_loopback(void)
 void
 init_bridge(void)
 {
-	int ap_mode = get_ap_mode();
+	int is_ap_mode = get_ap_mode();
 	int rt_radio_on = get_enabled_radio_rt();
 #if !defined(USE_RT3352_MII)
 	int rt_mode_x = get_mode_radio_rt();
@@ -96,7 +96,7 @@ init_bridge(void)
 #endif
 	char *lan_hwaddr = nvram_safe_get("lan_hwaddr");
 
-	if (!ap_mode)
+	if (!is_ap_mode)
 	{
 		/* set switch bridge mode and vlan isolation */
 		switch_config_vlan(1);
@@ -118,7 +118,7 @@ init_bridge(void)
 	phy_ports_power(1);
 
 #if defined (USE_SINGLE_MAC)
-	if (!ap_mode)
+	if (!is_ap_mode)
 	{
 		/* create VLAN1/2 */
 		doSystem("vconfig add %s %d", IFNAME_MAC, 1);
@@ -138,7 +138,7 @@ init_bridge(void)
 #endif
 
 #if defined (USE_RT3352_MII)
-	if (!ap_mode)
+	if (!is_ap_mode)
 	{
 		/* create VLAN3 for guest AP */
 		doSystem("vconfig add %s %d", IFNAME_MAC, INIC_GUEST_VLAN_VID);
@@ -187,7 +187,7 @@ init_bridge(void)
 	doSystem("brctl setfd %s %d", IFNAME_BR, 2);
 	doSystem("ifconfig %s hw ether %s", IFNAME_BR, lan_hwaddr);
 
-	if (!ap_mode)
+	if (!is_ap_mode)
 	{
 		/* add eth2 (or eth2.1) to bridge */
 		doSystem("brctl addif %s %s", IFNAME_BR, IFNAME_LAN);
@@ -530,7 +530,7 @@ update_hosts_ap(void)
 }
 
 void
-start_lan(void)
+start_lan(int is_ap_mode)
 {
 	char *lan_ipaddr;
 	char *lan_netmsk;
@@ -554,7 +554,7 @@ start_lan(void)
 	* 'udhcpc bound'/'udhcpc deconfig' upon finishing IP address 
 	* renew and release.
 	*/
-	if (get_ap_mode())
+	if (is_ap_mode)
 	{
 		create_hosts_lan(lan_ipaddr, nvram_safe_get("lan_domain"));
 		
@@ -599,16 +599,13 @@ start_lan(void)
 }
 
 void
-stop_lan(void)
+stop_lan(int is_ap_mode)
 {
 	char *svcs[] = { "udhcpc", "detect_wan", NULL };
 
-	if (get_ap_mode())
-	{
+	if (is_ap_mode) {
 		kill_services(svcs, 3, 1);
-	}
-	else
-	{
+	} else {
 		/* Remove static routes */
 		clear_if_route4(IFNAME_BR);
 	}
@@ -624,7 +621,7 @@ stop_lan(void)
 void 
 full_restart_lan(void)
 {
-	int ap_mode = get_ap_mode();
+	int is_ap_mode = get_ap_mode();
 	int lan_stp = nvram_match("lan_stp", "0") ? 0 : 1;
 	int log_remote = nvram_invmatch("log_ipaddr", "");
 
@@ -636,28 +633,27 @@ full_restart_lan(void)
 	stop_upnp();
 	stop_vpn_server();
 	stop_dns_dhcpd();
-	stop_lan();
+	stop_lan(is_ap_mode);
 
 	reset_lan_vars();
 
-	if (!ap_mode)
-	{
+	if (!is_ap_mode) {
 		doSystem("brctl stp %s %d", IFNAME_BR, 0);
 		doSystem("brctl setfd %s %d", IFNAME_BR, 2);
 	}
 
-	start_lan();
+	start_lan(is_ap_mode);
 
 	sleep(1);
 
 	// Start logger if remote
 	if (log_remote)
-	{
 		start_logger(0);
-	}
 
-	if (!ap_mode)
-	{
+	/* restart dns relay and dhcp server */
+	start_dns_dhcpd(is_ap_mode);
+
+	if (!is_ap_mode) {
 		if (lan_stp) {
 			doSystem("brctl stp %s %d", IFNAME_BR, 1);
 			doSystem("brctl setfd %s %d", IFNAME_BR, 15);
@@ -665,9 +661,6 @@ full_restart_lan(void)
 		
 		/* restart vpn server, firewall and miniupnpd */
 		restart_vpn_server();
-		
-		/* restart dns relay and dhcp server */
-		start_dns_dhcpd();
 		
 		/* restart igmpproxy, udpxy, xupnpd */
 		restart_iptv();

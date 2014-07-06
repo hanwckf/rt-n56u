@@ -3,6 +3,7 @@ var sw_mode = '<% nvram_get_x("", "sw_mode"); %>';
 var wan_route_x = '<% nvram_get_x("", "wan_route_x"); %>';
 var wan_nat_x = '<% nvram_get_x("", "wan_nat_x"); %>';
 var wan_proto = '<% nvram_get_x("", "wan_proto"); %>';
+var lan_proto = '<% nvram_get_x("", "lan_proto_x"); %>';
 
 var uptimeStr = "<% uptime(); %>";
 var timezone = uptimeStr.substring(26,31);

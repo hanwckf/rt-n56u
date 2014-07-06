@@ -137,8 +137,8 @@ int  route_del(char *ifname, int metric, char *dst, char *gateway, char *genmask
 int  control_static_routes(char *ift, char *ifname, int is_add);
 char* sanity_hostname(char *hname);
 char* get_our_hostname(void);
-int  is_same_subnet(char *ip1, char *ip2, char *msk);
-int  is_same_subnet2(char *ip1, char *ip2, char *msk1, char *msk2);
+int  is_same_subnet(const char *ip1, const char *ip2, const char *msk);
+int  is_same_subnet2(const char *ip1, const char *ip2, const char *msk1, const char *msk2);
 #if defined(APP_XUPNPD)
 void stop_xupnpd(void);
 void start_xupnpd(char *wan_ifname);
@@ -172,8 +172,8 @@ int  del_static_lan_routes(char *lan_ifname);
 void reset_lan_temp(void);
 void reset_lan_vars(void);
 void update_hosts_ap(void);
-void start_lan(void);
-void stop_lan(void);
+void start_lan(int is_ap_mode);
+void stop_lan(int is_ap_mode);
 void lan_up_manual(char *lan_ifname);
 void update_lan_status(int isup);
 void full_restart_lan(void);
@@ -430,7 +430,7 @@ void stop_misc(void);
 
 /* services_ex.c */
 int is_dns_dhcpd_run(void);
-int start_dns_dhcpd(void);
+int start_dns_dhcpd(int is_ap_mode);
 void stop_dns_dhcpd(void);
 int is_upnp_run(void);
 int start_upnp(void);

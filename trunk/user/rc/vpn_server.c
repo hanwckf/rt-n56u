@@ -227,15 +227,13 @@ start_vpn_server(void)
 			sprintf(acl_pass_var, "vpns_pass_x%d", i);
 			acl_user = nvram_safe_get(acl_user_var);
 			acl_pass = nvram_safe_get(acl_pass_var);
-			if (*acl_user && *acl_pass)
-			{
+			if (*acl_user && *acl_pass) {
 				sprintf(acl_addr_var, "vpns_addr_x%d", i);
 				i_cli2 = nvram_get_int(acl_addr_var);
 				if (i_cli2 >= i_cli0 && i_cli2 <= i_cli1 ) {
 					pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli2);
 					strcpy(acl_addr_var, inet_ntoa(pool_in));
-				}
-				else
+				} else
 					strcpy(acl_addr_var, "*");
 				
 				fprintf(fp, "\"%s\"	*	\"%s\"	%s\n", acl_user, acl_pass, acl_addr_var);

@@ -40,7 +40,7 @@
 #define INADYN_USER_DIR		"/etc/storage/inadyn"
 
 static void
-simple_dhcp_range(char *ip, char *dip1, char *dip2, char *mask)
+simple_dhcp_range(const char *ip, char *dip1, char *dip2, const char *mask)
 {
 	struct in_addr ina;
 	unsigned int new_start, new_end, lip, lmask;
@@ -58,14 +58,46 @@ simple_dhcp_range(char *ip, char *dip1, char *dip2, char *mask)
 }
 
 static int
-chk_valid_startend(char *ip, char *ip1, char *ip2, char *sub)
+chk_valid_subnet_pool(const char *ip, char *dip1, char *dip2, const char *mask)
 {
-	if (!is_same_subnet(ip, ip1, sub) || !is_same_subnet(ip, ip2, sub))
-	{
-		simple_dhcp_range(ip, ip1, ip2, sub);
+	if (!is_same_subnet(ip, dip1, mask) || !is_same_subnet(ip, dip2, mask)) {
+		simple_dhcp_range(ip, dip1, dip2, mask);
 		return 0;
 	}
 	return 1;
+}
+
+static int
+fill_static_ethers(void)
+{
+	FILE *fp;
+	int i, i_max, i_ethers = 0;
+	char nvram_mac[32], nvram_ip[32], *smac, *sip;
+
+	/* create /etc/ethers */
+	fp = fopen("/etc/ethers", "w+");
+	if (fp) {
+		if (nvram_get_int("dhcp_static_x") == 1) {
+			i_max = nvram_safe_get_int("dhcp_staticnum_x", 0, 0, 64);
+			for (i = 0; i < i_max; i++) {
+				snprintf(nvram_mac, sizeof(nvram_mac), "dhcp_staticmac_x%d", i);
+				smac = nvram_safe_get(nvram_mac);
+				if (strlen(smac) == 12) {
+					snprintf(nvram_ip, sizeof(nvram_ip), "dhcp_staticip_x%d", i);
+					sip = nvram_safe_get(nvram_ip);
+					if (is_valid_ipv4(sip)) {
+						i_ethers++;
+						fprintf(fp, "%c%c:%c%c:%c%c:%c%c:%c%c:%c%c %s\n", 
+							smac[0], smac[1], smac[2], smac[3], smac[4], smac[5], 
+							smac[6], smac[7], smac[8], smac[9], smac[10], smac[11], sip);
+					}
+				}
+			}
+		}
+		fclose(fp);
+	}
+
+	return i_ethers;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -79,151 +111,135 @@ is_dns_dhcpd_run(void)
 }
 
 int
-start_dns_dhcpd(void)
+start_dns_dhcpd(int is_ap_mode)
 {
 	FILE *fp;
-	int i, i_max, i_sdhcp, i_dns, is_use_dhcp, i_verbose;
-	char dhcp_mac[32], dhcp_ip[32], *smac, *sip;
-	char *start, *end, *ipaddr, *mask, *gw, *dns1, *dns2, *dns3, *domain;
-	char dhcp_start[16], dhcp_end[16], lan_ipaddr[16], lan_netmask[16];
-	size_t ethers = 0;
+	int i_ethers, i_verbose, is_dhcp_enable, is_dhcp_used, is_dns_used;
+	char dhcp_start[32], dhcp_end[32], dns_all[64];
+	char *ipaddr, *netmask, *gw, *dns1, *dns2, *dns3, *wins, *domain;
 	char *leases_dhcp = DHCPD_LEASE_FILE;
 	char *resolv_conf = "/etc/resolv.conf";
 	char *storage_dir = "/etc/storage/dnsmasq";
 
-	if (get_ap_mode())
-		return 0;
-
-	/* create /etc/hosts */
-	update_hosts_router();
-
-	/* touch resolv.conf if not exist */
-	create_file(resolv_conf);
+	if (!is_ap_mode) {
+		/* create /etc/hosts */
+		update_hosts_router();
+		
+		/* touch resolv.conf if not exist */
+		create_file(resolv_conf);
+		
+		is_dhcp_enable = nvram_match("dhcp_enable_x", "1");
+	} else {
+		is_dhcp_enable = nvram_match("lan_dhcpd_x", "1") && nvram_invmatch("lan_proto_x", "1");
+	}
 
 	/* touch dnsmasq.leases if not exist */
 	create_file(leases_dhcp);
 
-	i_sdhcp = nvram_get_int("dhcp_static_x");
-	i_max  = nvram_get_int("dhcp_staticnum_x");
-	if (i_max > 64) i_max = 64;
-
 	/* create /etc/ethers */
-	fp = fopen("/etc/ethers", "w+");
-	if (fp) {
-		if (i_sdhcp == 1) {
-			for (i = 0; i < i_max; i++) {
-				sprintf(dhcp_mac, "dhcp_staticmac_x%d", i);
-				smac = nvram_safe_get(dhcp_mac);
-				if (strlen(smac) == 12) {
-					sprintf(dhcp_ip, "dhcp_staticip_x%d", i);
-					sip = nvram_safe_get(dhcp_ip);
-					ethers += fprintf(fp, "%c%c:%c%c:%c%c:%c%c:%c%c:%c%c %s\n", 
-						smac[0], smac[1], smac[2], smac[3], smac[4], smac[5], 
-						smac[6], smac[7], smac[8], smac[9], smac[10], smac[11], sip);
-				}
-			}
-		}
-		fclose(fp);
-	}
+	i_ethers = fill_static_ethers();
 
-	ipaddr = nvram_safe_get("lan_ipaddr");
-	domain = nvram_safe_get("lan_domain");
+	i_verbose = nvram_get_int("dhcp_verbose");
+
+	ipaddr  = nvram_safe_get("lan_ipaddr");
+	netmask = nvram_safe_get("lan_netmask");
+	domain  = nvram_safe_get("lan_domain");
 
 	/* create /etc/dnsmasq.conf */
-	if (!(fp = fopen("/etc/dnsmasq.conf", "w"))) {
+	if (!(fp = fopen("/etc/dnsmasq.conf", "w")))
 		return errno;
-	}
 
 	fprintf(fp, "user=%s\n"
 		    "resolv-file=%s\n"
 		    "no-poll\n"
 		    "bogus-priv\n"
-		    "addn-hosts=%s/hosts\n"
 		    "interface=%s\n"
 		    "listen-address=%s\n"
-		    "bind-dynamic\n", SYS_USER_NOBODY, resolv_conf, storage_dir, IFNAME_BR, ipaddr);
+		    "bind-dynamic\n"
+		    "no-negcache\n"
+		    "clear-on-reload\n",
+		    SYS_USER_NOBODY,
+		    resolv_conf,
+		    IFNAME_BR,
+		    ipaddr);
+
+	if (!is_ap_mode) {
+		is_dns_used = 1;
+		fprintf(fp, "cache-size=%d\n", 1000);
+		fprintf(fp, "addn-hosts=%s/hosts\n", storage_dir);
+	} else {
+		is_dns_used = 0;
+		fprintf(fp, "cache-size=%d\n", 0);
+		fprintf(fp, "port=%d\n", 0);
+	}
 
 	if (strlen(domain) > 1) {
 		fprintf(fp, "domain=%s\n"
 			    "expand-hosts\n", domain);
 	}
 
-	fprintf(fp, "no-negcache\n"
-		    "cache-size=%d\n"
-		    "clear-on-reload\n", 1000);
-
-	is_use_dhcp = 0;
-	i_verbose = nvram_get_int("dhcp_verbose");
-	if (nvram_match("dhcp_enable_x", "1")) {
-		memset(dhcp_start, 0, 16);
-		memset(dhcp_end, 0, 16);
-		memset(lan_ipaddr, 0, 16);
-		memset(lan_netmask, 0, 16);
+	is_dhcp_used = 0;
+	if (is_dhcp_enable) {
+		snprintf(dhcp_start, sizeof(dhcp_start), "%s", nvram_safe_get("dhcp_start"));
+		snprintf(dhcp_end, sizeof(dhcp_end), "%s", nvram_safe_get("dhcp_end"));
 		
-		start  = nvram_safe_get("dhcp_start");
-		end    = nvram_safe_get("dhcp_end");
-		mask   = nvram_safe_get("lan_netmask");
-		
-		strcpy(lan_ipaddr, *ipaddr?ipaddr:"192.168.1.1");
-		strcpy(dhcp_start, *start&&*end?start:"192.168.1.2");
-		strcpy(dhcp_end,   *start&&*end?end:"192.168.1.244");
-		strcpy(lan_netmask,*start&&*end&&*mask?mask:"255.255.255.0");
-		
-		if (!chk_valid_startend(lan_ipaddr, dhcp_start, dhcp_end, lan_netmask))
-		{
+		if (!chk_valid_subnet_pool(ipaddr, dhcp_start, dhcp_end, netmask)) {
 			nvram_set("dhcp_start", dhcp_start);
 			nvram_set("dhcp_end", dhcp_end);
 		}
 		
-		fprintf(fp, "dhcp-range=%s,%s,%s,%s\n", dhcp_start, dhcp_end, lan_netmask, nvram_safe_get("dhcp_lease"));
+		fprintf(fp, "dhcp-range=%s,%s,%s,%d\n", dhcp_start, dhcp_end, netmask, nvram_get_int("dhcp_lease"));
 		
 		/* GATEWAY */
 		gw = nvram_safe_get("dhcp_gateway_x");
 		if (!is_valid_ipv4(gw))
-			gw = lan_ipaddr;
-		fprintf(fp, "dhcp-option=%d,%s\n", 3, gw);
+			gw = (!is_ap_mode) ? ipaddr : NULL;
+		if (gw)
+			fprintf(fp, "dhcp-option=%d,%s\n", 3, gw);
 		
 		/* DNS server */
-		i_dns = 0;
+		memset(dns_all, 0, sizeof(dns_all));
 		dns1 = nvram_safe_get("dhcp_dns1_x");
 		dns2 = nvram_safe_get("dhcp_dns2_x");
 		dns3 = nvram_safe_get("dhcp_dns3_x");
-		fprintf(fp, "dhcp-option=%d", 6);
-		if (is_valid_ipv4(dns1)) {
-			i_dns++;
-			fprintf(fp, ",%s", dns1);
-		}
+		
+		if (is_valid_ipv4(dns1))
+			strcat(dns_all, dns1);
 		if (is_valid_ipv4(dns2) && (strcmp(dns2, dns1))) {
-			i_dns++;
-			fprintf(fp, ",%s", dns2);
+			if (strlen(dns_all) > 0)
+				strcat(dns_all, ",");
+			strcat(dns_all, dns2);
 		}
 		if (is_valid_ipv4(dns3) && (strcmp(dns3, dns1) && strcmp(dns3, dns2))) {
-			i_dns++;
-			fprintf(fp, ",%s", dns3);
+			if (strlen(dns_all) > 0)
+				strcat(dns_all, ",");
+			strcat(dns_all, dns3);
 		}
-		if (i_dns < 1)
-			fprintf(fp, ",%s", lan_ipaddr);
-		fprintf(fp, "\n");
+		if (strlen(dns_all) == 0 && !is_ap_mode)
+			strcat(dns_all, ipaddr);
+		if (strlen(dns_all) > 0)
+			fprintf(fp, "dhcp-option=%d,%s\n", 6, dns_all);
 		
 		/* DOMAIN search */
 		if (strlen(domain) > 1)
 			fprintf(fp, "dhcp-option=%d,%s\n", 15, domain);
 		
 		/* WINS */
-		if (nvram_invmatch("dhcp_wins_x", ""))
-			fprintf(fp, "dhcp-option=%d,%s\n", 44, nvram_safe_get("dhcp_wins_x"));
+		wins = nvram_safe_get("dhcp_wins_x");
+		if (is_valid_ipv4(wins))
+			fprintf(fp, "dhcp-option=%d,%s\n", 44, wins);
 		
 		if (i_verbose == 0 || i_verbose == 2)
 			fprintf(fp, "quiet-dhcp\n");
 		
-		if (ethers)
+		if (i_ethers)
 			fprintf(fp, "read-ethers\n");
 		
-		is_use_dhcp = 1;
+		is_dhcp_used = 1;
 	}
 
 #if defined (USE_IPV6)
-	if (is_lan_radv_on() == 1) {
+	if (!is_ap_mode && is_lan_radv_on() == 1) {
 		int i_dhcp6s_mode = get_lan_dhcp6s_mode();
 		if (i_dhcp6s_mode > 0) {
 			int i_dhcp6s_irt = get_lan_dhcp6s_irt();
@@ -259,20 +275,22 @@ start_dns_dhcpd(void)
 				fprintf(fp, "quiet-dhcp6\n");
 			}
 			
-			is_use_dhcp = 1;
+			is_dhcp_used = 1;
 		}
 	}
 #endif
-	if (is_use_dhcp) {
+	if (is_dhcp_used) {
 		fprintf(fp, "dhcp-leasefile=%s\n", leases_dhcp);
 		fprintf(fp, "dhcp-authoritative\n");
 	}
 
 	fprintf(fp, "conf-file=%s/dnsmasq.conf\n", storage_dir);
-
 	fclose(fp);
 
-	return eval("/usr/sbin/dnsmasq");
+	if (is_dns_used || is_dhcp_used)
+		return eval("/usr/sbin/dnsmasq");
+
+	return 0;
 }
 
 void
@@ -287,7 +305,7 @@ int
 restart_dhcpd(void)
 {
 	stop_dns_dhcpd();
-	return start_dns_dhcpd();
+	return start_dns_dhcpd(get_ap_mode());
 }
 
 int

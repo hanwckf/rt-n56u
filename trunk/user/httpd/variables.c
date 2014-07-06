@@ -389,6 +389,7 @@
 
 	struct variable variables_LANHostConfig[] = {
 			{"lan_proto_x", "", NULL, RESTART_LAN},
+			{"lan_dhcpd_x", "", NULL, RESTART_DHCPD},
 			{"lan_ipaddr", "", NULL, RESTART_LAN},
 			{"lan_netmask", "", NULL, RESTART_LAN},
 			{"lan_gateway", "", NULL, RESTART_LAN},

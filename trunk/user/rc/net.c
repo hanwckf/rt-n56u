@@ -167,7 +167,7 @@ get_our_hostname(void)
 }
 
 int
-is_same_subnet(char *ip1, char *ip2, char *msk)
+is_same_subnet(const char *ip1, const char *ip2, const char *msk)
 {
 	unsigned int addr1, addr2, mask;
 
@@ -179,7 +179,7 @@ is_same_subnet(char *ip1, char *ip2, char *msk)
 }
 
 int
-is_same_subnet2(char *ip1, char *ip2, char *msk1, char *msk2)
+is_same_subnet2(const char *ip1, const char *ip2, const char *msk1, const char *msk2)
 {
 	unsigned int addr1, addr2, mask, mask1, mask2;
 

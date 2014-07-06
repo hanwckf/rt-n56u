@@ -193,7 +193,7 @@ void full_restart_ipv6(int ipv6_type_old)
 		control_if_ipv6_all(0);
 		update_resolvconf(0, 1);
 		restart_firewall();
-		start_dns_dhcpd();
+		start_dns_dhcpd(0);
 	}
 	else {
 		control_if_ipv6_all(1);
@@ -203,7 +203,7 @@ void full_restart_ipv6(int ipv6_type_old)
 		reload_lan_addr6();
 		full_restart_wan();
 		if (!is_dns_dhcpd_run())
-			start_dns_dhcpd();
+			start_dns_dhcpd(0);
 	}
 
 	if (ipv6_toggled) {

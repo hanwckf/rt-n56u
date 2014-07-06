@@ -53,14 +53,15 @@ function update_internet_status(){
 		showMapWANStatus(0);
 }
 
-function check_changed_status(){
+function notify_status_internet(wan_internet){
+	this.new_wan_internet = wan_internet;
 	if(location.pathname == "/" || location.pathname == "/index.asp")
 		update_internet_status();
-	enableCheckChangedStatus();
 }
 
-function set_changed_status(wan_internet){
-	this.new_wan_internet = wan_internet;
+function notify_status_vpn_client(vpnc_state){
+	if(location.pathname == "/vpncli.asp")
+		update_vpnc_status(vpnc_state);
 }
 
 function get_changed_status() {
@@ -73,13 +74,12 @@ function get_changed_status() {
 			;
 		},
 		success: function(response) {
-			set_changed_status(now_wan_internet);
-			check_changed_status();
+			notify_status_internet(now_wan_internet);
+			notify_status_vpn_client(now_vpnc_state);
+			enableCheckChangedStatus();
 		}
 	});
 }
-
-// for detect if the status of the machine is changed. }
 
 function getRadioBandStatus(data)
 {

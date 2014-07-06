@@ -66,8 +66,7 @@
 lan_ipaddr_x = '<% nvram_get_x("", "lan_ipaddr"); %>';
 lan_netmask_x = '<% nvram_get_x("", "lan_netmask"); %>';
 fw_enable_x = '<% nvram_get_x("", "fw_enable_x"); %>';
-
-<% vpnc_state_hook(); %>
+vpnc_state_last = '<% nvram_get_x("", "vpnc_state_t"); %>';
 
 <% openvpn_cli_cert_hook(); %>
 
@@ -75,17 +74,27 @@ function initial(){
 	show_banner(0);
 	show_menu(4, -1, 0);
 	show_footer();
-	
-	if (!found_app_ovpn()){
+
+	if (!found_app_ovpn())
 		document.form.vpnc_type.remove(2);
-	}
-	
+
 	if (fw_enable_x == "0")
-		$("row_vpnc_sfw").style.display = "none";
-	
+		showhide_div('row_vpnc_sfw', 0);
+
 	change_vpnc_enabled();
-	
+
 	load_body();
+}
+
+function update_vpnc_status(vpnc_state){
+	this.vpnc_state_last = vpnc_state;
+
+	if (vpnc_state != '1' || rcheck(document.form.vpnc_enable) == '0'){
+		showhide_div('col_vpnc_state', 0);
+		return;
+	}
+
+	showhide_div('col_vpnc_state', 1);
 }
 
 function applyRule(){
@@ -173,106 +182,81 @@ function done_validating(action){
 }
 
 function change_vpnc_enabled() {
-	var a = rcheck(document.form.vpnc_enable);
-	if (a == "0"){
-		$("tab_ssl_certs").style.display = "none";
-		$("tbl_vpnc_config").style.display = "none";
-		$("tbl_vpnc_server").style.display = "none";
-		$("tbl_vpnc_route").style.display = "none";
-	} else {
-		$("tbl_vpnc_config").style.display = "";
-		$("tbl_vpnc_server").style.display = "";
+	var v = (rcheck(document.form.vpnc_enable) == "0") ? 0 : 1;
+
+	showhide_div('tbl_vpnc_config', v);
+	showhide_div('tbl_vpnc_server', v);
+
+	if (v == 0){
+		showhide_div('tab_ssl_certs', 0);
+		showhide_div('tbl_vpnc_route', 0);
+	}else{
 		change_vpnc_type();
 	}
 }
 
 function change_vpnc_type() {
 	var mode = document.form.vpnc_type.value;
-	if (mode == "2")
-		$("row_vpnc_mppe").style.display = "none";
-	else
-		$("row_vpnc_mppe").style.display = "";
 
-	if (mode == "2" && !openvpn_cli_cert_found())
-		$("certs_hint").style.display = "";
-	else
-		$("certs_hint").style.display = "none";
+	showhide_div('row_vpnc_mppe', (mode == "2") ? 0 : 1);
+	showhide_div('certs_hint', (mode == "2" && !openvpn_cli_cert_found()) ? 1 : 0);
 
 	if (mode == "2") {
-		$("row_vpnc_auth").style.display = "none";
-		$("row_vpnc_pppd").style.display = "none";
-		$("row_vpnc_mtu").style.display = "none";
-		$("row_vpnc_mru").style.display = "none";
-		$("tbl_vpnc_route").style.display = "none";
+		showhide_div('row_vpnc_auth', 0);
+		showhide_div('row_vpnc_pppd', 0);
+		showhide_div('row_vpnc_mtu', 0);
+		showhide_div('row_vpnc_mru', 0);
+		showhide_div('tbl_vpnc_route', 0);
 		
-		$("row_vpnc_ov_port").style.display = "";
-		$("row_vpnc_ov_prot").style.display = "";
-		$("row_vpnc_ov_auth").style.display = "";
-		$("row_vpnc_ov_atls").style.display = "";
-		$("row_vpnc_ov_mode").style.display = "";
-		$("row_vpnc_ov_conf").style.display = "";
-		$("tab_ssl_certs").style.display = "";
+		showhide_div('row_vpnc_ov_port', 1);
+		showhide_div('row_vpnc_ov_prot', 1);
+		showhide_div('row_vpnc_ov_auth', 1);
+		showhide_div('row_vpnc_ov_atls', 1);
+		showhide_div('row_vpnc_ov_mode', 1);
+		showhide_div('row_vpnc_ov_conf', 1);
+		showhide_div('tab_ssl_certs', 1);
 		
 		change_vpnc_ov_auth();
 		change_vpnc_ov_atls();
 		change_vpnc_ov_mode();
 	}
 	else {
-		$("row_vpnc_ov_port").style.display = "none";
-		$("row_vpnc_ov_prot").style.display = "none";
-		$("row_vpnc_ov_auth").style.display = "none";
-		$("row_vpnc_ov_atls").style.display = "none";
-		$("row_vpnc_ov_mode").style.display = "none";
-		$("row_vpnc_ov_cnat").style.display = "none";
-		$("row_vpnc_ov_conf").style.display = "none";
-		$("tab_ssl_certs").style.display = "none";
+		showhide_div('row_vpnc_ov_port', 0);
+		showhide_div('row_vpnc_ov_prot', 0);
+		showhide_div('row_vpnc_ov_auth', 0);
+		showhide_div('row_vpnc_ov_atls', 0);
+		showhide_div('row_vpnc_ov_mode', 0);
+		showhide_div('row_vpnc_ov_cnat', 0);
+		showhide_div('row_vpnc_ov_conf', 0);
+		showhide_div('tab_ssl_certs', 0);
 		
-		$("row_vpnc_user").style.display = "";
-		$("row_vpnc_pass").style.display = "";
-		$("row_vpnc_auth").style.display = "";
-		$("row_vpnc_pppd").style.display = "";
-		$("row_vpnc_mtu").style.display = "";
-		$("row_vpnc_mru").style.display = "";
-		$("tbl_vpnc_route").style.display = "";
+		showhide_div('row_vpnc_user', 1);
+		showhide_div('row_vpnc_pass', 1);
+		showhide_div('row_vpnc_auth', 1);
+		showhide_div('row_vpnc_pppd', 1);
+		showhide_div('row_vpnc_mtu', 1);
+		showhide_div('row_vpnc_mru', 1);
+		showhide_div('tbl_vpnc_route', 1);
 	}
 
-	if (vpnc_state() != 0)
-		$("col_vpnc_state").style.display = "";
-	else
-		$("col_vpnc_state").style.display = "none";
+	showhide_div('col_vpnc_state', (vpnc_state_last == '1') ? 1 : 0);
 }
 
 function change_vpnc_ov_auth() {
-	var ov_auth = document.form.vpnc_ov_auth.value;
-	if (ov_auth == "1") {
-		$("row_vpnc_user").style.display = "";
-		$("row_vpnc_pass").style.display = "";
-		$("row_client_key").style.display = "none";
-		$("row_client_crt").style.display = "none";
-	} else {
-		$("row_vpnc_user").style.display = "none";
-		$("row_vpnc_pass").style.display = "none";
-		$("row_client_key").style.display = "";
-		$("row_client_crt").style.display = "";
-	}
+	var v = (document.form.vpnc_ov_auth.value == "1") ? 1 : 0;
+
+	showhide_div('row_vpnc_user', v);
+	showhide_div('row_vpnc_pass', v);
+	showhide_div('row_client_key', !v);
+	showhide_div('row_client_crt', !v);
 }
 
 function change_vpnc_ov_atls() {
-	var ov_atls = document.form.vpnc_ov_atls.value;
-	if (ov_atls == "1") {
-		$("row_ta_key").style.display = "";
-	} else {
-		$("row_ta_key").style.display = "none";
-	}
+	showhide_div('row_ta_key', (document.form.vpnc_ov_atls.value == "1") ? 1 : 0);
 }
 
 function change_vpnc_ov_mode() {
-	var ov_mode = document.form.vpnc_ov_mode.value;
-	if (ov_mode == "1") {
-		$("row_vpnc_ov_cnat").style.display = "none";
-	} else {
-		$("row_vpnc_ov_cnat").style.display = "";
-	}
+	showhide_div('row_vpnc_ov_cnat', (document.form.vpnc_ov_mode.value == "1") ? 0 : 1);
 }
 
 </script>

@@ -2761,15 +2761,6 @@ static int openvpn_cli_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
-static int vpnc_state_hook(int eid, webs_t wp, int argc, char_t **argv)
-{
-	int i_vpnc_status = (nvram_get_int("vpnc_state_t") == 1) ? 1 : 0;
-
-	websWrite(wp, "function vpnc_state() { return %d;}\n", i_vpnc_status);
-
-	return 0;
-}
-
 static int ej_get_parameter(int eid, webs_t wp, int argc, char_t **argv) {
 	bool last_was_escaped;
 	int ret = 0;
@@ -6071,7 +6062,6 @@ struct ej_handler ej_handlers[] = {
 	{ "modify_sharedfolder", ej_modify_sharedfolder},	/* no ccc*/
 	{ "set_share_mode", ej_set_share_mode},
 	{ "initial_folder_var_file", ej_initial_folder_var_file},	/* J++ */
-	{ "vpnc_state_hook", vpnc_state_hook},
 	{ "openvpn_srv_cert_hook", openvpn_srv_cert_hook},
 	{ "openvpn_cli_cert_hook", openvpn_cli_cert_hook},
 	{ NULL, NULL }

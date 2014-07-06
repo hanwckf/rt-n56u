@@ -76,6 +76,9 @@ AC_MSG_RESULT(yes)
 AC_MSG_RESULT(no)
 ])
 
+dnl clock_gettime is in librt for glibc <2.17
+AC_SEARCH_LIBS(clock_gettime, rt)
+
 dnl Needed for normal compile
 AC_PROG_INSTALL
 AC_PATH_PROG(RM, rm, NOTFOUND)

@@ -16,29 +16,32 @@
 #include "config.h"
 #include "radvd.h"
 
-struct timeval next_timeval(double next)
+struct timespec next_timespec(double next)
 {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	tv.tv_sec += (int)next;
-	tv.tv_usec += 1000000 * (next - (int)next);
-	return tv;
+	struct timespec ts;
+
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	ts.tv_sec += (int)next;
+	ts.tv_nsec += 1000000000ULL * (next - (int)next);
+	return ts;
 }
 
-int timevaldiff(struct timeval const *a, struct timeval const *b)
+int64_t timespecdiff(struct timespec const *a, struct timespec const *b)
 {
-	int msec;
-	msec = (a->tv_sec - b->tv_sec) * 1000;
-	msec += (a->tv_usec - b->tv_usec) / 1000;
+	int64_t msec;
+	msec = ((int64_t)a->tv_sec - b->tv_sec) * 1000;
+	msec += ((int64_t)a->tv_nsec - b->tv_nsec) / (1000 * 1000);
 	return msec;
 }
 
 /* Returns when the next time should expire in milliseconds. */
-int next_time_msec(struct Interface const *iface)
+uint64_t next_time_msec(struct Interface const *iface)
 {
-	struct timeval tv;
-	int retval;
-	gettimeofday(&tv, NULL);
-	retval = timevaldiff(&iface->next_multicast, &tv);
-	return retval >= 1 ? retval : 1;
+	struct timespec ts;
+	int64_t diff_ms;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	diff_ms = timespecdiff(&iface->next_multicast, &ts);
+	if (diff_ms <= 0)
+		return 0;
+	return (uint64_t)diff_ms;
 }

@@ -20,6 +20,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
+#include <assert.h>
 
 #include <httpd.h>
 #include <nvram/bcmnvram.h>
@@ -120,15 +121,34 @@ process_asp (char *s, char *e, FILE *f)
 
 	return end;
 }
+
+static char*
+search_desc(pkw_t pkw, char *name)
+{
+	int i, len;
+	char *p, *ret = NULL;
+
+	len = strlen(name);
+
+	for (i = 0; i < pkw->len; ++i)  {
+		p = pkw->idx[i];
+		if (strncmp(name, p, len) == 0) {
+			ret = p + len;
+			break;
+		}
+	}
+
+	return ret;
+}
+
 // Call this function if and only if we can read whole <#....#> pattern.
 static char *
-translate_lang (char *s, char *e, FILE *f, kw_t *pkw)
+translate_lang(char *s, char *e, FILE *fp, kw_t *pkw)
 {
 	char *end = NULL, *name = NULL, *desc = NULL;
 
-	if (s == NULL || e == NULL || f == NULL || pkw == NULL || s >= e)       {
+	if (s == NULL || e == NULL || fp == NULL || pkw == NULL || s >= e)
 		return NULL;
-	}
 
 	for (name = s; name < e; name = end) {
 		/* Skip initial whitespace */
@@ -138,10 +158,12 @@ translate_lang (char *s, char *e, FILE *f, kw_t *pkw)
 		*end++ = '=';	   // '#' --> '=', search_desc() need '='
 		*end++ = '\0';	  // '>' --> '\0'
 
-		desc = search_desc (pkw, name);
-		if (desc != NULL)       {
-			fprintf (f, "%s", desc);
-		}
+		desc = search_desc(pkw, name);
+		if (!desc && pkw != &kw_EN)
+			desc = search_desc(&kw_EN, name);
+
+		if (desc)
+			fprintf (fp, "%s", desc);
 
 		// skip kw_mark2
 		end = e + strlen (kw_mark2);
@@ -151,6 +173,69 @@ translate_lang (char *s, char *e, FILE *f, kw_t *pkw)
 	return end;
 }
 
+void
+release_dictionary(pkw_t pkw)
+{
+	if (!pkw)
+		return;
+
+	if (pkw->idx)
+		free(pkw->idx);
+
+	if (pkw->buf)
+		free(pkw->buf);
+
+	memset(pkw, 0, sizeof(kw_t));
+}
+
+int
+load_dictionary(char *lang, pkw_t pkw)
+{
+	FILE *dfp;
+	char dfn[16];
+	char *p, *q;
+	int dict_size = 0;
+
+	if (!pkw)
+		return 0;
+
+	snprintf(dfn, sizeof (dfn), "%s.dict", lang);
+	dfp = fopen(dfn, "r");
+	if (!dfp)
+		return 0;
+
+	memset(pkw, 0, sizeof(kw_t));
+
+	snprintf(pkw->dict, sizeof(pkw->dict), "%s", lang);
+
+	fseek(dfp, 0L, SEEK_END);
+	dict_size = ftell (dfp) + 128;
+	REALLOC_VECTOR (pkw->idx, pkw->len, pkw->tlen, sizeof (unsigned char*));
+	pkw->buf = q = malloc (dict_size);
+
+	fseek(dfp, 0L, SEEK_SET);
+
+	while ((fscanf(dfp, "%[^\n]", q)) != EOF) {
+		fgetc(dfp);
+
+		// if pkw->idx is not enough, add 32 item to pkw->idx
+		REALLOC_VECTOR (pkw->idx, pkw->len, pkw->tlen, sizeof (unsigned char*));
+
+		if ((p = strchr (q, '=')) != NULL) {
+			pkw->idx[pkw->len] = q;
+			pkw->len++;
+			q = p + strlen (p);
+			*q = '\0';
+			q++;
+		}
+	}
+
+	fclose(dfp);
+
+	return 1;
+}
+
+
 // This translation engine can not process <%...%> interlace with <#...#>
 void
 do_ej(char *path, FILE *stream)
@@ -158,25 +243,36 @@ do_ej(char *path, FILE *stream)
 #define PATTERN_LENGTH	1024
 #define FRAG_SIZE	128
 #define RESERVE_SIZE	4
+	FILE *fp;
 	int frag_size = FRAG_SIZE;
 	int pattern_size = PATTERN_LENGTH - RESERVE_SIZE;
 	char pat_buf[PATTERN_LENGTH];
 	char *pattern = pat_buf, *asp = NULL, *asp_end = NULL, *key = NULL, *key_end = NULL;
 	char *start_pat, *end_pat, *lang;
-	FILE *fp;
+	pkw_t pkw = &kw_EN;
 	int conn_break = 0;
 	size_t ret, read_len, len;
 	int no_translate = 1;
-	static kw_t kw = {0, 0, NULL, NULL};
 
 	if (!(fp = fopen(path, "r")))
 		return;
 
 	// Load dictionary file
-	lang = nvram_safe_get ("preferred_lang");
-	if (load_dictionary (lang, &kw)) {
-		no_translate = 0;
+	lang = nvram_safe_get("preferred_lang");
+	if (strlen(lang) > 1 && strcmp(lang, "EN") != 0) {
+		if (strcmp(lang, kw_XX.dict) != 0) {
+			release_dictionary(&kw_XX);
+			if (load_dictionary(lang, &kw_XX))
+				pkw = &kw_XX;
+		} else
+			pkw = &kw_XX;
+	} else {
+		if (kw_XX.buf)
+			release_dictionary(&kw_XX);
 	}
+
+	if (pkw->buf)
+		no_translate = 0;
 
 	start_pat = end_pat = pattern;
 	memset (pattern + pattern_size, 0, 4);
@@ -287,7 +383,7 @@ do_ej(char *path, FILE *stream)
 			// post process
 			p = NULL;
 			if (postproc == 1) {			    // translate
-				p = translate_lang (key + strlen (kw_mark1), key_end, stream, &kw);
+				p = translate_lang (key + strlen (kw_mark1), key_end, stream, pkw);
 				if (no_translate == 0 && p != NULL)     {
 					key = strstr (p, kw_mark1);
 				}

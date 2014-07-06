@@ -108,12 +108,12 @@ int http_is_ssl = 0;
 #endif
 
 static int http_acl_mode = 0;
-static time_t login_timestamp=0;	// the timestamp of the logined ip
+static time_t login_timestamp = 0;	// the timestamp of the logined ip
 static uaddr login_ip;			// the logined ip
 static uaddr login_ip_tmp;		// the ip of the current session.
 static uaddr last_login_ip;		// the last logined ip 2008.08 magic
 static char login_mac[18] = {0};	// the logined mac
-static char http_last_dict[16] = {0};	// last loaded XX.dict
+
 #if defined (USE_IPV6)
 static const struct in6_addr in6in4addr_loopback = {{{0x00, 0x00, 0x00, 0x00,
                                                       0x00, 0x00, 0x00, 0x00,
@@ -123,6 +123,9 @@ static const struct in6_addr in6in4addr_loopback = {{{0x00, 0x00, 0x00, 0x00,
 time_t request_timestamp = 0;
 time_t turn_off_auth_timestamp = 0;
 int temp_turn_off_auth = 0;	// for QISxxx.htm pages
+
+kw_t kw_EN = {0, 0, {0, 0, 0, 0}, NULL, NULL};
+kw_t kw_XX = {0, 0, {0, 0, 0, 0}, NULL, NULL};
 
 const int int_1 = 1;
 
@@ -388,9 +391,8 @@ void http_reset_login(void)
 }
 
 void http_logout(uaddr *ip) {
-	if (is_uaddr_equal(ip, &login_ip)) {
+	if (is_uaddr_equal(ip, &login_ip))
 		http_reset_login();
-	}
 }
 
 void http_login_timeout(uaddr *ip)
@@ -735,7 +737,7 @@ void do_auth(int reget)
 {
 	if (!reget)
 		return;
-	
+
 	snprintf(auth_userid, sizeof(auth_userid), "%s", nvram_safe_get("http_username"));
 	snprintf(auth_passwd, sizeof(auth_passwd), "%s", nvram_safe_get("http_passwd"));
 }
@@ -771,7 +773,7 @@ int set_preferred_lang(char* cur)
 		
 		p+=strlen(p)+1;
 	}
-	
+
 	if (p_lang)
 	{
 		snprintf(lang_file, sizeof(lang_file), "%s.dict", p_lang);
@@ -782,7 +784,7 @@ int set_preferred_lang(char* cur)
 		
 		return 1;
 	}
-	
+
 	return 0;
 }
 
@@ -999,127 +1001,12 @@ handle_request(FILE *conn_fp, int conn_fd)
 	}
 }
 
-int is_fileexist(char *filename)
-{
-	FILE *fp;
-
-	fp=fopen(filename, "r");
-
-	if (fp==NULL) return 0;
-	fclose(fp);
-	return 1;
-}
-
-int
-load_dictionary (char *lang, pkw_t pkw)
-{
-	char dfn[16];
-	char *p, *q;
-	FILE *dfp = NULL;
-	int dict_size = 0;
-	const char *eng_dict = "EN.dict";
-
-	if (lang == NULL || strlen(lang) == 0) {
-		snprintf(dfn, sizeof (dfn), eng_dict);
-	} else {
-		snprintf(dfn, sizeof (dfn), "%s.dict", lang);
-	}
-
-	if (strcmp (dfn, http_last_dict) == 0) {
-		return 1;
-	}
-
-	release_dictionary (pkw);
-
-	do {
-		dfp = fopen (dfn, "r");
-		if (dfp != NULL) {
-			snprintf(http_last_dict, sizeof(http_last_dict), "%s", dfn);
-			break;
-		}
-		
-		if (dfp == NULL && strcmp (dfn, eng_dict) == 0) {
-			return 0;
-		} else {
-			// If we can't open specified language file, use English as default
-			snprintf (dfn, sizeof (dfn), eng_dict);
-		}
-	} while (1);
-
-	memset (pkw, 0, sizeof (kw_t));
-	fseek (dfp, 0L, SEEK_END);
-	dict_size = ftell (dfp) + 128;
-	REALLOC_VECTOR (pkw->idx, pkw->len, pkw->tlen, sizeof (unsigned char*));
-	pkw->buf = q = malloc (dict_size);
-
-	fseek (dfp, 0L, SEEK_SET);
-
-	while ((fscanf(dfp, "%[^\n]", q)) != EOF) {
-		fgetc(dfp);
-
-		// if pkw->idx is not enough, add 32 item to pkw->idx
-		REALLOC_VECTOR (pkw->idx, pkw->len, pkw->tlen, sizeof (unsigned char*));
-
-		if ((p = strchr (q, '=')) != NULL) {
-			pkw->idx[pkw->len] = q;
-			pkw->len++;
-			q = p + strlen (p);
-			*q = '\0';
-			q++;
-		}
-	}
-
-	fclose (dfp);
-
-	return 1;
-}
-
-void
-release_dictionary (pkw_t pkw)
-{
-	if (pkw == NULL)
-		return;
-
-	pkw->len = pkw->tlen = 0;
-
-	if (pkw->idx != NULL)   {
-		free (pkw->idx);
-		pkw->idx = NULL;
-	}
-
-	if (pkw->buf != NULL)   {
-		free (pkw->buf);
-		pkw->buf = NULL;
-	}
-}
-
-char*
-search_desc (pkw_t pkw, char *name)
-{
-	int i;
-	char *p, *ret = NULL;
-
-	if (pkw == NULL || (pkw != NULL && pkw->len <= 0))      {
-		return NULL;
-	}
-	for (i = 0; i < pkw->len; ++i)  {
-		p = pkw->idx[i];
-		if (strncmp (name, p, strlen (name)) == 0)      {
-			ret = p + strlen (name);
-			break;
-		}
-	}
-
-	return ret;
-}
-
 static void
 http_reload_params(void)
 {
 	// reset last loaded XX.dict
-	memset(http_last_dict, 0, sizeof(http_last_dict));
+	memset(kw_XX.dict, 0, sizeof(kw_XX.dict));
 }
-
 
 static void
 catch_sig(int sig)
@@ -1294,6 +1181,8 @@ int main(int argc, char **argv)
 	pool.count = 0;
 	sz = sizeof(usa);
 
+	load_dictionary("EN", &kw_EN);
+
 	if (http_port[0] && listen_fd[0] >= 0)
 		httpd_log("Server listening port %d (%s).", http_port[0], "HTTP");
 #if defined (SUPPORT_HTTPS)
@@ -1435,6 +1324,9 @@ int main(int argc, char **argv)
 	if (http_port[1])
 		ssl_server_uninit();
 #endif
+
+	release_dictionary(&kw_XX);
+	release_dictionary(&kw_EN);
 
 	return 0;
 }

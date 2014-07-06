@@ -57,10 +57,14 @@ struct language_table{
 extern struct language_table language_tables[];
 
 typedef struct kw_s     {
-        int len, tlen;                                          // actually / total
-        unsigned char **idx;
-        unsigned char *buf;
+	int len, tlen;                                          // actually / total
+	char dict[4];
+	unsigned char **idx;
+	unsigned char *buf;
 } kw_t, *pkw_t;
+
+extern kw_t kw_EN;
+extern kw_t kw_XX;
 
 #define INC_ITEM        128
 #define REALLOC_VECTOR(p, len, size, item_size) {                      \
@@ -79,10 +83,6 @@ typedef struct kw_s     {
                 size = new_size;                                       \
         }    \
 }
-
-extern int load_dictionary (char *lang, pkw_t pkw);
-extern void release_dictionary (pkw_t pkw);
-extern char* search_desc (pkw_t pkw, char *name);
 
 typedef FILE * webs_t;
 typedef char char_t;
@@ -126,6 +126,10 @@ extern void set_cgi(char *name, char *value);
 
 // crc32.c
 extern unsigned long crc32_sp (unsigned long, const unsigned char *, unsigned int);
+
+// ej.c
+extern int load_dictionary (char *lang, pkw_t pkw);
+extern void release_dictionary (pkw_t pkw);
 
 // httpd.c
 extern long uptime(void);

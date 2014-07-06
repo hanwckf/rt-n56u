@@ -45,16 +45,31 @@ stop_klogd()
 int
 start_syslogd()
 {
+	char *log_ipaddr, host_dst[32];
+	char *syslogd_argv[] = {
+		"/sbin/syslogd",
+		"-s512",			/* max size before rotation */
+		"-b0",				/* purge on rotate */
+		"-S",				/* smaller output */
+		"-D",				/* drop duplicates */
+		"-O", "/tmp/syslog.log",	/* syslog file */
+		NULL,				/* -L */
+		NULL, NULL,			/* -R host:port */
+		NULL
+	};
+
+	log_ipaddr = nvram_safe_get("log_ipaddr");
+	if (is_valid_ipv4(log_ipaddr)) {
+		int log_port = nvram_safe_get_int("log_port", 514, 1, 65535);
+		snprintf(host_dst, sizeof(host_dst), "%s:%d", log_ipaddr, log_port);
+		syslogd_argv[7] = "-L";		/* local & remote */
+		syslogd_argv[8] = "-R";
+		syslogd_argv[9] = host_dst;
+	}
+
 	setenv_tz();
-	
-	if (nvram_invmatch("log_ipaddr", ""))
-	{
-		return eval("/sbin/syslogd", "-b0", "-s256", "-S", "-O", "/tmp/syslog.log", "-R", nvram_safe_get("log_ipaddr"), "-L");
-	}
-	else
-	{
-		return eval("/sbin/syslogd", "-b0", "-s256", "-S", "-D", "-O", "/tmp/syslog.log");
-	}
+
+	return _eval(syslogd_argv, NULL, 0, NULL);
 }
 
 int

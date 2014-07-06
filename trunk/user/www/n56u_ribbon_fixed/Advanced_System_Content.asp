@@ -158,7 +158,13 @@ function validForm(){
 			return false;
 	}
 
-	if(!validate_ipaddr_final(document.form.log_ipaddr, 'log_ipaddr') || !validate_string(document.form.ntp_server0))
+	if(!validate_string(document.form.ntp_server0))
+		return false;
+
+	if(!validate_ipaddr_final(document.form.log_ipaddr, 'log_ipaddr'))
+		return false;
+
+	if(!validate_range(document.form.log_port, 1, 65535))
 		return false;
 
 	if(document.form.http_passwd2.value.length > 0)
@@ -563,7 +569,10 @@ function sshd_auth_change(){
                                         </tr>
                                         <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,11,1)"><#LANHostConfig_x_ServerLogEnable_itemname#></a></th>
-                                            <td><input type="text" maxlength="15" class="input" size="15" name="log_ipaddr" value="<% nvram_get_x("", "log_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)"/></td>
+                                            <td>
+                                                <input type="text" maxlength="15" class="input" size="15" name="log_ipaddr" style="width: 145px" value="<% nvram_get_x("", "log_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)"/>&nbsp;:
+                                                <input type="text" maxlength="5" class="input" size="10" name="log_port" style="width: 44px;"  value="<% nvram_get_x("","log_port"); %>" onkeypress="return is_number(this)"/>
+                                            </td>
                                         </tr>
                                         <tr>
                                             <th><#PASS_LANG#></th>

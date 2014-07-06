@@ -765,7 +765,7 @@ function simplyMAC(fullMAC){
 
 <body onload="initial();" onunLoad="return unload_body();">
 <script>
-	if(sw_mode == 3){
+	if(get_ap_mode()){
 		alert("<#page_not_support_mode_hint#>");
 		location.href = "/as.asp";
 	}

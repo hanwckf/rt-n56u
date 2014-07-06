@@ -558,7 +558,7 @@ function is_ipaddr(o) {
 }
 
 function get_ap_mode(){
-    return (wan_route_x == "IP_Bridged" || sw_mode == "3") ? true : false;
+    return (wan_route_x == 'IP_Bridged' || sw_mode == '3') ? true : false;
 }
 
 function matchSubnet(ip1, ip2, sb1) {
@@ -1259,7 +1259,7 @@ function validate_ddns_hostname(o) {
             }
         }
         if (!validate_hostnamechar(c)) {
-            if (document.form.current_page.value == "Advanced_ASUSDDNS_Content.asp")
+            if (document.form.current_page.value == "Advanced_DDNS_Content.asp")
                 document.form.ddns_hostname_x.value = "";
             alert("<#LANHostConfig_x_DDNS_alarm_13#> '" + s.charAt(i) + "' !");
             return(false);
@@ -1280,7 +1280,7 @@ function validate_hostnamechar(ch) {
 function onSubmitApply(s) {
     pageChanged = 0;
 
-    if (document.form.current_page.value == "Advanced_ASUSDDNS_Content.asp") {
+    if (document.form.current_page.value == "Advanced_DDNS_Content.asp") {
         if (s == "hostname_check") {
             if (document.form.DDNSName.value == "" || !validate_ddns_hostname(document.form.DDNSName)) {
                 document.form.DDNSName.focus();

@@ -186,8 +186,7 @@ void change_passwd_unix(char *user, char *pass)
 		pass = DEF_ROOT_PASSWORD;
 
 	fp=fopen(tmpfile, "w");
-	if (fp)
-	{
+	if (fp) {
 		fprintf(fp, "%s:%s\n", user, pass);
 		fclose(fp);
 	}
@@ -204,8 +203,7 @@ void recreate_passwd_unix(int force_create)
 {
 	FILE *fp1, *fp2;
 	int i, uid, sh_num;
-	char tmpusernm[32];
-	char *rootnm, *usernm;
+	char tmp[32], *rootnm, *usernm;
 
 	rootnm = nvram_safe_get("http_username");
 	if (strlen(rootnm) < 1)
@@ -213,23 +211,18 @@ void recreate_passwd_unix(int force_create)
 
 	fp1 = fopen("/etc/passwd", "w");
 	fp2 = fopen("/etc/group", "w");
-	if (fp1 && fp2)
-	{
+	if (fp1 && fp2) {
 		fprintf(fp1, "%s:x:%d:%d::%s:%s\n", rootnm, 0, 0, SYS_HOME_PATH_ROOT, SYS_SHELL);
 		fprintf(fp1, "%s:x:%d:%d::%s:%s\n", SYS_USER_NOBODY, 99, 99, "/media", "/bin/false");
 		fprintf(fp2, "%s:x:%d:%s\n", SYS_GROUP_ROOT, 0, rootnm);
 		fprintf(fp2, "%s:x:%d:\n", SYS_GROUP_NOGROUP, 99);
 		
-		sh_num = nvram_get_int("acc_num");
-		if (sh_num > 100) sh_num = 100;
-		memset(tmpusernm, 0, sizeof(tmpusernm));
-		uid=1000;
-		for (i=0; i<sh_num; i++)
-		{
-			sprintf(tmpusernm, "acc_username%d", i);
-			usernm = nvram_safe_get(tmpusernm);
-			if (*usernm && strcmp(usernm, "root") && strcmp(usernm, SYS_USER_NOBODY) && strcmp(usernm, rootnm))
-			{
+		uid = 1000;
+		sh_num = nvram_safe_get_int("acc_num", 0, 0, 100);
+		for (i=0; i<sh_num; i++) {
+			snprintf(tmp, sizeof(tmp), "acc_username%d", i);
+			usernm = nvram_safe_get(tmp);
+			if (*usernm && strcmp(usernm, "root") && strcmp(usernm, SYS_USER_NOBODY) && strcmp(usernm, rootnm)) {
 				fprintf(fp1, "%s:x:%d:%d:::\n", usernm, uid, uid);
 				fprintf(fp2, "%s:x:%d:\n", usernm, uid);
 				uid++;
@@ -237,17 +230,17 @@ void recreate_passwd_unix(int force_create)
 		}
 	}
 
-	if (fp1) fclose(fp1);
-	if (fp2) fclose(fp2);
+	if (fp1)
+		fclose(fp1);
+	if (fp2)
+		fclose(fp2);
 
 	chmod("/etc/passwd", 0644);
 	chmod("/etc/group", 0644);
-	
-	if (force_create)
-	{
+
+	if (force_create) {
 		fp1 = fopen("/etc/shadow", "w");
-		if (fp1)
-		{
+		if (fp1) {
 			fprintf(fp1, "%s:%s:%d:0:99999:7:::\n", rootnm, "", 16000);
 			fprintf(fp1, "%s:%s:%d:0:99999:7:::\n", SYS_USER_NOBODY, "*", 16000);
 			

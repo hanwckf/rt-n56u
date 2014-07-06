@@ -171,20 +171,13 @@
 
 <script>
 
-<% login_state_hook(); %>
-
 <% nf_values(); %>
 
 function initial(){
 	show_banner(1);
-	show_menu(5,6,2);
+	show_menu(5,5,2);
 	show_footer();
-	if (sw_mode == "4"){
-		$("row_nat_loop").style.display = "none";
-	}
-	else{
-		$("row_nat_loop").style.display = "";
-	}
+	showhide_div('row_nat_loop', (sw_mode == '4') ? 0 : 1);
 
 	$("nf_count").innerHTML = nf_conntrack_count() + ' in use';
 }

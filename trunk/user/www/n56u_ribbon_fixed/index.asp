@@ -47,12 +47,10 @@ function initial(){
 	show_client_status(ccount);
 	set_default_choice();
 
-	if(sw_mode == "3"){
-		showMapWANStatus(3);
-		MapUnderAPmode();
-	}
-	else
-		update_internet_status();
+	if(sw_mode == '3')
+		$("linkInternet").href = "/device-map/intranet.asp"
+
+	update_internet_status();
 }
 
 function detect_update_info(){
@@ -92,23 +90,17 @@ function set_default_choice(){
 function showMapWANStatus(flag){
 	$j("#internetStatus").removeClass("badge badge-success badge-warning badge-important");
 
-	if(sw_mode == "3"){
+	if(flag == 1){
 		$j("#internetStatus").addClass("badge badge-success");
 		$j("#internetStatus").html('<i class="icon-ok icon-white"></i>');
 	}
+	else if(flag == 2){
+		$j("#internetStatus").addClass("badge badge-warning");
+		$j("#internetStatus").html('<i class="icon-minus icon-white"></i>');
+	}
 	else{
-		if(flag == 1){
-			$j("#internetStatus").addClass("badge badge-success");
-			$j("#internetStatus").html('<i class="icon-ok icon-white"></i>');
-		}
-		else if(flag == 2){
-			$j("#internetStatus").addClass("badge badge-warning");
-			$j("#internetStatus").html('<i class="icon-minus icon-white"></i>');
-		}
-		else{
-			$j("#internetStatus").addClass("badge badge-important");
-			$j("#internetStatus").html('<i class="icon-remove icon-white"></i>');
-		}
+		$j("#internetStatus").addClass("badge badge-important");
+		$j("#internetStatus").html('<i class="icon-remove icon-white"></i>');
 	}
 }
 
@@ -147,13 +139,10 @@ function show_middle_status(){
 
 	//$("wl_securitylevel_span").innerHTML = security_mode;
 
-	if(auth_mode == "open" && wl_wep_x == 0)
-	{
+	if(auth_mode == "open" && wl_wep_x == 0) {
 		$j("#wl_securitylevel_span").addClass("badge badge-important");
 		$j("#wl_securitylevel_span").html('<i class="icon-exclamation-sign icon-white"></i>');
-	}
-	else
-	{
+	} else {
 		$j("#wl_securitylevel_span").addClass("badge badge-success");
 		$j("#wl_securitylevel_span").html('<i class="icon-lock icon-white"></i>');
 	}
@@ -397,8 +386,13 @@ function clickEvent(obj){
 		icon = "big-icons-globe-active";
 		ContainerWidth = "300px";
 		Containerpadding = "5px";
-		stitle = "<#statusTitle_Internet#>";
-		$("statusframe").src = "/device-map/internet.asp";
+		if (sw_mode == '3'){
+			stitle = "<#statusTitle_Intranet#>";
+			$("statusframe").src = "/device-map/intranet.asp";
+		}else{
+			stitle = "<#statusTitle_Internet#>";
+			$("statusframe").src = "/device-map/internet.asp";
+		}
 	}
 	else if(obj.id.indexOf("Router") > 0){
 		icon = "big-icons-router-active";
@@ -488,28 +482,15 @@ function mouseEvent(obj, key){
 		alert("mouse over on wrong place!");
 	
 	if(avoidkey != icon){
-		if(key){ //when mouseover
+		if(key)
 			obj.style.background = 'url("/images/map-'+icon+'_r.gif") no-repeat';
-		}
-		else {  //when mouseout
+		else
 			obj.style.background = 'url("/images/map-'+icon+'.gif") no-repeat';
-		}
-	}
-}
-
-function MapUnderAPmode(){// if under AP mode, disable the Internet icon and show hint when mouseover.
-	
-	$("row_internet").style.display = "none";
-	
-	$("iconInternet").style.cursor = "default";
-	
-	$("iconInternet").onclick = function(){
-		return false;
 	}
 }
 
 $j(document).ready(function(){
-    $j('div[rel=rollover_disk]').popover();
+	$j('div[rel=rollover_disk]').popover();
 });
 </script>
 
@@ -638,7 +619,7 @@ $j(document).ready(function(){
                                 <tbody>
                                     <tr id="row_internet">
                                         <td width="30%">
-                                            <a href="/device-map/internet.asp" target="statusframe" style="outline:0;">
+                                            <a id="linkInternet" href="/device-map/internet.asp" target="statusframe" style="outline:0;">
                                                 <div id="iconInternet" class="big-icons big-icons-globe" onclick="clickEvent(this);"></div>
                                             </a>
                                             <div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>
@@ -646,7 +627,6 @@ $j(document).ready(function(){
                                             <div class="arrow-right" id="arrow-internet"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
                                     </tr>
-
                                     <tr>
                                         <td width="30%">
                                             <a href="device-map/router2g.asp" target="statusframe" style="outline:0;"><div id="iconRouter" class="big-icons big-icons-router" onclick="clickEvent(this);"></div></a>
@@ -654,7 +634,6 @@ $j(document).ready(function(){
                                             <div class="arrow-right" id="arrow-router"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
                                     </tr>
-
                                     <tr>
                                         <td>
                                             <a id="clientStatusLink" href="device-map/clients.asp" target="statusframe" style="outline:0;"><div id="iconClient" class="big-icons big-icons-laptop" onclick="clickEvent(this);"></div></a>
@@ -662,7 +641,6 @@ $j(document).ready(function(){
                                             <div class="arrow-right" id="arrow-clients"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
                                     </tr>
-
                                     <tr id="row_usb_port1">
                                         <td width="30%">
                                             <div id="deviceIcon_0" class="big-icons big-icons-usb"></div>
@@ -670,7 +648,6 @@ $j(document).ready(function(){
                                             <div class="arrow-right" id="arrow-usb1"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
                                     </tr>
-
                                     <tr id="row_usb_port2">
                                         <td width="30%">
                                             <div id="deviceIcon_1" class="big-icons big-icons-usb"></div>
@@ -696,7 +673,7 @@ $j(document).ready(function(){
                             <h2 id="helpname" class="box_head round_top"></h2>
 
                             <div class="round_bottom">
-                                <iframe id="statusframe" name="statusframe" src="/device-map/clients.asp" frameborder="0" width="100%" height="570" ></iframe>
+                                <iframe id="statusframe" name="statusframe" src="/device-map/clients.asp" frameborder="0" width="100%" height="571"></iframe>
                             </div>
                         </div>
                     </div>

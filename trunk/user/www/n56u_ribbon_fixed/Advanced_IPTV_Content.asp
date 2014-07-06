@@ -91,8 +91,6 @@
 
 <script>
 
-<% login_state_hook(); %>
-
 var lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
 
 function initial(){

@@ -6,27 +6,25 @@
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_1_5#></title>
+<title>ASUS Wireless Router <#Web_Title#> - <#menu5_10_2#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
 <script type="text/javascript" src="/jquery.js"></script>
-<script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
-<script type="text/javascript" src="/wireless.js"></script>
-<script type="text/javascript" src="/help_wl.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script>
 
-var $j = jQuery.noConflict();
-
 function initial(){
 	show_banner(1);
-
-	show_menu(5,2,5);
-	
+	show_menu(5,8,2);
 	show_footer();
+
+	if (get_ap_mode()){
+		showhide_div('row_post_wan_script', 0);
+		showhide_div('row_post_iptables_script', 0);
+	}
 }
 
 function applyRule(){
@@ -34,7 +32,7 @@ function applyRule(){
 		showLoading();
 		
 		document.form.action_mode.value = " Apply ";
-		document.form.current_page.value = "/Advanced_WSecurity_Content.asp";
+		document.form.current_page.value = "/Advanced_Scripts_Content.asp";
 		document.form.next_page.value = "";
 		
 		document.form.submit();
@@ -42,25 +40,18 @@ function applyRule(){
 }
 
 function validForm(){
-	if(!validate_ipaddr_final(document.form.wl_radius_ipaddr, 'radius_ipaddr'))
-		return false;
-
-	if(!validate_range(document.form.wl_radius_port, 0, 65535))
-		return false;
-
-	if(!validate_string(document.form.wl_radius_key))
-		return false;
-
 	return true;
 }
 
 function done_validating(action){
 	refreshpage();
 }
+
 </script>
 </head>
 
 <body onload="initial();" onunLoad="return unload_body();">
+
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
         <div class="row-fluid">
@@ -75,10 +66,11 @@ function done_validating(action){
 
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
-    <input type="hidden" name="current_page" value="Advanced_WSecurity_Content.asp">
+
+    <input type="hidden" name="current_page" value="Advanced_Scripts_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
-    <input type="hidden" name="sid_list" value="WLANAuthentication11a;WLANConfig11a;">
+    <input type="hidden" name="sid_list" value="General;">
     <input type="hidden" name="group_id" value="">
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
@@ -105,43 +97,54 @@ function done_validating(action){
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#menu5_1#> - <#t2RADIUS#> (5GHz)</h2>
+                            <h2 class="box_head round_top"><#menu5_10#> - <#menu5_10_2#></h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
-                                    <div class="alert alert-info" style="margin: 10px;"><#WLANAuthentication11a_display1_sectiondesc#></div>
+                                    <div class="alert alert-info" style="margin: 10px;"><#Scripts_desc#></div>
 
-                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
+                                    <table  width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th width="50%" style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,2,1);"><#WLANAuthentication11a_ExAuthDBIPAddr_itemname#></a></th>
-                                            <td width="50%" style="border-top: 0 none;">
-                                                <input type="text" maxlength="15" class="input" size="15" name="wl_radius_ipaddr" value="<% nvram_get_x("","wl_radius_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)">
+                                            <th style="background-color: #E3E3E3;"><#UserScripts#></th>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <a href="javascript:spoiler_toggle('script0')"><span><#RunPreStart#></span></a>
+                                                <div id="script0" style="display:none;">
+                                                    <textarea rows="24" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.start_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.start_script.sh",""); %></textarea>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);"  onmouseover="openTooltip(this,2,2);"><#WLANAuthentication11a_ExAuthDBPortNumber_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="5" class="input" size="5" name="wl_radius_port" value="<% nvram_get_x("","wl_radius_port"); %>" onkeypress="return is_number(this)" onblur="return validate_portrange(this, '')"/>
+                                                <a href="javascript:spoiler_toggle('script1')"><span><#RunPostStart#></span></a>
+                                                <div id="script1" style="display:none;">
+                                                    <textarea rows="24" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.started_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.started_script.sh",""); %></textarea>
+                                                </div>
                                             </td>
                                         </tr>
-                                        <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);"  onmouseover="openTooltip(this,2,3);"><#WLANAuthentication11a_ExAuthDBPassword_itemname#></a></th>
+                                        <tr id="row_post_wan_script">
                                             <td>
-                                                <div class="input-append">
-                                                    <input type="password" name="wl_radius_key" id="wl_radius_key" maxlength="64" size="32" style="width: 175px;" value="<% nvram_get_x("","wl_radius_key"); %>">
-                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('wl_radius_key')"><i class="icon-eye-close"></i></button>
+                                                <a href="javascript:spoiler_toggle('script2')"><span><#RunPostWAN#></span></a>
+                                                <div id="script2" style="display:none;">
+                                                    <textarea rows="24" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.post_wan_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.post_wan_script.sh",""); %></textarea>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_post_iptables_script">
+                                            <td style="padding-bottom: 0px;">
+                                                <a href="javascript:spoiler_toggle('script3')"><span><#RunPostFWL#></span></a>
+                                                <div id="script3" style="display:none;">
+                                                    <textarea rows="24" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.post_iptables_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.post_iptables_script.sh",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>
                                     </table>
 
-                                    <table class="table">
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <td style="margin-top: 10px; border-top: 0 none;">
-                                                <input class="btn btn-info" type="button"  value="<#GO_2G#>" onclick="location.href='Advanced_WSecurity2g_Content.asp';">
-                                            </td>
-                                            <td style="border-top: 0 none;">
-                                                <input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" />
+                                            <td style="border: 0 none;">
+                                                <center><input type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center>
                                             </td>
                                         </tr>
                                     </table>

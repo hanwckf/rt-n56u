@@ -19,8 +19,6 @@
 <script>
 var $j = jQuery.noConflict();
 
-<% login_state_hook(); %>
-
 var ipmonitor = [<% get_static_client(); %>];
 var wireless = [<% wl_auth_list(); %>];
 
@@ -119,8 +117,13 @@ function check_full_scan_done(){
 	if(nmap_fullscan != "1"){
 		$("LoadingBar").style.display = "none";
 		$("refresh_list").disabled = false;
-		$j('.popover_top').popover({placement: 'right'});
-		$j('.popover_bottom').popover({placement: 'right'});
+		if (sw_mode == "3") {
+			$j('.popover_top').popover({placement: 'top'});
+			$j('.popover_bottom').popover({placement: 'bottom'});
+		}else {
+			$j('.popover_top').popover({placement: 'right'});
+			$j('.popover_bottom').popover({placement: 'right'});
+		}
 	}else{
 		$("LoadingBar").style.display = "block";
 		$("refresh_list").disabled = true;
@@ -455,3 +458,6 @@ function networkmap_update(s){
 </script>
 </body>
 </html>
+
+
+

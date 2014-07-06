@@ -21,8 +21,6 @@
 
 var $j = jQuery.noConflict();
 
-<% login_state_hook(); %>
-
 var ipmonitor = [<% get_static_client(); %>];
 var wireless = [<% wl_auth_list(); %>];
 
@@ -31,11 +29,17 @@ var clients_info = getclients(0,0);
 var isMenuopen = 0;
 
 function initial(){
+	var id_menu = 4;
+	if(!support_ipv6())
+		id_menu--;
+
 	show_banner(1);
-	show_menu(5,4,3);
+	show_menu(5,4,id_menu);
 	show_footer();
-	load_body();
+
 	showLANIPList();
+
+	load_body();
 }
 
 function applyRule(){
@@ -166,7 +170,7 @@ function done_validating(action){
                                             <td>
                                                 <div id="ClientList_Block" class="alert alert-info ddown-list"></div>
                                                 <div class="input-append">
-                                                    <input type="text" maxlength="15" class="input" size="15" name="dmz_ip" value="<% nvram_get_x("IPConnection","dmz_ip"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" style="float:left; width: 175px"/>
+                                                    <input type="text" maxlength="15" class="input" size="15" name="dmz_ip" value="<% nvram_get_x("","dmz_ip"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" style="float:left; width: 175px"/>
                                                     <button class="btn btn-chevron" id="chevron" type="button" onclick="pullLANIPList(this);" title="Select the IP of LAN clients."><i class="icon icon-chevron-down"></i></button>
                                                 </div>
                                             </td>

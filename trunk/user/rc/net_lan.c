@@ -568,6 +568,9 @@ start_lan(int is_ap_mode)
 			/* early fill XXX_t fields */
 			update_lan_status(0);
 			
+			/* di wakeup after 60 secs */
+			notify_run_detect_internet(60);
+			
 			/* start dhcp daemon */
 			start_udhcpc_lan(lan_ifname);
 		}
@@ -578,6 +581,9 @@ start_lan(int is_ap_mode)
 			
 			/* manual config lan gateway and dns */
 			lan_up_manual(lan_ifname);
+			
+			/* di wakeup after 2 secs */
+			notify_run_detect_internet(2);
 		}
 	}
 	else
@@ -604,6 +610,8 @@ stop_lan(int is_ap_mode)
 	char *svcs[] = { "udhcpc", "detect_wan", NULL };
 
 	if (is_ap_mode) {
+		notify_pause_detect_internet();
+		
 		kill_services(svcs, 3, 1);
 	} else {
 		/* Remove static routes */
@@ -774,6 +782,9 @@ lan_up_auto(char *lan_ifname, char *lan_gateway)
 
 	/* fill XXX_t fields */
 	update_lan_status(1);
+
+	/* di wakeup after 2 secs */
+	notify_run_detect_internet(2);
 }
 
 static void
@@ -781,6 +792,8 @@ lan_down_auto(char *lan_ifname)
 {
 	FILE *fp;
 	char *lan_gateway = nvram_safe_get("lan_gateway_t");
+
+	notify_pause_detect_internet();
 
 	/* Remove default route to gateway if specified */
 	if (is_valid_ipv4(lan_gateway))

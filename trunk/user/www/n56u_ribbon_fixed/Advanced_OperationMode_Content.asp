@@ -17,38 +17,34 @@
 <script>
 var $j = jQuery.noConflict();
 
-<% login_state_hook(); %>
-
 function initial(){
 	show_banner(2);
-	
-	show_menu(5,8,3);
-	
+	show_menu(5,7,2);
 	show_footer();
 
-	if(sw_mode=="1" || sw_mode=="3"){
-		$('wl_rt').style.display="";
-		$('rt_wo_nat').style.display="none";
-	}else if(sw_mode=="4"){
-		$('wl_rt').style.display="none";
-		$('rt_wo_nat').style.display="";
+	if(sw_mode == '1' || sw_mode == '3'){
+		showhide_div('wl_rt', 1);
+		showhide_div('rt_wo_nat', 0);
+	}else if(sw_mode == '4'){
+		showhide_div('wl_rt', 0);
+		showhide_div('rt_wo_nat', 1);
 	}
-	
+
 	setScenerion(sw_mode);
 }
 
 function saveMode(){
-	if(sw_mode == "1"){
+	if(sw_mode == '1'){
 		if(document.form.sw_mode[0].checked == true){
 			alert("<#op_already_configured#>");
 			return false;
 		}
-	}else if(sw_mode == "4"){
+	}else if(sw_mode == '4'){
 		if(document.form.sw_mode[1].checked == true){
 			alert("<#op_already_configured#>");
 			return false;
 		}
-	}else if(sw_mode == "3"){
+	}else if(sw_mode == '3'){
 		if(document.form.sw_mode[2].checked == true){
 			alert("<#op_already_configured#>");
 			return false;

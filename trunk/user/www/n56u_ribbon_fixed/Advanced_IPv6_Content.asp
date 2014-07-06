@@ -6,7 +6,7 @@
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>Wireless Router <#Web_Title#> - IPv6</title>
+<title>Wireless Router <#Web_Title#> - <#menu5_3_3#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -81,11 +81,9 @@
 
 <script>
 
-<% login_state_hook(); %>
-
 function initial(){
 	show_banner(1);
-	show_menu(5, 5, 0);
+	show_menu(5,4,2);
 	show_footer();
 
 	document.form.ip6_lan_sfps_fake.value = decimalToHex(document.form.ip6_lan_sfps.value, 4);
@@ -99,6 +97,8 @@ function initial(){
 		change_ip6_service();
 		change_ip6_lan_radv();
 	}
+
+	load_body();
 }
 
 function applyRule(){
@@ -343,7 +343,7 @@ function change_ip6_service(){
 	else if (wan_proto == "l2tp")
 		wif = 'L2TP';
 
-	$('wan_type').innerHTML = '<span class="label ' + (warn == false ? 'label-success' : 'label-warning') + '">' + wif + '</span>';
+	$('wan_type').innerHTML = '<span class="label label-' + (warn == false ? 'success' : 'warning') + '">' + wif + '</span>';
 
 	change_ip6_wan_dhcp();
 	change_ip6_6rd_dhcp();
@@ -451,6 +451,12 @@ function change_ip6_lan_dhcp(){
 </head>
 
 <body onload="initial();" onunLoad="return unload_body();">
+<script>
+	if(get_ap_mode()){
+		alert("<#page_not_support_mode_hint#>");
+		location.href = "/as.asp";
+	}
+</script>
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -501,7 +507,7 @@ function change_ip6_lan_dhcp(){
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#IP6_proto#></h2>
+                            <h2 class="box_head round_top"><#menu5_3#> - <#menu5_3_3#></h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
@@ -513,7 +519,7 @@ function change_ip6_lan_dhcp(){
                                             <th width="50%"><#IP6_SVC#></th>
                                             <td align="left">
                                                 <select class="input" name="ip6_service" onchange="change_ip6_service()" >
-                                                    <option value="" <% nvram_match_x("", "ip6_service", "", "selected"); %>>Disabled</option>
+                                                    <option value="" <% nvram_match_x("", "ip6_service", "", "selected"); %>><#btn_Disabled#></option>
                                                     <option value="static" <% nvram_match_x("", "ip6_service", "static", "selected"); %>>Native Static</option>
                                                     <option value="dhcp6" <% nvram_match_x("", "ip6_service", "dhcp6", "selected"); %>>Native DHCPv6</option>
                                                     <option value="6in4" <% nvram_match_x("", "ip6_service", "6in4", "selected"); %>>Tunnel 6in4</option>

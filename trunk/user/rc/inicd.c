@@ -15,7 +15,6 @@
  * MA 02111-1307 USA
  */
 
- 
 #include <stdio.h>
 #include <signal.h>
 #include <time.h>
@@ -34,52 +33,67 @@
 
 #include "rc.h"
 
-struct itimerval itv;
+#define INICD_POLL_INTERVAL	15 /* every 15 seconds  */
+#define INICD_PID_FILE		"/var/run/inicd.pid"
 
 static void
-alarmtimer(unsigned long sec, unsigned long usec)
+inicd_alarmtimer(unsigned long sec)
 {
+	struct itimerval itv;
+
 	itv.it_value.tv_sec  = sec;
-	itv.it_value.tv_usec = usec;
+	itv.it_value.tv_usec = 0;
 	itv.it_interval = itv.it_value;
 	setitimer(ITIMER_REAL, &itv, NULL);
 }
 
-static void catch_sig_inicd(int sig)
+static void
+catch_sig_inicd(int sig)
 {
-	if (sig == SIGTERM)
+	switch (sig)
 	{
-		alarmtimer(0, 0);
-		remove("/var/run/inicd.pid");
-		exit(0);
-	}
-	else if (sig == SIGALRM)
-	{
+	case SIGALRM:
 		check_inic_mii_rebooted();
+		break;
+	case SIGTERM:
+		remove(INICD_PID_FILE);
+		inicd_alarmtimer(0);
+		exit(0);
+		break;
 	}
 }
 
-int start_inicd(void)
-{
-	return eval("/sbin/inicd");
-}
-
-int stop_inicd(void)
+int
+stop_inicd(void)
 {
 	return doSystem("killall %s %s", "-q", "inicd");
 }
 
-int 
+int
+start_inicd(void)
+{
+	return eval("/sbin/inicd");
+}
+
+int
 inicd_main(int argc, char *argv[])
 {
 	FILE *fp;
+	struct sigaction sa;
 
-	signal(SIGPIPE, SIG_IGN);
-	signal(SIGUSR1, SIG_IGN);
-	signal(SIGUSR2, SIG_IGN);
-	signal(SIGHUP,  SIG_IGN);
-	signal(SIGTERM, catch_sig_inicd);
-	signal(SIGALRM, catch_sig_inicd);
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = catch_sig_inicd;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGALRM, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = SIG_IGN;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGPIPE, &sa, NULL);
+	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGUSR2, &sa, NULL);
 
 	if (daemon(0, 0) < 0) {
 		perror("daemon");
@@ -87,18 +101,17 @@ inicd_main(int argc, char *argv[])
 	}
 
 	/* write pid */
-	if ((fp = fopen("/var/run/inicd.pid", "w")) != NULL)
+	if ((fp = fopen(INICD_PID_FILE, "w")) != NULL)
 	{
 		fprintf(fp, "%d", getpid());
 		fclose(fp);
 	}
 
-	/* set timer 15s */
-	alarmtimer(15, 0);
+	/* set poll timer */
+	inicd_alarmtimer(INICD_POLL_INTERVAL);
 
 	/* Most of time it goes to sleep */
-	while (1)
-	{
+	while (1) {
 		pause();
 	}
 

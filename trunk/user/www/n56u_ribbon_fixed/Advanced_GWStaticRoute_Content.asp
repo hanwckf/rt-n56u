@@ -62,7 +62,6 @@
 
 <script>
 
-<% login_state_hook(); %>
 var GWStaticList = [<% get_nvram_list("RouterConfig", "GWStatic"); %>];
 
 function initial(){

@@ -634,7 +634,8 @@ mkdir_if_none(char *dir)
 	return 0;
 }
 
-int rename_if_dir_exist(const char *dir, const char *subdir)
+int
+rename_if_dir_exist(const char *dir, const char *subdir)
 {
 	DIR *dirp;
 	struct dirent *direntp;
@@ -662,7 +663,8 @@ int rename_if_dir_exist(const char *dir, const char *subdir)
 	return 0;
 }
 
-char *if_dircase_exist(const char *dir, const char *subdir)
+char *
+if_dircase_exist(const char *dir, const char *subdir)
 {
 	DIR *dirp;
 	struct dirent *direntp;

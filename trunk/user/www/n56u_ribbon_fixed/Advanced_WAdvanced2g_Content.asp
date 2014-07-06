@@ -75,8 +75,6 @@
 
 <script>
 
-<% login_state_hook(); %>
-
 function initial(){
 	show_banner(1);
 

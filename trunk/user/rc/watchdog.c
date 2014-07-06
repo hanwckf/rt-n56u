@@ -15,7 +15,6 @@
  * MA 02111-1307 USA
  */
 
- 
 #include <stdio.h>
 #include <signal.h>
 #include <time.h>
@@ -72,7 +71,7 @@ static int ntpc_tries = 0;
 static int httpd_missing = 0;
 static int dnsmasq_missing = 0;
 
-static struct itimerval itv;
+static struct itimerval wd_itv;
 
 #if defined (BOARD_GPIO_BTN_RESET)
 static int btn_pressed_reset = 0;
@@ -91,12 +90,12 @@ void ez_event_short();
 void ez_event_long();
 
 static void
-alarmtimer(unsigned long sec, unsigned long usec)
+wd_alarmtimer(unsigned long sec, unsigned long usec)
 {
-	itv.it_value.tv_sec  = sec;
-	itv.it_value.tv_usec = usec;
-	itv.it_interval = itv.it_value;
-	setitimer(ITIMER_REAL, &itv, NULL);
+	wd_itv.it_value.tv_sec  = sec;
+	wd_itv.it_value.tv_usec = usec;
+	wd_itv.it_interval = wd_itv.it_value;
+	setitimer(ITIMER_REAL, &wd_itv, NULL);
 }
 
 #ifdef HTTPD_CHECK
@@ -107,7 +106,7 @@ httpd_check_v2()
 	FILE *fp = NULL;
 	int i, httpd_live, http_port;
 	char line[80], *login_timestamp;
-	time_t now;
+	long now;
 	static int check_count_down = 3;
 	static int httpd_timer = 0;
 
@@ -264,7 +263,7 @@ btn_check_reset(void)
 		else if (btn_pressed_reset == 2)
 		{
 			// pressed >= 5sec, reset!
-			alarmtimer(0, 0);
+			wd_alarmtimer(0, 0);
 #if defined (BOARD_GPIO_LED_POWER)
 			cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, LED_OFF);
 #endif
@@ -339,7 +338,7 @@ btn_check_wps(void)
 			btn_pressed_wps = 0;
 			btn_count_wps = 0;
 			
-			alarmtimer(0, 0);
+			wd_alarmtimer(0, 0);
 			
 			// pressed < 3sec
 			ez_event_short();
@@ -349,7 +348,7 @@ btn_check_wps(void)
 			btn_pressed_wps = 0;
 			btn_count_wps = 0;
 			
-			alarmtimer(0, 0);
+			wd_alarmtimer(0, 0);
 			
 			// pressed >= 3sec
 			ez_event_long();
@@ -421,7 +420,7 @@ btn_check_wlt(void)
 			btn_pressed_wlt = 0;
 			btn_count_wlt = 0;
 			
-			alarmtimer(0, 0);
+			wd_alarmtimer(0, 0);
 			
 			// pressed < 3sec
 		}
@@ -430,7 +429,7 @@ btn_check_wlt(void)
 			btn_pressed_wlt = 0;
 			btn_count_wlt = 0;
 			
-			alarmtimer(0, 0);
+			wd_alarmtimer(0, 0);
 			
 			// pressed >= 3sec
 		}
@@ -859,7 +858,7 @@ ez_action_led_toggle(void)
 	nvram_set_int("front_led_all", front_led_x);
 	nvram_set_int("front_led_pwr", front_led_x);
 
-	detect_link_update_leds();
+	notify_leds_detect_link();
 }
 
 void
@@ -1029,8 +1028,9 @@ static void httpd_process_check(void)
 	}
 }
 
-/* Sometimes, dnsmasq crushed, try to re-run it */
-static void dnsmasq_process_check(void)
+/* Sometimes, dnsmasq crashed, try to re-run it */
+static void
+dnsmasq_process_check(void)
 {
 	if (!is_dns_dhcpd_run())
 		dnsmasq_missing++;
@@ -1066,29 +1066,6 @@ ntpc_updated_main(int argc, char *argv[])
 	return 0;
 }
 
-int start_watchdog(void)
-{
-	if (pids("watchdog"))
-		return 0;
-
-	return eval("/sbin/watchdog");
-}
-
-void notify_watchdog_time(void)
-{
-	if (pids("watchdog"))
-		kill_pidfile_s(WD_PID_FILE, SIGHUP);
-	else
-		eval("/sbin/watchdog");
-}
-
-void notify_watchdog_wifi(int is_5ghz)
-{
-	int wd_notify_id = (is_5ghz) ? WD_NOTIFY_ID_WIFI5 : WD_NOTIFY_ID_WIFI2;
-
-	nvram_set_int_temp("wd_notify_id", wd_notify_id);
-	kill_pidfile_s(WD_PID_FILE, SIGUSR1);
-}
 
 static void
 watchdog_on_sighup(void)
@@ -1112,8 +1089,8 @@ static void
 watchdog_on_sigusr2(void)
 {
 	/* GPIO pins interrupt */
-	if (itv.it_value.tv_usec != WD_URGENT_PERIOD)
-		alarmtimer(0, WD_URGENT_PERIOD);
+	if (wd_itv.it_value.tv_usec != WD_URGENT_PERIOD)
+		wd_alarmtimer(0, WD_URGENT_PERIOD);
 }
 
 static void
@@ -1122,7 +1099,7 @@ watchdog_on_timer(void)
 	int is_ap_mode;
 
 	/* if timer is set to less than 1 sec, then check buttons only */
-	if (itv.it_value.tv_sec == 0) {
+	if (wd_itv.it_value.tv_sec == 0) {
 		int i_ret = 0;
 		
 		/* handle buttons */
@@ -1136,10 +1113,10 @@ watchdog_on_timer(void)
 		i_ret |= btn_check_wlt();
 #endif
 		if (i_ret) {
-			if (itv.it_value.tv_usec != WD_URGENT_PERIOD)
-				alarmtimer(0, WD_URGENT_PERIOD);
+			if (wd_itv.it_value.tv_usec != WD_URGENT_PERIOD)
+				wd_alarmtimer(0, WD_URGENT_PERIOD);
 		} else {
-			alarmtimer(WD_NORMAL_PERIOD, 0);
+			wd_alarmtimer(WD_NORMAL_PERIOD, 0);
 		}
 		
 		return;
@@ -1191,10 +1168,37 @@ catch_sig_watchdog(int sig)
 		cpu_gpio_irq_set(BOARD_GPIO_BTN_RESET, 0, 0, 0);
 #endif
 		cpu_gpio_irq_enable(0);
-		alarmtimer(0, 0);
+		wd_alarmtimer(0, 0);
 		exit(0);
 		break;
 	}
+}
+
+int
+start_watchdog(void)
+{
+	if (pids("watchdog"))
+		return 0;
+
+	return eval("/sbin/watchdog");
+}
+
+void
+notify_watchdog_time(void)
+{
+	if (pids("watchdog"))
+		kill_pidfile_s(WD_PID_FILE, SIGHUP);
+	else
+		eval("/sbin/watchdog");
+}
+
+void
+notify_watchdog_wifi(int is_5ghz)
+{
+	int wd_notify_id = (is_5ghz) ? WD_NOTIFY_ID_WIFI5 : WD_NOTIFY_ID_WIFI2;
+
+	nvram_set_int_temp("wd_notify_id", wd_notify_id);
+	kill_pidfile_s(WD_PID_FILE, SIGUSR1);
 }
 
 int
@@ -1233,8 +1237,7 @@ watchdog_main(int argc, char *argv[])
 	pid = getpid();
 
 	/* write pid */
-	if ((fp = fopen(WD_PID_FILE, "w")) != NULL)
-	{
+	if ((fp = fopen(WD_PID_FILE, "w")) != NULL) {
 		fprintf(fp, "%d", pid);
 		fclose(fp);
 	}
@@ -1251,11 +1254,10 @@ watchdog_main(int argc, char *argv[])
 	cpu_gpio_irq_enable(1);
 
 	/* set timer */
-	alarmtimer(WD_NORMAL_PERIOD, 0);
+	wd_alarmtimer(WD_NORMAL_PERIOD, 0);
 
-	/* Most of time it goes to sleep */
-	while (1)
-	{
+	/* most of time it goes to sleep */
+	while (1) {
 		pause();
 	}
 

@@ -63,7 +63,7 @@ function initial(){
 		setTimeout("top_delay_redirect('"+next_page+"');", restart_time*1000);
 	}
 	else if(action_script.indexOf("hostname_check") >= 0){
-		if(current_page.indexOf("Advanced_ASUSDDNS_Content.asp")>=0)
+		if(current_page.indexOf("Advanced_DDNS_Content.asp")>=0)
 			setTimeout("parent.parent.checkDDNSReturnCode();", 1000);
 		else
 			setTimeout("parent.checkDDNSReturnCode();", 1000);

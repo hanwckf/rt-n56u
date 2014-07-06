@@ -150,18 +150,16 @@
 
 lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
 
-<% login_state_hook(); %>
-
-var ddns_enable = '<% nvram_get_x("LANHostConfig", "ddns_enable_x"); %>';
-var ddns_server = '<% nvram_get_x("LANHostConfig", "ddns_server_x"); %>';
-var ddns_hostname = '<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
+var ddns_enable = '<% nvram_get_x("", "ddns_enable_x"); %>';
+var ddns_server = '<% nvram_get_x("", "ddns_server_x"); %>';
+var ddns_hostname = '<% nvram_get_x("", "ddns_hostname_x"); %>';
 
 var usb_share_list = [<% get_usb_share_list(); %>];
 var menu_open = [0, 0, 0];
 
 function initial(){
 	show_banner(1);
-	show_menu(5, 7, 1);
+	show_menu(5,6,1);
 	show_footer();
 
 	if(!found_utl_hdparm()){

@@ -92,7 +92,6 @@ dir_y							+= pppd
 dir_y							+= accel-pptpd
 dir_y							+= xl2tpd
 dir_y							+= rp-l2tp
-dir_y							+= tcpcheck
 dir_y							+= lldt
 dir_$(FS_EXT_ENABLED)					+= e2fsprogs
 dir_$(FS_FAT_ENABLED)					+= dosfstools

@@ -24,8 +24,6 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script>
 
-<% login_state_hook(); %>
-
 var $j = jQuery.noConflict();
 
 var wds_aplist = [["", "", ""]];

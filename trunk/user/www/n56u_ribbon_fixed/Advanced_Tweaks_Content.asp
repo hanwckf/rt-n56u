@@ -6,7 +6,7 @@
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_6_6#></title>
+<title>ASUS Wireless Router <#Web_Title#> - <#menu5_10_1#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -43,13 +43,11 @@
 </script>
 <script>
 
-<% login_state_hook(); %>
-
-<% hardware_pins_hook(); %>
+<% hardware_pins(); %>
 
 function initial(){
 	show_banner(1);
-	show_menu(5,8,2);
+	show_menu(5,8,1);
 	show_footer();
 
 	if (!support_but_wps()){
@@ -100,11 +98,6 @@ function initial(){
 			showhide_div('row_eth_phy_led0', 0);
 	}
 
-	if (sw_mode=="3"){
-		showhide_div('row_post_wan_script', 0);
-		showhide_div('row_post_iptables_script', 0);
-	}
-
 	change_ez_short(document.form.ez_action_short.value);
 }
 
@@ -146,10 +139,6 @@ function change_led_all(){
 }
 
 </script>
-<style>
-    .table th, .table td{vertical-align: middle;}
-    .table input, .table select {margin-bottom: 0px;}
-</style>
 </head>
 
 <body onload="initial();" onunLoad="return unload_body();">
@@ -199,7 +188,7 @@ function change_led_all(){
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#menu5_6#> - <#menu5_6_6#></h2>
+                            <h2 class="box_head round_top"><#menu5_10#> - <#menu5_10_1#></h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
@@ -280,7 +269,7 @@ function change_led_all(){
                                                     <option value="0" <% nvram_match_x("", "front_led_wan", "0","selected"); %>><#btn_Disable#></option>
                                                     <option value="1" <% nvram_match_x("", "front_led_wan", "1","selected"); %>><#TweaksLEDItem00#></option>
                                                     <option value="2" <% nvram_match_x("", "front_led_wan", "2","selected"); %>><#TweaksLEDItem03#> (*)</option>
-                                                    <!--option value="3" <% nvram_match_x("", "front_led_wan", "3","selected"); %>><#TweaksLEDItem04#></option-->
+                                                    <option value="3" <% nvram_match_x("", "front_led_wan", "3","selected"); %>><#TweaksLEDItem04#></option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -365,54 +354,8 @@ function change_led_all(){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#TweaksMisc#></th>
-                                        </tr>
-                                        <tr>
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 23, 1);"><#TweaksWdg#></a></th>
-                                            <td>
-                                                <select name="watchdog_cpu" class="input" style="width: 320px;">
-                                                    <option value="0" <% nvram_match_x("", "watchdog_cpu", "0","selected"); %>><#checkbox_No#> (*)</option>
-                                                    <option value="1" <% nvram_match_x("", "watchdog_cpu", "1","selected"); %>><#checkbox_Yes#> <#TweaksWdg_item#></option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                    </table>
-
-                                    <table  width="100%" cellpadding="4" cellspacing="0" class="table">
-                                        <tr>
-                                            <th style="background-color: #E3E3E3;"><#UserScripts#></th>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <a href="javascript:spoiler_toggle('script0')"><span><#RunPostStart#></span></a>
-                                                <div id="script0" style="display:none;">
-                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.started_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.started_script.sh",""); %></textarea>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_post_wan_script">
-                                            <td>
-                                                <a href="javascript:spoiler_toggle('script1')"><span><#RunPostWAN#></span></a>
-                                                <div id="script1" style="display:none;">
-                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.post_wan_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.post_wan_script.sh",""); %></textarea>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_post_iptables_script">
-                                            <td style="padding-bottom: 0px;">
-                                                <a href="javascript:spoiler_toggle('script2')"><span><#RunPostFWL#></span></a>
-                                                <div id="script2" style="display:none;">
-                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.post_iptables_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.post_iptables_script.sh",""); %></textarea>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </table>
-
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
-                                        <tr>
-                                            <td colspan="2">
-                                                <br />
-                                                <center><input class="btn btn-primary" style="width: 219px" onclick="applyRule();" type="button" value="<#CTL_apply#>" /></center>
+                                            <td style="border: 0 none;">
+                                                <center><input type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center>
                                             </td>
                                         </tr>
                                     </table>

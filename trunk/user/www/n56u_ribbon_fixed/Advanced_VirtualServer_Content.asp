@@ -86,7 +86,6 @@ var wItem2 = new Array(new Array("", "", "TCP"),
 <% login_state_hook(); %>
 
 var client_ip = login_ip_str();
-var client_mac = login_mac_str();
 
 var ipmonitor = [<% get_static_client(); %>];
 var wireless = [<% wl_auth_list(); %>];
@@ -98,8 +97,12 @@ var VSList = [<% get_nvram_list("IPConnection", "VSList"); %>];
 var isMenuopen = 0;
 
 function initial(){
+	var id_menu = 3;
+	if(!support_ipv6())
+		id_menu--;
+
 	show_banner(2);
-	show_menu(5,4,2);
+	show_menu(5,4,id_menu);
 	show_footer();
 
 	if(!support_ipv6()){

@@ -57,8 +57,6 @@
 
 <script>
 
-<% login_state_hook(); %>
-
 function initial(){
 	var id_menu = 5;
 
@@ -67,11 +65,11 @@ function initial(){
 	else if(!found_app_smbd() || !found_app_ftpd())
 		id_menu = 4;
 
-	if(sw_mode == "3")
+	if(get_ap_mode())
 		id_menu -= 1;
 
 	show_banner(1);
-	show_menu(5, 7, id_menu);
+	show_menu(5,6,id_menu);
 	show_footer();
 
 	if(!found_srv_u2ec())

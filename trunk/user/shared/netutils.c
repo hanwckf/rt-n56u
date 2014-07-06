@@ -70,6 +70,36 @@ const char* get_ifname_descriptor(const char* ifname)
 	return NULL;
 }
 
+static uint64_t
+get_ifstats_counter(const char* ifname, const char* cnt_name)
+{
+	FILE *fp;
+	uint64_t cnt_val64 = 0;
+	char cnt_path[64], cnt_data[32];
+
+	snprintf(cnt_path, sizeof(cnt_path), "/sys/class/net/%s/statistics/%s", ifname, cnt_name);
+	fp = fopen(cnt_path, "r");
+	if (fp) {
+		if (fgets(cnt_data, sizeof(cnt_data), fp))
+			cnt_val64 = strtoull(cnt_data, NULL, 10);
+		fclose(fp);
+	}
+
+	return cnt_val64;
+}
+
+uint64_t
+get_ifstats_bytes_rx(const char* ifname)
+{
+	return get_ifstats_counter(ifname, "rx_bytes");
+}
+
+uint64_t
+get_ifstats_bytes_tx(const char* ifname)
+{
+	return get_ifstats_counter(ifname, "tx_bytes");
+}
+
 static int
 is_invalid_char_for_hostname(char c)
 {
@@ -217,7 +247,13 @@ set_usb_modem_dev_wan(int unit, int devnum)
 int
 get_wan_ether_link_cached(void)
 {
-	return nvram_get_int("link_wan");
+	return (nvram_get_int("link_wan") == 1) ? 1 : 0;
+}
+
+int
+get_internet_state_cached(void)
+{
+	return (nvram_get_int("link_internet") == 1) ? 1 : 0;
 }
 
 int
@@ -290,7 +326,6 @@ err:
 
 	return ret;
 }
-
 
 int
 is_interface_exist(const char *ifname)

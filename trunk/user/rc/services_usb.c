@@ -1541,7 +1541,7 @@ try_start_usb_printer_spoolers(void)
 static void
 try_start_usb_modem_to_wan(void)
 {
-	int modem_prio;
+	int modem_prio, has_link;
 
 	if (get_ap_mode())
 		return;
@@ -1559,18 +1559,16 @@ try_start_usb_modem_to_wan(void)
 	if (!get_modem_devnum())
 		return;
 
-	if (modem_prio > 1) {
+	if (modem_prio == 2) {
 		if (get_apcli_wisp_ifname())
 			return;
 		
-		if (modem_prio == 2) {
-			int has_link = get_wan_ether_link_direct(0);
-			if (has_link < 0)
-				has_link = 0;
-			
-			if (has_link)
-				return;
-		}
+		has_link = get_wan_ether_link_direct(0);
+		if (has_link < 0)
+			has_link = 0;
+		
+		if (has_link)
+			return;
 	}
 
 	logmessage("USB hotplug", "try start USB Modem as WAN connection...");

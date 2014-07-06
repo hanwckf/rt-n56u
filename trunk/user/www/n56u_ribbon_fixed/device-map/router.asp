@@ -40,21 +40,21 @@
         });
         $j("#wl_closed_on_of label.itoggle").css("background-position", $j("input#wl_closed_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
-    	$j('#radio_on_of').iToggle({
-    		easing: 'linear',
-    		speed: 70,
-    		onClickOn: function(){
-    			$j("#wl_radio_x_fake").attr("value", 1);
-    			$j("#wl_radio_x_1").attr("checked", "checked");
+        $j('#radio_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#wl_radio_x_fake").attr("value", 1);
+                $j("#wl_radio_x_1").attr("checked", "checked");
                 $j("#wl_radio_x_0").removeAttr("checked");
-    		},
-    		onClickOff: function(){
-    			$j("#wl_radio_x_fake").attr("value", 0);
-    			$j("#wl_radio_x_0").attr("checked", "checked");
+            },
+            onClickOff: function(){
+                $j("#wl_radio_x_fake").attr("value", 0);
+                $j("#wl_radio_x_0").attr("checked", "checked");
                 $j("#wl_radio_x_1").removeAttr("checked");
-    		}
-    	});
-    	$j("#radio_on_of label.itoggle").css("background-position", $j("input#wl_radio_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+            }
+        });
+        $j("#radio_on_of label.itoggle").css("background-position", $j("input#wl_radio_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
     });
 </script>
 
@@ -64,10 +64,9 @@ var had_wrong_wep_key = false;
 <% wl_bssid_5g(); %>
 
 function initial(){
-	
 	flash_button();
 	loadXML();
-	
+
 	if(parent.document.wl_form.wl_ssid.value == ""){
 		document.form.wl_ssid.value = decodeURIComponent(document.form.wl_ssid2.value);
 		document.form.wl_wpa_psk.value = decodeURIComponent(document.form.wl_wpa_psk_org.value);
@@ -92,14 +91,6 @@ function initial(){
 		document.form.wl_wpa_psk.value = parent.document.wl_form.wl_wpa_psk.value;
 	}
 
-	document.form.rt_ssid.value = decodeURIComponent(document.form.rt_ssid_org.value);
-	document.form.rt_ssid2.value = decodeURIComponent(document.form.rt_ssid_org.value);
-	document.form.rt_key1.value = decodeURIComponent(document.form.rt_key1_org.value);
-	document.form.rt_key2.value = decodeURIComponent(document.form.rt_key2_org.value);
-	document.form.rt_key3.value = decodeURIComponent(document.form.rt_key3_org.value);
-	document.form.rt_key4.value = decodeURIComponent(document.form.rt_key4_org.value);
-	document.form.rt_wpa_psk.value = decodeURIComponent(document.form.rt_wpa_psk_org.value);
-
 	if(document.form.wl_wpa_psk.value.length <= 0)
 		document.form.wl_wpa_psk.value = "Please type Password";
 
@@ -113,7 +104,7 @@ function initial(){
 	}
 
 	wl_auth_mode_change(1);
-	
+
 	if(sw_mode == "3"){
 		stopFlag = 1;
 	}
@@ -125,9 +116,9 @@ function initial(){
 function show_middle_status_router(){
 	var auth_mode = document.form.wl_auth_mode_orig.value;
 	var wpa_mode = document.form.wl_wpa_mode_orig.value;
-	var wl_wep_x = parseInt(document.form.wl_wep_x_orig.value);
+	var wep_x = parseInt(document.form.wl_wep_x_orig.value);
 	var security_mode;
-	
+
 	if(auth_mode == "open")
 		security_mode = "Open System";
 	else if(auth_mode == "shared")
@@ -153,14 +144,11 @@ function show_middle_status_router(){
 
 	//parent.$("wl_securitylevel_span").innerHTML = security_mode;
 
-	if(auth_mode == "open" && wl_wep_x == 0)
-	{
+	if(auth_mode == "open" && wep_x == 0){
 		parent.$j("#wl_securitylevel_span").removeClass("badge badge-success");
 		parent.$j("#wl_securitylevel_span").addClass("badge badge-important");
 		parent.$j("#wl_securitylevel_span").html('<i class="icon-exclamation-sign icon-white"></i>');
-	}
-	else
-	{
+	}else{
 		parent.$j("#wl_securitylevel_span").removeClass("badge badge-important");
 		parent.$j("#wl_securitylevel_span").addClass("badge badge-success");
 		parent.$j("#wl_securitylevel_span").html('<i class="icon-lock icon-white"></i>');
@@ -168,38 +156,10 @@ function show_middle_status_router(){
 }
 
 function domore_create(){
-	var option_AP = new Array();
-	option_AP[0] = document.createElement("option");
-	option_AP[0].text = "<#menu5_7_4#>";
-	option_AP[0].value = "../Main_WStatus_Content.asp"
-
-	if(sw_mode == "4"){
+	if(get_ap_mode()){
 		$("Router_domore").remove(6);
 		$("Router_domore").remove(5);
-		$("Router_domore").remove(4);
-		$("Router_domore").options[3].value="../Advanced_FirmwareUpgrade_Content.asp";
-		$("Router_domore").options[3].text="<#menu5_6_3#>";
-		$("Router_domore").remove(2);
-		$("Router_domore").remove(1);
-		try{
-    	$("Router_domore").add(option_AP[0],null);
-    }
-  	catch(ex){
-    	$("Router_domore").add(option_AP[0],2);
-    }
-	}
-	else if(wan_route_x == "IP_Bridged" || sw_mode == "3"){
-		$("Router_domore").remove(6);
-		$("Router_domore").remove(5);
-		$("Router_domore").remove(4);
-		$("Router_domore").options[3].value="../Advanced_APLAN_Content.asp";
-		$("Router_domore").remove(2);
-		try{
-    	$("Router_domore").add(option_AP[0],null);
-    }
-  	catch(ex){
-    	$("Router_domore").add(option_AP[0],4);
-    }
+		$("Router_domore").options[4].value="../Advanced_APLAN_Content.asp";
 	}
 }
 
@@ -209,7 +169,7 @@ function wl_auth_mode_change(isload){
 	var new_array;
 	var cur_crypto;
 	var cur_key_index, cur_key_obj;
-	
+
 	if(mode == "open" || mode == "shared"){
 		$("all_related_wep").style.display = "";
 		$("all_wep_key").style.display = "";
@@ -221,23 +181,23 @@ function wl_auth_mode_change(isload){
 		$("all_wep_key").style.display = "none";
 		$("asus_wep_key").style.display = "none";
 	}
-	
+
 	if(mode == "wpa" || mode == "wpa2" || mode == "psk")
 		$("wl_crypto").style.display = "";
 	else
 		$("wl_crypto").style.display = "none";
-	
+
 	if(mode == "psk")
 		$("wl_wpa_psk").style.display = "";
 	else
 		$("wl_wpa_psk").style.display = "none";
-	
+
 	for(var i = 0; i < document.form.wl_crypto.length; ++i)
 		if(document.form.wl_crypto[i].selected){
 			cur_crypto = document.form.wl_crypto[i].value;
 			break;
 		}
-	
+
 	if(mode == "psk"){
 		if(opts[opts.selectedIndex].text == "WPA-Personal")
 			new_array = new Array("TKIP");
@@ -294,7 +254,7 @@ function wl_auth_mode_change(isload){
 		if(!isload)
 			cur_key_index = "1";
 	}
-	
+
 	free_options(document.form.wl_key);
 	for(var i in new_array){
 		document.form.wl_key[i] = new Option(new_array[i], new_array[i]);
@@ -302,18 +262,17 @@ function wl_auth_mode_change(isload){
 		if(new_array[i] == cur_key_index)
 			document.form.wl_key[i].selected = true;
 	}
-	
+
 	wl_wep_change();
 }
 
 function change_wep_type(mode){
-
 	var cur_wep = document.form.wl_wep_x.value;
 	var wep_type_array;
 	var value_array;
-	
+
 	free_options(document.form.wl_wep_x);
-	
+
 	if(mode == "shared"){
 		wep_type_array = new Array("WEP-64bits", "WEP-128bits");
 		value_array = new Array("1", "2");
@@ -322,31 +281,29 @@ function change_wep_type(mode){
 		wep_type_array = new Array("None", "WEP-64bits", "WEP-128bits");
 		value_array = new Array("0", "1", "2");
 	}
-	
+
 	add_options_x2(document.form.wl_wep_x, wep_type_array, value_array, cur_wep);
-	
-	
+
 	if(mode == "open"){
 		if(document.form.wl_wep_x.value == 0){
 			document.form.wl_wep_x.selectedIndex = 0;
 		}
 	}
-	
-	
+
 	if(mode == "psk" || mode == "wpa" || mode == "wpa2")
 		document.form.wl_wep_x.value = "0";
-	
+
 	change_wlweptype(document.form.wl_wep_x);
 }
 
 function change_wlweptype(wep_type_obj){
 	var mode = document.form.wl_auth_mode.value;
 	var gmode = document.form.wl_gmode.value;
-	
+
 	if(wep_type_obj.value == "0"){
 		$("all_wep_key").style.display = "none";
 		$("asus_wep_key").style.display = "none";
-	}	
+	}
 	else{
 		if((gmode == "1" || gmode == "3") && document.form.wl_wep_x.value != 0){
 			nmode_limitation2();
@@ -354,14 +311,14 @@ function change_wlweptype(wep_type_obj){
 		$("all_wep_key").style.display = "";
 		$("asus_wep_key").style.display = "";
 	}
-	
+
 	wl_wep_change();
 }
 
 function wl_wep_change(){
 	var mode = document.form.wl_auth_mode.value;
 	var wep = document.form.wl_wep_x.value;
-	
+
 	if(mode == "psk" || mode == "wpa" || mode == "wpa2"){
 		if(mode == "psk"){
 			$("wl_crypto").style.display = "";
@@ -394,14 +351,14 @@ function change_key_des(){
 	var objs = getElementsByName_iefix("span", "key_des");
 	var wep_type = document.form.wl_wep_x.value;
 	var str = "";
-	
+
 	if(wep_type == "1")
 		str = " (<#WLANConfig11b_WEPKey_itemtype1#>)";
 	else if(wep_type == "2")
 		str = " (<#WLANConfig11b_WEPKey_itemtype2#>)";
-	
+
 	str += ":";
-	
+
 	for(var i = 0; i < objs.length; ++i)
 		showtext(objs[i], str);
 }
@@ -443,7 +400,7 @@ function show_key(){
 	var keyindex = document.form.wl_key.value;
 	var cur_key_obj = eval("document.form.wl_key"+keyindex);
 	var cur_key_length = cur_key_obj.value.length;
-	
+
 	if(wep_type == 1){
 		if(cur_key_length == 5 || cur_key_length == 10)
 			document.form.wl_asuskey1.value = cur_key_obj.value;
@@ -462,7 +419,7 @@ function show_key(){
 	}
 	else
 		document.form.wl_asuskey1.value = "";
-	
+
 	document.form.wl_asuskey1.focus();
 	document.form.wl_asuskey1.select();
 }
@@ -471,7 +428,7 @@ function show_LAN_info(){
 	var lan_ipaddr_t = '<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>';
 	if(lan_ipaddr_t != '')
 		showtext($("LANIP"), '<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>');
-	else	
+	else
 		showtext($("LANIP"), '<% nvram_get_x("LANHostConfig", "lan_ipaddr"); %>');
 	showtext($("MAC"), get_bssid_ra0());
 }
@@ -488,8 +445,7 @@ var stopFlag=0;
 
 function resetTimer()
 {
-	if (stopFlag==1)
-	{
+	if (stopFlag==1){
 		stopFlag=0;
 		InitializeTimer();
 	}
@@ -542,10 +498,10 @@ function submitForm(){
 
 	if(document.form.wl_wpa_psk.value == "Please type Password")
 		document.form.wl_wpa_psk.value = "";
-	
+
 	if(!validate_string_ssid(document.form.wl_ssid))
 		return false;
-	
+
 	if(auth_mode == "psk"){
 		if(!validate_psk(document.form.wl_wpa_psk))
 			return false;
@@ -554,40 +510,24 @@ function submitForm(){
 		if(!validate_wlkey(document.form.wl_asuskey1))
 			return false;
 	}
-	
+
 	stopFlag = 1;
 	document.form.current_page.value = "/";
 	document.form.next_page.value = "";
 	document.form.action_mode.value = " Apply ";
-	
+
 	var wep11 = eval('document.form.wl_key'+document.form.wl_key.value);
 	wep11.value = document.form.wl_asuskey1.value;
-	
+
 	if(auth_mode == "wpa" || auth_mode == "wpa2" || auth_mode == "radius"){
 		document.form.target = "";
 		document.form.next_page.value = "/Advanced_WSecurity_Content.asp";
 	}
 
-	if(parent.document.rt_form.rt_ssid.value != ""){
-		document.form.rt_ssid.value = parent.document.rt_form.rt_ssid.value;
-		document.form.rt_wpa_mode.value = parent.document.rt_form.rt_wpa_mode.value;
-		document.form.rt_key1.value = parent.document.rt_form.rt_key1.value;
-		document.form.rt_key2.value = parent.document.rt_form.rt_key2.value;
-		document.form.rt_key3.value = parent.document.rt_form.rt_key3.value;
-		document.form.rt_key4.value = parent.document.rt_form.rt_key4.value;
-		document.form.rt_ssid2.value = parent.document.rt_form.rt_ssid2.value;
-		document.form.rt_key_type.value = parent.document.rt_form.rt_key_type.value;
-		document.form.rt_auth_mode.value = parent.document.rt_form.rt_auth_mode.value;
-		document.form.rt_wep_x.value = parent.document.rt_form.rt_wep_x.value;
-		document.form.rt_key.value = parent.document.rt_form.rt_key.value;
-		document.form.rt_crypto.value = parent.document.rt_form.rt_crypto.value;
-		document.form.rt_wpa_psk.value = parent.document.rt_form.rt_wpa_psk.value;
-	}
-	
 	parent.showLoading();
- 
+
 	document.form.submit();
-	
+
 	return true;
 }
 
@@ -684,26 +624,6 @@ window.onunload  = function(){
 <input type="hidden" name="wl_key3_org" value="<% nvram_char_to_ascii("", "wl_key3"); %>">
 <input type="hidden" name="wl_key4_org" value="<% nvram_char_to_ascii("", "wl_key4"); %>">
 <input type="hidden" name="wl_gmode" value="<% nvram_get_x("","wl_gmode"); %>">
-
-<input type="hidden" name="rt_ssid_org" value="<% nvram_char_to_ascii("", "rt_ssid"); %>">
-<input type="hidden" name="rt_key1_org" value="<% nvram_char_to_ascii("", "rt_key1"); %>">
-<input type="hidden" name="rt_key2_org" value="<% nvram_char_to_ascii("", "rt_key2"); %>">
-<input type="hidden" name="rt_key3_org" value="<% nvram_char_to_ascii("", "rt_key3"); %>">
-<input type="hidden" name="rt_key4_org" value="<% nvram_char_to_ascii("", "rt_key4"); %>">
-<input type="hidden" name="rt_wpa_psk_org" value="<% nvram_char_to_ascii("", "rt_wpa_psk"); %>">
-<input type="hidden" name="rt_ssid" value="">
-<input type="hidden" name="rt_ssid2" value="">
-<input type="hidden" name="rt_key1" value="">
-<input type="hidden" name="rt_key2" value="">
-<input type="hidden" name="rt_key3" value="">
-<input type="hidden" name="rt_key4" value="">
-<input type="hidden" name="rt_wpa_psk" value="">
-<input type="hidden" name="rt_wpa_mode" value="<% nvram_get_x("", "rt_wpa_mode"); %>">
-<input type="hidden" name="rt_key_type" value="<% nvram_get_x("","rt_key_type"); %>">
-<input type="hidden" name="rt_auth_mode" value="<% nvram_get_x("","rt_auth_mode"); %>">
-<input type="hidden" name="rt_wep_x" value="<% nvram_get_x("","rt_wep_x"); %>">
-<input type="hidden" name="rt_key" value="<% nvram_get_x("","rt_key"); %>">
-<input type="hidden" name="rt_crypto" value="<% nvram_get_x("","rt_crypto"); %>">
 
 <ul class="nav nav-tabs">
     <li><a href="router2g.asp">2.4GHz</a></li>
@@ -832,10 +752,13 @@ window.onunload  = function(){
     <td>
         <select id="Router_domore" class="domore" onchange="domore_link(this);">
             <option><#MoreConfig#>...</option>
-            <option value="../Advanced_Wireless_Content.asp"><#menu5_1#>-<#menu5_1_1#></option>
+            <option value="../Advanced_Wireless_Content.asp"><#menu5_1#> - <#menu5_1_1#></option>
+            <option value="../Advanced_WGuest_Content.asp"><#menu5_1#> - <#menu5_1_2#></option>
+            <option value="../Advanced_WAdvanced_Content.asp"><#menu5_1#> - <#menu5_1_6#></option>
             <option value="../Advanced_LAN_Content.asp"><#menu5_2_1#></option>
             <option value="../Advanced_DHCP_Content.asp"><#menu5_2_2#></option>
             <option value="../Advanced_GWStaticRoute_Content.asp"><#menu5_2_3#></option>
+            <option value="../Main_WStatus_Content.asp"><#menu5_9#></option>
             <option value="../Main_LogStatus_Content.asp"><#menu5_7_2#></option>
         </select>
     </td>

@@ -14,118 +14,185 @@
 <script type="text/javascript" src="formcontrol.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/jquery.js"></script>
-<script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script>
 
 <% wanlink(); %>
 
 var $j = jQuery.noConflict();
 var id_update_wanip = 0;
-var status_code = wanlink_status();
-var modem_devnum_array = parent.modem_devnum();
 
 function initial(){
 	flash_button();
-	id_update_wanip = setTimeout("update_wanip();", 2000);
 
-	if(sw_mode == "4"){
+	if(sw_mode == '4'){
 		$j("#domore")[0].remove(4);
 		$j("#domore")[0].remove(3);
-		$j("#domore")[0].remove(2);
 	}
 
-	if(modem_devnum_array.length > 0)
+	if(!support_ipv6())
+		$j("#domore")[0].remove(2);
+
+	if(parent.modem_devnum().length > 0)
 		$("row_modem_prio").style.display = "";
 
-	var wantime = wanlink_time();
-	if (wantime > 0){
-		var updays, uphours, upminutes;
-		updays = Math.floor(wantime / 86400);
-		upminutes = Math.floor(wantime / 60);
-		uphours = (Math.floor(upminutes / 60)) % 24;
-		upminutes = upminutes % 60;
-		uphours = uphours < 10 ? ('0'+uphours) : uphours;
-		upminutes = upminutes < 10 ? ('0'+upminutes) : upminutes;
-		$("WANTime").innerHTML = updays + "<#Day#>".substring(0,1) + " " + uphours+"<#Hour#>".substring(0,1) + " " + upminutes+"<#Minute#>".substring(0,1);
-		$("row_ppp_time").style.display = "";
-	}
+	fill_info();
+	id_update_wanip = setTimeout("update_wanip();", 3000);
+}
 
-	var status_text = "Unknown";
-	if (status_code == 0)
-		status_text = "<#InetState0#>";
-	else if (status_code == 1)
-		status_text = "<#InetState1#>";
-	else if (status_code == 2)
-		status_text = "<#InetState2#>";
-	else if (status_code == 3)
-		status_text = "<#InetState3#>";
-	else if (status_code == 4)
-		status_text = "<#InetState4#>";
-	else if (status_code == 5)
-		status_text = "<#InetState5#>";
-	else if (status_code == 6)
-		status_text = "<#InetState6#>";
-	else if (status_code == 7)
-		status_text = "<#InetState7#>";
-	else if (status_code == 8)
-		status_text = "<#InetState8#>";
-	$("wan_status").innerHTML = status_text;
+function bytesToIEC(bytes, precision){
+	var kilobyte = 1024;
+	var megabyte = kilobyte * 1024;
+	var gigabyte = megabyte * 1024;
+	var terabyte = gigabyte * 1024;
+	var petabyte = terabyte * 1024;
 
-	if (status_code != 0)
-		$("wan_status").style.color = "#F75";
-
-	var wantype = wanlink_type();
-	if(wantype == 'Automatic IP')
-		$("WANType").innerHTML = 'IPoE: <#BOP_ctype_title1#>';
-	else if(wantype == 'Static IP')
-		$("WANType").innerHTML = 'IPoE: <#BOP_ctype_title5#>';
+	if ((bytes >= 0) && (bytes < kilobyte))
+		return bytes + ' B';
+	else if ((bytes >= kilobyte) && (bytes < megabyte))
+		return (bytes / kilobyte).toFixed(precision) + ' KiB';
+	else if ((bytes >= megabyte) && (bytes < gigabyte))
+		return (bytes / megabyte).toFixed(precision) + ' MiB';
+	else if ((bytes >= gigabyte) && (bytes < terabyte))
+		return (bytes / gigabyte).toFixed(precision) + ' GiB';
+	else if ((bytes >= terabyte) && (bytes < petabyte))
+		return (bytes / terabyte).toFixed(precision) + ' TiB';
+	else if (bytes >= petabyte)
+		return (bytes / petabyte).toFixed(precision) + ' PiB';
 	else
-		$("WANType").innerHTML = wantype;
+		return bytes + ' B';
+}
 
-	var ether_link = wanlink_etherlink();
-	var apcli_link = wanlink_apclilink();
-	$("WANEther").innerHTML = ether_link;
-	$("WANAPCli").innerHTML = apcli_link;
-	$("WANIP4").innerHTML   = wanlink_ip4_wan();
-	$("WANGW4").innerHTML   = wanlink_gw4_wan();
-	$("WANDNS").innerHTML   = wanlink_dns();
-	$("WANMAC").innerHTML   = wanlink_mac();
+function secondsToDHM(seconds){
+	var days, hours, minutes;
 
-	if (ether_link != '')
-		$("row_link_ether").style.display = "";
+	days = Math.floor(seconds / 86400);
+	minutes = Math.floor(seconds / 60);
+	hours = (Math.floor(minutes / 60)) % 24;
+	minutes = minutes % 60;
 
-	if (apcli_link != '')
-		$("row_link_apcli").style.display = "";
+	hours = hours < 10 ? ('0'+hours) : hours;
+	minutes = minutes < 10 ? ('0'+minutes) : minutes;
 
-	if (wanlink_ip4_man() != ''){
-		$("MANIP4").innerHTML = wanlink_ip4_man();
-		$("MANGW4").innerHTML = wanlink_gw4_man();
-		$("row_man_ip4").style.display = "";
-		$("row_man_gw4").style.display = "";
-	}
+	return days+"<#Day#>".substring(0,1)+" "+hours+"<#Hour#>".substring(0,1)+" "+minutes+"<#Minute#>".substring(0,1);
+}
 
-	if (wanlink_ip6_wan() != ''){
-		$("WANIP6").innerHTML = wanlink_ip6_wan();
-		$("LANIP6").innerHTML = wanlink_ip6_lan();
-		$("row_wan_ip6").style.display = "";
-		$("row_lan_ip6").style.display = "";
+function fill_status(scode,wtype){
+	var stext = "Unknown";
+	if (scode == 0)
+		stext = "<#InetState0#>";
+	else if (scode == 1)
+		stext = "<#InetState1#>";
+	else if (scode == 2)
+		stext = "<#InetState2#>";
+	else if (scode == 3)
+		stext = "<#InetState3#>";
+	else if (scode == 4)
+		stext = "<#InetState4#>";
+	else if (scode == 5)
+		stext = "<#InetState5#>";
+	else if (scode == 6)
+		stext = "<#InetState6#>";
+	else if (scode == 7)
+		stext = "<#InetState7#>";
+	else if (scode == 8)
+		stext = "<#InetState8#>";
+	$("wan_status").innerHTML = '<span class="label label-' + (scode != 0 ? 'warning' : 'success') + '">' + stext + '</span>';
+
+	var wtext = wtype;
+	if(wtype == 'Automatic IP')
+		wtext = 'IPoE: <#BOP_ctype_title1#>';
+	else if(wtype == 'Static IP')
+		wtext = 'IPoE: <#BOP_ctype_title5#>';
+	$("WANType").innerHTML = wtext;
+}
+
+function fill_uptime(uptime,dltime){
+	if (uptime > 0){
+		$("WANTime").innerHTML = secondsToDHM(uptime);
+		$("row_uptime").style.display = "";
+		if (dltime > 0){
+			$("WANLease").innerHTML = secondsToDHM(dltime);
+			$("row_dltime").style.display = "";
+		}else
+			$("row_dltime").style.display = "none";
+	}else{
+		$("row_dltime").style.display = "none";
+		$("row_uptime").style.display = "none";
 	}
 }
 
-function update_wanip() {
+function fill_phylink(ether_link,apcli_link){
+	$("WANEther").innerHTML = ether_link;
+	$("WANAPCli").innerHTML = apcli_link;
+	if (ether_link != '')
+		$("row_link_ether").style.display = "";
+	else
+		$("row_link_ether").style.display = "none";
+	if (apcli_link != '')
+		$("row_link_apcli").style.display = "";
+	else
+		$("row_link_apcli").style.display = "none";
+}
+
+function fill_man_addr4(ip,gw){
+	if (ip != ''){
+		$("MANIP4").innerHTML = ip;
+		$("MANGW4").innerHTML = gw;
+		$("row_man_ip4").style.display = "";
+		$("row_man_gw4").style.display = "";
+	}else{
+		$("row_man_ip4").style.display = "none";
+		$("row_man_gw4").style.display = "none";
+	}
+}
+
+function fill_wan_addr6(wan_ip,lan_ip){
+	if (wan_ip != ''){
+		$("WANIP6").innerHTML = wan_ip;
+		$("row_wan_ip6").style.display = "";
+	}else
+		$("row_wan_ip6").style.display = "none";
+
+	if (lan_ip != ''){
+		$("LANIP6").innerHTML = lan_ip;
+		$("row_lan_ip6").style.display = "";
+	}else
+		$("row_lan_ip6").style.display = "none";
+}
+
+function fill_wan_bytes(rx,tx){
+	if (rx > 0 || tx > 0){
+		$("WANBytes").innerHTML = '<i class="icon-arrow-down"></i>'+bytesToIEC(rx,2)+'&nbsp;&nbsp;<i class="icon-arrow-up"></i>'+bytesToIEC(tx,2);
+		$("row_bytes").style.display = "";
+	}else
+		$("row_bytes").style.display = "none";
+}
+
+function fill_info(){
+	fill_status(wanlink_status(), wanlink_type());
+	fill_uptime(wanlink_uptime(), wanlink_dltime());
+	fill_phylink(wanlink_etherlink(), wanlink_apclilink());
+	fill_man_addr4(wanlink_ip4_man(), wanlink_gw4_man());
+	fill_wan_addr6(wanlink_ip6_wan(), wanlink_ip6_lan());
+	fill_wan_bytes(wanlink_bytes_rx(), wanlink_bytes_tx());
+	$("WANIP4").innerHTML = wanlink_ip4_wan();
+	$("WANGW4").innerHTML = wanlink_gw4_wan();
+	$("WANDNS").innerHTML = wanlink_dns();
+	$("WANMAC").innerHTML = wanlink_mac();
+}
+
+function update_wanip(){
 	clearTimeout(id_update_wanip);
 	$j.ajax({
 		url: '/status_wanlink.asp',
 		dataType: 'script',
 		cache: true,
-		error: function(xhr) {
+		error: function(xhr){
 			;
 		},
-		success: function(response) {
-			if(wanlink_status() != status_code)
-				refreshpage();
-			else
-				id_update_wanip = setTimeout("update_wanip();", 2000);
+		success: function(response){
+			fill_info();
+			id_update_wanip = setTimeout("update_wanip();", 3000);
 		}
 	});
 }
@@ -171,15 +238,23 @@ function submitInternet(v){
   </tr>
   <tr>
     <th><#ConnectionStatus#></th>
-    <td><span id="wan_status"></span></td>
+    <td id="wan_status"></td>
+  </tr>
+  <tr id="row_uptime" style="display:none">
+    <th><#WAN_Uptime#></th>
+    <td><span id="WANTime"></span></td>
+  </tr>
+  <tr id="row_dltime" style="display:none">
+    <th><#WAN_Lease#></th>
+    <td><span id="WANLease"></span></td>
+  </tr>
+  <tr id="row_bytes" style="display:none">
+    <th><#WAN_Bytes#></th>
+    <td><span id="WANBytes"></span></td>
   </tr>
   <tr>
     <th><#Connectiontype#>:</th>
     <td><span id="WANType"></span></td>
-  </tr>
-  <tr id="row_ppp_time" style="display:none">
-    <th><#PPP_Uptime#></th>
-    <td><span id="WANTime"></span></td>
   </tr>
   <tr>
     <th><#IP4_Addr#> WAN:</th>
@@ -219,9 +294,10 @@ function submitInternet(v){
         <select id="domore" class="domore" style="width: 260px;" onchange="domore_link(this);">
           <option selected="selected"><#MoreConfig#>...</option>
           <option value="../Advanced_WAN_Content.asp"><#menu5_3_1#></option>
+          <option value="../Advanced_IPv6_Content.asp"><#menu5_3_3#></option>
           <option value="../Advanced_VirtualServer_Content.asp"><#menu5_3_4#></option>
           <option value="../Advanced_Exposed_Content.asp"><#menu5_3_5#></option>
-          <option value="../Advanced_ASUSDDNS_Content.asp"><#menu5_3_6#></option>
+          <option value="../Advanced_DDNS_Content.asp"><#menu5_3_6#></option>
         </select>
     </td>
   </tr>

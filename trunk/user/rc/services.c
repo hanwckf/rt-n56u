@@ -370,8 +370,6 @@ start_services_once(int is_ap_mode)
 	start_infosvr();
 
 	if (!is_ap_mode) {
-		start_detect_internet();
-		
 		if (!is_upnp_run())
 			start_upnp();
 		

@@ -43,6 +43,7 @@
 
 #define SCRIPT_POST_WAN			"/etc/storage/post_wan_script.sh"
 #define SCRIPT_POST_FIREWALL		"/etc/storage/post_iptables_script.sh"
+#define SCRIPT_INTERNET_STATE		"/etc/storage/inet_state_script.sh"
 
 #define SCRIPT_OVPN_SERVER		"ovpns.script"
 #define SCRIPT_OVPN_CLIENT		"ovpnc.script"
@@ -210,6 +211,7 @@ void auto_wan_reconnect(void);
 void manual_wan_reconnect(void);
 void manual_wan_disconnect(void);
 void notify_on_wan_ether_link_restored(void);
+void notify_on_internet_state_changed(int has_internet, long elapsed);
 void add_dhcp_routes(char *rt, char *rt_rfc, char *rt_ms, char *ifname, int metric);
 void add_dhcp_routes_by_prefix(char *prefix, char *ifname, int metric);
 int  add_static_wan_routes(char *wan_ifname);
@@ -218,6 +220,7 @@ int  add_static_man_routes(char *man_ifname);
 int  del_static_man_routes(char *man_ifname);
 int  update_resolvconf(int is_first_run, int do_not_notify);
 int  update_hosts_router(void);
+int  get_wan_ether_link_direct(int is_ap_mode);
 int  get_wan_dns_static(void);
 int  get_wan_wisp_active(int *p_has_link);
 void get_wan_ifname(char wan_ifname[16]);
@@ -556,17 +559,17 @@ void notify_rstats_time(void);
 
 /* detect_link.c */
 int detect_link_main(int argc, char *argv[]);
-int get_wan_ether_link_direct(int is_ap_mode);
 int start_detect_link(void);
 void stop_detect_link(void);
-void detect_link_reset(void);
-void detect_link_update_leds(void);
+void notify_reset_detect_link(void);
+void notify_leds_detect_link(void);
 
 /* detect_internet.c */
 int detect_internet_main(int argc, char *argv[]);
-int start_detect_internet(void);
+int start_detect_internet(int autorun_time);
 void stop_detect_internet(void);
-void notify_detect_internet(void);
+void notify_run_detect_internet(int delay_time);
+void notify_pause_detect_internet(void);
 
 /* detect_wan.c */
 int detect_wan_main(int argc, char *argv[]);

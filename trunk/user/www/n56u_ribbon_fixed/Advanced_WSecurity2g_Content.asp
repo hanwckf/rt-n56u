@@ -21,8 +21,6 @@
 
 var $j = jQuery.noConflict();
 
-<% login_state_hook(); %>
-
 function initial(){
 	show_banner(1);
 	show_menu(5,1,5);

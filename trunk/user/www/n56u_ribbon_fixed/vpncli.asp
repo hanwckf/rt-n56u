@@ -67,8 +67,6 @@ lan_ipaddr_x = '<% nvram_get_x("", "lan_ipaddr"); %>';
 lan_netmask_x = '<% nvram_get_x("", "lan_netmask"); %>';
 fw_enable_x = '<% nvram_get_x("", "fw_enable_x"); %>';
 
-<% login_state_hook(); %>
-
 <% vpnc_state_hook(); %>
 
 <% openvpn_cli_cert_hook(); %>
@@ -289,7 +287,7 @@ function change_vpnc_ov_mode() {
 
 <body onload="initial();" onunload="unload_body();">
 <script>
-    if(sw_mode == 3){
+    if(get_ap_mode()){
         alert("<#page_not_support_mode_hint#>");
         location.href = "/as.asp";
     }

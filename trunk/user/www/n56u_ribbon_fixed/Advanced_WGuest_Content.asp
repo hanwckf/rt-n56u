@@ -116,8 +116,6 @@
 
 <script>
 
-<% login_state_hook(); %>
-
 function initial(){
 	show_banner(1);
 	show_menu(5,2,2);
@@ -237,41 +235,21 @@ function done_validating(action){
 }
 
 function change_guest_enabled(mflag) {
-	var a = rcheck(document.form.wl_guest_enable);
+	var v = (rcheck(document.form.wl_guest_enable) == "0") ? 0 : 1;
 
-	if (a == "0"){
-		$("row_guest_1").style.display = "none";
-		$("row_guest_2").style.display = "none";
-		$("row_guest_3").style.display = "none";
-		$("row_guest_4").style.display = "none";
-		$("row_guest_5").style.display = "none";
-		$("row_guest_6").style.display = "none";
-		$("row_guest_lan_iso").style.display = "none";
-		$("row_guest_8").style.display = "none";
-		$("row_guest_9").style.display = "none";
-		$("row_guest_10").style.display = "none";
-		$("row_guest_11").style.display = "none";
-		$("row_guest_12").style.display = "none";
-		$("row_guest_13").style.display = "none";
-	}else{
-		$("row_guest_1").style.display = "";
-		$("row_guest_2").style.display = "";
-		$("row_guest_3").style.display = "";
-		$("row_guest_4").style.display = "";
-		$("row_guest_5").style.display = "";
-		$("row_guest_6").style.display = "";
-		if(sw_mode == "3"){
-			$("row_guest_lan_iso").style.display = "none";
-		}else{
-			$("row_guest_lan_iso").style.display = "";
-		}
-		$("row_guest_8").style.display = "";
-		$("row_guest_9").style.display = "";
-		$("row_guest_10").style.display = "";
-		$("row_guest_11").style.display = "";
-		$("row_guest_12").style.display = "";
-		$("row_guest_13").style.display = "";
-	}
+	showhide_div('row_guest_1', v);
+	showhide_div('row_guest_2', v);
+	showhide_div('row_guest_3', v);
+	showhide_div('row_guest_4', v);
+	showhide_div('row_guest_5', v);
+	showhide_div('row_guest_6', v);
+	showhide_div('row_guest_lan_iso', (v && !get_ap_mode()));
+	showhide_div('row_guest_8', v);
+	showhide_div('row_guest_9', v);
+	showhide_div('row_guest_10', v);
+	showhide_div('row_guest_11', v);
+	showhide_div('row_guest_12', v);
+	showhide_div('row_guest_13', v);
 }
 
 function change_guest_auth_mode(mflag) {

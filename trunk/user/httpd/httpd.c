@@ -381,9 +381,6 @@ void http_reset_login(void)
 
 	nvram_set_temp("login_timestamp", "");
 
-	/* notify about HTTP logout */
-	kill_pidfile_s("/var/run/detect_internet.pid", SIGUSR1);
-
 	if (change_passwd == 1) {
 		change_passwd = 0;
 		reget_passwd = 1;

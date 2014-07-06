@@ -158,6 +158,7 @@ extern int       get_usb_modem_wan(int unit);
 extern int       get_usb_modem_dev_wan(int unit, int devnum);
 extern void      set_usb_modem_dev_wan(int unit, int devnum);
 extern int       get_wan_ether_link_cached(void);
+extern int       get_internet_state_cached(void);
 extern int       ifconfig(char *ifname, int flags, char *addr, char *mask);
 extern int       is_interface_exist(const char *ifname);
 extern int       is_interface_up(const char *ifname);
@@ -168,6 +169,8 @@ extern in_addr_t get_interface_addr4(const char *ifname);
 extern int       get_ipv6_type(void);
 
 extern const char* get_ifname_descriptor(const char* ifname);
+extern uint64_t    get_ifstats_bytes_rx(const char* ifname);
+extern uint64_t    get_ifstats_bytes_tx(const char* ifname);
 
 #if defined (USE_IPV6)
 extern char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s);

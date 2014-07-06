@@ -45,17 +45,18 @@
 <script>
 
 <% wanlink(); %>
-<% login_state_hook(); %>
 
 function init()
 {
+	var id_menu = 5;
+	if(sw_mode == '4')
+		id_menu = 3;
+	if(!support_ipv6())
+		id_menu--;
+
 	show_banner(1);
 	show_footer();
-
-	if(sw_mode == "4")
-		show_menu(5,4,2);
-	else
-		show_menu(5,4,4);
+	show_menu(5,4,id_menu);
 
 	hideLoading();
 
@@ -278,7 +279,7 @@ function applyRule(){
 		showLoading();
 		
 		document.form.action_mode.value = " Apply ";
-		document.form.current_page.value = "/Advanced_ASUSDDNS_Content.asp";
+		document.form.current_page.value = "/Advanced_DDNS_Content.asp";
 		document.form.next_page.value = "";
 		
 		document.form.submit();
@@ -319,7 +320,7 @@ function checkDDNSReturnCode(){
 
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
-    <input type="hidden" name="current_page" value="Advanced_ASUSDDNS_Content.asp">
+    <input type="hidden" name="current_page" value="Advanced_DDNS_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="LANHostConfig;">

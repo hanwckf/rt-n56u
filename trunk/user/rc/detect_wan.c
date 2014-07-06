@@ -262,24 +262,36 @@ poll_gateway(void)
 	return 0;
 }
 
-static void catch_sig_detect_wan(int sig)
+static void
+catch_sig_detect_wan(int sig)
 {
-	if (sig == SIGTERM)
+	switch (sig)
 	{
+	case SIGTERM:
 		remove(DW_PID_FILE);
 		exit(0);
+		break;
 	}
 }
 
-int detect_wan_main(int argc, char *argv[])
+int
+detect_wan_main(int argc, char *argv[])
 {
 	FILE *fp;
+	struct sigaction sa;
 
-	signal(SIGPIPE, SIG_IGN);
-	signal(SIGHUP,  SIG_IGN);
-	signal(SIGUSR1, SIG_IGN);
-	signal(SIGUSR2, SIG_IGN);
-	signal(SIGTERM, catch_sig_detect_wan);
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = catch_sig_detect_wan;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGTERM, &sa, NULL);
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = SIG_IGN;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGPIPE, &sa, NULL);
+	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGUSR2, &sa, NULL);
 
 	if (daemon(0, 0) < 0) {
 		perror("daemon");

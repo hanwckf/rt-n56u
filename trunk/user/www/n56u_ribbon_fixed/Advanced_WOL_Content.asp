@@ -12,6 +12,7 @@
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/state.js"></script>
+<script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" src="/bootstrap/js/jquery.xdomainajax.js"></script>
@@ -19,8 +20,6 @@
 
 <script>
 var $j = jQuery.noConflict();
-
-<% login_state_hook(); %>
 
 var ipmonitor = [<% get_static_client(); %>];
 var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
@@ -31,13 +30,16 @@ var devices = {};
 var allMacs = {};
 
 function initial(){
-	show_banner(1);
-	if(sw_mode == "3")
-		show_menu(5,3,3);
-	else
-		show_menu(5,3,6);
-	show_footer();
+	var id_menu = 6;
+	if(get_ap_mode()){
+		id_menu = 4;
+		if (lan_proto == '1')
+			id_menu--;
+	}
 
+	show_banner(1);
+	show_menu(5,3,id_menu);
+	show_footer();
 }
 
 // find oui in localStorage (name = hw_addr)

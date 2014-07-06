@@ -19,8 +19,6 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script>
 
-<% login_state_hook(); %>
-
 var $j = jQuery.noConflict();
 
 var wds_aplist = [["", "", ""]];
@@ -167,7 +165,7 @@ function change_wireless_bridge(mflag){
 		showhide_div("row_wds_apc", 1);
 		showhide_div("ctl_apc_1", 1);
 		showhide_div("ctl_apc_2", 1);
-		showhide_div("row_apc_wisp", (sw_mode == "3") ? 0 : 1);
+		showhide_div("row_apc_wisp", (get_ap_mode()) ? 0 : 1);
 		showhide_div("row_apc_1", 1);
 		showhide_div("row_apc_2", 1);
 		showhide_div("row_apc_3", 1);

@@ -214,13 +214,11 @@
 
 <script>
 
-<% login_state_hook(); %>
-
 var http_proto = '<% nvram_get_x("", "http_proto"); %>';
 
 function initial(){
 	show_banner(1);
-	show_menu(5,6,1);
+	show_menu(5,5,1);
 	show_footer();
 
 	load_body();
@@ -276,7 +274,7 @@ function applyRule(){
 }
 
 function validForm(){
-	if (sw_mode == "4")
+	if (sw_mode == '4')
 		return true;
 
 	if (support_http_ssl()){
@@ -318,7 +316,7 @@ function validForm(){
 }
 
 function http_wopen_changed(){
-	if (sw_mode == "4")
+	if (sw_mode == '4')
 		return;
 	var a = rcheck(document.form.misc_http_x);
 	if (a == "0")
@@ -328,7 +326,7 @@ function http_wopen_changed(){
 }
 
 function https_wopen_changed(){
-	if (sw_mode == "4")
+	if (sw_mode == '4')
 		return;
 	var a = rcheck(document.form.https_wopen);
 	if (a == "0")
@@ -350,7 +348,7 @@ function sshd_wopen_changed(){
 }
 
 function ftpd_wopen_changed(){
-	if (sw_mode == "4")
+	if (sw_mode == '4')
 		return;
 	var a = rcheck(document.form.ftpd_wopen);
 	if (a == "0")
@@ -360,7 +358,7 @@ function ftpd_wopen_changed(){
 }
 
 function udpxy_wopen_changed(){
-	if (sw_mode == "4")
+	if (sw_mode == '4')
 		return;
 	var a = rcheck(document.form.udpxy_wopen);
 	if (a == "0")

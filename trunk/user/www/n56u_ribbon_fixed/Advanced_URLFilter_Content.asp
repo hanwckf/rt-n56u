@@ -63,11 +63,9 @@
 
 <script>
 
-<% login_state_hook(); %>
-
 function initial(){
 	show_banner(1);
-	show_menu(5,6,3);
+	show_menu(5,5,3);
 	show_footer();
 	
 	enable_url();

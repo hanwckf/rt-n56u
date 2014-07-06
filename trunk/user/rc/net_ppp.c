@@ -543,9 +543,6 @@ ipup_main(int argc, char **argv)
 	}
 	set_wan_unit_value(unit, "dns", buf);
 
-	snprintf(buf, sizeof(buf), "%ld", uptime());
-	set_wan_unit_value(unit, "time_ppp", buf);
-
 	wan_up(ppp_ifname, unit);
 
 	logmessage(get_wan_unit_value(unit, "proto_t"), "Connected");
@@ -572,8 +569,6 @@ ipdown_main(int argc, char **argv)
 
 	if (ppp_idx >= RAS_PPP_UNIT)
 		create_file(FLAG_FILE_WWAN_GONE);
-
-	set_wan_unit_value(unit, "time_ppp", "0");
 
 	wan_down(ppp_ifname, unit);
 

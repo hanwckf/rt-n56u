@@ -122,6 +122,7 @@ func_fill()
 	script_started="$dir_storage/started_script.sh"
 	script_postf="$dir_storage/post_iptables_script.sh"
 	script_postw="$dir_storage/post_wan_script.sh"
+	script_inets="$dir_storage/inet_state_script.sh"
 	script_vpnsc="$dir_storage/vpns_client_script.sh"
 	script_vpncs="$dir_storage/vpnc_server_script.sh"
 
@@ -183,6 +184,22 @@ EOF
 
 EOF
 		chmod 755 "$script_postw"
+	fi
+
+	# create inet-state script
+	if [ ! -f "$script_inets" ] ; then
+		cat > "$script_inets" <<EOF
+#!/bin/sh
+
+### Custom user script
+### Called on Internet status changed
+### \$1 - Internet status (0/1)
+### \$2 - elapsed time (s) from previous state
+
+logger -t "di" "Internet state: \$1, elapsed time: \$2s."
+
+EOF
+		chmod 755 "$script_inets"
 	fi
 
 	# create vpn server action script
@@ -428,7 +445,7 @@ ns-cert-type server
 ;redirect-private def1
 
 ### Process priority level (0..19)
-nice 3
+nice 0
 
 ### Syslog verbose level
 verb 0

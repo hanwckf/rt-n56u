@@ -57,15 +57,19 @@
 
 <% lanlink(); %>
 
-<% hardware_pins_hook(); %>
+<% hardware_pins(); %>
 
 function initial(){
-	show_banner(1);
+	var id_menu = 5;
+	if(get_ap_mode()){
+		id_menu = 3;
+		if (lan_proto == '1')
+			id_menu--;
+	}
 
-	if(sw_mode == "3")
-		show_menu(5,3,2);
-	else
-		show_menu(5,3,5);
+	show_banner(1);
+	show_menu(5,3,id_menu);
+	show_footer();
 
 	if (sw_mode != "3"){
 		$('row_igmp_snoop').style.display="none";
@@ -88,8 +92,6 @@ function initial(){
 		
 		$('row_ether_green').style.display="none";
 	}
-
-	show_footer();
 
 	var arr_speeds = [1000, 100, 10, 100, 1000, 100, 10, 0, 0, 0, 0, 0];
 

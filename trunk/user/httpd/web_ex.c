@@ -1600,8 +1600,8 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			restart_total_time = MAX(ITVL_RESTART_DDNS, restart_total_time);
 		if ((restart_needed_bits & RESTART_HTTPD) != 0)
 			restart_total_time = MAX(ITVL_RESTART_HTTPD, restart_total_time);
-		if ((restart_needed_bits & RESTART_DNS) != 0)
-			restart_total_time = MAX(ITVL_RESTART_DNS, restart_total_time);
+		if ((restart_needed_bits & RESTART_DI) != 0)
+			restart_total_time = MAX(ITVL_RESTART_DI, restart_total_time);
 		if ((restart_needed_bits & RESTART_UPNP) != 0)
 			restart_total_time = MAX(ITVL_RESTART_UPNP, restart_total_time);
 		if ((restart_needed_bits & RESTART_DMS) != 0)
@@ -1679,7 +1679,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				restart_needed_bits &= ~(u32)RESTART_LAN;
 				restart_needed_bits &= ~(u32)RESTART_DHCPD;		// dnsmasq already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_RADVD;		// radvd already re-started (RESTART_IPV6)
-				restart_needed_bits &= ~(u32)RESTART_DNS;		// dnsmasq already re-started (RESTART_IPV6)
+				restart_needed_bits &= ~(u32)RESTART_DI;		// detect_internet already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_WAN;		// wan already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_MODEM;		// wan already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_IPTV;		// iptv already re-started (RESTART_IPV6)
@@ -1691,7 +1691,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				notify_rc("restart_whole_lan");
 				restart_needed_bits &= ~(u32)RESTART_LAN;
 				restart_needed_bits &= ~(u32)RESTART_DHCPD;		// dnsmasq already re-started (RESTART_LAN)
-				restart_needed_bits &= ~(u32)RESTART_DNS;		// dnsmasq already re-started (RESTART_LAN)
+				restart_needed_bits &= ~(u32)RESTART_DI;		// detect_internet already re-started (RESTART_LAN)
 				restart_needed_bits &= ~(u32)RESTART_UPNP;		// miniupnpd already re-started (RESTART_LAN)
 				restart_needed_bits &= ~(u32)RESTART_VPNSVR;		// vpn server already re-started (RESTART_LAN)
 				restart_needed_bits &= ~(u32)RESTART_IPTV;		// igmpproxy already re-started (RESTART_LAN)
@@ -1752,9 +1752,9 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				restart_needed_bits &= ~(u32)RESTART_HTTPD;
 				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_HTTPD)
 			}
-			if ((restart_needed_bits & RESTART_DNS) != 0) {
-				notify_rc("restart_dns");
-				restart_needed_bits &= ~(u32)RESTART_DNS;
+			if ((restart_needed_bits & RESTART_DI) != 0) {
+				notify_rc("restart_di");
+				restart_needed_bits &= ~(u32)RESTART_DI;
 			}
 			if ((restart_needed_bits & RESTART_DDNS) != 0) {
 				notify_rc("restart_ddns");
@@ -1882,15 +1882,6 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 	return 0;
 }
 
-static int
-detect_if_wan(int eid, webs_t wp, int argc, char_t **argv)
-{
-	if (!get_ap_mode())
-		kill_pidfile_s("/var/run/detect_internet.pid", SIGHUP);
-
-	return 0;
-}
-
 #define IF_STATE_EXIST		1
 #define IF_STATE_UP		2
 #define IF_STATE_HAS_ADDR	3
@@ -1945,207 +1936,279 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 {
 	FILE *fp;
 	char wan_dns[512], wan_mac[18], etherlink[32], apclilink[32];
-	char wan_desc[32], tmp[64], prefix[16], statusstr[32];
+	char wan_desc[32], tmp[64], prefix[16];
 	char addr4_wan[INET_ADDRSTRLEN], addr4_man[INET_ADDRSTRLEN];
-	char *wan0_ip, *wanx_ip, *wan0_gw, *wanx_gw, *wan_ip6, *lan_ip6, *man_ifname;
-	int unit, status_code, wan_proto, ifstate_wan, ifstate_man, phy_failed, ppp_mode;
-	long ppp_time;
+	char *wan0_ip, *wanx_ip, *wan0_gw, *wanx_gw, *wan_ip6, *lan_ip6, *wan_ifname, *man_ifname;
+	int unit, status_code, wan_proto, wan_ifstate, man_ifstate, eth_link, phy_failed, ppp_mode;
+	uint64_t wan_bytes_rx, wan_bytes_tx;
+	long wan_uptime, wan_dltime, wan_lease, now;
 #if defined (USE_IPV6)
 	int ipv6_type;
 	char *wan6_ifname = NULL;
 	char addr6_wan[INET6_ADDRSTRLEN], addr6_lan[INET6_ADDRSTRLEN];
 #endif
 
+	wan0_ip = "";
+	wan0_gw = "";
 	wanx_ip = "";
 	wanx_gw = "";
 	wan_ip6 = "";
 	lan_ip6 = "";
-	ppp_time = 0;
 	ppp_mode = 0;
+	wan_uptime = 0;
+	wan_dltime = 0;
+	wan_bytes_rx = 0;
+	wan_bytes_tx = 0;
 
 	/* current unit */
 	unit = 0;
 
-	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-	snprintf(wan_mac, sizeof(wan_mac), "%s", nvram_safe_get("wan_hwaddr"));
-
 	phy_failed = 0;
-	ifstate_wan = 0;
-	ifstate_man = 0;
+	wan_ifstate = 0;
+	man_ifstate = 0;
 	status_code = INET_STATE_CONNECTED;
-	statusstr[0] = 0;
 	etherlink[0] = 0;
 	apclilink[0] = 0;
 	addr4_wan[0] = 0;
 	addr4_man[0] = 0;
 	wan_desc[0] = 0;
 
-	fill_eth_port_status(nvram_get_int("wan_src_phy"), etherlink);
+	now = uptime();
 
-	wan_proto = get_wan_proto(unit);
-	man_ifname = get_man_ifname(unit);
-
+	if (!get_ap_mode()) {
+		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+		snprintf(wan_mac, sizeof(wan_mac), "%s", nvram_safe_get("wan_hwaddr"));
+		
+		wan_proto = get_wan_proto(unit);
+		wan_lease = nvram_get_int(strcat_r(prefix, "lease", tmp));
+		wan_dltime = nvram_get_int(strcat_r(prefix, "dltime", tmp));
+		wan_uptime = nvram_get_int(strcat_r(prefix, "uptime", tmp));
+		wan_ifname = nvram_safe_get(strcat_r(prefix, "ifname_t", tmp));
+		man_ifname = get_man_ifname(unit);
+		
+		eth_link = fill_eth_port_status(nvram_get_int("wan_src_phy"), etherlink);
+		
 #if (BOARD_NUM_USB_PORTS > 0)
-	if (get_usb_modem_wan(0)) {
-		int modem_prio = nvram_get_int("modem_prio");
-		if (nvram_get_int("modem_type") == 3) {
-			char *ndis_ifname = nvram_safe_get("wan0_ifname_t");
-			if (isUsbNetIf(ndis_ifname)) {
-				ifstate_wan = get_if_state(ndis_ifname, addr4_wan);
-				if (ifstate_wan > 0) {
-					unsigned char mac[8];
-					if (get_interface_hwaddr(ndis_ifname, mac) == 0) {
-						sprintf(wan_mac, "%02X:%02X:%02X:%02X:%02X:%02X", 
-							mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+		if (get_usb_modem_wan(0)) {
+			int modem_prio = nvram_get_int("modem_prio");
+			if (nvram_get_int("modem_type") == 3) {
+				if (isUsbNetIf(wan_ifname)) {
+					wan_ifstate = get_if_state(wan_ifname, addr4_wan);
+					if (wan_ifstate > 0) {
+						unsigned char mac[8];
+						
+						if (get_interface_hwaddr(wan_ifname, mac) == 0) {
+							sprintf(wan_mac, "%02X:%02X:%02X:%02X:%02X:%02X", 
+								mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+						}
+						
+						wan_bytes_rx = get_ifstats_bytes_rx(wan_ifname);
+						wan_bytes_tx = get_ifstats_bytes_tx(wan_ifname);
 					}
 				}
-			}
-			if (modem_prio < 2)
-				etherlink[0] = 0; // hide ethernet link
-			strcpy(wan_desc, "USB Modem (NDIS/RNDIS)");
-		} else {
+				if (modem_prio < 2)
+					etherlink[0] = 0; // hide ethernet link
+				strcpy(wan_desc, "USB Modem (NDIS/RNDIS)");
+			} else {
+				if (strncmp(wan_ifname, "ppp", 3) != 0)
+					wan_ifname = IFNAME_RAS;
 #if defined (USE_IPV6)
-			if (nvram_get_int("ip6_wan_if") == 0)
-				wan6_ifname = IFNAME_RAS;
+				if (nvram_get_int("ip6_wan_if") == 0)
+					wan6_ifname = wan_ifname;
 #endif
-			ifstate_wan = get_if_state(IFNAME_RAS, addr4_wan);
-			ppp_time = nvram_get_int(strcat_r(prefix, "time_ppp", tmp));
-			ppp_mode = 1;
+				wan_ifstate = get_if_state(wan_ifname, addr4_wan);
+				if (wan_ifstate > 0) {
+					wan_bytes_rx = get_ifstats_bytes_rx(wan_ifname);
+					wan_bytes_tx = get_ifstats_bytes_tx(wan_ifname);
+				}
+				
+				ppp_mode = 1;
+				
+				// Dual access with RAS Modem
+				if (wan_proto == IPV4_WAN_PROTO_PPPOE ||
+				    wan_proto == IPV4_WAN_PROTO_PPTP ||
+				    wan_proto == IPV4_WAN_PROTO_L2TP) {
+					man_ifstate = get_if_state(man_ifname, addr4_man);
+				} else {
+					if (modem_prio < 2)
+						etherlink[0] = 0; // hide ethernet link
+				}
+				strcpy(wan_desc, "USB Modem (RAS)");
+			}
+		} else
+#endif
+		{
+			if (is_man_wisp(man_ifname)) {
+				struct iwreq wrq;
+				unsigned char mac[8];
+				
+				if (get_interface_hwaddr(man_ifname, mac) == 0) {
+					sprintf(wan_mac, "%02X:%02X:%02X:%02X:%02X:%02X", 
+						mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+				}
+				
+				if (get_apcli_peer_connected(man_ifname, &wrq)) {
+					sprintf(apclilink, "BSSID: %02X:%02X:%02X:%02X:%02X:%02X", 
+						(unsigned char)wrq.u.ap_addr.sa_data[0],
+						(unsigned char)wrq.u.ap_addr.sa_data[1],
+						(unsigned char)wrq.u.ap_addr.sa_data[2],
+						(unsigned char)wrq.u.ap_addr.sa_data[3],
+						(unsigned char)wrq.u.ap_addr.sa_data[4],
+						(unsigned char)wrq.u.ap_addr.sa_data[5]);
+				} else {
+					strcpy(apclilink, "---");
+					phy_failed = 2; // STA not connected
+				}
+				
+				etherlink[0] = 0; // hide ethernet link
+			} else {
+				if (!eth_link)
+					phy_failed = 1; // No Ethernet port link
+			}
 			
-			// Dual access with RAS Modem
 			if (wan_proto == IPV4_WAN_PROTO_PPPOE ||
 			    wan_proto == IPV4_WAN_PROTO_PPTP ||
 			    wan_proto == IPV4_WAN_PROTO_L2TP) {
-				ifstate_man = get_if_state(man_ifname, addr4_man);
-			} else {
-				if (modem_prio < 2)
-					etherlink[0] = 0; // hide ethernet link
-			}
-			strcpy(wan_desc, "USB Modem (RAS)");
-		}
-	} else
-#endif
-	{
-		if (is_man_wisp(man_ifname)) {
-			struct iwreq wrq;
-			unsigned char mac[8];
-			
-			if (get_interface_hwaddr(man_ifname, mac) == 0) {
-				sprintf(wan_mac, "%02X:%02X:%02X:%02X:%02X:%02X", 
-					mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-			}
-			
-			if (get_apcli_peer_connected(man_ifname, &wrq)) {
-				sprintf(apclilink, "BSSID: %02X:%02X:%02X:%02X:%02X:%02X", 
-					(unsigned char)wrq.u.ap_addr.sa_data[0],
-					(unsigned char)wrq.u.ap_addr.sa_data[1],
-					(unsigned char)wrq.u.ap_addr.sa_data[2],
-					(unsigned char)wrq.u.ap_addr.sa_data[3],
-					(unsigned char)wrq.u.ap_addr.sa_data[4],
-					(unsigned char)wrq.u.ap_addr.sa_data[5]);
-			} else {
-				strcpy(apclilink, "---");
-				phy_failed = 2; // STA not connected
-			}
-			
-			etherlink[0] = 0; // hide ethernet link
-		} else {
-			if (!get_wan_ether_link_cached()) {
-				phy_failed = 1; // No port link
-			}
-		}
-		
-		if (wan_proto == IPV4_WAN_PROTO_PPPOE ||
-		    wan_proto == IPV4_WAN_PROTO_PPTP ||
-		    wan_proto == IPV4_WAN_PROTO_L2TP) {
+				if (strncmp(wan_ifname, "ppp", 3) != 0)
+					wan_ifname = IFNAME_PPP;
 #if defined (USE_IPV6)
-			if (nvram_get_int("ip6_wan_if") == 0)
-				wan6_ifname = IFNAME_PPP;
+				if (nvram_get_int("ip6_wan_if") == 0)
+					wan6_ifname = wan_ifname;
 #endif
-			ifstate_wan = get_if_state(IFNAME_PPP, addr4_wan);
-			ifstate_man = get_if_state(man_ifname, addr4_man);
-			ppp_time = nvram_get_int(strcat_r(prefix, "time_ppp", tmp));
-			ppp_mode = (wan_proto == IPV4_WAN_PROTO_L2TP) ? 2 : 1;
-		} else {
-			ifstate_wan = get_if_state(man_ifname, addr4_wan);
+				wan_ifstate = get_if_state(wan_ifname, addr4_wan);
+				man_ifstate = get_if_state(man_ifname, addr4_man);
+				
+				/* skip PPPoE traffic collect with HW_NAT enabled */
+				if (wan_ifstate > 0 && (wan_proto != IPV4_WAN_PROTO_PPPOE || nvram_get_int("hw_nat_mode") == 2)) {
+					wan_bytes_rx = get_ifstats_bytes_rx(wan_ifname);
+					wan_bytes_tx = get_ifstats_bytes_tx(wan_ifname);
+				}
+				
+				ppp_mode = (wan_proto == IPV4_WAN_PROTO_L2TP) ? 2 : 1;
+			} else {
+				wan_ifstate = get_if_state(man_ifname, addr4_wan);
+			}
+			
+			if (wan_proto == IPV4_WAN_PROTO_PPPOE)
+				strcpy(wan_desc, "PPPoE");
+			else if (wan_proto == IPV4_WAN_PROTO_PPTP)
+				strcpy(wan_desc, "PPTP");
+			else if (wan_proto == IPV4_WAN_PROTO_L2TP)
+				strcpy(wan_desc, "L2TP");
+			else if (wan_proto == IPV4_WAN_PROTO_IPOE_DHCP)
+				strcpy(wan_desc, "Automatic IP");
+			else
+				strcpy(wan_desc, "Static IP");
 		}
 		
-		if (wan_proto == IPV4_WAN_PROTO_PPPOE)
-			strcpy(wan_desc, "PPPoE");
-		else if (wan_proto == IPV4_WAN_PROTO_PPTP)
-			strcpy(wan_desc, "PPTP");
-		else if (wan_proto == IPV4_WAN_PROTO_L2TP)
-			strcpy(wan_desc, "L2TP");
-		else if (wan_proto == IPV4_WAN_PROTO_IPOE_DHCP)
+		if (wan_ifstate == IF_STATE_HAS_ADDR) {
+			wan0_ip = addr4_wan;
+			wan0_gw = nvram_safe_get(strcat_r(prefix, "gateway", tmp));
+			if (!is_valid_ipv4(wan0_gw)) {
+				status_code = INET_STATE_NO_DGW;
+				wan0_gw = "---";
+			}
+			if (wan_uptime > 0) {
+				wan_uptime = now - wan_uptime;
+				if (wan_uptime < 0)
+					wan_uptime = 0;
+				
+				if (wan_dltime > 0 && wan_lease > 0) {
+					wan_dltime = wan_lease - (now - wan_dltime);
+					/* always show after expired */
+					if (wan_dltime < 1)
+						wan_dltime = 1;
+				}
+			}
+		} else {
+			wan0_ip = "---";
+			wan0_gw = "---";
+			wan_uptime = 0;
+			if (ppp_mode) {
+				if (ppp_mode == 2) {
+					char *l2tpd = (nvram_match("wan_l2tpd", "0")) ? "xl2tpd" : "l2tpd";
+					status_code = (pids(l2tpd)) ? INET_STATE_PPP_WAIT : INET_STATE_PPP_INACTIVE;
+				} else
+					status_code = (pids("pppd")) ? INET_STATE_PPP_WAIT : INET_STATE_PPP_INACTIVE;
+			} else
+				status_code = (wan_ifstate == IF_STATE_UP) ? INET_STATE_NETIF_WAIT_DHCP : INET_STATE_NETIF_NOT_READY;
+		}
+		
+		if (phy_failed == 1)
+			status_code = INET_STATE_NO_ETH_LINK;
+		else if (phy_failed == 2)
+			status_code = INET_STATE_NO_AP_LINK;
+		else if (phy_failed == 3)
+			status_code = INET_STATE_NO_BS_LINK;
+		
+		if (man_ifstate == IF_STATE_HAS_ADDR) {
+			wanx_ip = addr4_man;
+			wanx_gw = nvram_safe_get("wanx_gateway");
+			if (!is_valid_ipv4(wanx_gw))
+				wanx_gw = "---";
+		}
+		
+		if (wan_uptime > 0 && (wan_bytes_rx || wan_bytes_tx)) {
+			uint64_t init_bytes_rx, init_bytes_tx;
+			
+			init_bytes_rx = strtoull(nvram_safe_get(strcat_r(prefix, "bytes_rx", tmp)), NULL, 10);
+			init_bytes_tx = strtoull(nvram_safe_get(strcat_r(prefix, "bytes_tx", tmp)), NULL, 10);
+			
+			/* support only 64 bit counters */
+			if (wan_bytes_rx < init_bytes_rx)
+				wan_bytes_rx = 0;
+			else
+				wan_bytes_rx -= init_bytes_rx;
+			
+			if (wan_bytes_tx < init_bytes_tx)
+				wan_bytes_tx = 0;
+			else
+				wan_bytes_tx -= init_bytes_tx;
+		}
+		
+#if defined (USE_IPV6)
+		ipv6_type = get_ipv6_type();
+		if (ipv6_type != IPV6_DISABLED) {
+			if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD) {
+				wan6_ifname = IFNAME_SIT;
+			} else {
+				if (!wan6_ifname)
+					wan6_ifname = man_ifname;
+			}
+			
+			if (get_ifaddr6(wan6_ifname, 0, addr6_wan))
+				wan_ip6 = addr6_wan;
+			else
+				wan_ip6 = "---";
+			
+			if (get_ifaddr6(IFNAME_BR, 0, addr6_lan))
+				lan_ip6 = addr6_lan;
+			else
+				lan_ip6 = "---";
+		}
+#endif
+	} else {
+		snprintf(wan_mac, sizeof(wan_mac), "%s", nvram_safe_get("lan_hwaddr"));
+		
+		if (nvram_match("lan_proto_x", "1"))
 			strcpy(wan_desc, "Automatic IP");
 		else
 			strcpy(wan_desc, "Static IP");
-	}
-
-	if (ifstate_wan == IF_STATE_HAS_ADDR) {
-		wan0_ip = addr4_wan;
-		wan0_gw = nvram_safe_get(strcat_r(prefix, "gateway", tmp));
-		if (!is_valid_ipv4(wan0_gw)) {
-			status_code = INET_STATE_NO_DGW;
-			wan0_gw = "---";
-		}
-		if (ppp_time > 0)
-			ppp_time = uptime() - ppp_time;
-	} else {
-		wan0_ip = "---";
-		wan0_gw = "---";
-		ppp_time = 0;
-		if (ppp_mode) {
-			if (ppp_mode == 2) {
-				char *l2tpd = (nvram_match("wan_l2tpd", "0")) ? "xl2tpd" : "l2tpd";
-				status_code = (pids(l2tpd)) ? INET_STATE_PPP_WAIT : INET_STATE_PPP_INACTIVE;
+		
+		wan_ifstate = get_if_state(IFNAME_BR, addr4_wan);
+		
+		if (wan_ifstate == IF_STATE_HAS_ADDR) {
+			wan0_ip = addr4_wan;
+			wan0_gw = nvram_safe_get("lan_gateway_t");
+			if (!is_valid_ipv4(wan0_gw)) {
+				wan0_gw = "---";
+				status_code = INET_STATE_NO_DGW;
 			}
-			else
-				status_code = (pids("pppd")) ? INET_STATE_PPP_WAIT : INET_STATE_PPP_INACTIVE;
-		}
-		else
-			status_code = (ifstate_wan == IF_STATE_UP) ? INET_STATE_NETIF_WAIT_DHCP : INET_STATE_NETIF_NOT_READY;
-	}
-
-	if (phy_failed == 1)
-		status_code = INET_STATE_NO_ETH_LINK;
-	else if (phy_failed == 2)
-		status_code = INET_STATE_NO_AP_LINK;
-	else if (phy_failed == 3)
-		status_code = INET_STATE_NO_BS_LINK;
-
-	if (status_code == INET_STATE_CONNECTED)
-		strcpy(statusstr, "Connected");
-	else
-		strcpy(statusstr, "Disconnected");
-
-#if defined (USE_IPV6)
-	ipv6_type = get_ipv6_type();
-	if (ipv6_type != IPV6_DISABLED) {
-		if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD) {
-			wan6_ifname = IFNAME_SIT;
 		} else {
-			if (!wan6_ifname)
-				wan6_ifname = man_ifname;
+			wan0_ip = "---";
+			wan0_gw = "---";
+			status_code = (wan_ifstate == IF_STATE_UP) ? INET_STATE_NETIF_WAIT_DHCP : INET_STATE_NETIF_NOT_READY;
 		}
-		
-		if (get_ifaddr6(wan6_ifname, 0, addr6_wan))
-			wan_ip6 = addr6_wan;
-		else
-			wan_ip6 = "---";
-		
-		if (get_ifaddr6(IFNAME_BR, 0, addr6_lan))
-			lan_ip6 = addr6_lan;
-		else
-			lan_ip6 = "---";
-	}
-#endif
-
-	if (ifstate_man == IF_STATE_HAS_ADDR) {
-		wanx_ip = addr4_man;
-		wanx_gw = nvram_safe_get("wanx_gateway");
-		if (!is_valid_ipv4(wanx_gw))
-			wanx_gw = "---";
 	}
 
 	wan_dns[0] = 0;
@@ -2169,10 +2232,10 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 		strcpy(wan_dns, "---");
 
 	websWrite(wp, "function wanlink_status() { return %d;}\n", status_code);
-	websWrite(wp, "function wanlink_statusstr() { return '%s';}\n", statusstr);
 	websWrite(wp, "function wanlink_etherlink() { return '%s';}\n", etherlink);
 	websWrite(wp, "function wanlink_apclilink() { return '%s';}\n", apclilink);
-	websWrite(wp, "function wanlink_time() { return %ld;}\n", (ppp_time > 0) ? ppp_time : 0);
+	websWrite(wp, "function wanlink_uptime() { return %ld;}\n", wan_uptime);
+	websWrite(wp, "function wanlink_dltime() { return %ld;}\n", wan_dltime);
 	websWrite(wp, "function wanlink_type() { return '%s';}\n", wan_desc);
 	websWrite(wp, "function wanlink_ip4_wan() { return '%s';}\n", wan0_ip);
 	websWrite(wp, "function wanlink_gw4_wan() { return '%s';}\n", wan0_gw);
@@ -2182,6 +2245,8 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "function wanlink_ip6_lan() { return '%s';}\n", lan_ip6);
 	websWrite(wp, "function wanlink_dns() { return '%s';}\n", wan_dns);
 	websWrite(wp, "function wanlink_mac() { return '%s';}\n", wan_mac);
+	websWrite(wp, "function wanlink_bytes_rx() { return %llu;}\n", wan_bytes_rx);
+	websWrite(wp, "function wanlink_bytes_tx() { return %llu;}\n", wan_bytes_tx);
 
 	return 0;
 }
@@ -2235,31 +2300,38 @@ wan_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 #if (BOARD_NUM_USB_PORTS > 0)
 	else if (!strcmp(wan_action, "ModemPrio")) {
 		int modem_prio = atoi(websGetVar(wp, "modem_prio", ""));
-		int modem_used = (get_usb_modem_wan(unit)) ? 1 : 0;
-		if (modem_prio >= 0 && modem_prio < 4 && nvram_get_int("modem_prio") != modem_prio) {
+		if (modem_prio >= 0 && modem_prio < 3 && nvram_get_int("modem_prio") != modem_prio) {
+			int modem_used;
 			int need_restart_wan = 0;
 			
 			nvram_set_int("modem_prio", modem_prio);
 			nvram_commit_safe();
 			
-			if (!is_man_wisp(get_man_ifname(unit))) {
-				if (modem_prio > 1) {
-					int link_wan = (nvram_get_int("link_wan")) ? 1 : 0;
-					need_restart_wan = (modem_used == link_wan);
-				} else {
-					need_restart_wan = (modem_used != modem_prio);
-				}
-				
-				if (need_restart_wan) {
-					notify_rc("auto_wan_reconnect");
-					needed_seconds = 3;
-				}
+			modem_used = (get_usb_modem_wan(unit)) ? 1 : 0;
+			if (modem_prio < 2) {
+				need_restart_wan = (modem_used != modem_prio);
+			} else if (modem_prio == 2) {
+				if (!is_man_wisp(get_man_ifname(unit)))
+					need_restart_wan = (modem_used == get_wan_ether_link_cached());
+			}
+			
+			if (need_restart_wan) {
+				notify_rc("auto_wan_reconnect");
+				needed_seconds = 3;
 			}
 		}
 	}
 #endif
 
 	websWrite(wp, "<script>restart_needed_time(%d);</script>\n", needed_seconds);
+	return 0;
+}
+
+static int
+ej_detect_internet_hook(int eid, webs_t wp, int argc, char_t **argv)
+{
+	kill_pidfile_s("/var/run/detect_internet.pid", SIGHUP);
+
 	return 0;
 }
 
@@ -5839,7 +5911,7 @@ int ej_set_account_permission(int eid, webs_t wp, int argc, char **argv) {
 static int 
 ej_netdev(int eid, webs_t wp, int argc, char_t **argv)
 {
-	FILE * fp;
+	FILE *fp;
 	char buf[256];
 	uint64_t rx, tx;
 	char *p, *ifname;
@@ -5957,7 +6029,6 @@ struct ej_handler ej_handlers[] = {
 	{ "asus_nvram_commit", asus_nvram_commit},
 	{ "notify_services", ej_notify_services},
 	{ "login_state_hook", login_state_hook},
-	{ "detect_if_wan", detect_if_wan},
 	{ "wanlink", wanlink_hook},
 	{ "lanlink", lanlink_hook},
 	{ "wan_action", wan_action_hook},
@@ -5977,7 +6048,8 @@ struct ej_handler ej_handlers[] = {
 	{ "wl_bssid_5g", ej_wl_bssid_5g},
 	{ "wl_bssid_2g", ej_wl_bssid_2g},
 	{ "shown_language_option", ej_shown_language_option},
-	{ "hardware_pins_hook", ej_hardware_pins_hook},
+	{ "hardware_pins", ej_hardware_pins_hook},
+	{ "detect_internet", ej_detect_internet_hook},
 	{ "disk_pool_mapping_info", ej_disk_pool_mapping_info},
 	{ "available_disk_names_and_sizes", ej_available_disk_names_and_sizes},
 	{ "get_usb_ports_info", ej_get_usb_ports_info},

@@ -49,7 +49,7 @@ function initial(){
 		id_menu = 2;
 
 	show_banner(1);
-	show_menu(5, 7, id_menu);
+	show_menu(5,6,id_menu);
 	show_footer();
 
 	// show page's control

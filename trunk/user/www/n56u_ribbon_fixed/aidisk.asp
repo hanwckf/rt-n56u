@@ -19,8 +19,6 @@
 <script type="text/javascript" src="/help.js"></script>
 <script>
 
-<% login_state_hook(); %>
-
 <% disk_pool_mapping_info(); %>
 <% available_disk_names_and_sizes(); %>
 <% get_AiDisk_status(); %>

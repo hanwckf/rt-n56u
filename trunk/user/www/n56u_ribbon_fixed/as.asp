@@ -29,31 +29,25 @@ function initial(){
 function show_sitemap(){
 	var l1 = tabtitle.length;
 	var l2 = menuL2_title.length;
-	var hide_last = false;
 
-	if (sw_mode != "3" && menuL2_title[2] != "")
-		hide_last = true;
+	if (l1 > 8) l1 = 8;
+	if (l2 > 8) l2 = 8;
 
-	if (hide_last){
-		l1 = l1 - 1;
-		l2 = l2 - 1;
-	}
 	for(var i=0, j=0; i<l1, j<l2;){
-		if(tabtitle[i] == "" || tabtitle[i] == ",IPv6"){
+		if(tabtitle[i] == ""){
 			tabtitle.splice(i,1);
 			tablink.splice(i,1);
 		}
 		else
 			i++;
-		if(menuL2_title[j] == "" || menuL2_title[j] == "IPv6")
+		if(menuL2_title[j] == "")
 			menuL2_title.splice(j,1);
 		else
 			j++;
 	}
 
 	l2 = menuL2_title.length;
-	if (hide_last)
-		l2 = l2 - 1;
+	if (l2 > 8) l2 = 8;
 
 	for(var i=0; i<l2; i++){
 		var k = (i/4 < 1)?0:3;
@@ -62,8 +56,7 @@ function show_sitemap(){
 	}
 
 	l1 = tabtitle.length;
-	if (hide_last)
-		l1 = l1 - 1;
+	if (l1 > 8) l1 = 8;
 
 	for(var l = 0; l < l1; l++){
 		map_code = '<ul class="nav nav-list">\n';

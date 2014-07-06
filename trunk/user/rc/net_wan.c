@@ -77,7 +77,9 @@ static void
 control_wan_led_isp_state(int is_wan_up, int is_modem_unit)
 {
 #if defined (BOARD_GPIO_LED_WAN)
-	if (nvram_get_int("front_led_wan") == 2) {
+	int front_led_wan = nvram_get_int("front_led_wan");
+
+	if (front_led_wan == 2) {
 		int has_link = 0;
 		if (is_wan_up) {
 			has_link = 1;
@@ -85,6 +87,9 @@ control_wan_led_isp_state(int is_wan_up, int is_modem_unit)
 				has_link = get_wan_ether_link_cached();
 		}
 		LED_CONTROL(BOARD_GPIO_LED_WAN, (is_wan_up && has_link) ? LED_ON : LED_OFF);
+	} else if (front_led_wan == 3) {
+		if (!is_wan_up)
+			LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
 	}
 #endif
 }
@@ -92,7 +97,10 @@ control_wan_led_isp_state(int is_wan_up, int is_modem_unit)
 static void
 clear_wan_state(void)
 {
-	set_wan_unit_value(0, "time_ppp", "0");
+	set_wan_unit_value(0, "uptime", "0");
+	set_wan_unit_value(0, "dltime", "0");
+	set_wan_unit_value(0, "bytes_rx", "0");
+	set_wan_unit_value(0, "bytes_tx", "0");
 	nvram_set_int_temp("l2tp_wan_t", 0);
 	nvram_set_temp("vpnc_dns_t", "");
 }
@@ -600,6 +608,9 @@ start_wan(int is_first_run)
 	if (!is_first_run)
 		smart_restart_upnp();
 
+	/* di wakeup after 60 secs */
+	notify_run_detect_internet(60);
+
 	/* Start each configured and enabled wan connection and its undelying i/f */
 	for (unit = 0; unit < 1; unit++)
 	{
@@ -766,11 +777,12 @@ stop_wan_ppp(void)
 		NULL
 	};
 
+	notify_pause_detect_internet();
+
 	stop_vpn_client();
 	kill_services(svcs_ppp, 6, 1);
 
 	clear_wan_state();
-	notify_detect_internet();
 
 	control_wan_led_isp_state(0, 0);
 }
@@ -808,6 +820,8 @@ stop_wan(void)
 
 	wan_proto = get_wan_proto(unit);
 	man_ifname = get_man_ifname(unit);
+
+	notify_pause_detect_internet();
 
 	stop_vpn_client();
 
@@ -849,7 +863,6 @@ stop_wan(void)
 
 	clear_wan_state();
 	flush_conntrack_caches();
-	notify_detect_internet();
 
 	control_wan_led_isp_state(0, 0);
 }
@@ -974,7 +987,7 @@ man_down(char *man_ifname, int unit)
 void
 wan_up(char *wan_ifname, int unit)
 {
-	char *wan_addr, *wan_mask, *wan_gate;
+	char wan_cnt[32], *wan_addr, *wan_mask, *wan_gate;
 	const char *script_postw = SCRIPT_POST_WAN;
 	int wan_proto, modem_unit_id;
 
@@ -982,6 +995,17 @@ wan_up(char *wan_ifname, int unit)
 
 	wan_proto = get_wan_proto(unit);
 	modem_unit_id = is_ifunit_modem(wan_ifname, unit);
+
+	snprintf(wan_cnt, sizeof(wan_cnt), "%ld", uptime());
+	set_wan_unit_value(unit, "uptime", wan_cnt);
+
+	if (modem_unit_id || wan_proto != IPV4_WAN_PROTO_IPOE_STATIC) {
+		snprintf(wan_cnt, sizeof(wan_cnt), "%llu", get_ifstats_bytes_rx(wan_ifname));
+		set_wan_unit_value(unit, "bytes_rx", wan_cnt);
+		
+		snprintf(wan_cnt, sizeof(wan_cnt), "%llu", get_ifstats_bytes_tx(wan_ifname));
+		set_wan_unit_value(unit, "bytes_tx", wan_cnt);
+	}
 
 	wan_addr = get_wan_unit_value(unit, "ipaddr");
 	wan_mask = get_wan_unit_value(unit, "netmask");
@@ -1063,6 +1087,9 @@ wan_up(char *wan_ifname, int unit)
 	if (wan_gate)
 		control_wan_led_isp_state(1, modem_unit_id);
 
+	/* di wakeup after 2 secs */
+	notify_run_detect_internet(2);
+
 	/* call custom user script */
 	if (check_if_file_exist(script_postw))
 		doSystem("%s %s %s", script_postw, "up", wan_ifname);
@@ -1076,6 +1103,8 @@ wan_down(char *wan_ifname, int unit)
 	int wan_proto, modem_unit_id;
 
 	logmessage(LOGNAME, "%s %s (%s)", "WAN", "down", wan_ifname);
+
+	notify_pause_detect_internet();
 
 	/* deferred stop static VPN client (prevent rebuild resolv.conf) */
 	nvram_set_temp("vpnc_dns_t", "");
@@ -1123,6 +1152,11 @@ wan_down(char *wan_ifname, int unit)
 
 	control_wan_led_isp_state(0, 0);
 
+	set_wan_unit_value(unit, "uptime", "0");
+	set_wan_unit_value(unit, "dltime", "0");
+	set_wan_unit_value(unit, "bytes_rx", "0");
+	set_wan_unit_value(unit, "bytes_tx", "0");
+
 	if (check_if_file_exist(script_postw))
 		doSystem("%s %s %s", script_postw, "down", wan_ifname);
 }
@@ -1149,10 +1183,10 @@ full_restart_wan(void)
 
 	add_static_lan_routes(IFNAME_BR);
 
-	detect_link_reset();
-	switch_config_vlan(0);
-
 	select_usb_modem_to_wan();
+
+	notify_reset_detect_link();
+	switch_config_vlan(0);
 
 	start_wan(0);
 
@@ -1174,7 +1208,7 @@ try_wan_reconnect(int try_use_modem)
 	if (try_use_modem)
 		select_usb_modem_to_wan();
 
-	detect_link_reset();
+	notify_reset_detect_link();
 
 	start_wan(0);
 
@@ -1246,6 +1280,37 @@ notify_on_wan_ether_link_restored(void)
 	logmessage(LOGNAME, "force WAN DHCP client renew...");
 
 	renew_udhcpc_wan(unit);
+}
+
+void
+notify_on_internet_state_changed(int has_internet, long elapsed)
+{
+	const char *script_inet = SCRIPT_INTERNET_STATE;
+
+	if (!has_internet && !get_ap_mode()) {
+		int fail_action = nvram_safe_get_int("di_lost_action", 0, 0, 2);
+		switch (fail_action)
+		{
+		case 1:
+			logmessage(LOGNAME, "Perform router auto-reboot on %s event", "Internet lost");
+			notify_rc("restart_reboot");
+			return;
+		case 2:
+			notify_rc("auto_wan_reconnect");
+			break;
+#if (BOARD_NUM_USB_PORTS > 0)
+		case 3:
+			if (get_modem_devnum()) {
+				nvram_set_int("modem_prio", (get_usb_modem_wan(0)) ? 0 : 1);
+				notify_rc("auto_wan_reconnect");
+			}
+			break;
+#endif
+		}
+	}
+
+	if (check_if_file_exist(script_inet))
+		doSystem("%s %d %ld", script_inet, has_internet, elapsed);
 }
 
 int
@@ -1516,22 +1581,54 @@ select_usb_modem_to_wan(void)
 		int modem_prio = nvram_get_int("modem_prio");
 		if (modem_prio < 1) {
 			modem_devnum = 0;
-		} else if (modem_prio > 1) {
+		} else if (modem_prio == 2) {
 			if (!get_apcli_wisp_ifname()) {
-				if (modem_prio == 2) {
-					int has_link = get_wan_ether_link_direct(0);
-					if (has_link < 0)
-						has_link = 0;
-					
-					if (has_link)
-						modem_devnum = 0;
-				}
+				int has_link = get_wan_ether_link_direct(0);
+				if (has_link < 0)
+					has_link = 0;
+				
+				if (has_link)
+					modem_devnum = 0;
 			} else
 				modem_devnum = 0;
 		}
 	}
 #endif
 	set_usb_modem_dev_wan(0, modem_devnum);
+}
+
+int
+get_wan_ether_link_direct(int is_ap_mode)
+{
+	int ret = 0, wan_src_phy = 0;
+	unsigned int phy_link = 0;
+
+	if (!is_ap_mode)
+		wan_src_phy = nvram_get_int("wan_src_phy");
+
+	switch (wan_src_phy)
+	{
+	case 4:
+		ret = phy_status_port_link_lan4(&phy_link);
+		break;
+	case 3:
+		ret = phy_status_port_link_lan3(&phy_link);
+		break;
+	case 2:
+		ret = phy_status_port_link_lan2(&phy_link);
+		break;
+	case 1:
+		ret = phy_status_port_link_lan1(&phy_link);
+		break;
+	default:
+		ret = phy_status_port_link_wan(&phy_link);
+		break;
+	}
+
+	if (ret != 0)
+		return -1;
+
+	return (phy_link) ? 1 : 0;
 }
 
 int
@@ -1696,10 +1793,13 @@ udhcpc_bound(char *wan_ifname, int is_renew_mode)
 	unit = get_wan_unit(wan_ifname);
 	is_man = is_ifunit_man(wan_ifname, unit);
 
-	if (is_man)
+	if (is_man) {
 		strcpy(prefix, "wanx_");
-	else
+	} else {
 		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+		snprintf(tmp, sizeof(tmp), "%ld", uptime());
+		set_wan_unit_value(unit, "dltime", tmp);
+	}
 
 	snprintf(log_prefix, sizeof(log_prefix), "%s %s Client", "DHCP", (is_man) ? "MAN" : "WAN");
 	udhcpc_state = (is_renew_mode) ? "renew" : "bound";
@@ -1951,10 +2051,13 @@ udhcpc_renew(char *wan_ifname)
 	unit = get_wan_unit(wan_ifname);
 	is_man = is_ifunit_man(wan_ifname, unit);
 
-	if (is_man)
+	if (is_man) {
 		strcpy(prefix, "wanx_");
-	else
+	} else {
 		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+		snprintf(tmp, sizeof(tmp), "%ld", uptime());
+		set_wan_unit_value(unit, "dltime", tmp);
+	}
 
 	snprintf(log_prefix, sizeof(log_prefix), "%s %s Client", "DHCP", (is_man) ? "MAN" : "WAN");
 	udhcpc_state = "renew";

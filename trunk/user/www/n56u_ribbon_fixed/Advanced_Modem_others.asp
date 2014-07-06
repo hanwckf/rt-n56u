@@ -64,8 +64,6 @@
 
 <script>
 
-<% login_state_hook(); %>
-
 var country = '<% nvram_get_x("", "modem_country"); %>';
 var isp = '<% nvram_get_x("", "modem_isp"); %>';
 var apn = '<% nvram_get_x("", "modem_apn"); %>';
@@ -90,7 +88,7 @@ function initial(){
 		id_menu = 3;
 
 	show_banner(1);
-	show_menu(5, 7, id_menu);
+	show_menu(5,6,id_menu);
 	show_footer();
 
 	gen_country_list();

@@ -167,10 +167,10 @@ static int rtl8367_ioctl(unsigned int cmd, unsigned int par, unsigned int *value
 	return retVal;
 }
 
-void fill_eth_port_status(int port_id, char linkstate[32])
+int fill_eth_port_status(int port_id, char linkstate[32])
 {
 	unsigned int cmd = RTL8367_IOCTL_STATUS_SPEED_PORT_WAN;
-	int link_value = -1;
+	int link_value = -1, has_link = 0;
 	char *link_duplex;
 
 	switch (port_id)
@@ -199,6 +199,8 @@ void fill_eth_port_status(int port_id, char linkstate[32])
 	{
 		if ((link_value >> 16) & 0x01)
 		{
+			has_link = 1;
+			
 			if ((link_value >> 8) & 0x01)
 				link_duplex = "Full Duplex";
 			else
@@ -228,6 +230,8 @@ void fill_eth_port_status(int port_id, char linkstate[32])
 	{
 		sprintf(linkstate, "I/O Error");
 	}
+
+	return has_link;
 }
 
 static int fill_eth_status(int port_id, webs_t wp)

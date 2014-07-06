@@ -52,80 +52,33 @@ static int dl_status_usb_old = 0;
 #endif
 static int dl_is_ap_mode = 0;
 
-static struct itimerval dl_itv;
-
 static void
-alarmtimer(unsigned long sec, unsigned long usec)
+dl_alarmtimer(unsigned long sec)
 {
-	dl_itv.it_value.tv_sec  = sec;
-	dl_itv.it_value.tv_usec = usec;
-	dl_itv.it_interval = dl_itv.it_value;
-	setitimer(ITIMER_REAL, &dl_itv, NULL);
-}
+	struct itimerval itv;
 
-void
-stop_detect_link(void)
-{
-	doSystem("killall %s %s", "-q", "detect_link");
-}
-
-int
-start_detect_link(void)
-{
-	return eval("detect_link");
-}
-
-void
-detect_link_reset(void)
-{
-	if (!pids("detect_link"))
-		start_detect_link();
-	else
-		kill_pidfile_s(DL_PID_FILE, SIGUSR1);
-}
-
-void
-detect_link_update_leds(void)
-{
-	kill_pidfile_s(DL_PID_FILE, SIGHUP);
-}
-
-int
-get_wan_ether_link_direct(int is_ap_mode)
-{
-	int ret = 0, wan_src_phy = 0;
-	unsigned int phy_link = 0;
-
-	if (!is_ap_mode)
-		wan_src_phy = nvram_get_int("wan_src_phy");
-
-	switch (wan_src_phy)
-	{
-	case 4:
-		ret = phy_status_port_link_lan4(&phy_link);
-		break;
-	case 3:
-		ret = phy_status_port_link_lan3(&phy_link);
-		break;
-	case 2:
-		ret = phy_status_port_link_lan2(&phy_link);
-		break;
-	case 1:
-		ret = phy_status_port_link_lan1(&phy_link);
-		break;
-	default:
-		ret = phy_status_port_link_wan(&phy_link);
-		break;
-	}
-
-	if (ret != 0)
-		return -1;
-
-	return (phy_link) ? 1 : 0;
+	itv.it_value.tv_sec  = sec;
+	itv.it_value.tv_usec = 0;
+	itv.it_interval = itv.it_value;
+	setitimer(ITIMER_REAL, &itv, NULL);
 }
 
 static void
-handle_link_wan(int is_first_call)
+dl_reset_state(void)
+{
+	dl_is_ap_mode = get_ap_mode();
+
+	dl_counter_total = 0;
+	dl_counter_wan_down = 0;
+	dl_counter_dhcpc_renew = 0;
+	dl_counter_modem_check = 0;
+
+	dl_status_wisp = 0;
+	dl_status_wisp_old = 0;
+}
+
+static void
+dl_handle_link_wan(void)
 {
 	int front_led_x;
 
@@ -171,7 +124,7 @@ handle_link_wan(int is_first_call)
 			}
 		}
 		
-		if (!is_first_call)
+		if (dl_counter_total > 1)
 			logmessage("detect_link", "WAN port link %s!", (dl_status_wan) ? "restored" : "down detected");
 	}
 
@@ -192,7 +145,7 @@ handle_link_wan(int is_first_call)
 }
 
 static void
-handle_link_lan(void)
+dl_handle_link_lan(void)
 {
 	int front_led_lan;
 
@@ -210,7 +163,7 @@ handle_link_lan(void)
 }
 
 static void
-handle_link_wisp(void)
+dl_handle_link_wisp(void)
 {
 	int front_led_wan;
 
@@ -229,7 +182,7 @@ handle_link_wisp(void)
 
 #if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
 static void
-handle_link_usb(void)
+dl_handle_link_usb(void)
 {
 	int front_led_usb = nvram_get_int("front_led_usb");
 
@@ -250,8 +203,9 @@ handle_link_usb(void)
 #endif
 
 static void
-linkstatus_poll(int is_first_call)
+dl_on_timer(void)
 {
+	static int dl_initialized = 0;
 	int is_ap_mode = dl_is_ap_mode;
 	unsigned int is_link_changed;
 
@@ -259,7 +213,7 @@ linkstatus_poll(int is_first_call)
 
 	is_link_changed = 0;
 	phy_status_port_link_changed(&is_link_changed);
-	if (is_link_changed || is_first_call) {
+	if (is_link_changed || !dl_initialized) {
 		int phy_link;
 		
 		phy_link = get_wan_ether_link_direct(is_ap_mode);
@@ -272,39 +226,26 @@ linkstatus_poll(int is_first_call)
 		
 		if (is_ap_mode)
 			dl_status_lan |= dl_status_wan;
+		
+		if (!dl_initialized)
+			dl_initialized = 1;
 	}
 
 	if (!is_ap_mode) {
-		handle_link_wan(is_first_call);
+		dl_handle_link_wan();
 		
 		if (get_wan_wisp_active(&dl_status_wisp))
-			handle_link_wisp();
+			dl_handle_link_wisp();
 	}
 
-	handle_link_lan();
+	dl_handle_link_lan();
 #if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
-	handle_link_usb();
+	dl_handle_link_usb();
 #endif
-
-	alarmtimer(DL_POLL_INTERVAL, 0);
 }
 
 static void
-linkstatus_reset(void)
-{
-	dl_is_ap_mode = get_ap_mode();
-
-	dl_counter_total = 0;
-	dl_counter_wan_down = 0;
-	dl_counter_dhcpc_renew = 0;
-	dl_counter_modem_check = 0;
-
-	dl_status_wisp = 0;
-	dl_status_wisp_old = 0;
-}
-
-static void
-linkstatus_check_leds(void)
+dl_update_leds(void)
 {
 	int dl_state, front_led_x;
 
@@ -321,10 +262,14 @@ linkstatus_check_leds(void)
 				dl_state = (dl_status_wan  && has_wan_gw4() && has_wan_ip4(1)) ? 1 : 0;
 			else
 				dl_state = (                  has_wan_gw4() && has_wan_ip4(0)) ? 1 : 0;
+		} else if (front_led_x == 3) {
+			dl_state = get_internet_state_cached();
 		}
 	} else {
 		if (front_led_x == 1)
 			dl_state = dl_status_wan;
+		else if (front_led_x == 3)
+			dl_state = get_internet_state_cached();
 	}
 	LED_CONTROL(BOARD_GPIO_LED_WAN, (dl_state) ? LED_ON : LED_OFF);
 #endif
@@ -365,25 +310,52 @@ linkstatus_check_leds(void)
 }
 
 static void
-catch_sig_linkstatus(int sig)
+catch_sig_detect_link(int sig)
 {
 	switch (sig)
 	{
 	case SIGALRM:
-		linkstatus_poll(0);
+		dl_on_timer();
 		break;
 	case SIGHUP:
-		linkstatus_check_leds();
+		dl_update_leds();
 		break;
 	case SIGUSR1:
-		linkstatus_reset();
+		dl_reset_state();
 		break;
 	case SIGTERM:
-		alarmtimer(0, 0);
 		remove(DL_PID_FILE);
+		dl_alarmtimer(0);
 		exit(0);
 		break;
 	}
+}
+
+void
+stop_detect_link(void)
+{
+	doSystem("killall %s %s", "-q", "detect_link");
+}
+
+int
+start_detect_link(void)
+{
+	return eval("/sbin/detect_link");
+}
+
+void
+notify_reset_detect_link(void)
+{
+	if (!pids("detect_link"))
+		start_detect_link();
+	else
+		kill_pidfile_s(DL_PID_FILE, SIGUSR1);
+}
+
+void
+notify_leds_detect_link(void)
+{
+	kill_pidfile_s(DL_PID_FILE, SIGHUP);
 }
 
 int
@@ -393,15 +365,15 @@ detect_link_main(int argc, char *argv[])
 	struct sigaction sa;
 
 	memset(&sa, 0, sizeof(sa));
-	sa.sa_handler = catch_sig_linkstatus;
+	sa.sa_handler = catch_sig_detect_link;
 	sigemptyset(&sa.sa_mask);
-	sigaddset(&sa.sa_mask, SIGALRM);
 	sigaddset(&sa.sa_mask, SIGHUP);
 	sigaddset(&sa.sa_mask, SIGUSR1);
+	sigaddset(&sa.sa_mask, SIGALRM);
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
-	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGALRM, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = SIG_IGN;
@@ -415,17 +387,15 @@ detect_link_main(int argc, char *argv[])
 	}
 
 	/* write pid */
-	if ((fp=fopen(DL_PID_FILE, "w"))!=NULL)
-	{
+	if ((fp=fopen(DL_PID_FILE, "w"))!=NULL) {
 		fprintf(fp, "%d", getpid());
 		fclose(fp);
 	}
 
-	linkstatus_reset();
-	linkstatus_poll(1);
+	dl_reset_state();
+	dl_alarmtimer(DL_POLL_INTERVAL);
 
-	while (1)
-	{
+	while (1) {
 		pause();
 	}
 

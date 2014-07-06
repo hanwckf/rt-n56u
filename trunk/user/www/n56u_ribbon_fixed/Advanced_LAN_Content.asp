@@ -41,8 +41,6 @@
 
 <script>
 
-<% login_state_hook(); %>
-
 var old_lan_addr = "<% nvram_get_x("","lan_ipaddr"); %>";
 var old_lan_mask = "<% nvram_get_x("","lan_netmask"); %>";
 

@@ -87,8 +87,6 @@ dhcp_enable_x = '<% nvram_get_x("", "dhcp_enable_x"); %>';
 
 var ACLList = [<% get_nvram_list("LANHostConfig", "VPNSACLList", "vpns_pass_x"); %>];
 
-<% login_state_hook(); %>
-
 <% openvpn_srv_cert_hook(); %>
 
 var vpn_clients = [];
@@ -581,7 +579,7 @@ function createBodyTable()
 
 <body onload="initial();" onunload="unload_body();">
 <script>
-    if(sw_mode == 3){
+    if(get_ap_mode()){
         alert("<#page_not_support_mode_hint#>");
         location.href = "/as.asp";
     }

@@ -1,13 +1,10 @@
 PASS_LANG=Select Language:
-[VPN Passthrough]
 VPN_PPTP_Passthrough=PPTP Passthrough?
 VPN_L2TP_Passthrough=L2TP Passthrough?
 VPN_IPSec_Passthrough=IPSec Passthrough?
 vpn_passthrough_itemname=VPN Passthrough
 vpn_passthrough_desc=Enable VPN Passthrough to allow a Virtual Private Network (VPN) connection to passthrough the router to the network clients.
-[AiDisk account alert]
 enable_noaccount_alert=If you try to share the files in your USB Disk without creating a shared account via AiDisk, problems will occur to the Samba Server.
-[opmode strings]
 wireless_router=Wireless Router
 OP_switch_button_hint1=The operation mode switch is located at the bottom panel of the ZVMODELVZ.
 OP_switch_button_hint2=Click here to view
@@ -20,7 +17,6 @@ OP_AP_desc2=In this Mode, NAT, Firewall, UPnP, DHCP Server are unavailable. The 
 OP_Modem=Modem
 OP_WirelessClient=Wireless Client
 OP_WirelessSignal=Existing Wireless Signal
-[untranslate]
 IP6_proto=IPv6 Protocol
 IP6_desc=Configure the IPv6 Internet Settings
 IP6_hint=IPv6 protocol not supported on current firmware build!
@@ -96,7 +92,9 @@ USB_Printer=USB Printer
 USB_Modem_remove_confirm=Do you want to remove this USB Modem and Switch to wired WAN?
 USB_Modem_unused=Modem is not used for WAN
 USB_Hub_Empty=No connected compatible devices
-PPP_Uptime=PPP Session Uptime:
+WAN_Uptime=Session uptime:
+WAN_Bytes=Traffic during the session:
+WAN_Lease=DHCP lease expires after:
 WOL_MAC=Target Host MAC Address:
 COM_Port_Node=Select Interface:
 COM_User_AT=Custom AT-command:
@@ -291,7 +289,25 @@ StorageRPortTRMD=RPC Control Port:
 StorageAria=Download manager Aria2
 StorageAria_itemdesc=Please create directory \"aria\" on the target partition before first start Aria2.
 StorageEnableAria=Enable Aria2?
-Tweaks_desc=Miscellaneous functions tweaks.
+Console_warn=Warning! Console emulator may be used only for commands which return result immediately. Commands such as 'top', 'ping', 'traceroute', etc. will block the WebUI.
+Scripts_desc=Flexible system configuration via Shell scripts that are called when certain events occur.
+InetCheck_desc=Internet detector monitors access to the Internet and allows to perform the required actions when the state of Internet access changes.
+InetCheckMode=Internet detector poll mode
+InetCheckModeItem0=While WebUI is opened
+InetCheckModeItem1=Сontinuous polling
+InetCheckHosts=List of Internet hosts for check TCP connection
+InetCheckHostIP4=Remote server address and port
+InetCheckPoll=Internet hosts polling settings
+InetCheckPeriod=Poll interval after connection Success/Failed (s):
+InetCheckTimeout=TCP connection timeout (s):
+InetCheckEvents=Events when the state of Internet access is changed
+InetCheckLostDelay=Delay before raise "Internet lost" event (s):
+InetCheckLostAction=Perform action on "Internet lost" event:
+InetCheckLostItem0=No action
+InetCheckLostItem1=Router reboot
+InetCheckLostItem2=WAN reconnect
+InetCheckLostItem3=Switch Ethernet WAN <=> USB Modem
+Tweaks_desc=Customized button actions and LED events.
 TweaksWPSAction=WPS Button Action
 TweaksWPSEventShort=WPS Short Press (1 sec):
 TweaksWPSEventLong=WPS Long Press (3 sec):
@@ -325,17 +341,18 @@ TweaksLEDItem07=Wireless radio ON, activity
 TweaksLEDItem08=buttons events
 TweaksLEDEth0=Ethernet ports Green LED:
 TweaksLEDEth1=Ethernet ports Yellow LED:
-TweaksMisc=Miscellaneous
 TweaksWdg=Hardware Watchdog Timer:
 TweaksWdg_item=(force reboot after crash)
 TweaksWdg_desc=Hardware watchdog timer reboot system during 15 seconds on CPU hung or after system crashed.
 CustomConf=Custom Configuration File
 UserScripts=Custom User Scripts
+RunPreStart=Run before Router initialized:
 RunPostStart=Run after Router started:
 RunPostWAN=Run after WAN up/down Events:
 RunPostFWL=Run after Firewall Rules restarted:
-RunPostVPNS=Run script after VPN Client connected/disconnected:
-RunPostVPNC=Run script after connected/disconnected to VPN Server:
+RunPostVPNS=Run the script after VPN Client connected/disconnected:
+RunPostVPNC=Run the script after connected/disconnected to VPN Server:
+RunInetState=Run the script when the state of Internet access is changed:
 PrinterPortU2E=Enable USB-over-Ethernet Port?
 PrinterPortLPR=Enable TCP/IP LPR Port?
 PrinterPortRAW=Enable TCP/IP RAW Port?
@@ -365,14 +382,6 @@ RouterConfig_GWMulticast_unknownUni_itemname=Unknown Unicast Storm Control (Mbps
 RouterConfig_GWMulticast_unknownMul_itemname=Unknown Multicast Storm Control (Mbps):
 RouterConfig_GWMulticast_Multicast_itemname=Multicast Storm Control (Mbps):
 RouterConfig_GWMulticast_Broadcast_itemname=Broadcast Storm Control (Mbps):
-[keyword_filter]
-FirewallConfig_KeywordFilterEnable_sectiondesc=Keyword Filter allows you to block the clients access to webpages containing the specified keywords.
-FirewallConfig_KeywordFilterEnable_itemname=Enable Keyword Filter
-FirewallConfig_KeywordActiveDate_itemname=When:
-FirewallConfig_KeywordActiveTime_itemname=Time:
-FirewallConfig_KeywordList_groupitemname=Keyword Filter List:
-FirewallConfig_KeywordList_groupitemdesc=Keyword Limit: 20
-[New translated]
 JS_field_wanip_rule3=Please input the value between 1 to 2592000 (sec).
 PrinterStatus_x_Monopoly_itemdesc=If your printer does not allow multi-user sharing support, click Monopoly mode on your router's user interface to manually set your printer to allow printer sharing. Do not do this when your printer is busy.
 Switch_band=Switch Frequency
@@ -385,7 +394,6 @@ WLANConfig11b_TxPower_itemname=TX Power Adjustment (%):
 WLANConfig11b_TxPower_itemdesc=Adjust antenna power to enhance the quality of trasmittion.
 WLANConfig11b_Wireless_Speed_itemname_3=Uses 40 MHz coexistent bandwidth to maximize the wireless throughput. If you experience issues with wireless stability, please choose the default mode.
 hwnat_desc=Enable Hardware Offload to offer Internet speed with maximum throughput over 900 Mbps when appropriately supported by you Internet Service Provider. But please note that enabling Hardware Offload may conflict with QoS/Shaper related functions.
-[QIS]
 QIS_autoMAC_desc1=Starting to clone the computer's MAC Address into the router
 QIS_autoMAC_desc2=Please wait...
 QIS_autoMAC_desc3=Verify the WAN IP Address
@@ -419,7 +427,6 @@ QIS_resetModem_desc2=Reset the modem
 QIS_resetModem_desc3=Unplug and replug the power cord after 2 minutes.
 QIS_resetModem2_desc1=Plug the power cord back into your modem and wait 1 minute. Click Detect Again. ASUS Router will get the new IP from the modem.
 QIS_wireless_desc1=Enter a network key between 8 and 63 characters (letters, numbers or a combination) or 64 hex digits. If you do not want to set the network security, leave the network key field blank. <span style='font-weight:bolder;'>The default wireless security is WPA-Auto-Personal - AES + TKIP.</span>
-[Traffic Monitor]
 Date=Date
 Scale=Scale
 Last30days=Last 30 Days
@@ -436,7 +443,6 @@ Maximum=Maximum
 Total=Total
 Downlink=Downlink
 Uplink=Uplink
-[ZVMODELVZ new item]
 LAN_IP_changed_suggedtion1=The LAN IP of ZVMODELVZ is
 LAN_IP_changed_suggedtion2=If you can't back setting page later, please renew IP configuration of your computer.
 WLANConfig11b_x_WPSband_itemname=Current Band
@@ -445,7 +451,6 @@ QKSet_Internet_Setup_fail_reason7=If you still cannot connect to the Internet, c
 QKSet_Wireless_ssid_warning=This setting will apply to the 2.4GHz and 5GHz WLAN setting.
 LANConfig_ChangedLANIP=The IP Address for your router has been changed. Please use the Device Discovery utility to search for your router's new IP Address.
 BasicConfig_HWNAT_alert=The Hardware NAT function is in conflict with your router's current settings. Disable the Hardware NAT function from Advanced Settings -> WAN -> Internet Connection in the navigation menu.
-[RT-N1X new item]
 BasicConfig_HWNAT_itemname=Enable HW NAT?
 LANHostConfig_x_Password_itemdesc=Password cannot be greater than 32 characters.
 CableStatus=Cable Status
@@ -473,7 +478,6 @@ ShareNode_Seeding_itemname=Seeding
 ShareNode_Seeding_itemdesc=Allows you to enable or disable the seeding function. ZVMODELVZ remains open until downloading process is completed.
 ShareNode_MaxUpload_itemname=Maximum Upload Rate
 ShareNode_MaxUpload_itemdesc=Enter a value between 0 to 999. The default value is 0 (zero), which denotes that there is no upload limit.
-[New item]
 HSDPAConfig_hsdpa_enable_hint1=After enabling USB Modem, your original WAN settings will be disabled.
 HSDPAConfig_hsdpa_enable_hint2=If you want to change the connection type, please go to <a href="/Advanced_Modem_others.asp">USB Modem</a> to disable USB Adapter.
 HSDPAConfig_USBAdapter_itemname=USB Adapter
@@ -520,7 +524,6 @@ AP_fail_get_IPaddr=Failed to get the IP information.
 AP_Remote_IP=AP IP Address
 AP_survey=AP Survey
 statusTitle_AP=Access Point Status
-[USB Application - HSDPA]
 HSDPAConfig_connection=Connection Setting
 HSDPAConfig_pin_code_itemname=PIN Code
 HSDPAConfig_pin_code_itemdesc=Please input the PIN Code of your SIM Card. It must be the 4 digits.
@@ -548,12 +551,10 @@ HSDPAConfig_Subnetmask_itemname=Subnet Mask
 HSDPAConfig_DefGateway_itemname=Default Gateway
 HSDPAConfig_DNSServers_itemname=DNS Server
 AiDisk_Wizard_failedreson1=Aidisk Wizard worked exceptionally. Please try again later.
-[state.js-Dr.Surf.]
 QKSet_ISP_desc3=Automatic IP connection failed. You can configure here manually.
 QKSet_ISP_desc2=Static IP connection failed.
 QIS_internet_vpn_confirm=If your connection type is PPTP/L2TP, Please click [OK] to connecting the VPN Server.\nIf not, please click [Cancel] and check the information then Apply the settings.
 Full_Clients=Clients
-[QIS_internet_vpn.htm]
 QIS_if_vpn_existed=Connecting the VPN Server?
 QIS_internet_vpn_title=VPN Item
 QIS_internet_vpn_type=VPN Type
@@ -579,10 +580,8 @@ Device_service_Wireless=Wireless:
 ddnsname_computername=After applying the setting, the Device Name is also changed at the same time. Do you continue?
 JS_storageright=It's the name of the ZVMODELVZ, and standard input characters include letters (A-Z,a-z), digits (0-9), spaces, underscores (_) and hyphens (-). The first and last character should not contain any spaces. Using a non-standard name will prevent other users from finding your computer on the network.
 not_support_script=Your browser does not support JavaScript. Choose a browser that supports JavaScript or enable it to use the multi-functional router, ZVMODELVZ.
-[Advanced_AiDisk_others.asp]
 Help_of_Workgroup=It is the group name of the ZVMODELVZ in the Network Neighborhood, and standard input characters include letters (A-Z,a-z), digits (0-9), spaces, underscores (_), and hyphens (-). There should not be any space in the first and last character. Using a non-standard  name results in other users cannot find your computer in LAN.
 Help_of_Run_prog=You can save the script file in the first partition of your USB Disk and  enter its file name here. ZVMODELVZ executes this script when the system mounts the USB Disk.
-[AiDisk Wizard]
 File_Pop_content_alert_desc1=Username cannot be blank.
 File_Pop_content_alert_desc2=Username cannot be less than two characters.
 File_Pop_content_alert_desc3=Username cannot be greater than 20 characters.
@@ -607,7 +606,6 @@ File_content_alert_desc11=MYSHARE1 is the system folder and cannot be edited.
 File_content_alert_desc12=There is no volume in this device.
 File_content_alert_desc13=There is no folder in this volume.
 File_content_alert_desc14=You cannot delete this share or modify it's name. If you want to do so, please translate the file system of this hard drive to ReiserFS file system.
-[AiDisk Advanced]
 enableCIFS=Enable SMB Server?
 enableFTP=Enable FTP Server?
 Noaccount=No Account
@@ -661,6 +659,7 @@ menu5_6=Administration
 menu5_7=System Log
 menu5_8=System Info
 menu5_9=Wireless & Wired Info
+menu5_10=Customization
 menu5_1_1=General
 menu5_1_2=Guest AP
 menu5_1_3=Bridge
@@ -674,6 +673,7 @@ menu5_2_4=IPTV
 menu5_2_5=Ethernet Switch
 menu5_3_1=Internet Connection
 menu5_3_2=QoS
+menu5_3_3=IPv6 Protocol
 menu5_3_4=Port Forwarding
 menu5_3_5=DMZ
 menu5_3_6=DDNS
@@ -693,7 +693,6 @@ menu5_6_2=System
 menu5_6_3=Firmware Upgrade
 menu5_6_4=Settings
 menu5_6_5=Console
-menu5_6_6=Tweaks
 menu5_7_1=System Status
 menu5_7_2=General Log
 menu5_7_3=DHCP Leases
@@ -704,6 +703,9 @@ menu5_7_7=VPN Clients
 menu5_7_8=Connections
 menu5_8_1=CPU Usage
 menu5_8_2=Memory Usage
+menu5_10_1=Buttons/LED
+menu5_10_2=Scripts
+menu5_10_3=Internet Detector
 menu5_1_desc=Configure your Wireless Connection, Security and other Advanced Parameters.
 menu5_2_desc=Configure LAN, DHCP and Route Settings.
 menu5_3_desc=Configure the Internet Connection, QoS and Server setting.
@@ -711,9 +713,9 @@ menu5_4_desc=Configure the USB Device and share your files in LAN or WAN.
 menu5_5_desc=Configure the Firewall and Filter mechanisms to protect your network.
 menu5_6_desc=Configure the system and upgrade the firmware of ZVMODELVZ.
 menu5_7_desc=Monitor the status and various system logs.
-[Network Map]
 statusTitle_System=ZVMODELVZ
 statusTitle_Internet=Internet Status
+statusTitle_Intranet=Intranet Status
 statusTitle_Client=Client Status
 statusTitle_USB_Disk=USB Storage Status
 statusTitle_Printer=USB Printer Status
@@ -805,7 +807,6 @@ Day=days
 Hour=hours
 Minute=minutes
 Second=seconds
-[AiDisk Wizard]
 AiDiskWelcome_title=Welcome to AiDisk Wizard
 AiDiskWelcome_desp=AiDisk enables you to:
 AiDiskWelcome_desp1=Share files in the USB Disk through the Internet.
@@ -850,7 +851,6 @@ yoursharesetting=Your share folder setting:
 noDDNS=You have not started the DDNS service yet.
 neednotDDNS=Skip ASUS DDNS setting.
 asusddns_inputhint=Key in the name
-[WPS]
 WPS_PBCbutton_hint=Click me and WPS button of client. Having a easy wireless connection within 2 minutes.
 WPS_PBCbutton_hint_notEnable=Enable WPS first.
 WPS_PBCbutton_hint_waiting=WPS is in process, waiting for client to connect.
@@ -947,8 +947,6 @@ ALERT_OF_ERROR_Action12=Failed to format the disk.
 ALERT_OF_ERROR_System1=System error: Cannot allocate the memory!
 ALERT_OF_ERROR_System2=System error: Cannot read out the disk's data!
 ALERT_OF_ERROR_System3=System error: The disk is busy!
-[QIS wizard]
-[QIS_detect.js]
 Web_Title=ZVMODELVZ
 QKSet_detect_sanglass=auto detecting
 QKSet_detect_desc1=Detecting your connection type
@@ -960,11 +958,9 @@ QKSet_detect_freshbtn=Detect again
 QKSet_detect_waitdesc=Start to detect your connection type...
 QKSet_detect_timedesc1=Detecting at
 QKSet_detect_timedesc2=times.
-[QIS_finish.js]
 QKSet_all_title=Quick Start
 QKSet_finishpre_webtitle=You have finished all settings. Now you can click the [Finish] and then we will redirect to your default Home page. Or you can click [Previous] to back the setting page.
 QKSet_finishpre_rebootnow=Finish
-[QIS_internet_account.js]
 QKSet_account_webtitle=ISP Account Setting
 QKSet_ISP_head=ISP Information Setting
 QKSet_ISP_desc=Please refer to your ISP setting, and input the related information.
@@ -973,7 +969,6 @@ BOP_account_user_item=User Name:
 BOP_account_pass_item=Password:
 QKSet_account_passwd=The Password for this user account.
 QKSet_account_nameblank=Account name cannot be blank.
-[QIS_internet_ip.js]
 Layer3Forwarding_x_DHCPClient_itemname=Get the WAN IP Address Automatically?
 Layer3Forwarding_x_UseStaticIP_itemname=Use the following IP Address:
 IPConnection_ExternalIPAddress_itemdesc=This is the IP Address of ZVMODELVZ as seen on the remote network. When installing [0.0.0.0] ZVMODELVZ will receive IP Address automatically from DHCP Server.
@@ -988,13 +983,11 @@ IPConnection_x_DNSServerEnable_itemdesc=This field allows you to get the DNS IP 
 IPConnection_x_DNSServer1_itemdesc=This field indicates the IP Address of DNS that ZVMODELVZ contact to.
 IPConnection_x_DNSServer1_itemname=DNS Server
 IPConnection_warning_WANIPEQUALGatewayIP=You have set WAN IP as ZVMODELVZ Gateway and ZVMODELVZ maybe could not connect to Internet. Please set Gateway with correct value.
-[QIS_internet_isp.js]
 BOP_isp_host_desc=This field allows you to provide a host name for ZVMODELVZ. It is usually requested by your ISP.
 BOP_isp_host_item=Host Name:
 PPPConnection_x_MacAddressForISP_itemdesc=This field allows you to provide a unique MAC Address for ZVMODELVZ to connect Internet. It is usually requested by your ISP.
 BOP_isp_mac_item=MAC Address:
 BOP_isp_MACclone=MAC Clone
-[QIS_internet_success.htm]
 QKSet_Internet_Setup_fail=Internet connection failed.
 QKSet_Internet_Setup_fail_reason1=DHCP connection failed.
 QKSet_Internet_Setup_fail_reason2=Invalid account or password, click the link to modify it.
@@ -1012,9 +1005,7 @@ QKSet_finish_moveto5=Simply wireless Security Setting
 QKSet_finish_moveto6=Look up and configure the encryption setup.
 QKSet_finish_moveto7=Advanced Settings Page
 QKSet_finish_moveto8=Manual configuration and fine-tuning.
-[QIS_internet_success.js]
 QKSet_finish_desc=Internet connection setting is finished.
-[QIS_internet_type.js]
 QKSet_type_head=Internet WAN connection type
 QKSet_type_desc=Please Choose the WAN connection type provided by your ISP.
 BOP_ctype_title1=Automatic IP
@@ -1035,7 +1026,6 @@ WLANConfig11b_WEPDefaultKey_itemname=Key Index:
 JS_passzero=Pre-shared key should be 8 to 63 characters. If you leave this field blank, system will assign [00000000] as your passphrase.
 JS_PSK64Hex=Pre-shared key should be 8 to 63 characters or 64 hex digits!
 JS_wepkey=Please enter the correct WEP key.
-[objcommon.js]
 CTL_nonsupported=Nonsupported
 CTL_localdevice=Local Device
 CTL_unknown=Unknown Device
@@ -1057,12 +1047,10 @@ CTL_Enabled=Enabled
 CTL_Disabled=Disabled
 CTL_Connect=Connected
 CTL_Disconnect=Disconnected
-[popup.js]
 Main_alert_proceeding_desc1=Proceeding...
 Main_alert_proceeding_desc4=Please wait...
 Main_alert_proceeding_desc3=Complete!
 Main_content_Login_Item7=Rebooting the router takes about 30 seconds. Are you sure you want to reboot the router now?
-[QIS-general.js]
 JS_fieldblank=Fields cannot be blank!
 JS_validip=is not a valid IP Address!
 JS_validmask=is not a valid IP Mask!
@@ -1283,7 +1271,7 @@ LANHostConfig_x_LDNSServer1_itemdesc=This field indicates the IP Address of DNS 
 LANHostConfig_x_WINSServer_itemname=WINS Server:
 LANHostConfig_x_WINSServer_itemdesc=The Windows Internet Naming Service manages interaction of each PC with the Internet. If you use a WINS Server, enter IP Address of server here.
 LANHostConfig_x_ServerLogEnable_itemname=Remote Log Server:
-LANHostConfig_x_ServerLogEnable_itemdesc=This field allows to assign a remote server to record log messages of ZVMODELVZ. If you leave it blank, the system will record up to 1024 messages on ZVMODELVZ.
+LANHostConfig_x_ServerLogEnable_itemdesc=This field allows to assign a remote server (IPv4 address:port) to record log messages of ZVMODELVZ.
 LANHostConfig_x_TimeZone_itemname=Time Zone:
 LANHostConfig_x_TimeZone_itemdesc=The standard time in your area or locality.
 LANHostConfig_x_TimeZone_itemhint=Remind: The system time zone is different from your locale setting.
@@ -1675,7 +1663,6 @@ LANHostConfig_IPRouters_itemdesc=The LAN IP Address of ZVMODELVZ. The default va
 HSDPAConfig_hsdpa_mode_itemdesc=Select the type of USB Modem for your requirements. To disconnect USB Modem, please go to <a href='/index.asp' target=\'_blank\'>Network Map</a> and click [Remove].
 Not_authpage_login_again=If you want to login again, please close this window first.
 GO_HSDPA_SETTING=Go to USB Modem Setting
-[new strings - translated]
 GO_2G=Go to 2.4GHz Setting
 GO_5G=Go to 5GHz Setting
 ChooseFile=Choose file

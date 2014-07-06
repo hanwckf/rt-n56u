@@ -709,7 +709,7 @@ include_vts_nat(FILE *fp)
 }
 
 static int
-is_need_tcp_mss(void)
+is_need_tcp_mss_wan(void)
 {
 	int unit = 0;
 
@@ -729,6 +729,40 @@ is_need_tcp_mss(void)
 	}
 
 	return 0;
+}
+
+static char *
+get_tcp_mss_ifname_vpns(int vpns_type)
+{
+#if defined(APP_OPENVPN)
+	if (vpns_type == 2) {
+		if (nvram_get_int("vpns_ov_mode") == 1)
+			return IFNAME_SERVER_TUN;
+	} else
+#endif
+	{
+		return "ppp+";
+	}
+
+	return NULL;
+}
+
+static char *
+get_tcp_mss_ifname_vpnc(int vpnc_type)
+{
+#if defined(APP_OPENVPN)
+	if (vpnc_type == 2) {
+		if (nvram_get_int("vpnc_ov_mode") == 1)
+			return IFNAME_CLIENT_TUN;
+		else if (nvram_get_int("vpnc_ov_cnat") == 1)
+			return IFNAME_CLIENT_TAP;
+	} else
+#endif
+	{
+		return "ppp+";
+	}
+
+	return NULL;
 }
 
 static int
@@ -1019,9 +1053,26 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip, char *l
 	}
 
 	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets */
-	if (is_need_tcp_mss()) {
-		fprintf(fp, "-A %s ! -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype, lan_if);
+	if (is_need_tcp_mss_wan()) {
+		fprintf(fp, "-A %s%s -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype, " !", lan_if);
 		forward_idx++;
+	} else {
+		char *vpns_if = NULL, *vpnc_if = NULL;
+		
+		if (i_vpns_enable)
+			vpns_if = get_tcp_mss_ifname_vpns(i_vpns_type);
+		if (i_vpnc_enable)
+			vpnc_if = get_tcp_mss_ifname_vpnc(i_vpnc_type);
+		
+		if (vpns_if) {
+			fprintf(fp, "-A %s%s -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype, "", vpns_if);
+			forward_idx++;
+		}
+		
+		if (vpnc_if && (!vpns_if || strcmp(vpnc_if, vpns_if) != 0)) {
+			fprintf(fp, "-A %s%s -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype, "", vpnc_if);
+			forward_idx++;
+		}
 	}
 
 	/* Accept related connections, skip rest of checks */
@@ -1504,8 +1555,8 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if, char *logaccept, cha
 	}
 
 	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets  */
-	if ((ipv6_type != IPV6_NATIVE_STATIC && ipv6_type != IPV6_NATIVE_DHCP6) || is_need_tcp_mss()) {
-		fprintf(fp, "-A %s ! -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype, lan_if);
+	if ((ipv6_type != IPV6_NATIVE_STATIC && ipv6_type != IPV6_NATIVE_DHCP6) || is_need_tcp_mss_wan()) {
+		fprintf(fp, "-A %s%s -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype, " !", lan_if);
 		forward_idx++;
 	}
 

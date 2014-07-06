@@ -60,7 +60,7 @@ function validForm(){
 		return false;
 
 	if (document.form.di_poll_mode.value == "1"){
-		if(!validate_range(document.form.di_fail_delay, 0, 600))
+		if(!validate_range(document.form.di_lost_delay, 0, 600))
 			return false;
 	}
 

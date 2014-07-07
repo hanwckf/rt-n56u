@@ -593,27 +593,28 @@ reload_modem_modules(int modem_type, int reload)
 {
 	unlink(QMI_CLIENT_ID);
 	int ret = 0;
-	ret |= module_smart_unload("cdc_acm", 1);
+	ret |= module_smart_unload("option", 1);
 	ret |= module_smart_unload("sierra", 1);
 	ret |= module_smart_unload("qcserial", 1);
-	ret |= module_smart_unload("option", 1);
+	ret |= module_smart_unload("cdc_acm", 1);
 	if (modem_type == 3) {
 		if (ret)
 			sleep(1);
+		module_smart_load("cdc_ether", NULL);
 		module_smart_load("rndis_host", NULL);
 		module_smart_load("qmi_wwan", NULL);
-		module_smart_load("cdc_mbim", NULL);
-		module_smart_load("cdc_ncm", NULL);
+		module_smart_load("cdc_ncm", "prefer_mbim=0");
 		module_smart_load("huawei_cdc_ncm", NULL);
+		module_smart_load("cdc_mbim", NULL);
 		module_smart_load("sierra_net", NULL);
 	} else {
-		ret |= module_smart_unload("rndis_host", 1);
-		ret |= module_smart_unload("qmi_wwan", 1);
+		ret |= module_smart_unload("sierra_net", 1);
 		ret |= module_smart_unload("cdc_mbim", 1);
 		ret |= module_smart_unload("huawei_cdc_ncm", 1);
 		ret |= module_smart_unload("cdc_ncm", 1);
+		ret |= module_smart_unload("qmi_wwan", 1);
+		ret |= module_smart_unload("rndis_host", 1);
 		ret |= module_smart_unload("cdc_ether", 1);
-		ret |= module_smart_unload("sierra_net", 1);
 		if (ret)
 			sleep(1);
 		module_smart_load("cdc_acm", NULL);

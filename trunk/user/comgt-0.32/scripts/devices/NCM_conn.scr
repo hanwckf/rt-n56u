@@ -17,7 +17,7 @@ opengt
 :ready
  let $x=$rpipe("nvram get modem_apn")
  send "AT\^NDISDUP=1,1,\""+$x+"\"^m"
- waitfor 10 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
+ waitfor 5 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
  if % = -1 goto timeerror
  if % = 0 goto dialok
  goto apnerror

@@ -18,6 +18,7 @@ var modem_ports_array = parent.modem_ports();
 var modem_devnum_array = parent.modem_devnum();
 var modem_types_array = parent.modem_types();
 var modem_models_array = parent.modem_models();
+var modem_vendors_array = parent.modem_manufacts();
 
 var modem_order = parent.get_clicked_device_order();
 
@@ -26,6 +27,7 @@ var modem_active = '<% nvram_get_x("", "wan0_modem_dev"); %>';
 function initial(){
 	if(modem_models_array.length > 0 ) {
 		showtext($("modem_name"), modem_models_array[modem_order]);
+		showtext($("modem_vend"), modem_vendors_array[modem_order]);
 		showtext($("modem_type"), modem_types_array[modem_order]);
 	}
 	
@@ -60,6 +62,10 @@ function remove_modem(){
   <tr>
     <th width="50%" style="border-top: 0 none;"><#Modelname#>:</th>
     <td style="border-top: 0 none;"><span id="modem_name"></span></td>
+  </tr>
+  <tr>
+    <th><#Manufacturer#>:</th>
+    <td><span id="modem_vend"></span></td>
   </tr>
   <tr>
     <th width="50%"><#ModemType#></th>

@@ -31,8 +31,8 @@ configure:
 	./Configure \
 		linux-mipsel \
 		shared \
-		--prefix=$(STAGEDIR) \
-		--install_prefix= \
+		--prefix=/ \
+		--install_prefix=$(STAGEDIR) \
 		--openssldir=/etc/ssl \
 		$(COPTS) \
 		$(LOPTS) \
@@ -45,7 +45,7 @@ clean:
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
+	$(MAKE) -C $(SRC_NAME) install DESTDIR="$(STAGEDIR)"
 	rm -f $(DESTDIR)/lib/libssl.a
 	rm -f $(DESTDIR)/lib/libcrypto.a
 

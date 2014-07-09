@@ -22,7 +22,8 @@ var mountedNum = parent.getDiskMountedNum(diskOrder);
 
 <% get_AiDisk_status(); %>
 
-var FTP_status = get_ftp_status();  // FTP
+var SMB_status = get_cifs_status();
+var FTP_status = get_ftp_status();
 var FTP_mode = get_share_management_status("ftp");
 var accounts = [<% get_all_accounts("ftp"); %>];
 
@@ -30,81 +31,93 @@ var ddns_enable = '<% nvram_get_x("", "ddns_enable_x"); %>';
 var ddns_server = '<% nvram_get_x("", "ddns_server_x"); %>';
 var ddns_hostname = '<% nvram_get_x("", "ddns_hostname_x"); %>';
 
-var samba_enable = '<% nvram_get_x("", "enable_samba"); %>';
-
 function initial(){
 	flash_button();
 
+	if (!found_app_smbd())
+		SMB_status = 0;
+	if (!found_app_ftpd())
+		FTP_status = 0;
+
 	showtext($("disk_model_name"), parent.getDiskModelName(diskOrder));
 	showtext($("disk_total_size"), parent.getDiskTotalSize(diskOrder));
-	
+
 	if(mountedNum > 0){
 		showtext($("disk_avail_size"), all_accessable_size);
-		
 		$("show_remove_button").style.display = "";
-		
-		showdisklink();
-	}
-	else{
+		show_disk_link();
+	}else{
 		$("mounted_item1").style.display = "none";
 		$("mounted_item2").style.display = "none";
 		
 		$("show_removed_string").style.display = "";
 		$("unmounted_refresh").style.display = "";
 	}
-	if(sw_mode == "3")
+
+	if(sw_mode == '3')
 		$("aidisk_hyperlink").style.display = "none";
 
 	var TotalSize = parent.getDiskTotalSize(diskOrder);
 	var alertPercentbar = 'progress-info';
 	percentbar = simpleNum2((all_accessable_size)/TotalSize*100);
 	percentbar = Math.round(100-percentbar);
-	if(percentbar >= 66 && percentbar < 85){
+	if(percentbar >= 66 && percentbar < 85)
 		alertPercentbar = 'progress-warning';
-	}
-	else if(percentbar >= 85) {
+	else if(percentbar >= 85)
 		alertPercentbar = 'progress-danger';
-	}
 
 	$j('#usb_availablespace').html('<div style="margin-bottom: 2px; width:250px; float: left;" class="progress ' + alertPercentbar + '"><div class="bar" style="width:'+percentbar+'%">'+(percentbar > 10 ? (percentbar + '%') : '')+'</div></div>');
 }
 
-function showdisklink(){
-	if(sw_mode != "3" && FTP_status == 1 && ddns_enable == 1 && ddns_server.length > 0 && ddns_hostname.length > 0){
-		if(FTP_mode == 1 || FTP_mode == 3){
-			$("ddnslink1").style.display = "";
-			$("desc_2").style.display = "";
-			$("ddnslink1_LAN").style.display = "";
+function show_disk_link(){
+	var labels_show = 0;
+
+	if(sw_mode == '3'){
+		if(FTP_status != 0){
+			$("ddnslink3").style.display = "";
+			labels_show = 1;
 		}
-		else{
-			$("ddnslink2").style.display = "";
-			$("desc_2").style.display = "";
-			$("ddnslink2_LAN").style.display = "";
-			
-			$("selected_account_link").href = 'ftp://'+accounts[1]+'@<% nvram_get_x("", "ddns_hostname_x"); %>';
-			showtext($("selected_account_str"), 'ftp://'+accounts[1]+'@<% nvram_get_x("", "ddns_hostname_x"); %>');
-			$("selected_account_link_LAN").href = 'ftp://'+accounts[1]+'@<% nvram_get_x("", "lan_ipaddr_t"); %>';
-			showtext($("selected_account_str_LAN"), 'ftp://'+accounts[1]+'@<% nvram_get_x("", "lan_ipaddr_t"); %>');
-		}
-		if(found_app_smbd() && samba_enable == '1'){
-			$("desc_3").style.display = "";
+	}else{
+		if(FTP_status != 0){
+			if(ddns_enable == '1' && ddns_server.length > 0 && ddns_hostname.length > 0){
+				if(FTP_mode == 1 || FTP_mode == 3){
+					$("ddnslink1").style.display = "";
+					$("ddnslink1_LAN").style.display = "";
+				}else{
+					$("ddnslink2").style.display = "";
+					$("ddnslink2_LAN").style.display = "";
+					
+					$("selected_account_link").href = 'ftp://'+accounts[1]+'@<% nvram_get_x("", "ddns_hostname_x"); %>';
+					showtext($("selected_account_str"), 'ftp://'+accounts[1]+'@<% nvram_get_x("", "ddns_hostname_x"); %>');
+					$("selected_account_link_LAN").href = 'ftp://'+accounts[1]+'@<% nvram_get_x("", "lan_ipaddr_t"); %>';
+					showtext($("selected_account_str_LAN"), 'ftp://'+accounts[1]+'@<% nvram_get_x("", "lan_ipaddr_t"); %>');
+				}
+				$("desc_2").style.display = "";
+			}else{
+				$("ddnslink3").style.display = "";
+				if(ddns_enable != '1'){
+					showtext($("noWAN_link"), "<br/><#linktoFTP_no_2#>");
+					$("noWAN_link").style.display = "";
+				}else if(ddns_hostname.length < 1){
+					showtext($("noWAN_link"), "<br/><#linktoFTP_no_3#>");
+					$("noWAN_link").style.display = "";
+				}
+			}
+			labels_show = 1;
+		}else if(found_app_ftpd()){
+			showtext($("noWAN_link"), "<#linktoFTP_no_1#>");
+			$("noWAN_link").style.display = "";
+			labels_show = 1;
 		}
 	}
-	else{
-		$("noWAN_link").style.display = "";
-		$("ddnslink3").style.display = "";
-		if(found_app_smbd() && samba_enable == '1'){
-			$("desc_3").style.display = "";
-		}
-		if(FTP_status != 1)
-			showtext($("noWAN_link"), "<br/><#linktoFTP_no_1#>");
-		else if(ddns_enable != 1)
-			showtext($("noWAN_link"), "<br/><#linktoFTP_no_2#>");
-		else if(ddns_hostname.length <= 0)
-			showtext($("noWAN_link"), "<br/><#linktoFTP_no_3#>");
-		else
-			return false;
+
+	if(SMB_status != 0){
+		$("desc_3").style.display = "";
+		labels_show = 1;
 	}
+
+	if (!labels_show)
+		$("mounted_item2").style.display = "none";
 }
 
 function goAiDiskWizard(){

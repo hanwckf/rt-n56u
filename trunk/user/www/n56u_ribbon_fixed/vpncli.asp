@@ -88,13 +88,7 @@ function initial(){
 
 function update_vpnc_status(vpnc_state){
 	this.vpnc_state_last = vpnc_state;
-
-	if (vpnc_state != '1' || rcheck(document.form.vpnc_enable) == '0'){
-		showhide_div('col_vpnc_state', 0);
-		return;
-	}
-
-	showhide_div('col_vpnc_state', 1);
+	showhide_div('col_vpnc_state', (vpnc_state != '1' || rcheck(document.form.vpnc_enable) == '0') ? 0 : 1);
 }
 
 function applyRule(){

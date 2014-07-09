@@ -21,12 +21,9 @@
 <script type="text/javascript" src="/aplist.js"></script>
 <script>
 
-<% login_state_hook(); %>
-
 <% disk_pool_mapping_info(); %>
 <% available_disk_names_and_sizes(); %>
 <% get_usb_ports_info(); %>
-<% wanlink(); %>
 
 var all_disks = foreign_disks().concat(blank_disks());
 var all_disk_interface = foreign_disk_interface_names().concat(blank_disk_interface_names());

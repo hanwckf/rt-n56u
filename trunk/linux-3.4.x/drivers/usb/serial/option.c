@@ -1950,7 +1950,7 @@ static void option_instat_callback(struct urb *urb)
 			dev_dbg(dev, "%s: type %x req %x\n", __func__,
 				req_pkt->bRequestType, req_pkt->bRequest);
 		}
-	} else
+	} else if (status != -ESHUTDOWN && status != -ENOENT)
 		dev_err(dev, "%s: error %d\n", __func__, status);
 
 	/* Resubmit urb so we continue receiving IRQ data */

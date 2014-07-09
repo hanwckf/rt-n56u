@@ -185,7 +185,7 @@ int usb_wwan_ioctl(struct tty_struct *tty,
 		break;
 	}
 
-	dbg("%s arg not supported", __func__);
+	dev_dbg(&port->dev, "%s arg not supported\n", __func__);
 
 	return -ENOIOCTLCMD;
 }
@@ -243,8 +243,9 @@ int usb_wwan_write(struct tty_struct *tty, struct usb_serial_port *port,
 			spin_unlock_irqrestore(&intfdata->susp_lock, flags);
 			err = usb_submit_urb(this_urb, GFP_ATOMIC);
 			if (err) {
-				dbg("usb_submit_urb %p (write bulk) failed "
-				    "(%d)", this_urb, err);
+				dev_dbg(&port->dev,
+					"usb_submit_urb %p (write bulk) failed (%d)\n",
+					this_urb, err);
 				clear_bit(i, &portdata->out_busy);
 				spin_lock_irqsave(&intfdata->susp_lock, flags);
 				intfdata->in_flight--;
@@ -271,15 +272,17 @@ static void usb_wwan_indat_callback(struct urb *urb)
 	int endpoint;
 	struct usb_serial_port *port;
 	struct tty_struct *tty;
+	struct device *dev;
 	unsigned char *data = urb->transfer_buffer;
 	int status = urb->status;
 
 	endpoint = usb_pipeendpoint(urb->pipe);
 	port = urb->context;
+	dev = &port->dev;
 
 	if (status) {
-		dbg("%s: nonzero status: %d on endpoint %02x.",
-		    __func__, status, endpoint);
+		dev_dbg(dev, "%s: nonzero status: %d on endpoint %02x.\n",
+			__func__, status, endpoint);
 	} else {
 		tty = tty_port_tty_get(&port->port);
 		if (tty) {
@@ -288,7 +291,7 @@ static void usb_wwan_indat_callback(struct urb *urb)
 						urb->actual_length);
 				tty_flip_buffer_push(tty);
 			} else
-				dbg("%s: empty read urb received", __func__);
+				dev_dbg(dev, "%s: empty read urb received\n", __func__);
 			tty_kref_put(tty);
 		}
 
@@ -297,8 +300,7 @@ static void usb_wwan_indat_callback(struct urb *urb)
 			err = usb_submit_urb(urb, GFP_ATOMIC);
 			if (err) {
 				if (err != -EPERM) {
-					printk(KERN_ERR "%s: resubmit read urb failed. "
-						"(%d)", __func__, err);
+					dev_err(dev, "%s: resubmit read urb failed. (%d)\n", __func__, err);
 					/* busy also in error unless we are killed */
 					usb_mark_last_busy(port->serial->dev);
 				}
@@ -403,8 +405,8 @@ int usb_wwan_open(struct tty_struct *tty, struct usb_serial_port *port)
 			continue;
 		err = usb_submit_urb(urb, GFP_KERNEL);
 		if (err) {
-			dbg("%s: submit urb %d failed (%d) %d",
-			    __func__, i, err, urb->transfer_buffer_length);
+			dev_dbg(&port->dev, "%s: submit urb %d failed (%d) %d\n",
+				__func__, i, err, urb->transfer_buffer_length);
 		}
 	}
 
@@ -483,7 +485,9 @@ static struct urb *usb_wwan_setup_urb(struct usb_serial *serial, int endpoint,
 
 	urb = usb_alloc_urb(0, GFP_KERNEL);	/* No ISO */
 	if (urb == NULL) {
-		dbg("%s: alloc for endpoint %d failed.", __func__, endpoint);
+		dev_dbg(&serial->interface->dev,
+			"%s: alloc for endpoint %d failed.\n", __func__,
+			endpoint);
 		return NULL;
 	}
 
@@ -547,8 +551,8 @@ int usb_wwan_startup(struct usb_serial *serial)
 		port = serial->port[i];
 		portdata = kzalloc(sizeof(*portdata), GFP_KERNEL);
 		if (!portdata) {
-			dbg("%s: kmalloc for usb_wwan_port_private (%d) failed!.",
-			    __func__, i);
+			dev_dbg(&port->dev, "%s: kmalloc for usb_wwan_port_private (%d) failed!.\n",
+				__func__, i);
 			return 1;
 		}
 		init_usb_anchor(&portdata->delayed);

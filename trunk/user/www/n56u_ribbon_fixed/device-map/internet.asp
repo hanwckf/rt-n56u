@@ -20,9 +20,25 @@
 
 var $j = jQuery.noConflict();
 var id_update_wanip = 0;
+var last_bytes_rx = 0;
+var last_bytes_tx = 0;
+var last_time = 0;
+
+window.performance = window.performance || {};
+performance.now = (function() {
+	return performance.now ||
+	performance.mozNow ||
+	performance.msNow ||
+	performance.oNow ||
+	performance.webkitNow ||
+	function() { return new Date().getTime(); };
+})();
 
 function initial(){
 	flash_button();
+
+	if(!support_usb())
+		$j("#domore")[0].remove(6);
 
 	if(sw_mode == '4'){
 		$j("#domore")[0].remove(4);
@@ -36,7 +52,11 @@ function initial(){
 		$("row_modem_prio").style.display = "";
 
 	fill_info();
-	id_update_wanip = setTimeout("update_wanip();", 3000);
+
+	if ($j('tr:visible').length > 12)
+		$("row_more_links").style.display = "none";
+
+	id_update_wanip = setTimeout("update_wanip();", 2500);
 }
 
 function bytesToIEC(bytes, precision){
@@ -60,6 +80,20 @@ function bytesToIEC(bytes, precision){
 		return (bytes / petabyte).toFixed(precision) + ' PiB';
 	else
 		return bytes + ' B';
+}
+
+function kbitsToRate(kbits, precision){
+	var megabit = 1000;
+	var gigabit = megabit * 1000;
+
+	if ((kbits >= 0) && (kbits < megabit))
+		return kbits + ' Kbps';
+	else if ((kbits >= megabit) && (kbits < gigabit))
+		return (kbits / megabit).toFixed(precision) + ' Mbps';
+	else if (bytes >= gigabit)
+		return (kbits / gigabit).toFixed(precision) + ' Gbps';
+	else
+		return kbits + ' Kbps';
 }
 
 function secondsToDHM(seconds){
@@ -152,7 +186,6 @@ function fill_wan_addr6(wan_ip,lan_ip){
 		$("row_wan_ip6").style.display = "";
 	}else
 		$("row_wan_ip6").style.display = "none";
-
 	if (lan_ip != ''){
 		$("LANIP6").innerHTML = lan_ip;
 		$("row_lan_ip6").style.display = "";
@@ -161,11 +194,43 @@ function fill_wan_addr6(wan_ip,lan_ip){
 }
 
 function fill_wan_bytes(rx,tx){
+	var now = performance.now();
 	if (rx > 0 || tx > 0){
-		$("WANBytes").innerHTML = '<i class="icon-arrow-down"></i>'+bytesToIEC(rx,2)+'&nbsp;&nbsp;<i class="icon-arrow-up"></i>'+bytesToIEC(tx,2);
+		var diff_rx = 0;
+		var diff_tx = 0;
+		if (last_time > 0 && now > last_time){
+			var diff_time = (now - last_time);
+			if (last_bytes_rx > 0){
+				if (rx < last_bytes_rx){
+					if (last_bytes_rx <= 0xFFFFFFFF && last_bytes_rx > 0xE0000000)
+						diff_rx = (0xFFFFFFFF - last_bytes_rx) + rx;
+				}else
+					diff_rx = rx - last_bytes_rx;
+				diff_rx = Math.floor(diff_rx * 8 / diff_time);
+			}
+			if (last_bytes_tx > 0){
+				if (tx < last_bytes_tx){
+					if (last_bytes_tx <= 0xFFFFFFFF && last_bytes_tx > 0xE0000000)
+						diff_tx = (0xFFFFFFFF - last_bytes_tx) + tx;
+				}else
+					diff_tx = tx - last_bytes_tx;
+				diff_tx = Math.floor(diff_tx * 8  / diff_time);
+			}
+		}
+		last_bytes_rx = rx;
+		last_bytes_tx = tx;
+		last_time = now;
+		
+		$("WANBytesRX").innerHTML = '<i class="icon-arrow-down"></i>'+bytesToIEC(rx,2);
+		$("WANBytesTX").innerHTML = '<i class="icon-arrow-up"></i>'+bytesToIEC(tx,2);
+		$("WANBRateRX").innerHTML = '<i class="icon-arrow-down"></i>'+kbitsToRate(diff_rx,2);
+		$("WANBRateTX").innerHTML = '<i class="icon-arrow-up"></i>'+kbitsToRate(diff_tx,2);
 		$("row_bytes").style.display = "";
-	}else
+		$("row_brate").style.display = "";
+	}else{
 		$("row_bytes").style.display = "none";
+		$("row_brate").style.display = "none";
+	}
 }
 
 function fill_info(){
@@ -192,7 +257,7 @@ function update_wanip(){
 		},
 		success: function(response){
 			fill_info();
-			id_update_wanip = setTimeout("update_wanip();", 3000);
+			id_update_wanip = setTimeout("update_wanip();", 2500);
 		}
 	});
 }
@@ -209,18 +274,17 @@ function submitInternet(v){
 </head>
 
 <body class="body_iframe" onload="initial();">
-<table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
+<table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_info">
   <tr>
     <th width="50%" style="border-top: 0 none;"><#InetControl#></th>
-    <td style="border-top: 0 none;">
-    <div style="display:none"></div>
+    <td style="border-top: 0 none;" colspan="2">
       <input type="button" id="btn_connect_1" class="btn btn-info" value="<#Connect#>" onclick="submitInternet('Connect');">
       <input type="button" id="btn_connect_0" class="btn btn-danger" value="<#Disconnect#>" onclick="submitInternet('Disconnect');">
     </td>
   </tr>
   <tr id="row_modem_prio" style="display:none">
     <th><#ModemPrio#></th>
-    <td>
+    <td colspan="2">
         <select id="modem_prio" class="input" style="width: 260px;" onchange="submitInternet('ModemPrio');">
             <option value="0" <% nvram_match_x("", "modem_prio", "0", "selected"); %>><#ModemPrioItem0#></option>
             <option value="1" <% nvram_match_x("", "modem_prio", "1", "selected"); %>><#ModemPrioItem1#></option>
@@ -230,67 +294,73 @@ function submitInternet(v){
   </tr>
   <tr id="row_link_ether" style="display:none">
     <th><#SwitchState#></th>
-    <td><span id="WANEther"></span></td>
+    <td colspan="2"><span id="WANEther"></span></td>
   </tr>
   <tr id="row_link_apcli" style="display:none">
     <th><#InetStateWISP#></th>
-    <td><span id="WANAPCli"></span></td>
+    <td colspan="2"><span id="WANAPCli"></span></td>
   </tr>
   <tr>
     <th><#ConnectionStatus#></th>
-    <td id="wan_status"></td>
-  </tr>
-  <tr id="row_uptime" style="display:none">
-    <th><#WAN_Uptime#></th>
-    <td><span id="WANTime"></span></td>
-  </tr>
-  <tr id="row_dltime" style="display:none">
-    <th><#WAN_Lease#></th>
-    <td><span id="WANLease"></span></td>
-  </tr>
-  <tr id="row_bytes" style="display:none">
-    <th><#WAN_Bytes#></th>
-    <td><span id="WANBytes"></span></td>
+    <td id="wan_status" colspan="2"></td>
   </tr>
   <tr>
     <th><#Connectiontype#>:</th>
-    <td><span id="WANType"></span></td>
+    <td colspan="2"><span id="WANType"></span></td>
+  </tr>
+  <tr id="row_uptime" style="display:none">
+    <th><#WAN_Uptime#></th>
+    <td colspan="2"><span id="WANTime"></span></td>
+  </tr>
+  <tr id="row_dltime" style="display:none">
+    <th><#WAN_Lease#></th>
+    <td colspan="2"><span id="WANLease"></span></td>
+  </tr>
+  <tr id="row_bytes" style="display:none">
+    <th><#WAN_Bytes#></th>
+    <td width="90px"><span id="WANBytesRX"></span></td>
+    <td><span id="WANBytesTX"></span></td>
+  </tr>
+  <tr id="row_brate" style="display:none">
+    <th><#WAN_BRate#></th>
+    <td width="90px"><span id="WANBRateRX"></span></td>
+    <td><span id="WANBRateTX"></span></td>
   </tr>
   <tr>
     <th><#IP4_Addr#> WAN:</th>
-    <td><span id="WANIP4"></span></span></td>
+    <td colspan="2"><span id="WANIP4"></span></span></td>
   </tr>
   <tr id="row_man_ip4" style="display:none">
     <th><#IP4_Addr#> MAN:</th>
-    <td><span id="MANIP4"></span></td>
+    <td colspan="2"><span id="MANIP4"></span></td>
   </tr>
   <tr id="row_wan_ip6" style="display:none">
     <th><#IP6_Addr#> WAN:</th>
-    <td><span id="WANIP6"></span></td>
+    <td colspan="2"><span id="WANIP6"></span></td>
   </tr>
   <tr id="row_lan_ip6" style="display:none">
     <th><#IP6_Addr#> LAN:</th>
-    <td><span id="LANIP6"></span></td>
+    <td colspan="2"><span id="LANIP6"></span></td>
   </tr>
   <tr>
     <th><#Gateway#> WAN:</th>
-    <td><span id="WANGW4"></span></td>
+    <td colspan="2"><span id="WANGW4"></span></td>
   </tr>
   <tr id="row_man_gw4" style="display:none">
     <th><#Gateway#> MAN:</th>
-    <td><span id="MANGW4"></span></td>
+    <td colspan="2"><span id="MANGW4"></span></td>
   </tr>
   <tr>
     <th>DNS:</th>
-    <td><span id="WANDNS"></span></td>
+    <td colspan="2"><span id="WANDNS"></span></td>
   </tr>
   <tr>
     <th><#MAC_Address#></th>
-    <td><span id="WANMAC"></span></td>
+    <td colspan="2"><span id="WANMAC"></span></td>
   </tr>
-  <tr>
-    <td>&nbsp;</td>
-    <td>
+  <tr id="row_more_links">
+    <td style="padding-bottom: 0px;">&nbsp;</td>
+    <td style="padding-bottom: 0px;" colspan="2">
         <select id="domore" class="domore" style="width: 260px;" onchange="domore_link(this);">
           <option selected="selected"><#MoreConfig#>...</option>
           <option value="../Advanced_WAN_Content.asp"><#menu5_3_1#></option>
@@ -298,6 +368,7 @@ function submitInternet(v){
           <option value="../Advanced_VirtualServer_Content.asp"><#menu5_3_4#></option>
           <option value="../Advanced_Exposed_Content.asp"><#menu5_3_5#></option>
           <option value="../Advanced_DDNS_Content.asp"><#menu5_3_6#></option>
+          <option value="../Advanced_Modem_others.asp"><#menu5_4_4#></option>
         </select>
     </td>
   </tr>

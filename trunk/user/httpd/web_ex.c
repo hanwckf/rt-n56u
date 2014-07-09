@@ -1939,7 +1939,7 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 	char wan_desc[32], tmp[64], prefix[16];
 	char addr4_wan[INET_ADDRSTRLEN], addr4_man[INET_ADDRSTRLEN];
 	char *wan0_ip, *wanx_ip, *wan0_gw, *wanx_gw, *wan_ip6, *lan_ip6, *wan_ifname, *man_ifname;
-	int unit, status_code, wan_proto, wan_ifstate, man_ifstate, eth_link, phy_failed, ppp_mode;
+	int unit, status_code, wan_proto, wan_ifstate, man_ifstate, need_eth_link, phy_failed, ppp_mode;
 	uint64_t wan_bytes_rx, wan_bytes_tx;
 	long wan_uptime, wan_dltime, wan_lease, now;
 #if defined (USE_IPV6)
@@ -1973,6 +1973,8 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 	addr4_man[0] = 0;
 	wan_desc[0] = 0;
 
+	need_eth_link = 0;
+
 	now = uptime();
 
 	if (!get_ap_mode()) {
@@ -1986,11 +1988,10 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 		wan_ifname = nvram_safe_get(strcat_r(prefix, "ifname_t", tmp));
 		man_ifname = get_man_ifname(unit);
 		
-		eth_link = fill_eth_port_status(nvram_get_int("wan_src_phy"), etherlink);
-		
 #if (BOARD_NUM_USB_PORTS > 0)
 		if (get_usb_modem_wan(0)) {
-			int modem_prio = nvram_get_int("modem_prio");
+			if (nvram_get_int("modem_prio") == 2)
+				need_eth_link |= 1;
 			if (nvram_get_int("modem_type") == 3) {
 				if (isUsbNetIf(wan_ifname)) {
 					wan_ifstate = get_if_state(wan_ifname, addr4_wan);
@@ -2006,8 +2007,6 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 						wan_bytes_tx = get_ifstats_bytes_tx(wan_ifname);
 					}
 				}
-				if (modem_prio < 2)
-					etherlink[0] = 0; // hide ethernet link
 				strcpy(wan_desc, "USB Modem (NDIS/RNDIS)");
 			} else {
 				if (strncmp(wan_ifname, "ppp", 3) != 0)
@@ -2029,9 +2028,7 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 				    wan_proto == IPV4_WAN_PROTO_PPTP ||
 				    wan_proto == IPV4_WAN_PROTO_L2TP) {
 					man_ifstate = get_if_state(man_ifname, addr4_man);
-				} else {
-					if (modem_prio < 2)
-						etherlink[0] = 0; // hide ethernet link
+					need_eth_link |= 1;
 				}
 				strcpy(wan_desc, "USB Modem (RAS)");
 			}
@@ -2060,10 +2057,8 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 					phy_failed = 2; // STA not connected
 				}
 				
-				etherlink[0] = 0; // hide ethernet link
 			} else {
-				if (!eth_link)
-					phy_failed = 1; // No Ethernet port link
+				need_eth_link |= 2;
 			}
 			
 			if (wan_proto == IPV4_WAN_PROTO_PPPOE ||
@@ -2134,6 +2129,12 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 				status_code = (wan_ifstate == IF_STATE_UP) ? INET_STATE_NETIF_WAIT_DHCP : INET_STATE_NETIF_NOT_READY;
 		}
 		
+		if (need_eth_link) {
+			int eth_link = fill_eth_port_status(nvram_get_int("wan_src_phy"), etherlink);
+			if (!eth_link && (need_eth_link & 2))
+				phy_failed = 1; // No Ethernet port link
+		}
+		
 		if (phy_failed == 1)
 			status_code = INET_STATE_NO_ETH_LINK;
 		else if (phy_failed == 2)
@@ -2164,6 +2165,9 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 				wan_bytes_tx = 0;
 			else
 				wan_bytes_tx -= init_bytes_tx;
+		} else {
+			wan_bytes_rx = 0;
+			wan_bytes_tx = 0;
 		}
 		
 #if defined (USE_IPV6)

@@ -2,6 +2,8 @@ var sw_mode = '<% nvram_get_x("", "sw_mode"); %>';
 var wan_route_x = '<% nvram_get_x("", "wan_route_x"); %>';
 var wan_proto = '<% nvram_get_x("", "wan_proto"); %>';
 var lan_proto = '<% nvram_get_x("", "lan_proto_x"); %>';
+var log_float = '<% nvram_get_x("", "log_float_ui"); %>';
+var log_stamp = 0;
 
 var uptimeStr = "<% uptime(); %>";
 var timezone = uptimeStr.substring(26,31);
@@ -55,12 +57,12 @@ function update_internet_status(){
 
 function notify_status_internet(wan_internet){
 	this.new_wan_internet = wan_internet;
-	if(location.pathname == "/" || location.pathname == "/index.asp")
+	if((location.pathname == "/" || location.pathname == "/index.asp") && (typeof update_internet_status === 'function'))
 		update_internet_status();
 }
 
 function notify_status_vpn_client(vpnc_state){
-	if(location.pathname == "/vpncli.asp")
+	if((location.pathname == "/vpncli.asp") && (typeof update_vpnc_status === 'function'))
 		update_vpnc_status(vpnc_state);
 }
 
@@ -133,7 +135,7 @@ function show_banner(L3){// L3 = The third Level of Menu
     }
 
     // log panel
-    if (!is_mobile){
+    if (!is_mobile && log_float != '0'){
         banner_code += '<div class="syslog_panel">\n';
         banner_code += '<button id="syslog_panel_button" class="handle" href="/"><span class="log_text">Log</span></button>\n';
         banner_code += '<table class="" style="margin-top: 0px; margin-bottom: 5px" width="100%" border="0">\n';
@@ -391,27 +393,26 @@ function go_wguest(band){
 }
 
 function show_time(){	
-	JS_timeObj.setTime(systime_millsec); // Add millsec to it.	
-	JS_timeObj3 = JS_timeObj.toString();	
+	JS_timeObj.setTime(systime_millsec); // Add millsec to it.
+	JS_timeObj3 = JS_timeObj.toString();
 	JS_timeObj3 = checkTime(JS_timeObj.getHours()) + ":" +
-				  			checkTime(JS_timeObj.getMinutes()) + ":" +
-				  			checkTime(JS_timeObj.getSeconds());
+			checkTime(JS_timeObj.getMinutes()) + ":" +
+			checkTime(JS_timeObj.getSeconds());
 	$('systemtime').innerHTML ="<a href='/Advanced_System_Content.asp'>" + JS_timeObj3 + "</a>";
-	systime_millsec += 1000;		
-	
+	systime_millsec += 1000;
 	stime_ID = setTimeout("show_time();", 1000);
 }
 
 function checkTime(i)
 {
-if (i<10) 
-  {i="0" + i}
-  return i
+    if (i<10)
+        {i="0" + i}
+    return i
 }
 
 function show_loading_obj(){
-	var obj = $("Loading");
-	var code = "";
+    var obj = $("Loading");
+    var code = "";
 
     code += '<center><div id="loadingBlock" class="loadingBlock">';
     code += '<div class="container-fluid">';
@@ -422,7 +423,7 @@ function show_loading_obj(){
     code += '</div>';
     code += '</div></center>';
 
-	obj.innerHTML = code;
+    obj.innerHTML = code;
 }
 
 function submit_language(){
@@ -894,7 +895,7 @@ jQuery(document).ready(function() {
     });
 
     var idFindSyslogPanel = setInterval(function(){
-        if(is_mobile){
+        if(is_mobile || log_float == '0'){
             clearInterval(idFindSyslogPanel);
         }else if($j('.syslog_panel').size() > 0){
             clearInterval(idFindSyslogPanel);
@@ -925,12 +926,88 @@ String.prototype.nl2br = function()
     return this.replace(/\n/g, "\n\r");
 }
 
-var idUpdateLogArea;
-function updateLogArea()
+function setLogStamp(mt)
 {
-    idUpdateLogArea = setTimeout(function(){
-        setLogData();
-    }, 5000);
+    if(is_mobile || log_float == '0')
+        return;
+
+    var $j = jQuery.noConflict();
+
+    if(isLocalStorageAvailable())
+        log_stamp = localStorage.getItem('syslog_stamp');
+    if(log_stamp == null)
+        log_stamp = 0;
+
+    if (log_stamp != mt){
+        setToLocalStorage('syslog_stamp', mt);
+        if (log_stamp != 0){
+            setLogData();
+            if(!$j('.syslog_panel').hasClass('open')){
+                var tabText = 'Log <span class="label label-important">!</span>';
+                $j(".log_text").html(tabText);
+            }
+        }
+        log_stamp = mt;
+    }
+}
+
+function setLogData()
+{
+    var $j = jQuery.noConflict();
+    $j.get('/log_content.asp', function(data){
+        // fix for ie
+        if($j.browser.msie && !is_ie11p)
+            data = data.nl2br();
+        if($j("#log_area").val() == ''){
+            $j("#log_area").text(data);
+            $j("#log_area").prop('scrollTop', $j("#log_area").prop('scrollHeight'));
+        }else{
+            var scrTop = $j("#log_area").prop('scrollTop');
+            $j("#log_area").text(data);
+            $j("#log_area").prop('scrollTop', scrTop);
+        }
+    });
+}
+
+function showClockLogArea(){
+
+    if(jQuery('#system_time').size() == 0)
+    {
+        JS_timeObj.setTime(systime_millsec);
+        systime_millsec += 1000;
+
+        JS_timeObj2 = JS_timeObj.toString();
+        JS_timeObj2 = JS_timeObj2.substring(0,3) + ", " +
+        JS_timeObj2.substring(4,10) + "  " +
+        checkTime(JS_timeObj.getHours()) + ":" +
+        checkTime(JS_timeObj.getMinutes()) + ":" +
+        checkTime(JS_timeObj.getSeconds()) + "  " +
+        JS_timeObj.getFullYear() + " GMT" + timezone;
+    }
+
+    jQuery("#system_time_log_area").html(JS_timeObj2);
+    setTimeout("showClockLogArea()", 1000);
+}
+
+function onCompleteSlideOutLogArea()
+{
+    var idTimeout = setTimeout(function(){
+        clearTimeout(idTimeout);
+        jQuery(".log_text").html('Log');
+    }, 1500);
+}
+
+function passwordShowHide(id)
+{
+    var obj = $j('#'+id);
+    var changeTo = (obj.attr('type') == 'password') ? 'text' : 'password';
+    if ($j.browser.msie && parseInt($j.browser.version, 10) < 9){
+        var marker = $j('<span />').insertBefore('#'+id);
+        obj.detach().attr('type', changeTo).insertAfter(marker);
+        marker.remove();
+    }else{
+        document.getElementById(id).type = changeTo;
+    }
 }
 
 /**
@@ -963,7 +1040,6 @@ function setToLocalStorage(name, value)
             localStorage.setItem(name, value);
         } catch (e) {
             if (e == QUOTA_EXCEEDED_ERR) {
-                console.info('Local storage full');
             }
         }
     }
@@ -995,96 +1071,6 @@ function removeFromLocalStorage(name)
     }
 }
 
-var curItemsLog, oldItemsLog = 0;
-function setLogData()
-{
-    // get syslog
-    jQuery.get('/log_content.asp', function(data){
-
-        clearTimeout(idUpdateLogArea);
-
-        var log = data;
-
-        // fix for ie
-        if(jQuery.browser.msie && !is_ie11p)
-            log = log.nl2br();
-
-        // remember scroll position
-        if(jQuery("#log_area").val() == '')
-        {
-            jQuery("#log_area").text(log);
-            jQuery("#log_area").prop('scrollTop', jQuery("#log_area").prop('scrollHeight'));
-        }
-        else
-        {
-            var scrTop = jQuery("#log_area").prop('scrollTop');
-            jQuery("#log_area").text(log);
-            jQuery("#log_area").prop('scrollTop', scrTop);
-        }
-
-        oldItemsLog = getFromLocalStorage('log_length') == null ? 0 :  getFromLocalStorage('log_length');
-        curItemsLog = jQuery('#log_area').val().split('\n').length;
-
-        var curText = 'Log';
-        // show important if log_area not opened
-        if(!jQuery('.syslog_panel').hasClass('open'))
-        {
-            curText += '  <span class="label label-important">!</span>';
-        }
-
-        if(curItemsLog != oldItemsLog )
-        {
-            jQuery(".log_text").html(curText);
-        }
-
-        updateLogArea();
-    });
-}
-
-function showClockLogArea(){
-
-    if(jQuery('#system_time').size() == 0)
-    {
-        JS_timeObj.setTime(systime_millsec);
-        systime_millsec += 1000;
-
-        JS_timeObj2 = JS_timeObj.toString();
-        JS_timeObj2 = JS_timeObj2.substring(0,3) + ", " +
-        JS_timeObj2.substring(4,10) + "  " +
-        checkTime(JS_timeObj.getHours()) + ":" +
-        checkTime(JS_timeObj.getMinutes()) + ":" +
-        checkTime(JS_timeObj.getSeconds()) + "  " +
-        JS_timeObj.getFullYear() + " GMT" + timezone;
-    }
-
-    jQuery("#system_time_log_area").html(JS_timeObj2);
-    setTimeout("showClockLogArea()", 1000);
-}
-
-function onCompleteSlideOutLogArea()
-{
-    var idTimeout = setTimeout(function(){
-        clearTimeout(idTimeout);
-
-        removeFromLocalStorage('log_length');
-        setToLocalStorage('log_length', curItemsLog);
-        jQuery(".log_text").html('Log');
-
-    }, 1500);
-}
-
-function passwordShowHide(id)
-{
-    var obj = $j('#'+id);
-    var changeTo = (obj.attr('type') == 'password') ? 'text' : 'password';
-    if ($j.browser.msie && parseInt($j.browser.version, 10) < 9){
-        var marker = $j('<span />').insertBefore('#'+id);
-        obj.detach().attr('type', changeTo).insertAfter(marker);
-        marker.remove();
-    }else{
-        document.getElementById(id).type = changeTo;
-    }
-}
 
 (function($){
     var $j = $.noConflict();

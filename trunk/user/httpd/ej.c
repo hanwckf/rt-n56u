@@ -67,9 +67,8 @@ get_arg(char *args, char **next)
 static void
 call(char *func, FILE *stream)
 {
-	char *args, *end, *next;
 	int argc;
-	char * argv[16];
+	char *args, *end, *next, *argv[16] = {NULL};
 	struct ej_handler *handler;
 
 	/* Parse out ( args ) */
@@ -87,8 +86,10 @@ call(char *func, FILE *stream)
 
 	/* Call handler */
 	for (handler = &ej_handlers[0]; handler->pattern; handler++) {
-		if (strncmp(handler->pattern, func, strlen(handler->pattern)) == 0)
+		if (strcmp(handler->pattern, func) == 0){
 			handler->output(0, stream, argc, argv);
+			break;
+		}
 	}
 }
 
@@ -100,9 +101,8 @@ process_asp (char *s, char *e, FILE *f)
 {
 	char *func = NULL, *end = NULL;
 
-	if (s == NULL || e == NULL || f == NULL || s >= e)      {
+	if (s == NULL || e == NULL || f == NULL || s >= e)
 		return NULL;
-	}
 
 	for (func = s; func < e; func = end) {
 		/* Skip initial whitespace */

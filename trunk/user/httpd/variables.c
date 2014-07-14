@@ -525,6 +525,7 @@
 			{"scripts.vpnc_server_script.sh", "File", NULL, FALSE},
 			{"log_ipaddr", "", NULL, RESTART_SYSLOG},
 			{"log_port", "", NULL, RESTART_SYSLOG},
+			{"log_float_ui", "", NULL, FALSE},
 			{"rstats_enable", "", NULL, FALSE},
 			{"time_zone", "", NULL, RESTART_TIME},
 			{"ntp_period", "", NULL, FALSE},

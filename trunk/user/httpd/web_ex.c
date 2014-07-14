@@ -3081,6 +3081,7 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
 	struct mem_stats mem;
 	struct wifi_stats wifi2;
 	struct wifi_stats wifi5;
+	struct stat log;
 	unsigned long updays, uphours, upminutes;
 	unsigned diff_total, u_user, u_nice, u_system, u_idle, u_iowait, u_irq, u_sirq, u_busy;
 
@@ -3118,6 +3119,9 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
 	mem.sw_total = (unsigned long)(((unsigned long long)info.totalswap * info.mem_unit) >> 10);
 	mem.sw_free  = (unsigned long)(((unsigned long long)info.freeswap * info.mem_unit) >> 10);
 
+	if (stat("/tmp/syslog.log", &log) != 0)
+		log.st_mtime = 0;
+
 	websWrite(wp, "{\"lavg\": \"%u.%02u %u.%02u %u.%02u\", "
 			"\"uptime\": {\"days\": %lu, \"hours\": %lu, \"minutes\": %lu}, "
 			"\"ram\": {\"total\": %lu, \"used\": %lu, \"free\": %lu, \"buffers\": %lu, \"cached\": %lu}, "
@@ -3125,7 +3129,8 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
 			"\"cpu\": {\"busy\": %u, \"user\": %u, \"nice\": %u, \"system\": %u, "
 				  "\"idle\": %u, \"iowait\": %u, \"irq\": %u, \"sirq\": %u}, "
 			"\"wifi2\": {\"state\": %d, \"guest\": %d}, "
-			"\"wifi5\": {\"state\": %d, \"guest\": %d}}",
+			"\"wifi5\": {\"state\": %d, \"guest\": %d}, "
+			"\"logmt\": %ld }",
 			LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]),
 			LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]),
 			LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]),
@@ -3133,8 +3138,53 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
 			mem.total, (mem.total - mem.free), mem.free, mem.buffers, mem.cached,
 			mem.sw_total, (mem.sw_total - mem.sw_free), mem.sw_free,
 			u_busy, u_user, u_nice, u_system, u_idle, u_iowait, u_irq, u_sirq,
-			wifi2.radio, wifi2.ap_guest, wifi5.radio, wifi5.ap_guest
+			wifi2.radio, wifi2.ap_guest,
+			wifi5.radio, wifi5.ap_guest,
+			log.st_mtime
 		);
+
+	return 0;
+}
+
+static int ej_dump_syslog_hook(int eid, webs_t wp, int argc, char_t **argv)
+{
+	int log_lines = 0;
+	int log_float = nvram_get_int("log_float_ui");
+
+	if (log_float > 0) {
+		FILE *fp;
+		int lskip = 0;
+		char buf[MAX_FILE_LINE_SIZE];
+		
+		fp = fopen("/tmp/syslog.log", "r");
+		if (fp) {
+			if (log_float > 1){
+				int ltotal = 0;
+				
+				while (fgets(buf, sizeof(buf), fp)!=NULL)
+					ltotal++;
+				fseek(fp, 0L, SEEK_SET);
+				
+				lskip = ltotal - 100;
+				if (lskip < 0)
+					lskip = 0;
+			}
+			
+			while (fgets(buf, sizeof(buf), fp)!=NULL){
+				if (lskip > 0) {
+					lskip--;
+					continue;
+				}
+				websWrite(wp, buf);
+				log_lines++;
+			}
+			
+			fclose(fp);
+		}
+	}
+
+	if (!log_lines)
+		websWrite(wp, "%s", "");
 
 	return 0;
 }
@@ -6012,7 +6062,7 @@ struct ej_handler ej_handlers[] = {
 	{ "uptime", ej_uptime},
 	{ "nvram_dump", ej_dump},
 	{ "firmware_caps_hook", ej_firmware_caps_hook},
-	{ "ej_system_status", ej_system_status_hook},
+	{ "json_system_status", ej_system_status_hook},
 
 	{ "netdev", ej_netdev},
 	{ "bandwidth", ej_bandwidth},
@@ -6045,6 +6095,7 @@ struct ej_handler ej_handlers[] = {
 	{ "shown_language_option", ej_shown_language_option},
 	{ "hardware_pins", ej_hardware_pins_hook},
 	{ "detect_internet", ej_detect_internet_hook},
+	{ "dump_syslog", ej_dump_syslog_hook},
 	{ "disk_pool_mapping_info", ej_disk_pool_mapping_info},
 	{ "available_disk_names_and_sizes", ej_available_disk_names_and_sizes},
 	{ "get_usb_ports_info", ej_get_usb_ports_info},

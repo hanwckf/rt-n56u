@@ -20,33 +20,33 @@
 <script type="text/javascript">
 
 var idRefresh;
-var timeToRefresh = 2; // in sec
+var timeToRefresh = 2;
 
 function bytesToSize(bytes, precision)
 {
-    var kilobyte = 1024;
-    var megabyte = kilobyte * 1024;
-    var gigabyte = megabyte * 1024;
-    var terabyte = gigabyte * 1024;
+	var kilobyte = 1024;
+	var megabyte = kilobyte * 1024;
+	var gigabyte = megabyte * 1024;
+	var terabyte = gigabyte * 1024;
 
-    if ((bytes >= 0) && (bytes < kilobyte))
-        return bytes + ' B';
-    else if ((bytes >= kilobyte) && (bytes < megabyte))
-        return (bytes / kilobyte).toFixed(precision) + ' KB';
-    else if ((bytes >= megabyte) && (bytes < gigabyte))
-        return (bytes / megabyte).toFixed(precision) + ' MB';
-    else if ((bytes >= gigabyte) && (bytes < terabyte))
-        return (bytes / gigabyte).toFixed(precision) + ' GB';
-    else if (bytes >= terabyte)
-        return (bytes / terabyte).toFixed(precision) + ' TB';
-    else
-        return bytes + ' B';
+	if ((bytes >= 0) && (bytes < kilobyte))
+		return bytes + ' B';
+	else if ((bytes >= kilobyte) && (bytes < megabyte))
+		return (bytes / kilobyte).toFixed(precision) + ' KB';
+	else if ((bytes >= megabyte) && (bytes < gigabyte))
+		return (bytes / megabyte).toFixed(precision) + ' MB';
+	else if ((bytes >= gigabyte) && (bytes < terabyte))
+		return (bytes / gigabyte).toFixed(precision) + ' GB';
+	else if (bytes >= terabyte)
+		return (bytes / terabyte).toFixed(precision) + ' TB';
+	else
+		return bytes + ' B';
 }
 
 function getLALabelStatus(num)
 {
-    var la = parseFloat(num);
-    return la > 0.9 ? 'danger' : (la > 0.5 ? 'warning' : 'info');
+	var la = parseFloat(num);
+	return la > 0.9 ? 'danger' : (la > 0.5 ? 'warning' : 'info');
 }
 
 function getSystemInfo()
@@ -54,91 +54,70 @@ function getSystemInfo()
 	clearTimeout(idRefresh);
 	$.getJSON('/system_status_data.asp', function(data){
 		setSystemInfo(data);
-
+		
+		if(typeof parent.getRadioBandStatus === 'function' && typeof data.wifi2 != 'undefined'){
+			var objWifi = {wifi2: data.wifi2, wifi5: data.wifi5};
+			parent.getRadioBandStatus(objWifi);
+		}
+		
+		if(typeof parent.setLogStamp === 'function' && typeof data.logmt != 'undefined')
+			parent.setLogStamp(data.logmt);
+		
 		if(typeof parent.getSystemJsonData === 'function')
-		{
-		    parent.getSystemJsonData(data);
-		}
-
-		if(typeof parent.getRadioBandStatus === 'function' && typeof data.wifi2 != 'undefined')
-		{
-		    var objWifi = {wifi2: data.wifi2, wifi5: data.wifi5};
-		    parent.getRadioBandStatus(objWifi);
-		}
+			parent.getSystemJsonData(data);
 	});
 }
 
 function setSystemInfo(jsonData)
 {
-	if(typeof jsonData === 'object')
-	{
-        // example jsonData
-        // {
-        //  "lavg": "0.01 0.02 0.00",
-        //  "uptime": {"days": 0, "hours": 0, "minutes": 3},
-        //  "ram": {"total": 127316, "used": 26084, "free": 101232, "shared": 0, "buffer": 3184},
-        //  "swap": {"total": 0, "used": 0, "free": 0},
-        //  "cpu": {"busy": 52, "user": 0, "nice": 0, "system": 0, "idle": 47, "iowait": 0, "irq": 0, "sirq": 52}
-        // }
-
-        var lavg = jsonData.lavg;
-        var uptime = jsonData.uptime;
-        var ram = jsonData.ram;
-        var swap = jsonData.swap;
-        var cpu = jsonData.cpu;
-
+	if(typeof jsonData === 'object'){
+		var lavg = jsonData.lavg;
+		var uptime = jsonData.uptime;
+		var ram = jsonData.ram;
+		var swap = jsonData.swap;
+		var cpu = jsonData.cpu;
 		var arrLA = lavg.split(' ');
 
-        uptime.hours = uptime.hours < 10 ? ('0'+uptime.hours) : uptime.hours;
-        uptime.minutes = uptime.minutes < 10 ? ('0'+uptime.minutes) : uptime.minutes;
+		uptime.hours = uptime.hours < 10 ? ('0'+uptime.hours) : uptime.hours;
+		uptime.minutes = uptime.minutes < 10 ? ('0'+uptime.minutes) : uptime.minutes;
 
 		$("#la_info").html('<span class="label label-'+getLALabelStatus(arrLA[0])+'">'+arrLA[0]+'</span>&nbsp;<span class="label label-'+getLALabelStatus(arrLA[1])+'">'+arrLA[1]+'</span>&nbsp;<span class="label label-'+getLALabelStatus(arrLA[2])+'">'+arrLA[2]+'</span>');
 		$("#cpu_info").html(cpu.busy + '%');
 		$("#mem_info").html(bytesToSize(ram.free*1024, 2) + " / " + bytesToSize(ram.total*1024, 2));
 		$("#uptime_info").html(uptime.days + "<#Day#>".substring(0,1) + " " + uptime.hours+"<#Hour#>".substring(0,1) + " " + uptime.minutes+"<#Minute#>".substring(0,1));
 
-        // --> cpu usage
 		$("#cpu_usage tr:nth-child(1) td:first").html('busy: '+cpu.busy+'%');
-
-        $("#cpu_usage tr:nth-child(2) td:first").html('user: '+cpu.user+'%');
+		$("#cpu_usage tr:nth-child(2) td:first").html('user: '+cpu.user+'%');
 		$("#cpu_usage tr:nth-child(2) td:last").html('system: '+cpu.system+'%');
+		$("#cpu_usage tr:nth-child(3) td:first").html('sirq: '+cpu.sirq+'%');
+		$("#cpu_usage tr:nth-child(3) td:last").html('irq: '+cpu.irq+'%');
+		$("#cpu_usage tr:nth-child(4) td:first").html('idle: '+cpu.idle+'%');
+		$("#cpu_usage tr:nth-child(4) td:last").html('nice: '+cpu.nice+'%');
 
-        $("#cpu_usage tr:nth-child(3) td:first").html('sirq: '+cpu.sirq+'%');
-        $("#cpu_usage tr:nth-child(3) td:last").html('irq: '+cpu.irq+'%');
-
-        $("#cpu_usage tr:nth-child(4) td:first").html('idle: '+cpu.idle+'%');
-        $("#cpu_usage tr:nth-child(4) td:last").html('nice: '+cpu.nice+'%');
-        // <-- cpu usage
-
-        // --> memory usage
-        $("#mem_usage tr:nth-child(1) td:first").html('total: '+bytesToSize(ram.total*1024, 2));
-
-        $("#mem_usage tr:nth-child(2) td:first").html('free: '+bytesToSize(ram.free*1024, 2));
-        $("#mem_usage tr:nth-child(2) td:last").html('used: '+bytesToSize(ram.used*1024, 2));
-
-        $("#mem_usage tr:nth-child(3) td:first").html('cached: '+bytesToSize(ram.cached*1024, 2));
-        $("#mem_usage tr:nth-child(3) td:last").html('buffers: '+bytesToSize(ram.buffers*1024, 2));
-
-        $("#mem_usage tr:nth-child(4) td:first").html('swap: '+bytesToSize(swap.total*1024, 2));
-        $("#mem_usage tr:nth-child(4) td:last").html('swap used: '+bytesToSize(swap.used*1024, 2));
-        // <-- memory usage
-    }
+		$("#mem_usage tr:nth-child(1) td:first").html('total: '+bytesToSize(ram.total*1024, 2));
+		$("#mem_usage tr:nth-child(2) td:first").html('free: '+bytesToSize(ram.free*1024, 2));
+		$("#mem_usage tr:nth-child(2) td:last").html('used: '+bytesToSize(ram.used*1024, 2));
+		$("#mem_usage tr:nth-child(3) td:first").html('cached: '+bytesToSize(ram.cached*1024, 2));
+		$("#mem_usage tr:nth-child(3) td:last").html('buffers: '+bytesToSize(ram.buffers*1024, 2));
+		$("#mem_usage tr:nth-child(4) td:first").html('swap: '+bytesToSize(swap.total*1024, 2));
+		$("#mem_usage tr:nth-child(4) td:last").html('swap used: '+bytesToSize(swap.used*1024, 2));
+	}
 
 	idRefresh = setTimeout('getSystemInfo()', timeToRefresh*1000);
 }
 
 $(document).ready(function() {
-    getSystemInfo();
+	getSystemInfo();
 
 	$("#cpu_info").click(function(){
-	    $("#main_info").hide();
-	    $("#cpu_usage").show();
+		$("#main_info").hide();
+		$("#cpu_usage").show();
 	});
 
-    $("#mem_info").click(function(){
-        $("#main_info").hide();
-        $("#mem_usage").show();
-    });
+	$("#mem_info").click(function(){
+		$("#main_info").hide();
+		$("#mem_usage").show();
+	});
 });
 
 </script>

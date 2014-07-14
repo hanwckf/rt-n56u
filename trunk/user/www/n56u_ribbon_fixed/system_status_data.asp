@@ -1,1 +1,1 @@
-<% ej_system_status(); %>
+<% json_system_status(); %>

@@ -1,4 +1,4 @@
-PASS_LANG=Select Language:
+PASS_LANG=Select WebUI Language:
 VPN_PPTP_Passthrough=PPTP Passthrough?
 VPN_L2TP_Passthrough=L2TP Passthrough?
 VPN_IPSec_Passthrough=IPSec Passthrough?
@@ -134,6 +134,8 @@ Adm_Setting_commit_item0=Always after changes
 Adm_Setting_commit_item1=Manual only
 Adm_Setting_commit_now=Commit NVRAM Content to Flash Memory Now:
 Adm_System_desc=Base administration control.
+Adm_System_logf=Enable Syslog Floating Toolbar?
+Adm_System_logf_item2=Last 100 lines
 Adm_System_help=Enable Context Help?
 Adm_System_terminal=Router Control
 Adm_System_telnetd=Enable Telnet Server?

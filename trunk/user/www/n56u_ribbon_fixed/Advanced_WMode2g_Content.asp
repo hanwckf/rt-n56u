@@ -94,7 +94,6 @@ function wds_scan(){
 	$j.ajax({
 		url: '/wds_aplist_2g.asp',
 		dataType: 'script',
-		
 		error: function(xhr){
 			setTimeout("wds_scan();", 1000);
 		},

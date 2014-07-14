@@ -291,6 +291,7 @@ function change_led_all(){
                                                     <option value="0" <% nvram_match_x("", "front_led_usb", "0","selected"); %>><#btn_Disable#></option>
                                                     <option value="1" <% nvram_match_x("", "front_led_usb", "1","selected"); %>><#TweaksLEDItem05#> (*)</option>
                                                     <option value="2" <% nvram_match_x("", "front_led_usb", "2","selected"); %>><#TweaksLEDItem06#></option>
+                                                    <option value="3" <% nvram_match_x("", "front_led_usb", "3","selected"); %>><#TweaksLEDItem07#></option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -299,7 +300,7 @@ function change_led_all(){
                                             <td>
                                                 <select name="front_led_wif" class="input" style="width: 320px;">
                                                     <option value="0" <% nvram_match_x("", "front_led_wif", "0","selected"); %>><#btn_Disable#></option>
-                                                    <option value="1" <% nvram_match_x("", "front_led_wif", "1","selected"); %>><#TweaksLEDItem07#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("", "front_led_wif", "1","selected"); %>><#TweaksLEDItem09#> (*)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -307,8 +308,8 @@ function change_led_all(){
                                             <th><#TweaksLEDPWR#></th>
                                             <td>
                                                 <select name="front_led_pwr" class="input" style="width: 320px;">
-                                                    <option value="0" <% nvram_match_x("", "front_led_pwr", "0","selected"); %>><#btn_Disable#>, <#TweaksLEDItem08#></option>
-                                                    <option value="1" <% nvram_match_x("", "front_led_pwr", "1","selected"); %>><#btn_Enable#>, <#TweaksLEDItem08#> (*)</option>
+                                                    <option value="0" <% nvram_match_x("", "front_led_pwr", "0","selected"); %>><#btn_Disable#>, <#TweaksLEDItem11#></option>
+                                                    <option value="1" <% nvram_match_x("", "front_led_pwr", "1","selected"); %>><#btn_Enable#>, <#TweaksLEDItem11#> (*)</option>
                                                 </select>
                                             </td>
                                         </tr>

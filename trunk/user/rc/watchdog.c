@@ -841,7 +841,7 @@ static void
 ez_action_user_script(int script_param)
 {
 	char* opt_user_script = "/opt/bin/on_wps.sh";
-	
+
 	if (check_if_file_exist(opt_user_script))
 	{
 		logmessage("watchdog", "Perform ez-button script: %s %d", opt_user_script, script_param);

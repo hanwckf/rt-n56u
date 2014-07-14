@@ -186,13 +186,20 @@ dl_handle_link_usb(void)
 {
 	int front_led_usb = nvram_get_int("front_led_usb");
 
-	if (front_led_usb > 1)
-		return;
-
-	if (front_led_usb == 1)
+	switch (front_led_usb)
+	{
+	case 2:
 		dl_status_usb = has_usb_devices();
-	else
+		break;
+	case 1:
+		dl_status_usb = is_storage_mounted();
+		break;
+	case 0:
 		dl_status_usb = 0;
+		break;
+	default:
+		return;
+	}
 
 	if (dl_status_usb_old != dl_status_usb) {
 		dl_status_usb_old = dl_status_usb;
@@ -288,7 +295,7 @@ dl_update_leds(void)
 	front_led_x = nvram_get_int("front_led_usb");
 	if (nvram_get_int("front_led_all") == 0)
 		front_led_x = 0;
-	if (front_led_x == 2) {
+	if (front_led_x == 3) {
 		LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
 		cpu_gpio_led_timer(1);
 		module_param_set_int("usbcore", "usb_led_gpio", BOARD_GPIO_LED_USB);

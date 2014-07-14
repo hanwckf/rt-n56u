@@ -78,6 +78,7 @@ extern int get_mount_path(const char *const pool, char **mount_path);
 extern int get_mount_size(const char *mount_point, u64 *total_kilobytes, u64 *used_kilobytes);
 extern int is_device_mounted(const char *device_name);
 extern int is_usb_mountpoint(const char *mount_path);
+extern int is_storage_mounted(void);
 
 extern char *get_disk_name(const char *string, char *buf, const int buf_size);
 

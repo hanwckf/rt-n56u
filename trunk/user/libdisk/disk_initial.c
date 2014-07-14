@@ -703,7 +703,7 @@ int read_mount_data(const char *device_name, char *mount_point, char *type, char
 	if (!fp)
 		return 0;
 
-	sprintf(dev_dst, "/dev/%s ", device_name);
+	snprintf(dev_dst, sizeof(dev_dst), "/dev/%s ", device_name);
 	dev_len = strlen(dev_dst);
 
 	ret = 0;
@@ -726,7 +726,6 @@ int read_mount_data(const char *device_name, char *mount_point, char *type, char
 	return ret;
 }
 
-
 int is_device_mounted(const char *device_name)
 {
 	FILE *fp;
@@ -737,12 +736,11 @@ int is_device_mounted(const char *device_name)
 	if (!fp)
 		return 0;
 
-	sprintf(dev_dst, "/dev/%s ", device_name);
+	snprintf(dev_dst, sizeof(dev_dst), "/dev/%s ", device_name);
 	dev_len = strlen(dev_dst);
 
 	ret = 0;
-	while (fgets(line, sizeof(line), fp))
-	{
+	while (fgets(line, sizeof(line), fp)) {
 		if (strncmp(line, dev_dst, dev_len) == 0) {
 			ret = 1;
 			break;
@@ -765,8 +763,7 @@ int is_usb_mountpoint(const char *mount_path)
 		return 0;
 
 	ret = 0;
-	while (fgets(line, sizeof(line), fp))
-	{
+	while (fgets(line, sizeof(line), fp)) {
 		if (strncmp(line, "/dev/sd", 7) == 0 && strstr(line, mount_path)) {
 			ret = 1;
 			break;
@@ -778,6 +775,28 @@ int is_usb_mountpoint(const char *mount_path)
 	return ret;
 }
 
+int is_storage_mounted(void)
+{
+	FILE *fp;
+	int ret;
+	char line[256];
+
+	fp = fopen(MOUNT_FILE, "r");
+	if (!fp)
+		return 0;
+
+	ret = 0;
+	while (fgets(line, sizeof(line), fp)) {
+		if (strncmp(line, "/dev/sd", 7) == 0) {
+			ret = 1;
+			break;
+		}
+	}
+
+	fclose(fp);
+
+	return ret;
+}
 
 int get_mount_path(const char *const pool, char **mount_path) 
 {

@@ -101,11 +101,16 @@ function initial(){
 	on_click_mroute();
 
 	var switch_type = support_switch_type();
-	if (switch_type == 1) {
+	if (switch_type != 0) {
 		$("row_storm_ucast").style.display = "none";
 		$("row_storm_mcast").style.display = "none";
 		$("row_storm_bcast").style.display = "none";
 	}
+
+	if (switch_type == 1)
+		$("lbl_umcast").innerHTML = "[0..100]";
+	else
+		$("lbl_umcast").innerHTML = "[0..1000]";
 
 	if(document.form.udpxy_enable_x.value == 0)
 		$("web_udpxy_link").style.display = "none";
@@ -118,8 +123,7 @@ function initial(){
 			$("row_xupnpd_udpxy").style.display = "none";
 		else
 			$("row_xupnpd_udpxy").style.display = "";
-	}
-	else{
+	}else{
 		$("row_xupnpd").style.display = "none";
 		$("row_xupnpd_udpxy").style.display = "none";
 	}
@@ -144,6 +148,7 @@ function validForm(){
 		if(!validate_range(document.form.udpxy_enable_x, 1024, 65535))
 			return false;
 	}
+
 	if(found_app_xupnpd()){
 		if(document.form.xupnpd_enable_x.value != 0){
 			if(!validate_range(document.form.xupnpd_enable_x, 1024, 65535))
@@ -155,6 +160,26 @@ function validForm(){
 			}
 		}
 	}
+
+	var switch_type = support_switch_type();
+	if(document.form.controlrate_unknown_unicast.value != 0 && switch_type == 0){
+		if(!validate_range(document.form.controlrate_unknown_unicast, 0, 1000))
+			return false;
+	}
+	if(document.form.controlrate_unknown_multicast.value != 0){
+		var max_rate = (switch_type == 1) ? 100 : 1000;
+		if(!validate_range(document.form.controlrate_unknown_multicast, 0, max_rate))
+			return false;
+	}
+	if(document.form.controlrate_multicast.value != 0 && switch_type == 0){
+		if(!validate_range(document.form.controlrate_multicast, 0, 1000))
+			return false;
+	}
+	if(document.form.controlrate_broadcast.value != 0 && switch_type == 0){
+		if(!validate_range(document.form.controlrate_broadcast, 0, 1000))
+			return false;
+	}
+
 	return true;
 }
 
@@ -172,22 +197,8 @@ function valid_xupnpd(){
 		validate_range(document.form.xupnpd_enable_x, 1024, 65535);
 }
 
-function valid_muliticast(){
-	if(document.form.controlrate_unknown_unicast.value != 0)
-		validate_range(document.form.controlrate_unknown_unicast, 0, 1000);
-	if(document.form.controlrate_unknown_multicast.value != 0)
-		validate_range(document.form.controlrate_unknown_multicast, 0, 1000);
-	if(document.form.controlrate_multicast.value != 0)
-		validate_range(document.form.controlrate_multicast, 0, 1000);
-	if(document.form.controlrate_broadcast.value != 0)
-		validate_range(document.form.controlrate_broadcast, 0, 1000);
-}
-
 function on_click_mroute() {
-	if (document.form.mr_enable_x[0].checked)
-		$("row_ttl_fix").style.display = "";
-	else
-		$("row_ttl_fix").style.display = "none";
+	showhide_div('row_ttl_fix', document.form.mr_enable_x[0].checked);
 }
 
 
@@ -276,8 +287,8 @@ function on_xupnpd_link(){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="mr_enable_x" id="mr_enable_x_1" class="input" onclick="on_click_mroute();" <% nvram_match_x("RouterConfig", "mr_enable_x", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="mr_enable_x" id="mr_enable_x_0" class="input" onclick="on_click_mroute();" <% nvram_match_x("RouterConfig", "mr_enable_x", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="mr_enable_x" id="mr_enable_x_1" class="input" onclick="on_click_mroute();" <% nvram_match_x("", "mr_enable_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="mr_enable_x" id="mr_enable_x_0" class="input" onclick="on_click_mroute();" <% nvram_match_x("", "mr_enable_x", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -294,7 +305,7 @@ function on_xupnpd_link(){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,6, 6);"><#RouterConfig_IPTV_itemname#>:</a></th>
                                             <td>
-                                                <input type="text" maxlength="5" class="input" size="15" name="udpxy_enable_x" value="<% nvram_get_x("LANHostConfig", "udpxy_enable_x"); %>" onkeypress="return is_number(this);" onblur="valid_udpxy();"/>
+                                                <input type="text" maxlength="5" class="input" size="15" name="udpxy_enable_x" value="<% nvram_get_x("", "udpxy_enable_x"); %>" onkeypress="return is_number(this);" onblur="valid_udpxy();"/>
                                             </td>
                                             <td width="15%">
                                                 <a href="javascript:on_udpxy_link();" id="web_udpxy_link">Web status</a>
@@ -303,7 +314,7 @@ function on_xupnpd_link(){
                                         <tr id="row_xupnpd">
                                             <th><#IPTVXUA#></th>
                                             <td>
-                                                <input type="text" maxlength="5" class="input" size="15" name="xupnpd_enable_x" value="<% nvram_get_x("LANHostConfig", "xupnpd_enable_x"); %>" onkeypress="return is_number(this);" onblur="valid_xupnpd();"/>
+                                                <input type="text" maxlength="5" class="input" size="15" name="xupnpd_enable_x" value="<% nvram_get_x("", "xupnpd_enable_x"); %>" onkeypress="return is_number(this);" onblur="valid_xupnpd();"/>
                                             </td>
                                             <td width="15%">
                                                 <a href="javascript:on_xupnpd_link();" id="web_xupnpd_link">Web status</a>
@@ -337,28 +348,28 @@ function on_xupnpd_link(){
                                         <tr id="row_storm_ucast">
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 7);"><#RouterConfig_GWMulticast_unknownUni_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="4" class="input" size="15" name="controlrate_unknown_unicast" value="<% nvram_get_x("LANHostConfig", "controlrate_unknown_unicast"); %>" onkeypress="return is_number(this);" onblur="valid_muliticast();"/>
+                                                <input type="text" maxlength="4" class="input" size="15" name="controlrate_unknown_unicast" value="<% nvram_get_x("", "controlrate_unknown_unicast"); %>" onkeypress="return is_number(this);"/>
                                                 &nbsp;<span style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 8);"><#RouterConfig_GWMulticast_unknownMul_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="4" class="input" size="15" name="controlrate_unknown_multicast" value="<% nvram_get_x("LANHostConfig", "controlrate_unknown_multicast"); %>" onkeypress="return is_number(this);" onblur="valid_muliticast();"/>
-                                                &nbsp;<span style="color:#888;">[0..1000]</span>
+                                                <input type="text" maxlength="4" class="input" size="15" name="controlrate_unknown_multicast" value="<% nvram_get_x("", "controlrate_unknown_multicast"); %>" onkeypress="return is_number(this);"/>
+                                                &nbsp;<span id="lbl_umcast" style="color:#888;"></span>
                                             </td>
                                         </tr>
                                         <tr id="row_storm_mcast">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 9);"><#RouterConfig_GWMulticast_Multicast_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="4" class="input" size="15" name="controlrate_multicast" value="<% nvram_get_x("LANHostConfig", "controlrate_multicast"); %>" onkeypress="return is_number(this);" onblur="valid_muliticast();"/>
+                                                <input type="text" maxlength="4" class="input" size="15" name="controlrate_multicast" value="<% nvram_get_x("", "controlrate_multicast"); %>" onkeypress="return is_number(this);"/>
                                                 &nbsp;<span style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_storm_bcast">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 10);"><#RouterConfig_GWMulticast_Broadcast_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="4" class="input" size="15" name="controlrate_broadcast" value="<% nvram_get_x("LANHostConfig", "controlrate_broadcast"); %>" onkeypress="return is_number(this);" onblur="valid_muliticast();"/>
+                                                <input type="text" maxlength="4" class="input" size="15" name="controlrate_broadcast" value="<% nvram_get_x("", "controlrate_broadcast"); %>" onkeypress="return is_number(this);"/>
                                                 &nbsp;<span style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
@@ -378,8 +389,8 @@ function on_xupnpd_link(){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="ether_igmp" id="ether_igmp_1" class="input" <% nvram_match_x("LANHostConfig", "ether_igmp", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="ether_igmp" id="ether_igmp_0" class="input" <% nvram_match_x("LANHostConfig", "ether_igmp", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="ether_igmp" id="ether_igmp_1" class="input" <% nvram_match_x("", "ether_igmp", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="ether_igmp" id="ether_igmp_0" class="input" <% nvram_match_x("", "ether_igmp", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

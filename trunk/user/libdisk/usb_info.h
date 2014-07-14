@@ -100,10 +100,6 @@ extern int  isWDMNode(const char *device_name);
 extern int  isUsbNetIf(const char *device_name);
 extern int  isSerialInterface(const char *interface_class);
 extern int  isACMInterface(const char *interface_class, const char *interface_subclass);
-extern int  isRNDISInterface(const char *interface_class, const char *interface_subclass);
-extern int  isCDCEthInterface(const char *interface_class, const char *interface_subclass);
-extern int  isCDCNCMInterface(const char *interface_class, const char *interface_subclass);
-extern int  isCDCMBIMInterface(const char *interface_class, const char *interface_subclass);
 extern int  isStorageInterface(const char *interface_class);
 
 extern int  has_usb_devices(void);

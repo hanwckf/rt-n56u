@@ -443,46 +443,6 @@ int isACMInterface(const char *interface_class, const char *interface_subclass){
 	return 0;
 }
 
-int isRNDISInterface(const char *interface_class, const char *interface_subclass){
-	// tethering
-	if(strcmp(interface_class, "e0") == 0 && strcmp(interface_subclass, "01") == 0)
-		return 1;
-
-	// WM5
-	if(strcmp(interface_class, "ef") == 0 && strcmp(interface_subclass, "01") == 0)
-		return 1;
-
-	return 0;
-}
-
-int isCDCEthInterface(const char *interface_class, const char *interface_subclass){
-	// cdc-ether
-	if(strcmp(interface_class, "02") == 0 && strcmp(interface_subclass, "06") == 0)
-		return 1;
-
-	// cdc-mdlm
-	if(strcmp(interface_class, "02") == 0 && strcmp(interface_subclass, "0a") == 0)
-		return 1;
-
-	return 0;
-}
-
-int isCDCNCMInterface(const char *interface_class, const char *interface_subclass){
-	// cdc-ncm
-	if(strcmp(interface_class, "02") == 0 && strcmp(interface_subclass, "0d") == 0)
-		return 1;
-
-	return 0;
-}
-
-int isCDCMBIMInterface(const char *interface_class, const char *interface_subclass){
-	// cdc-mbim
-	if(strcmp(interface_class, "02") == 0 && strcmp(interface_subclass, "0e") == 0)
-		return 1;
-
-	return 0;
-}
-
 int isStorageInterface(const char *interface_class){
 	if(strcmp(interface_class, "08") == 0)
 		return 1;

@@ -1804,7 +1804,15 @@ static int xhci_configure_endpoint(struct xhci_hcd *xhci,
 
 		cmd_completion = command->completion;
 		cmd_status = &command->status;
-		command->command_trb = xhci_find_next_enqueue(xhci->cmd_ring);
+		command->command_trb = xhci->cmd_ring->enqueue;
+
+		/* Enqueue pointer can be left pointing to the link TRB,
+		 * we must handle that
+		 */
+		if (TRB_TYPE_LINK_LE32(command->command_trb->link.control))
+			command->command_trb =
+				xhci->cmd_ring->enq_seg->next->trbs;
+
 		list_add_tail(&command->cmd_list, &virt_dev->cmd_list);
 	} else {
 		in_ctx = virt_dev->in_ctx;
@@ -1821,7 +1829,7 @@ static int xhci_configure_endpoint(struct xhci_hcd *xhci,
 	}
 	init_completion(cmd_completion);
 
-	cmd_trb = xhci_find_next_enqueue(xhci->cmd_ring);
+	cmd_trb = xhci->cmd_ring->dequeue;
 	if (!ctx_change)
 		ret = xhci_queue_configure_endpoint(xhci, in_ctx->dma,
 				udev->slot_id, must_succeed);
@@ -2604,7 +2612,14 @@ int xhci_discover_or_reset_device(struct usb_hcd *hcd, struct usb_device *udev)
 
 	/* Attempt to submit the Reset Device command to the command ring */
 	spin_lock_irqsave(&xhci->lock, flags);
-	reset_device_cmd->command_trb = xhci_find_next_enqueue(xhci->cmd_ring);
+	reset_device_cmd->command_trb = xhci->cmd_ring->enqueue;
+
+	/* Enqueue pointer can be left pointing to the link TRB,
+	 * we must handle that
+	 */
+	if (TRB_TYPE_LINK_LE32(reset_device_cmd->command_trb->link.control))
+		reset_device_cmd->command_trb =
+			xhci->cmd_ring->enq_seg->next->trbs;
 
 	list_add_tail(&reset_device_cmd->cmd_list, &virt_dev->cmd_list);
 	ret = xhci_queue_reset_device(xhci, slot_id);
@@ -2792,7 +2807,7 @@ int xhci_alloc_dev(struct usb_hcd *hcd, struct usb_device *udev)
 	union xhci_trb *cmd_trb;
 
 	spin_lock_irqsave(&xhci->lock, flags);
-	cmd_trb = xhci_find_next_enqueue(xhci->cmd_ring);
+	cmd_trb = xhci->cmd_ring->dequeue;
 	ret = xhci_queue_slot_control(xhci, TRB_ENABLE_SLOT, 0);
 	if (ret) {
 		spin_unlock_irqrestore(&xhci->lock, flags);
@@ -2919,7 +2934,7 @@ int xhci_address_device(struct usb_hcd *hcd, struct usb_device *udev)
 	xhci_dbg_ctx(xhci, virt_dev->in_ctx, 2);
 
 	spin_lock_irqsave(&xhci->lock, flags);
-	cmd_trb = xhci_find_next_enqueue(xhci->cmd_ring);
+	cmd_trb = xhci->cmd_ring->dequeue;
 	ret = xhci_queue_address_device(xhci, virt_dev->in_ctx->dma,
 					udev->slot_id);
 	if (ret) {

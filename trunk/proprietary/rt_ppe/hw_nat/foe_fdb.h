@@ -630,9 +630,12 @@ struct _ipv6_1t_route {
 
 struct FoeEntry {
 	union {
+		struct ud_info_blk1 udib1;
 		struct bf_info_blk1 bfib1;	//common header
 		struct _ipv4_hnapt ipv4_hnapt;	// nat & napt share same data structure
+#if defined (CONFIG_RA_HW_NAT_IPV6)
 		struct _ipv6_1t_route ipv6_1t_route;
+#endif
 	};
 };
 

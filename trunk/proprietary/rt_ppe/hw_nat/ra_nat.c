@@ -550,10 +550,10 @@ void PpeKeepAliveHandler(struct sk_buff* skb, struct FoeEntry* foe_entry, int re
 			}
 		} else if (iph->protocol == IPPROTO_UDP) {
 			struct udphdr *uh = (struct udphdr *)((uint8_t *)iph + iph->ihl * 4);
-			if (!uh->check && ppe_udp_bug && foe_entry->ipv4_hnapt.bfib1.state == BIND) {
+			if (!uh->check && ppe_udp_bug && foe_entry->bfib1.state == BIND) {
 				/* no UDP checksum, force unbind session from PPE for workaround PPE UDP bug */
-				foe_entry->ipv4_hnapt.udib1.state = UNBIND;
-				foe_entry->ipv4_hnapt.udib1.time_stamp = RegRead(FOE_TS) & 0xFF;
+				foe_entry->udib1.state = UNBIND;
+				foe_entry->udib1.time_stamp = RegRead(FOE_TS) & 0xFF;
 			}
 			if (recover_header)
 				FoeToOrgUdpHdr(foe_entry, iph, uh);
@@ -1123,8 +1123,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 		if (foe_entry.bfib1.pkt_type == IPV4_DSLITE) {
 #if defined (CONFIG_RA_HW_NAT_IPV6)
 			if (!ip6_offload)
-#endif
-			return 1;
+				return 1;
 			
 			foe_entry.bfib1.drm = 1;		// switch will keep dscp
 			foe_entry.bfib1.rmt = 1;		// remove outer IPv4 header
@@ -1137,8 +1136,11 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 			foe_entry.ipv4_dslite.vlan1 = vlan1_id;
 			foe_entry.ipv4_dslite.vlan2 = vlan2_id;
 			foe_entry.ipv4_dslite.etype = vlan_tag;
-			
+#else
+			return 1;
+#endif
 		} else {
+#if defined (CONFIG_RA_HW_NAT_IPV6)
 			if (iph->protocol == IPPROTO_IPV6) {
 				/* fill L2 info (80B) */
 				FoeSetMacInfo(foe_entry.ipv6_6rd.dmac_hi, eth->h_dest);
@@ -1147,7 +1149,9 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 				foe_entry.ipv6_6rd.vlan1 = vlan1_id;
 				foe_entry.ipv6_6rd.vlan2 = vlan2_id;
 				foe_entry.ipv6_6rd.etype = vlan_tag;
-			} else {
+			} else
+#endif
+			{
 				/* fill L3 info */
 				foe_entry.bfib1.drm = 1;		//switch will keep dscp
 				foe_entry.ipv4_hnapt.new_sip = ntohl(iph->saddr);

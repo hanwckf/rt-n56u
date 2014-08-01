@@ -430,7 +430,7 @@ try_again:
 		else {
 			sin6->sin6_addr = ipv6_hdr(skb)->saddr;
 			if (ipv6_addr_type(&sin6->sin6_addr) & IPV6_ADDR_LINKLOCAL)
-				sin6->sin6_scope_id = IP6CB(skb)->iif;
+				sin6->sin6_scope_id = inet6_iif(skb);
 		}
 		*addr_len = sizeof(*sin6);
 	}

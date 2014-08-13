@@ -61,8 +61,19 @@ use any IP address.  (This only applies where the peer is
 authenticating itself to you, of course.)
 
 
-What's new in ppp-2.4.6.
+What's new in ppp-2.4.7.
 ************************
+
+* Fixed a potential security issue in parsing option files (CVE-2014-3158).
+
+* There is a new "stop-bits" option, which takes an argument of 1 or 2,
+  indicating the number of stop bits to use for async serial ports.
+
+* Various bug fixes.
+
+
+What was new in ppp-2.4.6.
+**************************
 
 * Man page updates.
 

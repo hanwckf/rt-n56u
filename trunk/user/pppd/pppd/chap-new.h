@@ -56,8 +56,8 @@
 
 /* bitmask of supported algorithms */
 #define MDTYPE_MICROSOFT_V2	0x1
-#define MDTYPE_MICROSOFT	0x2
-#define MDTYPE_MD5		0x4
+#define MDTYPE_MD5		0x2
+#define MDTYPE_MICROSOFT	0x4
 #define MDTYPE_NONE		0
 
 /* hashes supported by this instance of pppd */
@@ -65,8 +65,8 @@ extern int chap_mdtype_all;
 
 /* Return the digest alg. ID for the most preferred digest type. */
 #define CHAP_DIGEST(mdtype) \
-    ((mdtype) & MDTYPE_MD5)? CHAP_MD5: \
     ((mdtype) & MDTYPE_MICROSOFT_V2)? CHAP_MICROSOFT_V2: \
+    ((mdtype) & MDTYPE_MD5)? CHAP_MD5: \
     ((mdtype) & MDTYPE_MICROSOFT)? CHAP_MICROSOFT: \
     0
 

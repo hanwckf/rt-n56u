@@ -259,8 +259,10 @@ extern struct notifier *pidchange;   /* for notifications of pid changing */
 extern struct notifier *phasechange; /* for notifications of phase changes */
 extern struct notifier *exitnotify;  /* for notification that we're exiting */
 extern struct notifier *sigreceived; /* notification of received signal */
-extern struct notifier *ip_up_notifier; /* IPCP has come up */
-extern struct notifier *ip_down_notifier; /* IPCP has gone down */
+extern struct notifier *ip_up_notifier;     /* IPCP has come up */
+extern struct notifier *ip_down_notifier;   /* IPCP has gone down */
+extern struct notifier *ipv6_up_notifier;   /* IPV6CP has come up */
+extern struct notifier *ipv6_down_notifier; /* IPV6CP has gone down */
 extern struct notifier *auth_up_notifier; /* peer has authenticated */
 extern struct notifier *link_down_notifier; /* link has gone down */
 extern struct notifier *fork_notifier;	/* we are a new child process */
@@ -278,6 +280,7 @@ extern int	kdebugflag;	/* Tell kernel to print debug messages */
 extern int	default_device;	/* Using /dev/tty or equivalent */
 extern char	devnam[MAXPATHLEN];	/* Device name */
 extern int	crtscts;	/* Use hardware flow control */
+extern int	stop_bits;	/* Number of serial port stop bits */
 extern bool	modem;		/* Use modem control lines */
 extern int	inspeed;	/* Input/Output speed requested */
 extern u_int32_t netmask;	/* IP netmask to set on interface */
@@ -641,6 +644,8 @@ int  cifaddr __P((int, u_int32_t, u_int32_t));
 				/* Reset i/f IP addresses */
 #ifdef INET6
 int  ether_to_eui64(eui64_t *p_eui64);	/* convert eth0 hw address to EUI64 */
+int  sif6up __P((int));		/* Configure i/f up for IPv6 */
+int  sif6down __P((int));	/* Configure i/f down for IPv6 */
 int  sif6addr __P((int, eui64_t, eui64_t));
 				/* Configure IPv6 addresses for i/f */
 int  cif6addr __P((int, eui64_t, eui64_t));
@@ -715,6 +720,8 @@ extern int (*allowed_address_hook) __P((u_int32_t addr));
 extern void (*ip_up_hook) __P((void));
 extern void (*ip_down_hook) __P((void));
 extern void (*ip_choose_hook) __P((u_int32_t *));
+extern void (*ipv6_up_hook) __P((void));
+extern void (*ipv6_down_hook) __P((void));
 
 extern int (*chap_check_hook) __P((void));
 extern int (*chap_passwd_hook) __P((char *user, char *passwd));

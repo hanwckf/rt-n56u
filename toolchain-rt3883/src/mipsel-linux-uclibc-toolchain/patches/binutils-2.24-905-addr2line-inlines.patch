@@ -1,0 +1,104 @@
+From 4ba3b3268eaea2c15e7adb1b816a946af3a830bc
+From: Tristan Gingold <tristan.gingold@adacore.com>
+Date: Wed, 28 May 2014 09:21:11 +0200
+Subject: [PATCH] addr2line: fix missing inlined frames.
+
+2014-05-28  Tristan Gingold  <gingold@adacore.com>
+
+	* dwarf2.c (lookup_address_in_function_table): Add best_fit_len
+	to keep the length of the best fit range.
+	(lookup_symbol_in_function_table, info_hash_lookup_funcinfo):
+	Likewise.
+---
+ bfd/ChangeLog |    7 +++++++
+ bfd/dwarf2.c  |   27 ++++++++++++++++++---------
+ 2 files changed, 25 insertions(+), 9 deletions(-)
+
+diff --git a/bfd/ChangeLog b/bfd/ChangeLog
+--- a/bfd/ChangeLog
++++ b/bfd/ChangeLog
+@@ -1,3 +1,10 @@
++2014-05-28  Tristan Gingold  <gingold@adacore.com>
++
++	* dwarf2.c (lookup_address_in_function_table): Add best_fit_len
++	to keep the length of the best fit range.
++	(lookup_symbol_in_function_table, info_hash_lookup_funcinfo):
++	Likewise.
++
+ 2014-02-10  H.J. Lu  <hongjiu.lu@intel.com>
+ 
+ 	PR gold/16530
+diff --git a/bfd/dwarf2.c b/bfd/dwarf2.c
+index e5579d8..5e322ce 100644
+--- a/bfd/dwarf2.c
++++ b/bfd/dwarf2.c
+@@ -1989,6 +1989,7 @@ lookup_address_in_function_table (struct comp_unit *unit,
+ {
+   struct funcinfo* each_func;
+   struct funcinfo* best_fit = NULL;
++  bfd_vma best_fit_len = 0;
+   struct arange *arange;
+ 
+   for (each_func = unit->function_table;
+@@ -2002,9 +2003,11 @@ lookup_address_in_function_table (struct comp_unit *unit,
+ 	  if (addr >= arange->low && addr < arange->high)
+ 	    {
+ 	      if (!best_fit
+-		  || (arange->high - arange->low
+-		      < best_fit->arange.high - best_fit->arange.low))
+-		best_fit = each_func;
++		  || arange->high - arange->low < best_fit_len)
++		{
++		  best_fit = each_func;
++		  best_fit_len = arange->high - arange->low;
++		}
+ 	    }
+ 	}
+     }
+@@ -2033,6 +2036,7 @@ lookup_symbol_in_function_table (struct comp_unit *unit,
+ {
+   struct funcinfo* each_func;
+   struct funcinfo* best_fit = NULL;
++  bfd_vma best_fit_len = 0;
+   struct arange *arange;
+   const char *name = bfd_asymbol_name (sym);
+   asection *sec = bfd_get_section (sym);
+@@ -2051,9 +2055,11 @@ lookup_symbol_in_function_table (struct comp_unit *unit,
+ 	      && each_func->name
+ 	      && strcmp (name, each_func->name) == 0
+ 	      && (!best_fit
+-		  || (arange->high - arange->low
+-		      < best_fit->arange.high - best_fit->arange.low)))
+-	    best_fit = each_func;
++		  || arange->high - arange->low < best_fit_len))
++	    {
++	      best_fit = each_func;
++	      best_fit_len = arange->high - arange->low;
++	    }
+ 	}
+     }
+ 
+@@ -3106,6 +3112,7 @@ info_hash_lookup_funcinfo (struct info_hash_table *hash_table,
+ {
+   struct funcinfo* each_func;
+   struct funcinfo* best_fit = NULL;
++  bfd_vma best_fit_len = 0;
+   struct info_list_node *node;
+   struct arange *arange;
+   const char *name = bfd_asymbol_name (sym);
+@@ -3124,9 +3131,11 @@ info_hash_lookup_funcinfo (struct info_hash_table *hash_table,
+ 	      && addr >= arange->low
+ 	      && addr < arange->high
+ 	      && (!best_fit
+-		  || (arange->high - arange->low
+-		      < best_fit->arange.high - best_fit->arange.low)))
+-	    best_fit = each_func;
++		  || arange->high - arange->low < best_fit_len))
++	    {
++	      best_fit = each_func;
++	      best_fit_len = arange->high - arange->low;
++	    }
+ 	}
+     }
+ 
+-- 

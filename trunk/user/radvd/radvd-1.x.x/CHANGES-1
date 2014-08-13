@@ -1,3 +1,6 @@
+2014/07/21	Fix capitalization of AdvLifeTime in scanner.l
+		release 1.15
+
 2014/06/27	Add check in configure.ac for clock_gettime <Gustavo Zacarias>
 		release 1.14
 

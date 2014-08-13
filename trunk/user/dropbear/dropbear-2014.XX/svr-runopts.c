@@ -96,6 +96,7 @@ static void printhelp(const char * progname) {
 					"-W <receive_window_buffer> (default %d, larger may be faster, max 1MB)\n"
 					"-K <keepalive>  (0 is never, default %d, in seconds)\n"
 					"-I <idle_timeout>  (0 is never, default %d, in seconds)\n"
+					"-V    Version\n"
 #ifdef DEBUG_TRACE
 					"-v		verbose (compiled with DEBUG_TRACE)\n"
 #endif
@@ -267,7 +268,7 @@ void svr_getopts(int argc, char ** argv) {
 #endif
 				case 'h':
 					printhelp(argv[0]);
-					exit(EXIT_FAILURE);
+					exit(EXIT_SUCCESS);
 					break;
 				case 'u':
 					/* backwards compatibility with old urandom option */
@@ -277,6 +278,10 @@ void svr_getopts(int argc, char ** argv) {
 					debug_trace = 1;
 					break;
 #endif
+				case 'V':
+					print_version();
+					exit(EXIT_SUCCESS);
+					break;
 				case 'x':
 					opts.weakkex = 1;
 					break;

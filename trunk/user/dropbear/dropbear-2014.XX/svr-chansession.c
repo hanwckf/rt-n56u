@@ -89,6 +89,9 @@ static void sesssigchild_handler(int UNUSED(dummy)) {
 
 	const int saved_errno = errno;
 
+	/* Make channel handling code look for closed channels */
+	ses.channel_signal_pending = 1;
+
 	TRACE(("enter sigchld handler"))
 	while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
 		TRACE(("sigchld handler: pid %d", pid))
@@ -252,6 +255,8 @@ static int newchansess(struct Channel *channel) {
 	chansess->agentfile = NULL;
 	chansess->agentdir = NULL;
 #endif
+
+	channel->prio = DROPBEAR_CHANNEL_PRIO_INTERACTIVE;
 
 	return 0;
 
@@ -668,8 +673,11 @@ static int sessioncommand(struct Channel *channel, struct ChanSess *chansess,
 
 	if (chansess->term == NULL) {
 		/* no pty */
-		set_sock_priority(ses.sock_out, DROPBEAR_PRIO_BULK);
 		ret = noptycommand(channel, chansess);
+		if (ret == DROPBEAR_SUCCESS) {
+			channel->prio = DROPBEAR_CHANNEL_PRIO_BULK;
+			update_channel_prio();
+		}
 	} else {
 		/* want pty */
 		ret = ptycommand(channel, chansess);

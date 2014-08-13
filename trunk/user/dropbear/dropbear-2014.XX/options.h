@@ -264,7 +264,7 @@ much traffic. */
 /* The command to invoke for xauth when using X11 forwarding.
  * "-q" for quiet */
 #ifndef XAUTH_COMMAND
-#define XAUTH_COMMAND "/opt/bin/X11/xauth -q"
+#define XAUTH_COMMAND "/opt/bin/xauth -q"
 #endif
 
 /* if you want to enable running an sftp server (such as the one included with
@@ -307,6 +307,11 @@ much traffic. */
 /* Ensure that data is transmitted every KEEPALIVE seconds. This can
 be overridden at runtime with -K. 0 disables keepalives */
 #define DEFAULT_KEEPALIVE 0
+
+/* If this many KEEPALIVES are sent with no packets received from the
+other side, exit. Not run-time configurable - if you have a need
+for runtime configuration please mail the Dropbear list */
+#define DEFAULT_KEEPALIVE_LIMIT 3
 
 /* Ensure that data is received within IDLE_TIMEOUT seconds. This can
 be overridden at runtime with -I. 0 disables idle timeouts */

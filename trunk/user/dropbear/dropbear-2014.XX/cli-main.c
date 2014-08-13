@@ -76,9 +76,6 @@ int main(int argc, char ** argv) {
 				cli_opts.remotehost, cli_opts.remoteport, 
 				0, &error);
 		sock_in = sock_out = sock;
-	 	if (cli_opts.wantpty) {
-			set_sock_priority(sock, DROPBEAR_PRIO_LOWDELAY);
-	 	}
 	}
 
 	if (sock_in < 0) {
@@ -108,9 +105,10 @@ static void cli_dropbear_exit(int exitcode, const char* format, va_list param) {
 
 	/* Do the cleanup first, since then the terminal will be reset */
 	session_cleanup();
+	/* Avoid printing onwards from terminal cruft */
+	fprintf(stderr, "\n");
 
 	_dropbear_log(LOG_INFO, fmtbuf, param);
-
 	exit(exitcode);
 }
 
@@ -122,7 +120,7 @@ static void cli_dropbear_log(int UNUSED(priority),
 	vsnprintf(printbuf, sizeof(printbuf), format, param);
 
 	fprintf(stderr, "%s: %s\n", cli_opts.progname, printbuf);
-
+	fflush(stderr);
 }
 
 static void exec_proxy_cmd(void *user_data_cmd) {

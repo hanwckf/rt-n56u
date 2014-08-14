@@ -412,10 +412,6 @@ function applyRule(){
 	}
 }
 
-function trim(str){
-	return str.replace(/(^s*)|(s*$)/g, "");
-}
-
 function validForm(){
 	if(!validate_range(document.form.st_max_user, 1, 50)){
 		return false;

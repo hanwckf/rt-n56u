@@ -630,11 +630,8 @@ function translate(str){
 	return str;
 }
 
-function trim(val){
-	val = val+'';
-	for (var startIndex=0;startIndex<val.length && val.substring(startIndex,startIndex+1) == ' ';startIndex++);
-	for (var endIndex=val.length-1; endIndex>startIndex && val.substring(endIndex,endIndex+1) == ' ';endIndex--);
-	return val.substring(startIndex,endIndex+1);
+function trim(str){
+	return str.replace(/(^s*)|(s*$)/g, "");
 }
 
 function is_string(o){

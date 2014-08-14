@@ -245,7 +245,8 @@ function showLANIPList(){
 			if(wds_aplist[i][1] && wds_aplist[i][1].length > 0){
 				code += '<a href="javascript:void(0)"><div onclick="setClientIP('+i+');"><strong>'+show_name+'</strong>';
 				code += ' ['+wds_aplist[i][1]+']';
-				code += ', '+wds_aplist[i][2]+'%';
+				code += ', Ch.'+wds_aplist[i][2];
+				code += ', '+wds_aplist[i][3]+'%';
 				code += ' </div></a>';
 			}
 		}

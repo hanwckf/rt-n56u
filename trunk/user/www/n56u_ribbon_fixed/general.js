@@ -1538,7 +1538,7 @@ function openLink(s) {
         else if (o1.value == 'WWW.SITELUTIONS.COM')
             tourl = "https://sitelutions.com/signup";
         else if (o1.value == 'WWW.DUCKDNS.ORG')
-            tourl = "https://duckdns.org/login/";
+            tourl = "https://duckdns.org/";
         else if (o1.value == 'WWW.DHIS.ORG')
             tourl = "http://dhis.org/WebEngine.ipo?context=dhis.website.register";
         else if (o1.value == 'TB.NETASSIST.UA')

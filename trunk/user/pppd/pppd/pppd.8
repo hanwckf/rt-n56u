@@ -320,8 +320,9 @@ can do either.)
 .TP
 .B demand
 Initiate the link only on demand, i.e. when data traffic is present.
-With this option, the remote IP address must be specified by the user
-on the command line or in an options file.  Pppd will initially
+With this option, the remote IP address may be specified by the user
+on the command line or in an options file, or if not, pppd will use
+an arbitrary address in the 10.x.x.x range.  Pppd will initially
 configure the interface and enable it for IP traffic without
 connecting to the peer.  When traffic is available, pppd will
 connect to the peer and perform negotiation, authentication, etc.
@@ -631,6 +632,14 @@ must have an entry in the /etc/ppp/pap\-secrets file as well as the
 system password database to be allowed access.  See also the
 \fBenable\-session\fR option.
 .TP
+.B master_detach
+If multilink is enabled and this pppd process is the multilink bundle
+master, and the link controlled by this pppd process terminates, this
+pppd process continues to run in order to maintain the bundle.  If the
+\fBmaster_detach\fR option has been given, pppd will detach from its
+controlling terminal in this situation, even if the \fBnodetach\fR
+option has been given.
+.TP
 .B maxconnect \fIn
 Terminate the connection when it has been available for network
 traffic for \fIn\fR seconds (i.e. \fIn\fR seconds after the first
@@ -639,6 +648,9 @@ network control protocol comes up).
 .B maxfail \fIn
 Terminate after \fIn\fR consecutive failed connection attempts.  A
 value of 0 means no limit.  The default value is 10.
+.TP
+.B minunit \fInum
+PPP interface minimal unit number. Such as unit, but always select bigger interface
 .TP
 .B modem
 Use the modem control lines.  This option is the default.  With this
@@ -845,8 +857,9 @@ do so by placing this option in the /etc/ppp/options file.
 .B noremoteip
 Allow pppd to operate without having an IP address for the peer.  This
 option is only available under Linux.  Normally, pppd will request the
-peer's IP address, and if the peer does not supply it, pppd will not
-bring up the link for IP traffic.  With this option, if the peer does
+peer's IP address, and if the peer does not supply it, pppd will use
+an arbitrary address in the 10.x.x.x subnet.
+With this option, if the peer does
 not supply its IP address, pppd will not ask the peer for it, and will
 not set the destination address of the ppp interface.  In this
 situation, the ppp interface can be used for routing by creating
@@ -1038,6 +1051,13 @@ Authentication Protocol] authentication.
 Require the peer to authenticate itself using PAP [Password
 Authentication Protocol] authentication.
 .TP
+.B set \fIname\fR=\fIvalue
+Set an environment variable for scripts that are invoked by pppd.
+When set by a privileged source, the variable specified by \fIname\fR
+cannot be changed by options contained in an unprivileged source.  See
+also the \fIunset\fR option and the environment described in
+\fISCRIPTS\fR.
+.TP
 .B show\-password
 When logging the contents of PAP packets, this option causes pppd to
 show the password string in the log message.
@@ -1078,11 +1098,12 @@ under Linux and FreeBSD 2.2.8 and later.
 Sets the ppp unit number (for a ppp0 or ppp1 etc interface name) for outbound
 connections.
 .TP
-.B minunit \fInum
-Such as unit, but always select bigger interface
-.TP
-.B minunit \fInum
-PPP interface minimal unit number. Such as unit, but always select bigger interface
+.B unset \fIname
+Remove a variable from the environment variable for scripts that are
+invoked by pppd.  When specified by a privileged source, the variable
+\fIname\fR cannot be set by options contained in an unprivileged
+source.  See also the \fIset\fR option and the environment described
+in \fISCRIPTS\fR.
 .TP
 .B updetach
 With this option, pppd will detach from its controlling terminal once

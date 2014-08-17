@@ -140,7 +140,7 @@ typedef struct {
 #define OPT_INITONLY	0x4000000 /* option can only be set in init phase */
 #define OPT_DEVEQUIV	0x8000000 /* equiv to device name */
 #define OPT_DEVNAM	(OPT_INITONLY | OPT_DEVEQUIV)
-#define OPT_A2PRINTER	0x10000000 /* *addr2 is a fn for printing option */
+#define OPT_A2PRINTER	0x10000000 /* *addr2 printer_func to print option */
 #define OPT_A2STRVAL	0x20000000 /* *addr2 points to current string value */
 #define OPT_NOPRINT	0x40000000 /* don't print this option at all */
 
@@ -200,6 +200,7 @@ struct epdisc {
 #define EPD_PHONENUM	5
 
 typedef void (*notify_func) __P((void *, int));
+typedef void (*printer_func) __P((void *, char *, ...));
 
 struct notifier {
     struct notifier *next;
@@ -287,6 +288,7 @@ extern u_int32_t netmask;	/* IP netmask to set on interface */
 extern bool	lockflag;	/* Create lock file to lock the serial dev */
 extern bool	nodetach;	/* Don't detach from controlling tty */
 extern bool	updetach;	/* Detach from controlling tty when link up */
+extern bool	master_detach;	/* Detach when multilink master without link */
 extern char	*initializer;	/* Script to initialize physical link */
 extern char	*connect_script; /* Script to establish physical link */
 extern char	*disconnect_script; /* Script to disestablish physical link */
@@ -411,8 +413,7 @@ struct protent {
     /* Close the protocol */
     void (*close) __P((int unit, char *reason));
     /* Print a packet in readable form */
-    int  (*printpkt) __P((u_char *pkt, int len,
-			  void (*printer) __P((void *, char *, ...)),
+    int  (*printpkt) __P((u_char *pkt, int len, printer_func printer,
 			  void *arg));
     /* Process a received data packet */
     void (*datainput) __P((int unit, u_char *pkt, int len));
@@ -466,6 +467,21 @@ struct channel {
 extern struct channel *the_channel;
 
 /*
+ * This structure contains environment variables that are set or unset
+ * by the user.
+ */
+struct userenv {
+	struct userenv *ue_next;
+	char *ue_value;		/* value (set only) */
+	bool ue_isset;		/* 1 for set, 0 for unset */
+	bool ue_priv;		/* from privileged source */
+	const char *ue_source;	/* source name */
+	char ue_name[1];	/* variable name */
+};
+
+extern struct userenv *userenv_list;
+
+/*
  * Prototypes.
  */
 
@@ -509,8 +525,8 @@ void tty_init __P((void));
 /* Procedures exported from utils.c. */
 void log_packet __P((u_char *, int, char *, int));
 				/* Format a packet and log it with syslog */
-void print_string __P((char *, int,  void (*) (void *, char *, ...),
-		void *));	/* Format a string for output */
+void print_string __P((char *, int,  printer_func, void *));
+				/* Format a string for output */
 int slprintf __P((char *, int, char *, ...));		/* sprintf++ */
 int vslprintf __P((char *, int, char *, va_list));	/* vsprintf++ */
 size_t strlcpy __P((char *, const char *, size_t));	/* safe strcpy */
@@ -699,7 +715,7 @@ void add_options __P((option_t *)); /* Add extra options */
 void check_options __P((void));	/* check values after all options parsed */
 int  override_value __P((const char *, int, const char *));
 				/* override value if permitted by priority */
-void print_options __P((void (*) __P((void *, char *, ...)), void *));
+void print_options __P((printer_func, void *));
 				/* print out values of all options */
 
 int parse_dotted_ip __P((char *, u_int32_t *));

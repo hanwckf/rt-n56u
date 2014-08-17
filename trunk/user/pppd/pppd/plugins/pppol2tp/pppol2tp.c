@@ -223,7 +223,7 @@ static void send_config_pppol2tp(int mtu,
 	}
 
 	if ((lcp_allowoptions[0].mru > 0) && (mtu > lcp_allowoptions[0].mru)) {
-		info("Overriding mtu %d to %d", mtu, lcp_allowoptions[0].mru);
+		warn("Overriding mtu %d to %d", mtu, lcp_allowoptions[0].mru);
 		mtu = lcp_allowoptions[0].mru;
 	}
 	netif_set_mtu(ifunit, mtu);
@@ -282,7 +282,7 @@ static void recv_config_pppol2tp(int mru,
 		return;
 
 	if ((lcp_allowoptions[0].mru > 0) && (mru > lcp_allowoptions[0].mru)) {
-		info("Overriding mru %d to mtu value %d", mru,
+		warn("Overriding mru %d to mtu value %d", mru,
 		     lcp_allowoptions[0].mru);
 		mru = lcp_allowoptions[0].mru;
 	}

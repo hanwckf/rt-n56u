@@ -79,6 +79,17 @@ What was new in ppp-2.4.6.
 
 * Several bug fixes.
 
+* Options files can now set and unset environment variables for
+  scripts.
+
+* The timeout for chat scripts can now be taken from an environment
+  variable.
+
+* There is a new option, master_detach, which allows pppd to detach
+  from the controlling terminal when it is the multilink bundle master
+  but its own link has terminated, even if the nodetach option has
+  been given.
+
 
 What was new in ppp-2.4.5.
 **************************

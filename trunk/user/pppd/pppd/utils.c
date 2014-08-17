@@ -68,8 +68,7 @@ extern char *strerror();
 static void logit __P((int, char *, va_list));
 static void log_write __P((int, char *));
 static void vslp_printer __P((void *, char *, ...));
-static void format_packet __P((u_char *, int, void (*) (void *, char *, ...),
-			       void *));
+static void format_packet __P((u_char *, int, printer_func, void *));
 
 struct buffer_info {
     char *ptr;
@@ -464,7 +463,7 @@ static void
 format_packet(p, len, printer, arg)
     u_char *p;
     int len;
-    void (*printer) __P((void *, char *, ...));
+    printer_func printer;
     void *arg;
 {
     int i, n;
@@ -602,7 +601,7 @@ void
 print_string(p, len, printer, arg)
     char *p;
     int len;
-    void (*printer) __P((void *, char *, ...));
+    printer_func printer;
     void *arg;
 {
     int c;

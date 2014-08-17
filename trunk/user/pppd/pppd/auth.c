@@ -240,7 +240,7 @@ bool explicit_passwd = 0;	/* Set if "password" option supplied */
 char remote_name[MAXNAMELEN];	/* Peer's name for authentication */
 
 static char *uafname;		/* name of most recent +ua file */
-static char *path_chaps = _PATH_CHAPFILE;	/* pathname to chap-secrets */
+static char *path_chapfile = _PATH_CHAPFILE;	/* pathname of chap-secrets file */
 
 extern char *crypt __P((const char *, const char *));
 
@@ -402,8 +402,8 @@ option_t auth_options[] = {
       "Set telephone number(s) which are allowed to connect",
       OPT_PRIV | OPT_A2LIST },
 
-    { "chap-secrets-path", o_string, &path_chaps,
-      "Set pathname of chap-secrets file", OPT_PRIV },
+    { "chap-secrets", o_string, &path_chapfile,
+      "Set pathname of chap-secrets file", OPT_PRIO },
 
     { NULL }
 };
@@ -560,7 +560,7 @@ void start_link(unit)
      /* we are called via link_terminated, must be ignored */
     if (phase == PHASE_DISCONNECT)
 	return;
-    status = EXIT_NEGOTIATION_FAILED;
+    status = EXIT_CONNECT_FAILED;
     new_phase(PHASE_SERIALCONN);
 
     hungup = 0;
@@ -595,6 +595,7 @@ void start_link(unit)
 	notice("Starting negotiation on %s", ppp_devnam);
     add_fd(fd_ppp);
 
+    status = EXIT_NEGOTIATION_FAILED;
     new_phase(PHASE_ESTABLISH);
 
     lcp_lowerup(0);
@@ -673,9 +674,11 @@ link_terminated(unit)
 	(*the_channel->cleanup)();
 
     if (doing_multilink && multilink_master) {
-	if (!bundle_terminating)
+	if (!bundle_terminating) {
 	    new_phase(PHASE_MASTER);
-	else
+	    if (master_detach && !detached)
+		detach();
+	} else
 	    mp_bundle_terminated();
     } else
 	new_phase(PHASE_DEAD);
@@ -1650,7 +1653,7 @@ have_chap_secret(client, server, need_ip, lacks_ipp)
 	}
     }
 
-    filename = path_chaps;
+    filename = path_chapfile;
     f = fopen(filename, "r");
     if (f == NULL)
 	return 0;
@@ -1745,7 +1748,7 @@ get_secret(unit, client, server, secret, secret_len, am_server)
 	    return 0;
 	}
     } else {
-	filename = path_chaps;
+	filename = path_chapfile;
 	addrs = NULL;
 	secbuf[0] = 0;
 

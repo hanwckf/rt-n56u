@@ -1,4 +1,6 @@
-SRC_NAME=lzo-2.06
+SRC_NAME=lzo-2.08
+
+CFLAGS += -O2
 
 all: config_test
 	$(MAKE) -C $(SRC_NAME)

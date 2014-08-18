@@ -89,11 +89,6 @@ extern char wan_ppp[IFNAMSIZ];
 #endif
 #endif
 
-#ifdef CONFIG_NF_FLUSH_CONNTRACK
-unsigned int nf_conntrack_table_flush __read_mostly;
-EXPORT_SYMBOL_GPL(nf_conntrack_table_flush);
-#endif
-
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE) 
 static inline int is_local_svc(u_int8_t protonm)
 {
@@ -393,12 +388,6 @@ ____nf_conntrack_find(struct net *net,
 	struct hlist_nulls_node *n;
 	unsigned int bucket = hash_bucket(hash, net);
 
-#ifdef CONFIG_NF_FLUSH_CONNTRACK
-	if ((nf_conntrack_table_flush != 0) && (atomic_read(&net->ct.count) != 0)) {
-		nf_conntrack_table_flush=0;
-		nf_ct_iterate_cleanup(net, kill_all, NULL);
-	}
-#endif
 	/* Disable BHs the entire time since we normally need to disable them
 	 * at least once for the stats anyway.
 	 */

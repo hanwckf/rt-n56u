@@ -16,6 +16,7 @@
 #include <linux/percpu.h>
 #include <linux/netdevice.h>
 #include <linux/security.h>
+#include <linux/inet.h>
 #include <net/net_namespace.h>
 #ifdef CONFIG_SYSCTL
 #include <linux/sysctl.h>
@@ -261,10 +262,66 @@ static int ct_open(struct inode *inode, struct file *file)
 			sizeof(struct ct_iter_state));
 }
 
+struct kill_request {
+	u16 family;
+	union nf_inet_addr addr;
+};
+
+static int kill_matching(struct nf_conn *i, void *data)
+{
+	struct kill_request *kr = data;
+	struct nf_conntrack_tuple *t1 = &i->tuplehash[IP_CT_DIR_ORIGINAL].tuple;
+	struct nf_conntrack_tuple *t2 = &i->tuplehash[IP_CT_DIR_REPLY].tuple;
+
+	if (!kr->family)
+		return 1;
+
+	if (t1->src.l3num != kr->family)
+		return 0;
+
+	return (nf_inet_addr_cmp(&kr->addr, &t1->src.u3) ||
+	        nf_inet_addr_cmp(&kr->addr, &t1->dst.u3) ||
+	        nf_inet_addr_cmp(&kr->addr, &t2->src.u3) ||
+	        nf_inet_addr_cmp(&kr->addr, &t2->dst.u3));
+}
+
+static ssize_t ct_file_write(struct file *file, const char __user *buf,
+			     size_t count, loff_t *ppos)
+{
+	struct seq_file *seq = file->private_data;
+	struct net *net = seq_file_net(seq);
+	struct kill_request kr = { };
+	char req[INET6_ADDRSTRLEN] = { };
+
+	if (count == 0)
+		return 0;
+
+	if (count >= INET6_ADDRSTRLEN)
+		count = INET6_ADDRSTRLEN - 1;
+
+	if (copy_from_user(req, buf, count))
+		return -EFAULT;
+
+	if (strnchr(req, count, ':')) {
+		kr.family = AF_INET6;
+		if (!in6_pton(req, count, (void *)&kr.addr, '\n', NULL))
+			return -EINVAL;
+	} else if (strnchr(req, count, '.')) {
+		kr.family = AF_INET;
+		if (!in4_pton(req, count, (void *)&kr.addr, '\n', NULL))
+			return -EINVAL;
+	}
+
+	nf_ct_iterate_cleanup(net, kill_matching, &kr);
+
+	return count;
+}
+
 static const struct file_operations ct_file_ops = {
 	.owner   = THIS_MODULE,
 	.open    = ct_open,
 	.read    = seq_read,
+	.write   = ct_file_write,
 	.llseek  = seq_lseek,
 	.release = seq_release_net,
 };
@@ -366,7 +423,7 @@ static int nf_conntrack_standalone_init_proc(struct net *net)
 {
 	struct proc_dir_entry *pde;
 
-	pde = proc_net_fops_create(net, "nf_conntrack", 0440, &ct_file_ops);
+	pde = proc_net_fops_create(net, "nf_conntrack", 0660, &ct_file_ops);
 	if (!pde)
 		goto out_nf_conntrack;
 
@@ -465,15 +522,6 @@ static ctl_table nf_ct_netfilter_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec,
 	},
-#ifdef CONFIG_NF_FLUSH_CONNTRACK
-	{
-		.procname	= "nf_conntrack_table_flush",
-		.data		= &nf_conntrack_table_flush,
-		.maxlen		= sizeof(int),
-		.mode		= 0644,
-		.proc_handler	= proc_dointvec,
-	},
-#endif
 #ifdef CONFIG_NAT_CONE
 	{
 		.procname	= "nf_conntrack_nat_mode",

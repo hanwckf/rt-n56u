@@ -337,10 +337,6 @@ extern unsigned int nf_conntrack_max;
 extern unsigned int nf_conntrack_hash_rnd;
 void init_nf_conntrack_hash_rnd(void);
 
-#ifdef CONFIG_NF_FLUSH_CONNTRACK
-extern unsigned int nf_conntrack_table_flush;
-#endif
-
 #ifdef CONFIG_NAT_CONE
 extern unsigned int nf_conntrack_nat_mode;
 #endif

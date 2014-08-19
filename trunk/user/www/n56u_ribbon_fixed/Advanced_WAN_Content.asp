@@ -319,7 +319,7 @@ function change_wan_type(wan_type, flag){
 		if (parseInt(document.form.wan_pppoe_mru.value) > 1492)
 			document.form.wan_pppoe_mru.value = "1492";
 		
-		if (document.form.pppoe_dhcp_route.value == "1")
+		if (document.form.wan_pppoe_man.value == "1")
 			$("tbl_dhcp_sect").style.display = "";
 		else
 			$("tbl_dhcp_sect").style.display = "none";
@@ -844,10 +844,10 @@ function simplyMAC(fullMAC){
                                         <tr id="row_pppoe_dhcp" style="display:none;">
                                             <th><#MAN_PPPoE#></th>
                                             <td>
-                                                <select name="pppoe_dhcp_route" class="input" onchange="change_pppoe_man(this.value);">
-                                                    <option value="0" <% nvram_match_x("", "pppoe_dhcp_route", "0", "selected"); %>><#checkbox_No#></option>
-                                                    <option value="1" <% nvram_match_x("", "pppoe_dhcp_route", "1", "selected"); %>>DHCP or Static</option>
-                                                    <option value="2" <% nvram_match_x("", "pppoe_dhcp_route", "2", "selected"); %>>ZeroConf (169.254.*.*)</option>
+                                                <select name="wan_pppoe_man" class="input" onchange="change_pppoe_man(this.value);">
+                                                    <option value="0" <% nvram_match_x("", "wan_pppoe_man", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "wan_pppoe_man", "1", "selected"); %>>DHCP or Static</option>
+                                                    <option value="2" <% nvram_match_x("", "wan_pppoe_man", "2", "selected"); %>>ZeroConf (169.254.*.*)</option>
                                                 </select>
                                             </td>
                                         </tr>

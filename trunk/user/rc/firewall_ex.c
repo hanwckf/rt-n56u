@@ -29,6 +29,9 @@
 
 #include "rc.h"
 
+/* Need enable IGDv2 in miniupnpd too (IGDv2 has compatible issues with old IGDv1 clients) */
+//#define USE_UPNP_IGDV2
+
 #define foreach_x(x)		for (i=0; i<nvram_get_int(x); i++)
 
 #define BATTLENET_PORT		6112
@@ -40,9 +43,6 @@
 #define MODULE_WEBSTR_MASK	0x01
 
 #define DAYS_MATCH		" --kerneltz --weekdays "
-
-/* Need enable IGDv2 in miniupnpd too (IGDv2 has compatible issues with old IGDv1 clients) */
-//#define USE_UPNP_IGDV2
 
 /* state match - xt_conntrack or xt_state (xt_conntrack more slower than xt_state) */
 #if defined (USE_MATCH_CONNTRACK)
@@ -360,23 +360,23 @@ err:
 }
 
 void
-ip2class(char *lan_ip, char *netmask, char *buf)
+ip2class(const char *addr, const char *mask, char *out_buf, size_t out_len)
 {
 	unsigned int val, ip;
 	struct in_addr in;
 	int i=0;
 
 	// only handle class A,B,C
-	val = (unsigned int)inet_addr(netmask);
-	ip = (unsigned int)inet_addr(lan_ip);
+	val = (unsigned int)inet_addr(mask);
+	ip = (unsigned int)inet_addr(addr);
 
 	// oleg patch ~
 	in.s_addr = ip & val;
 
-	for (val = ntohl(val); val; i++) 
+	for (val = ntohl(val); val; i++)
 		val <<= 1;
 
-	sprintf(buf, "%s/%d", inet_ntoa(in), i);
+	snprintf(out_buf, out_len, "%s/%d", inet_ntoa(in), i);
 }
 
 // WAN, MAN, LAN
@@ -708,11 +708,20 @@ include_vts_nat(FILE *fp)
 	}
 }
 
-static int
-is_need_tcp_mss_wan(void)
+static void
+include_masquerade(FILE *fp, char *wan_if, char *wan_ip, char *lan_net)
 {
-	int unit = 0;
+	char *dtype = "POSTROUTING";
 
+	if (wan_ip)
+		fprintf(fp, "-A %s -o %s -s %s -j SNAT --to-source %s\n", dtype, wan_if, lan_net, wan_ip);
+	else
+		fprintf(fp, "-A %s -o %s -s %s -j MASQUERADE\n", dtype, wan_if, lan_net);
+}
+
+static int
+is_need_tcp_mss_wan(int unit, char *man_if)
+{
 	if (get_usb_modem_wan(unit) ) {
 		int modem_mtu = nvram_safe_get_int("modem_mtu", 1500, 1000, 1500);
 		if (modem_mtu != 1500)
@@ -724,7 +733,7 @@ is_need_tcp_mss_wan(void)
 		    wan_proto == IPV4_WAN_PROTO_L2TP)
 			return 1;
 		
-		if (get_interface_mtu(get_man_ifname(unit)) != 1500)
+		if (get_interface_mtu(man_if) != 1500)
 			return 1;
 	}
 
@@ -734,7 +743,7 @@ is_need_tcp_mss_wan(void)
 static char *
 get_tcp_mss_ifname_vpns(int vpns_type)
 {
-#if defined(APP_OPENVPN)
+#if defined (APP_OPENVPN)
 	if (vpns_type == 2) {
 		if (nvram_get_int("vpns_ov_mode") == 1)
 			return IFNAME_SERVER_TUN;
@@ -750,7 +759,7 @@ get_tcp_mss_ifname_vpns(int vpns_type)
 static char *
 get_tcp_mss_ifname_vpnc(int vpnc_type)
 {
-#if defined(APP_OPENVPN)
+#if defined (APP_OPENVPN)
 	if (vpnc_type == 2) {
 		if (nvram_get_int("vpnc_ov_mode") == 1)
 			return IFNAME_CLIENT_TUN;
@@ -783,11 +792,11 @@ get_sshd_bfp_time(int bfp_mode)
 }
 
 static int
-ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
+ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
+                 char *logaccept, char *logdrop, int tcp_mss_need)
 {
 	FILE *fp;
 	char *ftype, *dtype;
-	char lan_class[32];
 	const char *ipt_file = "/tmp/ipt_filter.rules";
 	int ret, input_idx, forward_idx, wport, lport;
 	int i_mac_filter, is_nat_enabled, is_fw_enabled;
@@ -799,9 +808,6 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip, char *l
 
 	ret = 0;
 	i_bfplimit_ref = 0;
-
-	lan_class[0] = 0;
-	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
 
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
@@ -862,7 +868,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip, char *l
 
 	/* Accept multicast (all, except udp port 1900) */
 	if (nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0")
-#if defined(APP_XUPNPD)
+#if defined (APP_XUPNPD)
 	 || nvram_invmatch("xupnpd_enable_x", "0")
 #endif
 	) {
@@ -902,7 +908,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip, char *l
 				fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, lport, logaccept);
 		}
 #endif
-#if defined(APP_SSHD)
+#if defined (APP_SSHD)
 		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1")) {
 			i_bfplimit_ref++;
 			wport = nvram_get_int("sshd_wport");
@@ -913,7 +919,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip, char *l
 				fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, lport, "bfplimit");
 		}
 #endif
-#if defined(APP_FTPD)
+#if defined (APP_FTPD)
 		if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1")) {
 			wport = nvram_get_int("ftpd_wport");
 			lport = 21;
@@ -931,7 +937,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip, char *l
 			else
 				fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, lport, logaccept);
 		}
-#if defined(APP_TRMD)
+#if defined (APP_TRMD)
 		if (nvram_match("trmd_enable", "1") && is_torrent_support()) {
 			wport = nvram_get_int("trmd_pport");
 			if (wport < 1024 || wport > 65535) wport = TRANSMISSION_PPORT;
@@ -945,7 +951,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip, char *l
 			}
 		}
 #endif
-#if defined(APP_ARIA)
+#if defined (APP_ARIA)
 		if (nvram_match("aria_enable", "1") && is_aria_support()) {
 			wport = nvram_get_int("aria_pport");
 			if (wport < 1024 || wport > 65535) wport = ARIA_PPORT;
@@ -960,7 +966,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip, char *l
 		}
 #endif
 		if (i_vpns_enable) {
-#if defined(APP_OPENVPN)
+#if defined (APP_OPENVPN)
 			if (i_vpns_type == 2) {
 				char *ov_prot = "udp";
 				int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
@@ -977,7 +983,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip, char *l
 				fprintf(fp, "-A %s -p %d -j %s\n", dtype, 47, logaccept);
 			}
 			
-#if defined(APP_OPENVPN)
+#if defined (APP_OPENVPN)
 			if (i_vpns_type == 2) {
 				if (nvram_get_int("vpns_ov_mode") == 1)
 					fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_SERVER_TUN, logaccept);
@@ -990,7 +996,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip, char *l
 		
 		/* Accept to VPN client */
 		if (i_vpnc_enable && i_vpnc_sfw != 1) {
-#if defined(APP_OPENVPN)
+#if defined (APP_OPENVPN)
 			if (i_vpnc_type == 2) {
 				if (nvram_get_int("vpnc_ov_mode") == 1)
 					fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_CLIENT_TUN, logaccept);
@@ -1053,7 +1059,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip, char *l
 	}
 
 	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets */
-	if (is_need_tcp_mss_wan()) {
+	if (tcp_mss_need) {
 		fprintf(fp, "-A %s%s -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype, " !", lan_if);
 		forward_idx++;
 	} else {
@@ -1086,7 +1092,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip, char *l
 
 	/* Pass VPN server's clients traffic */
 	if (is_fw_enabled && i_vpns_enable) {
-#if defined(APP_OPENVPN)
+#if defined (APP_OPENVPN)
 		if (i_vpns_type == 2) {
 			if (nvram_get_int("vpns_ov_mode") == 1)
 				fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_SERVER_TUN, logaccept);
@@ -1099,7 +1105,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip, char *l
 
 	/* Accept via VPN client */
 	if (is_fw_enabled && i_vpnc_enable && i_vpnc_sfw != 1) {
-#if defined(APP_OPENVPN)
+#if defined (APP_OPENVPN)
 		if (i_vpnc_type == 2) {
 			if (nvram_get_int("vpnc_ov_mode") == 1)
 				fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_CLIENT_TUN, logaccept);
@@ -1293,7 +1299,7 @@ ipt_filter_default(void)
 }
 
 static void
-ipt_mangle_rules(char *wan_if)
+ipt_mangle_rules(char *man_if)
 {
 	FILE *fp;
 	int i_ttl_fixup;
@@ -1319,12 +1325,9 @@ ipt_mangle_rules(char *wan_if)
 	fprintf(fp, ":%s %s [0:0]\n", "POSTROUTING", "ACCEPT");
 
 	if (i_ttl_fixup > 0) {
-		char *man_if, *viptv_iflast;
-		viptv_iflast = nvram_safe_get("viptv_ifname");
+		char *viptv_iflast = nvram_safe_get("viptv_ifname");
 		if (*viptv_iflast && is_interface_exist(viptv_iflast))
 			man_if = viptv_iflast;
-		else
-			man_if = get_man_ifname(0);
 		
 		if (i_ttl_fixup == 2)
 			fprintf(fp, "-A %s -i %s -p udp -d 224.0.0.0/4 -j TTL %s %d\n", "PREROUTING", man_if, "--ttl-set", 64);
@@ -1340,7 +1343,7 @@ ipt_mangle_rules(char *wan_if)
 }
 
 static void
-ipt_raw_rules(char *wan_if)
+ipt_raw_rules(void)
 {
 	FILE *fp;
 	const char *ipt_file = "/tmp/ipt_raw.rules";
@@ -1361,7 +1364,8 @@ ipt_raw_rules(char *wan_if)
 
 #if defined (USE_IPV6)
 static int
-ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if, char *logaccept, char *logdrop)
+ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if,
+                  char *logaccept, char *logdrop, int tcp_mss_need)
 {
 	FILE *fp;
 	char *ftype, *dtype;
@@ -1453,7 +1457,7 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if, char *logaccept, cha
 		if ((i_http_proto == 1 || i_http_proto == 2) && nvram_match("https_wopen", "1") && (wport == lport))
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
 #endif
-#if defined(APP_SSHD)
+#if defined (APP_SSHD)
 		wport = nvram_get_int("sshd_wport");
 		lport = 22;
 		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1") && (wport == lport)) {
@@ -1461,7 +1465,7 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if, char *logaccept, cha
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, "bfplimit");
 		}
 #endif
-#if defined(APP_FTPD)
+#if defined (APP_FTPD)
 		wport = nvram_get_int("ftpd_wport");
 		lport = 21;
 		if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1") && (wport == lport))
@@ -1471,7 +1475,7 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if, char *logaccept, cha
 		lport = nvram_get_int("udpxy_enable_x");
 		if (lport > 1023 && nvram_match("udpxy_wopen", "1") && (wport == lport))
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
-#if defined(APP_TRMD)
+#if defined (APP_TRMD)
 		if (nvram_match("trmd_enable", "1") && is_torrent_support()) {
 			wport = nvram_get_int("trmd_pport");
 			if (wport < 1024 || wport > 65535) wport = TRANSMISSION_PPORT;
@@ -1485,7 +1489,7 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if, char *logaccept, cha
 			}
 		}
 #endif
-#if defined(APP_ARIA)
+#if defined (APP_ARIA)
 		if (nvram_match("aria_enable", "1") && is_aria_support()) {
 			wport = nvram_get_int("aria_pport");
 			if (wport < 1024 || wport > 65535) wport = ARIA_PPORT;
@@ -1501,7 +1505,7 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if, char *logaccept, cha
 #endif
 		if (nvram_match("vpns_enable", "1")) {
 			int i_vpns_type = nvram_get_int("vpns_type");
-#if defined(APP_OPENVPN)
+#if defined (APP_OPENVPN)
 			if (i_vpns_type == 2) {
 				char *ov_prot = "udp";
 				int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
@@ -1554,8 +1558,8 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if, char *logaccept, cha
 		forward_idx++;
 	}
 
-	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets  */
-	if ((ipv6_type != IPV6_NATIVE_STATIC && ipv6_type != IPV6_NATIVE_DHCP6) || is_need_tcp_mss_wan()) {
+	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets */
+	if ((ipv6_type != IPV6_NATIVE_STATIC && ipv6_type != IPV6_NATIVE_DHCP6) || tcp_mss_need) {
 		fprintf(fp, "-A %s%s -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype, " !", lan_if);
 		forward_idx++;
 	}
@@ -1701,7 +1705,7 @@ ip6t_filter_default(void)
 }
 
 static void
-ip6t_mangle_rules(char *wan_if)
+ip6t_mangle_rules(char *man_if)
 {
 	FILE *fp;
 	const char *ipt_file = "/tmp/ip6t_mangle.rules";
@@ -1725,13 +1729,15 @@ ip6t_mangle_rules(char *wan_if)
 #endif
 
 static int
-ipt_nat_rules(char *man_if, char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
+ipt_nat_rules(char *man_if, char *man_ip,
+              char *wan_if, char *wan_ip,
+              char *lan_if, char *lan_ip, char *lan_net,
+              int use_man)
 {
 	FILE *fp;
-	int wport, lport, is_nat_enabled, is_fw_enabled, is_use_dmz, use_battlenet;
+	int wport, lport, is_nat_enabled, is_fw_enabled;
 	int i_vpns_enable, i_vpnc_enable, i_vpns_type, i_vpnc_type, i_vpnc_sfw, i_http_proto;
-	char dmz_ip[32], lan_class[32];
-	char *dtype, *man_ip;
+	char *dtype;
 	const char *ipt_file = "/tmp/ipt_nat.rules";
 
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
@@ -1746,18 +1752,11 @@ ipt_nat_rules(char *man_if, char *wan_if, char *wan_ip, char *lan_if, char *lan_
 	// VSERVER chain
 	dtype = "VSERVER";
 
-	lan_class[0] = 0;
-	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
-
-	man_ip = NULL;
-	if (ppp_ifindex(wan_if) >= 0 && strcmp(man_if, wan_if)) {
-		man_ip = nvram_safe_get("wanx_ipaddr");
-		if (!is_valid_ipv4(man_ip))
-			man_ip = NULL;
-	}
-
 	if (!is_valid_ipv4(wan_ip))
 		wan_ip = NULL;
+
+	if (!is_valid_ipv4(man_ip))
+		man_ip = NULL;
 
 	if (!(fp=fopen(ipt_file, "w")))
 		return 0;
@@ -1766,73 +1765,71 @@ ipt_nat_rules(char *man_if, char *wan_if, char *wan_ip, char *lan_if, char *lan_
 	fprintf(fp, ":%s %s [0:0]\n", "PREROUTING", "ACCEPT");
 	fprintf(fp, ":%s %s [0:0]\n", "POSTROUTING", "ACCEPT");
 	fprintf(fp, ":%s %s [0:0]\n", "OUTPUT", "ACCEPT");
-	fprintf(fp, ":%s - [0:0]\n", "VSERVER");
+	fprintf(fp, ":%s - [0:0]\n", dtype);
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP4_NAT);
 
 	if (wan_ip)
 		fprintf(fp, "-A PREROUTING -d %s -j %s\n", wan_ip, dtype);
 
-	if (man_ip)
+	if (man_ip && use_man)
 		fprintf(fp, "-A PREROUTING -d %s -j %s\n", man_ip, dtype);
 
 	if (is_nat_enabled) {
+		char dmz_ip[16];
+		int is_use_dmz;
+		
 		snprintf(dmz_ip, sizeof(dmz_ip), "%s", nvram_safe_get("dmz_ip"));
 		is_use_dmz = (is_valid_ipv4(dmz_ip)) ? 1 : 0;
 		
-		/* BattleNET (PREROUTING) */
-		use_battlenet = (wan_ip && nvram_match("sp_battle_ips", "1")) ? 1 : 0;
-		if (use_battlenet)
-			fprintf(fp, "-A PREROUTING -p udp -d %s --sport %d -j NETMAP --to %s\n", wan_ip, BATTLENET_PORT, lan_class);
+		/* BattleNET (PREROUTING + POSTROUTING) */
+		if (wan_ip && nvram_match("sp_battle_ips", "1")) {
+			fprintf(fp, "-A %s -p udp -d %s --sport %d -j NETMAP --to %s\n", "PREROUTING", wan_ip, BATTLENET_PORT, lan_net);
+			fprintf(fp, "-A %s -p udp -s %s --dport %d -j NETMAP --to %s\n", "POSTROUTING", lan_net, BATTLENET_PORT, wan_ip);
+		}
 		
-		/* BattleNET (POSTROUTING) */
-		if (use_battlenet)
-			fprintf(fp, "-A POSTROUTING -p udp -s %s --dport %d -j NETMAP --to %s\n", lan_class, BATTLENET_PORT, wan_ip);
+		/* masquerade WAN connection for LAN clients */
+		include_masquerade(fp, wan_if, wan_ip, lan_net);
 		
-		/* use SNAT instead of MASQUERADE (more fast) */
-		/* masquerade WAN connection */
-		if (wan_ip) {
-			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", wan_if, lan_class, wan_ip);
-			
-			if (i_vpns_enable) {
-				char vpn_class[32];
-				ip2class(nvram_safe_get("vpns_vnet"), VPN_SERVER_SUBNET_MASK, vpn_class);
-				if (strcmp(vpn_class, lan_class) != 0) {
-#if defined(APP_OPENVPN)
-					if (i_vpns_type == 2) {
-						if (nvram_get_int("vpns_ov_mode") == 1)
-							fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", wan_if, vpn_class, wan_ip);
-					} else
+		/* masquerade WAN connection for VPN server clients */
+		if (i_vpns_enable) {
+			char vpn_net[24] = {0};
+			ip2class(nvram_safe_get("vpns_vnet"), VPN_SERVER_SUBNET_MASK, vpn_net, sizeof(vpn_net));
+			if (strcmp(vpn_net, lan_net) != 0) {
+#if defined (APP_OPENVPN)
+				if (i_vpns_type == 2) {
+					if (nvram_get_int("vpns_ov_mode") == 1)
+						include_masquerade(fp, wan_if, wan_ip, vpn_net);
+				} else
 #endif
-					{
-						if (nvram_get_int("vpns_vuse"))
-							fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", wan_if, vpn_class, wan_ip);
-					}
+				{
+					if (nvram_get_int("vpns_vuse"))
+						include_masquerade(fp, wan_if, wan_ip, vpn_net);
 				}
 			}
 		}
 		
-		/* masquerade physical WAN port connection */
-		if (man_ip)
-			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", man_if, lan_class, man_ip);
+		/* masquerade MAN connection for LAN clients */
+		if (use_man)
+			include_masquerade(fp, man_if, man_ip, lan_net);
 		
-		/* masquerade vpn client */
+		/* masquerade VPN client connection for LAN clients */
 		if (i_vpnc_enable && i_vpnc_sfw != 2) {
-#if defined(APP_OPENVPN)
+#if defined (APP_OPENVPN)
 			if (i_vpnc_type == 2) {
 				if (nvram_get_int("vpnc_ov_mode") == 1)
-					fprintf(fp, "-A POSTROUTING -o %s -s %s -j MASQUERADE\n", IFNAME_CLIENT_TUN, lan_class);
+					include_masquerade(fp, IFNAME_CLIENT_TUN, NULL, lan_net);
 				else if (nvram_get_int("vpnc_ov_cnat") == 1)
-					fprintf(fp, "-A POSTROUTING -o %s -s %s -j MASQUERADE\n", IFNAME_CLIENT_TAP, lan_class);
+					include_masquerade(fp, IFNAME_CLIENT_TAP, NULL, lan_net);
 			} else
 #endif
 			{
-				fprintf(fp, "-A POSTROUTING -o %s -s %s -j MASQUERADE\n", IFNAME_CLIENT_PPP, lan_class);
+				include_masquerade(fp, IFNAME_CLIENT_PPP, NULL, lan_net);
 			}
 		}
 		
-		/* masquerade lan to lan (NAT loopback) */
+		/* masquerade LAN to LAN (NAT loopback) */
 		if (nvram_match("nf_nat_loop", "1"))
-			fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n", lan_if, lan_class, lan_class, lan_ip);
+			fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n", lan_if, lan_net, lan_net, lan_ip);
 		
 		/* Local ports remap (http/https/ssh/ftp/udpxy) */
 		if (is_fw_enabled) {
@@ -1865,7 +1862,7 @@ ipt_nat_rules(char *man_if, char *wan_if, char *wan_ip, char *lan_if, char *lan_
 							dtype, wport, lan_ip, lport);
 			}
 #endif
-#if defined(APP_SSHD)
+#if defined (APP_SSHD)
 			if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1")) {
 				wport = nvram_get_int("sshd_wport");
 				lport = 22;
@@ -1878,7 +1875,7 @@ ipt_nat_rules(char *man_if, char *wan_if, char *wan_ip, char *lan_if, char *lan_
 							dtype, wport, lan_ip, lport);
 			}
 #endif
-#if defined(APP_FTPD)
+#if defined (APP_FTPD)
 			if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1")) {
 				wport = nvram_get_int("ftpd_wport");
 				lport = 21;
@@ -1912,7 +1909,7 @@ ipt_nat_rules(char *man_if, char *wan_if, char *wan_ip, char *lan_if, char *lan_
 			/* pre-route for local VPN server */
 			if (nvram_match("vpns_enable", "1")) {
 				int i_vpns_type = nvram_get_int("vpns_type");
-#if defined(APP_OPENVPN)
+#if defined (APP_OPENVPN)
 				if (i_vpns_type == 2) {
 					char *ov_prot = "udp";
 					int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
@@ -1929,7 +1926,7 @@ ipt_nat_rules(char *man_if, char *wan_if, char *wan_ip, char *lan_if, char *lan_
 					fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s\n", dtype, 1723, lan_ip);
 				}
 			}
-#if defined(APP_TRMD)
+#if defined (APP_TRMD)
 			/* pre-route for local Transmission */
 			if (nvram_match("trmd_enable", "1") && is_torrent_support()) {
 				wport = nvram_get_int("trmd_pport");
@@ -1944,7 +1941,7 @@ ipt_nat_rules(char *man_if, char *wan_if, char *wan_ip, char *lan_if, char *lan_
 				}
 			}
 #endif
-#if defined(APP_ARIA)
+#if defined (APP_ARIA)
 			/* pre-route for local Aria2 */
 			if (nvram_match("aria_enable", "1") && is_aria_support()) {
 				wport = nvram_get_int("aria_pport");
@@ -2012,14 +2009,16 @@ ipt_nat_default(void)
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP4_NAT);
 
 	if (is_nat_enabled) {
-		/* masquerade lan to lan (NAT loopback) */
-		if (nvram_match("nf_nat_loop", "1")) {
-			char* lan_ip = nvram_safe_get("lan_ipaddr");
-			if (is_valid_ipv4(lan_ip)) {
-				char lan_class[32] = {0};
-				ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
-				fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n", 
-					IFNAME_BR, lan_class, lan_class, lan_ip);
+		char *lan_if = IFNAME_BR;
+		char *lan_ip = nvram_safe_get("lan_ipaddr");
+		if (is_valid_ipv4(lan_ip)) {
+			char lan_net[24] = {0};
+			ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_net, sizeof(lan_net));
+			
+			/* masquerade lan to lan (NAT loopback) */
+			if (nvram_match("nf_nat_loop", "1")) {
+				fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n",
+					lan_if, lan_net, lan_net, lan_ip);
 			}
 		}
 	}
@@ -2030,27 +2029,43 @@ ipt_nat_default(void)
 	doSystem("iptables-restore %s", ipt_file);
 }
 
-int
-start_firewall_ex(char *man_if, char *wan_if, char *wan_ip)
+void
+start_firewall_ex(void)
 {
-	int i_nf_nat, i_nf_val, i_modules;
-	char rp_path[64], logaccept[32], logdrop[32];
-	char *lan_if, *lan_ip;
+	int unit, i_tcp_mss, i_use_man;
+	char rp_path[64], logaccept[16], logdrop[16];
+	char wan_if[16], man_if[16], lan_if[16];
+	char wan_ip[16], man_ip[16], lan_ip[16], lan_net[24] = {0};
 	const char *opt_iptables_script = "/opt/bin/update_iptables.sh";
 	const char *int_iptables_script = SCRIPT_POST_FIREWALL;
 
-	if (get_ap_mode())
-		return -1;
+	unit = 0;
 
-	i_modules = 0;
+	snprintf(lan_if, sizeof(lan_if), "%s", IFNAME_BR);
+	snprintf(man_if, sizeof(man_if), "%s", get_man_ifname(unit));
+	snprintf(wan_if, sizeof(wan_if), "%s", get_wan_unit_value(unit, "ifname_t"));
 
-	lan_if = IFNAME_BR;
-	lan_ip = nvram_safe_get("lan_ipaddr");
+	if (strlen(wan_if) < 1)
+		get_wan_ifname(wan_if);
+
+	snprintf(lan_ip, sizeof(lan_ip), "%s", nvram_safe_get("lan_ipaddr"));
+	snprintf(man_ip, sizeof(man_ip), "%s", nvram_safe_get("wanx_ipaddr"));
+	snprintf(wan_ip, sizeof(wan_ip), "%s", get_wan_unit_value(unit, "ipaddr"));
+
+	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_net, sizeof(lan_net));
+
+	i_tcp_mss = is_need_tcp_mss_wan(unit, man_if);
+
+	i_use_man = 0;
+	if (ppp_ifindex(wan_if) >= 0 && strcmp(man_if, wan_if)) {
+		if (get_wan_proto(unit) != IPV4_WAN_PROTO_PPPOE || get_wan_unit_value_int(unit, "pppoe_man") > 0)
+			i_use_man = 1;
+	}
 
 	/* mcast needs rp filter to be turned off only for non default iface */
-	sprintf(rp_path, "/proc/sys/net/ipv4/conf/%s/rp_filter", man_if);
+	snprintf(rp_path, sizeof(rp_path), "/proc/sys/net/ipv4/conf/%s/rp_filter", man_if);
 	if (nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0")
-#if defined(APP_XUPNPD)
+#if defined (APP_XUPNPD)
 	 || nvram_invmatch("xupnpd_enable_x", "0")
 #endif
 	)
@@ -2069,55 +2084,25 @@ start_firewall_ex(char *man_if, char *wan_if, char *wan_ip)
 	else
 		strcpy(logdrop, "DROP");
 
-	/* Raw rules */
-	ipt_raw_rules(wan_if);
+	/* IPv4 Raw rules */
+	ipt_raw_rules();
 
-	/* Mangle rules */
-	ipt_mangle_rules(wan_if);
+	/* IPv4 Mangle rules */
+	ipt_mangle_rules(man_if);
 
-	/* NAT rules */
-	i_modules |= ipt_nat_rules(man_if, wan_if, wan_ip, lan_if, lan_ip);
+	/* IPv4 NAT rules */
+	ipt_nat_rules(man_if, man_ip, wan_if, wan_ip, lan_if, lan_ip, lan_net, i_use_man);
 
-	/* Filter rules */
-	i_modules |= ipt_filter_rules(man_if, wan_if, lan_if, lan_ip, logaccept, logdrop);
+	/* IPv4 Filter rules */
+	ipt_filter_rules(man_if, wan_if, lan_if, lan_ip, logaccept, logdrop, i_tcp_mss);
+
 #if defined (USE_IPV6)
-	ip6t_mangle_rules(wan_if);
-	i_modules |= ip6t_filter_rules(man_if, wan_if, lan_if, logaccept, logdrop);
+	/* IPv6 Mangle rules */
+	ip6t_mangle_rules(man_if);
+
+	/* IPv6 Filter rules */
+	ip6t_filter_rules(man_if, wan_if, lan_if, logaccept, logdrop, i_tcp_mss);
 #endif
-
-	if (!(i_modules & MODULE_WEBSTR_MASK))
-		module_smart_unload("xt_webstr", 1);
-
-	i_nf_val = nvram_get_int("nf_nat_type");
-	if (i_nf_val == 2)
-		i_nf_nat = 0;	// Linux
-	else if (i_nf_val == 1)
-		i_nf_nat = 1;	// FCONE
-	else
-		i_nf_nat = 2;	// RCONE
-	fput_int("/proc/sys/net/nf_conntrack_nat_mode", i_nf_nat);
-
-	i_nf_val = nvram_get_int("nf_max_conn");
-	if (i_nf_val < 8192) i_nf_val = 8192;
-	if (i_nf_val > 262144) i_nf_val = 262144;
-	fput_int("/proc/sys/net/nf_conntrack_max", i_nf_val);
-
-	/* Tweak NAT performance... */
-	fput_int("/proc/sys/net/ipv4/tcp_fin_timeout", 40);		// def: 60
-	fput_int("/proc/sys/net/ipv4/tcp_keepalive_intvl", 30);		// def: 75
-	fput_int("/proc/sys/net/ipv4/tcp_keepalive_probes", 5);		// def: 9
-	fput_int("/proc/sys/net/ipv4/tcp_keepalive_time", 1800);	// def: 7200
-	fput_int("/proc/sys/net/ipv4/tcp_retries2", 5);			// def: 15
-	fput_int("/proc/sys/net/ipv4/tcp_syn_retries", 3);		// def: 5
-	fput_int("/proc/sys/net/ipv4/tcp_synack_retries", 3);		// def: 5
-	fput_int("/proc/sys/net/ipv4/tcp_tw_recycle", 1);
-	fput_int("/proc/sys/net/ipv4/tcp_tw_reuse", 1);
-
-	/* Tweak DoS-related... */
-	fput_int("/proc/sys/net/ipv4/icmp_ignore_bogus_error_responses", 1);
-	fput_int("/proc/sys/net/ipv4/icmp_echo_ignore_broadcasts", 1);
-	fput_int("/proc/sys/net/ipv4/tcp_rfc1337", 1);
-	fput_int("/proc/sys/net/ipv4/tcp_syncookies", nvram_get_int("fw_syn_cook"));
 
 	if (check_if_file_exist(int_iptables_script))
 		doSystem("%s", int_iptables_script);
@@ -2125,6 +2110,15 @@ start_firewall_ex(char *man_if, char *wan_if, char *wan_ip)
 	if (check_if_file_exist(opt_iptables_script))
 		doSystem("%s update", opt_iptables_script);
 
-	return 0;
+	/* enable IPv4 forward */
+	set_ipv4_forward(1);
+
+	/* try unload unused iptables modules */
+	module_smart_unload("xt_webstr", 0);
+	module_smart_unload("xt_string", 0);
+	module_smart_unload("xt_HL", 0);
+	module_smart_unload("iptable_raw", 0);
+	module_smart_unload("iptable_mangle", 0);
+	module_smart_unload("ip6table_mangle", 0);
 }
 

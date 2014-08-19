@@ -26,6 +26,9 @@
 #include <sys/time.h>
 #include <time.h>
 
+#include <disk_io_tools.h>
+#include <disk_initial.h>
+
 #include <nvram/bcmnvram.h>
 
 #include "rc.h"

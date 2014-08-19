@@ -98,7 +98,6 @@ struct nvram_pair router_defaults[] = {
 	{ "vlan_pri_lan4", "0" },
 	{ "vlan_tag_lan4", "0" },
 	{ "x_DHCPClient", "1" },
-	{ "pppoe_dhcp_route", "1" },
 
 	/* PPP VPN parameters */
 	{ "wan_pppoe_username", "" },		/* PPP username */
@@ -108,6 +107,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wan_pppoe_txonly_x", "0" },
 	{ "wan_pppoe_service", "" },		/* PPPoE service name */
 	{ "wan_pppoe_ac", "" },			/* PPPoE access concentrator name */
+	{ "wan_pppoe_man", "1" },		/* PPPoE & MAN */
 	{ "wan_pppoe_mtu", "1492" },		/* Negotiate MTU to the smaller of this value or the peer MRU */
 	{ "wan_pppoe_mru", "1492" },		/* Negotiate MRU to this value */
 	{ "wan_pptp_mtu", "1400" },		/* Negotiate MTU to the smaller of this value or the peer MRU */

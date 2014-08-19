@@ -396,6 +396,8 @@ init_sysctl(void)
 #endif
 	fput_int("/proc/sys/vm/overcommit_memory", 0);
 
+	set_tcp_tweaks();
+
 #if defined (USE_IPV6)
 	control_if_ipv6_all(0);
 #endif

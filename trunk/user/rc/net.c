@@ -194,12 +194,14 @@ is_same_subnet2(const char *ip1, const char *ip2, const char *msk1, const char *
 }
 
 #if defined(APP_XUPNPD)
-int is_xupnpd_support(void)
+int
+is_xupnpd_support(void)
 {
 	return check_if_file_exist("/usr/bin/xupnpd");
 }
 
-void stop_xupnpd(void)
+void
+stop_xupnpd(void)
 {
 	char* svcs[] = { "xupnpd", NULL };
 	
@@ -209,7 +211,8 @@ void stop_xupnpd(void)
 	kill_services(svcs, 3, 1);
 }
 
-void start_xupnpd(char *wan_ifname)
+void
+start_xupnpd(char *wan_ifname)
 {
 	int i, xport, has_daemon;
 	FILE *fp1, *fp2;
@@ -393,37 +396,39 @@ void
 restart_iptv(void)
 {
 	char *wan_ifname, *viptv_iflast;
-	
+
 	/* check used IPTV via VLAN interface */
 	viptv_iflast = nvram_safe_get("viptv_ifname");
 	if (*viptv_iflast && is_interface_exist(viptv_iflast))
 		wan_ifname = viptv_iflast;
 	else
 		wan_ifname = get_man_ifname(0);
-	
+
 	config_bridge();
 	start_igmpproxy(wan_ifname);
 }
 
-void 
+void
 flush_conntrack_caches(void)
 {
+//	fput_int("/proc/sys/net/nf_conntrack_table_flush", 1);
 	fput_string("/proc/net/nf_conntrack", "f");
 }
 
-void 
+void
 flush_route_caches(void)
 {
 	system("ip route flush cache");
 }
 
-void 
+void
 clear_if_route4(char *ifname)
 {
 	doSystem("ip route flush dev %s scope %s", ifname, "global");
 }
 
-int is_ftp_conntrack_loaded(int ftp_port0, int ftp_port1)
+int
+is_ftp_conntrack_loaded(int ftp_port0, int ftp_port1)
 {
 	char ports_use[64] = {0};
 	char ports_val[64];
@@ -447,7 +452,8 @@ int is_ftp_conntrack_loaded(int ftp_port0, int ftp_port1)
 	return 1;
 }
 
-int is_hwnat_loaded(void)
+int
+is_hwnat_loaded(void)
 {
 	char offload_val[32] = {0};
 
@@ -461,7 +467,8 @@ int is_hwnat_loaded(void)
 }
 
 
-int is_hwnat_allow(void)
+int
+is_hwnat_allow(void)
 {
 	int sw_mode = nvram_get_int("sw_mode");
 	int hw_nat_mode = nvram_get_int("hw_nat_mode");
@@ -478,7 +485,8 @@ int is_hwnat_allow(void)
 	return 1; // wifi_offload=0
 }
 
-int is_fastnat_allow(void)
+int
+is_fastnat_allow(void)
 {
 	if ( nvram_match("sw_nat_mode", "1") && nvram_match("sw_mode", "1") )
 	{
@@ -488,7 +496,8 @@ int is_fastnat_allow(void)
 	return 0;
 }
 
-void hwnat_load(void)
+void
+hwnat_load(void)
 {
 	char hnat_param[32];
 	int hnat_mode = nvram_get_int("hw_nat_mode");
@@ -497,7 +506,8 @@ void hwnat_load(void)
 	module_smart_load("hw_nat", hnat_param);
 }
 
-void hwnat_configure(void)
+void
+hwnat_configure(void)
 {
 	int hw_nat_mode, ppe_udp, wan_vid;
 	char *hwnat_status = "Disabled";
@@ -544,7 +554,8 @@ void hwnat_configure(void)
 #endif
 }
 
-void hw_vlan_tx_map(int idx, int vid)
+void
+hw_vlan_tx_map(int idx, int vid)
 {
 	char vlan_tx_data[16];
 
@@ -562,7 +573,8 @@ void hw_vlan_tx_map(int idx, int vid)
 #endif
 }
 
-void reload_nat_modules(void)
+void
+reload_nat_modules(void)
 {
 	int loaded_ftp;
 	int needed_ftp0 = 0;
@@ -666,32 +678,122 @@ void reload_nat_modules(void)
 	hwnat_configure();
 }
 
-void restart_firewall(void)
+void
+restart_firewall(void)
 {
-	char man_if[16], wan_if[16], wan_ip[32];
+	if (get_ap_mode())
+		return;
 
-	int unit = 0; // todo
+	/* re-build iptables rules */
+	start_firewall_ex();
 
-	snprintf(man_if, sizeof(man_if), "%s", get_man_ifname(unit));
-	snprintf(wan_if, sizeof(wan_if), "%s", get_wan_unit_value(unit, "ifname_t"));
-	snprintf(wan_ip, sizeof(wan_ip), "%s", get_wan_unit_value(unit, "ipaddr"));
-
-	if (strlen(wan_if) < 1)
-		get_wan_ifname(wan_if);
-
-	start_firewall_ex(man_if, wan_if, wan_ip);
-
-	/* update upnp forwards from lease file */
+	/* update UPnP forwards from lease file */
 	update_upnp();
 }
 
-void set_ipv4_forward(void)
+void
+set_ipv4_forward(int is_on)
 {
-	/* Enable Forwarding IPv4 */
-	fput_int("/proc/sys/net/ipv4/ip_forward", 1);
+	char tmp[64];
+
+	/* enable/disable forwarding IPv4 */
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "ip_forward");
+	fput_int(tmp, (is_on) ? 1 : 0);
 }
 
-void set_force_igmp_mld(void)
+void
+set_nf_conntrack(void)
+{
+	int i_nf_nat, i_nf_val;
+
+	i_nf_val = nvram_get_int("nf_nat_type");
+	if (i_nf_val == 2)
+		i_nf_nat = 0;	// Linux
+	else if (i_nf_val == 1)
+		i_nf_nat = 1;	// FCONE
+	else
+		i_nf_nat = 2;	// RCONE
+	fput_int("/proc/sys/net/nf_conntrack_nat_mode", i_nf_nat);
+
+	i_nf_val = nvram_safe_get_int("nf_max_conn", 16384, 4096, 262144);
+	fput_int("/proc/sys/net/nf_conntrack_max", i_nf_val);
+}
+
+void
+set_tcp_syncookies(void)
+{
+	char tmp[64];
+	int fw_syn_cook = nvram_get_int("fw_syn_cook");
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_syncookies");
+	fput_int(tmp, (fw_syn_cook) ? 1 : 0);
+
+	/* Tweak DoS-related... */
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "icmp_ignore_bogus_error_responses");
+	fput_int(tmp, 1);
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "icmp_echo_ignore_broadcasts");
+	fput_int(tmp, 1);
+}
+
+void
+set_tcp_tweaks(void)
+{
+	char tmp[64];
+
+	/* Tweak TCP IPv4 performance */
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_fin_timeout");
+	fput_int(tmp, 40);		// def: 60
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_keepalive_intvl");
+	fput_int(tmp, 30);		// def: 75
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_keepalive_probes");
+	fput_int(tmp, 5);		// def: 9
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_keepalive_time");
+	fput_int(tmp, 1800);		// def: 7200
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_retries2");
+	fput_int(tmp, 5);		// def: 15
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_syn_retries");
+	fput_int(tmp, 3);		// def: 5
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_synack_retries");
+	fput_int(tmp, 3);		// def: 5
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_tw_recycle");
+	fput_int(tmp, 1);
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_tw_reuse");
+	fput_int(tmp, 1);
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_rfc1337");
+	fput_int(tmp, 1);
+}
+
+void
+set_passthrough_pppoe(int is_on)
+{
+	char pthrough[32], *lan_if, *wan_if;
+
+	lan_if = "null";
+	wan_if = lan_if;
+
+	if (is_on && nvram_match("fw_pt_pppoe", "1")) {
+		lan_if = IFNAME_BR;
+		wan_if = get_man_ifname(0);
+	}
+
+	snprintf(pthrough, sizeof(pthrough), "%s,%s\n", lan_if, wan_if);
+
+	/* enable/disable kernel-mode PPPoE passthrough */
+	fput_string("/proc/net/pthrough/pppoe", pthrough);
+}
+
+void
+set_igmp_mld_version(void)
 {
 	char tmp[64];
 	char *ifname = get_man_ifname(0);
@@ -720,26 +822,5 @@ void set_force_igmp_mld(void)
 	sprintf(tmp, "/proc/sys/net/%s/conf/%s/%s", "ipv6", IFNAME_BR, "force_mld_version");
 	fput_int(tmp, force_value);
 #endif
-}
-
-void set_pppoe_passthrough(void)
-{
-	char pthrough[32];
-
-	if (nvram_match("fw_pt_pppoe", "1"))
-		sprintf(pthrough, "%s,%s\n", IFNAME_BR, get_man_ifname(0));
-	else
-		strcpy(pthrough, "null,null\n");
-
-	fput_string("/proc/net/pthrough/pppoe", pthrough);
-}
-
-void disable_all_passthrough(void)
-{
-	char pthrough[16];
-
-	strcpy(pthrough, "null,null\n");
-
-	fput_string("/proc/net/pthrough/pppoe", pthrough);
 }
 

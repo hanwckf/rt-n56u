@@ -726,7 +726,7 @@ launch_wan_modem_ras(int unit)
 	return 1;
 }
 
-void
+int
 launch_wan_usbnet(int unit)
 {
 	int modem_devnum = 0;
@@ -735,14 +735,26 @@ launch_wan_usbnet(int unit)
 	if (get_modem_ndis_ifname(ndis_ifname, &modem_devnum) && is_interface_exist(ndis_ifname)) {
 		int ndis_mtu = nvram_safe_get_int("modem_mtu", 1500, 1000, 1500);
 		
+		check_upnp_wanif_changed(ndis_ifname);
+		set_wan_unit_value(unit, "proto_t", "NDIS Modem");
 		set_wan_unit_value(unit, "ifname_t", ndis_ifname);
+		
+		/* bring up NDIS interface */
 		doSystem("ifconfig %s mtu %d up %s", ndis_ifname, ndis_mtu, "0.0.0.0");
+		
+		/* re-build iptables rules (first stage w/o WAN IP) */
+		start_firewall_ex();
+		
 		if (ndis_control_network(ndis_ifname, modem_devnum, 1) == 0)
 			sleep(1);
+		
 		start_udhcpc_wan(ndis_ifname, unit, 0);
+		
+		return 0;
 	}
-	else
-		set_wan_unit_value(unit, "ifname_t", "");
+
+	set_wan_unit_value(unit, "ifname_t", "");
+	return -1;
 }
 
 void

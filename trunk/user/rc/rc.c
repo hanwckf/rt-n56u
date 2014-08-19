@@ -252,16 +252,27 @@ convert_misc_values()
 		nvram_unset("front_leds");
 	}
 
+	test_value = nvram_get("pppoe_dhcp_route");
+	if (test_value) {
+		if (strlen(test_value) > 0 && strlen(nvram_safe_get("wan_pppoe_man")) == 0)
+			nvram_set("wan_pppoe_man", test_value);
+		nvram_unset("pppoe_dhcp_route");
+	}
+
 	test_value = nvram_get("wan_heartbeat_x");
 	if (test_value) {
 		if (strlen(test_value) > 0 && strlen(nvram_safe_get("wan_ppp_peer")) == 0)
 			nvram_set("wan_ppp_peer", test_value);
 		nvram_unset("wan_heartbeat_x");
 	}
+	nvram_unset("wan0_heartbeat_x");
 
-	if (nvram_match("modem_pin", "") && nvram_invmatch("wan_3g_pin", ""))
-		nvram_set("modem_pin", nvram_safe_get("wan_3g_pin"));
-	nvram_unset("wan_3g_pin");
+	test_value = nvram_get("wan_3g_pin");
+	if (test_value) {
+		if (strlen(test_value) > 0 && strlen(nvram_safe_get("modem_pin")) == 0)
+			nvram_set("modem_pin", test_value);
+		nvram_unset("wan_3g_pin");
+	}
 	nvram_unset("wan0_3g_pin");
 
 	if (strlen(nvram_wlan_get("wl", "ssid")) < 1)
@@ -335,8 +346,9 @@ convert_misc_values()
 	set_wan_unit_value(0, "dltime", "0000000000");
 	set_wan_unit_value(0, "bytes_rx", "00000000000000000000");
 	set_wan_unit_value(0, "bytes_tx", "00000000000000000000");
+	set_wan_unit_value(0, "ifname_t", "");
 	set_usb_modem_dev_wan(0, 0);
-	reset_wan_vars(1);
+	reset_wan_vars();
 
 	/* setup lan variables */
 	reset_lan_vars();
@@ -598,7 +610,7 @@ init_router(void)
 #if defined (USE_IPV6)
 		ip6t_filter_default();
 #endif
-		start_wan(1);
+		start_wan();
 	}
 
 	start_services_once(is_ap_mode);
@@ -626,6 +638,7 @@ shutdown_router(void)
 
 	stop_wan();
 	stop_services_lan_wan();
+	set_ipv4_forward(0);
 #if defined (BOARD_GPIO_LED_WAN)
 	LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
 #endif
@@ -955,14 +968,6 @@ handle_notifications(void)
 		{
 			reload_nat_modules();
 			restart_firewall();
-			
-			/* flush conntrack after NAT model changing */
-			int nf_nat_type = nvram_get_int("nf_nat_type");
-			if (nvram_nf_nat_type != nf_nat_type)
-			{
-				nvram_nf_nat_type = nf_nat_type;
-				flush_conntrack_caches();
-			}
 		}
 		else if (strcmp(entry->d_name, "restart_ntpc") == 0)
 		{
@@ -978,7 +983,16 @@ handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, "restart_sysctl") == 0)
 		{
+			int nf_nat_type = nvram_get_int("nf_nat_type");
+			
 			restart_all_sysctl();
+			
+			/* flush conntrack after NAT model changing */
+			if (nvram_nf_nat_type != nf_nat_type)
+			{
+				nvram_nf_nat_type = nf_nat_type;
+				flush_conntrack_caches();
+			}
 		}
 		else if (!strcmp(entry->d_name, "restart_wifi_wl"))
 		{

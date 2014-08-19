@@ -15,7 +15,6 @@
  * MA 02111-1307 USA
  */
 
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -341,8 +340,10 @@ void set_pagecache_reclaim(void)
 void restart_all_sysctl(void)
 {
 	if (!get_ap_mode()) {
-		set_force_igmp_mld();
-		set_pppoe_passthrough();
+		set_nf_conntrack();
+		set_tcp_syncookies();
+		set_igmp_mld_version();
+		set_passthrough_pppoe(1);
 	}
 
 	set_pagecache_reclaim();
@@ -454,6 +455,27 @@ int is_module_loaded(char *module_name)
 	return 0;
 }
 
+int get_module_refcount(char *module_name)
+{
+	FILE *fp;
+	char mod_path[64], mod_refval[16];
+	int refcount = 0;
+
+	snprintf(mod_path, sizeof(mod_path), "/sys/module/%s/refcnt", module_name);
+	fp = fopen(mod_path, "r");
+	if (!fp)
+		return -1;
+
+	mod_refval[0] = 0;
+	fgets(mod_refval, sizeof(mod_refval), fp);
+	if (strlen(mod_refval) > 0)
+		refcount = atoi(mod_refval);
+
+	fclose(fp);
+
+	return refcount;
+}
+
 int module_smart_load(char *module_name, char *module_param)
 {
 	int ret;
@@ -472,9 +494,15 @@ int module_smart_load(char *module_name, char *module_param)
 int module_smart_unload(char *module_name, int recurse_unload)
 {
 	int ret;
+	int refcount = get_module_refcount(module_name);
 
-	if (!is_module_loaded(module_name))
+	/* check module not loaded */
+	if (refcount < 0)
 		return 0;
+
+	/* check module is used */
+	if (refcount > 0)
+		return 1;
 
 	if (recurse_unload)
 		ret = doSystem("modprobe -r %s", module_name);

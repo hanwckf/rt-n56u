@@ -335,7 +335,7 @@ start_upnp(void)
 	char *lan_addr, *lan_mask, *lan_url, *proto_upnp, *proto_npmp, *secured;
 	char var[100];
 	char wan_ifname[16];
-	char lan_class[32];
+	char lan_class[24];
 	uint8_t lan_mac[16];
 
 	if (!nvram_get_int("upnp_enable_x") || !nvram_get_int("wan_nat_x") || get_ap_mode())
@@ -359,7 +359,7 @@ start_upnp(void)
 
 	lan_addr = nvram_safe_get("lan_ipaddr");
 	lan_mask = nvram_safe_get("lan_netmask");
-	ip2class(lan_addr, lan_mask, lan_class);
+	ip2class(lan_addr, lan_mask, lan_class, sizeof(lan_class));
 	memset(lan_mac, 0, sizeof(lan_mac));
 	ether_atoe(nvram_safe_get("lan_hwaddr"), lan_mac);
 
@@ -455,25 +455,14 @@ stop_upnp(void)
 }
 
 void
-smart_restart_upnp(void)
+check_upnp_wanif_changed(char *wan_ifname)
 {
-	char wan_ifname[16];
-
 	if (!is_upnp_run())
-	{
-		start_upnp();
-		
 		return;
-	}
-
-	wan_ifname[0] = 0;
-	get_wan_ifname(wan_ifname);
 
 	/* restart miniupnpd only if wan interface changed */
-	if (strcmp(wan_ifname, get_wan_unit_value(0, "ifname_t")) != 0) {
+	if (strcmp(wan_ifname, get_wan_unit_value(0, "ifname_t")) != 0)
 		stop_upnp();
-		start_upnp();
-	}
 }
 
 void

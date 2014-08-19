@@ -543,7 +543,7 @@ ipup_main(int argc, char **argv)
 	}
 	set_wan_unit_value(unit, "dns", buf);
 
-	wan_up(ppp_ifname, unit);
+	wan_up(ppp_ifname, unit, 0);
 
 	logmessage(get_wan_unit_value(unit, "proto_t"), "Connected");
 

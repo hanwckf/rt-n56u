@@ -128,15 +128,12 @@ reset_man_vars(void)
 }
 
 void
-reset_wan_vars(int full_reset)
+reset_wan_vars(void)
 {
 	int unit, wan_proto;
 	char macbuf[36], *man_addr, *man_mask, *man_gate, *man_mtu;
 
 	unit = 0;
-
-	if (full_reset)
-		set_wan_unit_value(unit, "ifname_t", "");
 
 	clear_wan_state();
 	reset_man_vars();
@@ -204,6 +201,7 @@ reset_wan_vars(int full_reset)
 		set_wan_unit_param(unit, "pppoe_txonly_x");
 		set_wan_unit_param(unit, "pppoe_service");
 		set_wan_unit_param(unit, "pppoe_ac");
+		set_wan_unit_param(unit, "pppoe_man");
 		set_wan_unit_param(unit, "pppoe_mtu");
 		set_wan_unit_param(unit, "pppoe_mru");
 		set_wan_unit_param(unit, "pptp_mtu");
@@ -444,11 +442,10 @@ launch_viptv_wan(void)
 }
 
 static void 
-launch_wanx(char *man_ifname, char *wan_ifname, int unit, int wait_dhcpc, int use_zcip)
+launch_wanx(char *man_ifname, int unit, int wait_dhcpc, int use_zcip)
 {
 	char *man_addr = get_wan_unit_value(unit, "man_ipaddr");
 	char *man_mask = get_wan_unit_value(unit, "man_netmask");
-	char *man_gate = get_wan_unit_value(unit, "man_gateway");
 	int   man_mtu  = get_wan_unit_value_int(unit, "man_mtu");
 
 	if (!is_valid_ipv4(man_addr))
@@ -472,7 +469,7 @@ launch_wanx(char *man_ifname, char *wan_ifname, int unit, int wait_dhcpc, int us
 		{
 			start_udhcpc_wan(man_ifname, unit, wait_dhcpc);
 			
-			/* add delay 2s after eth3 up: gethostbyname issue (L2TP/PPTP) */
+			/* add delay 2s after eth3 up: gethostbyname delay issue (L2TP/PPTP) */
 			if (wait_dhcpc)
 				sleep(2);
 		}
@@ -481,24 +478,7 @@ launch_wanx(char *man_ifname, char *wan_ifname, int unit, int wait_dhcpc, int us
 	}
 	else
 	{
-		/* start firewall */
-		start_firewall_ex(man_ifname, wan_ifname, "0.0.0.0");
-		
-		/* setup static wan routes via physical device */
-		add_static_man_routes(man_ifname);
-		
-		/* and default route with metric 1 */
-		if (is_valid_ipv4(man_gate)) {
-			/* if the gateway is out of the subnet */
-			if (man_mask && !is_same_subnet(man_gate, man_addr, man_mask))
-				route_add(man_ifname, 2, man_gate, NULL, "255.255.255.255");
-			
-			/* default route via default gateway */
-			route_add(man_ifname, 2, "0.0.0.0", man_gate, "0.0.0.0");
-		}
-		
-		/* start multicast router */
-		start_igmpproxy(man_ifname);
+		man_up(man_ifname, unit, 1);
 	}
 
 #if defined (USE_IPV6)
@@ -589,7 +569,7 @@ remove_cb_links(void)
 }
 
 void
-start_wan(int is_first_run)
+start_wan(void)
 {
 	int unit, wan_proto;
 	char *wan_ifname;
@@ -605,8 +585,9 @@ start_wan(int is_first_run)
 
 	update_resolvconf(1, 0);
 
-	if (!is_first_run)
-		smart_restart_upnp();
+	set_nf_conntrack();
+	set_tcp_syncookies();
+	set_igmp_mld_version();
 
 	/* di wakeup after 60 secs */
 	notify_run_detect_internet(60);
@@ -623,36 +604,21 @@ start_wan(int is_first_run)
 		if (strlen(wan_ifname) < 1)
 			continue;
 		
-		/* Bring up if */
+		/* bring up physical WAN interface */
 		doSystem("ifconfig %s mtu %d up %s", wan_ifname, 1500, "0.0.0.0");
-		
-		dbg("%s: wan_ifname=%s, wan_proto=%d\n", __FUNCTION__, wan_ifname, wan_proto);
-		
-		if (unit == 0)
-		{
-			set_ipv4_forward();
-			set_force_igmp_mld();
-			set_pppoe_passthrough();
-		}
-		
-		/* 
-		* Configure PPPoE connection. The PPPoE client will run 
-		* ip-up/ip-down scripts upon link's connect/disconnect.
-		*/
 		
 #if (BOARD_NUM_USB_PORTS > 0)
 		if (get_usb_modem_wan(unit))
 		{
 			if (nvram_get_int("modem_type") == 3)
 			{
-				set_wan_unit_value(unit, "proto_t", "NDIS Modem");
-				
 				launch_wan_usbnet(unit);
 			}
 			else
 			{
 				char *ppp_ifname = IFNAME_RAS;
 				
+				check_upnp_wanif_changed(ppp_ifname);
 				set_wan_unit_value(unit, "proto_t", "RAS Modem");
 				set_wan_unit_value(unit, "ifname_t", ppp_ifname);
 				
@@ -663,17 +629,15 @@ start_wan(int is_first_run)
 					int i_pppoe, i_pppoe_man;
 					
 					i_pppoe = (wan_proto == IPV4_WAN_PROTO_PPPOE) ? 1 : 0;
-					i_pppoe_man = nvram_get_int("pppoe_dhcp_route");
+					i_pppoe_man = get_wan_unit_value_int(unit, "pppoe_man");
 					if (!i_pppoe || i_pppoe_man == 1)
-						launch_wanx(wan_ifname, ppp_ifname, unit, 0, 0);
+						launch_wanx(wan_ifname, unit, 0, 0);
 					else if (i_pppoe && i_pppoe_man == 2)
-						launch_wanx(wan_ifname, ppp_ifname, unit, 0, 1);
+						launch_wanx(wan_ifname, unit, 0, 1);
 				}
-				else
-				{
-					/* start firewall */
-					start_firewall_ex(wan_ifname, ppp_ifname, "0.0.0.0");
-				}
+				
+				/* re-build iptables rules (first stage w/o WAN IP) */
+				start_firewall_ex();
 				
 				launch_wan_modem_ras(unit);
 			}
@@ -694,22 +658,26 @@ start_wan(int is_first_run)
 			else
 				proto_desc = "L2TP";
 			
+			check_upnp_wanif_changed(ppp_ifname);
 			set_wan_unit_value(unit, "proto_t", proto_desc);
 			set_wan_unit_value(unit, "ifname_t", ppp_ifname);
 			
 			i_pppoe = (wan_proto == IPV4_WAN_PROTO_PPPOE) ? 1 : 0;
-			i_pppoe_man = nvram_get_int("pppoe_dhcp_route");
+			i_pppoe_man = get_wan_unit_value_int(unit, "pppoe_man");
 			
 			if (!i_pppoe || i_pppoe_man == 1)
-				launch_wanx(wan_ifname, ppp_ifname, unit, !i_pppoe, 0);
+				launch_wanx(wan_ifname, unit, !i_pppoe, 0);
 			else if (i_pppoe && i_pppoe_man == 2)
-				launch_wanx(wan_ifname, ppp_ifname, unit, 0, 1);
+				launch_wanx(wan_ifname, unit, 0, 1);
 			
+			/* re-build iptables rules (first stage w/o WAN IP) */
+			start_firewall_ex();
+			
+			/* update demand option */
 			i_demand = get_wan_unit_value_int(unit, "pppoe_idletime");
 			if (!i_pppoe || i_demand < 0)
 				i_demand = 0;
 			
-			/* update demand option */
 			set_wan_unit_value(unit, "pppoe_demand", (i_demand) ? "1" : "0");
 			
 			/* launch ppp client daemon */
@@ -727,6 +695,7 @@ start_wan(int is_first_run)
 			int wan_auth_mode;
 			
 			/* Configure DHCP connection. */
+			check_upnp_wanif_changed(wan_ifname);
 			set_wan_unit_value(unit, "proto_t", "IPoE");
 			set_wan_unit_value(unit, "ifname_t", wan_ifname);
 			
@@ -742,6 +711,14 @@ start_wan(int is_first_run)
 				ifconfig(wan_ifname, IFUP, wan_addr, wan_mask);
 			}
 			
+			/* re-build iptables rules (final stage for IPoE static) */
+			start_firewall_ex();
+			
+			if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC) {
+				/* update UPnP forwards from lease file */
+				update_upnp();
+			}
+			
 			/* Start eapol authenticator */
 			wan_auth_mode = get_wan_unit_value_int(unit, "auth_mode");
 			if (wan_auth_mode > 1)
@@ -749,7 +726,7 @@ start_wan(int is_first_run)
 			
 			/* We are done configuration */
 			if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC)
-				wan_up(wan_ifname, unit);
+				wan_up(wan_ifname, unit, 1);
 			else
 				start_udhcpc_wan(wan_ifname, unit, 0);
 #if defined (USE_IPV6)
@@ -758,6 +735,8 @@ start_wan(int is_first_run)
 #endif
 		}
 	}
+
+	set_passthrough_pppoe(1);
 }
 
 static void
@@ -840,7 +819,7 @@ stop_wan(void)
 
 	stop_auth_eapol();
 	stop_auth_kabinet();
-	disable_all_passthrough();
+	set_passthrough_pppoe(0);
 
 	kill_services(svcs_wan, 3, 1);
 
@@ -951,31 +930,35 @@ add_man_gateway_routes(char *man_ifname, int unit, int metric)
 	}
 }
 
-static void
-man_up(char *man_ifname, int unit)
+void
+man_up(char *man_ifname, int unit, int is_static)
 {
 	logmessage(LOGNAME, "%s %s (%s)", "MAN", "up", man_ifname);
 
 	/* setup static wan routes via physical device */
 	add_static_man_routes(man_ifname);
 
-	/* and one supplied via DHCP */
-	add_dhcp_routes_by_prefix("wanx_", man_ifname, 0);
+	if (!is_static) {
+		/* and one supplied via DHCP */
+		add_dhcp_routes_by_prefix("wanx_", man_ifname, 0);
+	}
 
 	/* and default route with metric 1 */
 	add_man_gateway_routes(man_ifname, unit, 2);
 
-	/* update resolv.conf content */
-	update_resolvconf(0, 0);
+	if (!is_static) {
+		/* update resolv.conf content */
+		update_resolvconf(0, 0);
+		
+		/* re-start firewall */
+		notify_rc("restart_firewall_wan");
+	}
 
 	/* start multicast router */
 	start_igmpproxy(man_ifname);
-
-	/* re-start firewall */
-	notify_rc("restart_firewall_wan");
 }
 
-static void
+void
 man_down(char *man_ifname, int unit)
 {
 	logmessage(LOGNAME, "%s %s (%s)", "MAN", "down", man_ifname);
@@ -985,7 +968,7 @@ man_down(char *man_ifname, int unit)
 }
 
 void
-wan_up(char *wan_ifname, int unit)
+wan_up(char *wan_ifname, int unit, int is_static)
 {
 	char wan_cnt[32], *wan_addr, *wan_mask, *wan_gate;
 	const char *script_postw = SCRIPT_POST_WAN;
@@ -1056,8 +1039,10 @@ wan_up(char *wan_ifname, int unit)
 	/* update resolv.conf content */
 	update_resolvconf(0, 0);
 
-	/* re-start firewall */
-	notify_rc("restart_firewall_wan");
+	if (!is_static) {
+		/* re-start firewall */
+		notify_rc("restart_firewall_wan");
+	}
 
 	/* Start kabinet authenticator (for IPoE) */
 	if (!modem_unit_id && (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC || wan_proto == IPV4_WAN_PROTO_IPOE_DHCP)) {
@@ -1177,9 +1162,7 @@ full_restart_wan(void)
 
 	update_router_mode();
 
-	reset_wan_vars(0);
-
-	ipt_nat_default();
+	reset_wan_vars();
 
 	add_static_lan_routes(IFNAME_BR);
 
@@ -1188,7 +1171,7 @@ full_restart_wan(void)
 	notify_reset_detect_link();
 	switch_config_vlan(0);
 
-	start_wan(0);
+	start_wan();
 
 	/* restore L2TP VPN server after L2TP WAN client closed */
 	if (nvram_match("l2tp_srv_t", "1"))
@@ -1203,14 +1186,14 @@ try_wan_reconnect(int try_use_modem)
 
 	stop_wan();
 
-	reset_wan_vars(0);
+	reset_wan_vars();
 
 	if (try_use_modem)
 		select_usb_modem_to_wan();
 
 	notify_reset_detect_link();
 
-	start_wan(0);
+	start_wan();
 
 	/* restore L2TP VPN server after L2TP WAN client closed */
 	if (nvram_match("l2tp_srv_t", "1"))
@@ -1882,9 +1865,9 @@ udhcpc_bound(char *wan_ifname, int is_renew_mode)
 			udhcpc_state, wan_ifname, wan_ip, wan_gw, lease_dur);
 		
 		if (is_man)
-			man_up(wan_ifname, unit);
+			man_up(wan_ifname, unit, 0);
 		else
-			wan_up(wan_ifname, unit);
+			wan_up(wan_ifname, unit, 0);
 	}
 
 	return 0;
@@ -2010,7 +1993,7 @@ zcip_bound(char *man_ifname)
 		nvram_set_temp(strcat_r(prefix, "ipaddr", tmp), ip);
 		ifconfig(man_ifname, IFUP, ip, zeroconf_mask);
 		
-		man_up(man_ifname, unit);
+		man_up(man_ifname, unit, 0);
 	}
 
 	return 0;

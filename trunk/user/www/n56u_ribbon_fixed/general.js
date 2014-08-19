@@ -219,14 +219,6 @@ function markGroup(o, s, c, b) {
             else if (!validate_duplicate(document.form.UrlList_s, document.form.url_keyword_x_0.value, 32, 0))
                 return false;
         }
-        else if (s == 'KeywordList') {
-            if (document.form.keyword_num_x_0.value >= c)
-                cFlag = 1;
-            else if (document.form.keyword_keyword_x_0.value == "")
-                bFlag = 1;
-            else if (!validate_duplicate(document.form.KeywordList_s, document.form.keyword_keyword_x_0.value, 32, 0))
-                return false;
-        }
     }
 
     if (bFlag == 1)

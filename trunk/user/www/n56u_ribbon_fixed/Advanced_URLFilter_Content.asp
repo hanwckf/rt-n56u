@@ -96,7 +96,7 @@ function validForm(){
 		&& (document.form.url_date_x_Thu.checked ==false)
 		&& (document.form.url_date_x_Fri.checked ==false)
 		&& (document.form.url_date_x_Sat.checked ==false)){
-			alert("<#FirewallConfig_KeywordActiveDate_itemname#><#JS_fieldblank#>");
+			alert("<#FirewallConfig_URLActiveDate_itemname#><#JS_fieldblank#>");
 			document.form.url_enable_x[0].checked=false;
 			document.form.url_enable_x[1].checked=true;
 			document.form.url_enable_x_1[0].checked=false;
@@ -176,15 +176,15 @@ function validForm(){
 function enable_url(){
 	if(document.form.url_enable_x[1].checked == 1)
 		$("url_time").style.display = "none";
-	else 
-		$("url_time").style.display = "";	
+	else
+		$("url_time").style.display = "";
 	return change_common_radio(this, 'FirewallConfig', 'url_enable_x', '1')
 }
 
 function enable_url_1(){
 	if(document.form.url_enable_x_1[1].checked == 1)
 		$("url_time_1").style.display = "none";
-	else 
+	else
 		$("url_time_1").style.display = "";
 	return change_common_radio(this, 'FirewallConfig', 'url_enable_x_1', '1')
 }
@@ -232,10 +232,10 @@ function done_validating(action){
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
 
-    <input type="hidden" name="url_date_x" value="<% nvram_get_x("FirewallConfig","url_date_x"); %>">
-    <input type="hidden" name="url_time_x" value="<% nvram_get_x("FirewallConfig","url_time_x"); %>">
-    <input type="hidden" name="url_time_x_1" value="<% nvram_get_x("FirewallConfig","url_time_x_1"); %>">
-    <input type="hidden" name="url_num_x_0" value="<% nvram_get_x("FirewallConfig", "url_num_x"); %>" readonly="1">
+    <input type="hidden" name="url_date_x" value="<% nvram_get_x("","url_date_x"); %>">
+    <input type="hidden" name="url_time_x" value="<% nvram_get_x("","url_time_x"); %>">
+    <input type="hidden" name="url_time_x_1" value="<% nvram_get_x("","url_time_x_1"); %>">
+    <input type="hidden" name="url_num_x_0" value="<% nvram_get_x("","url_num_x"); %>" readonly="1">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -269,18 +269,18 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="url_enable_x_on_of">
-                                                        <input type="checkbox" id="url_enable_x_fake" <% nvram_match_x("FirewallConfig", "url_enable_x", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "url_enable_x", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="url_enable_x_fake" <% nvram_match_x("", "url_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "url_enable_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="url_enable_x" id="url_enable_x_11" onClick="enable_url();" <% nvram_match_x("FirewallConfig","url_enable_x", "1", "checked"); %>><#CTL_Enabled#>
-                                                    <input type="radio" value="0" name="url_enable_x" id="url_enable_x_00" onClick="enable_url();" <% nvram_match_x("FirewallConfig","url_enable_x", "0", "checked"); %>><#CTL_Disabled#>
+                                                    <input type="radio" value="1" name="url_enable_x" id="url_enable_x_11" onClick="enable_url();" <% nvram_match_x("","url_enable_x", "1", "checked"); %>><#CTL_Enabled#>
+                                                    <input type="radio" value="0" name="url_enable_x" id="url_enable_x_00" onClick="enable_url();" <% nvram_match_x("","url_enable_x", "0", "checked"); %>><#CTL_Disabled#>
                                                 </div>
                                             </td>
                                         </tr>
                                         <tr id="url_time">
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,9,2);"><#FirewallConfig_KeywordActiveTime_itemname#> 1:</a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,9,2);"><#FirewallConfig_URLActiveTime_itemname#> 1:</a></th>
                                             <td>
                                                 <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_starthour" onKeyPress="return is_number(this)">:
                                                 <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_startmin" onKeyPress="return is_number(this)">-
@@ -293,18 +293,18 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="url_enable_x_1_on_of">
-                                                        <input type="checkbox" id="url_enable_x_1_fake" <% nvram_match_x("FirewallConfig", "url_enable_x_1", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "url_enable_x_1", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="url_enable_x_1_fake" <% nvram_match_x("", "url_enable_x_1", "1", "value=1 checked"); %><% nvram_match_x("", "url_enable_x_1", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="url_enable_x_1" id="url_enable_x_1_1" onClick="enable_url_1();" <% nvram_match_x("FirewallConfig","url_enable_x_1", "1", "checked"); %>><#CTL_Enabled#>
-                                                    <input type="radio" value="0" name="url_enable_x_1" id="url_enable_x_1_0" onClick="enable_url_1();" <% nvram_match_x("FirewallConfig","url_enable_x_1", "0", "checked"); %>><#CTL_Disabled#>
+                                                    <input type="radio" value="1" name="url_enable_x_1" id="url_enable_x_1_1" onClick="enable_url_1();" <% nvram_match_x("","url_enable_x_1", "1", "checked"); %>><#CTL_Enabled#>
+                                                    <input type="radio" value="0" name="url_enable_x_1" id="url_enable_x_1_0" onClick="enable_url_1();" <% nvram_match_x("","url_enable_x_1", "0", "checked"); %>><#CTL_Disabled#>
                                                 </div>
                                             </td>
                                         </tr>
                                         <tr id="url_time_1">
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,9,2);"><#FirewallConfig_KeywordActiveTime_itemname#> 2:</a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,9,2);"><#FirewallConfig_URLActiveTime_itemname#> 2:</a></th>
                                             <td>
                                                 <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_starthour_1" onKeyPress="return is_number(this)">:
                                                 <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_startmin_1" onKeyPress="return is_number(this)">-
@@ -314,7 +314,7 @@ function done_validating(action){
                                         </tr>
 
                                         <tr>
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,9,1);"><#FirewallConfig_KeywordActiveDate_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,9,1);"><#FirewallConfig_URLActiveDate_itemname#></a></th>
                                             <td>
                                                 <div class="controls">
                                                     <label class="checkbox inline"><input type="checkbox" name="url_date_x_Mon" class="input" onChange="return changeDate();"><#DAY_Mon#></label>

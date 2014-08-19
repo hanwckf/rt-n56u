@@ -74,11 +74,10 @@ helpcontent[8] = new Array("",
 				"<#FirewallConfig_DoSEnable_itemdesc#>");
 helpcontent[9] = new Array("",
 				"<#FirewallConfig_URLActiveDate_itemdesc#>",
-				"<#FirewallConfig_URLActiveTime_itemdesc#><p><a href='/Main_LogStatus_Content.asp' target='_blank'><#General_x_SystemTime_itemname#></a></p>",
-				"<#FirewallConfig_KeywordList_groupitemdesc#>");
+				"<#FirewallConfig_URLActiveTime_itemdesc#>");
 helpcontent[10] = new Array("",
 				"<#FirewallConfig_LanWanActiveDate_itemdesc#>",
-				"<#FirewallConfig_LanWanActiveTime_itemdesc#><p><a href='/Main_LogStatus_Content.asp' target='_blank'><#General_x_SystemTime_itemname#></a></p>",
+				"<#FirewallConfig_LanWanActiveTime_itemdesc#>",
 				"<#FirewallConfig_LanWanDefaultAct_itemdesc#>",
 				"<#FirewallConfig_LanWanICMP_itemdesc#>",
 				"<#FirewallConfig_LanWanFirewallEnable_itemdesc#>");

@@ -201,47 +201,12 @@ set_wan0_vars(void)
 	set_wan_unit_value(0, "ifname", IFNAME_WAN);
 }
 
-static void 
-convert_misc_values()
+static void
+nvram_convert_old_params(void)
 {
-	char buff[64], *test_value;
-	int sw_mode;
+	char *test_value;
 
-	/* check router mode */
-	sw_mode = nvram_get_int("sw_mode");
-	if (sw_mode == 1) {
-		/* Internet gateway mode */
-		nvram_set_int("wan_nat_x", 1);
-		nvram_set("wan_route_x", "IP_Routed");
-	} else if (sw_mode == 4) {
-		/* Pure router mode */
-		nvram_set_int("wan_nat_x", 0);
-		nvram_set("wan_route_x", "IP_Routed");
-	} else if (sw_mode == 3) {
-		/* AP mode (Ethernet convertor) */
-		nvram_set_int("wan_nat_x", 0);
-		nvram_set("wan_route_x", "IP_Bridged");
-	} else {
-		nvram_set_int("sw_mode", 1);
-		nvram_set_int("wan_nat_x", 1);
-		nvram_set("wan_route_x", "IP_Routed");
-	}
-
-	/* remove old unused params */
-	nvram_unset("lan_route");
-	nvram_unset("wan0_route");
-	nvram_unset("wan_route");
-	nvram_unset("wan_dns_t");
-	nvram_unset("wan_proto_t");
-	nvram_unset("wan_ipaddr_t");
-	nvram_unset("wan_netmask_t");
-	nvram_unset("wan_gateway_t");
-	nvram_unset("wan_ifname_t");
-	nvram_unset("wan_status_t");
-	nvram_unset("wan_subnet_t");
-	nvram_unset("lan_subnet_t");
-	nvram_unset("link_lan");
-
+	/* convert old params */
 	test_value = nvram_get("front_leds");
 	if (test_value) {
 		int front_leds = atoi(test_value);
@@ -274,6 +239,48 @@ convert_misc_values()
 		nvram_unset("wan_3g_pin");
 	}
 	nvram_unset("wan0_3g_pin");
+
+	/* remove old unused params */
+	nvram_unset("lan_route");
+	nvram_unset("wan0_route");
+	nvram_unset("wan_route");
+	nvram_unset("wan_dns_t");
+	nvram_unset("wan_proto_t");
+	nvram_unset("wan_ipaddr_t");
+	nvram_unset("wan_netmask_t");
+	nvram_unset("wan_gateway_t");
+	nvram_unset("wan_ifname_t");
+	nvram_unset("wan_status_t");
+	nvram_unset("wan_subnet_t");
+	nvram_unset("lan_subnet_t");
+	nvram_unset("link_lan");
+}
+
+static void
+nvram_convert_misc_values(void)
+{
+	char buff[64];
+	int sw_mode;
+
+	/* check router mode */
+	sw_mode = nvram_get_int("sw_mode");
+	if (sw_mode == 1) {
+		/* Internet gateway mode */
+		nvram_set_int("wan_nat_x", 1);
+		nvram_set("wan_route_x", "IP_Routed");
+	} else if (sw_mode == 4) {
+		/* Pure router mode */
+		nvram_set_int("wan_nat_x", 0);
+		nvram_set("wan_route_x", "IP_Routed");
+	} else if (sw_mode == 3) {
+		/* AP mode (Ethernet convertor) */
+		nvram_set_int("wan_nat_x", 0);
+		nvram_set("wan_route_x", "IP_Bridged");
+	} else {
+		nvram_set_int("sw_mode", 1);
+		nvram_set_int("wan_nat_x", 1);
+		nvram_set("wan_route_x", "IP_Routed");
+	}
 
 	if (strlen(nvram_wlan_get("wl", "ssid")) < 1)
 		nvram_wlan_set("wl", "ssid", DEF_WLAN_5G_SSID);
@@ -560,11 +567,13 @@ init_router(void)
 	mtk_esw_node();
 #endif
 
+	nvram_convert_old_params();
+
 	nvram_need_commit = nvram_restore_defaults();
 
 	get_eeprom_params();
 
-	convert_misc_values();
+	nvram_convert_misc_values();
 
 	if (nvram_need_commit)
 		nvram_commit();

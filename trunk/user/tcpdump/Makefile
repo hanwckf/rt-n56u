@@ -3,7 +3,7 @@ SRC_NAME=tcpdump-4.4.0
 CFLAGS += -Os -ffunction-sections -fdata-sections -DTCPDUMP_MINI
 LDFLAGS += -Wl,--gc-sections
 
-all:	config_test build
+all: config_test build
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -15,6 +15,8 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	ac_cv_linux_vers=3 \
+	ac_cv_lib_rpc_main=no \
+	ac_cv_path_PCAP_CONFIG="" \
 	td_cv_buggygetaddrinfo=no \
 	./configure \
 		--prefix=/usr \

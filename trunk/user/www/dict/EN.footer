@@ -306,6 +306,7 @@ InetCheckTimeout=TCP connection timeout (s):
 InetCheckEvents=Events when the state of Internet access is changed
 InetCheckLostDelay=Delay before raise "Internet lost" event (s):
 InetCheckLostAction=Perform action on "Internet lost" event:
+InetCheckReconPause=Pause before run new WAN connection (s):
 InetCheckLostItem0=No action
 InetCheckLostItem1=Router reboot
 InetCheckLostItem2=WAN reconnect

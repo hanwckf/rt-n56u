@@ -235,7 +235,7 @@ check_apcli_wan(int is_5g, int radio_on)
 		full_restart_wan();
 	} else if (radio_on && wisp_id == is_5g) {
 		/* MAN interface still ApCli, need restart WAN after acpli0 down/up */
-		try_wan_reconnect(1);
+		try_wan_reconnect(1, 0);
 	}
 }
 

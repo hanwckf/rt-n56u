@@ -134,6 +134,7 @@
 			{"di_time_fail", "", NULL, FALSE},
 			{"di_lost_delay", "", NULL, FALSE},
 			{"di_lost_action", "", NULL, FALSE},
+			{"di_recon_pause", "", NULL, FALSE},
 			{"di_addr0", "", NULL, RESTART_DI},
 			{"di_addr1", "", NULL, RESTART_DI},
 			{"di_addr2", "", NULL, RESTART_DI},

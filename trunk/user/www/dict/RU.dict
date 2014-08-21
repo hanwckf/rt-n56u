@@ -324,6 +324,7 @@ InetCheckTimeout=Таймаут для TCP соединения (с):
 InetCheckEvents=События изменения состояния доступа к сети Интернет
 InetCheckLostDelay=Задержка перед событием "Нет Интернета" (с):
 InetCheckLostAction=Выполнить после события "Нет Интернета":
+InetCheckReconPause=Пауза перед запуском WAN подключения (с):
 InetCheckLostItem0=Нет действия
 InetCheckLostItem1=Перезагрузка маршрутизатора
 InetCheckLostItem2=Перезапуск WAN подключения

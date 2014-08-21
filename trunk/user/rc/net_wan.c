@@ -756,6 +756,8 @@ stop_wan_ppp(void)
 		NULL
 	};
 
+	nvram_set_int_temp("deferred_wanup_t", 0);
+
 	notify_pause_detect_internet();
 
 	stop_vpn_client();
@@ -796,6 +798,8 @@ stop_wan(void)
 	};
 
 	unit = 0;
+
+	nvram_set_int_temp("deferred_wanup_t", 0);
 
 	wan_proto = get_wan_proto(unit);
 	man_ifname = get_man_ifname(unit);
@@ -1179,17 +1183,51 @@ full_restart_wan(void)
 }
 
 void
-try_wan_reconnect(int try_use_modem)
+try_wan_reconnect(int try_use_modem, long pause_in_seconds)
 {
 	if (get_ap_mode())
 		return;
 
 	stop_wan();
-
 	reset_wan_vars();
+
+	if (pause_in_seconds > 0) {
+		long deferred_up_time = uptime() + pause_in_seconds;
+		
+		if (deferred_up_time == 0)
+			deferred_up_time++;
+		nvram_set_int_temp("deferred_wanup_t", deferred_up_time);
+		
+		/* check watchdog started */
+		start_watchdog();
+		
+		logmessage(LOGNAME, "WAN up delay: %lds.", pause_in_seconds);
+		
+		return;
+	}
 
 	if (try_use_modem)
 		select_usb_modem_to_wan();
+
+	notify_reset_detect_link();
+
+	start_wan();
+
+	/* restore L2TP VPN server after L2TP WAN client closed */
+	if (nvram_match("l2tp_srv_t", "1"))
+		safe_start_xl2tpd();
+}
+
+void
+deferred_wan_connect(void)
+{
+	/* check wan already started */
+	if (check_if_file_exist(SCRIPT_UDHCPC_WAN))
+		return;
+
+	nvram_set_int_temp("deferred_wanup_t", 0);
+
+	select_usb_modem_to_wan();
 
 	notify_reset_detect_link();
 
@@ -1234,7 +1272,7 @@ manual_wan_reconnect(void)
 {
 	logmessage(LOGNAME, "Perform WAN %s %s", "manual", "reconnect");
 
-	try_wan_reconnect(1);
+	try_wan_reconnect(1, 0);
 }
 
 void
@@ -1242,7 +1280,15 @@ auto_wan_reconnect(void)
 {
 	logmessage(LOGNAME, "Perform WAN %s %s", "auto", "reconnect");
 
-	try_wan_reconnect(1);
+	try_wan_reconnect(1, 0);
+}
+
+void
+auto_wan_reconnect_pause(void)
+{
+	logmessage(LOGNAME, "Perform WAN %s %s", "auto", "reconnect");
+
+	try_wan_reconnect(1, nvram_get_int("di_recon_pause"));
 }
 
 void
@@ -1260,9 +1306,9 @@ notify_on_wan_ether_link_restored(void)
 	if (get_wan_wisp_active(NULL))
 		return;
 
-	logmessage(LOGNAME, "force WAN DHCP client renew...");
-
-	renew_udhcpc_wan(unit);
+	if (renew_udhcpc_wan(unit) == 0) {
+		logmessage(LOGNAME, "force WAN DHCP client renew...");
+	}
 }
 
 void
@@ -1279,7 +1325,7 @@ notify_on_internet_state_changed(int has_internet, long elapsed)
 			notify_rc("restart_reboot");
 			return;
 		case 2:
-			notify_rc("auto_wan_reconnect");
+			notify_rc("auto_wan_reconnect_pause");
 			break;
 #if (BOARD_NUM_USB_PORTS > 0)
 		case 3:

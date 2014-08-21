@@ -344,6 +344,7 @@ nvram_convert_misc_values(void)
 	nvram_set_int_temp("l2tp_cli_t", 0);
 	nvram_set_int_temp("l2tp_srv_t", 0);
 	nvram_set_int_temp("vpnc_state_t", 0);
+	nvram_set_temp("deferred_wanup_t", "0000000000");
 	nvram_set_temp("vpnc_dns_t", "");
 	nvram_set_temp("viptv_ifname", "");
 
@@ -743,9 +744,17 @@ handle_notifications(void)
 			restart_iptv();
 			restart_firewall();
 		}
+		else if(!strcmp(entry->d_name, "deferred_wan_connect"))
+		{
+			deferred_wan_connect();
+		}
 		else if(!strcmp(entry->d_name, "auto_wan_reconnect"))
 		{
 			auto_wan_reconnect();
+		}
+		else if(!strcmp(entry->d_name, "auto_wan_reconnect_pause"))
+		{
+			auto_wan_reconnect_pause();
 		}
 		else if(!strcmp(entry->d_name, "manual_wan_reconnect"))
 		{

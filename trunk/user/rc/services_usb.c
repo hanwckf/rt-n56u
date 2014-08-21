@@ -98,7 +98,7 @@ safe_remove_usb_device(int port, const char *dev_name)
 			if (has_modem_port) {
 				if ( get_usb_modem_dev_wan(0, modem_devnum) ) {
 					safe_remove_usb_modem();
-					try_wan_reconnect(0);
+					try_wan_reconnect(0, 0);
 				}
 			}
 		} else {
@@ -1573,7 +1573,7 @@ try_start_usb_modem_to_wan(void)
 
 	logmessage("USB hotplug", "try start USB Modem as WAN connection...");
 
-	try_wan_reconnect(1);
+	try_wan_reconnect(1, 0);
 }
 
 void
@@ -1617,7 +1617,7 @@ on_deferred_hotplug_usb(void)
 
 	if (unplug_modem)
 	{
-		try_wan_reconnect(1);
+		try_wan_reconnect(1, 0);
 	}
 
 	if (plug_modem && !unplug_modem)

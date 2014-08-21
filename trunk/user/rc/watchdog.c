@@ -515,6 +515,14 @@ inet_handler(int is_ap_mode)
 {
 	if (!is_ap_mode)
 	{
+		long i_deferred_wanup = nvram_get_int("deferred_wanup_t");
+		if (i_deferred_wanup > 0 && uptime() >= i_deferred_wanup)
+		{
+			notify_rc("deferred_wan_connect");
+			
+			return;
+		}
+		
 		if (has_wan_ip4(0) && has_wan_gw4())
 		{
 			/* sync time to ntp server if necessary */

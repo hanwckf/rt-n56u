@@ -532,6 +532,7 @@ struct nvram_pair router_defaults[] = {
 	{ "di_time_fail", "5" },
 	{ "di_lost_delay", "10" },
 	{ "di_lost_action", "0" },
+	{ "di_recon_pause", "0" },
 	{ "di_addr0", "77.88.8.8" },
 	{ "di_addr1", "8.8.8.8" },
 	{ "di_addr2", "208.67.222.222" },

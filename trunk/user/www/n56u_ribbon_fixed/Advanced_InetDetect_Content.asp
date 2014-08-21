@@ -62,6 +62,11 @@ function validForm(){
 	if (document.form.di_poll_mode.value == "1"){
 		if(!validate_range(document.form.di_lost_delay, 0, 600))
 			return false;
+		
+		if (document.form.di_lost_action.value == "2" && !get_ap_mode()){
+			if(!validate_range(document.form.di_recon_pause, 0, 600))
+				return false;
+		}
 	}
 
 	return true;
@@ -69,7 +74,14 @@ function validForm(){
 
 function poll_mode_changed(){
 	var v = (document.form.di_poll_mode.value == "1") ? 1 : 0;
+	if (v)
+		lost_action_changed();
 	showhide_div('tbl_di_events', v);
+}
+
+function lost_action_changed(){
+	var v = (document.form.di_lost_action.value == "2" && !get_ap_mode()) ? 1 : 0;
+	showhide_div('row_recon_pause', v);
 }
 
 function done_validating(action){
@@ -224,12 +236,19 @@ function done_validating(action){
                                         <tr id="row_lost_action">
                                             <th><#InetCheckLostAction#></th>
                                             <td>
-                                                <select name="di_lost_action" class="input" style="width: 320px;">
+                                                <select name="di_lost_action" class="input" style="width: 320px;" onchange="lost_action_changed();">
                                                     <option value="0" <% nvram_match_x("", "di_lost_action", "0", "selected"); %>><#InetCheckLostItem0#></option>
                                                     <option value="1" <% nvram_match_x("", "di_lost_action", "1", "selected"); %>><#InetCheckLostItem1#></option>
                                                     <option value="2" <% nvram_match_x("", "di_lost_action", "2", "selected"); %>><#InetCheckLostItem2#></option>
                                                     <option value="3" <% nvram_match_x("", "di_lost_action", "3", "selected"); %>><#InetCheckLostItem3#></option>
                                                 </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_recon_pause" style="display:none;">
+                                            <th><#InetCheckReconPause#></th>
+                                            <td>
+                                                <input type="text" maxlength="3" class="input" size="15" name="di_recon_pause" value="<% nvram_get_x("", "di_recon_pause"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[0..600]</span>
                                             </td>
                                         </tr>
                                         <tr>

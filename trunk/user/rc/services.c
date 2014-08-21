@@ -304,7 +304,7 @@ int start_lltd(void)
 	if (pids("lld2d"))
 		return 0;
 
-	return eval("lld2d", IFNAME_BR);
+	return eval("/bin/lld2d", IFNAME_BR);
 }
 
 void stop_lltd(void)

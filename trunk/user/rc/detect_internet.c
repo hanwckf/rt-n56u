@@ -42,6 +42,7 @@ static int                   di_status;
 static int                   di_is_ap_mode;
 static long                  di_time_last_activity;
 static long                  di_time_last_state;
+static long                  di_time_diff_state;
 static long                  di_time_fail_event;
 static volatile sig_atomic_t di_pause_received = 0;
 static struct itimerval      di_itv;
@@ -147,6 +148,7 @@ di_reset_state(void)
 
 	di_time_fail_event = 0;
 	di_time_last_state = uptime();
+	di_time_diff_state = 0;
 
 	di_status = DI_STATUS_INIT;
 	nvram_set_int_temp("link_internet", DI_STATUS_INIT);
@@ -265,11 +267,12 @@ di_on_timer(void)
 		di_time_fail_event = 0;
 		
 		if (link_internet == 0 && di_poll_mode != 0 && !di_pause_received)
-			notify_on_internet_state_changed(0, now - di_time_last_state);
+			notify_on_internet_state_changed(0, di_time_diff_state);
 	}
 
 	if (link_internet != DI_STATUS_INIT && di_status != link_internet) {
 		di_status = link_internet;
+		di_time_diff_state = now - di_time_last_state;
 		
 		nvram_set_int_temp("link_internet", link_internet);
 		
@@ -281,7 +284,7 @@ di_on_timer(void)
 			long fail_delay = (long)nvram_safe_get_int("di_lost_delay", 10, 0, 600);
 			
 			if (link_internet || fail_delay == 0)
-				notify_on_internet_state_changed(link_internet, now - di_time_last_state);
+				notify_on_internet_state_changed(link_internet, di_time_diff_state);
 			else
 				di_time_fail_event = now + fail_delay;
 		}

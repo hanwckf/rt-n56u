@@ -283,10 +283,12 @@ di_on_timer(void)
 		if (di_poll_mode != 0 && !di_pause_received) {
 			long fail_delay = (long)nvram_safe_get_int("di_lost_delay", 10, 0, 600);
 			
-			if (link_internet || fail_delay == 0)
+			if (link_internet || fail_delay == 0) {
 				notify_on_internet_state_changed(link_internet, di_time_diff_state);
-			else
+			} else {
 				di_time_fail_event = now + fail_delay;
+				di_time_diff_state += fail_delay;
+			}
 		}
 		
 		di_time_last_state = now;

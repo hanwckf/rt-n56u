@@ -503,12 +503,21 @@ function change_vpnc_ov_mode() {
                                     </td>
                                 </tr>
                                 <tr id="row_vpnc_sfw">
-                                    <th style="padding-bottom: 0px;"><#VPNC_SFW#></th>
-                                    <td style="padding-bottom: 0px;">
+                                    <th><#VPNC_SFW#></th>
+                                    <td>
                                         <select name="vpnc_sfw" class="input">
                                             <option value="0" <% nvram_match_x("", "vpnc_sfw", "0","selected"); %>><#VPNC_SFW_Item0#></option>
                                             <option value="2" <% nvram_match_x("", "vpnc_sfw", "2","selected"); %>><#VPNC_SFW_Item2#></option>
                                             <option value="1" <% nvram_match_x("", "vpnc_sfw", "1","selected"); %>><#VPNC_SFW_Item1#></option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th style="padding-bottom: 0px;"><#VPNC_DGW#></th>
+                                    <td style="padding-bottom: 0px;">
+                                        <select name="vpnc_dgw" class="input">
+                                            <option value="0" <% nvram_match_x("", "vpnc_dgw", "0","selected"); %>><#checkbox_No#></option>
+                                            <option value="1" <% nvram_match_x("", "vpnc_dgw", "1","selected"); %>><#checkbox_Yes#></option>
                                         </select>
                                     </td>
                                 </tr>

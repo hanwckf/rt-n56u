@@ -129,7 +129,7 @@ struct lac
     int idle;                   /* Idle timeout in seconds */
     int autodial;               /* Try to dial immediately? */
     int defaultroute;           /* Use as default route? */
-    int route2man;              /* Add route to remote host via MAN iface */
+    int route_rdgw;             /* Add route to remote host via default gateway */
     int redial;                 /* Redial if disconnected */
     int rmax;                   /* Maximum # of consecutive redials */
     int rtries;                 /* # of tries so far */

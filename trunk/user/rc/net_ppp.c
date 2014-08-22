@@ -134,7 +134,7 @@ safe_start_xl2tpd(void)
 		fprintf(fp, "name = %s\n", get_wan_unit_value(unit, "pppoe_username"));
 		fprintf(fp, "require authentication = no\n");
 		fprintf(fp, "tunnel rws = %d\n", 8);
-		fprintf(fp, "route2man = %s\n", "yes");
+		fprintf(fp, "route_rdgw = %d\n", 1);
 		fprintf(fp,
 			    "autodial = yes\n"
 			    "redial = yes\n"
@@ -153,7 +153,7 @@ safe_start_xl2tpd(void)
 		fprintf(fp, "name = %s\n", nvram_safe_get("vpnc_user"));
 		fprintf(fp, "require authentication = no\n");
 		fprintf(fp, "tunnel rws = %d\n", 8);
-		fprintf(fp, "route2man = %s\n", "no");
+		fprintf(fp, "route_rdgw = %d\n", (nvram_match("vpnc_dgw", "1")) ? 2 : 0);
 		fprintf(fp,
 			    "autodial = yes\n"
 			    "redial = yes\n"
@@ -205,7 +205,7 @@ start_rpl2tp(int unit)
 		"persist yes\n"
 		"maxfail 0\n"    // l2tpd re-call count (0=infinite)
 		"holdoff 15\n"   // l2tpd re-call time (15s)
-		"route2man yes\n"
+		"route_rdgw 1\n"
 		"hide-avps no\n\n"
 		"section cmd\n\n",
 		options, get_wan_ppp_peer(unit));
@@ -314,7 +314,7 @@ launch_wan_pppd(int unit, int wan_proto)
 		
 		fprintf(fp, "plugin pptp.so\n");
 		fprintf(fp, "pptp_server '%s'\n", get_wan_ppp_peer(unit));
-		fprintf(fp, "route2man %d\n", 1);
+		fprintf(fp, "route_rdgw %d\n", 1);
 	}
 
 	if (wan_proto == IPV4_WAN_PROTO_L2TP) {
@@ -466,7 +466,7 @@ preset_wan_ppp_routes(char *ppp_ifname, int unit)
 {
 	/* Set default route to gateway if specified */
 	if (get_wan_unit_value_int(unit, "primary") == 1)
-		route_add(ppp_ifname, 0, "0.0.0.0", "0.0.0.0", "0.0.0.0");
+		route_add(ppp_ifname, 1, "0.0.0.0", "0.0.0.0", "0.0.0.0");
 
 	/* Install interface dependent static routes */
 	add_static_wan_routes(ppp_ifname);

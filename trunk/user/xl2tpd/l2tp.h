@@ -236,7 +236,7 @@ extern int get_entropy (unsigned char *, int);
 /* Route manipulation */
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 #define route_msg(args...) l2tp_log(LOG_ERR, ## args)
-extern int route_add(const struct in_addr inetaddr, struct rtentry *rt);
+extern int route_add(const struct in_addr inetaddr, int any_dgw, struct rtentry *rt);
 extern int route_del(struct rtentry *rt);
 
 /*

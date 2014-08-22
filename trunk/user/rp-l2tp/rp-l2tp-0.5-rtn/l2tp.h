@@ -94,7 +94,7 @@ typedef struct l2tp_peer_t {
 				   deleted.  Otherwise, delete tunnel too. */
     int validate_peer_ip;	/* If true, do not accept datagrams except
 				   from initial peer IP address */
-    int route2man;		/* Add route to remote host via MAN iface */
+    int route_rdgw;		/* Add route to remote host via default gateway */
     int persist;                /* If true, keep session established */
     int holdoff;                /* If persist is true, delay after which the
                                    session is re-established. */

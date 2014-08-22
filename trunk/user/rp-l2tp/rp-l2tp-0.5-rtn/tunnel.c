@@ -91,7 +91,7 @@ static char *state_names[] = {
 /* Route manipulation */
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 #define route_msg l2tp_set_errmsg
-static int route_add(const struct in_addr inetaddr, struct rtentry *rt);
+static int route_add(const struct in_addr inetaddr, int any_dgw, struct rtentry *rt);
 static int route_del(struct rtentry *rt);
 
 /**********************************************************************
@@ -562,8 +562,10 @@ tunnel_establish(l2tp_peer *peer, EventSelector *es)
 	    inet_ntoa(peer_addr.sin_addr), peer->peername));
 
     memset(&tunnel->rt, 0, sizeof(tunnel->rt));
-    if (peer->route2man)
-        route_add(tunnel->peer_addr.sin_addr, &tunnel->rt);
+    if (peer->route_rdgw == 1)
+        route_add(tunnel->peer_addr.sin_addr, 0, &tunnel->rt);
+    else if (peer->route_rdgw == 2)
+        route_add(tunnel->peer_addr.sin_addr, 1, &tunnel->rt);
 
     hash_insert(&tunnels_by_peer_address, tunnel);
     tunnel_send_SCCRQ(tunnel);
@@ -2039,7 +2041,8 @@ route_ctrl(int ctrl, struct rtentry *rt)
 	/* Open a raw socket to the kernel */
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0 || ioctl(s, ctrl, rt) < 0)
 		route_msg("%s: %s", __FUNCTION__, strerror(errno));
-	else errno = 0;
+	else
+		errno = 0;
 
 	close(s);
 	return errno;
@@ -2050,51 +2053,80 @@ route_del(struct rtentry *rt)
 {
 	if (rt->rt_dev) {
 		route_ctrl(SIOCDELRT, rt);
-		free(rt->rt_dev), rt->rt_dev = NULL;
+		free(rt->rt_dev);
 	}
+
+	memset(rt, 0, sizeof(*rt));
 
 	return 0;
 }
 
 static int
-route_add(const struct in_addr inetaddr, struct rtentry *rt)
+route_add(const struct in_addr inetaddr, int any_dgw, struct rtentry *rt)
 {
 	char buf[256], dev[64], rdev[64];
 	u_int32_t dest, mask, gateway, flags, bestmask = 0;
-	int metric;
+	u_int32_t metric, metric_min = UINT_MAX;
 
-	FILE *f = fopen("/proc/net/route", "r");
-	if (f == NULL) {
-		route_msg("%s: /proc/net/route: %s", strerror(errno), __FUNCTION__);
+	FILE *fp = fopen("/proc/net/route", "r");
+	if (!fp) {
+		/* route_msg("%s: /proc/net/route: %s", strerror(errno), __FUNCTION__); */
 		return -1;
 	}
 
 	rt->rt_gateway.sa_family = 0;
 
-	while (fgets(buf, sizeof(buf), f))
+	while (fgets(buf, sizeof(buf), fp))
 	{
-		if (sscanf(buf, "%63s %x %x %x %*s %*s %d %x", dev, &dest,
-			&gateway, &flags, &metric, &mask) != 6)
+		if (sscanf(buf, "%63s %x %x %x %*s %*s %d %x",
+			dev, &dest, &gateway, &flags, &metric, &mask) != 6)
 			continue;
-		if ((flags & RTF_UP) == (RTF_UP) && (inetaddr.s_addr & mask) == dest &&
-		    (dest || strncmp(dev, "ppp", 3)) /* avoid default via pppX to avoid on-demand loops*/)
-		{
-			if ((mask | bestmask) == bestmask && rt->rt_gateway.sa_family)
+		
+		if ((flags & RTF_UP) != RTF_UP)
+			continue;
+		
+		if (!any_dgw) {
+			/* use only physical WAN/MAN interface */
+			if (strncmp(dev, "eth", 3) != 0 &&
+			    strncmp(dev, "apcli", 5) != 0 &&
+			    strncmp(dev, "wwan", 4) != 0 &&
+			    strncmp(dev, "weth", 4) != 0)
 				continue;
-			bestmask = mask;
-
-			sin_addr(&rt->rt_gateway).s_addr = gateway;
-			rt->rt_gateway.sa_family = AF_INET;
-			rt->rt_flags = flags;
-			rt->rt_metric = metric;
-			strncpy(rdev, dev, sizeof(rdev));
-
-			if (mask == INADDR_BROADCAST)
-				break;
+			
+			if ( (inetaddr.s_addr & mask) == dest && gateway ) {
+				if ((mask | bestmask) == bestmask && rt->rt_gateway.sa_family)
+					continue;
+				
+				bestmask = mask;
+				
+				sin_addr(&rt->rt_gateway).s_addr = gateway;
+				rt->rt_gateway.sa_family = AF_INET;
+				rt->rt_flags = flags;
+				rt->rt_metric = (dest) ? metric : 0;
+				strncpy(rdev, dev, sizeof(rdev));
+				
+				if (mask == INADDR_BROADCAST)
+					break;
+			}
+		} else {
+			/* skip lo and LAN */
+			if (strcmp(dev, "lo") == 0 ||
+			    strcmp(dev, "br0") == 0)
+				continue;
+			
+			if ( !dest && !mask && gateway && metric < metric_min ) {
+				metric_min = metric;
+				
+				sin_addr(&rt->rt_gateway).s_addr = gateway;
+				rt->rt_gateway.sa_family = AF_INET;
+				rt->rt_flags = flags;
+				rt->rt_metric = 0;
+				strncpy(rdev, dev, sizeof(rdev));
+			}
 		}
 	}
 
-	fclose(f);
+	fclose(fp);
 
 	/* check for no route */
 	if (rt->rt_gateway.sa_family != AF_INET) 
@@ -2132,7 +2164,8 @@ route_add(const struct in_addr inetaddr, struct rtentry *rt)
 	if (!route_ctrl(SIOCADDRT, rt))
 		return 0;
 
-	free(rt->rt_dev), rt->rt_dev = NULL;
+	free(rt->rt_dev);
+	memset(rt, 0, sizeof(*rt));
 
 	return -1;
 }

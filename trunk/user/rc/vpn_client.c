@@ -127,7 +127,7 @@ start_vpn_client(void)
 	{
 		fprintf(fp, "plugin pptp.so\n");
 		fprintf(fp, "pptp_server '%s'\n", vpnc_peer);
-		fprintf(fp, "route2man %d\n", 0);
+		fprintf(fp, "route_rdgw %d\n", (nvram_match("vpnc_dgw", "1")) ? 2 : 0);
 		fprintf(fp, "persist\n");
 		fprintf(fp, "linkname %s\n", VPNC_PPP_LINK_NAME);
 	}
@@ -271,7 +271,23 @@ restore_dns_from_vpnc(void)
 }
 
 static void
-vpnc_route_to_remote_lan(int add)
+vpnc_route_dgw(char *ifname, char *gate, int add)
+{
+	if (nvram_match("vpnc_dgw", "1")) {
+		if (strlen(ifname) > 0 && gate) {
+			if (add) {
+				route_add(ifname, 0, "0.0.0.0", gate, "128.0.0.0");
+				route_add(ifname, 0, "128.0.0.0", gate, "128.0.0.0");
+			} else {
+				route_del(ifname, 0, "0.0.0.0", gate, "128.0.0.0");
+				route_del(ifname, 0, "128.0.0.0", gate, "128.0.0.0");
+			}
+		}
+	}
+}
+
+static void
+vpnc_route_to_remote_lan(char *ifname, char *gate, int add)
 {
 	char *rnet = nvram_safe_get("vpnc_rnet");
 	char *rmsk = nvram_safe_get("vpnc_rmsk");
@@ -279,13 +295,11 @@ vpnc_route_to_remote_lan(int add)
 	if (is_valid_ipv4(rnet) && is_valid_ipv4(rmsk)) {
 		char *lnet = nvram_safe_get("lan_ipaddr");
 		char *lmsk = nvram_safe_get("lan_netmask");
-		char *ifnm = safe_getenv("IFNAME");
-		char *gate = getenv("IPREMOTE");
-		if (*ifnm && !is_same_subnet2(rnet, lnet, rmsk, lmsk)) {
+		if (strlen(ifname) > 0 && !is_same_subnet2(rnet, lnet, rmsk, lmsk)) {
 			if (add)
-				route_add(ifnm, 0, rnet, gate, rmsk);
+				route_add(ifname, 0, rnet, gate, rmsk);
 			else
-				route_del(ifnm, 0, rnet, gate, rmsk);
+				route_del(ifname, 0, rnet, gate, rmsk);
 		}
 	}
 }
@@ -295,10 +309,13 @@ ipup_vpnc_main(int argc, char **argv)
 {
 	char buf[256];
 	char *script_name = VPNC_SERVER_SCRIPT;
+	char *ifname = safe_getenv("IFNAME");
+	char *gate = getenv("IPREMOTE");
 
 	umask(0000);
 
-	vpnc_route_to_remote_lan(1);
+	vpnc_route_to_remote_lan(ifname, gate, 1);
+	vpnc_route_dgw(ifname, gate, 1);
 
 	nvram_set_int_temp("vpnc_state_t", 1);
 
@@ -330,10 +347,13 @@ int
 ipdown_vpnc_main(int argc, char **argv)
 {
 	char *script_name = VPNC_SERVER_SCRIPT;
+	char *ifname = safe_getenv("IFNAME");
+	char *gate = getenv("IPREMOTE");
 
 	umask(0000);
 
-	vpnc_route_to_remote_lan(0);
+	vpnc_route_dgw(ifname, gate, 0);
+	vpnc_route_to_remote_lan(ifname, gate, 0);
 
 	nvram_set_int_temp("vpnc_state_t", 0);
 

@@ -634,6 +634,7 @@ struct nvram_pair router_defaults[] = {
 	{ "vpnc_mtu", "1450" },
 	{ "vpnc_mru", "1450" },
 	{ "vpnc_sfw", "0" },
+	{ "vpnc_dgw", "0" },
 	{ "vpns_ov_mode", "1" },
 	{ "vpns_ov_prot", "0" },
 	{ "vpns_ov_port", "1194" },

@@ -336,6 +336,9 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 			openvpn_create_client_secret("secret");
 		}
 		
+		if (nvram_match("vpnc_dgw", "1"))
+			fprintf(fp, "redirect-gateway def1 bypass-dhcp\n");
+		
 		fprintf(fp, "persist-key\n");
 		fprintf(fp, "script-security %d\n", 2);
 		fprintf(fp, "writepid %s\n", CLIENT_PID_FILE);

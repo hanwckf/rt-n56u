@@ -943,11 +943,11 @@ man_up(char *man_ifname, int unit, int is_static)
 	add_static_man_routes(man_ifname);
 
 	if (!is_static) {
-		/* and one supplied via DHCP */
+		/* and routes supplied via DHCP */
 		add_dhcp_routes_by_prefix("wanx_", man_ifname, 0);
 	}
 
-	/* and default route with metric 1 */
+	/* and default route (metric 2) */
 	add_man_gateway_routes(man_ifname, unit, 2);
 
 	if (!is_static) {
@@ -1005,19 +1005,21 @@ wan_up(char *wan_ifname, int unit, int is_static)
 	if (wan_gate && inet_addr_safe(wan_mask) != INADDR_BROADCAST && ppp_ifindex(wan_ifname) < 0) {
 		/* if the gateway is out of the subnet */
 		if (!is_same_subnet(wan_gate, wan_addr, wan_mask))
-			route_add(wan_ifname, 0, wan_gate, NULL, "255.255.255.255");
+			route_add(wan_ifname, 1, wan_gate, NULL, "255.255.255.255");
 	}
 
 	/* default route via default gateway */
 	if (wan_gate)
-		route_add(wan_ifname, 0, "0.0.0.0", wan_gate, "0.0.0.0");
+		route_add(wan_ifname, 1, "0.0.0.0", wan_gate, "0.0.0.0");
 
+#if 0
 	/* hack: avoid routing cycles, when both peer and server has the same IP (for PPTP or L2TP) */
 	if (!modem_unit_id && (wan_proto == IPV4_WAN_PROTO_PPTP || wan_proto == IPV4_WAN_PROTO_L2TP)) {
 		/* delete gateway route as it's no longer needed */
 		if (wan_gate)
 			route_del(wan_ifname, 0, wan_gate, "0.0.0.0", "255.255.255.255");
 	}
+#endif
 
 	/* Install interface dependent static routes */
 	add_static_wan_routes(wan_ifname);
@@ -1120,7 +1122,7 @@ wan_down(char *wan_ifname, int unit)
 	/* Remove default route to gateway if specified */
 	wan_gate = get_wan_unit_value(unit, "gateway");
 	if (is_valid_ipv4(wan_gate))
-		route_del(wan_ifname, 0, "0.0.0.0", wan_gate, "0.0.0.0");
+		route_del(wan_ifname, 1, "0.0.0.0", wan_gate, "0.0.0.0");
 
 	/* Remove interface dependent static routes */
 	del_static_wan_routes(wan_ifname);
@@ -1535,7 +1537,7 @@ add_dhcp_routes(char *rt, char *rt_rfc, char *rt_ms, char *ifname, int metric)
 		ipaddr = strsep(&tmp, "/");
 		gateway = strsep(&tmp, " ");
 		if (gateway && is_valid_ipv4(ipaddr)) {
-			route_add(ifname, metric + 1, ipaddr, gateway, netmask);
+			route_add(ifname, metric, ipaddr, gateway, netmask);
 		}
 	}
 	free(routes);
@@ -1555,7 +1557,7 @@ add_dhcp_routes(char *rt, char *rt_rfc, char *rt_ms, char *ifname, int metric)
 		{
 			mask.s_addr = htonl(0xffffffff << (32 - bits));
 			strcpy(netmask, inet_ntoa(mask));
-			route_add(ifname, metric + 1, ipaddr, gateway, netmask);
+			route_add(ifname, metric, ipaddr, gateway, netmask);
 		}
 	}
 	free(routes);
@@ -2003,10 +2005,11 @@ udhcpc_viptv_bound(char *man_ifname, int is_renew_mode)
 			"%s (%s), IP: %s, GW: %s, lease time: %d", 
 			udhcpc_state, man_ifname, ip, gw, lease_dur);
 		
+		/* and routes supplied via DHCP */
 		if (*rt || *rt_rfc || *rt_ms)
 			add_dhcp_routes(rt, rt_rfc, rt_ms, man_ifname, 0);
 		
-		/* default route via default gateway (metric 2) */
+		/* default route via default gateway (metric 3) */
 		if (is_valid_ipv4(gw))
 			route_add(man_ifname, 3, "0.0.0.0", gw, "0.0.0.0");
 		

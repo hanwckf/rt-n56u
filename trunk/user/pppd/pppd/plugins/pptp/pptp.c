@@ -68,7 +68,7 @@ char *pptp_client = NULL;
 char *pptp_phone = NULL;
 int pptp_sock=-1;
 int pptp_timeout=100000;
-int route2man = 1;
+int route_rdgw = 1;	/* 0: off, 1: add route to host via MAN dgw, 2: ...via any dgw */
 int log_level = 0;
 struct in_addr localbind = { INADDR_NONE };
 struct rtentry rt;
@@ -85,7 +85,7 @@ static int get_call_id(int sock, pid_t gre, pid_t pppd, u_int16_t *peer_call_id)
 /* Route manipulation */
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 #define route_msg warn
-static int route_add(const struct in_addr inetaddr, struct rtentry *rt);
+static int route_add(const struct in_addr inetaddr, int any_dgw, struct rtentry *rt);
 static int route_del(struct rtentry *rt);
 
 //static int pptp_devname_hook(char *cmd, char **argv, int doit);
@@ -99,8 +99,8 @@ static option_t Options[] =
       "PPTP socket" },
     { "pptp_phone", o_string, &pptp_phone,
       "PPTP Phone number" },
-    { "route2man", o_int, &route2man,
-      "Add route to remote host via MAN iface"},
+    { "route_rdgw", o_int, &route_rdgw,
+      "Add route to remote host via default gateway"},
     { "loglevel", o_int, &log_level,
       "debugging level (0=low, 1=default, 2=high)"},
     { NULL }
@@ -153,8 +153,10 @@ static int pptp_start_client(void)
 	dst_addr.sa_addr.pptp.sin_addr=*(struct in_addr*)hostinfo->h_addr;
 
 	route_del(&rt);
-	if (route2man)
-		route_add(dst_addr.sa_addr.pptp.sin_addr, &rt);
+	if (route_rdgw == 1)
+		route_add(dst_addr.sa_addr.pptp.sin_addr, 0, &rt);
+	else if (route_rdgw == 2)
+		route_add(dst_addr.sa_addr.pptp.sin_addr, 1, &rt);
 
 	{
 		int sock;
@@ -388,10 +390,11 @@ route_ctrl(int ctrl, struct rtentry *rt)
 	int s;
 
 	/* Open a raw socket to the kernel */
-	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ||	ioctl(s, ctrl, rt) < 0)
+	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0 || ioctl(s, ctrl, rt) < 0)
 		route_msg("%s: %s", __FUNCTION__, strerror(errno));
-	else errno = 0;
-    
+	else
+		errno = 0;
+
 	close(s);
 	return errno;
 }
@@ -401,7 +404,7 @@ route_del(struct rtentry *rt)
 {
 	if (rt->rt_dev) {
 		route_ctrl(SIOCDELRT, rt);
-		free(rt->rt_dev), rt->rt_dev = NULL;
+		free(rt->rt_dev);
 	}
 
 	memset(rt, 0, sizeof(*rt));
@@ -410,44 +413,70 @@ route_del(struct rtentry *rt)
 }
 
 static int
-route_add(const struct in_addr inetaddr, struct rtentry *rt)
+route_add(const struct in_addr inetaddr, int any_dgw, struct rtentry *rt)
 {
 	char buf[256], dev[64], rdev[64];
 	u_int32_t dest, mask, gateway, flags, bestmask = 0;
-	int metric;
+	u_int32_t metric, metric_min = UINT_MAX;
 
-	FILE *f = fopen("/proc/net/route", "r");
-	if (f == NULL) {
-		route_msg("%s: /proc/net/route: %s", strerror(errno), __FUNCTION__);
+	FILE *fp = fopen("/proc/net/route", "r");
+	if (!fp) {
+		/* route_msg("%s: /proc/net/route: %s", strerror(errno), __FUNCTION__); */
 		return -1;
 	}
 
 	rt->rt_gateway.sa_family = 0;
 
-	while (fgets(buf, sizeof(buf), f))
-	{
-		if (sscanf(buf, "%63s %x %x %x %*s %*s %d %x", dev, &dest,
-			&gateway, &flags, &metric, &mask) != 6)
+	while (fgets(buf, sizeof(buf), fp)) {
+		if (sscanf(buf, "%63s %x %x %x %*s %*s %d %x",
+			dev, &dest, &gateway, &flags, &metric, &mask) != 6)
 			continue;
-		if ((flags & RTF_UP) == (RTF_UP) && (inetaddr.s_addr & mask) == dest &&
-		    (dest || strncmp(dev, "ppp", 3)) /* avoid default via pppX to avoid on-demand loops*/)
-		{
-			if ((mask | bestmask) == bestmask && rt->rt_gateway.sa_family)
+		
+		if ((flags & RTF_UP) != RTF_UP)
+			continue;
+		
+		if (!any_dgw) {
+			/* use only physical WAN/MAN interface */
+			if (strncmp(dev, "eth", 3) != 0 &&
+			    strncmp(dev, "apcli", 5) != 0 &&
+			    strncmp(dev, "wwan", 4) != 0 &&
+			    strncmp(dev, "weth", 4) != 0)
 				continue;
-			bestmask = mask;
-
-			sin_addr(&rt->rt_gateway).s_addr = gateway;
-			rt->rt_gateway.sa_family = AF_INET;
-			rt->rt_flags = flags;
-			rt->rt_metric = metric;
-			strncpy(rdev, dev, sizeof(rdev));
-
-			if (mask == INADDR_BROADCAST)
-				break;
+			
+			if ( (inetaddr.s_addr & mask) == dest && gateway ) {
+				if ((mask | bestmask) == bestmask && rt->rt_gateway.sa_family)
+					continue;
+				
+				bestmask = mask;
+				
+				sin_addr(&rt->rt_gateway).s_addr = gateway;
+				rt->rt_gateway.sa_family = AF_INET;
+				rt->rt_flags = flags;
+				rt->rt_metric = (dest) ? metric : 0;
+				strncpy(rdev, dev, sizeof(rdev));
+				
+				if (mask == INADDR_BROADCAST)
+					break;
+			}
+		} else {
+			/* skip lo and LAN */
+			if (strcmp(dev, "lo") == 0 ||
+			    strcmp(dev, "br0") == 0)
+				continue;
+			
+			if ( !dest && !mask && gateway && metric < metric_min ) {
+				metric_min = metric;
+				
+				sin_addr(&rt->rt_gateway).s_addr = gateway;
+				rt->rt_gateway.sa_family = AF_INET;
+				rt->rt_flags = flags;
+				rt->rt_metric = 0;
+				strncpy(rdev, dev, sizeof(rdev));
+			}
 		}
 	}
 
-	fclose(f);
+	fclose(fp);
 
 	/* check for no route */
 	if (rt->rt_gateway.sa_family != AF_INET) 
@@ -482,10 +511,11 @@ route_add(const struct in_addr inetaddr, struct rtentry *rt)
 		return -1;
 	}
 
-	if (!route_ctrl(SIOCADDRT, rt))
+	if (route_ctrl(SIOCADDRT, rt) == 0)
 		return 0;
 
-	free(rt->rt_dev), rt->rt_dev = NULL;
+	free(rt->rt_dev);
+	memset(rt, 0, sizeof(*rt));
 
 	return -1;
 }

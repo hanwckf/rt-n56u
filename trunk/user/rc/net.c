@@ -92,13 +92,13 @@ route_manip(int cmd, char *ifname, int metric, char *dst, char *gateway, char *g
 int
 route_add(char *ifname, int metric, char *dst, char *gateway, char *genmask)
 {
-	return route_manip(SIOCADDRT, ifname, metric, dst, gateway, genmask);
+	return route_manip(SIOCADDRT, ifname, metric+1, dst, gateway, genmask);
 }
 
 int
 route_del(char *ifname, int metric, char *dst, char *gateway, char *genmask)
 {
-	return route_manip(SIOCDELRT, ifname, metric, dst, gateway, genmask);
+	return route_manip(SIOCDELRT, ifname, metric+1, dst, gateway, genmask);
 }
 
 int
@@ -134,9 +134,9 @@ control_static_routes(char *ift, char *ifname, int is_add)
 			gateway = nvram_safe_get("wanx_gateway");	// oleg patch
 		
 		if (is_add)
-			route_add(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
+			route_add(ifname, atoi(metric), ipaddr, gateway, netmask);
 		else
-			route_del(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
+			route_del(ifname, atoi(metric), ipaddr, gateway, netmask);
 	}
 
 	free(route_buf);

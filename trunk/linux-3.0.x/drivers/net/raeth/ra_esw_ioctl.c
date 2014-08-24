@@ -929,6 +929,11 @@ static void esw_jumbo_control(u32 jumbo_frames_enabled)
 
 static void esw_led_mode(u32 led_mode)
 {
+// LED mode #0: Link + Activity
+// LED mode #1: Link 100
+// LED mode #2: Link 100/10
+// LED mode #3: Disable
+
 	u32 reg_gpc1;
 
 	reg_gpc1 = _ESW_REG(REG_ESW_GPC1);

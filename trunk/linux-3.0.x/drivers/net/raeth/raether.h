@@ -80,7 +80,6 @@ typedef struct end_device
 	spinlock_t			irqe_lock;
 	spinlock_t			stat_lock;
 #if defined (CONFIG_PSEUDO_SUPPORT)
-	spinlock_t			hnat_lock;
 	struct net_device		*PseudoDev;
 #endif
 

@@ -34,6 +34,7 @@
 #include <linux/skbuff.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
+#include <linux/spinlock.h>
 #include <linux/if_vlan.h>
 #include <net/ipv6.h>
 #include <net/ip.h>
@@ -59,26 +60,40 @@
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 static int wifi_offload __read_mostly = 0;
 module_param(wifi_offload, int, S_IRUGO);
-MODULE_PARM_DESC(wifi_offload, "Enable/Disable wifi/extif PPE NAT offload");
+MODULE_PARM_DESC(wifi_offload, "PPE IPv4 NAT offload for wifi/extif");
 #endif
+
+static int udp_offload __read_mostly = 0;
+module_param(udp_offload, int, S_IRUGO);
+MODULE_PARM_DESC(udp_offload, "PPE IPv4 NAT offload for UDP proto");
+
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+int ipv6_offload __read_mostly = 0;
+module_param(ipv6_offload, int, S_IRUGO);
+MODULE_PARM_DESC(ipv6_offload, "PPE IPv6 routes offload");
+#endif
+
+uint16_t lan_vid __read_mostly = CONFIG_RA_HW_NAT_LAN_VLANID;
+module_param(lan_vid, ushort, S_IRUGO|S_IWUSR);
+MODULE_PARM_DESC(lan_vid, "VLAN ID for LAN traffic");
+
+uint16_t wan_vid __read_mostly = CONFIG_RA_HW_NAT_WAN_VLANID;
+module_param(wan_vid, ushort, S_IRUGO|S_IWUSR);
+MODULE_PARM_DESC(wan_vid, "VLAN ID for WAN traffic");
+
+uint32_t DebugLevel = 1;
 
 extern int (*ra_sw_nat_hook_rx) (struct sk_buff * skb);
 extern int (*ra_sw_nat_hook_tx) (struct sk_buff * skb, int gmac_no);
 extern int (*ra_sw_nat_hook_rs) (struct net_device *dev, int hold);
 
-extern uint32_t		DebugLevel;
-extern uint16_t		wan_vid;
-extern uint16_t		lan_vid;
-extern int		udp_offload;
-#if defined (CONFIG_RA_HW_NAT_IPV6)
-extern int		ip6_offload;
-#endif
 static int		ppe_udp_bug = 0;
 static uint32_t		chip_rev_id;
 
 struct FoeEntry		*PpeFoeBase = NULL;
 uint32_t		PpeFoeTblSize = FOE_4TB_SIZ;
 struct net_device	*DstPort[MAX_IF_NUM];
+DEFINE_SPINLOCK(ppe_foe_lock);
 
 #ifdef HWNAT_DEBUG
 #if 0
@@ -494,6 +509,7 @@ void PpeKeepAliveHandler(struct sk_buff* skb, struct FoeEntry* foe_entry, int re
 	uint32_t vlan1_gap = 0;
 	uint32_t vlan2_gap = 0;
 	uint32_t pppoe_gap = 0;
+	unsigned long flags;
 
 	/*
 	 * try to recover to original SMAC/DMAC, but we don't have such information.
@@ -552,8 +568,10 @@ void PpeKeepAliveHandler(struct sk_buff* skb, struct FoeEntry* foe_entry, int re
 			struct udphdr *uh = (struct udphdr *)((uint8_t *)iph + iph->ihl * 4);
 			if (!uh->check && ppe_udp_bug && foe_entry->bfib1.state == BIND) {
 				/* no UDP checksum, force unbind session from PPE for workaround PPE UDP bug */
+				spin_lock_irqsave(&ppe_foe_lock, flags);
 				foe_entry->udib1.state = UNBIND;
 				foe_entry->udib1.time_stamp = RegRead(FOE_TS) & 0xFF;
+				spin_unlock_irqrestore(&ppe_foe_lock, flags);
 			}
 			if (recover_header)
 				FoeToOrgUdpHdr(foe_entry, iph, uh);
@@ -1098,7 +1116,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 			}
 #if defined (CONFIG_RA_HW_NAT_IPV6)
 		} else if (iph->protocol == IPPROTO_IPV6) {
-				if (!ip6_offload)
+				if (!ipv6_offload)
 					return 1;
 				
 				/* fill 6rd entry */
@@ -1122,7 +1140,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 		
 		if (foe_entry.bfib1.pkt_type == IPV4_DSLITE) {
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-			if (!ip6_offload)
+			if (!ipv6_offload)
 				return 1;
 			
 			foe_entry.bfib1.drm = 1;		// switch will keep dscp
@@ -1171,7 +1189,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 #if defined (CONFIG_RA_HW_NAT_IPV6)
 	} else if (eth_type == ETH_P_IPV6 || (eth_type == ETH_P_PPP_SES && ppp_tag == PPP_IPV6)) {
 		struct ipv6hdr *ip6h;
-		if (!ip6_offload)
+		if (!ipv6_offload)
 			return 1;
 		
 		ip6h = (struct ipv6hdr *)(skb->data + ETH_HLEN + vlan1_gap + vlan2_gap + pppoe_gap);
@@ -1337,7 +1355,8 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 	uint16_t ppp_tag = 0;
 	uint16_t eth_type;
 
-	// we cannot speed up multicase packets because both wire and wireless PCs might join same multicast group.
+	/* we cannot speed up multicase packets because both wire and wireless
+	   PCs might join same multicast group. */
 	if(is_multicast_ether_addr(eth->h_dest))
 		return 1;
 
@@ -1457,7 +1476,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 		
 #if defined (CONFIG_RA_HW_NAT_IPV6)
 	} else if (eth_type == ETH_P_IPV6 || (eth_type == ETH_P_PPP_SES && ppp_tag == PPP_IPV6)) {
-		if (!ip6_offload)
+		if (!ipv6_offload)
 			return 1;
 #endif
 	} else {
@@ -1560,6 +1579,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 {
 	struct FoeEntry *foe_entry;
+	unsigned long flags;
 	int foe_ai;
 
 	/* check traffic from WiFi/ExtIf (gmac_no = 0) */
@@ -1597,11 +1617,12 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 			       || (foe_ai == HIT_UNBIND && IS_IPV6_1T_ROUTE(foe_entry))
 #endif
 	  )) {
+		spin_lock_irqsave(&ppe_foe_lock, flags);
 		if (FoeBindToPpe(skb, foe_entry, gmac_no)) {
 			if (gmac_no != 0)
 				FOE_AI(skb) = UN_HIT;
-			return 1;
 		}
+		spin_unlock_irqrestore(&ppe_foe_lock, flags);
 		
 #if defined (CONFIG_HNAT_V2)
 	} else if (foe_ai == HIT_BIND_KEEPALIVE_MC_NEW_HDR || foe_ai == HIT_BIND_KEEPALIVE_DUP_OLD_HDR) {
@@ -1619,8 +1640,10 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 #endif
 #if defined (CONFIG_RA_HW_NAT_PREBIND)
 	} else if (foe_ai == HIT_PRE_BIND) {
+		spin_lock_irqsave(&ppe_foe_lock, flags);
 		foe_entry->udib1.preb = 0;
 		foe_entry->bfib1.state = BIND;
+		spin_unlock_irqrestore(&ppe_foe_lock, flags);
 #ifdef HWNAT_DEBUG
 		/* Dump Binding Entry */
 		if (DebugLevel >= 2) {
@@ -1710,7 +1733,7 @@ void PpeSetFoeEbl(uint32_t FoeEbl)
 		PpeFlowSet |= (BIT_IPV4_NAT_FRAG_EN); //ip fragment
 		PpeFlowSet |= (BIT_IPV4_HASH_GREK);
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-		if (ip6_offload) {
+		if (ipv6_offload) {
 			PpeFlowSet |= (BIT_IPV4_DSL_EN | BIT_IPV6_6RD_EN | BIT_IPV6_3T_ROUTE_EN | BIT_IPV6_5T_ROUTE_EN);
 //			PpeFlowSet |= (BIT_IPV6_HASH_FLAB); // flow label
 			PpeFlowSet |= (BIT_IPV6_HASH_GREK);
@@ -1719,7 +1742,7 @@ void PpeSetFoeEbl(uint32_t FoeEbl)
 #else
 		PpeFlowSet |= (BIT_FUC_FOE);
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-		if (ip6_offload)
+		if (ipv6_offload)
 			PpeFlowSet |= (BIT_IPV6_FOE_EN);
 #endif
 #endif
@@ -2444,7 +2467,7 @@ static int __init PpeInitMod(void)
 	if (PpeSetFoeHashMode(DFL_FOE_HASH_MODE) != 0)
 		return -ENOMEM;
 
-	// Get net_device structure of Dest Port 
+	/* Get net_device structure of Dest Port */
 	memset(DstPort, 0, sizeof(DstPort));
 	PpeSetDstPort(1);
 
@@ -2477,7 +2500,7 @@ static int __init PpeInitMod(void)
 
 #if defined (CONFIG_RALINK_MT7620)
 	if ((chip_rev_id & 0xF) < 5) {
-//		SetAclFwd(1);
+//		SetAclFwd(1); // wdf?
 		;
 	} else {
 		/* Turn On UDP Control */
@@ -2487,7 +2510,7 @@ static int __init PpeInitMod(void)
 	}
 #endif
 
-	/* Set GMAC fowrards packet to PPE */
+	/* Set GMAC forwards packet to PPE */
 	SetGdmaFwd(1);
 
 	printk("Ralink HW NAT %s Module Enabled, ASIC: %s, REV: %04X, FoE Size: %d\n",
@@ -2500,7 +2523,7 @@ static void __exit PpeCleanupMod(void)
 {
 	printk("Ralink HW NAT %s Module Disabled\n", HW_NAT_MODULE_VER);
 
-	/* Set GMAC fowrards packet to CPU */
+	/* Set GMAC forwards packet to CPU */
 	SetGdmaFwd(0);
 
 	/* Unregister RX/TX hook point */
@@ -2521,7 +2544,7 @@ static void __exit PpeCleanupMod(void)
 	PpeSetSwitchVlanChk(1);
 #endif
 
-	//Release net_device structure of Dest Port 
+	/* Release net_device structure of Dest Port */
 	PpeSetDstPort(0);
 }
 

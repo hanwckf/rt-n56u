@@ -642,14 +642,9 @@ int	RTMPSendPackets(
 #if !defined(CONFIG_RA_NAT_NONE)
 	if(ra_sw_nat_hook_tx!= NULL)
 	{
-		unsigned long flags;
-
-		RTMP_INT_LOCK(&pAd->page_lock, flags);
 		ra_sw_nat_hook_tx(pPacket, 0);
-		RTMP_INT_UNLOCK(&pAd->page_lock, flags);
 	}
 #endif
-
 
 	RTMP_SET_PACKET_5VT(pPacket, 0);
 /*	MiniportMMRequest(pAd, pkt->data, pkt->len); */

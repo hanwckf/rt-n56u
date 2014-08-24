@@ -26,6 +26,7 @@
 
 extern struct FoeEntry *PpeFoeBase;
 extern uint32_t PpeFoeTblSize;
+extern spinlock_t ppe_foe_lock;
 
 #if defined (CONFIG_HNAT_V2)
 /*
@@ -512,31 +513,37 @@ int FoeBindEntry(struct hwnat_args *opt)
 	entry = &PpeFoeBase[opt->entry_num];
 
 	//restore right information block1
+	spin_lock_bh(&ppe_foe_lock);
 	entry->bfib1.time_stamp = RegRead(FOE_TS) & 0xFFFF;
 	entry->bfib1.state = BIND;
+	spin_unlock_bh(&ppe_foe_lock);
 
 	return HWNAT_SUCCESS;
 }
 
 int FoeUnBindEntry(struct hwnat_args *opt)
 {
-
 	struct FoeEntry *entry;
 
 	entry = &PpeFoeBase[opt->entry_num];
 
+	spin_lock_bh(&ppe_foe_lock);
 	entry->udib1.state = UNBIND;
 	entry->udib1.time_stamp = RegRead(FOE_TS) & 0xFF;
+	spin_unlock_bh(&ppe_foe_lock);
 
 	return HWNAT_SUCCESS;
 }
 
-int FoeDelEntryByNum(uint32_t entry_num)
+int FoeDelEntry(struct hwnat_args *opt)
 {
 	struct FoeEntry *entry;
 
-	entry = &PpeFoeBase[entry_num];
+	entry = &PpeFoeBase[opt->entry_num];
+
+	spin_lock_bh(&ppe_foe_lock);
 	memset(entry, 0, sizeof(struct FoeEntry));
+	spin_unlock_bh(&ppe_foe_lock);
 
 	return HWNAT_SUCCESS;
 }

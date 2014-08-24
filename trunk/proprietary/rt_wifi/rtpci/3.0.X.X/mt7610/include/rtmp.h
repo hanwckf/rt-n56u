@@ -3122,10 +3122,6 @@ struct _RTMP_ADAPTER {
 /*****************************************************************************************/
 /*      RBUS related parameters                                                           								  */
 /*****************************************************************************************/
-#if !defined(CONFIG_RA_NAT_NONE)
-	/* resource for software backlog queues */
-	NDIS_SPIN_LOCK page_lock;	/* for nat speedup by bruce */
-#endif /* CONFIG_RA_NAT_NONE */
 
 /*****************************************************************************************/
 /*      Both PCI/USB related parameters                                                  							  */

@@ -2886,11 +2886,6 @@ struct _RTMP_ADAPTER {
 	NDIS_SPIN_LOCK CmdQLock;	/* CmdQLock spinlock */
 	RTMP_OS_TASK cmdQTask;
 
-#if !defined(CONFIG_RA_NAT_NONE)
-	/* resource for software backlog queues */
-	NDIS_SPIN_LOCK page_lock;	/* for nat speedup by bruce */
-#endif
-
 /*****************************************************************************************/
 /*      Both PCI/USB related parameters                                                  							  */
 /*****************************************************************************************/

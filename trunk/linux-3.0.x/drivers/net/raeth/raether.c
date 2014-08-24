@@ -948,20 +948,10 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 	if (ra_sw_nat_hook_tx!= NULL)
 	{
-#if defined (CONFIG_PSEUDO_SUPPORT)
-		spin_lock(&ei_local->hnat_lock);
-		if (ra_sw_nat_hook_tx(skb, gmac_no)==0){
-			spin_unlock(&ei_local->hnat_lock);
-			dev_kfree_skb(skb);
-			return NETDEV_TX_OK;
-		}
-		spin_unlock(&ei_local->hnat_lock);
-#else
 		if (ra_sw_nat_hook_tx(skb, gmac_no)==0){
 			dev_kfree_skb(skb);
 			return NETDEV_TX_OK;
 		}
-#endif
 		if (IS_DPORT_PPE_VALID(skb))
 			gmac_no = PSE_PORT_PPE;
 	}
@@ -1596,7 +1586,6 @@ int ei_init(struct net_device *dev)
 
 #if defined (CONFIG_PSEUDO_SUPPORT)
 	ei_local->PseudoDev = NULL;
-	spin_lock_init(&ei_local->hnat_lock);
 #endif
 	spin_lock_init(&ei_local->stat_lock);
 	spin_lock_init(&ei_local->page_lock);

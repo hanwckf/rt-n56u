@@ -3770,11 +3770,6 @@ struct _RTMP_ADAPTER
 /*****************************************************************************************/
 /*      RBUS related parameters                                                           								  */
 /*****************************************************************************************/
-#ifdef RTMP_RBUS_SUPPORT
-	// resource for software backlog queues
-	NDIS_SPIN_LOCK          page_lock;                  // for nat speedup by bruce
-#endif // RTMP_RBUS_SUPPORT //
-
 
 /*****************************************************************************************/
 /*      Both PCI/USB related parameters                                                  							  */

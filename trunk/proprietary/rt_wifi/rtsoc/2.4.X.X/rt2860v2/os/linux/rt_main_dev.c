@@ -804,11 +804,7 @@ int rt28xx_packet_xmit(struct sk_buff *skb)
  */
 	if(ra_sw_nat_hook_tx!= NULL)
 	{
-		unsigned long flags;
-
-		RTMP_INT_LOCK(&pAd->page_lock, flags)
 		ra_sw_nat_hook_tx(pPacket, 0);
-		RTMP_INT_UNLOCK(&pAd->page_lock, flags);
 	}
 #endif
 #endif // RTMP_RBUS_SUPPORT //

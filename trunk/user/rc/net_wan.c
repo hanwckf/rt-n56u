@@ -577,11 +577,11 @@ start_wan(void)
 	/* Create links */
 	create_cb_links();
 
-	reload_nat_modules();
-
 	config_vinet_wan();
 	launch_viptv_wan();
 	config_apcli_wisp();
+
+	reload_nat_modules();
 
 	update_resolvconf(1, 0);
 

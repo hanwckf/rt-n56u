@@ -100,9 +100,6 @@ void show_usage(void)
     printf("Set LAN/WAN port VLAN ID\n");
     printf("Ex: hw_nat -V [LAN_VID] [WAN_VID]\n\n");
 
-    printf("Set HNAT IPv4 UDP offload (d=0)\n");
-    printf("Ex: hw_nat -Y [0/1]\n\n");
-
     printf("Set HNAT IPv6 routes offload (d=0)\n");
     printf("Ex: hw_nat -6 [0/1]\n\n");
 
@@ -114,9 +111,9 @@ int main(int argc, char *argv[])
 {
     int opt;
 #if !defined (CONFIG_HNAT_V2)
-    char options[] = "efg?c:d:A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:T:U:V:Y:Z:6:";
+    char options[] = "efg?c:d:A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:T:U:V:Z:6:";
 #else
-    char options[] = "aefg?c:d:A:N:O:P:Q:T:U:V:Y:Z:6:";
+    char options[] = "aefg?c:d:A:N:O:P:Q:T:U:V:Z:6:";
 #endif
     int method = 0;
     int i=0;
@@ -270,10 +267,6 @@ int main(int argc, char *argv[])
 		method = HW_NAT_VLAN_ID;
 		args4.lan_vid = strtoll(argv[2], NULL, 10);
 		args4.wan_vid = strtoll(argv[3], NULL, 10);
-		break;
-	case 'Y':
-		method = HW_NAT_ALLOW_UDP;
-		args4.foe_allow_udp = strtoll(optarg, NULL, 10);
 		break;
 	case 'Z':
 		method = HW_NAT_BIND_DIRECTION;
@@ -507,10 +500,6 @@ int main(int argc, char *argv[])
 	    result = args4.result;
 	    break;
     case HW_NAT_BIND_DIRECTION:
-	    HwNatSetConfig(&args4, method);
-	    result = args4.result;
-	    break;
-    case HW_NAT_ALLOW_UDP:
 	    HwNatSetConfig(&args4, method);
 	    result = args4.result;
 	    break;

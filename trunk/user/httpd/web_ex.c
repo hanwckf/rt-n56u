@@ -4484,14 +4484,14 @@ do_prf_file(char *url, FILE *stream)
 
 static char cache_static[] =
 "Cache-Control: max-age=2592000\r\n"
-"Expires: Tue, 31 Dec 2013 01:00:00 GMT"
+"Expires: Tue, 31 Dec 2014 01:00:00 GMT"
 ;
 
 static char no_cache_IE[] =
 "X-UA-Compatible: IE=edge\r\n"
-"Cache-Control: no-cache\r\n"
+"Cache-Control: no-store, no-cache, must-revalidate\r\n"
 "Pragma: no-cache\r\n"
-"Expires: 0"
+"Expires: -1"
 ;
 
 static void 

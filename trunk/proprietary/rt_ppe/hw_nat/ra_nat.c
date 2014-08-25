@@ -1293,10 +1293,14 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 		/* MT7621 with 2xGMAC - assuming GMAC2=WAN and GMAC1=LAN */
 		if (IS_IPV4_GRP(&foe_entry)) {
 			PpeSetInfoBlk2(&foe_entry.ipv4_hnapt.iblk2, 8, 0x3F, port_ag);
+			/* clear destination port for CPU */
+			foe_entry.ipv4_hnapt.act_dp = 0;
 		}
 #if defined (CONFIG_RA_HW_NAT_IPV6)
 		else if (IS_IPV6_GRP(&foe_entry)) {
 			PpeSetInfoBlk2(&foe_entry.ipv6_5t_route.iblk2, 8, 0x3F, port_ag);
+			/* clear destination port for CPU */
+			foe_entry.ipv6_5t_route.act_dp = 0;
 		}
 #endif
 #else
@@ -1306,12 +1310,16 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 			if ((foe_entry.ipv4_hnapt.vlan1 & VLAN_VID_MASK) != lan_vid)
 				port_ag = 2;
 			PpeSetInfoBlk2(&foe_entry.ipv4_hnapt.iblk2, 8, 0x3F, port_ag);
+			/* clear destination port for CPU */
+			foe_entry.ipv4_hnapt.act_dp = 0;
 		}
 #if defined (CONFIG_RA_HW_NAT_IPV6)
 		else if (IS_IPV6_GRP(&foe_entry)) {
 			if ((foe_entry.ipv6_5t_route.vlan1 & VLAN_VID_MASK) != lan_vid)
 				port_ag = 2;
 			PpeSetInfoBlk2(&foe_entry.ipv6_5t_route.iblk2, 8, 0x3F, port_ag);
+			/* clear destination port for CPU */
+			foe_entry.ipv6_5t_route.act_dp = 0;
 		}
 #endif
 #endif
@@ -1547,7 +1555,8 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 		else
 			foe_entry.ipv4_hnapt.iblk2.dp = 1;	/* -> VirtualPort1 in GMAC1 */
 #endif
-		foe_entry.ipv4_hnapt.act_dp = 0;		/* clear destination port for CPU */
+		/* clear destination port for CPU */
+		foe_entry.ipv4_hnapt.act_dp = 0;
 	}
 
 	/******************** BIND ********************/

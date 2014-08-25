@@ -616,6 +616,12 @@ int PpeHitBindForceToCpuHandler(struct sk_buff *skb, struct FoeEntry *foe_entry)
 		return 1;
 	}
 
+	if (!(dev->flags & IFF_UP)) {
+		/* wifi/ext interface is down, simple drop skb */
+		kfree_skb(skb);
+		return 0;
+	}
+
 	skb->dev = dev;
 	skb_reset_network_header(skb);
 	skb_push(skb, ETH_HLEN);	//pointer to layer2 header
@@ -651,7 +657,7 @@ int PpeHitBindForceMcastToWiFiHandler(struct sk_buff *skb)
 
 	for (i = DP_RA0; i < MAX_WIFI_IF_NUM; i++) {
 		dev = DstPort[i];
-		if (dev) {
+		if (dev && (dev->flags & IFF_UP)) {
 			skb2 = skb_clone(skb, GFP_ATOMIC);
 			if (skb2) {
 				skb2->dev = dev;

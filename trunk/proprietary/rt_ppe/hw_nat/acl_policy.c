@@ -64,7 +64,7 @@ uint32_t SyncAclTbl(void)
 
 	/* Empty Rule */
 	if (node == NULL) {
-		printk("ACL Table All Empty!\n");
+		NAT_PRINT("ACL Table All Empty!\n");
 		return ACL_SUCCESS;
 	}
 
@@ -491,13 +491,11 @@ void inline PpeInsAclEntry(void *Rule)
 	uint32_t *p = (uint32_t *) Rule;
 
 	Index = PpeGetPreAclEnd();
-	if (DebugLevel == 1) {
-		printk("Policy Table Base=%08X Offset=%d\n",
-		       POLICY_TBL_BASE, Index * 8);
-		printk("%08X: %08X\n", POLICY_TBL_BASE + Index * 8, *p);
-		printk("%08X: %08X\n", POLICY_TBL_BASE + Index * 8 + 4,
-		       *(p + 1));
-	}
+
+	NAT_DEBUG("Policy Table Base=%08X Offset=%d\n", POLICY_TBL_BASE, Index * 8);
+	NAT_DEBUG("%08X: %08X\n", POLICY_TBL_BASE + Index * 8, *p);
+	NAT_DEBUG("%08X: %08X\n", POLICY_TBL_BASE + Index * 8 + 4, *(p + 1));
+
 	RegWrite(POLICY_TBL_BASE + Index * 8, *p);	/* Low bytes */
 	RegWrite(POLICY_TBL_BASE + Index * 8 + 4, *(p + 1));	/* High bytes */
 
@@ -849,7 +847,7 @@ AclSetPortEntry(AclPlcyNode * node, enum L4RuleDir Dir,
 
 		L4Rule.ip.tu = FLT_IP_PROT;
 		L4Rule.ip.prot = node->Protocol;
-		printk("Protocol is 0x%2x\n\r", node->Protocol);
+		NAT_PRINT("Protocol is 0x%2x!\n", node->Protocol);
 	} else {
 
 		if (Proto == TCP) {

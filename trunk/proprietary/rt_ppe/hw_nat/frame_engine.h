@@ -30,11 +30,13 @@
 #define OUT
 #define INOUT
 
-#ifdef HWNAT_DEBUG
-#define NAT_PRINT(fmt, args...) printk(KERN_INFO fmt, ## args)
+#if defined (CONFIG_RA_HW_NAT_DEBUG)
+#define NAT_DEBUG(fmt, args...) printk(KERN_INFO fmt, ## args)
 #else
-#define NAT_PRINT(fmt, args...) { }
+#define NAT_DEBUG(fmt, args...) { }
 #endif
+
+#define NAT_PRINT(fmt, args...) printk(KERN_INFO fmt, ## args)
 
 #define CHIPID		    RALINK_SYSCTL_BASE + 0x00
 #define REVID		    RALINK_SYSCTL_BASE + 0x0C

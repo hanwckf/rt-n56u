@@ -321,10 +321,9 @@ void inline PpeInsAcEntry(void *Rule, enum AcType Type)
 		Index = PpeGetPostAcEnd();
 	}
 
-	printk("Policy Table Base=%08X Offset=%d\n", POLICY_TBL_BASE,
-	       Index * 8);
-	printk("%08X: %08X\n", POLICY_TBL_BASE + Index * 8, *p);
-	printk("%08X: %08X\n", POLICY_TBL_BASE + Index * 8 + 4, *(p + 1));
+	NAT_DEBUG("Policy Table Base=%08X Offset=%d\n", POLICY_TBL_BASE, Index * 8);
+	NAT_DEBUG("%08X: %08X\n", POLICY_TBL_BASE + Index * 8, *p);
+	NAT_DEBUG("%08X: %08X\n", POLICY_TBL_BASE + Index * 8 + 4, *(p + 1));
 
 	RegWrite(POLICY_TBL_BASE + Index * 8, *p);	/* Low bytes */
 	RegWrite(POLICY_TBL_BASE + Index * 8 + 4, *(p + 1));	/* High bytes */
@@ -335,7 +334,6 @@ void inline PpeInsAcEntry(void *Rule, enum AcType Type)
 	} else {
 		PpeSetPostAcEnd(Index + 1);
 	}
-
 }
 
 /*

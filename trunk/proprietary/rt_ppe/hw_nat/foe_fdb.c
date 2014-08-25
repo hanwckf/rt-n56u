@@ -257,7 +257,7 @@ void FoeDumpEntry(uint32_t Index)
 #else
 	for(i=0; i < 16; i++) { // 64 bytes per entry
 #endif
-		printk("%02d: %08X\n", i,*(p+i));
+		NAT_PRINT("%02d: %08X\n", i,*(p+i));
 	}
 	NAT_PRINT("-----------------<Flow Info>------------------\n");
 	NAT_PRINT("Information Block 1: %08X\n", entry->ipv4_hnapt.info_blk1);

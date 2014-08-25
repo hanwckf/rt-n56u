@@ -11,13 +11,19 @@
 
 void show_usage(void)
 {
+#if defined (CONFIG_HNAT_V2)
+    printf("Show Foe Cache Entries\n");
+    printf("hw_nat -a\n");
+    printf("Ex: hw_nat -a\n\n");
+#endif
+
     printf("Show Foe Entry\n");
     printf("hw_nat -c [entry_num]\n");
     printf("Ex: hw_nat -c 1234\n\n");
 
     printf("Set Debug Level (0:disable) \n");
     printf("hw_nat -d [0~7]\n");
-    printf("Ex: hw_nat -d \n\n");
+    printf("Ex: hw_nat -d 5\n\n");
 
     printf("Show All Foe Invalid Entry\n");
     printf("Ex: hw_nat -e\n\n");

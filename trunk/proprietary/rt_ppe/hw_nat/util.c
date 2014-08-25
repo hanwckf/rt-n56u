@@ -36,7 +36,7 @@ void MacReverse(uint8_t * Mac)
 	}
 }
 
-#ifdef HWNAT_DEBUG
+#if defined (CONFIG_RA_HW_NAT_DEBUG)
 int GetNext(char *src, int separator, char *dest)
 {
 	char *c;

@@ -332,3 +332,8 @@ config  RA_HW_NAT_WIFI
 	depends on RA_HW_NAT
 	default n
 	bool "Speed up WiFi traffic by HNAT"
+
+config  RA_HW_NAT_DEBUG
+	depends on RA_HW_NAT
+	default n
+	bool "Include additional debug messages"

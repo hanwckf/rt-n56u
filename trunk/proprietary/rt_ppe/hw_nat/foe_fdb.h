@@ -135,8 +135,12 @@ struct bf_info_blk1 {
 	uint32_t ka:1;		/* keep alive */
 	uint32_t vlan_layer:3;
 	uint32_t psn:1;		/* egress packet has PPPoE session */
+#if defined (CONFIG_RALINK_MT7621)
+	uint32_t vpm:2;		/* 0:ethertype remark, 1:0x8100, 2:0x88a8 */
+#else
 	uint32_t dvp:1;		/* inform switch of keeping VPRI */
 	uint32_t drm:1;		/* inform switch of keeping DSCP(IPv4) or TC(IPv6) */
+#endif
 	uint32_t cah:1;		/* cacheable flag */
 	uint32_t rmt:1;		/* remove tunnel ip header (6rd/dslite only) */
 	uint32_t ttl:1;
@@ -151,10 +155,10 @@ struct _info_blk2 {
 	uint32_t qid:4;		/* QID in Qos Port */
 	uint32_t fqos:1;	/* force to PSE QoS port */
 	uint32_t dp:3;		/* force to PSE port x 0:PSE, 1:GSW, 2:GMAC, 4:PPE, 5:QDMA, 7:DROP */
-	uint32_t vpm:1;		/* virtual channel/priority */
 	uint32_t mcast:1;	/* multicast this packet to CPU */
-	uint32_t mlen:1;	/* 0:pre 1:post packet length in meter */
-	uint32_t alen:1;	/* 0:pre 1:post packet length in accounting */
+	uint32_t pcpl:1;	/* OSBN */
+	uint32_t mlen:1;	/* 0:post 1:pre packet length in meter */
+	uint32_t alen:1;	/* 0:post 1:pre packet length in accounting */
 	uint32_t port_mg:6;	/* port meter group */
 	uint32_t port_ag:6;	/* port account group */
 	uint32_t dscp:8;	/* DSCP value */

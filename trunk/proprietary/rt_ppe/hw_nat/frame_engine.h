@@ -90,6 +90,8 @@
 #define PPE_FOE_BND_AGE1    PPE_BND_AGE_1
 #define PPE_HASH_SEED	    RALINK_PPE_BASE + 0x244
 
+#if defined (CONFIG_RALINK_MT7620)
+
 #define PPE_FP_BMAP_0	    RALINK_PPE_BASE + 0x248
 #define PPE_FP_BMAP_1	    RALINK_PPE_BASE + 0x24C
 #define PPE_FP_BMAP_2	    RALINK_PPE_BASE + 0x250
@@ -159,6 +161,56 @@
 #define CAH_LINE_RW	    RALINK_PPE_BASE + 0x328
 #define CAH_WDATA	    RALINK_PPE_BASE + 0x32C
 
+#elif defined (CONFIG_RALINK_MT7621)
+
+#define PPE_DFT_CPORT       RALINK_PPE_BASE + 0x248
+#define PPE_MCAST_PPSE      RALINK_PPE_BASE + 0x284
+#define PPE_MCAST_L_0       RALINK_PPE_BASE + 0x288
+#define PPE_MCAST_H_0       RALINK_PPE_BASE + 0x28C
+#define PPE_MCAST_L_1       RALINK_PPE_BASE + 0x290
+#define PPE_MCAST_H_1       RALINK_PPE_BASE + 0x294
+#define PPE_MCAST_L_2       RALINK_PPE_BASE + 0x298
+#define PPE_MCAST_H_2       RALINK_PPE_BASE + 0x29C
+#define PPE_MCAST_L_3       RALINK_PPE_BASE + 0x2A0
+#define PPE_MCAST_H_3       RALINK_PPE_BASE + 0x2A4
+#define PPE_MCAST_L_4       RALINK_PPE_BASE + 0x2A8
+#define PPE_MCAST_H_4       RALINK_PPE_BASE + 0x2AC
+#define PPE_MCAST_L_5       RALINK_PPE_BASE + 0x2B0
+#define PPE_MCAST_H_5       RALINK_PPE_BASE + 0x2B4
+#define PPE_MCAST_L_6       RALINK_PPE_BASE + 0x2BC
+#define PPE_MCAST_H_6       RALINK_PPE_BASE + 0x2C0
+#define PPE_MCAST_L_7       RALINK_PPE_BASE + 0x2C4
+#define PPE_MCAST_H_7       RALINK_PPE_BASE + 0x2C8
+#define PPE_MCAST_L_8       RALINK_PPE_BASE + 0x2CC
+#define PPE_MCAST_H_8       RALINK_PPE_BASE + 0x2D0
+#define PPE_MCAST_L_9       RALINK_PPE_BASE + 0x2D4
+#define PPE_MCAST_H_9       RALINK_PPE_BASE + 0x2D8
+#define PPE_MCAST_L_A       RALINK_PPE_BASE + 0x2DC
+#define PPE_MCAST_H_A       RALINK_PPE_BASE + 0x2E0
+#define PPE_MCAST_L_B       RALINK_PPE_BASE + 0x2E4
+#define PPE_MCAST_H_B       RALINK_PPE_BASE + 0x2E8
+#define PPE_MCAST_L_C       RALINK_PPE_BASE + 0x2EC
+#define PPE_MCAST_H_C       RALINK_PPE_BASE + 0x2F0
+#define PPE_MCAST_L_D       RALINK_PPE_BASE + 0x2F4
+#define PPE_MCAST_H_D       RALINK_PPE_BASE + 0x2F8
+#define PPE_MCAST_L_E       RALINK_PPE_BASE + 0x2FC
+#define PPE_MCAST_H_E       RALINK_PPE_BASE + 0x2E0
+#define PPE_MCAST_L_F       RALINK_PPE_BASE + 0x300
+#define PPE_MCAST_H_F       RALINK_PPE_BASE + 0x304
+#define PPE_MTU_DRP         RALINK_PPE_BASE + 0x308
+#define PPE_MTU_VLYR_0      RALINK_PPE_BASE + 0x30C
+#define PPE_MTU_VLYR_1      RALINK_PPE_BASE + 0x310
+#define PPE_MTU_VLYR_2      RALINK_PPE_BASE + 0x314
+#define PPE_VPM_TPID        RALINK_PPE_BASE + 0x318
+
+#define CAH_CTRL            RALINK_PPE_BASE + 0x320
+#define CAH_TAG_SRH         RALINK_PPE_BASE + 0x324
+#define CAH_LINE_RW         RALINK_PPE_BASE + 0x328
+#define CAH_WDATA           RALINK_PPE_BASE + 0x32C
+#define CAH_RDATA           RALINK_PPE_BASE + 0x330
+
+#endif /* CONFIG_RALINK_MT7621 */
+
 /* 
  * CAH_RDATA[17:16]
  *  0: invalid
@@ -192,7 +244,7 @@
 
 #if defined (CONFIG_RALINK_MT7621)
 #define AC_BASE		    RALINK_FRAME_ENGINE_BASE + 0x2000
-#define METER_BASE	    RALINK_FRAME_ENGINE_BASE + 0x2300
+#define METER_BASE	    RALINK_FRAME_ENGINE_BASE + 0x2000
 
 #define FE_GDMA1_FWD_CFG    RALINK_FRAME_ENGINE_BASE + 0x500
 #define FE_GDMA2_FWD_CFG    RALINK_FRAME_ENGINE_BASE + 0x1500
@@ -200,18 +252,22 @@
 /* GDMA1 My MAC unicast frame destination port */
 #define GDM1_UFRC_P_CPU     (0 << 12)
 #define GDM1_UFRC_P_PPE     (4 << 12)
+#define GDM1_UFRC_P_QDMA    (5 << 12)
 
 /* GDMA1 broadcast frame MAC address destination port */
 #define GDM1_BFRC_P_CPU     (0 << 8)
 #define GDM1_BFRC_P_PPE     (4 << 8)
+#define GDM1_BFRC_P_QDMA    (5 << 8)
 
 /* GDMA1 multicast frame MAC address destination port */
 #define GDM1_MFRC_P_CPU     (0 << 4)
 #define GDM1_MFRC_P_PPE     (4 << 4)
+#define GDM1_MFRC_P_QDMA    (5 << 4)
 
 /* GDMA1 other MAC address frame destination port */
 #define GDM1_OFRC_P_CPU     (0 << 0)
 #define GDM1_OFRC_P_PPE     (4 << 0)
+#define GDM1_OFRC_P_QDMA    (5 << 0)
 
 #else
 #define AC_BASE		    RALINK_FRAME_ENGINE_BASE + 0x1000
@@ -275,7 +331,6 @@
 
 #define FE_GDMA1_FWD_CFG    RALINK_FRAME_ENGINE_BASE + 0x20
 #define FE_GDMA2_FWD_CFG    RALINK_FRAME_ENGINE_BASE + 0x60
-#define FE_COS_MAP	    RALINK_FRAME_ENGINE_BASE + 0xC8
 
 /* GDMA1 My MAC unicast frame destination port */
 #define GDM1_UFRC_P_CPU     (0 << 12)
@@ -314,50 +369,52 @@ enum BindDir {
 
 #if defined (CONFIG_HNAT_V2)
 enum FoeCpuReason {
-	TTL_0 = 0x02, /* IPv4(IPv6) TTL(hop limit) = 0 */
-	HAS_OPTION_HEADER = 0x03, /* IPv4(IPv6) has option(extension) header */
-	NO_FLOW_IS_ASSIGNED = 0x07,	/* No flow is assigned */
-	IPV4_WITH_FRAGMENT = 0x08,	/* IPv4 HNAT doesn't support IPv4 /w fragment */
+	TTL_0 = 0x02,				/* IPv4(IPv6) TTL(hop limit) = 0 */
+	HAS_OPTION_HEADER = 0x03,		/* IPv4(IPv6) has option(extension) header */
+	NO_FLOW_IS_ASSIGNED = 0x07,		/* No flow is assigned */
+	IPV4_WITH_FRAGMENT = 0x08,		/* IPv4 HNAT doesn't support IPv4 /w fragment */
 	IPV4_HNAPT_DSLITE_WITH_FRAGMENT = 0x09,	/* IPv4 HNAPT/DS-Lite doesn't support IPv4 /w fragment */
 	IPV4_HNAPT_DSLITE_WITHOUT_TCP_UDP = 0x0A,	/* IPv4 HNAPT/DS-Lite can't find TCP/UDP sport/dport */
 	IPV6_5T_6RD_WITHOUT_TCP_UDP = 0x0B,	/* IPv6 5T-route/6RD can't find TCP/UDP sport/dport */
-	TCP_FIN_SYN_RST = 0x0C,	/* Ingress packet is TCP fin/syn/rst (for IPv4 NAPT/DS-Lite or IPv6 5T-route/6RD) */
-	UN_HIT = 0x0D,		/* FOE Un-hit */
-	HIT_UNBIND = 0x0E,	/* FOE Hit unbind */
-	HIT_UNBIND_RATE_REACH = 0x0F,	/* FOE Hit unbind & rate reach */
-	HIT_BIND_TCP_FIN = 0x10,	/* Hit bind PPE TCP FIN entry */
-	HIT_BIND_TTL_1 = 0x11,	/* Hit bind PPE entry and TTL(hop limit) = 1 and TTL(hot limit) - 1 */
+	TCP_FIN_SYN_RST = 0x0C,			/* Ingress packet is TCP fin/syn/rst (for IPv4 NAPT/DS-Lite or IPv6 5T-route/6RD) */
+	UN_HIT = 0x0D,				/* FOE Un-hit */
+	HIT_UNBIND = 0x0E,			/* FOE Hit unbind */
+	HIT_UNBIND_RATE_REACH = 0x0F,		/* FOE Hit unbind & rate reach */
+	HIT_BIND_TCP_FIN = 0x10,		/* Hit bind PPE TCP FIN entry */
+	HIT_BIND_TTL_1 = 0x11,			/* Hit bind PPE entry and TTL(hop limit) = 1 and TTL(hot limit) - 1 */
 	HIT_BIND_WITH_VLAN_VIOLATION = 0x12,	/* Hit bind and VLAN replacement violation
-						   (Ingress 1(0) VLAN layers and egress 4(3 or 4) VLAN layers) */
+						    (Ingress 1(0) VLAN layers and egress 4(3 or 4) VLAN layers) */
 	HIT_BIND_KEEPALIVE_UC_OLD_HDR = 0x13,	/* Hit bind and keep alive with unicast old-header packet */
 	HIT_BIND_KEEPALIVE_MC_NEW_HDR = 0x14,	/* Hit bind and keep alive with multicast new-header packet */
 	HIT_BIND_KEEPALIVE_DUP_OLD_HDR = 0x15,	/* Hit bind and keep alive with duplicate old-header packet */
-	HIT_BIND_FORCE_TO_CPU = 0x16,	/* FOE Hit bind & force to CPU */
-	HIT_BIND_WITH_OPTION_HEADER = 0x17, /* Hit bind and remove tunnel IP header, but inner IP has option/next header */
-	HIT_BIND_EXCEED_MTU = 0x1C,	/* Hit bind and exceed MTU */
+	HIT_BIND_FORCE_TO_CPU = 0x16,		/* FOE Hit bind & force to CPU */
+	HIT_BIND_WITH_OPTION_HEADER = 0x17,	/* Hit bind and remove tunnel IP header, but inner IP has option/next header */
+	HIT_BIND_EXCEED_MTU = 0x1C,		/* Hit bind and exceed MTU */
 #if defined (CONFIG_RALINK_MT7621)
-	HIT_BIND_MULTICAST_TO_CPU = 0x18,	/*  Switch clone multicast packet to CPU */
-	HIT_PRE_BIND = 0x1A			/*  Pre-bind */
+	HIT_BIND_MULTICAST_TO_CPU = 0x18,	/* Switch clone multicast packet to CPU */
+	HIT_BIND_MULTICAST_TO_GMAC_CPU = 0x19,	/* Switch clone multicast packet to GMAC1 & CPU */
+	HIT_PRE_BIND = 0x1A			/* Pre-bind */
 #else
-	HIT_BIND_MULTICAST_TO_CPU = 0x1F	/*  Switch clone multicast packet to CPU */
+	HIT_BIND_MULTICAST_TO_CPU = 0x1F,	/* Switch clone multicast packet to CPU */
+	HIT_BIND_MULTICAST_TO_GMAC_CPU = 0x1F,	/* Fake definition */
 #endif
 };
 #else
 enum FoeCpuReason {
-	TTL_0 = 0x80,		/* TTL=0 */
+	TTL_0 = 0x80,			/* TTL=0 */
 	FOE_EBL_NOT_IPV4_HLEN5 = 0x90,	/* FOE enable & not IPv4h5nf */
 	FOE_EBL_NOT_TCP_UDP_L4_READY = 0x91,	/* FOE enable & not TCP/UDP/L4_read */
-	TCP_SYN_FIN_RST = 0x92,	/* TCP SYN/FIN/RST */
-	UN_HIT = 0x93,		/* FOE Un-hit */
-	HIT_UNBIND = 0x94,	/* FOE Hit unbind */
+	TCP_SYN_FIN_RST = 0x92,		/* TCP SYN/FIN/RST */
+	UN_HIT = 0x93,			/* FOE Un-hit */
+	HIT_UNBIND = 0x94,		/* FOE Hit unbind */
 	HIT_UNBIND_RATE_REACH = 0x95,	/* FOE Hit unbind & rate reach */
-	HIT_FIN = 0x96,		/* FOE Hit fin */
-	HIT_BIND_TTL_1 = 0x97,	/* FOE Hit bind & ttl=1 & ttl-1 */
+	HIT_FIN = 0x96,			/* FOE Hit fin */
+	HIT_BIND_TTL_1 = 0x97,		/* FOE Hit bind & ttl=1 & ttl-1 */
 	HIT_BIND_KEEPALIVE = 0x98,	/* FOE Hit bind & keep alive */
 	HIT_BIND_FORCE_TO_CPU = 0x99,	/* FOE Hit bind & force to CPU */
-	ACL_FOE_TBL_ERR = 0x9A,	/* ACL link foe table error !(static & unbind) */
-	ACL_TBL_TTL_1 = 0x9B,	/* ACL link FOE table & TTL=1 & TTL-1 */
-	ACL_ALERT_CPU = 0x9C,	/* ACL alert CPU */
+	ACL_FOE_TBL_ERR = 0x9A,		/* ACL link foe table error !(static & unbind) */
+	ACL_TBL_TTL_1 = 0x9B,		/* ACL link FOE table & TTL=1 & TTL-1 */
+	ACL_ALERT_CPU = 0x9C,		/* ACL alert CPU */
 	NO_FORCE_DEST_PORT = 0xA0,	/* No force destination port */
 	ACL_FORCE_PRIORITY0 = 0xA8,	/* ACL to UP0 */
 	ACL_FORCE_PRIORITY1 = 0xA9,	/* ACL to UP1 */
@@ -367,7 +424,7 @@ enum FoeCpuReason {
 	ACL_FORCE_PRIORITY5 = 0xAD,	/* ACL to UP5 */
 	ACL_FORCE_PRIORITY6 = 0xAE,	/* ACL to UP6 */
 	ACL_FORCE_PRIORITY7 = 0xAF,	/* ACL to UP7 */
-	EXCEED_MTU = 0xA1	/* Exceed mtu */
+	EXCEED_MTU = 0xA1		/* Exceed mtu */
 };
 #endif
 

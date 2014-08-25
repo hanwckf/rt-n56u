@@ -198,8 +198,13 @@ void PpeUnRegIoctlHandler(void)
 #if defined (CONFIG_HNAT_V2)
 int PpeGetAGCnt(struct hwnat_ac_args * opt3)
 {
+#if defined (CONFIG_RALINK_MT7620)
 	opt3->ag_byte_cnt = RegRead(AC_BASE + opt3->ag_index * 8);     /* Low bytes */
 	opt3->ag_pkt_cnt = RegRead(AC_BASE + opt3->ag_index * 8 + 4);  /* High bytes */
+#elif defined (CONFIG_RALINK_MT7621)
+	opt3->ag_byte_cnt = RegRead(AC_BASE + opt3->ag_index * 16);     /* 64bit bytes cnt */
+	opt3->ag_pkt_cnt = RegRead(AC_BASE + opt3->ag_index * 16 + 8);  /* 32bites packet cnt */
+#endif
 	return HWNAT_SUCCESS;
 }
 #else

@@ -175,6 +175,13 @@ function validForm(){
 function done_validating(action){
 }
 
+function textarea_enabled(v){
+	inputCtrl(document.form['ovpncli.ca.crt'], v);
+	inputCtrl(document.form['ovpncli.client.crt'], v);
+	inputCtrl(document.form['ovpncli.client.key'], v);
+	inputCtrl(document.form['ovpncli.ta.key'], v);
+}
+
 function change_vpnc_enabled() {
 	var v = (rcheck(document.form.vpnc_enable) == "0") ? 0 : 1;
 
@@ -184,6 +191,7 @@ function change_vpnc_enabled() {
 	if (v == 0){
 		showhide_div('tab_ssl_certs', 0);
 		showhide_div('tbl_vpnc_route', 0);
+		textarea_enabled(0);
 	}else{
 		change_vpnc_type();
 	}
@@ -210,6 +218,8 @@ function change_vpnc_type() {
 		showhide_div('row_vpnc_ov_conf', 1);
 		showhide_div('tab_ssl_certs', 1);
 		
+		textarea_enabled(1);
+		
 		change_vpnc_ov_auth();
 		change_vpnc_ov_atls();
 		change_vpnc_ov_mode();
@@ -231,6 +241,8 @@ function change_vpnc_type() {
 		showhide_div('row_vpnc_mtu', 1);
 		showhide_div('row_vpnc_mru', 1);
 		showhide_div('tbl_vpnc_route', 1);
+		
+		textarea_enabled(0);
 	}
 
 	showhide_div('col_vpnc_state', (vpnc_state_last == '1') ? 1 : 0);
@@ -246,7 +258,10 @@ function change_vpnc_ov_auth() {
 }
 
 function change_vpnc_ov_atls() {
-	showhide_div('row_ta_key', (document.form.vpnc_ov_atls.value == "1") ? 1 : 0);
+	var v = (document.form.vpnc_ov_atls.value == "1") ? 1 : 0;
+
+	showhide_div('row_ta_key', v);
+	inputCtrl(document.form['ovpncli.ta.key'], v);
 }
 
 function change_vpnc_ov_mode() {

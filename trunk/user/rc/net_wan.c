@@ -1493,9 +1493,7 @@ update_hosts_router(void)
 				sip = nvram_safe_get(dhcp_ip);
 				sname = nvram_safe_get(dhcp_name);
 				if (is_valid_ipv4(sip) && inet_addr_safe(sip) != inet_addr_safe(lan_ipaddr) && is_valid_hostname(sname))
-				{
-					fprintf(fp, "%s %s\n", sip, sname);
-				}
+					fprintf(fp, "%s %s\n", sip, sanity_hostname(sname));
 			}
 		}
 #if defined (USE_IPV6)

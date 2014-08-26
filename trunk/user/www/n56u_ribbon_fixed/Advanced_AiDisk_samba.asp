@@ -127,22 +127,11 @@ function showAccountControl(){
 
 function showPermissionTitle(){
 	var code = "";
-	
 	code += '<table border="0"><tr>';
-	
-	if(PROTOCOL == "cifs"){
-		code += '<td width="56" align="center" valign="top" style="padding-top: 0px;"><span class="label label-info">R/W</span></td>';
-		code += '<td width="56" align="center" valign="top" style="padding-top: 0px;"><span class="label label-info">R</span></td>';
-		code += '<td width="56" align="center" valign="top" style="padding-top: 0px;"><span class="label label-info">No</span></td>';
-	}else if(PROTOCOL == "ftp"){
-		code += '<td width="42" align="center" valign="top" style="padding-top: 0px;"><span class="label label-info">R/W</span></td>';
-		code += '<td width="42" align="center" valign="top" style="padding-top: 0px;"><span class="label label-info">W</span></td>';
-		code += '<td width="42" align="center" valign="top" style="padding-top: 0px;"><span class="label label-info">R</span></td>';
-		code += '<td width="42" align="center" valign="top" style="padding-top: 0px;"><span class="label label-info">No</span></td>';
-	}
-	
+	code += '<td width="40" valign="top" style="text-align: center; padding-top: 0px; padding-bottom: 0px;"><span class="label label-info">R/W</span></td>';
+	code += '<td width="40" valign="top" style="text-align: center; padding-top: 0px; padding-bottom: 0px;"><span class="label label-info">R</span></td>';
+	code += '<td width="40" valign="top" style="text-align: center; padding-top: 0px; padding-bottom: 0px;"><span class="label label-info">No</span></td>';
 	code += '</tr></table>';
-	
 	$("permissionTitle").innerHTML = code;
 }
 
@@ -578,17 +567,17 @@ function unload_body(){
                                             <td style="vertical-align: top;">
                                                 <table cellspacing="0" cellpadding="0" class="table t-border-top-none" style="margin-bottom: 0px; border-top: 0 none;">
                                                     <tr>
-                                                        <td width="175" align="left" style="padding-left: 0px;">
+                                                        <td width="220" align="left" style="padding-left: 0px; padding-top: 0px; padding-bottom: 0px;">
                                                             <div class="machineName"><span><% nvram_get_x("", "productid"); %></span></div>
                                                         </td>
-                                                        <td>
+                                                        <td style="padding-top: 0px; padding-bottom: 0px;">
                                                             <div id="permissionTitle"></div>
                                                         </td>
                                                     </tr>
                                                 </table>
 
                                                 <!-- the tree of folders -->
-                                                <div id="e0" class="FdTemp" style="font-size:10pt; margin-top:2px;"></div>
+                                                <div id="e0" class="FdTemp" style="font-size:9pt; margin-top:1px;"></div>
 
                                                 <div style="text-align:right; margin:10px auto; border-top:1px dotted #CCC; width:95%; padding:2px;">
                                                     <center><input name="changePermissionBtn" id="changePermissionBtn" type="button" value="<#CTL_apply#>" class="btn btn-primary" style="width: 219px" disabled="disabled"></center>

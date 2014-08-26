@@ -223,13 +223,13 @@ function BuildTree(){
 		 	shown_ItemText = showhtmlspace(short_ItemText);
 			
 			TempObject += 
-		'<div id="b'+ItemBarCode+'" style="float:left; width:117px; overflow:hidden;" class="FdText">\n'+
+		'<div id="b'+ItemBarCode+'" style="float:left; width:170px; overflow:hidden;" class="FdText">\n'+
 			'<img id="c'+ItemBarCode+'" onclick=\'$("d'+ItemBarCode+'").onclick();\' src="/bootstrap/img/wl_device/'+ItemIcon+'.gif" align=top>\n'+
 			'<span id="d'+ItemBarCode+'"'+SubClick+' title="'+ItemText+'">'+shown_ItemText+'</span>\n'+
 		'</div>\n';
 			
 			TempObject += 
-		'<div id=\"f'+ItemBarCode+'" class="FileStatus" style="margin-left: 28px;" onclick="getChangedPermission(this);"></div>\n\n';
+		'<div id=\"f'+ItemBarCode+'" class="FileStatus" style="margin-left: 10px;" onclick="getChangedPermission(this);"></div>\n\n';
 		}
 		else{
 			shown_ItemText = showhtmlspace(ItemText);
@@ -280,21 +280,20 @@ function showPermissionRadio(barCode, permission){
 	var parentBarCode = barCode.substring(0, barCode.lastIndexOf('_'));
 	var parentPoolName = $('d'+parentBarCode).firstChild.nodeValue;
 	var parentPoolStatus = getSelectedStatusOfPool(parentPoolName);
-	
-	//alert("this.selectedAccount.length: " + this.selectedAccount.length + ",  " + parentPoolStatus);
-	code += '<input type="radio" style="margin-left: 5px" name="g'+barCode+'" value="3"';
+
+	code += '<input type="radio" style="margin-top: 0px; margin-left: '+(PROTOCOL == 'cifs' ? 20 : 15)+'px" name="g'+barCode+'" value="3"';
 	if(permission == 3)
 		code += ' checked';
 	else if(PROTOCOL == "cifs" && permission == 2)
 		code += ' checked';
-	
+
 	if(this.selectedAccount.length <= 0 || this.selectedAccount == "anonymous" || parentPoolStatus != "rw")
 		code += ' disabled';
-	
+
 	code += '>';
-	
+
 	if(PROTOCOL == "ftp"){
-		code += '<input type="radio" style="margin-left: 40px" name="g'+barCode+'" value="2"';
+		code += '<input type="radio" style="margin-top: 0px; margin-left: 30px" name="g'+barCode+'" value="2"';
 		if(permission == 2)
 			code += ' checked';
 		
@@ -305,28 +304,28 @@ function showPermissionRadio(barCode, permission){
 	}
 	else if(PROTOCOL == "cifs")
 		code += '<span></span>\n';
-	
-	code += '<input type="radio" style="margin-left: '+(PROTOCOL == 'cifs' ? 50 : 46)+'px" name="g'+barCode+'" value="1"';
+
+	code += '<input type="radio" style="margin-top: 0px; margin-left: '+(PROTOCOL == 'cifs' ? 40 : 30)+'px" name="g'+barCode+'" value="1"';
 	if(permission == 1)
 		code += ' checked';
-	
+
 	if(this.selectedAccount.length <= 0 || parentPoolStatus != "rw")
 		code += ' disabled';
-	
+
 	code += '>';
-	
+
 	if(PROTOCOL == "cifs")
 		code += '<span></span>\n';
-			
-	code += '<input type="radio" style="margin-left: '+(PROTOCOL == 'cifs' ? 60 : 49)+'px" name="g'+barCode+'" value="0"';
+
+	code += '<input type="radio" style="margin-top: 0px; margin-left: '+(PROTOCOL == 'cifs' ? 40 : 30)+'px" name="g'+barCode+'" value="0"';
 	if(permission == 0)
 		code += ' checked';
-	
+
 	if(this.selectedAccount.length <= 0 || parentPoolStatus != "rw")
 		code += ' disabled';
-	
+
 	code += '>';
-	
+
 	$("f"+barCode).innerHTML = code;
 }
 

@@ -438,9 +438,9 @@ a.help_tooltip:hover {text-decoration: none; border-bottom: 1px dotted grey; col
 }
 
 .FileStatus{
-    width:210px;
-    height:19px;
-    line-height:20px;
+    width:180px;
+    height:16px;
+    line-height:16px;
     overflow:hidden;
     float:right;
 }

@@ -5314,6 +5314,23 @@ SET_SHARE_MODE_SUCCESS:
 	return 0;
 }
 
+static void
+restart_ftp_samba_on_change_shared_folder(void)
+{
+#if defined(APP_SMBD) || defined(APP_FTPD)
+	int st_share_mode;
+#endif
+#if defined(APP_SMBD)
+	st_share_mode = nvram_get_int("st_samba_mode");
+	if (st_share_mode == 4)
+		eval("/sbin/run_samba");
+#endif
+#if defined(APP_FTPD)
+	st_share_mode = nvram_get_int("st_ftp_mode");
+	if (st_share_mode == 2 || st_share_mode == 4)
+		eval("/sbin/run_ftp");
+#endif
+}
 
 int ej_modify_sharedfolder(int eid, webs_t wp, int argc, char **argv) {
 	char *pool = websGetVar(wp, "pool", "");
@@ -5321,7 +5338,6 @@ int ej_modify_sharedfolder(int eid, webs_t wp, int argc, char **argv) {
 	char *new_folder = websGetVar(wp, "new_folder", "");
 	char *mount_path;
 
-	//printf("[httpd] mod share folder\n");	// tmp test
 	if (strlen(pool) <= 0) {
 		show_error_msg("Input7");
 
@@ -5376,19 +5392,12 @@ int ej_modify_sharedfolder(int eid, webs_t wp, int argc, char **argv) {
 	}
 	free(mount_path);
 
-	if (eval("/sbin/run_ftpsamba") != 0) {
-		show_error_msg("Action7");
+	restart_ftp_samba_on_change_shared_folder();
 
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "modify_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
 	websWrite(wp, "<script>\n");
 	websWrite(wp, "modify_sharedfolder_success();\n");
 	websWrite(wp, "</script>\n");
+
 	return 0;
 }
 
@@ -5441,20 +5450,12 @@ int ej_delete_sharedfolder(int eid, webs_t wp, int argc, char **argv) {
 	}
 	free(mount_path);
 
-	if (eval("/sbin/run_ftpsamba") != 0) {
-		show_error_msg("Action6");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "delete_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
+	restart_ftp_samba_on_change_shared_folder();
 
 	websWrite(wp, "<script>\n");
 	websWrite(wp, "delete_sharedfolder_success();\n");
 	websWrite(wp, "</script>\n");
+
 	return 0;
 }
 
@@ -5463,7 +5464,6 @@ int ej_create_sharedfolder(int eid, webs_t wp, int argc, char **argv) {
 	char *folder = websGetVar(wp, "folder", "");
 	char *mount_path;
 
-	printf("[httpd] create share folder\n");	// tmp test
 	if (strlen(pool) <= 0) {
 		show_error_msg("Input7");
 
@@ -5510,20 +5510,12 @@ int ej_create_sharedfolder(int eid, webs_t wp, int argc, char **argv) {
 	}
 	free(mount_path);
 
-	system("nvram set chk=1");	// tmp test
-	if (eval("/sbin/run_samba") != 0) {
-		show_error_msg("Action5");
+	restart_ftp_samba_on_change_shared_folder();
 
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "create_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
 	websWrite(wp, "<script>\n");
 	websWrite(wp, "create_sharedfolder_success();\n");
 	websWrite(wp, "</script>\n");
+
 	return 0;
 }
 
@@ -5532,7 +5524,6 @@ int ej_set_AiDisk_status(int eid, webs_t wp, int argc, char **argv) {
 	char *flag = websGetVar(wp, "flag", "");
 	int result = 0;
 
-	printf("[httpd] set aidisk status\n");	// tmp test
 	if (strlen(protocol) <= 0) {
 		show_error_msg("Input1");
 
@@ -5627,11 +5618,9 @@ int ej_set_AiDisk_status(int eid, webs_t wp, int argc, char **argv) {
 
 SET_AIDISK_STATUS_SUCCESS:
 	websWrite(wp, "<script>\n");
-	//websWrite(wp, "set_AiDisk_status_success();\n");
 	websWrite(wp, "parent.resultOfSwitchAppStatus();\n");
 	websWrite(wp, "</script>\n");
 
-	printf("set aidisk done\n");	// tmp test
 	return 0;
 }
 
@@ -5671,16 +5660,17 @@ int ej_modify_account(int eid, webs_t wp, int argc, char **argv) {
 		clean_error_msg();
 		return -1;
 	}
+
 	websWrite(wp, "<script>\n");
 	websWrite(wp, "modify_account_success();\n");
 	websWrite(wp, "</script>\n");
+
 	return 0;
 }
 
 int ej_delete_account(int eid, webs_t wp, int argc, char **argv) {
 	char *account = websGetVar(wp, "account", "");
 
-	printf("[httpd] delete account\n");	// tmp test
 	if (strlen(account) <= 0) {
 		show_error_msg("Input5");
 
@@ -5708,6 +5698,7 @@ int ej_delete_account(int eid, webs_t wp, int argc, char **argv) {
 	websWrite(wp, "<script>\n");
 	websWrite(wp, "delete_account_success();\n");
 	websWrite(wp, "</script>\n");
+
 	return 0;
 }
 
@@ -5717,7 +5708,6 @@ int ej_initial_account(int eid, webs_t wp, int argc, char **argv) {
 	char *command;
 	int len, result;
 
-	printf("[httpd] initial account\n");	// tmp test
 	nvram_set_int("acc_num", 0);
 	nvram_commit_safe();
 
@@ -5760,16 +5750,8 @@ int ej_initial_account(int eid, webs_t wp, int argc, char **argv) {
 
 	free_disk_data(disks_info);
 
-	if (eval("/sbin/run_ftpsamba") != 0) {
-		show_error_msg("System1");
+	eval("/sbin/run_ftpsamba");
 
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "initial_account_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
 	websWrite(wp, "<script>\n");
 	websWrite(wp, "initial_account_success();\n");
 	websWrite(wp, "</script>\n");
@@ -5781,7 +5763,6 @@ int ej_create_account(int eid, webs_t wp, int argc, char **argv) {
 	char *account = websGetVar(wp, "account", "");
 	char *password = websGetVar(wp, "password", "");
 
-	printf("[httpd] create account\n");	// tmp test
 	if (strlen(account) <= 0) {
 		show_error_msg("Input5");
 
@@ -5815,6 +5796,7 @@ int ej_create_account(int eid, webs_t wp, int argc, char **argv) {
 		clean_error_msg();
 		return -1;
 	}
+
 	websWrite(wp, "<script>\n");
 	websWrite(wp, "create_account_success();\n");
 	websWrite(wp, "</script>\n");
@@ -5945,10 +5927,12 @@ int ej_set_account_permission(int eid, webs_t wp, int argc, char **argv) {
 		return -1;
 	}
 
+	free(mount_path);
+
 	websWrite(wp, "<script>\n");
 	websWrite(wp, "set_account_permission_success();\n");
 	websWrite(wp, "</script>\n");
-	free(mount_path);
+
 	return 0;
 }
 

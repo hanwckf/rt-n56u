@@ -675,7 +675,7 @@ full_restart_lan(void)
 	}
 
 #if defined(APP_NFSD)
-	// Reload NFS server
+	// reload NFS server exports
 	if (pids("nfsd"))
 		run_nfsd();
 #endif

@@ -481,6 +481,7 @@ void control_ftp_fw(int is_run_before);
 void restart_ftp(void);
 #endif
 #if defined(APP_NFSD)
+void unload_nfsd(void);
 void stop_nfsd(void);
 void run_nfsd(void);
 #endif

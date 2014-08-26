@@ -837,9 +837,11 @@ handle_notifications(void)
 		else if (strcmp(entry->d_name, "restart_nfs") == 0)
 		{
 			stop_nfsd();
-			if (count_sddev_mountpoint()) {
+			if (nvram_match("nfsd_enable", "1") && count_sddev_mountpoint()) {
 				sleep(1);
 				run_nfsd();
+			} else {
+				unload_nfsd();
 			}
 		}
 #endif

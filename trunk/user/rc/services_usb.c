@@ -714,6 +714,14 @@ void write_nfsd_exports()
 	fclose(fp);
 }
 
+void unload_nfsd(void)
+{
+	module_smart_unload("nfsd", 0);
+	module_smart_unload("exportfs", 0);
+	module_smart_unload("lockd", 0);
+	module_smart_unload("sunrpc", 0);
+}
+
 void stop_nfsd(void)
 {
 	eval("/usr/bin/nfsd.sh", "stop");
@@ -721,7 +729,7 @@ void stop_nfsd(void)
 
 void run_nfsd()
 {
-	if (nvram_invmatch("nfsd_enable", "1")) 
+	if (nvram_invmatch("nfsd_enable", "1"))
 		return;
 
 	// always update nfsd exports

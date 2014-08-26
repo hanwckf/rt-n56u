@@ -72,6 +72,7 @@ func_stop()
 	fi
 	
 	umount /var/lib/nfs/rpc_pipefs 2>/dev/null
+	umount /proc/fs/nfsd 2>/dev/null
 	
 	rm -f /var/lib/nfs/etab
 }

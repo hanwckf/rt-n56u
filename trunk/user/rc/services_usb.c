@@ -116,6 +116,10 @@ safe_remove_usb_device(int port, const char *dev_name)
 				umount_ejected();
 				if (count_sddev_mountpoint())
 					start_usb_apps();
+#if defined(APP_NFSD)
+				else
+					unload_nfsd();
+#endif
 			}
 			free_disk_data(disks_info);
 		}
@@ -129,6 +133,9 @@ safe_remove_usb_device(int port, const char *dev_name)
 		free_disk_data(disks_info);
 		umount_sddev_all();
 		umount_ejected();
+#if defined(APP_NFSD)
+		unload_nfsd();
+#endif
 	}
 
 	return 0;

@@ -51,9 +51,11 @@
 #define VPN_SERVER_LEASE_FILE		"/tmp/vpns.leases"
 #define VPN_SERVER_SUBNET_MASK		"255.255.255.0"
 #define VPN_SERVER_PPP_UNIT		10
-
 #define VPN_SERVER_PPPD_OPTIONS		"/tmp/ppp/options.vpns"
+#define VPN_SERVER_UPDOWN_SCRIPT	"/etc/storage/vpns_client_script.sh"
+
 #define VPN_CLIENT_PPPD_OPTIONS		"/tmp/ppp/options.vpnc"
+#define VPN_CLIENT_UPDOWN_SCRIPT	"/etc/storage/vpnc_server_script.sh"
 
 #define MODEM_NODE_DIR			"/tmp/modem"
 #define PPP_PEERS_DIR			"/tmp/ppp/peers"

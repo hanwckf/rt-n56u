@@ -31,7 +31,6 @@
 #define VPNS_LOG_NAME		"VPN server"
 #define VPNS_PPP_UP_SCRIPT	"/tmp/ppp/ip-up.vpns"
 #define VPNS_PPP_DW_SCRIPT	"/tmp/ppp/ip-down.vpns"
-#define VPNS_CLIENT_SCRIPT	"/etc/storage/vpns_client_script.sh"
 
 static int xl2tpd_killed_vpns = 0;
 
@@ -371,7 +370,7 @@ ipup_vpns_main(int argc, char **argv)
 	FILE *fp;
 	int i_cast, i_vuse;
 	char *peer_name;
-	char *script_name = VPNS_CLIENT_SCRIPT;
+	char *script_name = VPN_SERVER_UPDOWN_SCRIPT;
 
 	if (argc < 7)
 		return -1;
@@ -418,7 +417,7 @@ ipdown_vpns_main(int argc, char **argv)
 	char *peer_name;
 	char *clients_l1 = VPN_SERVER_LEASE_FILE;
 	char *clients_l2 = "/tmp/.vpns.leases";
-	char *script_name = VPNS_CLIENT_SCRIPT;
+	char *script_name = VPN_SERVER_UPDOWN_SCRIPT;
 	char *svcs[] = { "bcrelay", NULL };
 
 	if (argc < 7)

@@ -61,6 +61,18 @@ static const char *openvpn_client_keys[4] = {
 	"ta.key"
 };
 
+static const char *env_ovpn[3]= {
+	"dev",
+	"ifconfig_local",
+	"ifconfig_remote"
+};
+
+static const char *env_pppd[3]= {
+	"IFNAME",
+	"IPLOCAL",
+	"IPREMOTE"
+};
+
 static int
 openvpn_check_key(const char *key_name, int is_server)
 {
@@ -244,8 +256,7 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 				fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", lanip);
 		}
 		
-		if (i_dhcp == 1)
-		{
+		if (i_dhcp == 1) {
 			wins = nvram_safe_get("dhcp_wins_x");
 			if (is_valid_ipv4(wins))
 				fprintf(fp, "push \"dhcp-option %s %s\"\n", "WINS", wins);
@@ -360,7 +371,7 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 	return 1;
 }
 
-static void 
+static void
 openvpn_tapif_start(const char *ifname, int insert_to_bridge)
 {
 	if (!is_interface_exist(ifname))
@@ -370,7 +381,7 @@ openvpn_tapif_start(const char *ifname, int insert_to_bridge)
 	doSystem("ifconfig %s %s %s", ifname, "0.0.0.0", "promisc up");
 }
 
-static void 
+static void
 openvpn_tapif_stop(const char *ifname)
 {
 	if (is_interface_exist(ifname)) {
@@ -380,14 +391,14 @@ openvpn_tapif_stop(const char *ifname)
 	}
 }
 
-static void 
+static void
 openvpn_tunif_start(const char *ifname)
 {
 	if (!is_interface_exist(ifname))
 		doSystem("%s %s --dev %s", OPENVPN_EXE, "--mktun", ifname);
 }
 
-static void 
+static void
 openvpn_tunif_stop(const char *ifname)
 {
 	if (is_interface_exist(ifname)) {
@@ -453,17 +464,19 @@ on_server_client_disconnect(int is_tun)
 static void
 on_client_ifup(void)
 {
+	int i, i_dns = 0;
 	char buf[256];
+	char *script_name = VPN_CLIENT_UPDOWN_SCRIPT;
 
 	nvram_set_int_temp("vpnc_state_t", 1);
 
 	buf[0] = 0;
 	if (nvram_get_int("vpnc_pdns") > 0) {
-		int i, i_dns, buf_len;
+		int buf_len;
 		char *value;
 		char foption[32], fdns[128];
 		
-		for (i=0, i_dns=0; i < 20 && i_dns < 3; i++) {
+		for (i = 0; i < 20 && i_dns < 3; i++) {
 			sprintf(foption, "foreign_option_%d", i);
 			value = getenv(foption);
 			if (value) {
@@ -472,6 +485,10 @@ on_client_ifup(void)
 					buf_len = strlen(buf);
 					snprintf(buf + buf_len, sizeof(buf) - buf_len, "%s%s", (buf_len) ? " " : "", fdns);
 					i_dns++;
+					if (i_dns == 1)
+						setenv("DNS1", fdns, 1);
+					else if (i_dns == 2)
+						setenv("DNS2", fdns, 1);
 				}
 			}
 		}
@@ -480,17 +497,41 @@ on_client_ifup(void)
 	nvram_set_temp("vpnc_dns_t", buf);
 	if (strlen(buf) > 0)
 		update_resolvconf(0, 0);
+
+	if (check_if_file_exist(script_name)) {
+		for (i = 0; i < ARRAY_SIZE(env_ovpn); i++)
+			setenv(env_pppd[i], safe_getenv(env_ovpn[i]), 1);
+		doSystem("%s %s", script_name, "up");
+		for (i = 0; i < ARRAY_SIZE(env_ovpn); i++)
+			unsetenv(env_pppd[i]);
+	}
+
+	if (i_dns > 1)
+		unsetenv("DNS2");
+	if (i_dns > 0)
+		unsetenv("DNS1");
 }
 
 static void
 on_client_ifdown(void)
 {
+	int i;
+	char *script_name = VPN_CLIENT_UPDOWN_SCRIPT;
+
 	nvram_set_int_temp("vpnc_state_t", 0);
 
 	restore_dns_from_vpnc();
+
+	if (check_if_file_exist(script_name)) {
+		for (i = 0; i < ARRAY_SIZE(env_ovpn); i++)
+			setenv(env_pppd[i], safe_getenv(env_ovpn[i]), 1);
+		doSystem("%s %s", script_name, "down");
+		for (i = 0; i < ARRAY_SIZE(env_ovpn); i++)
+			unsetenv(env_pppd[i]);
+	}
 }
 
-int 
+int
 start_openvpn_server(void)
 {
 	int i_mode_tun;
@@ -530,7 +571,7 @@ start_openvpn_server(void)
 	return _eval(openvpn_argv, NULL, 0, NULL);
 }
 
-int 
+int
 start_openvpn_client(void)
 {
 	int i_mode_tun;
@@ -569,7 +610,7 @@ start_openvpn_client(void)
 	return _eval(openvpn_argv, NULL, 0, NULL);
 }
 
-void 
+void
 stop_openvpn_server(void)
 {
 	char vpns_scr[64];
@@ -587,7 +628,7 @@ stop_openvpn_server(void)
 	unlink(vpns_scr);
 }
 
-void 
+void
 stop_openvpn_client(void)
 {
 	char vpnc_scr[64];

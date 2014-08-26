@@ -228,6 +228,7 @@ func_ipup()
 #  elif [ "\$peer_name" == "victoria" ] ; then
 #    route add -net 192.168.8.0 netmask 255.255.255.0 dev \$peer_if
 #  fi
+   return 0
 }
 
 func_ipdown()
@@ -237,6 +238,7 @@ func_ipdown()
 #  elif [ "\$peer_name" == "victoria" ] ; then
 #    route del -net 192.168.8.0 netmask 255.255.255.0 dev \$peer_if
 #  fi
+   return 0
 }
 
 case "\$1" in
@@ -260,7 +262,7 @@ EOF
 ### Custom user script
 ### Called after internal VPN client connected/disconnected to remote VPN server
 ### \$1        - action (up/down)
-### \$IFNAME   - tunnel interface name (e.g. ppp5)
+### \$IFNAME   - tunnel interface name (e.g. ppp5 or tun0)
 ### \$IPLOCAL  - tunnel local IP address
 ### \$IPREMOTE - tunnel remote IP address
 ### \$DNS1     - peer DNS1
@@ -275,12 +277,16 @@ peer_msk="255.255.255.0"
 func_ipup()
 {
 #  route add -net \$peer_lan netmask \$peer_msk gw \$IPREMOTE dev \$IFNAME
+   return 0
 }
 
 func_ipdown()
 {
 #  route del -net \$peer_lan netmask \$peer_msk gw \$IPREMOTE dev \$IFNAME
+   return 0
 }
+
+logger -t vpnc-script "\$IFNAME \$1"
 
 case "\$1" in
 up)

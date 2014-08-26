@@ -34,7 +34,6 @@
 #define VPNC_PPP_LINK_NAME	"vpnc"
 #define VPNC_PPP_UP_SCRIPT	"/tmp/ppp/ip-up.vpnc"
 #define VPNC_PPP_DW_SCRIPT	"/tmp/ppp/ip-down.vpnc"
-#define VPNC_SERVER_SCRIPT	"/etc/storage/vpnc_server_script.sh"
 
 static int xl2tpd_killed_vpnc = 0;
 
@@ -308,7 +307,7 @@ int
 ipup_vpnc_main(int argc, char **argv)
 {
 	char buf[256];
-	char *script_name = VPNC_SERVER_SCRIPT;
+	char *script_name = VPN_CLIENT_UPDOWN_SCRIPT;
 	char *ifname = safe_getenv("IFNAME");
 	char *gate = getenv("IPREMOTE");
 
@@ -346,7 +345,7 @@ ipup_vpnc_main(int argc, char **argv)
 int
 ipdown_vpnc_main(int argc, char **argv)
 {
-	char *script_name = VPNC_SERVER_SCRIPT;
+	char *script_name = VPN_CLIENT_UPDOWN_SCRIPT;
 	char *ifname = safe_getenv("IFNAME");
 	char *gate = getenv("IPREMOTE");
 

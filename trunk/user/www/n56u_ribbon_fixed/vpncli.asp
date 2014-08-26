@@ -528,12 +528,20 @@ function change_vpnc_ov_mode() {
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th style="padding-bottom: 0px;"><#VPNC_DGW#></th>
-                                    <td style="padding-bottom: 0px;">
+                                    <th><#VPNC_DGW#></th>
+                                    <td>
                                         <select name="vpnc_dgw" class="input">
                                             <option value="0" <% nvram_match_x("", "vpnc_dgw", "0","selected"); %>><#checkbox_No#></option>
                                             <option value="1" <% nvram_match_x("", "vpnc_dgw", "1","selected"); %>><#checkbox_Yes#></option>
                                         </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" style="padding-bottom: 0px;">
+                                        <a href="javascript:spoiler_toggle('spoiler_script')"><span><#RunPostVPNC#></span></a>
+                                        <div id="spoiler_script" style="display:none;">
+                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.vpnc_server_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.vpnc_server_script.sh",""); %></textarea>
+                                        </div>
                                     </td>
                                 </tr>
                             </table>
@@ -546,14 +554,6 @@ function change_vpnc_ov_mode() {
                                     <td>
                                         <input type="text" maxlength="15" size="14" name="vpnc_rnet" style="width: 94px;" value="<% nvram_get_x("", "vpnc_rnet"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);" />&nbsp;/
                                         <input type="text" maxlength="15" size="14" name="vpnc_rmsk" style="width: 94px;" value="<% nvram_get_x("", "vpnc_rmsk"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);" />
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2" style="padding-bottom: 0px;">
-                                        <a href="javascript:spoiler_toggle('spoiler_script')"><span><#RunPostVPNC#></span></a>
-                                        <div id="spoiler_script" style="display:none;">
-                                            <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.vpnc_server_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.vpnc_server_script.sh",""); %></textarea>
-                                        </div>
                                     </td>
                                 </tr>
                             </table>

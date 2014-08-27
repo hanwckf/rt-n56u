@@ -509,7 +509,7 @@ struct nvram_pair router_defaults[] = {
 	{ "modem_cmd", "" },
 	{ "modem_mtu", "1500" },
 
-	{ "force_igmp", "2" },
+	{ "force_igmp", "0" },
 	{ "force_mld", "0" },
 	{ "udpxy_enable_x", "0" },
 	{ "xupnpd_enable_x", "0" },

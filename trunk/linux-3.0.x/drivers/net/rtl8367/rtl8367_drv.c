@@ -1485,8 +1485,13 @@ void change_port_link_mode(rtk_port_t port, u32 port_link_mode)
 
 	printk("%s - port [%d] link speed: %d, flow control: %d\n", RTL8367_DEVNAME, port, i_port_speed, i_port_flowc);
 
-	phy_cfg.FC	 = 1; //  Symmetric Flow Control
-	phy_cfg.AsyFC	 = 0; // Asymmetric Flow Control (only for 1Gbps)
+	phy_cfg.FC		 = 1; //  Symmetric Flow Control
+	phy_cfg.AsyFC		 = 0; // Asymmetric Flow Control (only for 1Gbps)
+	phy_cfg.Full_1000	 = 1;
+	phy_cfg.Full_100	 = 1;
+	phy_cfg.Half_100	 = 1;
+	phy_cfg.Full_10		 = 1;
+	phy_cfg.Half_10		 = 1;
 
 	switch (i_port_flowc)
 	{
@@ -1499,13 +1504,6 @@ void change_port_link_mode(rtk_port_t port, u32 port_link_mode)
 		phy_cfg.AsyFC	 = 0;
 		break;
 	}
-
-	phy_cfg.AutoNegotiation	 = 1;
-	phy_cfg.Full_1000	 = 1;
-	phy_cfg.Full_100	 = 1;
-	phy_cfg.Half_100	 = 1;
-	phy_cfg.Full_10		 = 1;
-	phy_cfg.Half_10		 = 1;
 
 	switch (i_port_speed)
 	{
@@ -1541,7 +1539,12 @@ void change_port_link_mode(rtk_port_t port, u32 port_link_mode)
 		break;
 	}
 
-	retVal = rtk_port_phyAutoNegoAbility_set(port, &phy_cfg);
+	/* RTL8367 not support force link mode for 1000FD */
+	if (phy_cfg.Full_1000)
+		retVal = rtk_port_phyAutoNegoAbility_set(port, &phy_cfg);
+	else
+		retVal = rtk_port_phyForceModeAbility_set(port, &phy_cfg);
+
 	if (retVal == RT_ERR_OK)
 		g_port_link_mode[port] = port_link_mode;
 }

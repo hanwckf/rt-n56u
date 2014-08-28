@@ -716,7 +716,7 @@ static void inc_rx_drop(END_DEVICE *ei_local, int gmac_no)
 		ei_local->stat.rx_dropped++;
 }
 
-static int raeth_recv(struct net_device* dev)
+static inline int raeth_recv(struct net_device* dev)
 {
 	struct sk_buff *new_skb, *rx_skb;
 	struct PDMA_rxdesc *rx_ring;
@@ -1136,7 +1136,7 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 	return NETDEV_TX_OK;
 }
 
-static void ei_xmit_housekeeping(struct net_device *dev)
+static inline void ei_xmit_housekeeping(struct net_device *dev)
 {
 	END_DEVICE *ei_local = netdev_priv(dev);
 	struct PDMA_txdesc *tx_ring;
@@ -1226,8 +1226,9 @@ static irqreturn_t ei_interrupt(int irq, void *dev_id)
 
 	sysRegWrite(FE_INT_STATUS, reg_int_val);
 
-	if (reg_int_val & TX_DLY_INT)
+	if (reg_int_val & TX_DLY_INT) {
 		ei_xmit_housekeeping(dev);
+	}
 
 	if (reg_int_val & RX_DLY_INT) {
 		spin_lock(&ei_local->irqe_lock);

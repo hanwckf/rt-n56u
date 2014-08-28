@@ -861,13 +861,23 @@ static void esw_init_ports_phy(void)
 
 static void esw_port_phy_power(u32 port_id, u32 power_on)
 {
-	u32 esw_phy_mcr = (power_on) ? 0x3300 : 0x3900;
+	u32 esw_phy_mcr = 0x3100;
 
 	if (port_id > ESW_PHY_ID_MAX)
 		return;
 
-	if (mii_mgr_write(port_id, 0, esw_phy_mcr))
-		g_port_phy_power[port_id] = (power_on) ? 1 : 0;
+	if (mii_mgr_read(port_id, 0, &esw_phy_mcr)) {
+		esw_phy_mcr &= ~((1<<11)|(1<<9));
+		
+		if (power_on)
+			esw_phy_mcr |= (1<<9);
+		else
+			esw_phy_mcr |= (1<<11);
+		
+		mii_mgr_write(port_id, 0, esw_phy_mcr);
+	}
+
+	g_port_phy_power[port_id] = (power_on) ? 1 : 0;
 }
 
 static void esw_storm_control(u32 port_id, int set_bcast, int set_mcast, int set_ucast, u32 rate_mbps)
@@ -1190,9 +1200,9 @@ static void change_port_link_mode(u32 port_id, u32 port_link_mode)
 	u32 i_port_speed;
 	u32 i_port_flowc;
 	u32 esw_phy_ana = 0x05e1;
-	u32 esw_phy_mcr = 0x3300;
-	char *link_desc = "auto";
-	char *flow_desc = "on";
+	u32 esw_phy_mcr = 0x3100; /* 100 FD + auto-negotiation */
+	char *link_desc = "Auto";
+	char *flow_desc = "ON";
 
 	if (g_port_link_mode[port_id] == port_link_mode)
 		return;
@@ -1204,7 +1214,7 @@ static void change_port_link_mode(u32 port_id, u32 port_link_mode)
 	{
 	case SWAPI_LINK_FLOW_CONTROL_DISABLE:
 		esw_phy_ana &= ~(1<<10); // disable pause support (A5)
-		flow_desc = "off";
+		flow_desc = "OFF";
 		break;
 	}
 
@@ -1212,31 +1222,62 @@ static void change_port_link_mode(u32 port_id, u32 port_link_mode)
 	{
 	case SWAPI_LINK_SPEED_MODE_1000_FD:
 		link_desc = "1000FD";
+		/* support only for MT7621, todo */
 		break;
 	case SWAPI_LINK_SPEED_MODE_100_FD:
-		esw_phy_ana &= ~((1<<7)|(1<<6)|(1<<5)); // disable 100Base-TX Half Duplex, 10 Base-T Full Duplex, 10 Base-T Half Duplex
 		link_desc = "100FD";
+		/* disable ability 100 HD, 10 FD, 10 HD */
+		esw_phy_ana &= ~((1<<7)|(1<<6)|(1<<5));
+		/* disable auto-negotiation */
+		esw_phy_mcr &= ~((1<<12));
 		break;
 	case SWAPI_LINK_SPEED_MODE_100_HD:
-		esw_phy_ana &= ~((1<<8)|(1<<6)|(1<<5)); // disable 100Base-TX Full Duplex, 10 Base-T Full Duplex, 10 Base-T Half Duplex
 		link_desc = "100HD";
+		/* disable ability 100 FD, 10 FD, 10 HD */
+		esw_phy_ana &= ~((1<<8)|(1<<6)|(1<<5));
+		/* disable auto-negotiation, disable FD */
+		esw_phy_mcr &= ~((1<<12)|(1<<8));
 		break;
 	case SWAPI_LINK_SPEED_MODE_10_FD:
-		esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<5)); // disable 100Base-TX Full Duplex, 100 Base-TX Half Duplex, 10 Base-T Half Duplex
 		link_desc = "10FD";
+		/* disable ability 100 FD, 100 HD, 10 HD */
+		esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<5));
+		/* disable auto-negotiation, set 10Mbps */
+		esw_phy_mcr &= ~((1<<13)|(1<<12));
 		break;
 	case SWAPI_LINK_SPEED_MODE_10_HD:
-		esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<6)); // disable 100Base-TX Full Duplex, 100 Base-TX Half Duplex, 10 Base-T Full Duplex
 		link_desc = "10HD";
+		/* disable ability 100 FD, 100 HD, 10 FD */
+		esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<6));
+		/* disable auto-negotiation, set 10Mbps, disable FD */
+		esw_phy_mcr &= ~((1<<13)|(1<<12)|(1<<8));
 		break;
 	}
 
 	/* set PHY ability */
 	mii_mgr_write(port_id, 4, esw_phy_ana);
 
-	/* restart auto-negotiation */
-	if (g_port_phy_power[port_id])
-		mii_mgr_write(port_id, 0, esw_phy_mcr);
+	if (g_port_phy_power[port_id]) {
+		if (!(esw_phy_mcr & (1<<12))) {
+			/* power-down PHY */
+			esw_phy_mcr |= (1<<11);
+			
+			/* set PHY mode */
+			mii_mgr_write(port_id, 0, esw_phy_mcr);
+			
+			/* power-up PHY */
+			esw_phy_mcr &= ~(1<<11);
+		} else {
+			/* restart PHY auto-negotiation */
+			esw_phy_mcr |= (1<<9);
+		}
+	} else {
+		/* power-down PHY */
+		esw_phy_mcr |= (1<<11);
+	}
+
+	/* set PHY mode */
+	mii_mgr_write(port_id, 0, esw_phy_mcr);
 
 	g_port_link_mode[port_id] = port_link_mode;
 

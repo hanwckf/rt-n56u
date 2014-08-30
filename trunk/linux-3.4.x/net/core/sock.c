@@ -789,9 +789,11 @@ set_rcvbuf:
 		sock_valbool_flag(sk, SOCK_RXQ_OVFL, valbool);
 		break;
 
+#if IS_ENABLED(CONFIG_MAC80211)
 	case SO_WIFI_STATUS:
 		sock_valbool_flag(sk, SOCK_WIFI_STATUS, valbool);
 		break;
+#endif
 
 	case SO_PEEK_OFF:
 		if (sock->ops->set_peek_off)
@@ -1031,9 +1033,11 @@ int sock_getsockopt(struct socket *sock, int level, int optname,
 		v.val = !!sock_flag(sk, SOCK_RXQ_OVFL);
 		break;
 
+#if IS_ENABLED(CONFIG_MAC80211)
 	case SO_WIFI_STATUS:
 		v.val = !!sock_flag(sk, SOCK_WIFI_STATUS);
 		break;
+#endif
 
 	case SO_PEEK_OFF:
 		if (!sock->ops->set_peek_off)

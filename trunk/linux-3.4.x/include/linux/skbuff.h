@@ -228,11 +228,15 @@ enum {
 	/* device driver is going to provide hardware time stamp */
 	SKBTX_IN_PROGRESS = 1 << 2,
 
+#if IS_ENABLED(CONFIG_MACVTAP)
 	/* device driver supports TX zero-copy buffers */
 	SKBTX_DEV_ZEROCOPY = 1 << 3,
+#endif
 
+#if IS_ENABLED(CONFIG_MAC80211)
 	/* generate wifi status information (where possible) */
 	SKBTX_WIFI_STATUS = 1 << 4,
+#endif
 };
 
 /*
@@ -473,9 +477,13 @@ struct sk_buff {
 #endif
 	__u8			ooo_okay:1;
 	__u8			l4_rxhash:1;
+#if IS_ENABLED(CONFIG_MAC80211)
 	__u8			wifi_acked_valid:1;
 	__u8			wifi_acked:1;
+#endif
+#if IS_ENABLED(CONFIG_NET_VENDOR_INTEL)
 	__u8			no_fcs:1;
+#endif
 	/* 9/11 bit hole (depending on ndisc_nodetype presence) */
 	kmemcheck_bitfield_end(flags2);
 
@@ -595,7 +603,9 @@ extern void skb_recycle(struct sk_buff *skb);
 extern bool skb_recycle_check(struct sk_buff *skb, int skb_size);
 
 extern struct sk_buff *skb_morph(struct sk_buff *dst, struct sk_buff *src);
+#if IS_ENABLED(CONFIG_MACVTAP)
 extern int skb_copy_ubufs(struct sk_buff *skb, gfp_t gfp_mask);
+#endif
 extern struct sk_buff *skb_clone(struct sk_buff *skb,
 				 gfp_t priority);
 extern struct sk_buff *skb_copy(const struct sk_buff *skb,
@@ -1698,6 +1708,7 @@ static inline void skb_orphan(struct sk_buff *skb)
 	skb->sk		= NULL;
 }
 
+#if IS_ENABLED(CONFIG_MACVTAP)
 /**
  *	skb_orphan_frags - orphan the frags contained in a buffer
  *	@skb: buffer to orphan frags from
@@ -1713,6 +1724,7 @@ static inline int skb_orphan_frags(struct sk_buff *skb, gfp_t gfp_mask)
 		return 0;
 	return skb_copy_ubufs(skb, gfp_mask);
 }
+#endif
 
 /**
  *	__skb_queue_purge - empty a list
@@ -2368,6 +2380,7 @@ static inline void skb_tx_timestamp(struct sk_buff *skb)
 	sw_tx_timestamp(skb);
 }
 
+#if IS_ENABLED(CONFIG_MAC80211)
 /**
  * skb_complete_wifi_ack - deliver skb with wifi status
  *
@@ -2376,6 +2389,7 @@ static inline void skb_tx_timestamp(struct sk_buff *skb)
  *
  */
 void skb_complete_wifi_ack(struct sk_buff *skb, bool acked);
+#endif
 
 extern __sum16 __skb_checksum_complete_head(struct sk_buff *skb, int len);
 extern __sum16 __skb_checksum_complete(struct sk_buff *skb);
@@ -2622,8 +2636,10 @@ static inline bool skb_is_recycleable(const struct sk_buff *skb, int skb_size)
 	if (irqs_disabled())
 		return false;
 
+#if IS_ENABLED(CONFIG_MACVTAP)
 	if (skb_shinfo(skb)->tx_flags & SKBTX_DEV_ZEROCOPY)
 		return false;
+#endif
 
 	if (skb_is_nonlinear(skb) || skb->fclone != SKB_FCLONE_UNAVAILABLE)
 		return false;

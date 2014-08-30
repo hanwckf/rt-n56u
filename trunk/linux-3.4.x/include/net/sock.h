@@ -2024,8 +2024,10 @@ static inline int sock_intr_errno(long timeo)
 
 extern void __sock_recv_timestamp(struct msghdr *msg, struct sock *sk,
 	struct sk_buff *skb);
+#if IS_ENABLED(CONFIG_MAC80211)
 extern void __sock_recv_wifi_status(struct msghdr *msg, struct sock *sk,
 	struct sk_buff *skb);
+#endif
 
 static __inline__ void
 sock_recv_timestamp(struct msghdr *msg, struct sock *sk, struct sk_buff *skb)
@@ -2054,8 +2056,10 @@ sock_recv_timestamp(struct msghdr *msg, struct sock *sk, struct sk_buff *skb)
 	else
 		sk->sk_stamp = kt;
 
+#if IS_ENABLED(CONFIG_MAC80211)
 	if (sock_flag(sk, SOCK_WIFI_STATUS) && skb->wifi_acked_valid)
 		__sock_recv_wifi_status(msg, sk, skb);
+#endif
 }
 
 extern void __sock_recv_ts_and_drops(struct msghdr *msg, struct sock *sk,

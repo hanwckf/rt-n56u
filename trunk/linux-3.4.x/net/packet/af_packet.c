@@ -1559,8 +1559,10 @@ retry:
 	if (err < 0)
 		goto out_unlock;
 
+#if IS_ENABLED(CONFIG_NET_VENDOR_INTEL)
 	if (unlikely(extra_len == 4))
 		skb->no_fcs = 1;
+#endif
 
 	dev_queue_xmit(skb);
 	rcu_read_unlock();
@@ -2381,8 +2383,10 @@ static int packet_snd(struct socket *sock,
 		len += vnet_hdr_len;
 	}
 
+#if IS_ENABLED(CONFIG_NET_VENDOR_INTEL)
 	if (unlikely(extra_len == 4))
 		skb->no_fcs = 1;
+#endif
 
 	/*
 	 *	Now send it

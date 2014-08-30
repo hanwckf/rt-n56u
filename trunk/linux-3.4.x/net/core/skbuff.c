@@ -450,6 +450,7 @@ static void skb_release_data(struct sk_buff *skb)
 				skb_frag_unref(skb, i);
 		}
 
+#if IS_ENABLED(CONFIG_MACVTAP)
 		/*
 		 * If skb buf is from userspace, we need to notify the caller
 		 * the lower device DMA has done;
@@ -461,6 +462,7 @@ static void skb_release_data(struct sk_buff *skb)
 			if (uarg->callback)
 				uarg->callback(uarg);
 		}
+#endif
 
 		if (skb_has_frag_list(skb))
 			skb_drop_fraglist(skb);
@@ -676,7 +678,9 @@ static void __copy_skb_header(struct sk_buff *new, const struct sk_buff *old)
 	new->rxhash		= old->rxhash;
 	new->ooo_okay		= old->ooo_okay;
 	new->l4_rxhash		= old->l4_rxhash;
+#if IS_ENABLED(CONFIG_NET_VENDOR_INTEL)
 	new->no_fcs		= old->no_fcs;
+#endif
 #ifdef CONFIG_XFRM
 	new->sp			= secpath_get(old->sp);
 #endif
@@ -761,6 +765,7 @@ struct sk_buff *skb_morph(struct sk_buff *dst, struct sk_buff *src)
 }
 EXPORT_SYMBOL_GPL(skb_morph);
 
+#if IS_ENABLED(CONFIG_MACVTAP)
 /*	skb_copy_ubufs	-	copy userspace skb frags buffers to kernel
  *	@skb: the skb to modify
  *	@gfp_mask: allocation priority
@@ -820,6 +825,7 @@ int skb_copy_ubufs(struct sk_buff *skb, gfp_t gfp_mask)
 	return 0;
 }
 EXPORT_SYMBOL_GPL(skb_copy_ubufs);
+#endif
 
 /**
  *	skb_clone	-	duplicate an sk_buff
@@ -839,10 +845,12 @@ struct sk_buff *skb_clone(struct sk_buff *skb, gfp_t gfp_mask)
 {
 	struct sk_buff *n;
 
+#if IS_ENABLED(CONFIG_MACVTAP)
 	if (skb_shinfo(skb)->tx_flags & SKBTX_DEV_ZEROCOPY) {
 		if (skb_copy_ubufs(skb, gfp_mask))
 			return NULL;
 	}
+#endif
 
 	n = skb + 1;
 	if (skb->fclone == SKB_FCLONE_ORIG &&
@@ -962,6 +970,7 @@ struct sk_buff *__pskb_copy(struct sk_buff *skb, int headroom, gfp_t gfp_mask)
 	if (skb_shinfo(skb)->nr_frags) {
 		int i;
 
+#if IS_ENABLED(CONFIG_MACVTAP)
 		if (skb_shinfo(skb)->tx_flags & SKBTX_DEV_ZEROCOPY) {
 			if (skb_copy_ubufs(skb, gfp_mask)) {
 				kfree_skb(n);
@@ -969,6 +978,7 @@ struct sk_buff *__pskb_copy(struct sk_buff *skb, int headroom, gfp_t gfp_mask)
 				goto out;
 			}
 		}
+#endif
 		for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
 			skb_shinfo(n)->frags[i] = skb_shinfo(skb)->frags[i];
 			skb_frag_ref(skb, i);
@@ -1072,11 +1082,13 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 	if (fastpath) {
 		kfree(skb->head);
 	} else {
+#if IS_ENABLED(CONFIG_MACVTAP)
 		/* copy this zero copy skb frags */
 		if (skb_shinfo(skb)->tx_flags & SKBTX_DEV_ZEROCOPY) {
 			if (skb_copy_ubufs(skb, gfp_mask))
 				goto nofrags;
 		}
+#endif
 		for (i = 0; i < skb_shinfo(skb)->nr_frags; i++)
 			skb_frag_ref(skb, i);
 
@@ -1111,8 +1123,10 @@ adjust_others:
 	atomic_set(&skb_shinfo(skb)->dataref, 1);
 	return 0;
 
+#if IS_ENABLED(CONFIG_MACVTAP)
 nofrags:
 	kfree(data);
+#endif
 nodata:
 	return -ENOMEM;
 }
@@ -2877,9 +2891,10 @@ struct sk_buff *skb_segment(struct sk_buff *skb, netdev_features_t features)
 						 skb_put(nskb, hsize), hsize);
 
 		while (pos < offset + len && i < nfrags) {
+#if IS_ENABLED(CONFIG_MACVTAP)
 			if (unlikely(skb_orphan_frags(skb, GFP_ATOMIC)))
 				goto err;
-
+#endif
 			*frag = skb_shinfo(skb)->frags[i];
 			__skb_frag_ref(frag);
 			size = skb_frag_size(frag);
@@ -3335,6 +3350,7 @@ void skb_tstamp_tx(struct sk_buff *orig_skb,
 }
 EXPORT_SYMBOL_GPL(skb_tstamp_tx);
 
+#if IS_ENABLED(CONFIG_MAC80211)
 void skb_complete_wifi_ack(struct sk_buff *skb, bool acked)
 {
 	struct sock *sk = skb->sk;
@@ -3354,6 +3370,7 @@ void skb_complete_wifi_ack(struct sk_buff *skb, bool acked)
 		kfree_skb(skb);
 }
 EXPORT_SYMBOL_GPL(skb_complete_wifi_ack);
+#endif
 
 
 /**

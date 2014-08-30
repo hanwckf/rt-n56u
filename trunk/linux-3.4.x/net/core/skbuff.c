@@ -628,7 +628,7 @@ EXPORT_SYMBOL(consume_skb);
  * 	function does any necessary reference count dropping, and
  * 	cleans up the skbuff as if it just came from __alloc_skb().
  */
-void skb_recycle(struct sk_buff *skb)
+inline void skb_recycle(struct sk_buff *skb)
 {
 	struct skb_shared_info *shinfo;
 
@@ -642,7 +642,6 @@ void skb_recycle(struct sk_buff *skb)
 	skb->data = skb->head + NET_SKB_PAD;
 	skb_reset_tail_pointer(skb);
 }
-EXPORT_SYMBOL(skb_recycle);
 
 /**
  *	skb_recycle_check - check if skb can be reused for receive

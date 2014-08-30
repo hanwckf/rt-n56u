@@ -12,5 +12,7 @@ struct flow_keys {
 	u8 ip_proto;
 };
 
+#if IS_ENABLED(CONFIG_NET_CLS_FLOW)
 extern bool skb_flow_dissect(const struct sk_buff *skb, struct flow_keys *flow);
+#endif
 #endif

@@ -86,9 +86,9 @@ am_minidlnad_OBJECTS = minidlna.$(OBJEXT) upnphttp.$(OBJEXT) \
 	upnpevents.$(OBJEXT) sql.$(OBJEXT) utils.$(OBJEXT) \
 	metadata.$(OBJEXT) scanner.$(OBJEXT) inotify.$(OBJEXT) \
 	tivo_utils.$(OBJEXT) tivo_beacon.$(OBJEXT) \
-	tivo_commands.$(OBJEXT) textutils.$(OBJEXT) misc.$(OBJEXT) \
-	tagutils.$(OBJEXT) playlist.$(OBJEXT) image_utils.$(OBJEXT) \
-	albumart.$(OBJEXT) log.$(OBJEXT)
+	tivo_commands.$(OBJEXT) playlist.$(OBJEXT) \
+	image_utils.$(OBJEXT) albumart.$(OBJEXT) log.$(OBJEXT) \
+	containers.$(OBJEXT) tagutils/tagutils.$(OBJEXT)
 minidlnad_OBJECTS = $(am_minidlnad_OBJECTS)
 am__DEPENDENCIES_1 =
 minidlnad_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
@@ -313,8 +313,8 @@ minidlnad_SOURCES = minidlna.c upnphttp.c upnpdescgen.c upnpsoap.c \
 			options.c minissdp.c uuid.c upnpevents.c \
 			sql.c utils.c metadata.c scanner.c inotify.c \
 			tivo_utils.c tivo_beacon.c tivo_commands.c \
-			tagutils/textutils.c tagutils/misc.c tagutils/tagutils.c \
-			playlist.c image_utils.c albumart.c log.c
+			playlist.c image_utils.c albumart.c log.c \
+			containers.c tagutils/tagutils.c
 
 
 #if NEED_VORBIS
@@ -445,21 +445,33 @@ uninstall-sbinPROGRAMS:
 
 clean-sbinPROGRAMS:
 	-test -z "$(sbin_PROGRAMS)" || rm -f $(sbin_PROGRAMS)
+tagutils/$(am__dirstamp):
+	@$(MKDIR_P) tagutils
+	@: > tagutils/$(am__dirstamp)
+tagutils/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) tagutils/$(DEPDIR)
+	@: > tagutils/$(DEPDIR)/$(am__dirstamp)
+tagutils/tagutils.$(OBJEXT): tagutils/$(am__dirstamp) \
+	tagutils/$(DEPDIR)/$(am__dirstamp)
+
 minidlnad$(EXEEXT): $(minidlnad_OBJECTS) $(minidlnad_DEPENDENCIES) $(EXTRA_minidlnad_DEPENDENCIES) 
 	@rm -f minidlnad$(EXEEXT)
 	$(AM_V_CCLD)$(minidlnad_LINK) $(minidlnad_OBJECTS) $(minidlnad_LDADD) $(LIBS)
+
 testupnpdescgen$(EXEEXT): $(testupnpdescgen_OBJECTS) $(testupnpdescgen_DEPENDENCIES) $(EXTRA_testupnpdescgen_DEPENDENCIES) 
 	@rm -f testupnpdescgen$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(testupnpdescgen_OBJECTS) $(testupnpdescgen_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f tagutils/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/albumart.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clients.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/containers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getifaddr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/image_utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inotify.Po@am__quote@
@@ -468,15 +480,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/minidlna.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/minissdp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/minixml.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/misc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/options.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/playlist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/process.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sql.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tagutils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testupnpdescgen.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/textutils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tivo_beacon.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tivo_commands.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tivo_utils.Po@am__quote@
@@ -488,62 +497,23 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/upnpsoap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uuid.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tagutils/$(DEPDIR)/tagutils.Po@am__quote@
 
 .c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c $<
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c `$(CYGPATH_W) '$<'`
-
-textutils.o: tagutils/textutils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT textutils.o -MD -MP -MF $(DEPDIR)/textutils.Tpo -c -o textutils.o `test -f 'tagutils/textutils.c' || echo '$(srcdir)/'`tagutils/textutils.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/textutils.Tpo $(DEPDIR)/textutils.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tagutils/textutils.c' object='textutils.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o textutils.o `test -f 'tagutils/textutils.c' || echo '$(srcdir)/'`tagutils/textutils.c
-
-textutils.obj: tagutils/textutils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT textutils.obj -MD -MP -MF $(DEPDIR)/textutils.Tpo -c -o textutils.obj `if test -f 'tagutils/textutils.c'; then $(CYGPATH_W) 'tagutils/textutils.c'; else $(CYGPATH_W) '$(srcdir)/tagutils/textutils.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/textutils.Tpo $(DEPDIR)/textutils.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tagutils/textutils.c' object='textutils.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o textutils.obj `if test -f 'tagutils/textutils.c'; then $(CYGPATH_W) 'tagutils/textutils.c'; else $(CYGPATH_W) '$(srcdir)/tagutils/textutils.c'; fi`
-
-misc.o: tagutils/misc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT misc.o -MD -MP -MF $(DEPDIR)/misc.Tpo -c -o misc.o `test -f 'tagutils/misc.c' || echo '$(srcdir)/'`tagutils/misc.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/misc.Tpo $(DEPDIR)/misc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tagutils/misc.c' object='misc.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o misc.o `test -f 'tagutils/misc.c' || echo '$(srcdir)/'`tagutils/misc.c
-
-misc.obj: tagutils/misc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT misc.obj -MD -MP -MF $(DEPDIR)/misc.Tpo -c -o misc.obj `if test -f 'tagutils/misc.c'; then $(CYGPATH_W) 'tagutils/misc.c'; else $(CYGPATH_W) '$(srcdir)/tagutils/misc.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/misc.Tpo $(DEPDIR)/misc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tagutils/misc.c' object='misc.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o misc.obj `if test -f 'tagutils/misc.c'; then $(CYGPATH_W) 'tagutils/misc.c'; else $(CYGPATH_W) '$(srcdir)/tagutils/misc.c'; fi`
-
-tagutils.o: tagutils/tagutils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tagutils.o -MD -MP -MF $(DEPDIR)/tagutils.Tpo -c -o tagutils.o `test -f 'tagutils/tagutils.c' || echo '$(srcdir)/'`tagutils/tagutils.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/tagutils.Tpo $(DEPDIR)/tagutils.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tagutils/tagutils.c' object='tagutils.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tagutils.o `test -f 'tagutils/tagutils.c' || echo '$(srcdir)/'`tagutils/tagutils.c
-
-tagutils.obj: tagutils/tagutils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tagutils.obj -MD -MP -MF $(DEPDIR)/tagutils.Tpo -c -o tagutils.obj `if test -f 'tagutils/tagutils.c'; then $(CYGPATH_W) 'tagutils/tagutils.c'; else $(CYGPATH_W) '$(srcdir)/tagutils/tagutils.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/tagutils.Tpo $(DEPDIR)/tagutils.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tagutils/tagutils.c' object='tagutils.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tagutils.obj `if test -f 'tagutils/tagutils.c'; then $(CYGPATH_W) 'tagutils/tagutils.c'; else $(CYGPATH_W) '$(srcdir)/tagutils/tagutils.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.
@@ -679,6 +649,7 @@ GTAGS:
 
 distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
+	-rm -f cscope.out cscope.in.out cscope.po.out cscope.files
 
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
@@ -906,6 +877,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f tagutils/$(DEPDIR)/$(am__dirstamp)
+	-rm -f tagutils/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -917,7 +890,7 @@ clean-am: clean-checkPROGRAMS clean-generic clean-sbinPROGRAMS \
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf ./$(DEPDIR)
+	-rm -rf ./$(DEPDIR) tagutils/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -965,7 +938,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf ./$(DEPDIR)
+	-rm -rf ./$(DEPDIR) tagutils/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

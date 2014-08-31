@@ -184,5 +184,3 @@ TIMESTAMP_T *tm_current(TIMESTAMP_T *tp)
 
 	return tp;
 } /* end of tm_current */
-
-/* end of exfat_oal.c */

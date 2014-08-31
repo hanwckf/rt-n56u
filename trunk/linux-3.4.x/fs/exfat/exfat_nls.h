@@ -89,5 +89,3 @@ void   nls_uniname_to_cstring(struct super_block *sb, u8 *p_cstring, UNI_NAME_T 
 void   nls_cstring_to_uniname(struct super_block *sb, UNI_NAME_T *p_uniname, u8 *p_cstring, s32 *p_lossy);
 
 #endif /* _EXFAT_NLS_H */
-
-/* end of exfat_nls.h */

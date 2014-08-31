@@ -778,5 +778,3 @@ static void move_to_lru(BUF_CACHE_T *bp, BUF_CACHE_T *list)
 	bp->next->prev = bp->prev;
 	push_to_lru(bp, list);
 } /* end of buf_cache_move_to_lru */
-
-/* end of exfat_cache.c */

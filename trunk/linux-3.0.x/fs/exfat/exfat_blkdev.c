@@ -195,5 +195,3 @@ s32 bdev_sync(struct super_block *sb)
 
 	return sync_blockdev(sb->s_bdev);
 }
-
-/* end of exfat_blkdev.c */

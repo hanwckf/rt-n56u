@@ -67,5 +67,3 @@ DEFINE_SEMAPHORE(b_sem);
 BUF_CACHE_T buf_cache_array[BUF_CACHE_SIZE];
 BUF_CACHE_T buf_cache_lru_list;
 BUF_CACHE_T buf_cache_hash_list[BUF_CACHE_HASH_SIZE];
-
-/* end of exfat_data.c */

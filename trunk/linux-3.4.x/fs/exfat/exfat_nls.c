@@ -442,5 +442,3 @@ static s32 convert_uni_to_ch(struct nls_table *nls, u8 *ch, u16 uni, s32 *lossy)
 	return len;
 
 } /* end of convert_uni_to_ch */
-
-/* end of exfat_nls.c */

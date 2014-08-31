@@ -52,5 +52,3 @@
 #endif
 
 #endif /* _EXFAT_CONFIG_H */
-
-/* end of exfat_config.h */

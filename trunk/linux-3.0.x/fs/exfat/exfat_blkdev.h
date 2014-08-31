@@ -71,5 +71,3 @@ s32 bdev_write(struct super_block *sb, u32 secno, struct buffer_head *bh, u32 nu
 s32 bdev_sync(struct super_block *sb);
 
 #endif /* _EXFAT_BLKDEV_H */
-
-/* end of exfat_blkdev.h */

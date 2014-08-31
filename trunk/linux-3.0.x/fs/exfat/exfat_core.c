@@ -28,7 +28,7 @@
 /************************************************************************/
 /*                                                                      */
 /*  PROJECT : exFAT & FAT12/16/32 File System                           */
-/*  FILE    : exfat.c                                                   */
+/*  FILE    : exfat_core.c                                              */
 /*  PURPOSE : exFAT File Manager                                        */
 /*                                                                      */
 /*----------------------------------------------------------------------*/
@@ -2681,7 +2681,7 @@ void exfat_set_entry_flag(DENTRY_T *p_entry, u8 flags)
 u32 fat_get_entry_clu0(DENTRY_T *p_entry)
 {
 	DOS_DENTRY_T *ep = (DOS_DENTRY_T *) p_entry;
-	return (GET32_A(ep->start_clu_hi) << 16) | GET16_A(ep->start_clu_lo);
+	return ((u32) GET16_A(ep->start_clu_hi) << 16) | GET16_A(ep->start_clu_lo);
 } /* end of fat_get_entry_clu0 */
 
 u32 exfat_get_entry_clu0(DENTRY_T *p_entry)
@@ -5112,5 +5112,3 @@ s32 multi_sector_write(struct super_block *sb, u32 sec, struct buffer_head *bh, 
 
 	return ret;
 } /* end of multi_sector_write */
-
-/* end of exfat_core.c */

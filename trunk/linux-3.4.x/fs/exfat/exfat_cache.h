@@ -83,5 +83,3 @@ void   buf_release_all(struct super_block *sb);
 void   buf_sync(struct super_block *sb);
 
 #endif /* _EXFAT_CACHE_H */
-
-/* end of exfat_cache.h */

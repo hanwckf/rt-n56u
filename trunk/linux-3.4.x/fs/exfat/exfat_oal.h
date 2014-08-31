@@ -72,5 +72,3 @@ void  sm_V(struct semaphore *sm);
 TIMESTAMP_T *tm_current(TIMESTAMP_T *tm);
 
 #endif /* _EXFAT_OAL_H */
-
-/* end of exfat_oal.h */

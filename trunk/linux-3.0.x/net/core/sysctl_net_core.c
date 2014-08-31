@@ -22,7 +22,7 @@
 #ifdef CONFIG_VLAN_8021Q_DOUBLE_TAG
 /* QinQ support hack */
 /* enable vlan offload by default and reconfigure in userspace */
-int vlan_double_tag=0;
+int vlan_double_tag __read_mostly = 0;
 
 /* export for module support */
 EXPORT_SYMBOL(vlan_double_tag);

@@ -2549,8 +2549,8 @@ ip:
 		ip = (const struct iphdr *) (skb->data + nhoff);
 		if (ip->ihl < 5)
 			goto done;
-		nhoff += iph->ihl * 4;
-		ip_proto = iph->protocol;
+		nhoff += ip->ihl * 4;
+		ip_proto = ip->protocol;
 		if (ip_is_fragment(ip))
 			ip_proto = 0;
 		addr1 = (__force u32) ip->saddr;

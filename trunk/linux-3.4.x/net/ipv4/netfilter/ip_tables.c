@@ -374,10 +374,6 @@ ipt_do_table(struct sk_buff *skb,
 	unsigned int addend;
 
 	/* Initialization */
-	ip = ip_hdr(skb);
-	indev = in ? in->name : nulldevname;
-	outdev = out ? out->name : nulldevname;
-
 #ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
 	IP_NF_ASSERT(table->valid_hooks & (1 << hook));
 	local_bh_disable();
@@ -397,6 +393,10 @@ ipt_do_table(struct sk_buff *skb,
 		return verdict;
 	}
 #endif
+
+	ip = ip_hdr(skb);
+	indev = in ? in->name : nulldevname;
+	outdev = out ? out->name : nulldevname;
 
 	/* We handle fragments by dealing with the first fragment as
 	 * if it was a normal packet.  All other fragments are treated

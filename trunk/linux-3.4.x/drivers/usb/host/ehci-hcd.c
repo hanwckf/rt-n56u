@@ -503,7 +503,7 @@ static void ehci_shutdown(struct usb_hcd *hcd)
 	spin_unlock_irq(&ehci->lock);
 }
 
-static void ehci_port_power (struct ehci_hcd *ehci, int is_on)
+static void __maybe_unused ehci_port_power (struct ehci_hcd *ehci, int is_on)
 {
 	unsigned port;
 

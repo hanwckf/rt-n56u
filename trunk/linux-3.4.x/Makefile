@@ -1029,7 +1029,6 @@ headerdep:
 
 PHONY += depend dep
 depend dep:
-	@echo '*** Warning: make $@ is unnecessary now.'
 
 # ---------------------------------------------------------------------------
 # Firmware install

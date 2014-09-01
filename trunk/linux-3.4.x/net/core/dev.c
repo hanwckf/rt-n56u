@@ -2634,9 +2634,7 @@ static inline void ____napi_schedule(struct softnet_data *sd,
 	__raise_softirq_irqoff(NET_RX_SOFTIRQ);
 }
 
-#if IS_ENABLED(CONFIG_NET_CLS_FLOW)
-static
-#else
+#if !IS_ENABLED(CONFIG_NET_CLS_FLOW)
 static inline
 #endif
 bool skb_flow_dissect(const struct sk_buff *skb, struct flow_keys *flow)

@@ -2549,13 +2549,12 @@ ip:
 		ip = (const struct iphdr *) (skb->data + nhoff);
 		if (ip->ihl < 5)
 			goto done;
+		nhoff += iph->ihl * 4;
+		ip_proto = iph->protocol;
 		if (ip_is_fragment(ip))
 			ip_proto = 0;
-		else
-			ip_proto = ip->protocol;
 		addr1 = (__force u32) ip->saddr;
 		addr2 = (__force u32) ip->daddr;
-		nhoff += ip->ihl * 4;
 		break;
 	case __constant_htons(ETH_P_IPV6):
 ipv6:

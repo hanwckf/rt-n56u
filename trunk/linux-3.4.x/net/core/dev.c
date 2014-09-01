@@ -2641,9 +2641,6 @@ static inline
 #endif
 bool skb_flow_dissect(const struct sk_buff *skb, struct flow_keys *flow)
 {
-	BUILD_BUG_ON(offsetof(typeof(*flow), dst) !=
-		     offsetof(typeof(*flow), src) + sizeof(flow->src));
-
 	int poff, nhoff = skb_network_offset(skb);
 	u8 ip_proto;
 	__be16 proto = skb->protocol;
@@ -2745,7 +2742,11 @@ ipv6:
 		break;
 	}
 	case IPPROTO_IPIP:
-		goto again;
+		proto = __constant_htons(ETH_P_IP);
+		goto ip;
+	case IPPROTO_IPV6:
+		proto = __constant_htons(ETH_P_IPV6);
+		goto ipv6;
 	default:
 		break;
 	}

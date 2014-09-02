@@ -79,7 +79,7 @@ function initial(){
 		document.form.vpnc_type.remove(2);
 
 	if (fw_enable_x == "0")
-		showhide_div('row_vpnc_sfw', 0);
+		document.form.vpnc_sfw.remove(2);
 
 	change_vpnc_enabled();
 
@@ -517,7 +517,7 @@ function change_vpnc_ov_mode() {
                                         </select>
                                     </td>
                                 </tr>
-                                <tr id="row_vpnc_sfw">
+                                <tr>
                                     <th><#VPNC_SFW#></th>
                                     <td>
                                         <select name="vpnc_sfw" class="input">

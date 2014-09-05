@@ -386,21 +386,6 @@ EOF
 # Custom user conf file for OpenVPN server
 # Please add needed params only!
 
-### Authenticate packets with HMAC using message digest algorithm
-auth SHA1      # SHA1 160 bit (default)
-;auth SHA256    # SHA256 256 bit
-;auth SHA512    # SHA512 512 bit
-
-### Encrypt packets with cipher algorithm
-cipher BF-CBC        # Blowfish 128 bit (default)
-;cipher AES-128-CBC   # AES 128 bit
-;cipher AES-256-CBC   # AES 256 bit
-;cipher DES-EDE3-CBC  # Triple-DES 192 bit
-;cipher none          # No encryption
-
-### Enable LZO compression on the VPN link
-comp-lzo
-
 ### Max clients limit
 max-clients 10
 
@@ -428,21 +413,6 @@ EOF
 			cat > "$user_ovpncli_conf" <<EOF
 # Custom user conf file for OpenVPN client
 # Please add needed params only!
-
-### Authenticate packets with HMAC using message digest algorithm
-auth SHA1      # SHA1 160 bit (default)
-;auth SHA256    # SHA256 256 bit
-;auth SHA512    # SHA512 512 bit
-
-### Encrypt packets with cipher algorithm
-cipher BF-CBC        # Blowfish 128 bit (default)
-;cipher AES-128-CBC   # AES 128 bit
-;cipher AES-256-CBC   # AES 256 bit
-;cipher DES-EDE3-CBC  # Triple-DES 192 bit
-;cipher none          # No encryption
-
-### Enable LZO compression on the VPN link
-comp-lzo
 
 ### If your server certificates with the nsCertType field set to "server"
 ns-cert-type server

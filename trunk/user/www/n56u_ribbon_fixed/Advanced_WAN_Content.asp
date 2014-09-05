@@ -1020,7 +1020,7 @@ function simplyMAC(fullMAC){
                                             </td>
                                         </tr>
                                         <tr id="row_ppp_mppe">
-                                            <th><#VPNS_MPPE#></th>
+                                            <th><#VPNS_Ciph#></th>
                                             <td>
                                                 <select name="wan_ppp_mppe" class="input">
                                                     <option value="0" <% nvram_match_x("", "wan_ppp_mppe", "0","selected"); %>>No Encryption</option>

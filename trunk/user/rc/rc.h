@@ -121,7 +121,7 @@ char *mac_conv2(char *mac_name, int idx, char *buf);
 void get_eeprom_params(void);
 void char_to_ascii(char *output, char *input);
 unsigned int get_param_int_hex(const char *param);
-void load_user_config(FILE *fp, const char *dir_name, const char *file_name);
+void load_user_config(FILE *fp, const char *dir_name, const char *file_name, const char **forbid_list);
 int is_module_loaded(char *module_name);
 int get_module_refcount(char *module_name);
 int module_smart_load(char *module_name, char *module_param);

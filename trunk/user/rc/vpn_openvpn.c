@@ -61,16 +61,32 @@ static const char *openvpn_client_keys[4] = {
 	"ta.key"
 };
 
-static const char *env_ovpn[3]= {
+static const char *env_ovpn[3] = {
 	"dev",
 	"ifconfig_local",
 	"ifconfig_remote"
 };
 
-static const char *env_pppd[3]= {
+static const char *env_pppd[3] = {
 	"IFNAME",
 	"IPLOCAL",
 	"IPREMOTE"
+};
+
+static const char *forbidden_list[] = {
+	"dev ",
+	"proto ",
+	"topology ",
+	"server ",
+	"server-bridge ",
+	"tmp-dir ",
+	"writepid ",
+	"auth ",
+	"cipher ",
+	"comp-lzo",
+	"persist-key",
+	"persist-tun",
+	NULL
 };
 
 static int
@@ -129,8 +145,7 @@ openvpn_create_server_acl(FILE *fp, const char *ccd)
 		acl_user = nvram_safe_get(acl_user_var);
 		acl_rnet = nvram_safe_get(acl_rnet_var);
 		acl_rmsk = nvram_safe_get(acl_rmsk_var);
-		if (*acl_user && is_valid_ipv4(acl_rnet) && is_valid_ipv4(acl_rmsk))
-		{
+		if (*acl_user && is_valid_ipv4(acl_rnet) && is_valid_ipv4(acl_rmsk)) {
 			FILE *fp_ccf;
 			char ccf[80];
 			
@@ -163,6 +178,106 @@ openvpn_create_server_acl(FILE *fp, const char *ccd)
 			}
 		}
 	}
+}
+
+static void
+openvpn_add_auth(FILE *fp, int auth_idx)
+{
+	char *auth_str;
+
+	switch (auth_idx)
+	{
+	case 0:
+		auth_str = "MD5";
+		break;
+	case 1:
+		auth_str = "SHA1";
+		break;
+	case 2:
+		auth_str = "SHA224";
+		break;
+	case 3:
+		auth_str = "SHA256";
+		break;
+	case 4:
+		auth_str = "SHA384";
+		break;
+	case 5:
+		auth_str = "SHA512";
+		break;
+	default:
+		return;
+	}
+
+	fprintf(fp, "auth %s\n", auth_str);
+}
+
+static void
+openvpn_add_cipher(FILE *fp, int cipher_idx)
+{
+	char *cipher_str;
+
+	switch (cipher_idx)
+	{
+	case 0:
+		cipher_str = "none";
+		break;
+	case 1:
+		cipher_str = "DES-CBC";
+		break;
+	case 2:
+		cipher_str = "DES-EDE-CBC";
+		break;
+	case 3:
+		cipher_str = "BF-CBC";
+		break;
+	case 4:
+		cipher_str = "AES-128-CBC";
+		break;
+	case 5:
+		cipher_str = "AES-192-CBC";
+		break;
+	case 6:
+		cipher_str = "DES-EDE3-CBC";
+		break;
+	case 7:
+		cipher_str = "DESX-CBC";
+		break;
+	case 8:
+		cipher_str = "AES-256-CBC";
+		break;
+	default:
+		return;
+	}
+
+	fprintf(fp, "cipher %s\n", cipher_str);
+}
+
+static void
+openvpn_add_lzo(FILE *fp, int clzo_idx, int is_server_mode)
+{
+	char *clzo_str;
+
+	switch (clzo_idx)
+	{
+	case 1:
+		/* also use for obtain comp-lzo from server */
+		clzo_str = "no";
+		break;
+	case 2:
+		clzo_str = "adaptive";
+		break;
+	case 3:
+		clzo_str = "yes";
+		break;
+	default:
+		return;
+	}
+
+	fprintf(fp, "comp-lzo %s\n", clzo_str);
+
+	if (is_server_mode)
+		fprintf(fp, "push \"comp-lzo %s\"\n", clzo_str);
 }
 
 static int
@@ -220,6 +335,7 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 		
 		if (is_tun) {
 			char *vnet, *vmsk;
+			
 			vnet = nvram_safe_get("vpns_vnet");
 			vmsk = VPN_SERVER_SUBNET_MASK;
 			laddr = ntohl(inet_addr(vnet));
@@ -236,6 +352,10 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 			fprintf(fp, "dev %s\n", IFNAME_SERVER_TAP);
 			fprintf(fp, "server-bridge %s %s %s %s\n", lanip, lannm, pool1, pool2);
 		}
+		
+		openvpn_add_auth(fp, nvram_get_int("vpns_ov_mdig"));
+		openvpn_add_cipher(fp, nvram_get_int("vpns_ov_ciph"));
+		openvpn_add_lzo(fp, nvram_get_int("vpns_ov_clzo"), 1);
 		
 		if (i_rdgw) {
 			fprintf(fp, "push \"redirect-gateway def1 %s\"\n", "bypass-dhcp");
@@ -283,7 +403,7 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 		
 		fprintf(fp, "\n### User params:\n");
 		
-		load_user_config(fp, SERVER_CERT_DIR, "server.conf");
+		load_user_config(fp, SERVER_CERT_DIR, "server.conf", forbidden_list);
 		
 		fclose(fp);
 		
@@ -342,6 +462,10 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 		if (i_atls)
 			fprintf(fp, "tls-auth %s/%s %d\n", CLIENT_CERT_DIR, openvpn_client_keys[3], 1);
 		
+		openvpn_add_auth(fp, nvram_get_int("vpnc_ov_mdig"));
+		openvpn_add_cipher(fp, nvram_get_int("vpnc_ov_ciph"));
+		openvpn_add_lzo(fp, nvram_get_int("vpnc_ov_clzo"), 0);
+		
 		if (i_auth == 1) {
 			fprintf(fp, "auth-user-pass %s\n", "secret");
 			openvpn_create_client_secret("secret");
@@ -359,7 +483,7 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 		
 		fprintf(fp, "\n### User params:\n");
 		
-		load_user_config(fp, CLIENT_CERT_DIR, "client.conf");
+		load_user_config(fp, CLIENT_CERT_DIR, "client.conf", forbidden_list);
 		
 		fclose(fp);
 		

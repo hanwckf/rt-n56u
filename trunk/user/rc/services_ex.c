@@ -667,7 +667,7 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 			fprintf(fp, "  alias %s\n", ddns2_hname);
 		}
 		
-		load_user_config(fp, INADYN_USER_DIR, "inadyn.conf");
+		load_user_config(fp, INADYN_USER_DIR, "inadyn.conf", NULL);
 		
 		fclose(fp);
 		

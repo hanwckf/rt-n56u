@@ -284,17 +284,17 @@ function change_vpns_enabled(){
 
 function change_vpns_type(){
 	var mode = document.form.vpns_type.value;
-	if (mode == "2")
-		$("row_vpns_mppe").style.display = "none";
-	else
-		$("row_vpns_mppe").style.display = "";
-	
-	if (mode == "2" && !openvpn_srv_cert_found())
-		$("certs_hint").style.display = "";
-	else
-		$("certs_hint").style.display = "none";
-	
-	if (mode == "2") {
+	var is_ov = (mode == "2") ? 1 : 0;
+
+	showhide_div('row_vpns_mppe', !is_ov);
+
+	showhide_div('row_vpns_ov_mdig', is_ov);
+	showhide_div('row_vpns_ov_ciph', is_ov);
+	showhide_div('row_vpns_ov_clzo', is_ov);
+
+	showhide_div('certs_hint', is_ov && !openvpn_srv_cert_found());
+
+	if (is_ov) {
 		showhide_div('row_vpns_auth', 0);
 		showhide_div('row_vpns_cast', 0);
 		showhide_div('row_vpns_mtu', 0);
@@ -689,7 +689,7 @@ function createBodyTable()
                                     </td>
                                 </tr>
                                 <tr id="row_vpns_mppe">
-                                    <th><#VPNS_MPPE#></th>
+                                    <th><#VPNS_Ciph#></th>
                                     <td>
                                         <select name="vpns_mppe" class="input">
                                             <option value="0" <% nvram_match_x("", "vpns_mppe", "0","selected"); %>>Auto</option>
@@ -756,6 +756,46 @@ function createBodyTable()
                                     <td>
                                         <input type="text" maxlength="5" size="5" name="vpns_ov_port" class="input" value="<% nvram_get_x("", "vpns_ov_port"); %>" onkeypress="return is_number(this)">
                                         &nbsp;<span style="color:#888;">[ 1194 ]</span>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpns_ov_mdig" style="display:none">
+                                    <th><#VPNS_Auth#></th>
+                                    <td>
+                                        <select name="vpns_ov_mdig" class="input">
+                                            <option value="0" <% nvram_match_x("", "vpns_ov_mdig", "0","selected"); %>>[MD5] MD-5, 128 bit</option>
+                                            <option value="1" <% nvram_match_x("", "vpns_ov_mdig", "1","selected"); %>>[SHA1] SHA-1, 160 bit (*)</option>
+                                            <option value="2" <% nvram_match_x("", "vpns_ov_mdig", "2","selected"); %>>[SHA224] SHA-224, 224 bit</option>
+                                            <option value="3" <% nvram_match_x("", "vpns_ov_mdig", "3","selected"); %>>[SHA256] SHA-256, 256 bit</option>
+                                            <option value="4" <% nvram_match_x("", "vpns_ov_mdig", "4","selected"); %>>[SHA384] SHA-384, 384 bit</option>
+                                            <option value="5" <% nvram_match_x("", "vpns_ov_mdig", "5","selected"); %>>[SHA512] SHA-512, 512 bit</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpns_ov_ciph" style="display:none">
+                                    <th><#VPNS_Ciph#></th>
+                                    <td>
+                                        <select name="vpns_ov_ciph" class="input">
+                                            <option value="0" <% nvram_match_x("", "vpns_ov_ciph", "0","selected"); %>>[none]</option>
+                                            <option value="1" <% nvram_match_x("", "vpns_ov_ciph", "1","selected"); %>>[DES-CBC] DES, 64 bit</option>
+                                            <option value="2" <% nvram_match_x("", "vpns_ov_ciph", "2","selected"); %>>[DES-EDE-CBC] 3DES, 128 bit</option>
+                                            <option value="3" <% nvram_match_x("", "vpns_ov_ciph", "3","selected"); %>>[BF-CBC] Blowfish, 128 bit (*)</option>
+                                            <option value="4" <% nvram_match_x("", "vpns_ov_ciph", "4","selected"); %>>[AES-128-CBC] AES, 128 bit</option>
+                                            <option value="5" <% nvram_match_x("", "vpns_ov_ciph", "5","selected"); %>>[AES-192-CBC] AES, 192 bit</option>
+                                            <option value="6" <% nvram_match_x("", "vpns_ov_ciph", "6","selected"); %>>[DES-EDE3-CBC] 3DES, 192 bit</option>
+                                            <option value="7" <% nvram_match_x("", "vpns_ov_ciph", "7","selected"); %>>[DESX-CBC] DES-X, 192 bit</option>
+                                            <option value="8" <% nvram_match_x("", "vpns_ov_ciph", "8","selected"); %>>[AES-256-CBC] AES, 256 bit</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpns_ov_clzo" style="display:none">
+                                    <th><#OVPN_CLZO#></th>
+                                    <td>
+                                        <select name="vpns_ov_clzo" class="input">
+                                            <option value="0" <% nvram_match_x("", "vpns_ov_clzo", "0","selected"); %>><#btn_Disable#></option>
+                                            <option value="1" <% nvram_match_x("", "vpns_ov_clzo", "1","selected"); %>><#checkbox_No#></option>
+                                            <option value="2" <% nvram_match_x("", "vpns_ov_clzo", "2","selected"); %>><#OVPN_CLZO_Item2#> (*)</option>
+                                            <option value="3" <% nvram_match_x("", "vpns_ov_clzo", "3","selected"); %>><#OVPN_CLZO_Item3#></option>
+                                        </select>
                                     </td>
                                 </tr>
                                 <tr id="row_vpns_ov_atls" style="display:none" onchange="change_vpns_ov_atls();">

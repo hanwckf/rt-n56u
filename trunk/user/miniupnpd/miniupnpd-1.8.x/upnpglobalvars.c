@@ -92,11 +92,11 @@ const char * tag = 0;
 #ifdef USE_NETFILTER
 /* chain name to use, both in the nat table
  * and the filter table */
-const char * miniupnpd_nat_chain = "UPNP";
-const char * miniupnpd_peer_chain = "UPNP-PEER";
-const char * miniupnpd_forward_chain = "UPNP";
+const char * miniupnpd_nat_chain = "upnp";
+const char * miniupnpd_peer_chain = "upnp-peer";
+const char * miniupnpd_forward_chain = "upnp";
 #ifdef ENABLE_UPNPPINHOLE
-const char * miniupnpd_v6_filter_chain = "UPNP";
+const char * miniupnpd_v6_filter_chain = "upnp";
 #endif
 
 #endif

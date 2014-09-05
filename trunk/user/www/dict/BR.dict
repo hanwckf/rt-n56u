@@ -1345,7 +1345,6 @@ GO_5G=Ir para a configuração do 5 GHz
 [new strings]
 ChooseFile=Choose file
 Settings=Settings
-ConClients=Connected clients
 IPLocal=IP (local)
 IPRemote=IP (remote)
 Login=Login

@@ -40,26 +40,16 @@
         });
         $j("#vpnc_enable_on_of label.itoggle").css("background-position", $j("input#vpnc_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
-        $j('#tab_vpn_config').click(function(){
-            $j(this).parents('ul').find('li').removeClass('active');
-            $j(this).parent().addClass('active');
-
-            $j('#wnd_vpn_config').show();
-            $j('#wnd_ssl_certs').hide();
+        $j("#tab_vpnc_cfg, #tab_vpnc_ssl").click(function(){
+            var newHash = $j(this).attr('href').toLowerCase();
+            showTab(newHash);
 
             return false;
         });
 
-        $j('#tab_ssl_certs').click(function(){
-            $j(this).parents('ul').find('li').removeClass('active');
-            $j(this).parent().addClass('active');
-
-            $j('#wnd_ssl_certs').show();
-            $j('#wnd_vpn_config').hide();
-
-            return false;
-        });
+        showTab(getHash());
     });
+
 </script>
 <script>
 
@@ -101,11 +91,6 @@ function applyRule(){
 		
 		document.form.submit();
 	}
-}
-
-function applyRule2(){
-	$j('#tab_vpn_config').click();
-	applyRule();
 }
 
 function valid_rlan_subnet(oa, om){
@@ -189,7 +174,7 @@ function change_vpnc_enabled() {
 	showhide_div('tbl_vpnc_server', v);
 
 	if (v == 0){
-		showhide_div('tab_ssl_certs', 0);
+		showhide_div('tab_vpnc_ssl', 0);
 		showhide_div('tbl_vpnc_route', 0);
 		textarea_enabled(0);
 	}else{
@@ -201,53 +186,39 @@ function change_vpnc_type() {
 	var mode = document.form.vpnc_type.value;
 	var is_ov = (mode == "2") ? 1 : 0;
 
-	showhide_div('row_vpnc_mppe', is_ov);
+	showhide_div('row_vpnc_auth', !is_ov);
+	showhide_div('row_vpnc_mppe', !is_ov);
+	showhide_div('row_vpnc_pppd', !is_ov);
+	showhide_div('row_vpnc_mtu', !is_ov);
+	showhide_div('row_vpnc_mru', !is_ov);
+	showhide_div('tbl_vpnc_route', !is_ov);
 
+	showhide_div('row_vpnc_ov_port', is_ov);
+	showhide_div('row_vpnc_ov_prot', is_ov);
+	showhide_div('row_vpnc_ov_auth', is_ov);
 	showhide_div('row_vpnc_ov_mdig', is_ov);
 	showhide_div('row_vpnc_ov_ciph', is_ov);
 	showhide_div('row_vpnc_ov_clzo', is_ov);
+	showhide_div('row_vpnc_ov_atls', is_ov);
+	showhide_div('row_vpnc_ov_mode', is_ov);
+	showhide_div('row_vpnc_ov_conf', is_ov);
+	showhide_div('tab_vpnc_ssl', is_ov);
 	showhide_div('certs_hint', (is_ov && !openvpn_cli_cert_found()) ? 1 : 0);
 
 	if (is_ov) {
-		showhide_div('row_vpnc_auth', 0);
-		showhide_div('row_vpnc_pppd', 0);
-		showhide_div('row_vpnc_mtu', 0);
-		showhide_div('row_vpnc_mru', 0);
-		showhide_div('tbl_vpnc_route', 0);
-		
-		showhide_div('row_vpnc_ov_port', 1);
-		showhide_div('row_vpnc_ov_prot', 1);
-		showhide_div('row_vpnc_ov_auth', 1);
-		showhide_div('row_vpnc_ov_atls', 1);
-		showhide_div('row_vpnc_ov_mode', 1);
-		showhide_div('row_vpnc_ov_conf', 1);
-		showhide_div('tab_ssl_certs', 1);
-		
-		textarea_enabled(1);
-		
 		change_vpnc_ov_auth();
 		change_vpnc_ov_atls();
 		change_vpnc_ov_mode();
+		
+		textarea_enabled(1);
 	}
 	else {
-		showhide_div('row_vpnc_ov_port', 0);
-		showhide_div('row_vpnc_ov_prot', 0);
-		showhide_div('row_vpnc_ov_auth', 0);
-		showhide_div('row_vpnc_ov_atls', 0);
-		showhide_div('row_vpnc_ov_mode', 0);
+		textarea_enabled(0);
+		
 		showhide_div('row_vpnc_ov_cnat', 0);
-		showhide_div('row_vpnc_ov_conf', 0);
-		showhide_div('tab_ssl_certs', 0);
 		
 		showhide_div('row_vpnc_user', 1);
 		showhide_div('row_vpnc_pass', 1);
-		showhide_div('row_vpnc_auth', 1);
-		showhide_div('row_vpnc_pppd', 1);
-		showhide_div('row_vpnc_mtu', 1);
-		showhide_div('row_vpnc_mru', 1);
-		showhide_div('tbl_vpnc_route', 1);
-		
-		textarea_enabled(0);
 	}
 
 	showhide_div('col_vpnc_state', (vpnc_state_last == '1') ? 1 : 0);
@@ -271,6 +242,30 @@ function change_vpnc_ov_atls() {
 
 function change_vpnc_ov_mode() {
 	showhide_div('row_vpnc_ov_cnat', (document.form.vpnc_ov_mode.value == "1") ? 0 : 1);
+}
+
+var arrHashes = ["cfg", "ssl"];
+
+function showTab(curHash){
+	for(var i = 0; i < arrHashes.length; i++){
+		if(curHash == ('#'+arrHashes[i])){
+			$j('#tab_vpnc_'+arrHashes[i]).parents('li').addClass('active');
+			$j('#wnd_vpnc_'+arrHashes[i]).show();
+		}else{
+			$j('#wnd_vpnc_'+arrHashes[i]).hide();
+			$j('#tab_vpnc_'+arrHashes[i]).parents('li').removeClass('active');
+		}
+	}
+	window.location.hash = curHash;
+}
+
+function getHash(){
+	var curHash = window.location.hash.toLowerCase();
+	for(var i = 0; i < arrHashes.length; i++){
+		if(curHash == ('#'+arrHashes[i]))
+			return curHash;
+	}
+	return ('#'+arrHashes[0]);
 }
 
 </script>
@@ -342,15 +337,15 @@ function change_vpnc_ov_mode() {
                         <div>
                             <ul class="nav nav-tabs" style="margin-bottom: 10px;">
                                 <li class="active">
-                                    <a id="tab_vpn_config" href="#"><#Settings#></a>
+                                    <a id="tab_vpnc_cfg" href="#cfg"><#Settings#></a>
                                 </li>
                                 <li>
-                                    <a id="tab_ssl_certs" href="#" style="display:none"><#OVPN_Cert#></a>
+                                    <a id="tab_vpnc_ssl" href="#ssl" style="display:none"><#OVPN_Cert#></a>
                                 </li>
                             </ul>
                         </div>
 
-                        <div id="wnd_vpn_config">
+                        <div id="wnd_vpnc_cfg">
                             <div class="alert alert-info" style="margin: 10px;"><#VPNC_Info#></div>
                             <table class="table">
                                 <tr>
@@ -406,8 +401,17 @@ function change_vpnc_ov_mode() {
                                         </select>
                                     </td>
                                 </tr>
+                                <tr id="row_vpnc_ov_mode" style="display:none">
+                                    <th><#OVPN_Mode#></th>
+                                    <td>
+                                        <select name="vpnc_ov_mode" class="input" onchange="change_vpnc_ov_mode();">
+                                            <option value="0" <% nvram_match_x("", "vpnc_ov_mode", "0","selected"); %>>L2 - TAP (Ethernet)</option>
+                                            <option value="1" <% nvram_match_x("", "vpnc_ov_mode", "1","selected"); %>>L3 - TUN (IP)</option>
+                                        </select>
+                                    </td>
+                                </tr>
                                 <tr id="row_vpnc_ov_auth" style="display:none">
-                                    <th><#VPNS_Auth#></th>
+                                    <th><#OVPN_Auth#></th>
                                     <td>
                                         <select name="vpnc_ov_auth" class="input" onchange="change_vpnc_ov_auth();">
                                             <option value="0" <% nvram_match_x("", "vpnc_ov_auth", "0","selected"); %>>TLS: client.crt/client.key</option>
@@ -517,16 +521,7 @@ function change_vpnc_ov_mode() {
                                     <td>
                                         <select name="vpnc_ov_atls" class="input" onchange="change_vpnc_ov_atls();">
                                             <option value="0" <% nvram_match_x("", "vpnc_ov_atls", "0","selected"); %>><#checkbox_No#></option>
-                                            <option value="1" <% nvram_match_x("", "vpnc_ov_atls", "1","selected"); %>><#checkbox_Yes#></option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr id="row_vpnc_ov_mode" style="display:none">
-                                    <th><#OVPN_Mode#></th>
-                                    <td>
-                                        <select name="vpnc_ov_mode" class="input" onchange="change_vpnc_ov_mode();">
-                                            <option value="0" <% nvram_match_x("", "vpnc_ov_mode", "0","selected"); %>>L2 - TAP (Ethernet)</option>
-                                            <option value="1" <% nvram_match_x("", "vpnc_ov_mode", "1","selected"); %>>L3 - TUN (IP)</option>
+                                            <option value="1" <% nvram_match_x("", "vpnc_ov_atls", "1","selected"); %>><#OVPN_HMAC_Item1#></option>
                                         </select>
                                     </td>
                                 </tr>
@@ -609,36 +604,36 @@ function change_vpnc_ov_mode() {
                             </table>
                         </div>
 
-                        <div id="wnd_ssl_certs" style="display:none">
+                        <div id="wnd_vpnc_ssl" style="display:none">
                             <table class="table">
                                 <tr>
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
-                                        <span class="caption-bold">Root CA Certificate:</span>
+                                        <span class="caption-bold">ca.crt (Root CA Certificate):</span>
                                         <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpncli.ca.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpncli.ca.crt",""); %></textarea>
                                     </td>
                                 </tr>
                                 <tr id="row_client_crt">
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
-                                        <span class="caption-bold">Client Certificate:</span>
+                                        <span class="caption-bold">client.crt (Client Certificate):</span>
                                         <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpncli.client.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpncli.client.crt",""); %></textarea>
                                     </td>
                                 </tr>
                                 <tr id="row_client_key">
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
-                                        <span class="caption-bold">Client Private Key (secret):</span>
+                                        <span class="caption-bold">client.key (Client Private Key) - secret:</span>
                                         <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpncli.client.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpncli.client.key",""); %></textarea>
                                     </td>
                                 </tr>
                                 <tr id="row_ta_key">
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
-                                        <span class="caption-bold">TLS Auth Key (secret):</span>
+                                        <span class="caption-bold">ta.key (TLS Auth Key) - secret:</span>
                                         <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpncli.ta.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpncli.ta.key",""); %></textarea>
                                     </td>
                                 </tr>
                             </table>
                             <table class="table">
                                 <tr>
-                                    <td style="border: 0 none;"><center><input name="button2" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule2();" value="<#CTL_apply#>"/></center></td>
+                                    <td style="border: 0 none;"><center><input name="button2" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
                                 </tr>
                             </table>
                         </div>

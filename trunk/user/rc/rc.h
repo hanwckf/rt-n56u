@@ -58,6 +58,15 @@
 #define VPN_CLIENT_PPPD_OPTIONS		"/tmp/ppp/options.vpnc"
 #define VPN_CLIENT_UPDOWN_SCRIPT	"/etc/storage/vpnc_server_script.sh"
 
+#define IPT_CHAIN_NAME_VPN_LIST		"vpnlist"
+#define IPT_CHAIN_NAME_MAC_LIST		"maclist"
+#define IPT_CHAIN_NAME_URL_LIST		"urllist"
+#define IPT_CHAIN_NAME_BFP_LIMIT	"bfplimit"
+#define IPT_CHAIN_NAME_DOS_LIMIT	"doslimit"
+#define IPT_CHAIN_NAME_LOG_ACCEPT	"logaccept"
+#define IPT_CHAIN_NAME_LOG_DROP		"logdrop"
+#define IPT_CHAIN_NAME_VSERVER		"vserver"
+
 #define MODEM_NODE_DIR			"/tmp/modem"
 #define PPP_PEERS_DIR			"/tmp/ppp/peers"
 
@@ -327,7 +336,6 @@ void ip6t_filter_default(void);
 int start_vpn_server(void);
 void stop_vpn_server(void);
 void restart_vpn_server(void);
-void vpns_firewall_permission(char *ifname, int add);
 void vpns_route_to_remote_lan(const char *cname, char *ifname, char *gw, int add);
 int ipup_vpns_main(int argc, char **argv);
 int ipdown_vpns_main(int argc, char **argv);

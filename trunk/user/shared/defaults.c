@@ -616,6 +616,7 @@ struct nvram_pair router_defaults[] = {
 	{ "vpns_mru", "1450" },
 	{ "vpns_vuse", "0" },
 	{ "vpns_vnet", "10.8.0.0" },
+	{ "vpns_actl", "0" },
 	{ "vpns_cli0", "245" },
 	{ "vpns_cli1", "254" },
 	{ "vpns_num_x", "0" },

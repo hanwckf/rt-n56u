@@ -482,6 +482,7 @@
 			{"vpns_mru", "", NULL, RESTART_VPNSVR},
 			{"vpns_vuse", "", NULL, RESTART_VPNSVR},
 			{"vpns_vnet", "", NULL, RESTART_VPNSVR},
+			{"vpns_actl", "", NULL, RESTART_FIREWALL},
 			{"vpns_cli0", "", NULL, RESTART_VPNSVR},
 			{"vpns_cli1", "", NULL, RESTART_VPNSVR},
 			{"vpnc_enable", "", NULL, RESTART_VPNCLI},

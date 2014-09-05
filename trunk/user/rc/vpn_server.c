@@ -307,28 +307,10 @@ restart_vpn_server(void)
 		safe_start_xl2tpd();
 }
 
-void
+static void
 vpns_firewall_permission(char *ifname, int add)
 {
-	char *logaccept;
-
-	if (!nvram_match("fw_enable_x", "1"))
-		return;
-
-	logaccept = "ACCEPT";
-
-	if (add) {
-		int manual_idx;
-		
-		manual_idx = nvram_safe_get_int("ipt_input_t", 5, 5, 10);
-		doSystem("%s -I %s %d -i %s -j %s", "/bin/iptables", "INPUT", manual_idx, ifname, logaccept);
-		
-		manual_idx = nvram_safe_get_int("ipt_forward_t", 4, 4, 10);
-		doSystem("%s -I %s %d -i %s -j %s", "/bin/iptables", "FORWARD", manual_idx, ifname, logaccept);
-	} else {
-		doSystem("%s -D %s -i %s -j %s", "/bin/iptables", "INPUT", ifname, logaccept);
-		doSystem("%s -D %s -i %s -j %s", "/bin/iptables", "FORWARD", ifname, logaccept);
-	}
+	doSystem("/bin/iptables -%s %s -i %s -j %s", (add) ? "A" : "D", IPT_CHAIN_NAME_VPN_LIST, ifname, "ACCEPT");
 }
 
 void

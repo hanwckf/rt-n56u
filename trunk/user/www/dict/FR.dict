@@ -1351,7 +1351,6 @@ GO_5G=Allez dans les 5GHz avancés
 [new strings]
 ChooseFile=Choose file
 Settings=Settings
-ConClients=Connected clients
 IPLocal=IP (local)
 IPRemote=IP (remote)
 Login=Login

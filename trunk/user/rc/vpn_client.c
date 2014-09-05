@@ -71,7 +71,7 @@ start_vpn_client(void)
 		return 1;
 
 	vpnc_peer = nvram_safe_get("vpnc_peer");
-	if (!(*vpnc_peer)) {
+	if (strlen(vpnc_peer) < 1) {
 		logmessage(VPNC_LOG_NAME, "Unable to start - remote server host is not defined!");
 		return 1;
 	}
@@ -230,7 +230,7 @@ stop_vpn_client(void)
 	unlink(VPNC_PPP_DW_SCRIPT);
 }
 
-static void 
+static void
 stop_vpn_client_force(void)
 {
 	if (get_xl2tpd_vpnc_active()) {
@@ -240,7 +240,7 @@ stop_vpn_client_force(void)
 	}
 }
 
-void 
+void
 restart_vpn_client(void)
 {
 	xl2tpd_killed_vpnc = 0;
@@ -250,6 +250,7 @@ restart_vpn_client(void)
 
 	restore_dns_from_vpnc();
 
+	sleep(1);
 	start_vpn_client();
 
 	restart_firewall();

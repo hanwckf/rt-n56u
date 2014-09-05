@@ -1790,24 +1790,6 @@ ipt_nat_rules(char *man_if, char *man_ip,
 		/* masquerade WAN connection for LAN clients */
 		include_masquerade(fp, wan_if, wan_ip, lan_net);
 		
-		/* masquerade WAN connection for VPN server clients */
-		if (i_vpns_enable) {
-			char vpn_net[24] = {0};
-			ip2class(nvram_safe_get("vpns_vnet"), VPN_SERVER_SUBNET_MASK, vpn_net, sizeof(vpn_net));
-			if (strcmp(vpn_net, lan_net) != 0) {
-#if defined (APP_OPENVPN)
-				if (i_vpns_type == 2) {
-					if (nvram_get_int("vpns_ov_mode") == 1)
-						include_masquerade(fp, wan_if, wan_ip, vpn_net);
-				} else
-#endif
-				{
-					if (nvram_get_int("vpns_vuse"))
-						include_masquerade(fp, wan_if, wan_ip, vpn_net);
-				}
-			}
-		}
-		
 		/* masquerade MAN connection for LAN clients */
 		if (use_man)
 			include_masquerade(fp, man_if, man_ip, lan_net);
@@ -1824,6 +1806,34 @@ ipt_nat_rules(char *man_if, char *man_ip,
 #endif
 			{
 				include_masquerade(fp, IFNAME_CLIENT_PPP, NULL, lan_net);
+			}
+		}
+		
+		/* masquerade WAN connection for VPN server clients */
+		if (i_vpns_enable) {
+			char vpn_net[24] = {0};
+			ip2class(nvram_safe_get("vpns_vnet"), VPN_SERVER_SUBNET_MASK, vpn_net, sizeof(vpn_net));
+			if (strcmp(vpn_net, lan_net) != 0) {
+				int i_vpns_vuse = nvram_get_int("vpns_vuse");
+#if defined (APP_OPENVPN)
+				if (i_vpns_type == 2) {
+					if (nvram_get_int("vpns_ov_mode") == 1) {
+						include_masquerade(fp, wan_if, wan_ip, vpn_net);
+						
+						/* masquerade VPN server clients to LAN */
+						if (i_vpns_vuse == 2)
+							include_masquerade(fp, lan_if, lan_ip, vpn_net);
+					}
+				} else
+#endif
+				{
+					if (i_vpns_vuse)
+						include_masquerade(fp, wan_if, wan_ip, vpn_net);
+					
+					/* masquerade VPN server clients to LAN */
+					if (i_vpns_vuse == 2)
+						include_masquerade(fp, lan_if, lan_ip, vpn_net);
+				}
 			}
 		}
 		

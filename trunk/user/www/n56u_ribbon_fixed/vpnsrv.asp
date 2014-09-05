@@ -83,6 +83,7 @@
 lan_ipaddr_x = '<% nvram_get_x("", "lan_ipaddr"); %>';
 lan_netmask_x = '<% nvram_get_x("", "lan_netmask"); %>';
 vpn_ipvnet_x = '<% nvram_get_x("", "vpns_vnet"); %>';
+vpn_ipvuse_x = '<% nvram_get_x("", "vpns_vuse"); %>';
 dhcp_enable_x = '<% nvram_get_x("", "dhcp_enable_x"); %>';
 
 var ACLList = [<% get_nvram_list("LANHostConfig", "VPNSACLList", "vpns_pass_x"); %>];
@@ -206,7 +207,7 @@ function validForm(){
 		if(!validate_range(document.form.vpns_mru, 1000, 1460))
 			return false;
 		
-		if (document.form.vpns_vuse.value == "1")
+		if (document.form.vpns_vuse.value != "0")
 			return valid_vpn_subnet(document.form.vpns_vnet);
 	}
 
@@ -285,6 +286,13 @@ function change_vpns_enabled(){
 function change_vpns_type(){
 	var mode = document.form.vpns_type.value;
 	var is_ov = (mode == "2") ? 1 : 0;
+
+	var o = document.form.vpns_vuse;
+	free_options(o);
+	if (!is_ov)
+		add_option(o, "<#VPNS_VUse_Item0#>", "0", (vpn_ipvuse_x == '0') ? 1 : 0);
+	add_option(o, "<#VPNS_VUse_Item1#>", "1", (vpn_ipvuse_x == '1') ? 1 : 0);
+	add_option(o, "<#VPNS_VUse_Item2#>", "2", (vpn_ipvuse_x == '2') ? 1 : 0);
 
 	showhide_div('row_vpns_mppe', !is_ov);
 
@@ -728,8 +736,6 @@ function createBodyTable()
                                     <th><#VPNS_VUse#></th>
                                     <td>
                                         <select name="vpns_vuse" class="input" onchange="change_vpns_vnet_enable();">
-                                            <option value="0" <% nvram_match_x("", "vpns_vuse", "0","selected"); %>><#checkbox_No#></option>
-                                            <option value="1" <% nvram_match_x("", "vpns_vuse", "1","selected"); %>><#checkbox_Yes#></option>
                                         </select>
                                     </td>
                                 </tr>

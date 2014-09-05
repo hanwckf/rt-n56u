@@ -77,7 +77,7 @@ start_vpn_server(void)
 
 	lanip  = nvram_safe_get("lan_ipaddr");
 
-	if (!i_vuse)
+	if (i_vuse == 0)
 	{
 		laddr = ntohl(inet_addr(lanip));
 		lmask = ntohl(inet_addr(nvram_safe_get("lan_netmask")));
@@ -192,7 +192,7 @@ start_vpn_server(void)
 	fprintf(fp, "ipcp-accept-remote ipcp-accept-local\n");
 	fprintf(fp, "nodefaultroute\n");
 
-	if (!i_vuse)
+	if (i_vuse == 0)
 		fprintf(fp, "proxyarp\n");
 
 	if (i_type == 1) {
@@ -350,8 +350,7 @@ vpns_route_to_remote_lan(const char *cname, char *ifname, char *gw, int add)
 		acl_user = nvram_safe_get(acl_user_var);
 		acl_rnet = nvram_safe_get(acl_rnet_var);
 		acl_rmsk = nvram_safe_get(acl_rmsk_var);
-		if (*acl_user && strcmp(acl_user, cname) == 0 && is_valid_ipv4(acl_rnet) && is_valid_ipv4(acl_rmsk))
-		{
+		if (*acl_user && strcmp(acl_user, cname) == 0 && is_valid_ipv4(acl_rnet) && is_valid_ipv4(acl_rmsk)) {
 			if (!is_same_subnet2(acl_rnet, lnet, acl_rmsk, lmsk)) {
 				if (add)
 					route_add(ifname, 0, acl_rnet, gw, acl_rmsk);
@@ -382,11 +381,17 @@ ipup_vpns_main(int argc, char **argv)
 
 	umask(0000);
 
+	/* add firewall permission for this client */
 	vpns_firewall_permission(argv[1], 1);
 
 	i_vuse = nvram_get_int("vpns_vuse");
-	if (i_vuse)
-		vpns_route_to_remote_lan(peer_name, argv[1], NULL, 1);
+	if (i_vuse) {
+		/* disable multicast flag */
+		doSystem("ifconfig %s %s", argv[1], "-multicast");
+	}
+
+	/* add route to client's LAN */
+	vpns_route_to_remote_lan(peer_name, argv[1], NULL, 1);
 
 	fp = fopen(VPN_SERVER_LEASE_FILE, "a+");
 	if (fp) {
@@ -394,7 +399,7 @@ ipup_vpns_main(int argc, char **argv)
 		fclose(fp);
 	}
 
-	if (!i_vuse && !pids("bcrelay")) {
+	if (i_vuse == 0 && !pids("bcrelay")) {
 		i_cast = nvram_get_int("vpns_cast");
 		if (i_cast == 1 || i_cast == 3)
 			eval("/usr/sbin/bcrelay", "-d", "-i", IFNAME_BR, "-o", "ppp[1-5][0-9]", "-n");
@@ -430,9 +435,7 @@ ipdown_vpns_main(int argc, char **argv)
 	umask(0000);
 
 	vpns_firewall_permission(argv[1], 0);
-
-	if (nvram_get_int("vpns_vuse"))
-		vpns_route_to_remote_lan(peer_name, argv[1], NULL, 0);
+	vpns_route_to_remote_lan(peer_name, argv[1], NULL, 0);
 
 	i_clients = 0;
 	fp1 = fopen(clients_l1, "r");

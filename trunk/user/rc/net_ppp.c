@@ -71,7 +71,7 @@ safe_start_xl2tpd(void)
 		unsigned int laddr, lmask, lsnet;
 		struct in_addr pool_in;
 		
-		if (!nvram_get_int("vpns_vuse"))
+		if (nvram_get_int("vpns_vuse") == 0)
 		{
 			laddr = ntohl(inet_addr(nvram_safe_get("lan_ipaddr")));
 			lmask = ntohl(inet_addr(nvram_safe_get("lan_netmask")));

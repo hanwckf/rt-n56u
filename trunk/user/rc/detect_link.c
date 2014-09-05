@@ -372,6 +372,7 @@ int
 detect_link_main(int argc, char *argv[])
 {
 	FILE *fp;
+	pid_t pid;
 	struct sigaction sa;
 
 	memset(&sa, 0, sizeof(sa));
@@ -396,9 +397,14 @@ detect_link_main(int argc, char *argv[])
 		exit(errno);
 	}
 
+	pid = getpid();
+
+	/* never invoke oom killer */
+	oom_score_adjust(pid, OOM_SCORE_ADJ_MIN);
+
 	/* write pid */
 	if ((fp=fopen(DL_PID_FILE, "w"))!=NULL) {
-		fprintf(fp, "%d", getpid());
+		fprintf(fp, "%d", pid);
 		fclose(fp);
 	}
 

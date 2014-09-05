@@ -21,6 +21,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <linux/oom.h>
 
 #include <ralink_boards.h>
 #include <netutils.h>
@@ -127,6 +128,7 @@ int module_smart_load(char *module_name, char *module_param);
 int module_smart_unload(char *module_name, int recurse_unload);
 int module_param_get(char *module_name, char *module_param, char *param_value, size_t param_value_size);
 int module_param_set_int(char *module_name, char *module_param, int param_value);
+void oom_score_adjust(pid_t pid, int oom_score_adj);
 void kill_services(char* svc_name[], int wtimeout, int forcekill);
 int kill_process_pidfile(char *pidfile, int wtimeout, int forcekill);
 int create_file(const char *fn);

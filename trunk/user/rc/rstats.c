@@ -403,6 +403,7 @@ void notify_rstats_time(void)
 int rstats_main(int argc, char *argv[])
 {
 	struct sigaction sa;
+	pid_t pid;
 	long z;
 
 	printf("rstats\nCopyright (C) 2006-2009 Jonathan Zarate\n\n");
@@ -420,6 +421,11 @@ int rstats_main(int argc, char *argv[])
 		perror("daemon");
 		exit(errno);
 	}
+
+	pid = getpid();
+
+	/* never invoke oom killer */
+	oom_score_adjust(pid, OOM_SCORE_ADJ_MIN);
 
 	clear_history();
 	load_history();

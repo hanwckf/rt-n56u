@@ -395,6 +395,7 @@ int
 detect_internet_main(int argc, char *argv[])
 {
 	FILE *fp;
+	pid_t pid;
 	int c, auto_run_time = 0;
 	struct sigaction sa;
 
@@ -431,9 +432,14 @@ detect_internet_main(int argc, char *argv[])
 		exit(errno);
 	}
 
+	pid = getpid();
+
+	/* never invoke oom killer */
+	oom_score_adjust(pid, OOM_SCORE_ADJ_MIN);
+
 	/* write pid */
 	if ((fp = fopen(DI_PID_FILE, "w")) != NULL) {
-		fprintf(fp, "%d", getpid());
+		fprintf(fp, "%d", pid);
 		fclose(fp);
 	}
 

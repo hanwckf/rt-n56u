@@ -545,6 +545,15 @@ int module_param_set_int(char *module_name, char *module_param, int param_value)
 	return 0;
 }
 
+void
+oom_score_adjust(pid_t pid, int oom_score_adj)
+{
+	char proc_path[40];
+
+	snprintf(proc_path, sizeof(proc_path), "/proc/%u/oom_score_adj", pid);
+	fput_int(proc_path, oom_score_adj);
+}
+
 void kill_services(char* svc_name[], int wtimeout, int forcekill)
 {
 	int i, k, i_waited, i_killed;

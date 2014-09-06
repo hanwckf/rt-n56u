@@ -215,8 +215,8 @@ function BuildTree(){
 		var shown_ItemText = "";
 		
 		if(layer == 3){
-			if(ItemText.length > 14)
-		 		short_ItemText = ItemText.substring(0,11)+"...";
+			if(ItemText.length > 19)
+		 		short_ItemText = ItemText.substring(0,16)+"...";
 		 	else
 		 		short_ItemText = ItemText;
 		 	

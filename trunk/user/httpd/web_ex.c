@@ -4669,8 +4669,11 @@ static int ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv)
 
 	first = 1;
 	if (strcmp(acc_mode, "ftp") == 0) {
-		first = 0;
-		websWrite(wp, "\"%s\"", FTP_ANONYMOUS_USER);
+		int st_ftp_mode = nvram_get_int("st_ftp_mode");
+		if (st_ftp_mode == 3 || st_ftp_mode == 4) {
+			first = 0;
+			websWrite(wp, "\"%s\"", FTP_ANONYMOUS_USER);
+		}
 	}
 
 	get_account_list(&acc_num, &account_list);
@@ -4679,11 +4682,10 @@ static int ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv)
 			first = 0;
 		else
 			websWrite(wp, ", ");
-
 		websWrite(wp, "\"%s\"", account_list[i]);
 	}
 	free_2_dimension_list(&acc_num, &account_list);
-	
+
 	return 0;
 }
 
@@ -4735,7 +4737,9 @@ int ej_get_permissions_of_account(int eid, webs_t wp, int argc, char **argv) {
 
 	anonym = 0;
 	if (strcmp(acc_mode, "ftp") == 0) {
-		anonym = 1;
+		int st_ftp_mode = nvram_get_int("st_ftp_mode");
+		if (st_ftp_mode == 3 || st_ftp_mode == 4)
+			anonym = 1;
 	}
 
 	if ((acc_num + anonym) <= 0)

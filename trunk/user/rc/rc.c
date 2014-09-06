@@ -1011,7 +1011,7 @@ handle_notifications(void)
 			if (nvram_nf_nat_type != nf_nat_type)
 			{
 				nvram_nf_nat_type = nf_nat_type;
-				flush_conntrack_caches();
+				flush_conntrack_table(NULL);
 			}
 		}
 		else if (!strcmp(entry->d_name, "restart_wifi_wl"))

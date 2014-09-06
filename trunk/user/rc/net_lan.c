@@ -614,6 +614,12 @@ stop_lan(int is_ap_mode)
 		
 		kill_services(svcs, 3, 1);
 	} else {
+		char *lan_ip = nvram_safe_get("lan_ipaddr_t");
+		
+		/* flush conntrack table (only old LAN IP records) */
+		if (is_valid_ipv4(lan_ip))
+			flush_conntrack_table(lan_ip);
+		
 		/* Remove static routes */
 		clear_if_route4(IFNAME_BR);
 	}
@@ -809,9 +815,9 @@ lan_down_auto(char *lan_ifname)
 }
 
 void 
-update_lan_status(int isup)
+update_lan_status(int is_auto)
 {
-	if (!isup) {
+	if (!is_auto) {
 		nvram_set_temp("lan_ipaddr_t", nvram_safe_get("lan_ipaddr"));
 		nvram_set_temp("lan_netmask_t", nvram_safe_get("lan_netmask"));
 		nvram_set_temp("lan_domain_t", nvram_safe_get("lan_domain"));

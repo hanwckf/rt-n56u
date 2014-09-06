@@ -409,9 +409,11 @@ restart_iptv(void)
 }
 
 void
-flush_conntrack_caches(void)
+flush_conntrack_table(char *ip)
 {
-	fput_string("/proc/net/nf_conntrack", "f");
+	if (!ip)
+		ip = "f"; // flush all table
+	fput_string("/proc/net/nf_conntrack", ip);
 }
 
 void

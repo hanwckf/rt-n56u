@@ -845,7 +845,6 @@ stop_wan(void)
 	remove_cb_links();
 
 	clear_wan_state();
-	flush_conntrack_caches();
 
 	control_wan_led_isp_state(0, 0);
 }
@@ -1089,7 +1088,7 @@ wan_up(char *wan_ifname, int unit, int is_static)
 void
 wan_down(char *wan_ifname, int unit)
 {
-	char *wan_gate;
+	char *wan_addr, *wan_gate;
 	const char *script_postw = SCRIPT_POST_WAN;
 	int wan_proto, modem_unit_id;
 
@@ -1138,8 +1137,10 @@ wan_down(char *wan_ifname, int unit)
 	if (!modem_unit_id && wan_proto == IPV4_WAN_PROTO_IPOE_STATIC)
 		ifconfig(wan_ifname, IFUP, "0.0.0.0", NULL);
 
-	/* flush conntrack caches */
-	flush_conntrack_caches();
+	/* flush conntrack table (only old WAN IP records) */
+	wan_addr = get_wan_unit_value(unit, "ipaddr");
+	if (is_valid_ipv4(wan_addr))
+		flush_conntrack_table(wan_addr);
 
 	control_wan_led_isp_state(0, 0);
 
@@ -1797,8 +1798,16 @@ udhcpc_deconfig(char *wan_ifname, int is_zcip)
 	else
 	{
 		ifconfig(wan_ifname, IFUP, "0.0.0.0", NULL);
-		if (is_man)
+		
+		if (is_man) {
+			char *man_addr = nvram_safe_get("wanx_ipaddr");
+			
+			/* flush conntrack table (only old WAN IP records) */
+			if (is_valid_ipv4(man_addr))
+				flush_conntrack_table(man_addr);
+			
 			nvram_set_temp("wanx_ipaddr", "0.0.0.0");
+		}
 	}
 
 	logmessage(log_prefix, "%s (%s): lease is lost",

@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.84 2014/04/20 16:32:17 nanard Exp $
+# $Id: Makefile,v 1.85 2014/06/27 13:01:30 nanard Exp $
 # MiniUPnP project
 # http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
 # Author: Thomas Bernard
@@ -45,25 +45,37 @@ FWNAME = pf
 .endif
 
 # better way to find if we are using ipf or pf
-.if exists(/etc/rc.subr) && exists(/etc/rc.conf)
 .if $(OSNAME) == "FreeBSD"
+.if exists(/etc/rc.subr) && exists(/etc/rc.conf)
 FWNAME != . /etc/rc.subr; . /etc/rc.conf; \
           if checkyesno ipfilter_enable; then \
           echo "ipf"; elif checkyesno pf_enable; then \
-          echo "pf"; else echo "ipfw"; fi
+          echo "pf"; elif checkyesno firewall_enable; then \
+          echo "ipfw"; else echo "pf"; fi
+.else
+FWNAME = pf
+.endif
 .endif
 
 .if $(OSNAME) == "NetBSD"
+.if exists(/etc/rc.subr) && exists(/etc/rc.conf)
 FWNAME != . /etc/rc.subr; . /etc/rc.conf; \
-          if checkyesno ipfilter; then \
+          if checkyesno pf; then \
+          echo "pf"; elif checkyesno ipfilter; then \
           echo "ipf"; else echo "pf"; fi
+.else
+FWNAME = pf
+.endif
 .endif
 
 .if $(OSNAME) == "DragonFly"
+.if exists(/etc/rc.subr) && exists(/etc/rc.conf)
 FWNAME != . /etc/rc.subr; . /etc/rc.conf; \
-          if checkyesno ipfilter; then \
-          echo "ipf"; elif checkyesno pf_enable; then \
-          echo "pf"; else echo "ipfw"; fi
+          if checkyesno pf; then \
+          echo "pf"; elif checkyesno ipfilter; then \
+          echo "ipf"; else echo "pf"; fi
+.else
+FWNAME = pf
 .endif
 .endif
 

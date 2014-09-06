@@ -1,4 +1,4 @@
-/* $Id: iptpinhole.c,v 1.10 2014/05/15 10:15:05 nanard Exp $ */
+/* $Id: iptpinhole.c,v 1.11 2014/05/30 14:37:04 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2012 Thomas Bernard
@@ -206,6 +206,8 @@ int add_pinhole(const char * ifname,
 
 	e = calloc(1, sizeof(struct ip6t_entry));
 	e->ipv6.proto = proto;
+	if (proto)
+		e->ipv6.flags |= IP6T_F_PROTO;
 
 	if(ifname)
 		strncpy(e->ipv6.iniface, ifname, IFNAMSIZ);

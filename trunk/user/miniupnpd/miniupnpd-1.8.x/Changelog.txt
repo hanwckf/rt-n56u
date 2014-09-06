@@ -1,4 +1,10 @@
-$Id: Changelog.txt,v 1.375 2014/05/23 15:19:25 nanard Exp $
+$Id: Changelog.txt,v 1.376 2014/09/06 08:30:11 nanard Exp $
+
+2014/06/xx:
+  Various fixes :
+    e->ipv6.flags |= IP6T_F_PROTO; (netfilter)
+    fix natpmp.c byte order conversion 
+    add small delay before SSDP response to prevent flooding
 
 2014/05/22:
   Add ipv6_bind_address (option "ipv6_listening_ip")

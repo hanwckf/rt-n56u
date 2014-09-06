@@ -1,4 +1,4 @@
-/* $Id: minissdp.c,v 1.68 2014/05/23 15:19:24 nanard Exp $ */
+/* $Id: minissdp.c,v 1.69 2014/09/06 08:17:01 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2014 Thomas Bernard
@@ -747,7 +747,7 @@ ProcessSSDPData(int s, const char *bufr, int n,
 #if defined(UPNP_STRICT) || defined(DELAY_MSEARCH_RESPONSE)
 	int mx_value = -1;
 #endif
-	unsigned int delay = 0;
+	unsigned int delay = 50; /* Non-zero default delay to prevent flooding */
 	/* UPnP Device Architecture v1.1.  1.3.3 Search response :
 	 * Devices responding to a multicast M-SEARCH SHOULD wait a random period
 	 * of time between 0 seconds and the number of seconds specified in the

@@ -1,4 +1,4 @@
-/* $Id: natpmp.c,v 1.48 2014/05/19 13:38:03 nanard Exp $ */
+/* $Id: natpmp.c,v 1.49 2014/09/06 08:16:18 nanard Exp $ */
 /* MiniUPnP project
  * (c) 2007-2014 Thomas Bernard
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
@@ -54,7 +54,7 @@ INLINE void writenu32(uint8_t * p, uint32_t n)
 #define WRITENU32(p, n) writenu32(p, n)
 INLINE void writenu16(uint8_t * p, uint16_t n)
 {
-	p[0] = (n < 0xff00) >> 8;
+	p[0] = (n & 0xff00) >> 8;
 	p[1] = n & 0xff;
 }
 #define WRITENU16(p, n) writenu16(p, n)

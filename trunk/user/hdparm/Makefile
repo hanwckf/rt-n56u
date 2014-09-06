@@ -3,6 +3,9 @@
 # DESTDIR is for non root installs (eg packages, NFS) only!
 DESTDIR =
 
+# usable for embedded devices
+HDPARM_MINI = 1
+
 binprefix = 
 manprefix = /usr
 exec_prefix = $(binprefix)/
@@ -14,6 +17,9 @@ CC ?= gcc
 STRIP ?= strip
 
 CFLAGS := -Os -W -Wall -Wbad-function-cast -Wcast-align -Wpointer-arith -Wcast-qual -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -fkeep-inline-functions -Wwrite-strings -Waggregate-return -Wnested-externs -Wtrigraphs $(CFLAGS)
+ifdef HDPARM_MINI
+CFLAGS += -DHDPARM_MINI
+endif
 LDFLAGS = -s
 
 CFLAGS += -ffunction-sections -fdata-sections
@@ -24,7 +30,10 @@ INSTALL_DATA = $(INSTALL) -m 644
 INSTALL_DIR = $(INSTALL) -m 755 -d
 INSTALL_PROGRAM = $(INSTALL)
 
-OBJS = hdparm.o identify.o sgio.o sysfs.o geom.o fallocate.o fibmap.o fwdownload.o dvdspeed.o
+OBJS = hdparm.o identify.o sgio.o sysfs.o geom.o
+ifndef HDPARM_MINI
+OBJS += fallocate.o fibmap.o fwdownload.o dvdspeed.o
+endif
 
 all: hdparm
 

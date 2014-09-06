@@ -70,8 +70,10 @@ static int set_io32bit  = 0, get_io32bit  = 0, io32bit  = 0;
 static int set_piomode  = 0, get_piomode= 0, piomode = 0;
 static int set_dkeep    = 0, get_dkeep    = 0, dkeep    = 0;
 static int set_standby  = 0, get_standby  = 0, standby= 0;
+#if !defined (HDPARM_MINI)
 static int set_xfermode = 0, get_xfermode = 0;
 static int xfermode_requested= 0;
+#endif
 static int set_lookahead= 0, get_lookahead= 0, lookahead= 0;
 static int set_prefetch = 0, get_prefetch = 0, prefetch = 0;
 static int set_defects  = 0, get_defects  = 0, defects  = 0;
@@ -95,9 +97,12 @@ static char security_password[33], *fwpath;
 
 static int get_powermode  = 0, set_powermode = 0;
 static int set_apmmode = 0, get_apmmode= 0, apmmode = 0;
+#if !defined (HDPARM_MINI)
 static int get_cdromspeed = 0, set_cdromspeed = 0, cdromspeed = 0;
-static int do_IDentity = 0, drq_hsm_error = 0;
 static int do_fwdownload = 0, xfer_mode = 0;
+static int drq_hsm_error = 0;
+#endif
+static int do_IDentity = 0;
 static int	set_busstate = 0, get_busstate = 0, busstate = 0;
 static int	set_reread_partn = 0, get_reread_partn;
 static int	set_acoustic = 0, get_acoustic = 0, acoustic = 0;
@@ -123,8 +128,10 @@ static __u64 write_sector_addr = ~0ULL;
 static int   read_sector = 0;
 static __u64 read_sector_addr = ~0ULL;
 
+#if !defined (HDPARM_MINI)
 static int   set_max_sectors = 0, set_max_permanent, get_native_max_sectors = 0;
 static __u64 set_max_addr = 0;
+#endif
 
 static int	get_doreset = 0, set_doreset = 0;
 static int	i_know_what_i_am_doing = 0;
@@ -589,6 +596,7 @@ static void interpret_standby (void)
 	printf(")\n");
 }
 
+#if !defined (HDPARM_MINI)
 struct xfermode_entry {
 	int val;
 	const char *name;
@@ -696,6 +704,7 @@ static void interpret_xfermode (unsigned int xfermode)
 	}
 	printf(")\n");
 }
+#endif
 
 static unsigned int get_erase_timeout_secs (int fd, int enhanced)
 {
@@ -1010,6 +1019,7 @@ static __u16 *get_dco_identify_data (int fd, int quietly)
 	}
 }
 
+#if !defined (HDPARM_MINI)
 static __u64 do_get_native_max_sectors (int fd)
 {
 	int err = 0;
@@ -1058,6 +1068,7 @@ static __u64 do_get_native_max_sectors (int fd)
 	errno = err;
 	return max;
 }
+#endif
 
 static int do_make_bad_sector (int fd, __u64 lba, const char *devname)
 {
@@ -1414,6 +1425,7 @@ static int do_idleunload (int fd, const char *devname)
 	return err;
 }
 
+#if !defined (HDPARM_MINI)
 static int do_set_max_sectors (int fd, __u64 max_lba, int permanent)
 {
 	int err = 0;
@@ -1441,6 +1453,7 @@ static int do_set_max_sectors (int fd, __u64 max_lba, int permanent)
 	}
 	return err;
 }
+#endif
 
 static void usage_help (int clue, int rc)
 {
@@ -1458,7 +1471,9 @@ static void usage_help (int clue, int rc)
 	" -C   Check drive power mode status\n"
 	" -d   Get/set using_dma flag\n"
 	" -D   Enable/disable drive defect management\n"
+#if !defined (HDPARM_MINI)
 	" -E   Set cd/dvd drive speed\n"
+#endif
 	" -f   Flush buffer cache for device on exit\n"
 	" -F   Flush drive write cache\n"
 	" -g   Display drive geometry\n"
@@ -1472,8 +1487,10 @@ static void usage_help (int clue, int rc)
 	" -m   Get/set multiple sector count\n"
 	" -M   Get/set acoustic management (0-254, 128: quiet, 254: fast)\n"
 	" -n   Get/set ignore-write-errors flag (0/1)\n"
+#if !defined (HDPARM_MINI)
 	" -N   Get/set max visible number of sectors (HPA) (VERY DANGEROUS)\n"
 	" -p   Set PIO mode on IDE interface chipset (0,1,2,3,4,...)\n"
+#endif
 	" -P   Set drive prefetch count\n"
 	" -q   Change next setting quietly\n"
 	" -Q   Get/set DMA queue_depth (if supported)\n"
@@ -1490,11 +1507,14 @@ static void usage_help (int clue, int rc)
 	" -w   Perform device reset (DANGEROUS)\n"
 	" -W   Get/set drive write-caching flag (0/1)\n"
 	" -x   Obsolete\n"
+#if !defined (HDPARM_MINI)
 	" -X   Set IDE xfer mode (DANGEROUS)\n"
+#endif
 	" -y   Put drive in standby mode\n"
 	" -Y   Put drive to sleep\n"
 	" -z   Re-read partition table\n"
 	" -Z   Disable Seagate auto-powersaving mode\n"
+#if !defined (HDPARM_MINI)
 	" --dco-freeze      Freeze/lock current device configuration until next power cycle\n"
 	" --dco-identify    Read/dump device configuration identify data\n"
 	" --dco-restore     Reset device configuration back to factory defaults\n"
@@ -1520,10 +1540,12 @@ static void usage_help (int clue, int rc)
 	" --verbose         Display extra diagnostics from some commands\n"
 	//" --wdidle3         Issue the Western Digitial \"Idle3\" command (EXTREMELY DANGEROUS)\n"
 	" --write-sector    Repair/overwrite a (possibly bad) sector directly on the media (VERY DANGEROUS)\n"
+#endif
 	"\n");
 	exit(rc);
 }
 
+#if !defined (HDPARM_MINI)
 static void security_help (int rc)
 {
 	FILE *desc = rc ? stderr : stdout;
@@ -1554,6 +1576,7 @@ static void security_help (int rc)
 	);
 	exit(rc);
 }
+#endif
 
 void process_dev (char *devname)
 {
@@ -1733,6 +1756,7 @@ void process_dev (char *devname)
 			perror(" HDIO_DRIVE_CMD(setprefetch) failed");
 		}
 	}
+#if !defined (HDPARM_MINI)
 	if (set_xfermode) {
 		__u8 args[4] = {ATA_OP_SETFEATURES,0,3,0};
 		args[1] = xfermode_requested;
@@ -1745,6 +1769,7 @@ void process_dev (char *devname)
 			perror(" HDIO_DRIVE_CMD(setxfermode) failed");
 		}
 	}
+#endif
 	if (set_lookahead) {
 		__u8 args[4] = {ATA_OP_SETFEATURES,0,0,0};
 		args[2] = lookahead ? 0xaa : 0x55;
@@ -1800,6 +1825,7 @@ void process_dev (char *devname)
 			perror(" HDIO_DRIVE_CMD failed");
 		}
 	}
+#if !defined (HDPARM_MINI)
 	if (set_cdromspeed) {
 		int err1, err2;
 		/* The CDROM_SELECT_SPEED ioctl
@@ -1816,6 +1842,7 @@ void process_dev (char *devname)
 			perror(" SET_STREAMING/CDROM_SELECT_SPEED both failed");
 		}
 	}
+#endif
 	if (set_acoustic) {
 		__u8 args[4];
 		if (get_acoustic)
@@ -1942,6 +1969,7 @@ void process_dev (char *devname)
 			perror(" HDIO_SET_BUSSTATE failed");
 		}
 	}
+#if !defined (HDPARM_MINI)
 	if (set_max_sectors) {
 		if (get_native_max_sectors)
 			printf(" setting max visible sectors to %llu (%s)\n", set_max_addr, set_max_permanent ? "permanent" : "temporary");
@@ -1953,6 +1981,7 @@ void process_dev (char *devname)
 			id = NULL; /* invalidate existing identify data */
 		}
 	}
+#endif
 	if (make_bad_sector) {
 		get_identify_data(fd);
 		if (id) {
@@ -1984,6 +2013,7 @@ void process_dev (char *devname)
 		confirm_i_know_what_i_am_doing("--write-sector", "You are trying to deliberately overwrite a low-level sector on the media.\nThis is a BAD idea, and can easily result in total data loss.");
 		err = do_write_sector(fd, write_sector_addr, devname);
 	}
+#if !defined (HDPARM_MINI)
 	if (do_fwdownload) {
 		if (num_flags_processed > 1 || argc)
 			usage_help(15,EINVAL);
@@ -1997,8 +2027,10 @@ void process_dev (char *devname)
 				exit(err);
 		}
 	}
+#endif
 	if (read_sector)
 		err = do_read_sector(fd, read_sector_addr, devname);
+#if !defined (HDPARM_MINI)
 	if (drq_hsm_error) {
 		get_identify_data(fd);
 		if (id) {
@@ -2013,6 +2045,7 @@ void process_dev (char *devname)
 			fprintf(stderr, "ata status=0x%02x ata error=0x%02x\n", args[0], args[1]);
 		}
 	}
+#endif
 	id = NULL; /* force re-IDENTIFY in case something above modified settings */
 	if (get_hitachi_temp) {
 		__u8 args[4] = {0xf0,0,0x01,0}; /* "Sense Condition", vendor-specific */
@@ -2250,6 +2283,7 @@ void process_dev (char *devname)
 			printf(" busstate      = %2ld (%s)\n", parm, busstate_str(parm));
 		}
 	}
+#if !defined (HDPARM_MINI)
 	if (get_native_max_sectors) {
 		__u64 visible, native;
 		get_identify_data(fd);
@@ -2279,6 +2313,7 @@ void process_dev (char *devname)
 			}
 		}
 	}
+#endif
 
 	if (do_ctimings)
 		time_cache(fd);
@@ -2309,6 +2344,7 @@ void process_dev (char *devname)
 		exit (err);
 }
 
+#if !defined (HDPARM_MINI)
 #define GET_XFERMODE(flag, num)					\
 	do {							\
 		char *tmpstr = name;				\
@@ -2379,6 +2415,7 @@ eof:
 	fprintf(stderr, "read only %u/256 IDENTIFY words from stdin: %s\n", wc, strerror(err));
 	exit(err);
 }
+#endif
 
 static void
 numeric_parm (char c, const char *name, int *val, int *setparm, int *getparm, int min, int max, int set_only)
@@ -2409,6 +2446,7 @@ numeric_parm (char c, const char *name, int *val, int *setparm, int *getparm, in
 #define      DO_FLAG(CH,VAR)              CH:VAR=1;noisy=1;break
 #define    INCR_FLAG(CH,VAR)              CH:VAR++;noisy=1;break
 
+#if !defined (HDPARM_MINI)
 static void get_security_password (int handle_NULL)
 {
 	unsigned int maxlen = sizeof(security_password) - 1;
@@ -2706,12 +2744,12 @@ get_longarg (void)
 	}
 	return 0; /* additional flags allowed */
 }
+#endif
 
 int main (int _argc, char **_argv)
 {
 	int no_more_flags = 0, disallow_flags = 0;
 	char c;
-	char name[32];
 
 	argc = _argc;
 	argv = _argv;
@@ -2751,7 +2789,9 @@ int main (int _argc, char **_argv)
 				case     SET_FLAG('C',powermode);
 				case GET_SET_PARM('d',"dma-enable",dma,0,1);
 				case     SET_PARM('D',"defects-management",defects,0,1);
+#if !defined (HDPARM_MINI)
 				case     SET_PARM('E',"CDROM/DVD-speed",cdromspeed,0,255);
+#endif
 				case      DO_FLAG('f',do_flush);
 				case      DO_FLAG('F',do_flush_wcache);
 				case      DO_FLAG('g',get_geom);
@@ -2765,7 +2805,9 @@ int main (int _argc, char **_argv)
 				case GET_SET_PARM('m',"multmode-count",mult,0,64);
 				case GET_SET_PARM('M',"acoustic-management",acoustic,0,255);
 				case GET_SET_PARM('n',"ignore-write-errors",nowerr,0,1);
+#if !defined (HDPARM_MINI)
 				case              'N': get_set_max_sectors_parms(); break;
+#endif
 				case     SET_PARM('P',"prefetch",prefetch,0,255);
 				case              'q': quiet = 1; noisy = 0; break;
 				case GET_SET_PARM('Q',"queue-depth",dma_q,0,1024);
@@ -2784,6 +2826,7 @@ int main (int _argc, char **_argv)
 				case     SET_FLAG('z',reread_partn);
 				case     SET_FLAG('Z',seagate);
 
+#if !defined (HDPARM_MINI)
 				case '-':
 					if (get_longarg())
 						disallow_flags = 1;
@@ -2802,7 +2845,7 @@ int main (int _argc, char **_argv)
 					if (!set_xfermode)
 						fprintf(stderr, "-X: missing value\n");
 					break;
-
+#endif
 
 				default:
 					usage_help(10,EINVAL);

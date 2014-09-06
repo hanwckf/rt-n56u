@@ -5,40 +5,54 @@ export ROOTDIR=$ROOTDIR
 
 kernel_id="3.0.x"
 kernel_cf=""
+kernel_tf=""
 uclibc_id="0.9.33.2"
 uclibc_cf=""
+uclibc_tf="$ROOTDIR/libc/uClibc-${uclibc_id}/.config"
 busybox_id="1.22.1"
-busybox_cf=""
+busybox_cf="$ROOTDIR/configs/boards/busybox.config"
+busybox_tf="$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
 paragon_hfsplus=0
 
 func_enable_kernel_param()
 {
-	cfg_file="$ROOTDIR/$CONFIG_LINUXDIR/.config"
-	if [ -n "`grep \^\"\# $1 is not set\" $cfg_file`" ] ; then
-		sed -i "s/\# $1 is not set/$1=y/" $cfg_file
+	if [ -n "`grep \^\"\# $1 is not set\" $kernel_tf`" ] ; then
+		sed -i "s/\# $1 is not set/$1=y/" $kernel_tf
 	fi
 }
 
 func_disable_kernel_param()
 {
-	cfg_file="$ROOTDIR/$CONFIG_LINUXDIR/.config"
-	if [ -n "`grep \^$1=y $cfg_file`" ] ; then
-		sed -i "s/$1=y/\# $1 is not set/" $cfg_file
-	elif [ -n "`grep \^$1=m $cfg_file`" ] ; then
-		sed -i "s/$1=m/\# $1 is not set/" $cfg_file
+	if [ -n "`grep \^$1=y $kernel_tf`" ] ; then
+		sed -i "s/$1=y/\# $1 is not set/" $kernel_tf
+	elif [ -n "`grep \^$1=m $kernel_tf`" ] ; then
+		sed -i "s/$1=m/\# $1 is not set/" $kernel_tf
+	fi
+}
+
+func_disable_libc_param()
+{
+	if [ -n "`grep \^$1=y $uclibc_tf`" ] ; then
+		sed -i "s/$1=y/\# $1 is not set/" $uclibc_tf
+	fi
+}
+
+func_enable_busybox_param()
+{
+	if [ -n "`grep \^\"\# $1 is not set\" $busybox_tf`" ] ; then
+		sed -i "s/\# $1 is not set/$1=y/" $busybox_tf
 	fi
 }
 
 func_disable_busybox_param()
 {
-	cfg_file="$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
-	if [ -n "`grep \^$1=y $cfg_file`" ] ; then
-		sed -i "s/$1=y/\# $1 is not set/" $cfg_file
+	if [ -n "`grep \^$1=y $busybox_tf`" ] ; then
+		sed -i "s/$1=y/\# $1 is not set/" $busybox_tf
 	fi
 }
 
 if [ ! -f "$ROOTDIR/.config" ] ; then
-	cp -fv "$ROOTDIR/configs/n56u_dlna.config" "$ROOTDIR/.config"
+	cp -fv "$ROOTDIR/configs/templates/n56u_dlna.config" "$ROOTDIR/.config"
 fi
 
 if [ ! -f "$ROOTDIR/.config" ] ; then
@@ -59,26 +73,18 @@ if [ ! -d "$ROOTDIR/$CONFIG_LINUXDIR" ] ; then
 	exit 1
 fi
 
+uclibc_cf="$ROOTDIR/configs/boards/$CONFIG_FIRMWARE_PRODUCT_ID/libc.config"
+kernel_cd="$ROOTDIR/configs/boards/$CONFIG_FIRMWARE_PRODUCT_ID"
+kernel_tf="$ROOTDIR/$CONFIG_LINUXDIR/.config"
+
 if [ "$CONFIG_LINUXDIR" = "linux-3.4.x" ] ; then
 	kernel_id="3.4.x"
 fi
 
-if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" = "y" ] ; then
-	if [ "$CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM" = "y" ] ; then
-		kernel_cf="$ROOTDIR/configs/IPv6/$CONFIG_FIRMWARE_PRODUCT_ID/kernel-${kernel_id}.ram.config"
-	else
-		kernel_cf="$ROOTDIR/configs/IPv6/$CONFIG_FIRMWARE_PRODUCT_ID/kernel-${kernel_id}.config"
-	fi
-	uclibc_cf="$ROOTDIR/configs/IPv6/uClibc-${uclibc_id}.config"
-	busybox_cf="$ROOTDIR/configs/IPv6/busybox.config"
+if [ "$CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM" = "y" ] ; then
+	kernel_cf="${kernel_cd}/kernel-${kernel_id}.ram.config"
 else
-	if [ "$CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM" = "y" ] ; then
-		kernel_cf="$ROOTDIR/configs/IPv4/$CONFIG_FIRMWARE_PRODUCT_ID/kernel-${kernel_id}.ram.config"
-	else
-		kernel_cf="$ROOTDIR/configs/IPv4/$CONFIG_FIRMWARE_PRODUCT_ID/kernel-${kernel_id}.config"
-	fi
-	uclibc_cf="$ROOTDIR/configs/IPv4/uClibc-${uclibc_id}.config"
-	busybox_cf="$ROOTDIR/configs/IPv4/busybox.config"
+	kernel_cf="${kernel_cd}/kernel-${kernel_id}.config"
 fi
 
 if [ ! -f "$kernel_cf" ] ; then
@@ -101,15 +107,31 @@ rm -rf $ROOTDIR/images
 mkdir -p $ROOTDIR/romfs
 mkdir -p $ROOTDIR/images
 
-# load kernel config
+# load source kernel config
 . "$kernel_cf"
 
 echo --------------------------COPY-CONFIG-----------------------------
 ######################### FOR-ALL-DEVICES #############################
 ln -sf vendors/Ralink/$CONFIG_PRODUCT/config.arch config.arch
-cp -f "$kernel_cf" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
-cp -f "$uclibc_cf" "$ROOTDIR/libc/uClibc-${uclibc_id}/.config"
-cp -f "$busybox_cf" "$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
+cp -fL "$kernel_cf" "$kernel_tf"
+cp -fL "$uclibc_cf" "$uclibc_tf"
+cp -fL "$busybox_cf" "$busybox_tf"
+############################# IPV6 ####################################
+if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_INET_TUNNEL"
+	func_disable_kernel_param "CONFIG_IPV6"
+	func_disable_libc_param "UCLIBC_HAS_IPV6"
+	func_disable_busybox_param "CONFIG_PING6"
+	func_disable_busybox_param "CONFIG_FEATURE_IPV6"
+	func_disable_busybox_param "CONFIG_FEATURE_PREFER_IPV4_ADDRESS"
+	func_disable_busybox_param "CONFIG_TRACEROUTE6"
+	func_disable_busybox_param "CONFIG_FEATURE_UDHCP_RFC5969"
+	func_disable_busybox_param "CONFIG_DHCP6C"
+	func_enable_busybox_param "CONFIG_IP"
+	func_enable_busybox_param "CONFIG_FEATURE_IP_ADDRESS"
+	func_enable_busybox_param "CONFIG_FEATURE_IP_LINK"
+	func_enable_busybox_param "CONFIG_FEATURE_IP_ROUTE"
+fi
 ############################# WI-FI ###################################
 dir_wifi_src="$ROOTDIR/proprietary/rt_wifi"
 dir_wifi_dst="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless"
@@ -170,7 +192,6 @@ cp -rf "$dir_ppe_src/hw_nat" "$dir_ppe_dst/"
 if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
 	func_disable_kernel_param "CONFIG_RAETH_GMAC2"
 	func_disable_kernel_param "CONFIG_GE2_RGMII_FORCE_1000"
-	func_enable_kernel_param "CONFIG_RAETH_HW_VLAN_TX"
 	func_enable_kernel_param "CONFIG_VLAN_8021Q_DOUBLE_TAG"
 fi
 ############################# UFSD ####################################

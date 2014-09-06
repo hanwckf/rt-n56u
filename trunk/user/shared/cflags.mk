@@ -44,7 +44,7 @@ endif
 # Project .config related params
 ##################################################################
 
-CFLAGS += $(if $(CONFIG_FIRMWARE_BUILDS_VER),-DFWBLDSTR=\"$(CONFIG_FIRMWARE_BUILDS_VER)\",)
+CFLAGS += $(if $(FIRMWARE_BUILDS_VER),-DFWBLDSTR=\"$(FIRMWARE_BUILDS_VER)\",)
 
 ifneq ($(BOARD_NUM_USB_PORTS),0)
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_LPRD),y)

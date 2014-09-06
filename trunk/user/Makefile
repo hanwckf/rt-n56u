@@ -10,7 +10,7 @@ endif
 
 UCLINUX_BUILD_USER=1
 -include $(LINUX_CONFIG)
-include $(CONFIG_CONFIG)
+include $(PROJECT_CONFIG)
 include $(ARCH_CONFIG)
 
 INSTALLDIR = $(ROOTDIR)/romfs

@@ -10,7 +10,7 @@ endif
 
 UCLINUX_BUILD_LIB=1
 -include $(LINUX_CONFIG)
-include $(CONFIG_CONFIG)
+include $(PROJECT_CONFIG)
 include $(ARCH_CONFIG)
 
 CFLAGS  += -ffunction-sections -fdata-sections

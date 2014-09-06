@@ -1,6 +1,6 @@
 KERNELZ		= $(IMAGEDIR)/zImage
 RAMDISK		= $(IMAGEDIR)/ramdisk
-IMAGE		= $(IMAGEDIR)/$(CONFIG_FIRMWARE_PRODUCT_ID)_$(FIRMWARE_KERNEL_VER).$(CONFIG_FIRMWARE_ROOTFS_VER)-$(CONFIG_FIRMWARE_BUILDS_VER).trx
+IMAGE		= $(IMAGEDIR)/$(CONFIG_FIRMWARE_PRODUCT_ID)_$(FIRMWARE_KERNEL_VER).$(FIRMWARE_ROOTFS_VER)-$(FIRMWARE_BUILDS_VER).trx
 ROMFS_DIR	= $(ROOTDIR)/romfs
 RAMDISK_SIZE	:= $(shell echo $(CONFIG_BLK_DEV_RAM_SIZE))
 MKIMAGE_DIR	:= $(ROOTDIR)/tools/mkimage
@@ -132,7 +132,7 @@ ifeq ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
 	@cd $(IMAGEDIR) ; \
 	ENTRY=`LANG=C readelf -h $(ROOTDIR)/$(LINUXDIR)/vmlinux | grep "Entry" | awk '{print $$4}'` ; \
 	$(MKIMAGE_DIR)/mkimage -A mips -O linux -T kernel -C $(COMP) -a 80000000 -e $$ENTRY \
-	-n $(CONFIG_FIRMWARE_PRODUCT_ID) -V $(FIRMWARE_KERNEL_VER) $(CONFIG_FIRMWARE_ROOTFS_VER) -d $(KERNELZ).$(COMP) $(IMAGE)
+	-n $(CONFIG_FIRMWARE_PRODUCT_ID) -V $(FIRMWARE_KERNEL_VER) $(FIRMWARE_ROOTFS_VER) -d $(KERNELZ).$(COMP) $(IMAGE)
 else
 	# For No padded, need write kernel size in image header 
 	# to correct mount partition in mtd drivers address
@@ -142,5 +142,5 @@ else
 	RSIZE=`wc -c $(RAMDISK) | awk '{print $$1}'` ; \
 	KRN_SIZE=`expr $$ISIZE - $$RSIZE + 64` ; \
 	$(MKIMAGE_DIR)/mkimage -A mips -O linux -T kernel -C $(COMP) -a 80000000 -e $$ENTRY -k $$KRN_SIZE \
-	-n $(CONFIG_FIRMWARE_PRODUCT_ID) -V $(FIRMWARE_KERNEL_VER) $(CONFIG_FIRMWARE_ROOTFS_VER) -d $(KERNELZ).$(COMP) $(IMAGE)
+	-n $(CONFIG_FIRMWARE_PRODUCT_ID) -V $(FIRMWARE_KERNEL_VER) $(FIRMWARE_ROOTFS_VER) -d $(KERNELZ).$(COMP) $(IMAGE)
 endif

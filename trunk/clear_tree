@@ -4,7 +4,7 @@ ROOTDIR=`pwd`
 export ROOTDIR=$ROOTDIR
 
 if [ ! -f "$ROOTDIR/.config" ] ; then
-	cp -fv "$ROOTDIR/configs/n56u_dlna.config" "$ROOTDIR/.config"
+	cp -fv "$ROOTDIR/configs/templates/n56u_dlna.config" "$ROOTDIR/.config"
 fi
 
 if [ ! -f "$ROOTDIR/.config" ] ; then

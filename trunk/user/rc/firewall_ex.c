@@ -2090,7 +2090,6 @@ start_firewall_ex(void)
 
 	/* try unload unused iptables modules */
 	module_smart_unload("xt_webstr", 0);
-	module_smart_unload("xt_string", 0);
 	module_smart_unload("xt_HL", 0);
 	module_smart_unload("iptable_raw", 0);
 	module_smart_unload("iptable_mangle", 0);

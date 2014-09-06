@@ -264,7 +264,7 @@ asmlinkage void plat_irq_dispatch(void)
 
 	if (pending & CAUSEF_IP3)
 		ralink_hw0_irqdispatch(1);
-
+	else
 	if (pending & CAUSEF_IP2)
 		ralink_hw0_irqdispatch(0);
 

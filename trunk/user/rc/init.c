@@ -88,13 +88,13 @@ catch_sig_fatal(int sig)
 	printf("%s signal: %s\n", "fatal", strsignal(sig));
 
 	if (sig == SIGQUIT) {
-		shutdown_router();
+		shutdown_router(0);
 		return;
 	}
 
 	reset_signals();
 
-	shutdown_router();
+	shutdown_router(1);
 
 	kill(-1, SIGTERM);
 	sleep(1);

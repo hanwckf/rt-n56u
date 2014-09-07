@@ -59,8 +59,14 @@ else
 		removable=1
 		[ -r /sys/block/$1/removable ] && removable=`cat /sys/block/$1/removable`
 		if [ $removable -eq 0 ] ; then
-			[ $hdd_spindt -gt 0 ] && /sbin/hdparm $HDPARM_S /dev/$1
-			[ $hdd_apmoff -ne 0 ] && /sbin/hdparm $HDPARM_B /dev/$1
+			if [ $hdd_spindt -gt 0 ] ; then
+				logger -t hdparm "Set spindown timeout to device /dev/$1"
+				/sbin/hdparm $HDPARM_S /dev/$1
+			fi
+			if [ $hdd_apmoff -ne 0 ] ; then
+				logger -t hdparm "Set APM to device /dev/$1"
+				/sbin/hdparm $HDPARM_B /dev/$1
+			fi
 		fi
 	fi
 fi

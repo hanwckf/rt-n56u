@@ -100,7 +100,7 @@
 void setenv_tz(void);
 void setkernel_tz(void);
 void init_router(void);
-void shutdown_router(void);
+void shutdown_router(int use_reboot);
 void handle_notifications(void);
 void LED_CONTROL(int gpio_led, int flag);
 void storage_save_time(time_t delta);
@@ -522,8 +522,7 @@ void stop_aria(void);
 void run_aria(void);
 void restart_aria(void);
 #endif
-int safe_remove_usb_device(int port, const char *dev_name);
-void stop_usb(void);
+int safe_remove_usb_device(int port, const char *dev_name, int do_spindown);
 void restart_usb_printer_spoolers(void);
 void stop_usb_printer_spoolers(void);
 void on_deferred_hotplug_usb(void);

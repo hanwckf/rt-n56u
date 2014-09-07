@@ -47,7 +47,19 @@
 #include "switch.h"
 
 static void
-umount_usb_path(disk_info_t *disks_info, int port, const char *dev_name)
+spindown_hdd(char *sd_dev)
+{
+	if (!sd_dev)
+		return;
+
+	if (strncmp(sd_dev, "sd", 2) != 0)
+		return;
+
+	doSystem("/sbin/spindown.sh %s", sd_dev);
+}
+
+static void
+umount_usb_path(disk_info_t *disks_info, int port, const char *dev_name, int do_spindown)
 {
 	disk_info_t *follow_disk;
 	partition_info_t *follow_partition;
@@ -60,18 +72,20 @@ umount_usb_path(disk_info_t *disks_info, int port, const char *dev_name)
 			if (follow_disk->port_root != port)
 				continue;
 		}
-		if (dev_name) {
+		if (dev_name && follow_disk->device) {
 			if (strcmp(follow_disk->device, dev_name) != 0)
 				continue;
 		}
 		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next)
 			umount_dev(follow_partition->device);
 		umount_dev_all(follow_disk->device);
+		if (do_spindown)
+			spindown_hdd(follow_disk->device);
 	}
 }
 
 int
-safe_remove_usb_device(int port, const char *dev_name)
+safe_remove_usb_device(int port, const char *dev_name, int do_spindown)
 {
 	int modem_devnum = 0;
 
@@ -112,7 +126,7 @@ safe_remove_usb_device(int port, const char *dev_name)
 			}
 			if (has_mounted_port) {
 				stop_usb_apps();
-				umount_usb_path(disks_info, port, dev_name);
+				umount_usb_path(disks_info, port, dev_name, do_spindown);
 				umount_ejected();
 				if (count_sddev_mountpoint())
 					start_usb_apps();
@@ -129,7 +143,7 @@ safe_remove_usb_device(int port, const char *dev_name)
 		
 		stop_usb_apps();
 		disks_info = read_disk_data();
-		umount_usb_path(disks_info, 0, NULL);
+		umount_usb_path(disks_info, 0, NULL, do_spindown);
 		free_disk_data(disks_info);
 		umount_sddev_all();
 		umount_ejected();
@@ -1271,16 +1285,12 @@ umount_dev(char *sd_dev)
 		return;
 
 	procpt = fopen("/proc/mounts", "r");
-	if (procpt)
-	{
-		while (fgets(line, sizeof(line), procpt))
-		{
+	if (procpt) {
+		while (fgets(line, sizeof(line), procpt)) {
 			if (sscanf(line, "%s %s %s %s %d %d", devname, mpname, system_type, mount_mode, &dummy1, &dummy2) != 6)
 				continue;
-			if (!strncmp(devname, "/dev/sd", 7))
-			{
-				if (!strcmp(devname+5, sd_dev))
-				{
+			if (!strncmp(devname, "/dev/sd", 7)) {
+				if (!strcmp(devname+5, sd_dev)) {
 					eval("/usr/bin/opt-umount.sh", devname, mpname);
 					umount(mpname);
 					rmdir(mpname);
@@ -1299,12 +1309,12 @@ umount_dev_all(char *sd_dev)
 	FILE *procpt;
 	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160];
 	int dummy1, dummy2;
-	
+
 	if (!sd_dev || !(*sd_dev))
 		return;
-	
+
 	detach_swap_partition(sd_dev);
-	
+
 	procpt = fopen("/proc/mounts", "r");
 	if (procpt)
 	{
@@ -1324,11 +1334,6 @@ umount_dev_all(char *sd_dev)
 		}
 		
 		fclose(procpt);
-	}
-	
-	if (!strncmp(sd_dev, "sd", 2))
-	{
-		doSystem("/sbin/spindown.sh %s", sd_dev);
 	}
 }
 
@@ -1407,14 +1412,6 @@ count_sddev_partition(void)
 	}
 
 	return count;
-}
-
-void
-stop_usb(void)
-{
-	stop_usb_printer_spoolers();
-
-	safe_remove_usb_device(0, NULL);
 }
 
 void

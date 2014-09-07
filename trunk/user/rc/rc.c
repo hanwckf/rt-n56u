@@ -396,7 +396,8 @@ flash_firmware(void)
 	stop_misc();
 	stop_services(0); // don't stop httpd/telnetd/sshd/vpn
 #if (BOARD_NUM_USB_PORTS > 0)
-	stop_usb();
+	stop_usb_printer_spoolers();
+	safe_remove_usb_device(0, NULL, 0);
 #endif
 	stop_igmpproxy("");
 
@@ -632,7 +633,7 @@ init_router(void)
 }
 
 void 
-shutdown_router(void)
+shutdown_router(int use_reboot)
 {
 	int is_ap_mode = get_ap_mode();
 
@@ -640,7 +641,8 @@ shutdown_router(void)
 	stop_services(1);
 
 #if (BOARD_NUM_USB_PORTS > 0)
-	stop_usb();
+	stop_usb_printer_spoolers();
+	safe_remove_usb_device(0, NULL, !use_reboot);
 #endif
 #if defined (BOARD_GPIO_LED_USB)
 	LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
@@ -669,7 +671,8 @@ shutdown_router(void)
 	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_OFF);
 #endif
 
-	module_smart_unload("rt_timer_wdg", 0);
+	if (!use_reboot)
+		module_smart_unload("rt_timer_wdg", 0);
 }
 
 void 
@@ -1437,16 +1440,16 @@ main(int argc, char **argv)
 					devn = argv[2];
 			}
 		}
-		ret = safe_remove_usb_device(port, devn);
+		ret = safe_remove_usb_device(port, devn, 1);
 	}
 	else if (!strcmp(base, "ejusb1")) {
 		char *devn = (argc > 1) ? argv[1] : NULL;
-		ret = safe_remove_usb_device(1, devn);
+		ret = safe_remove_usb_device(1, devn, 1);
 	}
 #if (BOARD_NUM_USB_PORTS > 1)
 	else if (!strcmp(base, "ejusb2")) {
 		char *devn = (argc > 1) ? argv[1] : NULL;
-		ret = safe_remove_usb_device(2, devn);
+		ret = safe_remove_usb_device(2, devn, 1);
 	}
 #endif
 #endif

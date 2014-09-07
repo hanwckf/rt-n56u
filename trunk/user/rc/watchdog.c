@@ -791,7 +791,7 @@ ez_action_usb_saferemoval(void)
 #if (BOARD_NUM_USB_PORTS > 0)
 	logmessage("watchdog", "Perform ez-button %s...", "safe-removal USB");
 
-	safe_remove_usb_device(0, NULL);
+	safe_remove_usb_device(0, NULL, 1);
 #endif
 }
 

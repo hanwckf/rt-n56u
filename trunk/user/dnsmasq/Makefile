@@ -1,7 +1,7 @@
-SRC_NAME=dnsmasq-2.68
+SRC_NAME=dnsmasq-2.7x
 
 all:
-	$(MAKE) -C $(SRC_NAME) COPTS="$(if $(CONFIG_IPV6),-DUSE_IPV6,)"
+	$(MAKE) -C $(SRC_NAME) COPTS="$(if $(CONFIG_IPV6),,-DNO_IPV6)"
 
 clean:
 	$(MAKE) -C $(SRC_NAME) clean

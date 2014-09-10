@@ -1213,6 +1213,8 @@ int main(int argc, char **argv)
 				continue;
 			if (debug_mode)
 				perror("select");
+			else
+				httpd_log("Failed to select open sockets (errno: %d). EXITING", errno);
 			break;
 		}
 		

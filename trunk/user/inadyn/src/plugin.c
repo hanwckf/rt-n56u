@@ -120,6 +120,7 @@ ddns_system_t *plugin_find(const char *name)
 
 /* Private daemon API *******************************************************/
 
+#if 0
 /**
  * load_one - Load one plugin
  * @path: Path to finit plugins, usually %PLUGIN_PATH
@@ -183,6 +184,7 @@ int plugin_load_all(char *path)
 
 	return fail;
 }
+#endif
 
 /**
  * Local Variables:

@@ -423,21 +423,24 @@ static int mkparentdir(char *file)
 
 static void pidexit(void)
 {
-	unlink(pidfile_path);
-	free(pidfile_path);
+	if (pidfile_path) {
+		unlink(pidfile_path);
+		free(pidfile_path);
+		pidfile_path = NULL;
+	}
 }
 
-static int pidfile(char *pidfile)
+static int pidfile(char *file)
 {
 	FILE *fp;
 
 	/* Ignore any errors, we may not be allowed to create the dir,
 	 * but still be able to create/overwrite the pidfile. */
-	mkparentdir(pidfile);
+	mkparentdir(file);
 
-	fp = fopen(pidfile, "w");
+	fp = fopen(file, "w");
 	if (!fp) {
-		logit(LOG_ERR, "Failed creating pidfile %s: %s", pidfile, strerror(errno));
+		logit(LOG_ERR, "Failed creating pidfile %s: %s", file, strerror(errno));
 		return RC_FILE_IO_ACCESS_ERROR;
 	}
 

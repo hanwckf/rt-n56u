@@ -958,6 +958,8 @@ static int set_pidfile(cmd_data_t *cmd, int num, void *context)
 	if (ctx == NULL)
 		return RC_INVALID_POINTER;
 
+	if (pidfile_path)
+		free(pidfile_path);
 	pidfile_path = strdup(cmd->argv[num]);
 
 	return 0;

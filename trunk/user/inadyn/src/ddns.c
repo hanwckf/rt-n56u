@@ -426,13 +426,12 @@ static int get_encoded_user_passwd(ddns_t *ctx)
 	int i, rc = 0;
 	char *buf = NULL;
 	size_t len;
-	const char *format = "%s:%s"; /* : + \0 = 2 bytes */
 
 	/* Take base64 encoding into account when allocating buf */
 	len = strlen(ctx->info[0].creds.password) + strlen(ctx->info[0].creds.username) + 2;
 	len = (len / 3 + ((len % 3) ? 1 : 0)) * 4; /* output length = 4 * [input len / 3] */
 
-	buf = malloc(len);
+	buf = calloc(len, sizeof(char));
 	if (!buf)
 		return RC_OUT_OF_MEMORY;
 
@@ -443,7 +442,13 @@ static int get_encoded_user_passwd(ddns_t *ctx)
 		ddns_info_t *info = &ctx->info[i];
 
 		info->creds.encoded = 0;
-		snprintf(buf, len, format, info->creds.username, info->creds.password);
+
+		/* Concatenate username and password with a ':', without
+		 * snprintf(), since that can cause information loss if
+		 * the password has "\=" or similar in it, issue #57 */
+		strcpy(buf, info->creds.username);
+		strcat(buf, ":");
+		strcat(buf, info->creds.password);
 
 		/* query required buffer size for base64 encoded data */
 		base64_encode(NULL, &dlen, (unsigned char *)buf, strlen(buf));

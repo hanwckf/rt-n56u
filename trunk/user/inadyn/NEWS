@@ -1,6 +1,12 @@
 ChangeLog
 =========
 
+Version 1.99.10: Sep 13 2014
+----------------------------
+- Fix issue #57: snprintf() causes loss of \= from password string
+- Fix bugs found by Coverity Scan
+- Fix memory leaks found by Glibc on PowerPC
+
 Version 1.99.9: May 21 2014
 ---------------------------
 - Fix memory leak in new HTTPS support, found by Valgrind

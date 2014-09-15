@@ -3988,6 +3988,16 @@ do_nvram_file(char *url, FILE *stream)
 	do_file(nvram_file, stream);
 }
 
+static void
+do_storage_file(char *url, FILE *stream)
+{
+	char *storage_file = "/tmp/.storage_tar.bz2";
+
+	unlink(storage_file);
+	doSystem("/sbin/mtd_storage.sh %s", "backup");
+	do_file(storage_file, stream);
+}
+
 static void 
 do_log_cgi(char *url, FILE *stream)
 {
@@ -4049,7 +4059,8 @@ struct mime_handler mime_handlers[] = {
 	{ "**.js",  "text/javascript", no_cache_IE, NULL, do_ej, do_auth },
 	{ "**.cab", "text/txt", NULL, NULL, do_file, do_auth },
 
-	{ "**.CFG", "application/force-download", NULL, NULL, do_nvram_file, do_auth },
+	{ "Settings_**.CFG", "application/force-download", NULL, NULL, do_nvram_file, do_auth },
+	{ "Storage_**.TBZ", "application/force-download", NULL, NULL, do_storage_file, do_auth },
 	{ "syslog.txt", "application/force-download", syslog_txt, do_html_post_and_get, do_log_cgi, do_auth },
 
 	{ "apply.cgi*", "text/html", no_cache_IE, do_html_post_and_get, do_apply_cgi, do_auth },

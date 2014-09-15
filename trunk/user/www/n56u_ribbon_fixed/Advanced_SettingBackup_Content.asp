@@ -131,6 +131,11 @@ function saveSetting(){
 	location.href='Settings_' + document.form.productid.value + '.CFG';
 }
 
+function saveStorage(){
+	switch_form_action(1, "");
+	location.href='Storage_' + document.form.productid.value + '.TBZ';
+}
+
 function uploadSetting(){
 	var file_obj = document.form.file;
 	if(file_obj.value == ""){
@@ -138,7 +143,7 @@ function uploadSetting(){
 		file_obj.focus();
 	}
 	else if(file_obj.value.length < 6 ||
-					file_obj.value.lastIndexOf(".CFG")  < 0 || 
+					file_obj.value.lastIndexOf(".CFG") < 0 ||
 					file_obj.value.lastIndexOf(".CFG") != (file_obj.value.length)-4){
 		alert("<#Setting_upload_hint#>");
 		file_obj.focus();
@@ -297,25 +302,25 @@ $j.fn.fileName = function() {
                                         <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,19,1)"><#Setting_factorydefault_itemname#></a></th>
                                             <td>
-                                                <input class="btn btn-danger" style="width: 219px;" onclick="restoreNVRAM();" type="button" value="<#CTL_restore#>" name="action1" />
+                                                <input name="action1" class="btn btn-danger" style="width: 219px;" onclick="restoreNVRAM();" type="button" value="<#CTL_restore#>"/>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,19,2)"><#Setting_save_itemname#></a></th>
                                             <td>
-                                                <input class="btn btn-info" style="width: 219px;" onclick="saveSetting();" type="button" value="<#CTL_onlysave#>" name="action2" />
+                                                <input name="action2" class="btn btn-info" style="width: 219px;" onclick="saveSetting();" type="button" value="<#CTL_onlysave#>"/>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,19,3)"><#Setting_upload_itemname#></a></th>
                                             <td>
-                                                <input type="file" name="file" size="36" />
+                                                <input name="file" type="file" size="36" />
                                             </td>
                                         </tr>
                                         <tr>
                                             <th style="border-top: 0 none; padding-top: 0px;"></th>
                                             <td style="border-top: 0 none; padding-top: 0px;">
-                                                <input class="btn btn-info" style="width: 219px;" onclick="uploadSetting();" type="button" value="<#CTL_upload#>" name="uploadbutton" />
+                                                <input name="uploadbutton" class="btn btn-info" style="width: 219px;" onclick="uploadSetting();" type="button" value="<#CTL_upload#>"/>
                                             </td>
                                         </tr>
                                         <tr>
@@ -330,7 +335,7 @@ $j.fn.fileName = function() {
                                         <tr>
                                             <th><#Adm_Setting_commit_now#></th>
                                             <td>
-                                                <input class="btn btn-primary" id="commit_nvram" style="width: 219px;" type="button" value="<#CTL_Commit#>" name="commit_nvram" />
+                                                <input name="commit_nvram" class="btn btn-primary" id="commit_nvram" style="width: 219px;" type="button" value="<#CTL_Commit#>"/>
                                                 <div class="nvram_response" class="alert"></div>
                                             </td>
                                         </tr>
@@ -343,7 +348,13 @@ $j.fn.fileName = function() {
                                         <tr>
                                             <th width="50%"><#Setting_factorydefault_itemname#></th>
                                             <td colspan="2">
-                                                <input class="btn btn-danger" style="width: 219px;" type="button" value="<#CTL_restore#>" name="st_action1" onclick="restoreStorage();" />
+                                                <input name="st_action1" class="btn btn-danger" style="width: 219px;" type="button" value="<#CTL_restore#>" onclick="restoreStorage();"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#Adm_Setting_store_backup#></th>
+                                            <td>
+                                                <input name="st_action2" class="btn btn-info" style="width: 219px;" onclick="saveStorage();" type="button" value="<#CTL_onlysave#>"/>
                                             </td>
                                         </tr>
                                         <tr>
@@ -367,7 +378,7 @@ $j.fn.fileName = function() {
                                         <tr>
                                             <th><#Adm_Setting_store_now#></th>
                                             <td colspan="2">
-                                                <input class="btn btn-primary" id="commit_storage" style="width: 219px;" type="button" value="<#CTL_Commit#>" name="commit_storage" />
+                                                <input name="commit_storage" class="btn btn-primary" id="commit_storage" style="width: 219px;" type="button" value="<#CTL_Commit#>"/>
                                                 <div class="nvram_response" class="alert"></div>
                                             </td>
                                         </tr>

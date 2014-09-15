@@ -139,6 +139,7 @@ CTL_Commit=Записать
 Commit_confirm=Записать настройки маршрутизатора (NVRAM) во флеш-память?
 Adm_Setting_nvram=Настройки маршрутизатора (NVRAM)
 Adm_Setting_store=Хранилище файлов (/etc/storage)
+Adm_Setting_store_backup=Резервная копия хранилища:
 Adm_Setting_store_hint=Все файлы в хранилище будут удалены и после перезагрузки будут восстановлены по умолчанию.\n
 Adm_Setting_store_stats=Сохранять историю трафика в хранилище?
 Adm_Setting_store_stime=Сохранять системное время в хранилище?

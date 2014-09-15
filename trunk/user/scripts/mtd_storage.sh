@@ -26,10 +26,10 @@ func_get_mtd()
 func_load()
 {
 	local fsz
-	
+
 	[ ! -d "$dir_storage" ] && mkdir -p -m 755 $dir_storage
 	echo "Loading files from mtd partition \"$mtd_part_dev\""
-	
+
 	bzcat $mtd_part_dev > $tmp 2>/dev/null
 	fsz=`stat -c %s $tmp 2>/dev/null`
 	if [ -n "$fsz" ] && [ $fsz -gt 0 ] ; then
@@ -48,12 +48,12 @@ func_load()
 func_save()
 {
 	local fsz tbz2
-	
+
 	[ -f "$ers" ] && return 1
-	
+
 	[ ! -d "$dir_storage" ] && mkdir -p -m 755 $dir_storage
 	echo "Save files to mtd partition \"$mtd_part_dev\""
-	
+
 	tbz2="${tmp}.bz2"
 	rm -f $tmp
 	rm -f $tbz2
@@ -86,10 +86,27 @@ func_save()
 	rm -f $tbz2
 }
 
+func_backup()
+{
+	local tbz2
+
+	[ ! -d "$dir_storage" ] && mkdir -p -m 755 $dir_storage
+
+	tbz2="${tmp}.bz2"
+	rm -f $tmp
+	rm -f $tbz2
+	cd $dir_storage
+	find * -print0 | xargs -0 touch -c -h -t 201001010000.00
+	find * ! -type d -print0 | sort -z | xargs -0 tar -cf $tmp 2>/dev/null
+	cd - >>/dev/null
+	bzip2 -9 $tmp 2>/dev/null
+	rm -f $tmp
+}
+
 func_erase()
 {
 	echo "Erase mtd partition \"$mtd_part_dev\""
-	
+
 	mtd_write erase $mtd_part_name
 	if [ $? -eq 0 ] ; then
 		rm -f $hsh
@@ -439,6 +456,9 @@ save)
 	func_get_mtd
 	func_save
 	;;
+backup)
+	func_backup
+	;;
 erase)
 	func_get_mtd
 	func_erase
@@ -451,7 +471,7 @@ fill)
 	func_fill
 	;;
 *)
-	echo "Usage: $0 {load|save|erase|reset|fill}"
+	echo "Usage: $0 {load|save|backup|erase|reset|fill}"
 	exit 1
 	;;
 esac

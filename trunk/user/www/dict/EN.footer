@@ -125,6 +125,7 @@ CTL_Commit=Commit
 Commit_confirm=Save Settings (NVRAM) Permanently?
 Adm_Setting_nvram=Router Settings (NVRAM)
 Adm_Setting_store=Router Internal Storage (/etc/storage)
+Adm_Setting_store_backup=Storage Backup:
 Adm_Setting_store_hint=All files in the Storage are deleted and will be restored to default after reboot.\n
 Adm_Setting_store_stats=Save Network Traffic History to Internal Storage?
 Adm_Setting_store_stime=Save Current System Time to Internal Storage?

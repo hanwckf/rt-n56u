@@ -537,11 +537,12 @@ function sshd_auth_change(){
                                                 <select name="ntp_period" class="input">
                                                     <option value="6"   <% nvram_match_x("","ntp_period",  "6","selected"); %>>6 hours</option>
                                                     <option value="12"  <% nvram_match_x("","ntp_period", "12","selected"); %>>12 hours</option>
-                                                    <option value="24"  <% nvram_match_x("","ntp_period", "24","selected"); %>>1 day</option>
+                                                    <option value="24"  <% nvram_match_x("","ntp_period", "24","selected"); %>>1 day (*)</option>
                                                     <option value="48"  <% nvram_match_x("","ntp_period", "48","selected"); %>>2 days</option>
                                                     <option value="72"  <% nvram_match_x("","ntp_period", "72","selected"); %>>3 days</option>
                                                     <option value="168" <% nvram_match_x("","ntp_period","168","selected"); %>>1 week</option>
                                                     <option value="336" <% nvram_match_x("","ntp_period","336","selected"); %>>2 weeks</option>
+                                                    <option value="0"   <% nvram_match_x("","ntp_period",  "0","selected"); %>><#btn_Disable#></option>
                                                 </select>
                                             </td>
                                         </tr>

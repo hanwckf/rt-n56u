@@ -30,8 +30,6 @@
 #include <syslog.h>
 #include <fcntl.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 
 #define STORAGE_PATH  "/etc/storage/rstats-history"

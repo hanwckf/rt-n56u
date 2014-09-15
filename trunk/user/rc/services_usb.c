@@ -37,11 +37,9 @@
 #include <scsi/scsi.h>
 #include <scsi/scsi_ioctl.h>
 
-#include <disk_io_tools.h>
+#include <usb_info.h>
 #include <disk_initial.h>
 #include <disk_share.h>
-
-#include <nvram/bcmnvram.h>
 
 #include "rc.h"
 #include "switch.h"

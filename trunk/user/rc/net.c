@@ -34,8 +34,6 @@
 #include <net/route.h>
 #include <dirent.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 
 #define SR_BUF_LEN (8192)

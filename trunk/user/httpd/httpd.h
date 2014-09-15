@@ -23,8 +23,6 @@
 #include <shutils.h>
 #include <nvram/bcmnvram.h>
 
-#include <usb_info.h>
-
 #define SYSLOG_ID_HTTPD		"httpd"
 
 #define STORAGE_HTTPSSL_DIR	"/etc/storage/https"
@@ -85,7 +83,6 @@ extern kw_t kw_XX;
 }
 
 typedef FILE * webs_t;
-typedef char char_t;
 #define T(s) (s)
 #define __TMPVAR(x) tmpvar ## x
 #define _TMPVAR(x) __TMPVAR(x)
@@ -106,14 +103,38 @@ extern void do_auth(int reget);
 extern void do_file(char *path, FILE *stream);
 extern void do_ej(char *path, FILE *stream);
 
-extern int ejArgs(int argc, char_t **argv, char_t *fmt, ...);
+extern int ejArgs(int argc, char **argv, char *fmt, ...);
 
 struct ej_handler {
 	char *pattern;
-	int (*output)(int eid, webs_t wp, int argc, char_t **argv);
+	int (*output)(int eid, webs_t wp, int argc, char **argv);
 };
 
 extern struct ej_handler ej_handlers[];
+
+// aidisk.c
+#if (BOARD_NUM_USB_PORTS > 0)
+extern int ej_get_usb_ports_info(int eid, webs_t wp, int argc, char **argv);
+extern int ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char **argv);
+extern int ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char **argv);
+extern int ej_get_usb_share_list(int eid, webs_t wp, int argc, char **argv);
+extern int ej_get_AiDisk_status(int eid, webs_t wp, int argc, char **argv);
+extern int ej_set_AiDisk_status(int eid, webs_t wp, int argc, char **argv);
+extern int ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv);
+extern int ej_safely_remove_disk(int eid, webs_t wp, int argc, char **argv);
+extern int ej_get_permissions_of_account(int eid, webs_t wp, int argc, char **argv);
+extern int ej_set_account_permission(int eid, webs_t wp, int argc, char **argv);
+extern int ej_get_folder_tree(int eid, webs_t wp, int argc, char **argv);
+extern int ej_get_share_tree(int eid, webs_t wp, int argc, char **argv);
+extern int ej_initial_account(int eid, webs_t wp, int argc, char **argv);
+extern int ej_create_account(int eid, webs_t wp, int argc, char **argv);
+extern int ej_delete_account(int eid, webs_t wp, int argc, char **argv);
+extern int ej_modify_account(int eid, webs_t wp, int argc, char **argv);
+extern int ej_create_sharedfolder(int eid, webs_t wp, int argc, char **argv);
+extern int ej_delete_sharedfolder(int eid, webs_t wp, int argc, char **argv);
+extern int ej_modify_sharedfolder(int eid, webs_t wp, int argc, char **argv);
+extern int ej_set_share_mode(int eid, webs_t wp, int argc, char **argv);
+#endif
 
 // aspbw.c
 extern int f_exists(const char *path);
@@ -130,6 +151,8 @@ extern unsigned long crc32_sp (unsigned long, const unsigned char *, unsigned in
 // ej.c
 extern int load_dictionary (char *lang, pkw_t pkw);
 extern void release_dictionary (pkw_t pkw);
+extern char *get_alert_msg_from_dict(const char *msg_id);
+
 
 // httpd.c
 extern long uptime(void);
@@ -137,33 +160,41 @@ extern int http_login_check(void);
 extern void fill_login_ip(char *p_out_ip, size_t out_ip_len);
 extern const char *get_login_mac(void);
 
+// initial_web_hook.c
+extern char *initial_disk_pool_mapping_info(void);
+extern char *initial_blank_disk_names_and_sizes(void);
+extern char *initial_available_disk_names_and_sizes(void);
+
 // ralink.c
 struct ifreq;
 struct iwreq;
 extern void reltime(unsigned long seconds, char *buf);
 extern int get_apcli_peer_connected(const char *ifname, struct iwreq *p_wrq);
 extern int is_mac_in_sta_list(const unsigned char* p_mac);
-extern int ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv);
-extern int ej_vpns_leases(int eid, webs_t wp, int argc, char_t **argv);
-extern int ej_nat_table(int eid, webs_t wp, int argc, char_t **argv);
-extern int ej_route_table(int eid, webs_t wp, int argc, char_t **argv);
-extern int ej_conntrack_table(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_lan_leases(int eid, webs_t wp, int argc, char **argv);
+extern int ej_vpns_leases(int eid, webs_t wp, int argc, char **argv);
+extern int ej_nat_table(int eid, webs_t wp, int argc, char **argv);
+extern int ej_route_table(int eid, webs_t wp, int argc, char **argv);
+extern int ej_conntrack_table(int eid, webs_t wp, int argc, char **argv);
 extern int wl_ioctl(const char *ifname, int cmd, struct iwreq *pwrq);
-extern int ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv);
-extern int ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv);
-extern int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv);
-extern int ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv);
-extern int ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv);
-extern int ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv);
-extern int ej_wl_bssid_2g(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv);
+extern int ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv);
+extern int ej_wl_auth_list(int eid, webs_t wp, int argc, char **argv);
+extern int ej_wl_scan_5g(int eid, webs_t wp, int argc, char **argv);
+extern int ej_wl_scan_2g(int eid, webs_t wp, int argc, char **argv);
+extern int ej_wl_bssid_5g(int eid, webs_t wp, int argc, char **argv);
+extern int ej_wl_bssid_2g(int eid, webs_t wp, int argc, char **argv);
 
 // rtl8367.c or mtk_esw.c
 extern int fill_eth_port_status(int port_id, char linkstate[32]);
-extern int ej_eth_status_wan(int eid, webs_t wp, int argc, char_t **argv);
-extern int ej_eth_status_lan1(int eid, webs_t wp, int argc, char_t **argv);
-extern int ej_eth_status_lan2(int eid, webs_t wp, int argc, char_t **argv);
-extern int ej_eth_status_lan3(int eid, webs_t wp, int argc, char_t **argv);
-extern int ej_eth_status_lan4(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_eth_status_wan(int eid, webs_t wp, int argc, char **argv);
+extern int ej_eth_status_lan1(int eid, webs_t wp, int argc, char **argv);
+extern int ej_eth_status_lan2(int eid, webs_t wp, int argc, char **argv);
+extern int ej_eth_status_lan3(int eid, webs_t wp, int argc, char **argv);
+extern int ej_eth_status_lan4(int eid, webs_t wp, int argc, char **argv);
+
+// web_ex.c
+extern void nvram_commit_safe(void);
 
 #if defined (SUPPORT_HTTPS)
 extern int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_file, char *ssl_cipher_list);

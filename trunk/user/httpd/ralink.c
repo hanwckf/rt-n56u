@@ -41,11 +41,6 @@
 #include <linux/sockios.h>
 #include <net/if_arp.h>
 
-typedef u_int64_t u64;
-typedef u_int32_t u32;
-typedef u_int16_t u16;
-typedef u_int8_t u8;
-
 #include <iwlib.h>
 #include <ralink_priv.h>
 
@@ -56,7 +51,7 @@ typedef u_int8_t u8;
 
 /* Dump leases in <tr><td>hostname</td><td>MAC</td><td>IP</td><td>expires</td></tr> format */
 int
-ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv)
+ej_lan_leases(int eid, webs_t wp, int argc, char **argv)
 {
 	/* dnsmasq ex: 43200 00:26:18:57:08:bc 192.168.1.105 mypc-3eaf6880a0 01:00:26:18:57:08:bc */
 	
@@ -139,7 +134,7 @@ ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 int
-ej_vpns_leases(int eid, webs_t wp, int argc, char_t **argv)
+ej_vpns_leases(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
 	int ret = 0, i_clients = 0;
@@ -195,7 +190,7 @@ int is_hwnat_loaded()
 
 /* Dump NAT table <tr><td>destination</td><td>MAC</td><td>IP</td><td>expires</td></tr> format */
 int
-ej_nat_table(int eid, webs_t wp, int argc, char_t **argv)
+ej_nat_table(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
 	int ret, i_loaded, sw_mode;
@@ -284,7 +279,7 @@ ej_nat_table(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 int
-ej_route_table(int eid, webs_t wp, int argc, char_t **argv)
+ej_route_table(int eid, webs_t wp, int argc, char **argv)
 {
 	char buff[256];
 	int  nl = 0 ;
@@ -343,7 +338,7 @@ ej_route_table(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 int 
-ej_conntrack_table(int eid, webs_t wp, int argc, char_t **argv)
+ej_conntrack_table(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
 	int ret;
@@ -877,7 +872,7 @@ int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE_2G* mp, unsigned char ApIdx
 }
 
 int
-ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
+ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv)
 {
 	int ret = 0;
 #if BOARD_HAS_5G_RADIO
@@ -1078,7 +1073,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 int
-ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
+ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 {
 	int ret = 0;
 	int channel;
@@ -1310,7 +1305,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 int 
-ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
+ej_wl_auth_list(int eid, webs_t wp, int argc, char **argv)
 {
 	struct iwreq wrq;
 	int i, priv_cmd, firstRow = 1, ret = 0;
@@ -1384,7 +1379,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 #define SSURV_LINE_LEN_WPS	(4+33+20+23+9+7+7+3+4+5)	// Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType+WPS+PIN
 
 int 
-ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
+ej_wl_scan_5g(int eid, webs_t wp, int argc, char **argv)
 {
 #if BOARD_HAS_5G_RADIO
 	int retval = 0;
@@ -1492,7 +1487,7 @@ ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 int 
-ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
+ej_wl_scan_2g(int eid, webs_t wp, int argc, char **argv)
 {
 	int retval = 0, apCount = 0;
 	char data[8192];
@@ -1594,7 +1589,7 @@ ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 int 
-ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv)
+ej_wl_bssid_5g(int eid, webs_t wp, int argc, char **argv)
 {
 	char bssid[32] = {0};
 #if BOARD_HAS_5G_RADIO
@@ -1616,7 +1611,7 @@ ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 int 
-ej_wl_bssid_2g(int eid, webs_t wp, int argc, char_t **argv)
+ej_wl_bssid_2g(int eid, webs_t wp, int argc, char **argv)
 {
 	char bssid[32] = {0};
 	unsigned char mac[8];

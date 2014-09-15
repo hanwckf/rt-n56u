@@ -123,7 +123,7 @@ function clearLog(){
                                                 </form>
                                             </td>
                                             <td width="15%" style="text-align: left; padding-bottom: 0px;">
-                                                <form method="post" name="form2" action="syslog.cgi">
+                                                <form method="post" name="form2" action="syslog.txt">
                                                     <input type="hidden" name="action_mode" value="">
                                                     <input type="hidden" name="next_host" value="">
                                                     <input type="submit" onClick="document.form2.next_host.value = location.host; onSubmitCtrl(this, ' Save ');" value="<#CTL_onlysave#>" class="btn btn-success" style="width: 170px">

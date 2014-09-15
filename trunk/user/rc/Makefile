@@ -12,12 +12,15 @@ include ../shared/cflags.mk
 
 LDFLAGS += -L. -lm
 
-CFLAGS += -I$(USERDIR)/libdisk
 CFLAGS += -I$(USERDIR)/wireless_tools
 
-LDFLAGS += -L$(USERDIR)/libdisk -ldisk
 LDFLAGS += -L$(USERDIR)/wireless_tools -liw
 LDFLAGS += -L$(SHDIR) -lshared
+
+ifdef CONFIG_USB_SUPPORT
+CFLAGS += -I$(USERDIR)/libdisk
+LDFLAGS += -L$(USERDIR)/libdisk -ldisk
+endif
 
 EXEC = rc
 
@@ -28,8 +31,8 @@ OBJS += vpn_server.o vpn_client.o
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENVPN),y)
 OBJS += vpn_openvpn.o
 endif
-ifneq ($(BOARD_NUM_USB_PORTS),0)
-OBJS +=  usb_devices.o usb_modem.o services_usb.o
+ifdef CONFIG_USB_SUPPORT
+OBJS += usb_devices.o usb_modem.o services_usb.o
 endif
 ifdef CONFIG_RTL8367
 OBJS += switch_rtl8367.o
@@ -45,7 +48,7 @@ ifdef CONFIG_IPV6
 OBJS += net6.o net_lan6.o net_wan6.o
 endif
 
-all:	$(OBJS) Makefile
+all: $(OBJS) Makefile
 	$(CC) -o $(EXEC) $(OBJS) $(LDFLAGS)
 	$(STRIP) $(EXEC)
 
@@ -100,7 +103,16 @@ ifeq ($(BOARD_HAS_5G_RADIO),1)
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_guest_disable
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_eeprom_mac
 endif
-ifneq ($(BOARD_NUM_USB_PORTS),0)
+ifdef CONFIG_RAETH_ESW
+	cd $(INSTALLDIR)/sbin && ln -sf rc mtk_esw
+endif
+ifdef CONFIG_RTL8367
+	cd $(INSTALLDIR)/sbin && ln -sf rc rtl8367
+endif
+ifdef CONFIG_RT3352_INIC_MII
+	cd $(INSTALLDIR)/sbin && ln -sf rc inicd
+endif
+ifdef CONFIG_USB_SUPPORT
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sg
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sd
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sr
@@ -111,18 +123,8 @@ ifneq ($(BOARD_NUM_USB_PORTS),0)
 	cd $(INSTALLDIR)/sbin && ln -sf rc zerocd
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb1
-endif
 ifeq ($(BOARD_NUM_USB_PORTS),2)
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb2
-endif
-ifdef CONFIG_RAETH_ESW
-	cd $(INSTALLDIR)/sbin && ln -sf rc mtk_esw
-endif
-ifdef CONFIG_RTL8367
-	cd $(INSTALLDIR)/sbin && ln -sf rc rtl8367
-endif
-ifdef CONFIG_RT3352_INIC_MII
-	cd $(INSTALLDIR)/sbin && ln -sf rc inicd
 endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_MINIDLNA),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_minidlna
@@ -158,4 +160,4 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_NFSD),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_nfsd
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_nfsd
 endif
-
+endif

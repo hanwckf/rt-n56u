@@ -25,8 +25,6 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 
 #define DI_MAX_HOSTS	6

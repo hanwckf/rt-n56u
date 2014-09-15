@@ -166,10 +166,8 @@ char *get_upper_str(const char *const str) {
 
 	len = strlen(str);
 	target = (char *)malloc(sizeof(char)*(len+1));
-	if (target == NULL) {
-		csprintf("No memory \"target\".\n");
+	if (target == NULL)
 		return NULL;
-	}
 	for (i = 0; i < len; ++i)
 		target[i] = toupper(str[i]);
 	target[len] = 0;
@@ -230,10 +228,8 @@ char *upper_strstr(const char *const str1, const char *const str2) {
 			len = strlen(line);
 		
 		line_str = (char *)malloc(sizeof(char)*(len+1));
-		if (line_str == NULL) {
-			csprintf("upper_strstr: Can't malloc memory!\n");
+		if (line_str == NULL)
 			return NULL;
-		}
 		strncpy(line_str, line, len);
 		line_str[len] = 0;
 		

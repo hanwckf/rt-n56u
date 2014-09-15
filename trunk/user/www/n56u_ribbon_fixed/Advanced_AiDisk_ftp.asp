@@ -25,7 +25,6 @@
 <% available_disk_names_and_sizes(); %>
 
 <% get_AiDisk_status(); %>
-<% initial_folder_var_file(); %>
 <% get_permissions_of_account("ftp"); %>
 
 var PROTOCOL = "ftp";

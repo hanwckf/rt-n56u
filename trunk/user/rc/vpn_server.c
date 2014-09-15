@@ -24,8 +24,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 
 #define VPNS_LOG_NAME		"VPN server"

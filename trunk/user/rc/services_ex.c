@@ -31,8 +31,6 @@
 #include <sys/ioctl.h>
 #include <net/ethernet.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 
 #define DHCPD_LEASE_FILE	"/tmp/dnsmasq.leases"

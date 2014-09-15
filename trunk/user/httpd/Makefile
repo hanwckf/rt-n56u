@@ -1,21 +1,28 @@
 USERDIR = $(ROOTDIR)/user
 SHDIR = $(ROOTDIR)/user/shared
 
-CFLAGS += -Wall -I. -I$(SHDIR) -I$(SHDIR)/include -I$(USERDIR)/libdisk -I$(USERDIR)/wireless_tools
+CFLAGS += -Wall -I. -I$(SHDIR) -I$(SHDIR)/include -I$(USERDIR)/wireless_tools
 
 include ../shared/boards.mk
 include ../shared/cflags.mk
 
-LDFLAGS  = -L$(SHDIR) -L$(USERDIR)/libdisk -L$(USERDIR)/wireless_tools
-LDFLAGS += -lm -lshared -ldisk -liw
+LDFLAGS  = -L$(SHDIR) -L$(USERDIR)/wireless_tools
+LDFLAGS += -lm -lshared -liw
+ifdef CONFIG_USB_SUPPORT
+CFLAGS  += -I$(USERDIR)/libdisk
+LDFLAGS += -L$(USERDIR)/libdisk -ldisk
+endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_HTTPS),y)
 LDFLAGS += -L$(STAGEDIR)/lib -lssl -lcrypto
 endif
 
 EXEC = httpd
-OBJS = httpd.o ej.o cgi.o web_ex.o common.o nvram_x.o ralink.o crc32.o initial_web_hook.o aspbw.o
+OBJS = httpd.o ej.o cgi.o web_ex.o common.o nvram_x.o ralink.o crc32.o aspbw.o initial_web_hook.o
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_HTTPS),y)
 OBJS += https.o
+endif
+ifdef CONFIG_USB_SUPPORT
+OBJS += aidisk.o
 endif
 ifdef CONFIG_RTL8367
 OBJS += switch_rtl8367.o

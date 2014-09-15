@@ -34,8 +34,6 @@
 #include <sys/wait.h>
 #include <dirent.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 #include "gpio_pins.h"
 #include "switch.h"
@@ -520,9 +518,13 @@ LED_CONTROL(int gpio_led, int flag)
 		front_led_x = nvram_get_int("front_led_wif");
 		break;
 #endif
-#if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
+#if defined (BOARD_GPIO_LED_USB)
 	case BOARD_GPIO_LED_USB:
+#if (BOARD_NUM_USB_PORTS > 0)
 		front_led_x = nvram_get_int("front_led_usb");
+#else
+		front_led_x = 0;
+#endif
 		break;
 #endif
 #if defined (BOARD_GPIO_LED_POWER)

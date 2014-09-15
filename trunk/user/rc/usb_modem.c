@@ -28,7 +28,7 @@
 #include <signal.h>
 #include <sys/swap.h>
 
-#include <nvram/bcmnvram.h>
+#include <usb_info.h>
 #include <disk_share.h>
 
 #include "rc.h"

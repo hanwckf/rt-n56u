@@ -27,17 +27,10 @@
 
 /*
  * Reads file and returns contents
- * @param	fd	file descriptor
- * @return	contents of file or NULL if an error occurred
- */
-extern char * fd2str(int fd);
-
-/*
- * Reads file and returns contents
  * @param	path	path to file
  * @return	contents of file or NULL if an error occurred
  */
-extern char * file2str(const char *path);
+extern char * file2str(const char *path, size_t chunk_size);
 
 /* 
  * Waits for a file descriptor to become available for reading or unblocked signal
@@ -69,14 +62,6 @@ extern void recreate_passwd_unix(int force_create);
 extern int _eval(char *const argv[], char *path, int timeout, pid_t *ppid);
 extern int _eval2(char *const argv[], char *path, int timeout, pid_t *ppid);
 extern int _eval3(char *const argv[]);
-
-/* 
- * Concatenates NULL-terminated list of arguments into a single
- * commmand and executes it
- * @param	argv	argument list
- * @return	stdout of executed command or NULL if an error occurred
- */
-extern char * _backtick(char *const argv[]);
 
 /* 
  * Kills process whose PID is stored in plaintext in pidfile
@@ -164,12 +149,6 @@ extern void logmessage(char *logheader, char *fmt, ...);
 	while ((c > (s)) && (*c == '\n' || *c == '\r')) \
 		*c-- = '\0'; \
 	s; \
-})
-
-/* Simple version of _backtick() */
-#define backtick(cmd, args...) ({ \
-	char *argv[] = { cmd, ## args, NULL }; \
-	_backtick(argv); \
 })
 
 /* Simple version of _eval() (no timeout and wait for child termination) */

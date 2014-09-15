@@ -26,8 +26,6 @@
 #include <sys/types.h>
 #include <net/if.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 #include "switch.h"
 #include "gpio_pins.h"

@@ -29,8 +29,6 @@
 #include <errno.h>
 #include <time.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 
 #define OPENVPN_EXE		"/usr/sbin/openvpn"

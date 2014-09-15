@@ -26,8 +26,6 @@
 #include <stdint.h>
 #include <fcntl.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 
 #define VPNC_LOG_NAME		"VPN client"

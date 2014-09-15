@@ -173,6 +173,25 @@ translate_lang(char *s, char *e, FILE *fp, kw_t *pkw)
 	return end;
 }
 
+char *
+get_alert_msg_from_dict(const char *msg_id)
+{
+	pkw_t pkw = &kw_EN;
+	char msg_name[32], *desc, *lang;
+
+	lang = nvram_safe_get("preferred_lang");
+	if (strlen(lang) > 1 && strcmp(lang, kw_XX.dict) == 0)
+		pkw = &kw_XX;
+
+	snprintf(msg_name, sizeof(msg_name), "ALERT_OF_ERROR_%s=", msg_id);
+
+	desc = search_desc(pkw, msg_name);
+	if (!desc && pkw != &kw_EN)
+		desc = search_desc(&kw_EN, msg_name);
+
+	return desc;
+}
+
 void
 release_dictionary(pkw_t pkw)
 {

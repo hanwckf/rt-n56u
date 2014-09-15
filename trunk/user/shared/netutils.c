@@ -58,7 +58,8 @@ static const struct ifname_desc_t {
 	{ NULL, NULL }
 };
 
-const char* get_ifname_descriptor(const char* ifname)
+const char*
+get_ifname_descriptor(const char* ifname)
 {
 	struct ifname_desc_t *ifd;
 
@@ -68,6 +69,15 @@ const char* get_ifname_descriptor(const char* ifname)
 	}
 
 	return NULL;
+}
+
+int is_usbnet_interface(const char *ifname)
+{
+	if(!strncmp(ifname, "weth", 4))
+		return 1;
+	if(!strncmp(ifname, "wwan", 4))
+		return 1;
+	return 0;
 }
 
 static uint64_t

@@ -24,12 +24,13 @@
 #include <linux/oom.h>
 
 #include <ralink_boards.h>
+
+#include <nvram/bcmnvram.h>
+
 #include <netutils.h>
 #include <shutils.h>
 #include <notify_rc.h>
 #include <bin_sem_asus.h>
-
-#include <usb_info.h>
 
 /* do not set current year, it used for ntp done check! */
 #define SYS_START_YEAR			2010

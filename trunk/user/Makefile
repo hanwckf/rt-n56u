@@ -15,7 +15,6 @@ include $(ARCH_CONFIG)
 
 INSTALLDIR = $(ROOTDIR)/romfs
 
-USB_ENABLED=n
 FS_EXT_ENABLED=n
 FS_FAT_ENABLED=n
 FS_NTFS_ENABLED=n
@@ -33,7 +32,6 @@ OPENSSH_ENABLED=y
 endif
 
 ifdef CONFIG_USB_SUPPORT
-USB_ENABLED=y
 ifeq ($(CONFIG_FIRMWARE_ENABLE_EXT2),y)
 FS_EXT_ENABLED=y
 endif
@@ -58,82 +56,65 @@ dir_y =
 dir_n =
 dir_  =
 
-dir_y							+= busybox
-dir_y							+= iptables
-dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)			+= ipset
-dir_y							+= ebtables
-dir_y							+= iproute2
-dir_y							+= wireless_tools
-dir_y							+= shared
-dir_y							+= libdisk
-dir_y							+= nvram
-dir_y							+= mtd_write
-dir_y							+= networkmap
-dir_y							+= httpd
-dir_y							+= www
-dir_y							+= rc
-dir_y							+= infosvr
-dir_$(CONFIG_FIRMWARE_INCLUDE_FTPD)			+= vsftpd
-dir_$(CONFIG_FIRMWARE_INCLUDE_SMBD)			+= samba3
-dir_y							+= inadyn
-dir_y							+= miniupnpd
-dir_y							+= dnsmasq
-dir_$(CONFIG_IPV6)					+= radvd
-dir_y							+= igmpproxy
-dir_y							+= udpxy
-dir_y							+= nfsd
-dir_$(USB_ENABLED)					+= util-linux
-dir_$(CONFIG_FIRMWARE_INCLUDE_HDPARM)			+= hdparm
-dir_y							+= utils
-dir_y							+= lanauth
-dir_y							+= 802.1x
-dir_y							+= wpa_supplicant
-dir_y							+= pppd
-dir_y							+= accel-pptpd
-dir_y							+= xl2tpd
-dir_y							+= rp-l2tp
-dir_y							+= lldt
-dir_$(FS_EXT_ENABLED)					+= e2fsprogs
-dir_$(FS_FAT_ENABLED)					+= dosfstools
-dir_$(FS_NTFS_ENABLED)					+= ntfs-3g
-dir_$(CONFIG_FIRMWARE_INCLUDE_LPRD)			+= LPRng
-dir_$(CONFIG_FIRMWARE_INCLUDE_U2EC)			+= u2ec
-dir_$(USB_ENABLED)					+= p910nd
-dir_$(USB_ENABLED)					+= usb-modeswitch
-dir_$(USB_ENABLED)					+= comgt-0.32
-dir_$(USB_ENABLED)					+= uqmi
-dir_y							+= optware
-dir_y							+= scripts
+dir_y						+= busybox
+dir_y						+= iptables
+dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)		+= ipset
+dir_y						+= ebtables
+dir_y						+= iproute2
+dir_y						+= wireless_tools
+dir_y						+= shared
+dir_$(CONFIG_USB_SUPPORT)			+= libdisk
+dir_y						+= nvram
+dir_y						+= mtd_write
+dir_y						+= networkmap
+dir_y						+= httpd
+dir_y						+= www
+dir_y						+= rc
+dir_y						+= infosvr
+dir_y						+= inadyn
+dir_y						+= miniupnpd
+dir_y						+= dnsmasq
+dir_$(CONFIG_IPV6)				+= radvd
+dir_y						+= igmpproxy
+dir_y						+= udpxy
+dir_y						+= utils
+dir_y						+= lanauth
+dir_y						+= 802.1x
+dir_y						+= wpa_supplicant
+dir_y						+= pppd
+dir_y						+= accel-pptpd
+dir_y						+= xl2tpd
+dir_y						+= rp-l2tp
+dir_y						+= lldt
+dir_y						+= scripts
+dir_$(OPENSSH_ENABLED)				+= openssh
+dir_$(DROPBEAR_ENABLED)				+= dropbear
+dir_$(CONFIG_FIRMWARE_INCLUDE_OPENVPN)		+= openvpn
+dir_$(CONFIG_FIRMWARE_INCLUDE_XUPNPD)		+= xupnpd
+dir_$(CONFIG_FIRMWARE_INCLUDE_TCPDUMP)		+= tcpdump
 
-# tcpdump
-dir_$(CONFIG_FIRMWARE_INCLUDE_TCPDUMP)			+= tcpdump
-
-# parted
-dir_$(CONFIG_FIRMWARE_INCLUDE_PARTED)			+= parted
-
-# openssh or sftp-server
-dir_$(OPENSSH_ENABLED)					+= openssh
-
-# dropbear
-dir_$(DROPBEAR_ENABLED)					+= dropbear
-
-# openvpn
-dir_$(CONFIG_FIRMWARE_INCLUDE_OPENVPN)			+= openvpn
-
-# xupnpd
-dir_$(CONFIG_FIRMWARE_INCLUDE_XUPNPD)			+= xupnpd
-
-# minidlna
-dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)			+= minidlna
-
-# mt-daapd (firefly)
-dir_$(CONFIG_FIRMWARE_INCLUDE_FIREFLY)			+= firefly
-
-# transmission
-dir_$(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION)		+= transmission
-
-# aria2
-dir_$(CONFIG_FIRMWARE_INCLUDE_ARIA)			+= aria2
+ifdef CONFIG_USB_SUPPORT
+dir_y						+= nfsd
+dir_y						+= util-linux
+dir_$(FS_EXT_ENABLED)				+= e2fsprogs
+dir_$(FS_FAT_ENABLED)				+= dosfstools
+dir_$(FS_NTFS_ENABLED)				+= ntfs-3g
+dir_y						+= p910nd
+dir_y						+= usb-modeswitch
+dir_y						+= comgt-0.32
+dir_y						+= uqmi
+dir_y						+= optware
+dir_$(CONFIG_FIRMWARE_INCLUDE_LPRD)		+= LPRng
+dir_$(CONFIG_FIRMWARE_INCLUDE_U2EC)		+= u2ec
+dir_$(CONFIG_FIRMWARE_INCLUDE_FTPD)		+= vsftpd
+dir_$(CONFIG_FIRMWARE_INCLUDE_SMBD)		+= samba3
+dir_$(CONFIG_FIRMWARE_INCLUDE_HDPARM)		+= hdparm
+dir_$(CONFIG_FIRMWARE_INCLUDE_PARTED)		+= parted
+dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)		+= minidlna
+dir_$(CONFIG_FIRMWARE_INCLUDE_FIREFLY)		+= firefly
+dir_$(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION)	+= transmission
+dir_$(CONFIG_FIRMWARE_INCLUDE_ARIA)		+= aria2
+endif
 
 
 all:

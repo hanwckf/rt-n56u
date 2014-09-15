@@ -30,8 +30,6 @@
 #include <net/if.h>
 #include <signal.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 #include "switch.h"
 
@@ -870,7 +868,7 @@ is_ifunit_man(char *wan_ifname, int unit)
 {
 	int wan_proto = get_wan_proto(unit);
 
-	if (!isUsbNetIf(wan_ifname) &&
+	if (!is_usbnet_interface(wan_ifname) &&
 	    (wan_proto == IPV4_WAN_PROTO_PPPOE ||
 	     wan_proto == IPV4_WAN_PROTO_PPTP ||
 	     wan_proto == IPV4_WAN_PROTO_L2TP))
@@ -891,7 +889,7 @@ is_ifunit_modem(char *wan_ifname, int unit)
 		return 1;
 
 	ifname_temp = get_wan_unit_value(unit, "ifname_t");
-	if (isUsbNetIf(ifname_temp) && strcmp(wan_ifname, ifname_temp) == 0)
+	if (is_usbnet_interface(ifname_temp) && strcmp(wan_ifname, ifname_temp) == 0)
 		return 2;
 
 	return 0;
@@ -1303,7 +1301,7 @@ notify_on_wan_ether_link_restored(void)
 	if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC || nvram_match("x_DHCPClient", "0"))
 		return;
 
-	if (isUsbNetIf(get_wan_unit_value(unit, "ifname_t")))
+	if (is_usbnet_interface(get_wan_unit_value(unit, "ifname_t")))
 		return;
 
 	if (get_wan_wisp_active(NULL))
@@ -1703,7 +1701,7 @@ get_wan_ifname(char wan_ifname[16])
 
 	if (get_usb_modem_wan(unit)){
 		if (nvram_get_int("modem_type") == 3) {
-			if (isUsbNetIf(ifname_temp))
+			if (is_usbnet_interface(ifname_temp))
 				ifname = ifname_temp;
 		} else {
 			if (ppp_ifindex(ifname_temp) >= RAS_PPP_UNIT)

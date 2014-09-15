@@ -1,3 +1,5 @@
+include ../shared/boards.mk
+
 ROMFS_DIR = $(ROOTDIR)/romfs
 
 LABEL_COPYRIGHT_TEXT="© 2011-2014 Padavan \& N56U project community"
@@ -15,8 +17,6 @@ romfs:
 	cp -R $(WEBUI_NAME) $(ROMFS_DIR)/www
 	rm -f $(ROMFS_DIR)/www/httpd_check.htm
 	echo "ASUSTeK" > $(ROMFS_DIR)/www/httpd_check.htm
-	cd $(ROMFS_DIR)/www && ln -sf ../tmp/settings Settings.CFG && cd ../..
-	cd $(ROMFS_DIR)/www && ln -sf ../tmp/settings Settings_$(CONFIG_FIRMWARE_PRODUCT_ID).CFG && cd ../..
 	cd $(ROMFS_DIR)/www && ln -sf /opt/share/www/custom custom
 	cp dict/EN.header $(ROMFS_DIR)/www
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_LANG_BR),y)
@@ -100,6 +100,39 @@ endif
 	rm -f $(ROMFS_DIR)/www/bootstrap/js/jquery.backgroundpos.min.js
 	rm -f $(ROMFS_DIR)/www/bootstrap/js/jquery.easing.1.3.js
 	rm -f $(ROMFS_DIR)/www/bootstrap/css/bootstrap.css
+ifeq ($(BOARD_HAS_5G_RADIO),0)
+	rm -f $(INSTALLDIR)/www/Advanced_ACL_Content.asp
+	rm -f $(INSTALLDIR)/www/Advanced_WAdvanced_Content.asp
+	rm -f $(INSTALLDIR)/www/Advanced_WGuest_Content.asp
+	rm -f $(INSTALLDIR)/www/Advanced_Wireless_Content.asp
+	rm -f $(INSTALLDIR)/www/Advanced_WMode_Content.asp
+	rm -f $(INSTALLDIR)/www/Advanced_WSecurity_Content.asp
+	rm -f $(INSTALLDIR)/www/Main_WStatus_Content.asp
+	rm -f $(INSTALLDIR)/www/wireless.js
+	rm -f $(INSTALLDIR)/www/wds_aplist_5g.asp
+	rm -f $(INSTALLDIR)/www/device-map/router.asp
+endif
+ifndef CONFIG_IPV6
+	rm -f $(INSTALLDIR)/www/Advanced_IPv6_Content.asp
+endif
+ifndef CONFIG_USB_SUPPORT
+	rm -f $(INSTALLDIR)/www/Advanced_AiDisk_ftp.asp
+	rm -f $(INSTALLDIR)/www/Advanced_AiDisk_others.asp
+	rm -f $(INSTALLDIR)/www/Advanced_AiDisk_samba.asp
+	rm -f $(INSTALLDIR)/www/Advanced_Modem_others.asp
+	rm -f $(INSTALLDIR)/www/Advanced_Printer_others.asp
+	rm -f $(INSTALLDIR)/www/disk_folder_tree.js
+	rm -f $(INSTALLDIR)/www/aidisk.asp
+	rm -f $(INSTALLDIR)/www/modem_isp.js
+	rm -f $(INSTALLDIR)/www/device-map/hub.asp
+	rm -f $(INSTALLDIR)/www/device-map/disk.asp
+	rm -f $(INSTALLDIR)/www/device-map/modem.asp
+	rm -f $(INSTALLDIR)/www/device-map/printer.asp
+	rm -f $(INSTALLDIR)/www/device-map/safely_remove_disk.asp
+	rm -rf $(INSTALLDIR)/www/aidisk
+	rm -rf $(INSTALLDIR)/www/images/AiDisk
+	rm -rf $(INSTALLDIR)/www/images/Tree
+endif
 
 clean:
 	echo "Clean www romfs"

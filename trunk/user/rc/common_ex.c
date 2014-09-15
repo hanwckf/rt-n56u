@@ -31,7 +31,6 @@
 #include <dirent.h>
 #include <fcntl.h>
 
-#include <nvram/bcmnvram.h>
 #include <ralink_priv.h>
 #include <flash_mtd.h>
 
@@ -390,7 +389,6 @@ int fput_string(const char *name, const char *value)
 		fclose(fp);
 		return 0;
 	} else {
-		perror(name);
 		return errno;
 	}
 }

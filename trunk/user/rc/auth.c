@@ -20,7 +20,7 @@
 #include <string.h>
 #include <errno.h>
 #include <netinet/in.h>
-#include <nvram/bcmnvram.h>
+
 #include "rc.h"
 
 void stop_auth_kabinet(void)

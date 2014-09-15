@@ -27,8 +27,6 @@
 #include <net/if.h>
 #include <net/if_arp.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 
 //#define DEBUG		1

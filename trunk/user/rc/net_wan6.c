@@ -28,8 +28,6 @@
 #include <net/route.h>
 #include <net/ethernet.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 
 #if defined (USE_IPV6)

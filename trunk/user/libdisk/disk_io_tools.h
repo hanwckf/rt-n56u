@@ -17,23 +17,7 @@
 #ifndef _DISK_IO_TOOLS_
 #define _DISK_IO_TOOLS_
 
-typedef unsigned char u8;
-typedef unsigned short u16;
-typedef unsigned int u32;
-typedef unsigned long long u64;
-
-#define POOL_MOUNT_ROOT "/media"
-#define WWW_MOUNT_ROOT "/www"
-
 #define csprintf(fmt, args...) fprintf(stderr, fmt, ## args)
-
-#define lprintf(fmt, args...) do{\
-	FILE *ffp = fopen("/tmp/ftp_wrong_log.txt", "a");\
-	if(ffp) {\
-		fprintf(ffp, fmt, ## args);\
-		fclose(ffp);\
-	}\
-}while(0)
 
 extern void sanity_name(char *name);
 extern char *read_whole_file(const char *);

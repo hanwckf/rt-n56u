@@ -49,39 +49,26 @@
 #define _LARGEFILE_SOURCE 1
 #define _LARGEFILE64_SOURCE 1
 
-void
-die(const char *str)
-{
-	printf("%s\n", str);
-	exit(-1);
-}
-
-void 
-bug(const char *str)
-{
-	printf("%s\n", str);
-}
-
 /*
  * Reads file and returns contents
  * @param	fd	file descriptor
  * @return	contents of file or NULL if an error occurred
  */
-char *
-fd2str(int fd)
+static char *
+fd2str(int fd, size_t chunk_size)
 {
 	char *buf = NULL;
 	size_t count = 0, n;
 
 	do {
-		buf = realloc(buf, count + 512);
-		n = read(fd, buf + count, 512);
+		buf = realloc(buf, count + chunk_size);
+		n = read(fd, buf + count, chunk_size);
 		if (n < 0) {
 			free(buf);
 			buf = NULL;
 		}
 		count += n;
-	} while (n == 512);
+	} while (n == chunk_size);
 
 	close(fd);
 	if (buf)
@@ -95,7 +82,7 @@ fd2str(int fd)
  * @return	contents of file or NULL if an error occurred
  */
 char *
-file2str(const char *path)
+file2str(const char *path, size_t chunk_size)
 {
 	int fd;
 
@@ -104,7 +91,7 @@ file2str(const char *path)
 		return NULL;
 	}
 
-	return fd2str(fd);
+	return fd2str(fd, chunk_size);
 }
 
 /* 
@@ -330,47 +317,6 @@ _eval(char *const argv[], char *path, int timeout, int *ppid)
 		}
 	}
 }
-
-/* 
- * Concatenates NULL-terminated list of arguments into a single
- * commmand and executes it
- * @param	argv	argument list
- * @return	stdout of executed command or NULL if an error occurred
- */
-char *
-_backtick(char *const argv[])
-{
-	int filedes[2];
-	pid_t pid;
-	int status;
-	char *buf = NULL;
-
-	/* create pipe */
-	if (pipe(filedes) == -1) {
-		perror(argv[0]);
-		return NULL;
-	}
-
-	switch (pid = fork()) {
-	case -1:	/* error */
-		return NULL;
-	case 0:		/* child */
-		close(filedes[0]);	/* close read end of pipe */
-		dup2(filedes[1], 1);	/* redirect stdout to write end of pipe */
-		close(filedes[1]);	/* close write end of pipe */
-		execvp(argv[0], argv);
-		exit(errno);
-		break;
-	default:	/* parent */
-		close(filedes[1]);	/* close write end of pipe */
-		buf = fd2str(filedes[0]);
-		waitpid(pid, &status, 0);
-		break;
-	}
-	
-	return buf;
-}
-
 
 /*
  * fread() with automatic retry on syscall interrupt

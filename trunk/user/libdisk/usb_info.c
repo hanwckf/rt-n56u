@@ -11,6 +11,7 @@
 
 #include <nvram/bcmnvram.h>
 #include <shutils.h>
+#include <netutils.h>
 
 #include <fcntl.h>
 #include <errno.h>
@@ -48,7 +49,7 @@ int get_device_type_by_device(const char *device_name){
 	if(isSerialNode(device_name) || isACMNode(device_name)){
 		return DEVICE_TYPE_MODEM_TTY;
 	}
-	if(isUsbNetIf(device_name)){
+	if(is_usbnet_interface(device_name)){
 		return DEVICE_TYPE_MODEM_ETH;
 	}
 
@@ -419,14 +420,6 @@ int isWDMNode(const char *device_name){
 		return 0;
 
 	return 1;
-}
-
-int isUsbNetIf(const char *device_name) {
-	if(!strncmp(device_name, "weth", 4))
-		return 1;
-	if(!strncmp(device_name, "wwan", 4))
-		return 1;
-	return 0;
 }
 
 int isSerialInterface(const char *interface_class){

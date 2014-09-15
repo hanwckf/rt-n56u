@@ -295,6 +295,18 @@ fi
 if [ "$CONFIG_FIRMWARE_INCLUDE_NFSD" != "y" -a "$CONFIG_FIRMWARE_INCLUDE_NFSC" != "y" -a "$CONFIG_FIRMWARE_INCLUDE_CIFS" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_NETWORK_FILESYSTEMS"
 fi
+############################# USB #####################################
+if [ -z "$CONFIG_USB_SUPPORT" ] ; then
+	func_disable_busybox_param "CONFIG_FDISK"
+	func_disable_busybox_param "CONFIG_FEATURE_FDISK_WRITABLE"
+	func_disable_busybox_param "CONFIG_FEATURE_FDISK_ADVANCED"
+	func_disable_busybox_param "CONFIG_LSUSB"
+	func_disable_busybox_param "CONFIG_MICROCOM"
+	func_disable_busybox_param "CONFIG_EJECT"
+	func_disable_busybox_param "CONFIG_FEATURE_EJECT_SCSI"
+	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_FAT"
+	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_NTFS"
+fi
 #######################################################################
 echo --------------------------MAKE-DEP--------------------------------
 make dep

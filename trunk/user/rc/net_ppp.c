@@ -30,8 +30,6 @@
 #include <errno.h>
 #include <ctype.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 
 static char *

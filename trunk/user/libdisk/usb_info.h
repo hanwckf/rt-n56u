@@ -97,7 +97,6 @@ extern int  get_usb_interface_number(const char *usb_port_id);
 extern int  isSerialNode(const char *device_name);
 extern int  isACMNode(const char *device_name);
 extern int  isWDMNode(const char *device_name);
-extern int  isUsbNetIf(const char *device_name);
 extern int  isSerialInterface(const char *interface_class);
 extern int  isACMInterface(const char *interface_class, const char *interface_subclass);
 extern int  isStorageInterface(const char *interface_class);

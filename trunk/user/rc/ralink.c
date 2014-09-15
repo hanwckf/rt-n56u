@@ -28,7 +28,6 @@
 #include <ralink_priv.h>
 #include <iwlib.h>
 #include <flash_mtd.h>
-#include <nvram/bcmnvram.h>
 
 #include "rc.h"
 

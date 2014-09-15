@@ -54,11 +54,6 @@ typedef unsigned char   bool;
 #include <notify_rc.h>
 #include <bin_sem_asus.h>
 
-#include <disk_io_tools.h>
-#include <disk_initial.h>
-#include <disk_share.h>
-
-#include "initial_web_hook.h"
 #include "common.h"
 #include "nvram_x.h"
 #include "httpd.h"
@@ -103,8 +98,8 @@ extern int change_passwd;
 extern int http_is_ssl;
 #endif
 
-static void
-nvram_commit_safe()
+void
+nvram_commit_safe(void)
 {
 	if (nvram_get_int("nvram_manual") == 1)
 		return;
@@ -113,7 +108,7 @@ nvram_commit_safe()
 }
 
 void
-sys_reboot()
+sys_reboot(void)
 {
 	dbG("[httpd] reboot...\n");
 
@@ -425,13 +420,13 @@ write_textarea_to_file(const char* value, const char* dir_name, const char* file
 	return ret;
 }
 
-void websScan(char_t *str)
+void websScan(char *str)
 {
 #define SCAN_MAX_VALUE_LEN 256
 	unsigned int i, flag, i_len;
-	char_t *v1, *v2, *v3, *sp;
-	char_t groupid[64];
-	char_t value[SCAN_MAX_VALUE_LEN];
+	char *v1, *v2, *v3, *sp;
+	char groupid[64];
+	char value[SCAN_MAX_VALUE_LEN];
 	
 	v1 = strchr(str, '?');
 	
@@ -479,7 +474,7 @@ void websScan(char_t *str)
 	return;
 }
 
-void websApply(webs_t wp, char_t *url)
+void websApply(webs_t wp, char *url)
 {
 	do_ej (url, wp);
 	websDone (wp, 200);
@@ -492,7 +487,7 @@ void websApply(webs_t wp, char_t *url)
  * <% nvram_get_x("undefined"); %> produces ""
  */
 static int
-ej_nvram_get_x(int eid, webs_t wp, int argc, char_t **argv)
+ej_nvram_get_x(int eid, webs_t wp, int argc, char **argv)
 {
 	char *sid, *name, *cn, *c;
 
@@ -516,7 +511,7 @@ ej_nvram_get_x(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static int
-ej_nvram_get_ddns(int eid, webs_t wp, int argc, char_t **argv)
+ej_nvram_get_ddns(int eid, webs_t wp, int argc, char **argv)
 {
 	int ret = ej_nvram_get_x(eid, wp, argc, argv);
 
@@ -534,7 +529,7 @@ ej_nvram_get_ddns(int eid, webs_t wp, int argc, char_t **argv)
  * <% nvram_match("wan_proto", "static", "selected"); %> does not produce
  */
 static int
-ej_nvram_match_x(int eid, webs_t wp, int argc, char_t **argv)
+ej_nvram_match_x(int eid, webs_t wp, int argc, char **argv)
 {
 	char *sid, *name, *match, *output;
 
@@ -552,7 +547,7 @@ ej_nvram_match_x(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static int
-ej_nvram_double_match_x(int eid, webs_t wp, int argc, char_t **argv)
+ej_nvram_double_match_x(int eid, webs_t wp, int argc, char **argv)
 {
 	char *sid, *name, *match, *output;
 	char *sid2, *name2, *match2;
@@ -577,7 +572,7 @@ ej_nvram_double_match_x(int eid, webs_t wp, int argc, char_t **argv)
  * <% nvram_match("wan_proto", "static", "selected"); %> does not produce
  */
 static int
-ej_nvram_match_both_x(int eid, webs_t wp, int argc, char_t **argv)
+ej_nvram_match_both_x(int eid, webs_t wp, int argc, char **argv)
 {
 	char *sid, *name, *match, *output, *output_not;
 
@@ -604,7 +599,7 @@ ej_nvram_match_both_x(int eid, webs_t wp, int argc, char_t **argv)
  * <% nvram_get_list("lan_ipaddr", 1); %> produces "192.168.39.248"
  */
 static int
-ej_nvram_get_list_x(int eid, webs_t wp, int argc, char_t **argv)
+ej_nvram_get_list_x(int eid, webs_t wp, int argc, char **argv)
 {
 	char *sid, *name;
 	int which;	
@@ -626,7 +621,7 @@ ej_nvram_get_list_x(int eid, webs_t wp, int argc, char_t **argv)
  * <% nvram_get_list("lan_ipaddr", 1); %> produces "192.168.39.248"
  */
 static int
-ej_nvram_get_buf_x(int eid, webs_t wp, int argc, char_t **argv)
+ej_nvram_get_buf_x(int eid, webs_t wp, int argc, char **argv)
 {
 	char *sid, *name;
 	int which;		
@@ -647,7 +642,7 @@ ej_nvram_get_buf_x(int eid, webs_t wp, int argc, char_t **argv)
  * <% nvram_get_table_x("lan_ipaddr"); %> produces "192.168.39.248"
  */
 static int
-ej_nvram_get_table_x(int eid, webs_t wp, int argc, char_t **argv)
+ej_nvram_get_table_x(int eid, webs_t wp, int argc, char **argv)
 {
 	char *sid, *name;
 	int ret = 0;
@@ -668,7 +663,7 @@ ej_nvram_get_table_x(int eid, webs_t wp, int argc, char_t **argv)
  * <% nvram_match_list("wan_proto", "static", "selected", 1); %> does not produce
  */
 static int
-ej_nvram_match_list_x(int eid, webs_t wp, int argc, char_t **argv)
+ej_nvram_match_list_x(int eid, webs_t wp, int argc, char **argv)
 {
 	char *sid, *name, *match, *output;
 	int which;
@@ -685,7 +680,7 @@ ej_nvram_match_list_x(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static int
-ej_select_channel(int eid, webs_t wp, int argc, char_t **argv)
+ej_select_channel(int eid, webs_t wp, int argc, char **argv)
 {
 	char *sid, chstr[32];
 	int ret = 0;
@@ -729,7 +724,7 @@ ej_select_channel(int eid, webs_t wp, int argc, char_t **argv)
 
 
 static int
-ej_nvram_char_to_ascii(int eid, webs_t wp, int argc, char_t **argv)
+ej_nvram_char_to_ascii(int eid, webs_t wp, int argc, char **argv)
 {
 	char *sid, *name;
 	int ret = 0;
@@ -749,16 +744,17 @@ ej_nvram_char_to_ascii(int eid, webs_t wp, int argc, char_t **argv)
 
 /* Report sys up time */
 static int
-ej_uptime(int eid, webs_t wp, int argc, char_t **argv)
+ej_uptime(int eid, webs_t wp, int argc, char **argv)
 {
 	char buf[512];
 	int ret;
-	char *str = file2str("/proc/uptime");
+	char *str;
 	time_t tm;
 
 	time(&tm);
 	sprintf(buf, rfctime(&tm));
 
+	str = file2str("/proc/uptime", 64);
 	if (str) {
 		unsigned long up = atol(str);
 		free(str);
@@ -768,8 +764,8 @@ ej_uptime(int eid, webs_t wp, int argc, char_t **argv)
 		sprintf(buf, "%s(%s since boot)", buf, lease_buf);
 	}
 
-	ret = websWrite(wp, buf);  
-	return ret;	    
+	ret = websWrite(wp, buf);
+	return ret;
 }
 
 int
@@ -816,7 +812,7 @@ static int dump_file(webs_t wp, char *filename)
 }
 
 static int
-ej_dump(int eid, webs_t wp, int argc, char_t **argv)
+ej_dump(int eid, webs_t wp, int argc, char **argv)
 {
 	char filename[128];
 	char *file, *script;
@@ -949,79 +945,6 @@ static void do_html_post_and_get(char *url, FILE *stream, int clen, char *bounda
 	
 	websScan(post_buf_backup);
 	init_cgi(post_buf);
-}
-
-static char *error_msg_console = NULL, *error_msg = NULL;
-
-static char *get_msg_from_dict(char *lang, const char *const msg_name) {
-#define MAX_FILE_LENGTH 512
-	char current_dir[MAX_FILE_LENGTH];
-	char dict_file[MAX_FILE_LENGTH], *dict_info;
-	char *follow_info, *follow_info_end, *target;
-	int len;
-	
-	if (lang == NULL || strlen(lang) == 0)
-		lang = "EN";
-	
-	memset(dict_file, 0, MAX_FILE_LENGTH);
-	memset(current_dir, 0, MAX_FILE_LENGTH);
-	getcwd(current_dir, MAX_FILE_LENGTH);
-	sprintf(dict_file, "%s/%s.dict", current_dir, lang);
-	
-	dict_info = read_whole_file(dict_file);
-	if (dict_info == NULL) {
-		csprintf("No dictionary file, \"%s\".\n", dict_file);
-		return NULL;
-	}
-	
-	follow_info = strstr(dict_info, msg_name);
-	if (follow_info == NULL) {
-		csprintf("No \"%s\" in the dictionary file.\n", msg_name);
-		free(dict_info);
-		return NULL;
-	}
-	
-	follow_info += strlen(msg_name)+strlen("=");
-	follow_info_end = follow_info;
-	while (*follow_info_end != 0 && *follow_info_end != '\n')
-		++follow_info_end;
-	
-	len = follow_info_end-follow_info;
-	
-	target = (char *)malloc(sizeof(char)*(len+1));
-	if (target == NULL) {
-		csprintf("No memory \"target\".\n");
-		free(dict_info);
-		return NULL;
-	}
-	if (len > 0)
-		strncpy(target, follow_info, len);
-	target[len] = 0;
-	
-	free(dict_info);
-	return target;
-}
-
-static void show_error_msg(const char *const msg_num) {
-	char msg_name[32];
-	
-	memset(msg_name, 0, 32);
-	sprintf(msg_name, "ALERT_OF_ERROR_%s", msg_num);
-	
-	error_msg_console = get_msg_from_dict("", msg_name);
-	error_msg = get_msg_from_dict(nvram_safe_get("preferred_lang"), msg_name);
-	
-	return;
-}
-
-static void clean_error_msg() {
-	if (error_msg_console != NULL)
-		free(error_msg_console);
-	
-	if (error_msg != NULL)
-		free(error_msg);
-	
-	return;
 }
 
 #define WIFI_IWPRIV_CHANGE_BIT	(1<<0)
@@ -1455,7 +1378,7 @@ pinvalidate(char *pin_string)
 	return -1;
 }
 
-static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
+static int update_variables_ex(int eid, webs_t wp, int argc, char **argv) {
 	int sid;
 	char *action_mode;
 	char *sid_list;
@@ -1654,7 +1577,7 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 	return 0;
 }
 
-static int asus_nvram_commit(int eid, webs_t wp, int argc, char_t **argv) {
+static int asus_nvram_commit(int eid, webs_t wp, int argc, char **argv) {
 	if (nvram_modified) {
 		nvram_modified = 0;
 		nvram_commit_safe();
@@ -1663,7 +1586,7 @@ static int asus_nvram_commit(int eid, webs_t wp, int argc, char_t **argv) {
 	return 0;
 }
 
-static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
+static int ej_notify_services(int eid, webs_t wp, int argc, char **argv) {
 	if (restart_needed_bits != 0) {
 		if ((restart_needed_bits & RESTART_REBOOT) != 0) {
 			if (nvram_get_int("nvram_manual") == 1)
@@ -1932,7 +1855,7 @@ Internet connection status code:
 #define INET_STATE_NO_DGW		8
 
 static int
-wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
+wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
 	char wan_dns[512], wan_mac[18], etherlink[32], apclilink[32];
@@ -1993,7 +1916,7 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 			if (nvram_get_int("modem_prio") == 2)
 				need_eth_link |= 1;
 			if (nvram_get_int("modem_type") == 3) {
-				if (isUsbNetIf(wan_ifname)) {
+				if (is_usbnet_interface(wan_ifname)) {
 					wan_ifstate = get_if_state(wan_ifname, addr4_wan);
 					if (wan_ifstate > 0) {
 						unsigned char mac[8];
@@ -2256,7 +2179,7 @@ wanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static int
-lanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
+lanlink_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	char etherlink0[32] = {0};
 	char etherlink1[32] = {0};
@@ -2280,7 +2203,7 @@ lanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static int
-wan_action_hook(int eid, webs_t wp, int argc, char_t **argv)
+wan_action_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	int unit, needed_seconds = 1;
 	char *wan_action = websGetVar(wp, "wan_action", "");
@@ -2332,7 +2255,7 @@ wan_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static int
-ej_detect_internet_hook(int eid, webs_t wp, int argc, char_t **argv)
+ej_detect_internet_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	kill_pidfile_s("/var/run/detect_internet.pid", SIGHUP);
 
@@ -2340,7 +2263,7 @@ ej_detect_internet_hook(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static int
-wol_action_hook(int eid, webs_t wp, int argc, char_t **argv) 
+wol_action_hook(int eid, webs_t wp, int argc, char **argv) 
 {
 	int i, sys_result;
 	char *dst_mac, *p1, *p2, *pd;
@@ -2390,7 +2313,7 @@ wol_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static int
-nvram_action_hook(int eid, webs_t wp, int argc, char_t **argv) 
+nvram_action_hook(int eid, webs_t wp, int argc, char **argv) 
 {
 	int commit_all = 0;
 	int sys_result = 0;
@@ -2416,7 +2339,7 @@ nvram_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 
 
 static int
-nf_values_hook(int eid, webs_t wp, int argc, char_t **argv) 
+nf_values_hook(int eid, webs_t wp, int argc, char **argv) 
 {
 	FILE *fp;
 	char nf_count[32];
@@ -2439,7 +2362,7 @@ nf_values_hook(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static int
-ej_firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv) 
+ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv) 
 {
 #if defined(UTL_HDPARM)
 	int found_utl_hdparm = 1;
@@ -2629,7 +2552,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static int
-ej_hardware_pins_hook(int eid, webs_t wp, int argc, char_t **argv)
+ej_hardware_pins_hook(int eid, webs_t wp, int argc, char **argv)
 {
 #if defined (BOARD_GPIO_BTN_WPS)
 	int has_but_wps = 1;
@@ -2697,7 +2620,7 @@ ej_hardware_pins_hook(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static int
-openvpn_srv_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
+openvpn_srv_cert_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	int has_found_cert = 0;
 #if defined(APP_OPENVPN)
@@ -2730,7 +2653,7 @@ openvpn_srv_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
-static int openvpn_cli_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
+static int openvpn_cli_cert_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	int has_found_cert = 0;
 #if defined(APP_OPENVPN)
@@ -2765,7 +2688,7 @@ static int openvpn_cli_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
-static int ej_get_parameter(int eid, webs_t wp, int argc, char_t **argv) {
+static int ej_get_parameter(int eid, webs_t wp, int argc, char **argv) {
 	bool last_was_escaped;
 	int ret = 0;
 	
@@ -2783,7 +2706,7 @@ static int ej_get_parameter(int eid, webs_t wp, int argc, char_t **argv) {
 	return ret;
 }
 
-static int login_state_hook(int eid, webs_t wp, int argc, char_t **argv) {
+static int login_state_hook(int eid, webs_t wp, int argc, char **argv) {
 #if defined(USE_IPV6)
 	char s_addr[INET6_ADDRSTRLEN];
 #else
@@ -2797,7 +2720,7 @@ static int login_state_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	return 0;
 }
 
-static int ej_get_nvram_list(int eid, webs_t wp, int argc, char_t **argv) {
+static int ej_get_nvram_list(int eid, webs_t wp, int argc, char **argv) {
 	struct variable *v, *gv;
 	char buf[NVRAM_MAX_VALUE_LEN];
 	char *serviceId, *groupName, *hiddenVar;
@@ -2856,7 +2779,7 @@ static int ej_get_nvram_list(int eid, webs_t wp, int argc, char_t **argv) {
 }
 
 // for detect static IP's client.
-static int ej_get_static_client(int eid, webs_t wp, int argc, char_t **argv)
+static int ej_get_static_client(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
 	char buf[512], *head, *tail, field[512];
@@ -2910,7 +2833,7 @@ static int ej_get_static_client(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
-static int ej_get_static_ccount(int eid, webs_t wp, int argc, char_t **argv)
+static int ej_get_static_ccount(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
 	char buf[32];
@@ -2935,14 +2858,14 @@ static int ej_get_static_ccount(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
-static int ej_get_flash_time(int eid, webs_t wp, int argc, char_t **argv)
+static int ej_get_flash_time(int eid, webs_t wp, int argc, char **argv)
 {
 	websWrite(wp, "function board_flash_time() { return %d;}\n", BOARD_FLASH_TIME);
 
 	return 0;
 }
 
-static int ej_get_vpns_client(int eid, webs_t wp, int argc, char_t **argv)
+static int ej_get_vpns_client(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
 	int first_client;
@@ -3074,7 +2997,7 @@ void get_wifidata(struct wifi_stats *st, int is_5ghz)
 
 static struct cpu_stats g_cpu_old = {0};
 
-static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
+static int ej_system_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	struct sysinfo info;
 	struct cpu_stats cpu;
@@ -3146,7 +3069,7 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
-static int ej_dump_syslog_hook(int eid, webs_t wp, int argc, char_t **argv)
+static int ej_dump_syslog_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	int log_lines = 0;
 	int log_float = nvram_get_int("log_float_ui");
@@ -3185,422 +3108,6 @@ static int ej_dump_syslog_hook(int eid, webs_t wp, int argc, char_t **argv)
 
 	if (!log_lines)
 		websWrite(wp, "%s", "");
-
-	return 0;
-}
-
-static int ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char_t **argv) {
-	disk_info_t *disks_info, *follow_disk;
-	partition_info_t *follow_partition;
-	int first;
-
-	disks_info = read_disk_data();
-	if (disks_info == NULL) {
-		websWrite(wp, "%s", initial_disk_pool_mapping_info());
-		return -1;
-	}
-
-	char *Ptr;
-
-	websWrite(wp, "function pool_names() {\n");
-	websWrite(wp, "    return [");
-
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-			
-			if (follow_partition->mount_point == NULL) {
-				websWrite(wp, "\"unknown\"");
-				continue;
-			}
-			
-			Ptr = rindex(follow_partition->mount_point, '/');
-			if (Ptr == NULL) {
-				websWrite(wp, "\"unknown\"");
-				continue;
-			}
-			
-			if (strncmp(follow_partition->mount_point, "/media/", 7) != 0) {
-				websWrite(wp, "\"unknown\"");
-				continue;
-			}
-			++Ptr;
-			websWrite(wp, "\"%s\"", Ptr);
-		}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
-
-	websWrite(wp, "function pool_types() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-
-			if (follow_partition->mount_point == NULL) {
-				websWrite(wp, "\"unknown\"");
-				continue;
-			}
-
-			websWrite(wp, "\"%s\"", follow_partition->file_system);
-		}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
-
-	websWrite(wp, "function pool_status() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-
-			if (follow_partition->mount_point == NULL) {
-				websWrite(wp, "\"unmounted\"");
-				continue;
-			}
-
-			//if (strcmp(follow_partition->file_system, "ntfs") == 0)
-			//	websWrite(wp, "\"ro\"");
-			//else
-			websWrite(wp, "\"rw\"");
-		}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
-
-	websWrite(wp, "function pool_kilobytes_in_use() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-
-			//printf("[%llu] ", follow_partition->used_kilobytes);	// tmp test
-			websWrite(wp, "%llu", follow_partition->used_kilobytes);
-		}
-
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
-
-	disk_info_t *follow_disk2;
-	u32 disk_num, pool_num;
-	websWrite(wp, "function per_pane_pool_usage_kilobytes(pool_num, disk_num) {\n");
-	for (follow_disk = disks_info, pool_num = 0; follow_disk != NULL; follow_disk = follow_disk->next) {
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next, ++pool_num) {
-			websWrite(wp, "    if (pool_num == %d) {\n", pool_num);
-			if (follow_partition->mount_point != NULL)
-				for (follow_disk2 = disks_info, disk_num = 0; follow_disk2 != NULL; follow_disk2 = follow_disk2->next, ++disk_num) {
-					websWrite(wp, "	if (disk_num == %d) {\n", disk_num);
-					if (follow_disk2->major == follow_disk->major && follow_disk2->minor == follow_disk->minor)
-						websWrite(wp, "	    return [%llu];\n", follow_partition->size_in_kilobytes);
-					else
-						websWrite(wp, "	    return [0];\n");
-					websWrite(wp, "	}\n");
-				}
-			else
-				websWrite(wp, "	return [0];\n");
-			websWrite(wp, "    }\n");
-		}
-	}
-	websWrite(wp, "}\n\n");
-	free_disk_data(disks_info);
-
-	return 0;
-}
-
-static int ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char_t **argv) {
-	disk_info_t *disks_info, *follow_disk;
-	int first;
-
-	websWrite(wp, "function blank_disks() { return [];}\n");
-	websWrite(wp, "function blank_disk_interface_names() { return [];}\n");
-	websWrite(wp, "function blank_disk_device_names() { return [];}\n");
-	websWrite(wp, "function blank_disk_model_info() { return [];}\n");
-	websWrite(wp, "function blank_disk_total_size() { return [];}\n");
-	websWrite(wp, "function blank_disk_total_mounted_number() { return [];}\n\n");
-
-	disks_info = read_disk_data();
-	if (disks_info == NULL) {
-		websWrite(wp, "%s", initial_available_disk_names_and_sizes());
-		return -1;
-	}
-
-	/* show name of the foreign disks */
-	websWrite(wp, "function foreign_disks() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
-		if (first == 1)
-			first = 0;
-		else
-			websWrite(wp, ", ");
-		websWrite(wp, "\"%s\"", follow_disk->tag);
-	}
-	websWrite(wp, "];\n}\n\n");
-
-	/* show interface of the foreign disks */
-	websWrite(wp, "function foreign_disk_interface_names() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
-		if (first == 1)
-			first = 0;
-		else
-			websWrite(wp, ", ");
-		websWrite(wp, "\"%u\"", follow_disk->port_root);
-	}
-	websWrite(wp, "];\n}\n\n");
-
-	/* show device name of the foreign disks */
-	websWrite(wp, "function foreign_disk_device_names() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
-		if (first == 1)
-			first = 0;
-		else
-			websWrite(wp, ", ");
-		websWrite(wp, "\"%s\"", follow_disk->device);
-	}
-	websWrite(wp, "];\n}\n\n");
-
-	/* show model info of the foreign disks */
-	websWrite(wp, "function foreign_disk_model_info() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
-		if (first == 1)
-			first = 0;
-		else
-			websWrite(wp, ", ");
-		websWrite(wp, "\"");
-		if (follow_disk->vendor != NULL)
-			websWrite(wp, "%s", follow_disk->vendor);
-		if (follow_disk->model != NULL) {
-			if (follow_disk->vendor != NULL)
-				websWrite(wp, " ");
-			websWrite(wp, "%s", follow_disk->model);
-		}
-		websWrite(wp, "\"");
-	}
-	websWrite(wp, "];\n}\n\n");
-
-	/* show total_size of the foreign disks */
-	websWrite(wp, "function foreign_disk_total_size() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
-		if (first == 1)
-			first = 0;
-		else
-			websWrite(wp, ", ");
-		websWrite(wp, "\"%llu\"", follow_disk->size_in_kilobytes);
-	}
-	websWrite(wp, "];\n}\n\n");
-
-	/* show total number of the mounted partition in this foreign disk */
-	websWrite(wp, "function foreign_disk_total_mounted_number() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
-		if (first == 1)
-			first = 0;
-		else
-			websWrite(wp, ", ");
-		websWrite(wp, "\"%u\"", follow_disk->mounted_number);
-	}
-	websWrite(wp, "];\n}\n\n");
-
-	free_disk_data(disks_info);
-
-	return 0;
-}
-
-static int ej_get_usb_ports_info(int eid, webs_t wp, int argc, char_t **argv){
-
-	int i, idx, first, usb_dev_type[2] = {0};
-	char *usb_dev_string[2];
-	usb_info_t *usb_info, *follow_usb;
-
-	usb_info = get_usb_info();
-	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
-		idx = follow_usb->port_root;
-		if (idx == 1 || idx == 2) {
-			if (follow_usb->dev_type == DEVICE_TYPE_HUB)
-				usb_dev_type[idx-1] |= 0x01;
-			else if (follow_usb->dev_type == DEVICE_TYPE_DISK)
-				usb_dev_type[idx-1] |= 0x02;
-			else if (follow_usb->dev_type == DEVICE_TYPE_PRINTER)
-				usb_dev_type[idx-1] |= 0x04;
-			else if (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY)
-				usb_dev_type[idx-1] |= 0x08;
-			else if (follow_usb->dev_type == DEVICE_TYPE_MODEM_ETH)
-				usb_dev_type[idx-1] |= 0x10;
-		}
-	}
-
-	for (i = 0; i < 2; i++) {
-		if (usb_dev_type[i] & 0x01)
-			usb_dev_string[i] = "hub";
-		else if (usb_dev_type[i] & 0x04)
-			usb_dev_string[i] = "printer";
-		else if (usb_dev_type[i] & 0x10)
-			usb_dev_string[i] = "modem_eth";
-		else if (usb_dev_type[i] & 0x08)
-			usb_dev_string[i] = "modem_tty";
-		else if (usb_dev_type[i] & 0x02)
-			usb_dev_string[i] = "storage";
-		else
-			usb_dev_string[i] = "unknown";
-	}
-
-	/* usb ports num */
-	websWrite(wp, "function get_usb_ports_num(){\n");
-	websWrite(wp, "    return %u;\n", BOARD_NUM_USB_PORTS);
-	websWrite(wp, "}\n\n");
-
-	/* usb device types */
-	websWrite(wp, "function get_device_type_usb(port_num){\n");
-	websWrite(wp, "    if (port_num == 1)\n");
-	websWrite(wp, "        return \"%s\";\n", usb_dev_string[0]);
-	websWrite(wp, "    else if (port_num == 2)\n");
-	websWrite(wp, "        return \"%s\";\n", usb_dev_string[1]);
-	websWrite(wp, "    else\n");
-	websWrite(wp, "        return \"%s\";\n", "unknown");
-	websWrite(wp, "}\n\n");
-
-	/* printers */
-	websWrite(wp, "function printer_ports() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
-		if (follow_usb->dev_type == DEVICE_TYPE_PRINTER) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-			websWrite(wp, "\"%u\"", follow_usb->port_root);
-		}
-	}
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function printer_manufacts() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
-		if (follow_usb->dev_type == DEVICE_TYPE_PRINTER) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-			websWrite(wp, "\"%s\"", (follow_usb->manuf) ? follow_usb->manuf : "Unknown");
-		}
-	}
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function printer_models() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
-		if (follow_usb->dev_type == DEVICE_TYPE_PRINTER) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-			websWrite(wp, "\"%s\"", (follow_usb->product) ? follow_usb->product : "Unknown" );
-		}
-	}
-	websWrite(wp, "];\n}\n\n");
-
-	/* modems */
-	websWrite(wp, "function modem_ports() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
-		if (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY ||
-		    follow_usb->dev_type == DEVICE_TYPE_MODEM_ETH) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-			websWrite(wp, "\"%u\"", follow_usb->port_root);
-		}
-	}
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function modem_devnum() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
-		if (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY ||
-		    follow_usb->dev_type == DEVICE_TYPE_MODEM_ETH) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-			websWrite(wp, "\"%u\"", follow_usb->id_devnum);
-		}
-	}
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function modem_types() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
-		if (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY ||
-		    follow_usb->dev_type == DEVICE_TYPE_MODEM_ETH) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-			websWrite(wp, "\"%s\"", (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY) ? "RAS" : "NDIS/RNDIS");
-		}
-	}
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function modem_manufacts() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
-		if (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY ||
-		    follow_usb->dev_type == DEVICE_TYPE_MODEM_ETH) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-			websWrite(wp, "\"%s\"", (follow_usb->manuf) ? follow_usb->manuf : "Unknown");
-		}
-	}
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function modem_models() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
-		if (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY ||
-		    follow_usb->dev_type == DEVICE_TYPE_MODEM_ETH) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-			websWrite(wp, "\"%s\"", (follow_usb->product) ? follow_usb->product : "Unknown" );
-		}
-	}
-	websWrite(wp, "];\n}\n\n");
-
-	free_usb_info(usb_info);
 
 	return 0;
 }
@@ -3669,8 +3176,8 @@ int ej_shown_language_option(int eid, webs_t wp, int argc, char **argv) {
 }
 
 static int
-apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
-		char_t *url, char_t *path, char_t *query)
+apply_cgi(webs_t wp, char *urlPrefix, char *webDir, int arg,
+		char *url, char *path, char *query)
 {
 	int sid;
 	char *value;
@@ -4472,7 +3979,7 @@ do_update_cgi(char *url, FILE *stream)
 }
 
 static void
-do_prf_file(char *url, FILE *stream)
+do_nvram_file(char *url, FILE *stream)
 {
 	char *nvram_file = PROFILE_FIFO_DOWNLOAD;
 
@@ -4481,6 +3988,17 @@ do_prf_file(char *url, FILE *stream)
 	do_file(nvram_file, stream);
 }
 
+static void 
+do_log_cgi(char *url, FILE *stream)
+{
+	dump_file(stream, "/tmp/syslog.log");
+	fputs("\r\n", stream); /* terminator */
+}
+
+static char syslog_txt[] =
+"Content-Disposition: attachment;\r\n"
+"filename=syslog.txt"
+;
 
 static char cache_static[] =
 "Cache-Control: max-age=2592000\r\n"
@@ -4493,14 +4011,6 @@ static char no_cache_IE[] =
 "Pragma: no-cache\r\n"
 "Expires: -1"
 ;
-
-static void 
-do_log_cgi(char *url, FILE *stream)
-{
-	dump_file(stream, "/tmp/syslog.log");
-	fputs("\r\n", stream); /* terminator */
-	fputs("\r\n", stream); /* terminator */
-}
 
 struct mime_handler mime_handlers[] = {
 	{ "Nologin.asp", "text/html", no_cache_IE, do_html_post_and_get, do_ej, NULL },
@@ -4538,1411 +4048,21 @@ struct mime_handler mime_handlers[] = {
 
 	{ "**.js",  "text/javascript", no_cache_IE, NULL, do_ej, do_auth },
 	{ "**.cab", "text/txt", NULL, NULL, do_file, do_auth },
-	{ "**.CFG", "application/force-download", NULL, NULL, do_prf_file, do_auth },
+
+	{ "**.CFG", "application/force-download", NULL, NULL, do_nvram_file, do_auth },
+	{ "syslog.txt", "application/force-download", syslog_txt, do_html_post_and_get, do_log_cgi, do_auth },
 
 	{ "apply.cgi*", "text/html", no_cache_IE, do_html_post_and_get, do_apply_cgi, do_auth },
 	{ "upgrade.cgi*", "text/html", no_cache_IE, do_upgrade_post, do_upgrade_cgi, do_auth},
 	{ "upload.cgi*", "text/html", no_cache_IE, do_upload_post, do_upload_cgi, do_auth },
-	{ "syslog.cgi*", "application/force-download", no_cache_IE, do_html_post_and_get, do_log_cgi, do_auth },
 	{ "update.cgi*", "text/javascript", no_cache_IE, do_html_post_and_get, do_update_cgi, do_auth }, // jerry5 
 
 	{ NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
-static int ej_get_usb_share_list(int eid, webs_t wp, int argc, char **argv)
-{
-	disk_info_t *disks_info, *follow_disk;
-	partition_info_t *follow_partition;
-	int first_pool, ret;
-
-	disks_info = read_disk_data();
-	if (!disks_info)
-		return 0;
-
-	ret = 0;
-	first_pool = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
-			if (follow_partition->mount_point != NULL && strlen(follow_partition->mount_point) > 1) {
-				if (first_pool == 1)
-					first_pool = 0;
-				else
-					ret += websWrite(wp, ", ");
-				
-				ret += websWrite(wp, "[\"%s\",\"%s\",\"%s\"]", 
-					follow_partition->device, follow_partition->mount_point, follow_partition->file_system);
-			}
-		}
-
-	free_disk_data(disks_info);
-
-	return ret;
-}
-
-static int ej_get_AiDisk_status(int eid, webs_t wp, int argc, char **argv)
-{
-	disk_info_t *disks_info, *follow_disk;
-	partition_info_t *follow_partition;
-	char *follow_info;
-	int sh_num;
-	char **folder_list = NULL;
-	int first_pool, first_folder, result, i;
-
-	websWrite(wp, "function get_cifs_status() {\n");
-	websWrite(wp, "    return %d;\n", nvram_get_int("enable_samba"));
-	websWrite(wp, "}\n\n");
-
-	websWrite(wp, "function get_ftp_status() {\n");
-	websWrite(wp, "    return %d;\n", nvram_get_int("enable_ftp"));
-	websWrite(wp, "}\n\n");
-
-	websWrite(wp, "function get_share_management_status(protocol) {\n");
-	websWrite(wp, "    if (protocol == \"cifs\")\n");
-	websWrite(wp, "	return %d;\n", nvram_get_int("st_samba_mode"));
-	websWrite(wp, "    else if (protocol == \"ftp\")\n");
-	websWrite(wp, "	return %d;\n", nvram_get_int("st_ftp_mode"));
-	websWrite(wp, "    else\n");
-	websWrite(wp, "	return -1;\n");
-	websWrite(wp, "}\n\n");
-
-	disks_info = read_disk_data();
-	if (disks_info == NULL) {
-		websWrite(wp, "function get_sharedfolder_in_pool(poolName) {}\n");
-		return -1;
-	}
-	first_pool = 1;
-	websWrite(wp, "function get_sharedfolder_in_pool(poolName) {\n");
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
-			if (follow_partition->mount_point != NULL && strlen(follow_partition->mount_point) > 0) {
-				websWrite(wp, "    ");
-
-				if (first_pool == 1)
-					first_pool = 0;
-				else
-					websWrite(wp, "else ");
-
-				follow_info = rindex(follow_partition->mount_point, '/');
-				websWrite(wp, "if (poolName == \"%s\") {\n", follow_info+1);
-				websWrite(wp, "	return [");
-
-				result = get_all_folder_in_mount_path(follow_partition->mount_point, &sh_num, &folder_list);
-				if (result < 0) {
-					websWrite(wp, "];\n");
-					websWrite(wp, "    }\n");
-					free_2_dimension_list(&sh_num, &folder_list);
-					continue;
-				}
-
-				first_folder = 1;
-				for (i = 0; i < sh_num; ++i) {
-					if (first_folder == 1)
-						first_folder = 0;
-					else
-						websWrite(wp, ", ");
-					websWrite(wp, "\"%s\"", folder_list[i]);
-				}
-
-				websWrite(wp, "];\n");
-				websWrite(wp, "    }\n");
-			}
-		}
-
-	websWrite(wp, "}\n\n");
-
-	if (disks_info != NULL) {
-		free_2_dimension_list(&sh_num, &folder_list);
-		free_disk_data(disks_info);
-	}
-
-	return 0;
-}
-
-static int ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv)
-{
-	int acc_num = 0;
-	char **account_list = NULL;
-	char *acc_mode = "ftp";
-	int i, first;
-
-	ejArgs(argc, argv, "%s", &acc_mode);
-
-	first = 1;
-	if (strcmp(acc_mode, "ftp") == 0) {
-		int st_ftp_mode = nvram_get_int("st_ftp_mode");
-		if (st_ftp_mode == 3 || st_ftp_mode == 4) {
-			first = 0;
-			websWrite(wp, "\"%s\"", FTP_ANONYMOUS_USER);
-		}
-	}
-
-	get_account_list(&acc_num, &account_list);
-	for (i = 0; i < acc_num; ++i) {
-		if (first == 1)
-			first = 0;
-		else
-			websWrite(wp, ", ");
-		websWrite(wp, "\"%s\"", account_list[i]);
-	}
-	free_2_dimension_list(&acc_num, &account_list);
-
-	return 0;
-}
-
-static int ej_safely_remove_disk(int eid, webs_t wp, int argc, char_t **argv)
-{
-	int result;
-	int port_num = 0;
-	char *disk_port = websGetVar(wp, "port", "");
-	char *disk_devn = websGetVar(wp, "devn", "");
-
-	if (atoi(disk_port) == 1)
-		port_num = 1;
-	else if (atoi(disk_port) == 2)
-		port_num = 2;
-	
-	result = doSystem("/sbin/ejusb %d %s", port_num, disk_devn);
-	if (result != 0) {
-		show_error_msg("Action9");
-		websWrite(wp, "<script>safely_remove_disk_error(\'%s\');</script>\n", error_msg);
-		clean_error_msg();
-	} else {
-		websWrite(wp, "<script>safely_remove_disk_success();</script>\n");
-	}
-
-	return 0;
-}
-
-int ej_get_permissions_of_account(int eid, webs_t wp, int argc, char **argv) {
-	disk_info_t *disks_info, *follow_disk;
-	partition_info_t *follow_partition;
-	int acc_num = 0;
-	char **account_list = NULL;
-	char *acc_mode = "ftp";
-	int samba_right, ftp_right;
-	int result, anonym, i, j;
-	int first_pool, first_account, first_folder;
-
-	ejArgs(argc, argv, "%s", &acc_mode);
-
-	disks_info = read_disk_data();
-	if (disks_info == NULL) {
-		websWrite(wp, "function get_account_permissions_in_pool(account, pool) {return [];}\n");
-		return -1;
-	}
-
-	get_account_list(&acc_num, &account_list);
-
-	websWrite(wp, "function get_account_permissions_in_pool(account, pool) {\n");
-
-	anonym = 0;
-	if (strcmp(acc_mode, "ftp") == 0) {
-		int st_ftp_mode = nvram_get_int("st_ftp_mode");
-		if (st_ftp_mode == 3 || st_ftp_mode == 4)
-			anonym = 1;
-	}
-
-	if ((acc_num + anonym) <= 0)
-		websWrite(wp, "    return [];\n");
-
-	first_account = 1;
-	for (i = 0; i < (acc_num + anonym); ++i) {
-		char *acc_value;
-		websWrite(wp, "    ");
-		if (first_account == 1)
-			first_account = 0;
-		else
-			websWrite(wp, "else ");
-		
-		if (i < acc_num)
-			acc_value = account_list[i];
-		else
-			acc_value = FTP_ANONYMOUS_USER;
-
-		websWrite(wp, "if (account == \"%s\") {\n", acc_value);
-
-		first_pool = 1;
-		for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
-			for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
-				if (follow_partition->mount_point != NULL && strlen(follow_partition->mount_point) > 0) {
-					int sh_num = 0;
-					char **folder_list = NULL;
-					websWrite(wp, "	");
-					if (first_pool == 1)
-						first_pool = 0;
-					else
-						websWrite(wp, "else ");
-
-					websWrite(wp, "if (pool == \"%s\") {\n", rindex(follow_partition->mount_point, '/')+1);
-
-					websWrite(wp, "	    return [");
-
-					result = get_all_folder_in_mount_path(follow_partition->mount_point, &sh_num, &folder_list);
-					if (result != 0) {
-						websWrite(wp, "];\n");
-						websWrite(wp, "	}\n");
-						free_2_dimension_list(&sh_num, &folder_list);
-						continue;
-					}
-					first_folder = 1;
-					for (j = 0; j < sh_num; ++j) {
-						samba_right = get_permission(acc_value,
-												 follow_partition->mount_point,
-												 folder_list[j],
-												 "cifs");
-						ftp_right = get_permission(acc_value,
-												 follow_partition->mount_point,
-												 folder_list[j],
-												 "ftp");
-						if (samba_right < 0 || samba_right > 3) {
-//							samba_right = DEFAULT_SAMBA_RIGHT;	// J++
-							samba_right = 0;	
-						}
-
-						if (ftp_right < 0 || ftp_right > 3) {
-//							ftp_right = DEFAULT_FTP_RIGHT;		// J++
-							ftp_right = 0;
-						}
-
-						if (first_folder == 1) {
-							first_folder = 0;
-							websWrite(wp, "[\"%s\", %d, %d]", folder_list[j], samba_right, ftp_right);
-						}
-						else
-							websWrite(wp, "		    [\"%s\", %d, %d]", folder_list[j], samba_right, ftp_right);
-
-						if (j != sh_num-1)
-							websWrite(wp, ",\n");
-					}
-					websWrite(wp, "];\n");
-					websWrite(wp, "	}\n");
-					
-					free_2_dimension_list(&sh_num, &folder_list);
-				}
-			}
-		}
-
-		websWrite(wp, "    }\n");
-	}
-
-	websWrite(wp, "}\n\n");
-
-	free_2_dimension_list(&acc_num, &account_list);
-
-	if (disks_info != NULL)
-		free_disk_data(disks_info);
-
-	return 0;
-}
-
-
-int ej_get_folder_tree(int eid, webs_t wp, int argc, char **argv) {
-	char *layer_order = websGetVar(wp, "layer_order", ""), folder_code[1024];
-	char *follow_info, *follow_info_end, backup;
-	int layer = 0, first;
-	int disk_count, partition_count, folder_count1, folder_count2;
-	int disk_order = -1, partition_order = -1, folder_order = -1;
-	disk_info_t *disks_info, *follow_disk;
-	partition_info_t *follow_partition;
-	char *pool_mount_dir;
-	DIR *dir1, *dir2;
-	struct dirent *dp1, *dp2;
-	char dir1_Path[4096], dir2_Path[4096];
-
-	if (strlen(layer_order) <= 0) {
-		printf("No input \"layer_order\"!\n");
-		return -1;
-	}
-
-	follow_info = index(layer_order, '_');
-	while (follow_info != NULL && *follow_info != 0) {
-		++layer;
-
-		++follow_info;
-		if (*follow_info == 0)
-			break;
-		follow_info_end = follow_info;
-		while (*follow_info_end != 0 && isdigit(*follow_info_end))
-			++follow_info_end;
-		backup = *follow_info_end;
-		*follow_info_end = 0;
-
-		if (layer == 1)
-			disk_order = atoi(follow_info);
-		else if (layer == 2)
-			partition_order = atoi(follow_info);
-		else if (layer == 3)
-			folder_order = atoi(follow_info);
-		*follow_info_end = backup;
-
-		if (layer == 3) {
-			memset(folder_code, 0, 1024);
-			strcpy(folder_code, follow_info);
-		}
-
-		follow_info = follow_info_end;
-	}
-	follow_info = folder_code;
-
-	disks_info = read_disk_data();
-	if (disks_info == NULL) {
-		printf("Can't read the information of disks.\n");
-		return -1;
-	}
-
-	first = 1;
-	disk_count = 0;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next, ++disk_count) {
-		if (layer == 0) { // get disks.
-			partition_count = 0;
-			for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next, ++partition_count)
-				;
-
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-
-			websWrite(wp, "\"%s#%u#%u\"", follow_disk->tag, disk_count, partition_count);
-
-			continue;
-		}
-		if (disk_count != disk_order)
-			continue;
-
-		partition_count = 0;
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next, ++partition_count) {
-			if (follow_partition->mount_point == NULL || strlen(follow_partition->mount_point) <= 0)
-				continue;
-
-			pool_mount_dir = rindex(follow_partition->mount_point, '/')+1;
-
-			if (layer == 1) { // get pools.
-				dir2 = opendir(follow_partition->mount_point);
-				/* pool_mount_dir isn't file. */
-				if (dir2 == NULL)
-					continue;
-
-				folder_count2 = 0;
-				while ((dp2 = readdir(dir2)) != NULL) {
-					if (dp2->d_name[0] == '.')
-						continue;
-
-					++folder_count2;
-				}
-				closedir(dir2);
-
-				if (first == 1)
-					first = 0;
-				else
-					websWrite(wp, ", ");
-
-				websWrite(wp, "\"%s#%u#%u\"", pool_mount_dir, partition_count, folder_count2);
-
-				continue;
-			}
-			if (partition_count != partition_order)
-				continue;
-
-			memset(dir1_Path, 0, 4096);
-			sprintf(dir1_Path, "%s", follow_partition->mount_point);
-			dir1 = opendir(dir1_Path);
-			if (dir1 == NULL) {
-				printf("Can't open the directory, %s.\n", dir1_Path);
-
-				free_disk_data(disks_info);
-
-				return -1;
-			}
-
-			folder_count1 = -1;
-			while ((dp1 = readdir(dir1)) != NULL) {
-				if (dp1->d_name[0] == '.')
-					continue;
-
-				++folder_count1;
-
-				if (layer == 2) { // get L1's folders.
-					memset(dir2_Path, 0, 4096);
-					sprintf(dir2_Path, "%s/%s", dir1_Path, dp1->d_name);
-					dir2 = opendir(dir2_Path);
-
-					folder_count2 = 0;
-					if (dir2 != NULL) {
-						while ((dp2 = readdir(dir2)) != NULL) {
-							if (dp2->d_name[0] == '.')
-								continue;
-
-							++folder_count2;
-						}
-						closedir(dir2);
-					}
-					if (first == 1)
-						first = 0;
-					else
-						websWrite(wp, ", ");
-
-					websWrite(wp, "\"%s#%u#%u\"", dp1->d_name, folder_count1, folder_count2);
-
-					continue;
-				}
-
-				if (folder_count1 == folder_order)
-					sprintf(dir1_Path, "%s/%s", dir1_Path, dp1->d_name);
-			}
-			closedir(dir1);
-		}
-	}
-	free_disk_data(disks_info);
-	layer -= 3;
-
-	while (layer >= 0) {      // get Ln's folders.
-		/* get the current folder_code and folder_order. */
-		follow_info_end = index(follow_info, '_');
-		if (follow_info_end != NULL)
-			follow_info = follow_info_end+1;
-		else
-			backup = -1;
-		folder_order = atoi(follow_info);
-
-		dir1 = opendir(dir1_Path);
-		if (dir1 == NULL) {
-			printf("Can't open the directory, %s.\n", dir1_Path);
-
-			return -1;
-		}
-		folder_count1 = -1;
-		while ((dp1 = readdir(dir1)) != NULL) {
-			if (dp1->d_name[0] == '.')
-				continue;
-
-			++folder_count1;
-
-			if (layer == 0) {
-				memset(dir2_Path, 0, 4096);
-				sprintf(dir2_Path, "%s/%s", dir1_Path, dp1->d_name);
-				dir2 = opendir(dir2_Path);
-				folder_count2 = 0;
-				if (dir2 != NULL) {
-					while ((dp2 = readdir(dir2)) != NULL) {
-						if (dp2->d_name[0] == '.')
-							continue;
-
-						++folder_count2;
-					}
-					closedir(dir2);
-				}
-
-				if (first == 1)
-					first = 0;
-				else
-					websWrite(wp, ", ");
-
-				websWrite(wp, "\"%s#%u#%u\"", dp1->d_name, folder_count1, folder_count2);
-
-				continue;
-			}
-
-			if (folder_count1 == folder_order)
-				sprintf(dir1_Path, "%s/%s", dir1_Path, dp1->d_name);
-		}
-		closedir(dir1);
-		--layer;
-	}
-
-	return 0;
-}
-
-int ej_get_share_tree(int eid, webs_t wp, int argc, char **argv) {
-	char *layer_order = websGetVar(wp, "layer_order", "");
-	char *follow_info, *follow_info_end, backup;
-	int layer = 0, first;
-	int disk_count, partition_count, share_count;
-	int disk_order = -1, partition_order = -1;
-	disk_info_t *disks_info, *follow_disk;
-	partition_info_t *follow_partition;
-
-	if (strlen(layer_order) <= 0) {
-		printf("No input \"layer_order\"!\n");
-		return -1;
-	}
-
-	follow_info = index(layer_order, '_');
-	while (follow_info != NULL && *follow_info != 0) {
-		++layer;
-		++follow_info;
-		if (*follow_info == 0)
-			break;
-		follow_info_end = follow_info;
-		while (*follow_info_end != 0 && isdigit(*follow_info_end))
-			++follow_info_end;
-		backup = *follow_info_end;
-		*follow_info_end = 0;
-
-		if (layer == 1)
-			disk_order = atoi(follow_info);
-		else if (layer == 2)
-			partition_order = atoi(follow_info);
-		else {
-			*follow_info_end = backup;
-			printf("Input \"%s\" is incorrect!\n", layer_order);
-			return -1;
-		}
-
-		*follow_info_end = backup;
-		follow_info = follow_info_end;
-	}
-
-	disks_info = read_disk_data();
-	if (disks_info == NULL) {
-		printf("Can't read the information of disks.\n");
-		return -1;
-	}
-
-	first = 1;
-	disk_count = 0;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next, ++disk_count) {
-		partition_count = 0;
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next, ++partition_count) {
-			if (layer != 0 && follow_partition->mount_point != NULL && strlen(follow_partition->mount_point) > 0) {
-				int i;
-				char **folder_list;
-				int result;
-				result = get_all_folder_in_mount_path(follow_partition->mount_point, &share_count, &folder_list);
-				if (result < 0) {
-					printf("get_disk_tree: Can't get the folder list in \"%s\".\n", follow_partition->mount_point);
-
-					share_count = 0;
-				}
-
-				if (layer == 2 && partition_count == partition_order && disk_count == disk_order) {
-					for (i = 0; i < share_count; ++i) {
-						if (first == 1)
-							first = 0;
-						else
-							websWrite(wp, ", ");
-
-						websWrite(wp, "\"%s#%u#0\"", folder_list[i], i);
-					}
-				}
-				else if (layer == 1 && disk_count == disk_order) {
-					if (first == 1)
-						first = 0;
-					else
-						websWrite(wp, ", ");
-
-					follow_info = rindex(follow_partition->mount_point, '/');
-					websWrite(wp, "\"%s#%u#%u\"", follow_info+1, partition_count, share_count);
-				}
-
-				free_2_dimension_list(&share_count, &folder_list);
-			}
-		}
-		if (layer == 0) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-
-			websWrite(wp, "\"%s#%u#%u\"", follow_disk->tag, disk_count, partition_count);
-		}
-
-		if (layer > 0 && disk_count == disk_order)
-			break;
-	}
-
-	free_disk_data(disks_info);
-
-	return 0;
-}
-
-void not_ej_initial_folder_var_file()						// J++
-{
-	disk_info_t *disks_info, *follow_disk;
-	partition_info_t *follow_partition;
-
-	disks_info = read_disk_data();
-	if (disks_info == NULL)
-		return;
-
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next)
-			if (follow_partition->mount_point != NULL && strlen(follow_partition->mount_point) > 0) {
-				initial_folder_list_in_mount_path(follow_partition->mount_point);
-//				initial_all_var_file_in_mount_path(follow_partition->mount_point);
-			}
-
-	free_disk_data(disks_info);
-}
-
-int ej_initial_folder_var_file(int eid, webs_t wp, int argc, char **argv)	// J++
-{
-//	not_ej_initial_folder_var_file();
-	return 0;
-}
-
-int ej_set_share_mode(int eid, webs_t wp, int argc, char **argv) {
-	int samba_mode = nvram_get_int("st_samba_mode");
-	int ftp_mode = nvram_get_int("st_ftp_mode");
-	char *dummyShareway = websGetVar(wp, "dummyShareway", "");
-	char *protocol = websGetVar(wp, "protocol", "");
-	char *mode = websGetVar(wp, "mode", "");
-	int result;
-
-	if (strlen(dummyShareway) > 0)
-		nvram_set_temp("dummyShareway", dummyShareway);
-	else
-		nvram_set_int_temp("dummyShareway", 0);
-
-	if (strlen(protocol) <= 0) {
-		show_error_msg("Input1");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_share_mode_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (strlen(mode) <= 0) {
-		show_error_msg("Input3");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_share_mode_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (!strcmp(mode, "share")) {
-		if (!strcmp(protocol, "cifs")) {
-			if (samba_mode == 1 || samba_mode == 3)
-				goto SET_SHARE_MODE_SUCCESS;
-			nvram_set_int("st_samba_mode", 1);
-		}
-		else if (!strcmp(protocol, "ftp")) {
-			if (ftp_mode == 1)
-				goto SET_SHARE_MODE_SUCCESS;
-			nvram_set_int("st_ftp_mode", 1);
-		}
-		else {
-			show_error_msg("Input2");
-
-			websWrite(wp, "<script>\n");
-			websWrite(wp, "set_share_mode_error(\'%s\');\n", error_msg);
-			websWrite(wp, "</script>\n");
-
-			clean_error_msg();
-			return -1;
-		}
-	}
-	else if (!strcmp(mode, "account")) {
-		if (!strcmp(protocol, "cifs")) {
-			if (samba_mode == 2 || samba_mode == 4)
-				goto SET_SHARE_MODE_SUCCESS;
-
-			nvram_set_int("st_samba_mode", 4);
-		}
-		else if (!strcmp(protocol, "ftp")) {
-			if (ftp_mode == 2)
-				goto SET_SHARE_MODE_SUCCESS;
-
-			nvram_set_int("st_ftp_mode", 2);
-		}
-		else {
-			show_error_msg("Input2");
-
-			websWrite(wp, "<script>\n");
-			websWrite(wp, "set_share_mode_error(\'%s\');\n", error_msg);
-			websWrite(wp, "</script>\n");
-
-			clean_error_msg();
-			return -1;
-		}
-	}
-	else if (!strcmp(mode, "anonym") && !strcmp(protocol, "ftp")) {
-		if (ftp_mode == 3)
-			goto SET_SHARE_MODE_SUCCESS;
-		nvram_set_int("st_ftp_mode", 3);
-	}
-	else if (!strcmp(mode, "account_anonym") && !strcmp(protocol, "ftp")) {
-		if (ftp_mode == 4)
-			goto SET_SHARE_MODE_SUCCESS;
-		nvram_set_int("st_ftp_mode", 4);
-	}
-	else {
-		show_error_msg("Input4");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_share_mode_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	nvram_commit_safe();
-
-	not_ej_initial_folder_var_file();	// J++
-
-	if (!strcmp(protocol, "cifs"))
-		result = eval("/sbin/run_samba");
-	else if (!strcmp(protocol, "ftp"))
-		result = eval("/sbin/run_ftp");
-	else {
-		show_error_msg("Input2");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_share_mode_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	if (result != 0) {
-		show_error_msg("Action8");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_share_mode_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-SET_SHARE_MODE_SUCCESS:
-	websWrite(wp, "<script>\n");
-	websWrite(wp, "set_share_mode_success();\n");
-	websWrite(wp, "</script>\n");
-	return 0;
-}
-
-static void
-restart_ftp_samba_on_change_shared_folder(void)
-{
-#if defined(APP_SMBD) || defined(APP_FTPD)
-	int st_share_mode;
-#endif
-#if defined(APP_SMBD)
-	st_share_mode = nvram_get_int("st_samba_mode");
-	if (st_share_mode == 4)
-		eval("/sbin/run_samba");
-#endif
-#if defined(APP_FTPD)
-	st_share_mode = nvram_get_int("st_ftp_mode");
-	if (st_share_mode == 2 || st_share_mode == 4)
-		eval("/sbin/run_ftp");
-#endif
-}
-
-int ej_modify_sharedfolder(int eid, webs_t wp, int argc, char **argv) {
-	char *pool = websGetVar(wp, "pool", "");
-	char *folder = websGetVar(wp, "folder", "");
-	char *new_folder = websGetVar(wp, "new_folder", "");
-	char *mount_path;
-
-	if (strlen(pool) <= 0) {
-		show_error_msg("Input7");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "modify_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (strlen(folder) <= 0) {
-		show_error_msg("Input9");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "modify_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (strlen(new_folder) <= 0) {
-		show_error_msg("Input17");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "modify_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (get_mount_path(pool, &mount_path) < 0) {
-		show_error_msg("System1");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "modify_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	if (mod_folder(mount_path, folder, new_folder) < 0) {
-		show_error_msg("Action7");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "modify_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-		free(mount_path);
-
-		clean_error_msg();
-		return -1;
-	}
-	free(mount_path);
-
-	restart_ftp_samba_on_change_shared_folder();
-
-	websWrite(wp, "<script>\n");
-	websWrite(wp, "modify_sharedfolder_success();\n");
-	websWrite(wp, "</script>\n");
-
-	return 0;
-}
-
-int ej_delete_sharedfolder(int eid, webs_t wp, int argc, char **argv) {
-	char *pool = websGetVar(wp, "pool", "");
-	char *folder = websGetVar(wp, "folder", "");
-	char *mount_path;
-
-	if (strlen(pool) <= 0) {
-		show_error_msg("Input7");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "delete_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (strlen(folder) <= 0) {
-		show_error_msg("Input9");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "delete_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	if (get_mount_path(pool, &mount_path) < 0) {
-		show_error_msg("System1");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "delete_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (del_folder(mount_path, folder) < 0) {
-		show_error_msg("Action6");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "delete_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-		free(mount_path);
-
-		clean_error_msg();
-		return -1;
-	}
-	free(mount_path);
-
-	restart_ftp_samba_on_change_shared_folder();
-
-	websWrite(wp, "<script>\n");
-	websWrite(wp, "delete_sharedfolder_success();\n");
-	websWrite(wp, "</script>\n");
-
-	return 0;
-}
-
-int ej_create_sharedfolder(int eid, webs_t wp, int argc, char **argv) {
-	char *pool = websGetVar(wp, "pool", "");
-	char *folder = websGetVar(wp, "folder", "");
-	char *mount_path;
-
-	if (strlen(pool) <= 0) {
-		show_error_msg("Input7");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "create_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (strlen(folder) <= 0) {
-		show_error_msg("Input9");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "create_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	if (get_mount_path(pool, &mount_path) < 0) {
-		fprintf(stderr, "Can't get the mount_path of %s.\n", pool);
-
-		show_error_msg("System1");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "create_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (add_folder(mount_path, folder) < 0) {
-		show_error_msg("Action5");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "create_sharedfolder_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-		free(mount_path);
-
-		clean_error_msg();
-		return -1;
-	}
-	free(mount_path);
-
-	restart_ftp_samba_on_change_shared_folder();
-
-	websWrite(wp, "<script>\n");
-	websWrite(wp, "create_sharedfolder_success();\n");
-	websWrite(wp, "</script>\n");
-
-	return 0;
-}
-
-int ej_set_AiDisk_status(int eid, webs_t wp, int argc, char **argv) {
-	char *protocol = websGetVar(wp, "protocol", "");
-	char *flag = websGetVar(wp, "flag", "");
-	int result = 0;
-
-	if (strlen(protocol) <= 0) {
-		show_error_msg("Input1");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_AiDisk_status_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (strlen(flag) <= 0) {
-		show_error_msg("Input18");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_AiDisk_status_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (!strcmp(protocol, "cifs")) {
-		if (!strcmp(flag, "on")) {
-			nvram_set_int("enable_samba", 1);
-			nvram_commit_safe();
-			result = system("/sbin/run_samba");
-		}
-		else if (!strcmp(flag, "off")) {
-			nvram_set_int("enable_samba", 0);
-			nvram_commit_safe();
-			if (!pids("smbd"))
-				goto SET_AIDISK_STATUS_SUCCESS;
-
-			result = system("/sbin/stop_samba");
-		}
-		else {
-			show_error_msg("Input19");
-
-			websWrite(wp, "<script>\n");
-			websWrite(wp, "set_AiDisk_status_error(\'%s\');\n", error_msg);
-			websWrite(wp, "</script>\n");
-
-			clean_error_msg();
-			return -1;
-		}
-	}
-	else if (!strcmp(protocol, "ftp")) {
-		if (!strcmp(flag, "on")) {
-			nvram_set_int("enable_ftp", 1);
-			nvram_commit_safe();
-			result = system("run_ftp");
-		}
-		else if (!strcmp(flag, "off")) {
-			nvram_set_int("enable_ftp", 0);
-			nvram_commit_safe();
-			if (!pids("vsftpd"))
-				goto SET_AIDISK_STATUS_SUCCESS;
-
-			result = system("/sbin/stop_ftp");
-		}
-		else {
-			show_error_msg("Input19");
-
-			websWrite(wp, "<script>\n");
-			websWrite(wp, "set_AiDisk_status_error(\'%s\');\n", error_msg);
-			websWrite(wp, "</script>\n");
-
-			clean_error_msg();
-			return -1;
-		}
-	}
-	else {
-		show_error_msg("Input2");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_AiDisk_status_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	if (result != 0) {
-		show_error_msg("Action8");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_AiDisk_status_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-SET_AIDISK_STATUS_SUCCESS:
-	websWrite(wp, "<script>\n");
-	websWrite(wp, "parent.resultOfSwitchAppStatus();\n");
-	websWrite(wp, "</script>\n");
-
-	return 0;
-}
-
-int ej_modify_account(int eid, webs_t wp, int argc, char **argv) {
-	char *account = websGetVar(wp, "account", "");
-	char *new_account = websGetVar(wp, "new_account", "");
-	char *new_password = websGetVar(wp, "new_password", "");
-
-	if (strlen(account) <= 0) {
-		show_error_msg("Input5");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "modify_account_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (strlen(new_account) <= 0 && strlen(new_password) <= 0) {
-		show_error_msg("Input16");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "modify_account_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	if (mod_account(account, new_account, new_password) < 0) {
-		show_error_msg("Action4");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "modify_account_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	websWrite(wp, "<script>\n");
-	websWrite(wp, "modify_account_success();\n");
-	websWrite(wp, "</script>\n");
-
-	return 0;
-}
-
-int ej_delete_account(int eid, webs_t wp, int argc, char **argv) {
-	char *account = websGetVar(wp, "account", "");
-
-	if (strlen(account) <= 0) {
-		show_error_msg("Input5");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "delete_account_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	not_ej_initial_folder_var_file();	// J++
-
-	if (del_account(account) < 0) {
-		show_error_msg("Action3");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "delete_account_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	websWrite(wp, "<script>\n");
-	websWrite(wp, "delete_account_success();\n");
-	websWrite(wp, "</script>\n");
-
-	return 0;
-}
-
-int ej_initial_account(int eid, webs_t wp, int argc, char **argv) {
-	disk_info_t *disks_info, *follow_disk;
-	partition_info_t *follow_partition;
-	char *command;
-	int len, result;
-
-	nvram_set_int("acc_num", 0);
-	nvram_commit_safe();
-
-	disks_info = read_disk_data();
-	if (disks_info == NULL) {
-		show_error_msg("System2");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "initial_account_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next)
-			if (follow_partition->mount_point != NULL && strlen(follow_partition->mount_point) > 0) {
-				len = strlen("rm -f ")+strlen(follow_partition->mount_point)+strlen("/.__*");
-				command = (char *)malloc(sizeof(char)*(len+1));
-				if (command == NULL) {
-					show_error_msg("System1");
-
-					websWrite(wp, "<script>\n");
-					websWrite(wp, "initial_account_error(\'%s\');\n", error_msg);
-					websWrite(wp, "</script>\n");
-
-					clean_error_msg();
-					return -1;
-				}
-				sprintf(command, "rm -f %s/.__*", follow_partition->mount_point);
-				command[len] = 0;
-
-				result = system(command);
-				free(command);
-
-				initial_folder_list_in_mount_path(follow_partition->mount_point);
-				initial_all_var_file_in_mount_path(follow_partition->mount_point);
-			}
-
-	free_disk_data(disks_info);
-
-	eval("/sbin/run_ftpsamba");
-
-	websWrite(wp, "<script>\n");
-	websWrite(wp, "initial_account_success();\n");
-	websWrite(wp, "</script>\n");
-
-	return 0;
-}
-
-int ej_create_account(int eid, webs_t wp, int argc, char **argv) {
-	char *account = websGetVar(wp, "account", "");
-	char *password = websGetVar(wp, "password", "");
-
-	if (strlen(account) <= 0) {
-		show_error_msg("Input5");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "create_account_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (strlen(password) <= 0) {
-		show_error_msg("Input14");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "create_account_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	not_ej_initial_folder_var_file();	// J++
-
-	if (add_account(account, password) < 0) {
-		show_error_msg("Action2");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "create_account_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	websWrite(wp, "<script>\n");
-	websWrite(wp, "create_account_success();\n");
-	websWrite(wp, "</script>\n");
-
-	return 0;
-}
-
-int ej_set_account_permission(int eid, webs_t wp, int argc, char **argv) {
-	char *mount_path;
-	char *account = websGetVar(wp, "account", "");
-	char *pool = websGetVar(wp, "pool", "");
-	char *folder = websGetVar(wp, "folder", "");
-	char *protocol = websGetVar(wp, "protocol", "");
-	char *permission = websGetVar(wp, "permission", "");
-	int right;
-
-	if (strlen(account) <= 0) {
-		show_error_msg("Input5");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_account_permission_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (test_if_exist_account(account) != 1) {
-		show_error_msg("Input6");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_account_permission_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	if (strlen(pool) <= 0) {
-		show_error_msg("Input7");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_account_permission_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-	if (get_mount_path(pool, &mount_path) < 0) {
-		fprintf(stderr, "Can't get the mount_path of %s.\n", pool);
-
-		show_error_msg("System1");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_account_permission_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-
-		clean_error_msg();
-		return -1;
-	}
-
-	if (strlen(folder) <= 0) {
-		show_error_msg("Input9");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_account_permission_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-		free(mount_path);
-
-		clean_error_msg();
-		return -1;
-	}
-	if (strlen(protocol) <= 0) {
-		show_error_msg("Input1");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_account_permission_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-		free(mount_path);
-
-		clean_error_msg();
-		return -1;
-	}
-	if (strcmp(protocol, "cifs") && strcmp(protocol, "ftp") && strcmp(protocol, "dms")) {
-		show_error_msg("Input2");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_account_permission_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-		free(mount_path);
-
-		clean_error_msg();
-		return -1;
-	}
-
-	if (strlen(permission) <= 0) {
-		show_error_msg("Input12");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_account_permission_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-		free(mount_path);
-
-		clean_error_msg();
-		return -1;
-	}
-	right = atoi(permission);
-	if (right < 0 || right > 3) {
-		show_error_msg("Input13");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_account_permission_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-		free(mount_path);
-
-		clean_error_msg();
-		return -1;
-	}
-
-	if (set_permission(account, mount_path, folder, protocol, right) < 0) {
-		show_error_msg("Action1");
-
-		websWrite(wp, "<script>\n");
-		websWrite(wp, "set_account_permission_error(\'%s\');\n", error_msg);
-		websWrite(wp, "</script>\n");
-		free(mount_path);
-
-		clean_error_msg();
-		return -1;
-	}
-
-	free(mount_path);
-
-	websWrite(wp, "<script>\n");
-	websWrite(wp, "set_account_permission_success();\n");
-	websWrite(wp, "</script>\n");
-
-	return 0;
-}
-
 // traffic monitor
 static int 
-ej_netdev(int eid, webs_t wp, int argc, char_t **argv)
+ej_netdev(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
 	char buf[256];
@@ -5979,7 +4099,7 @@ ej_netdev(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static int 
-ej_bandwidth(int eid, webs_t wp, int argc, char_t **argv)
+ej_bandwidth(int eid, webs_t wp, int argc, char **argv)
 {
 	char *name, *sigs;
 	int is_speed = 0;
@@ -6013,7 +4133,7 @@ ej_bandwidth(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static int 
-ej_backup_nvram(int eid, webs_t wp, int argc, char_t **argv)
+ej_backup_nvram(int eid, webs_t wp, int argc, char **argv)
 {
 	char *list;
 	char *p, *k;
@@ -6036,9 +4156,76 @@ ej_backup_nvram(int eid, webs_t wp, int argc, char_t **argv)
 
 	return 0;
 }
-// end svg support by Viz ^^^^^^^^^^^^^^^^^^^^
 
-struct ej_handler ej_handlers[] = {
+#if (!BOARD_NUM_USB_PORTS)
+static int
+ej_get_usb_ports_info(int eid, webs_t wp, int argc, char **argv)
+{
+	/* usb ports num */
+	websWrite(wp, "function get_usb_ports_num(){\n");
+	websWrite(wp, "    return %u;\n", 0);
+	websWrite(wp, "}\n\n");
+
+	/* usb device types */
+	websWrite(wp, "function get_device_type_usb(port_num){\n");
+	websWrite(wp, "    return \"%s\";\n", "unknown");
+	websWrite(wp, "}\n\n");
+
+	/* printers */
+	websWrite(wp, "function printer_ports() {\n");
+	websWrite(wp, "    return [");
+	websWrite(wp, "];\n}\n\n");
+
+	websWrite(wp, "function printer_manufacts() {\n");
+	websWrite(wp, "    return [");
+	websWrite(wp, "];\n}\n\n");
+
+	websWrite(wp, "function printer_models() {\n");
+	websWrite(wp, "    return [");
+	websWrite(wp, "];\n}\n\n");
+
+	/* modems */
+	websWrite(wp, "function modem_ports() {\n");
+	websWrite(wp, "    return [");
+	websWrite(wp, "];\n}\n\n");
+
+	websWrite(wp, "function modem_devnum() {\n");
+	websWrite(wp, "    return [");
+	websWrite(wp, "];\n}\n\n");
+
+	websWrite(wp, "function modem_types() {\n");
+	websWrite(wp, "    return [");
+	websWrite(wp, "];\n}\n\n");
+
+	websWrite(wp, "function modem_manufacts() {\n");
+	websWrite(wp, "    return [");
+	websWrite(wp, "];\n}\n\n");
+
+	websWrite(wp, "function modem_models() {\n");
+	websWrite(wp, "    return [");
+	websWrite(wp, "];\n}\n\n");
+
+	return 0;
+}
+
+static int
+ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char **argv)
+{
+	websWrite(wp, "%s", initial_disk_pool_mapping_info());
+	return 0;
+}
+
+static int
+ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char **argv)
+{
+	websWrite(wp, "%s", initial_blank_disk_names_and_sizes());
+	websWrite(wp, "%s", initial_available_disk_names_and_sizes());
+	return 0;
+}
+#endif
+
+struct ej_handler ej_handlers[] =
+{
 	{ "nvram_get_x", ej_nvram_get_x},
 	{ "nvram_get_list_x", ej_nvram_get_list_x},
 	{ "nvram_get_buf_x", ej_nvram_get_buf_x},
@@ -6084,9 +4271,10 @@ struct ej_handler ej_handlers[] = {
 	{ "hardware_pins", ej_hardware_pins_hook},
 	{ "detect_internet", ej_detect_internet_hook},
 	{ "dump_syslog", ej_dump_syslog_hook},
+	{ "get_usb_ports_info", ej_get_usb_ports_info},
 	{ "disk_pool_mapping_info", ej_disk_pool_mapping_info},
 	{ "available_disk_names_and_sizes", ej_available_disk_names_and_sizes},
-	{ "get_usb_ports_info", ej_get_usb_ports_info},
+#if (BOARD_NUM_USB_PORTS > 0)
 	{ "get_usb_share_list", ej_get_usb_share_list},
 	{ "get_AiDisk_status", ej_get_AiDisk_status},
 	{ "set_AiDisk_status", ej_set_AiDisk_status},
@@ -6097,14 +4285,14 @@ struct ej_handler ej_handlers[] = {
 	{ "get_folder_tree", ej_get_folder_tree},
 	{ "get_share_tree", ej_get_share_tree},
 	{ "initial_account", ej_initial_account},
-	{ "create_account", ej_create_account},	/*no ccc*/
-	{ "delete_account", ej_delete_account}, /*n*/
-	{ "modify_account", ej_modify_account}, /*n*/
-	{ "create_sharedfolder", ej_create_sharedfolder},	/*y*/
-	{ "delete_sharedfolder", ej_delete_sharedfolder},	/*y*/
-	{ "modify_sharedfolder", ej_modify_sharedfolder},	/* no ccc*/
+	{ "create_account", ej_create_account},
+	{ "delete_account", ej_delete_account},
+	{ "modify_account", ej_modify_account},
+	{ "create_sharedfolder", ej_create_sharedfolder},
+	{ "delete_sharedfolder", ej_delete_sharedfolder},
+	{ "modify_sharedfolder", ej_modify_sharedfolder},
 	{ "set_share_mode", ej_set_share_mode},
-	{ "initial_folder_var_file", ej_initial_folder_var_file},	/* J++ */
+#endif
 	{ "openvpn_srv_cert_hook", openvpn_srv_cert_hook},
 	{ "openvpn_cli_cert_hook", openvpn_cli_cert_hook},
 	{ NULL, NULL }

@@ -28,7 +28,7 @@
 #include <signal.h>
 #include <sys/swap.h>
 
-#include <nvram/bcmnvram.h>
+#include <usb_info.h>
 
 #include "rc.h"
 
@@ -401,7 +401,7 @@ int mdev_net_main(int argc, char **argv)
 
 	usb_dbg("(%s): action=%s.\n", device_name, action);
 
-	if (!isUsbNetIf(device_name))
+	if (!is_usbnet_interface(device_name))
 		return 1;
 
 	sprintf(node_fname, "%s/%s", MODEM_NODE_DIR, device_name);

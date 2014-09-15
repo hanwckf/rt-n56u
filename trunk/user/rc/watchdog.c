@@ -26,7 +26,6 @@
 #include <stdarg.h>
 
 #include <syslog.h>
-#include <nvram/bcmnvram.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <math.h>

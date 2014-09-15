@@ -34,8 +34,6 @@
 #include <net/route.h>
 #include <dirent.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 
 #if defined (USE_IPV6)

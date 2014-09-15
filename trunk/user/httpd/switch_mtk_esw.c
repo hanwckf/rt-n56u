@@ -181,27 +181,27 @@ static int fill_eth_status(int port_id, webs_t wp)
 	return ret;
 }
 
-int ej_eth_status_wan(int eid, webs_t wp, int argc, char_t **argv)
+int ej_eth_status_wan(int eid, webs_t wp, int argc, char **argv)
 {
 	return fill_eth_status(0, wp);
 }
 
-int ej_eth_status_lan1(int eid, webs_t wp, int argc, char_t **argv)
+int ej_eth_status_lan1(int eid, webs_t wp, int argc, char **argv)
 {
 	return fill_eth_status(1, wp);
 }
 
-int ej_eth_status_lan2(int eid, webs_t wp, int argc, char_t **argv)
+int ej_eth_status_lan2(int eid, webs_t wp, int argc, char **argv)
 {
 	return fill_eth_status(2, wp);
 }
 
-int ej_eth_status_lan3(int eid, webs_t wp, int argc, char_t **argv)
+int ej_eth_status_lan3(int eid, webs_t wp, int argc, char **argv)
 {
 	return fill_eth_status(3, wp);
 }
 
-int ej_eth_status_lan4(int eid, webs_t wp, int argc, char_t **argv)
+int ej_eth_status_lan4(int eid, webs_t wp, int argc, char **argv)
 {
 	return fill_eth_status(4, wp);
 }

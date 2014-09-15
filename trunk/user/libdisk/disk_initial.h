@@ -17,12 +17,19 @@
 #ifndef _DISK_INITIAL_
 #define _DISK_INITIAL_
 
-#define PARTITION_FILE "/proc/partitions"
-#define MOUNT_FILE "/proc/mounts"
-#define SYS_BLOCK "/sys/block"
+#define POOL_MOUNT_ROOT		"/media"
 
-#define DEFAULT_USB_TAG "USB disk"
-#define PARTITION_TYPE_UNKNOWN "unknown"
+#define PARTITION_FILE		"/proc/partitions"
+#define MOUNT_FILE		"/proc/mounts"
+#define SYS_BLOCK		"/sys/block"
+
+#define DEFAULT_USB_TAG		"USB disk"
+#define PARTITION_TYPE_UNKNOWN	"unknown"
+
+typedef unsigned char u8;
+typedef unsigned short u16;
+typedef unsigned int u32;
+typedef unsigned long long u64;
 
 typedef struct disk_info_t disk_info_t;
 typedef struct partition_info_t partition_info_t;

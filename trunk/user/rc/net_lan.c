@@ -30,8 +30,6 @@
 #include <sys/socket.h>
 #include <net/if.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 #include "switch.h"
 

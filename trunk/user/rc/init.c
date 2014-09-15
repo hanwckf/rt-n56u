@@ -34,8 +34,6 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 
 #define CONSOLE_TERMINAL	"vt100"

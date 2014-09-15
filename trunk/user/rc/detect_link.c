@@ -26,10 +26,10 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include <disk_io_tools.h>
+#if (BOARD_NUM_USB_PORTS > 0)
+#include <usb_info.h>
 #include <disk_initial.h>
-
-#include <nvram/bcmnvram.h>
+#endif
 
 #include "rc.h"
 #include "switch.h"

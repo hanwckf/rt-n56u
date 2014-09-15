@@ -29,8 +29,6 @@
 #include <sys/stat.h>
 #include <string.h>
 
-#include <nvram/bcmnvram.h>
-
 #include "rc.h"
 
 #define INICD_POLL_INTERVAL	15 /* every 15 seconds  */

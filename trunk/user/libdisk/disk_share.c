@@ -709,7 +709,6 @@ int add_account(const char *const account, const char *const password) {
 	// 1. check if can create the account
 	get_account_list(&acc_num, &account_list);
 	if (acc_num >= MAX_ACCOUNT_NUM) {
-		csprintf("Too many accounts are created.\n");
 		free_2_dimension_list(&acc_num, &account_list);
 		return -1;
 	}
@@ -775,10 +774,8 @@ int del_account(const char *const account) {
 	
 	// 1. check if can create the account
 	get_account_list(&acc_num, &account_list);
-	if (acc_num <= 0) {
-		csprintf("It's too few account to delete.\n");
+	if (acc_num <= 0)
 		return -1;
-	}
 	
 	result = 0;
 	for (i = 0; i < acc_num; ++i)

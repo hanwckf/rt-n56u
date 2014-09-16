@@ -116,22 +116,6 @@ ln -sf vendors/Ralink/$CONFIG_PRODUCT/config.arch config.arch
 cp -fL "$kernel_cf" "$kernel_tf"
 cp -fL "$uclibc_cf" "$uclibc_tf"
 cp -fL "$busybox_cf" "$busybox_tf"
-############################# IPV6 ####################################
-if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" != "y" ] ; then
-	func_disable_kernel_param "CONFIG_INET_TUNNEL"
-	func_disable_kernel_param "CONFIG_IPV6"
-	func_disable_libc_param "UCLIBC_HAS_IPV6"
-	func_disable_busybox_param "CONFIG_PING6"
-	func_disable_busybox_param "CONFIG_FEATURE_IPV6"
-	func_disable_busybox_param "CONFIG_FEATURE_PREFER_IPV4_ADDRESS"
-	func_disable_busybox_param "CONFIG_TRACEROUTE6"
-	func_disable_busybox_param "CONFIG_FEATURE_UDHCP_RFC5969"
-	func_disable_busybox_param "CONFIG_DHCP6C"
-	func_enable_busybox_param "CONFIG_IP"
-	func_enable_busybox_param "CONFIG_FEATURE_IP_ADDRESS"
-	func_enable_busybox_param "CONFIG_FEATURE_IP_LINK"
-	func_enable_busybox_param "CONFIG_FEATURE_IP_ROUTE"
-fi
 ############################# WI-FI ###################################
 dir_wifi_src="$ROOTDIR/proprietary/rt_wifi"
 dir_wifi_dst="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless"
@@ -194,6 +178,70 @@ if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
 	func_disable_kernel_param "CONFIG_GE2_RGMII_FORCE_1000"
 	func_enable_kernel_param "CONFIG_VLAN_8021Q_DOUBLE_TAG"
 fi
+############################# IPV6 ####################################
+if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_INET_TUNNEL"
+	func_disable_kernel_param "CONFIG_IPV6"
+	func_disable_libc_param "UCLIBC_HAS_IPV6"
+	func_disable_busybox_param "CONFIG_PING6"
+	func_disable_busybox_param "CONFIG_FEATURE_IPV6"
+	func_disable_busybox_param "CONFIG_FEATURE_PREFER_IPV4_ADDRESS"
+	func_disable_busybox_param "CONFIG_TRACEROUTE6"
+	func_disable_busybox_param "CONFIG_FEATURE_UDHCP_RFC5969"
+	func_disable_busybox_param "CONFIG_DHCP6C"
+	func_enable_busybox_param "CONFIG_IP"
+	func_enable_busybox_param "CONFIG_FEATURE_IP_ADDRESS"
+	func_enable_busybox_param "CONFIG_FEATURE_IP_LINK"
+	func_enable_busybox_param "CONFIG_FEATURE_IP_ROUTE"
+fi
+############################# USB #####################################
+if [ "$CONFIG_FIRMWARE_ENABLE_USB" != "y" ] || [ -z "$CONFIG_USB_SUPPORT" ] ; then
+	func_disable_kernel_param "CONFIG_PAGECACHE_RECLAIM"
+	func_disable_kernel_param "CONFIG_SWAP"
+	func_disable_kernel_param "CONFIG_FAT_FS"
+	func_disable_kernel_param "CONFIG_MSDOS_FS"
+	func_disable_kernel_param "CONFIG_VFAT_FS"
+	func_disable_kernel_param "CONFIG_UFSD_FS"
+	func_disable_kernel_param "CONFIG_EXFAT_FS"
+	func_disable_kernel_param "CONFIG_EXT2_FS"
+	func_disable_kernel_param "CONFIG_EXT3_FS"
+	func_disable_kernel_param "CONFIG_EXT4_FS"
+	func_disable_kernel_param "CONFIG_JBD"
+	func_disable_kernel_param "CONFIG_JBD2"
+	func_disable_kernel_param "CONFIG_XFS_FS"
+	func_disable_kernel_param "CONFIG_FUSE_FS"
+	func_disable_kernel_param "CONFIG_FSCACHE"
+	func_disable_kernel_param "CONFIG_INOTIFY_USER"
+	func_disable_kernel_param "CONFIG_NFSD"
+	func_disable_kernel_param "CONFIG_PARTITION_ADVANCED"
+	func_disable_kernel_param "CONFIG_NLS_CODEPAGE_866"
+	func_disable_kernel_param "CONFIG_NLS_ISO8859_1"
+	func_disable_kernel_param "CONFIG_SCSI"
+	func_disable_kernel_param "CONFIG_SCSI_MOD"
+	func_disable_kernel_param "CONFIG_INPUT"
+	func_disable_kernel_param "CONFIG_USB_SUPPORT"
+	func_disable_kernel_param "CONFIG_HID_SUPPORT"
+	func_disable_kernel_param "CONFIG_MEDIA_SUPPORT"
+	func_disable_kernel_param "CONFIG_CRC16"
+	func_disable_kernel_param "CONFIG_RT3XXX_EHCI_OHCI"
+	func_disable_busybox_param "CONFIG_FDISK"
+	func_disable_busybox_param "CONFIG_FEATURE_FDISK_WRITABLE"
+	func_disable_busybox_param "CONFIG_FEATURE_FDISK_ADVANCED"
+	func_disable_busybox_param "CONFIG_LSUSB"
+	func_disable_busybox_param "CONFIG_MICROCOM"
+	func_disable_busybox_param "CONFIG_EJECT"
+	func_disable_busybox_param "CONFIG_FEATURE_EJECT_SCSI"
+	func_disable_busybox_param "CONFIG_MKSWAP"
+	func_disable_busybox_param "CONFIG_SWAPONOFF"
+	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_FAT"
+	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_EXFAT"
+	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_NTFS"
+	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_HFS"
+	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_EXT"
+	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_XFS"
+	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_LINUXSWAP"
+	CONFIG_FIRMWARE_INCLUDE_NFSD=n
+else
 ############################# UFSD ####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_UFSD" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_UFSD_FS"
@@ -240,6 +288,26 @@ if [ "$CONFIG_FIRMWARE_ENABLE_SWAP" != "y" ] ; then
 	func_disable_busybox_param "CONFIG_MKSWAP"
 	func_disable_busybox_param "CONFIG_SWAPONOFF"
 fi
+############################# NFSD ####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_NFSD" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_NFSD"
+fi
+############################# UVC #####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_UVC" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_MEDIA_SUPPORT"
+fi
+############################# HID #####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_HID" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_INPUT"
+	func_disable_kernel_param "CONFIG_HID_SUPPORT"
+	func_disable_kernel_param "CONFIG_USB_HID"
+fi
+############################# UART ####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_SERIAL" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_USB_SERIAL_CH341"
+	func_disable_kernel_param "CONFIG_USB_SERIAL_PL2303"
+fi
+fi
 ############################ IPSET ####################################
 if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_NETFILTER_NETLINK"
@@ -263,25 +331,6 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_IFB" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_NET_CLS_ACT"
 	func_disable_kernel_param "CONFIG_IFB"
 fi
-############################# UVC #####################################
-if [ "$CONFIG_FIRMWARE_INCLUDE_UVC" != "y" ] ; then
-	func_disable_kernel_param "CONFIG_MEDIA_SUPPORT"
-fi
-############################# HID #####################################
-if [ "$CONFIG_FIRMWARE_INCLUDE_HID" != "y" ] ; then
-	func_disable_kernel_param "CONFIG_INPUT"
-	func_disable_kernel_param "CONFIG_HID_SUPPORT"
-	func_disable_kernel_param "CONFIG_USB_HID"
-fi
-############################# UART ####################################
-if [ "$CONFIG_FIRMWARE_INCLUDE_SERIAL" != "y" ] ; then
-	func_disable_kernel_param "CONFIG_USB_SERIAL_CH341"
-	func_disable_kernel_param "CONFIG_USB_SERIAL_PL2303"
-fi
-############################# NFSD ####################################
-if [ "$CONFIG_FIRMWARE_INCLUDE_NFSD" != "y" ] ; then
-	func_disable_kernel_param "CONFIG_NFSD"
-fi
 ############################# NFSC ####################################
 if [ "$CONFIG_FIRMWARE_INCLUDE_NFSC" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_FSCACHE"
@@ -294,18 +343,6 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_CIFS" != "y" ] ; then
 fi
 if [ "$CONFIG_FIRMWARE_INCLUDE_NFSD" != "y" -a "$CONFIG_FIRMWARE_INCLUDE_NFSC" != "y" -a "$CONFIG_FIRMWARE_INCLUDE_CIFS" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_NETWORK_FILESYSTEMS"
-fi
-############################# USB #####################################
-if [ -z "$CONFIG_USB_SUPPORT" ] ; then
-	func_disable_busybox_param "CONFIG_FDISK"
-	func_disable_busybox_param "CONFIG_FEATURE_FDISK_WRITABLE"
-	func_disable_busybox_param "CONFIG_FEATURE_FDISK_ADVANCED"
-	func_disable_busybox_param "CONFIG_LSUSB"
-	func_disable_busybox_param "CONFIG_MICROCOM"
-	func_disable_busybox_param "CONFIG_EJECT"
-	func_disable_busybox_param "CONFIG_FEATURE_EJECT_SCSI"
-	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_FAT"
-	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_NTFS"
 fi
 #######################################################################
 echo --------------------------MAKE-DEP--------------------------------

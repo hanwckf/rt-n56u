@@ -23,6 +23,8 @@
 #include "vsftpver.h"
 #include "ssl.h"
 
+#include "asus_ext.h"
+
 /*
  * Forward decls of helper functions
  */

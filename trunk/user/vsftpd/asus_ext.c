@@ -18,6 +18,7 @@
 
 #include <nvram/bcmnvram.h>
 #include <disk_io_tools.h>
+#include <disk_initial.h>
 #include <disk_share.h>
 
 #define HIDE_PARTITION_FILE ".hidden"

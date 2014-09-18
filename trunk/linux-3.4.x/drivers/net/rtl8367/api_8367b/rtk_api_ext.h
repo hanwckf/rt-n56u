@@ -1786,27 +1786,6 @@ extern rtk_api_ret_t rtk_port_phyAutoNegoAbility_get(rtk_port_t port, rtk_port_p
 extern rtk_api_ret_t rtk_port_phyForceModeAbility_set(rtk_port_t port, rtk_port_phy_ability_t *pAbility);
 
 /* Function Name:
- *      rtk_port_phyForceModeAbility_get
- * Description:
- *      Get PHY ability through PHY registers.
- * Input:
- *      port - Port id.
- * Output:
- *      pAbility - Ability structure
- * Return:
- *      RT_ERR_OK              	- OK
- *      RT_ERR_FAILED          	- Failed
- *      RT_ERR_SMI             	- SMI access error
- *      RT_ERR_PORT_ID 			- Invalid port number.
- *      RT_ERR_PHY_REG_ID 		- Invalid PHY address
- *      RT_ERR_INPUT 			- Invalid input parameters.
- *      RT_ERR_BUSYWAIT_TIMEOUT - PHY access busy
- * Note:
- *      Get the capablity of specified PHY.
- */
-extern rtk_api_ret_t rtk_port_phyForceModeAbility_get(rtk_port_t port, rtk_port_phy_ability_t *pAbility);
-
-/* Function Name:
  *      rtk_port_phyStatus_get
  * Description:
  *      Get ethernet PHY linking status

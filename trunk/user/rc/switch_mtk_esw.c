@@ -466,6 +466,7 @@ int show_status_speed(unsigned int cmd)
 		{
 			switch (arg & 0x03)
 			{
+			case 3:
 			case 2:
 				lspeed = 1000;
 				break;

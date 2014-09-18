@@ -102,6 +102,7 @@ int fill_eth_port_status(int port_id, char linkstate[32])
 			
 			switch (link_value & 0x03)
 			{
+			case 3:
 			case 2:
 				link_value = 1000;
 				break;

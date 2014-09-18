@@ -285,55 +285,40 @@ switch_config_link(void)
 {
 	int i_flow_mode;
 	int i_link_mode;
-	
+
 	// WAN
-	i_flow_mode = nvram_get_int("ether_flow_wan");
-	if (i_flow_mode < 0 || i_flow_mode > 2)
-		i_flow_mode = 0;
-	i_link_mode = nvram_get_int("ether_link_wan");
-	if (i_link_mode < 0 || i_link_mode > 5)
-		i_link_mode = 0;
-	
+	i_link_mode = nvram_safe_get_int("ether_link_wan", SWAPI_LINK_SPEED_MODE_AUTO,
+			SWAPI_LINK_SPEED_MODE_AUTO, SWAPI_LINK_SPEED_MODE_FORCE_10_HD);
+	i_flow_mode = nvram_safe_get_int("ether_flow_wan", SWAPI_LINK_FLOW_CONTROL_TX_RX,
+			SWAPI_LINK_FLOW_CONTROL_TX_RX, SWAPI_LINK_FLOW_CONTROL_DISABLE);
 	phy_link_port_wan(i_link_mode, i_flow_mode);
-	
+
 	// LAN1
-	i_flow_mode = nvram_get_int("ether_flow_lan1");
-	if (i_flow_mode < 0 || i_flow_mode > 2)
-		i_flow_mode = 0;
-	i_link_mode = nvram_get_int("ether_link_lan1");
-	if (i_link_mode < 0 || i_link_mode > 5)
-		i_link_mode = 0;
-	
+	i_link_mode = nvram_safe_get_int("ether_link_lan1", SWAPI_LINK_SPEED_MODE_AUTO,
+			SWAPI_LINK_SPEED_MODE_AUTO, SWAPI_LINK_SPEED_MODE_FORCE_10_HD);
+	i_flow_mode = nvram_safe_get_int("ether_flow_lan1", SWAPI_LINK_FLOW_CONTROL_TX_RX,
+			SWAPI_LINK_FLOW_CONTROL_TX_RX, SWAPI_LINK_FLOW_CONTROL_DISABLE);
 	phy_link_port_lan1(i_link_mode, i_flow_mode);
-	
+
 	// LAN2
-	i_flow_mode = nvram_get_int("ether_flow_lan2");
-	if (i_flow_mode < 0 || i_flow_mode > 2)
-		i_flow_mode = 0;
-	i_link_mode = nvram_get_int("ether_link_lan2");
-	if (i_link_mode < 0 || i_link_mode > 5)
-		i_link_mode = 0;
-	
+	i_link_mode = nvram_safe_get_int("ether_link_lan2", SWAPI_LINK_SPEED_MODE_AUTO,
+			SWAPI_LINK_SPEED_MODE_AUTO, SWAPI_LINK_SPEED_MODE_FORCE_10_HD);
+	i_flow_mode = nvram_safe_get_int("ether_flow_lan2", SWAPI_LINK_FLOW_CONTROL_TX_RX,
+			SWAPI_LINK_FLOW_CONTROL_TX_RX, SWAPI_LINK_FLOW_CONTROL_DISABLE);
 	phy_link_port_lan2(i_link_mode, i_flow_mode);
-	
+
 	// LAN3
-	i_flow_mode = nvram_get_int("ether_flow_lan3");
-	if (i_flow_mode < 0 || i_flow_mode > 2)
-		i_flow_mode = 0;
-	i_link_mode = nvram_get_int("ether_link_lan3");
-	if (i_link_mode < 0 || i_link_mode > 5)
-		i_link_mode = 0;
-	
+	i_link_mode = nvram_safe_get_int("ether_link_lan3", SWAPI_LINK_SPEED_MODE_AUTO,
+			SWAPI_LINK_SPEED_MODE_AUTO, SWAPI_LINK_SPEED_MODE_FORCE_10_HD);
+	i_flow_mode = nvram_safe_get_int("ether_flow_lan3", SWAPI_LINK_FLOW_CONTROL_TX_RX,
+			SWAPI_LINK_FLOW_CONTROL_TX_RX, SWAPI_LINK_FLOW_CONTROL_DISABLE);
 	phy_link_port_lan3(i_link_mode, i_flow_mode);
-	
+
 	// LAN4
-	i_flow_mode = nvram_get_int("ether_flow_lan4");
-	if (i_flow_mode < 0 || i_flow_mode > 2)
-		i_flow_mode = 0;
-	i_link_mode = nvram_get_int("ether_link_lan4");
-	if (i_link_mode < 0 || i_link_mode > 5)
-		i_link_mode = 0;
-	
+	i_link_mode = nvram_safe_get_int("ether_link_lan4", SWAPI_LINK_SPEED_MODE_AUTO,
+			SWAPI_LINK_SPEED_MODE_AUTO, SWAPI_LINK_SPEED_MODE_FORCE_10_HD);
+	i_flow_mode = nvram_safe_get_int("ether_flow_lan4", SWAPI_LINK_FLOW_CONTROL_TX_RX,
+			SWAPI_LINK_FLOW_CONTROL_TX_RX, SWAPI_LINK_FLOW_CONTROL_DISABLE);
 	phy_link_port_lan4(i_link_mode, i_flow_mode);
 }
 

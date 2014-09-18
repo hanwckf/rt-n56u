@@ -1207,50 +1207,76 @@ static void change_port_link_mode(u32 port_id, u32 port_link_mode)
 	if (g_port_link_mode[port_id] == port_link_mode)
 		return;
 
-	i_port_speed =  (port_link_mode & 0x07);
+	i_port_speed =  (port_link_mode & 0x0F);
 	i_port_flowc = ((port_link_mode >> 8) & 0x03);
+
+	switch (i_port_speed)
+	{
+	case SWAPI_LINK_SPEED_MODE_AUTO_1000_FD:
+		link_desc = "1000FD [AN]";
+		/* support only for MT7621 GSW/MT7530, todo */
+		break;
+	case SWAPI_LINK_SPEED_MODE_AUTO_100_FD:
+		link_desc = "100FD [AN]";
+		/* disable ability 100 HD, 10 FD, 10 HD */
+		esw_phy_ana &= ~((1<<7)|(1<<6)|(1<<5));
+		break;
+	case SWAPI_LINK_SPEED_MODE_AUTO_100_HD:
+		link_desc = "100HD [AN]";
+		/* disable ability 100 FD, 10 FD, 10 HD */
+		esw_phy_ana &= ~((1<<8)|(1<<6)|(1<<5));
+		/* disable FD */
+		esw_phy_mcr &= ~((1<<8));
+		break;
+	case SWAPI_LINK_SPEED_MODE_AUTO_10_FD:
+		link_desc = "10FD [AN]";
+		/* disable ability 100 FD, 100 HD, 10 HD */
+		esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<5));
+		/* set 10Mbps */
+		esw_phy_mcr &= ~((1<<13));
+		break;
+	case SWAPI_LINK_SPEED_MODE_AUTO_10_HD:
+		link_desc = "10HD [AN]";
+		/* disable ability 100 FD, 100 HD, 10 FD */
+		esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<6));
+		/* set 10Mbps, disable FD */
+		esw_phy_mcr &= ~((1<<13)|(1<<8));
+		break;
+	case SWAPI_LINK_SPEED_MODE_FORCE_100_FD:
+		link_desc = "100FD [Force]";
+		/* disable ability 100 HD, 10 FD, 10 HD */
+		esw_phy_ana &= ~((1<<7)|(1<<6)|(1<<5));
+		/* disable auto-negotiation */
+		esw_phy_mcr &= ~((1<<12));
+		break;
+	case SWAPI_LINK_SPEED_MODE_FORCE_100_HD:
+		link_desc = "100HD [Force]";
+		/* disable ability 100 FD, 10 FD, 10 HD */
+		esw_phy_ana &= ~((1<<8)|(1<<6)|(1<<5));
+		/* disable auto-negotiation, disable FD */
+		esw_phy_mcr &= ~((1<<12)|(1<<8));
+		break;
+	case SWAPI_LINK_SPEED_MODE_FORCE_10_FD:
+		link_desc = "10FD [Force]";
+		/* disable ability 100 FD, 100 HD, 10 HD */
+		esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<5));
+		/* disable auto-negotiation, set 10Mbps */
+		esw_phy_mcr &= ~((1<<13)|(1<<12));
+		break;
+	case SWAPI_LINK_SPEED_MODE_FORCE_10_HD:
+		link_desc = "10HD [Force]";
+		/* disable ability 100 FD, 100 HD, 10 FD */
+		esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<6));
+		/* disable auto-negotiation, set 10Mbps, disable FD */
+		esw_phy_mcr &= ~((1<<13)|(1<<12)|(1<<8));
+		break;
+	}
 
 	switch (i_port_flowc)
 	{
 	case SWAPI_LINK_FLOW_CONTROL_DISABLE:
 		esw_phy_ana &= ~(1<<10); // disable pause support (A5)
 		flow_desc = "OFF";
-		break;
-	}
-
-	switch (i_port_speed)
-	{
-	case SWAPI_LINK_SPEED_MODE_1000_FD:
-		link_desc = "1000FD";
-		/* support only for MT7621, todo */
-		break;
-	case SWAPI_LINK_SPEED_MODE_100_FD:
-		link_desc = "100FD";
-		/* disable ability 100 HD, 10 FD, 10 HD */
-		esw_phy_ana &= ~((1<<7)|(1<<6)|(1<<5));
-		/* disable auto-negotiation */
-		esw_phy_mcr &= ~((1<<12));
-		break;
-	case SWAPI_LINK_SPEED_MODE_100_HD:
-		link_desc = "100HD";
-		/* disable ability 100 FD, 10 FD, 10 HD */
-		esw_phy_ana &= ~((1<<8)|(1<<6)|(1<<5));
-		/* disable auto-negotiation, disable FD */
-		esw_phy_mcr &= ~((1<<12)|(1<<8));
-		break;
-	case SWAPI_LINK_SPEED_MODE_10_FD:
-		link_desc = "10FD";
-		/* disable ability 100 FD, 100 HD, 10 HD */
-		esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<5));
-		/* disable auto-negotiation, set 10Mbps */
-		esw_phy_mcr &= ~((1<<13)|(1<<12));
-		break;
-	case SWAPI_LINK_SPEED_MODE_10_HD:
-		link_desc = "10HD";
-		/* disable ability 100 FD, 100 HD, 10 FD */
-		esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<6));
-		/* disable auto-negotiation, set 10Mbps, disable FD */
-		esw_phy_mcr &= ~((1<<13)|(1<<12)|(1<<8));
 		break;
 	}
 
@@ -1264,6 +1290,9 @@ static void change_port_link_mode(u32 port_id, u32 port_link_mode)
 			
 			/* set PHY mode */
 			mii_mgr_write(port_id, 0, esw_phy_mcr);
+			
+			/* wait for PHY down */
+			msleep(100);
 			
 			/* power-up PHY */
 			esw_phy_mcr &= ~(1<<11);

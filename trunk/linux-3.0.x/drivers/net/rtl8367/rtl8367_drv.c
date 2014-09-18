@@ -84,6 +84,14 @@ static u32 g_vlan_rule_user[6]                   = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+const char *g_port_desc_wan   = "WAN";
+const char *g_port_desc_lan1  = "LAN1";
+const char *g_port_desc_lan2  = "LAN2";
+const char *g_port_desc_lan3  = "LAN3";
+const char *g_port_desc_lan4  = "LAN4";
+
+////////////////////////////////////////////////////////////////////////////////////
+
 void asic_dump_isolation(int max_vlan_vid)
 {
 	int i;
@@ -161,6 +169,37 @@ u32 get_phy_ports_mask_from_user(u32 user_port_mask)
 		phy_ports_mask |= (1L << EXT_PORT_INIC);
 #endif
 	return phy_ports_mask;
+}
+
+static char* get_port_desc(rtk_port_t port)
+{
+	char *port_desc;
+	static char unk_desc[16] = {0};
+
+	switch (port)
+	{
+	case WAN_PORT_X:
+		port_desc = (char*)g_port_desc_wan;
+		break;
+	case LAN_PORT_1:
+		port_desc = (char*)g_port_desc_lan1;
+		break;
+	case LAN_PORT_2:
+		port_desc = (char*)g_port_desc_lan2;
+		break;
+	case LAN_PORT_3:
+		port_desc = (char*)g_port_desc_lan3;
+		break;
+	case LAN_PORT_4:
+		port_desc = (char*)g_port_desc_lan4;
+		break;
+	default:
+		snprintf(unk_desc, sizeof(unk_desc), "Port ID: %d", port);
+		port_desc = unk_desc;
+		break;
+	}
+
+	return port_desc;
 }
 
 u32 get_phy_ports_mask_lan(u32 include_cpu)
@@ -1472,81 +1511,127 @@ int change_led_mode_group2(u32 led_mode)
 
 void change_port_link_mode(rtk_port_t port, u32 port_link_mode)
 {
-	u32 i_port_speed;
-	u32 i_port_flowc;
+	u32 i_port_speed, i_port_flowc;
 	rtk_api_ret_t retVal;
 	rtk_port_phy_ability_t phy_cfg;
+	char *link_desc = "Auto", *flow_desc = "ON", *port_desc;
 
 	if (g_port_link_mode[port] == port_link_mode)
 		return;
 
-	i_port_speed =  (port_link_mode & 0x07);
+	i_port_speed =  (port_link_mode & 0x0F);
 	i_port_flowc = ((port_link_mode >> 8) & 0x03);
 
-	printk("%s - port [%d] link speed: %d, flow control: %d\n", RTL8367_DEVNAME, port, i_port_speed, i_port_flowc);
+	phy_cfg.FC			 = 1; //  Symmetric Flow Control
+	phy_cfg.AsyFC			 = 0; // Asymmetric Flow Control (only for 1Gbps)
+	phy_cfg.Full_1000		 = 1;
+	phy_cfg.Full_100		 = 1;
+	phy_cfg.Half_100		 = 1;
+	phy_cfg.Full_10			 = 1;
+	phy_cfg.Half_10			 = 1;
+	phy_cfg.AutoNegotiation		 = 1;
 
-	phy_cfg.FC		 = 1; //  Symmetric Flow Control
-	phy_cfg.AsyFC		 = 0; // Asymmetric Flow Control (only for 1Gbps)
-	phy_cfg.Full_1000	 = 1;
-	phy_cfg.Full_100	 = 1;
-	phy_cfg.Half_100	 = 1;
-	phy_cfg.Full_10		 = 1;
-	phy_cfg.Half_10		 = 1;
+	switch (i_port_speed)
+	{
+	case SWAPI_LINK_SPEED_MODE_AUTO_1000_FD:
+		phy_cfg.Full_100	 = 0;
+		phy_cfg.Half_100	 = 0;
+		phy_cfg.Full_10		 = 0;
+		phy_cfg.Half_10		 = 0;
+		link_desc		 = "1000FD [AN]";
+		break;
+	case SWAPI_LINK_SPEED_MODE_AUTO_100_FD:
+		phy_cfg.Full_1000	 = 0;
+		phy_cfg.Half_100	 = 0;
+		phy_cfg.Full_10		 = 0;
+		phy_cfg.Half_10		 = 0;
+		link_desc		 = "100FD [AN]";
+		break;
+	case SWAPI_LINK_SPEED_MODE_AUTO_100_HD:
+		phy_cfg.Full_1000	 = 0;
+		phy_cfg.Full_100	 = 0;
+		phy_cfg.Full_10		 = 0;
+		phy_cfg.Half_10		 = 0;
+		link_desc		 = "100HD [AN]";
+		break;
+	case SWAPI_LINK_SPEED_MODE_AUTO_10_FD:
+		phy_cfg.Full_1000	 = 0;
+		phy_cfg.Full_100	 = 0;
+		phy_cfg.Half_100	 = 0;
+		phy_cfg.Half_10		 = 0;
+		link_desc		 = "10FD [AN]";
+		break;
+	case SWAPI_LINK_SPEED_MODE_AUTO_10_HD:
+		phy_cfg.Full_1000	 = 0;
+		phy_cfg.Full_100	 = 0;
+		phy_cfg.Half_100	 = 0;
+		phy_cfg.Full_10		 = 0;
+		link_desc		 = "10HD [AN]";
+		break;
+	case SWAPI_LINK_SPEED_MODE_FORCE_100_FD:
+		phy_cfg.Full_1000	 = 0;
+		phy_cfg.Half_100	 = 0;
+		phy_cfg.Full_10		 = 0;
+		phy_cfg.Half_10		 = 0;
+		phy_cfg.AutoNegotiation	 = 0;
+		link_desc		 = "100FD [Force]";
+		break;
+	case SWAPI_LINK_SPEED_MODE_FORCE_100_HD:
+		phy_cfg.Full_1000	 = 0;
+		phy_cfg.Full_100	 = 0;
+		phy_cfg.Full_10		 = 0;
+		phy_cfg.Half_10		 = 0;
+		phy_cfg.AutoNegotiation	 = 0;
+		link_desc		 = "100HD [Force]";
+		break;
+	case SWAPI_LINK_SPEED_MODE_FORCE_10_FD:
+		phy_cfg.Full_1000	 = 0;
+		phy_cfg.Full_100	 = 0;
+		phy_cfg.Half_100	 = 0;
+		phy_cfg.Half_10		 = 0;
+		phy_cfg.AutoNegotiation	 = 0;
+		link_desc		 = "10FD [Force]";
+		break;
+	case SWAPI_LINK_SPEED_MODE_FORCE_10_HD:
+		phy_cfg.Full_1000	 = 0;
+		phy_cfg.Full_100	 = 0;
+		phy_cfg.Half_100	 = 0;
+		phy_cfg.Full_10		 = 0;
+		phy_cfg.AutoNegotiation	 = 0;
+		link_desc		 = "10HD [Force]";
+		break;
+	}
 
 	switch (i_port_flowc)
 	{
 	case SWAPI_LINK_FLOW_CONTROL_RX_ASYNC:
-		phy_cfg.FC	 = (i_port_speed != SWAPI_LINK_SPEED_MODE_1000_FD) ? 1 : 0;
-		phy_cfg.AsyFC	 = 1;
+		phy_cfg.FC		 = 0;
+		phy_cfg.AsyFC		 = (phy_cfg.Full_1000) ? 1 : 0;
+		flow_desc		 = (phy_cfg.Full_1000) ? "RX Asy" : "OFF";
 		break;
 	case SWAPI_LINK_FLOW_CONTROL_DISABLE:
-		phy_cfg.FC	 = 0;
-		phy_cfg.AsyFC	 = 0;
+		phy_cfg.FC		 = 0;
+		phy_cfg.AsyFC		 = 0;
+		flow_desc		 = "OFF";
 		break;
 	}
 
-	switch (i_port_speed)
-	{
-	case SWAPI_LINK_SPEED_MODE_1000_FD:
-		phy_cfg.Full_100  = 0;
-		phy_cfg.Half_100  = 0;
-		phy_cfg.Full_10   = 0;
-		phy_cfg.Half_10   = 0;
-		break;
-	case SWAPI_LINK_SPEED_MODE_100_FD:
-		phy_cfg.Full_1000 = 0;
-		phy_cfg.Half_100  = 0;
-		phy_cfg.Full_10   = 0;
-		phy_cfg.Half_10   = 0;
-		break;
-	case SWAPI_LINK_SPEED_MODE_100_HD:
-		phy_cfg.Full_1000 = 0;
-		phy_cfg.Full_100  = 0;
-		phy_cfg.Full_10   = 0;
-		phy_cfg.Half_10   = 0;
-		break;
-	case SWAPI_LINK_SPEED_MODE_10_FD:
-		phy_cfg.Full_1000 = 0;
-		phy_cfg.Full_100  = 0;
-		phy_cfg.Half_100  = 0;
-		phy_cfg.Half_10   = 0;
-		break;
-	case SWAPI_LINK_SPEED_MODE_10_HD:
-		phy_cfg.Full_1000 = 0;
-		phy_cfg.Full_100  = 0;
-		phy_cfg.Half_100  = 0;
-		phy_cfg.Full_10   = 0;
-		break;
-	}
+	port_desc = get_port_desc(port);
+
+	printk("%s - %s link speed: %s, flow control: %s\n", RTL8367_DEVNAME, port_desc, link_desc, flow_desc);
 
 	/* RTL8367 not support force link mode for 1000FD */
-	if (phy_cfg.Full_1000)
+	if (phy_cfg.AutoNegotiation || phy_cfg.Full_1000)
 		retVal = rtk_port_phyAutoNegoAbility_set(port, &phy_cfg);
 	else
 		retVal = rtk_port_phyForceModeAbility_set(port, &phy_cfg);
 
-	if (retVal == RT_ERR_OK)
-		g_port_link_mode[port] = port_link_mode;
+	if (retVal != RT_ERR_OK) {
+		printk("%s - %s, %s FAILED!\n", RTL8367_DEVNAME, port_desc, "phy ability set" );
+		return;
+	}
+
+	g_port_link_mode[port] = port_link_mode;
 }
 
 void change_jumbo_frames_accept(u32 jumbo_frames_enabled)

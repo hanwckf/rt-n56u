@@ -2654,130 +2654,81 @@ rtk_api_ret_t rtk_port_phyAutoNegoAbility_set(rtk_port_t port, rtk_port_phy_abil
     uint32 phyEnMsk0;
     uint32 phyEnMsk4;
     uint32 phyEnMsk9;
-    
 
     if (port > RTK_PORT_ID_MAX)
-        return RT_ERR_PORT_ID;            
-
-    if (pAbility->Half_10>=RTK_ENABLE_END||pAbility->Full_10>=RTK_ENABLE_END||
-       pAbility->Half_100>=RTK_ENABLE_END||pAbility->Full_100>=RTK_ENABLE_END||
-       pAbility->Full_1000>=RTK_ENABLE_END||pAbility->AutoNegotiation>=RTK_ENABLE_END||       
-       pAbility->AsyFC>=RTK_ENABLE_END||pAbility->FC>=RTK_ENABLE_END)
-        return RT_ERR_INPUT; 
+        return RT_ERR_PORT_ID;
 
     /*for PHY auto mode setup*/
-    pAbility->AutoNegotiation = 1;    
+    pAbility->AutoNegotiation = 1;
 
     phyEnMsk0 = 0;
     phyEnMsk4 = 0;
     phyEnMsk9 = 0;
-    
-    if (1 == pAbility->Half_10)
+
+    if (pAbility->Half_10)
     {
         /*10BASE-TX half duplex capable in reg 4.5*/
-        phyEnMsk4 = phyEnMsk4 | (1<<5);
-
-        /*Speed selection [1:0] */
-        /* 11=Reserved*/
-        /* 10= 1000Mpbs*/
-        /* 01= 100Mpbs*/
-        /* 00= 10Mpbs*/        
-        phyEnMsk0 = phyEnMsk0 & (~(1<<6));
-        phyEnMsk0 = phyEnMsk0 & (~(1<<13));
+        phyEnMsk4 |= (1<<5);
     }
 
-    if (1 == pAbility->Full_10)
+    if (pAbility->Full_10)
     {
         /*10BASE-TX full duplex capable in reg 4.6*/
-        phyEnMsk4 = phyEnMsk4 | (1<<6);
-        /*Speed selection [1:0] */
-        /* 11=Reserved*/
-        /* 10= 1000Mpbs*/
-        /* 01= 100Mpbs*/
-        /* 00= 10Mpbs*/        
-        phyEnMsk0 = phyEnMsk0 & (~(1<<6));
-        phyEnMsk0 = phyEnMsk0 & (~(1<<13));
-
-        /*Full duplex mode in reg 0.8*/
-        phyEnMsk0 = phyEnMsk0 | (1<<8);
-        
+        phyEnMsk4 |= (1<<6);
     }
 
-    if (1 == pAbility->Half_100)
+    if (pAbility->Half_100)
     {
         /*100BASE-TX half duplex capable in reg 4.7*/
-        phyEnMsk4 = phyEnMsk4 | (1<<7);
-        /*Speed selection [1:0] */
-        /* 11=Reserved*/
-        /* 10= 1000Mpbs*/
-        /* 01= 100Mpbs*/
-        /* 00= 10Mpbs*/        
-        phyEnMsk0 = phyEnMsk0 & (~(1<<6));
-        phyEnMsk0 = phyEnMsk0 | (1<<13);
+        phyEnMsk4 |= (1<<7);
     }
 
-
-    if (1 == pAbility->Full_100)
+    if (pAbility->Full_100)
     {
         /*100BASE-TX full duplex capable in reg 4.8*/
-        phyEnMsk4 = phyEnMsk4 | (1<<8);
-        /*Speed selection [1:0] */
-        /* 11=Reserved*/
-        /* 10= 1000Mpbs*/
-        /* 01= 100Mpbs*/
-        /* 00= 10Mpbs*/        
-        phyEnMsk0 = phyEnMsk0 & (~(1<<6));
-        phyEnMsk0 = phyEnMsk0 | (1<<13);
-        /*Full duplex mode in reg 0.8*/
-        phyEnMsk0 = phyEnMsk0 | (1<<8);
+        phyEnMsk4 |= (1<<8);
     }
-    
-    
-    if (1 == pAbility->Full_1000)
+
+    if (pAbility->Full_1000)
     {
         /*1000 BASE-T FULL duplex capable setting in reg 9.9*/
-        phyEnMsk9 = phyEnMsk9 | (1<<9);
-
-        /*Speed selection [1:0] */
-        /* 11=Reserved*/
-        /* 10= 1000Mpbs*/
-        /* 01= 100Mpbs*/
-        /* 00= 10Mpbs*/        
-        phyEnMsk0 = phyEnMsk0 | (1<<6);
-        phyEnMsk0 = phyEnMsk0 & (~(1<<13));
-    
-
-        /*Auto-Negotiation setting in reg 0.12*/
-        phyEnMsk0 = phyEnMsk0 | (1<<12);
-
-     }
-    
-    if (1 == pAbility->AutoNegotiation)
-    {
-        /*Auto-Negotiation setting in reg 0.12*/
-        phyEnMsk0 = phyEnMsk0 | (1<<12);
+        phyEnMsk9 |= (1<<9);
     }
 
-    if (1 == pAbility->AsyFC)
+    if (pAbility->Half_100 || pAbility->Full_100)
+    {
+        /*Speed selection [1:0] */
+        /* 01 = 100Mpbs*/
+        phyEnMsk0 |= (1 << 13);
+    }
+
+    if (pAbility->Full_100 || pAbility->Full_10)
+    {
+        /*Full duplex mode in reg 0.8*/
+        phyEnMsk0 |= (1<<8);
+    }
+
+    if (pAbility->AsyFC)
     {
         /*Asymetric flow control in reg 4.11*/
-        phyEnMsk4 = phyEnMsk4 | (1<<11);
+        phyEnMsk4 |= (1<<11);
     }
-    if (1 == pAbility->FC)
+
+    if (pAbility->FC)
     {
         /*Flow control in reg 4.10*/
-        phyEnMsk4 = phyEnMsk4 | (1<<10);
+        phyEnMsk4 |= (1<<10);
     }
 
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal;  
-    
+        return retVal;
+
     /*1000 BASE-T control register setting*/
     if ((retVal = rtl8370_getAsicPHYReg(port,PHY_1000_BASET_CONTROL_REG,&phyData))!=RT_ERR_OK)
         return retVal;
 
-    phyData = (phyData & (~0x0200)) | phyEnMsk9 ;
-
+    phyData &= ~(0x0200);
+    phyData |= phyEnMsk9;
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_1000_BASET_CONTROL_REG,phyData))!=RT_ERR_OK)
         return retVal;
 
@@ -2785,7 +2736,8 @@ rtk_api_ret_t rtk_port_phyAutoNegoAbility_set(rtk_port_t port, rtk_port_phy_abil
     if ((retVal = rtl8370_getAsicPHYReg(port,PHY_AN_ADVERTISEMENT_REG,&phyData))!=RT_ERR_OK)
         return retVal;
 
-    phyData = (phyData & (~0x0DE0)) | phyEnMsk4;
+    phyData &= ~(0x0DE0);
+    phyData |= phyEnMsk4;
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_AN_ADVERTISEMENT_REG,phyData))!=RT_ERR_OK)
         return retVal;
 
@@ -2793,19 +2745,12 @@ rtk_api_ret_t rtk_port_phyAutoNegoAbility_set(rtk_port_t port, rtk_port_phy_abil
     if ((retVal = rtl8370_getAsicPHYReg(port,PHY_CONTROL_REG,&phyData))!=RT_ERR_OK)
         return retVal;
 
-    phyData = (phyData & (~0x3140)) | phyEnMsk0;
-    /*If have auto-negotiation capable, then restart auto negotiation*/
-    if (1 == pAbility->AutoNegotiation)
-    {
-        phyData = phyData | (1 << 9);
-    }
-
+    /*Enable and restart auto negotiation*/
+    phyData &= ~(0x3140);
+    phyData |= phyEnMsk0 | (1<<12) | (1<<9);
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_CONTROL_REG,phyData))!=RT_ERR_OK)
-        return retVal;    
-    
-    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal;   
-    
+        return retVal;
+
     return RT_ERR_OK;
 }
 
@@ -2834,12 +2779,12 @@ rtk_api_ret_t rtk_port_phyAutoNegoAbility_get(rtk_port_t port, rtk_port_phy_abil
     uint32 phyData0;
     uint32 phyData4;
     uint32 phyData9;
-    
+
     if (port > RTK_PORT_ID_MAX)
-        return RT_ERR_PORT_ID; 
+        return RT_ERR_PORT_ID;
 
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal;  
+        return retVal;
 
     /*Control register setting and restart auto*/
     if ((retVal = rtl8370_getAsicPHYReg(port,PHY_CONTROL_REG,&phyData0))!=RT_ERR_OK)
@@ -2867,36 +2812,31 @@ rtk_api_ret_t rtk_port_phyAutoNegoAbility_get(rtk_port_t port, rtk_port_phy_abil
         pAbility->FC = 1;
     else
         pAbility->FC = 0;
-    
-    
+
     if (phyData4 & (1<<8))
-        pAbility->Full_100= 1;
+        pAbility->Full_100 = 1;
     else
-        pAbility->Full_100= 0;
-    
+        pAbility->Full_100 = 0;
+
     if (phyData4 & (1<<7))
-        pAbility->Half_100= 1;
+        pAbility->Half_100 = 1;
     else
-        pAbility->Half_100= 0;
+        pAbility->Half_100 = 0;
 
     if (phyData4 & (1<<6))
-        pAbility->Full_10= 1;
+        pAbility->Full_10 = 1;
     else
-        pAbility->Full_10= 0;
-    
-    if (phyData4 & (1<<5))
-        pAbility->Half_10= 1;
-    else
-        pAbility->Half_10= 0;
+        pAbility->Full_10 = 0;
 
+    if (phyData4 & (1<<5))
+        pAbility->Half_10 = 1;
+    else
+        pAbility->Half_10 = 0;
 
     if (phyData0 & (1<<12))
         pAbility->AutoNegotiation= 1;
     else
         pAbility->AutoNegotiation= 0;
-
-    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal; 
 
     return RT_ERR_OK;
 }
@@ -2929,127 +2869,85 @@ rtk_api_ret_t rtk_port_phyForceModeAbility_set(rtk_port_t port, rtk_port_phy_abi
     uint32 phyEnMsk0;
     uint32 phyEnMsk4;
     uint32 phyEnMsk9;
-    
 
     if (port > RTK_PORT_ID_MAX)
-        return RT_ERR_PORT_ID;            
+        return RT_ERR_PORT_ID;
 
-    if (pAbility->Half_10>=RTK_ENABLE_END||pAbility->Full_10>=RTK_ENABLE_END||
-       pAbility->Half_100>=RTK_ENABLE_END||pAbility->Full_100>=RTK_ENABLE_END||
-       pAbility->Full_1000>=RTK_ENABLE_END||pAbility->AutoNegotiation>=RTK_ENABLE_END||       
-       pAbility->AsyFC>=RTK_ENABLE_END||pAbility->FC>=RTK_ENABLE_END)
-        return RT_ERR_INPUT; 
-
-    if (1 == pAbility->Full_1000)
+    if (pAbility->Full_1000)
         return RT_ERR_INPUT;
 
     /*for PHY force mode setup*/
     pAbility->AutoNegotiation = 0;
-    
+
     phyEnMsk0 = 0;
     phyEnMsk4 = 0;
     phyEnMsk9 = 0;
-    
-    if (1 == pAbility->Half_10)
+
+    if (pAbility->Half_10)
     {
         /*10BASE-TX half duplex capable in reg 4.5*/
-        phyEnMsk4 = phyEnMsk4 | (1<<5);
+        phyEnMsk4 |= (1<<5);
 
         /*Speed selection [1:0] */
-        /* 11=Reserved*/
-        /* 10= 1000Mpbs*/
-        /* 01= 100Mpbs*/
-        /* 00= 10Mpbs*/        
-        phyEnMsk0 = phyEnMsk0 & (~(1<<6));
-        phyEnMsk0 = phyEnMsk0 & (~(1<<13));
+        /* 00 = 10Mpbs*/
     }
 
-    if (1 == pAbility->Full_10)
+    if (pAbility->Full_10)
     {
         /*10BASE-TX full duplex capable in reg 4.6*/
-        phyEnMsk4 = phyEnMsk4 | (1<<6);
-        /*Speed selection [1:0] */
-        /* 11=Reserved*/
-        /* 10= 1000Mpbs*/
-        /* 01= 100Mpbs*/
-        /* 00= 10Mpbs*/        
-        phyEnMsk0 = phyEnMsk0 & (~(1<<6));
-        phyEnMsk0 = phyEnMsk0 & (~(1<<13));
+        phyEnMsk4 |= (1<<6);
 
-        /*Full duplex mode in reg 0.8*/
-        phyEnMsk0 = phyEnMsk0 | (1<<8);
-        
+        /*Speed selection [1:0] */
+        /* 00 = 10Mpbs*/
     }
 
-    if (1 == pAbility->Half_100)
+    if (pAbility->Half_100)
     {
         /*100BASE-TX half duplex capable in reg 4.7*/
-        phyEnMsk4 = phyEnMsk4 | (1<<7);
+        phyEnMsk4 |= (1<<7);
+
         /*Speed selection [1:0] */
-        /* 11=Reserved*/
-        /* 10= 1000Mpbs*/
-        /* 01= 100Mpbs*/
-        /* 00= 10Mpbs*/        
-        phyEnMsk0 = phyEnMsk0 & (~(1<<6));
-        phyEnMsk0 = phyEnMsk0 | (1<<13);
+        /* 01 = 100Mpbs*/
+        phyEnMsk0 |= (1<<13);
     }
 
-
-    if (1 == pAbility->Full_100)
+    if (pAbility->Full_100)
     {
         /*100BASE-TX full duplex capable in reg 4.8*/
-        phyEnMsk4 = phyEnMsk4 | (1<<8);
+        phyEnMsk4 |= (1<<8);
+
         /*Speed selection [1:0] */
-        /* 11=Reserved*/
-        /* 10= 1000Mpbs*/
-        /* 01= 100Mpbs*/
-        /* 00= 10Mpbs*/        
-        phyEnMsk0 = phyEnMsk0 & (~(1<<6));
-        phyEnMsk0 = phyEnMsk0 | (1<<13);
-        /*Full duplex mode in reg 0.8*/
-        phyEnMsk0 = phyEnMsk0 | (1<<8);
+        /* 01 = 100Mpbs*/
+        phyEnMsk0 |= (1<<13);
     }
-    
-    
-    if (1 == pAbility->Full_1000)
+
+    if (pAbility->Full_100 || pAbility->Full_10)
     {
-        /*1000 BASE-T FULL duplex capable setting in reg 9.9*/
-        phyEnMsk9 = phyEnMsk9 | (1<<9);
-
-        /*Speed selection [1:0] */
-        /* 11=Reserved*/
-        /* 10= 1000Mpbs*/
-        /* 01= 100Mpbs*/
-        /* 00= 10Mpbs*/        
-        phyEnMsk0 = phyEnMsk0 | (1<<6);
-        phyEnMsk0 = phyEnMsk0 & (~(1<<13));
-    
-
-        /*Auto-Negotiation setting in reg 0.12*/
-        phyEnMsk0 = phyEnMsk0 | (1<<12);
-
+        /*Full duplex mode in reg 0.8*/
+        phyEnMsk0 |= (1<<8);
     }
 
-    if (1 == pAbility->AsyFC)
+    if (pAbility->AsyFC)
     {
         /*Asymetric flow control in reg 4.11*/
-        phyEnMsk4 = phyEnMsk4 | (1<<11);
+        phyEnMsk4 |= (1<<11);
     }
-    if (1 == pAbility->FC)
+
+    if (pAbility->FC)
     {
         /*Flow control in reg 4.10*/
-        phyEnMsk4 = phyEnMsk4 | (1<<10);
+        phyEnMsk4 |= (1<<10);
     }
 
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal;  
-    
+        return retVal;
+
     /*1000 BASE-T control register setting*/
     if ((retVal = rtl8370_getAsicPHYReg(port,PHY_1000_BASET_CONTROL_REG,&phyData))!=RT_ERR_OK)
         return retVal;
 
-    phyData = (phyData & (~0x0200)) | phyEnMsk9 ;
-
+    phyData &= ~(0x0200);
+    phyData |= phyEnMsk9;
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_1000_BASET_CONTROL_REG,phyData))!=RT_ERR_OK)
         return retVal;
 
@@ -3057,116 +2955,26 @@ rtk_api_ret_t rtk_port_phyForceModeAbility_set(rtk_port_t port, rtk_port_phy_abi
     if ((retVal = rtl8370_getAsicPHYReg(port,PHY_AN_ADVERTISEMENT_REG,&phyData))!=RT_ERR_OK)
         return retVal;
 
-    phyData = (phyData & (~0x0DE0)) | phyEnMsk4;
+    phyData &= ~(0x0DE0);
+    phyData |= phyEnMsk4;
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_AN_ADVERTISEMENT_REG,phyData))!=RT_ERR_OK)
         return retVal;
 
-    /*Control register setting and restart auto*/
-    if ((retVal = rtl8370_getAsicPHYReg(port,PHY_CONTROL_REG,&phyData))!=RT_ERR_OK)
-        return retVal;
-
-    phyData = (phyData & (~0x3140)) | phyEnMsk0;
+    /*Control register setting and power off/on*/
+    phyData = phyEnMsk0;
+    phyData &= ~(1 << 12);
+    phyData |= (1 << 11);   /* power down PHY, bit 11 should be set to 1 */
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_CONTROL_REG,phyData))!=RT_ERR_OK)
         return retVal;
 
-    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal;    
+    msleep(100);
+
+    phyData &= ~(1 << 11);   /* power on PHY, bit 11 should be set to 0*/
+    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_CONTROL_REG,phyData))!=RT_ERR_OK)
+        return retVal;
 
     return RT_ERR_OK;
 }
-
-/* Function Name:
- *      rtk_port_phyForceModeAbility_get
- * Description:
- *      Get PHY ability through PHY registers.
- * Input:
- *      port - Port id.
- * Output:
- *      pAbility - Ability structure
- * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
- *      RT_ERR_SMI             - SMI access error
- *      RT_ERR_PORT_ID - Invalid port number.
- *      RT_ERR_PHY_REG_ID - Invalid PHY address
- *      RT_ERR_INPUT - Invalid input parameters.
- *      RT_ERR_BUSYWAIT_TIMEOUT - PHY access busy
- * Note:
- *      Get the capablity of specified PHY.
- */
-rtk_api_ret_t rtk_port_phyForceModeAbility_get(rtk_port_t port, rtk_port_phy_ability_t *pAbility)
-{
-    rtk_api_ret_t retVal;
-    uint32 phyData0;
-    uint32 phyData4;
-    uint32 phyData9;
-    
-    if (port > RTK_PORT_ID_MAX)
-        return RT_ERR_PORT_ID; 
-
-    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal;  
-
-    /*Control register setting and restart auto*/
-    if ((retVal = rtl8370_getAsicPHYReg(port,PHY_CONTROL_REG,&phyData0))!=RT_ERR_OK)
-        return retVal;
-
-    /*Auto-Negotiation control register setting*/
-    if ((retVal = rtl8370_getAsicPHYReg(port,PHY_AN_ADVERTISEMENT_REG,&phyData4))!=RT_ERR_OK)
-        return retVal;
-
-    /*1000 BASE-T control register setting*/
-    if ((retVal = rtl8370_getAsicPHYReg(port,PHY_1000_BASET_CONTROL_REG,&phyData9))!=RT_ERR_OK)
-        return retVal;
-
-    if (phyData9 & (1<<9))
-        pAbility->Full_1000 = 1;
-    else
-        pAbility->Full_1000 = 0;
-
-    if (phyData4 & (1<<11))
-        pAbility->AsyFC = 1;
-    else
-        pAbility->AsyFC = 0;
-
-    if (phyData4 & (1<<10))
-        pAbility->FC = 1;
-    else
-        pAbility->FC = 0;
-    
-
-    if (phyData4 & (1<<8))
-        pAbility->Full_100= 1;
-    else
-        pAbility->Full_100= 0;
-    
-    if (phyData4 & (1<<7))
-        pAbility->Half_100= 1;
-    else
-        pAbility->Half_100= 0;
-
-    if (phyData4 & (1<<6))
-        pAbility->Full_10= 1;
-    else
-        pAbility->Full_10= 0;
-    
-    if (phyData4 & (1<<5))
-        pAbility->Half_10= 1;
-    else
-        pAbility->Half_10= 0;
-
-
-    if (phyData0 & (1<<12))
-        pAbility->AutoNegotiation= 1;
-    else
-        pAbility->AutoNegotiation= 0;
-
-    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal; 
-
-    return RT_ERR_OK;
-}
-
 
 /* Function Name:
  *      rtk_port_phyLink_get

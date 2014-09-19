@@ -31,7 +31,7 @@
  * Initial Release
  *
  * May 2009 Bruce Chang
- * support RT2880/RT2883 PCIe
+ * support RT3883 PCIe
  *
  **************************************************************************
  */
@@ -119,7 +119,7 @@ void ralink_hw0_irqdispatch(int prio)
 	 * bit[1] WDTIMER Timer 1 Interrupt Status after Mask
 	 * bit[0] TIMER0 Timer 0 Interrupt Status after Mask
 	 *
-	 * RT2883/RT3052:
+	 * RT3052:
 	 * bit[17] Ethernet switch interrupt status after mask
 	 * bit[6] PIO Programmable IO Interrupt Status after Mask
 	 * bit[5] UART Interrupt Status after Mask
@@ -243,8 +243,6 @@ asmlinkage void plat_irq_dispatch(void)
 			else
 				do_IRQ(SURFBOARDINT_PCI_0);
 		}
-#elif defined (CONFIG_RALINK_RT2883)
-		do_IRQ(SURFBOARDINT_PCI_0);
 #elif defined (CONFIG_RALINK_RT3883)
 		pci_status = RALINK_PCI_PCIINT_ADDR;
 		if (pci_status & 0x100000)

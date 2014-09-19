@@ -56,7 +56,7 @@ void SetWdgTimerEbl(unsigned int timer, unsigned int ebl)
 
         sysRegWrite(CLKCFG,result);
     }
-#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883)
+#elif defined (CONFIG_RALINK_RT3052)
     if(timer==TMR1CTL) {
         //the last 4bits in SYSCFG are write only
         result=sysRegRead(SYSCFG);
@@ -144,8 +144,8 @@ static void RaWdgStart(void)
     SetTimerMode(TMR1CTL,WATCHDOG);
     SetWdgTimerClock(TMR1CTL,SYS_CLK_DIV65536);
 
-#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT2883) || \
-    defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883)
+#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3052) || \
+    defined (CONFIG_RALINK_RT3883)
     WdgLoadValue = WATCHDOG_TIMEOUT * (get_surfboard_sysclk()/65536);
 #else
     WdgLoadValue = WATCHDOG_TIMEOUT * (40000000/65536); //fixed at 40Mhz

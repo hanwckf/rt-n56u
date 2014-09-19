@@ -74,7 +74,6 @@
 #define DLM(x)          *(volatile u32 *)((x)+RT2880_UART_DLM_OFFSET)
 
 #if defined (CONFIG_RALINK_RT2880) || \
-    defined (CONFIG_RALINK_RT2883) || \
     defined (CONFIG_RALINK_RT3883) || \
     defined (CONFIG_RALINK_RT3052) || \
     defined (CONFIG_RALINK_RT3352) || \

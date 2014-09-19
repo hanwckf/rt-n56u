@@ -84,7 +84,7 @@ void set_wdg_timer_ebl(unsigned int timer, unsigned int ebl)
 
 		sysRegWrite(CLKCFG, result);
 	}
-#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883)
+#elif defined (CONFIG_RALINK_RT3052)
 	if (timer == TMR1CTL) {
 		//the last 4bits in SYSCFG are write only
 		result = sysRegRead(SYSCFG);
@@ -198,8 +198,8 @@ int __init ralink_wdt_init_module(void)
 	setup_timer(&wdg_timer, on_refresh_wdg_timer, 0);
 
 	set_wdg_timer_mode(TMR1CTL, WATCHDOG);
-#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT2883) || \
-    defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883)
+#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3052) || \
+    defined (CONFIG_RALINK_RT3883)
 	/*
 	 * System Clock = CPU Clock/2
 	 * For user easy configuration, We assume the unit of watch dog timer is 1s, 

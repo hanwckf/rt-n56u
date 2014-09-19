@@ -37,8 +37,6 @@
 #define PROCREG_DIR			"rt3352"
 #elif defined (CONFIG_RALINK_RT5350)
 #define PROCREG_DIR			"rt5350"
-#elif defined (CONFIG_RALINK_RT2883)
-#define PROCREG_DIR			"rt2883"
 #elif defined (CONFIG_RALINK_RT3883)
 #define PROCREG_DIR			"rt3883"
 #elif defined (CONFIG_RALINK_RT6855)

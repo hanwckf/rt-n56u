@@ -138,9 +138,7 @@ static int config_access(int access_type, u32 busn, u32 slot, u32 func, u32 wher
 #endif
 
 	/* Setup address */
-#if defined(CONFIG_RALINK_RT2883)
-	address = (busn << 24) | (slot << 19) | (func << 16) | (where & 0xfc) | 0x1;
-#elif defined(CONFIG_RALINK_RT3883) || defined(CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
+#if defined(CONFIG_RALINK_RT3883) || defined(CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
 	address = 0x80000000 | (((where & 0xf00)>>8)<<24) | (busn << 16) | (slot << 11) | (func << 8) | (where & 0xfc);
 #else
 	address = 0x80000000 | (busn << 16) | (slot << 11) | (func << 8) | (where & 0xfc);
@@ -303,15 +301,6 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 	} else {
 		return 0;
 	}
-#elif defined(CONFIG_RALINK_RT2883)
-	if ((dev->bus->number == 0) && (slot == 0x0)) {
-		pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, MEMORY_BASE);
-	} else if ((dev->bus->number == 1)) {
-		pci_irq = SURFBOARDINT_PCI_0;
-		pci_cache_line = 0; // not available for PCIe
-	} else {
-		return 0;
-	}
 #elif defined(CONFIG_RALINK_RT2880)
 	if (slot == 0x0) {
 		pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, MEMORY_BASE);
@@ -359,7 +348,7 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 int __init init_ralink_pci(void)
 {
 	u32 val = 0;
-#if defined(CONFIG_RALINK_RT2883) || defined(CONFIG_RALINK_RT3883) || defined(CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
+#if defined(CONFIG_RALINK_RT3883) || defined(CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
 	int pcie0_disable = 0;
 #endif
 
@@ -429,7 +418,7 @@ int __init init_ralink_pci(void)
 	RALINK_PCI_PCICFG_ADDR = (1 << 16);	// virtual P2P bridge DEVNUM = 1, release PCIRST
 #endif
 
-#elif defined(CONFIG_RALINK_RT2880) || defined(CONFIG_RALINK_RT2883)
+#elif defined(CONFIG_RALINK_RT2880)
 	RALINK_PCI_PCICFG_ADDR = 0;		// release PCIRST
 #endif
 
@@ -460,12 +449,6 @@ int __init init_ralink_pci(void)
 	}
 #endif
 	RALINK_PCI_ARBCTL = 0x79;
-#elif defined(CONFIG_RALINK_RT2883)
-	if ((RALINK_PCI_STATUS & 0x1) == 0) {
-		printk("PCIe: no card\n");
-		pcie0_disable = 1;
-		return 0;
-	}
 #elif defined(CONFIG_RALINK_RT2880)
 	RALINK_PCI_ARBCTL = 0x79;
 #endif
@@ -509,14 +492,6 @@ int __init init_ralink_pci(void)
 #elif defined(CONFIG_PCIE_PCI_CONCURRENT)
 	RALINK_PCI_PCIMSK_ADDR      = (pcie0_disable) ? 0x000c0000 : 0x001c0000;	// enable PCI/PCIe interrupt
 #endif
-#elif defined(CONFIG_RALINK_RT2883)
-	RALINK_PCI_BAR0SETUP_ADDR   = BAR_MASK;
-	RALINK_PCI_IMBASEBAR0_ADDR  = MEMORY_BASE;
-	RALINK_PCI_ID               = 0x08021814;
-	RALINK_PCI_CLASS            = 0x06040001;
-	RALINK_PCI_SUBID            = 0x28831814;
-	RALINK_PCI_BAR0SETUP_ADDR   = (BAR_MASK | 1);	// enable PCIe BAR0
-	RALINK_PCI_PCIMSK_ADDR      = 0x000c0000;	// enable PCIe interrupt (fixme)
 #elif defined(CONFIG_RALINK_RT2880)
 	RALINK_PCI_BAR0SETUP_ADDR   = BAR_MASK;
 	RALINK_PCI_IMBASEBAR0_ADDR  = MEMORY_BASE;
@@ -534,7 +509,6 @@ int __init init_ralink_pci(void)
 	val |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
 	config_access(PCI_ACCESS_WRITE_4, 0, 0x0, 0, PCI_COMMAND, &val);
 #elif defined(CONFIG_RALINK_RT3883)
-
 #if defined(CONFIG_PCIE_PCI_CONCURRENT)
 	// start virtual P2P bridge
 	if (!pcie0_disable) {
@@ -544,12 +518,6 @@ int __init init_ralink_pci(void)
 	}
 #endif
 	// start PCI host bridge (or virtual P2P bridge for PCIe only)
-	config_access(PCI_ACCESS_READ_4, 0, 0x0, 0, PCI_COMMAND, &val);
-	val |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
-	config_access(PCI_ACCESS_WRITE_4, 0, 0x0, 0, PCI_COMMAND, &val);
-
-#elif defined(CONFIG_RALINK_RT2883)
-	// start PCI host bridge
 	config_access(PCI_ACCESS_READ_4, 0, 0x0, 0, PCI_COMMAND, &val);
 	val |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
 	config_access(PCI_ACCESS_WRITE_4, 0, 0x0, 0, PCI_COMMAND, &val);

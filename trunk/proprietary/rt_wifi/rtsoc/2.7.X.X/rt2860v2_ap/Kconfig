@@ -88,7 +88,7 @@ config  RT2860V2_AP_VIDEO_TURBINE
 config  RT2860V2_AP_TXBF
 	bool "Tx Beam Forming Support (Only 3883)"
 	depends on RT2860V2_AP
-	depends on RALINK_RT2883 || RALINK_RT3883
+	depends on RALINK_RT3883
 
 choice
 	prompt "Choose Power Design"

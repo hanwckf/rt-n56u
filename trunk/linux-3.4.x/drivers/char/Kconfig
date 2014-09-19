@@ -109,13 +109,13 @@ choice
 	config GDMA_PCM_ONLY
 	bool "PCM/Others"
 	---help---
-	  RT305x/RT3350/RT2883=>Ch0-Ch7:PCM0/PCM1 
+	  RT305x/RT3350=>Ch0-Ch7:PCM0/PCM1 
 	  RT3352/RT5350/RT3883/RT6855=>Ch0-Ch7:PCM0/PCM1, Ch8-Ch15:others
 	
 	config GDMA_PCM_I2S_OTHERS
 	bool "PCM/I2S/Others"
 	---help---
-	  RT305x/RT3350/RT2883=>4Ch:PCM0 / 2Ch:I2S / 2Ch:Others
+	  RT305x/RT3350=>4Ch:PCM0 / 2Ch:I2S / 2Ch:Others
 	  RT3352/RT5350/RT3883/RT6855=>4Ch:PCM0 / 2Ch:I2S_Tx / 2Ch:I2S_Rx / 8Ch:Others
 
 	config GDMA_EVERYBODY

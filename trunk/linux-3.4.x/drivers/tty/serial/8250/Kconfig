@@ -282,7 +282,7 @@ config SERIAL_8250_DW
 config SERIAL_8250_RT288X
 	bool "Ralink RT2xxx/RT3xxx/RT5xxx/MT7620 serial port support"
 	depends on SERIAL_8250
-	default y if (RALINK_RT2880 || RALINK_RT3052 || RALINK_RT3352 || RALINK_RT2883 || RALINK_RT3883 || RALINK_RT5350 || RALINK_MT7620)
+	default y if (RALINK_RT2880 || RALINK_RT3052 || RALINK_RT3352 || RALINK_RT3883 || RALINK_RT5350 || RALINK_MT7620)
 	help
 	  If you have an Ralink board and want to use the serial port, say Y
 	  to this option. The driver can handle 1 or 2 serial ports.                                                                                                           If unsure, say N.

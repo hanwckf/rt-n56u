@@ -41,20 +41,6 @@ endchoice
 
 endif
 
-#---------------------------
-
-if RALINK_RT2883
-
-choice
-	prompt "SoC Hardware Type"
-	default RT2883_ASIC
-
-config  RT2883_ASIC
-	bool "RT2883-ASIC"
-endchoice
-
-endif
-
 #--------------------------
 
 if RALINK_RT3883

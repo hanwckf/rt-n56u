@@ -267,8 +267,7 @@ static void prom_init_sysclk(void)
 #if defined(CONFIG_RT2880_FPGA)
 	mips_cpu_feq = 25000000;
 #elif defined (CONFIG_RT3052_FPGA) || defined (CONFIG_RT3352_FPGA) || \
-      defined (CONFIG_RT2883_FPGA) || defined (CONFIG_RT3883_FPGA) || \
-      defined (CONFIG_RT5350_FPGA)
+      defined (CONFIG_RT3883_FPGA) || defined (CONFIG_RT5350_FPGA)
 	mips_cpu_feq = 40000000;
 #elif defined (CONFIG_MT7620_FPGA)
 	mips_cpu_feq = 50000000;
@@ -285,8 +284,6 @@ static void prom_init_sysclk(void)
 
 #if defined (CONFIG_RT2880_ASIC)
 	clk_sel = (reg>>20) & 0x03;
-#elif defined (CONFIG_RT2883_ASIC)
-	clk_sel = (reg>>18) & 0x03;
 #elif defined (CONFIG_RT3052_ASIC)
 	clk_sel = (reg>>18) & 0x01;
 #elif defined (CONFIG_RT3352_ASIC)
@@ -333,19 +330,6 @@ static void prom_init_sysclk(void)
 		break;
 	case 3:
 		mips_cpu_feq = (300000000);
-		break;
-#elif defined (CONFIG_RALINK_RT2883)
-	case 0:
-		mips_cpu_feq = (380*1000*1000);
-		break;
-	case 1:
-		mips_cpu_feq = (390*1000*1000);
-		break;
-	case 2:
-		mips_cpu_feq = (400*1000*1000);
-		break;
-	case 3:
-		mips_cpu_feq = (420*1000*1000);
 		break;
 #elif defined (CONFIG_RALINK_RT3052)
 #if defined (CONFIG_RALINK_RT3350)
@@ -660,15 +644,15 @@ void __init prom_init(void)
 	prom_meminit();
 
 	prom_printf("\nLINUX started...\n");
-#if defined(CONFIG_RT2880_FPGA) || defined(CONFIG_RT2883_FPGA) || \
-    defined(CONFIG_RT3052_FPGA) || defined(CONFIG_RT3352_FPGA) || \
-    defined(CONFIG_RT3883_FPGA) || defined(CONFIG_RT5350_FPGA) || \
-    defined(CONFIG_MT7620_FPGA) || defined(CONFIG_MT7621_FPGA)
+#if defined(CONFIG_RT2880_FPGA) || defined(CONFIG_RT3052_FPGA) || \
+    defined(CONFIG_RT3352_FPGA) || defined(CONFIG_RT3883_FPGA) || \
+    defined(CONFIG_RT5350_FPGA) || defined(CONFIG_MT7620_FPGA) || \
+    defined(CONFIG_MT7621_FPGA)
 	prom_printf("\n THIS IS FPGA\n");
-#elif defined(CONFIG_RT2880_ASIC) || defined(CONFIG_RT2883_ASIC) || \
-      defined(CONFIG_RT3052_ASIC) || defined(CONFIG_RT3352_ASIC) || \
-      defined(CONFIG_RT3883_ASIC) || defined(CONFIG_RT5350_ASIC) || \
-      defined(CONFIG_MT7620_ASIC) || defined(CONFIG_MT7621_ASIC)
+#elif defined(CONFIG_RT2880_ASIC) || defined(CONFIG_RT3052_ASIC) || \
+      defined(CONFIG_RT3352_ASIC) || defined(CONFIG_RT3883_ASIC) || \
+      defined(CONFIG_RT5350_ASIC) || defined(CONFIG_MT7620_ASIC) || \
+      defined(CONFIG_MT7621_ASIC)
 	prom_printf("\n THIS IS ASIC\n");
 #endif
 }

@@ -261,7 +261,7 @@ config DMA_SA11X0
 
 config RALINK_DMA
 	bool "Ralink DMA engine support"
-	depends on (RALINK_RT3052 || RALINK_RT3352 || RALINK_RT2883 || RALINK_RT3883 || RALINK_RT5350 || RALINK_MT7620 || RALINK_MT7621)
+	depends on (RALINK_RT3052 || RALINK_RT3352 || RALINK_RT3883 || RALINK_RT5350 || RALINK_MT7620 || RALINK_MT7621)
 	select DMA_ENGINE
 	---help---
 	  Enable support for the Ralink DMA engine.

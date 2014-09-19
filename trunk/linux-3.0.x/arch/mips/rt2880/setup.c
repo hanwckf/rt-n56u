@@ -73,8 +73,6 @@ const char *get_system_type(void)
 {
 #if defined (CONFIG_RALINK_RT2880)
 	return "Ralink RT2880 SoC";
-#elif defined (CONFIG_RALINK_RT2883)
-	return "Ralink RT2883 SoC";
 #elif defined (CONFIG_RALINK_RT3883)
 	return "Ralink RT3883/RT3662 SoC";
 #elif defined (CONFIG_RALINK_RT3052)

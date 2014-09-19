@@ -133,8 +133,8 @@ int request_tmr_service(int interval, void (*function)(unsigned long), unsigned 
 	tmr0.tmr_callback_function = function;
 
 	set_timer_mode(TMR0CTL, PERIODIC);
-#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT2883) || \
-    defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883)
+#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3052) || \
+    defined (CONFIG_RALINK_RT3883)
 	set_timer_clock_prescale(TMR0CTL, SYS_CLK_DIV16384);
 	sysRegWrite(TMR0LOAD, interval * (get_surfboard_sysclk() / 16384 / 1000));
 #elif defined (CONFIG_RALINK_MT7621)
@@ -207,8 +207,8 @@ int request_tmr1_service(int interval, void (*function)(unsigned long), unsigned
 	tmr1.tmr_callback_function = function;
 
 	set_timer_mode(TMR1CTL, PERIODIC);
-#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT2883) || \
-    defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883)
+#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3052) || \
+    defined (CONFIG_RALINK_RT3883)
 	set_timer_clock_prescale(TMR1CTL, SYS_CLK_DIV16384);
 	sysRegWrite(TMR1LOAD, interval * (get_surfboard_sysclk() / 16384 / 1000));
 #elif defined (CONFIG_RALINK_MT7621)

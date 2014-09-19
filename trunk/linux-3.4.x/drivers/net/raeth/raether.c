@@ -450,7 +450,7 @@ static void forward_config(struct net_device *dev)
  * 	PSE_FQ_CFG register definition -
  *
  * 	Define max free queue page count in PSE. (31:24)
- *	RT2883/RT3883 - 0xff908000 (255 pages)
+ *	RT3883 - 0xff908000 (255 pages)
  *	RT2880 - 0x80504000 (128 pages)
  *	RT3052 - 0x80504000 (128 pages)
  *
@@ -463,8 +463,8 @@ static void forward_config(struct net_device *dev)
  *	The register affects QOS correctness in frame engine!
  */
 
-#if defined (CONFIG_RALINK_RT2883) || defined (CONFIG_RALINK_RT3883)
-	sysRegWrite(PSE_FQ_CFG, cpu_to_le32(INIT_VALUE_OF_RT2883_PSE_FQ_CFG));
+#if defined (CONFIG_RALINK_RT3883)
+	sysRegWrite(PSE_FQ_CFG, cpu_to_le32(INIT_VALUE_OF_RT3883_PSE_FQ_CFG));
 #elif defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT6855) || \
       defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620) || \
       defined (CONFIG_RALINK_MT7621)
@@ -584,8 +584,8 @@ static void fe_pdma_init(struct net_device *dev)
 #endif
 
 	/* only the following chipset need to set it */
-#if defined (CONFIG_RALINK_RT2880) || defined(CONFIG_RALINK_RT2883) || \
-    defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883)
+#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3052) || \
+    defined (CONFIG_RALINK_RT3883)
 	//set 1us timer count in unit of clock cycle
 	regVal = sysRegRead(FE_GLO_CFG);
 	regVal &= ~(0xff << 8); //clear bit8-bit15

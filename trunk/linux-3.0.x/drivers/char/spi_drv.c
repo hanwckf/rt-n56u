@@ -471,22 +471,7 @@ void vtss_reset(void)
 	spich = 0;
 #endif
 
-#ifdef CONFIG_RT2883_ASIC
-	RT2880_REG(RALINK_REG_GPIOMODE) |= (7 << 2);
-	RT2880_REG(RALINK_REG_GPIOMODE) &= ~(1 << 1);
-
-	RT2880_REG(RALINK_REG_PIODIR) |= (1 << 12);
-	RT2880_REG(RALINK_REG_PIODIR) &= ~(1 << 7);
-
-	//Set Gpio pin 12 to low
-	RT2880_REG(RALINK_REG_PIODATA) &= ~(1 << 12);
-
-	mdelay(50);
-	//Set Gpio pin 12 to high
-	RT2880_REG(RALINK_REG_PIODATA) |= (1 << 12);
-
-	mdelay(125);
-#elif defined CONFIG_RT3883_ASIC
+#if defined CONFIG_RT3883_ASIC
 	RT2880_REG(RALINK_REG_PIO3924DIR) |= 1;
 
 	//Set Gpio pin 24 to low
@@ -720,7 +705,7 @@ static int spidrv_init(void)
     //use normal(SPI) mode instead of GPIO mode
 #ifdef CONFIG_RALINK_RT2880
     RT2880_REG(RALINK_REG_GPIOMODE) &= ~(1 << 2);
-#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883) || defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
     RT2880_REG(RALINK_REG_GPIOMODE) &= ~(1 << 1);
 #else
 #error Ralink Chip not defined

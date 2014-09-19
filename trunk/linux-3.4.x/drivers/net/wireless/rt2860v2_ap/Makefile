@@ -167,16 +167,6 @@ rt2860v2_ap-objs += ../rt2860v2/ate/chips/rt28xx_ate.o
 endif
 endif
 
-ifeq ($(CONFIG_RALINK_RT2883),y)
-rt2860v2_ap-objs += ../rt2860v2/chips/rt2883.o
-ifeq ($(CONFIG_RT2860V2_AP_TXBF),y)
-rt2860v2_ap-objs += ../rt2860v2/common/cmm_txbf.o
-endif
-ifeq ($(CONFIG_RT2860V2_AP_ATE),y)
-rt2860v2_ap-objs += ../rt2860v2/ate/chips/rt2883_ate.o
-endif
-endif
-
 ifeq ($(CONFIG_RALINK_RT3883),y)
 rt2860v2_ap-objs += ../rt2860v2/chips/rt3883.o
 rt2860v2_ap-objs += ../rt2860v2/rate_ctrl/alg_grp.o
@@ -254,13 +244,6 @@ endif
 
 ifeq ($(CONFIG_RALINK_RT2880),y)
 EXTRA_CFLAGS += -DRT2880
-endif
-
-ifeq ($(CONFIG_RALINK_RT2883),y)
-EXTRA_CFLAGS += -DRT2883 -DDOT11N_SS3_SUPPORT -DA_BAND_SUPPORT
-ifeq ($(CONFIG_RT2860V2_AP_TXBF),y)
-EXTRA_CFLAGS += -DTXBF_SUPPORT
-endif
 endif
 
 ifeq ($(CONFIG_RALINK_RT3883),y)

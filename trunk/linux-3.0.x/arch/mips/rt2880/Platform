@@ -30,14 +30,6 @@ cflags-$(CONFIG_RALINK_RT5350)	+= -I$(srctree)/arch/mips/include/asm/rt2880
 load-$(CONFIG_RALINK_RT5350)	+= 0xffffffff80000000
 
 #
-## Ralink RT2883 board
-#
-platform-$(CONFIG_RALINK_RT2883)+= rt2880/
-cflags-$(CONFIG_RALINK_RT2883)	+= -mtune=74kc
-cflags-$(CONFIG_RALINK_RT2883)	+= -I$(srctree)/arch/mips/include/asm/rt2880
-load-$(CONFIG_RALINK_RT2883)	+= 0xffffffff80000000
-
-#
 ## Ralink RT3883 board
 #
 platform-$(CONFIG_RALINK_RT3883)+= rt2880/

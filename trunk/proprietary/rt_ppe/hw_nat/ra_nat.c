@@ -2492,7 +2492,7 @@ static int __init PpeInitMod(void)
 #elif defined (CONFIG_RALINK_RT3352)
 	/* RT3352 rev 0105 has no bug UDP w/o checksum */
 	ppe_udp_bug = (chip_rev_id < 0x0105) ? 1 : 0;
-#elif defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT2883) || defined (CONFIG_RALINK_RT3883)
+#elif defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3883)
 	/* RT3883/RT3662 at least rev 0105 has bug UDP w/o checksum :-( */
 	ppe_udp_bug = 1;
 #elif defined (CONFIG_RALINK_MT7620)

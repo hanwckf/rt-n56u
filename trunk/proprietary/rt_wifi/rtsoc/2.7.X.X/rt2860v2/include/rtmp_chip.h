@@ -38,35 +38,18 @@ struct _RSSI_SAMPLE;
 #include "chip/mac_pci.h"
 #endif /* RTMP_MAC_PCI */
 
-
-#ifdef RT2860
-#include "chip/rt2860.h"
-#include "chip/rt28xx.h"
-#endif /* RT2860 */
-
-
-
-
 #ifdef RT2880
 #include "chip/rt2880.h"
 #include "chip/rt28xx.h"
 #endif /* RT2880 */
 
-#ifdef RT2883
-#include "chip/rt2883.h"
-#endif /* RT2883 */
-
 #ifdef RT3883
 #include "chip/rt3883.h"
 #endif /* RT3883 */
 
-
 #ifdef RT305x
 #include "chip/rt305x.h"
 #endif /* RT305x */
-
-
-
 
 #ifdef RT3352
 #include "chip/rt3352.h"
@@ -75,10 +58,6 @@ struct _RSSI_SAMPLE;
 #ifdef RT5350
 #include "chip/rt5350.h"
 #endif /* RT5350 */
-
-
-
-
 
 #ifdef RT6352
 #include "chip/rt6352.h"

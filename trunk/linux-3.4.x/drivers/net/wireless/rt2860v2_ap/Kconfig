@@ -103,21 +103,21 @@ config  EXTERNAL_PA_EXTERNAL_LNA
 	bool "External PA and External LNA"
 endchoice
 
-config  RT2860V2_AP_ADJ_PWR_CONSUMPTION_SUPPORT
-	bool "Adjust Power Consumption Support"
-	depends on RT2860V2_AP
-	depends on RALINK_MT7620
-	default n
-
 config  RT2860V2_AP_RTMP_INTERNAL_TX_ALC
-	bool "TSSI Compensation"
+	bool "TSSI Compensation (Internal TX ALC)"
 	depends on RT2860V2_AP
 	depends on RALINK_RT3350 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620
 	depends on !EXTERNAL_PA_EXTERNAL_LNA
 	default n
 
 config  RT2860V2_AP_RTMP_TEMPERATURE_COMPENSATION
-	bool "Temperature Compensation"
+	bool "Temperature Compensation (External TX ALC)"
+	depends on RT2860V2_AP
+	depends on RALINK_MT7620
+	default n
+
+config  RT2860V2_AP_ADJ_PWR_CONSUMPTION_SUPPORT
+	bool "Reduce Power Consumption"
 	depends on RT2860V2_AP
 	depends on RALINK_MT7620
 	default n

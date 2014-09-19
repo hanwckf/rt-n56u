@@ -31,33 +31,17 @@
 
 #include "rtmp_type.h"
 
-
-#ifdef RT2860
-#include "chip/rt2860.h"
-#endif // RT2860 //
-
-
-
-
 #ifdef RT2880
 #include "chip/rt2880.h"
 #endif // RT2880 //
-
-#ifdef RT2883
-#include "chip/rt2883.h"
-#endif // RT2883 //
 
 #ifdef RT3883
 #include "chip/rt3883.h"
 #endif // RT3883 //
 
-
 #ifdef RT305x
 #include "chip/rt305x.h"
 #endif // RT305x //
-
-
-
 
 #define IS_RT3090A(_pAd)				((((_pAd)->MACVersion & 0xffff0000) == 0x30900000))
 

@@ -12,11 +12,6 @@
 #define MDIO_PHY_CONTROL_1	(RALINK_ETH_SW_BASE + 0xC4)
 #define GPIO_MDIO_BIT		(1<<7)
 
-#elif defined (CONFIG_RALINK_RT6855)  || defined (CONFIG_RALINK_RT6855A)
-
-#define MDIO_PHY_CONTROL_0	(RALINK_ETH_SW_BASE + 0x7004)
-#define GPIO_MDIO_BIT		(1<<7)
-
 #elif defined (CONFIG_RALINK_MT7620)
 
 #define MDIO_PHY_CONTROL_0	(RALINK_ETH_SW_BASE + 0x7004)
@@ -37,7 +32,7 @@
 #endif
 
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || \
-    defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+    defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 void enable_mdio(int enable)
 {
 #if !defined (CONFIG_P5_MAC_TO_PHY_MODE) && !defined(CONFIG_GE1_RGMII_AN) && !defined(CONFIG_GE2_RGMII_AN) && \
@@ -50,15 +45,9 @@ void enable_mdio(int enable)
 	sysRegWrite(REG_GPIOMODE, data);
 #endif
 }
-#elif defined (CONFIG_RALINK_RT6855A)
-void enable_mdio(int enable)
-{
-	/* need to check RT6855A MII/GPIO pin share scheme */
-}
 #endif
 
-#if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || \
-    defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 u32 mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data)
 {
 	u32 volatile status = 0;
@@ -148,7 +137,7 @@ u32 mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data)
 	}
 }
 
-#else // not rt6855
+#else
 
 u32 mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data)
 {

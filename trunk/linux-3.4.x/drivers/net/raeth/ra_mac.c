@@ -39,14 +39,10 @@
 #define PROCREG_DIR			"rt5350"
 #elif defined (CONFIG_RALINK_RT3883)
 #define PROCREG_DIR			"rt3883"
-#elif defined (CONFIG_RALINK_RT6855)
-#define PROCREG_DIR			"rt6855"
 #elif defined (CONFIG_RALINK_MT7620)
 #define PROCREG_DIR			"mt7620"
 #elif defined (CONFIG_RALINK_MT7621)
 #define PROCREG_DIR			"mt7621"
-#elif defined (CONFIG_RALINK_RT6855A)
-#define PROCREG_DIR			"rt6855a"
 #else
 #define PROCREG_DIR			"rt2880"
 #endif
@@ -74,8 +70,7 @@ static struct proc_dir_entry *procVlanTx;
 #endif
 
 #if defined (CONFIG_GIGAPHY) || defined (CONFIG_100PHY) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
-#if defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
-    defined (CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
 void enable_auto_negotiate(int unused)
 {
 	u32 regValue;
@@ -153,10 +148,6 @@ void ra_mac1_addr_set(unsigned char p[6])
 	regValue = (p[0] << 8) | (p[1]);
 #if defined (CONFIG_RALINK_RT5350)
 	sysRegWrite(SDM_MAC_ADRH, regValue);
-#elif defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A)
-	sysRegWrite(GDMA1_MAC_ADRH, regValue);
-	/* To keep the consistence between RT6855 and RT62806, GSW should keep the register. */
-	sysRegWrite(SMACCR1, regValue);
 #elif defined (CONFIG_RALINK_MT7620)
 	sysRegWrite(SMACCR1, regValue);
 #else
@@ -166,10 +157,6 @@ void ra_mac1_addr_set(unsigned char p[6])
 	regValue = (p[2] << 24) | (p[3] <<16) | (p[4] << 8) | p[5];
 #if defined (CONFIG_RALINK_RT5350)
 	sysRegWrite(SDM_MAC_ADRL, regValue);
-#elif defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A)
-	sysRegWrite(GDMA1_MAC_ADRL, regValue);
-	/* To keep the consistence between RT6855 and RT62806, GSW should keep the register. */
-	sysRegWrite(SMACCR0, regValue);
 #elif defined (CONFIG_RALINK_MT7620)
 	sysRegWrite(SMACCR0, regValue);
 #else
@@ -533,7 +520,7 @@ static int ra_esw_seq_show(struct seq_file *m, void *v)
 	seq_printf(m, "+-----------------------------------------------+\n");
 #endif
 
-#if defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620)
+#if defined (CONFIG_RALINK_MT7620)
 	seq_printf(m, "                      ^                          \n");
 	seq_printf(m, "                      | Port6 Rx:%08u Good Pkt   \n", sysRegRead(RALINK_ETH_SW_BASE+0x4620)&0xFFFF);
 	seq_printf(m, "                      | Port6 Rx:%08u Bad Pkt    \n", sysRegRead(RALINK_ETH_SW_BASE+0x4620)>>16);
@@ -565,7 +552,7 @@ static int ra_esw_seq_show(struct seq_file *m, void *v)
 	seq_printf(m, "       |     |     |     |       |      |        \n");
 #endif
 
-#if defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620)
+#if defined (CONFIG_RALINK_MT7620)
 	seq_printf(m, "Port0 Good RX=%08u Tx=%08u (Bad Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0x4020)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4010)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4020)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x4010)>>16);
 	seq_printf(m, "Port1 Good RX=%08u Tx=%08u (Bad Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0x4120)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4110)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4120)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x4110)>>16);
 	seq_printf(m, "Port2 Good RX=%08u Tx=%08u (Bad Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0x4220)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4210)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4220)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x4210)>>16);

@@ -13,9 +13,8 @@
 #define RAETH_VERSION		"v3.0.8"
 #define RAETH_DEV_NAME		"raeth"
 
-#if defined (CONFIG_RALINK_RT6855A)
-#define RAETH_PDMAPTR_FROM_VAR
-#endif
+/* RT6856 workaround */
+//#define RAETH_PDMAPTR_FROM_VAR
 
 #if defined (MEMORY_OPTIMIZATION)
 #define NUM_RX_DESC		128
@@ -36,11 +35,7 @@
 #define DEV2_NAME		"eth3"
 
 #define GMAC2_OFFSET		0x22
-#if !defined (CONFIG_RALINK_RT6855A)
 #define GMAC0_OFFSET		0x28
-#else
-#define GMAC0_OFFSET		0xE000
-#endif
 
 #define PSE_PORT_CPU		0
 #define PSE_PORT_GMAC1		1

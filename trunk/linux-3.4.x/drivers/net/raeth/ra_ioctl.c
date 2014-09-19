@@ -91,9 +91,8 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	esw_reg reg;
 #endif
 #if defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || \
-    defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || \
     defined (CONFIG_RALINK_MT7620)
-        esw_rate ratelimit;
+	esw_rate ratelimit;
 #endif
 #if defined(CONFIG_RAETH_ESW)
 	unsigned int offset = 0;
@@ -256,15 +255,10 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			printk("offset = 0x%4x value=0x%x\n\r", offset, value);
 			_ESW_REG(offset) = value;
 			break;
-#elif  defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
-       defined (CONFIG_RALINK_MT7620)
+#elif  defined (CONFIG_RALINK_MT7620)
 		case RAETH_ESW_INGRESS_RATE:
 			copy_from_user(&ratelimit, ifr->ifr_data, sizeof(ratelimit));
-#if defined(CONFIG_RALINK_RT6855A)
-			offset = 0x1800 + (0x100 * ratelimit.port);
-#else
 			offset = 0x1080 + (0x100 * ratelimit.port);
-#endif
 			value = _ESW_REG(offset);
 
 			value &= 0xffff0000;

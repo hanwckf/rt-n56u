@@ -165,99 +165,9 @@ static void init_giga_phy(int ge)
 }
 #endif
 
-
-#if defined(CONFIG_RALINK_RT6855A)
-static void rt6855A_gsw_init(void)
-{
-	u32 phy_val=0;
-	u32 rev=0;
-
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3600) = 0x0005e33b;		// CPU Port6 Force Link 1G, FC ON
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x0010) = 0xffffffe0;		// Set Port6 CPU Port
-
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE+0x1ec) = 0x0fffffff;		// Set PSE should pause 4 tx ring as default
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE+0x1f0) = 0x0fffffff;		// switch IOT more stable
-
-	*(volatile u32 *)(CKGCR) &= ~(0x3 << 4); //keep rx/tx port clock ticking, disable internal clock-gating to avoid switch stuck 
-
-	/*
-	 *Reg 31: Page Control
-	 * Bit 15     => PortPageSel, 1=local, 0=global
-	 * Bit 14:12  => PageSel, local:0~3, global:0~4
-	 *
-	 *Reg16~30:Local/Global registers
-	 *
-	*/
-	/*correct  PHY  setting J8.0*/
-	mii_mgr_read(0, 31, &rev);
-	rev &= (0x0f);
-
-	mii_mgr_write(1, 31, 0x4000); //global, page 4
-
-	mii_mgr_write(1, 16, 0xd4cc);
-	mii_mgr_write(1, 17, 0x7444);
-	mii_mgr_write(1, 19, 0x0112);
-	mii_mgr_write(1, 21, 0x7160);
-	mii_mgr_write(1, 22, 0x10cf);
-	mii_mgr_write(1, 26, 0x0777);
-
-	if(rev == 0){
-		mii_mgr_write(1, 25, 0x0102);
-		mii_mgr_write(1, 29, 0x8641);
-	}else{
-		mii_mgr_write(1, 25, 0x0212);
-		mii_mgr_write(1, 29, 0x4640);
-	}
-
-	mii_mgr_write(1, 31, 0x2000); //global, page 2
-	mii_mgr_write(1, 21, 0x0655);
-	mii_mgr_write(1, 22, 0x0fd3);
-	mii_mgr_write(1, 23, 0x003d);
-	mii_mgr_write(1, 24, 0x096e);
-	mii_mgr_write(1, 25, 0x0fed);
-	mii_mgr_write(1, 26, 0x0fc4);
-
-	mii_mgr_write(1, 31, 0x1000); //global, page 1
-	mii_mgr_write(1, 17, 0xe7f8);
-
-	mii_mgr_write(1, 31, 0xa000); //local, page 2
-
-	mii_mgr_write(0, 16, 0x0e0e);
-	mii_mgr_write(1, 16, 0x0c0c);
-	mii_mgr_write(2, 16, 0x0f0f);
-	mii_mgr_write(3, 16, 0x1010);
-	mii_mgr_write(4, 16, 0x0909);
-
-	mii_mgr_write(0, 17, 0x0000);
-	mii_mgr_write(1, 17, 0x0000);
-	mii_mgr_write(2, 17, 0x0000);
-	mii_mgr_write(3, 17, 0x0000);
-	mii_mgr_write(4, 17, 0x0000);
-
-#if defined (CONFIG_P5_RGMII_TO_MAC_MODE)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x5e33b;		// (P5, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
-#elif defined (CONFIG_P5_MII_TO_MAC_MODE)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x5e337;		// (P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
-#elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
-	//rt6855/6 need to modify TX/RX phase
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x7014) = 0xc;		// TX/RX CLOCK Phase select
-	enable_auto_negotiate(1);
-	init_giga_phy(1);
-#elif defined (CONFIG_P5_RMII_TO_MAC_MODE)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x5e337;		// (P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
-#else /* Port 5 Disabled */
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x8000;		// link down
-#endif
-}
-#endif
-
-#if defined(CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_MT7620)
+#if defined(CONFIG_RALINK_MT7620)
 static void mt7620_gsw_init(void)
 {
-#if defined (CONFIG_P4_MAC_TO_PHY_MODE) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
-	u32 phy_val=0;
-#endif
-#if defined (CONFIG_RALINK_MT7620)
 	u32 is_BGA = (sysRegRead(RALINK_SYSCTL_BASE + 0xc) >> 16) & 0x1;
 
 	*(volatile u32 *)(SYSCFG1) |= (0x1 << 8); // PCIE_RC_MODE=1
@@ -333,7 +243,6 @@ static void mt7620_gsw_init(void)
 	mii_mgr_write(3, 16, 0x0f0f);
 #if !defined (CONFIG_RAETH_HAS_PORT4)
 	mii_mgr_write(4, 16, 0x1313);
-#endif
 #endif
 
 	/* Port 6 (CPU) */
@@ -676,11 +585,9 @@ void fe_phy_init(void)
 	is_switch_175c = (sw_id == 0x175c) ? 1:0;
 #endif
 
-	// Case1: RT305x/RT335x/RT6855/RT6855A/MT7620 + EmbeddedSW
+	// Case1: RT305x/RT335x/MT7620 + EmbeddedSW
 #if defined (CONFIG_RAETH_ESW)
-#if defined (CONFIG_RALINK_RT6855A)
-	rt6855A_gsw_init();
-#elif defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_MT7620)
+#if defined(CONFIG_RALINK_MT7620)
 	mt7620_gsw_init();
 #elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
 	rt305x_esw_init();

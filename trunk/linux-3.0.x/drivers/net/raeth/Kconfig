@@ -44,7 +44,7 @@ config RAETH_SG_DMA_TX
 
 config RAETH_TSO
 	bool "TSOv4 (TCP Segmentaton Offload)"
-	depends on RAETH_SG_DMA_TX && (RALINK_RT6855 || RALINK_RT6855A || RALINK_MT7620 || RALINK_MT7621)
+	depends on RAETH_SG_DMA_TX && (RALINK_MT7620 || RALINK_MT7621)
 
 config RAETH_TSOV6
 	bool "TSOv6 (TCP Segmentaton Offload for IPv6)"
@@ -77,7 +77,7 @@ choice
 
 	config  RAETH_ESW
 		bool "Ralink Embedded Switch"
-	depends on (RALINK_RT3052 || RALINK_RT3352 || RALINK_RT5350 || RALINK_RT6855 || RALINK_RT6855A || RALINK_MT7620)
+	depends on (RALINK_RT3052 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620)
 endchoice
 
 config RAETH_HAS_PORT4
@@ -105,7 +105,7 @@ config  MAC_TO_GIGAPHY_MODE_ADDR2
 
 config RAETH_HAS_PORT5
 	bool "Port 5 Support"
-	depends on RAETH && (RALINK_RT3052 || RALINK_RT3352 || RALINK_RT6855 || RALINK_RT6855A || RALINK_MT7620)
+	depends on RAETH && (RALINK_RT3052 || RALINK_RT3352 || RALINK_MT7620)
 choice
 	prompt "Target Mode"
 	depends on RAETH_HAS_PORT5
@@ -192,7 +192,7 @@ config  RAETH_SPECIAL_TAG
 
 config  RAETH_ESW_CONTROL
 	bool "Embedded Switch Control Module (VLAN/Isolation/Status)"
-	depends on RAETH && RAETH_ESW && (RALINK_RT6855 || RALINK_RT6855A || RALINK_MT7620)
+	depends on RAETH && RAETH_ESW && (RALINK_MT7620)
 
 config  RAETH_ESW_PORT_WAN
 	int "ESW WAN Port ID (0..4)"

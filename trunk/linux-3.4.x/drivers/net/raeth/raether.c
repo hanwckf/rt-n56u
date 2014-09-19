@@ -85,7 +85,6 @@ struct net_device *dev_raether = NULL;
 
 static void fe_reset(void)
 {
-#if !defined (CONFIG_RALINK_RT6855A)
 	unsigned int val;
 	val = sysRegRead(RSTCTRL);
 
@@ -102,7 +101,6 @@ static void fe_reset(void)
 	val = val & ~(RALINK_FE_RST);
 #endif
 	sysRegWrite(RSTCTRL, val);
-#endif
 }
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
@@ -465,8 +463,7 @@ static void forward_config(struct net_device *dev)
 
 #if defined (CONFIG_RALINK_RT3883)
 	sysRegWrite(PSE_FQ_CFG, cpu_to_le32(INIT_VALUE_OF_RT3883_PSE_FQ_CFG));
-#elif defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT6855) || \
-      defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620) || \
+#elif defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_MT7620) || \
       defined (CONFIG_RALINK_MT7621)
         /*use default value*/
 #else
@@ -568,21 +565,6 @@ static void fe_pdma_init(struct net_device *dev)
 	ei_local->rx_calc_idx = sysRegRead(RX_CALC_IDX0);
 #endif
 
-#if defined (CONFIG_RALINK_RT6855A)
-	regVal = sysRegRead(RX_DRX_IDX0);
-	regVal = (regVal == 0)? (NUM_RX_DESC - 1) : (regVal - 1);
-	sysRegWrite(RX_CALC_IDX0, cpu_to_le32(regVal));
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-	ei_local->rx_calc_idx = sysRegRead(RX_CALC_IDX0);
-#endif
-	regVal = sysRegRead(TX_DTX_IDX0);
-	sysRegWrite(TX_CTX_IDX0, cpu_to_le32(regVal));
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-	ei_local->tx_calc_idx = regVal;
-#endif
-	ei_local->tx_free_idx = regVal;
-#endif
-
 	/* only the following chipset need to set it */
 #if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3052) || \
     defined (CONFIG_RALINK_RT3883)
@@ -598,7 +580,7 @@ static void fe_pdma_start(void)
 {
 	unsigned int pdma_glo_cfg = (TX_WB_DDONE | RX_DMA_EN | TX_DMA_EN);
 
-#if defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621)
 	pdma_glo_cfg |= PDMA_BT_SIZE_32DWORDS;
 #elif defined (CONFIG_RALINK_MT7620)
 	pdma_glo_cfg |= PDMA_BT_SIZE_16DWORDS;
@@ -961,8 +943,7 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 	mcast_tx(skb);
 #endif
 
-#if !defined (CONFIG_RALINK_RT6855) && !defined (CONFIG_RALINK_RT6855A) && \
-    !defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_RALINK_MT7621)
+#if !defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_RALINK_MT7621)
 	if (skb->len < eth_min_pkt_len) {
 		if (skb_padto(skb, eth_min_pkt_len)) {
 			inc_tx_drop(ei_local, gmac_no);

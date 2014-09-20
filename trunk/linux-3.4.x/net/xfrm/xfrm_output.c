@@ -19,6 +19,10 @@
 #include <net/dst.h>
 #include <net/xfrm.h>
 
+#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#include "../nat/hw_nat/ra_nat.h"
+#endif
+
 static int xfrm_output2(struct sk_buff *skb);
 
 static int xfrm_skb_check_space(struct sk_buff *skb)
@@ -79,6 +83,10 @@ static int xfrm_output_one(struct sk_buff *skb, int err)
 		spin_unlock_bh(&x->lock);
 
 		skb_dst_force(skb);
+
+#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+		FOE_ALG_MARK(skb);
+#endif
 
 		err = x->type->output(x, skb);
 		if (err == -EINPROGRESS)

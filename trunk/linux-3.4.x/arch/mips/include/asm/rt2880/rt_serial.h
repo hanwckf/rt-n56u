@@ -36,7 +36,10 @@
  **************************************************************************
  */
 
-#if defined (CONFIG_RALINK_MT7621)
+#ifndef __ASM_MACH_MIPS_RT2880_RT_SERIAL_H
+#define __ASM_MACH_MIPS_RT2880_RT_SERIAL_H
+
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 #define RT2880_UART_RBR_OFFSET  0x00
 #define RT2880_UART_TBR_OFFSET  0x00
 #define RT2880_UART_IER_OFFSET  0x04
@@ -56,25 +59,22 @@
 #define RT2880_UART_LCR_OFFSET  0x14
 #define RT2880_UART_MCR_OFFSET  0x18
 #define RT2880_UART_LSR_OFFSET  0x1C
-#define RT2880_UART_DLF_OFFSET  0x28
 #define RT2880_UART_DLL_OFFSET  0x2C
 #define RT2880_UART_DLM_OFFSET  0x30
 #endif
 
-#define RBR(x)          *(volatile u32 *)((x)+RT2880_UART_RBR_OFFSET)
-#define TBR(x)          *(volatile u32 *)((x)+RT2880_UART_TBR_OFFSET)
-#define IER(x)          *(volatile u32 *)((x)+RT2880_UART_IER_OFFSET)
-#define IIR(x)          *(volatile u32 *)((x)+RT2880_UART_IIR_OFFSET)
-#define FCR(x)          *(volatile u32 *)((x)+RT2880_UART_FCR_OFFSET)
-#define LCR(x)          *(volatile u32 *)((x)+RT2880_UART_LCR_OFFSET)
-#define MCR(x)          *(volatile u32 *)((x)+RT2880_UART_MCR_OFFSET)
-#define LSR(x)          *(volatile u32 *)((x)+RT2880_UART_LSR_OFFSET)
-#define DLF(x)          *(volatile u32 *)((x)+RT2880_UART_DLF_OFFSET)
-#define DLL(x)          *(volatile u32 *)((x)+RT2880_UART_DLL_OFFSET)
-#define DLM(x)          *(volatile u32 *)((x)+RT2880_UART_DLM_OFFSET)
+#define RBR(x)		*(volatile u32 *)((x)+RT2880_UART_RBR_OFFSET)
+#define TBR(x)		*(volatile u32 *)((x)+RT2880_UART_TBR_OFFSET)
+#define IER(x)		*(volatile u32 *)((x)+RT2880_UART_IER_OFFSET)
+#define IIR(x)		*(volatile u32 *)((x)+RT2880_UART_IIR_OFFSET)
+#define FCR(x)		*(volatile u32 *)((x)+RT2880_UART_FCR_OFFSET)
+#define LCR(x)		*(volatile u32 *)((x)+RT2880_UART_LCR_OFFSET)
+#define MCR(x)		*(volatile u32 *)((x)+RT2880_UART_MCR_OFFSET)
+#define LSR(x)		*(volatile u32 *)((x)+RT2880_UART_LSR_OFFSET)
+#define DLL(x)		*(volatile u32 *)((x)+RT2880_UART_DLL_OFFSET)
+#define DLM(x)		*(volatile u32 *)((x)+RT2880_UART_DLM_OFFSET)
 
-#if defined (CONFIG_RALINK_RT2880) || \
-    defined (CONFIG_RALINK_RT3883) || \
+#if defined (CONFIG_RALINK_RT3883) || \
     defined (CONFIG_RALINK_RT3052) || \
     defined (CONFIG_RALINK_RT3352) || \
     defined (CONFIG_RALINK_RT5350) || \
@@ -337,8 +337,6 @@
 #define UART_FCR_PXAR32	0xc0	/* receive FIFO treshold = 32 */
 
 
-
-
 /*
  * These register definitions are for the 16C950
  */
@@ -440,3 +438,4 @@
 #define UART_OMAP_SYSS		0x16	/* System status register */
 
 
+#endif

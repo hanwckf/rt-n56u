@@ -14,6 +14,11 @@
 #define	EUCLEAN		117	/* Structure needs cleaning */
 #endif
 
+//#include "gdma.h"
+
+#define SKIP_BAD_BLOCK
+//#define RANDOM_GEN_BAD_BLOCK
+
 #define ra_inl(addr)  (*(volatile unsigned int *)(addr))
 #define ra_outl(addr, value)  (*(volatile unsigned int *)(addr) = (value))
 #define ra_aor(addr, a_mask, o_value)  ra_outl(addr, (ra_inl(addr) & (a_mask)) | (o_value))

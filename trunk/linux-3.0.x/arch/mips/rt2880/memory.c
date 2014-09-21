@@ -45,33 +45,31 @@
 #include <asm/page.h>
 
 #include <asm/rt2880/prom.h>
+
 //#define DEBUG
 
 #define RAM_SIZE		(CONFIG_RALINK_RAM_SIZE*1024*1024)
 #define RAM_SIZE_MIN		(8*1024*1024)
 
-#if defined(CONFIG_RALINK_RT2880) || \
-    defined(CONFIG_RALINK_RT3052) || \
-    defined(CONFIG_RALINK_RT5350)
+#if defined (CONFIG_RALINK_RT3052) || \
+    defined (CONFIG_RALINK_RT5350)
 #define RAM_SIZE_MAX		(64*1024*1024)
+#elif defined(CONFIG_RALINK_MT7621)
+#define RAM_SIZE_MAX		(512*1024*1024)
 #else
 #define RAM_SIZE_MAX		(256*1024*1024)
 #endif
 
-#if defined(CONFIG_RALINK_RT2880)
-#define RAM_BASE		0x08000000
-#else
 #define RAM_BASE		0x00000000
-#endif
 
 #define PFN_ALIGN(x)		(((unsigned long)(x) + (PAGE_SIZE - 1)) & PAGE_MASK)
-
 
 enum surfboard_memtypes {
 	surfboard_dontuse,
 	surfboard_rom,
 	surfboard_ram,
 };
+
 struct prom_pmemblock mdesc[PROM_MAX_PMEMBLOCKS];
 
 #ifdef DEBUG
@@ -143,13 +141,17 @@ void __init prom_meminit(void)
 	else
 		mem_size = RAM_SIZE;
 
+#if defined (CONFIG_RALINK_MT7621) && defined (CONFIG_RT2880_DRAM_512M)
+	add_memory_region(RAM_BASE, RAM_SIZE + 64*1024*1024, BOOT_MEM_RAM);
+#else
 	add_memory_region(RAM_BASE, mem_size, BOOT_MEM_RAM);
+#endif
 }
 
 void __init prom_free_prom_memory(void)
 {
 #ifdef DEBUG
-	/* Nothing to do! Need only for DEBUG.	  */
+	/* Nothing to do! Need only for DEBUG. */
 	/* This is may be corrupt working memory. */
 
 	unsigned long addr;

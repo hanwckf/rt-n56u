@@ -16,7 +16,7 @@
 #define DMA_CHNUM (0)
 
 int _nand_dma_sync(void)
-{	
+{
 	//unmask to start dma
 	unsigned long data;
 	int retry = 1000000; //fixme
@@ -35,7 +35,7 @@ int _nand_dma_sync(void)
 		return -1;
 	}
 	GDMA_WRITE_REG(RALINK_GDMAISTS, 1<<DMA_CHNUM);
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
 	while(!(GDMA_READ_REG(RALINK_GDMA_DONEINT) & (1<<DMA_CHNUM)) && retry--) {
 		ndelay(1);
 	}
@@ -76,7 +76,7 @@ int _set_gdma_ch(unsigned long dst,
 //    data = (0 << CH_UNMASK_INTEBL_OFFSET); 
 	data |= ( DMA_CHNUM << NEXT_UNMASK_CH_OFFSET); 
 	data |= ( (soft_mode == 0) << CH_MASK_OFFSET); 
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
+#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
 	data |= (src_req_type << SRC_DMA_REQ_OFFSET); 
 	data |= (dst_req_type << DST_DMA_REQ_OFFSET); 
 #endif
@@ -110,7 +110,7 @@ int _ra_nand_prepare_dma_pull(unsigned long dst, int len)
 
 #if 0
 int _ra_nor_dma_pull(char *dst, char *src, int len)
-{	
+{
 	int ret = 0;
 
 	//fixme, take care about alignment issues
@@ -168,7 +168,6 @@ int _ra_nand_dma_pull(unsigned long dst, int len)
 	// disable dma
 	_release_dma_buf();
 
-
 	return ret;
 }
 
@@ -176,7 +175,7 @@ int _ra_nand_dma_pull(unsigned long dst, int len)
 int _ra_nand_dma_push(unsigned long src, int len)
 {
 	int ret = 0;
-	
+
 #if !defined (__UBOOT__) // uboot set kseg0 as noncache
 	dma_cache_wback(src, len);
 #else
@@ -194,11 +193,9 @@ int _ra_nand_dma_push(unsigned long src, int len)
 		ret = -1;
 	}
 
-	
 	// disable dma
 	_release_dma_buf();
 
-	
 	return ret;
 }
 

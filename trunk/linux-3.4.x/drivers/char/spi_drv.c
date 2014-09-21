@@ -43,25 +43,17 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0)
 #include <asm/system.h>
 #endif
+#include <linux/delay.h>
 #include <linux/wireless.h>
 
-#include "spi_drv.h"
 #include <linux/ralink_gpio.h>
-
+#include "spi_drv.h"
 #if defined (CONFIG_MAC_TO_MAC_MODE) || defined (CONFIG_P5_RGMII_TO_MAC_MODE)
-#include <linux/delay.h>
 #include "vtss.h"
 #endif
 
-#ifdef  CONFIG_DEVFS_FS
-#include <linux/devfs_fs_kernel.h>
-#endif
-
-#ifdef  CONFIG_DEVFS_FS
-static devfs_handle_t devfs_handle;
-#endif
-int spidrv_major =  217;
-int spich = 0;
+int spidrv_major = 217;
+static int spich = 0;
 
 static u32 spi0_reg[] = { RT2880_SPI0_STAT_REG, RT2880_SPI0_CFG_REG, RT2880_SPI0_CTL_REG, RT2880_SPI0_DATA_REG } ;
 static u32 spi1_reg[] = { RT2880_SPI1_STAT_REG, RT2880_SPI1_CFG_REG, RT2880_SPI1_CTL_REG, RT2880_SPI1_DATA_REG } ;
@@ -82,14 +74,14 @@ static inline void spi_chip_select(u8 enable)
 {
 	int i;
 	u32* spireg = spi_register[spich];
-	
+
 	for (i=0; i<spi_busy_loop; i++) {
 		if (!IS_BUSY) {
 			/* low active */
 			if (enable) {
 				RT2880_REG(spireg[SPICTL]) |= SPICTL_SPIENA_ASSERT;
 			} else  {
-				RT2880_REG(spireg[SPICTL]) &= SPICTL_SPIENA_NEGATE;			
+				RT2880_REG(spireg[SPICTL]) &= SPICTL_SPIENA_NEGATE;
 			}		
 			break;
 		}
@@ -113,36 +105,35 @@ static inline void spi_chip_select(u8 enable)
 /*----------------------------------------------------------------------*/
 void spi_master_init(void)
 {
-	int i;
 	u32* spireg = spi_register[spich];
-	
+
 	/* reset spi block */
 	RT2880_REG(RT2880_RSTCTRL_REG) |= RSTCTRL_SPI_RESET;
+	udelay(10);
 	RT2880_REG(RT2880_RSTCTRL_REG) &= ~(RSTCTRL_SPI_RESET);
-	/* udelay(500); */
-	for ( i = 0; i < 1000; i++);
+	udelay(10);
 
 #if defined(CONFIG_RALINK_VITESSE_SWITCH_CONNECT_SPI_CS1)||defined(CONFIG_RALINK_SLIC_CONNECT_SPI_CS1)
 	/* config ARB and set the low or high active correctly according to the device */
 	RT2880_REG(RT2880_SPI_ARB_REG) = SPIARB_ARB_EN|(SPIARB_SPI1_ACTIVE_MODE<<1)| SPIARB_SPI0_ACTIVE_MODE;
 #if defined(CONFIG_RALINK_MT7620)
-	if (spich > 0) 
-	    RT2880_REG(RT2880_SPI_ARB_REG) |= SPIARB_CS1CTL;
+	if (spich > 0)
+		RT2880_REG(RT2880_SPI_ARB_REG) |= SPIARB_CS1CTL;
 #endif
 	RT2880_REG(RT2880_SPI1_CTL_REG) = (~SPIARB_SPI1_ACTIVE_MODE)&0x1;     //disable first
 #endif
 	RT2880_REG(RT2880_SPI0_CTL_REG) = (~SPIARB_SPI0_ACTIVE_MODE)&0x1;     //disable first
 
 	RT2880_REG(spireg[SPICFG]) = SPICFG_MSBFIRST
-								| SPICFG_RXCLKEDGE_FALLING
-								| SPICFG_TXCLKEDGE_FALLING
-								| SPICFG_SPICLK_DIV128 ;
+					| SPICFG_RXCLKEDGE_FALLING
+					| SPICFG_TXCLKEDGE_FALLING
+					| SPICFG_SPICLK_DIV128 ;
 	spi_chip_select(DISABLE);
 
 #ifdef DBG
 	printk("SPICFG = %08x\n", RT2880_REG(RT2880_SPICFG_REG));
 	printk("is busy %d\n", IS_BUSY);
-#endif		 	
+#endif
 }
 
 /*----------------------------------------------------------------------*/
@@ -158,7 +149,7 @@ static void spi_write(u8 data)
 {
 	int i;
 	u32* spireg = spi_register[spich];
-	
+
 	for (i=0; i<spi_busy_loop; i++) {
 		if (!IS_BUSY) {
 			RT2880_REG(spireg[SPIDATA]) = data;
@@ -167,7 +158,7 @@ static void spi_write(u8 data)
 			break;
 		}
 	}
-	
+
 #ifdef DBG
 	if (i == spi_busy_loop) {
 		printk("warning : spi_transfer (write %02x) busy !\n", data);
@@ -206,8 +197,8 @@ static u8 spi_read(void)
 {
 	int i;
 	u32* spireg = spi_register[spich];
-	
-	/* 
+
+	/*
 	 * poll busy bit until it is 0 
 	 * then start read transfer
 	 */
@@ -215,13 +206,13 @@ static u8 spi_read(void)
 	for (i=0; i<spi_busy_loop; i++) {
 		if (!IS_BUSY) {
 			RT2880_REG(spireg[SPIDATA]) = 0;
-			/* start read transfer */			
+			/* start read transfer */
 			RT2880_REG(spireg[SPICTL]) = SPICTL_STARTRD ;
 			break;
 		}
 	}
 
-	/* 
+	/*
 	 * poll busy bit until it is 0 
 	 * then get data 
 	 */
@@ -230,11 +221,11 @@ static u8 spi_read(void)
 			break;
 		}
 	}
-		
-#ifdef DBG		
+
+#ifdef DBG
 	if (i == spi_busy_loop) {
 		printk("warning : spi_transfer busy !\n");
-	} 
+	}
 #endif
 
 	return ((u8)RT2880_REG(spireg[SPIDATA]));
@@ -270,7 +261,7 @@ static void eeprom_get_status_reg(u8 *status)
 {
 	spi_chip_select(ENABLE);
 	spi_write(RDSR_CMD);
-	*status = spi_read();		
+	*status = spi_read();
 	spi_chip_select(DISABLE);
 }
 
@@ -289,13 +280,13 @@ static void eeprom_get_status_reg(u8 *status)
 /*----------------------------------------------------------------------*/
 unsigned char spi_eeprom_read(u16 address, u16 nbytes, u8 *dest)
 {
-	u8	status;
-	u16	cnt = 0;
+	u8 status;
+	u16 cnt = 0;
 	int i = 0;
-	
+
 	do {
 		i++;
-		eeprom_get_status_reg(&status);		
+		eeprom_get_status_reg(&status);
 	}
 	while((status & (1<<RDY)) && (i < max_ee_busy_loop));
 
@@ -303,7 +294,7 @@ unsigned char spi_eeprom_read(u16 address, u16 nbytes, u8 *dest)
 		return (status);
 
 	/* eeprom ready */
-	if (!(status & (1<<RDY))) {	
+	if (!(status & (1<<RDY))) {
 		spi_chip_select(ENABLE);
 		/* read op */
 		spi_write(READ_CMD);
@@ -317,8 +308,8 @@ unsigned char spi_eeprom_read(u16 address, u16 nbytes, u8 *dest)
 		status = 0;
 		/* deassert cs */
 		spi_chip_select(DISABLE);
-	} 
-	return (status);	
+	}
+	return (status);
 }
 
 
@@ -338,7 +329,7 @@ static void eeprom_write_enable(void)
 
 	do {
 		i++;
-		eeprom_get_status_reg(&status);		
+		eeprom_get_status_reg(&status);
 	}
 	while((status & (1<<RDY)) && (i < max_ee_busy_loop));
 
@@ -346,7 +337,7 @@ static void eeprom_write_enable(void)
 		return;
 
 	/* eeprom ready */
-	if (!(status & (1<<RDY))) 
+	if (!(status & (1<<RDY)))
 	{	
 		spi_chip_select(ENABLE);
 		/* always write enable  before any write operation */
@@ -368,12 +359,12 @@ static void eeprom_write_enable(void)
 /*           	eeprom_write                                            */
 /*    INPUTS: address - the first byte address to be written            */
 /*            nbytes  - the number of bytes to be written               */
-/*            src     - the pointer to source buffer                    */     
+/*            src     - the pointer to source buffer                    */
 /*   RETURNS: 0  - successful                                           */
 /*            or eeprom buy status                                      */
 /*   OUTPUTS: None                                                      */
 /*   NOTE(S): The different eeprom has various write page size          */
-/* 			  The function don't care write page size so the caller     */
+/*            The function don't care write page size so the caller     */
 /*            must check the page size of eeprom                        */
 /*                                                                      */
 /*----------------------------------------------------------------------*/
@@ -385,7 +376,7 @@ unsigned char spi_eeprom_write(u16 address, u16 nbytes, u8 *src)
 
 	do {
 		i++;
-		eeprom_get_status_reg(&status);		
+		eeprom_get_status_reg(&status);
 	}
 	while((status & (1<<RDY)) && (i < max_ee_busy_loop));
 
@@ -394,8 +385,8 @@ unsigned char spi_eeprom_write(u16 address, u16 nbytes, u8 *src)
 
 
 	/* eeprom ready */
-	if (!(status & (1<<RDY))) {			
-		/* always write enable  before any write operation */		
+	if (!(status & (1<<RDY))) {
+		/* always write enable  before any write operation */
 		eeprom_write_enable();
 
 		spi_chip_select(ENABLE);
@@ -410,12 +401,12 @@ unsigned char spi_eeprom_write(u16 address, u16 nbytes, u8 *src)
 		status = 0;
 		/* last byte sent then pull #cs high  */
 		spi_chip_select(DISABLE);
-	} 
+	}
 
 	i = 0;
 	do {
 		i++;
-		eeprom_get_status_reg(&status);		
+		eeprom_get_status_reg(&status);
 	}
 	while((status & (1<<RDY)) && (i < max_ee_busy_loop));
 
@@ -428,11 +419,11 @@ void spi_vtss_read(u8 blk, u8 subblk, u8 addr, u32 *value)
 {
 	u8 cmd;
 #if defined(CONFIG_RALINK_VITESSE_SWITCH_CONNECT_SPI_CS1)
-        spich = 1;
+	spich = 1;
 #else
-        spich = 0;
+	spich = 0;
 #endif
-	
+
 	spi_master_init();
 	cmd = (u8)((blk << 5) | subblk);
 	spi_write(cmd);
@@ -440,6 +431,7 @@ void spi_vtss_read(u8 blk, u8 subblk, u8 addr, u32 *value)
 	spi_read(); //dummy byte
 	spi_read(); //dummy byte
 	*value = spi_read32();
+
 	//printf("rd %x:%x:%x = %x\n", blk, subblk, addr, *value);
 	udelay(100);
 }
@@ -453,12 +445,12 @@ void spi_vtss_write(u8 blk, u8 subblk, u8 addr, u32 value)
 	spich = 0;
 #endif
 
-
 	spi_master_init();
 	cmd = (u8)((blk << 5) | subblk | 0x10);
 	spi_write(cmd);
 	spi_write(addr);
 	spi_write32(value);
+
 	//printf("wr %x:%x:%x = %x\n", blk, subblk, addr, value);
 	udelay(10);
 }
@@ -471,7 +463,7 @@ void vtss_reset(void)
 	spich = 0;
 #endif
 
-#if defined CONFIG_RT3883_ASIC
+#if defined (CONFIG_RT3883_ASIC)
 	RT2880_REG(RALINK_REG_PIO3924DIR) |= 1;
 
 	//Set Gpio pin 24 to low
@@ -482,7 +474,7 @@ void vtss_reset(void)
 	RT2880_REG(RALINK_REG_PIO3924DATA) |= 1;
 
 	mdelay(125);
-#elif defined CONFIG_RT3052_ASIC
+#elif defined (CONFIG_RT3052_ASIC)
 	RT2880_REG(RALINK_REG_GPIOMODE) |= (7 << 2);
 	RT2880_REG(RALINK_REG_GPIOMODE) &= ~(1 << 1);
 
@@ -523,7 +515,6 @@ void vtss_init(int type)
 #else
 	spich = 0;
 #endif
-
 
 	//HT_WR(SYSTEM, 0, ICPU_CTRL, (1<<7) | (1<<3) | (1<<2) | (0<<0));
 	//read it out to be sure the reset was done.
@@ -580,174 +571,25 @@ void vtss_init(int type)
 }
 #endif
 
-int spidrv_open(struct inode *inode, struct file *filp)
-{
-	return 0;
-}
-
-int spidrv_release(struct inode *inode, struct file *filp)
-{
-	return 0;
-}
-
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-long spidrv_ioctl(struct file *filp, unsigned int cmd, 
-		unsigned long arg)
-#else
-int spidrv_ioctl(struct inode *inode, struct file *filp,
-		unsigned int cmd, unsigned long arg)
-#endif
-{
-	unsigned int address, value, size;
-	int vtss_spich = 0;
-	int eeprom_spich = 0;
-	SPI_WRITE *spi_wr;
-#if defined (CONFIG_MAC_TO_MAC_MODE) || defined (CONFIG_P5_RGMII_TO_MAC_MODE)
-	SPI_VTSS *vtss;
-#endif
-
-#if defined(CONFIG_RALINK_VITESSE_SWITCH_CONNECT_SPI_CS1)
-	vtss_spich = 1;
-	eeprom_spich = 0;
-#else
-	vtss_spich = 0;
-	eeprom_spich = 1;
-#endif		
-	switch (cmd) {
-	case RT2880_SPI_READ:
-		value = 0; address = 0;
-		spich = eeprom_spich;
-		address = (unsigned int)arg;
-		spi_master_init();
-
-		spi_eeprom_read(address, 4, (unsigned char*)&value);
-		printk("0x%04x : 0x%08x\n", address, value);
-		break;
-	case RT2880_SPI_WRITE:
-		spich = eeprom_spich;
-		spi_wr = (SPI_WRITE*)arg;
-		address = spi_wr->address;
-		value   = spi_wr->value;
-		size    = spi_wr->size;
-
-		spi_master_init();
-		spi_eeprom_write(address, size, (unsigned char*)&value);
-		break;
-#if defined (CONFIG_MAC_TO_MAC_MODE) || defined (CONFIG_P5_RGMII_TO_MAC_MODE)
-	case RT2880_SPI_INIT_VTSS_NOVLAN:
-		spich = vtss_spich;
-		vtss_reset();
-		vtss_init(0);
-		break;
-	case RT2880_SPI_INIT_VTSS_WANATP0:
-		spich = vtss_spich;
-		vtss_reset();
-		vtss_init(1);
-		break;
-	case RT2880_SPI_INIT_VTSS_WANATP4:
-		spich = vtss_spich;
-		vtss_reset();
-		vtss_init(2);
-		break;
-	case RT2880_SPI_VTSS_READ:
-		spich = vtss_spich;
-		vtss = (SPI_VTSS *)arg;
-		//printk("r %x %x %x -> ", vtss->blk, vtss->sub, vtss->reg);
-		spi_vtss_read(vtss->blk, vtss->sub, vtss->reg, (u32*)&vtss->value);
-		//printk("%x\n", (u32)vtss->value);
-		break;
-	case RT2880_SPI_VTSS_WRITE:
-		spich = vtss_spich;
-		vtss = (SPI_VTSS *)arg;
-		//printk("w %x %x %x -> %x\n", vtss->blk, vtss->sub, vtss->reg, (u32)vtss->value);
-		spi_vtss_write(vtss->blk, vtss->sub, vtss->reg, (u32)vtss->value);
-		break;
-#endif
-	default:
-		printk("spi_drv: command format error\n");
-	}
-
-	return 0;
-}
-
-struct file_operations spidrv_fops = {
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-    unlocked_ioctl:      spidrv_ioctl,
-#else
-    ioctl:	spidrv_ioctl,
-#endif
-    open:       spidrv_open,
-    release:    spidrv_release,
-};
-
-static int spidrv_init(void)
-{
-#ifdef  CONFIG_DEVFS_FS
-    if(devfs_register_chrdev(spidrv_major, SPI_DEV_NAME , &spidrv_fops)) {
-	printk(KERN_WARNING " spidrv: can't create device node\n");
-	return -EIO;
-    }
-
-    devfs_handle = devfs_register(NULL, SPI_DEV_NAME, DEVFS_FL_DEFAULT, spidrv_major, 0,
-				S_IFCHR | S_IRUGO | S_IWUGO, &spidrv_fops, NULL);
-#else
-    int result=0;
-    result = register_chrdev(spidrv_major, SPI_DEV_NAME, &spidrv_fops);
-    if (result < 0) {
-        printk(KERN_WARNING "spi_drv: can't get major %d\n",spidrv_major);
-        return result;
-    }
-
-    if (spidrv_major == 0) {
-	spidrv_major = result; /* dynamic */
-    }
-#endif
-    //use normal(SPI) mode instead of GPIO mode
-#ifdef CONFIG_RALINK_RT2880
-    RT2880_REG(RALINK_REG_GPIOMODE) &= ~(1 << 2);
-#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
-    RT2880_REG(RALINK_REG_GPIOMODE) &= ~(1 << 1);
-#else
-#error Ralink Chip not defined
-#endif
-
-    printk("spidrv_major = %d\n", spidrv_major);
-
-	spich = 0;
-	
-    return 0;
-}
-
-
-static void spidrv_exit(void)
-{
-    printk("spi_drv exit\n");
-
-#ifdef  CONFIG_DEVFS_FS
-    devfs_unregister_chrdev(spidrv_major, SPI_DEV_NAME);
-    devfs_unregister(devfs_handle);
-#else
-    unregister_chrdev(spidrv_major, SPI_DEV_NAME);
-#endif
-}
-
 
 #if defined (CONFIG_RALINK_PCM) || defined (CONFIG_RALINK_PCM_MODULE)
 static unsigned char high8bit (unsigned short data)
 {
-return ((data>>8)&(0x0FF));
+	return ((data>>8)&(0x0FF));
 }
 
 static unsigned char low8bit (unsigned short data)
 {
-return ((unsigned char)(data & 0x00FF));
+	return ((unsigned char)(data & 0x00FF));
 }
+
 static unsigned short SixteenBit (unsigned char hi, unsigned char lo)
 {
 	unsigned short data = hi;
 	data = (data<<8)|lo;
 	return data;
 }
+
 void spi_si3220_master_init(int ch)
 {
 	int i;
@@ -756,19 +598,18 @@ void spi_si3220_master_init(int ch)
 	spich = 1;
 #else
 	spich = 0;
-#endif	
+#endif
 	spireg = spi_register[spich];
 	spi_master_init();
 
-	RT2880_REG(spireg[SPICFG]) = SPICFG_MSBFIRST | 
-									SPICFG_TXCLKEDGE_FALLING |
-									SPICFG_SPICLK_DIV128 | SPICFG_SPICLKPOL;
+	RT2880_REG(spireg[SPICFG]) = SPICFG_MSBFIRST |
+					SPICFG_TXCLKEDGE_FALLING |
+					SPICFG_SPICLK_DIV128 | SPICFG_SPICLKPOL;
 	spi_chip_select(DISABLE);
 #ifdef DBG
 	printk("[slic]SPICFG = %08x\n", RT2880_REG(spireg[SPICFG]));
 	printk("[slic]is busy %d\n", IS_BUSY);
-#endif		 	
-
+#endif
 
 #if defined(CONFIG_RALINK_SLIC_CONNECT_SPI_CS1)
 	/* Set SPI_CS1_MODE to SPI_CS1 mode */
@@ -779,14 +620,13 @@ void spi_si3220_master_init(int ch)
 #endif
 #else
 	RT2880_REG(RALINK_REG_GPIOMODE) &= 0xFFFFFFFD; 
-#endif	
-	 	
+#endif
 }
 
 u8 spi_si3220_read8(int sid, unsigned char cid, unsigned char reg)
 {
 	u8 value;
-	
+
 	spi_si3220_master_init(sid);
 	spi_chip_select(ENABLE);
 	spi_write(cid);
@@ -831,6 +671,7 @@ void spi_si3220_write8(int sid, unsigned char cid, unsigned char reg, unsigned c
 unsigned short spi_si3220_read16(int sid, unsigned char cid, unsigned char reg)
 {
 	unsigned char hi, lo;
+
 	spi_si3220_master_init(sid);
 	spi_chip_select(ENABLE);
 	spi_write(cid);
@@ -854,7 +695,7 @@ unsigned short spi_si3220_read16(int sid, unsigned char cid, unsigned char reg)
 void spi_si3220_write16(int sid, unsigned char cid, unsigned char reg, unsigned short value)
 {
 	unsigned char hi, lo;
-	
+
 	hi = high8bit(value);
 	lo = low8bit(value);
 	spi_si3220_master_init(sid);
@@ -873,29 +714,27 @@ void spi_si3220_write16(int sid, unsigned char cid, unsigned char reg, unsigned 
 	RT2880_REG(RT2880_SPI1_CTL_REG) = (~SPIARB_SPI1_ACTIVE_MODE)&0x1;
 #endif
 	RT2880_REG(RT2880_SPI0_CTL_REG) = (~SPIARB_SPI0_ACTIVE_MODE)&0x1;
-
 }
 
 void spi_si321x_master_init(int ch)
 {
-
 	u32* spireg;
 #if defined(CONFIG_RALINK_SLIC_CONNECT_SPI_CS1)
 	spich = 1;
 #else
 	spich = 0;
-#endif	
+#endif
 	spireg = spi_register[spich];
 	spi_master_init();
 	
-	RT2880_REG(spireg[SPICFG]) =	SPICFG_MSBFIRST | 
-									SPICFG_SPICLK_DIV128 | SPICFG_SPICLKPOL |
-									SPICFG_TXCLKEDGE_FALLING;
+	RT2880_REG(spireg[SPICFG]) =	SPICFG_MSBFIRST |
+					SPICFG_SPICLK_DIV128 | SPICFG_SPICLKPOL |
+					SPICFG_TXCLKEDGE_FALLING;
 #ifdef DBG
 	printk("[slic]SPICFG = %08x\n", RT2880_REG(spireg[SPICFG]));
 	printk("[slic]is busy %d\n", IS_BUSY);
-#endif		 	
-		
+#endif
+
 #if defined(CONFIG_RALINK_SLIC_CONNECT_SPI_CS1)
 	/* Set SPI_CS1_MODE to SPI_CS1 mode */
 #if defined(CONFIG_RALINK_RT3883)
@@ -905,7 +744,7 @@ void spi_si321x_master_init(int ch)
 #endif
 #else
 	RT2880_REG(RALINK_REG_GPIOMODE) &= 0xFFFFFFFD; 
-#endif	
+#endif
 }
 
 u8 spi_si321x_read8(int sid, unsigned char cid, unsigned char reg)
@@ -942,14 +781,134 @@ EXPORT_SYMBOL(spi_si3220_master_init);
 EXPORT_SYMBOL(spi_si321x_master_init);
 #endif
 
+static long spidrv_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	unsigned int address, value, size;
+	int eeprom_spich = 0;
+	SPI_WRITE *spi_wr;
+#if defined (CONFIG_MAC_TO_MAC_MODE) || defined (CONFIG_P5_RGMII_TO_MAC_MODE)
+	SPI_VTSS *vtss;
+	int vtss_spich = 0;
+
+#if defined(CONFIG_RALINK_VITESSE_SWITCH_CONNECT_SPI_CS1)
+	vtss_spich = 1;
+	eeprom_spich = 0;
+#else
+	vtss_spich = 0;
+	eeprom_spich = 1;
+#endif
+#endif
+
+	switch (cmd) {
+	case RT2880_SPI_READ:
+		value = 0; address = 0;
+		spich = eeprom_spich;
+		address = (unsigned int)arg;
+		spi_master_init();
+		spi_eeprom_read(address, 4, (unsigned char*)&value);
+		//printk("0x%04x : 0x%08x\n", address, value);
+		break;
+	case RT2880_SPI_WRITE:
+		spich = eeprom_spich;
+		spi_wr = (SPI_WRITE*)arg;
+		address = spi_wr->address;
+		value   = spi_wr->value;
+		size    = spi_wr->size;
+		spi_master_init();
+		spi_eeprom_write(address, size, (unsigned char*)&value);
+		break;
+#if defined (CONFIG_MAC_TO_MAC_MODE) || defined (CONFIG_P5_RGMII_TO_MAC_MODE)
+	case RT2880_SPI_INIT_VTSS_NOVLAN:
+		spich = vtss_spich;
+		vtss_reset();
+		vtss_init(0);
+		break;
+	case RT2880_SPI_INIT_VTSS_WANATP0:
+		spich = vtss_spich;
+		vtss_reset();
+		vtss_init(1);
+		break;
+	case RT2880_SPI_INIT_VTSS_WANATP4:
+		spich = vtss_spich;
+		vtss_reset();
+		vtss_init(2);
+		break;
+	case RT2880_SPI_VTSS_READ:
+		spich = vtss_spich;
+		vtss = (SPI_VTSS *)arg;
+		//printk("r %x %x %x -> ", vtss->blk, vtss->sub, vtss->reg);
+		spi_vtss_read(vtss->blk, vtss->sub, vtss->reg, (u32*)&vtss->value);
+		//printk("%x\n", (u32)vtss->value);
+		break;
+	case RT2880_SPI_VTSS_WRITE:
+		spich = vtss_spich;
+		vtss = (SPI_VTSS *)arg;
+		//printk("w %x %x %x -> %x\n", vtss->blk, vtss->sub, vtss->reg, (u32)vtss->value);
+		spi_vtss_write(vtss->blk, vtss->sub, vtss->reg, (u32)vtss->value);
+		break;
+#endif
+	default:
+		printk("spi_drv: command format error\n");
+	}
+
+	return 0;
+}
+
+static int spidrv_open(struct inode *inode, struct file *file)
+{
+	try_module_get(THIS_MODULE);
+	return 0;
+}
+
+static int spidrv_release(struct inode *inode, struct file *file)
+{
+	module_put(THIS_MODULE);
+	return 0;
+}
+
+static const struct file_operations spidrv_fops =
+{
+	.owner		= THIS_MODULE,
+	.unlocked_ioctl	= spidrv_ioctl,
+	.open		= spidrv_open,
+	.release	= spidrv_release,
+};
+
+int __init spidrv_init(void)
+{
+	int result = register_chrdev(spidrv_major, SPI_DEV_NAME, &spidrv_fops);
+	if (result < 0) {
+		printk(KERN_WARNING "spi_drv: can't get major %d\n",spidrv_major);
+		return result;
+	}
+
+	if (spidrv_major == 0) {
+		spidrv_major = result; /* dynamic */
+	}
+
+	//use normal(SPI) mode instead of GPIO mode
+#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883) || \
+    defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || \
+    defined (CONFIG_RALINK_MT7620)
+	RT2880_REG(RALINK_REG_GPIOMODE) &= ~(RALINK_GPIOMODE_SPI);
+#else
+#error Ralink Chip not defined
+#endif
+
+	printk("Ralink SPI driver initialized.\n");
+
+	return 0;
+}
+
+void __exit spidrv_exit(void)
+{
+	unregister_chrdev(spidrv_major, SPI_DEV_NAME);
+}
+
 module_init(spidrv_init);
 module_exit(spidrv_exit);
 
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,12)
-MODULE_PARM (spidrv_major, "i");
-#else
-module_param (spidrv_major, int, 0);
-#endif
+module_param(spidrv_major, int, 0);
 
+MODULE_DESCRIPTION("Ralink SPI Driver");
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("Ralink SoC SPI Driver");

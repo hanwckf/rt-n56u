@@ -15,17 +15,14 @@ endmenu
 #############
 # Wired
 #############
-menu "Ethernet Ralink RT28xx/RT3xxx/RT5xxx/MT762x wire driver"
+menu "Ethernet Ralink RT3xxx/RT5xxx/MT762x wire driver"
 source "drivers/net/raeth/Kconfig"
 endmenu
 
 #############
 # Wireless
 #############
-menu "Platform config for Ralink RT28xx/RT3xxx/RT5xxx"
-config  RT2860V2_2850
-	bool "Dual Band"
-	depends on RALINK_RT2880
+menu "Platform config for Ralink RT3xxx/RT5xxx"
 
 choice
 	prompt "RF Type"
@@ -105,7 +102,7 @@ config RA_NAT_NONE
 
 config RA_NAT_HW
 	bool "Hardware NAT acceleration"
-	depends on !RALINK_RT5350
+	depends on !(RALINK_RT5350 || RALINK_MT7628)
 endchoice
 
 if RA_NAT_HW
@@ -119,7 +116,7 @@ endmenu
 menu "Ralink Devices"
 config RT3XXX_EHCI_OHCI
 	bool "Ralink USB2 EHCI/OHCI controller support"
-	depends on (RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620)
+	depends on (RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620 || RALINK_MT7628)
 	select USB_ARCH_HAS_OHCI
 	select USB_ARCH_HAS_EHCI
 
@@ -129,11 +126,11 @@ default y if (RT305x_INIC_USB || RT3572_AP || RT5572_AP)
 
 config RTDEV_MII
 bool
-default y if (RT2880v2_INIC_MII || RT305x_INIC_MII || RT3352_INIC_MII)
+default y if (RT305x_INIC_MII || RT3352_INIC_MII)
 
 config RTDEV_PCI
 bool
-default y if (RT2880v2_INIC_PCI || RT3090_AP || RT5392_AP || RT5592_AP || RT3593_AP || MT7610_AP)
+default y if (RT3090_AP || RT5392_AP || RT5592_AP || RT3593_AP || MT7610_AP)
 endmenu
 
 endmenu

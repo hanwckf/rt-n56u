@@ -7,123 +7,36 @@
 #include <linux/string.h>
 #include <linux/fs.h>
 #include <linux/netdevice.h>
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 #include <linux/sched.h>
-#endif
 
 #include "raether.h"
-#include "ra_mac.h"
 #include "mii_mgr.h"
 
-#ifdef CONFIG_RALINK_VISTA_BASIC
-extern int is_switch_175c;
-#endif
+/*  PHY Vender ID list */
+#define EV_MARVELL_PHY_ID0		0x0141
+#define EV_MARVELL_PHY_ID1		0x0CC2
+
+#define EV_VTSS_PHY_ID0			0x0007
+#define EV_VTSS_PHY_ID1			0x0421
+
+extern u32 ralink_asic_rev_id;
 
 #if defined (CONFIG_RAETH_ESW_CONTROL)
 extern int esw_control_post_init(void);
 #endif
 
-#if defined (CONFIG_GIGAPHY) || defined (CONFIG_P4_MAC_TO_PHY_MODE) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
-static int isICPlusGigaPHY(int ge)
+#if defined (CONFIG_GE1_RGMII_AN) || defined (CONFIG_P5_MAC_TO_PHY_MODE) || \
+    defined (CONFIG_GE2_RGMII_AN) || defined (CONFIG_P4_MAC_TO_PHY_MODE)
+static int is_gigaphy_id(u32 phy_addr, u32 check_phy_id0, u32 check_phy_id1)
 {
 	u32 phy_id0 = 0, phy_id1 = 0;
 
-#if defined (CONFIG_GE2_RGMII_AN) || defined (CONFIG_P4_MAC_TO_PHY_MODE)
-	if (ge == 2) {
-		if (!mii_mgr_read(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2, 2, &phy_id0)) {
-			printk("\n Read PhyID 1 is Fail!!\n");
-			phy_id0 =0;
-		}
-		if (!mii_mgr_read(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2, 3, &phy_id1)) {
-			printk("\n Read PhyID 1 is Fail!!\n");
-			phy_id1 = 0;
-		}
-	}
-	else
-#endif
-#if defined (CONFIG_GE1_RGMII_AN) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
-	{
-		if (!mii_mgr_read(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR, 2, &phy_id0)) {
-			printk("\n Read PhyID 0 is Fail!!\n");
-			phy_id0 =0;
-		}
-		if (!mii_mgr_read(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR, 3, &phy_id1)) {
-			printk("\n Read PhyID 0 is Fail!!\n");
-			phy_id1 = 0;
-		}
-	}
-#endif
-	if ((phy_id0 == EV_ICPLUS_PHY_ID0) && ((phy_id1 & 0xfff0) == EV_ICPLUS_PHY_ID1))
-		return 1;
+	if (!mii_mgr_read(phy_addr, 2, &phy_id0))
+		phy_id0 = 0;
+	if (!mii_mgr_read(phy_addr, 3, &phy_id1))
+		phy_id1 = 0;
 
-	return 0;
-}
-
-static int isMarvellGigaPHY(int ge)
-{
-	u32 phy_id0 = 0, phy_id1 = 0;
-
-#if defined (CONFIG_GE2_RGMII_AN) || defined (CONFIG_P4_MAC_TO_PHY_MODE)
-	if (ge == 2) {
-		if (!mii_mgr_read(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2, 2, &phy_id0)) {
-			printk("\n Read PhyID 1 is Fail!!\n");
-			phy_id0 =0;
-		}
-		if (!mii_mgr_read(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2, 3, &phy_id1)) {
-			printk("\n Read PhyID 1 is Fail!!\n");
-			phy_id1 = 0;
-		}
-	}
-	else
-#endif
-#if defined (CONFIG_GE1_RGMII_AN) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
-	{
-		if (!mii_mgr_read(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR, 2, &phy_id0)) {
-			printk("\n Read PhyID 0 is Fail!!\n");
-			phy_id0 =0;
-		}
-		if (!mii_mgr_read(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR, 3, &phy_id1)) {
-			printk("\n Read PhyID 0 is Fail!!\n");
-			phy_id1 = 0;
-		}
-	}
-#endif
-	if ((phy_id0 == EV_MARVELL_PHY_ID0) && (phy_id1 == EV_MARVELL_PHY_ID1))
-		return 1;
-
-	return 0;
-}
-
-static int isVtssGigaPHY(int ge)
-{
-	u32 phy_id0 = 0, phy_id1 = 0;
-
-#if defined (CONFIG_GE2_RGMII_AN) || defined (CONFIG_P4_MAC_TO_PHY_MODE)
-	if (ge == 2) {
-		if (!mii_mgr_read(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2, 2, &phy_id0)) {
-			printk("\n Read PhyID 1 is Fail!!\n");
-			phy_id0 =0;
-		}
-		if (!mii_mgr_read(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2, 3, &phy_id1)) {
-			printk("\n Read PhyID 1 is Fail!!\n");
-			phy_id1 = 0;
-		}
-	}
-	else
-#endif
-#if defined (CONFIG_GE1_RGMII_AN) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
-	{
-		if (!mii_mgr_read(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR, 2, &phy_id0)) {
-			printk("\n Read PhyID 0 is Fail!!\n");
-			phy_id0 =0;
-		}
-		if (!mii_mgr_read(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR, 3, &phy_id1)) {
-			printk("\n Read PhyID 0 is Fail!!\n");
-			phy_id1 = 0;
-		}
-	}
-#endif
-	if ((phy_id0 == EV_VTSS_PHY_ID0) && (phy_id1 == EV_VTSS_PHY_ID1))
+	if ((phy_id0 == check_phy_id0) && (phy_id1 == check_phy_id1))
 		return 1;
 
 	return 0;
@@ -131,47 +44,442 @@ static int isVtssGigaPHY(int ge)
 
 static void init_giga_phy(int ge)
 {
-#if defined(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2)
+	u32 phy_val = 0;
+#if defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2)
 	u32 phy_addr = (ge == 2) ? CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2 : CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
 #else
 	u32 phy_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
 #endif
 
-	if (isICPlusGigaPHY(ge)) {
-		mii_mgr_read(phy_addr, 4, &phy_val);
-		phy_val |= 1<<10; //enable pause ability
-		mii_mgr_write(phy_addr, 4, phy_val);
-		mii_mgr_read(phy_addr, 0, &phy_val);
-		phy_val |= 1<<9; //restart AN
-		mii_mgr_write(phy_addr, 0, phy_val);
-	} else if (isMarvellGigaPHY(ge)) {
-		printk("Reset MARVELL phy1\n");
+	if (is_gigaphy_id(phy_addr, EV_MARVELL_PHY_ID0, EV_MARVELL_PHY_ID1)) {
+		printk("%s GigaPHY is found!\n", "Marvell");
 		mii_mgr_read(phy_addr, 20, &phy_val);
-		phy_val |= 1<<7; //Add delay to RX_CLK for RXD Outputs
+		phy_val |= (1<<7);			// add delay to RX_CLK for RXD Outputs
 		mii_mgr_write(phy_addr, 20, phy_val);
 		mii_mgr_read(phy_addr, 0, &phy_val);
-		phy_val |= 1<<15; //PHY Software Reset
+		phy_val |= (1<<15);			// PHY Software Reset
 		mii_mgr_write(phy_addr, 0, phy_val);
-	} else if (isVtssGigaPHY(ge)) {
-		mii_mgr_write(phy_addr, 31, 0x0001); //extended page
+	} else if (is_gigaphy_id(phy_addr, EV_VTSS_PHY_ID0, EV_VTSS_PHY_ID1)) {
+		printk("%s GigaPHY is found!\n", "Vitesse");
+		mii_mgr_write(phy_addr, 31, 0x0001);	// extended page
 		mii_mgr_read(phy_addr, 28, &phy_val);
-		printk("Vitesse phy skew: %x --> ", phy_val);
-		phy_val |= (0x3<<12); // RGMII RX skew compensation= 2.0 ns
-		phy_val &= ~(0x3<<14);// RGMII TX skew compensation= 0 ns
-		printk("%x\n", phy_val);
+		phy_val |=  (0x3<<12);			// RGMII RX skew compensation= 2.0 ns
+		phy_val &= ~(0x3<<14);			// RGMII TX skew compensation= 0 ns
 		mii_mgr_write(phy_addr, 28, phy_val);
-		mii_mgr_write(phy_addr, 31, 0x0000); //main registers
+		mii_mgr_write(phy_addr, 31, 0x0000);	// main registers
 	}
 }
 #endif
 
-#if defined(CONFIG_RALINK_MT7620)
+#if defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR) || defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2)
+
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7620)
+static void enable_autopoll_phy(int unused)
+{
+	u32 regValue, addr_s, addr_e;
+
+#if defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR) && defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2)
+#if (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2 > CONFIG_MAC_TO_GIGAPHY_MODE_ADDR)
+	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
+	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
+#else
+	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
+	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
+#endif
+#elif defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2)
+	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
+	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2+1; // or = addr_s ?
+#else
+	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
+	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR+1; // or = addr_s ?
+#endif
+	regValue = sysRegRead(REG_ESW_PHY_POLLING);
+	regValue |= (1<<31);
+	regValue &= ~(0x1f);
+	regValue &= ~(0x1f<<8);
+	regValue |= (addr_s & 0x1f);		// setup PHY address for auto polling (Start Addr).
+	regValue |= ((addr_e & 0x1f) << 8);	// setup PHY address for auto polling (End Addr).
+	sysRegWrite(REG_ESW_PHY_POLLING, regValue);
+}
+
+#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
+      defined (CONFIG_RALINK_RT3883)
+
+static void enable_autopoll_phy(int ge)
+{
+	u32 regAddr, regValue;
+
+#if defined (CONFIG_RALINK_RT3883)
+	regAddr = MDIO_CFG;
+#if defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2)
+	if (ge == 2)
+		regAddr = MDIO_CFG2;
+#endif
+#else
+	regAddr = RALINK_ETH_SW_BASE + 0xC8;
+#endif
+
+	regValue = sysRegRead(regAddr);
+	regValue &= 0xe0ff7fff;			// clear auto polling related field: (MD_PHY1ADDR & GP1_FRC_EN).
+	regValue |= 0x20000000;			// force to enable MDC/MDIO auto polling.
+#if defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2)
+	if (ge == 2)
+		regValue |= ((CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2 & 0x1f) << 24);	// setup PHY address for auto polling.
+#endif
+#if defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR)
+	if (ge != 2)
+		regValue |= ((CONFIG_MAC_TO_GIGAPHY_MODE_ADDR & 0x1f) << 24);	// setup PHY address for auto polling.
+#endif
+	sysRegWrite(regAddr, regValue);
+}
+
+#endif
+#endif
+
+#if defined (CONFIG_MT7530_GSW)
+#if defined (CONFIG_RALINK_MT7621)
+
+#if defined (CONFIG_GE1_TRGMII_FORCE_1200)
+#define REGBIT(x, n)	(x << n)
+static void apll_xtal_enable(void)
+{
+	u32 data = 0;
+	u32 regValue = 0;
+
+	/* Firstly, reset all required register to default value */
+	sysRegWrite(RALINK_ANA_CTRL_BASE, 0x00008000);
+	sysRegWrite(RALINK_ANA_CTRL_BASE+0x0014, 0x01401d61);
+	sysRegWrite(RALINK_ANA_CTRL_BASE+0x0018, 0x38233d0e);
+	sysRegWrite(RALINK_ANA_CTRL_BASE+0x001c, 0x80120004);
+	sysRegWrite(RALINK_ANA_CTRL_BASE+0x0020, 0x1c7dbf48);
+
+	/* toggle RG_XPTL_CHG */
+	sysRegWrite(RALINK_ANA_CTRL_BASE, 0x00008800);
+	sysRegWrite(RALINK_ANA_CTRL_BASE, 0x00008c00);
+
+	data = sysRegRead(RALINK_ANA_CTRL_BASE+0x0014);
+	data &= ~(0x0000ffc0);
+
+	regValue = *(volatile u_long *)(RALINK_SYSCTL_BASE + 0x10);
+	regValue = (regValue >> 6) & 0x7;
+	if (regValue < 6) { //20/40Mhz Xtal
+		data |= REGBIT(0x1d, 8);
+	} else {
+		data |= REGBIT(0x17, 8);
+	}
+	if (regValue < 6) { //20/40Mhz Xtal
+		data |= REGBIT(0x1, 6);
+	}
+	sysRegWrite(RALINK_ANA_CTRL_BASE+0x0014, data);
+
+	data = sysRegRead(RALINK_ANA_CTRL_BASE+0x0018);
+	data &= ~(0xf0773f00);
+	data |= REGBIT(0x3, 28);
+	data |= REGBIT(0x2, 20);
+	if (regValue < 6) { //20/40Mhz Xtal
+		data |= REGBIT(0x3, 16);
+	} else {
+		data |= REGBIT(0x2, 16);
+	}
+	data |= REGBIT(0x3, 12);
+	if (regValue < 6) { //20/40Mhz Xtal
+		data |= REGBIT(0xd, 8);
+	} else {
+		data |= REGBIT(0x7, 8);
+	}
+	sysRegWrite(RALINK_ANA_CTRL_BASE+0x0018, data);
+
+	if (regValue < 6) { //20/40Mhz Xtal
+		sysRegWrite(RALINK_ANA_CTRL_BASE+0x0020, 0x1c7dbf48);
+	} else {
+		sysRegWrite(RALINK_ANA_CTRL_BASE+0x0020, 0x1697cc39);
+	}
+
+	//*Common setting - Set PLLGP_CTRL_4 *//
+	///* 1. Bit 31 */
+	data = sysRegRead(RALINK_ANA_CTRL_BASE+0x001c);
+	data &= ~(REGBIT(0x1, 31));
+	sysRegWrite(RALINK_ANA_CTRL_BASE+0x001c, data);
+
+	/* 2. Bit 0 */
+	data = sysRegRead(RALINK_ANA_CTRL_BASE+0x001c);
+	data |= REGBIT(0x1, 0);
+	sysRegWrite(RALINK_ANA_CTRL_BASE+0x001c, data);
+
+	/* 3. Bit 3 */
+	data = sysRegRead(RALINK_ANA_CTRL_BASE+0x001c);
+	data |= REGBIT(0x1, 3);
+	sysRegWrite(RALINK_ANA_CTRL_BASE+0x001c, data);
+
+	/* 4. Bit 8 */
+	data = sysRegRead(RALINK_ANA_CTRL_BASE+0x001c);
+	data |= REGBIT(0x1, 8);
+	sysRegWrite(RALINK_ANA_CTRL_BASE+0x001c, data);
+
+	/* 5. Bit 6 */
+	data = sysRegRead(RALINK_ANA_CTRL_BASE+0x001c);
+	data |= REGBIT(0x1, 6);
+	sysRegWrite(RALINK_ANA_CTRL_BASE+0x001c, data);
+
+	/* 6. Bit 7 */
+	data = sysRegRead(RALINK_ANA_CTRL_BASE+0x001c);
+	data |= REGBIT(0x1, 5);
+	data |= REGBIT(0x1, 7);
+	sysRegWrite(RALINK_ANA_CTRL_BASE+0x001c, data);
+
+	/* 7. Bit 17 */
+	data = sysRegRead(RALINK_ANA_CTRL_BASE+0x001c);
+	data &= ~REGBIT(0x1, 17);
+	sysRegWrite(RALINK_ANA_CTRL_BASE+0x001c, data);
+
+	/* 8. TRGMII TX CLK SEL APLL */
+	data = sysRegRead(0xbe00002c);
+	data &= 0xffffff9f;
+	data |= 0x40;
+	sysRegWrite(0xbe00002c, data);
+}
+#endif
+
+/* internal MT7350 (on-die) */
+static void mt7530_gsw_init(void)
+{
+	u32 i, regValue = 0;
+
+	/* turn off all PHY */
+	for(i = 0; i <= 4; i++) {
+		mii_mgr_read(i, 0, &regValue);
+		regValue |= (1<<11);
+		mii_mgr_write(i, 0, regValue);
+	}
+
+	/* reset switch */
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7000, 0x3);
+	udelay(10);
+
+#if defined (CONFIG_GE1_TRGMII_FORCE_1200)
+	// PLL to 150Mhz
+	mii_mgr_write(0, 13, 0x1f);
+	mii_mgr_write(0, 14, 0x404);
+	mii_mgr_write(0, 13, 0x401f);
+	mii_mgr_write(0, 14, 0x0780);	//40Mhz XTAL for 150Mhz CLK
+	mdelay(1);
+
+	mii_mgr_write(0, 13, 0x1f);
+	mii_mgr_write(0, 14, 0x409);
+	mii_mgr_write(0, 13, 0x401f);
+	mii_mgr_write(0, 14, 0x57);
+	mdelay(1);
+
+	mii_mgr_write(0, 13, 0x1f);
+	mii_mgr_write(0, 14, 0x40a);
+	mii_mgr_write(0, 13, 0x401f);
+	mii_mgr_write(0, 14, 0x57);
+
+	// PLL BIAS en
+	mii_mgr_write(0, 13, 0x1f);
+	mii_mgr_write(0, 14, 0x403);
+	mii_mgr_write(0, 13, 0x401f);
+	mii_mgr_write(0, 14, 0x1800);
+	mdelay(1);
+
+	// BIAS LPF en
+	mii_mgr_write(0, 13, 0x1f);
+	mii_mgr_write(0, 14, 0x403);
+	mii_mgr_write(0, 13, 0x401f);
+	mii_mgr_write(0, 14, 0x1c00);
+
+	// sys PLL en
+	mii_mgr_write(0, 13, 0x1f);
+	mii_mgr_write(0, 14, 0x401);
+	mii_mgr_write(0, 13, 0x401f);
+	mii_mgr_write(0, 14, 0xc020);
+
+	// LCDDDS PWDS
+	mii_mgr_write(0, 13, 0x1f);
+	mii_mgr_write(0, 14, 0x406);
+	mii_mgr_write(0, 13, 0x401f);
+	mii_mgr_write(0, 14, 0xa030);
+	mdelay(1);
+
+	// GSW_2X_CLK
+	mii_mgr_write(0, 13, 0x1f);
+	mii_mgr_write(0, 14, 0x410);
+	mii_mgr_write(0, 13, 0x401f);
+	mii_mgr_write(0, 14, 0x0003);
+
+	// switch to APLL if TRGMII + DDR2
+	regValue = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x10));
+	if ((regValue >> 4) & 0x1)
+		apll_xtal_enable();
+#endif
+
+	/* MT7530 HW-TRAP config */
+	mii_mgr_read(MT7530_MDIO_ADDR, 0x7804, &regValue);
+	regValue &= ~(1<<8);						// Enable Port 6
+	regValue |= (1<<16);						// Change HW-TRAP
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0)
+	regValue &= ~((1<<13)|(1<<6));					// Enable Port5, set to PHY P0 mode
+	regValue |= ((1<<7)|(1<<20));
+#elif defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+	regValue &= ~((1<<13)|(1<<6)|(1<<20));				// Enable Port5, set to PHY P4 mode
+	regValue |= ((1<<7));
+#else
+	regValue |= (1<<13);						// Port 5 as GMAC, no Internal PHY mode
+	regValue |= (1<<6);						// Disable Port 5
+#endif
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7804, regValue);
+
+#if defined (CONFIG_GE1_TRGMII_FORCE_1200)
+	/* enable TRGMII */
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7830, 0x1);
+#endif
+
+	/* configure switch Port6 */
+	if (ralink_asic_rev_id == 0x00030101) {
+		sysRegWrite(RALINK_ETH_SW_BASE+0x100, 0x0005e30b);	// (GE1, Force 1000M/FD, FC OFF)
+		mii_mgr_write(MT7530_MDIO_ADDR, 0x3600, 0x5e30b);	// (P6, Force mode, Link Up, 1000Mbps, Full-Duplex, FC OFF)
+	} else {
+		sysRegWrite(RALINK_ETH_SW_BASE+0x100, 0x0005e33b);	// (GE1, Force 1000M/FD, FC ON)
+		mii_mgr_write(MT7530_MDIO_ADDR, 0x3600, 0x5e33b);	// (P6, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
+	}
+
+	/* configure switch Port5 */
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x00056300);		// P5 AN
+#else
+	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x00008000);		// (GE2, Link down)
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x00008000);		// P5 link down
+#endif
+
+	/* config switch PLL */
+	regValue = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x10));
+	regValue = (regValue >> 6) & 0x7;
+	if (regValue >= 6) {
+		/* 25Mhz Xtal - do nothing */
+	} else if (regValue >= 3) {
+		/* 40Mhz Xtal */
+		mii_mgr_write(0, 13, 0x1f);	// disable MT7530 core clock
+		mii_mgr_write(0, 14, 0x410);
+		mii_mgr_write(0, 13, 0x401f);
+		mii_mgr_write(0, 14, 0x0);
+		
+		mii_mgr_write(0, 13, 0x1f);	// disable MT7530 PLL
+		mii_mgr_write(0, 14, 0x40d);
+		mii_mgr_write(0, 13, 0x401f);
+		mii_mgr_write(0, 14, 0x2020);
+		
+		mii_mgr_write(0, 13, 0x1f);	// for MT7530 core clock = 500Mhz
+		mii_mgr_write(0, 14, 0x40e);
+		mii_mgr_write(0, 13, 0x401f);
+		mii_mgr_write(0, 14, 0x119);
+		
+		mii_mgr_write(0, 13, 0x1f);	// enable MT7530 PLL
+		mii_mgr_write(0, 14, 0x40d);
+		mii_mgr_write(0, 13, 0x401f);
+		mii_mgr_write(0, 14, 0x2820);
+		udelay(20);
+		
+		mii_mgr_write(0, 13, 0x1f);	// enable MT7530 core clock
+		mii_mgr_write(0, 14, 0x410);
+		mii_mgr_write(0, 13, 0x401f);
+#if defined (CONFIG_GE1_TRGMII_FORCE_1200)
+		mii_mgr_write(0, 14, 0x0003);	/* TRGMII */
+#else
+		mii_mgr_write(0, 14, 0x0001);	/* RGMII */
+#endif
+	} else {
+		/* 20Mhz Xtal - todo */
+	}
+
+#if 0
+	/* todo, more documentation is needed */
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7b00, 0x102);		// delay setting for 10/1000M
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7b04, 0x14);		// delay setting for 10/1000M
+
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a54, 0x44);		// lower Tx driving
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a5c, 0x44);		// lower Tx driving
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a64, 0x44);		// lower Tx driving
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a6c, 0x44);		// lower Tx driving
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a74, 0x44);		// lower Tx driving
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a7c, 0x44);		// lower Tx driving
+#endif
+
+	/* enable switch INTR */
+	mii_mgr_read(MT7530_MDIO_ADDR, 0x7808, &regValue);
+	regValue |= (3<<16);
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7808, regValue);
+}
+
+#else
+
+/* external MT7350 */
+static void mt7530_gsw_init(void)
+{
+	u32 i, regValue = 0;
+
+	/* turn off all PHY */
+	for(i = 0; i <= 4; i++) {
+		mii_mgr_read(i, 0, &regValue);
+		regValue |= (1<<11);
+		mii_mgr_write(i, 0, regValue);
+	}
+
+	/* MT7530 HW-TRAP config */
+	mii_mgr_read(MT7530_MDIO_ADDR, 0x7804, &regValue);
+	regValue &= ~(1<<8);					// Enable Port 6
+	regValue |= (1<<16);					// Change HW-TRAP
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0)
+	regValue &= ~((1<<13)|(1<<6)|(1<<5)|(1<<15));		// Enable Port5, set to PHY P0 mode
+	regValue |= ((1<<7)|(1<<24)|(1<<20));
+#elif defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4)
+	regValue &= ~((1<<13)|(1<<6)|(1<<5)|(1<<15)|(1<<20));	// Enable Port5, set to PHY P4 mode
+	regValue |= ((1<<7)|(1<<24));
+#else
+	regValue |= (1<<13);					// Port 5 as GMAC, no Internal PHY mode
+	regValue |= (1<<6);					// Disable Port 5
+#endif
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7804, regValue);
+
+	/* configure switch Port6 */
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x3600, 0x0005e33b);	// (P6, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
+
+	/* configure switch Port5 */
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4)
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x00056300);	// P5 AN
+#else
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x00008000);	// P5 link down
+#endif
+
+#if 0
+	/* todo, more documentation is needed */
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7b00, 0x102);		// delay setting for 10/1000M
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7b04, 0x14);		// delay setting for 10/1000M
+
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a54, 0x44);		// lower Tx driving
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a5c, 0x44);		// lower Tx driving
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a64, 0x44);		// lower Tx driving
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a6c, 0x44);		// lower Tx driving
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a74, 0x44);		// lower Tx driving
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a7c, 0x44);		// lower Tx driving
+#endif
+
+	/* enable switch INTR */
+	mii_mgr_read(MT7530_MDIO_ADDR, 0x7808, &regValue);
+	regValue |= (3<<16);
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7808, regValue);
+}
+#endif
+#endif
+
+
+#if defined (CONFIG_RALINK_MT7620)
 static void mt7620_gsw_init(void)
 {
-	u32 is_BGA = (sysRegRead(RALINK_SYSCTL_BASE + 0xc) >> 16) & 0x1;
+#if defined (CONFIG_RAETH_ESW)
+	u32 is_BGA = (ralink_asic_rev_id >> 16) & 0x1;
 
-	*(volatile u32 *)(SYSCFG1) |= (0x1 << 8); // PCIE_RC_MODE=1
-	*(volatile u32 *)(CKGCR) &= ~(0x3 << 4); // keep rx/tx port clock ticking, disable internal clock-gating to avoid switch stuck 
+	*(volatile u32 *)(REG_SYSCFG1) |= (0x1 << 8);	// PCIE_RC_MODE=1
+	*(volatile u32 *)(CKGCR) &= ~(0x3 << 4);	// keep rx/tx port clock ticking, disable internal clock-gating to avoid switch stuck
 
 	/*
 	* Reg 31: Page Control
@@ -244,71 +552,109 @@ static void mt7620_gsw_init(void)
 #if !defined (CONFIG_RAETH_HAS_PORT4)
 	mii_mgr_write(4, 16, 0x1313);
 #endif
+#endif
+
+	if ((ralink_asic_rev_id & 0xf) >= 5) {
+		*(volatile u32 *)(RALINK_ETH_SW_BASE+0x701c) = 0x800000c; //enlarge FE2SW_IPG
+	}
 
 	/* Port 6 (CPU) */
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3600) = 0x0005e33b;	// CPU Port6 Force Link 1G, FC ON
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3600) = 0x0005e33b;	// (P6, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x0010) = 0x7f7f7fe0;	// Set Port6 CPU Port
 
 	/* Port 5 */
 #if defined (CONFIG_P5_RGMII_TO_MAC_MODE)
+	/* Use P5 for connect to external RGMII MAC */
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RGMii Mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e33b;	// (P5, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x7014) = 0x1fec000c;	// disable PHY 0~4, set phy base address to 12
+#if 0
+	/* MT7620 need mac learning for PPE! */
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x250c) = 0x000fff10;	// disable P5 mac learning
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x7014) = 0x1fec000c;	// disable PHY 0 ~ 4, set phy base address to 12
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
-	//rxclk_skew, txclk_skew = 0
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RGMii Mode
-#elif defined (CONFIG_P5_MII_TO_MAC_MODE)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e337;	// (P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=Mii Mode
-	*(volatile u32 *)(SYSCFG1) |= (0x1 << 12);
-#elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x260c) = 0x000fff10;	// disable P6 mac learning
+#endif
+#elif defined (CONFIG_P5_RGMII_TO_MT7530_MODE)
+	/* Use P5 for connect to external MT7530 (P6) */
 	*(volatile u32 *)(REG_GPIOMODE) &= ~(3 << 7);			// set MDIO to Normal mode
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RGMii Mode
-	enable_auto_negotiate(1);
-	init_giga_phy(1);
-#elif defined (CONFIG_P5_RMII_TO_MAC_MODE)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e337;	// (P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
 	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RvMii Mode
-	*(volatile u32 *)(SYSCFG1) |= (0x2 << 12);
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RGMii Mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e33b;	// (P5, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x7014) = 0x1fe0000c;	// disable PHY 0~4, set phy base address to 0
+#if 0
+	/* MT7620 need mac learning for PPE! */
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x250c) = 0x000fff10;	// disable P5 mac learning
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x260c) = 0x000fff10;	// disable P6 mac learning
+#endif
+	/* Initial config MT7530 via MDIO */
+	mt7530_gsw_init();
+#elif defined (CONFIG_P5_MII_TO_MAC_MODE)
+	/* Use P5 for connect to external MII MAC */
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set GE1 to Normal mode
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);
+	*(volatile u32 *)(REG_SYSCFG1) |=  (0x1 << 12);			// GE1_MODE=Mii Mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e337;	// (P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
+#elif defined (CONFIG_P5_RMII_TO_MAC_MODE)
+	/* Use P5 for connect to external RvMII MAC */
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set GE1 to Normal mode
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);
+	*(volatile u32 *)(REG_SYSCFG1) |=  (0x2 << 12);			// GE1_MODE=RvMii Mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e337;	// (P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
+#elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
+	/* Use P5 for connect to external GigaPHY (with autopolling) */
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(3 << 7);			// set MDIO to Normal mode
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set GE1 to Normal mode
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RGMii Mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x00056330;	// (P5, AN)
+	init_giga_phy(1);
+	enable_autopoll_phy(1);
 #else /* Port 5 Disabled */
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x00008000;	// P5 link down
-	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 9);			// set RGMII to GPIO mode
+	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 9);			// set GE1 to GPIO mode
 #endif
 
 	/* Port 4 */
-#if defined (CONFIG_RALINK_MT7620)
 #if defined (CONFIG_P4_RGMII_TO_MAC_MODE)
+	/* Use P4 for connect to external RGMII MAC */
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);			// GE2_MODE=RGMii Mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3400) = 0x0005e33b;	// (P4, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
-	//rxclk_skew, txclk_skew = 0
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 14);			// GE2_MODE=RGMii Mode
 #elif defined (CONFIG_P4_MII_TO_MAC_MODE)
+	/* Use P4 for connect to external MII MAC */
 	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 14);			// GE2_MODE=Mii Mode
-	*(volatile u32 *)(SYSCFG1) |= (0x1 << 14);
-#elif defined (CONFIG_P4_MAC_TO_PHY_MODE)
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(3 << 7);			// set MDIO to Normal mode
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 14);			// GE2_MODE=RGMii Mode
-	enable_auto_negotiate(1);
-	init_giga_phy(2);
-#elif defined (CONFIG_P4_RMII_TO_MAC_MODE)
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);
+	*(volatile u32 *)(REG_SYSCFG1) |=  (0x1 << 14);			// GE2_MODE=Mii Mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3400) = 0x0005e337;	// (P4, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
+#elif defined (CONFIG_P4_RMII_TO_MAC_MODE)
+	/* Use P4 for connect to external RvMII MAC */
 	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 14);			// GE1_MODE=RvMii Mode
-	*(volatile u32 *)(SYSCFG1) |= (0x2 << 14);
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);
+	*(volatile u32 *)(REG_SYSCFG1) |=  (0x2 << 14);			// GE2_MODE=RvMii Mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3400) = 0x0005e337;	// (P4, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
+#elif defined (CONFIG_P4_MAC_TO_PHY_MODE)
+	/* Use P4 for connect to external GigaPHY (with autopolling) */
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(3 << 7);			// set MDIO to Normal mode
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);			// GE2_MODE=RGMii Mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3400) = 0x00056330;	// (P4, AN)
+	init_giga_phy(2);
+	enable_autopoll_phy(1);
+#elif defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0)
+	/* Use P4 for connect to external MT7530 GigaPHY P4 or P0 (with autopolling) */
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);			// GE2_MODE=RGMii Mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3400) = 0x00056330;	// (P4, AN)
+	enable_autopoll_phy(1);
 #else /* Port 4 Disabled */
-	*(volatile u32 *)(SYSCFG1) |= (0x3 << 14);			// GE2_MODE=RJ45 Mode
-	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 10);			// set RGMII2 to GPIO mode
-#endif
+	*(volatile u32 *)(REG_SYSCFG1) |= (0x3 << 14);			// GE2_MODE=RJ45 Mode
+	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 10);			// set GE2 to GPIO mode
 #endif
 }
 #endif
 
-#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+
+#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
+    defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
 static void rt305x_esw_init(void)
 {
 	int i=0;
@@ -317,7 +663,7 @@ static void rt305x_esw_init(void)
 	u32 phy_val2;
 #endif
 
-#if defined (CONFIG_RT5350_ASIC)
+#if defined (CONFIG_RT5350_ASIC) || defined (CONFIG_MT7628_ASIC)
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x0168) = 0x17;
 #endif
 
@@ -362,24 +708,24 @@ static void rt305x_esw_init(void)
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(0x3fff);
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) |= 0x3ffd;		// force 100M full duplex
 #if defined (CONFIG_RALINK_RT3352)
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=Mii Mode
-	*(volatile u32 *)(SYSCFG1) |= (0x1 << 12);
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=Mii Mode
+	*(volatile u32 *)(REG_SYSCFG1) |= (0x1 << 12);
 #endif
 #elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
 	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
 	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 7);			// set MDIO to Normal mode
-#if defined (CONFIG_RT3052_ASIC) || defined (CONFIG_RT3352_ASIC)
-	enable_auto_negotiate(1);
-#endif
 	init_giga_phy(1);
+#if defined (CONFIG_RT3052_ASIC) || defined (CONFIG_RT3352_ASIC)
+	enable_autopoll_phy(1);
+#endif
 #elif defined (CONFIG_P5_RMII_TO_MAC_MODE)
 	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1<<29);	// disable port 5 auto-polling
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(0x3fff);
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) |= 0x3ffd;		// force 100M full duplex
 #if defined (CONFIG_RALINK_RT3352)
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RvMii Mode
-	*(volatile u32 *)(SYSCFG1) |= (0x2 << 12);
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RvMii Mode
+	*(volatile u32 *)(REG_SYSCFG1) |= (0x2 << 12);
 #endif
 #else // Port 5 Disabled //
 
@@ -397,11 +743,12 @@ static void rt305x_esw_init(void)
 	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 9);			// set RGMII to GPIO mode (GPIO24-GPIO35)
 	*(volatile u32 *)(0xb000064C) = 0xFFF;				// GPIO24-GPIO35 output mode
 	*(volatile u32 *)(0xb0000654) = 0xFFF;				// GPIO24-GPIO35 output high
-#elif defined (CONFIG_RALINK_RT5350)
+#elif defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
 	/* do nothing */
 #endif
 #endif // CONFIG_P5_RGMII_TO_MAC_MODE //
 
+#if defined (CONFIG_RAETH_ESW)
 #if defined (CONFIG_RT3052_ASIC)
 	rw_rf_reg(0, 0, &phy_val);
 	phy_val = phy_val >> 4;
@@ -412,11 +759,11 @@ static void rt305x_esw_init(void)
 		rw_rf_reg(1, 26, &phy_val2);
 		
 		// reset EPHY
-		val = sysRegRead(RSTCTRL);
+		val = sysRegRead(REG_RSTCTRL);
 		val = val | RALINK_EPHY_RST;
 		sysRegWrite(RSTCTRL, val);
 		val = val & ~(RALINK_EPHY_RST);
-		sysRegWrite(RSTCTRL, val);
+		sysRegWrite(REG_RSTCTRL, val);
 		
 		rw_rf_reg(1, 26, &phy_val);
 		
@@ -490,11 +837,11 @@ static void rt305x_esw_init(void)
 #elif defined (CONFIG_RT3352_ASIC)
 	//PHY IOT
 	// reset EPHY
-	val = sysRegRead(RSTCTRL);
+	val = sysRegRead(REG_RSTCTRL);
 	val = val | RALINK_EPHY_RST;
-	sysRegWrite(RSTCTRL, val);
+	sysRegWrite(REG_RSTCTRL, val);
 	val = val & ~(RALINK_EPHY_RST);
-	sysRegWrite(RSTCTRL, val);
+	sysRegWrite(REG_RSTCTRL, val);
 
 	//select local register
 	mii_mgr_write(0, 31, 0x8000);
@@ -527,14 +874,14 @@ static void rt305x_esw_init(void)
 		mii_mgr_write(i, 26, phy_val);
 	}
 
-#elif defined (CONFIG_RT5350_ASIC)
+#elif defined (CONFIG_RT5350_ASIC) || defined (CONFIG_MT7628_ASIC)
 	//PHY IOT
 	// reset EPHY
-	val = sysRegRead(RSTCTRL);
+	val = sysRegRead(REG_RSTCTRL);
 	val = val | RALINK_EPHY_RST;
-	sysRegWrite(RSTCTRL, val);
+	sysRegWrite(REG_RSTCTRL, val);
 	val = val & ~(RALINK_EPHY_RST);
-	sysRegWrite(RSTCTRL, val);
+	sysRegWrite(REG_RSTCTRL, val);
 
 	//select local register
 	mii_mgr_write(0, 31, 0x8000);
@@ -569,124 +916,141 @@ static void rt305x_esw_init(void)
 #else
 #error "Chip is not supported"
 #endif
-
+#endif
 }
 #endif
 
-
 void fe_phy_init(void)
 {
-#if defined (CONFIG_GIGAPHY) || defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_100PHY)
-	unsigned int regValue = 0;
-#endif
-#if defined (CONFIG_RALINK_VISTA_BASIC)
-	int sw_id=0;
-	mii_mgr_read(29, 31, &sw_id);
-	is_switch_175c = (sw_id == 0x175c) ? 1:0;
+#if defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_100PHY)
+	u32 regValue = 0;
 #endif
 
-	// Case1: RT305x/RT335x/MT7620 + EmbeddedSW
-#if defined (CONFIG_RAETH_ESW)
-#if defined(CONFIG_RALINK_MT7620)
+	/* Case1: RT305x/RT335x/RT5350/MT7620/MT7628 + ESW/GSW/P5/P4 */
+#if defined (CONFIG_RALINK_MT7620)
 	mt7620_gsw_init();
-#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
+      defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
 	rt305x_esw_init();
 #endif
-#if defined (CONFIG_RAETH_ESW_CONTROL)
-	esw_control_post_init();
-#endif
-#endif
 
-#if !defined (CONFIG_RALINK_MT7621)
-	// Case2: RT288x/RT3883 GE1 + GigaPhy
-#if defined (CONFIG_GE1_RGMII_AN)
-	enable_auto_negotiate(1);
-	init_giga_phy(1);
+	/* Case2: RT3883/MT7621 GE1 + GSW */
+#if defined (CONFIG_GE1_RGMII_FORCE_1000) || defined (CONFIG_GE1_TRGMII_FORCE_1200)
+#if defined (CONFIG_RALINK_MT7621)
+	/* MT7621 GE1 + Internal GSW (MT7530) */
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x3 << 12);		// set MDIO to Normal mode
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x1 << 14);		// GE1 = Normal mode
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GMAC1 = RGMII mode
+	mt7530_gsw_init();
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+	/* MT7621 GE2 + Internal GPHY P4 or P0 (with autopolling) */
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x1 << 15);		// GE2 = Normal mode
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);			// GMAC2 = RGMII mode
+	*(volatile u32 *)(REG_PAD_RGMII2_MDIO_CFG) &= ~(0x3 << 4);	// reduce RGMII2 PAD driving strength
+	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x20056300);		// (P1, AN)
+	enable_autopoll_phy(1);
 #endif
-
-	// Case3: RT3883 GE2 + GigaPhy
-#if defined (CONFIG_GE2_RGMII_AN)
-	enable_auto_negotiate(2);
-	init_giga_phy(2);
-#endif
-
-	// Case4: RT288x/RT388x GE1 + GigaSW
-#if defined (CONFIG_GE1_RGMII_FORCE_1000)
+#else
+	/* RT3883 GE1 + External GSW */
 	sysRegWrite(MDIO_CFG, INIT_VALUE_OF_FORCE_1000_FD);
 #endif
+#endif
 
-	// Case5: RT388x GE2 + GigaSW
+	/* Case3: RT3883/MT7621 GE2 + External GSW */
 #if defined (CONFIG_GE2_RGMII_FORCE_1000)
+#if defined (CONFIG_RALINK_MT7621)
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x1 << 15);		// GE2 = Normal mode
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);			// GMAC2 = RGMII mode
+	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x0005633b);		// (GE2, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
+#else
 	sysRegWrite(MDIO_CFG2, INIT_VALUE_OF_FORCE_1000_FD);
 #endif
 #endif
 
-	// Case6: RT288x GE1 /RT388x GE1/GE2 + (10/100 Switch or 100PHY)
+#if defined (CONFIG_RAETH_ESW_CONTROL)
+	esw_control_post_init();
+#endif
+
+	/* Case4: RT3883/MT7621 GE1 + GigaPhy */
+#if defined (CONFIG_GE1_RGMII_AN)
+#if defined (CONFIG_RALINK_MT7621)
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x3 << 12);		// set MDIO to Normal mode
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x1 << 14);		// GE1 = Normal mode
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GMAC1 = RGMII mode
+	sysRegWrite(RALINK_ETH_SW_BASE+0x100, 0x20056300);		// (GE1, AN)
+#endif
+	init_giga_phy(1);
+	enable_autopoll_phy(1);
+#endif
+
+	/* Case5: RT3883/MT7621 GE2 + GigaPhy */
+#if defined (CONFIG_GE2_RGMII_AN)
+#if defined (CONFIG_RALINK_MT7621)
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x3 << 12);		// set MDIO to Normal mode
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x1 << 15);		// GE2 = Normal mode
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);			// GMAC2 = RGMII mode
+	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x20056300);		// (GE2, AN)
+#endif
+	init_giga_phy(2);
+	enable_autopoll_phy(2);
+#endif
+
+	/* Case6: RT3883, MT7621 GE1/GE2 + (10/100 Switch or 100PHY) */
 #if defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_100PHY)
-//set GMAC to MII or RvMII mode
 
 #if defined (CONFIG_RALINK_RT3883)
-	regValue = sysRegRead(SYSCFG1);
+
+	// set RT3883 GMAC to MII or RvMII mode
+	regValue = sysRegRead(REG_SYSCFG1);
 #if defined (CONFIG_GE1_MII_FORCE_100) || defined (CONFIG_GE1_MII_AN)
 	regValue &= ~(0x3 << 12);
-	regValue |= 0x1 << 12; // GE1 MII Mode
+	regValue |=  (0x1 << 12);					// GE1 MII Mode
 #elif defined (CONFIG_GE1_RVMII_FORCE_100)
 	regValue &= ~(0x3 << 12);
-	regValue |= 0x2 << 12; // GE1 RvMII Mode
+	regValue |=  (0x2 << 12);					// GE1 RvMII Mode
 #endif
 #if defined (CONFIG_GE2_MII_FORCE_100) || defined (CONFIG_GE2_MII_AN)
 	regValue &= ~(0x3 << 14);
-	regValue |= 0x1 << 14; // GE2 MII Mode
+	regValue |=  (0x1 << 14);					// GE2 MII Mode
 #elif defined (CONFIG_GE2_RVMII_FORCE_100)
 	regValue &= ~(0x3 << 14);
-	regValue |= 0x2 << 14; // GE2 RvMII Mode
+	regValue |=  (0x2 << 14);					// GE2 RvMII Mode
 #endif
-	sysRegWrite(SYSCFG1, regValue);
-#endif
-
+	sysRegWrite(REG_SYSCFG1, regValue);
 #if defined (CONFIG_GE1_MII_FORCE_100)
 	sysRegWrite(MDIO_CFG, INIT_VALUE_OF_FORCE_100_FD);
 #endif
 #if defined (CONFIG_GE2_MII_FORCE_100)
 	sysRegWrite(MDIO_CFG2, INIT_VALUE_OF_FORCE_100_FD);
 #endif
-
-	// add switch configuration here for other switch chips.
-#if defined (CONFIG_GE1_MII_FORCE_100) ||  defined (CONFIG_GE2_MII_FORCE_100)
-	// IC+ 175x: force IC+ switch cpu port is 100/FD
-	mii_mgr_write(29, 22, 0x8420);
-#endif
-
 #if defined (CONFIG_GE1_MII_AN)
-	enable_auto_negotiate(1);
+	enable_autopoll_phy(1);
 #endif
 #if defined (CONFIG_GE2_MII_AN)
-	enable_auto_negotiate(2);
+	enable_autopoll_phy(2);
 #endif
 
-#endif // defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_100PHY) //
+#elif defined (CONFIG_RALINK_MT7621)
 
-	// Case7: MT7621 GE1/GE2
-#if defined (CONFIG_RALINK_MT7621)
-#if defined (CONFIG_GE1_MII_FORCE_100) || defined (CONFIG_GE1_RVMII_FORCE_100)
-	sysRegWrite(RALINK_ETH_SW_BASE+0x100, 0x5e337);//(P0, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
-#elif defined (CONFIG_GE1_MII_AN) || defined (CONFIG_GE1_RGMII_AN)
-	enable_auto_negotiate(1);
-	init_giga_phy(1);
-	sysRegWrite(RALINK_ETH_SW_BASE+0x100, 0x56300);//(P0, Auto mode)
-#elif defined (CONFIG_GE1_RGMII_FORCE_1000)
-	sysRegWrite(RALINK_ETH_SW_BASE+0x100, 0x5633b);//(P0, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
+#if defined (CONFIG_GE1_MII_FORCE_100)
+	sysRegWrite(RALINK_ETH_SW_BASE+0x100, 0x0005e337);		// (GE1, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
+#endif
+#if defined (CONFIG_GE2_MII_FORCE_100)
+	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x0005e337);		// (GE2, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
+#endif
+#if defined (CONFIG_GE1_MII_AN) || defined (CONFIG_GE2_MII_AN)
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x3 << 12);		// set MDIO to Normal mode
+	enable_autopoll_phy(1);
+#endif
+#if defined (CONFIG_GE1_MII_AN)
+	sysRegWrite(RALINK_ETH_SW_BASE+0x100, 0x20056300);		// (GE1, AN)
+#endif
+#if defined (CONFIG_GE2_MII_AN)
+	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x20056300);		// (GE2, AN)
 #endif
 
-#if defined (CONFIG_GE2_MII_FORCE_100) || defined (CONFIG_GE2_RVMII_FORCE_100)
-	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x5e337);//(P0, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
-#elif defined (CONFIG_GE2_MII_AN) || defined (CONFIG_GE2_RGMII_AN)
-	enable_auto_negotiate(2);
-	init_giga_phy(2);
-	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x56300);//(P1, Auto mode)
-#elif defined (CONFIG_GE2_RGMII_FORCE_1000)
-	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x5633b);//(P0, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
-#endif
-#endif
+#endif /* CONFIG_RALINK_MT7621 */
+
+#endif /* CONFIG_RAETH_ROUTER || CONFIG_100PHY */
 }
 

@@ -6,11 +6,12 @@
 #include <linux/interrupt.h>
 
 #include <asm/rt2880/rt_mmap.h>
+#include <asm/rt2880/surfboard.h>
 #include <asm/rt2880/surfboardint.h>
 
 #include "ra_ethreg.h"
 
-#define RAETH_VERSION		"v3.0.8"
+#define RAETH_VERSION		"v3.0.9"
 #define RAETH_DEV_NAME		"raeth"
 
 /* RT6856 workaround */
@@ -21,7 +22,7 @@
 #define NUM_TX_DESC		128
 #define NUM_RX_MAX_PROCESS	32
 #else
-#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3052)
+#if defined (CONFIG_RALINK_RT3052)
 #define NUM_RX_DESC		128
 #define NUM_TX_DESC		128
 #else
@@ -34,8 +35,13 @@
 #define DEV_NAME		"eth2"
 #define DEV2_NAME		"eth3"
 
-#define GMAC2_OFFSET		0x22
+#if defined (CONFIG_RALINK_MT7621)
+#define GMAC0_OFFSET		0xE000
+#define GMAC2_OFFSET		0xE006
+#else
 #define GMAC0_OFFSET		0x28
+#define GMAC2_OFFSET		0x22
+#endif
 
 #define PSE_PORT_CPU		0
 #define PSE_PORT_GMAC1		1
@@ -59,6 +65,10 @@
 
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 #define RAETH_PDMA_V2
+#endif
+
+#if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
+#define RAETH_SDMA
 #endif
 
 #ifdef RAETH_DEBUG
@@ -91,15 +101,7 @@ typedef struct end_device
 	struct sk_buff			*rx0_skbuf[NUM_RX_DESC];
 	struct sk_buff			*tx0_free[NUM_TX_DESC];
 
-#if defined (CONFIG_RAETH_HW_VLAN_RX)
-	struct vlan_group		*vlgrp;
-#endif
-
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 	struct rtnl_link_stats64	stat;
-#else
-	struct net_device_stats		stat;
-#endif
 #if defined (CONFIG_ETHTOOL)
 	struct mii_if_info		mii_info;
 #endif
@@ -109,11 +111,7 @@ typedef struct end_device
 #if defined (CONFIG_PSEUDO_SUPPORT)
 typedef struct _PSEUDO_ADAPTER {
 	struct net_device		*RaethDev;
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 	struct rtnl_link_stats64	stat;
-#else
-	struct net_device_stats		stat;
-#endif
 #if defined (CONFIG_ETHTOOL)
 	struct mii_if_info		mii_info;
 #endif
@@ -121,11 +119,11 @@ typedef struct _PSEUDO_ADAPTER {
 #endif
 
 int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd);
-#ifdef CONFIG_PSEUDO_SUPPORT
+#if defined (CONFIG_PSEUDO_SUPPORT)
 int VirtualIF_ioctl(struct net_device * net_dev, struct ifreq * ifr, int cmd);
 #endif
 
-#if defined (CONFIG_RAETH_HW_VLAN_TX)
+#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
 u32  get_map_hw_vlan_tx(u32 idx);
 void set_map_hw_vlan_tx(u32 idx, u32 vid);
 #endif

@@ -13,39 +13,17 @@
 #include <linux/wireless.h>
 #include "rdm.h"
 
-#ifdef  CONFIG_DEVFS_FS
-#include <linux/devfs_fs_kernel.h>
-#endif
-
 #define RDM_WIRELESS_ADDR	RALINK_11N_MAC_BASE // wireless control
 #define RDM_DEVNAME		"rdm0"
+
 static int register_control = RDM_WIRELESS_ADDR;
-#ifdef  CONFIG_DEVFS_FS
-static devfs_handle_t devfs_handle;
-#endif
 int rdm_major = 253;
 
-int rdm_open(struct inode *inode, struct file *filp)
-{
-	return 0;
-}
-
-int rdm_release(struct inode *inode, struct file *filp)
-{
-	return 0;
-}
-
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 long rdm_ioctl (struct file *filp, unsigned int cmd, unsigned long arg)
-#else
-int rdm_ioctl (struct inode *inode, struct file *filp,
-                     unsigned int cmd, unsigned long *arg)
-#endif
 {
 	unsigned int rtvalue, baseaddr, offset;
 	unsigned int addr=0,count=0;
 	
-	//printk("rdm_ioctl\n");
 	baseaddr = register_control;
 	if (cmd == RT_RDM_CMD_SHOW)
 	{
@@ -54,7 +32,6 @@ int rdm_ioctl (struct inode *inode, struct file *filp,
 	}
 	else if (cmd == RT_RDM_CMD_DUMP) 
 	{
-
 	        for (count=0; count < RT_RDM_DUMP_RANGE ; count++) {
 		    addr = baseaddr + (*(int *)arg) + (count*16);
 		    printk("%08X: ", addr);
@@ -64,7 +41,6 @@ int rdm_ioctl (struct inode *inode, struct file *filp,
 				le32_to_cpu(*(volatile u32 *)(addr+8)),
 				le32_to_cpu(*(volatile u32 *)(addr+12)));
 		}
-
 	}
 	else if (cmd == RT_RDM_CMD_DUMP_FPGA_EMU) 
 	{
@@ -111,70 +87,53 @@ int rdm_ioctl (struct inode *inode, struct file *filp,
 		return -EOPNOTSUPP;
 	}
 
-
 	return 0;
 }
 
-struct file_operations rdm_fops = {
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-    unlocked_ioctl:      rdm_ioctl,
-#else
-    ioctl:      rdm_ioctl,
-#endif
-    open:       rdm_open,
-    release:    rdm_release,
+static int rdm_open(struct inode *inode, struct file *file)
+{
+	try_module_get(THIS_MODULE);
+	return 0;
+}
+
+static int rdm_release(struct inode *inode, struct file *file)
+{
+	module_put(THIS_MODULE);
+	return 0;
+}
+
+static const struct file_operations rdm_fops = 
+{
+	.owner		= THIS_MODULE,
+	.unlocked_ioctl	= rdm_ioctl,
+	.open		= rdm_open,
+	.release	= rdm_release,
 };
 
-static int rdm_init(void)
-
+int __init rdm_init(void)
 {
-#ifdef  CONFIG_DEVFS_FS
-	if(devfs_register_chrdev(rdm_major, RDM_DEVNAME , &rdm_fops)) {
-		printk(KERN_WARNING " ps: can't create device node - ps\n");
-		return -EIO;
-	}
-
-	devfs_handle = devfs_register(NULL, RDM_DEVNAME, DEVFS_FL_DEFAULT, rdm_major, 0, 
-				S_IFCHR | S_IRUGO | S_IWUGO, &rdm_fops, NULL);
-#else
-	int result=0;
-	result = register_chrdev(rdm_major, RDM_DEVNAME, &rdm_fops);
+	int result = register_chrdev(rdm_major, RDM_DEVNAME, &rdm_fops);
 	if (result < 0) {
-	printk(KERN_WARNING "ps: can't get major %d\n",rdm_major);
-	return result;
+		printk(KERN_WARNING "ps: can't get major %d\n",rdm_major);
+		return result;
 	}
 
 	if (rdm_major == 0) {
 		rdm_major = result; /* dynamic */
 	}
-#endif
 
 	printk("rdm_major = %d\n", rdm_major);
 	return 0;
 }
 
-
-
-static void rdm_exit(void)
+void __exit rdm_exit(void)
 {
-	printk("rdm_exit\n");
-
-#ifdef  CONFIG_DEVFS_FS
-	devfs_unregister_chrdev(rdm_major, RDM_DEVNAME);
-	devfs_unregister(devfs_handle);
-#else
 	unregister_chrdev(rdm_major, RDM_DEVNAME);
-#endif
-
 }
 
 module_init(rdm_init);
 module_exit(rdm_exit);
 
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,12)
-MODULE_PARM (rdm_major, "i");
-#else
 module_param (rdm_major, int, 0);
-#endif
 
 MODULE_LICENSE("GPL");

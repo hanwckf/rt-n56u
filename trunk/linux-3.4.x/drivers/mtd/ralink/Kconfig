@@ -7,23 +7,30 @@ config MTD_RALINK
 config MTD_NOR_RALINK
 	bool "NOR Flash Support"
 	default y
-	depends on MTD_RALINK && !RALINK_RT3352 && !RALINK_RT5350 && !RALINK_MT7620
+	depends on MTD_RALINK && (RALINK_RT3052 || RALINK_RT3883)
 
 config MTD_SPI_RALINK
 	bool "SPI Flash Support"
-	depends on MTD_RALINK && !RALINK_RT2880
+	depends on MTD_RALINK
 
 config MTD_SPI_FAST_CLOCK
 	bool "Use double SPI clock (up to 50MHz)"
-	depends on MTD_SPI_RALINK
+	depends on MTD_SPI_RALINK && !(RALINK_MT7621 || RALINK_MT7628)
 
 config MTD_SPI_DUAL_READ
 	bool "Use Fast Read Dual I/O"
-	depends on MTD_SPI_RALINK && (RALINK_MT7620 || RALINK_MT7621)
+	depends on MTD_SPI_RALINK && (RALINK_MT7620 || RALINK_MT7621 || RALINK_MT7628)
 
 config MTD_NAND_RALINK
 	bool "NAND Flash Support"
-	depends on MTD_RALINK && !RALINK_RT3352 && !RALINK_RT2880 && !RALINK_RT5350
+	depends on MTD_RALINK && !(RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7621 || RALINK_MT7628)
+
+#config MTD_NAND_MTK
+#	bool "NAND Flash Support"
+#	depends on MTD_RALINK && (RALINK_MT7621)
+#	select MTD_NAND
+#	select MTD_NAND_IDS
+#	select MTD_NAND_ECC
 
 choice
 	prompt "Flash Size"
@@ -38,29 +45,24 @@ config RT2880_FLASH_8M
 config RT2880_FLASH_16M
 	bool "16M"
 
-endchoice
+config RT2880_FLASH_32M
+	bool "32M"
+	depends on MTD_SPI_RALINK
 
-config FLASH_REMAP_NEED
-	bool
-	default y if (RALINK_RT2880)
+config RT2880_FLASH_AUTO
+	bool "Autodetect size"
+	depends on (MTD_NAND_RALINK || MTD_NAND_MTK)
+
+endchoice
 
 config RT2880_MTD_PHYSMAP_START
 	hex
-	default 0xBF000000 if !FLASH_REMAP_NEED && RALINK_RT3052
-	default 0x1C000000 if !FLASH_REMAP_NEED && RALINK_RT3352
-	default 0x1C000000 if !FLASH_REMAP_NEED && RALINK_RT5350
-	default 0x1C000000 if !FLASH_REMAP_NEED && RALINK_RT3883
-	default 0x1C000000 if !FLASH_REMAP_NEED && RALINK_MT7620
-	default 0xBFC00000 if RT2880_FLASH_4M && !RALINK_RT3052
-	default 0xBF400000 if RT2880_FLASH_8M && !RALINK_RT3052
-	default 0xBEC00000 if RT2880_FLASH_16M && !RALINK_RT3052
+	default 0xBF000000 if RALINK_RT3052
+	default 0x1C000000 if !RALINK_RT3052
 
 config RT2880_MTD_PHYSMAP_LEN
 	hex
-	default 0x1000000 if !FLASH_REMAP_NEED
-	default 0x1000000 if RT2880_FLASH_16M
-	default 0x800000 if RT2880_FLASH_8M
-	default 0x400000 if RT2880_FLASH_4M
+	default 0x1000000
 
 config RT2880_MTD_PHYSMAP_BUSWIDTH
 	int

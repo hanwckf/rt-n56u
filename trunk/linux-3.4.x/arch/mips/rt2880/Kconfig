@@ -1,17 +1,3 @@
-if RALINK_RT2880
-
-choice
-	prompt "SoC Hardware Type"
-	default RT2880_ASIC
-
-config  RT2880_ASIC
-	bool "RT2880-ASIC"
-endchoice
-
-endif
-
-#---------------------------
-
 if RALINK_RT3052
 
 choice
@@ -54,16 +40,19 @@ config  RT3883_ASIC
 endchoice
 
 choice
-	prompt "RT3883/RT3662 PCI architecture"
-	default PCIE_PCI_CONCURRENT
+	prompt "RT3883/RT3662 PCI mode"
+	default PCIE_ONLY
 
-config PCIE_PCI_CONCURRENT
-	bool "PCIE RC and PCI HOST CONCURRENT"
-config PCIE_ONLY
-	bool "PCIE RC ONLY"
-config PCI_ONLY
+	config PCIE_PCI_CONCURRENT
+	bool "PCIe RC and PCI HOST CONCURRENT"
+
+	config PCIE_ONLY
+	bool "PCIe RC ONLY"
+
+	config PCI_ONLY
 	bool "PCI HOST ONLY"
-config PCIE_PCI_NONE
+
+	config PCIE_PCI_NONE
 	bool "Non-support PCI/PCIe"
 endchoice
 
@@ -99,19 +88,60 @@ endif
 
 #--------------------------
 
+if RALINK_MT7621
+
+choice
+	prompt "Soc Hardware Type"
+	default MT7621_ASIC
+
+config  MT7621_ASIC
+	bool "MT7621-ASIC"
+endchoice
+
+config PCIE_PORT0
+	bool "PCIe Port0 support"
+	default n
+
+config PCIE_PORT1
+	bool "PCIe Port1 support"
+	default n
+
+config PCIE_PORT2
+	bool "PCIe Port2 support"
+	default n
+
+endif
+
+#--------------------------
+
+if RALINK_MT7628
+
+choice
+	prompt "Soc Hardware Type"
+	default MT7628_ASIC
+
+config  MT7628_ASIC
+	bool "MT7628-ASIC"
+endchoice
+
+endif
+
+#--------------------------
+
 config  RALINK_MT7620_PLL600
-	bool "Set MT7620 CPU clock to 600MHz (Override Uboot config)"
-	depends on RALINK_MT7620
+	bool "Set MT7620/7628 CPU clock to 600MHz (Override Uboot config)"
+	depends on (RALINK_MT7620 || RALINK_MT7628)
 	default n
 
 config  RALINK_SYSTICK_COUNTER
 	bool "Use 50KHz System Tick Counter instead of MIPS counter"
-	depends on (RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620)
+	depends on (RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620 || RALINK_MT7621 || RALINK_MT7628)
+	select GENERIC_CLOCKEVENTS_BROADCAST if RALINK_MT7621
 	default n
 
 config  RALINK_CPUSLEEP
 	bool "Enable MIPS sleep mode (Dynamic CPU Frequency)"
-	depends on (RALINK_SYSTICK_COUNTER && RALINK_MT7620)
+	depends on (RALINK_SYSTICK_COUNTER && (RALINK_MT7620 || RALINK_MT7621 || RALINK_MT7628))
 	default n
 
 #--------------------------
@@ -119,9 +149,6 @@ config  RALINK_CPUSLEEP
 choice
 	prompt "DRAM Size"
 	default RT2880_DRAM_64M
-
-config RT2880_DRAM_8M
-	bool "8M"
 
 config RT2880_DRAM_16M
 	bool "16M"
@@ -134,20 +161,27 @@ config RT2880_DRAM_64M
 
 config RT2880_DRAM_128M
 	bool "128M"
+	depends on !(RALINK_RT3052 || RALINK_RT5350)
 
 config RT2880_DRAM_256M
 	bool "256M"
+	depends on !(RALINK_RT3052 || RALINK_RT5350)
+
+config RT2880_DRAM_512M
+	bool "512M"
+	depends on RALINK_MT7621
+	select HIGHMEM
 
 endchoice
 
 config RALINK_RAM_SIZE
 	int
-	default 8 if RT2880_DRAM_8M
 	default 16 if RT2880_DRAM_16M
 	default 32 if RT2880_DRAM_32M
 	default 64 if RT2880_DRAM_64M
 	default 128 if RT2880_DRAM_128M
 	default 256 if RT2880_DRAM_256M
+	default 512 if RT2880_DRAM_512M
 
 #--------------------------
 

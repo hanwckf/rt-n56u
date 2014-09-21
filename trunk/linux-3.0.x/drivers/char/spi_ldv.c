@@ -45,39 +45,11 @@
 #include <asm/system.h>
 #endif
 
+#include <linux/ralink_gpio.h>
 #include "../mtd/ralink/ralink_spi.h"
 
-#ifdef  CONFIG_DEVFS_FS
-#include <linux/devfs_fs_kernel.h>
-#endif
-
-#ifdef  CONFIG_DEVFS_FS
-static devfs_handle_t devfs_handle;
-#endif
-
 #define LDV_DEVNAME	"ldv0"
-
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-long ldv_ioctl (struct file *filp, unsigned int cmd, unsigned long arg);
-#else
-int ldv_ioctl (struct inode *inode, struct file *filp,
-                     unsigned int cmd, unsigned long *arg);
-#endif
-
-int ldv_open(struct inode *inode, struct file *filp);
-int ldv_release(struct inode *inode, struct file *filp);
-
-
-struct file_operations ldv_fops = {
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-    unlocked_ioctl:      ldv_ioctl,
-#else
-    ioctl:      ldv_ioctl,
-#endif
-    open:       ldv_open,
-    release:    ldv_release,
-};
-int ldv_major =  212;
+int ldv_major = 212;
 
 #define ra_inl(addr)  (*(volatile unsigned int *)(addr))
 #define ra_outl(addr, value)  (*(volatile unsigned int *)(addr) = (value))
@@ -86,7 +58,6 @@ int ldv_major =  212;
 
 #define ra_and(addr, a_mask)  ra_aor(addr, a_mask, 0)
 #define ra_or(addr, o_value)  ra_aor(addr, -1, o_value)
-
 
 #define LINE_DRIVER_READ	0x1	// Read Single registers
 #define LINE_DRIVER_WRITE	0x2	// Write
@@ -105,16 +76,16 @@ static int spic_busy_wait(void)
 	return -1;
 }
 
-
 int spic_init(void)
 {
-	// GPIO-SPI mode
-	ra_and(RALINK_REG_GPIOMODE, ~(1 << 1)); //use normal(SPI) mode instead of GPIO mode
+	 /* use normal SPI mode instead of GPIO mode */
+	ra_and(RALINK_REG_GPIOMODE, ~(RALINK_GPIOMODE_SPI));
 
 	/* reset spi block */
 	ra_or(RT2880_RSTCTRL_REG, RSTCTRL_SPI_RESET);
-	udelay(1);
+	udelay(10);
 	ra_and(RT2880_RSTCTRL_REG, ~RSTCTRL_SPI_RESET);
+	udelay(10);
 
 	ra_outl(RT2880_SPI0_CTL_REG, (~SPIARB_SPI0_ACTIVE_MODE)&0x1);
 
@@ -123,16 +94,10 @@ int spic_init(void)
 	// set idle state
 	ra_outl(RT2880_SPICTL_REG, SPICTL_HIZSDO | SPICTL_SPIENA_HIGH);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
-	spi_wait_nsec = (8 * 1000 / ((get_surfboard_sysclk() / 1000 / 1000 / CFG_CLK_DIV) )) >> 1 ;
-#else
 	spi_wait_nsec = (8 * 1000 / (128 / CFG_CLK_DIV) ) >> 1 ;
-#endif
 
-	printk("spic_init done\n");
 	return 0;
 }
-
 
 int ldv_read(unsigned char offset)
 {
@@ -147,12 +112,12 @@ int ldv_read(unsigned char offset)
 	if (spic_busy_wait()) {
 		return -1;
 	}
-	
+
 	ra_or(RT2880_SPICTL_REG, SPICTL_STARTRD);
 	if (spic_busy_wait())
 		return -1;
 	ret = (u8) ra_inl(RT2880_SPIDATA_REG);
-	
+
 	// de-assert CS and
 	ra_or (RT2880_SPICTL_REG, (SPICTL_SPIENA_HIGH));
 
@@ -189,15 +154,13 @@ int ldv_write(unsigned char offset, unsigned char value, unsigned char mask)
 	return 0;
 }
 
-
-int ldv_dump()
+int ldv_dump(void)
 {
 	int i, val;
 	for (i = 0; i < 0x20; i++)
 	{
 		if ((i & 0x7) == 0)
 			printk("\n");
-
 		val = ldv_read(i);
 		printk("%02x ", val);
 		
@@ -206,46 +169,28 @@ int ldv_dump()
 	return 0;
 }
 
-
-int ldv_open(struct inode *inode, struct file *filp)
-{
-	return 0;
-}
-
-int ldv_release(struct inode *inode, struct file *filp)
-{
-	return 0;
-}
-
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-long ldv_ioctl (struct file *filp, unsigned int cmd, unsigned long arg)
-#else
-int ldv_ioctl (struct inode *inode, struct file *filp,
-                     unsigned int cmd, unsigned long *arg)
-#endif
+static long ldv_ioctl (struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	unsigned int *p;
 	unsigned char value, offset, mask, method;
 
 	p = (unsigned int *)arg;
-	
+
 	method = cmd & 0xff;
 	mask = (cmd >> 8) & 0xff;
-	
+
 	offset = (*p >> 8) & 0xff;
 	value = *p & 0xff;
-	
+
 	if (mask)
 		mask = 0xff;
-	
-	printk("method = %x, mask = %x, offset = %x, value = %x\n", method, mask, offset, value);
-		
+
 	if (offset > 0x1f)
 	{
 		printk("offset should be 0~ 0x1f\n");
 		return 0;
 	}
-	
+
 	if (method == LINE_DRIVER_DUMP)
 	{
 		ldv_dump();
@@ -258,58 +203,56 @@ int ldv_ioctl (struct inode *inode, struct file *filp,
 	{
 		ldv_write(offset, value, 0xff);
 	}
-	
-	
+
 	return 0;
 }
 
-
-static int __init spi_ldv_init(void)
+static int ldv_open(struct inode *inode, struct file *filp)
 {
-
-#ifdef  CONFIG_DEVFS_FS
-    if(devfs_register_chrdev(ldv_major, LDV_DEVNAME , &ldv_fops)) {
-	printk(KERN_WARNING " ps: can't create device node - ps\n");
-	return -EIO;
-    }
-
-    devfs_handle = devfs_register(NULL, LDV_DEVNAME, DEVFS_FL_DEFAULT, ldv_major, 0, 
-				S_IFCHR | S_IRUGO | S_IWUGO, &ldv_fops, NULL);
-#else
-    int result=0;
-    result = register_chrdev(ldv_major, LDV_DEVNAME, &ldv_fops);
-    if (result < 0) {
-        printk(KERN_WARNING "ps: can't get major %d\n",ldv_major);
-        return result;
-    }
-
-    if (ldv_major == 0) {
-	ldv_major = result; /* dynamic */
-    }
-#endif
-
-    printk("ldv_major = %d\n", ldv_major);
-    
-    spic_init();
-    
-    return 0;
-
+	try_module_get(THIS_MODULE);
+	return 0;
 }
 
-
-
-static void __exit spi_ldv_exit(void)
+static int ldv_release(struct inode *inode, struct file *filp)
 {
-    printk("spi_ldv_exit\n");
-
-#ifdef  CONFIG_DEVFS_FS
-    devfs_unregister_chrdev(ldv_major, LDV_DEVNAME);
-    devfs_unregister(devfs_handle);
-#else
-    unregister_chrdev(ldv_major, LDV_DEVNAME);
-#endif
+	module_put(THIS_MODULE);
+	return 0;
 }
 
+static const struct file_operations ldv_fops = 
+{
+	.owner		= THIS_MODULE,
+	.unlocked_ioctl	= ldv_ioctl,
+	.open		= ldv_open,
+	.release	= ldv_release,
+};
+
+int __init spi_ldv_init(void)
+{
+	int result = register_chrdev(ldv_major, LDV_DEVNAME, &ldv_fops);
+	if (result < 0) {
+		printk(KERN_WARNING "ps: can't get major %d\n",ldv_major);
+		return result;
+	}
+
+	if (ldv_major == 0) {
+		ldv_major = result; /* dynamic */
+	}
+
+	spic_init();
+
+	return 0;
+}
+
+void __exit spi_ldv_exit(void)
+{
+	unregister_chrdev(ldv_major, LDV_DEVNAME);
+}
 
 module_init(spi_ldv_init);
 module_exit(spi_ldv_exit);
+
+module_param(ldv_major, int, 0);
+
+MODULE_DESCRIPTION("Ralink SPI Line Driver");
+MODULE_LICENSE("GPL");

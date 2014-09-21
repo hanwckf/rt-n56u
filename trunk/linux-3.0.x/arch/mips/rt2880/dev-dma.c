@@ -6,7 +6,7 @@
 static struct resource rt_dma_resource_dma[] = {
 	{
 		.start  = RALINK_GDMA_BASE,
-		.end    = RALINK_GDMA_BASE + 0x800,
+		.end    = RALINK_GDMA_BASE + 0x7FF,
 		.flags  = IORESOURCE_MEM,
 	},
 };

@@ -3,12 +3,12 @@
 #include <malloc.h>
 #include <linux/stddef.h>
 #include <linux/mtd/compat.h>
-
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/mtd-abi.h>
 #include <linux/mtd/partitions.h>
 #include "ralink_nand_rt3052.h"
 #include "ralink-flash.h"
+#include "ralink-flash-map.h"
 
 #define	EIO		 5	/* I/O error */
 #define	EINVAL		22	/* Invalid argument */
@@ -22,12 +22,19 @@
 #define schedule_timeout(a) 	udelay(1000000*(a))
 #define cond_resched()		NULL_DEF_RET_0()
 
+#define MTD_OPS_PLACE_OOB	MTD_OOB_PLACE
+#define MTD_OPS_AUTO_OOB	MTD_OOB_AUTO
+#define MTD_OPS_RAW		MTD_OOB_RAW
+
 #else // !defined (__UBOOT__)
 
 #define DEBUG
 #include <linux/device.h>
 #undef DEBUG
+#include <linux/version.h>
 #include <linux/slab.h>
+#include <linux/module.h>
+#include <linux/moduleparam.h>
 #include <linux/mtd/mtd.h>
 #include <linux/pci.h>
 #include <linux/delay.h>
@@ -37,12 +44,21 @@
 #include <asm/io.h>
 #include <linux/delay.h>
 #include <linux/sched.h>
+
 #include "ralink_nand_rt3052.h"
 #include "ralink-flash.h"
+#include "ralink-flash-map.h"
 
-#endif// !defined (__UBOOT__)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,2,0)
+#define MTD_OPS_PLACE_OOB	MTD_OOB_PLACE
+#define MTD_OPS_AUTO_OOB	MTD_OOB_AUTO
+#define MTD_OPS_RAW		MTD_OOB_RAW
+#endif
+
+#endif // !defined (__UBOOT__)
 
 #define READ_STATUS_RETRY	1000
+
 
 struct mtd_info *ranfc_mtd = NULL;
 
@@ -52,9 +68,9 @@ static int ranfc_bbt = 1;
 static int ranfc_verify = 1;
 
 #if !defined (__UBOOT__)
-module_param(ranfc_debug, int, 0644);
-module_param(ranfc_bbt, int, 0644);
-module_param(ranfc_verify, int, 0644);
+module_param(ranfc_debug, int, S_IRUGO | S_IWUSR);
+module_param(ranfc_bbt, int, S_IRUGO | S_IWUSR);
+module_param(ranfc_verify, int, S_IRUGO | S_IWUSR);
 #endif
 
 #if 0
@@ -66,7 +82,8 @@ module_param(ranfc_verify, int, 0644);
 #define CLEAR_INT_STATUS() 	ra_outl(NFC_INT_ST, ra_inl(NFC_INT_ST))
 #define NFC_TRANS_DONE() 	(ra_inl(NFC_INT_ST) & INT_ST_ND_DONE)
 
-
+#if 0
+// use from ralink-flash-map.h
 static struct mtd_partition rt2880_partitions[] = {
 	{
                 name:           "ALL",
@@ -121,6 +138,7 @@ static struct mtd_partition rt2880_partitions[] = {
 #endif
         }
 };
+#endif
 
 
 /*************************************************************
@@ -1256,8 +1274,8 @@ static int nand_write_oob_buf(struct ra_nand_chip *ra, uint8_t *buf, uint8_t *oo
 	ra_dbg("%s: size:%x, mode:%x, offs:%x  \n", __func__, size, mode, ooboffs);
 
 	switch(mode) {
-	case MTD_OOB_PLACE:
-	case MTD_OOB_RAW:
+	case MTD_OPS_PLACE_OOB:
+	case MTD_OPS_RAW:
 		if (ooboffs > oobsize)
 			return -1;
 
@@ -1271,7 +1289,7 @@ static int nand_write_oob_buf(struct ra_nand_chip *ra, uint8_t *buf, uint8_t *oo
 		retsize = size;
 		break;
 
-	case MTD_OOB_AUTO:  
+	case MTD_OPS_AUTO_OOB:  
 	{
 		struct nand_oobfree *free;
 		uint32_t woffs = ooboffs;
@@ -1324,8 +1342,8 @@ static int nand_read_oob_buf(struct ra_nand_chip *ra, uint8_t *oob, size_t size,
 	ra_dbg("%s: size:%x, mode:%x, offs:%x  \n", __func__, size, mode, ooboffs);
 
 	switch(mode) {
-	case MTD_OOB_PLACE:
-	case MTD_OOB_RAW:
+	case MTD_OPS_PLACE_OOB:
+	case MTD_OPS_RAW:
 		if (ooboffs > oobsize)
 			return -1;
 
@@ -1333,7 +1351,7 @@ static int nand_read_oob_buf(struct ra_nand_chip *ra, uint8_t *oob, size_t size,
 		memcpy(oob, buf + ooboffs, size);
 		return size;
 
-	case MTD_OOB_AUTO: {
+	case MTD_OPS_AUTO_OOB: {
 		struct nand_oobfree *free;
 		uint32_t woffs = ooboffs;
 
@@ -1416,7 +1434,7 @@ static int nand_do_write_ops(struct ra_nand_chip *ra, loff_t to,
 		page = (int)((to & ((1<<ra->chip_shift)-1)) >> ra->page_shift); //chip boundary
 		memset(ra->buffers, 0x0ff, pagesize);
 		//fixme, should we reserve the original content?
-		if (ops->mode == MTD_OOB_AUTO) {
+		if (ops->mode == MTD_OPS_AUTO_OOB) {
 			nfc_read_oob(ra, page, 0, ra->buffers, len, FLAG_USE_GDMA);
 		}
 		//prepare buffers
@@ -1450,7 +1468,7 @@ static int nand_do_write_ops(struct ra_nand_chip *ra, loff_t to,
 			return -EIO;
 
 		// oob write
-		if (ops->mode == MTD_OOB_AUTO) {
+		if (ops->mode == MTD_OPS_AUTO_OOB) {
 			//fixme, this path is not yet varified 
 			nfc_read_oob(ra, page, 0, ra->buffers + pagesize, oobsize, FLAG_NONE);
 		}
@@ -1478,7 +1496,7 @@ static int nand_do_write_ops(struct ra_nand_chip *ra, loff_t to,
 		}
 		
 		ret = nfc_write_page(ra, ra->buffers, page, FLAG_USE_GDMA | FLAG_VERIFY |
-				     ((ops->mode == MTD_OOB_RAW || ops->mode == MTD_OOB_PLACE) ? 0 : ecc_en ));
+				     ((ops->mode == MTD_OPS_RAW || ops->mode == MTD_OPS_PLACE_OOB) ? 0 : ecc_en ));
 		if (ret) {
 			nand_bbt_set(ra, addr >> ra->erase_shift, BBT_TAG_BAD);
 			return ret;
@@ -1537,12 +1555,12 @@ static int nand_do_read_ops(struct ra_nand_chip *ra, loff_t from,
 		page = (int)((addr & ((1<<ra->chip_shift)-1)) >> ra->page_shift); 
 
 		ret = nfc_read_page(ra, ra->buffers, page, FLAG_USE_GDMA | FLAG_VERIFY | 
-				    ((ops->mode == MTD_OOB_RAW || ops->mode == MTD_OOB_PLACE) ? 0: FLAG_ECC_EN ));
+				    ((ops->mode == MTD_OPS_RAW || ops->mode == MTD_OPS_PLACE_OOB) ? 0: FLAG_ECC_EN ));
 		//FIXME, something strange here, some page needs 2 more tries to guarantee read success.
 		if (ret) {
 			printk("read again:\n");
 			ret = nfc_read_page(ra, ra->buffers, page, FLAG_USE_GDMA | FLAG_VERIFY | 
-					    ((ops->mode == MTD_OOB_RAW || ops->mode == MTD_OOB_PLACE) ? 0: FLAG_ECC_EN ));
+					    ((ops->mode == MTD_OPS_RAW || ops->mode == MTD_OPS_PLACE_OOB) ? 0: FLAG_ECC_EN ));
 
 			if (ret) {
 				printk("read again fail \n");
@@ -1658,7 +1676,7 @@ static int ramtd_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 	ops.len = len;
 	ops.datbuf = (uint8_t *)buf;
 	ops.oobbuf = NULL;
-	ops.mode =  MTD_OOB_AUTO;
+	ops.mode =  MTD_OPS_AUTO_OOB;
 
 	ret = nand_do_write_ops(ra, to, &ops);
 
@@ -1702,7 +1720,7 @@ static int ramtd_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	ops.len = len;
 	ops.datbuf = buf;
 	ops.oobbuf = NULL;
-	ops.mode = MTD_OOB_AUTO;
+	ops.mode = MTD_OPS_AUTO_OOB;
 
 	ret = nand_do_read_ops(ra, from, &ops);
 
@@ -1950,12 +1968,10 @@ static void __exit ra_nand_remove(void)
 		ra = (struct ra_nand_chip  *)ranfc_mtd->priv;
 #if !defined (__UBOOT__)
 		mtd_device_unregister(ranfc_mtd);
-		if (ra)
-			kfree(ra);
-#else
+#endif
 		if (ra)
 			free(ra);
-#endif
+
 	}
 }
 

@@ -43,7 +43,7 @@
 
 #include <asm/rt2880/surfboard.h>
 #include <asm/rt2880/rt_mmap.h>
-#include <asm/rt2880/serial_rt2880.h>
+#include <asm/rt2880/rt_serial.h>
 
 static DEFINE_SPINLOCK(con_lock);
 static char buf[256];
@@ -87,9 +87,9 @@ char getPromChar(void)
 	return serial_in(UART_RX);
 }
 
-void __init prom_setup_printf(int tty_no)
+void __init prom_init_printf(int tty_no)
 {
-#if !defined(CONFIG_RALINK_GPIOMODE_UARTF) && (CONFIG_SERIAL_8250_NR_UARTS > 1)
+#if !defined (CONFIG_RALINK_GPIOMODE_UARTF) && (CONFIG_SERIAL_8250_NR_UARTS > 1)
 	if (tty_no == 1)
 		uart_base = RALINK_UART_BASE;
 	else
@@ -97,7 +97,6 @@ void __init prom_setup_printf(int tty_no)
 		uart_base = RALINK_UART_LITE_BASE;
 }
 
-/* NOTE:  must call prom_setup_printf before using this function */
 void __init prom_printf(char *fmt, ...)
 {
 	va_list args;

@@ -84,15 +84,11 @@ int lm_device_register(struct lm_device *dev)
 
 	dev->dev.release = lm_device_release;
 	dev->dev.bus = &lm_bustype;
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
+
 	ret = dev_set_name(&dev->dev, "lm%d", dev->id);
 	if (ret)
 		return ret;
 	dev->resource.name = dev_name(&dev->dev);
-#else
-	snprintf(dev->dev.bus_id, sizeof(dev->dev.bus_id), "lm%d", dev->id);
-	dev->resource.name = dev->dev.bus_id;
-#endif
 
 	ret = request_resource(&iomem_resource, &dev->resource);
 	if (ret == 0) {

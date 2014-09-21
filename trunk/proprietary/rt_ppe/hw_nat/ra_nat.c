@@ -83,12 +83,13 @@ MODULE_PARM_DESC(wan_vid, "VLAN ID for WAN traffic");
 
 uint32_t DebugLevel = 1;
 
+extern u32 ralink_asic_rev_id;
+
 extern int (*ra_sw_nat_hook_rx) (struct sk_buff * skb);
 extern int (*ra_sw_nat_hook_tx) (struct sk_buff * skb, int gmac_no);
 extern int (*ra_sw_nat_hook_rs) (struct net_device *dev, int hold);
 
 static int		ppe_udp_bug = 0;
-static uint32_t		chip_rev_id;
 
 struct FoeEntry		*PpeFoeBase = NULL;
 uint32_t		PpeFoeTblSize = FOE_4TB_SIZ;
@@ -1316,6 +1317,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 #endif
 #else
 		/* MT7620 or MT7621 with 1xGMAC+VLAN's */
+		uint32_t port_ag = 1;
 #if defined (CONFIG_RALINK_MT7621)
 		uint32_t fpidx = 1; /* 1: to GSW */
 		if (is_mcast)
@@ -1323,7 +1325,6 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 #else
 		uint32_t fpidx = 8; /* 8: no force port */
 #endif
-		uint32_t port_ag = 1;
 		if (IS_IPV4_GRP(&foe_entry)) {
 			if ((foe_entry.ipv4_hnapt.vlan1 & VLAN_VID_MASK) != lan_vid)
 				port_ag = 2;
@@ -1563,11 +1564,11 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 #if defined (CONFIG_RAETH_GMAC2)
 		/* RT3883 with 2xGMAC - assuming GMAC2=WAN and GMAC1=LAN */
 		foe_entry.ipv4_hnapt.iblk2.dp = (gmac_no == 2) ? 2 : 1;
-#elif defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3883)
-		/* RT2880, RT3883 (1xGMAC mode), always send to GMAC1 */
+#elif defined (CONFIG_RALINK_RT3883)
+		/* RT3883 (1xGMAC mode), always send to GMAC1 */
 		foe_entry.ipv4_hnapt.iblk2.dp = 1;		/* -> GMAC 1 */
 #else
-		/*  RT3052, RT335x */
+		/* RT3052, RT335x */
 		if ((foe_entry.ipv4_hnapt.vlan1 & VLAN_VID_MASK) != lan_vid)
 			foe_entry.ipv4_hnapt.iblk2.dp = 2;	/* -> VirtualPort2 in GMAC1 */
 		else
@@ -2465,25 +2466,6 @@ static void PpeSetIpProt(void)
  */
 static int __init PpeInitMod(void)
 {
-	char chip_id[8];
-
-	*(uint32_t *)&chip_id[0] = RegRead(CHIPID);
-	*(uint32_t *)&chip_id[4] = RegRead(CHIPID + 0x4);
-	chip_id[6] = '\0';
-
-	chip_rev_id = RegRead(REVID);
-
-#if defined (CONFIG_RALINK_MT7620)
-	if (chip_rev_id & 0x10000)
-		chip_id[6] = 'A';
-	else
-		chip_id[6] = 'N';
-	
-	chip_id[7] = '\0';
-#endif
-
-	chip_rev_id &= 0xFFFF;
-
 #if defined (CONFIG_RALINK_RT3052)
 	/* RT3052 with RF_REG0 > 0x53 has no bug UDP w/o checksum */
 	uint32_t phy_val = 0;
@@ -2491,13 +2473,13 @@ static int __init PpeInitMod(void)
 	ppe_udp_bug = ((phy_val & 0xFF) > 0x53) ? 0 : 1;
 #elif defined (CONFIG_RALINK_RT3352)
 	/* RT3352 rev 0105 has no bug UDP w/o checksum */
-	ppe_udp_bug = (chip_rev_id < 0x0105) ? 1 : 0;
-#elif defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3883)
+	ppe_udp_bug = ((ralink_asic_rev_id & 0xFFFF) < 0x0105) ? 1 : 0;
+#elif defined (CONFIG_RALINK_RT3883)
 	/* RT3883/RT3662 at least rev 0105 has bug UDP w/o checksum :-( */
 	ppe_udp_bug = 1;
 #elif defined (CONFIG_RALINK_MT7620)
 	/* MT7620 rev 0205 has no bug UDP w/o checksum */
-	ppe_udp_bug = ((chip_rev_id & 0xF) < 5) ? 1 : 0;
+	ppe_udp_bug = ((ralink_asic_rev_id & 0xF) < 5) ? 1 : 0;
 #endif
 
 	/* Set PPE FOE Hash Mode */
@@ -2536,10 +2518,7 @@ static int __init PpeInitMod(void)
 	ra_sw_nat_hook_rs = PpeRsHandler;
 
 #if defined (CONFIG_RALINK_MT7620)
-	if ((chip_rev_id & 0xF) < 5) {
-//		SetAclFwd(1); // wdf?
-		;
-	} else {
+	if ((ralink_asic_rev_id & 0xF) >= 5) {
 		/* Turn On UDP Control */
 		uint32_t reg = RegRead(RALINK_PPE_BASE + 0x380);
 		reg &= ~(0x1 << 30);
@@ -2550,8 +2529,8 @@ static int __init PpeInitMod(void)
 	/* Set GMAC forwards packet to PPE */
 	SetGdmaFwd(1);
 
-	printk("Ralink HW NAT %s Module Enabled, ASIC: %s, REV: %04X, FoE Size: %d\n",
-		HW_NAT_MODULE_VER, chip_id, chip_rev_id, PpeFoeTblSize);
+	printk("Ralink HW NAT %s Module Enabled, FoE Size: %d\n",
+		HW_NAT_MODULE_VER, PpeFoeTblSize);
 
 	return 0;
 }

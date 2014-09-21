@@ -14,10 +14,8 @@ ifeq ($(CONFIG_RAETH_ESW_CONTROL),y)
 raeth-objs += ra_esw_ioctl.o
 endif
 
-ifeq ($(CONFIG_RAETH_ROUTER),y)
 ifeq ($(CONFIG_ETHTOOL),y)
 raeth-objs += ra_ethtool.o
-endif
 endif
 
 ifeq ($(CONFIG_RALINK_RT3052_MP2),y)

@@ -133,7 +133,7 @@ static void cmp_cpus_done(void)
  * __KSTK_TOS(idle) is apparently the stack pointer
  * (unsigned long)idle->thread_info the gp
  */
-static void cmp_boot_secondary(int cpu, struct task_struct *idle)
+static void __cpuinit cmp_boot_secondary(int cpu, struct task_struct *idle)
 {
 	struct thread_info *gp = task_thread_info(idle);
 	unsigned long sp = __KSTK_TOS(idle);

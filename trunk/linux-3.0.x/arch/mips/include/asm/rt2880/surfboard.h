@@ -19,10 +19,8 @@
  * ########################################################################
  *
  */
-#ifndef _SURFBOARD_H
-#define _SURFBOARD_H
-
-//#include <asm/addrspace.h>
+#ifndef __ASM_MACH_MIPS_RT2880_SURFBOARD_H
+#define __ASM_MACH_MIPS_RT2880_SURFBOARD_H
 
 /*
  * Surfboard UART base baud rate = System Clock / 16.
@@ -31,4 +29,6 @@
  */
 #define SURFBOARD_BAUD_DIV	(16)
 
-#endif /* !(_SURFBOARD_H) */
+extern unsigned int get_surfboard_sysclk(void);
+
+#endif

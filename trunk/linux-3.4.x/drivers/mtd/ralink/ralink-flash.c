@@ -45,7 +45,7 @@ int ra_check_flash_type(void)
 	strncpy(Id, (char *)RALINK_SYSCTL_BASE, 6);
 	syscfg = (*((int *)(RALINK_SYSCTL_BASE + 0x10)));
 
-#if defined(CONFIG_RALINK_RT3052)
+#if defined (CONFIG_RALINK_RT3052)
 	if ((strcmp(Id,"RT3052")==0) || (strcmp(Id, "RT3350")==0)) {
 		boot_from = (syscfg >> 16) & 0x3;
 		switch(boot_from)
@@ -62,7 +62,7 @@ int ra_check_flash_type(void)
 			break;
 		}
 	} else
-#elif defined(CONFIG_RALINK_RT3883)
+#elif defined (CONFIG_RALINK_RT3883)
 	if (strcmp(Id,"RT3883")==0) {
 		boot_from = (syscfg >> 4) & 0x3; 
 		switch(boot_from)
@@ -84,23 +84,15 @@ int ra_check_flash_type(void)
 			break;
 		}
 	} else
-#elif defined(CONFIG_RALINK_RT3352)
+#elif defined (CONFIG_RALINK_RT3352)
 	if (strcmp(Id,"RT3352")==0) {
 		boot_from = BOOT_FROM_SPI;
 	} else
-#elif defined(CONFIG_RALINK_RT5350)
+#elif defined (CONFIG_RALINK_RT5350)
 	if (strcmp(Id,"RT5350")==0) {
 		boot_from = BOOT_FROM_SPI;
 	} else
-#elif defined(CONFIG_RALINK_RT2880)
-	if (strcmp(Id,"RT2880")==0) {
-		boot_from = BOOT_FROM_NOR;
-	} else
-#elif defined(CONFIG_RALINK_RT6855)
-	if (strcmp(Id,"RT6855")==0) {
-		boot_from = BOOT_FROM_SPI;
-	} else
-#elif defined(CONFIG_RALINK_MT7620)
+#elif defined (CONFIG_RALINK_MT7620)
 	if (strcmp(Id,"MT7620")==0) {
 		chip_mode = syscfg & 0xF;
 		switch(chip_mode)
@@ -118,7 +110,7 @@ int ra_check_flash_type(void)
 			break;
 		}
 	} else
-#elif defined(CONFIG_RALINK_MT7621)
+#elif defined (CONFIG_RALINK_MT7621)
 	if (strcmp(Id,"MT7621")==0) {
 		chip_mode = syscfg & 0xF;
 		switch(chip_mode)
@@ -135,6 +127,10 @@ int ra_check_flash_type(void)
 			boot_from = BOOT_FROM_NAND;
 			break;
 		}
+	} else
+#elif defined (CONFIG_RALINK_MT7628)
+	if(strcmp(Id,"MT7628")==0) {
+		boot_from = BOOT_FROM_SPI;
 	} else
 #endif
 	{

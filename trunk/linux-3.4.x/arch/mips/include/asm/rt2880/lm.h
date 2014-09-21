@@ -1,3 +1,7 @@
+
+#ifndef __ASM_MACH_MIPS_RT2880_LM_H
+#define __ASM_MACH_MIPS_RT2880_LM_H
+
 #include <linux/version.h>
 
 struct lm_device {
@@ -23,10 +27,7 @@ void lm_driver_unregister(struct lm_driver *drv);
 
 int lm_device_register(struct lm_device *dev);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
 # define lm_get_drvdata(lm)	((lm)->lm_drvdata)
 # define lm_set_drvdata(lm,d)	do { (lm)->lm_drvdata = (d); } while (0)
-#else
-# define lm_get_drvdata(lm)	dev_get_drvdata(&(lm)->dev)
-# define lm_set_drvdata(lm,d)	dev_set_drvdata(&(lm)->dev, d)
+
 #endif

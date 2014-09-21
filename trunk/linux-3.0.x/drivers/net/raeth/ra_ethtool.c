@@ -7,10 +7,30 @@
 #include <linux/if_ether.h>
 #include <linux/ethtool.h>
 
-#include "ra_ethreg.h"
+#include "raether.h"
 #include "mii_mgr.h"
 
 #define RA_NUM_STATS		4
+
+#define PHY_CR_REG		0x00
+#define PHY_STAT_REG		0x01
+#define PHY_AUTO_NEGO_REG	0x04
+#define PHY_1000_REG		0x09
+
+/* PHY_CR_REG = 0 */
+#define PHY_Enable_Auto_Nego	0x1000
+#define PHY_Restart_Auto_Nego	0x0200
+
+/* PHY_STAT_REG = 1 */
+#define PHY_Auto_Neco_Comp	0x0020
+#define PHY_Link_Status		0x0004
+
+/* PHY_AUTO_NEGO_REG = 4 */
+#define PHY_Cap_10_Half		0x0020
+#define PHY_Cap_10_Full		0x0040
+#define PHY_Cap_100_Half	0x0080
+#define PHY_Cap_100_Full	0x0100
+#define PHY_Cap_Pause		0x0400
 
 static struct {
 	const char str[ETH_GSTRING_LEN];
@@ -25,6 +45,7 @@ unsigned char get_current_phy_address(void)
 {
 	struct net_device *cur_dev_p;
 	END_DEVICE *ei_local;
+
 	for_each_netdev(&init_net, cur_dev_p) {
 		if (strncmp(cur_dev_p->name, DEV_NAME /* "eth2" usually */, 4) == 0)
 			break;
@@ -47,8 +68,7 @@ static u32 et_get_rx_csum(struct net_device *dev)
 
 static int et_set_tx_csum(struct net_device *dev, u32 data)
 {
-	int value;
-	//printk("et_set_tx_csum(): data = %d\n", data);
+	u32 value;
 
 	value = sysRegRead(GDMA1_FWD_CFG);
 	if(data)
@@ -62,8 +82,7 @@ static int et_set_tx_csum(struct net_device *dev, u32 data)
 
 static int et_set_rx_csum(struct net_device *dev, u32 data)
 {
-	int value;
-	//printk("et_set_rx_csum(): data = %d\n", data);
+	u32 value;
 
 	value = sysRegRead(GDMA1_FWD_CFG);
 	if(data)
@@ -76,57 +95,61 @@ static int et_set_rx_csum(struct net_device *dev, u32 data)
 }
 #endif
 
-#define MII_CR_ADDR			0x00
-#define MII_CR_MR_AUTONEG_ENABLE	(1 << 12)
-#define MII_CR_MR_RESTART_NEGOTIATION	(1 << 9)
-
-#define AUTO_NEGOTIATION_ADVERTISEMENT	0x04
-#define AN_PAUSE			(1 << 10)
 
 static void et_get_pauseparam(struct net_device *dev, struct ethtool_pauseparam *epause)
 {
-	int mii_an_reg;
-	int mdio_cfg_reg;
+	u32 mii_an_reg = 0, mdio_cfg_reg;
 	END_DEVICE *ei_local = netdev_priv(dev);
 
 	// get mii auto-negotiation register
-	mii_mgr_read(ei_local->mii_info.phy_id, AUTO_NEGOTIATION_ADVERTISEMENT, &mii_an_reg);
-	epause->autoneg = (mii_an_reg & AN_PAUSE) ? 1 : 0; //get autonet_enable flag bit
-	
+	mii_mgr_read(ei_local->mii_info.phy_id, PHY_AUTO_NEGO_REG, &mii_an_reg);
+	epause->autoneg = (mii_an_reg & PHY_Cap_Pause) ? 1 : 0; //get autonet_enable flag bit
+
+#if defined (CONFIG_RALINK_MT7621)
+	// todo
+#elif defined (CONFIG_RALINK_MT7620)
+	// todo (ESW regs 0x3X00)
+#elif defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
+	// todo
+#else
 	mdio_cfg_reg = sysRegRead(MDIO_CFG);
 	epause->tx_pause = (mdio_cfg_reg & MDIO_CFG_GP1_FC_TX) ? 1 : 0;
 	epause->rx_pause = (mdio_cfg_reg & MDIO_CFG_GP1_FC_RX) ? 1 : 0;
-
-	//printk("et_get_pauseparam(): autoneg=%d, tx_pause=%d, rx_pause=%d\n", epause->autoneg, epause->tx_pause, epause->rx_pause);
+#endif
 }
 
 static int et_set_pauseparam(struct net_device *dev, struct ethtool_pauseparam *epause)
 {
-	int mdio_cfg_reg;
-	int mii_an_reg;
+	u32 mii_an_reg = 0, mdio_cfg_reg;
 	END_DEVICE *ei_local = netdev_priv(dev);
 
-	//printk("et_set_pauseparam(): autoneg=%d, tx_pause=%d, rx_pause=%d\n", epause->autoneg, epause->tx_pause, epause->rx_pause);
-
 	// auto-neg pause
-	mii_mgr_read(ei_local->mii_info.phy_id, AUTO_NEGOTIATION_ADVERTISEMENT, &mii_an_reg);
-	if(epause->autoneg)
-		mii_an_reg |= AN_PAUSE;
+	mii_mgr_read(ei_local->mii_info.phy_id, PHY_AUTO_NEGO_REG, &mii_an_reg);
+	if (epause->autoneg)
+		mii_an_reg |= PHY_Cap_Pause;
 	else
-		mii_an_reg &= ~AN_PAUSE;
-	mii_mgr_write(ei_local->mii_info.phy_id, AUTO_NEGOTIATION_ADVERTISEMENT, mii_an_reg);
+		mii_an_reg &= ~PHY_Cap_Pause;
+	mii_mgr_write(ei_local->mii_info.phy_id, PHY_AUTO_NEGO_REG, mii_an_reg);
 
+#if defined (CONFIG_RALINK_MT7621)
+	// todo
+#elif defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
+	// todo
+#elif defined (CONFIG_RALINK_MT7620)
+	// todo (ESW regs 0x3X00)
+#else
 	// tx/rx pause
 	mdio_cfg_reg = sysRegRead(MDIO_CFG);
-	if(epause->tx_pause)
+	if (epause->tx_pause)
 		mdio_cfg_reg |= MDIO_CFG_GP1_FC_TX;
 	else
 		mdio_cfg_reg &= ~MDIO_CFG_GP1_FC_TX;
-	if(epause->rx_pause)
+	if (epause->rx_pause)
 		mdio_cfg_reg |= MDIO_CFG_GP1_FC_RX;
 	else
 		mdio_cfg_reg &= ~MDIO_CFG_GP1_FC_RX;
 	sysRegWrite(MDIO_CFG, mdio_cfg_reg);
+#endif
 
 	return 0;
 }
@@ -207,10 +230,11 @@ static void et_get_strings(struct net_device *dev, u32 stringset, u8 *data)
  */
 int mdio_read(struct net_device *dev, int phy_id, int location)
 {
-	unsigned int result;
+	u32 result;
 	END_DEVICE *ei_local = netdev_priv(dev);
-	mii_mgr_read( (unsigned int) ei_local->mii_info.phy_id, (unsigned int)location, &result);
-	RAETH_PRINT("\n%s mii.o query= phy_id:%d, address:%d retval:%x\n", dev->name, phy_id, location, result);
+
+	mii_mgr_read( (u32) ei_local->mii_info.phy_id, (u32)location, &result);
+//	RAETH_PRINT("\n%s mii.o query= phy_id:%d, address:%d retval:%x\n", dev->name, phy_id, location, result);
 	return (int)result;
 }
 
@@ -220,9 +244,8 @@ int mdio_read(struct net_device *dev, int phy_id, int location)
 void mdio_write(struct net_device *dev, int phy_id, int location, int value)
 {
 	END_DEVICE *ei_local = netdev_priv(dev);
-	RAETH_PRINT("mii.o write= phy_id:%d, address:%d value:%x\n", phy_id, location, value);
-	mii_mgr_write( (unsigned int) ei_local->mii_info.phy_id, (unsigned int)location, (unsigned int)value);
-	return;
+//	RAETH_PRINT("mii.o write= phy_id:%d, address:%d value:%x\n", phy_id, location, value);
+	mii_mgr_write( (u32) ei_local->mii_info.phy_id, (u32)location, (u32)value);
 }
 
 struct ethtool_ops ra_ethtool_ops = {
@@ -231,10 +254,12 @@ struct ethtool_ops ra_ethtool_ops = {
 	.set_settings		= et_set_settings,
 	.get_pauseparam		= et_get_pauseparam,
 	.set_pauseparam		= et_set_pauseparam,
-//	.get_rx_csum		= et_get_rx_csum,
-//	.set_rx_csum		= et_set_rx_csum,
-//	.get_tx_csum		= et_get_tx_csum,
-//	.set_tx_csum		= et_set_tx_csum,
+#if 0
+	.get_rx_csum		= et_get_rx_csum,
+	.set_rx_csum		= et_set_rx_csum,
+	.get_tx_csum		= et_get_tx_csum,
+	.set_tx_csum		= et_set_tx_csum,
+#endif
 	.nway_reset		= et_nway_reset,
 	.get_link		= et_get_link,
 	.get_msglevel		= et_get_msglevel,
@@ -242,9 +267,10 @@ struct ethtool_ops ra_ethtool_ops = {
 	.get_strings		= et_get_strings,
 	.get_sset_count		= et_get_sset_count,
 	.get_ethtool_stats	= et_get_ethtool_stats,
-/*	.get_regs_len		= et_get_regs_len,
+#if 0
+	.get_regs_len		= et_get_regs_len,
 	.get_regs		= et_get_regs,
-*/
+#endif
 };
 
 #ifdef CONFIG_PSEUDO_SUPPORT
@@ -262,50 +288,55 @@ static void et_virt_get_drvinfo(struct net_device *dev, struct ethtool_drvinfo *
 
 static void et_virt_get_pauseparam(struct net_device *dev, struct ethtool_pauseparam *epause)
 {
-	int mii_an_reg, mdio_cfg_reg;
+	u32 mii_an_reg = 0, mdio_cfg_reg;
 	PSEUDO_ADAPTER *pseudo = netdev_priv(dev);
 
 	// get mii auto-negotiation register
-	mii_mgr_read(pseudo->mii_info.phy_id, AUTO_NEGOTIATION_ADVERTISEMENT, &mii_an_reg);
-	epause->autoneg = (mii_an_reg & AN_PAUSE) ? 1 : 0; //get autonet_enable flag bit
-	
+	mii_mgr_read(pseudo->mii_info.phy_id, PHY_AUTO_NEGO_REG, &mii_an_reg);
+	epause->autoneg = (mii_an_reg & PHY_Cap_Pause) ? 1 : 0; //get autonet_enable flag bit
+
+#if defined (CONFIG_RALINK_MT7621)
+	// todo
+#else
 	mdio_cfg_reg = sysRegRead(MDIO_CFG);
 	epause->tx_pause = (mdio_cfg_reg & MDIO_CFG_GP1_FC_TX) ? 1 : 0;
 	epause->rx_pause = (mdio_cfg_reg & MDIO_CFG_GP1_FC_RX) ? 1 : 0;
-
-	//printk("et_get_pauseparam(): autoneg=%d, tx_pause=%d, rx_pause=%d\n", epause->autoneg, epause->tx_pause, epause->rx_pause);
+#endif
 }
 
 static int et_virt_set_pauseparam(struct net_device *dev, struct ethtool_pauseparam *epause)
 {
-	int mdio_cfg_reg;
-	int mii_an_reg;
+	u32 mii_an_reg = 0, mdio_cfg_reg;
 	PSEUDO_ADAPTER *pseudo = netdev_priv(dev);
 
-	//printk("et_set_pauseparam(): autoneg=%d, tx_pause=%d, rx_pause=%d\n", epause->autoneg, epause->tx_pause, epause->rx_pause);
 	// auto-neg pause
-	mii_mgr_read(pseudo->mii_info.phy_id, AUTO_NEGOTIATION_ADVERTISEMENT, &mii_an_reg);
-	if(epause->autoneg)
-		mii_an_reg |= AN_PAUSE;
+	mii_mgr_read(pseudo->mii_info.phy_id, PHY_AUTO_NEGO_REG, &mii_an_reg);
+	if (epause->autoneg)
+		mii_an_reg |= PHY_Cap_Pause;
 	else
-		mii_an_reg &= ~AN_PAUSE;
-	mii_mgr_write(pseudo->mii_info.phy_id, AUTO_NEGOTIATION_ADVERTISEMENT, mii_an_reg);
+		mii_an_reg &= ~PHY_Cap_Pause;
+	mii_mgr_write(pseudo->mii_info.phy_id, PHY_AUTO_NEGO_REG, mii_an_reg);
 
 	// tx/rx pause
+#if defined (CONFIG_RALINK_MT7621)
+	// todo
+#else
 	mdio_cfg_reg = sysRegRead(MDIO_CFG);
-	if(epause->tx_pause)
+	if (epause->tx_pause)
 		mdio_cfg_reg |= MDIO_CFG_GP1_FC_TX;
 	else
 		mdio_cfg_reg &= ~MDIO_CFG_GP1_FC_TX;
-	if(epause->rx_pause)
+	if (epause->rx_pause)
 		mdio_cfg_reg |= MDIO_CFG_GP1_FC_RX;
 	else
 		mdio_cfg_reg &= ~MDIO_CFG_GP1_FC_RX;
 	sysRegWrite(MDIO_CFG, mdio_cfg_reg);
+#endif
 
 	return 0;
 }
 
+#if 0
 static u32 et_virt_get_tx_csum(struct net_device *dev)
 {
 	return (sysRegRead(GDMA2_FWD_CFG) & GDM1_DISCRC) ? 0 : 1;	// a pitfall here, "0" means to enable.
@@ -318,21 +349,22 @@ static u32 et_virt_get_rx_csum(struct net_device *dev)
 
 static int et_virt_set_tx_csum(struct net_device *dev, u32 data)
 {
-	int value;
-	//printk("et_set_tx_csum(): data = %d\n", data);
+	u32 value;
+
 	value = sysRegRead(GDMA2_FWD_CFG);
 	if(data)
 		value |= GDM1_DISCRC;
 	else
 		value &= ~GDM1_DISCRC;
 	sysRegWrite(GDMA1_FWD_CFG, value);
+
 	return 0;
 }
 
 static int et_virt_set_rx_csum(struct net_device *dev, u32 data)
 {
-	int value;
-	//printk("et_set_rx_csum(): data = %d\n", data);
+	u32 value;
+
 	value = sysRegRead(GDMA2_FWD_CFG);
 	if(data)
 		value |= GDM1_STRPCRC;
@@ -341,6 +373,7 @@ static int et_virt_set_rx_csum(struct net_device *dev, u32 data)
 	sysRegWrite(GDMA1_FWD_CFG, value);
 	return 0;
 }
+#endif
 
 static int et_virt_nway_reset(struct net_device *dev)
 {
@@ -375,7 +408,6 @@ static u32 et_virt_get_msglevel(struct net_device *dev)
 
 static void et_virt_set_msglevel(struct net_device *dev, u32 datum)
 {
-	return;
 }
 
 static void et_virt_get_ethtool_stats(struct net_device *dev, struct ethtool_stats *stats, u64 *data)
@@ -419,10 +451,12 @@ struct ethtool_ops ra_virt_ethtool_ops = {
 	.set_settings		= et_virt_set_settings,
 	.get_pauseparam		= et_virt_get_pauseparam,
 	.set_pauseparam		= et_virt_set_pauseparam,
+#if 0
 	.get_rx_csum		= et_virt_get_rx_csum,
 	.set_rx_csum		= et_virt_set_rx_csum,
 	.get_tx_csum		= et_virt_get_tx_csum,
 	.set_tx_csum		= et_virt_set_tx_csum,
+#endif
 	.nway_reset		= et_virt_nway_reset,
 	.get_link		= et_virt_get_link,
 	.get_msglevel		= et_virt_get_msglevel,
@@ -430,26 +464,28 @@ struct ethtool_ops ra_virt_ethtool_ops = {
 	.get_strings		= et_virt_get_strings,
 	.get_sset_count		= et_virt_get_sset_count,
 	.get_ethtool_stats	= et_virt_get_ethtool_stats,
-/*	.get_regs_len		= et_virt_get_regs_len,
+#if 0
+	.get_regs_len		= et_virt_get_regs_len,
 	.get_regs		= et_virt_get_regs,
-*/
+#endif
 };
 
 int mdio_virt_read(struct net_device *dev, int phy_id, int location)
 {
-	unsigned int result;
+	u32 result;
 	PSEUDO_ADAPTER *pseudo = netdev_priv(dev);
-	mii_mgr_read( (unsigned int) pseudo->mii_info.phy_id, (unsigned int)location, &result);
-	RAETH_PRINT("%s mii.o query= phy_id:%d, address:%d retval:%d\n", dev->name, phy_id, location, result);
+
+	mii_mgr_read( (u32) pseudo->mii_info.phy_id, (u32)location, &result);
+//	RAETH_PRINT("%s mii.o query= phy_id:%d, address:%d retval:%d\n", dev->name, phy_id, location, result);
 	return (int)result;
 }
 
 void mdio_virt_write(struct net_device *dev, int phy_id, int location, int value)
 {
 	PSEUDO_ADAPTER *pseudo = netdev_priv(dev);
-	RAETH_PRINT("mii.o write= phy_id:%d, address:%d value:%d\n", phy_id, location, value);
-	mii_mgr_write( (unsigned int) pseudo->mii_info.phy_id, (unsigned int)location, (unsigned int)value);
-	return;
+
+//	RAETH_PRINT("mii.o write= phy_id:%d, address:%d value:%d\n", phy_id, location, value);
+	mii_mgr_write( (u32) pseudo->mii_info.phy_id, (u32)location, (u32)value);
 }
 
 #endif /* CONFIG_PSEUDO_SUPPORT */

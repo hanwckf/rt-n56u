@@ -134,7 +134,7 @@ char rs_getDebugChar(void)
 }
 
 
-#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3052) 
+#if defined (CONFIG_RALINK_RT3052)
 
 #include <asm/mips-boards/atlas.h>
 #include <asm/mips-boards/saa9730_uart.h>

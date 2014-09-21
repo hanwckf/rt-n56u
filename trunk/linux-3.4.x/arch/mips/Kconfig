@@ -35,10 +35,6 @@ menu "Machine selection"
 config ZONE_DMA
 	bool
 
-config RALINK_RT2880_MP
-	bool
-config RALINK_RT2880_SHUTTLE
-	bool
 config RALINK_RT3052_MP2
 	bool
 config RALINK_RT3352_MP
@@ -51,23 +47,6 @@ config RALINK_RT3883_MP
 choice
 	prompt "System type"
 	default RALINK_RT3883
-
-config RALINK_RT2880
-	bool "Ralink RT2880 board"
-	select DMA_NONCOHERENT
-	select IRQ_CPU
-	select HW_HAS_PCI
-	select SWAP_IO_SPACE
-	select BOOT_ELF32
-	select SYS_HAS_CPU_MIPS32_R1
-	select SYS_SUPPORTS_LITTLE_ENDIAN
-	select SYS_SUPPORTS_32BIT_KERNEL
-	select RALINK_RT2880_MP
-	select CEVT_R4K
-	select CSRC_R4K
-	select SYS_HAS_EARLY_PRINTK
-	help
-	  Ralink evaluation board based on RT2880
 
 config RALINK_RT3052
 	bool "Ralink RT305x/RT3350 board"
@@ -154,6 +133,47 @@ config RALINK_MT7620
 	select SYS_HAS_EARLY_PRINTK
 	help
 	  Ralink evaluation board based on MT7620
+
+config RALINK_MT7621
+	bool "Ralink MT7621 board"
+	select DMA_NONCOHERENT
+	select IRQ_CPU
+	select HW_HAS_PCI
+	select SWAP_IO_SPACE
+	select BOOT_ELF32
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_HAS_CPU_MIPS32_R2
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_HIGHMEM
+	select CPU_SUPPORTS_HIGHMEM
+	select CSRC_R4K
+	select CEVT_R4K
+	select MIPS_CPU_SCACHE
+	select SYS_SUPPORTS_MULTITHREADING
+	select SYS_SUPPORTS_SMP
+	select SYS_SUPPORTS_MIPS_CMP
+	select IRQ_GIC
+	select IRQ_FORCED_THREADING
+	help
+	  Ralink evaluation board based on MT7621
+
+config RALINK_MT7628
+	bool "Ralink MT7628 board"
+	select DMA_NONCOHERENT
+	select IRQ_CPU
+	select HW_HAS_PCI
+	select SWAP_IO_SPACE
+	select BOOT_ELF32
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_HAS_CPU_MIPS32_R2
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select CSRC_R4K
+	select CEVT_R4K
+	select SYS_HAS_EARLY_PRINTK
+	help
+	  Ralink evaluation board based on MT7628
 
 config MIPS_ALCHEMY
 	bool "Alchemy processor based machines"
@@ -1974,8 +1994,8 @@ config MIPS_MT_DISABLED
 config MIPS_MT_SMP
 	bool "Use 1 TC on each available VPE for SMP"
 	depends on SYS_SUPPORTS_MULTITHREADING
-	select CPU_MIPSR2_IRQ_VI
-	select CPU_MIPSR2_IRQ_EI
+#	select CPU_MIPSR2_IRQ_VI
+#	select CPU_MIPSR2_IRQ_EI
 	select MIPS_MT
 	select NR_CPUS_DEFAULT_2
 	select SMP

@@ -29,9 +29,7 @@
 #include "raether.h"
 #include "ra_ethtool.h"
 
-#if defined (CONFIG_RALINK_RT2880)
-#define PROCREG_DIR			"rt2880"
-#elif defined (CONFIG_RALINK_RT3052)
+#if defined (CONFIG_RALINK_RT3052)
 #define PROCREG_DIR			"rt3052"
 #elif defined (CONFIG_RALINK_RT3352)
 #define PROCREG_DIR			"rt3352"
@@ -43,6 +41,8 @@
 #define PROCREG_DIR			"mt7620"
 #elif defined (CONFIG_RALINK_MT7621)
 #define PROCREG_DIR			"mt7621"
+#elif defined (CONFIG_RALINK_MT7628)
+#define PROCREG_DIR			"mt7628"
 #else
 #define PROCREG_DIR			"rt2880"
 #endif
@@ -52,7 +52,6 @@
 #define PROCREG_GMAC			"gmac"
 #define PROCREG_CP0			"cp0"
 #define PROCREG_ESW_CNT			"esw_cnt"
-#define PROCREG_SNMP			"snmp"
 #define PROCREG_VLAN_TX			"vlan_tx"
 
 extern struct net_device *dev_raether;
@@ -62,149 +61,9 @@ static struct proc_dir_entry *procGmac;
 #ifdef RAETH_DEBUG
 static struct proc_dir_entry *procSysCP0, *procTxRing, *procRxRing, *procEswCnt;
 #endif
-#if defined (CONFIG_RAETH_SNMPD)
-static struct proc_dir_entry *procRaSnmp;
-#endif
-#if defined (CONFIG_RAETH_HW_VLAN_TX)
+#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
 static struct proc_dir_entry *procVlanTx;
-#endif
 
-#if defined (CONFIG_GIGAPHY) || defined (CONFIG_100PHY) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
-#if defined (CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
-void enable_auto_negotiate(int unused)
-{
-	u32 regValue;
-#if !defined (CONFIG_RALINK_MT7621)
-	u32 addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
-#endif
-
-	/* FIXME: we don't know how to deal with PHY end addr */
-	regValue = sysRegRead(ESW_PHY_POLLING);
-	regValue |= (1<<31);
-	regValue &= ~(0x1f);
-	regValue &= ~(0x1f<<8);
-#if defined (CONFIG_RALINK_MT7620)
-	regValue |= (addr-1 << 0);//setup PHY address for auto polling (start Addr).
-	regValue |= (addr << 8);// setup PHY address for auto polling (End Addr).
-#elif defined (CONFIG_RALINK_MT7621)
-	regValue |= (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR << 0);//setup PHY address for auto polling (start Addr).
-	regValue |= (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2 << 8);// setup PHY address for auto polling (End Addr).
-#else
-	regValue |= (addr << 0);// setup PHY address for auto polling (start Addr).
-	regValue |= (addr << 8);// setup PHY address for auto polling (End Addr).
-#endif
-
-	sysRegWrite(ESW_PHY_POLLING, regValue);
-
-#if defined (CONFIG_P4_MAC_TO_PHY_MODE)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3400) = 0x56330;
-#endif
-#if defined (CONFIG_P5_MAC_TO_PHY_MODE)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x56330;
-#endif
-}
-#elif defined (CONFIG_RALINK_RT2880) || defined(CONFIG_RALINK_RT3883) || \
-      defined (CONFIG_RALINK_RT3052) || defined(CONFIG_RALINK_RT3352)
-void enable_auto_negotiate(int ge)
-{
-#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352)
-	u32 regValue = sysRegRead(0xb01100C8);
-#else
-	u32 regValue;
-	regValue = (ge == 2)? sysRegRead(MDIO_CFG2) : sysRegRead(MDIO_CFG);
-#endif
-
-	regValue &= 0xe0ff7fff;                 // clear auto polling related field:
-                                                // (MD_PHY1ADDR & GP1_FRC_EN).
-	regValue |= 0x20000000;                 // force to enable MDC/MDIO auto polling.
-
-#if defined (CONFIG_GE2_RGMII_AN) || defined (CONFIG_GE2_MII_AN)
-	if(ge==2) {
-		regValue |= (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2 << 24);               // setup PHY address for auto polling.
-	}
-#endif
-#if defined (CONFIG_GE1_RGMII_AN) || defined (CONFIG_GE1_MII_AN) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
-	if(ge==1) {
-		regValue |= (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR << 24);               // setup PHY address for auto polling.
-	}
-#endif
-
-#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352)
-	sysRegWrite(0xb01100C8, regValue);
-#else
-	if (ge == 2)
-		sysRegWrite(MDIO_CFG2, regValue);
-	else
-		sysRegWrite(MDIO_CFG, regValue);
-#endif
-}
-#endif
-#endif
-
-void ra_mac1_addr_set(unsigned char p[6])
-{
-	unsigned long regValue;
-
-	regValue = (p[0] << 8) | (p[1]);
-#if defined (CONFIG_RALINK_RT5350)
-	sysRegWrite(SDM_MAC_ADRH, regValue);
-#elif defined (CONFIG_RALINK_MT7620)
-	sysRegWrite(SMACCR1, regValue);
-#else
-	sysRegWrite(GDMA1_MAC_ADRH, regValue);
-#endif
-
-	regValue = (p[2] << 24) | (p[3] <<16) | (p[4] << 8) | p[5];
-#if defined (CONFIG_RALINK_RT5350)
-	sysRegWrite(SDM_MAC_ADRL, regValue);
-#elif defined (CONFIG_RALINK_MT7620)
-	sysRegWrite(SMACCR0, regValue);
-#else
-	sysRegWrite(GDMA1_MAC_ADRL, regValue);
-#endif
-}
-
-#ifdef CONFIG_PSEUDO_SUPPORT
-void ra_mac2_addr_set(unsigned char p[6])
-{
-	unsigned long regValue;
-
-	regValue = (p[0] << 8) | (p[1]);
-	sysRegWrite(GDMA2_MAC_ADRH, regValue);
-
-	regValue = (p[2] << 24) | (p[3] <<16) | (p[4] << 8) | p[5];
-	sysRegWrite(GDMA2_MAC_ADRL, regValue);
-}
-#endif
-
-
-#if defined(CONFIG_RAETH_SNMPD)
-static int ra_snmp_seq_show(struct seq_file *m, void *v)
-{
-#if !defined(CONFIG_RALINK_RT5350) && !defined(CONFIG_RALINK_MT7620)
-	seq_printf(m, "rx counters: %x %x %x %x %x %x %x\n", sysRegRead(GDMA_RX_GBCNT0), sysRegRead(GDMA_RX_GPCNT0),sysRegRead(GDMA_RX_OERCNT0), sysRegRead(GDMA_RX_FERCNT0), sysRegRead(GDMA_RX_SERCNT0), sysRegRead(GDMA_RX_LERCNT0), sysRegRead(GDMA_RX_CERCNT0));
-	seq_printf(m, "fc config: %x %x %x %x\n", sysRegRead(CDMA_FC_CFG), sysRegRead(GDMA1_FC_CFG), PDMA_FC_CFG, sysRegRead(PDMA_FC_CFG));
-	seq_printf(m, "scheduler: %x %x %x\n", sysRegRead(GDMA1_SCH_CFG), sysRegRead(GDMA2_SCH_CFG), sysRegRead(PDMA_SCH_CFG));
-#endif
-	seq_printf(m, "ports: %x %x %x %x %x %x\n", sysRegRead(PORT0_PKCOUNT), sysRegRead(PORT1_PKCOUNT), sysRegRead(PORT2_PKCOUNT), sysRegRead(PORT3_PKCOUNT), sysRegRead(PORT4_PKCOUNT), sysRegRead(PORT5_PKCOUNT));
-
-	return 0;
-}
-
-static int ra_snmp_seq_open(struct inode *inode, struct file *file)
-{
-	return single_open(file, ra_snmp_seq_show, NULL);
-}
-
-static const struct file_operations ra_snmp_seq_fops = {
-	.open	 = ra_snmp_seq_open,
-	.read	 = seq_read,
-	.llseek	 = seq_lseek,
-	.release = single_release,
-};
-#endif
-
-#if defined(CONFIG_RAETH_HW_VLAN_TX)
 static int ra_vlan_tx_seq_show(struct seq_file *m, void *v)
 {
 	u32 i;
@@ -252,16 +111,16 @@ static const struct file_operations ra_vlan_tx_seq_fops = {
 
 static int ra_regs_seq_show(struct seq_file *m, void *v)
 {
-#if defined (CONFIG_RALINK_RT5350)
+#if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
 	seq_printf(m, "SDM_CON		: 0x%08x\n", sysRegRead(SDM_CON));
 #else
+	seq_printf(m, "FE_GLO_CFG	: 0x%08x\n", sysRegRead(FE_GLO_CFG));
 	seq_printf(m, "CDMA_CSG_CFG	: 0x%08x\n", sysRegRead(CDMA_CSG_CFG));
 	seq_printf(m, "GDMA1_FWD_CFG	: 0x%08x\n", sysRegRead(GDMA1_FWD_CFG));
 #if defined (CONFIG_PSEUDO_SUPPORT)
 	seq_printf(m, "GDMA2_FWD_CFG	: 0x%08x\n", sysRegRead(GDMA2_FWD_CFG));
 #endif
 #endif
-	seq_printf(m, "FE_GLO_CFG	: 0x%08x\n", sysRegRead(FE_GLO_CFG));
 	seq_printf(m, "PDMA_GLO_CFG	: 0x%08x\n", sysRegRead(PDMA_GLO_CFG));
 	seq_printf(m, "FE_INT_ENABLE	: 0x%08x\n", sysRegRead(FE_INT_ENABLE));
 	seq_printf(m, "DLY_INT_CFG	: 0x%08x\n\n", sysRegRead(DLY_INT_CFG));
@@ -273,7 +132,7 @@ static int ra_regs_seq_show(struct seq_file *m, void *v)
 	seq_printf(m, "RX_DRX_IDX0	: 0x%08x\n", sysRegRead(RX_DRX_IDX0));
 
 #if defined (CONFIG_ETHTOOL)
-	seq_printf(m, "\nThe current PHY address selected by ethtool is %d\n", get_current_phy_address());
+	seq_printf(m, "\nThe current PHY address selected by ethtool is 0x%2X\n", get_current_phy_address());
 #endif
 
 	return 0;
@@ -308,7 +167,7 @@ static ssize_t ra_phyid_seq_write(struct file *file, const char __user *buffer, 
 	if (cur_dev_p == NULL)
 		return -EFAULT;
 
-#ifdef CONFIG_PSEUDO_SUPPORT
+#if defined (CONFIG_PSEUDO_SUPPORT)
 	/* This may be wrong when more than 2 gmacs */
 	if(!strcmp(cur_dev_p->name, DEV_NAME)){
 		ei_local = netdev_priv(cur_dev_p);
@@ -440,135 +299,69 @@ static int ra_cp0_seq_show(struct seq_file *m, void *v)
 
 static int ra_esw_seq_show(struct seq_file *m, void *v)
 {
-	seq_printf(m, "\n		  <<CPU>>			 \n");
-	seq_printf(m, "		     |\n");
-#if defined (CONFIG_RALINK_RT5350)
+	seq_printf(m, "\n                   <<CPU>>\n");
+	seq_printf(m, "                      |\n");
+#if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
 	seq_printf(m, "+-----------------------------------------------+\n");
-	seq_printf(m, "|		  <<PDMA>>		        |\n");
+	seq_printf(m, "|                  <<PDMA>>                     |\n");
 	seq_printf(m, "+-----------------------------------------------+\n");
 #else
 	seq_printf(m, "+-----------------------------------------------+\n");
-	seq_printf(m, "|		  <<PSE>>		        |\n");
+	seq_printf(m, "|                  <<PSE>>                      |\n");
 	seq_printf(m, "+-----------------------------------------------+\n");
-	seq_printf(m, "		     |\n");
+	seq_printf(m, "                      |\n");
 	seq_printf(m, "+-----------------------------------------------+\n");
-	seq_printf(m, "|		  <<GDMA>>		        |\n");
-	seq_printf(m, "+-----------------------------------------------+\n");
-#if defined (CONFIG_RALINK_MT7620)
-	seq_printf(m, "| GDMA1_TX_GPCNT  : %010u (Tx Good Pkts)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x1304));
-	seq_printf(m, "| GDMA1_RX_GPCNT  : %010u (Rx Good Pkts)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x1324));
-	seq_printf(m, "|						|\n");
-	seq_printf(m, "| GDMA1_TX_SKIPCNT: %010u (skip)		|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x1308));
-	seq_printf(m, "| GDMA1_TX_COLCNT : %010u (collision)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x130c));
-	seq_printf(m, "| GDMA1_RX_OERCNT : %010u (overflow)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x1328));
-	seq_printf(m, "| GDMA1_RX_FERCNT : %010u (FCS error)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x132c));
-	seq_printf(m, "| GDMA1_RX_SERCNT : %010u (too short)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x1330));
-	seq_printf(m, "| GDMA1_RX_LERCNT : %010u (too long)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x1334));
-	seq_printf(m, "| GDMA1_RX_CERCNT : %010u (l3/l4 checksum) |\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x1338));
-	seq_printf(m, "| GDMA1_RX_FCCNT  : %010u (flow control)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x133c));
-	seq_printf(m, "|						|\n");
-	seq_printf(m, "| GDMA2_TX_GPCNT  : %010u (Tx Good Pkts)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x1344));
-	seq_printf(m, "| GDMA2_RX_GPCNT  : %010u (Rx Good Pkts)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x1364));
-	seq_printf(m, "|						|\n");
-	seq_printf(m, "| GDMA2_TX_SKIPCNT: %010u (skip)		|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x1348));
-	seq_printf(m, "| GDMA2_TX_COLCNT : %010u (collision)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x134c));
-	seq_printf(m, "| GDMA2_RX_OERCNT : %010u (overflow)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x1368));
-	seq_printf(m, "| GDMA2_RX_FERCNT : %010u (FCS error)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x136c));
-	seq_printf(m, "| GDMA2_RX_SERCNT : %010u (too short)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x1370));
-	seq_printf(m, "| GDMA2_RX_LERCNT : %010u (too long)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x1374));
-	seq_printf(m, "| GDMA2_RX_CERCNT : %010u (l3/l4 checksum) |\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x1378));
-	seq_printf(m, "| GDMA2_RX_FCCNT  : %010u (flow control)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x137c));
-#elif defined (CONFIG_RALINK_MT7621)
-	seq_printf(m, "| GDMA1_RX_GBCNT  : %010u (Rx Good Bytes)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2400));
-	seq_printf(m, "| GDMA1_RX_GPCNT  : %010u (Rx Good Pkts)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2408));
-	seq_printf(m, "| GDMA1_RX_OERCNT : %010u (overflow error)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2410));
-	seq_printf(m, "| GDMA1_RX_FERCNT : %010u (FCS error)		|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2414));
-	seq_printf(m, "| GDMA1_RX_SERCNT : %010u (too short)		|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2418));
-	seq_printf(m, "| GDMA1_RX_LERCNT : %010u (too long)		|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x241C));
-	seq_printf(m, "| GDMA1_RX_CERCNT : %010u (checksum error)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2420));
-	seq_printf(m, "| GDMA1_RX_FCCNT  : %010u (flow control)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2424));
-	seq_printf(m, "| GDMA1_TX_SKIPCNT: %010u (about count)		|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2428));
-	seq_printf(m, "| GDMA1_TX_COLCNT : %010u (collision count)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x242C));
-	seq_printf(m, "| GDMA1_TX_GBCNT  : %010u (Tx Good Bytes)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2430));
-	seq_printf(m, "| GDMA1_TX_GPCNT  : %010u (Tx Good Pkts)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2438));
-	seq_printf(m, "|						|\n");
-	seq_printf(m, "| GDMA2_RX_GBCNT  : %010u (Rx Good Bytes)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2440));
-	seq_printf(m, "| GDMA2_RX_GPCNT  : %010u (Rx Good Pkts)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2448));
-	seq_printf(m, "| GDMA2_RX_OERCNT : %010u (overflow error)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2450));
-	seq_printf(m, "| GDMA2_RX_FERCNT : %010u (FCS error)		|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2454));
-	seq_printf(m, "| GDMA2_RX_SERCNT : %010u (too short)		|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2458));
-	seq_printf(m, "| GDMA2_RX_LERCNT : %010u (too long)		|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x245C));
-	seq_printf(m, "| GDMA2_RX_CERCNT : %010u (checksum error)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2460));
-	seq_printf(m, "| GDMA2_RX_FCCNT  : %010u (flow control)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2464));
-	seq_printf(m, "| GDMA2_TX_SKIPCNT: %010u (skip)		|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2468));
-	seq_printf(m, "| GDMA2_TX_COLCNT : %010u (collision)		|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x246C));
-	seq_printf(m, "| GDMA2_TX_GBCNT  : %010u (Tx Good Bytes)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2470));
-	seq_printf(m, "| GDMA2_TX_GPCNT  : %010u (Tx Good Pkts)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x2478));
-#else
-	seq_printf(m, "| GDMA_TX_GPCNT1  : %010u (Tx Good Pkts)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x704));
-	seq_printf(m, "| GDMA_RX_GPCNT1  : %010u (Rx Good Pkts)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x724));
-	seq_printf(m, "|						|\n");
-	seq_printf(m, "| GDMA_TX_SKIPCNT1: %010u (skip)		|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x708));
-	seq_printf(m, "| GDMA_TX_COLCNT1 : %010u (collision)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x70c));
-	seq_printf(m, "| GDMA_RX_OERCNT1 : %010u (overflow)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x728));
-	seq_printf(m, "| GDMA_RX_FERCNT1 : %010u (FCS error)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x72c));
-	seq_printf(m, "| GDMA_RX_SERCNT1 : %010u (too short)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x730));
-	seq_printf(m, "| GDMA_RX_LERCNT1 : %010u (too long)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x734));
-	seq_printf(m, "| GDMA_RX_CERCNT1 : %010u (l3/l4 checksum)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x738));
-	seq_printf(m, "| GDMA_RX_FCCNT1  : %010u (flow control)	|\n", sysRegRead(RALINK_FRAME_ENGINE_BASE+0x73c));
-#endif
+	seq_printf(m, "|                  <<GDMA>>                     |\n");
 	seq_printf(m, "+-----------------------------------------------+\n");
 #endif
-
-#if defined (CONFIG_RALINK_MT7620)
+#if defined (CONFIG_MT7530_GSW)
+	// todo
+#elif defined (CONFIG_RALINK_MT7620)
 	seq_printf(m, "                      ^                          \n");
 	seq_printf(m, "                      | Port6 Rx:%08u Good Pkt   \n", sysRegRead(RALINK_ETH_SW_BASE+0x4620)&0xFFFF);
 	seq_printf(m, "                      | Port6 Rx:%08u Bad Pkt    \n", sysRegRead(RALINK_ETH_SW_BASE+0x4620)>>16);
 	seq_printf(m, "                      | Port6 Tx:%08u Good Pkt   \n", sysRegRead(RALINK_ETH_SW_BASE+0x4610)&0xFFFF);
 	seq_printf(m, "                      | Port6 Tx:%08u Bad Pkt    \n", sysRegRead(RALINK_ETH_SW_BASE+0x4610)>>16);
-#if defined (CONFIG_RALINK_MT7620)
 	seq_printf(m, "                      | Port7 Rx:%08u Good Pkt   \n", sysRegRead(RALINK_ETH_SW_BASE+0x4720)&0xFFFF);
 	seq_printf(m, "                      | Port7 Rx:%08u Bad Pkt    \n", sysRegRead(RALINK_ETH_SW_BASE+0x4720)>>16);
 	seq_printf(m, "                      | Port7 Tx:%08u Good Pkt   \n", sysRegRead(RALINK_ETH_SW_BASE+0x4710)&0xFFFF);
 	seq_printf(m, "                      | Port7 Tx:%08u Bad Pkt    \n", sysRegRead(RALINK_ETH_SW_BASE+0x4710)>>16);
-#endif
 	seq_printf(m, "+---------------------v-------------------------+\n");
-	seq_printf(m, "|		      P6		        |\n");
-	seq_printf(m, "|        <<10/100/1000 Embedded Switch>>        |\n");
+	seq_printf(m, "|                     P6                        |\n");
+	seq_printf(m, "|           <<10/100 Embedded Switch>>          |\n");
 	seq_printf(m, "|     P0    P1    P2     P3     P4     P5       |\n");
 	seq_printf(m, "+-----------------------------------------------+\n");
 	seq_printf(m, "       |     |     |     |       |      |        \n");
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_MT7621)
-	/* no built-in switch */
+#elif defined (CONFIG_RALINK_RT3883)
+	/* no embedded switch */
 #else
 	seq_printf(m, "                      ^                          \n");
 	seq_printf(m, "                      | Port6 Rx:%08u Good Pkt   \n", sysRegRead(RALINK_ETH_SW_BASE+0xE0)&0xFFFF);
 	seq_printf(m, "                      | Port6 Tx:%08u Good Pkt   \n", sysRegRead(RALINK_ETH_SW_BASE+0xE0)>>16);
 	seq_printf(m, "+---------------------v-------------------------+\n");
-	seq_printf(m, "|		      P6		        |\n");
-	seq_printf(m, "|  	     <<10/100 Embedded Switch>>	        |\n");
+	seq_printf(m, "|                     P6                        |\n");
+	seq_printf(m, "|           <<10/100 Embedded Switch>>          |\n");
 	seq_printf(m, "|     P0    P1    P2     P3     P4     P5       |\n");
 	seq_printf(m, "+-----------------------------------------------+\n");
 	seq_printf(m, "       |     |     |     |       |      |        \n");
 #endif
-
-#if defined (CONFIG_RALINK_MT7620)
+#if defined (CONFIG_MT7530_GSW)
+	// todo
+#elif defined (CONFIG_RALINK_MT7620)
 	seq_printf(m, "Port0 Good RX=%08u Tx=%08u (Bad Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0x4020)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4010)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4020)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x4010)>>16);
 	seq_printf(m, "Port1 Good RX=%08u Tx=%08u (Bad Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0x4120)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4110)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4120)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x4110)>>16);
 	seq_printf(m, "Port2 Good RX=%08u Tx=%08u (Bad Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0x4220)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4210)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4220)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x4210)>>16);
 	seq_printf(m, "Port3 Good RX=%08u Tx=%08u (Bad Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0x4320)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4310)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4320)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x4310)>>16);
 	seq_printf(m, "Port4 Good RX=%08u Tx=%08u (Bad Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0x4420)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4410)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4420)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x4410)>>16);
 	seq_printf(m, "Port5 Good RX=%08u Tx=%08u (Bad Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0x4520)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4510)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x4520)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x4510)>>16);
-#elif defined (CONFIG_RALINK_RT5350)
+#elif defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
 	seq_printf(m, "Port0 Good Pkt Cnt: RX=%08u Tx=%08u (Bad Pkt Cnt: Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0xE8)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x150)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0xE8)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x150)>>16);
 	seq_printf(m, "Port1 Good Pkt Cnt: RX=%08u Tx=%08u (Bad Pkt Cnt: Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0xEC)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x154)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0xEC)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x154)>>16);
 	seq_printf(m, "Port2 Good Pkt Cnt: RX=%08u Tx=%08u (Bad Pkt Cnt: Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0xF0)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x158)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0xF0)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x158)>>16);
 	seq_printf(m, "Port3 Good Pkt Cnt: RX=%08u Tx=%08u (Bad Pkt Cnt: Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0xF4)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x15C)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0xF4)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x15c)>>16);
 	seq_printf(m, "Port4 Good Pkt Cnt: RX=%08u Tx=%08u (Bad Pkt Cnt: Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0xF8)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x160)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0xF8)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x160)>>16);
 	seq_printf(m, "Port5 Good Pkt Cnt: RX=%08u Tx=%08u (Bad Pkt Cnt: Rx=%08u Tx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0xFC)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0x164)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0xFC)>>16, sysRegRead(RALINK_ETH_SW_BASE+0x164)>>16);
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_MT7621)
-	/* no built-in switch */
-#else /* RT305x, RT3352 */
+#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352)
 	seq_printf(m, "Port0: Good Pkt Cnt: RX=%08u (Bad Pkt Cnt: Rx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0xE8)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0xE8)>>16);
 	seq_printf(m, "Port1: Good Pkt Cnt: RX=%08u (Bad Pkt Cnt: Rx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0xEC)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0xEC)>>16);
 	seq_printf(m, "Port2: Good Pkt Cnt: RX=%08u (Bad Pkt Cnt: Rx=%08u)\n", sysRegRead(RALINK_ETH_SW_BASE+0xF0)&0xFFFF,sysRegRead(RALINK_ETH_SW_BASE+0xF0)>>16);
@@ -641,21 +434,12 @@ int debug_proc_init(void)
 		procGmac->proc_fops = &ra_regs_seq_fops;
 #endif
 
-#if defined(CONFIG_RAETH_HW_VLAN_TX)
+#if defined(CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	procVlanTx = proc_create(PROCREG_VLAN_TX, S_IRUGO | S_IWUSR, procRegDir, &ra_vlan_tx_seq_fops);
 #else
 	if ((procVlanTx = create_proc_entry(PROCREG_VLAN_TX, S_IRUGO | S_IWUSR, procRegDir)))
 		procVlanTx->proc_fops = &ra_vlan_tx_seq_fops;
-#endif
-#endif
-
-#if defined(CONFIG_RAETH_SNMPD)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-	procRaSnmp = proc_create(PROCREG_SNMP, S_IRUGO, procRegDir, &ra_snmp_seq_fops);
-#else
-	if ((procRaSnmp = create_proc_entry(PROCREG_SNMP, S_IRUGO, procRegDir)))
-		procRaSnmp->proc_fops = &ra_snmp_seq_fops;
 #endif
 #endif
 
@@ -708,12 +492,7 @@ void debug_proc_exit(void)
 		remove_proc_entry(PROCREG_TXRING, procRegDir);
 #endif
 
-#if defined(CONFIG_RAETH_SNMPD)
-	if (procRaSnmp)
-		remove_proc_entry(PROCREG_SNMP, procRegDir);
-#endif
-
-#if defined(CONFIG_RAETH_HW_VLAN_TX)
+#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
 	if (procVlanTx)
 		remove_proc_entry(PROCREG_VLAN_TX, procRegDir);
 #endif

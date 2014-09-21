@@ -965,17 +965,6 @@ config JZ4740_WDT
 	help
 	  Hardware driver for the built-in watchdog timer on Ingenic jz4740 SoCs.
 
-config RALINK_WATCHDOG
-	tristate "Ralink APSoC Hardware Watchdog"
-	depends on WATCHDOG
-	help
-	  timer expired and no process has written to /dev/watchdog during
-	  that time.
-
-config  RALINK_TIMER_WDG_RESET_OUTPUT
-	bool "Ralink WatchDog Reset Output"
-	depends on RALINK_WATCHDOG
-
 config WDT_MTX1
 	tristate "MTX-1 Hardware Watchdog"
 	depends on MIPS_MTX1

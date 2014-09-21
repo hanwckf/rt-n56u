@@ -53,11 +53,6 @@
 #include <asm/rt2880/rt_mmap.h>
 #include <asm/rt2880/eureka_ep430.h>
 
-#ifdef CONFIG_KGDB
-extern void breakpoint(void);
-extern int remote_debug;
-#endif
-
 static void mask_ralink_irq(struct irq_data *id)
 {
 	if (id->irq > 5) {
@@ -81,7 +76,27 @@ static struct irq_chip ralink_irq_chip = {
 
 unsigned int __cpuinit get_c0_compare_int(void)
 {
-	return RALINK_CPU_TIMER_IRQ;
+	return SURFBOARDINT_MIPS_TIMER;
+}
+
+void __init prom_init_irq(void)
+{
+	cp0_perfcount_irq = SURFBOARDINT_PCTRL;
+}
+
+void __init arch_init_irq(void)
+{
+	int i;
+
+	mips_cpu_irq_init();
+
+	for (i = 0; i <= SURFBOARDINT_END; i++)
+		irq_set_chip_and_handler(i, &ralink_irq_chip, handle_level_irq);
+
+	set_c0_status(ST0_IM);
+
+	/* Enable global interrupt bit */
+	*(volatile u32 *)(RALINK_INTENA) = M_SURFBOARD_GLOBAL_INT;
 }
 
 static inline int ls1bit32(unsigned int x)
@@ -97,7 +112,7 @@ static inline int ls1bit32(unsigned int x)
 	return b;
 }
 
-void ralink_hw0_irqdispatch(int prio)
+static void ralink_hw0_irqdispatch(int prio)
 {
 	unsigned long int_status;
 	int irq;
@@ -113,104 +128,28 @@ void ralink_hw0_irqdispatch(int prio)
 	irq = ls1bit32(int_status);
 
 	/*
-	 * RT2880:
-	 * bit[3] PIO Programmable IO Interrupt Status after Mask
-	 * bit[2] UART Interrupt Status after Mask
-	 * bit[1] WDTIMER Timer 1 Interrupt Status after Mask
-	 * bit[0] TIMER0 Timer 0 Interrupt Status after Mask
-	 *
-	 * RT3052:
-	 * bit[17] Ethernet switch interrupt status after mask
-	 * bit[6] PIO Programmable IO Interrupt Status after Mask
-	 * bit[5] UART Interrupt Status after Mask
-	 * bit[2] WDTIMER Timer 1 Interrupt Status after Mask
-	 * bit[1] TIMER0 Timer 0 Interrupt Status after Mask
+	 * Remapped IRQ 0..5 to 32..37:
+	 * bit[5] UART: UARTF Interrupt Status after mask
+	 * bit[4] PCM: PCM interrupt status after mask
+	 * bit[3] ILL_ACC: Illegal access interrupt status after mask
+	 * bit[2] WDTIMER: Timer 1 (Watchdog) timer interrupt status after mask
+	 * bit[1] TIMER0: Timer 0 (DFS) interrupt status after mask
+	 * bit[0] SYSCTL: System control interrupt status after mask
 	 */
-#if defined(CONFIG_RALINK_TIMER_DFS)
-#if defined(CONFIG_RALINK_RT2880)
-	if (irq == 0) {
-		irq = SURFBOARDINT_TIMER0;
-	}
-#else
-	if (irq == 1) {
-		irq = SURFBOARDINT_TIMER0; // DFS
-	} else if (irq == 2) {
-		irq = SURFBOARDINT_WDG;
-	}
-#endif
-#endif
-
-#if defined(CONFIG_RALINK_RT2880)
-	if (irq == 3) {
-#ifdef CONFIG_RALINK_GPIO
-		/* cause gpio registered irq 7 */
-		irq = SURFBOARDINT_GPIO;
-#endif
-	}
-#else
-	/* ILL_ACC */ 
-	if (irq == 3) {
-		irq = SURFBOARDINT_ILL_ACC;
-	}
-#endif
-
-#if defined(CONFIG_RALINK_PCM) || defined (CONFIG_RALINK_PCM_MODULE)
-	/* PCM */
-	if (irq == 4) {
-		irq = SURFBOARDINT_PCM;
-	}
-#endif
-	/* UARTF */
-	if (irq == 5) {
-		irq = SURFBOARDINT_UART;
-	}
+	if (irq < 6)
+		irq += 32;
 
 	do_IRQ(irq);
 }
 
-void __init arch_init_irq(void)
-{
-	int i;
-
-	mips_cpu_irq_init();
-
-#if !defined(CONFIG_RALINK_RT2880)
-	cp0_perfcount_irq = SURFBOARDINT_PC;
-#endif
-
-	for (i = 0; i <= SURFBOARDINT_END; i++)
-		irq_set_chip_and_handler(i, &ralink_irq_chip, handle_level_irq);
-
-#ifdef CONFIG_KGDB
-	if (remote_debug) {
-		set_debug_traps();
-		breakpoint();
-	}
-#endif
-
-	set_c0_status(ST0_IM);
-
-	/* Enable global interrupt bit */
-	*(volatile u32 *)(RALINK_INTENA) = M_SURFBOARD_GLOBAL_INT;
-}
-
 asmlinkage void plat_irq_dispatch(void)
 {
-	unsigned long pending;
-#if defined(CONFIG_RALINK_RT2880)
-	static unsigned int pci_order = 0;
-#if defined(CONFIG_RT2880_ASIC)
-#define PCI_STATUS_MASK1	0x0x40000
-#define PCI_STATUS_MASK2	0x0x80000
-#elif defined(CONFIG_RT2880_FPGA)
-#define PCI_STATUS_MASK1	0x0x80000
-#define PCI_STATUS_MASK2	0x0x40000
+	unsigned int pending;
+#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_MT7620) || \
+    defined (CONFIG_RALINK_MT7628)
+	unsigned int pci_status;
 #endif
-#endif
-#if defined (CONFIG_RALINK_RT2880) || defined(CONFIG_RALINK_RT3883) || \
-    defined (CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
-	unsigned long pci_status;
-#endif
+
 	pending = read_c0_status() & read_c0_cause() & ST0_IM;
 	if (!pending) {
 		spurious_interrupt();
@@ -218,45 +157,31 @@ asmlinkage void plat_irq_dispatch(void)
 	}
 
 	if (pending & CAUSEF_IP7) {
-		do_IRQ(RALINK_CPU_TIMER_IRQ); // CPU Timer
+		do_IRQ(SURFBOARDINT_MIPS_TIMER);	// CPU Timer
 		return;
 	}
 
 	if (pending & CAUSEF_IP5)
-		do_IRQ(SURFBOARDINT_FE); // Frame Engine
+		do_IRQ(SURFBOARDINT_FE);		// Frame Engine
 
 	if (pending & CAUSEF_IP6)
-		do_IRQ(SURFBOARDINT_WLAN); // Wireless
+		do_IRQ(SURFBOARDINT_WLAN);		// Wireless
 
 	if (pending & CAUSEF_IP4) {
-#if defined(CONFIG_RALINK_RT2880)
-		pci_order ^= 1;
-		pci_status = RALINK_PCI_PCIINT_ADDR;
-		if (!pci_order) {
-			if (pci_status & PCI_STATUS_MASK1)
-				do_IRQ(SURFBOARDINT_PCI_0);
-			else
-				do_IRQ(SURFBOARDINT_PCI_1);
-		} else {
-			if (pci_status & PCI_STATUS_MASK2)
-				do_IRQ(SURFBOARDINT_PCI_1);
-			else
-				do_IRQ(SURFBOARDINT_PCI_0);
-		}
-#elif defined (CONFIG_RALINK_RT3883)
+#if defined (CONFIG_RALINK_RT3883)
 		pci_status = RALINK_PCI_PCIINT_ADDR;
 		if (pci_status & 0x100000)
-			do_IRQ(SURFBOARDINT_PCIE_0);
-#if defined(CONFIG_PCI_ONLY) || defined(CONFIG_PCIE_PCI_CONCURRENT)
+			do_IRQ(SURFBOARDINT_PCIE0);
+#if defined (CONFIG_PCI_ONLY) || defined (CONFIG_PCIE_PCI_CONCURRENT)
 		else if (pci_status & 0x040000)
-			do_IRQ(SURFBOARDINT_PCI_0);
+			do_IRQ(SURFBOARDINT_PCI0);
 		else
-			do_IRQ(SURFBOARDINT_PCI_1);
+			do_IRQ(SURFBOARDINT_PCI1);
 #endif
-#elif defined (CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
+#elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7628)
 		pci_status = RALINK_PCI_PCIINT_ADDR;
 		if (pci_status & 0x100000)
-			do_IRQ(SURFBOARDINT_PCIE_0);
+			do_IRQ(SURFBOARDINT_PCIE0);
 #endif
 	}
 

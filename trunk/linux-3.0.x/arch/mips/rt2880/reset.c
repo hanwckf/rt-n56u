@@ -47,7 +47,7 @@ static void mips_machine_power_off(void);
 
 static void mips_machine_restart(char *command)
 {
-#if defined (CONFIG_RALINK_MT7620)
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7628)
 	*(volatile u32*)(SOFTRES_REG) = RALINK_PCIE0_RST;
 	mdelay(10);
 #endif
@@ -57,7 +57,7 @@ static void mips_machine_restart(char *command)
 
 static void mips_machine_halt(void)
 {
-#if defined (CONFIG_RALINK_MT7620)
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7628)
 	*(volatile u32*)(SOFTRES_REG) = RALINK_PCIE0_RST;
 	mdelay(10);
 #endif

@@ -23,16 +23,25 @@
 
 #define MTK_ESW_DEVNAME			"mtk_esw"
 
-#define WAN_PORT_X			CONFIG_RAETH_ESW_PORT_WAN	/* 8P8C WAN  */
 #define LAN_PORT_1			CONFIG_RAETH_ESW_PORT_LAN1	/* 8P8C LAN1 */
 #define LAN_PORT_2			CONFIG_RAETH_ESW_PORT_LAN2	/* 8P8C LAN2 */
 #define LAN_PORT_3			CONFIG_RAETH_ESW_PORT_LAN3	/* 8P8C LAN3 */
 #define LAN_PORT_4			CONFIG_RAETH_ESW_PORT_LAN4	/* 8P8C LAN4 */
 
+#define ESW_PORT_CPU			6
 #define LAN_PORT_CPU			6
 #define WAN_PORT_CPU			6
-#define ESW_PORT_CPU			6
-#if defined (CONFIG_RALINK_MT7620)
+
+#if defined (CONFIG_MT7530_GSW) && \
+   (defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P0) || \
+    defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P4))
+//#define WAN_PORT_X			5				/* 8P8C WAN -> P5 (todo) */
+#define WAN_PORT_X			CONFIG_RAETH_ESW_PORT_WAN	/* 8P8C WAN */
+#else
+#define WAN_PORT_X			CONFIG_RAETH_ESW_PORT_WAN	/* 8P8C WAN */
+#endif
+
+#if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
 #define ESW_PORT_PPE			7
 #define ESW_PORT_ID_MAX			7
 #else
@@ -41,7 +50,7 @@
 #endif
 
 #define ESW_PHY_ID_MAX			4
-#define ESW_VLAN_ID_MAX			15
+#define ESW_VLAN_ID_MAX			15 /* fake for MT7530 */
 
 ////////////////////////////////////////////////////////////////////////////////////
 

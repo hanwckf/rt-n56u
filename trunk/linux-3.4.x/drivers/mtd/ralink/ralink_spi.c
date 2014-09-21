@@ -30,6 +30,7 @@
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 
+#include <linux/ralink_gpio.h>
 #include "ralink_spi.h"
 #include "ralink-flash.h"
 #include "ralink-flash-map.h"
@@ -81,7 +82,7 @@ extern u32 get_surfboard_sysclk(void);
 #define SR_EPE			0x20	/* Erase/Program error */
 #define SR_SRWD			0x80	/* SR write protect */
 
-#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7620)
 
 #define COMMAND_MODE
 #define SPI_FIFO_SIZE		16
@@ -261,8 +262,8 @@ static int spic_write(const u8 *cmd, size_t n_cmd, const u8 *txbuf, size_t n_tx)
 
 int spic_init(void)
 {
-	// GPIO-SPI mode
-	ra_and(RALINK_REG_GPIOMODE, ~(1 << 1)); //use normal(SPI) mode instead of GPIO mode
+	/* use normal SPI mode instead of GPIO mode */
+	ra_and(RALINK_REG_GPIOMODE, ~(RALINK_GPIOMODE_SPI));
 
 	/* reset spi block */
 	ra_or(RT2880_RSTCTRL_REG, RSTCTRL_SPI_RESET);
@@ -293,8 +294,8 @@ int spic_init(void)
 	return 0;
 }
 
-
 /****************************************************************************/
+
 struct chip_info {
 	char		*name;
 	u8		id;
@@ -343,7 +344,7 @@ static struct chip_info chips_data [] = {
 };
 
 struct flash_info {
-	struct mutex	lock;
+	struct mutex		lock;
 	struct mtd_info		mtd;
 	struct chip_info	*chip;
 	u8			command[5];
@@ -351,6 +352,7 @@ struct flash_info {
 
 struct flash_info *flash;
 static inline int raspi_write_enable(void);
+
 /****************************************************************************/
 
 #if defined (COMMAND_MODE)
@@ -602,20 +604,15 @@ static int raspi_wait_ready(int sleep_ms)
 	int count;
 	int sr = 0;
 
-	/*int timeout = sleep_ms * HZ / 1000;
-	while (timeout) 
-		timeout = schedule_timeout (timeout);*/
-
 	/* one chip guarantees max 5 msec wait here after page writes,
 	 * but potentially three seconds (!) after page erase.
 	 */
-	for (count = 0;  count < ((sleep_ms+1)*1000); count++) {
+	for (count = 0;  count < ((sleep_ms+1)*1000*10); count++) {
 		if ((raspi_read_sr((u8 *)&sr)) < 0)
 			break;
 		else if (!(sr & SR_WIP))
 			return 0;
 		udelay(5);
-		/* REVISIT sometimes sleeping would be best */
 	}
 
 	printk("%s: read_sr fail: %x\n", __func__, sr);
@@ -630,12 +627,12 @@ static int raspi_wait_sleep_ready(int sleep_ms)
 	/* one chip guarantees max 5 msec wait here after page writes,
 	 * but potentially three seconds (!) after page erase.
 	 */
-	for (count = 0;  count < ((sleep_ms+1)*100); count++) {
+	for (count = 0;  count < ((sleep_ms+1)*1000); count++) {
 		if ((raspi_read_sr((u8 *)&sr)) < 0)
 			break;
 		else if (!(sr & SR_WIP))
 			return 0;
-		usleep(100);
+		usleep(50);
 	}
 
 	printk("%s: read_sr fail: %x\n", __func__, sr);
@@ -653,14 +650,14 @@ static int raspi_4byte_mode(int enable)
 		if (enable)
 		{
 			br = 0x81;
-#if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7620)
 			ra_or(RT2880_SPICFG_REG, SPICFG_ADDRMODE);
 #endif
 		}
 		else
 		{
 			br = 0x0;
-#if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7620)
 			ra_and(RT2880_SPICFG_REG, ~(SPICFG_ADDRMODE));
 #endif
 		}
@@ -681,14 +678,14 @@ static int raspi_4byte_mode(int enable)
 		if (enable)
 		{
 			code = 0xB7; /* EN4B, enter 4-byte mode */
-#if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7620)
 			ra_or(RT2880_SPICFG_REG, SPICFG_ADDRMODE);
 #endif
 		}
 		else
 		{
 			code = 0xE9; /* EX4B, exit 4-byte mode */
-#if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7620)
 			ra_and(RT2880_SPICFG_REG, ~(SPICFG_ADDRMODE));
 #endif
 		}
@@ -1168,7 +1165,6 @@ struct chip_info *chip_prob(void)
 	return match;
 }
 
-
 /*
  * board specific setup should have ensured the SPI clock used here
  * matches what the READ command supports, at least until this driver
@@ -1189,10 +1185,10 @@ static int raspi_probe(void)
 	} hdr;
 #endif
 
-	spic_init();
-
 	if (ra_check_flash_type() != BOOT_FROM_SPI)
 		return 0;
+
+	spic_init();
 
 	chip = chip_prob();
 
@@ -1269,9 +1265,8 @@ static int __init raspi_init(void)
 
 static void __exit raspi_exit(void)
 {
-	mtd_device_unregister(&flash->mtd);
-
 	if (flash) {
+		mtd_device_unregister(&flash->mtd);
 		kfree(flash);
 		flash = NULL;
 	}
@@ -1282,4 +1277,4 @@ module_exit(raspi_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Steven Liu");
-MODULE_DESCRIPTION("MTD SPI driver for Ralink flash chips");
+MODULE_DESCRIPTION("Ralink MTD SPI driver for flash chips");

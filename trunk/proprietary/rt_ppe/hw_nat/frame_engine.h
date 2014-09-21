@@ -38,9 +38,6 @@
 
 #define NAT_PRINT(fmt, args...) printk(KERN_INFO fmt, ## args)
 
-#define CHIPID		    RALINK_SYSCTL_BASE + 0x00
-#define REVID		    RALINK_SYSCTL_BASE + 0x0C
-
 #if defined (CONFIG_HNAT_V2)
 
 #define PFC		    RALINK_ETH_SW_BASE + 0x0004

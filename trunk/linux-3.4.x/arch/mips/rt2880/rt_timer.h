@@ -44,8 +44,8 @@
 
 #include <asm/rt2880/rt_mmap.h>
 
-#ifndef _TIMER_WANTED
-#define _TIMER_WANTED
+#ifndef __RT_TIMER__
+#define __RT_TIMER__
 
 #define PHYS_TO_K1(physaddr)		KSEG1ADDR(physaddr)
 #define sysRegRead(phys)		(*(volatile u32 *)PHYS_TO_K1(phys))
@@ -59,7 +59,7 @@
 
 #define TMRSTAT				(RALINK_TIMER_BASE)  /* Timer Status Register */
 
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 #define TMR0LOAD			(TMRSTAT + 0x14)  /* Timer0 Load Value */
 #define TMR0VAL				(TMRSTAT + 0x18)  /* Timer0 Counter Value */
 #define TMR0CTL				(TMRSTAT + 0x10)  /* Timer0 Control */
@@ -116,9 +116,14 @@ enum timer_clock_freq {
 extern int request_tmr_service(int interval, void (*function)(unsigned long), unsigned long data);
 extern int unregister_tmr_service(void);
 
-#if !defined(CONFIG_RALINK_TIMER_WDG) && !defined(CONFIG_RALINK_TIMER_WDG_MODULE)
+#if !defined (CONFIG_RALINK_TIMER_WDG) && !defined (CONFIG_RALINK_TIMER_WDG_MODULE)
 extern int request_tmr1_service(int interval, void (*function)(unsigned long), unsigned long data);
 extern int unregister_tmr1_service(void);
+#endif
+
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
+extern int request_tmr2_service(int interval, void (*function)(unsigned long), unsigned long data);
+extern int unregister_tmr2_service(void);
 #endif
 
 #endif

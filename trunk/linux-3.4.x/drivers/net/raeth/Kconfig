@@ -7,13 +7,13 @@ config  RAETH
 config  RAETH_32B_DESC
 	bool "32 bytes TX/RX ring descriptors (L1 cache aligned, no disable cache needed for TX/RX ring)"
 	default n
-	depends on RAETH && RALINK_MT7620
+	depends on RAETH && (RALINK_MT7620 || RALINK_MT7621)
 	---help---
 	  At this moment, you cannot enable 32B description with Multiple RX ring at the same time.
 
 config  RAETH_JUMBOFRAME
 	bool "Jumbo Frame up to 4K bytes"
-	depends on RAETH && !(RALINK_RT3052 || RALINK_RT3352 || RALINK_RT5350)
+	depends on RAETH && !(RALINK_RT3052 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7628)
 
 config  RAETH_HW_VLAN_RX
 	bool "Receive VLAN HW (DoubleVLAN is not supported)"
@@ -28,18 +28,18 @@ config  RAETH_BQL
 
 config  RAETH_HW_VLAN_TX
 	bool "Transmit VLAN HW (DoubleVLAN is not supported)"
-	depends on RAETH && !RALINK_RT5350
+	depends on RAETH && !(RALINK_RT5350 || RALINK_MT7628)
 	---help---
 	  Please set net.ipv4.vlan_double_tag=0 for enable vlan hw offload before eth2 up
 
 config  RAETH_CHECKSUM_OFFLOAD
 	bool "TCP/UDP/IP checksum offload"
 	default y
-	depends on RAETH && !RALINK_RT2880
+	depends on RAETH
 
 config RAETH_SG_DMA_TX
 	bool "Transmit scatter-gather (fragmented) packets"
-	depends on RAETH_CHECKSUM_OFFLOAD && !RALINK_RT5350
+	depends on RAETH_CHECKSUM_OFFLOAD && !(RALINK_RT5350 || RALINK_MT7628)
 	default y
 
 config RAETH_TSO
@@ -57,51 +57,42 @@ choice
 
 	config  GE1_MII_FORCE_100
 		bool "MII_FORCE_100 (10/100M Switch)"
-	depends on (RALINK_RT2880 || RALINK_RT3883 || RALINK_MT7621)
+		depends on (RALINK_RT3883 || RALINK_MT7621)
 
 	config  GE1_MII_AN
 		bool "MII_AN (100Phy)"
-	depends on (RALINK_RT2880 || RALINK_RT3883 || RALINK_MT7621)
+		depends on (RALINK_RT3883 || RALINK_MT7621)
 
 	config  GE1_RVMII_FORCE_100
 		bool "RvMII_FORCE_100 (CPU)"
-	depends on (RALINK_RT2880 || RALINK_RT3883 || RALINK_MT7621)
+		depends on (RALINK_RT3883 || RALINK_MT7621)
 
 	config  GE1_RGMII_FORCE_1000
 		bool "RGMII_FORCE_1000 (GigaSW, CPU)"
-	depends on (RALINK_RT2880 || RALINK_RT3883 || RALINK_MT7621)
+		depends on (RALINK_RT3883)
+
+	config  GE1_RGMII_FORCE_1000
+		bool "RGMII_FORCE_1000 (GE1 -> MT7530 GigaSW P6)"
+		depends on (RALINK_MT7621)
+		select MT7530_GSW
+
+	config  GE1_TRGMII_FORCE_1200
+		bool "TRGMII_FORCE_1200 (GE1 -> MT7530 GigaSW P6)"
+		depends on (RALINK_MT7621)
+		select MT7530_GSW
 
 	config  GE1_RGMII_AN
 		bool "RGMII_AN (GigaPhy)"
-	depends on (RALINK_RT2880 || RALINK_RT3883 || RALINK_MT7621)
+		depends on (RALINK_RT3883 || RALINK_MT7621)
 
-	config  RAETH_ESW
-		bool "Ralink Embedded Switch"
-	depends on (RALINK_RT3052 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620)
+	config  GE1_RGMII_NONE
+		bool "NONE (Not used)"
+		depends on (RALINK_MT7621)
+
+	config  GE1_MAC_ESW
+		bool "Integrated ESW"
+		depends on (RALINK_RT3052 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620 || RALINK_MT7628)
 endchoice
-
-config RAETH_HAS_PORT4
-	bool "Port 4 Support"
-	depends on RAETH && RALINK_MT7620
-choice
-	prompt "Target Mode"
-	depends on RAETH_HAS_PORT4
-	default P4_RGMII_TO_MAC_MODE
-
-	config P4_MAC_TO_PHY_MODE
-		bool "Giga_Phy (RGMII)"
-	config P4_RGMII_TO_MAC_MODE
-		bool "Giga_SW/iNIC (RGMII)"
-	config P4_MII_TO_MAC_MODE
-		bool "External_CPU (MII_RvMII)"
-	config P4_RMII_TO_MAC_MODE
-		bool "External_CPU (RvMII_MII)"
-endchoice
-
-config  MAC_TO_GIGAPHY_MODE_ADDR2
-	hex "Port4 Phy Address"
-	default 0x4
-	depends on RAETH && (P4_MAC_TO_PHY_MODE)
 
 config RAETH_HAS_PORT5
 	bool "Port 5 Support"
@@ -113,10 +104,18 @@ choice
 
 	config P5_MAC_TO_PHY_MODE
 		bool "Giga_Phy (RGMII)"
+
 	config P5_RGMII_TO_MAC_MODE
 		bool "Giga_SW/iNIC (RGMII)"
+
+	config P5_RGMII_TO_MT7530_MODE
+		bool "MT7530 GigaSW (P5 RGMII -> MT7530 P6)"
+		depends on RALINK_MT7620
+		select MT7530_GSW
+
 	config P5_MII_TO_MAC_MODE
 		bool "External_CPU (MII_RvMII)"
+
 	config P5_RMII_TO_MAC_MODE
 		bool "External_CPU (RvMII_MII)"
 endchoice
@@ -142,14 +141,57 @@ choice
 
 	config GE2_MII_FORCE_100
 		bool "MII_FORCE_100 (10/100M Switch)"
+
 	config GE2_MII_AN
 		bool "MII_AN (100Phy)"
+
 	config GE2_RVMII_FORCE_100
 		bool "RvMII_FORCE_100 (CPU)"
+
 	config GE2_RGMII_FORCE_1000
 		bool "RGMII_FORCE_1000 (GigaSW, CPU)"
+
 	config GE2_RGMII_AN
 		bool "RGMII_AN (GigaPhy)"
+
+	config GE2_INTERNAL_GPHY_P4
+		bool "Internal GigaPHY Port 4 (GE2 -> MT7530 P4 AN)"
+		depends on (RALINK_MT7621)
+		select MT7530_GSW
+
+	config GE2_INTERNAL_GPHY_P0
+		bool "Internal GigaPHY Port 0 (GE2 -> MT7530 P0 AN)"
+		depends on (RALINK_MT7621)
+		select MT7530_GSW
+endchoice
+
+config RAETH_HAS_PORT4
+	bool "Port 4 Support"
+	depends on RAETH && RALINK_MT7620
+choice
+	prompt "Target Mode"
+	depends on RAETH_HAS_PORT4
+	default P4_RGMII_TO_MAC_MODE
+
+	config P4_MAC_TO_PHY_MODE
+		bool "Giga_Phy (RGMII + AN)"
+
+	config P4_MAC_TO_MT7530_GPHY_P4
+		bool "MT7530 GigaPhy Port4 (P4 RGMII -> MT7530 P4 AN)"
+		select MT7530_GSW
+
+	config P4_MAC_TO_MT7530_GPHY_P0
+		bool "MT7530 GigaPhy Port0 (P4 RGMII -> MT7530 P0 AN)"
+		select MT7530_GSW
+
+	config P4_RGMII_TO_MAC_MODE
+		bool "Giga_SW/iNIC (RGMII)"
+
+	config P4_MII_TO_MAC_MODE
+		bool "External_CPU (MII_RvMII)"
+
+	config P4_RMII_TO_MAC_MODE
+		bool "External_CPU (RvMII_MII)"
 endchoice
 
 config  MAC_TO_GIGAPHY_MODE_ADDR2
@@ -157,54 +199,51 @@ config  MAC_TO_GIGAPHY_MODE_ADDR2
 	default 0x1E
 	depends on RAETH && (GE2_MII_AN || GE2_RGMII_AN)
 
-#force 100M
-config RAETH_ROUTER
-bool
-default y if (GE1_MII_FORCE_100 || GE2_MII_FORCE_100 || GE1_RVMII_FORCE_100 || GE2_RVMII_FORCE_100)
-depends on RAETH
+config  MAC_TO_GIGAPHY_MODE_ADDR2
+	hex
+	default 0x0 if (GE2_INTERNAL_GPHY_P0)
+	default 0x4 if (GE2_INTERNAL_GPHY_P4)
+	depends on RAETH && (GE2_INTERNAL_GPHY_P0 || GE2_INTERNAL_GPHY_P4)
 
-#force 1000M
-config MAC_TO_MAC_MODE
-bool
-default y if (GE1_RGMII_FORCE_1000 || GE2_RGMII_FORCE_1000)
-depends on RAETH
+config  MAC_TO_GIGAPHY_MODE_ADDR2
+	hex "Port4 Phy Address"
+	default 0x4
+	depends on RAETH && (P4_MAC_TO_PHY_MODE)
 
-#AN
-config GIGAPHY
-bool
-default y if (GE1_RGMII_AN || GE2_RGMII_AN)
-depends on RAETH
+config  MAC_TO_GIGAPHY_MODE_ADDR2
+	hex
+	default 0x0 if (P4_MAC_TO_MT7530_GPHY_P0)
+	default 0x4 if (P4_MAC_TO_MT7530_GPHY_P4)
+	depends on RAETH && (P4_MAC_TO_MT7530_GPHY_P0 || P4_MAC_TO_MT7530_GPHY_P4)
 
-#AN
-config 100PHY
-bool
-default y if (GE1_MII_AN || GE2_MII_AN)
-depends on RAETH
+config  RAETH_ESW
+	bool "Ralink Embedded Switch"
+	depends on RAETH && GE1_MAC_ESW && !MT7530_GSW
 
-config  RALINK_VISTA_BASIC
-	bool "Vista Basic Logo for IC+ 175C"
-	depends on RAETH && RAETH_ROUTER && (RALINK_RT2880 || RALINK_RT3883)
+config  MT7530_GSW
+	bool "Ralink MT7530 Giga-Switch (On-die for MT7621)"
+	depends on RAETH && (RALINK_MT7620 || RALINK_MT7621)
 
 config  RAETH_SPECIAL_TAG
-	bool "Ralink Special Tag (0x810x)"
-	depends on RAETH && RAETH_ESW
+	bool "Ralink ESW Special Tag (0x810x)"
+	depends on RAETH && (RAETH_ESW || MT7530_GSW)
 	default n
 
 config  RAETH_ESW_CONTROL
-	bool "Embedded Switch Control Module (VLAN/Isolation/Status)"
-	depends on RAETH && RAETH_ESW && (RALINK_MT7620)
+	bool "Embedded (or MT7530) Switch Control Module (VLAN/Isolation/Status)"
+	depends on RAETH && (RAETH_ESW || MT7530_GSW) && (RALINK_MT7620 || RALINK_MT7621)
 
 config  RAETH_ESW_PORT_WAN
 	int "ESW WAN Port ID (0..4)"
 	depends on RAETH_ESW_CONTROL
-	default 0
+	default 4
 	help
 	  please choose port ID from range 0..4
 
 config  RAETH_ESW_PORT_LAN1
 	int "ESW LAN1 Port ID (0..4)"
 	depends on RAETH_ESW_CONTROL
-	default 1
+	default 3
 	help
 	  please choose port ID from range 0..4
 
@@ -218,21 +257,16 @@ config  RAETH_ESW_PORT_LAN2
 config  RAETH_ESW_PORT_LAN3
 	int "ESW LAN3 Port ID (0..4)"
 	depends on RAETH_ESW_CONTROL
-	default 3
+	default 1
 	help
 	  please choose port ID from range 0..4
 
 config  RAETH_ESW_PORT_LAN4
 	int "ESW LAN4 Port ID (0..4)"
 	depends on RAETH_ESW_CONTROL
-	default 4
+	default 0
 	help
 	  please choose port ID from range 0..4
-
-config  RAETH_SNMPD
-	bool "Support SNMPD in raeth"
-	depends on RAETH
-	default n
 
 config  RAETH_READ_MAC_FROM_MTD
 	bool "Read mac adress from mtdflash at boot time"
@@ -243,4 +277,28 @@ config  RAETH_MEMORY_OPTIMIZATION
 	bool "Decrease memory usage. Need for <32Mb RAM devices. More CPU use"
 	depends on RAETH
 	default n
+
+#force 100M
+config RAETH_ROUTER
+bool
+default y if (GE1_MII_FORCE_100 || GE2_MII_FORCE_100 || GE1_RVMII_FORCE_100 || GE2_RVMII_FORCE_100)
+depends on RAETH
+
+#force 1000M
+config MAC_TO_MAC_MODE
+bool
+default y if (GE1_RGMII_FORCE_1000 || GE2_RGMII_FORCE_1000)
+depends on RAETH && (RALINK_RT3883)
+
+#AN
+config GIGAPHY
+bool
+default y if (GE1_RGMII_AN || GE2_RGMII_AN)
+depends on RAETH
+
+#AN
+config 100PHY
+bool
+default y if (GE1_MII_AN || GE2_MII_AN)
+depends on RAETH
 

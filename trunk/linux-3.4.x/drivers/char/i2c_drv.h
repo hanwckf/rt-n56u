@@ -43,6 +43,10 @@
 #define RT2880_I2C_READ			3
 #define RT2880_I2C_WRITE		5
 #define RT2880_I2C_SET_ADDR		7
+#define RT2880_I2C_SET_ADDR_BYTES	9
+#define RT2880_PCIE_PHY_READ		10
+#define RT2880_PCIE_PHY_WRITE		8
+
 
 #define I2C_DEV_NAME			"i2cM0"
 
@@ -70,6 +74,8 @@ typedef struct i2c_write_data {
 #define RT2880_I2C_STATUS_REG  		(RT2880_I2C_REG_BASE+0x18)
 #define RT2880_I2C_STARTXFR_REG		(RT2880_I2C_REG_BASE+0x1C)
 #define RT2880_I2C_BYTECNT_REG		(RT2880_I2C_REG_BASE+0x20)
+#define RT2880_I2C_SM0_IS_AUTOMODE      (RT2880_I2C_REG_BASE+0x28)
+#define RT2880_I2C_SM0CTL0              (RT2880_I2C_REG_BASE+0x40)
 
 /* I2C_CFG register bit field */
 #define I2C_CFG_ADDRLEN_8				(7<<5)	/* 8 bits */
@@ -83,25 +89,20 @@ typedef struct i2c_write_data {
 
 
 /*
- * max SCLK : 400 KHz (2.7V)
- * assumed that BUS CLK is 150 MHZ 
- * so DIV 375
- * SCLK = PB_CLK / CLKDIV -> CLKDIV = PB_CLK / SCLK = PB_CLK / 0.4
+ * max SCLK : 400 KHz
+ * CLKDIV < I2C_CLK / SCLK = I2C_CLK / 0.4
  */
-
-/*
- * Example :
- * 	In RT3052, System clock is 40 / 3 = 13.3
- *	Hence, CLKDIV = 13.3 / 0.4 = 33	
- * 	In RT2880, System Clock is 133Mhz
- *	Hence, CLKDIV = 133 / 0.4 = 332.5 -> Use 333 ( If use 150Mhz, then 150 / 0.4 = 375 )
- */
-#if (!defined (FPGA_BOARD_RT2880)) && (!defined (FPGA_BOARD_RT3052))
-#define CLKDIV_VALUE	333
+#if defined (CONFIG_MTK_NFC_SUPPORT)
+#if defined (CONFIG_RALINK_MT7621)
+#define CLKDIV_VALUE	100
+#elif defined (CONFIG_RALINK_RT3883)
+#define CLKDIV_VALUE	50
 #else
-#define CLKDIV_VALUE	60
-#endif 
-
+#error "chip is not support"
+#endif
+#else
+#define CLKDIV_VALUE	333
+#endif
 
 #define i2c_busy_loop		(CLKDIV_VALUE*30)
 #define max_ee_busy_loop	(CLKDIV_VALUE*25)
@@ -113,8 +114,6 @@ typedef struct i2c_write_data {
  * AT24C512 (512K)
  *  -- address : two 8-bits
  */    
-//#define ADDRESS_BYTES	2
-#define ADDRESS_BYTES	1
 
 /* 
  * sequential reads
@@ -145,5 +144,6 @@ typedef struct i2c_write_data {
 
 #define ATMEL_ADDR		(0xA0>>1)
 #define WM8751_ADDR		(0x36>>1)
+#define WM8960_ADDR             (0x34>>1)
 
 #endif

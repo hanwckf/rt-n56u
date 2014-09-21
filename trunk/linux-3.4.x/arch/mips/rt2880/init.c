@@ -43,17 +43,20 @@
 #include <linux/delay.h>
 #include <asm/bootinfo.h>
 #include <asm/io.h>
+
 #include <asm/rt2880/prom.h>
 #include <asm/rt2880/generic.h>
 #include <asm/rt2880/surfboard.h>
 #include <asm/rt2880/surfboardint.h>
 #include <asm/rt2880/rt_mmap.h>
-#include <asm/rt2880/serial_rt2880.h>
+#include <asm/rt2880/rt_serial.h>
 
-#define UART_BAUDRATE	CONFIG_RALINK_UART_BRATE
+#define UART_BAUDRATE		CONFIG_RALINK_UART_BRATE
 
-extern unsigned int surfboard_sysclk;
 u32 mips_cpu_feq;
+u32 surfboard_sysclk;
+u32 ralink_asic_rev_id;
+EXPORT_SYMBOL(ralink_asic_rev_id);
 
 #ifdef CONFIG_UBOOT_CMDLINE
 /* Environment variable */
@@ -123,14 +126,13 @@ static inline void str2eaddr(unsigned char *ea, unsigned char *str)
 	}
 }
 
-#if defined(CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
-#define RALINK_SYSTEM_CONTROL_BASE	0xB0000000
-#define RALINK_REVID			*(unsigned int *)(RALINK_SYSTEM_CONTROL_BASE + 0x0c)
-#define RALINK_CLKCFG1			*(unsigned int *)(RALINK_SYSTEM_CONTROL_BASE + 0x30)
-#define RALINK_RSTCTRL			*(unsigned int *)(RALINK_SYSTEM_CONTROL_BASE + 0x34)
-#define PPLL_CFG0			*(unsigned int *)(RALINK_SYSTEM_CONTROL_BASE + 0x98)
-#define PPLL_CFG1			*(unsigned int *)(RALINK_SYSTEM_CONTROL_BASE + 0x9c)
-#define PPLL_DRV			*(unsigned int *)(RALINK_SYSTEM_CONTROL_BASE + 0xa0)
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7628)
+
+#define RALINK_CLKCFG1			*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x30)
+#define RALINK_RSTCTRL			*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x34)
+#define PPLL_CFG0			*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x98)
+#define PPLL_CFG1			*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x9c)
+#define PPLL_DRV			*(volatile u32 *)(RALINK_SYSCTL_BASE + 0xa0)
 
 /* PCI-E Phy read/write */
 #define PCIEPHY0_CFG			(RALINK_PCI_BASE + 0x90)
@@ -140,17 +142,18 @@ static inline void str2eaddr(unsigned char *ea, unsigned char *str)
 #define DATA_SHIFT			0
 #define ADDR_SHIFT			8
 
-int wait_pciephy_busy(void)
+static int wait_pciephy_busy(void)
 {
-	unsigned long reg_value = 0x0, retry = 0;
-	while(1){
+	u32 reg_value = 0x0, retry = 0;
+
+	while (1) {
 		reg_value = (*((volatile u32 *)PCIEPHY0_CFG));
 		
-		if(reg_value & BUSY)
+		if (reg_value & BUSY)
 			mdelay(100);
 		else
 			break;
-		if(retry++ > WAITRETRY_MAX){
+		if (retry++ > WAITRETRY_MAX){
 			printk("PCIE-PHY retry failed.\n");
 			return -1;
 		}
@@ -158,9 +161,9 @@ int wait_pciephy_busy(void)
 	return 0;
 }
 
-unsigned long pcie_phy(char rwmode, unsigned long addr, unsigned long val)
+static u32 pcie_phy(char rwmode, unsigned long addr, unsigned long val)
 {
-	unsigned long reg_value = 0x0;
+	u32 reg_value = 0x0;
 
 	wait_pciephy_busy();
 	if(rwmode == 'w'){
@@ -176,22 +179,17 @@ unsigned long pcie_phy(char rwmode, unsigned long addr, unsigned long val)
 	wait_pciephy_busy();
 
 	if(rwmode == 'r'){
-		//reg_value = rareg(READMODE, PCIEPHY0_CFG, 0);
 		reg_value = (*((volatile u32 *)PCIEPHY0_CFG));
 		return reg_value;
 	}
 	return 0;
 }
 
-void pcie_bypass_dll(void)
-{
-	pcie_phy('w', 0x0, 0x80);
-	pcie_phy('w', 0x1, 0x04);
-}
-
 static void prom_init_pcie(void)
 {
-	pcie_bypass_dll();
+	/* pcie bypass dll */
+	pcie_phy('w', 0x0, 0x80);
+	pcie_phy('w', 0x1, 0x04);
 
 	pcie_phy('w', 0x68, 0xB4);
 
@@ -201,11 +199,13 @@ static void prom_init_pcie(void)
 	PPLL_DRV = (PPLL_DRV | 1<<31);
 
 #if defined (CONFIG_RALINK_MT7620)
-	if(!( RALINK_REVID & ((0x1UL)<<16))){
+	if (!(ralink_asic_rev_id & (1UL<<16))) {
 		/* Only MT7620N do this, not MT7620A */
 		PPLL_CFG0 = (PPLL_CFG0 | (1UL << 31));
 		PPLL_CFG1 = (PPLL_CFG1 | (1UL << 26));
 	}
+#elif defined (CONFIG_RALINK_MT7628)
+	/* todo */
 #endif
 }
 #else
@@ -214,77 +214,67 @@ static void prom_init_pcie(void)
 }
 #endif
 
-
 static void prom_init_usb(void)
 {
-#ifndef CONFIG_RALINK_RT3052
-	u32 reg=0;
+#if !defined (CONFIG_RALINK_RT3052) && !defined (CONFIG_RALINK_MT7621)
+	u32 reg = 0;
 #endif
 #if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || \
     defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7620) || \
-    defined (CONFIG_RALINK_MT7621)
+    defined (CONFIG_RALINK_MT7628)
 	reg = *(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x34));
 	reg |= (RALINK_UDEV_RST | RALINK_UHST_RST);
 	*(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x34))= reg;
 
 	reg = *(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x30));
 #if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7620) || \
-    defined (CONFIG_RALINK_MT7621)
+    defined (CONFIG_RALINK_MT7628)
 	reg = reg & ~(RALINK_UPHY0_CLK_EN);
 #else
 	reg = reg & ~(RALINK_UPHY0_CLK_EN | RALINK_UPHY1_CLK_EN);
 #endif
-	*(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x30))= reg;
-
+	*(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x30)) = reg;
 #elif defined (CONFIG_RALINK_RT3052)
 	*(volatile u32 *)KSEG1ADDR((RALINK_USB_OTG_BASE + 0xE00)) = 0xF;	// power saving
+#elif defined (CONFIG_RALINK_MT7621)
+	/* TODO */
 #endif
-}
-
-int get_ethernet_addr(char *ethernet_addr)
-{
-	char *ethaddr_str;
-
-	ethaddr_str = prom_getenv("ethaddr");
-	if (!ethaddr_str) {
-		printk("ethaddr not set in boot prom\n");
-		return -1;
-	}
-	str2eaddr(ethernet_addr, ethaddr_str);
-
-#ifdef DEBUG
-	int i;
-	printk("get_ethernet_addr: ");
-	for (i=0; i<5; i++)
-		printk("%02x:", (unsigned char)*(ethernet_addr+i));
-	printk("%02x\n", *(ethernet_addr+i));
-#endif
-	return 0;
 }
 
 static void prom_init_sysclk(void)
 {
-#if defined(CONFIG_RT2880_FPGA)
-	mips_cpu_feq = 25000000;
-#elif defined (CONFIG_RT3052_FPGA) || defined (CONFIG_RT3352_FPGA) || \
-      defined (CONFIG_RT3883_FPGA) || defined (CONFIG_RT5350_FPGA)
-	mips_cpu_feq = 40000000;
-#elif defined (CONFIG_MT7620_FPGA)
-	mips_cpu_feq = 50000000;
-#elif defined (CONFIG_MT7621_FPGA)
-	mips_cpu_feq = 35000000;  /* FIXME */
-#else
+	char asic_id[8], *ram_type = "SDRAM";
 	u32 reg;
 	u8  clk_sel;
-#if defined(CONFIG_RT5350_ASIC) || defined (CONFIG_MT7620_ASIC)
+#if defined (CONFIG_RT5350_ASIC) || defined (CONFIG_MT7620_ASIC) || \
+    defined (CONFIG_MT7628_ASIC)
 	u8  clk_sel2;
+#endif
+#if defined (CONFIG_RALINK_MT7621)
+	u32 cpu_fdiv = 0;
+	u32 cpu_ffrac = 0;
+	u32 fbdiv = 0;
+#endif
+
+	reg = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x00));
+	memcpy(asic_id, &reg, 4);
+	reg = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x04));
+	memcpy(asic_id+4, &reg, 4);
+	asic_id[6] = '\0';
+
+	ralink_asic_rev_id = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x0c));
+
+#if defined (CONFIG_RALINK_MT7620)
+	if (ralink_asic_rev_id & (1UL<<16))
+		asic_id[6] = 'A';
+	else
+		asic_id[6] = 'N';
+	asic_id[7] = '\0';
 #endif
 
 	reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x10)));
 
-#if defined (CONFIG_RT2880_ASIC)
-	clk_sel = (reg>>20) & 0x03;
-#elif defined (CONFIG_RT3052_ASIC)
+#if defined (CONFIG_RT3052_ASIC)
 	clk_sel = (reg>>18) & 0x01;
 #elif defined (CONFIG_RT3352_ASIC)
 	clk_sel = (reg>>8) & 0x01;
@@ -294,44 +284,24 @@ static void prom_init_sysclk(void)
 	clk_sel |= (clk_sel2 << 1);
 #elif defined (CONFIG_RT3883_ASIC)
 	clk_sel = (reg>>8) & 0x03;
-#elif defined (CONFIG_MT7620_ASIC)
+#elif defined (CONFIG_MT7620_ASIC) || defined (CONFIG_MT7628_ASIC)
+	clk_sel = 0;	/* clock from CPU PLL (600MHz) */
 	clk_sel2 = (reg>>4) & 0x03;
 	reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x58)));
-	if ( reg & ((0x1UL) << 24))
+	if (reg & (0x1UL << 24))
 		clk_sel = 1;	/* clock from BBP PLL (480MHz ) */
-	else
-		clk_sel = 0;	/* clock from CPU PLL (600MHz) */
+#elif defined (CONFIG_MT7621_ASIC)
+	clk_sel = 0;	/* GPLL (500MHz) */
+	clk_sel2 = (reg>>4) & 0x01;
+	reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x2C)));
+	if (reg & (0x1UL << 30))
+		clk_sel = 1;	/* CPU PLL */
 #else
 #error Please Choice System Type
 #endif
+
 	switch(clk_sel) {
-#if defined (CONFIG_RALINK_RT2880_SHUTTLE)
-	case 0:
-		mips_cpu_feq = (233333333);
-		break;
-	case 1:
-		mips_cpu_feq = (250000000);
-		break;
-	case 2:
-		mips_cpu_feq = (266666666);
-		break;
-	case 3:
-		mips_cpu_feq = (280000000);
-		break;
-#elif defined (CONFIG_RALINK_RT2880_MP)
-	case 0:
-		mips_cpu_feq = (250000000);
-		break;
-	case 1:
-		mips_cpu_feq = (266666666);
-		break;
-	case 2:
-		mips_cpu_feq = (280000000);
-		break;
-	case 3:
-		mips_cpu_feq = (300000000);
-		break;
-#elif defined (CONFIG_RALINK_RT3052)
+#if defined (CONFIG_RALINK_RT3052)
 #if defined (CONFIG_RALINK_RT3350)
 		// MA10 is floating
 	case 0:
@@ -379,7 +349,7 @@ static void prom_init_sysclk(void)
 	case 3:
 		mips_cpu_feq = (300*1000*1000);
 		break;
-#elif defined (CONFIG_RALINK_MT7620)
+#elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7628)
 	case 0:
 		/* set CPU ratio to 3/3 for normal mode (1/3 for sleep mode) */
 		reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x3C)));
@@ -432,11 +402,30 @@ static void prom_init_sysclk(void)
 	case 1:
 		mips_cpu_feq = (480*1000*1000);
 		break;
+#elif defined (CONFIG_RALINK_MT7621)
+	case 0: /* GPLL (500MHz) */
+		reg = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x44));
+		cpu_fdiv = ((reg >> 8) & 0x1F);
+		cpu_ffrac = (reg & 0x1F);
+		mips_cpu_feq = (500 * cpu_ffrac / cpu_fdiv) * 1000 * 1000;
+		break;
+	case 1: /* CPU PLL */
+		reg = (*(volatile u32 *)(RALINK_MEMCTRL_BASE + 0x648));
+		fbdiv = ((reg >> 4) & 0x7F) + 1;
+		reg = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x10));
+		reg = (reg >> 6) & 0x7;
+		if (reg >= 6)
+			mips_cpu_feq = 25 * fbdiv * 1000 * 1000;	// 25Mhz Xtal
+		else if (reg >= 3)
+			mips_cpu_feq = 20 * fbdiv * 1000 * 1000;	// 40Mhz Xtal
+		else {
+			/* 20Mhz Xtal: TODO */
+		}
+		break;
 #else
 #error Please Choice Chip Type
 #endif
 	}
-#endif
 
 #if defined (CONFIG_RT3883_ASIC)
 	if ((reg>>17) & 0x1) { //DDR2
@@ -454,6 +443,7 @@ static void prom_init_sysclk(void)
 			surfboard_sysclk = (166*1000*1000);
 			break;
 		}
+		ram_type = "DDR2";
 	}
 	else { //SDR
 		switch (clk_sel) {
@@ -471,7 +461,11 @@ static void prom_init_sysclk(void)
 			break;
 		}
 	}
-#elif defined(CONFIG_RT5350_ASIC)
+#elif defined (CONFIG_RT3352_ASIC)
+	if ((reg>>17) & 0x1) {
+		ram_type = "DDR2";
+	}
+#elif defined (CONFIG_RT5350_ASIC)
 	switch (clk_sel) {
 	case 0:
 		surfboard_sysclk = (120*1000*1000);
@@ -486,32 +480,61 @@ static void prom_init_sysclk(void)
 		surfboard_sysclk = (100*1000*1000);
 		break;
 	}
-#elif defined (CONFIG_MT7620_ASIC)
+#elif defined (CONFIG_RALINK_MT7620)
 	switch (clk_sel2) {
 	case 0:
-		surfboard_sysclk = mips_cpu_feq/4;	/* SDR (MT7620 E1) */
+		surfboard_sysclk = mips_cpu_feq/4;	/* SDR 150MHz */
 		break;
 	case 1:
+		surfboard_sysclk = mips_cpu_feq/3;	/* DDR1 */
+		ram_type = "DDR1";
+		break;
 	case 2:
-		surfboard_sysclk = mips_cpu_feq/3;	/* DDR1 & DDR2 */
+		surfboard_sysclk = mips_cpu_feq/3;	/* DDR2 */
+		ram_type = "DDR2";
 		break;
 	case 3:
-		surfboard_sysclk = mips_cpu_feq/5;	/* SDR (MT7620 E2) */
+		surfboard_sysclk = mips_cpu_feq/5;	/* SDR 120MHz */
 		break;
 	}
-#elif defined (CONFIG_RALINK_RT2880)
-	surfboard_sysclk = mips_cpu_feq/2;
+#elif defined (CONFIG_RALINK_MT7628)
+	surfboard_sysclk = mips_cpu_feq/3;
+	switch (clk_sel2 & 0x01) {
+	case 0:
+		ram_type = "DDR2";
+		break;
+	case 1:
+		ram_type = "DDR1";
+		break;
+	}
+#elif defined (CONFIG_RALINK_MT7621)
+	surfboard_sysclk = mips_cpu_feq/4;
+	switch (clk_sel2) {
+	case 0:
+		ram_type = "DDR3";
+		break;
+	case 1:
+		ram_type = "DDR2";
+		break;
+	}
 #else
 	surfboard_sysclk = mips_cpu_feq/3;
 #endif
-	printk("\n The CPU/SYS frequency set to %d/%d MHz\n", mips_cpu_feq / 1000 / 1000, surfboard_sysclk / 1000 / 1000);
+	printk("\nRalink SoC: %s, RevID: %04X, RAM: %s\n", asic_id, (ralink_asic_rev_id & 0xffff), ram_type);
+	printk("CPU/SYS frequency: %d/%d MHz\n", mips_cpu_feq / 1000 / 1000, surfboard_sysclk / 1000 / 1000);
 
 #if defined (CONFIG_RALINK_SYSTICK_COUNTER) && defined (CONFIG_RALINK_CPUSLEEP)
 	/* enable cpu sleep mode for power saving */
-	printk("\n MIPS CPU sleep mode enabled.\n");
+	printk("CPU sleep mode: ON\n");
+#if defined (CONFIG_RALINK_MT7621)
+	reg = (*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x14)));
+	reg |= 0x80000000;
+	(*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x14))) = reg;
+#else
 	reg = (*((volatile u32 *)(RALINK_CPU_CLK_AUTO_CFG)));
 	reg |= 0x80000000;
 	(*((volatile u32 *)(RALINK_CPU_CLK_AUTO_CFG))) = reg;
+#endif
 #endif
 }
 
@@ -535,8 +558,10 @@ void __init prom_init_serial_port(void)
 	 */
 #if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || \
     defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7620) || \
-    defined (CONFIG_RALINK_MT7621)
+    defined (CONFIG_RALINK_MT7628)
 	uartclk = 40000000;
+#elif defined (CONFIG_RALINK_MT7621)
+	uartclk = 50000000;
 #else
 	uartclk = surfboard_sysclk;
 #endif
@@ -548,31 +573,32 @@ void __init prom_init_serial_port(void)
 	IER(RALINK_SYSCTL_BASE + 0xC00) = 0;
 	FCR(RALINK_SYSCTL_BASE + 0xC00) = 0;
 	LCR(RALINK_SYSCTL_BASE + 0xC00) = UART_LCR_WLEN8;
-#if defined (CONFIG_RALINK_MT7621)
 	DLL(RALINK_SYSCTL_BASE + 0xC00) = (clock_divisor & 0xFF);
 	DLM(RALINK_SYSCTL_BASE + 0xC00) = (clock_divisor >> 8) & 0xFF;
-#else
-	DLF(RALINK_SYSCTL_BASE + 0xC00) = clock_divisor;
-#endif
+
 	// fixed 8n1
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
+	IER(RALINK_SYSCTL_BASE + 0xD00) = 0;
+	FCR(RALINK_SYSCTL_BASE + 0xD00) = 0;
+	LCR(RALINK_SYSCTL_BASE + 0xD00) = UART_LCR_WLEN8;
+	DLL(RALINK_SYSCTL_BASE + 0xD00) = (clock_divisor & 0xFF);
+	DLM(RALINK_SYSCTL_BASE + 0xD00) = (clock_divisor >> 8) & 0xFF;
+#else
 	IER(RALINK_SYSCTL_BASE + 0x500) = 0;
 	FCR(RALINK_SYSCTL_BASE + 0x500) = 0;
 	LCR(RALINK_SYSCTL_BASE + 0x500) = UART_LCR_WLEN8;
-#if defined (CONFIG_RALINK_MT7621)
 	DLL(RALINK_SYSCTL_BASE + 0x500) = (clock_divisor & 0xFF);
 	DLM(RALINK_SYSCTL_BASE + 0x500) = (clock_divisor >> 8) & 0xFF;
-#else
-	DLF(RALINK_SYSCTL_BASE + 0x500) = clock_divisor;
 #endif
 
 	serial_req[0].line       = 0;
 	serial_req[0].type       = PORT_16550A;
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 	serial_req[0].iotype     = UPIO_MEM32;
 #else
 	serial_req[0].iotype     = UPIO_AU;
 #endif
-	serial_req[0].irq        = SURFBOARDINT_UARTL;
+	serial_req[0].irq        = SURFBOARDINT_UART1;
 	serial_req[0].flags      = UPF_SKIP_TEST;
 	serial_req[0].uartclk    = uartclk;
 	serial_req[0].regshift   = 2;
@@ -580,15 +606,15 @@ void __init prom_init_serial_port(void)
 	serial_req[0].membase    = ioremap_nocache(serial_req[0].mapbase, 0x0100);
 	early_serial_setup(&serial_req[0]);
 
-#if !defined(CONFIG_RALINK_GPIOMODE_UARTF) && (CONFIG_SERIAL_8250_NR_UARTS > 1)
+#if !defined (CONFIG_RALINK_GPIOMODE_UARTF) && (CONFIG_SERIAL_8250_NR_UARTS > 1)
 	serial_req[1].line       = 1;
 	serial_req[1].type       = PORT_16550A;
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 	serial_req[1].iotype     = UPIO_MEM32;
 #else
 	serial_req[1].iotype     = UPIO_AU;
 #endif
-	serial_req[1].irq        = SURFBOARDINT_UART;
+	serial_req[1].irq        = SURFBOARDINT_UART2;
 	serial_req[1].flags      = UPF_SKIP_TEST;
 	serial_req[1].uartclk    = uartclk;
 	serial_req[1].regshift   = 2;
@@ -606,13 +632,12 @@ int __init prom_get_ttysnum(void)
 	/* get ttys_num to use with the fake console/prom_printf */
 	argptr = prom_getcmdline();
 
-	if ((argptr = strstr(argptr, "console=ttyS")) != NULL)
-	{
+	if ((argptr = strstr(argptr, "console=ttyS")) != NULL) {
 		argptr += strlen("console=ttyS");
-		if (argptr[0] == '0')           /* ttyS0 */
-			ttys_num = 0;           /* happens to be rs_table[0] */
-		else if (argptr[0] == '1')      /* ttyS1 */
-			ttys_num = 1;           /* happens to be rs_table[1] */
+		if (argptr[0] == '0')		/* ttyS0 */
+			ttys_num = 0;		/* happens to be rs_table[0] */
+		else if (argptr[0] == '1')	/* ttyS1 */
+			ttys_num = 1;		/* happens to be rs_table[1] */
 	}
 
 	return (ttys_num);
@@ -634,26 +659,14 @@ void __init prom_init(void)
 	write_c0_wired(0);
 
 	prom_init_cmdline();
-	prom_setup_printf(prom_get_ttysnum());
-
+	prom_init_printf(prom_get_ttysnum());
 	prom_init_sysclk();
 	prom_init_serial_port();	/* Needed for Serial Console */
 	prom_init_usb();		/* USB power saving */
 	prom_init_pcie();		/* PCIe power saving*/
-
 	prom_meminit();
+	prom_init_irq();
 
 	prom_printf("\nLINUX started...\n");
-#if defined(CONFIG_RT2880_FPGA) || defined(CONFIG_RT3052_FPGA) || \
-    defined(CONFIG_RT3352_FPGA) || defined(CONFIG_RT3883_FPGA) || \
-    defined(CONFIG_RT5350_FPGA) || defined(CONFIG_MT7620_FPGA) || \
-    defined(CONFIG_MT7621_FPGA)
-	prom_printf("\n THIS IS FPGA\n");
-#elif defined(CONFIG_RT2880_ASIC) || defined(CONFIG_RT3052_ASIC) || \
-      defined(CONFIG_RT3352_ASIC) || defined(CONFIG_RT3883_ASIC) || \
-      defined(CONFIG_RT5350_ASIC) || defined(CONFIG_MT7620_ASIC) || \
-      defined(CONFIG_MT7621_ASIC)
-	prom_printf("\n THIS IS ASIC\n");
-#endif
 }
 

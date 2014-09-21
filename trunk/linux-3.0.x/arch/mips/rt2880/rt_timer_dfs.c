@@ -52,13 +52,17 @@
 #include <asm/uaccess.h>
 #include <linux/interrupt.h>
 
+#include <asm/rt2880/surfboard.h>
 #include <asm/rt2880/surfboardint.h>
 
 #include "rt_timer.h"
 
 static struct timer_data tmr0;
-#if !defined(CONFIG_RALINK_TIMER_WDG) && !defined(CONFIG_RALINK_TIMER_WDG_MODULE)
+#if !defined (CONFIG_RALINK_TIMER_WDG) && !defined (CONFIG_RALINK_TIMER_WDG_MODULE)
 static struct timer_data tmr1;
+#endif
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
+static struct timer_data tmr2;
 #endif
 
 void set_timer_ebl(unsigned int timer, unsigned int ebl)
@@ -67,16 +71,23 @@ void set_timer_ebl(unsigned int timer, unsigned int ebl)
 
 	result = sysRegRead(timer);
 
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
+	if(ebl==1)
+		result |= ((1<<7) | (1<<4)); //count down and autoload enable
+	else
+		result &= ~((1<<7) | (1<<4)); //count down and autoload enable
+#else
 	if (ebl)
 		result |= (1<<7);
 	else
 		result &= ~(1<<7);
+#endif
 
 	sysRegWrite(timer, result);
 }
 
 
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 void set_timer_clock_prescale(unsigned int timer, int prescale)
 {
 	unsigned int result;
@@ -98,7 +109,7 @@ void set_timer_mode(unsigned int timer, enum timer_mode mode)
 	else
 		result &= ~(1 <<4);
 
-	sysRegWrite(timer,result);
+	sysRegWrite(timer, result);
 }
 #else
 void set_timer_clock_prescale(unsigned int timer, enum timer_clock_freq prescale)
@@ -133,11 +144,10 @@ int request_tmr_service(int interval, void (*function)(unsigned long), unsigned 
 	tmr0.tmr_callback_function = function;
 
 	set_timer_mode(TMR0CTL, PERIODIC);
-#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3052) || \
-    defined (CONFIG_RALINK_RT3883)
+#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883)
 	set_timer_clock_prescale(TMR0CTL, SYS_CLK_DIV16384);
 	sysRegWrite(TMR0LOAD, interval * (get_surfboard_sysclk() / 16384 / 1000));
-#elif defined (CONFIG_RALINK_MT7621)
+#elif defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 	set_timer_clock_prescale(TMR0CTL, 1000); //unit=1ms
 	sysRegWrite(TMR0LOAD, interval);
 #else /* RT3352/RT5350/MT7620 */
@@ -179,6 +189,7 @@ static irqreturn_t rt2880tmr_irq_handler(int irq, void *dev_id)
 	reg_val = sysRegRead(TMRSTAT);
 
 	// writing '1' to TMRSTAT[0]:TMR0INT to clear the interrupt
+	reg_val &= ~(0x7);
 	reg_val |= (0x1<<0);
 
 	sysRegWrite(TMRSTAT, reg_val);
@@ -192,11 +203,11 @@ static irqreturn_t rt2880tmr_irq_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-#if !defined (CONFIG_RALINK_TIMER_WDG) && !defined(CONFIG_RALINK_TIMER_WDG_MODULE)
+#if !defined (CONFIG_RALINK_TIMER_WDG) && !defined (CONFIG_RALINK_TIMER_WDG_MODULE)
 int request_tmr1_service(int interval, void (*function)(unsigned long), unsigned long data)
 {
 	unsigned long flags;
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 	unsigned long reg;
 #endif
 
@@ -207,11 +218,10 @@ int request_tmr1_service(int interval, void (*function)(unsigned long), unsigned
 	tmr1.tmr_callback_function = function;
 
 	set_timer_mode(TMR1CTL, PERIODIC);
-#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3052) || \
-    defined (CONFIG_RALINK_RT3883)
+#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883)
 	set_timer_clock_prescale(TMR1CTL, SYS_CLK_DIV16384);
 	sysRegWrite(TMR1LOAD, interval * (get_surfboard_sysclk() / 16384 / 1000));
-#elif defined (CONFIG_RALINK_MT7621)
+#elif defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 	//timer1 is used for periodic timer
 	reg  = sysRegRead(RSTSTAT);
 	reg &= ~(1 << 31); // WDT2SYSRST_EN
@@ -258,6 +268,7 @@ static irqreturn_t rt2880tmr1_irq_handler(int irq, void *dev_id)
 	reg_val = sysRegRead(TMRSTAT);
 
 	// writing '1' to TMRSTAT[1]:TMR1INT to clear the interrupt
+	reg_val &= ~(0x7);
 	reg_val |= (0x1<<1);
 
 	sysRegWrite(TMRSTAT, reg_val);
@@ -272,6 +283,71 @@ static irqreturn_t rt2880tmr1_irq_handler(int irq, void *dev_id)
 }
 #endif
 
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
+int request_tmr2_service(int interval, void (*function)(unsigned long), unsigned long data)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&tmr2.tmr_lock, flags);
+
+	// Set Callback function
+	tmr2.data = data;
+	tmr2.tmr_callback_function = function;
+
+	set_timer_mode(TMR2CTL, PERIODIC);
+	set_timer_clock_prescale(TMR2CTL, 1000); //unit=1ms
+	sysRegWrite(TMR2LOAD, interval);
+
+	// Enable Timer2
+	set_timer_ebl(TMR2CTL,1);
+
+	spin_unlock_irqrestore(&tmr2.tmr_lock, flags);
+
+	return 0;
+}
+
+int unregister_tmr2_service(void)
+{
+	unsigned long flags=0;
+
+	spin_lock_irqsave(&tmr2.tmr_lock, flags);
+
+	// Disable Timer2
+	set_timer_ebl(TMR2CTL,0);
+
+	// Unregister Callback Function
+	tmr2.data = 0;
+	tmr2.tmr_callback_function = NULL;
+
+	spin_unlock_irqrestore(&tmr2.tmr_lock, flags);
+
+	return 0;
+}
+
+static irqreturn_t rt2880tmr2_irq_handler(int irq, void *dev_id)
+{
+	unsigned long flags;
+	unsigned int reg_val;
+
+	spin_lock_irqsave(&tmr2.tmr_lock, flags);
+
+	reg_val = sysRegRead(TMRSTAT);
+
+	// Writing '1' to TMRSTAT[2]:TMR2INT to clear the interrupt
+	reg_val &= ~(0x7);
+	reg_val |= (0x1<<2);
+	sysRegWrite(TMRSTAT, reg_val);
+
+	// execute callback function
+	if ( tmr2.tmr_callback_function != NULL)
+		(tmr2.tmr_callback_function)(tmr0.data);
+
+	spin_unlock_irqrestore(&tmr2.tmr_lock, flags);
+
+	return IRQ_HANDLED;
+}
+#endif
+
 int __init ralink_timer_init_module(void)
 {
 	printk("Load Ralink Timer0 Module\n");
@@ -279,7 +355,7 @@ int __init ralink_timer_init_module(void)
 	spin_lock_init(&tmr0.tmr_lock);
 
 	// initialize Soft Timer (Timer0)
-	if(request_irq(SURFBOARDINT_TIMER0, rt2880tmr_irq_handler, IRQF_DISABLED, "rt2880_timer0", NULL))
+	if (request_irq(SURFBOARDINT_TIMER0, rt2880tmr_irq_handler, IRQF_DISABLED, "rt2880_timer0", NULL))
 		return 1;
 
 #if !defined (CONFIG_RALINK_TIMER_WDG) && !defined (CONFIG_RALINK_TIMER_WDG_MODULE)
@@ -288,10 +364,10 @@ int __init ralink_timer_init_module(void)
 	spin_lock_init(&tmr1.tmr_lock);
 
 	// initialize Soft Timer (Timer1)
-	if(request_irq(SURFBOARDINT_WDG, rt2880tmr1_irq_handler, IRQF_DISABLED, "rt2880_timer1", NULL))
+	if (request_irq(SURFBOARDINT_WDG, rt2880tmr1_irq_handler, IRQF_DISABLED, "rt2880_timer1", NULL))
 		return 1;
 
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 	{
 		int reg_val;
 		reg_val  = sysRegRead(RSTSTAT);
@@ -301,6 +377,15 @@ int __init ralink_timer_init_module(void)
 #endif
 #endif
 
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
+	printk("Load Ralink Timer2 Module\n");
+
+	spin_lock_init(&tmr2.tmr_lock);
+
+	// initialize Soft Timer (Timer2)
+	if (request_irq(SURFBOARDINT_TIMER1, rt2880tmr2_irq_handler, IRQF_DISABLED, "rt2880_timer2", NULL))
+		return 1;
+#endif
 	return 0;
 }
 
@@ -315,7 +400,11 @@ void __exit ralink_timer_exit_module(void)
 	free_irq(SURFBOARDINT_WDG, NULL);
 	unregister_tmr1_service();
 #endif
-
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
+	printk("Unload Ralink Timer2 Module\n");
+	free_irq(SURFBOARDINT_TIMER1, NULL);
+	unregister_tmr2_service();
+#endif
 }
 
 module_init(ralink_timer_init_module);
@@ -323,17 +412,20 @@ module_exit(ralink_timer_exit_module);
 
 EXPORT_SYMBOL(request_tmr_service);
 EXPORT_SYMBOL(unregister_tmr_service);
-#if !defined(CONFIG_RALINK_TIMER_WDG) && !defined(CONFIG_RALINK_TIMER_WDG_MODULE)
+#if !defined (CONFIG_RALINK_TIMER_WDG) && !defined (CONFIG_RALINK_TIMER_WDG_MODULE)
 EXPORT_SYMBOL(request_tmr1_service);
 EXPORT_SYMBOL(unregister_tmr1_service);
 #endif
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
+EXPORT_SYMBOL(request_tmr2_service);
+EXPORT_SYMBOL(unregister_tmr2_service);
+#endif
 
-#if !defined(CONFIG_RALINK_TIMER_WDG) && !defined(CONFIG_RALINK_TIMER_WDG_MODULE)
+#if !defined (CONFIG_RALINK_TIMER_WDG) && !defined (CONFIG_RALINK_TIMER_WDG_MODULE)
 MODULE_DESCRIPTION("Ralink Timer0/Timer1 Module");
 #else
 MODULE_DESCRIPTION("Ralink Timer0 Module");
 #endif
 MODULE_AUTHOR("Steven/Bob");
 MODULE_LICENSE("GPL");
-
 

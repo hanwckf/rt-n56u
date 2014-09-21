@@ -311,7 +311,7 @@ config  RA_HW_NAT_PREBIND
 
 config  RA_HW_NAT_IPV6
 	bool "IPv6 Acceleration"
-	depends on RA_HW_NAT && !(RALINK_RT2880 || RALINK_RT3052)
+	depends on RA_HW_NAT && !(RALINK_RT3052)
 	default n
 	help
 	  IPv6 routing accelerated by HNAT

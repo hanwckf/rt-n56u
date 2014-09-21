@@ -16,8 +16,8 @@
  *
  * Defines of the Palmchip boards specific address-MAP, registers, etc.
  */
-#ifndef __ASM_SURFBOARD_GENERIC_H
-#define __ASM_SURFBOARD_GENERIC_H
+#ifndef __ASM_MACH_MIPS_RT2880_GENERIC_H
+#define __ASM_MACH_MIPS_RT2880_GENERIC_H
 
 #include <asm/addrspace.h>
 #include <asm/byteorder.h>
@@ -39,4 +39,4 @@
 #define POWEROFF          (0x0)		/* drive low */
 
 
-#endif  /* __ASM_SURFBOARD_GENERIC_H */
+#endif

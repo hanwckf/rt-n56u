@@ -11,7 +11,7 @@
 
 int rw_rf_reg(int write, int reg, int *data)
 {
-	unsigned long rfcsr, i = 0;
+	u32 rfcsr, i = 0;
 
 	while (1) {
 		rfcsr = sysRegRead(RF_CSR_CFG);

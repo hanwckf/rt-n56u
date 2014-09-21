@@ -41,15 +41,15 @@
 #include <linux/sched.h>
 #include <linux/mc146818rtc.h>
 #include <linux/ioport.h>
-
 #include <asm/cpu.h>
 #include <asm/bootinfo.h>
 #include <asm/irq.h>
+#include <asm/time.h>
+#include <asm/traps.h>
+
 #include <asm/rt2880/generic.h>
 #include <asm/rt2880/prom.h>
 #include <asm/rt2880/surfboardint.h>
-#include <asm/time.h>
-#include <asm/traps.h>
 
 #if defined(CONFIG_SERIAL_CONSOLE) || defined(CONFIG_PROM_CONSOLE)
 extern void console_setup(char *, int *);
@@ -71,9 +71,7 @@ extern void mips_reboot_setup(void);
 
 const char *get_system_type(void)
 {
-#if defined (CONFIG_RALINK_RT2880)
-	return "Ralink RT2880 SoC";
-#elif defined (CONFIG_RALINK_RT3883)
+#if defined (CONFIG_RALINK_RT3883)
 	return "Ralink RT3883/RT3662 SoC";
 #elif defined (CONFIG_RALINK_RT3052)
 #if defined (CONFIG_RALINK_RT3350)
@@ -89,6 +87,8 @@ const char *get_system_type(void)
 	return "Mediatek MT7620 SoC";
 #elif defined (CONFIG_RALINK_MT7621)
 	return "Mediatek MT7621 SoC";
+#elif defined (CONFIG_RALINK_MT7628)
+	return "Mediatek MT7628 SoC";
 #else
 	return "Ralink SoC";
 #endif

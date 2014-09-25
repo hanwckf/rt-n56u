@@ -11,6 +11,10 @@ utils_dir_y			+= cpu_usage
 # ESW
 ifdef CONFIG_RAETH_ESW
 utils_dir_y			+= switch
+else
+ifdef CONFIG_MT7530_GSW
+utils_dir_y			+= switch
+endif
 endif
 
 # hub-ctrl

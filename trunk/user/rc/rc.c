@@ -567,7 +567,7 @@ init_router(void)
 #if defined (USE_RTL8367)
 	rtl8367_node();
 #endif
-#if defined (USE_MTK_ESW)
+#if defined (USE_MTK_ESW) || defined (USE_MTK_GSW)
 	mtk_esw_node();
 #endif
 
@@ -1181,7 +1181,7 @@ static const applet_rc_t applets_rc[] = {
 #if defined(USE_RTL8367)
 	{ "rtl8367",		rtl8367_main		},
 #endif
-#if defined(USE_MTK_ESW)
+#if defined(USE_MTK_ESW) || defined(USE_MTK_GSW)
 	{ "mtk_esw",		mtk_esw_main		},
 #endif
 #if defined(USE_RT3352_MII)

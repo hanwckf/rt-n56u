@@ -2481,7 +2481,9 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #if defined(USE_RTL8367)
 	int use_switch_type = 0; // Realtek RTL8367
 #elif defined(USE_MTK_ESW)
-	int use_switch_type = 1; // Mediatek MT7620 Embedded GSW
+	int use_switch_type = 1; // Mediatek MT7620 Embedded ESW
+#elif defined(USE_MTK_GSW)
+	int use_switch_type = 2; // Mediatek MT7621 Internal GSW (or MT7530)
 #endif
 
 	websWrite(wp,

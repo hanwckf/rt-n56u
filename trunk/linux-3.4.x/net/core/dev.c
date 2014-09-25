@@ -4997,6 +4997,20 @@ int dev_set_mac_address(struct net_device *dev, struct sockaddr *sa)
 }
 EXPORT_SYMBOL(dev_set_mac_address);
 
+#ifndef CONFIG_ETHTOOL
+/*
+ * Some useful ethtool_ops methods that're device independent.
+ * If we find that all drivers want to do the same thing here,
+ * we can turn these into dev_() function calls.
+ */
+
+u32 ethtool_op_get_link(struct net_device *dev)
+{
+	return netif_carrier_ok(dev) ? 1 : 0;
+}
+EXPORT_SYMBOL(ethtool_op_get_link);
+#endif
+
 /*
  *	Perform the SIOCxIFxxx calls, inside rcu_read_lock()
  */

@@ -765,8 +765,16 @@ enum ethtool_sfeatures_retval_bits {
 
 #include <linux/rculist.h>
 
+#ifdef CONFIG_ETHTOOL
 extern int __ethtool_get_settings(struct net_device *dev,
 				  struct ethtool_cmd *cmd);
+#else
+static inline int __ethtool_get_settings(struct net_device *dev,
+				  struct ethtool_cmd *cmd)
+{
+	return -EOPNOTSUPP;
+}
+#endif
 
 /**
  * enum ethtool_phys_id_state - indicator state for physical identification

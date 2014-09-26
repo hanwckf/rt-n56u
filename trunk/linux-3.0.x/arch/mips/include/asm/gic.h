@@ -33,9 +33,9 @@
 	REG32(_gic_base + segment##_##SECTION_OFS + offset)
 
 #define GIC_ABS_REG(segment, offset) \
-       (_gic_base + segment##_##SECTION_OFS + offset##_##OFS)
+	(_gic_base + segment##_##SECTION_OFS + offset##_##OFS)
 #define GIC_REG_ABS_ADDR(segment, offset) \
-       (_gic_base + segment##_##SECTION_OFS + offset)
+	(_gic_base + segment##_##SECTION_OFS + offset)
 
 #ifdef GICISBYTELITTLEENDIAN
 #define GICREAD(reg, data)	((data) = (reg), (data) = le32_to_cpu(data))
@@ -305,15 +305,15 @@
 		 GIC_SH_MAP_TO_VPE_REG_BIT(vpe))
 
 struct gic_pcpu_mask {
-       DECLARE_BITMAP(pcpu_mask, GIC_NUM_INTRS);
+	DECLARE_BITMAP(pcpu_mask, GIC_NUM_INTRS);
 };
 
 struct gic_pending_regs {
-       DECLARE_BITMAP(pending, GIC_NUM_INTRS);
+	DECLARE_BITMAP(pending, GIC_NUM_INTRS);
 };
 
 struct gic_intrmask_regs {
-       DECLARE_BITMAP(intrmask, GIC_NUM_INTRS);
+	DECLARE_BITMAP(intrmask, GIC_NUM_INTRS);
 };
 
 /*

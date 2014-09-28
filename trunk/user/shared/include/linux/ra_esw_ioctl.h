@@ -207,9 +207,7 @@ typedef struct arl_mib_counters_s
     uint32_t RxBadFrames;
 
     uint32_t RxDropFramesFilter;
-    uint32_t RxDropFramesLimiter;
-    uint32_t RxDropFramesIngress;
-    uint32_t RxDropFramesControl;
+    uint32_t RxDropFramesErr;
 
 } arl_mib_counters_t;
 

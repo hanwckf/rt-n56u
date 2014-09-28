@@ -174,9 +174,7 @@ static int fill_eth_status(int port_id, webs_t wp)
 		ret += websWrite(wp, "RxBadOctets			: %u\n", mibc.RxBadOctets);
 		ret += websWrite(wp, "RxBadFrames			: %u\n", mibc.RxBadFrames);
 		ret += websWrite(wp, "RxDropFramesFilter		: %u\n", mibc.RxDropFramesFilter);
-		ret += websWrite(wp, "RxDropFramesLimiter		: %u\n", mibc.RxDropFramesLimiter);
-		ret += websWrite(wp, "RxDropFramesIngress		: %u\n", mibc.RxDropFramesIngress);
-		ret += websWrite(wp, "RxDropFramesControl		: %u\n", mibc.RxDropFramesControl);
+		ret += websWrite(wp, "RxDropFramesErr			: %u\n", mibc.RxDropFramesErr);
 	}
 
 	return ret;

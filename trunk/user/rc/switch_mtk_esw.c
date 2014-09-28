@@ -537,9 +537,7 @@ int show_mib_counters(unsigned int cmd)
 			"  RxBadOctets: %u\n"
 			"  RxBadFrames: %u\n"
 			"  RxDropFramesFilter: %u\n"
-			"  RxDropFramesLimiter: %u\n"
-			"  RxDropFramesIngress: %u\n"
-			"  RxDropFramesControl: %u\n"
+			"  RxDropFramesErr: %u\n"
 			,
 			portname,
 			mibc.TxGoodOctets,
@@ -552,9 +550,7 @@ int show_mib_counters(unsigned int cmd)
 			mibc.RxBadOctets,
 			mibc.RxBadFrames,
 			mibc.RxDropFramesFilter,
-			mibc.RxDropFramesLimiter,
-			mibc.RxDropFramesIngress,
-			mibc.RxDropFramesControl
+			mibc.RxDropFramesErr
 			);
 	}
 

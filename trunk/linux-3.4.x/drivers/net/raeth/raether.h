@@ -2,7 +2,6 @@
 #define __RAETHER_H__
 
 #include <linux/mii.h>
-#include <linux/version.h>
 #include <linux/interrupt.h>
 
 #include <asm/rt2880/rt_mmap.h>
@@ -131,8 +130,6 @@ void set_map_hw_vlan_tx(u32 idx, u32 vid);
 #if defined (CONFIG_RAETH_ESW_CONTROL)
 int  esw_ioctl_init(void);
 void esw_ioctl_uninit(void);
-void esw_interrupt_init(void);
-irqreturn_t esw_interrupt(int irq, void *dev_id);
 #endif
 
 #endif

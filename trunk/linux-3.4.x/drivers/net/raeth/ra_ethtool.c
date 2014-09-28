@@ -133,10 +133,10 @@ static int et_set_pauseparam(struct net_device *dev, struct ethtool_pauseparam *
 
 #if defined (CONFIG_RALINK_MT7621)
 	// todo
-#elif defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
-	// todo
 #elif defined (CONFIG_RALINK_MT7620)
 	// todo (ESW regs 0x3X00)
+#elif defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
+	// todo
 #else
 	// tx/rx pause
 	mdio_cfg_reg = sysRegRead(MDIO_CFG);

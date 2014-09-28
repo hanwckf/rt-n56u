@@ -1,11 +1,18 @@
 #ifndef __RA_ESW_REG_H__
 #define __RA_ESW_REG_H__
 
-#include <linux/version.h>
 #include <asm/rt2880/rt_mmap.h>
 
 /* ESW Registers Access */
 #define _ESW_REG(x)			(*((volatile u32 *)(RALINK_ETH_SW_BASE + x)))
+
+#if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
+#define ESW_PORT_PPE			7
+#define ESW_PORT_ID_MAX			7
+#else
+#undef  ESW_PORT_PPE
+#define ESW_PORT_ID_MAX			6
+#endif
 
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_MT7530_GSW)
 
@@ -54,6 +61,9 @@
 #define REG_ESW_MAC_SMACCR1		0x3FE8
 #define REG_ESW_MAC_CKGCR		0x3FF0
 
+#if defined (CONFIG_MT7530_GSW)
+	// todo
+#else
 #define REG_ESW_MIB_ESR_P0		0x4000
 #define REG_ESW_MIB_INTS_P0		0x4004
 #define REG_ESW_MIB_INTM_P0		0x4008
@@ -66,6 +76,7 @@
 #define REG_ESW_MIB_RGOC_P0		0x4028
 #define REG_ESW_MIB_REPC1_P0		0x402C
 #define REG_ESW_MIB_REPC2_P0		0x4030
+#endif
 #define REG_ESW_MIB_MIBCNTEN		0x4800
 
 #define REG_ESW_IMR			0x7008
@@ -95,15 +106,19 @@
 
 #define MSK_RX_FILTER_CNT		BIT(0)
 #define MSK_RX_ARL_DROP_CNT		BIT(1)
+#define MSK_RX_ING_DROP_CNT		BIT(2)
+#define MSK_RX_CTRL_DROP_CNT		BIT(3)
 #define MSK_RX_GOCT_CNT			BIT(4)
 #define MSK_RX_GOOD_CNT			BIT(6)
 #define MSK_RX_BAD_CNT			BIT(7)
+#define MSK_TX_DROP_CNT			BIT(16)
 #define MSK_TX_GOCT_CNT			BIT(17)
 #define MSK_TX_GOOD_CNT			BIT(19)
 #define MSK_TX_BAD_CNT			BIT(20)
-#define ESW_MIB_INT_ALL			(MSK_RX_FILTER_CNT | MSK_RX_ARL_DROP_CNT | \
+#define ESW_MIB_INT_ALL			(MSK_RX_FILTER_CNT | MSK_RX_ARL_DROP_CNT | MSK_RX_CTRL_DROP_CNT | \
 					 MSK_RX_GOCT_CNT | MSK_RX_GOOD_CNT | MSK_RX_BAD_CNT | \
-					 MSK_TX_GOCT_CNT | MSK_TX_GOOD_CNT | MSK_TX_BAD_CNT)
+					 MSK_TX_GOCT_CNT | MSK_TX_GOOD_CNT | MSK_TX_BAD_CNT | \
+					 MSK_TX_DROP_CNT)
 
 #elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
       defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
@@ -144,6 +159,16 @@
 #define ABNORMAL_ALERT			BIT(28) //Abnormal
 #define ESW_INT_ALL			(PORT_ST_CHG)
 
+#endif
+
+#ifdef __KERNEL__
+typedef union _ULARGE_INTEGER {
+	struct {
+		uint32_t LowPart;
+		uint32_t HighPart;
+	} u;
+	uint64_t QuadPart;
+} ULARGE_INTEGER;
 #endif
 
 

@@ -28,6 +28,8 @@
 
 #include "raether.h"
 #include "ra_ethtool.h"
+#include "ra_esw_reg.h"
+#include "ra_esw_base.h"
 
 #if defined (CONFIG_RALINK_RT3052)
 #define PROCREG_DIR			"rt3052"
@@ -52,6 +54,7 @@
 #define PROCREG_GMAC			"gmac"
 #define PROCREG_CP0			"cp0"
 #define PROCREG_ESW_CNT			"esw_cnt"
+#define PROCREG_SNMP			"snmp"
 #define PROCREG_VLAN_TX			"vlan_tx"
 
 extern struct net_device *dev_raether;
@@ -60,6 +63,9 @@ struct proc_dir_entry *procRegDir = NULL;
 static struct proc_dir_entry *procGmac;
 #ifdef RAETH_DEBUG
 static struct proc_dir_entry *procSysCP0, *procTxRing, *procRxRing, *procEswCnt;
+#endif
+#if defined (CONFIG_RAETH_SNMPD)
+static struct proc_dir_entry *procSnmp;
 #endif
 #if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
 static struct proc_dir_entry *procVlanTx;
@@ -106,6 +112,65 @@ static const struct file_operations ra_vlan_tx_seq_fops = {
 	.read		= seq_read,
 	.llseek		= seq_lseek,
 	.release	= single_release,
+};
+#endif
+
+#if defined(CONFIG_RAETH_SNMPD)
+static int ra_snmp_seq_show(struct seq_file *m, void *v)
+{
+	u32 i;
+	ULARGE_INTEGER rx_goct[6], tx_goct[6];
+
+	for (i = 0; i < 6; i++) {
+		rx_goct[i].u.LowPart = esw_get_port_mib_rgoc(i, &rx_goct[i].u.HighPart);
+		tx_goct[i].u.LowPart = esw_get_port_mib_tgoc(i, &tx_goct[i].u.HighPart);
+	}
+
+	seq_printf(m, "rx counters: %u %u %u %u %u %u\n",
+		(u32)(rx_goct[0].QuadPart >> 20),
+		(u32)(rx_goct[1].QuadPart >> 20),
+		(u32)(rx_goct[2].QuadPart >> 20),
+		(u32)(rx_goct[3].QuadPart >> 20),
+		(u32)(rx_goct[4].QuadPart >> 20),
+		(u32)(rx_goct[5].QuadPart >> 20));
+
+	seq_printf(m, "tx counters: %u %u %u %u %u %u\n",
+		(u32)(tx_goct[0].QuadPart >> 20),
+		(u32)(tx_goct[1].QuadPart >> 20),
+		(u32)(tx_goct[2].QuadPart >> 20),
+		(u32)(tx_goct[3].QuadPart >> 20),
+		(u32)(tx_goct[4].QuadPart >> 20),
+		(u32)(tx_goct[5].QuadPart >> 20));
+
+	seq_printf(m, "rx64 counters: %llu %llu %llu %llu %llu %llu\n",
+		rx_goct[0].QuadPart,
+		rx_goct[1].QuadPart,
+		rx_goct[2].QuadPart,
+		rx_goct[3].QuadPart,
+		rx_goct[4].QuadPart,
+		rx_goct[5].QuadPart);
+
+	seq_printf(m, "tx64 counters: %llu %llu %llu %llu %llu %llu\n",
+		tx_goct[0].QuadPart,
+		tx_goct[1].QuadPart,
+		tx_goct[2].QuadPart,
+		tx_goct[3].QuadPart,
+		tx_goct[4].QuadPart,
+		tx_goct[5].QuadPart);
+
+	return 0;
+}
+
+static int ra_snmp_seq_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, ra_snmp_seq_show, NULL);
+}
+
+static const struct file_operations ra_snmp_seq_fops = {
+	.open	 = ra_snmp_seq_open,
+	.read	 = seq_read,
+	.llseek	 = seq_lseek,
+	.release = single_release,
 };
 #endif
 
@@ -443,6 +508,15 @@ int debug_proc_init(void)
 #endif
 #endif
 
+#if defined (CONFIG_RAETH_SNMPD)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+	procSnmp = proc_create(PROCREG_SNMP, S_IRUGO, procRegDir, &ra_snmp_seq_fops);
+#else
+	if ((procSnmp = create_proc_entry(PROCREG_SNMP, S_IRUGO, procRegDir)))
+		procSnmp->proc_fops = &ra_snmp_seq_fops;
+#endif
+#endif
+
 #ifdef RAETH_DEBUG
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	procTxRing = proc_create(PROCREG_TXRING, S_IRUGO, procRegDir, &ra_txring_seq_fops);
@@ -490,6 +564,11 @@ void debug_proc_exit(void)
 
 	if (procTxRing)
 		remove_proc_entry(PROCREG_TXRING, procRegDir);
+#endif
+
+#if defined (CONFIG_RAETH_SNMPD)
+	if (procSnmp)
+		remove_proc_entry(PROCREG_SNMP, procRegDir);
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)

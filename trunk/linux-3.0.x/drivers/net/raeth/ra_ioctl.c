@@ -9,7 +9,6 @@
 #include "ra_ethreg.h"
 #include "ra_esw_reg.h"
 #include "mii_mgr.h"
-
 #include "ra_ioctl.h"
 
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)

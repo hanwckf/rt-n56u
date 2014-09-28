@@ -14,6 +14,12 @@
 #include "ra_phy.h"
 #include "ra_rfrw.h"
 #include "ra_ioctl.h"
+#if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
+#include "ra_esw_base.h"
+#endif
+#if defined (CONFIG_RAETH_DHCP_TOUCH)
+#include "ra_esw_dhcpc.h"
+#endif
 #if defined (CONFIG_RAETH_ESW_CONTROL)
 #include "ra_esw_ioctl.h"
 #endif
@@ -1446,10 +1452,8 @@ static const struct net_device_ops VirtualIF_netdev_ops = {
 	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_validate_addr	= eth_validate_addr,
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
 	.ndo_vlan_rx_add_vid	= ei_vlan_rx_add_vid,
 	.ndo_vlan_rx_kill_vid	= ei_vlan_rx_kill_vid,
-#endif
 #endif
 };
 
@@ -1687,9 +1691,12 @@ int ei_open(struct net_device *dev)
 	fe_mac2_addr_set(ei_local->PseudoDev->dev_addr);
 #endif
 
-#if defined (CONFIG_RAETH_ESW_CONTROL)
+#if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
 	/* prepare switch for INT handling */
-	esw_interrupt_init();
+	esw_irq_init();
+#if defined (CONFIG_RAETH_DHCP_TOUCH)
+	esw_dhcpc_init();
+#endif
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_RALINK_MT7621)
 	/* request interrupt line for MT7620 ESW or MT7621 GSW */
 	err = request_irq(SURFBOARDINT_ESW, esw_interrupt, IRQF_DISABLED, "ralink_esw", dev);
@@ -1755,14 +1762,15 @@ int ei_close(struct net_device *dev)
 	tasklet_kill(&ei_local->rx_tasklet);
 
 	del_timer_sync(&ei_local->stat_timer);
+#if defined (CONFIG_RAETH_DHCP_TOUCH)
+	esw_dhcpc_cancel();
+#endif
 
 	free_irq(dev->irq, dev);
-#if defined (CONFIG_RAETH_ESW_CONTROL)
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_RALINK_MT7621)
 	free_irq(SURFBOARDINT_ESW, dev);
 #elif defined (CONFIG_MT7530_INT_GPIO)
 	// todo, needed capture GPIO interrupt for external MT7530
-#endif
 #endif
 
 	for (i = 0; i < NUM_RX_DESC; i++) {

@@ -1,7 +1,6 @@
 #ifndef __RA_ETHREG_H__
 #define __RA_ETHREG_H__
 
-#include <linux/version.h>
 #include <asm/rt2880/rt_mmap.h>
 
 #define u32				unsigned int

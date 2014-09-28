@@ -10,8 +10,20 @@ raeth-objs += ra_rfrw.o
 endif
 endif
 
+ifeq ($(CONFIG_RAETH_ESW),y)
+raeth-objs += ra_esw_base.o
+else
+ifeq ($(CONFIG_MT7530_GSW),y)
+raeth-objs += ra_esw_base.o
+endif
+endif
+
 ifeq ($(CONFIG_RAETH_ESW_CONTROL),y)
 raeth-objs += ra_esw_ioctl.o
+else
+ifeq ($(CONFIG_RAETH_DHCP_TOUCH),y)
+raeth-objs += ra_esw_dhcpc.o
+endif
 endif
 
 ifeq ($(CONFIG_ETHTOOL),y)

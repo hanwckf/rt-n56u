@@ -221,7 +221,7 @@ config  RAETH_ESW
 	depends on RAETH && GE1_MAC_ESW && !MT7530_GSW
 
 config  MT7530_GSW
-	bool "Ralink MT7530 Giga-Switch (On-die for MT7621)"
+	bool "MediaTek MT7530 Giga-Switch (On-die for MT7621)"
 	depends on RAETH && (RALINK_MT7620 || RALINK_MT7621)
 
 config  RAETH_SPECIAL_TAG
@@ -267,6 +267,16 @@ config  RAETH_ESW_PORT_LAN4
 	default 0
 	help
 	  please choose port ID from range 0..4
+
+config  RAETH_DHCP_TOUCH
+	bool "Send SIGUSR1/2 to udhcpc at media state changed"
+	depends on RAETH && (RAETH_ESW || MT7530_GSW) && !RAETH_ESW_CONTROL
+	default n
+
+config  RAETH_SNMPD
+	bool "Support SNMPD counters in raeth"
+	depends on RAETH && (RAETH_ESW || MT7530_GSW)
+	default n
 
 config  RAETH_READ_MAC_FROM_MTD
 	bool "Read mac adress from mtdflash at boot time"

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef __MTK_ESW_DEF_H__
-#define __MTK_ESW_DEF_H__
+#ifndef __MTK_ESW_IOCTL_DEF_H__
+#define __MTK_ESW_IOCTL_DEF_H__
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -39,14 +39,6 @@
 #define WAN_PORT_X			CONFIG_RAETH_ESW_PORT_WAN	/* 8P8C WAN */
 #else
 #define WAN_PORT_X			CONFIG_RAETH_ESW_PORT_WAN	/* 8P8C WAN */
-#endif
-
-#if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
-#define ESW_PORT_PPE			7
-#define ESW_PORT_ID_MAX			7
-#else
-#undef  ESW_PORT_PPE
-#define ESW_PORT_ID_MAX			6
 #endif
 
 #define ESW_PHY_ID_MAX			4
@@ -99,13 +91,13 @@ enum
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-typedef struct bwan_member_s
+typedef struct
 {
 	u8 bwan:1;
 	u8 rule:7;
 } bwan_member_t;
 
-typedef struct pvlan_member_s
+typedef struct
 {
 	u32 pvid:12;
 	u32 prio:3;
@@ -114,7 +106,7 @@ typedef struct pvlan_member_s
 	u32 unused:15;
 } pvlan_member_t;
 
-typedef struct vlan_entry_s
+typedef struct
 {
 	u32 valid:1;
 	u32 fid:3;
@@ -124,27 +116,6 @@ typedef struct vlan_entry_s
 	u32 port_member:8;
 	u32 unused2:24;
 } vlan_entry_t;
-
-typedef struct mib_threshold_s
-{
-	u32 tx_goct_thr;
-	u32 rx_goct_thr;
-	u16 tx_good_thr;
-	u16 rx_good_thr;
-	u16 tx_bad_thr;
-	u16 rx_bad_thr;
-	u16 rx_arl_drop_thr;
-	u16 rx_filter_thr;
-
-} mib_threshold_t;
-
-typedef union _ULARGE_INTEGER {
-	struct {
-		uint32_t LowPart;
-		uint32_t HighPart;
-	} u;
-	uint64_t QuadPart;
-} ULARGE_INTEGER;
 
 ////////////////////////////////////////////////////////////////////////////////////
 

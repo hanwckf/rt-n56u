@@ -208,8 +208,6 @@ void esw_irq_init(void)
 #if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
 	u32 i;
 
-	memset(mib_threholds, 0, sizeof(mib_threholds));
-
 	/* clear pending MIB int bits */
 	for (i = 0; i <= ESW_PORT_ID_MAX; i++) {
 		reg_val = esw_reg_get(REG_ESW_MIB_INTS_P0 + 0x100*i);
@@ -242,6 +240,13 @@ void esw_irq_init(void)
 	/* enable int mask */
 	reg_val = esw_reg_get(REG_ESW_IMR);
 	esw_reg_set(REG_ESW_IMR, (reg_val & ~(ESW_INT_ALL)));
+}
+
+void esw_mib_init(void)
+{
+#if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
+	memset(mib_threholds, 0, sizeof(mib_threholds));
+#endif
 }
 
 #if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)

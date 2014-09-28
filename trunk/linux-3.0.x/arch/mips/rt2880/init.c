@@ -247,7 +247,7 @@ static void prom_init_sysclk(void)
 	u32 reg;
 	u8  clk_sel;
 #if defined (CONFIG_RT5350_ASIC) || defined (CONFIG_MT7620_ASIC) || \
-    defined (CONFIG_MT7628_ASIC)
+    defined (CONFIG_MT7621_ASIC) || defined (CONFIG_MT7628_ASIC)
 	u8  clk_sel2;
 #endif
 #if defined (CONFIG_RALINK_MT7621)

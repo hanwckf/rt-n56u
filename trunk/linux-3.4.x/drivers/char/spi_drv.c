@@ -107,11 +107,13 @@ void spi_master_init(void)
 {
 	u32* spireg = spi_register[spich];
 
+#if 0
 	/* reset spi block */
 	RT2880_REG(RT2880_RSTCTRL_REG) |= RSTCTRL_SPI_RESET;
 	udelay(10);
 	RT2880_REG(RT2880_RSTCTRL_REG) &= ~(RSTCTRL_SPI_RESET);
 	udelay(10);
+#endif
 
 #if defined(CONFIG_RALINK_VITESSE_SWITCH_CONNECT_SPI_CS1)||defined(CONFIG_RALINK_SLIC_CONNECT_SPI_CS1)
 	/* config ARB and set the low or high active correctly according to the device */

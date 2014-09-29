@@ -86,6 +86,8 @@ typedef struct i2c_write_data {
 #define IS_BUSY		(RT2880_REG(RT2880_I2C_STATUS_REG) & 0x01)
 #define IS_SDOEMPTY	(RT2880_REG(RT2880_I2C_STATUS_REG) & 0x02)
 #define IS_DATARDY	(RT2880_REG(RT2880_I2C_STATUS_REG) & 0x04)
+#define IS_ACK		(RT2880_REG(RT2880_I2C_STATUS_REG) & 0x08)
+#define IS_STARTERR	(RT2880_REG(RT2880_I2C_STATUS_REG) & 0x10)
 
 
 /*
@@ -144,6 +146,7 @@ typedef struct i2c_write_data {
 
 #define ATMEL_ADDR		(0xA0>>1)
 #define WM8751_ADDR		(0x36>>1)
-#define WM8960_ADDR             (0x34>>1)
+#define WM8960_ADDR		(0x34>>1)
+#define MFI_AUTHIC_ADDR		(0x20>>1)
 
 #endif

@@ -92,6 +92,8 @@
 #define MEMORY_BASE			0x0
 
 #if defined (CONFIG_RALINK_MT7621)
+extern u32 ralink_asic_rev_id;
+static int pcie_link_status = 0;
 
 /* use GPIO control instead of PERST_N */
 #define GPIO_PERST
@@ -113,19 +115,17 @@
 #endif
 
 #define ASSERT_SYSRST_PCIE(val)		do {	\
-						if (*(unsigned int *)(0xbe00000c) == 0x00030101)	\
+						if ((ralink_asic_rev_id & 0xFFFF) == 0x0101)	\
 							RALINK_RSTCTRL |= val;	\
 						else	\
 							RALINK_RSTCTRL &= ~val;	\
 					} while(0)
 #define DEASSERT_SYSRST_PCIE(val)	do {	\
-						if (*(unsigned int *)(0xbe00000c) == 0x00030101)	\
+						if ((ralink_asic_rev_id & 0xFFFF) == 0x0101)	\
 							RALINK_RSTCTRL &= ~val;	\
 						else	\
 							RALINK_RSTCTRL |= val;	\
 					} while(0)
-
-static int pcie_link_status = 0;
 #endif
 
 #define RALINK_SYSCFG1 			*(volatile u32 *)(RALINK_SYSTEM_CONTROL_BASE + 0x14)
@@ -590,7 +590,7 @@ int __init init_ralink_pci(void)
 
 	printk("PCIe PHY initialize\n");
 
-	if (*(volatile u32 *)(0xbe00000c) == 0x00030101) // MT7621 E2
+	if ((ralink_asic_rev_id & 0xFFFF) == 0x0101) // MT7621 E2
 		bypass_pipe_rst();
 	set_phy_for_ssc();
 

@@ -446,11 +446,11 @@ int GdmaI2sTx(
     if(TxNo==0) { //TX0
 	//enable chain feature
 	Entry.ChNum=GDMA_I2S_TX0;
-	Entry.NextUnMaskCh= (TransCount==4) ? 0 : GDMA_I2S_TX1;
+	Entry.NextUnMaskCh= (TransCount==4) ? GDMA_I2S_TX0 : GDMA_I2S_TX1;
     }else if(TxNo==1) { //TX1
 	//enable chain feature
 	Entry.ChNum=GDMA_I2S_TX1;
-	Entry.NextUnMaskCh= (TransCount==4) ? 0 : GDMA_I2S_TX0;
+	Entry.NextUnMaskCh= (TransCount==4) ? GDMA_I2S_TX1 : GDMA_I2S_TX0;
     }else {
 	GDMA_PRINT("I2S Tx Number %x is invalid\n", TxNo);
 	return 0;
@@ -502,11 +502,11 @@ int GdmaI2sRx(
     if(RxNo==0) { //RX0
 	//enable chain feature
 	Entry.ChNum=GDMA_I2S_RX0;
-	Entry.NextUnMaskCh=(TransCount==4) ? 0 : GDMA_I2S_RX1;
+	Entry.NextUnMaskCh=(TransCount==4) ? GDMA_I2S_RX0 : GDMA_I2S_RX1;
     }else if(RxNo==1) { //RX1
 	//enable chain feature
 	Entry.ChNum=GDMA_I2S_RX1;
-	Entry.NextUnMaskCh=(TransCount==4) ? 0 : GDMA_I2S_RX0;
+	Entry.NextUnMaskCh=(TransCount==4) ? GDMA_I2S_RX1 : GDMA_I2S_RX0;
     }else {
 	GDMA_PRINT("I2S Rx Number %x is invalid\n", RxNo);
 	return 0;

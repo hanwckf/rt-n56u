@@ -94,7 +94,7 @@ static void enable_autopoll_phy(int unused)
 	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR+1; // or = addr_s ?
 #endif
 	regValue = sysRegRead(REG_ESW_PHY_POLLING);
-	regValue |= (1<<31);
+	regValue |= (1UL<<31);
 	regValue &= ~(0x1f);
 	regValue &= ~(0x1f<<8);
 	regValue |= (addr_s & 0x1f);		// setup PHY address for auto polling (Start Addr).
@@ -335,7 +335,7 @@ static void mt7530_gsw_init(void)
 #endif
 
 	/* configure switch Port6 */
-	if (ralink_asic_rev_id == 0x00030101) {
+	if ((ralink_asic_rev_id & 0xFFFF) == 0x0101) {
 		sysRegWrite(RALINK_ETH_SW_BASE+0x100, 0x0005e30b);	// (GE1, Force 1000M/FD, FC OFF)
 		mii_mgr_write(MT7530_MDIO_ADDR, 0x3600, 0x5e30b);	// (P6, Force mode, Link Up, 1000Mbps, Full-Duplex, FC OFF)
 	} else {
@@ -391,11 +391,25 @@ static void mt7530_gsw_init(void)
 		/* 20Mhz Xtal - todo */
 	}
 
-#if 0
-	/* todo, more documentation is needed */
+	/* set MT7530 central align */
+	mii_mgr_read(MT7530_MDIO_ADDR, 0x7830, &regValue);
+	regValue &= ~1;
+	regValue |= 1<<1;
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7830, regValue);
+
+	mii_mgr_read(MT7530_MDIO_ADDR, 0x7a40, &regValue);
+	regValue &= ~(1<<30);
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a40, regValue);
+
+	regValue = 0x855;
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a78, regValue);
+
+	/* set MT7530 delay */
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7b00, 0x102);		// delay setting for 10/1000M
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7b04, 0x14);		// delay setting for 10/1000M
 
+#if 0
+	/* todo, more documentation is needed */
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a54, 0x44);		// lower Tx driving
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a5c, 0x44);		// lower Tx driving
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a64, 0x44);		// lower Tx driving
@@ -450,8 +464,23 @@ static void mt7530_gsw_init(void)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x00008000);	// P5 link down
 #endif
 
+	/* set MT7530 central align */
+	mii_mgr_read(MT7530_MDIO_ADDR, 0x7830, &regValue);
+	regValue &= ~1;
+	regValue |= 1<<1;
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7830, regValue);
+
+	mii_mgr_read(MT7530_MDIO_ADDR, 0x7a40, &regValue);
+	regValue &= ~(1<<30);
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a40, regValue);
+
+	regValue = 0x855;
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a78, regValue);
+
 #if 0
 	/* todo, more documentation is needed */
+
+	/* set MT7530 delay */
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7b00, 0x102);		// delay setting for 10/1000M
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7b04, 0x14);		// delay setting for 10/1000M
 

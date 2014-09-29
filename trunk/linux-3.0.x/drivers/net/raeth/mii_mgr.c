@@ -109,8 +109,6 @@ static u32 __mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data)
 		}
 	}
 
-	udelay(1);
-
 	data = (0x01 << 16)| (1<<18) | (phy_addr << 20) | (phy_register << 25) | write_data;
 	sysRegWrite(MDIO_PHY_CONTROL_0, data);
 	data |= (1<<31);
@@ -134,8 +132,15 @@ u32 mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data)
 {
 #if defined (CONFIG_MT7530_GSW)
 	if (phy_addr == MT7530_MDIO_ADDR) {
+		u32 result = 0;
 		u32 lo_word = 0;
 		u32 hi_word = 0;
+		u32 an_state = sysRegRead(REG_ESW_PHY_POLLING);
+		
+		/* check AN polling On */
+		if (an_state & (1UL<<31))
+			sysRegWrite(REG_ESW_PHY_POLLING, an_state & ~(1UL<<31));
+		
 		// phase1: write page address phase
 		if (__mii_mgr_write(phy_addr, 0x1f, ((phy_register >> 6) & 0x3FF))) {
 			// phase2: write address & read low word phase
@@ -143,40 +148,52 @@ u32 mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data)
 				// phase3: write address & read high word phase
 				if (__mii_mgr_read(phy_addr, (0x1 << 4), &hi_word)) {
 					*read_data = (hi_word << 16) | (lo_word & 0xFFFF);
-					return 1;
+					result = 1;
 				}
 			}
 		}
-	
+		
+		if (an_state & (1UL<<31))
+			sysRegWrite(REG_ESW_PHY_POLLING, an_state | (1UL<<31));
+		
+		return result;
 	} else
 #endif
 	{
 		return __mii_mgr_read(phy_addr, phy_register, read_data);
 	}
-
-	return 0;
 }
 
 u32 mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data)
 {
 #if defined (CONFIG_MT7530_GSW)
 	if (phy_addr == MT7530_MDIO_ADDR) {
+		u32 result = 0;
+		u32 an_state = sysRegRead(REG_ESW_PHY_POLLING);
+		
+		/* check AN polling */
+		if (an_state & (1UL<<31))
+			sysRegWrite(REG_ESW_PHY_POLLING, an_state & ~(1UL<<31));
+		
 		// phase1: write page address phase
 		if (__mii_mgr_write(MT7530_MDIO_ADDR, 0x1f, (phy_register >> 6) & 0x3FF)) {
 			// phase2: write address & write low word phase
 			if (__mii_mgr_write(MT7530_MDIO_ADDR, ((phy_register >> 2) & 0xF), write_data & 0xFFFF)) {
 				// phase3: write address & write high word phase
 				if (__mii_mgr_write(MT7530_MDIO_ADDR, (0x1 << 4), write_data >> 16))
-					return 1;
+					result = 1;
 			}
 		}
+		
+		if (an_state & (1UL<<31))
+			sysRegWrite(REG_ESW_PHY_POLLING, an_state | (1UL<<31));
+		
+		return result;
 	} else
 #endif
 	{
 		return __mii_mgr_write(phy_addr, phy_register, write_data);
 	}
-
-	return 0;
 }
 
 #else

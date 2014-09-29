@@ -97,6 +97,8 @@ void i2c_master_init(void)
 #elif defined (CONFIG_RALINK_MT7628)
 	RT2880_REG(RALINK_SYSCTL_BASE + 0x60) &= ~0x3000;  //MT7628 bit2
 	udelay(500);
+#else
+	RT2880_REG(RALINK_SYSCTL_BASE+0x60) &= ~0x1;
 #endif
 	/* reset i2c block */
 	i = RT2880_REG(RT2880_RSTCTRL_REG) | RALINK_I2C_RST;
@@ -108,14 +110,13 @@ void i2c_master_init(void)
 	RT2880_REG(RT2880_I2C_CONFIG_REG) = I2C_CFG_DEFAULT;
 
 #if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
-        i = 1 << 31; // the output is pulled hight by SIF master 0
-        i |= 1 << 28; // allow triggered in VSYNC pulse
-        i |= CLKDIV_VALUE << 16; //clk div
-        i |= 1 << 6; // output H when SIF master 0 is in WAIT state
-        i |= 1 << 1; // Enable SIF master 0
-        RT2880_REG(RT2880_I2C_SM0CTL0) = i;
-
-        RT2880_REG(RT2880_I2C_SM0_IS_AUTOMODE) = 1; //auto mode
+	i = 1 << 31; // the output is pulled hight by SIF master 0
+	i |= 1 << 28; // allow triggered in VSYNC pulse
+	i |= CLKDIV_VALUE << 16; //clk div
+	i |= 1 << 6; // output H when SIF master 0 is in WAIT state
+	i |= 1 << 1; // Enable SIF master 0
+	RT2880_REG(RT2880_I2C_SM0CTL0) = i;
+	RT2880_REG(RT2880_I2C_SM0_IS_AUTOMODE) = 1; //auto mode
 #else
 	RT2880_REG(RT2880_I2C_CLKDIV_REG) = CLKDIV_VALUE;
 #endif

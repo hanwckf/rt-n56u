@@ -666,8 +666,8 @@ struct FoePriKey {
 
 #endif
 
-void FoeSetMacInfo(uint8_t *dst, uint8_t *src);
-void FoeGetMacInfo(uint8_t *dst, uint8_t *src);
+void FoeSetMacHiInfo(uint8_t *dst, uint8_t *src);
+void FoeSetMacLoInfo(uint8_t *dst, uint8_t *src);
 void FoeDumpEntry(uint32_t Index);
 int FoeGetAllEntries(struct hwnat_args *opt);
 int FoeBindEntry(struct hwnat_args *opt);

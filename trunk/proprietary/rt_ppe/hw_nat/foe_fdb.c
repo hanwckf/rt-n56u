@@ -55,24 +55,19 @@ extern spinlock_t ppe_foe_lock;
  * |  55:66   | PPPOE ID|
  * +----------+---------+
  */
-void FoeSetMacInfo(uint8_t * Dst, uint8_t * Src)
+
+void FoeSetMacHiInfo(uint8_t *Dst, uint8_t *Src)
 {
 	Dst[3] = Src[0];
 	Dst[2] = Src[1];
 	Dst[1] = Src[2];
 	Dst[0] = Src[3];
-	Dst[7] = Src[4];
-	Dst[6] = Src[5];
 }
 
-void FoeGetMacInfo(uint8_t * Dst, uint8_t * Src)
+void FoeSetMacLoInfo(uint8_t *Dst, uint8_t *Src)
 {
-	Dst[0] = Src[3];
-	Dst[1] = Src[2];
-	Dst[2] = Src[1];
-	Dst[3] = Src[0];
-	Dst[4] = Src[7];
-	Dst[5] = Src[6];
+	Dst[1] = Src[4];
+	Dst[0] = Src[5];
 }
 
 #else
@@ -105,25 +100,21 @@ void FoeGetMacInfo(uint8_t * Dst, uint8_t * Src)
  * +--------------+
  *
  */
-void FoeSetMacInfo(uint8_t * Dst, uint8_t * Src)
+
+void FoeSetMacHiInfo(uint8_t *Dst, uint8_t *Src)
 {
 	Dst[1] = Src[0];
 	Dst[0] = Src[1];
-	Dst[7] = Src[2];
-	Dst[6] = Src[3];
-	Dst[5] = Src[4];
-	Dst[4] = Src[5];
 }
 
-void FoeGetMacInfo(uint8_t * Dst, uint8_t * Src)
+void FoeSetMacLoInfo(uint8_t *Dst, uint8_t *Src)
 {
-	Dst[0] = Src[1];
-	Dst[1] = Src[0];
-	Dst[2] = Src[7];
-	Dst[3] = Src[6];
-	Dst[4] = Src[5];
-	Dst[5] = Src[4];
+	Dst[3] = Src[2];
+	Dst[2] = Src[3];
+	Dst[1] = Src[4];
+	Dst[0] = Src[5];
 }
+
 #endif
 
 #if defined (CONFIG_HNAT_V2)

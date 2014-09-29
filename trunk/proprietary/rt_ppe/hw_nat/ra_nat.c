@@ -413,7 +413,8 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	skb_reset_network_header(skb);
 	skb_push(skb, ETH_HLEN);	//pointer to layer2 header before calling hard_start_xmit
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-	skb = __vlan_put_tag(skb, __constant_htons(ETH_P_8021Q), VirIfIdx);
+	skb->vlan_proto = __constant_htons(ETH_P_8021Q);
+	skb = __vlan_put_tag(skb, skb->vlan_proto, VirIfIdx);
 #else
 	skb = __vlan_put_tag(skb, VirIfIdx);
 #endif
@@ -503,8 +504,11 @@ void PpeKeepAliveHandler(struct sk_buff* skb, struct FoeEntry* foe_entry, int re
 	 * just use SMAC as DMAC and set Multicast address as SMAC.
 	 */
 	if (recover_header) {
-		FoeGetMacInfo(eth->h_dest, eth->h_source);
-		FoeGetMacInfo(eth->h_source, eth->h_dest);
+		unsigned char tmp[8];
+		
+		memcpy(tmp, eth->h_dest, ETH_ALEN);
+		memcpy(eth->h_dest, eth->h_source, ETH_ALEN);
+		memcpy(eth->h_source, tmp, ETH_ALEN);
 	}
 
 	eth->h_source[0] = 0x1;	//change to multicast packet, make bridge not learn this packet
@@ -1149,8 +1153,10 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 			foe_entry.ipv4_dslite.iblk2.dscp = iph->tos;
 			
 			/* fill L2 info (80B) */
-			FoeSetMacInfo(foe_entry.ipv4_dslite.dmac_hi, eth->h_dest);
-			FoeSetMacInfo(foe_entry.ipv4_dslite.smac_hi, eth->h_source);
+			FoeSetMacHiInfo(foe_entry.ipv4_dslite.dmac_hi, eth->h_dest);
+			FoeSetMacLoInfo(foe_entry.ipv4_dslite.dmac_lo, eth->h_dest);
+			FoeSetMacHiInfo(foe_entry.ipv4_dslite.smac_hi, eth->h_source);
+			FoeSetMacLoInfo(foe_entry.ipv4_dslite.smac_lo, eth->h_source);
 			foe_entry.ipv4_dslite.pppoe_id = ppp_sid;
 			foe_entry.ipv4_dslite.vlan1 = vlan1_id;
 			foe_entry.ipv4_dslite.vlan2 = vlan2_id;
@@ -1162,8 +1168,10 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 #if defined (CONFIG_RA_HW_NAT_IPV6)
 			if (iph->protocol == IPPROTO_IPV6) {
 				/* fill L2 info (80B) */
-				FoeSetMacInfo(foe_entry.ipv6_6rd.dmac_hi, eth->h_dest);
-				FoeSetMacInfo(foe_entry.ipv6_6rd.smac_hi, eth->h_source);
+				FoeSetMacHiInfo(foe_entry.ipv6_6rd.dmac_hi, eth->h_dest);
+				FoeSetMacLoInfo(foe_entry.ipv6_6rd.dmac_lo, eth->h_dest);
+				FoeSetMacHiInfo(foe_entry.ipv6_6rd.smac_hi, eth->h_source);
+				FoeSetMacLoInfo(foe_entry.ipv6_6rd.smac_lo, eth->h_source);
 				foe_entry.ipv6_6rd.pppoe_id = ppp_sid;
 				foe_entry.ipv6_6rd.vlan1 = vlan1_id;
 				foe_entry.ipv6_6rd.vlan2 = vlan2_id;
@@ -1180,8 +1188,10 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 				foe_entry.ipv4_hnapt.iblk2.dscp = iph->tos;
 				
 				/* fill L2 info (64B) */
-				FoeSetMacInfo(foe_entry.ipv4_hnapt.dmac_hi, eth->h_dest);
-				FoeSetMacInfo(foe_entry.ipv4_hnapt.smac_hi, eth->h_source);
+				FoeSetMacHiInfo(foe_entry.ipv4_hnapt.dmac_hi, eth->h_dest);
+				FoeSetMacLoInfo(foe_entry.ipv4_hnapt.dmac_lo, eth->h_dest);
+				FoeSetMacHiInfo(foe_entry.ipv4_hnapt.smac_hi, eth->h_source);
+				FoeSetMacLoInfo(foe_entry.ipv4_hnapt.smac_lo, eth->h_source);
 				foe_entry.ipv4_hnapt.pppoe_id = ppp_sid;
 				foe_entry.ipv4_hnapt.vlan1 = vlan1_id;
 				foe_entry.ipv4_hnapt.vlan2 = vlan2_id;
@@ -1219,31 +1229,33 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 #if defined (CONFIG_RALINK_MT7620)
 			foe_entry.bfib1.drm = 1;		// switch will keep dscp
 #endif
-			foe_entry.ipv6_3t_route.iblk2.dscp = ((ip6h->priority << 4) | (ip6h->flow_lbl[0]>>4));
+			foe_entry.ipv6_5t_route.iblk2.dscp = ((ip6h->priority << 4) | (ip6h->flow_lbl[0]>>4));
 			
 			if (foe_entry.bfib1.pkt_type != IPV6_6RD) {
 				/* fill in ipv6 (3T/5T) routing entry */
-				foe_entry.ipv6_3t_route.ipv6_sip0 = ntohl(ip6h->saddr.s6_addr32[0]);
-				foe_entry.ipv6_3t_route.ipv6_sip1 = ntohl(ip6h->saddr.s6_addr32[1]);
-				foe_entry.ipv6_3t_route.ipv6_sip2 = ntohl(ip6h->saddr.s6_addr32[2]);
-				foe_entry.ipv6_3t_route.ipv6_sip3 = ntohl(ip6h->saddr.s6_addr32[3]);
+				foe_entry.ipv6_5t_route.ipv6_sip0 = ntohl(ip6h->saddr.s6_addr32[0]);
+				foe_entry.ipv6_5t_route.ipv6_sip1 = ntohl(ip6h->saddr.s6_addr32[1]);
+				foe_entry.ipv6_5t_route.ipv6_sip2 = ntohl(ip6h->saddr.s6_addr32[2]);
+				foe_entry.ipv6_5t_route.ipv6_sip3 = ntohl(ip6h->saddr.s6_addr32[3]);
 				
-				foe_entry.ipv6_3t_route.ipv6_dip0 = ntohl(ip6h->daddr.s6_addr32[0]);
-				foe_entry.ipv6_3t_route.ipv6_dip1 = ntohl(ip6h->daddr.s6_addr32[1]);
-				foe_entry.ipv6_3t_route.ipv6_dip2 = ntohl(ip6h->daddr.s6_addr32[2]);
-				foe_entry.ipv6_3t_route.ipv6_dip3 = ntohl(ip6h->daddr.s6_addr32[3]);
+				foe_entry.ipv6_5t_route.ipv6_dip0 = ntohl(ip6h->daddr.s6_addr32[0]);
+				foe_entry.ipv6_5t_route.ipv6_dip1 = ntohl(ip6h->daddr.s6_addr32[1]);
+				foe_entry.ipv6_5t_route.ipv6_dip2 = ntohl(ip6h->daddr.s6_addr32[2]);
+				foe_entry.ipv6_5t_route.ipv6_dip3 = ntohl(ip6h->daddr.s6_addr32[3]);
 			} else {
 				foe_entry.bfib1.rmt = 1;	// remove outer IPv6 header
 			}
 		}
 		
 		/* fill L2 info (80B) */
-		FoeSetMacInfo(foe_entry.ipv6_3t_route.dmac_hi, eth->h_dest);
-		FoeSetMacInfo(foe_entry.ipv6_3t_route.smac_hi, eth->h_source);
-		foe_entry.ipv6_3t_route.pppoe_id = ppp_sid;
-		foe_entry.ipv6_3t_route.vlan1 = vlan1_id;
-		foe_entry.ipv6_3t_route.vlan2 = vlan2_id;
-		foe_entry.ipv6_3t_route.etype = vlan_tag;
+		FoeSetMacHiInfo(foe_entry.ipv6_5t_route.dmac_hi, eth->h_dest);
+		FoeSetMacLoInfo(foe_entry.ipv6_5t_route.dmac_lo, eth->h_dest);
+		FoeSetMacHiInfo(foe_entry.ipv6_5t_route.smac_hi, eth->h_source);
+		FoeSetMacLoInfo(foe_entry.ipv6_5t_route.smac_lo, eth->h_source);
+		foe_entry.ipv6_5t_route.pppoe_id = ppp_sid;
+		foe_entry.ipv6_5t_route.vlan1 = vlan1_id;
+		foe_entry.ipv6_5t_route.vlan2 = vlan2_id;
+		foe_entry.ipv6_5t_route.etype = vlan_tag;
 #endif
 	} else {
 		/* packet format is not supported */
@@ -1519,8 +1531,10 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 	/******************** L2 ********************/
 
 	/* Set MAC Info */
-	FoeSetMacInfo(foe_entry.ipv4_hnapt.dmac_hi, eth->h_dest);
-	FoeSetMacInfo(foe_entry.ipv4_hnapt.smac_hi, eth->h_source);
+	FoeSetMacHiInfo(foe_entry.ipv4_hnapt.dmac_hi, eth->h_dest);
+	FoeSetMacLoInfo(foe_entry.ipv4_hnapt.dmac_lo, eth->h_dest);
+	FoeSetMacHiInfo(foe_entry.ipv4_hnapt.smac_hi, eth->h_source);
+	FoeSetMacLoInfo(foe_entry.ipv4_hnapt.smac_lo, eth->h_source);
 
 	/*
 	 * PPE support SMART VLAN/PPPoE Tag Push/PoP feature

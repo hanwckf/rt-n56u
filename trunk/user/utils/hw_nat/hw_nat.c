@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 #else
     char options[] = "aefg?c:d:A:N:O:P:Q:T:U:V:Z:6:";
 #endif
-    int method = 0;
+    int method = -1;
     int i=0;
     unsigned int entry_num = 0;
     unsigned int debug = 0;
@@ -136,11 +136,15 @@ int main(int argc, char *argv[])
 
     if(argc < 2) {
 	show_usage();
-	return 0;
+	return 1;
     }
 
     /* Max table size is 16K */
-    args=malloc(sizeof(struct hwnat_args)+sizeof(struct hwnat_tuple)*1024*16);
+    args = malloc(sizeof(struct hwnat_args)+sizeof(struct hwnat_tuple)*1024*16);
+    if (!args) {
+	printf(" Allocate memory for hwnat_args and hwnat_tuple failed.\n");
+	return 1;
+    }
 
     while ((opt = getopt (argc, argv, options)) != -1) {
 	switch (opt) {
@@ -472,8 +476,8 @@ int main(int argc, char *argv[])
 #else
     case HW_NAT_GET_AC_CNT:
 	    HwNatGetAGCnt(&args3);
-	    printf("Byte cnt=%d\n", args3.ag_byte_cnt);
-	    printf("Pkt cnt=%d\n", args3.ag_pkt_cnt);
+	    printf("Byte cnt=%llu\n", args3.ag_byte_cnt);
+	    printf("Pkt cnt=%u\n", args3.ag_pkt_cnt);
 	    result = args3.result;
 	    break;
 #endif
@@ -513,6 +517,8 @@ int main(int argc, char *argv[])
 	    HwNatSetConfig(&args4, method);
 	    result = args4.result;
 	    break;
+    default:
+	    result = HWNAT_FAIL;
     }
 
     if(result==HWNAT_SUCCESS){

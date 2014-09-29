@@ -166,9 +166,9 @@ struct hwnat_config_args {
 
 #if defined (CONFIG_HNAT_V2)
 struct hwnat_ac_args {
-	unsigned char ag_index;
-	unsigned int ag_byte_cnt;
+	unsigned int ag_index;
 	unsigned int ag_pkt_cnt;
+	unsigned long long ag_byte_cnt;
 	enum hwnat_status result;
 };
 #endif

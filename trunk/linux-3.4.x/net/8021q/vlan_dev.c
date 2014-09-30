@@ -160,8 +160,8 @@ static netdev_tx_t vlan_dev_hard_start_xmit(struct sk_buff *skb,
 #ifdef CONFIG_VLAN_8021Q_DOUBLE_TAG
 	    vlan_double_tag ||
 #endif
-	    veth->h_vlan_proto != htons(ETH_P_8021Q) ||
-	    vlan_dev_priv(dev)->flags & VLAN_FLAG_REORDER_HDR) {
+	    veth->h_vlan_proto != __constant_htons(ETH_P_8021Q) ||
+	    (vlan_dev_priv(dev)->flags & VLAN_FLAG_REORDER_HDR)) {
 		u16 vlan_tci;
 		vlan_tci = vlan_dev_priv(dev)->vlan_id;
 		vlan_tci |= vlan_dev_get_egress_qos_mask(dev, skb);

@@ -391,10 +391,11 @@ static void mt7530_gsw_init(void)
 		/* 20Mhz Xtal - todo */
 	}
 
+#if !defined (CONFIG_GE1_TRGMII_FORCE_1200)
 	/* set MT7530 central align */
 	mii_mgr_read(MT7530_MDIO_ADDR, 0x7830, &regValue);
 	regValue &= ~1;
-	regValue |= 1<<1;
+	regValue |= (1<<1);
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7830, regValue);
 
 	mii_mgr_read(MT7530_MDIO_ADDR, 0x7a40, &regValue);
@@ -403,6 +404,7 @@ static void mt7530_gsw_init(void)
 
 	regValue = 0x855;
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a78, regValue);
+#endif
 
 	/* set MT7530 delay */
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7b00, 0x102);		// delay setting for 10/1000M
@@ -467,7 +469,7 @@ static void mt7530_gsw_init(void)
 	/* set MT7530 central align */
 	mii_mgr_read(MT7530_MDIO_ADDR, 0x7830, &regValue);
 	regValue &= ~1;
-	regValue |= 1<<1;
+	regValue |= (1<<1);
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7830, regValue);
 
 	mii_mgr_read(MT7530_MDIO_ADDR, 0x7a40, &regValue);

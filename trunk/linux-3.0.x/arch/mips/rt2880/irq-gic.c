@@ -238,6 +238,11 @@ unsigned int plat_ipi_resched_int_xlate(unsigned int cpu)
 }
 #endif /* CONFIG_MIPS_MT_SMP */
 
+unsigned int __cpuinit get_c0_compare_int(void)
+{
+	return SURFBOARDINT_MIPS_TIMER;
+}
+
 void gic_irq_ack(struct irq_data *d)
 {
 	int irq = (d->irq - gic_irq_base);

@@ -47,6 +47,8 @@
 #define cpu_has_dsp			1
 #if !defined (CONFIG_RALINK_MT7621)
 #define cpu_has_mipsmt			0
+#else
+#define cpu_has_mipsmt			1
 #endif
 
 /* CPU ISA level */

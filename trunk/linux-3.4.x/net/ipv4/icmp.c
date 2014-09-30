@@ -736,11 +736,9 @@ static void icmp_unreach(struct sk_buff *skb)
 	raw_icmp_error(skb, protocol, info);
 
 	hash = protocol & (MAX_INET_PROTOS - 1);
-	rcu_read_lock();
 	ipprot = rcu_dereference(inet_protos[hash]);
 	if (ipprot && ipprot->err_handler)
 		ipprot->err_handler(skb, info);
-	rcu_read_unlock();
 
 out:
 	return;

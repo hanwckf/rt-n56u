@@ -26,7 +26,8 @@
 /*
  * dyndns.org specific update address format
  *
- * Also applies to: DNS-O-Matic, DynSIP, no-ip, 3322.org and HE.net
+ * Also applies to other dyndns2 api compatible services, like:
+ * DNS-O-Matic, DynSIP, no-ip, 3322, HE and nsupdate.info.
  */
 #define DYNDNS_UPDATE_IP_HTTP_REQUEST					\
 	"GET %s?"							\

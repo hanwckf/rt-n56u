@@ -394,6 +394,7 @@ function checkDDNSReturnCode(){
                                                     <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("","ddns_server_x", "WWW.TUNNELBROKER.NET","selected"); %>>www.tunnelbroker.net (HE)</option>
                                                     <option value="DNS.HE.NET"           <% nvram_match_x("","ddns_server_x", "DNS.HE.NET","selected"); %>>dns.he.net (HE)</option>
                                                     <option value="TB.NETASSIST.UA"      <% nvram_match_x("","ddns_server_x", "TB.NETASSIST.UA","selected"); %>>tb.netassist.ua</option>
+                                                    <option value="IPV4.NSUPDATE.INFO"   <% nvram_match_x("","ddns_server_x", "IPV4.NSUPDATE.INFO","selected"); %>>ipv4.nsupdate.info</option>
                                                     <option value="FREEDNS.AFRAID.ORG"   <% nvram_match_x("","ddns_server_x", "FREEDNS.AFRAID.ORG","selected"); %>>freedns.afraid.org</option>
                                                 </select>&nbsp;
                                                 <a id="ddns_link" href="javascript:openLink('x_DDNSServer')" class="label label-info" name="x_DDNS_link"><#LANHostConfig_x_DDNSServer_linkname#></a>
@@ -481,6 +482,7 @@ function checkDDNSReturnCode(){
                                                     <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("","ddns2_server", "WWW.TUNNELBROKER.NET","selected"); %>>www.tunnelbroker.net (HE)</option>
                                                     <option value="DNS.HE.NET"           <% nvram_match_x("","ddns2_server", "DNS.HE.NET","selected"); %>>dns.he.net (HE)</option>
                                                     <option value="TB.NETASSIST.UA"      <% nvram_match_x("","ddns2_server", "TB.NETASSIST.UA","selected"); %>>tb.netassist.ua</option>
+                                                    <option value="IPV4.NSUPDATE.INFO"   <% nvram_match_x("","ddns2_server", "IPV4.NSUPDATE.INFO","selected"); %>>ipv4.nsupdate.info</option>
                                                     <option value="FREEDNS.AFRAID.ORG"   <% nvram_match_x("","ddns2_server", "FREEDNS.AFRAID.ORG","selected"); %>>freedns.afraid.org</option>
                                                 </select>&nbsp;
                                                 <a id="ddns2_link" href="javascript:openLink('x_DDNSServer2')" class="label label-info" name="x_DDNS2_link"><#LANHostConfig_x_DDNSServer_linkname#></a>
@@ -548,6 +550,7 @@ function checkDDNSReturnCode(){
                                                     <option value="9" <% nvram_match_x("", "ddns_checkip", "9","selected"); %>>checkip.zerigo.com</option>
                                                     <option value="10" <% nvram_match_x("", "ddns_checkip", "10","selected"); %>>checkip.two-dns.de</option>
                                                     <option value="11" <% nvram_match_x("", "ddns_checkip", "11","selected"); %>>ipv4.wtfismyip.com/text</option>
+                                                    <option value="12" <% nvram_match_x("", "ddns_checkip", "12","selected"); %>>ipv4.nsupdate.info/myip</option>
                                                 </select>
                                             </td>
                                         </tr>

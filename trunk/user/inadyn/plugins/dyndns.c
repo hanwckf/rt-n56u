@@ -1,4 +1,5 @@
-/* Plugin for DynDNS, DNS-O-Matic, DynSIP, no-ip, 3322 and HE.net
+/* Plugin for dyndns2 api compatible services, like:
+ * DynDNS, DNS-O-Matic, DynSIP, no-ip, 3322, HE and nsupdate.info.
  *
  * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
  * Copyright (C) 2006       Steve Horbachuk
@@ -106,6 +107,20 @@ static ddns_system_t henet = {
 	.server_url   = "/nic/update"
 };
 
+/* Note: below is IPv4 only. ipv6.nsupdate.info would work IPv6 only. */
+static ddns_system_t nsupdate_info_ipv4 = {
+	.name         = "ipv4@nsupdate.info",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = "ipv4.nsupdate.info",
+	.checkip_url  = "/myip",
+
+	.server_name  = "ipv4.nsupdate.info",
+	.server_url   = "/nic/update"
+};
+
 static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 {
 	return common_request(ctx, info, alias);
@@ -124,6 +139,7 @@ PLUGIN_INIT(plugin_init)
 	plugin_register(&noip);
 	plugin_register(&_3322);
 	plugin_register(&henet);
+	plugin_register(&nsupdate_info_ipv4);
 }
 
 PLUGIN_EXIT(plugin_exit)
@@ -134,6 +150,7 @@ PLUGIN_EXIT(plugin_exit)
 	plugin_unregister(&noip);
 	plugin_unregister(&_3322);
 	plugin_unregister(&henet);
+	plugin_unregister(&nsupdate_info_ipv4);
 }
 
 /**

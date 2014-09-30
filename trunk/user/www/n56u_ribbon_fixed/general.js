@@ -1535,6 +1535,8 @@ function openLink(s) {
             tourl = "http://dhis.org/WebEngine.ipo?context=dhis.website.register";
         else if (o1.value == 'TB.NETASSIST.UA')
             tourl = "http://tb.netassist.ua/reg.php";
+        else if (o1.value == 'IPV4.NSUPDATE.INFO')
+            tourl = "https://nsupdate.info/account/register/";
         else if (o1.value == 'FREEDNS.AFRAID.ORG')
             tourl = "http://freedns.afraid.org/signup/";
         else

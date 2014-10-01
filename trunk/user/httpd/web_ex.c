@@ -2448,6 +2448,15 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int min_vlan_ext = 3;
 #endif
+#if (BOARD_RAM_SIZE < 64)
+	int max_conn = 16384;
+#elif (BOARD_RAM_SIZE < 128)
+	int max_conn = 65536;
+#elif (BOARD_RAM_SIZE < 256)
+	int max_conn = 262144;
+#else
+	int max_conn = 524288;
+#endif
 #if (BOARD_NUM_USB_PORTS > 0)
 	int has_usb = 1;
 #else
@@ -2522,6 +2531,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_http_ssl() { return %d;}\n"
 		"function support_ddns_ssl() { return %d;}\n"
 		"function support_min_vlan() { return %d;}\n"
+		"function support_max_conn() { return %d;}\n"
 		"function support_usb() { return %d;}\n"
 		"function support_usb3() { return %d;}\n"
 		"function support_switch_type() { return %d;}\n"
@@ -2538,6 +2548,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		has_http_ssl,
 		has_ddns_ssl,
 		min_vlan_ext,
+		max_conn,
 		has_usb,
 		has_usb3,
 		use_switch_type,

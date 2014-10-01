@@ -1719,14 +1719,18 @@ static int nf_conntrack_init_init_net(void)
 	}
 #endif
 
-	/* Fix for MIPS router with >= 64 MB RAM */
+	/* Fix for MIPS router with 32..256 MB RAM */
 	if (!nf_conntrack_htable_size) {
-#if CONFIG_RALINK_RAM_SIZE > 64
-		nf_conntrack_htable_size = 16384;
-#else
-		nf_conntrack_htable_size = 8192;
-#endif
+#if (CONFIG_RALINK_RAM_SIZE > 128)
+		nf_conntrack_htable_size = 32768;	// vmalloc: 131072 bytes (CT) + 131072 bytes (NAT)
+		max_factor = 1;
+#elif (CONFIG_RALINK_RAM_SIZE > 32)
+		nf_conntrack_htable_size = 16384;	// vmalloc: 65536 bytes (CT) + 65536 bytes (NAT)
 		max_factor = 2;
+#else
+		nf_conntrack_htable_size = 8192;	// vmalloc: 32768 bytes (CT) + 32768 bytes (NAT)
+		max_factor = 2;
+#endif
 	}
 
 	nf_conntrack_max = max_factor * nf_conntrack_htable_size;

@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_5_5#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_5_5#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,159 +17,25 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script>
-    var $j = jQuery.noConflict();
+var $j = jQuery.noConflict();
 
-    $j(document).ready(function() {
+$j(document).ready(function() {
+	init_itoggle('nf_nat_loop');
+	init_itoggle('fw_pt_pptp');
+	init_itoggle('fw_pt_l2tp');
+	init_itoggle('fw_pt_ipsec');
+	init_itoggle('fw_pt_pppoe');
+	init_itoggle('nf_alg_pptp');
+	init_itoggle('nf_alg_h323');
+	init_itoggle('nf_alg_rtsp');
+	init_itoggle('nf_alg_sip');
+});
 
-        $j('#nf_nat_loop_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#nf_nat_loop_fake").attr("checked", "checked").attr("value", 1);
-                $j("#nf_nat_loop_1").attr("checked", "checked");
-                $j("#nf_nat_loop_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#nf_nat_loop_fake").removeAttr("checked").attr("value", 0);
-                $j("#nf_nat_loop_0").attr("checked", "checked");
-                $j("#nf_nat_loop_1").removeAttr("checked");
-            }
-        });
-        $j("#nf_nat_loop_on_of label.itoggle").css("background-position", $j("input#nf_nat_loop_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#fw_pt_pptp_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#fw_pt_pptp_fake").attr("checked", "checked").attr("value", 1).attr("selected", "selected");
-                $j("#fw_pt_pptp_1").attr("checked", "checked").attr("selected", "selected");
-                $j("#fw_pt_pptp_0").removeAttr("checked").removeAttr("selected");
-            },
-            onClickOff: function(){
-                $j("#fw_pt_pptp_fake").removeAttr("checked").attr("value", 0).attr("selected", "selected");
-                $j("#fw_pt_pptp_0").attr("checked", "checked").attr("selected", "selected");
-                $j("#fw_pt_pptp_1").removeAttr("checked").removeAttr("selected");;
-            }
-        });
-        $j("#fw_pt_pptp_on_of label.itoggle").css("background-position", $j("input#fw_pt_pptp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#fw_pt_l2tp_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#fw_pt_l2tp_fake").attr("checked", "checked").attr("value", 1).attr("selected", "selected");
-                $j("#fw_pt_l2tp_1").attr("checked", "checked").attr("selected", "selected");
-                $j("#fw_pt_l2tp_0").removeAttr("checked").removeAttr("selected");
-            },
-            onClickOff: function(){
-                $j("#fw_pt_l2tp_fake").removeAttr("checked").attr("value", 0).attr("selected", "selected");
-                $j("#fw_pt_l2tp_0").attr("checked", "checked").attr("selected", "selected");
-                $j("#fw_pt_l2tp_1").removeAttr("checked").removeAttr("selected");;
-            }
-        });
-        $j("#fw_pt_l2tp_on_of label.itoggle").css("background-position", $j("input#fw_pt_l2tp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#fw_pt_ipsec_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#fw_pt_ipsec_fake").attr("checked", "checked").attr("value", 1).attr("selected", "selected");
-                $j("#fw_pt_ipsec_1").attr("checked", "checked").attr("selected", "selected");
-                $j("#fw_pt_ipsec_0").removeAttr("checked").removeAttr("selected");
-            },
-            onClickOff: function(){
-                $j("#fw_pt_ipsec_fake").removeAttr("checked").attr("value", 0).attr("selected", "selected");
-                $j("#fw_pt_ipsec_0").attr("checked", "checked").attr("selected", "selected");
-                $j("#fw_pt_ipsec_1").removeAttr("checked").removeAttr("selected");;
-            }
-        });
-        $j("#fw_pt_ipsec_on_of label.itoggle").css("background-position", $j("input#fw_pt_ipsec_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#fw_pt_pppoe_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#fw_pt_pppoe_fake").attr("checked", "checked").attr("value", 1).attr("selected", "selected");
-                $j("#fw_pt_pppoe_1").attr("checked", "checked").attr("selected", "selected");
-                $j("#fw_pt_pppoe_0").removeAttr("checked").removeAttr("selected");
-            },
-            onClickOff: function(){
-                $j("#fw_pt_pppoe_fake").removeAttr("checked").attr("value", 0).attr("selected", "selected");
-                $j("#fw_pt_pppoe_0").attr("checked", "checked").attr("selected", "selected");
-                $j("#fw_pt_pppoe_1").removeAttr("checked").removeAttr("selected");
-            }
-        });
-        $j("#fw_pt_pppoe_on_of label.itoggle").css("background-position", $j("input#fw_pt_pppoe_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#nf_alg_pptp_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#nf_alg_pptp_fake").attr("checked", "checked").attr("value", 1);
-                $j("#nf_alg_pptp_1").attr("checked", "checked");
-                $j("#nf_alg_pptp_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#nf_alg_pptp_fake").removeAttr("checked").attr("value", 0);
-                $j("#nf_alg_pptp_0").attr("checked", "checked");
-                $j("#nf_alg_pptp_1").removeAttr("checked");
-            }
-        });
-        $j("#nf_alg_pptp_on_of label.itoggle").css("background-position", $j("input#nf_alg_pptp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#nf_alg_h323_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#nf_alg_h323_fake").attr("checked", "checked").attr("value", 1);
-                $j("#nf_alg_h323_1").attr("checked", "checked");
-                $j("#nf_alg_h323_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#nf_alg_h323_fake").removeAttr("checked").attr("value", 0);
-                $j("#nf_alg_h323_0").attr("checked", "checked");
-                $j("#nf_alg_h323_1").removeAttr("checked");
-            }
-        });
-        $j("#nf_alg_h323_on_of label.itoggle").css("background-position", $j("input#nf_alg_h323_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#nf_alg_rtsp_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#nf_alg_rtsp_fake").attr("checked", "checked").attr("value", 1);
-                $j("#nf_alg_rtsp_1").attr("checked", "checked");
-                $j("#nf_alg_rtsp_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#nf_alg_rtsp_fake").removeAttr("checked").attr("value", 0);
-                $j("#nf_alg_rtsp_0").attr("checked", "checked");
-                $j("#nf_alg_rtsp_1").removeAttr("checked");
-            }
-        });
-        $j("#nf_alg_rtsp_on_of label.itoggle").css("background-position", $j("input#nf_alg_rtsp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#nf_alg_sip_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#nf_alg_sip_fake").attr("checked", "checked").attr("value", 1);
-                $j("#nf_alg_sip_1").attr("checked", "checked");
-                $j("#nf_alg_sip_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#nf_alg_sip_fake").removeAttr("checked").attr("value", 0);
-                $j("#nf_alg_sip_0").attr("checked", "checked");
-                $j("#nf_alg_sip_1").removeAttr("checked");
-            }
-        });
-        $j("#nf_alg_sip_on_of label.itoggle").css("background-position", $j("input#nf_alg_sip_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
 </script>
-
 <script>
 
 <% nf_values(); %>
@@ -178,6 +45,19 @@ function initial(){
 	show_menu(5,5,2);
 	show_footer();
 	showhide_div('row_nat_loop', (sw_mode == '4') ? 0 : 1);
+
+	var o = document.form.nf_max_conn;
+	var maxc = support_max_conn();
+	if (maxc < 524288)
+		o.remove(6);
+	if (maxc < 262144)
+		o.remove(5);
+	if (maxc < 131072)
+		o.remove(4);
+	if (maxc < 65536)
+		o.remove(3);
+	if (maxc < 32768)
+		o.remove(2);
 
 	$("nf_count").innerHTML = nf_conntrack_count() + ' in use';
 }
@@ -280,12 +160,13 @@ function done_validating(action){
                                         <th width="50%"><#NFilterMaxConn#></th>
                                             <td>
                                                 <select name="nf_max_conn" class="input">
-                                                    <option value="8192" <% nvram_match_x("FirewallConfig","nf_max_conn", "8192", "selected"); %>>8192</option>
-                                                    <option value="16384" <% nvram_match_x("FirewallConfig","nf_max_conn", "16384", "selected"); %>>16384 (HW_NAT FoE Max)</option>
-                                                    <option value="32768" <% nvram_match_x("FirewallConfig","nf_max_conn", "32768", "selected"); %>>32768</option>
-                                                    <option value="65536" <% nvram_match_x("FirewallConfig","nf_max_conn", "65536","selected"); %>>65536</option>
-                                                    <option value="131072" <% nvram_match_x("FirewallConfig","nf_max_conn", "131072", "selected"); %>>131072 (Slow)</option>
-                                                    <option value="262144" <% nvram_match_x("FirewallConfig","nf_max_conn", "262144", "selected"); %>>262144 (Very Slow)</option>
+                                                    <option value="8192" <% nvram_match_x("","nf_max_conn", "8192", "selected"); %>>8192</option>
+                                                    <option value="16384" <% nvram_match_x("","nf_max_conn", "16384", "selected"); %>>16384 (HW_NAT FoE Max)</option>
+                                                    <option value="32768" <% nvram_match_x("","nf_max_conn", "32768", "selected"); %>>32768</option>
+                                                    <option value="65536" <% nvram_match_x("","nf_max_conn", "65536","selected"); %>>65536</option>
+                                                    <option value="131072" <% nvram_match_x("","nf_max_conn", "131072", "selected"); %>>131072 (Slow)</option>
+                                                    <option value="262144" <% nvram_match_x("","nf_max_conn", "262144", "selected"); %>>262144 (Slow)</option>
+                                                    <option value="524288" <% nvram_match_x("","nf_max_conn", "524288", "selected"); %>>524288 (Slow)</option>
                                                 </select>
                                                 &nbsp;&nbsp;<span class="label label-info" style="padding: 6px 7px 8px 7px;" id="nf_count"></span>
                                             </td>
@@ -294,9 +175,9 @@ function done_validating(action){
                                             <th><#NFilterNatType#></th>
                                             <td>
                                                 <select name="nf_nat_type" class="input">
-                                                    <option value="2" <% nvram_match_x("FirewallConfig","nf_nat_type", "2", "selected"); %>>Classical Linux Hybrid NAT</option>
-                                                    <option value="0" <% nvram_match_x("FirewallConfig","nf_nat_type", "0", "selected"); %>>Restricted Cone NAT</option>
-                                                    <option value="1" <% nvram_match_x("FirewallConfig","nf_nat_type", "1", "selected"); %>>Full Cone NAT</option>
+                                                    <option value="2" <% nvram_match_x("","nf_nat_type", "2", "selected"); %>>Classical Linux Hybrid NAT</option>
+                                                    <option value="0" <% nvram_match_x("","nf_nat_type", "0", "selected"); %>>Restricted Cone NAT</option>
+                                                    <option value="1" <% nvram_match_x("","nf_nat_type", "1", "selected"); %>>Full Cone NAT</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -310,8 +191,8 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="nf_nat_loop" id="nf_nat_loop_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "nf_nat_loop", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="nf_nat_loop" id="nf_nat_loop_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_nat_loop", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="nf_nat_loop" id="nf_nat_loop_1" class="input" value="1" <% nvram_match_x("", "nf_nat_loop", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="nf_nat_loop" id="nf_nat_loop_0" class="input" value="0" <% nvram_match_x("", "nf_nat_loop", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -331,8 +212,8 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" id="fw_pt_pptp_1" name="fw_pt_pptp" value="1" <% nvram_match_x("FirewallConfig", "fw_pt_pptp", "1", "checked selected"); %>><#checkbox_Yes#>
-                                                    <input type="radio" id="fw_pt_pptp_0" name="fw_pt_pptp" value="0" <% nvram_match_x("FirewallConfig", "fw_pt_pptp", "0", "checked selected"); %>><#checkbox_No#>
+                                                    <input type="radio" id="fw_pt_pptp_1" name="fw_pt_pptp" value="1" <% nvram_match_x("", "fw_pt_pptp", "1", "checked selected"); %>><#checkbox_Yes#>
+                                                    <input type="radio" id="fw_pt_pptp_0" name="fw_pt_pptp" value="0" <% nvram_match_x("", "fw_pt_pptp", "0", "checked selected"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -346,8 +227,8 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" id="fw_pt_l2tp_1" name="fw_pt_l2tp" value="1" <% nvram_match_x("FirewallConfig", "fw_pt_l2tp", "1", "checked selected"); %>><#checkbox_Yes#>
-                                                    <input type="radio" id="fw_pt_l2tp_0" name="fw_pt_l2tp" value="0" <% nvram_match_x("FirewallConfig", "fw_pt_l2tp", "0", "checked selected"); %>><#checkbox_No#>
+                                                    <input type="radio" id="fw_pt_l2tp_1" name="fw_pt_l2tp" value="1" <% nvram_match_x("", "fw_pt_l2tp", "1", "checked selected"); %>><#checkbox_Yes#>
+                                                    <input type="radio" id="fw_pt_l2tp_0" name="fw_pt_l2tp" value="0" <% nvram_match_x("", "fw_pt_l2tp", "0", "checked selected"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -361,8 +242,8 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" id="fw_pt_ipsec_1" name="fw_pt_ipsec" value="1" <% nvram_match_x("FirewallConfig", "fw_pt_ipsec", "1", "checked selected"); %>><#checkbox_Yes#>
-                                                    <input type="radio" id="fw_pt_ipsec_0" name="fw_pt_ipsec" value="0" <% nvram_match_x("FirewallConfig", "fw_pt_ipsec", "0", "checked selected"); %>><#checkbox_No#>
+                                                    <input type="radio" id="fw_pt_ipsec_1" name="fw_pt_ipsec" value="1" <% nvram_match_x("", "fw_pt_ipsec", "1", "checked selected"); %>><#checkbox_Yes#>
+                                                    <input type="radio" id="fw_pt_ipsec_0" name="fw_pt_ipsec" value="0" <% nvram_match_x("", "fw_pt_ipsec", "0", "checked selected"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -376,8 +257,8 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" id="fw_pt_pppoe_1" name="fw_pt_pppoe" value="1" <% nvram_match_x("FirewallConfig", "fw_pt_pppoe", "1", "checked selected"); %>><#checkbox_Yes#>
-                                                    <input type="radio" id="fw_pt_pppoe_0" name="fw_pt_pppoe" value="0" <% nvram_match_x("FirewallConfig", "fw_pt_pppoe", "0", "checked selected"); %>><#checkbox_No#>
+                                                    <input type="radio" id="fw_pt_pppoe_1" name="fw_pt_pppoe" value="1" <% nvram_match_x("", "fw_pt_pppoe", "1", "checked selected"); %>><#checkbox_Yes#>
+                                                    <input type="radio" id="fw_pt_pppoe_0" name="fw_pt_pppoe" value="0" <% nvram_match_x("", "fw_pt_pppoe", "0", "checked selected"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -404,8 +285,8 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="nf_alg_pptp" id="nf_alg_pptp_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "nf_alg_pptp", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="nf_alg_pptp" id="nf_alg_pptp_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_alg_pptp", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="nf_alg_pptp" id="nf_alg_pptp_1" class="input" value="1" <% nvram_match_x("", "nf_alg_pptp", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="nf_alg_pptp" id="nf_alg_pptp_0" class="input" value="0" <% nvram_match_x("", "nf_alg_pptp", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -419,8 +300,8 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="nf_alg_rtsp" id="nf_alg_rtsp_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "nf_alg_rtsp", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="nf_alg_rtsp" id="nf_alg_rtsp_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_alg_rtsp", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="nf_alg_rtsp" id="nf_alg_rtsp_1" class="input" value="1" <% nvram_match_x("", "nf_alg_rtsp", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="nf_alg_rtsp" id="nf_alg_rtsp_0" class="input" value="0" <% nvram_match_x("", "nf_alg_rtsp", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -434,8 +315,8 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="nf_alg_h323" id="nf_alg_h323_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "nf_alg_h323", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="nf_alg_h323" id="nf_alg_h323_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_alg_h323", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="nf_alg_h323" id="nf_alg_h323_1" class="input" value="1" <% nvram_match_x("", "nf_alg_h323", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="nf_alg_h323" id="nf_alg_h323_0" class="input" value="0" <% nvram_match_x("", "nf_alg_h323", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -449,8 +330,8 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="nf_alg_sip" id="nf_alg_sip_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "nf_alg_sip", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="nf_alg_sip" id="nf_alg_sip_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_alg_sip", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="nf_alg_sip" id="nf_alg_sip_1" class="input" value="1" <% nvram_match_x("", "nf_alg_sip", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="nf_alg_sip" id="nf_alg_sip_0" class="input" value="0" <% nvram_match_x("", "nf_alg_sip", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

@@ -723,6 +723,15 @@ void
 set_nf_conntrack(void)
 {
 	int i_nf_nat, i_nf_val;
+#if (BOARD_RAM_SIZE < 64)
+	int i_nf_lim = 16384;
+#elif (BOARD_RAM_SIZE < 128)
+	int i_nf_lim = 65536;
+#elif (BOARD_RAM_SIZE < 256)
+	int i_nf_lim = 262144;
+#else
+	int i_nf_lim = 524288;
+#endif
 
 	i_nf_val = nvram_get_int("nf_nat_type");
 	if (i_nf_val == 2)
@@ -733,7 +742,7 @@ set_nf_conntrack(void)
 		i_nf_nat = 2;	// RCONE
 	fput_int("/proc/sys/net/nf_conntrack_nat_mode", i_nf_nat);
 
-	i_nf_val = nvram_safe_get_int("nf_max_conn", 16384, 4096, 262144);
+	i_nf_val = nvram_safe_get_int("nf_max_conn", 16384, 4096, i_nf_lim);
 	fput_int("/proc/sys/net/nf_conntrack_max", i_nf_val);
 }
 

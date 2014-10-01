@@ -598,7 +598,13 @@ struct nvram_pair router_defaults[] = {
 	{ "fw_mac_drop", "0" },
 	{ "nf_nat_type", "2" },
 	{ "nf_nat_loop", "1" },
+#if (BOARD_RAM_SIZE > 128)
+	{ "nf_max_conn", "32768" },
+#elif (BOARD_RAM_SIZE > 32)
 	{ "nf_max_conn", "16384" },
+#else
+	{ "nf_max_conn", "8192" },
+#endif
 	{ "nf_alg_ftp0", "21" },
 	{ "nf_alg_ftp1", "" },
 	{ "nf_alg_pptp", "0" },

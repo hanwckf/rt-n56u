@@ -29,9 +29,11 @@ mtr: $(MTR_OBJS)
 
 romfs:
 	$(ROMFSINST) /bin/hw_nat
+#ifndef CONFIG_HNAT_V2
 #	$(ROMFSINST) /bin/acl
 #	$(ROMFSINST) /bin/ac
 #	$(ROMFSINST) /bin/mtr
+#endif
 
 clean:
 	-rm -f $(EXEC) *.elf *.gdb *.o

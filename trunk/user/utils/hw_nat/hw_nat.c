@@ -122,10 +122,9 @@ int main(int argc, char *argv[])
     char options[] = "aefg?c:d:A:N:O:P:Q:T:U:V:Z:6:";
 #endif
     int method = -1;
-    int i=0;
+    unsigned int entry_state = 0;
     unsigned int entry_num = 0;
     unsigned int debug = 0;
-    struct hwnat_args *args;
 #if !defined (CONFIG_HNAT_V2)
     struct hwnat_qos_args args3;
 #else
@@ -139,20 +138,8 @@ int main(int argc, char *argv[])
 	return 1;
     }
 
-    /* Max table size is 16K */
-    args = malloc(sizeof(struct hwnat_args)+sizeof(struct hwnat_tuple)*1024*16);
-    if (!args) {
-	printf(" Allocate memory for hwnat_args and hwnat_tuple failed.\n");
-	return 1;
-    }
-
     while ((opt = getopt (argc, argv, options)) != -1) {
 	switch (opt) {
-#if defined (CONFIG_HNAT_V2)
-	case 'a':
-		method = HW_NAT_DUMP_CACHE_ENTRY;
-		break;
-#endif
 	case 'c':
 		method = HW_NAT_DUMP_ENTRY;
 		entry_num = strtoll(optarg, NULL, 10);
@@ -163,15 +150,15 @@ int main(int argc, char *argv[])
 		break;
 	case 'e':
 		method = HW_NAT_GET_ALL_ENTRIES;
-		args->entry_state=0; /* invalid entry */
+		entry_state=0; /* invalid entry */
 		break;
 	case 'f':
 		method = HW_NAT_GET_ALL_ENTRIES;
-		args->entry_state=1; /* unbinded entry */
+		entry_state=1; /* unbinded entry */
 		break;
 	case 'g':
 		method = HW_NAT_GET_ALL_ENTRIES;
-		args->entry_state=2; /* binded entry */
+		entry_state=2; /* binded entry */
 		break;
 #if !defined (CONFIG_HNAT_V2)
 	case 'A':
@@ -235,6 +222,9 @@ int main(int argc, char *argv[])
 		args3.weight0 = strtoll(argv[5], NULL, 10);
 		break;
 #else
+	case 'a':
+		method = HW_NAT_DUMP_CACHE_ENTRY;
+		break;
 	case 'A':
 		method = HW_NAT_GET_AC_CNT;
 		args3.ag_index = strtoll(optarg, NULL, 10);
@@ -293,127 +283,8 @@ int main(int argc, char *argv[])
 
     switch(method){
     case HW_NAT_GET_ALL_ENTRIES:
-	    HwNatGetAllEntries(args);
-	    printf("Total Entry Count = %d\n",args->num_of_entries);
-	    for(i=0;i<args->num_of_entries;i++){
-		if(args->entries[i].pkt_type==0) { //IPV4_NAPT
-		    printf("IPv4_NAPT=%d : %u.%u.%u.%u:%d->%u.%u.%u.%u:%d => %u.%u.%u.%u:%d->%u.%u.%u.%u:%d\n", \
-			    args->entries[i].hash_index, \
-			    NIPQUAD(args->entries[i].ing_sipv4), \
-			    args->entries[i].ing_sp, \
-			    NIPQUAD(args->entries[i].ing_dipv4), \
-			    args->entries[i].ing_dp, \
-			    NIPQUAD(args->entries[i].eg_sipv4), \
-		            args->entries[i].eg_sp, \
-		            NIPQUAD(args->entries[i].eg_dipv4), \
-		            args->entries[i].eg_dp);
-		} else if(args->entries[i].pkt_type==1) { //IPV4_NAT
-		    printf("IPv4_NAT=%d : %u.%u.%u.%u->%u.%u.%u.%u => %u.%u.%u.%u->%u.%u.%u.%u\n", \
-			    args->entries[i].hash_index, \
-			    NIPQUAD(args->entries[i].ing_sipv4), \
-			    NIPQUAD(args->entries[i].ing_dipv4), \
-			    NIPQUAD(args->entries[i].eg_sipv4), \
-			    NIPQUAD(args->entries[i].eg_dipv4)); 
-		} else if(args->entries[i].pkt_type==2) { //IPV6_ROUTING
-		    printf("IPv6_1T=%d /DIP: %x:%x:%x:%x:%x:%x:%x:%x\n", \
-		    args->entries[i].hash_index, \
-		    NIPHALF(args->entries[i].ing_dipv6_0), \
-		    NIPHALF(args->entries[i].ing_dipv6_1), \
-		    NIPHALF(args->entries[i].ing_dipv6_2), \
-		    NIPHALF(args->entries[i].ing_dipv6_3));
-		} else if(args->entries[i].pkt_type==3) { //IPV4_DSLITE
-		    printf("DS-Lite=%d : %u.%u.%u.%u:%d->%u.%u.%u.%u:%d (%x:%x:%x:%x:%x:%x:%x:%x -> %x:%x:%x:%x:%x:%x:%x:%x) \n", \
-			    args->entries[i].hash_index, \
-			    NIPQUAD(args->entries[i].ing_sipv4),  \
-			    args->entries[i].ing_sp,     \
-			    NIPQUAD(args->entries[i].ing_dipv4),  \
-			    args->entries[i].ing_dp, \
-			    NIPHALF(args->entries[i].eg_sipv6_0), \
-			    NIPHALF(args->entries[i].eg_sipv6_1), \
-			    NIPHALF(args->entries[i].eg_sipv6_2), \
-			    NIPHALF(args->entries[i].eg_sipv6_3), \
-			    NIPHALF(args->entries[i].eg_dipv6_0), \
-			    NIPHALF(args->entries[i].eg_dipv6_1), \
-			    NIPHALF(args->entries[i].eg_dipv6_2), \
-			    NIPHALF(args->entries[i].eg_dipv6_3));
-		} else if(args->entries[i].pkt_type==4) { //IPV6_3T_ROUTE
-		    printf("IPv6_3T=%d SIP: %x:%x:%x:%x:%x:%x:%x:%x DIP: %x:%x:%x:%x:%x:%x:%x:%x\n", \
-		    args->entries[i].hash_index, \
-		    NIPHALF(args->entries[i].ing_sipv6_0), \
-		    NIPHALF(args->entries[i].ing_sipv6_1), \
-		    NIPHALF(args->entries[i].ing_sipv6_2), \
-		    NIPHALF(args->entries[i].ing_sipv6_3), \
-		    NIPHALF(args->entries[i].ing_dipv6_0), \
-		    NIPHALF(args->entries[i].ing_dipv6_1), \
-		    NIPHALF(args->entries[i].ing_dipv6_2), \
-		    NIPHALF(args->entries[i].ing_dipv6_3));
-		} else if(args->entries[i].pkt_type==5) { //IPV6_5T_ROUTE
-		    if(args->entries[i].ipv6_flowlabel==1) {
-			printf("IPv6_5T=%d SIP: %x:%x:%x:%x:%x:%x:%x:%x DIP: %x:%x:%x:%x:%x:%x:%x:%x (Flow Label=%x)\n", \
-				args->entries[i].hash_index, \
-				NIPHALF(args->entries[i].ing_sipv6_0), \
-				NIPHALF(args->entries[i].ing_sipv6_1), \
-				NIPHALF(args->entries[i].ing_sipv6_2), \
-				NIPHALF(args->entries[i].ing_sipv6_3), \
-				NIPHALF(args->entries[i].ing_dipv6_0), \
-				NIPHALF(args->entries[i].ing_dipv6_1), \
-				NIPHALF(args->entries[i].ing_dipv6_2), \
-				NIPHALF(args->entries[i].ing_dipv6_3), \
-				((args->entries[i].ing_sp << 16) | (args->entries[i].ing_dp))&0xFFFFF);
-		    }else {
-			printf("IPv6_5T=%d SIP: %x:%x:%x:%x:%x:%x:%x:%x (SP:%d) DIP: %x:%x:%x:%x:%x:%x:%x:%x (DP=%d)\n", \
-				args->entries[i].hash_index, \
-				NIPHALF(args->entries[i].ing_sipv6_0), \
-				NIPHALF(args->entries[i].ing_sipv6_1), \
-				NIPHALF(args->entries[i].ing_sipv6_2), \
-				NIPHALF(args->entries[i].ing_sipv6_3), \
-				args->entries[i].ing_sp, \
-				NIPHALF(args->entries[i].ing_dipv6_0), \
-				NIPHALF(args->entries[i].ing_dipv6_1), \
-				NIPHALF(args->entries[i].ing_dipv6_2), \
-				NIPHALF(args->entries[i].ing_dipv6_3), \
-				args->entries[i].ing_dp);
-		    }
-		} else if(args->entries[i].pkt_type==7) { //IPV6_6RD
-		    if(args->entries[i].ipv6_flowlabel==1) {
-			printf("6RD=%d %x:%x:%x:%x:%x:%x:%x:%x->%x:%x:%x:%x:%x:%x:%x:%x [Flow Label=%x]\n", \
-				args->entries[i].hash_index, \
-				NIPHALF(args->entries[i].ing_sipv6_0), \
-				NIPHALF(args->entries[i].ing_sipv6_1), \
-				NIPHALF(args->entries[i].ing_sipv6_2), \
-				NIPHALF(args->entries[i].ing_sipv6_3), \
-				NIPHALF(args->entries[i].ing_dipv6_0), \
-				NIPHALF(args->entries[i].ing_dipv6_1), \
-				NIPHALF(args->entries[i].ing_dipv6_2), \
-				NIPHALF(args->entries[i].ing_dipv6_3), \
-				((args->entries[i].ing_sp << 16) | (args->entries[i].ing_dp))&0xFFFFF);
-				printf("(%u.%u.%u.%u->%u.%u.%u.%u)\n", NIPQUAD(args->entries[i].eg_sipv4), NIPQUAD(args->entries[i].eg_dipv4));
-		    }else {
-			printf("6RD=%d /SIP: %x:%x:%x:%x:%x:%x:%x:%x [SP:%d] /DIP: %x:%x:%x:%x:%x:%x:%x:%x [DP=%d]", \
-				args->entries[i].hash_index, \
-				NIPHALF(args->entries[i].ing_sipv6_0), \
-				NIPHALF(args->entries[i].ing_sipv6_1), \
-				NIPHALF(args->entries[i].ing_sipv6_2), \
-				NIPHALF(args->entries[i].ing_sipv6_3), \
-				args->entries[i].ing_sp, \
-				NIPHALF(args->entries[i].ing_dipv6_0), \
-				NIPHALF(args->entries[i].ing_dipv6_1), \
-				NIPHALF(args->entries[i].ing_dipv6_2), \
-				NIPHALF(args->entries[i].ing_dipv6_3), \
-				args->entries[i].ing_dp); 
-			printf("(%u.%u.%u.%u->%u.%u.%u.%u)\n", NIPQUAD(args->entries[i].eg_sipv4), NIPQUAD(args->entries[i].eg_dipv4));
-		    }
-		} else{
-		    printf("unknown packet type! (pkt_type=%d) \n", args->entries[i].pkt_type);
-		}
-	    }
-	    result = args->result;
+	    result = HwNatGetAllEntries(entry_state);
 	    break;
-#if defined (CONFIG_HNAT_V2)
-    case HW_NAT_DUMP_CACHE_ENTRY:
-	    result = HwNatCacheDumpEntry();
-	    break;
-#endif
     case HW_NAT_DUMP_ENTRY:
 	    result = HwNatDumpEntry(entry_num);
 	    break;
@@ -422,113 +293,90 @@ int main(int argc, char *argv[])
 	    break;
 #if !defined (CONFIG_HNAT_V2)
     case HW_NAT_DSCP_REMARK:
-	    HwNatSetQoS(&args3, method);
-	    result = args3.result;
+	    result = HwNatSetQoS(&args3, method);
 	    break;
     case HW_NAT_VPRI_REMARK:
-	    HwNatSetQoS(&args3, method);
-	    result = args3.result;
+	    result = HwNatSetQoS(&args3, method);
 	    break;
     case HW_NAT_FOE_WEIGHT:
-	    HwNatSetQoS(&args3, method);
-	    result = args3.result;
+	    result = HwNatSetQoS(&args3, method);
 	    break;
     case HW_NAT_ACL_WEIGHT:
-	    HwNatSetQoS(&args3, method);
-	    result = args3.result;
+	    result = HwNatSetQoS(&args3, method);
 	    break;
     case HW_NAT_DSCP_WEIGHT:
-	    HwNatSetQoS(&args3, method);
-	    result = args3.result;
+	    result = HwNatSetQoS(&args3, method);
 	    break;
     case HW_NAT_VPRI_WEIGHT:
-	    HwNatSetQoS(&args3, method);
-	    result = args3.result;
+	    result = HwNatSetQoS(&args3, method);
 	    break;
     case HW_NAT_DSCP_UP:
-	    HwNatSetQoS(&args3, method);
-	    result = args3.result;
+	    result = HwNatSetQoS(&args3, method);
 	    break;
     case HW_NAT_UP_IDSCP:
-	    HwNatSetQoS(&args3, method);
-	    result = args3.result;
+	    result = HwNatSetQoS(&args3, method);
 	    break;
     case HW_NAT_UP_ODSCP:
-	    HwNatSetQoS(&args3, method);
-	    result = args3.result;
+	    result = HwNatSetQoS(&args3, method);
 	    break;
     case HW_NAT_UP_VPRI:
-	    HwNatSetQoS(&args3, method);
-	    result = args3.result;
+	    result = HwNatSetQoS(&args3, method);
 	    break;
     case HW_NAT_UP_AC:
-	    HwNatSetQoS(&args3, method);
-	    result = args3.result;
+	    result = HwNatSetQoS(&args3, method);
 	    break;
     case HW_NAT_SCH_MODE:
-	    HwNatSetQoS(&args3, method);
-	    result = args3.result;
+	    result = HwNatSetQoS(&args3, method);
 	    break;
     case HW_NAT_SCH_WEIGHT:
-	    HwNatSetQoS(&args3, method);
-	    result = args3.result;
+	    result = HwNatSetQoS(&args3, method);
 	    break;
 #else
+    case HW_NAT_DUMP_CACHE_ENTRY:
+	    result = HwNatCacheDumpEntry();
+	    break;
     case HW_NAT_GET_AC_CNT:
-	    HwNatGetAGCnt(&args3);
-	    printf("Byte cnt=%llu\n", args3.ag_byte_cnt);
-	    printf("Pkt cnt=%u\n", args3.ag_pkt_cnt);
-	    result = args3.result;
+	    result = HwNatGetAGCnt(&args3);
 	    break;
 #endif
     case HW_NAT_BIND_THRESHOLD:
-	    HwNatSetConfig(&args4, method);
-	    result = args4.result;
+	    result = HwNatSetConfig(&args4, method);
 	    break;
     case HW_NAT_MAX_ENTRY_LMT:
-	    HwNatSetConfig(&args4, method);
-	    result = args4.result;
+	    result = HwNatSetConfig(&args4, method);
 	    break;
     case HW_NAT_RULE_SIZE:
-	    HwNatSetConfig(&args4, method);
-	    result = args4.result;
+	    result = HwNatSetConfig(&args4, method);
 	    break;
     case HW_NAT_KA_INTERVAL:
-	    HwNatSetConfig(&args4, method);
-	    result = args4.result;
+	    result = HwNatSetConfig(&args4, method);
 	    break;
     case HW_NAT_UB_LIFETIME:
-	    HwNatSetConfig(&args4, method);
-	    result = args4.result;
+	    result = HwNatSetConfig(&args4, method);
 	    break;
     case HW_NAT_BIND_LIFETIME:
-	    HwNatSetConfig(&args4, method);
-	    result = args4.result;
+	    result = HwNatSetConfig(&args4, method);
 	    break;
     case HW_NAT_VLAN_ID:
-	    HwNatSetConfig(&args4, method);
-	    result = args4.result;
+	    result = HwNatSetConfig(&args4, method);
 	    break;
     case HW_NAT_BIND_DIRECTION:
-	    HwNatSetConfig(&args4, method);
-	    result = args4.result;
+	    result = HwNatSetConfig(&args4, method);
 	    break;
     case HW_NAT_ALLOW_IPV6:
-	    HwNatSetConfig(&args4, method);
-	    result = args4.result;
+	    result = HwNatSetConfig(&args4, method);
 	    break;
     default:
 	    result = HWNAT_FAIL;
     }
 
-    if(result==HWNAT_SUCCESS){
+    if (result == HWNAT_SUCCESS){
 	printf("done\n");
-    }else if(result==HWNAT_ENTRY_NOT_FOUND) {
+    } else if(result == HWNAT_ENTRY_NOT_FOUND) {
 	printf("entry not found\n");
-    }else {
-	printf("fail\n");
+    } else {
+	return 1;
     }
 
-    free(args);
     return 0;
 }

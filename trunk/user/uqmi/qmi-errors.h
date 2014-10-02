@@ -125,9 +125,34 @@ typedef enum { /*< underscore_name=qmi_core_error >*/
   * @QMI_PROTOCOL_ERROR_SEGMENT_TOO_LONG: Segment too long.
   * @QMI_PROTOCOL_ERROR_SEGMENT_ORDER: Segment order.
   * @QMI_PROTOCOL_ERROR_BUNDLING_NOT_SUPPORTED: Bundling not supported.
+  * @QMI_PROTOCOL_ERROR_POLICY_MISMATCH: Policy mismatch.
   * @QMI_PROTOCOL_ERROR_SIM_FILE_NOT_FOUND: SIM file not found.
+  * @QMI_PROTOCOL_ERROR_EXTENDED_INTERNAL: Extended internal error.
   * @QMI_PROTOCOL_ERROR_ACCESS_DENIED: Access denied.
   * @QMI_PROTOCOL_ERROR_HARDWARE_RESTRICTED: Hardware restricted.
+  * @QMI_PROTOCOL_ERROR_ACK_NOT_SENT: ACK not sent.
+  * @QMI_PROTOCOL_ERROR_INJECT_TIMEOUT: Inject timeout.
+  * @QMI_PROTOCOL_ERROR_INCOMPATIBLE_STATE: Incompatible state.
+  * @QMI_PROTOCOL_ERROR_FDN_RESTRICT: FDN restrict.
+  * @QMI_PROTOCOL_ERROR_SUPS_FAILURE_CASE: SUPS failure case.
+  * @QMI_PROTOCOL_ERROR_NO_RADIO: No radio.
+  * @QMI_PROTOCOL_ERROR_NOT_SUPPORTED: Not supported.
+  * @QMI_PROTOCOL_ERROR_NO_SUBSCRIPTION: No subscription.
+  * @QMI_PROTOCOL_ERROR_CARD_CALL_CONTROL_FAILED: Card call control failed.
+  * @QMI_PROTOCOL_ERROR_NETWORK_ABORTED: Network aborted.
+  * @QMI_PROTOCOL_ERROR_MSG_BLOCKED: Message blocked.
+  * @QMI_PROTOCOL_ERROR_INVALID_SESSION_TYPE: Invalid session type.
+  * @QMI_PROTOCOL_ERROR_INVALID_PB_TYPE: Invalid PB type.
+  * @QMI_PROTOCOL_ERROR_NO_SIM: No SIM.
+  * @QMI_PROTOCOL_ERROR_PB_NOT_READY: PB not ready.
+  * @QMI_PROTOCOL_ERROR_PIN_RESTRICTION: PIN restriction.
+  * @QMI_PROTOCOL_ERROR_PIN2_RESTRICTION: PIN2 restriction.
+  * @QMI_PROTOCOL_ERROR_PUK_RESTRICTION: PUK restriction.
+  * @QMI_PROTOCOL_ERROR_PUK2_RESTRICTION: PUK2 restriction.
+  * @QMI_PROTOCOL_ERROR_PB_ACCESS_RESTRICTED: PB access restricted.
+  * @QMI_PROTOCOL_ERROR_PB_TEXT_TOO_LONG: PB text too long.
+  * @QMI_PROTOCOL_ERROR_PB_NUMBER_TOO_LONG: PB number too long.
+  * @QMI_PROTOCOL_ERROR_PB_HIDDEN_KEY_RESTRICTION: PB hidden key restriction.
   * @QMI_PROTOCOL_ERROR_CAT_EVENT_REGISTRATION_FAILED: Event registration failed.
   * @QMI_PROTOCOL_ERROR_CAT_INVALID_TERMINAL_RESPONSE: Invalid terminal response.
   * @QMI_PROTOCOL_ERROR_CAT_INVALID_ENVELOPE_COMMAND: Invalid envelope command.
@@ -206,9 +231,35 @@ typedef enum { /*< underscore_name=qmi_protocol_error >*/
   QMI_PROTOCOL_ERROR_SEGMENT_TOO_LONG                 = 75, /*< nick=SegmentTooLong >*/
   QMI_PROTOCOL_ERROR_SEGMENT_ORDER                    = 76, /*< nick=SegmentOrder >*/
   QMI_PROTOCOL_ERROR_BUNDLING_NOT_SUPPORTED           = 77, /*< nick=BundlingNotSupported >*/
+  /* 0x004E, 78: unused */
+  QMI_PROTOCOL_ERROR_POLICY_MISMATCH                  = 79, /*< nick=PolicyMismatch >*/
   QMI_PROTOCOL_ERROR_SIM_FILE_NOT_FOUND               = 80, /*< nick=SimFileNotFound >*/
+  QMI_PROTOCOL_ERROR_EXTENDED_INTERNAL                = 81, /*< nick=ExtendedInternal >*/
   QMI_PROTOCOL_ERROR_ACCESS_DENIED                    = 82, /*< nick=AccessDenied >*/
   QMI_PROTOCOL_ERROR_HARDWARE_RESTRICTED              = 83, /*< nick=HardwareRestricted >*/
+  QMI_PROTOCOL_ERROR_ACK_NOT_SENT                     = 84, /*< nick=AckNotSent >*/
+  QMI_PROTOCOL_ERROR_INJECT_TIMEOUT                   = 85, /*< nick=InjectTimeout >*/
+  QMI_PROTOCOL_ERROR_INCOMPATIBLE_STATE               = 90, /*< nick=IncompatibleState >*/
+  QMI_PROTOCOL_ERROR_FDN_RESTRICT                     = 91, /*< nick=FdnRestrict >*/
+  QMI_PROTOCOL_ERROR_SUPS_FAILURE_CASE                = 92, /*< nick=SupsFailureCase >*/
+  QMI_PROTOCOL_ERROR_NO_RADIO                         = 93, /*< nick=NoRadio >*/
+  QMI_PROTOCOL_ERROR_NOT_SUPPORTED                    = 94, /*< nick=NotSupported >*/
+  QMI_PROTOCOL_ERROR_NO_SUBSCRIPTION                  = 95, /*< nick=NoSubscription >*/
+  QMI_PROTOCOL_ERROR_CARD_CALL_CONTROL_FAILED         = 96, /*< nick=CardCallControlFailed >*/
+  QMI_PROTOCOL_ERROR_NETWORK_ABORTED                  = 97, /*< nick=NetworkAborted >*/
+  QMI_PROTOCOL_ERROR_MSG_BLOCKED                      = 98, /*< nick=MsgBlocked >*/
+  QMI_PROTOCOL_ERROR_INVALID_SESSION_TYPE             = 100, /*< nick=InvalidSessionType >*/
+  QMI_PROTOCOL_ERROR_INVALID_PB_TYPE                  = 101, /*< nick=InvalidPbType >*/
+  QMI_PROTOCOL_ERROR_NO_SIM                           = 102, /*< nick=NoSim >*/
+  QMI_PROTOCOL_ERROR_PB_NOT_READY                     = 103, /*< nick=PbNotReady >*/
+  QMI_PROTOCOL_ERROR_PIN_RESTRICTION                  = 104, /*< nick=PinRestriction >*/
+  QMI_PROTOCOL_ERROR_PIN2_RESTRICTION                 = 105, /*< nick=Pin1Restriction >*/
+  QMI_PROTOCOL_ERROR_PUK_RESTRICTION                  = 106, /*< nick=PukRestriction >*/
+  QMI_PROTOCOL_ERROR_PUK2_RESTRICTION                 = 107, /*< nick=Puk2Restriction >*/
+  QMI_PROTOCOL_ERROR_PB_ACCESS_RESTRICTED             = 108, /*< nick=PbAccessRestricted >*/
+  QMI_PROTOCOL_ERROR_PB_TEXT_TOO_LONG                 = 109, /*< nick=PbTextTooLong >*/
+  QMI_PROTOCOL_ERROR_PB_NUMBER_TOO_LONG               = 110, /*< nick=PbNumberTooLong >*/
+  QMI_PROTOCOL_ERROR_PB_HIDDEN_KEY_RESTRICTION        = 111, /*< nick=PbHiddenKeyRestriction >*/
   QMI_PROTOCOL_ERROR_CAT_EVENT_REGISTRATION_FAILED    = 61441, /*< nick=Cat.EventRegistrationFailed >*/
   QMI_PROTOCOL_ERROR_CAT_INVALID_TERMINAL_RESPONSE    = 61442, /*< nick=Cat.InvalidTerminalResponse >*/
   QMI_PROTOCOL_ERROR_CAT_INVALID_ENVELOPE_COMMAND     = 61443, /*< nick=Cat.InvalidEnvelopeCommand >*/

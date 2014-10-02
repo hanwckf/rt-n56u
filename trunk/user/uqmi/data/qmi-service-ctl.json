@@ -144,5 +144,19 @@
   {  "name"    : "Sync",
      "type"    : "Indication",
      "service" : "CTL",
-     "id"      : "0x0027" }
+     "id"      : "0x0027" },
+
+  // *********************************************************************************
+  // Internal
+  {  "name"    : "Internal Proxy Open",
+     "type"    : "Message",
+     "service" : "CTL",
+     "id"      : "0xFF00",
+     "input"   : [ { "name"      : "Device Path",
+                     "id"        : "0x01",
+                     "mandatory" : "yes",
+                     "type"      : "TLV",
+                     "format"    : "string" } ],
+     "output"  : [ { "common-ref" : "Operation Result" } ] }
+
 ]

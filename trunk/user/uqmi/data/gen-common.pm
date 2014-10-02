@@ -14,6 +14,7 @@ our %tlv_types = (
 	guint32 => "uint32_t",
 	gint64 => "int64_t",
 	guint64 => "uint64_t",
+	gfloat => "float",
 	gboolean => "bool",
 );
 

@@ -1,6 +1,6 @@
 #include "qmi-message.h"
 
-static const char *get_pin_status(QmiDmsUimPinStatus status)
+static const char *get_pin_status(int status)
 {
 	static const char *pin_status[] = {
 		[QMI_DMS_UIM_PIN_STATUS_NOT_INITIALIZED] = "not_initialized",

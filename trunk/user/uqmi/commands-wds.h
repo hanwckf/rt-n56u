@@ -6,6 +6,7 @@
 	__uqmi_command(wds_set_autoconnect, autoconnect, no, CMD_TYPE_OPTION), \
 	__uqmi_command(wds_stop_network, stop-network, required, QMI_SERVICE_WDS), \
 	__uqmi_command(wds_get_packet_service_status, get-data-status, no, QMI_SERVICE_WDS), \
+	__uqmi_command(wds_set_autoconnect_setting, set-autoconnect, required, QMI_SERVICE_WDS), \
 	__uqmi_command(wds_reset, reset-wds, no, QMI_SERVICE_WDS) \
 
 
@@ -18,4 +19,5 @@
 		"  --stop-network <pdh>:             Stop network connection (use with option below)\n" \
 		"    --autoconnect:                  Disable automatic connect/reconnect\n" \
 		"  --get-data-status:                Get current data access status\n" \
+		"  --set-autoconnect <val>:          Get current data access status (disabled, enabled, paused)\n" \
 

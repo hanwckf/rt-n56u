@@ -19,6 +19,7 @@ my %tlv_get = (
 	guint32 => "le32_to_cpu(*(uint32_t *) get_next(4))",
 	gint64 => "le64_to_cpu(*(uint64_t *) get_next(8))",
 	guint64 => "le64_to_cpu(*(uint64_t *) get_next(8))",
+	gfloat => "({ uint32_t data = le32_to_cpu(*(uint32_t *) get_next(4)); float _val; memcpy(&_val, &data, sizeof(_val)); _val; })"
 );
 
 my %tlv_get_be = (

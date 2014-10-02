@@ -408,7 +408,7 @@ ohci_dump_ed (const struct ohci_hcd *ohci, const char *label,
 }
 
 #else
-static inline void ohci_dump (struct ohci_hcd *controller, int verbose) {}
+static inline void ohci_dump (struct ohci_hcd *controller) {}
 
 #undef OHCI_VERBOSE_DEBUG
 

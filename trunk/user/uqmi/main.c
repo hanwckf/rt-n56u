@@ -41,6 +41,7 @@ static int usage(const char *progname)
 		"                                    (implies --keep-client-id)\n"
 		"  --get-client-id <name>:           Connect and get Client ID for service <name>\n"
 		"                                    (implies --keep-client-id)\n"
+		"  --set-data-format <mode>:         Set interface data format (802.3, raw-ip)\n"
 		wds_helptext
 		dms_helptext
 		nas_helptext

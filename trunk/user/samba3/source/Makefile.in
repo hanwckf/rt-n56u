@@ -148,7 +148,7 @@ PATH_FLAGS = $(PATH_FLAGS6) $(PASSWD_FLAGS)
 
 # Note that all executable programs now provide for an optional executable suffix.
 
-SBIN_PROGS = bin/smbmulti@EXEEXT@
+SBIN_PROGS = bin/smbmulti@EXEEXT@ bin/nmbd@EXEEXT@
 
 ROOT_SBIN_PROGS = @CIFSMOUNT_PROGS@
 
@@ -816,7 +816,7 @@ NTLM_AUTH_OBJ = ${NTLM_AUTH_OBJ1} $(LIBSAMBA_OBJ) $(POPT_LIB_OBJ) \
 ######################################################################
 # now the rules...
 ######################################################################
-all : SHOWFLAGS bin/smbmulti@EXEEXT@
+all : SHOWFLAGS bin/smbmulti@EXEEXT@ bin/nmbd@EXEEXT@
 
 nss_modules : $(NSS_MODULES)
 
@@ -948,29 +948,35 @@ bin/.dummy:
 	  dir=bin $(MAKEDIR); fi
 	@: >> $@ || : > $@ # what a fancy emoticon!
 
-MULTI_O = multi/smbmulti.o
+SMBMULTI_O = multi/smbmulti.o
+NMBDONLY_O = multi/nmbdonly.o
 MULTICALL_O = $(PARAM_OBJ) $(SECRETS_OBJ) \
 	$(LIBSMB_OBJ) $(RPC_PARSE_OBJ) $(LIB_OBJ) $(PASSDB_OBJ) \
 	$(GROUPDB_OBJ) $(KRBCLIENT_OBJ) $(SMBLDAP_OBJ) \
-	$(POPT_LIB_OBJ) $(SMBD_OBJ) $(NMBD_OBJ) $(MY_PASS_OBJ) $(MULTI_O)
+	$(POPT_LIB_OBJ) $(SMBD_OBJ) $(NMBD_OBJ) $(MY_PASS_OBJ)
 
-bin/smbmulti: proto_exists $(MULTICALL_O) @BUILD_POPT@ bin/.dummy
+bin/smbmulti: proto_exists $(MULTICALL_O) $(SMBMULTI_O) @BUILD_POPT@ bin/.dummy
 	@echo Linking $@
-	@$(CC) $(FLAGS) -o $@ $(MULTICALL_O) $(LDFLAGS) \
+	@$(CC) $(FLAGS) -o $@ $(MULTICALL_O) $(SMBMULTI_O) $(LDFLAGS) \
 		$(AUTH_LIBS) $(PASSDB_LIBS) $(IDMAP_LIBS) $(KRB5LIBS) $(LDAP_LIBS) $(LIBS) @POPTLIBS@
 
-bin/smbd: proto_exists bin/libbigballofmud.@SHLIBEXT@ $(SMBD_OBJ) @BUILD_POPT@ bin/.dummy
+bin/nmbd: proto_exists $(MULTICALL_O) $(NMBDONLY_O) @BUILD_POPT@ bin/.dummy
 	@echo Linking $@
-	@$(CC) $(FLAGS) -o $@ $(SMBD_OBJ) $(LDFLAGS) \
-		$(AUTH_LIBS) \
-		-L ./bin -lbigballofmud \
-		$(LIBS)
+	@$(CC) $(FLAGS) -o $@ $(MULTICALL_O) $(NMBDONLY_O) $(LDFLAGS) \
+		$(IDMAP_LIBS) $(KRB5LIBS) $(LDAP_LIBS) $(LIBS) @POPTLIBS@
 
-bin/nmbd: proto_exists bin/libbigballofmud.@SHLIBEXT@ $(NMBD_OBJ) @BUILD_POPT@ bin/.dummy
-	@echo Linking $@
-	@$(CC) $(FLAGS) -o $@ $(NMBD_OBJ) $(LDFLAGS) $(DYNEXP) \
-		-L ./bin -lbigballofmud \
-		$(LIBS)
+#bin/smbd: proto_exists bin/libbigballofmud.@SHLIBEXT@ $(SMBD_OBJ) @BUILD_POPT@ bin/.dummy
+#	@echo Linking $@
+#	@$(CC) $(FLAGS) -o $@ $(SMBD_OBJ) $(LDFLAGS) \
+#		$(AUTH_LIBS) \
+#		-L ./bin -lbigballofmud \
+#		$(LIBS)
+
+#bin/nmbd: proto_exists bin/libbigballofmud.@SHLIBEXT@ $(NMBD_OBJ) @BUILD_POPT@ bin/.dummy
+#	@echo Linking $@
+#	@$(CC) $(FLAGS) -o $@ $(NMBD_OBJ) $(LDFLAGS) $(DYNEXP) \
+#		-L ./bin -lbigballofmud \
+#		$(LIBS)
 
 bin/swat@EXEEXT@: proto_exists $(SWAT_OBJ) @BUILD_POPT@ bin/.dummy
 	@echo Linking $@

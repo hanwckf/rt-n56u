@@ -1,22 +1,19 @@
+include ../shared/boards.mk
+include ../shared/cflags.mk
+
 USERDIR = $(ROOTDIR)/user
 SHDIR = $(ROOTDIR)/user/shared
 INSTALLDIR = $(ROOTDIR)/romfs
 
 CFLAGS += -s -I. -I$(SHDIR) -I$(SHDIR)/include
-
-include ../shared/boards.mk
-include ../shared/cflags.mk
+CFLAGS += -I$(USERDIR)/wireless_tools
 
 # Disable/Enable ugly httpd_check
 #CFLAGS += -DHTTPD_CHECK
 
 LDFLAGS += -L. -lm
-
-CFLAGS += -I$(USERDIR)/wireless_tools
-
 LDFLAGS += -L$(USERDIR)/wireless_tools -liw
 LDFLAGS += -L$(SHDIR) -lshared
-
 ifdef CONFIG_USB_SUPPORT
 CFLAGS += -I$(USERDIR)/libdisk
 LDFLAGS += -L$(USERDIR)/libdisk -ldisk
@@ -36,16 +33,18 @@ OBJS += usb_devices.o usb_modem.o services_usb.o
 endif
 ifdef CONFIG_RTL8367
 OBJS += switch_rtl8367.o
+CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)/drivers/net/rtl8367
 else
 ifdef CONFIG_MT7530_GSW
 OBJS += switch_mtk_esw.o
+CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)/drivers/net/raeth
 else
 ifdef CONFIG_RAETH_ESW
 OBJS += switch_mtk_esw.o
+CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)/drivers/net/raeth
 endif
 endif
 endif
-
 ifdef CONFIG_RT3352_INIC_MII
 OBJS += inicd.o
 endif

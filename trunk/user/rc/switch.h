@@ -21,13 +21,13 @@
 #include <stdint.h>
 
 #if defined(USE_RTL8367)
-#include <linux/rtl8367_ioctl.h>
+#include <rtl8367_ioctl.h>
 int rtl8367_node(void);
 int rtl8367_main(int argc, char **argv);
 #endif
 
 #if defined(USE_MTK_ESW) || defined(USE_MTK_GSW)
-#include <linux/ra_esw_ioctl.h>
+#include <ra_esw_ioctl.h>
 int mtk_esw_node(void);
 int mtk_esw_main(int argc, char **argv);
 #endif

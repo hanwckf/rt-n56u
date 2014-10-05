@@ -26,7 +26,7 @@
 
 #include "httpd.h"
 
-#include <linux/rtl8367_ioctl.h>
+#include <rtl8367_ioctl.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // MIB COUNTERS

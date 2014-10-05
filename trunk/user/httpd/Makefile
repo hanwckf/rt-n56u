@@ -1,13 +1,15 @@
-USERDIR = $(ROOTDIR)/user
-SHDIR = $(ROOTDIR)/user/shared
-
-CFLAGS += -Wall -I. -I$(SHDIR) -I$(SHDIR)/include -I$(USERDIR)/wireless_tools
-
 include ../shared/boards.mk
 include ../shared/cflags.mk
 
-LDFLAGS  = -L$(SHDIR) -L$(USERDIR)/wireless_tools
-LDFLAGS += -lm -lshared -liw
+USERDIR = $(ROOTDIR)/user
+SHDIR = $(ROOTDIR)/user/shared
+
+CFLAGS += -Wall -I. -I$(SHDIR) -I$(SHDIR)/include
+CFLAGS += -I$(USERDIR)/wireless_tools
+
+LDFLAGS += -L. -lm
+LDFLAGS += -L$(SHDIR) -lshared
+LDFLAGS += -L$(USERDIR)/wireless_tools -liw
 ifdef CONFIG_USB_SUPPORT
 CFLAGS  += -I$(USERDIR)/libdisk
 LDFLAGS += -L$(USERDIR)/libdisk -ldisk
@@ -26,12 +28,15 @@ OBJS += aidisk.o
 endif
 ifdef CONFIG_RTL8367
 OBJS += switch_rtl8367.o
+CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)/drivers/net/rtl8367
 else
 ifdef CONFIG_MT7530_GSW
 OBJS += switch_mtk_esw.o
+CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)/drivers/net/raeth
 else
 ifdef CONFIG_RAETH_ESW
 OBJS += switch_mtk_esw.o
+CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)/drivers/net/raeth
 endif
 endif
 endif

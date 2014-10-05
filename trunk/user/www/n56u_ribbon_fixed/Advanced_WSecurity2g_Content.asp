@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_1_5#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_1_5#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
@@ -18,13 +19,11 @@
 <script type="text/javascript" src="/help_wl.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script>
-
 var $j = jQuery.noConflict();
 
 function initial(){
 	show_banner(1);
 	show_menu(5,1,5);
-
 	show_footer();
 
 	if (!support_5g_radio()) {

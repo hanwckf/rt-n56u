@@ -1,63 +1,36 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<title></title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
 
 <script type="text/javascript" src="/jquery.js"></script>
-<script type="text/javascript" src="/state.js"></script>
-<script type="text/javascript" src="/general.js"></script>
-<script type="text/javascript" src="/wireless_2g.js"></script>
-<script type="text/javascript" src="formcontrol.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
+<script type="text/javascript" src="/state.js"></script>
+<script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
+<script type="text/javascript" src="/wireless_2g.js"></script>
+<script type="text/javascript" src="formcontrol.js"></script>
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#rt_closed_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                change_common_radio(this, 'WLANConfig11b', 'rt_closed', '1');
-                $j("#rt_closed_fake").attr("checked", "checked").attr("value", 1);
-                $j("#rt_closed_1").attr("checked", "checked");
-                $j("#rt_closed_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                change_common_radio(this, 'WLANConfig11b', 'rt_closed', '0');
-                $j("#rt_closed_fake").removeAttr("checked").attr("value", 0);
-                $j("#rt_closed_0").attr("checked", "checked");
-                $j("#rt_closed_1").removeAttr("checked");
-            }
-        });
-        $j("#rt_closed_on_of label.itoggle").css("background-position", $j("input#rt_closed_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+var $j = jQuery.noConflict();
 
-        $j('#radio_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#rt_radio_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#rt_radio_x_1").attr("checked", "checked");
-                $j("#rt_radio_x_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#rt_radio_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#rt_radio_x_0").attr("checked", "checked");
-                $j("#rt_radio_x_1").removeAttr("checked");
-            }
-        });
-        $j("#radio_on_of label.itoggle").css("background-position", $j("input#rt_radio_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
+$j(document).ready(function() {
+	init_itoggle('rt_radio_x');
+	init_itoggle('rt_closed');
+});
+
 </script>
-
 <script>
+
 var had_wrong_wep_key = false;
 
 <% wl_bssid_2g(); %>
@@ -633,7 +606,7 @@ window.onunload  = function(){
     <th width="50%" style="border-top: 0 none; padding-top: 0px;"><#WLANConfig11b_x_RadioEnable_itemname#></th>
     <td style="border-top: 0 none; padding-top: 0px;">
         <div class="main_itoggle">
-            <div id="radio_on_of">
+            <div id="rt_radio_x_on_of">
                 <input type="checkbox" id="rt_radio_x_fake" <% nvram_match_x("", "rt_radio_x", "1", "value=1 checked"); %><% nvram_match_x("", "rt_radio_x", "0", "value=0"); %>>
             </div>
             <div style="position: absolute; margin-left: -10000px;">
@@ -657,10 +630,9 @@ window.onunload  = function(){
                   <input type="checkbox" id="rt_closed_fake" <% nvram_match_x("", "rt_closed", "1", "value=1 checked"); %><% nvram_match_x("", "rt_closed", "0", "value=0"); %>>
               </div>
           </div>
-
           <div style="position: absolute; margin-left: -10000px;">
-              <input type="radio" value="1" id="rt_closed_1" name="rt_closed" onClick="return change_common_radio(this, 'WLANConfig11b', 'rt_closed', '1')" <% nvram_match_x("", "rt_closed", "1", "checked"); %>><#checkbox_Yes#>
-              <input type="radio" value="0" id="rt_closed_0" name="rt_closed" onClick="return change_common_radio(this, 'WLANConfig11b', 'rt_closed', '0')" <% nvram_match_x("", "rt_closed", "0", "checked"); %>><#checkbox_No#>
+              <input type="radio" value="1" id="rt_closed_1" name="rt_closed" <% nvram_match_x("", "rt_closed", "1", "checked"); %>><#checkbox_Yes#>
+              <input type="radio" value="0" id="rt_closed_0" name="rt_closed" <% nvram_match_x("", "rt_closed", "0", "checked"); %>><#checkbox_No#>
           </div>
       </td>
   </tr>

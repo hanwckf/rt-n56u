@@ -282,7 +282,7 @@ static int
 openvpn_create_server_conf(const char *conf_file, int is_tun)
 {
 	FILE *fp;
-	int i, i_prot, i_atls, i_rdgw, i_dhcp, i_dns, i_cli0, i_cli1;
+	int i, i_prot, i_atls, i_rdgw, i_dhcp, i_items, i_cli0, i_cli1;
 	unsigned int laddr, lmask, lsnet;
 	struct in_addr pool_in;
 	char pooll[32], pool1[32], pool2[32];
@@ -302,8 +302,7 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 	i_cli0 = nvram_safe_get_int("vpns_cli0", 245, 1, 254);
 	i_cli1 = nvram_safe_get_int("vpns_cli1", 254, 2, 254);
 
-	i_dns = 0;
-	i_dhcp = nvram_get_int("dhcp_enable_x");
+	i_dhcp = is_dhcpd_enabled(0);
 
 	lanip = nvram_safe_get("lan_ipaddr");
 	lannm = nvram_safe_get("lan_netmask");
@@ -355,30 +354,39 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 		openvpn_add_cipher(fp, nvram_get_int("vpns_ov_ciph"));
 		openvpn_add_lzo(fp, nvram_get_int("vpns_ov_clzo"), 1);
 		
+		i_items = 0;
 		if (i_rdgw) {
 			fprintf(fp, "push \"redirect-gateway def1 %s\"\n", "bypass-dhcp");
-			if (i_dhcp == 1) {
+			if (i_dhcp) {
 				dns1 = nvram_safe_get("dhcp_dns1_x");
 				dns2 = nvram_safe_get("dhcp_dns2_x");
 				if (is_valid_ipv4(dns1) && (strcmp(dns1, lanip))) {
-					i_dns++;
+					i_items++;
 					fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", dns1);
 				}
 				if (is_valid_ipv4(dns2) && (strcmp(dns2, lanip)) && (strcmp(dns2, dns1))) {
-					i_dns++;
+					i_items++;
 					fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", dns2);
 				}
 			}
 			
-			if (i_dns < 2)
+			if (i_items < 2)
 				fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", lanip);
 		}
 		
-		if (i_dhcp == 1) {
+		i_items = 0;
+		if (i_dhcp) {
 			wins = nvram_safe_get("dhcp_wins_x");
-			if (is_valid_ipv4(wins))
+			if (is_valid_ipv4(wins)) {
+				i_items++;
 				fprintf(fp, "push \"dhcp-option %s %s\"\n", "WINS", wins);
+			}
 		}
+		
+#if defined(APP_SMBD) || defined(APP_NMBD)
+		if ((i_items < 1) && nvram_get_int("wins_enable"))
+			fprintf(fp, "push \"dhcp-option %s %s\"\n", "WINS", lanip);
+#endif
 		
 		fprintf(fp, "ca %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[0]);
 		fprintf(fp, "dh %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[1]);

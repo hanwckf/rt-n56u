@@ -356,11 +356,10 @@ menu5_5_3=MAC-Filter
 menu5_5_4=LAN-zu-WAN-Filter
 menu5_5_5=Netfilter
 menu5_6_1=Betriebsmodus
-menu5_6_1_title=Betriebsmodus
 menu5_6_2=System
 menu5_6_3=Firmware-Aktualisierung
 menu5_6_4=Wiederherstellung- / Speichern- / Hochladen-Einstellungen
-menu5_6_5=Console
+menu5_6_6=Console
 menu5_7_1=Systemstatus
 menu5_7_2=Allgemeines Protokoll
 menu5_7_3=DHCP-Nutzungen
@@ -616,7 +615,7 @@ ALERT_OF_ERROR_System2=Systemfehler: Laufwerkdaten konnten nicht ausgelesen werd
 ALERT_OF_ERROR_System3=Systemfehler: Das Laufwerk ist belegt!
 [QIS wizard]
 [QIS_detect.js]
-Web_Title=ZVMODELVZ
+Web_Title=ASUS Wireless Router
 QKSet_detect_sanglass=Automatische Erkennung
 QKSet_detect_desc1=Erkennung Ihres Verbindungstyps
 QKSet_detect_desc2=Neuerkennung Ihres Verbindungsstatus
@@ -757,7 +756,6 @@ BOP_isp_desc=Vom Internetanbieter zugewiesener Hostname:
 OP_desc1=Der ZVMODELVZ unterstützt drei Betriebsmodi für unterschiedliche Einsatzbedingungen. Bitte wählen Sie den Modus, der am besten zu Ihrer Situation passt.
 PASS_new=Neues Kennwort:
 PASS_retype=Neues Kennwort erneut eingeben:
-PASS_changepasswd=Systemkennwort andern
 FW_desc1=Fuhren Sie die nachstehenden Schritte aus:
 FW_desc2=Prüfen, ob eine neue Version der Firmware verfügbar ist auf: <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS Website</a>.
 FW_desc3=Laden Sie eine passende Version auf Ihren lokalen Computer herunter.

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_4_4#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
-<title>Wireless Router <#Web_Title#> - <#menu5_4_4#></title>
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
@@ -16,52 +17,19 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/modem_isp.js"></script>
-
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#modem_rule_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#modem_rule_fake").attr("checked", "checked").attr("value", 1);
-                $j("#modem_rule_1").attr("checked", "checked");
-                $j("#modem_rule_0").removeAttr("checked");
-                switch_modem_rule();
-            },
-            onClickOff: function(){
-                $j("#modem_rule_fake").removeAttr("checked").attr("value", 0);
-                $j("#modem_rule_0").attr("checked", "checked");
-                $j("#modem_rule_1").removeAttr("checked");
-                switch_modem_rule();
-            }
-        });
-        $j("#modem_rule_on_of label.itoggle").css("background-position", $j("input#modem_rule_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+var $j = jQuery.noConflict();
 
-        $j('#modem_dnsa_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#modem_dnsa_fake").attr("checked", "checked").attr("value", 1);
-                $j("#modem_dnsa_1").attr("checked", "checked");
-                $j("#modem_dnsa_0").removeAttr("checked");
-                change_modem_dns_auto();
-            },
-            onClickOff: function(){
-                $j("#modem_dnsa_fake").removeAttr("checked").attr("value", 0);
-                $j("#modem_dnsa_0").attr("checked", "checked");
-                $j("#modem_dnsa_1").removeAttr("checked");
-                change_modem_dns_auto();
-            }
-        });
-        $j("#modem_dnsa_on_of label.itoggle").css("background-position", $j("input#modem_dnsa_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
+$j(document).ready(function() {
+	init_itoggle('modem_rule', switch_modem_rule);
+	init_itoggle('modem_dnsa', change_modem_dns_auto);
+});
 
 </script>
-
 <script>
 
 var country = '<% nvram_get_x("", "modem_country"); %>';
@@ -96,16 +64,13 @@ function initial(){
 }
 
 function switch_modem_rule(){
-	var a = rcheck(document.form.modem_rule);
-	if (a == "0"){
-		$("tbl_modem_base").style.display = "none";
-		$("tbl_modem_dns").style.display = "none";
-		$("tbl_modem_adv").style.display = "none";
-	}
-	else {
-		$("tbl_modem_base").style.display = "";
-		$("tbl_modem_dns").style.display = "";
-		$("tbl_modem_adv").style.display = "";
+	var v = document.form.modem_rule[0].checked;
+
+	showhide_div('tbl_modem_base', v);
+	showhide_div('tbl_modem_dns', v);
+	showhide_div('tbl_modem_adv', v);
+
+	if (v){
 		change_modem_dns_auto();
 	}
 
@@ -152,7 +117,7 @@ function change_modem_dns_auto(){
 	inputCtrl(document.form.wan_dns2_x, !use_auto);
 	inputCtrl(document.form.wan_dns3_x, !use_auto);
 
-	if (use_auto == 1){
+	if (use_auto){
 		$("row_wan_dns1").style.display = "none";
 		$("row_wan_dns2").style.display = "none";
 		$("row_wan_dns3").style.display = "none";
@@ -267,8 +232,7 @@ function applyRule(){
 }
 
 function validForm(){
-	var a = rcheck(document.form.modem_rule);
-	if (a == "0")
+	if (!document.form.modem_rule[0].checked)
 		return true;
 
 	if(!validate_range(document.form.modem_mtu, 1000, 1500))

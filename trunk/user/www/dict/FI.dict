@@ -357,11 +357,10 @@ menu5_5_3=MAC-suodatin
 menu5_5_4=LANista WANiin -suodatin
 menu5_5_5=Netfilter
 menu5_6_1=Käyttötila
-menu5_6_1_title=Käyttötila
 menu5_6_2=Järjestelmä
 menu5_6_3=Laitteistopäivitys
 menu5_6_4=Palauta/Tallenna/Lataa tiedostoon -asetus
-menu5_6_5=Console
+menu5_6_6=Console
 menu5_7_1=Järjestelmän käyttötila
 menu5_7_2=Yleinen loki
 menu5_7_3=DHCP-luvat
@@ -617,7 +616,7 @@ ALERT_OF_ERROR_System2=Järjestelmävirhe: Levyn tietoja ei voi lukea!
 ALERT_OF_ERROR_System3=Järjestelmävirhe: Levy on varattu!
 [QIS wizard]
 [QIS_detect.js]
-Web_Title=ZVMODELVZ
+Web_Title=ASUS Wireless Router
 QKSet_detect_sanglass=automaattinen tunnistus
 QKSet_detect_desc1=Yhteystyyppisi tunnistaminen
 QKSet_detect_desc2=Yhteystilasi uudelleentunnistaminen
@@ -758,7 +757,6 @@ BOP_isp_desc=Internet-palveluntarjoajan toimittama isäntänimi:
 OP_desc1=ZVMODELVZ tukee kolmea käyttötilaa voidakseen vastata erilaisiin vaatimuksiin. Valitse tilannettasi vastaava tila.
 PASS_new=Uusi salasana:
 PASS_retype=Kirjoita uusi salasana uudelleen:
-PASS_changepasswd=Muuta järjestelmän salasana
 FW_desc1=Noudata seuraavia ohjeita:
 FW_desc2=Tarkista onko <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS-web-sivustolta</a> saatavana uusia laiteohjelmistoja.
 FW_desc3=Lataa oikea versio paikalliselle koneellesi.

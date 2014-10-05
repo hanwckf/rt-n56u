@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_5_1#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_5_1#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,202 +17,27 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script>
-    var $j = jQuery.noConflict();
+var $j = jQuery.noConflict();
 
-    $j(document).ready(function() {
-        $j('#fw_enable_x_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#fw_enable_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#fw_enable_x_1").attr("checked", "checked");
-                $j("#fw_enable_x_0").removeAttr("checked");
-                change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '1');
-            },
-            onClickOff: function(){
-                $j("#fw_enable_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#fw_enable_x_0").attr("checked", "checked");
-                $j("#fw_enable_x_1").removeAttr("checked");
-                change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '0');
-            }
-        });
-        $j("#fw_enable_x_on_of label.itoggle").css("background-position", $j("input#fw_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+$j(document).ready(function() {
+	init_itoggle('fw_enable_x', firewall_changed);
+	init_itoggle('fw_dos_x');
+	init_itoggle('fw_syn_cook');
+	init_itoggle('misc_ping_x');
+	init_itoggle('misc_http_x', http_wopen_changed);
+	init_itoggle('https_wopen', https_wopen_changed);
+	init_itoggle('sshd_wopen', sshd_wopen_changed);
+	init_itoggle('ftpd_wopen', ftpd_wopen_changed);
+	init_itoggle('udpxy_wopen', udpxy_wopen_changed);
+	init_itoggle('trmd_ropen');
+	init_itoggle('aria_ropen');
+});
 
-        $j('#fw_dos_x_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#fw_dos_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#fw_dos_x_1").attr("checked", "checked");
-                $j("#fw_dos_x_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#fw_dos_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#fw_dos_x_0").attr("checked", "checked");
-                $j("#fw_dos_x_1").removeAttr("checked");
-            }
-        });
-        $j("#fw_dos_x_on_of label.itoggle").css("background-position", $j("input#fw_dos_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#fw_syn_cook_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#fw_syn_cook_fake").attr("checked", "checked").attr("value", 1);
-                $j("#fw_syn_cook_1").attr("checked", "checked");
-                $j("#fw_syn_cook_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#fw_syn_cook_fake").removeAttr("checked").attr("value", 0);
-                $j("#fw_syn_cook_0").attr("checked", "checked");
-                $j("#fw_syn_cook_1").removeAttr("checked");
-            }
-        });
-        $j("#fw_syn_cook_on_of label.itoggle").css("background-position", $j("input#fw_syn_cook_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#misc_ping_x_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#misc_ping_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#misc_ping_x_1").attr("checked", "checked");
-                $j("#misc_ping_x_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#misc_ping_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#misc_ping_x_0").attr("checked", "checked");
-                $j("#misc_ping_x_1").removeAttr("checked");
-            }
-        });
-        $j("#misc_ping_x_on_of label.itoggle").css("background-position", $j("input#misc_ping_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#misc_http_x_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#misc_http_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#misc_http_x_1").attr("checked", "checked");
-                $j("#misc_http_x_0").removeAttr("checked");
-                http_wopen_changed();
-            },
-            onClickOff: function(){
-                $j("#misc_http_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#misc_http_x_0").attr("checked", "checked");
-                $j("#misc_http_x_1").removeAttr("checked");
-                http_wopen_changed();
-            }
-        });
-        $j("#misc_http_x_on_of label.itoggle").css("background-position", $j("input#misc_http_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#https_wopen_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#https_wopen_fake").attr("checked", "checked").attr("value", 1);
-                $j("#https_wopen_1").attr("checked", "checked");
-                $j("#https_wopen_0").removeAttr("checked");
-                https_wopen_changed();
-            },
-            onClickOff: function(){
-                $j("#https_wopen_fake").removeAttr("checked").attr("value", 0);
-                $j("#https_wopen_0").attr("checked", "checked");
-                $j("#https_wopen_1").removeAttr("checked");
-                https_wopen_changed();
-            }
-        });
-        $j("#https_wopen_on_of label.itoggle").css("background-position", $j("input#https_wopen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#sshd_wopen_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#sshd_wopen_fake").attr("checked", "checked").attr("value", 1);
-                $j("#sshd_wopen_1").attr("checked", "checked");
-                $j("#sshd_wopen_0").removeAttr("checked");
-                sshd_wopen_changed();
-            },
-            onClickOff: function(){
-                $j("#sshd_wopen_fake").removeAttr("checked").attr("value", 0);
-                $j("#sshd_wopen_0").attr("checked", "checked");
-                $j("#sshd_wopen_1").removeAttr("checked");
-                sshd_wopen_changed();
-            }
-        });
-        $j("#sshd_wopen_on_of label.itoggle").css("background-position", $j("input#sshd_wopen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#ftpd_wopen_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#ftpd_wopen_fake").attr("checked", "checked").attr("value", 1);
-                $j("#ftpd_wopen_1").attr("checked", "checked");
-                $j("#ftpd_wopen_0").removeAttr("checked");
-                ftpd_wopen_changed();
-            },
-            onClickOff: function(){
-                $j("#ftpd_wopen_fake").removeAttr("checked").attr("value", 0);
-                $j("#ftpd_wopen_0").attr("checked", "checked");
-                $j("#ftpd_wopen_1").removeAttr("checked");
-                ftpd_wopen_changed();
-            }
-        });
-        $j("#ftpd_wopen_on_of label.itoggle").css("background-position", $j("input#ftpd_wopen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#udpxy_wopen_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#udpxy_wopen_fake").attr("checked", "checked").attr("value", 1);
-                $j("#udpxy_wopen_1").attr("checked", "checked");
-                $j("#udpxy_wopen_0").removeAttr("checked");
-                udpxy_wopen_changed();
-            },
-            onClickOff: function(){
-                $j("#udpxy_wopen_fake").removeAttr("checked").attr("value", 0);
-                $j("#udpxy_wopen_0").attr("checked", "checked");
-                $j("#udpxy_wopen_1").removeAttr("checked");
-                udpxy_wopen_changed();
-            }
-        });
-        $j("#udpxy_wopen_on_of label.itoggle").css("background-position", $j("input#udpxy_wopen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#trmd_ropen_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#trmd_ropen_fake").attr("checked", "checked").attr("value", 1);
-                $j("#trmd_ropen_1").attr("checked", "checked");
-                $j("#trmd_ropen_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#trmd_ropen_fake").removeAttr("checked").attr("value", 0);
-                $j("#trmd_ropen_0").attr("checked", "checked");
-                $j("#trmd_ropen_1").removeAttr("checked");
-            }
-        });
-        $j("#trmd_ropen_on_of label.itoggle").css("background-position", $j("input#trmd_ropen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#aria_ropen_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#aria_ropen_fake").attr("checked", "checked").attr("value", 1);
-                $j("#aria_ropen_1").attr("checked", "checked");
-                $j("#aria_ropen_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#aria_ropen_fake").removeAttr("checked").attr("value", 0);
-                $j("#aria_ropen_0").attr("checked", "checked");
-                $j("#aria_ropen_1").removeAttr("checked");
-            }
-        });
-        $j("#aria_ropen_on_of label.itoggle").css("background-position", $j("input#aria_ropen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
 </script>
-
 <script>
 
 var http_proto = '<% nvram_get_x("", "http_proto"); %>';
@@ -222,6 +48,8 @@ function initial(){
 	show_footer();
 
 	load_body();
+
+	firewall_changed();
 
 	if(found_app_sshd()){
 		$("row_sshd").style.display = "";
@@ -315,56 +143,65 @@ function validForm(){
 	return true;
 }
 
+function firewall_changed(){
+	var v = document.form.fw_enable_x[0].checked;
+
+	inputCtrl(document.form.misc_httpport_x, v);
+	inputCtrl(document.form.https_wport, v);
+	inputCtrl(document.form.sshd_wport, v);
+
+	inputRCtrl1(document.form.misc_ping_x, v);
+	inputRCtrl1(document.form.misc_http_x, v);
+	inputRCtrl1(document.form.https_wopen, v);
+	inputRCtrl1(document.form.sshd_wopen, v);
+	inputRCtrl1(document.form.ftpd_wopen, v);
+	inputRCtrl1(document.form.trmd_ropen, v);
+
+	if (!v){
+		inputRCtrl2(document.form.misc_ping_x, 1);
+		inputRCtrl2(document.form.misc_http_x, 1);
+		inputRCtrl2(document.form.https_wopen, 1);
+		inputRCtrl2(document.form.sshd_wopen, 1);
+		inputRCtrl2(document.form.ftpd_wopen, 1);
+		inputRCtrl2(document.form.trmd_ropen, 1);
+	}
+
+	showhide_div('row_misc_ping', v);
+	showhide_div('access_section', v);
+}
+
 function http_wopen_changed(){
 	if (sw_mode == '4')
 		return;
-	var a = rcheck(document.form.misc_http_x);
-	if (a == "0")
-		$("row_http_wport").style.display = "none";
-	else
-		$("row_http_wport").style.display = "";
+	var v = document.form.misc_http_x[0].checked;
+	showhide_div('row_http_wport', v);
 }
 
 function https_wopen_changed(){
 	if (sw_mode == '4')
 		return;
-	var a = rcheck(document.form.https_wopen);
-	if (a == "0")
-		$("row_https_wport").style.display = "none";
-	else
-		$("row_https_wport").style.display = "";
+	var v = document.form.https_wopen[0].checked;
+	showhide_div('row_https_wport', v);
 }
 
 function sshd_wopen_changed(){
-	var a = rcheck(document.form.sshd_wopen);
-	if (a == "0") {
-		$("row_sshd_wport").style.display = "none";
-		$("row_sshd_wbfp").style.display = "none";
-	}else{
-		if (sw_mode != "4")
-			$("row_sshd_wport").style.display = "";
-		$("row_sshd_wbfp").style.display = "";
-	}
+	var v = document.form.sshd_wopen[0].checked;
+	showhide_div('row_sshd_wport', v);
+	showhide_div('row_sshd_wbfp', v);
 }
 
 function ftpd_wopen_changed(){
 	if (sw_mode == '4')
 		return;
-	var a = rcheck(document.form.ftpd_wopen);
-	if (a == "0")
-		$("row_ftpd_wport").style.display = "none";
-	else
-		$("row_ftpd_wport").style.display = "";
+	var v = document.form.ftpd_wopen[0].checked;
+	showhide_div('row_ftpd_wport', v);
 }
 
 function udpxy_wopen_changed(){
 	if (sw_mode == '4')
 		return;
-	var a = rcheck(document.form.udpxy_wopen);
-	if (a == "0")
-		$("row_udpxy_wport").style.display = "none";
-	else
-		$("row_udpxy_wport").style.display = "";
+	var v = document.form.udpxy_wopen[0].checked;
+	showhide_div('row_udpxy_wport', v);
 }
 
 function done_validating(action){
@@ -445,10 +282,9 @@ function done_validating(action){
                                                         <input type="checkbox" id="fw_enable_x_fake" <% nvram_match_x("", "fw_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "fw_enable_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="fw_enable_x" id="fw_enable_x_1" onClick="return change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '1')" <% nvram_match_x("","fw_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="fw_enable_x" id="fw_enable_x_0" onClick="return change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '0')" <% nvram_match_x("","fw_enable_x", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" name="fw_enable_x" id="fw_enable_x_1" onClick="firewall_changed();" <% nvram_match_x("","fw_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="fw_enable_x" id="fw_enable_x_0" onClick="firewall_changed();" <% nvram_match_x("","fw_enable_x", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -460,7 +296,6 @@ function done_validating(action){
                                                         <input type="checkbox" id="fw_dos_x_fake" <% nvram_match_x("", "fw_dos_x", "1", "value=1 checked"); %><% nvram_match_x("", "fw_dos_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" value="1" name="fw_dos_x" id="fw_dos_x_1" class="input" <% nvram_match_x("", "fw_dos_x", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="fw_dos_x" id="fw_dos_x_0" class="input" <% nvram_match_x("", "fw_dos_x", "0", "checked"); %>/><#checkbox_No#>
@@ -475,7 +310,6 @@ function done_validating(action){
                                                         <input type="checkbox" id="fw_syn_cook_fake" <% nvram_match_x("", "fw_syn_cook", "1", "value=1 checked"); %><% nvram_match_x("", "fw_syn_cook", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" value="1" name="fw_syn_cook" id="fw_syn_cook_1" class="input" <% nvram_match_x("", "fw_syn_cook", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="fw_syn_cook" id="fw_syn_cook_0" class="input" <% nvram_match_x("", "fw_syn_cook", "0", "checked"); %>/><#checkbox_No#>
@@ -501,7 +335,6 @@ function done_validating(action){
                                                         <input type="checkbox" id="misc_ping_x_fake" <% nvram_match_x("", "misc_ping_x", "1", "value=1 checked"); %><% nvram_match_x("", "misc_ping_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" value="1" name="misc_ping_x" id="misc_ping_x_1" class="input" <% nvram_match_x("","misc_ping_x", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="misc_ping_x" id="misc_ping_x_0" class="input" <% nvram_match_x("","misc_ping_x", "0", "checked"); %>/><#checkbox_No#>
@@ -522,7 +355,6 @@ function done_validating(action){
                                                         <input type="checkbox" id="misc_http_x_fake" <% nvram_match_x("", "misc_http_x", "1", "value=1 checked"); %><% nvram_match_x("", "misc_http_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" value="1" name="misc_http_x" id="misc_http_x_1" class="input" onclick="http_wopen_changed();" <% nvram_match_x("","misc_http_x", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="misc_http_x" id="misc_http_x_0" class="input" onclick="http_wopen_changed();" <% nvram_match_x("","misc_http_x", "0", "checked"); %>/><#checkbox_No#>
@@ -544,7 +376,6 @@ function done_validating(action){
                                                         <input type="checkbox" id="https_wopen_fake" <% nvram_match_x("", "https_wopen", "1", "value=1 checked"); %><% nvram_match_x("", "https_wopen", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" value="1" name="https_wopen" id="https_wopen_1" class="input" onclick="https_wopen_changed();" <% nvram_match_x("","https_wopen", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="https_wopen" id="https_wopen_0" class="input" onclick="https_wopen_changed();" <% nvram_match_x("","https_wopen", "0", "checked"); %>/><#checkbox_No#>
@@ -566,7 +397,6 @@ function done_validating(action){
                                                         <input type="checkbox" id="sshd_wopen_fake" <% nvram_match_x("", "sshd_wopen", "1", "value=1 checked"); %><% nvram_match_x("", "sshd_wopen", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" name="sshd_wopen" id="sshd_wopen_1" class="input" value="1" onclick="sshd_wopen_changed();" <% nvram_match_x("", "sshd_wopen", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="sshd_wopen" id="sshd_wopen_0" class="input" value="0" onclick="sshd_wopen_changed();" <% nvram_match_x("", "sshd_wopen", "0", "checked"); %>/><#checkbox_No#>
@@ -601,7 +431,6 @@ function done_validating(action){
                                                         <input type="checkbox" id="ftpd_wopen_fake" <% nvram_match_x("", "ftpd_wopen", "1", "value=1 checked"); %><% nvram_match_x("", "ftpd_wopen", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" name="ftpd_wopen" id="ftpd_wopen_1" class="input" value="1" onclick="ftpd_wopen_changed();" <% nvram_match_x("", "ftpd_wopen", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="ftpd_wopen" id="ftpd_wopen_0" class="input" value="0" onclick="ftpd_wopen_changed();" <% nvram_match_x("", "ftpd_wopen", "0", "checked"); %>/><#checkbox_No#>
@@ -623,7 +452,6 @@ function done_validating(action){
                                                         <input type="checkbox" id="udpxy_wopen_fake" <% nvram_match_x("", "udpxy_wopen", "1", "value=1 checked"); %><% nvram_match_x("", "udpxy_wopen", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" name="udpxy_wopen" id="udpxy_wopen_1" class="input" value="1" onclick="udpxy_wopen_changed();" <% nvram_match_x("", "udpxy_wopen", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="udpxy_wopen" id="udpxy_wopen_0" class="input" value="0" onclick="udpxy_wopen_changed();" <% nvram_match_x("", "udpxy_wopen", "0", "checked"); %>/><#checkbox_No#>
@@ -645,7 +473,6 @@ function done_validating(action){
                                                         <input type="checkbox" id="trmd_ropen_fake" <% nvram_match_x("", "trmd_ropen", "1", "value=1 checked"); %><% nvram_match_x("", "trmd_ropen", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" name="trmd_ropen" id="trmd_ropen_1" class="input" value="1" <% nvram_match_x("", "trmd_ropen", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="trmd_ropen" id="trmd_ropen_0" class="input" value="0" <% nvram_match_x("", "trmd_ropen", "0", "checked"); %>/><#checkbox_No#>
@@ -660,7 +487,6 @@ function done_validating(action){
                                                         <input type="checkbox" id="aria_ropen_fake" <% nvram_match_x("", "aria_ropen", "1", "value=1 checked"); %><% nvram_match_x("", "aria_ropen", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" name="aria_ropen" id="aria_ropen_1" class="input" value="1" <% nvram_match_x("", "aria_ropen", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="aria_ropen" id="aria_ropen_0" class="input" value="0" <% nvram_match_x("", "aria_ropen", "0", "checked"); %>/><#checkbox_No#>

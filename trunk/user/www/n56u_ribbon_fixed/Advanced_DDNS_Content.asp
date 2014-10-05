@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_3_6#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_3_6#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,32 +17,17 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#ddns_enable_x_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#ddns_enable_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#ddns_enable_x_1").attr("checked", "checked");
-                $j("#ddns_enable_x_0").removeAttr("checked");
-                enable_ddns(1,1);
-            },
-            onClickOff: function(){
-                $j("#ddns_enable_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#ddns_enable_x_0").attr("checked", "checked");
-                $j("#ddns_enable_x_1").removeAttr("checked");
-                enable_ddns(0,1);
-            }
-        });
-        $j("#ddns_enable_x_on_of label.itoggle").css("background-position", $j("input#ddns_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
-</script>
+var $j = jQuery.noConflict();
 
+$j(document).ready(function() {
+	init_itoggle('ddns_enable_x', change_ddns_enabled);
+});
+
+</script>
 <script>
 
 <% wanlink(); %>
@@ -140,31 +126,40 @@ function change_ddns_source(man)
 		disable_update();
 }
 
-function enable_ddns(e1,man)
+function ddns_enable(man)
 {
-	if (e1 == 1){
-		test_wan_ip();
-		change_ddns_server(man);
-		showhide_div("row_ddns_server", 1);
-		showhide_div("row_ddns_hname1", 1);
-		change_ddns2_server(man);
-		change_ddns_source(man);
-		showhide_div("tbl_ddns2", 1);
-		showhide_div("tbl_common", 1);
-	}else{
-		showhide("wan_ip_hide2", 0);
-		showhide("wan_ip_hide3", 0);
-		showhide_div("row_ddns_server", 0);
-		showhide_div("row_ddns_hname1", 0);
-		showhide_div("row_ddns_hname2", 0);
-		showhide_div("row_ddns_hname3", 0);
-		showhide_div("row_ddns_user", 0);
-		showhide_div("row_ddns_pass", 0);
-		showhide_div("row_ddns_ssl", 0);
-		showhide_div("row_ddns_wcard", 0);
-		showhide_div("tbl_ddns2", 0);
-		showhide_div("tbl_common", 0);
-	}
+	test_wan_ip();
+	change_ddns_server(man);
+	showhide_div("row_ddns_server", 1);
+	showhide_div("row_ddns_hname1", 1);
+	change_ddns2_server(man);
+	change_ddns_source(man);
+	showhide_div("tbl_ddns2", 1);
+	showhide_div("tbl_common", 1);
+}
+
+function ddns_disable()
+{
+	showhide("wan_ip_hide2", 0);
+	showhide("wan_ip_hide3", 0);
+	showhide_div("row_ddns_server", 0);
+	showhide_div("row_ddns_hname1", 0);
+	showhide_div("row_ddns_hname2", 0);
+	showhide_div("row_ddns_hname3", 0);
+	showhide_div("row_ddns_user", 0);
+	showhide_div("row_ddns_pass", 0);
+	showhide_div("row_ddns_ssl", 0);
+	showhide_div("row_ddns_wcard", 0);
+	showhide_div("tbl_ddns2", 0);
+	showhide_div("tbl_common", 0);
+}
+
+function change_ddns_enabled()
+{
+	if (document.form.ddns_enable_x[0].checked)
+		ddns_enable(1);
+	else
+		ddns_disable();
 }
 
 function ddns_load_body()
@@ -187,13 +182,12 @@ function ddns_load_body()
 	else
 		$("ddns_hostname_x").value = ddns_hostname_x;
 
-	if (rcheck(document.form.ddns_enable_x) == "1") {
-		enable_ddns(1,0);
+	if (document.form.ddns_enable_x[0].checked) {
+		ddns_enable(0);
 		if (ddns_server_x == "WWW.ASUS.COM")
 			show_asus_alert(ddns_hostname_x);
-	}
-	else
-		enable_ddns(0,0);
+	}else
+		ddns_disable();
 }
 
 function show_asus_alert(hname)
@@ -243,7 +237,7 @@ function show_asus_alert(hname)
 }
 
 function validForm(){
-	if(rcheck(document.form.ddns_enable_x) == "1"){
+	if(document.form.ddns_enable_x[0].checked){
 		if(document.form.ddns_server_x.selectedIndex == 0){
 			if(document.form.DDNSName.value == "" || !validate_ddns_hostname(document.form.DDNSName)){
 				alert("<#LANHostConfig_x_DDNS_alarm_14#>");
@@ -367,10 +361,9 @@ function checkDDNSReturnCode(){
                                                         <input type="checkbox" id="ddns_enable_x_fake" <% nvram_match_x("", "ddns_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "ddns_enable_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="ddns_enable_x" id="ddns_enable_x_1" onClick="enable_ddns(1,1)" <% nvram_match_x("","ddns_enable_x", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="ddns_enable_x" id="ddns_enable_x_0" onClick="enable_ddns(0,1)" <% nvram_match_x("","ddns_enable_x", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="ddns_enable_x" id="ddns_enable_x_1" onClick="change_ddns_enabled();" <% nvram_match_x("","ddns_enable_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="ddns_enable_x" id="ddns_enable_x_0" onClick="change_ddns_enabled();" <% nvram_match_x("","ddns_enable_x", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

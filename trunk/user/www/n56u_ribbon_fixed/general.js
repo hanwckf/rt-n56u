@@ -1,4 +1,4 @@
-﻿var keyPressed;
+var keyPressed;
 var wItem;
 var change = 0;
 var pageChanged = 0;
@@ -1101,13 +1101,9 @@ function setTimeRange(sh, sm, eh, em) {
     return(sh.value + sm.value + eh.value + em.value);
 }
 
-
 function load_body() {
     document.form.next_host.value = location.host;
-    if (document.form.current_page.value == "Advanced_BasicFirewall_Content.asp") {
-        change_firewall(rcheck(document.form.fw_enable_x));
-    }
-    else if (document.form.current_page.value == "Advanced_Firewall_Content.asp") {
+    if (document.form.current_page.value == "Advanced_Firewall_Content.asp") {
         wItem = new Array(
             new Array("WWW", "80", "TCP"),
             new Array("TELNET", "23", "TCP"),
@@ -1167,42 +1163,6 @@ function load_body() {
     change = 0;
 }
 
-function change_firewall(r) {
-    if (r == "0") {
-        inputCtrl(document.form.misc_httpport_x, 0);
-        inputCtrl(document.form.sshd_wport, 0);
-
-        inputRCtrl1(document.form.misc_http_x, 0);
-        inputRCtrl2(document.form.misc_http_x, 1);
-        inputRCtrl1(document.form.misc_ping_x, 0);
-        inputRCtrl2(document.form.misc_ping_x, 1);
-        inputRCtrl1(document.form.https_wopen, 0);
-        inputRCtrl2(document.form.https_wopen, 1);
-        inputRCtrl1(document.form.sshd_wopen, 0);
-        inputRCtrl2(document.form.sshd_wopen, 1);
-        inputRCtrl1(document.form.ftpd_wopen, 0);
-        inputRCtrl2(document.form.ftpd_wopen, 1);
-        inputRCtrl1(document.form.trmd_ropen, 0);
-        inputRCtrl2(document.form.trmd_ropen, 1);
-        $("row_misc_ping").style.display = "none";
-        $("access_section").style.display = "none";
-    }
-    else {
-        inputCtrl(document.form.misc_httpport_x, 1);
-        inputCtrl(document.form.https_wport, 1);
-        inputCtrl(document.form.sshd_wport, 1);
-
-        inputRCtrl1(document.form.misc_http_x, 1);
-        inputRCtrl1(document.form.misc_ping_x, 1);
-        inputRCtrl1(document.form.https_wopen, 1);
-        inputRCtrl1(document.form.sshd_wopen, 1);
-        inputRCtrl1(document.form.ftpd_wopen, 1);
-        inputRCtrl1(document.form.trmd_ropen, 1);
-        $("row_misc_ping").style.display = "";
-        $("access_section").style.display = "";
-    }
-}
-
 function onSubmit() {
     change = 0;
     pageChanged = 0;
@@ -1223,7 +1183,6 @@ function onSubmitCtrlOnly(o, s) {
         disableCheckChangedStatus();
         document.form.submit();
     }
-    stopFlag = 1;
     disableCheckChangedStatus();
     return true;
 }
@@ -1315,18 +1274,7 @@ function change_common(o, s, v) {
 function change_common_radio(o, s, v, r) {
     change = 1;
     pageChanged = 1;
-    if (v == "qos_dfragment_enable") {
-        if (r == '1') {
-            inputCtrl(document.form.qos_dfragment_size, 1);
-        }
-        else {
-            inputCtrl(document.form.qos_dfragment_size, 0);
-        }
-    }
-    else if (v == "fw_enable_x") {
-        change_firewall(r);
-    }
-    else if (s == "PrinterStatus" && v == "usb_webhttpport_x") {
+    if (s == "PrinterStatus" && v == "usb_webhttpport_x") {
         if (document.form.usb_webhttpport_x_check.checked) {
             document.form.usb_webhttpcheck_x.value = "1";
         }

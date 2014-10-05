@@ -18,11 +18,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-
-#include <shutils.h>
+#include <string.h>
 
 #include "common.h"
-#include "variables.c"
+
+extern struct svcLink svcLinks[];
 
 /* API export for UPnP function */
 int LookupServiceId(char *serviceId)
@@ -35,7 +35,7 @@ int LookupServiceId(char *serviceId)
     {
 	if ( strcmp(serviceId, svcLinks[sid].serviceId) == 0)
 	   break;
-	sid ++;
+	sid++;
     }
 
     if (svcLinks[sid].serviceId==NULL)
@@ -43,7 +43,7 @@ int LookupServiceId(char *serviceId)
     else return (sid);
 }
 
-char *GetServiceId(int sid)
+const char *GetServiceId(int sid)
 {
     return (svcLinks[sid].serviceId);
 }

@@ -39,87 +39,23 @@ get_xl2tpd_vpns_active(void)
 		 nvram_match("l2tp_srv_t", "1"));
 }
 
-int 
-start_vpn_server(void)
+static int
+create_vpns_pppd_options(int vpns_type)
 {
-	int i_type, i_cast, i_mppe, i_auth, i_vuse;
-	int i, i_cli0, i_cli1, i_dns, i_dhcp;
-	char *vpns_cfg, *vpns_opt, *vpns_sec, *lanip, *wins, *dns1, *dns2;
-	struct in_addr pool_in;
-	unsigned int laddr, lmask, lsnet;
 	FILE *fp;
+	int i_mppe, i_auth, i_vuse, i_dhcp, i_items;
+	char *vpns_opt, *lanip, *wins, *dns1, *dns2;
 
-	if (nvram_invmatch("vpns_enable", "1") || get_ap_mode())
-		return 0;
-
-	unlink(VPN_SERVER_LEASE_FILE);
-
-	i_type = nvram_get_int("vpns_type");
-#if defined(APP_OPENVPN)
-	if (i_type == 2)
-		return start_openvpn_server();
-#endif
-	vpns_cfg = "/etc/pptpd.conf";
-	vpns_sec = "/tmp/ppp/chap-secrets";
-	vpns_opt = VPN_SERVER_PPPD_OPTIONS;
-
-	mkdir("/tmp/ppp", 0777);
-	symlink("/sbin/rc", VPNS_PPP_UP_SCRIPT);
-	symlink("/sbin/rc", VPNS_PPP_DW_SCRIPT);
-	
-	i_cast = nvram_get_int("vpns_cast");
 	i_auth = nvram_get_int("vpns_auth");
 	i_mppe = nvram_get_int("vpns_mppe");
 	i_vuse = nvram_get_int("vpns_vuse");
-	i_dhcp = nvram_get_int("dhcp_enable_x");
+	i_dhcp = is_dhcpd_enabled(0);
 
 	lanip  = nvram_safe_get("lan_ipaddr");
 
-	if (i_vuse == 0)
-	{
-		laddr = ntohl(inet_addr(lanip));
-		lmask = ntohl(inet_addr(nvram_safe_get("lan_netmask")));
-		lsnet = (~lmask) - 1;
-		
-		i_cli0 = nvram_safe_get_int("vpns_cli0", 245, 1, 254);
-		i_cli1 = nvram_safe_get_int("vpns_cli1", 254, 2, 254);
-		if (i_cli0 > (int)lsnet) i_cli0 = (int)lsnet;
-		if (i_cli1 > (int)lsnet) i_cli1 = (int)lsnet;
-		if (i_cli1 < i_cli0) i_cli1 = i_cli0;
-	}
-	else
-	{
-		laddr = ntohl(inet_addr(nvram_safe_get("vpns_vnet")));
-		lmask = ntohl(inet_addr(VPN_SERVER_SUBNET_MASK));
-		laddr = (laddr & lmask) | 1;
-		
-		i_cli0 = 2;
-		i_cli1 = i_cli0 + MAX_CLIENTS_NUM - 1;
-	}
-
-	if (i_type != 1)
-	{
-		if (!(fp = fopen(vpns_cfg, "w")))
-			return -1;
-		
-		fprintf(fp, "option %s\n", vpns_opt);
-		fprintf(fp, "connections %d\n", MAX_CLIENTS_NUM);
-		
-		pool_in.s_addr = htonl(laddr);
-		fprintf(fp, "localip %s\n", inet_ntoa(pool_in));
-		
-		pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli0);
-		fprintf(fp, "remoteip %s-%d\n", inet_ntoa(pool_in), i_cli1);
-		
-		fclose(fp);
-		
-		chmod(vpns_cfg, 0644);
-	}
-
-	// Create options for pppd
-	if (!(fp = fopen(vpns_opt, "w"))) {
+	vpns_opt = VPN_SERVER_PPPD_OPTIONS;
+	if (!(fp = fopen(vpns_opt, "w")))
 		return -1;
-	}
 
 	fprintf(fp, "lock\n");
 	fprintf(fp, "name %s\n", get_our_hostname());
@@ -128,8 +64,7 @@ start_vpn_server(void)
 	fprintf(fp, "refuse-pap\n");
 	fprintf(fp, "refuse-mschap\n");
 
-	if (i_auth == 0)
-	{
+	if (i_auth == 0) {
 		fprintf(fp, "refuse-chap\n");
 		fprintf(fp, "require-mschap-v2\n");
 	}
@@ -161,29 +96,37 @@ start_vpn_server(void)
 	}
 
 	// DNS Server
-	i_dns = 0;
-	if (i_dhcp == 1) {
+	i_items = 0;
+	if (i_dhcp) {
 		dns1 = nvram_safe_get("dhcp_dns1_x");
 		dns2 = nvram_safe_get("dhcp_dns2_x");
 		if (is_valid_ipv4(dns1) && (strcmp(dns1, lanip))) {
-			i_dns++;
+			i_items++;
 			fprintf(fp, "ms-dns %s\n", dns1);
 		}
 		if (is_valid_ipv4(dns2) && (strcmp(dns2, lanip)) && (strcmp(dns2, dns1))) {
-			i_dns++;
+			i_items++;
 			fprintf(fp, "ms-dns %s\n", dns2);
 		}
 	}
 
-	if (i_dns < 2)
+	if (i_items < 2)
 		fprintf(fp, "ms-dns %s\n", lanip);
 
-	if (i_dhcp == 1) {
-		// WINS Server
+	// WINS Server
+	i_items = 0;
+	if (i_dhcp) {
 		wins = nvram_safe_get("dhcp_wins_x");
-		if (is_valid_ipv4(wins))
+		if (is_valid_ipv4(wins)) {
+			i_items++;
 			fprintf(fp, "ms-wins %s\n", wins);
+		}
 	}
+
+#if defined(APP_SMBD) || defined(APP_NMBD)
+	if ((i_items < 1) && nvram_get_int("wins_enable"))
+		fprintf(fp, "ms-wins %s\n", lanip);
+#endif
 
 	fprintf(fp, "mtu %d\n", nvram_safe_get_int("vpns_mtu", 1450, 1000, 1460));
 	fprintf(fp, "mru %d\n", nvram_safe_get_int("vpns_mru", 1450, 1000, 1460));
@@ -193,7 +136,7 @@ start_vpn_server(void)
 	if (i_vuse == 0)
 		fprintf(fp, "proxyarp\n");
 
-	if (i_type == 1) {
+	if (vpns_type == 1) {
 		// L2TP: Don't wait for LCP term responses; exit immediately when killed
 		fprintf(fp, "lcp-max-terminate %d\n", 0);
 	}
@@ -210,6 +153,77 @@ start_vpn_server(void)
 	fclose(fp);
 
 	chmod(vpns_opt, 0644);
+
+	return 0;
+}
+
+int
+start_vpn_server(void)
+{
+	FILE *fp;
+	int i, i_type, i_vuse, i_cli0, i_cli1;
+	char *vpns_cfg, *vpns_sec, *lanip;
+	struct in_addr pool_in;
+	unsigned int laddr, lmask, lsnet;
+
+	if (nvram_invmatch("vpns_enable", "1") || get_ap_mode())
+		return 0;
+
+	unlink(VPN_SERVER_LEASE_FILE);
+
+	i_type = nvram_get_int("vpns_type");
+#if defined(APP_OPENVPN)
+	if (i_type == 2)
+		return start_openvpn_server();
+#endif
+	vpns_cfg = "/etc/pptpd.conf";
+	vpns_sec = "/tmp/ppp/chap-secrets";
+
+	mkdir("/tmp/ppp", 0777);
+	symlink("/sbin/rc", VPNS_PPP_UP_SCRIPT);
+	symlink("/sbin/rc", VPNS_PPP_DW_SCRIPT);
+
+	i_vuse = nvram_get_int("vpns_vuse");
+	lanip  = nvram_safe_get("lan_ipaddr");
+
+	if (i_vuse == 0) {
+		laddr = ntohl(inet_addr(lanip));
+		lmask = ntohl(inet_addr(nvram_safe_get("lan_netmask")));
+		lsnet = (~lmask) - 1;
+		
+		i_cli0 = nvram_safe_get_int("vpns_cli0", 245, 1, 254);
+		i_cli1 = nvram_safe_get_int("vpns_cli1", 254, 2, 254);
+		if (i_cli0 > (int)lsnet) i_cli0 = (int)lsnet;
+		if (i_cli1 > (int)lsnet) i_cli1 = (int)lsnet;
+		if (i_cli1 < i_cli0) i_cli1 = i_cli0;
+	} else {
+		laddr = ntohl(inet_addr(nvram_safe_get("vpns_vnet")));
+		lmask = ntohl(inet_addr(VPN_SERVER_SUBNET_MASK));
+		laddr = (laddr & lmask) | 1;
+		
+		i_cli0 = 2;
+		i_cli1 = i_cli0 + MAX_CLIENTS_NUM - 1;
+	}
+
+	if (i_type != 1) {
+		if (!(fp = fopen(vpns_cfg, "w")))
+			return -1;
+		
+		fprintf(fp, "option %s\n", VPN_SERVER_PPPD_OPTIONS);
+		fprintf(fp, "connections %d\n", MAX_CLIENTS_NUM);
+		
+		pool_in.s_addr = htonl(laddr);
+		fprintf(fp, "localip %s\n", inet_ntoa(pool_in));
+		
+		pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli0);
+		fprintf(fp, "remoteip %s-%d\n", inet_ntoa(pool_in), i_cli1);
+		
+		fclose(fp);
+		
+		chmod(vpns_cfg, 0644);
+	}
+
+	create_vpns_pppd_options(i_type);
 
 	/* create /tmp/ppp/chap-secrets */
 	fp = fopen(vpns_sec, "w+");
@@ -241,14 +255,11 @@ start_vpn_server(void)
 		chmod(vpns_sec, 0600);
 	}
 
-	if (i_type == 1)
-	{
+	if (i_type == 1) {
 		nvram_set_int_temp("l2tp_srv_t", 1);
 		
 		safe_start_xl2tpd();
-	}
-	else
-	{
+	} else {
 		nvram_set_int_temp("l2tp_srv_t", 0);
 		
 		/* execute pptpd daemon */
@@ -258,7 +269,7 @@ start_vpn_server(void)
 	return 0;
 }
 
-void 
+void
 stop_vpn_server(void)
 {
 	int i;
@@ -290,7 +301,7 @@ stop_vpn_server(void)
 	unlink(VPN_SERVER_LEASE_FILE);
 }
 
-void 
+void
 restart_vpn_server(void)
 {
 	xl2tpd_killed_vpns = 0;
@@ -303,6 +314,21 @@ restart_vpn_server(void)
 	/* restore L2TP WAN client or L2TP VPNC */
 	if (xl2tpd_killed_vpns && (nvram_match("l2tp_wan_t", "1") || nvram_match("l2tp_cli_t", "1")))
 		safe_start_xl2tpd();
+}
+
+void
+reload_vpn_server(void)
+{
+	int i_type;
+
+	if (nvram_invmatch("vpns_enable", "1") || get_ap_mode())
+		return;
+
+	i_type = nvram_get_int("vpns_type");
+#if defined(APP_OPENVPN)
+	if (i_type != 2)
+#endif
+		create_vpns_pppd_options(i_type);
 }
 
 static void

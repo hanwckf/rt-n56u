@@ -344,8 +344,6 @@ void restart_all_sysctl(void)
 		set_igmp_mld_version();
 		set_passthrough_pppoe(1);
 	}
-
-	set_pagecache_reclaim();
 }
 
 void char_to_ascii(char *output, char *input)

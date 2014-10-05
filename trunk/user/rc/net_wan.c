@@ -1324,7 +1324,7 @@ notify_on_internet_state_changed(int has_internet, long elapsed)
 		{
 		case 1:
 			logmessage(LOGNAME, "Perform router auto-reboot on %s event", "Internet lost");
-			notify_rc("restart_reboot");
+			notify_rc(RCN_RESTART_REBOOT);
 			return;
 		case 2:
 			notify_rc("auto_wan_reconnect_pause");

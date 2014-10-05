@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_2_1#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_2_1#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,29 +17,17 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#lan_stp_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#lan_stp_fake").attr("checked", "checked").attr("value", 1);
-                $j("#lan_stp_1").attr("checked", "checked");
-                $j("#lan_stp_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#lan_stp_fake").removeAttr("checked").attr("value", 0);
-                $j("#lan_stp_0").attr("checked", "checked");
-                $j("#lan_stp_1").removeAttr("checked");
-            }
-        });
-        $j("#lan_stp_on_of label.itoggle").css("background-position", $j("input#lan_stp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    })
-</script>
+var $j = jQuery.noConflict();
 
+$j(document).ready(function() {
+	init_itoggle('lan_stp');
+});
+
+</script>
 <script>
 
 var old_lan_addr = "<% nvram_get_x("","lan_ipaddr"); %>";

@@ -1,12 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_1_6#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_1_6#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,63 +17,20 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/wireless.js"></script>
 <script type="text/javascript" src="/help_wl.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
-
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#wl_greenap_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#wl_greenap_fake").attr("checked", "checked").attr("value", 1);
-                $j("#wl_greenap_1").attr("checked", "checked");
-                $j("#wl_greenap_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#wl_greenap_fake").removeAttr("checked").attr("value", 0);
-                $j("#wl_greenap_0").attr("checked", "checked");
-                $j("#wl_greenap_1").removeAttr("checked");
-            }
-        });
-        $j("#wl_greenap_on_of label.itoggle").css("background-position", $j("input#wl_greenap_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+var $j = jQuery.noConflict();
 
-        $j('#wl_ap_isolate_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#wl_ap_isolate_fake").attr("checked", "checked").attr("value", 1);
-                $j("#wl_ap_isolate_1").attr("checked", "checked");
-                $j("#wl_ap_isolate_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#wl_ap_isolate_fake").removeAttr("checked").attr("value", 0);
-                $j("#wl_ap_isolate_0").attr("checked", "checked");
-                $j("#wl_ap_isolate_1").removeAttr("checked");
-            }
-        });
-        $j("#wl_ap_isolate_on_of label.itoggle").css("background-position", $j("input#wl_ap_isolate_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+$j(document).ready(function() {
+	init_itoggle('wl_greenap');
+	init_itoggle('wl_ap_isolate');
+	init_itoggle('wl_mbssid_isolate');
+});
 
-        $j('#wl_mbssid_isolate_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#wl_mbssid_isolate_fake").attr("checked", "checked").attr("value", 1);
-                $j("#wl_mbssid_isolate_1").attr("checked", "checked");
-                $j("#wl_mbssid_isolate_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#wl_mbssid_isolate_fake").removeAttr("checked").attr("value", 0);
-                $j("#wl_mbssid_isolate_0").attr("checked", "checked");
-                $j("#wl_mbssid_isolate_1").removeAttr("checked");
-            }
-        });
-        $j("#wl_mbssid_isolate_on_of label.itoggle").css("background-position", $j("input#wl_mbssid_isolate_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
 </script>
-
 <script>
 
 function initial(){

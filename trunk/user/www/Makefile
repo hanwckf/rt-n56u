@@ -109,7 +109,7 @@ ifeq ($(BOARD_HAS_5G_RADIO),0)
 	rm -f $(INSTALLDIR)/www/Advanced_WSecurity_Content.asp
 	rm -f $(INSTALLDIR)/www/Main_WStatus_Content.asp
 	rm -f $(INSTALLDIR)/www/wireless.js
-	rm -f $(INSTALLDIR)/www/wds_aplist_5g.asp
+	rm -f $(INSTALLDIR)/www/wds_aplist.asp
 	rm -f $(INSTALLDIR)/www/device-map/router.asp
 endif
 ifndef CONFIG_IPV6

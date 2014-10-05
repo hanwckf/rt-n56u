@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<title><#Web_Title#> - <#menu4_2#> : <#menu4_2_2#></title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
 
-<title>ASUS Wireless Router <#Web_Title#> - <#menu4_2#> : <#menu4_2_2#></title>
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
@@ -13,18 +13,16 @@
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/bootstrap/js/highstock.js"></script>
+<script type="text/javascript" src="/bootstrap/js/highchart_theme.js"></script>
+<script type="text/javascript" src="/bootstrap/js/network_chart_template.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/tmmenu.js"></script>
 <script type="text/javascript" src="/tmcal.js"></script>
-<script type="text/javascript" src="/bootstrap/js/highstock.js"></script>
-<script type="text/javascript" src="/bootstrap/js/highchart_theme.js"></script>
-<script type="text/javascript" src="/bootstrap/js/network_chart_template.js"></script>
-
-<script type='text/javascript'>
+<script>
 var $j = jQuery.noConflict();
-
 
 <% nvram("web_svg,rstats_enable,rstats_colors"); %>
 

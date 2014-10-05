@@ -65,19 +65,48 @@ chk_valid_subnet_pool(const char *ip, char *dip1, char *dip2, const char *mask)
 	return 1;
 }
 
+/*
+static int
+find_static_mac(int idx, int num_items, const char *ip, char mac[13])
+{
+	int i;
+	in_addr_t ip1, ip2;
+	char nvram_mac[32], nvram_ip[32], *smac;
+
+	ip1 = inet_addr_safe(ip);
+
+	for (i = idx; i < num_items; i++) {
+		snprintf(nvram_mac, sizeof(nvram_mac), "dhcp_staticmac_x%d", i);
+		smac = nvram_safe_get(nvram_mac);
+		if (strlen(smac) == 12) {
+			snprintf(nvram_ip, sizeof(nvram_ip), "dhcp_staticip_x%d", i);
+			ip2 = inet_addr_safe(nvram_safe_get(nvram_ip));
+			if (ip2 == ip1 && ip2 != INADDR_NONE) {
+				strcpy(mac, smac);
+				return i;
+			}
+		}
+	}
+
+	return -1;
+}
+*/
+
 static int
 fill_static_ethers(void)
 {
 	FILE *fp;
-	int i, i_max, i_ethers = 0;
+	int i, i_use_static, i_max_items, i_ethers = 0;
 	char nvram_mac[32], nvram_ip[32], *smac, *sip;
+
+	i_use_static = nvram_get_int("dhcp_static_x");
+	i_max_items = nvram_safe_get_int("dhcp_staticnum_x", 0, 0, 64);
 
 	/* create /etc/ethers */
 	fp = fopen("/etc/ethers", "w+");
 	if (fp) {
-		if (nvram_get_int("dhcp_static_x") == 1) {
-			i_max = nvram_safe_get_int("dhcp_staticnum_x", 0, 0, 64);
-			for (i = 0; i < i_max; i++) {
+		if (i_use_static == 1) {
+			for (i = 0; i < i_max_items; i++) {
 				snprintf(nvram_mac, sizeof(nvram_mac), "dhcp_staticmac_x%d", i);
 				smac = nvram_safe_get(nvram_mac);
 				if (strlen(smac) == 12) {
@@ -109,10 +138,19 @@ is_dns_dhcpd_run(void)
 }
 
 int
+is_dhcpd_enabled(int is_ap_mode)
+{
+	if (!is_ap_mode)
+		return nvram_match("dhcp_enable_x", "1");
+	else
+		return nvram_match("lan_dhcpd_x", "1") && nvram_invmatch("lan_proto_x", "1");
+}
+
+int
 start_dns_dhcpd(int is_ap_mode)
 {
 	FILE *fp;
-	int i_ethers, i_verbose, is_dhcp_enable, is_dhcp_used, is_dns_used;
+	int i_ethers, i_verbose, i_dhcp_enable, is_dhcp_used, is_dns_used;
 	char dhcp_start[32], dhcp_end[32], dns_all[64];
 	char *ipaddr, *netmask, *gw, *dns1, *dns2, *dns3, *wins, *domain;
 	char *leases_dhcp = DHCPD_LEASE_FILE;
@@ -125,11 +163,9 @@ start_dns_dhcpd(int is_ap_mode)
 		
 		/* touch resolv.conf if not exist */
 		create_file(resolv_conf);
-		
-		is_dhcp_enable = nvram_match("dhcp_enable_x", "1");
-	} else {
-		is_dhcp_enable = nvram_match("lan_dhcpd_x", "1") && nvram_invmatch("lan_proto_x", "1");
 	}
+
+	i_dhcp_enable = is_dhcpd_enabled(is_ap_mode);
 
 	/* touch dnsmasq.leases if not exist */
 	create_file(leases_dhcp);
@@ -177,7 +213,7 @@ start_dns_dhcpd(int is_ap_mode)
 	}
 
 	is_dhcp_used = 0;
-	if (is_dhcp_enable) {
+	if (i_dhcp_enable) {
 		snprintf(dhcp_start, sizeof(dhcp_start), "%s", nvram_safe_get("dhcp_start"));
 		snprintf(dhcp_end, sizeof(dhcp_end), "%s", nvram_safe_get("dhcp_end"));
 		
@@ -226,6 +262,10 @@ start_dns_dhcpd(int is_ap_mode)
 		wins = nvram_safe_get("dhcp_wins_x");
 		if (is_valid_ipv4(wins))
 			fprintf(fp, "dhcp-option=%d,%s\n", 44, wins);
+#if defined(APP_SMBD) || defined(APP_NMBD)
+		else if (nvram_get_int("wins_enable"))
+			fprintf(fp, "dhcp-option=%d,%s\n", 44, ipaddr);
+#endif
 		
 		if (i_verbose == 0 || i_verbose == 2)
 			fprintf(fp, "quiet-dhcp\n");
@@ -314,6 +354,131 @@ restart_dns(void)
 
 	return doSystem("killall %s %s", "-SIGHUP", "dnsmasq");
 }
+
+///////////////////////////////////////////////////////////////////////
+// WINS (nmbd)
+///////////////////////////////////////////////////////////////////////
+
+#if defined(APP_SMBD) || defined(APP_NMBD)
+
+FILE *
+write_smb_conf_header(void)
+{
+	FILE *fp;
+	int i_wins_enable;
+	char *p_computer_name, *p_workgroup, *p_res_order;
+
+	unlink(SAMBA_CONF);
+
+	i_wins_enable = nvram_get_int("wins_enable");
+	p_workgroup = nvram_safe_get("st_samba_workgroup");
+	p_computer_name = get_our_hostname();
+
+	if (!(fp = fopen(SAMBA_CONF, "w")))
+		return NULL;
+
+	p_res_order = "lmhosts hosts bcast";
+
+	fprintf(fp, "[global]\n");
+	if (strlen(p_workgroup) > 0)
+		fprintf(fp, "workgroup = %s\n", p_workgroup);
+	fprintf(fp, "netbios name = %s\n", p_computer_name);
+	fprintf(fp, "server string = %s\n", p_computer_name);
+
+#if defined(APP_SMBD)
+	if (nvram_invmatch("enable_samba", "0")) {
+		int i_lmb = nvram_get_int("st_samba_lmb");
+		if (i_lmb == 0) {
+			fprintf(fp, "local master = %s\n", "no");
+		} else if (i_lmb == 1) {
+			fprintf(fp, "local master = %s\n", "yes");
+			fprintf(fp, "os level = %d\n", 128);
+		} else {
+			fprintf(fp, "local master = %s\n", "yes");
+			fprintf(fp, "domain master = %s\n", "yes");
+			fprintf(fp, "preferred master = %s\n", "yes");
+			fprintf(fp, "os level = %d\n", 128);
+		}
+	}
+#endif
+
+	if (i_wins_enable) {
+		fprintf(fp, "wins support = %s\n", "yes");
+		p_res_order = "lmhosts wins hosts bcast";
+	} else {
+		if (is_dhcpd_enabled(get_ap_mode())) {
+			char *wins = nvram_safe_get("dhcp_wins_x");
+			if (is_valid_ipv4(wins)) {
+				fprintf(fp, "wins server = %s\n", wins);
+				p_res_order = "lmhosts wins hosts bcast";
+			}
+		}
+	}
+
+	fprintf(fp, "name resolve order = %s\n", p_res_order);
+	fprintf(fp, "log file = %s\n", "/var/log/samba.log");
+	fprintf(fp, "log level = 0\n");
+	fprintf(fp, "max log size = 5\n");
+	fprintf(fp, "socket options = TCP_NODELAY SO_KEEPALIVE\n");
+	fprintf(fp, "unix charset = UTF8\n");
+	fprintf(fp, "display charset = UTF8\n");
+	fprintf(fp, "bind interfaces only = %s\n", "yes");
+	fprintf(fp, "interfaces = %s lo\n", IFNAME_BR);
+	fprintf(fp, "unix extensions = no\n");			// fix for MAC users (thanks to 'mark2qualis')
+	fprintf(fp, "encrypt passwords = yes\n");
+	fprintf(fp, "pam password change = no\n");
+	fprintf(fp, "obey pam restrictions = no\n");
+	fprintf(fp, "host msdfs = no\n");
+	fprintf(fp, "disable spoolss = yes\n");
+
+	return fp;
+}
+
+void
+stop_wins(void)
+{
+	char* svcs[] = { "nmbd", NULL };
+	kill_services(svcs, 3, 1);
+}
+
+void
+start_wins(void)
+{
+	FILE *fp;
+
+	if (nvram_match("wins_enable", "0"))
+		return;
+
+	mkdir_if_none("/etc/samba");
+
+	fp = write_smb_conf_header();
+	if (fp)
+		fclose(fp);
+
+	eval("/sbin/nmbd", "-D", "-s", "/etc/smb.conf");
+}
+
+void
+reload_wins(void)
+{
+	if (pids("nmbd"))
+		doSystem("killall %s %s", "-SIGHUP", "nmbd");
+}
+
+void
+restart_wins(void)
+{
+	stop_wins();
+#if defined(APP_SMBD)
+	if (pids("smbd")) {
+		write_smb_conf();
+		eval("/sbin/nmbd", "-D", "-s", "/etc/smb.conf");
+		doSystem("killall %s %s", "-SIGHUP", "smbd");
+	} else
+#endif
+	start_wins();
+}
+#endif
 
 ///////////////////////////////////////////////////////////////////////
 // miniupnpd
@@ -466,8 +631,7 @@ check_upnp_wanif_changed(char *wan_ifname)
 void
 update_upnp(void)
 {
-	if (!is_upnp_run())
-	{
+	if (!is_upnp_run()) {
 		start_upnp();
 		return;
 	}
@@ -476,6 +640,15 @@ update_upnp(void)
 	if (check_if_file_exist(UPNPD_LEASE_FILE)) {
 		doSystem("killall %s %s", "-SIGUSR1", "miniupnpd");
 	}
+}
+
+void
+restart_upnp(void)
+{
+	stop_upnp();
+
+	/* restart_firewall call update_upnp */
+	restart_firewall();
 }
 
 ///////////////////////////////////////////////////////////////////////

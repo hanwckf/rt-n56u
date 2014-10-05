@@ -1,12 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_3_1#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>Wireless Router <#Web_Title#> - <#menu5_3_1#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,102 +17,21 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-
 <script>
-    var $j = jQuery.noConflict();
+var $j = jQuery.noConflict();
 
-    $j(document).ready(function() {
-        $j('#wan_nat_x_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#wan_nat_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#wan_nat_x_1").attr("checked", "checked");
-                $j("#wan_nat_x_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#wan_nat_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#wan_nat_x_0").attr("checked", "checked");
-                $j("#wan_nat_x_1").removeAttr("checked");
-            }
-        });
-        $j("#wan_nat_x_on_of label.itoggle").css("background-position", $j("input#wan_nat_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#gw_arp_ping_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#gw_arp_ping_fake").attr("checked", "checked").attr("value", 1);
-                $j("#gw_arp_ping_1").attr("checked", "checked");
-                $j("#gw_arp_ping_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#gw_arp_ping_fake").removeAttr("checked").attr("value", 0);
-                $j("#gw_arp_ping_0").attr("checked", "checked");
-                $j("#gw_arp_ping_1").removeAttr("checked");
-            }
-        });
-        $j("#gw_arp_ping_on_of label.itoggle").css("background-position", $j("input#gw_arp_ping_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#x_DHCPClient_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#x_DHCPClient_fake").attr("checked", "checked").attr("value", 1);
-                $j("#x_DHCPClient_1").attr("checked", "checked");
-                $j("#x_DHCPClient_0").removeAttr("checked");
-                change_wan_dhcp_auto(1);
-            },
-            onClickOff: function(){
-                $j("#x_DHCPClient_fake").removeAttr("checked").attr("value", 0);
-                $j("#x_DHCPClient_0").attr("checked", "checked");
-                $j("#x_DHCPClient_1").removeAttr("checked");
-                change_wan_dhcp_auto(0);
-            }
-        });
-        $j("#x_DHCPClient_on_of label.itoggle").css("background-position", $j("input#x_DHCPClient_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#wan_dnsenable_x_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#wan_dnsenable_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#wan_dnsenable_x_1").attr("checked", "checked");
-                $j("#wan_dnsenable_x_0").removeAttr("checked");
-                change_wan_dns_auto(1);
-            },
-            onClickOff: function(){
-                $j("#wan_dnsenable_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#wan_dnsenable_x_0").attr("checked", "checked");
-                $j("#wan_dnsenable_x_1").removeAttr("checked");
-                change_wan_dns_auto(0);
-            }
-        });
-        $j("#wan_dnsenable_x_on_of label.itoggle").css("background-position", $j("input#wan_dnsenable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#vlan_filter_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#vlan_filter_fake").attr("checked", "checked").attr("value", 1);
-                $j("#vlan_filter_1").attr("checked", "checked");
-                $j("#vlan_filter_0").removeAttr("checked");
-                change_stb_port_and_vlan();
-            },
-            onClickOff: function(){
-                $j("#vlan_filter_fake").removeAttr("checked").attr("value", 0);
-                $j("#vlan_filter_0").attr("checked", "checked");
-                $j("#vlan_filter_1").removeAttr("checked");
-                change_stb_port_and_vlan();
-            }
-        });
-        $j("#vlan_filter_on_of label.itoggle").css("background-position", $j("input#vlan_filter_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
+$j(document).ready(function() {
+	init_itoggle('wan_nat_x');
+	init_itoggle('gw_arp_ping');
+	init_itoggle('x_DHCPClient', change_wan_dhcp_auto);
+	init_itoggle('wan_dnsenable_x', change_wan_dns_auto);
+	init_itoggle('vlan_filter', change_stb_port_and_vlan);
+});
 
 </script>
-
 <script>
 
 <% login_state_hook(); %>
@@ -429,13 +349,13 @@ function change_wan_type(wan_type, flag){
 		$("tbl_vpn_control").style.display = "none";
 		$("row_auth_type").style.display = "";
 	}
-	
+
 	AuthSelection(document.form.wan_auth_mode.value);
 }
 
 function fixed_change_wan_type(wan_type){
 	var flag = false;
-	
+
 	if(!document.form.x_DHCPClient[0].checked){
 		if(document.form.wan_ipaddr.value.length == 0)
 			document.form.wan_ipaddr.focus();
@@ -448,14 +368,14 @@ function fixed_change_wan_type(wan_type){
 	}
 	else
 		flag = true;
-	
+
 	change_wan_dns_enable(wan_type);
-	
+
 	if(wan_type == "static"){
 		inputRCtrl2(document.form.wan_dnsenable_x, 1);
 		$j('#wan_dnsenable_x_on_of').iState(0);
 		
-		change_wan_dns_auto(0);
+		set_wan_dns_auto(0);
 		
 		if(flag == true && document.form.wan_dns1_x.value.length == 0)
 			document.form.wan_dns1_x.focus();
@@ -464,14 +384,14 @@ function fixed_change_wan_type(wan_type){
 		inputRCtrl2(document.form.wan_dnsenable_x, !original_dnsenable);
 		$j('#wan_dnsenable_x_on_of').iState(original_dnsenable);
 		
-		change_wan_dns_auto(original_dnsenable);
+		set_wan_dns_auto(original_dnsenable);
 		
-		if(flag == true && document.form.wan_dns1_x.value.length == 0 && document.form.wan_dnsenable_x[1].checked)
+		if(flag == true && document.form.wan_dns1_x.value.length == 0 && !document.form.wan_dnsenable_x[0].checked)
 			document.form.wan_dns1_x.focus();
 	}
 }
 
-function change_wan_dns_auto(use_auto){
+function set_wan_dns_auto(use_auto){
 	inputCtrl(document.form.wan_dns1_x, !use_auto);
 	inputCtrl(document.form.wan_dns2_x, !use_auto);
 	inputCtrl(document.form.wan_dns3_x, !use_auto);
@@ -481,7 +401,7 @@ function change_wan_dns_auto(use_auto){
 	showhide_div("row_wan_dns3", !use_auto);
 }
 
-function change_wan_dhcp_auto(use_auto){
+function set_wan_dhcp_auto(use_auto){
 	inputCtrl(document.form.wan_ipaddr, !use_auto);
 	inputCtrl(document.form.wan_netmask, !use_auto);
 	inputCtrl(document.form.wan_gateway, !use_auto);
@@ -491,6 +411,16 @@ function change_wan_dhcp_auto(use_auto){
 	showhide_div("row_wan_netmask", !use_auto);
 	showhide_div("row_wan_gateway", !use_auto);
 	showhide_div("row_wan_mtu", !use_auto);
+}
+
+function change_wan_dhcp_auto(){
+	var v = document.form.x_DHCPClient[0].checked;
+	set_wan_dhcp_auto(v);
+}
+
+function change_wan_dns_auto(use_auto){
+	var v = document.form.wan_dnsenable_x[0].checked;
+	set_wan_dns_auto(v);
 }
 
 function change_wan_dhcp_enable(wan_type){
@@ -503,7 +433,7 @@ function change_wan_dhcp_enable(wan_type){
 		$j('input[name="x_DHCPClient"]').removeAttr('disabled');
 		$j('#x_DHCPClient_on_of').iClickable(1);
 		
-		change_wan_dhcp_auto(original_wan_dhcpenable);
+		set_wan_dhcp_auto(original_wan_dhcpenable);
 	}
 	else if(wan_type == "static"){
 		inputRCtrl2(document.form.x_DHCPClient, 1);
@@ -514,7 +444,7 @@ function change_wan_dhcp_enable(wan_type){
 		$j('input[name="x_DHCPClient"]').attr('disabled','disabled');
 		$j('#x_DHCPClient_on_of').iState(0).iClickable(0);
 		
-		change_wan_dhcp_auto(0);
+		set_wan_dhcp_auto(0);
 	}
 	else{	// "dhcp"
 		inputRCtrl2(document.form.x_DHCPClient, 0);
@@ -525,7 +455,7 @@ function change_wan_dhcp_enable(wan_type){
 		$j('input[name="x_DHCPClient"]').attr('disabled','disabled');
 		$j('#x_DHCPClient_on_of').iState(1).iClickable(0);
 		
-		change_wan_dhcp_auto(1);
+		set_wan_dhcp_auto(1);
 	}
 	
 	if((document.form.x_DHCPClient[0].checked) || (wan_type == "pppoe" || wan_type == "pptp" || wan_type == "l2tp")){
@@ -703,24 +633,24 @@ function click_untag_lan(lan_port) {
 
 function AuthSelection(auth){
 	var wan_type = document.form.wan_proto.value;
-	
+
 	if(wan_type == "pppoe" || wan_type == "pptp" || wan_type == "l2tp"){
 		$("row_auth_user").style.display = "none";
 		$("row_auth_pass").style.display = "none";
 		$("row_auth_host").style.display = "none";
 		return 0;
 	}
-	
+
 	if (auth == "1")
 		$("row_auth_host").style.display = "";
 	else
 		$("row_auth_host").style.display = "none";
-	
+
 	if (auth != "0" && auth != "1")
 		$("row_auth_user").style.display = "";
 	else
 		$("row_auth_user").style.display = "none";
-	
+
 	if (auth != "0")
 		$("row_auth_pass").style.display = "";
 	else
@@ -735,11 +665,11 @@ function simplyMAC(fullMAC){
 	var ptr;
 	var tempMAC;
 	var pos1, pos2;
-	
+
 	ptr = fullMAC;
 	tempMAC = "";
 	pos1 = pos2 = 0;
-	
+
 	for(var i = 0; i < 5; ++i){
 		pos2 = pos1+ptr.indexOf(":");
 		
@@ -748,9 +678,9 @@ function simplyMAC(fullMAC){
 		pos1 = pos2+1;
 		ptr = fullMAC.substring(pos1);
 	}
-	
+
 	tempMAC += fullMAC.substring(pos1);
-	
+
 	return tempMAC;
 }
 
@@ -909,8 +839,8 @@ function simplyMAC(fullMAC){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="x_DHCPClient" id="x_DHCPClient_1" class="input" value="1" onclick="change_wan_dhcp_auto(1);" <% nvram_match_x("", "x_DHCPClient", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="x_DHCPClient" id="x_DHCPClient_0" class="input" value="0" onclick="change_wan_dhcp_auto(0);" <% nvram_match_x("", "x_DHCPClient", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="x_DHCPClient" id="x_DHCPClient_1" class="input" value="1" onclick="set_wan_dhcp_auto(1);" <% nvram_match_x("", "x_DHCPClient", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="x_DHCPClient" id="x_DHCPClient_0" class="input" value="0" onclick="set_wan_dhcp_auto(0);" <% nvram_match_x("", "x_DHCPClient", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -949,8 +879,8 @@ function simplyMAC(fullMAC){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="wan_dnsenable_x" id="wan_dnsenable_x_1" value="1" onclick="change_wan_dns_auto(1);" <% nvram_match_x("", "wan_dnsenable_x", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="wan_dnsenable_x" id="wan_dnsenable_x_0" value="0" onclick="change_wan_dns_auto(0);" <% nvram_match_x("", "wan_dnsenable_x", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="wan_dnsenable_x" id="wan_dnsenable_x_1" value="1" onclick="set_wan_dns_auto(1);" <% nvram_match_x("", "wan_dnsenable_x", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="wan_dnsenable_x" id="wan_dnsenable_x_0" value="0" onclick="set_wan_dns_auto(0);" <% nvram_match_x("", "wan_dnsenable_x", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

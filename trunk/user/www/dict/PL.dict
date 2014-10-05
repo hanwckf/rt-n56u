@@ -359,11 +359,10 @@ menu5_5_3=Filtr MAC
 menu5_5_4=Filtr LAN do WAN
 menu5_5_5=Netfilter
 menu5_6_1=Tryb operacji
-menu5_6_1_title=Tryb operacji
 menu5_6_2=System
 menu5_6_3=Upgrade Firmware
 menu5_6_4=Odtworzenie / Zapisanie / Przesłanie ustawień
-menu5_6_5=Console
+menu5_6_6=Console
 menu5_7_1=System Status
 menu5_7_2=Ogólny log
 menu5_7_3=Dzierżawy DHCP
@@ -619,7 +618,7 @@ ALERT_OF_ERROR_System2=Błąd systemowy: Nie można odczytać danych z dysku!
 ALERT_OF_ERROR_System3=Błąd systemowy: Dysk jest zajęty
 [QIS wizard]
 [QIS_detect.js]
-Web_Title=ZVMODELVZ
+Web_Title=ASUS Wireless Router
 QKSet_detect_sanglass=auto detekcja
 QKSet_detect_desc1=Detekcja typu połączenia
 QKSet_detect_desc2=Detekcja statusu połączenia
@@ -760,7 +759,6 @@ BOP_isp_desc=Nazwa hosta przydzielona przez ISP:
 OP_desc1=ZVMODELVZ obsługuje 3 tryby pracy. Wybierz pożądany przez Ciebie tryb:
 PASS_new=Nowe hasło:
 PASS_retype=Powtórz nowe hasło:
-PASS_changepasswd=Zmiana hasła systemowego:
 FW_desc1=Wykonaj kolejno następujące kroki:
 FW_desc2=Sprawdź czy dostępna jest nowa wersja firmware pod adresem <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS Support site</a>
 FW_desc3=Pobierz odpowiednią wersję na Twój komputer

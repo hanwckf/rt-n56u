@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_3_4#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_3_4#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -18,70 +18,42 @@
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/client_function.js"></script>
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#upnp_enable_x_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#upnp_enable_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#upnp_enable_x_1").attr("checked", "checked");
-                $j("#upnp_enable_x_0").removeAttr("checked");
-                change_upnp_enabled();
-            },
-            onClickOff: function(){
-                $j("#upnp_enable_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#upnp_enable_x_0").attr("checked", "checked");
-                $j("#upnp_enable_x_1").removeAttr("checked");
-                change_upnp_enabled();
-            }
-        });
-        $j("#upnp_enable_x_on_of label.itoggle").css("background-position", $j("input#upnp_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+var $j = jQuery.noConflict();
 
-        $j('#vts_enable_x_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#vts_enable_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#vts_enable_x_1").attr("checked", "checked");
-                $j("#vts_enable_x_0").removeAttr("checked");
-                change_vts_enabled();
-            },
-            onClickOff: function(){
-                $j("#vts_enable_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#vts_enable_x_0").attr("checked", "checked");
-                $j("#vts_enable_x_1").removeAttr("checked");
-                change_vts_enabled();
-            }
-        });
-        $j("#vts_enable_x_on_of label.itoggle").css("background-position", $j("input#vts_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
+$j(document).ready(function() {
+	init_itoggle('upnp_enable_x', change_upnp_enabled);
+	init_itoggle('vts_enable_x', change_vts_enabled);
+});
+
+</script>
+<script>
 
 var wItem = new Array(new Array("", "", "TCP"),
-						new Array("FTP", "21", "TCP"),
-						new Array("SSH", "22", "TCP"),
-						new Array("TELNET", "23", "TCP"),
-						new Array("SMTP", "25", "TCP"),
-						new Array("DNS", "53", "UDP"),
-						new Array("FINGER", "79", "TCP"),
-						new Array("HTTP", "80", "TCP"),
-						new Array("POP3", "110", "TCP"),
-						new Array("SNMP", "161", "UDP"),
-						new Array("SNMP TRAP", "162", "UDP"));
+		new Array("FTP", "21", "TCP"),
+		new Array("SSH", "22", "TCP"),
+		new Array("TELNET", "23", "TCP"),
+		new Array("SMTP", "25", "TCP"),
+		new Array("DNS", "53", "UDP"),
+		new Array("FINGER", "79", "TCP"),
+		new Array("HTTP", "80", "TCP"),
+		new Array("POP3", "110", "TCP"),
+		new Array("SNMP", "161", "UDP"),
+		new Array("SNMP TRAP", "162", "UDP"));
 
 var wItem2 = new Array(new Array("", "", "TCP"),
-						new Array("Age of Empires", "2302:2400,6073", "BOTH"),
-						new Array("BitTorrent", "6881:6889", "TCP"),
-						new Array("Transmission", "51413", "BOTH"),
-						new Array("Counter Strike(TCP)", "27030:27039", "TCP"),
-						new Array("Counter Strike(UDP)", "27000:27015,1200", "UDP"),
-						new Array("PlayStation2", "4658,4659", "BOTH"),
-						new Array("Warcraft III", "6112:6119,4000", "BOTH"),
-						new Array("WOW", "3724", "BOTH"),
-						new Array("Xbox Live", "3074", "BOTH"));
+		new Array("Age of Empires", "2302:2400,6073", "BOTH"),
+		new Array("BitTorrent", "6881:6889", "TCP"),
+		new Array("Transmission", "51413", "BOTH"),
+		new Array("Counter Strike(TCP)", "27030:27039", "TCP"),
+		new Array("Counter Strike(UDP)", "27000:27015,1200", "UDP"),
+		new Array("PlayStation2", "4658,4659", "BOTH"),
+		new Array("Warcraft III", "6112:6119,4000", "BOTH"),
+		new Array("WOW", "3724", "BOTH"),
+		new Array("Xbox Live", "3074", "BOTH"));
 
 <% login_state_hook(); %>
 
@@ -124,18 +96,17 @@ function initial(){
 
 function applyRule(){
 	showLoading();
-	if (rcheck(document.form.vts_enable_x) == "0")
-		document.form.action_mode.value = " Apply ";
-	else
+	if (document.form.vts_enable_x[0].checked)
 		document.form.action_mode.value = " Restart ";
+	else
+		document.form.action_mode.value = " Apply ";
 	document.form.next_page.value = "";
 	document.form.submit();
 }
 
 function done_validating(action){
-	if(action == " Add "){
+	if(action == " Add ")
 		split_vts_rule();
-	}
 	else
 		refreshpage();
 }
@@ -155,35 +126,20 @@ function loadGameOptions(){
 }
 
 function change_upnp_enabled(){
-	var a = rcheck(document.form.upnp_enable_x);
-	if (a == "0") {
-		$("row_upnp_proto").style.display = "none";
-		$("row_upnp_secure").style.display = "none";
-		$("row_upnp_eports").style.display = "none";
-		$("row_upnp_iports").style.display = "none";
-		$("row_upnp_clean_int").style.display = "none";
-		$("row_upnp_clean_min").style.display = "none";
-	} else {
-		$("row_upnp_proto").style.display = "";
-		$("row_upnp_secure").style.display = "";
-		$("row_upnp_eports").style.display = "";
-		$("row_upnp_iports").style.display = "";
-		$("row_upnp_clean_int").style.display = "";
-		$("row_upnp_clean_min").style.display = "";
-	}
+	var v = document.form.upnp_enable_x[0].checked;
+	showhide_div("row_upnp_proto", v);
+	showhide_div("row_upnp_secure", v);
+	showhide_div("row_upnp_eports", v);
+	showhide_div("row_upnp_iports", v);
+	showhide_div("row_upnp_clean_int", v);
+	showhide_div("row_upnp_clean_min", v);
 }
 
 function change_vts_enabled(){
-	var a = rcheck(document.form.vts_enable_x);
-	if (a == "0"){
-		$("VSList_Block").style.display = "none";
-		$("row_famous_apps").style.display = "none";
-		$("row_famous_game").style.display = "none";
-	} else {
-		$("VSList_Block").style.display = "";
-		$("row_famous_apps").style.display = "";
-		$("row_famous_game").style.display = "";
-	}
+	var v = document.form.vts_enable_x[0].checked;
+	showhide_div("VSList_Block", v);
+	showhide_div("row_famous_apps", v);
+	showhide_div("row_famous_game", v);
 }
 
 function change_proto(){

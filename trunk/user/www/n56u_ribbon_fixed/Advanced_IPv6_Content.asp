@@ -1,12 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_3_3#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>Wireless Router <#Web_Title#> - <#menu5_3_3#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,69 +17,18 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
-
 <script>
-    var $j = jQuery.noConflict();
+var $j = jQuery.noConflict();
 
-    $j(document).ready(function() {
-        $j('#ip6_dns_auto_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#ip6_dns_auto_fake").attr("checked", "checked").attr("value", 1);
-                $j("#ip6_dns_auto_1").attr("checked", "checked");
-                $j("#ip6_dns_auto_0").removeAttr("checked");
-                change_ip6_dns_auto(1);
-            },
-            onClickOff: function(){
-                $j("#ip6_dns_auto_fake").removeAttr("checked").attr("value", 0);
-                $j("#ip6_dns_auto_0").attr("checked", "checked");
-                $j("#ip6_dns_auto_1").removeAttr("checked");
-                change_ip6_dns_auto(1);
-            }
-        });
-        $j("#ip6_dns_auto_on_of label.itoggle").css("background-position", $j("input#ip6_dns_auto_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#ip6_lan_auto_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#ip6_lan_auto_fake").attr("checked", "checked").attr("value", 1);
-                $j("#ip6_lan_auto_1").attr("checked", "checked");
-                $j("#ip6_lan_auto_0").removeAttr("checked");
-                change_ip6_lan_auto(1);
-            },
-            onClickOff: function(){
-                $j("#ip6_lan_auto_fake").removeAttr("checked").attr("value", 0);
-                $j("#ip6_lan_auto_0").attr("checked", "checked");
-                $j("#ip6_lan_auto_1").removeAttr("checked");
-                change_ip6_lan_auto(1);
-            }
-        });
-        $j("#ip6_lan_auto_on_of label.itoggle").css("background-position", $j("input#ip6_lan_auto_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#ip6_lan_radv_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#ip6_lan_radv_fake").attr("checked", "checked").attr("value", 1);
-                $j("#ip6_lan_radv_1").attr("checked", "checked");
-                $j("#ip6_lan_radv_0").removeAttr("checked");
-                change_ip6_lan_radv();
-            },
-            onClickOff: function(){
-                $j("#ip6_lan_radv_fake").removeAttr("checked").attr("value", 0);
-                $j("#ip6_lan_radv_0").attr("checked", "checked");
-                $j("#ip6_lan_radv_1").removeAttr("checked");
-                change_ip6_lan_radv();
-            }
-        });
-        $j("#ip6_lan_radv_on_of label.itoggle").css("background-position", $j("input#ip6_lan_radv_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
+$j(document).ready(function() {
+	init_itoggle('ip6_dns_auto', change_ip6_dns_auto);
+	init_itoggle('ip6_lan_auto', change_ip6_lan_auto);
+	init_itoggle('ip6_lan_radv', change_ip6_lan_radv);
+});
 
 </script>
-
 <script>
 
 function initial(){
@@ -217,7 +167,7 @@ function change_ip6_service(){
 	var warn = false;
 	var pppif = false;
 	var ip6on = true;
-	
+
 	if (ip6_con=="6rd") {
 		$('lbl_ip6_wan_addr').innerHTML="<#IP6_6RD_Addr#>";
 		$('lbl_ip6_wan_size').innerHTML="<#IP6_6RD_Pref#>";
@@ -303,25 +253,14 @@ function change_ip6_service(){
 		ip6on = false;
 	}
 
-	if (!ip6on) {
-		$('row_wan_type').style.display="none";
-		$('tbl_ip6_sit').style.display="none";
-		$('tbl_ip6_wan').style.display="none";
-		$('tbl_ip6_dns').style.display="none";
-		$('tbl_ip6_lan').style.display="none";
-	}
-	else {
-		$('row_wan_type').style.display="";
-		$('tbl_ip6_wan').style.display="";
-		$('tbl_ip6_dns').style.display="";
-		$('tbl_ip6_lan').style.display="";
-	}
+	showhide_div('row_wan_type', ip6on);
+	showhide_div('row_wan_if', (pppif && ip6on));
+	showhide_div('tbl_ip6_wan', ip6on);
+	showhide_div('tbl_ip6_dns', ip6on);
+	showhide_div('tbl_ip6_lan', ip6on);
 
-	if (pppif && ip6on) {
-		$('row_wan_if').style.display="";
-	}
-	else {
-		$('row_wan_if').style.display="none";
+	if (!ip6on) {
+		showhide_div('tbl_ip6_sit', 0);
 	}
 
 	if (ip6on && hw_nat_mode != "2" && ((support_ipv6_ppe() > 1) || (support_ipv6_ppe() == 1 && (ip6_con=="static" || ip6_con=="dhcp6")))) {
@@ -347,8 +286,8 @@ function change_ip6_service(){
 
 	change_ip6_wan_dhcp();
 	change_ip6_6rd_dhcp();
-	change_ip6_dns_auto(1);
-	change_ip6_lan_auto(1);
+	change_ip6_dns_auto();
+	change_ip6_lan_auto();
 }
 
 function change_ip6_wan_dhcp(){
@@ -380,68 +319,39 @@ function change_ip6_6rd_dhcp(){
 		val_gate = 1;
 	}
 
-	if (!val_addr) {
-		$('row_ip6_wan_addr').style.display="none";
-		$('row_ip6_wan_size').style.display="none";
-	}
-	else {
-		$('row_ip6_wan_addr').style.display="";
-		$('row_ip6_wan_size').style.display="";
-	}
-
-	if (!val_gate)
-		$('row_ip6_wan_gate').style.display="none";
-	else
-		$('row_ip6_wan_gate').style.display="";
+	showhide_div('row_ip6_wan_addr', val_addr);
+	showhide_div('row_ip6_wan_size', val_addr);
+	showhide_div('row_ip6_wan_gate', val_gate);
 }
 
-function change_ip6_dns_auto(enable){
-	var val = (!enable || document.form.ip6_dns_auto[0].checked) ? 0 : 1;
-
-	if (!val) {
-		$('row_ip6_dns1').style.display="none";
-		$('row_ip6_dns2').style.display="none";
-		$('row_ip6_dns3').style.display="none";
-	}
-	else {
-		$('row_ip6_dns1').style.display="";
-		$('row_ip6_dns2').style.display="";
-		$('row_ip6_dns3').style.display="";
-	}
+function change_ip6_dns_auto(){
+	var v = !document.form.ip6_dns_auto[0].checked;
+	showhide_div('row_ip6_dns1', v);
+	showhide_div('row_ip6_dns2', v);
+	showhide_div('row_ip6_dns3', v);
 }
 
-function change_ip6_lan_auto(enable){
-	var val = (!enable || document.form.ip6_lan_auto[0].checked) ? 0 : 1;
-
-	if (!val) {
-		$('row_ip6_lan_addr').style.display="none";
-		$('row_ip6_lan_size').style.display="none";
-	}
-	else {
-		$('row_ip6_lan_addr').style.display="";
-		$('row_ip6_lan_size').style.display="";
-	}
+function change_ip6_lan_auto(){
+	var v = !document.form.ip6_lan_auto[0].checked;
+	showhide_div('row_ip6_lan_addr', v);
+	showhide_div('row_ip6_lan_size', v);
 }
 
 function change_ip6_lan_radv(){
-	if (document.form.ip6_lan_radv[0].checked) {
-		$('row_ip6_lan_dhcp').style.display="";
+	var v = document.form.ip6_lan_radv[0].checked;
+	showhide_div('row_ip6_lan_dhcp', v);
+	if (v) {
 		change_ip6_lan_dhcp();
 	} else {
-		$('row_ip6_lan_dhcp').style.display="none";
-		$('row_ip6_lan_pool').style.display="none";
-		$('row_ip6_lan_life').style.display="none";
+		showhide_div('row_ip6_lan_pool', 0);
+		showhide_div('row_ip6_lan_life', 0);
 	}
 }
 
 function change_ip6_lan_dhcp(){
-	if (parseInt(document.form.ip6_lan_dhcp.value)>1){
-		$('row_ip6_lan_pool').style.display="";
-		$('row_ip6_lan_life').style.display="";
-	}else{
-		$('row_ip6_lan_pool').style.display="none";
-		$('row_ip6_lan_life').style.display="none";
-	}
+	var v = (parseInt(document.form.ip6_lan_dhcp.value)>1) ? 1 : 0;
+	showhide_div('row_ip6_lan_pool', v);
+	showhide_div('row_ip6_lan_life', v);
 }
 
 </script>
@@ -660,8 +570,8 @@ function change_ip6_lan_dhcp(){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="ip6_dns_auto" id="ip6_dns_auto_1" class="input" value="1" onclick="change_ip6_dns_auto(1);" <% nvram_match_x("", "ip6_dns_auto", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="ip6_dns_auto" id="ip6_dns_auto_0" class="input" value="0" onclick="change_ip6_dns_auto(1);" <% nvram_match_x("", "ip6_dns_auto", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="ip6_dns_auto" id="ip6_dns_auto_1" class="input" value="1" onclick="change_ip6_dns_auto();" <% nvram_match_x("", "ip6_dns_auto", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="ip6_dns_auto" id="ip6_dns_auto_0" class="input" value="0" onclick="change_ip6_dns_auto();" <% nvram_match_x("", "ip6_dns_auto", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -699,8 +609,8 @@ function change_ip6_lan_dhcp(){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="ip6_lan_auto" id="ip6_lan_auto_1" class="input" value="1" onclick="change_ip6_lan_auto(1);" <% nvram_match_x("", "ip6_lan_auto", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="ip6_lan_auto" id="ip6_lan_auto_0" class="input" value="0" onclick="change_ip6_lan_auto(1);" <% nvram_match_x("", "ip6_lan_auto", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="ip6_lan_auto" id="ip6_lan_auto_1" class="input" value="1" onclick="change_ip6_lan_auto();" <% nvram_match_x("", "ip6_lan_auto", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="ip6_lan_auto" id="ip6_lan_auto_0" class="input" value="0" onclick="change_ip6_lan_auto();" <% nvram_match_x("", "ip6_lan_auto", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

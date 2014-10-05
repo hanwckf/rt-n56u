@@ -1,4 +1,4 @@
-﻿var isLoading = 0;
+var isLoading = 0;
 var FromObject = "0";
 var Items = null;
 var lastClickedObj = 0;

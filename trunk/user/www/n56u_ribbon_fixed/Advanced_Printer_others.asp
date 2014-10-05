@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_4_4#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
-<title>Wireless Router <#Web_Title#> - <#menu5_4_4#></title>
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
@@ -16,45 +17,17 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#u2ec_enable_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#u2ec_enable_fake").attr("checked", "checked").attr("value", 1);
-                $j("#u2ec_enable_1").attr("checked", "checked");
-                $j("#u2ec_enable_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#u2ec_enable_fake").removeAttr("checked").attr("value", 0);
-                $j("#u2ec_enable_0").attr("checked", "checked");
-                $j("#u2ec_enable_1").removeAttr("checked");
-            }
-        });
-        $j("#u2ec_enable_on_of label.itoggle").css("background-position", $j("input#u2ec_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+var $j = jQuery.noConflict();
 
-        $j('#lprd_enable_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#lprd_enable_fake").attr("checked", "checked").attr("value", 1);
-                $j("#lprd_enable_1").attr("checked", "checked");
-                $j("#lprd_enable_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#lprd_enable_fake").removeAttr("checked").attr("value", 0);
-                $j("#lprd_enable_0").attr("checked", "checked");
-                $j("#lprd_enable_1").removeAttr("checked");
-            }
-        });
-        $j("#lprd_enable_on_of label.itoggle").css("background-position", $j("input#lprd_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
+$j(document).ready(function() {
+	init_itoggle('u2ec_enable');
+	init_itoggle('lprd_enable');
+});
 
 </script>
-
 <script>
 
 function initial(){

@@ -357,11 +357,10 @@ menu5_5_3=Filtro MAC
 menu5_5_4=Filtro LAN a WAN
 menu5_5_5=Netfilter
 menu5_6_1=Modo de funcionamiento
-menu5_6_1_title=Modo de funcionamiento
 menu5_6_2=Sistema
 menu5_6_3=Actualización de firmware
 menu5_6_4=Restaurar, guardar y cargar configuración
-menu5_6_5=Console
+menu5_6_6=Console
 menu5_7_1=Estado del sistema
 menu5_7_2=Registro general
 menu5_7_3=Asignaciones DHCP
@@ -616,7 +615,7 @@ ALERT_OF_ERROR_System2=Error del sistema: no se pueden leer los datos del disco.
 ALERT_OF_ERROR_System3=Error del sistema: el disco está ocupado.
 [QIS wizard]
 [QIS_detect.js]
-Web_Title=ZVMODELVZ
+Web_Title=ASUS Wireless Router
 QKSet_detect_sanglass=detección automática
 QKSet_detect_desc1=Detectando el tipo de conexión
 QKSet_detect_desc2=Volviendo a detectar el estado de la conexión
@@ -757,7 +756,6 @@ BOP_isp_desc=Nombre de host proporcionado por su ISP:
 OP_desc1=Su ZVMODELVZ admite tres modos de funcionamiento para satisfacer distintos requisitos. Seleccione el modo que se adapte a su situación.
 PASS_new=Nueva contraseña:
 PASS_retype=Volver a escribir la nueva contraseña:
-PASS_changepasswd=Cambiar contraseña del sistema
 FW_desc1=Siga las instrucciones mostradas a continuación:
 FW_desc2=Compruebe si hay disponible alguna nueva versión de firmware en el <a href="http://code.google.com/p/rt-n56u/" target="blank">sitio Web de ASUS</a>.
 FW_desc3=Descargue una versión adecuada en la máquina local.

@@ -27,21 +27,21 @@
 #include "rc.h"
 
 void
-stop_syslogd()
+stop_syslogd(void)
 {
 	char* svcs[] = { "syslogd", NULL };
 	kill_services(svcs, 3, 1);
 }
 
 void
-stop_klogd()
+stop_klogd(void)
 {
 	char* svcs[] = { "klogd", NULL };
 	kill_services(svcs, 3, 1);
 }
 
 int
-start_syslogd()
+start_syslogd(void)
 {
 	char *log_ipaddr, host_dst[32];
 	char *syslogd_argv[] = {
@@ -71,7 +71,7 @@ start_syslogd()
 }
 
 int
-start_klogd()
+start_klogd(void)
 {
 	return eval("/sbin/klogd");
 }
@@ -83,10 +83,20 @@ stop_infosvr(void)
 	kill_services(svcs, 3, 1);
 }
 
-void
+int
 start_infosvr(void)
 {
-	eval("/usr/sbin/infosvr", IFNAME_BR);
+	if (nvram_invmatch("adsc_enable", "1"))
+		return 1;
+
+	return eval("/usr/sbin/infosvr", IFNAME_BR);
+}
+
+void
+restart_infosvr(void)
+{
+	stop_infosvr();
+	start_infosvr();
 }
 
 int
@@ -122,25 +132,19 @@ void
 run_telnetd(void)
 {
 	stop_telnetd();
-	
+
 	eval("telnetd");
 }
 
-void 
+void
 start_telnetd(void)
 {
-	if (!nvram_match("telnetd", "1"))
-	{
-		stop_telnetd();
-	}
-	else if (!pids("telnetd"))
-	{
+	if (nvram_match("telnetd", "1"))
 		eval("telnetd");
-	}
 }
 
 #if defined(APP_SSHD)
-int 
+int
 is_sshd_run(void)
 {
 	if (check_if_file_exist("/usr/bin/dropbearmulti"))
@@ -157,53 +161,38 @@ is_sshd_run(void)
 	return 0;
 }
 
-void 
+void
 stop_sshd(void)
 {
 	eval("/usr/bin/sshd.sh", "stop");
 }
 
-void 
+void
 start_sshd(void)
 {
-	static int sshd_mode_last = 0;
-
 	int sshd_mode = nvram_get_int("sshd_enable");
-	if (!sshd_mode || sshd_mode != sshd_mode_last)
-	{
-		stop_sshd();
-	}
 
-	if (sshd_mode != sshd_mode_last || !is_sshd_run())
-	{
-		if (sshd_mode == 2)
-			eval("/usr/bin/sshd.sh", "start", "-s");
-		else if (sshd_mode == 1)
-			eval("/usr/bin/sshd.sh", "start");
-	}
-	
-	sshd_mode_last = sshd_mode;
+	if (sshd_mode == 2)
+		eval("/usr/bin/sshd.sh", "start", "-s");
+	else if (sshd_mode == 1)
+		eval("/usr/bin/sshd.sh", "start");
 }
-#endif
 
-void 
-restart_term(void)
+void
+restart_sshd(void)
 {
-#if defined(APP_SSHD)
 	int is_run_before = is_sshd_run();
 	int is_run_after;
 
+	stop_sshd();
 	start_sshd();
-#endif
-	start_telnetd();
 
-#if defined(APP_SSHD)
 	is_run_after = is_sshd_run();
 
-	if (is_run_after && !is_run_before && nvram_match("sshd_wopen", "1") && nvram_match("fw_enable_x", "1"))
+	if ((is_run_after != is_run_before) && nvram_match("sshd_wopen", "1") && nvram_match("fw_enable_x", "1"))
 		restart_firewall();
-#endif
 }
+#endif
 
 void
 start_httpd(int restart_fw)
@@ -275,7 +264,7 @@ stop_httpd(void)
 	kill_services(svcs, 3, 1);
 }
 
-void 
+void
 restart_httpd(void)
 {
 	stop_httpd();
@@ -289,29 +278,46 @@ stop_rstats(void)
 	kill_services(svcs, 3, 1);
 }
 
-void
+int
 start_rstats(void)
 {
-	if (nvram_match("rstats_enable", "1")) {
-		eval("/sbin/rstats");
-	}
+	if (nvram_invmatch("rstats_enable", "1"))
+		return 1;
+
+	return eval("/sbin/rstats");
 }
 
-int start_lltd(void)
+void
+restart_rstats(void)
 {
-	if (pids("lld2d"))
-		return 0;
+	stop_rstats();
+	start_rstats();
+}
+
+int
+start_lltd(void)
+{
+	if (nvram_invmatch("lltd_enable", "1"))
+		return 1;
 
 	return eval("/bin/lld2d", IFNAME_BR);
 }
 
-void stop_lltd(void)
+void
+stop_lltd(void)
 {
 	char* svcs[] = { "lld2d", NULL };
 	kill_services(svcs, 2, 1);
 }
 
-int 
+void
+restart_lltd(void)
+{
+	stop_lltd();
+	start_lltd();
+}
+
+int
 start_logger(int showinfo)
 {
 	start_syslogd();
@@ -422,6 +428,9 @@ stop_services_lan_wan(void)
 	stop_dns_dhcpd();
 	stop_upnp();
 	stop_detect_link();
+#if defined(APP_SMBD) || defined(APP_NMBD)
+	stop_wins();
+#endif
 }
 
 void

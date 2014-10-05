@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu2#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu2#></title>
-
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -17,38 +17,22 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
-
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#vpns_enable_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#vpns_enable_fake").attr("checked", "checked").attr("value", 1);
-                $j("#vpns_enable_1").attr("checked", "checked");
-                $j("#vpns_enable_0").removeAttr("checked");
-                change_vpns_enabled();
-            },
-            onClickOff: function(){
-                $j("#vpns_enable_fake").removeAttr("checked").attr("value", 0);
-                $j("#vpns_enable_0").attr("checked", "checked");
-                $j("#vpns_enable_1").removeAttr("checked");
-                change_vpns_enabled();
-            }
-        });
-        $j("#vpns_enable_on_of label.itoggle").css("background-position", $j("input#vpns_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+var $j = jQuery.noConflict();
 
-        $j("#tab_vpns_cfg, #tab_vpns_ssl, #tab_vpns_acl, #tab_vpns_cli").click(function(){
-            var newHash = $j(this).attr('href').toLowerCase();
-            showTab(newHash);
+$j(document).ready(function() {
+	init_itoggle('vpns_enable', change_vpns_enabled);
 
-            return false;
-        });
+	$j("#tab_vpns_cfg, #tab_vpns_ssl, #tab_vpns_acl, #tab_vpns_cli").click(function(){
+		var newHash = $j(this).attr('href').toLowerCase();
+		showTab(newHash);
+		return false;
+	});
 
-        showTab(getHash());
-    });
+	showTab(getHash());
+});
 
 </script>
 <script>
@@ -157,8 +141,7 @@ function valid_rlan_subnet(oa, om){
 }
 
 function validForm(){
-	var a = rcheck(document.form.vpns_enable);
-	if (a == "0")
+	if (!document.form.vpns_enable[0].checked)
 		return true;
 
 	var mode = document.form.vpns_type.value;
@@ -236,13 +219,13 @@ function textarea_enabled(v){
 }
 
 function change_vpns_enabled(){
-	var v = (rcheck(document.form.vpns_enable) == "0") ? 0 : 1;
+	var v = document.form.vpns_enable[0].checked;
 
 	showhide_div('tab_vpns_cli', v);
 	showhide_div('tbl_vpn_config', v);
 	showhide_div('tbl_vpn_pool', v);
 
-	if (v == 0){
+	if (!v){
 		showhide_div('tab_vpns_ssl', 0);
 		showhide_div('tab_vpns_acl', 0);
 		textarea_enabled(0);

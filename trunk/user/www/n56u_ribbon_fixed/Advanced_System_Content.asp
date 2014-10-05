@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_6_2#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_6_2#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,46 +17,17 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#help_enable_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#help_enable_fake").attr("checked", "checked").attr("value", 1);
-                $j("#help_enable_1").attr("checked", "checked");
-                $j("#help_enable_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#help_enable_fake").removeAttr("checked").attr("value", 0);
-                $j("#help_enable_0").attr("checked", "checked");
-                $j("#help_enable_1").removeAttr("checked");
-            }
-        });
-        $j("#help_enable_on_of label.itoggle").css("background-position", $j("input#help_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+var $j = jQuery.noConflict();
 
-        $j('#telnetd_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#telnetd_fake").attr("checked", "checked").attr("value", 1);
-                $j("#telnetd_1").attr("checked", "checked");
-                $j("#telnetd_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#telnetd_fake").removeAttr("checked").attr("value", 0);
-                $j("#telnetd_0").attr("checked", "checked");
-                $j("#telnetd_1").removeAttr("checked");
-            }
-        });
-        $j("#telnetd_on_of label.itoggle").css("background-position", $j("input#telnetd_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
+$j(document).ready(function() {
+	init_itoggle('help_enable');
+});
+
 </script>
-
 <script>
 
 function initial(){
@@ -64,19 +36,6 @@ function initial(){
 	show_footer();
 
 	load_body();
-
-	if(!found_app_sshd())
-		$("row_sshd").style.display = "none";
-	else
-		sshd_auth_change();
-
-	if (!support_http_ssl()) {
-		document.form.http_proto.value = "0";
-		$("row_http_proto").style.display = "none";
-		$("row_https_lport").style.display = "none";
-		$("row_https_clist").style.display = "none";
-	}else
-		http_proto_change();
 
 	if(document.form.computer_name2.value != "")
 		document.form.computer_name.value = decodeURIComponent(document.form.computer_name2.value);
@@ -130,32 +89,6 @@ function validForm(){
 		return false;
 	}
 
-	if(!validate_range(document.form.http_lanport, 80, 65535))
-		return false;
-
-	if (support_http_ssl()){
-		var mode = document.form.http_proto.value;
-		if (mode == "0" || mode == "2"){
-			if(!validate_range(document.form.http_lanport, 80, 65535))
-				return false;
-		}
-		if (mode == "1" || mode == "2"){
-			if(!validate_range(document.form.https_lport, 81, 65535))
-				return false;
-		}
-		if (mode == "2"){
-			if (document.form.http_lanport.value == document.form.https_lport.value){
-				alert("HTTP and HTTPS ports is equal!");
-				document.form.https_lport.focus();
-				document.form.https_lport.select();
-				return false;
-			}
-		}
-	}else{
-		if(!validate_range(document.form.http_lanport, 80, 65535))
-			return false;
-	}
-
 	if(!validate_string(document.form.ntp_server0))
 		return false;
 
@@ -190,31 +123,6 @@ function blanktest(obj, flag){
 	}
 
 	return true;
-}
-
-function http_proto_change(){
-	var proto = document.form.http_proto.value;
-	if (proto == "0" || proto == "2")
-		$("row_http_lport").style.display = "";
-	else
-		$("row_http_lport").style.display = "none";
-	if (proto == "1" || proto == "2"){
-		$("row_https_lport").style.display = "";
-		$("row_https_clist").style.display = "";
-		$("tbl_https_certs").style.display = "";
-	} else {
-		$("row_https_lport").style.display = "none";
-		$("row_https_clist").style.display = "none";
-		$("tbl_https_certs").style.display = "none";
-	}
-}
-
-function sshd_auth_change(){
-	var auth = document.form.sshd_enable.value;
-	if (auth != "0")
-		$("tbl_ssh_keys").style.display = "";
-	else
-		$("tbl_ssh_keys").style.display = "none";
 }
 
 </script>
@@ -281,12 +189,20 @@ function sshd_auth_change(){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#PASS_changepasswd#></th>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#Adm_System_ident#></th>
                                         </tr>
                                         <tr>
-                                            <th width="50%"><#ISP_Authentication_user#></th>
+                                            <th width="50%">
+                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17,2);"><#ShareNode_DeviceName_itemname#></a>
+                                            </th>
                                             <td>
-                                                <input type="text" name="http_username" class="input" autocomplete="off" maxlength="32" size="25" value="<% nvram_get_x("General","http_username"); %>" onKeyPress="return is_string(this)"/>
+                                                <input type="text" name="computer_name" id="computer_name" class="input" maxlength="15" size="32" value=""/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#Adm_System_admin#></th>
+                                            <td>
+                                                <input type="text" name="http_username" class="input" autocomplete="off" maxlength="32" size="25" value="<% nvram_get_x("","http_username"); %>" onKeyPress="return is_string(this)"/>
                                             </td>
                                         </tr>
                                         <tr>
@@ -299,137 +215,6 @@ function sshd_auth_change(){
                                             <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,11,4)"><#PASS_retype#></th>
                                             <td>
                                                 <input type="password" name="v_password2" class="input" autocomplete="off" maxlength="32" size="25" onKeyPress="return is_string(this);"/><br/><span id="alert_msg"></span>
-                                            </td>
-                                        </tr>
-                                    </table>
-
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
-                                        <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#Adm_System_terminal#></th>
-                                        </tr>
-                                        <tr>
-                                            <th width="50%">
-                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17,2);"><#ShareNode_DeviceName_itemname#></a>
-                                            </th>
-                                            <td>
-                                                <input type="text" name="computer_name" id="computer_name" class="input" maxlength="15" size="32" value=""/>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_http_proto">
-                                            <th><#Adm_System_http_proto#></th>
-                                            <td>
-                                                <select name="http_proto" class="input" onchange="http_proto_change();">
-                                                    <option value="0" <% nvram_match_x("", "http_proto", "0","selected"); %>>HTTP</option>
-                                                    <option value="1" <% nvram_match_x("", "http_proto", "1","selected"); %>>HTTPS</option>
-                                                    <option value="2" <% nvram_match_x("", "http_proto", "2","selected"); %>>HTTP & HTTPS</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_http_lport">
-                                            <th><#Adm_System_http_lport#></th>
-                                            <td>
-                                                <input type="text" maxlength="5" size="15" name="http_lanport" class="input" value="<% nvram_get_x("", "http_lanport"); %>" onkeypress="return is_number(this)"/>
-                                                &nbsp;<span style="color:#888;">[80..65535]</span>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_https_lport" style="display:none">
-                                            <th><#Adm_System_https_lport#></th>
-                                            <td>
-                                                <input type="text" maxlength="5" size="15" name="https_lport" class="input" value="<% nvram_get_x("", "https_lport"); %>" onkeypress="return is_number(this)"/>
-                                                &nbsp;<span style="color:#888;">[81..65535]</span>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_https_clist" style="display:none">
-                                            <th><#Adm_System_https_clist#></th>
-                                            <td>
-                                                <input type="text" maxlength="256" size="15" name="https_clist" class="input" value="<% nvram_get_x("", "https_clist"); %>" onkeypress="return is_string(this)"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><#Adm_System_http_access#></th>
-                                            <td>
-                                                <select name="http_access" class="input">
-                                                    <option value="0" <% nvram_match_x("", "http_access", "0","selected"); %>><#checkbox_No#> (*)</option>
-                                                    <option value="1" <% nvram_match_x("", "http_access", "1","selected"); %>>Wired clients only</option>
-                                                    <option value="2" <% nvram_match_x("", "http_access", "2","selected"); %>>Wired and MainAP clients</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th width="50%"><#Adm_System_telnetd#></th>
-                                            <td>
-                                                <div class="main_itoggle">
-                                                    <div id="telnetd_on_of">
-                                                        <input type="checkbox" id="telnetd_fake" <% nvram_match_x("", "telnetd", "1", "value=1 checked"); %><% nvram_match_x("", "telnetd", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="telnetd" id="telnetd_1" class="input" value="1" <% nvram_match_x("", "telnetd", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="telnetd" id="telnetd_0" class="input" value="0" <% nvram_match_x("", "telnetd", "0", "checked"); %>/><#checkbox_No#>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_sshd">
-                                            <th><#Adm_System_sshd#></th>
-                                            <td>
-                                                <select name="sshd_enable" class="input" onchange="sshd_auth_change();">
-                                                    <option value="0" <% nvram_match_x("", "sshd_enable", "0","selected"); %>><#checkbox_No#></option>
-                                                    <option value="1" <% nvram_match_x("", "sshd_enable", "1","selected"); %>><#checkbox_Yes#></option>
-                                                    <option value="2" <% nvram_match_x("", "sshd_enable", "2","selected"); %>><#checkbox_Yes#> (authorized_keys only)</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                    </table>
-
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_https_certs" style="display:none">
-                                        <tr>
-                                            <th style="background-color: #E3E3E3;"><#Adm_System_https_certs#></th>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding-bottom: 0px; border-top: 0 none;">
-                                                <a href="javascript:spoiler_toggle('ca.crt')"><span>Root CA Certificate (optional)</span></a>
-                                                <div id="ca.crt" style="display:none;">
-                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.ca.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.ca.crt",""); %></textarea>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding-bottom: 0px; border-top: 0 none;">
-                                                <a href="javascript:spoiler_toggle('dh1024.pem')"><span>Diffie-Hellman PEM (optional)</span></a>
-                                                <div id="dh1024.pem" style="display:none;">
-                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.dh1024.pem" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.dh1024.pem",""); %></textarea>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding-bottom: 0px; border-top: 0 none;">
-                                                <a href="javascript:spoiler_toggle('server.crt')"><span>Server Certificate (required)</span></a>
-                                                <div id="server.crt" style="display:none;">
-                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.server.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.server.crt",""); %></textarea>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding-bottom: 0px; border-top: 0 none;">
-                                                <a href="javascript:spoiler_toggle('server.key')"><span>Server Private Key (required)</span></a>
-                                                <div id="server.key" style="display:none;">
-                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.server.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.server.key",""); %></textarea>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </table>
-
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_ssh_keys" style="display:none">
-                                        <tr>
-                                            <th style="background-color: #E3E3E3;"><#Adm_System_sshd_keys#></th>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding-bottom: 0px; border-top: 0 none;">
-                                                <a href="javascript:spoiler_toggle('authorized_keys')"><span>authorized_keys</span></a>
-                                                <div id="authorized_keys" style="display:none;">
-                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.authorized_keys" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.authorized_keys",""); %></textarea>
-                                                </div>
                                             </td>
                                         </tr>
                                     </table>
@@ -567,16 +352,7 @@ function sshd_auth_change(){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#t2Misc#></th>
                                         </tr>
                                         <tr>
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,23,1);"><#TweaksWdg#></a></th>
-                                            <td>
-                                                <select name="watchdog_cpu" class="input">
-                                                    <option value="0" <% nvram_match_x("", "watchdog_cpu", "0","selected"); %>><#checkbox_No#> (*)</option>
-                                                    <option value="1" <% nvram_match_x("", "watchdog_cpu", "1","selected"); %>><#checkbox_Yes#> <#TweaksWdg_item#></option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,11,1)"><#LANHostConfig_x_ServerLogEnable_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,11,1)"><#LANHostConfig_x_ServerLogEnable_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="log_ipaddr" style="width: 145px" value="<% nvram_get_x("", "log_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)"/>&nbsp;:
                                                 <input type="text" maxlength="5" class="input" size="10" name="log_port" style="width: 44px;"  value="<% nvram_get_x("","log_port"); %>" onkeypress="return is_number(this)"/>
@@ -617,10 +393,9 @@ function sshd_auth_change(){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                    <table class="table">
                                         <tr>
-                                            <td colspan="2">
-                                                <br />
+                                            <td style="border: 0 none;">
                                                 <center><input class="btn btn-primary" style="width: 219px" onclick="applyRule();" type="button" value="<#CTL_apply#>" /></center>
                                             </td>
                                         </tr>

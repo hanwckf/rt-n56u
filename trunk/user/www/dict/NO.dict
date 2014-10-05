@@ -357,11 +357,10 @@ menu5_5_3=MAC-filter
 menu5_5_4=LAN til WAN-filter
 menu5_5_5=Netfilter
 menu5_6_1=Funksjonsmodus
-menu5_6_1_title=Funksjonsmodus
 menu5_6_2=System
 menu5_6_3=Fastvareoppgradering
 menu5_6_4=Gjenopprett/Lagre/Last opp innstilling
-menu5_6_5=Console
+menu5_6_6=Console
 menu5_7_1=Systemstatus
 menu5_7_2=Generell logg
 menu5_7_3=DHCP leases
@@ -617,7 +616,7 @@ ALERT_OF_ERROR_System2=Systemfeil: Kan ikke lese diskens data!
 ALERT_OF_ERROR_System3=Systemfeil: Disken er opptatt!
 [QIS wizard]
 [QIS_detect.js]
-Web_Title=ZVMODELVZ
+Web_Title=ASUS Wireless Router
 QKSet_detect_sanglass=automatisk registrering
 QKSet_detect_desc1=Registrerer tilkoblingstypen din
 QKSet_detect_desc2=Registrerer tilkoblingsstatusen din igjen
@@ -758,7 +757,6 @@ BOP_isp_desc=Vertsnavn levert av ISP:
 OP_desc1=ZVMODELVZ støtter tre driftsmoduser for å møte ulike krav. Velg modusen som passer din situasjon.
 PASS_new=Nytt passord:
 PASS_retype=Skriv inn nytt passord på nytt:
-PASS_changepasswd=Endre systemets passord
 FW_desc1=Følg instruksjonene oppført under:
 FW_desc2=Sjekk om en ny versjon av fastvaren er tilgjengelig på <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS-websiden</a>.
 FW_desc3=Last ned en ordentlig versjon til din lokale maskin.

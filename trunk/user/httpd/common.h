@@ -43,112 +43,118 @@ typedef u_int32_t u32;
 typedef u_int16_t u16;
 typedef u_int8_t u8;
 
-enum{
-	RESTART_HTTPD		= 0x00000001,
-	RESTART_DI		= 0x00000002,
-	RESTART_DDNS		= 0x00000004,
-	RESTART_UPNP		= 0x00000008,
+#define EVM_RESTART_FIREWALL		(1ULL <<  0)
+#define EVM_RESTART_DHCPD		(1ULL <<  1)
+#define EVM_RESTART_RADVD		(1ULL <<  2)
+#define EVM_RESTART_DDNS		(1ULL <<  3)
+#define EVM_RESTART_UPNP		(1ULL <<  4)
+#define EVM_RESTART_TIME		(1ULL <<  5)
+#define EVM_RESTART_NTPC		(1ULL <<  6)
+#define EVM_RESTART_SYSLOG		(1ULL <<  7)
+#define EVM_RESTART_VPNSVR		(1ULL << 10)
+#define EVM_RESTART_VPNCLI		(1ULL << 11)
+#define EVM_RESTART_WIFI2		(1ULL << 12)
+#define EVM_RESTART_WIFI5		(1ULL << 13)
+#define EVM_RESTART_SWITCH_CFG		(1ULL << 14)
+#define EVM_RESTART_SWITCH_VLAN		(1ULL << 15)
+#define EVM_RESTART_LAN			(1ULL << 17)
+#define EVM_RESTART_WAN			(1ULL << 18)
+#define EVM_RESTART_IPV6		(1ULL << 19)
+#define EVM_RESTART_HTTPD		(1ULL << 20)
+#define EVM_RESTART_TELNETD		(1ULL << 21)
+#define EVM_RESTART_SSHD		(1ULL << 22)
+#define EVM_RESTART_WINS		(1ULL << 23)
+#define EVM_RESTART_LLTD		(1ULL << 24)
+#define EVM_RESTART_ADSC		(1ULL << 25)
+#define EVM_RESTART_IPTV		(1ULL << 26)
+#define EVM_RESTART_SYSCTL		(1ULL << 28)
+#define EVM_RESTART_TWEAKS		(1ULL << 29)
+#define EVM_RESTART_WDG			(1ULL << 30)
+#define EVM_RESTART_DI			(1ULL << 31)
+#define EVM_RESTART_SPOOLER		(1ULL << 32)
+#define EVM_RESTART_MODEM		(1ULL << 33)
+#define EVM_RESTART_HDDTUNE		(1ULL << 34)
+#define EVM_RESTART_FTPD		(1ULL << 35)
+#define EVM_RESTART_SMBD		(1ULL << 36)
+#define EVM_RESTART_NFSD		(1ULL << 37)
+#define EVM_RESTART_DMS			(1ULL << 38)
+#define EVM_RESTART_ITUNES		(1ULL << 39)
+#define EVM_RESTART_TRMD		(1ULL << 40)
+#define EVM_RESTART_ARIA		(1ULL << 41)
 
-	RESTART_FIREWALL	= 0x00000010,
-	RESTART_DHCPD		= 0x00000020,
-	RESTART_RADVD		= 0x00000040,
-	RESTART_IPTV		= 0x00000080,
+#define EVM_RESTART_REBOOT		(1ULL << 63)
 
-	RESTART_TIME		= 0x00000100,
-	RESTART_NTPC		= 0x00000200,
-	RESTART_SYSLOG		= 0x00000400,
-	RESTART_TWEAKS		= 0x00000800,
-
-	RESTART_TERMINAL	= 0x00001000,
-	RESTART_VPNSVR		= 0x00002000,
-	RESTART_VPNCLI		= 0x00004000,
-	RESTART_SYSCTL		= 0x00008000,
-
-	RESTART_SPOOLER		= 0x00010000,
-	RESTART_HDDTUNE		= 0x00020000,
-	RESTART_FTPSAMBA	= 0x00040000,
-	RESTART_NFS		= 0x00080000,
-
-	RESTART_DMS		= 0x00100000,
-	RESTART_ITUNES		= 0x00200000,
-	RESTART_TORRENT		= 0x00400000,
-	RESTART_ARIA		= 0x00800000,
-
-	RESTART_WIFI		= 0x01000000,
-	RESTART_SWITCH		= 0x02000000,
-	RESTART_SWITCH_VLAN	= 0x04000000,
-	RESTART_MODEM		= 0x08000000,
-
-	RESTART_LAN		= 0x10000000,
-	RESTART_WAN		= 0x20000000,
-	RESTART_IPV6		= 0x40000000,
-	RESTART_REBOOT		= 0x80000000
-};
-
-#define ITVL_RESTART_HTTPD		2
-#define ITVL_RESTART_DI			1
-#define ITVL_RESTART_DDNS		1
-#define ITVL_RESTART_UPNP		1
-
-#define ITVL_RESTART_FIREWALL		1
-#define ITVL_RESTART_DHCPD		1
-#define ITVL_RESTART_RADVD		1
-#define ITVL_RESTART_IPTV		1
-
-#define ITVL_RESTART_TIME		2
-#define ITVL_RESTART_NTPC		1
-#define ITVL_RESTART_SYSLOG		1
-#define ITVL_RESTART_TWEAKS		1
-
-#define ITVL_RESTART_TERMINAL		1
-#define ITVL_RESTART_VPNSVR		2
-#define ITVL_RESTART_VPNCLI		2
-#define ITVL_RESTART_SYSCTL		1
-
-#define ITVL_RESTART_SPOOLER		1
-#define ITVL_RESTART_HDDTUNE		1
-#define ITVL_RESTART_FTPSAMBA		2
-#define ITVL_RESTART_NFS		2
-
-#define ITVL_RESTART_DMS		2
-#define ITVL_RESTART_ITUNES		2
-#define ITVL_RESTART_TORRENT		3
-#define ITVL_RESTART_ARIA		3
-
-#define ITVL_RESTART_WIFI		3
-#if defined(USE_RT3352_MII)
- #define ITVL_RESTART_WIFI_INIC		5
+#define EVT_RESTART_FIREWALL		1
+#define EVT_RESTART_DHCPD		1
+#define EVT_RESTART_RADVD		1
+#define EVT_RESTART_DDNS		1
+#define EVT_RESTART_UPNP		1
+#define EVT_RESTART_TIME		2
+#define EVT_RESTART_NTPC		1
+#define EVT_RESTART_SYSLOG		1
+#define EVT_RESTART_VPNSVR		2
+#define EVT_RESTART_VPNCLI		2
+#if defined (USE_RT3352_MII)
+#define EVT_RESTART_WIFI2		5
 #else
- #define ITVL_RESTART_WIFI_INIC		3
+#define EVT_RESTART_WIFI2		3
 #endif
-#define ITVL_RESTART_SWITCH		3
-#define ITVL_RESTART_SWITCH_VLAN	3
-#define ITVL_RESTART_MODEM		3
+#define EVT_RESTART_WIFI5		3
+#define EVT_RESTART_SWITCH_CFG		3
+#define EVT_RESTART_SWITCH_VLAN		3
+#define EVT_RESTART_LAN			3
+#define EVT_RESTART_WAN			5
+#define EVT_RESTART_IPV6		3
+#define EVT_RESTART_HTTPD		2
+#define EVT_RESTART_TELNETD		1
+#define EVT_RESTART_SSHD		1
+#define EVT_RESTART_WINS		2
+#define EVT_RESTART_LLTD		1
+#define EVT_RESTART_ADSC		1
+#define EVT_RESTART_IPTV		1
+#define EVT_RESTART_SYSCTL		1
+#define EVT_RESTART_TWEAKS		1
+#define EVT_RESTART_WDG			1
+#define EVT_RESTART_DI			1
+#define EVT_RESTART_SPOOLER		1
+#define EVT_RESTART_MODEM		3
+#define EVT_RESTART_HDDTUNE		1
+#define EVT_RESTART_FTPD		1
+#define EVT_RESTART_SMBD		2
+#define EVT_RESTART_NFSD		2
+#define EVT_RESTART_DMS			2
+#define EVT_RESTART_ITUNES		2
+#define EVT_RESTART_TRMD		3
+#define EVT_RESTART_ARIA		3
+#define EVT_RESTART_REBOOT		40
 
-#define ITVL_RESTART_WAN		5
-#define ITVL_RESTART_LAN		3
-#define ITVL_RESTART_REBOOT		40
-
-
-struct variable {
-	char *name;
-	char *longname;
+struct variable
+{
+	const char *name;
+	const char *longname;
 	char **argv;
-	int event;
+	u64 event_mask;
 };
 
 struct svcLink
 {
-      char *serviceId;
-      char *serviceType;
-      struct variable *variables;
+	const char *serviceId;
+	struct variable *variables;
+};
+
+struct evDesc
+{
+	u64 event_mask;
+	u32 max_time;
+	const char* notify_cmd;
+	u64 event_unmask;
 };
 
 #define ARGV(args...) ((char *[]) { args, NULL })
 
 /* API export for UPnP function */
 int LookupServiceId(char *serviceId);
-char *GetServiceId(int sid);
+const char *GetServiceId(int sid);
 struct variable *GetVariables(int sid);
 
 

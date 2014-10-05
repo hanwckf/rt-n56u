@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_4_3#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_4_3#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,140 +17,26 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#enable_samba_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#enable_samba_fake").attr("checked", "checked").attr("value", 1);
-                $j("#enable_samba_1").attr("checked", "checked");
-                $j("#enable_samba_0").removeAttr("checked");
-                change_smb_enabled();
-            },
-            onClickOff: function(){
-                $j("#enable_samba_fake").removeAttr("checked").attr("value", 0);
-                $j("#enable_samba_0").attr("checked", "checked");
-                $j("#enable_samba_1").removeAttr("checked");
-                change_smb_enabled();
-            }
-        });
-        $j("#enable_samba_on_of label.itoggle").css("background-position", $j("input#enable_samba_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+var $j = jQuery.noConflict();
 
-        $j('#enable_ftp_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#enable_ftp_fake").attr("checked", "checked").attr("value", 1);
-                $j("#enable_ftp_1").attr("checked", "checked");
-                $j("#enable_ftp_0").removeAttr("checked");
-                change_ftp_enabled();
-            },
-            onClickOff: function(){
-                $j("#enable_ftp_fake").removeAttr("checked").attr("value", 0);
-                $j("#enable_ftp_0").attr("checked", "checked");
-                $j("#enable_ftp_1").removeAttr("checked");
-                change_ftp_enabled();
-            }
-        });
-        $j("#enable_ftp_on_of label.itoggle").css("background-position", $j("input#enable_ftp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#nfsd_enable_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#nfsd_enable_fake").attr("checked", "checked").attr("value", 1);
-                $j("#nfsd_enable_1").attr("checked", "checked");
-                $j("#nfsd_enable_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#nfsd_enable_fake").removeAttr("checked").attr("value", 0);
-                $j("#nfsd_enable_0").attr("checked", "checked");
-                $j("#nfsd_enable_1").removeAttr("checked");
-            }
-        });
-        $j("#nfsd_enable_on_of label.itoggle").css("background-position", $j("input#nfsd_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#apps_dms_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#apps_dms_fake").attr("checked", "checked").attr("value", 1);
-                $j("#apps_dms_1").attr("checked", "checked");
-                $j("#apps_dms_0").removeAttr("checked");
-                change_dms_enabled();
-            },
-            onClickOff: function(){
-                $j("#apps_dms_fake").removeAttr("checked").attr("value", 0);
-                $j("#apps_dms_0").attr("checked", "checked");
-                $j("#apps_dms_1").removeAttr("checked");
-                change_dms_enabled();
-            }
-        });
-        $j("#apps_dms_on_of label.itoggle").css("background-position", $j("input#apps_dms_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#apps_itunes_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#apps_itunes_fake").attr("checked", "checked").attr("value", 1);
-                $j("#apps_itunes_1").attr("checked", "checked");
-                $j("#apps_itunes_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#apps_itunes_fake").removeAttr("checked").attr("value", 0);
-                $j("#apps_itunes_0").attr("checked", "checked");
-                $j("#apps_itunes_1").removeAttr("checked");
-            }
-        });
-        $j("#apps_itunes_on_of label.itoggle").css("background-position", $j("input#apps_itunes_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#trmd_enable_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#trmd_enable_fake").attr("checked", "checked").attr("value", 1);
-                $j("#trmd_enable_1").attr("checked", "checked");
-                $j("#trmd_enable_0").removeAttr("checked");
-                change_trmd_enabled();
-            },
-            onClickOff: function(){
-                $j("#trmd_enable_fake").removeAttr("checked").attr("value", 0);
-                $j("#trmd_enable_0").attr("checked", "checked");
-                $j("#trmd_enable_1").removeAttr("checked");
-                change_trmd_enabled();
-            }
-        });
-        $j("#trmd_enable_on_of label.itoggle").css("background-position", $j("input#trmd_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#aria_enable_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#aria_enable_fake").attr("checked", "checked").attr("value", 1);
-                $j("#aria_enable_1").attr("checked", "checked");
-                $j("#aria_enable_0").removeAttr("checked");
-                change_aria_enabled();
-            },
-            onClickOff: function(){
-                $j("#aria_enable_fake").removeAttr("checked").attr("value", 0);
-                $j("#aria_enable_0").attr("checked", "checked");
-                $j("#aria_enable_1").removeAttr("checked");
-                change_aria_enabled();
-            }
-        });
-        $j("#aria_enable_on_of label.itoggle").css("background-position", $j("input#aria_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
+$j(document).ready(function() {
+	init_itoggle('enable_samba', change_smb_enabled);
+	init_itoggle('enable_ftp', change_ftp_enabled);
+	init_itoggle('nfsd_enable');
+	init_itoggle('apps_dms', change_dms_enabled);
+	init_itoggle('apps_itunes');
+	init_itoggle('trmd_enable', change_trmd_enabled);
+	init_itoggle('aria_enable', change_aria_enabled);
+});
 
 </script>
-
 <script>
 
-lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
-
+var lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
 var ddns_enable = '<% nvram_get_x("", "ddns_enable_x"); %>';
 var ddns_server = '<% nvram_get_x("", "ddns_server_x"); %>';
 var ddns_hostname = '<% nvram_get_x("", "ddns_hostname_x"); %>';
@@ -335,70 +222,39 @@ function pull_usb_share_list(obj,idx){
 }
 
 function change_smb_enabled(){
-	var a = rcheck(document.form.enable_samba);
-	if (a == "0"){
-		$("row_smb_wgrp").style.display = "none";
-		$("row_smb_mode").style.display = "none";
-		$("row_smb_lmb").style.display = "none";
-	} else {
-		$("row_smb_wgrp").style.display = "";
-		$("row_smb_mode").style.display = "";
-		$("row_smb_lmb").style.display = "";
-	}
+	var v = document.form.enable_samba[0].checked;
+	showhide_div('row_smb_wgrp', v);
+	showhide_div('row_smb_mode', v);
+	showhide_div('row_smb_lmb', v);
 }
 
 function change_ftp_enabled(){
-	var a = rcheck(document.form.enable_ftp);
-	if (a == "0"){
-		$("row_ftp_mode").style.display = "none";
-		$("row_ftp_log").style.display = "none";
-	} else {
-		$("row_ftp_mode").style.display = "";
-		$("row_ftp_log").style.display = "";
-	}
+	var v = document.form.enable_ftp[0].checked;
+	showhide_div('row_ftp_mode', v);
+	showhide_div('row_ftp_log', v);
 }
 
 function change_dms_enabled(){
-	var a = rcheck(document.form.apps_dms);
-	if (a == "0"){
-		$("row_dms_disc").style.display = "none";
-		$("row_dms_src1").style.display = "none";
-		$("row_dms_src2").style.display = "none";
-		$("row_dms_src3").style.display = "none";
-		$("row_dms_dnew").style.display = "none";
-		$("row_dms_root").style.display = "none";
-		$("row_dms_sort").style.display = "none";
-	} else {
-		$("row_dms_disc").style.display = "";
-		$("row_dms_src1").style.display = "";
-		$("row_dms_src2").style.display = "";
-		$("row_dms_src3").style.display = "";
-		$("row_dms_dnew").style.display = "";
-		$("row_dms_root").style.display = "";
-		$("row_dms_sort").style.display = "";
-	}
+	var v = document.form.apps_dms[0].checked;
+	showhide_div('row_dms_disc', v);
+	showhide_div('row_dms_src1', v);
+	showhide_div('row_dms_src2', v);
+	showhide_div('row_dms_src3', v);
+	showhide_div('row_dms_dnew', v);
+	showhide_div('row_dms_root', v);
+	showhide_div('row_dms_sort', v);
 }
 
 function change_trmd_enabled(){
-	var a = rcheck(document.form.trmd_enable);
-	if (a == "0"){
-		$("row_trmd_pport").style.display = "none";
-		$("row_trmd_rport").style.display = "none";
-	} else {
-		$("row_trmd_pport").style.display = "";
-		$("row_trmd_rport").style.display = "";
-	}
+	var v = document.form.trmd_enable[0].checked;
+	showhide_div('row_trmd_pport', v);
+	showhide_div('row_trmd_rport', v);
 }
 
 function change_aria_enabled(){
-	var a = rcheck(document.form.aria_enable);
-	if (a == "0"){
-		$("row_aria_pport").style.display = "none";
-		$("row_aria_rport").style.display = "none";
-	} else {
-		$("row_aria_pport").style.display = "";
-		$("row_aria_rport").style.display = "";
-	}
+	var v = document.form.aria_enable[0].checked;
+	showhide_div('row_aria_pport', v);
+	showhide_div('row_aria_rport', v);
 }
 
 function applyRule(){
@@ -612,8 +468,9 @@ function done_validating(action){
                                             </th>
                                             <td>
                                                 <select name="st_samba_lmb" class="input">
-                                                    <option value="1" <% nvram_match_x("", "st_samba_lmb", "1", "selected"); %>><#checkbox_Yes#></option>
                                                     <option value="0" <% nvram_match_x("", "st_samba_lmb", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "st_samba_lmb", "1", "selected"); %>>Local Master Browser</option>
+                                                    <option value="2" <% nvram_match_x("", "st_samba_lmb", "2", "selected"); %>>Local & Domain Master Browser</option>
                                                 </select>
                                             </td>
                                         </tr>

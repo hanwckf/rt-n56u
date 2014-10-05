@@ -179,6 +179,7 @@ void full_restart_ipv6(int ipv6_type_old)
 		stop_httpd();
 	}
 
+	stop_upnp();
 	stop_radvd();
 	stop_dhcp6c();
 	stop_dns_dhcpd();
@@ -195,8 +196,7 @@ void full_restart_ipv6(int ipv6_type_old)
 		update_resolvconf(0, 1);
 		restart_firewall();
 		start_dns_dhcpd(0);
-	}
-	else {
+	} else {
 		control_if_ipv6_all(1);
 		clear_all_route6();
 		clear_all_addr6();

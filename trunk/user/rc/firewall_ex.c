@@ -27,9 +27,6 @@
 
 #include "rc.h"
 
-/* Need enable IGDv2 in miniupnpd too (IGDv2 has compatible issues with old IGDv1 clients) */
-//#define USE_UPNP_IGDV2
-
 #define foreach_x(x)		for (i=0; i<nvram_get_int(x); i++)
 
 #define BATTLENET_PORT		6112
@@ -1379,9 +1376,7 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if,
 	fprintf(fp, ":%s %s [0:0]\n", "INPUT", (is_fw_enabled) ? "DROP" : "ACCEPT");
 	fprintf(fp, ":%s %s [0:0]\n", "FORWARD", (is_fw_enabled) ? "DROP" :  "ACCEPT");
 	fprintf(fp, ":%s %s [0:0]\n", "OUTPUT", "ACCEPT");
-#if defined (USE_UPNP_IGDV2)
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP6_FORWARD);
-#endif
 	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_MAC_LIST);
 	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_URL_LIST);
 	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_BFP_LIMIT);
@@ -1564,15 +1559,13 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if,
 		if (!is_wan_ipv6_if_ppp() && strcmp(man_if, wan_if))
 			fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, man_if, lan_if, logdrop);
 #endif
-
 		/* Accept LAN other outbound traffic  */
 		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, "ACCEPT");
 		
-#if defined (USE_UPNP_IGDV2)
-		/* Jump to IGDv2 pinhole IP6FC */
+		/* Jump to IPv6 pinhole (IGDv2 IP6FC or PCP) */
 		if (nvram_invmatch("upnp_enable_x", "0"))
 			fprintf(fp, "-A %s -j %s\n", dtype, MINIUPNPD_CHAIN_IP6_FORWARD);
-#endif
+		
 		/* Drop all (only for log) */
 		if (is_logdrop)
 			fprintf(fp, "-A %s -j %s\n", dtype, logdrop);
@@ -1635,9 +1628,7 @@ ip6t_filter_default(void)
 	fprintf(fp, ":%s %s [0:0]\n", "INPUT", (is_fw_enabled) ? "DROP" : "ACCEPT");
 	fprintf(fp, ":%s %s [0:0]\n", "FORWARD", (is_fw_enabled) ? "DROP" :  "ACCEPT");
 	fprintf(fp, ":%s %s [0:0]\n", "OUTPUT", "ACCEPT");
-#if defined (USE_UPNP_IGDV2)
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP6_FORWARD);
-#endif
 
 	// INPUT chain
 	dtype = "INPUT";

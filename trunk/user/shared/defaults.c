@@ -555,7 +555,9 @@ struct nvram_pair router_defaults[] = {
 
 	{ "telnetd", "1" },
 	{ "sshd_enable", "0" },
-
+	{ "wins_enable", "0" },
+	{ "lltd_enable", "1" },
+	{ "adsc_enable", "0" },
 
 #if defined(BOARD_N65U)
 	{ "inic_disable", "0" },

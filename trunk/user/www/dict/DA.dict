@@ -357,11 +357,10 @@ menu5_5_3=MAC-filter
 menu5_5_4=LAN-til-WAN-filter
 menu5_5_5=Netfilter
 menu5_6_1=Handlingstilstand
-menu5_6_1_title=Handlingstilstand
 menu5_6_2=System
 menu5_6_3=Firmwareopgradering
 menu5_6_4=Gendan, gem eller overfør indstillinger
-menu5_6_5=Console
+menu5_6_6=Console
 menu5_7_1=Systemstatus
 menu5_7_2=Generel log
 menu5_7_3=DHCP-rettigheder
@@ -617,7 +616,7 @@ ALERT_OF_ERROR_System2=Systemfejl: Kan ikke læse disken data!
 ALERT_OF_ERROR_System3=Systemfejl: Disken er optaget!
 [QIS wizard]
 [QIS_detect.js]
-Web_Title=ZVMODELVZ
+Web_Title=ASUS Wireless Router
 QKSet_detect_sanglass=automatisk registrering
 QKSet_detect_desc1=Registrerer forbindelsestypen
 QKSet_detect_desc2=Registrerer forbindelsesstatussen igen
@@ -758,7 +757,6 @@ BOP_isp_desc=Det værtsnavn som internetudbyderen opgiver:
 OP_desc1=ZVMODELVZ\'en understøtter 3 handlingstilstande til opfyldelse af forskellige krav. Vælg den tilstand, der passer til din situation.
 PASS_new=Ny adgangskode:
 PASS_retype=Indtast den nye adgangskode igen:
-PASS_changepasswd=Skift systemadgangskoden
 FW_desc1=Følg nedenstående anvisninger:
 FW_desc2=Kontroller, om der findes en ny firmwareversion på <a "href=http://code.google.com/p/rt-n56u/" target="blank">ASUS' netsted</a>.blank>ASUS netsted</a>.
 FW_desc3=Hent den rette version til din lokale computer.

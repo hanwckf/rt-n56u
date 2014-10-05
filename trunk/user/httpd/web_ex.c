@@ -15,8 +15,6 @@
  * MA 02111-1307 USA
  */
 
-typedef unsigned char   bool;
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -85,7 +83,7 @@ static int nvram_generate_table(webs_t wp, char *serviceId, char *groupName);
 static int nvram_modified = 0;
 static int wl_modified = 0;
 static int rt_modified = 0;
-static unsigned long restart_needed_bits = 0;
+static u64 restart_needed_bits = 0;
 
 int action;
 char *serviceId;
@@ -93,6 +91,7 @@ char *next_host;
 int delMap[MAX_GROUP_COUNT+2];
 char SystemCmd[128];
 
+extern struct evDesc events_desc[];
 extern int change_passwd;
 #if defined (SUPPORT_HTTPS)
 extern int http_is_ssl;
@@ -1106,24 +1105,24 @@ static int validate_asp_apply(webs_t wp, int sid) {
 			} else if (!strcmp(v->longname, "File")) {
 				if (!strncmp(v->name, "dnsmasq.", 8)) {
 					if (write_textarea_to_file(value, STORAGE_DNSMASQ_DIR, v->name+8))
-						restart_needed_bits |= v->event;
+						restart_needed_bits |= v->event_mask;
 				} else if (!strncmp(v->name, "scripts.", 8)) {
 					if (write_textarea_to_file(value, STORAGE_SCRIPTS_DIR, v->name+8))
-						restart_needed_bits |= v->event;
+						restart_needed_bits |= v->event_mask;
 				}
 #if defined (SUPPORT_HTTPS)
 				else if (!strncmp(v->name, "httpssl.", 8)) {
 					if (write_textarea_to_file(value, STORAGE_HTTPSSL_DIR, v->name+8))
-						restart_needed_bits |= v->event;
+						restart_needed_bits |= v->event_mask;
 				}
 #endif
 #if defined(APP_OPENVPN)
 				else if (!strncmp(v->name, "ovpnsvr.", 8)) {
 					if (write_textarea_to_file(value, STORAGE_OVPNSVR_DIR, v->name+8))
-						restart_needed_bits |= v->event;
+						restart_needed_bits |= v->event_mask;
 				} else if (!strncmp(v->name, "ovpncli.", 8)) {
 					if (write_textarea_to_file(value, STORAGE_OVPNCLI_DIR, v->name+8))
-						restart_needed_bits |= v->event;
+						restart_needed_bits |= v->event_mask;
 				}
 #endif
 			} else if (!strcmp(v->name, "wl_country_code")) {
@@ -1135,7 +1134,7 @@ static int validate_asp_apply(webs_t wp, int sid) {
 					
 					nvram_modified = 1;
 					
-					restart_needed_bits |= v->event;
+					restart_needed_bits |= v->event_mask;
 				}
 				
 			} else if (!strcmp(v->name, "rt_country_code")) {
@@ -1147,7 +1146,7 @@ static int validate_asp_apply(webs_t wp, int sid) {
 					
 					nvram_modified = 1;
 					
-					restart_needed_bits |= v->event;
+					restart_needed_bits |= v->event_mask;
 				}
 				
 			} else if (strcmp(nvram_safe_get(name), value) && strncmp(v->name, "wsc", 3) && strncmp(v->name, "wps", 3)) {
@@ -1337,10 +1336,10 @@ static int validate_asp_apply(webs_t wp, int sid) {
 					}
 				}
 				
-				if (v->event)
+				if (v->event_mask)
 				{
-					restart_needed_bits |= v->event;
-					dbG("debug restart_needed_bits: 0x%lx\n", restart_needed_bits);
+					restart_needed_bits |= v->event_mask;
+					dbG("debug restart_needed_bits: 0x%llx\n", restart_needed_bits);
 				}
 			}
 		}
@@ -1378,13 +1377,14 @@ pinvalidate(char *pin_string)
 	return -1;
 }
 
+
+
 static int update_variables_ex(int eid, webs_t wp, int argc, char **argv) {
 	int sid;
 	char *action_mode;
 	char *sid_list;
 	char *script;
 	int result;
-	unsigned int restart_total_time = 0;
 
 	restart_needed_bits = 0;
 
@@ -1445,8 +1445,8 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char **argv) {
 						validate_asp_apply(wp, sid);	// for some nvram with this group
 						
 						if (nvram_get_int(group_id) > 0) {
-							restart_needed_bits |= v->event;
-							dbG("group restart_needed_bits: 0x%lx\n", restart_needed_bits);
+							restart_needed_bits |= v->event_mask;
+							dbG("group restart_needed_bits: 0x%llx\n", restart_needed_bits);
 							
 							if (!strcmp(group_id, "RBRList") || !strcmp(group_id, "ACLList"))
 								wl_modified |= WIFI_COMMON_CHANGE_BIT;
@@ -1492,86 +1492,46 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char **argv) {
 		return 0;
 	}
 
-	if (restart_needed_bits != 0 && (!strcmp(action_mode, " Apply ") || !strcmp(action_mode, " Restart ") || !strcmp(action_mode, " WPS_Apply "))) {
-		if ((restart_needed_bits & RESTART_REBOOT) != 0)
-			restart_total_time = MAX(ITVL_RESTART_REBOOT, restart_total_time);
-		if ((restart_needed_bits & (RESTART_WAN | RESTART_IPV6)) != 0) {
-			unsigned int max_time = ITVL_RESTART_WAN;
-			if (nvram_match("wan_proto", "dhcp") || nvram_match("wan_proto", "static"))
-				max_time = 3;
-			restart_total_time = MAX(max_time, restart_total_time);
-		}
-		if ((restart_needed_bits & RESTART_LAN) != 0)
-			restart_total_time = MAX(ITVL_RESTART_LAN, restart_total_time);
-		if ((restart_needed_bits & RESTART_DHCPD) != 0)
-			restart_total_time = MAX(ITVL_RESTART_DHCPD, restart_total_time);
-		if ((restart_needed_bits & RESTART_RADVD) != 0)
-			restart_total_time = MAX(ITVL_RESTART_RADVD, restart_total_time);
-		if ((restart_needed_bits & RESTART_MODEM) != 0)
-			restart_total_time = MAX(ITVL_RESTART_MODEM, restart_total_time);
-		if ((restart_needed_bits & RESTART_IPTV) != 0)
-			restart_total_time = MAX(ITVL_RESTART_IPTV, restart_total_time);
-		if ((restart_needed_bits & RESTART_FTPSAMBA) != 0)
-			restart_total_time = MAX(ITVL_RESTART_FTPSAMBA, restart_total_time);
-		if ((restart_needed_bits & RESTART_TERMINAL) != 0)
-			restart_total_time = MAX(ITVL_RESTART_TERMINAL, restart_total_time);
-		if ((restart_needed_bits & RESTART_VPNSVR) != 0)
-			restart_total_time = MAX(ITVL_RESTART_VPNSVR, restart_total_time);
-		if ((restart_needed_bits & RESTART_VPNCLI) != 0)
-			restart_total_time = MAX(ITVL_RESTART_VPNCLI, restart_total_time);
-		if ((restart_needed_bits & RESTART_DDNS) != 0)
-			restart_total_time = MAX(ITVL_RESTART_DDNS, restart_total_time);
-		if ((restart_needed_bits & RESTART_HTTPD) != 0)
-			restart_total_time = MAX(ITVL_RESTART_HTTPD, restart_total_time);
-		if ((restart_needed_bits & RESTART_DI) != 0)
-			restart_total_time = MAX(ITVL_RESTART_DI, restart_total_time);
-		if ((restart_needed_bits & RESTART_UPNP) != 0)
-			restart_total_time = MAX(ITVL_RESTART_UPNP, restart_total_time);
-		if ((restart_needed_bits & RESTART_DMS) != 0)
-			restart_total_time = MAX(ITVL_RESTART_DMS, restart_total_time);
-		if ((restart_needed_bits & RESTART_TORRENT) != 0)
-			restart_total_time = MAX(ITVL_RESTART_TORRENT, restart_total_time);
-		if ((restart_needed_bits & RESTART_ARIA) != 0)
-			restart_total_time = MAX(ITVL_RESTART_ARIA, restart_total_time);
-		if ((restart_needed_bits & RESTART_ITUNES) != 0)
-			restart_total_time = MAX(ITVL_RESTART_ITUNES, restart_total_time);
-		if ((restart_needed_bits & RESTART_SWITCH) != 0)
-			restart_total_time = MAX(ITVL_RESTART_SWITCH, restart_total_time);
-		if ((restart_needed_bits & RESTART_SWITCH_VLAN) != 0)
-			restart_total_time = MAX(ITVL_RESTART_SWITCH_VLAN, restart_total_time);
-		if ((restart_needed_bits & RESTART_SYSLOG) != 0)
-			restart_total_time = MAX(ITVL_RESTART_SYSLOG, restart_total_time);
-		if ((restart_needed_bits & RESTART_TWEAKS) != 0)
-			restart_total_time = MAX(ITVL_RESTART_TWEAKS, restart_total_time);
-		if ((restart_needed_bits & RESTART_FIREWALL) != 0)
-			restart_total_time = MAX(ITVL_RESTART_FIREWALL, restart_total_time);
-		if ((restart_needed_bits & RESTART_NTPC) != 0)
-			restart_total_time = MAX(ITVL_RESTART_NTPC, restart_total_time);
-		if ((restart_needed_bits & RESTART_NFS) != 0)
-			restart_total_time = MAX(ITVL_RESTART_NFS, restart_total_time);
-		if ((restart_needed_bits & RESTART_TIME) != 0)
-			restart_total_time = MAX(ITVL_RESTART_TIME, restart_total_time);
-		if ((restart_needed_bits & RESTART_SPOOLER) != 0)
-			restart_total_time = MAX(ITVL_RESTART_SPOOLER, restart_total_time);
-		if ((restart_needed_bits & RESTART_HDDTUNE) != 0)
-			restart_total_time = MAX(ITVL_RESTART_HDDTUNE, restart_total_time);
-		if ((restart_needed_bits & RESTART_SYSCTL) != 0)
-			restart_total_time = MAX(ITVL_RESTART_SYSCTL, restart_total_time);
-		if ((restart_needed_bits & RESTART_WIFI) != 0) {
-			unsigned int max_time = 1;
-			if (wl_modified) {
-				if ((wl_modified & WIFI_COMMON_CHANGE_BIT) && nvram_get_int("wl_radio_x"))
-					max_time = ITVL_RESTART_WIFI;
-				restart_total_time = MAX(max_time, restart_total_time);
+	if (restart_needed_bits != 0 && (!strcmp(action_mode, " Apply ") || !strcmp(action_mode, " Restart "))) {
+		int i;
+		u32 restart_total_time = 0;
+		u32 max_time;
+		
+		i = 0;
+		while (events_desc[i].notify_cmd) {
+			if ((restart_needed_bits & events_desc[i].event_mask) != 0) {
+				max_time = events_desc[i].max_time;
+				
+				if ((events_desc[i].event_mask & (EVM_RESTART_WAN|EVM_RESTART_IPV6)) != 0) {
+					max_time = EVT_RESTART_WAN;
+					if (nvram_match("wan_proto", "dhcp") || nvram_match("wan_proto", "static"))
+						max_time = 3;
+				}
+				
+				restart_total_time = MAX(restart_total_time, max_time);
 			}
-			else if (rt_modified) {
-				if ((rt_modified & WIFI_COMMON_CHANGE_BIT) && nvram_get_int("rt_radio_x"))
-					max_time = ITVL_RESTART_WIFI_INIC;
-				restart_total_time = MAX(max_time, restart_total_time);
-			}
+			i++;
 		}
 		
-		websWrite(wp, "<script>restart_needed_time(%d);</script>\n", restart_total_time);
+		if ((restart_needed_bits & EVM_RESTART_WIFI2) != 0) {
+			max_time = 1;
+			if ((rt_modified & WIFI_COMMON_CHANGE_BIT) && nvram_get_int("rt_radio_x"))
+				max_time = EVT_RESTART_WIFI2;
+			restart_total_time = MAX(restart_total_time, max_time);
+		}
+		
+#if BOARD_HAS_5G_RADIO
+		if ((restart_needed_bits & EVM_RESTART_WIFI5) != 0) {
+			max_time = 1;
+			if ((wl_modified & WIFI_COMMON_CHANGE_BIT) && nvram_get_int("wl_radio_x"))
+				max_time = EVT_RESTART_WIFI5;
+			restart_total_time = MAX(restart_total_time, max_time);
+		}
+#endif
+		if ((restart_needed_bits & EVM_RESTART_REBOOT) != 0)
+			restart_total_time = MAX(EVT_RESTART_REBOOT, restart_total_time);
+		
+		websWrite(wp, "<script>restart_needed_time(%u);</script>\n", restart_total_time);
 	}
 
 	return 0;
@@ -1587,220 +1547,80 @@ static int asus_nvram_commit(int eid, webs_t wp, int argc, char **argv) {
 }
 
 static int ej_notify_services(int eid, webs_t wp, int argc, char **argv) {
-	if (restart_needed_bits != 0) {
-		if ((restart_needed_bits & RESTART_REBOOT) != 0) {
-			if (nvram_get_int("nvram_manual") == 1)
-				nvram_commit();
-			sys_reboot();
-		}
-		else {
-			dbG("debug restart_needed_bits before: 0x%lx\n", restart_needed_bits);
-			
-			if ((restart_needed_bits & RESTART_IPV6) != 0) {
-				notify_rc("restart_ipv6");
-				restart_needed_bits &= ~(u32)RESTART_IPV6;
-				restart_needed_bits &= ~(u32)RESTART_LAN;
-				restart_needed_bits &= ~(u32)RESTART_DHCPD;		// dnsmasq already re-started (RESTART_IPV6)
-				restart_needed_bits &= ~(u32)RESTART_RADVD;		// radvd already re-started (RESTART_IPV6)
-				restart_needed_bits &= ~(u32)RESTART_DI;		// detect_internet already re-started (RESTART_IPV6)
-				restart_needed_bits &= ~(u32)RESTART_WAN;		// wan already re-started (RESTART_IPV6)
-				restart_needed_bits &= ~(u32)RESTART_MODEM;		// wan already re-started (RESTART_IPV6)
-				restart_needed_bits &= ~(u32)RESTART_IPTV;		// iptv already re-started (RESTART_IPV6)
-				restart_needed_bits &= ~(u32)RESTART_UPNP;		// miniupnpd already re-started (RESTART_IPV6)
-				restart_needed_bits &= ~(u32)RESTART_SWITCH_VLAN;	// vlan filter already re-started (RESTART_IPV6)
-				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_IPV6)
-			}
-			if ((restart_needed_bits & RESTART_LAN) != 0) {
-				notify_rc("restart_whole_lan");
-				restart_needed_bits &= ~(u32)RESTART_LAN;
-				restart_needed_bits &= ~(u32)RESTART_DHCPD;		// dnsmasq already re-started (RESTART_LAN)
-				restart_needed_bits &= ~(u32)RESTART_DI;		// detect_internet already re-started (RESTART_LAN)
-				restart_needed_bits &= ~(u32)RESTART_UPNP;		// miniupnpd already re-started (RESTART_LAN)
-				restart_needed_bits &= ~(u32)RESTART_VPNSVR;		// vpn server already re-started (RESTART_LAN)
-				restart_needed_bits &= ~(u32)RESTART_IPTV;		// igmpproxy already re-started (RESTART_LAN)
-				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_LAN)
-			}
-#if (BOARD_NUM_USB_PORTS > 0)
-			if ((restart_needed_bits & RESTART_MODEM) != 0) {
-				notify_rc("restart_modem");
-				restart_needed_bits &= ~(u32)RESTART_MODEM;
-				restart_needed_bits &= ~(u32)RESTART_WAN;		// wan already re-started (RESTART_MODEM)
-			}
-#endif
-			if ((restart_needed_bits & RESTART_WAN) != 0) {
-				notify_rc("restart_whole_wan");
-				restart_needed_bits &= ~(u32)RESTART_WAN;
-				restart_needed_bits &= ~(u32)RESTART_IPTV;		// iptv already re-started (RESTART_WAN)
-				restart_needed_bits &= ~(u32)RESTART_SWITCH_VLAN;	// vlan filter already re-started (RESTART_WAN)
-				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_WAN)
-			}
-			if ((restart_needed_bits & RESTART_SWITCH) != 0) {
-				notify_rc("restart_switch_config");
-				restart_needed_bits &= ~(u32)RESTART_SWITCH;
-			}
-			if ((restart_needed_bits & RESTART_SWITCH_VLAN) != 0) {
-				notify_rc("restart_switch_vlan");
-				restart_needed_bits &= ~(u32)RESTART_SWITCH_VLAN;
-			}
-			if ((restart_needed_bits & RESTART_IPTV) != 0) {
-				notify_rc("restart_iptv");
-				restart_needed_bits &= ~(u32)RESTART_IPTV;
-				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_IPTV)
-			}
-			if ((restart_needed_bits & RESTART_RADVD) != 0) {
-				notify_rc("restart_radvd");
-				restart_needed_bits &= ~(u32)RESTART_RADVD;
-				restart_needed_bits &= ~(u32)RESTART_DHCPD;		// dnsmasq already re-started (RESTART_RADVD)
-			}
-			if ((restart_needed_bits & RESTART_DHCPD) != 0) {
-				notify_rc("restart_dhcpd");
-				restart_needed_bits &= ~(u32)RESTART_DHCPD;
-			}
-			if ((restart_needed_bits & RESTART_TERMINAL) != 0) {
-				notify_rc("restart_term");
-				restart_needed_bits &= ~(u32)RESTART_TERMINAL;
-			}
-			if ((restart_needed_bits & RESTART_VPNSVR) != 0) {
-				notify_rc("restart_vpn_server");
-				restart_needed_bits &= ~(u32)RESTART_VPNSVR;
-				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_VPNSVR)
-			}
-			if ((restart_needed_bits & RESTART_VPNCLI) != 0) {
-				notify_rc("restart_vpn_client");
-				restart_needed_bits &= ~(u32)RESTART_VPNCLI;
-				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_VPNCLI)
-			}
-			if ((restart_needed_bits & RESTART_HTTPD) != 0) {
-				notify_rc("restart_httpd");
-				restart_needed_bits &= ~(u32)RESTART_HTTPD;
-				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_HTTPD)
-			}
-			if ((restart_needed_bits & RESTART_DI) != 0) {
-				notify_rc("restart_di");
-				restart_needed_bits &= ~(u32)RESTART_DI;
-			}
-			if ((restart_needed_bits & RESTART_DDNS) != 0) {
-				notify_rc("restart_ddns");
-				restart_needed_bits &= ~(u32)RESTART_DDNS;
-			}
-			if ((restart_needed_bits & RESTART_UPNP) != 0) {
-				notify_rc("restart_upnp");
-				restart_needed_bits &= ~(u32)RESTART_UPNP;
-			}
-			if ((restart_needed_bits & RESTART_FIREWALL) != 0) {
-				notify_rc("restart_firewall");
-				restart_needed_bits &= ~(u32)RESTART_FIREWALL;
-			}
-#if (BOARD_NUM_USB_PORTS > 0)
-			if ((restart_needed_bits & RESTART_FTPSAMBA) != 0) {
-				notify_rc("restart_cifs");
-				restart_needed_bits &= ~(u32)RESTART_FTPSAMBA;
-			}
-#if defined(APP_NFSD)
-			if ((restart_needed_bits & RESTART_NFS) != 0) {
-				notify_rc("restart_nfs");
-				restart_needed_bits &= ~(u32)RESTART_NFS;
-			}
-#endif
-#if defined(APP_MINIDLNA)
-			if ((restart_needed_bits & RESTART_DMS) != 0) {
-				notify_rc("restart_dms");
-				restart_needed_bits &= ~(u32)RESTART_DMS;
-			}
-#endif
-#if defined(APP_TRMD)
-			if ((restart_needed_bits & RESTART_TORRENT) != 0) {
-				notify_rc("restart_torrent");
-				restart_needed_bits &= ~(u32)RESTART_TORRENT;
-			}
-#endif
-#if defined(APP_ARIA)
-			if ((restart_needed_bits & RESTART_ARIA) != 0) {
-				notify_rc("restart_aria");
-				restart_needed_bits &= ~(u32)RESTART_ARIA;
-			}
-#endif
-#if defined(APP_FIREFLY)
-			if ((restart_needed_bits & RESTART_ITUNES) != 0) {
-				notify_rc("restart_itunes");
-				restart_needed_bits &= ~(u32)RESTART_ITUNES;
-			}
-#endif
-			if ((restart_needed_bits & RESTART_SPOOLER) != 0) {
-				notify_rc("restart_spooler");
-				restart_needed_bits &= ~(u32)RESTART_SPOOLER;
-			}
-			if ((restart_needed_bits & RESTART_HDDTUNE) != 0) {
-				notify_rc("restart_hddtune");
-				restart_needed_bits &= ~(u32)RESTART_HDDTUNE;
-			}
-#endif
-			if ((restart_needed_bits & RESTART_SYSLOG) != 0) {
-				notify_rc("restart_syslog");
-				restart_needed_bits &= ~(u32)RESTART_SYSLOG;
-			}
-			if ((restart_needed_bits & RESTART_TWEAKS) != 0) {
-				notify_rc("restart_tweaks");
-				restart_needed_bits &= ~(u32)RESTART_TWEAKS;
-			}
-			if ((restart_needed_bits & RESTART_SYSCTL) != 0) {
-				notify_rc("restart_sysctl");
-				restart_needed_bits &= ~(u32)RESTART_SYSCTL;
-			}
-			if ((restart_needed_bits & RESTART_NTPC) != 0) {
-				notify_rc("restart_ntpc");
-				restart_needed_bits &= ~(u32)RESTART_NTPC;
-			}
-			if ((restart_needed_bits & RESTART_TIME) != 0) {
-				notify_rc("restart_time");
-				restart_needed_bits &= ~(u32)RESTART_TIME;
-			}
-			if ((restart_needed_bits & RESTART_WIFI) != 0) {
-#if BOARD_HAS_5G_RADIO
-				if (wl_modified) {
-					if (wl_modified & WIFI_COMMON_CHANGE_BIT)
-						notify_rc("restart_wifi_wl");
-					else {
-						if (wl_modified & WIFI_IWPRIV_CHANGE_BIT)
-							notify_rc("control_wifi_config_wl");
-						
-						if (wl_modified & WIFI_RADIO_CONTROL_BIT)
-							notify_rc("control_wifi_radio_wl");
-						
-						if (wl_modified & WIFI_GUEST_CONTROL_BIT)
-							notify_rc("control_wifi_guest_wl");
-						
-						if (wl_modified & WIFI_SCHED_CONTROL_BIT)
-							nvram_set_int_temp("reload_svc_wl", 1);
-					}
-					wl_modified = 0;
-				}
-#endif
-				if (rt_modified) {
-					if (rt_modified & WIFI_COMMON_CHANGE_BIT)
-						notify_rc("restart_wifi_rt");
-					else {
-						if (rt_modified & WIFI_IWPRIV_CHANGE_BIT)
-							notify_rc("control_wifi_config_rt");
-						
-						if (rt_modified & WIFI_RADIO_CONTROL_BIT)
-							notify_rc("control_wifi_radio_rt");
-						
-						if (rt_modified & WIFI_GUEST_CONTROL_BIT)
-							notify_rc("control_wifi_guest_rt");
-						
-						if (rt_modified & WIFI_SCHED_CONTROL_BIT)
-							nvram_set_int_temp("reload_svc_rt", 1);
-					}
-					rt_modified = 0;
-				}
-				restart_needed_bits &= ~(u32)RESTART_WIFI;
-			}
-			
-			dbG("debug restart_needed_bits after: 0x%lx\n", restart_needed_bits);
-		}
+	int i;
+
+	if (!restart_needed_bits)
+		return 0;
+
+	if ((restart_needed_bits & EVM_RESTART_REBOOT) != 0) {
 		restart_needed_bits = 0;
+		if (nvram_get_int("nvram_manual") == 1)
+			nvram_commit();
+		sys_reboot();
+		return 0;
 	}
+
+	dbG("debug restart_needed_bits before: 0x%llx\n", restart_needed_bits);
+
+	i = 0;
+	while (events_desc[i].notify_cmd) {
+		if ((restart_needed_bits & events_desc[i].event_mask) != 0) {
+			restart_needed_bits &= ~events_desc[i].event_mask;
+			restart_needed_bits &= ~events_desc[i].event_unmask;
+			notify_rc(events_desc[i].notify_cmd);
+		}
+		i++;
+	}
+
+	if ((restart_needed_bits & EVM_RESTART_WIFI2) != 0) {
+		restart_needed_bits &= ~EVM_RESTART_WIFI2;
+		if (rt_modified) {
+			if (rt_modified & WIFI_COMMON_CHANGE_BIT)
+				notify_rc(RCN_RESTART_WIFI2);
+			else {
+				if (rt_modified & WIFI_IWPRIV_CHANGE_BIT)
+					notify_rc("control_wifi_config_rt");
+				
+				if (rt_modified & WIFI_RADIO_CONTROL_BIT)
+					notify_rc("control_wifi_radio_rt");
+				
+				if (rt_modified & WIFI_GUEST_CONTROL_BIT)
+					notify_rc("control_wifi_guest_rt");
+				
+				if (rt_modified & WIFI_SCHED_CONTROL_BIT)
+					nvram_set_int_temp("reload_svc_rt", 1);
+			}
+			rt_modified = 0;
+		}
+	}
+
+	if ((restart_needed_bits & EVM_RESTART_WIFI5) != 0) {
+		restart_needed_bits &= ~EVM_RESTART_WIFI5;
+		if (wl_modified) {
+#if BOARD_HAS_5G_RADIO
+			if (wl_modified & WIFI_COMMON_CHANGE_BIT)
+				notify_rc(RCN_RESTART_WIFI5);
+			else {
+				if (wl_modified & WIFI_IWPRIV_CHANGE_BIT)
+					notify_rc("control_wifi_config_wl");
+				
+				if (wl_modified & WIFI_RADIO_CONTROL_BIT)
+					notify_rc("control_wifi_radio_wl");
+				
+				if (wl_modified & WIFI_GUEST_CONTROL_BIT)
+					notify_rc("control_wifi_guest_wl");
+				
+				if (wl_modified & WIFI_SCHED_CONTROL_BIT)
+					nvram_set_int_temp("reload_svc_wl", 1);
+			}
+#endif
+			wl_modified = 0;
+		}
+	}
+
+	dbG("debug restart_needed_bits after: 0x%llx\n", restart_needed_bits);
+
+	restart_needed_bits = 0;
 
 	return 0;
 }
@@ -2404,6 +2224,11 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int found_app_smbd = 0;
 #endif
+#if defined(APP_SMBD) || defined(APP_NMBD)
+	int found_app_nmbd = 1;
+#else
+	int found_app_nmbd = 0;
+#endif
 #if defined(APP_FTPD)
 	int found_app_ftpd = 1;
 #else
@@ -2504,6 +2329,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function found_app_aria() { return %d;}\n"
 		"function found_app_nfsd() { return %d;}\n"
 		"function found_app_smbd() { return %d;}\n"
+		"function found_app_nmbd() { return %d;}\n"
 		"function found_app_ftpd() { return %d;}\n"
 		"function found_srv_u2ec() { return %d;}\n"
 		"function found_srv_lprd() { return %d;}\n"
@@ -2517,6 +2343,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		found_app_aria,
 		found_app_nfsd,
 		found_app_smbd,
+		found_app_nmbd,
 		found_app_ftpd,
 		found_srv_u2ec,
 		found_srv_lprd,
@@ -2702,7 +2529,6 @@ static int openvpn_cli_cert_hook(int eid, webs_t wp, int argc, char **argv)
 }
 
 static int ej_get_parameter(int eid, webs_t wp, int argc, char **argv) {
-	bool last_was_escaped;
 	int ret = 0;
 	
 	if (argc < 1) {
@@ -2711,8 +2537,6 @@ static int ej_get_parameter(int eid, webs_t wp, int argc, char **argv) {
 				"argument is required to specify the parameter name\n");
 		return -1;
 	}
-	
-	last_was_escaped = FALSE;
 	
 	char *value = websGetVar(wp, argv[0], "");
 	websWrite(wp, "%s", value);//*/
@@ -3211,7 +3035,7 @@ apply_cgi(webs_t wp, char *urlPrefix, char *webDir, int arg,
 	current_url = websGetVar(wp, "current_page", "");
 	next_url = websGetVar(wp, "next_page", "");
 	script = websGetVar(wp, "action_script","");
-	
+
 	if (!strcmp(value, " Refresh "))
 	{
 		syscmd = websGetVar(wp, "SystemCmd", "");

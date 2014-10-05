@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_1_3#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_1_3#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
@@ -18,7 +19,6 @@
 <script type="text/javascript" src="/help_wl.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script>
-
 var $j = jQuery.noConflict();
 
 var wds_aplist = [["", "", ""]];
@@ -92,7 +92,7 @@ function done_validating(action){
 
 function wds_scan(){
 	$j.ajax({
-		url: '/wds_aplist_5g.asp',
+		url: '/wds_aplist.asp',
 		dataType: 'script',
 		error: function(xhr){
 			setTimeout("wds_scan();", 1000);
@@ -175,7 +175,7 @@ function change_wdsapply(){
 	var m = document.form.wl_mode_x.value;
 	if (m == "2")
 	{
-		var e1 = (rcheck(document.form.wl_wdsapply_x) == "0") ? 0 : 1;
+		var e1 = document.form.wl_wdsapply_x[0].checked;
 		showhide_div("row_wds_2", e1);
 		showhide_div("row_wds_apc", e1);
 	}

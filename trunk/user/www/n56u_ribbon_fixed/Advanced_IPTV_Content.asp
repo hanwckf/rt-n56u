@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_2_4#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_2_4#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,79 +17,20 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#mr_enable_x_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#mr_enable_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#mr_enable_x_1").attr("checked", "checked");
-                $j("#mr_enable_x_0").removeAttr("checked");
-                on_click_mroute();
-            },
-            onClickOff: function(){
-                $j("#mr_enable_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#mr_enable_x_0").attr("checked", "checked");
-                $j("#mr_enable_x_1").removeAttr("checked");
-                on_click_mroute();
-            }
-        });
-        $j("#mr_enable_x_on_of label.itoggle").css("background-position", $j("input#mr_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+var $j = jQuery.noConflict();
 
-        $j('#ether_igmp_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#ether_igmp_fake").attr("checked", "checked").attr("value", 1);
-                $j("#ether_igmp_1").attr("checked", "checked");
-                $j("#ether_igmp_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#ether_igmp_fake").removeAttr("checked").attr("value", 0);
-                $j("#ether_igmp_0").attr("checked", "checked");
-                $j("#ether_igmp_1").removeAttr("checked");
-            }
-        });
-        $j("#ether_igmp_on_of label.itoggle").css("background-position", $j("input#ether_igmp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+$j(document).ready(function() {
+	init_itoggle('mr_enable_x', on_click_mroute);
+	init_itoggle('ether_igmp');
+	init_itoggle('rt_IgmpSnEnable');
+	init_itoggle('wl_IgmpSnEnable');
+});
 
-        $j('#rt_IgmpSnEnable_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#rt_IgmpSnEnable_fake").attr("checked", "checked").attr("value", 1);
-                $j("#rt_IgmpSnEnable_1").attr("checked", "checked");
-                $j("#rt_IgmpSnEnable_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#rt_IgmpSnEnable_fake").removeAttr("checked").attr("value", 0);
-                $j("#rt_IgmpSnEnable_0").attr("checked", "checked");
-                $j("#rt_IgmpSnEnable_1").removeAttr("checked");
-            }
-        });
-        $j("#rt_IgmpSnEnable_on_of label.itoggle").css("background-position", $j("input#rt_IgmpSnEnable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#wl_IgmpSnEnable_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#wl_IgmpSnEnable_fake").attr("checked", "checked").attr("value", 1);
-                $j("#wl_IgmpSnEnable_1").attr("checked", "checked");
-                $j("#wl_IgmpSnEnable_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#wl_IgmpSnEnable_fake").removeAttr("checked").attr("value", 0);
-                $j("#wl_IgmpSnEnable_0").attr("checked", "checked");
-                $j("#wl_IgmpSnEnable_1").removeAttr("checked");
-            }
-        });
-        $j("#wl_IgmpSnEnable_on_of label.itoggle").css("background-position", $j("input#wl_IgmpSnEnable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    })
 </script>
-
 <script>
 
 var lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';

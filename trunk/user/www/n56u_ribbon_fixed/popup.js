@@ -1,4 +1,3 @@
-﻿// JavaScript Document
 var winH,winW;
 
 <% get_flash_time(); %>

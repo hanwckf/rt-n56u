@@ -616,6 +616,9 @@ init_router(void)
 		start_logger(1);
 
 	start_dns_dhcpd(is_ap_mode);
+#if defined(APP_SMBD) || defined(APP_NMBD)
+	start_wins();
+#endif
 
 	if (!is_ap_mode) {
 		ipt_nat_default();
@@ -634,7 +637,7 @@ init_router(void)
 	system("/etc/storage/started_script.sh &");
 }
 
-void 
+void
 shutdown_router(int use_reboot)
 {
 	int is_ap_mode = get_ap_mode();
@@ -708,7 +711,7 @@ handle_notifications(void)
 		printf("rc notification: %s\n", entry->d_name);
 		
 		/* Take the appropriate action. */
-		if (!strcmp(entry->d_name, "restart_reboot"))
+		if (!strcmp(entry->d_name, RCN_RESTART_REBOOT))
 		{
 			stop_handle = 1;
 			sys_exit();
@@ -719,24 +722,24 @@ handle_notifications(void)
 			flash_firmware();
 		}
 #if defined (USE_IPV6)
-		else if (!strcmp(entry->d_name, "restart_ipv6"))
+		else if (!strcmp(entry->d_name, RCN_RESTART_IPV6))
 		{
 			if (!get_ap_mode()) {
 				full_restart_ipv6(nvram_ipv6_type);
 				nvram_ipv6_type = get_ipv6_type();
 			}
 		}
-		else if (strcmp(entry->d_name, "restart_radvd") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_RADVD) == 0)
 		{
 			restart_dhcpd();
 			restart_radvd();
 		}
 #endif
-		else if (!strcmp(entry->d_name, "restart_whole_wan"))
+		else if (!strcmp(entry->d_name, RCN_RESTART_WAN))
 		{
 			full_restart_wan();
 		}
-		else if (!strcmp(entry->d_name, "restart_whole_lan"))
+		else if (!strcmp(entry->d_name, RCN_RESTART_LAN))
 		{
 			full_restart_lan();
 		}
@@ -744,7 +747,7 @@ handle_notifications(void)
 		{
 			stop_wan();
 		}
-		else if (!strcmp(entry->d_name, "restart_iptv"))
+		else if (!strcmp(entry->d_name, RCN_RESTART_IPTV))
 		{
 			restart_iptv();
 			restart_firewall();
@@ -774,7 +777,7 @@ handle_notifications(void)
 			manual_ddns_hostname_check();
 		}
 #if (BOARD_NUM_USB_PORTS > 0)
-		else if (!strcmp(entry->d_name, "restart_modem"))
+		else if (!strcmp(entry->d_name, RCN_RESTART_MODEM))
 		{
 			int wan_stopped = 0;
 			int modules_reloaded = 0;
@@ -809,45 +812,31 @@ handle_notifications(void)
 			if (need_restart_wan)
 				full_restart_wan();
 		}
-		else if (strcmp(entry->d_name, "restart_spooler") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_SPOOLER) == 0)
 		{
 			restart_usb_printer_spoolers();
 		}
-		else if (strcmp(entry->d_name, "restart_hddtune") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_HDDTUNE) == 0)
 		{
 			system("/sbin/hddtune.sh");
+			set_pagecache_reclaim();
 		}
-		else if (strcmp(entry->d_name, "restart_cifs") == 0)
+#if defined(APP_FTPD)
+		else if (strcmp(entry->d_name, RCN_RESTART_FTPD) == 0)
 		{
-#if defined(APP_FTPD)
-			int is_run_before = is_ftp_run();
-#endif
-#if defined(APP_SMBD)
-			stop_samba();
-#endif
-#if defined(APP_FTPD)
-			stop_ftp();
-#endif
-			if (count_sddev_mountpoint()) {
-#if defined(APP_SMBD)
-				run_samba();
-#endif
-#if defined(APP_FTPD)
-				run_ftp();
-				control_ftp_fw(is_run_before);
-#endif
-			}
+			restart_ftpd();
 		}
+#endif
+#if defined(APP_SMBD)
+		else if (strcmp(entry->d_name, RCN_RESTART_SMBD) == 0)
+		{
+			restart_smbd();
+		}
+#endif
 #if defined(APP_NFSD)
-		else if (strcmp(entry->d_name, "restart_nfs") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_NFSD) == 0)
 		{
-			stop_nfsd();
-			if (nvram_match("nfsd_enable", "1") && count_sddev_mountpoint()) {
-				sleep(1);
-				run_nfsd();
-			} else {
-				unload_nfsd();
-			}
+			restart_nfsd();
 		}
 #endif
 #if defined(APP_MINIDLNA)
@@ -855,25 +844,25 @@ handle_notifications(void)
 		{
 			restart_dms(1);
 		}
-		else if (strcmp(entry->d_name, "restart_dms") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_DMS) == 0)
 		{
 			restart_dms(0);
 		}
 #endif
 #if defined(APP_FIREFLY)
-		else if (strcmp(entry->d_name, "restart_itunes") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_ITUNES) == 0)
 		{
 			restart_itunes();
 		}
 #endif
 #if defined(APP_TRMD)
-		else if (strcmp(entry->d_name, "restart_torrent") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_TRMD) == 0)
 		{
 			restart_torrent();
 		}
 #endif
 #if defined(APP_ARIA)
-		else if (strcmp(entry->d_name, "restart_aria") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_ARIA) == 0)
 		{
 			restart_aria();
 		}
@@ -913,15 +902,42 @@ handle_notifications(void)
 			alarm(5);
 		}
 #endif
-		else if (strcmp(entry->d_name, "restart_term") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_HTTPD) == 0)
 		{
-			restart_term();
+			restart_httpd();
 		}
-		else if (strcmp(entry->d_name, "restart_vpn_server") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_TELNETD) == 0)
+		{
+			stop_telnetd();
+			start_telnetd();
+		}
+#if defined(APP_SSHD)
+		else if (strcmp(entry->d_name, RCN_RESTART_SSHD) == 0)
+		{
+			restart_sshd();
+		}
+#endif
+#if defined(APP_SMBD) || defined(APP_NMBD)
+		else if (strcmp(entry->d_name, RCN_RESTART_WINS) == 0)
+		{
+			restart_wins();
+			restart_dhcpd();
+			reload_vpn_server();
+		}
+#endif
+		else if (strcmp(entry->d_name, RCN_RESTART_LLTD) == 0)
+		{
+			restart_lltd();
+		}
+		else if (strcmp(entry->d_name, RCN_RESTART_ADSC) == 0)
+		{
+			restart_infosvr();
+		}
+		else if (strcmp(entry->d_name, RCN_RESTART_VPNSVR) == 0)
 		{
 			restart_vpn_server();
 		}
-		else if (strcmp(entry->d_name, "restart_vpn_client") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_VPNCLI) == 0)
 		{
 			restart_vpn_client();
 		}
@@ -933,72 +949,65 @@ handle_notifications(void)
 		{
 			stop_vpn_client();
 		}
-		else if (strcmp(entry->d_name, "restart_ddns") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_DDNS) == 0)
 		{
 			stop_ddns();
 			start_ddns(1);
 		}
-		else if (strcmp(entry->d_name, "restart_httpd") == 0)
-		{
-			restart_httpd();
-		}
-		else if (strcmp(entry->d_name, "restart_di") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_DI) == 0)
 		{
 			if (get_ap_mode() || has_wan_ip4(0))
 				notify_run_detect_internet(2);
 		}
-		else if (strcmp(entry->d_name, "restart_dhcpd") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_DHCPD) == 0)
 		{
 			if (get_ap_mode())
 				update_hosts_ap();
 			restart_dhcpd();
 		}
-		else if (strcmp(entry->d_name, "restart_upnp") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_UPNP) == 0)
 		{
-			int is_run_before = is_upnp_run();
-			
-			stop_upnp();
-			start_upnp();
-			
-			if (is_upnp_run() != is_run_before)
-				restart_firewall();
+			restart_upnp();
 		}
-		else if (strcmp(entry->d_name, "restart_switch_config") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_SWITCH_CFG) == 0)
 		{
 			config_bridge();
 			switch_config_base();
 			switch_config_storm();
 			switch_config_link();
 		}
-		else if (strcmp(entry->d_name, "restart_switch_vlan") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_SWITCH_VLAN) == 0)
 		{
 			notify_reset_detect_link();
 			switch_config_vlan(0);
 		}
-		else if (strcmp(entry->d_name, "restart_syslog") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_SYSLOG) == 0)
 		{
 			stop_logger();
 			start_logger(0);
 		}
-		else if (strcmp(entry->d_name, "restart_tweaks") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_WDG) == 0)
 		{
 			restart_watchdog_cpu();
+		}
+		else if (strcmp(entry->d_name, RCN_RESTART_TWEAKS) == 0)
+		{
 			notify_leds_detect_link();
 		}
 		else if (strcmp(entry->d_name, "restart_firewall_wan") == 0)
 		{
 			restart_firewall();
 		}
-		else if (strcmp(entry->d_name, "restart_firewall") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_FIREWALL) == 0)
 		{
 			reload_nat_modules();
 			restart_firewall();
 		}
-		else if (strcmp(entry->d_name, "restart_ntpc") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_NTPC) == 0)
 		{
 			notify_watchdog_time();
 		}
-		else if (strcmp(entry->d_name, "restart_time") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_TIME) == 0)
 		{
 			stop_logger();
 			set_timezone();
@@ -1006,7 +1015,7 @@ handle_notifications(void)
 			notify_rstats_time();
 			start_logger(0);
 		}
-		else if (strcmp(entry->d_name, "restart_sysctl") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_SYSCTL) == 0)
 		{
 			int nf_nat_type = nvram_get_int("nf_nat_type");
 			
@@ -1019,14 +1028,14 @@ handle_notifications(void)
 				flush_conntrack_table(NULL);
 			}
 		}
-		else if (!strcmp(entry->d_name, "restart_wifi_wl"))
+		else if (!strcmp(entry->d_name, RCN_RESTART_WIFI5))
 		{
 			int radio_on = get_enabled_radio_wl();
 			if (radio_on)
 				radio_on = is_radio_allowed_wl();
 			restart_wifi_wl(radio_on, 1);
 		}
-		else if (!strcmp(entry->d_name, "restart_wifi_rt"))
+		else if (!strcmp(entry->d_name, RCN_RESTART_WIFI2))
 		{
 			int radio_on = get_enabled_radio_rt();
 			if (radio_on)
@@ -1243,24 +1252,22 @@ main(int argc, char **argv)
 	}
 	else if (!strcmp(base, "run_ftpsamba")) {
 #if defined(APP_SMBD)
-		stop_samba();
-		run_samba();
+		restart_smbd();
 #else
 		;
 #endif
 #if defined(APP_FTPD)
-		restart_ftp();
+		restart_ftpd();
 #endif
 	}
 #if defined(APP_SMBD)
 	else if (!strcmp(base, "run_samba")) {
-		stop_samba();
-		run_samba();
+		restart_smbd();
 	}
 #endif
 #if defined(APP_FTPD)
 	else if (!strcmp(base, "run_ftp")) {
-		restart_ftp();
+		restart_ftpd();
 	}
 #endif
 #if defined(APP_NFSD)
@@ -1295,7 +1302,7 @@ main(int argc, char **argv)
 #endif
 #if defined(APP_SMBD)
 	else if (!strcmp(base, "stop_samba")) {
-		stop_samba();
+		stop_samba(0);
 	}
 #endif
 	else if (!strcmp(base, "stop_ftpsamba")) {
@@ -1303,7 +1310,7 @@ main(int argc, char **argv)
 		stop_ftp();
 #endif
 #if defined(APP_SMBD)
-		stop_samba();
+		stop_samba(0);
 #else
 		;
 #endif
@@ -1347,9 +1354,6 @@ main(int argc, char **argv)
 	}
 	else if (!strcmp(base, "restart_networkmap")) {
 		restart_networkmap();
-	}
-	else if (!strcmp(base, "start_telnetd")) {
-		start_telnetd();
 	}
 	else if (!strcmp(base, "run_telnetd")) {
 		run_telnetd();

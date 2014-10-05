@@ -82,6 +82,8 @@
 
 #define NTPC_DONE_SCRIPT		"/sbin/ntpc_updated"
 
+#define SAMBA_CONF			"/etc/smb.conf"
+
 #define SR_PREFIX_LAN			"LAN"
 #define SR_PREFIX_MAN			"MAN"
 #define SR_PREFIX_WAN			"WAN"
@@ -337,6 +339,7 @@ void ip6t_filter_default(void);
 int start_vpn_server(void);
 void stop_vpn_server(void);
 void restart_vpn_server(void);
+void reload_vpn_server(void);
 void vpns_route_to_remote_lan(const char *cname, char *ifname, char *gw, int add);
 int ipup_vpns_main(int argc, char **argv);
 int ipdown_vpns_main(int argc, char **argv);
@@ -421,8 +424,9 @@ void stop_syslogd();
 void stop_klogd();
 int start_syslogd();
 int start_klogd();
-void start_infosvr(void);
+int start_infosvr(void);
 void stop_infosvr(void);
+void restart_infosvr(void);
 int start_networkmap(int first_call);
 void stop_networkmap(void);
 void restart_networkmap(void);
@@ -433,15 +437,17 @@ void start_telnetd(void);
 int is_sshd_run(void);
 void stop_sshd(void);
 void start_sshd(void);
+void restart_sshd(void);
 #endif
-void restart_term(void);
 void start_httpd(int restart_fw);
 void stop_httpd(void);
 void restart_httpd(void);
 int start_lltd(void);
 void stop_lltd(void);
+void restart_lltd(void);
 void stop_rstats(void);
-void start_rstats(void);
+int start_rstats(void);
+void restart_rstats(void);
 int start_logger(int showinfo);
 void stop_logger(void);
 void start_watchdog_cpu(void);
@@ -453,13 +459,22 @@ void stop_misc(void);
 
 /* services_ex.c */
 int is_dns_dhcpd_run(void);
+int is_dhcpd_enabled(int is_ap_mode);
 int start_dns_dhcpd(int is_ap_mode);
 void stop_dns_dhcpd(void);
+#if defined(APP_SMBD) || defined(APP_NMBD)
+FILE *write_smb_conf_header(void);
+void stop_wins(void);
+void start_wins(void);
+void reload_wins(void);
+void restart_wins(void);
+#endif
 int is_upnp_run(void);
 int start_upnp(void);
 void stop_upnp(void);
 void check_upnp_wanif_changed(char *wan_ifname);
 void update_upnp(void);
+void restart_upnp(void);
 int ddns_updated_main(int argc, char *argv[]);
 int notify_ddns_update(void);
 int start_ddns(int clear_cache);
@@ -481,20 +496,23 @@ void stop_lpd(void);
 void start_p910nd(char *devlp);
 void stop_p910nd(void);
 #if defined(APP_SMBD)
-void stop_samba(void);
+int write_smb_conf(void);
+void stop_samba(int force_stop);
 void run_samba(void);
+void restart_smbd(void);
 #endif
 #if defined(APP_FTPD)
 int is_ftp_run(void);
 void stop_ftp(void);
 void run_ftp(void);
 void control_ftp_fw(int is_run_before);
-void restart_ftp(void);
+void restart_ftpd(void);
 #endif
 #if defined(APP_NFSD)
 void unload_nfsd(void);
 void stop_nfsd(void);
 void run_nfsd(void);
+void restart_nfsd(void);
 #endif
 #if defined(APP_MINIDLNA)
 int is_dms_run(void);

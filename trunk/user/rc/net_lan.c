@@ -669,6 +669,10 @@ full_restart_lan(void)
 		run_nfsd();
 #endif
 
+#if defined(APP_SMBD) || defined(APP_NMBD)
+	reload_wins();
+#endif
+
 	/* start ARP network scanner */
 	start_networkmap(1);
 
@@ -806,13 +810,12 @@ update_lan_status(int is_auto)
 		nvram_set_temp("lan_domain_t", nvram_safe_get("lan_domain"));
 		
 		if (!get_ap_mode()) {
-			if (nvram_match("dhcp_enable_x", "1")) {
+			if (is_dhcpd_enabled(0)) {
 				if (nvram_invmatch("dhcp_gateway_x", ""))
 					nvram_set_temp("lan_gateway_t", nvram_safe_get("dhcp_gateway_x"));
 				else
 					nvram_set_temp("lan_gateway_t", nvram_safe_get("lan_ipaddr"));
-			}
-			else
+			} else
 				nvram_set_temp("lan_gateway_t", nvram_safe_get("lan_ipaddr"));
 		}
 		else

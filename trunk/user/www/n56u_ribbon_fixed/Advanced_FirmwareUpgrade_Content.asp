@@ -1,12 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_6_3#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_6_3#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
@@ -18,10 +19,9 @@
 <script>
 var $j = jQuery.noConflict();
 
-
 function initial(){
 	show_banner(1);
-	show_menu(5,7,3);
+	show_menu(5,7,4);
 	show_footer();
 	disableCheckChangedStatus();
 }
@@ -44,9 +44,9 @@ $j.fn.fileName = function() {
 	newVal = valArray[valArray.length-1],
 	$button = $this.siblings('.button');
 	if(newVal !== '') {
-	    newVal = newVal.substring(0,26);
+		newVal = newVal.substring(0,26);
 		$button.text(newVal);
-  	}
+ 	}
 };
 
 </script>

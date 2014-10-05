@@ -357,11 +357,10 @@ menu5_5_3=MAC-filter
 menu5_5_4=LAN till WAN-filter
 menu5_5_5=Netfilter
 menu5_6_1=Driftläge
-menu5_6_1_title=Driftläge
 menu5_6_2=System
 menu5_6_3=Uppgradering av fast programvara
 menu5_6_4=Återställnings-/spar-/uppladdningsinställningar
-menu5_6_5=Console
+menu5_6_6=Console
 menu5_7_1=Systemstatus
 menu5_7_2=Allmän logg
 menu5_7_3=DHCP-lån
@@ -617,7 +616,7 @@ ALERT_OF_ERROR_System2=Systemfel: Kan inte läsa data på disken!
 ALERT_OF_ERROR_System3=Systemfel: Disken är upptagen!
 [QIS wizard]
 [QIS_detect.js]
-Web_Title=ZVMODELVZ
+Web_Title=ASUS Wireless Router
 QKSet_detect_sanglass=automatisk identifiering
 QKSet_detect_desc1=Identifiera anslutningstyp
 QKSet_detect_desc2=Återidentifiering av anslutningsstatus
@@ -758,7 +757,6 @@ BOP_isp_desc=Värdnamn givet av ISP:n:
 OP_desc1=ZVMODELVZ stöder tre driftlägen för att möta olika krav. Välj det läge som motsvarar din situation.
 PASS_new=Nytt lösenord:
 PASS_retype=Ange lösenordet igen:
-PASS_changepasswd=Ändra systemlösenordet
 FW_desc1=Följ nedanstående instruktioner:
 FW_desc2=Kontrollera om det finns en ny version av den fasta programvaran på <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS webbplats</a>.
 FW_desc3=Ladda ner lämplig version till din lokala maskin.

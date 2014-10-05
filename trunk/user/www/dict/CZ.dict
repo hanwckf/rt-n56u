@@ -359,11 +359,10 @@ menu5_5_3=MAC Filtr
 menu5_5_4=Filtr LAN do WAN
 menu5_5_5=Netfilter
 menu5_6_1=Režim provozu
-menu5_6_1_title=Režim provozu
 menu5_6_2=Systém
 menu5_6_3=Aktualizace Firmwaru
 menu5_6_4=Obnovit/Uložit/Nahrát nastavení
-menu5_6_5=Console
+menu5_6_6=Console
 menu5_7_1=Stav systému
 menu5_7_2=Obecný záznam
 menu5_7_3=Přidělené DHCP adresy
@@ -619,7 +618,7 @@ ALERT_OF_ERROR_System2=Systémová chyba: nemohu číst data z disku!
 ALERT_OF_ERROR_System3=Systémová chyba: Disk je zaneprázdněn!
 [QIS wizard]
 [QIS_detect.js]
-Web_Title=ZVMODELVZ
+Web_Title=ASUS Wireless Router
 QKSet_detect_sanglass=Automatická detekce
 QKSet_detect_desc1=Zjišťuje se stav vašeho připojení
 QKSet_detect_desc2=Zjišťuje se stav vašeho připojení
@@ -760,7 +759,6 @@ BOP_isp_desc=Jméno hostitele poskytnuté vašim ISP:
 OP_desc1=ZVMODELVZ podporuje 3 režimy provozu pro různé požadavky. Prosím vyberte nejvhodnější režim pro svou situaci.
 PASS_new=Nové heslo:
 PASS_retype=Zadejte nové heslo znovu:
-PASS_changepasswd=Změnit heslo systému
 FW_desc1=Postupujte podle pokynů uvedených dále:
 FW_desc2=Zkontrolujte, zda není dostupná novější verze firmwaru na <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS Support site</a>
 FW_desc3=Stáhněte správnou verzi do svého počítače.

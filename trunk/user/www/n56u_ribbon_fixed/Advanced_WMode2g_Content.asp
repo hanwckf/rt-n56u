@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_1_3#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_1_3#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
+
 <style>
 .table th, .table td{vertical-align: middle;}
 .table input, .table select {margin-bottom: 0px;}
@@ -16,14 +18,12 @@
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
-
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/wireless_2g.js"></script>
 <script type="text/javascript" src="/help_wl.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script>
-
 var $j = jQuery.noConflict();
 
 var wds_aplist = [["", "", ""]];
@@ -177,7 +177,7 @@ function change_wdsapply(){
 	var m = document.form.rt_mode_x.value;
 	if (m == "2") // [AP & WDS]
 	{
-		var e1 = (rcheck(document.form.rt_wdsapply_x) == "0") ? 0 : 1;
+		var e1 = document.form.rt_wdsapply_x[0].checked;
 		showhide_div("row_wds_2", e1);
 		showhide_div("row_wds_apc", e1);
 	}

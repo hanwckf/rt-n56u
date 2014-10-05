@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_5_2#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_5_2#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,60 +17,27 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-
 <script>
-    var $j = jQuery.noConflict();
+var $j = jQuery.noConflict();
 
-    $j(document).ready(function() {
-        $j('#url_enable_x_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#url_enable_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#url_enable_x_11").attr("checked", "checked");
-                $j("#url_enable_x_00").removeAttr("checked");
-                enable_url();
-            },
-            onClickOff: function(){
-                $j("#url_enable_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#url_enable_x_00").attr("checked", "checked");
-                $j("#url_enable_x_11").removeAttr("checked");
-                enable_url();
-            }
-        });
-        $j("#url_enable_x_on_of label.itoggle").css("background-position", $j("input#url_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+$j(document).ready(function() {
+	init_itoggle('url_enable1', change_url_enable1);
+	init_itoggle('url_enable2', change_url_enable2);
+});
 
-        $j('#url_enable_x_1_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#url_enable_x_1_fake").attr("checked", "checked").attr("value", 1);
-                $j("#url_enable_x_1_1").attr("checked", "checked");
-                $j("#url_enable_x_1_0").removeAttr("checked");
-                enable_url_1();
-            },
-            onClickOff: function(){
-                $j("#url_enable_x_1_fake").removeAttr("checked").attr("value", 0);
-                $j("#url_enable_x_1_0").attr("checked", "checked");
-                $j("#url_enable_x_1_1").removeAttr("checked");
-                enable_url_1();
-            }
-        });
-        $j("#url_enable_x_1_on_of label.itoggle").css("background-position", $j("input#url_enable_x_1_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
 </script>
-
 <script>
 
 function initial(){
 	show_banner(1);
 	show_menu(5,5,3);
 	show_footer();
-	
-	enable_url();
-	enable_url_1();
+
+	change_url_enable1();
+	change_url_enable2();
 	load_body();
 }
 
@@ -173,20 +141,14 @@ function validForm(){
 	return true;
 }
 
-function enable_url(){
-	if(document.form.url_enable_x[1].checked == 1)
-		$("url_time").style.display = "none";
-	else
-		$("url_time").style.display = "";
-	return change_common_radio(this, 'FirewallConfig', 'url_enable_x', '1')
+function change_url_enable1(){
+	var v = document.form.url_enable_x[0].checked;
+	showhide_div('row_url_time1', v);
 }
 
-function enable_url_1(){
-	if(document.form.url_enable_x_1[1].checked == 1)
-		$("url_time_1").style.display = "none";
-	else
-		$("url_time_1").style.display = "";
-	return change_common_radio(this, 'FirewallConfig', 'url_enable_x_1', '1')
+function change_url_enable2(){
+	var v = document.form.url_enable_x_1[0].checked;
+	showhide_div('row_url_time2', v);
 }
 
 function done_validating(action){
@@ -268,18 +230,17 @@ function done_validating(action){
                                             <th width="50%"><#FirewallConfig_UrlFilterEnable_itemname#> 1?</th>
                                             <td>
                                                 <div class="main_itoggle">
-                                                    <div id="url_enable_x_on_of">
-                                                        <input type="checkbox" id="url_enable_x_fake" <% nvram_match_x("", "url_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "url_enable_x", "0", "value=0"); %>>
+                                                    <div id="url_enable1_on_of">
+                                                        <input type="checkbox" id="url_enable1_fake" <% nvram_match_x("", "url_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "url_enable_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="url_enable_x" id="url_enable_x_11" onClick="enable_url();" <% nvram_match_x("","url_enable_x", "1", "checked"); %>><#CTL_Enabled#>
-                                                    <input type="radio" value="0" name="url_enable_x" id="url_enable_x_00" onClick="enable_url();" <% nvram_match_x("","url_enable_x", "0", "checked"); %>><#CTL_Disabled#>
+                                                    <input type="radio" value="1" name="url_enable_x" id="url_enable1_1" onClick="change_url_enable1();" <% nvram_match_x("","url_enable_x", "1", "checked"); %>><#CTL_Enabled#>
+                                                    <input type="radio" value="0" name="url_enable_x" id="url_enable1_0" onClick="change_url_enable1();" <% nvram_match_x("","url_enable_x", "0", "checked"); %>><#CTL_Disabled#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="url_time">
+                                        <tr id="row_url_time1" style="display:none">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,9,2);"><#FirewallConfig_URLActiveTime_itemname#> 1:</a></th>
                                             <td>
                                                 <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_starthour" onKeyPress="return is_number(this)">:
@@ -292,18 +253,17 @@ function done_validating(action){
                                             <th><#FirewallConfig_UrlFilterEnable_itemname#> 2?</th>
                                             <td>
                                                 <div class="main_itoggle">
-                                                    <div id="url_enable_x_1_on_of">
-                                                        <input type="checkbox" id="url_enable_x_1_fake" <% nvram_match_x("", "url_enable_x_1", "1", "value=1 checked"); %><% nvram_match_x("", "url_enable_x_1", "0", "value=0"); %>>
+                                                    <div id="url_enable2_on_of">
+                                                        <input type="checkbox" id="url_enable2_fake" <% nvram_match_x("", "url_enable_x_1", "1", "value=1 checked"); %><% nvram_match_x("", "url_enable_x_1", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="url_enable_x_1" id="url_enable_x_1_1" onClick="enable_url_1();" <% nvram_match_x("","url_enable_x_1", "1", "checked"); %>><#CTL_Enabled#>
-                                                    <input type="radio" value="0" name="url_enable_x_1" id="url_enable_x_1_0" onClick="enable_url_1();" <% nvram_match_x("","url_enable_x_1", "0", "checked"); %>><#CTL_Disabled#>
+                                                    <input type="radio" value="1" name="url_enable_x_1" id="url_enable2_1" onClick="change_url_enable2();" <% nvram_match_x("","url_enable_x_1", "1", "checked"); %>><#CTL_Enabled#>
+                                                    <input type="radio" value="0" name="url_enable_x_1" id="url_enable2_0" onClick="change_url_enable2();" <% nvram_match_x("","url_enable_x_1", "0", "checked"); %>><#CTL_Disabled#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="url_time_1">
+                                        <tr id="row_url_time2" style="display:none">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,9,2);"><#FirewallConfig_URLActiveTime_itemname#> 2:</a></th>
                                             <td>
                                                 <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_starthour_1" onKeyPress="return is_number(this)">:
@@ -312,7 +272,6 @@ function done_validating(action){
                                                 <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_endmin_1" onKeyPress="return is_number(this)">
                                             </td>
                                         </tr>
-
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,9,1);"><#FirewallConfig_URLActiveDate_itemname#></a></th>
                                             <td>

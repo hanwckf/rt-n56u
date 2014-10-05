@@ -1,4 +1,4 @@
-﻿var wep1, wep2, wep3, wep4;
+var wep1, wep2, wep3, wep4;
 
 function automode_hint() {
     var gmode = document.form.rt_gmode.value;

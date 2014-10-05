@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_10_1#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_10_1#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,30 +17,16 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
+var $j = jQuery.noConflict();
 
-        $j('#front_led_all_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#front_led_all_fake").attr("checked", "checked").attr("value", 1);
-                $j("#front_led_all_1").attr("checked", "checked");
-                $j("#front_led_all_0").removeAttr("checked");
-                change_led_all();
-            },
-            onClickOff: function(){
-                $j("#front_led_all_fake").removeAttr("checked").attr("value", 0);
-                $j("#front_led_all_0").attr("checked", "checked");
-                $j("#front_led_all_1").removeAttr("checked");
-                change_led_all();
-            }
-        });
-        $j("#front_led_all_on_of label.itoggle").css("background-position", $j("input#front_led_all_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    })
+$j(document).ready(function() {
+	init_itoggle('front_led_all', change_led_all);
+});
+
 </script>
 <script>
 
@@ -131,11 +118,11 @@ function change_ez_short(ez_short){
 }
 
 function change_led_all(){
-	var led_all = (document.form.front_led_all[0].checked) ? 1 : 0;
-	showhide_div("row_led_wan", led_all & support_led_wan());
-	showhide_div("row_led_lan", led_all & support_led_lan());
-	showhide_div("row_led_usb", led_all & support_led_usb());
-	showhide_div("row_led_wif", led_all & support_led_wif());
+	var led_all = document.form.front_led_all[0].checked;
+	showhide_div("row_led_wan", led_all && support_led_wan());
+	showhide_div("row_led_lan", led_all && support_led_lan());
+	showhide_div("row_led_usb", led_all && support_led_usb());
+	showhide_div("row_led_wif", led_all && support_led_wif());
 }
 
 </script>

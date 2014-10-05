@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_5_4#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_5_4#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,59 +17,27 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#fw_lw_enable_x_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#fw_lw_enable_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#fw_lw_enable_x_11").attr("checked", "checked");
-                $j("#fw_lw_enable_x_00").removeAttr("checked");
-                enable_lw();
-            },
-            onClickOff: function(){
-                $j("#fw_lw_enable_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#fw_lw_enable_x_00").attr("checked", "checked");
-                $j("#fw_lw_enable_x_11").removeAttr("checked");
-                enable_lw();
-            }
-        });
-        $j("#fw_lw_enable_x_on_of label.itoggle").css("background-position", $j("input#fw_lw_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+var $j = jQuery.noConflict();
 
-        $j('#fw_lw_enable_x_1_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#fw_lw_enable_x_1_fake").attr("checked", "checked").attr("value", 1);
-                $j("#fw_lw_enable_x_1_1").attr("checked", "checked");
-                $j("#fw_lw_enable_x_1_0").removeAttr("checked");
-                enable_lw_1();
-            },
-            onClickOff: function(){
-                $j("#fw_lw_enable_x_1_fake").removeAttr("checked").attr("value", 0);
-                $j("#fw_lw_enable_x_1_0").attr("checked", "checked");
-                $j("#fw_lw_enable_x_1_1").removeAttr("checked");
-                enable_lw_1();
-            }
-        });
-        $j("#fw_lw_enable_x_1_on_of label.itoggle").css("background-position", $j("input#fw_lw_enable_x_1_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
+$j(document).ready(function() {
+	init_itoggle('fw_lw_enable1', change_lw_enable1);
+	init_itoggle('fw_lw_enable2', change_lw_enable2);
+});
+
 </script>
-
 <script>
 
 function initial(){
 	show_banner(1);
 	show_menu(5,5,5);
 	show_footer();
-	
-	enable_lw();
-	enable_lw_1();
+
+	change_lw_enable1();
+	change_lw_enable2();
 	load_body();
 }
 
@@ -89,8 +58,6 @@ function applyRule(){
 var LWFilterList = [<% get_nvram_list("FirewallConfig", "LWFilterList"); %>];
 
 function validForm(){
-	
-	
 	if((document.form.fw_lw_enable_x[0].checked ==true || document.form.fw_lw_enable_x_1[0].checked ==true ) 
 		&& (document.form.filter_lw_date_x_Sun.checked ==false)
 		&& (document.form.filter_lw_date_x_Mon.checked ==false)
@@ -103,7 +70,7 @@ function validForm(){
 			document.form.fw_lw_enable_x[0].checked=false;
 			document.form.fw_lw_enable_x[1].checked=true;
 			return false;
-	}	
+	}
 	
 if(document.form.fw_lw_enable_x[0].checked == 1){
 	if(!validate_timerange(document.form.filter_lw_time_x_starthour, 0)
@@ -169,11 +136,9 @@ if(document.form.fw_lw_enable_x[0].checked == 1 && document.form.fw_lw_enable_x_
 	}
 }
 
-	
 	if(!validate_portlist(document.form.filter_lw_icmp_x, 'filter_lw_icmp_x'))
 		return false;
 
-	
 	return true;
 }
 
@@ -196,20 +161,14 @@ function change_wizard(o, id){
 	}
 }
 
-function enable_lw(){
-	if(document.form.fw_lw_enable_x[1].checked == 1)
-		$("lw_time").style.display = "none";
-	else 
-		$("lw_time").style.display = "";
-	return change_common_radio(this, 'FirewallConfig', 'lw_enable_x', '1')
+function change_lw_enable1(){
+	var v = document.form.fw_lw_enable_x[0].checked;
+	showhide_div('row_lw_time1', v);
 }
 
-function enable_lw_1(){
-	if(document.form.fw_lw_enable_x_1[1].checked == 1)
-		$("lw_time_1").style.display = "none";
-	else 
-		$("lw_time_1").style.display = "";
-	return change_common_radio(this, 'FirewallConfig', 'lw_enable_x_1', '1')
+function change_lw_enable2(){
+	var v = document.form.fw_lw_enable_x_1[0].checked;
+	showhide_div('row_lw_time2', v);
 }
 
 function valid_subnet(){
@@ -303,10 +262,10 @@ function valid_IP_form(obj){
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
 
-    <input type="hidden" name="filter_lw_date_x" value="<% nvram_get_x("FirewallConfig","filter_lw_date_x"); %>">
-    <input type="hidden" name="filter_lw_time_x" value="<% nvram_get_x("FirewallConfig","filter_lw_time_x"); %>">
-    <input type="hidden" name="filter_lw_time_x_1" value="<% nvram_get_x("FirewallConfig","filter_lw_time_x_1"); %>">
-    <input type="hidden" name="filter_lw_num_x_0" value="<% nvram_get_x("FirewallConfig", "filter_lw_num_x"); %>" readonly="1">
+    <input type="hidden" name="filter_lw_date_x" value="<% nvram_get_x("","filter_lw_date_x"); %>">
+    <input type="hidden" name="filter_lw_time_x" value="<% nvram_get_x("","filter_lw_time_x"); %>">
+    <input type="hidden" name="filter_lw_time_x_1" value="<% nvram_get_x("","filter_lw_time_x_1"); %>">
+    <input type="hidden" name="filter_lw_num_x_0" value="<% nvram_get_x("", "filter_lw_num_x"); %>" readonly="1">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -351,18 +310,17 @@ function valid_IP_form(obj){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,10,5);"><#FirewallConfig_LanWanFirewallEnable_itemname#> 1?</a></th>
                                             <td>
                                                 <div class="main_itoggle">
-                                                    <div id="fw_lw_enable_x_on_of">
-                                                        <input type="checkbox" id="fw_lw_enable_x_fake" <% nvram_match_x("FirewallConfig", "fw_lw_enable_x", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "fw_lw_enable_x", "0", "value=0"); %>>
+                                                    <div id="fw_lw_enable1_on_of">
+                                                        <input type="checkbox" id="fw_lw_enable1_fake" <% nvram_match_x("", "fw_lw_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "fw_lw_enable_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="fw_lw_enable_x" id="fw_lw_enable_x_11" onClick="enable_lw();" <% nvram_match_x("FirewallConfig","fw_lw_enable_x", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="fw_lw_enable_x" id="fw_lw_enable_x_00" onClick="enable_lw();" <% nvram_match_x("FirewallConfig","fw_lw_enable_x", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="fw_lw_enable_x" id="fw_lw_enable1_1" onClick="change_lw_enable1();" <% nvram_match_x("","fw_lw_enable_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="fw_lw_enable_x" id="fw_lw_enable1_0" onClick="change_lw_enable1();" <% nvram_match_x("","fw_lw_enable_x", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="lw_time">
+                                        <tr id="row_lw_time1" style="display:none">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,10,2);"><#FirewallConfig_LanWanActiveTime_itemname#> 1:</a></th>
                                             <td>
                                                 <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="filter_lw_time_x_starthour" onKeyPress="return is_number(this)">:
@@ -375,18 +333,17 @@ function valid_IP_form(obj){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,10,5);"><#FirewallConfig_LanWanFirewallEnable_itemname#> 2?</a></th>
                                             <td>
                                                 <div class="main_itoggle">
-                                                    <div id="fw_lw_enable_x_1_on_of">
-                                                        <input type="checkbox" id="fw_lw_enable_x_1_fake" <% nvram_match_x("FirewallConfig", "fw_lw_enable_x_1", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "fw_lw_enable_x_1", "0", "value=0"); %>>
+                                                    <div id="fw_lw_enable2_on_of">
+                                                        <input type="checkbox" id="fw_lw_enable2_fake" <% nvram_match_x("", "fw_lw_enable_x_1", "1", "value=1 checked"); %><% nvram_match_x("", "fw_lw_enable_x_1", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="fw_lw_enable_x_1" id="fw_lw_enable_x_1_1" onClick="enable_lw_1();" <% nvram_match_x("FirewallConfig","fw_lw_enable_x_1", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="fw_lw_enable_x_1" id="fw_lw_enable_x_1_0" onClick="enable_lw_1();" <% nvram_match_x("FirewallConfig","fw_lw_enable_x_1", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="fw_lw_enable_x_1" id="fw_lw_enable2_1" onClick="change_lw_enable2();" <% nvram_match_x("","fw_lw_enable_x_1", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="fw_lw_enable_x_1" id="fw_lw_enable2_0" onClick="change_lw_enable2();" <% nvram_match_x("","fw_lw_enable_x_1", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="lw_time_1">
+                                        <tr id="row_lw_time2" style="display:none">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,10,2);"><#FirewallConfig_LanWanActiveTime_itemname#> 2:</a></th>
                                             <td>
                                                 <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="filter_lw_time_x_1_starthour" onKeyPress="return is_number(this)">:

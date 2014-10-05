@@ -358,12 +358,11 @@ menu5_5_2=Filtre URL
 menu5_5_3=Filtre MAC
 menu5_5_4=Filtre Réseau local (LAN) / Réseau étendu (WAN)
 menu5_5_5=Netfilter
-menu5_6_1=Mode de <br/>fonctionnement
-menu5_6_1_title=Mode de fonctionnement
+menu5_6_1=Mode de fonctionnement
 menu5_6_2=Système
 menu5_6_3=Mise à jour du firmware
 menu5_6_4=Restaurer / Sauvegarder / garder des paramètres
-menu5_6_5=Console
+menu5_6_6=Console
 menu5_7_1=Etat du système
 menu5_7_2=Historique Général
 menu5_7_3=Crédits DHCP
@@ -619,7 +618,7 @@ ALERT_OF_ERROR_System2=Erreur système: Impossible de lire les données du disqu
 ALERT_OF_ERROR_System3=Erreur système: Le disque est occupé!
 [QIS wizard]		
 [QIS_detect.js]		
-Web_Title=ZVMODELVZ
+Web_Title=ASUS Wireless Router
 QKSet_detect_sanglass=Détection automatique
 QKSet_detect_desc1=Détection de votre type de connexion en cours
 QKSet_detect_desc2=Redétection de l'état de votre connexion en cours
@@ -760,7 +759,6 @@ BOP_isp_desc=Nom d'hôte fourni par votre fournisseur d'accès à Internet:
 OP_desc1=Le ZVMODELVZ supporte trois modes de fonctionnement pour répondre à différents scénarios. Sélectionnez le mode correspondant à vos besoins.
 PASS_new=Nouveau mot de passe:
 PASS_retype=Saisissez à nouveau le mot de passe:
-PASS_changepasswd=Changer le mot de passe système 
 FW_desc1=Suivez les instructions suivantes:
 FW_desc2=Vérifiez si une version récente du firmware est disponible sur <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS site Web</a>.
 FW_desc3=Téléchargez une version appropriée à votre appareil.

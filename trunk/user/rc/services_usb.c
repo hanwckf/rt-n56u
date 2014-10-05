@@ -312,20 +312,20 @@ void control_ftp_fw(int is_run_before)
 		restart_firewall();
 }
 
-void restart_ftp(void)
+void restart_ftpd(void)
 {
 	int is_run_before = is_ftp_run();
 
 	stop_ftp();
-	run_ftp();
 
-	control_ftp_fw(is_run_before);
+	if (count_sddev_mountpoint()) {
+		run_ftp();
+		control_ftp_fw(is_run_before);
+	}
 }
 #endif
 
 #if defined(APP_SMBD)
-
-#define SAMBA_CONF "/etc/smb.conf"
 
 int check_existed_share(const char *string)
 {
@@ -351,56 +351,35 @@ int check_existed_share(const char *string)
 	return 0;
 }
 
-int write_smb_conf(void) 
+int write_smb_conf(void)
 {
 	FILE *fp;
 	int i_maxuser, i_smb_mode;
-	char *p_computer_name;
-	
 	disk_info_t *follow_disk, *disks_info = NULL;
 	partition_info_t *follow_partition;
 
-	unlink(SAMBA_CONF);
-	unlink("/var/log/samba.log");
-
 	i_smb_mode = nvram_get_int("st_samba_mode");
 
-	if((fp = fopen(SAMBA_CONF, "w")) == NULL)
-		goto confpage;
+	unlink("/var/log/samba.log");
+	fp = write_smb_conf_header();
+	if (!fp)
+		return -1;
 
-	fprintf(fp, "[global]\n");
-	if (nvram_safe_get("st_samba_workgroup"))
-		fprintf(fp, "workgroup = %s\n", nvram_safe_get("st_samba_workgroup"));
-
-	p_computer_name = get_our_hostname();
-
-	fprintf(fp, "netbios name = %s\n", p_computer_name);
-	fprintf(fp, "server string = %s\n", p_computer_name);
-
-	if (nvram_get_int("st_samba_lmb") == 0)
-		fprintf(fp, "local master = no\n");
-
-	fprintf(fp, "log file = /var/log/samba.log\n");
-	fprintf(fp, "log level = 0\n");
-	fprintf(fp, "max log size = 5\n");
-	
 	/* share mode */
 	if (i_smb_mode == 1 || i_smb_mode == 3) {
 		char *rootnm = nvram_safe_get("http_username");
 		if (!(*rootnm)) rootnm = "admin";
 		
-		fprintf(fp, "security = SHARE\n");
-		fprintf(fp, "guest ok = yes\n");
+		fprintf(fp, "security = %s\n", "SHARE");
+		fprintf(fp, "guest ok = %s\n", "yes");
 		fprintf(fp, "guest only = yes\n");
 		fprintf(fp, "guest account = %s\n", rootnm);
-	}
-	else if (i_smb_mode == 4) {
-		fprintf(fp, "security = USER\n");
-		fprintf(fp, "guest ok = no\n");
+	} else if (i_smb_mode == 4) {
+		fprintf(fp, "security = %s\n", "USER");
+		fprintf(fp, "guest ok = %s\n", "no");
 		fprintf(fp, "map to guest = Bad User\n");
 		fprintf(fp, "hide unreadable = yes\n");
-	}
-	else{
+	} else {
 		goto confpage;
 	}
 
@@ -415,30 +394,18 @@ int write_smb_conf(void)
 	if (i_maxuser > MAX_CLIENTS_NUM) i_maxuser = MAX_CLIENTS_NUM;
 
 	fprintf(fp, "max connections = %d\n", i_maxuser);
-	fprintf(fp, "encrypt passwords = yes\n");
-	fprintf(fp, "pam password change = no\n");
-	fprintf(fp, "socket options = TCP_NODELAY SO_KEEPALIVE\n");	// Padavan, fix buffers
-	fprintf(fp, "obey pam restrictions = no\n");
 	fprintf(fp, "use spnego = no\n");		// ASUS add
 	fprintf(fp, "client use spnego = no\n");	// ASUS add
-	fprintf(fp, "disable spoolss = yes\n");		// ASUS add
-	fprintf(fp, "host msdfs = no\n");		// ASUS add
-	fprintf(fp, "strict allocate = No\n");		// ASUS add
 	fprintf(fp, "null passwords = yes\n");		// ASUS add
-	fprintf(fp, "unix charset = UTF8\n");		// ASUS add
-	fprintf(fp, "display charset = UTF8\n");	// ASUS add
-	fprintf(fp, "bind interfaces only = yes\n");	// ASUS add
-	fprintf(fp, "interfaces = lo %s\n", IFNAME_BR);
+	fprintf(fp, "strict allocate = no\n");		// ASUS add
 	fprintf(fp, "use sendfile = yes\n");
-	fprintf(fp, "unix extensions = no\n");		// Padavan, fix for MAC users (thanks mark2qualis)
 	fprintf(fp, "dos filemode = yes\n");
 	fprintf(fp, "dos filetimes = yes\n");
 	fprintf(fp, "dos filetime resolution = yes\n");
 	fprintf(fp, "\n");
 
 	disks_info = read_disk_data();
-	if (disks_info == NULL) {
-		usb_dbg("Couldn't get disk list when writing smb.conf!\n");
+	if (!disks_info) {
 		goto confpage;
 	}
 
@@ -603,39 +570,32 @@ int write_smb_conf(void)
 	}
 
 confpage:
-	if(fp)
-		fclose(fp);
+	fclose(fp);
 	free_disk_data(disks_info);
 	return 0;
 }
 
-void stop_samba(void)
+void stop_samba(int force_stop)
 {
 	char* svcs[] = { "smbd", "nmbd", NULL };
+
+	if (!force_stop && nvram_match("wins_enable", "1"))
+		svcs[1] = NULL;
+
 	kill_services(svcs, 5, 1);
 }
 
-void run_samba()
+void run_samba(void)
 {
 	int sh_num=0, i;
 	char tmpuser[40], tmp2[40];
 	char cmd[256];
 
-	if (nvram_match("enable_samba", "0") || nvram_match("st_samba_mode", "0")) 
+	if (nvram_match("enable_samba", "0") || nvram_match("st_samba_mode", "0"))
 		return;
-
-	if (pids("smbd") && pids("nmbd"))
-	{
-		// reload smb.conf
-		write_smb_conf();
-		doSystem("killall %s %s", "-SIGHUP", "smbd");
-		doSystem("killall %s %s", "-SIGHUP", "nmbd");
-		return;
-	}
 
 	mkdir_if_none("/etc/samba");
 
-	unlink("/etc/smb.conf");
 	unlink("/etc/samba/smbpasswd");
 	unlink("/etc/samba/secrets.tdb");
 	unlink("/var/lock/connections.tdb");
@@ -644,28 +604,39 @@ void run_samba()
 
 	write_smb_conf();
 
-	sh_num = nvram_get_int("acc_num");
-	if (sh_num > MAX_ACCOUNT_NUM) sh_num = MAX_ACCOUNT_NUM;
-	memset(tmpuser, 0, sizeof(tmpuser));
-	memset(tmp2, 0, sizeof(tmp2));
-	for (i=0; i<sh_num; i++)
-	{
-		sprintf(tmpuser, "acc_username%d", i);
-		sprintf(tmp2, "acc_password%d", i);
-		sprintf(cmd, "smbpasswd %s %s", nvram_safe_get(tmpuser), nvram_safe_get(tmp2));
+	sh_num = nvram_safe_get_int("acc_num", 0, 0, MAX_ACCOUNT_NUM);
+	for (i = 0; i < sh_num; i++) {
+		snprintf(tmpuser, sizeof(tmpuser), "acc_username%d", i);
+		snprintf(tmp2, sizeof(tmp2), "acc_password%d", i);
+		snprintf(cmd, sizeof(cmd), "smbpasswd %s %s", nvram_safe_get(tmpuser), nvram_safe_get(tmp2));
 		system(cmd);
 	}
 
-	eval("/sbin/nmbd", "-D", "-s", "/etc/smb.conf");
+	if (pids("nmbd"))
+		doSystem("killall %s %s", "-SIGHUP", "nmbd");
+	else
+		eval("/sbin/nmbd", "-D", "-s", "/etc/smb.conf");
+
 	eval("/sbin/smbd", "-D", "-s", "/etc/smb.conf");
 
 	if (pids("smbd") && pids("nmbd"))
 		logmessage("Samba Server", "daemon is started");
 }
+
+void restart_smbd(void)
+{
+	stop_samba(1);
+
+	if (count_sddev_mountpoint())
+		run_samba();
+
+	if (!pids("nmbd"))
+		start_wins();
+}
 #endif
 
 #if defined(APP_NFSD)
-void write_nfsd_exports()
+void write_nfsd_exports(void)
 {
 	FILE *procpt, *fp;
 	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160], acl_mask[64];
@@ -746,7 +717,7 @@ void stop_nfsd(void)
 	eval("/usr/bin/nfsd.sh", "stop");
 }
 
-void run_nfsd()
+void run_nfsd(void)
 {
 	if (nvram_invmatch("nfsd_enable", "1"))
 		return;
@@ -755,6 +726,18 @@ void run_nfsd()
 	write_nfsd_exports();
 
 	eval("/usr/bin/nfsd.sh", "start");
+}
+
+void restart_nfsd(void)
+{
+	stop_nfsd();
+
+	if (nvram_match("nfsd_enable", "1") && count_sddev_mountpoint()) {
+		sleep(1);
+		run_nfsd();
+	} else {
+		unload_nfsd();
+	}
 }
 #endif
 
@@ -1421,7 +1404,7 @@ stop_usb_apps(void)
 	stop_nfsd();
 #endif
 #if defined(APP_SMBD)
-	stop_samba();
+	stop_samba(0);
 #endif
 #if defined(APP_FTPD)
 	if (nvram_match("ftpd_wopen", "1"))

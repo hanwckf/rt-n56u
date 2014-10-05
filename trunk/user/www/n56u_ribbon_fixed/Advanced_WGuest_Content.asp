@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<title><#Web_Title#> - 5G <#menu5_1_2#></title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-
-<title>ASUS Wireless Router <#Web_Title#> - 5G <#menu5_1_2#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
+
 <style>
 .table th, .table td{vertical-align: middle;}
 .table input, .table select {margin-bottom: 0px;}
@@ -21,99 +22,23 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/wireless.js"></script>
 <script type="text/javascript" src="/help_wl.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/md5.js"></script>
-
 <script>
-    var $j = jQuery.noConflict();
+var $j = jQuery.noConflict();
 
-    $j(document).ready(function() {
-        $j('#wl_guest_enable_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#wl_guest_enable_fake").attr("checked", "checked").attr("value", 1);
-                $j("#wl_guest_enable_1").attr("checked", "checked");
-                $j("#wl_guest_enable_0").removeAttr("checked");
-                change_guest_enabled(1);
-            },
-            onClickOff: function(){
-                $j("#wl_guest_enable_fake").removeAttr("checked").attr("value", 0);
-                $j("#wl_guest_enable_0").attr("checked", "checked");
-                $j("#wl_guest_enable_1").removeAttr("checked");
-                change_guest_enabled(1);
-            }
-        });
-        $j("#wl_guest_enable_on_of label.itoggle").css("background-position", $j("input#wl_guest_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+$j(document).ready(function() {
+	init_itoggle('wl_guest_enable', change_guest_enabled); // change_guest_enabled(1) change_guest_enabled(1)
+	init_itoggle('wl_guest_closed');
+	init_itoggle('wl_guest_ap_isolate');
+	init_itoggle('wl_guest_lan_isolate');
+	init_itoggle('wl_guest_macrule');
+});
 
-        $j('#wl_guest_closed_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#wl_guest_closed_fake").attr("checked", "checked").attr("value", 1);
-                $j("#wl_guest_closed_1").attr("checked", "checked");
-                $j("#wl_guest_closed_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#wl_guest_closed_fake").removeAttr("checked").attr("value", 0);
-                $j("#wl_guest_closed_0").attr("checked", "checked");
-                $j("#wl_guest_closed_1").removeAttr("checked");
-            }
-        });
-        $j("#wl_guest_closed_on_of label.itoggle").css("background-position", $j("input#wl_guest_closed_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#wl_guest_ap_isolate_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#wl_guest_ap_isolate_fake").attr("checked", "checked").attr("value", 1);
-                $j("#wl_guest_ap_isolate_1").attr("checked", "checked");
-                $j("#wl_guest_ap_isolate_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#wl_guest_ap_isolate_fake").removeAttr("checked").attr("value", 0);
-                $j("#wl_guest_ap_isolate_0").attr("checked", "checked");
-                $j("#wl_guest_ap_isolate_1").removeAttr("checked");
-            }
-        });
-        $j("#wl_guest_ap_isolate_on_of label.itoggle").css("background-position", $j("input#wl_guest_ap_isolate_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#wl_guest_lan_isolate_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#wl_guest_lan_isolate_fake").attr("checked", "checked").attr("value", 1);
-                $j("#wl_guest_lan_isolate_1").attr("checked", "checked");
-                $j("#wl_guest_lan_isolate_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#wl_guest_lan_isolate_fake").removeAttr("checked").attr("value", 0);
-                $j("#wl_guest_lan_isolate_0").attr("checked", "checked");
-                $j("#wl_guest_lan_isolate_1").removeAttr("checked");
-            }
-        });
-        $j("#wl_guest_lan_isolate_on_of label.itoggle").css("background-position", $j("input#wl_guest_lan_isolate_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#wl_guest_macrule_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#wl_guest_macrule_fake").attr("checked", "checked").attr("value", 1);
-                $j("#wl_guest_macrule_1").attr("checked", "checked");
-                $j("#wl_guest_macrule_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#wl_guest_macrule_fake").removeAttr("checked").attr("value", 0);
-                $j("#wl_guest_macrule_0").attr("checked", "checked");
-                $j("#wl_guest_macrule_1").removeAttr("checked");
-            }
-        });
-        $j("#wl_guest_macrule_on_of label.itoggle").css("background-position", $j("input#wl_guest_macrule_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
 </script>
-
 <script>
 
 function initial(){
@@ -177,56 +102,56 @@ function applyRule(){
 }
 
 function validForm(){
-	var a = rcheck(document.form.wl_guest_enable);
+	if (!document.form.wl_guest_enable[0].checked)
+		return true;
+
 	var mode = document.form.wl_guest_auth_mode.value;
-	
-	if (a != "0")
-	{
-		if(!validate_string_ssid(document.form.wl_guest_ssid))
-			return false;
-		
-		if(!validate_timerange(document.form.wl_guest_time_x_starthour, 0)
-				|| !validate_timerange(document.form.wl_guest_time_x_startmin, 1)
-				|| !validate_timerange(document.form.wl_guest_time_x_endhour, 2)
-				|| !validate_timerange(document.form.wl_guest_time_x_endmin, 3)
-				)
-			return false;
-		
-		var starttime = eval(document.form.wl_guest_time_x_starthour.value + document.form.wl_guest_time_x_startmin.value);
-		var endtime = eval(document.form.wl_guest_time_x_endhour.value + document.form.wl_guest_time_x_endmin.value);
-		if(starttime == endtime){
-			alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
-				document.form.wl_guest_time_x_starthour.focus();
-				document.form.wl_guest_time_x_starthour.select;
-			return false;
-		}
-		
-		if(!validate_timerange(document.form.wl_guest_time2_x_starthour, 0)
-				|| !validate_timerange(document.form.wl_guest_time2_x_startmin, 1)
-				|| !validate_timerange(document.form.wl_guest_time2_x_endhour, 2)
-				|| !validate_timerange(document.form.wl_guest_time2_x_endmin, 3)
-				)
-			return false;
-		
-		var starttime2 = eval(document.form.wl_guest_time2_x_starthour.value + document.form.wl_guest_time2_x_startmin.value);
-		var endtime2 = eval(document.form.wl_guest_time2_x_endhour.value + document.form.wl_guest_time2_x_endmin.value);
-		if(starttime2 == endtime2){
-			alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
-				document.form.wl_guest_time2_x_starthour.focus();
-				document.form.wl_guest_time2_x_starthour.select;
-			return false;
-		}
-		
-		if(document.form.wl_guest_ssid.value == "") {
-			document.form.wl_guest_ssid.focus();
-			return false;
-		}
-		
-		if(mode == "psk"){
-			if(!validate_psk(document.form.wl_guest_wpa_psk))
-				return false;
-		}
+
+	if(!validate_string_ssid(document.form.wl_guest_ssid))
+		return false;
+
+	if(!validate_timerange(document.form.wl_guest_time_x_starthour, 0)
+			|| !validate_timerange(document.form.wl_guest_time_x_startmin, 1)
+			|| !validate_timerange(document.form.wl_guest_time_x_endhour, 2)
+			|| !validate_timerange(document.form.wl_guest_time_x_endmin, 3)
+			)
+		return false;
+
+	var starttime = eval(document.form.wl_guest_time_x_starthour.value + document.form.wl_guest_time_x_startmin.value);
+	var endtime = eval(document.form.wl_guest_time_x_endhour.value + document.form.wl_guest_time_x_endmin.value);
+	if(starttime == endtime){
+		alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
+			document.form.wl_guest_time_x_starthour.focus();
+			document.form.wl_guest_time_x_starthour.select;
+		return false;
 	}
+
+	if(!validate_timerange(document.form.wl_guest_time2_x_starthour, 0)
+			|| !validate_timerange(document.form.wl_guest_time2_x_startmin, 1)
+			|| !validate_timerange(document.form.wl_guest_time2_x_endhour, 2)
+			|| !validate_timerange(document.form.wl_guest_time2_x_endmin, 3)
+			)
+		return false;
+
+	var starttime2 = eval(document.form.wl_guest_time2_x_starthour.value + document.form.wl_guest_time2_x_startmin.value);
+	var endtime2 = eval(document.form.wl_guest_time2_x_endhour.value + document.form.wl_guest_time2_x_endmin.value);
+	if(starttime2 == endtime2){
+		alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
+			document.form.wl_guest_time2_x_starthour.focus();
+			document.form.wl_guest_time2_x_starthour.select;
+		return false;
+	}
+
+	if(document.form.wl_guest_ssid.value == "") {
+		document.form.wl_guest_ssid.focus();
+		return false;
+	}
+
+	if(mode == "psk"){
+		if(!validate_psk(document.form.wl_guest_wpa_psk))
+			return false;
+	}
+
 	return true;
 }
 
@@ -235,8 +160,7 @@ function done_validating(action){
 }
 
 function change_guest_enabled(mflag) {
-	var v = (rcheck(document.form.wl_guest_enable) == "0") ? 0 : 1;
-
+	var v = document.form.wl_guest_enable[0].checked;
 	showhide_div('row_guest_1', v);
 	showhide_div('row_guest_2', v);
 	showhide_div('row_guest_3', v);

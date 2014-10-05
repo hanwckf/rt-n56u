@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_2_3#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_2_3#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,50 +17,18 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#dr_enable_x_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                change_common_radio(this, '', 'dr_enable_x', '1');
-                $j("#dr_enable_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#dr_enable_x_1").attr("checked", "checked");
-                $j("#dr_enable_x_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                change_common_radio(this, '', 'dr_enable_x', '0');
-                $j("#dr_enable_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#dr_enable_x_0").attr("checked", "checked");
-                $j("#dr_enable_x_1").removeAttr("checked");
-            }
-        });
-        $j("#dr_enable_x_on_of label.itoggle").css("background-position", $j("input#dr_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+var $j = jQuery.noConflict();
 
-        $j('#sr_enable_x_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#sr_enable_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#sr_enable_x_1").attr("checked", "checked");
-                $j("#sr_enable_x_0").removeAttr("checked");
-                change_sr_enabled();
-            },
-            onClickOff: function(){
-                $j("#sr_enable_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#sr_enable_x_0").attr("checked", "checked");
-                $j("#sr_enable_x_1").removeAttr("checked");
-                change_sr_enabled();
-            }
-        });
-        $j("#sr_enable_x_on_of label.itoggle").css("background-position", $j("input#sr_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    })
+$j(document).ready(function() {
+	init_itoggle('dr_enable_x');
+	init_itoggle('sr_enable_x', change_sr_enabled);
+});
+
 </script>
-
 <script>
 
 var GWStaticList = [<% get_nvram_list("RouterConfig", "GWStatic"); %>];
@@ -68,19 +37,16 @@ function initial(){
 	show_banner(1);
 	show_menu(5,3,3);
 	show_footer();
-	
 	change_sr_enabled();
-	
 	showGWStaticList();
 }
 
 function applyRule(){
 	showLoading();
-	
-	if (rcheck(document.form.sr_enable_x) == "0")
-		document.form.action_mode.value = " Apply ";
-	else
+	if (document.form.sr_enable_x[0].checked)
 		document.form.action_mode.value = " Restart ";
+	else
+		document.form.action_mode.value = " Apply ";
 	document.form.current_page.value = "/Advanced_GWStaticRoute_Content.asp";
 	document.form.next_page.value = "";
 	document.form.submit();
@@ -91,12 +57,8 @@ function done_validating(action){
 }
 
 function change_sr_enabled(){
-	var a = rcheck(document.form.sr_enable_x);
-	if (a == "0"){
-		$("tbl_sroutes").style.display = "none";
-	} else {
-		$("tbl_sroutes").style.display = "";
-	}
+	var v = document.form.sr_enable_x[0].checked;
+	showhide_div('tbl_sroutes', v);
 }
 
 function GWStatic_markGroup(o, s, c, b) {
@@ -133,9 +95,9 @@ function GWStatic_markGroup(o, s, c, b) {
 				 GWStatic_validate_duplicate(GWStaticList, document.form.sr_if_x_0.value, 2, 4)
 				) return false;  //Check the IP, Submask, gateway and Interface is duplicate or not.
 	}
-	
+
 	pageChanged = 0;
-	
+
 	document.form.action_mode.value = b;
 	return true;
 }
@@ -256,10 +218,9 @@ function showGWStaticList(){
                                                         <input type="checkbox" id="dr_enable_x_fake" <% nvram_match_x("", "dr_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "dr_enable_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="dr_enable_x" id="dr_enable_x_1" class="input" onClick="return change_common_radio(this, 'RouterConfig', 'dr_enable_x', '1')" <% nvram_match_x("RouterConfig", "dr_enable_x", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="dr_enable_x" id="dr_enable_x_0" class="input" onClick="return change_common_radio(this, 'RouterConfig', 'dr_enable_x', '0')" <% nvram_match_x("RouterConfig", "dr_enable_x", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="dr_enable_x" id="dr_enable_x_1" class="input" <% nvram_match_x("", "dr_enable_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="dr_enable_x" id="dr_enable_x_0" class="input" <% nvram_match_x("", "dr_enable_x", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -271,10 +232,9 @@ function showGWStaticList(){
                                                         <input type="checkbox" id="sr_enable_x_fake" <% nvram_match_x("", "sr_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "sr_enable_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="sr_enable_x" id="sr_enable_x_1" class="input" onclick="change_sr_enabled();" <% nvram_match_x("RouterConfig", "sr_enable_x", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="sr_enable_x" id="sr_enable_x_0" class="input" onclick="change_sr_enabled();" <% nvram_match_x("RouterConfig", "sr_enable_x", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="sr_enable_x" id="sr_enable_x_1" class="input" onclick="change_sr_enabled();" <% nvram_match_x("", "sr_enable_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="sr_enable_x" id="sr_enable_x_0" class="input" onclick="change_sr_enabled();" <% nvram_match_x("", "sr_enable_x", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title>System Information</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="-1">
-<title>System Information</title>
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
@@ -16,8 +17,7 @@
 </style>
 
 <script type="text/javascript" src="/jquery.js"></script>
-
-<script type="text/javascript">
+<script>
 
 var idRefresh;
 var timeToRefresh = 2;

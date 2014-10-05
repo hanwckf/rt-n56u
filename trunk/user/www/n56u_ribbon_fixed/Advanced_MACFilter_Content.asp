@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title><#Web_Title#> - <#menu5_5_3#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_5_3#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -16,32 +17,18 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-
 <script>
-    var $j = jQuery.noConflict();
+var $j = jQuery.noConflict();
 
-    $j(document).ready(function() {
-        $j('#fw_mac_drop_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#fw_mac_drop_fake").attr("checked", "checked").attr("value", 1);
-                $j("#fw_mac_drop_1").attr("checked", "checked");
-                $j("#fw_mac_drop_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#fw_mac_drop_fake").removeAttr("checked").attr("value", 0);
-                $j("#fw_mac_drop_0").attr("checked", "checked");
-                $j("#fw_mac_drop_1").removeAttr("checked");
-            }
-        });
-        $j("#fw_mac_drop_on_of label.itoggle").css("background-position", $j("input#fw_mac_drop_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
+$j(document).ready(function() {
+	init_itoggle('fw_mac_drop');
+});
+
 </script>
-
 <script>
 
 <% login_state_hook(); %>
@@ -426,7 +413,6 @@ function done_validating(action){
                                                         <input type="checkbox" id="fw_mac_drop_fake" <% nvram_match_x("", "fw_mac_drop", "1", "value=1 checked"); %><% nvram_match_x("", "fw_mac_drop", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" value="1" name="fw_mac_drop" id="fw_mac_drop_1" <% nvram_match_x("","fw_mac_drop", "1", "checked"); %>><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="fw_mac_drop" id="fw_mac_drop_0" <% nvram_match_x("","fw_mac_drop", "0", "checked"); %>><#checkbox_No#>

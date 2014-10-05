@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<title><#Web_Title#></title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<link href="images/map-iconRouter_iphone.png" rel="apple-touch-icon" />
-<title>ASUS Wireless Router - Network Map</title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
@@ -20,6 +19,7 @@
 <script type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" src="/aplist.js"></script>
 <script>
+var $j = jQuery.noConflict();
 
 <% disk_pool_mapping_info(); %>
 <% available_disk_names_and_sizes(); %>
@@ -32,8 +32,6 @@ var flag = '<% get_parameter("flag"); %>';
 var disk_number = foreign_disks().length+blank_disks().length;
 
 var ccount = <% get_static_ccount(); %>;
-
-var $j = jQuery.noConflict();
 
 function initial(){
 	show_banner(0);

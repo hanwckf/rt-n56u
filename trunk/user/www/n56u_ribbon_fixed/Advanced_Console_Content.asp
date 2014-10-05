@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_6_5#></title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<title><#Web_Title#> - <#menu5_6_6#></title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
@@ -13,7 +14,6 @@
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
-
 <script>
 var $j = jQuery.noConflict();
 
@@ -40,7 +40,7 @@ function startPost(o, s)
 
 function initial(){
 	show_banner(1);
-	show_menu(5,7,5);
+	show_menu(5,7,6);
 	show_footer();
 }
 
@@ -98,7 +98,7 @@ function hideLoading(){}
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#menu5_6#> - <#menu5_6_5#></h2>
+                            <h2 class="box_head round_top"><#menu5_6#> - <#menu5_6_6#></h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>

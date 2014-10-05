@@ -1,4 +1,4 @@
-﻿var helpcontent = new Array(5);
+var helpcontent = new Array(5);
 var help_enable = '<% nvram_get_x("", "help_enable"); %>';
 
 helpcontent[0] = new Array("",

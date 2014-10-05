@@ -1,13 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<title><#Web_Title#> - 5G <#menu5_1_1#></title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-
-<title>ASUS Wireless Router <#Web_Title#> - 5G <#menu5_1_1#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
@@ -17,50 +17,20 @@
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/wireless.js"></script>
 <script type="text/javascript" src="/help_wl.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/md5.js"></script>
-
 <script>
-    var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#radio_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#wl_radio_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#wl_radio_x_1").attr("checked", "checked");
-                $j("#wl_radio_x_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#wl_radio_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#wl_radio_x_0").attr("checked", "checked");
-                $j("#wl_radio_x_1").removeAttr("checked");
-            }
-        });
-        $j("#radio_on_of label.itoggle").css("background-position", $j("input#wl_radio_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+var $j = jQuery.noConflict();
 
-        $j('#wl_closed_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                change_common_radio(this, 'WLANConfig11a', 'wl_closed', '1');
-                $j("#wl_closed_fake").attr("checked", "checked").attr("value", 1);
-                $j("#wl_closed_1").attr("checked", "checked");
-                $j("#wl_closed_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                change_common_radio(this, 'WLANConfig11a', 'wl_closed', '0');
-                $j("#wl_closed_fake").removeAttr("checked").attr("value", 0);
-                $j("#wl_closed_0").attr("checked", "checked");
-                $j("#wl_closed_1").removeAttr("checked");
-            }
-        });
-        $j("#wl_closed_on_of label.itoggle").css("background-position", $j("input#wl_closed_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    })
+$j(document).ready(function() {
+	init_itoggle('wl_radio_x');
+	init_itoggle('wl_closed');
+});
+
 </script>
-
 <script>
 
 function initial(){
@@ -360,7 +330,7 @@ function wl_nband_select(ch){
                                             <th width="50%" style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 22);"><#WLANConfig11b_x_RadioEnable_itemname#></a></th>
                                             <td style="border-top: 0 none;">
                                                 <div class="main_itoggle">
-                                                    <div id="radio_on_of">
+                                                    <div id="wl_radio_x_on_of">
                                                         <input type="checkbox" id="wl_radio_x_fake" <% nvram_match_x("","wl_radio_x", "1", "value=1 checked"); %><% nvram_match_x("","wl_radio_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
@@ -421,10 +391,9 @@ function wl_nband_select(ch){
                                                         <input type="checkbox" id="wl_closed_fake" <% nvram_match_x("", "wl_closed", "1", "value=1 checked"); %><% nvram_match_x("", "wl_closed", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" id="wl_closed_1" name="wl_closed" onClick="return change_common_radio(this, 'WLANConfig11a', 'wl_closed', '1')" <% nvram_match_x("", "wl_closed", "1", "checked"); %> /><#checkbox_Yes#>
-                                                    <input type="radio" value="0" id="wl_closed_0" name="wl_closed" onClick="return change_common_radio(this, 'WLANConfig11a', 'wl_closed', '0')" <% nvram_match_x("", "wl_closed", "0", "checked"); %> /><#checkbox_No#>
+                                                    <input type="radio" value="1" id="wl_closed_1" name="wl_closed" <% nvram_match_x("", "wl_closed", "1", "checked"); %> /><#checkbox_Yes#>
+                                                    <input type="radio" value="0" id="wl_closed_0" name="wl_closed" <% nvram_match_x("", "wl_closed", "0", "checked"); %> /><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -516,7 +485,7 @@ function wl_nband_select(ch){
                                         <tr id="row_wep2">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 10);"><#WLANConfig11b_WEPDefaultKey_itemname#></a></th>
                                             <td>
-                                                <select name="wl_key" class="input"  onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_key');">
+                                                <select name="wl_key" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_key');">
                                                     <option value="1" <% nvram_match_x("","wl_key", "1","selected"); %>>1</option>
                                                     <option value="2" <% nvram_match_x("","wl_key", "2","selected"); %>>2</option>
                                                     <option value="3" <% nvram_match_x("","wl_key", "3","selected"); %>>3</option>

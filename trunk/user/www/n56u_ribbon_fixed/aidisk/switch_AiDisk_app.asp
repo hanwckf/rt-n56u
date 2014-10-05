@@ -1,9 +1,11 @@
+<!DOCTYPE html>
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
 
-<script type="text/javascript">
+<script>
 function set_AiDisk_status_error(error_msg){
 	alert(error_msg);
 	parent.resultOfSwitchAppStatus(error_msg);

@@ -519,13 +519,10 @@ start_lan(int is_ap_mode)
 	char *lan_netmsk;
 	char *lan_ifname = IFNAME_BR;
 
-	if (nvram_match("lan_ipaddr", ""))
-	{
+	if (nvram_match("lan_ipaddr", "")) {
 		nvram_set("lan_ipaddr", "192.168.1.1");
 		nvram_set("lan_netmask", "255.255.255.0");
-	}
-	else if (nvram_match("lan_netmask", ""))
-	{
+	} else if (nvram_match("lan_netmask", "")) {
 		nvram_set("lan_netmask", "255.255.255.0");
 	}
 
@@ -537,12 +534,12 @@ start_lan(int is_ap_mode)
 	* 'udhcpc bound'/'udhcpc deconfig' upon finishing IP address 
 	* renew and release.
 	*/
-	if (is_ap_mode)
-	{
-		create_hosts_lan(lan_ipaddr, nvram_safe_get("lan_domain"));
+	if (is_ap_mode) {
+		char *lan_dname = nvram_safe_get("lan_domain");
 		
-		if (nvram_match("lan_proto_x", "1"))
-		{
+		create_hosts_lan(lan_ipaddr, lan_dname);
+		
+		if (nvram_match("lan_proto_x", "1")) {
 			/* bring up and configure LAN interface */
 			ifconfig(lan_ifname, IFUP, lan_ipaddr, lan_netmsk);
 			
@@ -556,21 +553,17 @@ start_lan(int is_ap_mode)
 			
 			/* start dhcp daemon */
 			start_udhcpc_lan(lan_ifname);
-		}
-		else
-		{
+		} else {
 			/* bring up and configure LAN interface */
 			ifconfig(lan_ifname, IFUP, lan_ipaddr, lan_netmsk);
 			
 			/* manual config lan gateway and dns */
-			lan_up_manual(lan_ifname);
+			lan_up_manual(lan_ifname, lan_dname);
 			
 			/* di wakeup after 2 secs */
 			notify_run_detect_internet(2);
 		}
-	}
-	else
-	{
+	} else {
 		/* bring up and configure LAN interface */
 		ifconfig(lan_ifname, IFUP, lan_ipaddr, lan_netmsk);
 		
@@ -681,7 +674,7 @@ full_restart_lan(void)
 }
 
 void
-lan_up_manual(char *lan_ifname)
+lan_up_manual(char *lan_ifname, char *lan_dname)
 {
 	FILE *fp;
 	int lock;
@@ -699,6 +692,9 @@ lan_up_manual(char *lan_ifname)
 	/* Open resolv.conf */
 	fp = fopen("/etc/resolv.conf", "w+");
 	if (fp) {
+		if (strlen(lan_dname) > 0)
+			fprintf(fp, "domain %s\n", lan_dname);
+		
 		dns_ip = nvram_safe_get("lan_dns1");
 		if (is_valid_ipv4(dns_ip)) {
 			fprintf(fp, "nameserver %s\n", dns_ip);
@@ -727,7 +723,7 @@ lan_up_manual(char *lan_ifname)
 }
 
 static void
-lan_up_auto(char *lan_ifname, char *lan_gateway)
+lan_up_auto(char *lan_ifname, char *lan_gateway, char *lan_dname)
 {
 	FILE *fp;
 	int dns_count = 0;
@@ -740,8 +736,10 @@ lan_up_auto(char *lan_ifname, char *lan_gateway)
 	/* Open resolv.conf */
 	fp = fopen("/etc/resolv.conf", "w+");
 	if (fp) {
-		if (nvram_get_int("lan_dns_x") == 0)
-		{
+		if (strlen(lan_dname) > 0)
+			fprintf(fp, "domain %s\n", lan_dname);
+		
+		if (nvram_get_int("lan_dns_x") == 0) {
 			dns_ip = nvram_safe_get("lan_dns1");
 			if (is_valid_ipv4(dns_ip)) {
 				fprintf(fp, "nameserver %s\n", dns_ip);
@@ -753,9 +751,7 @@ lan_up_auto(char *lan_ifname, char *lan_gateway)
 				fprintf(fp, "nameserver %s\n", dns_ip);
 				dns_count++;
 			}
-		}
-		else
-		{
+		} else {
 			foreach(word, nvram_safe_get("lan_dns_t"), next) {
 				if (is_valid_ipv4(word)) {
 					fprintf(fp, "nameserver %s\n", word);
@@ -894,7 +890,7 @@ udhcpc_lan_bound(char *lan_ifname, int is_renew)
 		
 		create_hosts_lan(lan_ipaddr, lan_domain);
 		
-		lan_up_auto(lan_ifname, lan_gateway);
+		lan_up_auto(lan_ifname, lan_gateway, lan_domain);
 		
 		logmessage("DHCP LAN Client", "%s, IP: %s/%s, GW: %s, lease time: %d",
 			udhcpc_lan_state, lan_ipaddr, lan_ipmask, lan_gateway, lease_dur);

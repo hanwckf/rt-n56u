@@ -194,7 +194,7 @@ void reset_lan_vars(void);
 void update_hosts_ap(void);
 void start_lan(int is_ap_mode);
 void stop_lan(int is_ap_mode);
-void lan_up_manual(char *lan_ifname);
+void lan_up_manual(char *lan_ifname, char *lan_dname);
 void update_lan_status(int is_auto);
 void full_restart_lan(void);
 void init_loopback(void);

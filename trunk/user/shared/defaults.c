@@ -157,7 +157,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_maclist", "" },			/* xx:xx:xx:xx:xx:xx ... */
 	{ "wl_wme", "1" },			/* WME mode (off|on) */
 	{ "wl_wme_no_ack", "off" },		/* WME No-Acknowledgment mode */
-	{ "wl_auth_mode", "open" },		/* Network authentication mode Open System */
+	{ "wl_auth_mode", "psk" },		/* Network authentication mode: WPAx Personal */
 	{ "wl_key", "1" },			/* Current WEP key */
 	{ "wl_key1", "" },			/* 5/13 char ASCII or 10/26 char hex */
 	{ "wl_key2", "" },			/* 5/13 char ASCII or 10/26 char hex */
@@ -166,7 +166,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_key_type", "0" } ,		/* WEP key format (HEX/ASCII)*/
 	{ "wl_mcastrate", "1" },		/* Mcast Rate (bps) */
 	{ "wl_crypto", "aes" },			/* WPA data encryption */
-	{ "wl_wpa_psk", "" },			/* WPA pre-shared key */
+	{ "wl_wpa_psk", DEF_WLAN_5G_PSK },			/* WPA pre-shared key */
 	{ "wl_wpa_gtk_rekey", "3600" },		/* GTK rotation interval */
 	{ "wl_radius_ipaddr", ""},		/* RADIUS server IP address */
 	{ "wl_radius_port", "1812" },		/* RADIUS server UDP port */
@@ -194,7 +194,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_macnum_x", "0" },
 	{ "wl_wdslist_x", "" },
 	{ "wl_maclist_x", "" },
-	{ "wl_wpa_mode", "0" },
+	{ "wl_wpa_mode", "2" },
 	{ "wl_stream_tx", STR(BOARD_NUM_ANT_5G_TX) },
 	{ "wl_stream_rx", STR(BOARD_NUM_ANT_5G_RX) },
 	{ "wl_preamble", "1" },
@@ -257,9 +257,9 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_TxBurst", "1" },
 	{ "rt_PktAggregate", "1" },
 	{ "rt_APSDCapable", "1" },
-	{ "rt_auth_mode", "open" },
+	{ "rt_auth_mode", "psk" },
 	{ "rt_crypto", "aes" },
-	{ "rt_wpa_psk", "" },
+	{ "rt_wpa_psk", DEF_WLAN_2G_PSK },
 	{ "rt_wpa_gtk_rekey", "3600" },
 	{ "rt_key", "1" },
 	{ "rt_key_type", "0" } ,
@@ -284,7 +284,7 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_macnum_x", "0" },
 	{ "rt_wdslist_x", "" },
 	{ "rt_maclist_x", "" },
-	{ "rt_wpa_mode", "0" },
+	{ "rt_wpa_mode", "2" },
 	{ "rt_stream_tx", STR(BOARD_NUM_ANT_2G_TX) },
 	{ "rt_stream_rx", STR(BOARD_NUM_ANT_2G_RX) },
 	{ "rt_preamble", "0" },

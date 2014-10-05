@@ -143,17 +143,20 @@ void control_if_ipv6_privacy(char *ifname, int enable)
 
 void clear_if_addr6(char *ifname)
 {
-	doSystem("ip -6 addr flush dev %s scope global", ifname);
+	if (is_interface_exist(ifname))
+		doSystem("ip -6 addr flush dev %s scope global", ifname);
 }
 
 void clear_if_route6(char *ifname)
 {
-	doSystem("ip -6 route flush dev %s", ifname);
+	if (is_interface_exist(ifname))
+		doSystem("ip -6 route flush dev %s", ifname);
 }
 
 void clear_if_neigh6(char *ifname)
 {
-	doSystem("ip -6 neigh flush dev %s", ifname);
+	if (is_interface_exist(ifname))
+		doSystem("ip -6 neigh flush dev %s", ifname);
 }
 
 void clear_all_addr6(void)

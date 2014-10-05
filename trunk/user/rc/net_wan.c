@@ -712,20 +712,17 @@ start_wan(void)
 			/* re-build iptables rules (final stage for IPoE static) */
 			start_firewall_ex();
 			
-			if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC) {
-				/* update UPnP forwards from lease file */
-				update_upnp();
-			}
-			
 			/* Start eapol authenticator */
 			wan_auth_mode = get_wan_unit_value_int(unit, "auth_mode");
 			if (wan_auth_mode > 1)
 				start_auth_eapol(wan_ifname, unit, wan_auth_mode - 2);
 			
 			/* We are done configuration */
-			if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC)
+			if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC) {
 				wan_up(wan_ifname, unit, 1);
-			else
+				/* update UPnP forwards from lease file (after wan up) */
+				update_upnp();
+			} else
 				start_udhcpc_wan(wan_ifname, unit, 0);
 #if defined (USE_IPV6)
 			if (is_wan_ipv6_type_sit() == 0)
@@ -1094,16 +1091,20 @@ wan_down(char *wan_ifname, int unit)
 
 	notify_pause_detect_internet();
 
+	wan_proto = get_wan_proto(unit);
+
 	/* deferred stop static VPN client (prevent rebuild resolv.conf) */
 	nvram_set_temp("vpnc_dns_t", "");
-	notify_rc("stop_vpn_client");
+	if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC)
+		stop_vpn_client();
+	else
+		notify_rc("stop_vpn_client");
 
 #if defined (USE_IPV6)
 	if (is_wan_ipv6_type_sit() == 1)
 		wan6_down(wan_ifname, unit);
 #endif
 
-	wan_proto = get_wan_proto(unit);
 	modem_unit_id = is_ifunit_modem(wan_ifname, unit);
 
 	/* Stop multicast router (for NDIS or IPoE) */

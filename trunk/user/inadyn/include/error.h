@@ -49,6 +49,7 @@
 #define RC_HTTPS_NO_SSL_SUPPORT                     35
 #define RC_HTTPS_SEND_ERROR                         36
 #define RC_HTTPS_RECV_ERROR                         37
+#define RC_HTTPS_SNI_ERROR                          38
 
 #define RC_DYNDNS_BUFFER_TOO_SMALL                  40
 #define RC_DYNDNS_INVALID_IP_ADDR_IN_HTTP_RESPONSE  41

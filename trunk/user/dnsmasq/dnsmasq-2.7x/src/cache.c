@@ -636,7 +636,7 @@ struct crec *cache_find_by_name(struct crec *crecp, char *name, time_t now, unsi
 	    {
 	      if ((crecp->flags & F_FORWARD) && 
 #ifdef HAVE_DNSSEC
-		  ((crecp->flags & (F_DNSKEY | F_DS)) == (prot & (F_DNSKEY | F_DS))) &&
+		  (((crecp->flags & (F_DNSKEY | F_DS)) == (prot & (F_DNSKEY | F_DS))) || (prot & F_NSIGMATCH)) &&
 #endif
 		  (crecp->flags & prot) &&
 		  hostname_isequal(cache_get_name(crecp), name))
@@ -696,7 +696,7 @@ struct crec *cache_find_by_name(struct crec *crecp, char *name, time_t now, unsi
   if (ans && 
       (ans->flags & F_FORWARD) &&
 #ifdef HAVE_DNSSEC
-      ((ans->flags & (F_DNSKEY | F_DS)) == (prot & (F_DNSKEY | F_DS))) &&
+      (((ans->flags & (F_DNSKEY | F_DS)) == (prot & (F_DNSKEY | F_DS))) || (prot & F_NSIGMATCH)) &&
 #endif
       (ans->flags & prot) &&     
       hostname_isequal(cache_get_name(ans), name))

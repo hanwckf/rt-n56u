@@ -1246,7 +1246,12 @@ int check_for_local_domain(char *name, time_t now)
   struct ptr_record *ptr;
   struct naptr *naptr;
 
-  if ((crecp = cache_find_by_name(NULL, name, now, F_IPV4 | F_IPV6 | F_CNAME | F_DS | F_NO_RR)) &&
+  /* Note: the call to cache_find_by_name is intended to find any record which matches
+     ie A, AAAA, CNAME, DS. Because RRSIG records are marked by setting both F_DS and F_DNSKEY,
+     cache_find_by name ordinarily only returns records with an exact match on those bits (ie
+     for the call below, only DS records). The F_NSIGMATCH bit changes this behaviour */
+
+  if ((crecp = cache_find_by_name(NULL, name, now, F_IPV4 | F_IPV6 | F_CNAME | F_DS | F_NO_RR | F_NSIGMATCH)) &&
       (crecp->flags & (F_HOSTS | F_DHCP | F_CONFIG)))
     return 1;
   

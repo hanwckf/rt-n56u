@@ -47,6 +47,8 @@
 #define SOA_REFRESH 1200 /* SOA refresh default */
 #define SOA_RETRY 180 /* SOA retry default */
 #define SOA_EXPIRY 1209600 /* SOA expiry default */
+#define LOOP_TEST_DOMAIN "test" /* domain for loop testing, "test" is reserved by RFC 2606 and won't therefore clash */
+#define LOOP_TEST_TYPE T_TXT
  
 /* compile-time options: uncomment below to enable or do eg.
    make COPTS=-DHAVE_BROKEN_RTC
@@ -105,6 +107,12 @@ HAVE_AUTH
    define this to include the facility to act as an authoritative DNS
    server for one or more zones.
 
+HAVE_DNSSEC
+   include DNSSEC validator.
+
+HAVE_LOOP
+   include functionality to probe for and remove DNS forwarding loops.
+
 
 NO_IPV6
 NO_TFTP
@@ -117,6 +125,11 @@ NO_AUTH
    otherwise be enabled automatically (HAVE_IPV6, >2Gb file sizes) or 
    which are enabled  by default in the distributed source tree. Building dnsmasq
    with something like "make COPTS=-DNO_SCRIPT" will do the trick.
+
+NO_NETTLE_ECC
+   Don't include the ECDSA cypher in DNSSEC validation. Needed for older Nettle versions.
+NO_GMP
+   Don't use and link against libgmp, Useful if nettle is built with --enable-mini-gmp.
 
 LEASEFILE
 CONFFILE
@@ -136,11 +149,12 @@ RESOLVFILE
    has no library dependencies other than libc */
 
 #define HAVE_DHCP
-#define HAVE_DHCP6 
+#define HAVE_DHCP6
 #define HAVE_TFTP
 /* #define HAVE_SCRIPT */
 /* #define HAVE_AUTH */
 /* #define HAVE_IPSET */
+/* #define HAVE_LOOP */
 
 #define LEASEFILE "/tmp/dnsmasq.leases"
 
@@ -265,6 +279,7 @@ HAVE_SOCKADDR_SA_LEN
 /* Select the RFC_3542 version of the IPv6 socket API. 
    Define before netinet6/in6.h is included. */
 #define __APPLE_USE_RFC_3542 
+#define NO_IPSET
 
 #elif defined(__NetBSD__)
 #define HAVE_BSD_NETWORK
@@ -334,8 +349,12 @@ HAVE_SOCKADDR_SA_LEN
 #undef HAVE_AUTH
 #endif
 
-#if defined(NO_IPSET) || !defined(HAVE_LINUX_NETWORK)
+#if defined(NO_IPSET)
 #undef HAVE_IPSET
+#endif
+
+#ifdef NO_LOOP
+#undef HAVE_LOOP
 #endif
 
 /* Define a string indicating which options are in use.
@@ -407,7 +426,11 @@ static char *compile_opts =
 #ifndef HAVE_DNSSEC
 "no-"
 #endif
-"DNSSEC";
+"DNSSEC "
+#ifndef HAVE_LOOP
+"no-"
+#endif
+"loop-detect";
 
 
 #endif

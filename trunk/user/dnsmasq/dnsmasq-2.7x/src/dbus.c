@@ -35,6 +35,11 @@ const char* introspection_xml_template =
 "    <method name=\"GetVersion\">\n"
 "      <arg name=\"version\" direction=\"out\" type=\"s\"/>\n"
 "    </method>\n"
+#ifdef HAVE_LOOP
+"    <method name=\"GetLoopServers\">\n"
+"      <arg name=\"server\" direction=\"out\" type=\"as\"/>\n"
+"    </method>\n"
+#endif
 "    <method name=\"SetServers\">\n"
 "      <arg name=\"servers\" direction=\"in\" type=\"av\"/>\n"
 "    </method>\n"
@@ -43,6 +48,12 @@ const char* introspection_xml_template =
 "    </method>\n"
 "    <method name=\"SetServersEx\">\n"
 "      <arg name=\"servers\" direction=\"in\" type=\"aas\"/>\n"
+"    </method>\n"
+"    <method name=\"SetFilterWin2KOption\">\n"
+"      <arg name=\"filterwin2k\" direction=\"in\" type=\"b\"/>\n"
+"    </method>\n"
+"    <method name=\"SetBogusPrivOption\">\n"
+"      <arg name=\"boguspriv\" direction=\"in\" type=\"b\"/>\n"
 "    </method>\n"
 "    <signal name=\"DhcpLeaseAdded\">\n"
 "      <arg name=\"ipaddr\" type=\"s\"/>\n"
@@ -150,13 +161,16 @@ static void dbus_read_servers(DBusMessage *message)
 	      dbus_message_iter_get_basic(&iter, &p[i]);
 	      dbus_message_iter_next (&iter);
 	      if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_BYTE)
-		break;
+		{
+		  i++;
+		  break;
+		}
 	    }
 
 #ifndef HAVE_IPV6
 	  my_syslog(LOG_WARNING, _("attempt to set an IPv6 server address via DBus - no IPv6 support"));
 #else
-	  if (i == sizeof(struct in6_addr)-1)
+	  if (i == sizeof(struct in6_addr))
 	    {
 	      memcpy(&addr.in6.sin6_addr, p, sizeof(struct in6_addr));
 #ifdef HAVE_SOCKADDR_SA_LEN
@@ -195,6 +209,29 @@ static void dbus_read_servers(DBusMessage *message)
   /* unlink and free anything still marked. */
   cleanup_servers();
 }
+
+#ifdef HAVE_LOOP
+static DBusMessage *dbus_reply_server_loop(DBusMessage *message)
+{
+  DBusMessageIter args, args_iter;
+  struct server *serv;
+  DBusMessage *reply = dbus_message_new_method_return(message);
+   
+  dbus_message_iter_init_append (reply, &args);
+  dbus_message_iter_open_container (&args, DBUS_TYPE_ARRAY,DBUS_TYPE_STRING_AS_STRING, &args_iter);
+
+  for (serv = daemon->servers; serv; serv = serv->next)
+    if (serv->flags & SERV_LOOP)
+      {
+	prettyprint_addr(&serv->addr, daemon->addrbuff);
+	dbus_message_iter_append_basic (&args_iter, DBUS_TYPE_STRING, &daemon->addrbuff);
+      }
+  
+  dbus_message_iter_close_container (&args, &args_iter);
+
+  return reply;
+}
+#endif
 
 static DBusMessage* dbus_read_servers_ex(DBusMessage *message, int strings)
 {
@@ -372,6 +409,30 @@ static DBusMessage* dbus_read_servers_ex(DBusMessage *message, int strings)
   return error;
 }
 
+static DBusMessage *dbus_set_bool(DBusMessage *message, int flag, char *name)
+{
+  DBusMessageIter iter;
+  dbus_bool_t enabled;
+
+  if (!dbus_message_iter_init(message, &iter) || dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_BOOLEAN)
+    return dbus_message_new_error(message, DBUS_ERROR_INVALID_ARGS, "Expected boolean argument");
+  
+  dbus_message_iter_get_basic(&iter, &enabled);
+
+  if (enabled)
+    { 
+      my_syslog(LOG_INFO, "Enabling --%s option from D-Bus", name);
+      set_option_bool(flag);
+    }
+  else
+    {
+      my_syslog(LOG_INFO, "Disabling --%s option from D-Bus", name);
+      reset_option_bool(flag);
+    }
+
+  return NULL;
+}
+
 DBusHandlerResult message_handler(DBusConnection *connection, 
 				  DBusMessage *message, 
 				  void *user_data)
@@ -400,6 +461,12 @@ DBusHandlerResult message_handler(DBusConnection *connection,
       
       dbus_message_append_args(reply, DBUS_TYPE_STRING, &v, DBUS_TYPE_INVALID);
     }
+#ifdef HAVE_LOOP
+  else if (strcmp(method, "GetLoopServers") == 0)
+    {
+      reply = dbus_reply_server_loop(message);
+    }
+#endif
   else if (strcmp(method, "SetServers") == 0)
     {
       dbus_read_servers(message);
@@ -414,6 +481,14 @@ DBusHandlerResult message_handler(DBusConnection *connection,
     {
       reply = dbus_read_servers_ex(message, 1);
       new_servers = 1;
+    }
+  else if (strcmp(method, "SetFilterWin2KOption") == 0)
+    {
+      reply = dbus_set_bool(message, OPT_FILTER, "filterwin2k");
+    }
+  else if (strcmp(method, "SetBogusPrivOption") == 0)
+    {
+      reply = dbus_set_bool(message, OPT_BOGUSPRIV, "bogus-priv");
     }
   else if (strcmp(method, "ClearCache") == 0)
     clear_cache = 1;
@@ -558,7 +633,7 @@ void emit_dbus_signal(int action, struct dhcp_lease *lease, char *hostname)
    if (lease->flags & (LEASE_TA | LEASE_NA))
      {
        print_mac(mac, lease->clid, lease->clid_len);
-       inet_ntop(AF_INET6, lease->hwaddr, daemon->addrbuff, ADDRSTRLEN);
+       inet_ntop(AF_INET6, &lease->addr6, daemon->addrbuff, ADDRSTRLEN);
      }
    else
 #endif

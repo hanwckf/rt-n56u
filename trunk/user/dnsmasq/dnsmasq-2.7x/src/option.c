@@ -146,6 +146,7 @@ struct myoption {
 #define LOPT_DNSSEC_CHECK  334
 #define LOPT_LOCAL_SERVICE 335
 #define LOPT_DNSSEC_TIME   336
+#define LOPT_LOOP_DETECT   337
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -297,6 +298,7 @@ static const struct myoption opts[] =
     { "quiet-dhcp", 0, 0, LOPT_QUIET_DHCP },
     { "quiet-dhcp6", 0, 0, LOPT_QUIET_DHCP6 },
     { "quiet-ra", 0, 0, LOPT_QUIET_RA },
+    { "dns-loop-detect", 0, 0, LOPT_LOOP_DETECT },
     { NULL, 0, 0, 0 }
   };
 
@@ -454,6 +456,7 @@ static struct {
   { LOPT_QUIET_DHCP6, OPT_QUIET_DHCP6, NULL, gettext_noop("Do not log routine DHCPv6."), NULL },
   { LOPT_QUIET_RA, OPT_QUIET_RA, NULL, gettext_noop("Do not log RA."), NULL },
   { LOPT_LOCAL_SERVICE, OPT_LOCAL_SERVICE, NULL, gettext_noop("Accept queries only from directly-connected networks"), NULL },
+  { LOPT_LOOP_DETECT, OPT_LOOP_DETECT, NULL, gettext_noop("Detect and remove DNS forwarding loops"), NULL },
   { 0, 0, NULL, NULL, NULL }
 }; 
 
@@ -1462,7 +1465,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	struct list {
 	  char *suffix;
 	  struct list *next;
-	} *ignore_suffix = NULL, *li;
+	} *ignore_suffix = NULL, *match_suffix = NULL, *li;
 	
 	comma = split(arg);
 	if (!(directory = opt_string_alloc(arg)))
@@ -1471,12 +1474,25 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	for (arg = comma; arg; arg = comma) 
 	  {
 	    comma = split(arg);
-	    li = opt_malloc(sizeof(struct list));
-	    li->next = ignore_suffix;
-	    ignore_suffix = li;
-	    /* Have to copy: buffer is overwritten */
-	    li->suffix = opt_string_alloc(arg);
-	  };
+	    if (strlen(arg) != 0)
+	      {
+		li = opt_malloc(sizeof(struct list));
+		if (*arg == '*')
+		  {
+		    li->next = match_suffix;
+		    match_suffix = li;
+		    /* Have to copy: buffer is overwritten */
+		    li->suffix = opt_string_alloc(arg+1);
+		  }
+		else
+		  {
+		    li->next = ignore_suffix;
+		    ignore_suffix = li;
+		    /* Have to copy: buffer is overwritten */
+		    li->suffix = opt_string_alloc(arg);
+		  }
+	      }
+	  }
 	
 	if (!(dir_stream = opendir(directory)))
 	  die(_("cannot access directory %s: %s"), directory, EC_FILE);
@@ -1493,6 +1509,20 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		ent->d_name[0] == '.')
 	      continue;
 
+	    if (match_suffix)
+	      {
+		for (li = match_suffix; li; li = li->next)
+		  {
+		    /* check for required suffices */
+		    size_t ls = strlen(li->suffix);
+		    if (len > ls &&
+			strcmp(li->suffix, &ent->d_name[len - ls]) == 0)
+		      break;
+		  }
+		if (!li)
+		  continue;
+	      }
+	    
 	    for (li = ignore_suffix; li; li = li->next)
 	      {
 		/* check for proscribed suffices */
@@ -1528,7 +1558,12 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	    free(ignore_suffix->suffix);
 	    free(ignore_suffix);
 	  }
-	      
+	for(; match_suffix; match_suffix = li)
+	  {
+	    li = match_suffix->next;
+	    free(match_suffix->suffix);
+	    free(match_suffix);
+	  }    
 	break;
       }
 
@@ -2171,6 +2206,9 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	  {
 	    newlist = opt_malloc(sizeof(struct server));
 	    memset(newlist, 0, sizeof(struct server));
+#ifdef HAVE_LOOP
+	    newlist->uid = rand32();
+#endif
 	  }
 	
 	if (servers_only && option == 'S')
@@ -2583,9 +2621,11 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		if (strcmp(a[leasepos], "static") == 0)
 		  new->flags |= CONTEXT_STATIC | CONTEXT_DHCP;
 		else if (strcmp(a[leasepos], "ra-only") == 0 || strcmp(a[leasepos], "slaac") == 0 )
-		  new->flags |= CONTEXT_RA_ONLY | CONTEXT_RA;
+		  new->flags |= CONTEXT_RA;
 		else if (strcmp(a[leasepos], "ra-names") == 0)
 		  new->flags |= CONTEXT_RA_NAME | CONTEXT_RA;
+		else if (strcmp(a[leasepos], "ra-advrouter") == 0)
+		  new->flags |= CONTEXT_RA_ROUTER | CONTEXT_RA;
 		else if (strcmp(a[leasepos], "ra-stateless") == 0)
 		  new->flags |= CONTEXT_RA_STATELESS | CONTEXT_DHCP | CONTEXT_RA;
 		else if (leasepos == 1 && inet_pton(AF_INET6, a[leasepos], &new->end6))
@@ -2615,7 +2655,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	    
 	    if (new->prefix != 64)
 	      {
-		if ((new->flags & (CONTEXT_RA_ONLY | CONTEXT_RA_NAME | CONTEXT_RA_STATELESS)))
+		if (new->flags & CONTEXT_RA)
 		  ret_err(_("prefix length must be exactly 64 for RA subnets"));
 		else if (new->flags & CONTEXT_TEMPLATE)
 		  ret_err(_("prefix length must be exactly 64 for subnet constructors"));
@@ -4267,6 +4307,7 @@ void read_opts(int argc, char **argv, char *compile_opts)
   daemon->soa_refresh = SOA_REFRESH;
   daemon->soa_retry = SOA_RETRY;
   daemon->soa_expiry = SOA_EXPIRY;
+
   add_txt("version.bind", "dnsmasq-" VERSION, 0 );
   add_txt("authors.bind", "Simon Kelley", 0);
   add_txt("copyright.bind", COPYRIGHT, 0);

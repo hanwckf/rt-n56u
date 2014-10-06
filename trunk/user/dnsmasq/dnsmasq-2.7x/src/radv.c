@@ -28,11 +28,11 @@
 
 struct ra_param {
   time_t now;
-  int ind, managed, other, found_context, first;
+  int ind, managed, other, found_context, first, adv_router;
   char *if_name;
   struct dhcp_netid *tags;
   struct in6_addr link_local, link_global, ula;
-  unsigned int glob_pref_time, link_pref_time, ula_pref_time, adv_interval;
+  unsigned int glob_pref_time, link_pref_time, ula_pref_time, adv_interval, prio;
 };
 
 struct search_param {
@@ -210,28 +210,30 @@ static void send_ra(time_t now, int iface, char *iface_name, struct in6_addr *de
 #ifdef HAVE_LINUX_NETWORK
   FILE *f;
 #endif
- 
+  
+  parm.ind = iface;
+  parm.managed = 0;
+  parm.other = 0;
+  parm.found_context = 0;
+  parm.adv_router = 0;
+  parm.if_name = iface_name;
+  parm.first = 1;
+  parm.now = now;
+  parm.glob_pref_time = parm.link_pref_time = parm.ula_pref_time = 0;
+  parm.adv_interval = calc_interval(ra_param);
+  parm.prio = calc_prio(ra_param);
+  
   save_counter(0);
   ra = expand(sizeof(struct ra_packet));
   
   ra->type = ND_ROUTER_ADVERT;
   ra->code = 0;
   ra->hop_limit = hop_limit;
-  ra->flags = calc_prio(ra_param);
+  ra->flags = parm.prio;
   ra->lifetime = htons(calc_lifetime(ra_param));
   ra->reachable_time = 0;
   ra->retrans_time = 0;
 
-  parm.ind = iface;
-  parm.managed = 0;
-  parm.other = 0;
-  parm.found_context = 0;
-  parm.if_name = iface_name;
-  parm.first = 1;
-  parm.now = now;
-  parm.glob_pref_time = parm.link_pref_time = parm.ula_pref_time = 0;
-  parm.adv_interval = calc_interval(ra_param);
-  
   /* set tag with name == interface */
   iface_id.net = iface_name;
   iface_id.next = NULL;
@@ -286,8 +288,7 @@ static void send_ra(time_t now, int iface, char *iface_name, struct in6_addr *de
 	      setaddr6part(&local, addr6part(&local) & ~((context->prefix == 64) ? (u64)-1LL : (1LLU << (128 - context->prefix)) - 1LLU));
 	     
 	      
-	      if ((context->flags & 
-		   (CONTEXT_RA_ONLY | CONTEXT_RA_NAME | CONTEXT_RA_STATELESS)))
+	      if (context->flags & CONTEXT_RA)
 		{
 		  do_slaac = 1;
 		  if (context->flags & CONTEXT_DHCP)
@@ -339,6 +340,17 @@ static void send_ra(time_t now, int iface, char *iface_name, struct in6_addr *de
   if (!old_prefix && !parm.found_context)
     return; 
   
+  /* If we're sending router address instead of prefix in at least on prefix,
+     include the advertisement interval option. */
+  if (parm.adv_router)
+    {
+      put_opt6_char(ICMP6_OPT_ADV_INTERVAL);
+      put_opt6_char(1);
+      put_opt6_short(0);
+      /* interval value is in milliseconds */
+      put_opt6_long(1000 * calc_interval(find_iface_param(iface_name)));
+    }
+
 #ifdef HAVE_LINUX_NETWORK
   /* Note that IPv6 MTU is not necessarilly the same as the IPv4 MTU
      available from SIOCGIFMTU */
@@ -500,6 +512,7 @@ static int add_prefixes(struct in6_addr *local,  int prefix,
 	  int do_slaac = 0;
 	  int deprecate  = 0;
 	  int constructed = 0;
+	  int adv_router = 0;
 	  unsigned int time = 0xffffffff;
 	  struct dhcp_context *context;
 	  
@@ -511,8 +524,7 @@ static int add_prefixes(struct in6_addr *local,  int prefix,
 	      {
 		context->saved_valid = valid;
 
-		if ((context->flags & 
-		     (CONTEXT_RA_ONLY | CONTEXT_RA_NAME | CONTEXT_RA_STATELESS)))
+		if (context->flags & CONTEXT_RA) 
 		  {
 		    do_slaac = 1;
 		    if (context->flags & CONTEXT_DHCP)
@@ -530,7 +542,17 @@ static int add_prefixes(struct in6_addr *local,  int prefix,
 		    param->managed = 1;
 		    param->other = 1;
 		  }
-		
+
+		/* Configured to advertise router address, not prefix. See RFC 3775 7.2 
+		 In this case we do all addresses associated with a context, 
+		 hence the real_prefix setting here. */
+		if (context->flags & CONTEXT_RA_ROUTER)
+		  {
+		    adv_router = 1;
+		    param->adv_router = 1;
+		    real_prefix = context->prefix;
+		  }
+
 		/* find floor time, don't reduce below 3 * RA interval. */
 		if (time > context->lease_time)
 		  {
@@ -556,7 +578,7 @@ static int add_prefixes(struct in6_addr *local,  int prefix,
 		/* subsequent prefixes on the same interface 
 		   and subsequent instances of this prefix don't need timers.
 		   Be careful not to find the same prefix twice with different
-		   addresses. */
+		   addresses unless we're advertising the actual addresses. */
 		if (!(context->flags & CONTEXT_RA_DONE))
 		  {
 		    if (!param->first)
@@ -607,13 +629,18 @@ static int add_prefixes(struct in6_addr *local,  int prefix,
 	      if ((opt = expand(sizeof(struct prefix_opt))))
 		{
 		  /* zero net part of address */
-		  setaddr6part(local, addr6part(local) & ~((real_prefix == 64) ? (u64)-1LL : (1LLU << (128 - real_prefix)) - 1LLU));
+		  if (!adv_router)
+		    setaddr6part(local, addr6part(local) & ~((real_prefix == 64) ? (u64)-1LL : (1LLU << (128 - real_prefix)) - 1LLU));
 		  
 		  opt->type = ICMP6_OPT_PREFIX;
 		  opt->len = 4;
 		  opt->prefix_len = real_prefix;
 		  /* autonomous only if we're not doing dhcp, always set "on-link" */
-		  opt->flags = do_slaac ? 0xC0 : 0x80;
+		  opt->flags = 0x80;
+		  if (do_slaac)
+		    opt->flags |= 0x40;
+		  if (adv_router)
+		    opt->flags |= 0x20;
 		  opt->valid_lifetime = htonl(valid);
 		  opt->preferred_lifetime = htonl(preferred);
 		  opt->reserved = 0; 

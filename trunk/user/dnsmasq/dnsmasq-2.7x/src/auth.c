@@ -31,7 +31,7 @@ static struct addrlist *find_subnet(struct auth_zone *zone, int flag, struct all
 	  if (!(flag & F_IPV4))
 	    continue;
 	  
-	  netmask.s_addr = htonl(~((1 << (32 - subnet->prefixlen)) - 1));
+	  netmask.s_addr = htonl(~(in_addr_t)0 << (32 - subnet->prefixlen));
 	  
 	  if  (is_same_net(addr, subnet->addr.addr.addr4, netmask))
 	    return subnet;

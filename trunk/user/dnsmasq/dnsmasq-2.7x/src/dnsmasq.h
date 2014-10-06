@@ -237,7 +237,8 @@ struct event_desc {
 #define OPT_DNSSEC_DEBUG   47
 #define OPT_DNSSEC_NO_SIGN 48 
 #define OPT_LOCAL_SERVICE  49
-#define OPT_LAST           50
+#define OPT_LOOP_DETECT    50
+#define OPT_LAST           51
 
 /* extra flags for my_syslog, we use a couple of facilities since they are known 
    not to occupy the same bits as priorities, no matter how syslog.h is set up. */
@@ -439,6 +440,7 @@ struct crec {
 #define F_SECSTAT   (1u<<24)
 #define F_NO_RR     (1u<<25)
 #define F_IPSET     (1u<<26)
+#define F_NSIGMATCH (1u<<27)
 
 /* Values of uid in crecs with F_CONFIG bit set. */
 #define SRC_INTERFACE 0
@@ -478,6 +480,7 @@ union mysockaddr {
 #define SERV_USE_RESOLV     1024  /* forward this domain in the normal way */
 #define SERV_NO_REBIND      2048  /* inhibit dns-rebind protection */
 #define SERV_FROM_FILE      4096  /* read from --servers-file */
+#define SERV_LOOP           8192  /* server causes forwarding loop */
 
 struct serverfd {
   int fd;
@@ -498,6 +501,9 @@ struct server {
   char *domain; /* set if this server only handles a domain. */ 
   int flags, tcpfd;
   unsigned int queries, failed_queries;
+#ifdef HAVE_LOOP
+  u32 uid;
+#endif
   struct server *next; 
 };
 
@@ -641,6 +647,8 @@ struct dhcp_lease {
   unsigned char *extradata;
   unsigned int extradata_len, extradata_size;
   int last_interface;
+  int new_interface;     /* save possible originated interface */
+  int new_prefixlen;     /* and its prefix length */
 #ifdef HAVE_DHCP6
   struct in6_addr addr6;
   int iaid;
@@ -825,7 +833,7 @@ struct dhcp_context {
 #define CONTEXT_NETMASK        (1u<<1)
 #define CONTEXT_BRDCAST        (1u<<2)
 #define CONTEXT_PROXY          (1u<<3)
-#define CONTEXT_RA_ONLY        (1u<<4)
+#define CONTEXT_RA_ROUTER      (1u<<4)
 #define CONTEXT_RA_DONE        (1u<<5)
 #define CONTEXT_RA_NAME        (1u<<6)
 #define CONTEXT_RA_STATELESS   (1u<<7)
@@ -839,7 +847,6 @@ struct dhcp_context {
 #define CONTEXT_USED           (1u<<15)
 #define CONTEXT_OLD            (1u<<16)
 #define CONTEXT_V6             (1u<<17)
-
 
 struct ping_result {
   struct in_addr addr;
@@ -1122,6 +1129,7 @@ unsigned char* hash_questions(struct dns_header *header, size_t plen, char *name
 /* util.c */
 void rand_init(void);
 unsigned short rand16(void);
+u32 rand32(void);
 u64 rand64(void);
 int legal_hostname(char *c);
 char *canonicalise(char *s, int *nomem);
@@ -1133,6 +1141,7 @@ int sa_len(union mysockaddr *addr);
 int sockaddr_isequal(union mysockaddr *s1, union mysockaddr *s2);
 int hostname_isequal(const char *a, const char *b);
 time_t dnsmasq_time(void);
+int netmask_length(struct in_addr mask);
 int is_same_net(struct in_addr a, struct in_addr b, struct in_addr mask);
 #ifdef HAVE_IPV6
 int is_same_net6(struct in6_addr *a, struct in6_addr *b, int prefixlen);
@@ -1152,6 +1161,7 @@ void bump_maxfd(int fd, int *max);
 int read_write(int fd, unsigned char *packet, int size, int rw);
 
 int wildcard_match(const char* wildcard, const char* match);
+int wildcard_matchn(const char* wildcard, const char* match, int num);
 
 /* log.c */
 void die(char *message, char *arg1, int exit_code);
@@ -1185,6 +1195,8 @@ int send_from(int fd, int nowild, char *packet, size_t len,
 	       union mysockaddr *to, struct all_addr *source,
 	       unsigned int iface);
 void resend_query();
+struct randfd *allocate_rfd(int family);
+void free_rfd(struct randfd *rfd);
 
 /* network.c */
 int indextoname(int fd, int index, char *name);
@@ -1450,3 +1462,10 @@ void slaac_add_addrs(struct dhcp_lease *lease, time_t now, int force);
 time_t periodic_slaac(time_t now, struct dhcp_lease *leases);
 void slaac_ping_reply(struct in6_addr *sender, unsigned char *packet, char *interface, struct dhcp_lease *leases);
 #endif
+
+/* loop.c */
+#ifdef HAVE_LOOP
+void loop_send_probes();
+int detect_loop(char *query, int type);
+#endif
+

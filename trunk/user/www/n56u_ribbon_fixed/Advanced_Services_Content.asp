@@ -25,7 +25,7 @@ var $j = jQuery.noConflict();
 
 $j(document).ready(function() {
 	init_itoggle('telnetd');
-	init_itoggle('wins_enable');
+	init_itoggle('wins_enable', change_wins_enabled);
 	init_itoggle('lltd_enable');
 	init_itoggle('adsc_enable');
 	init_itoggle('watchdog_cpu');
@@ -47,8 +47,10 @@ function initial(){
 	}else
 		sshd_auth_change();
 
-	if(found_app_nmbd())
-		showhide_div('row_wins', 1);
+	if(found_app_nmbd()){
+		showhide_div('tbl_wins', 1);
+		change_wins_enabled();
+	}
 
 	if(!support_http_ssl()) {
 		document.form.http_proto.value = "0";
@@ -137,6 +139,11 @@ function sshd_auth_change(){
 	textarea_sshd_enabled(v);
 }
 
+function change_wins_enabled(){
+	var v = document.form.wins_enable[0].checked;
+	showhide_div('row_smb_wgrp', v);
+	showhide_div('row_smb_lmb', v);
+}
 </script>
 </head>
 
@@ -159,7 +166,7 @@ function sshd_auth_change(){
     <input type="hidden" name="current_page" value="Advanced_Services_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
-    <input type="hidden" name="sid_list" value="LANHostConfig;General;">
+    <input type="hidden" name="sid_list" value="LANHostConfig;General;Storage;">
     <input type="hidden" name="group_id" value="">
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
@@ -243,7 +250,7 @@ function sshd_auth_change(){
                                             <th style="background-color: #E3E3E3;"><#Adm_System_https_certs#></th>
                                         </tr>
                                         <tr>
-                                            <td style="padding-bottom: 0px; border-top: 0 none;">
+                                            <td style="padding-bottom: 0px;">
                                                 <a href="javascript:spoiler_toggle('ca.crt')"><span>Root CA Certificate (optional)</span></a>
                                                 <div id="ca.crt" style="display:none;">
                                                     <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.ca.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.ca.crt",""); %></textarea>
@@ -314,12 +321,12 @@ function sshd_auth_change(){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_wins" style="display:none">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#Adm_System_misc#></th>
+                                            <th colspan="2" style="background-color: #E3E3E3;">Windows Internet Name Service (WINS)</th>
                                         </tr>
-                                        <tr id="row_wins" style="display:none">
-                                            <th><#Adm_Svc_wins#></th>
+                                        <tr>
+                                            <th width="50%"><#Adm_Svc_wins#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="wins_enable_on_of">
@@ -327,10 +334,36 @@ function sshd_auth_change(){
                                                     </div>
                                                 </div>
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="wins_enable" id="wins_enable_1" class="input" value="1" <% nvram_match_x("", "wins_enable", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="wins_enable" id="wins_enable_0" class="input" value="0" <% nvram_match_x("", "wins_enable", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="wins_enable" id="wins_enable_1" class="input" value="1" onclick="change_wins_enabled();" <% nvram_match_x("", "wins_enable", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="wins_enable" id="wins_enable_0" class="input" value="0" onclick="change_wins_enabled();" <% nvram_match_x("", "wins_enable", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
+                                        </tr>
+                                        <tr id="row_smb_wgrp" style="display:none;">
+                                            <th>
+                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17, 3);"><#ShareNode_WorkGroup_itemname#></a>
+                                            </th>
+                                            <td>
+                                                <input type="text" name="st_samba_workgroup" class="input" maxlength="32" size="32" value="<% nvram_get_x("", "st_samba_workgroup"); %>"/>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_smb_lmb" style="display:none;">
+                                            <th>
+                                                <#StorageLMB#>
+                                            </th>
+                                            <td>
+                                                <select name="st_samba_lmb" class="input">
+                                                    <option value="0" <% nvram_match_x("", "st_samba_lmb", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "st_samba_lmb", "1", "selected"); %>>Local Master Browser (*)</option>
+                                                    <option value="2" <% nvram_match_x("", "st_samba_lmb", "2", "selected"); %>>Local & Domain Master Browser</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#Adm_System_misc#></th>
                                         </tr>
                                         <tr>
                                             <th><#Adm_Svc_lltd#></th>

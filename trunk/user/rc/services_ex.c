@@ -365,11 +365,12 @@ FILE *
 write_smb_conf_header(void)
 {
 	FILE *fp;
-	int i_wins_enable;
+	int i_lmb, i_wins_enable;
 	char *p_computer_name, *p_workgroup, *p_res_order;
 
 	unlink(SAMBA_CONF);
 
+	i_lmb = nvram_get_int("st_samba_lmb");
 	i_wins_enable = nvram_get_int("wins_enable");
 	p_workgroup = nvram_safe_get("st_samba_workgroup");
 	p_computer_name = get_our_hostname();
@@ -385,26 +386,20 @@ write_smb_conf_header(void)
 	fprintf(fp, "netbios name = %s\n", p_computer_name);
 	fprintf(fp, "server string = %s\n", p_computer_name);
 
-#if defined(APP_SMBD)
-	if (nvram_invmatch("enable_samba", "0")) {
-		int i_lmb = nvram_get_int("st_samba_lmb");
-		if (i_lmb == 0) {
-			fprintf(fp, "local master = %s\n", "no");
-		} else if (i_lmb == 1) {
-			fprintf(fp, "local master = %s\n", "yes");
-			fprintf(fp, "os level = %d\n", 128);
-		} else {
-			fprintf(fp, "local master = %s\n", "yes");
-			fprintf(fp, "domain master = %s\n", "yes");
-			fprintf(fp, "preferred master = %s\n", "yes");
-			fprintf(fp, "os level = %d\n", 128);
-		}
+	if (i_lmb == 0) {
+		fprintf(fp, "local master = %s\n", "no");
+	} else if (i_lmb == 1) {
+		fprintf(fp, "local master = %s\n", "yes");
+		fprintf(fp, "os level = %d\n", 128);
+	} else {
+		fprintf(fp, "local master = %s\n", "yes");
+		fprintf(fp, "domain master = %s\n", "yes");
+		fprintf(fp, "preferred master = %s\n", "yes");
+		fprintf(fp, "os level = %d\n", 128);
 	}
-#endif
 
 	if (i_wins_enable) {
 		fprintf(fp, "wins support = %s\n", "yes");
-		p_res_order = "lmhosts wins hosts bcast";
 	} else {
 		if (is_dhcpd_enabled(get_ap_mode())) {
 			char *wins = nvram_safe_get("dhcp_wins_x");
@@ -423,7 +418,7 @@ write_smb_conf_header(void)
 	fprintf(fp, "unix charset = UTF8\n");
 	fprintf(fp, "display charset = UTF8\n");
 	fprintf(fp, "bind interfaces only = %s\n", "yes");
-	fprintf(fp, "interfaces = %s lo\n", IFNAME_BR);
+	fprintf(fp, "interfaces = %s\n", IFNAME_BR);
 	fprintf(fp, "unix extensions = no\n");			// fix for MAC users (thanks to 'mark2qualis')
 	fprintf(fp, "encrypt passwords = yes\n");
 	fprintf(fp, "pam password change = no\n");

@@ -64,7 +64,7 @@ static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
  * tb.netassist.ua specific response validation
  * 'OK!' and 'is already registered' are the good answers.
  */
-static int response(http_trans_t *trans, ddns_info_t *UNUSED(info), ddns_alias_t *alias)
+static int response(http_trans_t *trans, ddns_info_t *UNUSED(info), ddns_alias_t *UNUSED(alias))
 {
 	char *resp = trans->p_rsp_body;
 

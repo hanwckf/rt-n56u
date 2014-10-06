@@ -21,7 +21,7 @@
 #ifndef INADYN_HTTP_H_
 #define INADYN_HTTP_H_
 
-#ifdef CONFIG_OPENSSL
+#if defined(CONFIG_OPENSSL)
 #include <openssl/crypto.h>
 #include <openssl/x509.h>
 #include <openssl/pem.h>
@@ -42,7 +42,7 @@ typedef struct {
 	tcp_sock_t tcp;
 
 	int        ssl_enabled;
-#ifdef CONFIG_OPENSSL
+#ifdef ENABLE_SSL
 	SSL       *ssl;
 	SSL_CTX   *ssl_ctx;
 #endif

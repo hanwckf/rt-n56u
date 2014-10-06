@@ -1,4 +1,4 @@
-/* Inadyn is a simple and small dynamic DNS (DDNS) client
+/* Inadyn is a small and simple dynamic DNS (DDNS) client
  *
  * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
  * Copyright (C) 2010-2014  Joachim Nilsson <troglobit@gmail.com>
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 	int rc = 0, restart;
 	ddns_t *ctx = NULL;
 
-#ifdef CONFIG_OPENSSL
+#ifdef ENABLE_SSL
 	SSL_library_init();
 	SSL_load_error_strings();
 #endif
@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 
 	os_close_dbg_output();
 
-#ifdef CONFIG_OPENSSL
+#ifdef ENABLE_SSL
 	ERR_free_strings();
 #endif
 

@@ -23,14 +23,16 @@
 #include "http.h"
 
 
-#ifdef CONFIG_OPENSSL
+#ifdef ENABLE_SSL
 /* SSL SNI support: tell the servername we want to speak to */
 static int set_server_name(SSL *ssl, const char *sn)
 {
-	int rc;
+	int rc = 0;
 
+#if defined(CONFIG_OPENSSL)
 	/* api returns 1 for success */
 	rc = !SSL_set_tlsext_host_name(ssl, sn);
+#endif
 
 	return rc;
 }
@@ -38,7 +40,7 @@ static int set_server_name(SSL *ssl, const char *sn)
 
 int ssl_init(http_t *client, char *msg)
 {
-#ifndef CONFIG_OPENSSL
+#ifndef ENABLE_SSL
 	(void)client;
 	(void)msg;
 	return 0;
@@ -105,7 +107,7 @@ int ssl_init(http_t *client, char *msg)
 
 int ssl_exit(http_t *client)
 {
-#ifndef CONFIG_OPENSSL
+#ifndef ENABLE_SSL
 	(void)client;
 	return 0;
 #else
@@ -122,7 +124,7 @@ int ssl_exit(http_t *client)
 
 int ssl_send(http_t *client, const char *buf, int len)
 {
-#ifndef CONFIG_OPENSSL
+#ifndef ENABLE_SSL
 	(void)client;
 	(void)buf;
 	(void)len;
@@ -146,7 +148,7 @@ int ssl_send(http_t *client, const char *buf, int len)
 
 int ssl_recv(http_t *client, char *buf, int buf_len, int *recv_len)
 {
-#ifndef CONFIG_OPENSSL
+#ifndef ENABLE_SSL
 	(void)client;
 	(void)buf;
 	(void)buf_len;

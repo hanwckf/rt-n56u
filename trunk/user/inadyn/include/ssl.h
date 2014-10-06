@@ -22,14 +22,6 @@
 #ifndef INADYN_SSL_H_
 #define INADYN_SSL_H_
 
-#ifdef CONFIG_OPENSSL
-#include <openssl/crypto.h>
-#include <openssl/x509.h>
-#include <openssl/pem.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#endif
-
 #include "http.h"
 
 int ssl_init (http_t *client, char *msg);

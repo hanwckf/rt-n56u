@@ -36,7 +36,7 @@ LDFLAGS      += -Wl,--gc-sections
 LDLIBS       += -ldl
 
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_DDNS_SSL),y)
-CFLAGS       += -DCONFIG_OPENSSL
+CFLAGS       += -DENABLE_SSL -DCONFIG_OPENSSL
 LDLIBS       += -lssl -lcrypto
 endif
 

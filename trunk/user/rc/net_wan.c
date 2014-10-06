@@ -810,8 +810,7 @@ stop_wan(void)
 
 	kill_services(svcs_ppp, 6, 1);
 
-	if (pids("udhcpc"))
-	{
+	if (pids("udhcpc")) {
 		doSystem("killall %s %s", "-SIGUSR2", "udhcpc");
 		usleep(300000);
 	}
@@ -824,7 +823,7 @@ stop_wan(void)
 
 	if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC &&
 	    strcmp(man_ifname, get_wan_unit_value(unit, "ifname_t")) == 0)
-		wan_down(man_ifname, unit);
+		wan_down(man_ifname, unit, 1);
 
 	/* Bring down WAN interfaces */
 	ifconfig(man_ifname, 0, "0.0.0.0", NULL);
@@ -1081,7 +1080,7 @@ wan_up(char *wan_ifname, int unit, int is_static)
 }
 
 void
-wan_down(char *wan_ifname, int unit)
+wan_down(char *wan_ifname, int unit, int is_static)
 {
 	char *wan_addr, *wan_gate;
 	const char *script_postw = SCRIPT_POST_WAN;
@@ -1091,13 +1090,9 @@ wan_down(char *wan_ifname, int unit)
 
 	notify_pause_detect_internet();
 
-	wan_proto = get_wan_proto(unit);
-
 	/* deferred stop static VPN client (prevent rebuild resolv.conf) */
 	nvram_set_temp("vpnc_dns_t", "");
-	if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC)
-		stop_vpn_client();
-	else
+	if (!is_static)
 		notify_rc("stop_vpn_client");
 
 #if defined (USE_IPV6)
@@ -1105,6 +1100,7 @@ wan_down(char *wan_ifname, int unit)
 		wan6_down(wan_ifname, unit);
 #endif
 
+	wan_proto = get_wan_proto(unit);
 	modem_unit_id = is_ifunit_modem(wan_ifname, unit);
 
 	/* Stop multicast router (for NDIS or IPoE) */
@@ -1815,7 +1811,7 @@ udhcpc_deconfig(char *wan_ifname, int is_zcip)
 	if (is_man)
 		man_down(wan_ifname, unit);
 	else
-		wan_down(wan_ifname, unit);
+		wan_down(wan_ifname, unit, 0);
 
 	return 0;
 }

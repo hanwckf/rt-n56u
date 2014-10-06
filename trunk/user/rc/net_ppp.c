@@ -568,7 +568,7 @@ ipdown_main(int argc, char **argv)
 	if (ppp_idx >= RAS_PPP_UNIT)
 		create_file(FLAG_FILE_WWAN_GONE);
 
-	wan_down(ppp_ifname, unit);
+	wan_down(ppp_ifname, unit, 0);
 
 	preset_wan_ppp_routes(ppp_ifname, unit);
 

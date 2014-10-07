@@ -1,10 +1,13 @@
 SRC_NAME=pptpd-1.3.3
 
+PPPD_DIR=$(ROOTDIR)/user/pppd
+PPPD_VER=2.4.7
+
 CFLAGS  += -O2
 CFLAGS  += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 config_test:
@@ -21,8 +24,8 @@ configure:
 	export ac_cv_lib_intl_gettext=no ; \
 	./configure \
 		KDIR=$(ROOTDIR)/$(LINUXDIR) \
-		PPPDIR=../../pppd \
-		PPPVER=2.4.5 \
+		PPPDIR=$(PPPD_DIR) \
+		PPPVER=$(PPPD_VER) \
 		--prefix=/usr \
 		--enable-bcrelay \
 		--host=$(HOST_TARGET) \

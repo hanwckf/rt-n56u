@@ -163,7 +163,7 @@ BOOLEAN Query_config_from_driver(int ioctl_sock, char *prefix_name, struct rtapd
 		conf->SsidNum = 1;			
 	DBGPRINT(RT_DEBUG_TRACE, "MBSS number: %d\n", conf->SsidNum);
 
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 	m_num = conf->SsidNum;
 #else
 	m_num = 1;
@@ -187,7 +187,7 @@ BOOLEAN Query_config_from_driver(int ioctl_sock, char *prefix_name, struct rtapd
 	{
 		for (idx = 0; idx < pDot1xCmmConf->Dot1xBssInfo[i].radius_srv_num; idx++)
 		{			
-#if MULTIPLE_RADIUS  	
+#ifdef MULTIPLE_RADIUS
 			// RADIUS_Server ip address
 			if (!Config_read_radius_addr(
         	    &conf->mbss_auth_servers[i],
@@ -445,7 +445,7 @@ struct rtapd_config * Config_read(int ioctl_sock, char *prefix_name)
     	return NULL;
 	}
        
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 	for (i = 0; i < MAX_MBSSID_NUM; i++)
 	{
 		struct hostapd_radius_server *servs, *cserv, *nserv;
@@ -500,14 +500,14 @@ static void Config_free_radius(struct hostapd_radius_server *servers, int num_se
 
 void Config_free(struct rtapd_config *conf)
 {
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 	int	i;
 #endif
 	
     if (conf == NULL)
         return;
 
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 	for (i = 0; i < MAX_MBSSID_NUM; i++)
 	{
 		if (conf->mbss_auth_servers[i])

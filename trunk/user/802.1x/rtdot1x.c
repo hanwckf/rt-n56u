@@ -1,5 +1,3 @@
-
-
 #include <net/if_arp.h>
 #include <netpacket/packet.h>
 #include <sys/ioctl.h>
@@ -29,15 +27,12 @@
 #include "radius_client.h"
 #include "config.h"
 
-//#define RT2860AP_SYSTEM_PATH   "/etc/Wireless/RT2860AP/RT2860AP.dat"
-
-
 struct hapd_interfaces {
 	int count;
 	rtapd **rtapd;
 };
 
-u32    RTDebugLevel = RT_DEBUG_ERROR;
+u32  RTDebugLevel = RT_DEBUG_ERROR;
 
 /*
 	========================================================================
@@ -57,11 +52,11 @@ u32    RTDebugLevel = RT_DEBUG_ERROR;
 		
 	========================================================================
 */
-u16	RTMPCompareMemory(void *pSrc1,void *pSrc2, u16 Length)
+u16 RTMPCompareMemory(void *pSrc1,void *pSrc2, u16 Length)
 {
 	char *pMem1;
 	char *pMem2;
-	u16	Index = 0;
+	u16 Index = 0;
 
 	pMem1 = (char*) pSrc1;
 	pMem2 = (char*) pSrc2;
@@ -87,23 +82,18 @@ int RT_ioctl(
 		unsigned char 	apidx, 
 		int 			flags)
 {
-    //char			name[12];
-    int				ret = 1;
-    struct iwreq	wrq;
+	int ret = 1;
+	struct iwreq wrq;
 
-    //sprintf(name, "ra%d", apidx);
-    //name[3] = '\0';
-
-    //strcpy(wrq.ifr_name, name);
 	sprintf(wrq.ifr_name, "%s%d", prefix_name, apidx);
 
-    wrq.u.data.flags = flags;
+	wrq.u.data.flags = flags;
 	wrq.u.data.length = data_len;
-    wrq.u.data.pointer = (caddr_t) data;
+	wrq.u.data.pointer = (caddr_t) data;
 
-    ret = ioctl(sid, param, &wrq);	
-    
-    return ret;
+	ret = ioctl(sid, param, &wrq);
+
+	return ret;
 }
 
 void dot1x_set_IdleTimeoutAction(
@@ -114,9 +104,8 @@ void dot1x_set_IdleTimeoutAction(
 	DOT1X_IDLE_TIMEOUT dot1x_idle_time;
 
 	memset(&dot1x_idle_time, 0, sizeof(DOT1X_IDLE_TIMEOUT));
-
 	memcpy(dot1x_idle_time.StaAddr, sta->addr, MAC_ADDR_LEN);
-	
+
 	dot1x_idle_time.idle_timeout = 
 		((idle_timeout < DEFAULT_IDLE_INTERVAL) ? DEFAULT_IDLE_INTERVAL : idle_timeout);
 
@@ -126,27 +115,26 @@ void dot1x_set_IdleTimeoutAction(
 				 sizeof(DOT1X_IDLE_TIMEOUT), 
 				 rtapd->prefix_wlan_name, sta->ApIdx, 
 				 RT_OID_802_DOT1X_IDLE_TIMEOUT))
-	{				   
-    	DBGPRINT(RT_DEBUG_ERROR,"Failed to RT_OID_802_DOT1X_IDLE_TIMEOUT\n");
-    	return;
-	}   
-
+	{
+		DBGPRINT(RT_DEBUG_ERROR,"Failed to RT_OID_802_DOT1X_IDLE_TIMEOUT\n");
+		return;
+	}
 }
 
 static void Handle_reload_config(
-	rtapd 	*rtapd)
+	rtapd *rtapd)
 {
 	struct rtapd_config *newconf;
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 	int i;
 #endif
 
 	DBGPRINT(RT_DEBUG_TRACE, "Reloading configuration\n");
 
-	/* create new config */					
+	/* create new config */
 	newconf = Config_read(rtapd->ioctl_sock, rtapd->prefix_wlan_name);
 	if (newconf == NULL)
-    	{
+	{
 		DBGPRINT(RT_DEBUG_ERROR, "Failed to read new configuration file - continuing with old.\n");
 		return;
 	}
@@ -157,45 +145,30 @@ static void Handle_reload_config(
 	Radius_client_flush(rtapd);
 	Config_free(rtapd->conf);
 	rtapd->conf = newconf;
-    	Apd_free_stas(rtapd);
+	Apd_free_stas(rtapd);
 
-	/* when reStartAP, no need to reallocate sock
-    for (i = 0; i < rtapd->conf->SsidNum; i++)
-    {
-        if (rtapd->sock[i] >= 0)
-            close(rtapd->sock[i]);
-            
-	    rtapd->sock[i] = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-	    if (rtapd->sock[i] < 0)
-        {
-		    perror("socket[PF_PACKET,SOCK_RAW]");
-		    return;
-	    }
-    }*/
-
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 	for (i = 0; i < MAX_MBSSID_NUM; i++)
 		rtapd->radius->mbss_auth_serv_sock[i] = -1;
 #else
 	rtapd->radius->auth_serv_sock = -1;
 #endif
 
-    if (Radius_client_init(rtapd))
-    {
-	    DBGPRINT(RT_DEBUG_ERROR,"RADIUS client initialization failed.\n");
-	    return;
-    }
-#if MULTIPLE_RADIUS
+	if (Radius_client_init(rtapd))
+	{
+		DBGPRINT(RT_DEBUG_ERROR,"RADIUS client initialization failed.\n");
+		return;
+	}
+#ifdef MULTIPLE_RADIUS
 	for (i = 0; i < rtapd->conf->SsidNum; i++)
 		DBGPRINT(RT_DEBUG_TRACE, "auth_serv_sock[%d] = %d\n", i, rtapd->radius->mbss_auth_serv_sock[i]);
 #else
-    DBGPRINT(RT_DEBUG_TRACE,"rtapd->radius->auth_serv_sock = %d\n",rtapd->radius->auth_serv_sock);
+	DBGPRINT(RT_DEBUG_TRACE,"rtapd->radius->auth_serv_sock = %d\n", rtapd->radius->auth_serv_sock);
 #endif
-	
 }
 
 static void Handle_read(int sock, void *eloop_ctx, void *sock_ctx)
-{                              
+{
 	rtapd *rtapd = eloop_ctx;
 	int len;
 	unsigned char buf[3000];
@@ -260,7 +233,7 @@ static void Handle_read(int sock, void *eloop_ctx, void *sock_ctx)
 		if(i >= rtapd->conf->SsidNum)
 		{
 			DBGPRINT(RT_DEBUG_WARN, "Receive unexpected DA (%02x:%02x:%02x:%02x:%02x:%02x)\n",
-										MAC2STR(da));
+					MAC2STR(da));
 			return;
 		}
 		
@@ -310,7 +283,7 @@ static void Handle_read(int sock, void *eloop_ctx, void *sock_ctx)
 				if (s)
 				{
 					DBGPRINT(RT_DEBUG_TRACE,"This station(%02x:%02x:%02x:%02x:%02x:%02x) is removed.\n", MAC2STR(sa));
-					Ap_free_sta(rtapd, s);						
+					Ap_free_sta(rtapd, s);
 				}
 				else
 				{
@@ -337,127 +310,124 @@ static void Handle_read(int sock, void *eloop_ctx, void *sock_ctx)
 
 int Apd_init_sockets(rtapd *rtapd)
 {
-    struct ifreq ifr;
+	struct ifreq ifr;
 	struct sockaddr_ll addr;
-    int i;
+	int i;
 
 	// 1. init ethernet interface socket for pre-auth
 	for (i = 0; i < rtapd->conf->num_preauth_if; i++)
 	{
 		rtapd->eth_sock[i] = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PRE_AUTH));
-	    if (rtapd->eth_sock[i] < 0)
-    	{
-    	    perror("socket[PF_PACKET,SOCK_RAW](eth_sock)");
+		if (rtapd->eth_sock[i] < 0)
+		{
+			perror("socket[PF_PACKET,SOCK_RAW](eth_sock)");
 			return -1;
-    	}
-
-	    if (eloop_register_read_sock(rtapd->eth_sock[i], Handle_read, rtapd, NULL))
-    	{
-    	    DBGPRINT(RT_DEBUG_ERROR,"Could not register read socket(eth_sock)\n");
+		}
+		
+		if (eloop_register_read_sock(rtapd->eth_sock[i], Handle_read, rtapd, NULL))
+		{
+			DBGPRINT(RT_DEBUG_ERROR,"Could not register read socket(eth_sock)\n");
 			return -1;
-    	}
-	
-    	memset(&ifr, 0, sizeof(ifr));
-	    strcpy(ifr.ifr_name, rtapd->conf->preauth_if_name[i]);
-    	DBGPRINT(RT_DEBUG_TRACE,"Register pre-auth interface as (%s)\n", ifr.ifr_name);
-
-	    if (ioctl(rtapd->eth_sock[i], SIOCGIFINDEX, &ifr) != 0)
-    	{
-    	    perror("ioctl(SIOCGIFHWADDR)(eth_sock)");
-   	     	return -1;
-    	}
-
-    	memset(&addr, 0, sizeof(addr));
+		}
+		
+		memset(&ifr, 0, sizeof(ifr));
+		strcpy(ifr.ifr_name, rtapd->conf->preauth_if_name[i]);
+		DBGPRINT(RT_DEBUG_TRACE,"Register pre-auth interface as (%s)\n", ifr.ifr_name);
+		
+		if (ioctl(rtapd->eth_sock[i], SIOCGIFINDEX, &ifr) != 0)
+		{
+			perror("ioctl(SIOCGIFHWADDR)(eth_sock)");
+			return -1;
+		}
+		
+		memset(&addr, 0, sizeof(addr));
 		addr.sll_family = AF_PACKET;
 		addr.sll_ifindex = ifr.ifr_ifindex;
 		if (bind(rtapd->eth_sock[i], (struct sockaddr *) &addr, sizeof(addr)) < 0)
-    	{
+		{
 			perror("bind");
 			return -1;
 		}
-	    DBGPRINT(RT_DEBUG_TRACE,"Pre-auth raw packet socket binding on %s(socknum=%d,ifindex=%d)\n", 
-									ifr.ifr_name, rtapd->eth_sock[i], addr.sll_ifindex);
+		DBGPRINT(RT_DEBUG_TRACE,"Pre-auth raw packet socket binding on %s(socknum=%d,ifindex=%d)\n", 
+				ifr.ifr_name, rtapd->eth_sock[i], addr.sll_ifindex);
 	}
 
-	// 2. init wireless interface socket for EAP negotiation      		
+	// 2. init wireless interface socket for EAP negotiation
 	for (i = 0; i < rtapd->conf->num_eap_if; i++)
 	{
 		rtapd->wlan_sock[i] = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PAE));
-        
-	    if (rtapd->wlan_sock[i] < 0)
-        {
-            perror("socket[PF_PACKET,SOCK_RAW]");
-    		return -1;
-        }
-
-	    if (eloop_register_read_sock(rtapd->wlan_sock[i], Handle_read, rtapd, NULL))
-        {
-            DBGPRINT(RT_DEBUG_ERROR,"Could not register read socket\n");
-    		return -1;
-        }
-	
-        memset(&ifr, 0, sizeof(ifr));
+		if (rtapd->wlan_sock[i] < 0)
+		{
+			perror("socket[PF_PACKET,SOCK_RAW]");
+			return -1;
+		}
+		
+		if (eloop_register_read_sock(rtapd->wlan_sock[i], Handle_read, rtapd, NULL))
+		{
+			DBGPRINT(RT_DEBUG_ERROR,"Could not register read socket\n");
+			return -1;
+		}
+		
+		memset(&ifr, 0, sizeof(ifr));
 		strcpy(ifr.ifr_name, rtapd->conf->eap_if_name[i]);
 		DBGPRINT(RT_DEBUG_TRACE,"Register EAP interface as (%s)\n", ifr.ifr_name);
-
-	    if (ioctl(rtapd->wlan_sock[i], SIOCGIFINDEX, &ifr) != 0)
-        {
-            perror("ioctl(SIOCGIFHWADDR)");
-            return -1;
-        }
-
-        memset(&addr, 0, sizeof(addr));
-    	addr.sll_family = AF_PACKET;
-    	addr.sll_ifindex = ifr.ifr_ifindex;
-	    if (bind(rtapd->wlan_sock[i], (struct sockaddr *) &addr, sizeof(addr)) < 0)
-        {
-    		perror("bind");
-    		return -1;
-    	}
-	    DBGPRINT(RT_DEBUG_TRACE, "EAP raw packet socket binding on %s (socknum=%d,ifindex=%d)\n", 
-									ifr.ifr_name, rtapd->wlan_sock[i], addr.sll_ifindex);
+		
+		if (ioctl(rtapd->wlan_sock[i], SIOCGIFINDEX, &ifr) != 0)
+		{
+			perror("ioctl(SIOCGIFHWADDR)");
+			return -1;
+		}
+		
+		memset(&addr, 0, sizeof(addr));
+		addr.sll_family = AF_PACKET;
+		addr.sll_ifindex = ifr.ifr_ifindex;
+		
+		if (bind(rtapd->wlan_sock[i], (struct sockaddr *) &addr, sizeof(addr)) < 0)
+		{
+			perror("bind");
+			return -1;
+		}
+		DBGPRINT(RT_DEBUG_TRACE, "EAP raw packet socket binding on %s (socknum=%d,ifindex=%d)\n",
+				ifr.ifr_name, rtapd->wlan_sock[i], addr.sll_ifindex);
 	}
 
-    
 	// 3. Get wireless interface MAC address
-    for(i = 0; i < rtapd->conf->SsidNum; i++)
-    {
+	for(i = 0; i < rtapd->conf->SsidNum; i++)
+	{
 		int s = -1;
-	
-		s = socket(AF_INET, SOCK_DGRAM, 0); 
-
+		
+		s = socket(AF_INET, SOCK_DGRAM, 0);
 		if (s < 0)
-        {
-            perror("socket[AF_INET,SOCK_DGRAM]");
-    		return -1;
-        }
-    
-    	memset(&ifr, 0, sizeof(ifr));
+		{
+			perror("socket[AF_INET,SOCK_DGRAM]");
+			return -1;
+		}
+		
+		memset(&ifr, 0, sizeof(ifr));
 		sprintf(ifr.ifr_name, "%s%d",rtapd->prefix_wlan_name, i);
-    	//sprintf(ifr.ifr_name, "ra%d", i);
-    
+		//sprintf(ifr.ifr_name, "ra%d", i);
+		
 		// Get MAC address
-    	if (ioctl(s, SIOCGIFHWADDR, &ifr) != 0)
-    	{
-        	perror("ioctl(SIOCGIFHWADDR)");
+		if (ioctl(s, SIOCGIFHWADDR, &ifr) != 0)
+		{
+			perror("ioctl(SIOCGIFHWADDR)");
 			close(s);
-        	return -1;
-    	}
-
-    	DBGPRINT(RT_DEBUG_INFO," Device %s has ifr.ifr_hwaddr.sa_family %d\n",ifr.ifr_name, ifr.ifr_hwaddr.sa_family);
+			return -1;
+		}
+		
+		DBGPRINT(RT_DEBUG_INFO," Device %s has ifr.ifr_hwaddr.sa_family %d\n",ifr.ifr_name, ifr.ifr_hwaddr.sa_family);
 		if (ifr.ifr_hwaddr.sa_family != ARPHRD_ETHER)
-    	{
+		{
 			DBGPRINT(RT_DEBUG_ERROR,"IF-%s : Invalid HW-addr family 0x%04x\n", ifr.ifr_name, ifr.ifr_hwaddr.sa_family);
 			close(s);
 			return -1;
 		}
-
+		
 		memcpy(rtapd->own_addr[i], ifr.ifr_hwaddr.sa_data, ETH_ALEN);
-    	DBGPRINT(RT_DEBUG_TRACE, "IF-%s MAC Address = " MACSTR "\n", ifr.ifr_name, MAC2STR(rtapd->own_addr[i]));
-
+		DBGPRINT(RT_DEBUG_TRACE, "IF-%s MAC Address = " MACSTR "\n", ifr.ifr_name, MAC2STR(rtapd->own_addr[i]));
+		
 		close(s);
-	}	
-
+	}
 
 	return 0;
 }
@@ -471,11 +441,12 @@ static void Apd_cleanup(rtapd *rtapd)
 		if (rtapd->wlan_sock[i] >= 0)
 			close(rtapd->wlan_sock[i]);
 		if (rtapd->eth_sock[i] >= 0)
-			close(rtapd->eth_sock[i]);	
-	}	
+			close(rtapd->eth_sock[i]);
+	}
+
 	if (rtapd->ioctl_sock >= 0)
 		close(rtapd->ioctl_sock);
-    
+
 	Radius_client_deinit(rtapd);
 
 	Config_free(rtapd->conf);
@@ -485,49 +456,50 @@ static void Apd_cleanup(rtapd *rtapd)
 }
 
 static int Apd_setup_interface(rtapd *rtapd)
-{   
-#if MULTIPLE_RADIUS
-	int		i;
+{
+#ifdef MULTIPLE_RADIUS
+	int i;
 #endif
 
 	if (Apd_init_sockets(rtapd))
-		return -1;    
-    
+		return -1;
+
 	if (Radius_client_init(rtapd))
-    {
+	{
 		DBGPRINT(RT_DEBUG_ERROR,"RADIUS client initialization failed.\n");
 		return -1;
 	}
 
 	if (ieee802_1x_init(rtapd))
-    {
+	{
 		DBGPRINT(RT_DEBUG_ERROR,"IEEE 802.1X initialization failed.\n");
 		return -1;
 	}
-#if MULTIPLE_RADIUS
+
+#ifdef MULTIPLE_RADIUS
 	for (i = 0; i < rtapd->conf->SsidNum; i++)
 		DBGPRINT(RT_DEBUG_TRACE,"auth_serv_sock[%d] = %d\n", i, rtapd->radius->mbss_auth_serv_sock[i]);
-#else	
-    DBGPRINT(RT_DEBUG_TRACE,"rtapd->radius->auth_serv_sock = %d\n",rtapd->radius->auth_serv_sock);
+#else
+	DBGPRINT(RT_DEBUG_TRACE,"rtapd->radius->auth_serv_sock = %d\n",rtapd->radius->auth_serv_sock);
 #endif
 
 	return 0;
 }
 
-static void usage(void)
+static void usage(char *app)
 {
-	DBGPRINT(RT_DEBUG_OFF, "USAGE :  	rtdot1xd [optional command]\n");
-	DBGPRINT(RT_DEBUG_OFF, "[optional command] : \n");
-	DBGPRINT(RT_DEBUG_OFF, "-i <card_number> : indicate which card is used\n");
-	DBGPRINT(RT_DEBUG_OFF, "-d <debug_level> : set debug level\n");
-	
+	printf("USAGE : %s [optional commands]\n", app);
+	printf("[optional commands] : \n");
+	printf("  -i <ifname> : set first AP interface name (e.g. rai0)\n");
+	printf("  -d <debug_level> : set debug level\n");
+
 	exit(1);
 }
 
 static rtapd * Apd_init(const char *prefix_name)
 {
 	rtapd *rtapd;
-	int		i;
+	int i;
 
 	rtapd = malloc(sizeof(*rtapd));
 	if (rtapd == NULL)
@@ -589,145 +561,46 @@ static void Handle_usr1(int sig, void *eloop_ctx, void *signal_ctx)
 
 	DBGPRINT(RT_DEBUG_TRACE,"Reloading configuration\n");
 	for (i = 0; i < rtapds->count; i++)
-    {
+	{
 		rtapd *rtapd = rtapds->rtapd[i];
 		newconf = Config_read(rtapd->ioctl_sock, rtapd->prefix_wlan_name);
 		if (newconf == NULL)
-        {
+		{
 			DBGPRINT(RT_DEBUG_ERROR,"Failed to read new configuration file - continuing with old.\n");
 			continue;
 		}
-
+		
 		/* TODO: update dynamic data based on changed configuration
 		 * items (e.g., open/close sockets, remove stations added to
 		 * deny list, etc.) */
 		Radius_client_flush(rtapd);
 		Config_free(rtapd->conf);
 		rtapd->conf = newconf;
-        Apd_free_stas(rtapd);
-
-/* when reStartAP, no need to reallocate sock
-        for (i = 0; i < rtapd->conf->SsidNum; i++)
-        {
-            if (rtapd->sock[i] >= 0)
-                close(rtapd->sock[i]);
-                
-    	    rtapd->sock[i] = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-    	    if (rtapd->sock[i] < 0)
-            {
-    		    perror("socket[PF_PACKET,SOCK_RAW]");
-    		    return;
-    	    }
-        }*/
-
-#if MULTIPLE_RADIUS
+		Apd_free_stas(rtapd);
+		
+#ifdef MULTIPLE_RADIUS
 		for (i = 0; i < MAX_MBSSID_NUM; i++)
 			rtapd->radius->mbss_auth_serv_sock[i] = -1;
 #else
 		rtapd->radius->auth_serv_sock = -1;
 #endif
-
-	    if (Radius_client_init(rtapd))
-        {
-		    DBGPRINT(RT_DEBUG_ERROR,"RADIUS client initialization failed.\n");
-		    return;
-	    }
-#if MULTIPLE_RADIUS
+		if (Radius_client_init(rtapd))
+		{
+			DBGPRINT(RT_DEBUG_ERROR,"RADIUS client initialization failed.\n");
+			return;
+		}
+#ifdef MULTIPLE_RADIUS
 		for (i = 0; i < rtapd->conf->SsidNum; i++)
 			DBGPRINT(RT_DEBUG_TRACE, "auth_serv_sock[%d] = %d\n", i, rtapd->radius->mbss_auth_serv_sock[i]);
 #else
-        DBGPRINT(RT_DEBUG_TRACE,"rtapd->radius->auth_serv_sock = %d\n",rtapd->radius->auth_serv_sock);
+		DBGPRINT(RT_DEBUG_TRACE,"rtapd->radius->auth_serv_sock = %d\n", rtapd->radius->auth_serv_sock);
 #endif
 	}
 }
 
 void Handle_term(int sig, void *eloop_ctx, void *signal_ctx)
 {
-	//FILE    *f;
-	//char    buf[256], *pos;
-	//int     line = 0, i;
-    //int     filesize,cur = 0;
-    //char    *ini_buffer;             /* storage area for .INI file */
-
 	DBGPRINT(RT_DEBUG_ERROR,"Signal %d received - terminating\n", sig);
-
-#if 0
-	f = fopen(RT2860AP_SYSTEM_PATH, "r");
-	if (f == NULL)
-    {
-		DBGPRINT(RT_DEBUG_ERROR,"Could not open configuration file '%s' for reading.\n", RT2860AP_SYSTEM_PATH);
-		return;
-	}
-
-    if ((fseek(f, 0, SEEK_END))!=0)
-        return;
-    filesize=ftell(f);
-	DBGPRINT(RT_DEBUG_ERROR,"filesize %d   - terminating\n", filesize);
-
-    if ((ini_buffer=(char *)malloc(filesize + 1 ))==NULL)
-        return;   //out of memory
-    fseek(f,0,SEEK_SET);
-    fread(ini_buffer, filesize, 1, f);
-    fseek(f,0,SEEK_SET);
-    ini_buffer[filesize]='\0';
-
-	while ((fgets(buf, sizeof(buf), f)))
-    {
-		line++;
-		if (buf[0] == '#')
-			continue;
-		pos = buf;
-		while (*pos != '\0')
-        {
-			if (*pos == '\n')
-            {
-				*pos = '\0';
-				break;
-			}
-			pos++;
-		}
-		if (buf[0] == '\0')
-			continue;
-
-		pos = strchr(buf, '=');
-		if (pos == NULL)
-        {
-		    pos = strchr(buf, '[');                
-			continue;
-		}
-		*pos = '\0';
-		pos++;
-
-        if ((strcmp(buf, "pid") == 0) )
-        {
-            cur = 0;
-            while(cur < (int)filesize)
-            {  
-                if ((ini_buffer[cur]=='p') && (ini_buffer[cur+1]=='i') && (ini_buffer[cur+2]=='d'))
-                {
-                    cur += 4;
-                    for( i=4; i>=0; i--)
-                    {
-                        if (ini_buffer[cur] !='\n' )
-                        {
-                            ini_buffer[cur] =0x30;
-                        }
-                        else
-                        {
-                            break;
-                        }
-                        cur++;
-                    }   
-                    break;
-                }
-                cur++;
-            }
-		} 
-    }
-    fseek(f,0,SEEK_SET);
-    fprintf(f, "%s", ini_buffer);    
-    fclose(f);
-#endif
 
 	eloop_terminate();
 }
@@ -739,12 +612,7 @@ int main(int argc, char *argv[])
 	int ret = 1, i;
 	int c;
 	pid_t auth_pid;
-	char prefix_name[IFNAMSIZ+1];
-
-	if (strcmp(argv[0], "rtinicapd") == 0)
-		strcpy(prefix_name, "rai");
-	else
-		strcpy(prefix_name, "ra");
+	char prefix_name[IFNAMSIZ+1] = {0};
 
 	for (;;)
 	{
@@ -754,29 +622,36 @@ int main(int argc, char *argv[])
 		
 		switch (c)
 		{
-			case 'd': 
-				/* 	set Debug level -
-						RT_DEBUG_OFF		0
-						RT_DEBUG_ERROR		1
-						RT_DEBUG_WARN		2
-						RT_DEBUG_TRACE		3
-						RT_DEBUG_INFO		4
-				*/
-				printf("Set debug level as %s\n", optarg);
-				RTDebugLevel = (int)strtol(optarg, 0, 10);
-				break;
-				
-			case 'i': 
-				// Assign the wireless interface when support multiple cards
-				sprintf(prefix_name, "%s%02d_", prefix_name, ((int)strtol(optarg, 0, 10) - 1));
-				break;
-				
-			case 'h':
-			default:
-				usage();
-				break;
+		case 'd': 
+			/* 	set Debug level -
+					RT_DEBUG_OFF		0
+					RT_DEBUG_ERROR		1
+					RT_DEBUG_WARN		2
+					RT_DEBUG_TRACE		3
+					RT_DEBUG_INFO		4
+			*/
+			RTDebugLevel = (int)strtol(optarg, 0, 10);
+			printf("Set debug level as %d\n", RTDebugLevel);
+			break;
+		case 'i':
+			// Assign the wireless interface when support multiple cards
+			snprintf(prefix_name, sizeof(prefix_name), "%s", optarg);
+			break;
+		case 'h':
+		default:
+			usage(argv[0]);
+			break;
 		}
 	}
+
+	c = (int)strlen(prefix_name);
+	if (c > 1)
+	{
+		if (isdigit(prefix_name[c-1]))
+			prefix_name[c-1] = '\0';
+	}
+	else
+		strcpy(prefix_name, "ra");
 
 	printf("Ralink DOT1X daemon, version = '%s', prefix_name = '%s'\n", dot1x_version, prefix_name);
 
@@ -793,7 +668,7 @@ int main(int argc, char *argv[])
 		interfaces.rtapd = malloc(sizeof(rtapd *));
 		if (interfaces.rtapd == NULL)
 		{
-			DBGPRINT(RT_DEBUG_ERROR,"malloc failed\n");
+			DBGPRINT(RT_DEBUG_ERROR, "malloc failed\n");
 			exit(1);
 		}
 

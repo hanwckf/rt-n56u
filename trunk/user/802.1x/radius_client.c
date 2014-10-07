@@ -62,7 +62,7 @@ static int Radius_client_retransmit(rtapd *rtapd, struct radius_msg_list *entry,
 {
 	int s;
 
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 	s = rtapd->radius->mbss_auth_serv_sock[entry->ApIdx];
 #else
 	s = rtapd->radius->auth_serv_sock;
@@ -91,14 +91,14 @@ static void Radius_client_timer(void *eloop_ctx, void *timeout_ctx)
 	rtapd *rtapd = eloop_ctx;
 	time_t now, first;
 	struct radius_msg_list *entry, *prev, *tmp;
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 	int	i;
 	int mbss_auth_failover[MAX_MBSSID_NUM];
 #else
 	int auth_failover = 0;
 #endif
 
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 	for (i = 0; i < MAX_MBSSID_NUM; i++)
 		mbss_auth_failover[i] = 0;
 #endif
@@ -131,7 +131,7 @@ static void Radius_client_timer(void *eloop_ctx, void *timeout_ctx)
 		{
 			if (entry->msg_type == RADIUS_AUTH)
 			{
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 				mbss_auth_failover[entry->ApIdx]++;
 #else
 				auth_failover++;
@@ -153,7 +153,7 @@ static void Radius_client_timer(void *eloop_ctx, void *timeout_ctx)
 			first = now;
 		eloop_register_timeout(first - now, 0, Radius_client_timer, rtapd, NULL);
 	}
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 	for (i = 0; i < rtapd->conf->SsidNum; i++)
 	{	
 		if (mbss_auth_failover[i] && rtapd->conf->mbss_num_auth_servers[i] > 1)
@@ -253,17 +253,17 @@ int Radius_client_send(rtapd *rtapd, struct radius_msg *msg, RadiusType msg_type
 	char *name;
 	int s, res = 0;
 
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 	shared_secret = rtapd->conf->mbss_auth_server[ApIdx]->shared_secret;
 	shared_secret_len = rtapd->conf->mbss_auth_server[ApIdx]->shared_secret_len;
 	s = rtapd->radius->mbss_auth_serv_sock[ApIdx];
 	DBGPRINT(RT_DEBUG_TRACE, "Send packet to server (%s)\n",
-						inet_ntoa(rtapd->conf->mbss_auth_server[ApIdx]->addr));
+			inet_ntoa(rtapd->conf->mbss_auth_server[ApIdx]->addr));
 #else
 	shared_secret = rtapd->conf->auth_server->shared_secret;
 	shared_secret_len = rtapd->conf->auth_server->shared_secret_len;
 	s = rtapd->radius->auth_serv_sock;
-#endif	
+#endif
 	Radius_msg_finish(msg, shared_secret, shared_secret_len);
 	name = "authentication";
 
@@ -500,7 +500,7 @@ static void Radius_retry_primary_timer(void *eloop_ctx, void *timeout_ctx)
 	struct hostapd_radius_server *oserv;
 
 	DBGPRINT(RT_DEBUG_TRACE, "RUN Radius_retry_primary_timer.....\n");
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 	int	i;
 
 	for (i = 0; i < rtapd->conf->SsidNum; i++)
@@ -527,7 +527,7 @@ static void Radius_retry_primary_timer(void *eloop_ctx, void *timeout_ctx)
 		eloop_register_timeout(rtapd->conf->radius_retry_primary_interval, 0, Radius_retry_primary_timer, rtapd, NULL);
 }
 
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 static int Radius_client_init_auth(rtapd *rtapd, int apidx)
 {		
 	if (rtapd->conf->mbss_auth_server[apidx]->addr.s_addr == 0)
@@ -577,8 +577,8 @@ static int Radius_client_init_auth(rtapd *rtapd)
 
 int Radius_client_init(rtapd *rtapd)
 {
-#if MULTIPLE_RADIUS
-	int	i, ready_sock_count = 0, bReInit = 1;
+#ifdef MULTIPLE_RADIUS
+	int i, ready_sock_count = 0, bReInit = 1;
 #endif
 
 	if (rtapd->radius == NULL)
@@ -589,7 +589,7 @@ int Radius_client_init(rtapd *rtapd)
 		
 		memset(rtapd->radius, 0, sizeof(struct radius_client_data));
 
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 		for (i = 0; i < MAX_MBSSID_NUM; i++)
 			rtapd->radius->mbss_auth_serv_sock[i] = -1;
 
@@ -599,7 +599,7 @@ int Radius_client_init(rtapd *rtapd)
 #endif
 	}
 	
-#if MULTIPLE_RADIUS	
+#ifdef MULTIPLE_RADIUS
 	// Create socket for auth RADIUS
 	for (i = 0; i < rtapd->conf->SsidNum; i++)
 	{

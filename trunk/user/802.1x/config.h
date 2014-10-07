@@ -31,7 +31,7 @@ struct rtapd_config {
 	struct in_addr own_ip_addr;
 	
 	/* RADIUS Authentication and Accounting servers in priority order */
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 	struct hostapd_radius_server *mbss_auth_servers[MAX_MBSSID_NUM], *mbss_auth_server[MAX_MBSSID_NUM];
 	int mbss_num_auth_servers[MAX_MBSSID_NUM];
 #else

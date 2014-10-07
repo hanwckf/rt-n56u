@@ -38,7 +38,7 @@ struct radius_rx_handler {
 
 struct radius_client_data {
 
-#if MULTIPLE_RADIUS
+#ifdef MULTIPLE_RADIUS
 	int mbss_auth_serv_sock[MAX_MBSSID_NUM]; /* socket for authentication RADIUS messages */
 #else
 	int auth_serv_sock; /* socket for authentication RADIUS messages */

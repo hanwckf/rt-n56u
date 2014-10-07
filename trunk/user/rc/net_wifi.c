@@ -620,11 +620,13 @@ int is_need_8021x(char *auth_mode)
 void
 start_8021x_wl(void)
 {
+#if BOARD_HAS_5G_RADIO
 	if (!get_enabled_radio_wl())
 		return;
 
 	if (is_need_8021x(nvram_wlan_get("wl", "auth_mode")))
 		eval("rt2860apd", "-i", IFNAME_5G_MAIN);
+#endif
 }
 
 void
@@ -641,8 +643,10 @@ start_8021x_rt(void)
 void
 stop_8021x_wl(void)
 {
+#if BOARD_HAS_5G_RADIO
 	char* svcs[] = { "rt2860apd", NULL };
 	kill_services(svcs, 3, 1);
+#endif
 }
 
 void

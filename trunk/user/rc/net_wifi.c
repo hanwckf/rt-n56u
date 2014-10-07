@@ -624,7 +624,7 @@ start_8021x_wl(void)
 		return;
 
 	if (is_need_8021x(nvram_wlan_get("wl", "auth_mode")))
-		eval("rt2860apd");
+		eval("rt2860apd", "-i", IFNAME_5G_MAIN);
 }
 
 void
@@ -635,7 +635,7 @@ start_8021x_rt(void)
 		return;
 #endif
 	if (is_need_8021x(nvram_wlan_get("rt", "auth_mode")))
-		eval("rtinicapd");
+		eval("rtinicapd", "-i", IFNAME_2G_MAIN);
 }
 
 void

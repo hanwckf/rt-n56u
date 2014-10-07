@@ -360,7 +360,6 @@ int write_smb_conf(void)
 
 	i_smb_mode = nvram_get_int("st_samba_mode");
 
-	unlink("/var/log/samba.log");
 	fp = write_smb_conf_header();
 	if (!fp)
 		return -1;
@@ -575,6 +574,27 @@ confpage:
 	return 0;
 }
 
+static void
+clean_smbd_trash(void)
+{
+	int i;
+	const char *locks[] = {
+		"account_policy.tdb",
+		"connections.tdb",
+		"group_mapping.tdb",
+		"brlock.tdb",
+		"locking.tdb",
+		"sessionid.tdb",
+		NULL
+	};
+
+	for (i=0; locks[i] && *locks[i]; i++)
+		doSystem("rm -f /var/locks/%s", locks[i]);
+
+	doSystem("rm -f %s", "/var/*.log");
+	doSystem("rm -f %s", "/var/log/*");
+}
+
 void stop_samba(int force_stop)
 {
 	char* svcs[] = { "smbd", "nmbd", NULL };
@@ -583,6 +603,8 @@ void stop_samba(int force_stop)
 		svcs[1] = NULL;
 
 	kill_services(svcs, 5, 1);
+
+	clean_smbd_trash();
 }
 
 void run_samba(void)
@@ -596,9 +618,9 @@ void run_samba(void)
 
 	mkdir_if_none("/etc/samba");
 
-	unlink("/etc/samba/smbpasswd");
-	unlink("/etc/samba/secrets.tdb");
-	unlink("/var/lock/connections.tdb");
+	doSystem("rm -f %s", "/etc/samba/*");
+
+	clean_smbd_trash();
 
 	recreate_passwd_unix(0);
 

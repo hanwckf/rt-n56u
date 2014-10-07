@@ -70,7 +70,7 @@ configure:
 		--with-rootsbindir=/sbin \
 		--with-piddir=/var/run \
 		--with-privatedir=/etc/samba \
-		--with-lockdir=/var/lock \
+		--with-lockdir=/var/locks \
 		--with-included-popt=no \
 		--with-krb5=no \
 		--with-syslog \

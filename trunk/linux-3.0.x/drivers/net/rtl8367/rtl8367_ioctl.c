@@ -241,6 +241,10 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		toggle_disable_inic(uint_value);
 		break;
 #endif
+	case RTL8367_IOCTL_PORT_FORWARD_MASK:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		ioctl_result = asic_port_forward_mask(uint_param, uint_value);
+		break;
 
 	case RTL8367_IOCTL_VLAN_RESET_TABLE:
 		asic_vlan_reset_table();

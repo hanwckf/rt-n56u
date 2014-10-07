@@ -460,6 +460,7 @@ int show_usage(char *cmd)
 	"   51 [0|1]         Toggle iNIC isolation from LAN ports\n"
 	"   52 [0|1]         Toggle iNIC disable RGMII port link\n"
 #endif
+	"   55 [MASK] [PORT] Set port forward mask\n\n"
 	"   60               Reset VLAN table and init VLAN1\n"
 	"   61 [MASK]        Set VLAN ingress enabled for ports mask\n"
 	"   62 [MASK] [0..2] Set VLAN accept mode for ports mask\n"

@@ -144,7 +144,7 @@ void asic_dump_isolation(int max_vlan_vid)
 	}
 }
 
-u32 get_phy_ports_mask_from_user(u32 user_port_mask)
+u32 get_ports_mask_from_user(u32 user_port_mask)
 {
 	u32 phy_ports_mask = 0;
 
@@ -170,6 +170,32 @@ u32 get_phy_ports_mask_from_user(u32 user_port_mask)
 #endif
 	return phy_ports_mask;
 }
+
+rtk_port_t get_port_from_user(u32 user_port_mask)
+{
+	if (user_port_mask & SWAPI_PORTMASK_LAN1)
+		return LAN_PORT_1;
+	if (user_port_mask & SWAPI_PORTMASK_LAN2)
+		return LAN_PORT_2;
+	if (user_port_mask & SWAPI_PORTMASK_LAN3)
+		return LAN_PORT_3;
+	if (user_port_mask & SWAPI_PORTMASK_LAN4)
+		return LAN_PORT_4;
+	if (user_port_mask & SWAPI_PORTMASK_WAN)
+		return WAN_PORT_X;
+	if (user_port_mask & SWAPI_PORTMASK_CPU_LAN)
+		return LAN_PORT_CPU;
+#if !defined(RTL8367_SINGLE_EXTIF)
+	if (user_port_mask & SWAPI_PORTMASK_CPU_WAN)
+		return WAN_PORT_CPU;
+#endif
+#if defined(EXT_PORT_INIC)
+	if (user_port_mask & SWAPI_PORTMASK_INIC)
+		return EXT_PORT_INIC;
+#endif
+	return RTK_MAX_NUM_OF_PORT;
+}
+
 
 static char* get_port_desc(rtk_port_t port)
 {
@@ -469,6 +495,22 @@ void toggle_disable_inic(u32 inic_disable)
 }
 #endif
 
+int asic_port_forward_mask(u32 port_mask, u32 fwd_ports_mask)
+{
+	rtk_portmask_t fwd_mask;
+	rtk_port_t port = get_port_from_user(port_mask);
+
+	if (port >= RTK_MAX_NUM_OF_PORT)
+		return -EINVAL;
+
+	fwd_mask.bits[0] = get_ports_mask_from_user(fwd_ports_mask & 0xFF);
+
+	rtk_port_isolation_set(port, fwd_mask);
+
+	printk("%s - port %d forward mask: %04X\n", RTL8367_DEVNAME, port, fwd_mask.bits[0]);
+
+	return 0;
+}
 
 void asic_vlan_set_ingress_ports(u32 reg_ingress)
 {
@@ -481,7 +523,7 @@ void asic_vlan_set_ingress_ports(u32 reg_ingress)
 
 void asic_vlan_ingress_mode_enabled(u32 port_mask)
 {
-	u32 reg_ingress = get_phy_ports_mask_from_user(port_mask & 0xFF);
+	u32 reg_ingress = get_ports_mask_from_user(port_mask & 0xFF);
 
 	asic_vlan_set_ingress_ports(reg_ingress);
 }
@@ -501,7 +543,7 @@ void asic_vlan_accept_port_mode(u32 accept_mode, u32 port_mask)
 		break;
 	}
 
-	port_mask = get_phy_ports_mask_from_user(port_mask & 0xFF);
+	port_mask = get_ports_mask_from_user(port_mask & 0xFF);
 
 	for (i = 0; i < RTK_MAX_NUM_OF_PORT; i++)
 	{
@@ -521,8 +563,8 @@ void asic_vlan_create_port_vid(u32 vlan4k_info, u32 vlan4k_mask)
 	pvid = (rtk_vlan_t)(vlan4k_info & 0x0FFF);
 	prio = (rtk_pri_t)((vlan4k_info >> 12) & 0x7);
 	fid  = (rtk_fid_t)((vlan4k_info >> 16) & 0xFF);
-	mask_member.bits[0] = get_phy_ports_mask_from_user((vlan4k_mask & 0xFF));
-	mask_untag.bits[0]  = get_phy_ports_mask_from_user((vlan4k_mask >> 16) & 0xFF);
+	mask_member.bits[0] = get_ports_mask_from_user((vlan4k_mask & 0xFF));
+	mask_untag.bits[0]  = get_ports_mask_from_user((vlan4k_mask >> 16) & 0xFF);
 
 	rtk_vlan_set(pvid, mask_member, mask_untag, fid);
 
@@ -546,8 +588,8 @@ void asic_vlan_create_entry(u32 vlan4k_info, u32 vlan4k_mask)
 
 	vid = (rtk_vlan_t)(vlan4k_info & 0x0FFF);
 	fid = (rtk_fid_t)((vlan4k_info >> 16) & 0xFF);
-	mask_member.bits[0] = get_phy_ports_mask_from_user((vlan4k_mask & 0xFF));
-	mask_untag.bits[0]  = get_phy_ports_mask_from_user((vlan4k_mask >> 16) & 0xFF);
+	mask_member.bits[0] = get_ports_mask_from_user((vlan4k_mask & 0xFF));
+	mask_untag.bits[0]  = get_ports_mask_from_user((vlan4k_mask >> 16) & 0xFF);
 
 	rtk_vlan_set(vid, mask_member, mask_untag, fid);
 
@@ -1265,7 +1307,7 @@ void asic_port_power(u32 port_enabled, u32 port_mask)
 	int i;
 	rtk_enable_t is_enable = (port_enabled) ? ENABLED : DISABLED;
 
-	port_mask = get_phy_ports_mask_from_user(port_mask & 0xFF);
+	port_mask = get_ports_mask_from_user(port_mask & 0xFF);
 
 	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
 	{

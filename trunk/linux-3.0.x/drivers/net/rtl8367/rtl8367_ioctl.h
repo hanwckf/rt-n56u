@@ -78,6 +78,7 @@
 #define RTL8367_IOCTL_BRIDGE_MODE		50
 #define RTL8367_IOCTL_ISOLATE_INIC		51
 #define RTL8367_IOCTL_DISABLE_INIC		52
+#define RTL8367_IOCTL_PORT_FORWARD_MASK		55
 
 /////////////////////////////////////////////////
 // VLAN CONTROL

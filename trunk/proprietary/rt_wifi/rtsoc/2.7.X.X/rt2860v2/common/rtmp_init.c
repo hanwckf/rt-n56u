@@ -99,11 +99,10 @@ RTMP_REG_PAIR	MACRegTable[] =	{
 	{MAC_SYS_CTRL,		0x00}, /* 0x1004, , default Disable RX*/
 	{RX_FILTR_CFG,		0x17f97}, /*0x1400  , RX filter control,  */
 	{BKOFF_SLOT_CFG,	0x209}, /* default set short slot time, CC_DELAY_TIME should be 2	 */
-	/*{TX_SW_CFG0,		0x40a06},  Gary,2006-08-23 */
-#ifndef RT6352
+#if !defined(RT6352) && !defined(RT2883) && !defined(RT3883) && !defined(RT305x)
 	{TX_SW_CFG0,		0x0}, 		/* Gary,2008-05-21 for CWC test */
 	{TX_SW_CFG1,		0x80606}, /* Gary,2006-08-23 */
-#endif /* RT6352 */
+#endif
 	{TX_LINK_CFG,		0x1020},		/* Gary,2006-08-23 */
 	/*{TX_TIMEOUT_CFG,	0x00182090},	 CCK has some problem. So increase timieout value. 2006-10-09 MArvek RT*/
 	{TX_TIMEOUT_CFG,	0x000a2090},	/* CCK has some problem. So increase timieout value. 2006-10-09 MArvek RT , Modify for 2860E ,2007-08-01*/

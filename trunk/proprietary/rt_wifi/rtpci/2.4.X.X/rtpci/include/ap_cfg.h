@@ -46,11 +46,13 @@ VOID RTMPIoctlStatistics(
 	IN PRTMP_ADAPTER pAd, 
 	IN struct iwreq *wrq);
 
+VOID RTMPIoctlGetMacTableStaInfo(
+	IN PRTMP_ADAPTER pAd, 
+	IN struct iwreq *wrq);
 
 VOID RTMPIoctlGetMacTable(
 	IN PRTMP_ADAPTER pAd, 
 	IN struct iwreq *wrq);
-
 
 VOID RTMPAPIoctlE2PROM(
     IN  PRTMP_ADAPTER   pAdapter,

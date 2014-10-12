@@ -2432,8 +2432,47 @@ VOID RTMPIoctlGetSiteSurvey(
 }
 #endif
 
+VOID RTMPIoctlGetMacTableStaInfo(
+	IN PRTMP_ADAPTER pAd, 
+	IN struct iwreq *wrq)
+{
+	INT i;
+	RT_802_11_MAC_TABLE MacTab;
 
+	NdisZeroMemory(&MacTab, sizeof(RT_802_11_MAC_TABLE));
 
+	MacTab.Num = 0;
+	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
+	{
+		if (IS_ENTRY_CLIENT(&pAd->MacTab.Content[i]) && (pAd->MacTab.Content[i].Sst == SST_ASSOC))
+		{
+			MacTab.Entry[MacTab.Num].ApIdx = (UCHAR)pAd->MacTab.Content[i].apidx;
+			COPY_MAC_ADDR(MacTab.Entry[MacTab.Num].Addr, &pAd->MacTab.Content[i].Addr);
+			MacTab.Entry[MacTab.Num].Aid = (UCHAR)pAd->MacTab.Content[i].Aid;
+			MacTab.Entry[MacTab.Num].Psm = pAd->MacTab.Content[i].PsMode;
+#ifdef DOT11_N_SUPPORT
+			MacTab.Entry[MacTab.Num].MimoPs = pAd->MacTab.Content[i].MmpsMode;
+#endif // DOT11_N_SUPPORT //
+
+			// Fill in RSSI per entry
+			MacTab.Entry[MacTab.Num].AvgRssi0 = pAd->MacTab.Content[i].RssiSample.AvgRssi0;
+			MacTab.Entry[MacTab.Num].AvgRssi1 = pAd->MacTab.Content[i].RssiSample.AvgRssi1;
+			MacTab.Entry[MacTab.Num].AvgRssi2 = pAd->MacTab.Content[i].RssiSample.AvgRssi2;
+
+			// the connected time per entry
+			MacTab.Entry[MacTab.Num].ConnectedTime = pAd->MacTab.Content[i].StaConnectTime;
+			MacTab.Entry[MacTab.Num].TxRate.word = pAd->MacTab.Content[i].HTPhyMode.word;
+			
+			MacTab.Num += 1;
+		}
+	}
+
+	wrq->u.data.length = sizeof(RT_802_11_MAC_TABLE);
+	if (copy_to_user(wrq->u.data.pointer, &MacTab, wrq->u.data.length))
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("%s: copy_to_user() fail\n", __FUNCTION__));
+	}
+}
 
 #define	MAC_LINE_LEN	(14+4+4+10+10+10+6+6)	// Addr+aid+psm+datatime+rxbyte+txbyte+current tx rate+last tx rate
 VOID RTMPIoctlGetMacTable(
@@ -2464,15 +2503,8 @@ VOID RTMPIoctlGetMacTable(
 
 			// the connected time per entry
 			MacTab.Entry[MacTab.Num].ConnectedTime = pAd->MacTab.Content[i].StaConnectTime;
-			MacTab.Entry[MacTab.Num].TxRate.field.MCS = pAd->MacTab.Content[i].HTPhyMode.field.MCS;
-			MacTab.Entry[MacTab.Num].TxRate.field.BW = pAd->MacTab.Content[i].HTPhyMode.field.BW;
-			MacTab.Entry[MacTab.Num].TxRate.field.ShortGI = pAd->MacTab.Content[i].HTPhyMode.field.ShortGI;
-			MacTab.Entry[MacTab.Num].TxRate.field.STBC = pAd->MacTab.Content[i].HTPhyMode.field.STBC;
-			MacTab.Entry[MacTab.Num].TxRate.field.rsv = pAd->MacTab.Content[i].HTPhyMode.field.rsv;
-			MacTab.Entry[MacTab.Num].TxRate.field.MODE = pAd->MacTab.Content[i].HTPhyMode.field.MODE;
 			MacTab.Entry[MacTab.Num].TxRate.word = pAd->MacTab.Content[i].HTPhyMode.word;
-									
-									
+			
 			MacTab.Num += 1;
 		}
 	}

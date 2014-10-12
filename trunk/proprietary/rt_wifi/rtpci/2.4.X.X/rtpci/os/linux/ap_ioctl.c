@@ -516,6 +516,10 @@ INT rt28xx_ap_ioctl(
 			RTMPIoctlGetMacTable(pAd,wrq);
 		    break;
 
+		case RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT:
+			RTMPIoctlGetMacTableStaInfo(pAd,wrq);
+			break;
+
 /* end of modification */
 
 #ifdef AP_SCAN_SUPPORT

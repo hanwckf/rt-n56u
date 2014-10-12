@@ -20,12 +20,64 @@
 
 #define HW_NAT_MODULE_VER "v2.51.0"
 
+/* ra0-15, wds0-4, apcli0, mesh0 interfaces */
+#if defined (CONFIG_RT2860V2_AP_MBSS) || defined (CONFIG_RLT_AP_MBSS)
+#define HWNAT_DP_RA_MBSS
+#endif
+
+#if defined (CONFIG_RT2860V2_AP_WDS) || defined (CONFIG_RLT_AP_WDS)
+#define HWNAT_DP_RA_WDS
+#endif
+
+#if defined (CONFIG_RT2860V2_AP_APCLI) || defined (CONFIG_RLT_AP_APCLI)
+#define HWNAT_DP_RA_APCLI
+#endif
+
+#if defined (CONFIG_RT2860V2_AP_MESH) || defined (CONFIG_RLT_AP_MESH)
+#define HWNAT_DP_RA_MESH
+#endif
+
+/* rai0-15, wdsi0-4, apclii0, meshi0 interfaces */
+#if defined (CONFIG_RT3090_AP) || defined (CONFIG_RT5392_AP) || \
+    defined (CONFIG_RT3572_AP) || defined (CONFIG_RT5572_AP) || \
+    defined (CONFIG_RT5592_AP) || defined (CONFIG_RT3593_AP) || \
+    defined (CONFIG_MT7610_AP) || defined (CONFIG_RLT_AP)
+#define HWNAT_DP_RAI_AP
+
+#if defined (CONFIG_RT3090_AP_MBSS) || defined (CONFIG_RT5392_AP_MBSS) || \
+    defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
+    defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS) || \
+    defined (CONFIG_MT7610_AP_MBSS) || defined (CONFIG_RLT_AP_MBSS)
+#define HWNAT_DP_RAI_MBSS
+#endif
+
+#if defined (CONFIG_RT3090_AP_WDS) || defined (CONFIG_RT5392_AP_WDS) || \
+    defined (CONFIG_RT3572_AP_WDS) || defined (CONFIG_RT5572_AP_WDS) || \
+    defined (CONFIG_RT5592_AP_WDS) || defined (CONFIG_RT3593_AP_WDS) || \
+    defined (CONFIG_MT7610_AP_WDS) || defined (CONFIG_RLT_AP_WDS)
+#define HWNAT_DP_RAI_WDS
+#endif
+
+#if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
+    defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
+    defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI) || \
+    defined (CONFIG_MT7610_AP_APCLI) || defined (CONFIG_RLT_AP_APCLI)
+#define HWNAT_DP_RAI_APCLI
+#endif
+
+#if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
+    defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
+    defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH) || \
+    defined (CONFIG_MT7610_AP_MESH) || defined (CONFIG_RLT_AP_MESH)
+#define HWNAT_DP_RAI_MESH
+#endif
+#endif /* HWNAT_DP_RAI_AP */
+
 /*
  * TYPEDEFS AND STRUCTURES
  */
 enum DstPort {
 	DP_RA0 = 11,
-#if defined (CONFIG_RT2860V2_AP_MBSS)
 	DP_RA1 = 12,
 	DP_RA2 = 13,
 	DP_RA3 = 14,
@@ -41,24 +93,14 @@ enum DstPort {
 	DP_RA13 = 24,
 	DP_RA14 = 25,
 	DP_RA15 = 26,
-#endif
-#if defined (CONFIG_RT2860V2_AP_WDS)
 	DP_WDS0 = 27,
 	DP_WDS1 = 28,
 	DP_WDS2 = 29,
 	DP_WDS3 = 30,
-#endif
-#if defined (CONFIG_RT2860V2_AP_APCLI)
 	DP_APCLI0 = 31,
-#endif
-#if defined (CONFIG_RT2860V2_AP_MESH)
 	DP_MESH0 = 32,
-#endif
+#if defined (HWNAT_DP_RAI_AP)
 	DP_RAI0 = 33,
-#if defined (CONFIG_RT3090_AP_MBSS) || defined (CONFIG_RT5392_AP_MBSS) || \
-    defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
-    defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS) || \
-    defined (CONFIG_MT7610_AP_MBSS)
 	DP_RAI1 = 34,
 	DP_RAI2 = 35,
 	DP_RAI3 = 36,
@@ -74,29 +116,16 @@ enum DstPort {
 	DP_RAI13 = 46,
 	DP_RAI14 = 47,
 	DP_RAI15 = 48,
-#endif
-#if defined (CONFIG_RT3090_AP_WDS) || defined (CONFIG_RT5392_AP_WDS) || \
-    defined (CONFIG_RT3572_AP_WDS) || defined (CONFIG_RT5572_AP_WDS) || \
-    defined (CONFIG_RT5592_AP_WDS) || defined (CONFIG_RT3593_AP_WDS) || \
-    defined (CONFIG_MT7610_AP_WDS)
 	DP_WDSI0 = 49,
 	DP_WDSI1 = 50,
 	DP_WDSI2 = 51,
 	DP_WDSI3 = 52,
-#endif
-#if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
-    defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
-    defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI) || \
-    defined (CONFIG_MT7610_AP_APCLI)
 	DP_APCLII0 = 53,
-#endif
-#if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
-    defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
-    defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH) || \
-    defined (CONFIG_MT7610_AP_MESH)
 	DP_MESHI0 = 54,
-#endif
 	MAX_WIFI_IF_NUM = 55,
+#else
+	MAX_WIFI_IF_NUM = 33,
+#endif
 	DP_GMAC1 = 60,
 	DP_GMAC2 = 61,
 	DP_PCI0 = 62,

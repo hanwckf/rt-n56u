@@ -523,13 +523,14 @@ VOID	RTMPCalculateMICValue(
 #ifdef IGMP_SNOOP_SUPPORT
 	if ((RTMP_GET_PACKET_WCID(pPacket) != MCAST_WCID) && (*pSrc & 0x01) && (pAd->OpMode == OPMODE_AP))
 	{
+		UCHAR wcid = RTMP_GET_PACKET_WCID(pPacket);
 		RTMPInitMICEngine(
 			pAd,
 			pKey->Key,
-			pAd->MacTab.Content[RTMP_GET_PACKET_WCID(pPacket)].Addr,
+			pAd->MacTab.Content[wcid].Addr,
 			pSrc + 6,
 			UserPriority,
-			pKey->TxMic);		
+			pKey->TxMic);
 	}
 	else
 #endif /* IGMP_SNOOP_SUPPORT */

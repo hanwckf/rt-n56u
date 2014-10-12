@@ -38,10 +38,7 @@
 #endif
 
 /* rai0-15, wdsi0-4, apclii0, meshi0 interfaces */
-#if defined (CONFIG_RT3090_AP) || defined (CONFIG_RT5392_AP) || \
-    defined (CONFIG_RT3572_AP) || defined (CONFIG_RT5572_AP) || \
-    defined (CONFIG_RT5592_AP) || defined (CONFIG_RT3593_AP) || \
-    defined (CONFIG_MT7610_AP) || defined (CONFIG_RLT_AP)
+#if defined (CONFIG_RTDEV_USB) || defined (CONFIG_RTDEV_PCI)
 #define HWNAT_DP_RAI_AP
 
 #if defined (CONFIG_RT3090_AP_MBSS) || defined (CONFIG_RT5392_AP_MBSS) || \

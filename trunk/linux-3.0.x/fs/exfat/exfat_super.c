@@ -354,7 +354,7 @@ static int exfat_d_hashi(const struct dentry *dentry, const struct inode *inode,
 		struct qstr *qstr)
 #endif
 {
-	struct nls_table *t = EXFAT_SB(dentry->d_sb)->nls_io;
+	struct super_block *sb = dentry->d_sb;
 	const unsigned char *name;
 	unsigned int len;
 	unsigned long hash;
@@ -364,7 +364,7 @@ static int exfat_d_hashi(const struct dentry *dentry, const struct inode *inode,
 
 	hash = init_name_hash();
 	while (len--)
-		hash = partial_name_hash(nls_tolower(t, *name++), hash);
+		hash = partial_name_hash(nls_upper(sb, *name++), hash);
 	qstr->hash = end_name_hash(hash);
 
 	return 0;
@@ -385,7 +385,10 @@ static int exfat_cmpi(const struct dentry *parent, const struct inode *pinode,
 	alen = exfat_striptail_len(name);
 	blen = __exfat_striptail_len(len, str);
 	if (alen == blen) {
-		if (nls_strnicmp(t, name->name, str, alen) == 0)
+		if (t == NULL) {
+			if (strnicmp(name->name, str, alen) == 0)
+				return 0;
+		} else if (nls_strnicmp(t, name->name, str, alen) == 0)
 			return 0;
 	}
 	return 1;

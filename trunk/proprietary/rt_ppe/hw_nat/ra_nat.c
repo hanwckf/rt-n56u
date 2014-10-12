@@ -790,18 +790,14 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 		/* It means the flow is already in binding state, just transfer to output interface */
 		return PpeHitBindForceToCpuHandler(skb, foe_entry);
 #if defined (CONFIG_HNAT_V2)
-
 #if defined (CONFIG_RALINK_MT7621)
-	} else if (((FOE_SP(skb) == 0) || (FOE_SP(skb) == 5)) &&
-			(foe_ai != HIT_BIND_KEEPALIVE_UC_OLD_HDR) &&
-			(foe_ai != HIT_BIND_KEEPALIVE_MC_NEW_HDR) &&
-			(foe_ai != HIT_BIND_KEEPALIVE_DUP_OLD_HDR)) {
+	} else if ((FOE_SP(skb) == 0 || FOE_SP(skb) == 5) &&
 #else
 	} else if ((FOE_SP(skb) == 6) &&
-			(foe_ai != HIT_BIND_KEEPALIVE_UC_OLD_HDR) &&
-			(foe_ai != HIT_BIND_KEEPALIVE_MC_NEW_HDR) &&
-			(foe_ai != HIT_BIND_KEEPALIVE_DUP_OLD_HDR)) {
 #endif
+				(foe_ai != HIT_BIND_KEEPALIVE_UC_OLD_HDR) &&
+				(foe_ai != HIT_BIND_KEEPALIVE_MC_NEW_HDR) &&
+				(foe_ai != HIT_BIND_KEEPALIVE_DUP_OLD_HDR)) {
 		/* handle the incoming packet which came back from PPE */
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 		if (wifi_offload)
@@ -809,8 +805,11 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 		else
 #endif
 			return 1;
-	} else if (foe_ai == HIT_BIND_MULTICAST_TO_CPU ||
-		   foe_ai == HIT_BIND_MULTICAST_TO_GMAC_CPU) {
+#if defined (CONFIG_RALINK_MT7621)
+	} else if (foe_ai == HIT_BIND_MULTICAST_TO_CPU || foe_ai == HIT_BIND_MULTICAST_TO_GMAC_CPU) {
+#else
+	} else if (foe_ai == HIT_BIND_MULTICAST_TO_CPU) {
+#endif
 		return PpeHitBindForceMcastToWiFiHandler(skb);
 	} else if (foe_ai == HIT_BIND_KEEPALIVE_UC_OLD_HDR) {
 		return 1;

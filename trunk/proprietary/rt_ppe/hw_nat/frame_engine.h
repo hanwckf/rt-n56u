@@ -40,17 +40,6 @@
 
 #if defined (CONFIG_HNAT_V2)
 
-#define PFC		    RALINK_ETH_SW_BASE + 0x0004
-#define TPF0		    RALINK_ETH_SW_BASE + 0x2030
-#define TPF1		    RALINK_ETH_SW_BASE + 0x2130
-#define TPF2		    RALINK_ETH_SW_BASE + 0x2230
-#define TPF3		    RALINK_ETH_SW_BASE + 0x2330
-#define TPF4		    RALINK_ETH_SW_BASE + 0x2430
-#define TPF5		    RALINK_ETH_SW_BASE + 0x2530
-#define TPF6		    RALINK_ETH_SW_BASE + 0x2630
-
-#define PMCR_P7		    RALINK_ETH_SW_BASE + 0x3700
-#define PSC_P7		    RALINK_ETH_SW_BASE + 0x270c
 #define FOE_TS		    RALINK_FRAME_ENGINE_BASE + 0x0010
 
 #define PPE_FQFC_CFG	    RALINK_PPE_BASE + 0x00
@@ -88,6 +77,18 @@
 #define PPE_HASH_SEED	    RALINK_PPE_BASE + 0x244
 
 #if defined (CONFIG_RALINK_MT7620)
+
+#define PFC		    RALINK_ETH_SW_BASE + 0x0004
+#define TPF0		    RALINK_ETH_SW_BASE + 0x2030
+#define TPF1		    RALINK_ETH_SW_BASE + 0x2130
+#define TPF2		    RALINK_ETH_SW_BASE + 0x2230
+#define TPF3		    RALINK_ETH_SW_BASE + 0x2330
+#define TPF4		    RALINK_ETH_SW_BASE + 0x2430
+#define TPF5		    RALINK_ETH_SW_BASE + 0x2530
+#define TPF6		    RALINK_ETH_SW_BASE + 0x2630
+
+#define PMCR_P7		    RALINK_ETH_SW_BASE + 0x3700
+#define PSC_P7		    RALINK_ETH_SW_BASE + 0x270c
 
 #define PPE_FP_BMAP_0	    RALINK_PPE_BASE + 0x248
 #define PPE_FP_BMAP_1	    RALINK_PPE_BASE + 0x24C
@@ -215,7 +216,7 @@
  *  2: dirty
  *  3: lock
  *
- * CAH_RDATA[15:0]: entry num 
+ * CAH_RDATA[15:0]: entry num
  */
 #define CAH_RDATA	    RALINK_PPE_BASE + 0x330
 
@@ -223,21 +224,6 @@
 #define GDM1_MFRC_P_CPU     (0 << 4)
 #define GDM1_BFRC_P_CPU     (0 << 8)
 #define GDM1_UFRC_P_CPU     (0 << 12)
-
-/* TO PPE */
-#define IPV4_PPE_MYUC	    (1 << 0) //my mac
-#define IPV4_PPE_MC	    (1 << 1) //multicast
-#define IPV4_PPE_IPM	    (1 << 2) //ip multicast
-#define IPV4_PPE_BC	    (1 << 3) //broadcast
-#define IPV4_PPE_UC	    (1 << 4) //ipv4 learned UC frame
-#define IPV4_PPE_UN	    (1 << 5) //ipv4 unknown  UC frame
-
-#define IPV6_PPE_MYUC	    (1 << 8) //my mac
-#define IPV6_PPE_MC	    (1 << 9) //multicast
-#define IPV6_PPE_IPM	    (1 << 10) //ipv6 multicast
-#define IPV6_PPE_BC	    (1 << 11) //broadcast
-#define IPV6_PPE_UC	    (1 << 12) //ipv6 learned UC frame
-#define IPV6_PPE_UN	    (1 << 13) //ipv6 unknown  UC frame
 
 #if defined (CONFIG_RALINK_MT7621)
 #define AC_BASE		    RALINK_FRAME_ENGINE_BASE + 0x2000
@@ -267,21 +253,37 @@
 #define GDM1_OFRC_P_QDMA    (5 << 0)
 
 #else
+
+/* TO PPE */
+#define IPV4_PPE_MYUC	    (1 << 0) // my mac
+#define IPV4_PPE_MC	    (1 << 1) // multicast
+#define IPV4_PPE_IPM	    (1 << 2) // ip multicast
+#define IPV4_PPE_BC	    (1 << 3) // broadcast
+#define IPV4_PPE_UC	    (1 << 4) // ipv4 learned UC frame
+#define IPV4_PPE_UN	    (1 << 5) // ipv4 unknown  UC frame
+
+#define IPV6_PPE_MYUC	    (1 << 8) // my mac
+#define IPV6_PPE_MC	    (1 << 9) // multicast
+#define IPV6_PPE_IPM	    (1 << 10) // ipv6 multicast
+#define IPV6_PPE_BC	    (1 << 11) // broadcast
+#define IPV6_PPE_UC	    (1 << 12) // ipv6 learned UC frame
+#define IPV6_PPE_UN	    (1 << 13) // ipv6 unknown  UC frame
+
 #define AC_BASE		    RALINK_FRAME_ENGINE_BASE + 0x1000
 #define METER_BASE	    RALINK_FRAME_ENGINE_BASE + 0x1200
-#endif // CONFIG_RALINK_MT7621 //
+#endif /* CONFIG_RALINK_MT7621 */
 
-#else
+#else /* !CONFIG_HNAT_V2 */
 
-#define FE_GLO_BASE         RALINK_FRAME_ENGINE_BASE
+#define FE_GLO_BASE	    RALINK_FRAME_ENGINE_BASE
 #define PPE_BASE	    RALINK_FRAME_ENGINE_BASE + 0x200
 #define AC_BASE		    RALINK_FRAME_ENGINE_BASE + 0x400
 #define METER_BASE	    RALINK_FRAME_ENGINE_BASE + 0x600
 
 #define FOE_TS		    FE_GLO_BASE+0x1C
-#define GDMA1_BASE          FE_GLO_BASE+0x20
+#define GDMA1_BASE	    FE_GLO_BASE+0x20
 #define FE_GDMA1_SCH_CFG    GDMA1_BASE+0x04
-#define GDMA2_BASE          FE_GLO_BASE+0x60
+#define GDMA2_BASE	    FE_GLO_BASE+0x60
 #define FE_GDMA2_SCH_CFG    GDMA2_BASE+0x04
 
 #define PPE_GLO_CFG	    PPE_BASE + 0x00
@@ -386,14 +388,14 @@ enum FoeCpuReason {
 	HIT_BIND_KEEPALIVE_DUP_OLD_HDR = 0x15,	/* Hit bind and keep alive with duplicate old-header packet */
 	HIT_BIND_FORCE_TO_CPU = 0x16,		/* FOE Hit bind & force to CPU */
 	HIT_BIND_WITH_OPTION_HEADER = 0x17,	/* Hit bind and remove tunnel IP header, but inner IP has option/next header */
-	HIT_BIND_EXCEED_MTU = 0x1C,		/* Hit bind and exceed MTU */
 #if defined (CONFIG_RALINK_MT7621)
 	HIT_BIND_MULTICAST_TO_CPU = 0x18,	/* Switch clone multicast packet to CPU */
 	HIT_BIND_MULTICAST_TO_GMAC_CPU = 0x19,	/* Switch clone multicast packet to GMAC1 & CPU */
-	HIT_PRE_BIND = 0x1A			/* Pre-bind */
-#else
-	HIT_BIND_MULTICAST_TO_CPU = 0x1F,	/* Switch clone multicast packet to CPU */
-	HIT_BIND_MULTICAST_TO_GMAC_CPU = 0x1F,	/* Fake definition */
+	HIT_PRE_BIND = 0x1A,			/* Pre-bind */
+#endif
+	HIT_BIND_EXCEED_MTU = 0x1C,		/* Hit bind and exceed MTU */
+#if defined (CONFIG_RALINK_MT7620)
+	HIT_BIND_MULTICAST_TO_CPU = 0x1F	/* Switch clone multicast packet to CPU */
 #endif
 };
 #else

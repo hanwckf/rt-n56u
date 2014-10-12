@@ -489,19 +489,10 @@ uint32_t AcGetCnt(AcPlcyNode * SearchNode, enum AcCntType AcCntType)
 
 found:
 	if (AcCntType == AC_BYTE_CNT) {
-#if defined (CONFIG_RALINK_MT7621)
 		result = RegRead(AC_BASE + node->AgIdx * 8);
-		result |= RegRead(AC_BASE + node->AgIdx * 8 + 4);
-#else
-		result = RegRead(AC_BASE + node->AgIdx * 8);
-#endif
 		return result;
 	} else {		/* Packet Count */
-#if defined (CONFIG_RALINK_MT7621)
-		result = RegRead(AC_BASE + node->AgIdx * 12);
-#else
 		result = RegRead(AC_BASE + node->AgIdx * 8 + 4);
-#endif
 		return result;
 	}
 }

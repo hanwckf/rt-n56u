@@ -128,8 +128,8 @@ enum DstPort {
 #endif
 	DP_GMAC1 = 60,
 	DP_GMAC2 = 61,
-	DP_PCI0 = 62,
-	DP_PCI1 = 63,
+	DP_NIC0 = 62,
+	DP_NIC1 = 63,
 	MAX_IF_NUM // MAX_IF_NUM = 64 entries (act_dp length 6bits)
 };
 

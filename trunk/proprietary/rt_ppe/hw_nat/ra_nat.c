@@ -411,12 +411,12 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 #endif
 #endif /* HWNAT_DP_RAI_AP */
 #if defined (CONFIG_RA_HW_NAT_PCI)
-	else if (skb->dev == DstPort[DP_PCI0]) {
-		VirIfIdx = DP_PCI0;
+	else if (skb->dev == DstPort[DP_NIC0]) {
+		VirIfIdx = DP_NIC0;
 		hwaccel_tx = 1;
 	}
-	else if (skb->dev == DstPort[DP_PCI1]) {
-		VirIfIdx = DP_PCI1;
+	else if (skb->dev == DstPort[DP_NIC1]) {
+		VirIfIdx = DP_NIC1;
 	}
 #endif
 	else {
@@ -907,11 +907,11 @@ uint32_t PpeSetExtIfNum(struct sk_buff *skb, struct FoeEntry* foe_entry)
 		}
 	}
 #if defined (CONFIG_RA_HW_NAT_PCI)
-	else if (skb->dev == DstPort[DP_PCI0]) {
-		offset = DP_PCI0;
+	else if (skb->dev == DstPort[DP_NIC0]) {
+		offset = DP_NIC0;
 	}
-	else if (skb->dev == DstPort[DP_PCI1]) {
-		offset = DP_PCI1;
+	else if (skb->dev == DstPort[DP_NIC1]) {
+		offset = DP_NIC1;
 	}
 #endif
 	else if (skb->dev == DstPort[DP_GMAC1]) {
@@ -2232,26 +2232,26 @@ int PpeRsHandler(struct net_device *dev, int hold)
 		return -1;
 
 	if (hold) {
-		if (DstPort[DP_PCI0] == dev || DstPort[DP_PCI1] == dev)
+		if (DstPort[DP_NIC0] == dev || DstPort[DP_NIC1] == dev)
 			return 1;
-		if (!DstPort[DP_PCI0]) {
+		if (!DstPort[DP_NIC0]) {
 			dev_hold(dev);
-			DstPort[DP_PCI0] = dev;
+			DstPort[DP_NIC0] = dev;
 			return 0;
 		}
-		else if (!DstPort[DP_PCI1]) {
+		else if (!DstPort[DP_NIC1]) {
 			dev_hold(dev);
-			DstPort[DP_PCI1] = dev;
+			DstPort[DP_NIC1] = dev;
 			return 0;
 		}
 	} else {
-		if (DstPort[DP_PCI0] == dev) {
-			DstPort[DP_PCI0] = NULL;
+		if (DstPort[DP_NIC0] == dev) {
+			DstPort[DP_NIC0] = NULL;
 			dev_put(dev);
 			return 0;
 		}
-		else if (DstPort[DP_PCI1] == dev) {
-			DstPort[DP_PCI1] = NULL;
+		else if (DstPort[DP_NIC1] == dev) {
+			DstPort[DP_NIC1] = NULL;
 			dev_put(dev);
 			return 0;
 		}
@@ -2320,9 +2320,9 @@ void PpeSetDstPort(uint32_t Ebl)
 		DstPort[DP_GMAC2] = ra_dev_get_by_name("eth3");
 #endif
 #if defined (CONFIG_RA_HW_NAT_PCI)
-		i = DP_PCI0;
+		i = DP_NIC0;
 		DstPort[i] = ra_dev_get_by_name("weth0");	// USB interface name
-		if (DstPort[i]) i = DP_PCI1;
+		if (DstPort[i]) i = DP_NIC1;
 		DstPort[i] = ra_dev_get_by_name("wwan0");	// USB WWAN interface name
 #endif
 	} else {

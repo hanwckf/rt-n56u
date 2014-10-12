@@ -48,7 +48,7 @@ config RAETH_TSO
 
 config RAETH_TSOV6
 	bool "TSOv6 (TCP Segmentaton Offload for IPv6)"
-	depends on RAETH_TSO
+	depends on RAETH_TSO && IPV6
 
 choice
 	prompt "GMAC is connected to"

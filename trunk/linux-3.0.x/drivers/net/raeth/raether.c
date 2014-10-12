@@ -202,6 +202,31 @@ static void fill_hw_vlan_tx(void)
 		vlan_id_map[i] = (u16)i;
 		vlan_4k_map[i] = (u8)i;
 	}
+
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+	/* map VLAN TX for external offload (use slots 11..15) */
+	i = 11;
+#if defined (CONFIG_RA_HW_NAT_WIFI)
+	vlan_id_map[i] = (u16)DP_RA0;	// IDX: 11
+	vlan_4k_map[DP_RA0] = (u8)i;
+	i++;
+	vlan_id_map[i] = (u16)DP_RA1;	// IDX: 12
+	vlan_4k_map[DP_RA1] = (u8)i;
+	i++;
+#if defined (HWNAT_DP_RAI_AP)
+	vlan_id_map[i] = (u16)DP_RAI0;	// IDX: 13
+	vlan_4k_map[DP_RAI0] = (u8)i;
+	i++;
+	vlan_id_map[i] = (u16)DP_RAI1;	// IDX: 14
+	vlan_4k_map[DP_RAI1] = (u8)i;
+	i++;
+#endif
+#endif
+#if defined (CONFIG_RA_HW_NAT_PCI)
+	vlan_id_map[i] = (u16)DP_NIC0;	// IDX: 15
+	vlan_4k_map[DP_NIC0] = (u8)i;
+#endif
+#endif
 }
 
 static void update_hw_vlan_tx(void)

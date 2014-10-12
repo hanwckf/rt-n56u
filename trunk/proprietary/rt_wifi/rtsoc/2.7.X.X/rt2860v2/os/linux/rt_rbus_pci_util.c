@@ -150,17 +150,12 @@ PNDIS_PACKET RTMP_AllocateRxPacketBuffer(
 	}
 
 	if (pkt) {
-		RTMP_SET_PACKET_SOURCE(OSPKT_TO_RTPKT(pkt), PKTSRC_NDIS);
-		*VirtualAddress = (PVOID) pkt->data;	
-/*#ifdef CONFIG_5VT_ENHANCE */
-/*		*PhysicalAddress = PCI_MAP_SINGLE(pAd, *VirtualAddress, 1600, RTMP_PCI_DMA_FROMDEVICE); */
-/*#else */
+		*VirtualAddress = (PVOID) pkt->data;
 		*PhysicalAddress = PCI_MAP_SINGLE_DEV(pPciDev, *VirtualAddress, Length,  -1, RTMP_PCI_DMA_FROMDEVICE);
-/*#endif */
 	} else {
 		*VirtualAddress = (PVOID) NULL;
 		*PhysicalAddress = (NDIS_PHYSICAL_ADDRESS) 0;
-	}	
+	}
 
 	return (PNDIS_PACKET) pkt;
 }

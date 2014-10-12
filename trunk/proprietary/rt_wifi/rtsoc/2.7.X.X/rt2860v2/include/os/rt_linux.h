@@ -1016,8 +1016,6 @@ void linux_pci_unmap_single(void *handle, ra_dma_addr_t dma_addr, size_t size, i
 /***********************************************************************************
  *	Network Related data structure and marco definitions
  ***********************************************************************************/
-#define PKTSRC_NDIS             0x7f
-#define PKTSRC_DRIVER           0x0f
 
 #define RTMP_OS_NETDEV_STATE_RUNNING(_pNetDev)	((_pNetDev)->flags & IFF_UP)
 
@@ -1167,10 +1165,6 @@ void linux_pci_unmap_single(void *handle, ra_dma_addr_t dma_addr, size_t size, i
 /* 0x80~0xff: TX to a WDS link. b0~6: WDS index */
 #define RTMP_SET_PACKET_WCID(_p, _wdsidx)		(RTPKT_TO_OSPKT(_p)->cb[CB_OFF+2] = _wdsidx)
 #define RTMP_GET_PACKET_WCID(_p)          		((UCHAR)(RTPKT_TO_OSPKT(_p)->cb[CB_OFF+2]))
-
-/* 0xff: PKTSRC_NDIS, others: local TX buffer index. This value affects how to a packet */
-#define RTMP_SET_PACKET_SOURCE(_p, _pktsrc)		(RTPKT_TO_OSPKT(_p)->cb[CB_OFF+3] = _pktsrc)
-#define RTMP_GET_PACKET_SOURCE(_p)       		(RTPKT_TO_OSPKT(_p)->cb[CB_OFF+3])
 
 /* RTS/CTS-to-self protection method */
 #define RTMP_SET_PACKET_RTS(_p, _num)      		(RTPKT_TO_OSPKT(_p)->cb[CB_OFF+4] = _num)
@@ -1338,14 +1332,14 @@ void linux_pci_unmap_single(void *handle, ra_dma_addr_t dma_addr, size_t size, i
 
 #ifdef INF_AMAZON_SE
 /* [CB_OFF+28], 1B, Iverson patch for WMM A5-T07 ,WirelessStaToWirelessSta do not bulk out aggregate */
-#define RTMP_SET_PACKET_NOBULKOUT(_p, _morebit)			(RTPKT_TO_OSPKT(_p)->cb[CB_OFF+28] = _morebit)
-#define RTMP_GET_PACKET_NOBULKOUT(_p)					(RTPKT_TO_OSPKT(_p)->cb[CB_OFF+28])			
+#define RTMP_SET_PACKET_NOBULKOUT(_p, _morebit)		(RTPKT_TO_OSPKT(_p)->cb[CB_OFF+28] = _morebit)
+#define RTMP_GET_PACKET_NOBULKOUT(_p)			(RTPKT_TO_OSPKT(_p)->cb[CB_OFF+28])
 #endif /* INF_AMAZON_SE */
 
 
 #ifdef P2P_SUPPORT
-#define RTMP_SET_PACKET_OPMODE(_p, _flg)   (RTPKT_TO_OSPKT(_p)->cb[CB_OFF+26] = _flg)
-#define RTMP_GET_PACKET_OPMODE(_p)         (RTPKT_TO_OSPKT(_p)->cb[CB_OFF+26])
+#define RTMP_SET_PACKET_OPMODE(_p, _flg)		(RTPKT_TO_OSPKT(_p)->cb[CB_OFF+26] = _flg)
+#define RTMP_GET_PACKET_OPMODE(_p)			(RTPKT_TO_OSPKT(_p)->cb[CB_OFF+26])
 #endif /* P2P_SUPPORT */
 
 
@@ -1425,11 +1419,10 @@ extern int (*ra_sw_nat_hook_tx)(VOID *skb, int gmac_no);
 
 ******************************************************************************/
 
-#define RTMP_USB_PKT_COPY(__pNetDev, __pNetPkt, __Len, __pData)			\
-{																		\
-	memcpy(skb_put(__pNetPkt, __Len), __pData, __Len);					\
-	GET_OS_PKT_NETDEV(__pNetPkt) = __pNetDev;							\
-	RTMP_SET_PACKET_SOURCE(OSPKT_TO_RTPKT(__pNetPkt), PKTSRC_NDIS);		\
+#define RTMP_USB_PKT_COPY(__pNetDev, __pNetPkt, __Len, __pData)				\
+{											\
+	memcpy(skb_put(__pNetPkt, __Len), __pData, __Len);				\
+	GET_OS_PKT_NETDEV(__pNetPkt) = __pNetDev;					\
 }
 
 typedef struct usb_device_id USB_DEVICE_ID;

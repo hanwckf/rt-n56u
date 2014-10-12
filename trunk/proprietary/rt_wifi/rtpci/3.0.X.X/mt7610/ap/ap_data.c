@@ -183,7 +183,6 @@ VOID APSendPackets(NDIS_HANDLE dev_hnd, PPNDIS_PACKET pkt_list, UINT pkt_cnt)
 		{
 			/* For packet send from OS, we need to set the wcid here, it will used directly in APSendPacket. */
 			RTMP_SET_PACKET_WCID(pPacket, wcid);
-			RTMP_SET_PACKET_SOURCE(pPacket, PKTSRC_NDIS);
 			NDIS_SET_PACKET_STATUS(pPacket, NDIS_STATUS_PENDING);
 			pAd->RalinkCounters.PendingNdisPacketCount++;
 			
@@ -554,7 +553,6 @@ NDIS_STATUS APSendPacket(RTMP_ADAPTER *pAd, PNDIS_PACKET pPacket)
 	/* 3. otherwise, transmit the frame */
 	else /* (PsMode == PWR_ACTIVE) || (PsMode == PWR_UNKNOWN) */
 	{
-
 #ifdef IGMP_SNOOP_SUPPORT
 		/* if it's a mcast packet in igmp gourp. */
 		/* ucast clone it for all members in the gourp. */
@@ -563,8 +561,7 @@ NDIS_STATUS APSendPacket(RTMP_ADAPTER *pAd, PNDIS_PACKET pPacket)
 		{
 			NDIS_STATUS PktCloneResult = IgmpPktClone(pAd, pSrcBufVA, pPacket, InIgmpGroup, pGroupEntry, QueIdx, UserPriority);
 			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_SUCCESS);
-			if (PktCloneResult != NDIS_STATUS_SUCCESS)
-				return NDIS_STATUS_FAILURE;
+			return PktCloneResult;
 		}
 		else
 #endif /* IGMP_SNOOP_SUPPORT */
@@ -581,16 +578,14 @@ NDIS_STATUS APSendPacket(RTMP_ADAPTER *pAd, PNDIS_PACKET pPacket)
 
 			if (pAd->TxSwQueue[QueIdx].Number >= pAd->TxSwQMaxLen)
 			{
-
 #ifdef BLOCK_NET_IF
 				StopNetIfQueue(pAd, QueIdx, pPacket);
 #endif /* BLOCK_NET_IF */
 				RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
-
 				return NDIS_STATUS_FAILURE;
 			}
 			else
-			{			
+			{
 				RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
 				InsertTailQueueAc(pAd, pMacEntry, &pAd->TxSwQueue[QueIdx], PACKET_TO_QUEUE_ENTRY(pPacket));
 				RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
@@ -6445,7 +6440,6 @@ BOOLEAN APFowardWirelessStaToWirelessSta(
 				RTMP_SET_PACKET_NET_DEVICE_MBSSID(pForwardPacket, FromWhichBSSID);
 
 			RTMP_SET_PACKET_WCID(pForwardPacket, pEntry ? pEntry->Aid : MCAST_WCID);			
-			RTMP_SET_PACKET_SOURCE(pForwardPacket, PKTSRC_NDIS);
 			RTMP_SET_PACKET_MOREDATA(pForwardPacket, FALSE);
 
 #ifdef INF_AMAZON_SE

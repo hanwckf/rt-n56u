@@ -2149,11 +2149,9 @@ int APC_PacketSend(
 		{
 			/* ya! find it */
 			pAd->RalinkCounters.PendingNdisPacketCount ++;
-			RTMP_SET_PACKET_SOURCE(skb_p, PKTSRC_NDIS);
 			RTMP_SET_PACKET_MOREDATA(skb_p, FALSE);
 			RTMP_SET_PACKET_NET_DEVICE_APCLI(skb_p, apcliIndex);
 			SET_OS_PKT_NETDEV(skb_p, pAd->net_dev);
-
 
 			/* transmit the packet */
 			return Func(skb_p);

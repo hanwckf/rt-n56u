@@ -5679,7 +5679,6 @@ int P2P_PacketSend(
 				pAd->RalinkCounters.PendingNdisPacketCount ++;
 				/*NdisZeroMemory((PUCHAR)&(RTPKT_TO_OSPKT(pPktSrc))->cb[CB_OFF], 15);*/
 				NdisZeroMemory((PUCHAR)(GET_OS_PKT_CB(pPktSrc) + CB_OFF), 15);
-				RTMP_SET_PACKET_SOURCE(pPktSrc, PKTSRC_NDIS);
 				RTMP_SET_PACKET_MOREDATA(pPktSrc, FALSE);
 				RTMP_SET_PACKET_NET_DEVICE_APCLI(pPktSrc, MAIN_MBSSID);
 				SET_OS_PKT_NETDEV(pPktSrc, pAd->net_dev);
@@ -5701,7 +5700,6 @@ int P2P_PacketSend(
 				pAd->RalinkCounters.PendingNdisPacketCount ++;
 				/*NdisZeroMemory((PUCHAR)&(RTPKT_TO_OSPKT(pPktSrc))->cb[CB_OFF], 15);*/
 				NdisZeroMemory((PUCHAR)(GET_OS_PKT_CB(pPktSrc) + CB_OFF), 15);
-				RTMP_SET_PACKET_SOURCE(pPktSrc, PKTSRC_NDIS);
 				RTMP_SET_PACKET_MOREDATA(pPktSrc, FALSE);
 				RTMP_SET_PACKET_NET_DEVICE_P2P(pPktSrc, MAIN_MBSSID);
 				SET_OS_PKT_NETDEV(pPktSrc, pAd->net_dev);

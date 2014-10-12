@@ -324,7 +324,6 @@ PNDIS_PACKET RTMP_AllocateFragPacketBuffer(
 	if (pkt)
 	{
 		MEM_DBG_PKT_ALLOC_INC(pAd);
-		RTMP_SET_PACKET_SOURCE(OSPKT_TO_RTPKT(pkt), PKTSRC_NDIS);
 	}
 
 	return (PNDIS_PACKET) pkt;
@@ -407,7 +406,6 @@ NDIS_STATUS RTMPAllocateNdisPacket(
 	// 3. update length of packet
  	skb_put(GET_OS_PKT_TYPE(pPacket), HeaderLen+DataLen);
 
-	RTMP_SET_PACKET_SOURCE(pPacket, PKTSRC_NDIS);
 //	printk("%s : pPacket = %p, len = %d\n", __FUNCTION__, pPacket, GET_OS_PKT_LEN(pPacket));
 	*ppPacket = pPacket;
 	return NDIS_STATUS_SUCCESS;

@@ -333,7 +333,6 @@ PNDIS_PACKET RTMP_AllocateFragPacketBuffer(VOID *dummy, ULONG len)
 
 	if (pkt) {
 		MEM_DBG_PKT_ALLOC_INC(pkt);
-		RTMP_SET_PACKET_SOURCE(OSPKT_TO_RTPKT(pkt), PKTSRC_NDIS);
 	}
 
 	return (PNDIS_PACKET) pkt;
@@ -376,7 +375,6 @@ NDIS_STATUS RTMPAllocateNdisPacket(
 	skb_put(pPacket, HeaderLen + DataLen);
 /* printk(KERN_ERR "%s : pPacket = %p, len = %d\n", __FUNCTION__, pPacket, GET_OS_PKT_LEN(pPacket));*/
 
-	RTMP_SET_PACKET_SOURCE(pPacket, PKTSRC_NDIS);
 	*ppPacket = (PNDIS_PACKET)pPacket;
 
 	return NDIS_STATUS_SUCCESS;
@@ -4705,7 +4703,6 @@ VOID RtmpOsPktBodyCopy(
 {
 	memcpy(skb_put(pNetPkt, ThisFrameLen), pData, ThisFrameLen);
 	SET_OS_PKT_NETDEV(pNetPkt, pNetDev);
-	RTMP_SET_PACKET_SOURCE(OSPKT_TO_RTPKT(pNetPkt), PKTSRC_NDIS);
 }
 
 

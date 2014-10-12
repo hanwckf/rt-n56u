@@ -184,7 +184,6 @@ VOID	APSendPackets(
 		{
 			/* For packet send from OS, we need to set the wcid here, it will used directly in APSendPacket. */
 			RTMP_SET_PACKET_WCID(pPacket, wcid);
-			RTMP_SET_PACKET_SOURCE(pPacket, PKTSRC_NDIS);
 			NDIS_SET_PACKET_STATUS(pPacket, NDIS_STATUS_PENDING);
 			pAd->RalinkCounters.PendingNdisPacketCount++;
 			
@@ -561,13 +560,11 @@ NDIS_STATUS APSendPacket(
 		{
 			NDIS_STATUS PktCloneResult = IgmpPktClone(pAd, pSrcBufVA, pPacket, InIgmpGroup, pGroupEntry, QueIdx, UserPriority);
 			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_SUCCESS);
-			if (PktCloneResult != NDIS_STATUS_SUCCESS)
-				return NDIS_STATUS_FAILURE;
+			return PktCloneResult;
 		}
 		else
 #endif /* IGMP_SNOOP_SUPPORT */
 		{
-
 			if (pAd->TxSwQueue[QueIdx].Number >= pAd->TxSwQMaxLen)
 			{
 #ifdef BLOCK_NET_IF
@@ -5173,8 +5170,7 @@ BOOLEAN APFowardWirelessStaToWirelessSta(
 			if (!pEntry)
 				RTMP_SET_PACKET_NET_DEVICE_MBSSID(pForwardPacket, FromWhichBSSID);
 
-			RTMP_SET_PACKET_WCID(pForwardPacket, pEntry ? pEntry->Aid : MCAST_WCID);			
-			RTMP_SET_PACKET_SOURCE(pForwardPacket, PKTSRC_NDIS);
+			RTMP_SET_PACKET_WCID(pForwardPacket, pEntry ? pEntry->Aid : MCAST_WCID);
 			RTMP_SET_PACKET_MOREDATA(pForwardPacket, FALSE);
 #ifdef INF_AMAZON_SE
 			/*Iverson patch for WMM A5-T07 ,WirelessStaToWirelessSta do not bulk out aggregate */

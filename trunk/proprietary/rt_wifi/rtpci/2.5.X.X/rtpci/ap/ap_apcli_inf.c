@@ -308,11 +308,9 @@ INT ApCli_VirtualIF_PacketSend(
 		{
 			/* ya! find it */
 			ad_p->RalinkCounters.PendingNdisPacketCount ++;
-			RTMP_SET_PACKET_SOURCE(skb_p, PKTSRC_NDIS);
 			RTMP_SET_PACKET_MOREDATA(skb_p, FALSE);
 			RTMP_SET_PACKET_NET_DEVICE_APCLI(skb_p, apcliIndex);
 			SET_OS_PKT_NETDEV(skb_p, ad_p->net_dev);
-
 
 			/* transmit the packet */
 			return rt28xx_packet_xmit(RTPKT_TO_OSPKT(skb_p));

@@ -619,8 +619,6 @@ void linux_pci_unmap_single(void *handle, ra_dma_addr_t dma_addr, size_t size, i
 /***********************************************************************************
  *	Network Related data structure and marco definitions
  ***********************************************************************************/
-#define PKTSRC_NDIS             0x7f
-#define PKTSRC_DRIVER           0x0f
 
 #define RTMP_OS_NETDEV_GET_PHYADDR	RtmpOsNetDevGetPhyAddr
 #define SET_OS_PKT_NETDEV			RtmpOsSetPktNetDev
@@ -745,10 +743,6 @@ extern ULONG RtmpOsGetUnalignedlong(
 /* 0x80~0xff: TX to a WDS link. b0~6: WDS index */
 #define RTMP_SET_PACKET_WCID(_p, _wdsidx)		(PACKET_CB(_p, 2) = _wdsidx)
 #define RTMP_GET_PACKET_WCID(_p)          		(PACKET_CB(_p, 2))
-
-/* 0xff: PKTSRC_NDIS, others: local TX buffer index. This value affects how to a packet */
-#define RTMP_SET_PACKET_SOURCE(_p, _pktsrc)		(PACKET_CB(_p, 3) = _pktsrc)
-#define RTMP_GET_PACKET_SOURCE(_p)       		(PACKET_CB(_p, 3))
 
 /* RTS/CTS-to-self protection method */
 #define RTMP_SET_PACKET_RTS(_p, _num)      		(PACKET_CB(_p, 4) = _num)

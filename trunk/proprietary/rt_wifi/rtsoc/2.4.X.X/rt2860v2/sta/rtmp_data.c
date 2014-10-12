@@ -1229,7 +1229,6 @@ VOID STASendPackets(
 					RTMP_SET_PACKET_WCID(pPacket, 0);
 				}
 
-				RTMP_SET_PACKET_SOURCE(pPacket, PKTSRC_NDIS);
 				NDIS_SET_PACKET_STATUS(pPacket, NDIS_STATUS_PENDING);
 				pAd->RalinkCounters.PendingNdisPacketCount++;
 

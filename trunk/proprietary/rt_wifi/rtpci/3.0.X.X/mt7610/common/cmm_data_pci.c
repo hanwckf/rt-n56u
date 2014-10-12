@@ -1349,7 +1349,6 @@ PNDIS_PACKET RxRingDeQueue(
 		else
 		{
 			pNewPacket = OSPKT_TO_RTPKT(skb);
-			RTMP_SET_PACKET_SOURCE(OSPKT_TO_RTPKT(pNewPacket), PKTSRC_NDIS);
 			pRxCell->DmaBuf.AllocVa = GET_OS_PKT_DATAPTR(pNewPacket);
 			pRxCell->DmaBuf.AllocPa = PCI_MAP_SINGLE_DEV(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pRxCell->DmaBuf.AllocVa, RX_BUFFER_AGGRESIZE,  -1, RTMP_PCI_DMA_FROMDEVICE);
 		}

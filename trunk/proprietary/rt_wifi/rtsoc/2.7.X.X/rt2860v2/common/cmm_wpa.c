@@ -553,7 +553,6 @@ VOID RTMPToWirelessSta(
 #ifdef APCLI_SUPPORT
 		if (IS_ENTRY_APCLI(pEntry))
 		{
-			RTMP_SET_PACKET_SOURCE(pPacket, PKTSRC_NDIS);
 			RTMP_SET_PACKET_MOREDATA(pPacket, FALSE);
 			RTMP_SET_PACKET_NET_DEVICE_APCLI(pPacket, pEntry->MatchAPCLITabIdx);
 			RTMP_SET_PACKET_WCID(pPacket, pEntry->Aid); /* to ApClient links.*/
@@ -565,13 +564,11 @@ VOID RTMPToWirelessSta(
 #endif /* APCLI_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 		{
-			RTMP_SET_PACKET_SOURCE(pPacket, PKTSRC_NDIS);
-
 			RTMP_SET_PACKET_NET_DEVICE_MBSSID(pPacket, MAIN_MBSSID);	/* set a default value*/
 			if(pEntry->apidx != 0)
-        		RTMP_SET_PACKET_NET_DEVICE_MBSSID(pPacket, pEntry->apidx);
+				RTMP_SET_PACKET_NET_DEVICE_MBSSID(pPacket, pEntry->apidx);
 		
-        	RTMP_SET_PACKET_WCID(pPacket, (UCHAR)pEntry->Aid);
+			RTMP_SET_PACKET_WCID(pPacket, (UCHAR)pEntry->Aid);
 			RTMP_SET_PACKET_MOREDATA(pPacket, FALSE);
 #ifdef P2P_SUPPORT
 			if (IS_P2P_GO_ENTRY(pEntry))

@@ -52,9 +52,6 @@ static inline VOID FreeGrpMemberEntry(
 static VOID IGMPTableDisplay(
 	IN PRTMP_ADAPTER pAd);
 
-static BOOLEAN isIgmpMacAddr(
-	IN PUCHAR pMacAddr);
-
 static VOID InsertIgmpMember(
 	IN PMULTICAST_FILTER_TABLE pMulticastFilterTable,
 	IN PLIST_HEADER pList,
@@ -580,7 +577,6 @@ VOID IGMPSnooping(
 	return;
 }
 
-
 static inline BOOLEAN isIgmpMacAddr(
 	IN PUCHAR pMacAddr)
 {
@@ -1083,6 +1079,7 @@ NDIS_STATUS IgmpPktClone(
 		if (pMemberEntry)
 		{
 			pMemberAddr = pMemberEntry->Addr;
+			pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 			bContinue = TRUE;
 		}
 	}
@@ -1093,7 +1090,8 @@ NDIS_STATUS IgmpPktClone(
 		
 		for(MacEntryIdx=1; MacEntryIdx<MAX_NUMBER_OF_MAC; MacEntryIdx++)
 		{
-			pMacEntry = &pAd->MacTab.Content[MacEntryIdx];
+			pMemberAddr = pAd->MacTab.Content[MacEntryIdx].Addr;
+			pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 			if ((pMacEntry && IS_ENTRY_CLIENT(pMacEntry)) &&
 			    (get_netdev_from_bssid(pAd, pMacEntry->apidx) == pNetDev) &&
 			    (!MAC_ADDR_EQUAL(pMacEntry->Addr, pSrcMAC))) /* DAD IPv6 issue */
@@ -1112,7 +1110,6 @@ NDIS_STATUS IgmpPktClone(
 	/* check all members of the IGMP group. */
 	while(bContinue == TRUE)
 	{
-		pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 		if (pMacEntry && (Sst == SST_ASSOC) && (pMacEntry->PortSecured == WPA_802_1X_PORT_SECURED))
 		{
 			OS_PKT_CLONE(pAd, pPacket, pSkbClone, MEM_ALLOC_FLAG);
@@ -1120,10 +1117,6 @@ NDIS_STATUS IgmpPktClone(
 				return NDIS_STATUS_FAILURE;
 			
 			RTMP_SET_PACKET_WCID(pSkbClone, (UCHAR)pMacEntry->Aid);
-			/* Pkt type must set to PKTSRC_NDIS. */
-			/* It cause of the deason that APHardTransmit() */
-			/* doesn't handle PKTSRC_DRIVER pkt type in version 1.3.0.0. */
-			RTMP_SET_PACKET_SOURCE(pSkbClone, PKTSRC_NDIS);
 			
 			if (PsMode == PWR_SAVE)
 			{
@@ -1158,6 +1151,7 @@ NDIS_STATUS IgmpPktClone(
 			if (pMemberEntry)
 			{
 				pMemberAddr = pMemberEntry->Addr;
+				pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 				bContinue = TRUE;
 			}
 			else
@@ -1167,7 +1161,8 @@ NDIS_STATUS IgmpPktClone(
 		{
 			for(MacEntryIdx=pMacEntry->Aid + 1; MacEntryIdx<MAX_NUMBER_OF_MAC; MacEntryIdx++)
 			{
-				pMacEntry = &pAd->MacTab.Content[MacEntryIdx];
+				pMemberAddr = pAd->MacTab.Content[MacEntryIdx].Addr;
+				pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 				if ((pMacEntry && IS_ENTRY_CLIENT(pMacEntry)) && 
 				    (get_netdev_from_bssid(pAd, pMacEntry->apidx) == pNetDev) &&
 				    (!MAC_ADDR_EQUAL(pMacEntry->Addr, pSrcMAC)))

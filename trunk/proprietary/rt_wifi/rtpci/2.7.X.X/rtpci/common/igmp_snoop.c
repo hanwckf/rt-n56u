@@ -52,9 +52,6 @@ static inline VOID FreeGrpMemberEntry(
 static VOID IGMPTableDisplay(
 	IN PRTMP_ADAPTER pAd);
 
-static BOOLEAN isIgmpMacAddr(
-	IN PUCHAR pMacAddr);
-
 static VOID InsertIgmpMember(
 	IN PMULTICAST_FILTER_TABLE pMulticastFilterTable,
 	IN PLIST_HEADER pList,
@@ -580,8 +577,8 @@ VOID IGMPSnooping(
 	return;
 }
 
-
-static inline BOOLEAN isIgmpMacAddr(IN PUCHAR pMacAddr)
+static inline BOOLEAN isIgmpMacAddr(
+	IN PUCHAR pMacAddr)
 {
 	if((pMacAddr[0] == 0x01)
 		&& (pMacAddr[1] == 0x00)
@@ -610,7 +607,8 @@ BOOLEAN isIgmpPkt(
 	return FALSE;
 }
 
-BOOLEAN IPv4MulticastFilterExcluded(IN PUCHAR pDstMacAddr)
+BOOLEAN IPv4MulticastFilterExcluded(
+	IN PUCHAR pDstMacAddr)
 {
 	UINT32 DstIpAddr;
 
@@ -634,6 +632,7 @@ BOOLEAN IPv4MulticastFilterExcluded(IN PUCHAR pDstMacAddr)
 
 	return FALSE;
 }
+
 
 static VOID InsertIgmpMember(
 	IN PMULTICAST_FILTER_TABLE pMulticastFilterTable,
@@ -1005,7 +1004,7 @@ NDIS_STATUS IgmpPktInfoQuery(
 	{
 		BOOLEAN NeedForwardToAll = FALSE;
 		UINT16 EtherType = ntohs(*((UINT16 *)(pSrcBufVA + 12)));
-		
+ 
 		if (EtherType == ETH_P_IPV6)
 		{
 			NeedForwardToAll = IPv6MulticastFilterExcluded(pSrcBufVA);
@@ -1014,11 +1013,11 @@ NDIS_STATUS IgmpPktInfoQuery(
 		{
 			NeedForwardToAll = IPv4MulticastFilterExcluded(pSrcBufVA);
 		}
-		
+
 		if (NeedForwardToAll)
 		{
 			*ppGroupEntry = NULL;
-			*pInIgmpGroup = IGMP_PKT; // IGMP/MLD and all reserved
+			*pInIgmpGroup = IGMP_PKT;  // IGMP/MLD and all reserved
 		}
 		else if ((*ppGroupEntry = MulticastFilterTableLookup(pAd->pMulticastFilterTable, pSrcBufVA,
 									get_netdev_from_bssid(pAd, FromWhichBSSID))) == NULL)
@@ -1034,7 +1033,7 @@ NDIS_STATUS IgmpPktInfoQuery(
 		PUCHAR pDstIpAddr = pSrcBufVA + 30; /* point to Destination of Ip address of IP header. */
 		UCHAR GroupMacAddr[6];
 		PUCHAR pGroupMacAddr = (PUCHAR)&GroupMacAddr;
-
+		
 		ConvertMulticastIP2MAC(pDstIpAddr, (PUCHAR *)&pGroupMacAddr, ETH_P_IP);
 		if ((*ppGroupEntry = MulticastFilterTableLookup(pAd->pMulticastFilterTable, pGroupMacAddr,
 								get_netdev_from_bssid(pAd, FromWhichBSSID))) != NULL)
@@ -1080,6 +1079,7 @@ NDIS_STATUS IgmpPktClone(
 		if (pMemberEntry)
 		{
 			pMemberAddr = pMemberEntry->Addr;
+			pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 			bContinue = TRUE;
 		}
 	}
@@ -1090,7 +1090,8 @@ NDIS_STATUS IgmpPktClone(
 		
 		for(MacEntryIdx=1; MacEntryIdx<MAX_NUMBER_OF_MAC; MacEntryIdx++)
 		{
-			pMacEntry = &pAd->MacTab.Content[MacEntryIdx];
+			pMemberAddr = pAd->MacTab.Content[MacEntryIdx].Addr;
+			pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 			if ((pMacEntry && IS_ENTRY_CLIENT(pMacEntry)) &&
 			    (get_netdev_from_bssid(pAd, pMacEntry->apidx) == pNetDev) &&
 			    (!MAC_ADDR_EQUAL(pMacEntry->Addr, pSrcMAC))) /* DAD IPv6 issue */
@@ -1106,10 +1107,9 @@ NDIS_STATUS IgmpPktClone(
 		return NDIS_STATUS_FAILURE;
 	}
 
-	// check all members of the IGMP group.
+	/* check all members of the IGMP group. */
 	while(bContinue == TRUE)
 	{
-		pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 		if (pMacEntry && (Sst == SST_ASSOC) && (pMacEntry->PortSecured == WPA_802_1X_PORT_SECURED))
 		{
 			OS_PKT_CLONE(pAd, pPacket, pSkbClone, MEM_ALLOC_FLAG);
@@ -1117,10 +1117,6 @@ NDIS_STATUS IgmpPktClone(
 				return NDIS_STATUS_FAILURE;
 			
 			RTMP_SET_PACKET_WCID(pSkbClone, (UCHAR)pMacEntry->Aid);
-			// Pkt type must set to PKTSRC_NDIS.
-			// It cause of the deason that APHardTransmit()
-			// doesn't handle PKTSRC_DRIVER pkt type in version 1.3.0.0.
-			RTMP_SET_PACKET_SOURCE(pSkbClone, PKTSRC_NDIS);
 			
 			if (PsMode == PWR_SAVE)
 			{
@@ -1128,7 +1124,7 @@ NDIS_STATUS IgmpPktClone(
 			}
 			else
 			{
-				// insert the pkt to TxSwQueue.
+				/* insert the pkt to TxSwQueue. */
 				if (pAd->TxSwQueue[QueIdx].Number >= pAd->TxSwQMaxLen)
 				{
 #ifdef BLOCK_NET_IF
@@ -1155,6 +1151,7 @@ NDIS_STATUS IgmpPktClone(
 			if (pMemberEntry)
 			{
 				pMemberAddr = pMemberEntry->Addr;
+				pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 				bContinue = TRUE;
 			}
 			else
@@ -1164,7 +1161,8 @@ NDIS_STATUS IgmpPktClone(
 		{
 			for(MacEntryIdx=pMacEntry->Aid + 1; MacEntryIdx<MAX_NUMBER_OF_MAC; MacEntryIdx++)
 			{
-				pMacEntry = &pAd->MacTab.Content[MacEntryIdx];
+				pMemberAddr = pAd->MacTab.Content[MacEntryIdx].Addr;
+				pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 				if ((pMacEntry && IS_ENTRY_CLIENT(pMacEntry)) && 
 				    (get_netdev_from_bssid(pAd, pMacEntry->apidx) == pNetDev) &&
 				    (!MAC_ADDR_EQUAL(pMacEntry->Addr, pSrcMAC)))
@@ -1182,12 +1180,14 @@ NDIS_STATUS IgmpPktClone(
 	return NDIS_STATUS_SUCCESS;
 }
 
-static inline BOOLEAN isMldMacAddr(IN PUCHAR pMacAddr)
+static inline BOOLEAN isMldMacAddr(
+	IN PUCHAR pMacAddr)
 {
 	return ((pMacAddr[0] == 0x33) && (pMacAddr[1] == 0x33)) ? TRUE : FALSE;
 }
 
-static inline BOOLEAN IsSupportedMldMsg(IN UINT8 MsgType)
+static inline BOOLEAN IsSupportedMldMsg(
+	IN UINT8 MsgType) 
 {
 	BOOLEAN result = FALSE;
 	switch(MsgType)
@@ -1260,7 +1260,8 @@ static inline int IPv6_Transient_Multicast(
 	return 0;
 }
 
-BOOLEAN IPv6MulticastFilterExcluded(IN PUCHAR pDstMacAddr)
+BOOLEAN IPv6MulticastFilterExcluded(
+	IN PUCHAR pDstMacAddr)
 {
 	PUCHAR pIpHeader;
 	PRT_IPV6_HDR pIpv6Hdr;
@@ -1280,7 +1281,7 @@ BOOLEAN IPv6MulticastFilterExcluded(IN PUCHAR pDstMacAddr)
 		if(IPv6ExtHdrHandle((RT_IPV6_EXT_HDR *)(pIpHeader + offset), &nextProtocol, &offset) == FALSE)
 			break;
 	}
-
+	
 	for (idx = 0; idx < IPV6_MULTICAST_FILTER_EXCLUED_SIZE; idx++)
 	{
 		if (nextProtocol == IPv6MulticastFilterExclued[idx])

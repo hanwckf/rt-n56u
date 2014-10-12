@@ -269,6 +269,24 @@ uint32_t FoeDumpPkt(struct sk_buff * skb)
 }
 #endif
 
+static inline int RemoveVlanTag(struct sk_buff * skb)
+{
+	if (unlikely(!pskb_may_pull(skb, VLAN_HLEN))) {
+		NAT_DEBUG("HNAT: %s, no mem for remove tag!\n", __FUNCTION__);
+		return 1;
+	}
+
+	/* remove vlan tag from current packet */
+	skb_pull(skb, VLAN_HLEN);
+	memmove(skb->data - ETH_HLEN, skb->data - VLAN_ETH_HLEN, 2 * ETH_ALEN);
+	skb->mac_header += VLAN_HLEN;
+
+	/* set original skb protocol */
+	skb->protocol = eth_hdr(skb)->h_proto;
+
+	return 0;
+}
+
 #if defined  (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 /* push different VID for WiFi pseudo interface or USB external NIC */
 uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
@@ -434,7 +452,6 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 
 uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 {
-	struct ethhdr *eth = NULL;
 	struct net_device *dev;
 	struct vlan_ethhdr *veth;
 	uint16_t VirIfIdx;
@@ -457,19 +474,9 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 		return 1;
 	}
 
-	if (unlikely(!pskb_may_pull(skb, VLAN_HLEN))) {
-		NAT_DEBUG("HNAT: %s, no mem for remove tag! (VirIfIdx=%d)\n", __FUNCTION__, VirIfIdx);
-		return 1;
-	}
-
 	/* remove vlan tag from current packet */
-	skb_pull(skb, VLAN_HLEN);
-	memmove(skb->data - ETH_HLEN, skb->data - VLAN_ETH_HLEN, 2 * ETH_ALEN);
-	skb->mac_header += VLAN_HLEN;
-
-	/* set original skb protocol */
-	eth = eth_hdr(skb);
-	skb->protocol = eth->h_proto;
+	if (RemoveVlanTag(skb))
+		return 1;
 
 	/* set original skb dev */
 	skb->dev = dev;
@@ -478,6 +485,7 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 	   note: eth_type_trans is already completed for GMAC1 (dev eth2),
 	   so check only if pkt_type PACKET_OTHERHOST */
 	if (skb->pkt_type == PACKET_OTHERHOST) {
+		struct ethhdr *eth = eth_hdr(skb);
 		if (!compare_ether_addr(eth->h_dest, dev->dev_addr))
 			skb->pkt_type = PACKET_HOST;
 #ifdef CONFIG_RAETH_GMAC2
@@ -613,9 +621,19 @@ int PpeHitBindForceToCpuHandler(struct sk_buff *skb, struct FoeEntry *foe_entry)
 		return 0;
 	}
 
+#if defined (CONFIG_RALINK_MT7620)
+	/* remove vlan tag from PPE packet (P7/P6 egress always tagged) */
+	if (skb->protocol == __constant_htons(ETH_P_8021Q)) {
+		if (RemoveVlanTag(skb))
+			return 1;
+	}
+#endif
+
 	skb->dev = dev;
+
+	/* set pointer to L2 header before call dev_queue_xmit */
 	skb_reset_network_header(skb);
-	skb_push(skb, ETH_HLEN);	//pointer to layer2 header
+	skb_push(skb, ETH_HLEN);
 	dev_queue_xmit(skb);
 
 	return 0;
@@ -628,23 +646,15 @@ int PpeHitBindForceMcastToWiFiHandler(struct sk_buff *skb)
 	struct sk_buff *skb2;
 	struct net_device *dev;
 
+	/* remove vlan tag from PPE packet */
 	if (skb->protocol == __constant_htons(ETH_P_8021Q)) {
-		if (unlikely(!pskb_may_pull(skb, VLAN_HLEN))) {
-			NAT_DEBUG("HNAT: %s, no mem for remove tag!\n", __FUNCTION__);
+		if (RemoveVlanTag(skb))
 			return 1;
-		}
-		
-		/* remove vlan tag from current packet */
-		skb_pull(skb, VLAN_HLEN);
-		memmove(skb->data - ETH_HLEN, skb->data - VLAN_ETH_HLEN, 2 * ETH_ALEN);
-		skb->mac_header += VLAN_HLEN;
-		
-		/* set original skb protocol */
-		skb->protocol = eth_hdr(skb)->h_proto;
 	}
 
+	/* set pointer to L2 header before call dev_queue_xmit */
 	skb_reset_network_header(skb);
-	skb_push(skb, ETH_HLEN);	//pointer to layer2 header before calling hard_start_xmit
+	skb_push(skb, ETH_HLEN);
 
 	for (i = DP_RA0; i < MAX_WIFI_IF_NUM; i++) {
 		dev = DstPort[i];
@@ -753,9 +763,6 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 	if (skb->pkt_type == PACKET_BROADCAST)
 		return 1;
 
-	foe_entry = &PpeFoeBase[FOE_ENTRY_NUM(skb)];
-	foe_ai = FOE_AI(skb);
-
 	if (FOE_MAGIC_TAG(skb) == FOE_MAGIC_EXTIF) {
 		/* the incoming packet is from PCI or WiFi interface */
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
@@ -763,8 +770,13 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 			return PpeExtIfRxHandler(skb);
 		else
 #endif
-		return 1;
-	} else if (foe_ai == HIT_BIND_FORCE_TO_CPU) {
+			return 1;
+	}
+
+	foe_entry = &PpeFoeBase[FOE_ENTRY_NUM(skb)];
+	foe_ai = FOE_AI(skb);
+
+	if (foe_ai == HIT_BIND_FORCE_TO_CPU) {
 		/* It means the flow is already in binding state, just transfer to output interface */
 		return PpeHitBindForceToCpuHandler(skb, foe_entry);
 #if defined (CONFIG_HNAT_V2)
@@ -786,7 +798,7 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 			return PpeExtIfPingPongHandler(skb);
 		else
 #endif
-		return 1;
+			return 1;
 	} else if (foe_ai == HIT_BIND_MULTICAST_TO_CPU ||
 		   foe_ai == HIT_BIND_MULTICAST_TO_GMAC_CPU) {
 		return PpeHitBindForceMcastToWiFiHandler(skb);
@@ -806,7 +818,7 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 			return PpeExtIfPingPongHandler(skb);
 		else
 #endif
-		return 1;
+			return 1;
 	} else if (foe_ai == HIT_BIND_KEEPALIVE && DFL_FOE_KA == 0) {
 		if (!FOE_ENTRY_VALID(skb)) {
 			NAT_DEBUG("HNAT: %s, hit bind keepalive is not valid FoE entry!\n", __FUNCTION__);
@@ -1635,7 +1647,7 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 		if (!wifi_offload)
 #endif
-		return 1;
+			return 1;
 	}
 
 	/* return truncated packets to normal path with padding */
@@ -2217,7 +2229,7 @@ int PpeRsHandler(struct net_device *dev, int hold)
 #if defined (CONFIG_RA_HW_NAT_PCI)
 	if (!dev)
 		return -1;
-	
+
 	if (hold) {
 		if (DstPort[DP_PCI0] == dev || DstPort[DP_PCI1] == dev)
 			return 1;

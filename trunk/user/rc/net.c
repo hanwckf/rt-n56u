@@ -577,8 +577,9 @@ hw_vlan_tx_map(int idx, int vid)
 {
 	char vlan_tx_data[16];
 
-	/* use slots 10..14 for custom VID */
-	if (vid < 10 || idx < 10 || idx > 14)
+	/* use slots 6..10 for custom VID
+	   NOTE: slots 11..15 used by hw_nat WiFi/USB offload */
+	if (vid < 6 || idx < 6 || idx > 10)
 		return;
 
 	/* map VLAN VID to raeth (for support RT3883/MT7620 HW_VLAN_TX with VID > 15) */

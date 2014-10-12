@@ -360,8 +360,8 @@ launch_viptv_wan(void)
 	if (is_vlan_vid_iptv_valid(vlan_vid[0], vlan_vid[1]))
 	{
 		/* update VLAN for raeth */
-		hw_vlan_tx_map(10, vlan_vid[0]);
-		hw_vlan_tx_map(11, vlan_vid[1]);
+		hw_vlan_tx_map(6, vlan_vid[0]);
+		hw_vlan_tx_map(7, vlan_vid[1]);
 		
 		/* create VLAN for IPTV */
 #ifdef USE_SINGLE_MAC
@@ -397,7 +397,7 @@ launch_viptv_wan(void)
 	else
 	{
 		/* update VLAN for raeth */
-		hw_vlan_tx_map(10, vlan_vid[0]);
+		hw_vlan_tx_map(6, vlan_vid[0]);
 		
 		if (is_vlan_vid_inet_valid(vlan_vid[0]) && vlan_vid[0] != vlan_vid[1])
 		{

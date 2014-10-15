@@ -40,6 +40,9 @@
 #endif
 #endif
 
+#ifdef RTMP_MAC_PCI
+MODULE_LICENSE("GPL");
+#endif /* RTMP_MAC_PCI */
 
 #ifdef CONFIG_APSTA_MIXED_SUPPORT
 /*UINT32 CW_MAX_IN_BITS;*/

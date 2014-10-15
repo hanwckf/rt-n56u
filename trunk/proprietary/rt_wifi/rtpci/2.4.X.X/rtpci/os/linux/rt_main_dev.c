@@ -37,6 +37,10 @@ extern int (*ra_sw_nat_hook_tx)(struct sk_buff *skb, int gmac_no);
 UINT32 CW_MAX_IN_BITS;
 #endif // CONFIG_APSTA_MIXED_SUPPORT //
 
+#ifdef RTMP_MAC_PCI
+MODULE_LICENSE("GPL");
+#endif /* RTMP_MAC_PCI */
+
 /*---------------------------------------------------------------------*/
 /* Private Variables Used                                              */
 /*---------------------------------------------------------------------*/

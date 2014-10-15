@@ -37,6 +37,10 @@ extern int (*ra_sw_nat_hook_tx)(struct sk_buff *skb, int gmac_no);
 UINT32 CW_MAX_IN_BITS;
 #endif // CONFIG_APSTA_MIXED_SUPPORT //
 
+#ifdef RTMP_MAC_PCI
+MODULE_LICENSE("GPL");
+#endif /* RTMP_MAC_PCI */
+
 /*---------------------------------------------------------------------*/
 /* Private Variables Used                                              */
 /*---------------------------------------------------------------------*/
@@ -53,7 +57,6 @@ MODULE_PARM_DESC (mac, "rt28xx: wireless mac addr");
 #ifdef OS_ABL_SUPPORT
 UCHAR ZERO_MAC_ADDR[MAC_ADDR_LEN]  = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 #endif // OS_ABL_SUPPORT //
-
 
 /*---------------------------------------------------------------------*/
 /* Prototypes of Functions Used                                        */

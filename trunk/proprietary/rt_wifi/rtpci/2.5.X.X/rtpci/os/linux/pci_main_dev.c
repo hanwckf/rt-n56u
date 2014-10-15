@@ -650,7 +650,5 @@ static VOID __devexit rt2860_remove_one(
 
 	}
 	RtmpRaDevCtrlInit(pAd, RTMP_DEV_INF_PCI);
-
 }
 
-MODULE_LICENSE("Proprietary");

@@ -1315,7 +1315,7 @@ notify_on_internet_state_changed(int has_internet, long elapsed)
 	const char *script_inet = SCRIPT_INTERNET_STATE;
 
 	if (!has_internet && !get_ap_mode()) {
-		int fail_action = nvram_safe_get_int("di_lost_action", 0, 0, 2);
+		int fail_action = nvram_safe_get_int("di_lost_action", 0, 0, 3);
 		switch (fail_action)
 		{
 		case 1:

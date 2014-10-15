@@ -1352,6 +1352,7 @@ VOID MlmePeriodicExec(
 		RTMP_MLME_HANDLER(pAd);
 	}
 
+#ifdef RT6352
 	if (IS_RT6352(pAd) && (pAd->CommonCfg.bEnTemperatureTrack == TRUE))
 	{
 #ifdef RTMP_INTERNAL_TX_ALC
@@ -1408,6 +1409,7 @@ VOID MlmePeriodicExec(
 #endif /* RTMP_TEMPERATURE_CALIBRATION */
 		}
 	}
+#endif /* RT6352 */
 
 #ifdef WSC_INCLUDED
 	WSC_HDR_BTN_MR_HANDLE(pAd);

@@ -1010,7 +1010,9 @@ VOID ORIBATimerTimeout(
 /*	PUCHAR			pOutBuffer = NULL;*/
 /*	USHORT			Sequence;*/
 	UCHAR			TID;
+#if defined (MAC_REPEATER_SUPPORT) || defined(DBG)
 	UINT32 MaxWcidNum = MAX_LEN_OF_MAC_TABLE;
+#endif
 
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
@@ -1051,8 +1053,10 @@ VOID SendRefreshBAR(
 	UCHAR			i, TID;
 	USHORT			idx;
 	BA_ORI_ENTRY	*pBAEntry;
+#if defined (MAC_REPEATER_SUPPORT) || defined(DBG)
 	UINT32 MaxWcidNum = MAX_LEN_OF_MAC_TABLE;
-	
+#endif
+
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
 		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;

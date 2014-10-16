@@ -5850,6 +5850,7 @@ INT Set_ADCDump_Proc(
 
 
 #ifdef MT76x0
+#if 0
 /* not used */
 static VOID MT76x0ATE_TempSensor(
 	IN RTMP_ADAPTER *pAd)
@@ -5945,6 +5946,7 @@ done:
 	rlt_rf_write(pAd, RF_BANK0, RF_R66, rf_b0_66);
 	rlt_rf_write(pAd, RF_BANK0, RF_R67, rf_b0_67);
 }
+#endif
 #endif /* MT76x0 */
 
 

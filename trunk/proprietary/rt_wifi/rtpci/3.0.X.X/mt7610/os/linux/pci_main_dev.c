@@ -72,14 +72,19 @@ static struct pci_device_id rt2860_pci_tbl[] __devinitdata =
 #ifdef RT3290
 	{PCI_DEVICE(NIC_PCI_VENDOR_ID, NIC3290_PCIe_DEVICE_ID)},
 #endif /* RT3290 */
+
 #ifdef MT76x0
-	{PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7650_PCIe_DEVICE_ID)},
 	{PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7610_PCIe_DEVICE_ID)},
+#ifdef MT7650
+	{PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7650_PCIe_DEVICE_ID)},
+#endif
+#ifdef MT7630
 	{PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7630_PCIe_DEVICE_ID)},
+#endif
 #ifdef FPGA_MODE
 	{PCI_DEVICE(NIC_PCI_VENDOR_ID, NIC6390_PCIe_DEVICE_ID)},
 #endif /* FPGA_MODE */
-#endif /* RT6590 */
+#endif /* MT76x0 */
 #ifdef RT8592
 	{PCI_DEVICE(NIC_PCI_VENDOR_ID, NIC8592_PCIe_DEVICE_ID)},
 	{PCI_DEVICE(NIC_PCI_VENDOR_ID, NIC8592_5592_PCIe_DEVICE_ID)},
@@ -98,13 +103,13 @@ MODULE_DEVICE_TABLE(pci, rt2860_pci_tbl);
 /* */
 static struct pci_driver rt2860_driver =
 {
-	name:       RTMP_DRV_NAME,
-	id_table:   rt2860_pci_tbl,
-	probe:      rt2860_probe,
+	name:		RTMP_DRV_NAME,
+	id_table:	rt2860_pci_tbl,
+	probe:		rt2860_probe,
 #if LINUX_VERSION_CODE >= 0x20412
-	remove:     __devexit_p(rt2860_remove_one),
+	remove:		__devexit_p(rt2860_remove_one),
 #else
-	remove:     __devexit(rt2860_remove_one),
+	remove:		__devexit(rt2860_remove_one),
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,0)
@@ -294,7 +299,7 @@ static INT __init rt2860_init_module(VOID)
 /* */
 static VOID __exit rt2860_cleanup_module(VOID)
 {
-    pci_unregister_driver(&rt2860_driver);
+	pci_unregister_driver(&rt2860_driver);
 }
 
 module_init(rt2860_init_module);

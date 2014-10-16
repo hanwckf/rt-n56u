@@ -1032,12 +1032,6 @@ void FlashRead(UCHAR * p, ULONG a, ULONG b);
 int wl_proc_init(void);
 int wl_proc_exit(void);
 
-#ifdef LINUX
-#if defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE)
-extern volatile unsigned long classifier_cur_cycle;
-extern int (*ra_classifier_hook_rx) (struct sk_buff *skb, unsigned long cycle);
-#endif /* defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE) */
-#endif /* LINUX */
 #endif /* RTMP_RBUS_SUPPORT */
 
 

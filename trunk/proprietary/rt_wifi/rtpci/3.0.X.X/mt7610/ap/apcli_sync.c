@@ -494,10 +494,11 @@ static VOID ApCliProbeTimeoutAtJoinAction(
 	USHORT ifIndex = (USHORT)(Elem->Priv);
 	PULONG pCurrState = &pAd->ApCfg.ApCliTab[ifIndex].SyncCurrState;
 	PAPCLI_STRUCT pApCliEntry = NULL;
-
+#ifdef APCLI_CONNECTION_TRIAL
 	PULONG pCurrCtrlState = &pAd->ApCfg.ApCliTab[ifIndex].CtrlCurrState;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("APCLI_SYNC - ProbeTimeoutAtJoinAction, ifIndex = %d, pCurrCtrlState = %ld, pCurrSyncState = %ld\n", ifIndex, *pCurrCtrlState, *pCurrState));
+#endif
 
 	if (ifIndex >= MAX_APCLI_NUM)
 		return;

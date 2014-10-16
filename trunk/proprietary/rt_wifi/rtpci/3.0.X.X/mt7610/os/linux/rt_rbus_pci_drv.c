@@ -1268,7 +1268,7 @@ VOID RTMPInitPCIeDevice(
 		device_id == NIC7650_PCIe_DEVICE_ID ||
 		device_id == NIC7630_PCIe_DEVICE_ID ||
 		device_id == NIC7610_PCIe_DEVICE_ID
-		) {		
+		) {
 		MT76x0_WLAN_ChipOnOff(pAd, TRUE, TRUE);
 		bPCIe = TRUE;
 	}

@@ -3124,13 +3124,10 @@ INT RTMPAPQueryInformation(
 	IN	INT                 cmd)
 {
 	RTMP_IOCTL_INPUT_STRUCT	*wrq = (RTMP_IOCTL_INPUT_STRUCT *) rq;
-    INT	Status = NDIS_STATUS_SUCCESS;
-    POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
-    STRING	driverVersion[8];
-
-#if defined(DBG) || defined(WSC_AP_SUPPORT) || defined(LLTD_SUPPORT)
+	INT	Status = NDIS_STATUS_SUCCESS;
+	POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
+	STRING	driverVersion[8];
 	UCHAR	apidx = pObj->ioctl_if;
-#endif
 #ifdef WSC_AP_SUPPORT
 	UINT	WscPinCode = 0;
 	PWSC_PROFILE	pProfile;
@@ -8445,7 +8442,9 @@ INT	Set_ApCli_AuthMode_Proc(
 {
 	POS_COOKIE 	pObj = (POS_COOKIE) pAd->OS_Cookie;
 	UCHAR 		ifIndex;
+#ifdef MAC_REPEATER_SUPPORT
 	UINT32 MaxWcidNum = MAX_LEN_OF_MAC_TABLE;
+#endif
 
 	if (pObj->ioctl_if_type != INT_APCLI)
 		return FALSE;

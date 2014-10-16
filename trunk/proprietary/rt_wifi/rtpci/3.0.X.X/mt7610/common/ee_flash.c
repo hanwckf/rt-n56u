@@ -76,8 +76,6 @@ int rtmp_ee_flash_write(PRTMP_ADAPTER pAd, USHORT Offset, USHORT Data)
 	if (init_flag)
 	{
 		memcpy(nv_ee_start+ Offset, &Data, 2);
-		/*rt_nv_commit();*/
-		/*rt_cfg_commit();*/
 		RtmpFlashWrite(pAd->chipCap.eebuf, RF_OFFSET, EEPROM_SIZE);
 	}
 	return 0;
@@ -88,7 +86,7 @@ VOID rtmp_ee_flash_read_all(PRTMP_ADAPTER pAd, USHORT *Data)
 {	
 	if (!init_flag)
 		return;
-		
+
 	memcpy(Data, nv_ee_start, EEPROM_SIZE);
 }
 
@@ -97,6 +95,7 @@ VOID rtmp_ee_flash_write_all(PRTMP_ADAPTER pAd, USHORT *Data)
 {
 	if (!init_flag)
 		return;
+
 	memcpy(nv_ee_start, Data, EEPROM_SIZE);
 	RtmpFlashWrite(pAd->chipCap.eebuf, RF_OFFSET, EEPROM_SIZE);
 }

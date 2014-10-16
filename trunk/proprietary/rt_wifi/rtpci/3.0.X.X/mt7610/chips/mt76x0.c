@@ -4534,7 +4534,7 @@ BOOLEAN MT76x0_Enable9BitIchannelADC(
 	IN  SHORT *pTSSI_Linear)
 {
 	UINT32 bbp_val;
-	UINT32 MTxCycle = 0, i = 0;
+	UINT32 MTxCycle = 0;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s(): Channel = %d\n", __FUNCTION__, Channel));
 
@@ -4602,10 +4602,10 @@ BOOLEAN MT76x0_Enable9BitIchannelADC(
 	RTMP_BBP_IO_READ32(pAd, CORE_R35, &bbp_val);
 	pAd->chipCap.tssi_info_1 = (UCHAR)(bbp_val&0xFF);
 
-    /*
-    	Set Packet Info#2 mode
-    */
-    bbp_val = 0x00080042;
+	/*
+		Set Packet Info#2 mode
+	*/
+	bbp_val = 0x00080042;
 	RTMP_BBP_IO_WRITE32(pAd, CORE_R34, bbp_val);
 
 	/*
@@ -4751,7 +4751,6 @@ VOID MT76x0_EstimateDeltaPower(
 	IN  CHAR TargetPA_mode,
 	IN  INT *tssi_delta0)
 {
-	USHORT EE_Value;
 	INT tssi_slope=0;
 	INT tssi_offset=0;
 	INT tssi_target=0, tssi_delta_tmp;
@@ -5826,8 +5825,11 @@ VOID MT76x0_Read_TSSI_From_EEPROM(
 		IN PRTMP_ADAPTER pAd)
 {
 	EEPROM_TX_PWR_STRUC Power;
-	BOOLEAN Status = TRUE;
 	USHORT e2p_value = 0;
+#ifdef RTMP_TEMPERATURE_COMPENSATION
+	BOOLEAN Status = TRUE;
+#endif
+
 	Power.word = 0;
 
 	if (IS_MT76x0(pAd))

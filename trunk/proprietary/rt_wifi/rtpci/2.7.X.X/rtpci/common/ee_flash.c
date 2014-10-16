@@ -67,9 +67,7 @@ static USHORT EE_FLASH_ID_LIST[]={
 #ifdef RTMP_MAC_PCI
 	0x5592,
 #endif /* RTMP_MAC_PCI */
-
 #endif /* RT5592 */
-
 #ifdef RT3593
 #ifdef RTMP_MAC_PCI
 	0x3593,

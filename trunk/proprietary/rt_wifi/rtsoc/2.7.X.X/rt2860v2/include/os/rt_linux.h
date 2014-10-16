@@ -1361,17 +1361,11 @@ void FlashRead(UCHAR * p, ULONG a, ULONG b);
 
 int wl_proc_init(void);
 int wl_proc_exit(void);
-
-#if defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE)
-extern volatile unsigned long classifier_cur_cycle;
-extern int (*ra_classifier_hook_rx) (struct sk_buff *skb, unsigned long cycle);
-#endif /* defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE) */
 #endif /* RTMP_RBUS_SUPPORT */
 
 #if LINUX_VERSION_CODE <= 0x20402	/* Red Hat 7.1 */
 struct net_device *alloc_netdev(int sizeof_priv, const char *mask, void (*setup)(struct net_device *));
 #endif /* LINUX_VERSION_CODE */
-
 
 #ifdef RTMP_MAC_PCI
 /* function declarations */

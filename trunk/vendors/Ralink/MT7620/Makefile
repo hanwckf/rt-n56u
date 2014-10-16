@@ -37,10 +37,15 @@ ifeq ($(CONFIG_RT2860V2_AP_SINGLE_SKU),y)
 	$(ROMFSINST) /etc_ro/Wireless/SingleSKU_CE.dat
 	$(ROMFSINST) /etc_ro/Wireless/SingleSKU_FCC.dat
 endif
-ifneq ($(CONFIG_RT5592_AP),)
+ifdef CONFIG_RT5592_AP
 ifeq ($(CONFIG_RT5592_AP_EP_SUPPORT),y)
 	$(ROMFSINST) /etc_ro/Wireless/RT5592EP_PCIe_2T2R_5G_V1_4.bin
+else
+	$(ROMFSINST) /etc_ro/Wireless/RT5592_PCIe_2T2R_V1_7.bin
 endif
+endif
+ifdef CONFIG_MT7610_AP
+	$(ROMFSINST) /etc_ro/Wireless/MT7610E-V10-FEM.bin
 endif
 
 romfs.post::

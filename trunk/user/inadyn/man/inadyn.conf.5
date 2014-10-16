@@ -67,7 +67,7 @@ system default@dyndns.org
 .br
     alias other.example.org
 .Pp
-# Secondary account, on another DDNS provider,
+# Secondary account, on another DDNS provider
 .br
 # also updated on IP change
 .br
@@ -78,6 +78,20 @@ system default@no-ip.com
     password secret
 .br
     alias example.no-ip.com
+.Pp
+# Tertiary account at Loopia
+.br
+system default@loopia.com
+.br
+    ssl
+.br
+    wildcard
+.br
+    username account
+.br
+    password secret
+.br
+    alias example.com
 .Pp
 # Generic example for twoDNS.de
 .br

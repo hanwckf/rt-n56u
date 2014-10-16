@@ -1,8 +1,7 @@
 /* Plugin for DuckDNS
  *
- * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
- * Copyright (C) 2006       Steve Horbachuk
  * Copyright (C) 2010-2014  Joachim Nilsson <troglobit@gmail.com>
+ * Copyright (C) 2014       Andy Padavan <andy.padavan@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -50,7 +49,7 @@ static ddns_system_t plugin = {
 
 static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 {
-	char h_name[64], *p;
+	char h_name[SERVER_NAME_LEN], *p;
 
 	p = strstr(alias->name, "duckdns.org");
 	if ((p != NULL) && (p != alias->name) && (*(--p) == '.')) {

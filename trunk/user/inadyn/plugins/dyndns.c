@@ -1,5 +1,14 @@
-/* Plugin for dyndns2 api compatible services, like:
- * DynDNS, DNS-O-Matic, DynSIP, no-ip, 3322, HE and nsupdate.info.
+/* Plugin for DynDNS2 API compatible services
+ *
+ * Supported DDNS providers are:
+ *   - DynDNS,
+ *   - DNS-O-Matic,
+ *   - DynSIP,
+ *   - no-ip,
+ *   - 3322,
+ *   - Hurricane-Electric (HE)
+ *   - Loopia, and
+ *   - nsupdate.info
  *
  * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
  * Copyright (C) 2006       Steve Horbachuk
@@ -121,6 +130,23 @@ static ddns_system_t nsupdate_info_ipv4 = {
 	.server_url   = "/nic/update"
 };
 
+/*
+ * Loopia supports HTTPS, for details on supported variables, see
+ * https://support.loopia.com/wiki/About_the_DynDNS_support
+ */
+static ddns_system_t loopia = {
+	.name         = "default@loopia.com",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = "dns.loopia.se",
+	.checkip_url  = "/checkip/checkip.php",
+
+	.server_name  = "dns.loopia.se",
+	.server_url   = "/XDynDNSServer/XDynDNS.php"
+};
+
 static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 {
 	return common_request(ctx, info, alias);
@@ -140,6 +166,7 @@ PLUGIN_INIT(plugin_init)
 	plugin_register(&_3322);
 	plugin_register(&henet);
 	plugin_register(&nsupdate_info_ipv4);
+	plugin_register(&loopia);
 }
 
 PLUGIN_EXIT(plugin_exit)
@@ -151,6 +178,7 @@ PLUGIN_EXIT(plugin_exit)
 	plugin_unregister(&_3322);
 	plugin_unregister(&henet);
 	plugin_unregister(&nsupdate_info_ipv4);
+	plugin_unregister(&loopia);
 }
 
 /**

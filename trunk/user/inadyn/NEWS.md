@@ -1,11 +1,15 @@
 ChangeLog
 =========
 
-Version 1.99.11: ???????????
+Version 1.99.11: Oct 15 2014
 ----------------------------
-- Several fixes to add support for TLS 1.x with SNI, thanks to Thomas Waldmann
-- Add support https://nsupdate.info, thanks to Thomas Waldmann
 - Fix building on FreeBSD by converting to use GNU Configure & Build system
+- Fixes to add support for TLS 1.x with SNI, thanks to Thomas Waldmann
+- Add support for https://nsupdate.info, thanks to Thomas Waldmann
+- Add support for https://www.loopia.com DynDNS service extension
+- Add support for https://duckdns.org, thanks to Andy Padavan
+- Updated man pages, both inadyn(8) and inadyn.conf(5) with examples
+- SSL mitigation fixes for POODLE
 
 Version 1.99.10: Sep 13 2014
 ----------------------------

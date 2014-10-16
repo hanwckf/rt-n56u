@@ -179,6 +179,7 @@ static cmd_desc_t cmd_options_table[] = {
 	 "\t\t\t     default@zerigo.com\n"
 	 "\t\t\t     default@dhis.org\n"
 	 "\t\t\t     default@duckdns.org\n"
+	 "\t\t\t     default@loopia.com\n"
 	 "\t\t\t     update@asus.com, register@asus.com\n"
 	 "\t\t\t     ipv6tb@netassist.ua\n"
 	 "\t\t\t     ipv4@nsupdate.info\n"

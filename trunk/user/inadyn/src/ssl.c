@@ -57,11 +57,18 @@ int ssl_init(http_t *client, char *msg)
 	if (!client->ssl_ctx)
 		return RC_HTTPS_OUT_OF_MEMORY;
 
-	SSL_CTX_set_options(client->ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2);
+#if defined(CONFIG_OPENSSL)
+	/* POODLE, only allow TLSv1.x or later */
+	SSL_CTX_set_options(client->ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+#endif
 
 	client->ssl = SSL_new(client->ssl_ctx);
 	if (!client->ssl)
 		return RC_HTTPS_OUT_OF_MEMORY;
+
+#ifdef SSL_MODE_SEND_FALLBACK_SCSV
+	SSL_set_mode(client->ssl, SSL_MODE_SEND_FALLBACK_SCSV);
+#endif
 
 	http_get_remote_name(client, &sn);
 	if (set_server_name(client->ssl, sn))

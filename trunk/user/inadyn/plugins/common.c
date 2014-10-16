@@ -32,7 +32,8 @@
 #define DYNDNS_UPDATE_IP_HTTP_REQUEST					\
 	"GET %s?"							\
 	"hostname=%s&"							\
-	"myip=%s "							\
+	"myip=%s"							\
+	"%s "      							\
 	"HTTP/1.0\r\n"							\
 	"Host: %s\r\n"							\
 	"Authorization: Basic %s\r\n"					\
@@ -43,11 +44,17 @@
  */
 int common_request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 {
+	char wildcard[20] = "";
+
+	if (info->wildcard)
+		strcpy(wildcard, "&wildcard=ON");
+
 	return snprintf(ctx->request_buf, ctx->request_buflen,
 			DYNDNS_UPDATE_IP_HTTP_REQUEST,
 			info->server_url,
 			alias->name,
 			alias->address,
+			wildcard,
 			info->server_name.name,
 			info->creds.encoded_password);
 }

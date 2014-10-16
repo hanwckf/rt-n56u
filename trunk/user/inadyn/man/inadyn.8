@@ -77,7 +77,7 @@ http://www.dnsomatic.com
 .It
 http://www.tunnelbroker.net
 .It
-http://dns.he.net/
+http://dns.he.net
 .It
 http://www.dynsip.org
 .It
@@ -91,9 +91,11 @@ http://www.zerigo.com
 .It
 http://www.dhis.org
 .It
-http://www.duckdns.org
-.It
 https://nsupdate.info
+.It
+http://duckdns.org
+.It
+https://www.loopia.com
 .El
 .Pp
 DDNS providers not listed here, like http://twoDNS.de, can often be
@@ -167,7 +169,7 @@ http://www.dnsomatic.com
 .It Cm ipv6tb@he.net
 http://www.tunnelbroker.net
 .It Cm dyndns@he.net
-http://dns.he.net/
+http://dns.he.net
 .It Cm default@dynsip.org
 http://www.dynsip.org
 .It Cm default@sitelutions.com
@@ -180,10 +182,12 @@ http://www.changeip.com
 http://www.zerigo.com
 .It Cm default@dhis.org
 http://www.dhis.org
-.It Cm default@duckdns.org
-http://www.duckdns.org
 .It Cm ipv4@nsupdate.info
 https://nsupdate.info
+.It Cm default@duckdns.org
+http://duckdns.org
+.It Cm default@loopia.com
+https://www.loopia.com
 .It Cm custom@http_srv_basic_auth
 Try this if your DDNS service provider is not listed
 .El
@@ -246,7 +250,7 @@ update.
 .Pp
 On an embedded device with no RTC, or no battery backed RTC, it is
 strongly recommended to pair this setting with the
-.Fl --startup-delay Ar SEC
+.Fl -startup-delay Ar SEC
 option to ensure that an NTP client has set the device's clock before a
 cache file is created or read.
 .It Fl e, -exec Ar SCRIPT
@@ -259,8 +263,10 @@ second one - host name alias. INADYN_IFACE is available, if
 .Fl -iface
 option used.
 .It Fl w, -wildcard
-Enable domain name wildcarding for easydns.com. Default
-disabled. For
+Enable domain name wildcarding of your domain name, for DDNS providers
+that support this, e.g. easydns.com and loopia.com.  This means that
+anything typed before your hostname, e.g. www. or ftp., is also updated
+when your IP changes.  Default: disabled.  For
 .Nm inadyn
 < 1.96.3 wildcarding was enabled by default
 .It Fl t, -startup-delay Ar SEC
@@ -353,11 +359,9 @@ test.homeip.net
 my.second.domain
 .El
 .Pp
-The
-.Dq hash
-is automatically retrieved by
+The hash is automatically retrieved by
 .Nm inadyn
-using the freedns API.
+using the FreeDNS API.
 .Sh OUTPUT
 .Nm
 prints a message when the IP is updated.  If no update is needed then by
@@ -386,22 +390,23 @@ responds to the following signals:
 .It HUP
 Reload the
 .Nm .conf 
-file, standard UNIX behavior.
+file, standard UNIX behavior
 .It TERM
 Tell
 .Nm
-to exit gracefully.
+to exit gracefully
 .It INT
-Same as TERM.
+Same as TERM
 .It USR1
 Force update now, even if the IP address has not changed.  Works in
-tandem with --fake-address
+tandem with
+.Fl -fake-address
 .It USR2
 Check IP address change now. Useful when a new DHCP/PPPoE lease or new
 gateway is received.  Please note that
 .Nm
 does not track such events by itself.  You need an external monitor for
-that.
+that
 .El
 .Pp
 For convenience in sending signals,
@@ -421,16 +426,22 @@ writes its process ID to
 .Pp
 The
 .Nm
-home page is http://github.com/troglobit/inadyn
+home page is at GitHub:
+.Pa https://github.com/troglobit/inadyn
 .Sh AUTHORS
 .Nm
-was written by
+was originally written by
 .Bl -bullet -compact
 .It
 Narcis Ilisei
 .Pa inarcis2002@hotpop.com
+and
 .It
-Steve Horbachuk, and later
+Steve Horbachuk
+.El
+.Pp
+It is now maintained at GitHub by
+.Bl -bullet -compact
 .It
 Joachim Nilsson
 .Pa troglobit@gmail.com
@@ -441,11 +452,11 @@ Andrey Tikhomirov, and
 Mike Fleetwood
 .El
 .Pp
-This manual page was initially written for the
+This manual page was originally written for the
 .Em Debian GNU/Linux
-system by
+project by
 .An -nosplit
 .An Shaul Karl Aq shaul@debian.org .
 Currently maintained by
 .An -nosplit
-.An Joachim Nilsson Aq troglobit@gmail.com .
+.An Joachim Nilsson.

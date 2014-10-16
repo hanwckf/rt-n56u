@@ -763,10 +763,9 @@ int rt28xx_packet_xmit(struct sk_buff *skb)
 {
 	struct net_device *net_dev = skb->dev;
 	PRTMP_ADAPTER pAd = NULL;
-	int status = 0;
 	PNDIS_PACKET pPacket = (PNDIS_PACKET) skb;
 
-	GET_PAD_FROM_NET_DEV(pAd, net_dev);	
+	GET_PAD_FROM_NET_DEV(pAd, net_dev);
 
 	/* RT2870STA does this in RTMPSendPackets() */
 #ifdef RALINK_ATE
@@ -798,26 +797,21 @@ int rt28xx_packet_xmit(struct sk_buff *skb)
 		goto done;
 	}
 
-#ifdef RTMP_RBUS_SUPPORT
-#if !defined(CONFIG_RA_NAT_NONE)
-/* bruce+
- */
-	if(ra_sw_nat_hook_tx!= NULL)
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+#if !defined (CONFIG_RA_NAT_NONE)
+	if (ra_sw_nat_hook_tx != NULL)
 	{
 		ra_sw_nat_hook_tx(pPacket, 0);
 	}
 #endif
-#endif // RTMP_RBUS_SUPPORT //
-
-
-	RTMP_SET_PACKET_5VT(pPacket, 0);
-//	MiniportMMRequest(pAd, pkt->data, pkt->len);
-#ifdef CONFIG_5VT_ENHANCE
-    if (*(int*)(skb->cb) == BRIDGE_TAG) {
-		RTMP_SET_PACKET_5VT(pPacket, 1);
-    }
 #endif
 
+#ifdef CONFIG_5VT_ENHANCE
+	RTMP_SET_PACKET_5VT(pPacket, 0);
+	if (*(int*)(skb->cb) == BRIDGE_TAG) {
+		RTMP_SET_PACKET_5VT(pPacket, 1);
+	}
+#endif
 
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -827,16 +821,13 @@ int rt28xx_packet_xmit(struct sk_buff *skb)
 #ifdef CONFIG_STA_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
 	{
-
 		STASendPackets((NDIS_HANDLE)pAd, (PPNDIS_PACKET) &pPacket, 1);
 	}
-
 #endif // CONFIG_STA_SUPPORT //
 
-	status = 0;
 done:
-			   
-	return status;
+
+	return 0;
 }
 
 

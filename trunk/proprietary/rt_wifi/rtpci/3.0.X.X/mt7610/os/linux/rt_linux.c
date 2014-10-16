@@ -2044,27 +2044,6 @@ char *RtmpOsGetNetDevName(VOID *pDev)
 	return ((PNET_DEV) pDev)->name;
 }
 
-/*
-========================================================================
-Routine Description:
-	Assign protocol to the packet.
-
-Arguments:
-	pPkt			- the packet
-
-Return Value:
-	None
-
-Note:
-========================================================================
-*/
-VOID RtmpOsPktProtocolAssign(PNDIS_PACKET pNetPkt)
-{
-	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
-	pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
-}
-
-
 BOOLEAN RtmpOsStatsAlloc(
 	IN VOID **ppStats,
 	IN VOID **ppIwStats)
@@ -2085,29 +2064,6 @@ BOOLEAN RtmpOsStatsAlloc(
 
 	return TRUE;
 }
-
-/*
-========================================================================
-Routine Description:
-	Pass the received packet to OS.
-
-Arguments:
-	pPkt			- the packet
-
-Return Value:
-	None
-
-Note:
-========================================================================
-*/
-VOID RtmpOsPktRcvHandle(PNDIS_PACKET pNetPkt)
-{
-	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
-
-
-	netif_rx(pRxPkt);
-}
-
 
 VOID RtmpOsTaskPidInit(RTMP_OS_PID *pPid)
 {
@@ -2190,28 +2146,6 @@ PNDIS_PACKET RtmpOsPktIappMakeUp(
 	return pNetBuf;
 }
 #endif /* IAPP_SUPPORT */
-
-
-VOID RtmpOsPktNatMagicTag(PNDIS_PACKET pNetPkt)
-{
-#if !defined(CONFIG_RA_NAT_NONE)
-#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
-	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
-	FOE_MAGIC_TAG(pRxPkt) = FOE_MAGIC_EXTIF;
-#endif /* CONFIG_RA_HW_NAT || CONFIG_RA_HW_NAT_MODULE */
-#endif /* CONFIG_RA_NAT_NONE */
-}
-
-VOID RtmpOsPktNatNone(PNDIS_PACKET pNetPkt)
-{
-#if !defined(CONFIG_RA_NAT_NONE)
-#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
-	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
-	FOE_AI(pRxPkt) = UN_HIT;
-#endif /* CONFIG_RA_HW_NAT || CONFIG_RA_HW_NAT_MODULE */
-#endif /* CONFIG_RA_NAT_NONE */
-}
-
 
 #ifdef RT_CFG80211_SUPPORT
 /* all available channels */

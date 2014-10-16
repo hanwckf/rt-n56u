@@ -774,19 +774,13 @@ void announce_802_3_packet(
 	IN	PRTMP_ADAPTER	pAd, 
 	IN	PNDIS_PACKET	pPacket)
 {
-
-	struct sk_buff	*pRxPkt;
-#ifdef INF_PPA_SUPPORT
-        int             ret = 0;
-        unsigned int ppa_flags = 0; /* reserved for now */
-#endif // INF_PPA_SUPPORT //
-
+	struct sk_buff *pRxPkt;
 
 	ASSERT(pPacket);
-
 	MEM_DBG_PKT_FREE_INC(pAd);
 
 	pRxPkt = RTPKT_TO_OSPKT(pPacket);
+
 #ifdef CONFIG_AP_SUPPORT
 #ifdef APCLI_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -803,44 +797,36 @@ void announce_802_3_packet(
     /* Push up the protocol stack */
 #ifdef IKANOS_VX_1X0
 	IKANOS_DataFrameRx(pAd, pRxPkt->dev, pRxPkt, pRxPkt->len);
-#else
-
-// mark for bridge fast path, 2009/06/22
-//	pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
+	return;
+#endif
 
 #ifdef INF_PPA_SUPPORT
 	if (ppa_hook_directpath_send_fn && pAd->PPAEnable==TRUE ) 
 	{
-		pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
+		int ret = 0;
+		unsigned int ppa_flags = 0; /* reserved for now */
 
+		pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
 		memset(pRxPkt->head,0,pRxPkt->data-pRxPkt->head-14);
 		DBGPRINT(RT_DEBUG_TRACE, ("ppa_hook_directpath_send_fn rx :ret:%d headroom:%d dev:%s pktlen:%d<===\n",ret,skb_headroom(pRxPkt)
 			,pRxPkt->dev->name,pRxPkt->len));
 		hex_dump("rx packet", pRxPkt->data, 32);
 		ret = ppa_hook_directpath_send_fn(pAd->g_if_id, pRxPkt, pRxPkt->len, ppa_flags);
-		pRxPkt=NULL;
 		return;
 
-	}	  	
+	}
 #endif // INF_PPA_SUPPORT //
 
 //#ifdef CONFIG_5VT_ENHANCE
 //	*(int*)(pRxPkt->cb) = BRIDGE_TAG; 
 //#endif
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef CONFIG_RT2880_BRIDGING_ONLY
 	pRxPkt->cb[22]=0xa8;
 #endif // CONFIG_RT2880_BRIDGING_ONLY //
 
-#if defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE)
-	if(ra_classifier_hook_rx!= NULL)
-	{
-		ra_classifier_hook_rx(pRxPkt, classifier_cur_cycle);
-	}
-#endif // CONFIG_RA_CLASSIFIER //
-
-#if !defined(CONFIG_RA_NAT_NONE)
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+#if !defined (CONFIG_RA_NAT_NONE)
 	/*
 	 * ra_sw_nat_hook_rx return 1 --> continue
 	 * ra_sw_nat_hook_rx return 0 --> FWD & without netif_rx
@@ -854,23 +840,21 @@ void announce_802_3_packet(
 			FOE_AI(pRxPkt) = UN_HIT;
 			netif_rx(pRxPkt);
 		}
+		
+		return;
 	}
-	else
-#endif // !defined(CONFIG_RA_NAT_NONE) // 
-#endif // RTMP_RBUS_SUPPORT //
-	{
+#endif
+#endif
+
 #ifdef CONFIG_AP_SUPPORT
 #ifdef BG_FT_SUPPORT
-		if (BG_FTPH_PacketFromApHandle(pRxPkt) == 0)
-			return;
+	if (BG_FTPH_PacketFromApHandle(pRxPkt) == 0)
+		return;
 #endif // BG_FT_SUPPORT //
 #endif // CONFIG_AP_SUPPORT //
 
-		pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
-		netif_rx(pRxPkt);
-	}
-
-#endif // IKANOS_VX_1X0 //
+	pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
+	netif_rx(pRxPkt);
 }
 
 

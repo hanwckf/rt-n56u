@@ -2341,25 +2341,6 @@ char *RtmpOsGetNetDevName(IN VOID *pDev) {
 	return ((PNET_DEV) pDev)->name;
 }
 
-/*
-========================================================================
-Routine Description:
-	Assign protocol to the packet.
-
-Arguments:
-	pPkt			- the packet
-
-Return Value:
-	None
-
-Note:
-========================================================================
-*/
-VOID RtmpOsPktProtocolAssign(IN PNDIS_PACKET pNetPkt) {
-	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
-	pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
-}
-
 BOOLEAN RtmpOsStatsAlloc(IN VOID **ppStats,
 			 IN VOID **ppIwStats) {
 	os_alloc_mem(NULL, (UCHAR **) ppStats,
@@ -2378,27 +2359,6 @@ BOOLEAN RtmpOsStatsAlloc(IN VOID **ppStats,
 #endif
 
 	return TRUE;
-}
-
-/*
-========================================================================
-Routine Description:
-	Pass the received packet to OS.
-
-Arguments:
-	pPkt			- the packet
-
-Return Value:
-	None
-
-Note:
-========================================================================
-*/
-VOID RtmpOsPktRcvHandle(IN PNDIS_PACKET pNetPkt) {
-	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
-
-
-	netif_rx(pRxPkt);
 }
 
 VOID RtmpOsTaskPidInit(IN RTMP_OS_PID *pPid) {
@@ -2476,29 +2436,6 @@ PNDIS_PACKET RtmpOsPktIappMakeUp(IN PNET_DEV pNetDev,
 	return pNetBuf;
 }
 #endif /* IAPP_SUPPORT */
-
-VOID RtmpOsPktNatMagicTag(IN PNDIS_PACKET pNetPkt) {
-#ifdef RTMP_RBUS_SUPPORT
-#if !defined(CONFIG_RA_NAT_NONE)
-#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
-	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
-	FOE_MAGIC_TAG(pRxPkt) = FOE_MAGIC_EXTIF;
-#endif /* CONFIG_RA_HW_NAT || CONFIG_RA_HW_NAT_MODULE */
-#endif /* CONFIG_RA_NAT_NONE */
-#endif /* RTMP_RBUS_SUPPORT */
-}
-
-VOID RtmpOsPktNatNone(IN PNDIS_PACKET pNetPkt) {
-#ifdef RTMP_RBUS_SUPPORT
-#if !defined(CONFIG_RA_NAT_NONE)
-#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
-	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
-	FOE_AI(pRxPkt) = UN_HIT;
-#endif /* CONFIG_RA_HW_NAT || CONFIG_RA_HW_NAT_MODULE */
-#endif /* CONFIG_RA_NAT_NONE */
-#endif /* RTMP_RBUS_SUPPORT */
-}
-
 
 #ifdef RT_CFG80211_SUPPORT
 /* all available channels */

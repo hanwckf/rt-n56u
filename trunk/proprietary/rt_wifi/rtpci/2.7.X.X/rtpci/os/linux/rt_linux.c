@@ -2025,25 +2025,6 @@ char *RtmpOsGetNetDevName(IN VOID *pDev) {
 	return ((PNET_DEV) pDev)->name;
 }
 
-/*
-========================================================================
-Routine Description:
-	Assign protocol to the packet.
-
-Arguments:
-	pPkt			- the packet
-
-Return Value:
-	None
-
-Note:
-========================================================================
-*/
-VOID RtmpOsPktProtocolAssign(IN PNDIS_PACKET pNetPkt) {
-	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
-	pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
-}
-
 BOOLEAN RtmpOsStatsAlloc(IN VOID **ppStats,
 			 IN VOID **ppIwStats) {
 	os_alloc_mem(NULL, (UCHAR **) ppStats,
@@ -2062,39 +2043,6 @@ BOOLEAN RtmpOsStatsAlloc(IN VOID **ppStats,
 #endif
 
 	return TRUE;
-}
-
-/*
-========================================================================
-Routine Description:
-	Pass the received packet to OS.
-
-Arguments:
-	pPkt			- the packet
-
-Return Value:
-	None
-
-Note:
-========================================================================
-*/
-VOID RtmpOsPktRcvHandle(IN PNDIS_PACKET pNetPkt) {
-	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
-#ifdef CONFIG_TSO_SUPPORT
-	struct net_device *pNetDev =  GET_OS_PKT_NETDEV(pNetPkt);
-#endif /* CONFIG_TSO_SUPPORT */
-
-#ifdef CONFIG_TSO_SUPPORT
-	if (pNetDev->features & NETIF_F_HW_CSUM)
-	{
-		if (RTMP_GET_TCP_CHKSUM_FAIL(pNetPkt))
-			pRxPkt->ip_summed = CHECKSUM_NONE;
-		else
-			pRxPkt->ip_summed = CHECKSUM_UNNECESSARY;
-	}
-#endif /* CONFIG_TSO_SUPPORT */
-
-	netif_rx(pRxPkt);
 }
 
 VOID RtmpOsTaskPidInit(IN RTMP_OS_PID *pPid) {
@@ -2172,25 +2120,6 @@ PNDIS_PACKET RtmpOsPktIappMakeUp(IN PNET_DEV pNetDev,
 	return pNetBuf;
 }
 #endif /* IAPP_SUPPORT */
-
-VOID RtmpOsPktNatMagicTag(IN PNDIS_PACKET pNetPkt) {
-#if !defined(CONFIG_RA_NAT_NONE)
-#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
-	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
-	FOE_MAGIC_TAG(pRxPkt) = FOE_MAGIC_EXTIF;
-#endif /* CONFIG_RA_HW_NAT || CONFIG_RA_HW_NAT_MODULE */
-#endif /* CONFIG_RA_NAT_NONE */
-}
-
-VOID RtmpOsPktNatNone(IN PNDIS_PACKET pNetPkt) {
-#if !defined(CONFIG_RA_NAT_NONE)
-#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
-	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
-	FOE_AI(pRxPkt) = UN_HIT;
-#endif /* CONFIG_RA_HW_NAT || CONFIG_RA_HW_NAT_MODULE */
-#endif /* CONFIG_RA_NAT_NONE */
-}
-
 
 #ifdef RT_CFG80211_SUPPORT
 /* all available channels */

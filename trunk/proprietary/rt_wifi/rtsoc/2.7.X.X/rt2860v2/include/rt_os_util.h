@@ -259,19 +259,7 @@ VOID RtmpOsPktReserve(
 	IN	PNDIS_PACKET			pNetPkt,
 	IN	UINT					Len);
 
-VOID RtmpOsPktProtocolAssign(
-	IN	PNDIS_PACKET			pNetPkt);
-
 VOID RtmpOsPktInfPpaSend(
-	IN	PNDIS_PACKET			pNetPkt);
-
-VOID RtmpOsPktRcvHandle(
-	IN	PNDIS_PACKET			pNetPkt);
-
-VOID RtmpOsPktNatMagicTag(
-	IN	PNDIS_PACKET			pNetPkt);
-
-VOID RtmpOsPktNatNone(
 	IN	PNDIS_PACKET			pNetPkt);
 
 VOID RtmpOsPktInit(

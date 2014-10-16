@@ -770,17 +770,12 @@ void announce_802_3_packet(
 {
 
 	struct sk_buff	*pRxPkt;
-#ifdef INF_PPA_SUPPORT
-        int             ret = 0;
-        unsigned int ppa_flags = 0; /* reserved for now */
-#endif // INF_PPA_SUPPORT //
-
 
 	ASSERT(pPacket);
-
 	MEM_DBG_PKT_FREE_INC(pAd);
 
 	pRxPkt = RTPKT_TO_OSPKT(pPacket);
+
 #ifdef CONFIG_AP_SUPPORT
 #ifdef APCLI_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -790,7 +785,6 @@ void announce_802_3_packet(
 	}
 #endif // APCLI_SUPPORT //
 #endif // CONFIG_AP_SUPPORT //
-
 
     /* Push up the protocol stack */
 #ifdef PLATFORM_BL2348
@@ -804,32 +798,31 @@ void announce_802_3_packet(
 
 #ifdef IKANOS_VX_1X0
 	IKANOS_DataFrameRx(pAd, pRxPkt->dev, pRxPkt, pRxPkt->len);
-#else
-
-// mark for bridge fast path, 2009/06/22
-//	pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
+	return;
+#endif
 
 #ifdef INF_PPA_SUPPORT
 	if (ppa_hook_directpath_send_fn && pAd->PPAEnable==TRUE ) 
 	{
-		pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
+		int             ret = 0;
+		unsigned int ppa_flags = 0; /* reserved for now */
 
+		pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
 		memset(pRxPkt->head,0,pRxPkt->data-pRxPkt->head-14);
 		DBGPRINT(RT_DEBUG_TRACE, ("ppa_hook_directpath_send_fn rx :ret:%d headroom:%d dev:%s pktlen:%d<===\n",ret,skb_headroom(pRxPkt)
 			,pRxPkt->dev->name,pRxPkt->len));
 		hex_dump("rx packet", pRxPkt->data, 32);
 		ret = ppa_hook_directpath_send_fn(pAd->g_if_id, pRxPkt, pRxPkt->len, ppa_flags);
-		pRxPkt=NULL;
 		return;
-
-	}	  	
+	}
 #endif // INF_PPA_SUPPORT //
 
 //#ifdef CONFIG_5VT_ENHANCE
 //	*(int*)(pRxPkt->cb) = BRIDGE_TAG; 
 //#endif
 
-#if !defined(CONFIG_RA_NAT_NONE)
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+#if !defined (CONFIG_RA_NAT_NONE)
 	/*
 	*** ra_sw_nat_hook_rx return 1 --> continue
 	*** ra_sw_nat_hook_rx return 0 --> FWD & without netif_rx
@@ -843,22 +836,20 @@ void announce_802_3_packet(
 			FOE_AI(pRxPkt) = UN_HIT;
 			netif_rx(pRxPkt);
 		}
+		
+		return;
 	}
-	else
 #endif
-	{
+
 #ifdef CONFIG_AP_SUPPORT
 #ifdef BG_FT_SUPPORT
-		if (BG_FTPH_PacketFromApHandle(pRxPkt) == 0)
-			return;
+	if (BG_FTPH_PacketFromApHandle(pRxPkt) == 0)
+		return;
 #endif // BG_FT_SUPPORT //
 #endif // CONFIG_AP_SUPPORT //
 
-		pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
-		netif_rx(pRxPkt);
-	}
-
-#endif // IKANOS_VX_1X0 //
+	pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
+	netif_rx(pRxPkt);
 }
 
 

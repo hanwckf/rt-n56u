@@ -35,7 +35,7 @@ config  RT5392_AP_MBSS_NEW_MBSSID_MODE
 	depends on RT5392_AP_MBSS
 
 config  RT5392_AP_APCLI
-	bool "AP-CLient Support"
+	bool "AP-Client Support"
 	depends on RT5392_AP
 
 config  RT5392_AP_IGMP_SNOOP

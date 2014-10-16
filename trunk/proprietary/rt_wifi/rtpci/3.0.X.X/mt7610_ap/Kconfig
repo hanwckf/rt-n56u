@@ -1,5 +1,5 @@
 config MT7610_AP
-	tristate "Ralink MT7610E 802.11ac AP support"
+	tristate "MediaTek MT7610E 802.11ac AP support"
 	select WIRELESS_EXT
 	select WEXT_SPY
 	select WEXT_PRIV
@@ -39,7 +39,7 @@ config  MT7610_AP_MBSS_NEW_MBSSID_MODE
 	default n
 
 config  MT7610_AP_APCLI
-	bool "AP-CLient Support"
+	bool "AP-Client Support"
 	depends on MT7610_AP
 	default y
 
@@ -49,7 +49,7 @@ config  MT7610_AP_MAC_REPEATER
 	depends on MT7610_AP_APCLI
 	default n
 
-config MT7610_AP_CON_WPS_SUPPORT
+config  MT7610_AP_CON_WPS_SUPPORT
 	bool "Concurrent WPS Support"
 	depends on MT7610_AP
 	depends on MT7610_AP_APCLI
@@ -67,7 +67,7 @@ config  MT7610_AP_NETIF_BLOCK
 	depends on MT7610_AP
 	default n
 	help
-	Support Net interface block while Tx-Sw queue full
+	  Support Net interface block while Tx-Sw queue full
 
 config  MT7610_AP_DFS
 	bool "DFS support"
@@ -76,6 +76,11 @@ config  MT7610_AP_DFS
 
 config  MT7610_AP_CARRIER
 	bool "Carrier Detection support"
+	depends on MT7610_AP
+	default n
+
+config  MT7610_AP_ED_MONITOR
+	bool "ED CCA Monitor Support"
 	depends on MT7610_AP
 	default n
 
@@ -93,7 +98,7 @@ config  MT7610_AP_CARRIER
 #	depends on MT7610_AP
 
 config  MT7610_AP_DLS
-	bool "DLS (Direct-Link Setup) Support"
+	bool "802.11e DLS (Direct-Link Setup) Support"
 	depends on MT7610_AP
 	default n
 
@@ -150,6 +155,11 @@ config  MT7610_AP_BIG_ENDIAN
 	bool "Big-endian platform Support"
 	depends on MT7610_AP
 	default n
+
+config  MT7610_AP_MC_SUPPORT
+	bool "Multiple Card Support"
+	default n
+	depends on MT7610_AP
 
 config  MT7610_AP_ATE
 	bool "Provide ATE testmode commands support"

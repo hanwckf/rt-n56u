@@ -47,8 +47,22 @@ extern UCHAR NUM_RF_5390_REG_PARMS;
 #define BBP_REG_BF			BBP_R163 // TxBf control
 
 #ifdef RTMP_FLASH_SUPPORT
-#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT5392_PCIe_2T2R_ALC_V1_3.bin"
-#define RF_OFFSET					0x48000
+#define EEPROM_DEFAULT_FILE_PATH			"/etc_ro/Wireless/RT5392_PCIe_2T2R_ALC_V1_3.bin"
+
+#if defined (RT_IFNAME_1ST)
+#if defined (CONFIG_RT_FIRST_IF_RF_OFFSET)
+ #define RF_OFFSET					CONFIG_RT_FIRST_IF_RF_OFFSET
+#else
+ #define RF_OFFSET					0x40000
+#endif
+#else /* !RT_IFNAME_1ST */
+#if defined (CONFIG_RT_SECOND_IF_RF_OFFSET)
+ #define RF_OFFSET					CONFIG_RT_SECOND_IF_RF_OFFSET
+#else
+ #define RF_OFFSET					0x48000
+#endif
+#endif /* RT_IFNAME_1ST */
+
 extern void RtmpFlashWrite(UCHAR * p, ULONG a, ULONG b);
 extern void RtmpFlashRead(UCHAR * p, ULONG a, ULONG b);
 #endif // RTMP_FLASH_SUPPORT //

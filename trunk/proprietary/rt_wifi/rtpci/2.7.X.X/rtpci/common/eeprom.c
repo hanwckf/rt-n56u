@@ -27,6 +27,8 @@
 */
 #include "rt_config.h"
 
+#ifdef RT_SOC_SUPPORT
+#ifdef MULTIPLE_CARD_SUPPORT
 static struct {
 	UINT32 	ChipVersion;
 	PSTRING 	name;
@@ -49,6 +51,8 @@ static struct {
 #endif /* BB_SOC */
 	{0,}
 };
+#endif
+#endif
 
 UCHAR RtmpEepromGetDefault(
 	IN RTMP_ADAPTER 	*pAd)
@@ -166,7 +170,8 @@ INT RtmpChipOpsEepromHook(
 	return 0;
 }
 
-
+#ifdef RT_SOC_SUPPORT
+#ifdef MULTIPLE_CARD_SUPPORT
 BOOLEAN rtmp_get_default_bin_file_by_chip(
 	IN PRTMP_ADAPTER 	pAd,
 	IN UINT32 			ChipVersion,
@@ -192,7 +197,8 @@ BOOLEAN rtmp_get_default_bin_file_by_chip(
 	
 	return found;
 }
-
+#endif
+#endif
 
 INT rtmp_ee_bin_read16(
 	IN RTMP_ADAPTER 	*pAd, 

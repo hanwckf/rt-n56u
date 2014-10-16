@@ -1520,12 +1520,21 @@
 #define IS_OPMODE_AP(_x)		((_x)->OpMode == OPMODE_AP)
 #define IS_OPMODE_STA(_x)		((_x)->OpMode == OPMODE_STA)
 
+#if defined (RT_IFNAME_1ST)
+#define INF_MAIN_DEV_NAME		"ra"
+#define INF_MBSSID_DEV_NAME		"ra"
+#define INF_WDS_DEV_NAME		"wds"
+#define INF_APCLI_DEV_NAME		"apcli"
+#define INF_MESH_DEV_NAME		"mesh"
+#define INF_P2P_DEV_NAME		"p2p"
+#else
 #define INF_MAIN_DEV_NAME		"rai"
 #define INF_MBSSID_DEV_NAME		"rai"
 #define INF_WDS_DEV_NAME		"wdsi"
 #define INF_APCLI_DEV_NAME		"apclii"
 #define INF_MESH_DEV_NAME		"meshi"
 #define INF_P2P_DEV_NAME		"p2pi"
+#endif
 
 /* WEP Key TYPE */
 #define WEP_HEXADECIMAL_TYPE    0

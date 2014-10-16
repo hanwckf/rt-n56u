@@ -35,7 +35,7 @@ config  RT3090_AP_MBSS
 	depends on RT3090_AP
 
 config  RT3090_AP_APCLI
-	bool "AP-CLient Support"
+	bool "AP-Client Support"
 	depends on RT3090_AP
 
 config  RT3090_AP_IGMP_SNOOP

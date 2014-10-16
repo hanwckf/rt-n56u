@@ -53,8 +53,22 @@
 #include "chip/mac_pci.h"
 #include "chip/rt30xx.h"
 #ifdef RTMP_FLASH_SUPPORT
-#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin"
-#define RF_OFFSET					0x48000
+#define EEPROM_DEFAULT_FILE_PATH			"/etc_ro/Wireless/RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin"
+
+#if defined (RT_IFNAME_1ST)
+#if defined (CONFIG_RT_FIRST_IF_RF_OFFSET)
+ #define RF_OFFSET					CONFIG_RT_FIRST_IF_RF_OFFSET
+#else
+ #define RF_OFFSET					0x40000
+#endif
+#else /* !RT_IFNAME_1ST */
+#if defined (CONFIG_RT_SECOND_IF_RF_OFFSET)
+ #define RF_OFFSET					CONFIG_RT_SECOND_IF_RF_OFFSET
+#else
+ #define RF_OFFSET					0x48000
+#endif
+#endif /* RT_IFNAME_1ST */
+
 extern void RtmpFlashWrite(UCHAR * p, ULONG a, ULONG b);
 extern void RtmpFlashRead(UCHAR * p, ULONG a, ULONG b);
 #endif // RTMP_FLASH_SUPPORT //

@@ -119,18 +119,19 @@ typedef struct usb_ctrlrequest devctrlrequest;
  ***********************************************************************************/
 #ifdef CONFIG_AP_SUPPORT
 #ifdef RTMP_MAC_PCI
-#define AP_PROFILE_PATH			"/etc/Wireless/iNIC/iNIC_ap.dat"
-#define AP_RTMP_FIRMWARE_FILE_NAME	"/etc_ro/Wireless/iNIC_ap.bin"
+#if defined (RT_IFNAME_1ST)
+ #define AP_RTMP_FIRMWARE_FILE_NAME	"/etc_ro/Wireless/RT2860AP.bin"
+ #define AP_PROFILE_PATH		"/etc/Wireless/RT2860/RT2860AP.dat"
+#else
+ #define AP_RTMP_FIRMWARE_FILE_NAME	"/etc_ro/Wireless/iNIC_ap.bin"
+ #define AP_PROFILE_PATH		"/etc/Wireless/iNIC/iNIC_ap.dat"
+#endif
+#define PROFILE_PATH_1			AP_PROFILE_PATH
+#define PROFILE_PATH_2			AP_PROFILE_PATH
 #define AP_NIC_DEVICE_NAME		"RTPCI_AP"
 #define AP_DRIVER_VERSION		"2.7.1.5"
-#ifdef MULTIPLE_CARD_SUPPORT
-#define PROFILE_PATH_1			"/etc/Wireless/iNIC/iNIC_ap.dat"
-#define PROFILE_PATH_2			"/etc/Wireless/iNIC/iNIC_ap.dat"
-#endif /* MULTIPLE_CARD_SUPPORT */
 #endif /* RTMP_MAC_PCI */
-
 #endif /* CONFIG_AP_SUPPORT */
-
 
 
 #ifdef CONFIG_APSTA_MIXED_SUPPORT
@@ -1661,7 +1662,11 @@ extern int rausb_control_msg(VOID *dev,
 #define ATEDBGPRINT DBGPRINT
 #ifdef RTMP_MAC_PCI
 #ifdef CONFIG_AP_SUPPORT
-#define EEPROM_BIN_FILE_NAME  "/etc/Wireless/iNIC/e2p.bin"
+#if defined (RT_IFNAME_1ST)
+ #define EEPROM_BIN_FILE_NAME		"/etc/Wireless/RT2860/e2p.bin"
+#else
+ #define EEPROM_BIN_FILE_NAME		"/etc/Wireless/iNIC/e2p.bin"
+#endif
 #endif /* CONFIG_AP_SUPPORT */
 #endif /* RTMP_MAC_PCI */
 

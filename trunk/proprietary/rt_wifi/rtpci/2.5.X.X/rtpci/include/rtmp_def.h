@@ -1635,11 +1635,19 @@
 #define SET_ENTRY_CLIWDS(_x)	CLIENT_STATUS_SET_FLAG((_x), fCLIENT_STATUS_CLI_WDS)
 #endif // CLIENT_WDS //
 
+#if defined (RT_IFNAME_1ST)
+#define INF_MAIN_DEV_NAME		"ra"
+#define INF_MBSSID_DEV_NAME		"ra"
+#define INF_WDS_DEV_NAME		"wds"
+#define INF_APCLI_DEV_NAME		"apcli"
+#define INF_MESH_DEV_NAME		"mesh"
+#else
 #define INF_MAIN_DEV_NAME		"rai"
 #define INF_MBSSID_DEV_NAME		"rai"
 #define INF_WDS_DEV_NAME		"wdsi"
 #define INF_APCLI_DEV_NAME		"apclii"
 #define INF_MESH_DEV_NAME		"meshi"
+#endif
 
 #ifdef RALINK_ATE
 /* 

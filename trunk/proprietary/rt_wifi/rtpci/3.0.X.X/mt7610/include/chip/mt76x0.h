@@ -40,12 +40,23 @@ struct _RTMP_ADAPTER;
 #ifdef RTMP_FLASH_SUPPORT
 #ifdef RTMP_MAC_PCI
 
-#define EEPROM_DEFAULT_FILE_PATH     "/etc_ro/Wireless/MT7610E-V10-FEM.bin"
+#define EEPROM_DEFAULT_FILE_PATH			"/etc_ro/Wireless/MT7610E-V10-FEM.bin"
 
 #endif /* RTMP_MAC_PCI */
 
-
-#define RF_OFFSET					0x48000
+#if defined (RT_IFNAME_1ST)
+#if defined (CONFIG_RT_FIRST_IF_RF_OFFSET)
+ #define RF_OFFSET					CONFIG_RT_FIRST_IF_RF_OFFSET
+#else
+ #define RF_OFFSET					0x40000
+#endif
+#else /* !RT_IFNAME_1ST */
+#if defined (CONFIG_RT_SECOND_IF_RF_OFFSET)
+ #define RF_OFFSET					CONFIG_RT_SECOND_IF_RF_OFFSET
+#else
+ #define RF_OFFSET					0x48000
+#endif
+#endif /* RT_IFNAME_1ST */
 
 #endif /* RTMP_FLASH_SUPPORT */
 

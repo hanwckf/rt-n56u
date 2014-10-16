@@ -231,23 +231,6 @@ NDIS_STATUS os_free_mem(
 
 
 #if defined(RTMP_RBUS_SUPPORT) || defined (RTMP_FLASH_SUPPORT)
-/* The flag "CONFIG_RALINK_FLASH_API" is used for APSoC Linux SDK */
-#ifdef CONFIG_RALINK_FLASH_API
-
-int32_t FlashRead(uint32_t *dst, uint32_t *src, uint32_t count);
-int32_t FlashWrite(uint16_t *source, uint16_t *destination, uint32_t numBytes);
-#define NVRAM_OFFSET                            0x30000
-#if defined (CONFIG_RT2880_FLASH_32M)
-#define RF_OFFSET                               0x1FE0000
-#else
-#ifdef RTMP_FLASH_SUPPORT
-#define RF_OFFSET                               0x48000
-#else
-#define RF_OFFSET                               0x40000
-#endif // RTMP_FLASH_SUPPORT //
-#endif
-
-#else // CONFIG_RALINK_FLASH_API //
 
 #ifdef RA_MTD_RW_BY_NUM
 #if defined (CONFIG_RT2880_FLASH_32M)
@@ -262,32 +245,22 @@ extern int ra_mtd_write_nm(char *name, loff_t to, size_t len, const u_char *buf)
 extern int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf);
 #endif
 
-#endif // CONFIG_RALINK_FLASH_API //
-
 void RtmpFlashRead(UCHAR * p, ULONG a, ULONG b)
 {
-#ifdef CONFIG_RALINK_FLASH_API
-	FlashRead((uint32_t *)p, (uint32_t *)a, (uint32_t)b);
-#else
 #ifdef RA_MTD_RW_BY_NUM
 	ra_mtd_read(MTD_NUM_FACTORY, 0, (size_t)b, p);
 #else
 	ra_mtd_read_nm("Factory", a & 0xFFFF, (size_t)b, p);
 #endif
-#endif // CONFIG_RALINK_FLASH_API //
 }
 
 void RtmpFlashWrite(UCHAR * p, ULONG a, ULONG b)
 {
-#ifdef CONFIG_RALINK_FLASH_API
-	FlashWrite((uint16_t *)p, (uint16_t *)a, (uint32_t)b);
-#else
 #ifdef RA_MTD_RW_BY_NUM
 	ra_mtd_write(MTD_NUM_FACTORY, 0, (size_t)b, p);
 #else
 	ra_mtd_write_nm("Factory", a & 0xFFFF, (size_t)b, p);
 #endif
-#endif // CONFIG_RALINK_FLASH_API //
 }
 #endif // defined(RTMP_RBUS_SUPPORT) || defined (RTMP_FLASH_SUPPORT) //
 

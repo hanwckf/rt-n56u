@@ -1,194 +1,209 @@
-EXTRA_CFLAGS = -Idrivers/net/wireless/rt3593/include
-ifeq ($(CONFIG_RT3593_AP_ATE),y)
-EXTRA_CFLAGS += -Idrivers/net/wireless/rt3593/ate/include
-endif
+RT_DRV_DIR  := rt3593
+RT_DRV_PATH := ../$(RT_DRV_DIR)
+RT_DRV_NAME := rt3593_ap
 
-obj-$(CONFIG_RT3593_AP) += rt3593_ap.o
-rt3593_ap-objs += ../rt3593/common/crypt_md5.o
-rt3593_ap-objs += ../rt3593/common/crypt_sha2.o
-rt3593_ap-objs += ../rt3593/common/crypt_hmac.o
-rt3593_ap-objs += ../rt3593/common/crypt_aes.o
-rt3593_ap-objs += ../rt3593/common/crypt_arc4.o
-rt3593_ap-objs += ../rt3593/common/mlme.o
-rt3593_ap-objs += ../rt3593/common/cmm_wep.o
-rt3593_ap-objs += ../rt3593/common/action.o
-rt3593_ap-objs += ../rt3593/common/ba_action.o
-rt3593_ap-objs += ../rt3593/common/cmm_data.o
-rt3593_ap-objs += ../rt3593/common/rtmp_init.o
-rt3593_ap-objs += ../rt3593/common/rtmp_init_inf.o
-rt3593_ap-objs += ../rt3593/common/cmm_tkip.o
-rt3593_ap-objs += ../rt3593/common/cmm_aes.o
-rt3593_ap-objs += ../rt3593/common/cmm_sync.o
-rt3593_ap-objs += ../rt3593/common/cmm_sanity.o
-rt3593_ap-objs += ../rt3593/common/cmm_info.o
-rt3593_ap-objs += ../rt3593/common/cmm_cfg.o
-rt3593_ap-objs += ../rt3593/common/cmm_wpa.o
-rt3593_ap-objs += ../rt3593/common/cmm_radar.o
-rt3593_ap-objs += ../rt3593/common/spectrum.o
-rt3593_ap-objs += ../rt3593/common/rtmp_timer.o
-rt3593_ap-objs += ../rt3593/common/rt_channel.o
-rt3593_ap-objs += ../rt3593/common/cmm_profile.o
-rt3593_ap-objs += ../rt3593/common/cmm_asic.o
-rt3593_ap-objs += ../rt3593/common/cmm_cmd.o
-rt3593_ap-objs += ../rt3593/common/rtmp_mcu.o
-rt3593_ap-objs += ../rt3593/common/cmm_mac_pci.o
-rt3593_ap-objs += ../rt3593/common/cmm_data_pci.o
-rt3593_ap-objs += ../rt3593/common/rt_os_util.o
-rt3593_ap-objs += ../rt3593/common/ps.o
-rt3593_ap-objs += ../rt3593/common/uapsd.o
-rt3593_ap-objs += ../rt3593/common/ee_prom.o
-rt3593_ap-objs += ../rt3593/common/ee_efuse.o
-rt3593_ap-objs += ../rt3593/common/ee_flash.o
-rt3593_ap-objs += ../rt3593/common/eeprom.o
-rt3593_ap-objs += ../rt3593/common/rt_rf.o
-
-rt3593_ap-objs += ../rt3593/rate_ctrl/ra_ctrl.o
-rt3593_ap-objs += ../rt3593/rate_ctrl/alg_legacy.o
-
-rt3593_ap-objs += ../rt3593/ap/ap.o
-rt3593_ap-objs += ../rt3593/ap/ap_assoc.o
-rt3593_ap-objs += ../rt3593/ap/ap_auth.o
-rt3593_ap-objs += ../rt3593/ap/ap_connect.o
-rt3593_ap-objs += ../rt3593/ap/ap_mlme.o
-rt3593_ap-objs += ../rt3593/ap/ap_sanity.o
-rt3593_ap-objs += ../rt3593/ap/ap_sync.o
-rt3593_ap-objs += ../rt3593/ap/ap_wpa.o
-rt3593_ap-objs += ../rt3593/ap/ap_data.o
-rt3593_ap-objs += ../rt3593/ap/ap_autoChSel.o
-rt3593_ap-objs += ../rt3593/ap/ap_qload.o
-rt3593_ap-objs += ../rt3593/ap/ap_cfg.o
-
-rt3593_ap-objs += ../rt3593/os/linux/rt_proc.o
-rt3593_ap-objs += ../rt3593/os/linux/rt_main_dev.o
-rt3593_ap-objs += ../rt3593/os/linux/rt_pci_rbus.o
-rt3593_ap-objs += ../rt3593/os/linux/rt_profile.o
-rt3593_ap-objs += ../rt3593/os/linux/rt_linux.o
-rt3593_ap-objs += ../rt3593/os/linux/rt_rbus_pci_util.o
-rt3593_ap-objs += ../rt3593/os/linux/rt_rbus_pci_drv.o
-rt3593_ap-objs += ../rt3593/os/linux/ap_ioctl.o
-rt3593_ap-objs += ../rt3593/os/linux/pci_main_dev.o
-
-ifeq ($(CONFIG_RT3593_AP_ATE),y)
-rt3593_ap-objs += ../rt3593/ate/common/rt_ate.o
-rt3593_ap-objs += ../rt3593/ate/common/ate_pci.o
-ifeq ($(CONFIG_RT3593_AP_QA),y)
-rt3593_ap-objs += ../rt3593/ate/common/rt_qa.o
-endif
-endif
+obj-$(CONFIG_RT3593_AP) += $(RT_DRV_NAME).o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_md5.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_sha2.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_hmac.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_aes.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_arc4.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/mlme.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_wep.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/action.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ba_action.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_data.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rtmp_init.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rtmp_init_inf.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_tkip.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_aes.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_sync.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_sanity.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_info.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_cfg.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_wpa.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_radar.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/spectrum.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rtmp_timer.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rt_channel.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_profile.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_asic.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_cmd.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rtmp_mcu.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_mac_pci.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_data_pci.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rt_os_util.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ps.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/uapsd.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ee_prom.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ee_efuse.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ee_flash.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/eeprom.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rt_rf.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/rate_ctrl/ra_ctrl.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/rate_ctrl/alg_legacy.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_assoc.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_auth.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_connect.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_mlme.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_sanity.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_sync.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_wpa.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_data.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_autoChSel.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_qload.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_cfg.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/rt_proc.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/rt_main_dev.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/rt_pci_rbus.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/rt_profile.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/rt_linux.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/rt_rbus_pci_util.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/rt_rbus_pci_drv.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/ap_ioctl.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/pci_main_dev.o
 
 ### RT3593
-rt3593_ap-objs += ../rt3593/chips/rtmp_chip.o
-rt3593_ap-objs += ../rt3593/chips/rt28xx.o
-rt3593_ap-objs += ../rt3593/chips/rt30xx.o
-rt3593_ap-objs += ../rt3593/chips/rt35xx.o
-rt3593_ap-objs += ../rt3593/chips/rt3593.o
-rt3593_ap-objs += ../rt3593/rate_ctrl/alg_grp.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/chips/rtmp_chip.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/chips/rt28xx.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/chips/rt30xx.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/chips/rt35xx.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/chips/rt3593.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/rate_ctrl/alg_grp.o
 ifeq ($(CONFIG_RT3593_AP_TXBF_SUPPORT),y)
-rt3593_ap-objs += ../rt3593/common/cmm_txbf.o
-rt3593_ap-objs += ../rt3593/common/cmm_txbf_cal.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_txbf.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_txbf_cal.o
 endif
 ifeq ($(CONFIG_RT3593_AP_ATE),y)
-rt3593_ap-objs += ../rt3593/ate/chips/rt30xx_ate.o
-rt3593_ap-objs += ../rt3593/ate/chips/rt35xx_ate.o
-rt3593_ap-objs += ../rt3593/ate/chips/rt3593_ate.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/chips/rt30xx_ate.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/chips/rt35xx_ate.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/chips/rt3593_ate.o
 endif
 
-ifeq ($(CONFIG_RT3593_AP_VIDEO_TURBINE),y)
-rt3593_ap-objs += ../rt3593/common/cmm_video.o
+ifeq ($(CONFIG_RT3593_AP_ATE),y)
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/common/rt_ate.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/common/ate_pci.o
+ifeq ($(CONFIG_RT3593_AP_QA),y)
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/common/rt_qa.o
 endif
-
-ifeq ($(CONFIG_RT3593_AP_BRIDGE_FASTPATH),y)
-rt3593_ap-objs += ../rt3593/os/linux/br_ftph.o
 endif
 
 ifeq ($(CONFIG_RT3593_AP_LED),y)
-rt3593_ap-objs += ../rt3593/common/rt_led.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rt_led.o
 endif
 
 ifeq ($(CONFIG_RT3593_AP_WSC),y)
-rt3593_ap-objs += ../rt3593/common/wsc.o
-rt3593_ap-objs += ../rt3593/common/wsc_tlv.o
-rt3593_ap-objs += ../rt3593/common/crypt_dh.o
-rt3593_ap-objs += ../rt3593/common/wsc_ufd.o
-rt3593_ap-objs += ../rt3593/common/crypt_biginteger.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/wsc.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/wsc_tlv.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_dh.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/wsc_ufd.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_biginteger.o
 ifeq ($(CONFIG_RT3593_AP_WSC_V2),y)
-rt3593_ap-objs += ../rt3593/common/wsc_v2.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/wsc_v2.o
 endif
 endif
 
 ifeq ($(CONFIG_RT3593_AP_WDS),y)
-rt3593_ap-objs += ../rt3593/ap/ap_wds.o
-rt3593_ap-objs += ../rt3593/ap/ap_wds_inf.o
-rt3593_ap-objs += ../rt3593/common/client_wds.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_wds.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_wds_inf.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/client_wds.o
 endif
 
 ifeq ($(CONFIG_RT3593_AP_MBSS),y)
-rt3593_ap-objs += ../rt3593/ap/ap_mbss.o
-rt3593_ap-objs += ../rt3593/ap/ap_mbss_inf.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_mbss.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_mbss_inf.o
 endif
 
 ifeq ($(CONFIG_RT3593_AP_APCLI),y)
-rt3593_ap-objs += ../rt3593/ap/ap_apcli.o
-rt3593_ap-objs += ../rt3593/ap/ap_apcli_inf.o
-rt3593_ap-objs += ../rt3593/ap/apcli_assoc.o
-rt3593_ap-objs += ../rt3593/ap/apcli_auth.o
-rt3593_ap-objs += ../rt3593/ap/apcli_ctrl.o
-rt3593_ap-objs += ../rt3593/ap/apcli_sync.o
-rt3593_ap-objs += ../rt3593/common/cmm_mat.o
-rt3593_ap-objs += ../rt3593/common/cmm_mat_iparp.o
-rt3593_ap-objs += ../rt3593/common/cmm_mat_pppoe.o
-rt3593_ap-objs += ../rt3593/common/cmm_mat_ipv6.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_apcli.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_apcli_inf.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/apcli_assoc.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/apcli_auth.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/apcli_ctrl.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/apcli_sync.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_mat.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_mat_iparp.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_mat_pppoe.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_mat_ipv6.o
 endif
 
 ifeq ($(CONFIG_RT3593_AP_IGMP_SNOOP),y)
-rt3593_ap-objs += ../rt3593/common/igmp_snoop.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/igmp_snoop.o
 endif
 
 ifeq ($(CONFIG_RT3593_AP_NETIF_BLOCK),y)
-rt3593_ap-objs += ../rt3593/common/netif_block.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/netif_block.o
 endif
 
 ifeq ($(CONFIG_RT3593_AP_DLS),y)
-rt3593_ap-objs += ../rt3593/ap/ap_dls.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_dls.o
 endif
 
 ifeq ($(CONFIG_RT3593_AP_IDS),y)
-rt3593_ap-objs += ../rt3593/ap/ap_ids.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_ids.o
 endif
 
 ifeq ($(CONFIG_RT3593_AP_WAPI),y)
-rt3593_ap-objs += ../rt3593/common/wapi.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/wapi.o
 endif
 
 ifeq ($(CONFIG_RT3593_AP_DFS),y)
-rt3593_ap-objs += ../rt3593/common/cmm_dfs.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_dfs.o
 endif
 
 ifeq ($(CONFIG_RT3593_AP_CARRIER),y)
-rt3593_ap-objs += ../rt3593/common/cmm_cs.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_cs.o
 endif
 
+ifeq ($(CONFIG_RT3593_AP_BRIDGE_FASTPATH),y)
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/br_ftph.o
+endif
+
+ifeq ($(CONFIG_RT3593_AP_VIDEO_TURBINE),y)
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_video.o
+endif
 
 ###################
 #  CFLAGS
 ###################
-EXTRA_CFLAGS += -Wall -Wstrict-prototypes -Wno-trigraphs
+EXTRA_CFLAGS  = -Wall -Wstrict-prototypes -Wno-trigraphs
+EXTRA_CFLAGS += -Idrivers/net/wireless/$(RT_DRV_DIR)/include
+ifeq ($(CONFIG_RT3593_AP_ATE),y)
+EXTRA_CFLAGS += -Idrivers/net/wireless/$(RT_DRV_DIR)/ate/include
+endif
 EXTRA_CFLAGS += -DAGGREGATION_SUPPORT -DPIGGYBACK_SUPPORT -DWMM_SUPPORT -DLINUX
 EXTRA_CFLAGS += -DCONFIG_AP_SUPPORT -DAP_SCAN_SUPPORT -DUAPSD_SUPPORT -DDOT11_N_SUPPORT -DDOT1X_SUPPORT
 EXTRA_CFLAGS += -DRTMP_MAC_PCI -DRTMP_PCI_SUPPORT -DRTMP_RF_RW_SUPPORT
 EXTRA_CFLAGS += -DSTATS_COUNT_SUPPORT -DENHANCED_STAT_DISPLAY
 EXTRA_CFLAGS += -DRSSI_FEEDBACK
 EXTRA_CFLAGS += -DRESOURCE_PRE_ALLOC
+
+ifeq ($(CONFIG_RT_FIRST_CARD),2860)
 EXTRA_CFLAGS += -DRT_SOC_SUPPORT
+endif
+
+ifeq ($(CONFIG_RT_FIRST_CARD),3593)
+EXTRA_CFLAGS += -DRT_IFNAME_1ST
+ifeq ($(CONFIG_RT_FIRST_CARD_EEPROM),"efuse")
+EXTRA_CFLAGS += -DRTMP_EFUSE_SUPPORT
+else
+EXTRA_CFLAGS += -DRTMP_FLASH_SUPPORT
+endif
+else
+ifeq ($(CONFIG_RT_SECOND_CARD_EEPROM),"efuse")
+EXTRA_CFLAGS += -DRTMP_EFUSE_SUPPORT
+else
+EXTRA_CFLAGS += -DRTMP_FLASH_SUPPORT
+endif
+endif
+
+ifeq ($(CONFIG_RT3593_AP_READ_MAC_FROM_MTD),y)
+EXTRA_CFLAGS += -DREAD_MAC_FROM_EEPROM
+endif
 
 # do not lock CountryRegion from EEPROM
 EXTRA_CFLAGS += -DEEPROM_COUNTRY_UNLOCK
-
-# provide external Flash memory support
-EXTRA_CFLAGS += -DRTMP_FLASH_SUPPORT
-
-# provide internal eFuse memory support
-#EXTRA_CFLAGS += -DRTMP_EFUSE_SUPPORT
 
 # provide roaming support
 #EXTRA_CFLAGS += -DIAPP_SUPPORT
@@ -214,10 +229,6 @@ EXTRA_CFLAGS += -DRANGE_EXTEND
 #EXTRA_CFLAGS += -DSPECIFIC_BCN_BUF_SUPPORT
 ifeq ($(CONFIG_RT3593_AP_TXBF_SUPPORT),y)
 EXTRA_CFLAGS += -DTXBF_SUPPORT
-endif
-
-ifeq ($(CONFIG_RT3593_AP_READ_MAC_FROM_MTD),y)
-EXTRA_CFLAGS += -DREAD_MAC_FROM_EEPROM
 endif
 
 ifeq ($(CONFIG_RT3593_AP_DBG),y)

@@ -1,202 +1,224 @@
-EXTRA_CFLAGS = -Idrivers/net/wireless/mt7610/include
-ifeq ($(CONFIG_MT7610_AP_ATE),y)
-EXTRA_CFLAGS += -Idrivers/net/wireless/mt7610/ate/include
-endif
+RT_DRV_DIR  := mt7610
+RT_DRV_PATH := ../$(RT_DRV_DIR)
+RT_DRV_NAME := mt7610_ap
 
-obj-$(CONFIG_MT7610_AP) += mt7610_ap.o
-mt7610_ap-objs += ../mt7610/rate_ctrl/ra_ctrl.o
-mt7610_ap-objs += ../mt7610/rate_ctrl/alg_grp.o
-mt7610_ap-objs += ../mt7610/rate_ctrl/alg_legacy.o
-mt7610_ap-objs += ../mt7610/mgmt/mgmt_entrytb.o
-mt7610_ap-objs += ../mt7610/mgmt/mgmt_hw.o
-mt7610_ap-objs += ../mt7610/mgmt/mgmt_vht.o
-mt7610_ap-objs += ../mt7610/mgmt/mgmt_ht.o
-mt7610_ap-objs += ../mt7610/os/linux/ap_ioctl.o
-mt7610_ap-objs += ../mt7610/os/linux/rt_rbus_pci_drv.o
-mt7610_ap-objs += ../mt7610/os/linux/rt_pci_rbus.o
-mt7610_ap-objs += ../mt7610/os/linux/rt_rbus_pci_util.o
-mt7610_ap-objs += ../mt7610/os/linux/pci_main_dev.o
-mt7610_ap-objs += ../mt7610/os/linux/rt_profile.o
-mt7610_ap-objs += ../mt7610/os/linux/rt_linux.o
-mt7610_ap-objs += ../mt7610/os/linux/rt_proc.o
-mt7610_ap-objs += ../mt7610/os/linux/rt_main_dev.o
-mt7610_ap-objs += ../mt7610/mcu/mcu.o
-mt7610_ap-objs += ../mt7610/mcu/mcu_and.o
-mt7610_ap-objs += ../mt7610/common/cmm_data_pci.o
-mt7610_ap-objs += ../mt7610/common/eeprom.o
-mt7610_ap-objs += ../mt7610/common/cmm_profile.o
-mt7610_ap-objs += ../mt7610/common/cmm_sync.o
-mt7610_ap-objs += ../mt7610/common/rtmp_init_inf.o
-mt7610_ap-objs += ../mt7610/common/cmm_cfg.o
-mt7610_ap-objs += ../mt7610/common/rt_rf.o
-mt7610_ap-objs += ../mt7610/common/action.o
-mt7610_ap-objs += ../mt7610/common/rtmp_init.o
-mt7610_ap-objs += ../mt7610/common/txpower.o
-mt7610_ap-objs += ../mt7610/common/cmm_cmd.o
-mt7610_ap-objs += ../mt7610/common/rtmp_timer.o
-mt7610_ap-objs += ../mt7610/common/cmm_info.o
-mt7610_ap-objs += ../mt7610/common/ba_action.o
-mt7610_ap-objs += ../mt7610/common/cmm_mac_pci.o
-mt7610_ap-objs += ../mt7610/common/cmm_tkip.o
-mt7610_ap-objs += ../mt7610/common/cmm_asic.o
-mt7610_ap-objs += ../mt7610/common/vht.o
-mt7610_ap-objs += ../mt7610/common/cmm_aes.o
-mt7610_ap-objs += ../mt7610/common/crypt_md5.o
-mt7610_ap-objs += ../mt7610/common/cmm_wep.o
-mt7610_ap-objs += ../mt7610/common/crypt_arc4.o
-mt7610_ap-objs += ../mt7610/common/crypt_hmac.o
-mt7610_ap-objs += ../mt7610/common/cmm_wpa.o
-mt7610_ap-objs += ../mt7610/common/ps.o
-mt7610_ap-objs += ../mt7610/common/cmm_sanity.o
-mt7610_ap-objs += ../mt7610/common/cmm_radar.o
-mt7610_ap-objs += ../mt7610/common/crypt_aes.o
-mt7610_ap-objs += ../mt7610/common/ee_efuse.o
-mt7610_ap-objs += ../mt7610/common/cmm_data.o
-mt7610_ap-objs += ../mt7610/common/spectrum.o
-mt7610_ap-objs += ../mt7610/common/crypt_sha2.o
-mt7610_ap-objs += ../mt7610/common/mlme.o
-mt7610_ap-objs += ../mt7610/common/ee_prom.o
-mt7610_ap-objs += ../mt7610/common/rt_os_util.o
-mt7610_ap-objs += ../mt7610/common/rt_channel.o
-mt7610_ap-objs += ../mt7610/common/scan.o
-mt7610_ap-objs += ../mt7610/common/uapsd.o
-mt7610_ap-objs += ../mt7610/common/ee_flash.o
-mt7610_ap-objs += ../mt7610/ap/ap_qload.o
-mt7610_ap-objs += ../mt7610/ap/ap_auth.o
-mt7610_ap-objs += ../mt7610/ap/ap_sync.o
-mt7610_ap-objs += ../mt7610/ap/ap_mlme.o
-mt7610_ap-objs += ../mt7610/ap/ap_wpa.o
-mt7610_ap-objs += ../mt7610/ap/ap_assoc.o
-mt7610_ap-objs += ../mt7610/ap/ap_cfg.o
-mt7610_ap-objs += ../mt7610/ap/ap_autoChSel.o
-mt7610_ap-objs += ../mt7610/ap/ap_sanity.o
-mt7610_ap-objs += ../mt7610/ap/ap.o
-mt7610_ap-objs += ../mt7610/ap/ap_data.o
-mt7610_ap-objs += ../mt7610/ap/ap_connect.o
-mt7610_ap-objs += ../mt7610/phy/rtmp_phy.o
-mt7610_ap-objs += ../mt7610/phy/rlt_rf.o
-mt7610_ap-objs += ../mt7610/phy/rlt_phy.o
-mt7610_ap-objs += ../mt7610/mac/ral_nmac.o
-mt7610_ap-objs += ../mt7610/mac/rtmp_mac.o
-
-ifeq ($(CONFIG_MT7610_AP_ATE),y)
-mt7610_ap-objs += ../mt7610/ate/common/rt_ate.o
-mt7610_ap-objs += ../mt7610/ate/common/ate_pci.o
-ifeq ($(CONFIG_MT7610_AP_QA),y)
-mt7610_ap-objs += ../mt7610/ate/common/rt_qa.o
-endif
-endif
+obj-$(CONFIG_MT7610_AP) += $(RT_DRV_NAME).o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_md5.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_sha2.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_hmac.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_aes.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_arc4.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_wep.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_wpa.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_tkip.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_aes.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/mlme.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/action.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ba_action.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_data.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_sync.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_sanity.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_info.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_cfg.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_profile.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_asic.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_cmd.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rtmp_init.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rtmp_init_inf.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rtmp_timer.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rt_channel.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rt_os_util.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_radar.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/vht.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/spectrum.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/txpower.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/scan.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ps.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/uapsd.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_data_pci.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_mac_pci.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/eeprom.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ee_flash.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ee_efuse.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ee_prom.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/mgmt/mgmt_entrytb.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/mgmt/mgmt_ht.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/mgmt/mgmt_vht.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/mac/rtmp_mac.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/mac/ral_nmac.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/mcu/mcu.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/mcu/mcu_and.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/phy/rlt_rf.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/phy/rlt_phy.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/phy/rtmp_phy.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/rate_ctrl/ra_ctrl.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/rate_ctrl/alg_legacy.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/rate_ctrl/alg_grp.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_assoc.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_auth.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_connect.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_mlme.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_sanity.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_sync.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_wpa.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_data.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_autoChSel.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_qload.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_cfg.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/ap_ioctl.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/rt_proc.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/rt_linux.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/rt_profile.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/rt_main_dev.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/rt_rbus_pci_drv.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/rt_rbus_pci_util.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/rt_pci_rbus.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/os/linux/pci_main_dev.o
 
 ### MT7610
-mt7610_ap-objs += ../mt7610/chips/rtmp_chip.o
-mt7610_ap-objs += ../mt7610/chips/rt65xx.o
-mt7610_ap-objs += ../mt7610/chips/mt76x0.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/chips/rtmp_chip.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/chips/rt65xx.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/chips/mt76x0.o
 ifeq ($(CONFIG_MT7610_AP_ATE),y)
-mt7610_ap-objs += ../mt7610/ate/chips/rt6590_ate.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/chips/rt6590_ate.o
 endif
 
-ifeq ($(CONFIG_MT7610_AP_VIDEO_TURBINE),y)
-mt7610_ap-objs += ../mt7610/common/cmm_video.o
+ifeq ($(CONFIG_MT7610_AP_ATE),y)
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/common/rt_ate.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/common/ate_pci.o
+ifeq ($(CONFIG_MT7610_AP_QA),y)
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/common/rt_qa.o
+endif
 endif
 
 ifeq ($(CONFIG_MT7610_AP_LED),y)
-mt7610_ap-objs += ../mt7610/common/rt_led.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rt_led.o
 endif
 
 ifeq ($(CONFIG_MT7610_AP_WSC),y)
-mt7610_ap-objs += ../mt7610/common/wsc.o
-mt7610_ap-objs += ../mt7610/common/wsc_tlv.o
-mt7610_ap-objs += ../mt7610/common/crypt_dh.o
-mt7610_ap-objs += ../mt7610/common/wsc_ufd.o
-mt7610_ap-objs += ../mt7610/common/crypt_biginteger.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/wsc.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/wsc_tlv.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_dh.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/wsc_ufd.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_biginteger.o
 ifeq ($(CONFIG_MT7610_AP_WSC_V2),y)
-mt7610_ap-objs += ../mt7610/common/wsc_v2.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/wsc_v2.o
 endif
 endif
 
 ifeq ($(CONFIG_MT7610_AP_WDS),y)
-mt7610_ap-objs += ../mt7610/ap/ap_wds.o
-mt7610_ap-objs += ../mt7610/ap/ap_wds_inf.o
-mt7610_ap-objs += ../mt7610/common/client_wds.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_wds.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_wds_inf.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/client_wds.o
 endif
 
 ifeq ($(CONFIG_MT7610_AP_MBSS),y)
-mt7610_ap-objs += ../mt7610/ap/ap_mbss.o
-mt7610_ap-objs += ../mt7610/ap/ap_mbss_inf.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_mbss.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_mbss_inf.o
 endif
 
 ifeq ($(CONFIG_MT7610_AP_APCLI),y)
-mt7610_ap-objs += ../mt7610/ap/ap_apcli.o
-mt7610_ap-objs += ../mt7610/ap/ap_apcli_inf.o
-mt7610_ap-objs += ../mt7610/ap/apcli_assoc.o
-mt7610_ap-objs += ../mt7610/ap/apcli_auth.o
-mt7610_ap-objs += ../mt7610/ap/apcli_ctrl.o
-mt7610_ap-objs += ../mt7610/ap/apcli_sync.o
-mt7610_ap-objs += ../mt7610/common/cmm_mat.o
-mt7610_ap-objs += ../mt7610/common/cmm_mat_iparp.o
-mt7610_ap-objs += ../mt7610/common/cmm_mat_pppoe.o
-mt7610_ap-objs += ../mt7610/common/cmm_mat_ipv6.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_apcli.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_apcli_inf.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/apcli_assoc.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/apcli_auth.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/apcli_ctrl.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/apcli_sync.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_mat.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_mat_iparp.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_mat_pppoe.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_mat_ipv6.o
 ifeq ($(CONFIG_MT7610_AP_MAC_REPEATER),y)
-mt7610_ap-objs += ../mt7610/ap/ap_repeater.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_repeater.o
 endif
 endif
 
 ifeq ($(CONFIG_MT7610_AP_IGMP_SNOOP),y)
-mt7610_ap-objs += ../mt7610/common/igmp_snoop.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/igmp_snoop.o
 endif
 
 ifeq ($(CONFIG_MT7610_AP_NETIF_BLOCK),y)
-mt7610_ap-objs += ../mt7610/common/netif_block.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/netif_block.o
 endif
 
 ifeq ($(CONFIG_MT7610_AP_DLS),y)
-mt7610_ap-objs += ../mt7610/ap/ap_dls.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_dls.o
 endif
 
 ifeq ($(CONFIG_MT7610_AP_IDS),y)
-mt7610_ap-objs += ../mt7610/ap/ap_ids.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_ids.o
 endif
 
 ifeq ($(CONFIG_MT7610_AP_WAPI),y)
-mt7610_ap-objs += ../mt7610/common/wapi.o
-mt7610_ap-objs += ../mt7610/common/wapi_sms4.o
-mt7610_ap-objs += ../mt7610/common/wapi_crypt.o
-mt7610_ap-objs += ../mt7610/common/libwapi.a
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/wapi.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/wapi_sms4.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/wapi_crypt.o
 endif
 
 ifeq ($(CONFIG_MT7610_AP_DFS),y)
-mt7610_ap-objs += ../mt7610/common/cmm_dfs.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_dfs.o
 endif
 
 ifeq ($(CONFIG_MT7610_AP_CARRIER),y)
-mt7610_ap-objs += ../mt7610/common/cmm_cs.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_cs.o
 endif
 
+
 ifeq ($(CONFIG_MT7610_AP_CSO),y)
-mt7610_ap-objs += ../mt7610/naf/net_acc.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/naf/net_acc.o
+endif
+
+ifeq ($(CONFIG_MT7610_AP_BRIDGE_FASTPATH),y)
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/br_ftph.o
+endif
+
+ifeq ($(CONFIG_MT7610_AP_VIDEO_TURBINE),y)
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_video.o
 endif
 
 ###################
 #  CFLAGS
 ##################
 
-EXTRA_CFLAGS += -Wall -Wstrict-prototypes -Wno-trigraphs
+EXTRA_CFLAGS  = -Wall -Wstrict-prototypes -Wno-trigraphs 
+EXTRA_CFLAGS += -Idrivers/net/wireless/$(RT_DRV_DIR)/include
+ifeq ($(CONFIG_MT7610_AP_ATE),y)
+EXTRA_CFLAGS += -Idrivers/net/wireless/$(RT_DRV_DIR)/ate/include
+endif
 EXTRA_CFLAGS += -DAGGREGATION_SUPPORT -DPIGGYBACK_SUPPORT -DWMM_SUPPORT -DLINUX
-EXTRA_CFLAGS += -DCONFIG_AP_SUPPORT -DUAPSD_SUPPORT -DDOT11_N_SUPPORT -DDOT1X_SUPPORT -DDOT11_VHT_AC
+EXTRA_CFLAGS += -DCONFIG_AP_SUPPORT -DUAPSD_SUPPORT -DDOT11_N_SUPPORT -DDOT1X_SUPPORT
 EXTRA_CFLAGS += -DAP_SCAN_SUPPORT -DSCAN_SUPPORT
 EXTRA_CFLAGS += -DRTMP_MAC_PCI -DRTMP_PCI_SUPPORT
 EXTRA_CFLAGS += -DSTATS_COUNT_SUPPORT -DENHANCED_STAT_DISPLAY
 EXTRA_CFLAGS += -DRSSI_FEEDBACK
 EXTRA_CFLAGS += -DRESOURCE_PRE_ALLOC
 
+ifeq ($(CONFIG_RT_FIRST_CARD),2860)
+EXTRA_CFLAGS += -DRT_SOC_SUPPORT
+endif
+
+ifeq ($(CONFIG_RT_FIRST_CARD),7610)
+EXTRA_CFLAGS += -DRT_IFNAME_1ST
+ifeq ($(CONFIG_RT_FIRST_CARD_EEPROM),"efuse")
+EXTRA_CFLAGS += -DRTMP_EFUSE_SUPPORT
+else
+EXTRA_CFLAGS += -DRTMP_FLASH_SUPPORT
+endif
+else
+ifeq ($(CONFIG_RT_SECOND_CARD_EEPROM),"efuse")
+EXTRA_CFLAGS += -DRTMP_EFUSE_SUPPORT
+else
+EXTRA_CFLAGS += -DRTMP_FLASH_SUPPORT
+endif
+endif
+
+ifeq ($(CONFIG_MT7610_AP_READ_MAC_FROM_MTD),y)
+EXTRA_CFLAGS += -DREAD_MAC_FROM_EEPROM
+endif
+
 # do not lock CountryRegion from EEPROM
 EXTRA_CFLAGS += -DEEPROM_COUNTRY_UNLOCK
-
-# provide external Flash memory support
-EXTRA_CFLAGS += -DRTMP_FLASH_SUPPORT
-
-# provide internal eFuse memory support
-#EXTRA_CFLAGS += -DRTMP_EFUSE_SUPPORT
 
 # provide roaming support
 #EXTRA_CFLAGS += -DIAPP_SUPPORT
@@ -210,20 +232,17 @@ EXTRA_CFLAGS += -DWORKQUEUE_BH
 endif
 
 ### MT7610
-EXTRA_CFLAGS += -DMT76x0 -DRT65xx -DMT7610 -DRLT_MAC -DRLT_RF
-#EXTRA_CFLAGS += -DMT7630 -DMT7650
-EXTRA_CFLAGS += -DA_BAND_SUPPORT
+EXTRA_CFLAGS += -DRT65xx -DMT76x0 -DMT7610
+#EXTRA_CFLAGS += -DFPGA_MODE
+EXTRA_CFLAGS += -DRLT_MAC -DRLT_RF
+EXTRA_CFLAGS += -DA_BAND_SUPPORT -DDOT11_VHT_AC
 EXTRA_CFLAGS += -DRX_DMA_SCATTER -DCONFIG_ANDES_SUPPORT
 EXTRA_CFLAGS += -DNEW_RATE_ADAPT_SUPPORT
 EXTRA_CFLAGS += -DFIFO_EXT_SUPPORT
 EXTRA_CFLAGS += -DVCORECAL_SUPPORT
 EXTRA_CFLAGS += -DDYNAMIC_VGA_SUPPORT
 EXTRA_CFLAGS += -DMCS_LUT_SUPPORT -DPEER_DELBA_TX_ADAPT
-#EXTRA_CFLAGS += -DFPGA_MODE
-
-ifeq ($(CONFIG_MT7610_AP_READ_MAC_FROM_MTD),y)
-EXTRA_CFLAGS += -DREAD_MAC_FROM_EEPROM
-endif
+#EXTRA_CFLAGS += -DSPECIFIC_BCN_BUF_SUPPORT
 
 ifeq ($(CONFIG_MT7610_AP_DBG),y)
 EXTRA_CFLAGS += -DDBG
@@ -248,11 +267,10 @@ endif
 
 ifeq ($(CONFIG_MT7610_AP_DFS),y)
 EXTRA_CFLAGS += -DDFS_SUPPORT
-EXTRA_CFLAGS += -DDFS_DEBUG
 endif
 
 ifeq ($(CONFIG_MT7610_AP_WAPI),y)
-EXTRA_CFLAGS += -DWAPI_SUPPORT -DSOFT_ENCRYPT
+EXTRA_CFLAGS += -DWAPI_SUPPORT
 endif
 
 ifeq ($(CONFIG_MT7610_AP_GREENAP),y)
@@ -311,11 +329,11 @@ endif
 ifeq ($(CONFIG_MT7610_AP_APCLI),y)
 EXTRA_CFLAGS += -DAPCLI_SUPPORT
 EXTRA_CFLAGS += -DMAT_SUPPORT
-ifeq ($(CONFIG_MT7610_AP_MAC_REPEATER),y)
-EXTRA_CFLAGS += -DMAC_APCLI_SUPPORT
-EXTRA_CFLAGS += -DMAC_REPEATER_SUPPORT
-EXTRA_CFLAGS += -DAPCLI_CONNECTION_TRIAL
+#EXTRA_CFLAGS += -DMAC_APCLI_SUPPORT
 #EXTRA_CFLAGS += -DAPCLI_AUTO_CONNECT_SUPPORT
+#EXTRA_CFLAGS += -DAPCLI_CONNECTION_TRIAL
+ifeq ($(CONFIG_MT7610_AP_MAC_REPEATER),y)
+EXTRA_CFLAGS += -DMAC_REPEATER_SUPPORT
 endif
 endif
 
@@ -351,6 +369,10 @@ ifeq ($(CONFIG_MT7610_AP_TEMPERATURE_COMPENSATION),y)
 EXTRA_CFLAGS += -DRTMP_TEMPERATURE_COMPENSATION
 endif
 
+ifeq ($(CONFIG_MT7610_AP_ED_MONITOR),y)
+EXTRA_CFLAGS += -DED_MONITOR
+endif
+
 ifeq ($(CONFIG_MT7610_AP_SINGLE_SKU),y)
 EXTRA_CFLAGS += -DSINGLE_SKU_V2
 endif
@@ -366,3 +388,17 @@ endif
 ifeq ($(CONFIG_MT7610_AP_BIG_ENDIAN),y)
 EXTRA_CFLAGS += -DRT_BIG_ENDIAN
 endif
+
+ifeq ($(CONFIG_MT7610_AP_MC_SUPPORT),y)
+EXTRA_CFLAGS += -DMULTIPLE_CARD_SUPPORT
+endif
+
+ifeq ($(CONFIG_MT7610_AP_BRIDGE_FASTPATH),y)
+EXTRA_CFLAGS += -DBG_FT_SUPPORT
+endif
+
+
+clean:
+	@rm -f `find ./ -name "*.o.cmd"`
+	@rm -f `find ./ -name "*.ko"`
+	@rm -f `find ./ -name "*.o"`

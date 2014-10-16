@@ -230,7 +230,7 @@ int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_fil
 		return -1;
 	}
 
-	ssl_options = SSL_OP_ALL | SSL_OP_NO_COMPRESSION | SSL_OP_NO_SSLv2 |
+	ssl_options = SSL_OP_ALL | SSL_OP_NO_COMPRESSION | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
 			SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION;
 
 	SSL_CTX_set_options(ssl_ctx, ssl_options);

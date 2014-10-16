@@ -36,11 +36,11 @@
 
 #include "rc.h"
 
-
 #define XSTR(s) STR(s)
 #define STR(s) #s
 
-long uptime(void)
+long
+uptime(void)
 {
 	struct sysinfo info;
 	sysinfo(&info);
@@ -48,7 +48,8 @@ long uptime(void)
 	return info.uptime;
 }
 
-int rand_seed_by_time(void)
+int
+rand_seed_by_time(void)
 {
 	time_t atime;
 
@@ -60,7 +61,8 @@ int rand_seed_by_time(void)
 }
 
 /* convert mac address format from XXXXXXXXXXXX to XX:XX:XX:XX:XX:XX */
-char *mac_conv(char *mac_name, int idx, char *buf)
+char *
+mac_conv(char *mac_name, int idx, char *buf)
 {
 	char *mac, name[32];
 	int i, j;
@@ -91,7 +93,8 @@ char *mac_conv(char *mac_name, int idx, char *buf)
 }
 
 /* convert mac address format from XX:XX:XX:XX:XX:XX to XXXXXXXXXXXX */
-char *mac_conv2(char *mac_name, int idx, char *buf)
+char *
+mac_conv2(char *mac_name, int idx, char *buf)
 {
 	char *mac, name[32];
 	int i, j;
@@ -119,7 +122,8 @@ char *mac_conv2(char *mac_name, int idx, char *buf)
 	return(buf);
 }
 
-int valid_subver(char subfs)
+int
+valid_subver(char subfs)
 {
 	printf("validate subfs: %c\n", subfs);	// tmp test
 	if(((subfs >= 'a') && (subfs <= 'z' )) || ((subfs >= 'A') && (subfs <= 'Z' )))
@@ -128,7 +132,8 @@ int valid_subver(char subfs)
 		return 0;
 }
 
-void get_eeprom_params(void)
+void
+get_eeprom_params(void)
 {
 	int i_offset, i_ret;
 	unsigned char buffer[32];
@@ -162,7 +167,7 @@ void get_eeprom_params(void)
 	if (buffer[0] != 0xff)
 		ether_etoa(buffer, macaddr_rt);
 
-#if defined (BOARD_N14U)
+#if defined (BOARD_N14U) || defined (BOARD_N11P)
 	i_offset = 0x4018E; // wdf?
 #else
 	i_offset = OFFSET_MAC_GMAC0;
@@ -180,7 +185,7 @@ void get_eeprom_params(void)
 		ether_etoa(buffer, macaddr_lan);
 	}
 
-#if defined (BOARD_N14U)
+#if defined (BOARD_N14U) || defined (BOARD_N11P)
 	buffer[5] |= 0x03; // last 2 bits reserved by ASUS for MBSSID, use 0x03 for WAN (ra1: 0x01, apcli0: 0x02)
 	ether_etoa(buffer, macaddr_wan);
 #else
@@ -312,7 +317,8 @@ void get_eeprom_params(void)
 #endif
 }
 
-void update_router_mode(void)
+void
+update_router_mode(void)
 {
 	if (nvram_get_int("sw_mode") != 3)
 	{
@@ -323,7 +329,8 @@ void update_router_mode(void)
 	}
 }
 
-void set_pagecache_reclaim(void)
+void
+set_pagecache_reclaim(void)
 {
 	int pagecache_ratio = 100;
 	int pagecache_reclaim = nvram_get_int("pcache_reclaim");
@@ -336,7 +343,8 @@ void set_pagecache_reclaim(void)
 	fput_int("/proc/sys/vm/pagecache_ratio", pagecache_ratio);
 }
 
-void restart_all_sysctl(void)
+void
+restart_all_sysctl(void)
 {
 	if (!get_ap_mode()) {
 		set_nf_conntrack();
@@ -346,7 +354,8 @@ void restart_all_sysctl(void)
 	}
 }
 
-void char_to_ascii(char *output, char *input)
+void
+char_to_ascii(char *output, char *input)
 {
 	int i;
 	char tmp[10];
@@ -377,7 +386,8 @@ void char_to_ascii(char *output, char *input)
 	*(ptr) = '\0';
 }
 
-int fput_string(const char *name, const char *value)
+int
+fput_string(const char *name, const char *value)
 {
 	FILE *fp;
 
@@ -391,14 +401,16 @@ int fput_string(const char *name, const char *value)
 	}
 }
 
-int fput_int(const char *name, int value)
+int
+fput_int(const char *name, int value)
 {
 	char svalue[32];
 	sprintf(svalue, "%d", value);
 	return fput_string(name, svalue);
 }
 
-unsigned int get_param_int_hex(const char *param)
+unsigned int
+get_param_int_hex(const char *param)
 {
 	unsigned int retVal = 0;
 
@@ -422,7 +434,8 @@ is_param_forbidden(char *line, const char **forbid_list)
 	return 0;
 }
 
-void load_user_config(FILE *fp, const char *dir_name, const char *file_name, const char **forbid_list)
+void
+load_user_config(FILE *fp, const char *dir_name, const char *file_name, const char **forbid_list)
 {
 	FILE *fp_user;
 	char line[256], real_path[128];
@@ -449,7 +462,8 @@ void load_user_config(FILE *fp, const char *dir_name, const char *file_name, con
 	}
 }
 
-int is_module_loaded(char *module_name)
+int
+is_module_loaded(char *module_name)
 {
 	DIR *dir_to_open = NULL;
 	char sys_path[128];
@@ -465,7 +479,8 @@ int is_module_loaded(char *module_name)
 	return 0;
 }
 
-int get_module_refcount(char *module_name)
+int
+get_module_refcount(char *module_name)
 {
 	FILE *fp;
 	char mod_path[64], mod_refval[16];
@@ -486,7 +501,8 @@ int get_module_refcount(char *module_name)
 	return refcount;
 }
 
-int module_smart_load(char *module_name, char *module_param)
+int
+module_smart_load(char *module_name, char *module_param)
 {
 	int ret;
 
@@ -501,7 +517,8 @@ int module_smart_load(char *module_name, char *module_param)
 	return (ret == 0) ? 1 : 0;
 }
 
-int module_smart_unload(char *module_name, int recurse_unload)
+int
+module_smart_unload(char *module_name, int recurse_unload)
 {
 	int ret;
 	int refcount = get_module_refcount(module_name);
@@ -522,7 +539,8 @@ int module_smart_unload(char *module_name, int recurse_unload)
 	return (ret == 0) ? 1 : 0;
 }
 
-int module_param_get(char *module_name, char *module_param, char *param_value, size_t param_value_size)
+int
+module_param_get(char *module_name, char *module_param, char *param_value, size_t param_value_size)
 {
 	FILE *fp;
 	char mod_path[256];
@@ -545,7 +563,8 @@ int module_param_get(char *module_name, char *module_param, char *param_value, s
 	return 0;
 }
 
-int module_param_set_int(char *module_name, char *module_param, int param_value)
+int
+module_param_set_int(char *module_name, char *module_param, int param_value)
 {
 	char mod_path[256];
 
@@ -564,7 +583,8 @@ oom_score_adjust(pid_t pid, int oom_score_adj)
 	fput_int(proc_path, oom_score_adj);
 }
 
-void kill_services(char* svc_name[], int wtimeout, int forcekill)
+void
+kill_services(char* svc_name[], int wtimeout, int forcekill)
 {
 	int i, k, i_waited, i_killed;
 	
@@ -602,7 +622,8 @@ void kill_services(char* svc_name[], int wtimeout, int forcekill)
 	}
 }
 
-int kill_process_pidfile(char *pidfile, int wtimeout, int forcekill)
+int
+kill_process_pidfile(char *pidfile, int wtimeout, int forcekill)
 {
 	int i, result = -1;
 
@@ -624,7 +645,8 @@ int kill_process_pidfile(char *pidfile, int wtimeout, int forcekill)
 	return result;
 }
 
-int create_file(const char *fn)
+int
+create_file(const char *fn)
 {
 	int fd = open(fn, O_RDWR | O_CREAT, 0666);
 	if (fd >= 0) {
@@ -730,7 +752,6 @@ if_dircase_exist(const char *dir, const char *subdir)
 				return strdup(oldpath);
 			}
 		}
-
 		closedir(dirp);
 	}
 

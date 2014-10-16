@@ -174,7 +174,7 @@ stop_u2ec(void)
 #endif
 
 #if defined(SRV_LPRD)
-void 
+void
 start_lpd(void)
 {
 	if (nvram_match("lprd_enable", "0")) 
@@ -194,7 +194,7 @@ stop_lpd(void)
 }
 #endif
 
-void 
+void
 start_p910nd(char *devlp)
 {
 	if (nvram_match("rawd_enable", "0")) 
@@ -206,7 +206,7 @@ start_p910nd(char *devlp)
 		eval("/usr/sbin/p910nd", "-f", devlp, "0");
 }
 
-void 
+void
 stop_p910nd(void)
 {
 	char* svcs[] = { "p910nd", NULL };
@@ -214,18 +214,21 @@ stop_p910nd(void)
 }
 
 #if defined(APP_FTPD)
-int is_ftp_run(void)
+int
+is_ftp_run(void)
 {
 	return (pids("vsftpd")) ? 1 : 0;
 }
 
-void stop_ftp(void)
+void
+stop_ftp(void)
 {
 	char* svcs[] = { "vsftpd", NULL };
 	kill_services(svcs, 3, 1);
 }
 
-void write_vsftpd_conf(void)
+void
+write_vsftpd_conf(void)
 {
 	FILE *fp;
 	int i_maxuser, i_ftp_mode;
@@ -290,7 +293,8 @@ void write_vsftpd_conf(void)
 	fclose(fp);
 }
 
-void run_ftp(void)
+void
+run_ftp(void)
 {
 	if (nvram_match("enable_ftp", "0")) 
 		return;
@@ -306,13 +310,15 @@ void run_ftp(void)
 		logmessage("FTP server", "daemon is started");
 }
 
-void control_ftp_fw(int is_run_before)
+void
+control_ftp_fw(int is_run_before)
 {
 	if (!is_run_before && is_ftp_run() && nvram_match("ftpd_wopen", "1") && nvram_match("fw_enable_x", "1"))
 		restart_firewall();
 }
 
-void restart_ftpd(void)
+void
+restart_ftpd(void)
 {
 	int is_run_before = is_ftp_run();
 
@@ -327,7 +333,8 @@ void restart_ftpd(void)
 
 #if defined(APP_SMBD)
 
-int check_existed_share(const char *string)
+int
+check_existed_share(const char *string)
 {
 	FILE *tp;
 	char buf[4096], target[256];
@@ -351,7 +358,8 @@ int check_existed_share(const char *string)
 	return 0;
 }
 
-int write_smb_conf(void)
+int
+write_smb_conf(void)
 {
 	FILE *fp;
 	int i_maxuser, i_smb_mode;
@@ -595,7 +603,8 @@ clean_smbd_trash(void)
 	doSystem("rm -f %s", "/var/log/*");
 }
 
-void stop_samba(int force_stop)
+void
+stop_samba(int force_stop)
 {
 	char* svcs[] = { "smbd", "nmbd", NULL };
 
@@ -701,18 +710,15 @@ void write_nfsd_exports(void)
 	fprintf(fp, "# %s\n\n", "auto-created file");
 
 	procpt = fopen("/proc/mounts", "r");
-	if (procpt)
-	{
-		while (fgets(line, sizeof(line), procpt))
-		{
+	if (procpt) {
+		while (fgets(line, sizeof(line), procpt)) {
 			if (sscanf(line, "%s %s %s %s %d %d", devname, mpname, system_type, mount_mode, &dummy1, &dummy2) != 6)
 				continue;
 			
 			if (!strcmp(system_type, "fuseblk"))
 				continue;
 			
-			if (!strncmp(devname, "/dev/sd", 7) && !strncmp(mpname, "/media/", 7))
-			{
+			if (!strncmp(devname, "/dev/sd", 7) && !strncmp(mpname, "/media/", 7)) {
 				nfsmm = "rw";
 				if (!strncmp(mount_mode, "ro", 2))
 					nfsmm = "ro";

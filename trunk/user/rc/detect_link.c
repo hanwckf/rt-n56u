@@ -83,7 +83,9 @@ dl_reset_state(void)
 static void
 dl_handle_link_wan(void)
 {
+#if defined (BOARD_GPIO_LED_WAN) || defined (BOARD_GPIO_LED_LAN)
 	int front_led_x;
+#endif
 
 	if (dl_status_wan_old != dl_status_wan) {
 		dl_status_wan_old = dl_status_wan;
@@ -150,7 +152,9 @@ dl_handle_link_wan(void)
 static void
 dl_handle_link_lan(void)
 {
+#if defined (BOARD_GPIO_LED_LAN)
 	int front_led_lan;
+#endif
 
 	if (dl_status_lan_old != dl_status_lan) {
 		dl_status_lan_old = dl_status_lan;
@@ -257,7 +261,10 @@ dl_on_timer(void)
 static void
 dl_update_leds(void)
 {
-	int dl_state, front_led_x;
+	int front_led_x;
+#if defined (BOARD_GPIO_LED_WAN) || defined (BOARD_GPIO_LED_LAN)
+	int dl_state;
+#endif
 
 #if defined (BOARD_GPIO_LED_WAN)
 	front_led_x = nvram_get_int("front_led_wan");
@@ -417,3 +424,4 @@ detect_link_main(int argc, char *argv[])
 
 	return 0;
 }
+

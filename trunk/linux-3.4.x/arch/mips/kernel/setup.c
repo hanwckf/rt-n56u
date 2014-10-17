@@ -624,6 +624,8 @@ void __init setup_arch(char **cmdline_p)
 
 	resource_init();
 	plat_smp_setup();
+
+	cpu_cache_init();
 }
 
 unsigned long kernelsp[NR_CPUS];

@@ -8,9 +8,9 @@ obj-y := sock.o request_sock.o skbuff.o iovec.o datagram.o stream.o scm.o \
 obj-$(CONFIG_SYSCTL) += sysctl_net_core.o
 
 obj-y		     += dev.o dev_addr_lists.o dst.o netevent.o \
-			neighbour.o rtnetlink.o utils.o link_watch.o filter.o \
-			sock_diag.o
+			neighbour.o rtnetlink.o utils.o link_watch.o filter.o
 
+obj-$(CONFIG_SOCK_DIAG) += sock_diag.o
 obj-$(CONFIG_ETHTOOL) += ethtool.o
 obj-$(CONFIG_XFRM) += flow.o
 obj-y += net-sysfs.o

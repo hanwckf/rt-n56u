@@ -23,7 +23,7 @@
 #include <net/inet_sock.h>
 #include <net/request_sock.h>
 
-#define INET_CSK_DEBUG 1
+//#define INET_CSK_DEBUG 1
 
 /* Cancel timers, when they are not required. */
 #undef INET_CSK_CLEAR_TIMERS

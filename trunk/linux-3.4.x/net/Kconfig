@@ -79,6 +79,9 @@ source "net/netlabel/Kconfig"
 
 endif # if INET
 
+config SOCK_DIAG
+	bool
+
 config NETWORK_SECMARK
 	bool "Security Marking"
 	help

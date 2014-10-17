@@ -172,7 +172,7 @@ config IPV6_SIT
 
 config IPV6_SIT_6RD
 	bool "IPv6: IPv6 Rapid Deployment (6RD) (EXPERIMENTAL)"
-	depends on IPV6_SIT && EXPERIMENTAL
+	depends on IPV6_SIT
 	default n
 	---help---
 	  IPv6 Rapid Deployment (6rd; draft-ietf-softwire-ipv6-6rd) builds upon
@@ -224,7 +224,7 @@ config IPV6_SUBTREES
 
 config IPV6_MROUTE
 	bool "IPv6: multicast routing (EXPERIMENTAL)"
-	depends on IPV6 && EXPERIMENTAL
+	depends on IPV6
 	---help---
 	  Experimental support for IPv6 multicast forwarding.
 	  If unsure, say N.

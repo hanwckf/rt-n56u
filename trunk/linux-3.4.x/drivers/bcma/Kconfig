@@ -1,7 +1,7 @@
 config BCMA_POSSIBLE
 	bool
 	depends on HAS_IOMEM && HAS_DMA
-	default y
+	default n
 
 menu "Broadcom specific AMBA"
 	depends on BCMA_POSSIBLE
@@ -21,7 +21,7 @@ config BCMA_BLOCKIO
 config BCMA_HOST_PCI_POSSIBLE
 	bool
 	depends on BCMA && PCI = y
-	default y
+	default n
 
 config BCMA_HOST_PCI
 	bool "Support for BCMA on PCI-host bus"

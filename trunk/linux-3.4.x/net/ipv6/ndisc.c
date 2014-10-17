@@ -27,7 +27,7 @@
  */
 
 /* Set to 3 to get tracing... */
-#define ND_DEBUG 1
+#define ND_DEBUG 0
 
 #define ND_PRINTK(fmt, args...) do { if (net_ratelimit()) { printk(fmt, ## args); } } while(0)
 #define ND_NOPRINTK(x...) do { ; } while(0)

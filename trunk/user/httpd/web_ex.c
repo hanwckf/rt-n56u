@@ -1962,9 +1962,13 @@ wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 	fp = fopen("/etc/resolv.conf", "r");
 	if (fp) {
 		int is_first = 1;
-		char dns_item[80] = {0};
-		while(fscanf(fp, "nameserver %s\n", dns_item) > 0) {
-			if (*dns_item && strcmp(dns_item, "127.0.0.1") != 0) {
+		char line_buf[96], dns_item[80];
+		while (fgets(line_buf, sizeof(line_buf), fp)) {
+			if (sscanf(line_buf, "nameserver %s\n", dns_item) < 1)
+				continue;
+			if (strlen(dns_item) < 7)
+				continue;
+			if (strcmp(dns_item, "127.0.0.1") != 0) {
 				if (is_first)
 					is_first = 0;
 				else
@@ -1972,6 +1976,7 @@ wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 				strcat(wan_dns, dns_item);
 			}
 		}
+		
 		fclose(fp);
 	}
 

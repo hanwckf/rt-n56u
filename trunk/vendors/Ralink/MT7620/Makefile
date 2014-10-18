@@ -1,8 +1,8 @@
 KERNELZ		= $(IMAGEDIR)/zImage
 RAMDISK		= $(IMAGEDIR)/ramdisk
 IMAGE		= $(IMAGEDIR)/$(CONFIG_FIRMWARE_PRODUCT_ID)_$(FIRMWARE_KERNEL_VER).$(FIRMWARE_ROOTFS_VER)-$(FIRMWARE_BUILDS_VER).trx
+BOARD_DIR	= $(ROOTDIR)/configs/boards/$(CONFIG_FIRMWARE_PRODUCT_ID)
 ROMFS_DIR	= $(ROOTDIR)/romfs
-RAMDISK_SIZE	:= $(shell echo $(CONFIG_BLK_DEV_RAM_SIZE))
 MKIMAGE_DIR	:= $(ROOTDIR)/tools/mkimage
 CUR_DIR		= $(shell pwd)
 COMP		= lzma
@@ -32,10 +32,17 @@ romfs:
 	for i in $(ROMFS_DIRS); do \
 		[ -d $(ROMFSDIR)/$$i ] || mkdir -p $(ROMFSDIR)/$$i; \
 	done
-	$(ROMFSINST) /etc_ro/Wireless/MT7620_AP_2T2R-4L_V15.bin
-ifeq ($(CONFIG_RT2860V2_AP_SINGLE_SKU),y)
-	$(ROMFSINST) /etc_ro/Wireless/SingleSKU_CE.dat
-	$(ROMFSINST) /etc_ro/Wireless/SingleSKU_FCC.dat
+	for i in $(BOARD_DIR)/SingleSKU*; do \
+		[ -f $$i ] && cp -f $$i $(ROMFSDIR)/etc_ro/Wireless/; \
+	done
+ifeq ($(CONFIG_EXTERNAL_PA_EXTERNAL_LNA),y)
+	$(ROMFSINST) MT7620_AP_2T2R-4L_external_LNA_external_PA_V15.bin /etc_ro/Wireless/MT7620_AP_2T2R-4L_V15.bin
+else
+ifeq ($(CONFIG_INTERNAL_PA_EXTERNAL_LNA),y)
+	$(ROMFSINST) MT7620_AP_2T2R-4L_external_LNA_internal_PA_V15.bin /etc_ro/Wireless/MT7620_AP_2T2R-4L_V15.bin
+else
+	$(ROMFSINST) MT7620_AP_2T2R-4L_internal_LNA_internal_PA_V15.bin /etc_ro/Wireless/MT7620_AP_2T2R-4L_V15.bin
+endif
 endif
 ifdef CONFIG_RT5592_AP
 ifeq ($(CONFIG_RT5592_AP_EP_SUPPORT),y)

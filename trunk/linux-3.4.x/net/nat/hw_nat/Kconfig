@@ -324,7 +324,7 @@ config  RA_HW_NAT_MCAST
 	  Multicast flow accelerated by HNAT
 
 config  RA_HW_NAT_PCI
-	depends on RA_HW_NAT && (USB_USBNET || HW_HAS_PCI)
+	depends on RA_HW_NAT && (USB_USBNET || PCI)
 	default n
 	bool "Speed up external PCI/USBNET adapters traffic by HNAT"
 

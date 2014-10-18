@@ -330,7 +330,8 @@ setPIN(const char *pin)
 	return 0;
 }
 
-int getBootVer(void)
+int
+getBootVer(void)
 {
 	unsigned char btv[5];
 	memset(btv, 0, sizeof(btv));
@@ -340,7 +341,8 @@ int getBootVer(void)
 	return 0;
 }
 
-int getPIN(void)
+int
+getPIN(void)
 {
 	unsigned char PIN[9];
 	memset(PIN, 0, sizeof(PIN));
@@ -350,10 +352,11 @@ int getPIN(void)
 	return 0;
 }
 
-int getCountryRegion(const char *str)
+int
+getCountryRegion(const char *str)
 {
 	int i_code;
-	
+
 	if (    (strcasecmp(str, "CA") == 0) || (strcasecmp(str, "CO") == 0) ||
 		(strcasecmp(str, "DO") == 0) || (strcasecmp(str, "GT") == 0) ||
 		(strcasecmp(str, "MX") == 0) || (strcasecmp(str, "NO") == 0) ||
@@ -365,14 +368,15 @@ int getCountryRegion(const char *str)
 		i_code = 5;   // channel 1-14
 	else
 		i_code = 1;   // channel 1-13
-	
+
 	return i_code;
 }
 
-int getCountryRegionABand(const char *str)
+int
+getCountryRegionABand(const char *str)
 {
 	int i_code;
-	
+
 	if ( (!strcasecmp(str, "AL")) ||
 				(!strcasecmp(str, "DZ")) ||
 				(!strcasecmp(str, "AU")) ||
@@ -502,18 +506,26 @@ int getCountryRegionABand(const char *str)
 	{
 		i_code = 1;
 	}
-	
+
 	return i_code;
 }
 
-static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
+static int
+check_sku_file_exist(const char *prefix, const char *spec, char *out_buff, size_t out_size)
+{
+	snprintf(out_buff, out_size, "/etc_ro/Wireless/SingleSKU%s_%s.dat", prefix, spec);
+	return check_if_file_exist(out_buff);
+}
+
+static int
+gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 {
 	FILE *fp;
-	char *p_str, *dat_file, *sku_file, *sku_link, *prefix;
-	char macbuf[36], list[2048];
+	char *p_str, *dat_file, *sku_file, *regspec, *prefix;
+	char macbuf[36], list[2048], sku_link[64];
 	int i, i_num,  i_val, i_wmm;
 	int i_mode_x, i_gmode, i_auth, i_encr, i_wep, i_wds;
-	int i_ssid_num, i_channel, i_channel_max, i_HTBW_MAX;
+	int i_ssid_num, i_channel, i_channel_max, i_HTBW_MAX, i_VHTBW_MAX;
 	int i_stream_tx, i_stream_rx, i_mphy, i_mmcs, i_fix, i_mcs;
 	int i_val_mbss[2];
 	char *c_val_mbss[2];
@@ -563,6 +575,8 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	i_mode_x = nvram_wlan_get_int(prefix, "mode_x");
 	i_gmode = nvram_wlan_get_int(prefix, "gmode");
 
+	regspec = nvram_safe_get("regspec_code");
+
 	if (!(fp=fopen(dat_file, "w+")))
 		return -1;
 
@@ -581,12 +595,26 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		
 		unlink(sku_file);
 		
-		sku_link = "/etc/storage/SingleSKU.dat";
+		snprintf(sku_link, sizeof(sku_link), "/etc/storage/SingleSKU%s.dat", "");
 		if (!check_if_file_exist(sku_link)) {
-			if (i_val == 0) // USA
-				sku_link = "/etc_ro/Wireless/SingleSKU_FCC.dat";
-			else
-				sku_link = "/etc_ro/Wireless/SingleSKU_CE.dat";
+			int sku_exist = 0;
+			char *spec_fallback = "CE";
+			
+			if (strcasecmp(p_str, "US") == 0 ||
+			    strcasecmp(p_str, "TW") == 0 ||
+			    strcasecmp(p_str, "JP") == 0) { // Use FCC fallback rule yet
+				spec_fallback = "FCC";
+				if (strcasecmp(regspec, "NCC") == 0)
+					sku_exist = check_sku_file_exist("", "NCC", sku_link, sizeof(sku_link));
+			} else {
+				if (strcasecmp(regspec, "AU") == 0)
+					sku_exist = check_sku_file_exist("", "AU", sku_link, sizeof(sku_link));
+				else if (strcasecmp(regspec, "SG") == 0)
+					sku_exist = check_sku_file_exist("", "SG", sku_link, sizeof(sku_link));
+			}
+			
+			if (!sku_exist)
+				check_sku_file_exist("", spec_fallback, sku_link, sizeof(sku_link));
 		}
 		
 		if (check_if_file_exist(sku_link))
@@ -601,12 +629,26 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	if (is_aband) {
 		unlink(sku_file);
 		
-		sku_link = "/etc/storage/SingleSKU_5G.dat";
+		snprintf(sku_link, sizeof(sku_link), "/etc/storage/SingleSKU%s.dat", "_5G");
 		if (!check_if_file_exist(sku_link)) {
-			if (i_val == 0) // USA
-				sku_link = "/etc_ro/Wireless/SingleSKU_5G_FCC.dat";
-			else
-				sku_link = "/etc_ro/Wireless/SingleSKU_5G_CE.dat";
+			int sku_exist = 0;
+			char *spec_fallback = "CE";
+			
+			if (strcasecmp(p_str, "US") == 0 ||
+			    strcasecmp(p_str, "TW") == 0 ||
+			    strcasecmp(p_str, "JP") == 0 || // Use FCC fallback rule yet
+			    strcasecmp(p_str, "DB") == 0) {
+				spec_fallback = "FCC";
+				if (strcasecmp(regspec, "NCC") == 0)
+					sku_exist = check_sku_file_exist("_5G", "NCC", sku_link, sizeof(sku_link));
+				else if (strcasecmp(regspec, "SG") == 0)
+					sku_exist = check_sku_file_exist("_5G", "SG", sku_link, sizeof(sku_link));
+				else if (strcasecmp(regspec, "AU") == 0)
+					sku_exist = check_sku_file_exist("_5G", "AU", sku_link, sizeof(sku_link));
+			}
+			
+			if (!sku_exist)
+				check_sku_file_exist("_5G", spec_fallback, sku_link, sizeof(sku_link));
 		}
 		
 		if (check_if_file_exist(sku_link))
@@ -632,6 +674,7 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		fprintf(fp, "SSID%d=%s\n", i, "");
 
 	//Network Mode
+	i_VHTBW_MAX = 0;
 	if (!is_aband) {
 		i_val = PHY_11BGN_MIXED;
 		switch (i_gmode)
@@ -679,6 +722,8 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 #endif
 		}
 	}
+	if (i_val == PHY_11VHT_N_A_MIXED || i_val == PHY_11VHT_N_MIXED)
+		i_VHTBW_MAX = 1;
 	fprintf(fp, "WirelessMode=%d\n", i_val);
 
 	//Channel
@@ -1232,8 +1277,7 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		//VHT_BW
 		i_val = nvram_wlan_get_int(prefix, "HT_BW");
 		i_val = (i_val > 1) ? 1 : 0;
-		if (i_HTBW_MAX == 0) i_val = 0;
-		if (i_gmode != 3 && i_gmode != 4) i_val = 0;
+		if (i_HTBW_MAX == 0 || i_VHTBW_MAX == 0) i_val = 0;
 		fprintf(fp, "VHT_BW=%d\n", i_val);
 		
 		//VHT_SGI
@@ -1579,12 +1623,14 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	return 0;
 }
 
-int gen_ralink_config_2g(int disable_autoscan)
+int
+gen_ralink_config_2g(int disable_autoscan)
 {
 	return gen_ralink_config(BOARD_2G_IN_SOC, 0, disable_autoscan);
 }
 
-int gen_ralink_config_5g(int disable_autoscan)
+int
+gen_ralink_config_5g(int disable_autoscan)
 {
 #if BOARD_HAS_5G_RADIO
 	return gen_ralink_config(BOARD_5G_IN_SOC, 1, disable_autoscan);

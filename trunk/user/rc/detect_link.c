@@ -172,7 +172,9 @@ dl_handle_link_lan(void)
 static void
 dl_handle_link_wisp(void)
 {
+#if defined (BOARD_GPIO_LED_WAN)
 	int front_led_wan;
+#endif
 
 	if (dl_status_wisp_old != dl_status_wisp) {
 		dl_status_wisp_old = dl_status_wisp;

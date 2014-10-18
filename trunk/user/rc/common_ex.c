@@ -135,7 +135,7 @@ valid_subver(char subfs)
 void
 get_eeprom_params(void)
 {
-	int i_offset, i_ret;
+	int i, i_offset, i_ret;
 	unsigned char buffer[32];
 	unsigned char ea[ETHER_ADDR_LEN];
 	char macaddr_wl[]  = "00:11:22:33:44:55";
@@ -143,6 +143,7 @@ get_eeprom_params(void)
 	char macaddr_lan[] = "00:11:22:33:44:55";
 	char macaddr_wan[] = "00:11:22:33:44:56";
 	char country_code[4];
+	char regspec_code[8];
 	char wps_pin[12];
 	char productid[16];
 	char fwver[8], fwver_sub[32], blver[32];
@@ -206,43 +207,65 @@ get_eeprom_params(void)
 	}
 #endif
 
-	nvram_set("il0macaddr", macaddr_lan); // LAN
-	nvram_set("il1macaddr", macaddr_wan); // WAN
-	nvram_set("wl_macaddr", macaddr_wl);  // 5 GHz
-	nvram_set("rt_macaddr", macaddr_rt);  // 2.4 GHZ
+	nvram_set_temp("il0macaddr", macaddr_lan); // LAN
+	nvram_set_temp("il1macaddr", macaddr_wan); // WAN
+	nvram_set_temp("wl_macaddr", macaddr_wl);  // 5 GHz
+	nvram_set_temp("rt_macaddr", macaddr_rt);  // 2.4 GHZ
 
 	/* reserved for Ralink. used as ASUS country code. */
 	memset(country_code, 0, sizeof(country_code));
-	if (FRead(country_code, OFFSET_COUNTRY_CODE, 2)<0) {
-		dbg("READ ASUS country code: Out of scope\n");
+	if (FRead(country_code, OFFSET_COUNTRY_CODE, 2) < 0) {
 		strcpy(country_code, "GB");
 	} else {
 		country_code[2] = 0;
-		if ((unsigned char)country_code[0]==0xff)
+		for (i = 1; i >= 0; i--) {
+			if ((unsigned char)country_code[i] > 0x7f)
+				country_code[i] = 0;
+		}
+		if (country_code[0] == 0)
 			strcpy(country_code, "GB");
 	}
-	
+
 	if (strlen(nvram_safe_get("rt_country_code")) == 0)
 		nvram_set("rt_country_code", country_code);
-	
+
 	if (strlen(nvram_safe_get("wl_country_code")) == 0)
 		nvram_set("wl_country_code", country_code);
-	
-	if (!strcasecmp(nvram_safe_get("wl_country_code"), "BR"))
-		nvram_set("wl_country_code", "UZ");
+
+	/* reserved for Ralink. used as ASUS RegSpec code. */
+	memset(regspec_code, 0, sizeof(regspec_code));
+	if (FRead(regspec_code, OFFSET_REGSPEC_CODE, 4) < 0) {
+		strcpy(regspec_code, "CE");
+	} else {
+		regspec_code[4] = 0;
+		for (i = 3; i >= 0; i--) {
+			if ((unsigned char)regspec_code[i] > 0x7f)
+				regspec_code[i] = 0;
+		}
+		if (strcasecmp(regspec_code, "CE") &&
+		    strcasecmp(regspec_code, "SG") &&
+		    strcasecmp(regspec_code, "AU") &&
+		    strcasecmp(regspec_code, "FCC") &&
+		    strcasecmp(regspec_code, "NCC"))
+			strcpy(regspec_code, "CE");
+	}
+	nvram_set_temp("regspec_code", regspec_code);
 
 	/* reserved for Ralink. used as ASUS pin code. */
 	memset(wps_pin, 0, sizeof(wps_pin));
-	if (FRead(wps_pin, OFFSET_PIN_CODE, 8)<0) {
-		dbg("READ ASUS pin code: Out of scope\n");
+	if (FRead(wps_pin, OFFSET_PIN_CODE, 8) < 0) {
 		strcpy(wps_pin, "12345670");
 	} else {
 		wps_pin[8] = 0;
-		if ((unsigned char)wps_pin[0]==0xff)
+		for (i = 7; i >= 0; i--) {
+			if ((unsigned char)wps_pin[i] < 0x30 ||
+			    (unsigned char)wps_pin[i] > 0x39)
+				wps_pin[i] = 0;
+		}
+		if (wps_pin[0] == 0)
 			strcpy(wps_pin, "12345670");
 	}
-
-	nvram_set("secret_code", wps_pin);
+	nvram_set_temp("secret_code", wps_pin);
 
 #if defined(USE_RT3352_MII)
  #define EEPROM_INIC_SIZE (512)
@@ -267,9 +290,8 @@ get_eeprom_params(void)
 	snprintf(productid, sizeof(productid), "%s", BOARD_PID);
 	memset(buffer, 0, sizeof(buffer));
 	if (FRead(buffer, 0x50020, 32)<0) {
-		dbg("READ firmware header: Out of scope\n");
-		nvram_set("productid", "unknown");
-		nvram_set("firmver", "unknown");
+		nvram_set_temp("productid", "unknown");
+		nvram_set_temp("firmver", "unknown");
 	} else {
 		strncpy(productid, buffer + 4, 12);
 		productid[12] = 0;
@@ -285,14 +307,14 @@ get_eeprom_params(void)
 #if defined(FWBLDSTR)
 	snprintf(fwver_sub, sizeof(fwver_sub), "%s-%s", fwver_sub, FWBLDSTR);
 #endif
-	nvram_set("productid", trim_r(productid));
-	nvram_set("firmver", trim_r(fwver));
-	nvram_set("firmver_sub", trim_r(fwver_sub));
+	nvram_set_temp("productid", trim_r(productid));
+	nvram_set_temp("firmver", trim_r(fwver));
+	nvram_set_temp("firmver_sub", trim_r(fwver_sub));
 
 	memset(buffer, 0, 4);
 	FRead(buffer, OFFSET_BOOT_VER, 4);
 	sprintf(blver, "%s-0%c-0%c-0%c-0%c", trim_r(productid), buffer[0], buffer[1], buffer[2], buffer[3]);
-	nvram_set("blver", trim_r(blver));
+	nvram_set_temp("blver", trim_r(blver));
 
 #if 0
 	// TXBF, not used yet

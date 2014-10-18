@@ -68,7 +68,7 @@
     defined (CONFIG_MT7610_AP_MESH) || defined (CONFIG_RLT_AP_MESH)
 #define HWNAT_DP_RAI_MESH
 #endif
-#endif /* HWNAT_DP_RAI_AP */
+#endif
 
 /*
  * TYPEDEFS AND STRUCTURES

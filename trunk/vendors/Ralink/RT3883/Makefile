@@ -1,8 +1,8 @@
 KERNELZ		= $(IMAGEDIR)/zImage
 RAMDISK		= $(IMAGEDIR)/ramdisk
 IMAGE		= $(IMAGEDIR)/$(CONFIG_FIRMWARE_PRODUCT_ID)_$(FIRMWARE_KERNEL_VER).$(FIRMWARE_ROOTFS_VER)-$(FIRMWARE_BUILDS_VER).trx
+BOARD_DIR	= $(ROOTDIR)/configs/boards/$(CONFIG_FIRMWARE_PRODUCT_ID)
 ROMFS_DIR	= $(ROOTDIR)/romfs
-RAMDISK_SIZE	:= $(shell echo $(CONFIG_BLK_DEV_RAM_SIZE))
 MKIMAGE_DIR	:= $(ROOTDIR)/tools/mkimage
 CUR_DIR		= $(shell pwd)
 COMP		= lzma
@@ -32,17 +32,20 @@ romfs:
 	for i in $(ROMFS_DIRS); do \
 		[ -d $(ROMFSDIR)/$$i ] || mkdir -p $(ROMFSDIR)/$$i; \
 	done
-ifneq ($(CONFIG_RT3352_INIC_MII),)
-	mkdir -p $(ROMFSDIR)/iNIC_RT3352;
-	$(ROMFSINST) /iNIC_RT3352/iNIC_ap.bin
-endif
-ifneq ($(CONFIG_RT3090_AP),)
-	$(ROMFSINST) /etc_ro/Wireless/RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin
-endif
+	for i in $(BOARD_DIR)/SingleSKU*; do \
+		[ -f $$i ] && cp -f $$i $(ROMFSDIR)/etc_ro/Wireless/ ;\
+	done
 ifeq ($(CONFIG_RALINK_RT3883_3T3R),y)
 	$(ROMFSINST) /etc_ro/Wireless/RT3883_AP_3T3R_V0_1.bin
 else
 	$(ROMFSINST) /etc_ro/Wireless/RT3662_AP_2T2R_V0_0.bin
+endif
+ifdef CONFIG_RT3090_AP
+	$(ROMFSINST) /etc_ro/Wireless/RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin
+endif
+ifdef CONFIG_RT3352_INIC_MII
+	mkdir -p $(ROMFSDIR)/iNIC_RT3352;
+	$(ROMFSINST) /iNIC_RT3352/iNIC_ap.bin
 endif
 
 romfs.post::

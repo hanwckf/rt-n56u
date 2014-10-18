@@ -32,8 +32,8 @@ romfs:
 	for i in $(ROMFS_DIRS); do \
 		[ -d $(ROMFSDIR)/$$i ] || mkdir -p $(ROMFSDIR)/$$i; \
 	done
-	for i in $(BOARD_DIR)/SingleSKU*; do \
-		[ -f $$i ] && cp -f $$i $(ROMFSDIR)/etc_ro/Wireless/; \
+	for i in `ls $(BOARD_DIR)/SingleSKU*.dat` ; do \
+		[ -f $$i ] && cp -f $$i $(ROMFSDIR)/etc_ro/Wireless; \
 	done
 ifeq ($(CONFIG_EXTERNAL_PA_EXTERNAL_LNA),y)
 	$(ROMFSINST) MT7620_AP_2T2R-4L_external_LNA_external_PA_V15.bin /etc_ro/Wireless/MT7620_AP_2T2R-4L_V15.bin

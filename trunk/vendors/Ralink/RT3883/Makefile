@@ -32,8 +32,8 @@ romfs:
 	for i in $(ROMFS_DIRS); do \
 		[ -d $(ROMFSDIR)/$$i ] || mkdir -p $(ROMFSDIR)/$$i; \
 	done
-	for i in $(BOARD_DIR)/SingleSKU*; do \
-		[ -f $$i ] && cp -f $$i $(ROMFSDIR)/etc_ro/Wireless/ ;\
+	for i in `ls $(BOARD_DIR)/SingleSKU*.dat` ; do \
+		[ -f $$i ] && cp -f $$i $(ROMFSDIR)/etc_ro/Wireless; \
 	done
 ifeq ($(CONFIG_RALINK_RT3883_3T3R),y)
 	$(ROMFSINST) /etc_ro/Wireless/RT3883_AP_3T3R_V0_1.bin

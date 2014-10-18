@@ -6,6 +6,7 @@
 # Board PID # Board Name       # PRODUCT # Note
 ##################################################################
 # RT-N14U   # ASUS RT-N14U     # MT7620  #
+# RT-AC51U  # ASUS RT-AC51U    # MT7620  #
 # RT-AC52U  # ASUS RT-AC52U    # MT7620  #
 # RT-N56U   # ASUS RT-N56U     # RT3883  #
 # RT-N65U   # ASUS RT-N65U     # RT3883  #
@@ -19,6 +20,10 @@ BOARD_NUM_USB_PORTS=2
 ifeq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-N14U")
 CFLAGS += -DBOARD_N14U
 BOARD_HAS_5G_RADIO=0
+BOARD_NUM_USB_PORTS=1
+endif
+ifeq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-AC51U")
+CFLAGS += -DBOARD_AC51U
 BOARD_NUM_USB_PORTS=1
 endif
 ifeq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-AC52U")

@@ -4122,8 +4122,8 @@ CHAR RT6352_AdjustChannelPwr(
 	CHAR target_power;
 	UCHAR sku_min_pwr = 0;
 	UINT32 mac_value;
-	USHORT e2p_data;
-	
+//	USHORT e2p_data;
+
 	//RT28xx_EEPROM_READ16(pAd, 0xD0, e2p_data);
 	target_power = (pAd->E2p_D0_Value & 0x3F);
 	sku_min_pwr = GetSkuChannelBasePwr(pAd, pAd->CommonCfg.SkuChannel);
@@ -4131,7 +4131,7 @@ CHAR RT6352_AdjustChannelPwr(
 	/* Get delta power based on the percentage specified from UI */
 	target_power += TotalDeltaPower;
 	
-#ifdef RTMP_INTERNAL_TX_ALC	
+#ifdef RTMP_INTERNAL_TX_ALC
 	/* TSSI mode */
 	if (pAd->TxPowerCtrl.bInternalTxALC == TRUE)
 	{
@@ -4203,7 +4203,7 @@ VOID RT6352_AdjustPerRatePwr(
 {
 	INT i, j;
 	INT32 channel_power = channelpower;
-	CHAR bbp_reg, bbp_r4;//, mcs_digpwr_diff;
+	CHAR bbp_reg = 0, bbp_r4 = 0;//, mcs_digpwr_diff;
 	INT32 mcs_digpwr_diff;
 	CONFIGURATION_OF_TX_POWER_CONTROL_OVER_MAC mcs_pwr_table = {0};	
 

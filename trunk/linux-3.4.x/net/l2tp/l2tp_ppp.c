@@ -103,6 +103,8 @@
 
 #define PPPOL2TP_DRV_VERSION	"V2.0"
 
+//#define DEBUG_MSG_DATA
+
 /* Space for UDP, L2TP and PPP headers */
 #define PPPOL2TP_HEADER_OVERHEAD	40
 
@@ -234,9 +236,11 @@ static void pppol2tp_recv(struct l2tp_session *session, struct sk_buff *skb, int
 
 	if (sk->sk_state & PPPOX_BOUND) {
 		struct pppox_sock *po;
+#ifdef DEBUG_MSG_DATA
 		PRINTK(session->debug, PPPOL2TP_MSG_DATA, KERN_DEBUG,
 		       "%s: recv %d byte data frame, passing to ppp\n",
 		       session->name, data_len);
+#endif
 
 		/* We need to forget all info related to the L2TP packet
 		 * gathered in the skb as we are going to reuse the same
@@ -257,9 +261,11 @@ static void pppol2tp_recv(struct l2tp_session *session, struct sk_buff *skb, int
 		po = pppox_sk(sk);
 		ppp_input(&po->chan, skb);
 	} else {
+#ifdef DEBUG_MSG_DATA
 		PRINTK(session->debug, PPPOL2TP_MSG_DATA, KERN_INFO,
 			 "%s: recv %d byte data frame, passing to L2TP socket\n",
 			 session->name, data_len);
+#endif
 
 		if (sock_queue_rcv_skb(sk, skb) < 0) {
 			session->stats.rx_errors++;

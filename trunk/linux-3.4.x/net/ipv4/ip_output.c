@@ -837,7 +837,7 @@ static int __ip_append_data(struct sock *sk,
 
 	if (cork->length + length > 0xFFFF - fragheaderlen) {
 		ip_local_error(sk, EMSGSIZE, fl4->daddr, inet->inet_dport,
-			       mtu-exthdrlen);
+			       mtu - (opt ? opt->optlen : 0));
 		return -EMSGSIZE;
 	}
 
@@ -1172,7 +1172,8 @@ ssize_t	ip_append_page(struct sock *sk, struct flowi4 *fl4, struct page *page,
 	maxfraglen = ((mtu - fragheaderlen) & ~7) + fragheaderlen;
 
 	if (cork->length + size > 0xFFFF - fragheaderlen) {
-		ip_local_error(sk, EMSGSIZE, fl4->daddr, inet->inet_dport, mtu);
+		ip_local_error(sk, EMSGSIZE, fl4->daddr, inet->inet_dport,
+			       mtu - (opt ? opt->optlen : 0));
 		return -EMSGSIZE;
 	}
 

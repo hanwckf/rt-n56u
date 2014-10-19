@@ -741,7 +741,7 @@ set_nf_conntrack(void)
 		i_nf_nat = 1;	// FCONE
 	else
 		i_nf_nat = 2;	// RCONE
-	fput_int("/proc/sys/net/nf_conntrack_nat_mode", i_nf_nat);
+	fput_int("/proc/sys/net/netfilter/nf_conntrack_nat_mode", i_nf_nat);
 
 	i_nf_val = nvram_safe_get_int("nf_max_conn", 16384, 4096, i_nf_lim);
 	fput_int("/proc/sys/net/nf_conntrack_max", i_nf_val);

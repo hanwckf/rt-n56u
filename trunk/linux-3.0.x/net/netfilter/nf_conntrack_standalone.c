@@ -464,7 +464,7 @@ static int log_invalid_proto_max = 255;
 
 static struct ctl_table_header *nf_ct_netfilter_header;
 
-static ctl_table nf_ct_sysctl_table[] = {
+static struct ctl_table nf_ct_sysctl_table[] = {
 	{
 		.procname	= "nf_conntrack_max",
 		.data		= &nf_conntrack_max,
@@ -509,19 +509,6 @@ static ctl_table nf_ct_sysctl_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec,
 	},
-	{ }
-};
-
-#define NET_NF_CONNTRACK_MAX 2089
-
-static ctl_table nf_ct_netfilter_table[] = {
-	{
-		.procname	= "nf_conntrack_max",
-		.data		= &nf_conntrack_max,
-		.maxlen		= sizeof(int),
-		.mode		= 0644,
-		.proc_handler	= proc_dointvec,
-	},
 #ifdef CONFIG_NAT_CONE
 	{
 		.procname	= "nf_conntrack_nat_mode",
@@ -531,6 +518,19 @@ static ctl_table nf_ct_netfilter_table[] = {
 		.proc_handler	= proc_dointvec
 	},
 #endif
+	{ }
+};
+
+#define NET_NF_CONNTRACK_MAX 2089
+
+static struct ctl_table nf_ct_netfilter_table[] = {
+	{
+		.procname	= "nf_conntrack_max",
+		.data		= &nf_conntrack_max,
+		.maxlen		= sizeof(int),
+		.mode		= 0644,
+		.proc_handler	= proc_dointvec,
+	},
 	{ }
 };
 

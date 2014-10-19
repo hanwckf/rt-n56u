@@ -607,21 +607,27 @@ void PpeKeepAliveHandler(struct sk_buff* skb, struct FoeEntry* foe_entry, int re
 int PpeHitBindForceToCpuHandler(struct sk_buff *skb, struct FoeEntry *foe_entry)
 {
 	struct net_device *dev = NULL;
+	int act_dp;
 
 #if !defined (CONFIG_HNAT_V2)
-	dev = DstPort[foe_entry->ipv4_hnapt.act_dp];		// act_dp: offset 13 dword for IPv4/IPv6
+	act_dp = foe_entry->ipv4_hnapt.act_dp;			// act_dp: offset 13 dword for IPv4/IPv6
+	dev = DstPort[act_dp];
 #else
 	if (IS_IPV4_GRP(foe_entry)) {
-		dev = DstPort[foe_entry->ipv4_hnapt.act_dp];	// act_dp: offset 11 dword for IPv4
+		act_dp = foe_entry->ipv4_hnapt.act_dp;		// act_dp: offset 11 dword for IPv4
+		dev = DstPort[act_dp];
 	}
 #if defined (CONFIG_RA_HW_NAT_IPV6)
 	else if (IS_IPV6_GRP(foe_entry)) {
-		dev = DstPort[foe_entry->ipv6_5t_route.act_dp];	// act_dp: offset 14 dword for IPv6
+		act_dp = foe_entry->ipv6_5t_route.act_dp;	// act_dp: offset 14 dword for IPv6
+		dev = DstPort[act_dp];
 	}
 #endif
+	else
+		act_dp = -1;
 #endif
 	if (!dev) {
-		NAT_PRINT("HNAT: %s, dest interface not exist!\n", __FUNCTION__);
+		NAT_PRINT("HNAT: %s, dest interface (dp: %d, pkt_type: %d) not exist!\n", __FUNCTION__, act_dp, foe_entry->bfib1.pkt_type);
 		return 1;
 	}
 

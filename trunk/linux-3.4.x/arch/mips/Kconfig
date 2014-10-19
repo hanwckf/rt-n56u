@@ -2,7 +2,7 @@ config MIPS
 	bool
 	default y
 #	select HAVE_GENERIC_DMA_COHERENT
-	select HAVE_IDE
+#	select HAVE_IDE
 	select HAVE_OPROFILE
 	select HAVE_IRQ_WORK
 	select HAVE_PERF_EVENTS
@@ -2637,11 +2637,11 @@ endmenu
 menu "Power management options"
 
 config ARCH_HIBERNATION_POSSIBLE
-	def_bool y
+	def_bool n
 	depends on SYS_SUPPORTS_HOTPLUG_CPU || !SMP
 
 config ARCH_SUSPEND_POSSIBLE
-	def_bool y
+	def_bool n
 	depends on SYS_SUPPORTS_HOTPLUG_CPU || !SMP
 
 source "kernel/power/Kconfig"

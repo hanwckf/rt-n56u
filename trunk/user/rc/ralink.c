@@ -595,7 +595,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		
 		unlink(sku_file);
 		
-		snprintf(sku_link, sizeof(sku_link), "/etc/storage/SingleSKU%s.dat", "");
+		snprintf(sku_link, sizeof(sku_link), "%s/SingleSKU%s.dat", "/etc/storage/wlan", "");
 		if (!check_if_file_exist(sku_link)) {
 			int sku_exist = 0;
 			char *spec_fallback = "CE";
@@ -629,7 +629,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	if (is_aband) {
 		unlink(sku_file);
 		
-		snprintf(sku_link, sizeof(sku_link), "/etc/storage/SingleSKU%s.dat", "_5G");
+		snprintf(sku_link, sizeof(sku_link), "%s/SingleSKU%s.dat", "/etc/storage/wlan", "_5G");
 		if (!check_if_file_exist(sku_link)) {
 			int sku_exist = 0;
 			char *spec_fallback = "CE";
@@ -1617,6 +1617,8 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		}
 	}
 #endif
+
+	load_user_config(fp, "/etc/storage/wlan", (is_aband) ? "AP_5G.dat" : "AP.dat", NULL);
 
 	fclose(fp);
 

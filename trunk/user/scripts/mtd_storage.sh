@@ -134,6 +134,7 @@ func_fill()
 	dir_ovpnsvr="$dir_storage/openvpn/server"
 	dir_ovpncli="$dir_storage/openvpn/client"
 	dir_inadyn="$dir_storage/inadyn"
+	dir_wlan="$dir_storage/wlan"
 
 	script_start="$dir_storage/start_script.sh"
 	script_started="$dir_storage/started_script.sh"
@@ -388,6 +389,22 @@ EOF
 # 192.168.1.100		Boo
 EOF
 		chmod 644 "$user_hosts"
+	fi
+
+	# create user AP confs
+	[ ! -d "$dir_wlan" ] && mkdir -p -m 755 "$dir_wlan"
+	if [ ! -f "$dir_wlan/AP.dat" ] ; then
+		cat > "$dir_wlan/AP.dat" <<EOF
+# Custom user AP conf file
+EOF
+		chmod 644 "$dir_wlan/AP.dat"
+	fi
+
+	if [ ! -f "$dir_wlan/AP_5G.dat" ] ; then
+		cat > "$dir_wlan/AP_5G.dat" <<EOF
+# Custom user AP conf file
+EOF
+		chmod 644 "$dir_wlan/AP_5G.dat"
 	fi
 
 	# create openvpn files

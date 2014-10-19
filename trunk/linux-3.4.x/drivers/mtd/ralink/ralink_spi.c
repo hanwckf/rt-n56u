@@ -352,7 +352,15 @@ static struct chip_info chips_data [] = {
 	{ "W25Q128BV",		0xef, 0x40180000, 64 * 1024, 256, 0 },
 	{ "W25Q256FV",		0xef, 0x40190000, 64 * 1024, 512, 1 },
 
+#if defined (CONFIG_RT2880_FLASH_32M)
+	{ "STUB",		0x00, 0xffffffff, 64 * 1024, 512, 1 },
+#elif defined (CONFIG_RT2880_FLASH_16M)
+	{ "STUB",		0x00, 0xffffffff, 64 * 1024, 256, 0 },
+#elif defined (CONFIG_RT2880_FLASH_8M)
+	{ "STUB",		0x00, 0xffffffff, 64 * 1024, 128, 0 },
+#else
 	{ "STUB",		0x00, 0xffffffff, 64 * 1024, 64,  0 },
+#endif
 };
 
 struct flash_info {

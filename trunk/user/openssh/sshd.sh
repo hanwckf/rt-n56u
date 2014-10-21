@@ -125,8 +125,6 @@ func_start()
 		func_create_config
 	fi
 	
-	mkdir -p /var/empty
-	chmod 700 /var/empty
 	touch /var/run/utmp
 	
 	if [ -n "$1" ] ; then

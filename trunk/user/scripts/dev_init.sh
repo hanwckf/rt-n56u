@@ -21,6 +21,7 @@ mdev -s
 mkdir -p -m 777 "/var/lock"
 mkdir -p -m 777 "/var/locks"
 mkdir -p -m 777 "/var/private"
+mkdir -p -m 700 "/var/empty"
 mkdir -p -m 777 "/var/lib"
 mkdir -p -m 777 "/var/log"
 mkdir -p -m 777 "/var/run"

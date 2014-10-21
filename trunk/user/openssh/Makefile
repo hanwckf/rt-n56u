@@ -3,7 +3,9 @@ SRC_NAME=openssh-5.9p1
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
-all:	config_test
+THISDIR = $(shell pwd)
+
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 config_test:
@@ -21,17 +23,13 @@ configure:
 		--sysconfdir=/etc/storage/openssh \
 		--libexecdir=/usr/libexec \
 		--with-pid-dir=/var/run \
-		--with-random=/dev/urandom \
+		--with-privsep-path=/var/empty \
+		--with-privsep-user=sshd \
 		--with-sandbox=no \
-		--with-privsep-user=nobody \
 		--without-pam \
 		--without-selinux \
 		--without-bsd-auth \
 		--without-kerberos5 \
-		--without-x \
-		--enable-shared \
-		--disable-static \
-		--disable-debug \
 		--disable-strip \
 		--disable-etc-default-login \
 		--disable-lastlog \
@@ -39,6 +37,7 @@ configure:
 		--disable-utmpx \
 		--disable-wtmp \
 		--disable-wtmpx \
+		--disable-libutil \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)
@@ -48,25 +47,16 @@ clean:
 		$(MAKE) -C $(SRC_NAME) distclean ; \
 	fi ; \
 	rm -f config_done
-	rm -f scp
-	rm -f ssh
-	rm -f ssh-keygen
-	rm -f sshd
-	rm -f sftp-server
 
 romfs:
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSH),y)
-	cp $(SRC_NAME)/scp .
-	cp $(SRC_NAME)/ssh .
-	cp $(SRC_NAME)/ssh-keygen .
-	cp $(SRC_NAME)/sshd .
-	$(ROMFSINST) /usr/bin/scp
-	$(ROMFSINST) /usr/bin/ssh
-	$(ROMFSINST) /usr/bin/ssh-keygen
-	$(ROMFSINST) /usr/sbin/sshd
+	mkdir -p $(INSTALLDIR)/etc_ro/ssh
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/moduli /etc_ro/ssh/moduli
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/scp /usr/bin/scp
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/ssh /usr/bin/ssh
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/ssh-keygen /usr/bin/ssh-keygen
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/sshd /usr/sbin/sshd
 	$(ROMFSINST) -p +x /usr/bin/sshd.sh
 endif
-	cp $(SRC_NAME)/sftp-server .
 	mkdir -p $(INSTALLDIR)/usr/libexec
-	$(ROMFSINST) /usr/libexec/sftp-server
-
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/sftp-server /usr/libexec/sftp-server

@@ -132,8 +132,8 @@ choose_dh(int min, int wantbits, int max)
 
 	if ((f = fopen(_PATH_DH_MODULI, "r")) == NULL &&
 	    (f = fopen(_PATH_DH_PRIMES, "r")) == NULL) {
-//		logit("WARNING: %s does not exist, using fixed modulus",
-//		    _PATH_DH_MODULI);
+		logit("WARNING: %s does not exist, using fixed modulus",
+		    _PATH_DH_MODULI);
 		return (dh_new_group14());
 	}
 

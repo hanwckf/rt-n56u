@@ -274,7 +274,6 @@ int ipv6_dev_ac_inc(struct net_device *dev, const struct in6_addr *addr)
 	/* aca_tstamp should be updated upon changes */
 	aca->aca_cstamp = aca->aca_tstamp = jiffies;
 	atomic_set(&aca->aca_refcnt, 2);
-	spin_lock_init(&aca->aca_lock);
 
 	aca->aca_next = idev->ac_list;
 	idev->ac_list = aca;

@@ -249,7 +249,7 @@ int try_sendto(fd_set * writefds)
 					/* uncatched error */
 					if(sockaddr_to_string(elt->dest_addr, addr_str, sizeof(addr_str)) <= 0)
 						addr_str[0] = '\0';
-					syslog(LOG_ERR, "%s(sock=%d, len=%u, dest=%s): sendto: %m",
+					syslog(LOG_DEBUG, "%s(sock=%d, len=%u, dest=%s): sendto: %m",
 					       "try_sendto", elt->sockfd, (unsigned)elt->len,
 					       addr_str);
 					ret--;

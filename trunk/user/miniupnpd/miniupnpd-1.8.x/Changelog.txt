@@ -1,4 +1,16 @@
-$Id: Changelog.txt,v 1.376 2014/09/06 08:30:11 nanard Exp $
+$Id: Changelog.txt,v 1.379 2014/10/22 08:52:17 nanard Exp $
+
+2014/10/22:
+  Discard NAT-PMP packets coming from the WAN
+
+2014/10/21:
+  small modifications to compile with exotic C libraries
+
+2014/10/14:
+  add comments in miniupnpd.conf regarding security
+
+2014/09/25:
+  DeletePortMapping now checks for client IP in Securemode
 
 2014/06/xx:
   Various fixes :

@@ -1,4 +1,4 @@
-/* $Id: upnpdescgen.c,v 1.77 2014/03/10 11:04:53 nanard Exp $ */
+/* $Id: upnpdescgen.c,v 1.78 2014/10/21 14:08:35 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2014 Thomas Bernard
@@ -368,9 +368,9 @@ static const struct argument GetExternalIPAddressArgs[] =
 
 static const struct argument DeletePortMappingArgs[] =
 {
-	{1, 11},
-	{1, 12},
-	{1, 14},
+	{1, 11},	/* RemoteHost */
+	{1, 12},	/* ExternalPort */
+	{1, 14},	/* PortMappingProtocol */
 	{0, 0}
 };
 

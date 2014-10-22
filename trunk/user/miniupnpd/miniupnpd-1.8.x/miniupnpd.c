@@ -1,4 +1,4 @@
-/* $Id: miniupnpd.c,v 1.200 2014/05/22 07:56:34 nanard Exp $ */
+/* $Id: miniupnpd.c,v 1.202 2014/10/22 08:52:17 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2014 Thomas Bernard
@@ -39,7 +39,7 @@
 #include <sys/param.h>
 #if defined(sun)
 #include <kstat.h>
-#else
+#elif !defined(__linux__)
 /* for BSD's sysctl */
 #include <sys/sysctl.h>
 #endif
@@ -267,7 +267,7 @@ ProcessIncomingHTTP(int shttpl, const char * protocol)
 		if(get_lan_for_peer((struct sockaddr *)&clientname) == NULL)
 		{
 			/* The peer is not a LAN ! */
-			syslog(LOG_WARNING,
+			syslog(LOG_DEBUG,
 			       "%s peer %s is not from a LAN, closing the connection",
 			       protocol, addr_str);
 			close(shttp);
@@ -1625,7 +1625,7 @@ main(int argc, char * * argv)
 		return 0;
 	}
 
-	syslog(LOG_INFO, "Starting%s%swith external interface %s",
+	syslog(LOG_NOTICE, "Starting%s%swith external interface %s",
 #ifdef ENABLE_NATPMP
 #ifdef ENABLE_PCP
 	       GETFLAG(ENABLENATPMPMASK) ? " NAT-PMP/PCP " : " ",
@@ -2051,7 +2051,7 @@ main(int argc, char * * argv)
 		}
 		i = try_sendto(&writeset);
 		if(i < 0) {
-			syslog(LOG_ERR, "try_sendto failed to send %d packets", -i);
+			syslog(LOG_DEBUG, "try_sendto failed to send %d packets", -i);
 		}
 #ifdef USE_MINIUPNPDCTL
 		for(ectl = ctllisthead.lh_first; ectl;)
@@ -2138,6 +2138,20 @@ main(int argc, char * * argv)
 				                               msg_buff, sizeof(msg_buff));
 				if (len < 1)
 					continue;
+				/* Check if the packet is coming from a LAN to enforce RFC6886 :
+				 * The NAT gateway MUST NOT accept mapping requests destined to the NAT
+				 * gateway's external IP address or received on its external network
+				 * interface.  Only packets received on the internal interface(s) with a
+				 * destination address matching the internal address(es) of the NAT
+				 * gateway should be allowed. */
+				lan_addr = get_lan_for_peer((struct sockaddr *)&senderaddr);
+				if(lan_addr == NULL) {
+					char sender_str[64];
+					sockaddr_to_string((struct sockaddr *)&senderaddr, sender_str, sizeof(sender_str));
+					syslog(LOG_DEBUG, "NAT-PMP/PCP packet sender %s not from a LAN, ignoring",
+					       sender_str);
+					continue;
+				}
 #ifdef ENABLE_PCP
 				if (msg_buff[0]==0) {  /* version equals to 0 -> means NAT-PMP */
 					ProcessIncomingNATPMPPacket(snatpmp[i], msg_buff, len,
@@ -2293,7 +2307,7 @@ shutdown:
 		if(SendSSDPGoodbye(snotify, addr_count * 2) < 0)
 #endif
 		{
-			syslog(LOG_ERR, "Failed to broadcast good-bye notifications");
+			syslog(LOG_DEBUG, "Failed to broadcast good-bye notifications");
 		}
 	}
 	/* try to send pending packets */

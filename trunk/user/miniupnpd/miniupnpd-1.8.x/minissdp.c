@@ -1,4 +1,4 @@
-/* $Id: minissdp.c,v 1.69 2014/09/06 08:17:01 nanard Exp $ */
+/* $Id: minissdp.c,v 1.70 2014/10/21 14:11:39 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2014 Thomas Bernard
@@ -26,6 +26,7 @@
 #include "getroute.h"
 #include "asyncsendto.h"
 #include "codelength.h"
+#include "macros.h"
 
 /* SSDP ip/port */
 #define SSDP_PORT (1900)
@@ -578,6 +579,9 @@ SendSSDPNotifies(int s, const char * host, unsigned short http_port,
 	const char * dest_str;
 	int i=0;
 	char ver_str[4];
+#ifndef ENABLE_IPV6
+	UNUSED(ipv6);
+#endif
 
 	memset(&sockname, 0, sizeof(sockname));
 #ifdef ENABLE_IPV6
@@ -1113,11 +1117,11 @@ SendSSDPGoodbye(int * sockets, int n_sockets)
 	struct sockaddr_in6 sockname6;
 	struct sockaddr * sockname;
 	socklen_t socknamelen;
+	int ipv6 = 0;
 #endif
 	int i, j;
 	char ver_str[4];
 	int ret = 0;
-	int ipv6 = 0;
 	const char * dest_str;
 
     memset(&sockname4, 0, sizeof(struct sockaddr_in));

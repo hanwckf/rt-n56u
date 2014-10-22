@@ -1,4 +1,4 @@
-/* $Id: iptpinhole.h,v 1.8 2014/05/15 10:15:05 nanard Exp $ */
+/* $Id: iptpinhole.h,v 1.9 2014/10/21 14:07:20 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2012 Thomas Bernard
@@ -8,6 +8,7 @@
 #define IPTPINHOLE_H_INCLUDED
 
 #ifdef ENABLE_UPNPPINHOLE
+#include <sys/types.h>
 
 int add_pinhole(const char * ifname,
                 const char * rem_host, unsigned short rem_port,

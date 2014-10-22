@@ -383,6 +383,7 @@ function checkDDNSReturnCode(){
                                                     <option value="WWW.SITELUTIONS.COM"  <% nvram_match_x("","ddns_server_x", "WWW.SITELUTIONS.COM","selected"); %>>www.sitelutions.com</option>
                                                     <option value="WWW.ZERIGO.COM"       <% nvram_match_x("","ddns_server_x", "WWW.ZERIGO.COM","selected"); %>>www.zerigo.com</option>
                                                     <option value="WWW.DHIS.ORG"         <% nvram_match_x("","ddns_server_x", "WWW.DHIS.ORG","selected"); %>>www.dhis.org</option>
+                                                    <option value="WWW.NIC.RU"           <% nvram_match_x("","ddns_server_x", "WWW.NIC.RU","selected"); %>>www.nic.ru (RU-CENTER)</option>
                                                     <option value="WWW.DUCKDNS.ORG"      <% nvram_match_x("","ddns_server_x", "WWW.DUCKDNS.ORG","selected"); %>>www.duckdns.org</option>
                                                     <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("","ddns_server_x", "WWW.TUNNELBROKER.NET","selected"); %>>www.tunnelbroker.net (HE)</option>
                                                     <option value="DNS.HE.NET"           <% nvram_match_x("","ddns_server_x", "DNS.HE.NET","selected"); %>>dns.he.net (HE)</option>

@@ -9,6 +9,7 @@
  *   - Hurricane-Electric (HE)
  *   - Loopia, and
  *   - nsupdate.info
+ *   - nic.ru (RU-CENTER)
  *
  * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
  * Copyright (C) 2006       Steve Horbachuk
@@ -147,6 +148,23 @@ static ddns_system_t loopia = {
 	.server_url   = "/XDynDNSServer/XDynDNS.php"
 };
 
+/*
+ * nic.ru (RU-CENTER)
+ * https://www.nic.ru/dns/service/dns_hosting/dns_master/dynamic_dns_for_developers.html
+ */
+static ddns_system_t nic_ru = {
+	.name         = "default@nic.ru",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = "api.nic.ru:443",
+	.checkip_url  = "/dyndns/checkip",
+
+	.server_name  = "api.nic.ru:443",
+	.server_url   = "/dyndns/update"
+};
+
 static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 {
 	return common_request(ctx, info, alias);
@@ -167,6 +185,7 @@ PLUGIN_INIT(plugin_init)
 	plugin_register(&henet);
 	plugin_register(&nsupdate_info_ipv4);
 	plugin_register(&loopia);
+	plugin_register(&nic_ru);
 }
 
 PLUGIN_EXIT(plugin_exit)
@@ -179,6 +198,7 @@ PLUGIN_EXIT(plugin_exit)
 	plugin_unregister(&henet);
 	plugin_unregister(&nsupdate_info_ipv4);
 	plugin_unregister(&loopia);
+	plugin_unregister(&nic_ru);
 }
 
 /**

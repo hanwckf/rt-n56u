@@ -150,8 +150,10 @@ static int server_transaction(ddns_t *ctx, int servernum)
 	int rc = 0;
 	http_trans_t *trans;
 	http_t *http = &ctx->http_to_ip_server[servernum];
+	ddns_info_t *info = &ctx->info[servernum];
 
 	http->verbose = ctx->dbg.level;
+	http->ssl_enabled = (info->checkip_name.port == HTTPS_DEFAULT_PORT) ? 1 : 0;
 	DO(http_init(http, "Checking for IP# change"));
 
 	/* Prepare request for IP server */
@@ -309,6 +311,8 @@ static int send_update(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias, int 
 
 	client->verbose = ctx->dbg.level;
 	client->ssl_enabled = info->ssl_enabled;
+	if (info->server_name.port == HTTPS_DEFAULT_PORT)
+		client->ssl_enabled = 1;
 	DO(http_init(client, "Sending IP# update to DDNS server"));
 
 	memset(ctx->work_buf, 0, ctx->work_buflen);

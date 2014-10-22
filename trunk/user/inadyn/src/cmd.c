@@ -178,6 +178,7 @@ static cmd_desc_t cmd_options_table[] = {
 	 "\t\t\t     default@changeip.com\n"
 	 "\t\t\t     default@zerigo.com\n"
 	 "\t\t\t     default@dhis.org\n"
+	 "\t\t\t     default@nic.ru\n"
 	 "\t\t\t     default@duckdns.org\n"
 	 "\t\t\t     default@loopia.com\n"
 	 "\t\t\t     update@asus.com, register@asus.com\n"
@@ -595,7 +596,7 @@ static int get_alias_handler(cmd_data_t *cmd, int num, void *context)
 	return 0;
 }
 
-static int get_name_and_port(char *p_src, char *p_dest_name, int *p_dest_port)
+static int get_name_and_port(const char *p_src, char *p_dest_name, int *p_dest_port)
 {
 	const char *p_port = strstr(p_src, ":");
 
@@ -1409,8 +1410,14 @@ int get_config_data(ddns_t *ctx, int argc, char *argv[])
 					rc = RC_DYNDNS_BUFFER_TOO_SMALL;
 					break;
 				}
-				strcpy(info->checkip_name.name, info->system->checkip_name);
-
+				if (strlen(info->system->checkip_name) > 0) {
+					int port = -1;
+					info->checkip_name.port = HTTP_DEFAULT_PORT;
+					if (get_name_and_port(info->system->checkip_name, info->checkip_name.name, &port) == 0) {
+						if (port > 0 && port < 65535)
+							info->checkip_name.port = port;
+					}
+				}
 				if (sizeof(info->checkip_url) < strlen(info->system->checkip_url)) {
 					rc = RC_DYNDNS_BUFFER_TOO_SMALL;
 					break;
@@ -1423,8 +1430,14 @@ int get_config_data(ddns_t *ctx, int argc, char *argv[])
 					rc = RC_DYNDNS_BUFFER_TOO_SMALL;
 					break;
 				}
-				strcpy(info->server_name.name, info->system->server_name);
-
+				if (strlen(info->system->server_name) > 0) {
+					int port = -1;
+					info->server_name.port = HTTP_DEFAULT_PORT;
+					if (get_name_and_port(info->system->server_name, info->server_name.name, &port) == 0) {
+						if (port > 0 && port < 65535)
+							info->server_name.port = port;
+					}
+				}
 				if (sizeof(info->server_url) < strlen(info->system->server_url)) {
 					rc = RC_DYNDNS_BUFFER_TOO_SMALL;
 					break;

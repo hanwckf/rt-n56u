@@ -1477,6 +1477,8 @@ function openLink(s) {
             tourl = "https://www.dnsomatic.com/create/";
         else if (o1.value == 'WWW.SITELUTIONS.COM')
             tourl = "https://sitelutions.com/signup";
+        else if (o1.value == 'WWW.NIC.RU')
+            tourl = "https://www.nic.ru/dns/service/dns_hosting/dns_master/dynamic_dns.html";
         else if (o1.value == 'WWW.DUCKDNS.ORG')
             tourl = "https://duckdns.org/";
         else if (o1.value == 'WWW.DHIS.ORG')

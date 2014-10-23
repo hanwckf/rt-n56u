@@ -364,7 +364,8 @@
 #define RALINK_PCIE0_RST		(1<<26)
 #define RALINK_PCIE1_RST		(1<<27)
 #define RALINK_MIPS_CNT_RST		(1<<28)
-#define RALINK_CRYPTO_RST		(1<<29)
+#define RALINK_SDXC_RST			(1<<30)
+#define RALINK_PPE_RST			(1<<31)
 
 // Clock Conf Register
 #define RALINK_UPHY0_CLK_EN		(1<<25)

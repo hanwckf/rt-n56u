@@ -37,7 +37,9 @@
 int (*ra_sw_nat_hook_rx) (struct sk_buff * skb) = NULL;
 int (*ra_sw_nat_hook_tx) (struct sk_buff * skb, int gmac_no) = NULL;
 int (*ra_sw_nat_hook_rs) (struct net_device *dev, int hold) = NULL;
+int (*ra_sw_nat_hook_ec) (int engine_init) = NULL;
 
 EXPORT_SYMBOL(ra_sw_nat_hook_rx);
 EXPORT_SYMBOL(ra_sw_nat_hook_tx);
 EXPORT_SYMBOL(ra_sw_nat_hook_rs);
+EXPORT_SYMBOL(ra_sw_nat_hook_ec);

@@ -47,6 +47,7 @@ static int hw_offload_tso = 1;
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
 extern int (*ra_sw_nat_hook_tx)(struct sk_buff *skb, int gmac_no);
+extern int (*ra_sw_nat_hook_ec)(int engine_init);
 struct FoeEntry *PpeFoeBase = NULL;
 dma_addr_t PpeFoeBasePhy = 0;
 #endif
@@ -287,6 +288,10 @@ static void fe_reset(void)
 	val |= RALINK_ESW_RST;
 #endif
 
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+	val |= RALINK_PPE_RST;
+#endif
+
 	/* MT7621 + TRGMII need to reset GMAC */
 #if defined (CONFIG_RALINK_MT7621) && defined (CONFIG_GE1_TRGMII_FORCE_1200)
 	val |= RALINK_ETH_RST;
@@ -313,8 +318,13 @@ static void fe_reset(void)
 	val &= ~(RALINK_ESW_RST);
 #endif
 
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+	val &= ~(RALINK_PPE_RST);
+#endif
+
 	val &= ~(RALINK_FE_RST);
 	sysRegWrite(REG_RSTCTRL, val);
+	udelay(10);
 }
 
 static void fe_mac1_addr_set(unsigned char p[6])
@@ -424,10 +434,6 @@ static void fe_forward_config(struct net_device *dev)
 	regVal2 = sysRegRead(GDMA2_FWD_CFG);
 	/* set unicast/multicast/broadcast/other frames forward to cpu */
 	regVal2 &= ~0xFFFF;
-#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-	if (ra_sw_nat_hook_rx != NULL)
-		regVal2 |= (GDM1_UFRC_P_PPE | GDM1_OFRC_P_PPE); // unicast and other frames forward to PPE
-#endif
 #endif
 
 #if defined (CONFIG_RALINK_MT7620)
@@ -436,10 +442,6 @@ static void fe_forward_config(struct net_device *dev)
 #else
 	/* set unicast/multicast/broadcast/other frames forward to cpu */
 	regVal &= ~0xFFFF;
-#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-	if (ra_sw_nat_hook_rx != NULL)
-		regVal |= (GDM1_UFRC_P_PPE | GDM1_OFRC_P_PPE); // unicast and other frames forward to PPE
-#endif
 #endif
 
 #if defined (CONFIG_RAETH_SPECIAL_TAG)
@@ -920,10 +922,14 @@ static inline int raeth_recv(struct net_device* dev)
 #else
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
 			if (rx_vlan_tag)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+				__vlan_hwaccel_put_tag(rx_skb, __constant_htons(ETH_P_8021Q), rx_vlan_vid);
+#else
 				__vlan_hwaccel_put_tag(rx_skb, rx_vlan_vid);
 #endif
 #endif
-				netif_rx(rx_skb);
+#endif
+			netif_rx(rx_skb);
 		}
 		
 		ei_local->rx0_skbuf[rx_dma_owner_idx] = new_skb;
@@ -1006,7 +1012,7 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 	}
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-	if (ra_sw_nat_hook_tx!= NULL) {
+	if (ra_sw_nat_hook_tx != NULL) {
 		if (ra_sw_nat_hook_tx(skb, gmac_no)==0) {
 			dev_kfree_skb(skb);
 			return NETDEV_TX_OK;
@@ -1664,6 +1670,12 @@ void ei_uninit(struct net_device *dev)
 	}
 #endif
 
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+	/* down PPE engine before free ring */
+	if (ra_sw_nat_hook_ec != NULL)
+		ra_sw_nat_hook_ec(0);
+#endif
+
 	raeth_ring_free(ei_local);
 }
 
@@ -1698,6 +1710,12 @@ int ei_open(struct net_device *dev)
 
 	tasklet_init(&ei_local->rx_tasklet, ei_receive, (unsigned long)dev);
 
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+	/* down PPE engine before FE reset */
+	if (ra_sw_nat_hook_ec != NULL)
+		ra_sw_nat_hook_ec(0);
+#endif
+
 	fe_reset();
 	fe_pdma_init(dev);
 	fe_phy_init();
@@ -1714,6 +1732,12 @@ int ei_open(struct net_device *dev)
 	fe_mac1_addr_set(dev->dev_addr);
 #if defined (CONFIG_PSEUDO_SUPPORT)
 	fe_mac2_addr_set(ei_local->PseudoDev->dev_addr);
+#endif
+
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+	/* up PPE engine after FE init */
+	if (ra_sw_nat_hook_ec != NULL)
+		ra_sw_nat_hook_ec(1);
 #endif
 
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)

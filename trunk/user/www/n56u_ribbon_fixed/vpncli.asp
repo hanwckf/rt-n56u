@@ -62,7 +62,7 @@ function initial(){
 
 function update_vpnc_status(vpnc_state){
 	this.vpnc_state_last = vpnc_state;
-	showhide_div('col_vpnc_state', (vpnc_state != '1' || !document.form.vpnc_enable[0].checked));
+	showhide_div('col_vpnc_state', (vpnc_state == '1' && document.form.vpnc_enable[0].checked) ? 1 : 0);
 }
 
 function applyRule(){

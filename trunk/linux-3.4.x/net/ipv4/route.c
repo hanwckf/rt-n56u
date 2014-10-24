@@ -3025,7 +3025,7 @@ static int rt_fill_info(struct net *net,
 			unsigned long now = jiffies;
 			
 			if (time_before(now, expires))
-				expires -= jiffies;
+				expires -= now;
 			else
 				expires = 0;
 		}

@@ -82,7 +82,7 @@ const char *g_port_desc_rgmii = "RGMII";
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-static u32 get_phy_ports_mask_lan(u32 include_cpu)
+static u32 get_ports_mask_lan(u32 include_cpu)
 {
 	u32 i, wan_bridge_mode, portmask_lan;
 
@@ -98,12 +98,12 @@ static u32 get_phy_ports_mask_lan(u32 include_cpu)
 	}
 
 	if (wan_bridge_mode == SWAPI_WAN_BRIDGE_DISABLE_WAN)
-		portmask_lan |= (1u << WAN_PORT_X);
+		portmask_lan |= (1u << WAN_PORT_MAC);
 
 	return portmask_lan;
 }
 
-static u32 get_phy_ports_mask_wan(u32 include_cpu)
+static u32 get_ports_mask_wan(u32 include_cpu, int is_phy_id)
 {
 	u32 i, wan_bridge_mode, portmask_wan;
 
@@ -111,7 +111,11 @@ static u32 get_phy_ports_mask_wan(u32 include_cpu)
 	if (wan_bridge_mode == SWAPI_WAN_BRIDGE_DISABLE_WAN)
 		return 0;
 
-	portmask_wan = (1u << WAN_PORT_X);
+	if (is_phy_id)
+		portmask_wan = (1u << WAN_PORT_PHY);
+	else
+		portmask_wan = (1u << WAN_PORT_MAC);
+
 	if (include_cpu)
 		portmask_wan |= (1u << WAN_PORT_CPU);
 
@@ -123,26 +127,30 @@ static u32 get_phy_ports_mask_wan(u32 include_cpu)
 	return portmask_wan;
 }
 
-static u32 get_phy_ports_mask_from_user(u32 user_port_mask)
+static u32 get_ports_mask_from_user(u32 user_port_mask, int is_phy_id)
 {
-	u32 phy_ports_mask = 0;
+	u32 gsw_ports_mask = 0;
 
 	if (user_port_mask & SWAPI_PORTMASK_LAN1)
-		phy_ports_mask |= (1u << LAN_PORT_1);
+		gsw_ports_mask |= (1u << LAN_PORT_1);
 	if (user_port_mask & SWAPI_PORTMASK_LAN2)
-		phy_ports_mask |= (1u << LAN_PORT_2);
+		gsw_ports_mask |= (1u << LAN_PORT_2);
 	if (user_port_mask & SWAPI_PORTMASK_LAN3)
-		phy_ports_mask |= (1u << LAN_PORT_3);
+		gsw_ports_mask |= (1u << LAN_PORT_3);
 	if (user_port_mask & SWAPI_PORTMASK_LAN4)
-		phy_ports_mask |= (1u << LAN_PORT_4);
-	if (user_port_mask & SWAPI_PORTMASK_WAN)
-		phy_ports_mask |= (1u << WAN_PORT_X);
+		gsw_ports_mask |= (1u << LAN_PORT_4);
+	if (user_port_mask & SWAPI_PORTMASK_WAN) {
+		if (is_phy_id)
+			gsw_ports_mask |= (1u << WAN_PORT_PHY);
+		else
+			gsw_ports_mask |= (1u << WAN_PORT_MAC);
+	}
 	if (user_port_mask & SWAPI_PORTMASK_CPU_LAN)
-		phy_ports_mask |= (1u << LAN_PORT_CPU);
+		gsw_ports_mask |= (1u << LAN_PORT_CPU);
 	if (user_port_mask & SWAPI_PORTMASK_CPU_WAN)
-		phy_ports_mask |= (1u << WAN_PORT_CPU);
+		gsw_ports_mask |= (1u << WAN_PORT_CPU);
 
-	return phy_ports_mask;
+	return gsw_ports_mask;
 }
 
 static char* get_port_desc(u32 port_id)
@@ -151,9 +159,6 @@ static char* get_port_desc(u32 port_id)
 
 	switch (port_id)
 	{
-	case WAN_PORT_X:
-		port_desc = (char*)g_port_desc_wan;
-		break;
 	case LAN_PORT_1:
 		port_desc = (char*)g_port_desc_lan1;
 		break;
@@ -168,6 +173,12 @@ static char* get_port_desc(u32 port_id)
 		break;
 	case LAN_PORT_CPU:
 		port_desc = (char*)g_port_desc_cpu;
+		break;
+	case WAN_PORT_MAC:
+#if (WAN_PORT_PHY != WAN_PORT_MAC)
+	case WAN_PORT_PHY:
+#endif
+		port_desc = (char*)g_port_desc_wan;
 		break;
 	default:
 		port_desc = (char*)g_port_desc_rgmii;
@@ -242,8 +253,8 @@ static void esw_igmp_ports_config(u32 wan_bridge_mode)
 	u32 i, reg_isc, mask_drp;
 
 	if (wan_bridge_mode != SWAPI_WAN_BRIDGE_DISABLE_WAN) {
-		mask_drp = get_phy_ports_mask_wan(1);
-		for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
+		mask_drp = get_ports_mask_wan(1, 0);
+		for (i = 0; i <= ESW_MAC_ID_MAX; i++) {
 			if ((mask_drp >> i) & 0x1)
 				esw_reg_set(REG_ESW_PORT_PIC_P0 + 0x100*i, 0x8000);
 		}
@@ -285,8 +296,8 @@ static void esw_igmp_mld_snooping(u32 enable_igmp, u32 enable_mld)
 			reg_pic_phy |= (1u << 8);	// IPM_01
 	}
 
-	mask_lan = get_phy_ports_mask_lan(0);
-	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
+	mask_lan = get_ports_mask_lan(0);
+	for (i = 0; i <= ESW_MAC_ID_MAX; i++) {
 		if ((mask_lan >> i) & 0x1)
 			esw_reg_set(REG_ESW_PORT_PIC_P0 + 0x100*i, reg_pic_phy);
 	}
@@ -450,7 +461,7 @@ static u32 find_vlan_slot(vlan_entry_t *vlan_entry, u32 start_idx, u32 cvid)
 
 static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 {
-	pvlan_member_t pvlan_member[ESW_PHY_ID_MAX+1];
+	pvlan_member_t pvlan_member[ESW_MAC_ID_MAX+1];
 	vlan_entry_t vlan_entry[ESW_VLAN_ID_MAX+1];
 	u32 pvid[SWAPI_VLAN_RULE_NUM];
 	u32 prio[SWAPI_VLAN_RULE_NUM];
@@ -486,10 +497,10 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	}
 
 	/* fill WAN port (use PVID 2 for handle untagged traffic -> VID2) */
-	pvlan_member[WAN_PORT_X].pvid = 2;
-	pvlan_member[WAN_PORT_X].prio = 0;
-	pvlan_member[WAN_PORT_X].tagg = 0;
-	pvlan_member[WAN_PORT_X].swap = 0;
+	pvlan_member[WAN_PORT_MAC].pvid = 2;
+	pvlan_member[WAN_PORT_MAC].prio = 0;
+	pvlan_member[WAN_PORT_MAC].tagg = 0;
+	pvlan_member[WAN_PORT_MAC].swap = 0;
 
 	/* VID #1 */
 	vlan_entry[0].valid = 1;
@@ -501,10 +512,10 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	vlan_entry[1].valid = 1;
 	vlan_entry[1].fid = 2;
 	vlan_entry[1].cvid = 2;
-	vlan_entry[1].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_X));
+	vlan_entry[1].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_MAC));
 
 	if (!vlan_filter_on && wan_bwan_isolation == SWAPI_WAN_BWAN_ISOLATION_BETWEEN) {
-		pvlan_member[WAN_PORT_X].pvid = next_vid;
+		pvlan_member[WAN_PORT_MAC].pvid = next_vid;
 		
 		/* VID #1 */
 		vlan_entry[0].svid = 1;		/* used under etag_ctrl=SWAP (CVID<->SVID) */
@@ -517,7 +528,7 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 		vlan_entry[2].fid = next_fid;
 		vlan_entry[2].cvid = next_vid;
 		vlan_entry[2].svid = 2;		/* used under etag_ctrl=SWAP (CVID<->SVID) */
-		vlan_entry[2].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_X));
+		vlan_entry[2].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_MAC));
 		next_fid++;
 		next_vid++;
 		
@@ -534,10 +545,10 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 				vlan_entry[vlan_idx].cvid = pvid[SWAPI_VLAN_RULE_WAN_IPTV];
 				vlan_entry[vlan_idx].svid = pvid[SWAPI_VLAN_RULE_WAN_IPTV];
 			}
-			vlan_entry[vlan_idx].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_X));
+			vlan_entry[vlan_idx].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_MAC));
 			
-			pvlan_member[WAN_PORT_X].tagg = 1;
-			pvlan_member[WAN_PORT_X].swap = 1;
+			pvlan_member[WAN_PORT_MAC].tagg = 1;
+			pvlan_member[WAN_PORT_MAC].swap = 1;
 		}
 	}
 
@@ -551,10 +562,10 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 				vlan_entry[vlan_idx].cvid = pvid[SWAPI_VLAN_RULE_WAN_INET];
 				vlan_entry[vlan_idx].svid = pvid[SWAPI_VLAN_RULE_WAN_INET];
 			}
-			vlan_entry[vlan_idx].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_X));
+			vlan_entry[vlan_idx].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_MAC));
 			
-			pvlan_member[WAN_PORT_X].tagg = 1;
-			pvlan_member[WAN_PORT_X].swap = 1;
+			pvlan_member[WAN_PORT_MAC].tagg = 1;
+			pvlan_member[WAN_PORT_MAC].swap = 1;
 		}
 	}
 
@@ -562,7 +573,7 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
 		int rule_id;
 		
-		if (i == WAN_PORT_X)
+		if (i == WAN_PORT_PHY)
 			continue;
 		
 		pvlan_member[i].prio = 0;
@@ -598,7 +609,7 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 					next_fid++;
 					next_vid++;
 				} else {
-					vlan_entry[next_vid-1].port_member |= ((1u << i) | (1u << WAN_PORT_X));
+					vlan_entry[next_vid-1].port_member |= ((1u << i) | (1u << WAN_PORT_MAC));
 				}
 			}
 		} else {
@@ -610,14 +621,14 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 					vlan_entry[vlan_idx].cvid = pvid[rule_id];
 					vlan_entry[vlan_idx].svid = pvid[rule_id];
 				}
-				vlan_entry[vlan_idx].port_member |= ((1u << i) | (1u << WAN_PORT_X));
+				vlan_entry[vlan_idx].port_member |= ((1u << i) | (1u << WAN_PORT_MAC));
 				
 				pvlan_member[i].pvid = pvid[rule_id];
 				pvlan_member[i].prio = prio[rule_id];
 				pvlan_member[i].tagg = tagg[rule_id];
 				
-				pvlan_member[WAN_PORT_X].tagg = 1;
-				pvlan_member[WAN_PORT_X].swap = 1;
+				pvlan_member[WAN_PORT_MAC].tagg = 1;
+				pvlan_member[WAN_PORT_MAC].swap = 1;
 			} else {
 				pvlan_member[i].pvid = 2;
 				
@@ -638,7 +649,7 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 #endif
 
 	/* configure PHY ports */
-	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
+	for (i = 0; i <= ESW_MAC_ID_MAX; i++) {
 		esw_vlan_pvid_set(i, pvlan_member[i].pvid, pvlan_member[i].prio);
 		if (!pvlan_member[i].tagg) {
 			esw_port_attrib_set(i, PORT_ATTRIBUTE_TRANSPARENT);
@@ -690,9 +701,7 @@ static void esw_vlan_init_vid1(void)
 	u32 i, port_member;
 
 	port_member = 0xFF;
-#if !defined (CONFIG_RAETH_HAS_PORT5)
-	port_member &= ~0x20;
-#endif
+	port_member &= ~(ESW_MASK_EXCLUDE);
 
 	/* configure PHY ports */
 	for (i = 0; i <= ESW_PORT_ID_MAX; i++) {
@@ -803,119 +812,39 @@ static void esw_soft_reset(void)
 	atomic_set(&g_switch_inited, 0);
 }
 
-#if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
-static void esw_init_ports_cpu_ppe(void)
-{
-	u32 reg_pcr6;
-	u32 reg_pvc6;
-	u32 reg_pmcr6;
-	u32 i;
-	u32 reg_pfc;
-	u32 reg_tpf;
-	u32 reg_pcr7;
-	u32 reg_pvc7;
-	u32 reg_psc7;
-	u32 reg_pmcr7;
-
-	/* set security mode, egress always tagged */
-	reg_pcr6  =  0x20ff0003;
-#if !defined (CONFIG_RAETH_HAS_PORT5)
-	reg_pcr6 &= ~0x00200000;
-#endif
-	/* user port, admit all frames */
-	reg_pvc6 = 0x81000000;
-
-	/* forced Port6 link up, 1Gbps FD */
-	reg_pmcr6 = 0x0005e33b;
-
-	/* PPE_PORT=7, PPE_EN=0 */
-	reg_pfc = 0x00000007;
-
-	/* disable forward to PPE */
-	reg_tpf = 0x00000000;
-
-	/* set security mode, egress always tagged */
-	reg_pcr7  =  0x20ff0003;
-#if !defined (CONFIG_RAETH_HAS_PORT5)
-	reg_pcr7 &= ~0x00200000;
-#endif
-	/* user port, admit all frames */
-	reg_pvc7 = 0x81000000;
-
-	/* enable Port7 SA learning */
-	reg_psc7 = 0x000fff00;
-
-	/* forced Port7 link down */
-	reg_pmcr7 = 0x0005e330;
-
-#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-	if (ra_sw_nat_hook_rx != NULL) {
-		/* PPE_PORT=7, PPE_EN=1 */
-		reg_pfc = 0x0000000f;
-		
-		/* enable forward to PPE (exclude broadcast) */
-		reg_tpf  = 0x00000031;
-#if defined (CONFIG_RA_HW_NAT_IPV6)
-		reg_tpf |= 0x00003100;
-#endif
-#if defined (CONFIG_RA_HW_NAT_MCAST)
-		reg_tpf |= 0x00000006;
-#if defined (CONFIG_RA_HW_NAT_IPV6)
-		reg_tpf |= 0x00000600;
-#endif
-#endif
-		/* set fallback mode and P6|P7 port matrix group */
-		reg_pcr6 &= ~0x003F0003;
-		reg_pcr7 &= ~0x003F0003;
-		reg_pcr6 |=  0x00000001;
-		reg_pcr7 |=  0x00000001;
-		
-		/* disable Port7 SA learning */
-		reg_psc7 |= 0x00000010;
-		
-		/* forced Port7 link up, 1Gbps FD */
-		reg_pmcr7 = 0x0005e33b;
-	}
-#endif
-	/* config PPE port */
-	esw_reg_set(REG_ESW_PFC, reg_pfc);
-	esw_reg_set(REG_ESW_PORT_PCR_P0 + 0x100*ESW_PORT_PPE, reg_pcr7);
-	esw_reg_set(REG_ESW_PORT_PVC_P0 + 0x100*ESW_PORT_PPE, reg_pvc7);
-	esw_reg_set(REG_ESW_PORT_PSC_P0 + 0x100*ESW_PORT_PPE, reg_psc7);
-	esw_reg_set(REG_ESW_MAC_PMCR_P0 + 0x100*ESW_PORT_PPE, reg_pmcr7);
-
-	/* config all PHY ports TO_PPE Forwarding */
-	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
-		esw_reg_set(REG_ESW_PORT_TPF_P0 + 0x100*i, reg_tpf);
-
-	/* config CPU port */
-	esw_reg_set(REG_ESW_PORT_PCR_P0 + 0x100*ESW_PORT_CPU, reg_pcr6);
-	esw_reg_set(REG_ESW_PORT_PVC_P0 + 0x100*ESW_PORT_CPU, reg_pvc6);
-	esw_reg_set(REG_ESW_MAC_PMCR_P0 + 0x100*ESW_PORT_CPU, reg_pmcr6);
-}
-#endif
-
 static void esw_init_ports_phy(void)
 {
-	u32 i, fwd_mask = 0xFF;
+	u32 i, fwd_mask;
 
-#if !defined (CONFIG_RAETH_HAS_PORT5)
-	fwd_mask &= ~0x20;
-#endif
-	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
+	fwd_mask = 0xFF;
+	fwd_mask &= ~(ESW_MASK_EXCLUDE);
+
+	for (i = 0; i <= ESW_MAC_ID_MAX; i++) {
 		/* set port ingress to security mode */
 		esw_port_matrix_set(i, fwd_mask, PVLAN_INGRESS_MODE_SECURITY);
 	}
 }
 
-static void esw_port_phy_power(u32 port_id, u32 power_on)
+static void esw_port_phy_power(u32 phy_port_id, u32 power_on)
 {
 	u32 esw_phy_mcr = 0x3100;
+	u32 phy_mdio_addr = phy_port_id;
 
-	if (port_id > ESW_PHY_ID_MAX)
+	if (phy_port_id > ESW_PHY_ID_MAX)
 		return;
 
-	if (mii_mgr_read(port_id, 0, &esw_phy_mcr)) {
+#if defined (CONFIG_P4_MAC_TO_PHY_MODE)
+	if (phy_port_id == 4)
+		phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
+#elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
+	if (phy_port_id == 5)
+		phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
+#elif defined (CONFIG_GE2_RGMII_AN)
+	if (phy_port_id == 5)
+		phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
+#endif
+
+	if (mii_mgr_read(phy_mdio_addr, 0, &esw_phy_mcr)) {
 		esw_phy_mcr &= ~((1<<11)|(1<<9));
 		
 		if (power_on)
@@ -923,10 +852,10 @@ static void esw_port_phy_power(u32 port_id, u32 power_on)
 		else
 			esw_phy_mcr |= (1<<11);
 		
-		mii_mgr_write(port_id, 0, esw_phy_mcr);
+		mii_mgr_write(phy_mdio_addr, 0, esw_phy_mcr);
 	}
 
-	g_port_phy_power[port_id] = (power_on) ? 1 : 0;
+	g_port_phy_power[phy_port_id] = (power_on) ? 1 : 0;
 }
 
 static void esw_storm_control(u32 port_id, int set_bcast, int set_mcast, int set_ucast, u32 rate_mbps)
@@ -988,6 +917,7 @@ static void esw_jumbo_control(u32 jumbo_frames_enabled)
 
 static void esw_led_mode(u32 led_mode)
 {
+#if !defined (CONFIG_MT7530_GSW)
 // LED mode #0: Link + Activity
 // LED mode #1: Link 100
 // LED mode #2: Link 100/10
@@ -1002,6 +932,9 @@ static void esw_led_mode(u32 led_mode)
 		reg_gpc1 |= 0xC000;
 
 	esw_reg_set(REG_ESW_GPC1, reg_gpc1);
+#else
+	// todo
+#endif
 }
 
 static u32 esw_status_link_port(u32 port_id)
@@ -1035,11 +968,11 @@ static u32 esw_status_link_ports(int is_wan_ports)
 	u32 portmask;
 
 	if (is_wan_ports)
-		portmask = get_phy_ports_mask_wan(0);
+		portmask = get_ports_mask_wan(0, 0);
 	else
-		portmask = get_phy_ports_mask_lan(0);
+		portmask = get_ports_mask_lan(0);
 
-	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
+	for (i = 0; i <= ESW_MAC_ID_MAX; i++)
 	{
 		if ((portmask >> i) & 0x1)
 		{
@@ -1082,7 +1015,7 @@ static void change_ports_power(u32 power_on, u32 port_mask)
 {
 	u32 i;
 
-	port_mask = get_phy_ports_mask_from_user(port_mask & 0xFF);
+	port_mask = get_ports_mask_from_user(port_mask & 0xFF, 1);
 
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
 	{
@@ -1096,7 +1029,7 @@ static int change_wan_ports_power(u32 power_on)
 	int power_changed = 0;
 	u32 i, ports_mask_wan;
 
-	ports_mask_wan = get_phy_ports_mask_wan(0);
+	ports_mask_wan = get_ports_mask_wan(0, 1);
 
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
 	{
@@ -1167,7 +1100,7 @@ static void vlan_accept_port_mode(u32 accept_mode, u32 port_mask)
 		break;
 	}
 
-	port_mask = get_phy_ports_mask_from_user(port_mask & 0xFF);
+	port_mask = get_ports_mask_from_user(port_mask & 0xFF, 0);
 
 	for (i = 0; i <= ESW_PORT_ID_MAX; i++) {
 		if ((port_mask >> i) & 0x1)
@@ -1186,8 +1119,8 @@ static void vlan_create_entry(u32 vlan4k_info, u32 vlan4k_mask, int set_port_vid
 	cvid = (vlan4k_info & 0x0FFF);
 	prio = ((vlan4k_info >> 12) & 0x7);
 	fid  = ((vlan4k_info >> 16) & 0xFF);
-	mask_member = get_phy_ports_mask_from_user((vlan4k_mask & 0xFF));
-	mask_untag  = get_phy_ports_mask_from_user((vlan4k_mask >> 16) & 0xFF);
+	mask_member = get_ports_mask_from_user((vlan4k_mask & 0xFF), 0);
+	mask_untag  = get_ports_mask_from_user((vlan4k_mask >> 16) & 0xFF, 0);
 #if defined (ESW_PORT_PPE)
 	if (mask_member & (1u << ESW_PORT_CPU))
 		mask_member |= (1u << ESW_PORT_PPE);
@@ -1215,11 +1148,11 @@ static void vlan_create_entry(u32 vlan4k_info, u32 vlan4k_mask, int set_port_vid
 #endif
 
 	/* set phy ports attrib */
-	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
+	for (i = 0; i <= ESW_MAC_ID_MAX; i++) {
 		if ((1u << i) & mask_member) {
 			if (!((1u << i) & mask_untag)) {
 				esw_port_attrib_set(i, PORT_ATTRIBUTE_USER);
-				esw_port_egress_mode_set(i, (i == WAN_PORT_X) ? PVLAN_EGRESS_SWAP : PVLAN_EGRESS_TAG);
+				esw_port_egress_mode_set(i, (i == WAN_PORT_MAC) ? PVLAN_EGRESS_SWAP : PVLAN_EGRESS_TAG);
 			} else {
 				if (set_port_vid)
 					esw_vlan_pvid_set(i, cvid, prio);
@@ -1233,19 +1166,21 @@ static void vlan_create_entry(u32 vlan4k_info, u32 vlan4k_mask, int set_port_vid
 			MTK_ESW_DEVNAME, (set_port_vid) ? "ports" : "entry", cvid, prio, mask_member, mask_untag, fid);
 }
 
-static void change_port_link_mode(u32 port_id, u32 port_link_mode)
+static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 {
 	u32 i_port_speed;
 	u32 i_port_flowc;
 	u32 esw_phy_ana = 0x05e1;
 	u32 esw_phy_mcr = 0x3100; /* 100 FD + auto-negotiation */
-#if defined (CONFIG_MT7530_GSW)
-	u32 esw_phy_gcr = 0;
-#endif
+	u32 phy_mdio_addr = phy_port_id;
+
 	char *link_desc = "Auto";
 	char *flow_desc = "ON";
 
-	if (g_port_link_mode[port_id] == port_link_mode)
+	if (phy_port_id > ESW_PHY_ID_MAX)
+		return;
+
+	if (g_port_link_mode[phy_port_id] == port_link_mode)
 		return;
 
 	i_port_speed =  (port_link_mode & 0x0F);
@@ -1320,31 +1255,51 @@ static void change_port_link_mode(u32 port_id, u32 port_link_mode)
 	{
 	case SWAPI_LINK_FLOW_CONTROL_DISABLE:
 		/* disable pause support (A5) */
-		esw_phy_ana &= ~(1<<10); 
+		esw_phy_ana &= ~(1<<10);
 		flow_desc = "OFF";
 		break;
 	}
 
-#if defined (CONFIG_MT7530_GSW)
-	/* set 1000Base-T control register (support only for MT7621 GSW/MT7530) */
-	mii_mgr_read(port_id, 9, &esw_phy_gcr);
-	if (i_port_speed > SWAPI_LINK_SPEED_MODE_AUTO_1000_FD)
-		esw_phy_gcr &= ~((1<<9)|(1<<8));	// turn off 1000Base-T Advertisement
-	else
-		esw_phy_gcr |= (1<<9)|(1<<8);		// turn on 1000Base-T Advertisement
-	mii_mgr_write(port_id, 9, esw_phy_gcr);
+#if defined (CONFIG_P4_MAC_TO_PHY_MODE)
+	if (phy_port_id == 4)
+		phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
+#elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
+	if (phy_port_id == 5)
+		phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
+#elif defined (CONFIG_GE2_RGMII_AN)
+	if (phy_port_id == 5)
+		phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
+#endif
+
+#if defined (CONFIG_MT7530_GSW) || defined (CONFIG_P4_MAC_TO_PHY_MODE) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
+#if defined (CONFIG_P4_MAC_TO_PHY_MODE)
+	if (phy_port_id == 4)
+#elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
+	if (phy_port_id == 5)
+#endif
+	{
+		u32 esw_phy_gcr = 0;
+		
+		/* set 1000Base-T control register (support only for MT7621 GSW/MT7530 or external GigaPHY) */
+		mii_mgr_read(phy_mdio_addr, 9, &esw_phy_gcr);
+		if (i_port_speed > SWAPI_LINK_SPEED_MODE_AUTO_1000_FD)
+			esw_phy_gcr &= ~((1<<9)|(1<<8));	// turn off 1000Base-T Advertisement
+		else
+			esw_phy_gcr |= (1<<9)|(1<<8);		// turn on 1000Base-T Advertisement
+		mii_mgr_write(phy_mdio_addr, 9, esw_phy_gcr);
+	}
 #endif
 
 	/* set PHY ability */
-	mii_mgr_write(port_id, 4, esw_phy_ana);
+	mii_mgr_write(phy_mdio_addr, 4, esw_phy_ana);
 
-	if (g_port_phy_power[port_id]) {
+	if (g_port_phy_power[phy_port_id]) {
 		if (!(esw_phy_mcr & (1<<12))) {
 			/* power-down PHY */
 			esw_phy_mcr |= (1<<11);
 			
 			/* set PHY mode */
-			mii_mgr_write(port_id, 0, esw_phy_mcr);
+			mii_mgr_write(phy_mdio_addr, 0, esw_phy_mcr);
 			
 			/* wait for PHY down */
 			msleep(100);
@@ -1361,11 +1316,11 @@ static void change_port_link_mode(u32 port_id, u32 port_link_mode)
 	}
 
 	/* set PHY mode */
-	mii_mgr_write(port_id, 0, esw_phy_mcr);
+	mii_mgr_write(phy_mdio_addr, 0, esw_phy_mcr);
 
-	g_port_link_mode[port_id] = port_link_mode;
+	g_port_link_mode[phy_port_id] = port_link_mode;
 
-	printk("%s - %s link speed: %s, flow control: %s\n", MTK_ESW_DEVNAME, get_port_desc(port_id), link_desc, flow_desc);
+	printk("%s - %s link speed: %s, flow control: %s\n", MTK_ESW_DEVNAME, get_port_desc(phy_port_id), link_desc, flow_desc);
 }
 
 static void change_storm_control_multicast_unknown(u32 control_rate_mbps)
@@ -1387,7 +1342,7 @@ static void change_storm_control_multicast_unknown(u32 control_rate_mbps)
 		
 		printk("%s - set unknown multicast and broadcast storm control rate as: %s\n", MTK_ESW_DEVNAME, rate_desc);
 		
-		for (i = 0; i <= ESW_PHY_ID_MAX; i++)
+		for (i = 0; i <= ESW_MAC_ID_MAX; i++)
 			esw_storm_control(i, 1, 1, 0, control_rate_mbps);
 	}
 }
@@ -1454,7 +1409,7 @@ void esw_link_status_changed(u32 port_id, int port_link)
 		atomic_set(&g_port_link_changed, 1);
 
 #if !ESW_PRINT_LINK_ALL
-	if (port_id != WAN_PORT_X)
+	if (port_id != WAN_PORT_PHY)
 		return;
 #endif
 
@@ -1468,11 +1423,6 @@ void esw_link_status_changed(u32 port_id, int port_link)
 
 int esw_control_post_init(void)
 {
-#if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
-	/* configure CPU and PPE ports */
-	esw_init_ports_cpu_ppe();
-#endif
-
 	/* configure PHY ports */
 	esw_init_ports_phy();
 
@@ -1600,7 +1550,7 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 		break;
 
 	case MTK_ESW_IOCTL_STATUS_LINK_PORT_WAN:
-		uint_result = esw_status_link_port(WAN_PORT_X);
+		uint_result = esw_status_link_port(WAN_PORT_MAC);
 		put_user(uint_result, (unsigned int __user *)arg);
 		break;
 	case MTK_ESW_IOCTL_STATUS_LINK_PORTS_WAN:
@@ -1633,7 +1583,7 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 		break;
 
 	case MTK_ESW_IOCTL_STATUS_SPEED_PORT_WAN:
-		uint_result = esw_status_speed_port(WAN_PORT_X);
+		uint_result = esw_status_speed_port(WAN_PORT_MAC);
 		put_user(uint_result, (unsigned int __user *)arg);
 		break;
 	case MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN1:
@@ -1654,7 +1604,7 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 		break;
 
 	case MTK_ESW_IOCTL_STATUS_CNT_PORT_WAN:
-		esw_status_mib_port(WAN_PORT_X, &port_counters);
+		esw_status_mib_port(WAN_PORT_MAC, &port_counters);
 		copy_to_user((arl_mib_counters_t __user *)arg, &port_counters, sizeof(arl_mib_counters_t));
 		break;
 	case MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN1:
@@ -1742,7 +1692,7 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 
 	case MTK_ESW_IOCTL_SPEED_PORT_WAN:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		change_port_link_mode(WAN_PORT_X, uint_value);
+		change_port_link_mode(WAN_PORT_PHY, uint_value);
 		break;
 	case MTK_ESW_IOCTL_SPEED_PORT_LAN1:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
@@ -1774,11 +1724,11 @@ int esw_get_traffic_port_wan(struct rtnl_link_stats64 *stats)
 {
 	ULARGE_INTEGER rx_goct, tx_goct;
 
-	rx_goct.u.LowPart = esw_get_port_mib_rgoc(WAN_PORT_X, &rx_goct.u.HighPart);
-	tx_goct.u.LowPart = esw_get_port_mib_tgoc(WAN_PORT_X, &tx_goct.u.HighPart);
+	rx_goct.u.LowPart = esw_get_port_mib_rgoc(WAN_PORT_MAC, &rx_goct.u.HighPart);
+	tx_goct.u.LowPart = esw_get_port_mib_tgoc(WAN_PORT_MAC, &tx_goct.u.HighPart);
 
-	stats->rx_packets = esw_get_port_mib_rgpc(WAN_PORT_X);
-	stats->tx_packets = esw_get_port_mib_tgpc(WAN_PORT_X);
+	stats->rx_packets = esw_get_port_mib_rgpc(WAN_PORT_MAC);
+	stats->tx_packets = esw_get_port_mib_tgpc(WAN_PORT_MAC);
 
 	stats->rx_bytes = rx_goct.QuadPart;
 	if (stats->rx_packets)
@@ -1835,6 +1785,10 @@ int esw_ioctl_init(void)
 	}
 
 #if !defined (CONFIG_MT7530_GSW)
+#if defined (CONFIG_P4_MAC_TO_PHY_MODE) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
+	/* set MT7620 MDIO pins to Normal mode */
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(3 << 7);
+#endif
 	/* early down PHY only for ESW, not for MT7530 */
 	power_down_all_phy();
 #endif

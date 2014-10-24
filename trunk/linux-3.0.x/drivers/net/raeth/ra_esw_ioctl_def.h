@@ -30,19 +30,49 @@
 
 #define ESW_PORT_CPU			6
 #define LAN_PORT_CPU			6
-#define WAN_PORT_CPU			6
 
-#if defined (CONFIG_MT7530_GSW) && \
-   (defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P0) || \
-    defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P4))
-//#define WAN_PORT_X			5				/* 8P8C WAN -> P5 (todo) */
-#define WAN_PORT_X			CONFIG_RAETH_ESW_PORT_WAN	/* 8P8C WAN */
-#else
-#define WAN_PORT_X			CONFIG_RAETH_ESW_PORT_WAN	/* 8P8C WAN */
-#endif
-
+#if defined (CONFIG_MT7530_GSW)
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P0)
+#define WAN_PORT_PHY			0	/* P0 PHY */
+#define WAN_PORT_MAC			5	/* P0 PHY -> P5 MAC */
+#define WAN_PORT_CPU			5
+#define ESW_MAC_ID_MAX			5
 #define ESW_PHY_ID_MAX			4
-#define ESW_VLAN_ID_MAX			15 /* fake for MT7530 */
+#define ESW_MASK_EXCLUDE		(1<<0)	/* P0 excluded */
+#elif defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+#define WAN_PORT_PHY			4	/* P4 PHY */
+#define WAN_PORT_MAC			5	/* P4 PHY -> P5 MAC */
+#define WAN_PORT_CPU			5
+#define ESW_MAC_ID_MAX			5
+#define ESW_PHY_ID_MAX			4
+#define ESW_MASK_EXCLUDE		(1<<4)	/* P4 excluded */
+#else
+#define WAN_PORT_PHY			CONFIG_RAETH_ESW_PORT_WAN	/* 8P8C WAN */
+#define WAN_PORT_MAC			WAN_PORT_PHY
+#define WAN_PORT_CPU			6
+#define ESW_MAC_ID_MAX			4
+#if defined (CONFIG_GE2_RGMII_AN)
+#define ESW_PHY_ID_MAX			5
+#else
+#define ESW_PHY_ID_MAX			4
+#endif
+#define ESW_MASK_EXCLUDE		(1<<5)	/* P5 excluded */
+#endif
+#else /* !CONFIG_MT7530_GSW */
+#define WAN_PORT_PHY			CONFIG_RAETH_ESW_PORT_WAN	/* 8P8C WAN */
+#define WAN_PORT_MAC			WAN_PORT_PHY
+#define WAN_PORT_CPU			6
+#if defined (CONFIG_RAETH_HAS_PORT5)
+#define ESW_MAC_ID_MAX			5
+#define ESW_PHY_ID_MAX			5
+#define ESW_MASK_EXCLUDE		0
+#else
+#define ESW_MAC_ID_MAX			4
+#define ESW_PHY_ID_MAX			4
+#define ESW_MASK_EXCLUDE		(1<<5)	/* P5 excluded */
+#endif
+#define ESW_VLAN_ID_MAX			15
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////
 

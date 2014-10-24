@@ -135,7 +135,7 @@ void RegModifyBits(uint32_t Addr, uint32_t Data, uint32_t Offset, uint32_t Len)
 
 	Value = RegRead(Addr);
 	Value &= ~Mask;
-	Value |= (Data << Offset) & Mask;;
+	Value |= (Data << Offset) & Mask;
 
 	RegWrite(Addr, Value);
 }

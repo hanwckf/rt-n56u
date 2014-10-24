@@ -1308,8 +1308,11 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 		uint32_t fpidx = 0; /* 0: to CPU */
 		if (is_mcast)
 			fpidx |= 0x80;
-#else
-		uint32_t fpidx = (is_mcast) ? 8 : 6; /* 6: force to CPU, 8: no force port */
+#endif
+#if defined (CONFIG_RALINK_MT7620)
+		uint32_t fpidx = 6; /* 6: force to P6 */
+		if (is_mcast)
+			fpidx = 8; /* 8: no force port */
 #endif
 		if (IS_IPV4_GRP(&foe_entry)) {
 			PpeSetInfoBlk2(&foe_entry.ipv4_hnapt.iblk2, fpidx, 0x3F, 0x3F);
@@ -1350,8 +1353,15 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 		uint32_t fpidx = 1; /* 1: to GSW */
 		if (is_mcast)
 			fpidx |= 0x80;
+#endif
+#if defined (CONFIG_RALINK_MT7620)
+#if defined (CONFIG_RAETH_HAS_PORT5) && !defined (CONFIG_RAETH_HAS_PORT4) && !defined (CONFIG_RAETH_ESW)
+		uint32_t fpidx = 5; /* 5: force P5 */
+#elif defined (CONFIG_RAETH_HAS_PORT4) && !defined (CONFIG_RAETH_HAS_PORT5) && !defined (CONFIG_RAETH_ESW)
+		uint32_t fpidx = 4; /* 4: force P4 */
 #else
-		uint32_t fpidx = 8; /* 8: no force port */
+		uint32_t fpidx = 8; /* 8: no force port (use DA) */
+#endif
 #endif
 		if (IS_IPV4_GRP(&foe_entry)) {
 			if ((foe_entry.ipv4_hnapt.vlan1 & VLAN_VID_MASK) != lan_vid)
@@ -2062,9 +2072,6 @@ static void PpeSetFoeGloCfgEbl(uint32_t Ebl)
 
 		/* Forced Port7 link down */
 		RegWrite(PMCR_P7, 0x5e330);
-
-		/* Enable SA Learning */
-		RegModifyBits(PSC_P7, 0, 4, 1);
 #else
 		/* PPE Engine Disable */
 		RegModifyBits(PPE_GLO_CFG, 0, 0, 1);
@@ -2425,6 +2432,7 @@ static void PpeSetCacheEbl(void)
 static void PpeSetSwitchVlanChk(int Ebl)
 {
 #if defined (CONFIG_RALINK_MT7620)
+#if defined (CONFIG_RAETH_ESW) || (defined (CONFIG_RAETH_HAS_PORT5) && defined (CONFIG_RAETH_HAS_PORT4))
 	uint32_t reg_p6, reg_p7;
 
 	reg_p6 = (RegRead(RALINK_ETH_SW_BASE + 0x2604)) & ~0xff0003;
@@ -2453,6 +2461,7 @@ static void PpeSetSwitchVlanChk(int Ebl)
 
 	RegWrite(RALINK_ETH_SW_BASE + 0x2604, reg_p6);
 	RegWrite(RALINK_ETH_SW_BASE + 0x2704, reg_p7);
+#endif
 #endif
 }
 

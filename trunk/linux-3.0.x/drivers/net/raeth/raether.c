@@ -1066,10 +1066,19 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 		}
 	}
 
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7620)
+	if (gmac_no == PSE_PORT_PPE)
+		txd_info4 = TX4_DMA_FP_BMAP(0x80); /* P7 */
+	else
+#if defined (CONFIG_RAETH_HAS_PORT5) && !defined (CONFIG_RAETH_HAS_PORT4) && !defined (CONFIG_RAETH_ESW)
+		txd_info4 = TX4_DMA_FP_BMAP(0x20); /* P5 */
+#elif defined (CONFIG_RAETH_HAS_PORT4) && !defined (CONFIG_RAETH_HAS_PORT5) && !defined (CONFIG_RAETH_ESW)
+		txd_info4 = TX4_DMA_FP_BMAP(0x10); /* P4 */
+#else
+		txd_info4 = 0; /* routing by DA */
+#endif
+#elif defined (CONFIG_RALINK_MT7621)
 	txd_info4 = TX4_DMA_FPORT(gmac_no);
-#elif defined (CONFIG_RALINK_MT7620)
-	txd_info4 = (gmac_no == PSE_PORT_PPE) ? TX4_DMA_FP_BMAP(0x80) : 0;
 #else
 	txd_info4 = (TX4_DMA_QN(3) | TX4_DMA_PN(gmac_no));
 #endif

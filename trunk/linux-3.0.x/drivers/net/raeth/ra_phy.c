@@ -335,6 +335,13 @@ static void mt7530_gsw_init(void)
 #endif
 
 	/* configure switch Port6 */
+#if defined (CONFIG_RAETH_GMAC2)
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x2604, 0x005f0003);		// P6 set security mode
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x2610, 0x810000c0);		// P6 is transparent port, admit all frames
+#else
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x2604, 0x205f0003);		// P6 set security mode, egress always tagged
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x2610, 0x81000000);		// P6 is user port, admit all frames
+#endif
 	if ((ralink_asic_rev_id & 0xFFFF) == 0x0101) {
 		sysRegWrite(RALINK_ETH_SW_BASE+0x100, 0x0005e30b);	// (GE1, Force 1000M/FD, FC OFF)
 		mii_mgr_write(MT7530_MDIO_ADDR, 0x3600, 0x5e30b);	// (P6, Force mode, Link Up, 1000Mbps, Full-Duplex, FC OFF)
@@ -345,9 +352,10 @@ static void mt7530_gsw_init(void)
 
 	/* configure switch Port5 */
 #if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x2504, 0x003f0003);		// P5 set security mode
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x2510, 0x810000c0);		// P5 is transparent port, admit all frames
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x00056300);		// P5 AN
 #else
-	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x00008000);		// (GE2, Link down)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x00008000);		// P5 link down
 #endif
 
@@ -457,10 +465,15 @@ static void mt7530_gsw_init(void)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7804, regValue);
 
 	/* configure switch Port6 */
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x2604, 0x205f0003);	// P6 set security mode, egress always tagged
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x2610, 0x81000000);	// P6 is user port, admit all frames
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x3600, 0x0005e33b);	// (P6, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
 
 	/* configure switch Port5 */
 #if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4)
+	/* todo */
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x2504, 0x203f0003);	// P5 set security mode, egress always tagged
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x2510, 0x81000000);	// P5 is user port, admit all frames
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x00056300);	// P5 AN
 #else
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x00008000);	// P5 link down
@@ -586,8 +599,52 @@ static void mt7620_gsw_init(void)
 #endif
 
 	if ((ralink_asic_rev_id & 0xf) >= 5) {
-		*(volatile u32 *)(RALINK_ETH_SW_BASE+0x701c) = 0x800000c; //enlarge FE2SW_IPG
+		*(volatile u32 *)(RALINK_ETH_SW_BASE+0x701c) = 0x800000c; // enlarge FE2SW_IPG
 	}
+
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x0004) = 0x00000007;	// PPE_PORT=7, PPE_EN=0
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x270c) = 0x000fff10;	// disable P7 mac learning
+#if defined (CONFIG_RAETH_ESW)
+	/* Use internal switch, enable vlan control, enable egress tags */
+#if defined (CONFIG_RAETH_HAS_PORT5)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2704) = 0x20ff0003;	// P7 has security mode, egress always tagged
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2604) = 0x20ff0003;	// P6 has security mode, egress always tagged
+#else
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2704) = 0x20df0003;	// P7 has security mode, egress always tagged
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2604) = 0x20df0003;	// P6 has security mode, egress always tagged
+#endif
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2710) = 0x81000000;	// P7 is user port, admit all frames
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2610) = 0x81000000;	// P6 is user port, admit all frames
+#else /* !CONFIG_RAETH_ESW */
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x7014) = 0x1fe0000c;	// disable PHY 0~4, set phy base address to 0
+#if defined (CONFIG_RAETH_HAS_PORT5) && !defined (CONFIG_RAETH_HAS_PORT4)
+	/* Use single external P5, disable ports learning and vlan control */
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2704) = 0x00e00000;	// P7 has matrix mode (P7|P6|P5)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2604) = 0x00e00000;	// P6 has matrix mode (P7|P6|P5)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2504) = 0x00e00000;	// P5 has matrix mode (P7|P6|P5)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2710) = 0x810000c0;	// P7 is transparent port, admit all frames
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2610) = 0x810000c0;	// P6 is transparent port, admit all frames
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2510) = 0x810000c0;	// P5 is transparent port, admit all frames
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x260c) = 0x000fff10;	// disable P6 mac learning
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x250c) = 0x000fff10;	// disable P5 mac learning
+#elif defined (CONFIG_RAETH_HAS_PORT4) && !defined (CONFIG_RAETH_HAS_PORT5)
+	/* Use single external P4, disable ports learning and vlan control */
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2704) = 0x00d00000;	// P7 has matrix mode (P7|P6|P4)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2604) = 0x00d00000;	// P6 has matrix mode (P7|P6|P4)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2404) = 0x00d00000;	// P4 has matrix mode (P7|P6|P4)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2710) = 0x810000c0;	// P7 is transparent port, admit all frames
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2610) = 0x810000c0;	// P6 is transparent port, admit all frames
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2410) = 0x810000c0;	// P4 is transparent port, admit all frames
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x260c) = 0x000fff10;	// disable P6 mac learning
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x240c) = 0x000fff10;	// disable P4 mac learning
+#else
+	/* Use both external P5 & P4, enable vlan control, enable egress tags */
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2704) = 0x20f00003;	// P7 has security mode, egress always tagged
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2604) = 0x20f00003;	// P6 has security mode, egress always tagged
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2710) = 0x81000000;	// P7 is user port, admit all frames
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2610) = 0x81000000;	// P6 is user port, admit all frames
+#endif
+#endif
 
 	/* Port 6 (CPU) */
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3600) = 0x0005e33b;	// (P6, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
@@ -599,24 +656,13 @@ static void mt7620_gsw_init(void)
 	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
 	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RGMii Mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e33b;	// (P5, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x7014) = 0x1fec000c;	// disable PHY 0~4, set phy base address to 12
-#if 0
-	/* MT7620 need mac learning for PPE! */
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x250c) = 0x000fff10;	// disable P5 mac learning
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x260c) = 0x000fff10;	// disable P6 mac learning
-#endif
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x7014) |= 0x000c0000;	// set phy base address to 12
 #elif defined (CONFIG_P5_RGMII_TO_MT7530_MODE)
 	/* Use P5 for connect to external MT7530 (P6) */
 	*(volatile u32 *)(REG_GPIOMODE) &= ~(3 << 7);			// set MDIO to Normal mode
 	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
 	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RGMii Mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e33b;	// (P5, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x7014) = 0x1fe0000c;	// disable PHY 0~4, set phy base address to 0
-#if 0
-	/* MT7620 need mac learning for PPE! */
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x250c) = 0x000fff10;	// disable P5 mac learning
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x260c) = 0x000fff10;	// disable P6 mac learning
-#endif
 	/* Initial config MT7530 via MDIO */
 	mt7530_gsw_init();
 #elif defined (CONFIG_P5_MII_TO_MAC_MODE)
@@ -998,10 +1044,6 @@ void fe_phy_init(void)
 #endif
 #endif
 
-#if defined (CONFIG_RAETH_ESW_CONTROL)
-	esw_control_post_init();
-#endif
-
 	/* Case4: RT3883/MT7621 GE1 + GigaPhy */
 #if defined (CONFIG_GE1_RGMII_AN)
 #if defined (CONFIG_RALINK_MT7621)
@@ -1083,5 +1125,13 @@ void fe_phy_init(void)
 #endif /* CONFIG_RALINK_MT7621 */
 
 #endif /* CONFIG_RAETH_ROUTER || CONFIG_100PHY */
+
+#if defined (CONFIG_RALINK_MT7621) && !defined (CONFIG_RAETH_GMAC2)
+	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x00008000);		// (GE2, Link down)
+#endif
+
+#if defined (CONFIG_RAETH_ESW_CONTROL)
+	esw_control_post_init();
+#endif
 }
 

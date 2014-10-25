@@ -128,7 +128,7 @@ romfs:
 	done
 
 clean:
-	for i in $(dir_y) $(dir_n) $(dir_) ; do \
+	for i in `ls -d *` ; do \
 		if [ -d $$i ] ; then \
 			$(MAKE) -C $$i clean ; \
 			rm -f $(DESTDIR)/.installed_$$i ; \

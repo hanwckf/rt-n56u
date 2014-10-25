@@ -147,7 +147,7 @@ romfs:
 	done
 
 clean:
-	for i in $(dir_y) $(dir_n) $(dir_) ; do \
+	for i in `ls -d *` ; do \
 		[ ! -d $$i ] || \
 		$(MAKE) -C $$i clean ; \
 	done

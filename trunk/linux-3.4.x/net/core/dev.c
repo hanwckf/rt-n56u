@@ -2660,7 +2660,8 @@ ip:
 		if (ip_is_fragment(iph))
 			ip_proto = 0;
 
-		memcpy(&flow->src, &iph->saddr, sizeof(flow->src) + sizeof(flow->dst));
+		flow->src = iph->saddr;
+		flow->dst = iph->daddr;
 		break;
 	}
 	case __constant_htons(ETH_P_IPV6): {

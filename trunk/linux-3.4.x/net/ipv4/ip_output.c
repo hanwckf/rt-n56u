@@ -318,20 +318,6 @@ int ip_output(struct sk_buff *skb)
 			    !(IPCB(skb)->flags & IPSKB_REROUTED));
 }
 
-/*
- * copy saddr and daddr, possibly using 64bit load/stores
- * Equivalent to :
- *   iph->saddr = fl4->saddr;
- *   iph->daddr = fl4->daddr;
- */
-static void ip_copy_addrs(struct iphdr *iph, const struct flowi4 *fl4)
-{
-	BUILD_BUG_ON(offsetof(typeof(*fl4), daddr) !=
-		     offsetof(typeof(*fl4), saddr) + sizeof(fl4->saddr));
-	memcpy(&iph->saddr, &fl4->saddr,
-	       sizeof(fl4->saddr) + sizeof(fl4->daddr));
-}
-
 int ip_queue_xmit(struct sk_buff *skb, struct flowi *fl)
 {
 	struct sock *sk = skb->sk;
@@ -394,8 +380,8 @@ packet_routed:
 		iph->frag_off = 0;
 	iph->ttl      = ip_select_ttl(inet, &rt->dst);
 	iph->protocol = sk->sk_protocol;
-	ip_copy_addrs(iph, fl4);
-
+	iph->saddr    = fl4->saddr;
+	iph->daddr    = fl4->daddr;
 	/* Transport layer set skb->h.foo itself. */
 
 	if (inet_opt && inet_opt->opt.optlen) {
@@ -1356,7 +1342,8 @@ struct sk_buff *__ip_make_skb(struct sock *sk,
 	iph->frag_off = df;
 	iph->ttl = ttl;
 	iph->protocol = sk->sk_protocol;
-	ip_copy_addrs(iph, fl4);
+	iph->saddr = fl4->saddr;
+	iph->daddr = fl4->daddr;
 	ip_select_ident(skb, sk);
 
 	if (opt) {

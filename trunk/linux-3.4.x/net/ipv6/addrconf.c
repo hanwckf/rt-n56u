@@ -2616,8 +2616,7 @@ static int addrconf_notify(struct notifier_block *this, unsigned long event,
 		if (event == NETDEV_UP) {
 			if (!addrconf_qdisc_ok(dev)) {
 				/* device is not ready yet. */
-				printk(KERN_INFO
-					"ADDRCONF(NETDEV_UP): %s: "
+				pr_debug("ADDRCONF(NETDEV_UP): %s: "
 					"link is not ready\n",
 					dev->name);
 				break;
@@ -2643,8 +2642,7 @@ static int addrconf_notify(struct notifier_block *this, unsigned long event,
 				idev->if_flags |= IF_READY;
 			}
 
-			printk(KERN_INFO
-					"ADDRCONF(NETDEV_CHANGE): %s: "
+			pr_info("ADDRCONF(NETDEV_CHANGE): %s: "
 					"link becomes ready\n",
 					dev->name);
 

@@ -73,7 +73,7 @@
 
 #include "kmap_skb.h"
 
-#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 #include "../net/nat/hw_nat/ra_nat.h"
 #endif
 
@@ -871,7 +871,7 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 	bool fastpath;
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-#if defined (HNAT_USE_TAILROOM)
+#if defined(HNAT_USE_TAILROOM)
 	ntail += FOE_INFO_LEN;
 	size  += FOE_INFO_LEN;
 #endif
@@ -924,7 +924,7 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 #if defined(HNAT_USE_HEADROOM)
 	memcpy(data, FOE_INFO_START_ADDR(skb), FOE_INFO_LEN); // copy FoE Info to headroom
-#elif defined (HNAT_USE_TAILROOM)
+#elif defined(HNAT_USE_TAILROOM)
 	memcpy((data + size - FOE_INFO_LEN), FOE_INFO_START_ADDR(skb), FOE_INFO_LEN); // copy FoE Info to tailroom
 #endif
 #endif

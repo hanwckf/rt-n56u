@@ -89,7 +89,7 @@ extern char wan_ppp[IFNAMSIZ];
 #endif
 #endif
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE) 
+#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 static inline int is_local_svc(u_int8_t protonm)
 {
 	if (protonm == IPPROTO_GRE ||

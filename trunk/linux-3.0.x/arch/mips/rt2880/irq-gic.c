@@ -191,13 +191,13 @@ static irqreturn_t ipi_call_interrupt(int irq, void *dev_id)
 static struct irqaction irq_resched = {
 	.handler	= ipi_resched_interrupt,
 	.flags		= IRQF_PERCPU,
-	.name		= "IPI_resched"
+	.name		= "ipi_resched"
 };
 
 static struct irqaction irq_call = {
 	.handler	= ipi_call_interrupt,
 	.flags		= IRQF_PERCPU,
-	.name		= "IPI_call"
+	.name		= "ipi_call"
 };
 
 static void __init fill_ipi_map1(int baseintr, int cpu, int cpupin)

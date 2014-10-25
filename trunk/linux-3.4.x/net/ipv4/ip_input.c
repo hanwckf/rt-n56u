@@ -267,7 +267,8 @@ int ip_local_deliver(struct sk_buff *skb)
 	}
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-#if defined (CONFIG_HNAT_V2)
+#if defined(CONFIG_HNAT_V2)
+	/* skip SIT tunnels */
 	if (ip_hdr(skb)->protocol != IPPROTO_IPV6)
 #endif
 	FOE_ALG_MARK(skb);

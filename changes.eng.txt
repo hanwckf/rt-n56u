@@ -1,20 +1,111 @@
-            ASUS RT-N56U/N65U/N14U custom firmware 3.X.3.8-081 by Padavan
+        ASUS RT-N56U/N65U/N14U/AC51U custom firmware 3.X.3.8-085 by Padavan
 
+
+Project sources:
+git clone https://code.google.com/p/rt-n56u/
+
+Git HTTP frontend:
+http://code.google.com/p/rt-n56u/source/list
 
 ATTENTION:
 1) After the first upgrade from official firmware, all settings will be erased. Do not load
    settings (CFG file) from official firmware!!!
-2) If your current custom firmware version is N56U 1.1.2.2-006 or lower, it is absolutely 
+2) After uprgade from any official ASUS firmware, WAN MAC address for RT-N14U is dynamically changed
+   (not permanent) in last octet. Please check MAC binding from your ISP.
+3) If your current custom firmware version is N56U 1.1.2.2-006 or lower, it is absolutely
    necessary to save your settings to a .CFG file using WebGUI BEFORE upgrading to a newer version.
    After the upgrade, restore your settings from the saved .CFG file in a usual way.
 
 WARNING:
 These features are NO LONGER AVAILABLE:
-- WPS/WSC (completely disabled due to the serious security hole).
-- ASUS Download Master is no longer supported. It was replaced by Transmission.
+ - WPS/WSC (completely disabled due to the serious security hole).
+ - ASUS Download Master is no longer supported. It was replaced by Transmission.
+
+NOTE:
+After uprgade to 3.X.3.8-085 from any previous builds, please:
+ - Clear browser cache to properly render WebUI pages.
+ - Sync OpenVPN client and server settings with new controls.
+ - Update region timezone (for Russia only).
+ - Remember that the manual NVRAM reset is not required.
+After manual NVRAM reset:
+ - Both Wireless AP security is WPA2-Personal with pre-shared key 1234567890 by default.
+ - HTTP and Telnet/SSH login:passw is admin:admin by default.
 
 
                               LIST OF CHANGES
+
+3.X.3.8-085:
+----------------------------------------------------------
+[RT-N14U]
+- Migrate to kernel-3.4.x tree.
+- Updated kernel-3.4.x to 3.4.104.
+- Added support 64 bit MIB counters to embedded switch driver.
+- Improved embedded switch control.
+- Fixed critical HNATv2 bug (MAC corruption).
+- Fixed RADIUS authentication (WPA/WPA2 Enterprise).
+- Fixed custom WiFi LED control.
+[RT-AC51U]
+- Initial release (please report any issues).
+- Added support 11ac mode for Ralink/MTK platform.
+[RT-N56U]
+- Migrate to kernel-3.4.x tree.
+- Updated kernel-3.4.x to 3.4.104.
+[RT-N65U]
+- Backports kernel RCU code from linux 3.2 branch.
+- Backports kernel futex code from linux 3.2 branch.
+- Backports kernel net subsytem from linux 3.2 branch.
+- Backports kernel ext2/3/4 code from linux 3.2 branch.
+- Updated RTL8367RB switch code from Realtek SDK 1.2.10.
+[Common changes]
+- Updated Ralink kernel arch code from to SDK 4.2.1.0.
+- Updated NCM, MBIM and usbnet code up to kernel 3.17.
+- Updated L2TP kernel driver code, optimisations.
+- Updated OpenSSL to v1.0.1j, disable SSLv3 code.
+- Updated OpenVPN to 2.3.4.
+- Updated pppd to 2.4.7.
+- Updated radvd to 1.15.
+- Updated dnsmasq to v2.72+.
+- Updated miniupnpd to 1.8.20141022.
+- Updated dropbear SSH to 2013.65.
+- Updated INADYN to v1.99.12, added support SSL mode and new DDNS services.
+- Updated usb-modeswitch to 2.2.0, updated usb-modeswitch-data up to 2014-05-29.
+- Updated transmission to 2.84+.
+- Updated miniDLNA to 1.1.4.
+- Updated xUPnPd to rev399.
+- Updated exFAT code to 1.2.9.
+- Updated timezones for Russia.
+- Added 'Detect Internet' feature.
+- Added 64 bit stats for ppp and usbnet interfaces.
+- Added PHY link force modes w/o autonegotiation to ethernet switch control.
+- Added force IGMP version control.
+- Added NAT mode to VPN server.
+- Added pure routed mode w/o NAT to static VPN client.
+- Added user up/down script to OpenVPN client.
+- Added route all traffic through static VPN client.
+- Added access restriction control for VPN server clients.
+- Added DHCP server in AP mode (for static LAN IP only).
+- Added domain field in AP mode.
+- Added WebUI intranet status page in AP mode.
+- Added WebUI session traffic for Modem/PPTP/L2TP, show DHCP lease expires time.
+- Added port control for remote syslog server.
+- Added root share mode for SMB server.
+- Added support WINS server feature.
+- Added control LLTD and ASUS discovery services from WebUI.
+- Added hub-ctrl utility for control USB ports power/clock.
+- Added busybox applets microcom, adduser, addgroup.
+- Improved HW_NAT offload for WiFi interfaces.
+- Improved networkmap LAN scanner.
+- Improved contol for QMI-based USB modems.
+- Improved iptables firewall rules.
+- Improved WPS/Reset buttons sensitivity, expand front LED's tweak modes.
+- Increased up to 64 clients for APSoC WiFi driver.
+- Fixed forwarding a few LAN packets w/o NAT to WAN during router startup.
+- Fixed missing TCPMSS target for VPN client and server on WAN IPoE connection.
+- Fixed broken DNS servers after manual stop OpenVPN client.
+- Fixed broken apostrophe and slash chars for pppd username/password.
+- Fixed broken OpenSSH DH moduli.
+- Fixed background syslog fetching from WebUI float panel.
+
 
 3.X.3.8-081:
 ----------------------------------------------------------
@@ -963,5 +1054,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-04/12/2014
+10/26/2014
 Padavan

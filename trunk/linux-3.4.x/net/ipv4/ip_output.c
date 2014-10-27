@@ -1369,9 +1369,8 @@ out:
 	return skb;
 }
 
-int ip_send_skb(struct sk_buff *skb)
+int ip_send_skb(struct net *net, struct sk_buff *skb)
 {
-	struct net *net = sock_net(skb->sk);
 	int err;
 
 	err = ip_local_out(skb);
@@ -1394,7 +1393,7 @@ int ip_push_pending_frames(struct sock *sk, struct flowi4 *fl4)
 		return 0;
 
 	/* Netfilter gets whole the not fragmented skb. */
-	return ip_send_skb(skb);
+	return ip_send_skb(sock_net(sk), skb);
 }
 
 /*

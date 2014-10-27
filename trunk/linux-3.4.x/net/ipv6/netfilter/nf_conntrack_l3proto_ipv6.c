@@ -196,39 +196,13 @@ out:
 	return nf_conntrack_confirm(skb);
 }
 
-static unsigned int __ipv6_conntrack_in(struct net *net,
-					unsigned int hooknum,
-					struct sk_buff *skb,
-					int (*okfn)(struct sk_buff *))
-{
-	struct sk_buff *reasm = skb->nfct_reasm;
-
-	/* This packet is fragmented and has reassembled packet. */
-	if (reasm) {
-		/* Reassembled packet isn't parsed yet ? */
-		if (!reasm->nfct) {
-			unsigned int ret;
-
-			ret = nf_conntrack_in(net, PF_INET6, hooknum, reasm);
-			if (ret != NF_ACCEPT)
-				return ret;
-		}
-		nf_conntrack_get(reasm->nfct);
-		skb->nfct = reasm->nfct;
-		skb->nfctinfo = reasm->nfctinfo;
-		return NF_ACCEPT;
-	}
-
-	return nf_conntrack_in(net, PF_INET6, hooknum, skb);
-}
-
 static unsigned int ipv6_conntrack_in(unsigned int hooknum,
 				      struct sk_buff *skb,
 				      const struct net_device *in,
 				      const struct net_device *out,
 				      int (*okfn)(struct sk_buff *))
 {
-	return __ipv6_conntrack_in(dev_net(in), hooknum, skb, okfn);
+	return nf_conntrack_in(dev_net(in), PF_INET6, hooknum, skb);
 }
 
 static unsigned int ipv6_conntrack_local(unsigned int hooknum,
@@ -243,7 +217,7 @@ static unsigned int ipv6_conntrack_local(unsigned int hooknum,
 			pr_notice("ipv6_conntrack_local: packet too short\n");
 		return NF_ACCEPT;
 	}
-	return __ipv6_conntrack_in(dev_net(out), hooknum, skb, okfn);
+	return nf_conntrack_in(dev_net(out), PF_INET6, hooknum, skb);
 }
 
 static struct nf_hook_ops ipv6_conntrack_ops[] __read_mostly = {

@@ -3012,7 +3012,7 @@ static netdev_tx_t myri10ge_sw_tso(struct sk_buff *skb,
 	netdev_tx_t status;
 
 	segs = skb_gso_segment(skb, dev->features & ~NETIF_F_TSO6);
-	if (IS_ERR(segs))
+	if (IS_ERR_OR_NULL(segs))
 		goto drop;
 
 	while (segs) {

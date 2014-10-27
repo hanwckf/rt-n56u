@@ -1803,14 +1803,6 @@ static void sit_route_add(struct net_device *dev)
 }
 #endif
 
-static void addrconf_add_lroute(struct net_device *dev)
-{
-	struct in6_addr addr;
-
-	ipv6_addr_set(&addr,  htonl(0xFE800000), 0, 0, 0);
-	addrconf_prefix_route(&addr, 64, dev, 0, 0);
-}
-
 static struct inet6_dev *addrconf_add_dev(struct net_device *dev)
 {
 	struct inet6_dev *idev;
@@ -1828,8 +1820,6 @@ static struct inet6_dev *addrconf_add_dev(struct net_device *dev)
 	if (!(dev->flags & IFF_LOOPBACK))
 		addrconf_add_mroute(dev);
 
-	/* Add link local route */
-	addrconf_add_lroute(dev);
 	return idev;
 }
 
@@ -2548,10 +2538,9 @@ static void addrconf_sit_config(struct net_device *dev)
 
 	sit_add_v4_addrs(idev);
 
-	if (dev->flags&IFF_POINTOPOINT) {
+	if (dev->flags&IFF_POINTOPOINT)
 		addrconf_add_mroute(dev);
-		addrconf_add_lroute(dev);
-	} else
+	else
 		sit_route_add(dev);
 }
 #endif

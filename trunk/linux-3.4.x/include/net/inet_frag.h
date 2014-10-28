@@ -3,9 +3,12 @@
 
 struct netns_frags {
 	int			nqueues;
-	atomic_t		mem;
 	struct list_head	lru_list;
 
+	/* Its important for performance to keep lru_list and mem on
+	 * separate cachelines
+	 */
+	atomic_t		mem ____cacheline_aligned_in_smp;
 	/* sysctls */
 	int			timeout;
 	int			high_thresh;
@@ -13,12 +16,11 @@ struct netns_frags {
 };
 
 struct inet_frag_queue {
-	struct hlist_node	list;
-	struct netns_frags	*net;
-	struct list_head	lru_list;   /* lru list member */
 	spinlock_t		lock;
-	atomic_t		refcnt;
 	struct timer_list	timer;      /* when will this queue expire? */
+	struct list_head	lru_list;   /* lru list member */
+	struct hlist_node	list;
+	atomic_t		refcnt;
 	struct sk_buff		*fragments; /* list of received fragments */
 	struct sk_buff		*fragments_tail;
 	ktime_t			stamp;
@@ -31,6 +33,8 @@ struct inet_frag_queue {
 #define INET_FRAG_LAST_IN	1
 
 	u16			max_size;
+
+	struct netns_frags	*net;
 };
 
 #define INETFRAGS_HASHSZ		64
@@ -44,19 +48,21 @@ struct inet_frag_queue {
 
 struct inet_frags {
 	struct hlist_head	hash[INETFRAGS_HASHSZ];
-	rwlock_t		lock;
-	u32			rnd;
-	int			qsize;
+	/* This rwlock is a global lock (seperate per IPv4, IPv6 and
+	 * netfilter). Important to keep this on a seperate cacheline.
+	 */
+	rwlock_t		lock ____cacheline_aligned_in_smp;
 	int			secret_interval;
 	struct timer_list	secret_timer;
+	u32			rnd;
+	int			qsize;
 
 	unsigned int		(*hashfn)(struct inet_frag_queue *);
+	int			(*match)(struct inet_frag_queue *q, void *arg);
 	void			(*constructor)(struct inet_frag_queue *q,
 						void *arg);
 	void			(*destructor)(struct inet_frag_queue *);
 	void			(*skb_free)(struct sk_buff *);
-	int			(*match)(struct inet_frag_queue *q,
-						void *arg);
 	void			(*frag_expire)(unsigned long data);
 };
 

@@ -77,12 +77,6 @@ function initial(){
 	show_menu(5,4,id_menu);
 	show_footer();
 
-	if(!support_ipv6()){
-		var o = document.form.upnp_proto;
-		o.options[1].text = "NAT-PMP";
-		o.options[2].text = "UPnP & NAT-PMP";
-	}
-
 	loadAppOptions();
 	loadGameOptions();
 

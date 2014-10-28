@@ -2684,6 +2684,7 @@ struct sk_buff *tcp_tso_segment(struct sk_buff *skb,
 	__be32 delta;
 	unsigned int oldlen;
 	unsigned int mss;
+	__sum16 newcheck;
 
 	if (!pskb_may_pull(skb, sizeof(*th)))
 		goto out;
@@ -2732,11 +2733,13 @@ struct sk_buff *tcp_tso_segment(struct sk_buff *skb,
 	th = tcp_hdr(skb);
 	seq = ntohl(th->seq);
 
+	newcheck = ~csum_fold((__force __wsum)((__force u32)th->check +
+					       (__force u32)delta));
+
 	do {
 		th->fin = th->psh = 0;
+		th->check = newcheck;
 
-		th->check = ~csum_fold((__force __wsum)((__force u32)th->check +
-				       (__force u32)delta));
 		if (skb->ip_summed != CHECKSUM_PARTIAL)
 			th->check =
 			     csum_fold(csum_partial(skb_transport_header(skb),

@@ -493,9 +493,6 @@ extern void tcp_push_one(struct sock *, unsigned int mss_now);
 extern void tcp_send_ack(struct sock *sk);
 extern void tcp_send_delayed_ack(struct sock *sk);
 
-/* tcp_input.c */
-extern void tcp_cwnd_application_limited(struct sock *sk);
-
 /* tcp_timer.c */
 extern void tcp_init_xmit_timers(struct sock *);
 static inline void tcp_clear_xmit_timers(struct sock *sk)

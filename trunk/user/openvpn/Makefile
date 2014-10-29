@@ -1,9 +1,9 @@
-SRC_NAME=openvpn-2.3.4
+SRC_NAME=openvpn-2.3.x
 
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 config_test:
@@ -23,6 +23,7 @@ configure:
 		--disable-debug \
 		--disable-plugins \
 		--disable-pkcs11 \
+		--disable-ofb-cfb \
 		--disable-selinux \
 		--disable-systemd \
 		--disable-iproute2 \

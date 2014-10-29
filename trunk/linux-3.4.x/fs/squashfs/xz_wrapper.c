@@ -39,10 +39,8 @@ struct squashfs_xz {
 };
 
 struct comp_opts {
-	__le32 flags;
-	__le16 bit_opts;
-	__le16 fb;
 	__le32 dictionary_size;
+	__le32 flags;
 };
 
 static void *squashfs_xz_init(struct squashfs_sb_info *msblk, void *buff,

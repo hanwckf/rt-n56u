@@ -1027,7 +1027,7 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 	mcast_tx(skb);
 #endif
 
-#if !defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_RALINK_MT7621)
+#if !defined (CONFIG_RALINK_MT7621)
 	if (skb->len < eth_min_pkt_len) {
 		if (skb_padto(skb, eth_min_pkt_len)) {
 			inc_tx_drop(ei_local, gmac_no);

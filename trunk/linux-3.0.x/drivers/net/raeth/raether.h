@@ -10,7 +10,7 @@
 
 #include "ra_ethreg.h"
 
-#define RAETH_VERSION		"v3.1.0"
+#define RAETH_VERSION		"v3.1.1"
 #define RAETH_DEV_NAME		"raeth"
 
 /* RT6856 workaround */

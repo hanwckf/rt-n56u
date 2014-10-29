@@ -288,6 +288,12 @@ config  RAETH_MEMORY_OPTIMIZATION
 	depends on RAETH
 	default n
 
+config  RAETH_DEBUG
+	bool "Include additional debug messages and ring dump feature"
+	depends on RAETH
+	default n
+
+
 #force 100M
 config RAETH_ROUTER
 bool

@@ -70,7 +70,7 @@
 #define RAETH_SDMA
 #endif
 
-#ifdef RAETH_DEBUG
+#if defined (CONFIG_RAETH_DEBUG)
 #define RAETH_PRINT(fmt, args...) printk(KERN_INFO fmt, ## args)
 #else
 #define RAETH_PRINT(fmt, args...) { }

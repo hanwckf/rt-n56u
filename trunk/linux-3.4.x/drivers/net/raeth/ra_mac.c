@@ -61,7 +61,7 @@ extern struct net_device *dev_raether;
 
 struct proc_dir_entry *procRegDir = NULL;
 static struct proc_dir_entry *procGmac;
-#ifdef RAETH_DEBUG
+#if defined (CONFIG_RAETH_DEBUG)
 static struct proc_dir_entry *procSysCP0, *procTxRing, *procRxRing, *procEswCnt;
 #endif
 #if defined (CONFIG_RAETH_SNMPD)
@@ -265,7 +265,7 @@ static const struct file_operations ra_regs_seq_fops = {
 	.release	= single_release,
 };
 
-#ifdef RAETH_DEBUG
+#if defined (CONFIG_RAETH_DEBUG)
 static int ra_txring_seq_show(struct seq_file *m, void *v)
 {
 	int i = 0;
@@ -517,7 +517,7 @@ int debug_proc_init(void)
 #endif
 #endif
 
-#ifdef RAETH_DEBUG
+#if defined (CONFIG_RAETH_DEBUG)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	procTxRing = proc_create(PROCREG_TXRING, S_IRUGO, procRegDir, &ra_txring_seq_fops);
 #else
@@ -552,7 +552,7 @@ int debug_proc_init(void)
 
 void debug_proc_exit(void)
 {
-#ifdef RAETH_DEBUG
+#if defined (CONFIG_RAETH_DEBUG)
 	if (procEswCnt)
 		remove_proc_entry(PROCREG_ESW_CNT, procRegDir);
 

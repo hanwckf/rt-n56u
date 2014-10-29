@@ -1060,7 +1060,7 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 		  !(ei_local->tx_ring0[tx_cpu_owner_idx_next].txd_info2_u32 & TX2_DMA_DONE)) {
 			netif_stop_queue(dev);
 			spin_unlock_irqrestore(&ei_local->page_lock, flags);
-#if defined (RAETH_DEBUG)
+#if defined (CONFIG_RAETH_DEBUG)
 			if (net_ratelimit())
 				printk("%s: tx_ring full! (GMAC: %d)\n", RAETH_DEV_NAME, gmac_no);
 #endif

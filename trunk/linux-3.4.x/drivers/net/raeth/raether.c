@@ -1003,6 +1003,7 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	u32 nr_frags, txd_info2;
 	const skb_frag_t *tx_frag;
+	struct skb_shared_info *shinfo;
 #endif
 
 	/* protect eth while init or reinit */
@@ -1047,7 +1048,8 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 #endif
 
 #if defined (CONFIG_RAETH_SG_DMA_TX)
-	nr_frags = skb_shinfo(skb)->nr_frags;
+	shinfo = skb_shinfo(skb);
+	nr_frags = shinfo->nr_frags;
 	nr_slots = (nr_frags >> 1) + 1;
 #else
 	nr_slots = 1;
@@ -1085,7 +1087,7 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 
 #if defined (CONFIG_RAETH_TSO)
 	/* fill MSS info in tcp checksum field */
-	if (skb_shinfo(skb)->gso_segs > 1) {
+	if (shinfo->gso_segs > 1) {
 		if (skb_header_cloned(skb)) {
 			if (pskb_expand_head(skb, 0, 0, GFP_ATOMIC)) {
 				inc_tx_drop(ei_local, gmac_no);
@@ -1096,14 +1098,14 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 				return NETDEV_TX_OK;
 			}
 		}
-		if ((skb_shinfo(skb)->gso_type & SKB_GSO_TCPV4)
+		if ((shinfo->gso_type & SKB_GSO_TCPV4)
 #if defined (CONFIG_RAETH_TSOV6)
-		 || (skb_shinfo(skb)->gso_type & SKB_GSO_TCPV6)
+		 || (shinfo->gso_type & SKB_GSO_TCPV6)
 #endif
 		) {
 			int hdr_len = (skb_transport_offset(skb) + tcp_hdrlen(skb));
 			if (skb->len > hdr_len) {
-				tcp_hdr(skb)->check = htons(skb_shinfo(skb)->gso_size);
+				tcp_hdr(skb)->check = htons(shinfo->gso_size);
 				txd_info4 |= TX4_DMA_TSO;
 			}
 		}
@@ -1140,7 +1142,7 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 		
 		txd_info2 = TX2_DMA_SDL0(skb_headlen(skb));
 		for (i = 0; i < nr_frags; i++) {
-			tx_frag = &skb_shinfo(skb)->frags[i];
+			tx_frag = &shinfo->frags[i];
 			if (i % 2) {
 				tx_cpu_owner_idx = (tx_cpu_owner_idx + 1) % NUM_TX_DESC;
 				ei_local->tx0_free[tx_cpu_owner_idx] = (struct sk_buff *)0xFFFFFFFF; //MAGIC ID

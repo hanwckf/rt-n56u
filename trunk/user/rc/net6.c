@@ -198,7 +198,6 @@ void full_restart_ipv6(int ipv6_type_old)
 		start_dns_dhcpd(0);
 	} else {
 		control_if_ipv6_all(1);
-		clear_all_route6();
 		clear_all_addr6();
 		reset_lan6_vars();
 		reload_lan_addr6();

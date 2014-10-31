@@ -41,6 +41,7 @@
 #include <linux/mtd/partitions.h>
 
 #include "mtdcore.h"
+
 /*
  * backing device capabilities for non-mappable devices (such as NAND flash)
  * - permits private mappings, copies are taken of the data
@@ -96,23 +97,18 @@ EXPORT_SYMBOL_GPL(__mtd_next_device);
 static LIST_HEAD(mtd_notifiers);
 
 
-#if defined(CONFIG_MTD_CHAR) || defined(CONFIG_MTD_CHAR_MODULE)
 #define MTD_DEVT(index) MKDEV(MTD_CHAR_MAJOR, (index)*2)
-#else
-#define MTD_DEVT(index) 0
-#endif
 
 /* REVISIT once MTD uses the driver model better, whoever allocates
  * the mtd_info will probably want to use the release() hook...
  */
 static void mtd_release(struct device *dev)
 {
-	struct mtd_info __maybe_unused *mtd = dev_get_drvdata(dev);
+	struct mtd_info *mtd = dev_get_drvdata(dev);
 	dev_t index = MTD_DEVT(mtd->index);
 
-	/* remove /dev/mtdXro node if needed */
-	if (index)
-		device_destroy(&mtd_class, index + 1);
+	/* remove /dev/mtdXro node */
+	device_destroy(&mtd_class, index + 1);
 }
 
 static int mtd_cls_suspend(struct device *dev, pm_message_t state)
@@ -355,10 +351,8 @@ int add_mtd_device(struct mtd_info *mtd)
 	if (device_register(&mtd->dev) != 0)
 		goto fail_added;
 
-	if (MTD_DEVT(i))
-		device_create(&mtd_class, mtd->dev.parent,
-			      MTD_DEVT(i) + 1,
-			      NULL, "mtd%dro", i);
+	device_create(&mtd_class, mtd->dev.parent, MTD_DEVT(i) + 1, NULL,
+		      "mtd%dro", i);
 
 	pr_debug("mtd: Giving out device %d to %s\n", i, mtd->name);
 	/* No need to get a refcount on the module containing
@@ -691,7 +685,7 @@ EXPORT_SYMBOL_GPL(__put_mtd_device);
  */
 int mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
-	if (instr->addr > mtd->size || instr->len > mtd->size - instr->addr)
+	if (instr->addr >= mtd->size || instr->len > mtd->size - instr->addr)
 		return -EINVAL;
 	if (!(mtd->flags & MTD_WRITEABLE))
 		return -EROFS;
@@ -717,7 +711,7 @@ int mtd_point(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen,
 		*phys = 0;
 	if (!mtd->_point)
 		return -EOPNOTSUPP;
-	if (from < 0 || from > mtd->size || len > mtd->size - from)
+	if (from < 0 || from >= mtd->size || len > mtd->size - from)
 		return -EINVAL;
 	if (!len)
 		return 0;
@@ -730,7 +724,7 @@ int mtd_unpoint(struct mtd_info *mtd, loff_t from, size_t len)
 {
 	if (!mtd->_point)
 		return -EOPNOTSUPP;
-	if (from < 0 || from > mtd->size || len > mtd->size - from)
+	if (from < 0 || from >= mtd->size || len > mtd->size - from)
 		return -EINVAL;
 	if (!len)
 		return 0;
@@ -748,7 +742,7 @@ unsigned long mtd_get_unmapped_area(struct mtd_info *mtd, unsigned long len,
 {
 	if (!mtd->_get_unmapped_area)
 		return -EOPNOTSUPP;
-	if (offset > mtd->size || len > mtd->size - offset)
+	if (offset >= mtd->size || len > mtd->size - offset)
 		return -EINVAL;
 	return mtd->_get_unmapped_area(mtd, len, offset, flags);
 }
@@ -758,7 +752,7 @@ int mtd_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen,
 	     u_char *buf)
 {
 	*retlen = 0;
-	if (from < 0 || from > mtd->size || len > mtd->size - from)
+	if (from < 0 || from >= mtd->size || len > mtd->size - from)
 		return -EINVAL;
 	if (!len)
 		return 0;
@@ -770,7 +764,7 @@ int mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen,
 	      const u_char *buf)
 {
 	*retlen = 0;
-	if (to < 0 || to > mtd->size || len > mtd->size - to)
+	if (to < 0 || to >= mtd->size || len > mtd->size - to)
 		return -EINVAL;
 	if (!mtd->_write || !(mtd->flags & MTD_WRITEABLE))
 		return -EROFS;
@@ -793,7 +787,7 @@ int mtd_panic_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen,
 	*retlen = 0;
 	if (!mtd->_panic_write)
 		return -EOPNOTSUPP;
-	if (to < 0 || to > mtd->size || len > mtd->size - to)
+	if (to < 0 || to >= mtd->size || len > mtd->size - to)
 		return -EINVAL;
 	if (!(mtd->flags & MTD_WRITEABLE))
 		return -EROFS;
@@ -881,7 +875,7 @@ int mtd_lock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 {
 	if (!mtd->_lock)
 		return -EOPNOTSUPP;
-	if (ofs < 0 || ofs > mtd->size || len > mtd->size - ofs)
+	if (ofs < 0 || ofs >= mtd->size || len > mtd->size - ofs)
 		return -EINVAL;
 	if (!len)
 		return 0;
@@ -893,7 +887,7 @@ int mtd_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 {
 	if (!mtd->_unlock)
 		return -EOPNOTSUPP;
-	if (ofs < 0 || ofs > mtd->size || len > mtd->size - ofs)
+	if (ofs < 0 || ofs >= mtd->size || len > mtd->size - ofs)
 		return -EINVAL;
 	if (!len)
 		return 0;
@@ -905,7 +899,7 @@ int mtd_is_locked(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 {
 	if (!mtd->_is_locked)
 		return -EOPNOTSUPP;
-	if (ofs < 0 || ofs > mtd->size || len > mtd->size - ofs)
+	if (ofs < 0 || ofs >= mtd->size || len > mtd->size - ofs)
 		return -EINVAL;
 	if (!len)
 		return 0;
@@ -913,12 +907,22 @@ int mtd_is_locked(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 }
 EXPORT_SYMBOL_GPL(mtd_is_locked);
 
+int mtd_block_isreserved(struct mtd_info *mtd, loff_t ofs)
+{
+	if (ofs < 0 || ofs >= mtd->size)
+		return -EINVAL;
+	if (!mtd->_block_isreserved)
+		return 0;
+	return mtd->_block_isreserved(mtd, ofs);
+}
+EXPORT_SYMBOL_GPL(mtd_block_isreserved);
+
 int mtd_block_isbad(struct mtd_info *mtd, loff_t ofs)
 {
+	if (ofs < 0 || ofs >= mtd->size)
+		return -EINVAL;
 	if (!mtd->_block_isbad)
 		return 0;
-	if (ofs < 0 || ofs > mtd->size)
-		return -EINVAL;
 	return mtd->_block_isbad(mtd, ofs);
 }
 EXPORT_SYMBOL_GPL(mtd_block_isbad);
@@ -927,7 +931,7 @@ int mtd_block_markbad(struct mtd_info *mtd, loff_t ofs)
 {
 	if (!mtd->_block_markbad)
 		return -EOPNOTSUPP;
-	if (ofs < 0 || ofs > mtd->size)
+	if (ofs < 0 || ofs >= mtd->size)
 		return -EINVAL;
 	if (!(mtd->flags & MTD_WRITEABLE))
 		return -EROFS;
@@ -1045,8 +1049,6 @@ EXPORT_SYMBOL_GPL(mtd_kmalloc_up_to);
 /*====================================================================*/
 /* Support for /proc/mtd */
 
-static struct proc_dir_entry *proc_mtd;
-
 static int mtd_proc_show(struct seq_file *m, void *v)
 {
 	struct mtd_info *mtd;
@@ -1092,6 +1094,8 @@ static int __init mtd_bdi_init(struct backing_dev_info *bdi, const char *name)
 	return ret;
 }
 
+static struct proc_dir_entry *proc_mtd;
+
 static int __init init_mtd(void)
 {
 	int ret;
@@ -1112,11 +1116,17 @@ static int __init init_mtd(void)
 	if (ret)
 		goto err_bdi3;
 
-#ifdef CONFIG_PROC_FS
 	proc_mtd = proc_create("mtd", 0, NULL, &mtd_proc_ops);
-#endif /* CONFIG_PROC_FS */
+
+	ret = init_mtdchar();
+	if (ret)
+		goto out_procfs;
+
 	return 0;
 
+out_procfs:
+	if (proc_mtd)
+		remove_proc_entry("mtd", NULL);
 err_bdi3:
 	bdi_destroy(&mtd_bdi_ro_mappable);
 err_bdi2:
@@ -1130,10 +1140,9 @@ err_reg:
 
 static void __exit cleanup_mtd(void)
 {
-#ifdef CONFIG_PROC_FS
+	cleanup_mtdchar();
 	if (proc_mtd)
-		remove_proc_entry( "mtd", NULL);
-#endif /* CONFIG_PROC_FS */
+		remove_proc_entry("mtd", NULL);
 	class_unregister(&mtd_class);
 	bdi_destroy(&mtd_bdi_unmappable);
 	bdi_destroy(&mtd_bdi_ro_mappable);

@@ -1593,14 +1593,11 @@ static void stat_counters_update(unsigned long ptr)
 {
 	struct net_device *dev = (struct net_device *)ptr;
 	END_DEVICE *ei_local = netdev_priv(dev);
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	PSEUDO_ADAPTER *pAd = netdev_priv(ei_local->PseudoDev);
-#endif
 
 	spin_lock(&ei_local->stat_lock);
 	read_counters_gdma1(ei_local);
 #if defined (CONFIG_PSEUDO_SUPPORT)
-	read_counters_gdma2(pAd);
+	read_counters_gdma2(netdev_priv(ei_local->PseudoDev));
 #endif
 	spin_unlock(&ei_local->stat_lock);
 
@@ -1868,6 +1865,14 @@ int ei_close(struct net_device *dev)
 #endif
 
 	spin_unlock_irqrestore(&ei_local->page_lock, flags);
+
+	/* fetch pending FE counters */
+	spin_lock(&ei_local->stat_lock);
+	read_counters_gdma1(ei_local);
+#if defined (CONFIG_PSEUDO_SUPPORT)
+	read_counters_gdma2(netdev_priv(ei_local->PseudoDev));
+#endif
+	spin_unlock(&ei_local->stat_lock);
 
 	module_put(THIS_MODULE);
 

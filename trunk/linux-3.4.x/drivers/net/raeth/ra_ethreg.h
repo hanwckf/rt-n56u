@@ -31,9 +31,7 @@
 #define REG_ESW_PHY_POLLING		(RALINK_ETH_SW_BASE + 0x7000)
 #endif
 
-/*
-     FE_INT_STATUS
-*/
+/* FE_INT_STATUS */
 #if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7620) || \
     defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 
@@ -41,15 +39,12 @@
 #define RX_DLY_INT			BIT(30)
 #define TX_COHERENT			BIT(29)
 #define TX_DLY_INT			BIT(28)
-
 #define RX_DONE_INT1			BIT(17)
 #define RX_DONE_INT0			BIT(16)
-
 #define TX_DONE_INT3			BIT(3)
 #define TX_DONE_INT2			BIT(2)
 #define TX_DONE_INT1			BIT(1)
 #define TX_DONE_INT0			BIT(0)
-
 #if defined (CONFIG_RALINK_MT7621)
 #define RLS_COHERENT			BIT(29)
 #define RLS_DLY_INT			BIT(28)
@@ -57,8 +52,9 @@
 #endif
 
 #else
-//#define CNT_PPE_AF			BIT(31)
-//#define CNT_GDM_AF			BIT(29)
+
+#define CNT_PPE_AF			BIT(31)
+#define CNT_GDM_AF			BIT(29)
 #define PSE_P2_FC			BIT(26)
 #define GDM_CRC_DROP			BIT(25)
 #define PSE_BUF_DROP			BIT(24)
@@ -69,7 +65,6 @@
 #define GE1_STA_CHG			BIT(18)
 #define TX_COHERENT			BIT(17)
 #define RX_COHERENT			BIT(16)
-
 #define TX_DONE_INT3			BIT(11)
 #define TX_DONE_INT2			BIT(10)
 #define TX_DONE_INT1			BIT(9)
@@ -81,6 +76,18 @@
 
 #endif
 
+#if defined (CONFIG_RAETH_NAPI)
+#define FE_DLY_INIT_VALUE		0x00000000
+#define FE_INT_INIT_VALUE		(TX_DONE_INT0 | RX_DONE_INT0 | RX_DONE_INT1)
+#else
+#define FE_DLY_INIT_VALUE		0x84048404
+#define FE_INT_INIT_VALUE		(TX_DLY_INT | RX_DLY_INT)
+#endif
+
+/* FE_INT_STATUS2 */
+#if defined (CONFIG_RALINK_MT7621)
+#define GE2_LINK_INT			BIT(25)
+#endif
 
 /* Register Categories Definition */
 #define RAFRAMEENGINE_OFFSET		0x0000

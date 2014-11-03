@@ -4,6 +4,11 @@ config  RAETH
 	  This driver supports Ralink gigabit ethernet family of
 	  adapters.
 
+config  RAETH_NAPI
+	bool "Use NAPI for IRQ processing (instead of Tasklets)"
+	default y
+	depends on RAETH
+
 config  RAETH_32B_DESC
 	bool "32 bytes TX/RX ring descriptors (L1 cache aligned, no disable cache needed for TX/RX ring)"
 	default n

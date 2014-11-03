@@ -10,25 +10,22 @@
 
 #include "ra_ethreg.h"
 
-#define RAETH_VERSION		"v3.1.1"
+#define RAETH_VERSION		"v3.1.2"
 #define RAETH_DEV_NAME		"raeth"
 
 /* RT6856 workaround */
 //#define RAETH_PDMAPTR_FROM_VAR
 
-#if defined (MEMORY_OPTIMIZATION)
-#define NUM_RX_DESC		128
+#if defined (CONFIG_RALINK_RT3052) || defined (MEMORY_OPTIMIZATION)
 #define NUM_TX_DESC		128
+#define NUM_RX_DESC		128
 #define NUM_RX_MAX_PROCESS	32
+#define NAPI_WEIGHT		32
 #else
-#if defined (CONFIG_RALINK_RT3052)
-#define NUM_RX_DESC		128
-#define NUM_TX_DESC		128
-#else
-#define NUM_RX_DESC		256
 #define NUM_TX_DESC		256
-#endif
+#define NUM_RX_DESC		256
 #define NUM_RX_MAX_PROCESS	16
+#define NAPI_WEIGHT		64
 #endif
 
 #define DEV_NAME		"eth2"
@@ -76,16 +73,22 @@
 #define RAETH_PRINT(fmt, args...) { }
 #endif
 
-typedef struct end_device
+typedef struct _END_DEVICE
 {
-	struct tasklet_struct		rx_tasklet;
-	struct timer_list		stat_timer;
-	spinlock_t			page_lock;
-	spinlock_t			irqe_lock;
-	spinlock_t			stat_lock;
 #if defined (CONFIG_PSEUDO_SUPPORT)
 	struct net_device		*PseudoDev;
 #endif
+#if defined (CONFIG_RAETH_NAPI)
+	struct napi_struct		napi;
+#else
+	struct tasklet_struct		rx_tasklet;
+	struct tasklet_struct		tx_tasklet;
+#endif
+	struct timer_list		stat_timer;
+	spinlock_t			page_lock;
+	spinlock_t			stat_lock;
+	unsigned int			active;
+	unsigned int			min_pkt_len;
 
 	dma_addr_t			phy_tx_ring0;
 	dma_addr_t			phy_rx_ring0;
@@ -104,27 +107,28 @@ typedef struct end_device
 #if defined (CONFIG_ETHTOOL)
 	struct mii_if_info		mii_info;
 #endif
-} END_DEVICE, *pEND_DEVICE;
+} END_DEVICE, *PEND_DEVICE;
 
 
 #if defined (CONFIG_PSEUDO_SUPPORT)
-typedef struct _PSEUDO_ADAPTER {
+typedef struct _PSEUDO_ADAPTER
+{
 	struct net_device		*RaethDev;
 	struct rtnl_link_stats64	stat;
 #if defined (CONFIG_ETHTOOL)
 	struct mii_if_info		mii_info;
 #endif
-} PSEUDO_ADAPTER, PPSEUDO_ADAPTER;
-#endif
-
-int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd);
-#if defined (CONFIG_PSEUDO_SUPPORT)
-int VirtualIF_ioctl(struct net_device * net_dev, struct ifreq * ifr, int cmd);
+} PSEUDO_ADAPTER, *PPSEUDO_ADAPTER;
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
 u32  get_map_hw_vlan_tx(u32 idx);
 void set_map_hw_vlan_tx(u32 idx, u32 vid);
+#endif
+
+int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd);
+#if defined (CONFIG_PSEUDO_SUPPORT)
+int VirtualIF_ioctl(struct net_device * net_dev, struct ifreq * ifr, int cmd);
 #endif
 
 #if defined (CONFIG_RAETH_ESW_CONTROL)

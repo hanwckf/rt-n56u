@@ -80,8 +80,6 @@ extern struct ethtool_ops ra_virt_ethtool_ops;
 extern u32 ralink_asic_rev_id;
 
 struct net_device *dev_raether = NULL;
-static unsigned int eth_min_pkt_len = ETH_ZLEN;
-static int eth_close = 1; /* default disable rx/tx processing while init */
 
 //////////////////////////////////////////////////////////////
 
@@ -239,7 +237,7 @@ static void update_hw_vlan_tx(void)
 #if defined (CONFIG_RALINK_MT7620)
 		*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0x430 + i*4) = reg_vlan;
 #else
-		*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0xa8 + i*4) = reg_vlan;
+		*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0x0a8 + i*4) = reg_vlan;
 #endif
 	}
 }
@@ -363,7 +361,7 @@ static void fe_mac2_addr_set(unsigned char p[6])
 }
 #endif
 
-static void fe_forward_config(struct net_device *dev)
+static void fe_forward_config(struct net_device *dev, END_DEVICE *ei_local)
 {
 #if defined (RAETH_SDMA)
 	/* RT5350/MT7628 SDMA: No GDMA, PSE, CDMA, PPE */
@@ -389,9 +387,11 @@ static void fe_forward_config(struct net_device *dev)
 #endif
 
 #if defined (CONFIG_PSEUDO_SUPPORT)
-	eth_min_pkt_len = ETH_ZLEN; // pad to 60 bytes (no VLAN tag)
+	/* pad to 60 bytes (no VLAN tag) */
+	ei_local->min_pkt_len = ETH_ZLEN;
 #else
-	eth_min_pkt_len = VLAN_ETH_ZLEN; // pad to 64 bytes
+	/* pad to 64 bytes (with VLAN tag) */
+	ei_local->min_pkt_len = VLAN_ETH_ZLEN;
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
@@ -422,7 +422,7 @@ static void fe_forward_config(struct net_device *dev)
 #endif
 	{
 		/* enable HW VLAN TX */
-		eth_min_pkt_len = ETH_ZLEN; // pad to 60 bytes
+		ei_local->min_pkt_len = ETH_ZLEN; // pad to 60 bytes
 		dev->features |= NETIF_F_HW_VLAN_CTAG_TX;
 		printk("%s: HW VLAN %s offload enabled\n", RAETH_DEV_NAME, "TX");
 	}
@@ -572,6 +572,9 @@ static void fe_forward_config(struct net_device *dev)
 #if defined (CONFIG_RAETH_BQL)
 	printk("%s: Byte Queue Limits (BQL) support\n", RAETH_DEV_NAME);
 #endif
+#if defined (CONFIG_RAETH_NAPI)
+	printk("%s: NAPI support\n", RAETH_DEV_NAME);
+#endif
 }
 
 static void wait_pdma_stop(int cycles_10ms)
@@ -596,7 +599,7 @@ static void wait_pdma_stop(int cycles_10ms)
 static void fe_pdma_init(struct net_device *dev)
 {
 	int i;
-	unsigned int regVal;
+	u32 regVal;
 	END_DEVICE* ei_local = netdev_priv(dev);
 
 	wait_pdma_stop(10);
@@ -662,7 +665,7 @@ static void fe_pdma_init(struct net_device *dev)
 
 static void fe_pdma_start(void)
 {
-	unsigned int pdma_glo_cfg = (TX_WB_DDONE | RX_DMA_EN | TX_DMA_EN);
+	u32 pdma_glo_cfg = (TX_WB_DDONE | RX_DMA_EN | TX_DMA_EN);
 
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 	pdma_glo_cfg |= PDMA_BT_SIZE_16DWORDS;
@@ -680,7 +683,7 @@ static void fe_pdma_start(void)
 
 static void fe_pdma_stop(void)
 {
-	unsigned int regValue;
+	u32 regValue;
 
 	regValue = sysRegRead(PDMA_GLO_CFG);
 	regValue &= ~(TX_WB_DDONE | RX_DMA_EN | TX_DMA_EN);
@@ -780,21 +783,84 @@ static void inc_rx_drop(END_DEVICE *ei_local, int gmac_no)
 		ei_local->stat.rx_dropped++;
 }
 
-static inline int raeth_recv(struct net_device* dev)
+static void ei_xmit_clean(unsigned long ptr)
+{
+	struct net_device *dev = (struct net_device *)ptr;
+	END_DEVICE *ei_local = netdev_priv(dev);
+	struct PDMA_txdesc *tx_ring;
+	struct sk_buff *tx_skb;
+	unsigned int pkts_sent = 0;
+#if defined (CONFIG_RAETH_BQL)
+	unsigned int bytes_sent = 0;
+#if defined (CONFIG_PSEUDO_SUPPORT)
+	unsigned int bytes_sent_virt = 0;
+#endif
+#endif
+	spin_lock(&ei_local->page_lock);
+
+	for (;;) {
+		tx_ring = &ei_local->tx_ring0[ei_local->tx_free_idx];
+		tx_skb = ei_local->tx0_free[ei_local->tx_free_idx];
+		if (!tx_skb || !(tx_ring->txd_info2_u32 & TX2_DMA_DONE))
+			break;
+		
+		tx_ring->txd_info2_u32 = TX2_DMA_DONE;
+#if defined (CONFIG_RAETH_SG_DMA_TX)
+		if (tx_skb != (struct sk_buff *)0xFFFFFFFF)
+#endif
+		{
+#if defined (CONFIG_RAETH_BQL)
+#if defined (CONFIG_PSEUDO_SUPPORT)
+			if (tx_skb->dev == ei_local->PseudoDev)
+				bytes_sent_virt += tx_skb->len;
+			else
+#endif
+			bytes_sent += tx_skb->len;
+#endif
+			dev_kfree_skb(tx_skb);
+		}
+		ei_local->tx0_free[ei_local->tx_free_idx] = NULL;
+		ei_local->tx_free_idx = (ei_local->tx_free_idx + 1) % NUM_TX_DESC;
+		pkts_sent++;
+	}
+
+#if defined (CONFIG_RAETH_BQL)
+#if defined (CONFIG_PSEUDO_SUPPORT)
+	if (bytes_sent_virt)
+		netdev_completed_queue(ei_local->PseudoDev, pkts_sent, bytes_sent_virt);
+#endif
+	if (bytes_sent)
+		netdev_completed_queue(dev, pkts_sent, bytes_sent);
+#endif
+
+	if (pkts_sent) {
+		if (dev->flags & IFF_UP) {
+			if (netif_queue_stopped(dev))
+				netif_wake_queue(dev);
+		}
+#if defined (CONFIG_PSEUDO_SUPPORT)
+		if (ei_local->PseudoDev->flags & IFF_UP) {
+			if (netif_queue_stopped(ei_local->PseudoDev))
+				netif_wake_queue(ei_local->PseudoDev);
+		}
+#endif
+	}
+
+	spin_unlock(&ei_local->page_lock);
+}
+
+static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 {
 	struct sk_buff *new_skb, *rx_skb;
 	struct PDMA_rxdesc *rx_ring;
 	unsigned int length;
 	unsigned int rxd_info4;
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
-	unsigned int rx_vlan_tag;
 	unsigned int rx_vlan_vid;
 #endif
 	int gmac_no = PSE_PORT_GMAC1;
 	int rx_dma_owner_idx;
-	int rx_processed = 0;
-	int bReschedule = 0;
-	END_DEVICE* ei_local = netdev_priv(dev);
+	int work_done = 0;
 #if defined (CONFIG_RAETH_SPECIAL_TAG)
 	struct vlan_ethhdr *veth;
 #endif
@@ -809,23 +875,19 @@ static inline int raeth_recv(struct net_device* dev)
 	dma_cache_sync(NULL, &ei_local->rx_ring0[rx_dma_owner_idx], sizeof(struct PDMA_rxdesc), DMA_FROM_DEVICE);
 #endif
 
-	for ( ; ; ) {
-		if (rx_processed++ > NUM_RX_MAX_PROCESS) {
-			// need to reschedule rx handle
-			bReschedule = 1;
-			break;
-		}
+	while (work_done < work_todo && ei_local->active) {
 		rx_ring = &ei_local->rx_ring0[rx_dma_owner_idx];
 		if (!(rx_ring->rxd_info2_u32 & RX2_DMA_DONE))
 			break;
+		
+		work_done++;
 		
 #if defined (CONFIG_32B_DESC)
 		prefetch(&ei_local->rx_ring0[((rx_dma_owner_idx + 1) % NUM_RX_DESC)]);
 #endif
 		length = RX2_DMA_SDL0_GET(rx_ring->rxd_info2_u32);
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
-		rx_vlan_tag = (rx_ring->rxd_info2_u32 & RX2_DMA_TAG);
-		rx_vlan_vid = RX3_DMA_VID(rx_ring->rxd_info3_u32);
+		rx_vlan_vid = (rx_ring->rxd_info2_u32 & RX2_DMA_TAG) ? (RX3_DMA_VID(rx_ring->rxd_info3_u32)) : 0;
 #endif
 		rxd_info4 = rx_ring->rxd_info4_u32;
 #if defined (CONFIG_PSEUDO_SUPPORT)
@@ -835,8 +897,7 @@ static inline int raeth_recv(struct net_device* dev)
 		/* We have to check the free memory size is big enough
 		 * before pass the packet to cpu */
 		new_skb = __dev_alloc_skb(MAX_RX_LENGTH + NET_IP_ALIGN, GFP_ATOMIC);
-		if (unlikely(new_skb == NULL))
-		{
+		if (unlikely(new_skb == NULL)) {
 #if defined (RAETH_PDMA_V2)
 			rx_ring->rxd_info2_u32 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
 #else
@@ -847,9 +908,14 @@ static inline int raeth_recv(struct net_device* dev)
 			ei_local->rx_calc_idx = rx_dma_owner_idx;
 #endif
 			inc_rx_drop(ei_local, gmac_no);
-			bReschedule = 1;
+#if !defined (CONFIG_RAETH_NAPI)
+			/* mean need reschedule */
+			work_done = work_todo;
+#endif
+#if defined (CONFIG_RAETH_DEBUG)
 			if (net_ratelimit())
 				printk(KERN_ERR "%s: Failed to alloc new RX skb! (GMAC: %d)\n", RAETH_DEV_NAME, gmac_no);
+#endif
 			break;
 		}
 #if !defined (RAETH_PDMA_V2)
@@ -872,13 +938,6 @@ static inline int raeth_recv(struct net_device* dev)
 		rx_skb->data += NET_IP_ALIGN;
 #endif
 		rx_skb->tail = rx_skb->data + length;
-		
-#if defined (CONFIG_PSEUDO_SUPPORT)
-		if (gmac_no == PSE_PORT_GMAC2)
-			rx_skb->protocol = eth_type_trans(rx_skb, ei_local->PseudoDev);
-		else
-#endif
-			rx_skb->protocol = eth_type_trans(rx_skb, dev);
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 		FOE_MAGIC_TAG(rx_skb) = FOE_MAGIC_GE;
@@ -888,9 +947,23 @@ static inline int raeth_recv(struct net_device* dev)
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
 		if (rxd_info4 & RX4_DMA_L4FVLD)
 			rx_skb->ip_summed = CHECKSUM_UNNECESSARY;
+#endif
+
+#if defined (CONFIG_RAETH_HW_VLAN_RX)
+		if (rx_vlan_vid)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+			__vlan_hwaccel_put_tag(rx_skb, __constant_htons(ETH_P_8021Q), rx_vlan_vid);
+#else
+			__vlan_hwaccel_put_tag(rx_skb, rx_vlan_vid);
+#endif
+#endif
+
+#if defined (CONFIG_PSEUDO_SUPPORT)
+		if (gmac_no == PSE_PORT_GMAC2)
+			rx_skb->protocol = eth_type_trans(rx_skb, ei_local->PseudoDev);
 		else
 #endif
-			rx_skb->ip_summed = CHECKSUM_NONE;
+			rx_skb->protocol = eth_type_trans(rx_skb, dev);
 
 #if defined (CONFIG_RAETH_SPECIAL_TAG)
 		// port0: 0x8100 => 0x8100 0001
@@ -919,17 +992,12 @@ static inline int raeth_recv(struct net_device* dev)
 			if (mcast_rx(rx_skb)==0)
 				kfree_skb(rx_skb);
 			else
+#endif
+#if defined (CONFIG_RAETH_NAPI)
+			netif_receive_skb(rx_skb);
 #else
-#if defined (CONFIG_RAETH_HW_VLAN_RX)
-			if (rx_vlan_tag)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-				__vlan_hwaccel_put_tag(rx_skb, __constant_htons(ETH_P_8021Q), rx_vlan_vid);
-#else
-				__vlan_hwaccel_put_tag(rx_skb, rx_vlan_vid);
-#endif
-#endif
-#endif
 			netif_rx(rx_skb);
+#endif
 		}
 		
 		ei_local->rx0_skbuf[rx_dma_owner_idx] = new_skb;
@@ -943,53 +1011,77 @@ static inline int raeth_recv(struct net_device* dev)
 		rx_dma_owner_idx = (rx_dma_owner_idx + 1) % NUM_RX_DESC;
 	}
 
-	return bReschedule;
+	return work_done;
 }
 
-///////////////////////////////////////////////////////////////////
-/////
-///// ei_receive - process the next incoming packet
-/////
-///// Handle one incoming packet.  The packet is checked for errors and sent
-///// to the upper layer.
-/////
-///// RETURNS: OK on success or ERROR.
-///////////////////////////////////////////////////////////////////
+#if defined (CONFIG_RAETH_NAPI)
+static int ei_napi_poll(struct napi_struct *napi, int budget)
+{
+	END_DEVICE *ei_local = netdev_priv(napi->dev);
+	u32 reg_int_val;
+	int work_done;
 
-void ei_receive(unsigned long ptr)
+	/* read current INT status */
+	reg_int_val = sysRegRead(FE_INT_STATUS);
+
+	/* cleanup TX queue */
+	if (reg_int_val & TX_DONE_INT0)
+		ei_xmit_clean((unsigned long)napi->dev);
+
+	/* clear all pending bits */
+	sysRegWrite(FE_INT_STATUS, 0xffffffff);
+
+	/* process RX queue */
+	work_done = raeth_recv(napi->dev, ei_local, budget);
+
+	/* try cleanup TX queue again after hard RX work */
+	if (work_done > 7) {
+		reg_int_val = sysRegRead(FE_INT_STATUS);
+		if (reg_int_val & TX_DONE_INT0) {
+			ei_xmit_clean((unsigned long)napi->dev);
+			sysRegWrite(FE_INT_STATUS, TX_DONE_INT0);
+		}
+	}
+
+	if (work_done < budget) {
+		unsigned long flags;
+		
+		local_irq_save(flags);
+		__napi_complete(napi);
+		sysRegWrite(FE_INT_STATUS, 0xffffffff);
+		if (ei_local->active)
+			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
+		local_irq_restore(flags);
+	}
+
+	return work_done;
+}
+
+#else
+
+static void ei_receive(unsigned long ptr)
 {
 	struct net_device *dev = (struct net_device *)ptr;
 	END_DEVICE *ei_local = netdev_priv(dev);
-	u32 reg_int_mask;
-	unsigned long flags;
+	int work_done;
 
-	 /* protect eth while init or reinit */
-	if (eth_close)
-		return;
+	/* process RX queue */
+	work_done = raeth_recv(dev, ei_local, NUM_RX_MAX_PROCESS);
 
-	if (raeth_recv(dev)) {
-		tasklet_schedule(&ei_local->rx_tasklet);
+	if (work_done < NUM_RX_MAX_PROCESS) {
+		unsigned long flags;
+		
+		local_irq_save(flags);
+		sysRegWrite(FE_INT_STATUS, RX_DLY_INT);
+		if (ei_local->active)
+			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
+		local_irq_restore(flags);
 	} else {
-		spin_lock_irqsave(&ei_local->irqe_lock, flags);
-		reg_int_mask = sysRegRead(FE_INT_ENABLE);
-		sysRegWrite(FE_INT_ENABLE, reg_int_mask | RX_DLY_INT);
-		spin_unlock_irqrestore(&ei_local->irqe_lock, flags);
+		if (ei_local->active)
+			tasklet_schedule(&ei_local->rx_tasklet);
 	}
 }
-
-static void __maybe_unused inc_tx_drop(END_DEVICE *ei_local, int gmac_no)
-{
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	PSEUDO_ADAPTER *pAd;
-
-	if (gmac_no == PSE_PORT_GMAC2) {
-		pAd = netdev_priv(ei_local->PseudoDev);
-		pAd->stat.tx_dropped++;
-	} else
 #endif
-	if (gmac_no == PSE_PORT_GMAC1)
-		ei_local->stat.tx_dropped++;
-}
 
 inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE *ei_local, int gmac_no)
 {
@@ -999,7 +1091,6 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 	u32 tx_cpu_owner_idx;
 	u32 tx_cpu_owner_idx_next;
 	u32 txd_info4;
-	unsigned long flags;
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	u32 nr_frags, txd_info2;
 	const skb_frag_t *tx_frag;
@@ -1007,14 +1098,14 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 #endif
 
 	/* protect eth while init or reinit */
-	if (eth_close) {
+	if (!ei_local->active) {
 		dev_kfree_skb(skb);
 		return NETDEV_TX_OK;
 	}
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 	if (ra_sw_nat_hook_tx != NULL) {
-		if (ra_sw_nat_hook_tx(skb, gmac_no)==0) {
+		if (ra_sw_nat_hook_tx(skb, gmac_no) == 0) {
 			dev_kfree_skb(skb);
 			return NETDEV_TX_OK;
 		}
@@ -1028,18 +1119,19 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 #endif
 
 #if !defined (CONFIG_RALINK_MT7621)
-	if (skb->len < eth_min_pkt_len) {
-		if (skb_padto(skb, eth_min_pkt_len)) {
-			inc_tx_drop(ei_local, gmac_no);
+	if (skb->len < ei_local->min_pkt_len) {
+		if (skb_padto(skb, ei_local->min_pkt_len)) {
+#if defined (CONFIG_RAETH_DEBUG)
 			if (net_ratelimit())
 				printk(KERN_ERR "%s: skb_padto failed\n", RAETH_DEV_NAME);
+#endif
 			return NETDEV_TX_OK;
 		}
-		skb_put(skb, eth_min_pkt_len - skb->len);
+		skb_put(skb, ei_local->min_pkt_len - skb->len);
 	}
 #endif
 
-	spin_lock_irqsave(&ei_local->page_lock, flags);
+	spin_lock(&ei_local->page_lock);
 
 #if defined (RAETH_PDMAPTR_FROM_VAR)
 	tx_cpu_owner_idx = ei_local->tx_calc_idx;
@@ -1059,7 +1151,7 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 		if (ei_local->tx0_free[tx_cpu_owner_idx_next] ||
 		  !(ei_local->tx_ring0[tx_cpu_owner_idx_next].txd_info2_u32 & TX2_DMA_DONE)) {
 			netif_stop_queue(dev);
-			spin_unlock_irqrestore(&ei_local->page_lock, flags);
+			spin_unlock(&ei_local->page_lock);
 #if defined (CONFIG_RAETH_DEBUG)
 			if (net_ratelimit())
 				printk("%s: tx_ring full! (GMAC: %d)\n", RAETH_DEV_NAME, gmac_no);
@@ -1087,14 +1179,15 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 
 #if defined (CONFIG_RAETH_TSO)
 	/* fill MSS info in tcp checksum field */
-	if (shinfo->gso_segs > 1) {
+	if (shinfo->gso_size) {
 		if (skb_header_cloned(skb)) {
 			if (pskb_expand_head(skb, 0, 0, GFP_ATOMIC)) {
-				inc_tx_drop(ei_local, gmac_no);
-				spin_unlock_irqrestore(&ei_local->page_lock, flags);
+				spin_unlock(&ei_local->page_lock);
 				dev_kfree_skb(skb);
+#if defined (CONFIG_RAETH_DEBUG)
 				if (net_ratelimit())
 					printk(KERN_ERR "%s: pskb_expand_head for TSO failed!\n", RAETH_DEV_NAME);
+#endif
 				return NETDEV_TX_OK;
 			}
 		}
@@ -1103,7 +1196,7 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 		 || (shinfo->gso_type & SKB_GSO_TCPV6)
 #endif
 		) {
-			int hdr_len = (skb_transport_offset(skb) + tcp_hdrlen(skb));
+			u32 hdr_len = (skb_transport_offset(skb) + tcp_hdrlen(skb));
 			if (skb->len > hdr_len) {
 				tcp_hdr(skb)->check = htons(shinfo->gso_size);
 				txd_info4 |= TX4_DMA_TSO;
@@ -1198,74 +1291,9 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 		netif_stop_queue(dev);
 	}
 
-	spin_unlock_irqrestore(&ei_local->page_lock, flags);
+	spin_unlock(&ei_local->page_lock);
 
 	return NETDEV_TX_OK;
-}
-
-static inline void ei_xmit_housekeeping(struct net_device *dev)
-{
-	END_DEVICE *ei_local = netdev_priv(dev);
-	struct PDMA_txdesc *tx_ring;
-	struct sk_buff *tx_skb;
-	unsigned int pkts_sent = 0;
-#if defined (CONFIG_RAETH_BQL)
-	unsigned int bytes_sent = 0;
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	unsigned int bytes_sent_virt = 0;
-#endif
-#endif
-	spin_lock(&ei_local->page_lock);
-
-	for (;;) {
-		tx_ring = &ei_local->tx_ring0[ei_local->tx_free_idx];
-		tx_skb = ei_local->tx0_free[ei_local->tx_free_idx];
-		if (!tx_skb || !(tx_ring->txd_info2_u32 & TX2_DMA_DONE))
-			break;
-		
-		tx_ring->txd_info2_u32 = TX2_DMA_DONE;
-#if defined (CONFIG_RAETH_SG_DMA_TX)
-		if (tx_skb != (struct sk_buff *)0xFFFFFFFF)
-#endif
-		{
-#if defined (CONFIG_RAETH_BQL)
-#if defined (CONFIG_PSEUDO_SUPPORT)
-			if (tx_skb->dev == ei_local->PseudoDev)
-				bytes_sent_virt += tx_skb->len;
-			else
-#endif
-			bytes_sent += tx_skb->len;
-#endif
-			dev_kfree_skb_irq(tx_skb);
-		}
-		ei_local->tx0_free[ei_local->tx_free_idx] = NULL;
-		ei_local->tx_free_idx = (ei_local->tx_free_idx + 1) % NUM_TX_DESC;
-		pkts_sent++;
-	}
-
-#if defined (CONFIG_RAETH_BQL)
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	if (bytes_sent_virt)
-		netdev_completed_queue(ei_local->PseudoDev, pkts_sent, bytes_sent_virt);
-#endif
-	if (bytes_sent)
-		netdev_completed_queue(dev, pkts_sent, bytes_sent);
-#endif
-
-	if (pkts_sent) {
-		if (dev->flags & IFF_UP) {
-			if (netif_queue_stopped(dev))
-				netif_wake_queue(dev);
-		}
-#if defined (CONFIG_PSEUDO_SUPPORT)
-		if (ei_local->PseudoDev->flags & IFF_UP) {
-			if (netif_queue_stopped(ei_local->PseudoDev))
-				netif_wake_queue(ei_local->PseudoDev);
-		}
-#endif
-	}
-
-	spin_unlock(&ei_local->page_lock);
 }
 
 /**
@@ -1273,37 +1301,44 @@ static inline void ei_xmit_housekeeping(struct net_device *dev)
  *
  * This routine is called at interrupt level in response to an interrupt from
  * the controller.
- *
- * RETURNS: N/A.
  */
 static irqreturn_t ei_interrupt(int irq, void *dev_id)
 {
-	u32 reg_int_val;
-	u32 reg_int_mask;
-	END_DEVICE *ei_local;
 	struct net_device *dev = (struct net_device *) dev_id;
+	END_DEVICE *ei_local;
+#if !defined (CONFIG_RAETH_NAPI)
+	u32 reg_int_val, reg_int_mask;
+#endif
+
 	if (!dev)
 		return IRQ_NONE;
 
 	ei_local = netdev_priv(dev);
 
+#if defined (CONFIG_RAETH_NAPI)
+	if (napi_schedule_prep(&ei_local->napi)) {
+		/* disable all interrupts */
+		sysRegWrite(FE_INT_ENABLE, 0);
+		__napi_schedule(&ei_local->napi);
+	}
+#else
 	reg_int_val = sysRegRead(FE_INT_STATUS);
-	if (!reg_int_val)
-		return IRQ_NONE;
-
-	sysRegWrite(FE_INT_STATUS, reg_int_val);
-
-	if (reg_int_val & TX_DLY_INT) {
-		ei_xmit_housekeeping(dev);
+	if (reg_int_val) {
+		if (reg_int_val & TX_DLY_INT)
+			tasklet_schedule(&ei_local->tx_tasklet);
+		
+		if (reg_int_val & RX_DLY_INT) {
+			reg_int_mask = sysRegRead(FE_INT_ENABLE);
+			if (reg_int_mask & RX_DLY_INT) {
+				/* disable RX_DLY_INT interrupt */
+				sysRegWrite(FE_INT_ENABLE, reg_int_mask & ~(RX_DLY_INT));
+				tasklet_hi_schedule(&ei_local->rx_tasklet);
+			}
+		}
+		
+		sysRegWrite(FE_INT_STATUS, reg_int_val);
 	}
-
-	if (reg_int_val & RX_DLY_INT) {
-		spin_lock(&ei_local->irqe_lock);
-		reg_int_mask = sysRegRead(FE_INT_ENABLE);
-		sysRegWrite(FE_INT_ENABLE, reg_int_mask & ~(RX_DLY_INT));
-		spin_unlock(&ei_local->irqe_lock);
-		tasklet_hi_schedule(&ei_local->rx_tasklet);
-	}
+#endif /* CONFIG_RAETH_NAPI */
 
 	return IRQ_HANDLED;
 }
@@ -1499,7 +1534,6 @@ static const struct net_device_ops VirtualIF_netdev_ops = {
 #endif
 };
 
-// Register pseudo interface
 static int VirtualIF_init(struct net_device *dev_parent)
 {
 	struct net_device *dev;
@@ -1601,8 +1635,8 @@ static void stat_counters_update(unsigned long ptr)
 #endif
 	spin_unlock(&ei_local->stat_lock);
 
-	if (!eth_close)
-		mod_timer(&ei_local->stat_timer, jiffies + (15 * HZ));
+	if (ei_local->active)
+		mod_timer(&ei_local->stat_timer, jiffies + (25 * HZ));
 }
 
 /**
@@ -1624,10 +1658,28 @@ int ei_init(struct net_device *dev)
 #if defined (CONFIG_PSEUDO_SUPPORT)
 	ei_local->PseudoDev = NULL;
 #endif
+	ei_local->active = 0;
+	ei_local->min_pkt_len = ETH_ZLEN;
+
+	memset(&ei_local->stat, 0, sizeof(ei_local->stat));
+
 	spin_lock_init(&ei_local->stat_lock);
 	spin_lock_init(&ei_local->page_lock);
-	spin_lock_init(&ei_local->irqe_lock);
+
 	init_timer(&ei_local->stat_timer);
+	ei_local->stat_timer.data = (unsigned long)dev;
+	ei_local->stat_timer.function = stat_counters_update;
+
+#if defined (CONFIG_RAETH_NAPI)
+	netif_napi_add(dev, &ei_local->napi, ei_napi_poll, NAPI_WEIGHT);
+#else
+	tasklet_init(&ei_local->rx_tasklet, ei_receive, (unsigned long)dev);
+	tasklet_init(&ei_local->tx_tasklet, ei_xmit_clean, (unsigned long)dev);
+#endif
+
+#if defined (CONFIG_RAETH_DHCP_TOUCH)
+	esw_dhcpc_init();
+#endif
 
 	// Get MAC0 address from flash
 #if defined (CONFIG_RAETH_READ_MAC_FROM_MTD)
@@ -1645,13 +1697,6 @@ int ei_init(struct net_device *dev)
 	memcpy(dev->dev_addr, addr.sa_data, dev->addr_len);
 #endif
 
-	if (raeth_ring_alloc(ei_local) != 0) {
-		printk(KERN_WARNING "raeth_ring_alloc FAILED!\n");
-		return -ENOMEM;
-	}
-
-	memset(&ei_local->stat, 0, sizeof(ei_local->stat));
-
 #if defined (CONFIG_ETHTOOL)
 	// init mii structure
 	ei_local->mii_info.dev = dev;
@@ -1662,6 +1707,11 @@ int ei_init(struct net_device *dev)
 	ei_local->mii_info.phy_id = 1;
 	ei_local->mii_info.supports_gmii = mii_check_gmii_support(&ei_local->mii_info);
 #endif
+
+	if (raeth_ring_alloc(ei_local) != 0) {
+		printk(KERN_WARNING "raeth_ring_alloc FAILED!\n");
+		return -ENOMEM;
+	}
 
 	return 0;
 }
@@ -1676,6 +1726,10 @@ void ei_uninit(struct net_device *dev)
 		free_netdev(ei_local->PseudoDev);
 		ei_local->PseudoDev = NULL;
 	}
+#endif
+
+#if defined (CONFIG_RAETH_NAPI)
+	netif_napi_del(&ei_local->napi);
 #endif
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
@@ -1700,14 +1754,12 @@ int ei_open(struct net_device *dev)
 	unsigned long flags;
 	END_DEVICE *ei_local;
 
-	if (!try_module_get(THIS_MODULE))
-	{
+	if (!try_module_get(THIS_MODULE)) {
 		printk("%s: Cannot reserve module\n", __FUNCTION__);
 		return -1;
 	}
 
-	if (!dev)
-	{
+	if (!dev) {
 		printk(KERN_EMERG "%s: ei_open passed a non-existent device!\n", dev->name);
 		return -ENXIO;
 	}
@@ -1715,8 +1767,6 @@ int ei_open(struct net_device *dev)
 	ei_local = netdev_priv(dev);
 
 	spin_lock_irqsave(&ei_local->page_lock, flags);
-
-	tasklet_init(&ei_local->rx_tasklet, ei_receive, (unsigned long)dev);
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 	/* down PPE engine before FE reset */
@@ -1727,16 +1777,7 @@ int ei_open(struct net_device *dev)
 	fe_reset();
 	fe_pdma_init(dev);
 	fe_phy_init();
-
-	err = request_irq(dev->irq, ei_interrupt, IRQF_DISABLED, dev->name, dev);
-	if (err) {
-		spin_unlock_irqrestore(&ei_local->page_lock, flags);
-		return err;
-	}
-
-	fe_forward_config(dev);
-
-	/* set MAC address to ASIC */
+	fe_forward_config(dev, ei_local);
 	fe_mac1_addr_set(dev->dev_addr);
 #if defined (CONFIG_PSEUDO_SUPPORT)
 	fe_mac2_addr_set(ei_local->PseudoDev->dev_addr);
@@ -1748,12 +1789,16 @@ int ei_open(struct net_device *dev)
 		ra_sw_nat_hook_ec(1);
 #endif
 
+	/* request interrupt line for FE */
+	err = request_irq(dev->irq, ei_interrupt, IRQF_DISABLED, dev->name, dev);
+	if (err) {
+		spin_unlock_irqrestore(&ei_local->page_lock, flags);
+		return err;
+	}
+
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
 	/* prepare switch for INT handling */
 	esw_irq_init();
-#if defined (CONFIG_RAETH_DHCP_TOUCH)
-	esw_dhcpc_init();
-#endif
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_RALINK_MT7621)
 	/* request interrupt line for MT7620 ESW or MT7621 GSW */
 	err = request_irq(SURFBOARDINT_ESW, esw_interrupt, IRQF_DISABLED, "ralink_esw", dev);
@@ -1765,25 +1810,37 @@ int ei_open(struct net_device *dev)
 #endif
 #endif
 
-	/* delay IRQ to 4 interrupts, delay max 4*20us */
-	sysRegWrite(DLY_INT_CFG, 0x84048404);
-	sysRegWrite(FE_INT_ENABLE, RX_DLY_INT | TX_DLY_INT);
+#if defined (CONFIG_RAETH_NAPI)
+	napi_enable(&ei_local->napi);
+#endif
 
-	eth_close = 0; /* set flag to open protect eth while init or reinit */
+	/* config DLY interrupt */
+	sysRegWrite(DLY_INT_CFG, FE_DLY_INIT_VALUE);
+
+	/* clear pending INT and enable INT */
+	sysRegWrite(FE_INT_STATUS, 0xffffffff);
+	sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+	sysRegWrite(FE_INT_STATUS2, 0xffffffff);
+	sysRegWrite(FE_INT_ENABLE2, 0);
+#endif
+
+	/* allow processing */
+	ei_local->active = 1;
 
 #if defined (CONFIG_RAETH_BQL)
 	netdev_reset_queue(dev);
 #endif
+
 	netif_start_queue(dev);
 
 	fe_pdma_start();
 
-	ei_local->stat_timer.data = (unsigned long)dev;
-	ei_local->stat_timer.function = stat_counters_update;
-	ei_local->stat_timer.expires = jiffies + (15 * HZ); // 15 s
-	add_timer(&ei_local->stat_timer);
-
 	spin_unlock_irqrestore(&ei_local->page_lock, flags);
+
+	/* counters overflow after ~34s for 1Gbps speed, use 25s period for safe */
+	ei_local->stat_timer.expires = jiffies + (25 * HZ);
+	add_timer(&ei_local->stat_timer);
 
 	return 0;
 }
@@ -1798,11 +1855,12 @@ int ei_close(struct net_device *dev)
 {
 	int i;
 	unsigned long flags;
-	END_DEVICE *ei_local = netdev_priv(dev);	// device pointer
+	END_DEVICE *ei_local = netdev_priv(dev);
 
 	spin_lock_irqsave(&ei_local->page_lock, flags);
 
-	eth_close = 1; /* set closed flag protect eth while init or reinit */
+	/* block processing */
+	ei_local->active = 0;
 
 #if defined (CONFIG_PSEUDO_SUPPORT)
 	VirtualIF_close(ei_local->PseudoDev);
@@ -1816,7 +1874,12 @@ int ei_close(struct net_device *dev)
 
 	sysRegWrite(FE_INT_ENABLE, 0);
 
+#if defined (CONFIG_RAETH_NAPI)
+	napi_disable(&ei_local->napi);
+#else
 	tasklet_kill(&ei_local->rx_tasklet);
+	tasklet_kill(&ei_local->tx_tasklet);
+#endif
 
 	del_timer_sync(&ei_local->stat_timer);
 #if defined (CONFIG_RAETH_DHCP_TOUCH)

@@ -1018,31 +1018,15 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 static int ei_napi_poll(struct napi_struct *napi, int budget)
 {
 	END_DEVICE *ei_local = netdev_priv(napi->dev);
-	u32 reg_int_val;
 	int work_done;
 
-	/* read current INT status */
-	reg_int_val = sysRegRead(FE_INT_STATUS);
-
 	/* cleanup TX queue */
-	if (reg_int_val & TX_DONE_INT0)
-		ei_xmit_clean((unsigned long)napi->dev);
-
-	/* clear all pending bits */
-	sysRegWrite(FE_INT_STATUS, 0xffffffff);
+	ei_xmit_clean((unsigned long)napi->dev);
 
 	/* process RX queue */
 	work_done = raeth_recv(napi->dev, ei_local, budget);
 
-	/* try cleanup TX queue again after hard RX work */
-	if (work_done > 3) {
-		reg_int_val = sysRegRead(FE_INT_STATUS);
-		if (reg_int_val & TX_DONE_INT0) {
-			ei_xmit_clean((unsigned long)napi->dev);
-			sysRegWrite(FE_INT_STATUS, TX_DONE_INT0);
-		}
-	}
-
+	/* exit condition from NAPI poll */
 	if (work_done < budget) {
 		unsigned long flags;
 		
@@ -1306,37 +1290,39 @@ static irqreturn_t ei_interrupt(int irq, void *dev_id)
 {
 	struct net_device *dev = (struct net_device *) dev_id;
 	END_DEVICE *ei_local;
-#if !defined (CONFIG_RAETH_NAPI)
-	u32 reg_int_val, reg_int_mask;
-#endif
+	u32 reg_int_val;
 
 	if (!dev)
 		return IRQ_NONE;
 
 	ei_local = netdev_priv(dev);
 
+	reg_int_val = sysRegRead(FE_INT_STATUS);
+	if (unlikely(!reg_int_val))
+		return IRQ_NONE;
+
 #if defined (CONFIG_RAETH_NAPI)
 	if (napi_schedule_prep(&ei_local->napi)) {
 		/* disable all interrupts */
 		sysRegWrite(FE_INT_ENABLE, 0);
 		__napi_schedule(&ei_local->napi);
+	} else {
+		/* prevent race after ei_napi_poll call local_irq_restore */
+		sysRegWrite(FE_INT_STATUS, reg_int_val);
 	}
 #else
-	reg_int_val = sysRegRead(FE_INT_STATUS);
-	if (reg_int_val) {
-		if (reg_int_val & TX_DLY_INT)
-			tasklet_schedule(&ei_local->tx_tasklet);
-		
-		if (reg_int_val & RX_DLY_INT) {
-			reg_int_mask = sysRegRead(FE_INT_ENABLE);
-			if (reg_int_mask & RX_DLY_INT) {
-				/* disable RX_DLY_INT interrupt */
-				sysRegWrite(FE_INT_ENABLE, reg_int_mask & ~(RX_DLY_INT));
-				tasklet_hi_schedule(&ei_local->rx_tasklet);
-			}
+	sysRegWrite(FE_INT_STATUS, reg_int_val);
+
+	if (reg_int_val & TX_DLY_INT)
+		tasklet_schedule(&ei_local->tx_tasklet);
+
+	if (reg_int_val & RX_DLY_INT) {
+		u32 reg_int_mask = sysRegRead(FE_INT_ENABLE);
+		if (reg_int_mask & RX_DLY_INT) {
+			/* disable RX_DLY_INT interrupt */
+			sysRegWrite(FE_INT_ENABLE, reg_int_mask & ~(RX_DLY_INT));
+			tasklet_hi_schedule(&ei_local->rx_tasklet);
 		}
-		
-		sysRegWrite(FE_INT_STATUS, reg_int_val);
 	}
 #endif /* CONFIG_RAETH_NAPI */
 

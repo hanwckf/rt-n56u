@@ -20,12 +20,12 @@
 #define NUM_TX_DESC		128
 #define NUM_RX_DESC		128
 #define NUM_RX_MAX_PROCESS	32
-#define NAPI_WEIGHT		32
+#define NAPI_WEIGHT		16
 #else
 #define NUM_TX_DESC		256
 #define NUM_RX_DESC		256
 #define NUM_RX_MAX_PROCESS	16
-#define NAPI_WEIGHT		64
+#define NAPI_WEIGHT		32
 #endif
 
 #define DEV_NAME		"eth2"

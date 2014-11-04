@@ -1035,7 +1035,7 @@ static int ei_napi_poll(struct napi_struct *napi, int budget)
 	work_done = raeth_recv(napi->dev, ei_local, budget);
 
 	/* try cleanup TX queue again after hard RX work */
-	if (work_done > 7) {
+	if (work_done > 3) {
 		reg_int_val = sysRegRead(FE_INT_STATUS);
 		if (reg_int_val & TX_DONE_INT0) {
 			ei_xmit_clean((unsigned long)napi->dev);
@@ -1048,9 +1048,9 @@ static int ei_napi_poll(struct napi_struct *napi, int budget)
 		
 		local_irq_save(flags);
 		__napi_complete(napi);
-		sysRegWrite(FE_INT_STATUS, 0xffffffff);
 		if (ei_local->active)
 			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
+		sysRegWrite(FE_INT_STATUS, 0xffffffff);
 		local_irq_restore(flags);
 	}
 
@@ -1072,9 +1072,9 @@ static void ei_receive(unsigned long ptr)
 		unsigned long flags;
 		
 		local_irq_save(flags);
-		sysRegWrite(FE_INT_STATUS, RX_DLY_INT);
 		if (ei_local->active)
 			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
+		sysRegWrite(FE_INT_STATUS, RX_DLY_INT);
 		local_irq_restore(flags);
 	} else {
 		if (ei_local->active)

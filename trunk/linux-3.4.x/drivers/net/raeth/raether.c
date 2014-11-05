@@ -1256,8 +1256,8 @@ static int ei_napi_poll(struct napi_struct *napi, int budget)
 			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
 		local_irq_restore(flags);
 		
-		/* ack all interrupts */
-		sysRegWrite(FE_INT_STATUS, FE_INT_INIT_VALUE);
+		/* ack TX/RX interrupts */
+		sysRegWrite(FE_INT_STATUS, FE_INT_MASK_TX_RX);
 	}
 
 	return work_done;
@@ -1317,10 +1317,15 @@ static irqreturn_t ei_interrupt(int irq, void *dev_id)
 		/* disable all interrupts */
 		sysRegWrite(FE_INT_ENABLE, 0);
 		
+		/* ack not TX/RX interrupts */
+		reg_int_val &= ~(FE_INT_MASK_TX_RX);
+		if (reg_int_val)
+			sysRegWrite(FE_INT_STATUS, reg_int_val);
+		
 		/* enter to NAPI poll mode */
 		__napi_schedule(&ei_local->napi);
 	} else {
-		/* prevent race after ei_napi_poll */
+		/* ack all interrupts (prevent race with poll) */
 		sysRegWrite(FE_INT_STATUS, reg_int_val);
 	}
 #else

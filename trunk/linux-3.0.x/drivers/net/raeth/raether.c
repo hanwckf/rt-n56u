@@ -1014,59 +1014,6 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 	return work_done;
 }
 
-#if defined (CONFIG_RAETH_NAPI)
-static int ei_napi_poll(struct napi_struct *napi, int budget)
-{
-	END_DEVICE *ei_local = netdev_priv(napi->dev);
-	int work_done;
-
-	/* cleanup TX queue */
-	ei_xmit_clean((unsigned long)napi->dev);
-
-	/* process RX queue */
-	work_done = raeth_recv(napi->dev, ei_local, budget);
-
-	/* exit condition from NAPI poll */
-	if (work_done < budget) {
-		unsigned long flags;
-		
-		local_irq_save(flags);
-		__napi_complete(napi);
-		if (ei_local->active)
-			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
-		sysRegWrite(FE_INT_STATUS, 0xffffffff);
-		local_irq_restore(flags);
-	}
-
-	return work_done;
-}
-
-#else
-
-static void ei_receive(unsigned long ptr)
-{
-	struct net_device *dev = (struct net_device *)ptr;
-	END_DEVICE *ei_local = netdev_priv(dev);
-	int work_done;
-
-	/* process RX queue */
-	work_done = raeth_recv(dev, ei_local, NUM_RX_MAX_PROCESS);
-
-	if (work_done < NUM_RX_MAX_PROCESS) {
-		unsigned long flags;
-		
-		local_irq_save(flags);
-		if (ei_local->active)
-			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
-		sysRegWrite(FE_INT_STATUS, RX_DLY_INT);
-		local_irq_restore(flags);
-	} else {
-		if (ei_local->active)
-			tasklet_schedule(&ei_local->rx_tasklet);
-	}
-}
-#endif
-
 inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE *ei_local, int gmac_no)
 {
 	struct PDMA_txdesc *tx_ring, *tx_ring_start;
@@ -1280,6 +1227,70 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 	return NETDEV_TX_OK;
 }
 
+#if defined (CONFIG_RAETH_NAPI)
+static int ei_napi_poll(struct napi_struct *napi, int budget)
+{
+	END_DEVICE *ei_local = netdev_priv(napi->dev);
+	int work_done;
+
+	/* cleanup TX queue */
+	ei_xmit_clean((unsigned long)napi->dev);
+
+	/* ack TX interrupts */
+	sysRegWrite(FE_INT_STATUS, FE_INT_MASK_TX);
+
+	/* process RX queue */
+	work_done = raeth_recv(napi->dev, ei_local, budget);
+
+	if (work_done < budget) {
+		unsigned long flags;
+		
+		/* check new TX interrupts to stay in NAPI poll mode */
+		if (sysRegRead(FE_INT_STATUS) & FE_INT_MASK_TX)
+			return work_done;
+		
+		/* exit from NAPI poll mode, enable all interrupts */
+		local_irq_save(flags);
+		__napi_complete(napi);
+		if (ei_local->active)
+			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
+		local_irq_restore(flags);
+		
+		/* ack all interrupts */
+		sysRegWrite(FE_INT_STATUS, FE_INT_INIT_VALUE);
+	}
+
+	return work_done;
+}
+
+#else
+
+static void ei_receive(unsigned long ptr)
+{
+	struct net_device *dev = (struct net_device *)ptr;
+	END_DEVICE *ei_local = netdev_priv(dev);
+	int work_done;
+
+	/* process RX queue */
+	work_done = raeth_recv(dev, ei_local, NUM_RX_MAX_PROCESS);
+
+	if (work_done < NUM_RX_MAX_PROCESS) {
+		unsigned long flags;
+		
+		/* enable and ack RX interrupts */
+		local_irq_save(flags);
+		if (ei_local->active)
+			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
+		sysRegWrite(FE_INT_STATUS, RX_DLY_INT);
+		local_irq_restore(flags);
+	} else {
+		/* reschedule again */
+		if (ei_local->active)
+			tasklet_schedule(&ei_local->rx_tasklet);
+	}
+}
+#endif
+
 /**
  * ei_interrupt - handle controler interrupt
  *
@@ -1305,9 +1316,11 @@ static irqreturn_t ei_interrupt(int irq, void *dev_id)
 	if (napi_schedule_prep(&ei_local->napi)) {
 		/* disable all interrupts */
 		sysRegWrite(FE_INT_ENABLE, 0);
+		
+		/* enter to NAPI poll mode */
 		__napi_schedule(&ei_local->napi);
 	} else {
-		/* prevent race after ei_napi_poll call local_irq_restore */
+		/* prevent race after ei_napi_poll */
 		sysRegWrite(FE_INT_STATUS, reg_int_val);
 	}
 #else
@@ -1319,7 +1332,7 @@ static irqreturn_t ei_interrupt(int irq, void *dev_id)
 	if (reg_int_val & RX_DLY_INT) {
 		u32 reg_int_mask = sysRegRead(FE_INT_ENABLE);
 		if (reg_int_mask & RX_DLY_INT) {
-			/* disable RX_DLY_INT interrupt */
+			/* disable RX interrupt */
 			sysRegWrite(FE_INT_ENABLE, reg_int_mask & ~(RX_DLY_INT));
 			tasklet_hi_schedule(&ei_local->rx_tasklet);
 		}

@@ -84,9 +84,8 @@ typedef struct _END_DEVICE
 	struct tasklet_struct		rx_tasklet;
 	struct tasklet_struct		tx_tasklet;
 #endif
-	struct timer_list		stat_timer;
 	spinlock_t			page_lock;
-	spinlock_t			stat_lock;
+
 	unsigned int			active;
 	unsigned int			min_pkt_len;
 
@@ -103,6 +102,8 @@ typedef struct _END_DEVICE
 	struct sk_buff			*rx0_skbuf[NUM_RX_DESC];
 	struct sk_buff			*tx0_free[NUM_TX_DESC];
 
+	spinlock_t			stat_lock;
+	struct timer_list		stat_timer;
 	struct rtnl_link_stats64	stat;
 #if defined (CONFIG_ETHTOOL)
 	struct mii_if_info		mii_info;

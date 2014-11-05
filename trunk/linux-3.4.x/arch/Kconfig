@@ -207,6 +207,16 @@ config HAVE_ALIGNED_STRUCT_PAGE
 	  on a struct page for better performance. However selecting this
 	  might increase the size of a struct page by a word.
 
+config HAVE_IRQ_EXIT_ON_IRQ_STACK
+	bool
+	help
+	  Architecture doesn't only execute the irq handler on the irq stack
+	  but also irq_exit(). This way we can process softirqs on this irq
+	  stack instead of switching to a new one when we call __do_softirq()
+	  in the end of an hardirq.
+	  This spares a stack switch and improves cache usage on softirq
+	  processing.
+
 config HAVE_CMPXCHG_LOCAL
 	bool
 

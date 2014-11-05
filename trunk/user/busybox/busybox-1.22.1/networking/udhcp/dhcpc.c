@@ -1531,7 +1531,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 			case RENEW_REQUESTED: /* manual (SIGUSR1) renew */
 			case_RENEW_REQUESTED:
 			case RENEWING:
-				if (timeout > 60) {
+				if (timeout > 25) {
 					/* send an unicast renew request */
 			/* Sometimes observed to fail (EADDRNOTAVAIL) to bind
 			 * a new UDP socket for sending inside send_renew.
@@ -1595,8 +1595,8 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				 * (Ab)use -A TIMEOUT value (usually 20 sec)
 				 * as a cap on the timeout.
 				 */
-				if (timeout > tryagain_timeout)
-					timeout = tryagain_timeout;
+				if (timeout > 30)
+					timeout = 30; /* allow first renew via unicast */
 				goto case_RENEW_REQUESTED;
 			}
 			/* Start things over */

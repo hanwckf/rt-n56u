@@ -995,7 +995,7 @@ wan_up(char *wan_ifname, int unit, int is_static)
 		wan_gate = NULL;
 
 	/* Set default route to gateway if specified (for NDIS or IPoE) */
-	if (wan_gate && inet_addr_safe(wan_mask) != INADDR_BROADCAST && ppp_ifindex(wan_ifname) < 0) {
+	if (wan_gate && ppp_ifindex(wan_ifname) < 0) {
 		/* if the gateway is out of the subnet */
 		if (!is_same_subnet(wan_gate, wan_addr, wan_mask))
 			route_add(wan_ifname, 1, wan_gate, NULL, "255.255.255.255");

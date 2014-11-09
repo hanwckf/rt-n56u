@@ -180,21 +180,55 @@ static int ra_regs_seq_show(struct seq_file *m, void *v)
 	seq_printf(m, "SDM_CON		: 0x%08x\n", sysRegRead(SDM_CON));
 #else
 	seq_printf(m, "FE_GLO_CFG	: 0x%08x\n", sysRegRead(FE_GLO_CFG));
-	seq_printf(m, "CDMA_CSG_CFG	: 0x%08x\n", sysRegRead(CDMA_CSG_CFG));
+	seq_printf(m, "CDMA_CSG_CFG	: 0x%08x\n\n", sysRegRead(CDMA_CSG_CFG));
+
 	seq_printf(m, "GDMA1_FWD_CFG	: 0x%08x\n", sysRegRead(GDMA1_FWD_CFG));
+	seq_printf(m, "GDMA1_SHPR_CFG	: 0x%08x\n\n", sysRegRead(GDMA1_SHPR_CFG));
 #if defined (CONFIG_PSEUDO_SUPPORT)
 	seq_printf(m, "GDMA2_FWD_CFG	: 0x%08x\n", sysRegRead(GDMA2_FWD_CFG));
+	seq_printf(m, "GDMA2_SHPR_CFG	: 0x%08x\n\n", sysRegRead(GDMA2_SHPR_CFG));
 #endif
 #endif
-	seq_printf(m, "PDMA_GLO_CFG	: 0x%08x\n", sysRegRead(PDMA_GLO_CFG));
 	seq_printf(m, "FE_INT_ENABLE	: 0x%08x\n", sysRegRead(FE_INT_ENABLE));
+	seq_printf(m, "PDMA_GLO_CFG	: 0x%08x\n", sysRegRead(PDMA_GLO_CFG));
+#if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628) || \
+    defined (CONFIG_RALINK_RT3052)
+	seq_printf(m, "PDMA_SCH_CFG	: 0x%08x\n", sysRegRead(PDMA_SCH_CFG));
+#else
+	seq_printf(m, "SCH_Q01_CFG	: 0x%08x\n", sysRegRead(SCH_Q01_CFG));
+	seq_printf(m, "SCH_Q23_CFG	: 0x%08x\n", sysRegRead(SCH_Q23_CFG));
+#endif
+#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883)
+	seq_printf(m, "PDMA_FC_CFG	: 0x%08x\n", sysRegRead(PDMA_FC_CFG));
+#endif
 	seq_printf(m, "DLY_INT_CFG	: 0x%08x\n\n", sysRegRead(DLY_INT_CFG));
+
 	seq_printf(m, "TX_BASE_PTR0	: 0x%08x\n", sysRegRead(TX_BASE_PTR0));
 	seq_printf(m, "TX_CTX_IDX0	: 0x%08x\n", sysRegRead(TX_CTX_IDX0));
 	seq_printf(m, "TX_DTX_IDX0	: 0x%08x\n\n", sysRegRead(TX_DTX_IDX0));
+
+	seq_printf(m, "TX_BASE_PTR1	: 0x%08x\n", sysRegRead(TX_BASE_PTR1));
+	seq_printf(m, "TX_CTX_IDX1	: 0x%08x\n", sysRegRead(TX_CTX_IDX1));
+	seq_printf(m, "TX_DTX_IDX1	: 0x%08x\n\n", sysRegRead(TX_DTX_IDX1));
+
+	seq_printf(m, "TX_BASE_PTR2	: 0x%08x\n", sysRegRead(TX_BASE_PTR2));
+	seq_printf(m, "TX_CTX_IDX2	: 0x%08x\n", sysRegRead(TX_CTX_IDX2));
+	seq_printf(m, "TX_DTX_IDX2	: 0x%08x\n\n", sysRegRead(TX_DTX_IDX2));
+
+	seq_printf(m, "TX_BASE_PTR3	: 0x%08x\n", sysRegRead(TX_BASE_PTR3));
+	seq_printf(m, "TX_CTX_IDX3	: 0x%08x\n", sysRegRead(TX_CTX_IDX3));
+	seq_printf(m, "TX_DTX_IDX3	: 0x%08x\n\n", sysRegRead(TX_DTX_IDX3));
+
 	seq_printf(m, "RX_BASE_PTR0	: 0x%08x\n", sysRegRead(RX_BASE_PTR0));
 	seq_printf(m, "RX_CALC_IDX0	: 0x%08x\n", sysRegRead(RX_CALC_IDX0));
-	seq_printf(m, "RX_DRX_IDX0	: 0x%08x\n", sysRegRead(RX_DRX_IDX0));
+	seq_printf(m, "RX_DRX_IDX0	: 0x%08x\n\n", sysRegRead(RX_DRX_IDX0));
+
+#if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628) || \
+    defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+	seq_printf(m, "RX_BASE_PTR1	: 0x%08x\n", sysRegRead(RX_BASE_PTR1));
+	seq_printf(m, "RX_CALC_IDX1	: 0x%08x\n", sysRegRead(RX_CALC_IDX1));
+	seq_printf(m, "RX_DRX_IDX1	: 0x%08x\n", sysRegRead(RX_DRX_IDX1));
+#endif
 
 #if defined (CONFIG_ETHTOOL)
 	seq_printf(m, "\nThe current PHY address selected by ethtool is 0x%2X\n", get_current_phy_address());
@@ -268,27 +302,30 @@ static const struct file_operations ra_regs_seq_fops = {
 #if defined (CONFIG_RAETH_DEBUG)
 static int ra_txring_seq_show(struct seq_file *m, void *v)
 {
-	int i = 0;
+	int i, k;
 	END_DEVICE *ei_local = netdev_priv(dev_raether);
 
-	for (i=0; i < NUM_TX_DESC; i++) {
+	for (k = 0; k < NUM_TX_RING; k++) {
+		seq_printf(m, "- TX Ring[%d] -\n", k);
+		for (i = 0; i < NUM_TX_DESC; i++) {
 #if defined (CONFIG_RAETH_32B_DESC)
-		seq_printf(m, "%d: %08x %08x %08x %08x %08x %08x %08x %08x\n", i,
-				ei_local->tx_ring0[i].txd_info1_u32,
-				ei_local->tx_ring0[i].txd_info2_u32,
-				ei_local->tx_ring0[i].txd_info3_u32,
-				ei_local->tx_ring0[i].txd_info4_u32,
-				ei_local->tx_ring0[i].txd_info5_u32,
-				ei_local->tx_ring0[i].txd_info6_u32,
-				ei_local->tx_ring0[i].txd_info7_u32,
-				ei_local->tx_ring0[i].txd_info8_u32);
+			seq_printf(m, "%d: %08x %08x %08x %08x %08x %08x %08x %08x\n", i,
+				ei_local->tx_ring[k][i].txd_info1_u32,
+				ei_local->tx_ring[k][i].txd_info2_u32,
+				ei_local->tx_ring[k][i].txd_info3_u32,
+				ei_local->tx_ring[k][i].txd_info4_u32,
+				ei_local->tx_ring[k][i].txd_info5_u32,
+				ei_local->tx_ring[k][i].txd_info6_u32,
+				ei_local->tx_ring[k][i].txd_info7_u32,
+				ei_local->tx_ring[k][i].txd_info8_u32);
 #else
-		seq_printf(m, "%d: %08x %08x %08x %08x\n", i,
-				ei_local->tx_ring0[i].txd_info1_u32,
-				ei_local->tx_ring0[i].txd_info2_u32,
-				ei_local->tx_ring0[i].txd_info3_u32,
-				ei_local->tx_ring0[i].txd_info4_u32);
+			seq_printf(m, "%d: %08x %08x %08x %08x\n", i,
+				ei_local->tx_ring[k][i].txd_info1_u32,
+				ei_local->tx_ring[k][i].txd_info2_u32,
+				ei_local->tx_ring[k][i].txd_info3_u32,
+				ei_local->tx_ring[k][i].txd_info4_u32);
 #endif
+		}
 	}
 
 	return 0;
@@ -296,26 +333,26 @@ static int ra_txring_seq_show(struct seq_file *m, void *v)
 
 static int ra_rxring_seq_show(struct seq_file *m, void *v)
 {
-	int i = 0;
+	int i;
 	END_DEVICE *ei_local = netdev_priv(dev_raether);
 
-	for (i=0; i < NUM_RX_DESC; i++) {
+	for (i = 0; i < NUM_RX_DESC; i++) {
 #if defined (CONFIG_RAETH_32B_DESC)
 		seq_printf(m, "%d: %08x %08x %08x %08x %08x %08x %08x %08x\n", i,
-				ei_local->rx_ring0[i].rxd_info1_u32,
-				ei_local->rx_ring0[i].rxd_info2_u32,
-				ei_local->rx_ring0[i].rxd_info3_u32,
-				ei_local->rx_ring0[i].rxd_info4_u32,
-				ei_local->rx_ring0[i].rxd_info5_u32,
-				ei_local->rx_ring0[i].rxd_info6_u32,
-				ei_local->rx_ring0[i].rxd_info7_u32,
-				ei_local->rx_ring0[i].rxd_info8_u32);
+				ei_local->rx_ring[i].rxd_info1_u32,
+				ei_local->rx_ring[i].rxd_info2_u32,
+				ei_local->rx_ring[i].rxd_info3_u32,
+				ei_local->rx_ring[i].rxd_info4_u32,
+				ei_local->rx_ring[i].rxd_info5_u32,
+				ei_local->rx_ring[i].rxd_info6_u32,
+				ei_local->rx_ring[i].rxd_info7_u32,
+				ei_local->rx_ring[i].rxd_info8_u32);
 #else
 		seq_printf(m, "%d: %08x %08x %08x %08x\n", i,
-				ei_local->rx_ring0[i].rxd_info1_u32,
-				ei_local->rx_ring0[i].rxd_info2_u32,
-				ei_local->rx_ring0[i].rxd_info3_u32,
-				ei_local->rx_ring0[i].rxd_info4_u32);
+				ei_local->rx_ring[i].rxd_info1_u32,
+				ei_local->rx_ring[i].rxd_info2_u32,
+				ei_local->rx_ring[i].rxd_info3_u32,
+				ei_local->rx_ring[i].rxd_info4_u32);
 #endif
 	}
 

@@ -99,41 +99,37 @@ EXPORT_SYMBOL(get_foe_table);
 
 static void raeth_ring_free(END_DEVICE *ei_local)
 {
-	int i;
+	int i, k;
 
-	/* Clear adapter TX/RX rings */
-	sysRegWrite(TX_BASE_PTR0, 0);
-	sysRegWrite(TX_MAX_CNT0, 0);
-	sysRegWrite(RX_BASE_PTR0, 0);
-	sysRegWrite(RX_MAX_CNT0,  0);
+	/* free RX descriptors and buffers */
+	for (i = 0; i < NUM_RX_DESC; i++) {
+		if (ei_local->rx_buff[i]) {
+			dev_kfree_skb(ei_local->rx_buff[i]);
+			ei_local->rx_buff[i] = NULL;
+		}
+	}
+	
+	if (ei_local->rx_ring) {
+#if defined (CONFIG_RAETH_32B_DESC)
+		kfree(ei_local->rx_ring);
+#else
+		dma_free_coherent(NULL, NUM_RX_DESC*sizeof(struct PDMA_rxdesc), ei_local->rx_ring, ei_local->rx_ring_phy);
+#endif
+		ei_local->rx_ring = NULL;
+		ei_local->rx_ring_phy = 0;
+	}
 
-	/* Free RX buffers */
-	for (i = 0; i < NUM_RX_DESC; i++)
-	{
-		if (ei_local->rx0_skbuf[i]) {
-			dev_kfree_skb(ei_local->rx0_skbuf[i]);
-			ei_local->rx0_skbuf[i] = NULL;
+	/* free TX descriptors */
+	for (k = 0; k < NUM_TX_RING; k++) {
+		if (ei_local->tx_ring[k]) {
+			dma_free_coherent(NULL, NUM_TX_DESC*sizeof(struct PDMA_txdesc), ei_local->tx_ring[k], ei_local->tx_ring_phy[k]);
+			ei_local->tx_ring[k] = NULL;
+			ei_local->tx_ring_phy[k] = 0;
 		}
 	}
 
-	/* RX Ring */
-	if (ei_local->rx_ring0) {
-#if defined (CONFIG_RAETH_32B_DESC)
-		kfree(ei_local->rx_ring0);
-#else
-		dma_free_coherent(NULL, NUM_RX_DESC*sizeof(struct PDMA_rxdesc), ei_local->rx_ring0, ei_local->phy_rx_ring0);
-#endif
-		ei_local->rx_ring0 = NULL;
-	}
-
-	/* TX Ring */
-	if (ei_local->tx_ring0) {
-		dma_free_coherent(NULL, NUM_TX_DESC*sizeof(struct PDMA_txdesc), ei_local->tx_ring0, ei_local->phy_tx_ring0);
-		ei_local->rx_ring0 = NULL;
-	}
-
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-	/* FoE Table */
+	/* free PPE FoE table */
 	if (PpeFoeBase) {
 		dma_free_coherent(NULL, FOE_4TB_SIZ * sizeof(struct FoeEntry), PpeFoeBase, PpeFoeBasePhy);
 		PpeFoeBase = NULL;
@@ -144,41 +140,46 @@ static void raeth_ring_free(END_DEVICE *ei_local)
 
 static int raeth_ring_alloc(END_DEVICE *ei_local)
 {
-	int i;
+	int i, k;
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-	/* FoE Table */
+	/* PPE FoE Table */
 	PpeFoeBase = (struct FoeEntry *)dma_alloc_coherent(NULL, FOE_4TB_SIZ * sizeof(struct FoeEntry), &PpeFoeBasePhy, GFP_KERNEL);
 #endif
 
-	ei_local->tx_ring0 = NULL;
-	ei_local->rx_ring0 = NULL;
+	/* zero all TX pointers */
+	for (k = 0; k < NUM_TX_RING; k++)
+		ei_local->tx_ring[k] = NULL;
+
+	/* zero all RX pointers */
+	ei_local->rx_ring = NULL;
 	for (i = 0; i < NUM_RX_DESC; i++)
-		ei_local->rx0_skbuf[i] = NULL;
+		ei_local->rx_buff[i] = NULL;
 
-	/* TX Ring */
-	ei_local->tx_ring0 = dma_alloc_coherent(NULL, NUM_TX_DESC * sizeof(struct PDMA_txdesc), &ei_local->phy_tx_ring0, GFP_KERNEL);
-	if (!ei_local->tx_ring0)
-		goto err_cleanup;
+	/* allocate TX descriptors */
+	for (k = 0; k < NUM_TX_RING; k++) {
+		ei_local->tx_ring[k] = dma_alloc_coherent(NULL, NUM_TX_DESC * sizeof(struct PDMA_txdesc), &ei_local->tx_ring_phy[k], GFP_KERNEL);
+		if (!ei_local->tx_ring[k])
+			goto err_cleanup;
+	}
 
-	/* RX Ring */
+	/* allocate RX descriptors and skbuff */
 #if defined (CONFIG_RAETH_32B_DESC)
-	ei_local->rx_ring0 = kmalloc(NUM_RX_DESC * sizeof(struct PDMA_rxdesc), GFP_KERNEL);
-	ei_local->phy_rx_ring0 = virt_to_phys(ei_local->rx_ring0);
+	ei_local->rx_ring = kmalloc(NUM_RX_DESC * sizeof(struct PDMA_rxdesc), GFP_KERNEL);
+	ei_local->rx_ring_phy = virt_to_phys(ei_local->rx_ring);
 #else
-	ei_local->rx_ring0 = dma_alloc_coherent(NULL, NUM_RX_DESC * sizeof(struct PDMA_rxdesc), &ei_local->phy_rx_ring0, GFP_KERNEL);
+	ei_local->rx_ring = dma_alloc_coherent(NULL, NUM_RX_DESC * sizeof(struct PDMA_rxdesc), &ei_local->rx_ring_phy, GFP_KERNEL);
 #endif
-	if (!ei_local->rx_ring0)
+	if (!ei_local->rx_ring)
 		goto err_cleanup;
-
-	/* receiving packet buffer allocation - NUM_RX_DESC x MAX_RX_LENGTH */
-	for (i = 0; i < NUM_RX_DESC; i++)
-	{
-		ei_local->rx0_skbuf[i] = dev_alloc_skb(MAX_RX_LENGTH + NET_IP_ALIGN);
-		if (!ei_local->rx0_skbuf[i])
+	
+	/* allocate RX skbuff */
+	for (i = 0; i < NUM_RX_DESC; i++) {
+		ei_local->rx_buff[i] = dev_alloc_skb(MAX_RX_LENGTH + NET_IP_ALIGN);
+		if (!ei_local->rx_buff[i])
 			goto err_cleanup;
 #if !defined (RAETH_PDMA_V2)
-		skb_reserve(ei_local->rx0_skbuf[i], NET_IP_ALIGN);
+		skb_reserve(ei_local->rx_buff[i], NET_IP_ALIGN);
 #endif
 	}
 
@@ -524,11 +525,12 @@ static void fe_forward_config(struct net_device *dev, END_DEVICE *ei_local)
 #endif
 #endif
 
-	sysRegWrite(GDMA1_FWD_CFG, regVal);
 	sysRegWrite(CDMA_CSG_CFG, regCsg);
+	sysRegWrite(GDMA1_FWD_CFG, regVal);
 #if defined (CONFIG_PSEUDO_SUPPORT)
 	sysRegWrite(GDMA2_FWD_CFG, regVal2);
 #endif
+
 /*
  * 	PSE_FQ_CFG register definition -
  *
@@ -568,13 +570,6 @@ static void fe_forward_config(struct net_device *dev, END_DEVICE *ei_local)
 #endif
 
 #endif /* RAETH_SDMA */
-
-#if defined (CONFIG_RAETH_BQL)
-	printk("%s: Byte Queue Limits (BQL) support\n", RAETH_DEV_NAME);
-#endif
-#if defined (CONFIG_RAETH_NAPI)
-	printk("%s: NAPI support\n", RAETH_DEV_NAME);
-#endif
 }
 
 static void wait_pdma_stop(int cycles_10ms)
@@ -582,7 +577,7 @@ static void wait_pdma_stop(int cycles_10ms)
 	int i;
 	u32 regVal;
 
-	for (i=0; i < cycles_10ms; i++) {
+	for (i = 0; i < cycles_10ms; i++) {
 		regVal = sysRegRead(PDMA_GLO_CFG);
 		if ((regVal & RX_DMA_BUSY)) {
 			msleep(10);
@@ -596,39 +591,43 @@ static void wait_pdma_stop(int cycles_10ms)
 	}
 }
 
-static void fe_pdma_init(struct net_device *dev)
+static void fe_pdma_init(END_DEVICE *ei_local)
 {
-	int i;
+	int i, k;
 	u32 regVal;
-	END_DEVICE* ei_local = netdev_priv(dev);
 
 	wait_pdma_stop(10);
 
-	/* initial TX ring 0 */
-	ei_local->tx_free_idx =0;
-	for (i=0; i < NUM_TX_DESC; i++) {
-		ei_local->tx0_free[i] = NULL;
-		ei_local->tx_ring0[i].txd_info1_u32 = 0;
-		ei_local->tx_ring0[i].txd_info3_u32 = 0;
-#if defined (RAETH_PDMA_V2)
-		ei_local->tx_ring0[i].txd_info4_u32 = 0;
-#else
-		ei_local->tx_ring0[i].txd_info4_u32 = TX4_DMA_QN(3);
+	/* init TX rings */
+	for (k = 0; k < NUM_TX_RING; k++) {
+		ei_local->tx_free_idx[k] = 0;
+#if defined (RAETH_PDMAPTR_FROM_VAR)
+		ei_local->tx_calc_idx[k] = 0;
 #endif
-		ei_local->tx_ring0[i].txd_info2_u32 = TX2_DMA_DONE;
+		for (i = 0; i < NUM_TX_DESC; i++) {
+			ei_local->tx_free[k][i] = NULL;
+			ei_local->tx_ring[k][i].txd_info1_u32 = 0;
+			ei_local->tx_ring[k][i].txd_info3_u32 = 0;
+#if defined (RAETH_PDMA_V2)
+			ei_local->tx_ring[k][i].txd_info4_u32 = 0;
+#else
+			ei_local->tx_ring[k][i].txd_info4_u32 = TX4_DMA_QN(3);
+#endif
+			ei_local->tx_ring[k][i].txd_info2_u32 = TX2_DMA_DONE;
+		}
 	}
 
-	/* initial RX ring 0 */
+	/* init RX ring */
 	for (i = 0; i < NUM_RX_DESC; i++) {
-		ei_local->rx_ring0[i].rxd_info1_u32 = (unsigned int)dma_map_single(NULL, ei_local->rx0_skbuf[i]->data, MAX_RX_LENGTH, DMA_FROM_DEVICE);
-		ei_local->rx_ring0[i].rxd_info4_u32 = 0;
-		ei_local->rx_ring0[i].rxd_info3_u32 = 0;
+		ei_local->rx_ring[i].rxd_info1_u32 = (unsigned int)dma_map_single(NULL, ei_local->rx_buff[i]->data, MAX_RX_LENGTH, DMA_FROM_DEVICE);
+		ei_local->rx_ring[i].rxd_info4_u32 = 0;
+		ei_local->rx_ring[i].rxd_info3_u32 = 0;
 #if defined (RAETH_PDMA_V2)
-		ei_local->rx_ring0[i].rxd_info2_u32 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
+		ei_local->rx_ring[i].rxd_info2_u32 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
 #else
-		ei_local->rx_ring0[i].rxd_info2_u32 = RX2_DMA_LS0;
+		ei_local->rx_ring[i].rxd_info2_u32 = RX2_DMA_LS0;
 #endif
-		dma_cache_sync(NULL, &ei_local->rx_ring0[i], sizeof(struct PDMA_rxdesc), DMA_TO_DEVICE);
+		dma_cache_sync(NULL, &ei_local->rx_ring[i], sizeof(struct PDMA_rxdesc), DMA_TO_DEVICE);
 	}
 
 	/* clear PDMA */
@@ -636,21 +635,37 @@ static void fe_pdma_init(struct net_device *dev)
 	regVal &= ~(0x000000FF);
 	sysRegWrite(PDMA_GLO_CFG, regVal);
 
-	/* tell the adapter where the TX/RX rings are located. */
-	sysRegWrite(TX_BASE_PTR0, phys_to_bus((u32)ei_local->phy_tx_ring0));
+	/* GDMA1 <- TX Ring #0 */
+	sysRegWrite(TX_BASE_PTR0, phys_to_bus((u32)ei_local->tx_ring_phy[0]));
 	sysRegWrite(TX_MAX_CNT0, cpu_to_le32((u32)NUM_TX_DESC));
 	sysRegWrite(TX_CTX_IDX0, 0);
 	sysRegWrite(PDMA_RST_CFG, PST_DTX_IDX0);
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-	ei_local->tx_calc_idx = 0;
+#if NUM_TX_RING > 1 && defined (CONFIG_PSEUDO_SUPPORT)
+	/* GDMA2 <- TX Ring #2 */
+	sysRegWrite(TX_BASE_PTR2, phys_to_bus((u32)ei_local->tx_ring_phy[1]));
+	sysRegWrite(TX_MAX_CNT2, cpu_to_le32((u32)NUM_TX_DESC));
+	sysRegWrite(TX_CTX_IDX2, 0);
+	sysRegWrite(PDMA_RST_CFG, PST_DTX_IDX2);
 #endif
 
-	sysRegWrite(RX_BASE_PTR0, phys_to_bus((u32)ei_local->phy_rx_ring0));
-	sysRegWrite(RX_MAX_CNT0,  cpu_to_le32((u32)NUM_RX_DESC));
+	/* GDMA1/2 -> RX Ring #0 */
+	sysRegWrite(RX_BASE_PTR0, phys_to_bus((u32)ei_local->rx_ring_phy));
+	sysRegWrite(RX_MAX_CNT0, cpu_to_le32((u32)NUM_RX_DESC));
 	sysRegWrite(RX_CALC_IDX0, cpu_to_le32((u32)(NUM_RX_DESC - 1)));
 	sysRegWrite(PDMA_RST_CFG, PST_DRX_IDX0);
 #if defined (RAETH_PDMAPTR_FROM_VAR)
 	ei_local->rx_calc_idx = sysRegRead(RX_CALC_IDX0);
+#endif
+
+#if NUM_TX_RING > 1 && defined (CONFIG_PSEUDO_SUPPORT)
+	/* TX Ring #0 weight == TX Ring #2 weight */
+	sysRegWrite(SCH_Q01_CFG, 0x7c007c00);
+	sysRegWrite(SCH_Q23_CFG, 0x7c007c00);
+#if defined (CONFIG_RALINK_RT3883)
+	/* if P2(GMAC2) high/low queue is full, pause Ring3/Ring2
+	   if P1(GMAC1) high/low queue is full, pause Ring1/Ring0 */
+	sysRegWrite(PDMA_FC_CFG, 0x30300C0C);
+#endif
 #endif
 
 	/* only the following chipset need to set it */
@@ -661,6 +676,63 @@ static void fe_pdma_init(struct net_device *dev)
 	regVal |= (((get_surfboard_sysclk()/1000000)) << 8);
 	sysRegWrite(FE_GLO_CFG, regVal);
 #endif
+}
+
+static void fe_pdma_uninit(END_DEVICE *ei_local)
+{
+	int i, k;
+
+	/* uninit TX rings */
+	for (k = 0; k < NUM_TX_RING; k++) {
+		for (i = 0; i < NUM_TX_DESC; i++) {
+			if (ei_local->tx_free[k][i]) {
+				ei_local->tx_ring[k][i].txd_info1_u32 = 0;
+#if defined (CONFIG_RAETH_SG_DMA_TX)
+				ei_local->tx_ring[k][i].txd_info3_u32 = 0;
+				if (ei_local->tx_free[k][i] != (struct sk_buff *)0xFFFFFFFF)
+#endif
+					dev_kfree_skb_any(ei_local->tx_free[k][i]);
+				ei_local->tx_free[k][i] = NULL;
+				ei_local->tx_ring[k][i].txd_info2_u32 = TX2_DMA_DONE;
+			}
+		}
+		ei_local->tx_free_idx[k] = 0;
+#if defined (RAETH_PDMAPTR_FROM_VAR)
+		ei_local->tx_calc_idx[k] = 0;
+#endif
+	}
+
+	/* uninit RX ring */
+	for (i = 0; i < NUM_RX_DESC; i++) {
+		if (ei_local->rx_ring[i].rxd_info1_u32) {
+			ei_local->rx_ring[i].rxd_info1_u32 = 0;
+#if defined (RAETH_PDMA_V2)
+			ei_local->rx_ring[i].rxd_info2_u32 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
+#else
+			ei_local->rx_ring[i].rxd_info2_u32 = RX2_DMA_LS0;
+#endif
+		}
+	}
+
+#if defined (RAETH_PDMAPTR_FROM_VAR)
+	ei_local->rx_calc_idx = NUM_RX_DESC - 1;
+#endif
+
+	/* clear adapter TX rings */
+	sysRegWrite(TX_BASE_PTR0, 0);
+	sysRegWrite(TX_MAX_CNT0, 0);
+#if NUM_TX_RING > 1
+	sysRegWrite(TX_BASE_PTR1, 0);
+	sysRegWrite(TX_MAX_CNT1, 0);
+	sysRegWrite(TX_BASE_PTR2, 0);
+	sysRegWrite(TX_MAX_CNT2, 0);
+	sysRegWrite(TX_BASE_PTR3, 0);
+	sysRegWrite(TX_MAX_CNT3, 0);
+#endif
+
+	/* clear adapter RX ring */
+	sysRegWrite(RX_BASE_PTR0, 0);
+	sysRegWrite(RX_MAX_CNT0,  0);
 }
 
 static void fe_pdma_start(void)
@@ -783,72 +855,6 @@ static void inc_rx_drop(END_DEVICE *ei_local, int gmac_no)
 		ei_local->stat.rx_dropped++;
 }
 
-static void ei_xmit_clean(unsigned long ptr)
-{
-	struct net_device *dev = (struct net_device *)ptr;
-	END_DEVICE *ei_local = netdev_priv(dev);
-	struct PDMA_txdesc *tx_ring;
-	struct sk_buff *tx_skb;
-	unsigned int pkts_sent = 0;
-#if defined (CONFIG_RAETH_BQL)
-	unsigned int bytes_sent = 0;
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	unsigned int bytes_sent_virt = 0;
-#endif
-#endif
-	spin_lock(&ei_local->page_lock);
-
-	for (;;) {
-		tx_ring = &ei_local->tx_ring0[ei_local->tx_free_idx];
-		tx_skb = ei_local->tx0_free[ei_local->tx_free_idx];
-		if (!tx_skb || !(tx_ring->txd_info2_u32 & TX2_DMA_DONE))
-			break;
-		
-		tx_ring->txd_info2_u32 = TX2_DMA_DONE;
-#if defined (CONFIG_RAETH_SG_DMA_TX)
-		if (tx_skb != (struct sk_buff *)0xFFFFFFFF)
-#endif
-		{
-#if defined (CONFIG_RAETH_BQL)
-#if defined (CONFIG_PSEUDO_SUPPORT)
-			if (tx_skb->dev == ei_local->PseudoDev)
-				bytes_sent_virt += tx_skb->len;
-			else
-#endif
-			bytes_sent += tx_skb->len;
-#endif
-			dev_kfree_skb(tx_skb);
-		}
-		ei_local->tx0_free[ei_local->tx_free_idx] = NULL;
-		ei_local->tx_free_idx = (ei_local->tx_free_idx + 1) % NUM_TX_DESC;
-		pkts_sent++;
-	}
-
-#if defined (CONFIG_RAETH_BQL)
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	if (bytes_sent_virt)
-		netdev_completed_queue(ei_local->PseudoDev, pkts_sent, bytes_sent_virt);
-#endif
-	if (bytes_sent)
-		netdev_completed_queue(dev, pkts_sent, bytes_sent);
-#endif
-
-	if (pkts_sent) {
-		if (dev->flags & IFF_UP) {
-			if (netif_queue_stopped(dev))
-				netif_wake_queue(dev);
-		}
-#if defined (CONFIG_PSEUDO_SUPPORT)
-		if (ei_local->PseudoDev->flags & IFF_UP) {
-			if (netif_queue_stopped(ei_local->PseudoDev))
-				netif_wake_queue(ei_local->PseudoDev);
-		}
-#endif
-	}
-
-	spin_unlock(&ei_local->page_lock);
-}
-
 static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 {
 	struct sk_buff *new_skb, *rx_skb;
@@ -872,18 +878,18 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 #endif
 
 #if defined (CONFIG_RAETH_32B_DESC)
-	dma_cache_sync(NULL, &ei_local->rx_ring0[rx_dma_owner_idx], sizeof(struct PDMA_rxdesc), DMA_FROM_DEVICE);
+	dma_cache_sync(NULL, &ei_local->rx_ring[rx_dma_owner_idx], sizeof(struct PDMA_rxdesc), DMA_FROM_DEVICE);
 #endif
 
-	while (work_done < work_todo && ei_local->active) {
-		rx_ring = &ei_local->rx_ring0[rx_dma_owner_idx];
+	while (work_done < work_todo) {
+		rx_ring = &ei_local->rx_ring[rx_dma_owner_idx];
 		if (!(rx_ring->rxd_info2_u32 & RX2_DMA_DONE))
 			break;
 		
 		work_done++;
 		
 #if defined (CONFIG_32B_DESC)
-		prefetch(&ei_local->rx_ring0[((rx_dma_owner_idx + 1) % NUM_RX_DESC)]);
+		prefetch(&ei_local->rx_ring[((rx_dma_owner_idx + 1) % NUM_RX_DESC)]);
 #endif
 		length = RX2_DMA_SDL0_GET(rx_ring->rxd_info2_u32);
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
@@ -903,7 +909,7 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 #else
 			rx_ring->rxd_info2_u32 = RX2_DMA_LS0;
 #endif
-			sysRegWrite(RX_CALC_IDX0, rx_dma_owner_idx);
+			sysRegWrite(RX_CALC_IDX0, cpu_to_le32(rx_dma_owner_idx));
 #if defined (RAETH_PDMAPTR_FROM_VAR)
 			ei_local->rx_calc_idx = rx_dma_owner_idx;
 #endif
@@ -931,7 +937,7 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 		dma_cache_sync(NULL, rx_ring, sizeof(struct PDMA_rxdesc), DMA_TO_DEVICE);
 		
 		/* skb processing */
-		rx_skb = ei_local->rx0_skbuf[rx_dma_owner_idx];
+		rx_skb = ei_local->rx_buff[rx_dma_owner_idx];
 		
 		rx_skb->len = length;
 #if defined (RAETH_PDMA_V2)
@@ -989,7 +995,7 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 #endif
 		{
 #if defined (CONFIG_RALINK_RT3052_MP2)
-			if (mcast_rx(rx_skb)==0)
+			if (mcast_rx(rx_skb) == 0)
 				kfree_skb(rx_skb);
 			else
 #endif
@@ -1000,10 +1006,10 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 #endif
 		}
 		
-		ei_local->rx0_skbuf[rx_dma_owner_idx] = new_skb;
+		ei_local->rx_buff[rx_dma_owner_idx] = new_skb;
 		
 		/* move point to next RXD which wants to alloc */
-		sysRegWrite(RX_CALC_IDX0, rx_dma_owner_idx);
+		sysRegWrite(RX_CALC_IDX0, cpu_to_le32(rx_dma_owner_idx));
 #if defined (RAETH_PDMAPTR_FROM_VAR)
 		ei_local->rx_calc_idx = rx_dma_owner_idx;
 #endif
@@ -1014,11 +1020,10 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 	return work_done;
 }
 
-inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE *ei_local, int gmac_no)
+static inline int raeth_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE *ei_local, int gmac_no)
 {
 	struct PDMA_txdesc *tx_ring, *tx_ring_start;
-	u32 i;
-	u32 nr_slots;
+	u32 i, nr_slots;
 	u32 tx_cpu_owner_idx;
 	u32 tx_cpu_owner_idx_next;
 	u32 txd_info4;
@@ -1026,6 +1031,13 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 	u32 nr_frags, txd_info2;
 	const skb_frag_t *tx_frag;
 	struct skb_shared_info *shinfo;
+#endif
+#if NUM_TX_RING > 1 && defined (CONFIG_PSEUDO_SUPPORT)
+	u32 tx_ring_idx = (gmac_no == PSE_PORT_GMAC2) ? 1 : 0;
+	u32 tx_ring_ctx = (gmac_no == PSE_PORT_GMAC2) ? TX_CTX_IDX2 : TX_CTX_IDX0;
+#else
+#define tx_ring_idx 0
+#define tx_ring_ctx TX_CTX_IDX0
 #endif
 
 	/* protect eth while init or reinit */
@@ -1062,12 +1074,10 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 	}
 #endif
 
-	spin_lock(&ei_local->page_lock);
-
 #if defined (RAETH_PDMAPTR_FROM_VAR)
-	tx_cpu_owner_idx = ei_local->tx_calc_idx;
+	tx_cpu_owner_idx = ei_local->tx_calc_idx[tx_ring_idx];
 #else
-	tx_cpu_owner_idx = sysRegRead(TX_CTX_IDX0);
+	tx_cpu_owner_idx = sysRegRead(tx_ring_ctx);
 #endif
 
 #if defined (CONFIG_RAETH_SG_DMA_TX)
@@ -1079,10 +1089,9 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 #endif
 	for (i = 0; i <= nr_slots; i++) {
 		tx_cpu_owner_idx_next = (tx_cpu_owner_idx + i) % NUM_TX_DESC;
-		if (ei_local->tx0_free[tx_cpu_owner_idx_next] ||
-		  !(ei_local->tx_ring0[tx_cpu_owner_idx_next].txd_info2_u32 & TX2_DMA_DONE)) {
+		if (ei_local->tx_free[tx_ring_idx][tx_cpu_owner_idx_next] ||
+		  !(ei_local->tx_ring[tx_ring_idx][tx_cpu_owner_idx_next].txd_info2_u32 & TX2_DMA_DONE)) {
 			netif_stop_queue(dev);
-			spin_unlock(&ei_local->page_lock);
 #if defined (CONFIG_RAETH_DEBUG)
 			if (net_ratelimit())
 				printk("%s: tx_ring full! (GMAC: %d)\n", RAETH_DEV_NAME, gmac_no);
@@ -1113,7 +1122,6 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 	if (shinfo->gso_size) {
 		if (skb_header_cloned(skb)) {
 			if (pskb_expand_head(skb, 0, 0, GFP_ATOMIC)) {
-				spin_unlock(&ei_local->page_lock);
 				dev_kfree_skb(skb);
 #if defined (CONFIG_RAETH_DEBUG)
 				if (net_ratelimit())
@@ -1133,6 +1141,12 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 				txd_info4 |= TX4_DMA_TSO;
 			}
 		}
+#if defined (CONFIG_RAETH_DEBUG)
+		else {
+			if (net_ratelimit())
+				printk(KERN_ERR "%s: unsupported gso_type (0x%X) for TSO path!\n", RAETH_DEV_NAME, shinfo->gso_type);
+		}
+#endif
 	}
 #endif
 
@@ -1153,10 +1167,10 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 	}
 #endif
 
-	ei_local->tx0_free[tx_cpu_owner_idx] = skb;
+	ei_local->tx_free[tx_ring_idx][tx_cpu_owner_idx] = skb;
 
 	/* write DMA TX desc (DDONE must be cleared last) */
-	tx_ring = &ei_local->tx_ring0[tx_cpu_owner_idx];
+	tx_ring = &ei_local->tx_ring[tx_ring_idx][tx_cpu_owner_idx];
 	tx_ring_start = tx_ring;
 
 	tx_ring->txd_info4_u32 = txd_info4;
@@ -1169,8 +1183,8 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 			tx_frag = &shinfo->frags[i];
 			if (i % 2) {
 				tx_cpu_owner_idx = (tx_cpu_owner_idx + 1) % NUM_TX_DESC;
-				ei_local->tx0_free[tx_cpu_owner_idx] = (struct sk_buff *)0xFFFFFFFF; //MAGIC ID
-				tx_ring = &ei_local->tx_ring0[tx_cpu_owner_idx];
+				ei_local->tx_free[tx_ring_idx][tx_cpu_owner_idx] = (struct sk_buff *)0xFFFFFFFF; //MAGIC ID
+				tx_ring = &ei_local->tx_ring[tx_ring_idx][tx_cpu_owner_idx];
 				
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
 				tx_ring->txd_info1_u32 = skb_frag_dma_map(NULL, tx_frag, 0, skb_frag_size(tx_frag), DMA_TO_DEVICE);
@@ -1207,9 +1221,9 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 	dma_cache_sync(NULL, tx_ring_start, nr_slots * sizeof(struct PDMA_txdesc), DMA_TO_DEVICE);
 
 	/* kick the DMA TX */
-	sysRegWrite(TX_CTX_IDX0, tx_cpu_owner_idx_next);
+	sysRegWrite(tx_ring_ctx, cpu_to_le32(tx_cpu_owner_idx_next));
 #if defined (RAETH_PDMAPTR_FROM_VAR)
-	ei_local->tx_calc_idx = tx_cpu_owner_idx_next;
+	ei_local->tx_calc_idx[tx_ring_idx] = tx_cpu_owner_idx_next;
 #endif
 
 #if defined (CONFIG_RAETH_BQL)
@@ -1218,13 +1232,72 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE
 
 	/* check next free descriptor */
 	tx_cpu_owner_idx_next = (tx_cpu_owner_idx_next + 1) % NUM_TX_DESC;
-	if (ei_local->tx0_free[tx_cpu_owner_idx_next]) {
+	if (ei_local->tx_free[tx_ring_idx][tx_cpu_owner_idx_next]) {
 		netif_stop_queue(dev);
 	}
 
-	spin_unlock(&ei_local->page_lock);
-
 	return NETDEV_TX_OK;
+}
+
+static inline void raeth_xmit_clean(struct net_device *dev, END_DEVICE *ei_local, int gmac_no)
+{
+	struct netdev_queue *txq;
+	struct PDMA_txdesc *tx_ring;
+	struct sk_buff *tx_skb;
+	int cpu, clean_done = 0;
+	u32 tx_free_idx;
+#if defined (CONFIG_RAETH_BQL)
+	u32 pkts_sent = 0;
+	u32 bytes_sent = 0;
+#endif
+#if NUM_TX_RING > 1 && defined (CONFIG_PSEUDO_SUPPORT)
+	u32 tx_ring_idx = (gmac_no == PSE_PORT_GMAC2) ? 1 : 0;
+#else
+#define tx_ring_idx 0
+#endif
+
+	cpu = smp_processor_id();
+	txq = netdev_get_tx_queue(dev, 0);
+	__netif_tx_lock(txq, cpu);
+
+	tx_free_idx = ei_local->tx_free_idx[tx_ring_idx];
+
+	while (clean_done < NUM_TX_DESC) {
+		tx_ring = &ei_local->tx_ring[tx_ring_idx][tx_free_idx];
+		tx_skb = ei_local->tx_free[tx_ring_idx][tx_free_idx];
+		if (!tx_skb || !(tx_ring->txd_info2_u32 & TX2_DMA_DONE))
+			break;
+		
+		clean_done++;
+		
+		tx_ring->txd_info2_u32 = TX2_DMA_DONE;
+#if defined (CONFIG_RAETH_SG_DMA_TX)
+		if (tx_skb != (struct sk_buff *)0xFFFFFFFF)
+#endif
+		{
+#if defined (CONFIG_RAETH_BQL)
+			pkts_sent++;
+			bytes_sent += tx_skb->len;
+#endif
+			dev_kfree_skb(tx_skb);
+		}
+		ei_local->tx_free[tx_ring_idx][tx_free_idx] = NULL;
+		tx_free_idx = (tx_free_idx + 1) % NUM_TX_DESC;
+	}
+
+	ei_local->tx_free_idx[tx_ring_idx] = tx_free_idx;
+
+#if defined (CONFIG_RAETH_BQL)
+	if (pkts_sent)
+		netdev_completed_queue(dev, pkts_sent, bytes_sent);
+#endif
+
+	if (clean_done > 0 && netif_running(dev)) {
+		if (netif_tx_queue_stopped(txq))
+			netif_tx_wake_queue(txq);
+	}
+
+	__netif_tx_unlock(txq);
 }
 
 #if defined (CONFIG_RAETH_NAPI)
@@ -1234,7 +1307,10 @@ static int ei_napi_poll(struct napi_struct *napi, int budget)
 	int work_done;
 
 	/* cleanup TX queue */
-	ei_xmit_clean((unsigned long)napi->dev);
+	raeth_xmit_clean(napi->dev, ei_local, PSE_PORT_GMAC1);
+#if NUM_TX_RING > 1 && defined (CONFIG_PSEUDO_SUPPORT)
+	raeth_xmit_clean(ei_local->PseudoDev, ei_local, PSE_PORT_GMAC2);
+#endif
 
 	/* ack TX interrupts */
 	sysRegWrite(FE_INT_STATUS, FE_INT_MASK_TX);
@@ -1288,6 +1364,17 @@ static void ei_receive(unsigned long ptr)
 		if (ei_local->active)
 			tasklet_schedule(&ei_local->rx_tasklet);
 	}
+}
+
+static void ei_xmit_clean(unsigned long ptr)
+{
+	struct net_device *dev = (struct net_device *)ptr;
+	END_DEVICE *ei_local = netdev_priv(dev);
+
+	raeth_xmit_clean(dev, ei_local, PSE_PORT_GMAC1);
+#if NUM_TX_RING > 1 && defined (CONFIG_PSEUDO_SUPPORT)
+	raeth_xmit_clean(ei_local->PseudoDev, ei_local, PSE_PORT_GMAC2);
+#endif
 }
 #endif
 
@@ -1498,11 +1585,7 @@ int VirtualIF_open(struct net_device *dev)
 
 int VirtualIF_close(struct net_device *dev)
 {
-	netif_stop_queue(dev);
-
-#if defined (CONFIG_RAETH_BQL)
-	netdev_reset_queue(dev);
-#endif
+	netif_tx_disable(dev);
 
 	printk("%s: ===> VirtualIF_close\n", dev->name);
 	return 0;
@@ -1513,14 +1596,14 @@ int VirtualIF_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	END_DEVICE *ei_local;
 	PSEUDO_ADAPTER *pPseudoAd = netdev_priv(dev);
 
-	if (!pPseudoAd->RaethDev || !(pPseudoAd->RaethDev->flags & IFF_UP)) {
+	if (!netif_running(pPseudoAd->RaethDev)) {
 		dev_kfree_skb(skb);
 		return NETDEV_TX_OK;
 	}
 
 	ei_local = netdev_priv(pPseudoAd->RaethDev);
 
-	return ei_start_xmit(skb, dev, ei_local, PSE_PORT_GMAC2);
+	return raeth_xmit(skb, dev, ei_local, PSE_PORT_GMAC2);
 }
 
 static const struct net_device_ops VirtualIF_netdev_ops = {
@@ -1609,10 +1692,11 @@ static int VirtualIF_init(struct net_device *dev_parent)
 }
 #endif
 
-int ei_start_xmit_gmac1(struct sk_buff* skb, struct net_device *dev)
+int ei_start_xmit(struct sk_buff* skb, struct net_device *dev)
 {
 	END_DEVICE *ei_local = netdev_priv(dev);
-	return ei_start_xmit(skb, dev, ei_local, PSE_PORT_GMAC1);
+
+	return raeth_xmit(skb, dev, ei_local, PSE_PORT_GMAC1);
 }
 
 struct rtnl_link_stats64 *ei_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
@@ -1779,7 +1863,7 @@ int ei_open(struct net_device *dev)
 #endif
 
 	fe_reset();
-	fe_pdma_init(dev);
+	fe_pdma_init(ei_local);
 	fe_phy_init();
 	fe_forward_config(dev, ei_local);
 	fe_mac1_addr_set(dev->dev_addr);
@@ -1814,10 +1898,6 @@ int ei_open(struct net_device *dev)
 #endif
 #endif
 
-#if defined (CONFIG_RAETH_NAPI)
-	napi_enable(&ei_local->napi);
-#endif
-
 	/* config DLY interrupt */
 	sysRegWrite(DLY_INT_CFG, FE_DLY_INIT_VALUE);
 
@@ -1829,18 +1909,22 @@ int ei_open(struct net_device *dev)
 	sysRegWrite(FE_INT_ENABLE2, 0);
 #endif
 
+#if defined (CONFIG_RAETH_NAPI)
+	napi_enable(&ei_local->napi);
+#endif
+
 	/* allow processing */
 	ei_local->active = 1;
+
+	fe_pdma_start();
+
+	spin_unlock_irqrestore(&ei_local->page_lock, flags);
 
 #if defined (CONFIG_RAETH_BQL)
 	netdev_reset_queue(dev);
 #endif
 
 	netif_start_queue(dev);
-
-	fe_pdma_start();
-
-	spin_unlock_irqrestore(&ei_local->page_lock, flags);
 
 	/* counters overflow after ~34s for 1Gbps speed, use 25s period for safe */
 	ei_local->stat_timer.expires = jiffies + (25 * HZ);
@@ -1857,11 +1941,8 @@ int ei_open(struct net_device *dev)
  */
 int ei_close(struct net_device *dev)
 {
-	int i;
 	unsigned long flags;
 	END_DEVICE *ei_local = netdev_priv(dev);
-
-	spin_lock_irqsave(&ei_local->page_lock, flags);
 
 	/* block processing */
 	ei_local->active = 0;
@@ -1869,14 +1950,15 @@ int ei_close(struct net_device *dev)
 #if defined (CONFIG_PSEUDO_SUPPORT)
 	VirtualIF_close(ei_local->PseudoDev);
 #endif
-
-	netif_stop_queue(dev);
+	netif_tx_disable(dev);
 
 	fe_pdma_stop();
 	msleep(10);
 	wait_pdma_stop(50);
 
+	spin_lock_irqsave(&ei_local->page_lock, flags);
 	sysRegWrite(FE_INT_ENABLE, 0);
+	spin_unlock_irqrestore(&ei_local->page_lock, flags);
 
 #if defined (CONFIG_RAETH_NAPI)
 	napi_disable(&ei_local->napi);
@@ -1897,41 +1979,12 @@ int ei_close(struct net_device *dev)
 	// todo, needed capture GPIO interrupt for external MT7530
 #endif
 
-	for (i = 0; i < NUM_RX_DESC; i++) {
-		if (ei_local->rx_ring0[i].rxd_info1_u32) {
-			ei_local->rx_ring0[i].rxd_info1_u32 = 0;
-#if defined (RAETH_PDMA_V2)
-			ei_local->rx_ring0[i].rxd_info2_u32 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
-#else
-			ei_local->rx_ring0[i].rxd_info2_u32 = RX2_DMA_LS0;
-#endif
-		}
-	}
-
-	for (i = 0; i < NUM_TX_DESC; i++) {
-		if (ei_local->tx0_free[i]) {
-			ei_local->tx_ring0[i].txd_info1_u32 = 0;
-#if defined (CONFIG_RAETH_SG_DMA_TX)
-			ei_local->tx_ring0[i].txd_info3_u32 = 0;
-			if (ei_local->tx0_free[i] != (struct sk_buff *)0xFFFFFFFF)
-#endif
-				dev_kfree_skb_any(ei_local->tx0_free[i]);
-			ei_local->tx0_free[i] = NULL;
-			ei_local->tx_ring0[i].txd_info2_u32 = TX2_DMA_DONE;
-		}
-	}
-
+	netif_tx_lock_bh(dev);
 #if defined (CONFIG_RAETH_BQL)
 	netdev_reset_queue(dev);
 #endif
-
-	ei_local->tx_free_idx = 0;
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-	ei_local->rx_calc_idx = NUM_RX_DESC - 1;
-	ei_local->tx_calc_idx = 0;
-#endif
-
-	spin_unlock_irqrestore(&ei_local->page_lock, flags);
+	fe_pdma_uninit(ei_local);
+	netif_tx_unlock_bh(dev);
 
 	/* fetch pending FE counters */
 	spin_lock(&ei_local->stat_lock);
@@ -1951,7 +2004,7 @@ static const struct net_device_ops ei_netdev_ops = {
 	.ndo_uninit		= ei_uninit,
 	.ndo_open		= ei_open,
 	.ndo_stop		= ei_close,
-	.ndo_start_xmit		= ei_start_xmit_gmac1,
+	.ndo_start_xmit		= ei_start_xmit,
 	.ndo_get_stats64	= ei_get_stats64,
 	.ndo_do_ioctl		= ei_ioctl,
 	.ndo_change_mtu		= ei_change_mtu,
@@ -1990,6 +2043,7 @@ int __init raeth_init(void)
 #endif
 	}
 #endif
+
 	dev = alloc_etherdev(sizeof(END_DEVICE));
 	if (!dev)
 		return -ENOMEM;
@@ -2036,7 +2090,14 @@ int __init raeth_init(void)
 	esw_ioctl_init();
 #endif
 
-	printk("Ralink APSoC Ethernet Driver %s. Rx/Tx Ring: %d/%d. Max packet size: %d.\n", RAETH_VERSION, NUM_RX_DESC, NUM_TX_DESC, MAX_RX_LENGTH);
+	printk("Ralink APSoC Ethernet Driver %s (%s)\n", RAETH_VERSION, RAETH_DEV_NAME);
+	printk("%s: RX Ring %d, TX Ring %d*%d. Max packet size %d\n", RAETH_DEV_NAME, NUM_RX_DESC, NUM_TX_RING, NUM_TX_DESC, MAX_RX_LENGTH);
+#if defined (CONFIG_RAETH_NAPI)
+	printk("%s: NAPI support, weight %d\n", RAETH_DEV_NAME, NAPI_WEIGHT);
+#endif
+#if defined (CONFIG_RAETH_BQL)
+	printk("%s: Byte Queue Limits (BQL) support\n", RAETH_DEV_NAME);
+#endif
 
 	return 0;
 }

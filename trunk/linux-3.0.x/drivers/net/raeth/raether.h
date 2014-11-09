@@ -10,7 +10,7 @@
 
 #include "ra_ethreg.h"
 
-#define RAETH_VERSION		"v3.1.2"
+#define RAETH_VERSION		"v3.1.3"
 #define RAETH_DEV_NAME		"raeth"
 
 #define DEV_NAME		"eth2"
@@ -18,6 +18,12 @@
 
 /* RT6856 workaround */
 //#define RAETH_PDMAPTR_FROM_VAR
+
+#if defined (CONFIG_PSEUDO_SUPPORT)
+#define NUM_TX_RING		2
+#else
+#define NUM_TX_RING		1
+#endif
 
 #if defined (CONFIG_RALINK_RT3052) || defined (MEMORY_OPTIMIZATION)
 #define NUM_TX_DESC		128
@@ -84,23 +90,24 @@ typedef struct _END_DEVICE
 	struct tasklet_struct		rx_tasklet;
 	struct tasklet_struct		tx_tasklet;
 #endif
-	spinlock_t			page_lock;
-
 	unsigned int			active;
 	unsigned int			min_pkt_len;
 
-	dma_addr_t			phy_tx_ring0;
-	dma_addr_t			phy_rx_ring0;
-
+	unsigned int			tx_free_idx[NUM_TX_RING];
 #if defined (RAETH_PDMAPTR_FROM_VAR)
+	unsigned int			tx_calc_idx[NUM_TX_RING];
 	unsigned int			rx_calc_idx;
-	unsigned int			tx_calc_idx;
 #endif
-	unsigned int			tx_free_idx;
-	struct PDMA_txdesc		*tx_ring0;
-	struct PDMA_rxdesc		*rx_ring0;
-	struct sk_buff			*rx0_skbuf[NUM_RX_DESC];
-	struct sk_buff			*tx0_free[NUM_TX_DESC];
+
+	struct PDMA_txdesc		*tx_ring[NUM_TX_RING];
+	struct PDMA_rxdesc		*rx_ring;
+	struct sk_buff			*tx_free[NUM_TX_RING][NUM_TX_DESC];
+	struct sk_buff			*rx_buff[NUM_RX_DESC];
+
+	dma_addr_t			tx_ring_phy[NUM_TX_RING];
+	dma_addr_t			rx_ring_phy;
+
+	spinlock_t			page_lock;
 
 	spinlock_t			stat_lock;
 	struct timer_list		stat_timer;
@@ -109,7 +116,6 @@ typedef struct _END_DEVICE
 	struct mii_if_info		mii_info;
 #endif
 } END_DEVICE, *PEND_DEVICE;
-
 
 #if defined (CONFIG_PSEUDO_SUPPORT)
 typedef struct _PSEUDO_ADAPTER

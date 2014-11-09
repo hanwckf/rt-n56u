@@ -71,8 +71,9 @@
 #define ESW_PHY_ID_MAX			4
 #define ESW_MASK_EXCLUDE		(1<<5)	/* P5 excluded */
 #endif
-#define ESW_VLAN_ID_MAX			15
 #endif
+
+#define ESW_VLAN_ID_MAX			15
 
 ////////////////////////////////////////////////////////////////////////////////////
 

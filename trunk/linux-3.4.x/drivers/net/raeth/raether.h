@@ -13,6 +13,9 @@
 #define RAETH_VERSION		"v3.1.2"
 #define RAETH_DEV_NAME		"raeth"
 
+#define DEV_NAME		"eth2"
+#define DEV2_NAME		"eth3"
+
 /* RT6856 workaround */
 //#define RAETH_PDMAPTR_FROM_VAR
 
@@ -20,16 +23,13 @@
 #define NUM_TX_DESC		128
 #define NUM_RX_DESC		128
 #define NUM_RX_MAX_PROCESS	32
-#define NAPI_WEIGHT		16
 #else
 #define NUM_TX_DESC		256
 #define NUM_RX_DESC		256
 #define NUM_RX_MAX_PROCESS	16
-#define NAPI_WEIGHT		32
 #endif
 
-#define DEV_NAME		"eth2"
-#define DEV2_NAME		"eth3"
+#define NAPI_WEIGHT		32
 
 #if defined (CONFIG_RALINK_MT7621)
 #define GMAC0_OFFSET		0xE000

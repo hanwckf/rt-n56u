@@ -77,14 +77,16 @@
 #endif
 
 #if defined (CONFIG_RAETH_NAPI)
-#define FE_DLY_INIT_VALUE		0x00000000
-#define FE_INT_INIT_VALUE		(TX_DONE_INT0 | RX_DONE_INT0 | RX_DONE_INT1)
-#define FE_INT_MASK_TX_RX		(TX_DONE_INT0 | RX_DONE_INT0 | RX_DONE_INT1)
-#define FE_INT_MASK_TX			(TX_DONE_INT0)
+/* aggregate up to 2 INT, max delay 40us */
+#define FE_DLY_INIT_VALUE		0x82028202
 #else
-#define FE_DLY_INIT_VALUE		0x84048404
-#define FE_INT_INIT_VALUE		(TX_DLY_INT | RX_DLY_INT)
+/* aggregate up to 4 INT, max delay 40us */
+#define FE_DLY_INIT_VALUE		0x84028402
 #endif
+
+#define FE_INT_INIT_VALUE		(TX_DLY_INT | RX_DLY_INT)
+#define FE_INT_MASK_TX_RX		(TX_DLY_INT | RX_DLY_INT)
+#define FE_INT_MASK_TX			(TX_DLY_INT)
 
 /* FE_INT_STATUS2 */
 #if defined (CONFIG_RALINK_MT7621)
@@ -632,7 +634,6 @@ struct PDMA_txdesc {
 #define TX4_DMA_UDF(_x)			((_x) << 19)
 #define TX4_DMA_FPORT(_x)		((_x) << 25)
 #define TX4_DMA_TSO			BIT(28)
-#define TX4_DMA_TUI_CO(_x)		((_x) << 29)
 #elif defined (CONFIG_RALINK_MT7620)
 #define TX4_DMA_VIDX(_x)		((_x) & 0xf)
 #define TX4_DMA_VPRI(_x)		(((_x) & VLAN_PRIO_MASK) >> 9)
@@ -640,15 +641,14 @@ struct PDMA_txdesc {
 #define TX4_DMA_UDF(_x)			((_x) << 15)
 #define TX4_DMA_FP_BMAP(_x)		((_x) << 20)
 #define TX4_DMA_TSO			BIT(28)
-#define TX4_DMA_TUI_CO(_x)		((_x) << 29)
 #else
 #define TX4_DMA_VIDX(_x)		((_x) & 0xf)
 #define TX4_DMA_VPRI(_x)		(((_x) & VLAN_PRIO_MASK) >> 9)
 #define TX4_DMA_INSV			BIT(7)
 #define TX4_DMA_QN(_x)			((_x) << 16)
 #define TX4_DMA_PN(_x)			((_x) << 24)
-#define TX4_DMA_TUI_CO(_x)		((_x) << 29)
 #endif
+#define TX4_DMA_TUI_CO(_x)		((_x) << 29)
 
 
 #endif

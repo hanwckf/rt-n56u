@@ -10,7 +10,7 @@
 
 #include "ra_ethreg.h"
 
-#define RAETH_VERSION		"v3.1.3"
+#define RAETH_VERSION		"v3.1.4"
 #define RAETH_DEV_NAME		"raeth"
 
 #define DEV_NAME		"eth2"
@@ -110,6 +110,7 @@ typedef struct _END_DEVICE
 	spinlock_t			page_lock;
 
 	spinlock_t			stat_lock;
+	struct work_struct		stat_work;
 	struct timer_list		stat_timer;
 	struct rtnl_link_stats64	stat;
 #if defined (CONFIG_ETHTOOL)

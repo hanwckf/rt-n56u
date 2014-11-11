@@ -1787,7 +1787,7 @@ int esw_ioctl_init(void)
 #if !defined (CONFIG_MT7530_GSW)
 #if defined (CONFIG_P4_MAC_TO_PHY_MODE) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
 	/* set MT7620 MDIO pins to Normal mode */
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(3 << 7);
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_MDIO;
 #endif
 	/* early down PHY only for ESW, not for MT7530 */
 	power_down_all_phy();

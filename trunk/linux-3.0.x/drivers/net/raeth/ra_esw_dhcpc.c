@@ -12,7 +12,6 @@
 #define UDHCPC_PID_FILE		"/var/run/udhcpc.pid"
 
 extern int send_sigusr_dhcpc;
-static struct work_struct dhcpc_kill_sig_wq;
 
 static void on_kill_sig_workq(struct work_struct *work)
 {
@@ -35,6 +34,8 @@ static void on_kill_sig_workq(struct work_struct *work)
 
 	filp_close(fp, NULL);
 }
+
+static DECLARE_WORK(dhcpc_kill_sig_wq, on_kill_sig_workq);
 
 void esw_link_status_changed(u32 port_id, int port_link)
 {
@@ -62,11 +63,6 @@ void esw_link_status_changed(u32 port_id, int port_link)
 	}
 
 	printk("ESW: %sLink Status Changed - Port%d Link %s\n", port_desc, port_no_r, port_state_desc);
-}
-
-void esw_dhcpc_init(void)
-{
-	INIT_WORK(&dhcpc_kill_sig_wq, on_kill_sig_workq);
 }
 
 void esw_dhcpc_cancel(void)

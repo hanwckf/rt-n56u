@@ -20,9 +20,6 @@
 // Define Whole FE Reset Register
 #define REG_RSTCTRL			(RALINK_SYSCTL_BASE + 0x34)
 
-/* Register GPIO mode */
-#define REG_GPIOMODE			(RALINK_SYSCTL_BASE + 0x60)
-
 #if defined (CONFIG_RALINK_MT7621)
 #define REG_CLK_CFG_0			(RALINK_SYSCTL_BASE + 0x2C)
 #define REG_PAD_RGMII2_MDIO_CFG		(RALINK_SYSCTL_BASE + 0x58)

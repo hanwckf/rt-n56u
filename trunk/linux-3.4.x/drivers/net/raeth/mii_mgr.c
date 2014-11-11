@@ -5,21 +5,19 @@
 #include <linux/delay.h>
 #include <linux/sched.h>
 
+#include <linux/ralink_gpio.h>
+
 #include "ra_ethreg.h"
 #include "mii_mgr.h"
 
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_RT5350)
+    defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
 
 #define MDIO_PHY_CONTROL_0	(RALINK_ETH_SW_BASE + 0xC0)
 #define MDIO_PHY_CONTROL_1	(RALINK_ETH_SW_BASE + 0xC4)
-#define GPIO_MDIO_BIT		(1<<7)
-
-#elif defined (CONFIG_RALINK_MT7628)
-
-#define MDIO_PHY_CONTROL_0	(RALINK_ETH_SW_BASE + 0xC0)
-#define MDIO_PHY_CONTROL_1	(RALINK_ETH_SW_BASE + 0xC4)
+#if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
 #define enable_mdio(x)
+#endif
 
 #elif defined (CONFIG_RALINK_MT7620)
 
@@ -33,23 +31,21 @@
 
 #define MDIO_PHY_CONTROL_0	(RALINK_FRAME_ENGINE_BASE + 0x00)
 #define MDIO_PHY_CONTROL_1	(RALINK_FRAME_ENGINE_BASE + 0x04)
-#define GPIO_MDIO_BIT		(1<<7)
 #define enable_mdio(x)
 
 #endif
 
-#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_RT5350)
+#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352)
 void enable_mdio(int enable)
 {
 #if !defined (CONFIG_P5_MAC_TO_PHY_MODE) && !defined(CONFIG_GE1_RGMII_AN) && !defined(CONFIG_GE2_RGMII_AN) && \
     !defined (CONFIG_GE1_MII_AN) && !defined (CONFIG_GE2_MII_AN)
-	u32 data = sysRegRead(REG_GPIOMODE);
+	u32 data = sysRegRead(RALINK_REG_GPIOMODE);
 	if (enable)
-		data &= ~GPIO_MDIO_BIT;
+		data &= ~RALINK_GPIOMODE_MDIO;
 	else
-		data |=  GPIO_MDIO_BIT;
-	sysRegWrite(REG_GPIOMODE, data);
+		data |=  RALINK_GPIOMODE_MDIO;
+	sysRegWrite(RALINK_REG_GPIOMODE, data);
 #endif
 }
 #endif
@@ -331,14 +327,31 @@ u32 mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data)
 
 u32 mii_mgr_init(void)
 {
-#if !defined (CONFIG_RALINK_MT7621)
+	/* early config MDIO port for external switch control */
+
+#if defined (CONFIG_RALINK_RT3883)
+	/* set MDIO pins to Normal mode */
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_MDIO;
 #if defined (CONFIG_GE1_RGMII_FORCE_1000)
+	/* set MDIO clock to 4 MHz, disable PHY auto-polling */
 	sysRegWrite(MDIO_CFG, INIT_VALUE_OF_FORCE_1000_FD);
 #endif
 #if defined (CONFIG_GE2_RGMII_FORCE_1000)
 	sysRegWrite(MDIO_CFG2, INIT_VALUE_OF_FORCE_1000_FD);
 #endif
+#elif defined (CONFIG_RALINK_MT7620)
+	/* set MDIO pins to Normal mode */
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_MDIO;
+
+	/* set MDIO clock to 3.125 MHz, disable PHY auto-polling */
+	sysRegWrite(RALINK_ETH_SW_BASE+0x7000, 0x44000504);
+
+#if !defined (CONFIG_RAETH_ESW)
+	/* disable internal PHY 0~4, set internal PHY base address to 12 */
+	sysRegWrite(RALINK_ETH_SW_BASE+0x7014, 0x1fec000c);
 #endif
+#endif
+
 	return 0;
 }
 

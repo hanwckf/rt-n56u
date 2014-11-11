@@ -1711,10 +1711,12 @@ struct rtnl_link_stats64 *ei_get_stats64(struct net_device *dev, struct rtnl_lin
 	return stats;
 }
 
-static void stat_counters_update(unsigned long ptr)
+static void stat_counters_update(struct work_struct *work)
 {
-	struct net_device *dev = (struct net_device *)ptr;
-	END_DEVICE *ei_local = netdev_priv(dev);
+	END_DEVICE *ei_local = container_of(work, END_DEVICE, stat_work);
+
+	if (!ei_local->active)
+		return;
 
 	spin_lock(&ei_local->stat_lock);
 	read_counters_gdma1(ei_local);
@@ -1724,7 +1726,16 @@ static void stat_counters_update(unsigned long ptr)
 	spin_unlock(&ei_local->stat_lock);
 
 	if (ei_local->active)
-		mod_timer(&ei_local->stat_timer, jiffies + (25 * HZ));
+		mod_timer(&ei_local->stat_timer, jiffies + (20 * HZ));
+}
+
+static void stat_timer_handler(unsigned long ptr)
+{
+	struct net_device *dev = (struct net_device *)ptr;
+	END_DEVICE *ei_local = netdev_priv(dev);
+
+	if (ei_local->active)
+		schedule_work(&ei_local->stat_work);
 }
 
 /**
@@ -1754,19 +1765,15 @@ int ei_init(struct net_device *dev)
 	spin_lock_init(&ei_local->stat_lock);
 	spin_lock_init(&ei_local->page_lock);
 
-	init_timer(&ei_local->stat_timer);
-	ei_local->stat_timer.data = (unsigned long)dev;
-	ei_local->stat_timer.function = stat_counters_update;
+	INIT_WORK(&ei_local->stat_work, stat_counters_update);
+
+	setup_timer(&ei_local->stat_timer, stat_timer_handler, (unsigned long)dev);
 
 #if defined (CONFIG_RAETH_NAPI)
 	netif_napi_add(dev, &ei_local->napi, ei_napi_poll, NAPI_WEIGHT);
 #else
 	tasklet_init(&ei_local->rx_tasklet, ei_receive, (unsigned long)dev);
 	tasklet_init(&ei_local->tx_tasklet, ei_xmit_clean, (unsigned long)dev);
-#endif
-
-#if defined (CONFIG_RAETH_DHCP_TOUCH)
-	esw_dhcpc_init();
 #endif
 
 	// Get MAC0 address from flash
@@ -1926,9 +1933,8 @@ int ei_open(struct net_device *dev)
 
 	netif_start_queue(dev);
 
-	/* counters overflow after ~34s for 1Gbps speed, use 25s period for safe */
-	ei_local->stat_timer.expires = jiffies + (25 * HZ);
-	add_timer(&ei_local->stat_timer);
+	/* counters overflow after ~34s for 1Gbps speed, use 20s period for safe */
+	mod_timer(&ei_local->stat_timer, jiffies + (20 * HZ));
 
 	return 0;
 }
@@ -1968,6 +1974,7 @@ int ei_close(struct net_device *dev)
 #endif
 
 	del_timer_sync(&ei_local->stat_timer);
+	cancel_work_sync(&ei_local->stat_work);
 #if defined (CONFIG_RAETH_DHCP_TOUCH)
 	esw_dhcpc_cancel();
 #endif

@@ -9,6 +9,8 @@
 #include <linux/netdevice.h>
 #include <linux/sched.h>
 
+#include <linux/ralink_gpio.h>
+
 #include "raether.h"
 #include "mii_mgr.h"
 
@@ -616,25 +618,25 @@ static void mt7620_gsw_init(void)
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2710) = 0x81000000;	// P7 is user port, admit all frames
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2610) = 0x81000000;	// P6 is user port, admit all frames
 #else /* !CONFIG_RAETH_ESW */
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x7014) = 0x1fe0000c;	// disable PHY 0~4, set phy base address to 0
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x7014) = 0x1fec000c;	// disable internal PHY 0~4, set internal PHY base address to 12
 #if defined (CONFIG_RAETH_HAS_PORT5) && !defined (CONFIG_RAETH_HAS_PORT4)
 	/* Use single external P5, disable ports learning and vlan control */
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2704) = 0x00e00000;	// P7 has matrix mode (P7|P6|P5)
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2604) = 0x00e00000;	// P6 has matrix mode (P7|P6|P5)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2504) = 0x00e00000;	// P5 has matrix mode (P7|P6|P5)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2710) = 0x810000c0;	// P7 is transparent port, admit all frames
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2610) = 0x810000c0;	// P6 is transparent port, admit all frames
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2510) = 0x810000c0;	// P5 is transparent port, admit all frames
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2504) = 0x00600000;	// P5 has matrix mode (P6|P5)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2710) = 0x810080c0;	// P7 is transparent port, disable PVID insert, admit all frames
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2610) = 0x810080c0;	// P6 is transparent port, disable PVID insert, admit all frames
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2510) = 0x810080c0;	// P5 is transparent port, disable PVID insert, admit all frames
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x260c) = 0x000fff10;	// disable P6 mac learning
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x250c) = 0x000fff10;	// disable P5 mac learning
 #elif defined (CONFIG_RAETH_HAS_PORT4) && !defined (CONFIG_RAETH_HAS_PORT5)
 	/* Use single external P4, disable ports learning and vlan control */
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2704) = 0x00d00000;	// P7 has matrix mode (P7|P6|P4)
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2604) = 0x00d00000;	// P6 has matrix mode (P7|P6|P4)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2404) = 0x00d00000;	// P4 has matrix mode (P7|P6|P4)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2710) = 0x810000c0;	// P7 is transparent port, admit all frames
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2610) = 0x810000c0;	// P6 is transparent port, admit all frames
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2410) = 0x810000c0;	// P4 is transparent port, admit all frames
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2404) = 0x00500000;	// P4 has matrix mode (P6|P4)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2710) = 0x810080c0;	// P7 is transparent port, disable PVID insert, admit all frames
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2610) = 0x810080c0;	// P6 is transparent port, disable PVID insert, admit all frames
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x2410) = 0x810080c0;	// P4 is transparent port, disable PVID insert, admit all frames
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x260c) = 0x000fff10;	// disable P6 mac learning
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x240c) = 0x000fff10;	// disable P4 mac learning
 #else
@@ -651,80 +653,67 @@ static void mt7620_gsw_init(void)
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x0010) = 0x7f7f7fe0;	// Set Port6 CPU Port
 
 	/* Port 5 */
+#if defined (CONFIG_RAETH_HAS_PORT5)
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RGMii Mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_GE1;	// set GE1 to Normal mode
+#else
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x00008000;	// P5 link down
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) |=  RALINK_GPIOMODE_GE1;	// set GE1 to GPIO mode
+#endif
 #if defined (CONFIG_P5_RGMII_TO_MAC_MODE)
 	/* Use P5 for connect to external RGMII MAC */
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
-	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RGMii Mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e33b;	// (P5, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x7014) |= 0x000c0000;	// set phy base address to 12
 #elif defined (CONFIG_P5_RGMII_TO_MT7530_MODE)
 	/* Use P5 for connect to external MT7530 (P6) */
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(3 << 7);			// set MDIO to Normal mode
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
-	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RGMii Mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_MDIO;// set MDIO to Normal mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e33b;	// (P5, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
 	/* Initial config MT7530 via MDIO */
 	mt7530_gsw_init();
 #elif defined (CONFIG_P5_MII_TO_MAC_MODE)
 	/* Use P5 for connect to external MII MAC */
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set GE1 to Normal mode
-	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);
-	*(volatile u32 *)(REG_SYSCFG1) |=  (0x1 << 12);			// GE1_MODE=Mii Mode
+	*(volatile u32 *)(REG_SYSCFG1) |= (0x1 << 12);			// GE1_MODE=Mii Mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e337;	// (P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
 #elif defined (CONFIG_P5_RMII_TO_MAC_MODE)
 	/* Use P5 for connect to external RvMII MAC */
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set GE1 to Normal mode
-	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);
-	*(volatile u32 *)(REG_SYSCFG1) |=  (0x2 << 12);			// GE1_MODE=RvMii Mode
+	*(volatile u32 *)(REG_SYSCFG1) |= (0x2 << 12);			// GE1_MODE=RvMii Mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e337;	// (P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
 #elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
 	/* Use P5 for connect to external GigaPHY (with autopolling) */
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(3 << 7);			// set MDIO to Normal mode
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set GE1 to Normal mode
-	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RGMii Mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_MDIO;// set MDIO to Normal mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x00056330;	// (P5, AN)
 	init_giga_phy(1);
 	enable_autopoll_phy(1);
-#else /* Port 5 Disabled */
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x00008000;	// P5 link down
-	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 9);			// set GE1 to GPIO mode
 #endif
 
 	/* Port 4 */
+#if defined (CONFIG_RAETH_HAS_PORT4)
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);			// GE2_MODE=RGMii Mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_GE2;	// set GE2 to Normal mode
+#else
+	*(volatile u32 *)(REG_SYSCFG1) |=  (0x3 << 14);			// GE2_MODE=RJ45 Mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) |=  RALINK_GPIOMODE_GE2;	// set GE2 to GPIO mode
+#endif
 #if defined (CONFIG_P4_RGMII_TO_MAC_MODE)
 	/* Use P4 for connect to external RGMII MAC */
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
-	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);			// GE2_MODE=RGMii Mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3400) = 0x0005e33b;	// (P4, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
 #elif defined (CONFIG_P4_MII_TO_MAC_MODE)
 	/* Use P4 for connect to external MII MAC */
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
-	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);
-	*(volatile u32 *)(REG_SYSCFG1) |=  (0x1 << 14);			// GE2_MODE=Mii Mode
+	*(volatile u32 *)(REG_SYSCFG1) |= (0x1 << 14);			// GE2_MODE=Mii Mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3400) = 0x0005e337;	// (P4, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
 #elif defined (CONFIG_P4_RMII_TO_MAC_MODE)
 	/* Use P4 for connect to external RvMII MAC */
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
-	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);
-	*(volatile u32 *)(REG_SYSCFG1) |=  (0x2 << 14);			// GE2_MODE=RvMii Mode
+	*(volatile u32 *)(REG_SYSCFG1) |= (0x2 << 14);			// GE2_MODE=RvMii Mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3400) = 0x0005e337;	// (P4, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
 #elif defined (CONFIG_P4_MAC_TO_PHY_MODE)
 	/* Use P4 for connect to external GigaPHY (with autopolling) */
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(3 << 7);			// set MDIO to Normal mode
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
-	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);			// GE2_MODE=RGMii Mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_MDIO;// set MDIO to Normal mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3400) = 0x00056330;	// (P4, AN)
 	init_giga_phy(2);
 	enable_autopoll_phy(1);
 #elif defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0)
 	/* Use P4 for connect to external MT7530 GigaPHY P4 or P0 (with autopolling) */
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
-	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);			// GE2_MODE=RGMii Mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3400) = 0x00056330;	// (P4, AN)
 	enable_autopoll_phy(1);
-#else /* Port 4 Disabled */
-	*(volatile u32 *)(REG_SYSCFG1) |= (0x3 << 14);			// GE2_MODE=RJ45 Mode
-	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 10);			// set GE2 to GPIO mode
 #endif
 }
 #endif
@@ -775,12 +764,12 @@ static void rt305x_esw_init(void)
 	 * set port 5 force to 1000M/Full when connecting to switch or iNIC
 	 */
 #if defined (CONFIG_P5_RGMII_TO_MAC_MODE)
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~(1 << 9);		// set RGMII to Normal mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1<<29);	// disable port 5 auto-polling
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) |= 0x3fff;		// force 1000M full duplex
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(0xf<<20);	// rxclk_skew, txclk_skew = 0
 #elif defined (CONFIG_P5_MII_TO_MAC_MODE)
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~(1 << 9);		// set RGMII to Normal mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1<<29);	// disable port 5 auto-polling
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(0x3fff);
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) |= 0x3ffd;		// force 100M full duplex
@@ -789,14 +778,14 @@ static void rt305x_esw_init(void)
 	*(volatile u32 *)(REG_SYSCFG1) |= (0x1 << 12);
 #endif
 #elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 7);			// set MDIO to Normal mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~(1 << 9);		// set RGMII to Normal mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_MDIO;// set MDIO to Normal mode
 	init_giga_phy(1);
 #if defined (CONFIG_RT3052_ASIC) || defined (CONFIG_RT3352_ASIC)
 	enable_autopoll_phy(1);
 #endif
 #elif defined (CONFIG_P5_RMII_TO_MAC_MODE)
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~(1 << 9);		// set RGMII to Normal mode
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1<<29);	// disable port 5 auto-polling
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(0x3fff);
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) |= 0x3ffd;		// force 100M full duplex
@@ -808,16 +797,16 @@ static void rt305x_esw_init(void)
 
 #if defined (CONFIG_RALINK_RT3052)
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1 << 29);	// port5 auto polling disable
-	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 7);			// set MDIO to GPIO mode (GPIO22-GPIO23)
-	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 9);			// set RGMII to GPIO mode (GPIO41-GPIO50)
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) |= RALINK_GPIOMODE_MDIO;	// set MDIO to GPIO mode (GPIO22-GPIO23)
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) |= RALINK_GPIOMODE_RGMII;// set RGMII to GPIO mode (GPIO41-GPIO50)
 	*(volatile u32 *)(0xb0000674) = 0xFFF;				// GPIO41-GPIO50 output mode
 	*(volatile u32 *)(0xb000067C) = 0x0;				// GPIO41-GPIO50 output low
 #elif defined (CONFIG_RALINK_RT3352)
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1 << 29);	// port5 auto polling disable
-	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 7);			// set MDIO to GPIO mode (GPIO22-GPIO23)
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) |= RALINK_GPIOMODE_MDIO;	// set MDIO to GPIO mode (GPIO22-GPIO23)
 	*(volatile u32 *)(0xb0000624) = 0xC0000000;			// GPIO22-GPIO23 output mode
 	*(volatile u32 *)(0xb000062C) = 0xC0000000;			// GPIO22-GPIO23 output high
-	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 9);			// set RGMII to GPIO mode (GPIO24-GPIO35)
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) |= RALINK_GPIOMODE_GE1;	// set RGMII to GPIO mode (GPIO24-GPIO35)
 	*(volatile u32 *)(0xb000064C) = 0xFFF;				// GPIO24-GPIO35 output mode
 	*(volatile u32 *)(0xb0000654) = 0xFFF;				// GPIO24-GPIO35 output high
 #elif defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
@@ -1013,17 +1002,17 @@ void fe_phy_init(void)
 
 	/* Case2: RT3883/MT7621 GE1 + GSW */
 #if defined (CONFIG_GE1_RGMII_FORCE_1000) || defined (CONFIG_GE1_TRGMII_FORCE_1200)
+	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GMAC1 = RGMII mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_GE1;	// GE1 = Normal mode
 #if defined (CONFIG_RALINK_MT7621)
 	/* MT7621 GE1 + Internal GSW (MT7530) */
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x3 << 12);		// set MDIO to Normal mode
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x1 << 14);		// GE1 = Normal mode
-	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GMAC1 = RGMII mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_MDIO;// set MDIO to Normal mode
 	mt7530_gsw_init();
 #if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 	/* MT7621 GE2 + Internal GPHY P4 or P0 (with autopolling) */
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x1 << 15);		// GE2 = Normal mode
 	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);			// GMAC2 = RGMII mode
 	*(volatile u32 *)(REG_PAD_RGMII2_MDIO_CFG) &= ~(0x3 << 4);	// reduce RGMII2 PAD driving strength
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_GE2;	// GE2 = Normal mode
 	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x20056300);		// (P1, AN)
 	enable_autopoll_phy(1);
 #endif
@@ -1035,9 +1024,9 @@ void fe_phy_init(void)
 
 	/* Case3: RT3883/MT7621 GE2 + External GSW */
 #if defined (CONFIG_GE2_RGMII_FORCE_1000)
-#if defined (CONFIG_RALINK_MT7621)
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x1 << 15);		// GE2 = Normal mode
 	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);			// GMAC2 = RGMII mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_GE2;	// GE2 = Normal mode
+#if defined (CONFIG_RALINK_MT7621)
 	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x0005633b);		// (GE2, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
 #else
 	sysRegWrite(MDIO_CFG2, INIT_VALUE_OF_FORCE_1000_FD);
@@ -1046,10 +1035,10 @@ void fe_phy_init(void)
 
 	/* Case4: RT3883/MT7621 GE1 + GigaPhy */
 #if defined (CONFIG_GE1_RGMII_AN)
-#if defined (CONFIG_RALINK_MT7621)
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x3 << 12);		// set MDIO to Normal mode
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x1 << 14);		// GE1 = Normal mode
 	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 12);			// GMAC1 = RGMII mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_GE1;	// GE1 = Normal mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_MDIO;// set MDIO to Normal mode
+#if defined (CONFIG_RALINK_MT7621)
 	sysRegWrite(RALINK_ETH_SW_BASE+0x100, 0x20056300);		// (GE1, AN)
 #endif
 	init_giga_phy(1);
@@ -1058,10 +1047,10 @@ void fe_phy_init(void)
 
 	/* Case5: RT3883/MT7621 GE2 + GigaPhy */
 #if defined (CONFIG_GE2_RGMII_AN)
-#if defined (CONFIG_RALINK_MT7621)
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x3 << 12);		// set MDIO to Normal mode
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x1 << 15);		// GE2 = Normal mode
 	*(volatile u32 *)(REG_SYSCFG1) &= ~(0x3 << 14);			// GMAC2 = RGMII mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_GE2;	// GE2 = Normal mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_MDIO;// set MDIO to Normal mode
+#if defined (CONFIG_RALINK_MT7621)
 	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x20056300);		// (GE2, AN)
 #endif
 	init_giga_phy(2);
@@ -1112,7 +1101,7 @@ void fe_phy_init(void)
 	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x0005e337);		// (GE2, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
 #endif
 #if defined (CONFIG_GE1_MII_AN) || defined (CONFIG_GE2_MII_AN)
-	*(volatile u32 *)(REG_GPIOMODE) &= ~(0x3 << 12);		// set MDIO to Normal mode
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~(0x3 << 12);		// set MDIO to Normal mode
 	enable_autopoll_phy(1);
 #endif
 #if defined (CONFIG_GE1_MII_AN)

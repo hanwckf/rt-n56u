@@ -73,6 +73,16 @@ struct mcast_table
 	struct mcast_group_entry	pool[MCAST_TABLE_MAX_SIZE];
 };
 
+struct mcast_work
+{
+	struct work_struct ws;
+	u8 mac_src[ETHER_ADDR_LEN];
+	u8 mac_dst[ETHER_ADDR_LEN];
+	u16 is_leave:1;
+	u16 port_efid:3;
+	u16 port_fid:12;
+};
+
 static spinlock_t g_lut_lock;
 static spinlock_t g_mtb_lock;
 static struct mcast_table g_mtb;
@@ -412,12 +422,15 @@ table_unlock:
 }
 
 static void
-on_membership_timer(unsigned long data)
+on_membership_work(struct work_struct *work)
 {
 	u32 hash_idx;
 	int group_cleared;
 	unsigned long now;
 	struct mcast_group_entry *mge, **prev;
+
+	if (!g_igmp_snooping_enabled)
+		return;
 
 	spin_lock(&g_mtb_lock);
 
@@ -463,6 +476,17 @@ on_membership_timer(unsigned long data)
 		mod_timer(&g_membership_expired_timer, now + MCAST_GROUP_CHECK_INERVAL);
 
 	spin_unlock(&g_mtb_lock);
+}
+
+static DECLARE_WORK(g_membership_expired_work, on_membership_work);
+
+static void
+on_membership_timer(unsigned long data)
+{
+	if (!g_igmp_snooping_enabled)
+		return;
+
+	schedule_work(&g_membership_expired_work);
 }
 
 static void
@@ -547,7 +571,8 @@ asic_enum_mcast_table(int clear_all)
 #endif
 }
 
-void igmp_init(void)
+void
+igmp_init(void)
 {
 	spin_lock_init(&g_lut_lock);
 	spin_lock_init(&g_mtb_lock);
@@ -558,16 +583,23 @@ void igmp_init(void)
 	setup_timer(&g_membership_expired_timer, on_membership_timer, 0);
 }
 
-void igmp_uninit(void)
+void
+igmp_uninit(void)
 {
+	g_igmp_snooping_enabled = 0;
+
 	del_timer_sync(&g_membership_expired_timer);
+	cancel_work_sync(&g_membership_expired_work);
 
 	spin_lock(&g_mtb_lock);
 	mcast_table_clear();
 	spin_unlock(&g_mtb_lock);
+
+	flush_scheduled_work();
 }
 
-void change_igmp_snooping_control(u32 igmp_snooping_enabled)
+void
+change_igmp_snooping_control(u32 igmp_snooping_enabled)
 {
 	if (igmp_snooping_enabled) igmp_snooping_enabled = 1;
 
@@ -578,14 +610,15 @@ void change_igmp_snooping_control(u32 igmp_snooping_enabled)
 		g_igmp_snooping_enabled = igmp_snooping_enabled;
 		if (!igmp_snooping_enabled) {
 			del_timer_sync(&g_membership_expired_timer);
+			cancel_work_sync(&g_membership_expired_work);
 			
-			spin_lock_bh(&g_lut_lock);
+			spin_lock(&g_lut_lock);
 			asic_enum_mcast_table(1);
-			spin_unlock_bh(&g_lut_lock);
+			spin_unlock(&g_lut_lock);
 			
-			spin_lock_bh(&g_mtb_lock);
+			spin_lock(&g_mtb_lock);
 			mcast_table_clear();
-			spin_unlock_bh(&g_mtb_lock);
+			spin_unlock(&g_mtb_lock);
 		} else {
 			/* set expired timer at least group_expired time */
 			mod_timer(&g_membership_expired_timer, jiffies + (MCAST_GROUP_MEMBERSHIP_EXPIRED + 10 * HZ));
@@ -593,20 +626,22 @@ void change_igmp_snooping_control(u32 igmp_snooping_enabled)
 	}
 }
 
-void reset_igmp_snooping_table(void)
+void
+reset_igmp_snooping_table(void)
 {
 	if (!g_igmp_snooping_enabled)
 		return;
 
 	del_timer_sync(&g_membership_expired_timer);
+	cancel_work_sync(&g_membership_expired_work);
 
-	spin_lock_bh(&g_lut_lock);
+	spin_lock(&g_lut_lock);
 	asic_enum_mcast_table(1);
-	spin_unlock_bh(&g_lut_lock);
+	spin_unlock(&g_lut_lock);
 
-	spin_lock_bh(&g_mtb_lock);
+	spin_lock(&g_mtb_lock);
 	mcast_table_clear();
-	spin_unlock_bh(&g_mtb_lock);
+	spin_unlock(&g_mtb_lock);
 
 	/* set expired timer at least group_expired time */
 	mod_timer(&g_membership_expired_timer, jiffies + (MCAST_GROUP_MEMBERSHIP_EXPIRED + 10 * HZ));
@@ -614,34 +649,61 @@ void reset_igmp_snooping_table(void)
 	printk("%s - reset IGMP/MLD table and static LUT entries\n", RTL8367_DEVNAME);
 }
 
-void dump_mcast_table(void)
+void
+dump_mcast_table(void)
 {
 	printk("%s - dump multicast LUT table:\n", RTL8367_DEVNAME);
 
-	spin_lock_bh(&g_lut_lock);
+	spin_lock(&g_lut_lock);
 	asic_enum_mcast_table(0);
-	spin_unlock_bh(&g_lut_lock);
+	spin_unlock(&g_lut_lock);
 }
 
-void rtl8367_mcast_group_event(const u8 *mac_src, const u8 *mac_dst, const char *dev_name, int is_leave)
+static void
+mcast_group_event_wq(struct work_struct *work)
 {
 	int port_id;
-	u16 port_efid, port_fid;
 	u32 lan_grp_mask;
+	struct mcast_work *mw = container_of(work, struct mcast_work, ws);
+
+#ifdef RTL8367_DBG
+	printk("rtl8367_mcast_group_%s(SRC: %02X-%02X-%02X-%02X-%02X-%02X, DST: %02X-%02X-%02X-%02X-%02X-%02X, fid: %d)\n", 
+			(!mw->is_leave) ? "enter" : "leave",
+			mw->mac_src[0], mw->mac_src[1], mw->mac_src[2],
+			mw->mac_src[3], mw->mac_src[4], mw->mac_src[5],
+			mw->mac_dst[0], mw->mac_dst[1], mw->mac_dst[2],
+			mw->mac_dst[3], mw->mac_dst[4], mw->mac_dst[5],
+			mw->port_fid
+		);
+#endif
+
+	/* get port_id by unicast source MAC in l2 lookup table */
+	spin_lock(&g_lut_lock);
+	port_id = asic_find_port_with_ucast_mac(mw->mac_src, mw->port_efid, mw->port_fid);
+	spin_unlock(&g_lut_lock);
+
+	/* check valid port_id */
+	if (port_id >= 0 && port_id < RTK_MAX_NUM_OF_PORT) {
+		lan_grp_mask = get_phy_ports_mask_lan(0);
+#if defined(EXT_PORT_INIC)
+		lan_grp_mask |= (1u << EXT_PORT_INIC);
+#endif
+		/* check this port_id in LAN group */
+		if ((1u << port_id) & lan_grp_mask)
+			on_mcast_group_event(mw->mac_dst, mw->mac_src, mw->port_efid, mw->port_fid, (u32)port_id, (int)mw->is_leave);
+	}
+
+	kfree(mw);
+}
+
+void
+rtl8367_mcast_group_event(const u8 *mac_src, const u8 *mac_dst, const char *dev_name, int is_leave)
+{
+	struct mcast_work *mw;
+	u16 port_efid, port_fid;
 
 	if (!g_igmp_snooping_enabled)
 		return;
-
-#ifdef RTL8367_DBG
-	printk("rtl8367_mcast_group_%s(SRC: %02X-%02X-%02X-%02X-%02X-%02X, DST: %02X-%02X-%02X-%02X-%02X-%02X, dev: %s)\n", 
-			(!is_leave) ? "enter" : "leave",
-			mac_src[0], mac_src[1], mac_src[2],
-			mac_src[3], mac_src[4], mac_src[5],
-			mac_dst[0], mac_dst[1], mac_dst[2],
-			mac_dst[3], mac_dst[4], mac_dst[5],
-			dev_name
-		);
-#endif
 
 	/* check source MAC is unicast */
 	if (mac_src[0] & 0x01)
@@ -658,25 +720,18 @@ void rtl8367_mcast_group_event(const u8 *mac_src, const u8 *mac_dst, const char 
 		port_fid = INIC_GUEST_FID;
 #endif
 
-	/* get port_id by unicast source MAC in l2 lookup table */
-	spin_lock(&g_lut_lock);
-	port_id = asic_find_port_with_ucast_mac(mac_src, port_efid, port_fid);
-	spin_unlock(&g_lut_lock);
-
-	/* check valid port_id */
-	if (port_id < 0 || port_id >= RTK_MAX_NUM_OF_PORT)
-		return;
-
-	lan_grp_mask = get_phy_ports_mask_lan(0);
-#if defined(EXT_PORT_INIC)
-	lan_grp_mask |= (1u << EXT_PORT_INIC);
-#endif
-
-	/* check this port_id in LAN group */
-	if (!((1u << port_id) & lan_grp_mask))
-		return;
-
-	on_mcast_group_event(mac_dst, mac_src, port_efid, port_fid, (u32)port_id, is_leave);
+	/* create work (do not touch hardware in softirq context) */
+	mw = (struct mcast_work *)kmalloc(sizeof(struct mcast_work), GFP_ATOMIC);
+	if (mw) {
+		INIT_WORK(&mw->ws, mcast_group_event_wq);
+		memcpy(mw->mac_src, mac_src, ETHER_ADDR_LEN);
+		memcpy(mw->mac_dst, mac_dst, ETHER_ADDR_LEN);
+		mw->is_leave = (is_leave) ? 1 : 0;
+		mw->port_efid = port_efid;
+		mw->port_fid = port_fid;
+		if (!schedule_work(&mw->ws))
+			kfree(mw);
+	}
 }
 
 EXPORT_SYMBOL(rtl8367_mcast_group_event);

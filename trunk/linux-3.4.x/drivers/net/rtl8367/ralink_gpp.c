@@ -186,12 +186,11 @@ void gpio_smi_init(u32 gpio_sda, u32 gpio_sck, u32 clk_delay_ns, u8 addr_slave)
 
 int gpio_smi_read(u32 addr, u32 *data)
 {
-	unsigned long flags;
 	u32 rd_lo = 0;
 	u32 rd_hi = 0;
 	int ret = RT_ERR_FAILED;
 
-	spin_lock_irqsave(&g_smi_lock, flags);
+	spin_lock(&g_smi_lock);
 
 	_smi_start();
 
@@ -222,17 +221,16 @@ int gpio_smi_read(u32 addr, u32 *data)
 
  out:
 	_smi_stop();
-	spin_unlock_irqrestore(&g_smi_lock, flags);
+	spin_unlock(&g_smi_lock);
 
 	return ret;
 }
 
 int gpio_smi_write(u32 addr, u32 data)
 {
-	unsigned long flags;
 	int ret = RT_ERR_FAILED;
 
-	spin_lock_irqsave(&g_smi_lock, flags);
+	spin_lock(&g_smi_lock);
 
 	_smi_start();
 
@@ -265,7 +263,7 @@ int gpio_smi_write(u32 addr, u32 data)
 
  out:
 	_smi_stop();
-	spin_unlock_irqrestore(&g_smi_lock, flags);
+	spin_unlock(&g_smi_lock);
 
 	return ret;
 }
@@ -279,28 +277,24 @@ void gpio_init(void)
 
 int gpio_set_pin_direction(u32 pin, u32 use_direction_output)
 {
-	unsigned long flags;
-
 	if (pin > RALINK_GPIO_NUMBER)
 		return -EINVAL;
 
-	spin_lock_irqsave(&g_smi_lock, flags);
+	spin_lock(&g_smi_lock);
 	ralink_gpio_set_pin_direction(pin, use_direction_output);
-	spin_unlock_irqrestore(&g_smi_lock, flags);
+	spin_unlock(&g_smi_lock);
 
 	return 0;
 }
 
 int gpio_set_pin_value(u32 pin, u32 value)
 {
-	unsigned long flags;
-
 	if (pin > RALINK_GPIO_NUMBER)
 		return -EINVAL;
 
-	spin_lock_irqsave(&g_smi_lock, flags);
+	spin_lock(&g_smi_lock);
 	ralink_gpio_set_pin_value(pin, value);
-	spin_unlock_irqrestore(&g_smi_lock, flags);
+	spin_unlock(&g_smi_lock);
 
 	return 0;
 }
@@ -317,40 +311,26 @@ int gpio_get_pin_value(u32 pin, u32 *value)
 
 int gpio_set_mode_bit(u32 idx, u32 value)
 {
-	unsigned long flags;
-
 	if (idx > 31)
 		return -EINVAL;
 
-	spin_lock_irqsave(&g_smi_lock, flags);
+	spin_lock(&g_smi_lock);
 	ralink_gpio_mode_set_bit(idx, value);
-	spin_unlock_irqrestore(&g_smi_lock, flags);
+	spin_unlock(&g_smi_lock);
 
 	return 0;
 }
 
 void gpio_set_mode(u32 value)
 {
-	unsigned long flags;
-
-	spin_lock_irqsave(&g_smi_lock, flags);
+	spin_lock(&g_smi_lock);
 	ralink_gpio_mode_set(value);
-	spin_unlock_irqrestore(&g_smi_lock, flags);
+	spin_unlock(&g_smi_lock);
 }
 
 void gpio_get_mode(u32 *value)
 {
 	*value = ralink_gpio_mode_get();
-}
-
-void gpio_set_mdio_unlocked(int enable)
-{
-	/* control MDIO/GPIO only for RT3883, for all other chips 
-	   MDIO always controlled in mii_mgr_read/mii_mgr_write */
-#if defined (CONFIG_RALINK_RT3883)
-	// RALINK_GPIOMODE_MDIO is bit 7
-	ralink_gpio_mode_set_bit(7, (enable) ? 0 : 1);
-#endif
 }
 
 int ralink_initGpioPin(u32 pin, u32 use_direction_output)

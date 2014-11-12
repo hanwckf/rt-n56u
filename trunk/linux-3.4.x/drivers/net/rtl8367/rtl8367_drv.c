@@ -124,7 +124,7 @@ void asic_dump_isolation(int max_vlan_vid)
 	}
 
 	printk("%s: dump ports accept mode:\n", RTL8367_DEVNAME);
-	
+
 	for (i = 0; i < RTK_MAX_NUM_OF_PORT; i++)
 	{
 		rtk_vlan_portIgrFilterEnable_get(i, &Igr_filter);
@@ -1103,10 +1103,10 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 		mask_untag.bits[0] &= ~(1L << WAN_PORT_X);
 		accept_tagged      |=  (1L << WAN_PORT_X);
 	}
-	
+
 	if (!cpu_inet_combined)
 		rtk_vlan_set(pvid[SWAPI_VLAN_RULE_WAN_INET], mask_member, mask_untag, 2);
-	
+
 	/* force add WAN port to create Port VID (if ID2) */
 	if (pvid[SWAPI_VLAN_RULE_WAN_INET] == 2)
 		mask_untag.bits[0] |= (1L << WAN_PORT_X);
@@ -1176,12 +1176,12 @@ void asic_vlan_init_vid1(void)
 {
 	if (!g_vlan_cleared)
 		asic_vlan_reset_table();
-	
+
 	asic_vlan_set_ingress_ports(1L << LAN_PORT_CPU);
-	
+
 	/* set CPU port accept mask */
 	rtk_vlan_portAcceptFrameType_set(LAN_PORT_CPU, ACCEPT_FRAME_TYPE_ALL);
-	
+
 #if defined(EXT_PORT_INIC)
 	/* set iNIC port accept mask */
 	rtk_vlan_portAcceptFrameType_set(EXT_PORT_INIC, ACCEPT_FRAME_TYPE_UNTAG_ONLY);
@@ -1498,10 +1498,6 @@ int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 
 	if (power_changed)
 		change_wan_ports_power(1);
-
-#ifdef RTL8367_DBG
-	asic_dump_bridge();
-#endif
 
 	return 0;
 }
@@ -2046,6 +2042,8 @@ int __init rtl8367_init(void)
 {
 	int r;
 
+	printk("Realtek RTL8367 GigaPHY Switch Driver %s.\n", RTL8367_VERSION);
+
 	mutex_init(&asic_access_mutex);
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
 	igmp_init();
@@ -2065,8 +2063,6 @@ int __init rtl8367_init(void)
 	mutex_lock(&asic_access_mutex);
 	reset_and_init_switch(1);
 	mutex_unlock(&asic_access_mutex);
-
-	printk("Realtek RTL8367 GigaPHY Switch Driver %s.\n", RTL8367_VERSION);
 
 	return 0;
 }

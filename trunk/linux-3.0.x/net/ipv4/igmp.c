@@ -329,9 +329,11 @@ static struct sk_buff *igmpv3_newpack(struct net_device *dev, int size)
 	struct igmpv3_report *pig;
 	struct net *net = dev_net(dev);
 	struct flowi4 fl4;
+	int hlen = LL_RESERVED_SPACE(dev);
+	int tlen = dev->needed_tailroom;
 
 	while (1) {
-		skb = alloc_skb(size + LL_ALLOCATED_SPACE(dev),
+		skb = alloc_skb(size + hlen + tlen,
 				GFP_ATOMIC | __GFP_NOWARN);
 		if (skb)
 			break;
@@ -353,7 +355,7 @@ static struct sk_buff *igmpv3_newpack(struct net_device *dev, int size)
 	skb_dst_set(skb, &rt->dst);
 	skb->dev = dev;
 
-	skb_reserve(skb, LL_RESERVED_SPACE(dev));
+	skb_reserve(skb, hlen);
 
 	skb_reset_network_header(skb);
 	pip = ip_hdr(skb);
@@ -673,6 +675,7 @@ static int igmp_send_report(struct in_device *in_dev, struct ip_mc_list *pmc,
 	__be32	group = pmc ? pmc->multiaddr : 0;
 	struct flowi4 fl4;
 	__be32	dst;
+	int hlen, tlen;
 
 	if (type == IGMPV3_HOST_MEMBERSHIP_REPORT)
 		return igmpv3_send_report(in_dev, pmc);
@@ -687,7 +690,9 @@ static int igmp_send_report(struct in_device *in_dev, struct ip_mc_list *pmc,
 	if (IS_ERR(rt))
 		return -1;
 
-	skb = alloc_skb(IGMP_SIZE+LL_ALLOCATED_SPACE(dev), GFP_ATOMIC);
+	hlen = LL_RESERVED_SPACE(dev);
+	tlen = dev->needed_tailroom;
+	skb = alloc_skb(IGMP_SIZE + hlen + tlen, GFP_ATOMIC);
 	if (skb == NULL) {
 		ip_rt_put(rt);
 		return -1;
@@ -696,7 +701,7 @@ static int igmp_send_report(struct in_device *in_dev, struct ip_mc_list *pmc,
 
 	skb_dst_set(skb, &rt->dst);
 
-	skb_reserve(skb, LL_RESERVED_SPACE(dev));
+	skb_reserve(skb, hlen);
 
 	skb_reset_network_header(skb);
 	iph = ip_hdr(skb);

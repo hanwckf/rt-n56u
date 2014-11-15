@@ -521,7 +521,6 @@ void PpeKeepAliveHandler(struct sk_buff* skb, struct FoeEntry* foe_entry, int re
 	uint32_t vlan1_gap = 0;
 	uint32_t vlan2_gap = 0;
 	uint32_t pppoe_gap = 0;
-	unsigned long flags;
 
 	/*
 	 * try to recover to original SMAC/DMAC, but we don't have such information.
@@ -583,10 +582,10 @@ void PpeKeepAliveHandler(struct sk_buff* skb, struct FoeEntry* foe_entry, int re
 			struct udphdr *uh = (struct udphdr *)((uint8_t *)iph + iph->ihl * 4);
 			if (!uh->check && ppe_udp_bug && foe_entry->bfib1.state == BIND) {
 				/* no UDP checksum, force unbind session from PPE for workaround PPE UDP bug */
-				spin_lock_irqsave(&ppe_foe_lock, flags);
+				spin_lock_bh(&ppe_foe_lock);
 				foe_entry->udib1.state = UNBIND;
 				foe_entry->udib1.time_stamp = RegRead(FOE_TS) & 0xFF;
-				spin_unlock_irqrestore(&ppe_foe_lock, flags);
+				spin_unlock_bh(&ppe_foe_lock);
 			}
 			if (recover_header)
 				FoeToOrgUdpHdr(foe_entry, iph, uh);
@@ -1653,7 +1652,6 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 {
 	struct FoeEntry *foe_entry;
-	unsigned long flags;
 	int foe_ai;
 
 	/* check traffic from WiFi/ExtIf (gmac_no = 0) */
@@ -1691,12 +1689,12 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 			       || (foe_ai == HIT_UNBIND && IS_IPV6_1T_ROUTE(foe_entry))
 #endif
 	  )) {
-		spin_lock_irqsave(&ppe_foe_lock, flags);
+		spin_lock_bh(&ppe_foe_lock);
 		if (FoeBindToPpe(skb, foe_entry, gmac_no)) {
 			if (gmac_no != 0)
 				FOE_AI(skb) = UN_HIT;
 		}
-		spin_unlock_irqrestore(&ppe_foe_lock, flags);
+		spin_unlock_bh(&ppe_foe_lock);
 		
 #if defined (CONFIG_HNAT_V2)
 	} else if (foe_ai == HIT_BIND_KEEPALIVE_MC_NEW_HDR || foe_ai == HIT_BIND_KEEPALIVE_DUP_OLD_HDR) {
@@ -1714,12 +1712,12 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 #endif
 #if defined (CONFIG_RA_HW_NAT_PREBIND)
 	} else if (foe_ai == HIT_PRE_BIND) {
-		spin_lock_irqsave(&ppe_foe_lock, flags);
+		spin_lock_bh(&ppe_foe_lock);
 		if (foe_entry->udib1.preb) {
 			foe_entry->bfib1.state = BIND;
 			foe_entry->udib1.preb = 0;
 		}
-		spin_unlock_irqrestore(&ppe_foe_lock, flags);
+		spin_unlock_bh(&ppe_foe_lock);
 #if defined (CONFIG_RA_HW_NAT_DEBUG)
 		/* Dump Binding Entry */
 		if (DebugLevel >= 3) {

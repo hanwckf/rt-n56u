@@ -1325,15 +1325,13 @@ static int ei_napi_poll(struct napi_struct *napi, int budget)
 		if (sysRegRead(FE_INT_STATUS) & FE_INT_MASK_TX)
 			return work_done;
 		
-		/* exit from NAPI poll mode, enable all interrupts */
+		/* exit from NAPI poll mode, ack and enable TX/RX interrupts */
 		local_irq_save(flags);
 		__napi_complete(napi);
+		sysRegWrite(FE_INT_STATUS, FE_INT_MASK_TX_RX);
 		if (ei_local->active)
 			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
 		local_irq_restore(flags);
-		
-		/* ack TX/RX interrupts */
-		sysRegWrite(FE_INT_STATUS, FE_INT_MASK_TX_RX);
 	}
 
 	return work_done;
@@ -1353,11 +1351,11 @@ static void ei_receive(unsigned long ptr)
 	if (work_done < NUM_RX_MAX_PROCESS) {
 		unsigned long flags;
 		
-		/* enable and ack RX interrupts */
+		/* ack and enable RX interrupts */
 		local_irq_save(flags);
+		sysRegWrite(FE_INT_STATUS, RX_DLY_INT);
 		if (ei_local->active)
 			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
-		sysRegWrite(FE_INT_STATUS, RX_DLY_INT);
 		local_irq_restore(flags);
 	} else {
 		/* reschedule again */

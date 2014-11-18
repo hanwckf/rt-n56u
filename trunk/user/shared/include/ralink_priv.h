@@ -22,7 +22,11 @@
 #define ETHER_ADDR_LEN		6
 #endif
 
+#if (BOARD_RAM_SIZE > 32)
 #define MAX_NUMBER_OF_MAC	64
+#else
+#define MAX_NUMBER_OF_MAC	32
+#endif
 
 #define MODE_CCK		0
 #define MODE_OFDM		1

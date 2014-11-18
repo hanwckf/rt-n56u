@@ -1359,7 +1359,7 @@ config SLABINFO
 	bool
 	depends on PROC_FS
 	depends on SLAB || SLUB_DEBUG
-	default y
+	default n
 
 config RT_MUTEXES
 	boolean

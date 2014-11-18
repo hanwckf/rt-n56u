@@ -91,4 +91,9 @@ config MTD_KERNEL_PART_SIZ
 	default 0xD0000
 	depends on RT2880_ROOTFS_IN_FLASH && !ROOTFS_IN_FLASH_NO_PADDING
 
+config MTD_STORE_PART_SIZ
+	hex 'MTD Storage Partition Size (Unit:Bytes)'
+	default 0x10000
+	depends on MTD_RALINK
+
 endmenu

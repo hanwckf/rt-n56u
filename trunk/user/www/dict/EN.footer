@@ -356,6 +356,7 @@ TweaksWPSItem22=WAN: connect/disconnect
 TweaksWPSItem30=System: router reboot
 TweaksWPSItem31=System: router shutdown
 TweaksWPSItem32=System: run user script
+TweaksWPSItem33=System: reset settings
 TweaksLEDEvents=LED Events
 TweaksLEDALL=Enable front LED?
 TweaksLEDWAN=Front LED Internet:

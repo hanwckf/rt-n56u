@@ -73,6 +73,9 @@ function initial(){
 		o3.remove(1);
 	}
 
+	if (!support_led_pwr())
+		showhide_div("row_led_pwr", 0);
+
 	showhide_div("row_led_wan", support_led_wan());
 	showhide_div("row_led_lan", support_led_lan());
 	showhide_div("row_led_usb", support_led_usb());
@@ -225,6 +228,7 @@ function change_led_all(){
                                                     <option value="7"  <% nvram_match_x("", "ez_action_long", "7", "selected"); %>><#TweaksWPSItem30#></option>
                                                     <option value="8"  <% nvram_match_x("", "ez_action_long", "8", "selected"); %>><#TweaksWPSItem31#></option>
                                                     <option value="10" <% nvram_match_x("", "ez_action_long", "10","selected"); %>><#TweaksWPSItem32#> /opt/bin/on_wps.sh 2</option>
+                                                    <option value="15" <% nvram_match_x("", "ez_action_long", "15","selected"); %>><#TweaksWPSItem33#></option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -291,7 +295,7 @@ function change_led_all(){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_led_pwr">
                                             <th><#TweaksLEDPWR#></th>
                                             <td>
                                                 <select name="front_led_pwr" class="input" style="width: 320px;">

@@ -2367,6 +2367,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_usb() { return %d;}\n"
 		"function support_usb3() { return %d;}\n"
 		"function support_switch_type() { return %d;}\n"
+		"function support_num_ephy() { return %d;}\n"
 		"function support_2g_apcli_only() { return %d;}\n"
 		"function support_5g_radio() { return %d;}\n"
 		"function support_5g_11ac() { return %d;}\n"
@@ -2384,6 +2385,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		has_usb,
 		has_usb3,
 		use_switch_type,
+		BOARD_NUM_ETH_EPHY,
 		(has_inic_mii) ? 0 : 1,
 		BOARD_HAS_5G_RADIO,
 		BOARD_HAS_5G_11AC,

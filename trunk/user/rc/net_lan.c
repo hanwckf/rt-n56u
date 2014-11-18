@@ -280,7 +280,7 @@ config_bridge(void)
 	fput_int(bridge_path, (igmp_sn) ? 1 : 0);
 }
 
-void 
+void
 switch_config_link(void)
 {
 	int i_flow_mode;
@@ -322,21 +322,25 @@ switch_config_link(void)
 	phy_link_port_lan4(i_link_mode, i_flow_mode);
 }
 
-void 
+void
 switch_config_base(void)
 {
-#if (BOARD_NUM_ETH_LEDS > 0)
+#if (BOARD_NUM_ETH_LEDS > 1)
+	phy_led_mode_green(nvram_get_int("ether_led0"));
+	phy_led_mode_yellow(nvram_get_int("ether_led1"));
+#elif (BOARD_NUM_ETH_LEDS == 1)
+#if defined (BOARD_ETH_LED_SWAP)
+	phy_led_mode_yellow(nvram_get_int("ether_led0"));
+#else
 	phy_led_mode_green(nvram_get_int("ether_led0"));
 #endif
-#if (BOARD_NUM_ETH_LEDS > 1)
-	phy_led_mode_yellow(nvram_get_int("ether_led1"));
 #endif
 	phy_jumbo_frames(nvram_get_int("ether_jumbo"));
 	phy_green_ethernet(nvram_get_int("ether_green"));
 	phy_igmp_snooping(nvram_get_int("ether_igmp"));
 }
 
-void 
+void
 switch_config_storm(void)
 {
 	int controlrate_unknown_unicast;

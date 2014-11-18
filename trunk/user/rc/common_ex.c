@@ -212,6 +212,7 @@ get_eeprom_params(void)
 	nvram_set_temp("wl_macaddr", macaddr_wl);  // 5 GHz
 	nvram_set_temp("rt_macaddr", macaddr_rt);  // 2.4 GHZ
 
+#if defined (VENDOR_ASUS)
 	/* reserved for Ralink. used as ASUS country code. */
 	memset(country_code, 0, sizeof(country_code));
 	if (FRead(country_code, OFFSET_COUNTRY_CODE, 2) < 0) {
@@ -225,6 +226,9 @@ get_eeprom_params(void)
 		if (country_code[0] == 0)
 			strcpy(country_code, "GB");
 	}
+#else
+	strcpy(country_code, "GB");
+#endif
 
 	if (strlen(nvram_safe_get("rt_country_code")) == 0)
 		nvram_set("rt_country_code", country_code);
@@ -232,6 +236,7 @@ get_eeprom_params(void)
 	if (strlen(nvram_safe_get("wl_country_code")) == 0)
 		nvram_set("wl_country_code", country_code);
 
+#if defined (VENDOR_ASUS)
 	/* reserved for Ralink. used as ASUS RegSpec code. */
 	memset(regspec_code, 0, sizeof(regspec_code));
 	if (FRead(regspec_code, OFFSET_REGSPEC_CODE, 4) < 0) {
@@ -249,8 +254,12 @@ get_eeprom_params(void)
 		    strcasecmp(regspec_code, "NCC"))
 			strcpy(regspec_code, "CE");
 	}
+#else
+	strcpy(regspec_code, "CE");
+#endif
 	nvram_set_temp("regspec_code", regspec_code);
 
+#if defined (VENDOR_ASUS)
 	/* reserved for Ralink. used as ASUS pin code. */
 	memset(wps_pin, 0, sizeof(wps_pin));
 	if (FRead(wps_pin, OFFSET_PIN_CODE, 8) < 0) {
@@ -265,6 +274,9 @@ get_eeprom_params(void)
 		if (wps_pin[0] == 0)
 			strcpy(wps_pin, "12345670");
 	}
+#else
+	strcpy(wps_pin, "12345670");
+#endif
 	nvram_set_temp("secret_code", wps_pin);
 
 #if defined(USE_RT3352_MII)
@@ -311,10 +323,12 @@ get_eeprom_params(void)
 	nvram_set_temp("firmver", trim_r(fwver));
 	nvram_set_temp("firmver_sub", trim_r(fwver_sub));
 
+#if defined (VENDOR_ASUS)
 	memset(buffer, 0, 4);
 	FRead(buffer, OFFSET_BOOT_VER, 4);
 	sprintf(blver, "%s-0%c-0%c-0%c-0%c", trim_r(productid), buffer[0], buffer[1], buffer[2], buffer[3]);
 	nvram_set_temp("blver", trim_r(blver));
+#endif
 
 #if 0
 	// TXBF, not used yet

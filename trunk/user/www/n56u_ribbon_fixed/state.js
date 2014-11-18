@@ -244,6 +244,7 @@ menuL1_link = new Array("", "index.asp", "aidisk.asp", "vpnsrv.asp", "vpncli.asp
 menuL1_icon = new Array("", "icon-home", "icon-hdd", "icon-retweet", "icon-globe", "icon-tasks", "icon-random", "icon-wrench");
 
 function show_menu(L1, L2, L3){
+	var num_ephy = support_num_ephy();
 	if(sw_mode == '3'){
 		tabtitle[2].splice(3,2);//LAN
 		tablink[2].splice(3,2);
@@ -283,6 +284,17 @@ function show_menu(L1, L2, L3){
 			tablink[3].splice(2,1);
 			tabtitle[3].splice(2,1);
 		}
+	}
+
+	if(num_ephy<3){
+		tabtitle[8].splice(5,3);
+		tablink[8].splice(5,3);
+	}else if(num_ephy<4){
+		tabtitle[8].splice(6,2);
+		tablink[8].splice(6,2);
+	}else if(num_ephy<5){
+		tabtitle[8].splice(7,1);
+		tablink[8].splice(7,1);
 	}
 
 	if(!support_5g_radio()){

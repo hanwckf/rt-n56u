@@ -574,7 +574,12 @@ struct nvram_pair router_defaults[] = {
 	{ "front_led_wif", "1" },
 	{ "front_led_usb", "1" },
 	{ "front_led_pwr", "1" },
+
+#if (BOARD_NUM_ETH_LEDS > 1)
 	{ "ether_led0", "3" },
+#else
+	{ "ether_led0", "7" },
+#endif
 	{ "ether_led1", "0" },
 	{ "ether_igmp", "1" },
 #if BOARD_HAS_EPHY_1000
@@ -594,7 +599,12 @@ struct nvram_pair router_defaults[] = {
 	{ "ether_flow_lan2", "0" },
 	{ "ether_flow_lan3", "0" },
 	{ "ether_flow_lan4", "0" },
+
+#if defined(BOARD_N11P)
+	{ "hw_nat_mode", "3" },
+#else
 	{ "hw_nat_mode", "1" },
+#endif
 	{ "sw_nat_mode", "0" },
 	{ "fw_syn_cook", "0" },
 	{ "fw_mac_drop", "0" },
@@ -613,6 +623,7 @@ struct nvram_pair router_defaults[] = {
 	{ "nf_alg_h323", "0" },
 	{ "nf_alg_rtsp", "0" },
 	{ "nf_alg_sip", "0" },
+
 	{ "help_enable", "1" },
 
 	{ "vpns_enable", "0" },

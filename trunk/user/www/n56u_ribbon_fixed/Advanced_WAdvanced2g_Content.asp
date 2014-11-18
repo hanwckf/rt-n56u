@@ -45,6 +45,12 @@ function initial(){
 		$("col_goto5").width = "33%";
 	}
 
+	if (support_2g_stream_tx()<2)
+		document.form.rt_stream_tx.remove(1);
+
+	if (support_2g_stream_rx()<2)
+		document.form.rt_stream_rx.remove(1);
+
 	load_body();
 
 	change_wmm();

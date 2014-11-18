@@ -1003,6 +1003,11 @@ ez_event_long(void)
 		ez_action_change_guest_wifi2();
 		ez_action_change_guest_wifi5();
 		break;
+	case 15: // Reset settings
+		erase_nvram();
+		erase_storage();
+		sys_exit();
+		break;
 	}
 }
 

@@ -199,7 +199,11 @@ start_dns_dhcpd(int is_ap_mode)
 
 	if (!is_ap_mode) {
 		is_dns_used = 1;
+#if BOARD_RAM_SIZE > 32
 		fprintf(fp, "cache-size=%d\n", 1000);
+#else
+		fprintf(fp, "cache-size=%d\n", 500);
+#endif
 		fprintf(fp, "addn-hosts=%s/hosts\n", storage_dir);
 	} else {
 		is_dns_used = 0;

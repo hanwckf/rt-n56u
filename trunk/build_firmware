@@ -355,6 +355,9 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_CIFS" != "y" ] ; then
 fi
 if [ "$CONFIG_FIRMWARE_INCLUDE_NFSD" != "y" -a "$CONFIG_FIRMWARE_INCLUDE_NFSC" != "y" -a "$CONFIG_FIRMWARE_INCLUDE_CIFS" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_NETWORK_FILESYSTEMS"
+	if [ "$CONFIG_FIRMWARE_ENABLE_USB" != "y" ] || [ -z "$CONFIG_USB_SUPPORT" ] ; then
+		func_disable_kernel_param "CONFIG_NLS"
+	fi
 fi
 #######################################################################
 echo --------------------------MAKE-DEP--------------------------------

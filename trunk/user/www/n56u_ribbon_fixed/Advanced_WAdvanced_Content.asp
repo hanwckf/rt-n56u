@@ -39,15 +39,28 @@ function initial(){
 	show_menu(5,2,6);
 	show_footer();
 
-	load_body();
+	if (support_5g_11ac()){
+		var o1 = document.form.wl_stream_tx;
+		var o2 = document.form.wl_stream_rx;
+		o1.options[0].text = "1T (433Mbps)";
+		o2.options[0].text = "1R (433Mbps)";
+		o1.options[1].text = "2T (867Mbps)";
+		o2.options[1].text = "2R (867Mbps)";
+		o1.options[2].text = "3T (1300Mbps)";
+		o2.options[2].text = "3R (1300Mbps)";
+	}
 
-	if (support_5g_stream_tx()<3){
+	if (support_5g_stream_tx()<3)
 		document.form.wl_stream_tx.remove(2);
-	}
+	if (support_5g_stream_tx()<2)
+		document.form.wl_stream_tx.remove(1);
 
-	if (support_5g_stream_rx()<3){
+	if (support_5g_stream_rx()<3)
 		document.form.wl_stream_rx.remove(2);
-	}
+	if (support_5g_stream_rx()<2)
+		document.form.wl_stream_rx.remove(1);
+
+	load_body();
 
 	change_wmm();
 }

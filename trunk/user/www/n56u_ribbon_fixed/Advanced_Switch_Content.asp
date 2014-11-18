@@ -47,7 +47,7 @@ function initial(){
 	show_footer();
 
 	if (sw_mode != "3"){
-		$('row_igmp_snoop').style.display="none";
+		showhide_div('row_igmp_snoop', 0);
 	}
 
 	var switch_type = support_switch_type();
@@ -65,9 +65,17 @@ function initial(){
 		document.form.ether_flow_lan2.remove(1);
 		document.form.ether_flow_lan3.remove(1);
 		document.form.ether_flow_lan4.remove(1);
-		$('ether_jumbo').options[1].text = "Up to 9000 bytes";
-		$('row_ether_green').style.display="none";
+		document.form.ether_jumbo.options[1].text = "Up to 9000 bytes";
+		showhide_div('row_ether_green', 0);
 	}
+
+	var num_ephy = support_num_ephy();
+	if (num_ephy < 5)
+		showhide_div('tbl_ephy_l4', 0);
+	if (num_ephy < 4)
+		showhide_div('tbl_ephy_l3', 0);
+	if (num_ephy < 3)
+		showhide_div('tbl_ephy_l2', 0);
 
 	var arr_speeds = [1000, 100, 10, 100, 1000, 100, 10, 0, 0, 0, 0, 0];
 
@@ -169,7 +177,7 @@ function done_validating(action){
                                         <tr>
                                             <th width="50%"><#SwitchJumbo#></th>
                                             <td>
-                                                <select name="ether_jumbo" id="ether_jumbo" class="input">
+                                                <select name="ether_jumbo" class="input">
                                                     <option value="0" <% nvram_match_x("","ether_jumbo", "0","selected"); %>>Up to 1536 bytes</option>
                                                     <option value="1" <% nvram_match_x("","ether_jumbo", "1","selected"); %>>Up to 16000 bytes</option>
                                                 </select>
@@ -281,7 +289,7 @@ function done_validating(action){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_ephy_l2">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;">LAN 2</th>
                                         </tr>
@@ -318,7 +326,7 @@ function done_validating(action){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_ephy_l3">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;">LAN 3</th>
                                         </tr>
@@ -355,7 +363,7 @@ function done_validating(action){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_ephy_l4">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;">LAN 4</th>
                                         </tr>

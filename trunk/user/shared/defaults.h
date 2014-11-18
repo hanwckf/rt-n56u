@@ -44,6 +44,4 @@
 #define DEF_NTP_SERVER1		"time.nist.gov"
 #define DEF_HTTPS_CIPH_LIST	"DH+AESGCM:DH+AES256:DH+AES:DH+3DES:RSA+AES:RSA+3DES:!ADH:!MD5:!DSS"
 
-
-
 #endif

@@ -106,11 +106,14 @@ ifeq ($(BOARD_HAS_5G_RADIO),1)
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_guest_disable
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_eeprom_mac
 endif
+ifdef CONFIG_RTL8367
+	cd $(INSTALLDIR)/sbin && ln -sf rc rtl8367
+endif
 ifdef CONFIG_RAETH_ESW
 	cd $(INSTALLDIR)/sbin && ln -sf rc mtk_esw
 endif
-ifdef CONFIG_RTL8367
-	cd $(INSTALLDIR)/sbin && ln -sf rc rtl8367
+ifdef CONFIG_MT7530_GSW
+	cd $(INSTALLDIR)/sbin && ln -sf rc mtk_esw
 endif
 ifdef CONFIG_RT3352_INIC_MII
 	cd $(INSTALLDIR)/sbin && ln -sf rc inicd

@@ -370,6 +370,7 @@ TweaksWPSItem22=WAN: подключить/отключить
 TweaksWPSItem30=Система: перезагрузить маршрутизатор
 TweaksWPSItem31=Система: завершение работы
 TweaksWPSItem32=Система: исполнить скрипт
+TweaksWPSItem33=Система: сброс настроек
 TweaksLEDEvents=События LED
 TweaksLEDALL=Включить фронтальные LED?
 TweaksLEDWAN=Фронтальный LED Интернет:

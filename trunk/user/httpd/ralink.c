@@ -617,6 +617,8 @@ char* GetBW(int BW)
 			return "20M";
 		case BW_40:
 			return "40M";
+		case BW_80:
+			return "80M";
 		default:
 			return "N/A";
 	}
@@ -634,44 +636,62 @@ char* GetPhyMode(int Mode)
 			return "HTMIX";
 		case MODE_HTGREENFIELD:
 			return "GREEN";
+		case MODE_VHT:
+			return "VHT";
 		default:
 			return "N/A";
 	}
 }
 
 int MCSMappingRateTable[] =
-	{2,  4,   11,  22, // CCK
-	12, 18,   24,  36, 48, 72, 96, 108, // OFDM
-	13, 26,   39,  52,  78, 104, 117, 130, 26,  52,  78, 104, 156, 208, 234, 260, // 20MHz, 800ns GI, MCS: 0 ~ 15
-	39, 78,  117, 156, 234, 312, 351, 390,										  // 20MHz, 800ns GI, MCS: 16 ~ 23
-	27, 54,   81, 108, 162, 216, 243, 270, 54, 108, 162, 216, 324, 432, 486, 540, // 40MHz, 800ns GI, MCS: 0 ~ 15
-	81, 162, 243, 324, 486, 648, 729, 810,										  // 40MHz, 800ns GI, MCS: 16 ~ 23
-	14, 29,   43,  57,  87, 115, 130, 144, 29, 59,   87, 115, 173, 230, 260, 288, // 20MHz, 400ns GI, MCS: 0 ~ 15
-	43, 87,  130, 173, 260, 317, 390, 433,										  // 20MHz, 400ns GI, MCS: 16 ~ 23
-	30, 60,   90, 120, 180, 240, 270, 300, 60, 120, 180, 240, 360, 480, 540, 600, // 40MHz, 400ns GI, MCS: 0 ~ 15
-	90, 180, 270, 360, 540, 720, 810, 900};
+{
+	 2,  4,   11,  22,								// CCK
+
+	12,  18,  24,  36,  48,  72,  96, 108,						// OFDM
+
+	13,  26,  39,  52,  78, 104, 117, 130, 26,  52,  78, 104, 156, 208, 234, 260,	// 11n: 20MHz, 800ns GI, MCS: 0 ~ 15
+	39,  78, 117, 156, 234, 312, 351, 390,						// 11n: 20MHz, 800ns GI, MCS: 16 ~ 23
+	27,  54,  81, 108, 162, 216, 243, 270, 54, 108, 162, 216, 324, 432, 486, 540,	// 11n: 40MHz, 800ns GI, MCS: 0 ~ 15
+	81, 162, 243, 324, 486, 648, 729, 810,						// 11n: 40MHz, 800ns GI, MCS: 16 ~ 23
+	14,  29,  43,  57,  87, 115, 130, 144, 29, 59,   87, 115, 173, 230, 260, 288,	// 11n: 20MHz, 400ns GI, MCS: 0 ~ 15
+	43,  87, 130, 173, 260, 317, 390, 433,						// 11n: 20MHz, 400ns GI, MCS: 16 ~ 23
+	30,  60,  90, 120, 180, 240, 270, 300, 60, 120, 180, 240, 360, 480, 540, 600,	// 11n: 40MHz, 400ns GI, MCS: 0 ~ 15
+	90, 180, 270, 360, 540, 720, 810, 900,
+
+	13,  26,  39,  52,  78, 104, 117, 130, 156,					// 11ac: 20Mhz, 800ns GI, MCS: 0~8
+	27,  54,  81, 108, 162, 216, 243, 270, 324, 360,				// 11ac: 40Mhz, 800ns GI, MCS: 0~9
+	59, 117, 176, 234, 351, 468, 527, 585, 702, 780,				// 11ac: 80Mhz, 800ns GI, MCS: 0~9
+	14,  29,  43,  57,  87, 115, 130, 144, 173,					// 11ac: 20Mhz, 400ns GI, MCS: 0~8
+	30,  60,  90, 120, 180, 240, 270, 300, 360, 400,				// 11ac: 40Mhz, 400ns GI, MCS: 0~9
+	65, 130, 195, 260, 390, 520, 585, 650, 780, 867					// 11ac: 80Mhz, 400ns GI, MCS: 0~9
+};
 
 int
 getRate(MACHTTRANSMIT_SETTING HTSetting)
 {
 	int rate_count = sizeof(MCSMappingRateTable)/sizeof(int);
-	int rate_index = 0;  
+	int rate_index = 0;
 
-    if (HTSetting.field.MODE >= MODE_HTMIX)
-    {
-    	rate_index = 12 + ((unsigned char)HTSetting.field.BW *24) + ((unsigned char)HTSetting.field.ShortGI *48) + ((unsigned char)HTSetting.field.MCS);
-    }
-    else 
-    if (HTSetting.field.MODE == MODE_OFDM)                
-    	rate_index = (unsigned char)(HTSetting.field.MCS) + 4;
-    else if (HTSetting.field.MODE == MODE_CCK)   
-    	rate_index = (unsigned char)(HTSetting.field.MCS);
+	if (HTSetting.field.MODE >= MODE_VHT) {
+		if (HTSetting.field.BW == BW_20)
+			rate_index = 108 + ((unsigned char)HTSetting.field.ShortGI * 29) + ((unsigned char)HTSetting.field.MCS);
+		else if (HTSetting.field.BW == BW_40)
+			rate_index = 117 + ((unsigned char)HTSetting.field.ShortGI * 29) + ((unsigned char)HTSetting.field.MCS);
+		else if (HTSetting.field.BW == BW_80)
+			rate_index = 127 + ((unsigned char)HTSetting.field.ShortGI * 29) + ((unsigned char)HTSetting.field.MCS);
+	}
+	else if (HTSetting.field.MODE >= MODE_HTMIX)
+		rate_index = 12 + ((unsigned char)HTSetting.field.BW * 24) + ((unsigned char)HTSetting.field.ShortGI * 48) + ((unsigned char)HTSetting.field.MCS);
+	else if (HTSetting.field.MODE == MODE_OFDM)
+		rate_index = (unsigned char)(HTSetting.field.MCS) + 4;
+	else if (HTSetting.field.MODE == MODE_CCK)
+		rate_index = (unsigned char)(HTSetting.field.MCS);
 
-    if (rate_index < 0)
-        rate_index = 0;
-    
-    if (rate_index > rate_count)
-        rate_index = rate_count;
+	if (rate_index < 0)
+		rate_index = 0;
+
+	if (rate_index >= rate_count)
+		rate_index = rate_count-1;
 
 	return (MCSMappingRateTable[rate_index] * 5)/10;
 }
@@ -680,23 +700,20 @@ int
 getRate_2g(MACHTTRANSMIT_SETTING_2G HTSetting)
 {
 	int rate_count = sizeof(MCSMappingRateTable)/sizeof(int);
-	int rate_index = 0;  
+	int rate_index = 0;
 
-    if (HTSetting.field.MODE >= MODE_HTMIX)
-    {
-    	rate_index = 12 + ((unsigned char)HTSetting.field.BW *24) + ((unsigned char)HTSetting.field.ShortGI *48) + ((unsigned char)HTSetting.field.MCS);
-    }
-    else 
-    if (HTSetting.field.MODE == MODE_OFDM)                
-    	rate_index = (unsigned char)(HTSetting.field.MCS) + 4;
-    else if (HTSetting.field.MODE == MODE_CCK)   
-    	rate_index = (unsigned char)(HTSetting.field.MCS);
+	if (HTSetting.field.MODE >= MODE_HTMIX)
+		rate_index = 12 + ((unsigned char)HTSetting.field.BW * 24) + ((unsigned char)HTSetting.field.ShortGI * 48) + ((unsigned char)HTSetting.field.MCS);
+	else if (HTSetting.field.MODE == MODE_OFDM)
+		rate_index = (unsigned char)(HTSetting.field.MCS) + 4;
+	else if (HTSetting.field.MODE == MODE_CCK)
+		rate_index = (unsigned char)(HTSetting.field.MCS);
 
-    if (rate_index < 0)
-        rate_index = 0;
-    
-    if (rate_index > rate_count)
-        rate_index = rate_count;
+	if (rate_index < 0)
+		rate_index = 0;
+
+	if (rate_index >= rate_count)
+		rate_index = rate_count-1;
 
 	return (MCSMappingRateTable[rate_index] * 5)/10;
 }

@@ -436,6 +436,7 @@ VOID NICReadEEPROMParameters(RTMP_ADAPTER *pAd, PSTRING mac_addr)
 	}
 #endif
 
+#if !defined(NEW_MBSSID_MODE)
 #if defined(MBSS_SUPPORT)
 	/* Test MAC[5] for 4 MAC support */
 	if ((pAd->CurrentAddress[5] % 4) != 0)
@@ -448,6 +449,7 @@ VOID NICReadEEPROMParameters(RTMP_ADAPTER *pAd, PSTRING mac_addr)
 	{
 		pAd->CurrentAddress[5] &= 0xfe; // Max 2 MBSSID
 	}
+#endif
 #endif
 
 	/* Set the current MAC to ASIC */	

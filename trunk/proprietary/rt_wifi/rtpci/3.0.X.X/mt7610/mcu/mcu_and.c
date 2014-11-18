@@ -73,7 +73,7 @@ INT ral_pci_andes_erasefw(RTMP_ADAPTER *pAd)
 	UINT32 Loop = 0, idx = 0, val = 0;
 	UINT32 StartOffset, EndOffset;
 	RTMP_CHIP_CAP *pChipCap = &pAd->chipCap;
-	
+
 	ILMLen = (*(pChipCap->FWImageName + 3) << 24) | (*(pChipCap->FWImageName + 2) << 16) |
 			 (*(pChipCap->FWImageName + 1) << 8) | (*pChipCap->FWImageName);
 
@@ -83,20 +83,21 @@ INT ral_pci_andes_erasefw(RTMP_ADAPTER *pAd)
 	FWVersion = (*(pChipCap->FWImageName + 11) << 8) | (*(pChipCap->FWImageName + 10));
 
 	BuildVersion = (*(pChipCap->FWImageName + 9) << 8) | (*(pChipCap->FWImageName + 8));
-	
+
+#ifdef DBG
 	DBGPRINT(RT_DEBUG_TRACE, ("FW Version:%d.%d.%02d ", (FWVersion & 0xf000) >> 8,
 						(FWVersion & 0x0f00) >> 8, FWVersion & 0x00ff));
 	DBGPRINT(RT_DEBUG_TRACE, ("Build:%x\n", BuildVersion));
-	DBGPRINT(RT_DEBUG_TRACE, ("Build Time:"));
 
+	DBGPRINT(RT_DEBUG_TRACE, ("Build Time:"));
 	for (Loop = 0; Loop < 16; Loop++)
 		DBGPRINT(RT_DEBUG_TRACE, ("%c", *(pChipCap->FWImageName + 16 + Loop)));
-
 	DBGPRINT(RT_DEBUG_TRACE, ("\n"));
 
 	DBGPRINT(RT_DEBUG_TRACE, ("ILM Length = %d(bytes)\n", ILMLen));
 	DBGPRINT(RT_DEBUG_TRACE, ("DLM Length = %d(bytes)\n", DLMLen));
-	
+#endif
+
 	RTMP_IO_WRITE32(pAd, PCIE_REMAP_BASE4, 0x0);
 
 	if (pChipCap->IsComboChip)
@@ -197,20 +198,21 @@ loadfw_protect:
 	FWVersion = (*(pChipCap->FWImageName + 11) << 8) | (*(pChipCap->FWImageName + 10));
 
 	BuildVersion = (*(pChipCap->FWImageName + 9) << 8) | (*(pChipCap->FWImageName + 8));
-	
+
+#ifdef DBG
 	DBGPRINT(RT_DEBUG_TRACE, ("FW Version:%d.%d.%02d ", (FWVersion & 0xf000) >> 8,
 						(FWVersion & 0x0f00) >> 8, FWVersion & 0x00ff));
 	DBGPRINT(RT_DEBUG_TRACE, ("Build:%x\n", BuildVersion));
-	DBGPRINT(RT_DEBUG_TRACE, ("Build Time:"));
 
+	DBGPRINT(RT_DEBUG_TRACE, ("Build Time:"));
 	for (Loop = 0; Loop < 16; Loop++)
 		DBGPRINT(RT_DEBUG_TRACE, ("%c", *(pChipCap->FWImageName + 16 + Loop)));
-
 	DBGPRINT(RT_DEBUG_TRACE, ("\n"));
 
 	DBGPRINT(RT_DEBUG_TRACE, ("ILM Length = %d(bytes)\n", ILMLen));
 	DBGPRINT(RT_DEBUG_TRACE, ("DLM Length = %d(bytes)\n", DLMLen));
-	
+#endif
+
 	RTMP_IO_WRITE32(pAd, PCIE_REMAP_BASE4, 0x0);
 
 	if (pChipCap->IsComboChip)
@@ -436,7 +438,7 @@ VOID MCUCtrlExit(PRTMP_ADAPTER pAd)
 	struct MCU_CTRL *MCtrl = &pAd->MCUCtrl;
 	struct CMD_RSP_EVENT *CmdRspEvent, *CmdRspEventTmp;
 	unsigned long IrqFlags;
-	
+
 	RtmpOsMsDelay(30);
 
 	RTMP_IRQ_LOCK(&MCtrl->CmdRspEventListLock, IrqFlags);
@@ -485,13 +487,11 @@ INT AsicSendCmdToAndes(PRTMP_ADAPTER pAd, struct CMD_UNIT *CmdUnit)
 
 	if (!MCtrl->IsFWReady)
 	{
-		printk("22222\n");
 		return NDIS_STATUS_FAILURE;
 	}
 
 	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST | fRTMP_ADAPTER_RADIO_OFF | fRTMP_ADAPTER_HALT_IN_PROGRESS))
 	{
-		printk("33333(Flags=0x%08x)\n", (UINT32) pAd->Flags);
 		return NDIS_STATUS_FAILURE;
 	}
 

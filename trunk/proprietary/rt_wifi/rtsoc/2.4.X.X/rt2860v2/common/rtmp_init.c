@@ -972,7 +972,7 @@ VOID	NICReadEEPROMParameters(
 	}
 #endif
 
-#ifndef NEW_MBSSID_MODE
+#if !defined(NEW_MBSSID_MODE)
 #if defined(MBSS_SUPPORT)
 	/* Test MAC[5] for 4 MAC support */
 	if ((pAd->CurrentAddress[5] % 4) != 0)

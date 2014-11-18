@@ -1916,11 +1916,10 @@ VOID	RTMPCommSiteSurveyData(
 	NDIS_802_11_ENCRYPTION_STATUS	ap_cipher = Ndis802_11EncryptionDisabled;
 	NDIS_802_11_AUTHENTICATION_MODE	ap_auth_mode = Ndis802_11AuthModeOpen;
 
-		/*Channel*/
-		sprintf(msg+strlen(msg),"%-4d", pBss->Channel);
+	/*Channel*/
+	sprintf(msg+strlen(msg),"%-4d", pBss->Channel);
 
-
-		/*SSID*/
+	/*SSID*/
 	NdisZeroMemory(Ssid, (MAX_LEN_OF_SSID +1));
 	if (RTMPCheckStrPrintAble((PCHAR)pBss->Ssid, pBss->SsidLen))
 		NdisMoveMemory(Ssid, pBss->Ssid, pBss->SsidLen);
@@ -1931,17 +1930,17 @@ VOID	RTMPCommSiteSurveyData(
 		for (idx = 0; (idx < 14) && (idx < pBss->SsidLen); idx++)
 			sprintf(Ssid + 2 + (idx*2), "%02X", (UCHAR)pBss->Ssid[idx]);
 	}
-		sprintf(msg+strlen(msg),"%-33s", Ssid);      
-		
-		/*BSSID*/
-		sprintf(msg+strlen(msg),"%02x:%02x:%02x:%02x:%02x:%02x   ", 
+	sprintf(msg+strlen(msg),"%-33s", Ssid);      
+	
+	/*BSSID*/
+	sprintf(msg+strlen(msg),"%02x:%02x:%02x:%02x:%02x:%02x   ", 
 			pBss->Bssid[0], 
 			pBss->Bssid[1],
 			pBss->Bssid[2], 
 			pBss->Bssid[3], 
 			pBss->Bssid[4], 
 			pBss->Bssid[5]);
-	
+
 	/*Security*/
 	RTMPZeroMemory(SecurityStr, 32);
 	if ((Ndis802_11AuthModeWPA <= pBss->AuthMode) &&
@@ -2095,13 +2094,12 @@ VOID RTMPIoctlGetSiteSurvey(
 	IN	RTMP_IOCTL_INPUT_STRUCT	*wrq)
 {
 	PSTRING		msg;
-	INT 		i=0;	 
-	INT			WaitCnt;
-	INT 		Status=0;	
-    INT         max_len = LINE_LEN;		
+	INT 		i=0;
+	INT		WaitCnt;
+	INT 		Status=0;
+	INT		max_len = LINE_LEN;
 	PBSS_ENTRY	pBss;
 	UINT32 TotalLen, BufLen = IW_SCAN_MAX_DATA;
-
 
 	TotalLen = sizeof(CHAR)*((MAX_LEN_OF_BSS_TABLE)*max_len) + 100;
 
@@ -2113,7 +2111,7 @@ VOID RTMPIoctlGetSiteSurvey(
 	os_alloc_mem(NULL, (PUCHAR *)&msg, TotalLen);
 
 	if (msg == NULL)
-	{   
+	{
 		DBGPRINT(RT_DEBUG_TRACE, ("RTMPIoctlGetSiteSurvey - msg memory alloc fail.\n"));
 		return;
 	}
@@ -2239,7 +2237,6 @@ VOID RTMPIoctlGetMacTable(
 	IN RTMP_IOCTL_INPUT_STRUCT *wrq)
 {
 	INT i;
-/*	RT_802_11_MAC_TABLE MacTab;*/
 	RT_802_11_MAC_TABLE *pMacTab = NULL;
 	RT_802_11_MAC_ENTRY *pDst;
 	MAC_TABLE_ENTRY *pEntry;
@@ -2254,7 +2251,6 @@ VOID RTMPIoctlGetMacTable(
 	}
 
 	NdisZeroMemory(pMacTab, sizeof(RT_802_11_MAC_TABLE));
-	pMacTab->Num = 0;
 	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
 	{
 		pEntry = &(pAd->MacTab.Content[i]);
@@ -2262,7 +2258,6 @@ VOID RTMPIoctlGetMacTable(
 		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
 		{
 			pDst = &pMacTab->Entry[pMacTab->Num];
-
 
 			pDst->ApIdx = (UCHAR)pEntry->apidx;
 			COPY_MAC_ADDR(pDst->Addr, &pEntry->Addr);
@@ -2280,8 +2275,7 @@ VOID RTMPIoctlGetMacTable(
 			/* the connected time per entry*/
 			pDst->ConnectedTime = pEntry->StaConnectTime;
 			pDst->TxRate.word = pEntry->HTPhyMode.word;
-									
-									
+
 			pMacTab->Num += 1;
 		}
 	}
@@ -2292,18 +2286,18 @@ VOID RTMPIoctlGetMacTable(
 		DBGPRINT(RT_DEBUG_TRACE, ("%s: copy_to_user() fail\n", __FUNCTION__));
 	}
 
-
 	os_alloc_mem(NULL, (UCHAR **)&msg, sizeof(CHAR)*(MAX_LEN_OF_MAC_TABLE*MAC_LINE_LEN));
 	if (msg == NULL)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("%s():Alloc memory failed\n", __FUNCTION__));
 		goto LabelOK;
 	}
+
 	memset(msg, 0 ,MAX_LEN_OF_MAC_TABLE*MAC_LINE_LEN );
 	sprintf(msg,"%s","\n");
 	sprintf(msg+strlen(msg),"%-14s%-4s%-4s%-4s%-4s%-6s%-6s%-10s%-10s%-10s\n",
 		"MAC", "AP",  "AID", "PSM", "AUTH", "CTxR", "LTxR","LDT", "RxB", "TxB");
-	
+
 	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
 	{
 		PMAC_TABLE_ENTRY pEntry = &pAd->MacTab.Content[i];

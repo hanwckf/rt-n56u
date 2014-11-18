@@ -1951,12 +1951,9 @@ BOOLEAN ApCheckAccessControlList(
 
     if (Result == FALSE)
     {
-#if defined (A_BAND_SUPPORT)
-        printk("AP 5GHz - access denied for client MAC [%02x:%02x:%02x:%02x:%02x:%02x]!\n",
-#else
-        printk("AP 2.4GHz - access denied for client MAC [%02x:%02x:%02x:%02x:%02x:%02x]!\n",
-#endif
-        pAddr[0],pAddr[1],pAddr[2],pAddr[3],pAddr[4],pAddr[5]);
+        CHAR *pRange = (pAd->CommonCfg.Channel <= 14) ? "2.4" : "5";
+        printk("AP %sGHz - access denied for client MAC [%02x:%02x:%02x:%02x:%02x:%02x]!\n",
+                pRange, pAddr[0], pAddr[1], pAddr[2], pAddr[3], pAddr[4], pAddr[5]);
     }
 
     return Result;

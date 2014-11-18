@@ -315,16 +315,18 @@ TX_POWER_TUNING_ENTRY_STRUCT RT3352_TxPowerTuningTable[] =
 };
 
 /* The desired TSSI over CCK */
-CHAR desiredTSSIOverCCK[4] = {0};
+extern CHAR desiredTSSIOverCCK[4];
 
 /* The desired TSSI over OFDM */
-CHAR desiredTSSIOverOFDM[8] = {0};
+extern CHAR desiredTSSIOverOFDM[8];
 
 /* The desired TSSI over HT */
-CHAR desiredTSSIOverHT[16] = {0};
+extern CHAR desiredTSSIOverHT[16];
 
 /* The desired TSSI over HT using STBC */
-CHAR desiredTSSIOverHTUsingSTBC[8] = {0};
+extern CHAR desiredTSSIOverHTUsingSTBC[8];
+
+VOID RT3352_AsicInitDesiredTSSITable(IN PRTMP_ADAPTER pAd);
 #endif /* RTMP_INTERNAL_TX_ALC */
 
 /*
@@ -1657,13 +1659,12 @@ VOID RT3352_AsicTxAlcGetAutoAgcOffset(
 	IN PCHAR					pAgcCompensate,
 	IN PCHAR 					pDeltaPowerByBbpR1)
 {
-	const TX_POWER_TUNING_ENTRY_STRUCT *TxPowerTuningTable = pAd->chipCap.TxPowerTuningTable_2G;
+	TX_POWER_TUNING_ENTRY_STRUCT *TxPowerTuningTable = pAd->chipCap.TxPowerTuningTable_2G;
 	PTX_POWER_TUNING_ENTRY_STRUCT pTxPowerTuningEntry = NULL, pTxPowerTuningEntry2 = NULL;
 	static UCHAR	LastChannel = 0;
 	BBP_R49_STRUC 	BbpR49;
 	UCHAR 			RFValue = 0;
 	UCHAR 			RFValue2 = 0;
-	UCHAR 			TmpValue = 0;
 	UCHAR 			TssiChannel = 0;
 	CHAR 			desiredTSSI = 0;
 	CHAR 			currentTSSI = 0;

@@ -1243,7 +1243,7 @@ VOID RT5350_AsicTxAlcGetAutoAgcOffset(
 	CHAR TotalDeltaPower = 0; 
 	BBP_R49_STRUC BbpR49;
 	UINT32 desiredTSSI = 0, currentTSSI = 0, room_up = 0, room_down = 0;
-	const TX_POWER_TUNING_ENTRY_STRUCT *TxPowerTuningTable = pAd->chipCap.TxPowerTuningTable_2G;
+	TX_POWER_TUNING_ENTRY_STRUCT *TxPowerTuningTable = pAd->chipCap.TxPowerTuningTable_2G;
 	PTX_POWER_TUNING_ENTRY_STRUCT pTxPowerTuningEntry = NULL;
 	UCHAR RFValue = 0;
 	CHAR DeltaPwr = 0, TuningTableIndex = 0;

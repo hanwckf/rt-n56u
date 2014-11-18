@@ -300,7 +300,7 @@ endif
 
 if (RT_FIRST_IF_MT7612E || RT_FIRST_IF_MT7602E || RT_SECOND_IF_MT7612E || RT_SECOND_IF_MT7602E)
 menu "AP MODE MediaTek MT7602E/MT7612E PCIe Wireless Driver"
-#source "drivers/net/wireless/mt76x2_ap/Kconfig"
+source "drivers/net/wireless/mt76x2_ap/Kconfig"
 endmenu
 endif
 

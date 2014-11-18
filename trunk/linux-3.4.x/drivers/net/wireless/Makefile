@@ -68,5 +68,7 @@ obj-$(CONFIG_RT5392_AP)		+= rt5392_ap/
 obj-$(CONFIG_RT5592_AP)		+= rt5592_ap/
 obj-$(CONFIG_RT3593_AP)		+= rt3593_ap/
 obj-$(CONFIG_MT7610_AP)		+= mt7610_ap/
+obj-$(CONFIG_MT76X2_AP)		+= mt76x2_ap/
+#obj-$(CONFIG_MT76X3_AP)		+= mt76x3_ap/
 obj-$(CONFIG_RT3352_INIC_MII)	+= rt3352_mii/
 

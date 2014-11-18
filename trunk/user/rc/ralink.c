@@ -1272,6 +1272,9 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	//HT_DisallowTKIP
 	fprintf(fp, "HT_DisallowTKIP=%d\n", 0);
 
+	//HT_LDPC
+	fprintf(fp, "HT_LDPC=%d\n", 1);
+
 #if BOARD_HAS_5G_11AC
 	if (is_aband) {
 		//VHT_BW
@@ -1283,11 +1286,17 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		//VHT_SGI
 		fprintf(fp, "VHT_SGI=%d\n", 1);
 		
+		//VHT_BW_SIGNAL
+		fprintf(fp, "VHT_BW_SIGNAL=%d\n", 0);
+		
 		//VHT_DisallowNonVHT
 		i_val = nvram_wlan_get_int(prefix, "VHT_Only");
 		if (i_val) i_val = 1;
 		if (i_gmode != 3 && i_gmode != 4) i_val = 0;
 		fprintf(fp, "VHT_DisallowNonVHT=%d\n", i_val);
+		
+		//VHT_LDPC
+		fprintf(fp, "VHT_LDPC=%d\n", 1);
 	}
 #endif
 

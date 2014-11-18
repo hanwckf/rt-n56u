@@ -813,6 +813,7 @@ void announce_802_3_packet(
 		return;
 	}
 #endif
+#endif
 
 #ifdef CONFIG_AP_SUPPORT
 #ifdef BG_FT_SUPPORT

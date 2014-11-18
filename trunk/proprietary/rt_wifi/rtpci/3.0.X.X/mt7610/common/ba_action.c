@@ -849,65 +849,34 @@ VOID BATableFreeOriEntry(
 	BA_ORI_ENTRY    *pBAEntry = NULL;
 	MAC_TABLE_ENTRY *pEntry;
 
-
 	if ((Idx == 0) || (Idx >= MAX_LEN_OF_BA_ORI_TABLE))
 		return;
 
-	pBAEntry =&pAd->BATable.BAOriEntry[Idx];
+	pBAEntry = &pAd->BATable.BAOriEntry[Idx];
 
-#ifdef BB_SOC
 	NdisAcquireSpinLock(&pAd->BATabLock);
 	if (pBAEntry->ORI_BA_Status != Originator_NONE)
 	{
 		pEntry = &pAd->MacTab.Content[pBAEntry->Wcid];
 		pEntry->BAOriWcidArray[pBAEntry->TID] = 0;
-
-
-		//NdisAcquireSpinLock(&pAd->BATabLock);
-		pEntry->BAOriWcidArray[pBAEntry->TID] = 0;
-		if (pBAEntry->ORI_BA_Status == Originator_Done)
-		{
-			pAd->BATable.numDoneOriginator -= 1;
-		 	pEntry->TXBAbitmap &= (~(1<<(pBAEntry->TID) ));
-			DBGPRINT(RT_DEBUG_TRACE, ("BATableFreeOriEntry numAsOriginator= %ld\n", pAd->BATable.numAsOriginator));
-			// Erase Bitmap flag.
-		}
-	
-		ASSERT(pAd->BATable.numAsOriginator != 0);
-
-		pAd->BATable.numAsOriginator -= 1;
-		
-		pBAEntry->ORI_BA_Status = Originator_NONE;
-		pBAEntry->Token = 0;
-		//NdisReleaseSpinLock(&pAd->BATabLock);
-	}
-	NdisReleaseSpinLock(&pAd->BATabLock);
-#else
-	if (pBAEntry->ORI_BA_Status != Originator_NONE)
-	{
-		pEntry = &pAd->MacTab.Content[pBAEntry->Wcid];
-		pEntry->BAOriWcidArray[pBAEntry->TID] = 0;
 		DBGPRINT(RT_DEBUG_TRACE, ("%s: Wcid = %d, TID = %d\n", __FUNCTION__, pBAEntry->Wcid, pBAEntry->TID));
-
-
-		NdisAcquireSpinLock(&pAd->BATabLock);
+		
 		if (pBAEntry->ORI_BA_Status == Originator_Done)
 		{
 			pAd->BATable.numDoneOriginator -= 1;
-		 	pEntry->TXBAbitmap &= (~(1<<(pBAEntry->TID) ));
+			pEntry->TXBAbitmap &= (~(1<<(pBAEntry->TID) ));
 			DBGPRINT(RT_DEBUG_TRACE, ("BATableFreeOriEntry numAsOriginator= %ld\n", pAd->BATable.numAsRecipient));
 			/* Erase Bitmap flag.*/
 		}
-	
+		
 		ASSERT(pAd->BATable.numAsOriginator != 0);
-
+		
 		pAd->BATable.numAsOriginator -= 1;
 		
 		pBAEntry->ORI_BA_Status = Originator_NONE;
 		pBAEntry->Token = 0;
-		NdisReleaseSpinLock(&pAd->BATabLock);
 	}
-#endif
+	NdisReleaseSpinLock(&pAd->BATabLock);
 }
 
 
@@ -918,26 +887,23 @@ VOID BATableFreeRecEntry(
 	BA_REC_ENTRY    *pBAEntry = NULL;
 	MAC_TABLE_ENTRY *pEntry;
 
-
 	if ((Idx == 0) || (Idx >= MAX_LEN_OF_BA_REC_TABLE))
 		return;
 
-	pBAEntry =&pAd->BATable.BARecEntry[Idx];
+	pBAEntry = &pAd->BATable.BARecEntry[Idx];
 
+	NdisAcquireSpinLock(&pAd->BATabLock);
 	if (pBAEntry->REC_BA_Status != Recipient_NONE)
 	{
 		pEntry = &pAd->MacTab.Content[pBAEntry->Wcid];
 		pEntry->BARecWcidArray[pBAEntry->TID] = 0;
-
-		NdisAcquireSpinLock(&pAd->BATabLock);
 		
 		ASSERT(pAd->BATable.numAsRecipient != 0);
-
+		
 		pAd->BATable.numAsRecipient -= 1;
-
 		pBAEntry->REC_BA_Status = Recipient_NONE;
-		NdisReleaseSpinLock(&pAd->BATabLock);
 	}
+	NdisReleaseSpinLock(&pAd->BATabLock);
 }
 
 

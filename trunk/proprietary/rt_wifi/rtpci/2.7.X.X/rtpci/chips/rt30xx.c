@@ -42,7 +42,7 @@ REG_PAIR   RT3020_RFRegTable[] = {
         {RF_R04,          0x40},
         {RF_R05,          0x03},
         {RF_R06,          0x02},
-        {RF_R07,          0x70},
+        {RF_R07,          0x60},
         {RF_R09,          0x0F},
         {RF_R10,          0x41},
         {RF_R11,          0x21},
@@ -538,9 +538,9 @@ VOID RT30xxReverseRFSleepModeSetup(
 		RFValue |= 0x01;
 		RT30xxWriteRFRegister(pAd, RF_R01, RFValue);
 
-		/* VCO_IC, RF R7 register Bit 5 to 1 (VCO bias current control, 11: high) */
+		/* VCO_IC, RF R7 register Bit 5 to 1 (VCO bias current control, 10: medium) */
 		RT30xxReadRFRegister(pAd, RF_R07, &RFValue);
-		RFValue |= 0x30;
+		RFValue |= 0x20;
 		RT30xxWriteRFRegister(pAd, RF_R07, RFValue);
 
 		/* Idoh, RF R9 register Bit 1, Bit 2 & Bit 3 to 1*/

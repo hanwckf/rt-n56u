@@ -1462,13 +1462,13 @@ typedef struct  _RTMP_TX_RATE_SWITCH_3S
 //#define TX_WEIGHTING                     40
 //#define RX_WEIGHTING                     60
 
-#define MAC_TABLE_AGEOUT_TIME			300			// unit: sec
+#define MAC_TABLE_AGEOUT_TIME			180			// unit: sec
 #define MAC_TABLE_MIN_AGEOUT_TIME		60			// unit: sec
 #define MAC_TABLE_ASSOC_TIMEOUT			5			// unit: sec
 #define MAC_TABLE_FULL(Tab)				((Tab).size == MAX_LEN_OF_MAC_TABLE)
 
 // AP shall drop the sta if contine Tx fail count reach it.
-#define MAC_ENTRY_LIFE_CHECK_CNT		1024			// packet cnt.
+#define MAC_ENTRY_LIFE_CHECK_CNT		512			// packet cnt.
 
 // Value domain of pMacEntry->Sst
 typedef enum _Sst {

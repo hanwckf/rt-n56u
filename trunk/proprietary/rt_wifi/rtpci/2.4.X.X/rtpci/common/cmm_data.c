@@ -1233,16 +1233,17 @@ VOID RTMPDeQueuePacket(
 				if(IS_ENTRY_WDS(pMacEntry))
 				{
 					ULONG Now32;
-				    NdisGetSystemUpTime(&Now32);
+					NdisGetSystemUpTime(&Now32);
 					if(pMacEntry->LockEntryTx && RTMP_TIME_BEFORE(Now32, pMacEntry->TimeStamp_toTxRing + WDS_ENTRY_RETRY_INTERVAL))
 					{
 						pEntry = RemoveHeadQueue(pQueue);
 						RTMPFreeNdisPacket(pAd, pPacket);
 						DEQUEUE_UNLOCK(&pAd->irq_lock, bIntContext, IrqFlags);
+						Count++;
 						continue;
 					}
 					else
-					    NdisGetSystemUpTime(&pMacEntry->TimeStamp_toTxRing);
+						NdisGetSystemUpTime(&pMacEntry->TimeStamp_toTxRing);
 				}
 				else
 #endif // WDS_SUPPORT //
@@ -1252,6 +1253,7 @@ VOID RTMPDeQueuePacket(
 					pEntry = RemoveHeadQueue(pQueue);
 					RTMPFreeNdisPacket(pAd, pPacket);                          
 					DEQUEUE_UNLOCK(&pAd->irq_lock, bIntContext, IrqFlags);
+					Count++;
 					continue;
 				}
 			}

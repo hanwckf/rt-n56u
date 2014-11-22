@@ -83,6 +83,8 @@ struct net_bridge_port_group {
 	struct rcu_head			rcu;
 	struct timer_list		timer;
 	struct br_ip			addr;
+	unsigned char			src_addr[ETH_ALEN];
+	bool				m2u;
 };
 
 struct net_bridge_mdb_entry
@@ -136,6 +138,7 @@ struct net_bridge_port
 	unsigned long 			flags;
 #define BR_HAIRPIN_MODE		0x00000001
 #define BR_MULTICAST_FAST_LEAVE	0x00000008
+#define BR_MULTICAST_TO_UCAST	0x00000010
 
 #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
 	u32				multicast_startup_queries_sent;

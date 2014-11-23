@@ -61,7 +61,7 @@ config USB_EHCI_HCD
 
 config RT3XXX_EHCI
 	bool "Ralink EHCI HCD support"
-	depends on USB_EHCI_HCD
+	depends on USB_EHCI_HCD && !(RALINK_RT3052 || RALINK_MT7621)
 	default y
 
 config USB_EHCI_ROOT_HUB_TT
@@ -317,7 +317,7 @@ config USB_OHCI_ATH79
 
 config RT3XXX_OHCI
 	bool "Ralink OHCI HCD support"
-	depends on USB_OHCI_HCD
+	depends on USB_OHCI_HCD && !(RALINK_RT3052 || RALINK_MT7621)
 	default y
 
 config USB_OHCI_HCD_PPC_SOC

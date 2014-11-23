@@ -27,64 +27,61 @@
 #define CLKCFG1_REG		(RALINK_SYSCTL_BASE + 0x30)
 #define RSTCTRL_REG		(RALINK_SYSCTL_BASE + 0x34)
 
-static int rt_usb_set_host_mde(void)
-{
-	u32 val;
-
-	val = le32_to_cpu(*(volatile u32 *)(SYSCFG1_REG));
-	val |= (RALINK_UHST_MODE);
-	*(volatile u32 *)(SYSCFG1_REG) = cpu_to_le32(val);
-
-	return 0;
-}
-
 static void rt_usb_wake_up(void)
 {
 	u32 val;
 
-	// enable port0 & port1 Phy clock (MT7620 needed UPHY1_CLK_EN too!)
+	/* enable PHY0/1 clock */
 	val = le32_to_cpu(*(volatile u32 *)(CLKCFG1_REG));
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7628)
-	val |= (RALINK_UPHY0_CLK_EN | RALINK_UPHY1_CLK_EN);
-#else
-	/* one port only */
+#if defined (CONFIG_RALINK_RT5350)
 	val |= (RALINK_UPHY0_CLK_EN);
+#else
+	val |= (RALINK_UPHY0_CLK_EN | RALINK_UPHY1_CLK_EN);
 #endif
 	*(volatile u32 *)(CLKCFG1_REG) = cpu_to_le32(val);
 
 	mdelay(10);
 
-	// toggle reset to 0
+	/* set HOST mode */
+	val = le32_to_cpu(*(volatile u32 *)(SYSCFG1_REG));
+#if defined (CONFIG_USB_GADGET_RT)
+	val &= ~(RALINK_UHST_MODE);
+#else
+	val |= (RALINK_UHST_MODE);
+#endif
+	*(volatile u32 *)(SYSCFG1_REG) = cpu_to_le32(val);
+
+	mdelay(1);
+
+	/* release reset */
 	val = le32_to_cpu(*(volatile u32 *)(RSTCTRL_REG));
 	val &= ~(RALINK_UHST_RST | RALINK_UDEV_RST);
 	*(volatile u32 *)(RSTCTRL_REG) = cpu_to_le32(val);
 
-	mdelay(200);
+	mdelay(100);
 }
 
 static void rt_usb_sleep(void)
 {
 	u32 val;
 
-	// toggle reset to 1
+	/* raise reset */
 	val = le32_to_cpu(*(volatile u32 *)(RSTCTRL_REG));
 	val |= (RALINK_UHST_RST | RALINK_UDEV_RST);
 	*(volatile u32 *)(RSTCTRL_REG) = cpu_to_le32(val);
+
 	mdelay(10);
 
-	// disable port0 & port1 Phy clock (MT7620 needed UPHY1_CLK_EN too!)
+	/* disable PHY0/1 clock */
 	val = le32_to_cpu(*(volatile u32 *)(CLKCFG1_REG));
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7628)
-	val &= ~(RALINK_UPHY0_CLK_EN | RALINK_UPHY1_CLK_EN);
-#else
-	/* one port only */
+#if defined (CONFIG_RALINK_RT5350)
 	val &= ~(RALINK_UPHY0_CLK_EN);
+#else
+	val &= ~(RALINK_UPHY0_CLK_EN | RALINK_UPHY1_CLK_EN);
 #endif
 	*(volatile u32 *)(CLKCFG1_REG) = cpu_to_le32(val);
 
-	mdelay(10);
+	mdelay(1);
 }
 #endif
 
@@ -125,7 +122,7 @@ static struct hc_driver rt3xxx_ohci_hc_driver = {
 
 	.hub_status_data	= ohci_hub_status_data,
 	.hub_control		= ohci_hub_control,
-#ifdef	CONFIG_PM
+#ifdef CONFIG_PM
 	.bus_suspend		= ohci_bus_suspend,
 	.bus_resume		= ohci_bus_resume,
 #endif

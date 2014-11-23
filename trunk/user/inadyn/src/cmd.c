@@ -1160,11 +1160,6 @@ static int parser_read_option(cfg_parser_t *cfg, char *p_buffer, int maxlen)
 				break;
 			}
 
-			if (ch == '#') {
-				cfg->state = COMMENT;
-				break;
-			}
-
 			if (ch == '\n' || ch == '\r') {
 				cfg->state = NEW_LINE;
 				parse_end = 1;

@@ -1477,7 +1477,8 @@ VOID MlmeUpdateTxRates(
 		/* Keep Basic Mlme Rate.*/
 		pAd->MacTab.Content[MCAST_WCID].HTPhyMode.word = pAd->CommonCfg.MlmeTransmit.word;
 		if (pAd->CommonCfg.MlmeTransmit.field.MODE == MODE_OFDM)
-			pAd->MacTab.Content[MCAST_WCID].HTPhyMode.field.MCS = OfdmRateToRxwiMCS[RATE_24];
+			/* MTK patch fix dhcp issue on new Apple and others buggy clients (use RATE_6 instead of 24) */
+			pAd->MacTab.Content[MCAST_WCID].HTPhyMode.field.MCS = OfdmRateToRxwiMCS[RATE_6];
 		else
 			pAd->MacTab.Content[MCAST_WCID].HTPhyMode.field.MCS = RATE_1;
 		pAd->CommonCfg.BasicMlmeRate = pAd->CommonCfg.MlmeRate;

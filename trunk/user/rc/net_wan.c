@@ -138,6 +138,7 @@ reset_wan_vars(void)
 
 	set_wan_unit_param(unit, "proto");
 	set_wan_unit_param(unit, "dnsenable_x");
+	set_wan_unit_param(unit, "vci");
 	set_wan_unit_param(unit, "hostname");
 	set_wan_unit_param(unit, "auth_mode");
 	set_wan_unit_param(unit, "auth_user");
@@ -2278,8 +2279,8 @@ zcip_viptv_main(int argc, char **argv)
 int start_udhcpc_wan(char *wan_ifname, int unit, int wait_lease)
 {
 	int index, is_man;
-	char *wan_hostname;
 	char log_prefix[32], pidfile[32] = {0};
+	char *wan_hostname, *wan_vci;
 	char *dhcp_argv[] = {
 		"/sbin/udhcpc",
 		"-i", wan_ifname,
@@ -2288,7 +2289,8 @@ int start_udhcpc_wan(char *wan_ifname, int unit, int wait_lease)
 		"-t4",
 		"-T4",
 		NULL,
-		NULL, NULL,	/* -H wan_hostname	*/
+		NULL, NULL,	/* -H hostname		*/
+		NULL, NULL,	/* -V vendorclass	*/
 		NULL,		/* -O mtu		*/
 		NULL,		/* -O routes		*/
 		NULL,		/* -O staticroutes	*/
@@ -2305,14 +2307,20 @@ int start_udhcpc_wan(char *wan_ifname, int unit, int wait_lease)
 	snprintf(pidfile, sizeof(pidfile), "/var/run/udhcpc%d.pid", unit);
 
 	if (wait_lease)
-		dhcp_argv[index++] = "-b"; /* Background if lease is not obtained (timeout 4*4 sec) */
+		dhcp_argv[index++] = "-b";	/* Background if lease is not obtained (timeout 4*4 sec) */
 	else
-		dhcp_argv[index++] = "-d"; /* Background after run (new patch for udhcpc) */
+		dhcp_argv[index++] = "-d";	/* Background after run (new patch for udhcpc) */
 
 	wan_hostname = get_wan_unit_value(unit, "hostname");
-	if (*wan_hostname) {
+	if (strlen(wan_hostname) > 0) {
 		dhcp_argv[index++] = "-H";
 		dhcp_argv[index++] = sanity_hostname(wan_hostname);
+	}
+
+	wan_vci = get_wan_unit_value(unit, "vci");
+	if (strlen(wan_vci) > 0) {
+		dhcp_argv[index++] = "-V";
+		dhcp_argv[index++] = wan_vci;
 	}
 
 	dhcp_argv[index++] = "-O26";	/* "mtu" */
@@ -2320,7 +2328,7 @@ int start_udhcpc_wan(char *wan_ifname, int unit, int wait_lease)
 	if (nvram_match("dr_enable_x", "1")) {
 		dhcp_argv[index++] = "-O33";	/* "routes" */
 		dhcp_argv[index++] = "-O121";	/* "staticroutes" */
-		dhcp_argv[index++] = "-O249";   /* "msstaticroutes" */
+		dhcp_argv[index++] = "-O249";	/* "msstaticroutes" */
 	}
 
 #if defined (USE_IPV6)
@@ -2420,5 +2428,4 @@ int stop_udhcpc_viptv(void)
 	snprintf(pidfile, sizeof(pidfile), "/var/run/udhcpc_viptv.pid");
 	return kill_pidfile(pidfile);
 }
-
 

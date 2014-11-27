@@ -39,8 +39,8 @@ $j(document).ready(function() {
 var client_mac = login_mac_str();
 
 var original_wan_type = wan_proto;
-var original_wan_dhcpenable = parseInt('<% nvram_get_x("", "x_DHCPClient"); %>');
-var original_dnsenable = parseInt('<% nvram_get_x("", "wan_dnsenable_x"); %>');
+var original_wan_dhcp_auto = parseInt('<% nvram_get_x("", "x_DHCPClient"); %>');
+var original_wan_dns_auto = parseInt('<% nvram_get_x("", "wan_dnsenable_x"); %>');
 var original_wan_src_phy = '<% nvram_get_x("", "wan_src_phy"); %>';
 
 function initial(){
@@ -80,7 +80,7 @@ function validForm(){
 	var wan_stb_x = document.form.wan_stb_x.value;
 	var min_vlan = support_min_vlan();
 
-	if(!document.form.x_DHCPClient[0].checked){
+	if($("tbl_dhcp_sect").style.display != "none" && !document.form.x_DHCPClient[0].checked){
 		var addr_obj = document.form.wan_ipaddr;
 		var mask_obj = document.form.wan_netmask;
 		var gate_obj = document.form.wan_gateway;
@@ -157,10 +157,6 @@ function validForm(){
 			if(!validate_string(document.form.wan_ppp_peer))
 				return false;
 	}
-
-	if(document.form.wan_hostname.value.length > 0)
-		if(!validate_string(document.form.wan_hostname))
-			return false;
 
 	if(document.form.wan_hwaddr_x.value.length > 0)
 		if(!validate_hwaddr(document.form.wan_hwaddr_x))
@@ -239,10 +235,7 @@ function change_wan_type(wan_type, flag){
 		if (parseInt(document.form.wan_pppoe_mru.value) > 1492)
 			document.form.wan_pppoe_mru.value = "1492";
 		
-		if (document.form.wan_pppoe_man.value == "1")
-			$("tbl_dhcp_sect").style.display = "";
-		else
-			$("tbl_dhcp_sect").style.display = "none";
+		showhide_div("tbl_dhcp_sect", (document.form.wan_pppoe_man.value == "1")?1:0);
 		
 		$("row_wan_poller").style.display = "none";
 		$("row_dhcp_toggle").style.display = "";
@@ -336,8 +329,7 @@ function change_wan_type(wan_type, flag){
 		$("tbl_vpn_control").style.display = "none";
 		$("row_auth_type").style.display = "";
 	}
-	else{	// Automatic IP
-		
+	else{
 		$("dhcp_sect_desc").innerHTML = "<#IPConnection_ExternalIPAddress_sectionname#>";
 		$("dhcp_auto_desc").innerHTML = "<#Layer3Forwarding_x_DHCPClient_itemname#>";
 		
@@ -380,11 +372,12 @@ function fixed_change_wan_type(wan_type){
 		if(flag == true && document.form.wan_dns1_x.value.length == 0)
 			document.form.wan_dns1_x.focus();
 	}
-	else{	// dhcp, pppoe, pptp, l2tp
-		inputRCtrl2(document.form.wan_dnsenable_x, !original_dnsenable);
-		$j('#wan_dnsenable_x_on_of').iState(original_dnsenable);
+	else{
+		var dns_auto = original_wan_dns_auto;
+		inputRCtrl2(document.form.wan_dnsenable_x, !dns_auto);
+		$j('#wan_dnsenable_x_on_of').iState(dns_auto);
 		
-		set_wan_dns_auto(original_dnsenable);
+		set_wan_dns_auto(dns_auto);
 		
 		if(flag == true && document.form.wan_dns1_x.value.length == 0 && !document.form.wan_dnsenable_x[0].checked)
 			document.form.wan_dns1_x.focus();
@@ -411,6 +404,20 @@ function set_wan_dhcp_auto(use_auto){
 	showhide_div("row_wan_netmask", !use_auto);
 	showhide_div("row_wan_gateway", !use_auto);
 	showhide_div("row_wan_mtu", !use_auto);
+
+	var v = use_auto;
+	if (document.form.wan_proto.value == "pppoe" && document.form.wan_pppoe_man.value != "1")
+		v = 0;
+
+	showhide_div("row_hostname", v);
+	showhide_div("row_vci", v);
+}
+
+function change_pppoe_man(man_type){
+	if(document.form.wan_proto.value == "pppoe"){
+		showhide_div("tbl_dhcp_sect", (man_type == "1")?1:0);
+		set_wan_dhcp_auto(document.form.x_DHCPClient[0].checked);
+	}
 }
 
 function change_wan_dhcp_auto(){
@@ -425,15 +432,16 @@ function change_wan_dns_auto(use_auto){
 
 function change_wan_dhcp_enable(wan_type){
 	if (wan_type == "pppoe" || wan_type == "pptp" || wan_type == "l2tp"){
-		inputRCtrl2(document.form.x_DHCPClient, !original_wan_dhcpenable);
-		$j('#x_DHCPClient_on_of').iState(original_wan_dhcpenable);
+		var dhcp_auto = original_wan_dhcp_auto;
+		inputRCtrl2(document.form.x_DHCPClient, !dhcp_auto);
+		$j('#x_DHCPClient_on_of').iState(dhcp_auto);
 		
 		inputCtrl(document.form.x_DHCPClient[0], 1);
 		inputCtrl(document.form.x_DHCPClient[1], 1);
 		$j('input[name="x_DHCPClient"]').removeAttr('disabled');
 		$j('#x_DHCPClient_on_of').iClickable(1);
 		
-		set_wan_dhcp_auto(original_wan_dhcpenable);
+		set_wan_dhcp_auto(dhcp_auto);
 	}
 	else if(wan_type == "static"){
 		inputRCtrl2(document.form.x_DHCPClient, 1);
@@ -442,29 +450,20 @@ function change_wan_dhcp_enable(wan_type){
 		inputCtrl(document.form.x_DHCPClient[0], 0);
 		inputCtrl(document.form.x_DHCPClient[1], 0);
 		$j('input[name="x_DHCPClient"]').attr('disabled','disabled');
-		$j('#x_DHCPClient_on_of').iState(0).iClickable(0);
+		$j('#x_DHCPClient_on_of').iClickable(0);
 		
 		set_wan_dhcp_auto(0);
 	}
-	else{	// "dhcp"
+	else{
 		inputRCtrl2(document.form.x_DHCPClient, 0);
 		$j('#x_DHCPClient_on_of').iState(1);
 		
 		inputCtrl(document.form.x_DHCPClient[0], 0);
 		inputCtrl(document.form.x_DHCPClient[1], 0);
 		$j('input[name="x_DHCPClient"]').attr('disabled','disabled');
-		$j('#x_DHCPClient_on_of').iState(1).iClickable(0);
+		$j('#x_DHCPClient_on_of').iClickable(0);
 		
 		set_wan_dhcp_auto(1);
-	}
-	
-	if((document.form.x_DHCPClient[0].checked) || (wan_type == "pppoe" || wan_type == "pptp" || wan_type == "l2tp")){
-		$j('input[name="x_DHCPClient"]').removeAttr('disabled');
-		$j('#x_DHCPClient_on_of').iClickable(1);
-	}
-	else{
-		$j('input[name="x_DHCPClient"]').attr('disabled','disabled');
-		$j('#x_DHCPClient_on_of').iState(0).iClickable(0);
 	}
 }
 
@@ -480,15 +479,6 @@ function change_wan_dns_enable(wan_type){
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
 		$j('input[name="wan_dnsenable_x"]').removeAttr('disabled');
 		$j('#wan_dnsenable_x_on_of').iClickable(1);
-	}
-}
-
-function change_pppoe_man(man_type){
-	if(document.form.wan_proto.value == "pppoe"){
-		if (man_type == "1")
-			$("tbl_dhcp_sect").style.display = "";
-		else
-			$("tbl_dhcp_sect").style.display = "none";
 	}
 }
 
@@ -635,26 +625,15 @@ function AuthSelection(auth){
 	var wan_type = document.form.wan_proto.value;
 
 	if(wan_type == "pppoe" || wan_type == "pptp" || wan_type == "l2tp"){
-		$("row_auth_user").style.display = "none";
-		$("row_auth_pass").style.display = "none";
-		$("row_auth_host").style.display = "none";
+		showhide_div("row_auth_user", 0);
+		showhide_div("row_auth_pass", 0);
+		showhide_div("row_auth_host", 0);
 		return 0;
 	}
 
-	if (auth == "1")
-		$("row_auth_host").style.display = "";
-	else
-		$("row_auth_host").style.display = "none";
-
-	if (auth != "0" && auth != "1")
-		$("row_auth_user").style.display = "";
-	else
-		$("row_auth_user").style.display = "none";
-
-	if (auth != "0")
-		$("row_auth_pass").style.display = "";
-	else
-		$("row_auth_pass").style.display = "none";
+	showhide_div("row_auth_host", (auth == "1")?1:0);
+	showhide_div("row_auth_user", (auth != "0" && auth != "1")?1:0);
+	showhide_div("row_auth_pass", (auth != "0")?1:0);
 }
 
 function showMAC(){
@@ -1005,10 +984,6 @@ function simplyMAC(fullMAC){
                                         <tr>
                                             <th><#PPP_AdaptiveLCP#></th>
                                             <td>
-                                                <!--select name="wan_ppp_alcp" class="input">
-                                                    <option value="0" <% nvram_match_x("", "wan_ppp_alcp", "0","selected"); %>><#checkbox_No#></option>
-                                                    <option value="1" <% nvram_match_x("", "wan_ppp_alcp", "1","selected"); %>><#checkbox_Yes#></option>
-                                                </select-->
                                                 <label class="radio inline"><input type="radio" value="1" name="wan_ppp_alcp" class="input" <% nvram_match_x("", "wan_ppp_alcp", "1", "checked"); %>><#checkbox_Yes#></label>
                                                 <label class="radio inline"><input type="radio" value="0" name="wan_ppp_alcp" class="input" <% nvram_match_x("", "wan_ppp_alcp", "0", "checked"); %>><#checkbox_No#></label>
                                             </td>
@@ -1045,7 +1020,7 @@ function simplyMAC(fullMAC){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#PPPConnection_x_HostNameForISP_sectionname#></th>
                                         </tr>
                                         <tr id="row_auth_type">
-                                            <th width="50%"><#ISP_Authentication_mode#></th>
+                                            <th><#ISP_Authentication_mode#></th>
                                             <td>
                                                 <select name="wan_auth_mode" class="input" onChange="AuthSelection(this.value)">
                                                     <option value="0" <% nvram_match_x("", "wan_auth_mode", "0", "selected"); %>><#checkbox_No#></option>
@@ -1060,19 +1035,19 @@ function simplyMAC(fullMAC){
                                             </td>
                                         </tr>
                                         <tr id="row_auth_host">
-                                            <th width="50%"><#ISP_Authentication_host#></th>
+                                            <th><#ISP_Authentication_host#></th>
                                             <td>
                                                 <input type="text" name="wan_auth_host" class="input" maxlength="15" size="32" value="<% nvram_get_x("","wan_auth_host"); %>"  onKeyUp="change_ipaddr(this);"/>
                                             </td>
                                         </tr>
                                         <tr id="row_auth_user">
-                                            <th width="50%"><#ISP_Authentication_user#></th>
+                                            <th><#ISP_Authentication_user#></th>
                                             <td>
                                                 <input type="text" maxlength="64" class="input" size="32" name="wan_auth_user" value="<% nvram_get_x("","wan_auth_user"); %>" onKeyPress="return is_string(this)"/>
                                             </td>
                                         </tr>
                                         <tr id="row_auth_pass">
-                                            <th width="50%"><#ISP_Authentication_pass#></th>
+                                            <th><#ISP_Authentication_pass#></th>
                                             <td>
                                                 <div class="input-append">
                                                     <input type="password" maxlength="64" class="input" size="32" name="wan_auth_pass" id="wan_auth_pass" style="width: 175px;" value="<% nvram_get_x("","wan_auth_pass"); %>" onKeyPress="return is_string(this)"/>
@@ -1080,13 +1055,19 @@ function simplyMAC(fullMAC){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="hostname_x">
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,16);"><#PPPConnection_x_HostNameForISP_itemname#></a></th>
+                                        <tr id="row_hostname">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,16);"><#PPPConnection_x_HostNameForISP_itemname#></a></th>
                                             <td>
                                                 <input type="text" name="wan_hostname" class="input" maxlength="32" size="32" value="<% nvram_get_x("","wan_hostname"); %>" onkeypress="return is_string(this)"/>
                                             </td>
                                         </tr>
-                                        <tr id="clone_mac_x">
+                                        <tr id="row_vci">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,19);">Vendor Class Identifier:</a></th>
+                                            <td>
+                                                <input type="text" name="wan_vci" class="input" maxlength="128" size="32" value="<% nvram_get_x("","wan_vci"); %>" onkeypress="return is_string(this)"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,17);"><#PPPConnection_x_MacAddressForISP_itemname#></a></th>
                                             <td>
                                                 <input type="text" name="wan_hwaddr_x" class="input" style="float: left; margin-right: 5px;" maxlength="12" size="15" value="<% nvram_get_x("","wan_hwaddr_x"); %>" onKeyPress="return is_hwaddr()"/>

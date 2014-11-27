@@ -266,6 +266,7 @@
 			{"wan_dns2_x", "", NULL, EVM_RESTART_WAN},
 			{"wan_dns3_x", "", NULL, EVM_RESTART_WAN},
 			{"wan_hostname", "", NULL, EVM_RESTART_WAN},
+			{"wan_vci", "", NULL, EVM_RESTART_WAN},
 			{"wan_hwaddr_x", "", NULL, EVM_RESTART_WAN},
 			{"upnp_enable_x", "", NULL, EVM_RESTART_UPNP},
 			{"upnp_proto", "", NULL, EVM_RESTART_UPNP},

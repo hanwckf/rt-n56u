@@ -69,6 +69,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wan_dns2_x", "" },
 	{ "wan_dns3_x", "" },
 	{ "wan_hostname", "" },			/* WAN hostname */
+	{ "wan_vci", "" },			/* WAN vendor class identifier (OPT-60) */
 	{ "wan_hwaddr_x", "" },
 	{ "wan_nat_x", "1" },
 	{ "wan_mtu", "1500" },

@@ -191,6 +191,31 @@ is_same_subnet2(const char *ip1, const char *ip2, const char *msk1, const char *
 	return (addr1 & mask) == (addr2 & mask);
 }
 
+void
+stop_udpxy(void)
+{
+	char* svcs[] = { "udpxy", NULL };
+
+	kill_services(svcs, 3, 1);
+}
+
+void
+start_udpxy(char *wan_ifname)
+{
+	int uport;
+
+	uport = nvram_get_int("udpxy_enable_x");
+	if (uport < 1024)
+		return;
+
+	eval("/usr/sbin/udpxy",
+		"-m", wan_ifname,
+		"-p", nvram_safe_get("udpxy_enable_x"),
+		"-B", "65536",
+		"-c", "5"
+		);
+}
+
 #if defined(APP_XUPNPD)
 int
 is_xupnpd_support(void)
@@ -202,10 +227,10 @@ void
 stop_xupnpd(void)
 {
 	char* svcs[] = { "xupnpd", NULL };
-	
+
 	if (!is_xupnpd_support())
 		return;
-	
+
 	kill_services(svcs, 3, 1);
 }
 
@@ -293,13 +318,13 @@ start_xupnpd(char *wan_ifname)
 					snprintf(line, sizeof(line), "cfg.http_port=%d\n", xport);
 				else if (strstr(line, "cfg.udpxy_url=")) {
 					char *lua_rem = "--";
-					char *lan_add = nvram_safe_get("lan_ipaddr");
+					char *lan_addr = nvram_safe_get("lan_ipaddr_t");
 					int udpxy_port = nvram_get_int("udpxy_enable_x");
 					if (udpxy_port > 1023 && nvram_match("xupnpd_udpxy", "1"))
 						lua_rem = "";
 					if (udpxy_port == 0)
 						udpxy_port = 4022;
-					snprintf(line, sizeof(line), "%scfg.udpxy_url='http://%s:%d'\n", lua_rem, lan_add, udpxy_port);
+					snprintf(line, sizeof(line), "%scfg.udpxy_url='http://%s:%d'\n", lua_rem, lan_addr, udpxy_port);
 				}
 				else if (strstr(line, "cfg.daemon") && !strstr(line, "--")) {
 					snprintf(line, sizeof(line), "cfg.daemon=true\n");
@@ -323,13 +348,14 @@ start_xupnpd(char *wan_ifname)
 void
 stop_igmpproxy(char *wan_ifname)
 {
-	char *svcs[] = { "udpxy", "igmpproxy", NULL };
-	char *viptv_iflast;
+	char *svcs[] = { "xupnpd", "udpxy", "igmpproxy", NULL };
 
 	/* check used IPTV via VLAN interface */
-	viptv_iflast = nvram_safe_get("viptv_ifname");
-	if (*viptv_iflast && is_interface_exist(viptv_iflast) && strcmp(wan_ifname, viptv_iflast))
-		return;
+	if (wan_ifname) {
+		char *viptv_iflast = nvram_safe_get("viptv_ifname");
+		if (*viptv_iflast && is_interface_exist(viptv_iflast) && strcmp(wan_ifname, viptv_iflast))
+			return;
+	}
 
 	kill_services(svcs, 3, 1);
 }
@@ -346,22 +372,10 @@ start_igmpproxy(char *wan_ifname)
 	if (*viptv_iflast && is_interface_exist(viptv_iflast) && strcmp(wan_ifname, viptv_iflast))
 		return;
 
-	// Allways close old instance of igmpproxy and udpxy (interface may changed)
-#if defined(APP_XUPNPD)
-	stop_xupnpd();
-#endif
+	/* Allways close old instance of igmpproxy and udpxy (interface may changed) */
 	stop_igmpproxy(wan_ifname);
 
-	if (nvram_get_int("udpxy_enable_x") > 1023)
-	{
-		eval("/usr/sbin/udpxy",
-			"-m", wan_ifname,
-			"-p", nvram_safe_get("udpxy_enable_x"),
-			"-B", "65536",
-			"-c", "5"
-			);
-	}
-
+	start_udpxy(wan_ifname);
 #if defined(APP_XUPNPD)
 	start_xupnpd(wan_ifname);
 #endif
@@ -391,19 +405,27 @@ start_igmpproxy(char *wan_ifname)
 }
 
 void
-restart_iptv(void)
+restart_iptv(int is_ap_mode)
 {
-	char *wan_ifname, *viptv_iflast;
-
-	/* check used IPTV via VLAN interface */
-	viptv_iflast = nvram_safe_get("viptv_ifname");
-	if (*viptv_iflast && is_interface_exist(viptv_iflast))
-		wan_ifname = viptv_iflast;
-	else
-		wan_ifname = get_man_ifname(0);
-
 	config_bridge();
-	start_igmpproxy(wan_ifname);
+
+	if (!is_ap_mode) {
+		char *wan_ifname, *viptv_iflast;
+		
+		/* check used IPTV via VLAN interface */
+		viptv_iflast = nvram_safe_get("viptv_ifname");
+		if (*viptv_iflast && is_interface_exist(viptv_iflast))
+			wan_ifname = viptv_iflast;
+		else
+			wan_ifname = get_man_ifname(0);
+		start_igmpproxy(wan_ifname);
+	} else {
+		stop_igmpproxy(NULL);
+		start_udpxy(IFNAME_BR);
+#if defined(APP_XUPNPD)
+		start_xupnpd(IFNAME_BR);
+#endif
+	}
 }
 
 void

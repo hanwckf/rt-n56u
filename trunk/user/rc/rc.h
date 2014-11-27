@@ -98,7 +98,6 @@
 // for log message title
 #define LOGNAME				BOARD_NAME
 
-
 /* rc.c */
 void setenv_tz(void);
 void setkernel_tz(void);
@@ -161,9 +160,11 @@ int  is_same_subnet2(const char *ip1, const char *ip2, const char *msk1, const c
 void stop_xupnpd(void);
 void start_xupnpd(char *wan_ifname);
 #endif
+void stop_udpxy(void);
+void start_udpxy(char *wan_ifname);
 void stop_igmpproxy(char *wan_ifname);
 void start_igmpproxy(char *wan_ifname);
-void restart_iptv(void);
+void restart_iptv(int is_ap_mode);
 void flush_conntrack_table(char *ip);
 void flush_route_caches(void);
 void clear_if_route4(char *ifname);

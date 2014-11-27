@@ -271,31 +271,6 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#SwitchIgmp#></th>
-                                            <td>
-                                                <select name="wl_IgmpSnEnable" class="input">
-                                                    <option value="0" <% nvram_match_x("","wl_IgmpSnEnable", "0","selected"); %>><#btn_Disable#></option>
-                                                    <option value="1" <% nvram_match_x("","wl_IgmpSnEnable", "1","selected"); %>><#btn_Enable#> (*)</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 7);"><#WLANConfig11b_MultiRateAll_itemname#></a></th>
-                                            <td>
-                                                <select name="wl_mcastrate" class="input">
-                                                    <option value="0" <% nvram_match_x("", "wl_mcastrate", "0", "selected"); %>>HTMIX (1S) 15 Mbps</option>
-                                                    <option value="1" <% nvram_match_x("", "wl_mcastrate", "1", "selected"); %>>HTMIX (1S) 30 Mbps (*)</option>
-                                                    <option value="2" <% nvram_match_x("", "wl_mcastrate", "2", "selected"); %>>HTMIX (1S) 45 Mbps</option>
-                                                    <option value="3" <% nvram_match_x("", "wl_mcastrate", "3", "selected"); %>>HTMIX (2S) 30 Mbps</option>
-                                                    <option value="4" <% nvram_match_x("", "wl_mcastrate", "4", "selected"); %>>HTMIX (2S) 60 Mbps</option>
-                                                    <option value="5" <% nvram_match_x("", "wl_mcastrate", "5", "selected"); %>>OFDM 9 Mbps</option>
-                                                    <option value="6" <% nvram_match_x("", "wl_mcastrate", "6", "selected"); %>>OFDM 12 Mbps</option>
-                                                    <option value="7" <% nvram_match_x("", "wl_mcastrate", "7", "selected"); %>>OFDM 18 Mbps</option>
-                                                    <option value="8" <% nvram_match_x("", "wl_mcastrate", "8", "selected"); %>>OFDM 24 Mbps</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 13);"><#WLANConfig11b_x_TxBurst_itemname#></a></th>
                                             <td>
                                                 <select name="wl_TxBurst" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_TxBurst')">

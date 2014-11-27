@@ -158,6 +158,7 @@ extern char*     get_man_ifname(int unit);
 extern int       get_usb_modem_wan(int unit);
 extern int       get_usb_modem_dev_wan(int unit, int devnum);
 extern void      set_usb_modem_dev_wan(int unit, int devnum);
+extern void      brport_set_m2u(char *ifname, int m2u_on);
 extern int       get_wan_ether_link_cached(void);
 extern int       get_internet_state_cached(void);
 extern int       ifconfig(char *ifname, int flags, char *addr, char *mask);

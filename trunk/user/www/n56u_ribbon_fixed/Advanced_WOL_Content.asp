@@ -32,7 +32,7 @@ var allMacs = {};
 function initial(){
 	var id_menu = 6;
 	if(get_ap_mode()){
-		id_menu = 4;
+		id_menu = 5;
 		if (lan_proto == '1')
 			id_menu--;
 	}

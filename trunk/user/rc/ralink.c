@@ -1533,9 +1533,14 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	//RadioOn
 	fprintf(fp, "RadioOn=%d\n", 1);
 
-	// IgmpSnEnable (IGMP Snooping)
-	i_val = nvram_wlan_get_int(prefix, "IgmpSnEnable");
-	if (i_val) i_val = 1;
+	// IgmpSnEnable (internal IGMP Snooping)
+	i_val = 0;
+#if defined(USE_RT3352_MII)
+	if (!is_aband) {
+		i_val = nvram_wlan_get_int(prefix, "IgmpSnEnable");
+		if (i_val) i_val = 1;
+	}
+#endif
 	fprintf(fp, "IgmpSnEnable=%d\n", i_val);
 
 	/*	McastPhyMode, PHY mode for Multicast frames

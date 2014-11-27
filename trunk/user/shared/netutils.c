@@ -254,6 +254,18 @@ set_usb_modem_dev_wan(int unit, int devnum)
 	nvram_set_int_temp(strcat_r(prefix, "modem_dev", tmp), devnum);
 }
 
+void
+brport_set_m2u(char *ifname, int m2u_on)
+{
+	char brport_path[64];
+
+	snprintf(brport_path, sizeof(brport_path), "/sys/class/net/%s/brport/%s", ifname, "multicast_fast_leave");
+	fput_int(brport_path, (m2u_on) ? 1 : 0);
+
+	snprintf(brport_path, sizeof(brport_path), "/sys/class/net/%s/brport/%s", ifname, "multicast_to_unicast");
+	fput_int(brport_path, (m2u_on) ? 1 : 0);
+}
+
 int
 get_wan_ether_link_cached(void)
 {

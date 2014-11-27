@@ -150,7 +150,7 @@ init_bridge(void)
 	{
 		/* workaround for create all pseudo interfaces and fix iNIC issue (common PLL config) */
 		gen_ralink_config_2g(1);
-		ifconfig(IFNAME_2G_MAIN, IFUP, NULL, NULL);
+		doSystem("ifconfig %s %s", IFNAME_2G_MAIN, "up");
 	}
 #endif
 #if BOARD_HAS_5G_RADIO
@@ -158,7 +158,7 @@ init_bridge(void)
 	{
 		/* workaround for create all pseudo interfaces */
 		gen_ralink_config_5g(1);
-		ifconfig(IFNAME_5G_MAIN, IFUP, NULL, NULL);
+		doSystem("ifconfig %s %s", IFNAME_5G_MAIN, "up");
 	}
 #endif
 #else /* BOARD_2G_IN_SOC */
@@ -167,7 +167,7 @@ init_bridge(void)
 	{
 		/* workaround for create all pseudo interfaces and fix iNIC issue (common PLL config) */
 		gen_ralink_config_5g(1);
-		ifconfig(IFNAME_5G_MAIN, IFUP, NULL, NULL);
+		doSystem("ifconfig %s %s", IFNAME_5G_MAIN, "up");
 	}
 #endif
 #if !defined (USE_RT3352_MII)
@@ -175,7 +175,7 @@ init_bridge(void)
 	{
 		/* workaround for create all pseudo interfaces */
 		gen_ralink_config_2g(1);
-		ifconfig(IFNAME_2G_MAIN, IFUP, NULL, NULL);
+		doSystem("ifconfig %s %s", IFNAME_2G_MAIN, "up");
 	}
 #endif
 #endif
@@ -227,21 +227,27 @@ init_bridge(void)
 
 	sleep(1);
 
-#if BOARD_HAS_5G_RADIO
-	if (!wl_radio_on || (wl_mode_x == 1 || wl_mode_x == 3))
-		ifconfig(IFNAME_5G_MAIN, 0, NULL, NULL);
-#endif
-
-#if !defined(USE_RT3352_MII)
-	if (!rt_radio_on || (rt_mode_x == 1 || rt_mode_x == 3))
-		ifconfig(IFNAME_2G_MAIN, 0, NULL, NULL);
-#endif
-
 	ifconfig(IFNAME_BR, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 
 	restart_guest_lan_isolation();
 
 	config_bridge();
+
+#if BOARD_HAS_5G_RADIO
+	if (!wl_radio_on || (wl_mode_x == 1 || wl_mode_x == 3)) {
+		usleep(500000);
+		doSystem("ifconfig %s %s", IFNAME_5G_MAIN, "down");
+		gen_ralink_config_5g(0);
+	}
+#endif
+
+#if !defined(USE_RT3352_MII)
+	if (!rt_radio_on || (rt_mode_x == 1 || rt_mode_x == 3)) {
+		usleep(500000);
+		doSystem("ifconfig %s %s", IFNAME_2G_MAIN, "down");
+		gen_ralink_config_2g(0);
+	}
+#endif
 
 	nvram_set_int_temp("reload_svc_wl", 0);
 	nvram_set_int_temp("reload_svc_rt", 0);
@@ -250,9 +256,10 @@ init_bridge(void)
 void
 config_bridge(void)
 {
-	char bridge_path[64];
+	char bridge_path[64], *wired_ifname;
 	int multicast_router, multicast_querier;
-	int igmp_sn = nvram_get_int("ether_igmp");
+	int igmp_snoop = nvram_get_int("ether_igmp");
+	int wired_m2u = nvram_get_int("ether_m2u");
 
 	if (!get_ap_mode()) {
 		if (nvram_match("mr_enable_x", "1")) {
@@ -262,9 +269,15 @@ config_bridge(void)
 			multicast_router = 1;   // bridge may be mcast router path
 			multicast_querier = 1;  // bridge is needed internal mcast querier (for eth2-ra0-rai0 snooping work)
 		}
+		wired_ifname = IFNAME_LAN;
 	} else {
 		multicast_router = 0;   // bridge is not mcast router path
 		multicast_querier = 1;  // bridge is needed internal mcast querier (for eth2-ra0-rai0 snooping work)
+#if defined (AP_MODE_LAN_TAGGED)
+		wired_ifname = IFNAME_LAN;
+#else
+		wired_ifname = IFNAME_MAC;
+#endif
 	}
 
 	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", IFNAME_BR, "multicast_router");
@@ -273,11 +286,14 @@ config_bridge(void)
 	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", IFNAME_BR, "multicast_querier");
 	fput_int(bridge_path, multicast_querier);
 
+	/* allow use bridge IP address as IGMP/MLD query source IP (avoid cisco issue) */
 	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", IFNAME_BR, "multicast_query_use_ifaddr");
-	fput_int(bridge_path, 1); // allow use bridge IP address as IGMP/MLD query source IP (avoid cisco issue)
+	fput_int(bridge_path, 1);
 
 	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", IFNAME_BR, "multicast_snooping");
-	fput_int(bridge_path, (igmp_sn) ? 1 : 0);
+	fput_int(bridge_path, (igmp_snoop) ? 1 : 0);
+
+	brport_set_m2u(wired_ifname, (igmp_snoop && wired_m2u == 1) ? 1 : 0);
 }
 
 void
@@ -337,7 +353,7 @@ switch_config_base(void)
 #endif
 	phy_jumbo_frames(nvram_get_int("ether_jumbo"));
 	phy_green_ethernet(nvram_get_int("ether_green"));
-	phy_igmp_snooping(nvram_get_int("ether_igmp"));
+	phy_igmp_snooping((nvram_get_int("ether_m2u") == 2) ? 1 : 0);
 }
 
 void
@@ -347,9 +363,6 @@ switch_config_storm(void)
 	int controlrate_unknown_multicast;
 	int controlrate_multicast;
 	int controlrate_broadcast;
-
-	if (get_ap_mode())
-		return;
 
 	/* unknown unicast storm control */
 	controlrate_unknown_unicast = nvram_get_int("controlrate_unknown_unicast");
@@ -370,7 +383,7 @@ switch_config_storm(void)
 	controlrate_broadcast = nvram_get_int("controlrate_broadcast");
 	if (controlrate_broadcast <= 0 || controlrate_broadcast > 1024)
 		controlrate_broadcast = 1024;
-	
+
 	phy_storm_unicast_unknown(controlrate_unknown_unicast);
 	phy_storm_multicast_unknown(controlrate_unknown_multicast);
 	phy_storm_multicast(controlrate_multicast);
@@ -655,10 +668,10 @@ full_restart_lan(void)
 		
 		/* restart vpn server, firewall and miniupnpd */
 		restart_vpn_server();
-		
-		/* restart igmpproxy, udpxy, xupnpd */
-		restart_iptv();
 	}
+
+	/* restart igmpproxy, udpxy, xupnpd */
+	restart_iptv(is_ap_mode);
 
 #if defined(APP_NFSD)
 	// reload NFS server exports

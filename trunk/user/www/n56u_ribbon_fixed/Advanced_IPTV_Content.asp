@@ -25,9 +25,7 @@ var $j = jQuery.noConflict();
 
 $j(document).ready(function() {
 	init_itoggle('mr_enable_x', on_click_mroute);
-	init_itoggle('ether_igmp');
-	init_itoggle('rt_IgmpSnEnable');
-	init_itoggle('wl_IgmpSnEnable');
+	init_itoggle('ether_igmp', on_click_snoop);
 });
 
 </script>
@@ -36,17 +34,26 @@ $j(document).ready(function() {
 var lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
 
 function initial(){
-	show_banner(1);
-	show_menu(5,3,4);
-	show_footer();
+	var id_menu = 4;
+	if(get_ap_mode()){
+		id_menu = 3;
+		if (lan_proto == '1')
+			id_menu--;
+		showhide_div('row_mroute', 0);
+		showhide_div('row_ttl_fix', 0);
+	}else{
+		on_click_mroute();
+	}
 
-	on_click_mroute();
+	show_banner(1);
+	show_menu(5,3,id_menu);
+	show_footer();
 
 	var switch_type = support_switch_type();
 	if (switch_type != 0) {
-		$("row_storm_ucast").style.display = "none";
-		$("row_storm_mcast").style.display = "none";
-		$("row_storm_bcast").style.display = "none";
+		showhide_div('row_storm_ucast', 0);
+		showhide_div('row_storm_mcast', 0);
+		showhide_div('row_storm_bcast', 0);
 	}
 
 	if (switch_type == 1)
@@ -58,20 +65,19 @@ function initial(){
 		$("web_udpxy_link").style.display = "none";
 
 	if(found_app_xupnpd()){
-		$("row_xupnpd").style.display = "";
+		showhide_div('row_xupnpd', 1);
 		if(document.form.xupnpd_enable_x.value == 0)
 			$("web_xupnpd_link").style.display = "none";
 		if(document.form.udpxy_enable_x.value == 0 || document.form.xupnpd_enable_x.value == 0)
-			$("row_xupnpd_udpxy").style.display = "none";
+			showhide_div('row_xupnpd_udpxy', 0);
 		else
-			$("row_xupnpd_udpxy").style.display = "";
+			showhide_div('row_xupnpd_udpxy', 1);
 	}else{
-		$("row_xupnpd").style.display = "none";
-		$("row_xupnpd_udpxy").style.display = "none";
+		showhide_div('row_xupnpd', 0);
+		showhide_div('row_xupnpd_udpxy', 0);
 	}
 
-	if (!support_5g_radio())
-		$("tbl_mcast_5ghz").style.display = "none";
+	on_click_snoop();
 }
 
 function applyRule(){
@@ -139,25 +145,31 @@ function valid_xupnpd(){
 		validate_range(document.form.xupnpd_enable_x, 1024, 65535);
 }
 
-function on_click_mroute() {
+function on_click_mroute(){
 	showhide_div('row_ttl_fix', document.form.mr_enable_x[0].checked);
 }
 
+function on_click_snoop(){
+	var snoop = document.form.ether_igmp[0].checked;
+	showhide_div('row_m2u_wire', snoop);
+	showhide_div('row_m2u_2ghz', snoop);
+	showhide_div('row_m2u_5ghz', snoop && support_5g_radio());
+}
 
 var window_udpxy;
 var window_xupnpd;
 var window_params="toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=800,height=600";
 
 function on_udpxy_link(){
-    var svc_url="http://" + lan_ipaddr + ":" + document.form.udpxy_enable_x.value + "/status";
-    window_udpxy = window.open(svc_url, "udpxy", window_params);
-    window_udpxy.focus();
+	var svc_url="http://" + lan_ipaddr + ":" + document.form.udpxy_enable_x.value + "/status";
+	window_udpxy = window.open(svc_url, "udpxy", window_params);
+	window_udpxy.focus();
 }
 
 function on_xupnpd_link(){
-    var svc_url="http://" + lan_ipaddr + ":" + document.form.xupnpd_enable_x.value;
-    window_xupnpd = window.open(svc_url, "xupnpd", window_params);
-    window_xupnpd.focus();
+	var svc_url="http://" + lan_ipaddr + ":" + document.form.xupnpd_enable_x.value;
+	window_xupnpd = window.open(svc_url, "xupnpd", window_params);
+	window_xupnpd.focus();
 }
 
 </script>
@@ -219,8 +231,8 @@ function on_xupnpd_link(){
                                         <tr>
                                             <th colspan="3" style="background-color: #E3E3E3;"><#IPTVBase#></th>
                                         </tr>
-                                        <tr>
-                                            <th width="50%"><#RouterConfig_GWMulticastEnable_itemname#></th>
+                                        <tr id="row_mroute">
+                                            <th><#RouterConfig_GWMulticastEnable_itemname#></th>
                                             <td colspan="2">
                                                 <div class="main_itoggle">
                                                     <div id="mr_enable_x_on_of">
@@ -272,7 +284,7 @@ function on_xupnpd_link(){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#IPTVIGMP#></th>
+                                            <th width="50%"><#IPTVIGMP#></th>
                                             <td colspan="2">
                                                 <select name="force_igmp" class="input">
                                                     <option value="0" <% nvram_match_x("", "force_igmp", "0", "selected"); %>><#checkbox_No#> (*)</option>
@@ -319,7 +331,7 @@ function on_xupnpd_link(){
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#IPTVMulticast#> - <#menu5_2_5#></th>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#IPTVMulticast#> - IGMP/MLD Snooping</th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><#SwitchIgmp#></th>
@@ -331,87 +343,41 @@ function on_xupnpd_link(){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="ether_igmp" id="ether_igmp_1" class="input" <% nvram_match_x("", "ether_igmp", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="ether_igmp" id="ether_igmp_0" class="input" <% nvram_match_x("", "ether_igmp", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="ether_igmp" id="ether_igmp_1" class="input" onclick="on_click_snoop();" <% nvram_match_x("", "ether_igmp", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="ether_igmp" id="ether_igmp_0" class="input" onclick="on_click_snoop();" <% nvram_match_x("", "ether_igmp", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-                                    </table>
-
-                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
-                                        <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#IPTVMulticast#> - WiFi 2.4GHz</th>
-                                        </tr>
-                                        <tr>
-                                            <th width="50%"><#SwitchIgmp#></th>
+                                        <tr id="row_m2u_wire">
+                                            <th>M2U - <#menu5_2_5#>:</th>
                                             <td>
-                                                <div class="main_itoggle">
-                                                    <div id="rt_IgmpSnEnable_on_of">
-                                                        <input type="checkbox" id="rt_IgmpSnEnable_fake" <% nvram_match_x("", "rt_IgmpSnEnable", "1", "value=1 checked"); %><% nvram_match_x("", "rt_IgmpSnEnable", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="rt_IgmpSnEnable" id="rt_IgmpSnEnable_1" class="input" <% nvram_match_x("", "rt_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="rt_IgmpSnEnable" id="rt_IgmpSnEnable_0" class="input" <% nvram_match_x("", "rt_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
-                                                </div>
+                                                <select name="ether_m2u" class="input">
+                                                    <option value="0" <% nvram_match_x("", "ether_m2u", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "ether_m2u", "1", "selected"); %>>Multicast to Unicast</option>
+                                                    <option value="2" <% nvram_match_x("", "ether_m2u", "2", "selected"); %>>HW IGMP/MLD snooping (*)</option>
+                                                </select>
                                             </td>
                                         </tr>
-                                        <tr>
-                                            <th><#WLANConfig11b_MultiRateAll_itemname#></th>
+                                        <tr id="row_m2u_2ghz">
+                                            <th>M2U - <#menu5_11#>:</th>
                                             <td>
-                                                <select name="rt_mcastrate" class="input">
-                                                    <option value="0" <% nvram_match_x("", "rt_mcastrate", "0", "selected"); %>>HTMIX (1S) 15 Mbps</option>
-                                                    <option value="1" <% nvram_match_x("", "rt_mcastrate", "1", "selected"); %>>HTMIX (1S) 30 Mbps</option>
-                                                    <option value="2" <% nvram_match_x("", "rt_mcastrate", "2", "selected"); %>>HTMIX (1S) 45 Mbps</option>
-                                                    <option value="3" <% nvram_match_x("", "rt_mcastrate", "3", "selected"); %>>HTMIX (2S) 30 Mbps</option>
-                                                    <option value="4" <% nvram_match_x("", "rt_mcastrate", "4", "selected"); %>>HTMIX (2S) 60 Mbps</option>
-                                                    <option value="5" <% nvram_match_x("", "rt_mcastrate", "5", "selected"); %>>OFDM 9 Mbps</option>
-                                                    <option value="6" <% nvram_match_x("", "rt_mcastrate", "6", "selected"); %>>OFDM 12 Mbps (*)</option>
-                                                    <option value="7" <% nvram_match_x("", "rt_mcastrate", "7", "selected"); %>>OFDM 18 Mbps</option>
-                                                    <option value="8" <% nvram_match_x("", "rt_mcastrate", "8", "selected"); %>>OFDM 24 Mbps</option>
-                                                    <option value="9" <% nvram_match_x("", "rt_mcastrate", "9", "selected"); %>>CCK 11 Mbps</option>
+                                                <select name="rt_IgmpSnEnable" class="input">
+                                                    <option value="0" <% nvram_match_x("", "rt_IgmpSnEnable", "0", "selected"); %>><#btn_Disable#></option>
+                                                    <option value="1" <% nvram_match_x("", "rt_IgmpSnEnable", "1", "selected"); %>>Multicast to Unicast (*)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_m2u_5ghz">
+                                            <th>M2U - <#menu5_12#>:</th>
+                                            <td>
+                                                <select name="wl_IgmpSnEnable" class="input">
+                                                    <option value="0" <% nvram_match_x("", "wl_IgmpSnEnable", "0", "selected"); %>><#btn_Disable#></option>
+                                                    <option value="1" <% nvram_match_x("", "wl_IgmpSnEnable", "1", "selected"); %>>Multicast to Unicast (*)</option>
                                                 </select>
                                             </td>
                                         </tr>
                                     </table>
 
-                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_mcast_5ghz">
-                                        <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#IPTVMulticast#> - WiFi 5GHz</th>
-                                        </tr>
-                                        <tr>
-                                            <th width="50%"><#SwitchIgmp#></th>
-                                            <td>
-                                                <div class="main_itoggle">
-                                                    <div id="wl_IgmpSnEnable_on_of">
-                                                        <input type="checkbox" id="wl_IgmpSnEnable_fake" <% nvram_match_x("", "wl_IgmpSnEnable", "1", "value=1 checked"); %><% nvram_match_x("", "wl_IgmpSnEnable", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="wl_IgmpSnEnable" id="wl_IgmpSnEnable_1" class="input" <% nvram_match_x("", "wl_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="wl_IgmpSnEnable" id="wl_IgmpSnEnable_0" class="input" <% nvram_match_x("", "wl_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><#WLANConfig11b_MultiRateAll_itemname#></th>
-                                            <td>
-                                                <select name="wl_mcastrate" class="input">
-                                                    <option value="0" <% nvram_match_x("", "wl_mcastrate", "0", "selected"); %>>HTMIX (1S) 15 Mbps</option>
-                                                    <option value="1" <% nvram_match_x("", "wl_mcastrate", "1", "selected"); %>>HTMIX (1S) 30 Mbps (*)</option>
-                                                    <option value="2" <% nvram_match_x("", "wl_mcastrate", "2", "selected"); %>>HTMIX (1S) 45 Mbps</option>
-                                                    <option value="3" <% nvram_match_x("", "wl_mcastrate", "3", "selected"); %>>HTMIX (2S) 30 Mbps</option>
-                                                    <option value="4" <% nvram_match_x("", "wl_mcastrate", "4", "selected"); %>>HTMIX (2S) 60 Mbps</option>
-                                                    <option value="5" <% nvram_match_x("", "wl_mcastrate", "5", "selected"); %>>OFDM 9 Mbps</option>
-                                                    <option value="6" <% nvram_match_x("", "wl_mcastrate", "6", "selected"); %>>OFDM 12 Mbps</option>
-                                                    <option value="7" <% nvram_match_x("", "wl_mcastrate", "7", "selected"); %>>OFDM 18 Mbps</option>
-                                                    <option value="8" <% nvram_match_x("", "wl_mcastrate", "8", "selected"); %>>OFDM 24 Mbps</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                    </table>
                                     <table class="table">
                                         <tr>
                                             <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>

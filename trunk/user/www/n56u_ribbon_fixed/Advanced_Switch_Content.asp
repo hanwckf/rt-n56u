@@ -24,7 +24,6 @@ var $j = jQuery.noConflict();
 
 $j(document).ready(function() {
 	init_itoggle('ether_green');
-	init_itoggle('ether_igmp');
 });
 
 </script>
@@ -37,7 +36,7 @@ $j(document).ready(function() {
 function initial(){
 	var id_menu = 5;
 	if(get_ap_mode()){
-		id_menu = 3;
+		id_menu = 4;
 		if (lan_proto == '1')
 			id_menu--;
 	}
@@ -45,10 +44,6 @@ function initial(){
 	show_banner(1);
 	show_menu(5,3,id_menu);
 	show_footer();
-
-	if (sw_mode != "3"){
-		showhide_div('row_igmp_snoop', 0);
-	}
 
 	var switch_type = support_switch_type();
 	if (switch_type == 1) {
@@ -195,21 +190,6 @@ function done_validating(action){
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" value="1" name="ether_green" id="ether_green_1" class="input" <% nvram_match_x("", "ether_green", "1", "checked"); %> /><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="ether_green" id="ether_green_0" class="input" <% nvram_match_x("", "ether_green", "0", "checked"); %> /><#checkbox_No#>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_igmp_snoop">
-                                            <th><#SwitchIgmp#></th>
-                                            <td>
-                                                <div class="main_itoggle">
-                                                    <div id="ether_igmp_on_of">
-                                                        <input type="checkbox" id="ether_igmp_fake" <% nvram_match_x("", "ether_igmp", "1", "value=1 checked"); %><% nvram_match_x("", "ether_igmp", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="ether_igmp" id="ether_igmp_1" class="input" <% nvram_match_x("", "ether_igmp", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="ether_igmp" id="ether_igmp_0" class="input" <% nvram_match_x("", "ether_igmp", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

@@ -403,7 +403,7 @@ flash_firmware(void)
 	stop_usb_printer_spoolers();
 	safe_remove_usb_device(0, NULL, 0);
 #endif
-	stop_igmpproxy("");
+	stop_igmpproxy(NULL);
 
 	kill_services(svcs, 6, 1);
 
@@ -759,8 +759,10 @@ handle_notifications(void)
 		}
 		else if (!strcmp(entry->d_name, RCN_RESTART_IPTV))
 		{
-			restart_iptv();
-			restart_firewall();
+			int is_ap_mode = get_ap_mode();
+			restart_iptv(is_ap_mode);
+			if (!is_ap_mode)
+				restart_firewall();
 		}
 		else if(!strcmp(entry->d_name, "deferred_wan_connect"))
 		{

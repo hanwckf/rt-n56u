@@ -26,7 +26,7 @@ function initial(){
 	show_menu(5,1,5);
 	show_footer();
 
-	if (!support_5g_radio()) {
+	if (!support_5g_radio()){
 		document.form.goto5.style.display = "none";
 		$("col_goto5").width = "33%";
 	}

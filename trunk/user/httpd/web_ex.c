@@ -952,7 +952,6 @@ static void do_html_post_and_get(char *url, FILE *stream, int clen, char *bounda
 #define WIFI_GUEST_CONTROL_BIT	(1<<3)
 #define WIFI_SCHED_CONTROL_BIT	(1<<4)
 
-
 static const char* wifn_list[][3] = {
 	{IFNAME_2G_MAIN, IFNAME_2G_APCLI, IFNAME_2G_WDS0},
 #if BOARD_HAS_5G_RADIO
@@ -988,6 +987,7 @@ static void set_wifi_param_int(char* ifname, char* param, char* value, int val_m
 	doSystem("iwpriv %s set %s=%d", ifname, param, i_value);
 }
 
+#if defined(USE_RT3352_MII)
 static void set_wifi_mrate(char* ifname, char* value)
 {
 	int i_value = atoi(value);
@@ -1041,6 +1041,7 @@ static void set_wifi_mrate(char* ifname, char* value)
 	doSystem("iwpriv %s set %s=%d", ifname, "McastPhyMode", i_mphy);
 	doSystem("iwpriv %s set %s=%d", ifname, "McastMcs", i_mmcs);
 }
+#endif
 
 static void set_wifi_mcs_mode(char* ifname, char* value)
 {
@@ -1173,8 +1174,7 @@ static int validate_asp_apply(webs_t wp, int sid) {
 #if BOARD_HAS_5G_RADIO
 				if (!strncmp(v->name, "wl_", 3) && strcmp(v->name, "wl_ssid2"))
 				{
-#if BOARD_5G_IN_SOC
-/* APSoC driver has issue on direct change SSID via iwpriv */
+#if 1
 					if (!strcmp(v->name, "wl_ssid"))
 					{
 						memset(buff, 0, sizeof(buff));
@@ -1182,6 +1182,7 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						nvram_set("wl_ssid2", buff);
 					}
 #else
+/* Wireless driver has issue on direct change SSID via iwpriv ("MIC Different in pairwise msg 2 of 4-way handshake!") */
 					if (!strcmp(v->name, "wl_ssid"))
 					{
 						memset(buff, 0, sizeof(buff));
@@ -1213,6 +1214,7 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						
 						wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
+#if 0
 					else if (!strcmp(v->name, "wl_IgmpSnEnable"))
 					{
 						set_wifi_param_int(IFNAME_5G_MAIN, "IgmpSnEnable", value, 0, 1);
@@ -1231,6 +1233,14 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						
 						wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
+#else
+					else if (!strcmp(v->name, "wl_IgmpSnEnable"))
+					{
+						int i_m2u = atoi(value);
+						brport_set_m2u(IFNAME_5G_MAIN, i_m2u);
+						brport_set_m2u(IFNAME_5G_GUEST, i_m2u);
+					}
+#endif
 					else if (!strcmp(v->name, "wl_guest_enable") ||
 					         !strcmp(v->name, "wl_guest_time_x") ||
 					         !strcmp(v->name, "wl_guest_time2_x") ||
@@ -1253,8 +1263,7 @@ static int validate_asp_apply(webs_t wp, int sid) {
 				
 				if (!strncmp(v->name, "rt_", 3) && strcmp(v->name, "rt_ssid2"))
 				{
-#if BOARD_2G_IN_SOC
-/* APSoC driver has issue on direct change SSID via iwpriv */
+#if 1
 					if (!strcmp(v->name, "rt_ssid"))
 					{
 						memset(buff, 0, sizeof(buff));
@@ -1262,6 +1271,7 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						nvram_set("rt_ssid2", buff);
 					}
 #else
+/* Wireless driver has issue on direct change SSID via iwpriv ("MIC Different in pairwise msg 2 of 4-way handshake!") */
 					if (!strcmp(v->name, "rt_ssid"))
 					{
 						memset(buff, 0, sizeof(buff));
@@ -1293,6 +1303,7 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						
 						rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
+#if defined(USE_RT3352_MII)
 					else if (!strcmp(v->name, "rt_IgmpSnEnable"))
 					{
 						set_wifi_param_int(IFNAME_2G_MAIN, "IgmpSnEnable", value, 0, 1);
@@ -1305,6 +1316,14 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						
 						rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
+#else
+					else if (!strcmp(v->name, "rt_IgmpSnEnable"))
+					{
+						int i_m2u = atoi(value);
+						brport_set_m2u(IFNAME_2G_MAIN, i_m2u);
+						brport_set_m2u(IFNAME_2G_GUEST, i_m2u);
+					}
+#endif
 					else if (!strcmp(v->name, "rt_guest_mcs_mode"))
 					{
 						set_wifi_mcs_mode(IFNAME_2G_GUEST, value);
@@ -2368,7 +2387,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_usb3() { return %d;}\n"
 		"function support_switch_type() { return %d;}\n"
 		"function support_num_ephy() { return %d;}\n"
-		"function support_2g_apcli_only() { return %d;}\n"
+		"function support_2g_inic_mii() { return %d;}\n"
 		"function support_5g_radio() { return %d;}\n"
 		"function support_5g_11ac() { return %d;}\n"
 		"function support_5g_stream_tx() { return %d;}\n"
@@ -2386,7 +2405,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		has_usb3,
 		use_switch_type,
 		BOARD_NUM_ETH_EPHY,
-		(has_inic_mii) ? 0 : 1,
+		has_inic_mii,
 		BOARD_HAS_5G_RADIO,
 		BOARD_HAS_5G_11AC,
 		BOARD_NUM_ANT_5G_TX,

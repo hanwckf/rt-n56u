@@ -575,13 +575,14 @@ struct nvram_pair router_defaults[] = {
 	{ "front_led_usb", "1" },
 	{ "front_led_pwr", "1" },
 
+	{ "ether_igmp", "1" },
+	{ "ether_m2u", "2" },
 #if (BOARD_NUM_ETH_LEDS > 1)
 	{ "ether_led0", "3" },
 #else
 	{ "ether_led0", "7" },
 #endif
 	{ "ether_led1", "0" },
-	{ "ether_igmp", "1" },
 #if BOARD_HAS_EPHY_1000
 	{ "ether_jumbo", "1" },
 	{ "ether_green", "1" },

@@ -41,7 +41,7 @@ function initial(){
 
 	load_body();
 
-	if (!support_2g_apcli_only()){
+	if (support_2g_inic_mii()){
 		document.form.rt_mode_x.remove(3);
 	}
 
@@ -155,7 +155,7 @@ function change_wireless_bridge(mflag){
 	}
 	else if (m == "3" || m == "4") // [AP-Client only], [AP & AP-Client]
 	{
-		var e1 = (sw_mode != "3" && support_2g_apcli_only()) ? 1 : 0;
+		var e1 = (sw_mode != "3" && !support_2g_inic_mii()) ? 1 : 0;
 		
 		showhide_div("RBRList", 0);
 		showhide_div("ctl_wds_1", 0);

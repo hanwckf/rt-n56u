@@ -246,8 +246,8 @@ menuL1_icon = new Array("", "icon-home", "icon-hdd", "icon-retweet", "icon-globe
 function show_menu(L1, L2, L3){
 	var num_ephy = support_num_ephy();
 	if(sw_mode == '3'){
-		tabtitle[2].splice(3,2);//LAN
-		tablink[2].splice(3,2);
+		tabtitle[2].splice(3,1);//LAN
+		tablink[2].splice(3,1);
 		tabtitle[3].splice(1,5);//WAN
 		tablink[3].splice(1,5);
 		tabtitle[4].splice(1,5);//firewall

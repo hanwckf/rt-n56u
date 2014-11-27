@@ -380,6 +380,7 @@ start_wifi_ap_wl(int radio_on)
 {
 #if BOARD_HAS_5G_RADIO
 	int i_mode_x = get_mode_radio_wl();
+	int i_m2u = nvram_wlan_get_int("wl", "IgmpSnEnable");
 
 	// check WDS only, ApCli only or Radio disabled
 	if (i_mode_x == 1 || i_mode_x == 3 || !radio_on)
@@ -395,11 +396,13 @@ start_wifi_ap_wl(int radio_on)
 	{
 		wif_control(IFNAME_5G_MAIN, 1);
 		wif_bridge(IFNAME_5G_MAIN, 1);
+		brport_set_m2u(IFNAME_5G_MAIN, i_m2u);
 		
 		if (is_guest_allowed_wl())
 		{
 			wif_control(IFNAME_5G_GUEST, 1);
 			wif_bridge(IFNAME_5G_GUEST, 1);
+			brport_set_m2u(IFNAME_5G_GUEST, i_m2u);
 		}
 	}
 #endif
@@ -408,10 +411,12 @@ start_wifi_ap_wl(int radio_on)
 void 
 start_wifi_ap_rt(int radio_on)
 {
+	int i_mode_x = get_mode_radio_rt();
 #if defined(USE_RT3352_MII)
 	int ap_mode = get_ap_mode();
+#else
+	int i_m2u = nvram_wlan_get_int("rt", "IgmpSnEnable");
 #endif
-	int i_mode_x = get_mode_radio_rt();
 
 	// check WDS only, ApCli only or Radio disabled
 	if (i_mode_x == 1 || i_mode_x == 3 || !radio_on)
@@ -448,11 +453,13 @@ start_wifi_ap_rt(int radio_on)
 	{
 		wif_control(IFNAME_2G_MAIN, 1);
 		wif_bridge(IFNAME_2G_MAIN, 1);
+		brport_set_m2u(IFNAME_2G_MAIN, i_m2u);
 		
 		if (is_guest_allowed_rt())
 		{
 			wif_control(IFNAME_2G_GUEST, 1);
 			wif_bridge(IFNAME_2G_GUEST, 1);
+			brport_set_m2u(IFNAME_2G_GUEST, i_m2u);
 		}
 	}
 #endif
@@ -463,6 +470,7 @@ start_wifi_wds_wl(int radio_on)
 {
 #if BOARD_HAS_5G_RADIO
 	int i_mode_x = get_mode_radio_wl();
+//	int i_m2u = nvram_wlan_get_int("wl", "IgmpSnEnable");
 
 	if (radio_on && (i_mode_x == 1 || i_mode_x == 2))
 	{
@@ -475,6 +483,11 @@ start_wifi_wds_wl(int radio_on)
 		wif_bridge(IFNAME_5G_WDS1, 1);
 		wif_bridge(IFNAME_5G_WDS2, 1);
 		wif_bridge(IFNAME_5G_WDS3, 1);
+		
+//		brport_set_m2u(IFNAME_5G_WDS0, i_m2u);
+//		brport_set_m2u(IFNAME_5G_WDS1, i_m2u);
+//		brport_set_m2u(IFNAME_5G_WDS2, i_m2u);
+//		brport_set_m2u(IFNAME_5G_WDS3, i_m2u);
 	}
 	else
 	{
@@ -490,6 +503,7 @@ void
 start_wifi_wds_rt(int radio_on)
 {
 	int i_mode_x = get_mode_radio_rt();
+//	int i_m2u = nvram_wlan_get_int("rt", "IgmpSnEnable");
 
 	if (radio_on && (i_mode_x == 1 || i_mode_x == 2))
 	{
@@ -502,6 +516,11 @@ start_wifi_wds_rt(int radio_on)
 		wif_bridge(IFNAME_2G_WDS1, 1);
 		wif_bridge(IFNAME_2G_WDS2, 1);
 		wif_bridge(IFNAME_2G_WDS3, 1);
+		
+//		brport_set_m2u(IFNAME_2G_WDS0, i_m2u);
+//		brport_set_m2u(IFNAME_2G_WDS1, i_m2u);
+//		brport_set_m2u(IFNAME_2G_WDS2, i_m2u);
+//		brport_set_m2u(IFNAME_2G_WDS3, i_m2u);
 #endif
 	}
 #if !defined(USE_RT3352_MII)
@@ -805,6 +824,7 @@ control_guest_wl(int guest_on, int manual)
 	char *ifname_ap;
 	int radio_on = get_enabled_radio_wl();
 	int i_mode_x = get_mode_radio_wl();
+	int i_m2u = nvram_wlan_get_int("wl", "IgmpSnEnable");
 
 	// check WDS only, ApCli only or Radio disabled (force or by schedule)
 	if ((guest_on) && (i_mode_x == 1 || i_mode_x == 3 || !radio_on || !is_interface_up(IFNAME_5G_MAIN)))
@@ -821,6 +841,7 @@ control_guest_wl(int guest_on, int manual)
 			is_ap_changed = 1;
 		}
 		wif_bridge(ifname_ap, 1);
+		brport_set_m2u(ifname_ap, i_m2u);
 	}
 	else
 	{
@@ -850,6 +871,8 @@ control_guest_rt(int guest_on, int manual)
 	int i_mode_x = get_mode_radio_rt();
 #if defined(USE_RT3352_MII)
 	int ap_mode = get_ap_mode();
+#else
+	int i_m2u = nvram_wlan_get_int("rt", "IgmpSnEnable");
 #endif
 
 	// check WDS only, ApCli only or Radio disabled (force or by schedule)
@@ -871,6 +894,7 @@ control_guest_rt(int guest_on, int manual)
 			wif_bridge(IFNAME_INIC_GUEST_VLAN, 1);
 #else
 		wif_bridge(ifname_ap, 1);
+		brport_set_m2u(ifname_ap, i_m2u);
 #endif
 	}
 	else
@@ -970,18 +994,18 @@ manual_toggle_radio_rt(int radio_on)
 {
 	if (!get_enabled_radio_rt())
 		return 0;
-	
+
 	if (radio_on < 0) {
 		radio_on = !is_radio_on_rt();
 	} else {
 		if (is_radio_on_rt() == radio_on)
 			return 0;
 	}
-	
+
 	notify_watchdog_wifi(0);
-	
+
 	logmessage(LOGNAME, "Perform manual toggle %s radio: %s", "2.4GHz", (radio_on) ? "ON" : "OFF");
-	
+
 	return control_radio_rt(radio_on, 1);
 }
 
@@ -998,11 +1022,11 @@ manual_toggle_radio_wl(int radio_on)
 		if (is_radio_on_wl() == radio_on)
 			return 0;
 	}
-	
+
 	notify_watchdog_wifi(1);
-	
+
 	logmessage(LOGNAME, "Perform manual toggle %s radio: %s", "5GHz", (radio_on) ? "ON" : "OFF");
-	
+
 	return control_radio_wl(radio_on, 1);
 #else
 	return 0;
@@ -1067,7 +1091,7 @@ manual_change_guest_rt(int radio_on)
 	return control_guest_rt(radio_on, 1);
 }
 
-int 
+int
 manual_change_guest_wl(int radio_on)
 {
 #if BOARD_HAS_5G_RADIO

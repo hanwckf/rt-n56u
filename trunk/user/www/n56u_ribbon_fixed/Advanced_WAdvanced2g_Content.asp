@@ -51,6 +51,9 @@ function initial(){
 	if (support_2g_stream_rx()<2)
 		document.form.rt_stream_rx.remove(1);
 
+	if (!support_2g_inic_mii())
+		showhide_div('row_mrate', 0);
+
 	load_body();
 
 	change_wmm();
@@ -259,16 +262,7 @@ function done_validating(action){
                                                 &nbsp;<span style="color:#888;">[20..1000]</span>
                                             </td>
                                         </tr>
-                                        <tr>
-                                            <th><#SwitchIgmp#></th>
-                                            <td>
-                                                <select name="rt_IgmpSnEnable" class="input">
-                                                    <option value="0" <% nvram_match_x("","rt_IgmpSnEnable", "0","selected"); %>><#btn_Disable#></option>
-                                                    <option value="1" <% nvram_match_x("","rt_IgmpSnEnable", "1","selected"); %>><#btn_Enable#> (*)</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr>
+                                        <tr id="row_mrate">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 7);"><#WLANConfig11b_MultiRateAll_itemname#></a></th>
                                             <td>
                                                 <select name="rt_mcastrate" class="input">

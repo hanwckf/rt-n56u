@@ -385,6 +385,11 @@ start_services_once(int is_ap_mode)
 		}
 		
 		start_rstats();
+	} else {
+		start_udpxy(IFNAME_BR);
+#if defined(APP_XUPNPD)
+		start_xupnpd(IFNAME_BR);
+#endif
 	}
 
 	start_lltd();
@@ -419,9 +424,7 @@ stop_services(int stopall)
 	stop_detect_internet();
 	stop_rstats();
 	stop_infosvr();
-#if defined(APP_XUPNPD)
-	stop_xupnpd();
-#endif
+	stop_igmpproxy(NULL);
 }
 
 void

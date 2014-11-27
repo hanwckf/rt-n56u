@@ -14,12 +14,29 @@ config MTD_SPI_RALINK
 	depends on MTD_RALINK
 
 config MTD_SPI_FAST_CLOCK
-	bool "Use double SPI clock (up to 50MHz)"
-	depends on MTD_SPI_RALINK && !(RALINK_MT7621 || RALINK_MT7628)
+	bool "Use SPI fast clock, up to 50MHz"
+	depends on MTD_SPI_RALINK
 
-config MTD_SPI_DUAL_READ
-	bool "Use Fast Read Dual I/O"
-	depends on MTD_SPI_RALINK && (RALINK_MT7620 || RALINK_MT7621 || RALINK_MT7628)
+choice
+	prompt "Read Mode"
+	depends on MTD_SPI_RALINK
+	default MTD_SPI_READ_NORM if !(RALINK_MT7621 || RALINK_MT7628)
+	default MTD_SPI_READ_BUFF if (RALINK_MT7621 || RALINK_MT7628)
+
+	config MTD_SPI_READ_NORM
+		bool "Normal Read, opcode 0x03"
+	config MTD_SPI_READ_FAST
+		bool "Fast Read, opcode 0x0B"
+	config MTD_SPI_READ_BUFF
+		bool "Buffered Read"
+		depends on (RALINK_MT7621 || RALINK_MT7628)
+	config MTD_SPI_READ_DOR
+		bool "Fast Read Dual Out, opcode 0x3B"
+		depends on (RALINK_MT7620 || RALINK_MT7621 || RALINK_MT7628)
+	config MTD_SPI_READ_DIOR
+		bool "Fast Read Dual I/O, opcode 0xBB"
+		depends on (RALINK_MT7620 || RALINK_MT7621 || RALINK_MT7628)
+endchoice
 
 config MTD_NAND_RALINK
 	bool "NAND Flash Support"

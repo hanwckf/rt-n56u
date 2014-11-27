@@ -35,7 +35,7 @@
 #include "ralink-flash.h"
 #include "ralink-flash-map.h"
 
-extern u32 get_surfboard_sysclk(void);
+//#define SPI_DEBUG
 
 /******************************************************************************
  * SPI FLASH elementray definition and function
@@ -93,7 +93,11 @@ extern u32 get_surfboard_sysclk(void);
 //#define RD_MODE_QIOR		// use QIOR (0xEB) instead of normal Read
 //#define RD_MODE_QOR		// use QOR (0x6B) instead of normal Read
 
-#if defined (CONFIG_MTD_SPI_DUAL_READ)
+#if defined (CONFIG_MTD_SPI_READ_FAST)
+#define RD_MODE_FAST
+#elif defined (CONFIG_MTD_SPI_READ_DOR)
+#define RD_MODE_DOR
+#elif defined (CONFIG_MTD_SPI_READ_DIOR)
 #define RD_MODE_DIOR
 #endif
 
@@ -103,7 +107,9 @@ extern u32 get_surfboard_sysclk(void);
 
 #else
 
-//#define RD_MODE_FAST		// use Fast Read (0x0B) instead of normal Read
+#if defined (CONFIG_MTD_SPI_READ_FAST)
+#define RD_MODE_FAST
+#endif
 
 #endif
 
@@ -113,10 +119,9 @@ extern u32 get_surfboard_sysclk(void);
 #define CFG_CLK_DIV		SPICFG_SPICLK_DIV8 /* e.g. 166/8 = 20.5 MHz, 193/8 = 24.0 MHz */
 #endif
 
-
+extern u32 get_surfboard_sysclk(void);
 static unsigned int spi_wait_nsec = 150;
 
-//#define SPI_DEBUG
 #if !defined (SPI_DEBUG)
 
 #define ra_inl(addr)  (*(volatile unsigned int *)(addr))
@@ -133,25 +138,20 @@ int ranfc_debug = 1;
 u32 ra_inl(u32 addr)
 {
 	u32 retval = _ra_inl(addr);
-
 	printk("%s(%x) => %x \n", __func__, addr, retval);
-
 	return retval;
 }
 
 u32 ra_outl(u32 addr, u32 val)
 {
 	_ra_outl(addr, val);
-
 	printk("%s(%x, %x) \n", __func__, addr, val);
-
 	return val;
 }
 
 #endif // SPI_DEBUG
 
 #define ra_aor(addr, a_mask, o_value)  ra_outl(addr, (ra_inl(addr) & (a_mask)) | (o_value))
-
 #define ra_and(addr, a_mask)  ra_aor(addr, a_mask, 0)
 #define ra_or(addr, o_value)  ra_aor(addr, -1, o_value)
 
@@ -198,7 +198,7 @@ static int spic_transfer(const u8 *cmd, int n_cmd, u8 *buf, int n_buf, int flag)
 			n_cmd, cmd[0], cmd[1], cmd[2], cmd[3],
 			(buf)? (*buf) : 0, n_buf,
 			(flag == SPIC_READ_BYTES)? "read" : "write");
-	
+
 #if defined(CONFIG_RALINK_VITESSE_SWITCH_CONNECT_SPI_CS1)||defined(CONFIG_RALINK_SLIC_CONNECT_SPI_CS1)
 	/* config ARB and set the low or high active correctly according to the device */
 	ra_outl(RT2880_SPI_ARB_REG, SPIARB_ARB_EN|(SPIARB_SPI1_ACTIVE_MODE<<1)| SPIARB_SPI0_ACTIVE_MODE);
@@ -287,7 +287,7 @@ int spic_init(void)
 	// set idle state
 	ra_outl(RT2880_SPICTL_REG, SPICTL_HIZSDO | SPICTL_SPIENA_HIGH);
 
-	spi_wait_nsec = (8 * 1000 / (128 / (CFG_CLK_DIV+1)) ) >> 1 ;
+	spi_wait_nsec = (8 * 1000 / (128 / (CFG_CLK_DIV+1)) ) >> 1;
 
 	printk("Ralink SPI flash driver, SPI clock: %dMHz\n", (get_surfboard_sysclk() / 1000000) >> (CFG_CLK_DIV+1));
 

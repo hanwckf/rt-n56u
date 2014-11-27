@@ -37,7 +37,13 @@
 //#define SPI_DEBUG
 //#define TEST_CS1_FLASH
 
-#if defined (CONFIG_MTD_SPI_DUAL_READ)
+#if defined (CONFIG_MTD_SPI_READ_BUFF)
+#define MORE_BUF_MODE
+#elif defined (CONFIG_MTD_SPI_READ_FAST)
+#define RD_MODE_FAST
+#elif defined (CONFIG_MTD_SPI_READ_DOR)
+#define RD_MODE_DOR
+#elif defined (CONFIG_MTD_SPI_READ_DIOR)
 #define RD_MODE_DIOR
 #endif
 
@@ -46,10 +52,6 @@
 #elif defined(RD_MODE_QIOR) || defined(RD_MODE_QOR)
 #define RD_MODE_QUAD
 #endif
-
-/* Choose the SPI flash mode */
-#define BBU_MODE		// MT7621/MT7628 is BBU SPI flash controller
-#define MORE_BUF_MODE
 
 // check DUAL/QUAD and MORE_BUF_MODE, they can't be enabled together
 #if defined(MORE_BUF_MODE) && (defined(RD_MODE_DIOR) || defined(RD_MODE_DOR) || defined(RD_MODE_QIOR) || defined(RD_MODE_QOR))
@@ -72,6 +74,7 @@
 #define OPCODE_SE		0xD8	/* Sector erase */
 #define OPCODE_RES		0xAB	/* Read Electronic Signature */
 #define OPCODE_RDID		0x9F	/* Read JEDEC ID */
+#define OPCODE_FAST_READ	0x0B	/* Read data bytes */
 #define OPCODE_DOR		0x3B	/* Dual Output Read */
 #define OPCODE_QOR		0x6B	/* Quad Output Read */
 #define OPCODE_DIOR		0xBB	/* Dual IO High Performance Read */
@@ -89,6 +92,8 @@
 #define OPCODE_BRRD		0x16
 #define OPCODE_BRWR		0x17
 #define OPCODE_RDCR		0x35
+
+extern u32 get_surfboard_sysclk(void);
 
 #if !defined (SPI_DEBUG)
 #define ra_inl(addr)  (*(volatile u32 *)(addr))
@@ -144,22 +149,25 @@ static int bbu_spic_busy_wait(void)
 
 void spic_init(void)
 {
-#if defined (CONFIG_RALINK_MT7621)
-	// set default clock to hclk/5
-	ra_and(SPI_REG_MASTER, ~(0xfff << 16));
-	ra_or(SPI_REG_MASTER, (0x5 << 16));	//work-around 3-wire SPI issue (3 for RFB, 5 for EVB)
-#elif defined (CONFIG_RALINK_MT7628)
-	// set default clock to hclk/8
-	ra_and(SPI_REG_MASTER, ~(0xfff << 16));
-	ra_or(SPI_REG_MASTER, (0x6 << 16));
+	u32 clk_div, reg_div;
+
+#if defined (CONFIG_MTD_SPI_FAST_CLOCK)
+	clk_div = 6; /* hclk/6 -> 36.6 MHz */
+	reg_div = 0x04;
+#else
+	clk_div = 8; /* hclk/8 -> 27.5 MHz */
+	reg_div = 0x06;
 #endif
+
+	ra_and(SPI_REG_MASTER, ~(0xfff << 16));
+	ra_or(SPI_REG_MASTER, (reg_div << 16));
 
 #ifdef TEST_CS1_FLASH
 	ra_and(RALINK_SYSCTL_BASE + 0x60, ~(1 << 12));
 	ra_or(SPI_REG_MASTER, (1 << 29));
 #endif
 
-	printk("Ralink SPI flash driver\n");
+	printk("Ralink SPI flash driver, SPI clock: %dMHz\n", (get_surfboard_sysclk() / 1000000) / clk_div);
 }
 
 struct chip_info {
@@ -509,10 +517,9 @@ static int raspi_write_rg16(u8 code, u8 *val)
 static int raspi_4byte_mode(int enable)
 {
 	ssize_t retval;
-	
+
 	raspi_wait_ready(1);
-	
-	
+
 	if (flash->chip->id == 0x1) // Spansion
 	{
 		u8 br, br_cfn; // bank register
@@ -548,7 +555,6 @@ static int raspi_4byte_mode(int enable)
 		if (enable) {
 			ra_or(SPI_REG_CTL, 0x3 << 19);
 			ra_or(SPI_REG_Q_CTL, 0x3 << 8);
-
 		}
 		else {
 			ra_and(SPI_REG_CTL, ~SPI_CTL_SIZE_MASK);
@@ -791,8 +797,8 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 		{
 			reg[1] &= ~(1 << 1);
 			raspi_read_sr(&reg[0]);
-                        raspi_write_enable();
-                        raspi_write_rg16(OPCODE_WRSR, &reg[0]);
+			raspi_write_enable();
+			raspi_write_rg16(OPCODE_WRSR, &reg[0]);
 			raspi_wait_ready(1);
 			raspi_read_rg(OPCODE_RDCR, &cr);
 			if (reg[1] != cr)
@@ -801,20 +807,20 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 	}
 	else // MXIC
 	{
-                u8 sr;
+		u8 sr;
 		raspi_read_sr(&sr);
-                if ((sr & (1 << 6)))
-                {
+		if ((sr & (1 << 6)))
+		{
 			u8 get_sr;
-                        sr &= ~(1 << 6);
-                        raspi_write_enable();
-                        raspi_write_sr(&sr);
+			sr &= ~(1 << 6);
+			raspi_write_enable();
+			raspi_write_sr(&sr);
 			raspi_wait_ready(1);
 			raspi_read_sr(&get_sr);
 			if (get_sr != sr)
 				printk("warning: sr write failed %x %x\n", sr, get_sr);
-                }
- 	}
+		}
+	}
 	ra_and(SPI_REG_MASTER, ~3);
 	ra_or(SPI_REG_MASTER, 1);
 #elif defined(RD_MODE_QUAD)
@@ -827,9 +833,9 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 		{
 			reg[1] |= (1 << 1);
 			raspi_read_sr(&reg[0]);
-                        raspi_write_enable();
-                        raspi_write_rg16(OPCODE_WRSR, &reg[0]);
-			raspi_wait_ready(1); 
+			raspi_write_enable();
+			raspi_write_rg16(OPCODE_WRSR, &reg[0]);
+			raspi_wait_ready(1);
 			raspi_read_rg(OPCODE_RDCR, &cr);
 			if (reg[1] != cr)
 				printk("warning: set quad failed %x %x\n", reg[1], cr);
@@ -837,49 +843,58 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 	}
 	else // MXIC
 	{
-                u8 sr, sr2;
+		u8 sr, sr2;
 		raspi_read_sr(&sr);
 		sr2 = sr;
-                if ((sr & (1 << 6)) == 0)
-                {
+		if ((sr & (1 << 6)) == 0)
+		{
 			u8 get_sr;
-                        sr |= (1 << 6);
-                        raspi_write_enable();
-                        raspi_write_sr(&sr);
+			sr |= (1 << 6);
+			raspi_write_enable();
+			raspi_write_sr(&sr);
 			raspi_wait_ready(1);
 			raspi_read_sr(&get_sr);
 			if (get_sr != sr)
 				printk("warning: quad sr write failed %x %x %x\n", sr, get_sr, sr2);
-			
-                }
- 	}
+		}
+	}
 	ra_and(SPI_REG_MASTER, ~3);
 	ra_or(SPI_REG_MASTER, 2);
 #endif
 #endif
 
 	do {
-		int rc, more;
+		int rc;
 #ifdef MORE_BUF_MODE
-		more = 32;
+		int more = 32;
 #else
-		more = 4;
+		int more = 4;
+#if defined(RD_MODE_DOR)
+		u8 code = OPCODE_DOR;
+		size_t n_tx = 5;
+#elif defined(RD_MODE_DIOR)
+		u8 code = OPCODE_DIOR;
+		size_t n_tx = 5;
+#elif defined(RD_MODE_QOR)
+		u8 code = OPCODE_QOR;
+		size_t n_tx = 5;
+#elif defined(RD_MODE_QIOR)
+		u8 code = OPCODE_QIOR;
+		size_t n_tx = 7;
+#elif defined(RD_MODE_FAST)
+		u8 code = OPCODE_FAST_READ;
+		size_t n_tx = 5;
+#else
+		u8 code = OPCODE_READ;
+		size_t n_tx = 4;
 #endif
+#endif
+
 		if (len - rdlen <= more) {
 #ifdef MORE_BUF_MODE
 			rc = bbu_mb_spic_trans(STM_OP_RD_DATA, from, (buf+rdlen), 0, (len-rdlen), SPIC_READ_BYTES);
 #else
-#if defined(RD_MODE_DOR)
-			rc = bbu_spic_trans(OPCODE_DOR, from, (buf+rdlen), 5, (len-rdlen), SPIC_READ_BYTES);
-#elif defined(RD_MODE_DIOR)
-			rc = bbu_spic_trans(OPCODE_DIOR, from, (buf+rdlen), 5, (len-rdlen), SPIC_READ_BYTES);
-#elif defined(RD_MODE_QOR)
-			rc = bbu_spic_trans(OPCODE_QOR, from, (buf+rdlen), 5, (len-rdlen), SPIC_READ_BYTES);
-#elif defined(RD_MODE_QIOR)
-			rc = bbu_spic_trans(OPCODE_QIOR, from, (buf+rdlen), 7, (len-rdlen), SPIC_READ_BYTES);
-#else
-			rc = bbu_spic_trans(STM_OP_RD_DATA, from, (buf+rdlen), 4, (len-rdlen), SPIC_READ_BYTES);
-#endif
+			rc = bbu_spic_trans(code, from, (buf+rdlen), n_tx, (len-rdlen), SPIC_READ_BYTES);
 #endif
 			if (rc != 0) {
 				printk("%s: failed\n", __func__);
@@ -891,17 +906,7 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 #ifdef MORE_BUF_MODE
 			rc = bbu_mb_spic_trans(STM_OP_RD_DATA, from, (buf+rdlen), 0, more, SPIC_READ_BYTES);
 #else
-#if defined(RD_MODE_DOR)
-			rc = bbu_spic_trans(OPCODE_DOR, from, (buf+rdlen), 5, more, SPIC_READ_BYTES);
-#elif defined(RD_MODE_DIOR)
-			rc = bbu_spic_trans(OPCODE_DIOR, from, (buf+rdlen), 5, more, SPIC_READ_BYTES);
-#elif defined(RD_MODE_QOR)
-			rc = bbu_spic_trans(OPCODE_QOR, from, (buf+rdlen), 5, more, SPIC_READ_BYTES);
-#elif defined(RD_MODE_QIOR)
-			rc = bbu_spic_trans(OPCODE_QIOR, from, (buf+rdlen), 7, more, SPIC_READ_BYTES);
-#else
-			rc = bbu_spic_trans(STM_OP_RD_DATA, from, (buf+rdlen), 4, more, SPIC_READ_BYTES);
-#endif
+			rc = bbu_spic_trans(code, from, (buf+rdlen), n_tx, more, SPIC_READ_BYTES);
 #endif
 			if (rc != 0) {
 				printk("%s: failed\n", __func__);
@@ -926,8 +931,8 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 		{
 			reg[1] &= ~(1 << 1);
 			raspi_read_sr(&reg[0]);
-                        raspi_write_enable();
-                        raspi_write_rg16(OPCODE_WRSR, &reg[0]);
+			raspi_write_enable();
+			raspi_write_rg16(OPCODE_WRSR, &reg[0]);
 			raspi_wait_ready(1);
 			raspi_read_rg(OPCODE_RDCR, &cr);
 			if (reg[1] != cr)
@@ -936,17 +941,16 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 	}
 	else // MXIC
 	{
-                u8 sr;
+		u8 sr;
 		raspi_read_sr(&sr);
-                if ((sr & (1 << 6)))
-                {
-                        sr &= ~(1 << 6);
-                        raspi_write_enable();
-                        raspi_write_sr(&sr);
+		if ((sr & (1 << 6)))
+		{
+			sr &= ~(1 << 6);
+			raspi_write_enable();
+			raspi_write_sr(&sr);
 			raspi_wait_ready(1);
-                }
- 	}
-
+		}
+	}
 #endif
 #endif
 #endif // MORE_BUF_MODE
@@ -959,7 +963,7 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 	if (retlen)
 		*retlen = rdlen;
 
-	if (rdlen != len) 
+	if (rdlen != len)
 		return -EIO;
 
 	return 0;

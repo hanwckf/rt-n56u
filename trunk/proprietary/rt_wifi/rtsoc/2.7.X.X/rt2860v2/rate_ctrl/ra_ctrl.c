@@ -644,23 +644,27 @@ VOID APMlmeSetTxRate(
 	IN PMAC_TABLE_ENTRY		pEntry,
 	IN PRTMP_TX_RATE_SWITCH	pTxRate)
 {
-#ifdef DOT11_N_SUPPORT
-	if ((pTxRate->STBC) && (pEntry->MaxHTPhyMode.field.STBC))
-		pEntry->HTPhyMode.field.STBC = STBC_USE;
-	else
-		pEntry->HTPhyMode.field.STBC = STBC_NONE;
+	UCHAR tx_mode = pTxRate->Mode;
 
-	if (((pTxRate->ShortGI) && (pEntry->MaxHTPhyMode.field.ShortGI))
-         || (pAd->WIFItestbed.bShortGI && pEntry->MaxHTPhyMode.field.ShortGI) )
-		pEntry->HTPhyMode.field.ShortGI = GI_400;
-	else
-		pEntry->HTPhyMode.field.ShortGI = GI_800;
+#ifdef DOT11_N_SUPPORT
+	if (tx_mode >= MODE_HTMIX)
+	{
+		if ((pTxRate->STBC) && (pEntry->MaxHTPhyMode.field.STBC))
+			pEntry->HTPhyMode.field.STBC = STBC_USE;
+		else
+			pEntry->HTPhyMode.field.STBC = STBC_NONE;
+
+		if ((pTxRate->ShortGI || pAd->WIFItestbed.bShortGI) && (pEntry->MaxHTPhyMode.field.ShortGI))
+			pEntry->HTPhyMode.field.ShortGI = GI_400;
+		else
+			pEntry->HTPhyMode.field.ShortGI = GI_800;
+	}
 #endif /* DOT11_N_SUPPORT */
 
 	if (pTxRate->CurrMCS < MCS_AUTO)
 		pEntry->HTPhyMode.field.MCS = pTxRate->CurrMCS;
 
-	pEntry->HTPhyMode.field.MODE = pTxRate->Mode;
+	pEntry->HTPhyMode.field.MODE = tx_mode;
 
 #ifdef DOT11_N_SUPPORT
 	if ((pAd->WIFItestbed.bGreenField & pEntry->HTCapability.HtCapInfo.GF) && (pEntry->HTPhyMode.field.MODE == MODE_HTMIX))
@@ -680,7 +684,7 @@ VOID APMlmeSetTxRate(
 #ifdef RANGE_EXTEND
 #ifdef NEW_RATE_ADAPT_SUPPORT
 	/* 20 MHz Fallback */
-	if (pTxRate->Mode >= MODE_HTMIX &&
+	if (tx_mode >= MODE_HTMIX &&
 	    pEntry->HTPhyMode.field.BW == BW_40 &&
 	    ADAPT_RATE_TABLE(pEntry->pTable))
 	{

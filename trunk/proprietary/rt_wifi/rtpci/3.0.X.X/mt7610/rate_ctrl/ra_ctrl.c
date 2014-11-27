@@ -741,10 +741,11 @@ VOID APMlmeSetTxRate(
 	IN MAC_TABLE_ENTRY *pEntry,
 	IN RTMP_RA_LEGACY_TB *pTxRate)
 {
+	UCHAR tx_mode = pTxRate->Mode;
 	UCHAR tx_bw = pTxRate->BW;
 
 #ifdef DOT11_N_SUPPORT
-	if (pTxRate->Mode == MODE_HTMIX || pTxRate->Mode == MODE_HTGREENFIELD)
+	if (tx_mode == MODE_HTMIX || tx_mode == MODE_HTGREENFIELD)
 	{
 		if ((pTxRate->STBC) && (pEntry->MaxHTPhyMode.field.STBC))
 			pEntry->HTPhyMode.field.STBC = STBC_USE;
@@ -758,7 +759,7 @@ VOID APMlmeSetTxRate(
 	}
 
 #ifdef DOT11_VHT_AC
-	if (pTxRate->Mode == MODE_VHT)
+	if (tx_mode == MODE_VHT)
 	{
 		RTMP_RA_GRP_TB *pAdaptTbEntry = (RTMP_RA_GRP_TB *)pTxRate;
 		UCHAR bw_cap = BW_20;
@@ -817,7 +818,7 @@ VOID APMlmeSetTxRate(
 	if (pTxRate->CurrMCS < MCS_AUTO)
 		pEntry->HTPhyMode.field.MCS = pTxRate->CurrMCS;
 
-	pEntry->HTPhyMode.field.MODE = pTxRate->Mode;
+	pEntry->HTPhyMode.field.MODE = tx_mode;
 
 #ifdef DOT11_N_SUPPORT
 	if ((pAd->WIFItestbed.bGreenField & pEntry->HTCapability.HtCapInfo.GF) && (pEntry->HTPhyMode.field.MODE == MODE_HTMIX))
@@ -876,7 +877,7 @@ VOID APMlmeSetTxRate(
 #ifdef RANGE_EXTEND
 #ifdef NEW_RATE_ADAPT_SUPPORT
 	/* 20 MHz Fallback */
-	if ((pTxRate->Mode == MODE_HTMIX || pTxRate->Mode == MODE_HTGREENFIELD) &&
+	if ((tx_mode == MODE_HTMIX || tx_mode == MODE_HTGREENFIELD) &&
 	    pEntry->HTPhyMode.field.BW == BW_40 &&
 	    ADAPT_RATE_TABLE(pEntry->pTable))
 	{

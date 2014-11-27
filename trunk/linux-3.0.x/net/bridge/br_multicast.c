@@ -1165,13 +1165,12 @@ static void br_multicast_leave_group(struct net_bridge *br,
 	struct net_bridge_mdb_htable *mdb;
 	struct net_bridge_mdb_entry *mp;
 	struct net_bridge_port_group *p;
-	unsigned long now;
 	unsigned long time;
+	int querier_exist;
 
 	spin_lock(&br->multicast_lock);
 	if (!netif_running(br->dev) ||
-	    (port && port->state == BR_STATE_DISABLED) ||
-	    timer_pending(&br->multicast_querier_timer))
+	    (port && port->state == BR_STATE_DISABLED))
 		goto out;
 
 	mdb = mlock_dereference(br->mdb, br);
@@ -1179,12 +1178,14 @@ static void br_multicast_leave_group(struct net_bridge *br,
 	if (!mp)
 		goto out;
 
-	if (br->multicast_querier &&
-	    !timer_pending(&br->multicast_querier_timer)) {
+	querier_exist = timer_pending(&br->multicast_querier_timer);
+
+	time = jiffies + br->multicast_last_member_count *
+			 br->multicast_last_member_interval;
+
+	if (br->multicast_querier && !querier_exist) {
 		__br_multicast_send_query(br, port, &mp->addr);
 
-		time = jiffies + br->multicast_last_member_count *
-				 br->multicast_last_member_interval;
 		mod_timer(port ? &port->multicast_query_timer :
 				 &br->multicast_query_timer, time);
 	}
@@ -1198,6 +1199,9 @@ static void br_multicast_leave_group(struct net_bridge *br,
 			if (!br_port_group_equal(p, port, src))
 				continue;
 
+			if (!p->m2u && querier_exist)
+				break;
+
 			rcu_assign_pointer(*pp, p->next);
 			hlist_del_init(&p->mglist);
 			del_timer(&p->timer);
@@ -1209,10 +1213,6 @@ static void br_multicast_leave_group(struct net_bridge *br,
 		}
 		goto out;
 	}
-
-	now = jiffies;
-	time = now + br->multicast_last_member_count *
-		     br->multicast_last_member_interval;
 
 	if (!port) {
 		if (mp->mglist &&
@@ -1230,6 +1230,9 @@ static void br_multicast_leave_group(struct net_bridge *br,
 	     p = mlock_dereference(p->next, br)) {
 		if (!br_port_group_equal(p, port, src))
 			continue;
+
+		if (!p->m2u && querier_exist)
+			break;
 
 		if (!hlist_unhashed(&p->mglist) &&
 		    (timer_pending(&p->timer) ?

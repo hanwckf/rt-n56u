@@ -87,8 +87,6 @@ function initial(){
 		if (support_led_phy() < 1)
 			showhide_div('row_eth_phy_led0', 0);
 	}
-
-	change_ez_short(document.form.ez_action_short.value);
 }
 
 function applyRule(){
@@ -109,15 +107,6 @@ function validForm(){
 
 function done_validating(action){
 	refreshpage();
-}
-
-function change_ez_short(ez_short){
-	if(ez_short == "0"){
-		inputCtrl(document.form.ez_action_long, 0);
-		document.form.ez_action_long.value = "0";
-	}else{
-		inputCtrl(document.form.ez_action_long, 1);
-	}
 }
 
 function change_led_all(){
@@ -191,7 +180,7 @@ function change_led_all(){
                                         <tr>
                                             <th width="50%"><#TweaksWPSEventShort#></th>
                                             <td>
-                                                <select name="ez_action_short" class="input" style="width: 320px;" onchange="change_ez_short(this.value);">
+                                                <select name="ez_action_short" class="input" style="width: 320px;">
                                                     <option value="0"  <% nvram_match_x("", "ez_action_short", "0", "selected"); %>><#TweaksWPSItem00#></option>
                                                     <option value="1"  <% nvram_match_x("", "ez_action_short", "1", "selected"); %>><#TweaksWPSItem01#></option>
                                                     <option value="2"  <% nvram_match_x("", "ez_action_short", "2", "selected"); %>><#TweaksWPSItem02#> 2.4</option>

@@ -98,6 +98,24 @@
 // for log message title
 #define LOGNAME				BOARD_NAME
 
+#if BOARD_RAM_SIZE > 128
+ #define KERNEL_MIN_FREE_KBYTES		16384
+ #define DNS_RELAY_CACHE_MAX		1536
+ #define LOG_ROTATE_SIZE_MAX		1024
+#elif BOARD_RAM_SIZE > 64
+ #define KERNEL_MIN_FREE_KBYTES		8192
+ #define DNS_RELAY_CACHE_MAX		1024
+ #define LOG_ROTATE_SIZE_MAX		512
+#elif BOARD_RAM_SIZE > 32
+ #define KERNEL_MIN_FREE_KBYTES		4096
+ #define DNS_RELAY_CACHE_MAX		512
+ #define LOG_ROTATE_SIZE_MAX		256
+#else
+ #define KERNEL_MIN_FREE_KBYTES		2048
+ #define DNS_RELAY_CACHE_MAX		256
+ #define LOG_ROTATE_SIZE_MAX		128
+#endif
+
 /* rc.c */
 void setenv_tz(void);
 void setkernel_tz(void);

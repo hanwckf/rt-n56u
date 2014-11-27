@@ -252,6 +252,9 @@ if [ "$CONFIG_FIRMWARE_ENABLE_USB" != "y" ] || [ -z "$CONFIG_USB_SUPPORT" ] ; th
 	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_EXT"
 	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_XFS"
 	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_LINUXSWAP"
+	if [ "$CONFIG_FIRMWARE_INCLUDE_OPENVPN" != "y" ] ; then
+		func_disable_kernel_param "CONFIG_TUN"
+	fi
 	CONFIG_FIRMWARE_INCLUDE_NFSD=n
 else
 ############################# UFSD ####################################
@@ -357,6 +360,7 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_NFSD" != "y" -a "$CONFIG_FIRMWARE_INCLUDE_NFSC" !
 	func_disable_kernel_param "CONFIG_NETWORK_FILESYSTEMS"
 	if [ "$CONFIG_FIRMWARE_ENABLE_USB" != "y" ] || [ -z "$CONFIG_USB_SUPPORT" ] ; then
 		func_disable_kernel_param "CONFIG_NLS"
+		func_disable_kernel_param "CONFIG_LBDAF"
 	fi
 fi
 #######################################################################

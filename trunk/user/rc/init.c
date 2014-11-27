@@ -383,15 +383,8 @@ init_sysctl(void)
 	fput_int("/proc/sys/kernel/panic", 1);
 
 	fput_int("/proc/sys/net/ipv4/conf/all/rp_filter", 0); // new logic for new kernels
-#if BOARD_RAM_SIZE > 128
-	fput_int("/proc/sys/vm/min_free_kbytes", 16384);
-#elif BOARD_RAM_SIZE > 64
-	fput_int("/proc/sys/vm/min_free_kbytes", 8192);
-#elif BOARD_RAM_SIZE > 32
-	fput_int("/proc/sys/vm/min_free_kbytes", 4096);
-#else
-	fput_int("/proc/sys/vm/min_free_kbytes", 2048);
-#endif
+
+	fput_int("/proc/sys/vm/min_free_kbytes", KERNEL_MIN_FREE_KBYTES);
 	fput_int("/proc/sys/vm/overcommit_memory", 0);
 
 	set_tcp_tweaks();
@@ -411,7 +404,11 @@ init_main_loop(void)
 
 	/* Basic initialization */
 	init_time();
+#if BOARD_RAM_SIZE > 32
 	system("dev_init.sh");
+#else
+	system("dev_init.sh -l");
+#endif
 	init_nodes();
 	init_mdev();
 	init_sysctl();

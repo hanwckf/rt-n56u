@@ -137,6 +137,7 @@ struct nvram_pair router_defaults[] = {
 	{ "mr_enable_x", "0" },			// oleg patch
 	{ "mr_ttl_fix", "0" },
 
+#if BOARD_HAS_5G_RADIO
 	/* 5G Wireless parameters */
 	{ "wl_country_code", DEF_WLAN_5G_CC },		/* Country Code (default obtained from driver) */
 	{ "wl_ssid", DEF_WLAN_5G_SSID },		/* Service set ID (network name) */
@@ -228,6 +229,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_sta_crypto", "aes" },
 	{ "wl_sta_wpa_psk", "" },
 	{ "wl_sta_wisp", "0" },
+#endif
 
 	/* 2G Wireless parameters */
 	{ "rt_country_code", DEF_WLAN_2G_CC },
@@ -566,7 +568,11 @@ struct nvram_pair router_defaults[] = {
 	{ "wol_mac_last", "" },
 	{ "gw_arp_ping", "0" },
 	{ "ez_action_short", "0" },
+#if !defined(BOARD_GPIO_BTN_RESET)
+	{ "ez_action_long", "15" },	/* Reset */
+#else
 	{ "ez_action_long", "0" },
+#endif
 	{ "watchdog_cpu", "0" },
 	{ "front_led_all", "1" },
 	{ "front_led_wan", "2" },

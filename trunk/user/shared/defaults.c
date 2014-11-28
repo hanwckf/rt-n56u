@@ -609,7 +609,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ether_flow_lan4", "0" },
 
 #if defined(BOARD_N11P)
-	{ "hw_nat_mode", "3" },
+	{ "hw_nat_mode", "4" },
 #else
 	{ "hw_nat_mode", "1" },
 #endif

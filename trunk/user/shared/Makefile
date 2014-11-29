@@ -1,3 +1,7 @@
+ifndef ROOTDIR
+ROOTDIR=../..
+endif
+
 include boards.mk
 include cflags.mk
 

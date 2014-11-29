@@ -1,6 +1,10 @@
-include ../shared/boards.mk
+ifndef ROOTDIR
+ROOTDIR=../..
+endif
 
 ROMFS_DIR = $(ROOTDIR)/romfs
+
+include $(ROOTDIR)/user/shared/boards.mk
 
 LABEL_COPYRIGHT_TEXT="© 2011-2014 Padavan \& N56U project community"
 
@@ -135,4 +139,4 @@ ifndef CONFIG_USB_SUPPORT
 endif
 
 clean:
-	echo "Clean www romfs"
+	@echo "Clean www romfs"

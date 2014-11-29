@@ -342,10 +342,15 @@ void
 switch_config_base(void)
 {
 #if (BOARD_NUM_ETH_LEDS > 1)
+#if BOARD_ETH_LED_SWAP
+	phy_led_mode_green(nvram_get_int("ether_led1"));
+	phy_led_mode_yellow(nvram_get_int("ether_led0"));
+#else
 	phy_led_mode_green(nvram_get_int("ether_led0"));
 	phy_led_mode_yellow(nvram_get_int("ether_led1"));
+#endif
 #elif (BOARD_NUM_ETH_LEDS == 1)
-#if defined (BOARD_ETH_LED_SWAP)
+#if BOARD_ETH_LED_SWAP
 	phy_led_mode_yellow(nvram_get_int("ether_led0"));
 #else
 	phy_led_mode_green(nvram_get_int("ether_led0"));

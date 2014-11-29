@@ -1,9 +1,13 @@
-include ../shared/boards.mk
-include ../shared/cflags.mk
+ifndef ROOTDIR
+ROOTDIR=../..
+endif
 
 USERDIR = $(ROOTDIR)/user
 SHDIR = $(ROOTDIR)/user/shared
 INSTALLDIR = $(ROOTDIR)/romfs
+
+include $(SHDIR)/boards.mk
+include $(SHDIR)/cflags.mk
 
 CFLAGS += -s -I. -I$(SHDIR) -I$(SHDIR)/include
 CFLAGS += -I$(USERDIR)/wireless_tools

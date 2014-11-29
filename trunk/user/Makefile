@@ -4,6 +4,7 @@
 ifndef ROOTDIR
 ROOTDIR=..
 endif
+
 ifndef ROMFSDIR
 ROMFSDIR=$(ROOTDIR)/romfs
 endif

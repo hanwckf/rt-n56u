@@ -12,6 +12,8 @@ uclibc_tf="$ROOTDIR/libc/uClibc-${uclibc_id}/.config"
 busybox_id="1.22.1"
 busybox_cf="$ROOTDIR/configs/boards/busybox.config"
 busybox_tf="$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
+board_h=""
+board_mk=""
 paragon_hfsplus=0
 
 func_enable_kernel_param()
@@ -73,6 +75,8 @@ if [ ! -d "$ROOTDIR/$CONFIG_LINUXDIR" ] ; then
 	exit 1
 fi
 
+board_h="$ROOTDIR/configs/boards/$CONFIG_FIRMWARE_PRODUCT_ID/board.h"
+board_mk="$ROOTDIR/configs/boards/$CONFIG_FIRMWARE_PRODUCT_ID/board.mk"
 uclibc_cf="$ROOTDIR/configs/boards/$CONFIG_FIRMWARE_PRODUCT_ID/libc.config"
 kernel_cd="$ROOTDIR/configs/boards/$CONFIG_FIRMWARE_PRODUCT_ID"
 kernel_tf="$ROOTDIR/$CONFIG_LINUXDIR/.config"
@@ -102,6 +106,16 @@ if [ ! -f "$busybox_cf" ] ; then
 	exit 1
 fi
 
+if [ ! -f "$board_h" ] ; then
+	echo "Target board header ($board_h) not found! Terminate."
+	exit 1
+fi
+
+if [ ! -f "$board_mk" ] ; then
+	echo "Target board descriptor ($board_mk) not found! Terminate."
+	exit 1
+fi
+
 rm -rf $ROOTDIR/romfs
 rm -rf $ROOTDIR/images
 mkdir -p $ROOTDIR/romfs
@@ -116,6 +130,8 @@ ln -sf vendors/Ralink/$CONFIG_PRODUCT/config.arch config.arch
 cp -fL "$kernel_cf" "$kernel_tf"
 cp -fL "$uclibc_cf" "$uclibc_tf"
 cp -fL "$busybox_cf" "$busybox_tf"
+cp -fL "$board_mk" "$ROOTDIR/user/shared/board.mk"
+cp -fL "$board_h" "$ROOTDIR/user/shared/include/ralink_board.h"
 ############################# WI-FI ###################################
 dir_wifi_src="$ROOTDIR/proprietary/rt_wifi"
 dir_wifi_dst="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless"

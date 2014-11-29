@@ -1,4 +1,8 @@
-$Id: Changelog.txt,v 1.383 2014/11/07 11:53:37 nanard Exp $
+$Id: Changelog.txt,v 1.384 2014/11/28 13:18:56 nanard Exp $
+
+2014/11/28:
+  fixes ExecuteSoapAction if SoapAction value is not enclosed into
+    double quotes
 
 2014/11/07:
   sockaddr_to_string() includes scope in IPv6 addresses

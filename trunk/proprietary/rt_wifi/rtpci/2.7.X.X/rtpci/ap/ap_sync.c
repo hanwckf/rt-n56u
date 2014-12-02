@@ -1003,7 +1003,6 @@ VOID APPeerBeaconAction(
 	/* sanity check fail, ignore this frame */
 
 __End_Of_APPeerBeaconAction:
-/*#ifdef AUTO_CH_SELECT_ENHANCE */
 #ifdef CONFIG_AP_SUPPORT
 IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 {
@@ -1015,7 +1014,6 @@ IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	}
 }
 #endif /* CONFIG_AP_SUPPORT */
-/*#endif // AUTO_CH_SELECT_ENHANCE */
 
 LabelErr:
 	if (VarIE != NULL)

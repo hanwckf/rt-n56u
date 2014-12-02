@@ -38,10 +38,6 @@ config  RT5592_AP_APCLI
 	bool "AP-Client Support"
 	depends on RT5592_AP
 
-config  RT5592_AP_IGMP_SNOOP
-	bool "IGMP snooping"
-	depends on RT5592_AP
-
 config  RT5592_AP_NETIF_BLOCK
 	bool "NETIF Block"
 	depends on RT5592_AP
@@ -76,13 +72,12 @@ config  RT5592_AP_GREENAP
 	bool "Green AP mode support"
 	depends on RT5592_AP
 
-config  RT5592_AP_AUTO_CH_SELECT_ENHANCE
-	bool "Auto Channel Selection Enhancement"
-	default y
-	depends on RT5592_AP
-
 config  RT5592_AP_80211N_DRAFT3
 	bool "802.11n Draft3"
+	depends on RT5592_AP
+
+config  RT5592_AP_IGMP_SNOOP
+	bool "IGMP snooping"
 	depends on RT5592_AP
 
 config  RT5592_AP_MCAST_RATE_SPECIFIC

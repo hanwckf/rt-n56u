@@ -929,12 +929,6 @@ VOID RTMPDrvClose(
 #endif /* CLIENT_WDS */
 		/* Shutdown Access Point function, release all related resources */
 		APShutdown(pAd);
-
-/*#ifdef AUTO_CH_SELECT_ENHANCE*/
-		/* Free BssTab & ChannelInfo tabbles.*/
-/*		AutoChBssTableDestroy(pAd); */
-/*		ChannelInfoDestroy(pAd); */
-/*#endif  AUTO_CH_SELECT_ENHANCE */
 	}
 #endif /* CONFIG_AP_SUPPORT */
 

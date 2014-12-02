@@ -57,11 +57,6 @@ config  MT7610_AP_CON_WPS_SUPPORT
 	depends on MT7610_AP_WSC_V2
 	default n
 
-config  MT7610_AP_IGMP_SNOOP
-	bool "IGMP snooping"
-	depends on MT7610_AP
-	default y
-
 config  MT7610_AP_NETIF_BLOCK
 	bool "NETIF Block"
 	depends on MT7610_AP
@@ -112,15 +107,15 @@ config  MT7610_AP_80211N_DRAFT3
 	depends on MT7610_AP
 	default n
 
+config  MT7610_AP_IGMP_SNOOP
+	bool "IGMP snooping"
+	depends on MT7610_AP
+	default y
+
 config  MT7610_AP_MCAST_RATE_SPECIFIC
 	bool "User specific TX rate of mcast packets"
 	depends on MT7610_AP
 	default y
-
-#config  MT7610_AP_AUTO_CH_SELECT_ENHANCE
-#	bool "Auto Channel Selection Enhancement"
-#	depends on MT7610_AP
-#	default y
 
 #config  MT7610_AP_HDR_TRANS
 #	bool "Header Translation Rx Support"

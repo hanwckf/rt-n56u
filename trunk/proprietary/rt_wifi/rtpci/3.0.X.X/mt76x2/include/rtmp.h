@@ -3515,9 +3515,6 @@ typedef struct rtmp_phy_ctrl{
 	   Command: "iwpriv ra0 qload show".
 	 */
 
-/* provide busy time statistics for every TBTT */
-#define QLOAD_FUNC_BUSY_TIME_STATS
-
 /* provide busy time alarm mechanism */
 /* use the function to avoid to locate in some noise environments */
 #define QLOAD_FUNC_BUSY_TIME_ALARM
@@ -3909,11 +3906,8 @@ MONITOR_STRUCT monitor_ctrl;
 	BOOLEAN flg_apcli_init;
 #endif /* APCLI_SUPPORT */
 
-/*#ifdef AUTO_CH_SELECT_ENHANCE */
 	PBSSINFO pBssInfoTab;
 	PCHANNELINFO pChannelInfo;
-/*#endif // AUTO_CH_SELECT_ENHANCE */
-
 
 #endif /* CONFIG_AP_SUPPORT */
 

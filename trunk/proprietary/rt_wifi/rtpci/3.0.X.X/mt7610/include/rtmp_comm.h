@@ -36,16 +36,6 @@
 #undef WSC_LED_SUPPORT
 #endif	/* WSC_LED_SUPPORT */
 #endif /* VENDOR_FEATURE3_SUPPORT */
-    
-    
-#ifdef CONFIG_AP_SUPPORT
-    
-#ifndef VENDOR_FEATURE3_SUPPORT
-#define AP_QLOAD_SUPPORT
-#endif /* VENDOR_FEATURE3_SUPPORT */
-    
-#endif	/* CONFIG_AP_SUPPORT */
-    
 
 /* ======================== Before include files ============================ */ 
 /*

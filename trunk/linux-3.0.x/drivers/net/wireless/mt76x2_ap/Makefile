@@ -211,7 +211,7 @@ endif
 #  CFLAGS
 ##################
 
-EXTRA_CFLAGS  = -Wall -Wstrict-prototypes -Wno-trigraphs 
+EXTRA_CFLAGS  = -Wall -Wstrict-prototypes -Wno-trigraphs -Wno-unused -Wno-declaration-after-statement
 EXTRA_CFLAGS += -Idrivers/net/wireless/$(RT_DRV_DIR)/include
 ifeq ($(CONFIG_MT76X2_AP_ATE),y)
 EXTRA_CFLAGS += -Idrivers/net/wireless/$(RT_DRV_DIR)/ate/include
@@ -238,6 +238,9 @@ EXTRA_CFLAGS += -DRTMP_EFUSE_SUPPORT
 
 # provide roaming support
 #EXTRA_CFLAGS += -DIAPP_SUPPORT
+
+# provide information on the current STA population and traffic levels in the QBSS
+#EXTRA_CFLAGS += -DAP_QLOAD_SUPPORT -DQLOAD_FUNC_BUSY_TIME_STATS
 
 ifneq ($(CONFIG_RA_HW_NAT_WIFI),y)
 EXTRA_CFLAGS += -DCONFIG_RA_NAT_NONE
@@ -306,10 +309,6 @@ endif
 
 ifeq ($(CONFIG_MT76X2_AP_GREENAP),y)
 EXTRA_CFLAGS += -DGREENAP_SUPPORT
-endif
-
-ifeq ($(CONFIG_MT76X2_AP_AUTO_CH_SELECT_ENHANCE),y)
-EXTRA_CFLAGS += -DAUTO_CH_SELECT_ENHANCE
 endif
 
 ifeq ($(CONFIG_MT76X2_AP_MCAST_RATE_SPECIFIC),y)

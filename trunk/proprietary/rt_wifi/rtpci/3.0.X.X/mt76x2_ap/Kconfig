@@ -60,11 +60,6 @@ config  MT76X2_AP_MAC_REPEATER
 	depends on MT76X2_AP_APCLI
 	default n
 
-config  MT76X2_AP_IGMP_SNOOP
-	bool "IGMP snooping"
-	depends on MT76X2_AP
-	default y
-
 config  MT76X2_AP_NETIF_BLOCK
 	bool "NETIF Block"
 	depends on MT76X2_AP
@@ -130,15 +125,15 @@ config  MT76X2_AP_80211W_PMF
 	depends on MT76X2_AP
 	default n
 
+config  MT76X2_AP_IGMP_SNOOP
+	bool "IGMP snooping"
+	depends on MT76X2_AP
+	default y
+
 config  MT76X2_AP_MCAST_RATE_SPECIFIC
 	bool "User specific TX rate of mcast packets"
 	depends on MT76X2_AP
 	default y
-
-#config  MT76X2_AP_AUTO_CH_SELECT_ENHANCE
-#	bool "Auto Channel Selection Enhancement"
-#	depends on MT76X2_AP
-#	default y
 
 #config  MT76X2_AP_HDR_TRANS
 #	bool "Header Translation Rx Support"

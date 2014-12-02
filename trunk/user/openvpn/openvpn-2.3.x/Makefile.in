@@ -113,8 +113,8 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(srcdir)/config.h.in $(srcdir)/version.sh.in \
 	$(am__dist_doc_DATA_DIST) $(am__dist_noinst_DATA_DIST) \
 	$(dist_noinst_HEADERS) AUTHORS COPYING ChangeLog INSTALL NEWS \
-	README compile config.guess config.sub depcomp install-sh \
-	missing ltmain.sh
+	README compile config.guess config.sub install-sh missing \
+	ltmain.sh
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_emptyarray.m4 \
 	$(top_srcdir)/m4/ax_socklen_t.m4 \

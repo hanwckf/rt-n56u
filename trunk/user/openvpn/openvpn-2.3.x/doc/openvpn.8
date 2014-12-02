@@ -1429,6 +1429,7 @@ Currently defaults to 100.
 Limit bandwidth of outgoing tunnel data to
 .B n
 bytes per second on the TCP/UDP port.
+Note that this will only work if mode is set to p2p.
 If you want to limit the bandwidth
 in both directions, use this option on both peers.
 
@@ -4290,6 +4291,11 @@ to using TLS 1.0 only, without any version negotiation.  This reverts
 the beaviour to what OpenVPN versions up to 2.3.2 did, as it turned
 out that TLS version negotiation can lead to handshake problems due
 to new signature algorithms in TLS 1.2.
+.\"*********************************************************
+.TP
+.B \-\-tls-version-max version
+Set the maximum TLS version we will use (default is the highest version
+supported).  Examples for version include "1.0", "1.1", or "1.2".
 .\"*********************************************************
 .TP
 .B \-\-pkcs12 file

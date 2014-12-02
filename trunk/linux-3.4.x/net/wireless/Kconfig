@@ -6,7 +6,7 @@ config WEXT_CORE
 	depends on CFG80211_WEXT || WIRELESS_EXT
 
 config WEXT_PROC
-	def_bool y
+	def_bool n
 	depends on PROC_FS
 	depends on WEXT_CORE
 

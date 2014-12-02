@@ -574,13 +574,28 @@ static PUCHAR MATProto_IP_Rx(
 		PREPEATER_CLIENT_ENTRY pReptEntry = NULL;
 
 		wcid = RTMP_GET_PACKET_WCID(pSkb);
-		
-			pEntry = &pAd->MacTab.Content[wcid];
-		pReptEntry = &pAd->ApCfg.ApCliTab[pEntry->MatchAPCLITabIdx].RepeaterCli[pEntry->MatchReptCliIdx];
 
-		if (pEntry->bReptCli)
+		if (VALID_WCID(wcid))
+		{
+			pEntry = &pAd->MacTab.Content[wcid];
+		}
+		else
+		{
+			DBGPRINT(RT_DEBUG_ERROR, ("%s():ERROR! inValid wcid!\n", __FUNCTION__));
+			return pMacAddr;
+		}
+
+		if (pEntry == NULL)
+		{
+			DBGPRINT(RT_DEBUG_ERROR, ("%s():ERROR! pEntry is null!\n", __FUNCTION__));
+			return pMacAddr;
+		}
+
+		if (pEntry && IS_ENTRY_APCLI(pEntry) && (pEntry->bReptCli == TRUE))
 		{
 			PUCHAR pPktHdr, pLayerHdr;
+
+			pReptEntry = &pAd->ApCfg.ApCliTab[pEntry->MatchAPCLITabIdx].RepeaterCli[pEntry->MatchReptCliIdx];
 
 			pPktHdr = GET_OS_PKT_DATAPTR(pSkb);
 			pLayerHdr = (pPktHdr + MAT_ETHER_HDR_LEN);

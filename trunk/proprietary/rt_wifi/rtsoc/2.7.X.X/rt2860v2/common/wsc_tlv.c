@@ -217,16 +217,13 @@ static VOID	WscParseEncrSettings(
 	IN	INT					PlainLength,
 	IN  PWSC_CTRL           pWscControl)
 {
-#ifdef CONFIG_STA_SUPPORT
-    /* Point to  M7 Profile */
-	PWSC_PROFILE        pProfile = (PWSC_PROFILE) &pAdapter->StaCfg.WscControl.WscM7Profile;
-    UCHAR               *pTmp;
-    USHORT              Idx = 0, tmpVal = 0;
-#endif /* CONFIG_STA_SUPPORT */
+	UCHAR               *pTmp;
+	USHORT              Idx = 0, tmpVal = 0;
 	USHORT	WscType, WscLen, HmacLen;
 	PUCHAR	pData;
 	UCHAR	Hmac[8], Temp[32];
-    PWSC_REG_DATA		pReg = (PWSC_REG_DATA) &pWscControl->RegData;
+	PWSC_REG_DATA		pReg = (PWSC_REG_DATA) &pWscControl->RegData;
+	PWSC_PROFILE pProfile = (PWSC_PROFILE) &pWscControl->WscM7Profile;
 
 	HmacLen = (USHORT)(PlainLength - 12);
 	pData  = pPlainData;
@@ -268,7 +265,6 @@ static VOID	WscParseEncrSettings(
 				NdisMoveMemory(Hmac, pData, WscLen);
 				break;
 
-#ifdef CONFIG_STA_SUPPORT
             /* */
 			/* Parse AP Settings in M7 if the peer is configured AP. */
 			/* */
@@ -281,13 +277,15 @@ static VOID	WscParseEncrSettings(
 						break;
 				}
 				pProfile->Profile[0].SSID.SsidLength = Idx;
+				RTMPZeroMemory(pProfile->Profile[0].SSID.Ssid, NDIS_802_11_LENGTH_SSID);
 				RTMPMoveMemory(pProfile->Profile[0].SSID.Ssid, pData, pProfile->Profile[0].SSID.SsidLength);
+				DBGPRINT(RT_DEBUG_TRACE, ("M7 Profile ssid: %s\n", pProfile->Profile[0].SSID.Ssid));
 				/* Svae the total number, always get the first profile */
 				pProfile->ProfileCnt = 1;
 				break;
 
 			case WSC_ID_MAC_ADDR:
-				if (!MAC_ADDR_EQUAL(pData, pAdapter->StaCfg.WscControl.RegData.SelfInfo.MacAddr))
+				if (!MAC_ADDR_EQUAL(pData, pWscControl->RegData.SelfInfo.MacAddr))
 					DBGPRINT(RT_DEBUG_TRACE, ("WscParseEncrSettings --> Enrollee macAddr not match\n"));
 				RTMPMoveMemory(pProfile->Profile[0].MacAddr, pData, 6);				
 				break;
@@ -313,7 +311,6 @@ static VOID	WscParseEncrSettings(
 				pProfile->Profile[0].KeyLength = WscLen;
 				RTMPMoveMemory(pProfile->Profile[0].Key, pData, pProfile->Profile[0].KeyLength);
 				break;
-#endif /* CONFIG_STA_SUPPORT */
 
 			default:
 				DBGPRINT(RT_DEBUG_TRACE, ("WscParseEncrSettings --> Unknown IE 0x%04x\n", WscType));
@@ -439,6 +436,7 @@ static BOOLEAN	WscProcessCredential(
 				if (RTMPCheckStrPrintAble((CHAR *)pData, WscLen) || (pWscControl->bCheckMultiByte == FALSE))
 				{
 					pProfile->Profile[CurrentIdx].KeyLength = WscLen;
+					RTMPZeroMemory(pProfile->Profile[CurrentIdx].Key, 64);
 					NdisMoveMemory(pProfile->Profile[CurrentIdx].Key, pData, pProfile->Profile[CurrentIdx].KeyLength);
 				}
 				else
@@ -722,17 +720,10 @@ int BuildMessageM1(
 #ifdef WSC_V2_SUPPORT
 	if (pWscControl->WscV2Info.bEnableWpsV2)
 	{
-		/*
-			AP MUST NOT support using PBC to add an external Registrar 
-		*/
-		if (CurOpMode == AP_MODE)
-		{
-			ConfigMethods = (pWscControl->WscConfigMethods & 0x200F);
-		}
 #ifdef IWSC_SUPPORT
 		if ((CurOpMode == STA_MODE) && 
 			(pAdapter->StaCfg.BssType == BSS_ADHOC))
-			{
+		{
 				if (pAdapter->StaCfg.IWscInfo.bLimitedUI)
 				{
 					ConfigMethods &= (~WSC_CONFMET_KEYPAD);
@@ -741,10 +732,10 @@ int BuildMessageM1(
 				{
 					ConfigMethods |= WSC_CONFMET_KEYPAD;
 				}
-			}
-#endif /* IWSC_SUPPORT */
 		}
-		else
+#endif /* IWSC_SUPPORT */
+	}
+	else
 #endif /* WSC_V2_SUPPORT */
 	{
 		/*
@@ -2773,13 +2764,9 @@ int ProcessMessageM1(
 				
 			case WSC_ID_SC_STATE:
 				pReg->PeerInfo.ScState = get_unaligned((PUSHORT) pData);/**((PUSHORT) pData); */
-#ifdef CONFIG_STA_SUPPORT
-				if (CurOpMode == STA_MODE)
-				{
-					/* Don't overwrite the credential of M7 received from AP when this flag is TRUE in registrar mode! */
-					pWscControl->bConfiguredAP = (pReg->PeerInfo.ScState == WSC_SCSTATE_CONFIGURED) ? TRUE:FALSE;
-				}
-#endif /* CONFIG_STA_SUPPORT */
+				/* Don't overwrite the credential of M7 received from AP when this flag is TRUE in registrar mode! */
+				pWscControl->bConfiguredAP = (pReg->PeerInfo.ScState == WSC_SCSTATE_CONFIGURED) ? TRUE:FALSE;
+				DBGPRINT(RT_DEBUG_TRACE, ("Update the bConfiguredAP: %d\n", pWscControl->bConfiguredAP));
 				FieldCheck[(WSC_TLV_BYTE2(WSC_ID_SC_STATE))] ^= (1 << WSC_TLV_BYTE1(WSC_ID_SC_STATE));
 				break;
 				

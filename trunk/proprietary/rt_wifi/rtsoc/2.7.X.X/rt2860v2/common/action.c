@@ -314,7 +314,7 @@ VOID MlmeDELBAAction(
 #ifdef CONFIG_AP_SUPPORT
 	UCHAR		apidx;
 #endif /* CONFIG_AP_SUPPORT */
-	
+
 	pInfo = (MLME_DELBA_REQ_STRUCT *)Elem->Msg;	
 	/* must send back DELBA */
 	NdisZeroMemory(&Frame, sizeof(FRAME_DELBA_REQ));
@@ -692,7 +692,72 @@ VOID StaPublicAction(
 	}
 }
 
+VOID UpdateBssScanParm(
+	IN	PRTMP_ADAPTER	pAd,
+	IN	OVERLAP_BSS_SCAN_IE	APBssScan) 
+{									 
+	pAd->CommonCfg.Dot11BssWidthChanTranDelayFactor = le2cpu16(APBssScan.DelayFactor); /*APBssScan.DelayFactor[1] * 256 + APBssScan.DelayFactor[0];*/
+	/* out of range defined in MIB... So fall back to default value.*/
+	if ((pAd->CommonCfg.Dot11BssWidthChanTranDelayFactor <5) || (pAd->CommonCfg.Dot11BssWidthChanTranDelayFactor > 100))
+	{
+		/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11BssWidthChanTranDelayFactor out of range !!!!)  \n"));*/
+		pAd->CommonCfg.Dot11BssWidthChanTranDelayFactor = 5;
+	}
 
+	pAd->CommonCfg.Dot11BssWidthTriggerScanInt = le2cpu16(APBssScan.TriggerScanInt); /*APBssScan.TriggerScanInt[1] * 256 + APBssScan.TriggerScanInt[0];*/
+	/* out of range defined in MIB... So fall back to default value.*/
+	if ((pAd->CommonCfg.Dot11BssWidthTriggerScanInt < 10) ||(pAd->CommonCfg.Dot11BssWidthTriggerScanInt > 900))
+	{
+		/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11BssWidthTriggerScanInt out of range !!!!)  \n"));*/
+		pAd->CommonCfg.Dot11BssWidthTriggerScanInt = 900;
+	}
+		
+	pAd->CommonCfg.Dot11OBssScanPassiveDwell = le2cpu16(APBssScan.ScanPassiveDwell); /*APBssScan.ScanPassiveDwell[1] * 256 + APBssScan.ScanPassiveDwell[0];*/
+	/* out of range defined in MIB... So fall back to default value.*/
+	if ((pAd->CommonCfg.Dot11OBssScanPassiveDwell < 5) ||(pAd->CommonCfg.Dot11OBssScanPassiveDwell > 1000))
+	{
+		/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11OBssScanPassiveDwell out of range !!!!)  \n"));*/
+		pAd->CommonCfg.Dot11OBssScanPassiveDwell = 20;
+	}
+	
+	pAd->CommonCfg.Dot11OBssScanActiveDwell = le2cpu16(APBssScan.ScanActiveDwell); /*APBssScan.ScanActiveDwell[1] * 256 + APBssScan.ScanActiveDwell[0];*/
+	/* out of range defined in MIB... So fall back to default value.*/
+	if ((pAd->CommonCfg.Dot11OBssScanActiveDwell < 10) ||(pAd->CommonCfg.Dot11OBssScanActiveDwell > 1000))
+	{
+		/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11OBssScanActiveDwell out of range !!!!)  \n"));*/
+		pAd->CommonCfg.Dot11OBssScanActiveDwell = 10;
+	}
+	
+	pAd->CommonCfg.Dot11OBssScanPassiveTotalPerChannel = le2cpu16(APBssScan.PassiveTalPerChannel); /*APBssScan.PassiveTalPerChannel[1] * 256 + APBssScan.PassiveTalPerChannel[0];*/
+	/* out of range defined in MIB... So fall back to default value.*/
+	if ((pAd->CommonCfg.Dot11OBssScanPassiveTotalPerChannel < 200) ||(pAd->CommonCfg.Dot11OBssScanPassiveTotalPerChannel > 10000))
+	{
+		/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11OBssScanPassiveTotalPerChannel out of range !!!!)  \n"));*/
+		pAd->CommonCfg.Dot11OBssScanPassiveTotalPerChannel = 200;
+	}
+	
+	pAd->CommonCfg.Dot11OBssScanActiveTotalPerChannel = le2cpu16(APBssScan.ActiveTalPerChannel); /*APBssScan.ActiveTalPerChannel[1] * 256 + APBssScan.ActiveTalPerChannel[0];*/
+	/* out of range defined in MIB... So fall back to default value.*/
+	if ((pAd->CommonCfg.Dot11OBssScanActiveTotalPerChannel < 20) ||(pAd->CommonCfg.Dot11OBssScanActiveTotalPerChannel > 10000))
+	{
+		/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11OBssScanActiveTotalPerChannel out of range !!!!)  \n"));*/
+		pAd->CommonCfg.Dot11OBssScanActiveTotalPerChannel = 20;
+	}
+	
+	pAd->CommonCfg.Dot11OBssScanActivityThre = le2cpu16(APBssScan.ScanActThre); /*APBssScan.ScanActThre[1] * 256 + APBssScan.ScanActThre[0];*/
+	/* out of range defined in MIB... So fall back to default value.*/
+	if (pAd->CommonCfg.Dot11OBssScanActivityThre > 100)
+	{
+		/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11OBssScanActivityThre out of range !!!!)  \n"));*/
+		pAd->CommonCfg.Dot11OBssScanActivityThre = 25;
+	}
+
+	pAd->CommonCfg.Dot11BssWidthChanTranDelay = (pAd->CommonCfg.Dot11BssWidthTriggerScanInt * pAd->CommonCfg.Dot11BssWidthChanTranDelayFactor);
+	/*DBGPRINT(RT_DEBUG_LOUD,("ACT - UpdateBssScanParm( Dot11BssWidthTriggerScanInt = %d )  \n", pAd->CommonCfg.Dot11BssWidthTriggerScanInt));*/
+}
+#endif /* CONFIG_STA_SUPPORT */
+
+#if defined(CONFIG_STA_SUPPORT) || defined(APCLI_SUPPORT)
 /*
 Description : Build Intolerant Channel Rerpot from Trigger event table.
 return : how many bytes copied. 
@@ -844,72 +909,7 @@ VOID Send2040CoexistAction(
 	
 	DBGPRINT(RT_DEBUG_TRACE,("ACT - Send2040CoexistAction( BSSCoexist2040 = 0x%x )  \n", pAd->CommonCfg.BSSCoexist2040.word));
 }
-
-VOID UpdateBssScanParm(
-	IN	PRTMP_ADAPTER	pAd,
-	IN	OVERLAP_BSS_SCAN_IE	APBssScan) 
-{									 
-	pAd->CommonCfg.Dot11BssWidthChanTranDelayFactor = le2cpu16(APBssScan.DelayFactor); /*APBssScan.DelayFactor[1] * 256 + APBssScan.DelayFactor[0];*/
-	/* out of range defined in MIB... So fall back to default value.*/
-	if ((pAd->CommonCfg.Dot11BssWidthChanTranDelayFactor <5) || (pAd->CommonCfg.Dot11BssWidthChanTranDelayFactor > 100))
-	{
-		/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11BssWidthChanTranDelayFactor out of range !!!!)  \n"));*/
-		pAd->CommonCfg.Dot11BssWidthChanTranDelayFactor = 5;
-	}
-
-	pAd->CommonCfg.Dot11BssWidthTriggerScanInt = le2cpu16(APBssScan.TriggerScanInt); /*APBssScan.TriggerScanInt[1] * 256 + APBssScan.TriggerScanInt[0];*/
-	/* out of range defined in MIB... So fall back to default value.*/
-	if ((pAd->CommonCfg.Dot11BssWidthTriggerScanInt < 10) ||(pAd->CommonCfg.Dot11BssWidthTriggerScanInt > 900))
-	{
-		/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11BssWidthTriggerScanInt out of range !!!!)  \n"));*/
-		pAd->CommonCfg.Dot11BssWidthTriggerScanInt = 900;
-	}
-		
-	pAd->CommonCfg.Dot11OBssScanPassiveDwell = le2cpu16(APBssScan.ScanPassiveDwell); /*APBssScan.ScanPassiveDwell[1] * 256 + APBssScan.ScanPassiveDwell[0];*/
-	/* out of range defined in MIB... So fall back to default value.*/
-	if ((pAd->CommonCfg.Dot11OBssScanPassiveDwell < 5) ||(pAd->CommonCfg.Dot11OBssScanPassiveDwell > 1000))
-	{
-		/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11OBssScanPassiveDwell out of range !!!!)  \n"));*/
-		pAd->CommonCfg.Dot11OBssScanPassiveDwell = 20;
-	}
-	
-	pAd->CommonCfg.Dot11OBssScanActiveDwell = le2cpu16(APBssScan.ScanActiveDwell); /*APBssScan.ScanActiveDwell[1] * 256 + APBssScan.ScanActiveDwell[0];*/
-	/* out of range defined in MIB... So fall back to default value.*/
-	if ((pAd->CommonCfg.Dot11OBssScanActiveDwell < 10) ||(pAd->CommonCfg.Dot11OBssScanActiveDwell > 1000))
-	{
-		/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11OBssScanActiveDwell out of range !!!!)  \n"));*/
-		pAd->CommonCfg.Dot11OBssScanActiveDwell = 10;
-	}
-	
-	pAd->CommonCfg.Dot11OBssScanPassiveTotalPerChannel = le2cpu16(APBssScan.PassiveTalPerChannel); /*APBssScan.PassiveTalPerChannel[1] * 256 + APBssScan.PassiveTalPerChannel[0];*/
-	/* out of range defined in MIB... So fall back to default value.*/
-	if ((pAd->CommonCfg.Dot11OBssScanPassiveTotalPerChannel < 200) ||(pAd->CommonCfg.Dot11OBssScanPassiveTotalPerChannel > 10000))
-	{
-		/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11OBssScanPassiveTotalPerChannel out of range !!!!)  \n"));*/
-		pAd->CommonCfg.Dot11OBssScanPassiveTotalPerChannel = 200;
-	}
-	
-	pAd->CommonCfg.Dot11OBssScanActiveTotalPerChannel = le2cpu16(APBssScan.ActiveTalPerChannel); /*APBssScan.ActiveTalPerChannel[1] * 256 + APBssScan.ActiveTalPerChannel[0];*/
-	/* out of range defined in MIB... So fall back to default value.*/
-	if ((pAd->CommonCfg.Dot11OBssScanActiveTotalPerChannel < 20) ||(pAd->CommonCfg.Dot11OBssScanActiveTotalPerChannel > 10000))
-	{
-		/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11OBssScanActiveTotalPerChannel out of range !!!!)  \n"));*/
-		pAd->CommonCfg.Dot11OBssScanActiveTotalPerChannel = 20;
-	}
-	
-	pAd->CommonCfg.Dot11OBssScanActivityThre = le2cpu16(APBssScan.ScanActThre); /*APBssScan.ScanActThre[1] * 256 + APBssScan.ScanActThre[0];*/
-	/* out of range defined in MIB... So fall back to default value.*/
-	if (pAd->CommonCfg.Dot11OBssScanActivityThre > 100)
-	{
-		/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11OBssScanActivityThre out of range !!!!)  \n"));*/
-		pAd->CommonCfg.Dot11OBssScanActivityThre = 25;
-	}
-
-	pAd->CommonCfg.Dot11BssWidthChanTranDelay = (pAd->CommonCfg.Dot11BssWidthTriggerScanInt * pAd->CommonCfg.Dot11BssWidthChanTranDelayFactor);
-	/*DBGPRINT(RT_DEBUG_LOUD,("ACT - UpdateBssScanParm( Dot11BssWidthTriggerScanInt = %d )  \n", pAd->CommonCfg.Dot11BssWidthTriggerScanInt));*/
-}
-
-#endif /* CONFIG_STA_SUPPORT */
+#endif /* defined(CONFIG_STA_SUPPORT) || defined(APCLI_SUPPORT) */
 
 
 BOOLEAN ChannelSwitchSanityCheck(
@@ -1062,7 +1062,7 @@ VOID PeerPublicAction(
 
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
-	MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
+		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
 #endif /* MAC_REPEATER_SUPPORT */
 
 #ifdef P2P_SUPPORT
@@ -1120,6 +1120,12 @@ VOID PeerPublicAction(
 				IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 #endif /* P2P_SUPPORT */
 				{
+#ifdef APCLI_SUPPORT
+#ifdef APCLI_CERT_SUPPORT
+					if (!IS_ENTRY_APCLI(&pAd->MacTab.Content[Elem->Wcid]))
+					{
+#endif /* APCLI_CERT_SUPPORT */
+#endif /* APCLI_SUPPORT */				
 					BOOLEAN		bNeedFallBack = FALSE;
 									
 					/*ApPublicAction(pAd, Elem);*/
@@ -1206,7 +1212,11 @@ VOID PeerPublicAction(
 						for (apidx = 0; apidx < pAd->ApCfg.BssidNum; apidx++)
 							SendBSS2040CoexistMgmtAction(pAd, MCAST_WCID, apidx, 0);
 					}
-						
+#ifdef APCLI_SUPPORT	
+#ifdef APCLI_CERT_SUPPORT
+					}	
+#endif /* APCLI_CERT_SUPPORT */					
+#endif /* APCLI_SUPPORT */							
 				}
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -1503,7 +1513,7 @@ VOID PeerHTAction(
 
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
-	MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
+		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
 #endif /* MAC_REPEATER_SUPPORT */
 	
 	if (Elem->Wcid >= MaxWcidNum)
@@ -1618,7 +1628,7 @@ VOID ORIBATimerTimeout(
 
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
-	MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
+		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
 #endif /* MAC_REPEATER_SUPPORT */
 
 

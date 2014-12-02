@@ -244,25 +244,6 @@ VOID	WpaMicFailureReportFrame(
 	DBGPRINT(RT_DEBUG_TRACE, ("WpaMicFailureReportFrame <-----\n"));
 }
 
-/** from wpa_supplicant
- * inc_byte_array - Increment arbitrary length byte array by one
- * @counter: Pointer to byte array
- * @len: Length of the counter in bytes
- *
- * This function increments the last byte of the counter by one and continues
- * rolling over to more significant bytes if the byte was incremented from
- * 0xff to 0x00.
- */
-void inc_byte_array(UCHAR *counter, int len)
-{
-	int pos = len - 1;
-	while (pos >= 0) {
-		counter[pos]++;
-		if (counter[pos] != 0)
-			break;
-		pos--;
-	}
-}
 
 VOID WpaDisassocApAndBlockAssoc(
     IN PVOID SystemSpecific1, 

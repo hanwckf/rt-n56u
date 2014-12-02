@@ -754,7 +754,7 @@ VOID APMlmeSetTxRate(
 
 
 #ifdef MCS_LUT_SUPPORT
-	MlmeSetHwTxRateTable(pAd, pEntry);
+	asic_mcs_lut_update(pAd, pEntry);
 #endif /* MCS_LUT_SUPPORT */
 
 	
@@ -1063,6 +1063,9 @@ VOID MlmeSelectTxRateTable(
 		if ((pEntry->SupportRateMode & (SUPPORT_OFDM_MODE)) && 
 			(pEntry->HTCapability.MCSSet[0] != 0x00) &&
 			(pEntry->HTCapability.MCSSet[1] != 0x00) && 
+#ifdef THERMAL_PROTECT_SUPPORT
+			(pAd->force_one_tx_stream == FALSE) &&
+#endif /* THERMAL_PROTECT_SUPPORT */
 			(((pAd->Antenna.field.TxPath == 3) && (pEntry->HTCapability.MCSSet[2] == 0x00)) || (pAd->CommonCfg.TxStream == 2)))
 		{/* 11BGN 2S AP*/
 #ifdef AGS_SUPPORT
@@ -1110,7 +1113,11 @@ VOID MlmeSelectTxRateTable(
 
 		/*else if ((pAd->StaActive.SupportedPhyInfo.MCSSet[0] == 0xff) && ((pAd->StaActive.SupportedPhyInfo.MCSSet[1] == 0x00) || (pAd->Antenna.field.TxPath == 1)))*/
 		if ((pEntry->HTCapability.MCSSet[0] != 0x00) && 
-			((pEntry->HTCapability.MCSSet[1] == 0x00) || (pAd->CommonCfg.TxStream == 1)))
+			((pEntry->HTCapability.MCSSet[1] == 0x00) || (pAd->CommonCfg.TxStream == 1) 
+#ifdef THERMAL_PROTECT_SUPPORT
+			|| (pAd->force_one_tx_stream == TRUE)
+#endif /* THERMAL_PROTECT_SUPPORT */
+			))
 		{/* 11N 1S AP*/
 #ifdef AGS_SUPPORT
 			if (SUPPORT_AGS(pAd))
@@ -1134,7 +1141,11 @@ VOID MlmeSelectTxRateTable(
 		/*else if ((pAd->StaActive.SupportedPhyInfo.MCSSet[0] == 0xff) && (pAd->StaActive.SupportedPhyInfo.MCSSet[1] == 0xff) && (pAd->Antenna.field.TxPath == 2))*/
 		if ((pEntry->HTCapability.MCSSet[0] != 0x00) && 
 			(pEntry->HTCapability.MCSSet[1] != 0x00) && 
-			(pAd->CommonCfg.TxStream == 2))
+			(pAd->CommonCfg.TxStream == 2) 
+#ifdef THERMAL_PROTECT_SUPPORT
+			&& (pAd->force_one_tx_stream == FALSE)
+#endif /* THERMAL_PROTECT_SUPPORT */
+			)
 		{/* 11N 2S AP*/
 #ifdef AGS_SUPPORT
 			if (SUPPORT_AGS(pAd))
@@ -2097,12 +2108,10 @@ VOID RTMPSetSupportMCS(
 }
 
 #ifdef MCS_LUT_SUPPORT
-VOID MlmeSetHwTxRateTable(
-	IN PRTMP_ADAPTER pAd,
-	IN PMAC_TABLE_ENTRY pEntry)
+VOID asic_mcs_lut_update(
+	IN RTMP_ADAPTER *pAd,
+	IN MAC_TABLE_ENTRY *pEntry)
 {
-	WCID_TX_RATE_LU_STRUC WcidTxRateCnt;
-	UINT32 regAddr;
 
 #ifdef PEER_DELBA_TX_ADAPT
 	if (pEntry->bPeerDelBaTxAdaptEn)
@@ -2113,22 +2122,17 @@ VOID MlmeSetHwTxRateTable(
 		return;
 	}
 #endif /* PEER_DELBA_TX_ADAPT */
-	if (pEntry)
-	{
-/*
-		if (IS_HW_TXRATE_LOOKUP_SUPPORT(pAd) && (pAd->bUseHwTxLURate))
-*/
-		if (IS_HW_TXRATE_LOOKUP_SUPPORT(pAd))
+
+		if (IS_HW_TXRATE_LOOKUP_SUPPORT(pAd) && (pEntry) && (pEntry->Aid < 128))
 		{
-			regAddr = MAC_WCID_BASE + (8 * 128) + (pEntry->Aid * 8);
-			WcidTxRateCnt.field.MCS = pEntry->HTPhyMode.field.MCS;
-			WcidTxRateCnt.field.STBC = pEntry->HTPhyMode.field.STBC;
-			WcidTxRateCnt.field.ShortGI = pEntry->HTPhyMode.field.ShortGI;
-			WcidTxRateCnt.field.MODE = pEntry->HTPhyMode.field.MODE;
-			WcidTxRateCnt.field.BW = pEntry->HTPhyMode.field.BW;
-			RTMP_IO_WRITE32(pAd, regAddr, WcidTxRateCnt.word);
+			UINT32 wcid_offset;
+
+			wcid_offset = MAC_WCID_BASE + (8 * 128) + (pEntry->Aid * 8);
+			RTMP_IO_WRITE32(pAd, wcid_offset, pEntry->HTPhyMode.word);
+			RTMP_IO_WRITE32(pAd, wcid_offset + 4, 0x00);
+			DBGPRINT(RT_DEBUG_INFO, ("%s():MCS_LUT update, write to MAC=0x%08x, Value=0x%04x, WCID=%d\n",
+						__FUNCTION__, wcid_offset, pEntry->HTPhyMode.word, pEntry->Aid));
 		}
-	}
 }
 #endif /* MCS_LUT_SUPPORT */
 

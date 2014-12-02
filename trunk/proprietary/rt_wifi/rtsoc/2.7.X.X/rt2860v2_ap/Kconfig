@@ -122,22 +122,19 @@ config  RT2860V2_AP_ADJ_PWR_CONSUMPTION_SUPPORT
 	depends on RALINK_MT7620
 	default n
 
-config  RT2860V2_AP_AUTO_CH_SELECT_ENHANCE
-	bool "Auto Channel Selection Enhancement"
-	default y
-	depends on RT2860V2_AP
-
 config  RT2860V2_AP_80211N_DRAFT3
 	bool "802.11n Draft3"
 	depends on RT2860V2_AP
+	default n
 
 config  RT2860V2_AP_IGMP_SNOOP
 	bool "IGMP snooping"
 	depends on RT2860V2_AP
+	default n
 
 config  RT2860V2_AP_MCAST_RATE_SPECIFIC
 	bool "User specific TX rate of mcast packets"
-	default y
+	default n
 	depends on RT2860V2_AP
 
 config  RT2860V2_AP_NETIF_BLOCK

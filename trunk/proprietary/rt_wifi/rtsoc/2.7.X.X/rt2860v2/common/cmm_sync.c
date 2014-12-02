@@ -373,9 +373,9 @@ UCHAR NextChannel(
 #endif /* DOT11_N_SUPPORT */
 			{
 				/* Record this channel's idx in ChannelList array.*/
-			next_channel = pAd->ChannelList[i+1].Channel;
-			break;
-	}
+				next_channel = pAd->ChannelList[i+1].Channel;
+				break;
+			}
 		}
 		
 	}
@@ -525,6 +525,10 @@ VOID ScanNextChannel(
 		return;
 #endif /* RALINK_ATE */
 
+#ifdef CONFIG_AP_SUPPORT
+	ScanPending = ((pAd->ApCfg.bImprovedScan) && (pAd->ApCfg.ScanChannelCnt>=3));//7
+#endif /* CONFIG_AP_SUPPORT */
+
 	if ((pAd->MlmeAux.Channel == 0) || ScanPending) 
 	{
 	
@@ -534,7 +538,7 @@ VOID ScanNextChannel(
 			UINT32	Data = 0, macStatus;
 			UINT32 MTxCycle;
 
-			AsicSwitchChannel(pAd, pAd->CommonCfg.CentralChannel, FALSE);
+			AsicSwitchChannel(pAd, pAd->CommonCfg.CentralChannel, TRUE);
 			AsicLockChannel(pAd, pAd->CommonCfg.CentralChannel);
 			
 			//Disable MAC Tx/Rx
@@ -565,7 +569,7 @@ VOID ScanNextChannel(
 		}
 		else
 		{
-			AsicSwitchChannel(pAd, pAd->CommonCfg.Channel, FALSE);
+			AsicSwitchChannel(pAd, pAd->CommonCfg.Channel, TRUE);
 			AsicLockChannel(pAd, pAd->CommonCfg.Channel);
 
 			
@@ -659,9 +663,43 @@ VOID ScanNextChannel(
 				}
 			}			
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
+
+			/* to prevent AP no beacon when do sitesurvey. each time we get back to origin channel, update RcvBcnTime */
+			int loop;
+			for (loop = 0; loop < MAX_APCLI_NUM; loop++)
+			{
+				PAPCLI_STRUCT pApCliEntry = &pAd->ApCfg.ApCliTab[loop];
+				if (pApCliEntry->Valid == TRUE)
+				{
+					pApCliEntry->ApCliRcvBeaconTime = pAd->Mlme.Now32;
+				}
+			}
 #endif /* APCLI_SUPPORT */
+
 			pAd->Mlme.ApSyncMachine.CurrState = AP_SYNC_IDLE;
 			RTMPResumeMsduTransmission(pAd);
+
+			/* keep the latest scan channel, could be 0 for scan complete, or other channel */
+			pAd->ApCfg.LastScanChannel = pAd->MlmeAux.Channel;
+			pAd->ApCfg.ScanChannelCnt=0;
+			/* Suspend scanning and Resume TxData for Fast Scanning */
+			if ((pAd->MlmeAux.Channel != 0) &&
+				(pAd->ApCfg.bImprovedScan))
+			{
+				pAd->Mlme.ApSyncMachine.CurrState = AP_SCAN_PENDING;
+				DBGPRINT(RT_DEBUG_TRACE, ("bImprovedScan ~~ Get back to send data\n"));
+			}
+			else
+			{			
+				pAd->ApCfg.bImprovedScan = FALSE;
+#ifdef CON_WPS
+			if (pAd->conWscStatus != CON_WPS_STATUS_DISABLED)
+			{	
+	    			MlmeEnqueue(pAd, AP_SYNC_STATE_MACHINE, APMT2_MLME_SCAN_COMPLETE, 0, NULL, 0);	
+	    			RTMP_MLME_HANDLER(pAd);
+			}
+#endif /* CON_WPS */
+			}
 
 			/* iwpriv set auto channel selection*/
 			/* scanned all channels*/
@@ -681,6 +719,21 @@ VOID ScanNextChannel(
 				AsicEnableBssSync(pAd);
 			}
 		}
+
+#ifdef APCLI_SUPPORT
+#ifdef APCLI_CERT_SUPPORT
+#ifdef DOT11_N_SUPPORT
+#ifdef DOT11N_DRAFT3
+		if (APCLI_IF_UP_CHECK(pAd, 0) && pAd->bApCliCertTest == TRUE && ScanType == SCAN_2040_BSS_COEXIST)
+		{
+			UCHAR Status=1;
+			DBGPRINT(RT_DEBUG_TRACE, ("@(%s)  Scan Done ScanType=%d\n", __FUNCTION__, ScanType));
+			MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_SCAN_DONE, 2, &Status, 0);			
+		}
+#endif /* DOT11N_DRAFT3 */
+#endif /* DOT11_N_SUPPORT */
+#endif /* APCLI_CERT_SUPPORT */		
+#endif /* APCLI_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
 #ifdef P2P_SUPPORT
@@ -748,13 +801,25 @@ VOID ScanNextChannel(
 
 		/* We need to shorten active scan time in order for WZC connect issue*/
 		/* Chnage the channel scan time for CISCO stuff based on its IAPP announcement*/
+#ifdef CONFIG_STA_SUPPORT
 		if (ScanType == FAST_SCAN_ACTIVE)
 			RTMPSetTimer(&pAd->MlmeAux.ScanTimer, FAST_ACTIVE_SCAN_TIME);
 		else /* must be SCAN_PASSIVE or SCAN_ACTIVE*/
+#endif /* CONFIG_STA_SUPPORT */
+#ifdef CONFIG_AP_SUPPORT
+		if (ScanType == FAST_SCAN_ACTIVE) {
+			RTMPSetTimer(&pAd->MlmeAux.APScanTimer, MIN_CHANNEL_TIME);//use MIN_CHANNEL_TIME instead of Fast_Scan_Time
+			pAd->ApCfg.ScanChannelCnt++;
+		}
+		else /* must be SCAN_PASSIVE or SCAN_ACTIVE*/
+#endif /* CONFIG_AP_SUPPORT */
 		{
 #ifdef CONFIG_STA_SUPPORT
 			pAd->StaCfg.ScanChannelCnt++;
 #endif /* CONFIG_STA_SUPPORT */
+#ifdef CONFIG_AP_SUPPORT
+			pAd->ApCfg.ScanChannelCnt++;
+#endif /* CONFIG_AP_SUPPORT */
 			if ((pAd->CommonCfg.PhyMode == PHY_11ABG_MIXED) 
 #ifdef DOT11_N_SUPPORT
 				|| (pAd->CommonCfg.PhyMode == PHY_11ABGN_MIXED) || (pAd->CommonCfg.PhyMode == PHY_11AGN_MIXED)
@@ -907,6 +972,15 @@ VOID ScanNextChannel(
 				/*IF_DEV_CONFIG_OPMODE_ON_AP(pAd) */
 				if (OpMode == OPMODE_AP)
 				{
+#ifdef APCLI_SUPPORT
+#ifdef WSC_INCLUDED
+					if (ScanType == SCAN_WSC_ACTIVE) 
+						MgtMacHeaderInitExt(pAd, &Hdr80211, SUBTYPE_PROBE_REQ, 0, BROADCAST_ADDR, 
+										pAd->ApCfg.ApCliTab[0].CurrentAddress,
+										BROADCAST_ADDR);	
+					else
+#endif /* WSC_INCLUDED */						
+#endif /* APCLI_SUPPORT */				
 					MgtMacHeaderInitExt(pAd, &Hdr80211, SUBTYPE_PROBE_REQ, 0, BROADCAST_ADDR, 
 										pAd->ApCfg.MBSSID[0].Bssid,
 										BROADCAST_ADDR);
@@ -1037,6 +1111,50 @@ VOID ScanNextChannel(
 			}
 #endif /* DOT11_N_SUPPORT */
 
+#ifdef APCLI_SUPPORT
+#ifdef WSC_INCLUDED
+			if ((ScanType == SCAN_WSC_ACTIVE) && (OpMode == OPMODE_AP))
+			{
+				BOOLEAN bHasWscIe = FALSE;
+				/* 
+					Append WSC information in probe request if WSC state is running
+				*/
+				if (pAd->ApCfg.ApCliTab[0].WscControl.bWscTrigger)
+				{
+					bHasWscIe = TRUE;
+				}
+#ifdef WSC_V2_SUPPORT
+				else if (pAd->ApCfg.ApCliTab[0].WscControl.WscV2Info.bEnableWpsV2)
+				{
+					bHasWscIe = TRUE;	
+				}
+#endif /* WSC_V2_SUPPORT */
+
+				if (bHasWscIe)
+				{
+					UCHAR		*pWscBuf = NULL, WscIeLen = 0;
+					ULONG 		WscTmpLen = 0;
+
+					os_alloc_mem(NULL, (UCHAR **)&pWscBuf, 512);
+					if (pWscBuf != NULL)
+					{
+						NdisZeroMemory(pWscBuf, 512);
+						WscBuildProbeReqIE(&pAd->ApCfg.ApCliTab[0].WscControl, STA_MODE, pWscBuf, &WscIeLen);
+
+						MakeOutgoingFrame(pOutBuffer + FrameLen,              &WscTmpLen,
+										WscIeLen,                             pWscBuf,
+										END_OF_ARGS);
+
+						FrameLen += WscTmpLen;
+						os_free_mem(NULL, pWscBuf);
+					}
+					else
+						DBGPRINT(RT_DEBUG_WARN, ("%s:: WscBuf Allocate failed!\n", __FUNCTION__));
+				}
+			}
+#endif /* WSC_INCLUDED */			
+#endif /* APCLI_SUPPORT */
+
 #ifdef WSC_STA_SUPPORT
 			if (OpMode == OPMODE_STA)
 			{
@@ -1073,7 +1191,7 @@ VOID ScanNextChannel(
 					if (pWscBuf != NULL)
 					{
 						NdisZeroMemory(pWscBuf, 512);
-						WscBuildProbeReqIE(pAd, STA_MODE, pWscBuf, &WscIeLen);
+						WscBuildProbeReqIE(&pAd->StaCfg.WscControl, STA_MODE, pWscBuf, &WscIeLen);
 
 						MakeOutgoingFrame(pOutBuffer + FrameLen,              &WscTmpLen,
 										WscIeLen,                             pWscBuf,
@@ -1224,4 +1342,140 @@ BOOLEAN ScanRunning(
 
 	return rv;
 }
+
+
+#if defined(CONFIG_STA_SUPPORT) || defined(APCLI_SUPPORT)
+#ifdef DOT11_N_SUPPORT
+#ifdef DOT11N_DRAFT3
+VOID BuildEffectedChannelList(
+	IN PRTMP_ADAPTER pAd)
+{
+	UCHAR		EChannel[11];
+	UCHAR		i, j, k;
+	UCHAR		UpperChannel = 0, LowerChannel = 0;
+	
+	RTMPZeroMemory(EChannel, 11);
+	DBGPRINT(RT_DEBUG_TRACE, ("BuildEffectedChannelList:CtrlCh=%d,CentCh=%d,AuxCtrlCh=%d,AuxExtCh=%d\n", 
+								pAd->CommonCfg.Channel, pAd->CommonCfg.CentralChannel, 
+								pAd->MlmeAux.AddHtInfo.ControlChan, 
+								pAd->MlmeAux.AddHtInfo.AddHtInfo.ExtChanOffset));
+
+	/* 802.11n D4 11.14.3.3: If no secondary channel has been selected, all channels in the frequency band shall be scanned. */
+	{
+		for (k = 0;k < pAd->ChannelListNum;k++)
+		{
+			if (pAd->ChannelList[k].Channel <=14 )
+			pAd->ChannelList[k].bEffectedChannel = TRUE;
+		}
+		return;
+	}	
+	
+	i = 0;
+	/* Find upper and lower channel according to 40MHz current operation. */
+	if (pAd->CommonCfg.CentralChannel < pAd->CommonCfg.Channel)
+	{
+		UpperChannel = pAd->CommonCfg.Channel;
+		LowerChannel = pAd->CommonCfg.CentralChannel-2;
+	}
+	else if (pAd->CommonCfg.CentralChannel > pAd->CommonCfg.Channel)
+	{
+		UpperChannel = pAd->CommonCfg.CentralChannel+2;
+		LowerChannel = pAd->CommonCfg.Channel;
+	}
+	else
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("LinkUP 20MHz . No Effected Channel \n"));
+		/* Now operating in 20MHz, doesn't find 40MHz effected channels */
+		return;
+	}
+
+	DeleteEffectedChannelList(pAd);	
+
+	DBGPRINT(RT_DEBUG_TRACE, ("BuildEffectedChannelList!LowerChannel ~ UpperChannel; %d ~ %d \n", LowerChannel, UpperChannel));
+
+	/* Find all channels that are below lower channel.. */
+	if (LowerChannel > 1)
+	{
+		EChannel[0] = LowerChannel - 1;
+		i = 1;
+		if (LowerChannel > 2)
+		{
+			EChannel[1] = LowerChannel - 2;
+			i = 2;
+			if (LowerChannel > 3)
+			{
+				EChannel[2] = LowerChannel - 3;
+				i = 3;
+			}
+		}
+	}
+	/* Find all channels that are between  lower channel and upper channel. */
+	for (k = LowerChannel;k <= UpperChannel;k++)
+	{
+		EChannel[i] = k;
+		i++;
+	}
+	/* Find all channels that are above upper channel.. */
+	if (UpperChannel < 14)
+	{
+		EChannel[i] = UpperChannel + 1;
+		i++;
+		if (UpperChannel < 13)
+		{
+			EChannel[i] = UpperChannel + 2;
+			i++;
+			if (UpperChannel < 12)
+			{
+				EChannel[i] = UpperChannel + 3;
+				i++;
+			}
+		}
+	}
+	/* 
+	    Total i channels are effected channels. 
+	    Now find corresponding channel in ChannelList array.  Then set its bEffectedChannel= TRUE
+	*/
+	for (j = 0;j < i;j++)
+	{
+		for (k = 0;k < pAd->ChannelListNum;k++)
+		{
+			if (pAd->ChannelList[k].Channel == EChannel[j])
+			{
+				pAd->ChannelList[k].bEffectedChannel = TRUE;
+				DBGPRINT(RT_DEBUG_TRACE,(" EffectedChannel[%d]( =%d)\n", k, EChannel[j]));
+				break;
+			}
+		}
+	}
+}
+
+
+VOID DeleteEffectedChannelList(
+	IN PRTMP_ADAPTER pAd)
+{
+	UCHAR		i;
+	/*Clear all bEffectedChannel in ChannelList array. */
+ 	for (i = 0; i < pAd->ChannelListNum; i++)		
+	{
+		pAd->ChannelList[i].bEffectedChannel = FALSE;
+	}	
+}
+#endif /* DOT11N_DRAFT3 */
+#endif /* DOT11_N_SUPPORT */
+
+VOID ScanParmFill(
+	IN PRTMP_ADAPTER pAd,
+	IN OUT MLME_SCAN_REQ_STRUCT *ScanReq,
+	IN STRING Ssid[],
+	IN UCHAR SsidLen,
+	IN UCHAR BssType,
+	IN UCHAR ScanType)
+{
+	NdisZeroMemory(ScanReq->Ssid, MAX_LEN_OF_SSID);
+	ScanReq->SsidLen = SsidLen;
+	NdisMoveMemory(ScanReq->Ssid, Ssid, SsidLen);
+	ScanReq->BssType = BssType;
+	ScanReq->ScanType = ScanType;
+}
+#endif /* defined(CONFIG_STA_SUPPORT) || defined(APCLI_SUPPORT) */
 

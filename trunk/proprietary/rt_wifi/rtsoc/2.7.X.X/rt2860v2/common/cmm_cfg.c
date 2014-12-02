@@ -1424,6 +1424,18 @@ INT RTMP_COM_IoctlHandle(
 			break;
 #endif /* WDS_SUPPORT */
 
+#ifdef APCLI_SUPPORT
+		case CMD_RTPRIV_IOCTL_APCLI_STATS_GET:
+		if (Data == INT_APCLI)
+		{
+			if (ApCli_StatsGet(pAd, pData) != TRUE)
+				return NDIS_STATUS_FAILURE;
+		}
+		else
+			return NDIS_STATUS_FAILURE;
+		break;
+#endif /* APCLI_SUPPORT */
+
 #ifdef RALINK_ATE
 #ifdef RALINK_QA
 		case CMD_RTPRIV_IOCTL_ATE:
@@ -1558,6 +1570,7 @@ INT Set_SiteSurvey_Proc(
         	Ssid.SsidLength = strlen(arg);
 		}
 
+		pAd->ApCfg.bImprovedScan = TRUE;
 		if (Ssid.SsidLength == 0)
 			ApSiteSurvey(pAd, &Ssid, SCAN_PASSIVE, FALSE);
 		else
@@ -1659,35 +1672,4 @@ INT Set_TemperatureCAL_Proc(
 }
 #endif /* RTMP_TEMPERATURE_CALIBRATION */
 #endif /* RT6352 */
-
-#ifdef MCS_LUT_SUPPORT
-INT Set_HwTxRateLookUp_Proc(
-	IN RTMP_ADAPTER	*pAd,
-	IN PSTRING arg)
-{
-	UCHAR Enable;
-	UINT32 MacReg;
-
-	Enable = simple_strtol(arg, 0, 10);
-
-	RTMP_IO_READ32(pAd, TX_FBK_LIMIT, &MacReg);
-	if (Enable)
-	{
-		MacReg |= 0x00040000;
-		pAd->bUseHwTxLURate = TRUE;
-		DBGPRINT(RT_DEBUG_TRACE, ("==>UseHwTxLURate (ON)\n"));
-	}
-	else
-	{
-		MacReg &= (~0x00040000);
-		pAd->bUseHwTxLURate = FALSE;
-		DBGPRINT(RT_DEBUG_TRACE, ("==>UseHwTxLURate (OFF)\n"));
-	}
-	RTMP_IO_WRITE32(pAd, TX_FBK_LIMIT, MacReg);
-
-	DBGPRINT(RT_DEBUG_WARN, ("UseHwTxLURate = %d \n", pAd->bUseHwTxLURate));
-
-	return TRUE;
-}
-#endif /* MCS_LUT_SUPPORT */
 

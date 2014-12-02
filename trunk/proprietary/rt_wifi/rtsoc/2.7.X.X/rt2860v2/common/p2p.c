@@ -4539,7 +4539,7 @@ VOID P2PMacTableMaintenance(
 							bQosNull = TRUE;
 
 		            			ApEnqueueNullFrame(pAd, pEntry->Addr, pEntry->CurrTxRate,
-						pEntry->Aid, pEntry->apidx, bQosNull, TRUE, 0);
+	    	                           	pEntry->Aid, pEntry->apidx, bQosNull, TRUE, 0);
 					}
 #ifdef P2P_SUPPORT
 				}

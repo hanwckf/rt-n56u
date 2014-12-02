@@ -54,6 +54,7 @@ config  RT2860V2_STA_TXBF
 
 config  RT2860V2_STA_80211N_DRAFT3
 	bool "802.11n Draft3"
+	default n
 	depends on RT2860V2_STA
 
 #config  RT2860V2_STA_WAPI
@@ -64,9 +65,9 @@ config  RT2860V2_STA_80211N_DRAFT3
 #	bool "Extension Channel List"
 #	depends on RT2860V2_STA
 
-#config  RT2860V2_STA_SNMP
-#	bool "Net-SNMP Support"
-#	depends on RT2860V2_STA
+config  RT2860V2_STA_SNMP
+	bool "Net-SNMP Support"
+	depends on RT2860V2_STA
 
 config  RT2860V2_STA_P2P
 	bool "Wireless Direct(P2P)"

@@ -448,7 +448,7 @@ VOID STAHandleRxDataFrame(
 #endif /* DOT11Z_TDLS_SUPPORT */
 				{
 					DBGPRINT(RT_DEBUG_INFO, ("RxDone- Rcv EOSP frame, driver may fall into sleep\n"));
-				pAd->CommonCfg.bInServicePeriod = FALSE;
+					pAd->CommonCfg.bInServicePeriod = FALSE;
 
 				/* Force driver to fall into sleep mode when rcv EOSP frame */
 					if (!OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_DOZE))
@@ -1172,6 +1172,7 @@ BOOLEAN STARxDoneInterruptHandle(
 		if (pRxWI->MPDUtotalByteCount < 14)
 		{
 			Status = NDIS_STATUS_FAILURE;
+			RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_FAILURE);
 			continue;
 		}
 

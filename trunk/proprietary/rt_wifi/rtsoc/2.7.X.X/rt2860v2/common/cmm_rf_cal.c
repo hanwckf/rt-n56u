@@ -317,11 +317,11 @@ VOID RtmpKickOutHwNullFrame(
 			COPY_MAC_ADDR(pNullFr->Addr1, BROADCAST_ADDR);
 			COPY_MAC_ADDR(pNullFr->Addr2, pAd->CurrentAddress);
 			COPY_MAC_ADDR(pNullFr->Addr3, pAd->CurrentAddress);
-
+		
 			pNullFr->FC.PwrMgmt = 0;
 
 			pNullFr->Duration = pAd->CommonCfg.Dsifs + RTMPCalcDuration(pAd, pAd->CommonCfg.TxRate, 14);
-
+		
 			/* sequence is increased in MlmeHardTx */
 			pNullFr->Sequence = pAd->Sequence;
 			pAd->Sequence = (pAd->Sequence+1) & MAXSEQ; /* next sequence  */
@@ -330,24 +330,24 @@ VOID RtmpKickOutHwNullFrame(
 			MlmeTransmit.field.MCS = 15;
 			MlmeTransmit.field.MODE = MODE_HTMIX;
 			MlmeTransmit.field.BW = 0;
-
+			
 			RTMPWriteTxWI(pAd,
-					pTxWI,
-					FALSE,
-					FALSE,
-					FALSE,
-					FALSE,
-					FALSE,
-					TRUE,
-					0,
-					0,
-					Length,
-					15,
-					0,
-					15,
-					IFS_HTTXOP,
-					FALSE,
-					&MlmeTransmit);
+						pTxWI,
+						FALSE,
+						FALSE,
+						FALSE,
+						FALSE,
+						FALSE,
+						TRUE,
+						0,
+						0,
+						Length,
+						15,
+						0,
+						15,
+						IFS_HTTXOP,
+						FALSE,
+						&MlmeTransmit);
 
 			pTxWI->MCS = 15;
 			pTxWI->PHYMODE = MODE_HTMIX;
@@ -1094,7 +1094,7 @@ UCHAR DPD_Calibration(
 		/* ====================================== */
 		RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, 0x04);
 		RtmpKickOutHwNullFrame(pAd, FALSE, TRUE);
-
+		
 		/* Disable Tx/Rx */
 		RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, 0x00);
 
@@ -1398,7 +1398,7 @@ UCHAR DPD_Calibration(
 		RT635xWriteRFRegister(pAd, RF_BANK6, RF_R13, saveRfB6R13);
 		RT635xWriteRFRegister(pAd, RF_BANK6, RF_R19, saveRfB6R19);
 		RT635xWriteRFRegister(pAd, RF_BANK6, RF_R21, saveRfB6R21);
-		RT635xWriteRFRegister(pAd, RF_BANK6, RF_R22, saveRfB6R22);		
+		RT635xWriteRFRegister(pAd, RF_BANK6, RF_R22, saveRfB6R22);
 		RT635xWriteRFRegister(pAd, RF_BANK7, RF_R03, saveRfB7R3);
 		RT635xWriteRFRegister(pAd, RF_BANK7, RF_R04, saveRfB7R4);
 	}
@@ -2559,7 +2559,7 @@ VOID RXIQ_Calibration(
 	RTMP_IO_READ32(pAd, RF_BYPASS3	, &orig_RF_BYPASS3 );
 
 	// BBP store
-	RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R1, &BBP1);
+    RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R1, &BBP1);
 	RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R4, &BBP4);
 
 	RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, 0x0);
@@ -2740,7 +2740,7 @@ VOID RXIQ_Calibration(
 		}
 		RTMPusecDelay(500);
 
-    		/* e)   Read mi, mq, si, sq, riq */
+		/* e)   Read mi, mq, si, sq, riq */
 		vga_idx = 0;
 
 		while( vga_idx < 11)
@@ -2755,11 +2755,11 @@ VOID RXIQ_Calibration(
 
 			for (i = 0; i < 10000; i++)
 			{
-			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R159, &bbpval);
-			if ((bbpval & 0xff)== 0x93)
-				RTMPusecDelay(50);
-			else
-				break;
+				RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R159, &bbpval);
+				if ((bbpval & 0xff)== 0x93)
+					RTMPusecDelay(50);
+				else
+					break;
 			}
 
 			if ((bbpval & 0xff)== 0x93)
@@ -2768,11 +2768,11 @@ VOID RXIQ_Calibration(
 				goto Restore_Value;
 			}
 
-    			for (i = 0; i < 5; i++) // 0 mi, 1 mq, 2 si, 3 sq, 4 riq
-    			{
-	        		UINT32 BBPtemp = 0;
-	        		UINT8 value = 0;
-	        		INT32 result = 0;
+			for (i = 0; i < 5; i++) // 0 mi, 1 mq, 2 si, 3 sq, 4 riq
+			{
+				UINT32 BBPtemp = 0;
+				UINT8 value = 0;
+				INT32 result = 0;
 
 				RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R158, 0x1E);
 				RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R159, i);
@@ -2792,21 +2792,21 @@ VOID RXIQ_Calibration(
 				if ((i<2) && (BBPtemp & 0x800000)) // 23:0
 					result = (BBPtemp & 0xFFFFFF) - 0x1000000;
 				else if(i==4)
-	            			result = BBPtemp;
-	        		else
-	            			result = BBPtemp;
+					result = BBPtemp;
+				else
+	            	result = BBPtemp;
 
-	        		if (i == 0)
+				if (i == 0)
 					mi = result/4096;
-	        		else if (i==1)
+				else if (i==1)
 					mq = result/4096;
-	        		else if (i==2)
+				else if (i==2)
 					si = BBPtemp/4096;
-	        		else if (i==3)
+				else if (i==3)
 					sq = BBPtemp/4096;
-	        		else
+				else
 					riq = result/4096;
-    			}
+			}
 
 			/* Software AGC */
 			bbpval1 = si - mi*mi;
@@ -2852,10 +2852,10 @@ VOID RXIQ_Calibration(
 			R_iq = 10*(riq-(mi*mq));
 			DBGPRINT(RT_DEBUG_TRACE, ("RXIQ Sigma_i=%d, Sigma_q=%d, R_iq=%d\n", Sigma_i, Sigma_q, R_iq));
 
-			/* G)   Calculate Gain/ Phase imbalance */
+			/* G) Calculate Gain/ Phase imbalance */
 			G_rx = (1000 * Sigma_q) / Sigma_i;
 			G_imb = ((-2) * 128 * (1000 - G_rx)) / (1000 + G_rx);
-			Ph_rx = (R_iq * 2292 ) / (Sigma_i * Sigma_q);
+			Ph_rx = (R_iq * 2292) / (Sigma_i * Sigma_q);
 			DBGPRINT(RT_DEBUG_TRACE, ("RXIQ G_imb=%d, Ph_rx=%d\n", G_imb, Ph_rx));
 
 			if((Ph_rx > 20 ) || (Ph_rx < -20) )

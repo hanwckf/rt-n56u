@@ -1116,8 +1116,9 @@
 /* */
 #define AP_SYNC_IDLE                    0
 #ifdef AP_SCAN_SUPPORT
-#define AP_SCAN_LISTEN					1
-#define AP_MAX_SYNC_STATE               2
+#define AP_SCAN_LISTEN			1
+#define AP_SCAN_PENDING			2
+#define AP_MAX_SYNC_STATE               3
 #else
 #define AP_MAX_SYNC_STATE               1
 #endif
@@ -1130,7 +1131,12 @@
 #define APMT2_MLME_SCAN_REQ		3
 #define APMT2_SCAN_TIMEOUT		4
 #define APMT2_MLME_SCAN_CNCL		5
+#ifdef CON_WPS
+#define APMT2_MLME_SCAN_COMPLETE        6
+#define AP_MAX_SYNC_MSG                 7
+#else
 #define AP_MAX_SYNC_MSG			6
+#endif /* CON_WPS */
 #else
 #define AP_MAX_SYNC_MSG			3
 #endif
@@ -1206,7 +1212,9 @@
 #define APCLI_CTRL_ASSOC_REQ_TIMEOUT      9
 #define APCLI_CTRL_MT2_AUTH_REQ			  10
 #define APCLI_CTRL_MT2_ASSOC_REQ		  11
-#define APCLI_MAX_CTRL_MSG                12
+#define APCLI_CTRL_SCAN_DONE              12
+#define APCLI_MIC_FAILURE_REPORT_FRAME 13
+#define APCLI_MAX_CTRL_MSG                14
 
 #define APCLI_CTRL_FUNC_SIZE              (APCLI_MAX_CTRL_STATE * APCLI_MAX_CTRL_MSG)
 
@@ -1348,7 +1356,6 @@
 #ifdef DOT11_N_SUPPORT
 /* SHORTGI */
 #define GI_400		GAP_INTERVAL_400	/* only support in HT mode */
-#define GI_BOTH		GAP_INTERVAL_BOTH
 #endif /* DOT11_N_SUPPORT */
 #define GI_800		GAP_INTERVAL_800
 /* STBC */

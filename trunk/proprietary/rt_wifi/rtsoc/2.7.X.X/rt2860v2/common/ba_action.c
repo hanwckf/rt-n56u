@@ -17,17 +17,6 @@
 
 static void ba_mpdu_blk_free(PRTMP_ADAPTER pAd, struct reordering_mpdu *mpdu_blk);
 
-#ifdef PEER_DELBA_TX_ADAPT
-static VOID Peer_DelBA_Tx_Adapt_Enable(
-	IN PRTMP_ADAPTER pAd,
-	IN PMAC_TABLE_ENTRY pEntry);
-
-static VOID Peer_DelBA_Tx_Adapt_Disable(
-	IN PRTMP_ADAPTER pAd,
-	IN PMAC_TABLE_ENTRY pEntry);
-#endif /* PEER_DELBA_TX_ADAPT */
-
-
 BA_ORI_ENTRY *BATableAllocOriEntry(
 								  IN  PRTMP_ADAPTER   pAd,
 								  OUT USHORT          *Idx);
@@ -372,21 +361,21 @@ static USHORT ba_indicate_reordering_mpdus_in_order(
 	NdisAcquireSpinLock(&pBAEntry->RxReRingLock);
 
 	while ((mpdu_blk = ba_reordering_mpdu_probe(&pBAEntry->list)))
-		{
-			/* find in-order frame */
+	{
+		/* find in-order frame */
 		if (!SEQ_STEPONE(mpdu_blk->Sequence, StartSeq, MAXSEQ))
-			{
+		{
 				break;
-			}
-			/* dequeue in-order frame from reodering list */
-			mpdu_blk = ba_reordering_mpdu_dequeue(&pBAEntry->list);
-			/* pass this frame up */
+		}
+		/* dequeue in-order frame from reodering list */
+		mpdu_blk = ba_reordering_mpdu_dequeue(&pBAEntry->list);
+		/* pass this frame up */
 		ANNOUNCE_REORDERING_PACKET(pAd, mpdu_blk);
 		/* move to next sequence */
-			StartSeq = mpdu_blk->Sequence;
+		StartSeq = mpdu_blk->Sequence;
 		LastIndSeq = StartSeq;
 		/* free mpdu_blk */
-			ba_mpdu_blk_free(pAd, mpdu_blk);
+		ba_mpdu_blk_free(pAd, mpdu_blk);
 	}
 
 	NdisReleaseSpinLock(&pBAEntry->RxReRingLock);
@@ -954,7 +943,7 @@ VOID BAOriSessionTearDown(
 
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
-	MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
+		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
 #endif /* MAC_REPEATER_SUPPORT */
 
 	if (Wcid >= MaxWcidNum)
@@ -1050,7 +1039,7 @@ VOID BARecSessionTearDown(
 			
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
-	MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
+		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
 #endif /* MAC_REPEATER_SUPPORT */
 
 	if (Wcid >= MaxWcidNum)
@@ -1303,7 +1292,7 @@ VOID PeerAddBAReqAction(
 	/*hex_dump("AddBAReq", Elem->Msg, Elem->MsgLen);*/
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
-	MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
+		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
 #endif /* MAC_REPEATER_SUPPORT */
 
 	/*ADDBA Request from unknown peer, ignore this.*/
@@ -1479,7 +1468,7 @@ VOID PeerAddBARspAction(
 
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
-	MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
+		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
 #endif /* MAC_REPEATER_SUPPORT */
 	
 	/*ADDBA Response from unknown peer, ignore this.*/
@@ -1534,10 +1523,13 @@ VOID PeerDelBAAction(
 	/*DELBA Request from unknown peer, ignore this.*/
 	if (PeerDelBAActionSanity(pAd, Elem->Wcid, Elem->Msg, Elem->MsgLen))
 	{
-#ifdef PEER_DELBA_TX_ADAPT
-		Peer_DelBA_Tx_Adapt_Enable(pAd, &pAd->MacTab.Content[Elem->Wcid]);
-#endif /* PEER_DELBA_TX_ADAPT */
 		pDelFrame = (PFRAME_DELBA_REQ)(&Elem->Msg[0]);
+
+#ifdef PEER_DELBA_TX_ADAPT
+			if (pDelFrame->DelbaParm.TID == 0)
+				Peer_DelBA_Tx_Adapt_Enable(pAd, &pAd->MacTab.Content[Elem->Wcid]);
+#endif /* PEER_DELBA_TX_ADAPT */
+
 		if (pDelFrame->DelbaParm.Initiator == ORIGINATOR)
 		{
 			DBGPRINT(RT_DEBUG_TRACE,("BA - PeerDelBAAction----> ORIGINATOR\n"));
@@ -1571,7 +1563,7 @@ BOOLEAN CntlEnqueueForRecv(
 	
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
-	MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
+		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
 #endif /* MAC_REPEATER_SUPPORT */
 
 	
@@ -2215,7 +2207,15 @@ VOID BaReOrderingBufferMaintain(
 }
 
 #ifdef PEER_DELBA_TX_ADAPT
-static VOID Peer_DelBA_Tx_Adapt_Enable(
+VOID Peer_DelBA_Tx_Adapt_Init(
+	IN PRTMP_ADAPTER pAd,
+	IN PMAC_TABLE_ENTRY pEntry)
+{
+	pEntry->bPeerDelBaTxAdaptEn = 0;
+	RTMPInitTimer(pAd, &pEntry->DelBA_Tx_AdaptTimer, GET_TIMER_FUNCTION(Peer_DelBA_Tx_AdaptTimeOut), pEntry, FALSE);
+}
+
+VOID Peer_DelBA_Tx_Adapt_Enable(
 	IN PRTMP_ADAPTER pAd,
 	IN PMAC_TABLE_ENTRY pEntry)
 {
@@ -2236,11 +2236,23 @@ static VOID Peer_DelBA_Tx_Adapt_Enable(
 		return;
 	}
 	
+	if ((pAd->CommonCfg.BACapability.field.AutoBA != TRUE) ||
+		CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_RALINK_CHIPSET))
+	{
+		return;
+	}
+
 	if (pEntry)
 	{	
 		USHORT RegId = 0;
 		UINT32 MacReg = 0, BitLUT;
+		BOOLEAN Cancelled;
+
 		pEntry->bPeerDelBaTxAdaptEn = 1;
+
+		if (pEntry->DelBA_Tx_AdaptTimer.Valid)
+			RTMPCancelTimer(&pEntry->DelBA_Tx_AdaptTimer, &Cancelled);
+
 		/* Enable Tx Mac look up table */
 		RTMP_IO_READ32(pAd, TX_FBK_LIMIT, &MacReg);
 		BitLUT = (MacReg & ((1 << 18)));
@@ -2256,6 +2268,8 @@ static VOID Peer_DelBA_Tx_Adapt_Enable(
 		}
 		RegId = 0x1C00 + (pEntry->Aid << 3);
 		RTMP_IO_WRITE32(pAd, RegId, 0x4007); /* Legacy OFDM / no STBC / LGI / BW20 / MCS 7 */
+
+		RTMPSetTimer(&pEntry->DelBA_Tx_AdaptTimer, 800); /* 800ms */
 		DBGPRINT(RT_DEBUG_TRACE,
 				("%s():MacReg = 0x%08x, bPeerDelBaTxAdaptEn = 0x%x\n",
 				__FUNCTION__, MacReg, pEntry->bPeerDelBaTxAdaptEn));
@@ -2264,7 +2278,7 @@ static VOID Peer_DelBA_Tx_Adapt_Enable(
 }
 
 
-static VOID Peer_DelBA_Tx_Adapt_Disable(
+VOID Peer_DelBA_Tx_Adapt_Disable(
 	IN PRTMP_ADAPTER pAd,
 	IN PMAC_TABLE_ENTRY pEntry)
 {
@@ -2284,14 +2298,17 @@ static VOID Peer_DelBA_Tx_Adapt_Disable(
 				__FUNCTION__));
 		return;
 	}
-
+	
 	if (pEntry && pEntry->bPeerDelBaTxAdaptEn)
 	{
 		UINT32 BitLUT;
+		BOOLEAN Cancelled;
+
 		BitLUT = (pEntry->bPeerDelBaTxAdaptEn & (1 << 18));
 		if (!BitLUT)
 		{
 			UINT32 MacReg = 0;
+
 			/* Disable Tx Mac look up table (Ressume original setting) */
 			RTMP_IO_READ32(pAd, TX_FBK_LIMIT, &MacReg);
 			MacReg &= ~(1 << 18);
@@ -2302,13 +2319,33 @@ static VOID Peer_DelBA_Tx_Adapt_Disable(
 		}
 		/* TODO: ressume MSC rate of the MAC look up table? */
 		pEntry->bPeerDelBaTxAdaptEn = 0;
+		if (pEntry->DelBA_Tx_AdaptTimer.Valid)
+			RTMPCancelTimer(&pEntry->DelBA_Tx_AdaptTimer, &Cancelled);
+
+
 		DBGPRINT(RT_DEBUG_TRACE,
 				("%s():bPeerDelBaTxAdaptEn = 0x%x\n",
 				__FUNCTION__, pEntry->bPeerDelBaTxAdaptEn));
 	}
 #endif /* MCS_LUT_SUPPORT */
 }
-#endif /* PEER_DELBA_TX_ADAPT */
 
+VOID Peer_DelBA_Tx_AdaptTimeOut(
+        IN PVOID SystemSpecific1, 
+        IN PVOID FunctionContext, 
+        IN PVOID SystemSpecific2, 
+        IN PVOID SystemSpecific3) 
+{
+        MAC_TABLE_ENTRY *pEntry = (MAC_TABLE_ENTRY *)FunctionContext;
+
+        if (pEntry)
+        {
+   			DBGPRINT(RT_DEBUG_TRACE, ("(%s) - STA(%02x:%02x:%02x:%02x:%02x:%02x)\n",
+							__FUNCTION__, PRINT_MAC(pEntry->Addr)));
+
+			Peer_DelBA_Tx_Adapt_Disable(pEntry->pAd, pEntry);
+        }
+}
+#endif /* PEER_DELBA_TX_ADAPT */
 #endif /* DOT11_N_SUPPORT */
 

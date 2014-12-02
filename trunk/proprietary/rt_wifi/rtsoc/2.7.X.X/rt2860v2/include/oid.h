@@ -139,6 +139,18 @@
 #define OID_802_11_EAP_METHOD						0x0529
 #define OID_802_11_ACL_LIST							0x052A
 
+#define OID_802_11_PASSPHRASE						0x052B
+#define OID_802_11_CHANNEL_WIDTH					0x052C
+#define OID_802_11_BEACON_PERIOD					0x052D
+#define OID_802_11_HT_STBC							0x052E
+#define OID_802_11_UAPSD							0x052F
+#define OID_802_11_COEXISTENCE					0x0530
+#define OID_802_11_AMSDU							0x0531
+#define OID_802_11_AMPDU							0x0532
+#define OID_802_11_APCFG							0x0533
+
+#define OID_802_11_ASSOLIST						0x0534
+
 /* For 802.1x daemin using */
 #ifdef DOT1X_SUPPORT
 #define OID_802_DOT1X_CONFIGURATION					0x0540
@@ -635,6 +647,11 @@ typedef enum _NDIS_802_11_AUTHENTICATION_MODE {
 
 typedef UCHAR NDIS_802_11_RATES[NDIS_802_11_LENGTH_RATES];	/* Set of 8 data rates */
 typedef UCHAR NDIS_802_11_RATES_EX[NDIS_802_11_LENGTH_RATES_EX];	/* Set of 16 data rates */
+typedef struct GNU_PACKED _NDIS80211PSK
+{
+	UINT    WPAKeyLen;
+	UCHAR   WPAKey[64];
+} NDIS80211PSK;
 
 typedef struct GNU_PACKED _NDIS_802_11_SSID {
 	UINT SsidLength;	/* length of SSID field below, in bytes; */
@@ -953,6 +970,10 @@ typedef struct _NDIS_802_11_CAPABILITY {
 #endif /* APCLI_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 #endif /* LLTD_SUPPORT */
+
+#ifdef CON_WPS
+#define RT_OID_WSC_SET_CON_WPS_STOP                 0x0764
+#endif /* CON_WPS */
 
 
 

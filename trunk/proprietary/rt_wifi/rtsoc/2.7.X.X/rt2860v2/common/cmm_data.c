@@ -140,7 +140,9 @@ NDIS_STATUS MiniportMMRequest(
 		if (bUseDataQ)
 		{
 			/* free Tx(QueIdx) resources*/
-			RTMPFreeTXDUponTxDmaDone(pAd, QueIdx);
+			FreeNum = GET_TXRING_FREENO(pAd, QueIdx);
+			if (FreeNum <= 5)
+				RTMPFreeTXDUponTxDmaDone(pAd, QueIdx);
 			FreeNum = GET_TXRING_FREENO(pAd, QueIdx);
 		}
 		else
@@ -1074,8 +1076,8 @@ BOOLEAN RTMP_FillTxBlkInfo(
 
 						if(pAd->ApCfg.MACRepeaterOuiMode != 1)
 						{
-							tmpIdx = (64 + (MAX_EXT_MAC_ADDR_SIZE * pMacEntry->MatchAPCLITabIdx) + pMacEntry->MatchReptCliIdx);
-							apCliPkt = (PNDIS_PACKET)MATEngineTxHandle(pAd, pPacket, tmpIdx, pTxBlk->OpMode);
+								tmpIdx = (64 + (MAX_EXT_MAC_ADDR_SIZE * pMacEntry->MatchAPCLITabIdx) + pMacEntry->MatchReptCliIdx);
+								apCliPkt = (PNDIS_PACKET)MATEngineTxHandle(pAd, pPacket, tmpIdx, pTxBlk->OpMode);
 						}
 					}
 					else
@@ -2015,6 +2017,8 @@ VOID RTMPWriteTxWI_Data(
 		{
 			pAd->DiagStruct.TxDataCnt[pAd->DiagStruct.ArrayCurIdx]++;
 			pAd->DiagStruct.TxMcsCnt[pAd->DiagStruct.ArrayCurIdx][pTxWI->MCS]++;
+			if (pTxWI->ShortGI)
+				pAd->DiagStruct.TxSGICnt[pAd->DiagStruct.ArrayCurIdx][pTxWI->MCS]++;
 		}
 #endif /* DBG_DIAGNOSE */
 
@@ -2033,7 +2037,12 @@ VOID RTMPWriteTxWI_Data(
 #endif /* INF_AMAZON_SE */	
 
 #ifdef MCS_LUT_SUPPORT
-	pTxWI->TXLUT = pAd->bUseHwTxLURate;
+	if (RTMP_GET_PACKET_LOWRATE(pTxBlk->pPacket) ||
+		(pTxBlk->TxFrameType == TX_MCAST_FRAME) ||
+		(pMacEntry && (pMacEntry->MmpsMode == MMPS_STATIC)))
+		pTxWI->TXLUT = 0;
+	else
+		pTxWI->TXLUT = 1;
 #endif /* MCS_LUT_SUPPORT */
 
 }
@@ -2093,6 +2102,11 @@ VOID RTMPWriteTxWI_Cache(
 		pTxWI->BW = (pAd->CommonCfg.AddHTInfo.AddHtInfo.RecomWidth == 0) ? (BW_20) : (pTransmit->field.BW);
 #endif /* DOT11N_DRAFT3 */
 
+#ifdef MCS_LUT_SUPPORT
+	pTxWI->TXLUT = 1;
+#endif /* MCS_LUT_SUPPORT */
+
+
     if (pAd->CommonCfg.bMIMOPSEnable)
     {
 		/* MIMO Power Save Mode*/
@@ -2108,6 +2122,9 @@ VOID RTMPWriteTxWI_Cache(
 			{
 				pTxWI->MCS = 7;
 				pTxWI->MIMOps = 0;
+#ifdef MCS_LUT_SUPPORT
+				pTxWI->TXLUT = 0;
+#endif /* MCS_LUT_SUPPORT */
 			}
 		}
     }
@@ -2136,6 +2153,8 @@ VOID RTMPWriteTxWI_Cache(
 	{
 		pAd->DiagStruct.TxDataCnt[pAd->DiagStruct.ArrayCurIdx]++;
 		pAd->DiagStruct.TxMcsCnt[pAd->DiagStruct.ArrayCurIdx][pTxWI->MCS]++;
+		if (pTxWI->ShortGI)
+			pAd->DiagStruct.TxSGICnt[pAd->DiagStruct.ArrayCurIdx][pTxWI->MCS]++;
 	}
 #endif /* DBG_DIAGNOSE */
 
@@ -2196,9 +2215,13 @@ VOID RTMPWriteTxWI_Cache(
 	pTxWI->MPDUtotalByteCount = pTxBlk->MpduHeaderLen + pTxBlk->SrcBufLen;
 
 #ifdef MCS_LUT_SUPPORT
-	pTxWI->TXLUT = pAd->bUseHwTxLURate;
+	if (RTMP_GET_PACKET_LOWRATE(pTxBlk->pPacket) || 
+		pTxBlk->TxFrameType == TX_MCAST_FRAME)
+	{
+		pTxWI->TXLUT = 0;
+	}
 #endif /* MCS_LUT_SUPPORT */
-	
+
 }
 
 
@@ -2560,6 +2583,119 @@ MAC_TABLE_ENTRY *MacTableLookup(
 	return pEntry;
 }
 
+#ifdef MULTI_CLIENT_SUPPORT
+/* for Multi-Clients */
+VOID changeTxRetry(
+    IN PRTMP_ADAPTER pAd,
+    IN USHORT num)
+{
+    UINT32  TxRtyCfg, MacReg = 0;
+
+        if (pAd->CommonCfg.txRetryCfg == 0) {
+                /* txRetryCfg is invalid, should not be 0 */
+		 DBGPRINT(RT_DEBUG_TRACE, ("txRetryCfg=%x\n", pAd->CommonCfg.txRetryCfg));
+                return ;
+        }
+
+    if (num < 3)
+    {
+        /* Tx date retry default 15 */
+        RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
+        TxRtyCfg = ((TxRtyCfg & 0xffff0000) | (pAd->CommonCfg.txRetryCfg & 0x0000ffff));
+        RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
+
+        /* Tx RTS retry default 32 */
+        RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
+        MacReg &= 0xFFFFFF00;
+        MacReg |= 0x20;
+        RTMP_IO_WRITE32(pAd, TX_RTS_CFG, MacReg);
+    }
+    else
+    {
+
+        /* Tx date retry 8 */
+        TxRtyCfg = 0x4100080A;
+        RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
+
+        /* Tx RTS retry 3 */
+        RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
+        MacReg &= 0xFFFFFF00;
+        MacReg |= 0x03;
+        RTMP_IO_WRITE32(pAd, TX_RTS_CFG, MacReg);
+    }
+}
+
+VOID pktAggrNumChange(
+    IN PRTMP_ADAPTER pAd,
+    IN USHORT num)
+{
+	if (num < 5)
+	{
+		/* use default */
+		RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_20M1S, 0x77777777);
+		RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_20M2S, 0x77777777);
+		RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M1S, 0x77777777);
+		RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M2S, 0x77777777);
+	}
+	else
+	{
+		/* modify by MCS */
+		RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_20M1S, 0x77754433);
+		RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_20M2S, 0x77765543);
+		RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M1S, 0x77765544);
+        RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M2S, 0x77765544);
+	}
+}
+
+VOID tuneBEWMM(
+    IN PRTMP_ADAPTER pAd,
+    IN USHORT num)
+{
+    UCHAR  bssCwmin = 4, apCwmin = 4, apCwmax = 6;
+
+    if (num <= 4)
+    {
+        /* use profile cwmin */
+        if (pAd->CommonCfg.APCwmin > 0 && pAd->CommonCfg.BSSCwmin > 0 && pAd->CommonCfg.APCwmax > 0)
+        {
+            apCwmin = pAd->CommonCfg.APCwmin;
+            apCwmax = pAd->CommonCfg.APCwmax;
+            bssCwmin = pAd->CommonCfg.BSSCwmin;
+        }
+    }
+    else if (num > 4 && num <= 8)
+    {
+        apCwmin = 4;
+        apCwmax = 6;
+        bssCwmin = 5;
+    }
+    else if (num > 8 && num <= 16)
+    {
+        apCwmin = 4;
+        apCwmax = 6;
+        bssCwmin = 6;
+    }
+    else if (num > 16 && num <= 64)
+    {
+        apCwmin = 4;
+        apCwmax = 6;
+        bssCwmin = 7;
+    }
+    else if (num > 64 && num <= 128)
+    {
+        apCwmin = 4;
+        apCwmax = 6;
+        bssCwmin = 8;
+    }
+
+    pAd->CommonCfg.APEdcaParm.Cwmin[0] = apCwmin;
+    pAd->CommonCfg.APEdcaParm.Cwmax[0] = apCwmax;
+    pAd->ApCfg.BssEdcaParm.Cwmin[0] = bssCwmin;
+
+    AsicSetEdcaParm(pAd, &pAd->CommonCfg.APEdcaParm);
+}
+#endif /* MULTI_CLIENT_SUPPORT */
+
 MAC_TABLE_ENTRY *MacTableInsertEntry(
 	IN  PRTMP_ADAPTER pAd,
 	IN  PUCHAR pAddr,
@@ -2571,37 +2707,11 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 	int i, FirstWcid;
 	MAC_TABLE_ENTRY *pEntry = NULL, *pCurrEntry;
 	BOOLEAN Cancelled;
-	UINT32 MaxWcidNum = MAX_LEN_OF_MAC_TABLE;
-#ifdef MAC_REPEATER_SUPPORT
-	BOOLEAN bAPCLI = FALSE;
-#endif /* MAC_REPEATER_SUPPORT */
-
-#ifdef MAC_REPEATER_SUPPORT
-	if ((apidx >= MIN_NET_DEVICE_FOR_APCLI) && 
-		(apidx < MIN_NET_DEVICE_FOR_MESH) &&
-		(pAd->ApCfg.bMACRepeaterEn == TRUE))
-	{
-		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
-		bAPCLI = TRUE;
-	}
-#endif /* MAC_REPEATER_SUPPORT */
 
 	/* if FULL, return*/
-	if (pAd->MacTab.Size >= MaxWcidNum)
+	if (pAd->MacTab.Size >= MAX_LEN_OF_MAC_TABLE)
 		return NULL;
 
-#ifdef MAC_REPEATER_SUPPORT
-	if ((pAd->ApCfg.bMACRepeaterEn == TRUE) &&
-		(apidx < MIN_NET_DEVICE_FOR_WDS) &&
-		(pAd->ApCfg.EntryClientCount > MAX_LEN_OF_MAC_TABLE))
-		return NULL;
-#endif /* MAC_REPEATER_SUPPORT */
-
-#ifdef MAC_REPEATER_SUPPORT
-	if (bAPCLI && (pAd->ApCfg.bMACRepeaterEn == TRUE))
-		FirstWcid = (MAX_LEN_OF_MAC_TABLE + (MAX_EXT_MAC_ADDR_SIZE * (apidx - MIN_NET_DEVICE_FOR_APCLI)));
-	else
-#endif /* MAC_REPEATER_SUPPORT */
 	FirstWcid = 1;
 
 #ifdef CONFIG_STA_SUPPORT
@@ -2612,7 +2722,7 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 
 	/* allocate one MAC entry*/
 	NdisAcquireSpinLock(&pAd->MacTabLock);
-	for (i = FirstWcid; i< MaxWcidNum; i++)   /* skip entry#0 so that "entry index == AID" for fast lookup*/
+	for (i = FirstWcid; i< MAX_LEN_OF_MAC_TABLE; i++)   /* skip entry#0 so that "entry index == AID" for fast lookup*/
 	{
 		/* pick up the first available vacancy*/
 		if (IS_ENTRY_NONE(&pAd->MacTab.Content[i]))
@@ -2622,8 +2732,15 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 			/* ENTRY PREEMPTION: initialize the entry */
 			if (pEntry->RetryTimer.Valid)
 				RTMPCancelTimer(&pEntry->RetryTimer, &Cancelled);
+			if (pEntry->Start2WayGroupHSTimer.Valid)
+				RTMPCancelTimer(&pEntry->Start2WayGroupHSTimer, &Cancelled);
 			if (pEntry->EnqueueStartForPSKTimer.Valid)
 				RTMPCancelTimer(&pEntry->EnqueueStartForPSKTimer, &Cancelled);
+
+#ifdef PEER_DELBA_TX_ADAPT
+			if (pEntry->DelBA_Tx_AdaptTimer.Valid)
+				RTMPCancelTimer(&pEntry->DelBA_Tx_AdaptTimer, &Cancelled);
+#endif /* PEER_DELBA_TX_ADAPT */
 
 			NdisZeroMemory(pEntry, sizeof(MAC_TABLE_ENTRY));
 
@@ -2671,6 +2788,7 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 				if (apidx >= MIN_NET_DEVICE_FOR_APCLI)
 				{
 					SET_ENTRY_APCLI(pEntry);
+
 					pEntry->isCached = FALSE;
 #ifdef P2P_SUPPORT
 					SET_P2P_CLI_ENTRY(pEntry);
@@ -2748,6 +2866,7 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 				{
 					RTMPInitTimer(pAd, &pEntry->RetryTimer, GET_TIMER_FUNCTION(WPARetryExec), pEntry, FALSE);
 
+					RTMPInitTimer(pAd, &pEntry->Start2WayGroupHSTimer, GET_TIMER_FUNCTION(Start2WayGroupHSExec), pEntry, FALSE);
 	/*				RTMP_OS_Init_Timer(pAd, &pEntry->RetryTimer, GET_TIMER_FUNCTION(WPARetryExec), pAd);*/
 				}
 #ifdef APCLI_SUPPORT
@@ -3014,6 +3133,12 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 			/* Add this entry into ASIC RX WCID search table */
 			RTMP_STA_ENTRY_ADD(pAd, pEntry);
 
+#ifdef PEER_DELBA_TX_ADAPT
+			Peer_DelBA_Tx_Adapt_Init(pAd, pEntry);
+#endif /* PEER_DELBA_TX_ADAPT */
+#ifdef DROP_MASK_SUPPORT
+			drop_mask_init_per_client(pAd, pEntry);
+#endif /* DROP_MASK_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
 #ifdef P2P_SUPPORT
@@ -3045,6 +3170,8 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 #ifdef IWSC_SUPPORT
 		PWSC_PEER_ENTRY pWscPeerEntry = NULL;
 #endif /* IWSC_SUPPORT */
+
+		pEntry->pNext = NULL;
 
 		HashIdx = MAC_ADDR_HASH_INDEX(pAddr);
 		if (pAd->MacTab.Hash[HashIdx] == NULL)
@@ -3091,6 +3218,23 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 #endif /* IWSC_SUPPORT */
 	}
 
+#ifdef CONFIG_AP_SUPPORT
+#ifdef MULTI_CLIENT_SUPPORT
+    /* for Multi-Clients */
+    if (pAd->MacTab.Size < MAX_LEN_OF_MAC_TABLE)
+    {
+        USHORT size;
+
+		size = pAd->ApCfg.EntryClientCount;
+        changeTxRetry(pAd, size);
+        pktAggrNumChange(pAd, size);
+
+        if (pAd->CommonCfg.bWmm)
+            tuneBEWMM(pAd, size);
+    }
+#endif /* MULTI_CLIENT_SUPPORT */
+#endif // CONFIG_AP_SUPPORT //
+
 	NdisReleaseSpinLock(&pAd->MacTabLock);
 	return pEntry;
 }
@@ -3129,10 +3273,15 @@ BOOLEAN MacTableDeleteEntry(
 	{
 		/* ENTRY PREEMPTION: Cancel all timers */
 		RTMPCancelTimer(&pEntry->RetryTimer, &Cancelled);
+		RTMPCancelTimer(&pEntry->Start2WayGroupHSTimer, &Cancelled);
 		RTMPCancelTimer(&pEntry->EnqueueStartForPSKTimer, &Cancelled);
 
 		if (MAC_ADDR_EQUAL(pEntry->Addr, pAddr))
 		{
+
+#ifdef PEER_DELBA_TX_ADAPT
+			Peer_DelBA_Tx_Adapt_Disable(pAd, pEntry);
+#endif /* PEER_DELBA_TX_ADAPT */
 
 #ifdef DOT11_N_SUPPORT
 			/* free resources of BA*/
@@ -3153,6 +3302,10 @@ BOOLEAN MacTableDeleteEntry(
 				RTMP_IO_WRITE32(pAd, pEntry->StreamModeMACReg+4, 0);
 #endif // STREAM_MODE_SUPPORT //
 
+
+#ifdef PEER_DELBA_TX_ADAPT
+			RTMPReleaseTimer(&pEntry->DelBA_Tx_AdaptTimer, &Cancelled);
+#endif /* PEER_DELBA_TX_ADAPT */
 
 #ifdef CONFIG_STA_SUPPORT
 #ifdef ADHOC_WPA2PSK_SUPPORT
@@ -3175,6 +3328,8 @@ BOOLEAN MacTableDeleteEntry(
 #endif /* DOT1X_SUPPORT */
 
 				RTMPReleaseTimer(&pEntry->RetryTimer, &Cancelled);
+				RTMPReleaseTimer(&pEntry->Start2WayGroupHSTimer, &Cancelled);
+
 
 #ifdef DOT1X_SUPPORT    
 				/* Notify 802.1x daemon to clear this sta info*/
@@ -3301,6 +3456,7 @@ BOOLEAN MacTableDeleteEntry(
 			NdisZeroMemory(pEntry->Addr, MAC_ADDR_LEN);
 			/* invalidate the entry */
 			SET_ENTRY_NONE(pEntry);
+
 #ifdef P2P_SUPPORT
 			if (IS_P2P_GO_ENTRY(pEntry))
 			{
@@ -3315,6 +3471,11 @@ BOOLEAN MacTableDeleteEntry(
 				}
 			}
 #endif /* P2P_SUPPORT */
+
+#ifdef DROP_MASK_SUPPORT
+			drop_mask_release_per_client(pAd, pEntry);
+#endif /* DROP_MASK_SUPPORT */
+
 			pAd->MacTab.Size --;
 #ifdef TXBF_SUPPORT
 			if (pAd->chipCap.FlgHwTxBfCap)
@@ -3364,6 +3525,21 @@ BOOLEAN MacTableDeleteEntry(
 		RTMP_UPDATE_PROTECT(pAd, 0, ALLN_SETPROTECT, TRUE, 0);
 	}
 #ifdef CONFIG_AP_SUPPORT
+#ifdef MULTI_CLIENT_SUPPORT
+	/* for Multi-Clients */
+	if (pAd->MacTab.Size < MAX_LEN_OF_MAC_TABLE)
+	{
+		USHORT size;
+
+		size = pAd->ApCfg.EntryClientCount;
+		changeTxRetry(pAd, size);
+		pktAggrNumChange(pAd, size);
+
+		if (pAd->CommonCfg.bWmm)
+			tuneBEWMM(pAd, size);
+	}
+#endif /* MULTI_CLIENT_SUPPORT */
+
 	/*APUpdateCapabilityAndErpIe(pAd);*/
 	RTMP_AP_UPDATE_CAPABILITY_AND_ERPIE(pAd);  /* edit by johnli, fix "in_interrupt" error when call "MacTableDeleteEntry" in Rx tasklet*/
 #endif /* CONFIG_AP_SUPPORT */
@@ -3403,7 +3579,7 @@ VOID MacTableReset(
 
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
-	MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
+		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
 #endif /* MAC_REPEATER_SUPPORT */
 
 	for (i=1; i<MaxWcidNum; i++)
@@ -4444,9 +4620,9 @@ VOID Indicate_EAPOL_Packet(
 	IN	UCHAR			FromWhichBSSID)
 {
 	MAC_TABLE_ENTRY *pEntry = NULL;
+#ifdef CONFIG_AP_SUPPORT
 	UINT32 MaxWcidNum = MAX_LEN_OF_MAC_TABLE;
 
-#ifdef CONFIG_AP_SUPPORT
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
 		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
@@ -4848,4 +5024,138 @@ BOOLEAN RxDoneInterruptHandle(
 	return bReschedule;
 }
 #endif /* P2P_SUPPORT */
+
+#ifdef DROP_MASK_SUPPORT
+VOID drop_mask_init_per_client(
+	PRTMP_ADAPTER	ad,
+	PMAC_TABLE_ENTRY entry)
+{
+	BOOLEAN cancelled = 0;
+	
+	if (entry->tx_dropmask_timer.Valid)
+			RTMPCancelTimer(&entry->tx_dropmask_timer, &cancelled);
+	RTMPInitTimer(ad, &entry->tx_dropmask_timer, GET_TIMER_FUNCTION(tx_drop_mask_timer_action), entry, FALSE);
+	
+	NdisAllocateSpinLock(ad, &entry->drop_mask_lock);
+	
+	entry->tx_fail_drop_mask_enabled = 0;
+	entry->ps_drop_mask_enabled = 0;
+	asic_set_drop_mask(ad, entry->Aid, 0);
+}
+
+
+VOID drop_mask_release_per_client(
+	PRTMP_ADAPTER	ad,
+	PMAC_TABLE_ENTRY entry)
+{
+	BOOLEAN cancelled = 0;
+	
+	RTMPCancelTimer(&entry->tx_dropmask_timer, &cancelled);
+	RTMPReleaseTimer(&entry->tx_dropmask_timer, &cancelled);
+	NdisFreeSpinLock(&entry->drop_mask_lock);
+
+	entry->tx_fail_drop_mask_enabled = 0;
+	entry->ps_drop_mask_enabled = 0;
+	asic_set_drop_mask(ad, entry->Aid, 0);
+}
+
+
+VOID drop_mask_per_client_reset(
+	PRTMP_ADAPTER	ad)
+{
+	INT i;
+	UINT32 max_wcid_num = MAX_LEN_OF_MAC_TABLE;
+	
+	for ( i = 0; i < max_wcid_num; i++)
+	{
+		PMAC_TABLE_ENTRY entry = &ad->MacTab.Content[i];
+		if (IS_ENTRY_CLIENT(entry))
+		{
+			NdisAcquireSpinLock(&entry->drop_mask_lock);
+			entry->tx_fail_drop_mask_enabled = 0;
+			entry->ps_drop_mask_enabled = 0;
+			NdisReleaseSpinLock(&entry->drop_mask_lock);
+		}
+	}
+
+	asic_drop_mask_reset(ad);
+	
+}
+
+
+VOID set_drop_mask_per_client(
+	PRTMP_ADAPTER		ad,
+	PMAC_TABLE_ENTRY 	entry,
+	UINT8				type,
+	BOOLEAN				enable)
+{
+	BOOLEAN cancelled = 0;
+	BOOLEAN write_to_mac = 0;
+	UINT32 timeout = 0;
+
+
+	switch (type)
+	{
+		case 1: /* set drop mask due to tx_fail too high */
+		{
+			write_to_mac = (enable ^ entry->tx_fail_drop_mask_enabled);
+			NdisAcquireSpinLock(&entry->drop_mask_lock);
+			entry->tx_fail_drop_mask_enabled = (enable ? 1:0);
+			NdisReleaseSpinLock(&entry->drop_mask_lock);
+			timeout = 10;
+			break;
+		}
+		case 2: /* set drop mask due to client is in power saving */
+		{
+			write_to_mac = (enable ^ entry->ps_drop_mask_enabled);
+			NdisAcquireSpinLock(&entry->drop_mask_lock);
+			entry->ps_drop_mask_enabled = (enable ? 1:0);
+			NdisReleaseSpinLock(&entry->drop_mask_lock);
+			timeout = 1000;
+			break;
+		}
+		default:
+			break;
+	}
+
+	RTMPCancelTimer(&entry->tx_dropmask_timer, &cancelled);
+
+	if (enable)
+	{		
+		RTMPSetTimer(&entry->tx_dropmask_timer, timeout /* ms */);
+	}
+
+	/* if we don't need to change mac reg, just return */
+	if (!write_to_mac)
+		return;
+
+	if (enable) {
+		asic_set_drop_mask(ad, entry->Aid, enable);
+	} else {
+		if (!entry->tx_fail_drop_mask_enabled &&
+			!entry->ps_drop_mask_enabled)
+		{
+			asic_set_drop_mask(ad, entry->Aid, enable);
+		}
+	}
+}
+
+
+VOID  tx_drop_mask_timer_action(
+	IN PVOID SystemSpecific1, 
+	IN PVOID FunctionContext, 
+	IN PVOID SystemSpecific2, 
+	IN PVOID SystemSpecific3)
+{
+	PMAC_TABLE_ENTRY     entry = (MAC_TABLE_ENTRY *)FunctionContext;
+	PRTMP_ADAPTER ad = (PRTMP_ADAPTER)entry->pAd;
+
+	/* Disable drop mask */
+	if (entry->tx_fail_drop_mask_enabled)
+		set_drop_mask_per_client(ad, entry, 1, 0);
+
+	if (entry->ps_drop_mask_enabled)
+		set_drop_mask_per_client(ad, entry, 2, 0);
+}
+#endif /* DROP_MASK_SUPPORT */
 

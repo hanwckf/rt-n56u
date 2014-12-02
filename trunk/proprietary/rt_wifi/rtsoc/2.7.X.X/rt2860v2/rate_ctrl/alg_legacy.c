@@ -172,6 +172,13 @@ VOID APMlmeDynamicTxRateSwitching(
 		/* Rssi = RTMPMaxRssi(pAd, (CHAR)pEntry->RssiSample.AvgRssi0, (CHAR)pEntry->RssiSample.AvgRssi1, (CHAR)pEntry->RssiSample.AvgRssi2); */
 		Rssi = RTMPAvgRssi(pAd, &pEntry->RssiSample);
 
+#ifdef THERMAL_PROTECT_SUPPORT
+		if (pAd->force_one_tx_stream == TRUE) {
+			if (pEntry->CurrTxRateIndex > 0x0b)
+				pEntry->CurrTxRateIndex = TableSize - 1;
+		}
+#endif /* THERMAL_PROTECT_SUPPORT */
+
 		CurrRateIdx = UpRateIdx = DownRateIdx = pEntry->CurrTxRateIndex;
 
 		/* decide the next upgrade rate and downgrade rate, if any */
@@ -600,6 +607,13 @@ VOID APQuickResponeForRateUpExec(
 			}
 #endif /* FIFO_EXT_SUPPORT */
 		}
+
+#ifdef THERMAL_PROTECT_SUPPORT
+		if (pAd->force_one_tx_stream == TRUE) {
+			if (pEntry->CurrTxRateIndex > 0x0b)
+				pEntry->CurrTxRateIndex = TableSize - 1;
+		}
+#endif /* THERMAL_PROTECT_SUPPORT */
 
 		CurrRateIdx = pEntry->CurrTxRateIndex;
 #ifdef TXBF_SUPPORT
@@ -1848,4 +1862,11 @@ VOID MlmeOldRateAdapt(
 		/* Update PHY rate */
 		MlmeNewTxRate(pAd, pEntry);
 	}
+
+#ifdef THERMAL_PROTECT_SUPPORT
+	if ((pAd->force_one_tx_stream == TRUE) &&
+		(pEntry->LastSecTxRateChangeAction == RATE_NO_CHANGE)) {
+		MlmeNewTxRate(pAd, pEntry);
+	}
+#endif /* THERMAL_PROTECT_SUPPORT */
 }

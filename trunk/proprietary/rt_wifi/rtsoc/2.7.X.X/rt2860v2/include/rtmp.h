@@ -1666,6 +1666,12 @@ typedef struct _COMMON_CONFIG {
 	BOOLEAN bWmmCapable;	/* 0:disable WMM, 1:enable WMM */
 	QOS_CAPABILITY_PARM APQosCapability;	/* QOS capability of the current associated AP */
 	EDCA_PARM APEdcaParm;	/* EDCA parameters of the current associated AP */
+#ifdef MULTI_CLIENT_SUPPORT
+	BOOLEAN	bWmm;               /* have BSS enable/disable WMM */
+	UCHAR APCwmin;            /* record ap cwmin */
+	UCHAR APCwmax;            /* record ap cwmax */
+	UCHAR BSSCwmin;           /* record BSS cwmin */
+#endif /* MULTI_CLIENT_SUPPORT */
 	QBSS_LOAD_PARM APQbssLoad;	/* QBSS load of the current associated AP */
 	UCHAR AckPolicy[4];	/* ACK policy of the specified AC. see ACK_xxx */
 #ifdef CONFIG_STA_SUPPORT
@@ -1893,6 +1899,10 @@ typedef struct _COMMON_CONFIG {
 	MO_CFG_STRUCT MO_Cfg;	/* data structure for mitigating microwave interference */
 #endif /* defined(MICROWAVE_OVEN_SUPPORT) || defined(DYNAMIC_VGA_SUPPORT) */
 	BOOLEAN bEnTemperatureTrack;
+
+#ifdef MULTI_CLIENT_SUPPORT
+    UINT txRetryCfg;
+#endif /* MULTI_CLIENT_SUPPORT */
 } COMMON_CONFIG, *PCOMMON_CONFIG;
 
 #ifdef DBG_CTRL_SUPPORT
@@ -2392,6 +2402,13 @@ typedef struct _MAC_TABLE_ENTRY {
 #endif /* IWSC_SUPPORT */
 #endif				/* ADHOC_WPA2PSK_SUPPORT */
 
+#ifdef DROP_MASK_SUPPORT
+	BOOLEAN 		tx_fail_drop_mask_enabled;
+	NDIS_SPIN_LOCK		drop_mask_lock;
+	BOOLEAN 		ps_drop_mask_enabled;
+	RALINK_TIMER_STRUCT tx_dropmask_timer;
+#endif /* DROP_MASK_SUPPORT */
+
 	/*jan for wpa */
 	/* record which entry revoke MIC Failure , if it leaves the BSS itself, AP won't update aMICFailTime MIB */
 	UCHAR CMTimerRunning;
@@ -2404,6 +2421,7 @@ typedef struct _MAC_TABLE_ENTRY {
 	UCHAR PTK[64];
 	UCHAR ReTryCounter;
 	RALINK_TIMER_STRUCT RetryTimer;
+	RALINK_TIMER_STRUCT Start2WayGroupHSTimer;
 #ifdef TXBF_SUPPORT
 	RALINK_TIMER_STRUCT eTxBfProbeTimer;
 #endif /* TXBF_SUPPORT */
@@ -2521,6 +2539,7 @@ typedef struct _MAC_TABLE_ENTRY {
 
 #ifdef PEER_DELBA_TX_ADAPT
 	BOOLEAN bPeerDelBaTxAdaptEn;
+	RALINK_TIMER_STRUCT DelBA_Tx_AdaptTimer;
 #endif /* PEER_DELBA_TX_ADAPT */
 
 #ifdef MFB_SUPPORT
@@ -2606,6 +2625,7 @@ typedef struct _MAC_TABLE_ENTRY {
 #ifdef MAC_REPEATER_SUPPORT
 	BOOLEAN bReptCli;
 	BOOLEAN bReptEthCli;
+	BOOLEAN bReptBridgeCli;
 	UCHAR MatchReptCliIdx;
 	UCHAR ReptCliAddr[MAC_ADDR_LEN];
 	ULONG ReptCliIdleCount;
@@ -2769,7 +2789,11 @@ typedef struct _MAC_TABLE {
 
 #ifdef WAPI_SUPPORT
 	BOOLEAN fAnyWapiStation;
-#endif				/* WAPI_SUPPORT */
+#endif /* WAPI_SUPPORT */
+
+#ifdef PEER_DELBA_TX_ADAPT
+	UCHAR DelBA_Client_Count;
+#endif /* PEER_DELBA_TX_ADAPT */
 } MAC_TABLE, *PMAC_TABLE;
 
 
@@ -2861,7 +2885,7 @@ typedef struct _REPEATER_CLIENT_ENTRY {
 	ULONG AssocCurrState;
 
 	RALINK_TIMER_STRUCT ApCliAssocTimer, ApCliAuthTimer;
-	RALINK_TIMER_STRUCT ReptCliResetTimer;
+	RALINK_TIMER_STRUCT ReptCliResetEntryTimer;
 
 	USHORT AuthReqCnt;
 	USHORT AssocReqCnt;
@@ -2884,6 +2908,7 @@ typedef struct _REPEATER_CLIENT_ENTRY_MAP {
 
 typedef struct _INVAILD_TRIGGER_MAC_ENTRY {
 	UCHAR MacAddr[MAC_ADDR_LEN];
+	UCHAR entry_idx;
 	BOOLEAN bInsert;
 	struct _INVAILD_TRIGGER_MAC_ENTRY *pNext;
 } INVAILD_TRIGGER_MAC_ENTRY, *PINVAILD_TRIGGER_MAC_ENTRY;
@@ -2898,6 +2923,20 @@ typedef struct _REPEATER_CTRL_STRUCT {
 /***************************************************************************
   *	AP APCLI related data structures
   **************************************************************************/
+typedef struct _APCLI_COUNTER {
+	LARGE_INTEGER ReceivedFragmentCount;
+	LARGE_INTEGER TransmittedFragmentCount;
+	ULONG ReceivedByteCount;
+	ULONG TransmittedByteCount;
+	ULONG RxErrors;
+	ULONG TxErrors;
+	LARGE_INTEGER MulticastReceivedFrameCount;
+	ULONG OneCollision;
+	ULONG MoreCollisions;
+	ULONG RxNoBuffer;
+	ULONG RcvAlignmentErrors;
+} APCLI_COUNTER, *PAPCLI_COUNTER;
+
 typedef struct _APCLI_STRUCT {
 	PNET_DEV dev;
 #ifdef RTL865X_SOC
@@ -2948,7 +2987,7 @@ typedef struct _APCLI_STRUCT {
 	UCHAR PSK[100];		/* reserve PSK key material */
 	UCHAR PSKLen;
 	UCHAR PMK[32];		/* WPA PSK mode PMK */
-	/*UCHAR       PTK[64];                // WPA PSK mode PTK */
+	UCHAR PTK[64];                /* WPA PSK mode PTK */
 	UCHAR GTK[32];		/* GTK from authenticator */
 
 	/*CIPHER_KEY            PairwiseKey; */
@@ -2964,12 +3003,12 @@ typedef struct _APCLI_STRUCT {
 
 	/* For WPA countermeasures */
 	ULONG LastMicErrorTime;	/* record last MIC error time */
-	/*ULONG       MicErrCnt;          // Should be 0, 1, 2, then reset to zero (after disassoiciation). */
+	ULONG       MicErrCnt;          /* Should be 0, 1, 2, then reset to zero (after disassoiciation). */
 	BOOLEAN bBlockAssoc;	/* Block associate attempt for 60 seconds after counter measure occurred. */
 
 	/* For WPA-PSK supplicant state */
 	/*WPA_STATE     WpaState;           // Default is SS_NOTUSE */
-	/*UCHAR         ReplayCounter[8]; */
+	UCHAR         ReplayCounter[8];
 	/*UCHAR         ANonce[32];         // ANonce for WPA-PSK from authenticator */
 	UCHAR SNonce[32];	/* SNonce for WPA-PSK */
 	UCHAR GNonce[32];	/* GNonce for WPA-PSK from authenticator */
@@ -3023,6 +3062,7 @@ typedef struct _APCLI_STRUCT {
 	REPEATER_CLIENT_ENTRY_MAP RepeaterCliMap[MAX_EXT_MAC_ADDR_SIZE];
 #endif /* MAC_REPEATER_SUPPORT */
 	UCHAR LinkIdx;
+	APCLI_COUNTER ApCliCounter;
 	PVOID pAd;
 } APCLI_STRUCT, *PAPCLI_STRUCT;
 
@@ -3043,7 +3083,7 @@ typedef struct _AP_ADMIN_CONFIG {
 	BOOLEAN		ApCliAutoConnectRunning;
 	BOOLEAN		ApCliAutoConnectChannelSwitching;
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
-#endif				/* APCLI_SUPPORT */
+#endif	/* APCLI_SUPPORT */
 
 #ifdef MAC_REPEATER_SUPPORT
 	NDIS_SPIN_LOCK ReptCliEntryLock;
@@ -3070,6 +3110,9 @@ typedef struct _AP_ADMIN_CONFIG {
 #ifdef AP_SCAN_SUPPORT
 	UINT32  ACSCheckTime;           /* Periodic timer to trigger Auto Channel Selection (unit: second) */
 	UINT32  ACSCheckCount;          /* if  ACSCheckCount > ACSCheckTime, then do ACS check */
+	UINT32	ScanChannelCnt;
+	UINT32	LastScanChannel;
+	BOOLEAN	bImprovedScan;
 #endif /* AP_SCAN_SUPPORT */
 	BOOLEAN bAvoidDfsChannel;	/* 0: disable, 1: enable */
 	BOOLEAN bIsolateInterStaTraffic;
@@ -3162,7 +3205,10 @@ typedef struct _AP_ADMIN_CONFIG {
 	ULONG	MAX_PSDU_LEN;	/* Maximum PSDU length */
 #endif /* DOT11_N_SUPPORT */
 
-	UCHAR	EntryClientCount;
+	UCHAR EntryClientCount;
+#ifdef MULTI_CLIENT_SUPPORT
+	UCHAR ChangeTxOpClient;
+#endif /* MULTI_CLIENT_SUPPORT */
 
 #ifdef MAC_REPEATER_SUPPORT
 	BOOLEAN bMACRepeaterEn;
@@ -3170,6 +3216,14 @@ typedef struct _AP_ADMIN_CONFIG {
 	UINT8 EthApCliIdx;
 	UCHAR RepeaterCliSize;
 #endif /* MAC_REPEATER_SUPPORT */
+#ifdef BAND_STEERING
+	/* 
+		This is used to let user config band steering on/off by profile.
+		0: OFF / 1: ON / 2: Auto ONOFF
+	*/
+	BOOLEAN BandSteering;
+	BND_STRG_CLI_TABLE BndStrgTable;
+#endif /* BAND_STEERING */
 } AP_ADMIN_CONFIG, *PAP_ADMIN_CONFIG;
 
 #ifdef IGMP_SNOOP_SUPPORT
@@ -3261,6 +3315,7 @@ typedef struct _RtmpDiagStrcut_ {	/* Diagnosis Related element */
 	USHORT TxDescCnt[DIAGNOSE_TIME][24];	/* 3*3    // TxDesc queue length in scale of 0~14, >=15 */
 /*	USHORT TxMcsCnt[DIAGNOSE_TIME][16];			// TxDate MCS Count in range from 0 to 15, step in 1. */
 	USHORT TxMcsCnt[DIAGNOSE_TIME][MAX_MCS_SET];	/* 3*3 */
+	USHORT TxSGICnt[DIAGNOSE_TIME][MAX_MCS_SET];
 	USHORT TxSWQueCnt[DIAGNOSE_TIME][9];	/* TxSwQueue length in scale of 0, 1, 2, 3, 4, 5, 6, 7, >=8 */
 
 	USHORT TxAggCnt[DIAGNOSE_TIME];
@@ -3275,6 +3330,7 @@ typedef struct _RtmpDiagStrcut_ {	/* Diagnosis Related element */
 	USHORT RxCrcErrCnt[DIAGNOSE_TIME];
 /*	USHORT			RxMcsCnt[DIAGNOSE_TIME][16];		// Rx MCS Count in range from 0 to 15, step in 1. */
 	USHORT RxMcsCnt[DIAGNOSE_TIME][MAX_MCS_SET];	/* 3*3 */
+	USHORT RxSGICnt[DIAGNOSE_TIME][MAX_MCS_SET];
 } RtmpDiagStruct;
 #endif /* DBG_DIAGNOSE */
 
@@ -3703,6 +3759,12 @@ struct _RTMP_ADAPTER {
 	UCHAR rf_pa_mode_over_ht[16];
 
 
+#ifdef THERMAL_PROTECT_SUPPORT
+	BOOLEAN force_one_tx_stream;
+	INT32 last_thermal_pro_temp;
+	INT32 thermal_pro_criteria;
+#endif /* THERMAL_PROTECT_SUPPORT */
+
 	signed char BGRssiOffset0;	/* Store B/G RSSI#0 Offset value on EEPROM 0x46h */
 	signed char BGRssiOffset1;	/* Store B/G RSSI#1 Offset value */
 	signed char BGRssiOffset2;	/* Store B/G RSSI#2 Offset value */
@@ -3781,11 +3843,8 @@ struct _RTMP_ADAPTER {
 	BOOLEAN flg_apcli_init;
 #endif /* APCLI_SUPPORT */
 
-/*#ifdef AUTO_CH_SELECT_ENHANCE */
 	PBSSINFO pBssInfoTab;
 	PCHANNELINFO pChannelInfo;
-/*#endif // AUTO_CH_SELECT_ENHANCE */
-
 
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -4039,9 +4098,6 @@ struct _RTMP_ADAPTER {
 	   Command: "iwpriv ra0 qload show".
 	 */
 
-/* provide busy time statistics for every TBTT */
-#define QLOAD_FUNC_BUSY_TIME_STATS
-
 /* provide busy time alarm mechanism */
 /* use the function to avoid to locate in some noise environments */
 #define QLOAD_FUNC_BUSY_TIME_ALARM
@@ -4091,6 +4147,15 @@ struct _RTMP_ADAPTER {
 #ifdef WSC_INCLUDED
 	/* for multiple card */
 	UCHAR *pHmacData;
+
+#ifdef CON_WPS
+#define CON_WPS_STATUS_DISABLED      0x00
+#define CON_WPS_STATUS_AP_RUNNING    0x01
+#define CON_WPS_STATUS_APCLI_RUNNING 0x02
+
+	INT conWscStatus;            /* 0x0 Disabled, 0x01 ApRunning, 0x02 ApCliRunning */ 
+#endif /* CON_WPS */
+
 	/*   UCHAR                   Wsc_Uuid_E[UUID_LEN_HEX];  // now these two parameters move to structure "WSC_CTRL" */
 	/*   UCHAR                   Wsc_Uuid_Str[UUID_LEN_STR]; */
 #endif /* WSC_INCLUDED */
@@ -4199,7 +4264,9 @@ struct _RTMP_ADAPTER {
 
 #ifdef WOW_SUPPORT
 #endif /* WOW_SUPPORT */
-
+#ifdef APCLI_CERT_SUPPORT
+	BOOLEAN bApCliCertTest;	
+#endif /* APCLI_CERT_SUPPORT */
 #ifdef MULTI_MAC_ADDR_EXT_SUPPORT
 	BOOLEAN bUseMultiMacAddrExt;
 #endif /* MULTI_MAC_ADDR_EXT_SUPPORT */
@@ -5479,6 +5546,19 @@ VOID RTMPSendNullFrame(
 	IN	BOOLEAN			bQosNull,
 	IN  USHORT			PwrMgmt);
 
+#ifdef APCLI_SUPPORT
+VOID	ApCliRTMPReportMicError(
+	IN	PRTMP_ADAPTER	pAd, 
+	IN	PCIPHER_KEY 	pWpaKey,
+	IN	INT			ifIndex);
+
+VOID   ApCliWpaDisassocApAndBlockAssoc(
+    IN  PVOID SystemSpecific1, 
+    IN  PVOID FunctionContext, 
+    IN  PVOID SystemSpecific2, 
+    IN  PVOID SystemSpecific3);
+#endif/*APCLI_SUPPORT*/
+
 #ifdef CONFIG_STA_SUPPORT
 VOID RTMPReportMicError(
 	IN  PRTMP_ADAPTER   pAd, 
@@ -5595,6 +5675,11 @@ VOID AsicLockChannel(
 VOID AsicAntennaSelect(
 	IN  PRTMP_ADAPTER   pAd,
 	IN  UCHAR           Channel);
+
+#ifdef THERMAL_PROTECT_SUPPORT	
+VOID thermal_protection(
+	IN  PRTMP_ADAPTER   pAd);
+#endif /* THERMAL_PROTECT_SUPPORT */
 
 VOID AsicResetBBPAgent(
 	IN PRTMP_ADAPTER pAd);
@@ -5792,6 +5877,16 @@ INT Set_StreamModeMCS_Proc(
     IN  PRTMP_ADAPTER   pAd,
     IN  PSTRING         arg);
 #endif /* STREAM_MODE_SUPPORT */
+
+#ifdef DROP_MASK_SUPPORT
+VOID asic_set_drop_mask(
+	PRTMP_ADAPTER ad,
+	USHORT	wcid,
+	BOOLEAN enable);
+
+VOID asic_drop_mask_reset(
+	PRTMP_ADAPTER ad);
+#endif /* DROP_MASK_SUPPORT */
 
 #ifdef WOW_SUPPORT
 #endif /* WOW_SUPPORT */
@@ -7191,12 +7286,6 @@ INT Set_TemperatureCAL_Proc(
 #endif /* RTMP_TEMPERATURE_CALIBRATION */
 #endif /* RT6352 */
 
-#ifdef MCS_LUT_SUPPORT
-INT Set_HwTxRateLookUp_Proc(
-	IN RTMP_ADAPTER	*pAd,
-	IN PSTRING arg);
-#endif /* MCS_LUT_SUPPORT */
-
 /* */
 /* Prototypes of function definition in cmm_info.c */
 /* */
@@ -7210,6 +7299,9 @@ VOID    RTMPWPARemoveAllKeys(
 BOOLEAN RTMPCheckStrPrintAble(
     IN  CHAR *pInPutStr, 
     IN  UCHAR strLen);
+
+VOID RTMPSetDefaultChannel(
+	IN	PRTMP_ADAPTER	pAd);
     
 VOID    RTMPSetPhyMode(
 	IN  PRTMP_ADAPTER   pAd,
@@ -7394,6 +7486,12 @@ VOID MlmeDeAuthAction(
 
 
 VOID GREKEYPeriodicExec(
+	IN  PVOID   SystemSpecific1, 
+	IN  PVOID   FunctionContext, 
+	IN  PVOID   SystemSpecific2, 
+	IN  PVOID   SystemSpecific3);
+
+VOID Start2WayGroupHSExec(
 	IN  PVOID   SystemSpecific1, 
 	IN  PVOID   FunctionContext, 
 	IN  PVOID   SystemSpecific2, 
@@ -7737,9 +7835,8 @@ VOID    WscInformFromWPA(
     IN  PMAC_TABLE_ENTRY    pEntry);
 #endif /* CONFIG_AP_SUPPORT */
 
-#ifdef CONFIG_STA_SUPPORT
 VOID WscBuildProbeReqIE(
-	IN	PRTMP_ADAPTER	pAd,
+	IN PWSC_CTRL pWscControl,
 	IN  UCHAR			CurOpMode,
 	OUT	PUCHAR			pOutBuf,
 	OUT	PUCHAR			pIeLen);
@@ -7749,6 +7846,7 @@ VOID WscBuildAssocReqIE(
 	OUT	PUCHAR			pOutBuf,
 	OUT	PUCHAR			pIeLen);
 
+#ifdef CONFIG_STA_SUPPORT
 #ifdef IWSC_SUPPORT
 VOID	IWSC_Stop(
 	IN  PRTMP_ADAPTER 	pAd,
@@ -7828,6 +7926,13 @@ VOID WscInit(
 	IN	PRTMP_ADAPTER	pAd,
     IN  BOOLEAN         bFromApcli,	
 	IN  UCHAR       	BssIndex);
+
+#ifdef CON_WPS
+VOID WscConWpsStop(
+        IN  PRTMP_ADAPTER   pAd,
+        IN  BOOLEAN         bFromApCli,
+	IN  PWSC_CTRL       pWscControl);
+#endif /* CON_WPS */
 
 BOOLEAN	ValidateChecksum(
 	IN UINT PIN);
@@ -8729,6 +8834,31 @@ BOOLEAN STARxDoneInterruptHandle(
 
 BOOLEAN RxDoneInterruptHandle(
 	IN	PRTMP_ADAPTER	pAd);
+
+#ifdef DROP_MASK_SUPPORT
+VOID drop_mask_init_per_client(
+	PRTMP_ADAPTER	ad,
+	PMAC_TABLE_ENTRY entry);
+
+VOID drop_mask_release_per_client(
+	PRTMP_ADAPTER	ad,
+	PMAC_TABLE_ENTRY entry);
+
+VOID drop_mask_per_client_reset(
+	PRTMP_ADAPTER	ad);
+
+VOID set_drop_mask_per_client(
+	PRTMP_ADAPTER		ad,
+	PMAC_TABLE_ENTRY 	entry,
+	UINT8				type,
+	BOOLEAN				enable);
+
+VOID  tx_drop_mask_timer_action(
+	PVOID SystemSpecific1, 
+	PVOID FunctionContext, 
+	PVOID SystemSpecific2, 
+	PVOID SystemSpecific3);
+#endif /* DROP_MASK_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
 /* AMPDU packet indication */
@@ -9924,6 +10054,11 @@ VOID RTMPRemoveRepeaterEntry(
 	IN UCHAR apidx,
 	IN UCHAR CliIdx);
 
+VOID RTMPRemoveRepeaterDisconnectEntry(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR apIdx,
+	IN UCHAR CliIdx);
+
 VOID RTMPRepeaterReconnectionCheck(
 	IN PRTMP_ADAPTER pAd);
 
@@ -9974,5 +10109,25 @@ UCHAR GetSkuPerRatePwr(
 	IN UCHAR bw,
 	IN INT32 paValue);
 #endif /* SINGLE_SKU_V2 */
+
+#ifdef PEER_DELBA_TX_ADAPT
+VOID Peer_DelBA_Tx_Adapt_Init(
+	IN PRTMP_ADAPTER pAd,
+	IN PMAC_TABLE_ENTRY pEntry);
+
+VOID Peer_DelBA_Tx_Adapt_Enable(
+	IN PRTMP_ADAPTER pAd,
+	IN PMAC_TABLE_ENTRY pEntry);
+
+VOID Peer_DelBA_Tx_Adapt_Disable(
+	IN PRTMP_ADAPTER pAd,
+	IN PMAC_TABLE_ENTRY pEntry);
+
+VOID Peer_DelBA_Tx_AdaptTimeOut(
+        IN PVOID SystemSpecific1,
+        IN PVOID FunctionContext,
+        IN PVOID SystemSpecific2,
+        IN PVOID SystemSpecific3);   
+#endif /* PEER_DELBA_TX_ADAPT */
 #endif  /* __RTMP_H__ */
 

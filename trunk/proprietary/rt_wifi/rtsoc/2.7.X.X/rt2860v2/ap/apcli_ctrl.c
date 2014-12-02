@@ -30,7 +30,7 @@
 #include "rt_config.h"
 
 #ifdef MAC_REPEATER_SUPPORT
-static VOID ReptCliConnectTimeoutReset(
+static VOID ReptCliResetEntryTimeoutAction(
 	IN PVOID SystemSpecific1, 
 	IN PVOID FunctionContext, 
 	IN PVOID SystemSpecific2, 
@@ -93,9 +93,19 @@ static VOID ApCliCtrlDeAuthAction(
 	IN PRTMP_ADAPTER pAd, 
 	IN MLME_QUEUE_ELEM *Elem);
 
+static VOID ApCliWpaMicFailureReportFrame(
+		IN PRTMP_ADAPTER pAd, 
+	IN MLME_QUEUE_ELEM *Elem);
+
+#ifdef APCLI_CERT_SUPPORT
+static VOID ApCliCtrlScanDoneAction(
+	IN PRTMP_ADAPTER pAd, 
+	IN MLME_QUEUE_ELEM *Elem);
+#endif /* APCLI_CERT_SUPPORT */
+
 #ifdef MAC_REPEATER_SUPPORT
-DECLARE_TIMER_FUNCTION(ReptCliConnectTimeoutReset);
-BUILD_TIMER_FUNCTION(ReptCliConnectTimeoutReset);
+DECLARE_TIMER_FUNCTION(ReptCliResetEntryTimeoutAction);
+BUILD_TIMER_FUNCTION(ReptCliResetEntryTimeoutAction);
 #endif /* MAC_REPEATER_SUPPORT */
 
 /*
@@ -157,7 +167,10 @@ VOID ApCliCtrlStateMachineInit(
 	StateMachineSetAction(Sm, APCLI_CTRL_CONNECTED, APCLI_CTRL_DISCONNECT_REQ, (STATE_MACHINE_FUNC)ApCliCtrlDeAuthAction);
  	StateMachineSetAction(Sm, APCLI_CTRL_CONNECTED, APCLI_CTRL_PEER_DISCONNECT_REQ, (STATE_MACHINE_FUNC)ApCliCtrlPeerDeAssocReqAction);
 	StateMachineSetAction(Sm, APCLI_CTRL_CONNECTED, APCLI_CTRL_MT2_AUTH_REQ, (STATE_MACHINE_FUNC)ApCliCtrlProbeRspAction);
-
+	StateMachineSetAction(Sm, APCLI_CTRL_CONNECTED, APCLI_MIC_FAILURE_REPORT_FRAME, (STATE_MACHINE_FUNC)ApCliWpaMicFailureReportFrame);
+#ifdef APCLI_CERT_SUPPORT
+	StateMachineSetAction(Sm, APCLI_CTRL_CONNECTED, APCLI_CTRL_SCAN_DONE, (STATE_MACHINE_FUNC)ApCliCtrlScanDoneAction);
+#endif /* APCLI_CERT_SUPPORT */
 	for (i = 0; i < MAX_APCLI_NUM; i++)
 	{
 		pAd->ApCfg.ApCliTab[i].CtrlCurrState = APCLI_CTRL_DISCONNECTED;
@@ -174,8 +187,8 @@ VOID ApCliCtrlStateMachineInit(
 			pReptCliEntry->CliConnectState = 0;
 
 			/* timer init */
-			RTMPInitTimer(pAd, &pAd->ApCfg.ApCliTab[i].RepeaterCli[j].ReptCliResetTimer,
-							GET_TIMER_FUNCTION(ReptCliConnectTimeoutReset), &pAd->ApCfg.ApCliTab[i].RepeaterCli[j], FALSE);
+			RTMPInitTimer(pAd, &pAd->ApCfg.ApCliTab[i].RepeaterCli[j].ReptCliResetEntryTimer,
+							GET_TIMER_FUNCTION(ReptCliResetEntryTimeoutAction), &pAd->ApCfg.ApCliTab[i].RepeaterCli[j], FALSE);
 		}
 #endif /* MAC_REPEATER_SUPPORT */
 	}
@@ -193,34 +206,32 @@ VOID ApCliCtrlStateMachineInit(
         Standard timer parameters
     ==========================================================================
  */
-static VOID ReptCliConnectTimeoutReset(
+static VOID ReptCliResetEntryTimeoutAction(
 	IN PVOID SystemSpecific1, 
 	IN PVOID FunctionContext, 
 	IN PVOID SystemSpecific2, 
 	IN PVOID SystemSpecific3)
 {
 	PREPEATER_CLIENT_ENTRY pEntry = (PREPEATER_CLIENT_ENTRY)FunctionContext;
-	PRTMP_ADAPTER pAd;
-	USHORT HashIdx;
 	REPEATER_CLIENT_ENTRY *pPrevEntry, *pProbeEntry;
 	REPEATER_CLIENT_ENTRY_MAP *pMapEntry, *pPrevMapEntry, *pProbeMapEntry;
+	USHORT HashIdx;
+	PRTMP_ADAPTER pAd = NULL;
 
-	DBGPRINT(RT_DEBUG_TRACE, ("Repeater Cli Auth Timeout Reset Entry \n"));
-
-	pAd = pEntry->pAd;
-
-	DBGPRINT(RT_DEBUG_ERROR, (" (%s) ifIndex = %d, CliIdx = %d !!!\n",
+	DBGPRINT(RT_DEBUG_ERROR, (" (%s) ifIndex = %d, CliIdx = %d  Reset The Entry!!!\n",
 					__FUNCTION__, pEntry->MatchApCliIdx, pEntry->MatchLinkIdx));
 
-	RTMPRemoveRepeaterAsicEntry(pAd, pEntry->MatchLinkIdx);
-
 	NdisAcquireSpinLock(&pAd->ApCfg.ReptCliEntryLock);
+
+	pAd = pEntry->pAd;
+	RTMPRemoveRepeaterAsicEntry(pAd, pEntry->MatchLinkIdx);
 
 	HashIdx = MAC_ADDR_HASH_INDEX(pEntry->CurrentAddress);
 
 	pPrevEntry = NULL;
 	pProbeEntry = pAd->ApCfg.ReptCliHash[HashIdx];
 	ASSERT(pProbeEntry);
+
 	if (pProbeEntry != NULL)
 	{
 		/* update Hash list*/
@@ -243,6 +254,7 @@ static VOID ReptCliConnectTimeoutReset(
 			pProbeEntry = pProbeEntry->pNext;
 		} while (pProbeEntry);
 	}
+
 	/* not found !!!*/
 	ASSERT(pProbeEntry != NULL);
 
@@ -275,12 +287,12 @@ static VOID ReptCliConnectTimeoutReset(
 			pProbeMapEntry = pProbeMapEntry->pNext;
 		} while (pProbeMapEntry);
 	}
+
 	/* not found !!!*/
 	ASSERT(pProbeMapEntry != NULL);
 
 	NdisZeroMemory(pEntry->OriginalAddress, MAC_ADDR_LEN);
 	NdisZeroMemory(pEntry->CurrentAddress, MAC_ADDR_LEN);
-	pEntry->CliConnectState = 0;
 	pEntry->CtrlCurrState = APCLI_CTRL_DISCONNECTED;
 	pEntry->AuthCurrState = APCLI_AUTH_REQ_IDLE;
 	pEntry->AssocCurrState = APCLI_ASSOC_IDLE;
@@ -293,7 +305,9 @@ static VOID ReptCliConnectTimeoutReset(
 	pEntry->AssocReqCnt = 0;
 	pEntry->CliTriggerTime = 0;
 
-	pAd->ApCfg.RepeaterCliSize--;
+	if (pAd->ApCfg.RepeaterCliSize > 0)
+		pAd->ApCfg.RepeaterCliSize--;
+
 	NdisReleaseSpinLock(&pAd->ApCfg.ReptCliEntryLock);
 }
 #endif /* MAC_REPEATER_SUPPORT */
@@ -866,7 +880,9 @@ static VOID ApCliCtrlAuthReqTimeoutAction(
 		{
 			*pCurrState = APCLI_CTRL_DISCONNECTED;
 			pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].AuthReqCnt = 0;
-			RTMPSetTimer(&pApCliEntry->RepeaterCli[CliIdx].ReptCliResetTimer, AUTH_TIMEOUT * 50);
+
+			/* todo : need handle associate request time out retry 5 times */
+			//RTMPSetTimer(&pApCliEntry->RepeaterCli[CliIdx].ReptCliResetEntryTimer, AUTH_TIMEOUT * 20);
 			return;
 		}
 	}
@@ -1160,7 +1176,9 @@ static VOID ApCliCtrlAssocReqTimeoutAction(
 		{
 			*pCurrState = APCLI_CTRL_DISCONNECTED;
 			pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].AssocReqCnt = 0;
-			RTMPSetTimer(&pApCliEntry->RepeaterCli[CliIdx].ReptCliResetTimer, ASSOC_TIMEOUT * 50);
+
+			/* todo : need handle associate request time out retry 5 times */
+			//RTMPSetTimer(&pApCliEntry->RepeaterCli[CliIdx].ReptCliResetEntryTimer, ASSOC_TIMEOUT * 20);
 			return;
 		}
 	}
@@ -1264,8 +1282,7 @@ static VOID ApCliCtrlDisconnectReqAction(
 	if (CliIdx != 0xFF)
 	{
 		ifIndex = ((ifIndex - 64) / 16);
-		pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].CliValid = FALSE;
-		pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].CliEnable = FALSE;
+		RTMPRemoveRepeaterEntry(pAd, ifIndex, CliIdx);
 	}
 	else
 #endif /* MAC_REPEATER_SUPPORT */
@@ -1328,19 +1345,21 @@ static VOID ApCliCtrlPeerDeAssocReqAction(
 	if (CliIdx == 0xFF)
 	{
 		UCHAR index;
-		BOOLEAN Cancelled;
 
-		for(index = 0; index < MAX_EXT_MAC_ADDR_SIZE; index++)
+		if (pApCliEntry->Valid)
 		{
-			if (pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[index].CliEnable)
+			PMAC_TABLE_ENTRY pEntry = &pAd->MacTab.Content[pApCliEntry->MacTabWCID];
+
+			if (pEntry && (pEntry->PortSecured == WPA_802_1X_PORT_SECURED))
 			{
-				RTMPCancelTimer(&pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[index].ApCliAuthTimer, &Cancelled);
-				RTMPCancelTimer(&pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[index].ApCliAssocTimer, &Cancelled);
-				if (pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[index].CliValid)
-					ApCliLinkDown(pAd, (64 + MAX_EXT_MAC_ADDR_SIZE*ifIndex + index));
-				pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[index].CliValid = FALSE;
-				pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[index].CliEnable = FALSE;
-				RTMPRemoveRepeaterEntry(pAd, ifIndex, index);
+				for(index = 0; index < MAX_EXT_MAC_ADDR_SIZE; index++)
+				{
+					if (pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[index].CliEnable)
+					{
+						RTMPRemoveRepeaterDisconnectEntry(pAd, ifIndex, index);
+						RTMPRemoveRepeaterEntry(pAd, ifIndex, index);
+					}
+				}
 			}
 		}
 	}
@@ -1379,8 +1398,7 @@ static VOID ApCliCtrlPeerDeAssocReqAction(
 	if (CliIdx != 0xFF)
 	{
 		ifIndex = ((ifIndex - 64) / 16);
-		pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].CliValid = FALSE;
-		pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].CliEnable = FALSE;
+		RTMPRemoveRepeaterEntry(pAd, ifIndex, CliIdx);
 	}
 	else
 #endif /* MAC_REPEATER_SUPPORT */
@@ -1532,7 +1550,7 @@ static VOID ApCliCtrlDeAuthAction(
 	/* Fill in the related information */
 	DeAuthFrame.Reason = (USHORT)REASON_DEAUTH_STA_LEAVING;
 	COPY_MAC_ADDR(DeAuthFrame.Addr, pAd->ApCfg.ApCliTab[ifIndex].ApCliMlmeAux.Bssid);
-	
+
 #ifdef MAC_REPEATER_SUPPORT
 	if (CliIdx != 0xFF)
 	{
@@ -1583,5 +1601,153 @@ static VOID ApCliCtrlDeAuthAction(
 	return;
 }
 
+
+VOID ApCliWpaMicFailureReportFrame(
+		IN PRTMP_ADAPTER pAd, 
+	IN MLME_QUEUE_ELEM *Elem)
+{
+	PUCHAR              pOutBuffer = NULL;
+	UCHAR               Header802_3[14];
+	ULONG               FrameLen = 0;
+	UCHAR				*mpool;
+	PEAPOL_PACKET       pPacket;
+	UCHAR               Mic[16];
+	BOOLEAN             bUnicast;
+	UCHAR			Wcid;
+	PMAC_TABLE_ENTRY pMacEntry = NULL;
+	USHORT ifIndex = (USHORT)(Elem->Priv);
+	DBGPRINT(RT_DEBUG_TRACE, ("ApCliWpaMicFailureReportFrame ----->\n"));
+
+	if (ifIndex >= MAX_APCLI_NUM)
+		return;
+	
+	bUnicast = (Elem->Msg[0] == 1 ? TRUE:FALSE);
+	pAd->Sequence = ((pAd->Sequence) + 1) & (MAX_SEQ_NUMBER);
+	
+
+	/* init 802.3 header and Fill Packet */
+	pMacEntry = &pAd->MacTab.Content[pAd->ApCfg.ApCliTab[ifIndex].MacTabWCID];
+	if (!IS_ENTRY_APCLI(pMacEntry))
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("%s : !IS_ENTRY_APCLI(pMacEntry)\n", __FUNCTION__));
+		return;
+	}
+	
+	Wcid =  pAd->ApCfg.ApCliTab[ifIndex].MacTabWCID;
+	MAKE_802_3_HEADER(Header802_3, pAd->MacTab.Content[Wcid].Addr, pAd->ApCfg.ApCliTab[ifIndex].CurrentAddress, EAPOL);
+	
+	/* Allocate memory for output */
+	os_alloc_mem(NULL, (PUCHAR *)&mpool, TX_EAPOL_BUFFER);
+	if (mpool == NULL)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("!!!%s : no memory!!!\n", __FUNCTION__));
+		return;
+	}
+
+	pPacket = (PEAPOL_PACKET)mpool;
+	NdisZeroMemory(pPacket, TX_EAPOL_BUFFER);
+	
+	pPacket->ProVer	= EAPOL_VER;
+	pPacket->ProType	= EAPOLKey;
+	
+	pPacket->KeyDesc.Type = WPA1_KEY_DESC;
+
+	/* Request field presented */
+	pPacket->KeyDesc.KeyInfo.Request = 1;
+
+	if(pAd->ApCfg.ApCliTab[ifIndex].WepStatus  == Ndis802_11Encryption3Enabled)
+	{
+		pPacket->KeyDesc.KeyInfo.KeyDescVer = 2;
+	} 
+	else	  /* TKIP */
+	{
+		pPacket->KeyDesc.KeyInfo.KeyDescVer = 1;
+	}
+
+	pPacket->KeyDesc.KeyInfo.KeyType = (bUnicast ? PAIRWISEKEY : GROUPKEY);
+
+	/* KeyMic field presented */
+	pPacket->KeyDesc.KeyInfo.KeyMic  = 1;
+
+	/* Error field presented */
+	pPacket->KeyDesc.KeyInfo.Error  = 1;
+
+	/* Update packet length after decide Key data payload */
+	SET_UINT16_TO_ARRARY(pPacket->Body_Len, MIN_LEN_OF_EAPOL_KEY_MSG)
+
+	/* Key Replay Count */
+	NdisMoveMemory(pPacket->KeyDesc.ReplayCounter, pAd->ApCfg.ApCliTab[ifIndex].ReplayCounter, LEN_KEY_DESC_REPLAY);
+	inc_byte_array(pAd->ApCfg.ApCliTab[ifIndex].ReplayCounter, 8);
+
+	/* Convert to little-endian format. */
+	*((USHORT *)&pPacket->KeyDesc.KeyInfo) = cpu2le16(*((USHORT *)&pPacket->KeyDesc.KeyInfo));
+
+
+	MlmeAllocateMemory(pAd, (PUCHAR *)&pOutBuffer);  /* allocate memory */
+	if(pOutBuffer == NULL)
+	{
+		os_free_mem(NULL, mpool);
+		return;
+	}
+    
+	/*
+	   Prepare EAPOL frame for MIC calculation
+	   Be careful, only EAPOL frame is counted for MIC calculation
+	*/
+	MakeOutgoingFrame(pOutBuffer,               &FrameLen,
+		              CONV_ARRARY_TO_UINT16(pPacket->Body_Len) + 4,   pPacket,
+		              END_OF_ARGS);
+
+	/* Prepare and Fill MIC value */
+	NdisZeroMemory(Mic, sizeof(Mic));
+	if(pAd->ApCfg.ApCliTab[ifIndex].WepStatus  == Ndis802_11Encryption3Enabled)
+	{	/* AES */
+		UCHAR digest[20] = {0};
+		RT_HMAC_SHA1(pAd->ApCfg.ApCliTab[ifIndex].PTK, LEN_PTK_KCK, pOutBuffer, FrameLen, digest, SHA1_DIGEST_SIZE);
+		NdisMoveMemory(Mic, digest, LEN_KEY_DESC_MIC);
+	} 
+	else
+	{	/* TKIP */
+		RT_HMAC_MD5(pAd->ApCfg.ApCliTab[ifIndex].PTK, LEN_PTK_KCK, pOutBuffer, FrameLen, Mic, MD5_DIGEST_SIZE);
+	}
+	NdisMoveMemory(pPacket->KeyDesc.KeyMic, Mic, LEN_KEY_DESC_MIC);
+
+	/* copy frame to Tx ring and send MIC failure report frame to authenticator */
+	RTMPToWirelessSta(pAd, &pAd->MacTab.Content[Wcid],
+					  Header802_3, LENGTH_802_3, 
+					  (PUCHAR)pPacket, 
+					  CONV_ARRARY_TO_UINT16(pPacket->Body_Len) + 4, FALSE);
+
+	MlmeFreeMemory(pAd, (PUCHAR)pOutBuffer);
+
+	os_free_mem(NULL, mpool);
+
+	DBGPRINT(RT_DEBUG_TRACE, ("ApCliWpaMicFailureReportFrame <-----\n"));
+}
+
+#ifdef APCLI_CERT_SUPPORT
+static VOID ApCliCtrlScanDoneAction(
+	IN PRTMP_ADAPTER pAd, 
+	IN MLME_QUEUE_ELEM *Elem)
+{
+	
+#ifdef DOT11N_DRAFT3
+	USHORT ifIndex = (USHORT)(Elem->Priv);
+	UCHAR i;
+	/* AP sent a 2040Coexistence mgmt frame, then station perform a scan, and then send back the respone. */
+	if ((pAd->CommonCfg.BSSCoexist2040.field.InfoReq == 1)
+	    	    && OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_SCAN_2040)) {
+	    	DBGPRINT(RT_DEBUG_TRACE, ("Update2040CoexistFrameAndNotify @%s  \n", __FUNCTION__));    
+		for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
+		{
+			if (IS_ENTRY_APCLI(&pAd->MacTab.Content[i]) && (pAd->MacTab.Content[i].apidx == ifIndex))
+			{
+				Update2040CoexistFrameAndNotify(pAd, i, TRUE);
+			}
+		}			
+	}
+#endif /* DOT11N_DRAFT3 */
+}
+#endif /* APCLI_CERT_SUPPORT */
 #endif /* APCLI_SUPPORT */
 

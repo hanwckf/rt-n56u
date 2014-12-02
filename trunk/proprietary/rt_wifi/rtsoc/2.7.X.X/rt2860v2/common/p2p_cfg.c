@@ -7159,13 +7159,13 @@ VOID RTMPAPIoctlRF(
 							else
 #endif /* RT6352 */
 							{
-							RT30xxReadRFRegister(pAdapter, rfId, &regRF);
+								RT30xxReadRFRegister(pAdapter, rfId, &regRF);
 								RT30xxWriteRFRegister(pAdapter, (UCHAR)rfId,(UCHAR) rfValue);
-							/*Read it back for showing */
-							RT30xxReadRFRegister(pAdapter, rfId, &regRF);
-							sprintf(msg+strlen(msg), "R%02d[0x%02X]:%02X\n", rfId, rfId, regRF);
+								/*Read it back for showing */
+								RT30xxReadRFRegister(pAdapter, rfId, &regRF);
+								sprintf(msg+strlen(msg), "R%02d[0x%02X]:%02X\n", rfId, rfId, regRF);
+							}
 						}
-					}
 					}
 					else
 					{	/*Invalid parametes, so default printk all RF */
@@ -7223,11 +7223,11 @@ VOID RTMPAPIoctlRF(
 				else
 #endif /* RT6352 */
 				{
-					RT30xxReadRFRegister(pAdapter, rfId, &regRF);
-					sprintf(msg+strlen(msg), "R%02d[0x%02X]:%02X    ", rfId, rfId*2, regRF);
-					if (rfId%5 == 4)
-						sprintf(msg+strlen(msg), "\n");
-				}
+				RT30xxReadRFRegister(pAdapter, rfId, &regRF);
+				sprintf(msg+strlen(msg), "R%02d[0x%02X]:%02X    ", rfId, rfId*2, regRF);
+				if (rfId%5 == 4)
+					sprintf(msg+strlen(msg), "\n");
+			}
 			}
 		}
 		/* RtmpDrvAllRFPrint(NULL, msg, strlen(msg)); */

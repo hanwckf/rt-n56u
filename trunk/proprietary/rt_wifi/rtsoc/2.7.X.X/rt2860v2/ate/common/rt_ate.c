@@ -1524,14 +1524,7 @@ VOID ATEAPStop(
 			ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x32);
 			ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R195, 0x86);
 			ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x19);
-			ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R195, 0x9c);
-			ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x3d);
-			ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R195, 0x9d);
-			if (pAd->CommonCfg.BBPCurrentBW == BW_20)
-				ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x40);
-			else
-				ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x2F);
-	
+
 			ATEBBPWriteWithRxChain(pAd, BBP_R66, pAd->CommonCfg.MO_Cfg.Stored_BBP_R66, RX_CHAIN_ALL);
 		}
 #endif /* DYNAMIC_VGA_SUPPORT */
@@ -1632,11 +1625,11 @@ static NDIS_STATUS ATESTART(
 
 		if (atemode == ATE_STOP)
 		{
-			RT6352_RTMPReadTxPwrPerRate(pAd);
-			RTMP_CHIP_ASIC_EXTRA_POWER_OVER_MAC(pAd);
-			RTMP_IO_READ32(pAd, TX_ALG_CFG_1, &mac_value);
-			mac_value &= 0xFFFFFFC0;
-			RTMP_IO_WRITE32(pAd, TX_ALG_CFG_1, mac_value);
+		RT6352_RTMPReadTxPwrPerRate(pAd);
+		RTMP_CHIP_ASIC_EXTRA_POWER_OVER_MAC(pAd);
+		RTMP_IO_READ32(pAd, TX_ALG_CFG_1, &mac_value);
+		mac_value &= 0xFFFFFFC0;
+		RTMP_IO_WRITE32(pAd, TX_ALG_CFG_1, mac_value);
 		}
 	}
 #endif /* RT6352 */
@@ -1863,6 +1856,7 @@ static NDIS_STATUS ATESTART(
 #ifdef DOT11N_SS3_SUPPORT
 	pATEInfo->SNR2 = 0;
 #endif /* DOT11N_SS3_SUPPORT */
+
 	/* control */
 	pATEInfo->TxDoneCount = 0;
 	/* TxStatus : 0 --> task is idle, 1 --> task is running */
@@ -2135,8 +2129,7 @@ static NDIS_STATUS ATESTOP(
 		{
 			OS_SEM_LOCK(&(pATEInfo->TssiSemLock));
 			RT635xTssiDcCalibration(pAd);
-			OS_SEM_UNLOCK(&(pATEInfo->TssiSemLock));	
-
+			OS_SEM_UNLOCK(&(pATEInfo->TssiSemLock));
 			RT635xInitMcsPowerTable(pAd);
 			RT635xInitRfPaModeTable(pAd);
 		}
@@ -4780,7 +4773,7 @@ INT	Set_ATE_AUTO_ALC_Proc(
 			{
 #endif /* RT6352_EP_SUPPORT */
 				OS_SEM_LOCK(&(pATEInfo->TssiSemLock));
-		RT635xTssiDcCalibration(pAd);
+				RT635xTssiDcCalibration(pAd);
 				OS_SEM_UNLOCK(&(pATEInfo->TssiSemLock));	
 #ifdef RT6352_EP_SUPPORT
 			}
@@ -6443,7 +6436,7 @@ NDIS_STATUS ATEInit(
 		DBGPRINT_ERR(("%s failed !\n", __FUNCTION__));
 		return NDIS_STATUS_FAILURE;
 	}
-	
+
 	OS_NdisAllocateSpinLock(&(pATEInfo->TssiSemLock));
 
 	pATEInfo->Mode = ATE_STOP;
@@ -6963,44 +6956,44 @@ VOID ATEPeriodicExec(
 			{
 				if (pATEInfo->bLowTemperature == TRUE)
 				{
-				INT32 wait;
-				CHAR BbpR49;			
-				UINT8 BBPValue;
+					INT32 wait;
+					CHAR BbpR49;			
+					UINT8 BBPValue;
 
-				ATE_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R47, &BBPValue);
-
-				if (!(BBPValue & (1<<4)))
-				{
-					BBPValue |= (1<<4);
-					ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R47, BBPValue);		
-				}
-
-				/* polling BBP_R47 until BBP R47[4]==0 */
-				for (wait=0; wait<200; wait++)
-				{
-					RTMPusecDelay(200);
 					ATE_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R47, &BBPValue);
 
 					if (!(BBPValue & (1<<4)))
 					{
-						break;
+						BBPValue |= (1<<4);
+						ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R47, BBPValue);		
 					}
+
+					/* polling BBP_R47 until BBP R47[4]==0 */
+					for (wait=0; wait<200; wait++)
+					{
+						RTMPusecDelay(200);
+						ATE_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R47, &BBPValue);
+
+						if (!(BBPValue & (1<<4)))
+						{
+							break;
+						}
+					}
+
+					if ((BBPValue & 0x10) != 0)
+						return;
+
+					/* set BBP R47[3:0]=4 */
+					ATE_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R47, &BBPValue);
+					BBPValue &= ~(0x0F);
+					BBPValue |= (0x04);
+					ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R47, BBPValue);
+
+					/* fetch temperature reading */
+					ATE_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R49, &BbpR49);
+					pAd->CurrTemperature = (INT32)BbpR49;
+					DBGPRINT(RT_DEBUG_INFO, ("%s: Current Temperature from BBP_R49=0x%x\n", __FUNCTION__, pAd->CurrTemperature));
 				}
-
-				if ((BBPValue & 0x10) != 0)
-					return;
-
-				/* set BBP R47[3:0]=4 */
-				ATE_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R47, &BBPValue);
-				BBPValue &= ~(0x0F);
-				BBPValue |= (0x04);
-				ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R47, BBPValue);
-
-				/* fetch temperature reading */
-				ATE_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R49, &BbpR49);
-				pAd->CurrTemperature = (INT32)BbpR49;
-				DBGPRINT(RT_DEBUG_INFO, ("%s: Current Temperature from BBP_R49=0x%x\n", __FUNCTION__, pAd->CurrTemperature));
-			}
 			}
 			else
 #endif /* RTMP_TEMPERATURE_CALIBRATION */
@@ -7009,7 +7002,7 @@ VOID ATEPeriodicExec(
 				OS_SEM_LOCK(&(pATEInfo->TssiSemLock));
 				/* For MT7620, let QA come in for TSSI */
 				ATEAsicAdjustTxPower(pAd);
-				OS_SEM_UNLOCK(&(pATEInfo->TssiSemLock));	
+				OS_SEM_UNLOCK(&(pATEInfo->TssiSemLock));
 				ATEAsicExtraPowerOverMAC(pAd);
 #ifdef RT6352_EP_SUPPORT
 				if (pAd->bExtPA == FALSE)
@@ -7048,7 +7041,7 @@ VOID ATEPeriodicExec(
 				ATEAsicAdjustTxPower(pAd);
 			}
 		}
-			
+	
 		ATEAsicExtraPowerOverMAC(pAd);	
 
 		/* Normal 1 second ATE PeriodicExec.*/

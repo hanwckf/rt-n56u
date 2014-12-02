@@ -140,6 +140,9 @@ VOID ApCliAssocStateMachineInit(
 		RTMPInitTimer(pAd, &pAd->ApCfg.ApCliTab[i].ApCliMlmeAux.ApCliAssocTimer,
 							GET_TIMER_FUNCTION(ApCliAssocTimeout), pAd, FALSE);
 
+		RTMPInitTimer(pAd, &pAd->ApCfg.ApCliTab[i].ApCliMlmeAux.WpaDisassocAndBlockAssocTimer, 
+							GET_TIMER_FUNCTION(ApCliWpaDisassocApAndBlockAssoc), pAd, FALSE);
+
 #ifdef MAC_REPEATER_SUPPORT
 		for (j = 0; j < MAX_EXT_MAC_ADDR_SIZE; j++)
 		{
@@ -404,6 +407,37 @@ static VOID ApCliMlmeAssocReqAction(
 
 			FrameLen += TmpLen;
 		}
+
+#ifdef DOT11N_DRAFT3
+#ifdef APCLI_CERT_SUPPORT
+		if (pAd->bApCliCertTest == TRUE)
+		{
+			ULONG TmpLen;
+			EXT_CAP_INFO_ELEMENT extCapInfo;
+			UCHAR extInfoLen;
+
+			extInfoLen = sizeof (EXT_CAP_INFO_ELEMENT);
+			NdisZeroMemory(&extCapInfo, extInfoLen);
+
+
+			if ((pAd->CommonCfg.bBssCoexEnable == TRUE) &&
+			    (pAd->CommonCfg.PhyMode >= PHY_11ABGN_MIXED)
+			    && (pAd->CommonCfg.Channel <= 14)
+			    ) 
+			{
+				extCapInfo.BssCoexistMgmtSupport = 1;
+				DBGPRINT(RT_DEBUG_TRACE, ("%s: BssCoexistMgmtSupport = 1\n", __FUNCTION__));
+			}
+
+			MakeOutgoingFrame(pOutBuffer + FrameLen, &TmpLen,
+					  1, &ExtCapIe,
+					  1, &extInfoLen,
+								extInfoLen,			&extCapInfo,
+								END_OF_ARGS);
+			FrameLen += TmpLen;
+		}
+#endif /* APCLI_CERT_SUPPORT */
+#endif /* DOT11N_DRAFT3 */		
 #endif /* DOT11_N_SUPPORT */
 
 #ifdef AGGREGATION_SUPPORT
@@ -484,7 +518,9 @@ static VOID ApCliMlmeAssocReqAction(
             || (pApCliEntry->AuthMode >= Ndis802_11AuthModeWPA)
 #endif /* APCLI_WPA_SUPPLICANT_SUPPORT */
 #ifdef WSC_AP_SUPPORT
-			&& (pApCliEntry->WscControl.WscConfMode == WSC_DISABLE)
+                        && ((pApCliEntry->WscControl.WscConfMode == WSC_DISABLE) ||
+                        ((pApCliEntry->WscControl.WscConfMode != WSC_DISABLE) &&
+                         !(pApCliEntry->WscControl.bWscTrigger)))
 #endif /* WSC_AP_SUPPORT */
             )
 		{
@@ -592,6 +628,34 @@ static VOID ApCliMlmeAssocReqAction(
 #endif
 #endif /* APCLI_WPA_SUPPLICANT_SUPPORT */
 
+#ifdef WSC_AP_SUPPORT
+		/* Add WSC IE if we are connecting to WSC AP */
+		if ((pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscConfMode != WSC_DISABLE) &&
+		    (pAd->ApCfg.ApCliTab[ifIndex].WscControl.bWscTrigger)) 
+                {
+			UCHAR *pWscBuf = NULL, WscIeLen = 0;
+			ULONG WscTmpLen = 0;
+
+			os_alloc_mem(pAd, (UCHAR **) & pWscBuf, 512);
+/*			if( (pWscBuf = kmalloc(512, GFP_ATOMIC)) != NULL) */
+			if (pWscBuf != NULL) {
+				NdisZeroMemory(pWscBuf, 512);
+				WscBuildAssocReqIE(&pAd->ApCfg.ApCliTab[ifIndex].WscControl, pWscBuf, &WscIeLen);
+
+				MakeOutgoingFrame(pOutBuffer + FrameLen,
+						  &WscTmpLen, WscIeLen, pWscBuf,
+						  END_OF_ARGS);
+
+				FrameLen += WscTmpLen;
+/*				kfree(pWscBuf); */
+				os_free_mem(NULL, pWscBuf);
+			} else
+				DBGPRINT(RT_DEBUG_WARN,
+					 ("%s:: WscBuf Allocate failed!\n",
+					  __FUNCTION__));
+		}
+#endif /* WSC_AP_SUPPORT */
+
 		MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
 		MlmeFreeMemory(pAd, pOutBuffer);
 
@@ -646,7 +710,7 @@ static VOID ApCliMlmeDisassocReqAction(
 #endif /* MAC_REPEATER_SUPPORT */
 		)
 		return;
-
+	
 #ifdef MAC_REPEATER_SUPPORT
 	if (ifIndex >= 64)
 	{
@@ -793,8 +857,8 @@ static VOID ApCliPeerAssocRspAction(
 				if (CliIdx == 0xFF)
 #endif /* MAC_REPEATER_SUPPORT */
 				{
-				ApCliAssocPostProc(pAd, Addr2, CapabilityInfo, ifIndex, SupRate, SupRateLen,
-					ExtRate, ExtRateLen, &EdcaParm, &HtCapability, HtCapabilityLen, &AddHtInfo);  	
+					ApCliAssocPostProc(pAd, Addr2, CapabilityInfo, ifIndex, SupRate, SupRateLen,
+										ExtRate, ExtRateLen, &EdcaParm, &HtCapability, HtCapabilityLen, &AddHtInfo);  	
 				}
 
 				ApCliCtrlMsg.Status = MLME_SUCCESS;
@@ -871,16 +935,16 @@ static VOID ApCliPeerDisassocAction(
 
 #ifdef MAC_REPEATER_SUPPORT
 			ifIndex = (USHORT)(Elem->Priv);
-#endif /* MAC_REPEATER_SUPPORT */
-			MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_PEER_DISCONNECT_REQ, 0, NULL, ifIndex);
-#ifdef MAC_REPEATER_SUPPORT
+
 			if ((pAd->ApCfg.bMACRepeaterEn == TRUE) && (ifIndex >= 64))
 			{
-				RTMP_MLME_HANDLER(pAd);
 				ifIndex = ((ifIndex - 64) / 16);
+				RTMPRemoveRepeaterDisconnectEntry(pAd, ifIndex, CliIdx);
 				RTMPRemoveRepeaterEntry(pAd, ifIndex, CliIdx);
 			}
+			else
 #endif /* MAC_REPEATER_SUPPORT */
+			MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_PEER_DISCONNECT_REQ, 0, NULL, ifIndex);
         }
     }
     else

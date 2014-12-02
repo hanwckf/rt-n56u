@@ -576,4 +576,6 @@ VOID CCMP_test_vector(
 	IN PRTMP_ADAPTER pAd,
 	IN INT input);
 
+void inc_byte_array(UCHAR *counter, int len);
+
 #endif

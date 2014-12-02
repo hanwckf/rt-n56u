@@ -2287,6 +2287,32 @@ VOID	RTMPWPARemoveAllKeys(
 		
 	========================================================================
 */
+
+VOID RTMPSetDefaultChannel(
+	IN	PRTMP_ADAPTER	pAd
+	)
+{	
+	if ((pAd->CommonCfg.PhyMode != PHY_11A) 
+#ifdef DOT11_N_SUPPORT
+		&& (pAd->CommonCfg.PhyMode != PHY_11AN_MIXED) && (pAd->CommonCfg.PhyMode != PHY_11N_5G)
+#endif /* DOT11_N_SUPPORT */
+	)
+	{
+		pAd->CommonCfg.Channel = 1;
+	}
+	if ((pAd->CommonCfg.PhyMode == PHY_11A) || (pAd->CommonCfg.PhyMode == PHY_11ABG_MIXED) 
+#ifdef DOT11_N_SUPPORT
+		|| (pAd->CommonCfg.PhyMode == PHY_11ABGN_MIXED) || (pAd->CommonCfg.PhyMode == PHY_11AN_MIXED) 
+		|| (pAd->CommonCfg.PhyMode == PHY_11AGN_MIXED) || (pAd->CommonCfg.PhyMode == PHY_11N_5G)
+#endif /* DOT11_N_SUPPORT */
+	)
+	{
+		pAd->CommonCfg.Channel = 36;
+	}
+	DBGPRINT(RT_DEBUG_OFF,("%s() : default channel to %d \n",__FUNCTION__,pAd->CommonCfg.Channel));
+
+}
+
 /*
 	========================================================================
 	Routine Description:
@@ -3666,6 +3692,12 @@ VOID RTMPIoctlGetSiteSurvey(
 #endif /* CONFIG_STA_SUPPORT */
 
 	TotalLen = sizeof(CHAR)*((MAX_LEN_OF_BSS_TABLE)*max_len) + 100;
+
+	if (wrq->u.data.length == 0)
+		BufLen = IW_SCAN_MAX_DATA;	
+	else
+		BufLen = wrq->u.data.length;
+
 	os_alloc_mem(NULL, (PUCHAR *)&msg, TotalLen);
 
 	if (msg == NULL)
@@ -3942,6 +3974,79 @@ VOID RTMPIoctlGetMacTable(
 LabelOK:
 	if (pMacTab != NULL)
 		os_free_mem(NULL, pMacTab);
+}
+#define	ASSO_MAC_LINE_LEN	(1+19+4+4+4+4+8+7+7+7+10+6+6+6+6+7+7+1)
+
+VOID RTMPAPGetAssoMacTable(
+	IN PRTMP_ADAPTER pAd, 
+	IN RTMP_IOCTL_INPUT_STRUCT *wrq)
+{
+	ULONG DataRate=0;
+
+	INT i;
+	char *msg;
+
+	os_alloc_mem(NULL, (UCHAR **)&msg, sizeof(CHAR)*(MAX_LEN_OF_MAC_TABLE*ASSO_MAC_LINE_LEN));
+	if (msg == NULL)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("%s():Alloc memory failed\n", __FUNCTION__));
+		return;
+	}
+	memset(msg, 0 ,MAX_LEN_OF_MAC_TABLE*ASSO_MAC_LINE_LEN );
+
+	sprintf(msg+strlen(msg),"\n%-19s%-4s%-4s%-4s%-4s%-8s%-7s%-7s%-7s%-10s%-6s%-6s%-6s%-6s%-7s%-7s\n",
+		   "MAC", "AID", "BSS", "PSM", "WMM", "MIMOPS", "RSSI0", "RSSI1", 
+		   "RSSI2", "PhMd", "BW", "MCS", "SGI", "STBC", "Idle", "Rate");
+	
+	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
+	{
+		PMAC_TABLE_ENTRY pEntry = &pAd->MacTab.Content[i];
+
+		if ((IS_ENTRY_CLIENT(pEntry) || (IS_ENTRY_APCLI(pEntry)
+#ifdef MAC_REPEATER_SUPPORT
+			&& (pEntry->bReptCli == FALSE)
+#endif /* MAC_REPEATER_SUPPORT */
+			))
+			&& (pEntry->Sst == SST_ASSOC))
+		{
+			if((strlen(msg)+ASSO_MAC_LINE_LEN ) >= (MAX_LEN_OF_MAC_TABLE*ASSO_MAC_LINE_LEN) )
+				break;
+
+			DataRate=0;
+			getRate(pEntry->HTPhyMode, &DataRate);
+			sprintf(msg+strlen(msg),"%02X:%02X:%02X:%02X:%02X:%02X  ",
+				pEntry->Addr[0], pEntry->Addr[1], pEntry->Addr[2],
+				pEntry->Addr[3], pEntry->Addr[4], pEntry->Addr[5]);
+			sprintf(msg+strlen(msg),"%-4d", (int)pEntry->Aid);
+			sprintf(msg+strlen(msg),"%-4d", (int)pEntry->apidx);
+			sprintf(msg+strlen(msg),"%-4d", (int)pEntry->PsMode);
+			sprintf(msg+strlen(msg),"%-4d", (int)CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE));
+#ifdef DOT11_N_SUPPORT
+			sprintf(msg+strlen(msg),"%-8d", (int)pEntry->MmpsMode);
+#endif /* DOT11_N_SUPPORT */
+			sprintf(msg+strlen(msg),"%-7d", pEntry->RssiSample.AvgRssi0);
+			sprintf(msg+strlen(msg),"%-7d", pEntry->RssiSample.AvgRssi1);
+			sprintf(msg+strlen(msg),"%-7d", pEntry->RssiSample.AvgRssi2);
+			sprintf(msg+strlen(msg),"%-10s", GetPhyMode(pEntry->HTPhyMode.field.MODE));
+			sprintf(msg+strlen(msg),"%-6s", GetBW(pEntry->HTPhyMode.field.BW));
+			sprintf(msg+strlen(msg),"%-6d", pEntry->HTPhyMode.field.MCS);
+			sprintf(msg+strlen(msg),"%-6d", pEntry->HTPhyMode.field.ShortGI);
+			sprintf(msg+strlen(msg),"%-6d", pEntry->HTPhyMode.field.STBC);
+			sprintf(msg+strlen(msg),"%-7d", (int)(pEntry->StaIdleTimeout - pEntry->NoDataIdleCount));
+			sprintf(msg+strlen(msg),"%-7d", (int)DataRate);
+			sprintf(msg+strlen(msg),"%-10d, %d, %d%%\n", pEntry->DebugFIFOCount, pEntry->DebugTxCount, 
+						(pEntry->DebugTxCount) ? ((pEntry->DebugTxCount-pEntry->DebugFIFOCount)*100/pEntry->DebugTxCount) : 0);
+			sprintf(msg+strlen(msg),"\n");
+		}
+	} 
+	/* for compatible with old API just do the printk to console*/
+	wrq->u.data.length = strlen(msg);
+	if (copy_to_user(wrq->u.data.pointer, msg, wrq->u.data.length))
+	{
+		DBGPRINT(RT_DEBUG_OFF, ("%s", msg));
+	}
+
+	os_free_mem(NULL, msg);
 }
 
 #ifdef INF_AR9
@@ -6519,7 +6624,7 @@ INT	Show_ModuleTxpower_Proc(
  		return FALSE;
  
  	ifIndex = pObj->ioctl_if;
-
+ 	
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
 		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
@@ -6535,7 +6640,12 @@ INT	Show_ModuleTxpower_Proc(
  
  			if ( IS_ENTRY_APCLI(pEntry)
 				&& (pEntry->Sst == SST_ASSOC)
-				&& (pEntry->PortSecured == WPA_802_1X_PORT_SECURED))
+				&& (pEntry->PortSecured == WPA_802_1X_PORT_SECURED)
+#ifdef MAC_REPEATER_SUPPORT
+				&& (pEntry->bReptCli == FALSE)
+				&& (pEntry->bReptEthCli == FALSE)
+#endif /* MAC_REPEATER_SUPPORT */
+				)
  				{
  					DBGPRINT(RT_DEBUG_OFF, ("ApCli%d Connected AP : %02X:%02X:%02X:%02X:%02X:%02X   SSID:%s\n",ifIndex,
  						pEntry->Addr[0], pEntry->Addr[1], pEntry->Addr[2],

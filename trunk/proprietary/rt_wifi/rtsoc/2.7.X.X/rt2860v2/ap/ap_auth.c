@@ -204,13 +204,6 @@ static VOID APPeerDeauthReqAction(
             pAd->ApCfg.aMICFailTime = pAd->ApCfg.PrevaMICFailTime;
         }
 
-		MacTableDeleteEntry(pAd, Elem->Wcid, Addr2);
-
-        DBGPRINT(RT_DEBUG_TRACE,
-				("AUTH - receive DE-AUTH(seq-%d) from "
-				 "%02x:%02x:%02x:%02x:%02x:%02x, reason=%d\n", SeqNum,
-				Addr2[0], Addr2[1], Addr2[2], Addr2[3], Addr2[4], Addr2[5], Reason));
-
 #ifdef MAC_REPEATER_SUPPORT
 		if (pAd->ApCfg.bMACRepeaterEn == TRUE)
 		{
@@ -222,13 +215,19 @@ static VOID APPeerDeauthReqAction(
 			{
 				apCliIdx = pReptEntry->MatchApCliIdx;
 				CliIdx = pReptEntry->MatchLinkIdx;
-				MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL,
-								(64 + MAX_EXT_MAC_ADDR_SIZE*apCliIdx + CliIdx));
-				RTMP_MLME_HANDLER(pAd);
+
+				RTMPRemoveRepeaterDisconnectEntry(pAd, apCliIdx, CliIdx);
 				RTMPRemoveRepeaterEntry(pAd, apCliIdx, CliIdx);
 			}
 		}
 #endif /* MAC_REPEATER_SUPPORT */
+
+		MacTableDeleteEntry(pAd, Elem->Wcid, Addr2);
+
+        DBGPRINT(RT_DEBUG_TRACE,
+				("AUTH - receive DE-AUTH(seq-%d) from "
+				 "%02x:%02x:%02x:%02x:%02x:%02x, reason=%d\n", SeqNum,
+				Addr2[0], Addr2[1], Addr2[2], Addr2[3], Addr2[4], Addr2[5], Reason));
     }
 }
 
@@ -251,7 +250,9 @@ static VOID APPeerAuthReqAtIdleAction(
 	ULONG FrameLen = 0;
 	MAC_TABLE_ENTRY *pEntry;
 	UCHAR ChTxtIe = 16, ChTxtLen = CIPHER_TEXT_LEN;
-
+#ifdef BAND_STEERING
+	BOOLEAN bAuthCheck = TRUE;
+#endif /* BAND_STEERING */
 
 
 	if (! APPeerAuthSanity(pAd, Elem->Msg, Elem->MsgLen, Addr1,
@@ -349,6 +350,20 @@ static VOID APPeerAuthReqAtIdleAction(
 				"Status code = %d\n", MLME_UNSPECIFY_FAIL));
 		return;
     }
+
+
+#ifdef BAND_STEERING
+	BND_STRG_CHECK_CONNECTION_REQ(	pAd,
+										NULL, 
+										Addr2,
+										Elem->MsgType,
+										Elem->Rssi0,
+										Elem->Rssi1,
+										Elem->Rssi2,
+										&bAuthCheck);
+	if (bAuthCheck == FALSE)
+		return;
+#endif /* BAND_STEERING */
 
 	if ((Alg == AUTH_MODE_OPEN) && 
 		(pAd->ApCfg.MBSSID[apidx].AuthMode != Ndis802_11AuthModeShared)) 
@@ -558,7 +573,7 @@ static VOID APPeerAuthConfirmAction(
  */
 VOID APCls2errAction(
     IN PRTMP_ADAPTER pAd, 
-	IN 	ULONG Wcid, 
+	IN 	ULONG Wcid,
     IN	PHEADER_802_11	pHeader) 
 {
     HEADER_802_11 Hdr;
@@ -567,6 +582,7 @@ VOID APCls2errAction(
     ULONG         FrameLen = 0;
     USHORT        Reason = REASON_CLS2ERR;
     MAC_TABLE_ENTRY *pEntry = NULL;
+	UCHAR idx;
 
 
 	if (Wcid < MAX_LEN_OF_MAC_TABLE)
@@ -581,12 +597,15 @@ VOID APCls2errAction(
 	}
 	else
 	{
-		UCHAR bssid[MAC_ADDR_LEN];
+		for (idx = 0; idx < pAd->ApCfg.BssidNum; idx++)
+		{
+			PMULTISSID_STRUCT	pMbss = &pAd->ApCfg.MBSSID[idx];
 
-		NdisMoveMemory(bssid, pHeader->Addr1, MAC_ADDR_LEN);
-		bssid[5] &= pAd->ApCfg.MacMask;
+			if (NdisEqualMemory(pMbss->Bssid, pHeader->Addr1, MAC_ADDR_LEN))
+				break;
+		}
 
-		if (NdisEqualMemory(pAd->CurrentAddress, bssid, MAC_ADDR_LEN) == 0)
+		if (idx == pAd->ApCfg.BssidNum)
 			return;
 	}
 
@@ -597,7 +616,7 @@ VOID APCls2errAction(
 
 	DBGPRINT(RT_DEBUG_TRACE,
 			("AUTH - Class 2 error, Send DEAUTH frame to "
-			"%02x:%02x:%02x:%02x:%02x:%02x\n",
+			"%02x:%02x:%02x:%02x:%02x:%02x \n",
 			PRINT_MAC(pHeader->Addr2)));
 
 	MgtMacHeaderInit(pAd, &Hdr, SUBTYPE_DEAUTH, 0, pHeader->Addr2, 

@@ -927,7 +927,6 @@ VOID CFG80211_RegRuleApply(
 	if (CFG80211OS_BandInfoGet(CFG80211CB, pWiphy, &pBand24G, &pBand5G) == FALSE)
 		return;
 
-#ifdef AUTO_CH_SELECT_ENHANCE
 #ifdef EXT_BUILD_CHANNEL_LIST
 	if ((pAlpha2[0] != '0') && (pAlpha2[1] != '0'))
 	{
@@ -958,7 +957,6 @@ VOID CFG80211_RegRuleApply(
 		} /* End of if */
 	} /* End of if */
 #endif /* EXT_BUILD_CHANNEL_LIST */
-#endif /* AUTO_CH_SELECT_ENHANCE */
 
 	for(IdBand=0; IdBand<2; IdBand++)
 	{

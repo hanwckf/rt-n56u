@@ -644,18 +644,17 @@ VOID LOFT_IQ_Calibration(RTMP_ADAPTER *pAd)
 	UCHAR LOFT_DC_Search_Result[CHAIN_NUM][RF_ALC_NUM][2]; /* 0: I_PATH; 1: Q_PATH */
 	UCHAR gain_error_result[CHAIN_NUM], phase_error_result[CHAIN_NUM];
 	UCHAR RF_gain[] = {0x0, 0x1, 0x2, 0x4,0x8,0xc};
-	UCHAR RFVGA_gain_table[]=
-	  { 0x24, 0x25, 0x26, 0x27,   //[0:2:6]
-            0x28, 0x2c, 0x2d, 0x2e,   //[8:2:14]
-	    0x2f, 0x30, 0x31, 0x38,   //[16:2:22]
-	    0x39, 0x3a, 0x3b, 0x3c,   //[24:2:30]
-	    0x3d, 0x3e, 0x3f       }; //[32:2:36]
+	UCHAR RFVGA_gain_table[]={0x24, 0x25, 0x26, 0x27,   //[0:2:6]
+								0x28, 0x2c, 0x2d, 0x2e,   //[8:2:14]
+	    						0x2f, 0x30, 0x31, 0x38,   //[16:2:22]
+	    						0x39, 0x3a, 0x3b, 0x3c,   //[24:2:30]
+	    						0x3d, 0x3e, 0x3f}; //[32:2:36]
 	
 //    UCHAR VGA_gain[]     = {0x3b, 0x3b, 0x3b, 0x3b, 0x3b, 0x3bi;
-	CHAR VGA_gain[]     = {14, 14};   
+	CHAR VGA_gain[] = {14, 14};   
 	UCHAR BBP_2324gain[] = {0x16, 0x14, 0x12, 0x10, 0xc, 0x8};
 	UCHAR BBPValue = 0, chain_idx = 0, rf_alc_idx = 0, idx = 0;
-	UCHAR BBPR30Value = 0, RFB0_R39, RFB0_R42;
+	UCHAR BBPR30Value = 0, RFB0_R39 = 0, RFB0_R42 = 0;
 #ifdef RT6352_EP_SUPPORT
 	UCHAR BBP_R1_Value;
 	UCHAR BBP_R4_Value;
@@ -786,14 +785,14 @@ VOID LOFT_IQ_Calibration(RTMP_ADAPTER *pAd)
 			MacValue &= (~0x0000f1f1);
 			MacValue |= (RF_gain[rf_alc_idx] << 4);
 			MacValue |= (RF_gain[rf_alc_idx] << 12);
-			RTMP_IO_WRITE32(pAd, RF_CONTROL3, MacValue);
+			RTMP_IO_WRITE32(pAd, RF_CONTROL3, MacValue);			
 			MacValue = (0x0000f1f1);
 			RTMP_IO_WRITE32(pAd, RF_BYPASS3, MacValue);
-
+			
 			/* step 12: manually set RF VGA gain */
- 			if(rf_alc_idx == 0) {				
+ 			if(rf_alc_idx == 0) {
 				Write_DC(pAd, chain_idx, 0, 1, 0x21);
-				for(;VGA_gain[chain_idx] > 0;VGA_gain[chain_idx] = VGA_gain[chain_idx] -2){ 
+				for(;VGA_gain[chain_idx] > 0;VGA_gain[chain_idx] = VGA_gain[chain_idx] - 2){ 
 					RFValue = RFVGA_gain_table[VGA_gain[chain_idx]];
 					RT635xWriteRFRegister(pAd, RF_BANK5, RF_R03, RFValue);
 					RT635xWriteRFRegister(pAd, RF_BANK5, RF_R04, RFValue);
@@ -988,7 +987,7 @@ VOID LOFT_IQ_Calibration(RTMP_ADAPTER *pAd)
 #endif /* RT6352_EP_SUPPORT */
 
 	RTMP_IO_WRITE32(pAd, RF_CONTROL0, 0x00000004);
-	RTMP_IO_WRITE32(pAd, RF_BYPASS0, 0x00003306);
+	RTMP_IO_WRITE32(pAd, RF_BYPASS0 , 0x00003306);
 	RTMPusecDelay(1);
 	
 	RTMP_IO_WRITE32(pAd, TX_PIN_CFG	, 0x0000000f);
@@ -1069,7 +1068,7 @@ VOID LOFT_IQ_Calibration(RTMP_ADAPTER *pAd)
 		BBPValue = (chain_idx == 0) ? 0x28 : 0x46;
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R158, BBPValue);
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R159, 0x0);
-
+		
 #ifdef RT6352_EP_SUPPORT
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R23, 0x6);
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R24, 0x6);
@@ -1118,7 +1117,7 @@ VOID LOFT_IQ_Calibration(RTMP_ADAPTER *pAd)
 			if((pwr0 >2500*2500) || (pwr1 > 2500*2500)){				
 				break;
 			}
-		}	
+		}
 
 		if (VGA_gain[chain_idx] > 18)
 			VGA_gain[chain_idx] = 18;

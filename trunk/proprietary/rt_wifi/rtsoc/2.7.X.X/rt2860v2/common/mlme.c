@@ -801,6 +801,7 @@ VOID MlmeHalt(
 			RTMPCancelTimer(&pAd->ApCfg.ApCliTab[i].ApCliMlmeAux.ProbeTimer, &Cancelled);
 			RTMPCancelTimer(&pAd->ApCfg.ApCliTab[i].ApCliMlmeAux.ApCliAssocTimer, &Cancelled);
 			RTMPCancelTimer(&pAd->ApCfg.ApCliTab[i].ApCliMlmeAux.ApCliAuthTimer, &Cancelled);
+			RTMPCancelTimer(&pAd->ApCfg.ApCliTab[i].ApCliMlmeAux.WpaDisassocAndBlockAssocTimer, &Cancelled);
 
 #ifdef WSC_AP_SUPPORT
 			if (pAd->ApCfg.ApCliTab[i].WscControl.WscProfileRetryTimerRunning)
@@ -1129,8 +1130,20 @@ VOID MlmePeriodicExec(
 		pAd->Mlme.OneSecPeriodicRound ++;
 
 #ifdef CONFIG_AP_SUPPORT
+#ifdef APCLI_SUPPORT
+#ifdef APCLI_CERT_SUPPORT
+		if (pAd->bApCliCertTest == FALSE )
+		{
+#endif /* APCLI_CERT_SUPPORT */		
+#endif /* APCLI_SUPPORT */
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 			dynamic_tune_be_tx_op(pAd, 50);	/* change form 100 to 50 for WMM WiFi test @20070504*/
+#ifdef APCLI_SUPPORT
+#ifdef APCLI_CERT_SUPPORT
+		}
+#endif /* APCLI_CERT_SUPPORT */		
+#endif /* APCLI_SUPPORT */
+
 #endif /* CONFIG_AP_SUPPORT */
 
 
@@ -3900,7 +3913,7 @@ ULONG BssTableSetEntry(
 	return Idx;
 }
 
-#ifdef CONFIG_STA_SUPPORT
+#if defined(CONFIG_STA_SUPPORT) || defined(APCLI_SUPPORT)
 #ifdef DOT11_N_SUPPORT
 #ifdef DOT11N_DRAFT3
 VOID  TriEventInit(
@@ -3976,7 +3989,9 @@ INT TriEventTableSetEntry(
 }
 #endif /* DOT11N_DRAFT3 */
 #endif /* DOT11_N_SUPPORT */
+#endif /* defined(CONFIG_STA_SUPPORT) || defined(APCLI_SUPPORT) */
 
+#ifdef CONFIG_STA_SUPPORT
 /* IRQL = DISPATCH_LEVEL*/
 VOID BssTableSsidSort(
 	IN	PRTMP_ADAPTER	pAd, 
@@ -5206,14 +5221,14 @@ BOOLEAN MlmeEnqueueForRecv(
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
 	{
-	for (CliIdx = 0; CliIdx < MAX_EXT_MAC_ADDR_SIZE; CliIdx++)
-	{
-		if (MAC_ADDR_EQUAL(pAd->ApCfg.ApCliTab[ApCliIdx].RepeaterCli[CliIdx].CurrentAddress, pFrame->Hdr.Addr1))
+		for (CliIdx = 0; CliIdx < MAX_EXT_MAC_ADDR_SIZE; CliIdx++)
 		{
-			Queue->Entry[Tail].Priv = (64 + (MAX_EXT_MAC_ADDR_SIZE * ApCliIdx) + CliIdx);
-			break;
+			if (MAC_ADDR_EQUAL(pAd->ApCfg.ApCliTab[ApCliIdx].RepeaterCli[CliIdx].CurrentAddress, pFrame->Hdr.Addr1))
+			{
+				Queue->Entry[Tail].Priv = (64 + (MAX_EXT_MAC_ADDR_SIZE * ApCliIdx) + CliIdx);
+				break;
+			}
 		}
-	}
 	}
 #endif /* MAC_REPEATER_SUPPORT */
 

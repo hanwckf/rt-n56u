@@ -343,7 +343,7 @@ VOID MlmeSelectTxRateTable(
 #ifdef MCS_LUT_SUPPORT
 #define IS_HW_TXRATE_LOOKUP_SUPPORT(__pAd)		(__pAd->chipCap.bFlgHwTxLuCap)
 
-VOID MlmeSetHwTxRateTable(
+VOID asic_mcs_lut_update(
 	IN struct _RTMP_ADAPTER *pAd,
 	IN struct _MAC_TABLE_ENTRY *pEntry);
 #endif /* MCS_LUT_SUPPORT */

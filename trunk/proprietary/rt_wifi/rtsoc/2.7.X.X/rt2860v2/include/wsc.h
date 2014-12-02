@@ -43,6 +43,16 @@
 #define EAP_TYPE_NOTIFY		0x02
 #define	EAP_TYPE_WSC		0xfe
 
+#ifdef CON_WPS
+typedef struct GNU_PACKED _WSC_UPNP_CTRL_WSC_BAND_STOP
+{
+	char    ifName[IFNAMSIZ];
+	CHAR    is2gBand;
+	CHAR    isApCli;
+	INT 	status;
+} WSC_UPNP_CTRL_WSC_BAND_STOP, *PWSC_UPNP_CTRL_WSC_BAND_STOP;
+#endif /* CON_WPS */
+
 /* structure to store Simple Config Attributes Info */
 typedef struct GNU_PACKED _WSC_LV_INFO {
     USHORT  ValueLen;
@@ -220,6 +230,8 @@ static inline BOOLEAN WscCheckWSCHeader(
 #define WSC_UPNP_DATA_SUB_WSC_ACK		0x0D
 #define WSC_UPNP_DATA_SUB_WSC_NACK		0x0E
 #define WSC_UPNP_DATA_SUB_WSC_DONE		0x0F
+#define WSC_UPNP_DATA_SUB_PBC_OVERLAP		0x10
+#define WSC_UPNP_DATA_SUB_WSC_TIMEOUT		0x20
 #define WSC_UPNP_DATA_SUB_WSC_UNKNOWN	0xff
 
 
@@ -673,6 +685,10 @@ typedef	struct	_WSC_CTRL
 	UCHAR			WscEnrolleePinCodeLen; /* recored Device own PIN code length */
 	INT             WscSelReg;     /* record the UI's PIN code input when we are registrar */
 	NDIS_802_11_SSID	    WscSsid;		        /* select a desired ssid to connect for PIN mode */
+#ifdef WSC_PBC_SSID_SELECT_SUPPORT
+	NDIS_802_11_SSID	    WscPBCSsid;		        /* select a desired ssid to connect for PBC mode */
+	BOOLEAN bPBCSsidMatch; /* keep status after WscPBCBssTableSort() check*/
+#endif /* WSC_PBC_SSID_SELECT_SUPPORT */
 	UCHAR					WscPBCBssCount;			/* Count of PBC activated APs. */
 	UCHAR				    WscBssid[MAC_ADDR_LEN];	/* select a desired bssid to connect */
 #ifdef CONFIG_STA_SUPPORT
@@ -690,10 +706,8 @@ typedef	struct	_WSC_CTRL
 	BOOLEAN         Wsc2MinsTimerRunning;
 	RALINK_TIMER_STRUCT   Wsc2MinsTimer;
 	WSC_PROFILE			WscProfile;		/* Saved WSC profile after M8 */
-#ifdef CONFIG_STA_SUPPORT
 	WSC_PROFILE		        WscM7Profile;	/* Saved WSC profile from AP Settings in M7 */
 	BOOLEAN			        bConfiguredAP;	/* True: AP is in the configured state. FALSE: others */
-#endif /* CONFIG_STA_SUPPORT */
 	WSC_UPNP_NODE_INFO	WscUPnPNodeInfo;	/*Use to save UPnP node related info. */
 
     BOOLEAN             EapolTimerRunning; 
@@ -782,11 +796,13 @@ typedef	struct	_WSC_CTRL
 
 typedef struct GNU_PACKED _WSC_CONFIGURED_VALUE {
 	USHORT WscConfigured; /* 1 un-configured; 2 configured */
-	UCHAR	WscSsid[32 + 1];
+	UCHAR	WscSsid[32];
+	UCHAR	WscSsidLen;
 	USHORT WscAuthMode;	/* mandatory, 0x01: open, 0x02: wpa-psk, 0x04: shared, 0x08:wpa, 0x10: wpa2, 0x20: wpa2-psk */
 	USHORT	WscEncrypType;	/* 0x01: none, 0x02: wep, 0x04: tkip, 0x08: aes */
 	UCHAR	DefaultKeyIdx;
-	UCHAR	WscWPAKey[64 + 1];
+	UCHAR	WscWPAKey[64];
+	UCHAR	WscWPAKeyLen;
 } WSC_CONFIGURED_VALUE;
 
 /* 

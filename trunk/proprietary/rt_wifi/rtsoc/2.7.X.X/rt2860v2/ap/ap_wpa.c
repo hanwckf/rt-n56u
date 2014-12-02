@@ -698,7 +698,7 @@ VOID WPARetryExec(
                     if (pEntry->GTKState == REKEY_NEGOTIATING)
                     {
                         WPAStart2WayGroupHS(pAd, pEntry);
-			RTMPSetTimer(&pEntry->RetryTimer, PEER_MSG3_RETRY_EXEC_INTV);
+						RTMPSetTimer(&pEntry->RetryTimer, PEER_MSG3_RETRY_EXEC_INTV);
                     }
                 }
 				/* 3. 4-way message 1 retried more than three times. Disconnect client */
@@ -744,17 +744,17 @@ VOID WPARetryExec(
 								
 				DBGPRINT(RT_DEBUG_TRACE, ("(%s) ApCli interface[%d] startdown.\n", __FUNCTION__, ifIndex));
 #ifdef MAC_REPEATER_SUPPORT
-				if ( (pAd->ApCfg.bMACRepeaterEn == TRUE) && (pEntry->bReptCli))
+				if ((pAd->ApCfg.bMACRepeaterEn == TRUE) && (pEntry->bReptCli))
 					ifIndex = (64 + ifIndex*MAX_EXT_MAC_ADDR_SIZE + pEntry->MatchReptCliIdx);
-#endif /* MAC_REPEATER_SUPPORT */
-				MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL, ifIndex);
-#ifdef MAC_REPEATER_SUPPORT
+
 				if ( (pAd->ApCfg.bMACRepeaterEn == TRUE) && (pEntry->bReptCli))
 				{
-					RTMP_MLME_HANDLER(pAd);
+					RTMPRemoveRepeaterDisconnectEntry(pAd, pEntry->MatchAPCLITabIdx, pEntry->MatchReptCliIdx);
 					RTMPRemoveRepeaterEntry(pAd, pEntry->MatchAPCLITabIdx, pEntry->MatchReptCliIdx);
 				}
+				else
 #endif /* MAC_REPEATER_SUPPORT */
+				MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL, ifIndex);
 			}
 		}
 	}
@@ -839,7 +839,11 @@ VOID GREKEYPeriodicExec(
 						(pEntry->apidx == apidx))
                 {
 					pEntry->GTKState = REKEY_NEGOTIATING;
-						
+#ifdef DROP_MASK_SUPPORT
+					/* Disable Drop Mask */
+					set_drop_mask_per_client(pAd, pEntry, 1, 0);
+					set_drop_mask_per_client(pAd, pEntry, 2, 0);
+#endif /* DROP_MASK_SUPPORT */						
                 	WPAStart2WayGroupHS(pAd, pEntry);
                     DBGPRINT(RT_DEBUG_TRACE, ("Rekey interval excess, Update Group Key for  %x %x %x  %x %x %x , DefaultKeyId= %x \n",\
 												pEntry->Addr[0],pEntry->Addr[1],\
@@ -875,7 +879,6 @@ VOID GREKEYPeriodicExec(
 	}       
     
 }
-
 
 #ifdef DOT1X_SUPPORT
 /*
@@ -1629,4 +1632,91 @@ INT	    ApcliWpaCheckEapCode(
 	return result;
 }
 #endif /* APCLI_WPA_SUPPLICANT_SUPPORT */ 
+
+VOID	ApCliRTMPReportMicError(
+	IN	PRTMP_ADAPTER	pAd, 
+	IN	PCIPHER_KEY 	pWpaKey,
+	IN	INT			ifIndex)
+{
+	ULONG	Now;
+	UCHAR   unicastKey = (pWpaKey->Type == PAIRWISE_KEY ? 1:0);
+	PAPCLI_STRUCT pApCliEntry = NULL;
+	DBGPRINT(RT_DEBUG_TRACE, (" ApCliRTMPReportMicError <---\n"));
+
+	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
+	/* Record Last MIC error time and count */
+	NdisGetSystemUpTime(&Now);
+	if (pAd->ApCfg.ApCliTab[ifIndex].MicErrCnt == 0)
+	{
+		pAd->ApCfg.ApCliTab[ifIndex].MicErrCnt++;
+		pAd->ApCfg.ApCliTab[ifIndex].LastMicErrorTime = Now;
+		NdisZeroMemory(pAd->ApCfg.ApCliTab[ifIndex].ReplayCounter, 8);        
+	}
+	else if (pAd->ApCfg.ApCliTab[ifIndex].MicErrCnt == 1)
+	{
+		if ((pAd->ApCfg.ApCliTab[ifIndex].LastMicErrorTime + (60 * OS_HZ)) < Now)
+		{
+			/* Update Last MIC error time, this did not violate two MIC errors within 60 seconds */
+			pAd->ApCfg.ApCliTab[ifIndex].LastMicErrorTime = Now; 		
+		}
+		else
+		{
+
+			/* RTMPSendWirelessEvent(pAd, IW_COUNTER_MEASURES_EVENT_FLAG, pAd->MacTab.Content[BSSID_WCID].Addr, BSS0, 0); */
+
+			pAd->ApCfg.ApCliTab[ifIndex].LastMicErrorTime = Now; 		
+			/* Violate MIC error counts, MIC countermeasures kicks in */
+			pAd->ApCfg.ApCliTab[ifIndex].MicErrCnt++;
+			/*
+			 We shall block all reception
+			 We shall clean all Tx ring and disassoicate from AP after next EAPOL frame
+			 
+			 No necessary to clean all Tx ring, on RTMPHardTransmit will stop sending non-802.1X EAPOL packets
+			 if pAd->StaCfg.MicErrCnt greater than 2.
+			*/
+		}
+	}
+	else
+	{
+		/* MIC error count >= 2 */
+		/* This should not happen */
+		;
+	}
+	MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_MIC_FAILURE_REPORT_FRAME, 1, &unicastKey, ifIndex);
+
+	if (pAd->ApCfg.ApCliTab[ifIndex].MicErrCnt == 2)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, (" MIC Error count = 2 Trigger Block timer....\n"));
+		DBGPRINT(RT_DEBUG_TRACE, (" pAd->ApCfg.ApCliTab[%d].LastMicErrorTime = %ld\n",ifIndex,
+			pAd->ApCfg.ApCliTab[ifIndex].LastMicErrorTime));
+		
+		RTMPSetTimer(&pApCliEntry->ApCliMlmeAux.WpaDisassocAndBlockAssocTimer, 100);
+	}
+	DBGPRINT(RT_DEBUG_TRACE, ("ApCliRTMPReportMicError --->\n"));
+
+}
+VOID ApCliWpaDisassocApAndBlockAssoc(
+    IN PVOID SystemSpecific1, 
+    IN PVOID FunctionContext, 
+    IN PVOID SystemSpecific2, 
+    IN PVOID SystemSpecific3) 
+{
+
+	RTMP_ADAPTER                *pAd = (PRTMP_ADAPTER)FunctionContext;
+	MLME_DISASSOC_REQ_STRUCT    DisassocReq;
+	
+	PAPCLI_STRUCT pApCliEntry;
+
+	pAd->ApCfg.ApCliTab[0].bBlockAssoc = TRUE;
+	DBGPRINT(RT_DEBUG_TRACE, ("(%s) disassociate with current AP after sending second continuous EAPOL frame.\n", __FUNCTION__));
+
+
+	pApCliEntry = &pAd->ApCfg.ApCliTab[0];
+
+	DisassocParmFill(pAd, &DisassocReq, pApCliEntry->ApCliMlmeAux.Bssid, REASON_MIC_FAILURE);
+	MlmeEnqueue(pAd, APCLI_ASSOC_STATE_MACHINE, APCLI_MT2_MLME_DISASSOC_REQ,
+		sizeof(MLME_DISASSOC_REQ_STRUCT), &DisassocReq, 0);
+
+	pApCliEntry->MicErrCnt = 0;
+}
 #endif/*APCLI_SUPPORT*/

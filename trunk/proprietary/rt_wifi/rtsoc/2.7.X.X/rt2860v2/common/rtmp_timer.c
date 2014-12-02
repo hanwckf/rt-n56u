@@ -59,6 +59,7 @@ BUILD_TIMER_FUNCTION(Bss2040CoexistTimeOut);
 #endif /* DOT11N_DRAFT3 */
 
 BUILD_TIMER_FUNCTION(GREKEYPeriodicExec);
+BUILD_TIMER_FUNCTION(Start2WayGroupHSExec);
 BUILD_TIMER_FUNCTION(CMTimerExec);
 BUILD_TIMER_FUNCTION(WPARetryExec);
 #ifdef AP_SCAN_SUPPORT
@@ -68,6 +69,10 @@ BUILD_TIMER_FUNCTION(APQuickResponeForRateUpExec);
 #ifdef IDS_SUPPORT
 BUILD_TIMER_FUNCTION(RTMPIdsPeriodicExec);
 #endif /* IDS_SUPPORT */
+
+#ifdef DROP_MASK_SUPPORT
+BUILD_TIMER_FUNCTION(tx_drop_mask_timer_action);
+#endif /* DROP_MASK_SUPPORT */
 
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -128,6 +133,10 @@ BUILD_TIMER_FUNCTION(IWSC_DevQueryAction);
 
 #endif /* WSC_INCLUDED */
 
+#if defined(BAND_STEERING) && !defined(BNDSTRG_DAEMON)
+BUILD_TIMER_FUNCTION(BndStrg_PeriodicExec);
+#endif /* BAND_STEERING && !BNDSTRG_DAEMON */
+
 
 
 #ifdef TXBF_SUPPORT
@@ -146,6 +155,14 @@ BUILD_TIMER_FUNCTION(P2pCliReConnectTimeOut);
 #ifdef RALINK_ATE
 BUILD_TIMER_FUNCTION(ATEPeriodicExec);
 #endif /* RALINK_ATE */
+
+#ifdef APCLI_SUPPORT
+BUILD_TIMER_FUNCTION(ApCliWpaDisassocApAndBlockAssoc);
+#endif /* APCLI_SUPPORT */
+
+#ifdef PEER_DELBA_TX_ADAPT
+BUILD_TIMER_FUNCTION(Peer_DelBA_Tx_AdaptTimeOut);
+#endif /* PEER_DELBA_TX_ADAPT */
 
 #ifdef RTMP_TIMER_TASK_SUPPORT
 static void RtmpTimerQHandle(RTMP_ADAPTER *pAd)

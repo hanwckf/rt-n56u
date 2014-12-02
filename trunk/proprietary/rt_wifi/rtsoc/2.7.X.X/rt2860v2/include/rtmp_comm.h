@@ -40,15 +40,6 @@
 #endif	/* WSC_LED_SUPPORT */
 #endif /* VENDOR_FEATURE3_SUPPORT */
     
-    
-#ifdef CONFIG_AP_SUPPORT
-    
-#ifndef VENDOR_FEATURE3_SUPPORT
-#define AP_QLOAD_SUPPORT
-#endif /* VENDOR_FEATURE3_SUPPORT */
-    
-#endif	/* CONFIG_AP_SUPPORT */
-    
 
 /* ======================== Before include files ============================ */ 
 /* 14 channels @2.4G +  12@UNII(lower/middle) + 16@HiperLAN2 + 11@UNII(upper) + 0 @Japan + 1 as NULL termination */

@@ -653,7 +653,7 @@ INT Set_ATE_TSSI_CALIBRATION_EX_Proc(
 #ifdef RT5350
 INT RT5350_ATETssiCalibrationExtend(
 	IN struct _RTMP_ADAPTER		*pAd,
-	IN PSTRING			arg);
+	IN PSTRING					arg);
 #endif /* RT5350 */
 
 #if defined(RT3350) || defined(RT3352)

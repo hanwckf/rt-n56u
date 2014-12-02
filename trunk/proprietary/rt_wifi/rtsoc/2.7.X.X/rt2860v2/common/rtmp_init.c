@@ -1560,7 +1560,7 @@ NDIS_STATUS NICInitBBP(
 	INT Index = 0;
 	UCHAR R0 = 0xff;
 #ifdef MICROWAVE_OVEN_SUPPORT
-	UINT8 BBPValue;
+	UINT8 BBPValue = 0;
 #endif /* MICROWAVE_OVEN_SUPPORT */
 	
 	/* Read BBP register, make sure BBP is up and running before write new data*/
@@ -1623,7 +1623,7 @@ NDIS_STATUS NICInitBBP(
 	/* Backup BBP_R65  */
 	RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R65, &BBPValue);
 	pAd->CommonCfg.MO_Cfg.Stored_BBP_R65 = BBPValue;
-	DBGPRINT(RT_DEBUG_TRACE("Stored_BBP_R65=%x @%s \n", pAd->CommonCfg.MO_Cfg.Stored_BBP_R65, __FUNCTION__));
+	DBGPRINT(RT_DEBUG_TRACE, ("Stored_BBP_R65=%x @%s \n", pAd->CommonCfg.MO_Cfg.Stored_BBP_R65, __FUNCTION__));
 #endif /* MICROWAVE_OVEN_SUPPORT */
 
 	return NDIS_STATUS_SUCCESS;
@@ -2316,17 +2316,17 @@ VOID NICUpdateFifoStaCounters(
 #endif /* RALINK_ATE */
 
 #ifdef MAC_REPEATER_SUPPORT
-		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
+	MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
 #endif /* MAC_REPEATER_SUPPORT */
 
-		do
-		{
-			RTMP_IO_READ32(pAd, TX_STA_FIFO, &StaFifo.word);
+	do
+	{
+		RTMP_IO_READ32(pAd, TX_STA_FIFO, &StaFifo.word);
 
-			if (StaFifo.field.bValid == 0)
-				break;
+		if (StaFifo.field.bValid == 0)
+			break;
 		
-			wcid = (UCHAR)StaFifo.field.wcid;
+		wcid = (UCHAR)StaFifo.field.wcid;
 
 #ifdef DBG_CTRL_SUPPORT
 #ifdef INCLUDE_DEBUG_QUEUE
@@ -2337,143 +2337,143 @@ VOID NICUpdateFifoStaCounters(
 #endif /* DBG_CTRL_SUPPORT */
 
 		/* ignore NoACK and MGMT frame use 0xFF as WCID */
-			if ((StaFifo.field.TxAckRequired == 0) || (wcid >= MaxWcidNum))
-			{
-				i++;
-				continue;
-			}
+		if ((StaFifo.field.TxAckRequired == 0) || (wcid >= MaxWcidNum))
+		{
+			i++;
+			continue;
+		}
 
-			/* PID store Tx MCS Rate */
-			pid = (UCHAR)StaFifo.field.PidType;
+		/* PID store Tx MCS Rate */
+		pid = (UCHAR)StaFifo.field.PidType;
 
-			pEntry = &pAd->MacTab.Content[wcid];
+		pEntry = &pAd->MacTab.Content[wcid];
 
-			pEntry->DebugFIFOCount++;
+		pEntry->DebugFIFOCount++;
 
 
 #ifdef DOT11_N_SUPPORT
 #ifdef TXBF_SUPPORT
-			/* Update BF statistics*/
-			if (pAd->chipCap.FlgHwTxBfCap)
-			{
-				int succMCS = (StaFifo.field.SuccessRate & 0x7F);
-				int origMCS = pid;
+		/* Update BF statistics*/
+		if (pAd->chipCap.FlgHwTxBfCap)
+		{
+			int succMCS = (StaFifo.field.SuccessRate & 0x7F);
+			int origMCS = pid;
 
-				if (succMCS==32)
-					origMCS = 32;
+			if (succMCS==32)
+				origMCS = 32;
 #ifdef DOT11N_SS3_SUPPORT
-				if (succMCS>origMCS && pEntry->HTCapability.MCSSet[2]==0xff)
-					origMCS += 16;
+			if (succMCS>origMCS && pEntry->HTCapability.MCSSet[2]==0xff)
+				origMCS += 16;
 #endif /* DOT11N_SS3_SUPPORT */
 
-				if (succMCS>origMCS)
-					origMCS = succMCS+1;
+			if (succMCS>origMCS)
+				origMCS = succMCS+1;
 
-				/* MCS16 falls back to MCS8*/
-				if (origMCS>=16 && succMCS<=8)
-					succMCS += 8;
+			/* MCS16 falls back to MCS8*/
+			if (origMCS>=16 && succMCS<=8)
+				succMCS += 8;
 
-				/* MCS8 falls back to 0 */
-				if (origMCS >= 8 && succMCS == 0)
-					succMCS += 7;
+			/* MCS8 falls back to 0 */
+			if (origMCS >= 8 && succMCS == 0)
+				succMCS += 7;
 
-				reTry = origMCS-succMCS;
+			reTry = origMCS-succMCS;
 
-				if (StaFifo.field.eTxBF) {
-					if (StaFifo.field.TxSuccess)
-						pEntry->TxBFCounters.ETxSuccessCount++;
-					else
-						pEntry->TxBFCounters.ETxFailCount++;
-					pEntry->TxBFCounters.ETxRetryCount += reTry;
-				}
-				else if (StaFifo.field.iTxBF) {
-					if (StaFifo.field.TxSuccess)
-						pEntry->TxBFCounters.ITxSuccessCount++;
-					else
-						pEntry->TxBFCounters.ITxFailCount++;
-					pEntry->TxBFCounters.ITxRetryCount += reTry;
-				}
-				else {
-					if (StaFifo.field.TxSuccess)
-						pEntry->TxBFCounters.TxSuccessCount++;
-					else
-						pEntry->TxBFCounters.TxFailCount++;
-					pEntry->TxBFCounters.TxRetryCount += reTry;
-				}
+			if (StaFifo.field.eTxBF) {
+				if (StaFifo.field.TxSuccess)
+					pEntry->TxBFCounters.ETxSuccessCount++;
+				else
+					pEntry->TxBFCounters.ETxFailCount++;
+				pEntry->TxBFCounters.ETxRetryCount += reTry;
 			}
+			else if (StaFifo.field.iTxBF) {
+				if (StaFifo.field.TxSuccess)
+					pEntry->TxBFCounters.ITxSuccessCount++;
+				else
+					pEntry->TxBFCounters.ITxFailCount++;
+				pEntry->TxBFCounters.ITxRetryCount += reTry;
+			}
+			else {
+				if (StaFifo.field.TxSuccess)
+					pEntry->TxBFCounters.TxSuccessCount++;
+				else
+					pEntry->TxBFCounters.TxFailCount++;
+				pEntry->TxBFCounters.TxRetryCount += reTry;
+			}
+		}
 #endif /* TXBF_SUPPORT */
 #endif /* DOT11_N_SUPPORT */
 
 #ifdef UAPSD_SUPPORT
-			UAPSD_SP_AUE_Handle(pAd, pEntry, StaFifo.field.TxSuccess);
+		UAPSD_SP_AUE_Handle(pAd, pEntry, StaFifo.field.TxSuccess);
 #endif /* UAPSD_SUPPORT */
 
 #ifdef CONFIG_STA_SUPPORT
-			if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))
-				continue;
+		if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))
+			continue;
 #endif /* CONFIG_STA_SUPPORT */
 
-			if (!StaFifo.field.TxSuccess)
-			{
-				pEntry->FIFOCount++;
-				pEntry->OneSecTxFailCount++;
+		if (!StaFifo.field.TxSuccess)
+		{
+			pEntry->FIFOCount++;
+			pEntry->OneSecTxFailCount++;
 									
-				if (pEntry->FIFOCount >= 1)
-				{			
-					DBGPRINT(RT_DEBUG_TRACE, ("#"));
+			if (pEntry->FIFOCount >= 1)
+			{			
+				DBGPRINT(RT_DEBUG_TRACE, ("#"));
 #ifdef DOT11_N_SUPPORT
-					pEntry->NoBADataCountDown = 64;
+				pEntry->NoBADataCountDown = 64;
 #endif /* DOT11_N_SUPPORT */
 
 #ifdef CONFIG_STA_SUPPORT
 #ifdef DOT11Z_TDLS_SUPPORT
-					IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+				IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+				{
+					if(IS_ENTRY_TDLS(pEntry))
 					{
-						if(IS_ENTRY_TDLS(pEntry))
+						pEntry->TdlsTxFailCount++;
+						if (pEntry->TdlsTxFailCount >= 15)
 						{
-							pEntry->TdlsTxFailCount++;
-							if (pEntry->TdlsTxFailCount >= 15)
-							{
-								DBGPRINT(RT_DEBUG_OFF, ("TDLS: TxFail >= 15 LinkTearDown !!!\n"));
-								TDLS_TearDownPeerLink(pAd, pEntry->Addr, FALSE);
-							}
+							DBGPRINT(RT_DEBUG_OFF, ("TDLS: TxFail >= 15 LinkTearDown !!!\n"));
+							TDLS_TearDownPeerLink(pAd, pEntry->Addr, FALSE);
 						}
 					}
+				}
 #endif /* DOT11Z_TDLS_SUPPORT */
 #endif /* CONFIG_STA_SUPPORT */
 
-					/* Update the continuous transmission counter.*/
-					pEntry->ContinueTxFailCnt++;
+				/* Update the continuous transmission counter.*/
+				pEntry->ContinueTxFailCnt++;
 
-					if(pEntry->PsMode == PWR_ACTIVE)
-					{
+				if(pEntry->PsMode == PWR_ACTIVE)
+				{
 #ifdef DOT11_N_SUPPORT					
-						int tid;
-						for (tid=0; tid<NUM_OF_TID; tid++)
-						{
-							BAOriSessionTearDown(pAd, pEntry->Aid,  tid, FALSE, FALSE);
-						}
+					int tid;
+					for (tid=0; tid<NUM_OF_TID; tid++)
+					{
+						BAOriSessionTearDown(pAd, pEntry->Aid,  tid, FALSE, FALSE);
+					}
 #endif /* DOT11_N_SUPPORT */
 
 
 #ifdef WDS_SUPPORT
-						/* fix WDS Jam issue*/
-						if(IS_ENTRY_WDS(pEntry)
-							&& (pEntry->LockEntryTx == FALSE)
-							&& (pEntry->ContinueTxFailCnt >= pAd->ApCfg.EntryLifeCheck))
-						{ 
-							DBGPRINT(RT_DEBUG_TRACE, ("Entry %02x:%02x:%02x:%02x:%02x:%02x Blocked!! (Fail Cnt = %d)\n",
-								pEntry->Addr[0],pEntry->Addr[1],pEntry->Addr[2],pEntry->Addr[3],
-								pEntry->Addr[4],pEntry->Addr[5],pEntry->ContinueTxFailCnt ));
+					/* fix WDS Jam issue*/
+					if(IS_ENTRY_WDS(pEntry)
+						&& (pEntry->LockEntryTx == FALSE)
+						&& (pEntry->ContinueTxFailCnt >= pAd->ApCfg.EntryLifeCheck))
+					{ 
+						DBGPRINT(RT_DEBUG_TRACE, ("Entry %02x:%02x:%02x:%02x:%02x:%02x Blocked!! (Fail Cnt = %d)\n",
+							pEntry->Addr[0],pEntry->Addr[1],pEntry->Addr[2],pEntry->Addr[3],
+							pEntry->Addr[4],pEntry->Addr[5],pEntry->ContinueTxFailCnt ));
 
-							pEntry->LockEntryTx = TRUE;
-						}
-#endif /* WDS_SUPPORT */
+						pEntry->LockEntryTx = TRUE;
 					}
+#endif /* WDS_SUPPORT */
+				}
 
 					/*pEntry->FIFOCount = 0;*/
-				}
-				/*pEntry->bSendBAR = TRUE;*/
+			}
+			/*pEntry->bSendBAR = TRUE;*/
 #ifdef CONFIG_AP_SUPPORT
 #ifdef RTMP_MAC_PCI
 			/* if Tx fail >= 20, then clear TXWI ack in Tx Ring*/
@@ -2481,91 +2481,91 @@ VOID NICUpdateFifoStaCounters(
 				ClearTxRingClientAck(pAd, pEntry);	
 #endif /* RTMP_MAC_PCI */				
 #endif /* CONFIG_AP_SUPPORT */
-			}
-			else
-			{
+		}
+		else
+		{
 #ifdef DOT11_N_SUPPORT
-				if ((pEntry->PsMode != PWR_SAVE) && (pEntry->NoBADataCountDown > 0))
+			if ((pEntry->PsMode != PWR_SAVE) && (pEntry->NoBADataCountDown > 0))
+			{
+				pEntry->NoBADataCountDown--;
+				if (pEntry->NoBADataCountDown==0)
 				{
-					pEntry->NoBADataCountDown--;
-					if (pEntry->NoBADataCountDown==0)
-					{
-						DBGPRINT(RT_DEBUG_TRACE, ("@\n"));
-					}
+					DBGPRINT(RT_DEBUG_TRACE, ("@\n"));
 				}
+			}
 #endif /* DOT11_N_SUPPORT */
-				pEntry->FIFOCount = 0;
-				pEntry->OneSecTxNoRetryOkCount++;
+			pEntry->FIFOCount = 0;
+			pEntry->OneSecTxNoRetryOkCount++;
 
 
-				/* update NoDataIdleCount when sucessful send packet to STA.*/
-				pEntry->NoDataIdleCount = 0;
-				pEntry->ContinueTxFailCnt = 0;
+			/* update NoDataIdleCount when sucessful send packet to STA.*/
+			pEntry->NoDataIdleCount = 0;
+			pEntry->ContinueTxFailCnt = 0;
 #ifdef WDS_SUPPORT
-				pEntry->LockEntryTx = FALSE;
+			pEntry->LockEntryTx = FALSE;
 #endif /* WDS_SUPPORT */
 
 #ifdef CONFIG_STA_SUPPORT
 #ifdef DOT11Z_TDLS_SUPPORT
-				IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
-				{
-					if(IS_ENTRY_TDLS(pEntry))
-						pEntry->TdlsTxFailCount = 0;
-				}
+			IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+			{
+				if(IS_ENTRY_TDLS(pEntry))
+					pEntry->TdlsTxFailCount = 0;
+			}
 #endif /* DOT11Z_TDLS_SUPPORT */
 #endif /* CONFIG_STA_SUPPORT */
-			}
+		}
 
-			succMCS = StaFifo.field.SuccessRate & 0x7F;
+		succMCS = StaFifo.field.SuccessRate & 0x7F;
 
 #ifdef DOT11N_SS3_SUPPORT
-			if (pEntry->HTCapability.MCSSet[2] == 0xff)
-			{
-				if (succMCS > pid)
-					pid = pid + 16;
-			}
+		if (pEntry->HTCapability.MCSSet[2] == 0xff)
+		{
+			if (succMCS > pid)
+				pid = pid + 16;
+		}
 #endif /* DOT11N_SS3_SUPPORT */
 
 
-			if (StaFifo.field.TxSuccess)
+		if (StaFifo.field.TxSuccess)
+		{
+			pEntry->TXMCSExpected[pid]++;
+			if (pid == succMCS)
 			{
-				pEntry->TXMCSExpected[pid]++;
-				if (pid == succMCS)
-				{
-					pEntry->TXMCSSuccessful[pid]++;
-				}
-				else 
-				{
-					pEntry->TXMCSAutoFallBack[pid][succMCS]++;
-				}
+				pEntry->TXMCSSuccessful[pid]++;
 			}
-			else
+			else 
 			{
-				pEntry->TXMCSFailed[pid]++;
+				pEntry->TXMCSAutoFallBack[pid][succMCS]++;
 			}
+		}
+		else
+		{
+			pEntry->TXMCSFailed[pid]++;
+		}
 
 #ifdef DOT11N_SS3_SUPPORT
-			if (pid >= 16 && succMCS <= 8)
-				succMCS += (2 - (succMCS >> 3)) * 7;
+		if (pid >= 16 && succMCS <= 8)
+			succMCS += (2 - (succMCS >> 3)) * 7;
 #endif /* DOT11N_SS3_SUPPORT */
 
-			reTry = pid - succMCS;
+		reTry = pid - succMCS;
 
-				if (reTry > 0)
-				{
-				/* MCS8 falls back to 0 */
-				if (pid>=8 && succMCS==0)
-					reTry -= 7;
-				else if ((pid >= 12) && succMCS <=7)
-				{
-					reTry -= 4;
-				}
-				pEntry->OneSecTxRetryOkCount += reTry;
+		if (reTry > 0)
+		{
+			/* MCS8 falls back to 0 */
+			if (pid>=8 && succMCS==0)
+				reTry -= 7;
+			else if ((pid >= 12) && succMCS <=7)
+			{
+				reTry -= 4;
 			}
+			pEntry->OneSecTxRetryOkCount += reTry;
+		}
 
-			i++;
-			/* ASIC store 16 stack*/
-		} while ( i < (TX_RING_SIZE<<1) );
+		i++;
+		/* ASIC store 16 stack*/
+	} while ( i < (TX_RING_SIZE<<1) );
 
 }
 
@@ -2763,6 +2763,7 @@ VOID NICUpdateRawCounters(
 	    	pAd->PrivateInfo.PhyRxErrCnt += RxStaCnt1.field.PlcpErr;
 			/* Update False CCA counter*/
 			pAd->RalinkCounters.OneSecFalseCCACnt += RxStaCnt1.field.FalseCca;
+			pAd->RalinkCounters.OneSecFalseCCACnt1 = RxStaCnt1.field.FalseCca;
 			pAd->RalinkCounters.FalseCCACnt += RxStaCnt1.field.FalseCca;
 #ifdef RALINK_ATE
 		}
@@ -2914,24 +2915,27 @@ VOID NICUpdateRawCounters(
 				pDiag->TxDescCnt[ArrayCurIdx][i]= 0;
 				pDiag->TxSWQueCnt[ArrayCurIdx][i] =0;
 				pDiag->TxMcsCnt[ArrayCurIdx][i] = 0;
+				pDiag->TxSGICnt[ArrayCurIdx][i] = 0;
 				pDiag->RxMcsCnt[ArrayCurIdx][i] = 0;
+				pDiag->RxSGICnt[ArrayCurIdx][i] = 0;
 			}
 			pDiag->TxDataCnt[ArrayCurIdx] = 0;
 			pDiag->TxFailCnt[ArrayCurIdx] = 0;
 			pDiag->RxDataCnt[ArrayCurIdx] = 0;
 			pDiag->RxCrcErrCnt[ArrayCurIdx]  = 0;
 /*			for (i = 9; i < 16; i++)*/
-			for (i = 9; i < 24; i++) /* 3*3*/
+			for (i = 9; i < MAX_MCS_SET; i++) /* 3*3*/
 			{
 				pDiag->TxDescCnt[ArrayCurIdx][i] = 0;
 				pDiag->TxMcsCnt[ArrayCurIdx][i] = 0;
+				pDiag->TxSGICnt[ArrayCurIdx][i] = 0;
 				pDiag->RxMcsCnt[ArrayCurIdx][i] = 0;
-}
+				pDiag->RxSGICnt[ArrayCurIdx][i] = 0;
+			}
 
 			if (pDiag->ArrayCurIdx == pDiag->ArrayStartIdx)
 				INC_RING_INDEX(pDiag->ArrayStartIdx,  DIAGNOSE_TIME);
 		}
-		
 	}
 #endif /* DBG_DIAGNOSE */
 
@@ -3155,6 +3159,15 @@ VOID UserCfgExit(
 #endif /* MAC_REPEATER_SUPPORT */
 
 	pAd->CommonCfg.bEnTemperatureTrack = FALSE;
+
+#ifdef CONFIG_AP_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+	{
+#ifdef BAND_STEERING
+		BndStrg_Release(pAd);
+#endif /* BAND_STEERING */
+	}
+#endif /* CONFIG_AP_SUPPORT */
 }
 
 /*
@@ -3232,6 +3245,12 @@ VOID	UserCfgInit(
 #endif /* RTMP_TEMPERATURE_COMPENSATION */
 #endif /* RTMP_INTERNAL_TX_ALC || RTMP_TEMPERATURE_COMPENSATION */
 
+#ifdef THERMAL_PROTECT_SUPPORT
+	pAd->force_one_tx_stream = FALSE;
+	pAd->last_thermal_pro_temp = 0;
+	pAd->thermal_pro_criteria = 80;
+#endif /* THERMAL_PROTECT_SUPPORT */
+	
 	pAd->RfIcType = RFIC_2820;
 
 	/* Init timer for reset complete event*/
@@ -3684,6 +3703,14 @@ VOID	UserCfgInit(
 	/* Default Config change flag*/
 	pAd->bConfigChanged = FALSE;
 
+#ifdef CONFIG_AP_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+	{
+		pAd->ApCfg.ScanChannelCnt = 0;
+		pAd->ApCfg.bImprovedScan = FALSE;
+	}
+#endif /* CONFIG_AP_SUPPORT */
+
 	/* */
 	/* part III. AP configurations*/
 	
@@ -3870,7 +3897,9 @@ VOID	UserCfgInit(
 
 #ifdef APCLI_SUPPORT
 		pAd->ApCfg.FlgApCliIsUapsdInfoUpdated = FALSE;
-
+#ifdef APCLI_CERT_SUPPORT
+		pAd->bApCliCertTest = FALSE;
+#endif /* APCLI_CERT_SUPPORT */
 		for(j = 0; j < MAX_APCLI_NUM; j++) 
 		{
 			pAd->ApCfg.ApCliTab[j].AuthMode = Ndis802_11AuthModeOpen;
@@ -3896,10 +3925,15 @@ VOID	UserCfgInit(
 			pAd->ApCfg.ApCliTab[j].SavedPMKNum=0;
 			RTMPZeroMemory(pAd->ApCfg.ApCliTab[j].SavedPMK, (PMKID_NO * sizeof(BSSID_INFO)));
 #endif/*APCLI_WPA_SUPPLICANT_SUPPORT*/
+			pAd->ApCfg.ApCliTab[j].bBlockAssoc=FALSE;
+			pAd->ApCfg.ApCliTab[j].MicErrCnt=0;
 
 		}
 #endif /* APCLI_SUPPORT */
 		pAd->ApCfg.EntryClientCount = 0;
+#ifdef MULTI_CLIENT_SUPPORT
+		pAd->ApCfg.ChangeTxOpClient = 0;
+#endif /* MULTI_CLIENT_SUPPORT */
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -4033,6 +4067,10 @@ VOID	UserCfgInit(
 #ifdef MCS_LUT_SUPPORT
 	pAd->bUseHwTxLURate = TRUE;
 #endif /* MCS_LUT_SUPPORT */
+
+#ifdef PEER_DELBA_TX_ADAPT
+	pAd->MacTab.DelBA_Client_Count = 0;
+#endif /* PEER_DELBA_TX_ADAPT */
 
 #if defined(MICROWAVE_OVEN_SUPPORT) || defined(DYNAMIC_VGA_SUPPORT)
 	pAd->CommonCfg.MO_Cfg.bEnable = FALSE;
@@ -4225,7 +4263,7 @@ VOID	RTMP_TimerListRelease(
 
 
 /*
-	========================================================================
+========================================================================
 	
 	Routine Description:
 		Init timer objects
@@ -4259,10 +4297,10 @@ VOID	RTMPInitTimer(
 	/* It will crash if we cancel a timer or set a timer */
 	/* that we haven't initialize before.*/
 	/* */
-	pTimer->Valid      = TRUE;
-	
+	pTimer->Valid = TRUE;
+
 	pTimer->PeriodicType = Repeat;
-	pTimer->State      = FALSE;
+	pTimer->State = FALSE;
 	pTimer->cookie = (ULONG) pData;
 	pTimer->pAd = pAd;
 
@@ -4431,7 +4469,8 @@ VOID	RTMPCancelTimer(
 	}
 	else
 	{
-		DBGPRINT(RT_DEBUG_INFO,("RTMPCancelTimer failed, Timer hasn't been initialize!\n"));
+		//DBGPRINT(RT_DEBUG_INFO,("RTMPCancelTimer failed, Timer hasn't been initialize!\n"));
+		DBGPRINT_ERR(("RTMPCancelTimer failed, Timer hasn't been initialize!\n"));
 	}
 
 	RTMP_SEM_UNLOCK(&TimerSemLock);

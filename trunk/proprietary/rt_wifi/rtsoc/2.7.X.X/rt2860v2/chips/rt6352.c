@@ -35,21 +35,21 @@
 #endif // RTMP_RF_RW_SUPPORT //
 
 UCHAR	RT6352_EeBuffer[EEPROM_SIZE] = {
-	0x20, 0x76, 0x04, 0x01, 0x00, 0x0c, 0x43, 0x76, 0x20, 0x58, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0x20, 0x76, 0x05, 0x01, 0x00, 0x0c, 0x43, 0x76, 0x20, 0x58, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x0c, 0x43, 0x76, 0x20, 0x77, 0x00, 0x0c, 
-	0x43, 0x76, 0x20, 0x66, 0x22, 0x0c, 0x20, 0x00, 0xff, 0xff, 0x3f, 0x01, 0x55, 0x77, 0xa8, 0xaa, 
+	0x43, 0x76, 0x20, 0x66, 0x22, 0x0c, 0x20, 0x00, 0xff, 0xff, 0x4b, 0x01, 0x55, 0x77, 0xa8, 0xaa, 
 	0x8c, 0x88, 0xff, 0xff, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 
-	0xff, 0xff, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 
-	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x80, 0xff, 
+	0xff, 0xff, 0x13, 0x14, 0x15, 0x17, 0x18, 0x19, 0x19, 0x19, 0x1a, 0x1a, 0x1a, 0x1a, 0x1a, 0x1a, 
+	0x19, 0x19, 0x1a, 0x1a, 0x1b, 0x1b, 0x1b, 0x1c, 0x1c, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x80, 0xff, 
 	0xff, 0xff, 0x80, 0xff, 0xff, 0xff, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-	0x20, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x02, 0x02, 
-	0x02, 0x02, 0x04, 0x00, 0x02, 0x02, 0x04, 0x00, 0x02, 0x02, 0x04, 0x00, 0x02, 0x02, 0x04, 0x00, 
+	0x20, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x08, 0x08, 
+	0x08, 0x08, 0x04, 0x00, 0x07, 0x07, 0x04, 0x00, 0x08, 0x08, 0x04, 0x00, 0x07, 0x07, 0x04, 0x00, 
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
@@ -66,7 +66,7 @@ UCHAR	RT6352_EeBuffer[EEPROM_SIZE] = {
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	} ;
 
 RT635x_FREQUENCY_ITEM FreqItems6352[] =
@@ -469,11 +469,11 @@ REG_PAIR RT6352_BBP_GLRT[] =
 	{BBP_R170, 0x30},
 	{BBP_R171, 0x30},
 	{BBP_R172, 0x0E},
-	{BBP_R173, 0x0D},
+	{BBP_R173, 0x28},
 	{BBP_R174, 0x28},
 	{BBP_R175, 0x21},
 	{BBP_R176, 0x1C},
-	{BBP_R177, 0x16},
+	{BBP_R177, 0x20},
 	{BBP_R178, 0x50},
 	{BBP_R179, 0x4A},
 	{BBP_R180, 0x43},
@@ -664,11 +664,15 @@ UCHAR sku_min_pwr_20bw[11] =
 
 INT32 pa_mode_table[4] =
 {	
-	0,	/* PA mode = 0 :    0 * 8192  pa_mode_00*/	 	
+	    0,	/* PA mode = 0 :    0 * 8192  pa_mode_00*/	 	
 	 4915,	/* PA mode = 1 :  0.6 * 8192  pa_mode_01*/
 	-6554,  /* PA mode = 2 : -0.6 * 8192  pa_mode_10*/
 	-6554,  /* PA mode = 3 : -0.8 * 8192  pa_mode_11*/
 };
+
+#define AMPDU_MAX_LEN_20M1S		0x1030
+#define AMPDU_MAX_LEN_40M1S		0x1038
+#define TXRX_MICS_CTRL			0x1608
 
 /*
 ========================================================================
@@ -1097,7 +1101,7 @@ static UCHAR RT6352_ChipAGCAdjust(
 	IN UCHAR				OrigR66Value)
 {
 	UCHAR R66 = OrigR66Value;
-	CHAR lanGain = GET_LNA_GAIN(pAd);
+//	CHAR lanGain = GET_LNA_GAIN(pAd);
 
 	if (pAd->LatchRfRegs.Channel <= 14)
 		R66 = 0x04 + 2 * GET_LNA_GAIN(pAd);
@@ -1529,7 +1533,7 @@ static VOID RT6352_ChipSwitchChannel(
 
 				if ((pAd->CommonCfg.Chip_VerID > 1) && (pAd->CommonCfg.Chip_E_Number >= 2))
 				{
-					UINT8 BBPValue;
+					UINT8 BBPValue = 0;
 
 					/* ADC clcok selection */
 					DBGPRINT(RT_DEBUG_TRACE, ("ADC clcok selection for E3 !!!\n"));
@@ -1680,7 +1684,7 @@ static VOID RT6352_ChipSwitchChannel(
 	}
 
 #ifdef RT6352_EL_SUPPORT
-	if ((pAd->CommonCfg.PKG_ID == 1) && (pAd->NicConfig2.field.ExternalLNAForG))
+	if (pAd->NicConfig2.field.ExternalLNAForG)
 	{
 		if(pAd->CommonCfg.BBPCurrentBW == BW_20)
 		{
@@ -2005,7 +2009,7 @@ redo:
 					// DAC 0 only
 					RFValue = RFB0R42_Org & (~0x50);
 					RFValue = RFB0R42_Org | 0x10;
-					RT635xWriteRFRegister(pAd, RF_BANK0, RF_R42, RFValue);
+					RT635xWriteRFRegister(pAd, RF_BANK0, RF_R42, RFValue);				
 					MacValue = 0x1004;
 					RTMP_IO_WRITE32(pAd, RF_CONTROL0, MacValue);
 					break;
@@ -2020,7 +2024,7 @@ redo:
 					RT635xWriteRFRegister(pAd, RF_BANK0, RF_R42, RFValue);
 					MacValue = 0x2004;
 					RTMP_IO_WRITE32(pAd, RF_CONTROL0, MacValue);
-				break;
+					break;
 			}
 		
 			RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R23, 0x0);
@@ -2103,7 +2107,6 @@ redo:
 			DBGPRINT(RT_DEBUG_TRACE, ("BBP_R244 is 0x%02x\n", BBPValue));
 			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R22, &BBPValue);
 			DBGPRINT(RT_DEBUG_TRACE, ("BBP_R22 is 0x%02x\n", BBPValue));
-
 			for (wait=0; wait < 100; wait++)
 			{
 				RTMPusecDelay(2000);
@@ -2128,7 +2131,7 @@ redo:
 			BBPValue = (ant_idx == 0) ? 0x40 : 0x45;
 			RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R47, BBPValue);
 			RTMPusecDelay(10); /* wait 10 usec */
-			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R49, &BBPR49); 							
+			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R49, &BBPR49); 	
 
 #ifdef ADJUST_POWER_CONSUMPTION_SUPPORT
 			if((index==2) && (agc_loop_cnt < 10))
@@ -2197,7 +2200,7 @@ redo:
 					case 3:								
 						tssi0_linear = (INT32)BBPR49;
 						DBGPRINT(RT_DEBUG_TRACE, ("index %d: tssi0_linear hvga is 0x%08x\n", index, tssi0_linear));
-								
+
 						tssi0_linear = tssi0_linear - rt635x_tssi0_dc_hvga;
 						tssi0_linear = tssi0_linear * 4;								
 						rt635x_tssi0_db_hvga = lin2dBd(tssi0_linear) - tssi0_db;
@@ -2229,7 +2232,7 @@ redo:
 					case 3:				
 						tssi1_linear = (INT32)BBPR49;
 						DBGPRINT(RT_DEBUG_TRACE, ("index %d: tssi1_linear hvga is 0x%08x\n", index, tssi1_linear));
-						
+
 						tssi1_linear = tssi1_linear - rt635x_tssi1_dc_hvga;
 						tssi1_linear = tssi1_linear*4;
 
@@ -2825,7 +2828,7 @@ VOID RT635xTssiCompensation(
 			pa_mode_01 =  4915; /*  0.6 * 8192 */
 			pa_mode_11 = -6554; /* -0.8 * 8192 */
 	    }
-	pa_mode_used = (pa_mode == 0x00) ? pa_mode_00 :
+		pa_mode_used = (pa_mode == 0x00) ? pa_mode_00 :
 					(pa_mode == 0x01) ? pa_mode_01 :
 					pa_mode_11; /* pa_mode_11 is just default */
 
@@ -2959,7 +2962,7 @@ VOID RT635xTssiCompensation(
 	
 	DBGPRINT(RT_DEBUG_TRACE, ("comp_power[0] is 0x%08x\n", comp_power[0]));
 	if (max_stream == 2)
-	DBGPRINT(RT_DEBUG_TRACE, ("comp_power[1] is 0x%08x\n", comp_power[1]));
+		DBGPRINT(RT_DEBUG_TRACE, ("comp_power[1] is 0x%08x\n", comp_power[1]));
 
 		MacValue = MacValue | (comp_power[0] & 0x3f);
 
@@ -2984,8 +2987,8 @@ VOID RT635xTssiCompensation(
 }
 
 BOOLEAN RT635xTriggerTssiCompensation(
-	IN	PRTMP_ADAPTER	pAd,
-	IN	CHAR		percent_delta)
+	IN	PRTMP_ADAPTER pAd,
+	IN	CHAR percent_delta)
 {
 	UINT32 MacValue;
 	INT32 base_power[max_ant];
@@ -3030,7 +3033,7 @@ BOOLEAN RT635xTriggerTssiCompensation(
 		RTMP_IO_WRITE32(pAd, TX_ALG_CFG_0, MacValue);
 	}
 #endif /* SINGLE_SKU_V2 */
-
+	
 #ifdef DOT11_N_SUPPORT
 	if ((pAd->CommonCfg.PhyMode >= PHY_11ABGN_MIXED) && (pAd->Antenna.field.TxPath == 2))
 	{
@@ -3040,7 +3043,7 @@ BOOLEAN RT635xTriggerTssiCompensation(
 	else
 #endif /* DOT11_N_SUPPORT */
 	{
-		max_stream = 1;	
+		max_stream = 1; 
 	}
 
 #ifdef GREENAP_SUPPORT
@@ -3553,11 +3556,11 @@ BOOLEAN RT635xCheckTssiCompensation(
 			{
 				if (BBPR4 & (1 << 5)) /* BBP_R4[5] == 1 */
 				{
-					pkt_type_delta = 9831; /* 1.2 x 8192 */	
+					pkt_type_delta = 9831; /* 1.2 x 8192 */ 
 				}
 				else /* BBP_R4[5] == 0 */
 				{
-				pkt_type_delta = 3 * 8192;
+					pkt_type_delta = 3 * 8192;
 				}
 			}
 			else /* BBP_R178 != 0 */
@@ -3568,7 +3571,7 @@ BOOLEAN RT635xCheckTssiCompensation(
 				}
 				else /* BBP_R4[5] == 0 */
 				{
-				pkt_type_delta = 819; /* 0.1 x 8192 */	
+					pkt_type_delta = 819; /* 0.1 x 8192 */	
 				}
 			}
 			break;
@@ -3588,7 +3591,7 @@ BOOLEAN RT635xCheckTssiCompensation(
 			}
 			mcs_power = RT635x_McsPowerOverOFDM[mcs];
 			pa_mode = RT635x_RfPaModeOverOFDM[mcs];
-			pkt_type_delta = 0;	
+			pkt_type_delta = 0; 
 			break;
 
 		default: // TODO:STBC
@@ -3600,7 +3603,7 @@ BOOLEAN RT635xCheckTssiCompensation(
 			mcs = (UCHAR)(BBPR49 & 0x7F);
 			mcs_power = RT635x_McsPowerOverHT[mcs];
 			pa_mode = RT635x_RfPaModeOverHT[mcs];
-			pkt_type_delta = 0;	
+			pkt_type_delta = 0; 
 			break;
 	}
 
@@ -3619,16 +3622,16 @@ BOOLEAN RT635xCheckTssiCompensation(
 	cur_comp_power = MacValue & 0x3f;
 	if(cur_comp_power & 0x20) 
 		cur_comp_power = cur_comp_power - 0x40;
-	
+
 	for (chain=0; chain < max_stream; chain++)
 	{
 		pa_mode_00 =  0;
-		pa_mode_01 =  4915; /*  0.6 * 8192 */
+		pa_mode_01 =  4915; /*	0.6 * 8192 */
 		pa_mode_11 = -6554; /* -0.8 * 8192 */
 
 		pa_mode_used = (pa_mode == 0x00) ? pa_mode_00 :
-					(pa_mode == 0x01) ? pa_mode_01 :
-					pa_mode_11; /* pa_mode_11 is just default */
+						(pa_mode == 0x01) ? pa_mode_01 :
+						pa_mode_11; /* pa_mode_11 is just default */
 
 		DBGPRINT(RT_DEBUG_TRACE, ("\n============chain %u============\n", chain));
 
@@ -3664,7 +3667,7 @@ BOOLEAN RT635xCheckTssiCompensation(
 		}
 
 		pwr = (tssi_db*(rt635x_tssi_slope[chain]))
-			+ (rt635x_tssi_offset[ch_group][chain] << 9);
+				+ (rt635x_tssi_offset[ch_group][chain] << 9);
 
 		DBGPRINT(RT_DEBUG_TRACE, ("tssi_slope  %x\n", rt635x_tssi_slope[chain]));
 		DBGPRINT(RT_DEBUG_TRACE, ("tssi offset %x\n", rt635x_tssi_offset[ch_group][chain]));
@@ -3679,15 +3682,15 @@ BOOLEAN RT635xCheckTssiCompensation(
 			case 2: bbp_6db_power = -98304; break; /* -12dB x 8192 */
 			case 3: bbp_6db_power = 49152; break; /* 6dB x 8192 */
 		}
-		DBGPRINT(RT_DEBUG_TRACE, ("mcs_power      %8d\n", mcs_power));
+		DBGPRINT(RT_DEBUG_TRACE, ("mcs_power	  %8d\n", mcs_power));
 		DBGPRINT(RT_DEBUG_TRACE, ("pkt_type_delta %8d\n", pkt_type_delta));
-		DBGPRINT(RT_DEBUG_TRACE, ("pa mode        %8d\n", pa_mode));
+		DBGPRINT(RT_DEBUG_TRACE, ("pa mode		  %8d\n", pa_mode));
 		DBGPRINT(RT_DEBUG_TRACE, ("pa mode used   %8d\n", pa_mode_used));
- 
+
 		target_power = base_power[0] + mcs_power;
 		target_power = target_power * 4096;
 		target_power = target_power + pa_mode_used + pkt_type_delta
-			+ bbp_6db_power + rt635x_ant_pwr_offset[chain];
+						+ bbp_6db_power + rt635x_ant_pwr_offset[chain];
 		DBGPRINT(RT_DEBUG_TRACE, ("target_power %d, pwr %d\n", target_power, pwr));
 		pwr_diff[chain] = target_power - pwr;
 
@@ -3734,7 +3737,7 @@ BOOLEAN RT635xCheckTssiCompensation(
 			_comp_power = _comp_power + pwr_diff[chain];
 		else
 			_comp_power = base_power[chain] + pwr_diff[chain] - pwr_diff[0];
-
+	
 		DBGPRINT(RT_DEBUG_TRACE, ("pwr_diff is %d\n", pwr_diff[chain]));
 		DBGPRINT(RT_DEBUG_TRACE, ("_comp_power is 0x%08x\n", _comp_power));
 		if (chain == 0)
@@ -3758,13 +3761,13 @@ BOOLEAN RT635xCheckTssiCompensation(
 	/* 8. write compensation value back */
 	RTMP_IO_READ32(pAd, TX_ALG_CFG_1, &MacValue); /* MAC 0x13B4 */	
 	MacValue = MacValue & (~0x3f);
-	
+
 	DBGPRINT(RT_DEBUG_TRACE, ("comp_power[0] is 0x%08x\n", comp_power[0]));
 	if (max_stream == 2)
 		DBGPRINT(RT_DEBUG_TRACE, ("comp_power[1] is 0x%08x\n", comp_power[1]));
 
 	MacValue = MacValue | (comp_power[0] & 0x3f);
-
+	
 	DBGPRINT(RT_DEBUG_TRACE, ("\n================================\n"));
 	DBGPRINT(RT_DEBUG_TRACE, ("Mac 0x13B4 is 0x%08x\n", MacValue));
 	RTMP_IO_WRITE32(pAd, TX_ALG_CFG_1, MacValue);	
@@ -4117,7 +4120,7 @@ UCHAR GetSkuRatePwr(
 }
 
 CHAR RT6352_AdjustChannelPwr(
-	IN PRTMP_ADAPTER 	pAd,
+	IN PRTMP_ADAPTER pAd,
 	IN CHAR TotalDeltaPower,
 	OUT CHAR *PreDiff)
 {
@@ -4129,17 +4132,20 @@ CHAR RT6352_AdjustChannelPwr(
 	//RT28xx_EEPROM_READ16(pAd, 0xD0, e2p_data);
 	target_power = (pAd->E2p_D0_Value & 0x3F);
 	sku_min_pwr = GetSkuChannelBasePwr(pAd, pAd->CommonCfg.SkuChannel);
-	
-	/* Get delta power based on the percentage specified from UI */
-	target_power += TotalDeltaPower;
-	
+
+
 #ifdef RTMP_INTERNAL_TX_ALC
 	/* TSSI mode */
 	if (pAd->TxPowerCtrl.bInternalTxALC == TRUE)
 	{
 		CHAR bw_delta = 0;
+		CHAR target_power_ori = 0;
 
 		target_power = (target_power > sku_min_pwr) ? sku_min_pwr : target_power;
+
+		/* Get delta power based on the percentage specified from UI */
+		target_power_ori = target_power;
+		target_power += TotalDeltaPower;
 
 		if (target_power < 0)
 			target_power = 0;
@@ -4150,23 +4156,29 @@ CHAR RT6352_AdjustChannelPwr(
 		RTMP_IO_READ32(pAd, TX_ALG_CFG_0, &mac_value);
 		if ((mac_value & 0x3f) != target_power)
 		{
-		mac_value &= 0xFFFFC0C0;
-		mac_value |= (target_power & 0x3F);
-		mac_value |= (target_power & 0x3F) << 8;
-		RTMP_IO_WRITE32(pAd, TX_ALG_CFG_0, mac_value);	
+			mac_value &= 0xFFFFC0C0;
+			mac_value |= (target_power & 0x3F);
+			mac_value |= (target_power & 0x3F) << 8;
+			RTMP_IO_WRITE32(pAd, TX_ALG_CFG_0, mac_value);	
 		}
-		DBGPRINT(RT_DEBUG_TRACE, ("%s::mac 0x13B0 is 0x%08x\n", __FUNCTION__, mac_value));	
+		DBGPRINT(RT_DEBUG_TRACE, ("%s::mac 0x13B0 is 0x%08x\n", __FUNCTION__, mac_value));
+
+		target_power = target_power_ori;
 	}
 	else /* Manual/Temperature mode */
 #endif /* RTMP_INTERNAL_TX_ALC */
 	{
 		INT32 diff = 0;
+
 		DBGPRINT(RT_DEBUG_TRACE, ("target_power=%d, sku_min_pwr=%d\n", target_power, sku_min_pwr));	
 
 		RTMP_IO_READ32(pAd, TX_ALG_CFG_1, &mac_value);
 		mac_value &= 0xFFFFFFC0;
 
-		    diff = sku_min_pwr - target_power;
+		diff = sku_min_pwr - target_power;
+
+		/* Get delta power based on the percentage specified from UI */
+		diff += TotalDeltaPower;
 
 		if (target_power > sku_min_pwr)
 		    target_power = sku_min_pwr;
@@ -4187,6 +4199,43 @@ CHAR RT6352_AdjustChannelPwr(
 		else
 #endif /* RTMP_TEMPERATURE_COMPENSATION */
 		{
+#ifdef RT6352_EP_SUPPORT
+			UINT32 mac_13b0;
+			UCHAR bbp_r1 = 0;
+			CHAR ch_pwr = 0;
+
+			RTMP_IO_READ32(pAd, TX_ALG_CFG_0, &mac_13b0);
+
+			ch_pwr = (mac_13b0 & 0x3F);
+			if ((ch_pwr & 0x20) == 0x20)
+			{
+				ch_pwr = (ch_pwr | 0xC0);
+			}
+
+			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R1, &bbp_r1);
+
+			if ((ch_pwr + diff) < 0)
+			{
+				mac_value &= 0xFFFFFFC0;
+
+				if ((ch_pwr + diff) >= -12)
+				{
+					diff = diff + 12;
+					bbp_r1 |= 0x1;
+				}
+				else if ((ch_pwr + diff) >= -24)
+				{
+					diff = diff + 24;
+					bbp_r1 |= 0x2;
+				}
+
+				if (diff > 31)
+					diff = 31;
+
+				mac_value |= (diff & 0x3F);
+				RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R1, bbp_r1);
+			}
+#endif /* RT6352_EP_SUPPORT */
 			RTMP_IO_WRITE32(pAd, TX_ALG_CFG_1, mac_value);
 
 			DBGPRINT(RT_DEBUG_TRACE, ("%s::mac 0x13B4 is 0x%08x\n", __FUNCTION__, mac_value));
@@ -4200,8 +4249,8 @@ CHAR RT6352_AdjustChannelPwr(
 }
 
 VOID RT6352_AdjustPerRatePwr(
-	IN PRTMP_ADAPTER 	pAd,
-	IN CHAR 				channelpower)
+	IN PRTMP_ADAPTER pAd,
+	IN CHAR channelpower)
 {
 	INT i, j;
 	INT32 channel_power = channelpower;
@@ -4235,7 +4284,7 @@ VOID RT6352_AdjustPerRatePwr(
 		}
 		else /* BBP_R4[5] == 0 */
 		{
-		mcs_digpwr_diff = 819; /* 0.1 x 8192 */
+			mcs_digpwr_diff = 819; /* 0.1 x 8192 */
 		}
 	}
 
@@ -4257,6 +4306,11 @@ VOID RT6352_AdjustPerRatePwr(
 				INT32 rate_pwr = 0, rate_pwr_ori = 0, sku_rate_pwr, pa_mode = 0; 
 				
 				rate_pwr_ori = rate_pwr = (INT32)((reg_val >> j*4) & 0x000000FF);
+				if (rate_pwr > 31)
+				{
+					rate_pwr = (rate_pwr - 64);
+					rate_pwr_ori = rate_pwr;
+				}
 				rate_pwr = ((rate_pwr + channel_power) << 12);
 
 				/* Append mcs_digpwr_diff and PA_MODE to the corresponding rate power */
@@ -4294,8 +4348,11 @@ VOID RT6352_AdjustPerRatePwr(
 
 				sku_rate_pwr = (INT32)GetSkuPerRatePwr(pAd, (i * 4) + (j / 2), pAd->CommonCfg.SkuChannel, pAd->CommonCfg.BBPCurrentBW, pa_mode_table[pa_mode]);
 				/* Adjust the per rate power if enabling Single-SKU */
-				diff = (CHAR)(sku_rate_pwr - rate_pwr);
-				
+				if (rate_pwr >= 0)
+					diff = (CHAR)(sku_rate_pwr - rate_pwr);
+				else
+					diff = (CHAR)(sku_rate_pwr + rate_pwr);
+
 				mcs_pwr_value = (CHAR)rate_pwr_ori + diff;
 
 				DBGPRINT(RT_DEBUG_TRACE, 
@@ -4489,10 +4546,47 @@ BOOLEAN RT6352_TemperatureCompensation(
 				{
 					UINT32 MacValue;
 					CHAR delta_pwr = 0;
-					
+#ifdef RT6352_EP_SUPPORT
+					UINT32 mac_13b0;
+					UCHAR bbp_r1 = 0;
+					CHAR ch_pwr = 0;
+#endif /* RT6352_EP_SUPPORT */
+
 					/* adjust compensation value by MP temperature readings(i.e., e2p[77h]) */
 					delta_pwr = pAd->TxAgcCompensateG - pAd->mp_delta_pwr;
 					delta_pwr += pAd->DeltaPwrBeforeTempComp;
+
+#ifdef RT6352_EP_SUPPORT
+					RTMP_IO_READ32(pAd, TX_ALG_CFG_0, &mac_13b0);
+					ch_pwr = (mac_13b0 & 0x3F);
+
+					if ((ch_pwr & 0x20) == 0x20)
+					{
+						ch_pwr = (ch_pwr | 0xC0);
+					}
+
+					RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R1, &bbp_r1);
+
+					if ((ch_pwr + delta_pwr) < 0)
+					{
+						if ((ch_pwr + delta_pwr) >= -12)
+						{
+							delta_pwr = delta_pwr + 12;
+							bbp_r1 |= 0x1;
+						}
+						else if ((ch_pwr + delta_pwr) >= -24)
+						{
+							delta_pwr = delta_pwr + 24;
+							bbp_r1 |= 0x2;
+						}
+
+						if (delta_pwr > 31)
+							delta_pwr = 31;
+
+						RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R1, bbp_r1);
+					}
+#endif /* RT6352_EP_SUPPORT */
+
 					/* 8-bit representation ==> 6-bit representation (2's complement) */
 					delta_pwr = (delta_pwr & 0x80) ? \
 									((delta_pwr & 0x1f) | 0x20) : (delta_pwr & 0x3f);						
@@ -4594,7 +4688,7 @@ VOID RT6352_AsicAdjustTxPower(
 		TotalDeltaPower += DeltaPowerByBbpR1;
 
 		/* The transmit power controlled by the MAC */
-		TotalDeltaPower += DeltaPwr; 	
+		TotalDeltaPower += DeltaPwr;
 		TotalDeltaPower = (TotalDeltaPower * 2); // because unit = 0.5 dbm
 
 		if (pAd->CommonCfg.BBPCurrentBW == BW_40)
@@ -4685,11 +4779,11 @@ VOID RT6352_AsicAdjustTxPower(
 					bbpval &= 0xf8;
 					bbpval |= 0x04;
 					RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R47, bbpval);
-
+					
 					/* save temperature */ 
 					RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R49, &BBPR49);
 					pAd->CurrTemperature = (INT32) BBPR49;
-
+					
 					DBGPRINT(RT_DEBUG_INFO, ("Current Temperature from BBP_R49=0x%x\n", pAd->CurrTemperature));
 					RT6352_TemperatureCalibration(pAd);
 					pAd->CommonCfg.bEnTemperatureTrack = FALSE;
@@ -4705,18 +4799,18 @@ VOID RT6352_AsicAdjustTxPower(
 			return;
 #endif /* SINGLE_SKU_V2 */
 
-		{
+		{  
 			INT32 Diff;
 			UINT32 MacValue;
 			RTMP_IO_READ32(pAd, TX_ALG_CFG_1, &MacValue); /* MAC 0x13B4 */
 			MacValue &= 0xffffffc0;
-	
+
 				Diff = TotalDeltaPower;
 			if (Diff > 31)
 				Diff = 31;
 			else if(Diff < -31)
 				Diff = -31;
-	
+
 			MacValue |= (Diff & 0x3F);
 			RTMP_IO_WRITE32(pAd, TX_ALG_CFG_1, MacValue); 
 
@@ -4735,8 +4829,7 @@ static VOID RT6352_AsicMeasureFalseCCA(
 {
 	UINT32 reg;
 
-	/* Set to high gain LAN */
-	//printk("Stored_BBP_R65=%x @%s \n", pAd->CommonCfg.MO_Cfg.Stored_BBP_R65, __FUNCTION__);
+	/* Set to high gain LNA */
 	RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R65, pAd->CommonCfg.MO_Cfg.Stored_BBP_R65);
 
 	/* clear false cca counter */
@@ -4749,9 +4842,11 @@ static VOID RT6352_AsicMeasureFalseCCA(
 static VOID RT6352_AsicMitigateMicrowave(
 	IN PRTMP_ADAPTER pAd)
 {
-	UINT8	RegValue, RFValue;
-	printk("Detect Microwave...\n");
+	UINT8	RegValue;
 
+	DBGPRINT_RAW(RT_DEBUG_WARN, ("Detect Microwave Oven...\n"));
+
+	/* set middle gain */
 	RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R65, &RegValue);
 	RegValue |= 0x08;
 	RegValue &= 0xfd; /*BBP_R65[3:2] from 3 into 2 */
@@ -4853,7 +4948,7 @@ VOID RT6352_Temperature_Init (
 
 	/* save temperature */ 
 	RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R49, &BBPR49);
-	pAd->CurrTemperature = (INT32)BBPR49; 
+	pAd->CurrTemperature = (INT32)BBPR49;
 	pAd->DoCalibrationTemperature = (pAd->CurrTemperature - pAd->TemperatureRef25C) * 19;
 
 	RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R244, 0x0);
@@ -4903,7 +4998,7 @@ VOID RT6352_TemperatureCalibration(
 	{
 		if (pAd->bLowTemperatureTrigger)
 		{
-			if ( CurrentTemper > 50)
+			if (CurrentTemper > 50)
 			{
 				RT635xWriteRFRegister(pAd, RF_BANK4, RF_R04, 0x00);
 				RT635xWriteRFRegister(pAd, RF_BANK6, RF_R04, 0x00);
@@ -5146,7 +5241,7 @@ VOID RT6352_Init_ExtPA_ExtLNA(
 #endif /* RT6352_EP_SUPPORT */
 
 #ifdef RT6352_EL_SUPPORT
-	if ((pAd->CommonCfg.PKG_ID == 1) && (pAd->NicConfig2.field.ExternalLNAForG))
+	if (pAd->NicConfig2.field.ExternalLNAForG)
 	{
 		DBGPRINT_RAW(RT_DEBUG_ERROR, ("%s: Init Ext-LNA BBP. \n", __FUNCTION__));
 
@@ -5255,7 +5350,7 @@ VOID RT6352_Restore_RF_BBP(
 				RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x1A);
 			}
 		}
-#endif /* RT6352_EP_SUPPORT */
+#endif /* RT6352_EL_SUPPORT */
 
 #ifdef RT6352_EP_SUPPORT
 		if ((pAd->CommonCfg.PKG_ID == 1) && (pAd->bExtPA))
@@ -5368,6 +5463,74 @@ VOID RT6352_ReCalibration(
 }
 #endif /* defined(RT6352_EP_SUPPORT) || defined(RT6352_EL_SUPPORT) */
 
+#ifdef THERMAL_PROTECT_SUPPORT
+VOID thermal_pro_default_cond(
+	IN RTMP_ADAPTER 	*pAd)
+{
+	UINT32 mac_val = 0;
+
+	DBGPRINT(RT_DEBUG_OFF, ("----->%s\n", __FUNCTION__));
+
+	/* Default A-MPDU length */
+	RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_20M1S, 0x77777777);
+	RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M1S, 0x77777777);
+
+	/* 2SS */
+	RTMP_IO_READ32(pAd, TXRX_MICS_CTRL, &mac_val);
+	mac_val &= ~(0x00000008);
+	RTMP_IO_WRITE32(pAd, TXRX_MICS_CTRL, mac_val);	
+
+	pAd->force_one_tx_stream = FALSE;
+}
+	
+VOID thermal_pro_1st_cond(
+	IN RTMP_ADAPTER 	*pAd)
+{
+	UINT32 mac_val = 0;
+
+	DBGPRINT(RT_DEBUG_OFF, ("----->%s\n", __FUNCTION__));
+
+	/* Default A-MPDU length */
+	RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_20M1S, 0x77777777);
+	RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M1S, 0x77777777);
+
+	/* 2SS -> 1SS */
+	RTMP_IO_READ32(pAd, TXRX_MICS_CTRL, &mac_val);
+	mac_val |= 0x00000008;
+	RTMP_IO_WRITE32(pAd, TXRX_MICS_CTRL, mac_val);	
+
+	pAd->force_one_tx_stream = TRUE;
+}
+
+VOID thermal_pro_2nd_cond(
+	IN RTMP_ADAPTER 	*pAd)
+{
+	UINT32 mac_val = 0;
+
+	DBGPRINT(RT_DEBUG_OFF, ("----->%s\n", __FUNCTION__));
+
+	/* Reduce A-MPDU length */
+	RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_20M1S, 0x33222222);
+	RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M1S, 0x33222222);
+
+	/* 1SS */
+	RTMP_IO_READ32(pAd, TXRX_MICS_CTRL, &mac_val);
+	mac_val |= 0x00000008;
+	RTMP_IO_WRITE32(pAd, TXRX_MICS_CTRL, mac_val);	
+
+	pAd->force_one_tx_stream = TRUE;
+}
+#endif /* THERMAL_PROTECT_SUPPORT */
+
+UINT32 mt6532_get_current_temp(
+	IN RTMP_ADAPTER 	*pAd)
+{
+	UINT32 current_temp = 0;	
+	current_temp = (19*(pAd->CurrTemperature - pAd->TemperatureRef25C))/10 + 25;
+	return current_temp;
+}
+
+
 /*
 ========================================================================
 Routine Description:
@@ -5404,6 +5567,14 @@ VOID RT6352_Init(
 	pChipOps->InitDesiredTSSITable = RT6352_InitDesiredTSSITable;
 	pChipOps->AsicTxAlcGetAutoAgcOffset = NULL /*RT6352_AsicTxAlcGetAutoAgcOffset*/;
 #endif /* RTMP_INTERNAL_TX_ALC */
+
+	pChipOps->ChipGetCurrentTemp = mt6532_get_current_temp;
+
+#ifdef THERMAL_PROTECT_SUPPORT
+	pChipOps->ThermalProDefaultCond = thermal_pro_default_cond;
+	pChipOps->ThermalPro1stCond = thermal_pro_1st_cond;
+	pChipOps->ThermalPro2ndCond = thermal_pro_2nd_cond;
+#endif /* THERMAL_PROTECT_SUPPORT */
 
 	pChipCap->FlgIsHwWapiSup = TRUE;
 

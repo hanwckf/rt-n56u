@@ -430,6 +430,21 @@ static VOID ApCliPeerProbeRspAtJoinAction(
 			NdisMoveMemory(pApCliEntry->ApCliMlmeAux.ExtRate, ExtRate, ExtRateLen);
 			RTMPCheckRates(pAd, pApCliEntry->ApCliMlmeAux.ExtRate, &pApCliEntry->ApCliMlmeAux.ExtRateLen);
 
+#ifdef APCLI_CERT_SUPPORT
+			/*  Get the ext capability info element */
+			if (pAd->bApCliCertTest == TRUE)
+			{
+				NdisMoveMemory(&pApCliEntry->ApCliMlmeAux.ExtCapInfo, &ExtCapInfo,sizeof(ExtCapInfo));
+#ifdef DOT11_N_SUPPORT
+#ifdef DOT11N_DRAFT3
+				DBGPRINT(RT_DEBUG_TRACE, ("\x1b[31m ApCliMlmeAux.ExtCapInfo=%d \x1b[m\n", pApCliEntry->ApCliMlmeAux.ExtCapInfo.BssCoexistMgmtSupport)); //zero debug 210121122
+				if (pAd->CommonCfg.bBssCoexEnable == TRUE)
+					pAd->CommonCfg.ExtCapIE.BssCoexistMgmtSupport = 1;
+#endif /* DOT11N_DRAFT3 */
+#endif /* DOT11_N_SUPPORT */
+			}
+#endif /* APCLI_CERT_SUPPORT */
+
 #ifdef DOT11_N_SUPPORT
 			NdisZeroMemory(pAd->ApCfg.ApCliTab[ifIndex].RxMcsSet,sizeof(pAd->ApCfg.ApCliTab[ifIndex].RxMcsSet));
 			/* filter out un-supported ht rates */
@@ -641,6 +656,9 @@ static VOID ApCliEnqueueProbeRequest(
 	UCHAR ssidLen;
 	CHAR ssid[MAX_LEN_OF_SSID];
 	PAPCLI_STRUCT pApCliEntry = NULL;
+#ifdef WSC_AP_SUPPORT
+	BOOLEAN bHasWscIe = FALSE;
+#endif
 
 	DBGPRINT(RT_DEBUG_TRACE, ("force out a ProbeRequest ...\n"));
 
@@ -690,6 +708,52 @@ static VOID ApCliEnqueueProbeRequest(
 				END_OF_ARGS);
 			FrameLen += tmp;
 		}
+
+#ifdef WSC_AP_SUPPORT
+		/* Append WSC information in probe request if WSC state is running */
+		if ((pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscConfMode != WSC_DISABLE) &&
+			(pAd->ApCfg.ApCliTab[ifIndex].WscControl.bWscTrigger))
+		{
+			bHasWscIe = TRUE;
+		}
+#ifdef WSC_V2_SUPPORT
+		else if (pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscV2Info.bEnableWpsV2)
+		{
+			bHasWscIe = TRUE;
+		}
+#endif /* WSC_V2_SUPPORT */
+
+#ifdef CON_WPS
+		if ((pAd->conWscStatus != CON_WPS_STATUS_DISABLED) && bHasWscIe)
+		{
+			bHasWscIe = FALSE;
+			printk("YF DEBUG: Don't Put THE WSC IE IN ProbeReq due to CON_WPS\n");
+		}
+#endif /* CON_WPS */
+		if (bHasWscIe)
+		{
+			UCHAR		/* WscBuf[256], */ WscIeLen = 0;
+			UCHAR		*WscBuf = NULL;
+			ULONG 		WscTmpLen = 0;
+
+			/* allocate memory */
+			os_alloc_mem(NULL, (UCHAR **)&WscBuf, 512);
+			if (WscBuf != NULL)
+			{
+				NdisZeroMemory(WscBuf, 512);
+				WscBuildProbeReqIE(&pAd->ApCfg.ApCliTab[ifIndex].WscControl, STA_MODE, WscBuf, &WscIeLen);
+
+				MakeOutgoingFrame(pOutBuffer + FrameLen,              &WscTmpLen,
+								WscIeLen,                             WscBuf,
+								END_OF_ARGS);
+
+				FrameLen += WscTmpLen;
+				os_free_mem(NULL, WscBuf);
+			}
+			else
+				DBGPRINT(RT_DEBUG_ERROR, ("%s: Allocate memory fail!!!\n", __FUNCTION__));
+		}
+#endif
 
 		MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
 		MlmeFreeMemory(pAd, pOutBuffer);

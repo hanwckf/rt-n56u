@@ -686,17 +686,16 @@ static VOID ApCliPeerDeauthAction(
 
 #ifdef MAC_REPEATER_SUPPORT
 		ifIndex = (USHORT)(Elem->Priv);
-#endif /* MAC_REPEATER_SUPPORT */
 
-		MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_PEER_DISCONNECT_REQ, 0, NULL, ifIndex);
-#ifdef MAC_REPEATER_SUPPORT
 		if ((pAd->ApCfg.bMACRepeaterEn == TRUE) && (ifIndex >= 64))
 		{
-			RTMP_MLME_HANDLER(pAd);
 			ifIndex = ((ifIndex - 64) / 16);
+			RTMPRemoveRepeaterDisconnectEntry(pAd, ifIndex, CliIdx);
 			RTMPRemoveRepeaterEntry(pAd, ifIndex, CliIdx);
 		}
+		else
 #endif /* MAC_REPEATER_SUPPORT */
+		MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_PEER_DISCONNECT_REQ, 0, NULL, ifIndex);
 	}
 	else
 	{

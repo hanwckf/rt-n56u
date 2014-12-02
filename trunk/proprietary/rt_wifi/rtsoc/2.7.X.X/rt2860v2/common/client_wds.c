@@ -137,6 +137,7 @@ PUCHAR CliWds_ProxyLookup(
 		}
 		pCliWdsEntry = pCliWdsEntry->pNext;
 	}
+
 	return NULL;
 }
 

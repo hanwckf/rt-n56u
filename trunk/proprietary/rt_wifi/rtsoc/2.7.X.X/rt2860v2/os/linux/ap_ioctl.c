@@ -41,7 +41,7 @@ struct iw_priv_args ap_privtab[] = {
   IW_PRIV_TYPE_CHAR | 1024, 0,
   "show"},
 { RTPRIV_IOCTL_GSITESURVEY,
-  IW_PRIV_TYPE_CHAR | 1024, IW_PRIV_TYPE_CHAR | 1024 ,
+  0, IW_PRIV_TYPE_CHAR | 1024 ,
   "get_site_survey"}, 
 #ifdef INF_AR9
 { RTPRIV_IOCTL_GET_AR9_SHOW,

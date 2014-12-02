@@ -32,9 +32,9 @@
 #include "rtmp_type.h"
 #include "rtmp_def.h"
 
-#define BAND_5G         0
-#define BAND_24G        1
-#define BAND_BOTH       2
+#define BAND_5G		1
+#define BAND_24G	2
+#define BAND_BOTH	(BAND_5G | BAND_24G)
 
 typedef struct _CH_DESC {
 	UCHAR FirstChannel;

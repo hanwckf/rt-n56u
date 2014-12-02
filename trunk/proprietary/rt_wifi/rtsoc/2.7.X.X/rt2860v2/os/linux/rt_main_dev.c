@@ -940,6 +940,86 @@ struct net_device_stats *RT28xx_get_wds_ether_stats(
 }
 #endif /* WDS_SUPPORT */
 
+#ifdef APCLI_SUPPORT
+/*
+    ========================================================================
+
+    Routine Description:
+        return ethernet statistics counter
+
+    Arguments:
+        net_dev                     Pointer to net_device
+
+    Return Value:
+        net_device_stats*
+
+    Note:
+
+    ========================================================================
+*/
+struct net_device_stats *RT28xx_get_apcli_ether_stats(
+    IN PNET_DEV net_dev)
+{
+    VOID *pAd = NULL;
+	struct net_device_stats *pStats;
+
+	if (net_dev)
+		GET_PAD_FROM_NET_DEV(pAd, net_dev);
+
+	if (pAd)
+	{
+		RT_CMD_STATS ApCliStats, *pApCliStats = &ApCliStats;
+
+		pApCliStats->pNetDev = net_dev;
+
+		if (RTMP_COM_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_APCLI_STATS_GET,
+				0, pApCliStats, RT_DEV_PRIV_FLAGS_GET(net_dev)) != NDIS_STATUS_SUCCESS)
+		{
+			return NULL;
+		}
+
+		pStats = (struct net_device_stats *)pApCliStats->pStats; /*pAd->stats; */
+
+		pStats->rx_packets = pApCliStats->rx_packets;
+		pStats->tx_packets = pApCliStats->tx_packets;
+
+		pStats->rx_bytes = pApCliStats->rx_bytes;
+		pStats->tx_bytes = pApCliStats->tx_bytes;
+
+		pStats->rx_errors = pApCliStats->rx_errors;
+		pStats->tx_errors = pApCliStats->tx_errors;
+
+		pStats->rx_dropped = 0;
+		pStats->tx_dropped = 0;
+
+	  	pStats->multicast = pApCliStats->multicast;
+	  	pStats->collisions = pApCliStats->collisions;
+
+	  	pStats->rx_length_errors = 0;
+	  	pStats->rx_over_errors = pApCliStats->rx_over_errors;
+	  	pStats->rx_crc_errors = 0;
+	  	pStats->rx_frame_errors = pApCliStats->rx_frame_errors;
+	  	pStats->rx_fifo_errors = pApCliStats->rx_fifo_errors;
+	  	pStats->rx_missed_errors = 0; /* receiver missed packet */
+
+		/* detailed tx_errors */
+	  	pStats->tx_aborted_errors = 0;
+	  	pStats->tx_carrier_errors = 0;
+	  	pStats->tx_fifo_errors = 0;
+	  	pStats->tx_heartbeat_errors = 0;
+	  	pStats->tx_window_errors = 0;
+
+		/* for cslip etc */
+	  	pStats->rx_compressed = 0;
+	  	pStats->tx_compressed = 0;
+
+		return pStats;
+	}
+	else
+		return NULL;
+}
+#endif /* APCLI_SUPPORT */
+
 
 
 

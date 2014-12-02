@@ -99,7 +99,7 @@ NDIS_STATUS APCheckRxError(
 
 BOOLEAN APCheckClass2Class3Error(
     IN  PRTMP_ADAPTER   pAd,
-	IN ULONG Wcid, 
+	IN  ULONG Wcid,
 	IN  PHEADER_802_11  pHeader);
 
 VOID APHandleRxPsPoll(
@@ -253,6 +253,12 @@ VOID APPeerBeaconAction(
 VOID APMlmeScanReqAction(
 	IN PRTMP_ADAPTER pAd,
 	IN MLME_QUEUE_ELEM *Elem);
+
+#ifdef CON_WPS
+VOID APMlmeScanCompleteAction(
+        IN PRTMP_ADAPTER pAd,
+        IN MLME_QUEUE_ELEM *Elem);
+#endif /* CON_WPS */
 
 VOID APPeerBeaconAtScanAction(
 	IN PRTMP_ADAPTER pAd,

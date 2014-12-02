@@ -1003,7 +1003,7 @@ VOID RT635xATEAsicSwitchChannel(
 	{
 		if (Channel == FreqItems6352[index].Channel)
 		{
-			UINT32 macStatus, saveMacSysCtrl;
+			UINT32 macStatus, saveMacSysCtrl, SysCfgReg;
 			USHORT k_count = 0;
 
 			/* Frequeny plan setting */
@@ -1011,9 +1011,12 @@ VOID RT635xATEAsicSwitchChannel(
 			/* Rdiv setting
 			 * R13[1:0]
 			 */
+			RTMP_SYS_IO_READ32(0xb0000010, &SysCfgReg);
+			SysCfgReg &= (1 << 6); /* XTAL_FREQ_SEL */
 			ATE_RF_IO_READ8_BY_REG_ID(pAd, RF_BANK0, RF_R13, &RFValue);
 			RFValue = RFValue & (~0x03);
-			RFValue |= (FreqItems6352[index].Rdiv & 0x3);
+			if (!SysCfgReg)
+				RFValue |= (FreqItems6352[index].Rdiv & 0x3);
 			ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_BANK0,RF_R13, RFValue);
 
 			/*  
@@ -1371,7 +1374,7 @@ VOID RT635xATEAsicSwitchChannel(
 	}
 
 #ifdef RT6352_EL_SUPPORT
-	if ((pAd->CommonCfg.PKG_ID == 1) && (pAd->NicConfig2.field.ExternalLNAForG))
+	if (pAd->NicConfig2.field.ExternalLNAForG)
 	{
 		if(pATEInfo->TxWI.BW == BW_20)
 		{
@@ -1401,7 +1404,6 @@ INT RT635xATETxPwrHandler(
 	USHORT value = 0;
 	CHAR TxPower = 0;
 	CHAR bw_power_delta = 0;
-/*	UCHAR Channel = pATEInfo->Channel; */
 
 #ifdef RALINK_QA
 	if (pATEInfo->bQAEnabled == TRUE)
@@ -1433,26 +1435,24 @@ INT RT635xATETxPwrHandler(
 	if (index == 0)
 	{
 		TxPower = pATEInfo->TxPower0;
-#if defined(RTMP_INTERNAL_TX_ALC) || defined(RTMP_TEMPERATURE_COMPENSATION)
+
 		if ((pATEInfo->TxWI.BW == BW_40) && (pATEInfo->bAutoTxAlc == TRUE))
 		{
 			TxPower += (bw_power_delta);
-/*			TxPower = (TxPower < (0x0A << 1)) ? (0x0A << 1) : TxPower; */
 		}
-#endif /* RTMP_INTERNAL_TX_ALC || RTMP_TEMPERATURE_COMPENSATION */
+
 		MacValue &= (~0x0000003F);
 		MacValue |= TxPower;
 	}
 	else if (index == 1)
 	{
 		TxPower = pATEInfo->TxPower1;
-#if defined(RTMP_INTERNAL_TX_ALC) || defined(RTMP_TEMPERATURE_COMPENSATION)
+
 		if ((pATEInfo->TxWI.BW == BW_40) && (pATEInfo->bAutoTxAlc == TRUE))
 		{
 			TxPower += (bw_power_delta);
-/*			TxPower = (TxPower < (0x0A << 1)) ? (0x0A << 1) : TxPower; */
 		}
-#endif /* RTMP_INTERNAL_TX_ALC || RTMP_TEMPERATURE_COMPENSATION */
+
 		MacValue &= (~0x00003F00);
 		MacValue |= (TxPower << 8);
 	}
@@ -1472,13 +1472,14 @@ INT RT635xATETxPwrHandler(
 	/* when TSSI is disabled, 20MHz/40MHz power delta is performed on MAC 0x13B4 */
 	if (pATEInfo->bAutoTxAlc == FALSE)
 	{  
+		/* clean up MAC 0x13B4 bit[5:0] */
+		RTMP_IO_READ32(pAd, TX_ALG_CFG_1, &MacValue);
+		MacValue &= 0xFFFFFFC0;
+
 		if (pATEInfo->TxWI.BW == BW_40)
 		{
 			CHAR diff;
 
-			/* clean up MAC 0x13B4 bit[5:0] */
-			RTMP_IO_READ32(pAd, TX_ALG_CFG_1, &MacValue);
-			MacValue &= 0xFFFFFFC0;
 			diff = bw_power_delta;
 
 			/* MAC 0x13B4 is 6-bit signed value */
@@ -1491,9 +1492,9 @@ INT RT635xATETxPwrHandler(
 				diff = 20;
 
 			MacValue |= (diff & 0x1F);
-			RTMP_IO_WRITE32(pAd, TX_ALG_CFG_1, MacValue); 
 		}
 
+		RTMP_IO_WRITE32(pAd, TX_ALG_CFG_1, MacValue); 
 		DBGPRINT(RT_DEBUG_TRACE, ("bw_power_delta=%d, MAC 0x13B4 is 0x%08x\n", bw_power_delta, MacValue));
 	}
 	
@@ -1690,7 +1691,6 @@ INT	RT635x_Set_ATE_TX_BW_Proc(
 			}
 		}
 	}
-
 
 	return TRUE;
 }	
@@ -2279,8 +2279,6 @@ INT	RT635x_Set_ATE_TX_FREQ_OFFSET_Proc(
 	UCHAR PreRFValue = 0;
 	
 	RFFreqOffset = simple_strtol(arg, 0, 10);
-
-
 	pATEInfo->RFFreqOffset = RFFreqOffset;
 
 	ATE_RF_IO_READ8_BY_REG_ID(pAd, RF_BANK0, RF_R12, &RFValue);
@@ -2316,7 +2314,7 @@ struct _ATE_CHIP_STRUCT RALINK6352 =
 	.AdjustTxPower = RT635xATETemperatureCompensation,
 #endif /* RTMP_TEMPERATURE_COMPENSATION */
 	.AsicExtraPowerOverMAC = RT635xATEAsicExtraPowerOverMAC,
-
+	
 	/* command handlers */
 	.Set_BW_Proc = RT635x_Set_ATE_TX_BW_Proc,
 	.Set_FREQ_OFFSET_Proc = RT635x_Set_ATE_TX_FREQ_OFFSET_Proc,

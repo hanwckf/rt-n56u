@@ -1340,6 +1340,7 @@ typedef struct _MLME_AUX {
     UCHAR               VarIEs[MAX_VIE_LEN];
     LONG				Rssi; /* Record the rssi value when receive Probe Rsp. */
 	RALINK_TIMER_STRUCT ProbeTimer, ApCliAssocTimer, ApCliAuthTimer;
+	RALINK_TIMER_STRUCT WpaDisassocAndBlockAssocTimer;
 #endif /* APCLI_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -1365,7 +1366,7 @@ typedef struct _MLME_ADDBA_REQ_STRUCT{
 
 typedef struct _MLME_DELBA_REQ_STRUCT{
 	UCHAR   Wcid;	/* */
-	UCHAR     Addr[MAC_ADDR_LEN];
+	UCHAR   Addr[MAC_ADDR_LEN];
 	UCHAR   TID;
 	UCHAR	Initiator;
 } MLME_DELBA_REQ_STRUCT, *PMLME_DELBA_REQ_STRUCT;
@@ -1379,17 +1380,17 @@ typedef struct _MLME_ASSOC_REQ_STRUCT{
 } MLME_ASSOC_REQ_STRUCT, *PMLME_ASSOC_REQ_STRUCT, MLME_REASSOC_REQ_STRUCT, *PMLME_REASSOC_REQ_STRUCT;
 
 typedef struct _MLME_DISASSOC_REQ_STRUCT{
-    UCHAR     Addr[MAC_ADDR_LEN];
+    UCHAR	Addr[MAC_ADDR_LEN];
 #ifdef MAC_REPEATER_SUPPORT
 	UCHAR	Addr2[MAC_ADDR_LEN];
 #endif /* MAC_REPEATER_SUPPORT */
-    USHORT    Reason;
+    USHORT	Reason;
 } MLME_DISASSOC_REQ_STRUCT, *PMLME_DISASSOC_REQ_STRUCT;
 
 typedef struct _MLME_AUTH_REQ_STRUCT {
-    UCHAR        Addr[MAC_ADDR_LEN];
-    USHORT       Alg;
-    ULONG        Timeout;
+    UCHAR	Addr[MAC_ADDR_LEN];
+    USHORT	Alg;
+    ULONG	Timeout;
 #ifdef MAC_REPEATER_SUPPORT
 	UCHAR	BssIdx;
 	UCHAR	CliIdx;
@@ -1397,11 +1398,11 @@ typedef struct _MLME_AUTH_REQ_STRUCT {
 } MLME_AUTH_REQ_STRUCT, *PMLME_AUTH_REQ_STRUCT;
 
 typedef struct _MLME_DEAUTH_REQ_STRUCT {
-    UCHAR        Addr[MAC_ADDR_LEN];
+    UCHAR	Addr[MAC_ADDR_LEN];
 #ifdef MAC_REPEATER_SUPPORT
 	UCHAR	Addr2[MAC_ADDR_LEN];
 #endif /* MAC_REPEATER_SUPPORT */
-    USHORT       Reason;
+    USHORT	Reason;
 } MLME_DEAUTH_REQ_STRUCT, *PMLME_DEAUTH_REQ_STRUCT;
 
 typedef struct {

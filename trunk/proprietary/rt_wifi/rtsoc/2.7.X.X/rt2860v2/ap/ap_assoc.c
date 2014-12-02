@@ -1055,7 +1055,6 @@ VOID APPeerDisassocReqAction(
 		RTMPSendWirelessEvent(pAd, IW_DISASSOC_EVENT_FLAG, Addr2, 0, 0);
         ApLogEvent(pAd, Addr2, EVENT_DISASSOCIATED);
 
-		MacTableDeleteEntry(pAd, Elem->Wcid, Addr2);
 
 #ifdef MAC_REPEATER_SUPPORT
 		if (pAd->ApCfg.bMACRepeaterEn == TRUE)
@@ -1068,13 +1067,14 @@ VOID APPeerDisassocReqAction(
 			{
 				apCliIdx = pReptEntry->MatchApCliIdx;
 				CliIdx = pReptEntry->MatchLinkIdx;
-				MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL,
-								(64 + MAX_EXT_MAC_ADDR_SIZE*apCliIdx + CliIdx));
-				RTMP_MLME_HANDLER(pAd);
+
+				RTMPRemoveRepeaterDisconnectEntry(pAd, apCliIdx, CliIdx);
 				RTMPRemoveRepeaterEntry(pAd, apCliIdx, CliIdx);
 			}
 		}
 #endif /* MAC_REPEATER_SUPPORT */
+
+		MacTableDeleteEntry(pAd, Elem->Wcid, Addr2);
     }
 }
 
@@ -1098,7 +1098,27 @@ VOID MbssKickOutStas(
 	{
 		pEntry = &pAd->MacTab.Content[i];
 		if (pEntry && IS_ENTRY_CLIENT(pEntry) && pEntry->apidx == apidx)
+		{
+#ifdef MAC_REPEATER_SUPPORT
+			if (pAd->ApCfg.bMACRepeaterEn == TRUE)
+			{
+				UCHAR apCliIdx, CliIdx;
+				REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
+
+				pReptEntry = RTMPLookupRepeaterCliEntry(pAd, TRUE, pEntry->Addr);
+				if (pReptEntry && (pReptEntry->CliConnectState != 0))
+				{
+					apCliIdx = pReptEntry->MatchApCliIdx;
+					CliIdx = pReptEntry->MatchLinkIdx;
+
+					RTMPRemoveRepeaterDisconnectEntry(pAd, apCliIdx, CliIdx);
+					RTMPRemoveRepeaterEntry(pAd, apCliIdx, CliIdx);
+				}
+			}
+#endif /* MAC_REPEATER_SUPPORT */
+
 			APMlmeKickOutSta(pAd, pEntry->Addr, pEntry->Aid, Reason);
+		}
 	}
 
 	return;
@@ -1162,12 +1182,12 @@ VOID APMlmeKickOutSta(
 							pAd->ApCfg.MBSSID[ApIdx].Bssid,
 #endif /* P2P_SUPPORT */
 							pAd->ApCfg.MBSSID[ApIdx].Bssid);
-	    MakeOutgoingFrame(pOutBuffer,            &FrameLen,
+		MakeOutgoingFrame(pOutBuffer,            &FrameLen,
 	                      sizeof(HEADER_802_11), &DisassocHdr,
 	                      2,                     &Reason,
 	                      END_OF_ARGS);
-	    MiniportMMRequest(pAd, 0, pOutBuffer, FrameLen);
-	    MlmeFreeMemory(pAd, pOutBuffer);
+		MiniportMMRequest(pAd, 0, pOutBuffer, FrameLen);
+		MlmeFreeMemory(pAd, pOutBuffer);
 		MacTableDeleteEntry(pAd, Aid, pStaAddr);
     }
 }
@@ -1622,6 +1642,7 @@ USHORT APBuildAssociation(
 				}
 
 				pEntry->MaxHTPhyMode.field.STBC = (pHtCapability->HtCapInfo.RxSTBC & (pAd->CommonCfg.DesiredHtPhy.TxSTBC));
+
 				pEntry->MpduDensity = pHtCapability->HtCapParm.MpduDensity;
 				pEntry->MaxRAmpduFactor = pHtCapability->HtCapParm.MaxRAmpduFactor;
 				pEntry->MmpsMode = (UCHAR)pHtCapability->HtCapInfo.MimoPs;
@@ -1714,8 +1735,9 @@ USHORT APBuildAssociation(
 
 				/* Use STA Capability */
 #ifdef MCS_LUT_SUPPORT
-				MlmeSetHwTxRateTable(pAd, pEntry);
+				asic_mcs_lut_update(pAd, pEntry);
 #endif /* MCS_LUT_SUPPORT */
+
 			}
 
 			if (pEntry->AuthMode < Ndis802_11AuthModeWPA)

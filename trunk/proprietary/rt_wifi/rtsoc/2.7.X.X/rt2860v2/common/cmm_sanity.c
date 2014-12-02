@@ -71,7 +71,7 @@ BOOLEAN MlmeAddBAReqSanity(
 	
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
-	MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
+		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
 #endif /* MAC_REPEATER_SUPPORT */
 
 
@@ -128,7 +128,7 @@ BOOLEAN MlmeDelBAReqSanity(
 
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
-	MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
+		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
 #endif /* MAC_REPEATER_SUPPORT */
 
     if ((MsgLen != sizeof(MLME_DELBA_REQ_STRUCT)))
@@ -253,7 +253,7 @@ BOOLEAN PeerDelBAActionSanity(
 	
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
-	MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
+		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
 #endif /* MAC_REPEATER_SUPPORT */
 	
 	if (Wcid >= MaxWcidNum)
@@ -340,6 +340,7 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 	UCHAR				*pPeerWscIe = NULL;
 	INT					PeerWscIeLen = 0;
     UCHAR				LatchRfChannel = 0;
+	BOOLEAN bWscCheck = TRUE;
 
 
 	/*
@@ -742,20 +743,48 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 #endif // IWSC_SUPPORT //
 						 )
                 {
-					if (PeerWscIeLen >= 512)
-						DBGPRINT(RT_DEBUG_ERROR, ("%s: PeerWscIeLen = %d (>= 512)\n", __FUNCTION__, PeerWscIeLen));
-					if (pPeerWscIe && (PeerWscIeLen < 512))
+
+					if (pPeerWscIe)
 					{
-						NdisMoveMemory(pPeerWscIe+PeerWscIeLen, pEid->Octet+4, pEid->Len-4);
-						PeerWscIeLen += (pEid->Len - 4);
+						/* Ignore old WPS IE fragments, if we get the version 0x10 */
+						if (pEid->Octet[4] == 0x10) //First WPS IE will have version 0x10
+						{
+							if (pEid->Len >= 4)
+							{
+								NdisMoveMemory(pPeerWscIe, pEid->Octet+4, pEid->Len - 4);
+								PeerWscIeLen = (pEid->Len - 4);
+							}
+						}
+						else // reassembly remanning, other IE fragmentations will not have version 0x10
+						{
+							if (pEid->Len < 4)
+							{
+								bWscCheck = FALSE;
+								DBGPRINT(RT_DEBUG_ERROR, ("%s: Error!!! element length = %d \n", __FUNCTION__, pEid->Len));
+
+							}
+							else if ((PeerWscIeLen +(pEid->Len - 4)) <= 512)
+							{
+								NdisMoveMemory(pPeerWscIe+PeerWscIeLen, pEid->Octet+4, pEid->Len - 4);
+								PeerWscIeLen += (pEid->Len - 4);
+							}
+							else /* ((PeerWscIeLen +(pEid->Len - 4)) > 512) */
+							{
+								bWscCheck = FALSE;
+								DBGPRINT(RT_DEBUG_ERROR, ("%s: Error!!! Sum of All PeerWscIeLen = %d (> 512)\n", __FUNCTION__, (PeerWscIeLen +(pEid->Len - 4))));
+							}
+						}
 					}
+					else
+					{
+						bWscCheck = FALSE;
+						DBGPRINT(RT_DEBUG_ERROR, ("%s: Error!!! pPeerWscIe is empty!\n", __FUNCTION__));
+					}
+
 #ifdef IWSC_SUPPORT
 					if (NdisEqualMemory(pEid->Octet, IWSC_OUI, 4))
 						bFoundIWscIe = TRUE;
 #endif /* IWSC_SUPPORT */
-					
-
-					
                 }
 
                 
@@ -890,7 +919,7 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 			Sanity |= 0x4;
 		}
 
-		if (pPeerWscIe && (PeerWscIeLen > 0) && (PeerWscIeLen < 512))
+		if (pPeerWscIe && (PeerWscIeLen > 0) && (PeerWscIeLen < 512) && (bWscCheck == TRUE))
 		{
 			UCHAR WscIe[] = {0xdd, 0x00, 0x00, 0x50, 0xF2, 0x04};
 			Ptr = (PUCHAR) pVIE;
@@ -942,7 +971,7 @@ SanityCheck:
 	if (pPeerWscIe)
 		os_free_mem(NULL, pPeerWscIe);
 
-	if (Sanity != 0x7)
+	if ((Sanity != 0x7) || (bWscCheck == FALSE))
 	{
 		DBGPRINT(RT_DEBUG_LOUD, ("PeerBeaconAndProbeRspSanity - missing field, Sanity=0x%02x\n", Sanity));
 		return FALSE;

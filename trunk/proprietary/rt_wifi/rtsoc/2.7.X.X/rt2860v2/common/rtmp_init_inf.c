@@ -145,10 +145,8 @@ int rt28xx_init(
 #ifdef CONFIG_AP_SUPPORT	
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	{
-/*#ifdef AUTO_CH_SELECT_ENHANCE*/
 		AutoChBssTableInit(pAd);
 		ChannelInfoInit(pAd);
-/*#endif  AUTO_CH_SELECT_ENHANCE */
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -298,6 +296,11 @@ int rt28xx_init(
 	/* unknown, it will be updated in NICReadEEPROMParameters */
 	pAd->RfIcType = RFIC_UNKNOWN;
 	Status = RTMPReadParametersHook(pAd);
+
+	if(pAd->CommonCfg.Channel==0)
+	{
+		RTMPSetDefaultChannel(pAd);
+	}
 
 #ifdef CONFIG_STA_SUPPORT
 #ifdef CREDENTIAL_STORE
@@ -630,10 +633,6 @@ int rt28xx_init(
 				RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x70);
 				RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R195, 0x86);
 				RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x70);
-				RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R195, 0x9c);
-				RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x27);
-				RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R195, 0x9d);
-				RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x27);
 			}
 #endif /* DYNAMIC_VGA_SUPPORT */
 		}
@@ -787,6 +786,17 @@ int rt28xx_init(
 
 
 
+#ifdef PEER_DELBA_TX_ADAPT
+	if (IS_RT6352(pAd))
+	{
+		UINT32 MacReg;
+
+		RTMP_IO_READ32(pAd, TX_FBK_LIMIT, &MacReg);
+		MacReg &= (~0x00040000);
+		RTMP_IO_WRITE32(pAd, TX_FBK_LIMIT, MacReg);
+	}
+#endif /* PEER_DELBA_TX_ADAPT */
+
 	DBGPRINT_S(Status, ("<==== rt28xx_init, Status=%x\n", Status));
 
 	return TRUE;
@@ -865,8 +875,9 @@ VOID RTMPDrvOpen(
 	{
 	UINT32 reg = 0;
 	RTMP_IO_READ32(pAd, 0x1300, &reg);  /* clear garbage interrupts*/
-	if (reg);
+	if (reg) {
 	DBGPRINT(RT_DEBUG_TRACE, ("0x1300 = %08x\n", reg));
+	}
 	}
 
 	{
@@ -950,7 +961,11 @@ VOID RTMPDrvOpen(
 			
 			pWpsCtrl->pAd = pAd;        
 			NdisZeroMemory(pWpsCtrl->EntryAddr, MAC_ADDR_LEN);
+#ifdef WSC_V2_SUPPORT
+			pWpsCtrl->WscConfigMethods= 0x238C;
+#else			
 			pWpsCtrl->WscConfigMethods= 0x018C;
+#endif /*WSC_V2_SUPPORT*/
 			RTMP_AP_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_WSC_INIT, 0, (VOID *)&pAd->ApCfg.ApCliTab[index], index);
 		}
 #endif /* APCLI_SUPPORT */
@@ -973,6 +988,18 @@ VOID RTMPDrvOpen(
 	/* WSC hardware push button function 0811 */
 	WSC_HDR_BTN_Init(pAd);
 #endif /* WSC_INCLUDED */
+
+#ifdef CONFIG_AP_SUPPORT
+#ifdef MULTI_CLIENT_SUPPORT
+    pAd->CommonCfg.txRetryCfg = 0;
+    {
+        UINT32  TxRtyCfg;
+        RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
+        pAd->CommonCfg.txRetryCfg = TxRtyCfg;
+    }
+#endif /* MULTI_CLIENT_SUPPORT */
+#endif /* CONFIG_AP_SUPPORT */
+
 }
 
 
@@ -1117,12 +1144,6 @@ VOID RTMPDrvClose(
 #endif /* CLIENT_WDS */
 		/* Shutdown Access Point function, release all related resources */
 		APShutdown(pAd);
-
-/*#ifdef AUTO_CH_SELECT_ENHANCE*/
-		/* Free BssTab & ChannelInfo tabbles.*/
-/*		AutoChBssTableDestroy(pAd); */
-/*		ChannelInfoDestroy(pAd); */
-/*#endif  AUTO_CH_SELECT_ENHANCE */
 	}
 #endif /* CONFIG_AP_SUPPORT */
 

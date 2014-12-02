@@ -646,11 +646,11 @@ VOID 	AsicUpdateProtect(
 	offset = CCK_PROT_CFG;
 	for (i = 0;i < 6;i++)
 	{
-			if ((SetMask & (1<< i)))
+		if ((SetMask & (1<< i)))
 		{
-		RTMP_IO_WRITE32(pAd, offset + i*4, Protect[i]);
+			RTMP_IO_WRITE32(pAd, offset + i*4, Protect[i]);
+		}
 	}
-}
 }
 
 
@@ -2296,6 +2296,37 @@ VOID AsicAdjustTxPower(
 
 }
 
+#ifdef THERMAL_PROTECT_SUPPORT
+VOID thermal_protection(
+	IN RTMP_ADAPTER 	*pAd)
+{
+	RTMP_CHIP_OP *pChipOps = &pAd->chipOps;
+	INT32 temp_diff = 0, current_temp = 0;	
+
+	current_temp = pChipOps->ChipGetCurrentTemp(pAd);
+	temp_diff = current_temp - pAd->last_thermal_pro_temp;
+	pAd->last_thermal_pro_temp = current_temp;
+
+	DBGPRINT(RT_DEBUG_INFO, ("%s - current temp=%d, temp diff=%d\n", 
+					__FUNCTION__, current_temp, temp_diff));
+	
+	if (temp_diff > 0) {
+		if (current_temp > (pAd->thermal_pro_criteria + 10) /* 90 */)
+			pChipOps->ThermalPro2ndCond(pAd);
+		else if (current_temp > pAd->thermal_pro_criteria /* 80 */)
+			pChipOps->ThermalPro1stCond(pAd);
+		else
+			pChipOps->ThermalProDefaultCond(pAd);
+	} else if (temp_diff < 0) {
+		if (current_temp < (pAd->thermal_pro_criteria - 5) /* 75 */)
+			pChipOps->ThermalProDefaultCond(pAd);
+		else if (current_temp < (pAd->thermal_pro_criteria + 5) /* 85 */)
+			pChipOps->ThermalPro1stCond(pAd);
+		else
+			pChipOps->ThermalPro2ndCond(pAd);
+	}
+}
+#endif /* THERMAL_PROTECT_SUPPORT */
 
 VOID AsicResetBBPAgent(
 IN PRTMP_ADAPTER pAd)
@@ -2744,7 +2775,7 @@ VOID AsicSetEdcaParm(
 	
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
-	MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
+		MaxWcidNum = MAX_MAC_TABLE_SIZE_WITH_REPEATER;
 #endif /* MAC_REPEATER_SUPPORT */
 
 	Ac0Cfg.word = 0;
@@ -2908,6 +2939,29 @@ VOID AsicSetEdcaParm(
 		}
 #endif /* CONFIG_STA_SUPPORT */
 
+#ifdef APCLI_SUPPORT
+#ifdef APCLI_CERT_SUPPORT
+		if (APCLI_IF_UP_CHECK(pAd, 0) && pAd->bApCliCertTest == TRUE)
+		{
+			/* Tuning for Wi-Fi WMM S06*/
+			if (pAd->CommonCfg.bWiFiTest &&
+				pEdcaParm->Aifsn[QID_AC_VI] == 10) 
+				Ac2Cfg.field.Aifsn -= 1; 
+
+			/* Tuning for TGn Wi-Fi 5.2.32*/
+			/* STA TestBed changes in this item: conexant legacy sta ==> broadcom 11n sta*/
+			/*
+			if (STA_TGN_WIFI_ON(pAd) && 
+				pEdcaParm->Aifsn[QID_AC_VI] == 10)
+			{
+				Ac0Cfg.field.Aifsn = 3;
+				Ac2Cfg.field.AcTxop = 5;
+			}*/
+			
+		}
+#endif /* APCLI_CERT_SUPPORT */		
+#endif /* APCLI_SUPPORT */
+
 		Ac3Cfg.field.AcTxop = pEdcaParm->Txop[QID_AC_VO];
 		Ac3Cfg.field.Cwmin = pEdcaParm->Cwmin[QID_AC_VO];
 		Ac3Cfg.field.Cwmax = pEdcaParm->Cwmax[QID_AC_VO];
@@ -2937,6 +2991,21 @@ VOID AsicSetEdcaParm(
 #endif /* RTMP_MAC_PCI */
 #endif /* CONFIG_STA_SUPPORT */
 
+#ifdef APCLI_SUPPORT
+#ifdef APCLI_CERT_SUPPORT
+#ifdef RTMP_MAC_PCI
+		/* STA TestBed changes in this item: for sta wifitest 5.2.32, 2011/04/11 */
+		/* just for 5390 5392 pci, 5370 5372 not need this patch */
+		if (APCLI_IF_UP_CHECK(pAd, 0) && pAd->bApCliCertTest == TRUE)
+		{
+			if(pEdcaParm->Aifsn[QID_AC_VI] == 10)
+			{                   
+				Ac0Cfg.field.AcTxop = 38;
+			}
+		}
+#endif /* RTMP_MAC_PCI */
+#endif /* APCLI_CERT_SUPPORT */
+#endif /* APCLI_SUPPORT */
 
 		RTMP_IO_WRITE32(pAd, EDCA_AC0_CFG, Ac0Cfg.word);
 		RTMP_IO_WRITE32(pAd, EDCA_AC1_CFG, Ac1Cfg.word);
@@ -2967,6 +3036,14 @@ VOID AsicSetEdcaParm(
 		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
 			CwminCsr.field.Cwmin3 = pEdcaParm->Cwmin[QID_AC_VO] - 1; /*for TGn wifi test*/
 #endif /* CONFIG_STA_SUPPORT */
+
+#ifdef APCLI_SUPPORT
+#ifdef APCLI_CERT_SUPPORT
+		if(APCLI_IF_UP_CHECK(pAd, 0) && pAd->bApCliCertTest == TRUE)
+			CwminCsr.field.Cwmin3 = pEdcaParm->Cwmin[QID_AC_VO] - 1; /*for TGn wifi test*/
+#endif /* APCLI_CERT_SUPPORT */		
+#endif /* APCLI_SUPPORT */
+
 		RTMP_IO_WRITE32(pAd, WMM_CWMIN_CFG, CwminCsr.word);
 
 		CwmaxCsr.word = 0;
@@ -3024,6 +3101,23 @@ VOID AsicSetEdcaParm(
 			AifsnCsr.field.Aifsn3 = Ac3Cfg.field.Aifsn - 1; /*pEdcaParm->Aifsn[QID_AC_VO]; for TGn wifi test*/
 		}
 #endif /* CONFIG_STA_SUPPORT */
+
+#ifdef APCLI_SUPPORT
+#ifdef APCLI_CERT_SUPPORT
+		if (APCLI_IF_UP_CHECK(pAd, 0) && pAd->bApCliCertTest == TRUE)
+		{
+			AifsnCsr.field.Aifsn3 = Ac3Cfg.field.Aifsn - 1; /*pEdcaParm->Aifsn[QID_AC_VO]; for TGn wifi test*/
+
+			/* TODO: Is this modification also suitable for RT3052/RT3050 ???*/
+			{
+				IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+					AifsnCsr.field.Aifsn2 = 0x2; /*pEdcaParm->Aifsn[QID_AC_VI]; for WiFi WMM S4-T04.*/
+			}
+
+		}
+#endif /* APCLI_CERT_SUPPORT */		
+#endif /* APCLI_SUPPORT */
+
 		RTMP_IO_WRITE32(pAd, WMM_AIFSN_CFG, AifsnCsr.word);
 
 		NdisMoveMemory(&pAd->CommonCfg.APEdcaParm, pEdcaParm, sizeof(EDCA_PARM));
@@ -4125,4 +4219,43 @@ VOID AsicMitigateMicrowave(
 		pAd->chipOps.AsicMitigateMicrowave(pAd);
 }
 #endif /* MICROWAVE_OVEN_SUPPORT */
+
+#ifdef DROP_MASK_SUPPORT
+VOID asic_set_drop_mask(
+	PRTMP_ADAPTER ad,
+	USHORT	wcid,
+	BOOLEAN enable)
+{
+	UINT32 mac_reg = 0, reg_id, group_index;
+	UINT32 drop_mask = (1 << (wcid % 32));
+
+	/* each group has 32 entries */
+	group_index = (wcid - (wcid % 32)) >> 5 /* divided by 32 */;
+	reg_id = TX_WCID_DROP_MASK0 + 4*group_index;
+	
+	RTMP_IO_READ32(ad, reg_id, &mac_reg);
+
+	mac_reg = (enable ? \
+				(mac_reg | drop_mask):(mac_reg & ~drop_mask));
+	RTMP_IO_WRITE32(ad, reg_id, mac_reg);
+	DBGPRINT(RT_DEBUG_TRACE,
+			("%s(%u):, wcid = %u, reg_id = 0x%08x, mac_reg = 0x%08x, group_index = %u, drop_mask = 0x%08x\n",
+			__FUNCTION__, enable, wcid, reg_id, mac_reg, group_index, drop_mask));
+}
+
+
+VOID asic_drop_mask_reset(
+	PRTMP_ADAPTER ad)
+{
+	UINT32 i, reg_id;
+	
+	for ( i = 0; i < 8 /* num of drop mask group */; i++)
+	{
+		reg_id = TX_WCID_DROP_MASK0 + i*4;
+		RTMP_IO_WRITE32(ad, reg_id, 0);
+	}
+
+	DBGPRINT(RT_DEBUG_TRACE, ("%s()\n", __FUNCTION__));
+}
+#endif /* DROP_MASK_SUPPORT */
 

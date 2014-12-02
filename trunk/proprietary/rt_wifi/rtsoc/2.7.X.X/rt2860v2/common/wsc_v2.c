@@ -168,7 +168,7 @@ VOID	WscCheckPinAttackCount(
 		the AP shall revert to a locked down state, and the AP shall remain in the locked down state indefinitely 
 		(i.e., until the user intervenes to unlock AP's  PIN for use by external Registrars)
 	*/
-	pWscControl->PinAttackCount++;
+	pWscControl->PinAttackCount++;	
 	if (pWscControl->PinAttackCount >= pWscControl->MaxPinAttack)
 	{
 		pWscControl->bSetupLock = TRUE;
@@ -181,7 +181,7 @@ VOID	WscCheckPinAttackCount(
 		if (pWscControl->PinAttackCount < WSC_LOCK_FOREVER_PIN_ATTACK)
 		{
 			pWscControl->WscSetupLockTimerRunning = TRUE;
-		RTMPSetTimer(&pWscControl->WscSetupLockTimer, pWscControl->SetupLockTime*60*1000);
+			RTMPSetTimer(&pWscControl->WscSetupLockTimer, pWscControl->SetupLockTime*60*1000);
 		}
 		pWscControl->PinAttackCount = 0;
 
@@ -361,7 +361,7 @@ VOID	WscSendEapFragAck(
 		}
 	}
 	else if (IS_ENTRY_APCLI(pEntry))
-		WscSendMessage(pAdapter, WSC_OPCODE_FRAG_ACK, NULL, 0, pWscControl, AP_CLIENT_MODE, EAP_CODE_REQ);
+		WscSendMessage(pAdapter, WSC_OPCODE_FRAG_ACK, NULL, 0, pWscControl, AP_CLIENT_MODE, EAP_CODE_RSP);
 }
 
 VOID	WscSendEapFragData(

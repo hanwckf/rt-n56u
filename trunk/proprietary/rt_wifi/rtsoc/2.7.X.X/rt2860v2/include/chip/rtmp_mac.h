@@ -1115,6 +1115,14 @@ typedef	union	_LED_CFG_STRUC	{
 }	LED_CFG_STRUC, *PLED_CFG_STRUC;
 #endif
 
+#ifdef MULTI_CLIENT_SUPPORT
+/* for Multi-Clients modify AMPDU size by MCS */
+#define AMPDU_MAX_LEN_20M1S	0x1030
+#define AMPDU_MAX_LEN_20M2S	0x1034
+#define AMPDU_MAX_LEN_40M1S	0x1038
+#define AMPDU_MAX_LEN_40M2S	0x103C
+#endif /* MULTI_CLIENT_SUPPORT */
+
 /* */
 /* The number of the Tx chains */
 /* */
@@ -1128,6 +1136,8 @@ typedef	union	_LED_CFG_STRUC	{
 #define TX_CHAIN_ADDR2_H	0x1058
 #define TX_CHAIN_ADDR3_L	0x105C
 #define TX_CHAIN_ADDR3_H	0x1060
+
+#define TX_WCID_DROP_MASK0	0x106C
 
 #ifdef RT_BIG_ENDIAN
 typedef union _TX_CHAIN_ADDR0_L_STRUC

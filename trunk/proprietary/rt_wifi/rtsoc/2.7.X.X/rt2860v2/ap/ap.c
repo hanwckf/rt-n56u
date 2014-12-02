@@ -323,7 +323,10 @@ VOID APStartUp(
 				WscOnOff(pAd, apidx, FALSE);
 		}
 #endif /* WSC_V2_SUPPORT */
-
+#ifdef BAND_STEERING
+		if (pAd->ApCfg.BandSteering && apidx == BSS0)
+			BndStrg_Init(pAd);
+#endif /* BAND_STEERING */
 	}
 
 #ifdef DOT11_N_SUPPORT
@@ -1004,9 +1007,7 @@ VOID MacTableMaintenance(
 
 			if((pEntry->bReptCli) && (pEntry->bReptEthCli) && (pEntry->ReptCliIdleCount >= MAC_TABLE_AGEOUT_TIME))
 			{
-				MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL,
-								(64 + (MAX_EXT_MAC_ADDR_SIZE * pEntry->MatchAPCLITabIdx) + pEntry->MatchReptCliIdx));
-				RTMP_MLME_HANDLER(pAd);
+				RTMPRemoveRepeaterDisconnectEntry(pAd, pEntry->MatchAPCLITabIdx, pEntry->MatchReptCliIdx);
 				RTMPRemoveRepeaterEntry(pAd, pEntry->MatchAPCLITabIdx, pEntry->MatchReptCliIdx);
 				continue;
 			}
@@ -1265,9 +1266,8 @@ VOID MacTableMaintenance(
 					{
 						apCliIdx = pReptEntry->MatchApCliIdx;
 						CliIdx = pReptEntry->MatchLinkIdx;
-						MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL,
-										(64 + MAX_EXT_MAC_ADDR_SIZE*apCliIdx + CliIdx));
-						RTMP_MLME_HANDLER(pAd);
+
+						RTMPRemoveRepeaterDisconnectEntry(pAd, apCliIdx, CliIdx);
 						RTMPRemoveRepeaterEntry(pAd, apCliIdx, CliIdx);
 					}
 				}
@@ -1284,9 +1284,13 @@ VOID MacTableMaintenance(
 			pEntry->PsQIdleCount ++;  
 			if (pEntry->PsQIdleCount > 2) 
 			{
-				NdisAcquireSpinLock(&pAd->irq_lock);
+#ifdef RTMP_MAC_PCI
+				RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
+#endif /* RTMP_MAC_PCI */
 				APCleanupPsQueue(pAd, &pEntry->PsQueue);
-				NdisReleaseSpinLock(&pAd->irq_lock);
+#ifdef RTMP_MAC_PCI
+				RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
+#endif /* RTMP_MAC_PCI */
 				pEntry->PsQIdleCount = 0;
 				WLAN_MR_TIM_BIT_CLEAR(pAd, pEntry->apidx, pEntry->Aid);
 			}
@@ -1461,10 +1465,10 @@ VOID MacTableMaintenance(
 		}
 		else
 		{
-			if (pAd->ApCfg.GreenAPLevel!=GREENAP_11BGN_STAS)
+			if (pAd->ApCfg.GreenAPLevel != GREENAP_11BGN_STAS)
 			{
 				RTMP_CHIP_DISABLE_AP_MIMOPS(pAd);
-				pAd->ApCfg.GreenAPLevel=GREENAP_11BGN_STAS;
+				pAd->ApCfg.GreenAPLevel = GREENAP_11BGN_STAS;
 			}
 		}
 	}
@@ -1654,6 +1658,10 @@ BOOLEAN APPsIndicate(
 
 		if ((old_psmode == PWR_SAVE) && (Psm == PWR_ACTIVE))
 		{
+#ifdef DROP_MASK_SUPPORT
+			/* Disable Drop Mask */
+			set_drop_mask_per_client(pAd, pEntry, 2, 0);
+#endif /* DROP_MASK_SUPPORT */
 			/* TODO: For RT2870, how to handle about the BA when STA in PS mode???? */
 #ifdef RTMP_MAC_PCI
 #ifdef DOT11_N_SUPPORT
@@ -1665,6 +1673,12 @@ BOOLEAN APPsIndicate(
 			/* sleep station awakes, move all pending frames from PSQ to TXQ if any */
 			APHandleRxPsPoll(pAd, pAddr, pEntry->Aid, TRUE);
 		}
+#ifdef DROP_MASK_SUPPORT
+		else if ((old_psmode == PWR_ACTIVE) && (Psm == PWR_SAVE)) {
+			/* Enable Drop Mask */
+			set_drop_mask_per_client(pAd, pEntry, 2, 1);
+		}
+#endif /* DROP_MASK_SUPPORT */
 
 		/* move to above section */
 /*		pEntry->NoDataIdleCount = 0; */

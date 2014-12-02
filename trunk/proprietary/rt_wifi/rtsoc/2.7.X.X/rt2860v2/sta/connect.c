@@ -3195,21 +3195,6 @@ VOID JoinParmFill(
 	
 	==========================================================================
 */
-VOID ScanParmFill(
-	IN PRTMP_ADAPTER pAd,
-	IN OUT MLME_SCAN_REQ_STRUCT *ScanReq,
-	IN STRING Ssid[],
-	IN UCHAR SsidLen,
-	IN UCHAR BssType,
-	IN UCHAR ScanType)
-{
-	NdisZeroMemory(ScanReq->Ssid, MAX_LEN_OF_SSID);
-	ScanReq->SsidLen = SsidLen;
-	NdisMoveMemory(ScanReq->Ssid, Ssid, SsidLen);
-	ScanReq->BssType = BssType;
-	ScanReq->ScanType = ScanType;
-}
-
 #ifdef QOS_DLS_SUPPORT
 /*
 	==========================================================================

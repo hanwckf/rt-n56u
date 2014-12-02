@@ -68,6 +68,9 @@ VOID APSyncStateMachineInit(
 #endif /* P2P_SUPPORT */
 #ifdef AP_SCAN_SUPPORT
 	StateMachineSetAction(Sm, AP_SYNC_IDLE, APMT2_MLME_SCAN_REQ, (STATE_MACHINE_FUNC)APMlmeScanReqAction);
+#ifdef CON_WPS
+	StateMachineSetAction(Sm, AP_SYNC_IDLE, APMT2_MLME_SCAN_COMPLETE, (STATE_MACHINE_FUNC)APMlmeScanCompleteAction);
+#endif /* CON_WPS */
 
 	/* scan_listen state */
 	StateMachineSetAction(Sm, AP_SCAN_LISTEN, APMT2_MLME_SCAN_REQ, (STATE_MACHINE_FUNC)APInvalidStateWhenScan);
@@ -75,6 +78,11 @@ VOID APSyncStateMachineInit(
 	StateMachineSetAction(Sm, AP_SCAN_LISTEN, APMT2_PEER_PROBE_RSP, (STATE_MACHINE_FUNC)APPeerBeaconAtScanAction);
 	StateMachineSetAction(Sm, AP_SCAN_LISTEN, APMT2_SCAN_TIMEOUT, (STATE_MACHINE_FUNC)APScanTimeoutAction);
 	StateMachineSetAction(Sm, AP_SCAN_LISTEN, APMT2_MLME_SCAN_CNCL, (STATE_MACHINE_FUNC)APScanCnclAction);
+
+	/* resume scanning for fast-roaming */
+	StateMachineSetAction(Sm, AP_SCAN_PENDING, APMT2_MLME_SCAN_REQ, (STATE_MACHINE_FUNC)APMlmeScanReqAction);
+	StateMachineSetAction(Sm, AP_SCAN_PENDING, APMT2_PEER_BEACON, (STATE_MACHINE_FUNC)APPeerBeaconAtScanAction);
+	StateMachineSetAction(Sm, AP_SCAN_PENDING, APMT2_PEER_PROBE_RSP, (STATE_MACHINE_FUNC)APPeerBeaconAtScanAction);
 
 	RTMPInitTimer(pAd, &pAd->MlmeAux.APScanTimer, GET_TIMER_FUNCTION(APScanTimeout), pAd, FALSE);
 #endif /* AP_SCAN_SUPPORT */
@@ -154,6 +162,17 @@ VOID APPeerProbeReqAction(
 			;
 		else
 			continue; /* check next BSS */
+
+#ifdef BAND_STEERING
+	BND_STRG_CHECK_CONNECTION_REQ(	pAd,
+										NULL, 
+										Addr2,
+										Elem->MsgType,
+										Elem->Rssi0,
+										Elem->Rssi1,
+										Elem->Rssi2,
+										NULL);
+#endif /* BAND_STEERING */
 
 		/* allocate and send out ProbeRsp frame */
 		NStatus = MlmeAllocateMemory(pAd, &pOutBuffer);
@@ -1052,7 +1071,7 @@ VOID APPeerBeaconAction(
 								{
 									pEntry = &pAd->MacTab.Content[pReptEntry->MacTabWCID];
 									if (pEntry)
-						pEntry->HTPhyMode.field.BW = 0;
+										pEntry->HTPhyMode.field.BW = 0;
 								}
 							}
 						}
@@ -1086,7 +1105,7 @@ VOID APPeerBeaconAction(
 								{
 									pEntry = &pAd->MacTab.Content[pReptEntry->MacTabWCID];
 									if (pEntry)
-						pEntry->HTPhyMode.field.BW = 1;
+										pEntry->HTPhyMode.field.BW = 1;
 								}
 							}
 						}
@@ -1095,6 +1114,28 @@ VOID APPeerBeaconAction(
 						DBGPRINT(RT_DEBUG_INFO, ("FallBack APClient BW to 40MHz\n"));
 					}
 				}
+
+#ifdef APCLI_CERT_SUPPORT
+				if (pAd->bApCliCertTest == TRUE)
+				{
+					UCHAR RegClass;
+					OVERLAP_BSS_SCAN_IE	BssScan;
+					BOOLEAN					brc;
+					
+					brc = PeerBeaconAndProbeRspSanity2(pAd, Elem->Msg, Elem->MsgLen, &BssScan, &RegClass);
+					if (brc == TRUE)
+					{
+						pAd->CommonCfg.Dot11BssWidthTriggerScanInt = le2cpu16(BssScan.TriggerScanInt); /*APBssScan.TriggerScanInt[1] * 256 + APBssScan.TriggerScanInt[0];*/
+						/*DBGPRINT(RT_DEBUG_ERROR,("Update Dot11BssWidthTriggerScanInt=%d \n", pAd->CommonCfg.Dot11BssWidthTriggerScanInt)); */
+						/* out of range defined in MIB... So fall back to default value.*/
+						if ((pAd->CommonCfg.Dot11BssWidthTriggerScanInt < 10) ||(pAd->CommonCfg.Dot11BssWidthTriggerScanInt > 900))
+						{
+							/*DBGPRINT(RT_DEBUG_ERROR,("ACT - UpdateBssScanParm( Dot11BssWidthTriggerScanInt out of range !!!!)  \n"));*/
+							pAd->CommonCfg.Dot11BssWidthTriggerScanInt = 900;
+						}
+					}
+				}
+#endif /* APCLI_CERT_SUPPORT */						
 			}
 		}
 
@@ -1195,7 +1236,6 @@ VOID APPeerBeaconAction(
 	/* sanity check fail, ignore this frame */
 
 __End_Of_APPeerBeaconAction:
-/*#ifdef AUTO_CH_SELECT_ENHANCE */
 #ifdef CONFIG_AP_SUPPORT
 IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 {
@@ -1207,7 +1247,6 @@ IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	}
 }
 #endif /* CONFIG_AP_SUPPORT */
-/*#endif // AUTO_CH_SELECT_ENHANCE */
 
 LabelErr:
 	if (VarIE != NULL)
@@ -1289,6 +1328,46 @@ VOID APScanTimeoutAction(
 	ScanNextChannel(pAd, OPMODE_AP);
 }
 
+#ifdef CON_WPS
+VOID APMlmeScanCompleteAction(
+        IN PRTMP_ADAPTER pAd,
+        IN MLME_QUEUE_ELEM *Elem)
+{
+	PWSC_CTRL   pWscControl;
+	PWSC_CTRL   pApCliWscControl;
+	UCHAR       apidx;
+	INT         IsAPConfigured;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("AP SYNC - APMlmeScanCompleteAction\n"));
+
+	/* If We catch the SR=TRUE in last scan_res, stop the AP Wsc SM */	
+	pApCliWscControl = &pAd->ApCfg.ApCliTab[BSS0].WscControl;
+	WscPBCBssTableSort(pAd, pApCliWscControl);
+	
+	for(apidx=0; apidx<pAd->ApCfg.BssidNum; apidx++)
+	{
+		pWscControl = &pAd->ApCfg.MBSSID[apidx].WscControl;
+		IsAPConfigured = pWscControl->WscConfStatus;
+		
+		DBGPRINT(RT_DEBUG_TRACE, ("CON_WPS[%d]: info %d, %d\n", apidx, pWscControl->WscState, pWscControl->bWscTrigger));
+		if ((pWscControl->WscConfMode != WSC_DISABLE) && 
+		    (pWscControl->bWscTrigger == TRUE) &&
+		    (pApCliWscControl->WscPBCBssCount > 0))
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("CON_WPS[%d]: Stop the AP Wsc Machine\n", apidx));
+			WscBuildBeaconIE(pAd, IsAPConfigured, FALSE, 0, 0, apidx, NULL, 0, AP_MODE);
+			WscBuildProbeRespIE(pAd, WSC_MSGTYPE_AP_WLAN_MGR, IsAPConfigured, FALSE, 0, 0, apidx, NULL, 0, AP_MODE);
+			APUpdateBeaconFrame(pAd, apidx);
+			WscStop(pAd, FALSE, pWscControl);
+			/* AP: For stop the other side of the band with WSC SM */
+			WscConWpsStop(pAd, FALSE, pWscControl);
+			continue;
+		}
+	}
+
+}
+#endif /* CON_WPS*/
+
 /*
     ==========================================================================
     Description:
@@ -1330,6 +1409,9 @@ VOID APMlmeScanReqAction(
 
 		/* start from the first channel */
 		pAd->MlmeAux.Channel = FirstChannel(pAd);
+
+		if ((pAd->ApCfg.bImprovedScan) && (pAd->Mlme.ApSyncMachine.CurrState == AP_SCAN_PENDING))
+			pAd->MlmeAux.Channel = pAd->ApCfg.LastScanChannel;
 
 		/* Let BBP register at 20MHz to do scan */
 		RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R4, &BBPValue);
@@ -1540,6 +1622,47 @@ VOID APPeerBeaconAtScanAction(
 				&CfParm, AtimWin, CapabilityInfo, SupRate, SupRateLen, ExtRate, ExtRateLen,  pHtCapability,
 				pAddHtInfo, HtCapabilityLen, AddHtInfoLen, NewExtChannelOffset, Channel, Rssi, TimeStamp, CkipFlag,
 				&EdcaParm, &QosCapability, &QbssLoad, LenVIE, pVIE);
+#ifdef APCLI_SUPPORT
+#ifdef APCLI_CERT_SUPPORT
+#ifdef DOT11_N_SUPPORT
+#ifdef DOT11N_DRAFT3
+		/* Check if this scan channel is the effeced channel */
+		if (APCLI_IF_UP_CHECK(pAd, 0) && pAd->bApCliCertTest == TRUE
+			&& (pAd->CommonCfg.bBssCoexEnable == TRUE) 
+			&& ((Channel > 0) && (Channel <= 14)))
+		{
+			int chListIdx;
+
+			/* 
+				First we find the channel list idx by the channel number
+			*/
+			for (chListIdx = 0; chListIdx < pAd->ChannelListNum; chListIdx++)
+			{
+				if (Channel == pAd->ChannelList[chListIdx].Channel)
+					break;
+			}
+
+			if (chListIdx < pAd->ChannelListNum)
+			{
+				/* 
+					If this channel is effected channel for the 20/40 coex operation. Check the related IEs.
+				*/
+				if (pAd->ChannelList[chListIdx].bEffectedChannel == TRUE)
+				{
+					UCHAR RegClass;
+					OVERLAP_BSS_SCAN_IE	BssScan;
+
+					/* Read Beacon's Reg Class IE if any. */
+					PeerBeaconAndProbeRspSanity2(pAd, Elem->Msg, Elem->MsgLen, &BssScan, &RegClass);
+					//printk("\x1b[31m TriEventTableSetEntry \x1b[m\n");
+					TriEventTableSetEntry(pAd, &pAd->CommonCfg.TriggerEventTab, Bssid, pHtCapability, HtCapabilityLen, RegClass, Channel);
+				}
+			}
+		}
+#endif /* DOT11N_DRAFT3 */
+#endif /* DOT11_N_SUPPORT */
+#endif /* APCLI_CERT_SUPPORT */
+#endif /* APCLI_SUPPORT */				
 		if (Idx != BSS_NOT_FOUND)
 		{
 			NdisMoveMemory(pAd->ScanTab.BssEntry[Idx].PTSF, &Elem->Msg[24], 4);
@@ -1611,8 +1734,7 @@ VOID ApSiteSurvey(
 	IN	UCHAR				ScanType,
 	IN	BOOLEAN				ChannelSel)
 {
-	MLME_SCAN_REQ_STRUCT    ScanReq;
-
+    MLME_SCAN_REQ_STRUCT    ScanReq;
 	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))
 	{
 		/*
@@ -1722,6 +1844,7 @@ REG_CLASS reg_class[] =
 	{  3, 0, {149, 153, 157, 161, 0}},
 	{  4, 0, {100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 0}},
 	{  5, 0, {165, 0}},
+	{ 12, 0, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0}},
 	{ 22, 1, {36, 44, 0}},
 	{ 23, 1, {52, 60, 0}},
 	{ 24, 1, {100, 108, 116, 124, 132, 0}},

@@ -55,6 +55,10 @@
 #endif /* AGS_SUPPORT */
 #endif /* CONFIG_STA_SUPPORT */
 
+#ifdef BAND_STEERING
+#include "band_steering_def.h"
+#endif /* BAND_STEERING */
+
 #include "mlme.h"
 #include "crypt_md5.h"
 #include "crypt_sha2.h"
@@ -231,6 +235,10 @@
 #include <linux/workqueue.h>
 #endif /* WORKQUEUE_BH / */
 #endif /* RTMP_RBUS_SUPPORT */
+
+#ifdef BAND_STEERING
+#include "band_steering.h"
+#endif /* BAND_STEERING */
 
 
 #ifdef TXBF_SUPPORT

@@ -461,7 +461,13 @@ INT Set_ReptMode_Enable_Proc(IN PRTMP_ADAPTER pAd, IN PSTRING arg);
 
 #ifdef WSC_AP_SUPPORT
 INT Set_AP_WscSsid_Proc(IN PRTMP_ADAPTER	pAd, IN	PSTRING arg);
+#ifdef WSC_PBC_SSID_SELECT_SUPPORT
+INT Set_AP_WscPBCSsid_Proc(IN PRTMP_ADAPTER	pAd, IN	PSTRING arg);
+#endif /* WSC_PBC_SSID_SELECT_SUPPORT */
 #endif /* WSC_AP_SUPPORT */
+#ifdef APCLI_CERT_SUPPORT
+INT Set_ApCli_Cert_Enable_Proc(IN PRTMP_ADAPTER	pAd, IN	PSTRING arg);
+#endif /* APCLI_CERT_SUPPORT */
 #endif /* APCLI_SUPPORT */
 #ifdef UAPSD_SUPPORT
 INT Set_UAPSD_Proc(
@@ -543,6 +549,14 @@ INT Set_AP_WscMultiByteCheck_Proc(
 
 
 INT	Set_WscVersion_Proc(
+	IN	PRTMP_ADAPTER	pAd, 
+	IN	PSTRING			arg);
+
+INT	Set_WscUUID_STR_Proc(
+	IN	PRTMP_ADAPTER	pAd, 
+	IN	PSTRING			arg);
+
+INT	Set_WscUUID_HEX_E_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
 	IN	PSTRING			arg);
 
@@ -740,6 +754,12 @@ INT	Set_DyncVgaEnable_Proc(
 	IN	PSTRING			arg);
 #endif /* DYNAMIC_VGA_SUPPORT */
 
+#ifdef THERMAL_PROTECT_SUPPORT	
+INT set_thermal_protection_criteria_proc(
+	IN RTMP_ADAPTER	*pAd,
+	IN PSTRING arg);
+#endif /* THERMAL_PROTECT_SUPPORT */
+
 static struct {
 	PSTRING name;
 	INT (*set_proc)(PRTMP_ADAPTER pAdapter, PSTRING arg);
@@ -863,8 +883,8 @@ static struct {
 	{"ACSCheckTime",				Set_AutoChannelSelCheckTime_Proc},
 #endif /* AP_SCAN_SUPPORT */
 	{"ResetCounter",				Set_ResetStatCounter_Proc},
-	{"DisConnectSta",				Set_DisConnectSta_Proc},
 	{"DisConnectAllSta",			Set_DisConnectAllSta_Proc},
+	{"DisConnectSta",				Set_DisConnectSta_Proc},
 #ifdef DOT1X_SUPPORT
 	{"IEEE8021X",					Set_IEEE8021X_Proc},
 	{"PreAuth",						Set_PreAuth_Proc},
@@ -1069,7 +1089,13 @@ static struct {
 
 #ifdef WSC_AP_SUPPORT	
 	{"ApCliWscSsid",				Set_AP_WscSsid_Proc},
+#ifdef WSC_PBC_SSID_SELECT_SUPPORT
+	{"ApCliWscPBCSsid",			Set_AP_WscPBCSsid_Proc},
+#endif /* WSC_PBC_SSID_SELECT_SUPPORT */
 #endif /* WSC_AP_SUPPORT */
+#ifdef APCLI_CERT_SUPPORT
+	{"ApCliCertEnable",				Set_ApCli_Cert_Enable_Proc},
+#endif /* APCLI_CERT_SUPPORT */
 #endif /* APCLI_SUPPORT */
 #ifdef WSC_AP_SUPPORT
 	{"WscConfMode",				Set_AP_WscConfMode_Proc},
@@ -1084,6 +1110,10 @@ static struct {
 	{"WscSecurityMode",				Set_AP_WscSecurityMode_Proc},
 	{"WscMultiByteCheck",			Set_AP_WscMultiByteCheck_Proc},
 	{"WscVersion", 					Set_WscVersion_Proc},
+	//HEX : 32 Length
+	{"WscUUID_E", 					Set_WscUUID_HEX_E_Proc},
+	//37 Length
+	{"WscUUID_Str", 					Set_WscUUID_STR_Proc},	
 #ifdef WSC_V2_SUPPORT
 	{"WscV2Support", 				Set_WscV2Support_Proc},
 	{"WscVersion2", 				Set_WscVersion2_Proc},
@@ -1292,6 +1322,19 @@ static struct {
 #endif /* DYNAMIC_VGA_SUPPORT */
 #endif /* defined(MICROWAVE_OVEN_SUPPORT) || defined(DYNAMIC_VGA_SUPPORT) */
 
+#ifdef THERMAL_PROTECT_SUPPORT
+	{"tpc",						set_thermal_protection_criteria_proc},
+#endif /* THERMAL_PROTECT_SUPPORT */
+#ifdef BAND_STEERING
+	{"BndStrgEnable", 		Set_BndStrg_Enable},
+	{"BndStrgRssiCheck", 	Set_BndStrg_RssiCheck},
+	{"BndStrgAge", 		Set_BndStrg_Age},
+	{"BndStrgHoldTime", 	Set_BndStrg_HoldTime},
+	{"BndStrgCheckTime", 	Set_BndStrg_CheckTime5G},
+#ifdef BND_STRG_DBG
+	{"BndStrgMntAddr", 	Set_BndStrg_MonitorAddr},
+#endif /* BND_STRG_DBG */
+#endif /* BAND_STEERING */
 	{NULL,}
 };
 
@@ -1346,6 +1389,10 @@ static struct {
 #ifdef WSC_AP_SUPPORT
 	{"WscPeerList", 		WscApShowPeerList},
 #endif /* WSC_AP_SUPPORT */
+#ifdef BAND_STEERING
+	{"BndStrgList", 		Show_BndStrg_List},
+	{"BndStrgInfo", 		Show_BndStrg_Info},
+#endif /* BAND_STEERING */
 	{NULL,}
 };
 
@@ -1979,14 +2026,14 @@ INT RTMPAPSetInformation(
 	                {
 	                	NdisAcquireSpinLock(&pAd->MacTabLock);
 	                    pMacEntry->PortSecured = WPA_802_1X_PORT_NOT_SECURED;
-				NdisReleaseSpinLock(&pAd->MacTabLock);
+						NdisReleaseSpinLock(&pAd->MacTabLock);
 	                }
-			else
-			{
-				NdisAcquireSpinLock(&pAd->MacTabLock);
+					else
+					{
+						NdisAcquireSpinLock(&pAd->MacTabLock);
 	                    pMacEntry->PortSecured = WPA_802_1X_PORT_SECURED;
-				NdisReleaseSpinLock(&pAd->MacTabLock);
-			}
+						NdisReleaseSpinLock(&pAd->MacTabLock);
+					}
 	                DBGPRINT(RT_DEBUG_TRACE, ("Set ApCLi::OID_802_11_DROP_UNENCRYPTED (=%d)\n", enabled));
 	            }
 	            break;
@@ -2462,6 +2509,61 @@ INT RTMPAPSetInformation(
 			}
     		}
 			break;
+#ifdef CON_WPS
+		case RT_OID_WSC_SET_CON_WPS_STOP:
+		{
+			UCHAR       apidx = pObj->ioctl_if;
+			PWSC_UPNP_CTRL_WSC_BAND_STOP pWscUpnpBandStop;
+			PWSC_CTRL pWpsCtrl = NULL;
+        		INT         IsAPConfigured;
+
+			if (pAd->conWscStatus == CON_WPS_STATUS_DISABLED)
+			{
+				Status = -EINVAL;
+				break;
+			}
+
+			os_alloc_mem(NULL, (UCHAR **)&pWscUpnpBandStop, sizeof(WSC_UPNP_CTRL_WSC_BAND_STOP));
+			
+			if(pWscUpnpBandStop)
+			{
+				Status = copy_from_user(pWscUpnpBandStop, wrq->u.data.pointer, wrq->u.data.length);
+				DBGPRINT(RT_DEBUG_TRACE, ("CON_WPS BAND_STOP_CMD From[%s], isApCli[%d], is2gBand[%d]\n", 
+					pWscUpnpBandStop->ifName, pWscUpnpBandStop->isApCli, pWscUpnpBandStop->is2gBand));
+
+				if (pWscUpnpBandStop->isApCli)
+				{
+        				pWpsCtrl = &pAd->ApCfg.ApCliTab[BSS0].WscControl;
+        				DBGPRINT(RT_DEBUG_TRACE, ("CON_WPS FROM IOCTL: Stop the ApCli WPS, state [%d]\n", 
+								pWpsCtrl->WscState));
+
+				        if (pWpsCtrl->WscState != WSC_STATE_OFF)
+        				{
+				                WscStop(pAd, TRUE, pWpsCtrl);
+                				pWpsCtrl->WscConfMode = WSC_DISABLE;
+        				}
+				}
+				else
+				{
+					pWpsCtrl = &pAd->ApCfg.MBSSID[apidx].WscControl;
+					IsAPConfigured = pWpsCtrl->WscConfStatus;
+
+                			if ((pWpsCtrl->WscConfMode != WSC_DISABLE) &&
+                    			    (pWpsCtrl->bWscTrigger == TRUE))
+				        {
+						DBGPRINT(RT_DEBUG_TRACE, ("FROM IOCTL CON_WPS[%d]: Stop the AP Wsc Machine\n", apidx));
+				                WscBuildBeaconIE(pAd, IsAPConfigured, FALSE, 0, 0, apidx, NULL, 0, AP_MODE);
+                        			WscBuildProbeRespIE(pAd, WSC_MSGTYPE_AP_WLAN_MGR, IsAPConfigured, FALSE, 0, 0, 
+														apidx, NULL, 0, AP_MODE);
+                        			APUpdateBeaconFrame(pAd, apidx);
+				                WscStop(pAd, FALSE, pWpsCtrl);
+					}
+				}
+				os_free_mem(NULL, pWscUpnpBandStop);
+			}
+		}
+		break;
+#endif /* CON_WPS */
 #ifdef WSC_AP_SUPPORT
 		case RT_OID_WSC_SET_SELECTED_REGISTRAR:
 			{	
@@ -2919,48 +3021,48 @@ INT RTMPAPSetInformation(
 #endif /* DOT1X_SUPPORT */
 
         case OID_802_11_AUTHENTICATION_MODE:
-            if (wrq->u.data.length != sizeof(NDIS_802_11_AUTHENTICATION_MODE)) 
-                Status  = -EINVAL;
-            else
-            {
-                Status = copy_from_user(&AuthMode, wrq->u.data.pointer, wrq->u.data.length);
-                if (AuthMode > Ndis802_11AuthModeMax)
-                {
-                    Status  = -EINVAL;
-                    break;
-                }
+			if (wrq->u.data.length != sizeof(NDIS_802_11_AUTHENTICATION_MODE)) 
+				Status  = -EINVAL;
+			else
+			{
+				Status = copy_from_user(&AuthMode, wrq->u.data.pointer, wrq->u.data.length);
+				if (AuthMode > Ndis802_11AuthModeMax)
+				{
+					Status  = -EINVAL;
+					break;
+				}
 
 #ifdef APCLI_SUPPORT
 #ifdef APCLI_WPA_SUPPLICANT_SUPPORT
-		if (pObj->ioctl_if_type == INT_APCLI)
-		{
-			ifIndex = pObj->ioctl_if;
-			apcliEn = pAd->ApCfg.ApCliTab[ifIndex].Enable;
-
-			if(apcliEn)
-			{
-                   		 if (pAd->ApCfg.ApCliTab[ifIndex].AuthMode != AuthMode)
-                   		 {
-		                        /* Config has changed */
-		                        pAd->ApCfg.ApCliTab[ifIndex].bConfigChanged = TRUE;
-		               }
-                    		pAd->ApCfg.ApCliTab[ifIndex].AuthMode = AuthMode;
-
-				for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
+				if (pObj->ioctl_if_type == INT_APCLI)
 				{
-					if (IS_ENTRY_APCLI(&pAd->MacTab.Content[i]))
+					ifIndex = pObj->ioctl_if;
+					apcliEn = pAd->ApCfg.ApCliTab[ifIndex].Enable;
+
+					if(apcliEn)
 					{
-						pAd->MacTab.Content[i].PortSecured  = WPA_802_1X_PORT_NOT_SECURED;
+						if (pAd->ApCfg.ApCliTab[ifIndex].AuthMode != AuthMode)
+						{
+							/* Config has changed */
+							pAd->ApCfg.ApCliTab[ifIndex].bConfigChanged = TRUE;
+						}
+						pAd->ApCfg.ApCliTab[ifIndex].AuthMode = AuthMode;
+
+						for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
+						{
+							if (IS_ENTRY_APCLI(&pAd->MacTab.Content[i]))
+							{
+								pAd->MacTab.Content[i].PortSecured  = WPA_802_1X_PORT_NOT_SECURED;
+							}
+						}
+
+						RTMPMakeRSNIE(pAd, pAd->ApCfg.ApCliTab[ifIndex].AuthMode, pAd->ApCfg.ApCliTab[ifIndex].WepStatus, (ifIndex + MIN_NET_DEVICE_FOR_APCLI));
+						pAd->ApCfg.ApCliTab[ifIndex].DefaultKeyId  = 0;
+
+						if(pAd->ApCfg.ApCliTab[ifIndex].AuthMode >= Ndis802_11AuthModeWPA)
+							pAd->ApCfg.ApCliTab[ifIndex].DefaultKeyId = 1;
 					}
 				}
-
-				RTMPMakeRSNIE(pAd, pAd->ApCfg.ApCliTab[ifIndex].AuthMode, pAd->ApCfg.ApCliTab[ifIndex].WepStatus, (ifIndex + MIN_NET_DEVICE_FOR_APCLI));
-				pAd->ApCfg.ApCliTab[ifIndex].DefaultKeyId  = 0;
-				
-				if(pAd->ApCfg.ApCliTab[ifIndex].AuthMode >= Ndis802_11AuthModeWPA)
-					pAd->ApCfg.ApCliTab[ifIndex].DefaultKeyId = 1;
-			}
-		}
 #endif/*APCLI_WPA_SUPPLICANT_SUPPORT*/
 #endif/*APCLI_SUPPORT*/
                 else
@@ -2976,8 +3078,8 @@ INT RTMPAPSetInformation(
                 DBGPRINT(RT_DEBUG_TRACE, ("Set::OID_802_11_AUTHENTICATION_MODE (=%d) \n",pAd->ApCfg.MBSSID[0].AuthMode));
             }
 
-		APStop(pAd);
-		APStartUp(pAd);
+			APStop(pAd);
+			APStartUp(pAd);
             break;
 
         case OID_802_11_WEP_STATUS:
@@ -3114,6 +3216,30 @@ INT RTMPAPSetInformation(
                 }
             }
             break;
+
+		case OID_802_11_PASSPHRASE:
+			{
+				MULTISSID_STRUCT *pMBSSStruct;
+				INT retval;
+				NDIS80211PSK tmpPSK;
+				pObj = (POS_COOKIE) pAd->OS_Cookie;
+				NdisZeroMemory(&tmpPSK, sizeof(tmpPSK));
+				Status = copy_from_user(&tmpPSK, wrq->u.data.pointer, wrq->u.data.length);
+				hex_dump("Set::OID_802_11_PASSPHRASE ==>", &tmpPSK.WPAKey[0], tmpPSK.WPAKeyLen);
+
+				pMBSSStruct = &pAd->ApCfg.MBSSID[pObj->ioctl_if];
+				retval = RT_CfgSetWPAPSKKey(pAd, &tmpPSK.WPAKey[0], tmpPSK.WPAKeyLen, (PUCHAR)pMBSSStruct->Ssid, pMBSSStruct->SsidLen, pMBSSStruct->PMK);
+				if (retval == FALSE)
+					DBGPRINT(RT_DEBUG_ERROR, ("PassPhrase Generate Fail\n"));
+
+#ifdef WSC_AP_SUPPORT
+				NdisZeroMemory(pMBSSStruct->WscControl.WpaPsk, 64);
+				pMBSSStruct->WscControl.WpaPskLen = 0;
+				pMBSSStruct->WscControl.WpaPskLen = tmpPSK.WPAKeyLen;
+				NdisMoveMemory(pMBSSStruct->WscControl.WpaPsk, &tmpPSK.WPAKey[0], pMBSSStruct->WscControl.WpaPskLen);
+
+#endif /* WSC_AP_SUPPORT */
+			}
 
 #ifdef HOSTAPD_SUPPORT
 	case HOSTAPD_OID_SET_802_1X:/*pure 1x is enabled. */
@@ -3539,6 +3665,11 @@ INT RTMPAPSetInformation(
 			break;
 #endif /*HOSTAPD_SUPPORT*/
 
+#ifdef BAND_STEERING
+	case OID_BNDSTRG_MSG:
+		BndStrg_MsgHandle(pAd, wrq);
+		break;
+#endif /* BAND_STEERING */
 
    		default:
 			DBGPRINT(RT_DEBUG_TRACE, ("Set::unknown IOCTL's subcmd = 0x%08x\n", cmd));
@@ -3567,9 +3698,11 @@ INT RTMPAPQueryInformation(
 	PWSC_CTRL		pWscControl;
 #endif /* WSC_AP_SUPPORT */
 
+	ULONG ulInfo;
+
 #ifdef SNMP_SUPPORT	
 	/*for snmp, kathy */
-	ULONG ulInfo;
+	//ULONG ulInfo;
 	DefaultKeyIdxValue			*pKeyIdxValue;
 	INT							valueLen;
 	TX_RTY_CFG_STRUC			tx_rty_cfg;
@@ -3860,6 +3993,124 @@ INT RTMPAPQueryInformation(
 #endif/*APCLI_WPA_SUPPLICANT_SUPPORT*/
 #endif/*APCLI_SUPPORT*/
 
+#ifdef WSC_INCLUDED
+		case OID_802_11_PASSPHRASE:
+		{
+		     MULTISSID_STRUCT *pMBSSStruct;
+		     pMBSSStruct = &pAd->ApCfg.MBSSID[pObj->ioctl_if];
+	            wrq->u.data.length = pMBSSStruct->WscControl.WpaPskLen;
+	            Status = copy_to_user(wrq->u.data.pointer, &pMBSSStruct->WscControl.WpaPsk, wrq->u.data.length);
+	            DBGPRINT(RT_DEBUG_TRACE, ("Query::OID_802_11_PASSPHRASE\n"));
+		     hex_dump("OID_802_11_PASSPHRASE : ",&pMBSSStruct->WscControl.WpaPsk,wrq->u.data.length);
+	            break;
+	        }
+#endif
+
+		case OID_802_11_CHANNEL_WIDTH:
+		{
+	            wrq->u.data.length = sizeof(pAd->CommonCfg.BBPCurrentBW);
+		     ulInfo = pAd->CommonCfg.BBPCurrentBW;	
+	            Status = copy_to_user(wrq->u.data.pointer, &ulInfo, wrq->u.data.length);
+	            DBGPRINT(RT_DEBUG_TRACE, ("Query::OID_802_11_CHANNEL_WIDTH (%lu)\n",ulInfo));
+	            break;
+	        }
+		break;
+
+
+	        case RT_OID_802_11_COUNTRY_REGION:
+		     wrq->u.data.length = sizeof(ulInfo);
+	            ulInfo = pAd->CommonCfg.CountryRegionForABand;
+	            ulInfo = (ulInfo << 8)|(pAd->CommonCfg.CountryRegion);
+				if (copy_to_user(wrq->u.data.pointer, &ulInfo, wrq->u.data.length))
+	            {
+					Status = -EFAULT;
+	            }
+	            DBGPRINT(RT_DEBUG_TRACE, ("Query::RT_OID_802_11_COUNTRY_REGION (%lx)\n", ulInfo));
+	            break;
+
+		case OID_802_11_BEACON_PERIOD:
+		     wrq->u.data.length = sizeof(ulInfo);
+	            ulInfo = pAd->CommonCfg.BeaconPeriod;
+		     if (copy_to_user(wrq->u.data.pointer, &ulInfo, wrq->u.data.length))
+	            {
+					Status = -EFAULT;
+	            }
+	            DBGPRINT(RT_DEBUG_TRACE, ("Query::OID_802_11_BEACON_PERIOD (%lu)\n", ulInfo));
+		     break;
+
+	        case RT_OID_802_11_TX_POWER_LEVEL_1:
+	            wrq->u.data.length = sizeof(ulInfo);
+	            ulInfo = pAd->CommonCfg.TxPowerPercentage;
+	            Status = copy_to_user(wrq->u.data.pointer, &pAd->CommonCfg.TxPowerPercentage, wrq->u.data.length);
+		     DBGPRINT(RT_DEBUG_TRACE, ("Query::RT_OID_802_11_TX_POWER_LEVEL_1 (=%ld)\n", pAd->CommonCfg.TxPowerPercentage));
+			break;
+			
+		case RT_OID_802_11_QUERY_WMM:
+			wrq->u.data.length = sizeof(BOOLEAN);
+			//Status = copy_to_user(wrq->u.data.pointer, &pAd->ApCfg.MBSSID[pObj->ioctl_if].wdev.bWmmCapable, wrq->u.data.length);
+			Status = copy_to_user(wrq->u.data.pointer, &pAd->ApCfg.MBSSID[pObj->ioctl_if].bWmmCapable, wrq->u.data.length);				
+			DBGPRINT(RT_DEBUG_TRACE, ("Query::RT_OID_802_11_QUERY_WMM (=%d)\n",pAd->ApCfg.MBSSID[pObj->ioctl_if].bWmmCapable));
+			break;
+
+		case OID_802_11_BSSID:
+			{
+			//struct wifi_dev *wdev;
+			//wdev = &pAd->ApCfg.MBSSID[pObj->ioctl_if].wdev;
+			wrq->u.data.length = MAC_ADDR_LEN;
+	            	//Status = copy_to_user(wrq->u.data.pointer, &wdev->bssid[0], wrq->u.data.length);
+	            	Status = copy_to_user(wrq->u.data.pointer, &pAd->ApCfg.MBSSID[pObj->ioctl_if].Bssid[0], wrq->u.data.length);	            	
+		     	//DBGPRINT(RT_DEBUG_TRACE, ("Query::OID_802_11_BSSID (%02x:%02x:%02x:%02x:%02x:%02x)\n", PRINT_MAC(wdev->bssid)));
+		     	DBGPRINT(RT_DEBUG_TRACE, ("Query::OID_802_11_BSSID (%02x:%02x:%02x:%02x:%02x:%02x)\n", PRINT_MAC(pAd->ApCfg.MBSSID[pObj->ioctl_if].Bssid)));
+			break;				
+			 }
+
+	        case RT_OID_802_11_PREAMBLE:
+	            wrq->u.data.length = sizeof(ulInfo);
+	            ulInfo = pAd->CommonCfg.TxPreamble;				
+	            Status = copy_to_user(wrq->u.data.pointer, &ulInfo, wrq->u.data.length);
+	            DBGPRINT(RT_DEBUG_TRACE, ("Query::RT_OID_802_11_PREAMBLE(=%ld)\n", pAd->CommonCfg.TxPreamble));
+	            break;
+
+	        case OID_802_11_HT_STBC:
+	            wrq->u.data.length = sizeof(ulInfo);
+	            ulInfo = pAd->CommonCfg.RegTransmitSetting.field.STBC;				
+	            Status = copy_to_user(wrq->u.data.pointer, &ulInfo, wrq->u.data.length);
+	            DBGPRINT(RT_DEBUG_TRACE, ("Query::OID_802_11_HT_STBC(=%u)\n", pAd->CommonCfg.RegTransmitSetting.field.STBC));
+	            break;
+
+	        case OID_802_11_UAPSD:
+	            wrq->u.data.length = sizeof(BOOLEAN);
+	            Status = copy_to_user(wrq->u.data.pointer, &pAd->ApCfg.MBSSID[pObj->ioctl_if].UapsdInfo.bAPSDCapable, wrq->u.data.length);
+		     DBGPRINT(RT_DEBUG_TRACE, ("Query::OID_802_11_UAPSD (=%d)\n",pAd->ApCfg.MBSSID[pObj->ioctl_if].UapsdInfo.bAPSDCapable));
+		     break;
+
+		case OID_802_11_TX_PACKET_BURST:
+	            wrq->u.data.length = sizeof(BOOLEAN);
+	            Status = copy_to_user(wrq->u.data.pointer, &pAd->CommonCfg.bEnableTxBurst, wrq->u.data.length);
+		     DBGPRINT(RT_DEBUG_TRACE, ("Query::OID_802_11_TX_PACKET_BURST (=%d)\n",pAd->CommonCfg.bEnableTxBurst));
+		     break;
+
+#ifdef DOT11N_DRAFT3
+		case OID_802_11_COEXISTENCE:
+	            wrq->u.data.length = sizeof(BOOLEAN);
+	            Status = copy_to_user(wrq->u.data.pointer, &pAd->CommonCfg.bBssCoexEnable, wrq->u.data.length);
+		     DBGPRINT(RT_DEBUG_TRACE, ("Query::OID_802_11_COEXISTENCE (=%d)\n",pAd->CommonCfg.bBssCoexEnable));
+		     break;
+#endif
+
+		case OID_802_11_AMSDU:
+	            wrq->u.data.length = sizeof(ulInfo);
+		     ulInfo = pAd->CommonCfg.BACapability.field.AmsduEnable;	
+	            Status = copy_to_user(wrq->u.data.pointer, &ulInfo, wrq->u.data.length);
+		     DBGPRINT(RT_DEBUG_TRACE, ("Query::OID_802_11_AMSDU (=%ld)\n", ulInfo));
+		     break;			
+
+		case OID_802_11_AMPDU:
+	            wrq->u.data.length = sizeof(ulInfo);
+		     ulInfo = pAd->CommonCfg.BACapability.field.AutoBA;	
+	            Status = copy_to_user(wrq->u.data.pointer, &ulInfo, wrq->u.data.length);
+		     DBGPRINT(RT_DEBUG_TRACE, ("Query::OID_802_11_AMPDU (=%ld)\n", ulInfo));
+		     break;
 #ifdef P2P_SUPPORT
 		case OID_802_11_P2P_Connected_MAC:			
 			wrq->u.data.length = MAC_ADDR_LEN;
@@ -3965,6 +4216,11 @@ INT RTMPAPQueryInformation(
 			{
 				Status = -EFAULT;
 			}
+			break;
+
+		case OID_802_11_ASSOLIST:
+			DBGPRINT(RT_DEBUG_TRACE, ("Query::OID_802_11_ASSOLIST \n"));
+			RTMPAPGetAssoMacTable(pAd,wrq);
 			break;
 
 		case OID_802_11_NETWORK_TYPES_SUPPORTED:
@@ -4347,10 +4603,10 @@ INT RTMPAPQueryInformation(
 #ifdef RTMP_MAC_PCI
 			{
 			
-				USHORT  device_id;
+				USHORT  device_id = 0;
 				if (((POS_COOKIE)pAd->OS_Cookie)->pci_dev != NULL)
-			    	pci_read_config_word(((POS_COOKIE)pAd->OS_Cookie)->pci_dev, PCI_DEVICE_ID, &device_id);
-				else 
+					pci_read_config_word(((POS_COOKIE)pAd->OS_Cookie)->pci_dev, PCI_DEVICE_ID, &device_id);
+				else
 					DBGPRINT(RT_DEBUG_TRACE, (" pci_dev = NULL\n"));
 				snprintf((PSTRING)snmp_tmp, sizeof(snmp_tmp), "%04x %04x\n", NIC_PCI_VENDOR_ID, device_id);
 			}
@@ -6604,13 +6860,18 @@ INT	Show_MacTable_Proc(
 	for (i=0; i < MaxWcidNum; i++)
 	{
 		PMAC_TABLE_ENTRY pEntry = &pAd->MacTab.Content[i];
-		if ((IS_ENTRY_CLIENT(pEntry) || (IS_ENTRY_APCLI(pEntry)
-#ifdef MAC_REPEATER_SUPPORT
-			&& (pEntry->bReptCli == FALSE)
-#endif /* MAC_REPEATER_SUPPORT */
-			))
+		if ((IS_ENTRY_CLIENT(pEntry) || IS_ENTRY_APCLI(pEntry))
 			&& (pEntry->Sst == SST_ASSOC))
 		{
+			if (IS_ENTRY_APCLI(pEntry)
+#ifdef MAC_REPEATER_SUPPORT
+				&& (pEntry->bReptCli == TRUE)
+#endif /* MAC_REPEATER_SUPPORT */
+				)
+			{
+				continue;
+			}
+			
 			DataRate=0;
 			getRate(pEntry->HTPhyMode, &DataRate);
 			printk("%02X:%02X:%02X:%02X:%02X:%02X  ",
@@ -7033,18 +7294,25 @@ INT Show_Diag_Proc(
 	UCHAR			i, start, stop, McsIdx, SwQNumLevel, TxDescNumLevel;
 	unsigned long		irqFlags;
 	UCHAR			McsMaxIdx = MAX_MCS_SET;
-	
 
-#ifdef DOT11N_SS3_SUPPORT
-	if (IS_RT2883(pAd) || IS_RT3883(pAd))
-		McsMaxIdx = 24;
-#endif /* DOT11N_SS3_SUPPORT */
-	pDiag = &pAd->DiagStruct;
-	
-	if (pDiag->inited == FALSE)
-		return TRUE;
+	os_alloc_mem(pAd, &pDiag, sizeof(RtmpDiagStruct));
+	if (!pDiag) {
+		DBGPRINT(RT_DEBUG_ERROR, ("%s():AllocMem failed!\n", __FUNCTION__));
+		return FALSE;
+	}
 
 	RTMP_IRQ_LOCK(&pAd->irq_lock, irqFlags);
+	NdisMoveMemory(pDiag, &pAd->DiagStruct, sizeof(RtmpDiagStruct));
+	RTMP_IRQ_UNLOCK(&pAd->irq_lock, irqFlags);
+
+#ifdef DOT11N_SS3_SUPPORT
+		if (IS_RT2883(pAd) || IS_RT3883(pAd))
+			McsMaxIdx = 24;
+#endif /* DOT11N_SS3_SUPPORT */
+		
+		if (pDiag->inited == FALSE)
+			goto done;
+
 	start = pDiag->ArrayStartIdx;
 	stop = pDiag->ArrayCurIdx;
 	printk("Start=%d, stop=%d!\n\n", start, stop);
@@ -7119,13 +7387,19 @@ INT Show_Diag_Proc(
 	}
 #endif /* DOT11_N_SUPPORT */
 
-	printk("\n    %-12s\n", "TxMcsCnt");
+	printk("\n    %-12s\n", "TxMcsCnt_HT");
 	for (McsIdx =0 ; McsIdx < McsMaxIdx; McsIdx++)
 	{
 		printk("\t%-6d", McsIdx);
 		for (i = start; i != stop;  i = (i+1) % DIAGNOSE_TIME)
 		{
 			printk("%-7d", pDiag->TxMcsCnt[i][McsIdx]);
+		}
+		printk("\n");
+		printk("\tSGI   ");
+		for (i = start; i != stop;  i = (i+1) % DIAGNOSE_TIME)
+		{
+			printk("%-7d", pDiag->TxSGICnt[i][McsIdx]);
 		}
 		printk("\n");
 	}
@@ -7141,7 +7415,7 @@ INT Show_Diag_Proc(
 	{
 		printk("%-7d", pDiag->RxCrcErrCnt[i]);
 	}
-	printk("\n    %-12s\n", "RxMcsCnt");
+	printk("\n    %-12s\n", "RxMcsCnt_HT");
 	for (McsIdx =0 ; McsIdx < McsMaxIdx; McsIdx++) /* 3*3 */
 	{
 		printk("\t%-6d", McsIdx);
@@ -7150,13 +7424,18 @@ INT Show_Diag_Proc(
 			printk("%-7d", pDiag->RxMcsCnt[i][McsIdx]);
 		}
 		printk("\n");
+		printk("\tSGI   ");
+		for (i = start; i != stop;  i = (i+1) % DIAGNOSE_TIME)
+		{
+			printk("%-7d", pDiag->RxSGICnt[i][McsIdx]);
+		}
+		printk("\n");
 	}
 	printk("\n-------------\n");
 
-	RTMP_IRQ_UNLOCK(&pAd->irq_lock, irqFlags);
-
+done:
+	os_free_mem(pAd, pDiag);
 	return TRUE;
-
 }
 #endif /* DBG_DIAGNOSE */
 #endif /* RTMP_MAC_PCI */
@@ -8458,7 +8737,7 @@ VOID RTMPAPIoctlRF(
 							{
 								RT30xxReadRFRegister(pAdapter, rfId, &regRF);
 								sprintf(msg+strlen(msg), "R%02d[0x%02x]:%02X  ", rfId, rfId, regRF);
-							}
+							}							
 						}
 					}
 					else
@@ -8919,6 +9198,7 @@ VOID RTMPIoctlStatistics(
 	sprintf(msg+strlen(msg), "Rx duplicate frame              = %ld\n", (ULONG)pAd->WlanCounters.FrameDuplicateCount.u.LowPart);
 
 	sprintf(msg+strlen(msg), "False CCA                       = %ld\n", (ULONG)pAd->RalinkCounters.FalseCCACnt);
+	sprintf(msg+strlen(msg), "False CCA (one second)          = %ld\n", (ULONG)pAd->RalinkCounters.OneSecFalseCCACnt1);
 #else
     sprintf(msg+strlen(msg), "Tx retry count                  = %ld\n", (ULONG)pAd->WlanCounters.RetryCount.u.LowPart);
     sprintf(msg+strlen(msg), "Tx fail to Rcv ACK after retry  = %ld\n", (ULONG)pAd->WlanCounters.FailedCount.u.LowPart);
@@ -9838,6 +10118,8 @@ INT Set_ReptMode_Enable_Proc(
 	return TRUE;
 }
 
+#endif /* MAC_REPEATER_SUPPORT */
+
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 /* 
     ==========================================================================
@@ -9883,8 +10165,6 @@ INT Set_ApCli_AutoConnect_Proc(
 }
 #endif  /* APCLI_AUTO_CONNECT_SUPPORT */
 
-#endif /* MAC_REPEATER_SUPPORT */
-
 #ifdef WSC_AP_SUPPORT
 INT Set_AP_WscSsid_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
@@ -9917,7 +10197,123 @@ INT Set_AP_WscSsid_Proc(
 	return TRUE;	
 
 }
+
+#ifdef WSC_PBC_SSID_SELECT_SUPPORT
+INT Set_AP_WscPBCSsid_Proc(
+	IN	PRTMP_ADAPTER	pAd, 
+	IN	PSTRING			arg)
+{
+    POS_COOKIE 		pObj = (POS_COOKIE) pAd->OS_Cookie;
+    UCHAR			ifIndex = pObj->ioctl_if;
+	PWSC_CTRL	    pWscControl = &pAd->ApCfg.ApCliTab[ifIndex].WscControl;
+
+    if (pObj->ioctl_if_type != INT_APCLI)
+		return FALSE;
+    
+	NdisZeroMemory(&pWscControl->WscPBCSsid, sizeof(NDIS_802_11_SSID));
+
+	if( (strlen(arg) > 0) && (strlen(arg) <= MAX_LEN_OF_SSID))
+    {
+		NdisMoveMemory(pWscControl->WscPBCSsid.Ssid, arg, strlen(arg));
+		pWscControl->WscPBCSsid.SsidLength = strlen(arg);
+		DBGPRINT(RT_DEBUG_TRACE, ("Set_AP_WscPBCSsid_Proc:: (Select SsidLen=%d,Ssid=%s)\n", 
+				pWscControl->WscPBCSsid.SsidLength, pWscControl->WscPBCSsid.Ssid));
+	}
+	else
+		return FALSE;	/*Invalid argument */
+
+	return TRUE;	
+
+}
+#endif /* WSC_PBC_SSID_SELECT_SUPPORT */
+
+#ifdef CON_WPS
+static  INT WscPushConcurrentPBCAction(
+        IN      PRTMP_ADAPTER   pAd,
+	IN	PWSC_CTRL   pWscControl,
+	IN	BOOLEAN	    bIsApCli)
+{
+	POS_COOKIE  pObj = (POS_COOKIE) pAd->OS_Cookie;
+	UCHAR           apidx = pObj->ioctl_if;
+	INT                 idx;
+
+	if (bIsApCli)
+		pWscControl->WscConfMode = WSC_ENROLLEE;
+	else
+		pWscControl->WscConfMode = WSC_REGISTRAR;
+		
+        WscInit(pAd, bIsApCli, apidx);
+        pWscControl->WscMode = WSC_PBC_MODE;
+        WscGetRegDataPIN(pAd, pWscControl->WscPinCode, pWscControl);
+        
+	WscStop(pAd, bIsApCli, pWscControl);
+        pWscControl->RegData.ReComputePke = 1;
+        WscInitRegistrarPair(pAd, pWscControl, apidx);
+        for (idx = 0; idx < 192; idx++)
+        	pWscControl->RegData.EnrolleeRandom[idx] = RandomByte(pAd);
+
+	pWscControl->bWscAutoTigeer = FALSE;
+
+	if (bIsApCli)
+	{
+                pAd->ApCfg.ApCliTab[apidx].Enable = FALSE;
+                ApCliIfDown(pAd);
+
+                pWscControl->WscSsid.SsidLength = 0;
+                NdisZeroMemory(&pWscControl->WscSsid, sizeof(NDIS_802_11_SSID));
+                pWscControl->WscPBCBssCount = 0;
+                /* WPS - SW PBC */
+                WscPushPBCAction(pAd, pWscControl);
+	}
+	else
+	{
+		WscBuildBeaconIE(pAd, pWscControl->WscConfStatus, TRUE, DEV_PASS_ID_PBC, 
+								pWscControl->WscConfigMethods, apidx, NULL, 0, AP_MODE);
+
+                WscBuildProbeRespIE(pAd, WSC_MSGTYPE_AP_WLAN_MGR, pWscControl->WscConfStatus, TRUE, DEV_PASS_ID_PBC, 
+								pWscControl->WscConfigMethods, apidx, NULL, 0, AP_MODE);
+                APUpdateBeaconFrame(pAd, apidx);
+	        
+		RTMPSetTimer(&pWscControl->Wsc2MinsTimer, WSC_TWO_MINS_TIME_OUT);
+            	pWscControl->Wsc2MinsTimerRunning = TRUE;
+            	pWscControl->WscStatus = STATUS_WSC_LINK_UP;
+                pWscControl->bWscTrigger = TRUE;
+
+                RTMP_SEM_LOCK(&pWscControl->WscPeerListSemLock);
+                WscClearPeerList(&pWscControl->WscPeerList);
+                RTMP_SEM_UNLOCK(&pWscControl->WscPeerListSemLock);
+
+	}
+	
+	return TRUE;
+}
+#endif /* CON_WPS */
 #endif /* WSC_AP_SUPPORT */
+
+#ifdef APCLI_CERT_SUPPORT
+INT Set_ApCli_Cert_Enable_Proc(
+	IN  PRTMP_ADAPTER pAd, 
+	IN  PSTRING arg)
+{
+	UINT Enable;
+	POS_COOKIE pObj;
+	UCHAR ifIndex;
+	
+	pObj = (POS_COOKIE) pAd->OS_Cookie;
+	if (pObj->ioctl_if_type != INT_APCLI)
+		return FALSE;
+
+	ifIndex = pObj->ioctl_if;
+	
+	Enable = simple_strtol(arg, 0, 16);
+
+	pAd->bApCliCertTest = (Enable > 0) ? TRUE : FALSE;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("I/F(apcli%d) Set_ApCli_Cert_Enable_Proc::(enable = %d)\n", ifIndex, pAd->bApCliCertTest));
+	
+	return TRUE;
+}
+#endif /* APCLI_CERT_SUPPORT */
 #endif /* APCLI_SUPPORT */
 
 
@@ -9943,6 +10339,22 @@ INT	 Set_AP_WscConfMode_Proc(
 	}
 #endif /*HOSTAPD_SUPPORT*/
 
+#ifdef CON_WPS
+	if (ConfModeIdx == WSC_ENROLLEE_REGISTRAR)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("WPS is using concurrent WPS now.\n"));
+
+		pAd->conWscStatus = CON_WPS_STATUS_APCLI_RUNNING;
+		pWscControl = &pAd->ApCfg.ApCliTab[apidx].WscControl;
+		WscPushConcurrentPBCAction(pAd, pWscControl, TRUE);
+
+		pAd->conWscStatus |= CON_WPS_STATUS_AP_RUNNING;
+		pWscControl = &pAd->ApCfg.MBSSID[apidx].WscControl;
+		WscPushConcurrentPBCAction(pAd, pWscControl, FALSE);
+		
+		return TRUE;
+	}
+#endif /* CON_WPS */
 
 #ifdef APCLI_SUPPORT
     if (pObj->ioctl_if_type == INT_APCLI)
@@ -10261,7 +10673,7 @@ INT	Set_AP_WscGetConf_Proc(
 #ifdef APCLI_SUPPORT
     if (pObj->ioctl_if_type == INT_APCLI)
     {
-    	if (apcliEn == FALSE)
+	if (pAd->flg_apcli_init == FALSE)
     	{
     		DBGPRINT(RT_DEBUG_TRACE, ("IF(apcli%d) Set_AP_WscGetConf_Proc:: ApCli is disabled.\n", apidx));
     		return FALSE;
@@ -10685,10 +11097,13 @@ VOID RTMPIoctlWscProfile(
 
 	memset(&Profile, 0x00, sizeof(WSC_CONFIGURED_VALUE));
 	Profile.WscConfigured = pAd->ApCfg.MBSSID[apidx].WscControl.WscConfStatus;
-	NdisZeroMemory(Profile.WscSsid, 32 + 1);
+
+	NdisZeroMemory(Profile.WscSsid, 32);
 	NdisMoveMemory(Profile.WscSsid, pAd->ApCfg.MBSSID[apidx].Ssid, 
 								    pAd->ApCfg.MBSSID[apidx].SsidLen);
-	Profile.WscSsid[pAd->ApCfg.MBSSID[apidx].SsidLen] = '\0';
+	Profile.WscSsidLen = pAd->ApCfg.MBSSID[apidx].SsidLen;
+
+
 	if (pAd->ApCfg.MBSSID[apidx].AuthMode == Ndis802_11AuthModeWPA1PSKWPA2PSK)
 		Profile.WscAuthMode = WSC_AUTHTYPE_WPAPSK | WSC_AUTHTYPE_WPA2PSK;
 	else
@@ -10697,7 +11112,7 @@ VOID RTMPIoctlWscProfile(
 		Profile.WscEncrypType = WSC_ENCRTYPE_TKIP |WSC_ENCRTYPE_AES;
 	else
 		Profile.WscEncrypType = WscGetEncryType(pAd->ApCfg.MBSSID[apidx].WepStatus);
-	NdisZeroMemory(Profile.WscWPAKey, 64 + 1);
+	NdisZeroMemory(Profile.WscWPAKey, 64);
 
 	if (Profile.WscEncrypType == 2)
 	{
@@ -10710,7 +11125,7 @@ VOID RTMPIoctlWscProfile(
 						"%s%02x", Profile.WscWPAKey,
 									pAd->SharedKey[apidx][pAd->ApCfg.MBSSID[apidx].DefaultKeyId].Key[i]);
 			}
-			Profile.WscWPAKey[(pAd->SharedKey[apidx][pAd->ApCfg.MBSSID[apidx].DefaultKeyId].KeyLen)*2] = '\0';
+			Profile.WscWPAKeyLen = pAd->SharedKey[apidx][pAd->ApCfg.MBSSID[apidx].DefaultKeyId].KeyLen;
 		}
 	}
 	else if (Profile.WscEncrypType >= 4)
@@ -10718,7 +11133,7 @@ VOID RTMPIoctlWscProfile(
 		Profile.DefaultKeyIdx = 2;
 		NdisMoveMemory(Profile.WscWPAKey, pAd->ApCfg.MBSSID[apidx].WscControl.WpaPsk, 
 						pAd->ApCfg.MBSSID[apidx].WscControl.WpaPskLen);
-		Profile.WscWPAKey[pAd->ApCfg.MBSSID[apidx].WscControl.WpaPskLen] = '\0';
+		Profile.WscWPAKeyLen = pAd->ApCfg.MBSSID[apidx].WscControl.WpaPskLen;
 	}
 	else
 	{
@@ -11280,6 +11695,48 @@ INT	Set_WscVersion_Proc(
 	return TRUE;
 }
 
+INT	Set_WscUUID_STR_Proc(
+	IN	PRTMP_ADAPTER	pAd, 
+	IN	PSTRING			arg)
+{
+	POS_COOKIE	pObj = (POS_COOKIE) pAd->OS_Cookie;
+
+	if (strlen(arg) ==	(UUID_LEN_STR-1))
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("Set_WscUUID_E_Proc[%d]::(arg=%s)\n",pObj->ioctl_if,arg));
+		pAd->ApCfg.MBSSID[pObj->ioctl_if].WscControl.Wsc_Uuid_Str[UUID_LEN_STR-1]=0;
+		NdisMoveMemory(&pAd->ApCfg.MBSSID[pObj->ioctl_if].WscControl.Wsc_Uuid_Str[0], arg , strlen(arg));
+		return TRUE;
+	}
+	else
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("ERROR Set_WscUUID_E_Proc[%d]::(arg=%s), Leng(%d) is incorrect!\n",pObj->ioctl_if,arg,strlen(arg)));		
+		return FALSE;
+	}
+	
+}
+
+
+INT	Set_WscUUID_HEX_E_Proc(
+	IN	PRTMP_ADAPTER	pAd, 
+	IN	PSTRING			arg)
+{
+	POS_COOKIE	pObj = (POS_COOKIE) pAd->OS_Cookie;
+
+	if (strlen(arg) ==	(UUID_LEN_HEX*2))
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("Set_WscUUID_HEX_E_Proc[%d]::(arg=%s)\n",pObj->ioctl_if,arg));
+		AtoH(arg, &pAd->ApCfg.MBSSID[pObj->ioctl_if].WscControl.Wsc_Uuid_E[0], UUID_LEN_HEX);
+		hex_dump("Set_WscUUID_HEX_E_Proc OK:", &pAd->ApCfg.MBSSID[pObj->ioctl_if].WscControl.Wsc_Uuid_E[0], UUID_LEN_HEX);		
+		return TRUE;
+	}
+	else
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("ERROR Set_WscUUID_HEX_E_Proc[%d]::(arg=%s), Leng(%d) is incorrect!\n",pObj->ioctl_if,arg,strlen(arg)));		
+		return FALSE;
+	}
+	
+}
 #ifdef WSC_V2_SUPPORT
 INT	Set_WscFragment_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
@@ -13609,7 +14066,7 @@ INT Set_KickOutHwNull_Proc(
 #if defined(MICROWAVE_OVEN_SUPPORT) || defined(DYNAMIC_VGA_SUPPORT)
 INT Set_MO_FalseCCATh_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
-	IN	PSTRING			arg)
+	IN	PSTRING		arg)
 {
 	ULONG th;
 
@@ -13660,10 +14117,6 @@ INT Set_DyncVgaEnable_Proc(
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x70);
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R195, 0x86);
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x70);
-		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R195, 0x9c);
-		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x27);
-		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R195, 0x9d);
-		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x27);
 	}
 	else
 	{
@@ -13671,13 +14124,6 @@ INT Set_DyncVgaEnable_Proc(
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x32);
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R195, 0x86);
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x19);
-		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R195, 0x9c);
-		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x3d);
-		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R195, 0x9d);
-		if (pAd->CommonCfg.BBPCurrentBW == BW_20)
-			RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x40);
-		else
-			RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R196, 0x2F);
 
 		AsicBBPWriteWithRxChain(pAd, BBP_R66, pAd->CommonCfg.MO_Cfg.Stored_BBP_R66, RX_CHAIN_ALL);
 	}
@@ -13688,4 +14134,18 @@ INT Set_DyncVgaEnable_Proc(
 }
 #endif /* DYNAMIC_VGA_SUPPORT */
 #endif /* defined(MICROWAVE_OVEN_SUPPORT) || defined(DYNAMIC_VGA_SUPPORT) */
+
+#ifdef THERMAL_PROTECT_SUPPORT
+INT set_thermal_protection_criteria_proc(
+	IN PRTMP_ADAPTER	pAd, 
+	IN PSTRING			arg)
+{
+	INT32 criteria = simple_strtol(arg, 0, 10);
+	
+	pAd->thermal_pro_criteria = (criteria <= 0) ? 80 : criteria;
+	
+	DBGPRINT(RT_DEBUG_ERROR, ("%s::criteria=%d\n", __FUNCTION__, pAd->thermal_pro_criteria));
+	return TRUE;
+}
+#endif /* THERMAL_PROTECT_SUPPORT */
 

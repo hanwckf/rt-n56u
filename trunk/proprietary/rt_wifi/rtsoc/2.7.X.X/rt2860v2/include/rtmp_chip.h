@@ -960,6 +960,20 @@ struct _RTMP_CHIP_OP_ {
 				IN struct _RTMP_ADAPTER *pAd,
 				IN UCHAR 				Channel);
 
+	UINT32 (*ChipGetCurrentTemp)(
+				IN struct _RTMP_ADAPTER *pAd);
+		
+#ifdef THERMAL_PROTECT_SUPPORT
+	VOID (*ThermalProDefaultCond)(
+				IN struct _RTMP_ADAPTER *pAd);
+
+	VOID (*ThermalPro1stCond)(
+				IN struct _RTMP_ADAPTER *pAd);
+
+	VOID (*ThermalPro2ndCond)(
+				IN struct _RTMP_ADAPTER *pAd);
+#endif /* THERMAL_PROTECT_SUPPORT */
+
 	/* TX ALC */
 	UINT32 (*TSSIRatio)(IN INT32 delta_power);
 
@@ -1104,6 +1118,24 @@ struct _RTMP_CHIP_OP_ {
 #define RTMP_CHIP_ASIC_GET_TSSI_RATIO(__pAd, __DeltaPwr)					\
 			__pAd->chipOps.TSSIRatio(__DeltaPwr)
 
+#define RTMP_CHIP_GET_CURRENT_TEMP(__pAd)					\
+		if (__pAd->chipOps.ChipGetCurrentTemp != NULL)					\
+			__pAd->chipOps.ChipGetCurrentTemp(__pAd)
+			
+#ifdef THERMAL_PROTECT_SUPPORT
+#define RTMP_CHIP_THERMAL_PRO_DEFAULT_COND(__pAd)					\
+		if (__pAd->chipOps.ThermalProDefaultCond != NULL)					\
+			__pAd->chipOps.ThermalProDefaultCond(__pAd)
+
+#define RTMP_CHIP_THERMAL_PRO_1st_COND(__pAd)					\
+		if (__pAd->chipOps.ThermalPro1stCond != NULL)					\
+			__pAd->chipOps.ThermalPro1stCond(__pAd)
+
+#define RTMP_CHIP_THERMAL_PRO_2nd_COND(__pAd)					\
+		if (__pAd->chipOps.ThermalPro2ndCond != NULL)					\
+			__pAd->chipOps.ThermalPro2ndCond(__pAd)
+#endif /* THERMAL_PROTECT_SUPPORT */
+			
 #define RTMP_CHIP_ASIC_FREQ_CAL_STOP(__pAd)									\
 		if (__pAd->chipOps.AsicFreqCalStop != NULL)							\
 			__pAd->chipOps.AsicFreqCalStop(__pAd)

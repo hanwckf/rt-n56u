@@ -188,7 +188,7 @@ VOID RtmpAsicSleepHandle(
 
 #ifdef DOT11Z_TDLS_SUPPORT
 	/* check TDLS condition */
-		FlgCanAsicSleep = TDLS_UAPSDP_AsicCanSleep(pAd);
+	FlgCanAsicSleep = TDLS_UAPSDP_AsicCanSleep(pAd);
 #endif /* DOT11Z_TDLS_SUPPORT */
 
 	/* finally, check if we can sleep */

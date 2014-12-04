@@ -283,7 +283,7 @@ BOOLEAN ApCli_Close(
 
 BOOLEAN ApCli_StatsGet(
 	IN	PRTMP_ADAPTER pAd,
-	IN	RT_CMD_STATS *pStats);
+	IN	RT_CMD_STATS64 *pStats);
 
 BOOLEAN ApCliWaitProbRsp(
 	IN PRTMP_ADAPTER pAd,

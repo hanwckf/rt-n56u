@@ -3778,7 +3778,6 @@ VOID RTMPIoctlGetMacTableStaInfo(
 	IN RTMP_IOCTL_INPUT_STRUCT *wrq)
 {
 	INT i;
-/*	RT_802_11_MAC_TABLE MacTab;*/
 	RT_802_11_MAC_TABLE *pMacTab = NULL;
 	PRT_802_11_MAC_ENTRY pDst;
 	MAC_TABLE_ENTRY *pEntry;
@@ -3859,7 +3858,6 @@ VOID RTMPIoctlGetMacTable(
 	IN RTMP_IOCTL_INPUT_STRUCT *wrq)
 {
 	INT i;
-/*	RT_802_11_MAC_TABLE MacTab;*/
 	RT_802_11_MAC_TABLE *pMacTab = NULL;
 	RT_802_11_MAC_ENTRY *pDst;
 	MAC_TABLE_ENTRY *pEntry;
@@ -3874,7 +3872,6 @@ VOID RTMPIoctlGetMacTable(
 	}
 
 	NdisZeroMemory(pMacTab, sizeof(RT_802_11_MAC_TABLE));
-	pMacTab->Num = 0;
 	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
 	{
 		pEntry = &(pAd->MacTab.Content[i]);
@@ -3882,7 +3879,6 @@ VOID RTMPIoctlGetMacTable(
 		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
 		{
 			pDst = &pMacTab->Entry[pMacTab->Num];
-
 
 			pDst->ApIdx = (UCHAR)pEntry->apidx;
 			COPY_MAC_ADDR(pDst->Addr, &pEntry->Addr);
@@ -3930,7 +3926,6 @@ VOID RTMPIoctlGetMacTable(
 	}
 
 
-/*	msg = kmalloc(sizeof(CHAR)*(MAX_LEN_OF_MAC_TABLE*MAC_LINE_LEN), MEM_ALLOC_FLAG);*/
 	os_alloc_mem(NULL, (UCHAR **)&msg, sizeof(CHAR)*(MAX_LEN_OF_MAC_TABLE*MAC_LINE_LEN));
 	if (msg == NULL)
 	{
@@ -3968,7 +3963,6 @@ VOID RTMPIoctlGetMacTable(
 	/* for compatible with old API just do the printk to console*/
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s", msg));
-/*	kfree(msg);*/
 	os_free_mem(NULL, msg);
 
 LabelOK:
@@ -4059,7 +4053,6 @@ VOID RTMPAR9IoctlGetMacTable(
 	INT i;
 	char *msg;
 
-/*	msg = kmalloc(sizeof(CHAR)*(MAX_LEN_OF_MAC_TABLE*MAC_LINE_LEN), MEM_ALLOC_FLAG);*/
 	os_alloc_mem(NULL, (UCHAR **)&msg, sizeof(CHAR)*(MAX_LEN_OF_MAC_TABLE*MAC_LINE_LEN));
 	if (msg == NULL)
 	{
@@ -4100,7 +4093,6 @@ VOID RTMPAR9IoctlGetMacTable(
 		DBGPRINT(RT_DEBUG_OFF, ("%s", msg));
 	}
 
-/*	kfree(msg);*/
 	os_free_mem(NULL, msg);
 }
 
@@ -4112,8 +4104,6 @@ VOID RTMPIoctlGetSTAT2(
 	PMULTISSID_STRUCT	pMbss;
 	INT apidx;
 
-
-/*	msg = kmalloc(sizeof(CHAR)*(pAd->ApCfg.BssidNum*(14*128)), MEM_ALLOC_FLAG);*/
 	os_alloc_mem(NULL, (UCHAR **)&msg, sizeof(CHAR)*(pAd->ApCfg.BssidNum*(14*128)));
 	if (msg == NULL)
 	{
@@ -4128,21 +4118,20 @@ VOID RTMPIoctlGetSTAT2(
 		pMbss=&pAd->ApCfg.MBSSID[apidx];
 		
 		sprintf(msg+strlen(msg),"ra%d\n",apidx);
-		sprintf(msg+strlen(msg),"bytesTx = %ld\n",(pMbss->TransmittedByteCount));
-		sprintf(msg+strlen(msg),"bytesRx = %ld\n",(pMbss->ReceivedByteCount));
-		sprintf(msg+strlen(msg),"pktsTx = %ld\n",pMbss->TxCount);
-		sprintf(msg+strlen(msg),"pktsRx = %ld\n",pMbss->RxCount);
-		sprintf(msg+strlen(msg),"errorsTx = %ld\n",pMbss->TxErrorCount);
-		sprintf(msg+strlen(msg),"errorsRx = %ld\n",pMbss->RxErrorCount);
-		sprintf(msg+strlen(msg),"discardPktsTx = %ld\n",pMbss->TxDropCount);
-		sprintf(msg+strlen(msg),"discardPktsRx = %ld\n",pMbss->RxDropCount);
-		sprintf(msg+strlen(msg),"ucPktsTx = %ld\n",pMbss->ucPktsTx);
-		sprintf(msg+strlen(msg),"ucPktsRx = %ld\n",pMbss->ucPktsRx);
-		sprintf(msg+strlen(msg),"mcPktsTx = %ld\n",pMbss->mcPktsTx);
-		sprintf(msg+strlen(msg),"mcPktsRx = %ld\n",pMbss->mcPktsRx);
-		sprintf(msg+strlen(msg),"bcPktsTx = %ld\n",pMbss->bcPktsTx);
-		sprintf(msg+strlen(msg),"bcPktsRx = %ld\n",pMbss->bcPktsRx);
-		
+		sprintf(msg+strlen(msg),"bytesTx = %llu\n",pMbss->TransmittedByteCount.QuadPart);
+		sprintf(msg+strlen(msg),"bytesRx = %llu\n",pMbss->ReceivedByteCount.QuadPart);
+		sprintf(msg+strlen(msg),"pktsTx = %lu\n",pMbss->TxCount);
+		sprintf(msg+strlen(msg),"pktsRx = %lu\n",pMbss->RxCount);
+		sprintf(msg+strlen(msg),"errorsTx = %lu\n",pMbss->TxErrorCount);
+		sprintf(msg+strlen(msg),"errorsRx = %lu\n",pMbss->RxErrorCount);
+		sprintf(msg+strlen(msg),"discardPktsTx = %lu\n",pMbss->TxDropCount);
+		sprintf(msg+strlen(msg),"discardPktsRx = %lu\n",pMbss->RxDropCount);
+		sprintf(msg+strlen(msg),"ucPktsTx = %lu\n",pMbss->ucPktsTx);
+		sprintf(msg+strlen(msg),"ucPktsRx = %lu\n",pMbss->ucPktsRx);
+		sprintf(msg+strlen(msg),"mcPktsTx = %lu\n",pMbss->mcPktsTx);
+		sprintf(msg+strlen(msg),"mcPktsRx = %lu\n",pMbss->mcPktsRx);
+		sprintf(msg+strlen(msg),"bcPktsTx = %lu\n",pMbss->bcPktsTx);
+		sprintf(msg+strlen(msg),"bcPktsRx = %lu\n",pMbss->bcPktsRx);
 	}
 
 	wrq->u.data.length = strlen(msg);
@@ -4151,7 +4140,6 @@ VOID RTMPIoctlGetSTAT2(
 		DBGPRINT(RT_DEBUG_OFF, ("%s", msg));
 	}
 
-/*	kfree(msg);*/
 	os_free_mem(NULL, msg);
 }
 
@@ -4165,7 +4153,6 @@ VOID RTMPIoctlGetRadioDynInfo(
 	INT status,bandwidth,ShortGI;
 	
 
-/*	msg = kmalloc(sizeof(CHAR)*(4096), MEM_ALLOC_FLAG);*/
 	os_alloc_mem(NULL, (UCHAR **)&msg, sizeof(CHAR)*(4096));
 	if (msg == NULL)
 	{
@@ -4207,7 +4194,6 @@ VOID RTMPIoctlGetRadioDynInfo(
 		DBGPRINT(RT_DEBUG_OFF, ("%s", msg));
 	}
 
-/*	kfree(msg);*/
 	os_free_mem(NULL, msg);
 }
 #endif/*CONFIG_AP_SUPPORT*/

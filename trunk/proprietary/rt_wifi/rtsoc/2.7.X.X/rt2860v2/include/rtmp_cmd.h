@@ -521,14 +521,13 @@ typedef struct __RT_CMD_INF_UP_DOWN {
 	IN	int (*rt28xx_close)(VOID *net_dev);
 } RT_CMD_INF_UP_DOWN;
 
-typedef struct __RT_CMD_STATS {
+typedef struct __RT_CMD_STATS64 {
 	IN VOID *pNetDev;
-	OUT VOID *pStats;	/* point to pAd->stats */
 
+	OUT UINT64        rx_bytes;	/* total bytes received         */
+	OUT UINT64        tx_bytes;	/* total bytes transmitted      */
 	OUT unsigned long rx_packets;	/* total packets received       */
 	OUT unsigned long tx_packets;	/* total packets transmitted */
-	OUT unsigned long rx_bytes;	/* total bytes received         */
-	OUT unsigned long tx_bytes;	/* total bytes transmitted      */
 	OUT unsigned long rx_errors;	/* bad packets received         */
 	OUT unsigned long tx_errors;	/* packet transmit problems     */
 	OUT unsigned long multicast;	/* multicast packets received */
@@ -538,7 +537,7 @@ typedef struct __RT_CMD_STATS {
 	OUT unsigned long rx_crc_errors;	/* recved pkt with crc error    */
 	OUT unsigned long rx_frame_errors;	/* recv'd frame alignment error */
 	OUT unsigned long rx_fifo_errors;	/* recv'r fifo overrun                  */
-} RT_CMD_STATS;
+} RT_CMD_STATS64;
 
 typedef struct __RT_CMD_IW_STATS {
 

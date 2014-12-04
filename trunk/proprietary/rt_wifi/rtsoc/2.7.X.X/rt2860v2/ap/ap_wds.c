@@ -1380,7 +1380,7 @@ VOID WDS_Remove(
 	for(index = 0; index < MAX_WDS_ENTRY; index++)
 	{
 		if (pAd->WdsTab.WdsEntry[index].dev)
-	    {
+		{
 			RtmpOSNetDevDetach(pAd->WdsTab.WdsEntry[index].dev);
 			RtmpOSNetDevFree(pAd->WdsTab.WdsEntry[index].dev);
 
@@ -1390,49 +1390,38 @@ VOID WDS_Remove(
 	}
 }
 
-
 BOOLEAN WDS_StatsGet(
 	IN	PRTMP_ADAPTER		pAd,
-	IN	RT_CMD_STATS		*pStats)
+	IN	RT_CMD_STATS64		*pStats)
 {
-	INT WDS_apidx = 0,index;
+	INT WDS_apidx = 0, index;
+	RT_802_11_WDS_ENTRY *pWdsEntry;
 
-
-	/*struct net_device_stats	stats; */
 	for(index = 0; index < MAX_WDS_ENTRY; index++)
 	{
 		if (pAd->WdsTab.WdsEntry[index].dev == pStats->pNetDev)
 		{
 			WDS_apidx = index;
-
 			break;
 		}
 	}
-		
+
 	if(index >= MAX_WDS_ENTRY)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("rt28xx_ioctl can not find wds I/F\n"));
 		return FALSE;
 	}
 
-	pStats->pStats = pAd->stats;
+	pWdsEntry = &pAd->WdsTab.WdsEntry[WDS_apidx];
 
-	pStats->rx_packets = pAd->WdsTab.WdsEntry[WDS_apidx].WdsCounter.ReceivedFragmentCount.QuadPart;
-	pStats->tx_packets = pAd->WdsTab.WdsEntry[WDS_apidx].WdsCounter.TransmittedFragmentCount.QuadPart;
+	pStats->rx_bytes = pWdsEntry->WdsCounter.ReceivedByteCount.QuadPart;
+	pStats->tx_bytes = pWdsEntry->WdsCounter.TransmittedByteCount.QuadPart;
 
-	pStats->rx_bytes = pAd->WdsTab.WdsEntry[WDS_apidx].WdsCounter.ReceivedByteCount;
-	pStats->tx_bytes = pAd->WdsTab.WdsEntry[WDS_apidx].WdsCounter.TransmittedByteCount;
+	pStats->rx_packets = pWdsEntry->WdsCounter.ReceivedFragmentCount;
+	pStats->tx_packets = pWdsEntry->WdsCounter.TransmittedFragmentCount;
 
-	pStats->rx_errors = pAd->WdsTab.WdsEntry[WDS_apidx].WdsCounter.RxErrors;
-	pStats->tx_errors = pAd->WdsTab.WdsEntry[WDS_apidx].WdsCounter.TxErrors;
-
-	pStats->multicast = pAd->WdsTab.WdsEntry[WDS_apidx].WdsCounter.MulticastReceivedFrameCount.QuadPart;   /* multicast packets received */
-	pStats->collisions = pAd->WdsTab.WdsEntry[WDS_apidx].WdsCounter.OneCollision + pAd->WdsTab.WdsEntry[index].WdsCounter.MoreCollisions;  /* Collision packets */
-
-	pStats->rx_over_errors = pAd->WdsTab.WdsEntry[WDS_apidx].WdsCounter.RxNoBuffer;                   /* receiver ring buff overflow */
-	pStats->rx_crc_errors = 0;/*pAd->WlanCounters.FCSErrorCount;     // recved pkt with crc error */
-	pStats->rx_frame_errors = pAd->WdsTab.WdsEntry[WDS_apidx].WdsCounter.RcvAlignmentErrors;          /* recv'd frame alignment error */
-	pStats->rx_fifo_errors = pAd->WdsTab.WdsEntry[WDS_apidx].WdsCounter.RxNoBuffer;                   /* recv'r fifo overrun */
+	pStats->rx_errors = pWdsEntry->WdsCounter.RxErrors;
+	pStats->multicast = pWdsEntry->WdsCounter.MulticastReceivedFrameCount;
 
 	return TRUE;
 }

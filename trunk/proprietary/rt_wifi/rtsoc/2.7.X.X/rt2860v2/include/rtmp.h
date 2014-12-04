@@ -1375,11 +1375,10 @@ typedef struct _MULTISSID_STRUCT {
 	DESIRED_TRANSMIT_SETTING DesiredTransmitSetting;	/* Desired transmit setting. this is for reading registry setting only. not useful. */
 	BOOLEAN bAutoTxRateSwitch;
 
-	/*MBSS_STATISTICS MbssStat;*/
+	LARGE_INTEGER ReceivedByteCount;
+	LARGE_INTEGER TransmittedByteCount;
 	ULONG TxCount;
 	ULONG RxCount;
-	ULONG ReceivedByteCount;
-	ULONG TransmittedByteCount;
 	ULONG RxErrorCount;
 	ULONG RxDropCount;
 
@@ -1400,8 +1399,6 @@ typedef struct _MULTISSID_STRUCT {
 	UCHAR DesiredRatesIndex;
 	UCHAR MaxTxRate;	/* RATE_1, RATE_2, RATE_5_5, RATE_11 */
 
-/*	ULONG           					TimBitmap;      // bit0 for broadcast, 1 for AID1, 2 for AID2, ...so on */
-/*    ULONG           					TimBitmap2;     // b0 for AID32, b1 for AID33, ... and so on */
 	UCHAR TimBitmaps[WLAN_MAX_NUM_OF_TIM];
 
 	/* WPA */
@@ -2804,17 +2801,12 @@ typedef struct _MAC_TABLE {
   **************************************************************************/
 #ifdef WDS_SUPPORT
 typedef struct _WDS_COUNTER {
-	LARGE_INTEGER ReceivedFragmentCount;
-	LARGE_INTEGER TransmittedFragmentCount;
-	ULONG ReceivedByteCount;
-	ULONG TransmittedByteCount;
+	LARGE_INTEGER ReceivedByteCount;
+	LARGE_INTEGER TransmittedByteCount;
+	ULONG ReceivedFragmentCount;
+	ULONG TransmittedFragmentCount;
 	ULONG RxErrors;
-	ULONG TxErrors;
-	LARGE_INTEGER MulticastReceivedFrameCount;
-	ULONG OneCollision;
-	ULONG MoreCollisions;
-	ULONG RxNoBuffer;
-	ULONG RcvAlignmentErrors;
+	ULONG MulticastReceivedFrameCount;
 } WDS_COUNTER, *PWDS_COUNTER;
 
 typedef struct _WDS_ENTRY {
@@ -2924,17 +2916,12 @@ typedef struct _REPEATER_CTRL_STRUCT {
   *	AP APCLI related data structures
   **************************************************************************/
 typedef struct _APCLI_COUNTER {
-	LARGE_INTEGER ReceivedFragmentCount;
-	LARGE_INTEGER TransmittedFragmentCount;
-	ULONG ReceivedByteCount;
-	ULONG TransmittedByteCount;
+	LARGE_INTEGER ReceivedByteCount;
+	LARGE_INTEGER TransmittedByteCount;
+	ULONG ReceivedFragmentCount;
+	ULONG TransmittedFragmentCount;
 	ULONG RxErrors;
-	ULONG TxErrors;
-	LARGE_INTEGER MulticastReceivedFrameCount;
-	ULONG OneCollision;
-	ULONG MoreCollisions;
-	ULONG RxNoBuffer;
-	ULONG RcvAlignmentErrors;
+	ULONG MulticastReceivedFrameCount;
 } APCLI_COUNTER, *PAPCLI_COUNTER;
 
 typedef struct _APCLI_STRUCT {
@@ -3053,8 +3040,8 @@ typedef struct _APCLI_STRUCT {
 	BOOLEAN 					bP2pClient;
 #endif /* P2P_SUPPORT */
 
-    PSPOLL_FRAME PsPollFrame;
-    HEADER_802_11 NullFrame;
+	PSPOLL_FRAME PsPollFrame;
+	HEADER_802_11 NullFrame;
 
 	UAPSD_INFO	UapsdInfo;
 #ifdef MAC_REPEATER_SUPPORT
@@ -4047,7 +4034,6 @@ struct _RTMP_ADAPTER {
 	/* statistics count */
 
 	VOID *iw_stats;
-	VOID *stats;
 
 #ifdef BLOCK_NET_IF
 	BLOCK_QUEUE_ENTRY blockQueueTab[NUM_OF_TX_RING];

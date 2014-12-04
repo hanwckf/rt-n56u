@@ -459,11 +459,14 @@ launch_wanx(char *man_ifname, int unit, int wait_dhcpc, int use_zcip)
 	/* Bring up physical WAN interface */
 	ifconfig(man_ifname, IFUP, man_addr, man_mask);
 
+	/* add a bit delay for AP-Client ready */
+	if (is_man_wisp(man_ifname))
+		sleep(1);
+
 	if (use_zcip || !is_valid_ipv4(man_addr))
 	{
 		/* PPPoE connection not needed WAN physical address first, skip wait DHCP lease */
 		/* PPTP and L2TP needed WAN physical first for create VPN tunnel, wait DHCP lease */
-		/* Start dhcpc daemon */
 		if (!use_zcip)
 		{
 			start_udhcpc_wan(man_ifname, unit, wait_dhcpc);
@@ -697,6 +700,10 @@ start_wan(void)
 			check_upnp_wanif_changed(wan_ifname);
 			set_wan_unit_value(unit, "proto_t", "IPoE");
 			set_wan_unit_value(unit, "ifname_t", wan_ifname);
+			
+			/* add a bit delay for AP-Client ready */
+			if (is_man_wisp(wan_ifname))
+				sleep(1);
 			
 			/* Assign static IP address to i/f */
 			if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC) {

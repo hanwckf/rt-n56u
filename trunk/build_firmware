@@ -224,7 +224,6 @@ if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" != "y" ] ; then
 fi
 ############################# USB #####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_USB" != "y" ] || [ -z "$CONFIG_USB_SUPPORT" ] ; then
-	func_disable_kernel_param "CONFIG_PAGECACHE_RECLAIM"
 	func_disable_kernel_param "CONFIG_SWAP"
 	func_disable_kernel_param "CONFIG_FAT_FS"
 	func_disable_kernel_param "CONFIG_MSDOS_FS"

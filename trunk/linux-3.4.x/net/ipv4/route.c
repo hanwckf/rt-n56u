@@ -151,9 +151,6 @@ static void		 ipv4_link_failure(struct sk_buff *skb);
 static void		 ip_rt_update_pmtu(struct dst_entry *dst, u32 mtu);
 static int rt_garbage_collect(struct dst_ops *ops);
 
-static void __rt_garbage_collect(struct work_struct *w);
-static DECLARE_WORK(rt_gc_worker, __rt_garbage_collect);
-
 static void ipv4_dst_ifdown(struct dst_entry *dst, struct net_device *dev,
 			    int how)
 {
@@ -981,13 +978,12 @@ static void rt_emergency_hash_rebuild(struct net *net)
    and when load increases it reduces to limit cache size.
  */
 
-static void __do_rt_garbage_collect(int elasticity, int min_interval)
+static int rt_garbage_collect(struct dst_ops *ops)
 {
 	static unsigned long expire = RT_GC_TIMEOUT;
 	static unsigned long last_gc;
 	static int rover;
 	static int equilibrium;
-	static DEFINE_SPINLOCK(rt_gc_lock);
 	struct rtable *rth;
 	struct rtable __rcu **rthp;
 	unsigned long now = jiffies;
@@ -999,11 +995,9 @@ static void __do_rt_garbage_collect(int elasticity, int min_interval)
 	 * do not make it too frequently.
 	 */
 
-	spin_lock_bh(&rt_gc_lock);
-
 	RT_CACHE_STAT_INC(gc_total);
 
-	if (now - last_gc < min_interval &&
+	if (now - last_gc < ip_rt_gc_min_interval &&
 	    entries < ip_rt_max_size) {
 		RT_CACHE_STAT_INC(gc_ignored);
 		goto out;
@@ -1011,7 +1005,7 @@ static void __do_rt_garbage_collect(int elasticity, int min_interval)
 
 	entries = dst_entries_get_slow(&ipv4_dst_ops);
 	/* Calculate number of entries, which we want to expire now. */
-	goal = entries - (elasticity << rt_hash_log);
+	goal = entries - (ip_rt_gc_elasticity << rt_hash_log);
 	if (goal <= 0) {
 		if (equilibrium < ipv4_dst_ops.gc_thresh)
 			equilibrium = ipv4_dst_ops.gc_thresh;
@@ -1028,7 +1022,7 @@ static void __do_rt_garbage_collect(int elasticity, int min_interval)
 		equilibrium = entries - goal;
 	}
 
-	if (now - last_gc >= min_interval)
+	if (now - last_gc >= ip_rt_gc_min_interval)
 		last_gc = now;
 
 	if (goal <= 0) {
@@ -1093,34 +1087,15 @@ static void __do_rt_garbage_collect(int elasticity, int min_interval)
 	if (net_ratelimit())
 		pr_warn("dst cache overflow\n");
 	RT_CACHE_STAT_INC(gc_dst_overflow);
-	goto out;
+	return 1;
 
 work_done:
-	expire += min_interval;
+	expire += ip_rt_gc_min_interval;
 	if (expire > ip_rt_gc_timeout ||
 	    dst_entries_get_fast(&ipv4_dst_ops) < ipv4_dst_ops.gc_thresh ||
 	    dst_entries_get_slow(&ipv4_dst_ops) < ipv4_dst_ops.gc_thresh)
 		expire = ip_rt_gc_timeout;
-out:
-	spin_unlock_bh(&rt_gc_lock);
-}
-
-static void __rt_garbage_collect(struct work_struct *w)
-{
-	__do_rt_garbage_collect(ip_rt_gc_elasticity, ip_rt_gc_min_interval);
-}
-
-static int rt_garbage_collect(struct dst_ops *ops)
-{
-	if (!work_pending(&rt_gc_worker))
-		schedule_work(&rt_gc_worker);
-
-	if (dst_entries_get_fast(&ipv4_dst_ops) >= ip_rt_max_size ||
-	    dst_entries_get_slow(&ipv4_dst_ops) >= ip_rt_max_size) {
-		RT_CACHE_STAT_INC(gc_dst_overflow);
-		return 1;
-	}
-	return 0;
+out:	return 0;
 }
 
 /*
@@ -1177,7 +1152,7 @@ static struct rtable *rt_intern_hash(unsigned hash, struct rtable *rt,
 	unsigned long	now;
 	u32 		min_score;
 	int		chain_length;
-	int attempts = 1;
+	int attempts = !in_softirq();
 
 restart:
 	chain_length = 0;
@@ -1313,15 +1288,14 @@ restart:
 			   can be released. Try to shrink route cache,
 			   it is most likely it holds some neighbour records.
 			 */
-			if (!in_softirq() && attempts-- > 0) {
-				static DEFINE_SPINLOCK(lock);
-
-				if (spin_trylock(&lock)) {
-					__do_rt_garbage_collect(1, 0);
-					spin_unlock(&lock);
-				} else {
-					spin_unlock_wait(&lock);
-				}
+			if (attempts-- > 0) {
+				int saved_elasticity = ip_rt_gc_elasticity;
+				int saved_int = ip_rt_gc_min_interval;
+				ip_rt_gc_elasticity	= 1;
+				ip_rt_gc_min_interval	= 0;
+				rt_garbage_collect(&ipv4_dst_ops);
+				ip_rt_gc_min_interval	= saved_int;
+				ip_rt_gc_elasticity	= saved_elasticity;
 				goto restart;
 			}
 

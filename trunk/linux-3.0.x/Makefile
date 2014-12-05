@@ -555,9 +555,9 @@ endif # $(dot-config)
 all: vmlinux
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os -fno-caller-saves
+KBUILD_CFLAGS	+= -Os -fno-caller-saves -fno-reorder-blocks
 else
-KBUILD_CFLAGS	+= -O2 -fno-reorder-blocks
+KBUILD_CFLAGS	+= -O2
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile

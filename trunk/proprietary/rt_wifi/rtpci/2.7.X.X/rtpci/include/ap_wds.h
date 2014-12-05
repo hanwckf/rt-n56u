@@ -163,7 +163,7 @@ VOID WDS_Remove(
 
 BOOLEAN WDS_StatsGet(
 	IN	PRTMP_ADAPTER				pAd,
-	IN	RT_CMD_STATS				*pStats);
+	IN	RT_CMD_STATS64				*pStats);
 
 VOID AP_WDS_KeyNameMakeUp(
 	IN	STRING						*pKey,

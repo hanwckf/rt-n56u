@@ -12,6 +12,7 @@ config  MT76X2_AP_LED
 config  MT76X2_AP_WSC
 	bool "WSC (WiFi Simple Config)"
 	depends on MT76X2_AP
+	default n
 
 config  MT76X2_AP_WSC_V2
 	bool "WSC V2 (WiFi Simple Config Version 2)"
@@ -26,6 +27,7 @@ config  MT76X2_AP_WSC_NFC_SUPPORT
 config  MT76X2_AP_LLTD
 	bool "LLTD (Link Layer Topology Discovery Protocol)"
 	depends on MT76X2_AP
+	default y
 
 config  MT76X2_AP_WDS
 	bool "WDS"
@@ -113,7 +115,7 @@ config  MT76X2_AP_80211N_DRAFT3
 config  MT76X2_AP_80211AC_VHT
 	bool "802.11ac Support"
 	depends on MT76X2_AP
-	default n
+	default y
 
 config  MT76X2_AP_TXBF_SUPPORT
 	bool "Tx Beam Forming Support"
@@ -128,12 +130,12 @@ config  MT76X2_AP_80211W_PMF
 config  MT76X2_AP_IGMP_SNOOP
 	bool "IGMP snooping"
 	depends on MT76X2_AP
-	default y
+	default n
 
 config  MT76X2_AP_MCAST_RATE_SPECIFIC
 	bool "User specific TX rate of mcast packets"
 	depends on MT76X2_AP
-	default y
+	default n
 
 #config  MT76X2_AP_HDR_TRANS
 #	bool "Header Translation Rx Support"

@@ -584,11 +584,6 @@ VOID	RTMPFreeAdapter(
 		os_free_mem(NULL, pAd->iw_stats);
 		pAd->iw_stats = NULL;
 	}
-	if (pAd->stats)
-	{
-		os_free_mem(NULL, pAd->stats);
-		pAd->stats = NULL;
-	}
 
 	NdisFreeSpinLock(&TimerSemLock);
 

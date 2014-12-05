@@ -921,7 +921,6 @@ VOID APPeerBeaconAction(
 				}
 			}
 		}
-
 #endif /* APCLI_SUPPORT */
 
 #ifdef WDS_SUPPORT

@@ -2467,21 +2467,20 @@ VOID RTMPIoctlGetSTAT2(
 		pMbss=&pAd->ApCfg.MBSSID[apidx];
 		
 		sprintf(msg+strlen(msg),"ra%d\n",apidx);
-		sprintf(msg+strlen(msg),"bytesTx = %ld\n",(pMbss->TransmittedByteCount));
-		sprintf(msg+strlen(msg),"bytesRx = %ld\n",(pMbss->ReceivedByteCount));
-		sprintf(msg+strlen(msg),"pktsTx = %ld\n",pMbss->TxCount);
-		sprintf(msg+strlen(msg),"pktsRx = %ld\n",pMbss->RxCount);
-		sprintf(msg+strlen(msg),"errorsTx = %ld\n",pMbss->TxErrorCount);
-		sprintf(msg+strlen(msg),"errorsRx = %ld\n",pMbss->RxErrorCount);
-		sprintf(msg+strlen(msg),"discardPktsTx = %ld\n",pMbss->TxDropCount);
-		sprintf(msg+strlen(msg),"discardPktsRx = %ld\n",pMbss->RxDropCount);
-		sprintf(msg+strlen(msg),"ucPktsTx = %ld\n",pMbss->ucPktsTx);
-		sprintf(msg+strlen(msg),"ucPktsRx = %ld\n",pMbss->ucPktsRx);
-		sprintf(msg+strlen(msg),"mcPktsTx = %ld\n",pMbss->mcPktsTx);
-		sprintf(msg+strlen(msg),"mcPktsRx = %ld\n",pMbss->mcPktsRx);
-		sprintf(msg+strlen(msg),"bcPktsTx = %ld\n",pMbss->bcPktsTx);
-		sprintf(msg+strlen(msg),"bcPktsRx = %ld\n",pMbss->bcPktsRx);
-		
+		sprintf(msg+strlen(msg),"bytesTx = %llu\n",pMbss->TransmittedByteCount.QuadPart);
+		sprintf(msg+strlen(msg),"bytesRx = %llu\n",pMbss->ReceivedByteCount.QuadPart);
+		sprintf(msg+strlen(msg),"pktsTx = %lu\n",pMbss->TxCount);
+		sprintf(msg+strlen(msg),"pktsRx = %lu\n",pMbss->RxCount);
+		sprintf(msg+strlen(msg),"errorsTx = %lu\n",pMbss->TxErrorCount);
+		sprintf(msg+strlen(msg),"errorsRx = %lu\n",pMbss->RxErrorCount);
+		sprintf(msg+strlen(msg),"discardPktsTx = %lu\n",pMbss->TxDropCount);
+		sprintf(msg+strlen(msg),"discardPktsRx = %lu\n",pMbss->RxDropCount);
+		sprintf(msg+strlen(msg),"ucPktsTx = %lu\n",pMbss->ucPktsTx);
+		sprintf(msg+strlen(msg),"ucPktsRx = %lu\n",pMbss->ucPktsRx);
+		sprintf(msg+strlen(msg),"mcPktsTx = %lu\n",pMbss->mcPktsTx);
+		sprintf(msg+strlen(msg),"mcPktsRx = %lu\n",pMbss->mcPktsRx);
+		sprintf(msg+strlen(msg),"bcPktsTx = %lu\n",pMbss->bcPktsTx);
+		sprintf(msg+strlen(msg),"bcPktsRx = %lu\n",pMbss->bcPktsRx);
 	}
 
 	wrq->u.data.length = strlen(msg);

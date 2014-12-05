@@ -4057,16 +4057,15 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 #ifdef CONFIG_SNIFFER_SUPPORT
 		if (MONITOR_ON(pAd))
 		{
-						PNDIS_PACKET	pClonePacket;
-			PNDIS_PACKET    pTmpRxPacket;
+			PNDIS_PACKET pClonePacket;
+			PNDIS_PACKET pTmpRxPacket;
+			
 			pTmpRxPacket = rxblk.pRxPacket;
 			pClonePacket = ClonePacket(pAd, rxblk.pRxPacket, rxblk.pData, rxblk.DataSize);
 			rxblk.pRxPacket = pClonePacket;
 			STA_MonPktSend(pAd, &rxblk);
-
-			rxblk.pRxPacket = pTmpRxPacket;	
-
-					}
+			rxblk.pRxPacket = pTmpRxPacket;
+		}
 
 		if (rxblk.DataSize < 14)
 		{
@@ -4074,28 +4073,6 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 			continue;
 		}
 #endif /* CONFIG_SNIFFER_SUPPORT */
-
-#ifdef WDS_SUPPORT
-		if ((pHeader->FC.FrDs == 1) && (pHeader->FC.ToDs == 1))
-		{
-			MAC_TABLE_ENTRY *pEntry = NULL;
-
-			if (MAC_ADDR_EQUAL(pHeader->Addr1, pAd->CurrentAddress))
-				pEntry = FindWdsEntry(pAd, pRxBlk->wcid, pHeader->Addr2, pRxBlk->rx_rate.field.MODE);
-
-#ifdef STATS_COUNT_SUPPORT
-			if(pEntry)
-			{
-				pAd->WdsTab.WdsEntry[pEntry->wdev_idx].WdsCounter.ReceivedByteCount += pRxBlk->MPDUtotalByteCnt;
-				INC_COUNTER64(pAd->WdsTab.WdsEntry[pEntry->wdev_idx].WdsCounter.ReceivedFragmentCount);
-
-				if(IS_MULTICAST_MAC_ADDR(pHeader->Addr3))
-					INC_COUNTER64(pAd->WdsTab.WdsEntry[pEntry->wdev_idx].WdsCounter.MulticastReceivedFrameCount);
-
-			}
-#endif /* STATS_COUNT_SUPPORT */
-		}
-#endif /* WDS_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -4128,6 +4105,23 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 				}
 #endif /* STATS_COUNT_SUPPORT */
 #endif /* WDS_SUPPORT */
+
+#ifdef APCLI_SUPPORT
+#ifdef STATS_COUNT_SUPPORT
+				if ((pHeader->FC.FrDs == 1) && (pHeader->FC.ToDs == 0) && (pRxInfo->U2M))
+				{
+					MAC_TABLE_ENTRY *pEntry = NULL;
+
+					if (VALID_WCID(pRxBlk->wcid))
+						pEntry = ApCliTableLookUpByWcid(pAd, pRxBlk->wcid, pHeader->Addr2);
+					else
+						pEntry = MacTableLookup(pAd, pHeader->Addr2);
+					
+					if (pEntry && IS_ENTRY_APCLI(pEntry))
+						pAd->ApCfg.ApCliTab[pEntry->wdev_idx].ApCliCounter.RxErrors++;
+				}
+#endif /* STATS_COUNT_SUPPORT */
+#endif /* APCLI_SUPPORT */
 
 #ifdef DBG_DIAGNOSE
 				if (!pRxInfo->Crc)

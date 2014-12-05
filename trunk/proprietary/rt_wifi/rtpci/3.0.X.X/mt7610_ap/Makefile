@@ -181,7 +181,7 @@ endif
 #  CFLAGS
 ##################
 
-EXTRA_CFLAGS  = -Wall -Wstrict-prototypes -Wno-trigraphs 
+EXTRA_CFLAGS  = -Wall -Wstrict-prototypes -Wno-trigraphs -Wno-unused -Wno-declaration-after-statement
 EXTRA_CFLAGS += -Idrivers/net/wireless/$(RT_DRV_DIR)/include
 ifeq ($(CONFIG_MT7610_AP_ATE),y)
 EXTRA_CFLAGS += -Idrivers/net/wireless/$(RT_DRV_DIR)/ate/include

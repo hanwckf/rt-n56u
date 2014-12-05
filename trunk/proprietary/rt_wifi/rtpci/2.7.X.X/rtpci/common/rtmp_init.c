@@ -267,7 +267,7 @@ NDIS_STATUS	RTMPAllocAdapterBlock(
 		pAd->BeaconBuf = pBeaconBuf;
 		DBGPRINT(RT_DEBUG_OFF, ("\n\n=== pAd = %p, size = %d ===\n\n", pAd, (UINT32)sizeof(RTMP_ADAPTER)));
 
-		if (RtmpOsStatsAlloc(&pAd->stats, &pAd->iw_stats) == FALSE)
+		if (RtmpOsStatsAlloc(&pAd->iw_stats) == FALSE)
 		{
 			Status = NDIS_STATUS_FAILURE;
 			break;
@@ -342,9 +342,6 @@ NDIS_STATUS	RTMPAllocAdapterBlock(
 
 	if ((Status != NDIS_STATUS_SUCCESS) && (pAd != NULL))
 	{
-		if (pAd->stats != NULL)
-			os_free_mem(NULL, pAd->stats);
-
 		if (pAd->iw_stats != NULL)
 			os_free_mem(NULL, pAd->iw_stats);
 	}

@@ -1470,11 +1470,8 @@ int RtmpOSNetDevAttach(
 		/* if you don't implement get_stats, just leave the callback function as NULL, a dummy 
 		   function will make kernel panic.
 		 */
-		if (pDevOpHook->get_stats)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
-			pNetDevOps->ndo_get_stats = pDevOpHook->get_stats;
-#else
-			pNetDev->get_stats = pDevOpHook->get_stats;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35)
+		pNetDevOps->ndo_get_stats64 = pDevOpHook->get_stats;
 #endif
 
 		/* OS specific flags, here we used to indicate if we are virtual interface */
@@ -2022,18 +2019,11 @@ char *RtmpOsGetNetDevName(VOID *pDev)
 }
 
 BOOLEAN RtmpOsStatsAlloc(
-	IN VOID **ppStats,
 	IN VOID **ppIwStats)
 {
-	os_alloc_mem(NULL, (UCHAR **) ppStats, sizeof (struct net_device_stats));
-	if ((*ppStats) == NULL)
-		return FALSE;
-	NdisZeroMemory((UCHAR *) *ppStats, sizeof (struct net_device_stats));
-
 #if WIRELESS_EXT >= 12
 	os_alloc_mem(NULL, (UCHAR **) ppIwStats, sizeof (struct iw_statistics));
 	if ((*ppIwStats) == NULL) {
-		os_free_mem(NULL, *ppStats);
 		return FALSE;
 	}
 	NdisZeroMemory((UCHAR *)* ppIwStats, sizeof (struct iw_statistics));

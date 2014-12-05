@@ -3822,8 +3822,8 @@ INT RTMPAPQueryInformation(
 			{
 				NdisZeroMemory(pMbssStat, sizeof(MBSS_STATISTICS));
 
-				pMbssStat->TransmittedByteCount = pMbss->TransmittedByteCount;
-				pMbssStat->ReceivedByteCount =  pMbss->ReceivedByteCount;
+				pMbssStat->TransmittedByteCount = pMbss->TransmittedByteCount.u.LowPart;
+				pMbssStat->ReceivedByteCount =  pMbss->ReceivedByteCount.u.LowPart;
 				pMbssStat->TxCount =  pMbss->TxCount;
 				pMbssStat->RxCount =  pMbss->RxCount;
 				pMbssStat->RxErrorCount =  pMbss->RxErrorCount;
@@ -6388,12 +6388,12 @@ INT	Show_Sat_Proc(
 	for (apidx=0; apidx < pAd->ApCfg.BssidNum; apidx++)
 	{
 		printk("-- IF-ra%d -- \n", apidx);
-		printk("Packets Received = %ld\n", (ULONG)pAd->ApCfg.MBSSID[apidx].RxCount);
-		printk("Packets Sent = %ld\n", (ULONG)pAd->ApCfg.MBSSID[apidx].TxCount);
-		printk("Bytes Received = %ld\n", (ULONG)pAd->ApCfg.MBSSID[apidx].ReceivedByteCount);
-		printk("Byte Sent = %ld\n", (ULONG)pAd->ApCfg.MBSSID[apidx].TransmittedByteCount);
-		printk("Error Packets Received = %ld\n", (ULONG)pAd->ApCfg.MBSSID[apidx].RxErrorCount);
-		printk("Drop Received Packets = %ld\n", (ULONG)pAd->ApCfg.MBSSID[apidx].RxDropCount);
+		printk("Packets Received = %lu\n", pAd->ApCfg.MBSSID[apidx].RxCount);
+		printk("Packets Sent = %lu\n", pAd->ApCfg.MBSSID[apidx].TxCount);
+		printk("Bytes Received = %llu\n", pAd->ApCfg.MBSSID[apidx].ReceivedByteCount.QuadPart);
+		printk("Byte Sent = %llu\n", pAd->ApCfg.MBSSID[apidx].TransmittedByteCount.QuadPart);
+		printk("Error Packets Received = %lu\n", pAd->ApCfg.MBSSID[apidx].RxErrorCount);
+		printk("Drop Received Packets = %lu\n", pAd->ApCfg.MBSSID[apidx].RxDropCount);
 		
 #ifdef WSC_INCLUDED
 		if (pAd->ApCfg.MBSSID[apidx].WscControl.WscConfMode != WSC_DISABLE)

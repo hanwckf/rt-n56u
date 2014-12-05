@@ -1299,7 +1299,7 @@ VOID WDS_Remove(RTMP_ADAPTER *pAd)
 	{
 		wdev = &pAd->WdsTab.WdsEntry[index].wdev;
 		if (wdev->if_dev)
-	    {
+		{
 			RtmpOSNetDevProtect(1);
 			RtmpOSNetDevDetach(wdev->if_dev);
 			RtmpOSNetDevProtect(0);
@@ -1312,12 +1312,10 @@ VOID WDS_Remove(RTMP_ADAPTER *pAd)
 	}
 }
 
-
-BOOLEAN WDS_StatsGet(RTMP_ADAPTER *pAd, RT_CMD_STATS *pStats)
+BOOLEAN WDS_StatsGet(RTMP_ADAPTER *pAd, RT_CMD_STATS64 *pStats)
 {
-	INT WDS_apidx = 0,index;
-	RT_802_11_WDS_ENTRY *wds_entry;
-
+	INT WDS_apidx = 0, index;
+	RT_802_11_WDS_ENTRY *pWdsEntry;
 
 	for(index = 0; index < MAX_WDS_ENTRY; index++)
 	{
@@ -1327,32 +1325,23 @@ BOOLEAN WDS_StatsGet(RTMP_ADAPTER *pAd, RT_CMD_STATS *pStats)
 			break;
 		}
 	}
-		
+
 	if(index >= MAX_WDS_ENTRY)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("%s(): can not find wds I/F\n", __FUNCTION__));
 		return FALSE;
 	}
 
-	wds_entry = &pAd->WdsTab.WdsEntry[WDS_apidx];
-	pStats->pStats = pAd->stats;
+	pWdsEntry = &pAd->WdsTab.WdsEntry[WDS_apidx];
 
-	pStats->rx_packets = wds_entry->WdsCounter.ReceivedFragmentCount.QuadPart;
-	pStats->tx_packets = wds_entry->WdsCounter.TransmittedFragmentCount.QuadPart;
+	pStats->rx_bytes = pWdsEntry->WdsCounter.ReceivedByteCount.QuadPart;
+	pStats->tx_bytes = pWdsEntry->WdsCounter.TransmittedByteCount.QuadPart;
 
-	pStats->rx_bytes = wds_entry->WdsCounter.ReceivedByteCount;
-	pStats->tx_bytes = wds_entry->WdsCounter.TransmittedByteCount;
+	pStats->rx_packets = pWdsEntry->WdsCounter.ReceivedFragmentCount;
+	pStats->tx_packets = pWdsEntry->WdsCounter.TransmittedFragmentCount;
 
-	pStats->rx_errors = wds_entry->WdsCounter.RxErrors;
-	pStats->tx_errors = wds_entry->WdsCounter.TxErrors;
-
-	pStats->multicast = wds_entry->WdsCounter.MulticastReceivedFrameCount.QuadPart;   /* multicast packets received */
-	pStats->collisions = 0;  /* Collision packets */
-
-	pStats->rx_over_errors = wds_entry->WdsCounter.RxNoBuffer;                   /* receiver ring buff overflow */
-	pStats->rx_crc_errors = 0;/*pAd->WlanCounters.FCSErrorCount;     // recved pkt with crc error */
-	pStats->rx_frame_errors = 0; /* recv'd frame alignment error */
-	pStats->rx_fifo_errors = wds_entry->WdsCounter.RxNoBuffer;                   /* recv'r fifo overrun */
+	pStats->rx_errors = pWdsEntry->WdsCounter.RxErrors;
+	pStats->multicast = pWdsEntry->WdsCounter.MulticastReceivedFrameCount;
 
 	return TRUE;
 }

@@ -91,7 +91,6 @@ ULONG RtmpOsCopyToUser(
 	IN	ULONG					n);
 
 BOOLEAN RtmpOsStatsAlloc(
-	IN	VOID					**ppStats,
 	IN	VOID					**ppIwStats);
 
 /* OS Packet */

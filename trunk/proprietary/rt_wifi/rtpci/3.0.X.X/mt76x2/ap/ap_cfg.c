@@ -4345,8 +4345,8 @@ INT RTMPAPQueryInformation(
 			os_alloc_mem(pAd, (UCHAR * *) &pMbssStat, sizeof(MBSS_STATISTICS));
 			NdisZeroMemory(pMbssStat, sizeof(MBSS_STATISTICS));
 
-			pMbssStat->TransmittedByteCount = pMbss->TransmittedByteCount;
-			pMbssStat->ReceivedByteCount =  pMbss->ReceivedByteCount;
+			pMbssStat->TransmittedByteCount = pMbss->TransmittedByteCount.u.LowPart;
+			pMbssStat->ReceivedByteCount =  pMbss->ReceivedByteCount.u.LowPart;
 			pMbssStat->TxCount =  pMbss->TxCount;
 			pMbssStat->RxCount =  pMbss->RxCount;
 			pMbssStat->RxErrorCount =  pMbss->RxErrorCount;
@@ -7590,12 +7590,12 @@ INT	Show_Sat_Proc(
 	for (apidx=0; apidx < pAd->ApCfg.BssidNum; apidx++)
 	{
 		printk("-- IF-ra%d -- \n", apidx);
-		printk("Packets Received = %ld\n", (ULONG)pAd->ApCfg.MBSSID[apidx].RxCount);
-		printk("Packets Sent = %ld\n", (ULONG)pAd->ApCfg.MBSSID[apidx].TxCount);
-		printk("Bytes Received = %ld\n", (ULONG)pAd->ApCfg.MBSSID[apidx].ReceivedByteCount);
-		printk("Byte Sent = %ld\n", (ULONG)pAd->ApCfg.MBSSID[apidx].TransmittedByteCount);
-		printk("Error Packets Received = %ld\n", (ULONG)pAd->ApCfg.MBSSID[apidx].RxErrorCount);
-		printk("Drop Received Packets = %ld\n", (ULONG)pAd->ApCfg.MBSSID[apidx].RxDropCount);
+		printk("Packets Received = %lu\n", pAd->ApCfg.MBSSID[apidx].RxCount);
+		printk("Packets Sent = %lu\n", pAd->ApCfg.MBSSID[apidx].TxCount);
+		printk("Bytes Received = %llu\n", pAd->ApCfg.MBSSID[apidx].ReceivedByteCount.QuadPart);
+		printk("Byte Sent = %llu\n", pAd->ApCfg.MBSSID[apidx].TransmittedByteCount.QuadPart);
+		printk("Error Packets Received = %lu\n", pAd->ApCfg.MBSSID[apidx].RxErrorCount);
+		printk("Drop Received Packets = %lu\n", pAd->ApCfg.MBSSID[apidx].RxDropCount);
 		
 #ifdef WSC_INCLUDED
 		if (pAd->ApCfg.MBSSID[apidx].WscControl.WscConfMode != WSC_DISABLE)
@@ -9494,7 +9494,6 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
 
 	RTMP_CHIP_CAP *pChipCap = &pAd->chipCap;
 
-/*	msg = (PSTRING)kmalloc(sizeof(CHAR)*(2048), MEM_ALLOC_FLAG); */
 	os_alloc_mem(pAd, (UCHAR **)&msg, sizeof(CHAR)*(2048));
 	if (msg == NULL) {
 		return;
@@ -9517,17 +9516,17 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
 		rxCount = pAd->WlanCounters.ReceivedFragmentCount.QuadPart;
 	}
 
-	sprintf(msg+strlen(msg), "Current temperature = %d¢J\n", pChipCap->current_temp);
-    sprintf(msg+strlen(msg), "Tx success                      = %ld\n", txCount);
+	sprintf(msg+strlen(msg), "Current temperature = %d\n", pChipCap->current_temp);
+	sprintf(msg+strlen(msg), "Tx success                      = %ld\n", txCount);
 #ifdef ENHANCED_STAT_DISPLAY
 	per = txCount==0? 0: 1000*(pAd->WlanCounters.RetryCount.u.LowPart+pAd->WlanCounters.FailedCount.u.LowPart)/(pAd->WlanCounters.RetryCount.u.LowPart+pAd->WlanCounters.FailedCount.u.LowPart+txCount);
-    sprintf(msg+strlen(msg), "Tx retry count                  = %ld, PER=%ld.%1ld%%\n",
+	sprintf(msg+strlen(msg), "Tx retry count                  = %ld, PER=%ld.%1ld%%\n",
 									(ULONG)pAd->WlanCounters.RetryCount.u.LowPart,
 									per/10, per % 10);
 	plr = txCount==0? 0: 10000*pAd->WlanCounters.FailedCount.u.LowPart/(pAd->WlanCounters.FailedCount.u.LowPart+txCount);
-    sprintf(msg+strlen(msg), "Tx fail to Rcv ACK after retry  = %ld, PLR=%ld.%02ld%%\n",
+	sprintf(msg+strlen(msg), "Tx fail to Rcv ACK after retry  = %ld, PLR=%ld.%02ld%%\n",
 									(ULONG)pAd->WlanCounters.FailedCount.u.LowPart, plr/100, plr%100);
-    sprintf(msg+strlen(msg), "Rx success                      = %ld\n", (ULONG)rxCount);
+	sprintf(msg+strlen(msg), "Rx success                      = %ld\n", (ULONG)rxCount);
 #ifdef RALINK_QA
 	if(ATE_ON(pAd))
 	per = rxCount==0? 0: 1000*(pAd->WlanCounters.FCSErrorCount.u.LowPart)/(pAd->WlanCounters.FCSErrorCount.u.LowPart+rxCount);
@@ -9737,23 +9736,6 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
 	sprintf(msg+strlen(msg), "\n");
 #endif /*TCSUPPORT_COMPILE*/
 
-/* 
- * Let "iwpriv ra0 stat" can print out Tx/Rx Packet and Byte count.
- * Therefore, we can parse them out in cfg_manager. --Trey */
-#ifdef BB_SOC
-	for (index = 0; index < pAd->ApCfg.BssidNum; index++){
-		rxPackets += (ULONG)pAd->ApCfg.MBSSID[index].RxCount;
-		txPackets += (ULONG)pAd->ApCfg.MBSSID[index].TxCount;
-		rxBytes += (ULONG)pAd->ApCfg.MBSSID[index].ReceivedByteCount;
-		txBytes += (ULONG)pAd->ApCfg.MBSSID[index].TransmittedByteCount;
-	}
-	sprintf(msg+strlen(msg), "Packets Received       = %lu\n", rxPackets);
-	sprintf(msg+strlen(msg), "Packets Sent           = %lu\n", txPackets);
-	sprintf(msg+strlen(msg), "Bytes Received         = %lu\n", rxBytes);
-	sprintf(msg+strlen(msg), "Bytes Sent             = %lu\n", txBytes);
-	sprintf(msg+strlen(msg), "\n");
-#endif
-
 #ifdef RTMP_EFUSE_SUPPORT
 	if (pAd->bUseEfuse == TRUE)
 	{
@@ -9766,7 +9748,6 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
     Status = copy_to_user(wrq->u.data.pointer, msg, wrq->u.data.length);
 
 	os_free_mem(NULL, msg);
-/*	kfree(msg); */
 
 #if defined(TXBF_SUPPORT) && defined(ENHANCED_STAT_DISPLAY)
 #ifdef DBG_CTRL_SUPPORT

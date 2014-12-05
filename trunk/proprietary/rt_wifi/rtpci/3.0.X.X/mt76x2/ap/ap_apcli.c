@@ -1148,7 +1148,7 @@ VOID ApCliIfMonitor(RTMP_ADAPTER *pAd)
 				&& (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliLinkUpTime + (30 * OS_HZ)))))
 				bForceBrocken = TRUE;
  
-			if (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliRcvBeaconTime + (4 * OS_HZ))))
+			if (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliRcvBeaconTime + (8 * OS_HZ))))
 				bForceBrocken = TRUE;
 		}
 		else
@@ -2490,7 +2490,6 @@ VOID ApCliUpdateMlmeRate(RTMP_ADAPTER *pAd, USHORT ifIndex)
 
 VOID APCli_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 {
-#define APCLI_MAX_DEV_NUM	32
 	PNET_DEV new_dev_p;
 	INT idx;
 	APCLI_STRUCT *pApCliEntry;
@@ -2518,7 +2517,7 @@ VOID APCli_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 		IoctlIF = pAd->IoctlIF;
 #endif /* HOSTAPD_SUPPORT */
 
-	dev_name = get_dev_name_prefix(pAd, INT_APCLI);
+		dev_name = get_dev_name_prefix(pAd, INT_APCLI);
 		new_dev_p = RtmpOSNetDevCreate(MC_RowID, &IoctlIF, INT_APCLI, idx,
 									sizeof(struct mt_dev_priv), dev_name);
 		if (!new_dev_p) {
@@ -2545,6 +2544,8 @@ VOID APCli_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 			RtmpOSNetDevFree(new_dev_p);
 			break;
 		}
+
+		NdisZeroMemory(&pApCliEntry->ApCliCounter, sizeof(APCLI_COUNTER));
 
 		/* init MAC address of virtual network interface */
 		COPY_MAC_ADDR(wdev->if_addr, pAd->CurrentAddress);
@@ -2607,7 +2608,6 @@ VOID APCli_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 	}
 
 	pAd->flg_apcli_init = TRUE;
-
 }
 
 
@@ -2700,6 +2700,42 @@ BOOLEAN ApCli_Close(RTMP_ADAPTER *pAd, PNET_DEV dev_p)
 	}
 
 	return FALSE;
+}
+
+BOOLEAN ApCli_StatsGet(
+	IN	PRTMP_ADAPTER pAd,
+	IN	RT_CMD_STATS64 *pStats)
+{
+	INT ifIndex = 0, index;
+	APCLI_STRUCT *pApCliTab;
+
+	for(index = 0; index < MAX_APCLI_NUM; index++)
+	{
+		if (pAd->ApCfg.ApCliTab[index].wdev.if_dev == pStats->pNetDev)
+		{
+			ifIndex = index;
+			break;
+		}
+	}
+
+	if (index >= MAX_APCLI_NUM)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("rt28xx_ioctl apcli_statsGet can not find apcli I/F\n"));
+		return FALSE;
+	}
+
+	pApCliTab = &pAd->ApCfg.ApCliTab[ifIndex];
+
+	pStats->rx_bytes = pApCliTab->ApCliCounter.ReceivedByteCount.QuadPart;
+	pStats->tx_bytes = pApCliTab->ApCliCounter.TransmittedByteCount.QuadPart;
+
+	pStats->rx_packets = pApCliTab->ApCliCounter.ReceivedFragmentCount;
+	pStats->tx_packets = pApCliTab->ApCliCounter.TransmittedFragmentCount;
+
+	pStats->rx_errors = pApCliTab->ApCliCounter.RxErrors;
+	pStats->multicast = pApCliTab->ApCliCounter.MulticastReceivedFrameCount;
+
+	return TRUE;
 }
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT

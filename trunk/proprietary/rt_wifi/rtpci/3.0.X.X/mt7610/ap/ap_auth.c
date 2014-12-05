@@ -547,32 +547,35 @@ VOID APCls2errAction(
 	IN 	ULONG Wcid, 
     IN	PHEADER_802_11	pHeader) 
 {
-    HEADER_802_11 Hdr;
-    PUCHAR        pOutBuffer = NULL;
-    NDIS_STATUS   NStatus;
-    ULONG         FrameLen = 0;
-    USHORT        Reason = REASON_CLS2ERR;
-    MAC_TABLE_ENTRY *pEntry = NULL;
-
+	HEADER_802_11 Hdr;
+	PUCHAR        pOutBuffer = NULL;
+	NDIS_STATUS   NStatus;
+	ULONG         FrameLen = 0;
+	USHORT        Reason = REASON_CLS2ERR;
+	MAC_TABLE_ENTRY *pEntry = NULL;
+	UCHAR idx;
 
 	if (Wcid < MAX_LEN_OF_MAC_TABLE)
 	{
 		pEntry = &(pAd->MacTab.Content[Wcid]);
 	}
 
-    if (pEntry && IS_ENTRY_CLIENT(pEntry))
-    {
-        /*ApLogEvent(pAd, pAddr, EVENT_DISASSOCIATED); */
-        MacTableDeleteEntry(pAd, pEntry->Aid, pHeader->Addr2);
+	if (pEntry && IS_ENTRY_CLIENT(pEntry))
+	{
+		/*ApLogEvent(pAd, pAddr, EVENT_DISASSOCIATED); */
+		MacTableDeleteEntry(pAd, pEntry->Aid, pHeader->Addr2);
 	}
 	else
 	{
-		UCHAR bssid[MAC_ADDR_LEN];
+		for (idx = 0; idx < pAd->ApCfg.BssidNum; idx++)
+		{
+			PMULTISSID_STRUCT pMbss = &pAd->ApCfg.MBSSID[idx];
 
-		NdisMoveMemory(bssid, pHeader->Addr1, MAC_ADDR_LEN);
-		bssid[5] &= pAd->ApCfg.MacMask;
+			if (NdisEqualMemory(pMbss->Bssid, pHeader->Addr1, MAC_ADDR_LEN))
+				break;
+		}
 
-		if (NdisEqualMemory(pAd->CurrentAddress, bssid, MAC_ADDR_LEN) == 0)
+		if (idx == pAd->ApCfg.BssidNum)
 			return;
 	}
 

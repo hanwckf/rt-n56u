@@ -67,7 +67,7 @@ VOID RtmpOsVfree(VOID *pMem);
 ULONG RtmpOsCopyFromUser(VOID *to, const void *from, ULONG n);
 ULONG RtmpOsCopyToUser(VOID *to, const void *from, ULONG n);
 
-BOOLEAN RtmpOsStatsAlloc(VOID **ppStats, VOID **ppIwStats);
+BOOLEAN RtmpOsStatsAlloc(VOID **ppIwStats);
 
 /* OS Packet */
 PNDIS_PACKET RtmpOSNetPktAlloc(VOID *pReserved, int size);

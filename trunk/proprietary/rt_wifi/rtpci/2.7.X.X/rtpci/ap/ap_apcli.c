@@ -629,6 +629,8 @@ BOOLEAN ApCliLinkUp(
 			else
 				CLIENT_STATUS_CLEAR_FLAG(pMacEntry, fCLIENT_STATUS_RALINK_CHIPSET);
 
+			NdisGetSystemUpTime(&pApCliEntry->ApCliRcvBeaconTime);
+
 			/* set the apcli interface be valid. */
 			pApCliEntry->Valid = TRUE;
 			result = TRUE;
@@ -844,7 +846,7 @@ VOID ApCliIfMonitor(
 				&& (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliLinkUpTime + (30 * OS_HZ)))))
 				bForceBrocken = TRUE;
  
-			if (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliRcvBeaconTime + (4 * OS_HZ))))
+			if (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliRcvBeaconTime + (8 * OS_HZ))))
 				bForceBrocken = TRUE;
 		}
 		else
@@ -2069,17 +2071,13 @@ VOID APCli_Init(
 	IN	PRTMP_ADAPTER				pAd,
 	IN	RTMP_OS_NETDEV_OP_HOOK		*pNetDevOps)
 {
-#define APCLI_MAX_DEV_NUM	32
 	PNET_DEV	new_dev_p;
-/*	VIRTUAL_ADAPTER *apcli_pAd; */
 	INT apcli_index;
-/*	RTMP_OS_NETDEV_OP_HOOK	netDevOpHook; */
 	APCLI_STRUCT	*pApCliEntry;
-	
+
 	/* sanity check to avoid redundant virtual interfaces are created */
 	if (pAd->flg_apcli_init != FALSE)
 		return;
-
 
 	/* init */
 	for(apcli_index = 0; apcli_index < MAX_APCLI_NUM; apcli_index++)
@@ -2102,6 +2100,9 @@ VOID APCli_Init(
 		RTMP_OS_NETDEV_SET_PRIV(new_dev_p, pAd);
 
 		pApCliEntry = &pAd->ApCfg.ApCliTab[apcli_index];
+
+		NdisZeroMemory(&pApCliEntry->ApCliCounter, sizeof(APCLI_COUNTER));
+
 		/* init MAC address of virtual network interface */
 		COPY_MAC_ADDR(pApCliEntry->CurrentAddress, pAd->CurrentAddress);
 
@@ -2130,11 +2131,11 @@ VOID APCli_Init(
 		pNetDevOps->needProtcted = TRUE;
 		NdisMoveMemory(pNetDevOps->devAddr, &pApCliEntry->CurrentAddress[0], MAC_ADDR_LEN);
 
-		/* register this device to OS */
-		RtmpOSNetDevAttach(pAd->OpMode, new_dev_p, pNetDevOps);
-
 		/* backup our virtual network interface */
 		pApCliEntry->dev = new_dev_p;
+
+		/* register this device to OS */
+		RtmpOSNetDevAttach(pAd->OpMode, new_dev_p, pNetDevOps);
 	} /* End of for */
 
 	pAd->flg_apcli_init = TRUE;
@@ -2281,6 +2282,42 @@ int APC_PacketSend(
 	RELEASE_NDIS_PACKET(pAd, skb_p, NDIS_STATUS_FAILURE);
 
 	return 0;
+}
+
+BOOLEAN ApCli_StatsGet(
+	IN	PRTMP_ADAPTER pAd,
+	IN	RT_CMD_STATS64 *pStats)
+{
+	INT ifIndex = 0, index;
+	APCLI_STRUCT *pApCliTab;
+
+	for(index = 0; index < MAX_APCLI_NUM; index++)
+	{
+		if (pAd->ApCfg.ApCliTab[index].dev == (PNET_DEV)(pStats->pNetDev))
+		{
+			ifIndex = index;
+			break;
+		}
+	}
+
+	if(index >= MAX_APCLI_NUM)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("rt28xx_ioctl apcli_statsGet can not find apcli I/F\n"));
+		return FALSE;
+	}
+
+	pApCliTab = &pAd->ApCfg.ApCliTab[ifIndex];
+
+	pStats->rx_bytes = pApCliTab->ApCliCounter.ReceivedByteCount.QuadPart;
+	pStats->tx_bytes = pApCliTab->ApCliCounter.TransmittedByteCount.QuadPart;
+
+	pStats->rx_packets = pApCliTab->ApCliCounter.ReceivedFragmentCount;
+	pStats->tx_packets = pApCliTab->ApCliCounter.TransmittedFragmentCount;
+
+	pStats->rx_errors = pApCliTab->ApCliCounter.RxErrors;
+	pStats->multicast = pApCliTab->ApCliCounter.MulticastReceivedFrameCount;
+
+	return TRUE;
 }
 
 #endif /* APCLI_SUPPORT */

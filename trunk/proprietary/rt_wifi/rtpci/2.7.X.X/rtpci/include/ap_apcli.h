@@ -265,6 +265,10 @@ BOOLEAN ApCli_Close(
 	IN	PRTMP_ADAPTER	pAd,
 	IN	PNET_DEV		dev_p);
 
+BOOLEAN ApCli_StatsGet(
+	IN	PRTMP_ADAPTER pAd,
+	IN	RT_CMD_STATS64 *pStats);
+
 BOOLEAN ApCliWaitProbRsp(
 	IN PRTMP_ADAPTER pAd,
 	IN USHORT ifIndex);

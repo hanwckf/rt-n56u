@@ -243,7 +243,7 @@ VOID APCli_Init(
 
 BOOLEAN ApCli_Open(RTMP_ADAPTER *pAd, PNET_DEV dev_p);
 BOOLEAN ApCli_Close(RTMP_ADAPTER *pAd, PNET_DEV dev_p);
-
+BOOLEAN ApCli_StatsGet(RTMP_ADAPTER *pAd, RT_CMD_STATS64 *pStats);
 BOOLEAN ApCliWaitProbRsp(RTMP_ADAPTER *pAd, USHORT ifIndex);
 VOID ApCliSimulateRecvBeacon(RTMP_ADAPTER *pAd);
 

@@ -1317,11 +1317,10 @@ typedef struct _MULTISSID_STRUCT {
 	DESIRED_TRANSMIT_SETTING DesiredTransmitSetting;	/* Desired transmit setting. this is for reading registry setting only. not useful. */
 	BOOLEAN bAutoTxRateSwitch;
 
-	/*MBSS_STATISTICS MbssStat;*/
+	LARGE_INTEGER ReceivedByteCount;
+	LARGE_INTEGER TransmittedByteCount;
 	ULONG TxCount;
 	ULONG RxCount;
-	ULONG ReceivedByteCount;
-	ULONG TransmittedByteCount;
 	ULONG RxErrorCount;
 	ULONG RxDropCount;
 
@@ -2300,17 +2299,12 @@ typedef struct _MAC_TABLE {
   **************************************************************************/
 #ifdef WDS_SUPPORT
 typedef struct _WDS_COUNTER {
-	LARGE_INTEGER ReceivedFragmentCount;
-	LARGE_INTEGER TransmittedFragmentCount;
-	ULONG ReceivedByteCount;
-	ULONG TransmittedByteCount;
+	LARGE_INTEGER ReceivedByteCount;
+	LARGE_INTEGER TransmittedByteCount;
+	ULONG ReceivedFragmentCount;
+	ULONG TransmittedFragmentCount;
 	ULONG RxErrors;
-	ULONG TxErrors;
-	LARGE_INTEGER MulticastReceivedFrameCount;
-	ULONG OneCollision;
-	ULONG MoreCollisions;
-	ULONG RxNoBuffer;
-	ULONG RcvAlignmentErrors;
+	ULONG MulticastReceivedFrameCount;
 } WDS_COUNTER, *PWDS_COUNTER;
 
 typedef struct _WDS_ENTRY {
@@ -2417,6 +2411,15 @@ typedef struct _REPEATER_CTRL_STRUCT {
 /***************************************************************************
   *	AP APCLI related data structures
   **************************************************************************/
+typedef struct _APCLI_COUNTER {
+	LARGE_INTEGER ReceivedByteCount;
+	LARGE_INTEGER TransmittedByteCount;
+	ULONG ReceivedFragmentCount;
+	ULONG TransmittedFragmentCount;
+	ULONG RxErrors;
+	ULONG MulticastReceivedFrameCount;
+} APCLI_COUNTER, *PAPCLI_COUNTER;
+
 typedef struct _APCLI_STRUCT {
 	struct wifi_dev wdev;
 	
@@ -2548,6 +2551,7 @@ typedef struct _APCLI_STRUCT {
 	REPEATER_CLIENT_ENTRY_MAP RepeaterCliMap[MAX_EXT_MAC_ADDR_SIZE];
 #endif /* MAC_REPEATER_SUPPORT */
 	UCHAR LinkIdx;
+	APCLI_COUNTER ApCliCounter;
 	PVOID pAd;
 } APCLI_STRUCT, *PAPCLI_STRUCT;
 
@@ -3555,7 +3559,6 @@ struct _RTMP_ADAPTER {
 	/* statistics count */
 
 	VOID *iw_stats;
-	VOID *stats;
 
 #ifdef BLOCK_NET_IF
 	BLOCK_QUEUE_ENTRY blockQueueTab[NUM_OF_TX_RING];

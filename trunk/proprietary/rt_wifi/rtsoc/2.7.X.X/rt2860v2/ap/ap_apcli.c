@@ -770,6 +770,8 @@ BOOLEAN ApCliLinkUp(
 			else
 				CLIENT_STATUS_CLEAR_FLAG(pMacEntry, fCLIENT_STATUS_RALINK_CHIPSET);
 
+			NdisGetSystemUpTime(&pApCliEntry->ApCliRcvBeaconTime);
+
 			/* set the apcli interface be valid. */
 #ifdef MAC_REPEATER_SUPPORT
 			if (CliIdx == 0xFF)
@@ -1155,7 +1157,7 @@ VOID ApCliIfMonitor(
 				&& (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliLinkUpTime + (30 * OS_HZ)))))
 				bForceBrocken = TRUE;
  
-			if (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliRcvBeaconTime + (4 * OS_HZ))))
+			if (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliRcvBeaconTime + (8 * OS_HZ))))
 				bForceBrocken = TRUE;
 		}
 		else
@@ -2829,7 +2831,7 @@ BOOLEAN ApCli_StatsGet(
 	IN	RT_CMD_STATS64 *pStats)
 {
 	INT ifIndex = 0, index;
-	APCLI_STRUCT *pApCli;
+	APCLI_STRUCT *pApCliTab;
 
 	for(index = 0; index < MAX_APCLI_NUM; index++)
 	{
@@ -2846,16 +2848,16 @@ BOOLEAN ApCli_StatsGet(
 		return FALSE;
 	}
 
-	pApCli = &pAd->ApCfg.ApCliTab[ifIndex];
+	pApCliTab = &pAd->ApCfg.ApCliTab[ifIndex];
 
-	pStats->rx_bytes = pApCli->ApCliCounter.ReceivedByteCount.QuadPart;
-	pStats->tx_bytes = pApCli->ApCliCounter.TransmittedByteCount.QuadPart;
+	pStats->rx_bytes = pApCliTab->ApCliCounter.ReceivedByteCount.QuadPart;
+	pStats->tx_bytes = pApCliTab->ApCliCounter.TransmittedByteCount.QuadPart;
 
-	pStats->rx_packets = pApCli->ApCliCounter.ReceivedFragmentCount;
-	pStats->tx_packets = pApCli->ApCliCounter.TransmittedFragmentCount;
+	pStats->rx_packets = pApCliTab->ApCliCounter.ReceivedFragmentCount;
+	pStats->tx_packets = pApCliTab->ApCliCounter.TransmittedFragmentCount;
 
-	pStats->rx_errors = pApCli->ApCliCounter.RxErrors;
-	pStats->multicast = pApCli->ApCliCounter.MulticastReceivedFrameCount;
+	pStats->rx_errors = pApCliTab->ApCliCounter.RxErrors;
+	pStats->multicast = pApCliTab->ApCliCounter.MulticastReceivedFrameCount;
 
 	return TRUE;
 }

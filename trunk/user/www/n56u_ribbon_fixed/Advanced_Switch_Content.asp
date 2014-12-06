@@ -378,11 +378,11 @@ function done_validating(action){
                                             <th><#SwitchState#></th>
                                             <td id="linkstate_lan4"></td>
                                         </tr>
+                                    </table>
+
+                                    <table class="table">
                                         <tr>
-                                            <td colspan="3" style="border-top: 0 none;">
-                                                <br/>
-                                                <center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>
-                                            </td>
+                                            <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
                                         </tr>
                                     </table>
                                 </div>

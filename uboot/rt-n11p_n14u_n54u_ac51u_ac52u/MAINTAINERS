@@ -1,0 +1,494 @@
+#########################################################################
+#									#
+# Regular Maintainers for U-Boot board support:				#
+#									#
+# For any board without permanent maintainer, please contact		#
+#	Wolfgang Denk <wd@denx.de>					#
+# and Cc: the <U-Boot-Users@lists.sourceforge.net> mailing lists.	#
+#									#
+# Note: lists sorted by Maintainer Name					#
+#########################################################################
+
+
+#########################################################################
+# PowerPC Systems:							#
+#									#
+# Maintainer Name, Email Address					#
+#	Board			CPU					#
+#########################################################################
+
+Greg Allen <gallen@arlut.utexas.edu>
+
+	UTX8245			MPC8245
+
+Pantelis Antoniou <panto@intracom.gr>
+
+	NETVIA			MPC8xx
+
+Reinhard Arlt <reinhard.arlt@esd-electronics.com>
+
+	CPCI750			PPC750FX/GX
+
+Yuli Barcohen <yuli@arabellasw.com>
+
+	Adder			MPC87x/MPC852T
+	ISPAN			MPC8260
+	MPC8260ADS		MPC826x/MPC827x/MPC8280
+	ZPC1900			MPC8265
+
+Jerry Van Baren <gerald.vanbaren@smiths-aerospace.com>
+
+	sacsng			MPC8260
+
+Rick Bronson <rick@efn.org>
+
+	AT91RM9200DK		at91rm9200
+
+Oliver Brown <obrown@adventnetworks.com>
+
+	gw8260			MPC8260
+
+Conn Clark <clark@esteem.com>
+
+	ESTEEM192E		MPC8xx
+
+Kári Davíðsson <kd@flaga.is>
+
+	FLAGADM			MPC823
+
+Torsten Demke <torsten.demke@fci.com>
+
+	eXalion			MPC824x
+
+Wolfgang Denk <wd@denx.de>
+
+	IceCube_5100		MGT5100
+	IceCube_5200		MPC5200
+
+	AMX860			MPC860
+	ETX094			MPC850
+	FPS850L			MPC850
+	FPS860L			MPC860
+	ICU862			MPC862
+	IP860			MPC860
+	IVML24			MPC860
+	IVML24_128		MPC860
+	IVML24_256		MPC860
+	IVMS8			MPC860
+	IVMS8_128		MPC860
+	IVMS8_256		MPC860
+	LANTEC			MPC850
+	LWMON			MPC823
+	NC650			MPC852
+	R360MPI			MPC823
+	RMU			MPC850
+	RRvision		MPC823
+	SM850			MPC850
+	SPD823TS		MPC823
+	TQM823L			MPC823
+	TQM823L_LCD		MPC823
+	TQM850L			MPC850
+	TQM855L			MPC855
+	TQM860L			MPC860
+	TQM860L_FEC		MPC860
+	c2mon			MPC855
+	hermes			MPC860
+	lwmon			MPC823
+	pcu_e			MPC855
+
+	CU824			MPC8240
+	Sandpoint8240		MPC8240
+	SL8245			MPC8245
+
+	ATC			MPC8250
+	PM825			MPC8250
+
+	TQM8255			MPC8255
+
+	CPU86			MPC8260
+	PM826			MPC8260
+	TQM8260			MPC8260
+
+	P3G4			MPC7410
+
+	PCIPPC2			MPC750
+	PCIPPC6			MPC750
+
+	EXBITGEN		PPC405GP
+
+Jon Diekema <jon.diekema@smiths-aerospace.com>
+
+	sbc8260			MPC8260
+
+Dave Ellis <DGE@sixnetio.com>
+
+	SXNI855T		MPC8xx
+
+Thomas Frieden <ThomasF@hyperion-entertainment.com>
+
+	AmigaOneG3SE		MPC7xx
+
+Frank Gottschling <fgottschling@eltec.de>
+
+	MHPC			MPC8xx
+
+	BAB7xx			MPC740/MPC750
+
+Wolfgang Grandegger <wg@denx.de>
+
+	CCM			MPC855
+
+	PN62			MPC8240
+
+	IPHASE4539		MPC8260
+	SCM			MPC8260
+
+Howard Gray <mvsensor@matrix-vision.de>
+
+	MVS1			MPC823
+
+Bill Hargen <Bill_Hargen@Jabil.com>
+
+	BUBINGA405EP		PPC405EP
+
+Klaus Heydeck <heydeck@kieback-peter.de>
+
+	KUP4K			MPC855
+	KUP4X			MPC859
+
+Murray Jensen <Murray.Jensen@cmst.csiro.au>
+
+	cogent_mpc8xx		MPC8xx
+
+	cogent_mpc8260		MPC8260
+	hymod			MPC8260
+
+Brad Kemp <Brad.Kemp@seranoa.com>
+
+	ppmc8260		MPC8260
+
+Sangmoon Kim <dogoil@etinsys.com>
+
+	debris			MPC8245
+
+Nye Liu <nyet@zumanetworks.com>
+
+	ZUMA			MPC7xx_74xx
+
+Thomas Lange <thomas@corelatus.se>
+
+	GTH			MPC860
+
+The LEOX team <team@leox.org>
+
+	ELPT860			MPC860T
+
+Eran Man <eran@nbase.co.il>
+
+	EVB64260_750CX		MPC750CX
+
+Andrea "llandre" Marson <andrea.marson@dave-tech.it>
+
+	PPChameleonEVB	PPC405EP
+
+Reinhard Meyer <r.meyer@emk-elektronik.de>
+
+	TOP860			MPC860T
+	TOP5200			MPC5200
+
+Scott McNutt <smcnutt@artesyncp.com>
+
+	EBONY			PPC440GP
+
+Tolunay Orkun <torkun@nextio.com>
+	csb272			PPC405GP
+	csb472			PPC405GP
+
+Keith Outwater <Keith_Outwater@mvis.com>
+
+	GEN860T			MPC860T
+	GEN860T_SC		MPC860T
+
+Frank Panno <fpanno@delphintech.com>
+
+	ep8260			MPC8260
+
+Peter Pearse <peter.pearse@arm.com>
+
+	Integrator/AP		CM 926EJ-S, CM7x0T, CM9x0T
+	Integrator/CP		CM 926EJ-S  CM920T, CM940T, CM922T-XA10
+	Versatile/AB		ARM926EJ-S
+	Versatile/PB		ARM926EJ-S
+
+Denis Peter <d.peter@mpl.ch>
+
+	MIP405			PPC4xx
+	PIP405			PPC4xx
+
+Daniel Poirot <dan.poirot@windriver.com>
+	sbc8240			MPC8240
+	sbc405			PPC405GP
+
+Stefan Roese <stefan.roese@esd-electronics.com>
+
+	ADCIOP			IOP480 (PPC401)
+	APC405			PPC405GP
+	AR405			PPC405GP
+	ASH405			PPC405EP
+	CANBT			PPC405CR
+	CPCI405			PPC405GP
+	CPCI4052		PPC405GP
+	CPCI405AB		PPC405GP
+	CPCI405DT		PPC405GP
+	CPCI440			PPC440GP
+	CPCIISER4		PPC405GP
+	DASA_SIM		IOP480 (PPC401)
+	DP405			PPC405EP
+	DU405			PPC405GP
+	G2000			PPC405EP
+	HH405			PPC405EP
+	HUB405			PPC405EP
+	OCRTC			PPC405GP
+	ORSG			PPC405GP
+	PCI405			PPC405GP
+	PLU405			PPC405EP
+	PMC405			PPC405GP
+	VOH405			PPC405EP
+	VOM405			PPC405EP
+	WUH405			PPC405EP
+
+Travis Sawyer (travis.sawyer@sandburst.com>
+
+	XPEDITE1K		PPC440GX
+	OCOTEA			PPC440GX
+
+Peter De Schrijver <p2@mind.be>
+
+	ML2			PPC4xx
+
+Erik Theisen <etheisen@mindspring.com>
+
+	W7OLMC			PPC4xx
+	W7OLMG			PPC4xx
+
+Jim Thompson <jim@musenki.com>
+
+	MUSENKI			MPC8245/8241
+	Sandpoint8245		MPC8245
+
+Rune Torgersen <runet@innovsys.com>
+
+	MPC8266ADS		MPC8266
+
+Josef Wagner <Wagner@Microsys.de>
+
+	CPC45			MPC8245
+	PM520			MPC5200
+
+Stephen Williams <steve@icarus.com>
+
+	JSE			PPC405GPr
+
+John Zhan <zhanz@sinovee.com>
+
+	svm_sc8xx		MPC8xx
+
+Jon Loeliger <jdl@freescale.com>
+
+	MPC8540ADS		MPC8540
+	MPC8560ADS		MPC8560
+
+Dan Malek <dan@embeddededge.com>
+
+	STxGP3			MPC85xx
+
+-------------------------------------------------------------------------
+
+Unknown / orphaned boards:
+
+	ADS860			MPC8xx
+	FADS823			MPC8xx
+	FADS850SAR		MPC8xx
+	FADS860T		MPC8xx
+	GENIETV			MPC8xx
+	IAD210			MPC8xx
+	MBX			MPC8xx
+	MBX860T			MPC8xx
+	NX823			MPC8xx
+	RPXClassic		MPC8xx
+	RPXlite			MPC8xx
+
+	CRAYL1			PPC4xx
+	ERIC			PPC4xx
+	WALNUT405		PPC4xx
+
+	MOUSSE			MPC824x
+
+	RPXsuper		MPC8260
+	rsdproto		MPC8260
+
+	EVB64260		MPC7xx_74xx
+
+
+#########################################################################
+# ARM Systems:								#
+#									#
+# Maintainer Name, Email Address					#
+#	Board			CPU					#
+#########################################################################
+
+George G. Davis <gdavis@mvista.com>
+
+	assabet			SA1100
+	gcplus			SA1100
+
+Thomas Elste <info@elste.org>
+
+	modnet50		ARM720T (NET+50)
+
+Peter Figuli <peposh@etc.sk>
+
+	wepep250		xscale
+
+Marius Gröger <mag@sysgo.de>
+
+	impa7			ARM720T (EP7211)
+	ep7312			ARM720T (EP7312)
+
+Kyle Harris <kharris@nexus-tech.net>
+
+	lubbock			xscale
+	cradle			xscale
+	ixdp425			xscale
+
+Gary Jennejohn <gj@denx.de>
+
+	smdk2400		ARM920T
+	trab			ARM920T
+
+Prakash Kumar <prakash@embedx.com>
+
+	cerf250			xscale
+
+Kshitij Gupta <kshitij@ti.com>
+
+	omap1510inn		ARM925T
+	omap1610inn		ARM926EJS
+
+Dave Peverley <dpeverley@mpc-data.co.uk>
+	omap730p2		ARM926EJS
+
+Nishant Kamat <nskamat@ti.com>
+
+	omap1610h2		ARM926EJS
+
+Rishi Bhattacharya <rishi@ti.com>
+
+	omap5912osk		ARM926EJS
+
+Richard Woodruff <r-woodruff2@ti.com>
+
+	omap2420h4		ARM1136EJS
+
+David Müller <d.mueller@elsoft.ch>
+
+	smdk2410		ARM920T
+	VCMA9			ARM920T
+
+Rolf Offermanns <rof@sysgo.de>
+
+	shannon			SA1100
+
+Robert Schwebel <r.schwebel@pengutronix.de>
+
+	csb226			xscale
+	innokom			xscale
+
+Andrea Scian <andrea.scian@dave-tech.it>
+
+	B2				ARM7TDMI (S3C44B0X)
+
+Alex Züpke <azu@sysgo.de>
+
+	lart			SA1100
+	dnp1110			SA1110
+
+#########################################################################
+# x86 Systems:								#
+#									#
+# Maintainer Name, Email Address					#
+#	Board			CPU					#
+#########################################################################
+
+Daniel Engström <daniel@omicron.se>
+
+	sc520_cdp		x86
+
+#########################################################################
+# MIPS Systems:								#
+#									#
+# Maintainer Name, Email Address					#
+#	Board			CPU					#
+#########################################################################
+
+Wolfgang Denk <wd@denx.de>
+
+	incaip			MIPS32 4Kc
+	purple			MIPS64 5Kc
+
+Thomas Lange <thomas@corelatus.se>
+	dbau1x00		MIPS32 Au1000
+
+#########################################################################
+# Nios-32 Systems:							#
+#									#
+# Maintainer Name, Email Address					#
+#	Board			CPU					#
+#########################################################################
+
+Stephan Linz <linz@li-pro.net>
+
+	DK1S10			Nios-32
+	ADNPESC1		Nios-32
+
+Scott McNutt <smcnutt@psyent.com>
+
+	DK1C20			Nios-32
+
+#########################################################################
+# Nios-II Systems:							#
+#									#
+# Maintainer Name, Email Address					#
+#	Board			CPU					#
+#########################################################################
+
+Scott McNutt <smcnutt@psyent.com>
+
+	PCI5441			Nios-II
+	PK1C20			Nios-II
+
+#########################################################################
+# MicroBlaze Systems:							#
+#									#
+# Maintainer Name, Email Address					#
+#	Board			CPU					#
+#########################################################################
+
+Yasushi Shoji <yashi@atmark-techno.com>
+
+	SUZAKU			MicroBlaze
+
+#########################################################################
+# Coldfire Systems:							#
+#									#
+# Maintainer Name, Email Address					#
+#	Board			CPU					#
+#########################################################################
+
+Stefan Roese <stefan.roese@esd-electronics.com>
+
+	TASREG			MCF5249
+
+#########################################################################
+# End of MAINTAINERS list						#
+#########################################################################

@@ -1,0 +1,3678 @@
+msdc blklen
+[SD0] Bus Width: 1
+[SD0] SET_CLK(260kHz): SCLK(255kHz) MODE(0) DDR(0) DIV(47) DS(0) RS(0)
+[SD0] Set read data timeout: 100000000ns 0clks -> 1 x 65536 cycles
+[SD0] CMD(0): ARG(0x0), RAW(0x0), RSP(0)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(0): RSP(0)
+[SD0] CMD(8): ARG(0x1aa), RAW(0x88), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(8): RSP(1) = 0x1aa AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] Switch error
+	[CARD_STATUS] App Command
+	[CARD_STATUS] 'Idle' State
+[SD0] CMD(5): ARG(0x0), RAW(0x205), RSP(4)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x200)
+[SD0] CMD(5): RSP(4) ERR(CMDTO) AUTO(0)
+[SD0] CMD(5): ARG(0x0), RAW(0x205), RSP(4)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x200)
+[SD0] CMD(5): RSP(4) ERR(CMDTO) AUTO(0)
+[SD0] CMD(5): ARG(0x0), RAW(0x205), RSP(4)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x200)
+[SD0] CMD(5): RSP(4) ERR(CMDTO) AUTO(0)
+[SD0] CMD(5): ARG(0x0), RAW(0x205), RSP(4)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x200)
+[SD0] CMD(5): RSP(4) ERR(CMDTO) AUTO(0)
+[SD0] CMD(5): ARG(0x0), RAW(0x205), RSP(4)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x200)
+[SD0] CMD(5): RSP(4) ERR(CMDTO) AUTO(0)
+[SD0] CMD(5): ARG(0x0), RAW(0x205), RSP(4)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x200)
+[SD0] CMD(5): RSP(4) ERR(CMDTO) AUTO(0)
+[SD0] CMD(55): ARG(0x0), RAW(0xb7), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(55): RSP(1) = 0x120 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] App Command
+	[CARD_STATUS] 'Idle' State
+[SD0] CMD(41): ARG(0x0), RAW(0x1a9), RSP(3)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(41): RSP(3) = 0xff8000 AUTO(0)
+	[OCR] 2.7-2.8 volt
+	[OCR] 2.8-2.9 volt
+	[OCR] 2.9-3.0 volt
+	[OCR] 3.0-3.1 volt
+	[OCR] 3.1-3.2 volt
+	[OCR] 3.2-3.3 volt
+	[OCR] 3.3-3.4 volt
+	[OCR] 3.4-3.5 volt
+	[OCR] 3.5-3.6 volt
+	[OCR] Card Power Up Status (Busy)
+[SD0] CMD(0): ARG(0x0), RAW(0x0), RSP(0)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(0): RSP(0)
+[SD0] CMD(8): ARG(0x1aa), RAW(0x88), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(8): RSP(1) = 0x1aa AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] Switch error
+	[CARD_STATUS] App Command
+	[CARD_STATUS] 'Idle' State
+[SD0] CMD(55): ARG(0x0), RAW(0xb7), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(55): RSP(1) = 0x120 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] App Command
+	[CARD_STATUS] 'Idle' State
+[SD0] CMD(41): ARG(0x51200000), RAW(0x1a9), RSP(3)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(41): RSP(3) = 0xff8000 AUTO(0)
+	[OCR] 2.7-2.8 volt
+	[OCR] 2.8-2.9 volt
+	[OCR] 2.9-3.0 volt
+	[OCR] 3.0-3.1 volt
+	[OCR] 3.1-3.2 volt
+	[OCR] 3.2-3.3 volt
+	[OCR] 3.3-3.4 volt
+	[OCR] 3.4-3.5 volt
+	[OCR] 3.5-3.6 volt
+	[OCR] Card Power Up Status (Busy)
+[SD0] CMD(55): ARG(0x0), RAW(0xb7), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(55): RSP(1) = 0x120 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] App Command
+	[CARD_STATUS] 'Idle' State
+[SD0] CMD(41): ARG(0x51200000), RAW(0x1a9), RSP(3)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(41): RSP(3) = 0x80ff8000 AUTO(0)
+	[OCR] 2.7-2.8 volt
+	[OCR] 2.8-2.9 volt
+	[OCR] 2.9-3.0 volt
+	[OCR] 3.0-3.1 volt
+	[OCR] 3.1-3.2 volt
+	[OCR] 3.2-3.3 volt
+	[OCR] 3.3-3.4 volt
+	[OCR] 3.4-3.5 volt
+	[OCR] 3.5-3.6 volt
+	[OCR] Card Power Up Status (Idle)
+[SD0] CMD(2): ARG(0x0), RAW(0x102), RSP(2)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(2): RSP(2) = 0x1b534d30 0x30303030 0x1011d000 0x1200b4c7
+[SD0] CMD(3): ARG(0x0), RAW(0x83), RSP(6)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(3): RSP(6) = 0x20520 AUTO(0)
+	[RCA] 0x2
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] App Command
+	[CARD_STATUS] 'Ident' State
+[SD0] CMD(9): ARG(0x20000), RAW(0x109), RSP(2)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(9): RSP(2) = 0x7fff32 0x5b5a83ba 0xf6dbdfff 0xe8000b5
+[CSD] CSD v1.0
+[CSD] TACC_NS: 80000000 ns, TACC_CLKS: 25500 clks
+[CSD] Read Blk Len = 1024, Write Blk Len = 1024
+[CSD] CMD Class:'basic' 'block read' 'block write' 'erase' 'lock card' 'app-spec' 'switch' 
+[SD0] CMD(7): ARG(0x20000), RAW(0x387), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(7): RSP(8) = 0x700 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Stby' State
+[SD0] Set read data timeout: 100000000ns 0clks -> 1 x 65536 cycles
+[SD0] CMD(55): ARG(0x20000), RAW(0x800b7), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(55): RSP(1) = 0x920 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] App Command
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(51): ARG(0x0), RAW(0x808b3), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(51): RSP(1) = 0x920 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] App Command
+	[CARD_STATUS] 'Tran' State
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/8
+[SD0] SCR: 802502 0 (raw)
+[SD0] SCR: 0 2258000 (ntohl)
+[SD0] SD_SPEC(2) SD_SPEC3(1) SD_BUS_WIDTH=5
+[SD0] SD_SECU(2) EX_SECU(0), CMD_SUPP(0): CMD23(0), CMD20(0)
+[SD0] Set read data timeout: 100000000ns 0clks -> 1 x 65536 cycles
+[SD0] CMD(6): ARG(0xfffff1), RAW(0x400886), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(6): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 0,  Left: 0/64
+  [511-384] 1806400h 1800180h 1800180h 380h
+  [383-256] 1h 0h 0h 0h
+  [255-128] 0h 0h 0h 0h
+  [127-0] 0h 0h 0h 0h
+  [511-448] 0h 64h 80h 1h 80h 1h 80h 1h
+  [447-384] 80h 1h 80h 1h 80h 3h 0h 0h
+  [383-320] 1h 0h 0h 0h 0h 0h 0h 0h
+  [319-256] 0h 0h 0h 0h 0h 0h 0h 0h
+  [255-192] 0h 0h 0h 0h 0h 0h 0h 0h
+  [191-128] 0h 0h 0h 0h 0h 0h 0h 0h
+  [127-64] 0h 0h 0h 0h 0h 0h 0h 0h
+  [63-0] 0h 0h 0h 0h 0h 0h 0h 0h
+[SD0] Support: Default/SDR12
+[SD0] Support: HS/SDR25
+[SD0] Support: Type-B Drv
+[SD0] Support: 200mA current limit
+[SD0] Set read data timeout: 100000000ns 0clks -> 1 x 65536 cycles
+[SD0] CMD(6): ARG(0x80fffff1), RAW(0x400886), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(6): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 0,  Left: 0/64
+  [511-384] 1806400h 1800180h 1800180h 380h
+  [383-256] 1h 0h 0h 0h
+  [255-128] 0h 0h 0h 0h
+  [127-0] 0h 0h 0h 0h
+  [511-448] 0h 64h 80h 1h 80h 1h 80h 1h
+  [447-384] 80h 1h 80h 1h 80h 3h 0h 0h
+  [383-320] 1h 0h 0h 0h 0h 0h 0h 0h
+  [319-256] 0h 0h 0h 0h 0h 0h 0h 0h
+  [255-192] 0h 0h 0h 0h 0h 0h 0h 0h
+  [191-128] 0h 0h 0h 0h 0h 0h 0h 0h
+  [127-64] 0h 0h 0h 0h 0h 0h 0h 0h
+  [63-0] 0h 0h 0h 0h 0h 0h 0h 0h
+[SD0] Switch to HS mode!
+[SD0] CMD(55): ARG(0x20000), RAW(0x4000b7), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(55): RSP(1) = 0x920 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] App Command
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(6): ARG(0x2), RAW(0x400086), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(6): RSP(1) = 0x920 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] App Command
+	[CARD_STATUS] 'Tran' State
+[SD0] Bus Width: 4
+[SD0] CMD(16): ARG(0x200), RAW(0x400090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(55): ARG(0x20000), RAW(0x20000b7), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(55): RSP(1) = 0x920 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] App Command
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(42): ARG(0x0), RAW(0x20000aa), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(42): RSP(1) = 0x920 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] App Command
+	[CARD_STATUS] 'Tran' State
+[SD0] Size: 1910 MB, Max.Speed: 50000 kHz, blklen(512), nblks(3911680), ro(0)
+[SD0] Initialized
+[SD0] SET_CLK(48000kHz): SCLK(48000kHz) MODE(1) DDR(0) DIV(0) DS(0) RS(0)
+[SD0] Partial_write:0, Partial_read:1
+[SD0] SET_CLK(48000kHz): SCLK(48000kHz) MODE(1) DDR(0) DIV(0) DS(0) RS(0)
+[SD0] CMD(55): ARG(0x20000), RAW(0x20000b7), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(55): RSP(1) = 0x920 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] App Command
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(6): ARG(0x2), RAW(0x2000086), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(6): RSP(1) = 0x920 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] App Command
+	[CARD_STATUS] 'Tran' State
+[SD0] Bus Width: 4
+[SD0] 1 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x1), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 1 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x10891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/1
+[SD0] CMD(16): ARG(0x200), RAW(0x10090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x1), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 10 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x11092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1180)
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/10
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(12): RSP(8) = 0xb00 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x1008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 2 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x10090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x2), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 2 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x20891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/2
+[SD0] CMD(16): ARG(0x200), RAW(0x20090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x2), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 20 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x21092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1180)
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/20
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(12): RSP(8) = 0xb00 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x2008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 3 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x20090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x3), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 3 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x30891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/3
+[SD0] CMD(16): ARG(0x200), RAW(0x30090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x3), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 30 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x31092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1180)
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/30
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x3008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 4 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x30090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x4), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 4 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x40891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/4
+[SD0] CMD(16): ARG(0x200), RAW(0x40090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x4), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 40 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x41092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1180)
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/40
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(12): RSP(8) = 0xb00 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x4008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 15 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x40090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0xf), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 15 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0xf0891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/15
+[SD0] CMD(16): ARG(0x200), RAW(0xf0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0xf), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 150 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0xf1092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 88,  Left: 86/150
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read 64 bytes, RXFIFOCNT: 24,  Left: 22/150
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/150
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0xf008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 16 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0xf0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x10), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 16 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x100891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/16
+[SD0] CMD(16): ARG(0x200), RAW(0x100090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x10), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 160 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x101092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 96,  Left: 96/160
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read 64 bytes, RXFIFOCNT: 32,  Left: 32/160
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/160
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xb00 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x10008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 17 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x100090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x11), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 17 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x110891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/17
+[SD0] CMD(16): ARG(0x200), RAW(0x110090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x11), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 170 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x111092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 108,  Left: 106/170
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read 64 bytes, RXFIFOCNT: 44,  Left: 42/170
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/170
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x11008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 18 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x110090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x12), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 18 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x120891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/18
+[SD0] CMD(16): ARG(0x200), RAW(0x120090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x12), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 180 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x121092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 116,  Left: 116/180
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read 64 bytes, RXFIFOCNT: 52,  Left: 52/180
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/180
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x12008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 31 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x120090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x1f), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 31 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x1f0891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/31
+[SD0] CMD(16): ARG(0x200), RAW(0x1f0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x1f), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 310 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x1f1092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 246/310
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 182/310
+[SD0] Read 64 bytes, RXFIFOCNT: 120,  Left: 118/310
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read 64 bytes, RXFIFOCNT: 56,  Left: 54/310
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/310
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x1f008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 32 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x1f0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x20), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 32 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x200891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/32
+[SD0] CMD(16): ARG(0x200), RAW(0x200090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x20), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 320 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x201092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 256/320
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 192/320
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 128/320
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read 64 bytes, RXFIFOCNT: 64,  Left: 64/320
+[SD0] Read 64 bytes, RXFIFOCNT: 0,  Left: 0/320
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xb00 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x20008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 33 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x200090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x21), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 33 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x210891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/33
+[SD0] CMD(16): ARG(0x200), RAW(0x210090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x21), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 330 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x211092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 266/330
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 202/330
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 138/330
+[SD0] Read 64 bytes, RXFIFOCNT: 76,  Left: 74/330
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read 64 bytes, RXFIFOCNT: 12,  Left: 10/330
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/330
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x21008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 63 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x210090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x3f), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 63 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x3f0891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/63
+[SD0] CMD(16): ARG(0x200), RAW(0x3f0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x3f), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 630 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x3f1092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 566/630
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 502/630
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 438/630
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 374/630
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 310/630
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 246/630
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 182/630
+[SD0] Read 64 bytes, RXFIFOCNT: 120,  Left: 118/630
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read 64 bytes, RXFIFOCNT: 56,  Left: 54/630
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/630
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x3f008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 64 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x3f0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x40), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 64 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x400891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 0,  Left: 0/64
+[SD0] CMD(16): ARG(0x200), RAW(0x400090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x40), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 640 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x401092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 576/640
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 512/640
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 448/640
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 384/640
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 320/640
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 256/640
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 192/640
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 128/640
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read 64 bytes, RXFIFOCNT: 64,  Left: 64/640
+[SD0] Read 64 bytes, RXFIFOCNT: 0,  Left: 0/640
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xb00 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x40008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 65 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x400090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x41), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 65 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x410891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 4,  Left: 1/65
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/65
+[SD0] CMD(16): ARG(0x200), RAW(0x410090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x41), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 650 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x411092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 586/650
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 522/650
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 458/650
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 394/650
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 330/650
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 266/650
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 202/650
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 138/650
+[SD0] Read 64 bytes, RXFIFOCNT: 76,  Left: 74/650
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read 64 bytes, RXFIFOCNT: 12,  Left: 10/650
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/650
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x41008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 127 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x410090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x7f), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 127 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x7f0891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 64,  Left: 63/127
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/127
+[SD0] CMD(16): ARG(0x200), RAW(0x7f0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x7f), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 1270 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x7f1092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1206/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1142/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1078/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1014/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 950/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 886/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 822/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 758/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 694/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 630/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 566/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 502/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 438/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 374/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 310/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 246/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 182/1270
+[SD0] Read 64 bytes, RXFIFOCNT: 120,  Left: 118/1270
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read 64 bytes, RXFIFOCNT: 56,  Left: 54/1270
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/1270
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x7f008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 128 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x7f0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x80), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 128 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x800891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 64,  Left: 64/128
+[SD0] Read 64 bytes, RXFIFOCNT: 0,  Left: 0/128
+[SD0] CMD(16): ARG(0x200), RAW(0x800090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x80), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 1280 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x801092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1216/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1152/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1088/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1024/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 960/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 896/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 832/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 768/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 704/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 640/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 576/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 512/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 448/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 384/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 320/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 256/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 192/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 128/1280
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read 64 bytes, RXFIFOCNT: 64,  Left: 64/1280
+[SD0] Read 64 bytes, RXFIFOCNT: 0,  Left: 0/1280
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xb00 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x80008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 129 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x800090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x81), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 129 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x810891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x1100)
+[SD0]<CHECKME> Unexpected INT(0x1000)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 68,  Left: 65/129
+[SD0] Read 64 bytes, RXFIFOCNT: 4,  Left: 1/129
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/129
+[SD0] CMD(16): ARG(0x200), RAW(0x810090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x81), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 1290 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x811092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1226/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1162/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1098/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1034/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 970/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 906/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 842/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 778/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 714/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 650/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 586/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 522/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 458/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 394/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 330/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 266/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 202/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 138/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 76,  Left: 74/1290
+[SD0] Read 64 bytes, RXFIFOCNT: 12,  Left: 10/1290
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/1290
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x81008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 255 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x810090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0xff), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 255 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0xff0891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 191/255
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 127/255
+[SD0] Read 64 bytes, RXFIFOCNT: 64,  Left: 63/255
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/255
+[SD0] CMD(16): ARG(0x200), RAW(0xff0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0xff), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 2550 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0xff1092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2486/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2422/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2358/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2294/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2230/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2166/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2102/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2038/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1974/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1910/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1846/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1782/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1718/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1654/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1590/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1526/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1462/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1398/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1334/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1270/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1206/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1142/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1078/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1014/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 950/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 886/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 822/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 758/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 694/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 630/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 566/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 502/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 438/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 374/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 310/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 246/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 182/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 120,  Left: 118/2550
+[SD0] Read 64 bytes, RXFIFOCNT: 56,  Left: 54/2550
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/2550
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0xff008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 256 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0xff0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x100), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 256 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x1000891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 192/256
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 128/256
+[SD0] Read 64 bytes, RXFIFOCNT: 64,  Left: 64/256
+[SD0] Read 64 bytes, RXFIFOCNT: 0,  Left: 0/256
+[SD0] CMD(16): ARG(0x200), RAW(0x1000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x100), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 2560 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x1001092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2496/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2432/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2368/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2304/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2240/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2176/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2112/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2048/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1984/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1920/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1856/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1792/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1728/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1664/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1600/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1536/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1472/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1408/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1344/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1280/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1216/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1152/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1088/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1024/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 960/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 896/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 832/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 768/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 704/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 640/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 576/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 512/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 448/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 384/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 320/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 256/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 192/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 128/2560
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read 64 bytes, RXFIFOCNT: 64,  Left: 64/2560
+[SD0] Read 64 bytes, RXFIFOCNT: 0,  Left: 0/2560
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xb00 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x100008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 257 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x1000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x101), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 257 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x1010891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 193/257
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 129/257
+[SD0] Read 64 bytes, RXFIFOCNT: 68,  Left: 65/257
+[SD0] Read 64 bytes, RXFIFOCNT: 4,  Left: 1/257
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/257
+[SD0] CMD(16): ARG(0x200), RAW(0x1010090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x101), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 2570 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x1011092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2506/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2442/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2378/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2314/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2250/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2186/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2122/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2058/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1994/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1930/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1866/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1802/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1738/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1674/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1610/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1546/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1482/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1418/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1354/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1290/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1226/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1162/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1098/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1034/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 970/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 906/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 842/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 778/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 714/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 650/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 586/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 522/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 458/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 394/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 330/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 266/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 202/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 138/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 76,  Left: 74/2570
+[SD0] Read 64 bytes, RXFIFOCNT: 12,  Left: 10/2570
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/2570
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x101008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 509 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x1010090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x1fd), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 509 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x1fd0891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 445/509
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 381/509
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 317/509
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 253/509
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 189/509
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 125/509
+[SD0] Read 64 bytes, RXFIFOCNT: 64,  Left: 61/509
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/509
+[SD0] CMD(16): ARG(0x200), RAW(0x1fd0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x1fd), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 5090 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x1fd1092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 5026/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4962/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4898/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4834/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4770/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4706/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4642/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4578/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4514/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4450/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4386/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4322/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4258/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4194/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4130/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4066/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4002/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3938/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3874/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3810/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3746/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3682/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3618/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3554/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3490/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3426/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3362/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3298/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3234/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3170/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3106/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3042/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2978/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2914/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2850/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2786/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2722/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2658/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2594/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2530/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2466/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2402/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2338/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2274/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2210/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2146/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2082/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2018/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1954/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1890/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1826/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1762/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1698/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1634/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1570/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1506/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1442/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1378/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1314/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1250/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1186/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1122/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1058/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 994/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 930/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 866/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 802/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 738/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 674/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 610/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 546/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 482/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 418/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 354/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 290/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 226/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 162/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 100,  Left: 98/5090
+[SD0] Read 64 bytes, RXFIFOCNT: 36,  Left: 34/5090
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/5090
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x1fd008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 510 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x1fd0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x1fe), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 510 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x1fe0891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 446/510
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 382/510
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 318/510
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 254/510
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 190/510
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 126/510
+[SD0] Read 64 bytes, RXFIFOCNT: 64,  Left: 62/510
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/510
+[SD0] CMD(16): ARG(0x200), RAW(0x1fe0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x1fe), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 5100 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x1fe1092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 5036/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4972/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4908/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4844/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4780/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4716/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4652/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4588/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4524/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4460/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4396/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4332/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4268/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4204/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4140/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4076/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4012/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3948/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3884/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3820/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3756/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3692/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3628/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3564/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3500/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3436/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3372/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3308/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3244/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3180/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3116/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3052/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2988/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2924/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2860/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2796/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2732/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2668/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2604/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2540/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2476/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2412/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2348/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2284/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2220/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2156/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2092/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2028/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1964/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1900/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1836/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1772/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1708/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1644/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1580/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1516/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1452/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1388/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1324/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1260/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1196/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1132/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1068/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1004/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 940/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 876/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 812/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 748/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 684/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 620/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 556/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 492/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 428/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 364/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 300/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 236/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 172/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 108,  Left: 108/5100
+[SD0] Read 64 bytes, RXFIFOCNT: 44,  Left: 44/5100
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/5100
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x1fe008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 511 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x1fe0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x1ff), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 511 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x1ff0891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 447/511
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 383/511
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 319/511
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 255/511
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 191/511
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 127/511
+[SD0] Read 64 bytes, RXFIFOCNT: 64,  Left: 63/511
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/511
+[SD0] CMD(16): ARG(0x200), RAW(0x1ff0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x1ff), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 5110 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x1ff1092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 5046/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4982/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4918/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4854/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4790/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4726/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4662/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4598/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4534/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4470/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4406/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4342/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4278/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4214/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4150/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4086/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4022/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3958/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3894/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3830/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3766/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3702/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3638/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3574/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3510/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3446/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3382/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3318/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3254/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3190/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3126/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3062/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2998/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2934/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2870/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2806/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2742/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2678/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2614/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2550/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2486/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2422/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2358/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2294/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2230/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2166/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2102/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2038/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1974/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1910/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1846/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1782/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1718/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1654/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1590/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1526/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1462/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1398/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1334/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1270/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1206/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1142/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1078/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1014/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 950/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 886/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 822/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 758/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 694/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 630/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 566/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 502/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 438/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 374/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 310/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 246/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 182/5110
+[SD0] Read 64 bytes, RXFIFOCNT: 120,  Left: 118/5110
+[SD0]<CHECKME> Unexpected INT(0x1080)
+[SD0] Read 64 bytes, RXFIFOCNT: 56,  Left: 54/5110
+[SD0] Read left bytes, RXFIFOCNT: 0, Left: 0/5110
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(12): RSP(8) = 0x40000b00 AUTO(0)
+	[CARD_STATUS] Address Error
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x1ff008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] 512 bytes Block Size Test
+[SD0] CMD(16): ARG(0x200), RAW(0x1ff0090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 512 bytes to 0x0
+[SD0] CMD(24): ARG(0x0), RAW(0x2002898), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(24): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] all data flushed to card
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 512 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x200), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 512 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(17): ARG(0x0), RAW(0x2000891), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(17): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 448/512
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 384/512
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 320/512
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 256/512
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 192/512
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 128/512
+[SD0] Read 64 bytes, RXFIFOCNT: 64,  Left: 64/512
+[SD0] Read 64 bytes, RXFIFOCNT: 0,  Left: 0/512
+[SD0] CMD(16): ARG(0x200), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write data 5120 bytes to 0x0
+[SD0] CMD(25): ARG(0x0), RAW(0x2003099), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(25): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] all data flushed to card
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(12): RSP(8) = 0xc00 AUTO(0)
+	[CARD_STATUS] 'Rcv' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Write 5120 bytes (DONE)
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] CMD(16): ARG(0x200), RAW(0x2000090), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(16): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read data 5120 bytes from 0x0
+[SD0] Set read data timeout: 100000000ns 0clks -> 76 x 65536 cycles
+[SD0] CMD(18): ARG(0x0), RAW(0x2001092), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x100)
+[SD0] CMD(18): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 5056/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4992/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4928/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4864/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4800/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4736/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4672/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4608/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4544/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4480/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4416/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4352/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4288/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4224/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4160/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4096/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 4032/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3968/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3904/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3840/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3776/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3712/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3648/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3584/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3520/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3456/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3392/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3328/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3264/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3200/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3136/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3072/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 3008/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2944/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2880/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2816/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2752/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2688/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2624/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2560/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2496/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2432/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2368/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2304/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2240/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2176/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2112/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 2048/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1984/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1920/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1856/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1792/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1728/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1664/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1600/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1536/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1472/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1408/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1344/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1280/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1216/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1152/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1088/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 1024/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 960/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 896/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 832/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 768/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 704/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 640/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 576/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 512/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 448/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 384/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 320/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 256/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 192/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 128,  Left: 128/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 64,  Left: 64/5120
+[SD0] Read 64 bytes, RXFIFOCNT: 0,  Left: 0/5120
+[SD0] CMD(12): ARG(0x0), RAW(0x438c), RSP(8)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(12): RSP(8) = 0xb00 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Data' State
+[SD0] CMD(13): ARG(0x20000), RAW(0x200008d), RSP(1)
+[WARN] (MSDC_READ32(MSDC_INTEN) & intrs) != intrs LINE:1036 FILE:msdc/msdc.c
+[SD0] INT(0x180)
+[SD0]<CHECKME> Unexpected INT(0x80)
+[SD0] CMD(13): RSP(1) = 0x900 AUTO(0)
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+	[CARD_STATUS] Ready for Data
+	[CARD_STATUS] 'Tran' State
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=1
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=2
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=3
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=4
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=15
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=16
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=17
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=18
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=31
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=32
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=33
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=63
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=64
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=65
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=127
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=128
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=129
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=255
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=256
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=257
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=509
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=510
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=511
+[SD0] SW=0, SR=0, MW=0, MR=0, Blksz=512
+Block Length Test pass!
+RT6352 # 

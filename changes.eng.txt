@@ -1,4 +1,4 @@
-        ASUS RT-N56U/N65U/N14U/AC51U custom firmware 3.X.3.8-085 by Padavan
+        ASUS RT-N11P/N14U/N56U/N65U/AC51U custom firmware 3.X.3.8-088 by Padavan
 
 
 Project sources:
@@ -22,7 +22,7 @@ These features are NO LONGER AVAILABLE:
  - ASUS Download Master is no longer supported. It was replaced by Transmission.
 
 NOTE:
-After uprgade to 3.X.3.8-085 from any previous builds, please:
+After uprgade to 3.X.3.8-085 (and higher) from any previous builds, please:
  - Clear browser cache to properly render WebUI pages.
  - Sync OpenVPN client and server settings with new controls.
  - Update region timezone (for Russia only).
@@ -33,6 +33,33 @@ After manual NVRAM reset:
 
 
                               LIST OF CHANGES
+
+
+3.X.3.8-088:
+----------------------------------------------------------
+[RT-N11P]
+- Initial release.
+[RT-AC51U]
+- Fixed show VHT (11ac) modes on Wireless stats.
+[RT-N56U]
+- Added support two independent TX rings to Wired GMAC driver.
+[Common changes]
+- Added support NAPI to Wired GMAC driver.
+- Added support 64 bit interface counters to Wireless drivers.
+- Added traffic counters to WebUI Internet stats on WISP mode.
+- Added Vendor Class Identifier field to WAN DHCP client.
+- Added ability to usage udpxy and xupnpd in AP mode.
+- Migrated multicast-to-unicast (M2U) transform from Wireless drivers
+  to Linux bridge. Improved multi-clients environment.
+- Updated APSoC Wireless driver to 2.7.2.0.
+- Updated OpenVPN to 2.3.6.
+- Updated miniupnpd to 1.9.20141128.
+- Updated dropbear SSH to 2013.66.
+- Fixed PPPoE driver (ignore incoming wrong PADT packets to protect session).
+- Fixed RTL8367 IGMP snooping (ignore snooping for reserved L2 groups).
+- Fixed init Ralink EHCI on router startup.
+- Fixed direct toggle Wireless bridge modes WISP <-> LAN from WebUI.
+
 
 3.X.3.8-085:
 ----------------------------------------------------------
@@ -1054,5 +1081,5 @@ After manual NVRAM reset:
 
 
 -
-10/26/2014
+12/07/2014
 Padavan

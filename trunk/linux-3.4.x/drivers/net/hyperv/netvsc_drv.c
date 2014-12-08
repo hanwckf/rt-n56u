@@ -355,7 +355,7 @@ static const struct net_device_ops device_ops = {
  * Send GARP packet to network peers after migrations.
  * After Quick Migration, the network is not immediately operational in the
  * current context when receiving RNDIS_STATUS_MEDIA_CONNECT event. So, add
- * another netif_notify_peers() into a delayed work, otherwise GARP packet
+ * another netdev_notify_peers() into a delayed work, otherwise GARP packet
  * will not be sent after quick migration, and cause network disconnection.
  */
 static void netvsc_send_garp(struct work_struct *w)
@@ -367,7 +367,7 @@ static void netvsc_send_garp(struct work_struct *w)
 	ndev_ctx = container_of(w, struct net_device_context, dwork.work);
 	net_device = hv_get_drvdata(ndev_ctx->device_ctx);
 	net = net_device->ndev;
-	netif_notify_peers(net);
+	netdev_notify_peers(net);
 }
 
 

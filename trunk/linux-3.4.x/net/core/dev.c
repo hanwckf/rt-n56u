@@ -5634,10 +5634,9 @@ static int netif_alloc_rx_queues(struct net_device *dev)
 	BUG_ON(count < 1);
 
 	rx = kcalloc(count, sizeof(struct netdev_rx_queue), GFP_KERNEL);
-	if (!rx) {
-		pr_err("netdev: Unable to allocate %u rx queues\n", count);
+	if (!rx)
 		return -ENOMEM;
-	}
+
 	dev->_rx = rx;
 
 	for (i = 0; i < count; i++)
@@ -5668,10 +5667,9 @@ static int netif_alloc_netdev_queues(struct net_device *dev)
 	BUG_ON(count < 1);
 
 	tx = kcalloc(count, sizeof(struct netdev_queue), GFP_KERNEL);
-	if (!tx) {
-		pr_err("netdev: Unable to allocate %u tx queues\n", count);
+	if (!tx)
 		return -ENOMEM;
-	}
+
 	dev->_tx = tx;
 
 	netdev_for_each_tx_queue(dev, netdev_init_one_queue, NULL);
@@ -6092,16 +6090,12 @@ struct net_device *alloc_netdev_mqs(int sizeof_priv, const char *name,
 
 	BUG_ON(strlen(name) >= sizeof(dev->name));
 
-	if (txqs < 1) {
-		pr_err("alloc_netdev: Unable to allocate device with zero queues\n");
+	if (txqs < 1)
 		return NULL;
-	}
 
 #ifdef CONFIG_RPS
-	if (rxqs < 1) {
-		pr_err("alloc_netdev: Unable to allocate device with zero RX queues\n");
+	if (rxqs < 1)
 		return NULL;
-	}
 #endif
 
 	alloc_size = sizeof(struct net_device);
@@ -6114,10 +6108,8 @@ struct net_device *alloc_netdev_mqs(int sizeof_priv, const char *name,
 	alloc_size += NETDEV_ALIGN - 1;
 
 	p = kzalloc(alloc_size, GFP_KERNEL);
-	if (!p) {
-		pr_err("alloc_netdev: Unable to allocate device\n");
+	if (!p)
 		return NULL;
-	}
 
 	dev = PTR_ALIGN(p, NETDEV_ALIGN);
 	dev->padded = (char *)dev - (char *)p;

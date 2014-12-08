@@ -45,11 +45,16 @@ static int hw_offload_tso = 1;
 #endif
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
-extern int (*ra_sw_nat_hook_tx)(struct sk_buff *skb, int gmac_no);
-extern int (*ra_sw_nat_hook_ec)(int engine_init);
 struct FoeEntry *PpeFoeBase = NULL;
 dma_addr_t PpeFoeBasePhy = 0;
+int (*ra_sw_nat_hook_rx)(struct sk_buff *skb) = NULL;
+int (*ra_sw_nat_hook_tx)(struct sk_buff *skb, int gmac_no) = NULL;
+int (*ra_sw_nat_hook_rs)(struct net_device *dev, int hold) = NULL;
+int (*ra_sw_nat_hook_ec)(int engine_init) = NULL;
+EXPORT_SYMBOL(ra_sw_nat_hook_rx);
+EXPORT_SYMBOL(ra_sw_nat_hook_tx);
+EXPORT_SYMBOL(ra_sw_nat_hook_rs);
+EXPORT_SYMBOL(ra_sw_nat_hook_ec);
 #endif
 
 #if defined (CONFIG_RAETH_READ_MAC_FROM_MTD)

@@ -1,8 +1,7 @@
 config  RAETH
-	tristate "Ralink GMAC"
+	bool "Ralink GMAC"
 	---help---
-	  This driver supports Ralink gigabit ethernet family of
-	  adapters.
+	  This driver supports Ralink gigabit ethernet family of adapters.
 
 config  RAETH_NAPI
 	bool "Use NAPI for IRQ processing (instead of Tasklets)"

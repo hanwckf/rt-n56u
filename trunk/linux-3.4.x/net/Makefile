@@ -71,8 +71,5 @@ obj-$(CONFIG_BATMAN_ADV)	+= batman-adv/
 obj-$(CONFIG_NFC)		+= nfc/
 obj-$(CONFIG_OPENVSWITCH)	+= openvswitch/
 
-ifneq ($(CONFIG_RA_NAT_NONE),y)
-obj-y				+= nat/foe_hook/
-endif
 obj-$(CONFIG_RA_NAT_HW)		+= nat/hw_nat/
 

@@ -1,12 +1,12 @@
 #
 # Makefile for the Linux network (ethercard) device drivers.
 #
-ifeq ($(CONFIG_RAETH_ROUTER),y)
-obj-$(CONFIG_RT2880_GMAC) += mii.o
-endif
 obj-$(CONFIG_MII) += mii.o
 obj-$(CONFIG_MDIO) += mdio.o
 obj-$(CONFIG_PHYLIB) += phy/
+
+obj-$(CONFIG_RALINK_RDM) += rt_rdm/
+obj-$(CONFIG_RAETH) += raeth/
 
 obj-$(CONFIG_TI_DAVINCI_EMAC) += davinci_emac.o
 obj-$(CONFIG_TI_DAVINCI_MDIO) += davinci_mdio.o
@@ -309,7 +309,4 @@ obj-$(CONFIG_OCTEON_MGMT_ETHERNET) += octeon/
 obj-$(CONFIG_PCH_GBE) += pch_gbe/
 obj-$(CONFIG_TILE_NET) += tile/
 
-obj-$(CONFIG_RALINK_RDM) += rt_rdm/
-obj-$(CONFIG_RAETH) += raeth/
 obj-$(CONFIG_RTL8367) += rtl8367/
-

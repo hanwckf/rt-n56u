@@ -83,9 +83,9 @@ EXPORT_SYMBOL_GPL(nf_conntrack_hash_rnd);
 #ifdef CONFIG_NAT_CONE
 unsigned int nf_conntrack_nat_mode __read_mostly = NAT_MODE_LINUX;
 EXPORT_SYMBOL_GPL(nf_conntrack_nat_mode);
-extern char wan_name[IFNAMSIZ];
+char wan_name[IFNAMSIZ] __read_mostly = {0};
 #if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
-extern char wan_ppp[IFNAMSIZ];
+char wan_name_ppp[IFNAMSIZ] __read_mostly = {0};
 #endif
 #endif
 
@@ -466,7 +466,7 @@ begin:
 }
 
 /* Find a connection corresponding to a tuple. */
-struct nf_conntrack_tuple_hash *
+static struct nf_conntrack_tuple_hash *
 __nf_cone_conntrack_find_get(struct net *net,
 			     const struct nf_conntrack_tuple *tuple, u32 hash)
 {
@@ -492,15 +492,6 @@ begin:
 
 	return h;
 }
-
-struct nf_conntrack_tuple_hash *
-nf_cone_conntrack_find_get(struct net *net,
-			   const struct nf_conntrack_tuple *tuple)
-{
-	return __nf_cone_conntrack_find_get(net, tuple,
-					    hash_conntrack_raw(tuple));
-}
-EXPORT_SYMBOL_GPL(nf_cone_conntrack_find_get);
 #endif
 
 /* Find a connection corresponding to a tuple. */
@@ -1055,19 +1046,14 @@ resolve_normal_ct(struct net *net, struct nf_conn *tmpl,
          *             Restricted Cone=dst_ip/port & proto & src_ip
          *
          */
-	if ((nf_conntrack_nat_mode > 0) && (protonum == IPPROTO_UDP)) {
+	if (nf_conntrack_nat_mode > 0 && protonum == IPPROTO_UDP && skb->dev != NULL &&
 #if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
-		if ((skb->dev != NULL) && (strcmp(skb->dev->name, wan_name) == 0 || strcmp(skb->dev->name, wan_ppp) == 0)) {
+	    (strcmp(skb->dev->name, wan_name) == 0 || strcmp(skb->dev->name, wan_name_ppp) == 0)) {
 #else
-		if ((skb->dev != NULL) && (strcmp(skb->dev->name, wan_name) == 0)) {
+	    (strcmp(skb->dev->name, wan_name) == 0)) {
 #endif
-			/* CASE III To Cone NAT */
-			h = __nf_cone_conntrack_find_get(net, &tuple, hash);
-		}
-		else {
-			/* CASE I.II.IV To Linux NAT */
-			h = __nf_conntrack_find_get(net, &tuple, hash);
-		}
+		/* CASE III To Cone NAT */
+		h = __nf_cone_conntrack_find_get(net, &tuple, hash);
 	} else
 #endif
 	{

@@ -1,343 +1,260 @@
 #!/bin/sh
 
-if [ ! -x /usr/bin/openssl ] && [ ! -x /opt/bin/openssl ]; then
-	echo "Unable to find the 'openssl' executable!"
-	echo "Please install 'openssl-util' package from Entware."
-	exit 1
+if [ ! -x /usr/bin/openssl ] && [ ! -x /opt/bin/openssl ] ; then
+  echo "Unable to find the 'openssl' executable!"
+  echo "Please install 'openssl-util' package from Entware."
+  exit 1
 fi
 
-################################################################################
-##
-indir=$(pwd)
-ssldir=/etc/ssl
-keydir=/etc/ssl/keys
-dstdir=/etc/storage/openvpn/server
-
-[ -d ${keydir} ] || mkdir -p -m 700 ${keydir}
-[ -d ${dstdir} ] || mkdir -p -m 700 ${dstdir}
-
-################################################################################
-## Checks if the openssl configuration file exists and directory structure is 
-## correct.
-do_check_cfg()
-{
-## Create default directory structure according to config
-[ -d ./private ]     || { mkdir ./private; chmod 700 ./private; }
-[ -d ./crl ]         ||   mkdir ./crl
-[ -d ./certs ]       ||   mkdir ./certs
-[ -d ./newcerts ]    ||   mkdir ./newcerts
-[ -f ./index ]       ||   touch ./index
-[ -f ./serial ]      || { touch ./serial ; echo 01 > ./serial ; }
-} ## end do_change_cfg()
-
-
-################################################################################
-## reads values for certificate/key and saves them to local file in order not to
-## ask user each time he needs do create a certificate/key.
-do_get_raw_data()
-{
-clear
-
-GETVAL=1
-
-echo -e "\033[1m"
-cat <<EOF
-
-================================================================================
-
- You are about to be asked to enter information that will be incorporated
- into your certificate request.
-
- If you'd like to choose default value, just press 'Enter' (leave field blank).
- If you want a field be blank (contain no data), type '.' and press 'Enter'
-
-================================================================================
-
-
-
-
-EOF
-echo -e "\033[0m"
-
-
-while [ $GETVAL -eq 1 ] ; do
-
-chck_val=1
-while [ $chck_val -eq 1 ] ; do
-read -p "Enter country name ( 2 letter code ) [ `nvram get wl_country_code` ] : " COUNTRY
-COUNTRY=$(echo $COUNTRY | sed 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/; s/[^A-Z]//g')
-[ $(( `echo "$COUNTRY" | wc -m` - 1 )) -eq 2 ] && chck_val=0
-[ $(( `echo "$COUNTRY" | wc -m` - 1 )) -eq 0 ] && chck_val=0
-[ "$COUNTRY" == "." ] && chck_val=0
-done
-
-read -p "Enter province ( some state/region ) [ ] : " PROVINCE
-PROVINCE=$(echo $PROVINCE | sed 's/[^\.a-zA-Z0-9_-]//g')
-
-read -p "Enter city [ ] : " CITY
-CITY=$(echo $CITY | sed 's/[^\.a-zA-Z0-9_-]//g')
-
-read -p "Enter organization [ `nvram get computer_name` ] : " ORG
-ORG=$(echo $ORG | sed 's/[^\.a-zA-Z0-9_-]//g')
-
-read -p "Enter organization unit [ ] : " OU
-OU=$(echo $OU | sed 's/[^\.a-zA-Z0-9_-]//g')
-
-chck_val=1
-while [ $chck_val -eq 1 ] ; do
-read -p "Enter Common Name ( eg, YOUR name ) [ admin ] : " CN
-CN=$(echo $CN | sed 's/[^\.a-zA-Z0-9_-]//g')
-[ $(( `echo "$CN" | wc -m` - 1 )) -lt 64 ] && chck_val=0
-done
-
-chck_val=1
-while [ $chck_val -eq 1 ] ; do
-read -p "Enter email [ admin@my.router ] : " EMAIL
-EMAIL=$(echo $EMAIL | sed 's/[^\.@a-zA-Z0-9_-]//g')
-[ $(( `echo "$EMAIL" | wc -m` - 1 )) -lt 64 ] && chck_val=0
-done
-
-echo -e "\n"
-
-
-## Check values
-[ -z "$COUNTRY" ]  && COUNTRY="`nvram get wl_country_code`"
-[ -z "$PROVINCE" ] && PROVINCE="."
-[ -z "$CITY" ]     && CITY="."
-[ -z "$ORG" ]      && ORG="`nvram get computer_name`"
-[ -z "$OU" ]       && OU="."
-[ -z "$CN" ]       && CN="admin"
-[ -z "$EMAIL" ]    && EMAIL="admin@my.router"
-
-echo -e "\v"
-echo -e "\033[1m"
-
-cat << EOF
-
-------------------------------------------------
-
-Country			${COUNTRY}
-Province		${PROVINCE}
-City			${CITY}
-Organization		${ORG}
-Organization unit	${OU}
-Common name		${CN}
-Email address		${EMAIL}
-
-------------------------------------------------
-
-EOF
-
-echo -e "\033[0m"
-echo -e "\n"
-## Ask user if settings are correct
-REPLY=""
-while [ "$REPLY" != "y" -a "$REPLY" != "yes" -a \
-	"$REPLY" != "n" -a "$REPLY" != "no" ]; do
-        read -p "Are these settings correct? (yes/no) : " REPLY
-	REPLY=`echo $REPLY | sed 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/'`
-done
-
-[ "$REPLY" == "yes" -o "$REPLY" == "y" ] && GETVAL=0
-
-done
-
-[ -f ca.raw ] || touch ca.raw
-
-cat > ca.raw << EOF
-${COUNTRY}
-${PROVINCE}
-${CITY}
-${ORG}
-${OU}
-${CN}
-${EMAIL}
-EOF
-
-chmod 600 ca.raw
-} ## end do_get_raw_data()
-
-do_create_CA()
-{
-[ -s ca.raw ] || do_get_raw_data
-## Generate CA using previously saved data
-echo -en "\v\033[1m [ Generating CA and private key ."
-cat ca.raw | openssl req -nodes -days 3653 -x509 \
-	-newkey rsa:1024 -outform PEM -out ca.crt > /dev/null 2>&1
-##FIXME seems to be a bug
-[ -f privkey.pem ] && mv privkey.pem ca.key
-[ -f ca.key ] && chmod 600 ca.key # secret file
-if [ -f ca.crt ]; then
-	chmod 644 ca.crt
-	cp -f ca.crt ${dstdir}
-fi
-echo -e ". done ] \033[0m"
-} ## end do_create_CA()
-
-
-################################################################################
-## Creates certificate and private key pair.
-do_create_x_509()
-{
-if [ ! -f ca.raw ] ; then
-   echo -e "\v\t\033[1;37;41m It seems CA hasn't been created. \033[0m"
-   echo -ne "\t\033[1;37;41m You should run with \"-ca\" or \"-ca-new\" first. "
-   echo -e "\033[0m\v"
-   exit 1
-fi
-
-while [ -z "$CRT_CN" ] ; do
-   echo -e "\033[1m\n"
-   read -p "Enter Common name (the name of Certificate owner): " CRT_CN
-   CRT_CN=$(echo "${CRT_CN}" | sed 's/[ \t]*//g; s/-/_/g; s/[^a-zA-Z0-9_]//g')
-   echo -e "\033[0m"
-done
-
-echo -en "\033[1m [ Generating ${CRT_CN} key ."
-## Generate the private key
-openssl genrsa -out ${CRT_CN}.key > /dev/null 2>&1
-if [ -f ${CRT_CN}.key ]; then
-	chmod 600 ${CRT_CN}.key # secret
-	cp -f ${CRT_CN}.key ${dstdir}
-fi
-echo -e ". done ] \033[0m"
-
-echo -en "\033[1m [ Generating ${CRT_CN} certificate ."
-sed '6s/.*/'${CRT_CN}'/' "ca.raw" | sed '$ a .' | sed 8p | \
-	openssl req -new -nodes $1 -key ${CRT_CN}.key \
-	-out ${CRT_CN}.csr > /dev/null 2>&1
-
-echo -n "."
-openssl ca -batch -config ${ssldir}/openssl.cnf $1 -in ${CRT_CN}.csr \
-	-out ${CRT_CN}.crt > /dev/null 2>&1
-if [ -f ${CRT_CN}.crt ]; then
-	chmod 644 ${CRT_CN}.crt
-	cp -f ${CRT_CN}.crt ${dstdir}
-fi
-echo -e ". done ] \033[0m"
-} ## end do_create_x_509()
-
-
-################################################################################
-## Extra key
-do_antiflud_key()
-{
-echo -en "\033[1m [ Generating antiflud TLS key ."
-openvpn --genkey -config ${ssldir}/openssl.cnf --secret ta.key > /dev/null 2>&1
-if [ -f ta.key ]; then
-	chmod 600 ta.key #secret 
-	cp -f ta.key ${dstdir}
-fi
-echo -e ". done ] \033[0m"
-} ## end do_untiflud_key()
-
-
-do_DH()
-{
-echo -e "\033[1m [ Generating Diffie-Hellman key ] \033[0m"
-echo -e "\033[1m Please, be patient. This operation requires some time... \n\033[0m"
-echo -e "\033[1m -------------------------------------------------------- \n\033[0m"
-openssl dhparam -out dh1024.pem 1024
-if [ -f dh1024.pem ]; then
-	chmod 644 dh1024.pem
-	cp -f dh1024.pem ${dstdir}
-fi
-echo -e "\n"
-} ## end do_DH()
-
-
-################################################################################
-## Makes all actions. Is invoked after install.
-do_init()
-{
-
-[ -d ${keydir} ] && { cd ${keydir}; rm -rf ./* 2>/dev/null; }
-
-## Change openssl config file
-do_check_cfg
-
-## Create CA
-do_create_CA
-
-## Create certificate and key for router
-CRT_CN="server" ; do_create_x_509 "-extensions server"
-
-## Create certificate and key for client
-CRT_CN="client" ; do_create_x_509
-
-unset CRT_CN
-
-## Generate 'extra' antiflud key file
-do_antiflud_key
-
-## Generate Diffie-Hellman algorithm
-do_DH
-
-echo -e "\v"
-} ## end do_init
-
-
-do__CA()
-{
-## Change openssl config file
-do_change_cfg
-
-## Create CA
-do_create_CA
-echo -e "\v"
-} ## do__CA()
-
-
-
-
-do_help()
-{
-cat << EOF
-
-
-Usage: $0 [ param ]
-
-	list of params:
-
-             -init    generates Certificate Authority (CA) and private key file.
-                      Also generates certificate and private key for server
-                      (eg rt-n56u) and for client.
-
-             -ca      generates Certificate Authority (CA) and private key file.
-
-             -ca-new  removes stored files with user data and generates new CA.
-
-             -x509    creates new x-509 certificate.
-
-
-
-EOF
-} ## end do_help()
-
-cd ${keydir}
-
-case "$1" in
--init)
-	do_init
-	;;
--ca)
-	do__CA
-	;;
--ca-new)
-	rm -f ca.raw 2>/dev/null
-	do__CA
-	;;
--x509)
-	do_check_cfg
-	do_create_x_509
-	echo -e "\v"
-	;;
-*)
-	do_help
-	exit 1
-	;;
+## CA cert valid, days
+CA_DAYS=3653
+## default value for certs valid period, days
+CERT_DAYS=365
+## cert and key file names
+CA_CRT=ca.crt
+CA_KEY=ca.key
+SERVER_KEY=server.key
+SERVER_CRT=server.crt
+CLIENT_KEY=client.key
+CLIENT_CRT=client.crt
+TA_KEY=ta.key
+## number of bits to use when generate new key
+KEY_BITS=1024
+## number of bits for prime
+DH_BITS=1024
+## CA common name
+CA_CN="OpenVPN CA"
+## temp config file with cert extensions
+SSL_EXT_FILE=/tmp/openssl_ext.cnf
+## certs storage path
+CRT_PATH=/etc/storage/openvpn
+## path to openvpn binary
+OPENVPN=/usr/sbin/openvpn
+
+func_help() {
+  local BOLD="echo -ne \\033[1m"
+  local NORM="echo -ne \\033[0m"
+  echo >&2
+  echo "Create certificates for OpenVPN client/server. For more info see:" >&2
+  echo "http://openvpn.net/index.php/open-source/documentation/howto.html" >&2
+  echo "https://code.google.com/p/rt-n56u/wiki/HowToConfigureOpenvpnServer" >&2
+  echo >&2
+  echo "`$BOLD`Usage:`$NORM` $0 command [ args ]" >&2
+  echo >&2
+  echo "    `$BOLD`commands:`$NORM` [ server, client, client_csr, client_sign ]" >&2
+  echo >&2
+  echo "    `$BOLD`server`$NORM` [ -n `$BOLD`common_name`$NORM` ] [ -b `$BOLD`num_key_bits`$NORM` ] [ -d `$BOLD`days_valid`$NORM` ]" >&2
+  echo "           The following files for OpenVPN server are created:" >&2
+  echo "           - root CA key and certificate" >&2
+  echo "           - server key and certificate" >&2
+  echo "           - Diffie-Hellman parameters key" >&2
+  echo "           - TLS-Auth HMAC signature key" >&2
+  echo "           `$BOLD`Note:`$NORM` $CA_CRT and ${TA_KEY}(if TLS-Auth is used) should be sent to clients." >&2
+  echo >&2
+  echo "    `$BOLD`client`$NORM` -n `$BOLD`common_name`$NORM` [ -b `$BOLD`num_key_bits`$NORM` ] [ -d `$BOLD`days_valid`$NORM` ]" >&2
+  echo "           Create both client key and sign it on server side. It is not quite correct," >&2
+  echo "           but it saves time if you administer both server and client devices." >&2
+  echo >&2
+  echo "    `$BOLD`client_csr`$NORM` -n `$BOLD`common_name`$NORM` [ -b `$BOLD`num_key_bits`$NORM` ]" >&2
+  echo "           The following files for OpenVPN client are created:" >&2
+  echo "           - client key" >&2
+  echo "           - certificate signing request (client.csr)" >&2
+  echo "           `$BOLD`Note:`$NORM` This request should be signed with OpenVPN server CA certificate." >&2
+  echo >&2
+  echo "    `$BOLD`client_sign`$NORM` -f `$BOLD`csr_file_path`$NORM` [ -d `$BOLD`days_valid`$NORM` ]" >&2
+  echo "           Create client certificate." >&2
+  echo >&2
+  echo >&2
+  echo "`$BOLD`Example:`$NORM`" >&2
+  echo "  If you are new to OpenVPN but want to connect server and client," >&2
+  echo "  you can create certificates using:" >&2
+  echo "    `$BOLD`$0 server`$NORM`" >&2
+  echo "    `$BOLD`$0 client -n client1`$NORM`" >&2
+  echo "  Then copy the following files to client:" >&2
+  echo "    `$BOLD`$CA_CRT`$NORM`, `$BOLD`$TA_KEY`$NORM` from `$BOLD`$CRT_PATH/server`$NORM`" >&2
+  echo "    `$BOLD`$CLIENT_KEY`$NORM`, `$BOLD`$CLIENT_CRT`$NORM` from `$BOLD`$CRT_PATH/client`$NORM`" >&2
+  echo >&2
+  exit 1
+}
+
+ACTION=$1
+shift
+case "$ACTION" in
+  client) ;;
+  client_csr) ;;
+  client_sign) ;;
+  server) ;;
+  *) func_help ;;
 esac
 
-cd ${indir}
+[ $(( $# % 2 )) -ne 0 ] && func_help
 
-exit $?
+while [ $# -gt 0 ] ; do
+  case "$1" in
+    -b) KEY_BITS=$2   ; shift 2 ;;
+    -d) CERT_DAYS=$2  ; shift 2 ;;
+    -n) CN=$2         ; shift 2 ;;
+    -f) CSR_PATH=$2   ; shift 2 ;;
+    -s) CRL_SERIAL=$2 ; shift 2 ;;
+    *)  func_help     ;;
+  esac
+done
+
+
+write_ext_cfs() {
+  [ -s $SSL_EXT_FILE ] && return 0
+  cat > $SSL_EXT_FILE << EOF
+[ server ]
+extendedKeyUsage=serverAuth
+keyUsage=critical,digitalSignature, keyEncipherment
+[ client ]
+extendedKeyUsage=clientAuth
+keyUsage=critical,digitalSignature
+EOF
+}
+
+echo_done() {
+  echo -e " *\033[60G [ done ]"
+}
+
+echo_process() {
+  echo -ne " + $@\r"
+}
+
+make_cert() {
+  #
+  # $1 --> key file name
+  # $2 --> cert file name
+  # $3 --> days valid
+  # $4 --> key bits
+  # $5 --> CN
+  # $6 --> ca if cert is CA
+  #
+  [ "$6" == "ca" ] && local CA_TRUE="-x509"
+  if [ -s $1 ] ; then
+    echo_process "Creating ${2}: $5"
+    openssl req -nodes $CA_TRUE -days $3 -new -outform PEM \
+            -out $2 -key $1 -sha1 -subj "/CN=$5" &>/dev/null
+  else
+    echo_process "Creating new ${2}: $5"
+    openssl req -nodes $CA_TRUE -days $3 -newkey rsa:$4 \
+            -outform PEM -out $2 -keyout $1 -sha1 -subj "/CN=$5" &>/dev/null
+  fi
+  [ -f $1 ] && chmod 600 $1
+  echo_done
+}
+
+sign_cert() {
+  #
+  # $1 --> ca key file name
+  # $2 --> ca crt file name
+  # $3 --> csr input file name
+  # $4 --> crt output file name
+  # $5 --> days valid
+  # $6 --> extensions to use (server or client)
+  #
+  if [ ! -f $1 ] || [ ! -f $2 ] ; then
+    echo "Error: CA not found" >&2
+    return 1
+  fi
+  write_ext_cfs
+  echo_process "Signing $4"
+  openssl x509 -req -in $3 -CA $2 -CAkey $1 -CAcreateserial \
+               -clrext -out $4 -sha1 -extfile $SSL_EXT_FILE \
+               -days $5 -extensions $6 &>/dev/null
+  rm -f $3
+  echo_done
+}
+
+make_dh() {
+  #
+  # $1 --> num bits
+  #
+  if [ -f dh${1}.pem ] ; then
+    echo_process "Skipping DH Parameters. File exists"
+    echo_done
+    return
+  fi
+  echo_process "Creating DH Parameters (may take long time, be patient)"
+  openssl dhparam -out dh${1}.pem $1 &>/dev/null
+  echo_done
+}
+
+make_ta() {
+  #
+  # $1 --> ta key name
+  #
+  if [ ! -x $OPENVPN ] ; then
+    echo_process "Skipping TLS Auth key. $OPENVPN not found."
+    echo_done
+    return 1
+  fi
+  if [ -f $1 ] ; then
+    echo_process "Skipping TLS Auth key. File exists"
+    echo_done
+    return 0
+  fi
+  echo_process "Creating TLS Auth key"
+  $OPENVPN --genkey --secret $1 &>/dev/null
+  [ -s $1 ] && chmod 600 $1
+  echo_done
+}
+
+server() {
+  local CRT_PATH_X=$CRT_PATH/server
+  [ -d $CRT_PATH_X ] || mkdir -m 755 -p $CRT_PATH_X
+  if ! cd $CRT_PATH_X ; then
+    echo "Error: can't cd to $CRT_PATH_X" >&2
+    return 1
+  fi
+  ## Create CA
+  make_cert $CA_KEY $CA_CRT $CA_DAYS $KEY_BITS "$CA_CN" ca
+  ## Create server csr
+  [ -z "$CN" ] && CN="OpenVPN Server"
+  make_cert $SERVER_KEY server.csr $CERT_DAYS $KEY_BITS "$CN"
+  ## Sign server csr
+  sign_cert $CA_KEY $CA_CRT server.csr $SERVER_CRT $CERT_DAYS server
+  ## Create DH key
+  make_dh $DH_BITS
+  ## Create TLS Auth key
+  make_ta $TA_KEY
+  ## Cleanup
+  rm -f ca.srl
+}
+
+client_csr() {
+  local CRT_PATH_X=$CRT_PATH/client
+  [ -d $CRT_PATH_X ] || mkdir -m 755 -p $CRT_PATH_X
+  if ! cd $CRT_PATH_X ; then
+    echo "Error: can't cd to $CRT_PATH_X" >&2
+    return 1
+  fi
+  [ -z "$CN" ] && func_help
+  make_cert $CLIENT_KEY client.csr $CERT_DAYS $KEY_BITS "$CN"
+}
+
+client_sign() {
+  [ -z "$CSR_PATH" ] && func_help
+  if [ "${CSR_PATH:0:1}" != "/" ] ; then
+    CSR_PATH=`pwd`/$CSR_PATH
+  fi
+  local CRT_PATH_X=$CRT_PATH/server
+  [ -d $CRT_PATH_X ] || mkdir -m 755 -p $CRT_PATH_X
+  if ! cd $CRT_PATH_X ; then
+    echo "Error: can't cd to $CRT_PATH_X" >&2
+    return 1
+  fi
+  if [ ! -f $CSR_PATH ] ; then
+    echo "Error: $CSR_PATH - file not found" >&2
+    return 1
+  fi
+  sign_cert $CA_KEY $CA_CRT $CSR_PATH ${CSR_PATH%.*}.crt $CERT_DAYS client
+}
+
+client() {
+  client_csr
+  CSR_PATH=$CRT_PATH/client/client.csr
+  client_sign
+}
+
+eval $ACTION

@@ -12,10 +12,18 @@ DAYS=365
 SSL_EXT_FILE=/tmp/openssl_ext.cfg
 
 func_help() {
-  echo "Usage: $0 -n cert_common_name [ -b key_bits ] [ -d days_valid ]" >&2
-  echo "Example cert_common_name: myname.no-ip.com" >&2
-  echo "Default key_bits: 1024" >&2
-  echo "Default days_valid: 365" >&2
+  local BOLD="echo -ne \\033[1m"
+  local NORM="echo -ne \\033[0m"
+  echo "Create self-signed certificate for HTTP SSL server." >&2
+  echo >&2
+  echo "`$BOLD`Usage:`$NORM` $0 -n cert_common_name [ -b key_bits ] [ -d days_valid ]" >&2
+  echo >&2
+  echo "`$BOLD`Example:`$NORM`" >&2
+  echo "    $0 -n myname.no-ip.com 2048 3650" >&2
+  echo >&2
+  echo "`$BOLD`Defaults:`$NORM`"
+  echo "    key_bits=`$BOLD`1024`$NORM`, days_valid=`$BOLD`365`$NORM`" >&2
+  echo >&2
   exit 1
 }
 

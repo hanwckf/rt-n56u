@@ -1,212 +1,113 @@
 #!/bin/sh
 
 if [ ! -x /usr/bin/openssl ] && [ ! -x /opt/bin/openssl ]; then
-	echo "Unable to find the 'openssl' executable!"
-	echo "Please install 'openssl-util' package from Entware."
-	exit 1
+  echo "Unable to find the 'openssl' executable!" >&2
+  echo "Please install 'openssl-util' package from Entware." >&2
+  exit 1
 fi
 
-################################################################################
-indir=$(pwd)
-ssldir=/etc/ssl
-keydir=/etc/ssl/keys
-dstdir=/etc/storage/https
+DSTDIR=/etc/storage/https
+BITS=1024
+DAYS=365
+SSL_EXT_FILE=/tmp/openssl_ext.cfg
 
-################################################################################
-do_check_cfg()
-{
-## Create default directory structure according to config
-[ -d ./private ]     || { mkdir ./private; chmod 700 ./private; }
-[ -d ./crl ]         ||   mkdir ./crl
-[ -d ./certs ]       ||   mkdir ./certs
-[ -d ./newcerts ]    ||   mkdir ./newcerts
-[ -f ./index ]       ||   touch ./index
-[ -f ./serial ]      || { touch ./serial ; echo 01 > ./serial ; }
+func_help() {
+  echo "Usage: $0 -n cert_common_name [ -b key_bits ] [ -d days_valid ]" >&2
+  echo "Example cert_common_name: myname.no-ip.com" >&2
+  echo "Default key_bits: 1024" >&2
+  echo "Default days_valid: 365" >&2
+  exit 1
 }
 
-################################################################################
-## reads values for certificate/key and saves them to local file in order not to
-## ask user each time he needs do create a certificate/key.
-do_get_raw_data()
-{
-http_ipaddr=`nvram get lan_ipaddr_t`
-clear
-
-GETVAL=1
-
-echo -e "\033[1m"
-cat <<EOF
-
-================================================================================
-
- You are about to be asked to enter information that will be incorporated
- into your certificate request.
-
- If you'd like to choose default value, just press 'Enter' (leave field blank).
- If you want a field be blank (contain no data), type '.' and press 'Enter'
-
-================================================================================
-
-
-
-
-EOF
-echo -e "\033[0m"
-
-
-while [ $GETVAL -eq 1 ] ; do
-
-chck_val=1
-while [ $chck_val -eq 1 ] ; do
-read -p "Enter country name ( 2 letter code ) [ `nvram get wl_country_code` ] : " COUNTRY
-COUNTRY=$(echo $COUNTRY | sed 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/; s/[^A-Z]//g')
-[ $(( `echo "$COUNTRY" | wc -m` - 1 )) -eq 2 ] && chck_val=0
-[ $(( `echo "$COUNTRY" | wc -m` - 1 )) -eq 0 ] && chck_val=0
-[ "$COUNTRY" == "." ] && chck_val=0
-done
-
-read -p "Enter province ( some state/region ) [ ] : " PROVINCE
-PROVINCE=$(echo $PROVINCE | sed 's/[^\.a-zA-Z0-9_-]//g')
-
-read -p "Enter city [ ] : " CITY
-CITY=$(echo $CITY | sed 's/[^\.a-zA-Z0-9_-]//g')
-
-read -p "Enter organization [ `nvram get computer_name` ] : " ORG
-ORG=$(echo $ORG | sed 's/[^\.a-zA-Z0-9_-]//g')
-
-read -p "Enter organization unit [ ] : " OU
-OU=$(echo $OU | sed 's/[^\.a-zA-Z0-9_-]//g')
-
-chck_val=1
-while [ $chck_val -eq 1 ] ; do
-read -p "Enter Common Name ( server hostname ) [ $http_ipaddr ] : " CN
-CN=$(echo $CN | sed 's/[^\.a-zA-Z0-9_-]//g')
-[ $(( `echo "$CN" | wc -m` - 1 )) -lt 64 ] && chck_val=0
-done
-
-chck_val=1
-while [ $chck_val -eq 1 ] ; do
-read -p "Enter email [ admin@my.router ] : " EMAIL
-EMAIL=$(echo $EMAIL | sed 's/[^\.@a-zA-Z0-9_-]//g')
-[ $(( `echo "$EMAIL" | wc -m` - 1 )) -lt 64 ] && chck_val=0
-done
-
-read -p "Enter challenge password [ ] : " CPASS
-CPASS=$(echo $CPASS | sed 's/[^\.a-zA-Z0-9_-]//g')
-
-read -p "Enter optional company name [ ] : " ORGN
-ORGN=$(echo $ORGN | sed 's/[^\.a-zA-Z0-9_-]//g')
-
-echo -e "\n"
-
-
-## Check values
-[ -z "$COUNTRY" ]  && COUNTRY="`nvram get wl_country_code`"
-[ -z "$PROVINCE" ] && PROVINCE="."
-[ -z "$CITY" ]     && CITY="."
-[ -z "$ORG" ]      && ORG="`nvram get computer_name`"
-[ -z "$OU" ]       && OU="."
-[ -z "$CN" ]       && CN="$http_ipaddr"
-[ -z "$EMAIL" ]    && EMAIL="admin@my.router"
-[ -z "$CPASS" ]    && CPASS="."
-[ -z "$ORGN" ]     && ORGN="."
-
-echo -e "\v"
-echo -e "\033[1m"
-
-cat << EOF
-
-------------------------------------------------
-
-Country			${COUNTRY}
-Province		${PROVINCE}
-City			${CITY}
-Organization		${ORG}
-Organization unit	${OU}
-Common name (CN)	${CN}
-Email address		${EMAIL}
-Challenge password	${CPASS}
-Optional company name	${ORGN}
-
-------------------------------------------------
-
-EOF
-
-echo -e "\033[0m"
-echo -e "\n"
-## Ask user if settings are correct
-REPLY=""
-while [ "$REPLY" != "y" -a "$REPLY" != "yes" -a \
-	"$REPLY" != "n" -a "$REPLY" != "no" ]; do
-        read -p "Are these settings correct? (yes/no) : " REPLY
-	REPLY=`echo $REPLY | sed 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/'`
-done
-
-[ "$REPLY" == "yes" -o "$REPLY" == "y" ] && GETVAL=0
-
-done
-
-[ -f ca.raw ] || touch ca.raw
-
-cat > ca.raw << EOF
-${COUNTRY}
-${PROVINCE}
-${CITY}
-${ORG}
-${OU}
-${CN}
-${EMAIL}
-${CPASS}
-${ORGN}
-EOF
-
-chmod 600 ca.raw
+echo_done() {
+  echo -e " *\033[60G [ done ]"
 }
 
-do_create_cert()
-{
-[ -s ca.raw ] || do_get_raw_data
-echo -en "\v\033[1m [ Generating HTTPS certificate and private key ."
-
-# create the server private key
-openssl genrsa -des3 -passout pass:password -out server.pem 1024 > /dev/null 2>&1
-
-# create the certificate signing request
-cat ca.raw | openssl req -config ${ssldir}/openssl.cnf -new -key server.pem -out server.csr -passin pass:password > /dev/null 2>&1
-
-# remove the passphrase from the key
-openssl rsa -in server.pem -out server.key -passin pass:password > /dev/null 2>&1
-
-# convert the certificate request into a signed certificate
-openssl x509 -req -days 3653 -in server.csr -signkey server.key -out server.crt > /dev/null 2>&1
-
-if [ -f server.crt ]; then
-	chmod 644 server.crt
-	cp -f server.crt ${dstdir}
-fi
-
-if [ -f server.key ]; then
-	chmod 600 server.key
-	cp -f server.key ${dstdir}
-fi
-
-rm -f server.pem server.csr
-
-echo -e ". done ] \033[0m"
+echo_process() {
+  echo -ne " + $@\r"
 }
 
-################################################################################
+is_cn_valid() {
+  # RFC 1034 (https://tools.ietf.org/html/rfc1034#section-3.5)
+  if [ -n "`echo $1 | sed 's/^[a-zA-Z][0-9a-zA-z\.-]\{1,253\}[0-9a-zA-Z]$//'`" ] ; then
+    return 1
+  fi
+  for i in  `echo $1 | sed 's/\./ /g'` ; do
+    if [ `echo -n $i | wc -c` -gt 63 ] ; then
+      return 1
+    fi
+  done
+  return 0
+}
 
-[ -d ${keydir} ] || mkdir -p -m 700 ${keydir}
-[ -d ${dstdir} ] || mkdir -p -m 700 ${dstdir}
+create_cert() {
+  [ -z "$CN" ] && func_help
+  if ! is_cn_valid $CN ; then
+     echo >&2
+     echo "Warning: $CN is not a valid host name." >&2
+     echo >&2
+  fi
 
-rm -rf ${keydir}/*
-cd ${keydir}
+  [ -d $DSTDIR ] || mkdir -m 755 -p $DSTDIR
+  if ! cd $DSTDIR ; then
+    echo "Error: can't cd to $DSTDIR" >&2
+    return 1
+  fi
 
-do_check_cfg
-do_create_cert
+  # Check if -sha256 is supported
+  local DGST_ALG
+  openssl dgst -h 2>&1 | grep -q '^-sha256' && DGST_ALG="-sha256" || DGST_ALG="-sha1"
 
-echo -e "\v"
+  cat > $SSL_EXT_FILE << EOF
+[ server ]
+basicConstraints=CA:FALSE
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid,issuer:always
+extendedKeyUsage=serverAuth,clientAuth
+keyUsage=critical,digitalSignature,keyEncipherment
+subjectAltName=DNS:${CN},DNS:my.router
+EOF
 
-cd ${indir}
+    echo_process "Creating CA"
+    openssl req -nodes -x509 -days $(($DAYS * 10 + 3)) -newkey rsa:${BITS} \
+            -outform PEM -out ca.crt -keyout ca.key \
+            $DGST_ALG -subj "/CN=HTTPS CA" &>/dev/null
+    chmod 600 ca.key
+    echo_done
 
+    echo_process "Creating certificate request"
+    openssl req -nodes -days $DAYS -newkey rsa:${BITS} \
+            -outform PEM -out server.csr -keyout server.key \
+            $DGST_ALG -subj "/CN=$CN" &>/dev/null
+    chmod 600 server.key
+    echo_done
+
+    echo_process "Signing request"
+    openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
+               -clrext -out server.crt $DGST_ALG -extfile $SSL_EXT_FILE \
+               -days $DAYS -extensions server &>/dev/null
+    [ -f server.crt ] && rm -f server.csr
+    echo_done
+
+    echo_process "Creating DH Parameters (may take long time, be patient)"
+    openssl dhparam -out dh1024.pem 1024 &>/dev/null
+    echo_done
+
+    [ -f $SSL_EXT_FILE ] && rm -f $SSL_EXT_FILE
+    [ -f ca.srl ] && rm -f ca.srl
+}
+
+[ $(( $# % 2 )) -ne 0 ] && func_help
+
+while [ $# -gt 0 ] ; do
+  case "$1" in
+    -n) CN="$2" ; shift 2 ;;
+    -b) BITS=$2 ; shift 2 ;;
+    -d) DAYS=$2 ; shift 2 ;;
+    *)  func_help ;;
+  esac
+done
+
+create_cert
+
+exit $?

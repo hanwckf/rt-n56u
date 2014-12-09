@@ -590,7 +590,9 @@ static inline struct sk_buff *alloc_skb_fclone(unsigned int size,
 	return __alloc_skb(size, priority, 1, NUMA_NO_NODE);
 }
 
+#ifdef SKB_RECYCLE_SUPPORT
 extern bool skb_recycle_check(struct sk_buff *skb, int skb_size);
+#endif
 
 extern struct sk_buff *skb_morph(struct sk_buff *dst, struct sk_buff *src);
 #if IS_ENABLED(CONFIG_MACVTAP)

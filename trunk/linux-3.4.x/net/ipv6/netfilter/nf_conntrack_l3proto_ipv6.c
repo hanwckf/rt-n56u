@@ -213,8 +213,7 @@ static unsigned int ipv6_conntrack_local(unsigned int hooknum,
 {
 	/* root is playing with raw sockets. */
 	if (skb->len < sizeof(struct ipv6hdr)) {
-		if (net_ratelimit())
-			pr_notice("ipv6_conntrack_local: packet too short\n");
+		net_notice_ratelimited("ipv6_conntrack_local: packet too short\n");
 		return NF_ACCEPT;
 	}
 	return nf_conntrack_in(dev_net(out), PF_INET6, hooknum, skb);

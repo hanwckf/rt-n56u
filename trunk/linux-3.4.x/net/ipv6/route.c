@@ -797,9 +797,7 @@ static struct rt6_info *rt6_alloc_cow(struct rt6_info *ort,
 				goto retry;
 			}
 
-			if (net_ratelimit())
-				printk(KERN_WARNING
-				       "ipv6: Neighbour table overflow.\n");
+			net_warn_ratelimited("ipv6: Neighbour table overflow\n");
 			dst_free(&rt->dst);
 			return NULL;
 		}
@@ -1655,9 +1653,7 @@ void rt6_redirect(const struct in6_addr *dest, const struct in6_addr *src,
 	rt = ip6_route_redirect(dest, src, saddr, neigh->dev);
 
 	if (rt == net->ipv6.ip6_null_entry) {
-		if (net_ratelimit())
-			printk(KERN_DEBUG "rt6_redirect: source isn't a valid nexthop "
-			       "for redirect target\n");
+		net_dbg_ratelimited("rt6_redirect: source isn't a valid nexthop for redirect target\n");
 		goto out;
 	}
 

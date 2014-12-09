@@ -109,15 +109,13 @@ tcpmss_mangle_packet(struct sk_buff *skb,
 		unsigned int in_mtu = tcpmss_reverse_mtu(skb, family);
 
 		if (dst_mtu(skb_dst(skb)) <= minlen) {
-			if (net_ratelimit())
-				pr_err("unknown or invalid path-MTU (%u)\n",
-				       dst_mtu(skb_dst(skb)));
+			net_err_ratelimited("unknown or invalid path-MTU (%u)\n",
+					    dst_mtu(skb_dst(skb)));
 			return -1;
 		}
 		if (in_mtu <= minlen) {
-			if (net_ratelimit())
-				pr_err("unknown or invalid path-MTU (%u)\n",
-				       in_mtu);
+			net_err_ratelimited("unknown or invalid path-MTU (%u)\n",
+					    in_mtu);
 			return -1;
 		}
 		newmss = min(dst_mtu(skb_dst(skb)), in_mtu) - minlen;

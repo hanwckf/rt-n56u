@@ -603,8 +603,7 @@ static int h245_help(struct sk_buff *skb, unsigned int protoff,
 
       drop:
 	spin_unlock_bh(&nf_h323_lock);
-	if (net_ratelimit())
-		pr_info("nf_ct_h245: packet dropped\n");
+	net_info_ratelimited("nf_ct_h245: packet dropped\n");
 	return NF_DROP;
 }
 
@@ -1154,8 +1153,7 @@ static int q931_help(struct sk_buff *skb, unsigned int protoff,
 
       drop:
 	spin_unlock_bh(&nf_h323_lock);
-	if (net_ratelimit())
-		pr_info("nf_ct_q931: packet dropped\n");
+	net_info_ratelimited("nf_ct_q931: packet dropped\n");
 	return NF_DROP;
 }
 
@@ -1729,8 +1727,7 @@ static int ras_help(struct sk_buff *skb, unsigned int protoff,
 
       drop:
 	spin_unlock_bh(&nf_h323_lock);
-	if (net_ratelimit())
-		pr_info("nf_ct_ras: packet dropped\n");
+	net_info_ratelimited("nf_ct_ras: packet dropped\n");
 	return NF_DROP;
 }
 

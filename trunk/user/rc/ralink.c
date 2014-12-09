@@ -1444,7 +1444,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 
 	if (i_auth == 5 || i_auth == 6 || i_auth == 7 || i_auth == 8)
 	{
-		fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+		fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr_t"));
 		fprintf(fp, "EAPifname=%s\n", IFNAME_BR);
 		fprintf(fp, "PreAuthifname=%s\n", IFNAME_BR);
 	}

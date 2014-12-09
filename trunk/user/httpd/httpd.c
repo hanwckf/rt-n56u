@@ -864,14 +864,25 @@ handle_request(FILE *conn_fp, int conn_fd)
 		return;
 	}
 
-	file = &(path[1]);
-	len = strlen( file );
-	if ( file[0] == '/' || strcmp( file, ".." ) == 0 || strncmp( file, "../", 3 ) == 0 || strstr( file, "/../" ) != (char*) 0 || strcmp( &(file[len-3]), "/.." ) == 0 ) {
+	file = path + 1;
+	len = strlen(file);
+
+	if (file[0] == '/' || strcmp(file, "..") == 0 || strncmp(file, "../", 3) == 0 || strstr(file, "/../") != NULL) {
 		send_error( 400, "Bad Request", (char*) 0, "Illegal filename.", conn_fp );
 		return;
 	}
 
-	if (file[0] == '\0' || file[len-1] == '/')
+	if (len > 0 && file[len-1] == '/') {
+		send_error( 400, "Bad Request", (char*) 0, "Illegal filename.", conn_fp );
+		return;
+	}
+
+	if (len > 2 && strcmp(&(file[len-3]), "/.." ) == 0) {
+		send_error( 400, "Bad Request", (char*) 0, "Illegal filename.", conn_fp );
+		return;
+	}
+
+	if (len < 1)
 		file = "index.asp";
 
 	if ((query = index(file, '?')) != NULL)

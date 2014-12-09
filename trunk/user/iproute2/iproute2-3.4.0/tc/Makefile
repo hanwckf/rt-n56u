@@ -28,12 +28,16 @@ TCMODULES += q_dsmark.o
 TCMODULES += q_gred.o
 TCMODULES += f_tcindex.o
 TCMODULES += q_ingress.o
+ifdef CONFIG_NET_SCH_HFSC
 TCMODULES += q_hfsc.o
+endif
 TCMODULES += q_htb.o
 #TCMODULES += q_drr.o
 #TCMODULES += q_qfq.o
 #TCMODULES += m_gact.o
+ifdef CONFIG_NET_ACT_MIRRED
 TCMODULES += m_mirred.o
+endif
 #TCMODULES += m_nat.o
 TCMODULES += m_pedit.o
 #TCMODULES += m_skbedit.o
@@ -47,6 +51,12 @@ TCMODULES += em_cmp.o
 TCMODULES += em_u32.o
 TCMODULES += em_meta.o
 #TCMODULES += q_mqprio.o
+ifdef CONFIG_NET_SCH_CODEL
+TCMODULES += q_codel.o
+endif
+ifdef CONFIG_NET_SCH_FQ_CODEL
+TCMODULES += q_fq_codel.o
+endif
 
 TCSO :=
 ifeq ($(TC_CONFIG_ATM),y)
@@ -119,7 +129,7 @@ install: all
 	fi
 
 clean:
-	rm -f $(TCOBJ) $(TCLIB) libtc.a tc *.so emp_ematch.yacc.h; \
+	rm -f $(TCOBJ) $(TCLIB) libtc.a tc *.so *.o emp_ematch.yacc.h; \
 	rm -f emp_ematch.yacc.*
 
 q_atm.so: q_atm.c

@@ -572,7 +572,8 @@ static int sfb_dump(struct Qdisc *sch, struct sk_buff *skb)
 	opts = nla_nest_start(skb, TCA_OPTIONS);
 	if (opts == NULL)
 		goto nla_put_failure;
-	NLA_PUT(skb, TCA_SFB_PARMS, sizeof(opt), &opt);
+	if (nla_put(skb, TCA_SFB_PARMS, sizeof(opt), &opt))
+		goto nla_put_failure;
 	return nla_nest_end(skb, opts);
 
 nla_put_failure:

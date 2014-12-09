@@ -1429,7 +1429,8 @@ static int cbq_dump_rate(struct sk_buff *skb, struct cbq_class *cl)
 {
 	unsigned char *b = skb_tail_pointer(skb);
 
-	NLA_PUT(skb, TCA_CBQ_RATE, sizeof(cl->R_tab->rate), &cl->R_tab->rate);
+	if (nla_put(skb, TCA_CBQ_RATE, sizeof(cl->R_tab->rate), &cl->R_tab->rate))
+		goto nla_put_failure;
 	return skb->len;
 
 nla_put_failure:
@@ -1454,7 +1455,8 @@ static int cbq_dump_lss(struct sk_buff *skb, struct cbq_class *cl)
 	opt.minidle = (u32)(-cl->minidle);
 	opt.offtime = cl->offtime;
 	opt.change = ~0;
-	NLA_PUT(skb, TCA_CBQ_LSSOPT, sizeof(opt), &opt);
+	if (nla_put(skb, TCA_CBQ_LSSOPT, sizeof(opt), &opt))
+		goto nla_put_failure;
 	return skb->len;
 
 nla_put_failure:
@@ -1473,7 +1475,8 @@ static int cbq_dump_wrr(struct sk_buff *skb, struct cbq_class *cl)
 	opt.priority = cl->priority + 1;
 	opt.cpriority = cl->cpriority + 1;
 	opt.weight = cl->weight;
-	NLA_PUT(skb, TCA_CBQ_WRROPT, sizeof(opt), &opt);
+	if (nla_put(skb, TCA_CBQ_WRROPT, sizeof(opt), &opt))
+		goto nla_put_failure;
 	return skb->len;
 
 nla_put_failure:
@@ -1490,7 +1493,8 @@ static int cbq_dump_ovl(struct sk_buff *skb, struct cbq_class *cl)
 	opt.priority2 = cl->priority2 + 1;
 	opt.pad = 0;
 	opt.penalty = cl->penalty;
-	NLA_PUT(skb, TCA_CBQ_OVL_STRATEGY, sizeof(opt), &opt);
+	if (nla_put(skb, TCA_CBQ_OVL_STRATEGY, sizeof(opt), &opt))
+		goto nla_put_failure;
 	return skb->len;
 
 nla_put_failure:
@@ -1507,7 +1511,8 @@ static int cbq_dump_fopt(struct sk_buff *skb, struct cbq_class *cl)
 		opt.split = cl->split ? cl->split->common.classid : 0;
 		opt.defmap = cl->defmap;
 		opt.defchange = ~0;
-		NLA_PUT(skb, TCA_CBQ_FOPT, sizeof(opt), &opt);
+		if (nla_put(skb, TCA_CBQ_FOPT, sizeof(opt), &opt))
+			goto nla_put_failure;
 	}
 	return skb->len;
 
@@ -1526,7 +1531,8 @@ static int cbq_dump_police(struct sk_buff *skb, struct cbq_class *cl)
 		opt.police = cl->police;
 		opt.__res1 = 0;
 		opt.__res2 = 0;
-		NLA_PUT(skb, TCA_CBQ_POLICE, sizeof(opt), &opt);
+		if (nla_put(skb, TCA_CBQ_POLICE, sizeof(opt), &opt))
+			goto nla_put_failure;
 	}
 	return skb->len;
 

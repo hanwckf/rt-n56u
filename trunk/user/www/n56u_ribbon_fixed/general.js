@@ -652,10 +652,19 @@ function validate_ipaddr_final(o, v) {
         }
     }
 
-    if (v == 'dhcp_start' || v == 'dhcp_end' || v == 'lan_ipaddr' ||
-        v == 'staticip' || v == 'radius_ipaddr' || v == 'dmz_ip' ||
+    if (v == 'dhcp_start' || v == 'dhcp_end' ||
+        v == 'lan_ipaddr' || v == 'staticip' || v == 'dmz_ip' ||
         v == 'dhcp_dns_x' || v == 'dhcp_gateway_x' || v == 'dhcp_wins_x') {
         if (ip4[0] == 255 || ip4[0] == 0 || ip4[0] == 127 || ip4[0] == 224) {
+            alert(o.value + " <#JS_validip#>");
+            o.focus();
+            o.select();
+            return false;
+        }
+    }
+
+    if (v == 'radius_ipaddr') {
+        if (ip4[0] == 255 || ip4[0] == 0 || ip4[0] == 224) {
             alert(o.value + " <#JS_validip#>");
             o.focus();
             o.select();

@@ -40,6 +40,7 @@
 #include <net/if.h>
 
 #include "httpd.h"
+#include "common.h"
 
 /* Basic authorization userid and passwd limit */
 #define AUTH_MAX		64
@@ -98,7 +99,6 @@ static char auth_passwd[AUTH_MAX];
 static char auth_product[AUTH_MAX];
 
 char log_header[32] = {0};
-char url[128] = {0};
 int redirect = 0;
 int change_passwd = 0;
 int debug_mode = 0;
@@ -791,18 +791,18 @@ int set_preferred_lang(char* cur)
 static void
 handle_request(FILE *conn_fp, int conn_fd)
 {
-	char line[8192];
+	char line[8192], url[128];
 	char *method, *path, *protocol, *authorization, *boundary;
-	char *cur, *end, *cp, *file;
+	char *cur, *end, *cp, *file, *query;
 	int len, login_state;
+	int clen = 0, file_len, flags, has_lang;
 	struct mime_handler *handler;
-	int clen = 0, flags, has_lang;
 
 	/* Initialize the request variables. */
 	authorization = boundary = NULL;
 
 	/* Parse the first line of the request. */
-	if (!fgets( line, sizeof(line), conn_fp)) {
+	if (!fgets(line, sizeof(line), conn_fp)) {
 		send_error( 400, "Bad Request", (char*) 0, "No request found.", conn_fp);
 		return;
 	}
@@ -873,29 +873,25 @@ handle_request(FILE *conn_fp, int conn_fd)
 
 	if (file[0] == '\0' || file[len-1] == '/')
 		file = "index.asp";
-	
-	char *query;
-	int file_len;
-	
-	if ((query = index(file, '?')) != NULL) {
+
+	if ((query = index(file, '?')) != NULL)
 		file_len = strlen(file)-strlen(query);
-		
-		strncpy(url, file, file_len);
-	}
 	else
-	{
-		strcpy(url, file);
-	}
+		file_len = strlen(file);
+
+	file_len = MIN(file_len, sizeof(url)-1);
+
+	strncpy(url, file, file_len);
+	url[file_len] = 0;
 
 	login_state = http_login_check();
-	if (login_state == 3)
-	{
+	if (login_state == 3) {
 		if ( (login_ip.len != 0) && (strstr(url, ".htm") != NULL || strstr(url, ".asp") != NULL) ) {
 			file = "Nologin.asp";
 			strcpy(url, file);
 		}
 	}
-	
+
 	for (handler = mime_handlers; handler->pattern; handler++) 
 	{
 		if (match(handler->pattern, url))

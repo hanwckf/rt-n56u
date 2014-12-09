@@ -1430,8 +1430,7 @@ ej_wl_scan_5g(int eid, webs_t wp, int argc, char **argv)
 		return websWrite(wp, "[%s]", empty);
 	}
 
-	dbg("Please wait...\n\n");
-	sleep(4);
+	sleep(5);
 
 	memset(data, 0, sizeof(data));
 	wrq.u.data.length = sizeof(data);
@@ -1536,8 +1535,7 @@ ej_wl_scan_2g(int eid, webs_t wp, int argc, char **argv)
 		return websWrite(wp, "[%s]", empty);
 	}
 
-	dbg("Please wait...\n\n");
-	sleep(4);
+	sleep(5);
 
 	memset(data, 0, sizeof(data));
 	wrq.u.data.length = sizeof(data);

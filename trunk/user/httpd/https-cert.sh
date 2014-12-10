@@ -19,7 +19,7 @@ func_help() {
   echo "`$BOLD`Usage:`$NORM` $0 -n cert_common_name [ -b key_bits ] [ -d days_valid ]" >&2
   echo >&2
   echo "`$BOLD`Example:`$NORM`" >&2
-  echo "    $0 -n myname.no-ip.com 2048 3650" >&2
+  echo "    $0 -n myname.no-ip.com -b 2048 -d 3650" >&2
   echo >&2
   echo "`$BOLD`Defaults:`$NORM`"
   echo "    key_bits=`$BOLD`1024`$NORM`, days_valid=`$BOLD`365`$NORM`" >&2

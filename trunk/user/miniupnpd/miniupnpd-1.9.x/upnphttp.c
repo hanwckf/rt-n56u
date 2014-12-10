@@ -1,4 +1,4 @@
-/* $Id: upnphttp.c,v 1.92 2014/04/11 08:15:43 nanard Exp $ */
+/* $Id: upnphttp.c,v 1.94 2014/12/09 09:46:45 nanard Exp $ */
 /* Project :  miniupnp
  * Website :  http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * Author :   Thomas Bernard
@@ -224,7 +224,7 @@ ParseHttpHeaders(struct upnphttp * h)
 			if(strncasecmp(line, "Content-Length", 14)==0)
 			{
 				p = colon;
-				while(*p < '0' || *p > '9')
+				while((*p < '0' || *p > '9') && (*p != '\r') && (*p != '\n'))
 					p++;
 				h->req_contentlen = atoi(p);
 				if(h->req_contentlen < 0) {
@@ -341,8 +341,8 @@ intervening space) by either an integer or the keyword "infinite". */
 				h->req_NTOff = p - h->req_buf;
 				h->req_NTLen = n;
 			}
-#endif
-#endif
+#endif /* UPNP_STRICT */
+#endif /* ENABLE_EVENTS */
 		}
 		/* the loop below won't run off the end of the buffer
 		 * because the buffer is guaranteed to contain the \r\n\r\n
@@ -989,7 +989,7 @@ static const char httpresphead[] =
 /* with response code and response message
  * also allocate enough memory */
 
-void
+int
 BuildHeader_upnphttp(struct upnphttp * h, int respcode,
                      const char * respmsg,
                      int bodylen)
@@ -1003,7 +1003,7 @@ BuildHeader_upnphttp(struct upnphttp * h, int respcode,
 		h->res_buf = (char *)malloc(templen);
 		if(!h->res_buf) {
 			syslog(LOG_ERR, "malloc error in BuildHeader_upnphttp()");
-			return;
+			return -1;
 		}
 		h->res_buf_alloclen = templen;
 	}
@@ -1082,8 +1082,10 @@ BuildHeader_upnphttp(struct upnphttp * h, int respcode,
 		else
 		{
 			syslog(LOG_ERR, "realloc error in BuildHeader_upnphttp()");
+			return -1;
 		}
 	}
+	return 0;
 }
 
 void
@@ -1091,8 +1093,8 @@ BuildResp2_upnphttp(struct upnphttp * h, int respcode,
                     const char * respmsg,
                     const char * body, int bodylen)
 {
-	BuildHeader_upnphttp(h, respcode, respmsg, bodylen);
-	if(body)
+	int r = BuildHeader_upnphttp(h, respcode, respmsg, bodylen);
+	if(body && (r >= 0))
 		memcpy(h->res_buf + h->res_buflen, body, bodylen);
 	h->res_buflen += bodylen;
 }
@@ -1100,7 +1102,7 @@ BuildResp2_upnphttp(struct upnphttp * h, int respcode,
 /* responding 200 OK ! */
 void
 BuildResp_upnphttp(struct upnphttp * h,
-                        const char * body, int bodylen)
+                   const char * body, int bodylen)
 {
 	BuildResp2_upnphttp(h, 200, "OK", body, bodylen);
 }

@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: genconfig.sh,v 1.76 2014/05/15 09:22:54 nanard Exp $
+# $Id: genconfig.sh,v 1.77 2014/12/04 10:21:33 nanard Exp $
 # miniupnp daemon
 # http://miniupnp.free.fr or http://miniupnp.tuxfamily.org/
 # (c) 2006-2014 Thomas Bernard
@@ -252,6 +252,7 @@ case $OS_NAME in
 		fi
 		echo "#define USE_IFACEWATCHER 1" >> ${CONFIGFILE}
 		FW=netfilter
+		V6SOCKETS_ARE_V6ONLY=`/sbin/sysctl -n net.ipv6.bindv6only`
 		;;
 	OpenWRT)
 		OS_URL=http://www.openwrt.org/

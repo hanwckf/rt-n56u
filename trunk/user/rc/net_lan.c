@@ -81,9 +81,8 @@ init_loopback(void)
 }
 
 void
-init_bridge(void)
+init_bridge(int is_ap_mode)
 {
-	int is_ap_mode = get_ap_mode();
 	int rt_radio_on = get_enabled_radio_rt();
 #if !defined(USE_RT3352_MII)
 	int rt_mode_x = get_mode_radio_rt();
@@ -489,8 +488,15 @@ is_vlan_vid_iptv_valid(int vlan_vid_inet, int vlan_vid_iptv)
 void
 reset_lan_temp(void)
 {
-	nvram_set_temp("lan_ipaddr_t", "");
-	nvram_set_temp("lan_netmask_t", "");
+	if (nvram_match("lan_ipaddr", "")) {
+		nvram_set("lan_ipaddr", "192.168.1.1");
+		nvram_set("lan_netmask", "255.255.255.0");
+	} else if (nvram_match("lan_netmask", "")) {
+		nvram_set("lan_netmask", "255.255.255.0");
+	}
+
+	nvram_set_temp("lan_ipaddr_t", nvram_safe_get("lan_ipaddr"));
+	nvram_set_temp("lan_netmask_t", nvram_safe_get("lan_netmask"));
 	nvram_set_temp("lan_gateway_t", "");
 	nvram_set_temp("lan_domain_t", "");
 	nvram_set_temp("lan_dns_t", "");
@@ -540,13 +546,6 @@ start_lan(int is_ap_mode)
 	char *lan_ipaddr;
 	char *lan_netmsk;
 	char *lan_ifname = IFNAME_BR;
-
-	if (nvram_match("lan_ipaddr", "")) {
-		nvram_set("lan_ipaddr", "192.168.1.1");
-		nvram_set("lan_netmask", "255.255.255.0");
-	} else if (nvram_match("lan_netmask", "")) {
-		nvram_set("lan_netmask", "255.255.255.0");
-	}
 
 	lan_ipaddr = nvram_safe_get("lan_ipaddr");
 	lan_netmsk = nvram_safe_get("lan_netmask");

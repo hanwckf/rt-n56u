@@ -65,6 +65,30 @@ chk_valid_subnet_pool(const char *ip, char *dip1, char *dip2, const char *mask)
 	return 1;
 }
 
+static void
+arpbind_clear(void)
+{
+	FILE *fp;
+	char buffer[256], arp_ip[INET_ADDRSTRLEN], arp_if[32];
+	unsigned int arp_flags;
+
+	fp = fopen("/proc/net/arp", "r");
+	if (fp) {
+		// skip first line
+		fgets(buffer, sizeof(buffer), fp);
+		
+		while (fgets(buffer, sizeof(buffer), fp)) {
+			arp_flags = 0;
+			if (sscanf(buffer, "%s %*s 0x%x %*s %*s %s", arp_ip, &arp_flags, arp_if) == 3) {
+				if ((arp_flags & 0x04) && strcmp(arp_if, IFNAME_BR) == 0)
+					doSystem("arp -i %s -d %s", IFNAME_BR, arp_ip);
+			}
+		}
+		
+		fclose(fp);
+	}
+}
+
 /*
 static int
 find_static_mac(int idx, int num_items, const char *ip, char mac[13])
@@ -93,30 +117,33 @@ find_static_mac(int idx, int num_items, const char *ip, char mac[13])
 */
 
 static int
-fill_static_ethers(void)
+fill_static_ethers(const char *lan_ip, const char *lan_mask)
 {
 	FILE *fp;
-	int i, i_use_static, i_max_items, i_ethers = 0;
+	int i, i_use_static, i_arpbind, i_max_items, i_ethers = 0;
 	char nvram_mac[32], nvram_ip[32], *smac, *sip;
 
 	i_use_static = nvram_get_int("dhcp_static_x");
-	i_max_items = nvram_safe_get_int("dhcp_staticnum_x", 0, 0, 64);
 
 	/* create /etc/ethers */
 	fp = fopen("/etc/ethers", "w+");
 	if (fp) {
 		if (i_use_static == 1) {
+			i_arpbind = nvram_get_int("dhcp_static_arp");
+			i_max_items = nvram_safe_get_int("dhcp_staticnum_x", 0, 0, 64);
 			for (i = 0; i < i_max_items; i++) {
 				snprintf(nvram_mac, sizeof(nvram_mac), "dhcp_staticmac_x%d", i);
 				smac = nvram_safe_get(nvram_mac);
 				if (strlen(smac) == 12) {
 					snprintf(nvram_ip, sizeof(nvram_ip), "dhcp_staticip_x%d", i);
 					sip = nvram_safe_get(nvram_ip);
-					if (is_valid_ipv4(sip)) {
+					if (is_valid_ipv4(sip) && is_same_subnet(sip, lan_ip, lan_mask)) {
 						i_ethers++;
 						fprintf(fp, "%c%c:%c%c:%c%c:%c%c:%c%c:%c%c %s\n", 
 							smac[0], smac[1], smac[2], smac[3], smac[4], smac[5], 
 							smac[6], smac[7], smac[8], smac[9], smac[10], smac[11], sip);
+						if (i_arpbind)
+							doSystem("arp -i %s -s %s %s", IFNAME_BR, sip, smac);
 					}
 				}
 			}
@@ -170,14 +197,14 @@ start_dns_dhcpd(int is_ap_mode)
 	/* touch dnsmasq.leases if not exist */
 	create_file(leases_dhcp);
 
-	/* create /etc/ethers */
-	i_ethers = fill_static_ethers();
-
 	i_verbose = nvram_get_int("dhcp_verbose");
 
 	ipaddr  = nvram_safe_get("lan_ipaddr");
 	netmask = nvram_safe_get("lan_netmask");
 	domain  = nvram_safe_get("lan_domain");
+
+	/* create /etc/ethers */
+	i_ethers = fill_static_ethers(ipaddr, netmask);
 
 	/* create /etc/dnsmasq.conf */
 	if (!(fp = fopen("/etc/dnsmasq.conf", "w")))
@@ -337,6 +364,8 @@ stop_dns_dhcpd(void)
 	char* svcs[] = { "dnsmasq", NULL };
 
 	kill_services(svcs, 3, 1);
+
+	arpbind_clear();
 }
 
 int

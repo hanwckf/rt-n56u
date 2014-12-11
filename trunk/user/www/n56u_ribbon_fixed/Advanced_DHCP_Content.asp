@@ -28,6 +28,7 @@ $j(document).ready(function() {
 	init_itoggle('dhcp_enable_x');
 	init_itoggle('lan_dhcpd_x');
 	init_itoggle('dhcp_static_x', change_dhcp_static_enabled);
+	init_itoggle('dhcp_static_arp');
 });
 
 </script>
@@ -202,6 +203,7 @@ function pullLANIPList(obj){
 
 function change_dhcp_static_enabled(){
 	var v = document.form.dhcp_static_x[0].checked;
+	showhide_div('row_static_arp', v);
 	showhide_div('row_static_caption', v);
 	showhide_div('row_static_header', v);
 	showhide_div('row_static_body', v);
@@ -489,6 +491,21 @@ function changeBgColor(obj, num){
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" value="1" name="dhcp_static_x" id="dhcp_static_x_1" onclick="change_dhcp_static_enabled()" <% nvram_match_x("", "dhcp_static_x", "1", "checked"); %> /><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="dhcp_static_x" id="dhcp_static_x_0" onclick="change_dhcp_static_enabled()" <% nvram_match_x("", "dhcp_static_x", "0", "checked"); %> /><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_static_arp" style="display:none">
+                                            <th colspan="2"><#LANHostConfig_ManualARP_itemname#></th>
+                                            <td colspan="2">
+                                                <div class="main_itoggle">
+                                                    <div id="dhcp_static_arp_on_of">
+                                                        <input type="checkbox" id="dhcp_static_arp_fake" <% nvram_match_x("", "dhcp_static_arp", "1", "value=1 checked"); %><% nvram_match_x("", "dhcp_static_arp", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="dhcp_static_arp" id="dhcp_static_arp_1" onclick="change_dhcp_static_enabled()" <% nvram_match_x("", "dhcp_static_arp", "1", "checked"); %> /><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="dhcp_static_arp" id="dhcp_static_arp_0" onclick="change_dhcp_static_enabled()" <% nvram_match_x("", "dhcp_static_arp", "0", "checked"); %> /><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

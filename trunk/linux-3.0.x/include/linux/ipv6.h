@@ -63,6 +63,9 @@ struct ipv6_opt_hdr {
 #define ipv6_destopt_hdr ipv6_opt_hdr
 #define ipv6_hopopt_hdr  ipv6_opt_hdr
 
+/* Router Alert option values (RFC2711) */
+#define IPV6_OPT_ROUTERALERT_MLD	0x0000	/* MLD(RFC2710) */
+
 #ifdef __KERNEL__
 #define ipv6_optlen(p)  (((p)->hdrlen+1) << 3)
 #endif
@@ -240,7 +243,7 @@ static inline struct ipv6hdr *ipipv6_hdr(const struct sk_buff *skb)
 
 struct inet6_skb_parm {
 	int			iif;
-	__u16			ra;
+	__be16			ra;
 	__u16			hop;
 	__u16			dst0;
 	__u16			srcrt;
@@ -255,6 +258,7 @@ struct inet6_skb_parm {
 #define IP6SKB_XFRM_TRANSFORMED	1
 #define IP6SKB_FORWARDED	2
 #define IP6SKB_REROUTED		4
+#define IP6SKB_ROUTERALERT	8
 #define IP6SKB_FRAGMENTED      16
 };
 

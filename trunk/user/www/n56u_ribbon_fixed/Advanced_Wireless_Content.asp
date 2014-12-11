@@ -42,6 +42,7 @@ function initial(){
 		var o1 = document.form.wl_gmode;
 		o1.remove(0);
 		o1.remove(0);
+		o1.options[0].text = "a/n Mixed (*)";
 		insert_vht_bw(0);
 	}
 
@@ -401,7 +402,7 @@ function wl_nband_select(ch){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 4);"><#WLANConfig11b_x_Mode11g_itemname#></a></th>
                                             <td>
                                                 <select name="wl_gmode" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_gmode')">
-                                                    <option value="4" <% nvram_match_x("","wl_gmode", "4","selected"); %>>a/n/ac Mixed</option>
+                                                    <option value="4" <% nvram_match_x("","wl_gmode", "4","selected"); %>>a/n/ac Mixed (*)</option>
                                                     <option value="3" <% nvram_match_x("","wl_gmode", "3","selected"); %>>n/ac Mixed</option>
                                                     <option value="2" <% nvram_match_x("","wl_gmode", "2","selected"); %>>a/n Mixed</option>
                                                     <option value="1" <% nvram_match_x("","wl_gmode", "1","selected"); %>>n Only</option>

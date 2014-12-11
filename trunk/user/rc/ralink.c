@@ -676,7 +676,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	//Network Mode
 	i_VHTBW_MAX = 0;
 	if (!is_aband) {
-		i_val = PHY_11BGN_MIXED;
+		i_val = PHY_11GN_MIXED;
 		switch (i_gmode)
 		{
 		case 0:  // B
@@ -684,6 +684,9 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 			break;
 		case 1:  // B,G
 			i_val = PHY_11BG_MIXED;
+			break;
+		case 2:  // B,G,N
+			i_val = PHY_11BGN_MIXED;
 			break;
 		case 3:  // N
 			i_val = PHY_11N;
@@ -1562,58 +1565,47 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	 *	MODE=3, MCS=9: HTMIX 26/60Mbps
 	 */
 
-	if (!is_aband) {
-		i_mphy = 2; // OFDM
-		i_mmcs = 2; // 12 Mbps
-	} else {
-		i_mphy = 3; // HTMIX
-		i_mmcs = 1; // 1S 15-30 Mbps
-	}
+	i_mphy = 2; // OFDM
+	i_mmcs = 0; // 6 Mbps
 
-	i_val = nvram_wlan_get_int(prefix, "mcastrate");
+	i_val = nvram_wlan_get_int(prefix, "mrate");
 	switch (i_val)
 	{
-	case 0: // HTMIX (1S) 6.5-15 Mbps
+	case 0: // Auto
+		i_mphy = 0;
+		i_mmcs = 0;
+		break;
+	case 1: // CCK 1 Mbps
+		if (!is_aband) {
+			i_mphy = 1;
+			i_mmcs = 0;
+		}
+		break;
+	case 2: // CCK 2 Mbps
+		if (!is_aband) {
+			i_mphy = 1;
+			i_mmcs = 1;
+		}
+		break;
+	case 3: // OFDM 6 Mbps
+		i_mphy = 2;
+		i_mmcs = 0;
+		break;
+	case 4: // OFDM 9 Mbps
+		i_mphy = 2;
+		i_mmcs = 1;
+		break;
+	case 5: // OFDM 12 Mbps
+		i_mphy = 2;
+		i_mmcs = 2;
+		break;
+	case 6: // HTMIX (1S) 6.5-15 Mbps
 		i_mphy = 3;
 		i_mmcs = 0;
 		break;
-	case 1: // HTMIX (1S) 15-30 Mbps
+	case 7: // HTMIX (1S) 15-30 Mbps
 		i_mphy = 3;
 		i_mmcs = 1;
-		break;
-	case 2: // HTMIX (1S) 19.5-45 Mbps
-		i_mphy = 3;
-		i_mmcs = 2;
-		break;
-	case 3: // HTMIX (2S) 13-30 Mbps
-		i_mphy = 3;
-		i_mmcs = 8;
-		break;
-	case 4: // HTMIX (2S) 26-60 Mbps
-		i_mphy = 3;
-		i_mmcs = 9;
-		break;
-	case 5: // OFDM 9 Mbps
-		i_mphy = 2;
-		i_mmcs = 1;
-		break;
-	case 6: // OFDM 12 Mbps
-		i_mphy = 2;
-		i_mmcs = 2;
-		break;
-	case 7: // OFDM 18 Mbps
-		i_mphy = 2;
-		i_mmcs = 3;
-		break;
-	case 8: // OFDM 24 Mbps
-		i_mphy = 2;
-		i_mmcs = 4;
-		break;
-	case 9: // CCK 11 Mbps
-		if (!is_aband) {
-			i_mphy = 1;
-			i_mmcs = 3;
-		}
 		break;
 	}
 

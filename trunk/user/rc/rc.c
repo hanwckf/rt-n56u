@@ -258,6 +258,8 @@ nvram_convert_old_params(void)
 	nvram_unset("wan_subnet_t");
 	nvram_unset("lan_subnet_t");
 	nvram_unset("link_lan");
+	nvram_unset("rt_mcastrate");
+	nvram_unset("wl_mcastrate");
 }
 
 static void

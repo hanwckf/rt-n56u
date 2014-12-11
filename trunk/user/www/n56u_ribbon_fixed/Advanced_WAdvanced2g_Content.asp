@@ -265,17 +265,15 @@ function done_validating(action){
                                         <tr id="row_mrate">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 7);"><#WLANConfig11b_MultiRateAll_itemname#></a></th>
                                             <td>
-                                                <select name="rt_mcastrate" class="input">
-                                                    <option value="0" <% nvram_match_x("", "rt_mcastrate", "0", "selected"); %>>HTMIX (1S) 15 Mbps</option>
-                                                    <option value="1" <% nvram_match_x("", "rt_mcastrate", "1", "selected"); %>>HTMIX (1S) 30 Mbps</option>
-                                                    <option value="2" <% nvram_match_x("", "rt_mcastrate", "2", "selected"); %>>HTMIX (1S) 45 Mbps</option>
-                                                    <option value="3" <% nvram_match_x("", "rt_mcastrate", "3", "selected"); %>>HTMIX (2S) 30 Mbps</option>
-                                                    <option value="4" <% nvram_match_x("", "rt_mcastrate", "4", "selected"); %>>HTMIX (2S) 60 Mbps</option>
-                                                    <option value="5" <% nvram_match_x("", "rt_mcastrate", "5", "selected"); %>>OFDM 9 Mbps</option>
-                                                    <option value="6" <% nvram_match_x("", "rt_mcastrate", "6", "selected"); %>>OFDM 12 Mbps (*)</option>
-                                                    <option value="7" <% nvram_match_x("", "rt_mcastrate", "7", "selected"); %>>OFDM 18 Mbps</option>
-                                                    <option value="8" <% nvram_match_x("", "rt_mcastrate", "8", "selected"); %>>OFDM 24 Mbps</option>
-                                                    <option value="9" <% nvram_match_x("", "rt_mcastrate", "9", "selected"); %>>CCK 11 Mbps</option>
+                                                <select name="rt_mrate" class="input">
+                                                    <option value="0" <% nvram_match_x("", "rt_mrate", "0", "selected"); %>>Auto</option>
+                                                    <option value="1" <% nvram_match_x("", "rt_mrate", "1", "selected"); %>>CCK 1 Mbps</option>
+                                                    <option value="2" <% nvram_match_x("", "rt_mrate", "2", "selected"); %>>CCK 2 Mbps</option>
+                                                    <option value="3" <% nvram_match_x("", "rt_mrate", "3", "selected"); %>>OFDM 6 Mbps (*)</option>
+                                                    <option value="4" <% nvram_match_x("", "rt_mrate", "4", "selected"); %>>OFDM 9 Mbps</option>
+                                                    <option value="5" <% nvram_match_x("", "rt_mrate", "5", "selected"); %>>OFDM 12 Mbps</option>
+                                                    <option value="6" <% nvram_match_x("", "rt_mrate", "6", "selected"); %>>HTMIX 15 Mbps</option>
+                                                    <option value="7" <% nvram_match_x("", "rt_mrate", "7", "selected"); %>>HTMIX 30 Mbps</option>
                                                 </select>
                                             </td>
                                         </tr>

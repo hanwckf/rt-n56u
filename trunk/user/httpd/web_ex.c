@@ -991,50 +991,43 @@ static void set_wifi_param_int(char* ifname, char* param, char* value, int val_m
 static void set_wifi_mrate(char* ifname, char* value)
 {
 	int i_value = atoi(value);
-	int i_mphy = 3;
-	int i_mmcs = 1;
+
+	i_mphy = 2; // OFDM
+	i_mmcs = 0; // 6 Mbps
 
 	switch (i_value)
 	{
-	case 0: // HTMIX (1S) 6.5-15 Mbps
+	case 0: // Auto
+		i_mphy = 0;
+		i_mmcs = 0;
+		break;
+	case 1: // CCK 1 Mbps
+		i_mphy = 1;
+		i_mmcs = 0;
+		break;
+	case 2: // CCK 2 Mbps
+		i_mphy = 1;
+		i_mmcs = 1;
+		break;
+	case 3: // OFDM 6 Mbps
+		i_mphy = 2;
+		i_mmcs = 0;
+		break;
+	case 4: // OFDM 9 Mbps
+		i_mphy = 2;
+		i_mmcs = 1;
+		break;
+	case 5: // OFDM 12 Mbps
+		i_mphy = 2;
+		i_mmcs = 2;
+		break;
+	case 6: // HTMIX (1S) 6.5-15 Mbps
 		i_mphy = 3;
 		i_mmcs = 0;
 		break;
-	case 1: // HTMIX (1S) 15-30 Mbps
+	case 7: // HTMIX (1S) 15-30 Mbps
 		i_mphy = 3;
 		i_mmcs = 1;
-		break;
-	case 2: // HTMIX (1S) 19.5-45 Mbps
-		i_mphy = 3;
-		i_mmcs = 2;
-		break;
-	case 3: // HTMIX (2S) 13-30 Mbps
-		i_mphy = 3;
-		i_mmcs = 8;
-		break;
-	case 4: // HTMIX (2S) 26-60 Mbps
-		i_mphy = 3;
-		i_mmcs = 9;
-		break;
-	case 5: // OFDM 9 Mbps
-		i_mphy = 2;
-		i_mmcs = 1;
-		break;
-	case 6: // OFDM 12 Mbps
-		i_mphy = 2;
-		i_mmcs = 2;
-		break;
-	case 7: // OFDM 18 Mbps
-		i_mphy = 2;
-		i_mmcs = 3;
-		break;
-	case 8: // OFDM 24 Mbps
-		i_mphy = 2;
-		i_mmcs = 4;
-		break;
-	case 9: // CCK 11 Mbps
-		i_mphy = 1;
-		i_mmcs = 3;
 		break;
 	}
 
@@ -1221,15 +1214,9 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						
 						wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
-					else if (!strcmp(v->name, "wl_mcastrate"))
+					else if (!strcmp(v->name, "wl_mrate"))
 					{
 						set_wifi_mrate(IFNAME_5G_MAIN, value);
-						
-						wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
-					}
-					else if (!strcmp(v->name, "wl_guest_mcs_mode"))
-					{
-						set_wifi_mcs_mode(IFNAME_5G_GUEST, value);
 						
 						wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
@@ -1241,6 +1228,12 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						brport_set_m2u(IFNAME_5G_GUEST, i_m2u);
 					}
 #endif
+					else if (!strcmp(v->name, "wl_guest_mcs_mode"))
+					{
+						set_wifi_mcs_mode(IFNAME_5G_GUEST, value);
+						
+						wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
+					}
 					else if (!strcmp(v->name, "wl_guest_enable") ||
 					         !strcmp(v->name, "wl_guest_time_x") ||
 					         !strcmp(v->name, "wl_guest_time2_x") ||
@@ -1310,7 +1303,7 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						
 						rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 					}
-					else if (!strcmp(v->name, "rt_mcastrate"))
+					else if (!strcmp(v->name, "rt_mrate"))
 					{
 						set_wifi_mrate(IFNAME_2G_MAIN, value);
 						

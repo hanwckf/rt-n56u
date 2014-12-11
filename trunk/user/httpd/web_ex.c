@@ -991,9 +991,8 @@ static void set_wifi_param_int(char* ifname, char* param, char* value, int val_m
 static void set_wifi_mrate(char* ifname, char* value)
 {
 	int i_value = atoi(value);
-
-	i_mphy = 2; // OFDM
-	i_mmcs = 0; // 6 Mbps
+	int i_mphy = 2; // OFDM
+	int i_mmcs = 0; // 6 Mbps
 
 	switch (i_value)
 	{

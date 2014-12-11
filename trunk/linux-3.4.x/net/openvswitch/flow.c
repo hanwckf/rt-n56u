@@ -478,7 +478,7 @@ static __be16 parse_ethertype(struct sk_buff *skb)
 	proto = *(__be16 *) skb->data;
 	__skb_pull(skb, sizeof(__be16));
 
-	if (ntohs(proto) >= 1536)
+	if (ntohs(proto) >= ETH_P_802_3_MIN)
 		return proto;
 
 	if (skb->len < sizeof(struct llc_snap_hdr))
@@ -1044,7 +1044,7 @@ int ovs_flow_from_nlattrs(struct sw_flow_key *swkey, int *key_lenp,
 
 	if (attrs & (1 << OVS_KEY_ATTR_ETHERTYPE)) {
 		swkey->eth.type = nla_get_be16(a[OVS_KEY_ATTR_ETHERTYPE]);
-		if (ntohs(swkey->eth.type) < 1536)
+		if (ntohs(swkey->eth.type) < ETH_P_802_3_MIN)
 			return -EINVAL;
 		attrs &= ~(1 << OVS_KEY_ATTR_ETHERTYPE);
 	} else {

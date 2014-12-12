@@ -102,7 +102,6 @@ enum {
 #define TCP_QUICKACK		12	/* Block/reenable quick acks */
 #define TCP_CONGESTION		13	/* Congestion control algorithm */
 #define TCP_MD5SIG		14	/* TCP MD5 Signature (RFC2385) */
-#define TCP_COOKIE_TRANSACTIONS	15	/* TCP Cookie Transactions */
 #define TCP_THIN_LINEAR_TIMEOUTS 16      /* Use linear timeouts for thin streams*/
 #define TCP_THIN_DUPACK         17      /* Fast retrans. after 1 dupack */
 #define TCP_USER_TIMEOUT	18	/* How long for loss retry before timeout */
@@ -180,30 +179,6 @@ struct tcp_md5sig {
 	__u8	tcpm_key[TCP_MD5SIG_MAXKEYLEN];		/* key (binary) */
 };
 
-/* for TCP_COOKIE_TRANSACTIONS (TCPCT) socket option */
-#define TCP_COOKIE_MIN		 8		/*  64-bits */
-#define TCP_COOKIE_MAX		16		/* 128-bits */
-#define TCP_COOKIE_PAIR_SIZE	(2*TCP_COOKIE_MAX)
-
-/* Flags for both getsockopt and setsockopt */
-#define TCP_COOKIE_IN_ALWAYS	(1 << 0)	/* Discard SYN without cookie */
-#define TCP_COOKIE_OUT_NEVER	(1 << 1)	/* Prohibit outgoing cookies,
-						 * supercedes everything. */
-
-/* Flags for getsockopt */
-#define TCP_S_DATA_IN		(1 << 2)	/* Was data received? */
-#define TCP_S_DATA_OUT		(1 << 3)	/* Was data sent? */
-
-/* TCP_COOKIE_TRANSACTIONS data */
-struct tcp_cookie_transactions {
-	__u16	tcpct_flags;			/* see above */
-	__u8	__tcpct_pad1;			/* zero */
-	__u8	tcpct_cookie_desired;		/* bytes */
-	__u16	tcpct_s_data_desired;		/* bytes of variable data */
-	__u16	tcpct_used;			/* bytes in value */
-	__u8	tcpct_value[TCP_MSS_DEFAULT];
-};
-
 #ifdef __KERNEL__
 
 #include <linux/skbuff.h>
@@ -256,9 +231,6 @@ struct tcp_options_received {
 		sack_ok : 4,	/* SACK seen on SYN packet		*/
 		snd_wscale : 4,	/* Window scaling received from sender	*/
 		rcv_wscale : 4;	/* Window scaling to send to receiver	*/
-	u8	cookie_plus:6,	/* bytes in authenticator/cookie option	*/
-		cookie_out_never:1,
-		cookie_in_always:1;
 	u8	num_sacks;	/* Number of SACK blocks		*/
 	u16	user_mss;	/* mss requested by user in ioctl	*/
 	u16	mss_clamp;	/* Maximal mss, negotiated at connection setup */
@@ -268,7 +240,6 @@ static inline void tcp_clear_options(struct tcp_options_received *rx_opt)
 {
 	rx_opt->tstamp_ok = rx_opt->sack_ok = 0;
 	rx_opt->wscale_ok = rx_opt->snd_wscale = 0;
-	rx_opt->cookie_plus = 0;
 }
 
 /* This is the max number of SACKS that we'll generate and process. It's safe
@@ -465,12 +436,6 @@ struct tcp_sock {
 /* TCP MD5 Signature Option information */
 	struct tcp_md5sig_info	__rcu *md5sig_info;
 #endif
-
-	/* When the cookie options are generated and exchanged, then this
-	 * object holds a reference to them (cookie_values->kref).  Also
-	 * contains related tcp_cookie_transactions fields.
-	 */
-	struct tcp_cookie_values  *cookie_values;
 };
 
 static inline struct tcp_sock *tcp_sk(const struct sock *sk)

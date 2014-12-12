@@ -589,12 +589,12 @@ static const struct file_operations dn_neigh_seq_fops = {
 
 void __init dn_neigh_init(void)
 {
-	neigh_table_init(&dn_neigh_table);
+	neigh_table_init(NEIGH_DN_TABLE, &dn_neigh_table);
 	proc_net_fops_create(&init_net, "decnet_neigh", S_IRUGO, &dn_neigh_seq_fops);
 }
 
 void __exit dn_neigh_cleanup(void)
 {
 	proc_net_remove(&init_net, "decnet_neigh");
-	neigh_table_clear(&dn_neigh_table);
+	neigh_table_clear(NEIGH_DN_TABLE, &dn_neigh_table);
 }

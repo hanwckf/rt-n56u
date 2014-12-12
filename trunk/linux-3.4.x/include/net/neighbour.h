@@ -180,6 +180,13 @@ struct neigh_table {
 	struct pneigh_entry	**phash_buckets;
 };
 
+enum {
+	NEIGH_ARP_TABLE = 0,
+	NEIGH_ND_TABLE = 1,
+	NEIGH_DN_TABLE = 2,
+	NEIGH_NR_TABLES,
+};
+
 #define NEIGH_PRIV_ALIGN	sizeof(long long)
 
 static inline void *neighbour_priv(const struct neighbour *n)
@@ -194,9 +201,8 @@ static inline void *neighbour_priv(const struct neighbour *n)
 #define NEIGH_UPDATE_F_ISROUTER			0x40000000
 #define NEIGH_UPDATE_F_ADMIN			0x80000000
 
-extern void			neigh_table_init(struct neigh_table *tbl);
-extern void			neigh_table_init_no_netlink(struct neigh_table *tbl);
-extern int			neigh_table_clear(struct neigh_table *tbl);
+extern void			neigh_table_init(int index, struct neigh_table *tbl);
+extern int			neigh_table_clear(int index, struct neigh_table *tbl);
 extern struct neighbour *	neigh_lookup(struct neigh_table *tbl,
 					     const void *pkey,
 					     struct net_device *dev);

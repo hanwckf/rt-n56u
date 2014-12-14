@@ -687,7 +687,8 @@ static int busybox_main(char **argv)
 		return 0;
 	}
 
-	if (ENABLE_FEATURE_INSTALLER && strcmp(argv[1], "--install") == 0) {
+# if ENABLE_FEATURE_INSTALLER
+	if (strcmp(argv[1], "--install") == 0) {
 		int use_symbolic_links;
 		const char *busybox;
 
@@ -710,6 +711,7 @@ static int busybox_main(char **argv)
 		install_links(busybox, use_symbolic_links, argv[2]);
 		return 0;
 	}
+# endif
 
 	if (strcmp(argv[1], "--help") == 0) {
 		/* "busybox --help [<applet>]" */

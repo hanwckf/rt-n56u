@@ -395,7 +395,9 @@ static int parse_subst_cmd(sed_cmd_t *sed_cmd, const char *substr)
 	/* process the flags */
 
 	sed_cmd->which_match = 1;
+	dbg("s flags:'%s'", substr + idx + 1);
 	while (substr[++idx]) {
+		dbg("s flag:'%c'", substr[idx]);
 		/* Parse match number */
 		if (isdigit(substr[idx])) {
 			if (match[0] != '^') {
@@ -403,7 +405,7 @@ static int parse_subst_cmd(sed_cmd_t *sed_cmd, const char *substr)
 				const char *pos = substr + idx;
 /* FIXME: error check? */
 				sed_cmd->which_match = (unsigned)strtol(substr+idx, (char**) &pos, 10);
-				idx = pos - substr;
+				idx = pos - substr - 1;
 			}
 			continue;
 		}
@@ -443,6 +445,7 @@ static int parse_subst_cmd(sed_cmd_t *sed_cmd, const char *substr)
 		case '}':
 			goto out;
 		default:
+			dbg("s bad flags:'%s'", substr + idx);
 			bb_error_msg_and_die("bad option in substitution expression");
 		}
 	}

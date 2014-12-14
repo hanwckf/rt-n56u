@@ -329,6 +329,10 @@ line with \\
 continuation
 "
 
+testing "sed s///NUM test" \
+	"sed -e 's/a/b/2; s/a/c/g'" \
+	"cb\n" "" "aa\n"
+
 # testing "description" "commands" "result" "infile" "stdin"
 
 exit $FAILCOUNT

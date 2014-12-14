@@ -83,13 +83,13 @@ static struct dhcp6_serverinfo *find_server(struct dhcp6_event *,
 						 struct dhcp6_vbuf *);
 static struct dhcp6_serverinfo *select_server(struct dhcp6_event *);
 static void client6_recv(void);
-static int client6_recvadvert(struct dhcp6_if *, struct dhcp6_event *,
+static int client6_recvadvert(const struct dhcp6_if *, struct dhcp6_event *,
 				   struct dhcp6_optinfo *);
 static int client6_recvreply(struct dhcp6_if *, struct dhcp6_event *,
 				  struct dhcp6_optinfo *);
 static struct dhcp6_event *find_event_withid(unsigned int ifid, uint32_t xid);
-static int construct_confdata(struct dhcp6_if *, struct dhcp6_event *);
-static int construct_reqdata(struct dhcp6_if *, struct dhcp6_optinfo *,
+static int construct_confdata(const struct dhcp6_if *, struct dhcp6_event *);
+static int construct_reqdata(const struct dhcp6_if *, struct dhcp6_optinfo *,
     struct dhcp6_event *);
 static struct dhcp6_timer *client6_expire_refreshtime(void *);
 static struct dhcp6_timer *client6_timo(void *arg);
@@ -198,13 +198,14 @@ static void if6init(struct dhcp6_if *ifp, const char *ifname)
 
 	TAILQ_INIT(&ifp->reqopt_list);
 	TAILQ_INIT(&ifp->iaconf_list);
-
+#if ENABLE_FEATURE_DHCP6_AUTH
 	ifp->authproto = -1;
 	ifp->authalgorithm = -1;
 	ifp->authrdm = -1;
+#endif
 }
 
-struct dhcp6_event *dhcp6_create_event(struct dhcp6_if *ifp, int state)
+struct dhcp6_event *dhcp6_create_event(const struct dhcp6_if *ifp, int state)
 {
 	struct dhcp6_event *ev;
 
@@ -240,13 +241,16 @@ void dhcp6_remove_event(struct dhcp6_event *ev)
 
 		log1("removing server (ID: %s)", duidstr(&sp->optinfo.serverID));
 		dhcp6_clear_options(&sp->optinfo);
+#if ENABLE_FEATURE_DHCP6_AUTH
 		free(sp->authparam);
+#endif
 		free(sp);
 		sp = sp_next;
 	}
 
+#if ENABLE_FEATURE_DHCP6_AUTH
 	free(ev->authparam);
-
+#endif
 	free(ev);
 }
 
@@ -409,7 +413,7 @@ static struct dhcp6_timer *client6_expire_refreshtime(void *arg)
 static struct dhcp6_timer *client6_timo(void *arg)
 {
 	struct dhcp6_event *ev = (struct dhcp6_event *)arg;
-	struct dhcp6_if *ifp;
+	const struct dhcp6_if *ifp;
 	int state = ev->state;
 
 	ifp = ev->ifp;
@@ -477,11 +481,11 @@ static struct dhcp6_timer *client6_timo(void *arg)
 			ev->timeouts = 0;
 			ev->state = DHCP6S_REQUEST;
 			dhcp6_set_timeoparam(ev);
-
+#if ENABLE_FEATURE_DHCP6_AUTH
 			free(ev->authparam);
 			ev->authparam = ev->current_server->authparam;
 			ev->current_server->authparam = NULL;
-
+#endif
 			if (construct_reqdata(ifp, &ev->current_server->optinfo, ev)) {
 				bb_info_msg("can't construct request");
 				break;
@@ -496,7 +500,7 @@ static struct dhcp6_timer *client6_timo(void *arg)
 	return ev->timer;
 }
 
-static int construct_confdata(struct dhcp6_if *ifp, struct dhcp6_event *ev)
+static int construct_confdata(const struct dhcp6_if *ifp, struct dhcp6_event *ev)
 {
 	struct ia_conf *iac;
 	struct dhcp6_eventdata *evd = NULL;
@@ -543,7 +547,7 @@ static int construct_confdata(struct dhcp6_if *ifp, struct dhcp6_event *ev)
 	return -1;
 }
 
-static int construct_reqdata(struct dhcp6_if *ifp, struct dhcp6_optinfo *optinfo,
+static int construct_reqdata(const struct dhcp6_if *ifp, struct dhcp6_optinfo *optinfo,
 		  struct dhcp6_event *ev)
 {
 	struct ia_conf *iac;
@@ -641,14 +645,14 @@ static struct dhcp6_serverinfo *find_server(struct dhcp6_event *ev,
 
 void client6_send(struct dhcp6_event *ev)
 {
-	struct dhcp6_if *ifp = ev->ifp;
+	const struct dhcp6_if *ifp = ev->ifp;
 	struct dhcp6 *dh6 = (struct dhcp6 *)G.sbuf;
 	struct sockaddr_in6 dst;
 	struct dhcp6_optinfo optinfo;
 	ssize_t optlen, len;
 	struct dhcp6_eventdata *evd;
 
-	len = sizeof(*dh6);
+	len = sizeof(struct dhcp6);
 	memset(dh6, 0, len);
 	dh6->dh6_msgtype = ev->state;
 
@@ -806,7 +810,7 @@ static void client6_recv(void)
 	struct dhcp6_if *ifp = &client6_config.dhcp6c_if;
 	struct dhcp6_optinfo optinfo;
 	ssize_t len;
-	struct dhcp6 *dh6 = (struct dhcp6 *)G.rbuf;
+	const struct dhcp6 *dh6 = (struct dhcp6 *)G.rbuf;
 	struct dhcp6_event *ev;
 	char *a;
 
@@ -894,7 +898,7 @@ fail:
 	return;
 }
 
-static int client6_recvadvert(struct dhcp6_if *ifp, struct dhcp6_event *ev,
+static int client6_recvadvert(const struct dhcp6_if *ifp, struct dhcp6_event *ev,
 				struct dhcp6_optinfo *optinfo)
 {
 	struct dhcp6_serverinfo *newserver, **sp;
@@ -991,11 +995,11 @@ static int client6_recvadvert(struct dhcp6_if *ifp, struct dhcp6_event *ev,
 
 		ev->timeouts = 0;
 		ev->state = DHCP6S_REQUEST;
-
+#if ENABLE_FEATURE_DHCP6_AUTH
 		free(ev->authparam);
 		ev->authparam = newserver->authparam;
 		newserver->authparam = NULL;
-
+#endif
 		client6_send(ev);
 
 		dhcp6_set_timeoparam(ev);
@@ -1097,7 +1101,7 @@ static int client6_recvreply(struct dhcp6_if *ifp, struct dhcp6_event *ev,
 
 	/* update stateful configuration information */
 	if (state != DHCP6S_RELEASE) {
-		update_ia(&optinfo->ia_list, ifp, &optinfo->serverID, ev->authparam);
+		update_ia(&optinfo->ia_list, ifp, &optinfo->serverID IF_FEATURE_DHCP6_AUTH(, ev->authparam));
 	}
 
 	/*

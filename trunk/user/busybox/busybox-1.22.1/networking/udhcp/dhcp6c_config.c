@@ -76,8 +76,10 @@ static int add_prefix6(struct dhcp6_list *, int type, int lvtype,
 						struct dhcp6_prefix *);
 static void clear_pd_pif(struct ia_conf *);
 static void clear_iaconf(struct ia_conflist *);
+#if ENABLE_FEATURE_DHCP6_AUTH
 static void clear_keys(struct keyinfo *);
 static void clear_authinfo(struct authinfo *);
+#endif
 static int get_default_ifid(struct prefix_ifconf *);
 static char* FAST_FUNC qstrdup(char *);
 
@@ -570,11 +572,11 @@ void clear_ifconf(int destroy)
 	ifp->allow_flags = 0;
 
 	ifp->server_pref = -1;
-
+#if ENABLE_FEATURE_DHCP6_AUTH
 	ifp->authproto = -1;
 	ifp->authalgorithm = -1;
 	ifp->authrdm = -1;
-
+#endif
 	dhcp6_clear_list(&ifp->reqopt_list);
 
 	clear_iaconf(&ifp->iaconf_list);
@@ -627,6 +629,7 @@ static void clear_iaconf(struct ia_conflist *ialist)
 	}
 }
 
+#if ENABLE_FEATURE_DHCP6_AUTH
 static void clear_keys(struct keyinfo *klist)
 {
 	struct keyinfo *key = klist, *key_next;
@@ -654,6 +657,7 @@ static void clear_authinfo(struct authinfo *alist)
 		auth = auth_next;
 	}
 }
+#endif /* ENABLE_FEATURE_DHCP6_AUTH */
 
 static int add_options(int opcode, struct dhcp6_if *ifp, struct cf_list *cfl0)
 {
@@ -834,7 +838,7 @@ static int add_prefix6(struct dhcp6_list *head, int type, int lvtype,
 	return 0;
 }
 
-struct ia_conf *find_iaconf(struct ia_conflist *head, dh6cnfopts_t type,
+struct ia_conf *find_iaconf(const struct ia_conflist *head, dh6cnfopts_t type,
 			uint32_t iaid)
 {
 	struct ia_conf *iac;
@@ -861,6 +865,7 @@ struct dhcp6_prefix *find_prefix6(struct dhcp6_list *list,
 	return NULL;
 }
 
+#if ENABLE_FEATURE_DHCP6_AUTH
 struct keyinfo *find_key(struct dhcp6_vbuf *realm, uint32_t id)
 {
 	struct keyinfo *key;
@@ -873,6 +878,7 @@ struct keyinfo *find_key(struct dhcp6_vbuf *realm, uint32_t id)
 
 	return NULL;
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -1303,10 +1309,12 @@ int FAST_FUNC read_config6(const char *file)
 	cleanup_cflist(client6_config.config_list);
 	client6_config.config_list = NULL;
 	TAILQ_INIT(&client6_config.ia_allconflist);
+#if ENABLE_FEATURE_DHCP6_AUTH
 	clear_keys(client6_config.key_list);
 	client6_config.key_list = NULL;
 	clear_authinfo(client6_config.auth_list);
 	client6_config.auth_list = NULL;
+#endif
 	clear_ifconf(0);
 
 	/* Phase I - parse & fill-up config int. structures */

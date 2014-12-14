@@ -46,7 +46,7 @@ struct iaprefix {
 
 	union {
 		TAILQ_HEAD(, dhcp6_ifprefix) ifprefix_list; /* interface prefixes */
-		struct dhcp6_if *dhcpif;
+		const struct dhcp6_if *dhcpif;
 	} u;
 };
 
@@ -113,7 +113,7 @@ static const char *iastatestr(iastate_t);
 #endif
 
 static int update_prefix6(struct ia *, struct dhcp6_listval *,
-        struct pifc_list *, struct dhcp6_if *, struct iactl **);
+        struct pifc_list *, const struct dhcp6_if *, struct iactl **);
 static struct iaprefix *find_iaprefix(struct iaprefix_list *,
     struct dhcp6_prefix *, int);
 static int remove_iaprefix(struct iaprefix *, int);
@@ -165,8 +165,8 @@ static int update_authparam(struct ia *ia, struct authparam *authparam)
 #endif /* ENABLE_FEATURE_DHCP6_AUTH */
 
 void update_ia(struct dhcp6_list *iahead, struct dhcp6_if *ifp,
-	  struct dhcp6_vbuf *serverid,
-	  struct authparam *authparam IF_NOT_FEATURE_DHCP6_AUTH(UNUSED_PARAM))
+	  struct dhcp6_vbuf *serverid
+	  IF_FEATURE_DHCP6_AUTH(,struct authparam *authparam))
 {
 	struct ia *ia;
 	struct ia_conf *iac;
@@ -483,7 +483,7 @@ static struct ia *get_ia(struct dhcp6_if *ifp,
 	struct dhcp6_vbuf *serverid)
 {
 	struct ia *ia;
-	int create;
+	IF_UDHCP_VERBOSE(bool create = false;)
 
 	TAILQ_FOREACH(ia, &iac->iadata, link) {
 		if (ia->conf->type == iaparam->dh6optype &&
@@ -498,11 +498,9 @@ static struct ia *get_ia(struct dhcp6_if *ifp,
 		TAILQ_INSERT_TAIL(&iac->iadata, ia, link);
 		ia->conf = iac;
 
-		create = 1;
+		IF_UDHCP_VERBOSE(create = true;)
 	} else {
 		dhcp6_vbuf_free(&ia->serverid);
-
-		create = 0;
 	}
 
 	ia->t1 = iaparam->val_ia.t1;
@@ -550,7 +548,7 @@ static const char *iastatestr(iastate_t state)
 
 
 static int update_prefix6(struct ia *ia, struct dhcp6_listval *lv,
-		struct pifc_list *pifc,	struct dhcp6_if * dhcpifp,
+		struct pifc_list *pifc,	const struct dhcp6_if * dhcpifp,
 		struct iactl **ctlp)
 {
 	struct iactl *iac = (struct iactl *)(*ctlp);

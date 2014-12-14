@@ -110,11 +110,13 @@ struct dhcp6_if {
 	struct dhcp6_list reqopt_list;
 	struct ia_conflist iaconf_list;
 
+#if ENABLE_FEATURE_DHCP6_AUTH
 	/* authentication information */
 	int authproto;				/* protocol */
 	/* the followings are valid only if authproto is not UNDEF */
 	int authalgorithm;			/* algorithm */
 	int authrdm;				/* replay attack detection method */
+#endif
 };
 
 /* run-time authentication parameters */
@@ -132,7 +134,7 @@ struct authparam {
 struct dhcp6_event {
 	TAILQ_ENTRY(dhcp6_event) link;
 
-	struct dhcp6_if *ifp;
+	const struct dhcp6_if *ifp;
 	struct dhcp6_timer *timer;
 
 	struct dhcp6_vbuf serverid; /* server DUID */
@@ -154,9 +156,10 @@ struct dhcp6_event {
 	struct dhcp6_serverinfo *current_server;
 	struct dhcp6_serverinfo *servers;
 
+#if ENABLE_FEATURE_DHCP6_AUTH
 	/* authentication parameters */
 	struct authparam *authparam;
-
+#endif
 	TAILQ_HEAD(, dhcp6_eventdata) data_list;
 };
 
@@ -177,8 +180,9 @@ struct dhcp6_serverinfo {
 	int pref;					/* preference */
 	int active;					/* bool; if this server is active or not */
 
+#if ENABLE_FEATURE_DHCP6_AUTH
 	struct authparam *authparam; /* authentication parameters */
-
+#endif
 	/* TODO: remember available information from the server */
 };
 
@@ -217,8 +221,10 @@ struct client6_config_t {
 	struct dhcp6_if dhcp6c_if;
 
 	struct ia_conflist ia_allconflist;
+#if ENABLE_FEATURE_DHCP6_AUTH
 	struct keyinfo *key_list;
 	struct authinfo *auth_list;
+#endif
 
 	/* config parser internal tree */
 	struct cf_list *config_list;
@@ -238,8 +244,10 @@ void clear_ifconf(int destroy);
 
 struct prefix_ifconf *find_prefixifconf(char *);
 struct dhcp6_prefix *find_prefix6(struct dhcp6_list *, struct dhcp6_prefix *);
-struct ia_conf *find_iaconf(struct ia_conflist *, dh6cnfopts_t, uint32_t);
+struct ia_conf *find_iaconf(const struct ia_conflist *, dh6cnfopts_t, uint32_t);
+#if ENABLE_FEATURE_DHCP6_AUTH
 struct keyinfo *find_key(struct dhcp6_vbuf *, uint32_t);
+#endif
 
 int read_config6(const char *file) FAST_FUNC;
 

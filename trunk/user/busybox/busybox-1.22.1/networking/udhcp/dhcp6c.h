@@ -169,13 +169,14 @@ int dhcp6_script(const char *scriptpath, char **envp);
 
 /* dhcp6c_ia.c */
 void update_ia(struct dhcp6_list *iahead, struct dhcp6_if *ifp,
-		struct dhcp6_vbuf *serverid, struct authparam *);
+		struct dhcp6_vbuf *serverid
+		IF_FEATURE_DHCP6_AUTH(, struct authparam *));
 void release_all_ia(struct dhcp6_if *);
 
 /* dhcp6c.c */
 #define MAX_ELAPSED_TIME 0xffff
 
-struct dhcp6_event *dhcp6_create_event(struct dhcp6_if *, int) RETURNS_MALLOC;
+struct dhcp6_event *dhcp6_create_event(const struct dhcp6_if *, int) RETURNS_MALLOC;
 void dhcp6_remove_event(struct dhcp6_event *);
 
 int client6_start(struct dhcp6_if *);

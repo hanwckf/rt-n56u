@@ -797,7 +797,7 @@ int dhcp6_get_options(struct dhcp6opt *p, struct dhcp6opt *ep,
 {
 	struct dhcp6opt *np;
 	int opt, optlen, tlen;
-	char *bp, *cp, *val;
+	char *cp, *val;
 	union {
 		struct dhcp6opt h;
 		struct dhcp6opt_ia optia;
@@ -811,12 +811,12 @@ int dhcp6_get_options(struct dhcp6opt *p, struct dhcp6opt *ep,
 	} u1 ALIGN4;
 	struct dhcp6_list sublist;
 #if ENABLE_FEATURE_DHCP6_AUTH
+	char *bp = (char *)p;
 	int authinfolen;
 #endif
 
 	TAILQ_INIT(&sublist);
 
-	bp = (char *)p;
 	for (; p + 1 <= ep; p = np) {
 		/*
 		 * get the option header.  XXX: since there is no guarantee

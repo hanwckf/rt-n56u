@@ -485,8 +485,7 @@ static void redraw(int);	// force a full screen refresh
 static char* format_line(char* /*, int*/);
 static void refresh(int);	// update the terminal from screen[]
 
-static void Indicate_Error(void);       // use flash or beep to indicate error
-#define indicate_error(c) Indicate_Error()
+static void indicate_error(void);       // use flash or beep to indicate error
 static void Hit_Return(void);
 
 #if ENABLE_FEATURE_VI_SEARCH
@@ -1662,11 +1661,11 @@ static char *bound_dot(char *p) // make sure  text[0] <= P < "end"
 {
 	if (p >= end && end > text) {
 		p = end - 1;
-		indicate_error('1');
+		indicate_error();
 	}
 	if (p < text) {
 		p = text;
-		indicate_error('2');
+		indicate_error();
 	}
 	return p;
 }
@@ -1828,20 +1827,13 @@ static char *char_insert(char *p, char c) // insert the char c at 'p'
 			p = text_hole_delete(p, p);	// shrink buffer 1 char
 		}
 	} else {
-#if ENABLE_FEATURE_VI_SETOPTS
 		// insert a char into text[]
-		char *sp;		// "save p"
-#endif
-
 		if (c == 13)
 			c = '\n';	// translate \r to \n
-#if ENABLE_FEATURE_VI_SETOPTS
-		sp = p;			// remember addr of insert
-#endif
 		p += 1 + stupid_insert(p, c);	// insert the char
 #if ENABLE_FEATURE_VI_SETOPTS
-		if (showmatch && strchr(")]}", *sp) != NULL) {
-			showmatching(sp);
+		if (showmatch && strchr(")]}", c) != NULL) {
+			showmatching(p - 1);
 		}
 		if (autoindent && c == '\n') {	// auto indent the new line
 			char *q;
@@ -1999,34 +1991,32 @@ static char *skip_thing(char *p, int linecnt, int dir, int type)
 }
 
 // find matching char of pair  ()  []  {}
+// will crash if c is not one of these
 static char *find_pair(char *p, const char c)
 {
-	char match, *q;
+	const char *braces = "()[]{}";
+	char match;
 	int dir, level;
 
-	match = ')';
+	dir = strchr(braces, c) - braces;
+	dir ^= 1;
+	match = braces[dir];
+	dir = ((dir & 1) << 1) - 1; /* 1 for ([{, -1 for )\} */
+
+	// look for match, count levels of pairs  (( ))
 	level = 1;
-	dir = 1;			// assume forward
-	switch (c) {
-	case '(': match = ')'; break;
-	case '[': match = ']'; break;
-	case '{': match = '}'; break;
-	case ')': match = '('; dir = -1; break;
-	case ']': match = '['; dir = -1; break;
-	case '}': match = '{'; dir = -1; break;
-	}
-	for (q = p + dir; text <= q && q < end; q += dir) {
-		// look for match, count levels of pairs  (( ))
-		if (*q == c)
+	for (;;) {
+		p += dir;
+		if (p < text || p >= end)
+			return NULL;
+		if (*p == c)
 			level++;	// increase pair levels
-		if (*q == match)
+		if (*p == match) {
 			level--;	// reduce pair level
-		if (level == 0)
-			break;		// found matching pair
+			if (level == 0)
+				return p; // found matching pair
+		}
 	}
-	if (level != 0)
-		q = NULL;		// indicate no match
-	return q;
 }
 
 #if ENABLE_FEATURE_VI_SETOPTS
@@ -2038,7 +2028,7 @@ static void showmatching(char *p)
 	// we found half of a pair
 	q = find_pair(p, *p);	// get loc of matching char
 	if (q == NULL) {
-		indicate_error('3');	// no matching char
+		indicate_error();	// no matching char
 	} else {
 		// "q" now points to matching pair
 		save_dot = dot;	// remember where we are
@@ -2376,6 +2366,9 @@ static int mysleep(int hund)	// sleep for 'hund' 1/100 seconds or stdin ready
 {
 	struct pollfd pfd[1];
 
+	if (hund != 0)
+		fflush_all();
+
 	pfd[0].fd = STDIN_FILENO;
 	pfd[0].events = POLLIN;
 	return safe_poll(pfd, 1, hund*10) > 0;
@@ -2633,7 +2626,7 @@ static void flash(int h)
 	redraw(TRUE);
 }
 
-static void Indicate_Error(void)
+static void indicate_error(void)
 {
 #if ENABLE_FEATURE_VI_CRASHME
 	if (crashme > 0)
@@ -3175,7 +3168,7 @@ static void do_cmd(int c)
 		break;
 	case 27:			// esc
 		if (cmd_mode == 0)
-			indicate_error(c);
+			indicate_error();
 		cmd_mode = 0;	// stop insrting
 		end_cmd_q();
 		last_status_cksum = 0;	// force status update
@@ -3193,7 +3186,7 @@ static void do_cmd(int c)
 		if ((unsigned)c1 <= 25) { // a-z?
 			YDreg = c1;
 		} else {
-			indicate_error(c);
+			indicate_error();
 		}
 		break;
 	case '\'':			// '- goto a specific mark
@@ -3211,7 +3204,7 @@ static void do_cmd(int c)
 			dot_begin();	// go to B-o-l
 			dot_skip_over_ws();
 		} else {
-			indicate_error(c);
+			indicate_error();
 		}
 		break;
 	case 'm':			// m- Mark a line
@@ -3224,7 +3217,7 @@ static void do_cmd(int c)
 			// remember the line
 			mark[c1] = dot;
 		} else {
-			indicate_error(c);
+			indicate_error();
 		}
 		break;
 	case 'P':			// P- Put register before
@@ -3280,7 +3273,7 @@ static void do_cmd(int c)
 				// we found half of a pair
 				p = find_pair(q, *q);
 				if (p == NULL) {
-					indicate_error(c);
+					indicate_error();
 				} else {
 					dot = p;
 				}
@@ -3288,7 +3281,7 @@ static void do_cmd(int c)
 			}
 		}
 		if (*q == '\n')
-			indicate_error(c);
+			indicate_error();
 		break;
 	case 'f':			// f- forward to a user specified char
 		last_forward_char = get_one_char();	// get the search char
@@ -3656,7 +3649,7 @@ static void do_cmd(int c)
 		// ZZ means to save file (if necessary), then exit
 		c1 = get_one_char();
 		if (c1 != 'Z') {
-			indicate_error(c);
+			indicate_error();
 			break;
 		}
 		if (file_modified) {
@@ -3739,7 +3732,7 @@ static void do_cmd(int c)
 			// could not recognize object
 			c = c1 = 27;	// error-
 			ml = 0;
-			indicate_error(c);
+			indicate_error();
 		}
 		if (ml && whole) {
 			if (c == 'c') {

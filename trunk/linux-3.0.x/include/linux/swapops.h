@@ -1,3 +1,8 @@
+#ifndef _LINUX_SWAPOPS_H
+#define _LINUX_SWAPOPS_H
+
+#include <linux/bug.h>
+
 /*
  * swapcache pages are stored in the swapper_space radix tree.  We want to
  * get good packing density in that tree, so the index should be dense in
@@ -193,3 +198,5 @@ static inline int non_swap_entry(swp_entry_t entry)
 	return 0;
 }
 #endif
+
+#endif /* _LINUX_SWAPOPS_H */

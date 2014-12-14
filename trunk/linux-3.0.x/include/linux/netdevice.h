@@ -33,6 +33,7 @@
 #ifdef __KERNEL__
 #include <linux/pm_qos_params.h>
 #include <linux/timer.h>
+#include <linux/bug.h>
 #include <linux/delay.h>
 #include <linux/mm.h>
 #include <asm/atomic.h>

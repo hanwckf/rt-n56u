@@ -8,6 +8,7 @@
 #ifndef __ASM_CMPXCHG_H
 #define __ASM_CMPXCHG_H
 
+#include <linux/bug.h>
 #include <linux/irqflags.h>
 
 #define __HAVE_ARCH_CMPXCHG 1

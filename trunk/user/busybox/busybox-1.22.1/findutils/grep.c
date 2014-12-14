@@ -668,7 +668,7 @@ static int grep_dir(const char *dir)
 	int matched = 0;
 	recursive_action(dir,
 		/* recurse=yes */ ACTION_RECURSE |
-		/* followLinks=no */
+		/* followLinks=command line only */ ACTION_FOLLOWLINKS_L0 |
 		/* depthFirst=yes */ ACTION_DEPTHFIRST,
 		/* fileAction= */ file_action_grep,
 		/* dirAction= */ NULL,

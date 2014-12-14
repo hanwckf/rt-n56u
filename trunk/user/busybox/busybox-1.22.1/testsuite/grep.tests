@@ -171,6 +171,26 @@ testing "grep -w word match second word" \
 	"bword,word\n""wordb,word\n""bwordb,word\n" \
 	""
 
+# -r on symlink to dir should recurse into dir
+mkdir -p grep.testdir/foo
+echo bar > grep.testdir/foo/file
+ln -s foo grep.testdir/symfoo
+testing "grep -r on symlink to dir" \
+	"grep -r . grep.testdir/symfoo" \
+	"grep.testdir/symfoo/file:bar\n" \
+	"" ""
+rm -Rf grep.testdir
+
+# But -r on dir/symlink_to_dir should not recurse into symlink_to_dir
+mkdir -p grep.testdir/foo
+echo bar > grep.testdir/foo/file
+ln -s foo grep.testdir/symfoo
+testing "grep -r on dir/symlink to dir" \
+	"grep -r . grep.testdir" \
+	"grep.testdir/foo/file:bar\n" \
+	"" ""
+rm -Rf grep.testdir
+
 # testing "test name" "commands" "expected result" "file input" "stdin"
 #   file input will be file called "input"
 #   test can create a file "actual" instead of writing to stdout

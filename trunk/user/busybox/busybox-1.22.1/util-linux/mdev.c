@@ -977,7 +977,7 @@ wait_for_seqfile(const char *seq)
 			break;
 		}
 		seqbuf[seqlen] = '\0';
-		if (seqbuf[0] == '\n') {
+		if (seqbuf[0] == '\n' || seqbuf[0] == '\0') {
 			/* seed file: write out seq ASAP */
 			xwrite_str(seq_fd, seq);
 			xlseek(seq_fd, 0, SEEK_SET);

@@ -691,7 +691,7 @@ extern size_t __copy_user(void *__to, const void *__from, size_t __n);
 	__MODULE_JAL(__copy_user)					\
 	: "+r" (__cu_to_r), "+r" (__cu_from_r), "+r" (__cu_len_r)	\
 	:								\
-	: "$8", "$9", "$10", "$11", "$12", "$15", "$24", "$31",		\
+	: "$8", "$9", "$10", "$11", "$12", "$14", "$15", "$24", "$31",	\
 	  DADDI_SCRATCH, "memory");					\
 	__cu_len_r;							\
 })
@@ -801,7 +801,7 @@ extern size_t __copy_user_inatomic(void *__to, const void *__from, size_t __n);
 	".set\treorder"							\
 	: "+r" (__cu_to_r), "+r" (__cu_from_r), "+r" (__cu_len_r)	\
 	:								\
-	: "$8", "$9", "$10", "$11", "$12", "$15", "$24", "$31",		\
+	: "$8", "$9", "$10", "$11", "$12", "$14", "$15", "$24", "$31",	\
 	  DADDI_SCRATCH, "memory");					\
 	__cu_len_r;							\
 })
@@ -824,7 +824,7 @@ extern size_t __copy_user_inatomic(void *__to, const void *__from, size_t __n);
 	".set\treorder"							\
 	: "+r" (__cu_to_r), "+r" (__cu_from_r), "+r" (__cu_len_r)	\
 	:								\
-	: "$8", "$9", "$10", "$11", "$12", "$15", "$24", "$31",		\
+	: "$8", "$9", "$10", "$11", "$12", "$14", "$15", "$24", "$31",	\
 	  DADDI_SCRATCH, "memory");					\
 	__cu_len_r;							\
 })

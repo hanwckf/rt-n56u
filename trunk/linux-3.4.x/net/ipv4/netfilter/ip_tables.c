@@ -39,7 +39,6 @@ MODULE_DESCRIPTION("IPv4 packet filter");
 /*#define DEBUG_IP_FIREWALL_USER*/
 
 #ifdef CONFIG_NAT_CONE
-extern unsigned int nf_conntrack_nat_mode;
 extern char wan_name[IFNAMSIZ];
 #if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
 extern char wan_name_ppp[IFNAMSIZ];
@@ -150,7 +149,7 @@ ip_packet_match(const struct iphdr *ip,
 }
 
 #ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
-static void
+static inline void
 ip_checkdefault(struct ipt_ip *ip)
 {
 	static const char iface_mask[IFNAMSIZ] = {};

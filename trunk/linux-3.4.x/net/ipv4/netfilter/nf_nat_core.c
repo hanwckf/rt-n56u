@@ -694,8 +694,6 @@ static int __init nf_nat_init(void)
 	size_t i;
 	int ret;
 
-	need_ipv4_conntrack();
-
 	ret = nf_ct_extend_register(&nat_extend);
 	if (ret < 0) {
 		printk(KERN_ERR "nf_nat_core: Unable to register extension\n");

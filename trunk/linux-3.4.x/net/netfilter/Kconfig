@@ -56,8 +56,8 @@ config NETFILTER_NETLINK_LOG
 	  and ip6t_LOG modules.
 
 config NF_CONNTRACK
-	tristate "Netfilter connection tracking support"
-	default m if NETFILTER_ADVANCED=n
+	bool "Netfilter connection tracking support"
+	default y
 	help
 	  Connection tracking keeps a record of what packets have passed
 	  through your machine, in order to figure out how they are related
@@ -773,7 +773,7 @@ config NETFILTER_XT_MATCH_CONNBYTES
 	  <file:Documentation/kbuild/modules.txt>.  If unsure, say `N'.
 
 config NETFILTER_XT_MATCH_CONNLIMIT
-	tristate '"connlimit" match support"'
+	bool '"connlimit" match support"'
 	depends on NF_CONNTRACK
 	depends on NETFILTER_ADVANCED
 	---help---

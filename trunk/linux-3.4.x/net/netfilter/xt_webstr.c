@@ -439,7 +439,7 @@ static int webstr_mt_check(const struct xt_mtchk_param *par)
 	return 0;
 }
 
-static struct xt_match xt_webstr_match = {
+static struct xt_match xt_webstr_match __read_mostly = {
 	.name		= "webstr",
 	.family		= NFPROTO_UNSPEC,
 	.match		= webstr_mt,

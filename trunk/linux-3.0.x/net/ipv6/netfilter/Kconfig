@@ -10,9 +10,9 @@ config NF_DEFRAG_IPV6
 	default n
 
 config NF_CONNTRACK_IPV6
-	tristate "IPv6 connection tracking support"
+	bool "IPv6 connection tracking support"
 	depends on INET && IPV6 && NF_CONNTRACK
-	default m if NETFILTER_ADVANCED=n
+	default y
 	select NF_DEFRAG_IPV6
 	---help---
 	  Connection tracking keeps a record of what packets have passed

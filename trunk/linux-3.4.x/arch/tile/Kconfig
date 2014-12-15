@@ -14,6 +14,7 @@ config TILE
 	select HAVE_SYSCALL_WRAPPERS if TILEGX
 	select SYS_HYPERVISOR
 	select ARCH_HAVE_NMI_SAFE_CMPXCHG
+	select HAVE_GENERIC_INIT_TASK
 
 # FIXME: investigate whether we need/want these options.
 #	select HAVE_IOREMAP_PROT

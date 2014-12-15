@@ -49,6 +49,7 @@ config CRIS
 	select HAVE_GENERIC_HARDIRQS
 	select GENERIC_IRQ_SHOW
 	select GENERIC_IOMAP
+	select HAVE_GENERIC_INIT_TASK
 
 config HZ
 	int

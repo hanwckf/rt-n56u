@@ -164,6 +164,9 @@ config HAVE_DMA_ATTRS
 config USE_GENERIC_SMP_HELPERS
 	bool
 
+config HAVE_GENERIC_INIT_TASK
+       bool
+
 config HAVE_REGS_AND_STACK_ACCESS_API
 	bool
 	help

@@ -1747,7 +1747,7 @@ static int shmem_symlink(struct inode *dir, struct dentry *dentry, const char *s
 	int error;
 	int len;
 	struct inode *inode;
-	struct page *page;
+	struct page *page = NULL;
 	char *kaddr;
 	struct shmem_inode_info *info;
 
@@ -2785,7 +2785,7 @@ struct page *shmem_read_mapping_page_gfp(struct address_space *mapping,
 {
 #ifdef CONFIG_SHMEM
 	struct inode *inode = mapping->host;
-	struct page *page;
+	struct page *page = NULL;
 	int error;
 
 	BUG_ON(mapping->a_ops != &shmem_aops);

@@ -117,8 +117,8 @@ static int get_tpkt_data(struct sk_buff *skb, unsigned int protoff,
 	int dir = CTINFO2DIR(ctinfo);
 	const struct tcphdr *th;
 	struct tcphdr _tcph;
-	int tcpdatalen;
-	int tcpdataoff;
+	int tcpdatalen = 0;
+	int tcpdataoff = 0;
 	unsigned char *tpkt;
 	int tpktlen;
 	int tpktoff;
@@ -564,8 +564,8 @@ static int h245_help(struct sk_buff *skb, unsigned int protoff,
 {
 	static MultimediaSystemControlMessage mscm;
 	unsigned char *data = NULL;
-	int datalen;
-	int dataoff;
+	int datalen = 0;
+	int dataoff = 0;
 	int ret;
 
 	/* Until there's been traffic both ways, don't look in packets. */
@@ -1115,8 +1115,8 @@ static int q931_help(struct sk_buff *skb, unsigned int protoff,
 {
 	static Q931 q931;
 	unsigned char *data = NULL;
-	int datalen;
-	int dataoff;
+	int datalen = 0;
+	int dataoff = 0;
 	int ret;
 
 	/* Until there's been traffic both ways, don't look in packets. */

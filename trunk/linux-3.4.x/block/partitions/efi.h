@@ -32,6 +32,7 @@
 #include <linux/major.h>
 #include <linux/string.h>
 #include <linux/efi.h>
+#include <linux/compiler.h>
 
 #define MSDOS_MBR_SIGNATURE 0xaa55
 #define EFI_PMBR_OSTYPE_EFI 0xEF
@@ -84,13 +85,13 @@ typedef struct _gpt_header {
 	 *
 	 * uint8_t		reserved2[ BlockSize - 92 ];
 	 */
-} __attribute__ ((packed)) gpt_header;
+} __packed gpt_header;
 
 typedef struct _gpt_entry_attributes {
 	u64 required_to_function:1;
 	u64 reserved:47;
         u64 type_guid_specific:16;
-} __attribute__ ((packed)) gpt_entry_attributes;
+} __packed gpt_entry_attributes;
 
 typedef struct _gpt_entry {
 	efi_guid_t partition_type_guid;
@@ -99,7 +100,7 @@ typedef struct _gpt_entry {
 	__le64 ending_lba;
 	gpt_entry_attributes attributes;
 	efi_char16_t partition_name[72 / sizeof (efi_char16_t)];
-} __attribute__ ((packed)) gpt_entry;
+} __packed gpt_entry;
 
 typedef struct _legacy_mbr {
 	u8 boot_code[440];
@@ -107,7 +108,7 @@ typedef struct _legacy_mbr {
 	__le16 unknown;
 	struct partition partition_record[4];
 	__le16 signature;
-} __attribute__ ((packed)) legacy_mbr;
+} __packed legacy_mbr;
 
 /* Functions */
 extern int efi_partition(struct parsed_partitions *state);

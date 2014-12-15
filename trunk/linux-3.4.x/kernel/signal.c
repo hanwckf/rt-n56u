@@ -29,6 +29,7 @@
 #include <linux/pid_namespace.h>
 #include <linux/nsproxy.h>
 #include <linux/user_namespace.h>
+#include <linux/compiler.h>
 #define CREATE_TRACE_POINTS
 #include <trace/events/signal.h>
 
@@ -3267,7 +3268,7 @@ SYSCALL_DEFINE2(rt_sigsuspend, sigset_t __user *, unewset, size_t, sigsetsize)
 }
 #endif /* __ARCH_WANT_SYS_RT_SIGSUSPEND */
 
-__attribute__((weak)) const char *arch_vma_name(struct vm_area_struct *vma)
+__weak const char *arch_vma_name(struct vm_area_struct *vma)
 {
 	return NULL;
 }

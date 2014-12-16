@@ -56,7 +56,7 @@
 #include <net/net_namespace.h>
 #include <net/netns/generic.h>
 
-#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
 #include "../../../net/nat/hw_nat/ra_nat.h"
 #endif
 
@@ -1957,7 +1957,7 @@ ppp_decompress_frame(struct ppp *ppp, struct sk_buff *skb)
 			goto err;
 		}
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
 #if !defined(HNAT_USE_TAILROOM)
 		memcpy(FOE_INFO_START_ADDR(ns), FOE_INFO_START_ADDR(skb), FOE_INFO_LEN); // copy FoE Info
 #endif

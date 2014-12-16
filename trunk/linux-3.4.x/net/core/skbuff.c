@@ -72,7 +72,7 @@
 
 #include "kmap_skb.h"
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
 #include "../net/nat/hw_nat/ra_nat.h"
 #endif
 
@@ -292,7 +292,7 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 		child->fclone = SKB_FCLONE_UNAVAILABLE;
 	}
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
 #if defined(HNAT_USE_HEADROOM)
 	DO_FAST_CLEAR_FOE(skb); // fast clear FoE info header (headroom)
 #endif
@@ -1015,7 +1015,7 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 	long off;
 	bool fastpath;
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
 #if defined(HNAT_USE_TAILROOM)
 	ntail += FOE_INFO_LEN;
 	size  += FOE_INFO_LEN;
@@ -1065,7 +1065,7 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 	       skb_shinfo(skb),
 	       offsetof(struct skb_shared_info, frags[skb_shinfo(skb)->nr_frags]));
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
 #if defined(HNAT_USE_HEADROOM)
 	memcpy(data, FOE_INFO_START_ADDR(skb), FOE_INFO_LEN); // copy FoE Info to headroom
 #elif defined(HNAT_USE_TAILROOM)

@@ -33,7 +33,7 @@ int (*nf_nat_seq_adjust_hook)(struct sk_buff *skb,
 			      enum ip_conntrack_info ctinfo);
 EXPORT_SYMBOL_GPL(nf_nat_seq_adjust_hook);
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
 #include "../../nat/hw_nat/ra_nat.h"
 #endif
 
@@ -124,7 +124,7 @@ static unsigned int ipv4_confirm(unsigned int hooknum,
 	if (!helper)
 		goto out;
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
 	FOE_ALG_MARK(skb);
 #endif
 

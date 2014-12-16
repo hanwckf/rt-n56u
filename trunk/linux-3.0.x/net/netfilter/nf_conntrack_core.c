@@ -54,8 +54,6 @@ extern int (*ra_sw_nat_hook_tx)(struct sk_buff *skb, int gmac_no);
 
 #if defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR) || defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR_MODULE)
 #include <linux/tcp.h>
-int web_str_loaded=0;
-EXPORT_SYMBOL_GPL(web_str_loaded);
 #endif
 
 #define NF_CONNTRACK_VERSION	"0.5.0"
@@ -75,7 +73,7 @@ unsigned int nf_conntrack_max __read_mostly;
 unsigned int nf_conntrack_htable_size __read_mostly;
 unsigned int nf_conntrack_hash_rnd __read_mostly;
 
-#ifdef CONFIG_NAT_CONE
+#if defined(CONFIG_NAT_CONE)
 unsigned int nf_conntrack_nat_mode __read_mostly = NAT_MODE_LINUX;
 char wan_name[IFNAMSIZ] __read_mostly = {0};
 #if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
@@ -83,20 +81,29 @@ char wan_name_ppp[IFNAMSIZ] __read_mostly = {0};
 #endif
 #endif
 
+#if defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR) || defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR_MODULE)
+unsigned int web_str_loaded __read_mostly = 0;
+EXPORT_SYMBOL_GPL(web_str_loaded);
+#endif
+
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-static inline int is_local_svc(u_int8_t protonm)
+static inline bool is_local_svc(u_int8_t protonm)
 {
-	if (protonm == IPPROTO_GRE ||
-	    protonm == IPPROTO_IPIP ||
-	    protonm == IPPROTO_ICMP ||
-	    protonm == IPPROTO_ESP ||
-	    protonm == IPPROTO_AH) {
-		/* Local gre/esp/ah/ip-ip/icmp proto must be skip from hw/sw offload
-		   and mark as interested by ALG for correct tracking this */
-		return 1;
+	/* Local gre/esp/ah/ip-ip/ipv6_in_ipv4/icmp proto must be skip from hw/sw offload
+	    and mark as interested by ALG  for correct tracking this */
+	switch (protonm) {
+	case IPPROTO_IPIP:
+#if !defined(CONFIG_RA_HW_NAT_IPV6) || !defined(CONFIG_HNAT_V2)
+	case IPPROTO_IPV6:
+#endif
+	case IPPROTO_GRE:
+	case IPPROTO_ICMP:
+	case IPPROTO_ESP:
+	case IPPROTO_AH:
+		return true;
 	}
 
-	return 0;
+	return false;
 };
 #endif
 
@@ -104,7 +111,7 @@ static u32 hash_conntrack_raw(const struct nf_conntrack_tuple *tuple)
 {
 	unsigned int n;
 
-#ifdef CONFIG_NAT_CONE
+#if defined(CONFIG_NAT_CONE)
 	u32 a, b;
 
 	if (nf_conntrack_nat_mode == NAT_MODE_FCONE) {
@@ -418,7 +425,7 @@ __nf_conntrack_find(struct net *net,
 }
 EXPORT_SYMBOL_GPL(__nf_conntrack_find);
 
-#ifdef CONFIG_NAT_CONE
+#if defined(CONFIG_NAT_CONE)
 static inline bool
 nf_ct_cone_tuple_equal(const struct nf_conntrack_tuple *t1,
 		       const struct nf_conntrack_tuple *t2)
@@ -952,7 +959,7 @@ resolve_normal_ct(struct net *net, struct nf_conn *tmpl,
 
 	/* look for tuple match */
 	hash = hash_conntrack_raw(&tuple);
-#ifdef CONFIG_NAT_CONE
+#if defined(CONFIG_NAT_CONE)
         /*
          * Based on NAT treatments of UDP in RFC3489:
          *
@@ -1007,7 +1014,7 @@ resolve_normal_ct(struct net *net, struct nf_conn *tmpl,
          *             Restricted Cone=dst_ip/port & proto & src_ip
          *
          */
-	if (nf_conntrack_nat_mode > 0 && protonum == IPPROTO_UDP && skb->dev != NULL &&
+	if (protonum == IPPROTO_UDP && nf_conntrack_nat_mode > 0 && skb->dev != NULL &&
 #if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
 	    (strcmp(skb->dev->name, wan_name) == 0 || strcmp(skb->dev->name, wan_name_ppp) == 0)) {
 #else
@@ -1071,7 +1078,7 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 	int ret;
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 	struct nf_conn_help *help;
-	int skip_ppe = 0;
+	int skip_offload = 0;
 #endif
 
 	if (skb->nfct) {
@@ -1148,20 +1155,25 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 	}
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-	if (hooknum != NF_INET_LOCAL_OUT && FOE_ALG(skb) == 0) {
-		/* 1. skip several proto */
-		if ((pf == PF_INET) && (is_local_svc(protonum))) {
-			skip_ppe = 1;
-		}
-		else {
-			/* 2. skip marked packets for ALG */
-			help = nfct_help(ct);
-			if (help && help->helper)
-				skip_ppe = 1;
-		}
+	if (hooknum == NF_INET_LOCAL_OUT || FOE_ALG(skb))
+		goto skip_alg_mark;
+
+	/*
+	 * skip ALG marked packets from all fastpaths
+	 */
+	help = nfct_help(ct);
+	if (help && help->helper) {
+		skip_offload = 1;
+		goto skip_pkt_check;
+	}
+
+	/* this code section may be used for skip some types traffic,
+	    only if hardware nat support enabled or software fastnat support enabled */
+	if (ra_sw_nat_hook_tx != NULL) {
 #if defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR) || defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR_MODULE)
-		/* 3. skip xt_webstr HTTP headers */
-		if (!skip_ppe && web_str_loaded && ra_sw_nat_hook_tx != NULL && pf == PF_INET && protonum == IPPROTO_TCP) {
+		/* skip xt_webstr HTTP headers */
+		if (web_str_loaded &&
+		    pf == PF_INET && protonum == IPPROTO_TCP && CTINFO2DIR(ctinfo) == IP_CT_DIR_ORIGINAL) {
 			struct tcphdr _tcph, *tcph;
 			unsigned char _data[2], *data;
 			
@@ -1172,18 +1184,25 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 				 (data[0] == 'P' && data[1] == 'O') ||
 				 (data[0] == 'H' && data[1] == 'E'))) {
 				/* skip http post/get/head traffic for correct webstr work */
-				skip_ppe = 1;
+				skip_offload = 1;
+				goto skip_pkt_check;
 			}
 		}
-#endif /* XT_MATCH_WEBSTR */
-		if (skip_ppe) {
-			FOE_ALG_MARK(skb);
-		}
+#endif
 	}
+
+skip_pkt_check:
+
+	/* skip several proto only from hw_nat */
+	if (skip_offload || (pf == PF_INET && is_local_svc(protonum)))
+		FOE_ALG_MARK(skb);
+
+skip_alg_mark:
 #endif
 
-	if (set_reply && !test_and_set_bit(IPS_SEEN_REPLY_BIT, &ct->status))
+	if (set_reply && !test_and_set_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {
 		nf_conntrack_event_cache(IPCT_REPLY, ct);
+	}
 out:
 	if (tmpl) {
 		/* Special case: we have to repeat this hook, assign the

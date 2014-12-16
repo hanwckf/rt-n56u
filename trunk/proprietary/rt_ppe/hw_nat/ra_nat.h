@@ -247,7 +247,7 @@ typedef struct {
 				     (FOE_ENTRY_NUM(skb) == 0) && \
 				     (FOE_AI(skb) == 0))
 
-#define FOE_ALG_MARK(skb)	    if (IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) FOE_ALG(skb)=1
+#define FOE_ALG_MARK(skb)	    if (IS_SPACE_AVAILABLED(skb) && !FOE_ALG(skb) && IS_MAGIC_TAG_VALID(skb)) FOE_ALG(skb)=1
 #define FOE_AI_UNHIT(skb)	    if (IS_SPACE_AVAILABLED(skb)) FOE_AI(skb)=UN_HIT
 
 /*

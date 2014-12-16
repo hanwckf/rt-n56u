@@ -44,7 +44,7 @@
 #include <net/sock.h>
 #include <net/ipv6.h>
 
-extern int web_str_loaded;
+extern unsigned int web_str_loaded;
 
 #define BM_MAX_NLEN 256
 
@@ -451,14 +451,14 @@ static struct xt_match xt_webstr_match __read_mostly = {
 
 static int __init webstr_init(void)
 {
-	web_str_loaded=1;
+	web_str_loaded = 1;
 	search = search_linear;
 	return xt_register_match(&xt_webstr_match);
 }
 
 static void __exit webstr_fini(void)
 {
-	web_str_loaded=0;
+	web_str_loaded = 0;
 	xt_unregister_match(&xt_webstr_match);
 }
 

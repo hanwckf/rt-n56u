@@ -30,7 +30,7 @@
 #include <net/netfilter/ipv6/nf_defrag_ipv6.h>
 #include <net/netfilter/nf_log.h>
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
 #include "../../nat/hw_nat/ra_nat.h"
 #endif
 
@@ -181,7 +181,7 @@ static unsigned int ipv6_confirm(unsigned int hooknum,
 		return NF_ACCEPT;
 	}
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
 	FOE_ALG_MARK(skb);
 #endif
 

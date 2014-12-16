@@ -35,7 +35,7 @@ static int nf_ct_tcp_no_window_check __read_mostly = 1;
 /* "Be conservative in what you do,
     be liberal in what you accept from others."
     If it's non-zero, we mark only out of window RST segments as INVALID. */
-static int nf_ct_tcp_be_liberal __read_mostly = 0;
+static int nf_ct_tcp_be_liberal __read_mostly = 1;
 
 /* If it is set to zero, we disable picking up already established
    connections. */

@@ -38,9 +38,9 @@ MODULE_DESCRIPTION("IPv4 packet filter");
 /*#define DEBUG_ALLOW_ALL*/ /* Useful for remote debugging */
 /*#define DEBUG_IP_FIREWALL_USER*/
 
-#ifdef CONFIG_NAT_CONE
+#if defined(CONFIG_NAT_CONE)
 extern char wan_name[IFNAMSIZ];
-#if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
+#if IS_ENABLED(CONFIG_PPP)
 extern char wan_name_ppp[IFNAMSIZ];
 #endif
 #endif
@@ -1478,15 +1478,15 @@ do_add_counters(struct net *net, const void __user *user,
 	loc_cpu_entry = private->entries[curcpu];
 	addend = xt_write_recseq_begin();
 	xt_entry_foreach(iter, loc_cpu_entry, private->size) {
-#ifdef CONFIG_NAT_CONE
+#if defined(CONFIG_NAT_CONE)
 		struct ipt_entry *e = iter;
 		struct xt_entry_target *f = ipt_get_target(e);
 		if ((strlen(e->ip.outiface) > 0) && (strcmp(f->u.kernel.target->name, "MASQUERADE") == 0 ||
 		                                     strcmp(f->u.kernel.target->name, "SNAT") == 0)) {
-#if defined (CONFIG_RAETH_GMAC2)
+#if defined(CONFIG_RAETH_GMAC2)
 			/* ralink giga - wan */
 			if (strcmp(e->ip.outiface, "eth3") == 0) {
-#elif defined (CONFIG_RAETH) || defined (CONFIG_RAETH_MODULE)
+#elif IS_ENABLED(CONFIG_RAETH)
 			/* ralink vlan - wan */
 			if (strncmp(e->ip.outiface, "eth2.", 5) == 0 && strcmp(e->ip.outiface, "eth2.1") != 0) {
 #else
@@ -1495,7 +1495,7 @@ do_add_counters(struct net *net, const void __user *user,
 #endif
 				strcpy(wan_name, e->ip.outiface);
 			}
-#if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
+#if IS_ENABLED(CONFIG_PPP)
 			/* pppX - wan */
 			else if (strncmp(e->ip.outiface, "ppp", 3) == 0) {
 				strcpy(wan_name_ppp, e->ip.outiface);
@@ -2362,13 +2362,13 @@ static int __init ip_tables_init(void)
 {
 	int ret;
 
-#ifdef CONFIG_NAT_CONE
-#if defined (CONFIG_RAETH_GMAC2)
+#if defined(CONFIG_NAT_CONE)
+#if defined(CONFIG_RAETH_GMAC2)
 	strcpy(wan_name, "eth3");
 #else
 	strcpy(wan_name, "eth2.2");
 #endif
-#if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
+#if IS_ENABLED(CONFIG_PPP)
 	strcpy(wan_name_ppp, "ppp0");
 #endif
 #endif

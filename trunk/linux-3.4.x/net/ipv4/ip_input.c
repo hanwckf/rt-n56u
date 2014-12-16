@@ -146,7 +146,7 @@
 #include <linux/mroute.h>
 #include <linux/netlink.h>
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
 #include "../nat/hw_nat/ra_nat.h"
 #endif
 
@@ -267,7 +267,7 @@ int ip_local_deliver(struct sk_buff *skb)
 			return 0;
 	}
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
 #if defined(CONFIG_HNAT_V2)
 	/* skip SIT tunnels */
 	if (ip_hdr(skb)->protocol != IPPROTO_IPV6)

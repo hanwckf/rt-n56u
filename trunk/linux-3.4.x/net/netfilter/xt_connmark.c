@@ -28,6 +28,10 @@
 #include <linux/netfilter/x_tables.h>
 #include <linux/netfilter/xt_connmark.h>
 
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
+#include "../nat/hw_nat/ra_nat.h"
+#endif
+
 MODULE_AUTHOR("Henrik Nordstrom <hno@marasystems.com>");
 MODULE_DESCRIPTION("Xtables: connection mark operations");
 MODULE_LICENSE("GPL");
@@ -52,6 +56,9 @@ connmark_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	case XT_CONNMARK_SET:
 		newmark = (ct->mark & ~info->ctmask) ^ info->ctmark;
 		if (ct->mark != newmark) {
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
+			FOE_ALG_MARK(skb);
+#endif
 			ct->mark = newmark;
 			nf_conntrack_event_cache(IPCT_MARK, ct);
 		}

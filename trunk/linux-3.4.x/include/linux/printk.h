@@ -2,6 +2,7 @@
 #define __KERNEL_PRINTK__
 
 #include <linux/init.h>
+#include <linux/cache.h>
 
 extern const char linux_banner[];
 extern const char linux_proc_banner[];
@@ -209,15 +210,26 @@ extern void dump_stack(void) __cold;
 #ifdef CONFIG_PRINTK
 #define printk_once(fmt, ...)			\
 ({						\
-	static bool __print_once;		\
+	static bool __print_once __read_mostly;			\
 						\
 	if (!__print_once) {			\
 		__print_once = true;		\
 		printk(fmt, ##__VA_ARGS__);	\
 	}					\
 })
+#define printk_deferred_once(fmt, ...)				\
+({								\
+	static bool __print_once __read_mostly;			\
+								\
+	if (!__print_once) {					\
+		__print_once = true;				\
+		printk_deferred(fmt, ##__VA_ARGS__);		\
+	}							\
+})
 #else
 #define printk_once(fmt, ...)			\
+	no_printk(fmt, ##__VA_ARGS__)
+#define printk_deferred_once(fmt, ...)				\
 	no_printk(fmt, ##__VA_ARGS__)
 #endif
 

@@ -598,11 +598,20 @@ static void mt7620_gsw_init(void)
 #if !defined (CONFIG_RAETH_HAS_PORT4)
 	mii_mgr_write(4, 16, 0x1313);
 #endif
+
+	/* disable 802.3az EEE by default */
+	mii_mgr_write(1, 31, 0xb000); //local, page 3
+	mii_mgr_write(0, 17, 0x0000);
+	mii_mgr_write(1, 17, 0x0000);
+	mii_mgr_write(2, 17, 0x0000);
+	mii_mgr_write(3, 17, 0x0000);
+#if !defined (CONFIG_RAETH_HAS_PORT4)
+	mii_mgr_write(4, 17, 0x0000);
+#endif
 #endif
 
-	if ((ralink_asic_rev_id & 0xf) >= 5) {
-		*(volatile u32 *)(RALINK_ETH_SW_BASE+0x701c) = 0x800000c; // enlarge FE2SW_IPG
-	}
+	if ((ralink_asic_rev_id & 0xf) >= 5)
+		*(volatile u32 *)(RALINK_ETH_SW_BASE+0x701c) = 0x0800000c; // enlarge FE2SW_IPG
 
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x0004) = 0x00000007;	// PPE_PORT=7, PPE_EN=0
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x270c) = 0x000fff10;	// disable P7 mac learning

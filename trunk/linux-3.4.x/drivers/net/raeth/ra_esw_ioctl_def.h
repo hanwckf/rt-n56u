@@ -78,6 +78,7 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #define ESW_DEFAULT_JUMBO_FRAMES	0
+#define ESW_DEFAULT_GREEN_ETHERNET	0
 #define ESW_DEFAULT_STORM_RATE		0
 #define ESW_DEFAULT_IGMP_SNOOPING	1
 

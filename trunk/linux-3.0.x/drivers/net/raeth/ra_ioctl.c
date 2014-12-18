@@ -51,11 +51,11 @@ static void dump_phy_reg(int port_no, int from, int to, int is_local, int page_n
 	u32 r31=0;
 
 	if (is_local==0) {
-		printk("\n\nGlobal Register Page %d\n",page_no);
+		printk("\n\nGlobal Register Page %d\n", page_no);
 		printk("===============");
 		r31 |= 0 << 15; //global
 		r31 |= ((page_no&0x7) << 12); //page no
-		mii_mgr_write(1, 31, r31); //select global page x
+		mii_mgr_write(port_no, 31, r31); //select global page x
 		for (i=16;i<32;i++) {
 			if (i%8==0)
 				printk("\n");
@@ -67,7 +67,7 @@ static void dump_phy_reg(int port_no, int from, int to, int is_local, int page_n
 		printk("===============");
 		r31 |= 1 << 15; //local
 		r31 |= ((page_no&0x7) << 12); //page no
-		mii_mgr_write(1, 31, r31); //select local page x
+		mii_mgr_write(port_no, 31, r31); //select local page x
 		for (i=16;i<32;i++) {
 			if (i%8==0)
 				printk("\n");
@@ -120,7 +120,7 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
     defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
-			if (reg.val ==32 ) {//dump all phy register
+			if (reg.val == 32) {//dump all phy register
 				/* Global Register 0~31
 				 * Local Register 0~31
 				 */
@@ -138,7 +138,7 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			 * Local Register 16~31 for each page
 			 */
 			printk("SPEC defined Register");
-			if (reg.val ==32 ) {//dump all phy register
+			if (reg.val == 32) {//dump all phy register
 				int i = 0;
 				for(i=0; i<5; i++){
 					printk("\n[Port %d]===============",i);
@@ -146,8 +146,8 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 						if(offset%8==0) {
 							printk("\n");
 						}
-						mii_mgr_read(i,offset, &value);
-						printk("%02d: %04X ",offset, value);
+						mii_mgr_read(i, offset, &value);
+						printk("%02d: %04X ", offset, value);
 					}
 				}
 			}
@@ -157,8 +157,8 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 					if(offset%8==0) {
 						printk("\n");
 					}
-					mii_mgr_read(reg.val,offset, &value);
-					printk("%02d: %04X ",offset, value);
+					mii_mgr_read(reg.val, offset, &value);
+					printk("%02d: %04X ", offset, value);
 				}
 			}
 			
@@ -166,7 +166,7 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 				dump_phy_reg(1, 16, 31, 0, offset);
 			}
 			
-			if (reg.val == 32 ) {//dump all phy register
+			if (reg.val == 32) {//dump all phy register
 #if !defined (CONFIG_RAETH_HAS_PORT4)
 				for(offset=0;offset<5;offset++) { //local register port 0-port4
 #else

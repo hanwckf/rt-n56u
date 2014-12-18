@@ -53,6 +53,7 @@ static u32 g_wan_bwan_isolation                  = SWAPI_WAN_BWAN_ISOLATION_NONE
 static u32 g_led_phy_mode                        = SWAPI_LED_LINK_ACT;
 
 static u32 g_jumbo_frames_enabled                = ESW_DEFAULT_JUMBO_FRAMES;
+static u32 g_green_ethernet_enabled              = ESW_DEFAULT_GREEN_ETHERNET;
 static u32 g_igmp_snooping_enabled               = ESW_DEFAULT_IGMP_SNOOPING;
 
 static u32 g_storm_rate_limit                    = ESW_DEFAULT_STORM_RATE;
@@ -858,6 +859,15 @@ static void esw_port_phy_power(u32 phy_port_id, u32 power_on)
 	g_port_phy_power[phy_port_id] = (power_on) ? 1 : 0;
 }
 
+static void power_down_all_phy(void)
+{
+	u32 i;
+
+	/* down all PHY ports (please enable from user-level) */
+	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
+		esw_port_phy_power(i, 0);
+}
+
 static void esw_storm_control(u32 port_id, int set_bcast, int set_mcast, int set_ucast, u32 rate_mbps)
 {
 	u32 reg_bsr = 0;
@@ -913,6 +923,43 @@ static void esw_jumbo_control(u32 jumbo_frames_enabled)
 	}
 
 	esw_reg_set(REG_ESW_MAC_GMACCR, reg_gmaccr);
+}
+
+static void esw_eee_control(u32 green_ethernet_enabled)
+{
+	u32 i, port_phy_power[ESW_PHY_ID_MAX+1];
+
+	/* store PHY power state before down */
+	memcpy(port_phy_power, g_port_phy_power, sizeof(g_port_phy_power));
+
+	/* disable PHY ports link */
+	power_down_all_phy();
+	msleep(200);
+
+#if !defined (CONFIG_MT7530_GSW)
+	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
+#if defined (CONFIG_P4_MAC_TO_PHY_MODE)
+		if (i == 4)
+			continue;
+#elif defined (CONFIG_P5_MAC_TO_PHY_MODE) || defined (CONFIG_GE2_RGMII_AN)
+		if (i == 5)
+			continue;
+#endif
+		/* select PHY local page #3 */
+		mii_mgr_write(i, 31, 0xb000);
+		
+		/* set PHY EEE on/off */
+		mii_mgr_write(i, 17, (green_ethernet_enabled) ? 0x0002 : 0x0000);
+	}
+#else
+	// todo
+#endif
+
+	/* restore PHY ports link */
+	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
+		if (port_phy_power[i])
+			esw_port_phy_power(i, 1);
+	}
 }
 
 static void esw_led_mode(u32 led_mode)
@@ -1074,7 +1121,7 @@ static int change_bridge_mode(u32 wan_bwan_isolation, u32 wan_bridge_mode)
 		power_changed = change_wan_ports_power(0);
 		if (power_changed) {
 			// wait for PHY link down
-			msleep(1000);
+			msleep(500);
 		}
 	}
 
@@ -1302,7 +1349,7 @@ static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 			mii_mgr_write(phy_mdio_addr, 0, esw_phy_mcr);
 			
 			/* wait for PHY down */
-			msleep(100);
+			msleep(200);
 			
 			/* power-up PHY */
 			esw_phy_mcr &= ~(1<<11);
@@ -1357,6 +1404,19 @@ static void change_jumbo_frames_accept(u32 jumbo_frames_enabled)
 		printk("%s - jumbo frames accept: %d bytes\n", MTK_ESW_DEVNAME, (jumbo_frames_enabled) ? 9000 : 1536);
 		
 		esw_jumbo_control(jumbo_frames_enabled);
+	}
+}
+
+void change_green_ethernet_mode(u32 green_ethernet_enabled)
+{
+	if (green_ethernet_enabled) green_ethernet_enabled = 1;
+
+	if (g_green_ethernet_enabled != green_ethernet_enabled)
+	{
+		g_green_ethernet_enabled = green_ethernet_enabled;
+		printk("%s - 802.3az EEE: %s\n", MTK_ESW_DEVNAME, (green_ethernet_enabled) ? "on" : "off");
+		
+		esw_eee_control(green_ethernet_enabled);
 	}
 }
 
@@ -1440,15 +1500,6 @@ int esw_control_post_init(void)
 	return 0;
 }
 
-static void power_down_all_phy(void)
-{
-	u32 i;
-
-	/* down all PHY ports (please enable from user-level) */
-	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
-		esw_port_phy_power(i, 0);
-}
-
 static void reset_and_init_switch(void)
 {
 	u32 i, port_phy_power[ESW_PHY_ID_MAX+1];
@@ -1457,6 +1508,8 @@ static void reset_and_init_switch(void)
 	memcpy(port_phy_power, g_port_phy_power, sizeof(g_port_phy_power));
 
 	power_down_all_phy();
+	msleep(200);
+
 	esw_soft_reset();
 	esw_control_post_init();
 
@@ -1678,6 +1731,11 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 	case MTK_ESW_IOCTL_JUMBO_FRAMES:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
 		change_jumbo_frames_accept(uint_value);
+		break;
+
+	case MTK_ESW_IOCTL_GREEN_ETHERNET:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		change_green_ethernet_mode(uint_value);
 		break;
 
 	case MTK_ESW_IOCTL_IGMP_SNOOPING:

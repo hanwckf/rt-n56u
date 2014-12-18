@@ -81,10 +81,10 @@
 #define OPCODE_QIOR		0xEB	/* Quad IO High Performance Read */
 
 /* Status Register bits. */
-#define SR_WIP			1	/* Write in progress */
-#define SR_WEL			2	/* Write enable latch */
-#define SR_BP0			4	/* Block protect 0 */
-#define SR_BP1			8	/* Block protect 1 */
+#define SR_WIP			0x01	/* Write in progress */
+#define SR_WEL			0x02	/* Write enable latch */
+#define SR_BP0			0x04	/* Block protect 0 */
+#define SR_BP1			0x08	/* Block protect 1 */
 #define SR_BP2			0x10	/* Block protect 2 */
 #define SR_EPE			0x20	/* Erase/Program error */
 #define SR_SRWD			0x80	/* SR write protect */
@@ -206,6 +206,8 @@ static struct chip_info chips_data [] = {
 	{ "N25Q032A",		0x20, 0xba161000, 64 * 1024, 64,  0 },
 	{ "N25Q064A",		0x20, 0xba171000, 64 * 1024, 128, 0 },
 	{ "N25Q128A",		0x20, 0xba181000, 64 * 1024, 256, 0 },
+	{ "N25Q256A",		0x20, 0xba191000, 64 * 1024, 512, 1 },
+	{ "MT25QL512AB",	0x20, 0xba201044, 64 * 1024, 1024, 1 },
 
 	{ "F25L32QA",		0x8c, 0x41168c41, 64 * 1024, 64,  0 }, // ESMT
 	{ "F25L64QA",		0x8c, 0x41170000, 64 * 1024, 128, 0 }, // ESMT
@@ -241,7 +243,6 @@ struct flash_info {
 	struct mutex		lock;
 	struct mtd_info		mtd;
 	struct chip_info	*chip;
-	u8			command[5];
 };
 
 struct flash_info *flash = NULL;
@@ -444,6 +445,56 @@ static int bbu_spic_trans(const u8 code, const u32 addr, u8 *buf, const size_t n
 	return 0;
 }
 
+#if defined (RD_MODE_QUAD)
+static int raspi_write_rg16(u8 code, u8 *val)
+{
+	ssize_t retval;
+	u32 address = (*val) << 24;
+
+	// put the value to be written in address register, so it will be transfered
+	address |= (*(val+1)) << 16;
+	retval = bbu_spic_trans(code, address, val, 3, 0, SPIC_WRITE_BYTES);
+	return retval;
+}
+
+static int raspi_set_quad(void)
+{
+	if ((flash->chip->id == 0x01) || (flash->chip->id == 0xef)) // Spansion or WinBond
+	{
+		u8 reg[2] = {0}, cr = 0;
+		raspi_read_rg(OPCODE_RDCR, &reg[1]);
+		if ((reg[1] & (1 << 1)) == 0)
+		{
+			reg[1] |= (1 << 1);
+			raspi_read_sr(&reg[0]);
+			raspi_write_enable();
+			raspi_write_rg16(OPCODE_WRSR, reg);
+			raspi_wait_ready(1);
+			raspi_read_rg(OPCODE_RDCR, &cr);
+			if (reg[1] != cr)
+				printk("warning: set quad failed %x %x\n", reg[1], cr);
+		}
+	}
+	else // MXIC
+	{
+		u8 sr = 0, sr2;
+		raspi_read_sr(&sr);
+		sr2 = sr;
+		if ((sr & (1 << 6)) == 0)
+		{
+			u8 get_sr = 0;
+			sr |= (1 << 6);
+			raspi_write_enable();
+			raspi_write_sr(&sr);
+			raspi_wait_ready(1);
+			raspi_read_sr(&get_sr);
+			if (get_sr != sr)
+				printk("warning: quad sr write failed %x %x %x\n", sr, get_sr, sr2);
+		}
+	}
+}
+#endif
+
 static int raspi_read_rg(u8 code, u8 *val);
 static int raspi_write_rg(u8 code, u8 *val);
 static int raspi_wait_ready(int sleep_ms);
@@ -500,19 +551,6 @@ static int raspi_write_rg(u8 code, u8 *val)
 	retval = bbu_spic_trans(code, address, val, 2, 0, SPIC_WRITE_BYTES);
 	return retval;
 }
-
-#if defined(RD_MODE_DUAL) || defined(RD_MODE_QUAD)
-static int raspi_write_rg16(u8 code, u8 *val)
-{
-	ssize_t retval;
-	u32 address = (*val) << 24;
-
-	// put the value to be written in address register, so it will be transfered
-	address |= (*(val+1)) << 16;
-	retval = bbu_spic_trans(code, address, val, 3, 0, SPIC_WRITE_BYTES);
-	return retval;
-}
-#endif
 
 static int raspi_4byte_mode(int enable)
 {
@@ -578,8 +616,12 @@ static int raspi_4byte_mode(int enable)
  */
 static inline int raspi_write_enable(void)
 {
-	u8 code = OPCODE_WREN;
-	return bbu_spic_trans(code, 0, NULL, 1, 0, 0);
+	return bbu_spic_trans(OPCODE_WREN, 0, NULL, 1, 0, 0);
+}
+
+static inline int raspi_write_disable(void)
+{
+	return bbu_spic_trans(OPCODE_WRDI, 0, NULL, 1, 0, 0);
 }
 
 /*
@@ -597,6 +639,7 @@ static inline int raspi_unprotect(void)
 
 	if ((sr & (SR_BP0 | SR_BP1 | SR_BP2)) != 0) {
 		sr = 0;
+		raspi_write_enable();
 		raspi_write_sr(&sr);
 	}
 	return 0;
@@ -658,16 +701,16 @@ static int raspi_erase_sector(u32 offset)
 	if (raspi_wait_ready(10))
 		return -EIO;
 
-	/* Send write enable, then erase commands. */
-	raspi_write_enable();
 	raspi_unprotect();
 
 	if (flash->chip->addr4b)
 		raspi_4byte_mode(1);
 
+	/* Send write enable, then erase commands. */
 	raspi_write_enable();
 	bbu_spic_trans(STM_OP_SECTOR_ERASE, offset, NULL, 4, 0, 0);
 	raspi_wait_sleep_ready(950);
+
 	if (flash->chip->addr4b)
 		raspi_4byte_mode(0);
 
@@ -761,8 +804,6 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 {
 	size_t rdlen = 0;
 
-	ra_dbg("%s: from:%x len:%x \n", __func__, from, len);
-
 	/* sanity checks */
 	if (len == 0)
 		return 0;
@@ -787,78 +828,11 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 		raspi_4byte_mode(1);
 
 #ifndef MORE_BUF_MODE
-#if defined(RD_MODE_DUAL)
-	// serial mode = dual
-	if (flash->chip->id == 0x1) // Spansion
-	{
-		u8 reg[2], cr;
-		raspi_read_rg(OPCODE_RDCR, &reg[1]);
-		if (reg[1] & (1 << 1))
-		{
-			reg[1] &= ~(1 << 1);
-			raspi_read_sr(&reg[0]);
-			raspi_write_enable();
-			raspi_write_rg16(OPCODE_WRSR, &reg[0]);
-			raspi_wait_ready(1);
-			raspi_read_rg(OPCODE_RDCR, &cr);
-			if (reg[1] != cr)
-				printk("warning: set quad failed %x %x\n", reg[1], cr);
-		}
-	}
-	else // MXIC
-	{
-		u8 sr;
-		raspi_read_sr(&sr);
-		if ((sr & (1 << 6)))
-		{
-			u8 get_sr;
-			sr &= ~(1 << 6);
-			raspi_write_enable();
-			raspi_write_sr(&sr);
-			raspi_wait_ready(1);
-			raspi_read_sr(&get_sr);
-			if (get_sr != sr)
-				printk("warning: sr write failed %x %x\n", sr, get_sr);
-		}
-	}
 	ra_and(SPI_REG_MASTER, ~3);
+#if defined(RD_MODE_DUAL)
 	ra_or(SPI_REG_MASTER, 1);
 #elif defined(RD_MODE_QUAD)
-	// serial mode = quad
-	if (flash->chip->id == 0x1) // Spansion
-	{
-		u8 reg[2], cr;
-		raspi_read_rg(OPCODE_RDCR, &reg[1]);
-		if ((reg[1] & (1 << 1)) == 0)
-		{
-			reg[1] |= (1 << 1);
-			raspi_read_sr(&reg[0]);
-			raspi_write_enable();
-			raspi_write_rg16(OPCODE_WRSR, &reg[0]);
-			raspi_wait_ready(1);
-			raspi_read_rg(OPCODE_RDCR, &cr);
-			if (reg[1] != cr)
-				printk("warning: set quad failed %x %x\n", reg[1], cr);
-		}
-	}
-	else // MXIC
-	{
-		u8 sr, sr2;
-		raspi_read_sr(&sr);
-		sr2 = sr;
-		if ((sr & (1 << 6)) == 0)
-		{
-			u8 get_sr;
-			sr |= (1 << 6);
-			raspi_write_enable();
-			raspi_write_sr(&sr);
-			raspi_wait_ready(1);
-			raspi_read_sr(&get_sr);
-			if (get_sr != sr)
-				printk("warning: quad sr write failed %x %x %x\n", sr, get_sr, sr2);
-		}
-	}
-	ra_and(SPI_REG_MASTER, ~3);
+	raspi_set_quad();
 	ra_or(SPI_REG_MASTER, 2);
 #endif
 #endif
@@ -921,39 +895,8 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 #if defined(RD_MODE_DUAL) || defined(RD_MODE_QUAD)
 	// serial mode = normal
 	ra_and(SPI_REG_MASTER, ~3);
-#if defined(RD_MODE_QUAD)
-	// serial mode = quad
-	if (flash->chip->id == 0x1) // Spansion
-	{
-		u8 reg[2], cr;
-		raspi_read_rg(OPCODE_RDCR, &reg[1]);
-		if (reg[1] & (1 << 1))
-		{
-			reg[1] &= ~(1 << 1);
-			raspi_read_sr(&reg[0]);
-			raspi_write_enable();
-			raspi_write_rg16(OPCODE_WRSR, &reg[0]);
-			raspi_wait_ready(1);
-			raspi_read_rg(OPCODE_RDCR, &cr);
-			if (reg[1] != cr)
-				printk("warning: set quad failed %x %x\n", reg[1], cr);
-		}
-	}
-	else // MXIC
-	{
-		u8 sr;
-		raspi_read_sr(&sr);
-		if ((sr & (1 << 6)))
-		{
-			sr &= ~(1 << 6);
-			raspi_write_enable();
-			raspi_write_sr(&sr);
-			raspi_wait_ready(1);
-		}
-	}
 #endif
 #endif
-#endif // MORE_BUF_MODE
 
 	if (flash->chip->addr4b)
 		raspi_4byte_mode(0);
@@ -988,34 +931,36 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 	size_t *retlen, const u_char *buf)
 {
 	u32 page_offset, page_size;
-	int rc = 0;
+	int rc = 0, exit_code = 0;
 	int wrto, wrlen, more;
 	char *wrbuf;
 	int count = 0;
 
-	ra_dbg("%s: to:%x len:%x \n", __func__, to, len);
 	if (retlen)
 		*retlen = 0;
 
 	/* sanity checks */
 	if (len == 0)
 		return 0;
+
 	if (to + len > flash->mtd.size)
 		return -EINVAL;
 
 	mutex_lock(&flash->lock);
 
-	/* Wait until finished previous write command. */
+	/* wait until finished previous write command. */
 	if (raspi_wait_ready(2)) {
 		mutex_unlock(&flash->lock);
 		return -1;
 	}
 
-	/* what page do we start with? */
-	page_offset = to % FLASH_PAGESIZE;
+	raspi_unprotect();
 
 	if (flash->chip->addr4b)
 		raspi_4byte_mode(1);
+
+	/* what page do we start with? */
+	page_offset = to % FLASH_PAGESIZE;
 
 	/* write everything in PAGESIZE chunks */
 	while (len > 0) {
@@ -1025,7 +970,6 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 		/* write the next page to flash */
 		raspi_wait_ready(3);
 		raspi_write_enable();
-		raspi_unprotect();
 
 		wrto = to;
 		wrlen = page_size;
@@ -1065,10 +1009,10 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 			if (retlen)
 				*retlen += rc;
 			if (rc < page_size) {
-				mutex_unlock(&flash->lock);
+				exit_code = -EIO;
 				printk("%s: rc:%x return:%x page_size:%x \n", 
 				       __func__, rc, rc, page_size);
-				return -EIO;
+				goto exit_mtd_write;
 			}
 		}
 
@@ -1078,17 +1022,18 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 		count++;
 		if ((count & 0xf) == 0)
 			raspi_wait_sleep_ready(1);
-			
 	}
 
 	raspi_wait_ready(100);
+
+exit_mtd_write:
 
 	if (flash->chip->addr4b)
 		raspi_4byte_mode(0);
 
 	mutex_unlock(&flash->lock);
 
-	return 0;
+	return exit_code;
 }
 
 /*

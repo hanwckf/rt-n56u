@@ -593,11 +593,11 @@ struct nvram_pair router_defaults[] = {
 	{ "ether_led1", "0" },
 #if BOARD_HAS_EPHY_1000
 	{ "ether_jumbo", "1" },
-	{ "ether_green", "1" },
 #else
 	{ "ether_jumbo", "0" },
-	{ "ether_green", "0" },
 #endif
+	{ "ether_green", "0" },
+
 	{ "ether_link_wan",  "0" },
 	{ "ether_link_lan1", "0" },
 	{ "ether_link_lan2", "0" },

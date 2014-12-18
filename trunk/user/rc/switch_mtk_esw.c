@@ -201,8 +201,7 @@ inline int phy_led_mode_yellow(unsigned int led_yellow)
 
 inline int phy_green_ethernet(unsigned int green_ethernet_on)
 {
-	// N.A.
-	return 0;
+	return mtk_esw_ioctl(MTK_ESW_IOCTL_GREEN_ETHERNET, 0, &green_ethernet_on);
 }
 
 int phy_jumbo_frames(unsigned int jumbo_frames_on)
@@ -356,6 +355,7 @@ int show_usage(char *cmd)
 	"   64 [MASK] [DATA] Create VLAN entry\n\n"
 	"   71 [0..1000]     Set Unknown Multicast and Broadcast storm rate for all PHY ports\n"
 	"   75 [1|0]         Set Jumbo Frames accept on/off\n"
+	"   76 [1|0]         Set 802.3az EEE on/off\n"
 	"   78 [1|0]         Set IGMP/MLD snooping on/off\n"
 	"   80 [7,11]        Set EPHY LED action\n"
 	"   90 [MODE]        Set WAN port link mode (flow|link)\n"

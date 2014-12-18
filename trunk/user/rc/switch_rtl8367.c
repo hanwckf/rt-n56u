@@ -471,7 +471,7 @@ int show_usage(char *cmd)
 	"   72 [1..1024]     Set Multicast storm rate for all ports\n"
 	"   73 [1..1024]     Set Broadcast storm rate for all ports\n\n"
 	"   75 [0|1]         Set Jumbo Frames accept off/on\n"
-	"   76 [0|1]         Set GreenEthernet off/on\n"
+	"   76 [1|0]         Set GreenEthernet on/off\n"
 #if defined(USE_RTL8367_IGMP_SNOOPING)
 	"   78 [1|0]         Set IGMP/MLD snooping on/off\n"
 	"   79               Reset IGMP/MLD group table and static LUT entries\n\n"

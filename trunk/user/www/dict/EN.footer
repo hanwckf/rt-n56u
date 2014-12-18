@@ -401,7 +401,6 @@ IPTVIGMP=Force IGMP Protocol Version:
 Switch_desc=Physical WAN and LAN Ethernet Ports configuration on internal switch.
 SwitchBase=Base Settings
 SwitchJumbo=Accept Jumbo Frames Between Ports:
-SwitchGreen=Enable Green Ethernet?
 SwitchIgmp=Enable IGMP/MLD Snooping?
 SwitchFlow=Flow Control:
 SwitchLink=Speed and Duplex:

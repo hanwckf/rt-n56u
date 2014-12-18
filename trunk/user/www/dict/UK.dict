@@ -403,7 +403,6 @@ IPTVIGMP=Форсування версії протоколу IGMP:
 Switch_desc=Налаштування фізичних WAN та LAN Ethernet портів вбудованого світча.
 SwitchBase=Основні параметри
 SwitchJumbo=Пропуск великих фреймів між портами:
-SwitchGreen=Увімкнути Green Ethernet?
 SwitchIgmp=Увімкнути IGMP/MLD Snooping?
 SwitchFlow=Керування потоком:
 SwitchLink=Швидкість і дуплекс:

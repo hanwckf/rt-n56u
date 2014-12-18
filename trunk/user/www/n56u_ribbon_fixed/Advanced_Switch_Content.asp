@@ -46,7 +46,7 @@ function initial(){
 	show_footer();
 
 	var switch_type = support_switch_type();
-	if (switch_type == 1) {
+	if (switch_type == 1){
 		document.form.ether_link_wan.remove(1);
 		document.form.ether_link_lan1.remove(1);
 		document.form.ether_link_lan2.remove(1);
@@ -54,14 +54,16 @@ function initial(){
 		document.form.ether_link_lan4.remove(1);
 	}
 
-	if (switch_type != 0) {
+	if (switch_type != 0){
 		document.form.ether_flow_wan.remove(1);
 		document.form.ether_flow_lan1.remove(1);
 		document.form.ether_flow_lan2.remove(1);
 		document.form.ether_flow_lan3.remove(1);
 		document.form.ether_flow_lan4.remove(1);
 		document.form.ether_jumbo.options[1].text = "Up to 9000 bytes";
-		showhide_div('row_ether_green', 0);
+		$("col_ether_green").innerHTML = "<#btn_Enable#> Energy Efficient Ethernet (802.3az)?";
+	}else{
+		$("col_ether_green").innerHTML = "<#btn_Enable#> Green Ethernet?";
 	}
 
 	var num_ephy = support_num_ephy();
@@ -178,8 +180,8 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr id="row_ether_green">
-                                            <th><#SwitchGreen#></th>
+                                        <tr>
+                                            <th id="col_ether_green">&nbsp;</th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ether_green_on_of">

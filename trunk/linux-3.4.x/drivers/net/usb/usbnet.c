@@ -354,7 +354,7 @@ void usbnet_skb_return (struct usbnet *dev, struct sk_buff *skb)
 	if ((ra_sw_nat_hook_rx != NULL) && !(dev->driver_info->flags & FLAG_MULTI_PACKET)) {
 		FOE_MAGIC_TAG(skb) = FOE_MAGIC_EXTIF;
 		if (ra_sw_nat_hook_rx(skb)) {
-			FOE_AI(skb) = UN_HIT;
+			FOE_MAGIC_TAG(skb) = 0;
 			status = netif_rx (skb);
 			if (status != NET_RX_SUCCESS)
 				netif_dbg(dev, rx_err, dev->net,

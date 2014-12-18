@@ -207,13 +207,19 @@ static uint8_t *ShowCpuReason(struct sk_buff *skb)
 	return (Buf);
 }
 
-uint32_t FoeDumpPkt(struct sk_buff * skb)
+static uint32_t FoeDumpPkt(struct sk_buff *skb)
 {
-	struct FoeEntry *foe_entry = &PpeFoeBase[FOE_ENTRY_NUM(skb)];
+	struct FoeEntry *foe_entry;
+	uint32_t foe_entry_num;
 
-	NAT_PRINT("\nRx===<FOE_Entry=%d>=====\n", FOE_ENTRY_NUM(skb));
+	foe_entry_num = FOE_ENTRY_NUM(skb);
+	if (foe_entry_num >= FOE_4TB_SIZ)
+		return 1;
+
+	foe_entry = &PpeFoeBase[foe_entry_num];
+
+	NAT_PRINT("\nRx===<FOE_Entry=%d>=====\n", foe_entry_num);
 	NAT_PRINT("RcvIF=%s\n", skb->dev->name);
-	NAT_PRINT("FOE_Entry=%d\n", FOE_ENTRY_NUM(skb));
 	NAT_PRINT("CPU Reason=%s", ShowCpuReason(skb));
 	NAT_PRINT("ALG=%d\n", FOE_ALG(skb));
 	NAT_PRINT("SP=%d\n", FOE_SP(skb));
@@ -514,13 +520,26 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 }
 #endif
 
-void PpeKeepAliveHandler(struct sk_buff* skb, struct FoeEntry* foe_entry, int recover_header)
+static void PpeKeepAliveHandler(struct sk_buff *skb, int recover_header)
 {
-	struct ethhdr *eth = (struct ethhdr *)(skb->data - ETH_HLEN);
-	uint16_t eth_type = ntohs(skb->protocol);
+	struct FoeEntry *foe_entry;
+	struct ethhdr *eth;
+	uint16_t eth_type;
 	uint32_t vlan1_gap = 0;
 	uint32_t vlan2_gap = 0;
 	uint32_t pppoe_gap = 0;
+	uint32_t foe_entry_num;
+
+	foe_entry_num = FOE_ENTRY_NUM(skb);
+	if (foe_entry_num >= FOE_4TB_SIZ || !FOE_ENTRY_VALID(skb)) {
+		NAT_DEBUG("HNAT: %s, invalid FoE entry (%u)\n", __FUNCTION__, foe_entry_num);
+		return;
+	}
+
+	eth = (struct ethhdr *)(skb->data - ETH_HLEN);
+	eth_type = ntohs(skb->protocol);
+
+	foe_entry = &PpeFoeBase[foe_entry_num];
 
 	/*
 	 * try to recover to original SMAC/DMAC, but we don't have such information.
@@ -585,6 +604,11 @@ void PpeKeepAliveHandler(struct sk_buff* skb, struct FoeEntry* foe_entry, int re
 				spin_lock_bh(&ppe_foe_lock);
 				foe_entry->udib1.state = UNBIND;
 				foe_entry->udib1.time_stamp = RegRead(FOE_TS) & 0xFF;
+#if defined (CONFIG_HNAT_V2)
+				/* clear HWNAT cache */
+				RegModifyBits(CAH_CTRL, 1, 9, 1);
+				RegModifyBits(CAH_CTRL, 0, 9, 1);
+#endif
 				spin_unlock_bh(&ppe_foe_lock);
 			}
 			if (recover_header)
@@ -609,10 +633,20 @@ void PpeKeepAliveHandler(struct sk_buff* skb, struct FoeEntry* foe_entry, int re
 	skb->pkt_type = PACKET_HOST;
 }
 
-int PpeHitBindForceToCpuHandler(struct sk_buff *skb, struct FoeEntry *foe_entry)
+static int PpeHitBindForceToCpuHandler(struct sk_buff *skb)
 {
+	struct FoeEntry *foe_entry;
 	struct net_device *dev = NULL;
+	uint32_t foe_entry_num;
 	int act_dp;
+
+	foe_entry_num = FOE_ENTRY_NUM(skb);
+	if (foe_entry_num >= FOE_4TB_SIZ || !FOE_ENTRY_VALID(skb)) {
+		NAT_DEBUG("HNAT: %s, invalid FoE entry (%u)\n", __FUNCTION__, foe_entry_num);
+		return 1;
+	}
+
+	foe_entry = &PpeFoeBase[foe_entry_num];
 
 #if !defined (CONFIG_HNAT_V2)
 	act_dp = foe_entry->ipv4_hnapt.act_dp;			// act_dp: offset 13 dword for IPv4/IPv6
@@ -762,20 +796,13 @@ void PpeGetUpFromACLRule(struct sk_buff *skb)
 
 int32_t PpeRxHandler(struct sk_buff * skb)
 {
-	struct FoeEntry *foe_entry;
-	int foe_ai;
+	uint32_t foe_ai;
 
 	/* return truncated packets to normal path */
 	if (!skb || skb->len < ETH_HLEN) {
 		NAT_DEBUG("HNAT: %s, skb null or small len in RX path\n", __FUNCTION__);
 		return 1;
 	}
-
-#if defined (CONFIG_RA_HW_NAT_DEBUG)
-	if (DebugLevel >= 7) {
-		FoeDumpPkt(skb);
-	}
-#endif
 
 #if !defined (CONFIG_RA_HW_NAT_MCAST) || !defined (CONFIG_HNAT_V2)
 	if (skb->pkt_type == PACKET_MULTICAST)
@@ -794,12 +821,16 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 			return 1;
 	}
 
-	foe_entry = &PpeFoeBase[FOE_ENTRY_NUM(skb)];
+#if defined (CONFIG_RA_HW_NAT_DEBUG)
+	if (DebugLevel >= 7)
+		FoeDumpPkt(skb);
+#endif
+
 	foe_ai = FOE_AI(skb);
 
 	if (foe_ai == HIT_BIND_FORCE_TO_CPU) {
 		/* It means the flow is already in binding state, just transfer to output interface */
-		return PpeHitBindForceToCpuHandler(skb, foe_entry);
+		return PpeHitBindForceToCpuHandler(skb);
 #if defined (CONFIG_HNAT_V2)
 #if defined (CONFIG_RALINK_MT7621)
 	} else if ((FOE_SP(skb) == 0 || FOE_SP(skb) == 5) &&
@@ -825,10 +856,10 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 	} else if (foe_ai == HIT_BIND_KEEPALIVE_UC_OLD_HDR) {
 		return 1;
 	} else if (foe_ai == HIT_BIND_KEEPALIVE_MC_NEW_HDR) {
-		PpeKeepAliveHandler(skb, foe_entry, 1);
+		PpeKeepAliveHandler(skb, 1);
 		return 1;
 	} else if (foe_ai == HIT_BIND_KEEPALIVE_DUP_OLD_HDR) {
-		PpeKeepAliveHandler(skb, foe_entry, 0);
+		PpeKeepAliveHandler(skb, 0);
 		return 1;
 #else /* !CONFIG_HNAT_V2 */
 	} else if (FOE_SP(skb) == 0 && foe_ai != HIT_BIND_KEEPALIVE) {
@@ -840,11 +871,7 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 #endif
 			return 1;
 	} else if (foe_ai == HIT_BIND_KEEPALIVE && DFL_FOE_KA == 0) {
-		if (!FOE_ENTRY_VALID(skb)) {
-			NAT_DEBUG("HNAT: %s, hit bind keepalive is not valid FoE entry!\n", __FUNCTION__);
-			return 1;
-		}
-		PpeKeepAliveHandler(skb, foe_entry, 1);
+		PpeKeepAliveHandler(skb, 1);
 		return 1;
 #endif /* CONFIG_HNAT_V2 */
 	}
@@ -1652,7 +1679,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 {
 	struct FoeEntry *foe_entry;
-	int foe_ai;
+	uint32_t foe_ai, foe_entry_num;
 
 	/* check traffic from WiFi/ExtIf (gmac_no = 0) */
 	if (gmac_no == 0) {
@@ -1666,7 +1693,7 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 	if (!skb || skb->len < ETH_HLEN)
 		return 1;
 
-	/* check FoE packet tag */
+	/* check FoE packet tag from GE */
 	if (!IS_SPACE_AVAILABLED(skb) || !IS_MAGIC_TAG_VALID(skb))
 		return 1;
 
@@ -1676,7 +1703,11 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 	if (foe_ai == UN_HIT)
 		return 1;
 
-	foe_entry = &PpeFoeBase[FOE_ENTRY_NUM(skb)];
+	foe_entry_num = FOE_ENTRY_NUM(skb);
+	if (foe_entry_num >= FOE_4TB_SIZ || !FOE_ENTRY_VALID(skb))
+		return 1;
+
+	foe_entry = &PpeFoeBase[foe_entry_num];
 
 	/*
 	 * Packet is interested by ALG?
@@ -1707,7 +1738,7 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 #if defined (CONFIG_RA_HW_NAT_DEBUG)
 	} else if (foe_ai == HIT_UNBIND_RATE_REACH && FOE_ALG(skb) == 1) {
 		if (DebugLevel >= 4) {
-			NAT_DEBUG("FOE_ALG=1 (Entry=%d)\n", FOE_ENTRY_NUM(skb));
+			NAT_DEBUG("FOE_ALG=1 (Entry=%d)\n", foe_entry_num);
 		}
 #endif
 #if defined (CONFIG_RA_HW_NAT_PREBIND)
@@ -1721,7 +1752,7 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 #if defined (CONFIG_RA_HW_NAT_DEBUG)
 		/* Dump Binding Entry */
 		if (DebugLevel >= 3) {
-			FoeDumpEntry(FOE_ENTRY_NUM(skb));
+			FoeDumpEntry(foe_entry_num);
 		}
 #endif
 #endif

@@ -1053,12 +1053,15 @@ static inline int raeth_xmit(struct sk_buff* skb, struct net_device *dev, END_DE
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 	if (ra_sw_nat_hook_tx != NULL) {
+#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
+		if (IS_DPORT_PPE_VALID(skb))
+			gmac_no = PSE_PORT_PPE;
+		else
+#endif
 		if (ra_sw_nat_hook_tx(skb, gmac_no) == 0) {
 			dev_kfree_skb(skb);
 			return NETDEV_TX_OK;
 		}
-		if (IS_DPORT_PPE_VALID(skb))
-			gmac_no = PSE_PORT_PPE;
 	}
 #endif
 

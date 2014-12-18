@@ -268,6 +268,10 @@ int main(int argc, char *argv[])
     case ACL_GET_ALL_ENTRIES:
 	      /* Max 511 acl entries */
 	      args2=malloc(sizeof(struct acl_list_args) + sizeof(struct acl_args)*511);
+	      if (!args2) {
+		printf("Allocate memory for acl_list_args failed!\n");
+		return 1;
+	      }
 	      AclGetAllEntries(args2);
 	      result = args2->result;
 	      printf("Total Entry Count = %d\n",args2->num_of_entries);
@@ -296,6 +300,9 @@ int main(int argc, char *argv[])
 	      }
 	      free(args2);
 	      break;
+    default:
+	    result = ACL_FAIL;
+	    break;
     }
 
     if(result == ACL_SUCCESS) {

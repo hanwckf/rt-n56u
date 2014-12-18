@@ -18,7 +18,7 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
-#define HW_NAT_MODULE_VER "v2.51.2"
+#define HW_NAT_MODULE_VER "v2.51.3"
 
 /* ra0-15, wds0-4, apcli0, mesh0 interfaces */
 #if defined (CONFIG_RT2860V2_AP_MBSS) || defined (CONFIG_MT76X2_AP_MBSS)
@@ -187,6 +187,7 @@ typedef struct {
 #define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->FOE_Entry
 #define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->ALG
 #if defined (CONFIG_HNAT_V2)
+#define FOE_ENTRY_VALID(skb)	    (((PdmaRxDescInfo4 *)((skb)->head))->FOE_Entry != 0x3fff)
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->CRSN
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->SPORT
 #else
@@ -203,6 +204,7 @@ typedef struct {
 #define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->FOE_Entry
 #define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->ALG
 #if defined (CONFIG_HNAT_V2)
+#define FOE_ENTRY_VALID(skb)	    (((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->FOE_Entry != 0x3fff)
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->CRSN
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->SPORT
 #else
@@ -221,6 +223,7 @@ typedef struct {
 #define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FOE_Entry
 #define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->ALG
 #if defined (CONFIG_HNAT_V2)
+#define FOE_ENTRY_VALID(skb)	    (((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FOE_Entry != 0x3fff)
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->CRSN
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->SPORT
 #else
@@ -240,12 +243,10 @@ typedef struct {
 // full clear FoE Info
 #define DO_FULL_CLEAR_FOE(skb)	    (memset(FOE_INFO_START_ADDR(skb), 0, FOE_INFO_LEN))
 
-#define IS_MAGIC_TAG_VALID(skb)	    ((FOE_MAGIC_TAG(skb) == FOE_MAGIC_EXTIF) || \
-				     (FOE_MAGIC_TAG(skb) == FOE_MAGIC_GE))
+#define IS_MAGIC_TAG_VALID(skb)	    ((FOE_MAGIC_TAG(skb) == FOE_MAGIC_GE))
 
 #define IS_DPORT_PPE_VALID(skb)	    ((FOE_MAGIC_TAG(skb) == FOE_MAGIC_PPE) && \
-				     (FOE_ENTRY_NUM(skb) == 0) && \
-				     (FOE_AI(skb) == 0))
+				     (FOE_ENTRY_NUM(skb) == 0))
 
 #define FOE_ALG_MARK(skb)	    if (IS_SPACE_AVAILABLED(skb) && !FOE_ALG(skb) && IS_MAGIC_TAG_VALID(skb)) FOE_ALG(skb)=1
 #define FOE_AI_UNHIT(skb)	    if (IS_SPACE_AVAILABLED(skb)) FOE_AI(skb)=UN_HIT

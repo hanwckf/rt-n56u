@@ -232,6 +232,9 @@ int main(int argc, char *argv[])
 	    result = GetAcEntry(&args, method);
 	    printf("Count=%lld\n",args.cnt);
 	    break;
+    default:
+	    result = AC_FAIL;
+	    break;
     }
 
     if(result == AC_SUCCESS) {

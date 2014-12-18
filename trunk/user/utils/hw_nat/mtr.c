@@ -228,6 +228,10 @@ int main(int argc, char *argv[])
 	    break;
     case MTR_GET_ALL_ENTRIES:
 	    args2 = malloc(sizeof(struct mtr_list_args) + sizeof(struct mtr_args)*511);
+	    if (!args2) {
+		printf("Allocate memory for mtr_list_args failed!\n");
+		return 1;
+	    }
 	    MtrGetAllEntries(args2);
 	    result = args2->result;
 	    printf("Total Entry Count = %d\n", args2->num_of_entries);
@@ -239,6 +243,9 @@ int main(int argc, char *argv[])
 		printf("   :BucketSize=%d Token_Rate:%d MtrInterval=%d\n", args2->entries[i].bk_size, args2->entries[i].token_rate, args2->entries[i].mtr_intval);
 	    }
 	    free(args2);
+	    break;
+    default:
+	    result = MTR_FAIL;
 	    break;
     }
 

@@ -238,9 +238,17 @@ int FoeDumpCacheEntry(void)
 
 void FoeDumpEntry(uint32_t Index)
 {
-	struct FoeEntry *entry = &PpeFoeBase[Index];
-	uint32_t *p = (uint32_t *)entry;
+	struct FoeEntry *entry;
+	uint32_t *p;
 	uint32_t i = 0;
+
+	if (Index >= FOE_4TB_SIZ) {
+		NAT_PRINT("Entry number (%d) is invalid!\n", Index);
+		return;
+	}
+
+	entry = &PpeFoeBase[Index];
+	p = (uint32_t *)entry;
 
 	NAT_PRINT("==========<Flow Table Entry=%d (%p)>===============\n", Index, entry);
 #if defined (CONFIG_HNAT_V2) && defined (CONFIG_RA_HW_NAT_IPV6)
@@ -248,7 +256,7 @@ void FoeDumpEntry(uint32_t Index)
 #else
 	for(i=0; i < 16; i++) { // 64 bytes per entry
 #endif
-		NAT_PRINT("%02d: %08X\n", i,*(p+i));
+		NAT_PRINT("%02d: %08X\n", i, *(p+i));
 	}
 	NAT_PRINT("-----------------<Flow Info>------------------\n");
 	NAT_PRINT("Information Block 1: %08X\n", entry->ipv4_hnapt.info_blk1);
@@ -501,6 +509,9 @@ int FoeBindEntry(struct hwnat_args *opt)
 {
 	struct FoeEntry *entry;
 
+	if (opt->entry_num >= FOE_4TB_SIZ)
+		return HWNAT_ENTRY_NOT_FOUND;
+
 	entry = &PpeFoeBase[opt->entry_num];
 
 	//restore right information block1
@@ -516,11 +527,19 @@ int FoeUnBindEntry(struct hwnat_args *opt)
 {
 	struct FoeEntry *entry;
 
+	if (opt->entry_num >= FOE_4TB_SIZ)
+		return HWNAT_ENTRY_NOT_FOUND;
+
 	entry = &PpeFoeBase[opt->entry_num];
 
 	spin_lock_bh(&ppe_foe_lock);
 	entry->udib1.state = UNBIND;
 	entry->udib1.time_stamp = RegRead(FOE_TS) & 0xFF;
+#if defined (CONFIG_HNAT_V2)
+	/* clear HWNAT cache */
+	RegModifyBits(CAH_CTRL, 1, 9, 1);
+	RegModifyBits(CAH_CTRL, 0, 9, 1);
+#endif
 	spin_unlock_bh(&ppe_foe_lock);
 
 	return HWNAT_SUCCESS;
@@ -529,6 +548,9 @@ int FoeUnBindEntry(struct hwnat_args *opt)
 int FoeDelEntry(struct hwnat_args *opt)
 {
 	struct FoeEntry *entry;
+
+	if (opt->entry_num >= FOE_4TB_SIZ)
+		return HWNAT_ENTRY_NOT_FOUND;
 
 	entry = &PpeFoeBase[opt->entry_num];
 

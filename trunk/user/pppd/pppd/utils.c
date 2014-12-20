@@ -625,7 +625,7 @@ print_string(p, len, printer, arg)
 		printer(arg, "\\t");
 		break;
 	    default:
-		printer(arg, "\\%.3o", c);
+		printer(arg, "\\%.3o", (unsigned char) c);
 	    }
 	}
     }

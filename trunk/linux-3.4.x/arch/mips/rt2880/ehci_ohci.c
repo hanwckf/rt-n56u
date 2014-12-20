@@ -212,7 +212,7 @@ int __init init_rt3xxx_ehci_ohci(void)
 	printk("MTK/Ralink EHCI/OHCI init.\n");
 
 #if defined(CONFIG_USB_EHCI_HCD_PLATFORM)
-	ehci_pdev = platform_device_register_resndata(NULL, "rt3xxx-ehci", -1,
+	ehci_pdev = platform_device_register_resndata(NULL, "ehci-platform", -1,
 			rt3xxx_ehci_resources, ARRAY_SIZE(rt3xxx_ehci_resources),
 			&rt3xxx_ehci_pdata, sizeof(rt3xxx_ehci_pdata));
 	if (IS_ERR(ehci_pdev)) {
@@ -223,7 +223,7 @@ int __init init_rt3xxx_ehci_ohci(void)
 	ehci_pdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
 #endif
 #if defined(CONFIG_USB_OHCI_HCD_PLATFORM)
-	ohci_pdev = platform_device_register_resndata(NULL, "rt3xxx-ohci", -1,
+	ohci_pdev = platform_device_register_resndata(NULL, "ohci-platform", -1,
 			rt3xxx_ohci_resources, ARRAY_SIZE(rt3xxx_ohci_resources),
 			&rt3xxx_ohci_pdata, sizeof(rt3xxx_ohci_pdata));
 	if (IS_ERR(ohci_pdev)) {

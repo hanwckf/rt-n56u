@@ -684,7 +684,7 @@ full_restart_lan(void)
 #endif
 
 #if defined(APP_SMBD) || defined(APP_NMBD)
-	reload_wins();
+	reload_nmbd();
 #endif
 
 	/* start ARP network scanner */

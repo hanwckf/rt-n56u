@@ -483,10 +483,10 @@ int start_dns_dhcpd(int is_ap_mode);
 void stop_dns_dhcpd(void);
 #if defined(APP_SMBD) || defined(APP_NMBD)
 FILE *write_smb_conf_header(void);
-void stop_wins(void);
+void stop_nmbd(void);
 void start_wins(void);
-void reload_wins(void);
-void restart_wins(void);
+void reload_nmbd(void);
+void restart_nmbd(void);
 #endif
 int is_upnp_run(void);
 int start_upnp(void);

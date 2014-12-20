@@ -50,6 +50,7 @@
 #define RCN_RESTART_MODEM		"restart_modem"
 #define RCN_RESTART_HDDTUNE		"restart_hddtune"
 #define RCN_RESTART_FTPD		"restart_ftpd"
+#define RCN_RESTART_NMBD		"restart_nmbd"
 #define RCN_RESTART_SMBD		"restart_smbd"
 #define RCN_RESTART_NFSD		"restart_nfsd"
 #define RCN_RESTART_DMS			"restart_dms"

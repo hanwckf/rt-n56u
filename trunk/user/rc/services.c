@@ -436,7 +436,7 @@ stop_services_lan_wan(void)
 	stop_upnp();
 	stop_detect_link();
 #if defined(APP_SMBD) || defined(APP_NMBD)
-	stop_wins();
+	stop_nmbd();
 #endif
 }
 

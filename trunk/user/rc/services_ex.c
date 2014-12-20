@@ -459,7 +459,7 @@ write_smb_conf_header(void)
 }
 
 void
-stop_wins(void)
+stop_nmbd(void)
 {
 	char* svcs[] = { "nmbd", NULL };
 	kill_services(svcs, 3, 1);
@@ -483,16 +483,16 @@ start_wins(void)
 }
 
 void
-reload_wins(void)
+reload_nmbd(void)
 {
 	if (pids("nmbd"))
 		doSystem("killall %s %s", "-SIGHUP", "nmbd");
 }
 
 void
-restart_wins(void)
+restart_nmbd(void)
 {
-	stop_wins();
+	stop_nmbd();
 #if defined(APP_SMBD)
 	if (pids("smbd")) {
 		write_smb_conf();

@@ -932,9 +932,13 @@ handle_notifications(void)
 		}
 #endif
 #if defined(APP_SMBD) || defined(APP_NMBD)
+		else if (strcmp(entry->d_name, RCN_RESTART_NMBD) == 0)
+		{
+			restart_nmbd();
+		}
 		else if (strcmp(entry->d_name, RCN_RESTART_WINS) == 0)
 		{
-			restart_wins();
+			restart_nmbd();
 			restart_dhcpd();
 			reload_vpn_server();
 		}

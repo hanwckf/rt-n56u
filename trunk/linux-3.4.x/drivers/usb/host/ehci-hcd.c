@@ -1255,7 +1255,7 @@ MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_AUTHOR (DRIVER_AUTHOR);
 MODULE_LICENSE ("GPL");
 
-#ifndef CONFIG_RT3XXX_EHCI
+#if !defined(CONFIG_USB_EHCI_HCD_PLATFORM)
 #ifdef CONFIG_PCI
 #include "ehci-pci.c"
 #define	PCI_DRIVER		ehci_pci_driver
@@ -1295,11 +1295,6 @@ MODULE_LICENSE ("GPL");
 #ifdef CONFIG_USB_EHCI_HCD_PPC_OF
 #include "ehci-ppc-of.c"
 #define OF_PLATFORM_DRIVER	ehci_hcd_ppc_of_driver
-#endif
-
-#ifdef CONFIG_RT3XXX_EHCI
-#include "ehci-rt3xxx.c"
-#define PLATFORM_DRIVER		rt3xxx_ehci_driver
 #endif
 
 #ifdef CONFIG_XPS_USB_HCD_XILINX

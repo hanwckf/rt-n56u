@@ -82,11 +82,11 @@ static void ohci_dump(struct ohci_hcd *ohci);
 static int ohci_init(struct ohci_hcd *ohci);
 static void ohci_stop(struct usb_hcd *hcd);
 
-#if defined(CONFIG_PM) || (defined(CONFIG_PCI) && !defined(CONFIG_RT3XXX_OHCI))
+#if defined(CONFIG_PM) || (defined(CONFIG_PCI) && !defined(CONFIG_USB_OHCI_HCD_PLATFORM))
 static int ohci_restart (struct ohci_hcd *ohci);
 #endif
 
-#if defined(CONFIG_PCI) && !defined(CONFIG_RT3XXX_OHCI)
+#if defined(CONFIG_PCI) && !defined(CONFIG_USB_OHCI_HCD_PLATFORM)
 static void sb800_prefetch(struct ohci_hcd *ohci, int on);
 #else
 static inline void sb800_prefetch(struct ohci_hcd *ohci, int on)
@@ -918,7 +918,7 @@ static void ohci_stop (struct usb_hcd *hcd)
 
 /*-------------------------------------------------------------------------*/
 
-#if defined(CONFIG_PM) || (defined(CONFIG_PCI) && !defined(CONFIG_RT3XXX_OHCI))
+#if defined(CONFIG_PM) || (defined(CONFIG_PCI) && !defined(CONFIG_USB_OHCI_HCD_PLATFORM))
 /* must not be called from interrupt context */
 static int ohci_restart (struct ohci_hcd *ohci)
 {
@@ -988,7 +988,7 @@ MODULE_AUTHOR (DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE ("GPL");
 
-#ifndef CONFIG_RT3XXX_OHCI
+#if !defined(CONFIG_USB_OHCI_HCD_PLATFORM)
 #ifdef CONFIG_PCI
 #include "ohci-pci.c"
 #define PCI_DRIVER		ohci_pci_driver
@@ -1069,11 +1069,6 @@ MODULE_LICENSE ("GPL");
 #ifdef CONFIG_USB_OHCI_HCD_PPC_OF
 #include "ohci-ppc-of.c"
 #define OF_PLATFORM_DRIVER	ohci_hcd_ppc_of_driver
-#endif
-
-#ifdef CONFIG_RT3XXX_OHCI
-#include "ohci-rt3xxx.c"
-#define PLATFORM_DRIVER		rt3xxx_ohci_driver
 #endif
 
 #ifdef CONFIG_PLAT_SPEAR

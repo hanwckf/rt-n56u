@@ -63,11 +63,6 @@ config USB_EHCI_HCD
 	  To compile this driver as a module, choose M here: the
 	  module will be called ehci-hcd.
 
-config RT3XXX_EHCI
-	bool "Ralink EHCI HCD support"
-	depends on USB_EHCI_HCD && !(RALINK_RT3052 || RALINK_MT7621)
-	default y
-
 config USB_EHCI_ROOT_HUB_TT
 	bool "Root Hub Transaction Translators"
 	depends on USB_EHCI_HCD
@@ -355,11 +350,6 @@ config USB_OHCI_HCD_PPC_OF_BE
 	  Enables support for big-endian USB controllers present on the
 	  OpenFirmware platform bus.
 
-config RT3XXX_OHCI
-	bool "Ralink OHCI HCD support"
-	depends on USB_OHCI_HCD && !(RALINK_RT3052 || RALINK_MT7621)
-	default y
-
 config USB_OHCI_HCD_PPC_OF_LE
 	bool "OHCI support for OF platform bus (little endian)"
 	depends on USB_OHCI_HCD && PPC_OF
@@ -417,7 +407,7 @@ config USB_CNS3XXX_OHCI
 
 config USB_OHCI_HCD_PLATFORM
 	bool "Generic OHCI driver for a platform device"
-	depends on USB_OHCI_HCD && EXPERIMENTAL
+	depends on USB_OHCI_HCD
 	default n
 	---help---
 	  Adds an OHCI host driver for a generic platform device, which
@@ -427,7 +417,7 @@ config USB_OHCI_HCD_PLATFORM
 
 config USB_EHCI_HCD_PLATFORM
 	bool "Generic EHCI driver for a platform device"
-	depends on USB_EHCI_HCD && EXPERIMENTAL
+	depends on USB_EHCI_HCD
 	default n
 	---help---
 	  Adds an EHCI host driver for a generic platform device, which

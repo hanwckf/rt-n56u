@@ -1541,7 +1541,6 @@ VOID RTMPAPGetAssoMacTable(
 				break;
 			
 			DataRate=0;
-			//getRate(pEntry->HTPhyMode, &DataRate);
 			RtmpDrvRateGet(pAd, pEntry->HTPhyMode.field.MODE, pEntry->HTPhyMode.field.ShortGI,
 		                          pEntry->HTPhyMode.field.BW, pEntry->HTPhyMode.field.MCS,
 		                          newRateGetAntenna(pEntry->HTPhyMode.field.MCS), &DataRate);

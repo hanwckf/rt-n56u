@@ -671,14 +671,21 @@ getRate(MACHTTRANSMIT_SETTING HTSetting)
 {
 	int rate_count = sizeof(MCSMappingRateTable)/sizeof(int);
 	int rate_index = 0;
+	int num_ss_vht = 1;
 
 	if (HTSetting.field.MODE >= MODE_VHT) {
+		int mcs_1ss = (int)HTSetting.field.MCS;
+		
+		if (mcs_1ss > 9) {
+			num_ss_vht = (mcs_1ss / 16) + 1;
+			mcs_1ss %= 16;
+		}
 		if (HTSetting.field.BW == BW_20)
-			rate_index = 108 + ((unsigned char)HTSetting.field.ShortGI * 29) + ((unsigned char)HTSetting.field.MCS);
+			rate_index = 108 + ((unsigned char)HTSetting.field.ShortGI * 29) + mcs_1ss;
 		else if (HTSetting.field.BW == BW_40)
-			rate_index = 117 + ((unsigned char)HTSetting.field.ShortGI * 29) + ((unsigned char)HTSetting.field.MCS);
+			rate_index = 117 + ((unsigned char)HTSetting.field.ShortGI * 29) + mcs_1ss;
 		else if (HTSetting.field.BW == BW_80)
-			rate_index = 127 + ((unsigned char)HTSetting.field.ShortGI * 29) + ((unsigned char)HTSetting.field.MCS);
+			rate_index = 127 + ((unsigned char)HTSetting.field.ShortGI * 29) + mcs_1ss;
 	}
 	else if (HTSetting.field.MODE >= MODE_HTMIX)
 		rate_index = 12 + ((unsigned char)HTSetting.field.BW * 24) + ((unsigned char)HTSetting.field.ShortGI * 48) + ((unsigned char)HTSetting.field.MCS);
@@ -693,7 +700,7 @@ getRate(MACHTTRANSMIT_SETTING HTSetting)
 	if (rate_index >= rate_count)
 		rate_index = rate_count-1;
 
-	return (MCSMappingRateTable[rate_index] * 5)/10;
+	return (MCSMappingRateTable[rate_index] * num_ss_vht * 5)/10;
 }
 
 int

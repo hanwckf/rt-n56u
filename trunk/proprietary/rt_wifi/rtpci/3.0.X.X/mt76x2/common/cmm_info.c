@@ -4853,7 +4853,6 @@ INT Show_MacTable_Proc(RTMP_ADAPTER *pAd, PSTRING arg)
 			&& (pEntry->Sst == SST_ASSOC))
 		{
 			DataRate=0;
-			//getRate(pEntry->HTPhyMode, &DataRate);
 			RtmpDrvRateGet(pAd, pEntry->HTPhyMode.field.MODE, pEntry->HTPhyMode.field.ShortGI,
 		                          pEntry->HTPhyMode.field.BW, pEntry->HTPhyMode.field.MCS,
 		                          newRateGetAntenna(pEntry->MaxHTPhyMode.field.MCS), &DataRate);
@@ -4972,7 +4971,6 @@ INT show_stainfo_proc(RTMP_ADAPTER *pAd, PSTRING arg)
 		   "RSSI2", "PhMd", "BW", "MCS", "SGI", "STBC", "Idle", "Rate");
 	
 	DataRate=0;
-	//getRate(pEntry->HTPhyMode, &DataRate);
 	RtmpDrvRateGet(pAd, pEntry->HTPhyMode.field.MODE, pEntry->HTPhyMode.field.ShortGI,
                       pEntry->HTPhyMode.field.BW, pEntry->HTPhyMode.field.MCS,
                       newRateGetAntenna(pEntry->MaxHTPhyMode.field.MCS), &DataRate);
@@ -5426,17 +5424,6 @@ INT	Show_ModuleTxpower_Proc(
  	return TRUE;
 }
 #endif/*APCLI_SUPPORT*/
-
-void  getRate(HTTRANSMIT_SETTING HTSetting, UINT32* fLastTxRxRate)
-
-{
-	VOID *pAd = NULL;
-	RtmpDrvRateGet(pAd, HTSetting.field.MODE,HTSetting.field.ShortGI,
-		HTSetting.field.BW,HTSetting.field.MCS,newRateGetAntenna(HTSetting.field.MCS),fLastTxRxRate);
-	*(fLastTxRxRate) /= 500000;
-	*(fLastTxRxRate) /= 2;
-}
-
 
 #ifdef TXBF_SUPPORT
 

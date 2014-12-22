@@ -34,7 +34,7 @@ VOID RtmpDrvRateGet(
 {
 	UINT32 MCS_1NSS = (UINT32) MCS;
 	*pRate = 0;
-	
+
 	DBGPRINT(RT_DEBUG_TRACE,("<==== %s \nMODE: %x shortGI: %x BW: %x MCS: %x Antenna: %x \n"
 		,__FUNCTION__,MODE,ShortGI,BW,MCS,Antenna));
 	if((BW >= Rate_BW_MAX) || (ShortGI >= Rate_GI_MAX) || (BW >= Rate_BW_MAX))
@@ -44,23 +44,22 @@ VOID RtmpDrvRateGet(
 	}
 	
 #ifdef DOT11_VHT_AC
-    if (MODE >= MODE_VHT)
-    {
+	if (MODE >= MODE_VHT)
+	{
 		if(MCS_1NSS > 9)
 		{
-			Antenna = (MCS / 10)+1;
-			MCS_1NSS %= 10;
+			Antenna = (MCS / 16)+1;
+			MCS_1NSS %= 16;
 		}
-        *pRate = RalinkRate_VHT_1NSS[BW][ShortGI][MCS_1NSS];
-    }
-    else
+		*pRate = RalinkRate_VHT_1NSS[BW][ShortGI][MCS_1NSS];
+	}
+	else
 #endif /* DOT11_VHT_AC */
-
 #ifdef DOT11_N_SUPPORT
 	if ((MODE >= MODE_HTMIX) && (MODE < MODE_VHT))
 	{
 		if(MCS_1NSS > 7)
-		{			
+		{
 			Antenna = (MCS / 8)+1;
 			MCS_1NSS %= 8;
 		}
@@ -70,11 +69,9 @@ VOID RtmpDrvRateGet(
 #endif /* DOT11_N_SUPPORT */
 	if (MODE == MODE_OFDM)
 		*pRate = RalinkRate_Legacy[MCS_1NSS+4];
-	else 
+	else
 		*pRate = RalinkRate_Legacy[MCS_1NSS];
 
-
-	
 	*pRate *= 500000;
 #if defined(DOT11_VHT_AC) || defined(DOT11_N_SUPPORT)
     if (MODE >= MODE_HTMIX)
@@ -83,8 +80,6 @@ VOID RtmpDrvRateGet(
 
 	DBGPRINT(RT_DEBUG_TRACE,("=====> %s \nMODE: %x shortGI: %x BW: %x MCS: %x Antenna: %x  Rate = %d\n"
 		,__FUNCTION__,MODE,ShortGI,BW,MCS_1NSS,Antenna, (*pRate)/1000000));
-	
-
 }
 
 

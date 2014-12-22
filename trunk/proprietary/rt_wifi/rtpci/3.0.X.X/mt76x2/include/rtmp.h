@@ -8609,9 +8609,6 @@ INT WaitForAsicReady(RTMP_ADAPTER *pAd);
 BOOLEAN CHAN_PropertyCheck(RTMP_ADAPTER *pAd, UINT32 ChanNum, UCHAR Property);
 
 
-void  getRate(HTTRANSMIT_SETTING HTSetting, UINT32* fLastTxRxRate);
-
-
 #ifdef APCLI_SUPPORT
 
 VOID ApCliRTMPSendNullFrame(

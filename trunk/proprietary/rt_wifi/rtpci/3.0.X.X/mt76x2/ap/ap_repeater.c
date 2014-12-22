@@ -752,7 +752,6 @@ INT	Show_Repeater_Cli_Proc(
 		if (pEntry && IS_ENTRY_APCLI(pEntry)&& (pEntry->Sst == SST_ASSOC) && (pEntry->bReptCli))
 		{
 			DataRate=0;
-			//getRate(pEntry->HTPhyMode, &DataRate);
 			RtmpDrvRateGet(pAd, pEntry->HTPhyMode.field.MODE, pEntry->HTPhyMode.field.ShortGI,
 				 pEntry->HTPhyMode.field.BW,pEntry->HTPhyMode.field.MCS,
 				 newRateGetAntenna(pEntry->HTPhyMode.field.MCS),&DataRate);

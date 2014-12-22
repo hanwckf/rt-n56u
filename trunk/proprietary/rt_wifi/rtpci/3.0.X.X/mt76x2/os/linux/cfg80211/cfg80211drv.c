@@ -619,7 +619,6 @@ BOOLEAN CFG80211DRV_StaGet(
 		return FALSE;
 
 	/* fill tx rate */
-	//getRate(pEntry->HTPhyMode, &DataRate);
 	RtmpDrvRateGet(pAd, pEntry->HTPhyMode.field.MODE, pEntry->HTPhyMode.field.ShortGI,
 				 pEntry->HTPhyMode.field.BW,pEntry->HTPhyMode.field.MCS,
 				 newRateGetAntenna(pEntry->MaxHTPhyMode.field.MCS),&DataRate);

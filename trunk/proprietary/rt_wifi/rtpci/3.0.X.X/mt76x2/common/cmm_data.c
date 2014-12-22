@@ -2561,8 +2561,8 @@ VOID Update_Rssi_Sample(
 	IN RSSI_SAMPLE *pRssi,
 	IN RXWI_STRUC *pRxWI)
 {
-	CHAR rssi[3];
-	UCHAR snr[3];
+	CHAR rssi[3] = {0};
+	UCHAR snr[3] = {0};
 	BOOLEAN bInitial = FALSE;
 	CHAR Phymode = get_pkt_phymode_by_rxwi(pAd, pRxWI);
 
@@ -2571,9 +2571,9 @@ VOID Update_Rssi_Sample(
 
 	get_pkt_rssi_by_rxwi(pAd, pRxWI, 3, &rssi[0]);
 	get_pkt_snr_by_rxwi(pAd, pRxWI, 3, &snr[0]);
-	
+
 	if (snr[0] != 0)
-	{			
+	{
 		pRssi->LastSnr0 = ConvertToSnr(pAd, (UCHAR)snr[0]);
 		if (bInitial)
 		{
@@ -2597,7 +2597,7 @@ VOID Update_Rssi_Sample(
 						&& (is_external_lna_mode(pAd, pAd->CommonCfg.Channel) == FALSE)) {
 				pRssi->LastRssi0 = (-92 + pRssi->LastSnr0);
 			}
-		} 
+		}
 
 		if (bInitial)
 		{
@@ -2606,12 +2606,12 @@ VOID Update_Rssi_Sample(
 		}
 		else
 			pRssi->AvgRssi0X8 = (pRssi->AvgRssi0X8 - pRssi->AvgRssi0) + pRssi->LastRssi0;
- 
+
 		pRssi->AvgRssi0 = pRssi->AvgRssi0X8 >> 3;
 	}
-	
+
 	if (snr[1] != 0)
-	{			
+	{
 		pRssi->LastSnr1 = ConvertToSnr(pAd, (UCHAR)snr[1]);
 		if (bInitial)
 		{
@@ -2623,9 +2623,9 @@ VOID Update_Rssi_Sample(
 		
 		pRssi->AvgSnr1 = pRssi->AvgSnr1X8 >> 3;
 	}
-	
+
 	if (rssi[1] != 0)
-	{   
+	{
 		pRssi->LastRssi1 = ConvertToRssi(pAd, (CHAR)rssi[1], RSSI_1);
 		
 		if (IS_MT76x2(pAd)) {

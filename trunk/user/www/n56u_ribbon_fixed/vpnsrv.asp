@@ -435,9 +435,9 @@ function markGroupACL(o, c, b) {
 
 function showACLList(vnet_show,rnet_show,is_openvpn){
 	var code;
-	var acl_pass = "";
-	var acl_addr = "";
-	var acl_rnet = "";
+	var acl_pass;
+	var acl_addr;
+	var acl_rnet;
 	var addr_part = lan_ipaddr_x;
 	if (vnet_show)
 		addr_part = vpn_ipvnet_x;
@@ -450,6 +450,8 @@ function showACLList(vnet_show,rnet_show,is_openvpn){
 		code +='<tr><td colspan="5" style="text-align: center; padding-bottom: 0px;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
 		for(var i = 0; i < ACLList.length; i++){
+			acl_pass = "";
+			acl_rnet = "";
 			if (rnet_show) {
 				if (ACLList[i][3] != "" && ACLList[i][4] != "")
 					acl_rnet = ACLList[i][3] + " / " + ACLList[i][4];

@@ -475,30 +475,38 @@ function reboot(){
 	}
 }
 
+function reset_btn_commit(btn_id){
+	var $j = jQuery.noConflict();
+	var $btn=$j('#'+btn_id);
+	$btn.removeClass('alert-error').removeClass('alert-success');
+}
+
 function commit(){
-	if(!confirm("<#Commit_confirm#>"))
+	if(!confirm('<#Commit_confirm#>'))
 		return;
 	var $j = jQuery.noConflict();
-	$j.getJSON('/nvram_action.asp', {nvram_action: "commit_nvram"},
-	function(response){
-		var respRes = (response != null && typeof response === 'object' && "nvram_result" in response)
-				? response.nvram_result : -1;
-		
-		var $respBtn = $j("#commit_btn");
-		
-		if(respRes != 0){
-			$respBtn.removeClass('alert-success')
-			.addClass('alert-error');
-		}else{
-			$respBtn.removeClass('alert-error')
-			.addClass('alert-success');
+	var $btn = $j('#commit_btn');
+	$j.ajax({
+		type: "post",
+		url: "/apply.cgi",
+		data: {
+			action_mode: " CommitFlash ",
+			nvram_action: "commit_nvram"
+		},
+		dataType: "json",
+		error: function(xhr) {
+			$btn.addClass('alert-error');
+			setTimeout("reset_btn_commit('#commit_btn')", 1500);
+		},
+		success: function(response) {
+			var sys_result = (response != null && typeof response === 'object' && "sys_result" in response)
+				? response.sys_result : -1;
+			if(sys_result == 0)
+				$btn.addClass('alert-success');
+			else
+				$btn.addClass('alert-error');
+			setTimeout("reset_btn_commit('commit_btn')", 1500);
 		}
-		
-		var idTimeOut = setTimeout(function(){
-			clearTimeout(idTimeOut);
-			$respBtn.removeClass('alert-success')
-			.removeClass('alert-error');
-		}, 1500);
 	});
 }
 
@@ -507,7 +515,7 @@ function clearlog(){
 	$j.post('/apply.cgi',
 	{
 		'current_page': 'Main_LogStatus_Content.asp',
-		'action_mode': ' Clear '
+		'action_mode': ' ClearLog '
 	});
 	setLogData();
 }
@@ -515,28 +523,24 @@ function clearlog(){
 function kb_to_gb(kilobytes){
 	if(typeof(kilobytes) == "string" && kilobytes.length == 0)
 		return 0;
-	
 	return (kilobytes*1024)/(1024*1024*1024);
 }
 
 function simpleNum(num){
 	if(typeof(num) == "string" && num.length == 0)
 		return 0;
-	
 	return parseInt(kb_to_gb(num)*1000)/1000;
 }
 
 function simpleNum2(num){
 	if(typeof(num) == "string" && num.length == 0)
 		return 0;
-	
 	return parseInt(num*1000)/1000;
 }
 
 function simpleNum3(num){
 	if(typeof(num) == "string" && num.length == 0)
 		return 0;
-	
 	return parseInt(num)/1024;
 }
 

@@ -440,9 +440,7 @@ function changeBgColor(obj, num){
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="IPConnection;">
     <input type="hidden" name="group_id" value="VSList">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
 
     <div class="container-fluid">

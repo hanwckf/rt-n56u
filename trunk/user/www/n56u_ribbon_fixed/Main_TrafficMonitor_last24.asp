@@ -24,7 +24,7 @@
 <script>
 var $j = jQuery.noConflict();
 
-<% nvram("web_svg,rstats_enable,rstats_colors"); %>
+<% nvram("rstats_enable,rstats_colors"); %>
 
 speed_history = {};
 
@@ -252,9 +252,7 @@ $j(document).ready(function() {
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="zoom" value="3">
 

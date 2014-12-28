@@ -700,9 +700,7 @@ function simplyMAC(fullMAC){
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="Layer3Forwarding;LANHostConfig;IPConnection;PPPConnection;WLANConfig11b">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="lan_ipaddr" value="<% nvram_get_x("", "lan_ipaddr"); %>" readonly="1" />
     <input type="hidden" name="lan_netmask" value="<% nvram_get_x("", "lan_netmask"); %>" readonly="1" />

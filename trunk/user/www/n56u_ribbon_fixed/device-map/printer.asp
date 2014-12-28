@@ -42,7 +42,6 @@ function u2ec_monopolize(){
 <form method="post" name="form" action="/start_apply.htm">
 <input type="hidden" name="current_page" value="">
 <input type="hidden" name="next_page" value="">
-<input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="action_script" value="">
 

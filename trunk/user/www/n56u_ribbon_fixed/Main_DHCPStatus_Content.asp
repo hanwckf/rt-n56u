@@ -43,9 +43,7 @@
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
 
     <div class="container-fluid">
@@ -80,7 +78,7 @@
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td style="text-align: right; padding-bottom: 5px;">
+                                            <td style="text-align: right; padding-bottom: 0px;">
                                                 <input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 219px;">
                                             </td>
                                         </tr>

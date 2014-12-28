@@ -169,7 +169,6 @@ function done_validating(action){
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="LANHostConfig;">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="wan_ipaddr" value="<% nvram_get_x("", "wan_ipaddr_t"); %>" readonly="1">

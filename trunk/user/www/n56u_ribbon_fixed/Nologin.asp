@@ -16,8 +16,9 @@ body {
 }
 
 .alert {
-  padding: 8px 35px 8px 14px;
-  margin-bottom: 18px;
+  padding: 10px 20px 2px 20px;
+  margin-bottom: 10px;
+  margin-top: 10px;
   color: #c09853;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
   background-color: #fcf8e3;
@@ -25,10 +26,9 @@ body {
   -webkit-border-radius: 4px;
   -moz-border-radius: 4px;
   border-radius: 4px;
-  width:390px;
-  height:100px;
+  width: 460px;
+  height: 100px;
   font-family:Arial, Verdana, Helvetica, sans-serif;
-  margin-top:20px;
   text-align:left;
 }
 
@@ -48,19 +48,17 @@ body {
 <% login_state_hook(); %>
 
 function initial(){
-	document.getElementById("logined_ip_str").innerHTML = login_ip_str();
+  document.getElementById("logined_ip_str").innerHTML = login_ip_str();
 }
 </script>
 </head>
 
 <body onload="initial()">
-<form name="formname" method="POST">
-    <center>
-        <div class="alert alert-info">
-            <p><#login_hint1#> <span id="logined_ip_str"></span></p>
-            <p><#login_hint2#></p>
-        </div>
-    </center>
-</form>
+<center>
+    <div class="alert alert-info">
+        <p><#login_hint1#> <span id="logined_ip_str"></span></p>
+        <p><#login_hint2#></p>
+    </div>
+</center>
 </body>
 </html>

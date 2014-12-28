@@ -112,7 +112,6 @@ table td {text-align: center; }
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
     <input type="hidden" name="sid_list" value="IPConnection;">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="prev_page" value="">
     <input type="hidden" name="current_page" value="/Advanced_OperationMode_Content.asp">

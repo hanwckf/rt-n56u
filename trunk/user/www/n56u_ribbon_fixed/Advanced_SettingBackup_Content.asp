@@ -23,7 +23,7 @@ var $j = jQuery.noConflict();
 $j(document).ready(function() {
     $j('#commit_nvram, #commit_storage').click(function(){
         var $button = $j(this);
-        send_action($button.prop('id'), $button);
+        send_commit_action($button.prop('id'), $button);
         return false;
     });
 });
@@ -31,11 +31,22 @@ $j(document).ready(function() {
 </script>
 <script>
 
+<% login_state_hook(); %>
 var lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
 
 function initial(){
 	show_banner(1);
 	show_menu(5,7,5);
+
+	if (login_safe()){
+		showhide_div('row_nv_reset', 1);
+		showhide_div('row_nv_backup', 1);
+		showhide_div('row_nv_restore1', 1);
+		showhide_div('row_nv_restore2', 1);
+		showhide_div('row_st_reset', 1);
+		showhide_div('row_st_backup', 1);
+	}
+
 	show_footer();
 }
 
@@ -93,41 +104,32 @@ function restoreStorage(){
 		return false;
 }
 
-function send_action(action_id, $button)
-{
-	var $respClass = $button.parents('td').find('div.nvram_response');
-	if(action_id != '')
-	{
-		$j.getJSON('/nvram_action.asp', {nvram_action: action_id},
-		function(response){
-			var respRes = (response != null && typeof response === 'object' && "nvram_result" in response)
-					? response.nvram_result : -1;
-			
-			$button.hide();
-			
-			if(respRes != 0)
-			{
-				$respClass.removeClass('alert-success')
-				.addClass('alert-error')
-				.html('Error!')
-				.show();
-			}
+function send_commit_action(action_id,$button){
+	if(action_id == '')
+		return;
+	$j.ajax({
+		type: "post",
+		url: "/apply.cgi",
+		data: {
+			action_mode: " CommitFlash ",
+			nvram_action: action_id
+		},
+		dataType: "json",
+		error: function(xhr) {
+			$button.addClass('alert-error');
+			$button.val('Failed!');
+			setTimeout("reset_btn_commit("+$button+")", 1500);
+		},
+		success: function(response) {
+			var sys_result = (response != null && typeof response === 'object' && "sys_result" in response)
+				? response.sys_result : -1;
+			if(sys_result == 0)
+				$button.addClass('alert-success');
 			else
-			{
-				$respClass.removeClass('alert-error')
-				.addClass('alert-success')
-				.html('Success')
-				.show();
-			}
-			
-			var idTimeOut = setTimeout(function(){
-				clearTimeout(idTimeOut);
-				$respClass.hide();
-				$button.show();
-			}, 1500);
+				$button.addClass('alert-error');
+			setTimeout("reset_btn_commit('"+action_id+"')", 1500);
 		}
-		);
-	}
+	});
 }
 
 function saveSetting(){
@@ -194,17 +196,6 @@ $j.fn.fileName = function() {
 	background-image: linear-gradient(top, #ffffff, #e6e6e6);
 	background-image: -moz-linear-gradient(top, #ffffff, #e6e6e6);
 	border: 1px solid #ddd;
-}
-
-.nvram_response
-{
-	display: none;
-	float: left;
-	padding: 5px 11px;
-	width: 200px;
-	height: 18px;
-	text-align: center;
-	border-radius: 5px;
 }
 
 /* style text of the upload field and add an attachment icon */
@@ -303,32 +294,32 @@ $j.fn.fileName = function() {
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#Adm_Setting_nvram#></th>
                                         </tr>
-                                        <tr>
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,19,1)"><#Setting_factorydefault_itemname#></a></th>
+                                        <tr id="row_nv_reset" style="display:none">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,19,1)"><#Setting_factorydefault_itemname#></a></th>
                                             <td>
                                                 <input name="action1" class="btn btn-danger" style="width: 219px;" onclick="restoreNVRAM();" type="button" value="<#CTL_restore#>"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_nv_backup" style="display:none">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,19,2)"><#Setting_save_itemname#></a></th>
                                             <td>
                                                 <input name="action2" class="btn btn-info" style="width: 219px;" onclick="saveSetting();" type="button" value="<#CTL_onlysave#>"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_nv_restore1" style="display:none">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,19,3)"><#Setting_upload_itemname#></a></th>
                                             <td>
                                                 <input name="file" type="file" size="36" />
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_nv_restore2" style="display:none">
                                             <th style="border-top: 0 none; padding-top: 0px;"></th>
                                             <td style="border-top: 0 none; padding-top: 0px;">
                                                 <input name="uploadbutton" class="btn btn-info" style="width: 219px;" onclick="uploadSetting();" type="button" value="<#CTL_upload#>"/>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#Adm_Setting_commit_mode#></th>
+                                            <th width="50%"><#Adm_Setting_commit_mode#></th>
                                             <td align="left">
                                                 <select class="input" name="nvram_manual_fake" onchange="applyRule();">
                                                     <option value="0" <% nvram_match_x("", "nvram_manual", "0", "selected"); %>><#Adm_Setting_commit_item0#> (*)</option>
@@ -339,8 +330,7 @@ $j.fn.fileName = function() {
                                         <tr>
                                             <th><#Adm_Setting_commit_now#></th>
                                             <td>
-                                                <input name="commit_nvram" class="btn btn-primary" id="commit_nvram" style="width: 219px;" type="button" value="<#CTL_Commit#>"/>
-                                                <div class="nvram_response" class="alert"></div>
+                                                <button type="button" name="commit_nvram" id="commit_nvram" class="btn" style="width: 219px; outline: 0"><i class="icon icon-fire"></i>&nbsp;<#CTL_Commit#></button>
                                             </td>
                                         </tr>
                                     </table>
@@ -349,20 +339,20 @@ $j.fn.fileName = function() {
                                         <tr>
                                             <th colspan="3" style="background-color: #E3E3E3;"><#Adm_Setting_store#></th>
                                         </tr>
-                                        <tr>
-                                            <th width="50%"><#Setting_factorydefault_itemname#></th>
+                                        <tr id="row_st_reset" style="display:none">
+                                            <th><#Setting_factorydefault_itemname#></th>
                                             <td colspan="2">
                                                 <input name="st_action1" class="btn btn-danger" style="width: 219px;" type="button" value="<#CTL_restore#>" onclick="restoreStorage();"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_st_backup" style="display:none">
                                             <th><#Adm_Setting_store_backup#></th>
                                             <td>
                                                 <input name="st_action2" class="btn btn-info" style="width: 219px;" onclick="saveStorage();" type="button" value="<#CTL_onlysave#>"/>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#Adm_Setting_store_stats#></th>
+                                            <th width="50%"><#Adm_Setting_store_stats#></th>
                                             <td align="left">
                                                 <select class="input" name="rstats_stored_fake" onchange="applyRule();" >
                                                     <option value="1" <% nvram_match_x("", "rstats_stored", "1", "selected"); %>><#checkbox_Yes#> (*)</option>
@@ -382,8 +372,7 @@ $j.fn.fileName = function() {
                                         <tr>
                                             <th><#Adm_Setting_store_now#></th>
                                             <td colspan="2">
-                                                <input name="commit_storage" class="btn btn-primary" id="commit_storage" style="width: 219px;" type="button" value="<#CTL_Commit#>"/>
-                                                <div class="nvram_response" class="alert"></div>
+                                                <button type="button" name="commit_storage" id="commit_storage" class="btn" style="width: 219px; outline: 0"><i class="icon icon-fire"></i>&nbsp;<#CTL_Commit#></button>
                                             </td>
                                         </tr>
                                     </table>

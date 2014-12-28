@@ -82,8 +82,10 @@ typedef u_int8_t u8;
 #define EVM_RESTART_ITUNES		(1ULL << 40)
 #define EVM_RESTART_TRMD		(1ULL << 41)
 #define EVM_RESTART_ARIA		(1ULL << 42)
+#define EVM_RESTART_REBOOT		(1ULL << 62)
 
-#define EVM_RESTART_REBOOT		(1ULL << 63)
+#define EVM_BLOCK_UNSAFE		(1ULL << 63) /* special case */
+
 
 #define EVT_RESTART_FIREWALL		1
 #define EVT_RESTART_DHCPD		1

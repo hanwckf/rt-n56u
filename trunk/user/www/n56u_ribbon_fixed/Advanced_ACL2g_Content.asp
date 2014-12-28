@@ -251,9 +251,7 @@ function done_validating(action){
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="DeviceSecurity11b;">
     <input type="hidden" name="group_id" value="rt_ACLList">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
 
     <input type="hidden" name="rt_macnum_x_0" value="<% nvram_get_x("", "rt_macnum_x"); %>" readonly="1" />

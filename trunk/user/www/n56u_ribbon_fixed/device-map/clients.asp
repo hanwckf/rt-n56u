@@ -311,19 +311,16 @@ function submit_macfilter(){
 	document.macfilterForm.submit();
 }
 
-
 function build_submitrule(){
 	if(document.macfilterForm.modified.value == "1"){
-		if(list_type != "1"){
+		if(list_type != "1")
 			submit_macfilter();
-		}
 		else
 			refreshpage();
 	}
 	else
 		refreshpage();
 }
-
 
 function applyRule(){
 	parent.showLoading();

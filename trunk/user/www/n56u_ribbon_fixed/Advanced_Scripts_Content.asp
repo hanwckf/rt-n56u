@@ -17,15 +17,27 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script>
 
+<% login_state_hook(); %>
+
 function initial(){
 	show_banner(1);
 	show_menu(5,8,2);
 	show_footer();
 
+	if (!login_safe())
+		textarea_scripts_enabled(0);
+
 	if (get_ap_mode()){
 		showhide_div('row_post_wan_script', 0);
 		showhide_div('row_post_iptables_script', 0);
 	}
+}
+
+function textarea_scripts_enabled(v){
+	inputCtrl(document.form['scripts.start_script.sh'], v);
+	inputCtrl(document.form['scripts.started_script.sh'], v);
+	inputCtrl(document.form['scripts.post_wan_script.sh'], v);
+	inputCtrl(document.form['scripts.post_iptables_script.sh'], v);
 }
 
 function applyRule(){
@@ -73,9 +85,7 @@ function done_validating(action){
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="General;">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
 
     <div class="container-fluid">

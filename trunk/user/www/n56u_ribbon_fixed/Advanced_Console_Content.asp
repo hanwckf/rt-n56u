@@ -17,6 +17,20 @@
 <script>
 var $j = jQuery.noConflict();
 
+<% login_state_hook(); %>
+
+function initial(){
+	show_banner(1);
+	show_menu(5,7,6);
+	show_footer();
+
+	if (!login_safe()){
+		$j('#btn_exec').attr('disabled', 'disabled');
+		$j('#SystemCmd').attr('disabled', 'disabled');
+	}else
+		document.form.SystemCmd.focus();
+}
+
 function getResponse(){
 	$j.get('/console_response.asp', function(data){
 		var response = ($j.browser.msie && !is_ie11p) ? data.nl2br() : data;
@@ -25,35 +39,37 @@ function getResponse(){
 	});
 }
 
-function startPost(o, s)
-{
+function startPost(){
+	if (!login_safe())
+		return false;
 	$j('#btn_exec').attr('disabled', 'disabled');
 	$j.post('/apply.cgi',
 	{
+		'action_mode': ' SystemCmd ',
 		'current_page': 'console_response.asp',
 		'next_page': 'console_response.asp',
-		'SystemCmd': $j('#SystemCmd').val(),
-		'action_mode': s
+		'SystemCmd': $j('#SystemCmd').val()
 	},
-	function(response){getResponse()});
+	function(response){
+		getResponse();
+	});
 }
 
-function initial(){
-	show_banner(1);
-	show_menu(5,7,6);
-	show_footer();
+function clearOut(){
+	$j('#console_area').html('');
+	$j('#SystemCmd').val('');
 }
 
 function checkEnter(e){
 	e = e || event;
-	return (e.keyCode || event.which || event.charCode || 0) !== 13;
+	return (e.keyCode || event.which || event.charCode || 0) === 13;
 }
 
 function hideLoading(){}
 </script>
-</head>  
+</head>
 
-<body onLoad="initial(); document.form.SystemCmd.focus(); " >
+<body onLoad="initial();" >
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -67,15 +83,13 @@ function hideLoading(){}
     <div id="Loading" class="popup_bg"></div>
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 
-    <form method="GET" name="form" action="apply.cgi" onkeypress="return checkEnter(event)">
-    <input type="hidden" name="current_page" value="Advanced_Console_Content.asp">
-    <input type="hidden" name="next_page" value="Advanced_Console_Content.asp">
+    <form method="post" name="form" action="apply.cgi" onkeypress="return !checkEnter(event)">
+    <input type="hidden" name="current_page" value="">
+    <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
-    <input type="hidden" name="sid_list" value="FirewallConfig;">
+    <input type="hidden" name="sid_list" value="">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
 
     <div class="container-fluid">
@@ -106,9 +120,9 @@ function hideLoading(){}
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <td width="80%" style="border-top: 0 none"><input type="text" id="SystemCmd" class="span12" name="SystemCmd" maxlength="127" onkeypress="if (event.keyCode == 13) startPost(this, ' Refresh ');" value=""></td>
-                                            <td style="border-top: 0 none"><input class="btn btn-primary span12" id="btn_exec" onClick="startPost(this, ' Refresh ')" type="button" value="<#CTL_refresh#>" name="action"></td>
-                                            <td style="border-top: 0 none"><button class="btn span12" onClick="$j('#console_area').html(''); $j('#SystemCmd').val('');" type="button" value="<#CTL_refresh#>" name="action"><i class="icon icon-remove"></i></button></td>
+                                            <td width="80%" style="border-top: 0 none"><input type="text" id="SystemCmd" class="span12" name="SystemCmd" maxlength="127" onkeypress="if (checkEnter(event)) startPost();" value=""></td>
+                                            <td style="border-top: 0 none"><input class="btn btn-primary span12" id="btn_exec" onClick="startPost()" type="button" value="<#CTL_refresh#>" name="action"></td>
+                                            <td style="border-top: 0 none"><button class="btn span12" onClick="clearOut();" type="button" value="<#CTL_refresh#>" name="action" style="outline: 0"><i class="icon icon-remove"></i></button></td>
                                         </tr>
                                         <tr>
                                             <td colspan="3" style="border-top: 0 none">

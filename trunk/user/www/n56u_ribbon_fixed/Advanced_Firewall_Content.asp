@@ -257,9 +257,7 @@ function valid_IP_form(obj){
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="FirewallConfig;">
     <input type="hidden" name="group_id" value="LWFilterList">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
 
     <input type="hidden" name="filter_lw_date_x" value="<% nvram_get_x("","filter_lw_date_x"); %>">

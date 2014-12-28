@@ -25,8 +25,6 @@
 #define FW_APPEND	1
 #define FW_NEWLINE	2
 
-#define _dprintf(args...)	do { } while(0)
-
 // for backup =========================================================
 
 int f_write(const char *path, const void *buffer, int len, unsigned flags, unsigned cmode)
@@ -48,16 +46,6 @@ int f_write(const char *path, const void *buffer, int len, unsigned flags, unsig
 	}
 	umask(m);
 	return r;
-}
-
-const char *resmsg_get(void)
-{
-	return get_cgi("resmsg");
-}
-
-void resmsg_set(const char *msg)
-{
-	set_cgi("resmsg", strdup(msg));	// m ok
 }
 
 // for bandwidth =========================================================

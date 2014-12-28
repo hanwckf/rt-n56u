@@ -196,9 +196,7 @@ function on_xupnpd_link(){
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="RouterConfig;LANHostConfig;WLANConfig11a;WLANConfig11b;">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
 
     <div class="container-fluid">
@@ -352,7 +350,7 @@ function on_xupnpd_link(){
                                             <th>M2U - <#menu5_2_5#>:</th>
                                             <td>
                                                 <select name="ether_m2u" class="input">
-                                                    <option value="0" <% nvram_match_x("", "ether_m2u", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="0" <% nvram_match_x("", "ether_m2u", "0", "selected"); %>><#btn_Disable#></option>
                                                     <option value="1" <% nvram_match_x("", "ether_m2u", "1", "selected"); %>>Multicast to Unicast</option>
                                                     <option value="2" <% nvram_match_x("", "ether_m2u", "2", "selected"); %>>HW IGMP/MLD snooping (*)</option>
                                                 </select>

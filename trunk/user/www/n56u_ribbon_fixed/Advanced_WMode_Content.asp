@@ -301,9 +301,7 @@ function hideClients_Block(){
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="WLANConfig11a;">
     <input type="hidden" name="group_id" value="RBRList">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="wl_country_code" value="<% nvram_get_x("",  "wl_country_code"); %>">
     <input type="hidden" name="wl_HT_BW" value="<% nvram_get_x("",  "wl_HT_BW"); %>">

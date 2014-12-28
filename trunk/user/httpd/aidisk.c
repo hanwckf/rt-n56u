@@ -308,7 +308,6 @@ ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char **argv)
 			else
 				websWrite(wp, ", ");
 
-			//printf("[%llu] ", follow_partition->used_kilobytes);	// tmp test
 			websWrite(wp, "%llu", follow_partition->used_kilobytes);
 		}
 
@@ -833,10 +832,8 @@ ej_get_folder_tree(int eid, webs_t wp, int argc, char **argv)
 	struct dirent *dp1, *dp2;
 	char dir1_Path[4096], dir2_Path[4096];
 
-	if (strlen(layer_order) <= 0) {
-		printf("No input \"layer_order\"!\n");
+	if (strlen(layer_order) <= 0)
 		return -1;
-	}
 
 	follow_info = index(layer_order, '_');
 	while (follow_info != NULL && *follow_info != 0) {
@@ -869,10 +866,8 @@ ej_get_folder_tree(int eid, webs_t wp, int argc, char **argv)
 	follow_info = folder_code;
 
 	disks_info = read_disk_data();
-	if (disks_info == NULL) {
-		printf("Can't read the information of disks.\n");
+	if (disks_info == NULL)
 		return -1;
-	}
 
 	first = 1;
 	disk_count = 0;
@@ -932,10 +927,7 @@ ej_get_folder_tree(int eid, webs_t wp, int argc, char **argv)
 			sprintf(dir1_Path, "%s", follow_partition->mount_point);
 			dir1 = opendir(dir1_Path);
 			if (dir1 == NULL) {
-				printf("Can't open the directory, %s.\n", dir1_Path);
-
 				free_disk_data(disks_info);
-
 				return -1;
 			}
 
@@ -990,11 +982,9 @@ ej_get_folder_tree(int eid, webs_t wp, int argc, char **argv)
 		folder_order = atoi(follow_info);
 
 		dir1 = opendir(dir1_Path);
-		if (dir1 == NULL) {
-			printf("Can't open the directory, %s.\n", dir1_Path);
-
+		if (dir1 == NULL)
 			return -1;
-		}
+		
 		folder_count1 = -1;
 		while ((dp1 = readdir(dir1)) != NULL) {
 			if (dp1->d_name[0] == '.')
@@ -1048,10 +1038,8 @@ ej_get_share_tree(int eid, webs_t wp, int argc, char **argv)
 	disk_info_t *disks_info, *follow_disk;
 	partition_info_t *follow_partition;
 
-	if (strlen(layer_order) <= 0) {
-		printf("No input \"layer_order\"!\n");
+	if (strlen(layer_order) <= 0)
 		return -1;
-	}
 
 	follow_info = index(layer_order, '_');
 	while (follow_info != NULL && *follow_info != 0) {
@@ -1080,10 +1068,8 @@ ej_get_share_tree(int eid, webs_t wp, int argc, char **argv)
 	}
 
 	disks_info = read_disk_data();
-	if (disks_info == NULL) {
-		printf("Can't read the information of disks.\n");
+	if (disks_info == NULL)
 		return -1;
-	}
 
 	first = 1;
 	disk_count = 0;
@@ -1095,11 +1081,8 @@ ej_get_share_tree(int eid, webs_t wp, int argc, char **argv)
 				char **folder_list;
 				int result;
 				result = get_all_folder_in_mount_path(follow_partition->mount_point, &share_count, &folder_list);
-				if (result < 0) {
-					printf("get_disk_tree: Can't get the folder list in \"%s\".\n", follow_partition->mount_point);
-
+				if (result < 0)
 					share_count = 0;
-				}
 
 				if (layer == 2 && partition_count == partition_order && disk_count == disk_order) {
 					for (i = 0; i < share_count; ++i) {

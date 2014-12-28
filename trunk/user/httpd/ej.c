@@ -257,7 +257,7 @@ load_dictionary(char *lang, pkw_t pkw)
 
 // This translation engine can not process <%...%> interlace with <#...#>
 void
-do_ej(char *path, FILE *stream)
+do_ej(const char *url, FILE *stream)
 {
 #define PATTERN_LENGTH	1024
 #define FRAG_SIZE	128
@@ -273,7 +273,7 @@ do_ej(char *path, FILE *stream)
 	size_t ret, read_len, len;
 	int no_translate = 1;
 
-	if (!(fp = fopen(path, "r")))
+	if (!(fp = fopen(url, "r")))
 		return;
 
 	// Load dictionary file
@@ -424,13 +424,12 @@ do_ej(char *path, FILE *stream)
 		}       /* while ((start_pat < end_pat) && special == 0) */
 	}	       /* while (conn_break == 0) */
 
-
-	fflush (stream);
 	fclose(fp);
 
-	if (pattern != pat_buf) {
+	if (pattern != pat_buf)
 		free (pattern);
-	}
+
+	fflush(stream);
 }
 
 int

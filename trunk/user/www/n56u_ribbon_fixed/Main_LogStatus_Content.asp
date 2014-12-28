@@ -19,6 +19,14 @@
 <script>
 var $j = jQuery.noConflict();
 
+function initial(){
+	show_banner(2);
+	show_menu(5,10,1);
+	show_footer();
+	load_body();
+	showclock();
+}
+
 function showclock(){
 	JS_timeObj.setTime(systime_millsec);
 	systime_millsec += 1000;
@@ -35,11 +43,11 @@ function showclock(){
 }
 
 function clearLog(){
-	document.form1.target = "hidden_frame";
-	document.form1.action_mode.value = " Clear ";
-	document.form1.submit();
-	location.href = location.href;
+	document.form.next_host.value = location.host;
+	document.form.action_mode.value = " ClearLog ";
+	document.form.submit();
 }
+
 </script>
 <style>
     .nav-tabs > li > a {
@@ -49,7 +57,7 @@ function clearLog(){
 </style>
 </head>
 
-<body onload="show_banner(2); show_menu(5,10,1); show_footer();load_body();showclock();" onunLoad="return unload_body();">
+<body onload="initial();" >
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -63,19 +71,15 @@ function clearLog(){
 
     <div id="Loading" class="popup_bg"></div>
 
-    <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0" style="position: absolute;"></iframe>
-
+    <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
     <form method="post" name="form" action="apply.cgi" >
     <input type="hidden" name="current_page" value="Main_LogStatus_Content.asp">
-    <input type="hidden" name="next_page" value="Main_LogStatus_Content.asp">
+    <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
-    <input type="hidden" name="sid_list" value="FirewallConfig;">
+    <input type="hidden" name="sid_list" value="">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
-    </form>
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -115,24 +119,13 @@ function clearLog(){
                                         </tr>
                                         <tr>
                                             <td width="15%" style="text-align: left; padding-bottom: 0px;">
-                                                <form method="post" name="form1" action="apply.cgi">
-                                                    <input type="hidden" name="current_page" value="Main_LogStatus_Content.asp">
-                                                    <input type="hidden" name="action_mode" value=" Clear ">
-                                                    <input type="hidden" name="next_host" value="">
-                                                    <input type="submit" onClick="document.form1.next_host.value = location.host; onSubmitCtrl(this, ' Clear ');" value="<#CTL_clear#>" class="btn btn-info" style="width: 170px">
-                                                </form>
+                                                <input type="submit" onClick="clearLog();" value="<#CTL_clear#>" class="btn btn-info" style="width: 170px">
                                             </td>
                                             <td width="15%" style="text-align: left; padding-bottom: 0px;">
-                                                <form method="post" name="form2" action="syslog.txt">
-                                                    <input type="hidden" name="action_mode" value="">
-                                                    <input type="hidden" name="next_host" value="">
-                                                    <input type="submit" onClick="document.form2.next_host.value = location.host; onSubmitCtrl(this, ' Save ');" value="<#CTL_onlysave#>" class="btn btn-success" style="width: 170px">
-                                                </form>
+                                                <input type="button" onClick="location.href='syslog.txt'" value="<#CTL_onlysave#>" class="btn btn-success" style="width: 170px">
                                             </td>
                                             <td style="text-align: right; padding-bottom: 0px;">
-                                                <form method="post" name="form3" action="apply.cgi">
-                                                    <input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 219px">
-                                                </form>
+                                                <input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 219px">
                                             </td>
                                         </tr>
                                     </table>
@@ -144,6 +137,8 @@ function clearLog(){
             </div>
         </div>
     </div>
+
+    </form>
 
     <div id="footer"></div>
 </div>

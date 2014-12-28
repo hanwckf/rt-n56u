@@ -244,11 +244,10 @@ function change_guest_auth_mode(mflag) {
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="WLANConfig11b;">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="rt_country_code" value="<% nvram_get_x("","rt_country_code"); %>">
 
+    <input type="hidden" name="rt_country_code" value="<% nvram_get_x("","rt_country_code"); %>">
     <input type="hidden" name="rt_guest_ssid_org" value="<% nvram_char_to_ascii("", "rt_guest_ssid"); %>">
     <input type="hidden" name="rt_guest_wpa_mode" value="<% nvram_get_x("","rt_guest_wpa_mode"); %>">
     <input type="hidden" name="rt_guest_wpa_psk_org" value="<% nvram_char_to_ascii("", "rt_guest_wpa_psk"); %>">

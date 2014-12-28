@@ -314,7 +314,6 @@ function done_validating(action){
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="Storage;LANHostConfig;">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
 

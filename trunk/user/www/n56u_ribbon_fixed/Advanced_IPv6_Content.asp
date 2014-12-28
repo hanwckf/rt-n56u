@@ -388,9 +388,7 @@ function change_ip6_lan_dhcp(){
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="IP6Connection;">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="wan_proto" value="<% nvram_get_x("", "wan_proto"); %>" readonly="1">
     <input type="hidden" name="hw_nat_mode" value="<% nvram_get_x("", "hw_nat_mode"); %>" readonly="1">

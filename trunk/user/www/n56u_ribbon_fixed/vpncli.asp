@@ -30,8 +30,6 @@ $j(document).ready(function() {
 		showTab(newHash);
 		return false;
 	});
-
-	showTab(getHash());
 });
 
 </script>
@@ -42,6 +40,7 @@ lan_netmask_x = '<% nvram_get_x("", "lan_netmask"); %>';
 fw_enable_x = '<% nvram_get_x("", "fw_enable_x"); %>';
 vpnc_state_last = '<% nvram_get_x("", "vpnc_state_t"); %>';
 
+<% login_state_hook(); %>
 <% openvpn_cli_cert_hook(); %>
 
 function initial(){
@@ -56,6 +55,8 @@ function initial(){
 		document.form.vpnc_sfw.remove(2);
 
 	change_vpnc_enabled();
+
+	showTab(getHash());
 
 	load_body();
 }
@@ -143,7 +144,8 @@ function validForm(){
 function done_validating(action){
 }
 
-function textarea_enabled(v){
+function textarea_ovpn_enabled(v){
+	inputCtrl(document.form['ovpncli.client.conf'], v);
 	inputCtrl(document.form['ovpncli.ca.crt'], v);
 	inputCtrl(document.form['ovpncli.client.crt'], v);
 	inputCtrl(document.form['ovpncli.client.key'], v);
@@ -159,7 +161,7 @@ function change_vpnc_enabled() {
 	if (!v){
 		showhide_div('tab_vpnc_ssl', 0);
 		showhide_div('tbl_vpnc_route', 0);
-		textarea_enabled(0);
+		textarea_ovpn_enabled(0);
 	}else{
 		change_vpnc_type();
 	}
@@ -188,16 +190,14 @@ function change_vpnc_type() {
 	showhide_div('tab_vpnc_ssl', is_ov);
 	showhide_div('certs_hint', (is_ov && !openvpn_cli_cert_found()) ? 1 : 0);
 
+	textarea_ovpn_enabled(is_ov);
+
 	if (is_ov) {
 		change_vpnc_ov_auth();
 		change_vpnc_ov_atls();
 		change_vpnc_ov_mode();
-		
-		textarea_enabled(1);
 	}
 	else {
-		textarea_enabled(0);
-		
 		showhide_div('row_vpnc_ov_cnat', 0);
 		
 		showhide_div('row_vpnc_user', 1);
@@ -230,6 +230,9 @@ function change_vpnc_ov_mode() {
 var arrHashes = ["cfg", "ssl"];
 
 function showTab(curHash){
+	var obj = $('tab_vpnc_'+curHash.slice(1));
+	if (obj == null || obj.style.display == 'none')
+		curHash = '#cfg';
 	for(var i = 0; i < arrHashes.length; i++){
 		if(curHash == ('#'+arrHashes[i])){
 			$j('#tab_vpnc_'+arrHashes[i]).parents('li').addClass('active');

@@ -135,9 +135,7 @@ function done_validating(action){
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="WLANAuthentication11a;WLANConfig11a;LANHostConfig;">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="wl_gmode" value="<% nvram_get_x("","wl_gmode"); %>">
 

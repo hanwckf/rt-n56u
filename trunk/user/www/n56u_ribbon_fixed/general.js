@@ -1258,12 +1258,6 @@ function onSubmitApply(s) {
     return true;
 }
 
-function setup_script(s) {
-    if (document.form.current_page.value == "Advanced_ACL_Content.asp") {
-        document.form.action_script.value = s;
-    }
-}
-
 function change_common(o, s, v) {
     change = 1;
     pageChanged = 1;

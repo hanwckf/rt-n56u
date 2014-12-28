@@ -36,8 +36,8 @@ struct mime_handler {
 	char *pattern;
 	char *mime_type;
 	char *extra_header;
-	void (*input)(char *url, FILE *stream, int clen, char *boundary);
-	void (*output)(char *url, FILE *stream);
+	void (*input)(const char *url, FILE *stream, int clen, char *boundary);
+	void (*output)(const char *url, FILE *stream);
 	void (*auth)(int reget);
 };
 
@@ -89,19 +89,14 @@ typedef FILE * webs_t;
 #define TMPVAR _TMPVAR(__LINE__)
 #define websWrite(wp, fmt, args...) ({ int TMPVAR = fprintf(wp, fmt, ## args); fflush(wp); TMPVAR; })
 #define websError(wp, code, msg, args...) fprintf(wp, msg, ## args)
-#define websHeader(wp) fputs("<html lang=\"en\">", wp)
-#define websFooter(wp) fputs("</html>", wp)
 #define websDone(wp, code) fflush(wp)
 #define websGetVar(wp, var, default) (get_cgi(var) ? : default)
-#define websDefaultHandler(wp, urlPrefix, webDir, arg, url, path, query) ({ do_ej(path, wp); fflush(wp); 1; })
-#define websWriteData(wp, buf, nChars) ({ int TMPVAR = fwrite(buf, 1, nChars, wp); fflush(wp); TMPVAR; })
-#define websWriteDataNonBlock websWriteData
 
 extern void do_auth(int reget);
 
 /* Regular file handler */
-extern void do_file(char *path, FILE *stream);
-extern void do_ej(char *path, FILE *stream);
+extern void do_file(const char *url, FILE *stream);
+extern void do_ej(const char *url, FILE *stream);
 
 extern int ejArgs(int argc, char **argv, char *fmt, ...);
 
@@ -195,6 +190,7 @@ extern int ej_eth_status_lan4(int eid, webs_t wp, int argc, char **argv);
 
 // web_ex.c
 extern void nvram_commit_safe(void);
+extern void do_uncgi_query(const char *query);
 
 #if defined (SUPPORT_HTTPS)
 extern int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_file, char *ssl_cipher_list);

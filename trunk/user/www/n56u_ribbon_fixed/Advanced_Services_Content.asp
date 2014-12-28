@@ -34,11 +34,13 @@ $j(document).ready(function() {
 </script>
 <script>
 
+<% login_state_hook(); %>
+<% openssl_util_hook(); %>
+
 function initial(){
 	show_banner(1);
 	show_menu(5,7,2);
 	show_footer();
-
 	load_body();
 
 	if(!found_app_sshd()){
@@ -58,8 +60,11 @@ function initial(){
 		showhide_div('row_https_lport', 0);
 		showhide_div('row_https_clist', 0);
 		textarea_https_enabled(0);
-	}else
+	}else{
+		if (openssl_util_found() && login_safe())
+			showhide_div('row_https_gen', 1);
 		http_proto_change();
+	}
 }
 
 function applyRule(){
@@ -126,14 +131,76 @@ function http_proto_change(){
 
 	showhide_div('row_http_lport', v1);
 	showhide_div('row_https_lport', v2);
+
+	if (!login_safe())
+		v2 = 0;
+
 	showhide_div('row_https_clist', v2);
 	showhide_div('tbl_https_certs', v2);
 	textarea_https_enabled(v2);
 }
 
+var id_timeout_btn_gen;
+function flashing_btn_gen(is_shown){
+	var $btn=$j('#https_gen_bn');
+	if (is_shown)
+		$btn.val('Please wait...');
+	else
+		$btn.val('');
+	id_timeout_btn_gen = setTimeout("flashing_btn_gen("+!is_shown+")", 250);
+}
+
+function reset_btn_gen(is_refresh){
+	var $btn=$j('#https_gen_bn');
+	$btn.removeClass('alert-error').removeClass('alert-success');
+	$btn.val('<#VPNS_GenNew#>');
+	if (is_refresh)
+		location.href = location.href;
+}
+
+function create_server_cert() {
+	if(!confirm('<#Adm_System_https_query#>'))
+		return false;
+	var $btn=$j('#https_gen_bn');
+	flashing_btn_gen(1);
+	$btn.addClass('alert-error');
+	$j.ajax({
+		type: "post",
+		url: "/apply.cgi",
+		data: {
+			action_mode: " CreateCertHTTPS ",
+			common_name: $('https_gen_cn').value,
+			rsa_bits: $('https_gen_rb').value,
+			days_valid: $('https_gen_dv').value
+		},
+		dataType: "json",
+		error: function(xhr) {
+			clearTimeout(id_timeout_btn_gen);
+			$btn.val('Failed!');
+			setTimeout("reset_btn_gen(0)", 1500);
+		},
+		success: function(response) {
+			var sys_result = (response != null && typeof response === 'object' && "sys_result" in response)
+				? response.sys_result : -1;
+			clearTimeout(id_timeout_btn_gen);
+			if(sys_result == 0){
+				$btn.removeClass('alert-error').addClass('alert-success');
+				$btn.val('Success!');
+				setTimeout("reset_btn_gen(1)", 1000);
+			}else{
+				$btn.val('Failed!');
+				setTimeout("reset_btn_gen(0)", 1500);
+			}
+		}
+	});
+}
+
 function sshd_auth_change(){
 	var auth = document.form.sshd_enable.value;
 	var v = (auth != "0") ? 1 : 0;
+
+	if (!login_safe())
+		v = 0;
 
 	showhide_div('row_ssh_keys', v);
 	textarea_sshd_enabled(v);
@@ -145,6 +212,11 @@ function change_wins_enabled(){
 	showhide_div('row_smb_lmb', v);
 }
 </script>
+<style>
+    .caption-bold {
+        font-weight: bold;
+    }
+</style>
 </head>
 
 <body onload="initial();" onunLoad="return unload_body();">
@@ -168,9 +240,7 @@ function change_wins_enabled(){
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="LANHostConfig;General;Storage;">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
 
     <div class="container-fluid">
@@ -247,10 +317,30 @@ function change_wins_enabled(){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_https_certs" style="display:none">
                                         <tr>
-                                            <th style="background-color: #E3E3E3;"><#Adm_System_https_certs#></th>
+                                            <th colspan="4" style="background-color: #E3E3E3;"><#Adm_System_https_certs#></th>
+                                        </tr>
+                                        <tr id="row_https_gen" style="display:none">
+                                            <td align="right" style="text-align:right;">
+                                                <span class="caption-bold">Server CN:</span>
+                                                <input id="https_gen_cn" type="text" maxlength="32" size="10" style="width: 105px;" placeholder="my.domain" onKeyPress="return is_string(this)"/>
+                                            </td>
+                                            <td align="left">
+                                                <span class="caption-bold">RSA bits:</span>
+                                                <select id="https_gen_rb" class="input" style="width: 85px;">
+                                                    <option value="1024">1024 (*)</option>
+                                                    <option value="2048">2048</option>
+                                                </select>
+                                            </td>
+                                            <td align="left">
+                                                <span class="caption-bold">Days valid:</span>
+                                                <input id="https_gen_dv" type="text" maxlength="5" size="10" style="width: 35px;" value="365" onKeyPress="return is_number(this)"/>
+                                            </td>
+                                            <td align="left">
+                                                <input id="https_gen_bn" type="button" class="btn" style="width: 145px; outline:0" onclick="create_server_cert();" value="<#VPNS_GenNew#>"/>
+                                            </td>
                                         </tr>
                                         <tr>
-                                            <td style="padding-bottom: 0px;">
+                                            <td colspan="4" style="padding-bottom: 0px;">
                                                 <a href="javascript:spoiler_toggle('ca.crt')"><span>Root CA Certificate (optional)</span></a>
                                                 <div id="ca.crt" style="display:none;">
                                                     <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.ca.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.ca.crt",""); %></textarea>
@@ -258,7 +348,7 @@ function change_wins_enabled(){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td style="padding-bottom: 0px; border-top: 0 none;">
+                                            <td colspan="4" style="padding-bottom: 0px; border-top: 0 none;">
                                                 <a href="javascript:spoiler_toggle('dh1024.pem')"><span>Diffie-Hellman PEM (optional)</span></a>
                                                 <div id="dh1024.pem" style="display:none;">
                                                     <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.dh1024.pem" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.dh1024.pem",""); %></textarea>
@@ -266,7 +356,7 @@ function change_wins_enabled(){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td style="padding-bottom: 0px; border-top: 0 none;">
+                                            <td colspan="4" style="padding-bottom: 0px; border-top: 0 none;">
                                                 <a href="javascript:spoiler_toggle('server.crt')"><span>Server Certificate (required)</span></a>
                                                 <div id="server.crt" style="display:none;">
                                                     <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.server.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.server.crt",""); %></textarea>
@@ -274,7 +364,7 @@ function change_wins_enabled(){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td style="padding-bottom: 0px; border-top: 0 none;">
+                                            <td colspan="4" style="padding-bottom: 0px; border-top: 0 none;">
                                                 <a href="javascript:spoiler_toggle('server.key')"><span>Server Private Key (required)</span></a>
                                                 <div id="server.key" style="display:none;">
                                                     <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.server.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.server.key",""); %></textarea>

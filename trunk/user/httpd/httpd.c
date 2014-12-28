@@ -38,6 +38,7 @@
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
 #include <net/if.h>
+#include <ifaddrs.h>
 
 #include "httpd.h"
 #include "common.h"
@@ -93,7 +94,7 @@ typedef struct conn_list {
 
 /* Globals. */
 static int daemon_exit = 0;
-static int reget_passwd = 0;
+static int reload_passwd = 0;
 static char auth_userid[AUTH_MAX];
 static char auth_passwd[AUTH_MAX];
 static char auth_product[AUTH_MAX];
@@ -101,6 +102,7 @@ static char auth_product[AUTH_MAX];
 char log_header[32] = {0};
 int redirect = 0;
 int change_passwd = 0;
+int login_safe = 0;
 int debug_mode = 0;
 
 #if defined (SUPPORT_HTTPS)
@@ -192,7 +194,7 @@ int is_uaddr_equal(uaddr *ip1, uaddr *ip2)
 {
 	if ((ip1->len > 0) && (ip1->len == ip2->len) && (memcmp(&ip1->addr, &ip2->addr, ip1->len) == 0))
 		return 1;
-	
+
 	return 0;
 }
 
@@ -334,17 +336,127 @@ is_http_client_allowed(const usockaddr *usa)
 	return 0;
 }
 
-void fill_login_ip(char *p_out_ip, size_t out_ip_len)
+static int
+get_safe_ifname(char *ifname)
+{
+	if (strcmp(ifname, IFNAME_BR) == 0)
+		return 1;
+#if defined(APP_OPENVPN)
+	if (strcmp(ifname, IFNAME_SERVER_TUN) == 0)
+		return 1;
+#endif
+	if (strncmp(ifname, "ppp", 3) == 0 && atoi(ifname+3) >= 10)
+		return 1;
+	return 0;
+}
+
+static int
+get_safe_ipaddr(const uaddr *ip)
+{
+	int result = 0;
+	struct ifaddrs *ifa, *ife;
+	const struct in_addr *addr4, *mask4, *ip4 = NULL;
+#if defined (USE_IPV6)
+	struct in_addr ip4_6;
+	const struct in6_addr *addr6, *mask6, *ip6 = NULL;
+
+	if (ip->family == AF_INET6) {
+		ip6 = &ip->addr.in6;
+		
+		/* check IPv4-Mapped IPv6 Addresses */
+		if (IN6_IS_ADDR_V4MAPPED(ip6)) {
+			ip4_6.s_addr = ip6->s6_addr32[3];
+			ip4 = &ip4_6;
+			ip6 = NULL;
+		}
+	} else
+#endif
+	if (ip->family == AF_INET)
+		ip4 = &ip->addr.in4;
+	else
+		return 0;
+
+	if (getifaddrs(&ifa) < 0)
+		return 0;
+
+	for (ife = ifa; ife; ife = ife->ifa_next) {
+		if (!ife->ifa_addr)
+			continue;
+		if (!(ife->ifa_flags & IFF_UP))
+			continue;
+		if (!ife->ifa_name)
+			continue;
+		if (!get_safe_ifname(ife->ifa_name))
+			continue;
+#if defined (USE_IPV6)
+		if (ip6 && ife->ifa_addr->sa_family == AF_INET6) {
+			addr6 = &((struct sockaddr_in6 *)ife->ifa_addr)->sin6_addr;
+			mask6 = &((struct sockaddr_in6 *)ife->ifa_netmask)->sin6_addr;
+			if (IN6_IS_ADDR_LINKLOCAL(addr6))
+				continue;
+			
+			if ((addr6->s6_addr32[0] & mask6->s6_addr32[0]) == (ip6->s6_addr32[0] & mask6->s6_addr32[0]) &&
+			    (addr6->s6_addr32[1] & mask6->s6_addr32[1]) == (ip6->s6_addr32[1] & mask6->s6_addr32[1]) &&
+			    (addr6->s6_addr32[2] & mask6->s6_addr32[2]) == (ip6->s6_addr32[2] & mask6->s6_addr32[2]) &&
+			    (addr6->s6_addr32[3] & mask6->s6_addr32[3]) == (ip6->s6_addr32[3] & mask6->s6_addr32[3])) {
+				result = 1;
+				break;
+			}
+		} else
+#endif
+		if (ip4 && ife->ifa_addr->sa_family == AF_INET) {
+			if ((ife->ifa_flags & IFF_POINTOPOINT) && ife->ifa_dstaddr)
+				addr4 = &((struct sockaddr_in *)ife->ifa_dstaddr)->sin_addr;
+			else
+				addr4 = &((struct sockaddr_in *)ife->ifa_addr)->sin_addr;
+			mask4 = &((struct sockaddr_in *)ife->ifa_netmask)->sin_addr;
+			if (mask4->s_addr == INADDR_ANY || addr4->s_addr == INADDR_BROADCAST)
+				continue;
+			
+			if ((addr4->s_addr & mask4->s_addr) == (ip4->s_addr & mask4->s_addr)) {
+				result = 1;
+				break;
+			}
+		}
+	}
+
+	freeifaddrs(ifa);
+
+	return result;
+}
+
+static int
+get_http_login_safe(void)
+{
+	if (login_ip.len == 0)
+		return 0;
+
+#if defined (SUPPORT_HTTPS)
+	if (http_is_ssl)
+		return 1;
+#endif
+
+	if (get_safe_ipaddr(&login_ip))
+		return 1;
+
+	return 0;
+}
+
+void
+fill_login_ip(char *p_out_ip, size_t out_ip_len)
 {
 	convert_ip_to_string(&login_ip, p_out_ip, out_ip_len);
 }
 
-const char *get_login_mac(void)
+const char *
+get_login_mac(void)
 {
 	return (const char *)login_mac;
 }
 
-void http_login(uaddr *ip, char *url) {
+void
+http_login(uaddr *ip, char *url)
+{
 	char s_login_timestamp[32];
 
 	if (is_uaddr_localhost(ip))
@@ -363,6 +475,8 @@ void http_login(uaddr *ip, char *url) {
 				ether_etoa(mac, login_mac);
 			else
 				login_mac[0] = 0;
+			
+			login_safe = get_http_login_safe();
 		}
 		login_timestamp = uptime();
 		sprintf(s_login_timestamp, "%lu", login_timestamp);
@@ -370,11 +484,13 @@ void http_login(uaddr *ip, char *url) {
 	}
 }
 
-void http_reset_login(void)
+void
+http_reset_login(void)
 {
 	memcpy(&last_login_ip, &login_ip, sizeof(uaddr));
 	memset(&login_ip, 0, sizeof(uaddr));
 	login_timestamp = 0;
+	login_safe = 0;
 
 	// load new acl mode
 	http_acl_mode = nvram_get_int("http_access");
@@ -383,16 +499,18 @@ void http_reset_login(void)
 
 	if (change_passwd == 1) {
 		change_passwd = 0;
-		reget_passwd = 1;
+		reload_passwd = 1;
 	}
 }
 
-void http_logout(uaddr *ip) {
+void
+http_logout(uaddr *ip) {
 	if (is_uaddr_equal(ip, &login_ip))
 		http_reset_login();
 }
 
-void http_login_timeout(uaddr *ip)
+void
+http_login_timeout(uaddr *ip)
 {
 	time_t now;
 
@@ -403,7 +521,8 @@ void http_login_timeout(uaddr *ip)
 }
 
 // 0: can not login, 1: can login, 2: loginer, 3: not loginer.
-int http_login_check(void) 
+int
+http_login_check(void) 
 {
 	if (is_uaddr_localhost(&login_ip_tmp))
 		return 1;
@@ -479,10 +598,11 @@ send_headers( int status, char* title, char* extra_header, char* mime_type, FILE
 	time_t now;
 	char timebuf[100];
 
-	fprintf( conn_fp, "%s %d %s\r\n", PROTOCOL, status, title );
-	fprintf( conn_fp, "Server: %s\r\n", SERVER_NAME );
 	now = time( (time_t*) 0 );
 	strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &now ) );
+
+	fprintf( conn_fp, "%s %d %s\r\n", PROTOCOL, status, title );
+	fprintf( conn_fp, "Server: %s\r\n", SERVER_NAME );
 	fprintf( conn_fp, "Date: %s\r\n", timebuf );
 	if ( extra_header != (char*) 0 )
 		fprintf( conn_fp, "%s\r\n", extra_header );
@@ -505,7 +625,7 @@ send_error( int status, char* title, char* extra_header, char* text, FILE *conn_
 static void
 send_authenticate( FILE *conn_fp )
 {
-	char header[8192];
+	char header[128];
 
 	snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", auth_product );
 	send_error( 401, "Unauthorized", header, "Authorization required.", conn_fp );
@@ -705,14 +825,42 @@ match_one( const char* pattern, int patternlen, const char* string )
 	return 0;
 }
 
+static void
+eat_post_data(FILE *conn_fp, int clen)
+{
+	char fake_buf[128];
+
+	if (!fgets(fake_buf, MIN(clen+1, sizeof(fake_buf)), conn_fp))
+		return;
+
+	clen -= strlen(fake_buf);
+	while (clen--)
+		fgetc(conn_fp);
+}
+
+static void
+try_pull_data(FILE *conn_fp, int conn_fd)
+{
+	int flags = fcntl(conn_fd, F_GETFL);
+
+	/* Read up to two more characters */
+	if (flags != -1 && fcntl(conn_fd, F_SETFL, flags | O_NONBLOCK) != -1) {
+		if (fgetc(conn_fp) != EOF)
+			fgetc(conn_fp);
+		
+		fcntl(conn_fd, F_SETFL, flags);
+	}
+}
+
 int do_fwrite(const char *buffer, int len, FILE *stream)
 {
 	int n = len;
 	int r = 0;
- 
+
 	while (n > 0) {
 		r = fwrite(buffer, 1, n, stream);
-		if ((r == 0) && (errno != EINTR)) return -1;
+		if ((r == 0) && (errno != EINTR))
+			return -1;
 		buffer += r;
 		n -= r;
 	}
@@ -720,13 +868,13 @@ int do_fwrite(const char *buffer, int len, FILE *stream)
 	return r;
 }
 
-void do_file(char *path, FILE *stream)
+void do_file(const char *url, FILE *stream)
 {
 	FILE *fp;
 	char buf[1024];
 	int nr;
 
-	if ((fp = fopen(path, "r")) != NULL) {
+	if ((fp = fopen(url, "r")) != NULL) {
 		while ((nr = fread(buf, 1, sizeof(buf), fp)) > 0)
 			do_fwrite(buf, nr, stream);
 		fclose(fp);
@@ -791,11 +939,10 @@ int set_preferred_lang(char* cur)
 static void
 handle_request(FILE *conn_fp, int conn_fd)
 {
-	char line[8192], url[128];
+	char line[4096];
 	char *method, *path, *protocol, *authorization, *boundary;
-	char *cur, *end, *cp, *file, *query;
-	int len, login_state;
-	int clen = 0, file_len, flags, has_lang;
+	char *cur, *end, *cp, *file, *url, *query;
+	int len, login_state, method_post, has_lang, clen = 0;
 	struct mime_handler *handler;
 
 	/* Initialize the request variables. */
@@ -826,16 +973,14 @@ handle_request(FILE *conn_fp, int conn_fd)
 	cur = protocol + strlen(protocol) + 1;
 	end = line + sizeof(line) - 1;
 
-	while ( (cur < end) && (fgets(cur, line + sizeof(line) - cur, conn_fp)) )
-	{
+	while ( (cur < end) && (fgets(cur, line + sizeof(line) - cur, conn_fp)) ) {
 		if ( strcmp( cur, "\n" ) == 0 || strcmp( cur, "\r\n" ) == 0 ) {
 			break;
 		}
 		else if ((!has_lang) && (strncasecmp(cur, "Accept-Language:", 16) == 0)) {
 			has_lang = set_preferred_lang(cur + 16);
 		}
-		else if (strncasecmp( cur, "Authorization:", 14) == 0)
-		{
+		else if (strncasecmp( cur, "Authorization:", 14) == 0) {
 			cp = cur + 14;
 			cp += strspn( cp, " \t" );
 			authorization = cp;
@@ -854,7 +999,13 @@ handle_request(FILE *conn_fp, int conn_fd)
 		}
 	}
 
-	if ( strcasecmp( method, "get" ) != 0 && strcasecmp(method, "post") != 0 ) {
+//	printf("buffer left: %d\n", (int)(end - cur));
+
+	if (strcasecmp(method, "get") == 0)
+		method_post = 0;
+	else if (strcasecmp(method, "post") == 0)
+		method_post = 1;
+	else {
 		send_error( 501, "Not Implemented", (char*) 0, "That method is not implemented.", conn_fp );
 		return;
 	}
@@ -885,28 +1036,19 @@ handle_request(FILE *conn_fp, int conn_fd)
 	if (len < 1)
 		file = "index.asp";
 
-	if ((query = index(file, '?')) != NULL)
-		file_len = strlen(file)-strlen(query);
-	else
-		file_len = strlen(file);
-
-	file_len = MIN(file_len, sizeof(url)-1);
-
-	strncpy(url, file, file_len);
-	url[file_len] = 0;
+	query = file;
+	url = strsep(&query, "?") ? : file;
 
 	login_state = http_login_check();
 	if (login_state == 3) {
 		if ( (login_ip.len != 0) && (strstr(url, ".htm") != NULL || strstr(url, ".asp") != NULL) ) {
-			file = "Nologin.asp";
-			strcpy(url, file);
+			url = "Nologin.asp";
+			query = NULL;
 		}
 	}
 
-	for (handler = mime_handlers; handler->pattern; handler++) 
-	{
-		if (match(handler->pattern, url))
-		{
+	for (handler = mime_handlers; handler->pattern; handler++) {
+		if (match(handler->pattern, url)) {
 			request_timestamp = uptime();
 			
 			if ((login_state == 1 || login_state == 2)
@@ -961,8 +1103,8 @@ handle_request(FILE *conn_fp, int conn_fd)
 			
 			if (handler->auth) {
 				if (!temp_turn_off_auth) {
-					handler->auth(reget_passwd);
-					reget_passwd = 0;
+					handler->auth(reload_passwd);
+					reload_passwd = 0;
 					if (!auth_check(authorization, url, conn_fp))
 						return;
 				}
@@ -971,41 +1113,36 @@ handle_request(FILE *conn_fp, int conn_fd)
 					http_login(&login_ip_tmp, url);
 			}
 			
-			if (strcasecmp(method, "post") == 0 && !handler->input) {
-				send_error(501, "Not Implemented", NULL, "That method is not implemented.", conn_fp);
-				return;
-			}
-			
-			if (handler->input) {
-				handler->input(file, conn_fp, clen, boundary);
-				if ((flags = fcntl(conn_fd, F_GETFL)) != -1 && fcntl(conn_fd, F_SETFL, flags | O_NONBLOCK) != -1) {
-					/* Read up to two more characters */
-					if (fgetc(conn_fp) != EOF)
-						(void)fgetc(conn_fp);
-					
-					fcntl(conn_fd, F_SETFL, flags);
-				}
+			if (method_post) {
+				/* POST */
+				if (handler->input)
+					handler->input(url, conn_fp, clen, boundary);
+				else
+					eat_post_data(conn_fp, clen);
+				
+				try_pull_data(conn_fp, conn_fd);
+			} else {
+				/* GET */
+				if (query)
+					do_uncgi_query(query);
 			}
 			
 			send_headers( 200, "Ok", handler->extra_header, handler->mime_type, conn_fp );
-			if (handler->output) {
-				handler->output(file, conn_fp);
-			}
+			if (handler->output)
+				handler->output(url, conn_fp);
 			
 			break;
 		}
 	}
-	
-	if (!handler->pattern) 
+
+	if (!handler->pattern)
 		send_error( 404, "Not Found", (char*) 0, "File not found.", conn_fp );
-	
-	if (!strcmp(file, "Logout.asp")) {
+
+	if (!strcmp(url, "Logout.asp"))
 		http_logout(&login_ip_tmp);
-	}
-	
-	if (!strcmp(file, "Reboot.asp")) {
+
+	if (!strcmp(url, "Reboot.asp"))
 		system("reboot");
-	}
 }
 
 static void
@@ -1334,6 +1471,7 @@ int main(int argc, char **argv)
 		ssl_server_uninit();
 #endif
 
+	init_cgi(NULL);
 	release_dictionary(&kw_XX);
 	release_dictionary(&kw_EN);
 

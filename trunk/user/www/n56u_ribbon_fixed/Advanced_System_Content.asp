@@ -30,12 +30,12 @@ $j(document).ready(function() {
 </script>
 <script>
 
+<% login_state_hook(); %>
+
 function initial(){
 	show_banner(1);
 	show_menu(5,7,1);
 	show_footer();
-
-	load_body();
 
 	if(document.form.computer_name2.value != "")
 		document.form.computer_name.value = decodeURIComponent(document.form.computer_name2.value);
@@ -43,6 +43,14 @@ function initial(){
 		document.form.computer_name.value = "";
 
 	document.form.http_passwd2.value = "";
+
+	if (login_safe()){
+		showhide_div('row_user', 1);
+		showhide_div('row_pass1', 1);
+		showhide_div('row_pass2', 1);
+	}
+
+	load_body();
 }
 
 function applyRule(){
@@ -153,10 +161,9 @@ function blanktest(obj, flag){
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="LANHostConfig;General;Storage;">
     <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
+
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("", "preferred_lang"); %>">
     <input type="hidden" name="http_passwd" value="">
     <input type="hidden" name="computer_name2" value="<% nvram_get_x("", "computer_name"); %>">
@@ -199,19 +206,19 @@ function blanktest(obj, flag){
                                                 <input type="text" name="computer_name" id="computer_name" class="input" maxlength="15" size="32" value=""/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_user" style="display:none">
                                             <th><#Adm_System_admin#></th>
                                             <td>
                                                 <input type="text" name="http_username" class="input" autocomplete="off" maxlength="32" size="25" value="<% nvram_get_x("","http_username"); %>" onKeyPress="return is_string(this)"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_pass1" style="display:none">
                                             <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,11,4)"><#PASS_new#></th>
                                             <td>
                                                 <input type="password" name="http_passwd2" class="input" autocomplete="off" maxlength="32" size="25" onKeyPress="return is_string(this);"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_pass2" style="display:none">
                                             <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,11,4)"><#PASS_retype#></th>
                                             <td>
                                                 <input type="password" name="v_password2" class="input" autocomplete="off" maxlength="32" size="25" onKeyPress="return is_string(this);"/><br/><span id="alert_msg"></span>

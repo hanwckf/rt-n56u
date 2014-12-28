@@ -379,6 +379,7 @@ void stop_openvpn_server(void);
 void stop_openvpn_client(void);
 int ovpn_server_script_main(int argc, char **argv);
 int ovpn_client_script_main(int argc, char **argv);
+int ovpn_server_expcli_main(int argc, char **argv);
 #endif
 
 /* net_wifi.c */

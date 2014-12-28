@@ -1186,6 +1186,7 @@ static const applet_rc_t applets_rc[] = {
 #if defined(APP_OPENVPN)
 	{ SCRIPT_OVPN_SERVER,	ovpn_server_script_main	},
 	{ SCRIPT_OVPN_CLIENT,	ovpn_client_script_main	},
+	{ "ovpn_export_client",	ovpn_server_expcli_main	},
 #endif
 #if (BOARD_NUM_USB_PORTS > 0)
 	{ "mdev_sg",		mdev_sg_main		},

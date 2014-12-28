@@ -122,6 +122,9 @@ endif
 ifdef CONFIG_RT3352_INIC_MII
 	cd $(INSTALLDIR)/sbin && ln -sf rc inicd
 endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENVPN),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc ovpn_export_client
+endif
 ifdef CONFIG_USB_SUPPORT
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sg
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sd

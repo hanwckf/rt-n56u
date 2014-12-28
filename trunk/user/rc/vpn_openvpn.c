@@ -282,15 +282,21 @@ static void
 openvpn_add_key(FILE *fp, const char *key_dir, const char *key_file, const char *key_sect)
 {
 	FILE *fpk;
-	char buff[2048];
+	int skip_head = 1;
+	char buff[MAX_FILE_LINE_SIZE] = {0};
 
 	snprintf(buff, sizeof(buff), "%s/%s", key_dir , key_file);
 	fpk = fopen(buff, "r");
 	if (fpk) {
 		fprintf(fp, "<%s>\n", key_sect);
-		memset(buff, 0, sizeof(buff));
-		while (fgets(buff, sizeof(buff), fpk) != NULL)
+		while (fgets(buff, sizeof(buff), fpk) != NULL) {
+			if (skip_head) {
+				if (!strstr(buff, "-----BEGIN "))
+					continue;
+				skip_head = 0;
+			}
 			fputs(buff, fp);
+		}
 		fprintf(fp, "</%s>\n", key_sect);
 		fclose(fpk);
 	}

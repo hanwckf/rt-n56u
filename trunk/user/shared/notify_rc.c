@@ -23,110 +23,37 @@
 #include <signal.h>
 #include <unistd.h>
 
-typedef unsigned char   bool;   // 1204 ham
-
 #include "notify_rc.h"
 
-static void notify_rc_internal(const char *event_name, bool do_wait);
-
-
-extern void notify_rc(const char *event_name)
+static void notify_rc_internal(const char *event_name, int wait_sec)
 {
-	notify_rc_internal(event_name, 0);
-}
-
-extern void notify_rc_and_wait(const char *event_name)
-{
-	notify_rc_internal(event_name, 1);
-}
-
-static void notify_rc_internal(const char *event_name, bool do_wait)
-{
-	char *full_name;
 	FILE *fp;
-	int close_result;
+	int i;
+	char *full_name;
 
-	full_name = (char *)(malloc(strlen(event_name) + 100));
-	if (full_name == NULL)
-	{
-		fprintf(stderr,
-				"Error: Failed trying to allocate %lu bytes of memory for the "
-				"full path of an rc notification marker file, while trying to "
-				"notify rc of a `%s' event.\n",
-				(unsigned long)(strlen(event_name) + 100), event_name);
+	full_name = (char *)(malloc(strlen(event_name) + 32));
+	if (!full_name) {
+		fprintf(stderr, "notify_rc: failed to alloc event memory!\n");
 		return;
 	}
 
-	sprintf(full_name, "/tmp/rc_notification/%s", event_name);
+	sprintf(full_name, "%s/%s", DIR_RC_INCOMPLETE, event_name);
 	fp = fopen(full_name, "w");
-	if (fp == NULL)
-	{
-		fprintf(stderr,
-				"Error: Failed trying to open file %s while trying to notify "
-				"rc of an event: %s.\n", full_name, strerror(errno));
-		free(full_name);
-		return;
-	}
+	if (fp)
+		fclose(fp);
 
-	close_result = fclose(fp);
-	if (close_result != 0)
-	{
-		fprintf(stderr,
-				"Error: Failed trying to close file %s while trying to notify "
-				"rc of an event: %s.\n", full_name, strerror(errno));
-	}
-
-	sprintf(full_name, "/tmp/rc_action_incomplete/%s", event_name);
+	sprintf(full_name, "%s/%s", DIR_RC_NOTIFY, event_name);
 	fp = fopen(full_name, "w");
-	if (fp == NULL)
-	{
-		fprintf(stderr,
-				"Error: Failed trying to open file %s while trying to notify "
-				"rc of an event: %s.\n", full_name, strerror(errno));
-		free(full_name);
-		return;
-	}
+	if (fp)
+		fclose(fp);
 
-	close_result = fclose(fp);
-	if (close_result != 0)
-	{
-		fprintf(stderr,
-				"Error: Failed trying to close file %s while trying to notify "
-				"rc of an event: %s.\n", full_name, strerror(errno));
-	}
+	kill(1, SIGUSR1);
 
-	sprintf(full_name, "/tmp/rc_notification/%s", event_name);
-	fp = fopen(full_name, "w");
-	if (fp == NULL)
-	{
-		fprintf(stderr,
-				"Error: Failed trying to open file %s while trying to notify "
-				"rc of an event: %s.\n", full_name, strerror(errno));
-		free(full_name);
-		return;
-	}
-
-	close_result = fclose(fp);
-	if (close_result != 0)
-	{
-		fprintf(stderr,
-				"Error: Failed trying to close file %s while trying to notify "
-				"rc of an event: %s.\n", full_name, strerror(errno));
-	}
-	
-	//wendebug
-	int killproc = 1;
-	//printf("notify_rc_internal : kill %d\n", killproc);
-	kill(killproc, SIGUSR1);
-
-	if (do_wait)
-	{
-		sprintf(full_name, "/tmp/rc_action_incomplete/%s", event_name);
-
-		while (1)
-		{
+	if (wait_sec > 0) {
+		sprintf(full_name, "%s/%s", DIR_RC_INCOMPLETE, event_name);
+		for(i=0;i<wait_sec;i++) {
 			fp = fopen(full_name, "r");
-			if (fp == NULL)
+			if (!fp)
 				break;
 			fclose(fp);
 			sleep(1);
@@ -134,4 +61,14 @@ static void notify_rc_internal(const char *event_name, bool do_wait)
 	}
 
 	free(full_name);
+}
+
+void notify_rc(const char *event_name)
+{
+	notify_rc_internal(event_name, 0);
+}
+
+void notify_rc_and_wait(const char *event_name, int wait_sec)
+{
+	notify_rc_internal(event_name, wait_sec);
 }

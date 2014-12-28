@@ -59,8 +59,13 @@
 #define RCN_RESTART_ARIA		"restart_aria"
 #define RCN_RESTART_REBOOT		"restart_reboot"
 
+////////////////////////////////////////////////////////////
+
+#define DIR_RC_NOTIFY			"/tmp/rc_notification"
+#define DIR_RC_INCOMPLETE		"/tmp/rc_action_incomplete"
+
 extern void notify_rc(const char *event_name);
-extern void notify_rc_and_wait(const char *event_name);
+extern void notify_rc_and_wait(const char *event_name, int wait_sec);
 
 
 #endif /* NOTIFY_RC_H */

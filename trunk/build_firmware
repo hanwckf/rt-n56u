@@ -269,6 +269,7 @@ if [ "$CONFIG_FIRMWARE_ENABLE_USB" != "y" ] || [ -z "$CONFIG_USB_SUPPORT" ] ; th
 	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_LINUXSWAP"
 	if [ "$CONFIG_FIRMWARE_INCLUDE_OPENVPN" != "y" ] ; then
 		func_disable_kernel_param "CONFIG_TUN"
+		func_disable_kernel_param "CONFIG_HOTPLUG"
 	fi
 	CONFIG_FIRMWARE_INCLUDE_NFSD=n
 else

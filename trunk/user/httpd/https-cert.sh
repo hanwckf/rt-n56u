@@ -6,23 +6,27 @@ if [ ! -x /usr/bin/openssl ] && [ ! -x /opt/bin/openssl ]; then
   exit 1
 fi
 
+DH_GEN=0
+DH_BITS=1024
+RSA_BITS=1024
+CA_DAYS=3653
+CERT_DAYS=365
 DSTDIR=/etc/storage/https
-BITS=1024
-DAYS=365
-SSL_EXT_FILE=/tmp/openssl_ext.cfg
+SSL_EXT_FILE=/etc/ssl/openssl_ext2.cnf
 
 func_help() {
   local BOLD="echo -ne \\033[1m"
   local NORM="echo -ne \\033[0m"
   echo "Create self-signed certificate for HTTP SSL server." >&2
   echo >&2
-  echo "`$BOLD`Usage:`$NORM` $0 -n cert_common_name [ -b key_bits ] [ -d days_valid ]" >&2
+  echo "`$BOLD`Usage:`$NORM`" >&2
+  echo "    $0 -n `$BOLD`common_name`$NORM` [ -b `$BOLD`rsa_bits`$NORM` ] [ -d `$BOLD`days_valid`$NORM` ] [ -p {DH} ]" >&2
   echo >&2
   echo "`$BOLD`Example:`$NORM`" >&2
-  echo "    $0 -n myname.no-ip.com -b 2048 -d 3650" >&2
+  echo "    $0 -n myname.no-ip.com -b 2048 -d 30" >&2
   echo >&2
   echo "`$BOLD`Defaults:`$NORM`"
-  echo "    key_bits=`$BOLD`1024`$NORM`, days_valid=`$BOLD`365`$NORM`" >&2
+  echo "    rsa_bits=`$BOLD`$RSA_BITS`$NORM`, days_valid=`$BOLD`$CERT_DAYS`$NORM`" >&2
   echo >&2
   exit 1
 }
@@ -62,9 +66,7 @@ create_cert() {
     return 1
   fi
 
-  # Check if -sha256 is supported
-  local DGST_ALG
-  openssl dgst -h 2>&1 | grep -q '^-sha256' && DGST_ALG="-sha256" || DGST_ALG="-sha1"
+  rm -f $SSL_EXT_FILE
 
   cat > $SSL_EXT_FILE << EOF
 [ server ]
@@ -76,43 +78,43 @@ keyUsage=critical,digitalSignature,keyEncipherment
 subjectAltName=DNS:${CN},DNS:my.router
 EOF
 
-    echo_process "Creating CA"
-    openssl req -nodes -x509 -days $(($DAYS * 10 + 3)) -newkey rsa:${BITS} \
+  echo_process "Creating CA"
+  openssl req -nodes -x509 -days $CA_DAYS -newkey rsa:${RSA_BITS} \
             -outform PEM -out ca.crt -keyout ca.key \
-            $DGST_ALG -subj "/CN=HTTPS CA" &>/dev/null
-    chmod 600 ca.key
-    echo_done
+            -sha1 -subj "/CN=HTTPS CA" &>/dev/null
+  chmod 600 ca.key
+  echo_done
 
-    echo_process "Creating certificate request"
-    openssl req -nodes -days $DAYS -newkey rsa:${BITS} \
+  echo_process "Creating certificate request"
+  openssl req -nodes -days $CERT_DAYS -newkey rsa:${RSA_BITS} \
             -outform PEM -out server.csr -keyout server.key \
-            $DGST_ALG -subj "/CN=$CN" &>/dev/null
-    chmod 600 server.key
-    echo_done
+            -sha1 -subj "/CN=$CN" &>/dev/null
+  chmod 600 server.key
+  echo_done
 
-    echo_process "Signing request"
-    openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
-               -clrext -out server.crt $DGST_ALG -extfile $SSL_EXT_FILE \
-               -days $DAYS -extensions server &>/dev/null
-    [ -f server.crt ] && rm -f server.csr
-    echo_done
+  echo_process "Signing request"
+  openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
+               -clrext -out server.crt -sha1 -extfile $SSL_EXT_FILE \
+               -days $CERT_DAYS -extensions server &>/dev/null
+  rm -f server.csr
+  echo_done
 
+  if [ $DH_GEN -eq 1 ] ; then
     echo_process "Creating DH Parameters (may take long time, be patient)"
-    openssl dhparam -out dh1024.pem 1024 &>/dev/null
+    openssl dhparam -out dh1024.pem $DH_BITS &>/dev/null
     echo_done
+  fi
 
-    [ -f $SSL_EXT_FILE ] && rm -f $SSL_EXT_FILE
-    [ -f ca.srl ] && rm -f ca.srl
+  rm -f ca.srl
 }
-
-[ $(( $# % 2 )) -ne 0 ] && func_help
 
 while [ $# -gt 0 ] ; do
   case "$1" in
     -n) CN="$2" ; shift 2 ;;
-    -b) BITS=$2 ; shift 2 ;;
-    -d) DAYS=$2 ; shift 2 ;;
-    *)  func_help ;;
+    -b) RSA_BITS=$2 ; shift 2 ;;
+    -d) CERT_DAYS=$2 ; shift 2 ;;
+    -p) DH_GEN=1 ; shift 1 ;;
+     *) func_help ; ;;
   esac
 done
 

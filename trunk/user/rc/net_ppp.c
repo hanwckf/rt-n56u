@@ -77,9 +77,11 @@ safe_start_xl2tpd(void)
 			
 			i_cli0 = nvram_safe_get_int("vpns_cli0", 245, 1, 254);
 			i_cli1 = nvram_safe_get_int("vpns_cli1", 254, 2, 254);
-			if (i_cli0 > (int)lsnet) i_cli0 = (int)lsnet;
+			if (i_cli0 >= (int)lsnet) i_cli0 = (int)(lsnet - 1);
 			if (i_cli1 > (int)lsnet) i_cli1 = (int)lsnet;
-			if (i_cli1 < i_cli0) i_cli1 = i_cli0;
+			if (i_cli1 <= i_cli0) i_cli1 = i_cli0 + 1;
+			laddr = (laddr & lmask) | (unsigned int)i_cli0;
+			i_cli0 += 1;
 		}
 		else
 		{

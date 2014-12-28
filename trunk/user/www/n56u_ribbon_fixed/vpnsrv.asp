@@ -179,8 +179,8 @@ function validForm(){
 	if (snet_pool > 254)
 		snet_pool = 254;
 
-	if(vpns_cli0_ip < 1 || vpns_cli0_ip > snet_pool){
-		alert("Start IP value should be between 1 and "+snet_pool+"!");
+	if(vpns_cli0_ip < 1 || vpns_cli0_ip >= snet_pool){
+		alert("Start IP value should be between 1 and "+(snet_pool-1)+"!");
 		o_cli0.focus();
 		o_cli0.select();
 		return false;
@@ -193,14 +193,14 @@ function validForm(){
 		return false;
 	}
 
-	if(vpns_cli0_ip > vpns_cli1_ip){
-		alert("End IP value should higher or equal than Start IP!");
+	if(vpns_cli0_ip >= vpns_cli1_ip){
+		alert("End IP value should higher than Start IP!");
 		o_cli1.focus();
 		o_cli1.select();
 		return false;
 	}
 
-	if((vpns_cli1_ip - vpns_cli0_ip) >= 50){
+	if((vpns_cli1_ip - vpns_cli0_ip) > 50){
 		alert("VPN server allow max 50 clients!");
 		o_cli1.focus();
 		o_cli1.select();
@@ -325,7 +325,7 @@ function calc_vpn_addr(vnet_show,is_openvpn){
 		$("vpnip0").innerHTML = vpn_part + '1';
 		$("vpnip3").innerHTML = vpn_part;
 	}else{
-		$("vpnip0").innerHTML = lan_ipaddr_x;
+		$("vpnip0").innerHTML = lan_part + document.form.vpns_cli0.value;
 		$("vpnip3").innerHTML = lan_part;
 	}
 }

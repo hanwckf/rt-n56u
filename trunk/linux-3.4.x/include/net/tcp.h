@@ -27,7 +27,6 @@
 #include <linux/cache.h>
 #include <linux/percpu.h>
 #include <linux/skbuff.h>
-#include <linux/dmaengine.h>
 #include <linux/crypto.h>
 #include <linux/cryptohash.h>
 #include <linux/kref.h>
@@ -246,7 +245,6 @@ extern int sysctl_tcp_tw_reuse;
 extern int sysctl_tcp_frto;
 extern int sysctl_tcp_frto_response;
 extern int sysctl_tcp_low_latency;
-extern int sysctl_tcp_dma_copybreak;
 extern int sysctl_tcp_nometrics_save;
 extern int sysctl_tcp_moderate_rcvbuf;
 extern int sysctl_tcp_tso_win_divisor;
@@ -345,7 +343,6 @@ extern int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb,
 extern int tcp_rcv_established(struct sock *sk, struct sk_buff *skb,
 			       const struct tcphdr *th, unsigned int len);
 extern void tcp_rcv_space_adjust(struct sock *sk);
-extern void tcp_cleanup_rbuf(struct sock *sk, int copied);
 extern int tcp_twsk_unique(struct sock *sk, struct sock *sktw, void *twp);
 extern void tcp_twsk_destructor(struct sock *sk);
 extern ssize_t tcp_splice_read(struct socket *sk, loff_t *ppos,
@@ -934,12 +931,6 @@ static inline void tcp_prequeue_init(struct tcp_sock *tp)
 	tp->ucopy.len = 0;
 	tp->ucopy.memory = 0;
 	skb_queue_head_init(&tp->ucopy.prequeue);
-#ifdef CONFIG_NET_DMA
-	tp->ucopy.dma_chan = NULL;
-	tp->ucopy.wakeup = 0;
-	tp->ucopy.pinned_list = NULL;
-	tp->ucopy.dma_cookie = 0;
-#endif
 }
 
 /* Packet is added to VJ-style prequeue for processing in process

@@ -1204,7 +1204,6 @@ int __devinit ioat1_dma_probe(struct ioatdma_device *device, int dca)
 	err = ioat_probe(device);
 	if (err)
 		return err;
-	ioat_set_tcp_copy_break(4096);
 	err = ioat_register(device);
 	if (err)
 		return err;

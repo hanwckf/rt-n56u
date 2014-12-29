@@ -3609,21 +3609,22 @@ static gro_result_t napi_skb_finish(gro_result_t ret, struct sk_buff *skb)
 	return ret;
 }
 
-void skb_gro_reset_offset(struct sk_buff *skb)
+static void skb_gro_reset_offset(struct sk_buff *skb)
 {
+	const struct skb_shared_info *pinfo = skb_shinfo(skb);
+
 	NAPI_GRO_CB(skb)->data_offset = 0;
 	NAPI_GRO_CB(skb)->frag0 = NULL;
 	NAPI_GRO_CB(skb)->frag0_len = 0;
 
-	if (skb->mac_header == skb->tail &&
-	    !PageHighMem(skb_shinfo(skb)->frags[0].page)) {
+	if (skb->mac_header == skb->tail && pinfo->nr_frags &&
+	    !PageHighMem(pinfo->frags[0].page)) {
 		NAPI_GRO_CB(skb)->frag0 =
-			page_address(skb_shinfo(skb)->frags[0].page) +
-			skb_shinfo(skb)->frags[0].page_offset;
-		NAPI_GRO_CB(skb)->frag0_len = skb_shinfo(skb)->frags[0].size;
+			page_address(pinfo->frags[0].page) +
+			pinfo->frags[0].page_offset;
+		NAPI_GRO_CB(skb)->frag0_len = pinfo->frags[0].size;
 	}
 }
-EXPORT_SYMBOL(skb_gro_reset_offset);
 
 gro_result_t napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 {

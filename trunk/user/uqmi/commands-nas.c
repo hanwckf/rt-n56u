@@ -105,7 +105,10 @@ cmd_nas_set_roaming_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct
 static enum qmi_cmd_result
 cmd_nas_initiate_network_register_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
-	static struct qmi_nas_initiate_network_register_request register_req;
+	static struct qmi_nas_initiate_network_register_request register_req = {
+		QMI_INIT(action, QMI_NAS_NETWORK_REGISTER_TYPE_AUTOMATIC)
+	};
+
 	qmi_set_nas_initiate_network_register_request(msg, &register_req);
 	return QMI_CMD_REQUEST;
 }

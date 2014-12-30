@@ -16,10 +16,6 @@
 
 #include "dnsmasq.h"
 
-#ifndef IN6_IS_ADDR_ULA
-#define IN6_IS_ADDR_ULA(a) ((((__const uint32_t *) (a))[0] & htonl (0xfe00000)) == htonl (0xfc000000))
-#endif
-
 #ifdef HAVE_LINUX_NETWORK
 
 int indextoname(int fd, int index, char *name)

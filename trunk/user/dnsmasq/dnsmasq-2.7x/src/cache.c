@@ -1411,7 +1411,7 @@ void dump_cache(time_t now)
 	    *a = 0;
 	    if (strlen(n) == 0 && !(cache->flags & F_REVERSE))
 	      n = "<Root>";
-	    p += sprintf(p, "%-40.40s ", n);
+	    p += sprintf(p, "%-30.30s ", n);
 	    if ((cache->flags & F_CNAME) && !is_outdated_cname_pointer(cache))
 	      a = cache_get_cname_target(cache);
 #ifdef HAVE_DNSSEC
@@ -1454,7 +1454,7 @@ void dump_cache(time_t now)
 	    else if (cache->flags & F_DNSKEY)
 	      t = "K";
 #endif
-	    p += sprintf(p, "%-30.30s %s%s%s%s%s%s%s%s%s  ", a, t,
+	    p += sprintf(p, "%-40.40s %s%s%s%s%s%s%s%s%s  ", a, t,
 			 cache->flags & F_FORWARD ? "F" : " ",
 			 cache->flags & F_REVERSE ? "R" : " ",
 			 cache->flags & F_IMMORTAL ? "I" : " ",

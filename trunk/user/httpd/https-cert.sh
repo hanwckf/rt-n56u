@@ -66,8 +66,12 @@ create_cert() {
     return 1
   fi
 
-  rm -f $SSL_EXT_FILE
+  # Check if -sha256 is supported
+  local DGST_ALG
+  DGST_ALG="-sha1"
+  openssl dgst -h 2>&1 | grep -q '^-sha256' && DGST_ALG="-sha256"
 
+  rm -f $SSL_EXT_FILE
   cat > $SSL_EXT_FILE << EOF
 [ server ]
 basicConstraints=CA:FALSE
@@ -81,20 +85,20 @@ EOF
   echo_process "Creating CA"
   openssl req -nodes -x509 -days $CA_DAYS -newkey rsa:${RSA_BITS} \
             -outform PEM -out ca.crt -keyout ca.key \
-            -sha1 -subj "/CN=HTTPS CA" &>/dev/null
+            $DGST_ALG -subj "/CN=HTTPS CA" &>/dev/null
   chmod 600 ca.key
   echo_done
 
   echo_process "Creating certificate request"
   openssl req -nodes -days $CERT_DAYS -newkey rsa:${RSA_BITS} \
             -outform PEM -out server.csr -keyout server.key \
-            -sha1 -subj "/CN=$CN" &>/dev/null
+            $DGST_ALG -subj "/CN=$CN" &>/dev/null
   chmod 600 server.key
   echo_done
 
   echo_process "Signing request"
   openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
-               -clrext -out server.crt -sha1 -extfile $SSL_EXT_FILE \
+               -clrext -out server.crt $DGST_ALG -extfile $SSL_EXT_FILE \
                -days $CERT_DAYS -extensions server &>/dev/null
   rm -f server.csr
   echo_done

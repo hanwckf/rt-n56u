@@ -1923,14 +1923,17 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		  for (intr = daemon->int_names; intr; intr = intr->next)
 		    if (hostname_isequal(name, intr->name))
 		      {
-			ans = 1;
-			if (!dryrun)
-			  {
-			    
-			    for (addrlist = intr->addr; addrlist; addrlist = addrlist->next)
+			for (addrlist = intr->addr; addrlist; addrlist = addrlist->next)
 #ifdef HAVE_IPV6
-			      if (((addrlist->flags & ADDRLIST_IPV6) ? T_AAAA : T_A) == type)
+			  if (((addrlist->flags & ADDRLIST_IPV6) ? T_AAAA : T_A) == type)
 #endif
+			    {
+#ifdef HAVE_IPV6
+			      if (addrlist->flags & ADDRLIST_REVONLY)
+				continue;
+#endif	
+			      ans = 1;	
+			      if (!dryrun)
 				{
 				  gotit = 1;
 				  log_query(F_FORWARD | F_CONFIG | flag, name, &addrlist->addr, NULL);
@@ -1939,7 +1942,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 							  type == T_A ? "4" : "6", &addrlist->addr))
 				    anscount++;
 				}
-			  }
+			    }
 		      }
 		  
 		  if (!dryrun && !gotit)

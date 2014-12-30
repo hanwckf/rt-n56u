@@ -363,6 +363,10 @@ size_t answer_auth(struct dns_header *header, char *limit, size_t qlen, time_t n
 		 if (((addrlist->flags & ADDRLIST_IPV6)  ? T_AAAA : T_A) == qtype &&
 		     (local_query || filter_zone(zone, flag, &addrlist->addr)))
 		   {
+#ifdef HAVE_IPV6
+		     if (addrlist->flags & ADDRLIST_REVONLY)
+		       continue;
+#endif
 		     found = 1;
 		     log_query(F_FORWARD | F_CONFIG | flag, name, &addrlist->addr, NULL);
 		     if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, 

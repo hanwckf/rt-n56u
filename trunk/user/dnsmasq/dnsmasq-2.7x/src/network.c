@@ -236,7 +236,7 @@ struct iface_param {
 };
 
 static int iface_allowed(struct iface_param *param, int if_index, char *label,
-			 union mysockaddr *addr, struct in_addr netmask, int prefixlen, int dad) 
+			 union mysockaddr *addr, struct in_addr netmask, int prefixlen, int iface_flags) 
 {
   struct irec *iface;
   int mtu = 0, loopback;
@@ -388,6 +388,10 @@ static int iface_allowed(struct iface_param *param, int if_index, char *label,
 		 {
 		    al->addr.addr.addr6 = addr->in6.sin6_addr;
 		    al->flags = ADDRLIST_IPV6;
+		    /* Privacy addresses and addresses still undergoing DAD and deprecated addresses
+		       don't appear in forward queries, but will in reverse ones. */
+		    if (!(iface_flags & IFACE_PERMANENT) || (iface_flags & (IFACE_DEPRECATED | IFACE_TENTATIVE)))
+		      al->flags |= ADDRLIST_REVONLY;
 		 } 
 #endif
 	      }
@@ -399,7 +403,7 @@ static int iface_allowed(struct iface_param *param, int if_index, char *label,
   for (iface = daemon->interfaces; iface; iface = iface->next) 
     if (sockaddr_isequal(&iface->addr, addr))
       {
-	iface->dad = dad;
+	iface->dad = !!(iface_flags & IFACE_TENTATIVE);
 	iface->found = 1; /* for garbage collection */
 	return 1;
       }
@@ -474,7 +478,7 @@ static int iface_allowed(struct iface_param *param, int if_index, char *label,
       iface->dhcp_ok = dhcp_ok;
       iface->dns_auth = auth_dns;
       iface->mtu = mtu;
-      iface->dad = dad;
+      iface->dad = !!(iface_flags & IFACE_TENTATIVE);
       iface->found = 1;
       iface->done = iface->multicast_done = iface->warned = 0;
       iface->index = if_index;
@@ -519,7 +523,7 @@ static int iface_allowed_v6(struct in6_addr *local, int prefix,
   else
     addr.in6.sin6_scope_id = 0;
   
-  return iface_allowed((struct iface_param *)vparam, if_index, NULL, &addr, netmask, prefix, !!(flags & IFACE_TENTATIVE));
+  return iface_allowed((struct iface_param *)vparam, if_index, NULL, &addr, netmask, prefix, flags);
 }
 #endif
 

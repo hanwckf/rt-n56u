@@ -318,6 +318,7 @@ struct ds_config {
 
 #define ADDRLIST_LITERAL 1
 #define ADDRLIST_IPV6    2
+#define ADDRLIST_REVONLY 4
 
 struct addrlist {
   struct all_addr addr;

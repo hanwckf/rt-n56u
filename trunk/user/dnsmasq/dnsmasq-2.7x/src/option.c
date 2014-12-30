@@ -1941,10 +1941,17 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 			      else
 				{
 				   /* generate the equivalent of
-				      local=/<domain>/
 				      local=/xxx.yyy.zzz.in-addr.arpa/ */
 				  struct server *serv = add_rev4(new->start, msize);
 				  serv->flags |= SERV_NO_ADDR;
+
+				  /* local=/<domain>/ */
+				  serv = opt_malloc(sizeof(struct server));
+				  memset(serv, 0, sizeof(struct server));
+				  serv->domain = d;
+				  serv->flags = SERV_HAS_DOMAIN | SERV_NO_ADDR;
+				  serv->next = daemon->servers;
+				  daemon->servers = serv;
 				}
 			    }
 			}
@@ -1978,10 +1985,17 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 			      else 
 				{
 				  /* generate the equivalent of
-				     local=/<domain>/
 				     local=/xxx.yyy.zzz.ip6.arpa/ */
 				  struct server *serv = add_rev6(&new->start6, msize);
 				  serv->flags |= SERV_NO_ADDR;
+				  
+				  /* local=/<domain>/ */
+				  serv = opt_malloc(sizeof(struct server));
+				  memset(serv, 0, sizeof(struct server));
+				  serv->domain = d;
+				  serv->flags = SERV_HAS_DOMAIN | SERV_NO_ADDR;
+				  serv->next = daemon->servers;
+				  daemon->servers = serv;
 				}
 			    }
 			}

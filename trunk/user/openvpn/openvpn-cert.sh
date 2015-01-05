@@ -6,6 +6,8 @@ if [ ! -x /usr/bin/openssl ] && [ ! -x /opt/bin/openssl ] ; then
   exit 1
 fi
 
+umask 0022
+
 ## path to openvpn binary
 OPENVPN=/usr/sbin/openvpn
 ## CA cert valid, days

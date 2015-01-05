@@ -6,6 +6,8 @@ if [ ! -x /usr/bin/openssl ] && [ ! -x /opt/bin/openssl ]; then
   exit 1
 fi
 
+umask 0022
+
 DH_GEN=0
 DH_BITS=1024
 RSA_BITS=1024

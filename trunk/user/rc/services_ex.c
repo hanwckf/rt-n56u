@@ -740,15 +740,31 @@ inadyn_checkip_url[] = {
 	"ipv4.nsupdate.info /myip",
 };
 
+static const char *
+get_inadyn_system(const char *alias)
+{
+	const struct inadyn_system_t *inadyn;
+	const char *system = NULL;
+
+	for (inadyn = &inadyn_systems[0]; inadyn->alias; inadyn++) {
+		if (strcmp(alias, inadyn->alias) == 0) {
+			system = inadyn->system;
+			break;
+		}
+	}
+
+	return system;
+}
+
 static int
 write_inadyn_conf(const char *conf_file, int use_delay)
 {
 	FILE *fp;
 	int i_max, i_ddns_source, i_ddns_checkip, i_ddns_period, i_ddns_forced, i_ddns1_ssl;
-	char *ddns1_svc, *ddns1_srv, *ddns1_hname[3], *ddns1_user, *ddns1_pass;
-	char *ddns2_svc, *ddns2_srv, *ddns2_hname,    *ddns2_user, *ddns2_pass;
+	char *ddns1_hname[3], *ddns1_user, *ddns1_pass;
+	char *ddns2_hname,    *ddns2_user, *ddns2_pass;
+	const char *ddns1_svc, *ddns2_svc;
 	char wan_ifname[16];
-	struct inadyn_system_t *inadyn;
 
 	i_ddns_period = nvram_safe_get_int("ddns_period", 24, 0, 72);
 	i_ddns_period *= 3600;
@@ -768,17 +784,9 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 	i_max = ARRAY_SIZE(inadyn_checkip_url) - 1;
 	i_ddns_checkip = nvram_safe_get_int("ddns_checkip", 0, 0, i_max);
 
-	ddns1_srv = nvram_safe_get("ddns_server_x");
-	ddns1_svc = NULL;
-	for (inadyn = (struct inadyn_system_t *)&inadyn_systems[0]; inadyn->alias; inadyn++) {
-		if (strcmp(ddns1_srv, inadyn->alias) == 0) {
-			ddns1_svc = (char *)inadyn->system;
-			break;
-		}
-	}
-
+	ddns1_svc = get_inadyn_system(nvram_safe_get("ddns_server_x"));
 	if (!ddns1_svc) {
-		ddns1_svc = (char *)inadyn_systems[0].system;
+		ddns1_svc = inadyn_systems[0].system;
 		nvram_set("ddns_server_x", inadyn_systems[0].alias);
 	}
 
@@ -806,14 +814,7 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 		ddns1_pass = nvram_safe_get("secret_code");
 	}
 
-	ddns2_srv = nvram_safe_get("ddns2_server");
-	ddns2_svc = NULL;
-	for (inadyn = (struct inadyn_system_t *)&inadyn_systems[0]; inadyn->alias; inadyn++) {
-		if (strcmp(ddns2_srv, inadyn->alias) == 0) {
-			ddns2_svc = (char *)inadyn->system;
-			break;
-		}
-	}
+	ddns2_svc = get_inadyn_system(nvram_safe_get("ddns2_server"));
 
 	ddns2_hname = nvram_safe_get("ddns2_hname");
 	ddns2_user  = nvram_safe_get("ddns2_user");
@@ -899,13 +900,51 @@ start_ddns(int clear_cache)
 int
 notify_ddns_update(void)
 {
-	if (pids("inadyn"))
-	{
+	if (pids("inadyn")) {
 		write_inadyn_conf(DDNS_CONF_FILE, 1);
 		return doSystem("killall %s %s", "-SIGHUP", "inadyn");
 	}
 
 	return start_ddns(0);
+}
+
+char *
+get_ddns_fqdn(void)
+{
+	char *ddns_fqdn = NULL;
+	const char *ddns_svc;
+
+	if (!nvram_match("ddns_enable_x", "1"))
+		return NULL;
+
+	ddns_svc = get_inadyn_system(nvram_safe_get("ddns_server_x"));
+	if (ddns_svc && strncmp(ddns_svc, "ipv6tb@", 7) != 0) {
+		ddns_fqdn = nvram_safe_get("ddns_hostname_x");
+		if (strcmp(ddns_svc, "update@asus.com") == 0) {
+			if (!strstr(ddns_fqdn, ".asuscomm.com"))
+				ddns_fqdn = NULL;
+		} else {
+			if (!strchr(ddns_fqdn, '.')) {
+				ddns_fqdn = nvram_safe_get("ddns_hostname2_x");
+				if (!strchr(ddns_fqdn, '.')) {
+					ddns_fqdn = nvram_safe_get("ddns_hostname3_x");
+					if (!strchr(ddns_fqdn, '.'))
+						ddns_fqdn = NULL;
+				}
+			}
+		}
+	}
+
+	if (!ddns_fqdn) {
+		ddns_svc = get_inadyn_system(nvram_safe_get("ddns2_server"));
+		if (ddns_svc && strncmp(ddns_svc, "ipv6tb@", 7) != 0) {
+			ddns_fqdn = nvram_safe_get("ddns2_hname");
+			if (!strchr(ddns_fqdn, '.'))
+				ddns_fqdn = NULL;
+		}
+	}
+
+	return ddns_fqdn;
 }
 
 void

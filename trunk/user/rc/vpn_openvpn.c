@@ -882,8 +882,14 @@ ovpn_server_expcli_main(int argc, char **argv)
 		return 1;
 	}
 
-	wan_addr = get_wan_unit_value(0, "ipaddr");
-	if (!is_valid_ipv4(wan_addr))
+	wan_addr = get_ddns_fqdn();
+	if (!wan_addr) {
+		wan_addr = get_wan_unit_value(0, "ipaddr");
+		if (!is_valid_ipv4(wan_addr))
+			wan_addr = NULL;
+	}
+
+	if (!wan_addr)
 		wan_addr = "{wan_address}";
 
 	fprintf(fp, "client\n");

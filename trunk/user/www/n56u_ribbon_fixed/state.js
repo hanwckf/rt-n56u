@@ -7,7 +7,6 @@ var log_stamp = 0;
 
 var uptimeStr = "<% uptime(); %>";
 var timezone = uptimeStr.substring(26,31);
-var boottime = parseInt(uptimeStr.substring(32,42));
 var newformat_systime = uptimeStr.substring(8,11) + " " + uptimeStr.substring(5,7) + " " + uptimeStr.substring(17,25) + " " + uptimeStr.substring(12,16);  //Ex format: Jun 23 10:33:31 2008
 var systime_millsec = Date.parse(newformat_systime); // millsec from system
 var JS_timeObj = new Date(); // 1970.1.1
@@ -459,20 +458,20 @@ function submit_language(){
 }
 
 function logout(){
-	if(confirm('<#JS_logout#>')){
-		setTimeout('location = "Logout.asp";', 1);
-	}
+	if(!confirm('<#JS_logout#>'))
+		return;
+	setTimeout('location = "Logout.asp";', 1);
 }
 
 function reboot(){
-	if(confirm("<#Main_content_Login_Item7#>")){
-		if(window.frames["statusframe"] && window.frames["statusframe"].stopFlag == 0){
-			window.frames["statusframe"].stopFlag = 1;
-		}
-		showLoading(40);
-		setTimeout("location.href = '/index.asp';", 40000);
-		$("hidden_frame").src = "Reboot.asp";
-	}
+	if(!confirm('<#Main_content_Login_Item7#>'))
+		return;
+	showLoading(board_boot_time());
+	var $j = jQuery.noConflict();
+	$j.post('/apply.cgi',
+	{
+		'action_mode': ' Reboot ',
+	});
 }
 
 function reset_btn_commit(btn_id){
@@ -514,8 +513,8 @@ function clearlog(){
 	var $j = jQuery.noConflict();
 	$j.post('/apply.cgi',
 	{
-		'current_page': 'Main_LogStatus_Content.asp',
-		'action_mode': ' ClearLog '
+		'action_mode': ' ClearLog ',
+		'current_page': 'Main_LogStatus_Content.asp'
 	});
 	setLogData();
 }

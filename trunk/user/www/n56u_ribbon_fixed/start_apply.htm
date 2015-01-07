@@ -19,6 +19,8 @@ var action_script = '<% get_parameter("action_script"); %>';
 var group_id = '<% get_parameter("group_id"); %>';
 var getflag = '<% get_parameter("flag"); %>';
 
+<% get_flash_time(); %>
+
 function done_validating(action){
 	parent.done_validating(action, group_id);
 }
@@ -47,16 +49,18 @@ function top_delay_redirect(next_url){
 }
 
 function redirect(){
-	parent.location.href = 'http://'+parent.document.form.lan_ipaddr.value;
+	var prefix = 'http';
+	if(parent.location.href.indexOf("https:") >= 0)
+		prefix += 's';
+	parent.location.href = prefix+'://'+parent.document.form.lan_ipaddr.value;
 }
 
 function initial(){
 	if(getflag == "set_language"){
 		if(navigator.appName.indexOf("Microsoft") >= 0)
 			parent.parent.location.reload();
-		else{
+		else
 			parent.parent.location.href = parent.parent.location.href;
-		}
 	}
 	else if(next_page.indexOf("QIS_") >= 0){
 		if(getflag.length > 0)
@@ -82,8 +86,8 @@ function initial(){
 				setTimeout("top_delay_redirect('/');", restart_time*1000);
 			}
 			else if(current_page == "Advanced_OperationMode_Content.asp"){
-				setTimeout("hideLoading()",40000);
-				setTimeout("redirect()",45000);
+				setTimeout("hideLoading()",board_boot_time()*1000);
+				setTimeout("redirect()",(board_boot_time()+2)*1000);
 			}
 			else if(current_page == "Advanced_LAN_Content.asp" || current_page == "Advanced_APLAN_Content.asp"){
 				setTimeout("hideLoading()",5000);
@@ -98,12 +102,10 @@ function initial(){
 		}
 	}
 	else{
-		if(current_page.length > 0){
+		if(current_page.length > 0)
 			setTimeout("top_delay_redirect('"+current_page+"');", restart_time*1000);
-		}
-		else if(next_page.length > 0){
+		else if(next_page.length > 0)
 			setTimeout("delay_redirect('"+next_page+"');", restart_time*1000);
-		}
 	}
 }
 

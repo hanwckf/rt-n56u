@@ -1140,9 +1140,6 @@ handle_request(FILE *conn_fp, int conn_fd)
 
 	if (!strcmp(url, "Logout.asp"))
 		http_logout(&login_ip_tmp);
-
-	if (!strcmp(url, "Reboot.asp"))
-		system("reboot");
 }
 
 static void

@@ -6,6 +6,7 @@
 #define BOARD_VENDOR_NAME	"ASUSTek Computer Inc."
 #define BOARD_VENDOR_URL	"http://www.asus.com/"
 #define BOARD_MODEL_URL		"http://www.asus.com/Networking/RTN11P/"
+#define BOARD_BOOT_TIME		20
 #define BOARD_FLASH_TIME	90
 #undef  BOARD_GPIO_BTN_RESET
 #define BOARD_GPIO_BTN_WPS	17

@@ -6,6 +6,7 @@
 #define BOARD_VENDOR_NAME	"Samsung Electronics Co."
 #define BOARD_VENDOR_URL	"http://www.samsung.com/us/"
 #define BOARD_MODEL_URL		"http://www.samsung.com/us/video/tvs-accessories/CY-SWR1100/ZA"
+#define BOARD_BOOT_TIME		35
 #define BOARD_FLASH_TIME	180
 #define BOARD_GPIO_BTN_RESET	6
 #define BOARD_GPIO_BTN_WPS	3

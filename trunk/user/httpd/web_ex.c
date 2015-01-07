@@ -109,8 +109,6 @@ nvram_commit_safe(void)
 void
 sys_reboot(void)
 {
-	dbG("[httpd] reboot...\n");
-
 	kill(1, SIGTERM);
 }
 
@@ -125,30 +123,6 @@ rfctime(const time_t *timep)
 	memcpy(&tm, localtime(timep), sizeof(struct tm));
 	strftime(s, 200, "%a, %d %b %Y %H:%M:%S %z", &tm);
 	return s;
-}
-
-void
-reltime(unsigned long seconds, char *cs)
-{
-#ifdef SHOWALL
-	unsigned int days=0, hours=0, minutes=0;
-
-	if (seconds > 60*60*24) {
-		days = seconds / (60*60*24);
-		seconds %= 60*60*24;
-	}
-	if (seconds > 60*60) {
-		hours = seconds / (60*60);
-		seconds %= 60*60;
-	}
-	if (seconds > 60) {
-		minutes = seconds / 60;
-		seconds %= 60;
-	}
-	sprintf(cs, "%d days, %d hours, %d minutes, %ld seconds", days, hours, minutes, seconds);
-#else
-	sprintf(cs, "%ld secs", seconds);
-#endif
 }
 
 /******************************************************************************/
@@ -718,30 +692,14 @@ ej_nvram_char_to_ascii(int eid, webs_t wp, int argc, char **argv)
 	return ret;
 }
 
-/* Report sys up time */
+/* report system time */
 static int
 ej_uptime(int eid, webs_t wp, int argc, char **argv)
 {
-	char buf[512];
-	int ret;
-	char *str;
 	time_t tm;
 
 	time(&tm);
-	sprintf(buf, rfctime(&tm));
-
-	str = file2str("/proc/uptime", 64);
-	if (str) {
-		unsigned long up = atol(str);
-		free(str);
-		char lease_buf[128];
-		memset(lease_buf, 0, sizeof(lease_buf));
-		reltime(up, lease_buf);
-		sprintf(buf, "%s(%s since boot)", buf, lease_buf);
-	}
-
-	ret = websWrite(wp, buf);
-	return ret;
+	return websWrite(wp, rfctime(&tm));
 }
 
 static int
@@ -2673,6 +2631,7 @@ static int ej_get_static_ccount(int eid, webs_t wp, int argc, char **argv)
 
 static int ej_get_flash_time(int eid, webs_t wp, int argc, char **argv)
 {
+	websWrite(wp, "function board_boot_time() { return %d;}\n", BOARD_BOOT_TIME+5);
 	websWrite(wp, "function board_flash_time() { return %d;}\n", BOARD_FLASH_TIME);
 
 	return 0;
@@ -3014,17 +2973,16 @@ apply_cgi(const char *url, webs_t wp)
 		websRedirect(wp, current_url);
 		return 0;
 	}
-	else if (!strcmp(value, " Restart "))
-	{
-		websApply(wp, "Restarting.asp");
-		sys_reboot();
-		return 0;
-	}
 	else if (!strcmp(value, " ClearLog "))
 	{
 		// current only syslog implement this button
 		unlink("/tmp/syslog.log");
 		websRedirect(wp, current_url);
+		return 0;
+	}
+	else if (!strcmp(value, " Reboot "))
+	{
+		sys_reboot();
 		return 0;
 	}
 	else if (!strcmp(value, " RestoreNVRAM "))

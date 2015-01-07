@@ -57,8 +57,9 @@ function LoadingProgress(seconds){
 function showLoading(seconds, flag){
 	disableCheckChangedStatus();
 
-	htmlbodyforIE = document.getElementsByTagName("html");  //this both for IE&FF, use "html" but not "body" because <!DOCTYPE html PUBLIC.......>
-	htmlbodyforIE[0].style.overflow = "hidden";	  //hidden the Y-scrollbar for preventing from user scroll it.
+	// hide IE scrollbars
+	htmlbodyforIE = document.getElementsByTagName("html");
+	htmlbodyforIE[0].style.overflow = "hidden";
 
 	winW_H();
 	var blockmarginTop;
@@ -76,13 +77,13 @@ function showLoading(seconds, flag){
 	loadingSeconds = seconds;
 	progress = 100/loadingSeconds;
 	y = 0;
-
 	LoadingTime(seconds, flag);
 }
 
 function showLoadingBar(seconds){
 	disableCheckChangedStatus();
 
+	// hide IE scrollbars
 	htmlbodyforIE = document.getElementsByTagName("html");
 	htmlbodyforIE[0].style.overflow = "hidden";
 
@@ -100,7 +101,7 @@ function showLoadingBar(seconds){
 }
 
 function showResetBar(){
-	showLoadingBar(40);
+	showLoadingBar(board_boot_time());
 }
 
 function showUpgradeBar(){

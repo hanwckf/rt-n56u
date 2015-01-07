@@ -6,6 +6,7 @@
 #define BOARD_VENDOR_NAME	"Belkin International Inc."
 #define BOARD_VENDOR_URL	"http://www.belkin.com/us/"
 #define BOARD_MODEL_URL		"http://www.belkin.com/us/p/P-F9K1103/"
+#define BOARD_BOOT_TIME		35
 #define BOARD_FLASH_TIME	150
 #define BOARD_GPIO_BTN_RESET	25
 #define BOARD_GPIO_BTN_WPS	26

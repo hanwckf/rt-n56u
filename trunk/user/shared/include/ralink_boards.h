@@ -27,6 +27,10 @@
 #define LED_ON			0
 #define LED_OFF			1
 
+#ifndef BOARD_BOOT_TIME
+#define BOARD_BOOT_TIME		35
+#endif
+
 #ifndef BOARD_FLASH_TIME
 #define BOARD_FLASH_TIME	150
 #endif

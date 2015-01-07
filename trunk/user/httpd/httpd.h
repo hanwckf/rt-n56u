@@ -163,7 +163,6 @@ extern char *initial_available_disk_names_and_sizes(void);
 // ralink.c
 struct ifreq;
 struct iwreq;
-extern void reltime(unsigned long seconds, char *buf);
 extern int get_apcli_peer_connected(const char *ifname, struct iwreq *p_wrq);
 extern int is_mac_in_sta_list(const unsigned char* p_mac);
 extern int ej_lan_leases(int eid, webs_t wp, int argc, char **argv);

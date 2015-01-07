@@ -6,6 +6,7 @@
 #define BOARD_VENDOR_NAME	"ASUSTek Computer Inc."
 #define BOARD_VENDOR_URL	"http://www.asus.com/"
 #define BOARD_MODEL_URL		"http://www.asus.com/Networking/RTN56U/"
+#define BOARD_BOOT_TIME		35
 #define BOARD_FLASH_TIME	180
 #define BOARD_GPIO_BTN_RESET	13
 #define BOARD_GPIO_BTN_WPS	26

@@ -82,7 +82,6 @@ function restoreNVRAM(){
 	alert_string += "\n<#Setting_factorydefault_hint2#>";
 	if(confirm(alert_string)){
 		document.form.action1.blur();
-		showtext($("loading_text"), "<#SAVE_restart_desc#>");
 		showLoading();
 		switch_form_action(0, " RestoreNVRAM ");
 		document.form.submit();
@@ -94,8 +93,7 @@ function restoreStorage(){
 	var alert_string = "<#Adm_Setting_store_hint#>";
 	alert_string += "\n<#Setting_factorydefault_hint2#>";
 	if(confirm(alert_string)){
-		document.form.action1.blur();
-		showtext($("loading_text"), "<#SAVE_restart_desc#>");
+		document.form.st_action1.blur();
 		showLoading();
 		switch_form_action(0, " RestoreStorage ");
 		document.form.submit();
@@ -156,7 +154,6 @@ function uploadSetting(){
 	}
 	else{
 		disableCheckChangedStatus();
-		showtext($("loading_text"), "<#SET_ok_desc#>");
 		switch_form_action(1, "");
 		document.form.submit();
 	}

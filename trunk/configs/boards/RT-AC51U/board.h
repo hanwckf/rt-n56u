@@ -6,6 +6,7 @@
 #define BOARD_VENDOR_NAME	"ASUSTek Computer Inc."
 #define BOARD_VENDOR_URL	"http://www.asus.com/"
 #define BOARD_MODEL_URL		"http://www.asus.com/Networking/RTAC51U/"
+#define BOARD_BOOT_TIME		25
 #define BOARD_FLASH_TIME	120
 #define BOARD_GPIO_BTN_RESET	1
 #define BOARD_GPIO_BTN_WPS	2

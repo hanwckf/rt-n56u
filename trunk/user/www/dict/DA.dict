@@ -47,47 +47,12 @@ PrinterStatus_x_Monopoly_itemdesc=Hvis printeren ikke tillader understøttelse a
 Switch_band=Skift frekvens
 Current_band=Nuværende frekvens
 LANHostConfig_DomainName_itemdesc2=må kun omfatte alfanumeriske tegn og bindestreg.
-qis_ssid_desc=Kopier indstillingerne 2.4 GHz til 5 GHz.
 RouterConfig_IPTV_itemname=IPTV UDP Multicast til http-proxyport
 RHELP_desc9=Indtast et 0 (nul) for at deaktivere denne funktion.
 WLANConfig11b_TxPower_itemname=Tx-styrkejustering
 WLANConfig11b_TxPower_itemdesc=Indstil antennestyrken for at gøre transmissionskvaliteten bedre.
 WLANConfig11b_Wireless_Speed_itemname_3=Anvender 40 MHz sameksisterede båndbredde til at maksimere den trådløse overførselshastighed. Hvis der opstår problemer med den trådløse stabilitet, skal standardtilstanden vælges.
 hwnat_desc=Aktiver hardware-NAT for at opnå en internethastighed med en maksimal overførselshastighed på over 900 Mbps, når det understøttes korrekt af internetudbyderen. Men vær opmærksom på, at en aktivering af hardware-NAT kan give konflikter med QoS-relaterede funktioner.
-[QIS]
-QIS_autoMAC_desc1=Starter en kloning af computerens MAC-adresse til routeren…
-QIS_autoMAC_desc2=Vent et øjeblik...
-QIS_autoMAC_desc3=Kontroller WAN IP-adressen
-QIS_autoMAC_result_desc1=AJAX kunne ikke køres. Vent i 3 sekunder for, at AJAX skal køres igen.
-QIS_autoMAC_result_desc2=Hentede WAN IP-adressen.
-QIS_autoMAC_result_desc3=Hent den nye WAN IP-adresse efter MAC-kloningen
-QIS_detect2_desc1=Starter på at hente den nye IP-adresse…
-QIS_detect2_desc2=Henter IP-adressen…
-QIS_detect2_desc3=Hent den nye WAN IP-adresse efter MAC-kloningen
-QIS_detect2_desc4=Modemmet er nulstillet manuelt.
-QIS_detectWAN_desc1=Kontroller WAN-forbindelsestypen.
-QIS_detectWAN_desc2=Vent lidt, mens der kontrolleres…
-QIS_finish_wireless_item1=Netværksnavn (SSID)
-QIS_finish_wireless_item2=Trådløs sikkerhed
-QIS_finish_wireless_item3=Netværksnøgle
-QIS_finish_admin_item1=Routerens administratorkonto
-QIS_finish_admin_item2=Routerens administratoradgangskode
-QIS_internet_account_desc1=Indtast kontonavnet og adgangskoden, som internetserviceudbyderen (ISP) har tildelt.
-QIS_internet_account_desc2=Standard brugernavnet og adgangskoden admin / admin må ikke indtastes.
-QIS_internet_success_item1=Fik IP-adressen
-QIS_internet_success_item2_1=Tilsluttet internetudbyderens DNS
-QIS_internet_success_item2_2=Det lykkedes ikke, at oprette forbindelse til internetudbyderens DNS
-QIS_internet_success_item3_1=Tilsluttet den offentlige DNS
-QIS_internet_success_item3_2=Det lykkedes ikke, at oprette forbindelse til den offentlige DNS
-QIS_internet_success_desc1=Der kan være en proxyserver på dit netværk. Kontakt din internetserviceudbyder eller netværksadministrator.
-QIS_internet_success_desc2=Der kan være en fejl i internetudbyderens DNS-server (navneserver for domænet). Kontakt din internetserviceudbyder eller netværksadministrator, eller gå til siden med avancerede indstillinger for at indstille den offentlige DNS-adresse.
-QIS_internet_success_desc3=Kontakt din internetserviceudbyder eller netværksadministrator.
-QIS_internet_success_desc4=Træk elstikket ud af modemmet. Vent i 2 minutter, og sæt derefter stikket i igen. Klik på Registrer forbindelsen.
-QIS_resetModem_desc1=Træk elstikket ud af modemmet.
-QIS_resetModem_desc2=Nulstil modemmet
-QIS_resetModem_desc3=Træk elstikket ud, og sæt det i igen efter 2 minutter.
-QIS_resetModem2_desc1=Sæt elstikket tilbage på modemmet, og vent i 1 minut. ASUS-routeren henter den nye IP-adresse fra modemmet.
-QIS_wireless_desc1=Indtast en netværksnøgle på 8-63 tegn (bogstaver, tal eller en kombination af dem) eller 64 hex cifre. Hvis netværkssikkerheden ikke skal indstilles, så lad feltet med netværksnøglen stå tomt. <span style='font-weight:bolder;'>Den trådløse standardsikkerhed er WPA-Auto-Personal - AES + TKIP.</span>
 [Traffic Monitor]
 Date=Dato
 Scale=Skala
@@ -105,16 +70,12 @@ Maximum=Maksimalt
 Total=I alt
 Downlink=Downlink
 Uplink=Uplink
-[ZVMODELVZ new item]
 LAN_IP_changed_suggedtion1=ZVMODELVZ'ens lokalnets IP-adresse er
 LAN_IP_changed_suggedtion2=. Hvis siden ikke kan sættes tilbage senere, så forny IP-konfigurationen på computeren.
 WLANConfig11b_x_WPSband_itemname=Det nuværende bånd
 WLANConfig11b_x_WPSband_itemdesc=Vælg et driftsbånd (2.4 GHz eller 5 GHz), inden WPS-funktionen (Wi-Fi-beskyttet indstilling) benyttes.
-QKSet_Internet_Setup_fail_reason7=Kontroller ISP-indstillingerne på routeren eller kontakt din internetudbyder, hvis der stadig ikke er forbindelse til internettet.
-QKSet_Wireless_ssid_warning=Denne indstilling gælder indstillingen af 2.4 GHz og 5 GHz WLAN.
 LANConfig_ChangedLANIP=Routerens IP-adresse er ændret. Anvend funktionen med enhedsregistrering til at søge efter routerens nye IP-adresse.
 BasicConfig_HWNAT_alert=Funktionen Hardware-NAT er i konflikt med routerens nuværende indstillinger. Deaktiver funktionen Hardware-NAT ved at vælge Avancerede indstillinger > WAN > Internetforbindelse i navigationsmenuen.
-[RT-N1X new item]
 BasicConfig_HWNAT_itemname=Skal Hardware-NAT aktiveres?
 LANHostConfig_x_Password_itemdesc=Adgangskoden må ikke være længere end 32 tegn.
 CableStatus=Kabelstatus
@@ -142,7 +103,6 @@ ShareNode_Seeding_itemname=Forhåndsudfyldning
 ShareNode_Seeding_itemdesc=Giver mulighed for at aktivere eller deaktivere funktionen med forhåndsudfyldning. ZVMODELVZ'en forbliver åben, indtil overførslen er fuldført.
 ShareNode_MaxUpload_itemname=Maksimal upload-rate
 ShareNode_MaxUpload_itemdesc=Indtast en værdi mellem 0 og 999. Standardværdien er 0, hvilket angiver, at der ikke er nogen upload-begrænsning.
-[New item]
 HSDPAConfig_hsdpa_enable_hint1=Når USB Modem er aktiveret, deaktiveres de oprindelige WAN-indstillinger.
 HSDPAConfig_hsdpa_enable_hint2=Hvis forbindelsestypen skal ændres, så gå til <a href="/Advanced_Modem_others.asp">USB Modem</a> for at deaktivere 3 G/3,5 G-adapteren.
 HSDPAConfig_USBAdapter_itemname=3 G/3,5 G USB-adapter
@@ -151,7 +111,6 @@ APSurvey_msg_connected=Du er allerede tilsluttet dette adgangspunkt.
 APSurvey_msg_connect_suggest1=Vi foreslår at anvende et Ethernetkabel til at koble til ZVMODELVZ'en for at få en stabil konfiguration og bedre udnyttelse.
 APSurvey_msg_connect_suggest2=Klik på [<span style="font-weight:bold; font-size:16px;">OK</span>] for at fortsætte konfigureringen. Under indstillingen kan forbindelsen til pc'en blive afbrudt, og vi kan ikke garantere, at ZVMODELVZ'en kobles til det fjerne adgangspunkt.
 APSurvey_msg_connect_suggest3=Klik på [<span style="font-weight:bold; font-size:16px;">Log af </span>] for at forlade webbrugergrænsefladen og anvende Ethernetkablet til at koble til ZVMODELVZ'en og derefter logge på igen.
-QKSet_finish_moveto9=Luk vinduet og afslut konfigureringen af indstillingerne. Åbn et nyt vindue for at koble til internettet.
 APSurvey_action_search_again_hint1=Vælg et andet netværk
 APSurvey_action_search_again_hint2=Skift det netværk, som ZVMODELVZ'en forbinder til.
 Browser_action_addfavorite_hint1=ZVMODELVZ'ens IP-adresse er ændret til
@@ -217,16 +176,7 @@ HSDPAConfig_Subnetmask_itemname=Undernetmaske
 HSDPAConfig_DefGateway_itemname=Standardgateway
 HSDPAConfig_DNSServers_itemname=DNS-serveradresse
 AiDisk_Wizard_failedreson1=Guiden Aidisk virkede exceptionelt. Prøv igen senere.
-[state.js-Dr.Surf.]
-QKSet_ISP_desc3=Den automatiske IP-forbindelse mislykkedes. Den kan konfigureres manuelt her.
-QKSet_ISP_desc2=Den statiske IP-forbindelse mislykkedes.
-QIS_internet_vpn_confirm=Hvis forbindelsestypen er PPTP/L2TP, skal der klikkes på [OK] for at [Forbinde VPN-serveren].\nHvis ikke, så klik på [Annuller] og kontroller oplysningerne og derefter Anvend indstillingerne.
 Full_Clients=Klienter
-[QIS_internet_vpn.htm]
-QIS_if_vpn_existed=Skal der forbindes til VPN-serveren?
-QIS_internet_vpn_title=VPN-element
-QIS_internet_vpn_type=VPN-type
-QIS_internet_vpn_alert=Angiv ikke VPN-serverens URL- eller IP-adresse endnu!
 PPPConnection_UserName_sectionname=Kontoindstilling
 PPPConnection_detail_sectionname=Kontoindstilling og detaljeret forbindelsesindstilling
 JS_fieldInputError=inputfejl.
@@ -411,7 +361,6 @@ ConnectionStatus=Forbindelsesstatus:
 WAN_IP=WAN-IP
 Connectiontype=Forbindelsestype
 Gateway=Gateway
-QIS=Hurtig indstilling af internettet
 Connected=Tilsluttet
 Disconnected=Afbrudt
 PauseConnect=Pause
@@ -614,33 +563,13 @@ ALERT_OF_ERROR_Action12=Det lykkedes ikke at formatere disken.
 ALERT_OF_ERROR_System1=Systemfejl: Den nødvendige hukommelse kan ikke allokeres!
 ALERT_OF_ERROR_System2=Systemfejl: Kan ikke læse disken data!
 ALERT_OF_ERROR_System3=Systemfejl: Disken er optaget!
-[QIS wizard]
-[QIS_detect.js]
 Web_Title=ASUS Wireless Router
-QKSet_detect_sanglass=automatisk registrering
-QKSet_detect_desc1=Registrerer forbindelsestypen
-QKSet_detect_desc2=Registrerer forbindelsesstatussen igen
-QKSet_detect_wanconnfault=Kontroller, om Ethernetkablet er koblet ordentligt til WAN-porten.
-QKSet_detect_APdesc=ZVMODELVZ'ens handlingstilstand er 'AP'. Starter for at konfigurere indstillingerne…
-QKSet_detect_skipbtn=Spring over og gå til manuel indstilling
-QKSet_detect_freshbtn=Registrer igen
-QKSet_detect_waitdesc=Starter for at fastslå forbindelsestypen...
-QKSet_detect_timedesc1=Registrerer
-QKSet_detect_timedesc2=gange.
-[QIS_finish.js] 
-QKSet_all_title=Hurtig start
-QKSet_finishpre_webtitle=Alle indstillinger er afsluttet. Klik nu på [Afslut], hvorefter du omdirigeres til din standard startside. Eller du kan klikke på [Forrige] for at vende tilbage til indstillingssiden.
-QKSet_finishpre_rebootnow=Afslut
-[QIS_internet_account.js]
-QKSet_account_webtitle=Indstiling af internetudbyderkontoen
-QKSet_ISP_head=Indstiling af internetudbyderoplysningerne
-QKSet_ISP_desc=Se dine ISP-indstillinger og indtast de relevante oplysninger.
 PPPConnection_UserName_itemdesc=Dette felt er kun tilgængeligt, når WAN-forbindelsestypen er sat til USB Modem, PPPoE, PPTP eller L2TP.
 BOP_account_user_item=Brugernavn:
 BOP_account_pass_item=Adgangskode:
+QKSet_detect_freshbtn=Registrer igen
 QKSet_account_passwd=Adgangskoden til denne brugerkonto.
 QKSet_account_nameblank=Kontonavnet må ikke være tomt.
-[QIS_internet_ip.js]
 Layer3Forwarding_x_DHCPClient_itemname=Skal WAN-IP-adressen hentes automatisk?
 Layer3Forwarding_x_UseStaticIP_itemname=Brug følgende IP-adresse:
 IPConnection_ExternalIPAddress_itemdesc=Dette er ZVMODELVZ'ens IP-adresse, som den ser ud på fjernnetværket.
@@ -655,35 +584,11 @@ IPConnection_x_DNSServerEnable_itemdesc=Dette felt gør det muligt at hente DNS'
 IPConnection_x_DNSServer1_itemdesc=Dette felt angiver den DNS-servers IP-adresse, som ZVMODELVZ'en kontakter.
 IPConnection_x_DNSServer1_itemname=DNS-server
 IPConnection_warning_WANIPEQUALGatewayIP=WAN-IP-adressen er indstillet som ZVMODELVZ'ens gateway, og ZVMODELVZ'en kunne muligvis ikke kobles til internettet. Angiv gatewayen korrekt.
-[QIS_internet_isp.js]
 BOP_isp_host_desc=Dette felt gør det muligt at angive et værtsnavn for ZVMODELVZ'en. Det er almindeligvis din internetudbyder, der anmoder om det.
 BOP_isp_host_item=Værtsnavn (valgfrit):
 PPPConnection_x_MacAddressForISP_itemdesc=Dette felt gør det muligt at angive en unik MAC-adresse til ZVMODELVZ'en for at koble til internettet. Det er almindeligvis din internetudbyder, der anmoder om det.
 BOP_isp_mac_item=MAC-adresse (valgfrit)
 BOP_isp_MACclone=MAC-klon
-[QIS_internet_success.htm]
-QKSet_Internet_Setup_fail=Der kunne ikke oprettes internetforbindelse.
-QKSet_Internet_Setup_fail_reason1=Der kunne ikke oprettes DHCP-forbindelse.
-QKSet_Internet_Setup_fail_reason2=Kontonavnet eller adgangskoden er ugyldigt. Klik på linket for at rette det.
-QKSet_Internet_Setup_fail_reason3=Der kunne ikke oprettes PPPoE-forbindelse. Klik på linket, og prøv igen.
-QKSet_Internet_Setup_fail_reason4=Der kunne ikke oprettes PPTP-forbindelse. Klik på linket, og prøv igen.
-QKSet_Internet_Setup_fail_reason5=Der kunne ikke oprettes L2TP-forbindelse. Klik på linket, og prøv igen.
-QKSet_Internet_Setup_fail_reason6=Der kunne ikke oprettes en statisk forbindelse. Klik på linket, og prøv igen.
-QKSet_Internet_Setup_fail_method1=Registrer forbindelsen igen
-QKSet_Internet_Setup_fail_method2=Indtast kontonavnet eller adgangskoden igen
-QKSet_finish_moveto1=Gå til internettet
-QKSet_finish_moveto2=Gå til browserens startside.
-QKSet_finish_moveto3=Advarsel: Den trådløse kryptering er ikke konfigureret, og det kan skabe sikkerhedsmæssige problemer. Vi foreslår, at den konfigureres via nedenstående hyperlink.
-QKSet_finish_moveto4=Kør
-QKSet_finish_moveto5=Enkle trådløse sikkerhedsindstillinger
-QKSet_finish_moveto6=Slå krypteringsindstillingen op og konfigurer den.
-QKSet_finish_moveto7=Siden med avancerede indstillinger
-QKSet_finish_moveto8=Manuel konfigurering og finjustering.
-[QIS_internet_success.js] 
-QKSet_finish_desc=Indstilling af internetforbindelsen er afsluttet.
-[QIS_internet_type.js] 
-QKSet_type_head=Internet WAN-forbindelsestype
-QKSet_type_desc=Vælg den WAN-forbindelsestype, som er angivet af internetudbyderen.
 BOP_ctype_title1=Automatisk IP-adresse
 BOP_ctype_item1=Typen gør det muligt for din pc at hente IP-adressen automatisk. Denne forbindelsestype er ofte anvendt af tjenesteudbydere af kabelmodemmer.
 BOP_ctype_item2=ADSL- eller anden forbindelse, der kræver brugernavn og adgangskode. Den kaldes også for PPPoE.
@@ -691,8 +596,6 @@ BOP_ctype_item3=ADSL- eller anden forbindelse, der kræver brugernavn, adgangsko
 BOP_ctype_item4=L2TP kræver brugernavn, adgangskode og IP-adresse, som er opgivet af internetudbyderen.
 BOP_ctype_title5=Statisk IP-adresse
 BOP_ctype_item5=En statisk IP-adresse gør det muligt for pc'en at anvende en fast IP-adresse, som er opgivet af internetudbyderen. Denne forbindelsestype er ofte anvendt at tjenesteudbydere af ADSL-forbindelser.
-QKSet_type_rechoice=Vælg WAN-type
-QKSet_wireless_webtitle=Trådløs indstilling
 WLANConfig11b_SSID_itemdesc=Tildel en identifikationsstreng på maksimalt 32 tegn til den trådløse forbindelse.
 WLANConfig11b_SSID_itemname=SSID:
 WLANConfig11b_x_PSKKey_itemdesc=Dette felt kræver en adgangskode på 8-63 tegn (bogstaver, tal eller en kombination af dem) eller 64 hex cifre for at starte krypteringsprocessen. Hvis feltet efterlades tomt, tildeles [00000000] standardmæssigt som adgangskode.
@@ -729,7 +632,6 @@ Main_alert_proceeding_desc1=Fortsætter...
 Main_alert_proceeding_desc4=Vent et øjeblik...
 Main_alert_proceeding_desc3=Fuldført!
 Main_content_Login_Item7=Det tager ca. 30 sekunder at genstarte routeren. Er du sikker på, at du vil genstarte routeren nu?
-[QIS-general.js] 
 JS_fieldblank=Felterne må ikke være tomme!
 JS_validip=er ikke en gyldig IP-adresse!
 JS_validmask=is not a valid IP Mask!

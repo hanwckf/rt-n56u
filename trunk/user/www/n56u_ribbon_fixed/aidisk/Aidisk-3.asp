@@ -324,7 +324,7 @@ function checkDDNSReturnCode(){
 			    </label>
 			    <br/>
 			</div>
-			<div id="ddnsname_input" class="aidiskdesc" style="display:none; margin-left: 33px;">
+			<div id="ddnsname_input" style="display:none; margin-left: 33px;">
 			    <input type="text" name="DDNSName" id="DDNSName" class="inputtext">.asuscomm.com
 			    <div id="alert_block" class="alert alert-danger" style="margin-left:5px; display:none;">
 			        <span id="alert_str"></span>

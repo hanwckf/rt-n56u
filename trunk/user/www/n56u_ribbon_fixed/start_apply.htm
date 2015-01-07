@@ -62,13 +62,6 @@ function initial(){
 		else
 			parent.parent.location.href = parent.parent.location.href;
 	}
-	else if(next_page.indexOf("QIS_") >= 0){
-		if(getflag.length > 0)
-			document.redirectForm.flag.value = getflag;
-		
-		parent.showLoading(restart_time, "waiting");
-		setTimeout("top_delay_redirect('"+next_page+"');", restart_time*1000);
-	}
 	else if(action_script.indexOf("hostname_check") >= 0){
 		if(current_page.indexOf("Advanced_DDNS_Content.asp")>=0)
 			setTimeout("parent.parent.checkDDNSReturnCode();", 1000);

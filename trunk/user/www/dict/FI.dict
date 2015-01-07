@@ -47,47 +47,12 @@ PrinterStatus_x_Monopoly_itemdesc=Jos tulostimesi ei salli monen käyttäjän ja
 Switch_band=Vaihda taajuutta
 Current_band=Nykyinen taajuus
 LANHostConfig_DomainName_itemdesc2=voi sisältää vain aakkosnumeerisia merkkejä ja ajatusviivan.
-qis_ssid_desc=Kopioi 2.4 GHz – 5 GHz asetukset.
 RouterConfig_IPTV_itemname=IPTV UDP -monilähetys http-välityspalvelinporttiin
 RHELP_desc9=Ota pois käytöstä syöttämällä 0 (nolla).
 WLANConfig11b_TxPower_itemname=Tx-tehon säätö
 WLANConfig11b_TxPower_itemdesc=Paranna lähetyksen laatua säätämällä antennitehoa. 
 WLANConfig11b_Wireless_Speed_itemname_3=Käyttää 40 MHz samanaikaista kaistanleveyttä langattoman läpimenon maksimoimiseksi. Jos langattoman tilan vakaudessa ilmenee ongelmia, valitse oletustila.
 hwnat_desc=Ota käyttöön Hardware NAT -toiminto käyttääksesi internet-nopeutta, jonka läpimeno on yli 900 Mbps, jos toiminto on internet-palveluntarjoasi asianmukaisesti tukema. Huomioi kuitenkin, että Hardware NAT -toiminnon käyttöönotto voi luoda ristiriidan QoS:iin liittyvien toimintojen kanssa.
-[QIS]
-QIS_autoMAC_desc1=Aloitetaan tietokoneen MAC-osoitteen kloonaaminen reitittimeen…
-QIS_autoMAC_desc2=Odota...
-QIS_autoMAC_desc3=Vahvista WAN IP -osoite
-QIS_autoMAC_result_desc1=AJAXia ei voi suorittaa. Odota noin kolme sekuntia AJAXin suorittamiseksi uudelleen.
-QIS_autoMAC_result_desc2=WAN IP –osoitteen saaminen onnistui.
-QIS_autoMAC_result_desc3=Hae uusi WAN IP-osoite MAC-kloonauksen jälkeen
-QIS_detect2_desc1=Aloitetaan uuden IP-osoitteen hakeminen...
-QIS_detect2_desc2=Haetaan IP-osoitetta...
-QIS_detect2_desc3=Hae uusi WAN IP-osoite MAC-kloonauksen jälkeen
-QIS_detect2_desc4=Modeemi on nollattu manuaalisesti.
-QIS_detectWAN_desc1=Tarkista WAN-yhteystyyppi.
-QIS_detectWAN_desc2=Varmennetaan. Odota...
-QIS_finish_wireless_item1=Verkkonimi (SSID)
-QIS_finish_wireless_item2=Langaton suojaus
-QIS_finish_wireless_item3=Verkkoavain
-QIS_finish_admin_item1=Reitittimen järjestelmänvalvojatili
-QIS_finish_admin_item2=Reitittimen järjestelmänvalvojan salasana
-QIS_internet_account_desc1=Näppäile internet-palveluntarjoajalta (ISP) saamasi tili ja salasana.
-QIS_internet_account_desc2=ÄLÄ näppäile oletuskäyttäjänimeä ja salasanaa ”admin / admin”.
-QIS_internet_success_item1=IP saatu
-QIS_internet_success_item2_1=Yhdistetty ISP DNS:ään
-QIS_internet_success_item2_2=Yhteyden muodostaminen ISP DNS:ään epäonnistui
-QIS_internet_success_item3_1=Yhdistetty julkiseen DNS:ään
-QIS_internet_success_item3_2=Yhteyden muodostaminen julkiseen DNS:ään epäonnistui
-QIS_internet_success_desc1=Verkossasi voi olla välityspalvelin. Tarkista asia internet-palveluntarjoajaltasi tai verkon järjestelmänvalvojalta.
-QIS_internet_success_desc2=Internet-palveluntarjoajan toimialuenimipalvelimessa (DNS) voi olla jokin virhe. Tarkista asia internet-palveluntarjoajaltasi tai verkon järjestelmänvalvojalta tai siirry Lisäasetukset-sivulle ja aseta julkinen DNS.
-QIS_internet_success_desc3=Tarkista asia internet-palveluntarjoajaltasi tai verkon järjestelmänvalvojalta.
-QIS_internet_success_desc4=Irrota modeemin virtajohto. Odota noin kaksi minuuttia ja liitä se takaisin. Valitse Havaitse yhteys.
-QIS_resetModem_desc1=Irrota modeemin virtajohto.
-QIS_resetModem_desc2=Nollaa modeemi
-QIS_resetModem_desc3=Irrota ja liitä virtajohto kahden minuutin kuluttua.
-QIS_resetModem2_desc1=Liitä virtajohto takaisin modeemiin ja odota 1 minuutti. ASUS-reititin hakee modeemista uuden IP-osoitteen.
-QIS_wireless_desc1=Anna verkkoavain, jossa on 8 ja 63 merkkiä (kirjaimia, numeroita tai yhdistelmä) tai 64 heksadesimaalimerkkiä. Jollet halua asettaa verkkosuojausta, jätä verkkoavainkenttä tyhjäksi. <span style='font-weight:bolder;'>Oletus verkkosuojaus on WPA-Auto-Personal - AES + TKIP.</span>
 [Traffic Monitor]
 Date=Päivämäärä
 Scale=Skaalaa
@@ -105,16 +70,12 @@ Maximum=Maksimi
 Total=Yhteensä
 Downlink=Yhteys alaspäin
 Uplink=Yhteys ylöspäin
-[ZVMODELVZ new item]
 LAN_IP_changed_suggedtion1=ZVMODELVZ:n LAN IP on
 LAN_IP_changed_suggedtion2=. Jos et voi palata asetussivulle myöhemmin, uudista tietokoneesi IP-konfiguraatio.
 WLANConfig11b_x_WPSband_itemname=Nykyinen taajuusalue
 WLANConfig11b_x_WPSband_itemdesc=Valitse käyttötaajuusalue (2.4 GHz tai 5 GHz) ennen kuin käytät WPS (Wi-Fi-suojattu asennus) -toimintoa.
-QKSet_Internet_Setup_fail_reason7=Jollet vieläkään pysty muodostamaan yhteyttä internetiin, tarkista reitittimen ISP (Internet-palveluntarjoaja) -asetukset tai ota yhteys internet-palveluntarjoajaan.
-QKSet_Wireless_ssid_warning=Tämä asetus vaikuttaa 2.4 GHz:in ja 5 GHz:in WLAN-asetukseen.
 LANConfig_ChangedLANIP=Reitittimen IP-osoite on vaihdettu. Käytä Device Discovery -apuohjelmaa reitittimen uuden IP-osoitteen etsimiseen.
 BasicConfig_HWNAT_alert=Hardware NAT -toiminto on ristiriidassa reitittimesi nykyisten asetusten kanssa. Ota Hardware NAT -toiminto pois käytöstä navigointivalikon kohdassa Advanced Setting (Lisäasetukset) > WAN > Internet connection (Internet-yhteys).
-[RT-N1X new item]
 BasicConfig_HWNAT_itemname=Otetaanko HW NAT käyttöön?
 LANHostConfig_x_Password_itemdesc=Salasana ei saa olla pitempi kuin 32 merkkiä.
 CableStatus=Kaapelitila
@@ -142,7 +103,6 @@ ShareNode_Seeding_itemname=Alustus
 ShareNode_Seeding_itemdesc=Antaa ottaa käyttöön tai pois käytöstä alustustoiminnon. ZVMODELVZ pysyy auki kunnes lataus on valmis.
 ShareNode_MaxUpload_itemname=Maksiminopeus palvelimeen lataamiseen
 ShareNode_MaxUpload_itemdesc=Anna arvo välillä 0-999. Oletusarvo on 0, mikä tarkoittaa, palvelimelle lataamisella ei ole ylärajaa.
-[New item]
 HSDPAConfig_hsdpa_enable_hint1=Kun USB Modem on otettu käyttöön, alkuperäiset WAN-asetukset otetaan pois käytöstä.
 HSDPAConfig_hsdpa_enable_hint2=Jos haluat muuttaa yhteystyyppiä, siirry kohtaan <a href="/Advanced_Modem_others.asp">USB Modem</a> ottaaksesi 3G/3.5G-sovittimen pois käytöstä.
 HSDPAConfig_USBAdapter_itemname=3G/3.5G USB -sovitin
@@ -151,7 +111,6 @@ APSurvey_msg_connected=Olet jo muodostanut yhteyden tähän tukiasemaan.
 APSurvey_msg_connect_suggest1=On suositeltavaa käyttää Ethernet-kaapelia ZVMODELVZ:n liittämiseen vakaamman konfiguraation ja paremman käytön varmistamiseksi.
 APSurvey_msg_connect_suggest2=Jatka määrittämistä napsauttamalla [<span style="font-weight:bold; font-size:16px;">OK</span>]-painiketta. Asettamisen aikana tietokoneen yhteys voi katketa, eikä ole varmaa, että ZVMODELVZ-reititin muodostaa yhteyden etätukiasemaan.
 APSurvey_msg_connect_suggest3=Sulje web-käyttöliittymä napsauttamalla [<span style="font-weight:bold; font-size:16px;">Logout (Kirjaudu ulos)</span>]-painiketta ja muodosta yhteys ZVMODELVZ-laitteeseen Ethernet-kaapelilla ja kirjaudu uudelleen sisään.
-QKSet_finish_moveto9=Sulje tämä ikkuna ja lopeta asetusten määrittäminen. Avaa uusi ikkuna muodostaaksesi intenet-yhteyden.
 APSurvey_action_search_again_hint1=Valitse toinen verkko
 APSurvey_action_search_again_hint2=Muuta verkko, johon ZVMODELVZ muodostaa yhteyden.
 Browser_action_addfavorite_hint1=ZVMODELVZ:n IP-osoite on muutettu muotoon 
@@ -217,16 +176,7 @@ HSDPAConfig_Subnetmask_itemname=Aliverkon peite
 HSDPAConfig_DefGateway_itemname=Oletusyhdyskäytävä
 HSDPAConfig_DNSServers_itemname=DNS-nimipalvelin
 AiDisk_Wizard_failedreson1=Ohjattu Aidisk-asennus toimi epätavallisesti. Yritä myöhemmin uudelleen.
-[state.js-Dr.Surf.]
-QKSet_ISP_desc3=Automaattinen IP-yhteys epäonnistui. Voit tehdä tässä määrityksen manuaalisesti.
-QKSet_ISP_desc2=Staattinen IP-yhteys epäonnistui.
-QIS_internet_vpn_confirm=Jos yhteystyyppi on PPTP/L2TP, napsauta [OK]-painiketta valitaksesi [Connecting the VPN server] (Muodostetaan yhteyttä VPN-palvelimeen).\nJos ei, napsauta [Cancel] (Peruuta) ja tarkista tiedot ja käytä sen jälkeen asetuksia.
 Full_Clients=Asiakkaat
-[QIS_internet_vpn.htm]
-QIS_if_vpn_existed=Muodostetaanko yhteys VPN-palvelimeen?
-QIS_internet_vpn_title=VPN-kohde
-QIS_internet_vpn_type=VPN-tyyppi
-QIS_internet_vpn_alert=Älä syötä vielä VPN-palvelimen URL- tai IP-osoitetta!
 PPPConnection_UserName_sectionname=Tiliasetus
 PPPConnection_detail_sectionname=Tili- ja Yksityiskohtaiset yhteysasetukset
 JS_fieldInputError=syöttövirhe.
@@ -411,7 +361,6 @@ ConnectionStatus=Yhteyden tila:
 WAN_IP=WAN IP
 Connectiontype=Yhteystyyppi
 Gateway=Yhdyskäytävä
-QIS=Pika-internet-asetus
 Connected=Yhdistetty
 Disconnected=Yhteys katkaistu
 PauseConnect=Keskeytä
@@ -614,33 +563,13 @@ ALERT_OF_ERROR_Action12=Levyn alustus epäonnistui.
 ALERT_OF_ERROR_System1=Järjestelmävirhe: Muistia ei voi varata!
 ALERT_OF_ERROR_System2=Järjestelmävirhe: Levyn tietoja ei voi lukea!
 ALERT_OF_ERROR_System3=Järjestelmävirhe: Levy on varattu!
-[QIS wizard]
-[QIS_detect.js]
 Web_Title=ASUS Wireless Router
-QKSet_detect_sanglass=automaattinen tunnistus
-QKSet_detect_desc1=Yhteystyyppisi tunnistaminen
-QKSet_detect_desc2=Yhteystilasi uudelleentunnistaminen
-QKSet_detect_wanconnfault=Tarkista, että Ethernet-kaapeli on liitetty oikein WAN-porttiin.
-QKSet_detect_APdesc=ZVMODELVZ-reitittimen käyttötila on 'AP' (Tukiasema). Aloita asetusten määritys... 
-QKSet_detect_skipbtn=Ohita manuaaliseen asetukseen
-QKSet_detect_freshbtn=Tunnista uudelleen
-QKSet_detect_waitdesc=Aloita yhteystyyppisi tunnistaminen...
-QKSet_detect_timedesc1=Tunnistaminen
-QKSet_detect_timedesc2=aikoina.
-[QIS_finish.js]
-QKSet_all_title=Pika-aloitus
-QKSet_finishpre_webtitle=Olet päättänyt kaikki asetukset. Voit napsauttaa nyt [Finish] (Valmis) -painiketta, jonka jälkeen sinut ohjataan oletuskotisivullesi. Tai voit napsauttaa [Previous] (Edellinen) -painiketta siirtyäksesi takaisin asetussivulle.
-QKSet_finishpre_rebootnow=Valmis
-[QIS_internet_account.js]
-QKSet_account_webtitle=ISP-tilin asetus
-QKSet_ISP_head=ISP-tietojen asetus
-QKSet_ISP_desc=Katso ISP-asetuksesi ja anna asiaankuuluvat tiedot.
 PPPConnection_UserName_itemdesc=Tämä kenttä on käytettävissä vain, kun asetat WAN-yhteystyypiksi USB Modem:n, PPPoE:n, PPTP:n tai L2TP:n.
 BOP_account_user_item=User Name (Käyttäjänimi):
 BOP_account_pass_item=Password (Salasana):
+QKSet_detect_freshbtn=Tunnista uudelleen
 QKSet_account_passwd=Salasana tälle käyttäjätilille.
 QKSet_account_nameblank=Tilinimi ei voi olla tyhjä.
-[QIS_internet_ip.js]
 Layer3Forwarding_x_DHCPClient_itemname=Haetaanko WAN IP automaattisesti?
 Layer3Forwarding_x_UseStaticIP_itemname=Käytä seuraavaa IP-osoitetta:
 IPConnection_ExternalIPAddress_itemdesc=Tämä on ZVMODELVZ-reitittimen IP-osoite muodossa, jossa se näkyy etäverkossa.
@@ -655,35 +584,11 @@ IPConnection_x_DNSServerEnable_itemdesc=Tämä kenttä sallii DNS IP-osoitteen h
 IPConnection_x_DNSServer1_itemdesc=Tämä kenttä ilmaisee DNS-palvelimen IP-osoitteen, johon ZVMODELVZ-reititin muodostaa yhteyden.
 IPConnection_x_DNSServer1_itemname=DNS Server
 IPConnection_warning_WANIPEQUALGatewayIP=Olet asettanut WAN IP:n ZVMODELVZ-reitittimen yhdyskäytäväksi, eikä ZVMODELVZ ehkä pysty muodostamaan yhteyttä internetiin. Aseta yhdyskäytävälle oikea arvo.
-[QIS_internet_isp.js]
 BOP_isp_host_desc=Tässä kentässä voi ZVMODELVZ-palvelimelle antaa isäntänimen. Yleensä internet-palveluntarjoaja kysyy sitä.
 BOP_isp_host_item=Host Name (Isäntänimi) (valinnainen):
 PPPConnection_x_MacAddressForISP_itemdesc=Tässä kentässä voit antaa ZVMODELVZ-reitittimelle yksilöivän MAC-osoitteen yhteyden muodostamiseksi internetiin. Yleensä internet-palveluntarjoaja kysyy sitä.
 BOP_isp_mac_item=MAC Address (MAC-osoite) (valinnainen):
 BOP_isp_MACclone=MAC-klooni
-[QIS_internet_success.htm]
-QKSet_Internet_Setup_fail=Internet-yhteys epäonnistui.
-QKSet_Internet_Setup_fail_reason1=DHCP-yhteys epäonnistui.
-QKSet_Internet_Setup_fail_reason2=Väärä tili tai salasana. Napsauta linkkiä muokataksesi sitä.
-QKSet_Internet_Setup_fail_reason3=PPPoE-yhteys epäonnistui. Napsauta linkkiä yrittääksesi uudelleen.
-QKSet_Internet_Setup_fail_reason4=PPTP-yhteys epäonnistui. Napsauta linkkiä yrittääksesi uudelleen.
-QKSet_Internet_Setup_fail_reason5=L2TP-yhteys epäonnistui. Napsauta linkkiä yrittääksesi uudelleen.
-QKSet_Internet_Setup_fail_reason6=Staattinen yhteys epäonnistui. Napsauta linkkiä yrittääksesi uudelleen.
-QKSet_Internet_Setup_fail_method1=Tunnista yhteys uudelleen
-QKSet_Internet_Setup_fail_method2=Anna tili tai salasana uudelleen
-QKSet_finish_moveto1=Going to Internet (Mene Internetiin)
-QKSet_finish_moveto2=siirry selaimesi oletuskotisivulle.
-QKSet_finish_moveto3=Varoitus: Et ole määrittänyt langatonta salausta, ja se voi muodostaa tietoturvaongelman. On suositeltavaa määrittää se alla olevan hyperlinkin kautta.
-QKSet_finish_moveto4=Suorita
-QKSet_finish_moveto5=Yksinkertainen langaton suojausasetus
-QKSet_finish_moveto6=Etsi ja määritä salausasetus.
-QKSet_finish_moveto7=Lisäasetukset-sivu
-QKSet_finish_moveto8=Manuaalinen määritys ja hienosäätö.
-[QIS_internet_success.js]
-QKSet_finish_desc=Internet-yhteysasetus on valmis.
-[QIS_internet_type.js]
-QKSet_type_head=Internet-WAN-yhteystyyppi
-QKSet_type_desc=Valitse internet-palveluntarjoajan toimittama WAN-yhteystyyppi.
 BOP_ctype_title1=Automaattinen IP
 BOP_ctype_item1=Tämä tyyppi antaa tietokoneen hakea IP-osoitteen automaattisesti. Kaapelimodeemipalvelun tarjoajat käyttävät usein tätä yhteystyyppiä.
 BOP_ctype_item2=ADSL tai muu yhteys, joka vaatii käyttäjänimen ja salasanan. Siitä käytetään nimitystä PPPoE.
@@ -691,8 +596,6 @@ BOP_ctype_item3=ADSL tai muu yhteys, joka vaatii käyttäjänimen, salasanan ja 
 BOP_ctype_item4=L2TP vaatii internet-palveluntarjoajan toimittaman käyttäjänimen, salasanan ja IP-osoitteen.
 BOP_ctype_title5=Staattinen IP
 BOP_ctype_item5=Staattinen IP mahdollistaa internet-palveluntarjoajan toimittaman kiinteän IP-osoitteen käytön tietokoneella. ADSL-palvelun tarjoajat käyttävät usein tätä yhteystyyppiä.
-QKSet_type_rechoice=Valitse WAN-tyyppi
-QKSet_wireless_webtitle=Langaton asetus
 WLANConfig11b_SSID_itemdesc=Määritä langattomalle yhteydellesi enintään 32 merkkiä pitkä yksilöintimerkkijono.
 WLANConfig11b_SSID_itemname=SSID:
 WLANConfig11b_x_PSKKey_itemdesc=Tähän kenttään on annettava 8 ja 63 merkkiä (kirjaimia, numeroita tai yhdistelmä) tai 64 heksadesimaalimerkkiä pitkä salasana salauksen aloittamiseksi. Jos jätät tämän kentän tyhjäksi, salasanaksi määritetään oletussalasana [00000000].
@@ -729,7 +632,6 @@ Main_alert_proceeding_desc1=Jatketaan...
 Main_alert_proceeding_desc4=Odota...
 Main_alert_proceeding_desc3=Valmis!
 Main_content_Login_Item7=Reitittimen uudelleenkäynnistys kestää 30 sekuntia. Haluatko varmasti käynnistää reitittimen uudelleen?
-[QIS-general.js]
 JS_fieldblank=Kentät eivät voi olla tyhjiä!
 JS_validip=ei ole kelvollinen IP-osoite!
 JS_validmask=is not a valid IP Mask!

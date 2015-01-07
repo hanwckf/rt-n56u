@@ -6,7 +6,7 @@ ROMFS_DIR = $(ROOTDIR)/romfs
 
 include $(ROOTDIR)/user/shared/boards.mk
 
-LABEL_COPYRIGHT_TEXT="© 2011-2014 Padavan \& N56U project community"
+LABEL_COPYRIGHT_TEXT="© 2011-2015 Padavan \& N56U project community"
 
 BOARD_PATTERN=s/ZVMODELVZ/$(CONFIG_FIRMWARE_PRODUCT_ID)/g
 COPYR_PATTERN=s/ZVCOPYRVZ/$(LABEL_COPYRIGHT_TEXT)/g

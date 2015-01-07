@@ -49,47 +49,12 @@ PrinterStatus_x_Monopoly_itemdesc=Pokud vaše tiskárna neposkytuje podporu sdí
 Switch_band=Spínací frekvence
 Current_band=Frequency
 LANHostConfig_DomainName_itemdesc2=může obsahovat pouze alfanumerické znaky a pomlčku.
-qis_ssid_desc=Kopírovat nastavení 2.4 GHz do nastavení 5 GHz
 RouterConfig_IPTV_itemname=Vícesměnové vysílání IPTV UDP na port HTTP Proxy
 RHELP_desc9=Zadáním 0 (nula) deaktivujete tuto funkci.
 WLANConfig11b_TxPower_itemname=Úprava výkonu Tx
 WLANConfig11b_TxPower_itemdesc=Upravuje poměr výkonu signálu. 
 WLANConfig11b_Wireless_Speed_itemname_3=využívá koexistentní šířku pásma 40 MHz pro maximalizaci propustnosti bezdrátové sítě. Pokud se setkáte s problémy se stabilitou bezdrátové sítě, zvolte výchozí režim.
 hwnat_desc=Enable Hardware NAT to offer internet speed with maximum throughput over 900Mbps when appropriately supported by you internet service provider. But please note that enabling Hardware NAT may conflict with QoS related functions.
-[QIS]
-QIS_autoMAC_desc1=Zahájení klonování adresy MAC počítače do směrovače…
-QIS_autoMAC_desc2=Počkejte prosím ...
-QIS_autoMAC_desc3=Ověřování adresy IP WAN
-QIS_autoMAC_result_desc1=Spuštění AJAX se nezdařilo. Počkejte přibližně tři sekundy, než se AJAX spustí znovu.
-QIS_autoMAC_result_desc2=Adresa IP WAN byla úspěšně získána.
-QIS_autoMAC_result_desc3=Získávání nové adresy IP WAN po klonování MAC
-QIS_detect2_desc1=Zahájení získání nové adresy IP...
-QIS_detect2_desc2=Získávání adresy IP...
-QIS_detect2_desc3=Získávání nové adresy IP WAN po klonování MAC
-QIS_detect2_desc4=Modem byl ručně resetován.
-QIS_detectWAN_desc1=Zkontrolujte typ připojení WAN.
-QIS_detectWAN_desc2=Počkejte na ověření...
-QIS_finish_wireless_item1=Síťový název (SSID)
-QIS_finish_wireless_item2=Zabezpečení bezdrátové sítě
-QIS_finish_wireless_item3=Síťový klíč
-QIS_finish_admin_item1=Účet správce směrovače
-QIS_finish_admin_item2=Heslo správce směrovače
-QIS_internet_account_desc1=Zadejte účet a heslo poskytnuté vaším poskytovatelem služeb Internetu (ISP).
-QIS_internet_account_desc2=NEZADÁVEJTE výchozí uživatelské jméno a heslo admin / admin.
-QIS_internet_success_item1=Získána adresa IP
-QIS_internet_success_item2_1=Připojeno k serveru DNS ISP
-QIS_internet_success_item2_2=Připojení k serveru DNS ISP se nezdařilo
-QIS_internet_success_item3_1=Připojeno k veřejnému serveru DNS
-QIS_internet_success_item3_2=Připojení k veřejnému serveru DNS se nezdařilo
-QIS_internet_success_desc1=Ve vaší síti je pravděpodobně server proxy. Obraťte se na vašeho poskytovatele služeb Internetu nebo správce sítě.
-QIS_internet_success_desc2=Pravděpodobně došlo k chybě na serveru DNS poskytovatele služeb Internetu. Obraťte se na vašeho ISP nebo správce sítě nebo přejděte na stránku Advanced Setting (Upřesnit nastavení) a nastavte veřejný server DNS.
-QIS_internet_success_desc3=Obraťte se na vašeho poskytovatele služeb Internetu nebo správce sítě.
-QIS_internet_success_desc4=Odpojte napájecí kabel od modemu. Počkejte přibližně dvě minuty a potom jej znovu připojte. Klepněte na tlačítko Detect connection (Rozpoznat připojení).
-QIS_resetModem_desc1=Odpojte napájecí kabel od modemu.
-QIS_resetModem_desc2=Resetujte modem
-QIS_resetModem_desc3=Odpojte a znovu připojte napájecí kabel po dvou minutách.
-QIS_resetModem2_desc1=Připojte napájecí kabel zpět k modemu a počkejte přibližně jednu minutu. Klepněte na tlačítko Detect connection (Rozpoznat připojení).
-QIS_wireless_desc1=Zadejte síťový klíč mezi 8 a 63 znaky (písmena, číslice nebo kombinace) nebo 64 hexadecimálních číslic. Nechcete-li nastavit zabezpečení sítě, ponechte políčko síťového klíče prázdné. <span style='font-weight:bolder;'>Výchozí zabezpečení bezdrátové sítě je WPA-Auto-Personal - AES + TKIP.</span>
 [Traffic Monitor]
 Date=datum
 Scale=měřítko
@@ -107,16 +72,12 @@ Maximum=maximální
 Total=celková
 Downlink=stahování
 Uplink=odesílání
-[ZVMODELVZ new item]
 LAN_IP_changed_suggedtion1=Původní nastavení LAN IP ZVMODELVZ je
 LAN_IP_changed_suggedtion2=.Pokud se později nebudete moci vrátit na tuto stránku, prosím ověřte IP konfiguraci svého PC.
 WLANConfig11b_x_WPSband_itemname=Current Band
 WLANConfig11b_x_WPSband_itemdesc=Před používáním funkce WPS (Wi-Fi Protected Setup) vyberte provozní pásmo (2.4 GHz nebo 5 GHz).
-QKSet_Internet_Setup_fail_reason7=Pokud se přesto nemůžete připojit k Internetu, zkontrolujte nastavení ISP (Internet Service Provider) ve směrovači nebo kontaktujte vašeho ISP.
-QKSet_Wireless_ssid_warning=Toto nastavení se bude vztahovat pro nastavení 2.4 GHz a 5 GHz WLAN
 LANConfig_ChangedLANIP=Adresa IP vašeho směrovače byla změněna. Pomocí nástroje Device Discovery (Vyhledání zařízení) vyhledejte novou adresu IP vašeho směrovače.
 BasicConfig_HWNAT_alert=Funkce hardwarového překladu adres koliduje s aktuálními nastaveními vašeho směrovače. Deaktivujte funkci hardwarového překladu adres v části Advanced Setting (Upřesnit nastavení) > WAN > Internet connection (Internetové připojení) v navigační nabídce.
-[RT-N1X new item]
 BasicConfig_HWNAT_itemname=Povolit HW NAT?
 LANHostConfig_x_Password_itemdesc=Heslo nesmí být delší než 32 znaků.
 CableStatus=Kabelová status
@@ -144,7 +105,6 @@ ShareNode_Seeding_itemname=Ohlašování
 ShareNode_Seeding_itemdesc=Umožňuje povolit nebo zakázat funkci ohlašování. ZVMODELVZ zůstává otevřený, dokud nebude dokončen proces stahování.
 ShareNode_MaxUpload_itemname=Maximální rychlost ukládání
 ShareNode_MaxUpload_itemdesc=Zadejte hodnotu mezi 0 až 999. Výchozí hodnota je 0, což označuje, že není žádné omezení ukládání.
-[New item]
 HSDPAConfig_hsdpa_enable_hint1=Po aktivaci USB Modem budou deaktivovány vaše původní nastavení WAN.
 HSDPAConfig_hsdpa_enable_hint2=Chcete-li změnit typ připojení, přejděte na <a href="/Advanced_Modem_others.asp">USB Modem</a> a deaktivujte adaptér.
 HSDPAConfig_USBAdapter_itemname=USB adaptér
@@ -153,7 +113,6 @@ APSurvey_msg_connected=Již jste připojeni k tomuto přístupovému bodu.
 APSurvey_msg_connect_suggest1=Pro stabilnější připojení použijte pro připojení k ZVMODELVZ ethernetový kabel.
 APSurvey_msg_connect_suggest2=Klepnutím na [<span style="font-weight:bold; font-size:16px;">OK</span>] pokračujte v konfigurování nastavení. Během procesu konfigurace může být počítač dočasně odpojen od ZVMODELVZ.
 APSurvey_msg_connect_suggest3=Klepnutím na [<span style="font-weight:bold; font-size:16px;">Odhlásit</span>] ukončete webové grafické uživatelské rozhraní ZVMODELVZ.
-QKSet_finish_moveto9=Zavřete toto okno a dokončete konfigurování nastavení. Otevřete nové okno pro připojení k Internetu.
 APSurvey_action_search_again_hint1=Vybrat jinou síť
 APSurvey_action_search_again_hint2=Změňte síť, ke které se ZVMODELVZ připojí.
 Browser_action_addfavorite_hint1=Adresa IP zařízení ZVMODELVZ je změněna na
@@ -219,16 +178,7 @@ HSDPAConfig_Subnetmask_itemname=Maska podsítě
 HSDPAConfig_DefGateway_itemname=Výchozí brána
 HSDPAConfig_DNSServers_itemname=DNS Server
 AiDisk_Wizard_failedreson1=Aidisk Průvodce pracoval výjimečně. Prosím, zkuste to znovu později.
-[state.js-Dr.Surf.]
-QKSet_ISP_desc3=Připojení automatické IP se nezdařilo. Můžete nakonfigurovat zde ručně.
-QKSet_ISP_desc2=Připojení statické IP se nezdařilo.
-QIS_internet_vpn_confirm=Pokud je váš typ připojení PPTP/L2TP, klepněte na [OK] při [ Připojování k serveru VPN].\nPokud ne, klepněte na tlačítko [Storno], zkontrolujte informace a potom použijte nastavení.
 Full_Clients=Klienti
-[QIS_internet_vpn.htm]
-QIS_if_vpn_existed=Existuje server VPN？
-QIS_internet_vpn_title=Položka VPN
-QIS_internet_vpn_type=Typ VPN
-QIS_internet_vpn_alert=Nyní ještě nezadávejte adresu URL nebo IP serveru VPN！
 PPPConnection_UserName_sectionname=Nastavení účtu
 PPPConnection_detail_sectionname=Účet a podrobné nastavení připojení
 JS_fieldInputError=chyba zadání.
@@ -413,7 +363,6 @@ ConnectionStatus=Stav připojení:
 WAN_IP=WAN IP
 Connectiontype=Typ připojení
 Gateway=Brána
-QIS=Rychlé nastavení internetu
 Connected=Připojeno
 Disconnected=Odpojeno
 PauseConnect=Pozastavit
@@ -616,33 +565,13 @@ ALERT_OF_ERROR_Action12=Chyba při formátování disku.
 ALERT_OF_ERROR_System1=Systémová chyba: Nemohu alokovat paměť!
 ALERT_OF_ERROR_System2=Systémová chyba: nemohu číst data z disku!
 ALERT_OF_ERROR_System3=Systémová chyba: Disk je zaneprázdněn!
-[QIS wizard]
-[QIS_detect.js]
 Web_Title=ASUS Wireless Router
-QKSet_detect_sanglass=Automatická detekce
-QKSet_detect_desc1=Zjišťuje se stav vašeho připojení
-QKSet_detect_desc2=Zjišťuje se stav vašeho připojení
-QKSet_detect_wanconnfault=Prosím ověřte, zda je síťový kabel správně připojen do portu WAN.
-QKSet_detect_APdesc=ZVMODELVZ je v režimu provozu 'AP'. Začněte konfigurací nastavení…
-QKSet_detect_skipbtn=Přejít k ručnímu nastavení
-QKSet_detect_freshbtn=Znovu detekovat
-QKSet_detect_waitdesc=Zjišťuje se typ vašeho připojení…
-QKSet_detect_timedesc1=Detekuji na
-QKSet_detect_timedesc2=pokusů.
-[QIS_finish.js]
-QKSet_all_title=Rychlý start
-QKSet_finishpre_webtitle=Dokončili jste všechna nastavení. Nyní můžete kliknout na [Použít] a poté budete přesměrování na vaši domovskou stránku. Nebo můžete kliknout na [Předchozí] a vrátit se zpět na stránku nastavení.
-QKSet_finishpre_rebootnow=Ukončit
-[QIS_internet_account.js]		
-QKSet_account_webtitle=Nastavení účtu ISP
-QKSet_ISP_head=Nastavení informací ISP
-QKSet_ISP_desc=Prosím přejděte na nastavení ISP a zadejte potřebné informace.
 PPPConnection_UserName_itemdesc=Toto pole je k dispozici pouze, když nastavíte typ připojení WAN USB Modem, PPPoE, PPTP nebo L2TP.
 BOP_account_user_item=Uživatelské jméno:
 BOP_account_pass_item=Heslo:
+QKSet_detect_freshbtn=Znovu detekovat
 QKSet_account_passwd=Heslo k tomuto uživatelskému účtu.
 QKSet_account_nameblank=Název účtu nemůže být prázdný.
-[QIS_internet_ip.js]
 Layer3Forwarding_x_DHCPClient_itemname=Získat WAN IP automaticky?
 Layer3Forwarding_x_UseStaticIP_itemname=Použít následující adresu IP:
 IPConnection_ExternalIPAddress_itemdesc=Toto je IP adresa ZVMODELVZ viditelná ze vzdálené sítě. Pokud ji nastavíte na 0.0.0.0., získá ZVMODELVZ IP adresu ze serveru DHCP automaticky.
@@ -657,35 +586,11 @@ IPConnection_x_DNSServerEnable_itemdesc=Toto pole umožňuje automaticky získat
 IPConnection_x_DNSServer1_itemdesc=Toto pole naznačuje IP adresu DNS, se kterou ZVMODELVZ spojil.
 IPConnection_x_DNSServer1_itemname=DNS Server
 IPConnection_warning_WANIPEQUALGatewayIP=Nastavili jste WAN IP jako bránu pro ZVMODELVZ a ten se nemusí připojit k internetu. Prosím nastavte bránu na správnou hodnotu.
-[QIS_internet_isp.js]		
 BOP_isp_host_desc=Toto pole je určeno pro jméno hostitele ZVMODELVZ. Obvykle je vyžadováno vaším ISP.
 BOP_isp_host_item=Jméno hostitele(volitelné):
 PPPConnection_x_MacAddressForISP_itemdesc=Toto pole je určeno pro unikátní MAC adresu ZVMODELVZ pro připojení k internetu. Je obvykle vyžadována vaším ISP.
 BOP_isp_mac_item=Adresa MAC(volitelné):
 BOP_isp_MACclone=Klon MAC
-[QIS_internet_success.htm]		
-QKSet_Internet_Setup_fail=Internetové připojení se nezdařilo.
-QKSet_Internet_Setup_fail_reason1=DHCP připojení se nezdařilo.
-QKSet_Internet_Setup_fail_reason2=Nesprávný účet nebo heslo, prosím klikněte na odkaz a upravte je.
-QKSet_Internet_Setup_fail_reason3=PPPoE připojení se nezdařilo, prosím klikněte na odkaz a zkuste to znovu.
-QKSet_Internet_Setup_fail_reason4=PPTP připojení se nezdařilo, prosím klikněte na odkaz a zkuste to znovu.
-QKSet_Internet_Setup_fail_reason5=L2TP připojení se nezdařilo, prosím klikněte na odkaz a zkuste to znovu.
-QKSet_Internet_Setup_fail_reason6=Statické připojení se nezdařilo, prosím klikněte na odkaz a zkuste to znovu.
-QKSet_Internet_Setup_fail_method1=Znovu detekovat připojení
-QKSet_Internet_Setup_fail_method2=Znovu zadejte účet a heslo
-QKSet_finish_moveto1=Přejít na internet
-QKSet_finish_moveto2=přejít na domovskou stránku prohlížeče.
-QKSet_finish_moveto3=Varování: Neprovedli jste konfiguraci šifrování bezdrátového připojení, to může způsobit bezpečnostní problémy. Doporučujeme, abyste jej nakonfigurovali pomocí dále uvedeného odkazu.
-QKSet_finish_moveto4=Spustit
-QKSet_finish_moveto5=Jednoduché nastavení úrovně bezpečnosti bezdrátového připojení
-QKSet_finish_moveto6=Najděte nastavení pro šifrování a proveďte jeho konfiguraci.
-QKSet_finish_moveto7=Stránka pokročilých nastavení
-QKSet_finish_moveto8=Manuální konfigurace a dolaďování
-[QIS_internet_success.js]
-QKSet_finish_desc=Internetové připojení je ukončeno.
-[QIS_internet_type.js]
-QKSet_type_head=Typ internetového připojení WAN
-QKSet_type_desc=Prosím vyberte typ připojení WAN poskytovaného vaším ISP.
 BOP_ctype_title1=Automatické IP
 BOP_ctype_item1=Automatická IP umožňuje, aby vaše PC získalo IP adresu automaticky. Tento typ připojení se často vyskytuje u poskytovatelů kabelového připojení.
 BOP_ctype_item2=ADSL a jiné typy připojení vyžadující uživatelské jméno a heslo. Známé také jako PPPoE.
@@ -693,8 +598,6 @@ BOP_ctype_item3=ADSL a jiné typy připojení vyžadující uživatelské jméno
 BOP_ctype_item4=L2TP vyžaduje uživatelské jméno, heslo a IP adresu poskytnuté vaším ISP.
 BOP_ctype_title5=Statická IP
 BOP_ctype_item5=Statická IP umožňuje vašemu PC používat fixní IP adresu poskytnutou vaším ISP. Tento typ připojení se často vyskytuje u poskytovatelů ADSL.
-QKSet_type_rechoice=Prosím vyberte typ WAN
-QKSet_wireless_webtitle=Nastavení bezdrátového připojení
 WLANConfig11b_SSID_itemdesc=Pro bezdrátové připojení nastavte identifikační řetězec o délce až 32 znaků.
 WLANConfig11b_SSID_itemname=SSID:
 WLANConfig11b_x_PSKKey_itemdesc=Toto pole vyžaduje heslo o 8 a 63 znaky (písmena, číslice nebo kombinace) nebo 64 hexadecimálních číslic, aby byl spuštěn šifrovací proces. Pokud zanecháte toto pole prázdné, původní hodnota [00000000] bude použita jako vaše heslo.
@@ -731,7 +634,6 @@ Main_alert_proceeding_desc1=Zpracovává se...
 Main_alert_proceeding_desc4=Prosím vyčkejte...
 Main_alert_proceeding_desc3=Hotovo!
 Main_content_Login_Item7=Restartování routeru potrvá přibližně 30 vteřin. Opravdu chcete nyní restartovat router?
-[QIS-general.js]
 JS_fieldblank=Pole nesmí být prázdná!
 JS_validip=není platná IP adresa!
 JS_validmask=is not a valid IP Mask!

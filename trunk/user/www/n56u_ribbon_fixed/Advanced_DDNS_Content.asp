@@ -172,14 +172,10 @@ function ddns_load_body()
 		document.form.ddns_server_x.selectedIndex = 0;
 	}
 
-	var d1s = document.form.ddns_server_x;
-	if(d1s.selectedIndex == 0 && ddns_hostname_x != '')
-		$("DDNSName").value = ddns_hostname_x.substring(0, ddns_hostname_x.indexOf('.'));
-	else if(d1s.selectedIndex == 0 && ddns_hostname_x == '')
-		$("DDNSName").value = "<#asusddns_inputhint#>";
-	else if(d1s.selectedIndex != 0 && ddns_hostname_x == '')
-		$("ddns_hostname_x").value = "<#asusddns_inputhint#>";
-	else
+	if(document.form.ddns_server_x.selectedIndex == 0){
+		if(ddns_hostname_x != '')
+			$("DDNSName").value = ddns_hostname_x.substring(0, ddns_hostname_x.indexOf('.'));
+	}else
 		$("ddns_hostname_x").value = ddns_hostname_x;
 
 	if (document.form.ddns_enable_x[0].checked) {
@@ -395,11 +391,11 @@ function checkDDNSReturnCode(){
                                         <tr id="row_ddns_hname1">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,24,3);"><#LANHostConfig_x_DDNSHostNames_itemname#></a></th>
                                             <td>
-                                                <div id="ddnsname_input" class="aidiskdesc" style="display:none;">
+                                                <div id="ddnsname_input" style="display:none;">
                                                     <input type="text" class="input" maxlength="64" size="48" style="width: 286px;" id="ddns_hostname_x" name="ddns_hostname_x" value="<% nvram_get_x("","ddns_hostname_x"); %>" onKeyPress="return is_string(this)">
                                                 </div>
-                                                <div id="asusddnsname_input" class="aidiskdesc" style="display:none;">
-                                                    <input type="text" name="DDNSName" id="DDNSName" style="width: 110px;">.asuscomm.com&nbsp;&nbsp;
+                                                <div id="asusddnsname_input" style="display:none;">
+                                                    <input type="text" name="DDNSName" id="DDNSName" style="width: 110px;" placeholder="<#asusddns_inputhint#>">.asuscomm.com&nbsp;&nbsp;
                                                     <input type="submit" maxlength="15" size="15" class="btn btn-info" style="max-width: 98px;" onClick="return onSubmitApply('hostname_check');" name="x_DDNSHostCheck" value="<#LANHostConfig_x_DDNSHostnameCheck_buttonname#>"/>
                                                 </div>
                                             </td>

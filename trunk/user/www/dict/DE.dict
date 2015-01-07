@@ -45,47 +45,12 @@ PrinterStatus_x_Monopoly_itemdesc=Falls Ihr Drucker keine Mehrbenutzerfreigabe z
 Switch_band=Schaltfrequenz
 Current_band=Aktuelle Frequenz
 LANHostConfig_DomainName_itemdesc2=darf nur aus alphanumerischen Zeichen und dem Bindestrich bestehen.
-qis_ssid_desc=2.4GHz-Einstellungen zu 5GHz-Einstellungen kopieren
 RouterConfig_IPTV_itemname=IPTV-UDP-Multicast zu HTTP-Proxy-Port
 RHELP_desc9=Die Eingabe von 0 (Null) deaktiviert diese Funktion.
 WLANConfig11b_TxPower_itemname=Tx-Energieeinstellungen
 WLANConfig11b_TxPower_itemdesc=Regelt das Signal-Energie-Verhältnis. 
 WLANConfig11b_Wireless_Speed_itemname_3=Benutzt eine 40MHz gemeinsame Bandbreite, um den Wireless-Durchsatz zu maximieren. Wenn Sie mit der Wireless-Stabilität Probleme bekommen, wählen Sie bitte den Standardmodus.
 hwnat_desc=Enable Hardware NAT to offer internet speed with maximum throughput over 900Mbps when appropriately supported by you internet service provider. But please note that enabling Hardware NAT may conflict with QoS related functions.
-[QIS]
-QIS_autoMAC_desc1=Beginn des Klonens der MAC-Adresse des Computer im Router.
-QIS_autoMAC_desc2=Bitte warten...
-QIS_autoMAC_desc3=WAN IP-Adresse verifizieren
-QIS_autoMAC_result_desc1=AJAX-Ausführung fehlgeschlagen. Warten Sie ca. 3 Sekunden, um AJAX erneut zu starten.
-QIS_autoMAC_result_desc2=WAN IP-Adresse erfolgreich bezogen.
-QIS_autoMAC_result_desc3=Nach dem Klonen der MAC-Adresse eine neue WAN IP-Adresse beziehen.
-QIS_detect2_desc1=Neue IP-Adresse beziehen...
-QIS_detect2_desc2=IP-Adresse wird bezogen...
-QIS_detect2_desc3=Nach dem Klonen der MAC-Adresse eine neue WAN IP-Adresse beziehen.
-QIS_detect2_desc4=Das Modem wurde manuell zurückgesetzt.
-QIS_detectWAN_desc1=WAN-Verbindungsart überprüfen.
-QIS_detectWAN_desc2=Bitte auf Verifizierung warten...
-QIS_finish_wireless_item1=Netzwerkname (SSID)
-QIS_finish_wireless_item2=Wireless_Sicherheit
-QIS_finish_wireless_item3=Netzwerkschlüssel
-QIS_finish_admin_item1=Router Admin-Konto
-QIS_finish_admin_item2=Router Admin-Kennwort
-QIS_internet_account_desc1=Geben Sie bitte das Konto und das Kennwort ein, welches Sie von Ihrem ISP (Internet Service Provider) erhalten haben.
-QIS_internet_account_desc2=Geben Sie NICHT den Standard-Benutzernamen und -Kennwort admin / admin ein.
-QIS_internet_success_item1=IP bezogen
-QIS_internet_success_item2_1=Mit ISP DNS verbunden
-QIS_internet_success_item2_2=Verbindung mit ISP DNS fehlgeschlagen
-QIS_internet_success_item3_1=Mit öffentlichen DNS verbunden
-QIS_internet_success_item3_2=Verbindung mit öffentlichen DNS fehlgeschlagen
-QIS_internet_success_desc1=In Ihrem Netzwerk befindet sich voraussichtlich ein Proxy-Server. Bitte überprüfen Sie dies zusammen mit Ihrem ISP oder Netzwerkadministrator.
-QIS_internet_success_desc2=Am ISP DNS ist voraussichtlich ein Fehler aufgetreten. Bitte überprüfen Sie dies zusammen mit Ihrem ISP oder Netzwerkadministrator oder gehen Sie zur Seite mit den erweiterten Einstellungen, um den öffentlichen DNS einzustellen.
-QIS_internet_success_desc3=Bitte überprüfen Sie dies zusammen mit Ihrem ISP oder Netzwerkadministrator.
-QIS_internet_success_desc4=Trennen Sie bitte das Stromversorgungskabel vom Modem. Warten Sie ca. 2 Minuten und stecken Sie das Kabel dann erneut hinein. Klicken Sie auf Erneut erkennen.
-QIS_resetModem_desc1=Trennen Sie bitte das Stromversorgungskabel vom Modem.
-QIS_resetModem_desc2=Setzen Sie das Modem zurück
-QIS_resetModem_desc3=Ziehen Sie das Stromversorgungskabel heraus und stecken Sie es nach ca. 2 Minuten wieder hinein.
-QIS_resetModem2_desc1=Stecken Sie das Stromversorgungskabel wieder in Ihr Modem und warten Sie ca. 1 Minute. Klicken Sie auf Erneut erkennen.
-QIS_wireless_desc1=Geben Sie einen Netzwerkschlüssel von 8 bis 63 Zeichen (Buchstaben, Zahlen oder Kombinationen daraus) oder 64 Hexadezimalzeichen ein. Wenn Sie keine Netzwerksicherheit einrichten wollen, lassen Sie die Felder für den Netzwerkschlüssel leer. <span style='font-weight:bolder;'>Die Standard-Wireless-Sicherheit ist WPA-Auto-Personal - AES + TKIPP.</span>
 [Traffic Monitor]
 TM_Note=To monitor LAN traffic, please enable your EZQoS function.
 Date=Datum
@@ -104,16 +69,12 @@ Maximum=maximale
 Total=gesamt
 Downlink=downlink
 Uplink=uplink
-[ZVMODELVZ new item]
 LAN_IP_changed_suggedtion1=Die Standard-LAN-IP-Adresse ZVMODELVZ lautet
 LAN_IP_changed_suggedtion2=.Falls Sie die Einstellungsseite nicht wiederherstellen können, erneuern Sie bitte die IP-Konfiguration Ihres Computers.
 WLANConfig11b_x_WPSband_itemname=Current Band
 WLANConfig11b_x_WPSband_itemdesc=Wählen Sie ein Arbeitsband (2.4GHz oder 5GHz), bevor Sie die WPS (Wi-Fi Protected Setup) -Funktion verwenden.
-QKSet_Internet_Setup_fail_reason7=Wenn Sie sich immer noch nicht mit dem Internet verbinden können, überprüfen Sie die Einstellungen für den ISP (Internet Service Provider) im Router oder kontaktieren Sie dazu Ihren ISP.
-QKSet_Wireless_ssid_warning=Diese Einstellung gilt für die 2.4GHz und 5GHz-WLAN-Einstellung
 LANConfig_ChangedLANIP=Die IP-Adresse Ihres Routers wurde geändert. Bitte verwenden Sie das Hilfsprogramm Device Discovery, um nach der neuen IP-Adresse des Routers zu suchen.
 BasicConfig_HWNAT_alert=Die Hardware-NAT-Funktion ist in Konflikt mit den aktuellen Einstellungen Ihres Routers. Deaktivieren Sie die Hardware-NAT-Funktion in Erweiterte Einstellung > WAN > Internetverbindung des Navigationsmenüs.
-[RT-N1X new item]
 BasicConfig_HWNAT_itemname=HW NAT aktivieren?
 LANHostConfig_x_Password_itemdesc=Kennwort darf nicht langer als 32 Zeichen sein.
 CableStatus=Kabel-Status
@@ -141,7 +102,6 @@ ShareNode_Seeding_itemname=Seeding
 ShareNode_Seeding_itemdesc=Hier können Sie die Seeding-Funktion aktivieren/deaktivieren. Der ZVMODELVZ bleibt solange offen, bis der Download-Vorgang abgeschlossen ist.
 ShareNode_MaxUpload_itemname=Maximale Upload-Rate
 ShareNode_MaxUpload_itemdesc=Geben Sie einen Wert zwischen 0 und 999 ein. Der Standardwert ist 0, welcher bedeutet, dass es keine Upload-Beschränkung gibt.
-[New item]
 HSDPAConfig_hsdpa_enable_hint1=Nach der Aktivierung von USB Modem werden Ihre WAN-Einstellungen deaktiviert.
 HSDPAConfig_hsdpa_enable_hint2=Wenn Sie die Verbindungsart ändern wollen, gehen Sie bitte zu <a href="/Advanced_Modem_others.asp">USB Modem</a>, um den USB-Adapter zu deaktivieren.
 HSDPAConfig_USBAdapter_itemname=USB-Adapter
@@ -150,7 +110,6 @@ APSurvey_msg_connected=Sie sind mit diesen AP schon verbunden.
 APSurvey_msg_connect_suggest1=Für eine stabilere Verbindung benutzen Sie ein Ethernet-Kabel, um sich mit den ZVMODELVZ zu verbinden.
 APSurvey_msg_connect_suggest2=Klicken Sie auf [<span style=font-weight:bold; font-size:16px;>OK</span>], um mit der Konfiguration der Einstellungen fortzufahren. Die Verbindung zwischen Ihren Computer und den ZVMODELVZ kann während der Konfiguration kurzzeitig unterbrochen werden.
 APSurvey_msg_connect_suggest3=Klicken Sie auf [<span style=font-weight:bold; font-size:16px;>Abmelden</span>], um die Web-GUI des ZVMODELVZ zu verlassen.
-QKSet_finish_moveto9=Schließen sie bitte dieses Fenster und beenden sie die Konfiguration der Einstellungen. Öffnen Sie ein neues Fenster, um sich mit dem Internet zu verbinden.
 APSurvey_action_search_again_hint1=Anderes Netzwerk wählen
 APSurvey_action_search_again_hint2=Netzwerk ändern, mit dem sich der ZVMODELVZ verbinden soll.
 Browser_action_addfavorite_hint1=Die IP-Adresse des ZVMODELVZ wurde geändert zu 
@@ -216,16 +175,7 @@ HSDPAConfig_Subnetmask_itemname=Subnetzmaske
 HSDPAConfig_DefGateway_itemname=Standardgateway
 HSDPAConfig_DNSServers_itemname=DNS-Server
 AiDisk_Wizard_failedreson1=Aidisk Assistent arbeitete außergewöhnlich. Bitte versuchen Sie es später noch einmal.
-[state.js-Dr.Surf.]
-QKSet_ISP_desc3=Automatische IP-Verbindung fehlgeschlagen. Sie können diese hier manuell konfigurieren.
-QKSet_ISP_desc2=Statische IP-Verbindung fehlgeschlagen.
-QIS_internet_vpn_confirm=Wenn Ihre Verbindungsart PPTP/L2TP ist, klicken Sie bitte auf [OK] zum [Connecting the VPN server].\nWenn nicht, klicken Sie bitte auf [Abbrechen] und überprüfen Sie die Informationen und übernehmen Sie dann die Einstellungen.
 Full_Clients=Clients
-[QIS_internet_vpn.htm]
-QIS_if_vpn_existed=Ist ein VPN-Server vorhanden?
-QIS_internet_vpn_title=VPN-Element
-QIS_internet_vpn_type=VPN-Typ
-QIS_internet_vpn_alert=URL oder IP des VPN-Servers noch nicht eingeben!
 PPPConnection_UserName_sectionname=Kontoeinstellungen
 PPPConnection_detail_sectionname=Konten- und detaillierte Verbindungseinstellungen
 JS_fieldInputError=Eingabefehler.
@@ -410,7 +360,6 @@ ConnectionStatus=Verbindungsstatus:
 WAN_IP=WAN-IP
 Connectiontype=Verbindungstyp
 Gateway=Gateway
-QIS=Internet-Schnelleinrichtung
 Connected=Verbunden
 Disconnected=Nicht verbunden
 PauseConnect=Pause
@@ -613,33 +562,13 @@ ALERT_OF_ERROR_Action12=Laufwerk konnte nicht formatiert werden.
 ALERT_OF_ERROR_System1=Systemfehler: Speicherzuweisung nicht möglich!
 ALERT_OF_ERROR_System2=Systemfehler: Laufwerkdaten konnten nicht ausgelesen werden!
 ALERT_OF_ERROR_System3=Systemfehler: Das Laufwerk ist belegt!
-[QIS wizard]
-[QIS_detect.js]
 Web_Title=ASUS Wireless Router
-QKSet_detect_sanglass=Automatische Erkennung
-QKSet_detect_desc1=Erkennung Ihres Verbindungstyps
-QKSet_detect_desc2=Neuerkennung Ihres Verbindungsstatus
-QKSet_detect_wanconnfault=Bitte überzeugen Sie sich davon, dass das Ethernet-Kabel richtig mit dem WAN-Port verbunden ist.
-QKSet_detect_APdesc=Ihr ZVMODELVZ arbeitet im 'AP'-Betriebsmodus. Konfiguration der Einstellungen wird gestartet... 
-QKSet_detect_skipbtn=Manuelle Einstellungen verwenden
-QKSet_detect_freshbtn=Erneut erkennen
-QKSet_detect_waitdesc=Erkennung Ihres Verbindungstyps wird gestartet...
-QKSet_detect_timedesc1=Erkennung bei
-QKSet_detect_timedesc2=mal.
-[QIS_finish.js]
-QKSet_all_title=Schnellstart
-QKSet_finishpre_webtitle=Sie haben sämtliche Einstellungen vorgenommen. Nun können Sie auf [Anwenden] klicken; anschließend gelangen Sie wieder zur Standard-Startseite. Durch Anklicken von [Zurück] gelangen Sie zurück zur Einstellungsseite.
-QKSet_finishpre_rebootnow=Abschließen
-[QIS_internet_account.js]
-QKSet_account_webtitle=Internetanbieter-Kontoeinstellung
-QKSet_ISP_head=Internetanbieter-Informationseinstellung
-QKSet_ISP_desc=Bitte geben Sie die durch Ihren Internetanbieter vorgegebenen Daten ein.
 PPPConnection_UserName_itemdesc=Dieses Feld steht nur dann zur Verfügung, wenn Sie den WAN-Verbindungstyp auf PPPoE, PPTP oder L2TP einstellen.
 BOP_account_user_item=Benutzername:
 BOP_account_pass_item=Kennwort:
+QKSet_detect_freshbtn=Erneut erkennen
 QKSet_account_passwd=Das Kennwort für dieses Benutzerkonto.
 QKSet_account_nameblank=Der Kontoname darf nicht leer sein.
-[QIS_internet_ip.js]
 Layer3Forwarding_x_DHCPClient_itemname=WAN-IP automatisch beziehen?
 Layer3Forwarding_x_UseStaticIP_itemname=Folgende IP-Adresse verwenden:
 IPConnection_ExternalIPAddress_itemdesc=Dies ist die IP-Adresse des ZVMODELVZ, wie sie im externen Netzwerk erscheint. Wenn Sie diese auf 0.0.0.0 einstellen, bezieht der ZVMODELVZ die IP-Adresse automatisch vom DHCP-Server.
@@ -654,35 +583,11 @@ IPConnection_x_DNSServerEnable_itemdesc=Dieses Feld ermöglicht Ihnen den automa
 IPConnection_x_DNSServer1_itemdesc=Dieses Feld zeigt die IP-Adresse des DNS, mit dem sich der ZVMODELVZ verbindet.
 IPConnection_x_DNSServer1_itemname=DNS-Server
 IPConnection_warning_WANIPEQUALGatewayIP=Sie haben die WAN-IP als ZVMODELVZ-Gateway festgelegt; der ZVMODELVZ kann sich eventuell nicht mit dem Internet verbinden. Bitte stellen Sie den richtigen Gateway-Wert ein.
-[QIS_internet_isp.js]
 BOP_isp_host_desc=In diesem Feld können Sie dem ZVMODELVZ einen Hostnamen zuweisen. Dies wird gewöhnlich von Ihrem Internetanbieter gefordert.
 BOP_isp_host_item=Hostname:
 PPPConnection_x_MacAddressForISP_itemdesc=In diesem Feld können Sie eine eindeutige MAC-Adresse für den ZVMODELVZ zur Verbindung mit dem Internet angeben. Dies wird gewöhnlich von Ihrem Internetanbieter gefordert.
 BOP_isp_mac_item=MAC-Adresse:
 BOP_isp_MACclone=MAC-Clone
-[QIS_internet_success.htm]
-QKSet_Internet_Setup_fail=Internetverbindung fehlgeschlagen.
-QKSet_Internet_Setup_fail_reason1=DHCP-Verbindung fehlgeschlagen.
-QKSet_Internet_Setup_fail_reason2=Ungültiges Konto oder Kennwort; zum Modifizieren auf den Link klicken.
-QKSet_Internet_Setup_fail_reason3=PPPoE-Verbindung fehlgeschlagen; zum Neuversuch auf den Link klicken.
-QKSet_Internet_Setup_fail_reason4=PPTP-Verbindung fehlgeschlagen; zum Neuversuch auf den Link klicken.
-QKSet_Internet_Setup_fail_reason5=L2TP-Verbindung fehlgeschlagen; zum Neuversuch auf den Link klicken.
-QKSet_Internet_Setup_fail_reason6=Statische Verbindung fehlgeschlagen; zum Neuversuch auf den Link klicken.
-QKSet_Internet_Setup_fail_method1=Verbindung erneut erkennen
-QKSet_Internet_Setup_fail_method2=Konto oder Kennwort erneut eingeben
-QKSet_finish_moveto1=Internet aufrufen
-QKSet_finish_moveto2=zur Standard-Startseite Ihres Browsers.
-QKSet_finish_moveto3=Warnung: Sie haben keine Wireless-Verschlüsselung konfiguriert, dies kann zu Sicherheitsproblemen führen. Wir empfehlen Ihnen, die Konfiguration über den nachstehenden Hyperlink vorzunehmen.
-QKSet_finish_moveto4=Start 
-QKSet_finish_moveto5=Einfache Wireless-Sicherheitseinstellungen 
-QKSet_finish_moveto6=Verschlüsselung nachschlagen und konfigurieren.
-QKSet_finish_moveto7=Erweiterte Einstellungen-Seite
-QKSet_finish_moveto8=Manuelle Konfiguration und Feinabstimmung.
-[QIS_internet_success.js]
-QKSet_finish_desc=Internetverbindung ist abgeschlossen.
-[QIS_internet_type.js]
-QKSet_type_head=Internet-WAN-Verbindungstyp
-QKSet_type_desc=Bitte wählen Sie den von Ihrem Internetanbieter vorgegebenen WAN-Verbindungstyp.
 BOP_ctype_title1=Automatische IP
 BOP_ctype_item1=Dies ermöglicht Ihrem PC das automatische Beziehen einer IP-Adresse. Dieser Verbindungstyp wird oft bei Kabelmodem-Anbietern eingesetzt.
 BOP_ctype_item2=(A)DSL- oder andere Verbindung, die Benutzername und Kennwort erfordert. Auch bekannt als PPPoE.
@@ -690,8 +595,6 @@ BOP_ctype_item3=(A)DSL- oder andere Verbindung, die Benutzername, Kennwort und I
 BOP_ctype_item4=L2TP erfordert Benutzername, Kennwort und IP-Adresse – diese Daten erhalten Sie von Ihrem Internetanbieter.
 BOP_ctype_title5=Statische IP
 BOP_ctype_item5=Mit einer statischen IP kann Ihr PC eine feste IP-Adresse verwenden, die von Ihrem Internetanbieter zugeteilt wird. Dieser Verbindungstyp wird oft bei (A)DSL-Anbietern eingesetzt.
-QKSet_type_rechoice=Bitte wählen Sie den WAN-Typ
-QKSet_wireless_webtitle=Wireless-Einstellungen
 WLANConfig11b_SSID_itemdesc=Zur Zuweisung einer Identifizier-ungszeichenfolge Ihrer Wireless-Verbindung mit bis zu 32 Zeichen.
 WLANConfig11b_SSID_itemname=SSID:
 WLANConfig11b_x_PSKKey_itemdesc=In dieses Feld muss ein Kennwort 8 bis 63 Zeichen (Buchstaben, Zahlen oder Kombinationen daraus) oder 64 Hexadezimalzeichen ein zum Starten der Verschlüsselung eingegeben werden. Wenn Sie dieses Feld nicht ausfüllen, wird die Standardvorgabe [00000000] als Kennwort zugewiesen.
@@ -728,7 +631,6 @@ Main_alert_proceeding_desc1=Fortfahren...
 Main_alert_proceeding_desc4=Bitte warten...
 Main_alert_proceeding_desc3=Abgeschlossen!
 Main_content_Login_Item7=Der Neustart des Routers braucht etwa 30 Sekunden. Mochten Sie den Router wirklich neu starten?
-[QIS-general.js]
 JS_fieldblank=Felder dürfen nicht leer sein!
 JS_validip=ist keine gültige IP-Adresse!
 JS_validmask=is not a valid IP Mask!

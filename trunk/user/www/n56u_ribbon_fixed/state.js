@@ -823,20 +823,13 @@ function no_flash_button(){
 
 function gotoprev(formObj){
 	var prev_page = formObj.prev_page.value;
-	
+
 	if(prev_page == "/")
 		prev_page = "/index.asp";
-	
-	if(prev_page.indexOf('QIS') < 0){
-		formObj.action = prev_page;
-		formObj.target = "_parent";
-		formObj.submit();
-	}
-	else{
-		formObj.action = prev_page;
-		formObj.target = "";
-		formObj.submit();
-	}
+
+	formObj.action = prev_page;
+	formObj.target = "_parent";
+	formObj.submit();
 }
 
 function add_option(selectObj, str, value, selected){

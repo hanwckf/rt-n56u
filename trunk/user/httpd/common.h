@@ -105,7 +105,7 @@ typedef u_int8_t u8;
 #define EVT_RESTART_WIFI5		3
 #define EVT_RESTART_SWITCH_CFG		3
 #define EVT_RESTART_SWITCH_VLAN		3
-#define EVT_RESTART_LAN			3
+#define EVT_RESTART_LAN			5
 #define EVT_RESTART_WAN			5
 #define EVT_RESTART_IPV6		3
 #define EVT_RESTART_HTTPD		2

@@ -407,7 +407,7 @@ start_igmpproxy(char *wan_ifname)
 void
 restart_iptv(int is_ap_mode)
 {
-	config_bridge();
+	config_bridge(is_ap_mode);
 
 	if (!is_ap_mode) {
 		char *wan_ifname, *viptv_iflast;

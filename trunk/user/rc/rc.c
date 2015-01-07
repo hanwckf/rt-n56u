@@ -623,7 +623,7 @@ init_router(void)
 #endif
 	start_detect_link();
 	start_detect_internet(0);
-	start_lan(is_ap_mode);
+	start_lan(is_ap_mode, 0);
 
 	if (log_remote)
 		start_logger(1);
@@ -990,7 +990,7 @@ handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, RCN_RESTART_SWITCH_CFG) == 0)
 		{
-			config_bridge();
+			config_bridge(get_ap_mode());
 			switch_config_base();
 			switch_config_storm();
 			switch_config_link();

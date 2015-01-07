@@ -226,11 +226,7 @@ init_bridge(int is_ap_mode)
 
 	sleep(1);
 
-	ifconfig(IFNAME_BR, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
-
-	restart_guest_lan_isolation();
-
-	config_bridge();
+	ifconfig(IFNAME_BR, IFUP, NULL, NULL);
 
 #if BOARD_HAS_5G_RADIO
 	if (!wl_radio_on || (wl_mode_x == 1 || wl_mode_x == 3)) {
@@ -248,19 +244,21 @@ init_bridge(int is_ap_mode)
 	}
 #endif
 
+	restart_guest_lan_isolation();
+
 	nvram_set_int_temp("reload_svc_wl", 0);
 	nvram_set_int_temp("reload_svc_rt", 0);
 }
 
 void
-config_bridge(void)
+config_bridge(int is_ap_mode)
 {
 	char bridge_path[64], *wired_ifname;
 	int multicast_router, multicast_querier;
 	int igmp_snoop = nvram_get_int("ether_igmp");
 	int wired_m2u = nvram_get_int("ether_m2u");
 
-	if (!get_ap_mode()) {
+	if (!is_ap_mode) {
 		if (nvram_match("mr_enable_x", "1")) {
 			multicast_router = 2;   // bridge is mcast router path (br0 <--igmpproxy--> eth3)
 			multicast_querier = 0;  // bridge is not needed internal mcast querier (igmpproxy is mcast querier)
@@ -541,7 +539,7 @@ update_hosts_ap(void)
 }
 
 void
-start_lan(int is_ap_mode)
+start_lan(int is_ap_mode, int do_wait)
 {
 	char *lan_ipaddr;
 	char *lan_netmsk;
@@ -549,6 +547,9 @@ start_lan(int is_ap_mode)
 
 	lan_ipaddr = nvram_safe_get("lan_ipaddr");
 	lan_netmsk = nvram_safe_get("lan_netmask");
+
+	/* bring up and configure LAN interface */
+	ifconfig(lan_ifname, IFUP, lan_ipaddr, lan_netmsk);
 
 	/*
 	* Configure DHCP connection. The DHCP client will run 
@@ -561,13 +562,15 @@ start_lan(int is_ap_mode)
 		create_hosts_lan(lan_ipaddr, lan_dname);
 		
 		if (nvram_match("lan_proto_x", "1")) {
-			/* bring up and configure LAN interface */
-			ifconfig(lan_ifname, IFUP, lan_ipaddr, lan_netmsk);
 			
 			symlink("/sbin/rc", SCRIPT_UDHCPC_LAN);
 			
 			/* early fill XXX_t fields */
 			update_lan_status(0);
+			
+			/* wait PHY ports link ready */
+			if (do_wait)
+				sleep(1);
 			
 			/* di wakeup after 60 secs */
 			notify_run_detect_internet(60);
@@ -575,8 +578,6 @@ start_lan(int is_ap_mode)
 			/* start dhcp daemon */
 			start_udhcpc_lan(lan_ifname);
 		} else {
-			/* bring up and configure LAN interface */
-			ifconfig(lan_ifname, IFUP, lan_ipaddr, lan_netmsk);
 			
 			/* manual config lan gateway and dns */
 			lan_up_manual(lan_ifname, lan_dname);
@@ -585,8 +586,6 @@ start_lan(int is_ap_mode)
 			notify_run_detect_internet(2);
 		}
 	} else {
-		/* bring up and configure LAN interface */
-		ifconfig(lan_ifname, IFUP, lan_ipaddr, lan_netmsk);
 		
 		/* install lan specific static routes */
 		add_static_lan_routes(lan_ifname);
@@ -599,6 +598,8 @@ start_lan(int is_ap_mode)
 	if (get_ipv6_type() != IPV6_DISABLED)
 		reload_lan_addr6();
 #endif
+
+	config_bridge(is_ap_mode);
 }
 
 void
@@ -653,11 +654,14 @@ full_restart_lan(void)
 		doSystem("brctl setfd %s %d", IFNAME_BR, 2);
 	}
 
-	start_lan(is_ap_mode);
-
+	/* down and up all LAN ports link */
+	phy_ports_lan_power(0);
 	sleep(1);
+	phy_ports_lan_power(1);
 
-	// Start logger if remote
+	start_lan(is_ap_mode, 1);
+
+	/* Start logger if remote */
 	if (log_remote)
 		start_logger(0);
 

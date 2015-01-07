@@ -223,8 +223,22 @@ int phy_ports_power(int power_on)
 				   SWAPI_PORTMASK_LAN3 |
 				   SWAPI_PORTMASK_LAN4 |
 				   SWAPI_PORTMASK_WAN);
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_PORT_POWER, power_on, &ports_mask);
+	return mtk_esw_ioctl(MTK_ESW_IOCTL_PORTS_POWER, power_on, &ports_mask);
 }
+
+int phy_ports_wan_power(int power_on)
+{
+	unsigned int ports_wan = 1;
+	return mtk_esw_ioctl(MTK_ESW_IOCTL_PORTS_WAN_LAN_POWER, power_on, &ports_wan);
+}
+
+int phy_ports_lan_power(int power_on)
+{
+	unsigned int ports_wan = 0;
+	return mtk_esw_ioctl(MTK_ESW_IOCTL_PORTS_WAN_LAN_POWER, power_on, &ports_wan);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 int phy_bridge_mode(unsigned int bridge_mode, int isolated_mode)
 {
@@ -346,8 +360,9 @@ int show_usage(char *cmd)
 	"   34               Show LAN4 port MIB counters\n"
 	"   36               Show CPU LAN port MIB counters\n\n"
 	"   40 [0x25252525]  Full reset and reinit switch\n"
-	"   41 [MASK] [0|1]  Set power for ports mask\n"
-	"   42               Clear switch MAC table\n\n"
+	"   41 [MASK] [0|1]  Set power off/on for ports mask\n"
+	"   42 [W|L]  [0|1]  Set power off/on for WAN or LAN ports\n"
+	"   43               Clear switch MAC table\n\n"
 	"   50 [0..8] [0..3] Config WAN bridge mode and isolation\n"
 	"   60               Reset VLAN table and init VLAN1\n"
 	"   62 [MASK] [0..2] Set VLAN accept mode for ports mask\n"

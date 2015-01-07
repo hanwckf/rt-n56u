@@ -1302,20 +1302,6 @@ rtk_api_ret_t rtk_port_Enable_set(rtk_port_t port, rtk_enable_t enable)
 	return RT_ERR_OK;
 }
 
-void asic_port_power(u32 port_enabled, u32 port_mask)
-{
-	int i;
-	rtk_enable_t is_enable = (port_enabled) ? ENABLED : DISABLED;
-
-	port_mask = get_ports_mask_from_user(port_mask & 0xFF);
-
-	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
-	{
-		if ((port_mask >> i) & 0x1)
-			rtk_port_Enable_set(i, is_enable);
-	}
-}
-
 rtk_api_ret_t asic_status_link_port(rtk_port_t port, rtk_port_linkStatus_t *pLinkStatus)
 {
 	u32 regData = 0;
@@ -1433,18 +1419,34 @@ u32 asic_status_link_changed(void)
 	return 0;
 }
 
-int change_wan_ports_power(u32 power_on)
+void change_ports_power(u32 power_on, u32 ports_mask)
 {
-	int i, power_changed;
-	u32 ports_mask_wan;
+	int i;
 	rtk_enable_t is_enable = (power_on) ? ENABLED : DISABLED;
 
-	ports_mask_wan = get_phy_ports_mask_wan(0);
+	ports_mask = get_ports_mask_from_user(ports_mask & 0xFF);
 
-	power_changed = 0;
 	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
 	{
-		if (((ports_mask_wan >> i) & 0x1) && (g_port_phy_power[i] ^ power_on)) {
+		if ((ports_mask >> i) & 0x1)
+			rtk_port_Enable_set(i, is_enable);
+	}
+}
+
+int change_wan_lan_ports_power(u32 power_on, u32 is_wan)
+{
+	int i, power_changed = 0;
+	u32 ports_mask;
+	rtk_enable_t is_enable = (power_on) ? ENABLED : DISABLED;
+
+	if (is_wan)
+		ports_mask = get_phy_ports_mask_wan(0);
+	else
+		ports_mask = get_phy_ports_mask_lan(0);
+
+	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
+	{
+		if (((ports_mask >> i) & 0x1) && (g_port_phy_power[i] ^ power_on)) {
 			power_changed = 1;
 			rtk_port_Enable_set(i, is_enable);
 		}
@@ -1482,7 +1484,7 @@ int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 	power_changed = 0;
 	if (bridge_changed || vlan_rule_changed)
 	{
-		power_changed = change_wan_ports_power(0);
+		power_changed = change_wan_lan_ports_power(0, 1);
 		if (power_changed) {
 			// wait for PHY link down
 			msleep(1000);
@@ -1497,7 +1499,7 @@ int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 	asic_vlan_bridge_isolate(wan_bridge_mode, bridge_changed, vlan_rule_changed);
 
 	if (power_changed)
-		change_wan_ports_power(1);
+		change_wan_lan_ports_power(1, 1);
 
 	return 0;
 }

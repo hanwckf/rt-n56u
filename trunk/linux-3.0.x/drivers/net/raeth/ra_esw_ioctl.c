@@ -1058,29 +1058,32 @@ static void esw_status_mib_port(u32 port_id, arl_mib_counters_t *mibc)
 	mibc->RxDropFramesFilter   = esw_get_port_mib_rfpc(port_id);
 }
 
-static void change_ports_power(u32 power_on, u32 port_mask)
+static void change_ports_power(u32 power_on, u32 ports_mask)
 {
 	u32 i;
 
-	port_mask = get_ports_mask_from_user(port_mask & 0xFF, 1);
+	ports_mask = get_ports_mask_from_user(ports_mask & 0xFF, 1);
 
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
 	{
-		if ((port_mask >> i) & 0x1)
+		if ((ports_mask >> i) & 0x1)
 			esw_port_phy_power(i, power_on);
 	}
 }
 
-static int change_wan_ports_power(u32 power_on)
+static int change_wan_lan_ports_power(u32 power_on, u32 is_wan)
 {
 	int power_changed = 0;
-	u32 i, ports_mask_wan;
+	u32 i, ports_mask;
 
-	ports_mask_wan = get_ports_mask_wan(0, 1);
+	if (is_wan)
+		ports_mask = get_ports_mask_wan(0, 1);
+	else
+		ports_mask = get_ports_mask_lan(0);
 
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
 	{
-		if (((ports_mask_wan >> i) & 0x1) && (g_port_phy_power[i] ^ power_on)) {
+		if (((ports_mask >> i) & 0x1) && (g_port_phy_power[i] ^ power_on)) {
 			power_changed = 1;
 			esw_port_phy_power(i, power_on);
 		}
@@ -1118,7 +1121,7 @@ static int change_bridge_mode(u32 wan_bwan_isolation, u32 wan_bridge_mode)
 
 	power_changed = 0;
 	if (bridge_changed || vlan_rule_changed) {
-		power_changed = change_wan_ports_power(0);
+		power_changed = change_wan_lan_ports_power(0, 1);
 		if (power_changed) {
 			// wait for PHY link down
 			msleep(500);
@@ -1128,7 +1131,7 @@ static int change_bridge_mode(u32 wan_bwan_isolation, u32 wan_bridge_mode)
 	esw_vlan_bridge_isolate(wan_bridge_mode, wan_bwan_isolation, bridge_changed, br_iso_changed, vlan_rule_changed);
 
 	if (power_changed)
-		change_wan_ports_power(1);
+		change_wan_lan_ports_power(1, 1);
 
 	return 0;
 }
@@ -1690,9 +1693,13 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 		if (uint_value == SWAPI_MAGIC_RESET_ASIC)
 			reset_and_init_switch();
 		break;
-	case MTK_ESW_IOCTL_PORT_POWER:
+	case MTK_ESW_IOCTL_PORTS_POWER:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
 		change_ports_power(uint_param, uint_value);
+		break;
+	case MTK_ESW_IOCTL_PORTS_WAN_LAN_POWER:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		change_wan_lan_ports_power(uint_param, uint_value);
 		break;
 	case MTK_ESW_IOCTL_MAC_TABLE_CLEAR:
 		esw_mac_table_clear();

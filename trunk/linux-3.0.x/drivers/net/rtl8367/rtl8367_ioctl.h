@@ -69,7 +69,8 @@
 /////////////////////////////////////////////////
 
 #define RTL8367_IOCTL_RESET_ASIC		40
-#define RTL8367_IOCTL_PORT_POWER		41
+#define RTL8367_IOCTL_PORTS_POWER		41
+#define RTL8367_IOCTL_PORTS_WAN_LAN_POWER	42
 
 /////////////////////////////////////////////////
 // BRIDGE CONTROL (WAN/LAN HW ISOLATION)

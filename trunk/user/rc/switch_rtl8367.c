@@ -329,8 +329,22 @@ int phy_ports_power(int power_on)
 				   SWAPI_PORTMASK_LAN3 |
 				   SWAPI_PORTMASK_LAN4 |
 				   SWAPI_PORTMASK_WAN);
-	return rtl8367_ioctl(RTL8367_IOCTL_PORT_POWER, power_on, &ports_mask);
+	return rtl8367_ioctl(RTL8367_IOCTL_PORTS_POWER, power_on, &ports_mask);
 }
+
+int phy_ports_wan_power(int power_on)
+{
+	unsigned int ports_wan = 1;
+	return rtl8367_ioctl(RTL8367_IOCTL_PORTS_WAN_LAN_POWER, power_on, &ports_wan);
+}
+
+int phy_ports_lan_power(int power_on)
+{
+	unsigned int ports_wan = 0;
+	return rtl8367_ioctl(RTL8367_IOCTL_PORTS_WAN_LAN_POWER, power_on, &ports_wan);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 int phy_bridge_mode(unsigned int bridge_mode, int isolated_mode)
 {
@@ -454,7 +468,8 @@ int show_usage(char *cmd)
 #endif
 	"   38               Reset all ports MIB counters\n\n"
 	"   40 [0x25252525]  Full reset and reinit switch\n"
-	"   41 [MASK] [0|1]  Set power for ports mask\n\n"
+	"   41 [MASK] [0|1]  Set power off/on for ports mask\n"
+	"   42 [W|L]  [0|1]  Set power off/on for WAN or LAN ports\n\n"
 	"   50 [0..8] [0..3] Config WAN bridge mode and isolation\n"
 #if defined (USE_RT3352_MII)
 	"   51 [0|1]         Toggle iNIC isolation from LAN ports\n"

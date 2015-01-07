@@ -67,8 +67,9 @@
 /////////////////////////////////////////////////
 
 #define MTK_ESW_IOCTL_RESET_SWITCH		40
-#define MTK_ESW_IOCTL_PORT_POWER		41
-#define MTK_ESW_IOCTL_MAC_TABLE_CLEAR		42
+#define MTK_ESW_IOCTL_PORTS_POWER		41
+#define MTK_ESW_IOCTL_PORTS_WAN_LAN_POWER	42
+#define MTK_ESW_IOCTL_MAC_TABLE_CLEAR		43
 
 /////////////////////////////////////////////////
 // BRIDGE CONTROL (WAN/LAN HW ISOLATION)

@@ -222,9 +222,13 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		if (uint_value == SWAPI_MAGIC_RESET_ASIC)
 			reset_and_init_switch(0);
 		break;
-	case RTL8367_IOCTL_PORT_POWER:
+	case RTL8367_IOCTL_PORTS_POWER:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		asic_port_power(uint_param, uint_value);
+		change_ports_power(uint_param, uint_value);
+		break;
+	case RTL8367_IOCTL_PORTS_WAN_LAN_POWER:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		change_wan_lan_ports_power(uint_param, uint_value);
 		break;
 
 	case RTL8367_IOCTL_BRIDGE_MODE:

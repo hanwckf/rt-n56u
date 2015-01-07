@@ -38,7 +38,7 @@ struct mime_handler {
 	char *extra_header;
 	void (*input)(const char *url, FILE *stream, int clen, char *boundary);
 	void (*output)(const char *url, FILE *stream);
-	void (*auth)(int reget);
+	int need_auth;
 };
 
 extern struct mime_handler mime_handlers[];
@@ -52,7 +52,7 @@ struct language_table{
 	char *Target_Lang;
 };
 
-extern struct language_table language_tables[];
+extern const struct language_table language_tables[];
 
 typedef struct kw_s     {
 	int len, tlen;                                          // actually / total
@@ -91,8 +91,6 @@ typedef FILE * webs_t;
 #define websError(wp, code, msg, args...) fprintf(wp, msg, ## args)
 #define websDone(wp, code) fflush(wp)
 #define websGetVar(wp, var, default) (get_cgi(var) ? : default)
-
-extern void do_auth(int reget);
 
 /* Regular file handler */
 extern void do_file(const char *url, FILE *stream);
@@ -143,6 +141,9 @@ extern void set_cgi(char *name, char *value);
 // crc32.c
 extern unsigned long crc32_sp (unsigned long, const unsigned char *, unsigned int);
 
+// base64.c
+extern int b64_decode( const char* str, unsigned char* space, int size );
+
 // ej.c
 extern int load_dictionary (char *lang, pkw_t pkw);
 extern void release_dictionary (pkw_t pkw);
@@ -151,9 +152,9 @@ extern char *get_alert_msg_from_dict(const char *msg_id);
 
 // httpd.c
 extern long uptime(void);
-extern int http_login_check(void);
 extern void fill_login_ip(char *p_out_ip, size_t out_ip_len);
 extern const char *get_login_mac(void);
+extern int get_login_safe(void);
 
 // initial_web_hook.c
 extern char *initial_disk_pool_mapping_info(void);

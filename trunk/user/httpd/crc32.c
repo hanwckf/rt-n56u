@@ -24,17 +24,12 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
-#include "zlib.h"
-
-#define local static
-#define ZEXPORT	/* empty */
-unsigned long crc32_sp (unsigned long, const unsigned char *, unsigned int);
+#include <stdlib.h>
 
 #ifdef DYNAMIC_CRC_TABLE
 
-local int crc_table_empty = 1;
-local uLongf crc_table[256];
-local void make_crc_table OF((void));
+static int crc_table_done = 0;
+static unsigned long crc_table[256];
 
 /*
   Generate a table for a byte-wise 32-bit CRC calculation on the polynomial:
@@ -60,33 +55,33 @@ local void make_crc_table OF((void));
   the information needed to generate CRC's on data a byte at a time for all
   combinations of CRC register values and incoming bytes.
 */
-local void make_crc_table()
+static void make_crc_table(void)
 {
-  uLong c;
+  unsigned long c;
   int n, k;
-  uLong poly;	    /* polynomial exclusive-or pattern */
+  unsigned long poly;	    /* polynomial exclusive-or pattern */
   /* terms of polynomial defining this crc (except x^32): */
-  static const Byte p[] = {0,1,2,4,5,7,8,10,11,12,16,22,23,26};
+  static const unsigned char p[] = {0,1,2,4,5,7,8,10,11,12,16,22,23,26};
 
   /* make exclusive-or pattern from polynomial (0xedb88320L) */
   poly = 0L;
-  for (n = 0; n < sizeof(p)/sizeof(Byte); n++)
+  for (n = 0; n < sizeof(p)/sizeof(unsigned char); n++)
     poly |= 1L << (31 - p[n]);
 
   for (n = 0; n < 256; n++)
   {
-    c = (uLong)n;
+    c = (unsigned long)n;
     for (k = 0; k < 8; k++)
       c = c & 1 ? poly ^ (c >> 1) : c >> 1;
     crc_table[n] = c;
   }
-  crc_table_empty = 0;
+  crc_table_done = 1;
 }
 #else
 /* ========================================================================
  * Table of CRC-32's of all single-byte values (made by make_crc_table)
  */
-local const uLongf crc_table[256] = {
+static const unsigned long crc_table[256] = {
   0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
   0x706af48fL, 0xe963a535L, 0x9e6495a3L, 0x0edb8832L, 0x79dcb8a4L,
   0xe0d5e91eL, 0x97d2d988L, 0x09b64c2bL, 0x7eb17cbdL, 0xe7b82d07L,
@@ -142,19 +137,6 @@ local const uLongf crc_table[256] = {
 };
 #endif
 
-#if 0
-/* =========================================================================
- * This function can be used by asm versions of crc32()
- */
-const uLongf * ZEXPORT get_crc_table()
-{
-#ifdef DYNAMIC_CRC_TABLE
-  if (crc_table_empty) make_crc_table();
-#endif
-  return (const uLongf *)crc_table;
-}
-#endif
-
 /* ========================================================================= */
 #define DO1(buf) crc = crc_table[((int)crc ^ (*buf++)) & 0xff] ^ (crc >> 8);
 #define DO2(buf)  DO1(buf); DO1(buf);
@@ -162,13 +144,10 @@ const uLongf * ZEXPORT get_crc_table()
 #define DO8(buf)  DO4(buf); DO4(buf);
 
 /* ========================================================================= */
-uLong ZEXPORT crc32_sp(crc, buf, len)
-    uLong crc;
-    const Bytef *buf;
-    uInt len;
+unsigned long crc32_sp(unsigned long crc, const unsigned char *buf, unsigned int len)
 {
 #ifdef DYNAMIC_CRC_TABLE
-    if (crc_table_empty)
+    if (!crc_table_done)
       make_crc_table();
 #endif
     crc = crc ^ 0xffffffffL;
@@ -183,27 +162,3 @@ uLong ZEXPORT crc32_sp(crc, buf, len)
     return crc ^ 0xffffffffL;
 }
 
-//#if (CONFIG_COMMANDS & CFG_CMD_JFFS2)
-
-/* No ones complement version. JFFS2 (and other things ?)
- * don't use ones compliment in their CRC calculations.
- */
-uLong ZEXPORT crc32_no_comp(uLong crc, const Bytef *buf, uInt len)
-{
-#ifdef DYNAMIC_CRC_TABLE
-    if (crc_table_empty)
-      make_crc_table();
-#endif
-    while (len >= 8)
-    {
-      DO8(buf);
-      len -= 8;
-    }
-    if (len) do {
-      DO1(buf);
-    } while (--len);
-
-    return crc;
-}
-
-//#endif	/* CFG_CMD_JFFS2 */

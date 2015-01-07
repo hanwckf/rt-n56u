@@ -923,8 +923,7 @@ ej_get_folder_tree(int eid, webs_t wp, int argc, char **argv)
 			if (partition_count != partition_order)
 				continue;
 
-			memset(dir1_Path, 0, 4096);
-			sprintf(dir1_Path, "%s", follow_partition->mount_point);
+			snprintf(dir1_Path, sizeof(dir1_Path), "%s", follow_partition->mount_point);
 			dir1 = opendir(dir1_Path);
 			if (dir1 == NULL) {
 				free_disk_data(disks_info);
@@ -939,8 +938,7 @@ ej_get_folder_tree(int eid, webs_t wp, int argc, char **argv)
 				++folder_count1;
 
 				if (layer == 2) { // get L1's folders.
-					memset(dir2_Path, 0, 4096);
-					sprintf(dir2_Path, "%s/%s", dir1_Path, dp1->d_name);
+					snprintf(dir2_Path, sizeof(dir2_Path), "%s/%s", dir1_Path, dp1->d_name);
 					dir2 = opendir(dir2_Path);
 
 					folder_count2 = 0;
@@ -964,7 +962,7 @@ ej_get_folder_tree(int eid, webs_t wp, int argc, char **argv)
 				}
 
 				if (folder_count1 == folder_order)
-					sprintf(dir1_Path, "%s/%s", dir1_Path, dp1->d_name);
+					snprintf(dir1_Path, sizeof(dir1_Path), "%s/%s", dir1_Path, dp1->d_name);
 			}
 			closedir(dir1);
 		}
@@ -993,8 +991,7 @@ ej_get_folder_tree(int eid, webs_t wp, int argc, char **argv)
 			++folder_count1;
 
 			if (layer == 0) {
-				memset(dir2_Path, 0, 4096);
-				sprintf(dir2_Path, "%s/%s", dir1_Path, dp1->d_name);
+				snprintf(dir2_Path, sizeof(dir2_Path), "%s/%s", dir1_Path, dp1->d_name);
 				dir2 = opendir(dir2_Path);
 				folder_count2 = 0;
 				if (dir2 != NULL) {
@@ -1018,7 +1015,7 @@ ej_get_folder_tree(int eid, webs_t wp, int argc, char **argv)
 			}
 
 			if (folder_count1 == folder_order)
-				sprintf(dir1_Path, "%s/%s", dir1_Path, dp1->d_name);
+				snprintf(dir1_Path, sizeof(dir1_Path), "%s/%s", dir1_Path, dp1->d_name);
 		}
 		closedir(dir1);
 		--layer;

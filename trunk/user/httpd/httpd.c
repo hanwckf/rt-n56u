@@ -42,9 +42,7 @@
 
 #include "httpd.h"
 #include "common.h"
-
-/* Basic authorization userid and passwd limit */
-#define AUTH_MAX		64
+#include "queue.h"
 
 #define LOGIN_TIMEOUT		60
 #define SERVER_NAME		"httpd"
@@ -52,6 +50,10 @@
 #define SERVER_PORT_SSL		443
 #define PROTOCOL		"HTTP/1.0"
 #define RFC1123FMT		"%a, %d %b %Y %H:%M:%S GMT"
+#define MAX_LISTEN_BACKLOG	511
+#define MAX_CONN_ACCEPT		50
+#define MAX_CONN_TIMEOUT	30
+#define MAX_AUTH_LEN		128
 
 /* A multi-family in_addr. */
 typedef struct {
@@ -74,10 +76,6 @@ typedef union {
 #endif
 } usockaddr;
 
-#include "queue.h"
-#define MAX_CONN_ACCEPT 64
-#define MAX_CONN_TIMEOUT 30
-
 typedef struct conn_item {
 	TAILQ_ENTRY(conn_item) entry;
 	int fd;
@@ -92,29 +90,28 @@ typedef struct conn_list {
 	int count;
 } conn_list_t;
 
+enum {
+	HTTP_METHOD_GET = 0,
+	HTTP_METHOD_HEAD,
+	HTTP_METHOD_POST
+};
+
 /* Globals. */
-static int daemon_exit = 0;
-static int reload_passwd = 0;
-static char auth_userid[AUTH_MAX];
-static char auth_passwd[AUTH_MAX];
-static char auth_product[AUTH_MAX];
-
 char log_header[32] = {0};
-int redirect = 0;
-int change_passwd = 0;
-int login_safe = 0;
+int auth_nvram_changed = 0;
 int debug_mode = 0;
-
 #if defined (SUPPORT_HTTPS)
 int http_is_ssl = 0;
 #endif
 
+static int daemon_exit = 0;
+static int http_has_lang = 0;
 static int http_acl_mode = 0;
+static int login_safe = 0;		// the login from LAN/VPN
 static time_t login_timestamp = 0;	// the timestamp of the logined ip
 static uaddr login_ip;			// the logined ip
-static uaddr login_ip_tmp;		// the ip of the current session.
-static uaddr last_login_ip;		// the last logined ip 2008.08 magic
 static char login_mac[18] = {0};	// the logined mac
+static char auth_basic_data[MAX_AUTH_LEN];
 
 #if defined (USE_IPV6)
 static const struct in6_addr in6in4addr_loopback = {{{0x00, 0x00, 0x00, 0x00,
@@ -122,16 +119,13 @@ static const struct in6_addr in6in4addr_loopback = {{{0x00, 0x00, 0x00, 0x00,
                                                       0x00, 0x00, 0xff, 0xff,
                                                       0x7f, 0x00, 0x00, 0x01}}};
 #endif
-time_t request_timestamp = 0;
-time_t turn_off_auth_timestamp = 0;
-int temp_turn_off_auth = 0;	// for QISxxx.htm pages
 
 kw_t kw_EN = {0, 0, {0, 0, 0, 0}, NULL, NULL};
 kw_t kw_XX = {0, 0, {0, 0, 0, 0}, NULL, NULL};
 
 const int int_1 = 1;
 
-struct language_table language_tables[] = {
+const struct language_table language_tables[] = {
 	{"en-us", "EN"},
 	{"en", "EN"},
 	{"ru-ru", "RU"},
@@ -177,12 +171,8 @@ struct language_table language_tables[] = {
 	{NULL, NULL}
 };
 
-/* Forwards. */
-static int b64_decode( const char* str, unsigned char* space, int size );
-static int match( const char* pattern, const char* string );
-static int match_one( const char* pattern, int patternlen, const char* string );
-
-long uptime(void)
+long
+uptime(void)
 {
 	struct sysinfo info;
 	sysinfo(&info);
@@ -190,7 +180,8 @@ long uptime(void)
 	return info.uptime;
 }
 
-int is_uaddr_equal(uaddr *ip1, uaddr *ip2)
+static int
+is_uaddr_equal(const uaddr *ip1, const uaddr *ip2)
 {
 	if ((ip1->len > 0) && (ip1->len == ip2->len) && (memcmp(&ip1->addr, &ip2->addr, ip1->len) == 0))
 		return 1;
@@ -198,7 +189,8 @@ int is_uaddr_equal(uaddr *ip1, uaddr *ip2)
 	return 0;
 }
 
-int is_uaddr_localhost(uaddr *ip)
+static int
+is_uaddr_localhost(const uaddr *ip)
 {
 	if (
 #if defined (USE_IPV6)
@@ -211,7 +203,7 @@ int is_uaddr_localhost(uaddr *ip)
 #endif
 	)
 		return 1;
-	
+
 	return 0;
 }
 
@@ -233,7 +225,7 @@ usockaddr_to_uaddr(const usockaddr *usa, uaddr *ip)
 }
 
 static int
-convert_ip_to_string(uaddr *ip, char *p_out_ip, size_t out_ip_len)
+convert_ip_to_string(const uaddr *ip, char *p_out_ip, size_t out_ip_len)
 {
 #if defined (USE_IPV6)
 	char s_addr[INET6_ADDRSTRLEN];
@@ -257,7 +249,7 @@ convert_ip_to_string(uaddr *ip, char *p_out_ip, size_t out_ip_len)
 }
 
 static int
-find_mac_from_ip(uaddr *ip, unsigned char *p_out_mac, int *p_out_lan)
+find_mac_from_ip(const uaddr *ip, unsigned char *p_out_mac, int *p_out_lan)
 {
 	FILE *fp;
 	int result = -1;
@@ -337,7 +329,7 @@ is_http_client_allowed(const usockaddr *usa)
 }
 
 static int
-get_safe_ifname(char *ifname)
+is_safe_ifname(const char *ifname)
 {
 	if (strcmp(ifname, IFNAME_BR) == 0)
 		return 1;
@@ -351,7 +343,7 @@ get_safe_ifname(char *ifname)
 }
 
 static int
-get_safe_ipaddr(const uaddr *ip)
+is_safe_ipaddr(const uaddr *ip)
 {
 	int result = 0;
 	struct ifaddrs *ifa, *ife;
@@ -386,7 +378,7 @@ get_safe_ipaddr(const uaddr *ip)
 			continue;
 		if (!ife->ifa_name)
 			continue;
-		if (!get_safe_ifname(ife->ifa_name))
+		if (!is_safe_ifname(ife->ifa_name))
 			continue;
 #if defined (USE_IPV6)
 		if (ip6 && ife->ifa_addr->sa_family == AF_INET6) {
@@ -425,23 +417,6 @@ get_safe_ipaddr(const uaddr *ip)
 	return result;
 }
 
-static int
-get_http_login_safe(void)
-{
-	if (login_ip.len == 0)
-		return 0;
-
-#if defined (SUPPORT_HTTPS)
-	if (http_is_ssl)
-		return 1;
-#endif
-
-	if (get_safe_ipaddr(&login_ip))
-		return 1;
-
-	return 0;
-}
-
 void
 fill_login_ip(char *p_out_ip, size_t out_ip_len)
 {
@@ -451,95 +426,117 @@ fill_login_ip(char *p_out_ip, size_t out_ip_len)
 const char *
 get_login_mac(void)
 {
-	return (const char *)login_mac;
+	return login_mac;
 }
 
-void
-http_login(uaddr *ip, char *url)
+int
+get_login_safe(void)
 {
-	char s_login_timestamp[32];
+	if (login_ip.len == 0)
+		return 0;
 
-	if (is_uaddr_localhost(ip))
-		return;
+#if defined (SUPPORT_HTTPS)
+	if (http_is_ssl)
+		return 1;
+#endif
 
-	if (strcmp(url, "system_status_data.asp") && 
-	    strcmp(url, "log_content.asp") && 
-	    strcmp(url, "status_internet.asp") && 
-	    strcmp(url, "status_wanlink.asp")) {
-		memset(&last_login_ip, 0, sizeof(uaddr));
-		if (!is_uaddr_equal(&login_ip, ip)) {
-			unsigned char mac[8] = {0};
-			
-			memcpy(&login_ip, ip, sizeof(uaddr));
-			if (find_mac_from_ip(ip, mac, NULL) == 0)
-				ether_etoa(mac, login_mac);
-			else
-				login_mac[0] = 0;
-			
-			login_safe = get_http_login_safe();
-		}
-		login_timestamp = uptime();
-		sprintf(s_login_timestamp, "%lu", login_timestamp);
-		nvram_set_temp("login_timestamp", s_login_timestamp);
-	}
+	return login_safe;
 }
 
-void
-http_reset_login(void)
+static void
+http_login(const uaddr *ip_now)
 {
-	memcpy(&last_login_ip, &login_ip, sizeof(uaddr));
-	memset(&login_ip, 0, sizeof(uaddr));
-	login_timestamp = 0;
-	login_safe = 0;
+	char s_lts[32];
+	unsigned char mac[8] = {0};
 
+	memcpy(&login_ip, ip_now, sizeof(uaddr));
+
+	if (find_mac_from_ip(ip_now, mac, NULL) == 0)
+		ether_etoa(mac, login_mac);
+	else
+		login_mac[0] = 0;
+
+	login_safe = is_safe_ipaddr(ip_now);
+	login_timestamp = uptime();
+
+	sprintf(s_lts, "%lu", login_timestamp);
+	nvram_set_temp("login_timestamp", s_lts);
+}
+
+static void
+load_nvram_auth(void)
+{
+	char *pw_str;
+	size_t pw_len, bs_len;
+
+	memset(auth_basic_data, 0, sizeof(auth_basic_data));
+	snprintf(auth_basic_data, sizeof(auth_basic_data)-1, "%s:", nvram_safe_get("http_username"));
+
+	bs_len = strlen(auth_basic_data);
+
+	pw_str = nvram_safe_get("http_passwd");
+	pw_len = MIN(sizeof(auth_basic_data)-bs_len-1, strlen(pw_str));
+	strncpy(&auth_basic_data[bs_len], pw_str, pw_len);
+	auth_basic_data[bs_len+pw_len] = '\0';
+}
+
+static void
+reset_login_data(void)
+{
 	// load new acl mode
 	http_acl_mode = nvram_get_int("http_access");
+	http_has_lang = (strlen(nvram_safe_get("preferred_lang")) > 1) ? 1 : 0;
+
+	memset(&login_ip, 0, sizeof(uaddr));
+
+	login_safe = 0;
+	login_timestamp = 0;
 
 	nvram_set_temp("login_timestamp", "");
 
-	if (change_passwd == 1) {
-		change_passwd = 0;
-		reload_passwd = 1;
+	if (auth_nvram_changed) {
+		auth_nvram_changed = 0;
+		load_nvram_auth();
 	}
 }
 
-void
-http_logout(uaddr *ip) {
-	if (is_uaddr_equal(ip, &login_ip))
-		http_reset_login();
+static void
+http_logout(const uaddr *ip_now)
+{
+	if (is_uaddr_equal(ip_now, &login_ip))
+		reset_login_data();
 }
 
-void
-http_login_timeout(uaddr *ip)
+
+/*
+ * attempt login check, result
+ * 0: can not login, has other loginer
+ * 1: can login, this is localhost (always allow w/o auth)
+ * 2: can login, no loginer
+ * 3: can login, loginer is our
+ */
+static int
+http_login_check(const uaddr *ip_now)
 {
-	time_t now;
-
-	now = uptime();
-
-	if (((unsigned long)(now - login_timestamp) > LOGIN_TIMEOUT) && (login_ip.len != 0) && (!is_uaddr_equal(&login_ip, ip)))
-		http_logout(&login_ip);
-}
-
-// 0: can not login, 1: can login, 2: loginer, 3: not loginer.
-int
-http_login_check(void) 
-{
-	if (is_uaddr_localhost(&login_ip_tmp))
+	if (is_uaddr_localhost(ip_now))
 		return 1;
-
-	http_login_timeout(&login_ip_tmp);
 
 	if (login_ip.len == 0)
-		return 1;
-
-	if (is_uaddr_equal(&login_ip, &login_ip_tmp))
 		return 2;
 
-	return 3;
+	if (is_uaddr_equal(&login_ip, ip_now))
+		return 3;
+
+	if ((unsigned long)(uptime() - login_timestamp) > LOGIN_TIMEOUT) {
+		reset_login_data();
+		return 2;
+	}
+
+	return 0;
 }
 
 static int
-initialize_listen_socket( usockaddr* usaP, int http_port )
+initialize_listen_socket(usockaddr* usaP, int http_port)
 {
 	int listen_fd;
 	int sa_family;
@@ -582,7 +579,7 @@ initialize_listen_socket( usockaddr* usaP, int http_port )
 		return -1;
 	}
 
-	if ( listen( listen_fd, 1024 ) < 0 )
+	if ( listen( listen_fd, MAX_LISTEN_BACKLOG ) < 0 )
 	{
 		close(listen_fd);	// 1104 chk
 		perror( "listen" );
@@ -593,27 +590,27 @@ initialize_listen_socket( usockaddr* usaP, int http_port )
 }
 
 static void
-send_headers( int status, char* title, char* extra_header, char* mime_type, FILE *conn_fp )
+send_headers( int status, const char *title, const char *extra_header, const char *mime_type, FILE *conn_fp )
 {
 	time_t now;
 	char timebuf[100];
 
-	now = time( (time_t*) 0 );
+	now = time(NULL);
 	strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &now ) );
 
 	fprintf( conn_fp, "%s %d %s\r\n", PROTOCOL, status, title );
 	fprintf( conn_fp, "Server: %s\r\n", SERVER_NAME );
 	fprintf( conn_fp, "Date: %s\r\n", timebuf );
-	if ( extra_header != (char*) 0 )
+	if (extra_header)
 		fprintf( conn_fp, "%s\r\n", extra_header );
-	if ( mime_type != (char*) 0 )
+	if (mime_type)
 		fprintf( conn_fp, "Content-Type: %s\r\n", mime_type );
 	fprintf( conn_fp, "Connection: close\r\n" );
 	fprintf( conn_fp, "\r\n" );
 }
 
 static void
-send_error( int status, char* title, char* extra_header, char* text, FILE *conn_fp )
+send_error( int status, const char *title, const char *extra_header, const char *text, FILE *conn_fp )
 {
 	send_headers( status, title, extra_header, "text/html", conn_fp );
 	fprintf( conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title );
@@ -627,187 +624,50 @@ send_authenticate( FILE *conn_fp )
 {
 	char header[128];
 
-	snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", auth_product );
+	snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", nvram_safe_get("productid") );
 	send_error( 401, "Unauthorized", header, "Authorization required.", conn_fp );
 }
 
 static int
-auth_check( char* authorization, char* url, FILE *conn_fp )
+auth_check( const char *authorization )
 {
-	char authinfo[500];
-	char* authpass;
-	int l;
-
-	/* Is this directory unprotected? */
-	if ( !strlen(auth_passwd) )
-		/* Yes, let the request go through. */
-		return 1;
+	char authinfo[256];
+	int auth_len;
 
 	/* Basic authorization info? */
-	if ( !authorization || strncmp( authorization, "Basic ", 6 ) != 0) 
-	{
-		send_authenticate(conn_fp);
-		http_logout(&login_ip_tmp);
-		memset(&last_login_ip, 0, sizeof(uaddr));
+	if (!authorization || strncmp(authorization, "Basic ", 6) != 0)
 		return 0;
-	}
 
 	/* Decode it. */
-	l = b64_decode( &(authorization[6]), authinfo, sizeof(authinfo) );
-	authinfo[l] = '\0';
-	/* Split into user and password. */
-	authpass = strchr( authinfo, ':' );
-	if ( authpass == (char*) 0 ) {
-		/* No colon?  Bogus auth info. */
-		send_authenticate(conn_fp);
-		http_logout(&login_ip_tmp);
-		return 0;
-	}
-	*authpass++ = '\0';
+	auth_len = b64_decode(authorization+6, authinfo, sizeof(authinfo)-1);
+	authinfo[auth_len] = '\0';
 
 	/* Is this the right user and password? */
-	if ( strcmp( auth_userid, authinfo ) == 0 && strcmp( auth_passwd, authpass ) == 0 )
-	{
-		/* Is this is the first login after logout */
-		if (login_ip.len == 0 && is_uaddr_equal(&last_login_ip, &login_ip_tmp))
-		{
-			send_authenticate(conn_fp);
-			memset(&last_login_ip, 0, sizeof(uaddr));
-			return 0;
-		}
+	if (strcmp(authinfo, auth_basic_data) == 0)
 		return 1;
-	}
-
-	send_authenticate(conn_fp);
-	http_logout(&login_ip_tmp);
 
 	return 0;
 }
 
-
-/* Base-64 decoding.  This represents binary data as printable ASCII
-** characters.  Three 8-bit binary bytes are turned into four 6-bit
-** values, like so:
-**
-**   [11111111]  [22222222]  [33333333]
-**
-**   [111111] [112222] [222233] [333333]
-**
-** Then the 6-bit values are represented using the characters "A-Za-z0-9+/".
-*/
-
-static int b64_decode_table[256] = {
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,  /* 00-0F */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,  /* 10-1F */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,  /* 20-2F */
-    52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,  /* 30-3F */
-    -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,  /* 40-4F */
-    15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,  /* 50-5F */
-    -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,  /* 60-6F */
-    41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1,  /* 70-7F */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,  /* 80-8F */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,  /* 90-9F */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,  /* A0-AF */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,  /* B0-BF */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,  /* C0-CF */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,  /* D0-DF */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,  /* E0-EF */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1   /* F0-FF */
-    };
-
-/* Do base-64 decoding on a string.  Ignore any non-base64 bytes.
-** Return the actual number of bytes generated.  The decoded size will
-** be at most 3/4 the size of the encoded, and may be smaller if there
-** are padding characters (blanks, newlines).
-*/
 static int
-b64_decode( const char* str, unsigned char* space, int size )
-{
-    const char* cp;
-    int space_idx, phase;
-    int d, prev_d=0;
-    unsigned char c;
-
-    space_idx = 0;
-    phase = 0;
-    for ( cp = str; *cp != '\0'; ++cp )
-	{
-	d = b64_decode_table[(int)*cp];
-	if ( d != -1 )
-	    {
-	    switch ( phase )
-		{
-		case 0:
-		++phase;
-		break;
-		case 1:
-		c = ( ( prev_d << 2 ) | ( ( d & 0x30 ) >> 4 ) );
-		if ( space_idx < size )
-		    space[space_idx++] = c;
-		++phase;
-		break;
-		case 2:
-		c = ( ( ( prev_d & 0xf ) << 4 ) | ( ( d & 0x3c ) >> 2 ) );
-		if ( space_idx < size )
-		    space[space_idx++] = c;
-		++phase;
-		break;
-		case 3:
-		c = ( ( ( prev_d & 0x03 ) << 6 ) | d );
-		if ( space_idx < size )
-		    space[space_idx++] = c;
-		phase = 0;
-		break;
-		}
-	    prev_d = d;
-	    }
-	}
-    return space_idx;
-}
-
-
-/* Simple shell-style filename matcher.  Only does ? * and **, and multiple
-** patterns separated by |.  Returns 1 or 0.
-*/
-int
-match( const char* pattern, const char* string )
-{
-	const char* or;
-
-	for (;;)
-	{
-		or = strchr( pattern, '|' );
-		if ( or == (char*) 0 )
-			return match_one( pattern, strlen( pattern ), string );
-		if ( match_one( pattern, or - pattern, string ) )
-			return 1;
-		pattern = or + 1;
-	}
-}
-
-
-static int
-match_one( const char* pattern, int patternlen, const char* string )
+match_one( const char *pattern, int patternlen, const char *string )
 {
 	const char* p;
 
-	for ( p = pattern; p - pattern < patternlen; ++p, ++string )
-	{
+	for ( p = pattern; p - pattern < patternlen; ++p, ++string ) {
 		if ( *p == '?' && *string != '\0' )
 			continue;
-		if ( *p == '*' )
-		{
+		if ( *p == '*' ) {
 			int i, pl;
 			++p;
-			if ( *p == '*' )
-			{
+			if ( *p == '*' ) {
 				/* Double-wildcard matches anything. */
 				++p;
 				i = strlen( string );
-			}
-			else
+			} else {
 				/* Single-wildcard matches anything but slash. */
 				i = strcspn( string, "/" );
+			}
 			
 			pl = patternlen - ( p - pattern );
 			for ( ; i >= 0; --i )
@@ -823,6 +683,24 @@ match_one( const char* pattern, int patternlen, const char* string )
 		return 1;
 
 	return 0;
+}
+
+/* Simple shell-style filename matcher.  Only does ? * and **, and multiple
+** patterns separated by |.  Returns 1 or 0.
+*/
+static int
+match( const char *pattern, const char *string )
+{
+	const char *or;
+
+	for (;;) {
+		or = strchr( pattern, '|' );
+		if ( or == (char*) 0 )
+			return match_one( pattern, strlen( pattern ), string );
+		if ( match_one( pattern, or - pattern, string ) )
+			return 1;
+		pattern = or + 1;
+	}
 }
 
 static void
@@ -852,7 +730,8 @@ try_pull_data(FILE *conn_fp, int conn_fd)
 	}
 }
 
-int do_fwrite(const char *buffer, int len, FILE *stream)
+int
+do_fwrite(const char *buffer, int len, FILE *stream)
 {
 	int n = len;
 	int r = 0;
@@ -868,7 +747,8 @@ int do_fwrite(const char *buffer, int len, FILE *stream)
 	return r;
 }
 
-void do_file(const char *url, FILE *stream)
+void
+do_file(const char *url, FILE *stream)
 {
 	FILE *fp;
 	char buf[1024];
@@ -881,36 +761,25 @@ void do_file(const char *url, FILE *stream)
 	}
 }
 
-void do_auth(int reget)
-{
-	if (!reget)
-		return;
-
-	snprintf(auth_userid, sizeof(auth_userid), "%s", nvram_safe_get("http_username"));
-	snprintf(auth_passwd, sizeof(auth_passwd), "%s", nvram_safe_get("http_passwd"));
-}
-
-int set_preferred_lang(char* cur)
+static int
+set_preferred_lang(char *cur)
 {
 	char *p, *p_lang;
 	char lang_buf[64], lang_file[16];
-	struct language_table *p_lt;
+	const struct language_table *p_lt;
 
 	memset(lang_buf, 0, sizeof(lang_buf));
 	strncpy(lang_buf, cur, sizeof(lang_buf)-1);
 
 	p = lang_buf;
 	p_lang = NULL;
-	while (p != NULL)
-	{
+	while (p != NULL) {
 		p = strtok (p, "\r\n ,;");
 		if (p == NULL)
 			break;
 		
-		for (p_lt = language_tables; p_lt->Lang != NULL; ++p_lt) 
-		{
-			if (strcasecmp(p, p_lt->Lang)==0)
-			{
+		for (p_lt = language_tables; p_lt->Lang != NULL; ++p_lt) {
+			if (strcasecmp(p, p_lt->Lang)==0) {
 				p_lang = p_lt->Target_Lang;
 				break;
 			}
@@ -922,8 +791,7 @@ int set_preferred_lang(char* cur)
 		p+=strlen(p)+1;
 	}
 
-	if (p_lang)
-	{
+	if (p_lang) {
 		snprintf(lang_file, sizeof(lang_file), "%s.dict", p_lang);
 		if (f_exists(lang_file))
 			nvram_set("preferred_lang", p_lang);
@@ -937,20 +805,21 @@ int set_preferred_lang(char* cur)
 }
 
 static void
-handle_request(FILE *conn_fp, int conn_fd)
+handle_request(FILE *conn_fp, const conn_item_t *item)
 {
 	char line[4096];
 	char *method, *path, *protocol, *authorization, *boundary;
-	char *cur, *end, *cp, *file, *url, *query;
-	int len, login_state, method_post, has_lang, clen = 0;
+	char *cur, *end, *cp, *file, *query;
+	int len, login_state, method_id, do_logout, clen = 0;
 	struct mime_handler *handler;
+	uaddr conn_ip;
 
 	/* Initialize the request variables. */
 	authorization = boundary = NULL;
 
 	/* Parse the first line of the request. */
 	if (!fgets(line, sizeof(line), conn_fp)) {
-		send_error( 400, "Bad Request", (char*) 0, "No request found.", conn_fp);
+		send_error( 400, "Bad Request", NULL, "No request found.", conn_fp);
 		return;
 	}
 
@@ -964,11 +833,9 @@ handle_request(FILE *conn_fp, int conn_fd)
 	strsep(&cp, " ");
 
 	if ( !method || !path || !protocol ) {
-		send_error( 400, "Bad Request", (char*) 0, "Can't parse request.", conn_fp );
+		send_error( 400, "Bad Request", NULL, "Can't parse request.", conn_fp );
 		return;
 	}
-
-	has_lang = (strlen(nvram_safe_get("preferred_lang")) > 1) ? 1 : 0;
 
 	cur = protocol + strlen(protocol) + 1;
 	end = line + sizeof(line) - 1;
@@ -977,8 +844,10 @@ handle_request(FILE *conn_fp, int conn_fd)
 		if ( strcmp( cur, "\n" ) == 0 || strcmp( cur, "\r\n" ) == 0 ) {
 			break;
 		}
-		else if ((!has_lang) && (strncasecmp(cur, "Accept-Language:", 16) == 0)) {
-			has_lang = set_preferred_lang(cur + 16);
+		
+		if (strncasecmp(cur, "Accept-Language:", 16) == 0) {
+			if (!http_has_lang)
+				http_has_lang = set_preferred_lang(cur + 16);
 		}
 		else if (strncasecmp( cur, "Authorization:", 14) == 0) {
 			cp = cur + 14;
@@ -999,19 +868,19 @@ handle_request(FILE *conn_fp, int conn_fd)
 		}
 	}
 
-//	printf("buffer left: %d\n", (int)(end - cur));
-
 	if (strcasecmp(method, "get") == 0)
-		method_post = 0;
+		method_id = HTTP_METHOD_GET;
+	else if (strcasecmp(method, "head") == 0)
+		method_id = HTTP_METHOD_HEAD;
 	else if (strcasecmp(method, "post") == 0)
-		method_post = 1;
+		method_id = HTTP_METHOD_POST;
 	else {
-		send_error( 501, "Not Implemented", (char*) 0, "That method is not implemented.", conn_fp );
+		send_error( 501, "Not Implemented", NULL, "Unsupported method.", conn_fp );
 		return;
 	}
 
 	if ( path[0] != '/' ) {
-		send_error( 400, "Bad Request", (char*) 0, "Bad filename.", conn_fp );
+		send_error( 400, "Bad Request", NULL, "Bad URL.", conn_fp );
 		return;
 	}
 
@@ -1019,17 +888,17 @@ handle_request(FILE *conn_fp, int conn_fd)
 	len = strlen(file);
 
 	if (file[0] == '/' || strcmp(file, "..") == 0 || strncmp(file, "../", 3) == 0 || strstr(file, "/../") != NULL) {
-		send_error( 400, "Bad Request", (char*) 0, "Illegal filename.", conn_fp );
+		send_error( 400, "Bad Request", NULL, "Illegal URL.", conn_fp );
 		return;
 	}
 
 	if (len > 0 && file[len-1] == '/') {
-		send_error( 400, "Bad Request", (char*) 0, "Illegal filename.", conn_fp );
+		send_error( 400, "Bad Request", NULL, "Illegal URL.", conn_fp );
 		return;
 	}
 
 	if (len > 2 && strcmp(&(file[len-3]), "/.." ) == 0) {
-		send_error( 400, "Bad Request", (char*) 0, "Illegal filename.", conn_fp );
+		send_error( 400, "Bad Request", NULL, "Illegal URL.", conn_fp );
 		return;
 	}
 
@@ -1037,113 +906,72 @@ handle_request(FILE *conn_fp, int conn_fd)
 		file = "index.asp";
 
 	query = file;
-	url = strsep(&query, "?") ? : file;
+	strsep(&query, "?");
 
-	login_state = http_login_check();
-	if (login_state == 3) {
-		if ( (login_ip.len != 0) && (strstr(url, ".htm") != NULL || strstr(url, ".asp") != NULL) ) {
-			url = "Nologin.asp";
+	usockaddr_to_uaddr(&item->usa, &conn_ip);
+
+	login_state = http_login_check(&conn_ip);
+	if (login_state == 0) {
+		if (strstr(file, ".htm") != NULL || strstr(file, ".asp") != NULL) {
+			file = "Nologin.asp";
 			query = NULL;
 		}
 	}
 
 	for (handler = mime_handlers; handler->pattern; handler++) {
-		if (match(handler->pattern, url)) {
-			request_timestamp = uptime();
-			
-			if ((login_state == 1 || login_state == 2)
-					/* modify QIS authentication flow */
-					&& (strstr(url, "QIS_") != NULL   // to avoid the interference of the other logined browser. 2008.11 magic
-						|| !strcmp(url, "Logout.asp")
-						|| !strcmp(url, "log_content.asp")
-						|| !strcmp(url, "system_status_data.asp")
-						|| !strcmp(url, "status_internet.asp")
-						|| !strcmp(url, "status_wanlink.asp")
-						|| !strcmp(url, "start_apply.htm")
-						|| !strcmp(url, "httpd_check.htm")
-						)
-					) {
-				turn_off_auth_timestamp = request_timestamp;
-				temp_turn_off_auth = 1; // no auth
-				redirect = !strcmp(url, "Logout.asp");
-			}
-			else if(!strcmp(url, "jquery.js")
-					|| !strcmp(url, "Nologin.asp")
-					) {
-				;	// do nothing.
-			}
-			else if (strstr(url, ".asp") != NULL
-					|| strstr(url, ".cgi") != NULL
-					|| strstr(url, ".htm") != NULL
-					|| strstr(url, ".CFG") != NULL
-					|| strstr(url, "QIS_") != NULL  /* modify QIS authentication flow */
-					) {
-				switch(login_state) {
-					case 0:
-						return;
-					case 1:
-					case 2:
-						turn_off_auth_timestamp = 0;
-						temp_turn_off_auth = 0;
-						redirect = 0;
-						break;
-					case 3:
-						break;
-				}
-			}
-			else if (login_state == 2
-					&& temp_turn_off_auth
-					&& (unsigned long)(request_timestamp-turn_off_auth_timestamp) > 10
-					) {
-				http_logout(&login_ip_tmp);
-				turn_off_auth_timestamp = 0;
-				temp_turn_off_auth = 0;
-				redirect = 0;
-			}
-			
-			if (handler->auth) {
-				if (!temp_turn_off_auth) {
-					handler->auth(reload_passwd);
-					reload_passwd = 0;
-					if (!auth_check(authorization, url, conn_fp))
-						return;
-				}
-				
-				if (!redirect)
-					http_login(&login_ip_tmp, url);
-			}
-			
-			if (method_post) {
-				/* POST */
-				if (handler->input)
-					handler->input(url, conn_fp, clen, boundary);
-				else
-					eat_post_data(conn_fp, clen);
-				
-				try_pull_data(conn_fp, conn_fd);
-			} else {
-				/* GET */
-				if (query)
-					do_uncgi_query(query);
-			}
-			
-			send_headers( 200, "Ok", handler->extra_header, handler->mime_type, conn_fp );
-			if (handler->output)
-				handler->output(url, conn_fp);
-			
+		if (match(handler->pattern, file))
 			break;
-		}
 	}
 
-	if (!handler->pattern)
-		send_error( 404, "Not Found", (char*) 0, "File not found.", conn_fp );
+	if (!handler->pattern) {
+		send_error( 404, "Not Found", NULL, "URL was not found.", conn_fp );
+		return;
+	}
 
-	if (!strcmp(url, "Logout.asp"))
-		http_logout(&login_ip_tmp);
+#if defined (SUPPORT_HTTPS)
+	http_is_ssl = item->ssl;
+#endif
+
+	do_logout = (strcmp(file, "Logout.asp") == 0) ? 1 : 0;
+
+	if (handler->need_auth && login_state > 1 && !do_logout) {
+		if (!auth_check(authorization)) {
+			http_logout(&conn_ip);
+			if (method_id == HTTP_METHOD_POST)
+				eat_post_data(conn_fp, clen);
+			send_authenticate(conn_fp);
+			return;
+		}
+		
+		if (login_state == 2)
+			http_login(&conn_ip);
+	}
+
+	if (method_id == HTTP_METHOD_POST) {
+		if (handler->input)
+			handler->input(file, conn_fp, clen, boundary);
+		else
+			eat_post_data(conn_fp, clen);
+		try_pull_data(conn_fp, item->fd);
+	} else {
+		if (query)
+			do_uncgi_query(query);
+	}
+
+	send_headers( 200, "OK", handler->extra_header, handler->mime_type, conn_fp );
+
+	if (method_id == HTTP_METHOD_HEAD)
+		return;
+
+	if (handler->output)
+		handler->output(file, conn_fp);
+
+	if (do_logout)
+		http_logout(&conn_ip);
 }
 
 static void
-http_reload_params(void)
+reset_lang_dict(void)
 {
 	// reset last loaded XX.dict
 	memset(kw_XX.dict, 0, sizeof(kw_XX.dict));
@@ -1159,18 +987,20 @@ catch_sig(int sig)
 	}
 	else if (sig == SIGHUP)
 	{
-		http_reload_params();
+		reset_lang_dict();
 	}
 	else if (sig == SIGUSR1)
 	{
-		http_reset_login();
+		reset_login_data();
 	}
 	else if (sig == SIGUSR2)
 	{
+		;
 	}
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	FILE *pid_fp;
 	struct timeval tv;
@@ -1243,10 +1073,6 @@ int main(int argc, char **argv)
 	}
 #endif
 
-	memset(&login_ip, 0, sizeof(uaddr));
-	memset(&login_ip_tmp, 0, sizeof(uaddr));
-	memset(&last_login_ip, 0, sizeof(uaddr));
-
 #if defined (USE_IPV6)
 	usa[0].sa.sa_family = (get_ipv6_type() != IPV6_DISABLED) ? AF_INET6 : AF_INET;
 	usa[1].sa.sa_family = usa[0].sa.sa_family;
@@ -1304,16 +1130,13 @@ int main(int argc, char **argv)
 	pid = getpid();
 	snprintf(log_header, sizeof(log_header), "%s[%d]", SYSLOG_ID_HTTPD, pid);
 
-	do_auth(1);
-	snprintf(auth_product, sizeof(auth_product), "%s", nvram_safe_get("productid"));
-
 	if ((pid_fp = fopen("/var/run/httpd.pid", "w"))) {
 		fprintf(pid_fp, "%d", pid);
 		fclose(pid_fp);
 	}
 
-	http_acl_mode = nvram_get_int("http_access");
-	nvram_set_temp("login_timestamp", "");
+	reset_login_data();
+	load_nvram_auth();
 
 	chdir("/www");
 
@@ -1414,15 +1237,13 @@ int main(int argc, char **argv)
 			if (selected) {
 				FILE *conn_fp;
 #if defined (SUPPORT_HTTPS)
-				http_is_ssl = item->ssl;
 				if (item->ssl)
 					conn_fp = ssl_server_fopen(item->fd);
 				else
 #endif
 				conn_fp = fdopen(item->fd, "r+");
 				if (conn_fp) {
-					usockaddr_to_uaddr(&item->usa, &login_ip_tmp);
-					handle_request(conn_fp, item->fd);
+					handle_request(conn_fp, item);
 					fflush(conn_fp);
 #if defined (SUPPORT_HTTPS)
 					http_is_ssl = 0;

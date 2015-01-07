@@ -2988,7 +2988,9 @@ apply_cgi(const char *url, webs_t wp)
 	else if (!strcmp(value, " RestoreNVRAM "))
 	{
 		websApply(wp, "Restarting.asp");
-		eval("/sbin/reset_to_defaults");
+		nvram_set_int("restore_defaults", 1);
+		nvram_commit();
+		sys_reboot();
 		return 0;
 	}
 	else if (!strcmp(value, " RestoreStorage "))

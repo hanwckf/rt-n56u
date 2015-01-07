@@ -386,7 +386,8 @@ erase_storage(void)
 void
 erase_nvram(void)
 {
-	doSystem("/bin/mtd_write %s %s", "erase", "Config");
+	nvram_set_int("restore_defaults", 1);
+	nvram_commit();
 }
 
 static void

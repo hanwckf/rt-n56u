@@ -1007,10 +1007,84 @@ set_wifi_mcs_mode(char* ifname, char* value)
 	doSystem("iwpriv %s set %s=%d", ifname, "HtMcs", i_mcs);
 }
 
+static void
+validate_nvram_lan_param(const char *nvram_name, in_addr_t lan_addr, in_addr_t lan_mask)
+{
+	struct in_addr ina;
+	in_addr_t lan_snet, test_addr;
+
+	test_addr = inet_addr_safe(nvram_safe_get(nvram_name));
+	if (test_addr == INADDR_ANY)
+		return;
+
+	test_addr = ntohl(test_addr);
+	if ((test_addr & lan_mask) == (lan_addr & lan_mask))
+		return;
+
+	lan_snet = ~lan_mask;
+
+	test_addr &= lan_snet;
+	if (test_addr < 1)
+		test_addr = 1;
+	else
+	if (test_addr > (lan_snet-1))
+		test_addr = (lan_snet-1);
+
+	if (test_addr == (lan_addr & lan_snet)) {
+		if (test_addr < (lan_snet-1))
+			test_addr += 1;
+		else
+			test_addr -= 1;
+	}
+
+	ina.s_addr = htonl((lan_addr & lan_mask) | test_addr);
+	nvram_set(nvram_name, inet_ntoa(ina));
+}
+
+static void
+validate_nvram_lan_subnet(void)
+{
+	char nvram_ip[32];
+	in_addr_t lan_addr, lan_mask;
+	int i, i_max_items;
+
+	lan_addr = ntohl(inet_addr(nvram_safe_get("lan_ipaddr")));
+	lan_mask = ntohl(inet_addr(nvram_safe_get("lan_netmask")));
+
+	/* validate dhcp start */
+	validate_nvram_lan_param("dhcp_start", lan_addr, lan_mask);
+
+	/* validate dhcp end */
+	validate_nvram_lan_param("dhcp_end", lan_addr, lan_mask);
+
+	/* validate dhcp static IP */
+	i_max_items = nvram_safe_get_int("dhcp_staticnum_x", 0, 0, 64);
+	for (i = 0; i < i_max_items; i++) {
+		snprintf(nvram_ip, sizeof(nvram_ip), "dhcp_staticip_x%d", i);
+		validate_nvram_lan_param(nvram_ip, lan_addr, lan_mask);
+	}
+
+	if (get_ap_mode())
+		return;
+
+	/* validate port forwards IP */
+	i_max_items = nvram_safe_get_int("vts_num_x", 0, 0, 64);
+	for (i = 0; i < i_max_items; i++) {
+		snprintf(nvram_ip, sizeof(nvram_ip), "vts_ipaddr_x%d", i);
+		validate_nvram_lan_param(nvram_ip, lan_addr, lan_mask);
+	}
+
+	/* validate DMZ IP */
+	validate_nvram_lan_param("dmz_ip", lan_addr, lan_mask);
+}
+
 static int
 validate_asp_apply(webs_t wp, int sid)
 {
 	u64 event_mask;
+	int user_changed = 0;
+	int pass_changed = 0;
+	int lanip_changed = 0;
 	struct variable *v;
 	char *value;
 	char name[64];
@@ -1072,13 +1146,14 @@ validate_asp_apply(webs_t wp, int sid)
 		nvram_set(v->name, value);
 		nvram_modified = 1;
 		
-		if (!strcmp(v->name, "http_username")) {
-			change_passwd = 1;
-			recreate_passwd_unix(1);
-		} else if (!strcmp(v->name, "http_passwd")) {
-			change_passwd = 1;
-			change_passwd_unix(nvram_safe_get("http_username"), value);
-		}
+		if (!strcmp(v->name, "http_username"))
+			user_changed = 1;
+		
+		if (!strcmp(v->name, "http_passwd"))
+			pass_changed = 1;
+		
+		if (!strcmp(v->name, "lan_ipaddr") || !strcmp(v->name, "lan_netmask"))
+			lanip_changed = 1;
 		
 #if BOARD_HAS_5G_RADIO
 		if (!strncmp(v->name, "wl_", 3) && strcmp(v->name, "wl_ssid2"))
@@ -1230,6 +1305,17 @@ validate_asp_apply(webs_t wp, int sid)
 			dbG("debug restart_needed_bits: 0x%llx\n", restart_needed_bits);
 		}
 	}
+
+	if (user_changed || pass_changed)
+		change_passwd = 1;
+
+	if (user_changed)
+		recreate_passwd_unix(1);
+	else if (pass_changed)
+		change_passwd_unix(nvram_safe_get("http_username"), nvram_safe_get("http_passwd"));
+
+	if (lanip_changed)
+		validate_nvram_lan_subnet();
 
 	return (nvram_modified || restart_needed_bits) ? 1 : 0;
 }

@@ -151,6 +151,11 @@ cmd_nas_get_signal_info_cb(struct qmi_dev *qmi, struct qmi_request *req, struct 
 		blobmsg_add_u32(&status, "rsrp", (int32_t) res.data.lte_signal_strength.rsrp);
 		blobmsg_add_u32(&status, "snr", (int32_t) res.data.lte_signal_strength.snr);
 	}
+
+	if (res.set.tdma_signal_strength) {
+		blobmsg_add_string(&status, "type", "tdma");
+		blobmsg_add_u32(&status, "signal", (int32_t) res.data.tdma_signal_strength);
+	}
 }
 
 static enum qmi_cmd_result

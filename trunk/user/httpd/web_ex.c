@@ -3857,11 +3857,6 @@ static char syslog_txt[] =
 "filename=syslog.txt"
 ;
 
-static char cache_static[] =
-"Cache-Control: max-age=2592000\r\n"
-"Expires: Tue, 31 Dec 2014 01:00:00 GMT"
-;
-
 static char no_cache_IE[] =
 "X-UA-Compatible: IE=edge\r\n"
 "Cache-Control: no-store, no-cache, must-revalidate\r\n"
@@ -3871,28 +3866,28 @@ static char no_cache_IE[] =
 
 struct mime_handler mime_handlers[] = {
 	/* cached javascript files w/o translations */
-	{ "jquery.js", "text/javascript", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "**bootstrap.min.js", "text/javascript", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "**engage.itoggle.min.js", "text/javascript", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "**highstock.js", "text/javascript", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "**formcontrol.js", "text/javascript", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "itoggle.js", "text/javascript", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "modem_isp.js", "text/javascript", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "client_function.js", "text/javascript", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "disk_functions.js", "text/javascript", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "md5.js", "text/javascript", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "tmcal.js", "text/javascript", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "tmhist.js", "text/javascript", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "tmmenu.js", "text/javascript", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "jquery.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "**bootstrap.min.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "**engage.itoggle.min.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "**highstock.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "**formcontrol.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "itoggle.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "modem_isp.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "client_function.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "disk_functions.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "md5.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "tmcal.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "tmhist.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "tmmenu.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 
 	/* cached css  */
-	{ "**.css", "text/css", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "**.css", "text/css", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 
 	/* cached images */
-	{ "**.png", "image/png", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "**.gif", "image/gif", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "**.jpg", "image/jpeg", cache_static, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "**.ico", "image/x-icon", cache_static, NULL, do_file, 0 }, // 2013.04 Eagle23
+	{ "**.png", "image/png", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "**.gif", "image/gif", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "**.jpg", "image/jpeg", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "**.ico", "image/x-icon", NULL, NULL, do_file, 0 }, // 2013.04 Eagle23
 
 	/* no-cached html/asp files with translations */
 	{ "**.htm*", "text/html", no_cache_IE, do_html_apply_post, do_ej, 1 },
@@ -3900,11 +3895,6 @@ struct mime_handler mime_handlers[] = {
 
 	/* no-cached javascript files with translations */
 	{ "**.js",  "text/javascript", no_cache_IE, NULL, do_ej, 1 },
-
-	/* misc objects */
-	{ "**.svg", "image/svg+xml", NULL, NULL, do_file, 0 },
-	{ "**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, 0 },
-	{ "**.htc", "text/x-component", NULL, NULL, do_file, 0 },
 
 	/* downloads objects */
 	{ "Settings_**.CFG", "application/force-download", NULL, NULL, do_nvram_file, 1 },

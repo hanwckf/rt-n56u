@@ -49,6 +49,7 @@
 #define SERVER_PORT		80
 #define SERVER_PORT_SSL		443
 #define PROTOCOL		"HTTP/1.0"
+#define CACHE_AGE_VAL		(30 * (24*60*60))
 #define RFC1123FMT		"%a, %d %b %Y %H:%M:%S GMT"
 #define MAX_LISTEN_BACKLOG	511
 #define MAX_CONN_ACCEPT		50
@@ -590,10 +591,10 @@ initialize_listen_socket(usockaddr* usaP, int http_port)
 }
 
 static void
-send_headers( int status, const char *title, const char *extra_header, const char *mime_type, FILE *conn_fp )
+send_headers( int status, const char *title, const char *extra_header, const char *mime_type, const struct stat *st, FILE *conn_fp )
 {
 	time_t now;
-	char timebuf[100];
+	char timebuf[64];
 
 	now = time(NULL);
 	strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &now ) );
@@ -601,8 +602,21 @@ send_headers( int status, const char *title, const char *extra_header, const cha
 	fprintf( conn_fp, "%s %d %s\r\n", PROTOCOL, status, title );
 	fprintf( conn_fp, "Server: %s\r\n", SERVER_NAME );
 	fprintf( conn_fp, "Date: %s\r\n", timebuf );
-	if (extra_header)
+	if (extra_header) {
 		fprintf( conn_fp, "%s\r\n", extra_header );
+	} else if (st) {
+		now += CACHE_AGE_VAL;
+		strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &now ) );
+		fprintf( conn_fp, "Cache-Control: max-age=%u\r\n", CACHE_AGE_VAL );
+		fprintf( conn_fp, "Expires: %s\r\n", timebuf );
+		if (st->st_mtime != 0) {
+			now = st->st_mtime;
+			strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &now ) );
+			fprintf( conn_fp, "Last-Modified: %s\r\n", timebuf );
+		}
+		if (st->st_size > 0)
+			fprintf( conn_fp, "Content-Length: %lu\r\n", st->st_size );
+	}
 	if (mime_type)
 		fprintf( conn_fp, "Content-Type: %s\r\n", mime_type );
 	fprintf( conn_fp, "Connection: close\r\n" );
@@ -612,7 +626,7 @@ send_headers( int status, const char *title, const char *extra_header, const cha
 static void
 send_error( int status, const char *title, const char *extra_header, const char *text, FILE *conn_fp )
 {
-	send_headers( status, title, extra_header, "text/html", conn_fp );
+	send_headers( status, title, extra_header, "text/html", NULL, conn_fp );
 	fprintf( conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title );
 	fprintf( conn_fp, "%s\n", text );
 	fprintf( conn_fp, "</BODY></HTML>\n" );
@@ -812,6 +826,7 @@ handle_request(FILE *conn_fp, const conn_item_t *item)
 	char *cur, *end, *cp, *file, *query;
 	int len, login_state, method_id, do_logout, clen = 0;
 	struct mime_handler *handler;
+	struct stat st, *p_st = NULL;
 	uaddr conn_ip;
 
 	/* Initialize the request variables. */
@@ -958,13 +973,17 @@ handle_request(FILE *conn_fp, const conn_item_t *item)
 			do_uncgi_query(query);
 	}
 
-	send_headers( 200, "OK", handler->extra_header, handler->mime_type, conn_fp );
+	if (handler->output == do_file) {
+		if (stat(file, &st) == 0 && !S_ISDIR(st.st_mode))
+			p_st = &st;
+	}
 
-	if (method_id == HTTP_METHOD_HEAD)
-		return;
+	send_headers( 200, "OK", handler->extra_header, handler->mime_type, p_st, conn_fp );
 
-	if (handler->output)
-		handler->output(file, conn_fp);
+	if (method_id != HTTP_METHOD_HEAD) {
+		if (handler->output)
+			handler->output(file, conn_fp);
+	}
 
 	if (do_logout)
 		http_logout(&conn_ip);

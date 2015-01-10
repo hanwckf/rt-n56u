@@ -825,6 +825,7 @@ handle_request(FILE *conn_fp, const conn_item_t *item)
 	char *method, *path, *protocol, *authorization, *boundary;
 	char *cur, *end, *cp, *file, *query;
 	int len, login_state, method_id, do_logout, clen = 0;
+	time_t if_modified_since = (time_t)-1;
 	struct mime_handler *handler;
 	struct stat st, *p_st = NULL;
 	uaddr conn_ip;
@@ -874,6 +875,11 @@ handle_request(FILE *conn_fp, const conn_item_t *item)
 			cp = cur + 15;
 			cp += strspn( cp, " \t" );
 			clen = strtoul( cp, NULL, 0 );
+		}
+		else if (strncasecmp( cur, "If-Modified-Since:", 18) == 0) {
+			cp = cur + 18;
+			cp += strspn( cp, " \t" );
+			if_modified_since = tdate_parse(cp);
 		}
 		else if ((cp = strstr( cur, "boundary=" ))) {
 			boundary = cp + 9;
@@ -974,8 +980,14 @@ handle_request(FILE *conn_fp, const conn_item_t *item)
 	}
 
 	if (handler->output == do_file) {
-		if (stat(file, &st) == 0 && !S_ISDIR(st.st_mode))
+		if (stat(file, &st) == 0 && !S_ISDIR(st.st_mode)) {
 			p_st = &st;
+			if (!handler->extra_header && if_modified_since != (time_t)-1 && if_modified_since == st.st_mtime) {
+				st.st_size = 0; /* not send Content-Length */
+				send_headers( 304, "Not Modified", NULL, handler->mime_type, p_st, conn_fp );
+				return;
+			}
+		}
 	}
 
 	send_headers( 200, "OK", handler->extra_header, handler->mime_type, p_st, conn_fp );

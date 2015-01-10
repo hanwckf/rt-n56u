@@ -149,6 +149,8 @@ extern int load_dictionary (char *lang, pkw_t pkw);
 extern void release_dictionary (pkw_t pkw);
 extern char *get_alert_msg_from_dict(const char *msg_id);
 
+// tdate_parse.c
+extern time_t tdate_parse(char *str);
 
 // httpd.c
 extern long uptime(void);

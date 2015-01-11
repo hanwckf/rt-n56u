@@ -161,15 +161,15 @@ function show_device(){
 	var i;
 	var dev_type_usb;
 	var usb_ports_num = get_usb_ports_num();
-	
+
 	if (usb_ports_num < 2)
 		$("row_usb_port2").style.display = "none";
-	
+
 	if (usb_ports_num < 1) {
 		$("row_usb_port1").style.display = "none";
 		return;
 	}
-	
+
 	dev_type_usb = get_device_type_usb(1);
 	switch(dev_type_usb){
 		case "hub":
@@ -200,10 +200,10 @@ function show_device(){
 		default:
 			no_device_html(0);
 	}
-	
+
 	if (usb_ports_num < 2)
 		return;
-	
+
 	dev_type_usb = get_device_type_usb(2);
 	switch(dev_type_usb){
 		case "hub":
@@ -238,10 +238,9 @@ function show_device(){
 
 function disk_html(device_order, all_disk_order){
 	var device_icon = $("deviceIcon_"+device_order);
-	var device_dec = $("deviceDec_"+device_order);
+	var device_dec = $j("#deviceDec_"+device_order);
 	var icon_html_code = '';
 	var dec_html_code = '';
-	
 	var disk_model_name = "";
 	var TotalSize;
 	var mount_num = getDiskMountedNum(all_disk_order);
@@ -254,7 +253,7 @@ function disk_html(device_order, all_disk_order){
 		disk_model_name = foreign_disk_model_info()[all_disk_order];
 	else
 		disk_model_name = blank_disks()[all_disk_order-foreign_disks().length];
-	
+
 	if(mount_num > 0){
 		if(all_disk_order < foreign_disks().length)
 			TotalSize = simpleNum(foreign_disk_total_size()[all_disk_order]);
@@ -287,14 +286,14 @@ function disk_html(device_order, all_disk_order){
 
 	device_icon.innerHTML = icon_html_code;
 
-	$j(device_dec).addClass("badge badge-success");
-	$j(device_dec).css({paddingLeft: '3px'});
-	$j(device_dec).html('<i class="icon-share icon-white"></i>');
+	device_dec.addClass("badge badge-success");
+	device_dec.css({paddingLeft: '3px'});
+	device_dec.html('<i class="icon-share icon-white"></i>');
 }
 
 function printer_html(device_seat, printer_order){
 	var device_icon = $("deviceIcon_"+device_seat);
-	var device_dec = $("deviceDec_"+device_seat);
+	var device_dec = $j("#deviceDec_"+device_seat);
 	var icon_html_code = '';
 
 	icon_html_code += '<a href="device-map/printer.asp" target="statusframe" style="outline:0;">\n';
@@ -303,14 +302,14 @@ function printer_html(device_seat, printer_order){
 
 	device_icon.innerHTML = icon_html_code;
 
-	$j(device_dec).addClass("badge badge-success");
-	$j(device_dec).css({paddingLeft: '3px'});
-	$j(device_dec).html('<i class="icon-share icon-white"></i>');
+	device_dec.addClass("badge badge-success");
+	device_dec.css({paddingLeft: '3px'});
+	device_dec.html('<i class="icon-share icon-white"></i>');
 }
 
 function modem_html(device_seat, modem_order){
 	var device_icon = $("deviceIcon_"+device_seat);
-	var device_dec = $("deviceDec_"+device_seat);
+	var device_dec = $j("#deviceDec_"+device_seat);
 	var icon_html_code = '';
 
 	icon_html_code += '<a href="device-map/modem.asp" target="statusframe" style="outline:0;">\n';
@@ -319,39 +318,38 @@ function modem_html(device_seat, modem_order){
 
 	device_icon.innerHTML = icon_html_code;
 
-	$j(device_dec).addClass("badge badge-success");
-	$j(device_dec).css({paddingLeft: '3px'});
-	$j(device_dec).html('<i class="icon-share icon-white"></i>');
+	device_dec.addClass("badge badge-success");
+	device_dec.css({paddingLeft: '3px'});
+	device_dec.html('<i class="icon-share icon-white"></i>');
 }
 
 function hub_html(device_seat){
 	var device_icon = $("deviceIcon_"+device_seat);
-	var device_dec = $("deviceDec_"+device_seat);
+	var device_dec = $j("#deviceDec_"+device_seat);
 	var icon_html_code = '';
-	
+
 	icon_html_code += '<a href="device-map/hub.asp" target="statusframe" style="outline:0;">\n';
 	icon_html_code += '    <div id="iconHub'+device_seat+'" class="big-icons big-icons-hub" onclick="clickEvent(this);"></div>\n';
 	icon_html_code += '</a>\n';
-	
+
 	device_icon.innerHTML = icon_html_code;
 
-	$j(device_dec).addClass("badge badge-success");
-	$j(device_dec).css({paddingLeft: '3px'});
-	$j(device_dec).html('<i class="icon-share icon-white"></i>');
+	device_dec.addClass("badge badge-success");
+	device_dec.css({paddingLeft: '3px'});
+	device_dec.html('<i class="icon-share icon-white"></i>');
 }
 
 function no_device_html(device_seat){
 	var device_icon = $("deviceIcon_"+device_seat);
-	var device_dec = $("deviceDec_"+device_seat);
+	var device_dec = $j("#deviceDec_"+device_seat);
 	var icon_html_code = '';
 	var dec_html_code = '';
-	
+
 	icon_html_code += '    <div class="iconNo"></div>';
-	
 	dec_html_code += '<span class="account style4"><#NoDevice#></span>\n';
-	
+
 	device_icon.innerHTML = icon_html_code;
-	//device_dec.innerHTML = dec_html_code;
+	//device_dec.html(dec_html_code);
 }
 
 var avoidkey;

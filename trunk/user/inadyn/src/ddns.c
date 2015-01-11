@@ -191,14 +191,17 @@ static int parse_my_ip_address(ddns_t *ctx, int UNUSED(servernum))
 {
 	int found = 0;
 	char *accept = "0123456789.";
-	char *needle, *haystack;
+	char *needle, *haystack, *end;
 	struct in_addr addr;
 
 	if (!ctx || ctx->http_transaction.rsp_len <= 0 || !ctx->http_transaction.p_rsp)
 		return RC_INVALID_POINTER;
 
 	haystack = ctx->http_transaction.p_rsp_body;
-	do {
+	needle = haystack;
+	end = haystack + strlen(haystack) - 1;
+
+	while (needle && haystack < end) {
 		/* Try to find first decimal number (begin of IP) */
 		needle = strpbrk(haystack, accept);
 		if (needle) {
@@ -208,7 +211,7 @@ static int parse_my_ip_address(ddns_t *ctx, int UNUSED(servernum))
 				needle[len] = 0;
 
 			if (!inet_aton(needle, &addr)) {
-				haystack = needle + 1;
+				haystack = needle + len + 1;
 				continue;
 			}
 
@@ -217,7 +220,6 @@ static int parse_my_ip_address(ddns_t *ctx, int UNUSED(servernum))
 			break;
 		}
 	}
-	while (needle);
 
 	if (found) {
 		int i, anychange = 0;

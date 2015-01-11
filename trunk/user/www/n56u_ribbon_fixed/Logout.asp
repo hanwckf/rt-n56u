@@ -10,9 +10,25 @@
 <link rel="icon" href="images/favicon.png">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
+<script>
+function initial(){
+	var xmlhttp;
+	try{
+		if (window.XMLHttpRequest)
+			xmlhttp=new XMLHttpRequest();
+		else
+			xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	}catch (e){
+		xmlhttp=null;
+	}
+	if (xmlhttp != null){
+		xmlhttp.open("HEAD","logout",true,"logout","");
+		xmlhttp.send(null);
+	}
+}
+</script>
 </head>
-
-<body>
+<body onload="initial()">
     <div style="margin-top: 50px;">
         <center>
             <div class="well" style="max-width: 600px;">

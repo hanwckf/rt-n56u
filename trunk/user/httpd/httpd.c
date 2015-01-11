@@ -939,6 +939,12 @@ handle_request(FILE *conn_fp, const conn_item_t *item)
 		}
 	}
 
+	/* special case for reset browser credentials */
+	if (strcmp(file, "logout") == 0) {
+		send_headers( 401, "Unauthorized", NULL, NULL, NULL, conn_fp );
+		return;
+	}
+
 	for (handler = mime_handlers; handler->pattern; handler++) {
 		if (match(handler->pattern, file))
 			break;

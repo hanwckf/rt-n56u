@@ -84,6 +84,7 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_firewall
 	cd $(INSTALLDIR)/sbin && ln -sf rc pids
 	cd $(INSTALLDIR)/sbin && ln -sf rc rstats
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_wan
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_wan
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_networkmap
 	cd $(INSTALLDIR)/sbin && ln -sf rc detect_link

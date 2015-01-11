@@ -1251,6 +1251,9 @@ manual_wan_disconnect(void)
 
 	logmessage(LOGNAME, "Perform WAN %s %s", "manual", "disconnect");
 
+	if (get_ap_mode())
+		return;
+
 	wan_proto = get_wan_proto(0);
 	if (get_usb_modem_wan(0))
 	{

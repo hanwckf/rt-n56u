@@ -1159,7 +1159,8 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 				include_vts_filter(fp, lan_ip, logaccept, 1);
 			
 			/* Jump to IGD UPnP/NAT-PMP (miniupnpd chain) */
-			fprintf(fp, "-A %s -j %s\n", dtype, MINIUPNPD_CHAIN_IP4_FORWARD);
+			if (nvram_invmatch("upnp_enable_x", "0"))
+				fprintf(fp, "-A %s -j %s\n", dtype, MINIUPNPD_CHAIN_IP4_FORWARD);
 #endif
 		}
 		

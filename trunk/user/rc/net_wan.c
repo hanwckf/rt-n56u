@@ -153,25 +153,33 @@ reset_wan_vars(void)
 
 	wan_proto = get_wan_proto(unit);
 
-	if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC || nvram_match("x_DHCPClient", "0"))
-	{
+	if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC) {
 		set_wan_unit_param(unit, "ipaddr");
 		set_wan_unit_param(unit, "netmask");
 		set_wan_unit_param(unit, "gateway");
 		set_wan_unit_param(unit, "mtu");
-	}
-	else
-	{
+	} else {
 		set_wan_unit_value(unit, "ipaddr", "0.0.0.0");
 		set_wan_unit_value(unit, "netmask", "0.0.0.0");
 		set_wan_unit_value(unit, "gateway", "0.0.0.0");
 		set_wan_unit_value(unit, "mtu", "");
 	}
 
-	man_addr = get_wan_unit_value(unit, "ipaddr");
-	man_mask = get_wan_unit_value(unit, "netmask");
-	man_gate = get_wan_unit_value(unit, "gateway");
-	man_mtu  = get_wan_unit_value(unit, "mtu");
+	man_addr = "0.0.0.0";
+	man_mask = "0.0.0.0";
+	man_gate = "0.0.0.0";
+	man_mtu  = "";
+
+	if (nvram_match("x_DHCPClient", "0")) {
+		if (wan_proto == IPV4_WAN_PROTO_PPTP ||
+		    wan_proto == IPV4_WAN_PROTO_L2TP ||
+		   (wan_proto == IPV4_WAN_PROTO_PPPOE && nvram_match("wan_pppoe_man", "1"))) {
+			man_addr = nvram_safe_get("wan_ipaddr");
+			man_mask = nvram_safe_get("wan_netmask");
+			man_gate = nvram_safe_get("wan_gateway");
+			man_mtu  = nvram_safe_get("wan_mtu");
+		}
+	}
 
 	set_wan_unit_value(unit, "man_ipaddr", man_addr);
 	set_wan_unit_value(unit, "man_netmask", man_mask);
@@ -180,8 +188,7 @@ reset_wan_vars(void)
 
 	if (wan_proto == IPV4_WAN_PROTO_PPPOE ||
 	    wan_proto == IPV4_WAN_PROTO_PPTP ||
-	    wan_proto == IPV4_WAN_PROTO_L2TP)
-	{
+	    wan_proto == IPV4_WAN_PROTO_L2TP) {
 		nvram_set_temp("wanx_ipaddr", man_addr);
 		if (is_valid_ipv4(man_addr) && is_valid_ipv4(man_mask))
 			nvram_set_temp("wanx_netmask", man_mask);

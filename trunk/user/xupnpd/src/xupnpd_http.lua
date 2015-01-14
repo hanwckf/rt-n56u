@@ -1,4 +1,4 @@
--- Copyright (C) 2011-2013 Anton Burdinuk
+-- Copyright (C) 2011-2015 Anton Burdinuk
 -- clark15b@gmail.com
 -- https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
 
@@ -84,6 +84,7 @@ http_templ=
 }
 
 dofile('xupnpd_soap.lua')
+dofile('xupnpd_webapp.lua')
 
 function compile_templates()
     local path=cfg.tmp_path..'xupnpd-cache'
@@ -263,6 +264,9 @@ function http_handler(what,from,port,msg)
             dofile(http_ui_main)
             ui_handler(f.args,msg.data or '',from_ip,f.url)
         end
+        return
+    elseif string.find(f.url,'^/app/?') then
+        webapp_handler(f.args,msg.data or '',from_ip,f.url)
         return
     end
 

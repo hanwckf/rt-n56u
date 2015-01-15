@@ -17,9 +17,22 @@
 #include <linux/hardirq.h>
 #include <asm-generic/bitops/find.h>
 
+unsigned int gic_present;
 unsigned long _gic_base;
 unsigned int gic_irq_base;
 unsigned int gic_irq_flags[GIC_NUM_INTRS];
+
+struct gic_pcpu_mask {
+	DECLARE_BITMAP(pcpu_mask, GIC_NUM_INTRS);
+};
+
+struct gic_pending_regs {
+	DECLARE_BITMAP(pending, GIC_NUM_INTRS);
+};
+
+struct gic_intrmask_regs {
+	DECLARE_BITMAP(intrmask, GIC_NUM_INTRS);
+};
 
 static struct gic_pcpu_mask pcpu_masks[NR_CPUS];
 static struct gic_pending_regs pending_regs[NR_CPUS];

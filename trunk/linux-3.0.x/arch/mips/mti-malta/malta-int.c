@@ -46,7 +46,6 @@
 #include <asm/gcmpregs.h>
 
 int gcmp_present = -1;
-int gic_present;
 static unsigned long _msc01_biu_base;
 static unsigned long _gcmp_base;
 static unsigned int ipi_map[NR_CPUS];

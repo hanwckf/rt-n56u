@@ -174,9 +174,11 @@ void ra_systick_event_broadcast(const struct cpumask *mask)
 	(*((volatile u32 *)(RALINK_TESTSTAT))) = reg;
 	spin_unlock_irqrestore(&ra_teststat_lock, flags);
 
+#if defined (CONFIG_MIPS_GIC_IPI)
 	/* send IPI to other VPEs, using "ipi_call" GIC(60~63), MIPS int#2  */
 	for_each_cpu(i, mask)
 		gic_send_ipi(plat_ipi_call_int_xlate(i));
+#endif
 }
 #endif
 

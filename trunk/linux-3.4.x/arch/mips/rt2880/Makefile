@@ -20,7 +20,7 @@ else
 obj-y += irq.o
 endif
 
-obj-$(CONFIG_MIPS_MT_SMP) += malta-amon.o
+obj-$(CONFIG_MIPS_CMP) += malta-amon.o
 
 obj-$(CONFIG_PCI) += pci.o
 obj-$(CONFIG_MTD_NAND_MTK) += dev-nand.o

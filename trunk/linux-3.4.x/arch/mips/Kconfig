@@ -25,7 +25,6 @@ config MIPS
 	select GENERIC_IRQ_PROBE
 	select GENERIC_IRQ_SHOW
 	select HAVE_ARCH_JUMP_LABEL
-#	select IRQ_FORCED_THREADING
 	select HAVE_MEMBLOCK
 	select HAVE_MEMBLOCK_NODE_MAP
 	select ARCH_DISCARD_MEMBLOCK
@@ -154,7 +153,6 @@ config RALINK_MT7621
 	select SYS_SUPPORTS_SMP
 	select SYS_SUPPORTS_MIPS_CMP
 	select IRQ_GIC
-	select IRQ_FORCED_THREADING
 	help
 	  Ralink evaluation board based on MT7621
 
@@ -1991,8 +1989,8 @@ config MIPS_MT_DISABLED
 config MIPS_MT_SMP
 	bool "Use 1 TC on each available VPE for SMP"
 	depends on SYS_SUPPORTS_MULTITHREADING
-#	select CPU_MIPSR2_IRQ_VI
-#	select CPU_MIPSR2_IRQ_EI
+	select CPU_MIPSR2_IRQ_VI if !RALINK_MT7621
+	select CPU_MIPSR2_IRQ_EI if !RALINK_MT7621
 	select SYNC_R4K
 	select MIPS_GIC_IPI
 	select MIPS_MT
@@ -2270,6 +2268,7 @@ config SMP
 	bool "Multi-Processing support"
 	depends on SYS_SUPPORTS_SMP
 	select IRQ_PER_CPU
+	select IRQ_FORCED_THREADING
 	select USE_GENERIC_SMP_HELPERS
 	help
 	  This enables support for systems with more than one CPU. If you have

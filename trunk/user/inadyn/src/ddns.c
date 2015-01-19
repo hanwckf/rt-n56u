@@ -430,16 +430,8 @@ static int update_alias_table(ddns_t *ctx)
 static int get_encoded_user_passwd(ddns_t *ctx)
 {
 	int i, rc = 0;
-	char *buf = NULL;
-	size_t len;
-
-	/* Take base64 encoding into account when allocating buf */
-	len = strlen(ctx->info[0].creds.password) + strlen(ctx->info[0].creds.username) + 2;
-	len = (len / 3 + ((len % 3) ? 1 : 0)) * 4; /* output length = 4 * [input len / 3] */
-
-	buf = calloc(len, sizeof(char));
-	if (!buf)
-		return RC_OUT_OF_MEMORY;
+	char buf[1024] = {0};
+	size_t len, pwlen;
 
 	for (i = 0; i < ctx->info_count; i++) {
 		int rc2;
@@ -452,9 +444,16 @@ static int get_encoded_user_passwd(ddns_t *ctx)
 		/* Concatenate username and password with a ':', without
 		 * snprintf(), since that can cause information loss if
 		 * the password has "\=" or similar in it, issue #57 */
-		strcpy(buf, info->creds.username);
+		len = MIN(strlen(info->creds.username), sizeof(buf)-3);
+		if (len > 0)
+			strncpy(buf, info->creds.username, len);
+		buf[len] = 0;
 		strcat(buf, ":");
-		strcat(buf, info->creds.password);
+		pwlen = strlen(buf);
+		len = MIN(strlen(info->creds.password), sizeof(buf)-pwlen-1);
+		if (len > 0)
+			strncpy(&buf[pwlen], info->creds.password, len);
+		buf[pwlen+len] = 0;
 
 		/* query required buffer size for base64 encoded data */
 		base64_encode(NULL, &dlen, (unsigned char *)buf, strlen(buf));
@@ -476,8 +475,6 @@ static int get_encoded_user_passwd(ddns_t *ctx)
 		info->creds.encoded = 1;
 		info->creds.size = strlen(info->creds.encoded_password);
 	}
-
-	free(buf);
 
 	return rc;
 }

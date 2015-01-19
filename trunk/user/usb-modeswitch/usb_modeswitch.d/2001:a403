@@ -1,0 +1,4 @@
+# D-Link DWM-156 A8
+TargetVendor=0x2001
+TargetProduct=0x7d0b
+StandardEject=1

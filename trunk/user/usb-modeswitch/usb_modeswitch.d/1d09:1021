@@ -1,0 +1,4 @@
+# Aiko 81D
+TargetVendor=0x1d09
+TargetProduct=0x1010
+StandardEject=1

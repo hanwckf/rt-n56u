@@ -1,0 +1,4 @@
+# Aiko 81D, fw with wrong vendor ID
+TargetVendor=0xed09
+TargetProduct=0x1010
+StandardEject=1

@@ -1,0 +1,4 @@
+# Unknown devices
+TargetVendor=0x257a
+TargetProductList="1601,161f,162f,261f,262f,361f,362f"
+StandardEject=1

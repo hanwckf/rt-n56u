@@ -2,4 +2,4 @@
 TargetVendor=0x1004
 TargetProductList="6000,6114"
 MessageContent="555342431234567803000000800006f1010100000000000000000000000000"
-NeedResponse=1 
+NeedResponse=1

@@ -1,4 +1,4 @@
-# Mediatek MT6229
+# Mediatek MT6229, Micromax MMX 377G
 TargetVendor=0x2020
-TargetProduct=0x2000
+TargetProductList="2000,4010"
 MessageContent="555342430820298900000000000003f0010100000000000000000000000000"

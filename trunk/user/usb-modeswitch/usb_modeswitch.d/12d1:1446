@@ -1,4 +1,4 @@
-# Huawei, newer modems
+# Huawei, newer modems, and rebrandings
 TargetVendor=0x12d1
-TargetProductList="1001,1406,140b,140c,1412,141b,1432,1433,1436,14ac,1506,150c,1511"
+TargetProductList="1001,1404,1406,140b,140c,1412,1417,141b,1429,1432,1433,1436,14ac,1506,150c,1511"
 HuaweiNewMode=1

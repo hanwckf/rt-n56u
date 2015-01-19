@@ -1,0 +1,4 @@
+# ZTE / Vodafone K4201
+TargetVendor=0x19d2
+TargetProduct=0x0017
+StandardEject=1

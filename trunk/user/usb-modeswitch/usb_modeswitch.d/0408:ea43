@@ -1,4 +1,4 @@
-# Quanta MobileGenie 4G lte
+# Quanta MobileGenie 4G lte, Quanta 1K6
 TargetVendor=0x0408
-TargetProduct=0xea47
+TargetProductList="ea47,ea49"
 StandardEject=1

@@ -2,6 +2,8 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.2.1, 2015/01/15
+    Fixed unreliable switching function for Cisco AM10
 Version 2.2.0, 2014/05/29
     Introduction of parameter "HuaweiNewMode", wrapping the standard bulk
     message for all newer Huawei devices; support for generic fall-back

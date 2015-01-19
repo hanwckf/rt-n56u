@@ -1,0 +1,5 @@
+# Onda MDC655 Variant
+TargetVendor=0x1ee8
+TargetProduct=0x004e
+MessageContent="555342431234567800000000000010ff000000000000000000000000000000"
+NeedResponse=1

@@ -1,8 +1,8 @@
 /*
   Mode switching tool for controlling mode of 'multi-state' USB devices
-  Version 2.2.0, 2014/05/29
+  Version 2.2.1, 2015/01/15
 
-  Copyright (C) 2007 - 2014 Josua Dietze (mail to "digidietze" at the domain
+  Copyright (C) 2007 - 2015 Josua Dietze (mail to "digidietze" at the domain
   of the home page; or write a personal message through the forum to "Josh".
   NO SUPPORT VIA E-MAIL - please use the forum for that)
 
@@ -1324,6 +1324,9 @@ void switchCiscoMode() {
 	if (show_progress)
 		fflush(output);
 
+//	ret = read_bulk(ResponseEndpoint, ByteString, 13);
+//	SHOW_PROGRESS(output," Extra response (CSW) read, result %d\n",ret);
+
 	for (i=0; i<11; i++) {
 		if ( sendMessage(msg[i], i+1) )
 			goto skip;
@@ -1332,6 +1335,14 @@ void switchCiscoMode() {
 		ret = read_bulk(ResponseEndpoint, ByteString, 13);
 		if (ret < 0)
 			goto skip;
+		if (ret < 13) {
+			SHOW_PROGRESS(output," Repeat reading the response to bulk message %d ...\n",i+1);
+			ret = read_bulk(ResponseEndpoint, ByteString, 13);
+		}
+		if (ret < 13) {
+			SHOW_PROGRESS(output," Repeat reading the response to bulk message %d ...\n",i+1);
+			ret = read_bulk(ResponseEndpoint, ByteString, 13);
+		}
 	}
 
 	if (ReleaseDelay) {

@@ -1,0 +1,4 @@
+# StrongRising STD808
+TargetVendor=0x21f5
+TargetProduct=0x1101
+StandardEject=1

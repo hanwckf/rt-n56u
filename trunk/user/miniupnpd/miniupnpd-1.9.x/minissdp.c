@@ -1082,7 +1082,7 @@ ProcessSSDPData(int s, const char *bufr, int n,
 	}
 	else
 	{
-		syslog(LOG_NOTICE, "Unknown udp packet received from %s", sender_str);
+		syslog(LOG_DEBUG, "Unknown udp packet received from %s", sender_str);
 	}
 }
 

@@ -8,17 +8,15 @@
 
 #define ETHER_ADDR_LEN			6
 
-#define PHYS_TO_K1(physaddr)		KSEG1ADDR(physaddr)
 #define phys_to_bus(a)			(a & 0x1FFFFFFF)
-
-#define sysRegRead(phys)		(*(volatile u32 *)PHYS_TO_K1(phys))
-#define sysRegWrite(phys, val)		((*(volatile u32 *)PHYS_TO_K1(phys)) = (val))
 
 /* Register Map Detail */
 #define REG_SYSCFG1			(RALINK_SYSCTL_BASE + 0x14)
 
 // Define Whole FE Reset Register
 #define REG_RSTCTRL			(RALINK_SYSCTL_BASE + 0x34)
+
+#define REG_AGPIOCFG			(RALINK_SYSCTL_BASE + 0x3C)
 
 #if defined (CONFIG_RALINK_MT7621)
 #define REG_CLK_CFG_0			(RALINK_SYSCTL_BASE + 0x2C)
@@ -89,6 +87,13 @@
 #if defined (CONFIG_RALINK_MT7621)
 #define GE2_LINK_INT			BIT(25)
 #endif
+
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+#define FE_INT_INIT2_VALUE		(GE2_LINK_INT)
+#else
+#define FE_INT_INIT2_VALUE		0
+#endif
+
 
 /* Register Categories Definition */
 #define RAFRAMEENGINE_OFFSET		0x0000
@@ -529,11 +534,6 @@
 #define TD_CHAIN			0x01000000	/* Chained */
 
 #define TD_SET				0x08000000	/* Setup Packet */
-
-
-#define RSTCTL				(0x34)
-#define RSTCTL_RSTENET1			(1<<19)
-#define RSTCTL_RSTENET2			(1<<20)
 
 #define INIT_VALUE_OF_RT3883_PSE_FQ_CFG	0xff908000
 #define INIT_VALUE_OF_PSE_FQFC_CFG	0x80504000

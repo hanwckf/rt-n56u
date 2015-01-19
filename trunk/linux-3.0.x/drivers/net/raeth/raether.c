@@ -20,6 +20,9 @@
 #if defined (CONFIG_RAETH_DHCP_TOUCH)
 #include "ra_esw_dhcpc.h"
 #endif
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+#include "ra_esw_mt7621.h"
+#endif
 #if defined (CONFIG_RAETH_ESW_CONTROL)
 #include "ra_esw_ioctl.h"
 #endif
@@ -241,9 +244,9 @@ static void update_hw_vlan_tx(void)
 	for (i = 0; i < 8; i++) {
 		reg_vlan = ((u32)vlan_id_map[(i*2)+1] << 16) | (u32)vlan_id_map[i*2];
 #if defined (CONFIG_RALINK_MT7620)
-		*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0x430 + i*4) = reg_vlan;
+		sysRegWrite(RALINK_FRAME_ENGINE_BASE + 0x430 + i*4, reg_vlan);
 #else
-		*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0x0a8 + i*4) = reg_vlan;
+		sysRegWrite(RALINK_FRAME_ENGINE_BASE + 0x0a8 + i*4, reg_vlan);
 #endif
 	}
 }
@@ -292,6 +295,7 @@ static void fe_reset(void)
 	val |= RALINK_ESW_RST;
 #endif
 
+	/* Reset PPE at this point */
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 	val |= RALINK_PPE_RST;
 #endif
@@ -312,9 +316,8 @@ static void fe_reset(void)
 		val_clk &= 0xffffff9f;
 		val_clk |= (0x1 << 5);
 		sysRegWrite(REG_CLK_CFG_0, val_clk);
-		mdelay(1);
+		udelay(1000);
 	}
-
 	val &= ~(RALINK_ETH_RST);
 #endif
 
@@ -328,7 +331,7 @@ static void fe_reset(void)
 
 	val &= ~(RALINK_FE_RST);
 	sysRegWrite(REG_RSTCTRL, val);
-	udelay(10);
+	udelay(100);
 }
 
 static void fe_mac1_addr_set(unsigned char p[6])
@@ -1308,6 +1311,47 @@ static inline void raeth_xmit_clean(struct net_device *dev, END_DEVICE *ei_local
 	__netif_tx_unlock(txq);
 }
 
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+static irqreturn_t dispatch_int_status2(END_DEVICE *ei_local)
+{
+	u32 reg_int_val;
+
+	reg_int_val = sysRegRead(FE_INT_STATUS2);
+	if (unlikely(!reg_int_val))
+		return IRQ_NONE;
+
+	sysRegWrite(FE_INT_STATUS2, reg_int_val);
+
+	if (!ei_local->active)
+		return IRQ_HANDLED;
+
+	if (reg_int_val & GE2_LINK_INT) {
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0)
+		u32 port_id = 0;
+#else
+		u32 port_id = 4;
+#endif
+		u32 link_state = sysRegRead(RALINK_ETH_SW_BASE+0x0208);
+		if (link_state & 0x1) {
+			/* MT7621 E2 has FC bug */
+			if ((ralink_asic_rev_id & 0xFFFF) == 0x0101) {
+				u32 link_speed = (link_state >> 2) & 0x3;
+				mt7621_esw_fc_delay_set((link_speed == 1) ? 1 : 0);
+			}
+		}
+		
+		esw_link_status_changed(port_id, link_state & 0x1);
+	}
+
+	return IRQ_HANDLED;
+}
+#else
+static inline irqreturn_t dispatch_int_status2(END_DEVICE *ei_local)
+{
+	return IRQ_NONE;
+}
+#endif
+
 #if defined (CONFIG_RAETH_NAPI)
 static int ei_napi_poll(struct napi_struct *napi, int budget)
 {
@@ -1337,6 +1381,7 @@ static int ei_napi_poll(struct napi_struct *napi, int budget)
 		local_irq_save(flags);
 		__napi_complete(napi);
 		sysRegWrite(FE_INT_STATUS, FE_INT_MASK_TX_RX);
+		dispatch_int_status2(ei_local);
 		if (ei_local->active)
 			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
 		local_irq_restore(flags);
@@ -1403,7 +1448,7 @@ static irqreturn_t ei_interrupt(int irq, void *dev_id)
 
 	reg_int_val = sysRegRead(FE_INT_STATUS);
 	if (unlikely(!reg_int_val))
-		return IRQ_NONE;
+		return dispatch_int_status2(ei_local);
 
 #if defined (CONFIG_RAETH_NAPI)
 	if (napi_schedule_prep(&ei_local->napi)) {
@@ -1435,6 +1480,8 @@ static irqreturn_t ei_interrupt(int irq, void *dev_id)
 			tasklet_hi_schedule(&ei_local->rx_tasklet);
 		}
 	}
+
+	dispatch_int_status2(ei_local);
 #endif /* CONFIG_RAETH_NAPI */
 
 	return IRQ_HANDLED;
@@ -1884,6 +1931,10 @@ int ei_open(struct net_device *dev)
 	fe_mac2_addr_set(ei_local->PseudoDev->dev_addr);
 #endif
 
+#if defined (CONFIG_RAETH_ESW_CONTROL)
+	esw_control_post_init();
+#endif
+
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 	/* up PPE engine after FE init */
 	if (ra_sw_nat_hook_ec != NULL)
@@ -1905,7 +1956,7 @@ int ei_open(struct net_device *dev)
 	err = request_irq(SURFBOARDINT_ESW, esw_interrupt, IRQF_DISABLED, "ralink_esw", dev);
 
 	/* enable MT7620 ESW or MT7621 GSW interrupt */
-	*((volatile u32 *)(RALINK_INTENA)) = RALINK_INTCTL_ESW;
+	sysRegWrite(RALINK_INTENA, RALINK_INTCTL_ESW);
 #elif defined (CONFIG_MT7530_INT_GPIO)
 	// todo, needed capture GPIO interrupt for external MT7530
 #endif
@@ -1919,7 +1970,7 @@ int ei_open(struct net_device *dev)
 	sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 	sysRegWrite(FE_INT_STATUS2, 0xffffffff);
-	sysRegWrite(FE_INT_ENABLE2, 0);
+	sysRegWrite(FE_INT_ENABLE2, FE_INT_INIT2_VALUE);
 #endif
 
 #if defined (CONFIG_RAETH_NAPI)

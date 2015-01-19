@@ -3,9 +3,6 @@
 
 #include <asm/rt2880/rt_mmap.h>
 
-/* ESW Registers Access */
-#define _ESW_REG(x)			(*((volatile u32 *)(RALINK_ETH_SW_BASE + x)))
-
 #if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
 #define ESW_PORT_PPE			7
 #define ESW_PORT_ID_MAX			7
@@ -38,9 +35,7 @@
 #define REG_ESW_VLAN_VAWD1		0x94
 #define REG_ESW_VLAN_VAWD2		0x98
 
-#if !defined (CONFIG_MT7530_GSW)
 #define REG_ESW_VLAN_ID_BASE		0x100
-#endif
 
 #define REG_ESW_PORT_SSC_P0		0x2000
 #define REG_ESW_PORT_PCR_P0		0x2004

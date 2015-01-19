@@ -3,7 +3,6 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/mutex.h>
-#include <linux/fs.h>
 #include <linux/delay.h>
 #include <linux/slab.h>
 #include <linux/string.h>
@@ -48,7 +47,7 @@ u32 esw_reg_get(u32 addr)
 	printk("mt7530_get: FAILED at read from 0x%08X!\n", addr);
 	return 0;
 #else
-	return _ESW_REG(addr);
+	return sysRegRead(RALINK_ETH_SW_BASE + addr);
 #endif
 }
 
@@ -58,7 +57,7 @@ void esw_reg_set(u32 addr, u32 data)
 	if (!mii_mgr_write(MT7530_MDIO_ADDR, addr, data))
 		printk("mt7530_set: FAILED at write to 0x%08X!\n", addr);
 #else
-	_ESW_REG(addr) = data;
+	sysRegWrite(RALINK_ETH_SW_BASE + addr, data);
 #endif
 }
 
@@ -314,7 +313,7 @@ static void gsw_event_link(u32 port_id)
 	u32 reg_val;
 
 	reg_val = esw_reg_get(REG_ESW_MAC_PMSR_P0 + (port_id*0x100));
-	esw_link_status_changed(port_id, (reg_val & 0x1) ? 1 : 0);
+	esw_link_status_changed(port_id, reg_val & 0x1);
 }
 #elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
       defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)

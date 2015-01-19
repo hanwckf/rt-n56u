@@ -14,7 +14,7 @@
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
 
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
+    defined (CONFIG_RALINK_RT5350)
 static void dump_phy_reg(int port_no, int from, int to, int is_local)
 {
 	u32 i=0;
@@ -105,21 +105,21 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
 			if (reg.off > REG_ESW_MAX)
 				return -EINVAL;
-			reg.val = _ESW_REG(reg.off);
+			reg.val = sysRegRead(RALINK_ETH_SW_BASE + reg.off);
 			copy_to_user(ifr->ifr_data, &reg, sizeof(reg));
 			break;
 		case RAETH_ESW_REG_WRITE:
 			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
 			if (reg.off > REG_ESW_MAX)
 				return -EINVAL;
-			_ESW_REG(reg.off) = reg.val;
+			sysRegWrite(RALINK_ETH_SW_BASE + reg.off, reg.val);
 			break;
 #endif
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
 		case RAETH_ESW_PHY_DUMP:
 			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
+    defined (CONFIG_RALINK_RT5350)
 			if (reg.val == 32) {//dump all phy register
 				/* Global Register 0~31
 				 * Local Register 0~31
@@ -162,8 +162,15 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 				}
 			}
 			
+#if defined (CONFIG_RALINK_MT7628)
+			for(offset=0;offset<7;offset++) { //global register  page 0~6
+#else
 			for(offset=0;offset<5;offset++) { //global register  page 0~4
-				dump_phy_reg(1, 16, 31, 0, offset);
+#endif
+				if(reg.val == 32) //dump all phy register
+					dump_phy_reg(0, 16, 31, 0, offset);
+				else
+					dump_phy_reg(reg.val, 16, 31, 0, offset);
 			}
 			
 			if (reg.val == 32) {//dump all phy register
@@ -190,7 +197,7 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 		case RAETH_ESW_INGRESS_RATE:
 			copy_from_user(&ratelimit, ifr->ifr_data, sizeof(ratelimit));
 			offset = 0x11c + (4 * (ratelimit.port / 2));
-			value = _ESW_REG(offset);
+			value = sysRegRead(RALINK_ETH_SW_BASE + offset);
 			
 			if((ratelimit.port % 2) == 0)
 			{
@@ -213,13 +220,13 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 				}
 			}
 			printk("offset = 0x%4x value=0x%x\n\r", offset, value);
-			_ESW_REG(offset) = value;
+			sysRegWrite(RALINK_ETH_SW_BASE + offset, value);
 			break;
 
 		case RAETH_ESW_EGRESS_RATE:
 			copy_from_user(&ratelimit, ifr->ifr_data, sizeof(ratelimit));
 			offset = 0x140 + (4 * (ratelimit.port / 2));
-			value = _ESW_REG(offset);
+			value = sysRegRead(RALINK_ETH_SW_BASE + offset);
 			
 			if((ratelimit.port % 2) == 0)
 			{
@@ -242,7 +249,7 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 				}
 			}
 			printk("offset = 0x%4x value=0x%x\n\r", offset, value);
-			_ESW_REG(offset) = value;
+			sysRegWrite(RALINK_ETH_SW_BASE + offset, value);
 			break;
 
 #elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_MT7530_GSW)
@@ -252,7 +259,7 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 #if defined (CONFIG_MT7530_GSW)
 			mii_mgr_read(MT7530_MDIO_ADDR, offset, &value);
 #else
-			value = _ESW_REG(offset);
+			value = sysRegRead(RALINK_ETH_SW_BASE + offset);
 #endif
 			value &= 0xffff0000;
 			if(ratelimit.on_off == 1)
@@ -288,7 +295,7 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 #if defined (CONFIG_MT7530_GSW)
 			mii_mgr_write(MT7530_MDIO_ADDR, offset, value);
 #else
-			_ESW_REG(offset) = value;
+			sysRegWrite(RALINK_ETH_SW_BASE + offset, value);
 #endif
 			break;
 
@@ -298,7 +305,7 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 #if defined (CONFIG_MT7530_GSW)
 			mii_mgr_read(MT7530_MDIO_ADDR, offset, &value);
 #else
-			value = _ESW_REG(offset);
+			value = sysRegRead(RALINK_ETH_SW_BASE + offset);
 #endif
 			value &= 0xffff0000;
 			if(ratelimit.on_off == 1)
@@ -334,7 +341,7 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 #if defined (CONFIG_MT7530_GSW)
 			mii_mgr_write(MT7530_MDIO_ADDR, offset, value);
 #else
-			_ESW_REG(offset) = value;
+			sysRegWrite(RALINK_ETH_SW_BASE + offset, value);
 #endif
 			break;
 #endif

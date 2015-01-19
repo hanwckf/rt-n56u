@@ -26,6 +26,7 @@
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/interrupt.h>
+#include <linux/netdevice.h>
 
 #include <linux/ralink_gpio.h>
 
@@ -34,6 +35,7 @@
 
 #include "ra_esw_reg.h"
 #include "ra_esw_base.h"
+#include "ra_esw_mt7620.h"
 #include "ra_esw_ioctl.h"
 #include "ra_esw_ioctl_def.h"
 
@@ -311,13 +313,12 @@ static int esw_mac_table_clear(void)
 	u32 i, reg_atc;
 
 	esw_reg_set(REG_ESW_WT_MAC_ATC, 0x8002);
-	udelay(1000);
 
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < 200; i++) {
+		udelay(100);
 		reg_atc = esw_reg_get(REG_ESW_WT_MAC_ATC);
 		if (!(reg_atc & 0x8000))
 			return 0;
-		udelay(100);
 	}
 
 	printk("%s: ATC timeout!\n", MTK_ESW_DEVNAME);
@@ -331,11 +332,11 @@ static int esw_write_vtcr(u32 vtcr_cmd, u32 vtcr_val)
 	reg_vtcr = (vtcr_cmd << 12) | vtcr_val | 0x80000000;
 	esw_reg_set(REG_ESW_VLAN_VTCR, reg_vtcr);
 
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < 200; i++) {
+		udelay(100);
 		reg_vtcr = esw_reg_get(REG_ESW_VLAN_VTCR);
 		if (!(reg_vtcr & 0x80000000))
 			return 0;
-		udelay(100);
 	}
 
 	printk("%s: VTCR timeout!\n", MTK_ESW_DEVNAME);
@@ -469,6 +470,7 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	u32 tagg[SWAPI_VLAN_RULE_NUM];
 	u32 i, next_fid, next_vid, vlan_idx;
 	u32 egress_swap_port_cpu, vlan_filter_on;
+	u32 __maybe_unused cpu_wan_accept_tagged = 0;
 
 	next_vid = 3;
 	next_fid = 3;
@@ -536,6 +538,13 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 		egress_swap_port_cpu = 1;
 	}
 
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || \
+    defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5)
+	/* clear vlan members on MT7620 ESW (slot idx 2..3) */
+	mt7620_esw_vlan_clear_idx(2);
+	mt7620_esw_vlan_clear_idx(3);
+#endif
+
 	/* check IPTV tagged */
 	if (pvid[SWAPI_VLAN_RULE_WAN_IPTV] >= MIN_EXT_VLAN_VID) {
 		vlan_idx = find_vlan_slot(&vlan_entry[0], next_vid-1, pvid[SWAPI_VLAN_RULE_WAN_IPTV]);
@@ -550,6 +559,14 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 			
 			pvlan_member[WAN_PORT_MAC].tagg = 1;
 			pvlan_member[WAN_PORT_MAC].swap = 1;
+			
+			cpu_wan_accept_tagged = 1;
+			
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || \
+    defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5)
+			/* need add vlan members on MT7620 ESW P4 (ESW members P7|P6|P4) */
+			mt7620_esw_vlan_set_idx(2, pvid[SWAPI_VLAN_RULE_WAN_IPTV], 0xd0);
+#endif
 		}
 	}
 
@@ -562,11 +579,19 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 				vlan_entry[vlan_idx].fid = next_fid++;
 				vlan_entry[vlan_idx].cvid = pvid[SWAPI_VLAN_RULE_WAN_INET];
 				vlan_entry[vlan_idx].svid = pvid[SWAPI_VLAN_RULE_WAN_INET];
+				
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || \
+    defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5)
+				/* need add vlan members on MT7620 ESW P4 (ESW members P7|P6|P4) */
+				mt7620_esw_vlan_set_idx(3, pvid[SWAPI_VLAN_RULE_WAN_INET], 0xd0);
+#endif
 			}
 			vlan_entry[vlan_idx].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_MAC));
 			
 			pvlan_member[WAN_PORT_MAC].tagg = 1;
 			pvlan_member[WAN_PORT_MAC].swap = 1;
+			
+			cpu_wan_accept_tagged = 1;
 		}
 	}
 
@@ -663,12 +688,22 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 		}
 	}
 
-	/* configure CPU port */
+	/* configure CPU LAN port */
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P0) || \
+    defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P4) || \
+    defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
+	/* [MT7620 P5 -> MT7530 P6] or [MT7621 GE1 -> MT7530 P6] */
+	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_TRANSPARENT);
+	esw_port_accept_set(LAN_PORT_CPU, PORT_ACCEPT_FRAMES_UNTAGGED);
+	esw_port_egress_mode_set(LAN_PORT_CPU, PVLAN_EGRESS_UNTAG);
+#else
+	/* P6 always is trunk port */
 	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_USER);
 	esw_port_accept_set(LAN_PORT_CPU, PORT_ACCEPT_FRAMES_ALL);
 	esw_port_egress_mode_set(LAN_PORT_CPU, (egress_swap_port_cpu) ? PVLAN_EGRESS_SWAP : PVLAN_EGRESS_TAG);
 #if defined (ESW_PORT_PPE)
 	esw_port_egress_mode_set(ESW_PORT_PPE, (egress_swap_port_cpu) ? PVLAN_EGRESS_SWAP : PVLAN_EGRESS_TAG);
+#endif
 #endif
 
 #if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
@@ -679,6 +714,21 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 #endif
 #endif
 		esw_port_ingress_mode_set(LAN_PORT_CPU, PVLAN_INGRESS_MODE_SECURITY);
+
+	/* configure CPU WAN port */
+#if defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
+	/* [MT7620 P4 -> MT7530 P5] or [MT7621 GE2 -> MT7530 P5] */
+	if (cpu_wan_accept_tagged) {
+		esw_port_attrib_set(WAN_PORT_CPU, PORT_ATTRIBUTE_USER);
+		esw_port_accept_set(WAN_PORT_CPU, PORT_ACCEPT_FRAMES_ALL);
+		esw_port_egress_mode_set(WAN_PORT_CPU, (egress_swap_port_cpu) ? PVLAN_EGRESS_SWAP : PVLAN_EGRESS_TAG);
+	} else {
+		esw_port_attrib_set(WAN_PORT_CPU, PORT_ATTRIBUTE_TRANSPARENT);
+		esw_port_accept_set(WAN_PORT_CPU, PORT_ACCEPT_FRAMES_UNTAGGED);
+		esw_port_egress_mode_set(WAN_PORT_CPU, PVLAN_EGRESS_UNTAG);
+	}
+	esw_port_ingress_mode_set(WAN_PORT_CPU, PVLAN_INGRESS_MODE_SECURITY);
+#endif
 
 	/* fill VLAN table */
 	esw_vlan_reset_table();
@@ -704,7 +754,7 @@ static void esw_vlan_init_vid1(void)
 	port_member = 0xFF;
 	port_member &= ~(ESW_MASK_EXCLUDE);
 
-	/* configure PHY ports */
+	/* configure LAN ports */
 	for (i = 0; i <= ESW_PORT_ID_MAX; i++) {
 		esw_vlan_pvid_set(i, 1, 0);
 		esw_port_attrib_set(i, PORT_ATTRIBUTE_TRANSPARENT);
@@ -713,9 +763,18 @@ static void esw_vlan_init_vid1(void)
 	}
 
 	/* configure CPU port */
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P0) || \
+    defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P4) || \
+    defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
+	/* [MT7620 P4 -> MT7530 P5] or [MT7621 GE2 -> MT7530 P5] */
+	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_TRANSPARENT);
+	esw_port_accept_set(LAN_PORT_CPU, PORT_ACCEPT_FRAMES_UNTAGGED);
+	esw_port_egress_mode_set(LAN_PORT_CPU, PVLAN_EGRESS_UNTAG);
+#else
 	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_USER);
 	esw_port_accept_set(LAN_PORT_CPU, PORT_ACCEPT_FRAMES_ALL);
 	esw_port_egress_mode_set(LAN_PORT_CPU, PVLAN_EGRESS_TAG);
+#endif
 	esw_port_ingress_mode_set(LAN_PORT_CPU, PVLAN_INGRESS_MODE_SECURITY);
 
 	/* reset VLAN table */
@@ -792,6 +851,10 @@ static void esw_vlan_bridge_isolate(u32 wan_bridge_mode, u32 wan_bwan_isolation,
 	}
 
 	esw_mac_table_clear();
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || \
+    defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5)
+	mt7620_esw_mac_table_clear();
+#endif
 }
 
 static void esw_soft_reset(void)
@@ -813,7 +876,7 @@ static void esw_soft_reset(void)
 	atomic_set(&g_switch_inited, 0);
 }
 
-static void esw_init_ports_phy(void)
+static void esw_init_ports_security(void)
 {
 	u32 i, fwd_mask;
 
@@ -821,7 +884,7 @@ static void esw_init_ports_phy(void)
 	fwd_mask &= ~(ESW_MASK_EXCLUDE);
 
 	for (i = 0; i <= ESW_MAC_ID_MAX; i++) {
-		/* set port ingress to security mode */
+		/* set all port ingress to security mode */
 		esw_port_matrix_set(i, fwd_mask, PVLAN_INGRESS_MODE_SECURITY);
 	}
 }
@@ -1486,8 +1549,8 @@ void esw_link_status_changed(u32 port_id, int port_link)
 
 int esw_control_post_init(void)
 {
-	/* configure PHY ports */
-	esw_init_ports_phy();
+	/* configure ports security and fwd_mask  */
+	esw_init_ports_security();
 
 	/* configure bridge isolation mode via VLAN */
 	esw_vlan_bridge_isolate(g_wan_bridge_mode, g_wan_bwan_isolation, 1, 1, 1);
@@ -1703,6 +1766,10 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 		break;
 	case MTK_ESW_IOCTL_MAC_TABLE_CLEAR:
 		esw_mac_table_clear();
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || \
+    defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5)
+		mt7620_esw_mac_table_clear();
+#endif
 		break;
 
 	case MTK_ESW_IOCTL_BRIDGE_MODE:

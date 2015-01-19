@@ -295,6 +295,13 @@ static int udelay_recal(void)
 	for(i=0; i< NR_CPUS; i++)
 		cpu_data[i].udelay_val = lpj;
 
+#if defined (CONFIG_RALINK_CPUSLEEP) && defined (CONFIG_RALINK_MT7621)
+	lpj = (*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x10)));
+	lpj &= ~(0xF << 8);
+	lpj |=  (0xA << 8);
+	(*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x10))) = lpj;
+#endif
+
 	return 0;
 }
 device_initcall(udelay_recal);
@@ -308,6 +315,19 @@ void __init plat_time_init(void)
 #if defined (CONFIG_RALINK_SYSTICK_COUNTER)
 	ra_systick_clockevent_init();
 	ra_systick_clocksource_init();
+#endif
+
+#if 0
+	printk("options: 0x%08lX, ases: 0x%08lX, isa_level: 0x%08X, icache.flags: 0x%08X, dcache.flags: 0x%08X,"
+	       "icache.linesz: %d, dcache.linesz: %d, cp0_compare_irq: %d\n",
+		cpu_data[0].options,
+		cpu_data[0].ases,
+		cpu_data[0].isa_level,
+		cpu_data[0].icache.flags,
+		cpu_data[0].dcache.flags,
+		cpu_data[0].icache.linesz,
+		cpu_data[0].dcache.linesz,
+		cp0_compare_irq);
 #endif
 }
 

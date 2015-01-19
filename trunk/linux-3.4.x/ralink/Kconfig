@@ -106,7 +106,7 @@ config  RT_FIRST_IF_RF_OFFSET
 
 config  RT_FIRST_CARD
 	int
-	depends on !RT_FIRST_IF_NONE
+	default 0    if RT_FIRST_IF_NONE
 	default 2860 if RT_FIRST_IF_RT2860
 	default 3090 if RT_FIRST_IF_RT3090
 	default 5392 if RT_FIRST_IF_RT5392
@@ -193,7 +193,7 @@ config  RT_SECOND_IF_RF_OFFSET
 
 config  RT_SECOND_CARD
 	int
-	depends on !RT_SECOND_IF_NONE
+	default 0    if RT_SECOND_IF_NONE
 	default 3090 if RT_SECOND_IF_RT3090
 	default 5392 if RT_SECOND_IF_RT5392
 	default 5592 if RT_SECOND_IF_RT5592
@@ -306,7 +306,7 @@ endif
 
 if (RT_FIRST_IF_MT7603E || RT_SECOND_IF_MT7603E)
 menu "AP MODE MediaTek MT7603E PCIe Wireless Driver"
-#source "drivers/net/wireless/mt76x3_ap/Kconfig"
+source "drivers/net/wireless/mt76x3_ap/Kconfig"
 endmenu
 endif
 endmenu

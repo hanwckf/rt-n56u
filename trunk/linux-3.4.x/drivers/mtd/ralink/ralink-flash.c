@@ -33,7 +33,6 @@ int ra_check_flash_type(void)
 {
 	uint8_t Id[10];
 	int syscfg=0;
-	int chip_mode=0;
 #if defined (CONFIG_MTD_NOR_RALINK)
 	int boot_from = BOOT_FROM_NOR;
 #elif defined (CONFIG_MTD_NAND_RALINK)
@@ -64,7 +63,8 @@ int ra_check_flash_type(void)
 	} else
 #elif defined (CONFIG_RALINK_RT3883)
 	if (strcmp(Id,"RT3883")==0) {
-		boot_from = (syscfg >> 4) & 0x3; 
+		int chip_mode = syscfg & 0xF;
+		boot_from = (syscfg >> 4) & 0x3;
 		switch(boot_from)
 		{
 		case 0:
@@ -73,7 +73,6 @@ int ra_check_flash_type(void)
 			break;
 		case 2:
 		case 3:
-			chip_mode = syscfg & 0xF;
 			if((chip_mode==0) || (chip_mode==7)) {
 				boot_from = BOOT_FROM_SPI;
 			}else if(chip_mode==8) {
@@ -94,7 +93,7 @@ int ra_check_flash_type(void)
 	} else
 #elif defined (CONFIG_RALINK_MT7620)
 	if (strcmp(Id,"MT7620")==0) {
-		chip_mode = syscfg & 0xF;
+		int chip_mode = syscfg & 0xF;
 		switch(chip_mode)
 		{
 		case 0:
@@ -112,7 +111,7 @@ int ra_check_flash_type(void)
 	} else
 #elif defined (CONFIG_RALINK_MT7621)
 	if (strcmp(Id,"MT7621")==0) {
-		chip_mode = syscfg & 0xF;
+		int chip_mode = syscfg & 0xF;
 		switch(chip_mode)
 		{
 		case 0:

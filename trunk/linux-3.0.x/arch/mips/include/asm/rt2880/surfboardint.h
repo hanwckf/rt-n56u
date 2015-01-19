@@ -87,7 +87,8 @@
 #endif
 
 #if defined (CONFIG_RALINK_MT7628)
-#define SURFBOARDINT_CRYPTO		13	/* CryptoEngine */
+#define SURFBOARDINT_AES		13	/* AES */
+#define SURFBOARDINT_AESENGINE		13	/* AES Engine */
 #define SURFBOARDINT_SDXC		14	/* SDXC */
 #define SURFBOARDINT_UART_LITE1		20	/* UART Lite 1 */
 #define SURFBOARDINT_UART_LITE2		21	/* UART Lite 2 */

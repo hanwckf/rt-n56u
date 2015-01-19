@@ -71,6 +71,7 @@ extern void mt6605_sim(void);
 int i2cdrv_major = 218;
 unsigned long i2cdrv_addr = ATMEL_ADDR;
 unsigned long address_bytes= 2;
+unsigned long clkdiv_value = CLKDIV_VALUE;
 
 unsigned long switch_address_bytes(unsigned long addr_bytes)
 {
@@ -91,28 +92,19 @@ unsigned long switch_address_bytes(unsigned long addr_bytes)
 void i2c_master_init(void)
 {
 	u32 i;
-#if defined (CONFIG_RALINK_MT7621)
-	RT2880_REG(RALINK_SYSCTL_BASE + 0x60) &= ~0x4;  //MT7621 bit2
-	udelay(500);
-#elif defined (CONFIG_RALINK_MT7628)
-	RT2880_REG(RALINK_SYSCTL_BASE + 0x60) &= ~0x3000;  //MT7628 bit2
-	udelay(500);
-#else
-	RT2880_REG(RALINK_SYSCTL_BASE+0x60) &= ~0x1;
-#endif
-	/* reset i2c block */
-	i = RT2880_REG(RT2880_RSTCTRL_REG) | RALINK_I2C_RST;
-	RT2880_REG(RT2880_RSTCTRL_REG) = i;
-	RT2880_REG(RT2880_RSTCTRL_REG) = i & ~(RALINK_I2C_RST);
 
+	/* reset i2c block */
+	i = RT2880_REG(RT2880_RSTCTRL_REG);
+	RT2880_REG(RT2880_RSTCTRL_REG) = (i | RALINK_I2C_RST);
+	RT2880_REG(RT2880_RSTCTRL_REG) = (i & ~(RALINK_I2C_RST));
 	udelay(500);
-	
+
 	RT2880_REG(RT2880_I2C_CONFIG_REG) = I2C_CFG_DEFAULT;
 
 #if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 	i = 1 << 31; // the output is pulled hight by SIF master 0
 	i |= 1 << 28; // allow triggered in VSYNC pulse
-	i |= CLKDIV_VALUE << 16; //clk div
+	i |= clkdiv_value << 16; //clk div
 	i |= 1 << 6; // output H when SIF master 0 is in WAIT state
 	i |= 1 << 1; // Enable SIF master 0
 	RT2880_REG(RT2880_I2C_SM0CTL0) = i;
@@ -172,9 +164,9 @@ void i2c_WM8751_write(u32 address, u32 data)
 #else
 	i2cdrv_addr = WM8960_ADDR;
 #endif
-	
-	i2c_master_init();	
-	
+
+	i2c_master_init();
+
 	/* two bytes data at least so NODATA = 0 */
 
 	RT2880_REG(RT2880_I2C_BYTECNT_REG) = 1;
@@ -767,6 +759,10 @@ long i2cdrv_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	case RT2880_I2C_SET_ADDR_BYTES:
 		value = switch_address_bytes( (unsigned long)arg);
 		printk("i2c addr bytes = %x\n", value);
+		break;
+	case RT2880_I2C_SET_CLKDIV:
+		clkdiv_value = 40*1000/(unsigned long)arg;
+		printk("i2c clkdiv = %d\n", clkdiv_value);
 		break;
 	default :
 		printk("i2c_drv: command format error\n");

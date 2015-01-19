@@ -427,13 +427,15 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 	return pci_irq;
 }
 
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 static void set_pcie_phy(u32 *addr, int start_b, int bits, int val)
 {
 	*(volatile u32 *)(addr) &= ~(((1<<bits) - 1)<<start_b);
 	*(volatile u32 *)(addr) |= val << start_b;
 }
+#endif
 
+#if defined (CONFIG_RALINK_MT7621)
 static void bypass_pipe_rst(void)
 {
 #if defined (CONFIG_PCIE_PORT0)
@@ -455,7 +457,7 @@ static void bypass_pipe_rst(void)
 
 static void set_phy_for_ssc(void)
 {
-	unsigned long reg = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x10));
+	u32 reg = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x10));
 
 	reg = (reg >> 6) & 0x7;
 #if defined (CONFIG_PCIE_PORT0) || defined (CONFIG_PCIE_PORT1)
@@ -543,6 +545,44 @@ static void set_phy_for_ssc(void)
 }
 #endif
 
+#if defined (CONFIG_MT7628_ASIC)
+void pcie_phy_config(void)
+{
+	u32 reg = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x10));
+
+	reg = (reg >> 6) & 0x1;
+	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x400), 8, 1, 0x01);		// [rg_pe1_frc_h_xtal_type]: Enable Crystal type force mode
+	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x400), 9, 2, 0x00);		// [rg_pe1_h_xtal_type]: Force Crystal type = 20MHz 
+	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x000), 4, 1, 0x01);		// [rg_pe1_frc_phy_en]: Enable Port 0 force mode
+	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x000), 5, 1, 0x00);		// [rg_pe1_phy_en]: Port 0 disable
+	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4AC),16, 3, 0x03);		// [RG_PE1_H_PLL_BR]
+	if (reg == 1) {
+		printk("***** Xtal 40MHz *****\n");
+		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4BC),24, 8, 0x7D);	// [RG_PE1_H_PLL_FBKDIV]
+		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x490),12, 4, 0x08);	// [RG_PE1_H_PLL_IR]
+		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x490), 6, 2, 0x01);	// [RG_PE1_H_PLL_PREDIV]: Pre-divider ratio (for host mode)
+		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4C0), 0,32, 0x1F400000);	// [RG_PE1_H_LCDDS_PCW_NCPO]: For 40MHz crystal input
+		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4A4), 0,16, 0x013D);	// [RG_PE1_H_LCDDS_SSC_PRD]
+		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4A8),16,16, 0x74);	// [RG_PE1_H_LCDDS_SSC_DELTA1]: For SSC=4500ppm
+		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4A8), 0,16, 0x74);	// [RG_PE1_H_LCDDS_SSC_DELTA]: For SSC=4500ppm
+	} else {
+		printk("***** Xtal 25MHz *****\n");
+		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4BC),24, 8, 0x64);	// [RG_PE1_H_PLL_FBKDIV]
+		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x490),12, 4, 0x0A);	// [RG_PE1_H_PLL_IR]
+		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x490), 6, 2, 0x00);	// [RG_PE1_H_PLL_PREDIV]: Pre-divider ratio (for host mode)
+		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4C0), 0,32, 0x19000000);	// [RG_PE1_H_LCDDS_PCW_NCPO]: For 25MHz crystal input
+		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4A4), 0,16, 0x018D);	// [RG_PE1_H_LCDDS_SSC_PRD]
+		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4A8),16,16, 0x4A);	// [RG_PE1_H_LCDDS_SSC_DELTA1]: For SSC=4500ppm
+		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4A8), 0,16, 0x4A);	// [RG_PE1_H_LCDDS_SSC_DELTA]: For SSC=4500ppm
+	}
+	/* MT7628 PCIe PHY LDO setting: 0x1 -> 0x5 (1.0V -> 1.2V) */
+	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x498), 0, 8, 0x05);
+
+	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x000), 5, 1, 0x01);	// Port 0 enable			[rg_pe1_phy_en]
+	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x000), 4, 1, 0x00);	// Disable Port 0 force mode		[rg_pe1_frc_phy_en]
+}
+#endif
+
 int __init init_ralink_pci(void)
 {
 	u32 val = 0;
@@ -557,17 +597,17 @@ int __init init_ralink_pci(void)
 	pcie_link_status = 0;
 	ASSERT_SYSRST_PCIE(RALINK_PCIE0_RST | RALINK_PCIE1_RST | RALINK_PCIE2_RST);
 #if defined (GPIO_PERST)
-	RALINK_GPIOMODE &= ~(0x3<<PCIE_SHARE_PIN_SW | 0x3<<UARTL3_SHARE_PIN_SW);
-	RALINK_GPIOMODE |=  (0x1<<PCIE_SHARE_PIN_SW | 0x1<<UARTL3_SHARE_PIN_SW);
+	RALINK_GPIOMODE &= ~((0x3<<PCIE_SHARE_PIN_SW) | (0x3<<UARTL3_SHARE_PIN_SW));
+	RALINK_GPIOMODE |=  ((0x1<<PCIE_SHARE_PIN_SW) | (0x1<<UARTL3_SHARE_PIN_SW));
 	mdelay(100);
 #if defined (CONFIG_PCIE_PORT0)
-	val = 0x1<<GPIO_PCIE_PORT0;
+	val  = (0x1<<GPIO_PCIE_PORT0);
 #endif
 #if defined (CONFIG_PCIE_PORT1)
-	val |= 0x1<<GPIO_PCIE_PORT1;
+	val |= (0x1<<GPIO_PCIE_PORT1);
 #endif
 #if defined (CONFIG_PCIE_PORT2)
-	val |= 0x1<<GPIO_PCIE_PORT2;
+	val |= (0x1<<GPIO_PCIE_PORT2);
 #endif
 	RALINK_GPIO_CTRL0 |= val;			// switch to output mode
 	mdelay(100);
@@ -596,43 +636,42 @@ int __init init_ralink_pci(void)
 
 #if defined (GPIO_PERST)
 #if defined (CONFIG_PCIE_PORT0)
-	val  = 0x1<<GPIO_PCIE_PORT0;
+	val  = (0x1<<GPIO_PCIE_PORT0);
 #endif
 #if defined (CONFIG_PCIE_PORT1)
-	val |= 0x1<<GPIO_PCIE_PORT1;
+	val |= (0x1<<GPIO_PCIE_PORT1);
 #endif
 #if defined (CONFIG_PCIE_PORT2)
-	val |= 0x1<<GPIO_PCIE_PORT2;
+	val |= (0x1<<GPIO_PCIE_PORT2);
 #endif
 	RALINK_GPIO_DATA0 |= val;
+	mdelay(100);
 #else /* !defined (GPIO_PERST) */
 	RALINK_PCI_PCICFG_ADDR &= ~(1<<1);		// release PCIRST
 #endif
 
 #elif defined (CONFIG_RALINK_MT7628)
-	RALINK_GPIOMODE &= ~(0x1<<9);			// PCIe RESET GPIO mode
+	RALINK_GPIOMODE &= ~(0x01<<16);			// PCIe RESET GPIO mode
+
 	RALINK_RSTCTRL &= ~RALINK_PCIE0_RST;
 	RALINK_CLKCFG1 |=  RALINK_PCIE0_CLK_EN;
 
 	mdelay(100);
 
-	/* set N_FTS */
-	val = 0;
-	config_access(PCI_ACCESS_READ_4, 0, 0x0, 0, 0x70c, &val);
-	val &= ~(0xff)<<8;
-	val |= 0x50<<8;
-	config_access(PCI_ACCESS_WRITE_4, 0, 0x0, 0, 0x70c, &val);
+	pcie_phy_config();
 
 	RALINK_PCI_PCICFG_ADDR &= ~(1<<1);		// release PCIRST
 #elif defined (CONFIG_RALINK_MT7620)
 	RALINK_GPIOMODE &= ~(0x3<<16);			// PERST_GPIO_MODE = 2'b00
+
 	RALINK_SYSCFG1 |=  RALINK_PCIE_RC_MODE_EN;	// PCIe in RC mode
 	RALINK_RSTCTRL &= ~RALINK_PCIE0_RST;
 	RALINK_CLKCFG1 |=  RALINK_PCIE0_CLK_EN;
 
-	mdelay(100);
+	mdelay(50);
 
-	if ( !(PPLL_CFG1 & (1<<23)) ) {
+	val = PPLL_CFG1;
+	if ( !(val & (1<<23)) ) {
 		printk("MT7620 PPLL unlock, cannot enable PCIe!\n");
 		/* for power saving */
 		RALINK_RSTCTRL |=  RALINK_PCIE0_RST;
@@ -673,7 +712,6 @@ int __init init_ralink_pci(void)
 	RALINK_CLKCFG1 &= ~RALINK_PCI_CLK_EN;
 #endif
 	mdelay(200);
-
 #if defined (CONFIG_PCIE_ONLY)
 	RALINK_PCI_PCICFG_ADDR = 0;		// virtual P2P bridge DEVNUM = 0, release PCIRST
 #else
@@ -758,7 +796,7 @@ pcie(2/1/0) link status	pcie2_num	pcie1_num	pcie0_num
 	printk(" -> %x\n", RALINK_PCI_PCICFG_ADDR);
 #elif defined (CONFIG_RALINK_MT7628)
 	if ((RALINK_PCI0_STATUS & 0x1) == 0) {
-		RALINK_RSTCTRL |= RALINK_PCIE0_RST;
+		RALINK_RSTCTRL |=  RALINK_PCIE0_RST;
 		RALINK_CLKCFG1 &= ~RALINK_PCIE0_CLK_EN;
 		printk("%s: no card, disable it (RST&CLK)\n", "PCIe0");
 		return 0;
@@ -860,50 +898,71 @@ pcie(2/1/0) link status	pcie2_num	pcie1_num	pcie0_num
 	switch (pcie_link_status)
 	{
 	case 7:
+		/* start PCIe2 */
 		config_access(PCI_ACCESS_READ_4, 0, 0x2, 0, PCI_COMMAND, &val);
 		val |= PCI_COMMAND_MASTER;
 		config_access(PCI_ACCESS_WRITE_4, 0, 0x2, 0, PCI_COMMAND, &val);
 		
+		/* set PCIe2 N_FTS */
+		val = 0;
 		config_access(PCI_ACCESS_READ_4, 0, 0x2, 0, 0x70c, &val);
 		val &= ~(0xff)<<8;
 		val |=  (0x50<<8);
 		config_access(PCI_ACCESS_WRITE_4, 0, 0x2, 0, 0x70c, &val);
-	case 3:
-	case 5:
 	case 6:
+	case 5:
+	case 3:
+		/* start PCIe1 */
+		val = 0;
 		config_access(PCI_ACCESS_READ_4, 0, 0x1, 0, PCI_COMMAND, &val);
 		val |= PCI_COMMAND_MASTER;
 		config_access(PCI_ACCESS_WRITE_4, 0, 0x1, 0, PCI_COMMAND, &val);
 		
+		/* set PCIe1 N_FTS */
+		val = 0;
 		config_access(PCI_ACCESS_READ_4, 0, 0x1, 0, 0x70c, &val);
 		val &= ~(0xff)<<8;
 		val |=  (0x50<<8);
 		config_access(PCI_ACCESS_WRITE_4, 0, 0x1, 0, 0x70c, &val);
 	default:
+		/* start PCIe0 */
+		val = 0;
 		config_access(PCI_ACCESS_READ_4, 0, 0x0, 0, PCI_COMMAND, &val);
 		val |= PCI_COMMAND_MASTER;
 		config_access(PCI_ACCESS_WRITE_4, 0, 0x0, 0, PCI_COMMAND, &val);
 		
+		/* set PCIe0 N_FTS */
+		val = 0;
 		config_access(PCI_ACCESS_READ_4, 0, 0x0, 0, 0x70c, &val);
 		val &= ~(0xff)<<8;
 		val |=  (0x50<<8);
 		config_access(PCI_ACCESS_WRITE_4, 0, 0x0, 0, 0x70c, &val);
 	}
 #elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7628)
-	// start P2P bridge PCIe0
+	/* start P2P bridge PCIe0 */
 	config_access(PCI_ACCESS_READ_4, 0, 0x0, 0, PCI_COMMAND, &val);
 	val |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
 	config_access(PCI_ACCESS_WRITE_4, 0, 0x0, 0, PCI_COMMAND, &val);
+#if defined (CONFIG_RALINK_MT7628)
+	/* set PCIe0 N_FTS */
+	val = 0;
+	config_access(PCI_ACCESS_READ_4, 0, 0x0, 0, 0x70c, &val);
+	val &= ~(0xff)<<8;
+	val |= 0x50<<8;
+	config_access(PCI_ACCESS_WRITE_4, 0, 0x0, 0, 0x70c, &val);
+	config_access(PCI_ACCESS_READ_4, 0, 0x0, 0, 0x70c, &val);
+	printk("PCIe0 N_FTS = %x\n", val);
+#endif
 #elif defined (CONFIG_RALINK_RT3883)
 #if defined (CONFIG_PCIE_PCI_CONCURRENT)
-	// start virtual P2P bridge
+	/* start virtual P2P bridge */
 	if (!pcie_disable) {
 		config_access(PCI_ACCESS_READ_4, 0, 0x1, 0, PCI_COMMAND, &val);
 		val |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
 		config_access(PCI_ACCESS_WRITE_4, 0, 0x1, 0, PCI_COMMAND, &val);
 	}
 #endif
-	// start PCI host bridge (or virtual P2P bridge for PCIe only)
+	/* start PCI host bridge (or virtual P2P bridge for PCIe only) */
 	config_access(PCI_ACCESS_READ_4, 0, 0x0, 0, PCI_COMMAND, &val);
 	val |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
 	config_access(PCI_ACCESS_WRITE_4, 0, 0x0, 0, PCI_COMMAND, &val);

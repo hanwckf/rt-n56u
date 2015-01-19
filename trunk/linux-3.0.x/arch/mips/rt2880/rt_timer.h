@@ -42,14 +42,10 @@
     Steven Liu  2007-07-04      Initial version
 */
 
-#include <asm/rt2880/rt_mmap.h>
-
 #ifndef __RT_TIMER__
 #define __RT_TIMER__
 
-#define PHYS_TO_K1(physaddr)		KSEG1ADDR(physaddr)
-#define sysRegRead(phys)		(*(volatile u32 *)PHYS_TO_K1(phys))
-#define sysRegWrite(phys, val)		((*(volatile u32 *)PHYS_TO_K1(phys)) = (val))
+#include <asm/rt2880/rt_mmap.h>
 
 #define SYSCFG				(RALINK_SYSCTL_BASE + 0x10)  /* System Configuration Register */
 #define SYSCFG1				(RALINK_SYSCTL_BASE + 0x14)  /* System Configuration Register1 */

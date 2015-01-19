@@ -889,13 +889,7 @@ int __init spidrv_init(void)
 	}
 
 	//use normal(SPI) mode instead of GPIO mode
-#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883) || \
-    defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || \
-    defined (CONFIG_RALINK_MT7620)
 	RT2880_REG(RALINK_REG_GPIOMODE) &= ~(RALINK_GPIOMODE_SPI);
-#else
-#error Ralink Chip not defined
-#endif
 
 	printk("Ralink SPI driver initialized.\n");
 

@@ -4,7 +4,7 @@
 
 -- HTML5 Player
 
-webapp_show_playlists=false
+webapp_show_playlists=true
 
 function webapp_head()
     http_send_headers(200,'html')

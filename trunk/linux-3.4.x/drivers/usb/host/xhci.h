@@ -29,7 +29,7 @@
 #include <linux/usb/hcd.h>
 
 /* Code sharing between pci-quirks and xhci hcd */
-#include	"xhci-ext-caps.h"
+#include "xhci-ext-caps.h"
 #include "pci-quirks.h"
 
 /* xHCI PCI Configuration Registers */
@@ -1530,8 +1530,12 @@ struct xhci_hcd {
 	/* Compliance Mode Recovery Data */
 	struct timer_list	comp_mode_recovery_timer;
 	u32			port_status_u0;
+#if defined (CONFIG_MTK_XHCI)
+#define COMP_MODE_RCVRY_MSECS 5000
+#else
 /* Compliance Mode Timer Triggered every 2 seconds */
 #define COMP_MODE_RCVRY_MSECS 2000
+#endif
 };
 
 /* convert between an HCD pointer and the corresponding EHCI_HCD */
@@ -1695,7 +1699,7 @@ void xhci_urb_free_priv(struct xhci_hcd *xhci, struct urb_priv *urb_priv);
 void xhci_free_command(struct xhci_hcd *xhci,
 		struct xhci_command *command);
 
-#ifdef CONFIG_PCI
+#if defined (CONFIG_PCI) && !defined (CONFIG_MTK_XHCI)
 /* xHCI PCI glue */
 int xhci_register_pci(void);
 void xhci_unregister_pci(void);

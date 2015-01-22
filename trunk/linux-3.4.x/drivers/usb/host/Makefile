@@ -13,15 +13,22 @@ fhci-$(CONFIG_FHCI_DEBUG) += fhci-dbg.o
 
 xhci-hcd-y := xhci.o xhci-mem.o
 xhci-hcd-y += xhci-ring.o xhci-hub.o xhci-dbg.o
+
+ifdef CONFIG_MTK_XHCI
+xhci-hcd-y += xhci-mtk/xhci-mtk.o xhci-mtk/xhci-mtk-power.o xhci-mtk/xhci-mtk-scheduler.o
+else
 xhci-hcd-$(CONFIG_PCI)	+= xhci-pci.o
+endif
 
 ifneq ($(CONFIG_USB_XHCI_PLATFORM), )
-	xhci-hcd-y		+= xhci-plat.o
+xhci-hcd-y += xhci-plat.o
 endif
 
 obj-$(CONFIG_USB_WHCI_HCD)	+= whci/
 
+ifndef CONFIG_MTK_XHCI
 obj-$(CONFIG_PCI)		+= pci-quirks.o
+endif
 
 obj-$(CONFIG_USB_EHCI_HCD)	+= ehci-hcd.o
 obj-$(CONFIG_USB_OXU210HP_HCD)	+= oxu210hp-hcd.o

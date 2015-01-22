@@ -28,7 +28,7 @@ config USB_XHCI_HCD
 	  module will be called xhci-hcd.
 
 config USB_XHCI_PLATFORM
-	tristate
+	bool "Generic xHCI driver for a platform device"
 	depends on USB_XHCI_HCD
 
 config USB_XHCI_HCD_DEBUGGING

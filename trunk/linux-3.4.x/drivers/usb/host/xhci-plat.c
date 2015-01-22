@@ -18,6 +18,10 @@
 
 #include "xhci.h"
 
+#if defined (CONFIG_MTK_XHCI)
+#include "xhci-mtk/xhci-mtk.h"
+#endif
+
 static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
 {
 	/*
@@ -108,6 +112,10 @@ static int xhci_plat_probe(struct platform_device *pdev)
 
 	if (pdata && pdata->uphy_init)
 		pdata->uphy_init(pdev);
+
+#if defined (CONFIG_MTK_XHCI)
+	reinitIP();
+#endif
 
 	hcd = usb_create_hcd(driver, &pdev->dev, dev_name(&pdev->dev));
 	if (!hcd)

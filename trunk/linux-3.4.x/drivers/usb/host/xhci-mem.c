@@ -65,6 +65,9 @@ static struct xhci_segment *xhci_segment_alloc(struct xhci_hcd *xhci,
 
 static void xhci_segment_free(struct xhci_hcd *xhci, struct xhci_segment *seg)
 {
+	if (!seg)
+		return;
+
 	if (seg->trbs) {
 		dma_pool_free(xhci->segment_pool, seg->trbs, seg->dma);
 		seg->trbs = NULL;
@@ -1466,9 +1469,19 @@ int xhci_endpoint_init(struct xhci_hcd *xhci,
 			max_burst = (usb_endpoint_maxp(&ep->desc)
 				     & 0x1800) >> 11;
 		}
+#if defined (CONFIG_MTK_XHCI)
+		if ((max_packet % 4 == 2) && (max_packet % 16 != 14) &&
+		    (max_burst == 0) && usb_endpoint_dir_in(&ep->desc))
+			max_packet += 2;
+#endif
 		break;
 	case USB_SPEED_FULL:
 	case USB_SPEED_LOW:
+#if defined (CONFIG_MTK_XHCI)
+		if ((max_packet % 4 == 2) && (max_packet % 16 != 14) &&
+		    (max_burst == 0) && usb_endpoint_dir_in(&ep->desc))
+			max_packet += 2;
+#endif
 		break;
 	default:
 		BUG();

@@ -121,7 +121,7 @@ static int of_isp1760_probe(struct platform_device *dev)
 		goto free_gpio;
 	}
 
-	dev_set_drvdata(&dev->dev, drvdata);
+	platform_set_drvdata(dev, drvdata);
 	return ret;
 
 free_gpio:
@@ -136,9 +136,7 @@ free_data:
 
 static int of_isp1760_remove(struct platform_device *dev)
 {
-	struct isp1760 *drvdata = dev_get_drvdata(&dev->dev);
-
-	dev_set_drvdata(&dev->dev, NULL);
+	struct isp1760 *drvdata = platform_get_drvdata(dev);
 
 	usb_remove_hcd(drvdata->hcd);
 	iounmap(drvdata->hcd->regs);

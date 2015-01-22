@@ -100,7 +100,7 @@ endchoice
 
 config PCIE_PORT0
 	bool "PCIe Port0 support"
-	default n
+	default y
 
 config PCIE_PORT1
 	bool "PCIe Port1 support"

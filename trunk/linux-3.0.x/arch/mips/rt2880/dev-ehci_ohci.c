@@ -49,30 +49,31 @@
 #include <asm/rt2880/surfboardint.h>
 #include <asm/rt2880/rt_mmap.h>
 
-#define IRQ_RT3XXX_USB		SURFBOARDINT_UHST
+#define RT3XXX_EHCI_MEM_START	(RALINK_USB_HOST_BASE)
+#define RT3XXX_OHCI_MEM_START	(RALINK_USB_HOST_BASE + 0x1000)
 
 static struct resource rt3xxx_ehci_resources[] = {
 	[0] = {
-		.start  = 0x101c0000,
-		.end    = 0x101c0fff,
+		.start  = RT3XXX_EHCI_MEM_START,
+		.end    = RT3XXX_EHCI_MEM_START + 0xfff,
 		.flags  = IORESOURCE_MEM,
 	},
 	[1] = {
-		.start  = IRQ_RT3XXX_USB,
-		.end    = IRQ_RT3XXX_USB,
+		.start  = SURFBOARDINT_UHST,
+		.end    = SURFBOARDINT_UHST,
 		.flags  = IORESOURCE_IRQ,
 	},
 };
 
 static struct resource rt3xxx_ohci_resources[] = {
 	[0] = {
-		.start  = 0x101c1000,
-		.end    = 0x101c1fff,
+		.start  = RT3XXX_OHCI_MEM_START,
+		.end    = RT3XXX_OHCI_MEM_START + 0xfff,
 		.flags  = IORESOURCE_MEM,
 	},
 	[1] = {
-		.start  = IRQ_RT3XXX_USB,
-		.end    = IRQ_RT3XXX_USB,
+		.start  = SURFBOARDINT_UHST,
+		.end    = SURFBOARDINT_UHST,
 		.flags  = IORESOURCE_IRQ,
 	},
 };
@@ -82,6 +83,10 @@ static u64 rt3xxx_ohci_dmamask = DMA_BIT_MASK(32);
 
 #if defined(CONFIG_USB_EHCI_HCD_PLATFORM) || defined(CONFIG_USB_OHCI_HCD_PLATFORM)
 static atomic_t rt3xxx_power_instance = ATOMIC_INIT(0);
+
+#if defined (CONFIG_RALINK_MT7628)
+extern void uphy_init(void);
+#endif
 
 #define SYSCFG1_REG		(RALINK_SYSCTL_BASE + 0x14)
 #define RALINK_UHST_MODE	(1UL<<10)
@@ -109,7 +114,7 @@ static void rt_usb_wake_up(void)
 #if defined (CONFIG_USB_GADGET_RT)
 	val &= ~(RALINK_UHST_MODE);
 #else
-	val |= (RALINK_UHST_MODE);
+	val |=  (RALINK_UHST_MODE);
 #endif
 	*(volatile u32 *)(SYSCFG1_REG) = cpu_to_le32(val);
 
@@ -121,6 +126,10 @@ static void rt_usb_wake_up(void)
 	*(volatile u32 *)(RSTCTRL_REG) = cpu_to_le32(val);
 
 	mdelay(100);
+
+#if defined (CONFIG_RALINK_MT7628)
+	uphy_init();
+#endif
 }
 
 static void rt_usb_sleep(void)
@@ -150,6 +159,7 @@ static int rt3xxx_power_on(struct platform_device *pdev)
 {
 	if (atomic_inc_return(&rt3xxx_power_instance) == 1)
 		rt_usb_wake_up();
+
 	return 0;
 }
 
@@ -179,7 +189,7 @@ static struct platform_device rt3xxx_ehci_device = {
 		.dma_mask = &rt3xxx_ehci_dmamask,
 		.coherent_dma_mask = DMA_BIT_MASK(32),
 	},
-	.num_resources	= 2,
+	.num_resources	= ARRAY_SIZE(rt3xxx_ehci_resources),
 	.resource	= rt3xxx_ehci_resources,
 };
 
@@ -190,7 +200,7 @@ static struct platform_device rt3xxx_ohci_device = {
 		.dma_mask = &rt3xxx_ohci_dmamask,
 		.coherent_dma_mask = DMA_BIT_MASK(32),
 	},
-	.num_resources	= 2,
+	.num_resources	= ARRAY_SIZE(rt3xxx_ohci_resources),
 	.resource	= rt3xxx_ohci_resources,
 };
 

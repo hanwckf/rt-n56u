@@ -541,7 +541,7 @@ static void prom_init_sysclk(void)
 
 	/* disable request preemption */
 	reg = (*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x0)));
-	reg &= ~0x4000000;
+	reg &= ~0x04000000;
 	(*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x0))) = reg;
 
 	/* MIPS reset apply to Andes */

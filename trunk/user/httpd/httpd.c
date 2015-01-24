@@ -636,9 +636,13 @@ send_error( int status, const char *title, const char *extra_header, const char 
 static void
 send_authenticate( FILE *conn_fp )
 {
-	char header[128];
+	char header[128], *realm;
 
-	snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", nvram_safe_get("productid") );
+	realm = nvram_safe_get("computer_name");
+	if (strlen(realm) < 1)
+		realm = nvram_safe_get("productid");
+
+	snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", realm);
 	send_error( 401, "Unauthorized", header, "Authorization required.", conn_fp );
 }
 

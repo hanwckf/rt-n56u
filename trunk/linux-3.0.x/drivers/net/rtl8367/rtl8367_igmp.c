@@ -157,23 +157,27 @@ asic_update_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_fid, u32 por
 	retVal = rtl8370_getAsicL2LookupTb(LUTREADMETHOD_MAC, &l2t);
 	if (retVal == RT_ERR_OK) {
 		if (l2t.address < RTK_MAX_NUM_OF_LEARN_LIMIT)
-			g_l2t_cache[l2t.address] = 1;
-	}
-	else
+			g_l2t_cache[l2t.address] = (l2t.portmask) ? 1 : 0;
+	} else
 		l2t.portmask = 0; // entry not exist, reset mask to 0
 
 	l2t.efid = port_efid;
 	l2t.fid = port_fid;
 	l2t.ipmul = 0;
-	l2t.static_bit = 1;
 
 	portmask_old = l2t.portmask;
 
-	l2t.portmask |= port_cpu_msk;
-	if (!is_leave)
-		l2t.portmask |= port_dst_msk;
-	else
-		l2t.portmask &= ~port_dst_msk;
+	if (!is_leave) {
+		l2t.static_bit = 1;
+		l2t.portmask |= (port_cpu_msk | port_dst_msk);
+	} else {
+		l2t.static_bit = 0;
+		l2t.portmask &= ~(port_cpu_msk | port_dst_msk);
+		if (l2t.portmask) {
+			l2t.static_bit = 1;
+			l2t.portmask |= port_cpu_msk;
+		}
+	}
 
 	if (l2t.portmask == portmask_old)
 		return RT_ERR_OK;
@@ -181,7 +185,7 @@ asic_update_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_fid, u32 por
 	retVal = rtl8370_setAsicL2LookupTb(&l2t);
 	if (retVal == RT_ERR_OK) {
 		if (l2t.address < RTK_MAX_NUM_OF_LEARN_LIMIT)
-			g_l2t_cache[l2t.address] = 1;
+			g_l2t_cache[l2t.address] = (l2t.portmask) ? 1 : 0;
 	}
 
 	return retVal;
@@ -200,15 +204,20 @@ asic_update_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_fid, u32 por
 	l2t.ivl_svl = 0;
 	l2t.cvid_fid = port_fid;
 	l2t.l3lookup = 0;
-	l2t.nosalearn = 1;
 
 	portmask_old = l2t.mbr;
 
-	l2t.mbr |= port_cpu_msk;
-	if (!is_leave)
-		l2t.mbr |= port_dst_msk;
-	else
-		l2t.mbr &= ~port_dst_msk;
+	if (!is_leave) {
+		l2t.nosalearn = 1;
+		l2t.mbr |= (port_cpu_msk | port_dst_msk);
+	} else {
+		l2t.nosalearn = 0;
+		l2t.mbr &= ~(port_cpu_msk | port_dst_msk);
+		if (l2t.mbr) {
+			l2t.nosalearn = 1;
+			l2t.mbr |= port_cpu_msk;
+		}
+	}
 
 	if (l2t.mbr == portmask_old)
 		return RT_ERR_OK;

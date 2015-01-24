@@ -609,3 +609,5 @@ config MMC_USHC
 
 	  Note: These controllers only support SDIO cards and do not
 	  support MMC or SD memory cards.
+
+source "drivers/mmc/host/mmc-mtk/Kconfig"

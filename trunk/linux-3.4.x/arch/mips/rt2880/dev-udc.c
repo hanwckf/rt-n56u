@@ -31,53 +31,56 @@
  **************************************************************************
  */
 
-#include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
 #include <linux/init.h>
+#include <linux/dma-mapping.h>
 #include <linux/platform_device.h>
 
 #include <asm/rt2880/surfboardint.h>
+#include <asm/rt2880/rt_mmap.h>
 
 #if defined(CONFIG_USB_GADGET_RT)
-#define IRQ_RT3XXX_USB SURFBOARDINT_UDEV
+
+#define RT3XXX_UDC_MEM_START	RALINK_USB_DEV_BASE
+
 static struct resource rt3xxx_udc_resources[] = {
 	[0] = {
-		.start  = 0x10120000,
-		.end    = 0x10121400,
+		.start  = RT3XXX_UDC_MEM_START,
+		.end    = RT3XXX_UDC_MEM_START + 0x13ff,
 		.flags  = IORESOURCE_MEM,
 	},
 	[1] = {
-		.start  = IRQ_RT3XXX_USB,
-		.end    = IRQ_RT3XXX_USB,
+		.start  = SURFBOARDINT_UDEV,
 		.flags  = IORESOURCE_IRQ,
 	},
 };
 
-/*
- * RT3xxx UDC (CUSB2/PDMA) controller.
- */
-static u64 rt3xxx_udc_dmamask = ~(u32)0;
-static struct platform_device rt3xxx_udc_device = {
-	.name           = "rt_udc",
-	.id             = -1,
-	.dev            = {
-		.dma_mask       = &rt3xxx_udc_dmamask,
-		.coherent_dma_mask  = 0xffffffff,
-	},
-	.num_resources  = 2,
-	.resource       = rt3xxx_udc_resources,
-};
+static u64 rt3xxx_udc_dmamask = DMA_BIT_MASK(32);
 
-static struct platform_device *rt3xxx_devices[] __initdata = {
-	&rt3xxx_udc_device,
+static struct platform_device rt3xxx_udc_device = {
+	.name		= "rt_udc",
+	.id		= -1,
+	.dev		= {
+		.dma_mask = &rt3xxx_udc_dmamask,
+		.coherent_dma_mask = DMA_BIT_MASK(32),
+	},
+	.num_resources	= ARRAY_SIZE(rt3xxx_udc_resources),
+	.resource	= rt3xxx_udc_resources,
 };
 
 int __init init_rt3xxx_udc(void)
 {
-	printk("Ralink USB Device init.\n");
-	platform_add_devices(rt3xxx_devices, ARRAY_SIZE(rt3xxx_devices));
-	return 0;
+	int retval = 0;
+
+	retval = platform_device_register(&rt3xxx_udc_device);
+	if (retval != 0) {
+		printk(KERN_ERR "register %s device fail!\n", "UDC");
+		return retval;
+	}
+
+	return retval;
 }
+
 device_initcall(init_rt3xxx_udc);
 #endif

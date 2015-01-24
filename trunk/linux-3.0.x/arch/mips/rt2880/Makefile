@@ -20,6 +20,10 @@ else
 obj-y += irq.o
 endif
 
+ifdef CONFIG_MTK_MMC
+obj-y += dev-mmc.o
+endif
+
 obj-$(CONFIG_MIPS_CMP) += malta-amon.o
 
 obj-$(CONFIG_PCI) += pci.o

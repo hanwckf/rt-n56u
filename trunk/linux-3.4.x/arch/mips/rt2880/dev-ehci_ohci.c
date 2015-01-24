@@ -31,7 +31,6 @@
  **************************************************************************
  */
 
-#include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
 #include <linux/init.h>
@@ -60,7 +59,6 @@ static struct resource rt3xxx_ehci_resources[] = {
 	},
 	[1] = {
 		.start  = SURFBOARDINT_UHST,
-		.end    = SURFBOARDINT_UHST,
 		.flags  = IORESOURCE_IRQ,
 	},
 };
@@ -73,7 +71,6 @@ static struct resource rt3xxx_ohci_resources[] = {
 	},
 	[1] = {
 		.start  = SURFBOARDINT_UHST,
-		.end    = SURFBOARDINT_UHST,
 		.flags  = IORESOURCE_IRQ,
 	},
 };
@@ -181,11 +178,19 @@ static struct usb_ohci_pdata rt3xxx_ohci_pdata = {
 	.power_on		= rt3xxx_power_on,
 	.power_off		= rt3xxx_power_off,
 };
-#else
+#endif
+
 static struct platform_device rt3xxx_ehci_device = {
+#if defined(CONFIG_USB_EHCI_HCD_PLATFORM)
+	.name		= "ehci-platform",
+#else
 	.name		= "rt3xxx-ehci",
+#endif
 	.id		= -1,
 	.dev		= {
+#if defined(CONFIG_USB_EHCI_HCD_PLATFORM)
+		.platform_data = &rt3xxx_ehci_pdata,
+#endif
 		.dma_mask = &rt3xxx_ehci_dmamask,
 		.coherent_dma_mask = DMA_BIT_MASK(32),
 	},
@@ -194,9 +199,16 @@ static struct platform_device rt3xxx_ehci_device = {
 };
 
 static struct platform_device rt3xxx_ohci_device = {
+#if defined(CONFIG_USB_OHCI_HCD_PLATFORM)
+	.name		= "ohci-platform",
+#else
 	.name		= "rt3xxx-ohci",
+#endif
 	.id		= -1,
 	.dev		= {
+#if defined(CONFIG_USB_OHCI_HCD_PLATFORM)
+		.platform_data = &rt3xxx_ohci_pdata,
+#endif
 		.dma_mask = &rt3xxx_ohci_dmamask,
 		.coherent_dma_mask = DMA_BIT_MASK(32),
 	},
@@ -208,50 +220,18 @@ static struct platform_device *rt3xxx_devices[] __initdata = {
 	&rt3xxx_ehci_device,
 	&rt3xxx_ohci_device,
 };
-#endif
 
 int __init init_rt3xxx_ehci_ohci(void)
 {
-#if defined(CONFIG_USB_EHCI_HCD_PLATFORM)
-	struct platform_device *ehci_pdev;
-#endif
-#if defined(CONFIG_USB_OHCI_HCD_PLATFORM)
-	struct platform_device *ohci_pdev;
-#endif
+	int retval = 0;
 
-	printk("MTK/Ralink EHCI/OHCI init.\n");
-
-#if defined(CONFIG_USB_EHCI_HCD_PLATFORM)
-	ehci_pdev = platform_device_register_resndata(NULL, "ehci-platform", -1,
-			rt3xxx_ehci_resources, ARRAY_SIZE(rt3xxx_ehci_resources),
-			&rt3xxx_ehci_pdata, sizeof(rt3xxx_ehci_pdata));
-	if (IS_ERR(ehci_pdev)) {
-		pr_err("MTK/Ralink %s: unable to register USB, err=%d\n", "EHCI", (int)PTR_ERR(ehci_pdev));
-		return -1;
+	retval = platform_add_devices(rt3xxx_devices, ARRAY_SIZE(rt3xxx_devices));
+	if (retval != 0) {
+		printk(KERN_ERR "register %s device fail!\n", "EHCI/OHCI");
+		return retval;
 	}
-	ehci_pdev->dev.dma_mask = &rt3xxx_ehci_dmamask;
-	ehci_pdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
-#endif
-#if defined(CONFIG_USB_OHCI_HCD_PLATFORM)
-	ohci_pdev = platform_device_register_resndata(NULL, "ohci-platform", -1,
-			rt3xxx_ohci_resources, ARRAY_SIZE(rt3xxx_ohci_resources),
-			&rt3xxx_ohci_pdata, sizeof(rt3xxx_ohci_pdata));
-	if (IS_ERR(ohci_pdev)) {
-		pr_err("MTK/Ralink %s: unable to register USB, err=%d\n", "OHCI", (int)PTR_ERR(ohci_pdev));
-#if defined(CONFIG_USB_EHCI_HCD_PLATFORM)
-		platform_device_unregister(ehci_pdev);
-#endif
-		return -1;
-	}
-	ohci_pdev->dev.dma_mask = &rt3xxx_ohci_dmamask;
-	ohci_pdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
-#endif
 
-#if !defined(CONFIG_USB_EHCI_HCD_PLATFORM) && !defined(CONFIG_USB_OHCI_HCD_PLATFORM)
-	platform_add_devices(rt3xxx_devices, ARRAY_SIZE(rt3xxx_devices));
-#endif
-
-	return 0;
+	return retval;
 }
 
 device_initcall(init_rt3xxx_ehci_ohci);

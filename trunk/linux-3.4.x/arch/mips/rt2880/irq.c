@@ -72,6 +72,8 @@ static struct irq_chip ralink_irq_chip = {
 	.irq_mask	= mask_ralink_irq,
 	.irq_mask_ack	= mask_ralink_irq,
 	.irq_unmask	= unmask_ralink_irq,
+	.irq_disable	= mask_ralink_irq,
+	.irq_enable	= unmask_ralink_irq,
 };
 
 unsigned int __cpuinit get_c0_compare_int(void)

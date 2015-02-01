@@ -613,12 +613,15 @@ stop_samba(int force_stop)
 
 	kill_services(svcs, 5, 1);
 
+	if (!svcs[1])
+		return;
+
 	clean_smbd_trash();
 }
 
 void run_samba(void)
 {
-	int sh_num=0, i;
+	int sh_num, has_nmbd, i;
 	char tmpuser[40], tmp2[40];
 	char cmd[256];
 
@@ -627,9 +630,11 @@ void run_samba(void)
 
 	mkdir_if_none("/etc/samba");
 
-	doSystem("rm -f %s", "/etc/samba/*");
-
-	clean_smbd_trash();
+	has_nmbd = pids("nmbd");
+	if (!has_nmbd) {
+		doSystem("rm -f %s", "/etc/samba/*");
+		clean_smbd_trash();
+	}
 
 	recreate_passwd_unix(0);
 
@@ -643,7 +648,7 @@ void run_samba(void)
 		system(cmd);
 	}
 
-	if (pids("nmbd"))
+	if (has_nmbd)
 		doSystem("killall %s %s", "-SIGHUP", "nmbd");
 	else
 		eval("/sbin/nmbd", "-D", "-s", "/etc/smb.conf");

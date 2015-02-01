@@ -244,7 +244,7 @@ start_xupnpd(char *wan_ifname)
 	char *dir_dst = "/etc/storage/xupnpd";
 	char *xdir1[] = { "config", "playlists", NULL };
 	char *xdir2[] = { "plugins", "profiles", NULL };
-	char *xlua[] = { "", "_http", "_m3u", "_main", "_mime", "_soap", "_ssdp", NULL };
+	char *xlua[] = { "", "_http", "_m3u", "_main", "_mime", "_soap", "_ssdp", "_webapp", NULL };
 
 	if (!is_xupnpd_support())
 		return;

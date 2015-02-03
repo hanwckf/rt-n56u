@@ -932,7 +932,7 @@ static void extract_buf(struct entropy_store *r, __u8 *out)
 	 * pool while mixing, and hash one final time.
 	 */
 	sha_transform(hash.w, extract, workspace);
-	memset(extract, 0, sizeof(extract));
+	memzero_explicit(extract, sizeof(extract));
 	memzero_explicit(workspace, sizeof(workspace));
 
 	/*

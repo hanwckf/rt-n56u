@@ -44,13 +44,8 @@ static void cmp_init_secondary(void)
 	struct cpuinfo_mips *c = &current_cpu_data;
 
 	/* Assume GIC is present */
-#if defined (CONFIG_RALINK_MT7621)
 	change_c0_status(ST0_IM, STATUSF_IP2 | STATUSF_IP3 | STATUSF_IP4 |
 				 STATUSF_IP5 | STATUSF_IP6 | STATUSF_IP7);
-#else
-	change_c0_status(ST0_IM, STATUSF_IP3 | STATUSF_IP4 | STATUSF_IP6 |
-				 STATUSF_IP7);
-#endif
 
 	/* Enable per-cpu interrupts: platform specific */
 

@@ -135,10 +135,6 @@ static int __devinit pcie_portdrv_probe(struct pci_dev *dev,
 	     (dev->pcie_type != PCI_EXP_TYPE_DOWNSTREAM)))
 		return -ENODEV;
 
-	if (!dev->irq && dev->pin) {
-		dev_warn(&dev->dev, "device [%04x:%04x] has invalid IRQ; "
-			 "check vendor BIOS\n", dev->vendor, dev->device);
-	}
 	status = pcie_port_device_register(dev);
 	if (status)
 		return status;

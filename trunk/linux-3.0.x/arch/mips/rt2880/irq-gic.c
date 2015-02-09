@@ -305,15 +305,6 @@ void __init arch_init_irq(void)
 	}
 }
 
-static inline void gic_irqdispatch(void)
-{
-	unsigned int irq = gic_get_int();
-
-	if (likely(irq < GIC_NUM_INTRS))  {
-		do_IRQ(MIPS_GIC_IRQ_BASE + irq);
-	}
-}
-
 asmlinkage void plat_irq_dispatch(void)
 {
 	unsigned int pending;
@@ -328,7 +319,6 @@ asmlinkage void plat_irq_dispatch(void)
 		do_IRQ(cp0_compare_irq);	// MIPS Timer
 	}
 
-	if (pending & (CAUSEF_IP6 | CAUSEF_IP5 | CAUSEF_IP4 | CAUSEF_IP3 | CAUSEF_IP2)) {
-		gic_irqdispatch();
-	}
+	if (pending & (CAUSEF_IP6 | CAUSEF_IP5 | CAUSEF_IP4 | CAUSEF_IP3 | CAUSEF_IP2))
+		gic_irq_dispatch();
 }

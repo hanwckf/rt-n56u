@@ -26,17 +26,7 @@ struct gic_pcpu_mask {
 	DECLARE_BITMAP(pcpu_mask, GIC_NUM_INTRS);
 };
 
-struct gic_pending_regs {
-	DECLARE_BITMAP(pending, GIC_NUM_INTRS);
-};
-
-struct gic_intrmask_regs {
-	DECLARE_BITMAP(intrmask, GIC_NUM_INTRS);
-};
-
 static struct gic_pcpu_mask pcpu_masks[NR_CPUS];
-static struct gic_pending_regs pending_regs[NR_CPUS];
-static struct gic_intrmask_regs intrmask_regs[NR_CPUS];
 
 void gic_send_ipi(unsigned int intr)
 {
@@ -69,15 +59,15 @@ static void __init vpe_local_setup(unsigned int numvpes)
 	}
 }
 
-unsigned int gic_get_int(void)
+void gic_irq_dispatch(void)
 {
-	unsigned int i;
-	unsigned long *pending, *intrmask, *pcpu_mask;
+	unsigned int i, intr;
+	unsigned long *pcpu_mask;
 	unsigned long *pending_abs, *intrmask_abs;
+	DECLARE_BITMAP(pending, GIC_NUM_INTRS);
+	DECLARE_BITMAP(intrmask, GIC_NUM_INTRS);
 
 	/* Get per-cpu bitmaps */
-	pending = pending_regs[smp_processor_id()].pending;
-	intrmask = intrmask_regs[smp_processor_id()].intrmask;
 	pcpu_mask = pcpu_masks[smp_processor_id()].pcpu_mask;
 
 	pending_abs = (unsigned long *) GIC_REG_ABS_ADDR(SHARED,
@@ -95,7 +85,14 @@ unsigned int gic_get_int(void)
 	bitmap_and(pending, pending, intrmask, GIC_NUM_INTRS);
 	bitmap_and(pending, pending, pcpu_mask, GIC_NUM_INTRS);
 
-	return find_first_bit(pending, GIC_NUM_INTRS);
+	intr = find_first_bit(pending, GIC_NUM_INTRS);
+	while (intr < GIC_NUM_INTRS) {
+		do_IRQ(MIPS_GIC_IRQ_BASE + intr);
+		
+		/* go to next pending bit */
+		bitmap_clear(pending, intr, 1);
+		intr = find_first_bit(pending, GIC_NUM_INTRS);
+	}
 }
 
 static void gic_mask_irq(struct irq_data *d)

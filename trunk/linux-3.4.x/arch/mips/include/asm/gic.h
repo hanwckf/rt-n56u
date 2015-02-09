@@ -359,7 +359,7 @@ extern void gic_init(unsigned long gic_base_addr,
 	unsigned int intrmap_size, unsigned int irqbase);
 
 extern void gic_clocksource_init(unsigned int);
-extern unsigned int gic_get_int(void);
+extern void gic_irq_dispatch(void);
 extern void gic_send_ipi(unsigned int intr);
 extern unsigned int plat_ipi_call_int_xlate(unsigned int);
 extern unsigned int plat_ipi_resched_int_xlate(unsigned int);

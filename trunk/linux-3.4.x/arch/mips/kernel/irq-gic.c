@@ -155,6 +155,8 @@ static struct irq_chip gic_irq_controller = {
 	.irq_ack		=	gic_ack_irq,
 	.irq_mask		=	gic_mask_irq,
 	.irq_unmask		=	gic_unmask_irq,
+	.irq_disable		=	gic_mask_irq,
+	.irq_enable		=	gic_unmask_irq,
 #ifdef CONFIG_SMP
 	.irq_set_affinity	=	gic_set_affinity,
 #endif

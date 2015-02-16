@@ -6,7 +6,12 @@ ROMFS_DIR	= $(ROOTDIR)/romfs
 MKIMAGE_DIR	:= $(ROOTDIR)/tools/mkimage
 CUR_DIR		= $(shell pwd)
 COMP		= lzma
-ROMFS_DIRS 	= \
+ifeq ($(CONFIG_MTD_NAND_RALINK),y)
+PART_ALIGN	= 131072
+else
+PART_ALIGN	= 16
+endif
+ROMFS_DIRS	= \
 	bin \
 	dev dev/pts \
 	home \
@@ -118,9 +123,10 @@ else
 endif
 else
 	@SIZE=`wc -c $(KERNELZ).$(COMP) | awk '{ print $$1 }'` ; \
-	DIV=`expr $$SIZE % 16` ; \
+	SIZE=`expr $$SIZE + 64` ; \
+	DIV=`expr $$SIZE % $(PART_ALIGN)` ; \
 	if [ $$DIV -gt 0 ] ; then \
-		PAD=`expr 16 - $$DIV` ; \
+		PAD=`expr $(PART_ALIGN) - $$DIV` ; \
 		dd if=/dev/zero count=1 bs=$$PAD conv=sync 2> /dev/null | tr \\000 \\377 >> $(KERNELZ).$(COMP) ; \
 	fi
 endif
@@ -134,14 +140,26 @@ endif
 	  @cat $(RAMDISK) >> $(KERNELZ).$(COMP)
 	  @wc -c $(KERNELZ).$(COMP)
 	# !!! Please make sure that Padded Kernel Image + Compressed Rootfs size
-ifneq ($(CONFIG_RT2880_FLASH_16M),y)
-	# can't bigger than 7995328 !!!
+ifeq ($(CONFIG_MTD_NAND_RALINK),y)
+	# can't bigger than 33554432 (32MiB) !!!
 else
+ifneq ($(CONFIG_RT2880_FLASH_AUTO),y)
+ifeq ($(CONFIG_RT2880_FLASH_32M),y)
+	# can't bigger than 32964544 !!!
+else
+ifeq ($(CONFIG_RT2880_FLASH_16M),y)
 	# can't bigger than 16187328 !!!
+else
+	# can't bigger than 7995328 !!!
+endif
+endif
+else
+	# can't bigger than: flash size - storage partition size -
+	# uboot_hdr(64B) - mtd0(192KiB) - mtd1(64KiB) - mtd2(64KiB) !!!
+endif
 endif
 	#===========================================
 endif
-
 	# Pack final image and write headers
 ifeq ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
 	@cd $(IMAGEDIR) ; \

@@ -108,6 +108,7 @@ else
 endif
 else
 	@SIZE=`wc -c $(KERNELZ).$(COMP) | awk '{ print $$1 }'` ; \
+	SIZE=`expr $$SIZE + 64` ; \
 	DIV=`expr $$SIZE % 16` ; \
 	if [ $$DIV -gt 0 ] ; then \
 		PAD=`expr 16 - $$DIV` ; \

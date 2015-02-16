@@ -41,7 +41,7 @@
  */
 #define MOD_VERSION 			"0.4"
 
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 #define MAX_GDMA_CHANNEL		2
 #elif defined (CONFIG_RALINK_RT3052)
 #define MAX_GDMA_CHANNEL		8
@@ -56,7 +56,7 @@
 #if defined (CONFIG_RALINK_RT3052)
 #define RALINK_GDMAISTS			(RALINK_GDMA_BASE + 0x80)
 #define RALINK_GDMAGCT			(RALINK_GDMA_BASE + 0x88)
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 #define RALINK_GDMA_UNMASKINT		(RALINK_GDMA_BASE + 0x200)
 #define RALINK_GDMA_DONEINT		(RALINK_GDMA_BASE + 0x204)
 #define RALINK_GDMA_GCT			(RALINK_GDMA_BASE + 0x220)
@@ -65,10 +65,6 @@
 #define GDMA_READ_REG(addr) 		le32_to_cpu(*(volatile u32 *)(addr))
 #define GDMA_WRITE_REG(addr, val)  	*((volatile uint32_t *)(addr)) = cpu_to_le32(val)
 #define GET_GDMA_IP_VER			(GDMA_READ_REG(RALINK_GDMA_GCT) & 0x6) >> 1 //GDMA_GCT[2:1]
-
-#define RALINK_IRQ_ADDR                 RALINK_INTCL_BASE
-#define RALINK_REG_INTENA               (RALINK_IRQ_ADDR + 0x34)
-#define RALINK_REG_INTDIS               (RALINK_IRQ_ADDR + 0x38)
 
 /* 
  * 12bytes=GDMA Channel n Source Address(4) +
@@ -84,7 +80,7 @@
 //GDMA Interrupt Status Register
 #if defined (CONFIG_RALINK_RT3052)
 #define UNMASK_INT_STATUS(ch)           (ch+16)
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 #define UNMASK_INT_STATUS(ch)           (ch)
 #endif
 #define TXDONE_INT_STATUS(ch)           (ch)
@@ -102,7 +98,7 @@
 #if defined (CONFIG_RALINK_RT3052)
 #define CH_UNMASKINT_EBL_OFFSET		4
 #define NEXT_UNMASK_CH_OFFSET		1
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7620) ||  defined (CONFIG_RALINK_MT7621)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 #define CH_UNMASKINT_EBL_OFFSET		1
 #define NEXT_UNMASK_CH_OFFSET		3
 #endif
@@ -114,7 +110,7 @@
 //Control Reg0
 #define DST_DMA_REQ_OFFSET		8
 #define SRC_DMA_REQ_OFFSET		12
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7620) ||  defined (CONFIG_RALINK_MT7621)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 //Control Reg1
 #define DST_DMA_REQ_OFFSET		8
 #define SRC_DMA_REQ_OFFSET		16
@@ -192,7 +188,7 @@ enum GdmaDmaReqNum {
 #elif defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7620)
 	DMA_MEM_REQ=32
 #endif
-#elif defined (CONFIG_RALINK_MT7621)
+#elif defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 	DMA_REQ0=0, /* FIXME: TBD */
 	DMA_NAND_REQ=1,
 	DMA_MEM_REQ=2,

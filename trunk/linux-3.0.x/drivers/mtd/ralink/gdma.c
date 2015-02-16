@@ -1,17 +1,11 @@
-#if !defined (__UBOOT__)
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
 #define PHYSADDR(a)		virt_to_phys((void*)(a))
-#else
-#include <common.h>
-#define printk printf
-#define PHYSADDR(a)		(((unsigned long)(a)) & 0x1fffffff)
-#endif
 #include <asm/io.h>
 #include <asm/rt2880/rt_mmap.h>
 #include "gdma.h"
 
-#include "ralink_nand_rt3052.h"
+#include "ralink_nand.h"
 
 #define DMA_CHNUM (0)
 
@@ -140,19 +134,12 @@ int _ra_nor_dma_pull(char *dst, char *src, int len)
 }
 #endif
 
-
 // this is "data moving" from nand to memory.
 int _ra_nand_dma_pull(unsigned long dst, int len)
 {
 	int ret =0;
 
-#if !defined (__UBOOT__)
 	dma_cache_inv(dst, len);
-#endif
-
-#if defined (__UBOOT__) 
-	flush_cache(dst, len);
-#endif
 
 	// set GDMA 
 	_set_gdma_ch(PHYSADDR(dst), NFC_DATA, len,  
@@ -176,11 +163,7 @@ int _ra_nand_dma_push(unsigned long src, int len)
 {
 	int ret = 0;
 
-#if !defined (__UBOOT__) // uboot set kseg0 as noncache
 	dma_cache_wback(src, len);
-#else
-	flush_cache(src, len);
-#endif
 
 	// set GDMA 
 	_set_gdma_ch(NFC_DATA, PHYSADDR((void*)src), len,  

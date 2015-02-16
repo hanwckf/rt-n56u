@@ -5,14 +5,32 @@ config MTD_RALINK
 	default y
 	depends on MTD
 
-config MTD_NOR_RALINK
-	bool "NOR Flash Support"
-	default y
-	depends on MTD_RALINK && (RALINK_RT3052 || RALINK_RT3883)
+if MTD_RALINK
 
-config MTD_SPI_RALINK
-	bool "SPI Flash Support"
+choice
+	prompt "Flash Type"
+	default MTD_SPI_RALINK
 	depends on MTD_RALINK
+
+	config MTD_NOR_RALINK
+		bool "NOR Flash"
+		depends on (RALINK_RT3052 || RALINK_RT3883)
+		select MTD_CFI
+
+	config MTD_SPI_RALINK
+		bool "SPI Flash"
+
+	config MTD_NAND_RALINK
+		bool "NAND Flash"
+		depends on !(RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7621 || RALINK_MT7628)
+
+	config MTD_NAND_MTK
+		bool "NAND Flash"
+		depends on (RALINK_MT7621)
+		select MTD_NAND
+		select MTD_NAND_IDS
+		select MTD_NAND_ECC
+endchoice
 
 config MTD_SPI_FAST_CLOCK
 	bool "Use SPI fast clock, up to 50MHz"
@@ -39,17 +57,6 @@ choice
 		bool "Fast Read Dual I/O, opcode 0xBB"
 		depends on (RALINK_MT7620 || RALINK_MT7621 || RALINK_MT7628)
 endchoice
-
-config MTD_NAND_RALINK
-	bool "NAND Flash Support"
-	depends on MTD_RALINK && !(RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7621 || RALINK_MT7628)
-
-#config MTD_NAND_MTK
-#	bool "NAND Flash Support"
-#	depends on MTD_RALINK && (RALINK_MT7621)
-#	select MTD_NAND
-#	select MTD_NAND_IDS
-#	select MTD_NAND_ECC
 
 choice
 	prompt "Flash Size"
@@ -102,16 +109,51 @@ endchoice
 config ROOTFS_IN_FLASH_NO_PADDING
 	bool "No Padding between Kernel and RootFS"
 	default y
-	depends on RT2880_ROOTFS_IN_FLASH
+	depends on RT2880_ROOTFS_IN_FLASH && !MTD_NAND_USE_UBI_PART
+
+config MTD_NAND_USE_UBI_PART
+	bool "Use UBI partitions (Uboot must support boot from UBI!)"
+	default n
+	depends on (MTD_NAND_RALINK || MTD_NAND_MTK)
+	select MTD_UBI
+	select MTD_UBI_GLUEBI
+
+config MTD_NAND_USE_CUSTOM_PART
+	bool "Use custom Bootloader/Config/Factory partition size (depends from Uboot)"
+	default n
+	depends on (MTD_NAND_RALINK || MTD_NAND_MTK)
+
+config MTD_BOOTLOADER_PART_SIZ
+	hex "MTD 'Bootloader' Partition Size (Unit:Bytes)"
+	default 0x0080000
+	depends on MTD_NAND_USE_CUSTOM_PART
+
+config MTD_CONFIG_PART_SIZ
+	hex "MTD 'Config' Partition Size (Unit:Bytes)"
+	default 0x0080000
+	depends on MTD_NAND_USE_CUSTOM_PART && !MTD_NAND_USE_UBI_PART
+
+config MTD_FACTORY_PART_SIZ
+	hex "MTD 'Factory' Partition Size (Unit:Bytes)"
+	default 0x0040000
+	depends on MTD_NAND_USE_CUSTOM_PART && !MTD_NAND_USE_UBI_PART
 
 config MTD_KERNEL_PART_SIZ
-	hex 'MTD Kernel Partition Size (Unit:Bytes)'
-	default 0xD0000
-	depends on RT2880_ROOTFS_IN_FLASH && !ROOTFS_IN_FLASH_NO_PADDING
+	hex "MTD 'Kernel' Partition Size (Unit:Bytes)"
+	default 0x0120000
+	depends on RT2880_ROOTFS_IN_FLASH && !ROOTFS_IN_FLASH_NO_PADDING && !MTD_NAND_USE_UBI_PART
+
+config MTD_FIRMWARE_PART_SIZ
+	hex "MTD 'Kernel+RootFS' Partition Size (Unit:Bytes). Max 32MiB."
+	default 0x1000000
+	depends on (MTD_NAND_RALINK || MTD_NAND_MTK) && !MTD_NAND_USE_UBI_PART
 
 config MTD_STORE_PART_SIZ
-	hex 'MTD Storage Partition Size (Unit:Bytes)'
-	default 0x10000
-	depends on MTD_RALINK
+	hex "MTD 'Storage' Partition Size (Unit:Bytes)"
+	default 0x0200000 if  (MTD_NAND_RALINK || MTD_NAND_MTK)
+	default 0x0010000 if !(MTD_NAND_RALINK || MTD_NAND_MTK)
+	depends on !MTD_NAND_USE_UBI_PART
+
+endif
 
 endmenu

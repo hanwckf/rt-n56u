@@ -12,12 +12,14 @@ rt_spi-objs = ralink_spi.o
 endif
 endif
 
-ifeq ($(CONFIG_RALINK_RT3883),y)
-rt_nand-objs = ralink_nand_rt3052.o gdma.o
-else
 ifeq ($(CONFIG_RALINK_RT3052),y)
-rt_nand-objs = ralink_nand_rt3052.o gdma.o
-else
-rt_nand-objs = ralink_nand.o
+rt_nand-objs = ralink_nand.o gdma.o
 endif
+
+ifeq ($(CONFIG_RALINK_RT3883),y)
+rt_nand-objs = ralink_nand.o gdma.o
+endif
+
+ifeq ($(CONFIG_RALINK_MT7620),y)
+rt_nand-objs = ralink_nand.o
 endif

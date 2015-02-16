@@ -31,7 +31,7 @@
 
 #include "nvram.c"
 
-#define NVRAM_DRIVER_VERSION	"0.07"
+#define NVRAM_DRIVER_VERSION	"0.08"
 #define MTD_NVRAM_NAME		"Config"
 #define NVRAM_VALUES_SPACE	(NVRAM_MTD_SIZE*2)
 
@@ -486,7 +486,7 @@ static long dev_nvram_ioctl(struct file *file, unsigned int req, unsigned long a
 	return -EINVAL;
 }
 
-static int 
+static int
 nvram_proc_version_read(char *buf, char **start, off_t offset, int count, int *eof, void *data)
 {
 	int len = 0;
@@ -495,14 +495,28 @@ nvram_proc_version_read(char *buf, char **start, off_t offset, int count, int *e
 	len += snprintf (buf+len, count-len, "nvram driver : v" NVRAM_DRIVER_VERSION "\n");
 	len += snprintf (buf+len, count-len, "nvram space  : 0x%x\n", NVRAM_SPACE);
 	len += snprintf (buf+len, count-len, "major number : %d\n", nvram_major);
-	if (nvram_mtd)
-	{
-		len += snprintf (buf+len, count-len, "MTD            \n");
-		len += snprintf (buf+len, count-len, "  name       : %s\n", nvram_mtd->name);
+	if (!IS_ERR(nvram_mtd)) {
+		char type[24];
+		
+		if (nvram_mtd->type == MTD_NORFLASH)
+			strcpy(type, "NOR Flash");
+		else if (nvram_mtd->type == MTD_NANDFLASH)
+			strcpy(type, "NAND Flash");
+		else if (nvram_mtd->type == MTD_MLCNANDFLASH)
+			strcpy(type, "NAND Flash (MLC)");
+		else if (nvram_mtd->type == MTD_UBIVOLUME)
+			strcpy(type, "UBI Volume");
+		else
+			snprintf(type, sizeof(type), "Unknown (%d)", nvram_mtd->type);
+		
+		len += snprintf (buf+len, count-len, "MTD\n");
 		len += snprintf (buf+len, count-len, "  index      : %d\n", nvram_mtd->index);
+		len += snprintf (buf+len, count-len, "  name       : %s\n", nvram_mtd->name);
+		len += snprintf (buf+len, count-len, "  type       : %s\n", type);
 		len += snprintf (buf+len, count-len, "  flags      : 0x%x\n", nvram_mtd->flags);
 		len += snprintf (buf+len, count-len, "  size       : 0x%llx\n", nvram_mtd->size);
 		len += snprintf (buf+len, count-len, "  erasesize  : 0x%x\n", nvram_mtd->erasesize);
+		len += snprintf (buf+len, count-len, "  writesize  : 0x%x\n", nvram_mtd->writesize);
 		
 		put_mtd_device(nvram_mtd);
 	}
@@ -586,7 +600,7 @@ dev_nvram_init(void)
 
 	nvram_major = NVRAM_MAJOR;
 
-	g_pdentry = create_proc_read_entry(MTD_NVRAM_NAME, 0444, NULL, nvram_proc_version_read, NULL);
+	g_pdentry = create_proc_read_entry("nvram", 0444, NULL, nvram_proc_version_read, NULL);
 	if (!g_pdentry) {
 		ret = -ENOMEM;
 		goto err;

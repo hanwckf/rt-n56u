@@ -40,7 +40,7 @@ get_wireless_mac(int is_5ghz)
 	unsigned char buffer[ETHER_ADDR_LEN];
 #if BOARD_5G_IN_SOC
 	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR_WSOC : OFFSET_MAC_ADDR_INIC;
-#elif BOARD_2G_IN_SOC
+#else
 #if BOARD_HAS_5G_RADIO
 	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR_INIC : OFFSET_MAC_ADDR_WSOC;
 #else
@@ -49,7 +49,8 @@ get_wireless_mac(int is_5ghz)
 #endif
 	memset(buffer, 0, sizeof(buffer));
 	memset(macaddr, 0, sizeof(macaddr));
-	if (FRead(buffer, i_offset, ETHER_ADDR_LEN)<0) {
+
+	if (flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN) < 0) {
 		puts("Unable to read MAC from EEPROM!");
 		return -1;
 	}
@@ -70,7 +71,7 @@ set_wireless_mac(int is_5ghz, const char *mac)
 	unsigned char ea[ETHER_ADDR_LEN];
 #if BOARD_5G_IN_SOC
 	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR_WSOC : OFFSET_MAC_ADDR_INIC;
-#elif BOARD_2G_IN_SOC
+#else
 #if BOARD_HAS_5G_RADIO
 	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR_INIC : OFFSET_MAC_ADDR_WSOC;
 #else
@@ -78,7 +79,7 @@ set_wireless_mac(int is_5ghz, const char *mac)
 #endif
 #endif
 	if (ether_atoe(mac, ea)) {
-		if (FWrite(ea, i_offset, ETHER_ADDR_LEN) == 0) {
+		if (flash_mtd_write(MTD_PART_NAME_FACTORY, i_offset, ea, ETHER_ADDR_LEN) == 0) {
 			if (get_wireless_mac(is_5ghz) == 0)
 				puts("\nPlease reboot router!");
 		} else {
@@ -99,7 +100,7 @@ get_wireless_cc(void)
 	unsigned char CC[4];
 
 	memset(CC, 0, sizeof(CC));
-	if (FRead(CC, OFFSET_COUNTRY_CODE, 2) < 0) {
+	if (flash_mtd_read(MTD_PART_NAME_FACTORY, OFFSET_COUNTRY_CODE, CC, 2) < 0) {
 		puts("Unable to read Country Code from EEPROM!");
 		return -1;
 	}
@@ -231,7 +232,7 @@ set_wireless_cc(const char *cc)
 	memset(&CC[0], toupper(cc[0]), 1);
 	memset(&CC[1], toupper(cc[1]), 1);
 
-	if (FWrite(CC, OFFSET_COUNTRY_CODE, 2) == 0) {
+	if (flash_mtd_write(MTD_PART_NAME_FACTORY, OFFSET_COUNTRY_CODE, CC, 2) == 0) {
 		get_wireless_cc();
 	} else {
 		puts("Write Country Code to EEPROM FAILED!");
@@ -319,11 +320,11 @@ pinvalidate(const char *pin_string)
 int
 setPIN(const char *pin)
 {
-	if (pincheck(pin) && !pinvalidate(pin))
-	{
-		FWrite((char *)pin, OFFSET_PIN_CODE, 8);
-		char PIN[9];
-		memset(PIN, 0, 9);
+	char PIN[9];
+
+	if (pincheck(pin) && !pinvalidate(pin)) {
+		flash_mtd_write(MTD_PART_NAME_FACTORY, OFFSET_PIN_CODE, (unsigned char*)pin, 8);
+		memset(PIN, 0, sizeof(PIN));
 		memcpy(PIN, pin, 8);
 		puts(PIN);
 	}
@@ -333,10 +334,11 @@ setPIN(const char *pin)
 int
 getBootVer(void)
 {
-	unsigned char btv[5];
-	memset(btv, 0, sizeof(btv));
-	FRead(btv, OFFSET_BOOT_VER, 4);
-	puts(btv);
+	unsigned char bootv[5];
+
+	memset(bootv, 0, sizeof(bootv));
+	flash_mtd_read(MTD_PART_NAME_FACTORY, OFFSET_BOOT_VER, bootv, 4);
+	puts(bootv);
 
 	return 0;
 }
@@ -345,8 +347,9 @@ int
 getPIN(void)
 {
 	unsigned char PIN[9];
+
 	memset(PIN, 0, sizeof(PIN));
-	FRead(PIN, OFFSET_PIN_CODE, 8);
+	flash_mtd_read(MTD_PART_NAME_FACTORY, OFFSET_PIN_CODE, PIN, 8);
 	if (PIN[0]!=0xff)
 		puts(PIN);
 	return 0;
@@ -1289,6 +1292,9 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		//VHT_SGI
 		fprintf(fp, "VHT_SGI=%d\n", 1);
 		
+		//VHT_STBC
+		fprintf(fp, "VHT_STBC=%d\n", 0);
+		
 		//VHT_BW_SIGNAL
 		fprintf(fp, "VHT_BW_SIGNAL=%d\n", 0);
 		
@@ -1634,7 +1640,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 int
 gen_ralink_config_2g(int disable_autoscan)
 {
-	return gen_ralink_config(BOARD_2G_IN_SOC, 0, disable_autoscan);
+	return gen_ralink_config(BOARD_2G_AS_WSOC, 0, disable_autoscan);
 }
 
 int

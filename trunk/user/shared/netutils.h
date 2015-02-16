@@ -46,7 +46,9 @@
 #define IFNAME_WAN			IFNAME_MAC2
 #endif
 
-#if BOARD_2G_IN_SOC
+#define BOARD_2G_AS_WSOC		(BOARD_2G_IN_SOC || !BOARD_5G_IN_SOC)
+
+#if BOARD_2G_AS_WSOC
 #define IFNAME_2G_MAIN			"ra0"
 #define IFNAME_2G_GUEST			"ra1"
 #define IFNAME_2G_APCLI			"apcli0"
@@ -54,14 +56,6 @@
 #define IFNAME_2G_WDS1			"wds1"
 #define IFNAME_2G_WDS2			"wds2"
 #define IFNAME_2G_WDS3			"wds3"
-#elif !BOARD_5G_IN_SOC
-#define IFNAME_2G_MAIN			"rai2"
-#define IFNAME_2G_GUEST			"rai3"
-#define IFNAME_2G_APCLI			"apclii1"
-#define IFNAME_2G_WDS0			"wdsi4"
-#define IFNAME_2G_WDS1			"wdsi5"
-#define IFNAME_2G_WDS2			"wdsi6"
-#define IFNAME_2G_WDS3			"wdsi7"
 #else
 #define IFNAME_2G_MAIN			"rai0"
 #define IFNAME_2G_GUEST			"rai1"

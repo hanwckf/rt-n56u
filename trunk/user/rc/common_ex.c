@@ -146,7 +146,7 @@ get_eeprom_params(void)
 	char regspec_code[8];
 	char wps_pin[12];
 	char productid[16];
-	char fwver[8], fwver_sub[32], blver[32];
+	char fwver[8], fwver_sub[32];
 
 #if (BOARD_5G_IN_SOC || !BOARD_HAS_5G_RADIO)
 	i_offset = OFFSET_MAC_ADDR_WSOC;
@@ -154,33 +154,33 @@ get_eeprom_params(void)
 	i_offset = OFFSET_MAC_ADDR_INIC;
 #endif
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
-	FRead(buffer, i_offset, ETHER_ADDR_LEN);
-	if (buffer[0] != 0xff)
+	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
+	if (i_ret >= 0 && buffer[0] != 0xff)
 		ether_etoa(buffer, macaddr_wl);
 
-#if BOARD_2G_IN_SOC
+#if BOARD_2G_AS_WSOC
 	i_offset = OFFSET_MAC_ADDR_WSOC;
 #else
 	i_offset = OFFSET_MAC_ADDR_INIC;
 #endif
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
-	FRead(buffer, i_offset, ETHER_ADDR_LEN);
-	if (buffer[0] != 0xff)
+	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
+	if (i_ret >= 0 && buffer[0] != 0xff)
 		ether_etoa(buffer, macaddr_rt);
 
 #if defined (BOARD_N14U) || defined (BOARD_N11P)
-	i_offset = 0x4018E; // wdf?
+	i_offset = 0x018E; // wdf?
 #else
 	i_offset = OFFSET_MAC_GMAC0;
 #endif
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
-	i_ret = FRead(buffer, i_offset, ETHER_ADDR_LEN);
+	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
 	if (buffer[0] == 0xff) {
 		if (ether_atoe(macaddr_wl, ea)) {
 			memcpy(buffer, ea, ETHER_ADDR_LEN);
 			strcpy(macaddr_lan, macaddr_wl);
 			if (i_ret >= 0)
-				FWrite(ea, i_offset, ETHER_ADDR_LEN);
+				flash_mtd_write(MTD_PART_NAME_FACTORY, i_offset, ea, ETHER_ADDR_LEN);
 		}
 	} else {
 		ether_etoa(buffer, macaddr_lan);
@@ -192,14 +192,14 @@ get_eeprom_params(void)
 #else
 	i_offset = OFFSET_MAC_GMAC2;
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
-	i_ret = FRead(buffer, i_offset, ETHER_ADDR_LEN);
+	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
 	if (buffer[0] == 0xff) {
 		if (ether_atoe(macaddr_rt, ea)) {
 			memcpy(buffer, ea, ETHER_ADDR_LEN);
 			strcpy(macaddr_wan, macaddr_rt);
 #if !defined (USE_SINGLE_MAC)
 			if (i_ret >= 0)
-				FWrite(ea, i_offset, ETHER_ADDR_LEN);
+				flash_mtd_write(MTD_PART_NAME_FACTORY, i_offset, ea, ETHER_ADDR_LEN);
 #endif
 		}
 	} else {
@@ -215,7 +215,8 @@ get_eeprom_params(void)
 #if defined (VENDOR_ASUS)
 	/* reserved for Ralink. used as ASUS country code. */
 	memset(country_code, 0, sizeof(country_code));
-	if (FRead(country_code, OFFSET_COUNTRY_CODE, 2) < 0) {
+	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, OFFSET_COUNTRY_CODE, country_code, 2);
+	if (i_ret < 0) {
 		strcpy(country_code, "GB");
 	} else {
 		country_code[2] = 0;
@@ -239,7 +240,8 @@ get_eeprom_params(void)
 #if defined (VENDOR_ASUS)
 	/* reserved for Ralink. used as ASUS RegSpec code. */
 	memset(regspec_code, 0, sizeof(regspec_code));
-	if (FRead(regspec_code, OFFSET_REGSPEC_CODE, 4) < 0) {
+	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, OFFSET_REGSPEC_CODE, regspec_code, 4);
+	if (i_ret < 0) {
 		strcpy(regspec_code, "CE");
 	} else {
 		regspec_code[4] = 0;
@@ -262,7 +264,8 @@ get_eeprom_params(void)
 #if defined (VENDOR_ASUS)
 	/* reserved for Ralink. used as ASUS pin code. */
 	memset(wps_pin, 0, sizeof(wps_pin));
-	if (FRead(wps_pin, OFFSET_PIN_CODE, 8) < 0) {
+	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, OFFSET_PIN_CODE, wps_pin, 8);
+	if (i_ret < 0) {
 		strcpy(wps_pin, "12345670");
 	} else {
 		wps_pin[8] = 0;
@@ -281,10 +284,11 @@ get_eeprom_params(void)
 
 #if defined(USE_RT3352_MII)
  #define EEPROM_INIC_SIZE (512)
- #define EEPROM_INIT_ADDR 0x48000
+ #define EEPROM_INIC_ADDR 0x8000
 	{
 		char eeprom[EEPROM_INIC_SIZE];
-		if(FRead(eeprom, EEPROM_INIT_ADDR, sizeof(eeprom)) < 0) {
+		i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, EEPROM_INIC_ADDR, eeprom, sizeof(eeprom));
+		if (i_ret < 0) {
 			dbg("READ iNIC EEPROM: Out of scope!\n");
 		} else {
 			FILE *fp;
@@ -296,12 +300,13 @@ get_eeprom_params(void)
 	}
 #endif
 
-	/* /dev/mtd/3, firmware, starts from 0x50000 */
+	/* read firmware header */
 	strcpy(fwver, "3.0.0.0");
 	strcpy(fwver_sub, fwver);
 	snprintf(productid, sizeof(productid), "%s", BOARD_PID);
 	memset(buffer, 0, sizeof(buffer));
-	if (FRead(buffer, 0x50020, 32)<0) {
+	i_ret = flash_mtd_read(MTD_PART_NAME_KERNEL, 0x20, buffer, 32);
+	if (i_ret < 0) {
 		nvram_set_temp("productid", "unknown");
 		nvram_set_temp("firmver", "unknown");
 	} else {
@@ -325,9 +330,12 @@ get_eeprom_params(void)
 
 #if defined (VENDOR_ASUS)
 	memset(buffer, 0, 4);
-	FRead(buffer, OFFSET_BOOT_VER, 4);
-	sprintf(blver, "%s-0%c-0%c-0%c-0%c", trim_r(productid), buffer[0], buffer[1], buffer[2], buffer[3]);
-	nvram_set_temp("blver", trim_r(blver));
+	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, OFFSET_BOOT_VER, buffer, 4);
+	if (i_ret == 0) {
+		char blver[32];
+		snprintf(blver, sizeof(blver), "%s-0%c-0%c-0%c-0%c", trim_r(productid), buffer[0], buffer[1], buffer[2], buffer[3]);
+		nvram_set_temp("blver", trim_r(blver));
+	}
 #endif
 
 #if 0
@@ -336,7 +344,8 @@ get_eeprom_params(void)
 		int i, count_0xff = 0;
 		unsigned char txbf_para[33];
 		memset(txbf_para, 0, sizeof(txbf_para));
-		if (FRead(txbf_para, OFFSET_TXBF_PARA, 33) < 0) {
+		i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, OFFSET_TXBF_PARA, txbf_para, 33);
+		if (i_ret < 0) {
 			dbg("READ TXBF PARA address: Out of scope\n");
 		} else {
 			for (i = 0; i < 33; i++) {
@@ -475,7 +484,7 @@ load_user_config(FILE *fp, const char *dir_name, const char *file_name, const ch
 {
 	FILE *fp_user;
 	char line[256], real_path[128];
-	
+
 	snprintf(real_path, sizeof(real_path), "%s/%s", dir_name, file_name);
 	fp_user = fopen(real_path, "r");
 	if (fp_user) {
@@ -502,16 +511,15 @@ int
 is_module_loaded(char *module_name)
 {
 	DIR *dir_to_open = NULL;
-	char sys_path[128];
-	
-	sprintf(sys_path, "/sys/module/%s", module_name);
-	dir_to_open = opendir(sys_path);
-	if (dir_to_open)
-	{
+	char mod_path[64];
+
+	snprintf(mod_path, sizeof(mod_path), "/sys/module/%s", module_name);
+	dir_to_open = opendir(mod_path);
+	if (dir_to_open) {
 		closedir(dir_to_open);
 		return 1;
 	}
-	
+
 	return 0;
 }
 

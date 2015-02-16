@@ -1448,6 +1448,10 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
 		if (realpage != chip->pagebuf || oob) {
 			bufpoi = aligned ? buf : chip->buffers->databuf;
 
+#if defined (CONFIG_MTD_NAND_MTK)
+			/* use api extension */
+			ret = chip->read_page(mtd, chip, bufpoi, page);
+#else
 			chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
 
 			/* Now read the page into the buffer */
@@ -1460,6 +1464,7 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
 			else
 				ret = chip->ecc.read_page(mtd, chip, bufpoi,
 							  page);
+#endif
 			if (ret < 0) {
 				if (!aligned)
 					/* Invalidate page cache */
@@ -2503,9 +2508,14 @@ int nand_erase_nand(struct mtd_info *mtd, struct erase_info *instr,
 		    (page + pages_per_block))
 			chip->pagebuf = -1;
 
+#if defined (CONFIG_MTD_NAND_MTK)
+		/* use api extension */
+		status = chip->erase(mtd, page & chip->pagemask);
+#else
 		chip->erase_cmd(mtd, page & chip->pagemask);
 
 		status = chip->waitfunc(mtd, chip);
+#endif
 
 		/*
 		 * See if operation failed and additional status checks are

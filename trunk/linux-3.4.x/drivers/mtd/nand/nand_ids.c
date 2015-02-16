@@ -25,6 +25,7 @@
  * extended chip ID.
  */
 struct nand_flash_dev nand_flash_ids[] = {
+#if !defined (CONFIG_MTD_NAND_MTK)
 	LEGACY_ID_NAND("NAND 4MiB 5V 8-bit",   0x6B, 4, 0x2000, SP_OPTIONS),
 	LEGACY_ID_NAND("NAND 4MiB 3,3V 8-bit", 0xE3, 4, 0x2000, SP_OPTIONS),
 	LEGACY_ID_NAND("NAND 4MiB 3,3V 8-bit", 0xE5, 4, 0x2000, SP_OPTIONS),
@@ -55,6 +56,7 @@ struct nand_flash_dev nand_flash_ids[] = {
 	LEGACY_ID_NAND("NAND 128MiB 3,3V 16-bit", 0x59, 128, 0x4000, SP_OPTIONS16),
 
 	LEGACY_ID_NAND("NAND 256MiB 3,3V 8-bit", 0x71, 256, 0x4000, SP_OPTIONS),
+#endif
 
 	/*
 	 * These are the new chips with large page size. Their page size and

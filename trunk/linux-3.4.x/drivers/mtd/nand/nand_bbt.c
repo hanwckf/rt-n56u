@@ -71,6 +71,10 @@
 #include <linux/export.h>
 #include <linux/string.h>
 
+#if defined (CONFIG_MTD_NAND_MTK)
+extern int check_block_remap(struct mtd_info *mtd, int block);
+#endif
+
 #define BBT_BLOCK_GOOD		0x00
 #define BBT_BLOCK_WORN		0x01
 #define BBT_BLOCK_RESERVED	0x02
@@ -1363,9 +1367,19 @@ int nand_isbad_bbt(struct mtd_info *mtd, loff_t offs, int allowbbt)
 {
 	struct nand_chip *this = mtd->priv;
 	int block, res;
+#if defined (CONFIG_MTD_NAND_MTK)
+	int mapped_block;
+#endif
 
 	block = (int)(offs >> this->bbt_erase_shift);
+#if defined (CONFIG_MTD_NAND_MTK)
+	mapped_block = check_block_remap(mtd, block);
+	if (mapped_block < 0)
+		return 1;
+	res = bbt_get_entry(this, mapped_block);
+#else
 	res = bbt_get_entry(this, block);
+#endif
 
 	pr_debug("nand_isbad_bbt(): bbt info for offs 0x%08x: "
 			"(block %d) 0x%02x\n",
@@ -1381,6 +1395,26 @@ int nand_isbad_bbt(struct mtd_info *mtd, loff_t offs, int allowbbt)
 	}
 	return 1;
 }
+
+#if defined (CONFIG_MTD_NAND_MTK)
+void nand_bbt_set_bad(struct mtd_info *mtd, int page)
+{
+	struct nand_chip *this = mtd->priv;
+	int block;
+
+	block = (int)(page >> (this->bbt_erase_shift - this->page_shift));
+	bbt_mark_entry(this, block, BBT_BLOCK_FACTORY_BAD);
+}
+
+int nand_bbt_get(struct mtd_info *mtd, int page)
+{
+	struct nand_chip *this = mtd->priv;
+	int block;
+
+	block = (int)(page >> (this->bbt_erase_shift - this->page_shift));
+	return bbt_get_entry(this, block);
+}
+#endif
 
 EXPORT_SYMBOL(nand_scan_bbt);
 EXPORT_SYMBOL(nand_default_bbt);

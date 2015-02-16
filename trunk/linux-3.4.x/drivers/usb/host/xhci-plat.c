@@ -110,12 +110,13 @@ static int xhci_plat_probe(struct platform_device *pdev)
 	if (!res)
 		return -ENODEV;
 
-	if (pdata && pdata->uphy_init)
-		pdata->uphy_init(pdev);
-
 #if defined (CONFIG_MTK_XHCI)
 	reinitIP();
 #endif
+
+	if (pdata && pdata->uphy_init)
+		pdata->uphy_init(pdev);
+
 
 	hcd = usb_create_hcd(driver, &pdev->dev, dev_name(&pdev->dev));
 	if (!hcd)

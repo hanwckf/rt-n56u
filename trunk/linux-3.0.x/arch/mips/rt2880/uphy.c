@@ -1,4 +1,3 @@
-
 #include <linux/version.h>
 #include <linux/module.h>
 #include <linux/types.h>
@@ -67,7 +66,7 @@
 static atomic_t uphy_init_instance = ATOMIC_INIT(0);
 
 static void
-u2_slew_rate_calibration(u32 u2_phy_reg_base)
+u2_slew_rate_calibration(int port_id, u32 u2_phy_reg_base)
 {
 	int i;
 	u32 reg_val;
@@ -138,10 +137,11 @@ u2_slew_rate_calibration(u32 u2_phy_reg_base)
 	if (u4FmOut != 0) {
 		// set reg = (1024/FM_OUT) * 25 * 0.028 (round to the nearest digits)
 		u32 u4Tmp = (((1024 * 25 * U2_SR_COEFF) / u4FmOut) + 500) / 1000;
-		printk("U2PHY calibration value: %d\n", u4Tmp);
 		reg_val |= ((u4Tmp & 0x07)<<16);
+		printk("U2PHY P%d set SRCTRL %s value: %d\n", port_id, "calibration", u4Tmp);
 	} else {
 		reg_val |= (0x4<<16);
+		printk("U2PHY P%d set SRCTRL %s value: %d\n", port_id, "default", 4);
 	}
 	sysRegWrite(u2_phy_reg_base + OFS_U2_PHY_ACR0, reg_val);
 }
@@ -155,8 +155,8 @@ uphy_init(void)
 	if (atomic_inc_return(&uphy_init_instance) != 1)
 		return;
 
-	u2_slew_rate_calibration(ADDR_U2_PHY_P0_BASE);
-	u2_slew_rate_calibration(ADDR_U2_PHY_P1_BASE);
+	u2_slew_rate_calibration(0, ADDR_U2_PHY_P0_BASE);
+	u2_slew_rate_calibration(1, ADDR_U2_PHY_P1_BASE);
 }
 
 #elif defined (CONFIG_RALINK_MT7628)
@@ -192,7 +192,7 @@ uphy_init(void)
 		return;
 
 	u2_phy_init();
-	u2_slew_rate_calibration(ADDR_U2_PHY_P0_BASE);
+	u2_slew_rate_calibration(0, ADDR_U2_PHY_P0_BASE);
 }
 
 #endif

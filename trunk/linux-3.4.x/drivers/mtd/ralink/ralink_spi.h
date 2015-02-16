@@ -1,21 +1,7 @@
 #ifndef __SPIC_H__
 #define __SPIC_H__
 
-#if !defined (__UBOOT__)
-#include <asm/rt2880/rt_mmap.h>
-
 #define RT2880_RSTCTRL_REG		(RALINK_SYSCTL_BASE+0x34)
-
-#else //__UBOOT__
-
-#include <rt_mmap.h>
-#define	EIO		 5	/* I/O error */
-#define	EINVAL		22	/* Invalid argument */
-#define	ENOMEM		12	/* Out of memory */
-#define	EBADMSG		74	/* Not a data message */
-#define	EUCLEAN		117	/* Structure needs cleaning */
-#define RALINK_SPI_RST			(1<<11)
-#endif  //__UBOOT__
 
 #define RSTCTRL_SPI_RESET		RALINK_SPI_RST
 
@@ -31,7 +17,6 @@
 #define RT2880_SPITXFIFO_REG		(RT2880_SPI_REG_BASE+0x30)
 #define RT2880_SPIRXFIFO_REG		(RT2880_SPI_REG_BASE+0x34)
 #define RT2880_SPIFIFOSTAT_REG		(RT2880_SPI_REG_BASE+0x38)
-
 
 #define RT2880_SPI0_CTL_REG		RT2880_SPICTL_REG
 #define RT2880_SPI1_CTL_REG		(RT2880_SPI_REG_BASE+0x54)
@@ -112,10 +97,6 @@
 #define SPIARB_SPI1_ACTIVE_MODE		0
 #endif
 
-#define spi_busy_loop 3000
-#define max_ee_busy_loop 500
-
-
 /*
  * ATMEL AT25XXXX Serial EEPROM 
  * access type
@@ -135,7 +116,6 @@
 #define BP0 2	/* Block Write Protect Bit */
 #define BP1 3	/* Block Write Protect Bit */
 #define WPEN 7	/* Software Write Protect Enable Bit */
-
 
 #define ENABLE	1
 #define DISABLE	0

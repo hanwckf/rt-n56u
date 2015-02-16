@@ -1,7 +1,8 @@
-menu "Ralink Flash Type support"
+menu "Ralink MTD support"
 
 config MTD_RALINK
 	bool "Ralink MTD support"
+	default y
 	depends on MTD
 
 config MTD_NOR_RALINK
@@ -15,13 +16,14 @@ config MTD_SPI_RALINK
 
 config MTD_SPI_FAST_CLOCK
 	bool "Use SPI fast clock, up to 50MHz"
+	default n
 	depends on MTD_SPI_RALINK
 
 choice
-	prompt "Read Mode"
-	depends on MTD_SPI_RALINK
+	prompt "SPI Read Mode"
 	default MTD_SPI_READ_NORM if !(RALINK_MT7621 || RALINK_MT7628)
-	default MTD_SPI_READ_BUFF if (RALINK_MT7621 || RALINK_MT7628)
+	default MTD_SPI_READ_BUFF if  (RALINK_MT7621 || RALINK_MT7628)
+	depends on MTD_SPI_RALINK
 
 	config MTD_SPI_READ_NORM
 		bool "Normal Read, opcode 0x03"
@@ -51,25 +53,22 @@ config MTD_NAND_RALINK
 
 choice
 	prompt "Flash Size"
-	default RT2880_FLASH_8M
+	default RT2880_FLASH_AUTO
 
-config RT2880_FLASH_4M
-	bool "4M"
-
-config RT2880_FLASH_8M
-	bool "8M"
-
-config RT2880_FLASH_16M
-	bool "16M"
-
-config RT2880_FLASH_32M
-	bool "32M"
-	depends on MTD_SPI_RALINK
-
-config RT2880_FLASH_AUTO
-	bool "Autodetect size"
-	depends on (MTD_NAND_RALINK || MTD_NAND_MTK)
-
+	config RT2880_FLASH_4M
+		bool "4M"
+		depends on (MTD_SPI_RALINK || MTD_NOR_RALINK)
+	config RT2880_FLASH_8M
+		bool "8M"
+		depends on (MTD_SPI_RALINK || MTD_NOR_RALINK)
+	config RT2880_FLASH_16M
+		bool "16M"
+		depends on (MTD_SPI_RALINK || MTD_NOR_RALINK)
+	config RT2880_FLASH_32M
+		bool "32M"
+		depends on MTD_SPI_RALINK
+	config RT2880_FLASH_AUTO
+		bool "Autodetect Size"
 endchoice
 
 config RT2880_MTD_PHYSMAP_START
@@ -91,17 +90,17 @@ choice
 	prompt "Root File System Type"
 	default RT2880_ROOTFS_IN_FLASH
 
-config  RT2880_ROOTFS_IN_RAM
-	bool "RootFS_in_RAM"
-	select BLK_DEV_INITRD
-	select BLK_DEV_RAM
+	config  RT2880_ROOTFS_IN_RAM
+		bool "RootFS_in_RAM"
+		select BLK_DEV_INITRD
+		select BLK_DEV_RAM
 
-config  RT2880_ROOTFS_IN_FLASH
-	bool "RootFS_in_FLASH"
+	config  RT2880_ROOTFS_IN_FLASH
+		bool "RootFS_in_FLASH"
 endchoice
 
 config ROOTFS_IN_FLASH_NO_PADDING
-	bool 'No Padding between Kernel and RootFS'
+	bool "No Padding between Kernel and RootFS"
 	default y
 	depends on RT2880_ROOTFS_IN_FLASH
 

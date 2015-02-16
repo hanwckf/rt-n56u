@@ -1,50 +1,19 @@
 #ifndef __RALINK_FLASH_H__
 #define __RALINK_FLASH_H__
 
-#define MTD_BOOT_PART_SIZE	0x30000
-#define MTD_CONFIG_PART_SIZE	0x10000
-#define MTD_FACTORY_PART_SIZE	0x10000
-#if defined (CONFIG_MTD_STORE_PART_SIZ)
-#define MTD_STORE_PART_SIZE	CONFIG_MTD_STORE_PART_SIZ
-#else
-#define MTD_STORE_PART_SIZE	0x10000 // 64K
-#endif
-
-#if defined (CONFIG_RT2880_FLASH_4M)
-#define IMAGE1_SIZE		0x400000
-#elif defined (CONFIG_RT2880_FLASH_8M)
-#define IMAGE1_SIZE		0x800000
-#elif defined (CONFIG_RT2880_FLASH_16M)
-#define IMAGE1_SIZE		0x1000000
-#elif defined (CONFIG_RT2880_FLASH_32M)
-#define IMAGE1_SIZE		0x2000000
-#else
-#define IMAGE1_SIZE		CONFIG_RT2880_MTD_PHYSMAP_LEN
-#endif
-
-#ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
-#ifdef CONFIG_ROOTFS_IN_FLASH_NO_PADDING
-#undef  CONFIG_MTD_KERNEL_PART_SIZ
-#define CONFIG_MTD_KERNEL_PART_SIZ 0
-#endif
-#define MTD_KERN_PART_SIZE	CONFIG_MTD_KERNEL_PART_SIZ
-#define MTD_ROOTFS_PART_SIZE	(IMAGE1_SIZE - (MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE + CONFIG_MTD_KERNEL_PART_SIZ + MTD_STORE_PART_SIZE))
-#else
-#define MTD_KERN_PART_SIZE	(IMAGE1_SIZE - (MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE + MTD_STORE_PART_SIZE))
-#endif
-#if defined (CONFIG_RT2880_FLASH_4M) || defined (CONFIG_RT2880_FLASH_8M)
-#define MTD_FWSTUB_PART_SIZE	(IMAGE1_SIZE - (MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE))
-#else
-#define MTD_FWSTUB_PART_SIZE	(IMAGE1_SIZE - (MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE + MTD_STORE_PART_SIZE))
-#endif
-#define MTD_FWSTUB_PART_OFFSET	(MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE)
-
 #define BOOT_FROM_NOR	0
 #define BOOT_FROM_NAND	2
 #define BOOT_FROM_SPI	3
+
+#if defined (CONFIG_RT2880_ROOTFS_IN_FLASH) && defined (CONFIG_ROOTFS_IN_FLASH_NO_PADDING)
+typedef struct __image_header {
+	uint8_t unused[60];
+	uint32_t ih_ksz;
+} _ihdr_t;
+#endif
 
 extern int ra_check_flash_type(void);
 extern int ra_mtd_write_nm(char *name, loff_t to, size_t len, const unsigned char *buf);
 extern int ra_mtd_read_nm(char *name, loff_t from, size_t len, unsigned char *buf);
 
-#endif /* __RALINK_FLASH_H__ */
+#endif

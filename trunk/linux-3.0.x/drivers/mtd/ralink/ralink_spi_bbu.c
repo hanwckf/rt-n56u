@@ -30,9 +30,11 @@
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 
-#include "ralink_spi_bbu.h"
+#include <linux/ralink_gpio.h>
+
 #include "ralink-flash.h"
 #include "ralink-flash-map.h"
+#include "ralink_spi_bbu.h"
 
 //#define SPI_DEBUG
 //#define TEST_CS1_FLASH
@@ -149,32 +151,46 @@ static int bbu_spic_busy_wait(void)
 
 void spic_init(void)
 {
-	u32 clk_div, reg_div;
+	u32 clk_sys, clk_div, reg;
 
+	clk_sys = get_surfboard_sysclk() / 1000000;
+#if defined(CONFIG_RALINK_MT7621)
+	if (clk_sys > 230) {
+		/* OCP 1:3 */
 #if defined (CONFIG_MTD_SPI_FAST_CLOCK)
-	clk_div = 6; /* hclk/6 -> 36.6 MHz */
-	reg_div = 0x04;
+		clk_div = 6;	/* hclk/6 -> 50 MHz */
 #else
-	clk_div = 8; /* hclk/8 -> 27.5 MHz */
-	reg_div = 0x06;
+		clk_div = 8;	/* hclk/8 -> 36 MHz */
 #endif
+	} else
+#endif
+	{
+		/* OCP 1:4 or MT7628 */
+#if defined (CONFIG_MTD_SPI_FAST_CLOCK)
+		clk_div = 4;	/* hclk/4 -> 50 MHz */
+#else
+		clk_div = 6;	/* hclk/6 -> 33 MHz */
+#endif
+	}
 
-	ra_and(SPI_REG_MASTER, ~(0xfff << 16));
-	ra_or(SPI_REG_MASTER, (reg_div << 16));
+	reg = ra_inl(SPI_REG_MASTER);
+	reg &= ~(0xfff << 16);
+	reg |= ((clk_div-2) << 16);
+	ra_outl(SPI_REG_MASTER, reg);
 
 #ifdef TEST_CS1_FLASH
-	ra_and(RALINK_SYSCTL_BASE + 0x60, ~(1 << 12));
+	ra_and(RALINK_REG_GPIOMODE, ~(1 << 12));
 	ra_or(SPI_REG_MASTER, (1 << 29));
 #endif
 
-	printk("Ralink SPI flash driver, SPI clock: %dMHz\n", (get_surfboard_sysclk() / 1000000) / clk_div);
+	printk("Ralink SPI flash driver, SPI clock: %dMHz\n", clk_sys / clk_div);
 }
 
 struct chip_info {
 	char		*name;
 	u8		id;
 	u32		jedec_id;
-	unsigned long	sector_size;
+	unsigned int	sector_size;
 	unsigned int	n_sectors;
 	char		addr4b;
 };
@@ -207,7 +223,7 @@ static struct chip_info chips_data [] = {
 	{ "N25Q064A",		0x20, 0xba171000, 64 * 1024, 128, 0 },
 	{ "N25Q128A",		0x20, 0xba181000, 64 * 1024, 256, 0 },
 	{ "N25Q256A",		0x20, 0xba191000, 64 * 1024, 512, 1 },
-	{ "MT25QL512AB",	0x20, 0xba201044, 64 * 1024, 1024, 1 },
+	{ "MT25QL512AB",	0x20, 0xba201044, 64 * 1024, 512, 1 },
 
 	{ "F25L32QA",		0x8c, 0x41168c41, 64 * 1024, 64,  0 }, // ESMT
 	{ "F25L64QA",		0x8c, 0x41170000, 64 * 1024, 128, 0 }, // ESMT
@@ -229,13 +245,13 @@ static struct chip_info chips_data [] = {
 	{ "W25Q256FV",		0xef, 0x40190000, 64 * 1024, 512, 1 },
 
 #if defined (CONFIG_RT2880_FLASH_32M)
-	{ "STUB",		0x00, 0xffffffff, 64 * 1024, 512, 1 },
-#elif defined (CONFIG_RT2880_FLASH_16M)
-	{ "STUB",		0x00, 0xffffffff, 64 * 1024, 256, 0 },
+	{ "Unknown",		0x00, 0xffffffff, 64 * 1024, 512, 1 },
+#elif defined (CONFIG_RT2880_FLASH_16M) || defined (CONFIG_RT2880_FLASH_AUTO)
+	{ "Unknown",		0x00, 0xffffffff, 64 * 1024, 256, 0 },
 #elif defined (CONFIG_RT2880_FLASH_8M)
-	{ "STUB",		0x00, 0xffffffff, 64 * 1024, 128, 0 },
+	{ "Unknown",		0x00, 0xffffffff, 64 * 1024, 128, 0 },
 #else
-	{ "STUB",		0x00, 0xffffffff, 64 * 1024, 64,  0 },
+	{ "Unknown",		0x00, 0xffffffff, 64 * 1024, 64,  0 },
 #endif
 };
 
@@ -297,7 +313,7 @@ static int bbu_mb_spic_trans(const u8 code, const u32 addr, u8 *buf, const size_
 	}
 
 	/* step 3. set rx (miso_bit_cnt) and tx (mosi_bit_cnt) bit count */
-	ra_and(SPI_REG_MOREBUF, ~SPI_MBCTL_TX_RX_CNT_MASK);
+	ra_and(SPI_REG_MOREBUF, ~SPI_MBCTL_TXRXCNT_MASK);
 	ra_or(SPI_REG_MOREBUF, (n_rx << 3 << 12));
 	ra_or(SPI_REG_MOREBUF, n_tx << 3);
 
@@ -404,7 +420,7 @@ static int bbu_spic_trans(const u8 code, const u32 addr, u8 *buf, const size_t n
 	}
 
 	/* step 3. set mosi_byte_cnt */
-	ra_and(SPI_REG_CTL, ~SPI_CTL_TX_RX_CNT_MASK);
+	ra_and(SPI_REG_CTL, ~SPI_CTL_TXRXCNT_MASK);
 	ra_or(SPI_REG_CTL, (n_rx << 4));
 	if (flash && flash->chip->addr4b && n_tx >= 4)
 		ra_or(SPI_REG_CTL, (n_tx + 1));
@@ -708,7 +724,7 @@ static int raspi_erase_sector(u32 offset)
 
 	/* Send write enable, then erase commands. */
 	raspi_write_enable();
-	bbu_spic_trans(STM_OP_SECTOR_ERASE, offset, NULL, 4, 0, 0);
+	bbu_spic_trans(OPCODE_SE, offset, NULL, 4, 0, 0);
 	raspi_wait_sleep_ready(950);
 
 	if (flash->chip->addr4b)
@@ -723,14 +739,14 @@ static int raspi_erase_sector(u32 offset)
 struct chip_info *chip_prob(void)
 {
 	struct chip_info *info, *match;
-	u8 buf[5];
+	u8 buf[5] = {0};
 	u32 jedec, weight;
 	int i;
 
 	raspi_read_devid(buf, 5);
 	jedec = (u32)((u32)(buf[1] << 24) | ((u32)buf[2] << 16) | ((u32)buf[3] <<8) | (u32)buf[4]);
 
-	printk("flash manufacture id: %x, device id %x %x\n", buf[0], buf[1], buf[2]);
+	ra_dbg("deice id : %x %x %x\n", buf[0], buf[1], buf[2]);
 
 	// FIXME, assign default as AT25D
 	weight = 0xffffffff;
@@ -749,7 +765,7 @@ struct chip_info *chip_prob(void)
 		}
 	}
 
-	printk("Warning: un-recognized chip ID, please update SPI driver!\n");
+	printk("Warning: un-recognized SPI chip ID: %x (%x), please update SPI driver!\n", buf[0], jedec);
 
 	return match;
 }
@@ -866,7 +882,7 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 
 		if (len - rdlen <= more) {
 #ifdef MORE_BUF_MODE
-			rc = bbu_mb_spic_trans(STM_OP_RD_DATA, from, (buf+rdlen), 0, (len-rdlen), SPIC_READ_BYTES);
+			rc = bbu_mb_spic_trans(OPCODE_READ, from, (buf+rdlen), 0, (len-rdlen), SPIC_READ_BYTES);
 #else
 			rc = bbu_spic_trans(code, from, (buf+rdlen), n_tx, (len-rdlen), SPIC_READ_BYTES);
 #endif
@@ -878,7 +894,7 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 		}
 		else {
 #ifdef MORE_BUF_MODE
-			rc = bbu_mb_spic_trans(STM_OP_RD_DATA, from, (buf+rdlen), 0, more, SPIC_READ_BYTES);
+			rc = bbu_mb_spic_trans(OPCODE_READ, from, (buf+rdlen), 0, more, SPIC_READ_BYTES);
 #else
 			rc = bbu_spic_trans(code, from, (buf+rdlen), n_tx, more, SPIC_READ_BYTES);
 #endif
@@ -983,17 +999,17 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 #endif
 			if (wrlen <= more) {
 #ifdef MORE_BUF_MODE
-				bbu_mb_spic_trans(STM_OP_PAGE_PGRM, wrto, wrbuf, wrlen, 0, SPIC_WRITE_BYTES);
+				bbu_mb_spic_trans(OPCODE_PP, wrto, wrbuf, wrlen, 0, SPIC_WRITE_BYTES);
 #else
-				bbu_spic_trans(STM_OP_PAGE_PGRM, wrto, wrbuf, wrlen+4, 0, SPIC_WRITE_BYTES);
+				bbu_spic_trans(OPCODE_PP, wrto, wrbuf, wrlen+4, 0, SPIC_WRITE_BYTES);
 #endif
 				wrlen = 0;
 			}
 			else {
 #ifdef MORE_BUF_MODE
-				bbu_mb_spic_trans(STM_OP_PAGE_PGRM, wrto, wrbuf, more, 0, SPIC_WRITE_BYTES);
+				bbu_mb_spic_trans(OPCODE_PP, wrto, wrbuf, more, 0, SPIC_WRITE_BYTES);
 #else
-				bbu_spic_trans(STM_OP_PAGE_PGRM, wrto, wrbuf, more+4, 0, SPIC_WRITE_BYTES);
+				bbu_spic_trans(OPCODE_PP, wrto, wrbuf, more+4, 0, SPIC_WRITE_BYTES);
 #endif
 				wrto += more;
 				wrlen -= more;
@@ -1036,24 +1052,18 @@ exit_mtd_write:
 	return exit_code;
 }
 
-/*
- * board specific setup should have ensured the SPI clock used here
- * matches what the READ command supports, at least until this driver
- * understands FAST_READ (for clocks over 25 MHz).
- */
-static int raspi_probe(void)
+static int __init raspi_init(void)
 {
 	struct chip_info *chip;
+	uint64_t flash_size = IMAGE1_SIZE;
+	uint32_t kernel_size = 0x150000;
+#if defined (CONFIG_RT2880_ROOTFS_IN_FLASH) && defined (CONFIG_ROOTFS_IN_FLASH_NO_PADDING)
+	_ihdr_t hdr;
+	loff_t offs;
+	size_t ret_len = 0;
+#endif
 #if defined (SPI_DEBUG)
 	unsigned i;
-#endif
-#if defined (CONFIG_RT2880_ROOTFS_IN_FLASH) && defined (CONFIG_ROOTFS_IN_FLASH_NO_PADDING)
-	loff_t offs;
-	size_t len_ret;
-	struct __image_header {
-		uint8_t unused[60];
-		uint32_t ih_ksz;
-	} hdr;
 #endif
 
 	if (ra_check_flash_type() != BOOT_FROM_SPI)
@@ -1091,7 +1101,7 @@ static int raspi_probe(void)
 	flash->mtd.unlock = ramtd_unlock;
 #endif
 
-	printk("%s (%02x %04x) (%u Kbytes)\n",
+	printk("SPI flash chip: %s (%02x %04x) (%u Kbytes)\n",
 	       chip->name, chip->id, chip->jedec_id, (uint32_t)flash->mtd.size / 1024);
 
 #if defined (SPI_DEBUG)
@@ -1114,24 +1124,22 @@ static int raspi_probe(void)
 				flash->mtd.eraseregions[i].numblocks);
 #endif
 
+#if defined (CONFIG_RT2880_FLASH_AUTO)
+	flash_size = flash->mtd.size;
+#endif
 #if defined (CONFIG_RT2880_ROOTFS_IN_FLASH) && defined (CONFIG_ROOTFS_IN_FLASH_NO_PADDING)
-	offs = MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE;
-	ramtd_read(NULL, offs, sizeof(hdr), &len_ret, (u_char *)(&hdr));
-	if (hdr.ih_ksz != 0) {
-		rt2880_partitions[3].size = ntohl(hdr.ih_ksz);
-		rt2880_partitions[4].size = IMAGE1_SIZE - (MTD_BOOT_PART_SIZE +
-				MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE +
-				MTD_STORE_PART_SIZE +
-				ntohl(hdr.ih_ksz));
-	}
+	offs = MTD_KERNEL_PART_OFFSET;
+	memset(&hdr, 0, sizeof(hdr));
+	ramtd_read(NULL, offs, sizeof(hdr), &ret_len, (u_char *)(&hdr));
+	if (ret_len == sizeof(hdr) && hdr.ih_ksz != 0)
+		kernel_size = ntohl(hdr.ih_ksz);
 #endif
 
-	return mtd_device_register(&flash->mtd, rt2880_partitions, ARRAY_SIZE(rt2880_partitions));
-}
+	/* calculate partition table */
+	recalc_partitions(flash_size, kernel_size);
 
-static int __init raspi_init(void)
-{
-	return raspi_probe();
+	/* register the partitions */
+	return mtd_device_register(&flash->mtd, rt2880_partitions, ARRAY_SIZE(rt2880_partitions));
 }
 
 static void __exit raspi_exit(void)

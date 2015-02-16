@@ -31,9 +31,10 @@
 #include <linux/spi/flash.h>
 
 #include <linux/ralink_gpio.h>
-#include "ralink_spi.h"
+
 #include "ralink-flash.h"
 #include "ralink-flash-map.h"
+#include "ralink_spi.h"
 
 //#define SPI_DEBUG
 
@@ -333,7 +334,7 @@ static struct chip_info chips_data [] = {
 	{ "N25Q064A",		0x20, 0xba171000, 64 * 1024, 128, 0 },
 	{ "N25Q128A",		0x20, 0xba181000, 64 * 1024, 256, 0 },
 	{ "N25Q256A",		0x20, 0xba191000, 64 * 1024, 512, 1 },
-	{ "MT25QL512AB",	0x20, 0xba201044, 64 * 1024, 1024, 1 },
+	{ "MT25QL512AB",	0x20, 0xba201044, 64 * 1024, 512, 1 },
 
 	{ "F25L32QA",		0x8c, 0x41168c41, 64 * 1024, 64,  0 }, // ESMT
 	{ "F25L64QA",		0x8c, 0x41170000, 64 * 1024, 128, 0 }, // ESMT
@@ -355,13 +356,13 @@ static struct chip_info chips_data [] = {
 	{ "W25Q256FV",		0xef, 0x40190000, 64 * 1024, 512, 1 },
 
 #if defined (CONFIG_RT2880_FLASH_32M)
-	{ "STUB",		0x00, 0xffffffff, 64 * 1024, 512, 1 },
-#elif defined (CONFIG_RT2880_FLASH_16M)
-	{ "STUB",		0x00, 0xffffffff, 64 * 1024, 256, 0 },
+	{ "Unknown",		0x00, 0xffffffff, 64 * 1024, 512, 1 },
+#elif defined (CONFIG_RT2880_FLASH_16M) || defined (CONFIG_RT2880_FLASH_AUTO)
+	{ "Unknown",		0x00, 0xffffffff, 64 * 1024, 256, 0 },
 #elif defined (CONFIG_RT2880_FLASH_8M)
-	{ "STUB",		0x00, 0xffffffff, 64 * 1024, 128, 0 },
+	{ "Unknown",		0x00, 0xffffffff, 64 * 1024, 128, 0 },
 #else
-	{ "STUB",		0x00, 0xffffffff, 64 * 1024, 64,  0 },
+	{ "Unknown",		0x00, 0xffffffff, 64 * 1024, 64,  0 },
 #endif
 };
 
@@ -1116,7 +1117,7 @@ exit_mtd_write:
 struct chip_info *chip_prob(void)
 {
 	struct chip_info *info, *match;
-	u8 buf[5];
+	u8 buf[5] = {0};
 	u32 jedec, weight;
 	int i;
 
@@ -1141,29 +1142,23 @@ struct chip_info *chip_prob(void)
 		}
 	}
 
-	printk("Warning: un-recognized chip ID, please update SPI driver!\n");
+	printk("Warning: un-recognized SPI chip ID: %x (%x), please update SPI driver!\n", buf[0], jedec);
 
 	return match;
 }
 
-/*
- * board specific setup should have ensured the SPI clock used here
- * matches what the READ command supports, at least until this driver
- * understands FAST_READ (for clocks over 25 MHz).
- */
-static int raspi_probe(void)
+static int __init raspi_init(void)
 {
 	struct chip_info *chip;
-#if defined (SPI_DEBUG)
-	unsigned i;
-#endif
+	uint64_t flash_size = IMAGE1_SIZE;
+	uint32_t kernel_size = 0x150000;
 #if defined (CONFIG_RT2880_ROOTFS_IN_FLASH) && defined (CONFIG_ROOTFS_IN_FLASH_NO_PADDING)
 	loff_t offs;
-	size_t len_ret;
-	struct __image_header {
-		uint8_t unused[60];
-		uint32_t ih_ksz;
-	} hdr;
+	size_t ret_len = 0;
+	_ihdr_t hdr;
+#endif
+#if defined (SPI_DEBUG)
+	unsigned i;
 #endif
 
 	if (ra_check_flash_type() != BOOT_FROM_SPI)
@@ -1201,8 +1196,8 @@ static int raspi_probe(void)
 	flash->mtd.unlock = ramtd_unlock;
 #endif
 
-	printk("%s (%02x %04x) (%u Kbytes)\n",
-	       chip->name, chip->id, chip->jedec_id, (uint32_t)flash->mtd.size / 1024);
+	printk("SPI flash chip: %s (%02x %04x) (%u Kbytes)\n",
+		chip->name, chip->id, chip->jedec_id, (uint32_t)flash->mtd.size / 1024);
 
 #if defined (SPI_DEBUG)
 	ra_dbg("mtd .name = %s, .size = 0x%.8x (%uM) "
@@ -1224,24 +1219,22 @@ static int raspi_probe(void)
 				flash->mtd.eraseregions[i].numblocks);
 #endif
 
+#if defined (CONFIG_RT2880_FLASH_AUTO)
+	flash_size = flash->mtd.size;
+#endif
 #if defined (CONFIG_RT2880_ROOTFS_IN_FLASH) && defined (CONFIG_ROOTFS_IN_FLASH_NO_PADDING)
-	offs = MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE;
-	ramtd_read(NULL, offs, sizeof(hdr), &len_ret, (u_char *)(&hdr));
-	if (hdr.ih_ksz != 0) {
-		rt2880_partitions[3].size = ntohl(hdr.ih_ksz);
-		rt2880_partitions[4].size = IMAGE1_SIZE - (MTD_BOOT_PART_SIZE +
-				MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE +
-				MTD_STORE_PART_SIZE +
-				ntohl(hdr.ih_ksz));
-	}
+	offs = MTD_KERNEL_PART_OFFSET;
+	memset(&hdr, 0, sizeof(hdr));
+	ramtd_read(NULL, offs, sizeof(hdr), &ret_len, (u_char *)(&hdr));
+	if (ret_len == sizeof(hdr) && hdr.ih_ksz != 0)
+		kernel_size = ntohl(hdr.ih_ksz);
 #endif
 
-	return mtd_device_register(&flash->mtd, rt2880_partitions, ARRAY_SIZE(rt2880_partitions));
-}
+	/* calculate partition table */
+	recalc_partitions(flash_size, kernel_size);
 
-static int __init raspi_init(void)
-{
-	return raspi_probe();
+	/* register the partitions */
+	return mtd_device_register(&flash->mtd, rt2880_partitions, ARRAY_SIZE(rt2880_partitions));
 }
 
 static void __exit raspi_exit(void)

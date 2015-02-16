@@ -18,22 +18,26 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
-#define HW_NAT_MODULE_VER "v2.51.3"
+#define HW_NAT_MODULE_VER "v2.51.4"
 
 /* ra0-15, wds0-4, apcli0, mesh0 interfaces */
-#if defined (CONFIG_RT2860V2_AP_MBSS) || defined (CONFIG_MT76X2_AP_MBSS)
+#if defined (CONFIG_RT2860V2_AP_MBSS) || defined (CONFIG_MT76X2_AP_MBSS) || \
+    defined (CONFIG_MT76X3_AP_MBSS)
 #define HWNAT_DP_RA_MBSS
 #endif
 
-#if defined (CONFIG_RT2860V2_AP_WDS) || defined (CONFIG_MT76X2_AP_WDS)
+#if defined (CONFIG_RT2860V2_AP_WDS) || defined (CONFIG_MT76X2_AP_WDS) || \
+    defined (CONFIG_MT76X3_AP_WDS)
 #define HWNAT_DP_RA_WDS
 #endif
 
-#if defined (CONFIG_RT2860V2_AP_APCLI) || defined (CONFIG_MT76X2_AP_APCLI)
+#if defined (CONFIG_RT2860V2_AP_APCLI) || defined (CONFIG_MT76X2_AP_APCLI) || \
+    defined (CONFIG_MT76X3_AP_APCLI)
 #define HWNAT_DP_RA_APCLI
 #endif
 
-#if defined (CONFIG_RT2860V2_AP_MESH) || defined (CONFIG_MT76X2_AP_MESH)
+#if defined (CONFIG_RT2860V2_AP_MESH) || defined (CONFIG_MT76X2_AP_MESH) || \
+    defined (CONFIG_MT76X3_AP_MESH)
 #define HWNAT_DP_RA_MESH
 #endif
 
@@ -44,32 +48,28 @@
 #if defined (CONFIG_RT3090_AP_MBSS) || defined (CONFIG_RT5392_AP_MBSS) || \
     defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
     defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS) || \
-    defined (CONFIG_MT7610_AP_MBSS) || defined (CONFIG_MT76X2_AP_MBSS) || \
-    defined (CONFIG_MT76X3_AP_MBSS)
+    defined (CONFIG_MT7610_AP_MBSS) || defined (CONFIG_MT76X2_AP_MBSS)
 #define HWNAT_DP_RAI_MBSS
 #endif
 
 #if defined (CONFIG_RT3090_AP_WDS) || defined (CONFIG_RT5392_AP_WDS) || \
     defined (CONFIG_RT3572_AP_WDS) || defined (CONFIG_RT5572_AP_WDS) || \
     defined (CONFIG_RT5592_AP_WDS) || defined (CONFIG_RT3593_AP_WDS) || \
-    defined (CONFIG_MT7610_AP_WDS) || defined (CONFIG_MT76X2_AP_WDS) || \
-    defined (CONFIG_MT76X3_AP_WDS)
+    defined (CONFIG_MT7610_AP_WDS) || defined (CONFIG_MT76X2_AP_WDS)
 #define HWNAT_DP_RAI_WDS
 #endif
 
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
     defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
     defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI) || \
-    defined (CONFIG_MT7610_AP_APCLI) || defined (CONFIG_MT76X2_AP_APCLI) || \
-    defined (CONFIG_MT76X3_AP_APCLI)
+    defined (CONFIG_MT7610_AP_APCLI) || defined (CONFIG_MT76X2_AP_APCLI)
 #define HWNAT_DP_RAI_APCLI
 #endif
 
 #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
     defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
     defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH) || \
-    defined (CONFIG_MT7610_AP_MESH) || defined (CONFIG_MT76X2_AP_MESH) || \
-    defined (CONFIG_MT76X3_AP_MESH)
+    defined (CONFIG_MT7610_AP_MESH) || defined (CONFIG_MT76X2_AP_MESH)
 #define HWNAT_DP_RAI_MESH
 #endif
 #endif

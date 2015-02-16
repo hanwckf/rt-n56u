@@ -475,18 +475,23 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 {
 	struct net_device *dev;
-	struct vlan_ethhdr *veth;
 	uint16_t VirIfIdx;
 
-	/* something wrong: proto must be 802.11q, interface index must be < MAX_IF_NUM and exist, 
-		don`t touch this packets and return to normal path before corrupt in detag code
-	*/
-	if (skb->protocol != __constant_htons(ETH_P_8021Q))
+#if defined (CONFIG_RAETH_HW_VLAN_RX)
+	if (vlan_tx_tag_present(skb))
+		VirIfIdx = vlan_tx_tag_get(skb);
+	else
+#endif
+	if (skb->protocol == __constant_htons(ETH_P_8021Q)) {
+		struct vlan_ethhdr *veth = vlan_eth_hdr(skb);
+		VirIfIdx = ntohs(veth->h_vlan_TCI);
+	} else {
+		/* something wrong: proto must be 802.11q, interface index must be < MAX_IF_NUM and exist, 
+			don`t touch this packets and return to normal path before corrupt in detag code
+		*/
 		return 1;
+	}
 
-	veth = vlan_eth_hdr(skb);
-
-	VirIfIdx = ntohs(veth->h_vlan_TCI);
 	if (VirIfIdx >= MAX_IF_NUM)
 		return 1;
 
@@ -497,8 +502,15 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 	}
 
 	/* remove vlan tag from current packet */
-	if (RemoveVlanTag(skb))
-		return 1;
+#if defined (CONFIG_RAETH_HW_VLAN_RX)
+	if (vlan_tx_tag_present(skb))
+		skb->vlan_tci = 0;
+	else
+#endif
+	{
+		if (RemoveVlanTag(skb))
+			return 1;
+	}
 
 	/* set original skb dev */
 	skb->dev = dev;
@@ -980,8 +992,12 @@ uint32_t PpeSetExtIfNum(struct sk_buff *skb, struct FoeEntry* foe_entry)
 static void PpeSetInfoBlk2(struct _info_blk2 *iblk2, uint32_t fpidx, uint32_t port_mg, uint32_t port_ag)
 {
 #if defined (CONFIG_RALINK_MT7621)
+	/* PDMA MODE should not goes to QoS */
+	iblk2->fqos = 0;
+
 	/* 0:PSE, 1:GSW, 2:GMAC, 4:PPE, 5:QDMA, 7:DROP */
 	iblk2->dp = (fpidx & 0x7);
+
 	/* need lookup another multicast table if this is multicast flow */
 	iblk2->mcast = (fpidx & 0x80) ? 1 : 0;
 #elif defined (CONFIG_RALINK_MT7620)
@@ -1050,18 +1066,6 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 	/* reset L2 fields */
 	foe_entry.bfib1.rmt = 0;
 
-	/* PPPoE + IP (MT7621 with 2xGMAC) */
-#if defined (CONFIG_RAETH_GMAC2)
-	if (eth_type == ETH_P_PPP_SES) {
-		struct pppoe_hdr *peh = (struct pppoe_hdr *)(skb->data + ETH_HLEN);
-		if (peh->ver != 1 || peh->type != 1)
-			return 1;
-		pppoe_gap = 8;
-		ppp_tag = ntohs(peh->tag[0].tag_type);
-		ppp_sid = ntohs(peh->sid);
-	}
-	else
-#endif
 	if (eth_type == ETH_P_8021Q || vlan_tx_tag_present(skb)
 #if defined (CONFIG_RAETH_SPECIAL_TAG)
 	 || ((eth_type & 0xFF00) == ETH_P_8021Q)
@@ -1117,6 +1121,17 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 			}
 		}
 	}
+#if defined (CONFIG_RAETH_GMAC2)
+	/* PPPoE + IP (MT7621 with 2xGMAC) */
+	else if (eth_type == ETH_P_PPP_SES) {
+		struct pppoe_hdr *peh = (struct pppoe_hdr *)(skb->data + ETH_HLEN);
+		if (peh->ver != 1 || peh->type != 1)
+			return 1;
+		pppoe_gap = 8;
+		ppp_tag = ntohs(peh->tag[0].tag_type);
+		ppp_sid = ntohs(peh->sid);
+	}
+#endif
 
 	if ((eth_type == ETH_P_IP) || (eth_type == ETH_P_PPP_SES && ppp_tag == PPP_IP)) {
 		struct iphdr *iph = (struct iphdr *)(skb->data + ETH_HLEN + vlan1_gap + vlan2_gap + pppoe_gap);
@@ -1319,7 +1334,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 	foe_entry.bfib1.psn = (pppoe_gap) ? 1 : 0;
 
 #if defined (CONFIG_RALINK_MT7621)
-	foe_entry.bfib1.vpm = 1; // 0x8100
+	foe_entry.bfib1.vpm = 1;	// 0x8100
 #else
 	/* we set VID and VPRI in foe entry already, so we have to inform switch of keeping VPRI */
 	foe_entry.bfib1.dvp = 1;
@@ -1478,18 +1493,6 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 	foe_entry.ipv4_hnapt.vlan2 = 0;
 	foe_entry.ipv4_hnapt.pppoe_id = 0;
 
-	/* PPPoE + IP (RT3883 with 2xGMAC) */
-#if defined (CONFIG_RAETH_GMAC2)
-	if (eth_type == ETH_P_PPP_SES) {
-		struct pppoe_hdr *peh = (struct pppoe_hdr *)(skb->data + ETH_HLEN);
-		if (peh->ver != 1 || peh->type != 1)
-			return 1;
-		pppoe_gap = 8;
-		ppp_tag = ntohs(peh->tag[0].tag_type);
-		foe_entry.ipv4_hnapt.pppoe_id = ntohs(peh->sid);
-	}
-	else
-#endif
 	if (eth_type == ETH_P_8021Q || vlan_tx_tag_present(skb)) {
 		struct vlan_hdr *vh;
 		
@@ -1529,6 +1532,17 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 			}
 		}
 	}
+#if defined (CONFIG_RAETH_GMAC2)
+	/* PPPoE + IP (RT3883 with 2xGMAC) */
+	else if (eth_type == ETH_P_PPP_SES) {
+		struct pppoe_hdr *peh = (struct pppoe_hdr *)(skb->data + ETH_HLEN);
+		if (peh->ver != 1 || peh->type != 1)
+			return 1;
+		pppoe_gap = 8;
+		ppp_tag = ntohs(peh->tag[0].tag_type);
+		foe_entry.ipv4_hnapt.pppoe_id = ntohs(peh->sid);
+	}
+#endif
 
 	if ((eth_type == ETH_P_IP) || (eth_type == ETH_P_PPP_SES && ppp_tag == PPP_IP)) {
 		struct iphdr *iph = (struct iphdr *)(skb->data + ETH_HLEN + vlan1_gap + vlan2_gap + pppoe_gap);

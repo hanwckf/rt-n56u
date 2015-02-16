@@ -55,7 +55,7 @@ char rt2880_cmdline[]=CONFIG_CMDLINE;
 #define MTD_UBI_MTD	""
 #endif
 #if defined (CONFIG_RT2880_ROOTFS_IN_FLASH)
-#if defined (CONFIG_MTD_NAND_USE_UBI)
+#if defined (CONFIG_MTD_NAND_USE_UBI_PART)
 #define MTD_ROOTFS_DEV	"/dev/mtdblock5"
 #else
 #define MTD_ROOTFS_DEV	"/dev/mtdblock4"

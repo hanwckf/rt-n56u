@@ -267,82 +267,131 @@ static void __exit rt2880_mtd_exit(void)
  */
 int ra_mtd_write_nm(char *name, loff_t to, size_t len, const u_char *buf)
 {
-	int ret = -1;
-	size_t rdlen, wrlen;
+	int ret, res;
+	loff_t ofs, ofs_align, bad_shift;
+	size_t cnt, i_len, r_len, w_len;
 	struct mtd_info *mtd;
 	struct erase_info ei;
-	u_char *bak = NULL;
+	u_char *bak, *ptr;
 
 	mtd = get_mtd_device_nm(name);
+	if (IS_ERR(mtd))
+		return (int)mtd;
 
-	if (IS_ERR(mtd)) {
-		ret = (int)mtd;
-		goto out;
-	}
+	ret = 0;
 
-	if (len > mtd->erasesize) {
-		put_mtd_device(mtd);
+	if ((to + len) > mtd->size) {
 		ret = -E2BIG;
+		printk("%s: out of mtd size (%lld)!\n", __FUNCTION__, mtd->size);
 		goto out;
 	}
 
 	bak = kzalloc(mtd->erasesize, GFP_KERNEL);
-	if (bak == NULL) {
-		put_mtd_device(mtd);
+	if (!bak) {
 		ret = -ENOMEM;
 		goto out;
 	}
 
+	ptr = (u_char *)buf;
+	ofs = to;
+	cnt = len;
+
+	bad_shift = 0;
+
+	while (cnt > 0) {
+		ofs_align = ofs & ~(mtd->erasesize - 1);	/* aligned to erase boundary */
+		i_len = mtd->erasesize - (ofs - ofs_align);
+		if (cnt < i_len)
+			i_len = cnt;
+		
+		ei.mtd = mtd;
+		ei.callback = NULL;
+		ei.addr = ofs_align + bad_shift;
+		ei.len = mtd->erasesize;
+		ei.priv = 0;
+		
+		/* check bad block */
+		if (mtd->type == MTD_NANDFLASH || mtd->type == MTD_MLCNANDFLASH) {
+			if ((ei.addr + mtd->erasesize) > mtd->size) {
+				ret = -E2BIG;
+				goto free_out;
+			}
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
-	ret = mtd_read(mtd, 0, mtd->erasesize, &rdlen, bak);
+			res = mtd_block_isbad(mtd, ei.addr);
 #else
-	ret = mtd->read(mtd, 0, mtd->erasesize, &rdlen, bak);
+			res = 0;
+			if (mtd->block_isbad)
+				res = mtd->block_isbad(mtd, ei.addr);
 #endif
-	if (ret) {
-		goto free_out;
+			if (res < 0) {
+				ret = -EIO;
+				goto free_out;
+			}
+			if (res > 0) {
+				bad_shift += mtd->erasesize;
+				continue;
+			}
+		}
+		
+		/* backup */
+		r_len = 0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
+		res = mtd_read(mtd, ei.addr, mtd->erasesize, &r_len, bak);
+#else
+		res = mtd->read(mtd, ei.addr, mtd->erasesize, &r_len, bak);
+#endif
+		if (res || mtd->erasesize != r_len) {
+			ret = -EIO;
+			printk("%s: read from 0x%llx failed!\n", __FUNCTION__, ei.addr);
+			goto free_out;
+		}
+		
+		/* erase */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
+		res = mtd_erase(mtd, &ei);
+#else
+		res = mtd->erase(mtd, &ei);
+#endif
+		if (res) {
+			ret = -EIO;
+			printk("%s: erase on 0x%llx failed!\n", __FUNCTION__, ei.addr);
+			goto free_out;
+		}
+		
+		/* write */
+		w_len = 0;
+		memcpy(bak + (ofs - ofs_align), ptr, i_len);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
+		res = mtd_write(mtd, ei.addr, mtd->erasesize, &w_len, bak);
+#else
+		res = mtd->write(mtd, ei.addr, mtd->erasesize, &w_len, bak);
+#endif
+		if (res || mtd->erasesize != w_len) {
+			ret = -EIO;
+			printk("%s: write to 0x%llx failed!\n", __FUNCTION__, ei.addr);
+			goto free_out;
+		}
+		
+		ptr += i_len;
+		ofs += i_len;
+		cnt -= i_len;
+		
+		/* add delay after write */
+		udelay(10);
 	}
 
-	if (rdlen != mtd->erasesize)
-		printk("warning: ra_mtd_write_nm: rdlen is not equal to erasesize\n");
-
-	memcpy(bak + to, buf, len);
-
-	ei.mtd = mtd;
-	ei.callback = NULL;
-	ei.addr = 0;
-	ei.len = mtd->erasesize;
-	ei.priv = 0;
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
-	ret = mtd_erase(mtd, &ei);
-#else
-	ret = mtd->erase(mtd, &ei);
-#endif
-	if (ret != 0)
-		goto free_out;
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
-	ret = mtd_write(mtd, 0, mtd->erasesize, &wrlen, bak);
-#else
-	ret = mtd->write(mtd, 0, mtd->erasesize, &wrlen, bak);
-#endif
-
-	udelay(10); /* add delay after write */
-
 free_out:
-	if (mtd)
-		put_mtd_device(mtd);
-
-	if (bak)
-		kfree(bak);
+	kfree(bak);
 out:
+	put_mtd_device(mtd);
 	return ret;
 }
+EXPORT_SYMBOL(ra_mtd_write_nm);
 
 int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf)
 {
 	int ret;
-	size_t rdlen = 0;
+	size_t r_len = 0;
 	struct mtd_info *mtd;
 
 	mtd = get_mtd_device_nm(name);
@@ -350,22 +399,25 @@ int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf)
 		return (int)mtd;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
-	ret = mtd_read(mtd, from, len, &rdlen, buf);
+	ret = mtd_read(mtd, from, len, &r_len, buf);
 #else
-	ret = mtd->read(mtd, from, len, &rdlen, buf);
+	ret = mtd->read(mtd, from, len, &r_len, buf);
 #endif
-	if (rdlen != len)
-		printk("warning: ra_mtd_read_nm: rdlen is not equal to len\n");
+	if (ret) {
+		printk("%s: read from 0x%llx failed!\n", __FUNCTION__, from);
+		goto out;
+	}
 
+	if (r_len != len)
+		printk("%s: read len (%u) is not equal to requested len (%u)\n", __FUNCTION__, r_len, len);
+out:
 	put_mtd_device(mtd);
 	return ret;
 }
+EXPORT_SYMBOL(ra_mtd_read_nm);
 
 module_init(rt2880_mtd_init);
 module_exit(rt2880_mtd_exit);
-
-EXPORT_SYMBOL(ra_mtd_write_nm);
-EXPORT_SYMBOL(ra_mtd_read_nm);
 
 MODULE_AUTHOR("Steven Liu <steven_liu@ralinktech.com.tw>");
 MODULE_DESCRIPTION("Ralink APSoC Flash Map");

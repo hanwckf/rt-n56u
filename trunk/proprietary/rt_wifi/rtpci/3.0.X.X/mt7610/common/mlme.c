@@ -581,6 +581,103 @@ VOID MlmeResetRalinkCounters(
 
 	return;
 }
+#ifdef DYNAMIC_VGA_SUPPORT
+void update_rssi_for_channel_model(RTMP_ADAPTER * pAd)
+{
+	INT32 rx0_rssi, rx1_rssi;
+	
+#ifdef CONFIG_AP_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+	{
+		rx0_rssi = (CHAR)(pAd->ApCfg.RssiSample.LastRssi0);
+		rx1_rssi = (CHAR)(pAd->ApCfg.RssiSample.LastRssi1);
+	}
+#endif /* CONFIG_AP_SUPPORT */
+
+	DBGPRINT(RT_DEBUG_INFO, ("%s:: rx0_rssi(%d), rx1_rssi(%d)\n", 
+		__FUNCTION__, rx0_rssi, rx1_rssi));	
+
+	/*
+		RSSI_DUT(n) = RSSI_DUT(n-1)*15/16 + RSSI_R2320_100ms_sample*1/16
+	*/
+	pAd->chipCap.avg_rssi_0 = ((pAd->chipCap.avg_rssi_0) * 15)/16 + (rx0_rssi << 8)/16;
+	//pAd->chipCap.avg_rssi_1 = ((pAd->chipCap.avg_rssi_1) * 15)/16 + (rx1_rssi << 8)/16;
+	//pAd->chipCap.avg_rssi_all = (pAd->chipCap.avg_rssi_0 + pAd->chipCap.avg_rssi_1)/512;
+	pAd->chipCap.avg_rssi_all = pAd->chipCap.avg_rssi_0 / 256;
+
+	DBGPRINT(RT_DEBUG_INFO, ("%s:: update rssi all(%d)\n", 
+		__FUNCTION__, pAd->chipCap.avg_rssi_all));
+}
+
+#endif /*DYNAMIC_VGA_SUPPORT*/
+
+
+//edcca same channel ap count
+/* get ap counts from some channel*/
+#ifdef ED_MONITOR
+ULONG BssChannelAPCount(
+	IN BSS_TABLE *Tab, 
+	IN UCHAR	 Channel) 
+{
+	UCHAR i;
+	ULONG ap_count = 0;
+	
+	for (i = 0; i < Tab->BssNr; i++) 
+	{
+		if (Tab->BssEntry[i].Channel == Channel)
+		{
+			ap_count ++; 
+		}
+	}
+	return ap_count;
+}
+
+
+void dynamic_ed_cca_threshold_adjust(RTMP_ADAPTER * pAd)
+{
+	UINT32 reg_val = 0;
+	CHAR high_gain = 0, mid_gain = 0, low_gain = 0, ulow_gain = 0, lna_gain_mode = 0;
+	UCHAR lna_gain = 0, vga_gain = 0, y = 0, z = 0;
+	
+	RTMP_BBP_IO_READ32(pAd, AGC1_R4, &reg_val);
+	high_gain = ((reg_val & (0x3F0000)) >> 16) & 0x3F;
+	mid_gain = ((reg_val & (0x3F00)) >> 8) & 0x3F;
+	low_gain = reg_val & 0x3F;
+	
+	RTMP_BBP_IO_READ32(pAd, AGC1_R6, &reg_val);
+	ulow_gain = reg_val & 0x3F;
+
+	RTMP_BBP_IO_READ32(pAd, AGC1_R8, &reg_val);
+	lna_gain_mode = ((reg_val & 0xC0) >> 6) & 0x3;
+	vga_gain = ((reg_val & 0x7E00) >> 9) & 0x3F;
+
+	if (lna_gain_mode == 0)
+		lna_gain = ulow_gain;
+	else if (lna_gain_mode == 1)
+		lna_gain = low_gain;
+	else if (lna_gain_mode == 2)
+		lna_gain = mid_gain;	
+	else if (lna_gain_mode == 3)
+		lna_gain = high_gain;
+
+	if ((vga_gain + lna_gain) > 64)
+		y = ((vga_gain + lna_gain) - 64) / 3;
+	else
+		y = 0;
+
+	if (y > 1)
+		z = min((1 << (y - 2)), 14);
+	else 
+		z = 1;
+
+	RTMP_BBP_IO_READ32(pAd, AGC1_R2, &reg_val);
+	reg_val = (reg_val & 0xFFFF0000) | (z << 8) | z;
+	RTMP_BBP_IO_WRITE32(pAd, AGC1_R2, reg_val);
+
+	DBGPRINT(RT_DEBUG_TRACE, ("%s:: lna_gain(%d), vga_gain(%d), lna_gain_mode(%d), y=%d, z=%d, 0x2308=0x%08x\n", 
+		__FUNCTION__, lna_gain, vga_gain, lna_gain_mode, y, z, reg_val));
+}
+#endif /* ED_MONITOR */
 
 
 /*
@@ -643,6 +740,14 @@ VOID MlmePeriodicExec(
 	pAd->Mlme.PeriodicRound ++;
 	pAd->Mlme.GPIORound++;
 
+#ifdef DYNAMIC_VGA_SUPPORT
+#ifdef MT76x0
+		if (IS_MT76x0(pAd)) {
+			update_rssi_for_channel_model(pAd);			
+		}
+#endif /* MT76x0 */
+#endif /* DYNAMIC_VGA_SUPPORT */
+
 
 	/* by default, execute every 500ms */
 	if ((pAd->ra_interval) && 
@@ -700,8 +805,120 @@ VOID MlmePeriodicExec(
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{
+			if ((IS_MT76x0(pAd) && pAd->chipCap.bDoTemperatureSensor) && 
+                           ((pAd->Mlme.OneSecPeriodicRound % 10) == 0))
+			{
+				CHAR CurTempSensorState;
+				if ((pAd->chipCap.LastTempSensorState == MT7610_TS_STATE_NORMAL) &&
+				   (pAd->chipCap.NowTemperature > 50))	
+				{
+					CurTempSensorState = MT7610_TS_STATE_HIGH;
+				}
+				else if ((pAd->chipCap.LastTempSensorState == MT7610_TS_STATE_HIGH) &&
+				         (pAd->chipCap.NowTemperature < 40))	
+				{
+					CurTempSensorState = MT7610_TS_STATE_NORMAL;
+				}
+				else if ((pAd->chipCap.LastTempSensorState == MT7610_TS_STATE_NORMAL) &&
+				         (pAd->chipCap.NowTemperature < 0))
+				{
+					CurTempSensorState = MT7610_TS_STATE_LOW;
+				}
+				else if ((pAd->chipCap.LastTempSensorState == MT7610_TS_STATE_LOW) &&
+				         (pAd->chipCap.NowTemperature > 10))
+				{
+					CurTempSensorState = MT7610_TS_STATE_LOW;
+				}
+				else
+				{
+					CurTempSensorState = pAd->chipCap.LastTempSensorState;
+				}
+
+				UINT32 vga_ext_val[3][3]={
+				/*               20MHz      40MHz      80MHz  */	
+				/* NORMAL */	{0x122C54F2, 0x122C54F2, 0x122C54F2},
+				/* HIGH   */	{0x122C54F2, 0x122C54F2, 0x122C54F2},
+				/* LOW    */	{0x122C50F2, 0x122C50F2, 0x122C50F2}}; 
+
+				/* Apply the new CR */
+				if ((CurTempSensorState != pAd->chipCap.LastTempSensorState) ||
+                    (pAd->chipCap.IsTempSensorStateReset == TRUE))
+				{
+					INT tsIdx=0, bwIdx=0;
+					bwIdx = pAd->CommonCfg.BBPCurrentBW; 
+					tsIdx = CurTempSensorState;
+					UINT32 eLNAgain = (vga_ext_val[tsIdx][bwIdx] & 0x0000FF00) >> 8;
+
+                    if (pAd->CommonCfg.Channel < 100)
+                    {
+                            eLNAgain -= (pAd->ALNAGain0*2);
+                    }
+                    else if (pAd->CommonCfg.Channel < 137)
+                    {
+                            eLNAgain -= (pAd->ALNAGain1*2);
+                    }
+                    else
+                    {
+                            eLNAgain -= (pAd->ALNAGain2*2);
+                    }
+
+                    DBGPRINT(RT_DEBUG_TRACE, ("VGA_EXT: Change in new TS state %d, BW:%d\n", tsIdx, bwIdx));
+                    DBGPRINT(RT_DEBUG_TRACE, ("VGA_EXT: Target Gain ==> %02X\n", eLNAgain));
+
+					/* get the AGC_VGA_INIT value for chain 0 */
+					pAd->CommonCfg.MO_Cfg.Stored_BBP_R66 = eLNAgain;
+					pAd->chipCap.LastTempSensorState = CurTempSensorState;
+					
+					if (pAd->chipCap.IsTempSensorStateReset == TRUE)
+						pAd->chipCap.IsTempSensorStateReset = FALSE;
+				}
+				else
+				{
+					DBGPRINT(RT_DEBUG_INFO, ("VGA_EXT: Keep in the Last TS state %d, BW:%d\n", 
+							CurTempSensorState, pAd->CommonCfg.BBPCurrentBW));
+				}
+			}
+
+			//dynamic VGA adjust
+			BOOLEAN disableByLongRange = TRUE;			
+			DBGPRINT(RT_DEBUG_TRACE,("%s() : avg_rssi_0 == %d pAd->CommonCfg.BBPCurrentBW == %d ,init gain =0x%x\n",
+						__FUNCTION__, pAd->chipCap.avg_rssi_all,pAd->CommonCfg.BBPCurrentBW,pAd->CommonCfg.MO_Cfg.Stored_BBP_R66));
+			if( pAd->OpMode == OPMODE_AP &&
+				((pAd->chipCap.avg_rssi_all > -82 && pAd->CommonCfg.BBPCurrentBW == BW_20)  || 
+				(pAd->chipCap.avg_rssi_all > -79 && pAd->CommonCfg.BBPCurrentBW == BW_40) ||
+				(pAd->chipCap.avg_rssi_all > -76 && pAd->CommonCfg.BBPCurrentBW == BW_80)))
+			{
+				disableByLongRange = FALSE;  // do dynamic VGA				
+			}
+			else
+			{
+				UINT32 bbp_val;
+				
+				disableByLongRange = TRUE;   // skip dynamic VGA , resume initial gain
+				RTMP_BBP_IO_READ32(pAd, AGC1_R8, &bbp_val);
+				if(((bbp_val & 0x0000ff00) >> 8) == pAd->CommonCfg.MO_Cfg.Stored_BBP_R66)
+				{
+					DBGPRINT(RT_DEBUG_INFO,
+						("%s() : VGA gain == init gain: 0x%x \n",
+						__FUNCTION__, pAd->CommonCfg.MO_Cfg.Stored_BBP_R66));
+				}
+				else
+				{
+					bbp_val = (bbp_val & 0xffff00ff) | (pAd->CommonCfg.MO_Cfg.Stored_BBP_R66 << 8);
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, bbp_val);
+#ifdef DFS_SUPPORT
+			        pAd->CommonCfg.RadarDetect.bAdjustDfsAgc = TRUE;
+#endif					
+					DBGPRINT(RT_DEBUG_TRACE,
+						("%s() : AP AvgRssi0 : %d  BW : 0x%x  disable Dynamic VGA! resume gain: 0x%x\n",
+						__FUNCTION__,pAd->chipCap.avg_rssi_all, pAd->CommonCfg.BBPCurrentBW
+						,pAd->CommonCfg.MO_Cfg.Stored_BBP_R66));
+				}
+			}
+			
 			if ((pAd->CommonCfg.MO_Cfg.bDyncVgaEnable) &&
-				OPSTATUS_TEST_FLAG(pAd, fOP_AP_STATUS_MEDIA_STATE_CONNECTED))
+				OPSTATUS_TEST_FLAG(pAd, fOP_AP_STATUS_MEDIA_STATE_CONNECTED)
+				&& !disableByLongRange)
 			{
 				UCHAR val;
 				UINT32 bbp_val, bbp_reg = AGC1_R8;
@@ -736,6 +953,9 @@ VOID MlmePeriodicExec(
 #endif
 					}
 				}
+#ifdef ED_MONITOR
+				dynamic_ed_cca_threshold_adjust(pAd);
+#endif
 			}
 		}
 #endif /* CONFIG_AP_SUPPORT */
@@ -800,6 +1020,7 @@ VOID MlmePeriodicExec(
 				{
 					INT32 temperature_diff = 0;
 					MT76x0_TempSensor(pAd);
+					DBGPRINT(RT_DEBUG_TRACE,("VGA_EXT: MT76x0_TempSensor --> %d\n", pAd->chipCap.NowTemperature));
 
 					temperature_diff = (pAd->chipCap.NowTemperature - pAd->chipCap.LastTemperatureforVCO);
 					if ((temperature_diff > 20) || 
@@ -854,6 +1075,9 @@ VOID MlmePeriodicExec(
 #ifdef CARRIER_DETECTION_SUPPORT
 				&& (isCarrierDetectExist(pAd) == FALSE)
 #endif /* CARRIER_DETECTION_SUPPORT */
+#ifdef ED_MONITOR
+				&& (pAd->ed_chk == FALSE)
+#endif /* ED_MONITOR */
 				)
 				pAd->macwd ++;
 			else
@@ -917,6 +1141,13 @@ VOID MlmePeriodicExec(
 #endif /* WSC_INCLUDED */
 
 
+
+#ifdef ED_MONITOR
+	if (pAd->ed_chk)
+	{
+		ed_status_read(pAd);
+	}
+#endif /* ED_MONITOR */
 
 	pAd->bUpdateBcnCntDone = FALSE;
 }

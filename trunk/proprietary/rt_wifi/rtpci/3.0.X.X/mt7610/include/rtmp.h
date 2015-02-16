@@ -2264,7 +2264,7 @@ typedef struct _MAC_TABLE {
 #else
 	MAC_TABLE_ENTRY Content[MAX_LEN_OF_MAC_TABLE];
 #endif /* MAC_REPEATER_SUPPORT */
-	USHORT Size;
+	UINT16 Size;
 	QUEUE_HEADER McastPsQueue;
 	ULONG PsQIdleCount;
 	BOOLEAN fAnyStationInPsm;
@@ -2704,6 +2704,14 @@ typedef struct _AP_ADMIN_CONFIG {
 	UINT8 EthApCliIdx;
 	UCHAR RepeaterCliSize;
 #endif /* MAC_REPEATER_SUPPORT */
+#ifdef BAND_STEERING
+	/* 
+		This is used to let user config band steering on/off by profile.
+		0: OFF / 1: ON / 2: Auto ONOFF
+	*/
+	BOOLEAN BandSteering; 
+	BND_STRG_CLI_TABLE BndStrgTable;
+#endif /* BAND_STEERING */
 } AP_ADMIN_CONFIG, *PAP_ADMIN_CONFIG;
 
 #ifdef IGMP_SNOOP_SUPPORT
@@ -3041,7 +3049,7 @@ typedef enum{
 
 typedef struct _BBP_RESET_CTL
 {
-#define BBP_RECORD_NUM	47
+#define BBP_RECORD_NUM	49
 	REG_PAIR BBPRegDB[BBP_RECORD_NUM];
 	BOOLEAN	AsicCheckEn;
 } BBP_RESET_CTL, *PBBP_RESET_CTL;
@@ -3756,6 +3764,42 @@ struct _RTMP_ADAPTER {
     struct sk_buff_head rx0_recycle;
 #endif /* WLAN_SKB_RECYCLE */
 
+#ifdef ED_MONITOR
+	BOOLEAN ed_chk;
+
+//for AP Mode's threshold
+#ifdef CONFIG_AP_SUPPORT
+	UCHAR ed_sta_threshold;
+	UCHAR ed_ap_threshold;
+#endif /* CONFIG_AP_SUPPORT */
+
+//for STA Mode's threshold
+
+	UCHAR ed_threshold;
+	UINT false_cca_threshold;
+	UINT ed_block_tx_threshold;
+	INT ed_chk_period;  // in unit of ms
+
+	UCHAR ed_stat_sidx;
+	UCHAR ed_stat_lidx;
+	BOOLEAN ed_tx_stoped;
+	UINT ed_trigger_cnt;
+	UINT ed_silent_cnt;
+	UINT ed_false_cca_cnt;
+
+#define ED_STAT_CNT 20
+	UINT32 ed_stat[ED_STAT_CNT];
+	UINT32 ed_trigger_stat[ED_STAT_CNT];
+	UINT32 ed_silent_stat[ED_STAT_CNT];
+	UINT32 ed_2nd_stat[ED_STAT_CNT];
+	UINT32 ch_idle_stat[ED_STAT_CNT];
+	UINT32 ch_busy_stat[ED_STAT_CNT];
+	UINT32 false_cca_stat[ED_STAT_CNT];
+	ULONG chk_time[ED_STAT_CNT];
+	RALINK_TIMER_STRUCT ed_timer;
+	BOOLEAN ed_timer_inited;
+#endif /* ED_MONITOR */
+
 #ifdef FPGA_MODE
 	INT tx_kick_cnt;
 	INT phy_rates;
@@ -3801,6 +3845,12 @@ struct _RTMP_ADAPTER {
 #endif /* SINGLE_SKU_V2 */
 
 };
+
+#ifdef ED_MONITOR
+INT ed_status_read(RTMP_ADAPTER *pAd);
+INT ed_monitor_init(RTMP_ADAPTER *pAd);
+INT ed_monitor_exit(RTMP_ADAPTER *pAd);
+#endif /* ED_MONITOR */
 
 #if defined(RTMP_INTERNAL_TX_ALC) || defined(RTMP_TEMPERATURE_COMPENSATION) 
 /* The offset of the Tx power tuning entry (zero-based array) */
@@ -5268,6 +5318,12 @@ VOID BATableInit(
 VOID BATableExit(	
 	IN RTMP_ADAPTER *pAd);
 #endif /* DOT11_N_SUPPORT */
+
+#ifdef ED_MONITOR
+ULONG BssChannelAPCount(
+	IN BSS_TABLE *Tab, 
+	IN UCHAR Channel);
+#endif /* ED_MONITOR */
 
 ULONG BssTableSearch(
 	IN BSS_TABLE *Tab, 
@@ -7833,6 +7889,7 @@ INT	Set_BurstMode_Proc(
 
 #ifdef DOT11_VHT_AC
 INT Set_VhtBw_Proc(RTMP_ADAPTER *pAd, PSTRING arg);
+INT	Set_VhtGi_Proc(RTMP_ADAPTER *pAd, PSTRING arg);
 INT Set_VhtStbc_Proc(RTMP_ADAPTER *pAd, PSTRING arg);
 INT Set_VhtBwSignal_Proc(RTMP_ADAPTER *pAd, PSTRING arg);
 INT	Set_VhtDisallowNonVHT_Proc(

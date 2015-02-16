@@ -2590,6 +2590,14 @@ NDIS_STATUS	RTMPSetProfileParameters(
 				pAd->ApCfg.DtimPeriod = (UCHAR) simple_strtol(tmpbuf, 0, 10);
 				DBGPRINT(RT_DEBUG_TRACE, ("DtimPeriod=%d\n", pAd->ApCfg.DtimPeriod));
 			}
+#ifdef BAND_STEERING
+			/* Band Steering Enable/Disable */
+			if(RTMPGetKeyParameter("BandSteering", tmpbuf, 10, pBuffer, TRUE))
+			{
+				pAd->ApCfg.BandSteering = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+				DBGPRINT(RT_DEBUG_TRACE, ("BandSteering=%d\n", pAd->ApCfg.BandSteering));
+			}
+#endif /* BAND_STEERING */
 		}
 #endif /* CONFIG_AP_SUPPORT */					
 	    /*TxPower*/
@@ -2860,6 +2868,50 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			}
 		}
 #endif /* CONFIG_AP_SUPPORT */
+
+#ifdef ED_MONITOR
+
+#ifdef CONFIG_AP_SUPPORT
+		/*For AP connected client's count*/
+		if (RTMPGetKeyParameter("EDCCA_AP_STA_TH", tmpbuf, 32, pBuffer, TRUE))
+		{
+			UINT8 count = simple_strtol(tmpbuf, 0, 10);
+			pAd->ed_sta_threshold = count;
+			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_sta_threshold = %u\n", count));
+		}
+
+		/*For APs found in working channel*/
+		if (RTMPGetKeyParameter("EDCCA_AP_AP_TH", tmpbuf, 32, pBuffer, TRUE))
+		{
+			UINT8 count = simple_strtol(tmpbuf, 0, 10);
+			pAd->ed_ap_threshold = count;
+			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_ap_threshold = %u\n", count));
+		}
+#endif /* CONFIG_AP_SUPPORT */
+
+
+		/* common part for EDCCA config */
+		if (RTMPGetKeyParameter("EDCCA_ED_TH", tmpbuf, 32, pBuffer, TRUE))
+		{
+			UCHAR count = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+			pAd->ed_threshold = count;
+			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_threshold = %u\n", count));
+		}
+
+		if (RTMPGetKeyParameter("EDCCA_FALSE_CCA_TH", tmpbuf, 32, pBuffer, TRUE))
+		{
+			UINT count = (UINT) simple_strtol(tmpbuf, 0, 10);
+			pAd->false_cca_threshold = count;
+			DBGPRINT(RT_DEBUG_TRACE, ("pAd->false_cca_threshold = %u\n", count));
+		}
+
+		if (RTMPGetKeyParameter("EDCCA_BLOCK_CHECK_TH", tmpbuf, 32, pBuffer, TRUE))
+		{
+			UINT count = (UINT) simple_strtol(tmpbuf, 0, 10);
+			pAd->ed_block_tx_threshold = count;
+			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_block_tx_threshold = %u\n", count));
+		}
+#endif /* ED_MONITOR */			
 
 		/*ShortSlot*/
 		if(RTMPGetKeyParameter("ShortSlot", tmpbuf, 10, pBuffer, TRUE))

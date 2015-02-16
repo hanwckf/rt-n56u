@@ -247,7 +247,9 @@ static VOID APPeerAuthReqAtIdleAction(
 	ULONG FrameLen = 0;
 	MAC_TABLE_ENTRY *pEntry;
 	UCHAR ChTxtIe = 16, ChTxtLen = CIPHER_TEXT_LEN;
-
+#ifdef BAND_STEERING
+	BOOLEAN bAuthCheck = TRUE;
+#endif /* BAND_STEERING */
 
 
 	if (! APPeerAuthSanity(pAd, Elem->Msg, Elem->MsgLen, Addr1,
@@ -338,6 +340,19 @@ static VOID APPeerAuthReqAtIdleAction(
 				"Status code = %d\n", MLME_UNSPECIFY_FAIL));
 		return;
     }
+
+#ifdef BAND_STEERING
+	BND_STRG_CHECK_CONNECTION_REQ(	pAd,
+										NULL, 
+										Addr2,
+										Elem->MsgType,
+										Elem->Rssi0,
+										Elem->Rssi1,
+										Elem->Rssi2,
+										&bAuthCheck);
+	if (bAuthCheck == FALSE)
+		return;
+#endif /* BAND_STEERING */
 
 	if ((Alg == AUTH_MODE_OPEN) && 
 		(pAd->ApCfg.MBSSID[apidx].AuthMode != Ndis802_11AuthModeShared)) 

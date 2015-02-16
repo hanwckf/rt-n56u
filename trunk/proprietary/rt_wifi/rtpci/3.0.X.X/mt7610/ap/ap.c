@@ -318,7 +318,10 @@ VOID APStartUp(
 				WscOnOff(pAd, apidx, FALSE);
 		}
 #endif /* WSC_V2_SUPPORT */
-
+#ifdef BAND_STEERING
+		if (pAd->ApCfg.BandSteering && apidx == BSS0)
+			BndStrg_Init(pAd);
+#endif /* BAND_STEERING */
 	}
 
 #ifdef DOT11_N_SUPPORT
@@ -797,6 +800,19 @@ DBGPRINT(RT_DEBUG_OFF, ("%s(): AP Set CentralFreq at %d(Prim=%d, HT-CentCh=%d, V
 
 
 
+#ifdef ED_MONITOR
+{
+	BOOLEAN bEdcca = FALSE;
+
+	bEdcca = GetEDCCASupport(pAd);
+
+	if (bEdcca)
+	{
+		ed_monitor_init(pAd);
+	}
+}
+#endif /* ED_MONITOR */
+
 	DBGPRINT(RT_DEBUG_TRACE, ("<=== APStartUp\n"));
 }
 
@@ -815,6 +831,14 @@ VOID APStop(
 	INT			apidx;
 	
 	DBGPRINT(RT_DEBUG_TRACE, ("!!! APStop !!!\n"));
+
+#ifdef ED_MONITOR
+	if (pAd->ed_chk)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("@@@ %s: go to ed_monitor_exit()!!\n", __FUNCTION__));		
+		ed_monitor_exit(pAd);
+	}
+#endif /* ED_MONITOR */
 
 #ifdef DFS_SUPPORT
 		NewRadarDetectionStop(pAd);
@@ -963,6 +987,10 @@ VOID MacTableMaintenance(
 	RSSI_SAMPLE *worst_rssi = NULL;
 	int worst_rssi_sta_idx = 0;
 #endif /* WFA_VHT_PF */
+
+#ifdef ED_MONITOR
+	INT total_sta = 0;
+#endif /* ED_MONITOR */
 
 	for (bss_index = BSS0; bss_index < MAX_MBSSID_NUM(pAd); bss_index++)
 		fAnyStationPortSecured[bss_index] = 0;
@@ -1406,11 +1434,26 @@ VOID MacTableMaintenance(
 	/* Update the state of port per MBSS */
 	for (bss_index = BSS0; bss_index < MAX_MBSSID_NUM(pAd); bss_index++)
 	{
+#ifdef ED_MONITOR
+		total_sta += pAd->ApCfg.MBSSID[bss_index].StaCount;
+#endif /* ED_MONITOR */
 		if (fAnyStationPortSecured[bss_index] > 0)
 			pAd->ApCfg.MBSSID[bss_index].PortSecured = WPA_802_1X_PORT_SECURED;
 		else
 			pAd->ApCfg.MBSSID[bss_index].PortSecured = WPA_802_1X_PORT_NOT_SECURED;
 	}
+
+#ifdef ED_MONITOR
+	if (total_sta > pAd->ed_sta_threshold)
+	{
+		/* Predict this is not test edcca case*/
+		if (pAd->ed_chk)
+		{
+			DBGPRINT(RT_DEBUG_ERROR, ("@@@ %s: go to ed_monitor_exit()!!\n", __FUNCTION__));		
+			ed_monitor_exit(pAd);
+		}
+	}
+#endif /* ED_MONITOR */
 
 #ifdef DOT11_N_SUPPORT
 #ifdef DOT11N_DRAFT3

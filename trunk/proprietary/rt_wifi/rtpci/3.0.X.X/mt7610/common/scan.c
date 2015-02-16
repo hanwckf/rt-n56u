@@ -47,7 +47,17 @@ INT scan_ch_restore(RTMP_ADAPTER *pAd, UCHAR OpMode)
 #ifdef CONFIG_AP_SUPPORT
 	if (OpMode == OPMODE_AP)
 	{
-
+#ifdef APCLI_SUPPORT
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+			if (pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+			{
+				if (!ApCliAutoConnectExec(pAd))
+				{
+					DBGPRINT(RT_DEBUG_ERROR, ("Error in  %s\n", __FUNCTION__));
+				}
+			}			
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
+#endif /* APCLI_SUPPORT */
 		pAd->Mlme.ApSyncMachine.CurrState = AP_SYNC_IDLE;
 		RTMPResumeMsduTransmission(pAd);
 
@@ -85,8 +95,24 @@ INT scan_ch_restore(RTMP_ADAPTER *pAd, UCHAR OpMode)
 			APStartUp(pAd);
 		}
 
-		if (!((pAd->CommonCfg.Channel > 14) && (pAd->CommonCfg.bIEEE80211H == TRUE)))
+		if (((pAd->CommonCfg.Channel > 14) &&
+			(pAd->CommonCfg.bIEEE80211H == TRUE) &&
+			RadarChannelCheck(pAd, pAd->CommonCfg.Channel)))
+		{
+			if (pAd->Dot11_H.InServiceMonitorCount)
+			{
+				pAd->Dot11_H.RDMode = RD_NORMAL_MODE;
+				AsicEnableBssSync(pAd);
+			}
+			else
+			{
+				pAd->Dot11_H.RDMode = RD_SILENCE_MODE;
+			}
+		}
+		else
+		{
 			AsicEnableBssSync(pAd);
+	}
 	}
 #endif /* CONFIG_AP_SUPPORT */
 

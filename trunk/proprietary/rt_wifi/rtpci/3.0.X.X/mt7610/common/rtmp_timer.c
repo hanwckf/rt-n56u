@@ -91,6 +91,10 @@ BUILD_TIMER_FUNCTION(WscSetupLockTimeout);
 
 #endif /* WSC_INCLUDED */
 
+#if defined(BAND_STEERING) && !defined(BNDSTRG_DAEMON)
+BUILD_TIMER_FUNCTION(BndStrg_PeriodicExec);
+#endif /* BAND_STEERING && !BNDSTRG_DAEMON */
+
 
 
 #ifdef TXBF_SUPPORT

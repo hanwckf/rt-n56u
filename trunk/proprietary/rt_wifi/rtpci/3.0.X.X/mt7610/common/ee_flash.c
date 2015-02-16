@@ -32,7 +32,7 @@
 static NDIS_STATUS rtmp_ee_flash_init(PRTMP_ADAPTER pAd, PUCHAR start);
 
 
-static UCHAR init_flag = 0;
+UCHAR init_flag = 0;
 static PUCHAR nv_ee_start = 0;
 
 static USHORT EE_FLASH_ID_LIST[]={

@@ -1034,6 +1034,8 @@ VOID RtmpChipOpsHook(VOID *pCB)
 	RTMP_DRS_ALG_INIT(pAd, RATE_ALG_LEGACY);
 
 
+	/* EDCCA */
+	pChipOps->ChipSetEDCCA= NULL;
 
 
 #ifdef RT3290

@@ -81,6 +81,11 @@ config  MT7610_AP_ED_MONITOR
 	depends on MT7610_AP
 	default n
 
+config  MT7610_AP_BAND_STEERING
+	bool "Band Steering"
+	depends on MT7610_AP
+	default n
+
 #config  MT7610_AP_EXT_CHANNEL_LIST
 #	bool "Extension Channel List"
 #	depends on MT7610_AP
@@ -121,10 +126,6 @@ config  MT7610_AP_MCAST_RATE_SPECIFIC
 
 #config  MT7610_AP_HDR_TRANS
 #	bool "Header Translation Rx Support"
-#	depends on MT7610_AP
-
-#config  MT7610_AP_CSO
-#	bool "CSO/TSO Support"
 #	depends on MT7610_AP
 
 choice

@@ -797,6 +797,7 @@ VOID APMlmeSetTxRate(
 			tx_bw = pAdaptTbEntry->BW;
 
 		if ((CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_SGI80_CAPABLE)) && 
+			(pAd->CommonCfg.vht_sgi_80) &&
 			(pTxRate->ShortGI
 #ifdef WFA_VHT_PF
 			|| pAd->vht_force_sgi

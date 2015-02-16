@@ -51,7 +51,9 @@
 #ifdef AGS_SUPPORT
 #include "ags.h"
 #endif /* AGS_SUPPORT */
-
+#ifdef BAND_STEERING
+#include "band_steering_def.h"
+#endif /* BAND_STEERING */
 #include "mlme.h"
 #include "crypt_md5.h"
 #include "crypt_sha2.h"
@@ -195,6 +197,10 @@
 #include <linux/workqueue.h>
 #endif /* WORKQUEUE_BH / */
 
+
+#ifdef BAND_STEERING
+#include "band_steering.h"
+#endif /* BAND_STEERING */
 
 #ifdef TXBF_SUPPORT
 #include "rt_txbf.h"

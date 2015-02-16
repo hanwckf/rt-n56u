@@ -164,17 +164,16 @@ ifeq ($(CONFIG_MT7610_AP_CARRIER),y)
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_cs.o
 endif
 
-
-ifeq ($(CONFIG_MT7610_AP_CSO),y)
-$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/naf/net_acc.o
-endif
-
 ifeq ($(CONFIG_MT7610_AP_BRIDGE_FASTPATH),y)
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/br_ftph.o
 endif
 
 ifeq ($(CONFIG_MT7610_AP_VIDEO_TURBINE),y)
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_video.o
+endif
+
+ifeq ($(CONFIG_MT7610_AP_BAND_STEERING),y)
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_band_steering.o
 endif
 
 ###################
@@ -235,7 +234,7 @@ EXTRA_CFLAGS += -DWORKQUEUE_BH
 endif
 
 ### MT7610
-EXTRA_CFLAGS += -DRT65xx -DMT76x0 -DMT7610
+EXTRA_CFLAGS += -DRT65xx -DMT76x0 -DMT7610 -DMT7650
 #EXTRA_CFLAGS += -DFPGA_MODE
 EXTRA_CFLAGS += -DRLT_MAC -DRLT_RF
 EXTRA_CFLAGS += -DA_BAND_SUPPORT -DDOT11_VHT_AC
@@ -352,8 +351,8 @@ ifeq ($(CONFIG_MT7610_AP_HDR_TRANS),y)
 EXTRA_CFLAGS += -DHDR_TRANS_SUPPORT
 endif
 
-ifeq ($(CONFIG_MT7610_AP_CSO),y)
-EXTRA_CFLAGS += -DCONFIG_CSO_SUPPORT -DCONFIG_TSO_SUPPORT
+ifeq ($(CONFIG_MT7610_AP_BAND_STEERING),y)
+EXTRA_CFLAGS += -DBAND_STEERING
 endif
 
 ifeq ($(CONFIG_MT7610_AP_EXT_CHANNEL_LIST),y)

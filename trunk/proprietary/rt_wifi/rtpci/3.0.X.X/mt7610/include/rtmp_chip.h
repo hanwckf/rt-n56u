@@ -665,6 +665,15 @@ struct _RTMP_CHIP_CAP_ {
 	BOOLEAN bTxRxSwAntDiv;
 #endif /* TXRX_SW_ANTDIV_SUPPORT */
 
+#ifdef DYNAMIC_VGA_SUPPORT
+		BOOLEAN dynamic_vga_support;
+		INT32 compensate_level;
+		INT32 avg_rssi_0;
+		INT32 avg_rssi_1;
+		INT32 avg_rssi_all;
+#endif
+
+
 	/* ---------------------------- signal ---------------------------------- */
 #define SNR_FORMULA1		0	/* ((0xeb     - pAd->StaCfg.LastSNR0) * 3) / 16; */
 #define SNR_FORMULA2		1	/* (pAd->StaCfg.LastSNR0 * 3 + 8) >> 4; */
@@ -772,6 +781,8 @@ struct _RTMP_CHIP_CAP_ {
 	UCHAR delta_tw_pwr_bw40_2G;
 	UCHAR delta_tw_pwr_bw80;
 	BOOLEAN bInternalTxALC; /* Internal Tx ALC */
+	CHAR LastTempSensorState;
+	BOOLEAN IsTempSensorStateReset;
 #ifdef MT76x0_TSSI_CAL_COMPENSATION
 	UCHAR tssi_info_1;
 	UCHAR tssi_info_2;
@@ -844,6 +855,9 @@ struct _RTMP_CHIP_OP_ {
 	
 	/* Channel */
 	VOID (*ChipSwitchChannel)(struct _RTMP_ADAPTER *pAd, UCHAR ch, BOOLEAN bScan);
+
+	/* EDCCA */
+	VOID (*ChipSetEDCCA)(struct _RTMP_ADAPTER *pAd, BOOLEAN bOn);
 
 	/* IQ Calibration */
 	VOID (*ChipIQCalibration)(struct _RTMP_ADAPTER *pAd, UCHAR Channel);
@@ -982,6 +996,12 @@ struct _RTMP_CHIP_OP_ {
 #define RTMP_EEPROM_ASIC_INIT(__pAd)										\
 		if (__pAd->chipOps.NICInitAsicFromEEPROM != NULL)					\
 			__pAd->chipOps.NICInitAsicFromEEPROM(__pAd)
+
+#define RTMP_CHIP_ASIC_SET_EDCCA(__pAd, __bOn)			\
+do {	\
+		if (__pAd->chipOps.ChipSetEDCCA != NULL)						\
+			__pAd->chipOps.ChipSetEDCCA(__pAd, __bOn);	\
+} while (0)
 
 #define RTMP_CHIP_SPECIFIC(__pAd, __FuncId, __pData, __Data)				\
 		if ((__FuncId >= 0) && (__FuncId < CHIP_SPEC_RESV_FUNC))				\

@@ -16,7 +16,7 @@
  ***************************************************************************
 
 	Module Name:
-	rt6592.c
+	mt76x0.c
 
 	Abstract:
 	Specific funcitons and configurations for MT76x0
@@ -37,8 +37,11 @@
 #endif
 
 #define COEXCFG3 0x4C
+#define LDO_CTRL_0 			0x006C
+#define LDO_CTRL1			0x0070
 #define CSR_EE_CFG1 0x0104
 #define IOCFG_6  0x0124
+#define MT7650_EFUSE_CTRL	0x0024
 
 #ifdef SINGLE_SKU_V2
 #define MT76x0_RF_2G_PA_MODE0_DECODE		0
@@ -132,14 +135,13 @@ UCHAR MT76x0_EeBuffer[EEPROM_SIZE] = {
 	__WlanFunCtrl.field.WLAN_CLK_EN = 0;\
 }
 
-#define MT7650_EFUSE_CTRL	0x0024
 static RTMP_REG_PAIR	MT76x0_MACRegTable[] = {
 	{IOCFG_6,			0xA0040080},
 	{PBF_SYS_CTRL,		0x80c00},
 	{PBF_CFG,			0x77723c1f},
 	{FCE_PSE_CTRL,		0x1},
 
-	{AMPDU_MAX_LEN_20M1S,	0xBAA99887}, /* Recommended by JerryCK @20120905 */
+	{AMPDU_MAX_LEN_20M1S,	0xAAA99887},
 
 	{TX_SW_CFG0,		0x601}, /* Delay bb_tx_pe for proper tx_mcs_pwr update */
 	{TX_SW_CFG1,		0x00040000}, /* Set rf_tx_pe deassert time to 1us by Chee's comment @MT7650_CR_setting_1018.xlsx */
@@ -169,7 +171,7 @@ static RTMP_REG_PAIR	MT76x0_MACRegTable[] = {
 
 	{0x150C, 0x00000002}, /* Enable Tx length > 4095 byte */
 	{0x1238, 0x001700C8}, /* Disable bt_abort_tx_en(0x1238[21] = 0) which is not used at MT7650 @MT7650_E3_CR_setting_1115.xlsx */
-	{0x0070, 0x6B006464}, /* Default LDO_DIG supply 1.26V, change to 1.2V */
+	{LDO_CTRL1, 0x6B006464}, /* Default LDO_DIG supply 1.26V, change to 1.2V */
 };
 
 static UCHAR MT76x0_NUM_MAC_REG_PARMS = (sizeof(MT76x0_MACRegTable) / sizeof(RTMP_REG_PAIR));
@@ -183,7 +185,6 @@ static RTMP_REG_PAIR MT76x0_DCOC_Tab[] = {
 	{CAL_R52, 0x00080803},
 	{CAL_R53, 0x00000704},
 	{CAL_R54, 0x00002828},
-	//{CAL_R54, 0x00008080},
 	{CAL_R55, 0x00005050},
 };
 static UCHAR MT76x0_DCOC_Tab_Size = (sizeof(MT76x0_DCOC_Tab) / sizeof(RTMP_REG_PAIR));
@@ -214,8 +215,8 @@ static RTMP_REG_PAIR MT76x0_BBP_Init_Tab[] = {
 	{AGC1_R23, 0x0000272C},
 	{AGC1_R24, 0x00002F3A},
 	{AGC1_R25, 0x8000005A},
-
-	{AGC1_R33, 0x00003218},
+	{AGC1_R26, 0x007C2005},
+	{AGC1_R33, 0x00003238},
 	{AGC1_R34, 0x000A0C0C},
 	{AGC1_R37, 0x2121262C},
 	{AGC1_R41, 0x38383E45},
@@ -226,7 +227,6 @@ static RTMP_REG_PAIR MT76x0_BBP_Init_Tab[] = {
 
 	{TXC_R0, 0x00280403},
 	{TXC_R1, 0x00000000},
-	{TXC_R2, 0x00005555},
 
 	{RXC_R1, 0x00000012},
 	{RXC_R2, 0x00000011},
@@ -250,13 +250,11 @@ static RTMP_REG_PAIR MT76x0_BBP_Init_Tab[] = {
 	{TXBE_R16, 0x00000000},
 	{TXBE_R17, 0x00000000},
 
-	{RXFE_R0, 0x895000E0}, // TODO: This value is for 5G. 2G has different setting.
-	//{RXFE_R0, 0x005000E0},
 	{RXFE_R1, 0x00008800}, /* Add for E3 */
 	{RXFE_R3, 0x00000000},
 	{RXFE_R4, 0x00000000},
 
-	{RXO_R13, 0x00000092},
+	{RXO_R13, 0x00000192},
 	{RXO_R14, 0x00060612},
 	{RXO_R15, 0xC8321B18},
 	{RXO_R16, 0x0000001E},
@@ -278,23 +276,18 @@ MT76x0_BBP_Table MT76x0_BPP_SWITCH_Tab[] = {
 	{RF_G_BAND | RF_BW_20 | RF_BW_40,	{AGC1_R6, 0x00000045}},
 	{RF_A_BAND | RF_BW_20 | RF_BW_40 | RF_BW_80,	{AGC1_R6, 0x0000000A}},
 	
-	{RF_G_BAND | RF_BW_20,	{AGC1_R8, 0x16343EF0}},
-	{RF_G_BAND | RF_BW_40,	{AGC1_R8, 0x16343EF0}},
-	{RF_A_BAND | RF_BW_20,	{AGC1_R8, 0x122C54F2}},
-	{RF_A_BAND | RF_BW_40,	{AGC1_R8, 0x122C54F2}},
-	{RF_A_BAND | RF_BW_80,	{AGC1_R8, 0x122C54F2}},
+	{RF_G_BAND | RF_BW_20 | RF_BW_40,				{AGC1_R8, 0x16344EF0}},
+	{RF_A_BAND | RF_BW_20 | RF_BW_40 | RF_BW_80,	{AGC1_R8, 0x122C54F2}},
 
 	{RF_G_BAND | RF_BW_20,	{AGC1_R12, 0x05052879}},
 	{RF_G_BAND | RF_BW_40,	{AGC1_R12, 0x050528F9}},
 	{RF_A_BAND | RF_BW_20 | RF_BW_40 | RF_BW_80,	{AGC1_R12, 0x050528F9}},
 
-	{RF_G_BAND | RF_BW_20,	{AGC1_R13, 0x35050004}},
-	{RF_G_BAND | RF_BW_40,	{AGC1_R13, 0x35050004}},
+	{RF_G_BAND | RF_BW_20 | RF_BW_40,				{AGC1_R13, 0x35050004}},
 	{RF_A_BAND | RF_BW_20 | RF_BW_40 | RF_BW_80,	{AGC1_R13, 0x2C3A0406}},
 	
 	{RF_G_BAND | RF_BW_20 | RF_BW_40,	{AGC1_R14, 0x310F2E3C}},
-	{RF_A_BAND | RF_BW_20,	{AGC1_R14, 0x310F2A3F}},
-	{RF_A_BAND | RF_BW_40 | RF_BW_80,	{AGC1_R14, 0x310F2A3F}},
+	{RF_A_BAND | RF_BW_20 | RF_BW_40 | RF_BW_80,	{AGC1_R14, 0x310F2A3F}},
 
 	{RF_G_BAND | RF_BW_20 | RF_BW_40,	{AGC1_R26, 0x007C2005}},
 	{RF_A_BAND | RF_BW_20 | RF_BW_40 | RF_BW_80,	{AGC1_R26, 0x007C2005}},
@@ -307,8 +300,8 @@ MT76x0_BBP_Table MT76x0_BPP_SWITCH_Tab[] = {
 	{RF_A_BAND | RF_BW_40,	{AGC1_R28, 0x00060801}},
 	{RF_A_BAND | RF_BW_20 | RF_BW_80,	{AGC1_R28, 0x00060806}},
 
-	{RF_G_BAND | RF_BW_20 | RF_BW_40,	{AGC1_R31, 0x00000F23}},
-	{RF_A_BAND | RF_BW_20 | RF_BW_40 | RF_BW_80,	{AGC1_R31, 0x00000F33}},
+	{RF_G_BAND | RF_BW_20 | RF_BW_40,				{AGC1_R31, 0x00000E23}},
+	{RF_A_BAND | RF_BW_20 | RF_BW_40 | RF_BW_80,	{AGC1_R31, 0x00000E13}},
 
 	{RF_G_BAND | RF_BW_20 | RF_BW_40,	{AGC1_R32, 0x00003218}},
 	{RF_A_BAND | RF_BW_20 | RF_BW_40 | RF_BW_80,	{AGC1_R32, 0x0000181C}},
@@ -336,6 +329,8 @@ MT76x0_BBP_Table MT76x0_BPP_SWITCH_Tab[] = {
 	
 	{RF_G_BAND | RF_BW_20 | RF_BW_40,	{AGC1_R58, 0x00001010}},
 	{RF_A_BAND | RF_BW_20 | RF_BW_40 | RF_BW_80,	{AGC1_R58, 0x00000000}},
+	{RF_G_BAND | RF_BW_20 | RF_BW_40,				{RXFE_R0, 0x3D5000E0}},
+	{RF_A_BAND | RF_BW_20 | RF_BW_40 | RF_BW_80,	{RXFE_R0, 0x895000E0}},
 };
 UCHAR MT76x0_BPP_SWITCH_Tab_Size = (sizeof(MT76x0_BPP_SWITCH_Tab) / sizeof(MT76x0_BBP_Table));
 
@@ -435,7 +430,7 @@ static BANK_RF_REG_PAIR MT76x0_RF_2G_Channel_0_RegTb[] = {
 	*/
 	/* RF_R00 Change in SelectBand6590 */
 
-	{RF_BANK5,	RF_R02, 0x1D}, /* 0x1D: 5G+2G+BT(MT7650E),  0x0C: 5G+2G(MT7610U) */
+	{RF_BANK5,	RF_R02, 0x00}, /* 0x1D: 5G+2G+BT(MT7650E),  0x0C: 5G+2G(MT7610U), 0x00: 5G only (MT7610E) */
 	{RF_BANK5,	RF_R03, 0x00},
 
 	/*
@@ -1765,16 +1760,6 @@ static VOID NICInitMT76x0MacRegisters(RTMP_ADAPTER *pAd)
 	RTMP_IO_WRITE32(pAd, TX_FBK_LIMIT, MacReg);
 #endif /* MCS_LUT_SUPPORT */
 
-	if (pAd->CommonCfg.Channel > 14 &&
-		pAd->CommonCfg.bIEEE80211H == TRUE &&
-		pAd->CommonCfg.BBPCurrentBW == BW_80)
-	{
-		/* Improve BW Adaptation */
-		RTMP_IO_READ32(pAd, TXOP_CTRL_CFG, &MacReg);
-		MacReg = (MacReg & 0xFFFF) | (0x410 << 16);
-		RTMP_IO_WRITE32(pAd, TXOP_CTRL_CFG, MacReg);
-		RTMP_IO_WRITE32(pAd, TXOP_HLDR_ET, 0x3);
-	}
 
 	return;
 }
@@ -1891,15 +1876,6 @@ static VOID MT76x0_ChipBBPAdjust(RTMP_ADAPTER *pAd)
 void MT76x0_adjust_per_rate_pwr_delta(RTMP_ADAPTER *ad, u8 channel, char delta_pwr)
 {
 	u32 value = 0;
-#if 0	
-	RTMP_CHIP_CAP *cap = &ad->chipCap;
-	unsigned int band;
-
-	if (channel > 14)
-		band = _A_BAND;
-	else
-		band = _G_BAND;
-#endif
 
 	value |= TX_PWR_CCK_1_2(ad->chipCap.rate_pwr_table.CCK[0].MCS_Power + delta_pwr);
 	value |= TX_PWR_CCK_5_11(ad->chipCap.rate_pwr_table.CCK[2].MCS_Power + delta_pwr);
@@ -2108,14 +2084,22 @@ static VOID MT76x0_ChipSwitchChannel(
 						eLNAgain -= (pAd->ALNAGain1*2);
 					else
 						eLNAgain -= (pAd->ALNAGain2*2);
+		
+					pAd->chipCap.IsTempSensorStateReset = TRUE;					
 				}
 				else
 				{
 					eLNAgain -= (pAd->BLNAGain*2);
 				}
 
+				if (!bScan) //update inital gain if not during site_survey
+				{
+					pAd->CommonCfg.MO_Cfg.Stored_BBP_R66 = eLNAgain;
+				}
+
 				RTMP_BBP_IO_WRITE32(pAd, MT76x0_BPP_SWITCH_Tab[Index].RegDate.Register,
 						(MT76x0_BPP_SWITCH_Tab[Index].RegDate.Value&(~0x0000FF00))|(eLNAgain << 8));				
+				
 			}
 			else
 			{
@@ -2579,6 +2563,30 @@ VOID MT76x0_DisableTxRx(
 	
 	DBGPRINT(RT_DEBUG_TRACE, ("<---- %s\n", __FUNCTION__));
 }
+
+
+#ifdef ED_MONITOR
+void MT76x0_Set_ED_CCA(RTMP_ADAPTER *pAd, BOOLEAN enable)
+{
+	UINT32 MacReg = 0;
+	if (enable) {
+		RTMP_IO_READ32(pAd, CH_TIME_CFG, &MacReg);
+		MacReg |= 0x40;
+		RTMP_IO_WRITE32(pAd, CH_TIME_CFG, MacReg);
+
+		RTMP_IO_READ32(pAd, TXOP_CTRL_CFG, &MacReg);
+		MacReg |= (1 << 20);
+		RTMP_IO_WRITE32(pAd, TXOP_CTRL_CFG, MacReg);
+	} else {
+		RTMP_IO_READ32(pAd, TXOP_CTRL_CFG, &MacReg);
+		MacReg &= ~(1 << 20);
+		RTMP_IO_WRITE32(pAd, TXOP_CTRL_CFG, MacReg);
+	}
+
+	DBGPRINT(RT_DEBUG_TRACE, ("%s::0x%x: 0x%08X\n", __FUNCTION__, TXOP_CTRL_CFG, MacReg));
+
+}
+#endif /* ED_MONITOR */
 
 VOID MT76x0_AsicExtraPowerOverMAC(
 	IN PRTMP_ADAPTER pAd)
@@ -3088,7 +3096,6 @@ VOID MT76x0_Init(RTMP_ADAPTER *pAd)
 
 
 	pChipCap->asic_caps |= (fASIC_CAP_PMF_ENC);
-	pChipCap->asic_caps |= (fASIC_CAP_MCS_LUT);
 	pChipCap->phy_caps = (fPHY_CAP_24G | fPHY_CAP_5G);
 	pChipCap->phy_caps |= (fPHY_CAP_HT | fPHY_CAP_VHT);
 
@@ -3150,11 +3157,20 @@ VOID MT76x0_Init(RTMP_ADAPTER *pAd)
 		pChipCap->FWImageName = MT7610_FirmwareImage;
 #endif
 
+#ifdef DYNAMIC_VGA_SUPPORT
+	pChipCap->dynamic_vga_support = TRUE;
+	pChipCap->compensate_level = 0;
+	pChipCap->avg_rssi_all = -90;
+	pChipCap->avg_rssi_0 = -90;
+	pChipCap->avg_rssi_1 = -90;
+	
+#endif /* DYNAMIC_VGA_SUPPORT */
+
 	pChipCap->bDoTemperatureSensor = TRUE;
 
-	pChipCap->MACRegisterVer = "MT7650_E3_CR_setting_20130508.xlsx";
-	pChipCap->BBPRegisterVer = "MT7650E3_BBP_CR_20130724.xls";
-	pChipCap->RFRegisterVer = "MT7650E3_WiFi_RF_CR_20130422.xls";
+	pChipCap->MACRegisterVer = "MT7650_E5_MAC_CR_setting_20131218.xlsx";
+	pChipCap->BBPRegisterVer = "MT7650E6_BBP_CR_20140303.xls";
+	pChipCap->RFRegisterVer = "MT7650E6_WiFi_RF_CR_20140114.xls";
 
 	RTMP_DRS_ALG_INIT(pAd, RATE_ALG_GRP);
 		
@@ -3225,6 +3241,13 @@ VOID MT76x0_Init(RTMP_ADAPTER *pAd)
 	pChipOps->DisableAPMIMOPS = NULL;
 #endif /* GREENAP_SUPPORT */
 	
+#ifdef ED_MONITOR
+    	pChipOps->ChipSetEDCCA = MT76x0_Set_ED_CCA;
+#else
+    	pChipOps->ChipSetEDCCA = NULL;
+#endif /* ED_MONITOR */
+
+
 #ifdef HDR_TRANS_SUPPORT
 	if (1) {
 		/* enable TX/RX Header Translation */
@@ -3499,11 +3522,244 @@ VOID MT76x0_VCO_CalibrationMode3(
 }
 
 
+#ifdef RTMP_FLASH_SUPPORT
+static VOID ReloadLowCalResult(
+	IN RTMP_ADAPTER *pAd
+)
+{
+	UCHAR RFValue;
+	UINT32 reg_val, mac_val, i=0;
+	UINT16 tmp1,tmp2;
+	
+	DBGPRINT(RT_DEBUG_ERROR,("<==== %s() \n",__FUNCTION__));
+	/* LC-A band */
+	
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x2CC, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B0_R39 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK0, RF_R39, RFValue);
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x2D0, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R24 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R24, RFValue);
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x2D4, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R39 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R39, RFValue);
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x2D8, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R17 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R58, RFValue);
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x2DC, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R58 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R58, RFValue);
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x2E0, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R59 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R59, RFValue);
+	/* TX group delay + TX IQ */
+	RtmpFlashRead((UCHAR *)&tmp1, RF_OFFSET + 0x2E4, sizeof(tmp1));
+	DBGPRINT(RT_DEBUG_TRACE,(" reg_val [%x] \n",tmp1));
+	RtmpFlashRead((UCHAR *)&tmp2, RF_OFFSET + 0x2E6, sizeof(tmp1));
+	reg_val = (tmp2 << 16) | tmp1;
+	DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2C38 value [%x] \n",reg_val));
+	RTMP_IO_WRITE32(pAd, 0x2C38, reg_val);
+	/* RX group delay + RX IQ */
+	RtmpFlashRead((UCHAR *)&tmp1, RF_OFFSET + 0x2E8, sizeof(tmp1));
+	RtmpFlashRead((UCHAR *)&tmp2, RF_OFFSET + 0x2EA, sizeof(tmp1));
+	reg_val = (tmp2 << 16) | tmp1;
+	DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2C60 value [%x] \n",reg_val));
+	RTMP_IO_WRITE32(pAd, 0x2C60, reg_val);
+	RtmpFlashRead((UCHAR *)&tmp1, RF_OFFSET + 0x2EC, sizeof(tmp1));
+	RtmpFlashRead((UCHAR *)&tmp2, RF_OFFSET + 0x2EE, sizeof(tmp1));
+	reg_val = (tmp2 << 16) | tmp1;
+	DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2C70 value [%x] \n",reg_val));	
+	RTMP_IO_WRITE32(pAd, 0x2C70, reg_val);
+	/* LOFT cal */
+	for(i=0;i<=15;i++)
+	{
+		RtmpFlashRead((UCHAR *)&tmp1, (RF_OFFSET + 0x2F0 + i*4), sizeof(tmp1));
+		RtmpFlashRead((UCHAR *)&tmp2, (RF_OFFSET + 0x2F0 + i*4 + 2), sizeof(tmp1));	
+		reg_val = (tmp2 << 16) | tmp1;
+		DBGPRINT(RT_DEBUG_TRACE,(" read from 0x%x and 0x%x \n",(RF_OFFSET + 0x2F0 + i*4),(RF_OFFSET + 0x2F0 + i*4 + 2)));	
+				
+		RTMP_IO_WRITE32(pAd, 0x2CF0, i);
+		RTMP_IO_READ32(pAd, 0x2CF0, &mac_val);
+		DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2CF0 value [%x] \n",mac_val));			
+		
+		RTMP_IO_WRITE32(pAd, 0x2CF4, reg_val);
+		RTMP_IO_READ32(pAd, 0x2CF4, &reg_val);
+		DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2CF4 value [%x] \n",reg_val));	
+	}
+	DBGPRINT(RT_DEBUG_ERROR,("====> %s() \n",__FUNCTION__));
+}
+
+static VOID ReloadMidCalResult(
+	IN RTMP_ADAPTER *pAd
+)
+{
+	UCHAR RFValue;
+	UINT32 reg_val, mac_val, i=0;
+	UINT16 tmp1,tmp2;
+	DBGPRINT(RT_DEBUG_ERROR,("<==== %s() \n",__FUNCTION__));
+	/* LC-A band */
+		
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x268, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B0_R39 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK0, RF_R39, RFValue);
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x26C, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R24 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R24, RFValue);
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x270, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R39 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R39, RFValue);
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x274, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R17 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R58, RFValue);
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x278, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R58 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R58, RFValue);
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x27C, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R59 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R59, RFValue);
+	/* TX group delay + TX IQ */
+
+
+	RtmpFlashRead((UCHAR *)&tmp1, RF_OFFSET + 0x280, sizeof(tmp1));
+	RtmpFlashRead((UCHAR *)&tmp2, RF_OFFSET + 0x282, sizeof(tmp1));
+	reg_val = (tmp2 << 16) | tmp1;
+	DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2C38 value [%x] \n",reg_val));
+	RTMP_IO_WRITE32(pAd, 0x2C38, reg_val);
+	/* RX group delay + RX IQ */
+	RtmpFlashRead((UCHAR *)&tmp1, RF_OFFSET + 0x284, sizeof(tmp1));
+	RtmpFlashRead((UCHAR *)&tmp2, RF_OFFSET + 0x286, sizeof(tmp1));
+	reg_val = (tmp2 << 16) | tmp1;
+	DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2C60 value [%x] \n",reg_val));
+	RTMP_IO_WRITE32(pAd, 0x2C60, reg_val);
+	RtmpFlashRead((UCHAR *)&tmp1, RF_OFFSET + 0x288, sizeof(tmp1));
+	RtmpFlashRead((UCHAR *)&tmp2, RF_OFFSET + 0x28A, sizeof(tmp1));
+	reg_val = (tmp2 << 16) | tmp1;
+	DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2C70 value [%x] \n",reg_val));	
+	RTMP_IO_WRITE32(pAd, 0x2C70, reg_val);
+	/* LOFT cal */
+	for(i=0;i<=15;i++)
+	{
+		RtmpFlashRead((UCHAR *)&tmp1, (RF_OFFSET + 0x28C + i*4), sizeof(tmp1));
+		RtmpFlashRead((UCHAR *)&tmp2, (RF_OFFSET + 0x28C + i*4 + 2), sizeof(tmp1));	
+		reg_val = (tmp2 << 16) | tmp1;
+		DBGPRINT(RT_DEBUG_TRACE,(" read from 0x%x and 0x%x \n",(RF_OFFSET + 0x28C + i*4),(RF_OFFSET + 0x28C + i*4 + 2)));	
+				
+		RTMP_IO_WRITE32(pAd, 0x2CF0, i);
+		RTMP_IO_READ32(pAd, 0x2CF0, &mac_val);
+		DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2CF0 value [%x] \n",mac_val));			
+		
+		RTMP_IO_WRITE32(pAd, 0x2CF4, reg_val);
+		RTMP_IO_READ32(pAd, 0x2CF4, &reg_val);
+		DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2CF4 value [%x] \n",reg_val));	
+	}
+	DBGPRINT(RT_DEBUG_ERROR,("====> %s() \n",__FUNCTION__));
+}
+
+static VOID ReloadHighCalResult(
+	IN RTMP_ADAPTER *pAd
+)
+{
+	UCHAR RFValue;
+	UINT32 reg_val, mac_val, i=0;
+	UINT16 tmp1,tmp2;
+	DBGPRINT(RT_DEBUG_ERROR,("<==== %s() \n",__FUNCTION__));
+	/* LC-A band */
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x204, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B0_R39 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK0, RF_R39, RFValue);
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x208, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R24 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R24, RFValue);	
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x20C, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R39 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R39, RFValue);
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x210, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R17 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R58, RFValue);
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x214, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R58 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R58, RFValue);
+	RtmpFlashRead(&RFValue, RF_OFFSET + 0x218, sizeof(RFValue));
+	DBGPRINT(RT_DEBUG_TRACE,(" B6_R59 value [%x] \n",RFValue));
+	rlt_rf_write(pAd, RF_BANK6, RF_R59, RFValue);
+	/* TX group delay + TX IQ */
+	
+	RtmpFlashRead((UCHAR *)&tmp1, RF_OFFSET + 0x21C, sizeof(tmp1));
+	RtmpFlashRead((UCHAR *)&tmp2, RF_OFFSET + 0x21E, sizeof(tmp1));
+	reg_val = (tmp2 << 16) | tmp1;
+	DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2C38 value [%x] \n",reg_val));
+	RTMP_IO_WRITE32(pAd, 0x2C38, reg_val);
+	/* RX group delay + RX IQ */
+	RtmpFlashRead((UCHAR *)&tmp1, RF_OFFSET + 0x220, sizeof(tmp1));
+	RtmpFlashRead((UCHAR *)&tmp2, RF_OFFSET + 0x222, sizeof(tmp1));
+	reg_val = (tmp2 << 16) | tmp1;
+	DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2C60 value [%x] \n",reg_val));
+	RTMP_IO_WRITE32(pAd, 0x2C60, reg_val);
+	RtmpFlashRead((UCHAR *)&tmp1, RF_OFFSET + 0x224, sizeof(tmp1));
+	RtmpFlashRead((UCHAR *)&tmp2, RF_OFFSET + 0x226, sizeof(tmp1));
+	reg_val = (tmp2 << 16) | tmp1;
+	DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2C70 value [%x] \n",reg_val));	
+	RTMP_IO_WRITE32(pAd, 0x2C70, reg_val);
+	/* LOFT cal */
+	for(i=0;i<=15;i++)
+	{
+		RtmpFlashRead((UCHAR *)&tmp1, (RF_OFFSET + 0x228 + i*4), sizeof(tmp1));
+		RtmpFlashRead((UCHAR *)&tmp2, (RF_OFFSET + 0x228 + i*4 + 2), sizeof(tmp1));	
+		reg_val = (tmp2 << 16) | tmp1;
+		DBGPRINT(RT_DEBUG_TRACE,(" read from 0x%x and 0x%x \n",(RF_OFFSET + 0x228 + i*4),(RF_OFFSET + 0x228 + i*4 + 2)));	
+				
+		RTMP_IO_WRITE32(pAd, 0x2CF0, i);
+		RTMP_IO_READ32(pAd, 0x2CF0, &mac_val);
+		DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2CF0 value [%x] \n",mac_val));			
+		
+		RTMP_IO_WRITE32(pAd, 0x2CF4, reg_val);
+		RTMP_IO_READ32(pAd, 0x2CF4, &reg_val);
+		DBGPRINT(RT_DEBUG_TRACE,(" mac 0x2CF4 value [%x] \n",reg_val));	
+	}
+	
+	DBGPRINT(RT_DEBUG_ERROR,("====> %s() \n",__FUNCTION__));
+}
+#endif /* RTMP_FLASH_SUPPORT */
+
+
 static VOID FullCalibration(
 	IN RTMP_ADAPTER *pAd,
 	IN UCHAR Channel,
 	IN BOOLEAN bSave)
 {
+#ifdef RTMP_FLASH_SUPPORT
+	UINT32 doCal1=0,doCal2=0;
+	RtmpFlashRead((UCHAR *)&doCal1, RF_OFFSET + 0x43, sizeof(doCal1));
+	doCal2 = doCal1 & 0x10;
+	DBGPRINT(RT_DEBUG_OFF,("%s():  docal = [%04x] valid bit[%x]\n",__FUNCTION__,doCal1,doCal2));
+
+	/* if 0x43 bit 4 is 1 , read result from flash,otherwise, do calibration */
+	if(doCal2 == 0x10)
+	{
+		DBGPRINT(RT_DEBUG_ERROR,("[%s] Reload from flash! current channel : %d \n",__FUNCTION__,Channel));
+		if((Channel >= 36) && (Channel <= 64))
+		{
+			ReloadLowCalResult(pAd);
+		}
+		else if((Channel >= 100) && (Channel <= 128))
+		{
+			ReloadMidCalResult(pAd);
+		}
+		else if((Channel >= 132) && (Channel <= 165))
+		{			
+			ReloadHighCalResult(pAd);			
+		}
+		else
+		{
+			DBGPRINT(RT_DEBUG_ERROR,("This Channel %d Has NO calibration data in flash! \n",Channel));
+		}
+		
+				
+	
+	}
+	else 
+#endif /* RTMP_FLASH_SUPPORT */
+	{
 	UINT32 param, _param1, _param2;
 	UINT32 CalibrationMode;
 	/*
@@ -3708,6 +3964,8 @@ static VOID FullCalibration(
 			RTMP_CHIP_CALIBRATION(pAd, DPD_CALIBRATION, 0x0);
 	}
 }
+}
+
 
 
 VOID MT76x0_Calibration(
@@ -3729,6 +3987,17 @@ VOID MT76x0_Calibration(
 
 	if (bPowerOn)
 	{
+		/* update PMU_OCLEVEL<5:1> from default 10010 to 11011 */
+		UINT32 Value=0;
+		RTMP_IO_READ32(pAd, LDO_CTRL_0, &Value);
+		Value = Value & (~0x3E);
+		Value |= 0x36;
+		RTMP_IO_WRITE32(pAd, LDO_CTRL_0, Value);
+		RTMP_IO_READ32(pAd, LDO_CTRL_0, &Value);
+		DBGPRINT(RT_DEBUG_TRACE, 
+				("%s - LDO_CTRL_0 value before RX_IQ calibration: 0x%x\n",
+				__FUNCTION__, Value));		
+
 		/*
 			Do Power on calibration.
 			The calibration sequence is very important, please do NOT change it.
@@ -5356,13 +5625,6 @@ UCHAR MT76x0_UpdateSkuPwr(
 	*/
 	MT76x0ReadTxPwrPerRate(pAd);
 
-#if 0 // Move to MT76x0ReadTxPwrPerRate
-	/*
-		Get per rate register setting.
-	*/
-	MT76x0_MakeUpRatePwrTable(pAd);
-#endif
-	
 	DlListForEachSafe(ch, ch_temp, &pAd->SingleSkuPwrList, CH_POWER, List)
 	{
 		DBGPRINT(RT_DEBUG_TRACE, ("%s ==> channel = %d, ch->channel = %d\n", __FUNCTION__, channel, ch->channel));
@@ -5635,7 +5897,7 @@ VOID MT76x0_TemperatureCompensation(
 	}
 	else
 #endif /* MT76x0_TSSI_CAL_COMPENSATION */
-	if ((pAd->CommonCfg.Channel > 14) ? 
+	if ((WMODE_CAP_5G(pAd->CommonCfg.PhyMode)) ? 
 		(pAd->bAutoTxAgcA == FALSE) : (pAd->bAutoTxAgcG == FALSE))
 		return;
 
@@ -5778,7 +6040,11 @@ static VOID MT76x0_TssiMpAdjust(
 	EEPROM_TX_PWR_STRUC e2p_value;
 	CHAR mp_temperature, idx, TxAgcMpOffset = 0;
 	RT28xx_EEPROM_READ16(pAd, 0x10D, e2p_value);
-	mp_temperature = e2p_value.field.Byte1;			
+
+	mp_temperature = e2p_value.field.Byte0;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("0x10D e2p_value.field.Byte0=0x%02x\n",
+	    mp_temperature)); 
 
 	if (mp_temperature < pTssiMinusBoundary[1])
 	{
@@ -5836,7 +6102,7 @@ VOID MT76x0_Read_TSSI_From_EEPROM(
 	{
 		RT28xx_EEPROM_READ16(pAd, 0xd0 /*EEPROM_TEMPERATURE_OFFSET*/, e2p_value);
 		DBGPRINT(RT_DEBUG_TRACE, ("%s: EEPROM_MT76x0_TEMPERATURE_OFFSET = 0x%x\n", __FUNCTION__, e2p_value));
-		pAd->chipCap.TemperatureOffset = (CHAR)( (e2p_value >> 8) & 0x00FF); // TODO: --(CHAR)
+		//pAd->chipCap.TemperatureOffset = (CHAR)( (e2p_value >> 8) & 0x00FF); // TODO: --(CHAR)
 
 		if (((e2p_value >> 8) & 0x00FF) == 0xFF)
 			pAd->chipCap.TemperatureOffset = -10;
@@ -5844,7 +6110,7 @@ VOID MT76x0_Read_TSSI_From_EEPROM(
 		{
 			pAd->chipCap.TemperatureOffset = ((e2p_value >> 8) & 0x007F);
 			if ((e2p_value & 0x8000))
-				pAd->chipCap.TemperatureOffset |= 0x8000;
+				pAd->chipCap.TemperatureOffset |= 0xFF80;
 		}
 		DBGPRINT(RT_DEBUG_TRACE, ("%s: TemperatureOffset = 0x%x\n", __FUNCTION__, pAd->chipCap.TemperatureOffset));
 	}
@@ -5942,7 +6208,7 @@ VOID MT76x0_Read_TSSI_From_EEPROM(
 #ifdef RTMP_TEMPERATURE_COMPENSATION
 	if (pAd->bAutoTxAgcG | pAd->bAutoTxAgcA)
 	{	
-		if (pAd->CommonCfg.Channel > 14)
+		if (WMODE_CAP_5G(pAd->CommonCfg.PhyMode))
 		{
 			RT28xx_EEPROM_READ16(pAd, 0xD0, e2p_value);
 			pAd->TssiCalibratedOffset = (e2p_value >> 8);

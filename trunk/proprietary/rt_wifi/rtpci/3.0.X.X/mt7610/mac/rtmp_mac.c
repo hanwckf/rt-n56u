@@ -366,7 +366,12 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 			pTxWI->TxWILutEn = 1;
 		pTxWI->TxWILutEn = 0;
 	}
+
 #ifdef PEER_DELBA_TX_ADAPT
+	if (RTMP_GET_PACKET_LOWRATE(pTxBlk->pPacket) || 
+		(pTxBlk->TxFrameType == TX_MCAST_FRAME))
+		pTxWI->TxWILutEn = 0;
+	else
 	pTxWI->TxWILutEn = 1;
 #endif /* PEER_DELBA_TX_ADAPT */
 #endif /* MCS_LUT_SUPPORT */
@@ -574,6 +579,14 @@ VOID RTMPWriteTxWI_Cache(
 			pTxWI->TxWILutEn = 1;
 		pTxWI->TxWILutEn = 0;
 	}
+
+#ifdef PEER_DELBA_TX_ADAPT
+	if (RTMP_GET_PACKET_LOWRATE(pTxBlk->pPacket) || 
+		(pTxBlk->TxFrameType == TX_MCAST_FRAME))
+		pTxWI->TxWILutEn = 0;
+	else
+		pTxWI->TxWILutEn = 1;
+#endif /* PEER_DELBA_TX_ADAPT */
 #endif /* MCS_LUT_SUPPORT */
 
 #ifdef DOT11_VHT_AC

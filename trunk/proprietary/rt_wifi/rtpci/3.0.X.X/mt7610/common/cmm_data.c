@@ -2254,9 +2254,7 @@ BOOLEAN RTMPCheckEtherType(
 		*pQueIdx		 = QID_AC_BE;
 	}
 
-
 	return TRUE;
-	
 }
 
 
@@ -2347,8 +2345,6 @@ VOID Update_Rssi_Sample(
 		pRssi->AvgRssi2 = pRssi->AvgRssi2X8 >> 3;
 	}
 }
-
-
 
 /* Normal legacy Rx packet indication*/
 VOID Indicate_Legacy_Packet(

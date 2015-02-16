@@ -2513,6 +2513,9 @@ VOID AP_Legacy_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 
 	RTMPWriteTxWI_Data(pAd, (TXWI_STRUC *)(&pTxBlk->HeaderBuf[TXINFO_SIZE]), pTxBlk);
 
+	if (pTxBlk->pMacEntry)
+		pTxBlk->pMacEntry->isCached = FALSE;
+	
 	HAL_WriteTxResource(pAd, pTxBlk, TRUE, &freeCnt);
 	
 

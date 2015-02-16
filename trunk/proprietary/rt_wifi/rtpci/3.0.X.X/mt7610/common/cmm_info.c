@@ -250,6 +250,11 @@ INT	Set_Channel_Proc(
 
 	Channel = (UCHAR) simple_strtol(arg, 0, 10);
 
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+	if (pAd->ApCfg.ApCliAutoConnectChannelSwitching == FALSE)
+		pAd->ApCfg.ApCliAutoConnectChannelSwitching = TRUE;
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
+
 	/* check if this channel is valid*/
 	if (ChannelSanity(pAd, Channel) == TRUE)
 	{
@@ -326,6 +331,9 @@ INT	Set_Channel_Proc(
 	if (success == TRUE)
 		DBGPRINT(RT_DEBUG_TRACE, ("Set_Channel_Proc::(Channel=%d)\n", pAd->CommonCfg.Channel));
 
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+		pAd->ApCfg.ApCliAutoConnectChannelSwitching = FALSE;
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
 	return success;
 }
 
@@ -3362,6 +3370,24 @@ INT	Set_VhtBw_Proc(
 direct_done:
 
 	DBGPRINT(RT_DEBUG_TRACE, ("Set_VhtBw_Proc::(VHT_BW=%d)\n", pAd->CommonCfg.vht_bw));
+
+	return TRUE;
+}
+
+
+INT	Set_VhtGi_Proc(
+	IN RTMP_ADAPTER *pAd, 
+	IN PSTRING arg)
+{
+
+	if (!WMODE_CAP_AC(pAd->CommonCfg.PhyMode))
+		goto direct_done;
+	
+	pAd->CommonCfg.vht_sgi_80= simple_strtol(arg, 0, 10);
+
+direct_done:
+
+	DBGPRINT(RT_DEBUG_TRACE, ("Set_VhtGi_Proc::(VHT_SGI=%d)\n", pAd->CommonCfg.vht_sgi_80));
 
 	return TRUE;
 }

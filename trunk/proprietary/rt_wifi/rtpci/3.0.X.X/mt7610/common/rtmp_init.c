@@ -99,11 +99,6 @@ RTMP_REG_PAIR MACRegTable[] = {
 
 	{EXP_ACK_TIME,			0x002400ca},	/* default value */
 	{TXOP_HLDR_ET, 			0x00000002},
-
-	/* Jerry comments 2008/01/16: we use SIFS = 10us in CCK defaultly, but it seems that 10us
-		is too small for INTEL 2200bg card, so in MBSS mode, the delta time between beacon0
-		and beacon1 is SIFS (10us), so if INTEL 2200bg card connects to BSS0, the ping
-		will always lost. So we change the SIFS of CCK from 10us to 16us. */
 	{XIFS_TIME_CFG,			0x33a41010},
 #ifdef RT65xx
 	{PWR_PIN_CFG,			0x00000000},
@@ -2213,6 +2208,10 @@ VOID NICUpdateRawCounters(
 	    pAd->PrivateInfo.PhyRxErrCnt += RxStaCnt1.field.PlcpErr;
 		/* Update False CCA counter*/
 		pAd->RalinkCounters.OneSecFalseCCACnt += RxStaCnt1.field.FalseCca;
+#ifdef ED_MONITOR
+		if (pAd->ed_chk /*&& pAd->ed_timer_inited == TRUE*/) //no timer now, and the data may not correct before.
+			pAd->false_cca_stat[pAd->ed_stat_lidx] += RxStaCnt1.field.FalseCca;
+#endif /* ED_MONITOR */
 		pAd->RalinkCounters.FalseCCACnt += RxStaCnt1.field.FalseCca;
 	}
 
@@ -2544,7 +2543,14 @@ VOID UserCfgExit(
 	NdisFreeSpinLock(&pAd->ApCfg.ReptCliEntryLock);
 #endif /* MAC_REPEATER_SUPPORT */
 
-
+#ifdef CONFIG_AP_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+	{
+#ifdef BAND_STEERING
+		BndStrg_Release(pAd);
+#endif /* BAND_STEERING */
+	}
+#endif /* CONFIG_AP_SUPPORT */
 }
 
 /*
@@ -3172,9 +3178,26 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 	pAd->chipCap.NowTemperature = 0x7FFF;
 #endif /* MT76x0 */
 
+	pAd->chipCap.LastTempSensorState = 0;
+    pAd->chipCap.IsTempSensorStateReset = FALSE;
+
 #ifdef DOT11_VHT_AC
 	pAd->CommonCfg.bNonVhtDisallow = FALSE;
 #endif /* DOT11_VHT_AC */
+#ifdef ED_MONITOR
+	pAd->ed_chk = FALSE; //let country region to turn on
+
+#ifdef CONFIG_AP_SUPPORT
+	pAd->ed_sta_threshold = 1;
+	pAd->ed_ap_threshold = 1;
+#endif /* CONFIG_AP_SUPPORT */
+
+
+	pAd->ed_chk_period = 100;
+	pAd->ed_threshold = 90;
+	pAd->false_cca_threshold = 10000;
+	pAd->ed_block_tx_threshold = 2;
+#endif /* ED_MONITOR */
 	DBGPRINT(RT_DEBUG_TRACE, ("<-- UserCfgInit\n"));
 }
 

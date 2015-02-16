@@ -1460,8 +1460,8 @@ INT AndesLedOP(
 
 	/* Calibration ID and Parameter */
 	VarLen = 8;
-	arg0 = LedIdx;
-	arg1 = LinkStatus;
+	arg0 = cpu2le32(LedIdx);
+	arg1 = cpu2le32(LinkStatus);
 	os_alloc_mem(pAd, (UCHAR **)&pBuf, VarLen);
 	if (pBuf == NULL)
 	{

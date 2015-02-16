@@ -812,8 +812,7 @@ VOID MacTableReset(
 /*		NdisZeroMemory(&pAd->MacTab, sizeof(MAC_TABLE));*/
 		NdisZeroMemory(&pAd->MacTab.Size,
 						sizeof(MAC_TABLE)-
-							sizeof(pAd->MacTab.Hash)-
-							sizeof(pAd->MacTab.Content));
+						Offsetof(MAC_TABLE, Size));
 
 		InitializeQueueHeader(&pAd->MacTab.McastPsQueue);
 		/*NdisReleaseSpinLock(&pAd->MacTabLock);*/

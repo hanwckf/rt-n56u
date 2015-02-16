@@ -66,7 +66,7 @@ typedef VOID	pregs;
 #define AP_PROFILE_PATH			"/etc/Wireless/iNIC/iNIC_ap.dat"
 #define AP_RTMP_FIRMWARE_FILE_NAME	"/etc_ro/Wireless/iNIC_ap.bin"
 #define AP_NIC_DEVICE_NAME		"MT7610_AP"
-#define AP_DRIVER_VERSION		"3.0.0.7"
+#define AP_DRIVER_VERSION		"3.0.0.8"
 #ifdef MULTIPLE_CARD_SUPPORT
 #define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860APCard.dat"
 #endif /* RTMP_MAC_PCI */

@@ -3124,20 +3124,6 @@ VOID RTMPIoctlGetMacTableStaInfo(
 			pDst->ConnectedTime = pEntry->StaConnectTime;
 			pDst->TxRate.word = pEntry->HTPhyMode.word;
 
-			pDst->LastRxRate = pEntry->LastRxRate;
-#if defined (RT2883) || defined (RT3883)
-			pDst->StreamSnr[0] = pEntry->BF_SNR[0];
-			pDst->StreamSnr[1] = pEntry->BF_SNR[1];
-			pDst->StreamSnr[2] = pEntry->BF_SNR[2];
-#endif // defined (RT2883) || defined (RT3883) //
-			//pDst->TxPER = pEntry->LastTxPER;
-
-#ifdef TXBF_SUPPORT
-			pDst->SoundingRespSnr[0] = pEntry->sndg0Snr0;
-			pDst->SoundingRespSnr[1] = pEntry->sndg0Snr1;
-			pDst->SoundingRespSnr[2] = pEntry->sndg0Snr2;
-#endif // TXBF_SUPPORT //
-
 			MacTab.Num++;
 		}
 	}
@@ -3186,29 +3172,7 @@ VOID RTMPIoctlGetMacTable(
 
 			// the connected time per entry
 			pDst->ConnectedTime = pEntry->StaConnectTime;
-			pDst->TxRate.field.MCS = pEntry->HTPhyMode.field.MCS;
-			pDst->TxRate.field.BW = pEntry->HTPhyMode.field.BW;
-			pDst->TxRate.field.ShortGI = pEntry->HTPhyMode.field.ShortGI;
-			pDst->TxRate.field.STBC = pEntry->HTPhyMode.field.STBC;
-			pDst->TxRate.field.rsv = pEntry->HTPhyMode.field.rsv;
-			pDst->TxRate.field.MODE = pEntry->HTPhyMode.field.MODE;
 			pDst->TxRate.word = pEntry->HTPhyMode.word;
-
-#ifdef RTMP_RBUS_SUPPORT
-			pDst->LastRxRate = pEntry->LastRxRate;
-#if defined(RT2883) || defined(RT3883)
-			pDst->StreamSnr[0] = pEntry->BF_SNR[0];
-			pDst->StreamSnr[1] = pEntry->BF_SNR[1];
-			pDst->StreamSnr[2] = pEntry->BF_SNR[2];
-#endif // defined(RT2883) || defined(RT3883) //
-			//pDst->TxPER = pEntry->LastTxPER;
-#endif // RTMP_RBUS_SUPPORT //
-
-#ifdef TXBF_SUPPORT
-			pDst->SoundingRespSnr[0] = pEntry->sndg0Snr0;
-			pDst->SoundingRespSnr[1] = pEntry->sndg0Snr1;
-			pDst->SoundingRespSnr[2] = pEntry->sndg0Snr2;
-#endif // TXBF_SUPPORT //
 
 			MacTab.Num++;
 		}

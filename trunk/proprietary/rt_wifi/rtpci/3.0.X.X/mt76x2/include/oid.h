@@ -71,19 +71,9 @@
 /*#define MAX_NUM_OF_CHS					49 */ /* 14 channels @2.4G +  12@UNII + 4 @MMAC + 11 @HiperLAN2 + 7 @Japan + 1 as NULL terminationc */
 /*#define MAX_NUM_OF_CHS             		54 */ /* 14 channels @2.4G +  12@UNII(lower/middle) + 16@HiperLAN2 + 11@UNII(upper) + 0 @Japan + 1 as NULL termination */
 #define MAX_NUMBER_OF_EVENT			10	/* entry # in EVENT table */
-#ifdef BB_SOC
-#define MAX_NUMBER_OF_MAC			8 // if MAX_MBSSID_NUM is 8, this value can't be larger than 211
-#else
-#ifdef MT76x2
-#ifdef MAC_REPEATER_SUPPORT			//((MAX_EXT_MAC_ADDR_SIZE + 1) * MAC_APCLI_NUM)
-#define MAX_NUMBER_OF_MAC			64	/* (116 - ((16 + 1) * 1)) */
-#else
-#define MAX_NUMBER_OF_MAC			64	/* 116 */
-#endif /* MAC_REPEATER_SUPPORT */
-#else
-#define MAX_NUMBER_OF_MAC			64	/* if MAX_MBSSID_NUM is 8, this value can't be larger than 211 */
-#endif /* MT76X2 */
-#endif
+
+#define MAX_NUMBER_OF_MAC			64
+
 #define MAX_NUMBER_OF_ACL			64
 #define MAX_LENGTH_OF_SUPPORT_RATES		12	/* 1, 2, 5.5, 11, 6, 9, 12, 18, 24, 36, 48, 54 */
 #define MAX_NUMBER_OF_DLS_ENTRY			4
@@ -1075,8 +1065,6 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	UINT32 ConnectedTime;
 	MACHTTRANSMIT_SETTING TxRate;
 	UINT32 LastRxRate;
-	SHORT StreamSnr[3];				/* BF SNR from RXWI. Units=0.25 dB. 22 dB offset removed */
-	SHORT SoundingRespSnr[3];			/* SNR from Sounding Response. Units=0.25 dB. 22 dB offset removed */
 } RT_802_11_MAC_ENTRY, *PRT_802_11_MAC_ENTRY;
 
 typedef struct _RT_802_11_MAC_TABLE {

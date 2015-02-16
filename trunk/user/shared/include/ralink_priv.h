@@ -59,9 +59,9 @@ typedef enum _RT_802_11_PHY_MODE {
 	PHY_11VHT_N_MIXED = 15, /* 15 -> AC/AN mixed in 5G band */
 } RT_802_11_PHY_MODE;
 
-#if defined (USE_MT7610_AP) || defined (USE_MT76X2_AP)
 typedef union _MACHTTRANSMIT_SETTING {
 	struct {
+#if defined (USE_MT7610_AP) || defined (USE_MT76X2_AP) || defined (USE_MT76X3_AP)
 		unsigned short MCS:6;
 		unsigned short ldpc:1;
 		unsigned short BW:2;
@@ -70,12 +70,7 @@ typedef union _MACHTTRANSMIT_SETTING {
 		unsigned short eTxBF:1;
 		unsigned short iTxBF:1;
 		unsigned short MODE:3;
-	} field;
-	unsigned short word;
-} MACHTTRANSMIT_SETTING, *PMACHTTRANSMIT_SETTING;
 #else
-typedef union  _MACHTTRANSMIT_SETTING {
-	struct  {
 		unsigned short MCS:7;
 		unsigned short BW:1;
 		unsigned short ShortGI:1;
@@ -84,61 +79,31 @@ typedef union  _MACHTTRANSMIT_SETTING {
 		unsigned short rsv:1;
 		unsigned short iTxBF:1;
 		unsigned short MODE:2;
+#endif
 	} field;
 	unsigned short word;
 } MACHTTRANSMIT_SETTING, *PMACHTTRANSMIT_SETTING;
-#endif
-
-typedef union  _MACHTTRANSMIT_SETTING_2G {
-	struct  {
-		unsigned short MCS:7;
-		unsigned short BW:1;
-		unsigned short ShortGI:1;
-		unsigned short STBC:2;
-		unsigned short rsv:3;
-		unsigned short MODE:2;
-	} field;
-	unsigned short word;
-} MACHTTRANSMIT_SETTING_2G, *PMACHTTRANSMIT_SETTING_2G;
 
 typedef struct _RT_802_11_MAC_ENTRY {
-    unsigned char	ApIdx;
-    unsigned char	Addr[ETHER_ADDR_LEN];
-    unsigned char	Aid;
-    unsigned char	Psm;     // 0:PWR_ACTIVE, 1:PWR_SAVE
-    unsigned char	MimoPs;  // 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
-    char		AvgRssi0;
-    char		AvgRssi1;
-    char		AvgRssi2;
-    unsigned int	ConnectedTime;
-    MACHTTRANSMIT_SETTING	TxRate;
-    unsigned int	LastRxRate;
-    short		StreamSnr[3];
-    short		SoundingRespSnr[3];
+	unsigned char	ApIdx;
+	unsigned char	Addr[ETHER_ADDR_LEN];
+	unsigned char	Aid;
+	unsigned char	Psm;     // 0:PWR_ACTIVE, 1:PWR_SAVE
+	unsigned char	MimoPs;  // 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
+	char		AvgRssi0;
+	char		AvgRssi1;
+	char		AvgRssi2;
+	unsigned int	ConnectedTime;
+	MACHTTRANSMIT_SETTING	TxRate;
+#if defined (USE_MT7610_AP) || defined (USE_MT76X2_AP) || defined (USE_MT76X3_AP)
+	unsigned int	LastRxRate;
+#endif
 } RT_802_11_MAC_ENTRY, *PRT_802_11_MAC_ENTRY;
-
-typedef struct _RT_802_11_MAC_ENTRY_2G {
-    unsigned char	ApIdx;
-    unsigned char	Addr[ETHER_ADDR_LEN];
-    unsigned char	Aid;
-    unsigned char	Psm;	// 0:PWR_ACTIVE, 1:PWR_SAVE
-    unsigned char	MimoPs;	// 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
-    char		AvgRssi0;
-    char		AvgRssi1;
-    char		AvgRssi2;
-    unsigned int	ConnectedTime;
-    MACHTTRANSMIT_SETTING_2G	TxRate;
-} RT_802_11_MAC_ENTRY_2G, *PRT_802_11_MAC_ENTRY_2G;
 
 typedef struct _RT_802_11_MAC_TABLE {
     unsigned long	Num;
     RT_802_11_MAC_ENTRY Entry[MAX_NUMBER_OF_MAC];
 } RT_802_11_MAC_TABLE, *PRT_802_11_MAC_TABLE;
-
-typedef struct _RT_802_11_MAC_TABLE_2G {
-    unsigned long	Num;
-    RT_802_11_MAC_ENTRY_2G Entry[MAX_NUMBER_OF_MAC];
-} RT_802_11_MAC_TABLE_2G, *PRT_802_11_MAC_TABLE_2G;
 
 typedef struct _SITE_SURVEY 
 {

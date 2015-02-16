@@ -1054,8 +1054,6 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	MACHTTRANSMIT_SETTING TxRate;
 	/* below not used for MT7610E, need for structure align */
 	UINT32 LastRxRate;
-	SHORT StreamSnr[3];
-	SHORT SoundingRespSnr[3];
 } RT_802_11_MAC_ENTRY, *PRT_802_11_MAC_ENTRY;
 
 typedef struct _RT_802_11_MAC_TABLE {

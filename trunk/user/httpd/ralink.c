@@ -666,7 +666,7 @@ int MCSMappingRateTable[] =
 	65, 130, 195, 260, 390, 520, 585, 650, 780, 867					// 11ac: 80Mhz, 400ns GI, MCS: 0~9
 };
 
-int
+static int
 getRate(MACHTTRANSMIT_SETTING HTSetting)
 {
 	int rate_count = sizeof(MCSMappingRateTable)/sizeof(int);
@@ -703,8 +703,8 @@ getRate(MACHTTRANSMIT_SETTING HTSetting)
 	return (MCSMappingRateTable[rate_index] * num_ss_vht * 5)/10;
 }
 
-int
-getRate_2g(MACHTTRANSMIT_SETTING_2G HTSetting)
+static int
+getRate_2g(MACHTTRANSMIT_SETTING HTSetting)
 {
 	int rate_count = sizeof(MCSMappingRateTable)/sizeof(int);
 	int rate_index = 0;
@@ -787,7 +787,7 @@ is_mac_in_sta_list(const unsigned char* p_mac)
 	wrq.u.data.length = sizeof(mac_table_data);
 	wrq.u.data.flags = 0;
 	if (wl_ioctl(IFNAME_2G_MAIN, priv_cmd, &wrq) >= 0) {
-		RT_802_11_MAC_TABLE_2G *mp2 = (RT_802_11_MAC_TABLE_2G *)wrq.u.data.pointer;
+		RT_802_11_MAC_TABLE *mp2 = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
 		for (i = 0; i < mp2->Num; i++) {
 			if (memcmp(mp2->Entry[i].Addr, p_mac, ETHER_ADDR_LEN) == 0)
 				return (mp2->Entry[i].ApIdx == 0) ? 1 : 2;
@@ -800,16 +800,19 @@ is_mac_in_sta_list(const unsigned char* p_mac)
 int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 {
 	int i, ret;
-	int hr, min, sec, rssi;
+	int hr, min, sec, rssi, stream_rx;
 
 	ret = 0;
 	if (ApIdx == 0)
 		ret+=websWrite(wp, "\nAP Main Stations List\n");
 	else
 		ret+=websWrite(wp, "\nAP Guest Stations List\n");
+
 	ret+=websWrite(wp, "----------------------------------------\n");
 	ret+=websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-5s%-4s%-12s\n",
 			   "MAC", "PhyMode", "BW", "MCS", "SGI", "STBC", "Rate", "RSSI", "PSM", "Connect Time");
+
+	stream_rx = nvram_get_int("wl_stream_rx");
 
 	for (i=0;i<mp->Num;i++)
 	{
@@ -821,10 +824,14 @@ int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 			rssi = -127;
 			if ((int)mp->Entry[i].AvgRssi0 > rssi && mp->Entry[i].AvgRssi0 != 0)
 				rssi = (int)mp->Entry[i].AvgRssi0;
-			if ((int)mp->Entry[i].AvgRssi1 > rssi && mp->Entry[i].AvgRssi1 != 0)
-				rssi = (int)mp->Entry[i].AvgRssi1;
-			if ((int)mp->Entry[i].AvgRssi2 > rssi && mp->Entry[i].AvgRssi2 != 0)
-				rssi = (int)mp->Entry[i].AvgRssi2;
+			if (stream_rx > 1) {
+				if ((int)mp->Entry[i].AvgRssi1 > rssi && mp->Entry[i].AvgRssi1 != 0)
+					rssi = (int)mp->Entry[i].AvgRssi1;
+			}
+			if (stream_rx > 2) {
+				if ((int)mp->Entry[i].AvgRssi2 > rssi && mp->Entry[i].AvgRssi2 != 0)
+					rssi = (int)mp->Entry[i].AvgRssi2;
+			}
 			
 			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %s %-3d %s %s  %-3dM  %-3d %s %02d:%02d:%02d\n",
 				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
@@ -846,19 +853,22 @@ int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 	return ret;
 }
 
-int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE_2G* mp, unsigned char ApIdx)
+int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 {
 	int i, ret;
-	int hr, min, sec, rssi;
+	int hr, min, sec, rssi, stream_rx;
 
 	ret = 0;
 	if (ApIdx == 0)
 		ret+=websWrite(wp, "\nAP Main Stations List\n");
 	else
 		ret+=websWrite(wp, "\nAP Guest Stations List\n");
+
 	ret+=websWrite(wp, "----------------------------------------\n");
 	ret+=websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-5s%-4s%-12s\n",
 			   "MAC", "PhyMode", "BW", "MCS", "SGI", "STBC", "Rate", "RSSI", "PSM", "Connect Time");
+
+	stream_rx = nvram_get_int("rt_stream_rx");
 
 	for (i=0;i<mp->Num;i++)
 	{
@@ -870,10 +880,14 @@ int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE_2G* mp, unsigned char ApIdx
 			rssi = -127;
 			if ((int)mp->Entry[i].AvgRssi0 > rssi && mp->Entry[i].AvgRssi0 != 0)
 				rssi = (int)mp->Entry[i].AvgRssi0;
-			if ((int)mp->Entry[i].AvgRssi1 > rssi && mp->Entry[i].AvgRssi1 != 0)
-				rssi = (int)mp->Entry[i].AvgRssi1;
-			if ((int)mp->Entry[i].AvgRssi2 > rssi && mp->Entry[i].AvgRssi2 != 0)
-				rssi = (int)mp->Entry[i].AvgRssi2;
+			if (stream_rx > 1) {
+				if ((int)mp->Entry[i].AvgRssi1 > rssi && mp->Entry[i].AvgRssi1 != 0)
+					rssi = (int)mp->Entry[i].AvgRssi1;
+			}
+			if (stream_rx > 2) {
+				if ((int)mp->Entry[i].AvgRssi2 > rssi && mp->Entry[i].AvgRssi2 != 0)
+					rssi = (int)mp->Entry[i].AvgRssi2;
+			}
 			
 			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %s %-3d %s %s  %-3dM  %-3d %s %02d:%02d:%02d\n",
 				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
@@ -1316,7 +1330,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 	if (wl_ioctl(IFNAME_2G_MAIN, priv_cmd, &wrq3) < 0)
 		return ret;
 
-	RT_802_11_MAC_TABLE_2G* mp=(RT_802_11_MAC_TABLE_2G*)wrq3.u.data.pointer;
+	RT_802_11_MAC_TABLE* mp=(RT_802_11_MAC_TABLE*)wrq3.u.data.pointer;
 	
 	ret+=print_sta_list_2g(wp, mp, 0);
 	
@@ -1378,7 +1392,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char **argv)
 	wrq.u.data.flags = 0;
 	if (wl_ioctl(IFNAME_2G_MAIN, priv_cmd, &wrq) >= 0)
 	{
-		RT_802_11_MAC_TABLE_2G *mp2 = (RT_802_11_MAC_TABLE_2G *)wrq.u.data.pointer;
+		RT_802_11_MAC_TABLE *mp2 = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
 		for (i = 0; i<mp2->Num; i++)
 		{
 			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X",

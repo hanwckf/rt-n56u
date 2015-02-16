@@ -3816,25 +3816,6 @@ VOID RTMPIoctlGetMacTableStaInfo(
 			pDst->ConnectedTime = pEntry->StaConnectTime;
 			pDst->TxRate.word = pEntry->HTPhyMode.word;
 
-#if defined (RT2883) || defined (RT3883)
-			pDst->LastRxRate = pEntry->LastRxRate;
-			if (IS_RT2883(pAd) || IS_RT3883(pAd))
-			{
-				pDst->StreamSnr[0] = pEntry->BF_SNR[0];
-				pDst->StreamSnr[1] = pEntry->BF_SNR[1];
-				pDst->StreamSnr[2] = pEntry->BF_SNR[2];
-#ifdef TXBF_SUPPORT
-				if (pAd->chipCap.FlgHwTxBfCap)
-				{
-					pDst->SoundingRespSnr[0] = pEntry->sndg0Snr0;
-					pDst->SoundingRespSnr[1] = pEntry->sndg0Snr1;
-					pDst->SoundingRespSnr[2] = pEntry->sndg0Snr2;
-				}
-#endif /* TXBF_SUPPORT */
-/*				pDst->TxPER = pEntry->SaveTxPER; */
-			}
-#endif /* defined (RT2883) || defined (RT3883) */
-									
 			pMacTab->Num += 1;
 		}
 	}
@@ -3896,25 +3877,7 @@ VOID RTMPIoctlGetMacTable(
 			/* the connected time per entry*/
 			pDst->ConnectedTime = pEntry->StaConnectTime;
 			pDst->TxRate.word = pEntry->HTPhyMode.word;
-									
-#ifdef RTMP_RBUS_SUPPORT
-#if defined(RT2883) || defined(RT3883)
-			pDst->LastRxRate = pEntry->LastRxRate;
-			if (IS_RT2883(pAd) || IS_RT3883(pAd))
-			{
-				pDst->StreamSnr[0] = pEntry->BF_SNR[0];
-				pDst->StreamSnr[1] = pEntry->BF_SNR[1];
-				pDst->StreamSnr[2] = pEntry->BF_SNR[2];
-#ifdef TXBF_SUPPORT
-				pDst->SoundingRespSnr[0] = pEntry->sndg0Snr0;
-				pDst->SoundingRespSnr[1] = pEntry->sndg0Snr1;
-				pDst->SoundingRespSnr[2] = pEntry->sndg0Snr2;
-#endif /* TXBF_SUPPORT */
-			}
-#endif /* defined(RT2883) || defined(RT3883) */
-/*			pDst->TxPER = pEntry->SaveTxPER; */
-#endif /* RTMP_RBUS_SUPPORT */
-									
+
 			pMacTab->Num += 1;
 		}
 	}

@@ -2209,7 +2209,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_usb = 0;
 #endif
-#if defined(USE_USB3)
+#if (BOARD_NUM_UPHY_USB3 > 0)
 	int has_usb3 = 1;
 #else
 	int has_usb3 = 0;

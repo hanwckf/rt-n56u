@@ -210,7 +210,7 @@
 			{"aria_enable", "", NULL,EVM_RESTART_ARIA},
 			{"aria_pport", "", NULL, EVM_RESTART_ARIA},
 			{"aria_rport", "", NULL, EVM_RESTART_ARIA},
-#if defined(USE_USB3)
+#if (BOARD_NUM_UPHY_USB3 > 0)
 			{"usb3_disable", "", NULL, EVM_RESTART_REBOOT},
 #endif
 			{"Storage_UserList", "Group", ARGV((char*)variables_Storage_UserList, "16", "79", "acc_num"), EVM_RESTART_FTPD|EVM_RESTART_SMBD},

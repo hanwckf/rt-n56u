@@ -231,18 +231,13 @@ void mt7621_esw_fc_delay_set(int is_link_100)
 /* MT7621 embedded switch (aka MT7350) */
 void mt7621_esw_init(void)
 {
-	u32 i, regValue = 0;
+	u32  __maybe_unused i, regLink, regValue = 0;
 
-	/* turn off all PHY */
-	for(i = 0; i <= 4; i++) {
-		mii_mgr_read(i, 0, &regValue);
-		regValue |= (1<<11);
-		mii_mgr_write(i, 0, regValue);
-	}
-
-	/* reset switch */
-	mii_mgr_write(MT7530_MDIO_ADDR, 0x7000, 0x3);
-	udelay(100);
+	/* MT7621 E2 has FC bug */
+	if ((ralink_asic_rev_id & 0xFFFF) == 0x0101)
+		regLink = 0x5e30b; // Force mode, Link Up, 1000Mbps, Full-Duplex, FC OFF
+	else
+		regLink = 0x5e33b; // Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON
 
 #if defined (CONFIG_GE1_TRGMII_FORCE_1200)
 	turbo_rgmii_set_pll();
@@ -285,30 +280,19 @@ void mt7621_esw_init(void)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x2604, 0x205f0003);		// P6 set security mode, egress always tagged
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x2610, 0x81000000);		// P6 is user port, admit all frames
 #endif
-	if ((ralink_asic_rev_id & 0xFFFF) == 0x0101) {
-		/* MT7621 E2 has FC bug */
-		sysRegWrite(RALINK_ETH_SW_BASE+0x100, 0x2005e30b);	// (GE1, Force 1000M/FD, FC OFF)
-		mii_mgr_write(MT7530_MDIO_ADDR, 0x3600, 0x5e30b);	// (P6, Force mode, Link Up, 1000Mbps, Full-Duplex, FC OFF)
-	} else {
-		sysRegWrite(RALINK_ETH_SW_BASE+0x100, 0x2005e33b);	// (GE1, Force 1000M/FD, FC ON)
-		mii_mgr_write(MT7530_MDIO_ADDR, 0x3600, 0x5e33b);	// (P6, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
-	}
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x3600, regLink);		// (P6, Force mode, Link Up, 1000Mbps, Full-Duplex)
+	sysRegWrite(RALINK_ETH_SW_BASE+0x100, (0x20000000|regLink));	// (GE1, Force 1000M/FD)
 
 	/* configure MT7350 Port5 */
 #if defined (CONFIG_GE2_INTERNAL_GMAC_P5)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x2504, 0x00300003);		// P5 set security mode
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x2510, 0x810000c0);		// P5 is transparent port, admit all frames
-
-	if ((ralink_asic_rev_id & 0xFFFF) == 0x0101) {
-		/* MT7621 E2 has FC bug */
-		sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x2005e30b);	// (GE2, Force 1000M/FD, FC OFF)
-		mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x5e30b);	// (P5, Force mode, Link Up, 1000Mbps, Full-Duplex, FC OFF)
-	} else {
-		sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x2005e33b);	// (GE2, Force 1000M/FD, FC ON)
-		mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x5e33b);	// (P5, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
-	}
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x2514, 0x00010002);		// P5 PVID=2
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, regLink);		// (P5, Force mode, Link Up, 1000Mbps, Full-Duplex)
+	sysRegWrite(RALINK_ETH_SW_BASE+0x200, (0x20000000|regLink));	// (GE2, Force 1000M/FD)
 #elif defined (CONFIG_GE2_INTERNAL_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P0)
-	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x00056300);		// (P5, AN) ???
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x56300);		// (P5, AN) wdf ???
+	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x20056300);		// (GE2, AN)
 #endif
 
 	/* config switch PLL */
@@ -365,5 +349,9 @@ void mt7621_esw_init(void)
 	mii_mgr_read(MT7530_MDIO_ADDR, 0x7808, &regValue);
 	regValue |= (3<<16);
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7808, regValue);
-}
 
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+	/* autopoll GPHY P4/P0 */
+	enable_autopoll_phy(1);
+#endif
+}

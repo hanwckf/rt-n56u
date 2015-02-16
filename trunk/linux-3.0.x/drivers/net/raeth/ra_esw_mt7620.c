@@ -99,7 +99,8 @@ static void mt7620_ephy_init(void)
 	mii_mgr_write(4, 16, 0x1313);
 #endif
 
-	/* disable 802.3az EEE by default */
+#if 0
+	/* disable 802.3az EEE (need link down first) */
 	mii_mgr_write(1, 31, 0xb000); //local, page 3
 	mii_mgr_write(0, 17, 0x0000);
 	mii_mgr_write(1, 17, 0x0000);
@@ -107,6 +108,7 @@ static void mt7620_ephy_init(void)
 	mii_mgr_write(3, 17, 0x0000);
 #if !defined (CONFIG_RAETH_HAS_PORT4)
 	mii_mgr_write(4, 17, 0x0000);
+#endif
 #endif
 }
 #endif

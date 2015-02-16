@@ -14,13 +14,6 @@ void mt7530_gsw_init(void)
 {
 	u32 i, regValue = 0;
 
-	/* turn off all PHY */
-	for(i = 0; i <= 4; i++) {
-		mii_mgr_read(i, 0, &regValue);
-		regValue |= (1<<11);
-		mii_mgr_write(i, 0, regValue);
-	}
-
 	/* configure MT7530 HW-TRAP */
 	mii_mgr_read(MT7530_MDIO_ADDR, 0x7804, &regValue);
 	regValue |= (1<<16);						// Change HW-TRAP
@@ -60,6 +53,7 @@ void mt7530_gsw_init(void)
 #if defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x2504, 0x20300003);		// P5 set security mode, egress always tagged
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x2510, 0x81000000);		// P5 is user port, admit all frames
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x2514, 0x00010002);		// P5 PVID=2
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x0005e33b);		// (P5, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
 #elif defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x00056300);		// (P5, AN) ???

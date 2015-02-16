@@ -61,6 +61,7 @@
 #define MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN4	34
 #define MTK_ESW_IOCTL_STATUS_CNT_PORT_CPU_WAN	35
 #define MTK_ESW_IOCTL_STATUS_CNT_PORT_CPU_LAN	36
+#define MTK_ESW_IOCTL_STATUS_CNT_RESET_ALL	38
 
 /////////////////////////////////////////////////
 // INIT CONTROL
@@ -212,7 +213,6 @@ typedef struct arl_mib_counters_s
     uint32_t RxDropFramesErr;
 
 } arl_mib_counters_t;
-
 
 #endif
 

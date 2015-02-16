@@ -180,7 +180,12 @@ static int ra_regs_seq_show(struct seq_file *m, void *v)
 	seq_printf(m, "SDM_CON		: 0x%08x\n", sysRegRead(SDM_CON));
 #else
 	seq_printf(m, "FE_GLO_CFG	: 0x%08x\n", sysRegRead(FE_GLO_CFG));
+#if defined (CONFIG_RALINK_MT7621)
+	seq_printf(m, "CDMP_IG_CTRL	: 0x%08x\n", sysRegRead(CDMP_IG_CTRL));
+	seq_printf(m, "CDMP_EG_CTRL	: 0x%08x\n\n", sysRegRead(CDMP_EG_CTRL));
+#else
 	seq_printf(m, "CDMA_CSG_CFG	: 0x%08x\n\n", sysRegRead(CDMA_CSG_CFG));
+#endif
 
 	seq_printf(m, "GDMA1_FWD_CFG	: 0x%08x\n", sysRegRead(GDMA1_FWD_CFG));
 	seq_printf(m, "GDMA1_SHPR_CFG	: 0x%08x\n\n", sysRegRead(GDMA1_SHPR_CFG));
@@ -361,6 +366,7 @@ static int ra_rxring_seq_show(struct seq_file *m, void *v)
 
 static int ra_cp0_seq_show(struct seq_file *m, void *v)
 {
+#if defined (CONFIG_MIPS)
 	seq_printf(m, "CP0 Register dump --\n");
 	seq_printf(m, "CP0_INDEX\t: 0x%08x\n", read_32bit_cp0_register(CP0_INDEX));
 	seq_printf(m, "CP0_RANDOM\t: 0x%08x\n", read_32bit_cp0_register(CP0_RANDOM));
@@ -395,6 +401,7 @@ static int ra_cp0_seq_show(struct seq_file *m, void *v)
 	seq_printf(m, "CP0_TAGHI\t: 0x%08x\n", read_32bit_cp0_register(CP0_TAGHI));
 	seq_printf(m, "CP0_ERROREPC\t: 0x%08x\n", read_32bit_cp0_register(CP0_ERROREPC));
 	seq_printf(m, "CP0_DESAVE\t: 0x%08x\n\n", read_32bit_cp0_register(CP0_DESAVE));
+#endif
 
 	return 0;
 }

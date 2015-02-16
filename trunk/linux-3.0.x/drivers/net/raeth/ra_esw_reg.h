@@ -51,14 +51,14 @@
 #define REG_ESW_MAC_PMEEECR_P0		0x3004
 #define REG_ESW_MAC_PMSR_P0		0x3008
 
+#if defined (CONFIG_MT7530_GSW)
+	// todo
+#else
 #define REG_ESW_MAC_GMACCR		0x3FE0
 #define REG_ESW_MAC_SMACCR0		0x3FE4
 #define REG_ESW_MAC_SMACCR1		0x3FE8
 #define REG_ESW_MAC_CKGCR		0x3FF0
 
-#if defined (CONFIG_MT7530_GSW)
-	// todo
-#else
 #define REG_ESW_MIB_ESR_P0		0x4000
 #define REG_ESW_MIB_INTS_P0		0x4004
 #define REG_ESW_MIB_INTM_P0		0x4008
@@ -71,14 +71,16 @@
 #define REG_ESW_MIB_RGOC_P0		0x4028
 #define REG_ESW_MIB_REPC1_P0		0x402C
 #define REG_ESW_MIB_REPC2_P0		0x4030
-#endif
+
 #define REG_ESW_MIB_MIBCNTEN		0x4800
 
-#define REG_ESW_IMR			0x7008
-#define REG_ESW_ISR			0x700C
 #define REG_ESW_CPC			0x7010
 #define REG_ESW_GPC1			0x7014
 #define REG_ESW_GPC2			0x701C
+#endif
+
+#define REG_ESW_IMR			0x7008
+#define REG_ESW_ISR			0x700C
 
 #define REG_ESW_MAX			0x7FFFF
 

@@ -34,18 +34,18 @@
 #if defined (CONFIG_MT7530_GSW)
 #if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P0)
 #define WAN_PORT_PHY			0	/* P0 PHY */
-#define WAN_PORT_MAC			5	/* P0 PHY -> P5 MAC */
-#define WAN_PORT_CPU			5
-#define ESW_MAC_ID_MAX			5
+#define WAN_PORT_MAC			0	/* fake */
+#define WAN_PORT_CPU			5	/* fake */
+#define ESW_MAC_ID_MAX			4
 #define ESW_PHY_ID_MAX			4
-#define ESW_MASK_EXCLUDE		(1<<0)	/* P0 excluded */
+#define ESW_MASK_EXCLUDE		((1<<5)|(1<<0))	/* P5/P0 excluded */
 #elif defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 #define WAN_PORT_PHY			4	/* P4 PHY */
-#define WAN_PORT_MAC			5	/* P4 PHY -> P5 MAC */
-#define WAN_PORT_CPU			5
-#define ESW_MAC_ID_MAX			5
+#define WAN_PORT_MAC			4	/* fake */
+#define WAN_PORT_CPU			5	/* fake */
+#define ESW_MAC_ID_MAX			4
 #define ESW_PHY_ID_MAX			4
-#define ESW_MASK_EXCLUDE		(1<<4)	/* P4 excluded */
+#define ESW_MASK_EXCLUDE		((1<<5)|(1<<4))	/* P5/P4 excluded */
 #elif defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
 #define WAN_PORT_PHY			CONFIG_RAETH_ESW_PORT_WAN	/* 8P8C WAN */
 #define WAN_PORT_MAC			WAN_PORT_PHY
@@ -89,7 +89,7 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #define ESW_DEFAULT_JUMBO_FRAMES	0
-#define ESW_DEFAULT_GREEN_ETHERNET	0
+#define ESW_DEFAULT_GREEN_ETHERNET	1
 #define ESW_DEFAULT_STORM_RATE		0
 #define ESW_DEFAULT_IGMP_SNOOPING	1
 

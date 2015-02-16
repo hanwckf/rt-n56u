@@ -82,13 +82,12 @@ void enable_autopoll_phy(int unused)
 	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
 #endif
 #elif defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2)
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || \
-    defined (CONFIG_GE2_INTERNAL_GPHY_P4) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4)
-	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
-	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
-#else
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4)
 	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
 	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2+1;
+#else
+	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2-1;
+	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
 #endif
 #else
 	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR-1;
@@ -202,19 +201,14 @@ void fe_phy_init(void)
 	/* Case2: RT3883/MT7621 GE1 + GSW */
 #if defined (CONFIG_GE1_RGMII_FORCE_1000) || defined (CONFIG_GE1_TRGMII_FORCE_1200)
 #if defined (CONFIG_RALINK_MT7621)
-	/* MT7621 GE1 + Internal GSW (MT7530) */
+	/* MT7621 GE1 + Internal GSW */
 	ge1_set_mode(0, 1);
-	mt7621_esw_init();
 #if defined (CONFIG_GE2_INTERNAL_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
-	/* MT7621 GE2 + Internal GSW (MT7530) */
+	/* MT7621 GE2 + Internal GSW */
 	ge2_set_mode(0, 1);
 	*(volatile u32 *)(REG_PAD_RGMII2_MDIO_CFG) &= ~(0x3 << 4);	// reduce RGMII2 PAD driving strength
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
-	/* Internal GPHY P4 or P0 (with autopolling) */
-	sysRegWrite(RALINK_ETH_SW_BASE+0x200, 0x20056300);		// (P1, AN)
-	enable_autopoll_phy(1);
 #endif
-#endif
+	mt7621_esw_init();
 #else
 	/* RT3883 GE1 + External GSW (MDIO mode set by mii_mgr_init) */
 	ge1_set_mode(0, 0);

@@ -901,7 +901,7 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 #endif
 		length = RX2_DMA_SDL0_GET(rx_ring->rxd_info2_u32);
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
-		rx_vlan_vid = (rx_ring->rxd_info2_u32 & RX2_DMA_TAG) ? (RX3_DMA_VID(rx_ring->rxd_info3_u32)) : 0;
+		rx_vlan_vid = (rx_ring->rxd_info2_u32 & RX2_DMA_TAG) ? rx_ring->rxd_info3_u32 : 0;
 #endif
 		rxd_info4 = rx_ring->rxd_info4_u32;
 #if defined (CONFIG_PSEUDO_SUPPORT)
@@ -964,12 +964,13 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
-		if (rx_vlan_vid)
+		if (rx_vlan_vid && RX3_DMA_TPID(rx_vlan_vid) == 0x8100) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-			__vlan_hwaccel_put_tag(rx_skb, __constant_htons(ETH_P_8021Q), rx_vlan_vid);
+			__vlan_hwaccel_put_tag(rx_skb, __constant_htons(ETH_P_8021Q), RX3_DMA_VID(rx_vlan_vid));
 #else
-			__vlan_hwaccel_put_tag(rx_skb, rx_vlan_vid);
+			__vlan_hwaccel_put_tag(rx_skb, RX3_DMA_VID(rx_vlan_vid));
 #endif
+		}
 #endif
 
 #if defined (CONFIG_PSEUDO_SUPPORT)
@@ -1502,20 +1503,6 @@ static int ei_change_mtu(struct net_device *dev, int new_mtu)
 	return 0;
 }
 
-#if defined (CONFIG_RAETH_HW_VLAN_RX)
-static int ei_vlan_rx_add_vid(struct net_device *dev, u16 vid)
-{
-	// not need add vlan id to hardware
-	return 0;
-}
-
-static int ei_vlan_rx_kill_vid(struct net_device *dev, u16 vid)
-{
-	// not need delete vlan id from hardware
-	return 0;
-}
-#endif
-
 static void fill_dev_features(struct net_device *dev)
 {
 #if defined (RAETH_SDMA)
@@ -1668,10 +1655,6 @@ static const struct net_device_ops VirtualIF_netdev_ops = {
 	.ndo_change_mtu		= ei_change_mtu,
 	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_validate_addr	= eth_validate_addr,
-#if defined (CONFIG_RAETH_HW_VLAN_RX)
-	.ndo_vlan_rx_add_vid	= ei_vlan_rx_add_vid,
-	.ndo_vlan_rx_kill_vid	= ei_vlan_rx_kill_vid,
-#endif
 };
 
 static int VirtualIF_init(struct net_device *dev_parent)
@@ -1689,6 +1672,9 @@ static int VirtualIF_init(struct net_device *dev_parent)
 	dev = alloc_etherdev(sizeof(PSEUDO_ADAPTER));
 	if (!dev)
 		return -ENOMEM;
+
+	pPseudoAd = netdev_priv(dev);
+	pPseudoAd->RaethDev = dev_parent;
 
 	ether_setup(dev);
 	strcpy(dev->name, DEV2_NAME);
@@ -1711,26 +1697,6 @@ static int VirtualIF_init(struct net_device *dev_parent)
 
 	dev->netdev_ops = &VirtualIF_netdev_ops;
 #if defined (CONFIG_ETHTOOL)
-	dev->ethtool_ops = &ra_virt_ethtool_ops;
-#endif
-
-	fill_dev_features(dev);
-
-	/* Register this device */
-	if (register_netdev(dev) != 0) {
-		free_netdev(dev);
-		return -ENXIO;
-	}
-
-	pPseudoAd = netdev_priv(dev);
-	pPseudoAd->RaethDev = dev_parent;
-
-	ei_local = netdev_priv(dev_parent);
-	ei_local->PseudoDev = dev;
-
-	memset(&pPseudoAd->stat, 0, sizeof(pPseudoAd->stat));
-
-#if defined (CONFIG_ETHTOOL)
 	// init mii structure
 	pPseudoAd->mii_info.dev = dev;
 	pPseudoAd->mii_info.mdio_read = mdio_virt_read;
@@ -1739,7 +1705,19 @@ static int VirtualIF_init(struct net_device *dev_parent)
 	pPseudoAd->mii_info.reg_num_mask = 0x1f;
 	pPseudoAd->mii_info.phy_id = 0x1e;
 	pPseudoAd->mii_info.supports_gmii = mii_check_gmii_support(&pPseudoAd->mii_info);
+	dev->ethtool_ops = &ra_virt_ethtool_ops;
 #endif
+
+	fill_dev_features(dev);
+
+	/* Register this device */
+	if (register_netdevice(dev) != 0) {
+		free_netdev(dev);
+		return -ENXIO;
+	}
+
+	ei_local = netdev_priv(dev_parent);
+	ei_local->PseudoDev = dev;
 
 	return 0;
 }
@@ -1807,13 +1785,8 @@ int ei_init(struct net_device *dev)
 	unsigned char zero2[6] = {0x00,0x00,0x00,0x00,0x00,0x00};
 #endif
 
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	ei_local->PseudoDev = NULL;
-#endif
 	ei_local->active = 0;
 	ei_local->min_pkt_len = ETH_ZLEN;
-
-	memset(&ei_local->stat, 0, sizeof(ei_local->stat));
 
 	spin_lock_init(&ei_local->stat_lock);
 	spin_lock_init(&ei_local->page_lock);
@@ -1845,23 +1818,17 @@ int ei_init(struct net_device *dev)
 	memcpy(dev->dev_addr, addr.sa_data, dev->addr_len);
 #endif
 
-#if defined (CONFIG_ETHTOOL)
-	// init mii structure
-	ei_local->mii_info.dev = dev;
-	ei_local->mii_info.mdio_read = mdio_read;
-	ei_local->mii_info.mdio_write = mdio_write;
-	ei_local->mii_info.phy_id_mask = 0x1f;
-	ei_local->mii_info.reg_num_mask = 0x1f;
-	ei_local->mii_info.phy_id = 1;
-	ei_local->mii_info.supports_gmii = mii_check_gmii_support(&ei_local->mii_info);
-#endif
-
 	if (raeth_ring_alloc(ei_local) != 0) {
 		printk(KERN_WARNING "raeth_ring_alloc FAILED!\n");
 		return -ENOMEM;
 	}
 
+#if defined (CONFIG_PSEUDO_SUPPORT)
+	/* Register virtual net device (eth3) for the driver */
+	return VirtualIF_init(dev);
+#else
 	return 0;
+#endif
 }
 
 void ei_uninit(struct net_device *dev)
@@ -1954,8 +1921,8 @@ int ei_open(struct net_device *dev)
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_RALINK_MT7621)
 	/* request interrupt line for MT7620 ESW or MT7621 GSW */
 	err = request_irq(SURFBOARDINT_ESW, esw_interrupt, IRQF_DISABLED, "ralink_esw", dev);
-
-	/* enable MT7620 ESW or MT7621 GSW interrupt */
+	
+	/* enable ESW interrupts */
 	sysRegWrite(RALINK_INTENA, RALINK_INTCTL_ESW);
 #elif defined (CONFIG_MT7530_INT_GPIO)
 	// todo, needed capture GPIO interrupt for external MT7530
@@ -2021,6 +1988,9 @@ int ei_close(struct net_device *dev)
 
 	spin_lock_irqsave(&ei_local->page_lock, flags);
 	sysRegWrite(FE_INT_ENABLE, 0);
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+	sysRegWrite(FE_INT_ENABLE2, 0);
+#endif
 	spin_unlock_irqrestore(&ei_local->page_lock, flags);
 
 #if defined (CONFIG_RAETH_NAPI)
@@ -2074,10 +2044,6 @@ static const struct net_device_ops ei_netdev_ops = {
 	.ndo_change_mtu		= ei_change_mtu,
 	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_validate_addr	= eth_validate_addr,
-#if defined (CONFIG_RAETH_HW_VLAN_RX)
-	.ndo_vlan_rx_add_vid	= ei_vlan_rx_add_vid,
-	.ndo_vlan_rx_kill_vid	= ei_vlan_rx_kill_vid,
-#endif
 };
 
 /**
@@ -2090,6 +2056,7 @@ int __init raeth_init(void)
 {
 	int ret;
 	struct net_device *dev;
+	END_DEVICE *ei_local;
 
 #if defined (CONFIG_RALINK_MT7620)
 	/* MT7620 has CDM bugs at least ECO_ID=3
@@ -2112,16 +2079,26 @@ int __init raeth_init(void)
 	if (!dev)
 		return -ENOMEM;
 
+	ei_local = netdev_priv(dev);
+
 	ether_setup(dev);
 	strcpy(dev->name, DEV_NAME);
 
-	dev->irq		= SURFBOARDINT_FE;
-	dev->base_addr		= RALINK_FRAME_ENGINE_BASE;
-	dev->netdev_ops		= &ei_netdev_ops;
+	dev->irq = SURFBOARDINT_FE;
+	dev->base_addr = RALINK_FRAME_ENGINE_BASE;
+	dev->watchdog_timeo = 5*HZ;
+	dev->netdev_ops = &ei_netdev_ops;
 #if defined (CONFIG_ETHTOOL)
-	dev->ethtool_ops	= &ra_ethtool_ops;
+	// init mii structure
+	ei_local->mii_info.dev = dev;
+	ei_local->mii_info.mdio_read = mdio_read;
+	ei_local->mii_info.mdio_write = mdio_write;
+	ei_local->mii_info.phy_id_mask = 0x1f;
+	ei_local->mii_info.reg_num_mask = 0x1f;
+	ei_local->mii_info.phy_id = 1;
+	ei_local->mii_info.supports_gmii = mii_check_gmii_support(&ei_local->mii_info);
+	dev->ethtool_ops = &ra_ethtool_ops;
 #endif
-	dev->watchdog_timeo	= 5*HZ;
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
 	fill_hw_vlan_tx();
@@ -2135,16 +2112,6 @@ int __init raeth_init(void)
 		printk(KERN_WARNING " " __FILE__ ": No ethernet port found.\n");
 		return ret;
 	}
-
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	/* Register virtual net device (eth3) for the driver */
-	ret = VirtualIF_init(dev);
-	if (ret != 0) {
-		unregister_netdev(dev);
-		free_netdev(dev);
-		return ret;
-	}
-#endif
 
 	dev_raether = dev;
 

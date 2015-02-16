@@ -200,11 +200,10 @@ dir_ppe_src="$ROOTDIR/proprietary/rt_ppe"
 dir_ppe_dst="$ROOTDIR/$CONFIG_LINUXDIR/net/nat"
 rm -rf "$dir_ppe_dst/hw_nat"
 cp -rf "$dir_ppe_src/hw_nat" "$dir_ppe_dst/"
-############################ RAETH ####################################
-if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
-	func_disable_kernel_param "CONFIG_RAETH_GMAC2"
-	func_disable_kernel_param "CONFIG_GE2_RGMII_FORCE_1000"
-	func_enable_kernel_param "CONFIG_VLAN_8021Q_DOUBLE_TAG"
+###########################@# SMP ##@##################################
+if [ -n "$CONFIG_SMP" ] ; then
+	func_enable_busybox_param "CONFIG_FEATURE_TOP_SMP_CPU"
+	func_enable_busybox_param "CONFIG_FEATURE_TOP_SMP_PROCESS"
 fi
 ############################# IPV6 ####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" != "y" ] ; then

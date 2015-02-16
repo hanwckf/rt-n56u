@@ -358,7 +358,13 @@ int show_usage(char *cmd)
 	"   32               Show LAN2 port MIB counters\n"
 	"   33               Show LAN3 port MIB counters\n"
 	"   34               Show LAN4 port MIB counters\n"
+#if defined (USE_MTK_GSW)
+	"   35               Show CPU WAN port MIB counters\n"
+	"   36               Show CPU LAN port MIB counters\n"
+	"   38               Reset all ports MIB counters\n\n"
+#else
 	"   36               Show CPU LAN port MIB counters\n\n"
+#endif
 	"   40 [0x25252525]  Full reset and reinit switch\n"
 	"   41 [MASK] [0|1]  Set power off/on for ports mask\n"
 	"   42 [W|L]  [0|1]  Set power off/on for WAN or LAN ports\n"

@@ -91,7 +91,11 @@ void usage(char *cmd)
 	printf(" %s sip del [sip] [dip]                  - del a sip entry to switch table\n", cmd);
 	printf(" %s sip dump                             - dump switch sip table\n", cmd);
 	printf(" %s sip clear                            - clear switch sip table\n", cmd);
-	printf(" %s vlan dump                            - dump switch table\n", cmd);
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_MT7530_GSW)
+	printf(" %s vlan dump {max_vid}                  - dump switch vlan table, up to specified vlan id\n", cmd);
+#else
+	printf(" %s vlan dump                            - dump switch vlan table\n", cmd);
+#endif
 	printf(" %s tag on [port]                        - tag vid on port 0~4 \n", cmd);
 	printf(" %s tag off [port]                       - untag vid on port 0~4 \n", cmd);
 	printf(" %s pvid on [port] [pvid]                - set pvid on port 0~4 \n", cmd);
@@ -1656,12 +1660,18 @@ void set_mirror_from(int argc, char *argv[])
 }
 
 #if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_MT7530_GSW)
-void vlan_dump(void)
+void vlan_dump(int max_vid)
 {
 	int i, j, vid, value, value2;
 
+	if (max_vid <  1)
+		max_vid = 1;
+	else
+	if (max_vid > 4095)
+		max_vid = 4095;
+
 	printf("  vid  fid  portmap    s-tag\n");
-	for (i = 1; i < 4095; i++) {
+	for (i = 1; i <= max_vid; i++) {
 		value = (0x80000000 + i);  //r_vid_cmd
 		reg_write(REG_ESW_VLAN_VTCR, value);
 		
@@ -1683,14 +1693,10 @@ void vlan_dump(void)
 			printf("%c", (value & 0x00800000)? '1':'-');
 			printf("    %4d\n", ((value & 0xfff0)>>4)) ;
 		} else{
-			/* print 16 vid for reference information */
-			if(i<=16){
-				printf(" %4d  ", i);
-				printf(" %2d ",((value & 0xe)>>1));
-				printf(" invalid\n");
-			}
+			printf(" %4d  ", i);
+			printf(" %2d ",((value & 0xe)>>1));
+			printf(" invalid\n");
 		}
-	
 	}
 }
 #else
@@ -2037,9 +2043,16 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 		
 #if RT_TABLE_MANIPULATE
-		if (!strncmp(argv[2], "dump", 5))
+		if (!strncmp(argv[2], "dump", 5)) {
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_MT7530_GSW)
+			int max_vid = 15;
+			if (argc > 3)
+				max_vid = strtoul(argv[3], NULL, 10);
+			vlan_dump(max_vid);
+#else
 			vlan_dump();
-		else
+#endif
+		} else
 #endif
 		if (!strncmp(argv[2], "set", 4))
 			vlan_set(argc, argv);

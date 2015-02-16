@@ -181,7 +181,11 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_PktAggregate", "1" },
 	{ "wl_APSDCapable", "1" },
 	{ "wl_HT_OpMode", "0" },
+#if BOARD_HAS_5G_11AC
+	{ "wl_HT_BW", "2" },
+#else
 	{ "wl_HT_BW", "1" },
+#endif
 	{ "wl_VHT_Only", "0" },
 	{ "wl_txbf", "0" },
 	{ "wl_ssid2",  DEF_WLAN_5G_SSID },
@@ -585,18 +589,16 @@ struct nvram_pair router_defaults[] = {
 
 	{ "ether_igmp", "1" },
 	{ "ether_m2u", "2" },
-#if (BOARD_NUM_ETH_LEDS > 1)
+#if defined(USE_RTL8367)
+	{ "ether_jumbo", "1" },
+	{ "ether_green", "0" },
 	{ "ether_led0", "3" },
 #else
+	{ "ether_jumbo", "0" },
+	{ "ether_green", "1" },
 	{ "ether_led0", "7" },
 #endif
 	{ "ether_led1", "0" },
-#if BOARD_HAS_EPHY_1000
-	{ "ether_jumbo", "1" },
-#else
-	{ "ether_jumbo", "0" },
-#endif
-	{ "ether_green", "0" },
 
 	{ "ether_link_wan",  "0" },
 	{ "ether_link_lan1", "0" },
@@ -609,7 +611,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ether_flow_lan3", "0" },
 	{ "ether_flow_lan4", "0" },
 
-#if defined(BOARD_N11P)
+#if defined(CONFIG_RALINK_MT7621) || (defined(CONFIG_RALINK_MT7620) && !defined(BOARD_N14U))
 	{ "hw_nat_mode", "4" },
 #else
 	{ "hw_nat_mode", "1" },

@@ -315,15 +315,15 @@ static int msdc_debug_show(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations msdc_debug_fops = {
-	.owner	 	= THIS_MODULE,
-	.open 		= msdc_debug_show,
-	.read 		= seq_read,
-	.write 		= msdc_debug_proc_write,
-	.llseek 	= seq_lseek,
-	.release 	= single_release,
+	.owner		= THIS_MODULE,
+	.open		= msdc_debug_show,
+	.read		= seq_read,
+	.write		= msdc_debug_proc_write,
+	.llseek		= seq_lseek,
+	.release	= single_release,
 };
 
-int msdc_debug_proc_init(void) 
+int msdc_debug_proc_init(void)
 {
 	struct proc_dir_entry *de = proc_create("msdc_debug", 0667, NULL, &msdc_debug_fops);
 
@@ -332,5 +332,10 @@ int msdc_debug_proc_init(void)
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(msdc_debug_proc_init);
+
+void msdc_debug_proc_exit(void)
+{
+	remove_proc_entry("msdc_debug", NULL);
+}
+
 #endif

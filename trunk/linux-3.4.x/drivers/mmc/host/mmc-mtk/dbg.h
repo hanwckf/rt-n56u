@@ -111,8 +111,26 @@ do {    \
             host->id,  ##args , __FUNCTION__, __LINE__, current->comm, current->pid);	\
     } \
 } while(0)
+
 #else
 #define N_MSG(evt, fmt, args...) do {} while(0)
+#endif
+
+#if defined (MT6575_SD_DEBUG) && !defined (CONFIG_MTK_MMC_CD_POLL)
+#define INIT_MSG(fmt, args...) \
+do { \
+    printk(KERN_ERR TAG"%d -> "fmt" <- %s() : L<%d> PID<%s><0x%x>\n", \
+        host->id,  ##args , __FUNCTION__, __LINE__, current->comm, current->pid); \
+} while(0);
+
+#define IRQ_MSG(fmt, args...) \
+do { \
+    printk(KERN_ERR TAG"%d -> "fmt" <- %s() : L<%d>\n", \
+        host->id,  ##args , __FUNCTION__, __LINE__); \
+} while(0);
+#else
+#define INIT_MSG(fmt, args...) do {} while(0)
+#define IRQ_MSG(fmt, args...) do {} while(0)
 #endif
 
 #define ERR_MSG(fmt, args...) \
@@ -121,26 +139,11 @@ do { \
         host->id,  ##args , __FUNCTION__, __LINE__, current->comm, current->pid); \
 } while(0);
 
-#if defined (CONFIG_MTK_MMC_CD_POLL)
-#define INIT_MSG(fmt, args...)
-#define IRQ_MSG(fmt, args...)
-#else
-#define INIT_MSG(fmt, args...) \
-do { \
-    printk(KERN_ERR TAG"%d -> "fmt" <- %s() : L<%d> PID<%s><0x%x>\n", \
-        host->id,  ##args , __FUNCTION__, __LINE__, current->comm, current->pid); \
-} while(0);
-
-/* PID in ISR in not corrent */
-#define IRQ_MSG(fmt, args...) \
-do { \
-    printk(KERN_ERR TAG"%d -> "fmt" <- %s() : L<%d>\n", \
-        host->id,  ##args , __FUNCTION__, __LINE__); \
-} while(0);
-#endif
-
+#if defined (MT6575_SD_DEBUG)
 int msdc_debug_proc_init(void);
+void msdc_debug_proc_exit(void);
 u32 msdc_time_calc(u32 old_L32, u32 old_H32, u32 new_L32, u32 new_H32);
 void msdc_performance(u32 opcode, u32 sizes, u32 bRx, u32 ticks);
+#endif
 
 #endif

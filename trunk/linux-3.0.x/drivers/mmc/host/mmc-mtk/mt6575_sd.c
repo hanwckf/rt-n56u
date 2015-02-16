@@ -199,36 +199,6 @@ static int msdc_rsp[] = {
 /* clock source for host: global */
 static u32 hclks[1] = {HOST_MAX_MCLK};
 
-//============================================
-// the power for msdc host controller: global
-//    always keep the VMC on. 
-//============================================
-#define msdc_vcore_on(host) \
-    do { \
-        INIT_MSG("[+]VMC ref. count<%d>", ++host->pwr_ref); \
-        (void)hwPowerOn(MT65XX_POWER_LDO_VMC, VOL_3300, "SD"); \
-    } while (0)
-
-#define msdc_vcore_off(host) \
-    do { \
-        INIT_MSG("[-]VMC ref. count<%d>", --host->pwr_ref); \
-        (void)hwPowerDown(MT65XX_POWER_LDO_VMC, "SD"); \
-    } while (0)
-
-//====================================
-// the vdd output for card: global 
-//   always keep the VMCH on. 
-//==================================== 
-#define msdc_vdd_on(host) \
-    do { \
-        (void)hwPowerOn(MT65XX_POWER_LDO_VMCH, VOL_3300, "SD"); \
-    } while (0)
-
-#define msdc_vdd_off(host) \
-    do { \
-        (void)hwPowerDown(MT65XX_POWER_LDO_VMCH, "SD"); \
-    } while (0)
-
 #define sdc_is_busy()          (sdr_read32(SDC_STS) & SDC_STS_SDCBUSY)
 #define sdc_is_cmd_busy()      (sdr_read32(SDC_STS) & SDC_STS_CMDBUSY)
 
@@ -2095,18 +2065,12 @@ static void msdc_enable_cd_irq(struct msdc_host *host, int enable)
 		return;
 	}
 
-	N_MSG(CFG, "CD IRQ Eanable(%d)", enable);
+	N_MSG(CFG, "CD IRQ Enable(%d)", enable);
 
 	if (enable) {
 	    if (hw->enable_cd_eirq) { /* not set, never enter */
 		    hw->enable_cd_eirq();
 	    } else {
-		    /* card detection circuit relies on the core power so that the core power 
-		     * shouldn't be turned off. Here adds a reference count to keep 
-		     * the core power alive.
-		     */
-		    //msdc_vcore_on(host); //did in msdc_init_hw()
-
 		    if (hw->config_gpio_pin) /* NULL */
 			    hw->config_gpio_pin(MSDC_CD_PIN, GPIO_PULL_UP);
 
@@ -2125,11 +2089,6 @@ static void msdc_enable_cd_irq(struct msdc_host *host, int enable)
 		    sdr_clr_bits(SDC_CFG, SDC_CFG_INSWKUP);
 		    sdr_clr_bits(MSDC_PS, MSDC_PS_CDEN);
 		    sdr_clr_bits(MSDC_INTEN, MSDC_INTEN_CDSC);
-
-		    /* Here decreases a reference count to core power since card 
-		     * detection circuit is shutdown.
-		     */
-		    //msdc_vcore_off(host);
 	    }
     }
 }
@@ -2511,21 +2470,24 @@ static int __init mt_msdc_init(void)
     return 0;
 #endif
 
+    reg = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x60));
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
-    reg = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x60)) & ~(0x3<<18);
+    reg &= ~(0x3<<18); // 0: SD Mode
 #if defined (CONFIG_RALINK_MT7620)
-    reg |= (0x1<<18); // 1: SD Mode
+    reg |=  (0x1<<18); // 1: SD Mode
 #endif
 #elif defined (CONFIG_RALINK_MT7628)
-    reg = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x60)) & ~(0x3<<0) & ~(0x3<<6) & ~(0x3<<10) & ~(0x1<<15) & ~(0x3<<20) & ~(0x3<<24) | (0x1<<0) | (0x1<<6) | (0x1<<10) | (0x1<<15) | (0x1<<20) | (0x1<<24);
-   // reg = 0x55158448;
-    reg1 = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x1340)) & ~(0x1<<11); //Normal mode(AP mode) , SDXC CLK=PAD_GPIO0=GPIO11, driving = 6mA
-    sdr_write32((volatile u32*)(RALINK_SYSCTL_BASE + 0x1340), reg1);
-    reg1 = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x1350)) | (0x1<<11);
-    sdr_write32((volatile u32*)(RALINK_SYSCTL_BASE + 0x1350), reg1);
+    reg &= ~((0x3<<0)|(0x3<<6)|(0x3<<10)|(0x1<<15)|(0x3<<20)|(0x3<<24));
+    reg |=  ((0x1<<0)|(0x1<<6)|(0x1<<10)|(0x1<<15)|(0x1<<20)|(0x1<<24));
 #if defined (CONFIG_MTK_MMC_EMMC_8BIT)
-    reg |= (0x3<<26 | 0x3<<28 | 0x3<<30);
+    reg |=  ((0x3<<26)|(0x3<<28)|(0x3<<30));
 #endif
+    reg1 = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x1340));
+    reg1 &= ~(0x1<<11); //Normal mode(AP mode), SDXC CLK=PAD_GPIO0=GPIO11, driving = 6mA
+    sdr_write32((volatile u32*)(RALINK_SYSCTL_BASE + 0x1340), reg1);
+    reg1 = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x1350));
+    reg1 |= (0x1<<11);
+    sdr_write32((volatile u32*)(RALINK_SYSCTL_BASE + 0x1350), reg1);
 #endif
     sdr_write32((volatile u32*)(RALINK_SYSCTL_BASE + 0x60), reg);
 
@@ -2535,7 +2497,7 @@ static int __init mt_msdc_init(void)
         return ret;
     }
 
-    printk(KERN_INFO MMC_DRV_NAME ": MediaTek MT6575 MSDC Driver\n");
+    printk(KERN_INFO MMC_DRV_NAME ": MediaTek SD/MMC Card driver init\n");
 
 #if defined (MT6575_SD_DEBUG)
     msdc_debug_proc_init();
@@ -2552,5 +2514,5 @@ module_init(mt_msdc_init);
 module_exit(mt_msdc_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("MediaTek MT6575 SD/MMC Card Driver");
+MODULE_DESCRIPTION("MediaTek SD/MMC Card driver");
 MODULE_AUTHOR("Infinity Chen <infinity.chen@mediatek.com>");

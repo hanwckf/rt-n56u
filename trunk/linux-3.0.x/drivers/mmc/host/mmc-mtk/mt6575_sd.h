@@ -841,7 +841,7 @@ struct msdc_regs {
     msdc_dat_rddly0     dat_rddly0;    /* base+0xf0h */
     msdc_dat_rddly1     dat_rddly1;    /* base+0xf4h */
     msdc_hw_dbg_reg     hw_dbg;        /* base+0xf8h */
-    u32                 rsv7[1];       
+    u32                 rsv7[1];
     msdc_version_reg    version;       /* base+0x100h */
     msdc_eco_ver_reg    eco_ver;       /* base+0x104h */
 };

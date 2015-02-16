@@ -84,11 +84,11 @@ const char *get_system_type(void)
 #elif defined (CONFIG_RALINK_RT5350)
 	return "Ralink RT5350 SoC";
 #elif defined (CONFIG_RALINK_MT7620)
-	return "Mediatek MT7620 SoC";
+	return "MediaTek MT7620 SoC";
 #elif defined (CONFIG_RALINK_MT7621)
-	return "Mediatek MT7621 SoC";
+	return "MediaTek MT7621 SoC";
 #elif defined (CONFIG_RALINK_MT7628)
-	return "Mediatek MT7628 SoC";
+	return "MediaTek MT7628 SoC";
 #else
 	return "Ralink SoC";
 #endif

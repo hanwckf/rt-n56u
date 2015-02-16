@@ -187,10 +187,6 @@ static int ra_systick_clockevent_init(void)
 	unsigned int cpu = smp_processor_id();
 	struct clock_event_device *cd;
 	unsigned int irq;
-#if defined (CONFIG_RALINK_MT7621)
-	unsigned int i;
-	unsigned long _gic_base;
-#endif
 
 	/*
 	 * With vectored interrupts things are getting platform specific.
@@ -219,17 +215,6 @@ static int ra_systick_clockevent_init(void)
 	cd->set_mode		= ra_systick_set_clock_mode;
 	cd->event_handler	= ra_systick_event_handler;
 
-#if defined (CONFIG_RALINK_MT7621)
-	/* Program MIPS GIC to turn off(mask) each VPE's local timer interrupt.
-	 * "_gic_base" is for GIC read/write macro.
-	 */
-	_gic_base = (unsigned long) ioremap_nocache(GIC_BASE_ADDR, GIC_ADDRSPACE_SZ);
-	for (i = 0; i < NR_CPUS /* numvpes */; i++) {
-		GICWRITE(GIC_REG(VPE_LOCAL, GIC_VPE_OTHER_ADDR), i);
-		GICWRITE(GIC_REG(VPE_OTHER, GIC_VPE_RMASK), GIC_VPE_SMASK_TIMER_MSK);
-	}
-#endif
-
 	/* install timer irq handler before MIPS BSP code. */
 	if (!cp0_timer_irq_installed){
 		cp0_timer_irq_installed = 1;
@@ -244,7 +229,6 @@ static int ra_systick_clockevent_init(void)
 	return 0;
 }
 #endif
-
 
 #if defined (CONFIG_RALINK_MT7621)
 #define LPS_PREC 8
@@ -290,12 +274,13 @@ static int udelay_recal(void)
 		if (jiffies != ticks)   /* longer than 1 tick */
 			lpj &= ~loopbit;
 	}
-	printk("%d CPUs re-calibrate udelay(lpj = %d)\n", NR_CPUS, lpj);
 
-	for(i=0; i< NR_CPUS; i++)
+	for (i=0; i < NR_CPUS; i++)
 		cpu_data[i].udelay_val = lpj;
 
-#if defined (CONFIG_RALINK_CPUSLEEP) && defined (CONFIG_RALINK_MT7621)
+	printk("%d CPUs re-calibrate udelay (lpj = %d)\n", nr_cpu_ids, lpj);
+
+#if defined (CONFIG_RALINK_CPUSLEEP)
 	lpj = (*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x10)));
 	lpj &= ~(0xF << 8);
 	lpj |=  (0xA << 8);
@@ -315,19 +300,6 @@ void __init plat_time_init(void)
 #if defined (CONFIG_RALINK_SYSTICK_COUNTER)
 	ra_systick_clockevent_init();
 	ra_systick_clocksource_init();
-#endif
-
-#if 0
-	printk("options: 0x%08lX, ases: 0x%08lX, isa_level: 0x%08X, icache.flags: 0x%08X, dcache.flags: 0x%08X,"
-	       "icache.linesz: %d, dcache.linesz: %d, cp0_compare_irq: %d\n",
-		cpu_data[0].options,
-		cpu_data[0].ases,
-		cpu_data[0].isa_level,
-		cpu_data[0].icache.flags,
-		cpu_data[0].dcache.flags,
-		cpu_data[0].icache.linesz,
-		cpu_data[0].dcache.linesz,
-		cp0_compare_irq);
 #endif
 }
 

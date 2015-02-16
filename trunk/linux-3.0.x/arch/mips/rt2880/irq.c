@@ -153,7 +153,7 @@ asmlinkage void plat_irq_dispatch(void)
 #endif
 
 	pending = read_c0_status() & read_c0_cause() & ST0_IM;
-	if (!pending) {
+	if (unlikely(!pending)) {
 		spurious_interrupt();
 		return;
 	}

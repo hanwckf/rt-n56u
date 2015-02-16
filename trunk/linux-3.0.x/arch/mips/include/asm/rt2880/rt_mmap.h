@@ -294,6 +294,8 @@
 // Clock Conf Register
 #define RALINK_UPHY1_CLK_EN		(1<<20)
 #define RALINK_UPHY0_CLK_EN		(1<<18)
+#define RALINK_PCI_CLK_EN		(1<<19)
+#define RALINK_PCIE_CLK_EN		(1<<21)
 #define RALINK_GE1_CLK_EN		(1<<16)
 
 #elif defined (CONFIG_RALINK_MT7620)
@@ -494,7 +496,7 @@
 #define CPLL_MULT_RATIO			(0x7UL << CPLL_MULT_RATIO_SHIFT)
 #define CPLL_DIV_RATIO_SHIFT		10
 #define CPLL_DIV_RATIO			(0x3UL << CPLL_DIV_RATIO_SHIFT)
-#define BASE_CLOCK			40      /* Mhz */
+#define BASE_CLOCK			50      /* Mhz */
 
 #define RALINK_TESTSTAT			0xBE000018
 #define RALINK_TESTSTAT2		0xBE00001C

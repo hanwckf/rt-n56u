@@ -257,6 +257,7 @@ static void prom_init_usb(void)
 static void prom_init_sysclk(void)
 {
 	char asic_id[8], *ram_type = "SDRAM";
+	int xtal = 40;
 	u32 reg;
 	u8  clk_sel;
 #if defined (CONFIG_RT5350_ASIC) || defined (CONFIG_MT7620_ASIC) || \
@@ -278,10 +279,18 @@ static void prom_init_sysclk(void)
 	ralink_asic_rev_id = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x0c));
 
 #if defined (CONFIG_RALINK_MT7620)
+	/* PKG_ID [16:16], 0: DRQFN-148 (N/H), 1: TFBGA-269 (A)  */
 	if (ralink_asic_rev_id & (1UL<<16))
 		asic_id[6] = 'A';
 	else
 		asic_id[6] = 'N';
+	asic_id[7] = '\0';
+#elif defined (CONFIG_RALINK_MT7621)
+	/* CORE_NUM [17:17], 0: Single Core (S), 1: Dual Core (A)  */
+	if (ralink_asic_rev_id & (1UL<<17))
+		asic_id[6] = 'A';
+	else
+		asic_id[6] = 'S';
 	asic_id[7] = '\0';
 #endif
 
@@ -291,27 +300,40 @@ static void prom_init_sysclk(void)
 	clk_sel = (reg>>18) & 0x01;
 #elif defined (CONFIG_RT3352_ASIC)
 	clk_sel = (reg>>8) & 0x01;
+	if (!(reg & (1UL<<20)))
+		xtal = 20;
 #elif defined (CONFIG_RT5350_ASIC)
 	clk_sel = (reg>>8) & 0x01;
 	clk_sel2 = (reg>>10) & 0x01;
 	clk_sel |= (clk_sel2 << 1);
+	if (!(reg & (1UL<<20)))
+		xtal = 20;
 #elif defined (CONFIG_RT3883_ASIC)
 	clk_sel = (reg>>8) & 0x03;
 #elif defined (CONFIG_MT7620_ASIC)
 	clk_sel = 0;		/* clock from CPU PLL (600MHz) */
 	clk_sel2 = (reg>>4) & 0x03;
+	if (!(reg & (1UL<<6)))
+		xtal = 20;
 	reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x58)));
 	if (reg & (0x1UL << 24))
 		clk_sel = 1;	/* clock from BBP PLL (480MHz ) */
 #elif defined (CONFIG_MT7621_ASIC)
 	clk_sel = 0;	/* GPLL (500MHz) */
-	clk_sel2 = (reg>>4) & 0x01;
+	clk_sel2 = (reg>>3) & 0x03;
+	reg = (reg >> 6) & 0x7;
+	if (reg >= 6)
+		xtal = 25;
+	else if (reg <= 2)
+		xtal = 20;
 	reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x2C)));
 	if (reg & (0x1UL << 30))
 		clk_sel = 1;	/* CPU PLL */
 #elif defined (CONFIG_MT7628_ASIC)
 	clk_sel = 0;		/* clock from CPU PLL (600MHz) */
 	clk_sel2 = (reg>>4) & 0x01;
+	if (!(reg & (1UL<<7)))
+		xtal = 25;
 #else
 #error Please Choice System Type
 #endif
@@ -421,23 +443,28 @@ static void prom_init_sysclk(void)
 		break;
 	case 1: /* CPU PLL */
 		reg = (*(volatile u32 *)(RALINK_MEMCTRL_BASE + 0x648));
-		fbdiv = ((reg >> 4) & 0x7F) + 1;
-		reg = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x10));
-		reg = (reg >> 6) & 0x7;
-		if (reg >= 6)
-			mips_cpu_feq = 25 * fbdiv * 1000 * 1000;	/* 25Mhz Xtal */
-		else if (reg >= 3)
-			mips_cpu_feq = 20 * fbdiv * 1000 * 1000;	/* 40Mhz Xtal */
-		else {
-			/* 20Mhz Xtal: TODO */
+#if defined(CONFIG_RALINK_MT7621_PLL900)
+		if ((reg & 0xff) != 0xc2) {
+			reg &= ~(0xff);
+			reg |=  (0xc2);
+			(*((volatile u32 *)(RALINK_MEMCTRL_BASE + 0x648))) = reg;
+			udelay(10);
 		}
+#endif
+		fbdiv = ((reg >> 4) & 0x7F) + 1;
+		if (xtal == 20)
+			;						/* 20Mhz Xtal: TODO */
+		else if (xtal == 25)
+			mips_cpu_feq = 25 * fbdiv * 1000 * 1000;	/* 25Mhz Xtal */
+		else
+			mips_cpu_feq = 20 * fbdiv * 1000 * 1000;	/* 40Mhz Xtal */
 		break;
 #elif defined (CONFIG_RALINK_MT7628)
 	case 0:
-		if (reg & 0x80)
-			mips_cpu_feq = 580 * 1000 * 1000;	/* 40MHz Xtal */
-		else
+		if (xtal == 25)
 			mips_cpu_feq = 575 * 1000 * 1000;	/* 25MHZ Xtal */
+		else
+			mips_cpu_feq = 580 * 1000 * 1000;	/* 40MHz Xtal */
 		break;
 #else
 #error Please Choice Chip Type
@@ -521,8 +548,11 @@ static void prom_init_sysclk(void)
 	(*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x3C))) = reg;
 	udelay(10);
 #elif defined (CONFIG_RALINK_MT7621)
-	surfboard_sysclk = mips_cpu_feq/4;
-	if (clk_sel2)
+	if (clk_sel2 & 0x01)
+		surfboard_sysclk = mips_cpu_feq/4;	/* OCP_RATIO 1:4 */
+	else
+		surfboard_sysclk = mips_cpu_feq/3;	/* OCP_RATIO 1:3 */
+	if (clk_sel2 & 0x02)
 		ram_type = "DDR2";
 	else
 		ram_type = "DDR3";
@@ -552,7 +582,7 @@ static void prom_init_sysclk(void)
 	surfboard_sysclk = mips_cpu_feq/3;
 #endif
 
-	printk("\nRalink SoC: %s, RevID: %04X, RAM: %s\n", asic_id, (ralink_asic_rev_id & 0xffff), ram_type);
+	printk("\nRalink SoC: %s, RevID: %04X, RAM: %s, XTAL: %dMHz\n", asic_id, (ralink_asic_rev_id & 0xffff), ram_type, xtal);
 	printk("CPU/SYS frequency: %d/%d MHz\n", mips_cpu_feq / 1000 / 1000, surfboard_sysclk / 1000 / 1000);
 
 	/* enable cpu sleep mode for power saving */

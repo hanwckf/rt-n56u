@@ -56,6 +56,12 @@ static void __init vpe_local_setup(unsigned int numvpes)
 		if (vpe_ctl & GIC_VPE_CTL_PERFCNT_RTBL_MSK)
 			GICWRITE(GIC_REG(VPE_OTHER, GIC_VPE_PERFCTR_MAP),
 				 GIC_MAP_TO_PIN_MSK | perf_interrupt);
+
+#if defined (CONFIG_RALINK_MT7621) && defined (CONFIG_RALINK_SYSTICK_COUNTER)
+		/* Program MIPS GIC to turn off(mask) each VPE's local timer interrupt. */
+		GICWRITE(GIC_REG(VPE_OTHER, GIC_VPE_RMASK),
+			 GIC_VPE_SMASK_TIMER_MSK);
+#endif
 	}
 }
 

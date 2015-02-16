@@ -66,15 +66,6 @@
 #define GDMA_WRITE_REG(addr, val)  	*((volatile uint32_t *)(addr)) = cpu_to_le32(val)
 #define GET_GDMA_IP_VER			(GDMA_READ_REG(RALINK_GDMA_GCT) & 0x6) >> 1 //GDMA_GCT[2:1]
 
-#define RALINK_IRQ_ADDR                 RALINK_INTCL_BASE
-#if defined (CONFIG_RALINK_MT7621)
-#define RALINK_REG_INTENA               (RALINK_IRQ_ADDR + 0x80)
-#define RALINK_REG_INTDIS               (RALINK_IRQ_ADDR + 0x78)
-#else
-#define RALINK_REG_INTENA               (RALINK_IRQ_ADDR + 0x34)
-#define RALINK_REG_INTDIS               (RALINK_IRQ_ADDR + 0x38)
-#endif
-
 /* 
  * 12bytes=GDMA Channel n Source Address(4) +
  *         GDMA Channel n Destination Address(4) +

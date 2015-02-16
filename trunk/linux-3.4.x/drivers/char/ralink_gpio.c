@@ -1154,9 +1154,9 @@ ralink_gpio_int_enabled(u32 is_enabled)
 {
 	if (is_enabled) {
 		ralink_gpio_irq_clear();
-		*(volatile u32 *)(RALINK_REG_INTENA) = cpu_to_le32(RALINK_INTCTL_PIO);
+		*(volatile u32 *)(RALINK_INTENA) = cpu_to_le32(RALINK_INTCTL_PIO);
 	} else {
-		*(volatile u32 *)(RALINK_REG_INTDIS) = cpu_to_le32(RALINK_INTCTL_PIO);
+		*(volatile u32 *)(RALINK_INTDIS) = cpu_to_le32(RALINK_INTCTL_PIO);
 	}
 }
 
@@ -1499,9 +1499,6 @@ int __init ralink_gpio_init(void)
 #if defined(CONFIG_RALINK_GPIOMODE_UARTF) && defined(RALINK_GPIOMODE_UARTF)
 	gpiomode |= RALINK_GPIOMODE_UARTF;
 #endif
-#if defined(CONFIG_RALINK_GPIOMODE_UARTL) && defined(RALINK_GPIOMODE_UARTL)
-	gpiomode |= RALINK_GPIOMODE_UARTL;
-#endif
 #if defined(CONFIG_RALINK_GPIOMODE_JTAG) && defined(RALINK_GPIOMODE_JTAG)
 	gpiomode |= RALINK_GPIOMODE_JTAG;
 #endif
@@ -1510,12 +1507,6 @@ int __init ralink_gpio_init(void)
 #endif
 #if defined(CONFIG_RALINK_GPIOMODE_MDIO) && defined(RALINK_GPIOMODE_MDIO)
 	gpiomode |= RALINK_GPIOMODE_MDIO;
-#endif
-#if defined(CONFIG_RALINK_GPIOMODE_GE1) && defined(RALINK_GPIOMODE_GE1)
-	gpiomode |= RALINK_GPIOMODE_GE1;
-#endif
-#if defined(CONFIG_RALINK_GPIOMODE_GE2) && defined(RALINK_GPIOMODE_GE2)
-	gpiomode |= RALINK_GPIOMODE_GE2;
 #endif
 #if defined(CONFIG_RALINK_GPIOMODE_PCI) && defined(RALINK_GPIOMODE_PCI)
 	gpiomode |= RALINK_GPIOMODE_PCI;
@@ -1528,9 +1519,6 @@ int __init ralink_gpio_init(void)
 #endif
 #if defined(CONFIG_RALINK_GPIOMODE_PA_G) && defined(RALINK_GPIOMODE_PA_G)
 	gpiomode |= RALINK_GPIOMODE_PA_G;
-#endif
-#if defined(CONFIG_RALINK_GPIOMODE_WLED) && defined(RALINK_GPIOMODE_WLED)
-	gpiomode |= RALINK_GPIOMODE_WLED;
 #endif
 	*(volatile u32 *)(RALINK_REG_GPIOMODE) = cpu_to_le32(gpiomode);
 

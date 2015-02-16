@@ -793,9 +793,7 @@ int __init RalinkGdmaInit(void)
 	}
 
 	//Enable GDMA interrupt
-	val = le32_to_cpu(*(volatile u32 *)(RALINK_REG_INTENA));
-	val |= RALINK_INTCTL_DMA;
-	GDMA_WRITE_REG(RALINK_REG_INTENA, val);
+	(*(volatile u32 *)(RALINK_INTENA)) = cpu_to_le32(RALINK_INTCTL_DMA);
 
 	//Channel0~Channel7 are round-robin
 #if defined (CONFIG_RALINK_RT3052)

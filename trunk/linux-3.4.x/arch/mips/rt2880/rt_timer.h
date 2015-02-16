@@ -74,8 +74,6 @@
 #define TMR1CTL				(TMRSTAT + 0x28)  /* Timer1 Control */
 #endif
 
-#define INTENA				(RALINK_INTCL_BASE  + 0x34)  /* Interrupt Enable */
-
 struct timer_data {
 	unsigned long expires;
 	unsigned long data;

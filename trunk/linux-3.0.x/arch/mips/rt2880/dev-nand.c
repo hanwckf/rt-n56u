@@ -5,23 +5,23 @@
 #include <linux/err.h>
 #include <linux/platform_device.h>
 
-#include <linux/mtd/mt6575_typedefs.h>
-
 #include <asm/rt2880/rt_mmap.h>
 #include <asm/rt2880/surfboardint.h>
 
-#define NFI_base		RALINK_NAND_CTRL_BASE
-#define NFIECC_base		RALINK_NANDECC_CTRL_BASE
+#include <linux/mtd/mtk_nand_dev.h>
+
+#define NFI_BASE 	RALINK_NAND_CTRL_BASE
+#define NFIECC_BASE	RALINK_NANDECC_CTRL_BASE
 
 static struct resource mt7621_nand_resource[] = {
 	{
-		.start	= NFI_base,
-		.end	= NFI_base + 0x1A0,
+		.start	= NFI_BASE,
+		.end	= NFI_BASE + 0x1A0,
 		.flags	= IORESOURCE_MEM,
 	},
 	{
-		.start	= NFIECC_base,
-		.end	= NFIECC_base + 0x150,
+		.start	= NFIECC_BASE,
+		.end	= NFIECC_BASE + 0x150,
 		.flags	= IORESOURCE_MEM,
 	},
 	{
@@ -34,8 +34,14 @@ static struct resource mt7621_nand_resource[] = {
 	},
 };
 
+static struct mtk_nand_host_hw mt7621_nand_hw = {
+	.nfi_bus_width		= 8,
+	.nfi_cs_num		= NFI_CS_NUM,
+	.nfi_cs_id		= NFI_DEFAULT_CS,
+};
+
 static struct platform_device mt7621_nand_device = {
-	.name		= "MT7621-NAND",
+	.name		= MTK_NAND_DRV_NAME,
 	.id		= 0,
 	.dev = {
 		.platform_data = &mt7621_nand_hw,

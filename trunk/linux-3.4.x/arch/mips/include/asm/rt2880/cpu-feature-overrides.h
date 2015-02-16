@@ -36,7 +36,7 @@
 #define cpu_has_inclusive_pcaches	0
 #define cpu_has_prefetch		1
 //#define cpu_has_vint			1 // do not override, depend from CONFIG_CPU_MIPSR2_IRQ_VI
-//#define cpu_has_veic			0 // do not override, depend from CONFIG_CPU_MIPSR2_IRQ_EI
+#define cpu_has_veic			0
 #define cpu_has_userlocal		1
 
 /* CPU ases */
@@ -45,14 +45,14 @@
 #define cpu_has_mips3d			0
 #define cpu_has_smartmips		0
 #define cpu_has_dsp			1
-#if !defined (CONFIG_RALINK_MT7621)
-#define cpu_has_mipsmt			0
-#else
+#if defined (CONFIG_RALINK_MT7621)
 #define cpu_has_mipsmt			1
+#else
+#define cpu_has_mipsmt			0
 #endif
 
 /* CPU ISA level */
-#define cpu_has_mips32r1		1
+#define cpu_has_mips32r1		0
 #define cpu_has_mips32r2		1
 #define cpu_has_mips64r1		0
 #define cpu_has_mips64r2		0
@@ -63,10 +63,8 @@
 #define cpu_has_64bit_addresses		0
 
 /* CPU cache info */
-#if !defined (CONFIG_RALINK_MT7621)
 #define cpu_has_dc_aliases		0
 #define cpu_dcache_line_size()		32
 #define cpu_icache_line_size()		32
-#endif
 
 #endif

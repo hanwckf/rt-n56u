@@ -50,6 +50,7 @@
 #include <asm/gcmpregs.h>
 
 #include <asm/irq.h>
+
 #include <asm/rt2880/surfboard.h>
 #include <asm/rt2880/surfboardint.h>
 #include <asm/rt2880/rt_mmap.h>
@@ -65,47 +66,43 @@ unsigned long _gcmp_base;
  */
 #define X GIC_UNUSED
 static struct gic_intr_map gic_intr_map[GIC_NUM_INTRS] = {
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 0
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT3, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// FE
-	{ 0, GIC_CPU_INT4, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// PCIE0
-#if defined (CONFIG_RALINK_SYSTICK)
-	{ 0, GIC_CPU_INT5, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },	// 5, aux timer (system tick)
+	{ X, X,            X,           X,              0            },		// 00: N/A
+	{ X, X,            X,           X,              0            },		// 01: N/A
+	{ X, X,            X,           X,              0            },		// 02: N/A
+	{ 0, GIC_CPU_INT3, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 03: FE
+	{ 0, GIC_CPU_INT4, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 04: PCIe0
+#if defined (CONFIG_RALINK_SYSTICK_COUNTER)
+	{ 0, GIC_CPU_INT5, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },	// 05: AUX timer (system tick)
 #else
-	{ X, X,            X,           X,              0            },		// 5
+	{ X, X,            X,           X,              0            },		// 05: N/A
 #endif
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ X, X,            X,           X,              0            },		// 7, mips timer
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 06: SYSCTL
+	{ X, X,            X,           X,              0            },		// 07: MIPS timer
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 08: I2C
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 09: DRAMC
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 10: PCM
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 11: HS GDMA
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 12: GPIO
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 13: GDMA
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_EDGE,  GIC_FLAG_IPI },		// 14: NFI NAND
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_EDGE,  GIC_FLAG_IPI },		// 15: NFI ECC
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 16: I2S
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 17: SPI
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 18: SPDIF
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 19: CryptoEngine
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 20: SDXC
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 21: PerfCounter
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 22: USB XHCI
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_EDGE,  GIC_FLAG_IPI },		// 23: ESW MT7530 (use edge interrupt)
+	{ 0, GIC_CPU_INT4, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 24: PCIe1
+	{ 0, GIC_CPU_INT4, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 25: PCIe2
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 26: UART 1
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 27: UART 2
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 28: UART 3
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 29: Timer WDG
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 30: Timer0
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 31: Timer1
 
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 10
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 15
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 20
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT4, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-
-	{ 0, GIC_CPU_INT4, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 25
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
-
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 30
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },
 	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_EDGE,  GIC_FLAG_IPI },		// 32: PCIE_P0_LINT_DOWN_RST
 	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_EDGE,  GIC_FLAG_IPI },		// 33: PCIE_P1_LINT_DOWN_RST
 	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_EDGE,  GIC_FLAG_IPI },		// 34: PCIE_P2_LINT_DOWN_RST
@@ -121,18 +118,14 @@ int __init gcmp_probe(unsigned long addr, unsigned long size)
 	_gcmp_base = (unsigned long) ioremap_nocache(GCMP_BASE_ADDR, GCMP_ADDRSPACE_SZ);
 	gcmp_present = (GCMPGCB(GCMPB) & GCMP_GCB_GCMPB_GCMPBASE_MSK) == GCMP_BASE_ADDR;
 
-	if (gcmp_present)
-		printk("GCMP present\n");
-
 	return gcmp_present;
 }
 
 /* Return the number of IOCU's present */
 int __init gcmp_niocu(void)
 {
-	return gcmp_present ?
-		(GCMPGCB(GC) & GCMP_GCB_GC_NUMIOCU_MSK) >> GCMP_GCB_GC_NUMIOCU_SHF :
-		0;
+	return (gcmp_present) ?
+		(GCMPGCB(GC) & GCMP_GCB_GC_NUMIOCU_MSK) >> GCMP_GCB_GC_NUMIOCU_SHF : 0;
 }
 
 #if defined (CONFIG_MIPS_GIC_IPI)
@@ -213,7 +206,7 @@ static void __init fill_ipi_map(void)
 {
 	int cpu;
 
-	for (cpu = 0; cpu < NR_CPUS; cpu++) {
+	for (cpu = 0; cpu < nr_cpu_ids; cpu++) {
 		fill_ipi_map1(gic_resched_int_base, cpu, GIC_CPU_INT1);
 		fill_ipi_map1(gic_call_int_base, cpu, GIC_CPU_INT2);
 	}
@@ -268,6 +261,7 @@ void __init prom_init_irq(void)
 void __init arch_init_irq(void)
 {
 	int i;
+	unsigned int gic_rev;
 
 	mips_cpu_irq_init();
 
@@ -278,22 +272,22 @@ void __init arch_init_irq(void)
 
 	if (gic_present) {
 #if defined (CONFIG_MIPS_GIC_IPI)
-		gic_call_int_base = GIC_NUM_INTRS - NR_CPUS;
-		gic_resched_int_base = gic_call_int_base - NR_CPUS;
+		gic_call_int_base = GIC_NUM_INTRS - nr_cpu_ids;
+		gic_resched_int_base = gic_call_int_base - nr_cpu_ids;
 		fill_ipi_map();
 #endif
 		gic_init(GIC_BASE_ADDR, GIC_ADDRSPACE_SZ, gic_intr_map,
 				ARRAY_SIZE(gic_intr_map), MIPS_GIC_IRQ_BASE);
+
+		GICREAD(GIC_REG(SHARED, GIC_SH_REVISIONID), gic_rev);
+		printk("MIPS GIC RevID: %d.%d\n", (gic_rev >> 8) & 0xff, gic_rev & 0xff);
+
 #if defined (CONFIG_MIPS_GIC_IPI)
-		set_c0_status(STATUSF_IP7 | STATUSF_IP6 | STATUSF_IP5 | STATUSF_IP4 | STATUSF_IP3 | STATUSF_IP2);
-		
-		/* set up ipi interrupts */
-		for (i = 0; i < NR_CPUS; i++) {
+		/* setup ipi interrupts */
+		for (i = 0; i < nr_cpu_ids; i++) {
 			arch_init_ipiirq(MIPS_GIC_IRQ_BASE + GIC_RESCHED_INT(i), &irq_resched);
 			arch_init_ipiirq(MIPS_GIC_IRQ_BASE + GIC_CALL_INT(i), &irq_call);
 		}
-#else
-		set_c0_status(STATUSF_IP7 | STATUSF_IP6 | STATUSF_IP5 | STATUSF_IP2);
 #endif
 	}
 
@@ -303,6 +297,8 @@ void __init arch_init_irq(void)
 		    i != SURFBOARDINT_MIPS_TIMER)
 			irq_set_handler(i, handle_level_irq);
 	}
+
+	change_c0_status(ST0_IM, STATUSF_IP7 | STATUSF_IP6 | STATUSF_IP5 | STATUSF_IP4 | STATUSF_IP3 | STATUSF_IP2);
 }
 
 asmlinkage void plat_irq_dispatch(void)
@@ -310,7 +306,7 @@ asmlinkage void plat_irq_dispatch(void)
 	unsigned int pending;
 
 	pending = read_c0_status() & read_c0_cause() & ST0_IM;
-	if (!pending) {
+	if (unlikely(!pending)) {
 		spurious_interrupt();
 		return;
 	}

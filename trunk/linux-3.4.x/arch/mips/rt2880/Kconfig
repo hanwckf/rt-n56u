@@ -110,6 +110,9 @@ config PCIE_PORT2
 	bool "PCIe Port2 support"
 	default n
 
+config PCIE_PERST_ONLY
+	bool "Use single PERST_N pin (GPIO19) to reset PCIe peripherals"
+	default y
 endif
 
 #--------------------------
@@ -131,6 +134,11 @@ endif
 config  RALINK_MT7620_PLL600
 	bool "Set MT7620 CPU clock to 600MHz (Override Uboot config)"
 	depends on (RALINK_MT7620)
+	default n
+
+config  RALINK_MT7621_PLL900
+	bool "Set MT7621 CPU clock to 900MHz (Override Uboot config)"
+	depends on (RALINK_MT7621)
 	default n
 
 config  RALINK_SYSTICK_COUNTER

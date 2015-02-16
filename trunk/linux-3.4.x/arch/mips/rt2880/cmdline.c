@@ -41,10 +41,29 @@
 
 #include <asm/bootinfo.h>
 
-#ifdef CONFIG_CMDLINE_BOOL
+#if defined (CONFIG_CMDLINE_BOOL)
 char rt2880_cmdline[]=CONFIG_CMDLINE;
 #else
-char rt2880_cmdline[]="console=ttyS0,57600n8 root=/dev/ram0";
+#if defined (CONFIG_RT2880_UART_115200)
+#define TTY_BAUDRATE	"115200n8"
+#else
+#define TTY_BAUDRATE	"57600n8"
+#endif
+#if defined (CONFIG_MTD_NAND_USE_UBI_PART)
+#define MTD_UBI_MTD	" ubi.mtd=UBI_DEV"
+#else
+#define MTD_UBI_MTD	""
+#endif
+#if defined (CONFIG_RT2880_ROOTFS_IN_FLASH)
+#if defined (CONFIG_MTD_NAND_USE_UBI)
+#define MTD_ROOTFS_DEV	"/dev/mtdblock5"
+#else
+#define MTD_ROOTFS_DEV	"/dev/mtdblock4"
+#endif
+#else
+#define MTD_ROOTFS_DEV	"/dev/ram0"
+#endif
+char rt2880_cmdline[]="console=ttyS0," TTY_BAUDRATE "" MTD_UBI_MTD " root=" MTD_ROOTFS_DEV "";
 #endif
 
 #ifdef CONFIG_UBOOT_CMDLINE

@@ -10,75 +10,58 @@ config RALINK_GPIO
 	bool "Ralink SoC GPIO Support"
 	default y
 
-config RALINK_GPIOMODE_GE1
-	bool "Configure GE1 as GPIO mode (84~95)"
-	depends on RALINK_GPIO
-	depends on RALINK_RT3352 || RALINK_RT3883 || RALINK_MT7620 || RALINK_MT7621
-	default n
-config RALINK_GPIOMODE_GE2
-	bool "Configure GE2 as GPIO mode (72~83)"
-	depends on RALINK_GPIO
-	depends on RALINK_RT3883 || RALINK_MT7620 || RALINK_MT7621
-	default n
-config RALINK_GPIOMODE_WLED
-	bool "Configure WiFi LED as GPIO mode (72)"
-	depends on RALINK_GPIO
-	depends on RALINK_MT7620 || RALINK_MT7628
-	default n
 config RALINK_GPIOMODE_EPHY
-	bool "Configure EPHY as GPIO mode (40~44)"
+	bool "Configure EPHY as GPIO mode"
 	depends on RALINK_GPIO
-	depends on RALINK_MT7620 || RALINK_MT7628
+	depends on (RALINK_MT7620 || RALINK_MT7628)
 	default n
 config RALINK_GPIOMODE_PCI
-	bool "Configure PCI as GPIO mode (40~71)"
+	bool "Configure PCI as GPIO mode"
 	depends on RALINK_GPIO
 	depends on RALINK_RT3883
 	default n
 config RALINK_GPIOMODE_LNA_G
-	bool "Configure LNA_G as GPIO mode (35~37)"
+	bool "Configure LNA_G as GPIO mode"
 	depends on RALINK_GPIO
-	depends on RALINK_RT3352 || RALINK_RT3883
+	depends on (RALINK_RT3352 || RALINK_RT3883)
 	default n
 config RALINK_GPIOMODE_LNA_A
-	bool "Configure LNA_A as GPIO mode (32~34)"
+	bool "Configure LNA_A as GPIO mode"
 	depends on RALINK_GPIO
 	depends on RALINK_RT3883
 	default n
 config RALINK_GPIOMODE_MDIO
-	bool "Configure MDIO as GPIO mode (22~23)"
+	bool "Configure MDIO as GPIO mode"
 	depends on RALINK_GPIO
-	depends on !(RALINK_RT5350 || RALINK_MT7628)
+	depends on !(RALINK_RT5350 || RALINK_MT7621 || RALINK_MT7628)
 	default n
 config RALINK_GPIOMODE_PA_G
-	bool "Configure PA_G as GPIO mode (18~21)"
+	bool "Configure PA_G as GPIO mode"
 	depends on RALINK_GPIO
-	depends on RALINK_RT3352 || RALINK_MT7620 || RALINK_MT7628
+	depends on (RALINK_RT3352 || RALINK_MT7620 || RALINK_MT7628)
 	default n
 config RALINK_GPIOMODE_JTAG
-	bool "Configure JTAG as GPIO mode (17~21)"
+	bool "Configure JTAG as GPIO mode"
 	depends on RALINK_GPIO
 	depends on !(RALINK_MT7620 || RALINK_MT7628)
 	default n
-config RALINK_GPIOMODE_UARTL
-	bool "Configure UARTL as GPIO mode (15~16)"
-	depends on RALINK_GPIO
-	default n
 config RALINK_GPIOMODE_UARTF
-	bool "Configure UARTF as GPIO mode (7~14)"
-	depends on RALINK_GPIO && !(RALINK_MT7621 || RALINK_MT7628)
+	bool "Configure UARTF as GPIO mode"
+	depends on RALINK_GPIO
+	depends on !(RALINK_MT7621 || RALINK_MT7628)
 	default y
 config RALINK_GPIOMODE_SPI
-	bool "Configure SPI as GPIO mode (3~6)"
+	bool "Configure SPI as GPIO mode"
 	depends on RALINK_GPIO
+	depends on !(RALINK_MT7621)
 	default n
 config RALINK_GPIOMODE_SPI_REFCLK
-	bool "Configure SPI CS1 as REFCLK_OUT (37)"
+	bool "Configure SPI CS1 as REFCLK_OUT"
 	depends on RALINK_GPIO && !RALINK_GPIOMODE_SPI
 	depends on RALINK_MT7620
 	default y
 config RALINK_GPIOMODE_I2C
-	bool "Configure I2C as GPIO mode (1~2)"
+	bool "Configure I2C as GPIO mode"
 	depends on RALINK_GPIO
 	default n
 

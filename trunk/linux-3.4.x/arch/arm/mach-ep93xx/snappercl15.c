@@ -103,7 +103,6 @@ static struct platform_nand_data snappercl15_nand_data = {
 		.part_probe_types	= snappercl15_nand_part_probes,
 		.partitions		= snappercl15_nand_parts,
 		.nr_partitions		= ARRAY_SIZE(snappercl15_nand_parts),
-		.options		= NAND_NO_AUTOINCR,
 		.chip_delay		= 25,
 	},
 	.ctrl = {

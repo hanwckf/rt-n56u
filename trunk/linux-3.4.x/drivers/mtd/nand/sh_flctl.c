@@ -769,16 +769,6 @@ static void flctl_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
 		buf[i] = flctl_read_byte(mtd);
 }
 
-static int flctl_verify_buf(struct mtd_info *mtd, const u_char *buf, int len)
-{
-	int i;
-
-	for (i = 0; i < len; i++)
-		if (buf[i] != flctl_read_byte(mtd))
-			return -EFAULT;
-	return 0;
-}
-
 static int flctl_chip_init_tail(struct mtd_info *mtd)
 {
 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
@@ -881,8 +871,6 @@ static int __devinit flctl_probe(struct platform_device *pdev)
 	flctl->hwecc = pdata->has_hwecc;
 	flctl->holden = pdata->use_holden;
 
-	nand->options = NAND_NO_AUTOINCR;
-
 	/* Set address of hardware control function */
 	/* 20 us command delay time */
 	nand->chip_delay = 20;
@@ -890,7 +878,6 @@ static int __devinit flctl_probe(struct platform_device *pdev)
 	nand->read_byte = flctl_read_byte;
 	nand->write_buf = flctl_write_buf;
 	nand->read_buf = flctl_read_buf;
-	nand->verify_buf = flctl_verify_buf;
 	nand->select_chip = flctl_select_chip;
 	nand->cmdfunc = flctl_cmdfunc;
 

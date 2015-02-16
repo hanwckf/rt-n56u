@@ -102,7 +102,7 @@ static struct nand_ecclayout omap_oobinfo;
  */
 static uint8_t scan_ff_pattern[] = { 0xff };
 static struct nand_bbt_descr bb_descrip_flashbased = {
-	.options = NAND_BBT_SCANEMPTY | NAND_BBT_SCANALLPAGES,
+	.options = NAND_BBT_SCANALLPAGES,
 	.offs = 0,
 	.len = 1,
 	.pattern = scan_ff_pattern,
@@ -614,27 +614,6 @@ out_copy:
 }
 
 /**
- * omap_verify_buf - Verify chip data against buffer
- * @mtd: MTD device structure
- * @buf: buffer containing the data to compare
- * @len: number of bytes to compare
- */
-static int omap_verify_buf(struct mtd_info *mtd, const u_char * buf, int len)
-{
-	struct omap_nand_info *info = container_of(mtd, struct omap_nand_info,
-							mtd);
-	u16 *p = (u16 *) buf;
-
-	len >>= 1;
-	while (len--) {
-		if (*p++ != cpu_to_le16(readw(info->nand.IO_ADDR_R)))
-			return -EFAULT;
-	}
-
-	return 0;
-}
-
-/**
  * gen_true_ecc - This function will generate true ECC value
  * @ecc_buf: buffer to store ecc code
  *
@@ -1048,8 +1027,6 @@ static int __devinit omap_nand_probe(struct platform_device *pdev)
 		err = -EINVAL;
 		goto out_release_mem_region;
 	}
-
-	info->nand.verify_buf = omap_verify_buf;
 
 	/* selsect the ecc type */
 	if (pdata->ecc_opt == OMAP_ECC_HAMMING_CODE_DEFAULT)

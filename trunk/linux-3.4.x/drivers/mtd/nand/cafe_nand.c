@@ -303,13 +303,7 @@ static void cafe_nand_cmdfunc(struct mtd_info *mtd, unsigned command,
 	case NAND_CMD_SEQIN:
 	case NAND_CMD_RNDIN:
 	case NAND_CMD_STATUS:
-	case NAND_CMD_DEPLETE1:
 	case NAND_CMD_RNDOUT:
-	case NAND_CMD_STATUS_ERROR:
-	case NAND_CMD_STATUS_ERROR0:
-	case NAND_CMD_STATUS_ERROR1:
-	case NAND_CMD_STATUS_ERROR2:
-	case NAND_CMD_STATUS_ERROR3:
 		cafe_writel(cafe, cafe->ctl2, NAND_CTRL2);
 		return;
 	}
@@ -364,11 +358,11 @@ static int cafe_nand_write_oob(struct mtd_info *mtd,
 
 /* Don't use -- use nand_read_oob_std for now */
 static int cafe_nand_read_oob(struct mtd_info *mtd, struct nand_chip *chip,
-			      int page, int sndcmd)
+			      int page)
 {
 	chip->cmdfunc(mtd, NAND_CMD_READOOB, 0, page);
 	chip->read_buf(mtd, chip->oob_poi, mtd->oobsize);
-	return 1;
+	return 0;
 }
 /**
  * cafe_nand_read_page_syndrome - [REPLACEABLE] hardware ecc syndrome based page read
@@ -566,13 +560,6 @@ static int cafe_nand_write_page(struct mtd_info *mtd, struct nand_chip *chip,
 		status = chip->waitfunc(mtd, chip);
 	}
 
-#ifdef CONFIG_MTD_NAND_VERIFY_WRITE
-	/* Send command to read back the data */
-	chip->cmdfunc(mtd, NAND_CMD_READ0, 0, page);
-
-	if (chip->verify_buf(mtd, buf, mtd->writesize))
-		return -EIO;
-#endif
 	return 0;
 }
 
@@ -685,7 +672,7 @@ static int __devinit cafe_nand_probe(struct pci_dev *pdev,
 
 	/* Enable the following for a flash based bad block table */
 	cafe->nand.bbt_options = NAND_BBT_USE_FLASH;
-	cafe->nand.options = NAND_NO_AUTOINCR | NAND_OWN_BUFFERS;
+	cafe->nand.options = NAND_OWN_BUFFERS;
 
 	if (skipbbt) {
 		cafe->nand.options |= NAND_SKIP_BBTSCAN;

@@ -768,12 +768,6 @@ static void pxa3xx_nand_write_buf(struct mtd_info *mtd,
 	info->buf_start += real_len;
 }
 
-static int pxa3xx_nand_verify_buf(struct mtd_info *mtd,
-		const uint8_t *buf, int len)
-{
-	return 0;
-}
-
 static void pxa3xx_nand_select_chip(struct mtd_info *mtd, int chip)
 {
 	return;
@@ -990,7 +984,7 @@ static int pxa3xx_nand_scan(struct mtd_info *mtd)
 	}
 
 	pxa3xx_flash_ids[0].name = f->name;
-	pxa3xx_flash_ids[0].id = (f->chip_id >> 8) & 0xffff;
+	pxa3xx_flash_ids[0].dev_id = (f->chip_id >> 8) & 0xffff;
 	pxa3xx_flash_ids[0].pagesize = f->page_size;
 	chipsize = (uint64_t)f->num_blocks * f->page_per_block * f->page_size;
 	pxa3xx_flash_ids[0].chipsize = chipsize >> 20;
@@ -1004,8 +998,6 @@ KEEP_CONFIG:
 	chip->ecc.size = host->page_size;
 	chip->ecc.strength = 1;
 
-	chip->options = NAND_NO_AUTOINCR;
-	chip->options |= NAND_NO_READRDY;
 	if (host->reg_ndcr & NDCR_DWIDTH_M)
 		chip->options |= NAND_BUSWIDTH_16;
 
@@ -1068,7 +1060,6 @@ static int alloc_nand_resource(struct platform_device *pdev)
 		chip->read_byte		= pxa3xx_nand_read_byte;
 		chip->read_buf		= pxa3xx_nand_read_buf;
 		chip->write_buf		= pxa3xx_nand_write_buf;
-		chip->verify_buf	= pxa3xx_nand_verify_buf;
 	}
 
 	spin_lock_init(&chip->controller->lock);

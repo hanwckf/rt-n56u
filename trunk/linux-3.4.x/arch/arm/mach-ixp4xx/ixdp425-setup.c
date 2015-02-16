@@ -100,7 +100,6 @@ static struct platform_nand_data ixdp425_flash_nand_data = {
 	.chip = {
 		.nr_chips		= 1,
 		.chip_delay		= 30,
-		.options		= NAND_NO_AUTOINCR,
 		.part_probe_types 	= part_probes,
 		.partitions	 	= ixdp425_partitions,
 		.nr_partitions	 	= ARRAY_SIZE(ixdp425_partitions),

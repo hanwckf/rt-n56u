@@ -798,7 +798,7 @@ static int docg4_read_page(struct mtd_info *mtd, struct nand_chip *nand,
 }
 
 static int docg4_read_oob(struct mtd_info *mtd, struct nand_chip *nand,
-			  int page, int sndcmd)
+			  int page)
 {
 	struct docg4_priv *doc = nand->priv;
 	void __iomem *docptr = doc->virtadr;
@@ -1192,8 +1192,7 @@ static void __init init_mtd_structs(struct mtd_info *mtd)
 	nand->ecc.prepad = 8;
 	nand->ecc.bytes	= 8;
 	nand->ecc.strength = DOCG4_T;
-	nand->options =
-		NAND_BUSWIDTH_16 | NAND_NO_SUBPAGE_WRITE | NAND_NO_AUTOINCR;
+	nand->options = NAND_BUSWIDTH_16 | NAND_NO_SUBPAGE_WRITE;
 	nand->IO_ADDR_R = nand->IO_ADDR_W = doc->virtadr + DOC_IOSPACE_DATA;
 	nand->controller = &nand->hwcontrol;
 	spin_lock_init(&nand->controller->lock);

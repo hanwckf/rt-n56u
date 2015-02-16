@@ -611,46 +611,6 @@ static void fsl_ifc_read_buf(struct mtd_info *mtd, u8 *buf, int len)
 }
 
 /*
- * Verify buffer against the IFC Controller Data Buffer
- */
-static int fsl_ifc_verify_buf(struct mtd_info *mtd,
-			       const u_char *buf, int len)
-{
-	struct nand_chip *chip = mtd->priv;
-	struct fsl_ifc_mtd *priv = chip->priv;
-	struct fsl_ifc_ctrl *ctrl = priv->ctrl;
-	struct fsl_ifc_nand_ctrl *nctrl = ifc_nand_ctrl;
-	int i;
-
-	if (len < 0) {
-		dev_err(priv->dev, "%s: write_buf of %d bytes", __func__, len);
-		return -EINVAL;
-	}
-
-	if ((unsigned int)len > nctrl->read_bytes - nctrl->index) {
-		dev_err(priv->dev,
-			"%s: beyond end of buffer (%d requested, %u available)\n",
-			__func__, len, nctrl->read_bytes - nctrl->index);
-
-		nctrl->index = nctrl->read_bytes;
-		return -EINVAL;
-	}
-
-	for (i = 0; i < len; i++)
-		if (in_8(&nctrl->addr[nctrl->index + i]) != buf[i])
-			break;
-
-	nctrl->index += len;
-
-	if (i != len)
-		return -EIO;
-	if (ctrl->nand_stat != IFC_NAND_EVTER_STAT_OPC)
-		return -EIO;
-
-	return 0;
-}
-
-/*
  * This function is called after Program and Erase Operations to
  * check for success or failure.
  */
@@ -778,7 +738,6 @@ static int fsl_ifc_chip_init(struct fsl_ifc_mtd *priv)
 
 	chip->write_buf = fsl_ifc_write_buf;
 	chip->read_buf = fsl_ifc_read_buf;
-	chip->verify_buf = fsl_ifc_verify_buf;
 	chip->select_chip = fsl_ifc_select_chip;
 	chip->cmdfunc = fsl_ifc_cmdfunc;
 	chip->waitfunc = fsl_ifc_wait;
@@ -789,7 +748,6 @@ static int fsl_ifc_chip_init(struct fsl_ifc_mtd *priv)
 	out_be32(&ifc->ifc_nand.ncfgr, 0x0);
 
 	/* set up nand options */
-	chip->options = NAND_NO_READRDY | NAND_NO_AUTOINCR;
 	chip->bbt_options = NAND_BBT_USE_FLASH;
 
 

@@ -185,19 +185,19 @@ static inline unsigned long decode_bar(struct pci_dev *dev, u32 bar)
 	case PCI_BASE_ADDRESS_MEM_TYPE_32:
 		break;
 	case PCI_BASE_ADDRESS_MEM_TYPE_1M:
-		dev_info(&dev->dev, "1M mem BAR treated as 32-bit BAR\n");
+		/* 1M mem BAR treated as 32-bit BAR */
 		break;
 	case PCI_BASE_ADDRESS_MEM_TYPE_64:
 		flags |= IORESOURCE_MEM_64;
 		break;
 	default:
-		dev_warn(&dev->dev,
-			 "mem unknown type %x treated as 32-bit BAR\n",
-			 mem_type);
+		/* mem unknown type treated as 32-bit BAR */
 		break;
 	}
 	return flags;
 }
+
+#define PCI_COMMAND_DECODE_ENABLE	(PCI_COMMAND_MEMORY | PCI_COMMAND_IO)
 
 /**
  * pci_read_base - read a PCI BAR
@@ -214,13 +214,17 @@ int __pci_read_base(struct pci_dev *dev, enum pci_bar_type type,
 	u32 l, sz, mask;
 	u16 orig_cmd;
 	struct pci_bus_region region;
+	bool bar_too_big = false, bar_disabled = false;
 
 	mask = type ? PCI_ROM_ADDRESS_MASK : ~0;
 
+	/* No printks while decoding is disabled! */
 	if (!dev->mmio_always_on) {
 		pci_read_config_word(dev, PCI_COMMAND, &orig_cmd);
-		pci_write_config_word(dev, PCI_COMMAND,
-			orig_cmd & ~(PCI_COMMAND_MEMORY | PCI_COMMAND_IO));
+		if (orig_cmd & PCI_COMMAND_DECODE_ENABLE) {
+			pci_write_config_word(dev, PCI_COMMAND,
+				orig_cmd & ~PCI_COMMAND_DECODE_ENABLE);
+		}
 	}
 
 	res->name = pci_name(dev);
@@ -229,9 +233,6 @@ int __pci_read_base(struct pci_dev *dev, enum pci_bar_type type,
 	pci_write_config_dword(dev, pos, l | mask);
 	pci_read_config_dword(dev, pos, &sz);
 	pci_write_config_dword(dev, pos, l);
-
-	if (!dev->mmio_always_on)
-		pci_write_config_word(dev, PCI_COMMAND, orig_cmd);
 
 	/*
 	 * All bits set in sz means the device isn't working properly.
@@ -284,8 +285,7 @@ int __pci_read_base(struct pci_dev *dev, enum pci_bar_type type,
 			goto fail;
 
 		if ((sizeof(resource_size_t) < 8) && (sz64 > 0x100000000ULL)) {
-			dev_err(&dev->dev, "reg %x: can't handle 64-bit BAR\n",
-				pos);
+			bar_too_big = true;
 			goto fail;
 		}
 
@@ -295,13 +295,10 @@ int __pci_read_base(struct pci_dev *dev, enum pci_bar_type type,
 			pci_write_config_dword(dev, pos + 4, 0);
 			region.start = 0;
 			region.end = sz64;
-			pcibios_bus_to_resource(dev, res, &region);
+			bar_disabled = true;
 		} else {
 			region.start = l64;
 			region.end = l64 + sz64;
-			pcibios_bus_to_resource(dev, res, &region);
-			dev_printk(KERN_DEBUG, &dev->dev, "reg %x: %pR\n",
-				   pos, res);
 		}
 	} else {
 		sz = pci_size(l, sz, mask);
@@ -311,16 +308,26 @@ int __pci_read_base(struct pci_dev *dev, enum pci_bar_type type,
 
 		region.start = l;
 		region.end = l + sz;
-		pcibios_bus_to_resource(dev, res, &region);
-
-		dev_printk(KERN_DEBUG, &dev->dev, "reg %x: %pR\n", pos, res);
 	}
 
- out:
-	return (res->flags & IORESOURCE_MEM_64) ? 1 : 0;
- fail:
-	res->flags = 0;
+	pcibios_bus_to_resource(dev, res, &region);
+
 	goto out;
+
+
+fail:
+	res->flags = 0;
+out:
+	if (!dev->mmio_always_on &&
+	    (orig_cmd & PCI_COMMAND_DECODE_ENABLE))
+		pci_write_config_word(dev, PCI_COMMAND, orig_cmd);
+
+	if (bar_too_big)
+		dev_err(&dev->dev, "reg 0x%x: can't handle 64-bit BAR\n", pos);
+	if (res->flags && !bar_disabled)
+		dev_printk(KERN_DEBUG, &dev->dev, "reg 0x%x: %pR\n", pos, res);
+
+	return (res->flags & IORESOURCE_MEM_64) ? 1 : 0;
 }
 
 static void pci_read_bases(struct pci_dev *dev, unsigned int howmany, int rom)

@@ -23,6 +23,7 @@
 */
 struct nand_flash_dev nand_flash_ids[] = {
 
+#if !defined (CONFIG_MTD_NAND_MTK)
 #ifdef CONFIG_MTD_NAND_MUSEUM_IDS
 	{"NAND 1MiB 5V 8-bit",		0x6e, 256, 1, 0x1000, 0},
 	{"NAND 2MiB 5V 8-bit",		0x64, 256, 2, 0x1000, 0},
@@ -65,6 +66,7 @@ struct nand_flash_dev nand_flash_ids[] = {
 	{"NAND 128MiB 3,3V 16-bit",	0x59, 512, 128, 0x4000, NAND_BUSWIDTH_16},
 
 	{"NAND 256MiB 3,3V 8-bit",	0x71, 512, 256, 0x4000, 0},
+#endif
 
 	/*
 	 * These are the new chips with large page size. The pagesize and the
@@ -175,7 +177,9 @@ struct nand_manufacturers nand_manuf_ids[] = {
 	{NAND_MFR_STMICRO, "ST Micro"},
 	{NAND_MFR_HYNIX, "Hynix"},
 	{NAND_MFR_MICRON, "Micron"},
-	{NAND_MFR_AMD, "AMD"},
+	{NAND_MFR_AMD, "AMD/Spansion"},
+	{NAND_MFR_MACRONIX, "Macronix"},
+	{NAND_MFR_EON, "Eon/Zentel/ESMT"},
 	{0x0, "Unknown"}
 };
 

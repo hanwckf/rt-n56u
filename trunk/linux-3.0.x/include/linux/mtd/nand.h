@@ -506,6 +506,10 @@ struct nand_chip {
 			int status, int page);
 	int (*write_page)(struct mtd_info *mtd, struct nand_chip *chip,
 			const uint8_t *buf, int page, int cached, int raw);
+#if defined (CONFIG_MTD_NAND_MTK)
+	int (*read_page)(struct mtd_info *mtd, struct nand_chip *chip, u8 *buf, int page);
+	int (*erase)(struct mtd_info *mtd, int page);
+#endif
 
 	int chip_delay;
 	unsigned int options;
@@ -559,6 +563,8 @@ struct nand_chip {
 #define NAND_MFR_HYNIX		0xad
 #define NAND_MFR_MICRON		0x2c
 #define NAND_MFR_AMD		0x01
+#define NAND_MFR_MACRONIX	0xc2
+#define NAND_MFR_EON		0x92
 
 /**
  * struct nand_flash_dev - NAND Flash Device ID Structure

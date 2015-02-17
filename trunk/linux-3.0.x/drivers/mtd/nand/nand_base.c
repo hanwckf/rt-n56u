@@ -93,8 +93,7 @@ static struct nand_ecclayout nand_oob_128 = {
 		 .length = 78} }
 };
 
-static int nand_get_device(struct nand_chip *chip, struct mtd_info *mtd,
-			   int new_state);
+int nand_get_device(struct mtd_info *mtd, int new_state);
 
 static int nand_do_write_oob(struct mtd_info *mtd, loff_t to,
 			     struct mtd_oob_ops *ops);
@@ -140,7 +139,7 @@ static int check_offs_len(struct mtd_info *mtd,
  *
  * Deselect, release chip lock and wake up anyone waiting on the device
  */
-static void nand_release_device(struct mtd_info *mtd)
+void nand_release_device(struct mtd_info *mtd)
 {
 	struct nand_chip *chip = mtd->priv;
 
@@ -352,7 +351,7 @@ static int nand_block_bad(struct mtd_info *mtd, loff_t ofs, int getchip)
 	if (getchip) {
 		chipnr = (int)(ofs >> chip->chip_shift);
 
-		nand_get_device(chip, mtd, FL_READING);
+		nand_get_device(mtd, FL_READING);
 
 		/* Select the NAND device */
 		chip->select_chip(mtd, chipnr);
@@ -408,7 +407,7 @@ static int nand_default_block_markbad(struct mtd_info *mtd, loff_t ofs)
 	if (chip->options & NAND_USE_FLASH_BBT)
 		ret = nand_update_bbt(mtd, ofs);
 	else {
-		nand_get_device(chip, mtd, FL_WRITING);
+		nand_get_device(mtd, FL_WRITING);
 
 		/* Write to first two pages and to byte 1 and 6 if necessary.
 		 * If we write to more than one location, the first error
@@ -772,15 +771,15 @@ static void panic_nand_get_device(struct nand_chip *chip,
 
 /**
  * nand_get_device - [GENERIC] Get chip for selected access
- * @chip:	the nand chip descriptor
  * @mtd:	MTD device structure
  * @new_state:	the state which is requested
  *
  * Get the device and lock it for exclusive access
  */
-static int
-nand_get_device(struct nand_chip *chip, struct mtd_info *mtd, int new_state)
+int
+nand_get_device(struct mtd_info *mtd, int new_state)
 {
+	struct nand_chip *chip = mtd->priv;
 	spinlock_t *lock = &chip->controller->lock;
 	wait_queue_head_t *wq = &chip->controller->wq;
 	DECLARE_WAITQUEUE(wait, current);
@@ -849,13 +848,8 @@ static void panic_nand_wait(struct mtd_info *mtd, struct nand_chip *chip,
 static int nand_wait(struct mtd_info *mtd, struct nand_chip *chip)
 {
 
-	unsigned long timeo = jiffies;
 	int status, state = chip->state;
-
-	if (state == FL_ERASING)
-		timeo += (HZ * 400) / 1000;
-	else
-		timeo += (HZ * 20) / 1000;
+	unsigned long timeo = (state == FL_ERASING ? 400 : 20);
 
 	led_trigger_event(nand_led_trigger, LED_FULL);
 
@@ -871,6 +865,7 @@ static int nand_wait(struct mtd_info *mtd, struct nand_chip *chip)
 	if (in_interrupt() || oops_in_progress)
 		panic_nand_wait(mtd, chip, timeo);
 	else {
+		timeo = jiffies + msecs_to_jiffies(timeo);
 		while (time_before(jiffies, timeo)) {
 			if (chip->dev_ready) {
 				if (chip->dev_ready(mtd))
@@ -955,7 +950,7 @@ int nand_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 	if (ofs + len == mtd->size)
 		len -= mtd->erasesize;
 
-	nand_get_device(chip, mtd, FL_UNLOCKING);
+	nand_get_device(mtd, FL_UNLOCKING);
 
 	/* Shift to get chip number */
 	chipnr = ofs >> chip->chip_shift;
@@ -1006,7 +1001,7 @@ int nand_lock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 	if (check_offs_len(mtd, ofs, len))
 		ret = -EINVAL;
 
-	nand_get_device(chip, mtd, FL_LOCKING);
+	nand_get_device(mtd, FL_LOCKING);
 
 	/* Shift to get chip number */
 	chipnr = ofs >> chip->chip_shift;
@@ -1477,6 +1472,10 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
 		if (realpage != chip->pagebuf || oob) {
 			bufpoi = aligned ? buf : chip->buffers->databuf;
 
+#if defined (CONFIG_MTD_NAND_MTK)
+			/* use api extension */
+			ret = chip->read_page(mtd, chip, bufpoi, page);
+#else
 			if (likely(sndcmd)) {
 				chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
 				sndcmd = 0;
@@ -1492,6 +1491,7 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
 			else
 				ret = chip->ecc.read_page(mtd, chip, bufpoi,
 							  page);
+#endif
 			if (ret < 0)
 				break;
 
@@ -1594,7 +1594,7 @@ static int nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	if (!len)
 		return 0;
 
-	nand_get_device(chip, mtd, FL_READING);
+	nand_get_device(mtd, FL_READING);
 
 	chip->ops.len = len;
 	chip->ops.datbuf = buf;
@@ -1852,7 +1852,6 @@ static int nand_do_read_oob(struct mtd_info *mtd, loff_t from,
 static int nand_read_oob(struct mtd_info *mtd, loff_t from,
 			 struct mtd_oob_ops *ops)
 {
-	struct nand_chip *chip = mtd->priv;
 	int ret = -ENOTSUPP;
 
 	ops->retlen = 0;
@@ -1864,7 +1863,7 @@ static int nand_read_oob(struct mtd_info *mtd, loff_t from,
 		return -EINVAL;
 	}
 
-	nand_get_device(chip, mtd, FL_READING);
+	nand_get_device(mtd, FL_READING);
 
 	switch (ops->mode) {
 	case MTD_OOB_PLACE:
@@ -2205,8 +2204,8 @@ static int nand_do_write_ops(struct mtd_info *mtd, loff_t to,
 	blockmask = (1 << (chip->phys_erase_shift - chip->page_shift)) - 1;
 
 	/* Invalidate the page cache, when we write to the cached page */
-	if (to <= (chip->pagebuf << chip->page_shift) &&
-	    (chip->pagebuf << chip->page_shift) < (to + ops->len))
+	if (to <= ((loff_t)chip->pagebuf << chip->page_shift) &&
+	    ((loff_t)chip->pagebuf << chip->page_shift) < (to + ops->len))
 		chip->pagebuf = -1;
 
 	/* Don't allow multipage oob writes with offset */
@@ -2326,7 +2325,7 @@ static int nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 	if (!len)
 		return 0;
 
-	nand_get_device(chip, mtd, FL_WRITING);
+	nand_get_device(mtd, FL_WRITING);
 
 	chip->ops.len = len;
 	chip->ops.datbuf = (uint8_t *)buf;
@@ -2428,7 +2427,6 @@ static int nand_do_write_oob(struct mtd_info *mtd, loff_t to,
 static int nand_write_oob(struct mtd_info *mtd, loff_t to,
 			  struct mtd_oob_ops *ops)
 {
-	struct nand_chip *chip = mtd->priv;
 	int ret = -ENOTSUPP;
 
 	ops->retlen = 0;
@@ -2440,7 +2438,7 @@ static int nand_write_oob(struct mtd_info *mtd, loff_t to,
 		return -EINVAL;
 	}
 
-	nand_get_device(chip, mtd, FL_WRITING);
+	nand_get_device(mtd, FL_WRITING);
 
 	switch (ops->mode) {
 	case MTD_OOB_PLACE:
@@ -2536,7 +2534,7 @@ int nand_erase_nand(struct mtd_info *mtd, struct erase_info *instr,
 	instr->fail_addr = MTD_FAIL_ADDR_UNKNOWN;
 
 	/* Grab the lock and see if the device is available */
-	nand_get_device(chip, mtd, FL_ERASING);
+	nand_get_device(mtd, FL_ERASING);
 
 	/* Shift to get first page */
 	page = (int)(instr->addr >> chip->page_shift);
@@ -2590,9 +2588,14 @@ int nand_erase_nand(struct mtd_info *mtd, struct erase_info *instr,
 		    (page + pages_per_block))
 			chip->pagebuf = -1;
 
+#if defined (CONFIG_MTD_NAND_MTK)
+		/* use api extension */
+		status = chip->erase(mtd, page & chip->pagemask);
+#else
 		chip->erase_cmd(mtd, page & chip->pagemask);
 
 		status = chip->waitfunc(mtd, chip);
+#endif
 
 		/*
 		 * See if operation failed and additional status checks are
@@ -2683,12 +2686,10 @@ erase_exit:
  */
 static void nand_sync(struct mtd_info *mtd)
 {
-	struct nand_chip *chip = mtd->priv;
-
 	DEBUG(MTD_DEBUG_LEVEL3, "%s: called\n", __func__);
 
 	/* Grab the lock and see if the device is available */
-	nand_get_device(chip, mtd, FL_SYNCING);
+	nand_get_device(mtd, FL_SYNCING);
 	/* Release it and go back */
 	nand_release_device(mtd);
 }
@@ -2734,9 +2735,7 @@ static int nand_block_markbad(struct mtd_info *mtd, loff_t ofs)
  */
 static int nand_suspend(struct mtd_info *mtd)
 {
-	struct nand_chip *chip = mtd->priv;
-
-	return nand_get_device(chip, mtd, FL_PM_SUSPENDED);
+	return nand_get_device(mtd, FL_PM_SUSPENDED);
 }
 
 /**
@@ -2937,7 +2936,8 @@ static struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
 
 	chip->cmdfunc(mtd, NAND_CMD_READID, 0x00, -1);
 
-	for (i = 0; i < 2; i++)
+	/* Read entire ID string */
+	for (i = 0; i < 8; i++)
 		id_data[i] = chip->read_byte(mtd);
 
 	if (id_data[0] != *maf_id || id_data[1] != *dev_id) {
@@ -2961,13 +2961,6 @@ static struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
 		if (ret)
 			goto ident_done;
 	}
-
-	chip->cmdfunc(mtd, NAND_CMD_READID, 0x00, -1);
-
-	/* Read entire ID string */
-
-	for (i = 0; i < 8; i++)
-		id_data[i] = chip->read_byte(mtd);
 
 	if (!type->name)
 		return ERR_PTR(-ENODEV);

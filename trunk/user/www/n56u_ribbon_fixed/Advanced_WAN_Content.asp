@@ -48,13 +48,28 @@ function initial(){
 	show_menu(5,4,1);
 	show_footer();
 
+	var o1 = document.form.wan_auth_mode;
 	if (!support_peap_ssl()){
-		var o1 = document.form.wan_auth_mode;
 		o1.remove(3);
 		o1.remove(3);
 		o1.remove(3);
 		o1.remove(3);
 		o1.remove(3);
+	}
+
+	var o2 = document.form.wan_stb_x;
+	var num_ephy = support_num_ephy();
+	if (num_ephy < 5){
+		o2.remove(7);
+		o2.remove(5);
+		o2.remove(4);
+	}
+	if (num_ephy < 4){
+		o2.remove(4);
+		o2.remove(3);
+	}
+	if (num_ephy < 3){
+		o2.remove(2);
 	}
 
 	change_wan_type(document.form.wan_proto.value, 0);

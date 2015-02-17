@@ -30,7 +30,7 @@
 #define USB_DEVICE_PATH		"/sys/bus/usb/devices"
 #define USB_BUS_PATH		"/proc/bus/usb/devices"
 
-#if defined (BOARD_USB_PORT_SWAP)
+#if BOARD_USB_PORT_SWAP
 #define USB_EHCI_PORT_2		"1-1"
 #define USB_OHCI_PORT_2		"2-1"
 #define USB_EHCI_PORT_1		"1-2"

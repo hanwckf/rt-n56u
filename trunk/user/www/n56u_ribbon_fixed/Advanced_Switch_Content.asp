@@ -47,7 +47,8 @@ function initial(){
 
 	var switch_type = support_switch_type();
 	if (switch_type == 1){
-		document.form.ether_link_wan.remove(1);
+		if (!support_ephy_w1000())
+			document.form.ether_link_wan.remove(1);
 		document.form.ether_link_lan1.remove(1);
 		document.form.ether_link_lan2.remove(1);
 		document.form.ether_link_lan3.remove(1);

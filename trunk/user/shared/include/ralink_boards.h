@@ -55,5 +55,9 @@
 #define BOARD_ETH_LED_SWAP	0
 #endif
 
+#ifndef BOARD_USB_PORT_SWAP
+#define BOARD_USB_PORT_SWAP	0
+#endif
+
 #endif
 

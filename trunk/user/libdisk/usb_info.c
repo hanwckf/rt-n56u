@@ -525,7 +525,7 @@ usb_info_t *get_usb_info(void)
 			new_dev->id_port = get_param_int(line, "Port=", 10, 0);
 			new_dev->id_devnum = get_param_int(line, "Dev#=", 10, 0);
 			if (id_parent == 1) {
-#if defined (BOARD_USB_PORT_SWAP)
+#if BOARD_USB_PORT_SWAP
 				new_dev->id_port = (new_dev->id_port) ? 0 : 1;
 #endif
 				new_dev->port_root = (new_dev->id_port + 1);

@@ -141,6 +141,8 @@ static int pcie_link_status = 0;
 #elif defined (CONFIG_RALINK_MT7620)
 #define PPLL_CFG1			*(volatile u32 *)(RALINK_SYSTEM_CONTROL_BASE + 0x9c)
 #define PPLL_DRV			*(volatile u32 *)(RALINK_SYSTEM_CONTROL_BASE + 0xa0)
+//RALINK_SYSCFG1 bit
+#define RALINK_PCIE_RC_MODE_EN		(1<<8)
 //MTK PCIE PLL bit
 #define PDRV_SW_SET			(1<<31)
 #define LC_CKDRVPD			(1<<19)

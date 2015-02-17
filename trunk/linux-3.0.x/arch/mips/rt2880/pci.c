@@ -289,8 +289,9 @@ int pcibios_plat_dev_init(struct pci_dev *dev)
 
 	/* P2P bridge */
 	if (dev->bus->number == 0) {
-#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
-		/* set N_FTS */
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621) || \
+    defined (CONFIG_RALINK_MT7628)
+		/* set N_FTS 0x28 -> 0x50 */
 		val = 0;
 		pci_read_config_dword(dev, 0x70c, &val);
 		val &= ~(0xff<<8);

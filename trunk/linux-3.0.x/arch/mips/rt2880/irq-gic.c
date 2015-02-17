@@ -84,8 +84,8 @@ static struct gic_intr_map gic_intr_map[GIC_NUM_INTRS] = {
 	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 11: HS GDMA
 	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 12: GPIO
 	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 13: GDMA
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_EDGE,  GIC_FLAG_IPI },		// 14: NFI NAND
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_EDGE,  GIC_FLAG_IPI },		// 15: NFI ECC
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_EDGE,  GIC_FLAG_IPI },		// 14: NFI NAND (use edge interrupt)
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_EDGE,  GIC_FLAG_IPI },		// 15: NFI ECC (use edge interrupt)
 	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 16: I2S
 	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 17: SPI
 	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 18: SPDIF
@@ -283,11 +283,15 @@ void __init arch_init_irq(void)
 		printk("MIPS GIC RevID: %d.%d\n", (gic_rev >> 8) & 0xff, gic_rev & 0xff);
 
 #if defined (CONFIG_MIPS_GIC_IPI)
+		set_c0_status(STATUSF_IP7 | STATUSF_IP6 | STATUSF_IP5 | STATUSF_IP4 | STATUSF_IP3 | STATUSF_IP2);
+		
 		/* setup ipi interrupts */
 		for (i = 0; i < nr_cpu_ids; i++) {
 			arch_init_ipiirq(MIPS_GIC_IRQ_BASE + GIC_RESCHED_INT(i), &irq_resched);
 			arch_init_ipiirq(MIPS_GIC_IRQ_BASE + GIC_CALL_INT(i), &irq_call);
 		}
+#else
+		set_c0_status(STATUSF_IP7 | STATUSF_IP6 | STATUSF_IP5 | STATUSF_IP2);
 #endif
 	}
 
@@ -297,8 +301,6 @@ void __init arch_init_irq(void)
 		    i != SURFBOARDINT_MIPS_TIMER)
 			irq_set_handler(i, handle_level_irq);
 	}
-
-	change_c0_status(ST0_IM, STATUSF_IP7 | STATUSF_IP6 | STATUSF_IP5 | STATUSF_IP4 | STATUSF_IP3 | STATUSF_IP2);
 }
 
 asmlinkage void plat_irq_dispatch(void)

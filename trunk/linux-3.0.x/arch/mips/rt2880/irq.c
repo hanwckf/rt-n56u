@@ -192,10 +192,5 @@ asmlinkage void plat_irq_dispatch(void)
 	else
 	if (pending & CAUSEF_IP2)
 		ralink_hw0_irqdispatch(0);
-
-#if 0
-	/* clear new potentially pending IP6..IP2 */
-	set_c0_status( STATUSF_IP6 | STATUSF_IP5 | STATUSF_IP4 | STATUSF_IP3 | STATUSF_IP2 );
-#endif
 }
 

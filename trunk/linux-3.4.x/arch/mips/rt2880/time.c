@@ -282,8 +282,8 @@ static int udelay_recal(void)
 
 #if defined (CONFIG_RALINK_CPUSLEEP)
 	lpj = (*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x10)));
-	lpj &= ~(0xF << 8);
-	lpj |=  (0xA << 8);
+	lpj &= ~(0xF<<8);
+	lpj |=  (0x2<<8);
 	(*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x10))) = lpj;
 #endif
 

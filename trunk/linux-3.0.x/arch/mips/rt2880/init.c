@@ -320,7 +320,7 @@ static void prom_init_sysclk(void)
 		clk_sel = 1;	/* clock from BBP PLL (480MHz ) */
 #elif defined (CONFIG_MT7621_ASIC)
 	clk_sel = 0;	/* GPLL (500MHz) */
-	clk_sel2 = (reg>>3) & 0x03;
+	clk_sel2 = (reg>>4) & 0x03;
 	reg = (reg >> 6) & 0x7;
 	if (reg >= 6)
 		xtal = 25;
@@ -549,13 +549,13 @@ static void prom_init_sysclk(void)
 	udelay(10);
 #elif defined (CONFIG_RALINK_MT7621)
 	if (clk_sel2 & 0x01)
-		surfboard_sysclk = mips_cpu_feq/4;	/* OCP_RATIO 1:4 */
-	else
-		surfboard_sysclk = mips_cpu_feq/3;	/* OCP_RATIO 1:3 */
-	if (clk_sel2 & 0x02)
 		ram_type = "DDR2";
 	else
 		ram_type = "DDR3";
+	if (clk_sel2 & 0x02)
+		surfboard_sysclk = mips_cpu_feq/4;	/* OCP_RATIO 1:4 */
+	else
+		surfboard_sysclk = mips_cpu_feq/3;	/* OCP_RATIO 1:3 */
 #elif defined (CONFIG_RALINK_MT7628)
 	surfboard_sysclk = mips_cpu_feq/3;
 	if (clk_sel2)

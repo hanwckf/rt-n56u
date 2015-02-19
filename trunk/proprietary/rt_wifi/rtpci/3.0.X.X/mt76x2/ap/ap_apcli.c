@@ -281,7 +281,7 @@ BOOLEAN ApCliCheckVht(
 
 	if (Wcid >= MAX_LEN_OF_MAC_TABLE)
 		return FALSE;
-	printk("============>ApCliCheckVht\n");
+	DBGPRINT(RT_DEBUG_TRACE, ("============>ApCliCheckVht\n"));
 	/* Save Peer Capability*/
 	if (vht_cap_info->sgi_80M)
 		CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_SGI80_CAPABLE);

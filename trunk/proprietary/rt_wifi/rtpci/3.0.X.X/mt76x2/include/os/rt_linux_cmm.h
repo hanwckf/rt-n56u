@@ -68,7 +68,7 @@ RTMP_DECLARE_DRV_OPS_FUNCTION(pci);
 
 #else
 
-#define RTMP_DRV_NAME	"rt2860"
+#define RTMP_DRV_NAME	"rtpci"
 
 #endif /* OS_ABL_FUNC_SUPPORT */
 

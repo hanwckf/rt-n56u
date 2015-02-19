@@ -7859,7 +7859,7 @@ BOOLEAN rtstrmactohex(PSTRING s1, PSTRING s2);
 BOOLEAN rtstrcasecmp(PSTRING s1, PSTRING s2);
 PSTRING rtstrstruncasecmp(PSTRING s1, PSTRING s2);
 
-PSTRING rtstrstr( const PSTRING s1, const PSTRING s2);
+PSTRING rtstrstr( PSTRING s1, const PSTRING s2);
 PSTRING rstrtok( PSTRING s, const PSTRING ct);
 int rtinet_aton(const PSTRING cp, unsigned int *addr);
 	
@@ -8607,7 +8607,6 @@ INT AsicGetMacVersion(RTMP_ADAPTER *pAd);
 INT WaitForAsicReady(RTMP_ADAPTER *pAd);
 
 BOOLEAN CHAN_PropertyCheck(RTMP_ADAPTER *pAd, UINT32 ChanNum, UCHAR Property);
-
 
 #ifdef APCLI_SUPPORT
 

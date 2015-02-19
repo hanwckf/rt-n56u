@@ -4868,13 +4868,13 @@ INT Show_MacTable_Proc(RTMP_ADAPTER *pAd, PSTRING arg)
 			printk("%-8d", (int)pEntry->MmpsMode);
 #endif /* DOT11_N_SUPPORT */
 
-		        if (pAd->CommonCfg.RxStream == 3)
-                		printk("%-7d%-7d%-7d", pEntry->RssiSample.AvgRssi0, pEntry->RssiSample.AvgRssi1, pEntry->RssiSample.AvgRssi2);
-		        else if (pAd->CommonCfg.RxStream == 2)
-                		printk("%-7d%-7d", pEntry->RssiSample.AvgRssi0, pEntry->RssiSample.AvgRssi1);
-        		else	
-                		printk("%-7d", pEntry->RssiSample.AvgRssi0);
-			
+			if (pAd->CommonCfg.RxStream == 3)
+				printk("%-7d%-7d%-7d", pEntry->RssiSample.AvgRssi0, pEntry->RssiSample.AvgRssi1, pEntry->RssiSample.AvgRssi2);
+			else if (pAd->CommonCfg.RxStream == 2)
+				printk("%-7d%-7d", pEntry->RssiSample.AvgRssi0, pEntry->RssiSample.AvgRssi1);
+			else
+				printk("%-7d", pEntry->RssiSample.AvgRssi0);
+
 			printk("%-10s", get_phymode_str(pEntry->HTPhyMode.field.MODE));
 			printk("%-6s", get_bw_str(pEntry->HTPhyMode.field.BW));
 #ifdef DOT11_VHT_AC
@@ -4887,9 +4887,9 @@ INT Show_MacTable_Proc(RTMP_ADAPTER *pAd, PSTRING arg)
 			printk("%-6d", pEntry->HTPhyMode.field.STBC);
 			printk("%-7d", (int)(pEntry->StaIdleTimeout - pEntry->NoDataIdleCount));
 			printk("%-7d", (int)DataRate);
-#ifdef CONFIG_AP_SUPPORT			
+#ifdef CONFIG_AP_SUPPORT
 			printk("%-7d", (int)pEntry->StaConnectTime);
-#endif /* CONFIG_AP_SUPPORT */			
+#endif /* CONFIG_AP_SUPPORT */
 			printk("\t\t\t\t\t\t\t%-10d, %d, %d%%\n", pEntry->DebugFIFOCount, pEntry->DebugTxCount, 
 						(pEntry->DebugTxCount) ? ((pEntry->DebugTxCount-pEntry->DebugFIFOCount)*100/pEntry->DebugTxCount) : 0);
 //+++Add by shiang for debug
@@ -4906,7 +4906,7 @@ INT Show_MacTable_Proc(RTMP_ADAPTER *pAd, PSTRING arg)
 //---Add by shiang for debug
 			printk("\n");
 		}
-	} 
+	}
 
 	return TRUE;
 }
@@ -5424,6 +5424,7 @@ INT	Show_ModuleTxpower_Proc(
  	return TRUE;
 }
 #endif/*APCLI_SUPPORT*/
+
 
 #ifdef TXBF_SUPPORT
 

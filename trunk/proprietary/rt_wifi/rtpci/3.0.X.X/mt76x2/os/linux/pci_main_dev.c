@@ -238,7 +238,7 @@ static int DEVINIT rt_pci_probe(struct pci_dev *pdev, const struct pci_device_id
 {
 	void *pAd = NULL, *handle;
 	struct net_device *net_dev;
-	char *print_name;
+	const char *print_name;
 	unsigned long csr_addr;
 	int rv = 0;
 	RTMP_OS_NETDEV_OP_HOOK netDevHook;
@@ -255,7 +255,7 @@ static int DEVINIT rt_pci_probe(struct pci_dev *pdev, const struct pci_device_id
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,0)
-	print_name = (PSTRING)pci_name(pdev);
+	print_name = pci_name(pdev);
 #else
 	print_name = pdev->slot_name;
 #endif /* LINUX_VERSION_CODE */

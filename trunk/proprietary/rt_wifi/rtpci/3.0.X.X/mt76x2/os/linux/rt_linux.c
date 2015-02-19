@@ -370,7 +370,7 @@ NDIS_STATUS RTMPAllocateNdisPacket(
 	pPacket = dev_alloc_skb(HeaderLen + DataLen + RTMP_PKT_TAIL_PADDING + LEN_CCMP_HDR + LEN_CCMP_MIC);
 	if (pPacket == NULL) {
 		*ppPacket = NULL;
-#ifdef DEBUG
+#ifdef DBG
 		printk(KERN_ERR "RTMPAllocateNdisPacket Fail\n\n");
 #endif
 		return NDIS_STATUS_FAILURE;

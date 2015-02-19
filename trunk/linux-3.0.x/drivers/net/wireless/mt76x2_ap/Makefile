@@ -8,14 +8,16 @@ $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_sha2.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_hmac.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_aes.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_arc4.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/mlme.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/action.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ba_action.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_wep.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_wpa.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_tkip.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_aes.o
-$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/mlme.o
-$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/action.o
-$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ba_action.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_data.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_data_pci.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_mac_pci.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_sync.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_sanity.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_info.o
@@ -23,19 +25,17 @@ $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_cfg.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_profile.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_asic.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_cmd.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_radar.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rtmp_init.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rtmp_init_inf.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rtmp_timer.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rt_channel.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rt_os_util.o
-$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_radar.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/spectrum.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/txpower.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/scan.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ps.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/uapsd.o
-$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_data_pci.o
-$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_mac_pci.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/eeprom.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ee_flash.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ee_efuse.o
@@ -56,7 +56,6 @@ $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/phy/rtmp_phy.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/rate_ctrl/ra_ctrl.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/rate_ctrl/alg_legacy.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/rate_ctrl/alg_grp.o
-#$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/rate_ctrl/alg_ags.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_assoc.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_auth.o
@@ -87,14 +86,9 @@ ifeq ($(CONFIG_MT76X2_AP_ATE),y)
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/chips/mt76x2_ate.o
 endif
 
-########################################################
-# Rate adaptation related files
-########################################################
-#ifeq ($(CONFIG_NEW_RATE_ADAPT_SUPPORT),y)
 #ifeq ($(CONFIG_AGS_SUPPORT),y)
 #EXTRA_CFLAGS += -DAGS_ADAPT_SUPPORT
-#rate_objs += $(RT_WIFI_DIR)/rate_ctrl/alg_ags.o
-#endif
+#$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/rate_ctrl/alg_ags.o
 #endif
 
 ifeq ($(CONFIG_MT76X2_AP_ATE),y)
@@ -126,6 +120,9 @@ $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/wsc_ufd.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/crypt_biginteger.o
 ifeq ($(CONFIG_MT76X2_AP_WSC_V2),y)
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/wsc_v2.o
+endif
+ifeq ($(CONFIG_MT76X2_AP_WSC_NFC_SUPPORT),y)
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/nfc.o
 endif
 endif
 
@@ -234,7 +231,7 @@ EXTRA_CFLAGS += -DEEPROM_COUNTRY_UNLOCK
 EXTRA_CFLAGS += -DRTMP_FLASH_SUPPORT
 
 # provide internal eFuse memory support
-EXTRA_CFLAGS += -DRTMP_EFUSE_SUPPORT
+#EXTRA_CFLAGS += -DRTMP_EFUSE_SUPPORT -DCAL_FREE_IC_SUPPORT
 
 # provide roaming support
 #EXTRA_CFLAGS += -DIAPP_SUPPORT
@@ -256,7 +253,6 @@ EXTRA_CFLAGS += -DRT65xx -DMT76x2 -DMT7612
 EXTRA_CFLAGS += -DRLT_MAC -DRLT_BBP -DMT_RF -DRTMP_RF_RW_SUPPORT
 EXTRA_CFLAGS += -DA_BAND_SUPPORT
 EXTRA_CFLAGS += -DRX_DMA_SCATTER -DCONFIG_ANDES_SUPPORT
-EXTRA_CFLAGS += -DCAL_FREE_IC_SUPPORT
 EXTRA_CFLAGS += -DNEW_RATE_ADAPT_SUPPORT
 EXTRA_CFLAGS += -DFIFO_EXT_SUPPORT
 EXTRA_CFLAGS += -DVCORECAL_SUPPORT
@@ -272,7 +268,7 @@ endif
 
 ifeq ($(CONFIG_MT76X2_AP_DBG),y)
 EXTRA_CFLAGS += -DDBG
-EXTRA_CFLAGS += -DDBG_DIAGNOSE -DDBG_RX_MCS -DDBG_TX_MCS
+#EXTRA_CFLAGS += -DDBG_DIAGNOSE -DDBG_RX_MCS -DDBG_TX_MCS
 EXTRA_CFLAGS += -DSYSTEM_LOG_SUPPORT
 endif
 
@@ -336,6 +332,9 @@ EXTRA_CFLAGS += -DLED_CONTROL_SUPPORT
 ifeq ($(CONFIG_MT76X2_AP_WSC),y)
 EXTRA_CFLAGS += -DWSC_LED_SUPPORT
 endif
+ifeq ($(CONFIG_MT76X2_AP_WSC_NFC_SUPPORT),y)
+EXTRA_CFLAGS += -DWSC_NFC_SUPPORT
+endif
 endif
 
 ifeq ($(CONFIG_MT76X2_AP_WSC),y)
@@ -362,8 +361,7 @@ endif
 endif
 
 ifeq ($(CONFIG_MT76X2_AP_APCLI),y)
-EXTRA_CFLAGS += -DAPCLI_SUPPORT
-EXTRA_CFLAGS += -DMAT_SUPPORT
+EXTRA_CFLAGS += -DAPCLI_SUPPORT -DMAT_SUPPORT
 #EXTRA_CFLAGS += -DAPCLI_AUTO_CONNECT_SUPPORT
 ifeq ($(CONFIG_MT76X2_AP_MAC_REPEATER),y)
 EXTRA_CFLAGS += -DMAC_REPEATER_SUPPORT

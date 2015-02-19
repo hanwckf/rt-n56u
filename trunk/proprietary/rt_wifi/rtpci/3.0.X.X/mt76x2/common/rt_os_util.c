@@ -34,7 +34,7 @@ VOID RtmpDrvRateGet(
 {
 	UINT32 MCS_1NSS = (UINT32) MCS;
 	*pRate = 0;
-
+	
 	DBGPRINT(RT_DEBUG_TRACE,("<==== %s \nMODE: %x shortGI: %x BW: %x MCS: %x Antenna: %x \n"
 		,__FUNCTION__,MODE,ShortGI,BW,MCS,Antenna));
 	if((BW >= Rate_BW_MAX) || (ShortGI >= Rate_GI_MAX) || (BW >= Rate_BW_MAX))
@@ -55,6 +55,7 @@ VOID RtmpDrvRateGet(
 	}
 	else
 #endif /* DOT11_VHT_AC */
+
 #ifdef DOT11_N_SUPPORT
 	if ((MODE >= MODE_HTMIX) && (MODE < MODE_VHT))
 	{
@@ -74,14 +75,13 @@ VOID RtmpDrvRateGet(
 
 	*pRate *= 500000;
 #if defined(DOT11_VHT_AC) || defined(DOT11_N_SUPPORT)
-    if (MODE >= MODE_HTMIX)
+	if (MODE >= MODE_HTMIX)
 		*pRate *= Antenna;
 #endif /* DOT11_VHT_AC */
 
 	DBGPRINT(RT_DEBUG_TRACE,("=====> %s \nMODE: %x shortGI: %x BW: %x MCS: %x Antenna: %x  Rate = %d\n"
 		,__FUNCTION__,MODE,ShortGI,BW,MCS_1NSS,Antenna, (*pRate)/1000000));
 }
-
 
 char *rtstrchr(const char * s, int c)
 {

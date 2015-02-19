@@ -451,10 +451,10 @@ do{                                   \
 	printk Fmt;					\
 }
 #else
-#define DBGPRINT(Level, Fmt)
-#define DBGPRINT_RAW(Level, Fmt)
-#define DBGPRINT_S(Status, Fmt)
-#define DBGPRINT_ERR(Fmt)
+#define DBGPRINT(Level, Fmt)		do{}while(0)
+#define DBGPRINT_RAW(Level, Fmt)	do{}while(0)
+#define DBGPRINT_S(Status, Fmt)		do{}while(0)
+#define DBGPRINT_ERR(Fmt)		do{}while(0)
 #endif
 
 #undef  ASSERT

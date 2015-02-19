@@ -1110,7 +1110,7 @@ static void esw_eee_control(u32 green_ethernet_enabled)
 #if defined (CONFIG_P4_MAC_TO_PHY_MODE)
 		if (i == 4)
 			continue;
-#elif defined (CONFIG_P5_MAC_TO_PHY_MODE) || defined (CONFIG_GE2_RGMII_AN)
+#elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
 		if (i == 5)
 			continue;
 #endif
@@ -1121,7 +1121,23 @@ static void esw_eee_control(u32 green_ethernet_enabled)
 		mii_mgr_write(i, 17, (green_ethernet_enabled) ? 0x0002 : 0x0000);
 	}
 #else
-	// todo (mt7530 documentation needed)
+#if defined (CONFIG_RALINK_MT7621)
+	for (i = 0; i <= 4; i++) {
+		/* EEE 1000/100 LPI */
+		mii_mgr_write(i, 13, 0x0007);
+		mii_mgr_write(i, 14, 0x003c);
+		mii_mgr_write(i, 13, 0x4007);
+		mii_mgr_write(i, 14, (green_ethernet_enabled) ? 0x0006 : 0x0000);
+	}
+
+	/* EEE 10Base-Te (global) */
+	mii_mgr_write(0, 13, 0x001f);
+	mii_mgr_write(0, 14, 0x027b);
+	mii_mgr_write(0, 13, 0x401f);
+	mii_mgr_write(0, 14, (green_ethernet_enabled) ? 0x1147 : 0x1177);
+#else
+	/* not confirmed for external MT7530B/W */
+#endif
 #endif
 
 	/* restore PHY ports link */

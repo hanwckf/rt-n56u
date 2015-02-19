@@ -11,6 +11,4 @@ hw_nat-objs += ac_policy.o ac_ioctl.o
 hw_nat-objs += mtr_policy.o mtr_ioctl.o
 endif
 
-### uncomment this flag if you want to offload all MBSS interfaces from WiFi
-#EXTRA_CFLAGS += -DHWNAT_MBSS_ALL
 

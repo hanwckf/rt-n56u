@@ -126,7 +126,7 @@ COUNTRY_CODE_TO_COUNTRY_REGION allCountry[] = {
 	{630,	"PR",	"PUERTO RICO",			TRUE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_0},
 	{634,	"QA",	"QATAR",				FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
 	{642,	"RO",	"ROMANIA",				FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
-	{643,	"RU",	"RUSSIA FEDERATION",	FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
+	{643,	"RU",	"RUSSIA FEDERATION",	TRUE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
 	{682,	"SA",	"SAUDI ARABIA",			FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
 	{702,	"SG",	"SINGAPORE",			TRUE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
 	{703,	"SK",	"SLOVAKIA",				TRUE,	A_BAND_REGION_1,	TRUE,	G_BAND_REGION_1},
@@ -9474,7 +9474,7 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
 	INT Status;
 	PSTRING msg;
 #ifdef WSC_AP_SUPPORT
-    UCHAR idx = 0;
+	UCHAR idx = 0;
 #endif /* WSC_AP_SUPPORT */
 	ULONG txCount = 0;
 	UINT32 rxCount = 0;
@@ -9498,15 +9498,14 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
 		return;
 	}
 
-
-    memset(msg, 0x00, 1600);
-    sprintf(msg, "\n");
+	memset(msg, 0x00, 1600);
+	sprintf(msg, "\n");
 
 #ifdef RALINK_QA
 	if(ATE_ON(pAd))
 	{
 		txCount = pAd->ate.TxDoneCount;
-		rxCount = pAd->ate.U2M + pAd->ate.OtherData + pAd->ate.OtherCount;		
+		rxCount = pAd->ate.U2M + pAd->ate.OtherData + pAd->ate.OtherCount;
 	}
 	else
 #endif /* RALINK_QA */
@@ -9519,41 +9518,34 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
 	sprintf(msg+strlen(msg), "Tx success                      = %ld\n", txCount);
 #ifdef ENHANCED_STAT_DISPLAY
 	per = txCount==0? 0: 1000*(pAd->WlanCounters.RetryCount.u.LowPart+pAd->WlanCounters.FailedCount.u.LowPart)/(pAd->WlanCounters.RetryCount.u.LowPart+pAd->WlanCounters.FailedCount.u.LowPart+txCount);
-	sprintf(msg+strlen(msg), "Tx retry count                  = %ld, PER=%ld.%1ld%%\n",
-									(ULONG)pAd->WlanCounters.RetryCount.u.LowPart,
-									per/10, per % 10);
+	sprintf(msg+strlen(msg), "Tx retry count                  = %ld, PER=%ld.%1ld%%\n", (ULONG)pAd->WlanCounters.RetryCount.u.LowPart, per/10, per % 10);
 	plr = txCount==0? 0: 10000*pAd->WlanCounters.FailedCount.u.LowPart/(pAd->WlanCounters.FailedCount.u.LowPart+txCount);
-	sprintf(msg+strlen(msg), "Tx fail to Rcv ACK after retry  = %ld, PLR=%ld.%02ld%%\n",
-									(ULONG)pAd->WlanCounters.FailedCount.u.LowPart, plr/100, plr%100);
+	sprintf(msg+strlen(msg), "Tx fail to Rcv ACK after retry  = %ld, PLR=%ld.%02ld%%\n", (ULONG)pAd->WlanCounters.FailedCount.u.LowPart, plr/100, plr%100);
 	sprintf(msg+strlen(msg), "Rx success                      = %ld\n", (ULONG)rxCount);
+
 #ifdef RALINK_QA
 	if(ATE_ON(pAd))
-	per = rxCount==0? 0: 1000*(pAd->WlanCounters.FCSErrorCount.u.LowPart)/(pAd->WlanCounters.FCSErrorCount.u.LowPart+rxCount);
+		per = rxCount==0? 0: 1000*(pAd->WlanCounters.FCSErrorCount.u.LowPart)/(pAd->WlanCounters.FCSErrorCount.u.LowPart+rxCount);
 	else
 #endif /* RALINK_QA */
-	per = pAd->WlanCounters.ReceivedFragmentCount.u.LowPart==0? 0: 1000*(pAd->WlanCounters.FCSErrorCount.u.LowPart)/(pAd->WlanCounters.FCSErrorCount.u.LowPart+pAd->WlanCounters.ReceivedFragmentCount.u.LowPart);
-	sprintf(msg+strlen(msg), "Rx with CRC                     = %ld, PER=%ld.%1ld%%\n",
-									(ULONG)pAd->WlanCounters.FCSErrorCount.u.LowPart, per/10, per % 10);
-	sprintf(msg+strlen(msg), "Rx with PhyErr                  = %ld\n",
-									(ULONG)pAd->RalinkCounters.PhyErrCnt);
-	sprintf(msg+strlen(msg), "Rx with PlcpErr                 = %ld\n",
-									(ULONG)pAd->RalinkCounters.PlcpErrCnt);
+		per = pAd->WlanCounters.ReceivedFragmentCount.u.LowPart==0? 0: 1000*(pAd->WlanCounters.FCSErrorCount.u.LowPart)/(pAd->WlanCounters.FCSErrorCount.u.LowPart+pAd->WlanCounters.ReceivedFragmentCount.u.LowPart);
+
+	sprintf(msg+strlen(msg), "Rx with CRC                     = %ld, PER=%ld.%1ld%%\n", (ULONG)pAd->WlanCounters.FCSErrorCount.u.LowPart, per/10, per % 10);
+	sprintf(msg+strlen(msg), "Rx with PhyErr                  = %ld\n", (ULONG)pAd->RalinkCounters.PhyErrCnt);
+	sprintf(msg+strlen(msg), "Rx with PlcpErr                 = %ld\n", (ULONG)pAd->RalinkCounters.PlcpErrCnt);
 	sprintf(msg+strlen(msg), "Rx drop due to out of resource  = %ld\n", (ULONG)pAd->Counters8023.RxNoBuffer);
 	sprintf(msg+strlen(msg), "Rx duplicate frame              = %ld\n", (ULONG)pAd->WlanCounters.FrameDuplicateCount.u.LowPart);
-
 	sprintf(msg+strlen(msg), "False CCA                       = %ld\n", (ULONG)pAd->RalinkCounters.FalseCCACnt);
 #else
-    sprintf(msg+strlen(msg), "Tx retry count                  = %ld\n", (ULONG)pAd->WlanCounters.RetryCount.u.LowPart);
-    sprintf(msg+strlen(msg), "Tx fail to Rcv ACK after retry  = %ld\n", (ULONG)pAd->WlanCounters.FailedCount.u.LowPart);
-    sprintf(msg+strlen(msg), "RTS Success Rcv CTS             = %ld\n", (ULONG)pAd->WlanCounters.RTSSuccessCount.u.LowPart);
-    sprintf(msg+strlen(msg), "RTS Fail Rcv CTS                = %ld\n", (ULONG)pAd->WlanCounters.RTSFailureCount.u.LowPart);
-
-    sprintf(msg+strlen(msg), "Rx success                      = %ld\n", (ULONG)pAd->WlanCounters.ReceivedFragmentCount.QuadPart);
-    sprintf(msg+strlen(msg), "Rx with CRC                     = %ld\n", (ULONG)pAd->WlanCounters.FCSErrorCount.u.LowPart);
-    sprintf(msg+strlen(msg), "Rx drop due to out of resource  = %ld\n", (ULONG)pAd->Counters8023.RxNoBuffer);
-    sprintf(msg+strlen(msg), "Rx duplicate frame              = %ld\n", (ULONG)pAd->WlanCounters.FrameDuplicateCount.u.LowPart);
-
-    sprintf(msg+strlen(msg), "False CCA (one second)          = %ld\n", (ULONG)pAd->RalinkCounters.OneSecFalseCCACnt);
+	sprintf(msg+strlen(msg), "Tx retry count                  = %ld\n", (ULONG)pAd->WlanCounters.RetryCount.u.LowPart);
+	sprintf(msg+strlen(msg), "Tx fail to Rcv ACK after retry  = %ld\n", (ULONG)pAd->WlanCounters.FailedCount.u.LowPart);
+	sprintf(msg+strlen(msg), "RTS Success Rcv CTS             = %ld\n", (ULONG)pAd->WlanCounters.RTSSuccessCount.u.LowPart);
+	sprintf(msg+strlen(msg), "RTS Fail Rcv CTS                = %ld\n", (ULONG)pAd->WlanCounters.RTSFailureCount.u.LowPart);
+	sprintf(msg+strlen(msg), "Rx success                      = %ld\n", (ULONG)pAd->WlanCounters.ReceivedFragmentCount.QuadPart);
+	sprintf(msg+strlen(msg), "Rx with CRC                     = %ld\n", (ULONG)pAd->WlanCounters.FCSErrorCount.u.LowPart);
+	sprintf(msg+strlen(msg), "Rx drop due to out of resource  = %ld\n", (ULONG)pAd->Counters8023.RxNoBuffer);
+	sprintf(msg+strlen(msg), "Rx duplicate frame              = %ld\n", (ULONG)pAd->WlanCounters.FrameDuplicateCount.u.LowPart);
+	sprintf(msg+strlen(msg), "False CCA (one second)          = %ld\n", (ULONG)pAd->RalinkCounters.OneSecFalseCCACnt);
 #endif /* ENHANCED_STAT_DISPLAY */
 
 #ifdef RALINK_QA
@@ -9561,13 +9553,13 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
 	{
 		if (pAd->ate.RxAntennaSel == 0)
 		{
-    		sprintf(msg+strlen(msg), "RSSI-A                          = %ld\n", (LONG)(pAd->ate.LastRssi0 - pAd->BbpRssiToDbmDelta));
+			sprintf(msg+strlen(msg), "RSSI-A                          = %ld\n", (LONG)(pAd->ate.LastRssi0 - pAd->BbpRssiToDbmDelta));
 			sprintf(msg+strlen(msg), "RSSI-B (if available)           = %ld\n", (LONG)(pAd->ate.LastRssi1 - pAd->BbpRssiToDbmDelta));
 			sprintf(msg+strlen(msg), "RSSI-C (if available)           = %ld\n\n", (LONG)(pAd->ate.LastRssi2 - pAd->BbpRssiToDbmDelta));
 		}
 		else
 		{
-    		sprintf(msg+strlen(msg), "RSSI                            = %ld\n", (LONG)(pAd->ate.LastRssi0 - pAd->BbpRssiToDbmDelta));
+			sprintf(msg+strlen(msg), "RSSI                            = %ld\n", (LONG)(pAd->ate.LastRssi0 - pAd->BbpRssiToDbmDelta));
 		}
 		sprintf(msg+strlen(msg), "Rx U2M                          = %ld\n", (ULONG)pAd->ate.U2M);
 		sprintf(msg+strlen(msg), "Rx other Data                   = %ld\n", (ULONG)pAd->ate.OtherData);
@@ -9577,24 +9569,24 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
 #endif /* RALINK_QA */
 	{
 #ifdef ENHANCED_STAT_DISPLAY
-	sprintf(msg+strlen(msg), "RSSI                            = %ld %ld %ld\n",
-    			(LONG)(pAd->ApCfg.RssiSample.LastRssi0 - pAd->BbpRssiToDbmDelta),
-    			(LONG)(pAd->ApCfg.RssiSample.LastRssi1 - pAd->BbpRssiToDbmDelta),
-    			(LONG)(pAd->ApCfg.RssiSample.LastRssi2 - pAd->BbpRssiToDbmDelta));
+		sprintf(msg+strlen(msg), "RSSI                            = %ld %ld %ld\n",
+			(LONG)(pAd->ApCfg.RssiSample.LastRssi0 - pAd->BbpRssiToDbmDelta),
+			(LONG)(pAd->ApCfg.RssiSample.LastRssi1 - pAd->BbpRssiToDbmDelta),
+			(LONG)(pAd->ApCfg.RssiSample.LastRssi2 - pAd->BbpRssiToDbmDelta));
 
-    	/* Display Last Rx Rate and BF SNR of first Associated entry in MAC table */
-    	if (pAd->MacTab.Size > 0)
-    	{
-    		static char *phyMode[5] = {"CCK", "OFDM", "MM", "GF", "VHT"};
+	/* Display Last Rx Rate and BF SNR of first Associated entry in MAC table */
+	if (pAd->MacTab.Size > 0)
+	{
+		static char *phyMode[5] = {"CCK", "OFDM", "MM", "GF", "VHT"};
 #ifdef RT65xx
-			static char *bw[3] = {"20M", "40M", "80M"};
-			static char *fec_coding[2] = {"bcc", "ldpc"};
+		static char *bw[3] = {"20M", "40M", "80M"};
+		static char *fec_coding[2] = {"bcc", "ldpc"};
 #endif /* RT65xx */
 
-    		for (i=1; i<MAX_LEN_OF_MAC_TABLE; i++)
-			{
-    			PMAC_TABLE_ENTRY pEntry = &(pAd->MacTab.Content[i]);
-    			if (IS_ENTRY_CLIENT(pEntry) && pEntry->Sst==SST_ASSOC)
+		for (i=1; i<MAX_LEN_OF_MAC_TABLE; i++)
+		{
+			PMAC_TABLE_ENTRY pEntry = &(pAd->MacTab.Content[i]);
+			if (IS_ENTRY_CLIENT(pEntry) && pEntry->Sst==SST_ASSOC)
 				{
 					//sprintf(msg+strlen(msg), "sta mac: %02x:%02x:%02x:%02x:%02x:%02x\n", pEntry->wdev->if_addr[0], pEntry->wdev->if_addr[1],  pEntry->wdev->if_addr[2],  pEntry->wdev->if_addr[3],  pEntry->wdev->if_addr[4],  pEntry->wdev->if_addr[5]); 
 					UINT32 lastRxRate = pEntry->LastRxRate;
@@ -9674,9 +9666,9 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
 					break;
 				}
 			}
-    	}
+	}
 #else
-    	sprintf(msg+strlen(msg), "RSSI-A                          = %ld\n", (LONG)(pAd->ApCfg.RssiSample.LastRssi0 - pAd->BbpRssiToDbmDelta));
+		sprintf(msg+strlen(msg), "RSSI-A                          = %ld\n", (LONG)(pAd->ApCfg.RssiSample.LastRssi0 - pAd->BbpRssiToDbmDelta));
 		sprintf(msg+strlen(msg), "RSSI-B (if available)           = %ld\n", (LONG)(pAd->ApCfg.RssiSample.LastRssi1 - pAd->BbpRssiToDbmDelta));
 		sprintf(msg+strlen(msg), "RSSI-C (if available)           = %ld\n\n", (LONG)(pAd->ApCfg.RssiSample.LastRssi2 - pAd->BbpRssiToDbmDelta));
 #endif /* ENHANCED_STAT_DISPLAY */
@@ -9743,8 +9735,8 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
 	}
 #endif /* RTMP_EFUSE_SUPPORT */    
     /* Copy the information into the user buffer */
-    wrq->u.data.length = strlen(msg);
-    Status = copy_to_user(wrq->u.data.pointer, msg, wrq->u.data.length);
+	wrq->u.data.length = strlen(msg);
+	Status = copy_to_user(wrq->u.data.pointer, msg, wrq->u.data.length);
 
 	os_free_mem(NULL, msg);
 
@@ -9807,7 +9799,7 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
 #endif /* DBG_CTRL_SUPPORT */
 #endif /* defined(TXBF_SUPPORT) && defined(ENHANCED_STAT_DISPLAY) */
 
-    DBGPRINT(RT_DEBUG_TRACE, ("<==RTMPIoctlStatistics\n"));
+	DBGPRINT(RT_DEBUG_TRACE, ("<==RTMPIoctlStatistics\n"));
 }
 
 

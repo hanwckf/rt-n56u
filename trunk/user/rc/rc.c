@@ -145,42 +145,61 @@ set_timezone(void)
 static void
 init_gpio_leds_buttons(void)
 {
+	/* hide WiFi 2G soft-led  */
+#if defined (BOARD_GPIO_LED_SW2G)
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_SW2G, 1);
+	LED_CONTROL(BOARD_GPIO_LED_SW2G, LED_OFF);
+#endif
+	/* hide WiFi 5G soft-led  */
+#if defined (BOARD_GPIO_LED_SW5G)
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_SW5G, 1);
+	LED_CONTROL(BOARD_GPIO_LED_SW5G, LED_OFF);
+#endif
+	/* hide WAN soft-led  */
 #if defined (BOARD_GPIO_LED_WAN)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_WAN, 1);
 	LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
 #endif
+	/* hide LAN soft-led  */
 #if defined (BOARD_GPIO_LED_LAN)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_LAN, 1);
 	LED_CONTROL(BOARD_GPIO_LED_LAN, LED_OFF);
 #endif
+	/* hide USB soft-led  */
 #if defined (BOARD_GPIO_LED_USB)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_USB, 1);
 	LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
 #endif
+	/* enable common led trigger */
 #if defined (BOARD_GPIO_LED_ALL)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_ALL, 1);
 	LED_CONTROL(BOARD_GPIO_LED_ALL, LED_ON);
 #endif
+	/* allow WiFi hw-led  */
 #if defined (BOARD_GPIO_LED_WIFI)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_WIFI, 1);
 	LED_CONTROL(BOARD_GPIO_LED_WIFI, LED_ON);
 #endif
+	/* show PWR soft-led  */
 #if defined (BOARD_GPIO_LED_POWER)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_POWER, 1);
 	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
 #endif
-#if defined (BOARD_GPIO_PWR_USB)
 	/* enable USB port 5V power */
+#if defined (BOARD_GPIO_PWR_USB)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_PWR_USB, 1);
 	cpu_gpio_set_pin(BOARD_GPIO_PWR_USB, BOARD_GPIO_PWR_USB_ON);
 #endif
 
+	/* init BTN Reset  */
 #if defined (BOARD_GPIO_BTN_RESET)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_RESET, 0);
 #endif
+	/* init BTN WPS  */
 #if defined (BOARD_GPIO_BTN_WPS)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_WPS, 0);
 #endif
+	/* init BTN WLTOG  */
 #if defined (BOARD_GPIO_BTN_WLTOG)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_WLTOG, 0);
 #endif

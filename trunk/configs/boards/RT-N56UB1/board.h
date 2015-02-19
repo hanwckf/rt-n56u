@@ -12,7 +12,9 @@
 #define BOARD_GPIO_BTN_WPS	18
 #undef  BOARD_GPIO_BTN_WLTOG
 #undef  BOARD_GPIO_LED_ALL
-#define BOARD_GPIO_LED_WIFI	14	/* 14: 2.4G, 15: 5G */
+#undef  BOARD_GPIO_LED_WIFI
+#define BOARD_GPIO_LED_SW2G	14	/* soft led */
+#define BOARD_GPIO_LED_SW5G	15	/* soft led */
 #define BOARD_GPIO_LED_POWER	12
 #define BOARD_GPIO_LED_LAN	7
 #define BOARD_GPIO_LED_WAN	16

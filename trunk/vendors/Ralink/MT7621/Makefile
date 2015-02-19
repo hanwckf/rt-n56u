@@ -44,7 +44,20 @@ ifdef CONFIG_MT7610_AP
 	$(ROMFSINST) /etc_ro/Wireless/MT7610E-V10-FEM.bin
 endif
 ifdef CONFIG_MT76X2_AP
+ifeq ($(CONFIG_RT_FIRST_CARD),7602)
+	$(ROMFSINST) /etc_ro/Wireless/MT7602E_EEPROM.bin
+else
+ifeq ($(CONFIG_RT_SECOND_CARD),7602)
+	$(ROMFSINST) /etc_ro/Wireless/MT7602E_EEPROM.bin
+endif
+endif
+ifeq ($(CONFIG_RT_FIRST_CARD),7612)
 	$(ROMFSINST) /etc_ro/Wireless/MT7612E_EEPROM.bin
+else
+ifeq ($(CONFIG_RT_SECOND_CARD),7612)
+	$(ROMFSINST) /etc_ro/Wireless/MT7612E_EEPROM.bin
+endif
+endif
 endif
 ifdef CONFIG_MT76X3_AP
 	$(ROMFSINST) /etc_ro/Wireless/MT7603E_EEPROM.bin

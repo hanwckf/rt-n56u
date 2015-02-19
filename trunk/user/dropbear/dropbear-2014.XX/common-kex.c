@@ -238,14 +238,24 @@ void recv_msg_newkeys() {
 void kexfirstinitialise() {
 	ses.kexstate.donefirstkex = 0;
 
-#ifndef DISABLE_ZLIB
-	if (opts.enable_compress) {
-		ses.compress_algos = ssh_compress;
-	} else
-#endif
+#ifdef DISABLE_ZLIB
+	ses.compress_algos = ssh_nocompress;
+#else
+	switch (opts.compress_mode)
 	{
-		ses.compress_algos = ssh_nocompress;
+		case DROPBEAR_COMPRESS_DELAYED:
+			ses.compress_algos = ssh_delaycompress;
+			break;
+
+		case DROPBEAR_COMPRESS_ON:
+			ses.compress_algos = ssh_compress;
+			break;
+
+		case DROPBEAR_COMPRESS_OFF:
+			ses.compress_algos = ssh_nocompress;
+			break;
 	}
+#endif
 	kexinitialise();
 }
 
@@ -303,7 +313,7 @@ static void hashkeys(unsigned char *out, unsigned int outlen,
 		hash_desc->done(&hs2, tmpout);
 		memcpy(&out[offset], tmpout, MIN(outlen - offset, hash_desc->hashsize));
 	}
-
+	m_burn(&hs2, sizeof(hash_state));
 }
 
 /* Generate the actual encryption/integrity keys, using the results of the
@@ -403,6 +413,7 @@ static void gen_new_keys() {
 	m_burn(C2S_key, sizeof(C2S_key));
 	m_burn(S2C_IV, sizeof(S2C_IV));
 	m_burn(S2C_key, sizeof(S2C_key));
+	m_burn(&hs, sizeof(hash_state));
 
 	TRACE(("leave gen_new_keys"))
 }
@@ -798,6 +809,7 @@ static void finish_kexhashbuf(void) {
 
 	buf_burn(ses.kexhashbuf);
 	buf_free(ses.kexhashbuf);
+	m_burn(&hs, sizeof(hash_state));
 	ses.kexhashbuf = NULL;
 	
 	/* first time around, we set the session_id to H */
@@ -805,7 +817,6 @@ static void finish_kexhashbuf(void) {
 		/* create the session_id, this never needs freeing */
 		ses.session_id = buf_newcopy(ses.hash);
 	}
-
 }
 
 /* read the other side's algo list. buf_match_algo is a callback to match

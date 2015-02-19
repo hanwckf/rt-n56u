@@ -131,6 +131,7 @@ ecc_key *buf_get_ecdsa_priv_key(buffer *buf) {
 
 	if (buf_getmpint(buf, new_key->k) != DROPBEAR_SUCCESS) {
 		ecc_free(new_key);
+		m_free(new_key);
 		return NULL;
 	}
 

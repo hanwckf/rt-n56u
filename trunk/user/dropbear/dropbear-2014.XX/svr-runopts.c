@@ -144,8 +144,13 @@ void svr_getopts(int argc, char ** argv) {
 #ifdef ENABLE_SVR_REMOTETCPFWD
 	svr_opts.noremotetcp = 0;
 #endif
+
 #ifndef DISABLE_ZLIB
-	opts.enable_compress = 1;
+#if DROPBEAR_SERVER_DELAY_ZLIB
+	opts.compress_mode = DROPBEAR_COMPRESS_DELAYED;
+#else
+	opts.compress_mode = DROPBEAR_COMPRESS_ON;
+#endif
 #endif
 	svr_opts.ipfamily = AF_UNSPEC;
 #ifdef DO_MOTD

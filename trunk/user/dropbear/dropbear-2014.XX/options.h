@@ -95,8 +95,12 @@ much traffic. */
 #define DROPBEAR_AES256
 /* Compiling in Blowfish will add ~6kB to runtime heap memory usage */
 /*#define DROPBEAR_BLOWFISH*/
-#define DROPBEAR_TWOFISH256
-#define DROPBEAR_TWOFISH128
+/*#define DROPBEAR_TWOFISH256*/
+/*#define DROPBEAR_TWOFISH128*/
+
+/* Enable CBC mode for ciphers. This has security issues though
+ * is the most compatible with older SSH implementations */
+#define DROPBEAR_ENABLE_CBC_MODE
 
 /* Enable "Counter Mode" for ciphers. This is more secure than normal
  * CBC mode against certain attacks. This adds around 1kB to binary 
@@ -170,6 +174,11 @@ much traffic. */
 #define DROPBEAR_ZLIB_WINDOW_BITS 15
 #endif
 
+/* Server won't allow zlib compression until after authentication. Prevents
+   flaws in the zlib library being unauthenticated exploitable flaws.
+   Some old ssh clients may not support the alternative zlib@openssh.com method */
+#define DROPBEAR_SERVER_DELAY_ZLIB 1
+
 /* Whether to do reverse DNS lookups. */
 /*#define DO_HOST_LOOKUP*/
 
@@ -206,6 +215,10 @@ much traffic. */
 #define ENABLE_CLI_PASSWORD_AUTH
 #define ENABLE_CLI_PUBKEY_AUTH
 #define ENABLE_CLI_INTERACT_AUTH
+
+/* A default argument for dbclient -i <privatekey>. 
+   leading "~" is expanded */
+#define DROPBEAR_DEFAULT_CLI_AUTHKEY "~/.ssh/id_dropbear"
 
 /* This variable can be used to set a password for client
  * authentication on the commandline. Beware of platforms

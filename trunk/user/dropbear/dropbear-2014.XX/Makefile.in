@@ -131,7 +131,7 @@ insmultidropbear: dropbearmulti
 	-rm -f $(DESTDIR)$(sbindir)/dropbear$(EXEEXT)
 	-ln -s $(bindir)/dropbearmulti$(EXEEXT) $(DESTDIR)$(sbindir)/dropbear$(EXEEXT) 
 	$(INSTALL) -d $(DESTDIR)$(mandir)/man8
-	$(INSTALL) -m 644 dropbear.8  $(DESTDIR)$(mandir)/man8/dropbear.8
+	$(INSTALL) -m 644 $(srcdir)/dropbear.8  $(DESTDIR)$(mandir)/man8/dropbear.8
 
 insmulti%: dropbearmulti
 	$(INSTALL) -d $(DESTDIR)$(bindir)
@@ -145,7 +145,7 @@ inst_dropbear: dropbear
 	$(INSTALL) -d $(DESTDIR)$(sbindir)
 	$(INSTALL) dropbear$(EXEEXT) $(DESTDIR)$(sbindir)
 	$(INSTALL) -d $(DESTDIR)$(mandir)/man8
-	$(INSTALL) -m 644 dropbear.8 $(DESTDIR)$(mandir)/man8/dropbear.8
+	$(INSTALL) -m 644 $(srcdir)/dropbear.8 $(DESTDIR)$(mandir)/man8/dropbear.8
 
 inst_%: %
 	$(INSTALL) -d $(DESTDIR)$(bindir)

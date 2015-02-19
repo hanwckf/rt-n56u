@@ -1,3 +1,32 @@
+2015.67 - Wednesday 28 January 2015
+
+- Call fsync() after generating private keys to ensure they aren't lost if a
+  reboot occurs. Thanks to Peter Korsgaard
+
+- Disable non-delayed zlib compression by default on the server. Can be
+  enabled if required for old clients with DROPBEAR_SERVER_DELAY_ZLIB
+
+- Default client key path ~/.ssh/id_dropbear
+
+- Prefer stronger algorithms by default, from Fedor Brunner. 
+  AES256 over 3DES
+  Diffie-hellman group14 over group1
+
+- Add option to disable CBC ciphers.
+
+- Disable twofish in default options.h
+
+- Enable sha2 HMAC algorithms by default, the code was already required
+  for ECC key exchange. sha1 is the first preference still for performance. 
+
+- Fix installing dropbear.8 in a separate build directory, from Like Ma
+
+- Allow configure to succeed if libtomcrypt/libtommath are missing, from Elan Ruusamäe
+
+- Don't crash if ssh-agent provides an unknown type of key. From Catalin Patulea
+
+- Minor bug fixes, a few issues found by Coverity scan
+
 2014.66 - Thursday 23 October 2014
 
 - Use the same keepalive handling behaviour as OpenSSH. This will work better 

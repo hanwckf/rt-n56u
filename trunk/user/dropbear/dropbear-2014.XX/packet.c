@@ -283,14 +283,14 @@ static int read_packet_init() {
 	}
 	len = buf_getint(ses.readbuf) + 4 + macsize;
 
-	TRACE2(("packet size is %d, block %d mac %d", len, blocksize, macsize))
+	TRACE2(("packet size is %u, block %u mac %u", len, blocksize, macsize))
 
 
 	/* check packet length */
 	if ((len > RECV_MAX_PACKET_LEN) ||
 		(len < MIN_PACKET_LEN + macsize) ||
 		((len - macsize) % blocksize != 0)) {
-		dropbear_exit("Integrity error (bad packet size %d)", len);
+		dropbear_exit("Integrity error (bad packet size %u)", len);
 	}
 
 	if (len > ses.readbuf->size) {
@@ -342,7 +342,7 @@ void decrypt_packet() {
 	/* - 4 - 1 is for LEN and PADLEN values */
 	len = ses.readbuf->len - padlen - 4 - 1 - macsize;
 	if ((len > RECV_MAX_PAYLOAD_LEN+ZLIB_COMPRESS_EXPANSION) || (len < 1)) {
-		dropbear_exit("Bad packet size %d", len);
+		dropbear_exit("Bad packet size %u", len);
 	}
 
 	buf_setpos(ses.readbuf, PACKET_PAYLOAD_OFF);

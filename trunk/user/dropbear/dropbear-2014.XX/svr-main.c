@@ -344,6 +344,7 @@ static void sigchld_handler(int UNUSED(unused)) {
 
 	sa_chld.sa_handler = sigchld_handler;
 	sa_chld.sa_flags = SA_NOCLDSTOP;
+	sigemptyset(&sa_chld.sa_mask);
 	if (sigaction(SIGCHLD, &sa_chld, NULL) < 0) {
 		dropbear_exit("signal() error");
 	}

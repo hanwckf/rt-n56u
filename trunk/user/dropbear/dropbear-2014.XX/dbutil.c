@@ -936,6 +936,23 @@ int m_str_to_uint(const char* str, unsigned int *val) {
 	}
 }
 
+/* Returns malloced path. Only expands ~ in first character */
+char * expand_tilde(const char *inpath) {
+	struct passwd *pw = NULL;
+	if (inpath[0] == '~') {
+		pw = getpwuid(getuid());
+		if (pw && pw->pw_dir) {
+			int len = strlen(inpath) + strlen(pw->pw_dir) + 1;
+			char *buf = m_malloc(len);
+			snprintf(buf, len, "%s/%s", pw->pw_dir, &inpath[1]);
+			return buf;
+		}
+	}
+
+	/* Fallback */
+	return m_strdup(inpath);
+}
+
 int constant_time_memcmp(const void* a, const void *b, size_t n)
 {
 	const char *xa = a, *xb = b;

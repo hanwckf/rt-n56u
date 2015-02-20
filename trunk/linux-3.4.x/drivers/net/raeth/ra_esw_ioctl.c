@@ -255,21 +255,26 @@ static void esw_vlan_pvid_set(u32 port_id, u32 pvid, u32 prio)
 
 static void esw_igmp_ports_config(u32 wan_bridge_mode)
 {
-	u32 i, reg_isc, mask_drp;
+	u32 i, reg_isc, mask_no_learn;
+
+	mask_no_learn = 0;
 
 	if (wan_bridge_mode != SWAPI_WAN_BRIDGE_DISABLE_WAN) {
-		mask_drp = get_ports_mask_wan(1, 0);
+		mask_no_learn = get_ports_mask_wan(1, 0);
 		for (i = 0; i <= ESW_MAC_ID_MAX; i++) {
-			if ((mask_drp >> i) & 0x1)
+			if ((mask_no_learn >> i) & 0x1)
 				esw_reg_set(REG_ESW_PORT_PIC_P0 + 0x100*i, 0x8000);
 		}
+	} else {
+		if (!g_igmp_snooping_enabled)
+			mask_no_learn = get_ports_mask_lan(1);
 	}
-	else
-		mask_drp = (1u << LAN_PORT_CPU);
+
+	mask_no_learn |= (1u << LAN_PORT_CPU);
 
 	reg_isc = esw_reg_get(REG_ESW_ISC);
 	reg_isc &= ~0xFF0000FF;
-	reg_isc |= mask_drp;
+	reg_isc |= mask_no_learn;
 	esw_reg_set(REG_ESW_ISC, reg_isc);
 }
 
@@ -279,6 +284,7 @@ static void esw_igmp_mld_snooping(u32 enable_igmp, u32 enable_mld)
 
 	reg_pic_phy = 0x00008000;		// Robustness = 2
 	reg_pic_cpu = 0x00008000;		// Robustness = 2
+
 	if (enable_mld) {
 		reg_pic_cpu |= (1u << 9);	// IPM_33
 		

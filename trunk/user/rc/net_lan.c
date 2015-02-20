@@ -291,6 +291,8 @@ config_bridge(int is_ap_mode)
 	fput_int(bridge_path, (igmp_snoop) ? 1 : 0);
 
 	brport_set_m2u(wired_ifname, (igmp_snoop && wired_m2u == 1) ? 1 : 0);
+
+	phy_igmp_snooping((igmp_snoop && wired_m2u == 2) ? 1 : 0);
 }
 
 void
@@ -355,7 +357,6 @@ switch_config_base(void)
 #endif
 	phy_jumbo_frames(nvram_get_int("ether_jumbo"));
 	phy_green_ethernet(nvram_get_int("ether_green"));
-	phy_igmp_snooping((nvram_get_int("ether_m2u") == 2) ? 1 : 0);
 }
 
 void

@@ -37,6 +37,8 @@
 
 #endif
 
+static DEFINE_SPINLOCK(mii_mgr_lock);
+
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352)
 void enable_mdio(int enable)
 {
@@ -128,9 +130,12 @@ static u32 __mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data)
 
 u32 mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data)
 {
+	unsigned long flags;
+	u32 result = 0;
+
+	spin_lock_irqsave(&mii_mgr_lock, flags);
 #if defined (CONFIG_MT7530_GSW)
 	if (phy_addr == MT7530_MDIO_ADDR) {
-		u32 result = 0;
 		u32 lo_word = 0;
 		u32 hi_word = 0;
 		u32 an_state = sysRegRead(REG_ESW_PHY_POLLING);
@@ -153,20 +158,25 @@ u32 mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data)
 		
 		if (an_state & (1UL<<31))
 			sysRegWrite(REG_ESW_PHY_POLLING, an_state | (1UL<<31));
-		
-		return result;
 	} else
 #endif
 	{
-		return __mii_mgr_read(phy_addr, phy_register, read_data);
+		result = __mii_mgr_read(phy_addr, phy_register, read_data);
 	}
+
+	spin_unlock_irqrestore(&mii_mgr_lock, flags);
+
+	return result;
 }
 
 u32 mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data)
 {
+	unsigned long flags;
+	u32 result = 0;
+
+	spin_lock_irqsave(&mii_mgr_lock, flags);
 #if defined (CONFIG_MT7530_GSW)
 	if (phy_addr == MT7530_MDIO_ADDR) {
-		u32 result = 0;
 		u32 an_state = sysRegRead(REG_ESW_PHY_POLLING);
 		
 		/* check AN polling */
@@ -185,13 +195,15 @@ u32 mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data)
 		
 		if (an_state & (1UL<<31))
 			sysRegWrite(REG_ESW_PHY_POLLING, an_state | (1UL<<31));
-		
-		return result;
 	} else
 #endif
 	{
-		return __mii_mgr_write(phy_addr, phy_register, write_data);
+		result = __mii_mgr_write(phy_addr, phy_register, write_data);
 	}
+
+	spin_unlock_irqrestore(&mii_mgr_lock, flags);
+
+	return result;
 }
 
 #else

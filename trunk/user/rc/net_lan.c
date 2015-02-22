@@ -254,11 +254,12 @@ void
 config_bridge(int is_ap_mode)
 {
 	char bridge_path[64], *wired_ifname;
-	int multicast_router, multicast_querier;
+	int multicast_router, multicast_querier, igmp_static_port;
 	int igmp_snoop = nvram_get_int("ether_igmp");
 	int wired_m2u = nvram_get_int("ether_m2u");
 
 	if (!is_ap_mode) {
+		igmp_static_port = 0;
 		if (nvram_match("mr_enable_x", "1")) {
 			multicast_router = 2;   // bridge is mcast router path (br0 <--igmpproxy--> eth3)
 			multicast_querier = 0;  // bridge is not needed internal mcast querier (igmpproxy is mcast querier)
@@ -268,6 +269,7 @@ config_bridge(int is_ap_mode)
 		}
 		wired_ifname = IFNAME_LAN;
 	} else {
+		igmp_static_port = nvram_get_int("ether_uport");
 		multicast_router = 0;   // bridge is not mcast router path
 		multicast_querier = 1;  // bridge is needed internal mcast querier (for eth2-ra0-rai0 snooping work)
 #if defined (AP_MODE_LAN_TAGGED)
@@ -292,6 +294,7 @@ config_bridge(int is_ap_mode)
 
 	brport_set_m2u(wired_ifname, (igmp_snoop && wired_m2u == 1) ? 1 : 0);
 
+	phy_igmp_static_port(igmp_static_port);
 	phy_igmp_snooping((igmp_snoop && wired_m2u == 2) ? 1 : 0);
 }
 

@@ -282,7 +282,7 @@ static int fill_eth_status(int port_id, webs_t wp)
 		ret += websWrite(wp, "dot3StatsSymbolErrors		: %u\n", mibc.dot3StatsSymbolErrors);
 		ret += websWrite(wp, "dot3ControlInUnknownOpcodes	: %u\n", mibc.dot3ControlInUnknownOpcodes);
 		ret += websWrite(wp, "dot3InPauseFrames		: %u\n", mibc.dot3InPauseFrames);
-		ret += websWrite(wp, "dot3OutPauseFrames		: %u\n", mibc.dot3OutPauseFrames);
+		ret += websWrite(wp, "dot3OutPauseFrames		: %u", mibc.dot3OutPauseFrames);
 	}
 
 	return ret;

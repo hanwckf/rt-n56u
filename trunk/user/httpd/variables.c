@@ -470,6 +470,7 @@
 			{"adsc_enable", "", NULL, EVM_RESTART_ADSC},
 			{"scripts.authorized_keys", "File", NULL, EVM_RESTART_SSHD|EVM_BLOCK_UNSAFE},
 			{"ether_igmp", "", NULL, EVM_RESTART_SWITCH_CFG},
+			{"ether_uport", "", NULL, EVM_RESTART_SWITCH_CFG},
 			{"ether_m2u", "", NULL, EVM_RESTART_SWITCH_CFG},
 			{"ether_led0", "", NULL, EVM_RESTART_SWITCH_CFG},
 			{"ether_led1", "", NULL, EVM_RESTART_SWITCH_CFG},

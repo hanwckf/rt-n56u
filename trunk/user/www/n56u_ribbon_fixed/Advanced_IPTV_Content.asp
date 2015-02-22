@@ -49,6 +49,17 @@ function initial(){
 	show_menu(5,3,id_menu);
 	show_footer();
 
+	var o1 = document.form.ether_uport;
+	var num_ephy = support_num_ephy();
+	if (!support_2g_inic_mii())
+		o1.remove(6);
+	if (num_ephy < 5)
+		o1.remove(5);
+	if (num_ephy < 4)
+		o1.remove(4);
+	if (num_ephy < 3)
+		o1.remove(3);
+
 	var switch_type = support_switch_type();
 	if (switch_type != 0) {
 		showhide_div('row_storm_ucast', 0);
@@ -151,9 +162,19 @@ function on_click_mroute(){
 
 function on_click_snoop(){
 	var snoop = document.form.ether_igmp[0].checked;
+	showhide_div('row_igmp_uport', snoop && allow_uport());
 	showhide_div('row_m2u_wire', snoop);
 	showhide_div('row_m2u_2ghz', snoop);
 	showhide_div('row_m2u_5ghz', snoop && support_5g_radio());
+}
+
+function on_change_m2u_wire(){
+	var snoop = document.form.ether_igmp[0].checked;
+	showhide_div('row_igmp_uport', snoop && allow_uport());
+}
+
+function allow_uport(){
+	return (document.form.ether_m2u.value == "2" && get_ap_mode()) ? 1 : 0;
 }
 
 var window_udpxy;
@@ -349,10 +370,24 @@ function on_xupnpd_link(){
                                         <tr id="row_m2u_wire">
                                             <th>M2U - <#menu5_2_5#>:</th>
                                             <td>
-                                                <select name="ether_m2u" class="input">
+                                                <select name="ether_m2u" class="input" onchange="on_change_m2u_wire();">
                                                     <option value="0" <% nvram_match_x("", "ether_m2u", "0", "selected"); %>><#btn_Disable#></option>
                                                     <option value="1" <% nvram_match_x("", "ether_m2u", "1", "selected"); %>>Multicast to Unicast</option>
                                                     <option value="2" <% nvram_match_x("", "ether_m2u", "2", "selected"); %>>HW IGMP/MLD snooping (*)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_igmp_uport">
+                                            <th><#SwitchUport#></th>
+                                            <td>
+                                                <select name="ether_uport" class="input">
+                                                    <option value="0" <% nvram_match_x("", "ether_uport", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="5" <% nvram_match_x("", "ether_uport", "5", "selected"); %>>WAN (*)</option>
+                                                    <option value="1" <% nvram_match_x("", "ether_uport", "1", "selected"); %>>LAN1</option>
+                                                    <option value="2" <% nvram_match_x("", "ether_uport", "2", "selected"); %>>LAN2</option>
+                                                    <option value="3" <% nvram_match_x("", "ether_uport", "3", "selected"); %>>LAN3</option>
+                                                    <option value="4" <% nvram_match_x("", "ether_uport", "4", "selected"); %>>LAN4</option>
+                                                    <option value="7" <% nvram_match_x("", "ether_uport", "7", "selected"); %>>iNIC (2.4GHz)</option>
                                                 </select>
                                             </td>
                                         </tr>

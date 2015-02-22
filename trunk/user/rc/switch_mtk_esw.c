@@ -28,6 +28,46 @@
 #include "switch.h"
 
 ////////////////////////////////////////////////////////////////////////////////
+// MIB COUNTERS
+////////////////////////////////////////////////////////////////////////////////
+
+#if defined (USE_MTK_GSW)
+typedef struct esw_mib_counters_s
+{
+	uint64_t TxGoodOctets;
+	uint32_t TxUcastFrames;
+	uint32_t TxMcastFrames;
+	uint32_t TxBcastFrames;
+	uint32_t TxDropFrames;
+	uint32_t TxCollisions;
+	uint32_t TxCRCError;
+	uint64_t RxGoodOctets;
+	uint32_t RxUcastFrames;
+	uint32_t RxMcastFrames;
+	uint32_t RxBcastFrames;
+	uint32_t RxDropFrames;
+	uint32_t RxFilterFrames;
+	uint32_t RxCRCError;
+	uint32_t RxAligmentError;
+} esw_mib_counters_t;
+#else
+typedef struct esw_mib_counters_s
+{
+	uint64_t TxGoodOctets;
+	uint32_t TxGoodFrames;
+	uint32_t TxBadOctets;
+	uint32_t TxBadFrames;
+	uint32_t TxDropFrames;
+	uint64_t RxGoodOctets;
+	uint32_t RxGoodFrames;
+	uint32_t RxBadOctets;
+	uint32_t RxBadFrames;
+	uint32_t RxDropFramesFilter;
+	uint32_t RxDropFramesErr;
+} esw_mib_counters_t;
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
 // IOCTL
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -209,6 +249,32 @@ int phy_jumbo_frames(unsigned int jumbo_frames_on)
 	return mtk_esw_ioctl(MTK_ESW_IOCTL_JUMBO_FRAMES, 0, &jumbo_frames_on);
 }
 
+int phy_igmp_static_port(unsigned int static_port)
+{
+	unsigned int ports_mask = 0;
+
+	switch (static_port)
+	{
+	case 1:
+		ports_mask |= SWAPI_PORTMASK_LAN1;
+		break;
+	case 2:
+		ports_mask |= SWAPI_PORTMASK_LAN2;
+		break;
+	case 3:
+		ports_mask |= SWAPI_PORTMASK_LAN3;
+		break;
+	case 4:
+		ports_mask |= SWAPI_PORTMASK_LAN4;
+		break;
+	case 5:
+		ports_mask |= SWAPI_PORTMASK_WAN;
+		break;
+	}
+
+	return mtk_esw_ioctl(MTK_ESW_IOCTL_IGMP_STATIC_PORTS, 0, &ports_mask);
+}
+
 int phy_igmp_snooping(unsigned int igmp_snooping_on)
 {
 	return mtk_esw_ioctl(MTK_ESW_IOCTL_IGMP_SNOOPING, 0, &igmp_snooping_on);
@@ -377,6 +443,7 @@ int show_usage(char *cmd)
 	"   71 [0..1000]     Set Unknown Multicast and Broadcast storm rate for all PHY ports\n"
 	"   75 [1|0]         Set Jumbo Frames accept on/off\n"
 	"   76 [1|0]         Set 802.3az EEE on/off\n"
+	"   77 [MASK]        Set IGMP/MLD static ports mask\n"
 	"   78 [1|0]         Set IGMP/MLD snooping on/off\n"
 	"   80 [7,11]        Set EPHY LED action\n"
 	"   90 [MODE]        Set WAN port link mode (flow|link)\n"
@@ -515,10 +582,10 @@ int show_status_speed(unsigned int cmd)
 int show_mib_counters(unsigned int cmd)
 {
 	int retVal;
-	arl_mib_counters_t mibc;
+	esw_mib_counters_t mibc;
 	char *portname = "";
 
-	memset(&mibc, 0, sizeof(arl_mib_counters_t));
+	memset(&mibc, 0, sizeof(esw_mib_counters_t));
 	retVal = mtk_esw_ioctl(cmd, 0, (unsigned int *)&mibc);
 	if (retVal == 0)
 	{
@@ -547,12 +614,48 @@ int show_mib_counters(unsigned int cmd)
 			break;
 		}
 		
+#if defined (USE_MTK_GSW)
+		printf("%s MIB counters:\n"
+			"  TxGoodOctets: %llu\n"
+			"  TxUcastFrames: %u\n"
+			"  TxMcastFrames: %u\n"
+			"  TxBcastFrames: %u\n"
+			"  TxDropFrames: %u\n"
+			"  TxCollisions: %u\n"
+			"  TxCRCError: %u\n"
+			"  RxGoodOctets: %llu\n"
+			"  RxUcastFrames: %u\n"
+			"  RxMcastFrames: %u\n"
+			"  RxBcastFrames: %u\n"
+			"  RxDropFrames: %u\n"
+			"  RxFilterFrames: %u\n"
+			"  RxCRCError: %u\n"
+			"  RxAligmentError: %u\n"
+			,
+			portname,
+			mibc.TxGoodOctets,
+			mibc.TxUcastFrames,
+			mibc.TxMcastFrames,
+			mibc.TxBcastFrames,
+			mibc.TxDropFrames,
+			mibc.TxCollisions,
+			mibc.TxCRCError,
+			mibc.RxGoodOctets,
+			mibc.RxUcastFrames,
+			mibc.RxMcastFrames,
+			mibc.RxBcastFrames,
+			mibc.RxDropFrames,
+			mibc.RxFilterFrames,
+			mibc.RxCRCError,
+			mibc.RxAligmentError
+			);
+#else
 		printf("%s MIB counters:\n"
 			"  TxGoodOctets: %llu\n"
 			"  TxGoodFrames: %u\n"
 			"  TxBadOctets: %u\n"
 			"  TxBadFrames: %u\n"
-			"  TxDropFrames: %u\n"
+			"  TxDropFrames: %u\n\n"
 			"  RxGoodOctets: %llu\n"
 			"  RxGoodFrames: %u\n"
 			"  RxBadOctets: %u\n"
@@ -573,6 +676,7 @@ int show_mib_counters(unsigned int cmd)
 			mibc.RxDropFramesFilter,
 			mibc.RxDropFramesErr
 			);
+#endif
 	}
 
 	return retVal;

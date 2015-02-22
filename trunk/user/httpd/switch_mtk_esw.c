@@ -29,6 +29,46 @@
 #include <ra_esw_ioctl.h>
 
 ////////////////////////////////////////////////////////////////////////////////
+// MIB COUNTERS
+////////////////////////////////////////////////////////////////////////////////
+
+#if defined (USE_MTK_GSW)
+typedef struct esw_mib_counters_s
+{
+	uint64_t TxGoodOctets;
+	uint32_t TxUcastFrames;
+	uint32_t TxMcastFrames;
+	uint32_t TxBcastFrames;
+	uint32_t TxDropFrames;
+	uint32_t TxCollisions;
+	uint32_t TxCRCError;
+	uint64_t RxGoodOctets;
+	uint32_t RxUcastFrames;
+	uint32_t RxMcastFrames;
+	uint32_t RxBcastFrames;
+	uint32_t RxDropFrames;
+	uint32_t RxFilterFrames;
+	uint32_t RxCRCError;
+	uint32_t RxAligmentError;
+} esw_mib_counters_t;
+#else
+typedef struct esw_mib_counters_s
+{
+	uint64_t TxGoodOctets;
+	uint32_t TxGoodFrames;
+	uint32_t TxBadOctets;
+	uint32_t TxBadFrames;
+	uint32_t TxDropFrames;
+	uint64_t RxGoodOctets;
+	uint32_t RxGoodFrames;
+	uint32_t RxBadOctets;
+	uint32_t RxBadFrames;
+	uint32_t RxDropFramesFilter;
+	uint32_t RxDropFramesErr;
+} esw_mib_counters_t;
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
 // IOCTL
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -133,7 +173,7 @@ static int fill_eth_status(int port_id, webs_t wp)
 {
 	int ret = 0;
 	unsigned int cmd = MTK_ESW_IOCTL_STATUS_CNT_PORT_WAN;
-	arl_mib_counters_t mibc;
+	esw_mib_counters_t mibc;
 	char etherlink[32] = {0};
 
 	switch (port_id)
@@ -159,11 +199,28 @@ static int fill_eth_status(int port_id, webs_t wp)
 
 	ret += websWrite(wp, "Port Link			: %s\n", etherlink);
 
-	memset(&mibc, 0, sizeof(arl_mib_counters_t));
+	memset(&mibc, 0, sizeof(esw_mib_counters_t));
 	if (mtk_esw_ioctl(cmd, 0, (unsigned int *)&mibc) == 0)
 	{
 		ret += websWrite(wp, "\nMIB Counters\n");
 		ret += websWrite(wp, "----------------------------------------\n");
+#if defined (USE_MTK_GSW)
+		ret += websWrite(wp, "TxGoodOctets			: %llu\n", mibc.TxGoodOctets);
+		ret += websWrite(wp, "TxUcastFrames			: %u\n", mibc.TxUcastFrames);
+		ret += websWrite(wp, "TxMcastFrames			: %u\n", mibc.TxMcastFrames);
+		ret += websWrite(wp, "TxBcastFrames			: %u\n", mibc.TxBcastFrames);
+		ret += websWrite(wp, "TxDropFrames			: %u\n", mibc.TxDropFrames);
+		ret += websWrite(wp, "TxCollisions			: %u\n", mibc.TxCollisions);
+		ret += websWrite(wp, "TxCRCError			: %u\n", mibc.TxCRCError);
+		ret += websWrite(wp, "RxGoodOctets			: %llu\n", mibc.RxGoodOctets);
+		ret += websWrite(wp, "RxUcastFrames			: %u\n", mibc.RxUcastFrames);
+		ret += websWrite(wp, "RxMcastFrames			: %u\n", mibc.RxMcastFrames);
+		ret += websWrite(wp, "RxBcastFrames			: %u\n", mibc.RxBcastFrames);
+		ret += websWrite(wp, "RxDropFrames			: %u\n", mibc.RxDropFrames);
+		ret += websWrite(wp, "RxFilterFrames			: %u\n", mibc.RxFilterFrames);
+		ret += websWrite(wp, "RxCRCError			: %u\n", mibc.RxCRCError);
+		ret += websWrite(wp, "RxAligmentError			: %u", mibc.RxAligmentError);
+#else
 		ret += websWrite(wp, "TxGoodOctets			: %llu\n", mibc.TxGoodOctets);
 		ret += websWrite(wp, "TxGoodFrames			: %u\n", mibc.TxGoodFrames);
 		ret += websWrite(wp, "TxBadOctets			: %u\n", mibc.TxBadOctets);
@@ -174,7 +231,8 @@ static int fill_eth_status(int port_id, webs_t wp)
 		ret += websWrite(wp, "RxBadOctets			: %u\n", mibc.RxBadOctets);
 		ret += websWrite(wp, "RxBadFrames			: %u\n", mibc.RxBadFrames);
 		ret += websWrite(wp, "RxDropFramesFilter		: %u\n", mibc.RxDropFramesFilter);
-		ret += websWrite(wp, "RxDropFramesErr			: %u\n", mibc.RxDropFramesErr);
+		ret += websWrite(wp, "RxDropFramesErr			: %u", mibc.RxDropFramesErr);
+#endif
 	}
 
 	return ret;

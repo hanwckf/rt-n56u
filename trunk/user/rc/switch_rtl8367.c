@@ -315,6 +315,37 @@ int phy_jumbo_frames(unsigned int jumbo_frames_on)
 	return rtl8367_ioctl(RTL8367_IOCTL_JUMBO_FRAMES, 0, &jumbo_frames_on);
 }
 
+int phy_igmp_static_port(unsigned int static_port)
+{
+	unsigned int ports_mask = 0;
+
+	switch (static_port)
+	{
+	case 5:
+		ports_mask |= SWAPI_PORTMASK_WAN;
+		break;
+	case 1:
+		ports_mask |= SWAPI_PORTMASK_LAN1;
+		break;
+	case 2:
+		ports_mask |= SWAPI_PORTMASK_LAN2;
+		break;
+	case 3:
+		ports_mask |= SWAPI_PORTMASK_LAN3;
+		break;
+	case 4:
+		ports_mask |= SWAPI_PORTMASK_LAN4;
+		break;
+#if defined (USE_RT3352_MII)
+	case 7:
+		ports_mask |= SWAPI_PORTMASK_INIC;
+		break;
+#endif
+	}
+
+	return rtl8367_ioctl(RTL8367_IOCTL_IGMP_STATIC_PORTS, 0, &ports_mask);
+}
+
 int phy_igmp_snooping(unsigned int igmp_snooping_on)
 {
 	return rtl8367_ioctl(RTL8367_IOCTL_IGMP_SNOOPING, 0, &igmp_snooping_on);
@@ -488,6 +519,7 @@ int show_usage(char *cmd)
 	"   75 [0|1]         Set Jumbo Frames accept off/on\n"
 	"   76 [1|0]         Set GreenEthernet on/off\n"
 #if defined(USE_RTL8367_IGMP_SNOOPING)
+	"   77 [MASK]        Set IGMP/MLD static ports mask\n"
 	"   78 [1|0]         Set IGMP/MLD snooping on/off\n"
 	"   79               Reset IGMP/MLD group table and static LUT entries\n\n"
 #endif

@@ -1249,25 +1249,49 @@ static u32 esw_status_link_changed(void)
 	return atomic_cmpxchg(&g_port_link_changed, 1, 0);
 }
 
-static void esw_status_mib_port(u32 port_id, arl_mib_counters_t *mibc)
+static void esw_status_mib_port(u32 port_id, esw_mib_counters_t *mibc)
 {
 	ULARGE_INTEGER rx_goct, tx_goct;
 
 	rx_goct.u.LowPart = esw_get_port_mib_rgoc(port_id, &rx_goct.u.HighPart);
 	tx_goct.u.LowPart = esw_get_port_mib_tgoc(port_id, &tx_goct.u.HighPart);
 
-	mibc->TxGoodOctets         = tx_goct.QuadPart;
-	mibc->TxBadOctets          = esw_get_port_mib_tboc(port_id);
-	mibc->TxGoodFrames         = esw_get_port_mib_tgpc(port_id);
-	mibc->TxBadFrames          = esw_get_port_mib_tbpc(port_id);
-	mibc->TxDropFrames         = esw_get_port_mib_tepc(port_id);
+	mibc->TxGoodOctets	= tx_goct.QuadPart;
+	mibc->RxGoodOctets	= rx_goct.QuadPart;
 
-	mibc->RxGoodOctets         = rx_goct.QuadPart;
-	mibc->RxBadOctets          = esw_get_port_mib_rboc(port_id);
-	mibc->RxGoodFrames         = esw_get_port_mib_rgpc(port_id);
-	mibc->RxBadFrames          = esw_get_port_mib_rbpc(port_id);
-	mibc->RxDropFramesErr      = esw_get_port_mib_repc(port_id);
-	mibc->RxDropFramesFilter   = esw_get_port_mib_rfpc(port_id);
+#if defined (CONFIG_MT7530_GSW)
+	mibc->TxDropFrames	= esw_reg_get(0x4000 + 0x100*port_id);
+	mibc->TxCRCError	= esw_reg_get(0x4004 + 0x100*port_id);
+	mibc->TxUcastFrames	= esw_reg_get(0x4008 + 0x100*port_id);
+	mibc->TxMcastFrames	= esw_reg_get(0x400c + 0x100*port_id);
+	mibc->TxBcastFrames	= esw_reg_get(0x4010 + 0x100*port_id);
+	mibc->TxCollision	= esw_reg_get(0x4014 + 0x100*port_id);
+//	mibc->TxPausedFrames	= esw_reg_get(0x402c + 0x100*port_id);
+
+	mibc->RxDropFrames	= esw_reg_get(0x4060 + 0x100*port_id);
+	mibc->RxFilterFrames	= esw_reg_get(0x4064 + 0x100*port_id);
+	mibc->RxUcastFrames	= esw_reg_get(0x4068 + 0x100*port_id);
+	mibc->RxMcastFrames	= esw_reg_get(0x406c + 0x100*port_id);
+	mibc->RxBcastFrames	= esw_reg_get(0x4070 + 0x100*port_id);
+	mibc->RxAligmentError	= esw_reg_get(0x4074 + 0x100*port_id);
+	mibc->RxCRCError	= esw_reg_get(0x4078 + 0x100*port_id);
+//	mibc->RxUndersizeError	= esw_reg_get(0x407c + 0x100*port_id);
+//	mibc->RxFragmentError	= esw_reg_get(0x4080 + 0x100*port_id);
+//	mibc->RxOversizeError	= esw_reg_get(0x4084 + 0x100*port_id);
+//	mibc->RxJabberError	= esw_reg_get(0x4088 + 0x100*port_id);
+//	mibc->RxPausedFrames	= esw_reg_get(0x408c + 0x100*port_id);
+#else
+	mibc->TxBadOctets	= esw_get_port_mib_tboc(port_id);
+	mibc->TxGoodFrames	= esw_get_port_mib_tgpc(port_id);
+	mibc->TxBadFrames	= esw_get_port_mib_tbpc(port_id);
+	mibc->TxDropFrames	= esw_get_port_mib_tepc(port_id);
+
+	mibc->RxBadOctets	= esw_get_port_mib_rboc(port_id);
+	mibc->RxGoodFrames	= esw_get_port_mib_rgpc(port_id);
+	mibc->RxBadFrames	= esw_get_port_mib_rbpc(port_id);
+	mibc->RxDropFramesErr	= esw_get_port_mib_repc(port_id);
+	mibc->RxDropFramesFilter= esw_get_port_mib_rfpc(port_id);
+#endif
 }
 
 static void esw_status_mib_reset(void)
@@ -1801,7 +1825,7 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 	int ioctl_result = 0;
 	u32 uint_value = 0;
 	u32 uint_result = 0;
-	arl_mib_counters_t port_counters;
+	esw_mib_counters_t port_counters;
 
 	unsigned int uint_param = (req >> MTK_ESW_IOCTL_CMD_LENGTH_BITS);
 	req &= ((1u << MTK_ESW_IOCTL_CMD_LENGTH_BITS)-1);
@@ -1891,31 +1915,31 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 
 	case MTK_ESW_IOCTL_STATUS_CNT_PORT_WAN:
 		esw_status_mib_port(WAN_PORT_MAC, &port_counters);
-		copy_to_user((arl_mib_counters_t __user *)arg, &port_counters, sizeof(arl_mib_counters_t));
+		copy_to_user((esw_mib_counters_t __user *)arg, &port_counters, sizeof(esw_mib_counters_t));
 		break;
 	case MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN1:
 		esw_status_mib_port(LAN_PORT_1, &port_counters);
-		copy_to_user((arl_mib_counters_t __user *)arg, &port_counters, sizeof(arl_mib_counters_t));
+		copy_to_user((esw_mib_counters_t __user *)arg, &port_counters, sizeof(esw_mib_counters_t));
 		break;
 	case MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN2:
 		esw_status_mib_port(LAN_PORT_2, &port_counters);
-		copy_to_user((arl_mib_counters_t __user *)arg, &port_counters, sizeof(arl_mib_counters_t));
+		copy_to_user((esw_mib_counters_t __user *)arg, &port_counters, sizeof(esw_mib_counters_t));
 		break;
 	case MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN3:
 		esw_status_mib_port(LAN_PORT_3, &port_counters);
-		copy_to_user((arl_mib_counters_t __user *)arg, &port_counters, sizeof(arl_mib_counters_t));
+		copy_to_user((esw_mib_counters_t __user *)arg, &port_counters, sizeof(esw_mib_counters_t));
 		break;
 	case MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN4:
 		esw_status_mib_port(LAN_PORT_4, &port_counters);
-		copy_to_user((arl_mib_counters_t __user *)arg, &port_counters, sizeof(arl_mib_counters_t));
+		copy_to_user((esw_mib_counters_t __user *)arg, &port_counters, sizeof(esw_mib_counters_t));
 		break;
 	case MTK_ESW_IOCTL_STATUS_CNT_PORT_CPU_WAN:
 		esw_status_mib_port(WAN_PORT_CPU, &port_counters);
-		copy_to_user((arl_mib_counters_t __user *)arg, &port_counters, sizeof(arl_mib_counters_t));
+		copy_to_user((esw_mib_counters_t __user *)arg, &port_counters, sizeof(esw_mib_counters_t));
 		break;
 	case MTK_ESW_IOCTL_STATUS_CNT_PORT_CPU_LAN:
 		esw_status_mib_port(LAN_PORT_CPU, &port_counters);
-		copy_to_user((arl_mib_counters_t __user *)arg, &port_counters, sizeof(arl_mib_counters_t));
+		copy_to_user((esw_mib_counters_t __user *)arg, &port_counters, sizeof(esw_mib_counters_t));
 		break;
 	case MTK_ESW_IOCTL_STATUS_CNT_RESET_ALL:
 		esw_status_mib_reset();

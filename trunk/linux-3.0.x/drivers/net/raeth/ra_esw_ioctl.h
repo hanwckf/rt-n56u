@@ -192,27 +192,5 @@
 #define SWAPI_LED_LINK_ACT			(7)
 #define SWAPI_LED_OFF				(11)
 
-/////////////////////////////////////////////////
-// MIB_COUNTERS
-/////////////////////////////////////////////////
-
-typedef struct arl_mib_counters_s
-{
-    uint64_t TxGoodOctets;
-    uint32_t TxGoodFrames;
-    uint32_t TxBadOctets;
-    uint32_t TxBadFrames;
-    uint32_t TxDropFrames;
-
-    uint64_t RxGoodOctets;
-    uint32_t RxGoodFrames;
-    uint32_t RxBadOctets;
-    uint32_t RxBadFrames;
-
-    uint32_t RxDropFramesFilter;
-    uint32_t RxDropFramesErr;
-
-} arl_mib_counters_t;
-
 #endif
 

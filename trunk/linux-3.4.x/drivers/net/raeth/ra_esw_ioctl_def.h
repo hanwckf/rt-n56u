@@ -162,5 +162,82 @@ typedef struct
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+#if defined (CONFIG_MT7530_GSW)
+typedef struct esw_mib_counters_s
+{
+	uint64_t TxGoodOctets;
+	uint32_t TxUcastFrames;
+	uint32_t TxMcastFrames;
+	uint32_t TxBcastFrames;
+	uint32_t TxDropFrames;
+	uint32_t TxCollision;
+	uint32_t TxCRCError;
+	uint64_t RxGoodOctets;
+	uint32_t RxUcastFrames;
+	uint32_t RxMcastFrames;
+	uint32_t RxBcastFrames;
+	uint32_t RxDropFrames;
+	uint32_t RxFilterFrames;
+	uint32_t RxCRCError;
+	uint32_t RxAligmentError;
+} esw_mib_counters_t;
+#else
+typedef struct esw_mib_counters_s
+{
+	uint64_t TxGoodOctets;
+	uint32_t TxGoodFrames;
+	uint32_t TxBadOctets;
+	uint32_t TxBadFrames;
+	uint32_t TxDropFrames;
+	uint64_t RxGoodOctets;
+	uint32_t RxGoodFrames;
+	uint32_t RxBadOctets;
+	uint32_t RxBadFrames;
+	uint32_t RxDropFramesFilter;
+	uint32_t RxDropFramesErr;
+} esw_mib_counters_t;
+#endif
+
+/*
+	MT7530 MIB (docs needed)
+
+	"Tx Drop Packet      :" 0x4000
+	"Tx CRC Error        :" 0x4004
+	"Tx Unicast Packet   :" 0x4008
+	"Tx Multicast Packet :" 0x400C
+	"Tx Broadcast Packet :" 0x4010
+	"Tx Collision Event  :" 0x4014
+	"Tx Pause Packet     :" 0x402C
+	"Tx ???              :" 0x4030
+	"Tx ???              :" 0x4034
+	"Tx ???              :" 0x4038
+	"Tx ???              :" 0x403C
+	"Tx ???              :" 0x4040
+	"Tx ???              :" 0x4044
+	"Tx Good Octets Lo   :" 0x4048
+	"Tx Good Octets Hi   :" 0x404C
+
+	"Rx Drop Packet      :" 0x4060
+	"Rx Filtering Packet :" 0x4064
+	"Rx Unicast Packet   :" 0x4068
+	"Rx Multicast Packet :" 0x406C
+	"Rx Broadcast Packet :" 0x4070
+	"Rx Alignment Error  :" 0x4074
+	"Rx CRC Error        :" 0x4078
+	"Rx Undersize Error  :" 0x407C
+	"Rx Fragment Error   :" 0x4080
+	"Rx Oversize Error   :" 0x4084
+	"Rx Jabber Error     :" 0x4088
+	"Rx Pause Packet     :" 0x408C
+	"Rx ???              :" 0x4090
+	"Rx ???              :" 0x4094
+	"Rx ???              :" 0x4098
+	"Rx ???              :" 0x409C
+	"Rx ???              :" 0x40A0
+	"Rx ???              :" 0x40A4
+	"Rx Good Octets Lo   :" 0x40A8
+	"Rx Good Octets Hi   :" 0x40AC
+*/
+
 #endif
 

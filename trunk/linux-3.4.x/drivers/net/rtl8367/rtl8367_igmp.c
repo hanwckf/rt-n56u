@@ -88,6 +88,7 @@ static spinlock_t g_mtb_lock;
 static struct mcast_table g_mtb;
 static struct timer_list g_membership_expired_timer;
 static u32 g_igmp_snooping_enabled = 0;
+static u32 g_igmp_static_ports = 0;
 #if defined(CONFIG_RTL8367_API_8370)
 static u8 g_l2t_cache[RTK_MAX_NUM_OF_LEARN_LIMIT];
 #endif
@@ -145,8 +146,8 @@ asic_update_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_fid, u32 por
 {
 	rtk_api_ret_t retVal;
 	u16 portmask_old;
-	u16 port_cpu_msk = (1u << LAN_PORT_CPU);
 	u16 port_dst_msk = (1u << port_id);
+	u16 uports_static = (1u << LAN_PORT_CPU) | (u16)g_igmp_static_ports;
 #if defined(CONFIG_RTL8367_API_8370)
 	rtl8370_luttb l2t;
 
@@ -169,13 +170,13 @@ asic_update_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_fid, u32 por
 
 	if (!is_leave) {
 		l2t.static_bit = 1;
-		l2t.portmask |= (port_cpu_msk | port_dst_msk);
+		l2t.portmask |= (uports_static | port_dst_msk);
 	} else {
 		l2t.static_bit = 0;
-		l2t.portmask &= ~(port_cpu_msk | port_dst_msk);
+		l2t.portmask &= ~(uports_static | port_dst_msk);
 		if (l2t.portmask) {
 			l2t.static_bit = 1;
-			l2t.portmask |= port_cpu_msk;
+			l2t.portmask |= uports_static;
 		}
 	}
 
@@ -209,13 +210,13 @@ asic_update_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_fid, u32 por
 
 	if (!is_leave) {
 		l2t.nosalearn = 1;
-		l2t.mbr |= (port_cpu_msk | port_dst_msk);
+		l2t.mbr |= (uports_static | port_dst_msk);
 	} else {
 		l2t.nosalearn = 0;
-		l2t.mbr &= ~(port_cpu_msk | port_dst_msk);
+		l2t.mbr &= ~(uports_static | port_dst_msk);
 		if (l2t.mbr) {
 			l2t.nosalearn = 1;
-			l2t.mbr |= port_cpu_msk;
+			l2t.mbr |= uports_static;
 		}
 	}
 
@@ -605,6 +606,12 @@ igmp_uninit(void)
 	spin_unlock(&g_mtb_lock);
 
 	flush_scheduled_work();
+}
+
+void
+change_igmp_static_ports(u32 ports_mask)
+{
+	g_igmp_static_ports = get_ports_mask_from_user(ports_mask & 0xFF);
 }
 
 void

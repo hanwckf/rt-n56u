@@ -21,7 +21,7 @@
 
 //#define RTL8367_DBG 1
 
-#define RTL8367_VERSION				"v2.5"
+#define RTL8367_VERSION				"v2.6"
 
 #define RTL8367_DEVNAME				"rtl8367"
 
@@ -116,11 +116,13 @@
 
 u32 get_phy_ports_mask_lan(u32 include_cpu);
 u32 get_phy_ports_mask_wan(u32 include_cpu);
+u32 get_ports_mask_from_user(u32 user_port_mask);
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
 void igmp_init(void);
 void igmp_uninit(void);
 void dump_mcast_table(void);
+void change_igmp_static_ports(u32 ports_mask);
 void change_igmp_snooping_control(u32 igmp_snooping_enabled);
 void reset_igmp_snooping_table(void);
 #endif

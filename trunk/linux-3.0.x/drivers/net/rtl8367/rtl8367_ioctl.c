@@ -302,6 +302,10 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		break;
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
+	case RTL8367_IOCTL_IGMP_STATIC_PORTS:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		change_igmp_static_ports(uint_value);
+		break;
 	case RTL8367_IOCTL_IGMP_SNOOPING:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
 		change_igmp_snooping_control(uint_value);

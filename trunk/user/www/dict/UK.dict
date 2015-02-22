@@ -419,6 +419,7 @@ IPTVIGMP=Форсування версії протоколу IGMP:
 Switch_desc=Налаштування фізичних WAN та LAN Ethernet портів вбудованого світча.
 SwitchBase=Основні параметри
 SwitchJumbo=Пропуск великих фреймів між портами:
+SwitchUport=IGMP-роутер вищого рівня підключений до порту:
 SwitchIgmp=Увімкнути IGMP/MLD Snooping?
 SwitchFlow=Керування потоком:
 SwitchLink=Швидкість і дуплекс:

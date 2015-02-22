@@ -69,31 +69,12 @@ void mt7530_gsw_init(void)
 	regValue &= ~(1<<30);
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a40, regValue);
 
-	regValue = 0x855;
-	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a78, regValue);
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a78, 0x855);
 
-#if 0
-	/* todo, more documentation is needed */
-
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0)
 	/* set MT7530 delay setting for 10/1000M */
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7b00, 0x102);
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7b04, 0x14);
-
-	/* disable EEE */
-	for (i = 0; i <= 4; i++) {
-		mii_mgr_write(i, 13, 0x7);
-		mii_mgr_write(i, 14, 0x3C);
-		mii_mgr_write(i, 13, 0x4007);
-		mii_mgr_write(i, 14, 0x0);
-	}
-
-	/* disable EEE 10Base-T */
-	for (i = 0; i <= 4; i++) {
-		mii_mgr_write(i, 13, 0x1f);
-		mii_mgr_write(i, 14, 0x027b);
-		mii_mgr_write(i, 13, 0x401f);
-		mii_mgr_write(i, 14, 0x1177);
-	}
 #endif
 
 	/* enable switch INTR */

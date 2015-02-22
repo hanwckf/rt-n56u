@@ -10,7 +10,7 @@
 
 #include "ra_ethreg.h"
 
-#define RAETH_VERSION		"v3.1.6"
+#define RAETH_VERSION		"v3.1.7"
 #define RAETH_DEV_NAME		"raeth"
 
 #define DEV_NAME		"eth2"

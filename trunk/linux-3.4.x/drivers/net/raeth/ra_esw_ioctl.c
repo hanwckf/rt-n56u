@@ -59,6 +59,7 @@ static u32 g_led_phy_mode                        = SWAPI_LED_LINK_ACT;
 static u32 g_jumbo_frames_enabled                = ESW_DEFAULT_JUMBO_FRAMES;
 static u32 g_green_ethernet_enabled              = ESW_DEFAULT_GREEN_ETHERNET;
 static u32 g_igmp_snooping_enabled               = ESW_DEFAULT_IGMP_SNOOPING;
+static u32 g_igmp_static_ports                   = 0;
 
 static u32 g_storm_rate_limit                    = ESW_DEFAULT_STORM_RATE;
 
@@ -260,17 +261,21 @@ static void esw_igmp_ports_config(u32 wan_bridge_mode)
 	mask_no_learn = 0;
 
 	if (wan_bridge_mode != SWAPI_WAN_BRIDGE_DISABLE_WAN) {
-		mask_no_learn = get_ports_mask_wan(1, 0);
+		mask_no_learn = get_ports_mask_wan(0, 0);
 		for (i = 0; i <= ESW_MAC_ID_MAX; i++) {
 			if ((mask_no_learn >> i) & 0x1)
 				esw_reg_set(REG_ESW_PORT_PIC_P0 + 0x100*i, 0x8000);
 		}
-	} else {
-		if (!g_igmp_snooping_enabled)
-			mask_no_learn = get_ports_mask_lan(1);
 	}
 
+	/* make CPU ports always static */
+	mask_no_learn |= (1u << WAN_PORT_CPU);
 	mask_no_learn |= (1u << LAN_PORT_CPU);
+
+	if (g_igmp_snooping_enabled)
+		mask_no_learn |= g_igmp_static_ports;
+	else
+		mask_no_learn |= get_ports_mask_lan(0);
 
 	reg_isc = esw_reg_get(REG_ESW_ISC);
 	reg_isc &= ~0xFF0000FF;
@@ -280,40 +285,42 @@ static void esw_igmp_ports_config(u32 wan_bridge_mode)
 
 static void esw_igmp_mld_snooping(u32 enable_igmp, u32 enable_mld)
 {
-	u32 i, mask_lan, reg_pic_phy, reg_pic_cpu;
+	u32 i, mask_lan, dst_igmp, src_join, reg_pic, reg_pic_lan;
+	u32 mask_static = g_igmp_static_ports;
 
-	reg_pic_phy = 0x00008000;		// Robustness = 2
-	reg_pic_cpu = 0x00008000;		// Robustness = 2
+	dst_igmp = 0;
+	src_join = 0;
+	reg_pic = (2u << 14);			// Robustness = 2
 
 	if (enable_mld) {
-		reg_pic_cpu |= (1u << 9);	// IPM_33
+		dst_igmp |= (1u << 9);		// IPM_33
 		
-		reg_pic_phy |= (1u << 13);	// MLD_HW_LEAVE
-		reg_pic_phy |= (1u << 7);	// MLD2_JOIN_EN
-		reg_pic_phy |= (1u << 5);	// MLD_JOIN_EN
-		
-		if (g_wan_bridge_mode == SWAPI_WAN_BRIDGE_DISABLE_WAN)
-			reg_pic_phy |= (1u << 9);	// IPM_33
+		src_join |= (1u << 7);		// MLD2_JOIN_EN
+		src_join |= (1u << 5);		// MLD_JOIN_EN
 	}
 
 	if (enable_igmp) {
-		reg_pic_cpu |= (1u << 8);	// IPM_01
+		dst_igmp |= (1u << 10);		// IPM_224
+		dst_igmp |= (1u << 8);		// IPM_01
 		
-		reg_pic_phy |= (1u << 12);	// IGMP_HW_LEAVE
-		reg_pic_phy |= (1u << 6);	// IGMP3_JOIN_EN
-		reg_pic_phy |= (1u << 4);	// IGMP_JOIN_EN
-		
-		if (g_wan_bridge_mode == SWAPI_WAN_BRIDGE_DISABLE_WAN)
-			reg_pic_phy |= (1u << 8);	// IPM_01
+		src_join |= (1u << 6);		// IGMP3_JOIN_EN
+		src_join |= (1u << 4);		// IGMP_JOIN_EN
 	}
 
 	mask_lan = get_ports_mask_lan(0);
 	for (i = 0; i <= ESW_MAC_ID_MAX; i++) {
-		if ((mask_lan >> i) & 0x1)
-			esw_reg_set(REG_ESW_PORT_PIC_P0 + 0x100*i, reg_pic_phy);
+		if ((mask_lan >> i) & 0x1) {
+			reg_pic_lan = reg_pic;
+			if ((mask_static >> i) & 0x1)
+				reg_pic_lan |= dst_igmp;
+			else
+				reg_pic_lan |= src_join;
+			esw_reg_set(REG_ESW_PORT_PIC_P0 + 0x100*i, reg_pic_lan);
+		}
 	}
 
-	esw_reg_set(REG_ESW_PORT_PIC_P0 + 0x100*LAN_PORT_CPU, reg_pic_cpu);
+	/* make CPU port always static */
+	esw_reg_set(REG_ESW_PORT_PIC_P0 + 0x100*LAN_PORT_CPU, reg_pic | dst_igmp);
 }
 
 static int esw_mac_table_clear(void)
@@ -948,6 +955,8 @@ static void esw_vlan_bridge_isolate(u32 wan_bridge_mode, u32 wan_bwan_isolation,
 	if (bridge_changed) {
 		esw_igmp_ports_config(wan_bridge_mode);
 		esw_show_bridge_partitions(wan_bridge_mode);
+		if (g_igmp_snooping_enabled)
+			esw_igmp_mld_snooping(1, 1);
 	}
 
 	esw_mac_table_clear();
@@ -955,6 +964,13 @@ static void esw_vlan_bridge_isolate(u32 wan_bridge_mode, u32 wan_bwan_isolation,
     defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5)
 	mt7620_esw_mac_table_clear();
 #endif
+}
+
+static void esw_cpu_ports_down(void)
+{
+	/* force MAC P5/P6 link down */
+	esw_reg_set(0x3500, 0x8000);
+	esw_reg_set(0x3600, 0x8000);
 }
 
 static void esw_soft_reset(void)
@@ -972,9 +988,8 @@ static void esw_soft_reset(void)
 	/* disable switch interrupts */
 	esw_irq_uninit();
 
-	/* force MAC P5/P6 link down */
-	esw_reg_set(0x3500, 0x8000);
-	esw_reg_set(0x3600, 0x8000);
+	/* disable CPU ports link */
+	esw_cpu_ports_down();
 
 	/* reset MT7530 */
 	esw_reg_set(0x7000, 0x3);
@@ -1072,11 +1087,7 @@ static void esw_storm_control(u32 port_id, int set_bcast, int set_mcast, int set
 		reg_bsr |= (rate_unit_10);		// STORM_10M
 	}
 
-#if !defined (CONFIG_MT7530_GSW)
 	esw_reg_set(REG_ESW_PORT_BSR_P0 + 0x100*port_id, reg_bsr);
-#else
-	// todo (mt7530 documentation needed)
-#endif
 }
 
 static void esw_jumbo_control(u32 jumbo_frames_enabled)
@@ -1659,7 +1670,7 @@ static void change_jumbo_frames_accept(u32 jumbo_frames_enabled)
 	}
 }
 
-void change_green_ethernet_mode(u32 green_ethernet_enabled)
+static void change_green_ethernet_mode(u32 green_ethernet_enabled)
 {
 	if (green_ethernet_enabled) green_ethernet_enabled = 1;
 
@@ -1672,6 +1683,21 @@ void change_green_ethernet_mode(u32 green_ethernet_enabled)
 	}
 }
 
+static void change_igmp_static_ports(u32 ports_mask)
+{
+	ports_mask = get_ports_mask_from_user(ports_mask & 0xFF, 0);
+
+	if (g_igmp_static_ports != ports_mask)
+	{
+		g_igmp_static_ports = ports_mask;
+		
+		if (g_igmp_snooping_enabled) {
+			esw_igmp_ports_config(g_wan_bridge_mode);
+			esw_igmp_mld_snooping(1, 1);
+		}
+	}
+}
+
 static void change_igmp_snooping_control(u32 igmp_snooping_enabled)
 {
 	if (igmp_snooping_enabled) igmp_snooping_enabled = 1;
@@ -1681,6 +1707,7 @@ static void change_igmp_snooping_control(u32 igmp_snooping_enabled)
 		g_igmp_snooping_enabled = igmp_snooping_enabled;
 		printk("%s - IGMP/MLD snooping: %s\n", MTK_ESW_DEVNAME, (igmp_snooping_enabled) ? "on" : "off");
 		
+		esw_igmp_ports_config(g_wan_bridge_mode);
 		esw_igmp_mld_snooping(igmp_snooping_enabled, igmp_snooping_enabled);
 	}
 }
@@ -2006,6 +2033,11 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 		change_green_ethernet_mode(uint_value);
 		break;
 
+	case MTK_ESW_IOCTL_IGMP_STATIC_PORTS:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		change_igmp_static_ports(uint_value);
+		break;
+
 	case MTK_ESW_IOCTL_IGMP_SNOOPING:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
 		change_igmp_snooping_control(uint_value);
@@ -2118,6 +2150,7 @@ int esw_ioctl_init(void)
 	mii_mgr_init();
 #endif
 	power_down_all_phy();
+	esw_cpu_ports_down();
 
 	return 0;
 }

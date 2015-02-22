@@ -1,4 +1,3 @@
-
 utils_dir_y =
 utils_dir_  =
 
@@ -26,4 +25,7 @@ all romfs:
 	for i in $(utils_dir_y) ; do make -C $$i $@ || exit $?; done
 
 clean:
-	for i in $(utils_dir_y) $(utils_dir_) ; do make -C $$i clean ; done
+	for i in `ls -d *` ; do \
+		[ ! -d $$i ] || \
+		$(MAKE) -C $$i clean ; \
+	done

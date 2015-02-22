@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <linux/if.h>
 
-#include "ra_ioctl.h"
+#include <ra_ioctl.h>
 
 #define RT_SWITCH_HELP		1
 #define RT_TABLE_MANIPULATE	1
@@ -49,6 +49,7 @@ void switch_init(void)
 void switch_fini(void)
 {
 	close(esw_fd);
+	esw_fd = -1;
 }
 
 void usage(char *cmd)
@@ -1138,7 +1139,7 @@ void dip_dump(void)
 	char tmpstr[16];
 
 	reg_write(REG_ESW_WT_MAC_ATC, 0x8104);//dip search command
-	printf("hash   port(0:6)   rsp_cnt  flag  timer    dip-address       ATRD\n");
+	printf("hash   port(0:6)   rsp_cnt  flag  timer    dip-address      ATRD\n");
 	for (i = 0; i < 0x800; i++) {
 		while(1) {
 			reg_read(REG_ESW_WT_MAC_ATC, &value);
@@ -1158,15 +1159,15 @@ void dip_dump(void)
 				printf("%c", (j & 0x40)? '1':'-');
 
 				reg_read(REG_ESW_TABLE_TSRA2, &mac2);
-				
-				printf("     0x%4x", (mac2 & 0xffff)); //RESP_CNT
-				printf("  0x%2x", ((mac2 >> 16)& 0xff));//RESP_FLAG
-				printf("  %3d", ((mac2 >> 24)& 0xff));//RESP_TIMER
+				printf("     0x%04x", (mac2 & 0xffff)); //RESP_CNT
+				printf("  0x%02x", ((mac2 >> 16)& 0xff));//RESP_FLAG
+				printf("  %5d", ((mac2 >> 24)& 0xff));//RESP_TIMER
 				//printf(" %4d", (value2 >> 24) & 0xff); //r_age_field
+
 				reg_read(REG_ESW_TABLE_TSRA1, &mac);
 				ip_to_str(tmpstr, mac);
-				printf("     %s", tmpstr);
-				printf("  0x%8x\n", value2);//ATRD
+				printf("    %-15s", tmpstr);
+				printf("  0x%08x\n", value2);//ATRD
 				//printf("%04x", ((mac2 >> 16) & 0xffff));
 				//printf("     %c\n", (((value2 >> 20) & 0x03)== 0x03)? 'y':'-');
 				if (value & 0x4000) {
@@ -1294,13 +1295,12 @@ void sip_dump(void)
 				reg_read(REG_ESW_TABLE_TSRA2, &mac2);
 				
 				ip_to_str(tmpstr, mac2);
-				printf("   %s", tmpstr);
-
-	
+				printf("   %-15s", tmpstr);
 				//printf(" %4d", (value2 >> 24) & 0xff); //r_age_field
+
 				reg_read(REG_ESW_TABLE_TSRA1, &mac);
 				ip_to_str(tmpstr, mac);
-				printf("    %s", tmpstr);
+				printf("    %-15s", tmpstr);
 				printf("      0x%x\n", value2);
 				//printf("%04x", ((mac2 >> 16) & 0xffff));
 				//printf("     %c\n", (((value2 >> 20) & 0x03)== 0x03)? 'y':'-');
@@ -1670,7 +1670,7 @@ void vlan_dump(int max_vid)
 	if (max_vid > 4095)
 		max_vid = 4095;
 
-	printf("  vid  fid  portmap    s-tag\n");
+	printf("  vid  portmap   s-tag  ivl  fid\n");
 	for (i = 1; i <= max_vid; i++) {
 		value = (0x80000000 + i);  //r_vid_cmd
 		reg_write(REG_ESW_VLAN_VTCR, value);
@@ -1682,8 +1682,7 @@ void vlan_dump(int max_vid)
 		
 		if ((value & 0x01) != 0){
 			printf(" %4d  ", i);
-			printf(" %2d ",((value & 0xe)>>1));
-			printf(" %c", (value & 0x00010000)? '1':'-');
+			printf("%c", (value & 0x00010000)? '1':'-');
 			printf("%c", (value & 0x00020000)? '1':'-');
 			printf("%c", (value & 0x00040000)? '1':'-');
 			printf("%c", (value & 0x00080000)? '1':'-');
@@ -1691,11 +1690,9 @@ void vlan_dump(int max_vid)
 			printf("%c", (value & 0x00200000)? '1':'-');
 			printf("%c", (value & 0x00400000)? '1':'-');
 			printf("%c", (value & 0x00800000)? '1':'-');
-			printf("    %4d\n", ((value & 0xfff0)>>4)) ;
-		} else{
-			printf(" %4d  ", i);
-			printf(" %2d ",((value & 0xe)>>1));
-			printf(" invalid\n");
+			printf("  %5d", ((value & 0xfff0)>>4)) ;
+			printf("  %3d",  (value>>30));
+			printf("  %3d\n", ((value&0xe)>>1));
 		}
 	}
 }

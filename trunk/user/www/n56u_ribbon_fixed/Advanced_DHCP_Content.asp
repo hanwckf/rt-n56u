@@ -38,6 +38,14 @@ var ipmonitor = [<% get_static_client(); %>];
 var wireless = [<% wl_auth_list(); %>];
 var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
+var mdhcp_ifield = 3;
+if(m_dhcp.length > 0){
+	var m_dhcp_ifield = m_dhcp[0].length;
+	for (var i = 0; i < m_dhcp.length; i++) {
+		m_dhcp[i][mdhcp_ifield] = i;
+	}
+}
+
 var clients_info = getclients(1,0);
 
 var isMenuopen = 0;
@@ -153,6 +161,42 @@ function validForm(){
 	return true;
 }
 
+function sortbyIP(){
+	m_dhcp.sort(function(a,b){
+		var aa = a[1].split(".");
+		var bb = b[1].split(".");
+		var resulta = aa[0]*0x1000000 + aa[1]*0x10000 + aa[2]*0x100 + aa[3]*1;
+		var resultb = bb[0]*0x1000000 + bb[1]*0x10000 + bb[2]*0x100 + bb[3]*1;
+		return resulta-resultb;
+	});
+	showMDHCPList();
+}
+
+function sortbyMAC(){
+	m_dhcp.sort(function(a,b){
+		return parseInt(a[0])-parseInt(b[0]);
+	});
+	showMDHCPList();
+}
+
+function sortbyName(){
+	m_dhcp.sort(function(a,b){
+		var aa = a[2].toLowerCase();
+		var bb = b[2].toLowerCase();
+		if (aa < bb) return -1;
+		if (aa > bb) return 1;
+		return 0;
+	});
+	showMDHCPList();
+}
+
+function sortbyId(){
+	m_dhcp.sort(function(a,b){
+		return a[mdhcp_ifield] - b[mdhcp_ifield];
+	});
+	showMDHCPList();
+}
+
 function setClientMAC(num){
 	document.form.dhcp_staticmac_x_0.value = clients_info[num][2];
 	document.form.dhcp_staticip_x_0.value = clients_info[num][1];
@@ -266,7 +310,7 @@ function showMDHCPList(){
 		code +='<td width="25%">' + m_dhcp[i][0] + '</td>';
 		code +='<td width="25%">' + m_dhcp[i][1] + '</td>';
 		code +='<td width="45%">' + m_dhcp[i][2] + '</td>';
-		code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="ManualDHCPList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
+		code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="ManualDHCPList_s" value="' + m_dhcp[i][mdhcp_ifield] + '" onClick="changeBgColor(this,' + i + ');" id="check' + m_dhcp[i][mdhcp_ifield] + '"></td>';
 		code +='</tr>';
 		}
 		
@@ -508,10 +552,18 @@ function changeBgColor(obj, num){
                                             </td>
                                         </tr>
                                         <tr id="row_static_caption" style="display:none">
-                                            <th width="25%"><#LANHostConfig_ManualMac_itemname#></th>
-                                            <th width="25%"><#LANHostConfig_ManualIP_itemname#></th>
-                                            <th width="45%"><#LANHostConfig_ManualName_itemname#></th>
-                                            <th width="5%">&nbsp;</th>
+                                            <th width="25%">
+                                                <#LANHostConfig_ManualMac_itemname#> <a href="javascript:sortbyMAC();" style="outline:0;"><i class="icon-circle-arrow-down"></i></a>
+                                            </th>
+                                            <th width="25%">
+                                                <#LANHostConfig_ManualIP_itemname#> <a href="javascript:sortbyIP();" style="outline:0;"><i class="icon-circle-arrow-down"></i></a>
+                                            </th>
+                                            <th width="45%">
+                                                <#LANHostConfig_ManualName_itemname#> <a href="javascript:sortbyName();" style="outline:0;"><i class="icon-circle-arrow-down"></i></a>
+                                            </th>
+                                            <th width="5%">
+                                                <center><a href="javascript:sortbyId();" style="outline:0;"><i class="icon-th-list"></i></a></center>
+                                            </th>
                                         </tr>
                                         <tr id="row_static_header" style="display:none">
                                             <td width="25%">

@@ -2398,8 +2398,16 @@ static void PpeSetSwitchVlanChk(int Ebl)
 #if defined (CONFIG_RAETH_ESW) || (defined (CONFIG_RAETH_HAS_PORT5) && defined (CONFIG_RAETH_HAS_PORT4))
 	uint32_t reg_p6, reg_p7;
 
-	reg_p6 = (RegRead(RALINK_ETH_SW_BASE + 0x2604)) & ~0xff0003;
-	reg_p7 = (RegRead(RALINK_ETH_SW_BASE + 0x2704)) & ~0xff0003;
+	reg_p6 = RegRead(RALINK_ETH_SW_BASE + 0x2604);
+
+	/* check P6 in Port Matrix Mode (dumb switch) */
+	if ((reg_p6 & 0x03) == 0x0)
+		return;
+
+	reg_p7 = RegRead(RALINK_ETH_SW_BASE + 0x2704);
+
+	reg_p6 &= ~0xff0003;
+	reg_p7 &= ~0xff0003;
 
 	/* port6&7: fall back mode / same port matrix group */
 	if (Ebl) {

@@ -63,6 +63,8 @@
 #define cpu_has_64bit_addresses		0
 
 /* CPU cache info */
+#define cpu_has_vtag_icache		0
+#define cpu_has_ic_fills_f_dc		0
 #define cpu_has_dc_aliases		0
 #define cpu_dcache_line_size()		32
 #define cpu_icache_line_size()		32

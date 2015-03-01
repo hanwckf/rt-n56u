@@ -63,7 +63,7 @@ struct mcast_group_entry
 	unsigned long			last_time;
 	u16				valid:1;
 	u16				efid:3;
-	u16				fid:12;
+	u16				cvid_fid:12;
 	u8				maddr[ETHER_ADDR_LEN];
 };
 
@@ -80,7 +80,7 @@ struct mcast_work
 	u8 mac_dst[ETHER_ADDR_LEN];
 	u16 is_leave:1;
 	u16 port_efid:3;
-	u16 port_fid:12;
+	u16 port_cvid_fid:12;
 };
 
 static spinlock_t g_lut_lock;
@@ -90,11 +90,11 @@ static struct timer_list g_membership_expired_timer;
 static u32 g_igmp_snooping_enabled = 0;
 static u32 g_igmp_static_ports = 0;
 #if defined(CONFIG_RTL8367_API_8370)
-static u8 g_l2t_cache[RTK_MAX_NUM_OF_LEARN_LIMIT];
+static DECLARE_BITMAP(g_l2t_cache, RTK_MAX_NUM_OF_LEARN_LIMIT);
 #endif
 
 static int
-asic_find_port_with_ucast_mac(const u8 *ucast_mac, u16 port_efid, u16 port_fid)
+asic_find_port_with_ucast_mac(const u8 *ucast_mac, u16 port_efid, u16 port_cvid_fid)
 {
 #if defined(CONFIG_RTL8367_API_8370)
 	rtl8370_luttb l2t;
@@ -102,7 +102,7 @@ asic_find_port_with_ucast_mac(const u8 *ucast_mac, u16 port_efid, u16 port_fid)
 	memset(&l2t, 0, sizeof(l2t));
 	memcpy(l2t.mac.octet, ucast_mac, ETHER_ADDR_LEN);
 	l2t.efid = port_efid;
-	l2t.fid = port_fid;
+	l2t.fid = port_cvid_fid;	// svl, mean fid
 	if (rtl8370_getAsicL2LookupTb(LUTREADMETHOD_MAC, &l2t) != RT_ERR_OK)
 		return -1;
 #else
@@ -111,38 +111,16 @@ asic_find_port_with_ucast_mac(const u8 *ucast_mac, u16 port_efid, u16 port_fid)
 	memset(&l2t, 0, sizeof(l2t));
 	memcpy(l2t.mac.octet, ucast_mac, ETHER_ADDR_LEN);
 	l2t.efid = port_efid;
-	l2t.fid = port_fid;
-	l2t.cvid_fid = port_fid; // ivl = 0, mean fid
+	l2t.ivl_svl = 1;
+	l2t.cvid_fid = port_cvid_fid;	// ivl, mean cvid
 	if (rtl8367b_getAsicL2LookupTb(LUTREADMETHOD_MAC, &l2t) != RT_ERR_OK)
 		return -1;
 #endif
 	return (int)l2t.spa;
 }
 
-static void
-asic_delete_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_fid)
-{
-#if defined(CONFIG_RTL8367_API_8370)
-	rtl8370_luttb l2t;
-
-	memset(&l2t, 0, sizeof(l2t));
-	memcpy(l2t.mac.octet, mcast_mac, ETHER_ADDR_LEN);
-	l2t.efid = port_efid;
-	l2t.fid = port_fid;
-	rtl8370_setAsicL2LookupTb(&l2t);
-#else
-	rtl8367b_luttb l2t;
-
-	memset(&l2t, 0, sizeof(l2t));
-	memcpy(l2t.mac.octet, mcast_mac, ETHER_ADDR_LEN);
-	l2t.efid = port_efid;
-	l2t.cvid_fid = port_fid; // ivl = 0, mean fid
-	rtl8367b_setAsicL2LookupTb(&l2t);
-#endif
-}
-
 static rtk_api_ret_t
-asic_update_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_fid, u32 port_id, int is_leave)
+asic_update_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_cvid_fid, u32 port_id, int is_leave)
 {
 	rtk_api_ret_t retVal;
 	u16 portmask_old;
@@ -154,29 +132,31 @@ asic_update_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_fid, u32 por
 	memset(&l2t, 0, sizeof(l2t));
 	memcpy(l2t.mac.octet, mcast_mac, ETHER_ADDR_LEN);
 	l2t.efid = port_efid;
-	l2t.fid = port_fid;
+	l2t.fid = port_cvid_fid;	// svl, mean fid
 	retVal = rtl8370_getAsicL2LookupTb(LUTREADMETHOD_MAC, &l2t);
 	if (retVal == RT_ERR_OK) {
-		if (l2t.address < RTK_MAX_NUM_OF_LEARN_LIMIT)
-			g_l2t_cache[l2t.address] = (l2t.portmask) ? 1 : 0;
+		if (l2t.address < RTK_MAX_NUM_OF_LEARN_LIMIT) {
+			if (l2t.portmask)
+				set_bit(l2t.address, g_l2t_cache);
+			else
+				clear_bit(l2t.address, g_l2t_cache);
+		}
 	} else
-		l2t.portmask = 0; // entry not exist, reset mask to 0
-
-	l2t.efid = port_efid;
-	l2t.fid = port_fid;
-	l2t.ipmul = 0;
+		l2t.portmask = 0;	// entry not exist, reset mask to 0
 
 	portmask_old = l2t.portmask;
 
+	l2t.ipmul = 0;
+	l2t.static_bit = 1;
+	l2t.portmask |= uports_static;
+
 	if (!is_leave) {
-		l2t.static_bit = 1;
-		l2t.portmask |= (uports_static | port_dst_msk);
+		l2t.portmask |= port_dst_msk;
 	} else {
-		l2t.static_bit = 0;
-		l2t.portmask &= ~(uports_static | port_dst_msk);
-		if (l2t.portmask) {
-			l2t.static_bit = 1;
-			l2t.portmask |= uports_static;
+		l2t.portmask &= ~port_dst_msk;
+		if (!(l2t.portmask & ~uports_static)) {
+			l2t.static_bit = 0;
+			l2t.portmask = 0;
 		}
 	}
 
@@ -185,8 +165,12 @@ asic_update_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_fid, u32 por
 
 	retVal = rtl8370_setAsicL2LookupTb(&l2t);
 	if (retVal == RT_ERR_OK) {
-		if (l2t.address < RTK_MAX_NUM_OF_LEARN_LIMIT)
-			g_l2t_cache[l2t.address] = (l2t.portmask) ? 1 : 0;
+		if (l2t.address < RTK_MAX_NUM_OF_LEARN_LIMIT) {
+			if (l2t.portmask)
+				set_bit(l2t.address, g_l2t_cache);
+			else
+				clear_bit(l2t.address, g_l2t_cache);
+		}
 	}
 
 	return retVal;
@@ -196,27 +180,25 @@ asic_update_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_fid, u32 por
 	memset(&l2t, 0, sizeof(l2t));
 	memcpy(l2t.mac.octet, mcast_mac, ETHER_ADDR_LEN);
 	l2t.efid = port_efid;
-	l2t.cvid_fid  = port_fid; // ivl = 0, mean fid
+	l2t.ivl_svl = 1;
+	l2t.cvid_fid = port_cvid_fid;	// ivl, mean cvid
 	retVal = rtl8367b_getAsicL2LookupTb(LUTREADMETHOD_MAC, &l2t);
 	if (retVal != RT_ERR_OK)
 		l2t.mbr = 0; // entry not exist, reset mask to 0
 
-	l2t.efid = port_efid;
-	l2t.ivl_svl = 0;
-	l2t.cvid_fid = port_fid;
-	l2t.l3lookup = 0;
-
 	portmask_old = l2t.mbr;
 
+	l2t.l3lookup = 0;
+	l2t.nosalearn = 1;
+	l2t.mbr |= uports_static;
+
 	if (!is_leave) {
-		l2t.nosalearn = 1;
-		l2t.mbr |= (uports_static | port_dst_msk);
+		l2t.mbr |= port_dst_msk;
 	} else {
-		l2t.nosalearn = 0;
-		l2t.mbr &= ~(uports_static | port_dst_msk);
-		if (l2t.mbr) {
-			l2t.nosalearn = 1;
-			l2t.mbr |= uports_static;
+		l2t.mbr &= ~port_dst_msk;
+		if (!(l2t.mbr & ~uports_static)) {
+			l2t.nosalearn = 0;
+			l2t.mbr = 0;
 		}
 	}
 
@@ -273,7 +255,7 @@ lookup_mcast_member_entry(struct mcast_group_entry* mge, const u8 *haddr, u32 po
 }
 
 static struct mcast_group_entry*
-lookup_mcast_group_entry(const u8 *maddr, u16 port_efid, u16 port_fid, int create_if_none)
+lookup_mcast_group_entry(const u8 *maddr, u16 port_efid, u16 port_cvid_fid, int create_if_none)
 {
 	u32 hash_idx;
 	struct mcast_group_entry *mge, **prev;
@@ -281,7 +263,7 @@ lookup_mcast_group_entry(const u8 *maddr, u16 port_efid, u16 port_fid, int creat
 	hash_idx = MCAST_ADDR_HASH_INDEX(maddr);
 
 	for (prev = &g_mtb.hash[hash_idx], mge = *prev; mge; prev = &mge->next, mge = *prev) {
-		if (mge->efid == port_efid && mge->fid == port_fid && compare_ether_addr(mge->maddr, maddr) == 0)
+		if (mge->efid == port_efid && mge->cvid_fid == port_cvid_fid && compare_ether_addr(mge->maddr, maddr) == 0)
 			return mge;
 	}
 
@@ -293,7 +275,7 @@ lookup_mcast_group_entry(const u8 *maddr, u16 port_efid, u16 port_fid, int creat
 	if (mge) {
 		mge->valid = 1;
 		mge->efid = port_efid;
-		mge->fid = port_fid;
+		mge->cvid_fid = port_cvid_fid;
 		memcpy(mge->maddr, maddr, ETHER_ADDR_LEN);
 		
 		/* add entry to list */
@@ -353,7 +335,7 @@ mcast_group_members_clear(struct mcast_group_entry *mge, int update_asic_port)
 		
 		if (update_asic_port && port_has_members) {
 			spin_lock(&g_lut_lock);
-			asic_update_mcast_mask(mge->maddr, mge->efid, mge->fid, port_id, 1);
+			asic_update_mcast_mask(mge->maddr, mge->efid, mge->cvid_fid, port_id, 1);
 			spin_unlock(&g_lut_lock);
 		}
 	}
@@ -373,7 +355,7 @@ mcast_table_clear(void)
 }
 
 static void
-on_mcast_group_event(const u8 *maddr, const u8 *haddr, u16 port_efid, u16 port_fid, u32 port_id, int is_leave)
+on_mcast_group_event(const u8 *maddr, const u8 *haddr, u16 port_efid, u16 port_cvid_fid, u32 port_id, int is_leave)
 {
 	int port_members_exist = 0;
 	rtk_api_ret_t retVal;
@@ -383,7 +365,7 @@ on_mcast_group_event(const u8 *maddr, const u8 *haddr, u16 port_efid, u16 port_f
 	spin_lock(&g_mtb_lock);
 
 	/* find group for this [addr+efid+fid] or create new if not found (only for enter) */
-	mge = lookup_mcast_group_entry(maddr, port_efid, port_fid, !is_leave);
+	mge = lookup_mcast_group_entry(maddr, port_efid, port_cvid_fid, !is_leave);
 	if (!mge)
 		goto table_unlock;
 
@@ -419,13 +401,13 @@ table_unlock:
 
 	/* update hardware multicast MAC port mask in L2 lookup table */
 	spin_lock(&g_lut_lock);
-	retVal = asic_update_mcast_mask(maddr, port_efid, port_fid, port_id, is_leave);
+	retVal = asic_update_mcast_mask(maddr, port_efid, port_cvid_fid, port_id, is_leave);
 	spin_unlock(&g_lut_lock);
 
 	if (retVal != RT_ERR_OK) {
 		if (net_ratelimit())
-			printk("%s - unable to update LUT table (efid: %d, fid: %d) for mcast group %02X-%02X-%02X-%02X-%02X-%02X!\n",
-				RTL8367_DEVNAME, port_efid, port_fid,
+			printk("%s - unable to update LUT table (efid: %d, cvid_fid: %d) for mcast group %02X-%02X-%02X-%02X-%02X-%02X!\n",
+				RTL8367_DEVNAME, port_efid, port_cvid_fid,
 				maddr[0], maddr[1], maddr[2],
 				maddr[3], maddr[4], maddr[5]);
 	}
@@ -454,8 +436,8 @@ on_membership_work(struct work_struct *work)
 				mcast_group_members_clear(mge, 0);
 				group_cleared = 1;
 #ifdef RTL8367_DBG
-				printk("%s - mcast group has no members, clean garbage. efid: %d, fid: %d, group: %02X-%02X-%02X-%02X-%02X-%02X\n", 
-					RTL8367_DEVNAME, mge->efid, mge->fid,
+				printk("%s - mcast group has no members, clean garbage. efid: %d, cvid_fid: %d, group: %02X-%02X-%02X-%02X-%02X-%02X\n", 
+					RTL8367_DEVNAME, mge->efid, mge->cvid_fid,
 					mge->maddr[0], mge->maddr[1], mge->maddr[2],
 					mge->maddr[3], mge->maddr[4], mge->maddr[5]);
 #endif
@@ -464,8 +446,8 @@ on_membership_work(struct work_struct *work)
 				mcast_group_members_clear(mge, 1);
 				group_cleared = 1;
 #ifdef RTL8367_DBG
-				printk("%s - mcast group expired! (time after: %ld), efid: %d, fid: %d, group: %02X-%02X-%02X-%02X-%02X-%02X\n", 
-					RTL8367_DEVNAME, (now - mge->last_time), mge->efid, mge->fid,
+				printk("%s - mcast group expired! (time after: %ld), efid: %d, cvid_fid: %d, group: %02X-%02X-%02X-%02X-%02X-%02X\n", 
+					RTL8367_DEVNAME, (now - mge->last_time), mge->efid, mge->cvid_fid,
 					mge->maddr[0], mge->maddr[1], mge->maddr[2],
 					mge->maddr[3], mge->maddr[4], mge->maddr[5]);
 #endif
@@ -508,9 +490,8 @@ asic_enum_mcast_table(int clear_all)
 #if defined(CONFIG_RTL8367_API_8370)
 	rtl8370_luttb l2t;
 
-	for (addr_id = 0; addr_id < RTK_MAX_NUM_OF_LEARN_LIMIT; addr_id++)
-	{
-		if (!g_l2t_cache[addr_id])
+	for (addr_id = 0; addr_id < RTK_MAX_NUM_OF_LEARN_LIMIT; addr_id++) {
+		if (!test_bit(addr_id, g_l2t_cache))
 			continue;
 		
 		memset(&l2t, 0, sizeof(l2t));
@@ -522,34 +503,32 @@ asic_enum_mcast_table(int clear_all)
 		if (!(l2t.mac.octet[0] & 0x01))
 			continue;
 		
-		if (clear_all)
-		{
-			asic_delete_mcast_mask(l2t.mac.octet, l2t.efid, l2t.fid);
-		}
-		else
-		{
+		if (clear_all) {
+			l2t.ipmul = 0;
+			l2t.block = 0;
+			l2t.static_bit = 0;
+			l2t.portmask = 0;
+			rtl8370_setAsicL2LookupTb(&l2t);
+		} else {
 			index++;
-			printk("  %d. %02X-%02X-%02X-%02X-%02X-%02X, portmask: 0x%04X, efid: %d, fid: %d\n", 
+			printk("%4d. %02X-%02X-%02X-%02X-%02X-%02X, portmask: 0x%04X, efid: %d, fid: %4d\n",
 				index,
 				l2t.mac.octet[0], l2t.mac.octet[1], l2t.mac.octet[2],
 				l2t.mac.octet[3], l2t.mac.octet[4], l2t.mac.octet[5],
 				l2t.portmask,
 				l2t.efid,
 				l2t.fid
-				);
+			);
 		}
 	}
 
-	if (clear_all)
-		memset(g_l2t_cache, 0, sizeof(g_l2t_cache));
+	if (clear_all) {
+		bitmap_zero(g_l2t_cache, RTK_MAX_NUM_OF_LEARN_LIMIT);
+	}
 #else
 	rtl8367b_luttb l2t;
 
-	for (;;)
-	{
-		if (addr_id > RTK_MAX_LUT_ADDR_ID)
-			break;
-		
+	while (addr_id <= RTK_MAX_LUT_ADDR_ID) {
 		memset(&l2t, 0, sizeof(l2t));
 		l2t.address = addr_id;
 		retVal = rtl8367b_getAsicL2LookupTb(LUTREADMETHOD_NEXT_L2MC, &l2t);
@@ -560,22 +539,24 @@ asic_enum_mcast_table(int clear_all)
 		
 		addr_id = l2t.address + 1;
 		
-		if (clear_all)
-		{
-			asic_delete_mcast_mask(l2t.mac.octet, l2t.efid, l2t.cvid_fid);
-		}
-		else
-		{
+		if (clear_all) {
+			l2t.l3lookup = 0;
+			l2t.nosalearn = 0;
+			l2t.sa_block = 0;
+			l2t.mbr = 0;
+			rtl8367b_setAsicL2LookupTb(&l2t);
+		} else {
 			index++;
-			printk("  %d. %02X-%02X-%02X-%02X-%02X-%02X, addr_id: %d, portmask: 0x%04X, efid: %d, fid: %d\n", 
+			printk("%4d. %02X-%02X-%02X-%02X-%02X-%02X, addr_id: %d, portmask: 0x%04X, efid: %d, cvid: %4d, ivl: %d\n",
 				index,
 				l2t.mac.octet[0], l2t.mac.octet[1], l2t.mac.octet[2],
 				l2t.mac.octet[3], l2t.mac.octet[4], l2t.mac.octet[5],
 				l2t.address,
 				l2t.mbr,
 				l2t.efid,
-				l2t.cvid_fid
-				);
+				l2t.cvid_fid,
+				l2t.ivl_svl
+			);
 		}
 	}
 #endif
@@ -588,7 +569,7 @@ igmp_init(void)
 	spin_lock_init(&g_mtb_lock);
 	memset(&g_mtb, 0, sizeof(struct mcast_table));
 #if defined(CONFIG_RTL8367_API_8370)
-	memset(g_l2t_cache, 0, sizeof(g_l2t_cache));
+	bitmap_zero(g_l2t_cache, RTK_MAX_NUM_OF_LEARN_LIMIT);
 #endif
 	setup_timer(&g_membership_expired_timer, on_membership_timer, 0);
 }
@@ -619,8 +600,7 @@ change_igmp_snooping_control(u32 igmp_snooping_enabled)
 {
 	if (igmp_snooping_enabled) igmp_snooping_enabled = 1;
 
-	if (g_igmp_snooping_enabled != igmp_snooping_enabled)
-	{
+	if (g_igmp_snooping_enabled != igmp_snooping_enabled) {
 		printk("%s - IGMP/MLD snooping: %d\n", RTL8367_DEVNAME, igmp_snooping_enabled);
 		
 		g_igmp_snooping_enabled = igmp_snooping_enabled;
@@ -683,19 +663,19 @@ mcast_group_event_wq(struct work_struct *work)
 	struct mcast_work *mw = container_of(work, struct mcast_work, ws);
 
 #ifdef RTL8367_DBG
-	printk("rtl8367_mcast_group_%s(SRC: %02X-%02X-%02X-%02X-%02X-%02X, DST: %02X-%02X-%02X-%02X-%02X-%02X, fid: %d)\n", 
+	printk("rtl8367_mcast_group_%s(SRC: %02X-%02X-%02X-%02X-%02X-%02X, DST: %02X-%02X-%02X-%02X-%02X-%02X, cvid_fid: %d)\n", 
 			(!mw->is_leave) ? "enter" : "leave",
 			mw->mac_src[0], mw->mac_src[1], mw->mac_src[2],
 			mw->mac_src[3], mw->mac_src[4], mw->mac_src[5],
 			mw->mac_dst[0], mw->mac_dst[1], mw->mac_dst[2],
 			mw->mac_dst[3], mw->mac_dst[4], mw->mac_dst[5],
-			mw->port_fid
+			mw->port_cvid_fid
 		);
 #endif
 
 	/* get port_id by unicast source MAC in l2 lookup table */
 	spin_lock(&g_lut_lock);
-	port_id = asic_find_port_with_ucast_mac(mw->mac_src, mw->port_efid, mw->port_fid);
+	port_id = asic_find_port_with_ucast_mac(mw->mac_src, mw->port_efid, mw->port_cvid_fid);
 	spin_unlock(&g_lut_lock);
 
 	/* check valid port_id */
@@ -706,7 +686,7 @@ mcast_group_event_wq(struct work_struct *work)
 #endif
 		/* check this port_id in LAN group */
 		if ((1u << port_id) & lan_grp_mask)
-			on_mcast_group_event(mw->mac_dst, mw->mac_src, mw->port_efid, mw->port_fid, (u32)port_id, (int)mw->is_leave);
+			on_mcast_group_event(mw->mac_dst, mw->mac_src, mw->port_efid, mw->port_cvid_fid, (u32)port_id, (int)mw->is_leave);
 	}
 
 	kfree(mw);
@@ -716,7 +696,7 @@ void
 rtl8367_mcast_group_event(const u8 *mac_src, const u8 *mac_dst, const char *dev_name, int is_leave)
 {
 	struct mcast_work *mw;
-	u16 port_efid, port_fid;
+	u16 port_efid, port_cvid_fid;
 
 	if (!g_igmp_snooping_enabled)
 		return;
@@ -742,14 +722,19 @@ rtl8367_mcast_group_event(const u8 *mac_src, const u8 *mac_dst, const char *dev_
 	if (strncmp(dev_name, "eth2", 4) != 0)
 		return;
 
-	port_efid = 0; // always use efid = 0 for LAN group
-	port_fid = 1;
+	port_efid = 0;		// always use efid = 0 for LAN group
+	port_cvid_fid = 1;	// always use fid = 1 (cvid = 1) for LAN group
 #if defined(EXT_PORT_INIC)
-	if (strcmp(dev_name, "eth2.3") == 0)
-		port_fid = INIC_GUEST_FID;
+	if (strcmp(dev_name, "eth2.3") == 0) {
+#if defined(CONFIG_RTL8367_API_8370)
+		port_cvid_fid = INIC_GUEST_VLAN_FID;	// use for SVL
+#else
+		port_cvid_fid = INIC_GUEST_VLAN_VID;	// use for IVL
+#endif
+	}
 #endif
 
-	/* create work (do not touch hardware in softirq context) */
+	/* create work (do not touch MDIO registers in softirq context) */
 	mw = (struct mcast_work *)kmalloc(sizeof(struct mcast_work), GFP_ATOMIC);
 	if (mw) {
 		INIT_WORK(&mw->ws, mcast_group_event_wq);
@@ -757,7 +742,7 @@ rtl8367_mcast_group_event(const u8 *mac_src, const u8 *mac_dst, const char *dev_
 		memcpy(mw->mac_dst, mac_dst, ETHER_ADDR_LEN);
 		mw->is_leave = (is_leave) ? 1 : 0;
 		mw->port_efid = port_efid;
-		mw->port_fid = port_fid;
+		mw->port_cvid_fid = port_cvid_fid;
 		if (!schedule_work(&mw->ws))
 			kfree(mw);
 	}

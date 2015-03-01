@@ -230,6 +230,9 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
 		change_wan_lan_ports_power(uint_param, uint_value);
 		break;
+	case RTL8367_IOCTL_MAC_TABLE_CLEAR:
+		asic_clear_mac_table();
+		break;
 
 	case RTL8367_IOCTL_BRIDGE_MODE:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
@@ -252,10 +255,6 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 
 	case RTL8367_IOCTL_VLAN_RESET_TABLE:
 		asic_vlan_reset_table();
-		break;
-	case RTL8367_IOCTL_VLAN_INGRESS_MODE:
-		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		asic_vlan_ingress_mode_enabled(uint_value);
 		break;
 	case RTL8367_IOCTL_VLAN_ACCEPT_PORT_MODE:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
@@ -359,6 +358,9 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		ioctl_result = change_cpu_rgmii_delay_tx(uint_value);
 		break;
 
+	case RTL8367_IOCTL_UCAST_MAC_DUMP:
+		asic_dump_ucast_table();
+		break;
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
 	case RTL8367_IOCTL_MCAST_LUT_DUMP:
 		dump_mcast_table();

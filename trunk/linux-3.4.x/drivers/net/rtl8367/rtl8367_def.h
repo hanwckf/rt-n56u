@@ -21,7 +21,7 @@
 
 //#define RTL8367_DBG 1
 
-#define RTL8367_VERSION				"v2.6"
+#define RTL8367_VERSION				"v2.7"
 
 #define RTL8367_DEVNAME				"rtl8367"
 
@@ -99,7 +99,7 @@
   #define EXT_PORT_INIC				SEC_PORT_MAC
   #define INIC_HEART_VLAN_VID			4095	/* use reserved VID for iNIC boot/heartbeat packets  */
   #define INIC_GUEST_VLAN_VID			3
-  #define INIC_GUEST_FID			INIC_GUEST_VLAN_VID
+  #define INIC_GUEST_VLAN_FID			INIC_GUEST_VLAN_VID
   #define MIN_EXT_VLAN_VID			4
  #else
   #define MIN_EXT_VLAN_VID			3
@@ -113,6 +113,33 @@
 #define RTL8367_DEFAULT_GREEN_ETHERNET		1
 #define RTL8367_DEFAULT_STORM_RATE		1024
 #define RTL8367_DEFAULT_LINK_MODE		0
+
+////////////////////////////////////////////////////////////////////////////////////
+
+typedef struct
+{
+	u8 bwan:1;
+	u8 rule:7;
+} bwan_member_t;
+
+typedef struct
+{
+	u16 pvid:12;
+	u16 prio:3;
+	u16 tagg:1;
+} pvlan_member_t;
+
+typedef struct
+{
+	u32 valid:1;
+	u32 cvid:12;
+	u32 fid:12;
+	u32 unused:7;
+	u32 port_member:16;
+	u32 port_untag:16;
+} vlan_entry_t;
+
+////////////////////////////////////////////////////////////////////////////////////
 
 u32 get_phy_ports_mask_lan(u32 include_cpu);
 u32 get_phy_ports_mask_wan(u32 include_cpu);

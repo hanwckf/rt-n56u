@@ -942,7 +942,9 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 #else
 		rx_ring->rxd_info2_u32 = RX2_DMA_LS0;
 #endif
+#if defined (CONFIG_RAETH_32B_DESC)
 		dma_cache_sync(NULL, rx_ring, sizeof(struct PDMA_rxdesc), DMA_TO_DEVICE);
+#endif
 		
 		/* skb processing */
 		rx_skb = ei_local->rx_buff[rx_dma_owner_idx];

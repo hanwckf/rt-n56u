@@ -37,8 +37,6 @@
 
 #endif
 
-static DEFINE_SPINLOCK(mii_mgr_lock);
-
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352)
 void enable_mdio(int enable)
 {
@@ -55,6 +53,8 @@ void enable_mdio(int enable)
 #endif
 
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+static DEFINE_SPINLOCK(mii_mgr_lock);
+
 static u32 __mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data)
 {
 	u32 i;

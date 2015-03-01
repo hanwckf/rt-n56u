@@ -273,8 +273,7 @@ void mt7621_esw_init(void)
 
 	/* configure MT7350 Port6 */
 #if defined (CONFIG_GE2_INTERNAL_GMAC_P5)
-	mii_mgr_write(MT7530_MDIO_ADDR, 0x2604, 0x004f0003);		// P6 set security mode
-	mii_mgr_write(MT7530_MDIO_ADDR, 0x2610, 0x810000c0);		// P6 is transparent port, admit all frames
+	/* do not override P6 security (use external switch control) */
 #elif defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x2604, 0x004f0000);		// P6 has matrix mode (P6|P3|P2|P1|P0)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x2610, 0x810000c0);		// P6 is transparent port, admit all frames
@@ -290,9 +289,7 @@ void mt7621_esw_init(void)
 
 	/* configure MT7350 Port5 */
 #if defined (CONFIG_GE2_INTERNAL_GMAC_P5)
-	mii_mgr_write(MT7530_MDIO_ADDR, 0x2504, 0x00300003);		// P5 set security mode
-	mii_mgr_write(MT7530_MDIO_ADDR, 0x2510, 0x810000c0);		// P5 is transparent port, admit all frames
-	mii_mgr_write(MT7530_MDIO_ADDR, 0x2514, 0x00010002);		// P5 PVID=2
+	/* do not override P5 security (use external switch control) */
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, regLink);		// (P5, Force mode, Link Up, 1000Mbps, Full-Duplex)
 	sysRegWrite(RALINK_ETH_SW_BASE+0x200, (0x20000000|regLink));	// (GE2, Force 1000M/FD)
 #elif defined (CONFIG_GE2_INTERNAL_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P0)

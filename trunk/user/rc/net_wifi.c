@@ -414,9 +414,7 @@ void
 start_wifi_ap_rt(int radio_on)
 {
 	int i_mode_x = get_mode_radio_rt();
-#if defined(USE_RT3352_MII)
-	int ap_mode = get_ap_mode();
-#else
+#if !defined(USE_RT3352_MII)
 	int i_m2u = nvram_wlan_get_int("rt", "IgmpSnEnable");
 #endif
 
@@ -424,8 +422,7 @@ start_wifi_ap_rt(int radio_on)
 	if (i_mode_x == 1 || i_mode_x == 3 || !radio_on)
 	{
 #if defined(USE_RT3352_MII)
-		if (!ap_mode)
-			wif_bridge(IFNAME_INIC_GUEST_VLAN, 0);
+		wif_bridge(IFNAME_INIC_GUEST_VLAN, 0);
 #else
 		wif_bridge(IFNAME_2G_GUEST, 0);
 		wif_bridge(IFNAME_2G_MAIN, 0);
@@ -442,8 +439,7 @@ start_wifi_ap_rt(int radio_on)
 	if (radio_on && i_mode_x != 1 && i_mode_x != 3 && is_guest_allowed_rt())
 	{
 		wif_control(IFNAME_INIC_GUEST, 1);
-		if (!ap_mode)
-			wif_bridge(IFNAME_INIC_GUEST_VLAN, 1);
+		wif_bridge(IFNAME_INIC_GUEST_VLAN, 1);
 	}
 
 	// start iNIC_mii checking daemon
@@ -869,9 +865,7 @@ control_guest_rt(int guest_on, int manual)
 	char *ifname_ap;
 	int radio_on = get_enabled_radio_rt();
 	int i_mode_x = get_mode_radio_rt();
-#if defined(USE_RT3352_MII)
-	int ap_mode = get_ap_mode();
-#else
+#if !defined(USE_RT3352_MII)
 	int i_m2u = nvram_wlan_get_int("rt", "IgmpSnEnable");
 #endif
 
@@ -890,8 +884,7 @@ control_guest_rt(int guest_on, int manual)
 			is_ap_changed = 1;
 		}
 #if defined(USE_RT3352_MII)
-		if (!ap_mode)
-			wif_bridge(IFNAME_INIC_GUEST_VLAN, 1);
+		wif_bridge(IFNAME_INIC_GUEST_VLAN, 1);
 #else
 		wif_bridge(ifname_ap, 1);
 		brport_set_m2u(ifname_ap, i_m2u);
@@ -904,8 +897,7 @@ control_guest_rt(int guest_on, int manual)
 			is_ap_changed = 1;
 		}
 #if defined(USE_RT3352_MII)
-		if (!ap_mode)
-			wif_bridge(IFNAME_INIC_GUEST_VLAN, 0);
+		wif_bridge(IFNAME_INIC_GUEST_VLAN, 0);
 #else
 		wif_bridge(ifname_ap, 0);
 #endif
@@ -924,9 +916,10 @@ void
 restart_guest_lan_isolation(void)
 {
 	int rt_need_ebtables, wl_need_ebtables, ap_mode;
-	char rt_ifname_guest[8];
+	char *ifname_lan = IFNAME_LAN;
+	char *rt_ifname_guest = IFNAME_2G_GUEST;
 #if BOARD_HAS_5G_RADIO
-	char wl_ifname_guest[8];
+	char *wl_ifname_guest = IFNAME_5G_GUEST;
 #endif
 
 	ap_mode = get_ap_mode();
@@ -934,11 +927,7 @@ restart_guest_lan_isolation(void)
 	rt_need_ebtables = 0;
 	wl_need_ebtables = 0;
 
-	strcpy(rt_ifname_guest, IFNAME_2G_GUEST);
-
 #if BOARD_HAS_5G_RADIO
-	strcpy(wl_ifname_guest, IFNAME_5G_GUEST);
-
 	if (is_interface_up(wl_ifname_guest)) {
 		if (nvram_wlan_get_int("wl", "guest_lan_isolate") && !ap_mode)
 			wl_need_ebtables |= 0x1;
@@ -955,29 +944,33 @@ restart_guest_lan_isolation(void)
 	}
 
 #if defined(USE_RT3352_MII)
-	if (rt_need_ebtables)
-		strcpy(rt_ifname_guest, IFNAME_INIC_GUEST_VLAN);
+	rt_ifname_guest = IFNAME_INIC_GUEST_VLAN;
+#endif
+
+#if !defined (AP_MODE_LAN_TAGGED)
+	if (ap_mode)
+		ifname_lan = IFNAME_MAC;
 #endif
 
 	if (wl_need_ebtables || rt_need_ebtables) {
-		doSystem("modprobe %s", "ebtable_filter");
+		module_smart_load("ebtable_filter", NULL);
 		doSystem("ebtables %s", "-F");
 		doSystem("ebtables %s", "-X");
 #if BOARD_HAS_5G_RADIO
 		if ((wl_need_ebtables & 0x3) == 0x3) {
 			doSystem("ebtables -A %s -i %s -j DROP", "FORWARD", wl_ifname_guest);
 		} else if (wl_need_ebtables & 0x2) {
-			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", wl_ifname_guest, "! ", IFNAME_LAN);
+			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", wl_ifname_guest, "! ", ifname_lan);
 		} else if (wl_need_ebtables & 0x1) {
-			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", wl_ifname_guest, "", IFNAME_LAN);
+			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", wl_ifname_guest, "", ifname_lan);
 		}
 #endif
 		if ((rt_need_ebtables & 0x3) == 0x3) {
 			doSystem("ebtables -A %s -i %s -j DROP", "FORWARD", rt_ifname_guest);
 		} else if (rt_need_ebtables & 0x2) {
-			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", rt_ifname_guest, "! ", IFNAME_LAN);
+			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", rt_ifname_guest, "! ", ifname_lan);
 		} else if (rt_need_ebtables & 0x1) {
-			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", rt_ifname_guest, "", IFNAME_LAN);
+			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", rt_ifname_guest, "", ifname_lan);
 		}
 	}
 	else if (is_module_loaded("ebtables")) {

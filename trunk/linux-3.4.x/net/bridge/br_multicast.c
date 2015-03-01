@@ -33,11 +33,6 @@
 
 #include "br_private.h"
 
-#if defined(CONFIG_RTL8367_IGMP_SNOOPING)
-extern void rtl8367_mcast_group_event(const unsigned char *mac_src, const unsigned char *mac_dst,
-				      const char *dev_name, int is_leave);
-#endif
-
 static void br_multicast_start_querier(struct net_bridge *br);
 
 static inline int br_ip_equal(const struct br_ip *a, const struct br_ip *b)
@@ -200,10 +195,34 @@ static int br_mdb_copy(struct net_bridge_mdb_htable *new,
 	return maxlen > elasticity ? -EINVAL : 0;
 }
 
+#if defined(CONFIG_RTL8367_IGMP_SNOOPING)
+extern void rtl8367_mcast_group_event(const unsigned char *mac_src, const unsigned char *mac_dst,
+				      const char *dev_name, int is_leave);
+
+static void br_pg_notify_switch(struct net_bridge_port_group *p, int is_leave)
+{
+	unsigned char mac_dst[8];
+
+	if (p->port && p->port->dev) {
+#if IS_ENABLED(CONFIG_IPV6)
+		if (p->addr.proto == htons(ETH_P_IPV6))
+			ipv6_eth_mc_map(&p->addr.u.ip6, mac_dst);
+		else
+#endif
+			ip_eth_mc_map(p->addr.u.ip4, mac_dst);
+		rtl8367_mcast_group_event(p->src_addr, mac_dst, p->port->dev->name, is_leave);
+	}
+}
+#endif
+
 static void br_multicast_free_pg(struct rcu_head *head)
 {
 	struct net_bridge_port_group *p =
 		container_of(head, struct net_bridge_port_group, rcu);
+
+#if defined(CONFIG_RTL8367_IGMP_SNOOPING)
+	br_pg_notify_switch(p, 1);
+#endif
 
 	kfree(p);
 }
@@ -690,15 +709,21 @@ static int br_multicast_add_group(struct net_bridge *br,
 	setup_timer(&p->timer, br_multicast_port_group_expired,
 		    (unsigned long)p);
 
-	if ((port->flags & BR_MULTICAST_TO_UCAST) && src) {
+	if (src) {
 		memcpy(p->src_addr, src, ETH_ALEN);
-		p->m2u = true;
+		if (port->flags & BR_MULTICAST_TO_UCAST)
+			p->m2u = true;
 	}
 
 	rcu_assign_pointer(*pp, p);
 
 found:
 	mod_timer(&p->timer, now + br->multicast_membership_interval);
+
+#if defined(CONFIG_RTL8367_IGMP_SNOOPING)
+	br_pg_notify_switch(p, 0);
+#endif
+
 out:
 	err = 0;
 
@@ -713,21 +738,10 @@ static int br_ip4_multicast_add_group(struct net_bridge *br,
 				      __be32 group)
 {
 	struct br_ip br_group;
-	const unsigned char *src;
+	const unsigned char *src = eth_hdr(skb)->h_source;
 
 	if (ipv4_is_flooded_multicast(group))
 		return 0;
-
-	src = eth_hdr(skb)->h_source;
-
-#if defined(CONFIG_RTL8367_IGMP_SNOOPING)
-	if (port && port->dev) {
-		unsigned char mac_dst[8]; // with align
-		
-		ip_eth_mc_map(group, mac_dst);
-		rtl8367_mcast_group_event(src, mac_dst, port->dev->name, 0);
-	}
-#endif
 
 	br_group.u.ip4 = group;
 	br_group.proto = htons(ETH_P_IP);
@@ -742,21 +756,10 @@ static int br_ip6_multicast_add_group(struct net_bridge *br,
 				      const struct in6_addr *group)
 {
 	struct br_ip br_group;
-	const unsigned char *src;
+	const unsigned char *src = eth_hdr(skb)->h_source;
 
 	if (!ipv6_is_transient_multicast(group))
 		return 0;
-
-	src = eth_hdr(skb)->h_source;
-
-#if defined(CONFIG_RTL8367_IGMP_SNOOPING)
-	if (port && port->dev) {
-		unsigned char mac_dst[8]; // with align
-		
-		ipv6_eth_mc_map(group, mac_dst);
-		rtl8367_mcast_group_event(src, mac_dst, port->dev->name, 0);
-	}
-#endif
 
 	br_group.u.ip6 = *group;
 	br_group.proto = htons(ETH_P_IPV6);
@@ -1254,21 +1257,10 @@ static void br_ip4_multicast_leave_group(struct net_bridge *br,
 					 __be32 group)
 {
 	struct br_ip br_group;
-	const unsigned char *src;
+	const unsigned char *src = eth_hdr(skb)->h_source;
 
 	if (ipv4_is_flooded_multicast(group))
 		return;
-
-	src = eth_hdr(skb)->h_source;
-
-#if defined(CONFIG_RTL8367_IGMP_SNOOPING)
-	if (port && port->dev) {
-		unsigned char mac_dst[8]; // with align
-		
-		ip_eth_mc_map(group, mac_dst);
-		rtl8367_mcast_group_event(src, mac_dst, port->dev->name, 1);
-	}
-#endif
 
 	br_group.u.ip4 = group;
 	br_group.proto = htons(ETH_P_IP);
@@ -1343,21 +1335,10 @@ static void br_ip6_multicast_leave_group(struct net_bridge *br,
 					 const struct in6_addr *group)
 {
 	struct br_ip br_group;
-	const unsigned char *src;
+	const unsigned char *src = eth_hdr(skb)->h_source;
 
 	if (!ipv6_is_transient_multicast(group))
 		return;
-
-	src = eth_hdr(skb)->h_source;
-
-#if defined(CONFIG_RTL8367_IGMP_SNOOPING)
-	if (port && port->dev) {
-		unsigned char mac_dst[8]; // with align
-		
-		ipv6_eth_mc_map(group, mac_dst);
-		rtl8367_mcast_group_event(src, mac_dst, port->dev->name, 1);
-	}
-#endif
 
 	br_group.u.ip6 = *group;
 	br_group.proto = htons(ETH_P_IPV6);

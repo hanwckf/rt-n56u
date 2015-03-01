@@ -176,7 +176,7 @@ ext4_xattr_check_block(struct buffer_head *bh)
 	    BHDR(bh)->h_blocks != cpu_to_le32(1))
 		return -EIO;
 	return ext4_xattr_check_names(BFIRST(bh), bh->b_data + bh->b_size,
-				       bh->b_data);
+				      bh->b_data);
 }
 
 static inline int

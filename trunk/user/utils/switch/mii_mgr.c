@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 #endif
 				break;
 			case 'r':
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_MT7530_GSW)
 				if(mii.phy_id == 31) {
 					mii.reg_num = strtol(optarg, NULL, 16);
 				} else {

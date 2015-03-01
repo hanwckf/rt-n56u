@@ -46,6 +46,10 @@
 #include <asm/irq.h>
 #include <asm/time.h>
 #include <asm/traps.h>
+#if defined (CONFIG_DMA_MAYBE_COHERENT)
+#include <asm/gcmpregs.h>
+#include <asm/dma-coherence.h>
+#endif
 
 #include <asm/rt2880/generic.h>
 #include <asm/rt2880/prom.h>
@@ -93,6 +97,37 @@ const char *get_system_type(void)
 	return "Ralink SoC";
 #endif
 }
+
+#if defined (CONFIG_DMA_MAYBE_COHERENT)
+static int __init plat_enable_iocoherency(void)
+{
+	int supported = 0;
+
+#if defined (CONFIG_RALINK_MT7621)
+	if (gcmp_niocu() != 0) {
+		pr_info("GCMP IOCU detected\n");
+		/* MT7621 GCMP reported about IOCU=1, but IOCU switch disabled by default */
+//		supported = 1;
+	}
+#endif
+
+	return supported;
+}
+
+static void __init plat_setup_iocoherency(void)
+{
+	/*
+	 * Kernel has been configured with software coherency
+	 * but we might choose to turn it off and use hardware
+	 * coherency instead.
+	 */
+	if (plat_enable_iocoherency()) {
+		coherentio = 1;
+		hw_coherentio = 1;
+		pr_info("Hardware DMA cache coherency enabled\n");
+	}
+}
+#endif
 
 void __init rt2880_setup(void)
 {
@@ -162,6 +197,9 @@ void __init rt2880_setup(void)
 	//board_time_init = mips_time_init;
 	//board_timer_setup = mips_timer_setup;
 
+#if defined (CONFIG_DMA_MAYBE_COHERENT)
+	plat_setup_iocoherency();
+#endif
 	mips_reboot_setup();
 }
 

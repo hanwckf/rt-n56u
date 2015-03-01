@@ -394,19 +394,14 @@ int phy_disable_inic(unsigned int inic_disabled)
 
 inline int phy_clear_mac_table(void)
 {
-	// N.A.
-	return 0;
+	unsigned int unused = 0;
+	return rtl8367_ioctl(RTL8367_IOCTL_MAC_TABLE_CLEAR, 0, &unused);
 }
 
 int phy_vlan_reset_table(void)
 {
 	unsigned int unused = 0;
 	return rtl8367_ioctl(RTL8367_IOCTL_VLAN_RESET_TABLE, 0, &unused);
-}
-
-int phy_vlan_ingress_mode(unsigned int port_pask)
-{
-	return rtl8367_ioctl(RTL8367_IOCTL_VLAN_INGRESS_MODE, 0, &port_pask);
 }
 
 int phy_vlan_accept_port_mode(int accept_mode, unsigned int port_pask)
@@ -474,19 +469,22 @@ int show_usage(char *cmd)
 	"    2               Show GPIO mode RAW\n"
 	"    3 [0|1] [PIN]   Set GPIO pin direction (0=Input, 1=Output)\n"
 	"    4 [0|1] [PIN]   Set GPIO pin value\n"
-	"    5 [PIN]         Show GPIO pin value\n\n"
+	"    5 [PIN]         Show GPIO pin value\n"
+	"\n"
 	"   10               Show WAN port link status\n"
 	"   11               Show WAN ports link status\n"
 	"   12               Show LAN ports link status\n"
 	"   13               Show LAN1 port link status\n"
 	"   14               Show LAN2 port link status\n"
 	"   15               Show LAN3 port link status\n"
-	"   16               Show LAN4 port link status\n\n"
+	"   16               Show LAN4 port link status\n"
+	"\n"
 	"   20               Show WAN port speed status\n"
 	"   21               Show LAN1 port speed status\n"
 	"   22               Show LAN2 port speed status\n"
 	"   23               Show LAN3 port speed status\n"
-	"   24               Show LAN4 port speed status\n\n"
+	"   24               Show LAN4 port speed status\n"
+	"\n"
 	"   30               Show WAN port MIB counters\n"
 	"   31               Show LAN1 port MIB counters\n"
 	"   32               Show LAN2 port MIB counters\n"
@@ -497,46 +495,60 @@ int show_usage(char *cmd)
 #if defined (USE_RT3352_MII)
 	"   37               Show iNIC port MIB counters\n"
 #endif
-	"   38               Reset all ports MIB counters\n\n"
+	"   38               Reset all ports MIB counters\n"
+	"\n"
 	"   40 [0x25252525]  Full reset and reinit switch\n"
 	"   41 [MASK] [0|1]  Set power off/on for ports mask\n"
-	"   42 [W|L]  [0|1]  Set power off/on for WAN or LAN ports\n\n"
+	"   42 [W|L]  [0|1]  Set power off/on for WAN or LAN ports\n"
+#if defined(USE_RTL8367_API_8367B)
+	"   43               Clear switch L2 MAC table\n"
+#endif
+	"\n"
 	"   50 [0..8] [0..3] Config WAN bridge mode and isolation\n"
 #if defined (USE_RT3352_MII)
 	"   51 [0|1]         Toggle iNIC isolation from LAN ports\n"
 	"   52 [0|1]         Toggle iNIC disable RGMII port link\n"
 #endif
-	"   55 [MASK] [PORT] Set port forward mask\n\n"
+	"   55 [MASK] [PORT] Set port forward mask\n"
+	"\n"
 	"   60               Reset VLAN table and init VLAN1\n"
-	"   61 [MASK]        Set VLAN ingress enabled for ports mask\n"
 	"   62 [MASK] [0..2] Set VLAN accept mode for ports mask\n"
 	"   63 [MASK] [DATA] Create port-based VLAN entry\n"
-	"   64 [MASK] [DATA] Create VLAN entry\n\n"
+	"   64 [MASK] [DATA] Create VLAN entry\n"
+	"\n"
 	"   70 [1..1024]     Set Unknown Unicast storm rate for all ports\n"
 	"   71 [1..1024]     Set Unknown Multicast storm rate for all ports\n"
 	"   72 [1..1024]     Set Multicast storm rate for all ports\n"
-	"   73 [1..1024]     Set Broadcast storm rate for all ports\n\n"
+	"   73 [1..1024]     Set Broadcast storm rate for all ports\n"
+	"\n"
 	"   75 [0|1]         Set Jumbo Frames accept off/on\n"
 	"   76 [1|0]         Set GreenEthernet on/off\n"
 #if defined(USE_RTL8367_IGMP_SNOOPING)
 	"   77 [MASK]        Set IGMP/MLD static ports mask\n"
 	"   78 [1|0]         Set IGMP/MLD snooping on/off\n"
-	"   79               Reset IGMP/MLD group table and static LUT entries\n\n"
+	"   79               Reset IGMP/MLD group table and static LUT entries\n"
 #endif
+	"\n"
 	"   80 [0..11]       Set LED action group0\n"
 	"   81 [0..11]       Set LED action group1\n"
-	"   82 [0..11]       Set LED action group2\n\n"
+	"   82 [0..11]       Set LED action group2\n"
+	"\n"
 	"   90 [MODE]        Set WAN port link mode (flow|link)\n"
 	"   91 [MODE]        Set LAN1 port link mode (flow|link)\n"
 	"   92 [MODE]        Set LAN2 port link mode (flow|link)\n"
 	"   93 [MODE]        Set LAN3 port link mode (flow|link)\n"
-	"   94 [MODE]        Set LAN4 port link mode (flow|link)\n\n"
+	"   94 [MODE]        Set LAN4 port link mode (flow|link)\n"
+	"\n"
 	"  100 [0..7]        Set ExtIf RGMII delay RX\n"
 	"  101 [0..1]        Set ExtIf RGMII delay TX\n"
+	"\n"
 #if defined(USE_RTL8367_IGMP_SNOOPING)
 	"  110               Dump IGMP/MLD static LUT entries from ASIC\n"
 #endif
-	"  111 [MAX_VID]     Dump ASIC ports isolation\n"
+#if defined(USE_RTL8367_API_8367B)
+	"  111               Dump L2 MAC entries from ASIC\n"
+#endif
+	"  112 [MAX_VID]     Dump ASIC ports isolation\n"
 	, cmd);
 
 	return 1;

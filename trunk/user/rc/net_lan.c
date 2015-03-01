@@ -417,8 +417,7 @@ switch_config_vlan(int first_call)
 		bwan_isolation = SWAPI_WAN_BWAN_ISOLATION_NONE;
 	
 	is_vlan_filter = (nvram_match("vlan_filter", "1")) ? 1 : 0;
-	if (is_vlan_filter)
-	{
+	if (is_vlan_filter) {
 		bwan_isolation = SWAPI_WAN_BWAN_ISOLATION_FROM_CPU;
 		
 		vlan_vid[SWAPI_VLAN_RULE_WAN_INET] = nvram_get_int("vlan_vid_cpu");
@@ -442,18 +441,16 @@ switch_config_vlan(int first_call)
 		vlan_tag[SWAPI_VLAN_RULE_WAN_LAN3] = nvram_get_int("vlan_tag_lan3");
 		vlan_tag[SWAPI_VLAN_RULE_WAN_LAN4] = nvram_get_int("vlan_tag_lan4");
 		
-		if(is_vlan_vid_inet_valid(vlan_vid[SWAPI_VLAN_RULE_WAN_INET]))
+		if (is_vlan_vid_valid(vlan_vid[SWAPI_VLAN_RULE_WAN_INET]))
 			vlan_tag[SWAPI_VLAN_RULE_WAN_INET] = 1;
 		else
 			vlan_vid[SWAPI_VLAN_RULE_WAN_INET] = 0;
 		
-		if (is_vlan_vid_iptv_valid(vlan_vid[SWAPI_VLAN_RULE_WAN_INET], vlan_vid[SWAPI_VLAN_RULE_WAN_IPTV]))
+		if (is_vlan_vid_valid(vlan_vid[SWAPI_VLAN_RULE_WAN_IPTV]))
 			vlan_tag[SWAPI_VLAN_RULE_WAN_IPTV] = 1;
 		else
 			vlan_vid[SWAPI_VLAN_RULE_WAN_IPTV] = 0;
-	}
-	else
-	{
+	} else {
 		memset(vlan_vid, 0, sizeof(vlan_vid));
 		memset(vlan_pri, 0, sizeof(vlan_pri));
 		memset(vlan_tag, 0, sizeof(vlan_tag));
@@ -466,8 +463,7 @@ switch_config_vlan(int first_call)
 	phy_bridge_mode(bridge_mode, bwan_isolation);
 	
 #if defined(USE_RT3352_MII)
-	if (!first_call)
-	{
+	if (!first_call) {
 		// clear isolation iNIC port from all LAN ports
 		if (is_interface_up(IFNAME_INIC_MAIN) && get_mlme_radio_rt())
 			phy_isolate_inic(0);
@@ -476,15 +472,9 @@ switch_config_vlan(int first_call)
 }
 
 int
-is_vlan_vid_inet_valid(int vlan_vid_inet)
+is_vlan_vid_valid(int vlan_vid)
 {
-	return (vlan_vid_inet >= MIN_EXT_VLAN_VID && vlan_vid_inet < 4095) ? 1 : 0;
-}
-
-int
-is_vlan_vid_iptv_valid(int vlan_vid_inet, int vlan_vid_iptv)
-{
-	return (vlan_vid_iptv >= MIN_EXT_VLAN_VID && vlan_vid_iptv < 4095 && vlan_vid_iptv != vlan_vid_inet) ? 1 : 0;
+	return (vlan_vid >= MIN_EXT_VLAN_VID && vlan_vid < 4095) ? 1 : 0;
 }
 
 void

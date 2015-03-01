@@ -273,6 +273,8 @@ start_inic_mii(void)
 		/* release iNIC reset pin */
 		cpu_gpio_set_pin(1, 1);
 		
+		usleep(50000);
+		
 		/* enable iNIC RGMII port */
 		phy_disable_inic(0);
 		

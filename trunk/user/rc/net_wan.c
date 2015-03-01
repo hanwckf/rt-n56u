@@ -248,7 +248,7 @@ get_vlan_vid_wan(void)
 	else
 		vlan_vid = 0;
 
-	if (!is_vlan_vid_inet_valid(vlan_vid))
+	if (!is_vlan_vid_valid(vlan_vid))
 		vlan_vid = 2;
 
 	return vlan_vid;
@@ -265,54 +265,71 @@ static void
 config_vinet_wan(void)
 {
 	char vinet_ifname[32];
-#if defined (USE_SINGLE_MAC)
-	int vlan_vid, vlan_pri;
-	int is_vlan_filter;
+	int vlan_vid[2], vlan_pri;
+	int is_vlan_filter, is_vlan_ifname;
 	char *vinet_iflast;
+#if defined (USE_SINGLE_MAC)
+	const char *ifname_wan_cpu = IFNAME_MAC;
+#else
+	const char *ifname_wan_cpu = IFNAME_MAC2;
+#endif
 
 	is_vlan_filter = (nvram_match("vlan_filter", "1")) ? 1 : 0;
-	if (is_vlan_filter)
-	{
-		vlan_vid = nvram_get_int("vlan_vid_cpu");
+	if (is_vlan_filter) {
+		vlan_vid[0] = nvram_get_int("vlan_vid_cpu");
+		vlan_vid[1] = nvram_get_int("vlan_vid_iptv");
 		vlan_pri = nvram_get_int("vlan_pri_cpu") & 0x07;
-	}
-	else
-	{
-		vlan_vid = 0;
+	} else {
+		vlan_vid[0] = 0;
+		vlan_vid[1] = 0;
 		vlan_pri = 0;
 	}
 
-	if (!is_vlan_vid_inet_valid(vlan_vid))
-	{
-		vlan_vid = 2;
+	if (!is_vlan_vid_valid(vlan_vid[0])) {
+		vlan_vid[0] = 2;
 		vlan_pri = 0;
 	}
 
+	if (!is_vlan_vid_valid(vlan_vid[1]))
+		vlan_vid[1] = 2;
+
+	/* update VLAN VID for raeth (HW_VLAN_TX) */
+	hw_vlan_tx_map(6, vlan_vid[0]);
+	hw_vlan_tx_map(7, vlan_vid[1]);
+
+	is_vlan_ifname = 1;
+	snprintf(vinet_ifname, sizeof(vinet_ifname), "%s.%d", ifname_wan_cpu, vlan_vid[0]);
+#if !defined (USE_SINGLE_MAC)
+	if (vlan_vid[0] == vlan_vid[1]) {
+		/* case1: CPU Internet tagged: n, CPU IPTV tagged: n */
+		/* case2: CPU Internet tagged: y, CPU IPTV tagged: y (common VID) */
+		is_vlan_ifname = 0;
+		snprintf(vinet_ifname, sizeof(vinet_ifname), "%s", IFNAME_MAC2);
+	}
+	
+	/* always prepare eth3 interface */
+	doSystem("ifconfig %s hw ether %s", IFNAME_MAC2, nvram_safe_get("wan_hwaddr"));
+	doSystem("ifconfig %s mtu %d up %s", IFNAME_MAC2, 1500, "0.0.0.0");
+#endif
+
+	/* prevent delete apcli0/apclii0 and default eth2.2/eth3 */
 	vinet_iflast = get_man_ifname(0);
-	snprintf(vinet_ifname, sizeof(vinet_ifname), "%s.%d", IFNAME_MAC, vlan_vid);
-
-	/* prevent delete apcli0/apclii0 and default eth2.2 */
 	if (*vinet_iflast && strstr(vinet_iflast, ".") && strcmp(vinet_iflast, vinet_ifname) &&
 	                     strcmp(vinet_iflast, IFNAME_WAN) && is_interface_exist(vinet_iflast))
 		remove_vlan_iface(vinet_iflast);
 
-	if (!is_interface_exist(vinet_ifname))
-		doSystem("vconfig add %s %d", IFNAME_MAC, vlan_vid);
-
-	doSystem("vconfig set_egress_map %s %d %d", vinet_ifname, 0, vlan_pri);
-	doSystem("ifconfig %s hw ether %s", vinet_ifname, nvram_safe_get("wan_hwaddr"));
-	doSystem("ifconfig %s mtu %d up %s", vinet_ifname, 1500, "0.0.0.0");
+	/* create VLAN interface for INET */
+	if (is_vlan_ifname) {
+		if (!is_interface_exist(vinet_ifname))
+			doSystem("vconfig add %s %d", ifname_wan_cpu, vlan_vid[0]);
+		doSystem("vconfig set_egress_map %s %d %d", vinet_ifname, 0, vlan_pri);
+		doSystem("ifconfig %s hw ether %s", vinet_ifname, nvram_safe_get("wan_hwaddr"));
+		doSystem("ifconfig %s mtu %d up %s", vinet_ifname, 1500, "0.0.0.0");
+	}
 
 #if defined (USE_IPV6)
 	if (get_ipv6_type() != IPV6_DISABLED)
 		control_if_ipv6(vinet_ifname, 1);
-#endif
-
-#else /* !USE_SINGLE_MAC */
-	snprintf(vinet_ifname, sizeof(vinet_ifname), "%s", IFNAME_MAC2);
-
-	doSystem("ifconfig %s hw ether %s", IFNAME_MAC2, nvram_safe_get("wan_hwaddr"));
-	doSystem("ifconfig %s mtu %d up %s", IFNAME_MAC2, 1500, "0.0.0.0");
 #endif
 
 	set_wan_unit_value(0, "ifname", vinet_ifname);
@@ -329,12 +346,12 @@ config_apcli_wisp(void)
 		return;
 
 	man_ifname = get_man_ifname(unit);
+	if (strlen(man_ifname) > 0 && !is_man_wisp(man_ifname)) {
+		ifconfig(man_ifname, IFUP, "0.0.0.0", NULL);
 #if defined (USE_SINGLE_MAC)
-	if (strlen(man_ifname) > 0 && !is_man_wisp(man_ifname))
-#else
-	if (strlen(man_ifname) > 0 && !is_man_wisp(man_ifname) && strlen(nvram_safe_get("viptv_ifname")) < 1)
-#endif
 		ifconfig(man_ifname, 0, "0.0.0.0", NULL);
+#endif
+	}
 
 	set_wan_unit_value(0, "ifname", wisp_ifname);
 }
@@ -347,48 +364,60 @@ launch_viptv_wan(void)
 	int is_vlan_filter;
 	char *viptv_iflast, *vinet_iflast;
 	char viptv_ifname[32], rp_path[64];
+#if defined (USE_SINGLE_MAC)
+	const char *ifname_wan_cpu = IFNAME_MAC;
+#else
+	const char *ifname_wan_cpu = IFNAME_MAC2;
+#endif
 
 	is_vlan_filter = (nvram_match("vlan_filter", "1")) ? 1 : 0;
-	if (is_vlan_filter)
-	{
+	if (is_vlan_filter) {
 		vlan_vid[0] = nvram_get_int("vlan_vid_cpu");
 		vlan_vid[1] = nvram_get_int("vlan_vid_iptv");
 		vlan_pri = nvram_get_int("vlan_pri_iptv") & 0x07;
-	}
-	else
-	{
+	} else {
 		vlan_vid[0] = 0;
 		vlan_vid[1] = 0;
+		vlan_pri = 0;
+	}
+
+	if (!is_vlan_vid_valid(vlan_vid[0]))
+		vlan_vid[0] = 2;
+
+	if (!is_vlan_vid_valid(vlan_vid[1])) {
+		vlan_vid[1] = 2;
 		vlan_pri = 0;
 	}
 
 	vinet_iflast = get_man_ifname(0);
 	viptv_iflast = nvram_safe_get("viptv_ifname");
 
-	if (is_vlan_vid_iptv_valid(vlan_vid[0], vlan_vid[1]))
-	{
-		/* update VLAN for raeth */
-		hw_vlan_tx_map(6, vlan_vid[0]);
-		hw_vlan_tx_map(7, vlan_vid[1]);
+	if (vlan_vid[1] == vlan_vid[0]) {
+		/* case1: CPU Internet tagged: n, CPU IPTV tagged: n */
+		/* case2: CPU Internet tagged: y, CPU IPTV tagged: y (common VID) */
 		
-		/* create VLAN for IPTV */
-#ifdef USE_SINGLE_MAC
-		snprintf(viptv_ifname, sizeof(viptv_ifname), "%s.%d", IFNAME_MAC,  vlan_vid[1]);
-#else
-		snprintf(viptv_ifname, sizeof(viptv_ifname), "%s.%d", IFNAME_MAC2, vlan_vid[1]);
-#endif
+		if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && strcmp(viptv_iflast, IFNAME_WAN) &&
+		                    is_interface_exist(viptv_iflast))
+			remove_vlan_iface(viptv_iflast);
+		
+		viptv_ifname[0] = 0;
+		nvram_set_temp("viptv_ifname", viptv_ifname);
+	} else {
+		/* case3: CPU Internet tagged: y, CPU IPTV tagged: y (different VID) */
+		/* case4: CPU Internet tagged: n, CPU IPTV tagged: y */
+		/* case5: CPU Internet tagged: y, CPU IPTV tagged: n */
+		
+		/* VLAN interface for IPTV */
+		snprintf(viptv_ifname, sizeof(viptv_ifname), "%s.%d", ifname_wan_cpu, vlan_vid[1]);
+		
+		/* remove previous VLAN interface */
 		if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && strcmp(viptv_iflast, IFNAME_WAN) &&
 		                     strcmp(viptv_iflast, viptv_ifname) && is_interface_exist(viptv_iflast))
 			remove_vlan_iface(viptv_iflast);
 		
+		/* create VLAN interface for IPTV */
 		if (!is_interface_exist(viptv_ifname))
-		{
-#ifdef USE_SINGLE_MAC
-			doSystem("vconfig add %s %d", IFNAME_MAC,  vlan_vid[1]);
-#else
-			doSystem("vconfig add %s %d", IFNAME_MAC2, vlan_vid[1]);
-#endif
-		}
+			doSystem("vconfig add %s %d", ifname_wan_cpu, vlan_vid[1]);
 		
 		doSystem("vconfig set_egress_map %s %d %d", viptv_ifname, 0, vlan_pri);
 		doSystem("ifconfig %s hw ether %s", viptv_ifname, nvram_safe_get("wan_hwaddr"));
@@ -402,52 +431,9 @@ launch_viptv_wan(void)
 		
 		start_udhcpc_viptv(viptv_ifname);
 	}
-	else
-	{
-		/* update VLAN for raeth */
-		hw_vlan_tx_map(6, vlan_vid[0]);
-		
-		if (is_vlan_vid_inet_valid(vlan_vid[0]) && vlan_vid[0] != vlan_vid[1])
-		{
-			/* case: CPU Internet tagged, CPU IPTV not tagged */
-#ifdef USE_SINGLE_MAC
-			snprintf(viptv_ifname, sizeof(viptv_ifname), "%s", IFNAME_WAN); // eth2.2
-#else
-			snprintf(viptv_ifname, sizeof(viptv_ifname), "%s.%d", IFNAME_MAC2, 2);  // eth3.2
-			if (!is_interface_exist(viptv_ifname))
-				doSystem("vconfig add %s %d", IFNAME_MAC2, 2);
-#endif
-			if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && strcmp(viptv_iflast, IFNAME_WAN) &&
-			                     strcmp(viptv_iflast, viptv_ifname) && is_interface_exist(viptv_iflast))
-				remove_vlan_iface(viptv_iflast);
-			
-			doSystem("ifconfig %s hw ether %s", viptv_ifname, nvram_safe_get("wan_hwaddr"));
-			doSystem("ifconfig %s mtu %d up %s", viptv_ifname, 1500, "0.0.0.0");
-			
-			/* disable rp_filter */
-			sprintf(rp_path, "/proc/sys/net/ipv4/conf/%s/rp_filter", viptv_ifname);
-			fput_int(rp_path, 0);
-			
-			nvram_set_temp("viptv_ifname", viptv_ifname);
-			
-			start_udhcpc_viptv(viptv_ifname);
-		}
-		else
-		{
-			/* case1: CPU Internet not tagged, CPU IPTV not tagged.
-			   case2: CPU Internet tagged, CPU IPTV tagged with common VLAN ID. */
-			
-			if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && strcmp(viptv_iflast, IFNAME_WAN) &&
-			                    is_interface_exist(viptv_iflast))
-				remove_vlan_iface(viptv_iflast);
-			
-			viptv_ifname[0] = 0;
-			nvram_set_temp("viptv_ifname", viptv_ifname);
-		}
-	}
 }
 
-static void 
+static void
 launch_wanx(char *man_ifname, int unit, int wait_dhcpc, int use_zcip)
 {
 	char *man_addr = get_wan_unit_value(unit, "man_ipaddr");

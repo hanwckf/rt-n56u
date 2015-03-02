@@ -627,6 +627,82 @@ oom_score_adjust(pid_t pid, int oom_score_adj)
 	fput_int(proc_path, oom_score_adj);
 }
 
+#if defined (CONFIG_RALINK_MT7621)
+static void
+irq_affinity_set(int irq_num, int cpu)
+{
+	char proc_path[40];
+
+	snprintf(proc_path, sizeof(proc_path), "/proc/irq/%d/smp_affinity", irq_num);
+	fput_int(proc_path, cpu);
+}
+
+static void
+rps_queue_set(const char *ifname, int cpu_mask)
+{
+	char proc_path[64];
+
+	snprintf(proc_path, sizeof(proc_path), "/sys/class/net/%s/queues/rx-%d/rps_cpus", ifname, 0);
+	fput_int(proc_path, cpu_mask);
+}
+
+static void
+xps_queue_set(const char *ifname, int cpu_mask)
+{
+	char proc_path[64];
+
+	snprintf(proc_path, sizeof(proc_path), "/sys/class/net/%s/queues/tx-%d/xps_cpus", ifname, 0);
+	fput_int(proc_path, cpu_mask);
+}
+
+void
+set_cpu_affinity(void)
+{
+	/* set initial IRQ affinity and RPS/XPS balancing */
+	int ncpu = sysconf(_SC_NPROCESSORS_ONLN);
+
+	if (ncpu == 4) {
+		irq_affinity_set( 3, 2);	/* GMAC  -> CPU:0, VPE:1 */
+		irq_affinity_set( 4, 4);	/* PCIe0 -> CPU:1, VPE:0 */
+		irq_affinity_set(24, 8);	/* PCIe1 -> CPU:1, VPE:1 */
+		irq_affinity_set(25, 1);	/* PCIe2 -> CPU:0, VPE:0 */
+		irq_affinity_set(20, 4);	/* SDXC  -> CPU:1, VPE:0 */
+		irq_affinity_set(22, 8);	/* xHCI  -> CPU:1, VPE:1 */
+		
+		rps_queue_set("ra0", 0x2);
+		xps_queue_set("ra0", 0x2);
+		
+		rps_queue_set("rai0", 0x8);
+		xps_queue_set("rai0", 0x8);
+		
+		rps_queue_set("eth2", 0x1);
+		xps_queue_set("eth2", 0x1);
+		
+		rps_queue_set("eth3", 0x4);
+		xps_queue_set("eth3", 0x4);
+		
+	} else if (ncpu == 2) {
+		irq_affinity_set( 3, 1);	/* GMAC  -> CPU:0, VPE:0 */
+		irq_affinity_set( 4, 2);	/* PCIe0 -> CPU:0, VPE:1 */
+		irq_affinity_set(24, 2);	/* PCIe1 -> CPU:0, VPE:1 */
+		irq_affinity_set(25, 1);	/* PCIe2 -> CPU:0, VPE:0 */
+		irq_affinity_set(20, 2);	/* SDXC  -> CPU:0, VPE:1 */
+		irq_affinity_set(22, 2);	/* xHCI  -> CPU:0, VPE:1 */
+		
+		rps_queue_set("rai0", 0x1);
+		xps_queue_set("rai0", 0x1);
+		
+		rps_queue_set("eth2", 0x1);
+		xps_queue_set("eth2", 0x1);
+		
+		rps_queue_set("eth3", 0x2);
+		xps_queue_set("eth3", 0x2);
+	}
+}
+#else
+void set_cpu_affinity(void) {}
+#endif
+
 void
 kill_services(char* svc_name[], int wtimeout, int forcekill)
 {

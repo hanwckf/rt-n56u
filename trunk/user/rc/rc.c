@@ -639,6 +639,7 @@ init_router(void)
 	recreate_passwd_unix(1);
 
 	set_timezone();
+	set_cpu_affinity();
 	set_pagecache_reclaim();
 
 	storage_load_time();

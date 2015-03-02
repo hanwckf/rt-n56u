@@ -244,6 +244,10 @@
 			{"wan_auth_user", "", NULL, EVM_RESTART_WAN},
 			{"wan_auth_pass", "", NULL, EVM_RESTART_WAN},
 			{"wan_auth_host", "", NULL, EVM_RESTART_WAN},
+			{"viptv_mode", "", NULL, EVM_RESTART_WAN},
+			{"viptv_ipaddr", "", NULL, EVM_RESTART_WAN},
+			{"viptv_netmask", "", NULL, EVM_RESTART_WAN},
+			{"viptv_gateway", "", NULL, EVM_RESTART_WAN},
 			{0,0,0,0}
 		};
 

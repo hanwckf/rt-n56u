@@ -203,6 +203,7 @@ ISP_Authentication_pass=Пароль:
 PPP_L2TPD=Управляющий L2TP-клиент:
 PPP_AdaptiveLCP=Адаптивный интервал LCP Echo:
 PPP_DefaultGW=Использовать шлюз по умолчанию из туннеля?
+MAN_VIPTV_desc=Настройка IP-адреса MAN для VLAN CPU (IPTV)
 WAN_MAN_desc=Настройка IP-адреса MAN
 WAN_MAN_DHCP=Получать IP-адрес MAN автоматически?
 WAN_Poller=Проверять удаленный шлюз ARP-пингами?

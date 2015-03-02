@@ -361,8 +361,8 @@ launch_viptv_wan(void)
 {
 	int vlan_vid[2];
 	int vlan_pri;
-	int is_vlan_filter;
-	char *viptv_iflast, *vinet_iflast;
+	int is_vlan_filter, viptv_mode;
+	char *viptv_iflast, *vinet_iflast, *viptv_addr, *viptv_mask, *viptv_gate;
 	char viptv_ifname[32], rp_path[64];
 #if defined (USE_SINGLE_MAC)
 	const char *ifname_wan_cpu = IFNAME_MAC;
@@ -402,33 +402,61 @@ launch_viptv_wan(void)
 		
 		viptv_ifname[0] = 0;
 		nvram_set_temp("viptv_ifname", viptv_ifname);
+		
+		return;
+	}
+
+	/* case3: CPU Internet tagged: y, CPU IPTV tagged: y (different VID) */
+	/* case4: CPU Internet tagged: n, CPU IPTV tagged: y */
+	/* case5: CPU Internet tagged: y, CPU IPTV tagged: n */
+
+	/* VLAN interface for IPTV */
+	snprintf(viptv_ifname, sizeof(viptv_ifname), "%s.%d", ifname_wan_cpu, vlan_vid[1]);
+
+	/* remove previous VLAN interface */
+	if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && strcmp(viptv_iflast, IFNAME_WAN) &&
+	                     strcmp(viptv_iflast, viptv_ifname) && is_interface_exist(viptv_iflast))
+		remove_vlan_iface(viptv_iflast);
+
+	/* create VLAN interface for IPTV */
+	if (!is_interface_exist(viptv_ifname))
+		doSystem("vconfig add %s %d", ifname_wan_cpu, vlan_vid[1]);
+
+	doSystem("vconfig set_egress_map %s %d %d", viptv_ifname, 0, vlan_pri);
+	doSystem("ifconfig %s hw ether %s", viptv_ifname, nvram_safe_get("wan_hwaddr"));
+	doSystem("ifconfig %s mtu %d up %s", viptv_ifname, 1500, "0.0.0.0");
+
+	/* disable rp_filter */
+	sprintf(rp_path, "/proc/sys/net/ipv4/conf/%s/rp_filter", viptv_ifname);
+	fput_int(rp_path, 0);
+
+	nvram_set_temp("viptv_ifname", viptv_ifname);
+
+	viptv_mode = nvram_get_int("viptv_mode");
+	viptv_addr = nvram_safe_get("viptv_ipaddr");
+	viptv_mask = nvram_safe_get("viptv_netmask");
+
+	if (viptv_mode == 2 && is_valid_ipv4(viptv_addr) && is_valid_ipv4(viptv_mask)) {
+		char tmp[32], prefix[8];
+		
+		strcpy(prefix, "manv_");
+		nvram_set_temp(strcat_r(prefix, "ipaddr", tmp), viptv_addr);
+		nvram_set_temp(strcat_r(prefix, "netmask", tmp), viptv_mask);
+		ifconfig(viptv_ifname, IFUP, viptv_addr, viptv_mask);
+		
+		/* default route via default gateway (metric 10) */
+		viptv_gate = nvram_safe_get("viptv_gateway");
+		if (is_valid_ipv4(viptv_gate)) {
+			nvram_set_temp(strcat_r(prefix, "gateway", tmp), viptv_gate);
+			route_add(viptv_ifname, 10, "0.0.0.0", viptv_gate, "0.0.0.0");
+		}
+		
+		logmessage(LOGNAME, "%s %s (%s)", "IPTV MAN", "up", viptv_ifname);
+		
+		start_igmpproxy(viptv_ifname);
+	} else if (viptv_mode == 1) {
+		start_zcip_viptv(viptv_ifname);
 	} else {
-		/* case3: CPU Internet tagged: y, CPU IPTV tagged: y (different VID) */
-		/* case4: CPU Internet tagged: n, CPU IPTV tagged: y */
-		/* case5: CPU Internet tagged: y, CPU IPTV tagged: n */
-		
-		/* VLAN interface for IPTV */
-		snprintf(viptv_ifname, sizeof(viptv_ifname), "%s.%d", ifname_wan_cpu, vlan_vid[1]);
-		
-		/* remove previous VLAN interface */
-		if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && strcmp(viptv_iflast, IFNAME_WAN) &&
-		                     strcmp(viptv_iflast, viptv_ifname) && is_interface_exist(viptv_iflast))
-			remove_vlan_iface(viptv_iflast);
-		
-		/* create VLAN interface for IPTV */
-		if (!is_interface_exist(viptv_ifname))
-			doSystem("vconfig add %s %d", ifname_wan_cpu, vlan_vid[1]);
-		
-		doSystem("vconfig set_egress_map %s %d %d", viptv_ifname, 0, vlan_pri);
-		doSystem("ifconfig %s hw ether %s", viptv_ifname, nvram_safe_get("wan_hwaddr"));
-		doSystem("ifconfig %s mtu %d up %s", viptv_ifname, 1500, "0.0.0.0");
-		
-		/* disable rp_filter */
-		sprintf(rp_path, "/proc/sys/net/ipv4/conf/%s/rp_filter", viptv_ifname);
-		fput_int(rp_path, 0);
-		
-		nvram_set_temp("viptv_ifname", viptv_ifname);
-		
 		start_udhcpc_viptv(viptv_ifname);
 	}
 }
@@ -2015,9 +2043,9 @@ udhcpc_viptv_bound(char *man_ifname, int is_renew_mode)
 		if (*rt || *rt_rfc || *rt_ms)
 			add_dhcp_routes(rt, rt_rfc, rt_ms, man_ifname, 0);
 		
-		/* default route via default gateway (metric 3) */
+		/* default route via default gateway (metric 10) */
 		if (is_valid_ipv4(gw))
-			route_add(man_ifname, 3, "0.0.0.0", gw, "0.0.0.0");
+			route_add(man_ifname, 10, "0.0.0.0", gw, "0.0.0.0");
 		
 		start_igmpproxy(man_ifname);
 	}
@@ -2156,16 +2184,14 @@ udhcpc_viptv_renew(char *man_ifname)
 static int
 udhcpc_leasefail(char *wan_ifname)
 {
+	/* DHCP failed for INET */
 	return 0;
 }
 
 static int
 udhcpc_viptv_leasefail(char *man_ifname)
 {
-	/* DHCP failed for IPTV, start ZCIP */
-	start_zcip_viptv(man_ifname);
-	stop_udhcpc_viptv();
-
+	/* DHCP failed for IPTV */
 	return 0;
 }
 
@@ -2273,7 +2299,9 @@ zcip_viptv_main(int argc, char **argv)
 
 	umask(0000);
 
-	if (!strcmp(argv[1], "config"))
+	if (!strcmp(argv[1], "deconfig"))
+		ret = 0;
+	else if (!strcmp(argv[1], "config"))
 		ret = zcip_viptv_bound(man_ifname);
 
 	return ret;
@@ -2358,7 +2386,7 @@ int start_udhcpc_viptv(char *man_ifname)
 		"-s", SCRIPT_UDHCPC_VIPTV,
 		"-p", pidfile,
 		"-t4",
-		"-T3",
+		"-T4",
 		"-d",		/* Background after run (new patch for udhcpc) */
 		NULL,		/* -O mtu		*/
 		NULL,		/* -O routes		*/

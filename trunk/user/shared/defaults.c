@@ -100,6 +100,12 @@ struct nvram_pair router_defaults[] = {
 	{ "vlan_tag_lan4", "0" },
 	{ "x_DHCPClient", "1" },
 
+	/* VLAN IPTV path */
+	{ "viptv_mode", "0" },
+	{ "viptv_ipaddr", "0.0.0.0" },
+	{ "viptv_netmask", "0.0.0.0" },
+	{ "viptv_gateway", "0.0.0.0" },
+
 	/* PPP VPN parameters */
 	{ "wan_pppoe_username", "" },		/* PPP username */
 	{ "wan_pppoe_passwd", "" },		/* PPP password */

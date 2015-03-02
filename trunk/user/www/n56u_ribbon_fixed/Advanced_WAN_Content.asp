@@ -91,14 +91,19 @@ function applyRule(){
 }
 
 function validForm(){
+	var lan_addr = document.form.lan_ipaddr.value;
+	var lan_mask = document.form.lan_netmask.value;
 	var wan_proto = document.form.wan_proto.value;
 	var wan_stb_x = document.form.wan_stb_x.value;
 	var min_vlan = support_min_vlan();
+	var addr_obj;
+	var mask_obj;
+	var gate_obj;
 
 	if($("tbl_dhcp_sect").style.display != "none" && !document.form.x_DHCPClient[0].checked){
-		var addr_obj = document.form.wan_ipaddr;
-		var mask_obj = document.form.wan_netmask;
-		var gate_obj = document.form.wan_gateway;
+		addr_obj = document.form.wan_ipaddr;
+		mask_obj = document.form.wan_netmask;
+		gate_obj = document.form.wan_gateway;
 		
 		if(!validate_ipaddr_final(addr_obj, 'wan_ipaddr')
 				|| !validate_ipaddr_final(mask_obj, 'wan_netmask')
@@ -112,9 +117,6 @@ function validForm(){
 			gate_obj.focus();
 			return false;
 		}
-		
-		var lan_addr = document.form.lan_ipaddr.value;
-		var lan_mask = document.form.lan_netmask.value;
 		
 		if(matchSubnet2(lan_addr, lan_mask, addr_obj.value, mask_obj.value)){
 			alert("<#JS_validsubnet#>");
@@ -225,6 +227,23 @@ function validForm(){
 					return false;
 				if(!validate_range(document.form.vlan_pri_lan4, 0, 7))
 					return false;
+			}
+		}
+		
+		if (document.form.viptv_mode.value == "2"){
+			addr_obj = document.form.viptv_ipaddr;
+			mask_obj = document.form.viptv_netmask;
+			
+			if(!validate_ipaddr_final(addr_obj, 'viptv_ipaddr')
+				|| !validate_ipaddr_final(mask_obj, 'viptv_netmask')
+				)
+				return false;
+			
+			if(matchSubnet2(lan_addr, lan_mask, addr_obj.value, mask_obj.value)){
+				alert("<#JS_validsubnet#>");
+				mask_obj.focus();
+				mask_obj.select();
+				return false;
 			}
 		}
 	}
@@ -498,27 +517,21 @@ function change_wan_dns_enable(wan_type){
 }
 
 function change_stb_port_and_vlan(){
-	var wan_stb_x   = document.form.wan_stb_x.value;
+	var wan_stb_x = document.form.wan_stb_x.value;
 	var vlan_filter = document.form.vlan_filter[0].checked;
-	
+
 	free_options(document.form.wan_src_phy);
 	add_option(document.form.wan_src_phy, "WAN", "0", 0);
-	
-	if(wan_stb_x == "0" || vlan_filter) {
-		$("wan_stb_iso").style.display = "none";
-	}
-	else {
-		$("wan_stb_iso").style.display = "";
-	}
-	
+
+	showhide_div("wan_stb_iso", !(wan_stb_x == "0" || vlan_filter));
+
 	if(wan_stb_x == "0") {
 		$("wan_src_phy").style.display = "none";
 		document.form.wan_src_phy.SelectedIndex = 0;
-	}
-	else {
+	} else {
 		$("wan_src_phy").style.display = "";
 	}
-	
+
 	if(!vlan_filter) {
 		$("vlan_cpu").style.display = "none";
 		$("vlan_iptv").style.display = "none";
@@ -527,7 +540,7 @@ function change_stb_port_and_vlan(){
 		$("vlan_lan3").style.display = "none";
 		$("vlan_lan4").style.display = "none";
 	}
-	
+
 	if(wan_stb_x == "0") {
 		if(vlan_filter) {
 			$("vlan_cpu").style.display = "";
@@ -619,21 +632,27 @@ function change_stb_port_and_vlan(){
 		add_option(document.form.wan_src_phy, "LAN2", "2", (original_wan_src_phy == 2) ? 1 : 0);
 		add_option(document.form.wan_src_phy, "LAN3", "3", (original_wan_src_phy == 3) ? 1 : 0);
 	}
+
+	change_viptv_mode(vlan_filter);
+}
+
+function change_viptv_mode(vf){
+	var v = (document.form.viptv_mode.value == "2" && vf) ? 1 : 0;
+	showhide_div("tbl_viptv_sect", v);
+	inputCtrl(document.form.viptv_ipaddr, v);
+	inputCtrl(document.form.viptv_netmask, v);
+	inputCtrl(document.form.viptv_gateway, v);
 }
 
 function click_untag_lan(lan_port) {
-	if (lan_port == 1) {
+	if (lan_port == 1)
 		document.form.vlan_tag_lan1.value = (document.form.untag_lan1.checked) ? "0" : "1";
-	}
-	else if (lan_port == 2) {
+	else if (lan_port == 2)
 		document.form.vlan_tag_lan2.value = (document.form.untag_lan2.checked) ? "0" : "1";
-	}
-	else if (lan_port == 3) {
+	else if (lan_port == 3)
 		document.form.vlan_tag_lan3.value = (document.form.untag_lan3.checked) ? "0" : "1";
-	}
-	else if (lan_port == 4) {
+	else if (lan_port == 4)
 		document.form.vlan_tag_lan4.value = (document.form.untag_lan4.checked) ? "0" : "1";
-	}
 }
 
 function AuthSelection(auth){
@@ -1089,6 +1108,24 @@ function simplyMAC(fullMAC){
                                         </tr>
                                     </table>
 
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_viptv_sect" style="display:none">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#MAN_VIPTV_desc#></th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%"><#IPConnection_ExternalIPAddress_itemname#></th>
+                                            <td><input type="text" name="viptv_ipaddr" maxlength="15" class="input" size="15" value="<% nvram_get_x("","viptv_ipaddr"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);"/></td>
+                                        </tr>
+                                        <tr>
+                                            <th><#IPConnection_x_ExternalSubnetMask_itemname#></th>
+                                            <td><input type="text" name="viptv_netmask" maxlength="15" class="input" size="15" value="<% nvram_get_x("","viptv_netmask"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);"/></td>
+                                        </tr>
+                                        <tr>
+                                            <th><#IPConnection_x_ExternalGateway_itemname#></th>
+                                            <td><input type="text" name="viptv_gateway" maxlength="15" class="input" size="15" value="<% nvram_get_x("","viptv_gateway"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);"/></td>
+                                        </tr>
+                                    </table>
+
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#WAN_Bridge#></th>
@@ -1152,6 +1189,13 @@ function simplyMAC(fullMAC){
                                             <td>
                                                 <span class="input-prepend"><span class="add-on">VID</span><input type="text" name="vlan_vid_iptv" class="wlan_filter" size="4" maxlength="4" value="<% nvram_get_x("", "vlan_vid_iptv"); %>"/>&nbsp;&nbsp;</span>
                                                 <span class="input-prepend"><span class="add-on">PRIO</span><input type="text" name="vlan_pri_iptv" class="wlan_filter" size="2" maxlength="1" value="<% nvram_get_x("", "vlan_pri_iptv"); %>"/></span>
+                                                <span class="input-prepend">&nbsp;
+                                                <select name="viptv_mode" class="input" style="width: 95px;" onchange="change_viptv_mode(1);">
+                                                    <option value="0" <% nvram_match_x("", "viptv_mode", "0", "selected"); %>>DHCP (*)</option>
+                                                    <option value="1" <% nvram_match_x("", "viptv_mode", "1", "selected"); %>>ZeroConf</option>
+                                                    <option value="2" <% nvram_match_x("", "viptv_mode", "2", "selected"); %>>Static IP</option>
+                                                </select>
+                                                </span>
                                             </td>
                                         </tr>
                                         <tr id="vlan_lan1">
@@ -1186,11 +1230,11 @@ function simplyMAC(fullMAC){
                                                 <label class="checkbox inline"><input type="checkbox" name="untag_lan4" value="" style="margin-left:10;" onclick="click_untag_lan(4);" <% nvram_match_x("", "vlan_tag_lan4", "0", "checked"); %>/><#UntagVLAN#></label>
                                             </td>
                                         </tr>
+                                    </table>
+
+                                    <table class="table">
                                         <tr>
-                                            <td colspan="2" style="border-top: 0 none;">
-                                                <br/>
-                                                <center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>
-                                            </td>
+                                            <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
                                         </tr>
                                     </table>
                                 </div>

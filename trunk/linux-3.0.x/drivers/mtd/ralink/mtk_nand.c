@@ -30,7 +30,7 @@
 #include "ralink-nand-map.h"
 #endif
 
-#if defined (CONFIG_MTD_UBI)
+#if defined (CONFIG_MTD_UBI) || defined (CONFIG_MTD_UBI_MODULE)
 #define UBIFS_ECC_0_PATCH
 #if defined (CONFIG_MTD_NAND_USE_UBI_PART)
 #define UBI_PART_START_OFFSET	NAND_MTD_UBI_PART_OFFSET
@@ -43,8 +43,9 @@
 static int shift_on_bbt = 0;
 extern void nand_bbt_set_bad(struct mtd_info *mtd, int page);
 extern int nand_bbt_get(struct mtd_info *mtd, int page);
-int mtk_nand_read_oob_hw(struct mtd_info *mtd, struct nand_chip *chip, int page);
 #endif
+static int mtk_nand_read_oob_hw(struct mtd_info *mtd, struct nand_chip *chip, int page);
+static int mtk_nand_read_oob_raw(struct mtd_info *mtd, uint8_t * buf, int page_addr, int len);
 
 extern void nand_release_device(struct mtd_info *mtd);
 extern int nand_get_device(struct mtd_info *mtd, int new_state);
@@ -1063,7 +1064,7 @@ static int write_next_on_fail(struct mtd_info *mtd, char *write_buf, int page, i
 
 static int is_skip_bad_block(struct mtd_info *mtd, int page)
 {
-#if defined (CONFIG_MTD_UBI)
+#if defined (CONFIG_MTD_UBI) || defined (CONFIG_MTD_UBI_MODULE)
 	struct nand_chip *chip = mtd->priv;
 
 	if ((page << chip->page_shift) >= UBI_PART_START_OFFSET)
@@ -1074,8 +1075,15 @@ static int is_skip_bad_block(struct mtd_info *mtd, int page)
 
 int check_block_remap(struct mtd_info *mtd, int block)
 {
-	if (shift_on_bbt)
+	if (shift_on_bbt) {
+#if defined (CONFIG_MTD_UBI) || defined (CONFIG_MTD_UBI_MODULE)
+		struct nand_chip *chip = mtd->priv;
+
+		if ((block << chip->phys_erase_shift) >= UBI_PART_START_OFFSET)
+			return block;
+#endif
 		return block_remap(mtd, block);
+	}
 
 	return block;
 }
@@ -1089,16 +1097,15 @@ EXPORT_SYMBOL(check_block_remap);
 
 
 #if defined(UBIFS_ECC_0_PATCH)
-static int mtk_nand_read_oob_raw(struct mtd_info *mtd, uint8_t * buf, int page_addr, int len);
 static int check_ecc_0(struct mtd_info *mtd, int page)
 {
+	int i;
 	struct nand_chip *chip = mtd->priv;
 	u8 local_oob[NAND_MAX_OOBSIZE];
 
 	// for 4 bits ecc protection, the all 0xff is 26 20 98 1b 87 6e fc
 	if (chip->ecc.layout->eccbytes == 32) {
 		if (mtk_nand_read_oob_raw(mtd, local_oob, page, mtd->oobsize) == 0) {
-			int i;
 			for (i = 0; i < 64; i++) {
 				switch (i & 0xf)
 				{
@@ -1147,7 +1154,8 @@ static int check_ecc_0(struct mtd_info *mtd, int page)
 		return 0;
 	}
 
-//	printk("clean page with ECC at %x\n", page);
+	MSG(VERIFY, "%s: [%s] clean page with ECC at 0x%x\n",
+		MTK_NAND_MODULE_TEXT, __FUNCTION__, page);
 	return 1;
 }
 
@@ -1238,6 +1246,7 @@ static int mtk_nand_write_page(struct mtd_info *mtd, struct nand_chip *chip, con
 				return -EIO;
 			if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
 				return -EIO;
+			goto do_write;
 		}
 	}
 #endif
@@ -1247,6 +1256,8 @@ static int mtk_nand_write_page(struct mtd_info *mtd, struct nand_chip *chip, con
 		fix_ecc_0(mtd, page_in_block + mapped_block * page_per_block);
 	}
 #endif
+
+do_write:
 
 	do {
 		if (!mtk_nand_exec_write_page(mtd, page_in_block + mapped_block * page_per_block, mtd->writesize, (u8 *)buf, chip->oob_poi)) {
@@ -1881,7 +1892,7 @@ static int mtk_nand_block_markbad(struct mtd_info *mtd, loff_t offset)
 	return ret;
 }
 
-int mtk_nand_read_oob_hw(struct mtd_info *mtd, struct nand_chip *chip, int page)
+static int mtk_nand_read_oob_hw(struct mtd_info *mtd, struct nand_chip *chip, int page)
 {
 	int i;
 	u8 iter = 0;
@@ -1930,7 +1941,7 @@ static int mtk_nand_read_oob(struct mtd_info *mtd, struct nand_chip *chip, int p
 	if (!is_skip_bad_block(mtd, page)) {
 		// bmt code
 	} else {
-		if (shift_on_bbt){
+		if (shift_on_bbt) {
 			mapped_block = block_remap(mtd, block);
 			if (mapped_block < 0)
 				return -EIO;

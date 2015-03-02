@@ -31,7 +31,7 @@
 #define MTD_OPS_RAW		MTD_OOB_RAW
 #endif
 
-#if defined (CONFIG_MTD_UBI)
+#if defined (CONFIG_MTD_UBI) || defined (CONFIG_MTD_UBI_MODULE)
 #define UBIFS_ECC_0_PATCH
 #if defined (CONFIG_MTD_NAND_USE_UBI_PART)
 #define UBI_PART_START_OFFSET	NAND_MTD_UBI_PART_OFFSET
@@ -2322,7 +2322,7 @@ static int page_remap(struct ra_nand_chip *ra, int page)
 
 static int is_skip_bad_block(struct ra_nand_chip *ra, int page)
 {
-#if defined (CONFIG_MTD_UBI)
+#if defined (CONFIG_MTD_UBI) || defined (CONFIG_MTD_UBI_MODULE)
 	if ((page << ra->page_shift) >= UBI_PART_START_OFFSET)
 		return 0;
 #endif

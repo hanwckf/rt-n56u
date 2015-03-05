@@ -1027,10 +1027,12 @@ static void esw_port_phy_power(u32 phy_port_id, u32 power_on)
 {
 	u32 esw_phy_mcr = 0x3100;
 	u32 phy_mdio_addr = phy_port_id;
+	u32 i_port_speed;
 
 	if (phy_port_id > ESW_PHY_ID_MAX)
 		return;
 
+	/* external GigaPHY */
 #if defined (CONFIG_P4_MAC_TO_PHY_MODE)
 	if (phy_port_id == 4)
 		phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
@@ -1042,8 +1044,14 @@ static void esw_port_phy_power(u32 phy_port_id, u32 power_on)
 		phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
 #endif
 
+	i_port_speed = (g_port_link_mode[phy_port_id] & 0x0F);
+
 	if (mii_mgr_read(phy_mdio_addr, 0, &esw_phy_mcr)) {
 		esw_phy_mcr &= ~((1<<11)|(1<<9));
+		
+		/* fix PHY init after buggy Uboot 4.3.0.0 */
+		if (i_port_speed < SWAPI_LINK_SPEED_MODE_FORCE_100_FD)
+			esw_phy_mcr |= (1<<12);
 		
 		if (power_on)
 			esw_phy_mcr |= (1<<9);
@@ -1060,7 +1068,7 @@ static void power_down_all_phy(void)
 {
 	u32 i;
 
-	/* down all PHY ports (please enable from user-level) */
+	/* down all PHY ports */
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
 		esw_port_phy_power(i, 0);
 }
@@ -1513,13 +1521,6 @@ static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 
 	switch (i_port_speed)
 	{
-#if defined (CONFIG_MT7530_GSW)
-	case SWAPI_LINK_SPEED_MODE_AUTO_1000_FD:
-		link_desc = "1000FD [AN]";
-		/* disable ability 100 FD, 100 HD, 10 FD, 10 HD */
-		esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<6)|(1<<5));
-		break;
-#endif
 	case SWAPI_LINK_SPEED_MODE_AUTO_100_FD:
 		link_desc = "100FD [AN]";
 		/* disable ability 100 HD, 10 FD, 10 HD */
@@ -1585,6 +1586,7 @@ static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 		break;
 	}
 
+	/* external GigaPHY */
 #if defined (CONFIG_P4_MAC_TO_PHY_MODE)
 	if (phy_port_id == 4)
 		phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
@@ -1596,7 +1598,9 @@ static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 		phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
 #endif
 
-#if defined (CONFIG_MT7530_GSW) || defined (CONFIG_P4_MAC_TO_PHY_MODE) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
+	/* MT7621/MT7530 GSW or external GigaPHY */
+#if defined (CONFIG_P5_MAC_TO_PHY_MODE) || defined (CONFIG_MT7530_GSW) || \
+    defined (CONFIG_P4_MAC_TO_PHY_MODE) || defined (CONFIG_GE2_RGMII_AN)
 #if defined (CONFIG_P4_MAC_TO_PHY_MODE)
 	if (phy_port_id == 4)
 #elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
@@ -1605,12 +1609,29 @@ static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 	{
 		u32 esw_phy_gcr = 0;
 		
-		/* set 1000Base-T control register (support only for MT7621 GSW/MT7530 or external GigaPHY) */
+		/* set MII control register [6,13] */
+		if (i_port_speed <= SWAPI_LINK_SPEED_MODE_AUTO_1000_FD) {
+			/* set 1000 Mbps */
+			esw_phy_mcr &= ~(1<<13);
+			esw_phy_mcr |=  (1<<6);
+		}
+		
+		/* set auto-negotiation advertisement register [5,6,7,8] */
+		if (i_port_speed == SWAPI_LINK_SPEED_MODE_AUTO_1000_FD) {
+			/* disable ability 100 FD, 100 HD, 10 FD, 10 HD */
+			esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<6)|(1<<5));
+			link_desc = "1000FD [AN]";
+		}
+		
+		/* set 1000Base-T control register [8,9] */
 		mii_mgr_read(phy_mdio_addr, 9, &esw_phy_gcr);
-		if (i_port_speed > SWAPI_LINK_SPEED_MODE_AUTO_1000_FD)
-			esw_phy_gcr &= ~((1<<9)|(1<<8));	// turn off 1000Base-T Advertisement
-		else
-			esw_phy_gcr |= (1<<9)|(1<<8);		// turn on 1000Base-T Advertisement
+		if (i_port_speed <= SWAPI_LINK_SPEED_MODE_AUTO_1000_FD) {
+			/* enable 1000Base-T Advertisement */
+			esw_phy_gcr |=  ((1<<9)|(1<<8));
+		} else {
+			/* disable 1000Base-T Advertisement */
+			esw_phy_gcr &= ~((1<<9)|(1<<8));
+		}
 		mii_mgr_write(phy_mdio_addr, 9, esw_phy_gcr);
 	}
 #endif
@@ -2155,9 +2176,9 @@ int esw_ioctl_init(void)
 		return r;
 	}
 
-	/* early down all PHY */
-#if defined (CONFIG_P4_MAC_TO_PHY_MODE) || defined (CONFIG_P5_MAC_TO_PHY_MODE) || \
-    defined (CONFIG_GE2_RGMII_AN) || defined (CONFIG_MT7530_GSW)
+	/* early down all PHY (please enable from user-level) */
+#if defined (CONFIG_P5_MAC_TO_PHY_MODE) || defined (CONFIG_MT7530_GSW) || \
+    defined (CONFIG_P4_MAC_TO_PHY_MODE) || defined (CONFIG_GE2_RGMII_AN)
 	mii_mgr_init();
 #endif
 	power_down_all_phy();

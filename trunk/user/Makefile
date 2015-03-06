@@ -103,6 +103,10 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_XUPNPD)		+= xupnpd
 dir_$(CONFIG_FIRMWARE_INCLUDE_TCPDUMP)		+= tcpdump
 dir_$(SAMBA_ENABLED)				+= samba3
 
+ifdef CONFIG_MTD_UBI
+dir_y						+= mtd-utils
+endif
+
 ifdef CONFIG_USB_SUPPORT
 dir_y						+= nfsd
 dir_y						+= util-linux

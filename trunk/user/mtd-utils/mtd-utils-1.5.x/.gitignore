@@ -1,0 +1,69 @@
+#
+# NOTE! Don't add files that are generated in specific
+# subdirectories here. Add them in the ".gitignore" file
+# in that subdirectory instead.
+#
+# Normal rules
+#
+.*
+*.gdb
+*.o
+*.a
+*.s
+*.ko
+*.so
+*.mod.c
+*~
+
+#
+# Our programs
+#
+/doc_loadbios
+/docfdisk
+/flash_erase
+/flash_info
+/flash_lock
+/flash_otp_dump
+/flash_otp_info
+/flash_otp_lock
+/flash_otp_write
+/flash_unlock
+/flashcp
+/ftl_check
+/ftl_format
+/jffs2dump
+/jffs2reader
+/mkfs.jffs2
+/mtd_debug
+/nanddump
+/nandtest
+/nandwrite
+/nftl_format
+/nftldump
+/recv_image
+/rfddump
+/rfdformat
+/serve_image
+/sumtool
+
+#
+# Top-level generic files
+#
+
+#
+# git files that we don't want to ignore even it they are dot-files
+#
+!.gitignore
+
+#
+# Generated include files
+#
+/include/version.h
+
+# stgit generated dirs
+patches-*
+*.patch
+
+# cscope files
+cscope.*
+ncscope.*

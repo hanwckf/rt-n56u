@@ -55,10 +55,10 @@ char rt2880_cmdline[]=CONFIG_CMDLINE;
 #define MTD_UBI_MTD	""
 #endif
 #if defined (CONFIG_RT2880_ROOTFS_IN_FLASH)
-#if defined (CONFIG_MTD_NAND_USE_UBI_PART)
-#define MTD_ROOTFS_DEV	"/dev/mtdblock5"
+#if defined (CONFIG_MTD_NAND_RALINK) || defined (CONFIG_MTD_NAND_MTK)
+#define MTD_ROOTFS_DEV	"/dev/mtdblock5 rootfstype=squashfs"
 #else
-#define MTD_ROOTFS_DEV	"/dev/mtdblock4"
+#define MTD_ROOTFS_DEV	"/dev/mtdblock4 rootfstype=squashfs"
 #endif
 #else
 #define MTD_ROOTFS_DEV	"/dev/ram0"

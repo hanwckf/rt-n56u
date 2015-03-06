@@ -1,11 +1,8 @@
 #ifndef __RALINK_NAND_MAP_UBI_H__
 #define __RALINK_NAND_MAP_UBI_H__
 
-#if defined (CONFIG_MTD_NAND_USE_CUSTOM_PART)
 #define NAND_MTD_BOOT_PART_SIZE		CONFIG_MTD_BOOTLOADER_PART_SIZ
-#else
-#define NAND_MTD_BOOT_PART_SIZE		0x00100000	/* 8x NAND blocks */
-#endif
+
 #define NAND_MTD_UBI_PART_OFFSET	NAND_MTD_BOOT_PART_SIZE
 
 static struct mtd_partition rt2880_partitions[] = {

@@ -630,6 +630,8 @@ init_router(void)
 
 	init_gpio_leds_buttons();
 
+	attach_ubi_partition();
+
 	gen_ralink_config_2g(0);
 	gen_ralink_config_5g(0);
 	load_wireless_modules();

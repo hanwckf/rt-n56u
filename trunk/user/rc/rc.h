@@ -159,6 +159,7 @@ int module_param_get(char *module_name, char *module_param, char *param_value, s
 int module_param_set_int(char *module_name, char *module_param, int param_value);
 void oom_score_adjust(pid_t pid, int oom_score_adj);
 void set_cpu_affinity(void);
+void attach_ubi_partition(void);
 void kill_services(char* svc_name[], int wtimeout, int forcekill);
 int kill_process_pidfile(char *pidfile, int wtimeout, int forcekill);
 int create_file(const char *fn);

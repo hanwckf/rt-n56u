@@ -700,7 +700,27 @@ set_cpu_affinity(void)
 	}
 }
 #else
-void set_cpu_affinity(void) {}
+inline void set_cpu_affinity(void) {}
+#endif
+
+#if defined (USE_NAND_FLASH)
+void attach_ubi_partition(void)
+{
+	int mtd_rwfs;
+
+	mtd_rwfs = mtd_dev_idx("RWFS");
+	if (mtd_rwfs < 3)
+		return;
+
+	module_smart_load("ubi", NULL);
+
+	if (!is_module_loaded("ubi"))
+		return;
+
+	doSystem("ubiattach -p /dev/mtd%d", mtd_rwfs);
+}
+#else
+inline void attach_ubi_partition(void) {}
 #endif
 
 void

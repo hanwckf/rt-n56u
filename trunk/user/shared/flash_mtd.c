@@ -43,13 +43,12 @@ struct mtd_info {
 	int type;
 };
 
-static int
-mtd_dev_open(const char *mtd_part, int flags, struct mtd_info *p_mi)
+int
+mtd_dev_idx(const char *mtd_part)
 {
 	FILE *fp;
-	struct mtd_info_user miu;
-	char line[128], bnm[64], mtd_dev[16], *p;
-	int idx, fd = -1;
+	char line[128], bnm[64], *p;
+	int idx, ret_idx = -1;
 
 	if (!(fp = fopen("/proc/mtd", "r")))
 		return -1;
@@ -63,28 +62,43 @@ mtd_dev_open(const char *mtd_part, int flags, struct mtd_info *p_mi)
 		if ((p = strchr(bnm, '"')) != NULL)
 			*p = '\0';
 		
-		if (strcmp(mtd_part, bnm))
-			continue;
-		
-		snprintf(mtd_dev, sizeof(mtd_dev), "/dev/mtd%d", idx);
-		if ((fd = open(mtd_dev, flags)) < 0)
-			continue;
-		
-		if (ioctl(fd, MEMGETINFO, &miu) < 0) {
-			close(fd);
-			fd = -1;
+		if (strcmp(mtd_part, bnm) == 0) {
+			ret_idx = idx;
 			break;
 		}
-		
-		sprintf(p_mi->dev, "mtd%d", idx);
-		p_mi->size = miu.size;
-		p_mi->erasesize = miu.erasesize;
-		p_mi->writesize = miu.writesize;
-		p_mi->type = miu.type;
-		break;
 	}
 
 	fclose(fp);
+
+	return ret_idx;
+}
+
+static int
+mtd_dev_open(const char *mtd_part, int flags, struct mtd_info *p_mi)
+{
+	struct mtd_info_user miu;
+	char mtd_dev[16];
+	int idx, fd;
+
+	idx = mtd_dev_idx(mtd_part);
+	if (idx < 0)
+		return -1;
+
+	snprintf(mtd_dev, sizeof(mtd_dev), "/dev/mtd%d", idx);
+	fd = open(mtd_dev, flags);
+	if (fd < 0)
+		return fd;
+
+	if (ioctl(fd, MEMGETINFO, &miu) < 0) {
+		close(fd);
+		return -1;
+	}
+
+	sprintf(p_mi->dev, "mtd%d", idx);
+	p_mi->size = miu.size;
+	p_mi->erasesize = miu.erasesize;
+	p_mi->writesize = miu.writesize;
+	p_mi->type = miu.type;
 
 	return fd;
 }

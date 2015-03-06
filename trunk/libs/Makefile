@@ -22,6 +22,7 @@ dir_y =
 dir_n =
 dir_  =
 
+LIBS_INCLUDE_LIBLZO=n
 LIBS_INCLUDE_LIBSSL=n
 LIBS_INCLUDE_LIBICONV=n
 LIBS_INCLUDE_LIBUSB_0=n
@@ -41,6 +42,7 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_SFTP),y)
 LIBS_INCLUDE_LIBSSL=y
 endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENVPN),y)
+LIBS_INCLUDE_LIBLZO=y
 LIBS_INCLUDE_LIBSSL=y
 endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSH),y)
@@ -69,7 +71,12 @@ LIBS_INCLUDE_MEDIA=y
 endif
 endif
 
+ifdef CONFIG_MTD_UBI
+LIBS_INCLUDE_LIBLZO=y
+endif
+
 dir_y						+= libz
+dir_$(LIBS_INCLUDE_LIBLZO)			+= liblzo
 dir_$(LIBS_INCLUDE_LIBICONV)			+= libiconv
 dir_$(LIBS_INCLUDE_LIBSSL)			+= libssl
 dir_$(LIBS_INCLUDE_LIBUSB_0)			+= libusb
@@ -78,9 +85,6 @@ dir_y						+= libnfnetlink
 
 # ipset shared libs
 dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)		+= libmnl
-
-# openvpn shared libs
-dir_$(CONFIG_FIRMWARE_INCLUDE_OPENVPN)		+= liblzo
 
 # tcpdump shared libs
 dir_$(CONFIG_FIRMWARE_INCLUDE_TCPDUMP)		+= libpcap

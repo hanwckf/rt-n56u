@@ -24,7 +24,7 @@
 #include <sys/types.h>	// for mkdir()
 #include <unistd.h>	// for rmdir()
 
-#include <nvram/bcmnvram.h>
+#include <nvram_linux.h>
 #include <shutils.h>
 
 #include "disk_io_tools.h"

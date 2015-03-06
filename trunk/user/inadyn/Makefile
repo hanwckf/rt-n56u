@@ -27,7 +27,7 @@ DEPS          = $(SRCS:.c=.d)
 CFLAGS       += -W -Wall
 CFLAGS       += -D_BSD_SOURCE -D_GNU_SOURCE
 CFLAGS       += -Iinclude -DVERSION=\"$(VERSION)\"
-CFLAGS       += -Iinclude -I$(SHAREDIR)/include
+CFLAGS       += -Iinclude -I$(SHAREDIR)
 CFLAGS       += -ffunction-sections -fdata-sections
 
 LDFLAGS      += -L$(SHAREDIR) -lshared

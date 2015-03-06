@@ -21,14 +21,16 @@
 #include <errno.h>
 #include <error.h>
 #include <string.h>
+#include <stdint.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "nvram/bcmnvram.h"
+#include <bcmnvram.h>
 
 #define PATH_DEV_NVRAM	"/dev/nvram"
+
 #define MAX_CACHE_LEN	(2*NVRAM_MAX_VALUE_LEN)
 #define MIN_CACHE_RES	32
 

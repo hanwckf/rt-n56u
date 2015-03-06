@@ -27,7 +27,7 @@
 
 #include "infosvr.h"
 #include <include/ibox.h>
-#include <nvram/bcmnvram.h>
+#include <nvram_linux.h>
 #include <shutils.h>
 
 char *get_printer(void *buf, int size)

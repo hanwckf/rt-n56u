@@ -23,7 +23,7 @@ else
 endif
 
 CFLAGS += -DSUPPORT_LPRng
-CFLAGS += -I$(TOP)/shared -I$(TOP)/shared/include
+CFLAGS += -I$(TOP)/shared
 CFLAGS += -Wall -I.
 CFLAGS += $(DEBFLAGS)
 CFLAGS += -ffunction-sections -fdata-sections

@@ -41,7 +41,7 @@
 #include <syslog.h>
 #include <utime.h>
 
-#include "nvram/bcmnvram.h"
+#include "nvram_linux.h"
 #include "shutils.h"
 
 /* Activate 64-bit file support on Linux/32bit plus others */

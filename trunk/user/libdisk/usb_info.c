@@ -9,7 +9,7 @@
 #include "usb_info.h"
 #include "disk_io_tools.h"
 
-#include <nvram/bcmnvram.h>
+#include <nvram_linux.h>
 #include <shutils.h>
 #include <netutils.h>
 

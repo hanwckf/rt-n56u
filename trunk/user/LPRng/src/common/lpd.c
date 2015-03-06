@@ -32,7 +32,7 @@
 #include "syslog.h"
 
 #include <bin_sem_asus.h>
-#include <nvram/bcmnvram.h>
+#include <nvram_linux.h>
 #include <netinet/tcp.h>
 
 /*Lisa*/

@@ -23,7 +23,7 @@
 #include <sys/swap.h>
 
 #include <shutils.h>	// for eval()
-#include <nvram/bcmnvram.h>
+#include <nvram_linux.h>
 
 #include "disk_io_tools.h"
 #include "disk_swap.h"

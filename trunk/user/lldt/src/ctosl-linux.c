@@ -59,7 +59,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <nvram/bcmnvram.h>
+#include <nvram_linux.h>
 
 #include "globals.h"
 

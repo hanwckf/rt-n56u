@@ -24,7 +24,7 @@
 #include <ctype.h>
 
 #include <bin_sem_asus.h>
-#include <nvram/bcmnvram.h>
+#include <nvram_linux.h>
 
 #include "typeconvert.h"
 #include "usbsock.h"

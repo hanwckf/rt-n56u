@@ -27,7 +27,7 @@
 
 #include <ctype.h>
 
-#include <nvram/bcmnvram.h>
+#include <nvram_linux.h>
 
 #define ASUSDDNS_IP_HTTP_REQUEST					\
 	"GET %s?"							\

@@ -21,7 +21,7 @@
 #include <ralink_boards.h>
 #include <netutils.h>
 #include <shutils.h>
-#include <nvram/bcmnvram.h>
+#include <nvram_linux.h>
 
 #define SYSLOG_ID_HTTPD		"httpd"
 

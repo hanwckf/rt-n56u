@@ -6,7 +6,7 @@ include boards.mk
 include cflags.mk
 
 CFLAGS += -fPIC
-CFLAGS += -Wall -I. -I./include
+CFLAGS += -Wall -I. -I./include -I$(ROOTDIR)/$(LINUXDIR)/include/nvram
 
 LDFLAGS += -L.
 

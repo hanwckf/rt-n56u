@@ -20,8 +20,19 @@
 #define NVRAM_INVALID_MAGIC	0xFFFFFFFF
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	20
-#define NVRAM_MTD_SIZE		0x10000		/* mtdblock1 64K */
-#define NVRAM_MTD_OFFSET	0x01000		/* uboot env max space 4K */
+
+#if defined (CONFIG_MTD_NAND_RALINK) || defined (CONFIG_MTD_NAND_MTK)
+#if defined (CONFIG_MTD_NAND_USE_UBI_PART)
+#define NVRAM_MTD_SIZE		0x1F000		/* mtdblock1, UBI LEB 124K */
+#else
+#define NVRAM_MTD_SIZE		0x20000		/* mtdblock1, nand block 128K */
+#endif
+#define NVRAM_MTD_OFFSET	0		/* uboot env not shared with nvram */
+#else
+#define NVRAM_MTD_SIZE		0x10000		/* mtdblock1, 64K */
+#define NVRAM_MTD_OFFSET	0x01000		/* uboot env max space 4K, shared with nvram */
+#endif
+
 #define NVRAM_SPACE		(NVRAM_MTD_SIZE-NVRAM_MTD_OFFSET)
 
 #define NVRAM_MAX_PARAM_LEN	64
@@ -50,34 +61,6 @@ struct nvram_tuple {
 	         val_tmp:1;
 	struct nvram_tuple *next;
 };
-
-#else
-
-#include <stdint.h>
-
-struct nvram_pair {
-	char *name;
-	char *value;
-};
-
-extern char *nvram_get(const char *name);
-extern char *nvram_safe_get(const char *name);
-extern int nvram_get_int(const char *name);
-extern int nvram_safe_get_int(const char* name, int val_def, int val_min, int val_max);
-extern int nvram_getall(char *buf, int count, int include_temp);
-
-extern int nvram_set(const char *name, const char *value);
-extern int nvram_set_int(const char *name, int value);
-extern int nvram_unset(const char *name);
-
-extern int nvram_set_temp(const char *name, const char *value);
-extern int nvram_set_int_temp(const char *name, int value);
-
-extern int nvram_match(const char *name, char *match);
-extern int nvram_invmatch(const char *name, char *invmatch);
-
-extern int nvram_commit(void);
-extern int nvram_clear(void);
 
 #endif
 

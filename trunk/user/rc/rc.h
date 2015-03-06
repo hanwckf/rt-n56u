@@ -25,7 +25,7 @@
 
 #include <ralink_boards.h>
 
-#include <nvram/bcmnvram.h>
+#include <nvram_linux.h>
 
 #include <netutils.h>
 #include <shutils.h>

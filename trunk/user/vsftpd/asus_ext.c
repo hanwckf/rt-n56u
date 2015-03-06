@@ -16,7 +16,7 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 
-#include <nvram/bcmnvram.h>
+#include <nvram_linux.h>
 #include <disk_io_tools.h>
 #include <disk_initial.h>
 #include <disk_share.h>

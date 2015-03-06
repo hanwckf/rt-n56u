@@ -31,9 +31,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <unistd.h>
-#include <nvram/bcmnvram.h>
+#include <stdint.h>
+
+#include <bcmnvram.h>
+
+#include <nvram_linux.h>
 
 #define PROFILE_HEADER		"HDR1"
 #define PROFILE_HEADER_NEW	"HDR2"

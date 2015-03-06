@@ -23,7 +23,6 @@
 #include <assert.h>
 
 #include <httpd.h>
-#include <nvram/bcmnvram.h>
 
 static char * get_arg(char *args, char **next);
 static void call(char *func, FILE *stream);

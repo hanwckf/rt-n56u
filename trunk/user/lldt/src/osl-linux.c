@@ -67,7 +67,7 @@
 #include "packetio.h"
 
 #include <netutils.h>
-#include <nvram/bcmnvram.h>
+#include <nvram_linux.h>
 
 /* helper functions */
 

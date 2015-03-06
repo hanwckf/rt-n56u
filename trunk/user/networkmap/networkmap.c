@@ -22,7 +22,7 @@
 
 #include <shutils.h>
 #include <netutils.h>
-#include <nvram/bcmnvram.h>
+#include <nvram_linux.h>
 #include <bin_sem_asus.h>
 
 #define MAX_SUBNET  (23) /* 22..24 */

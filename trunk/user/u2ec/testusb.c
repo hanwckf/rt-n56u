@@ -18,10 +18,11 @@
 #include <ctype.h>
 #include <string.h>
 #include <usb.h>
+
+#include <nvram_linux.h>
+
 #include "typeconvert.h"
 #include "usbsock.h"
-
-#include <nvram/bcmnvram.h>
 
 #define USBLP_FIRST_PROTOCOL	1
 #define USBLP_LAST_PROTOCOL	3

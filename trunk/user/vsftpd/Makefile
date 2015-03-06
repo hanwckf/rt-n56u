@@ -6,7 +6,7 @@ INSTALL	= install
 IFLAGS  = -idirafter dummyinc
 
 CFLAGS	+= -O2 -Wall -W -Wshadow
-CFLAGS  += -I$(TOP)/shared -I$(TOP)/shared/include
+CFLAGS  += -I$(TOP)/shared
 CFLAGS	+= -I$(TOP)/libdisk
 CFLAGS	+= -ffunction-sections -fdata-sections
 

@@ -239,11 +239,15 @@ _nvram_generate(struct nvram_header *header, int rehash)
 		}
 	}
 
-	/* End with a double NUL */
-	ptr += 2;
+	/* End with a double NULL */
+	ptr += 1;
 
 	/* Set new length */
 	header->len = ROUNDUP(ptr - (char *) header, 4);
+
+	/* Fill residual by 0xFF */
+	if (header->len < NVRAM_SPACE)
+		memset((char *)header + header->len, 0xFF, NVRAM_SPACE - header->len);
 
 	crc = nvram_calc_crc(header);
 

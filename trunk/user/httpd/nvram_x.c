@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <nvram/bcmnvram.h>
+#include <nvram_linux.h>
 
 #include "nvram_x.h"
 

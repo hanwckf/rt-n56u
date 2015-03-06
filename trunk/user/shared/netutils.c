@@ -34,7 +34,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 
-#include "nvram/bcmnvram.h"
+#include "nvram_linux.h"
 #include "netutils.h"
 #include "shutils.h"
 

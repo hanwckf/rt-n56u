@@ -91,7 +91,7 @@ STRIP= -s
 
 CFLAGS:= \
 	-I${top_builddir} -I. \
-	-I${SRC}/include -I${SRC}/common -I$(TOP)/shared -I$(TOP)/shared/include \
+	-I${SRC}/include -I${SRC}/common -I$(TOP)/shared \
 	 -g -W -Wall  -Wno-unused  -g -Os -g -W -Wall  -Wno-unused  -DHAVE_CONFIG_H -DWINDOW_1 -DTEST_WRITE -DNODEBUG -DLPR_with_ASUS ${GLOBAL_OPTIONS} -DUSBONLY #-DRETURNOK
 
 USER_OBJS := 

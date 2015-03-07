@@ -30,6 +30,15 @@
 #include <net/netfilter/nf_log.h>
 #include "../../netfilter/xt_repldata.h"
 
+#if defined(CONFIG_NAT_CONE)
+#if IS_ENABLED(CONFIG_PPP)
+#define NF_NEED_STRTOU32
+#include <linux/netfilter/netfilter_helpers.h>
+extern int cone_ppp_ifindex;
+#endif
+extern int cone_man_ifindex;
+#endif
+
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Netfilter Core Team <coreteam@netfilter.org>");
 MODULE_DESCRIPTION("IPv4 packet filter");
@@ -37,13 +46,6 @@ MODULE_DESCRIPTION("IPv4 packet filter");
 /*#define DEBUG_IP_FIREWALL*/
 /*#define DEBUG_ALLOW_ALL*/ /* Useful for remote debugging */
 /*#define DEBUG_IP_FIREWALL_USER*/
-
-#ifdef CONFIG_NAT_CONE
-extern char wan_name[IFNAMSIZ];
-#if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
-extern char wan_name_ppp[IFNAMSIZ];
-#endif
-#endif
 
 #ifdef DEBUG_IP_FIREWALL
 #define dprintf(format, args...) pr_info(format , ## args)
@@ -1491,8 +1493,8 @@ do_add_counters(struct net *net, const void __user *user,
 		if ((strlen(e->ip.outiface) > 0) && (strcmp(f->u.kernel.target->name, "MASQUERADE") == 0 ||
 		                                     strcmp(f->u.kernel.target->name, "SNAT") == 0)) {
 #if defined (CONFIG_RAETH_GMAC2)
-			/* ralink giga - wan */
-			if (strcmp(e->ip.outiface, "eth3") == 0) {
+			/* ralink 2xGMAC - wan */
+			if (strncmp(e->ip.outiface, "eth3", 4) == 0) {
 #elif defined (CONFIG_RAETH) || defined (CONFIG_RAETH_MODULE)
 			/* ralink vlan - wan */
 			if (strncmp(e->ip.outiface, "eth2.", 5) == 0 && strcmp(e->ip.outiface, "eth2.1") != 0) {
@@ -1500,12 +1502,23 @@ do_add_counters(struct net *net, const void __user *user,
 			/* hw independed - wan, if not ppp - this wan */
 			if (strncmp(e->ip.outiface, "ppp", 3) != 0) {
 #endif
-				strcpy(wan_name, e->ip.outiface);
+				struct net_device *man_dev = dev_get_by_name(net, e->ip.outiface);
+				if (man_dev) {
+					cone_man_ifindex = man_dev->ifindex;
+					dev_put(man_dev);
+				}
 			}
 #if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
-			/* pppX - wan */
+			/* ppp[0..9] - wan */
 			else if (strncmp(e->ip.outiface, "ppp", 3) == 0) {
-				strcpy(wan_name_ppp, e->ip.outiface);
+				u32 ifnum = 0;
+				if (nf_strtou32(e->ip.outiface+3, &ifnum) > 0 && ifnum < 10) {
+					struct net_device *ppp_dev = dev_get_by_name(net, e->ip.outiface);
+					if (ppp_dev) {
+						cone_ppp_ifindex = ppp_dev->ifindex;
+						dev_put(ppp_dev);
+					}
+				}
 			}
 #endif
 		}
@@ -2369,16 +2382,6 @@ static int __init ip_tables_init(void)
 {
 	int ret;
 
-#ifdef CONFIG_NAT_CONE
-#if defined (CONFIG_RAETH_GMAC2)
-	strcpy(wan_name, "eth3");
-#else
-	strcpy(wan_name, "eth2.2");
-#endif
-#if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
-	strcpy(wan_name_ppp, "ppp0");
-#endif
-#endif
 	ret = register_pernet_subsys(&ip_tables_net_ops);
 	if (ret < 0)
 		goto err1;

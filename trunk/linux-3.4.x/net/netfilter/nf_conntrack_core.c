@@ -75,9 +75,9 @@ unsigned int nf_conntrack_hash_rnd __read_mostly;
 
 #if defined(CONFIG_NAT_CONE)
 unsigned int nf_conntrack_nat_mode __read_mostly = NAT_MODE_LINUX;
-char wan_name[IFNAMSIZ] __read_mostly = {0};
+int cone_man_ifindex __read_mostly = -1;
 #if IS_ENABLED(CONFIG_PPP)
-char wan_name_ppp[IFNAMSIZ] __read_mostly = {0};
+int cone_ppp_ifindex __read_mostly = -1;
 #endif
 #endif
 
@@ -1046,9 +1046,9 @@ resolve_normal_ct(struct net *net, struct nf_conn *tmpl,
          */
 	if (protonum == IPPROTO_UDP && nf_conntrack_nat_mode > 0 && skb->dev != NULL &&
 #if IS_ENABLED(CONFIG_PPP)
-	    (strcmp(skb->dev->name, wan_name) == 0 || strcmp(skb->dev->name, wan_name_ppp) == 0)) {
+	    (skb->dev->ifindex == cone_man_ifindex || skb->dev->ifindex == cone_ppp_ifindex)) {
 #else
-	    (strcmp(skb->dev->name, wan_name) == 0)) {
+	    (skb->dev->ifindex == cone_man_ifindex)) {
 #endif
 		/* CASE III To Cone NAT */
 		h = __nf_cone_conntrack_find_get(net, &tuple, hash);

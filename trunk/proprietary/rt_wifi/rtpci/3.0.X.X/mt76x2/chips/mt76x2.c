@@ -3861,8 +3861,8 @@ void mt76x2_make_up_rate_pwr_table(RTMP_ADAPTER *ad)
 		ad->chipCap.rate_pwr_table.HT[8].mcs_pwr -= 64;
 	ad->chipCap.rate_pwr_table.VHT2SS[0].mcs_pwr = ad->chipCap.rate_pwr_table.HT[8].mcs_pwr;
 
-	ad->chipCap.rate_pwr_table.HT[9].mcs_pwr = ad->chipCap.rate_pwr_table.HT[9].mcs_pwr; /* HT MCS9 / VHT2SS MCS1 */
-	ad->chipCap.rate_pwr_table.VHT2SS[1].mcs_pwr = ad->chipCap.rate_pwr_table.VHT2SS[1].mcs_pwr;
+	ad->chipCap.rate_pwr_table.HT[9].mcs_pwr = ad->chipCap.rate_pwr_table.HT[8].mcs_pwr; /* HT MCS9 / VHT2SS MCS1 */
+	ad->chipCap.rate_pwr_table.VHT2SS[1].mcs_pwr = ad->chipCap.rate_pwr_table.VHT2SS[0].mcs_pwr;
 
 	ad->chipCap.rate_pwr_table.HT[10].mcs_pwr = (CHAR)((reg_val&0x3F000000) >> 24); /* HT MCS10 / VHT2SS MCS2 */
 	if (ad->chipCap.rate_pwr_table.HT[10].mcs_pwr & 0x20)

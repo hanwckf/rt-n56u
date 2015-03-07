@@ -31,7 +31,7 @@
 #include "../../netfilter/xt_repldata.h"
 
 #if defined(CONFIG_NAT_CONE)
-#if IS_ENABLED(CONFIG_PPP)
+#if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
 #define NF_NEED_STRTOU32
 #include <linux/netfilter/netfilter_helpers.h>
 extern int cone_ppp_ifindex;

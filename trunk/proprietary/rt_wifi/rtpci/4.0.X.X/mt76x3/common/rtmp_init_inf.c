@@ -219,8 +219,13 @@ int rt28xx_init(VOID *pAdSrc, RTMP_STRING *pDefaultMac, RTMP_STRING *pHostName)
 	}
 #endif /* MT_MAC */
 
-	DBGPRINT(RT_DEBUG_TRACE, ("MAC[Ver:Rev=0x%08x : 0x%08x]\n",
+#ifdef MT_MAC
+	DBGPRINT(RT_DEBUG_OFF, ("MAC [Ver: 0x%08x, Rev: 0x%08x]\n",
+				pAd->ChipID, pAd->HWVersion));
+#else
+	DBGPRINT(RT_DEBUG_OFF, ("MAC [Ver: 0x%08x, Rev: 0x%08x]\n",
 				pAd->MACVersion, pAd->ChipID));
+#endif
 
 	if (hif_sys_init(pAd, TRUE) != TRUE)
 		goto err1;

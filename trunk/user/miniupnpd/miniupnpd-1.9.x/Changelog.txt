@@ -1,4 +1,15 @@
-$Id: Changelog.txt,v 1.391 2014/12/09 09:48:04 nanard Exp $
+$Id: Changelog.txt,v 1.396 2015/03/07 15:53:50 nanard Exp $
+
+2015/03/07:
+  don't die when IPv6 is enabled and interface has no IPv4 address
+
+2015/02/10:
+  IP wildcard for AddPinhole() is empty string
+
+2014/12/10:
+  Checking Host: HTTP request header to prevent DNS rebinding attack
+  configurable BOOTID.UPNP.ORG SSDP header
+  use time for BOOTID.UPNP.ORG value
 
 2014/12/09:
   fix upnp_add_inboundpinhole() : check inet_pton() return

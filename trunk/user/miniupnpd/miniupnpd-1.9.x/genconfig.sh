@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: genconfig.sh,v 1.77 2014/12/04 10:21:33 nanard Exp $
+# $Id: genconfig.sh,v 1.78 2014/12/10 09:34:42 nanard Exp $
 # miniupnp daemon
 # http://miniupnp.free.fr or http://miniupnp.tuxfamily.org/
 # (c) 2006-2014 Thomas Bernard
@@ -526,6 +526,12 @@ cat >> ${CONFIGFILE} <<EOF
 #define ENABLE_UPNPPINHOLE
 #endif
 
+EOF
+
+cat >> ${CONFIGFILE} <<EOF
+/* Uncomment the following line if your device does not have a proper clock
+ * BOOTID.UPNP.ORG can be set with command line */
+#define USE_TIME_AS_BOOTID
 EOF
 
 echo "#endif /* ${CONFIGMACRO} */" >> ${CONFIGFILE}

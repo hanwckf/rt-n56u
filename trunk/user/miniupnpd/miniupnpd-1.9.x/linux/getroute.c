@@ -1,4 +1,4 @@
-/* $Id: getroute.c,v 1.4 2013/02/06 10:50:04 nanard Exp $ */
+/* $Id: getroute.c,v 1.5 2015/03/07 15:54:42 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2013 Thomas Bernard
@@ -144,8 +144,8 @@ get_src_for_route_to(const struct sockaddr * dst,
 					if(rta->rta_type == RTA_PREFSRC) {
 						if(src_len && src) {
 							if(*src_len < RTA_PAYLOAD(rta)) {
-								syslog(LOG_WARNING, "cannot copy src: %u<%u",
-								       (unsigned)*src_len, RTA_PAYLOAD(rta));
+								syslog(LOG_WARNING, "cannot copy src: %u<%lu",
+								       (unsigned)*src_len, (unsigned long)RTA_PAYLOAD(rta));
 								goto error;
 							}
 							*src_len = RTA_PAYLOAD(rta);

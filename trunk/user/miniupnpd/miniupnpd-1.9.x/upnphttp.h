@@ -1,4 +1,4 @@
-/* $Id: upnphttp.h,v 1.39 2014/12/09 09:46:46 nanard Exp $ */
+/* $Id: upnphttp.h,v 1.40 2014/12/09 16:41:21 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2014 Thomas Bernard
@@ -72,6 +72,8 @@ struct upnphttp {
 	enum httpCommands req_command;
 	int req_soapActionOff;
 	int req_soapActionLen;
+	int req_HostOff;	/* Host: header */
+	int req_HostLen;
 #ifdef ENABLE_EVENTS
 	int req_CallbackOff;	/* For SUBSCRIBE */
 	int req_CallbackLen;

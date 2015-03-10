@@ -15,8 +15,8 @@
 # $ CONFIG_OPTIONS="--ipv6 --igd2" make
 #
 
-CFLAGS ?= -pipe -Os
-#CFLAGS = -pipe -O -g -DDEBUG
+#CFLAGS ?= -pipe -Os
+CFLAGS = -pipe -O -g -DDEBUG
 #CFLAGS += -ansi
 CFLAGS += -Wall
 CFLAGS += -W

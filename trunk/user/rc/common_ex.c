@@ -704,11 +704,16 @@ inline void set_cpu_affinity(void) {}
 #endif
 
 #if defined (USE_NAND_FLASH)
-void attach_ubi_partition(void)
+void mount_rwfs_partition(void)
 {
 	int mtd_rwfs;
+	char dev_ubi[16];
+	const char *mp_rwfs = MP_MTD_RWFS;
 
-	mtd_rwfs = mtd_dev_idx("RWFS");
+	if (nvram_get_int("mtd_rwfs_mount") == 0)
+		return;
+
+	mtd_rwfs = mtd_dev_idx(MTD_PART_NAME_RWFS);
 	if (mtd_rwfs < 3)
 		return;
 
@@ -717,10 +722,35 @@ void attach_ubi_partition(void)
 	if (!is_module_loaded("ubi"))
 		return;
 
-	doSystem("ubiattach -p /dev/mtd%d", mtd_rwfs);
+	if (doSystem("ubiattach -p /dev/mtd%d -d %d", mtd_rwfs, mtd_rwfs) == 0) {
+		mkdir(mp_rwfs, 0755);
+		snprintf(dev_ubi, sizeof(dev_ubi), "/dev/ubi%d_0", mtd_rwfs);
+		mount(dev_ubi, mp_rwfs, "ubifs", 0, NULL);
+	}
+}
+
+void umount_rwfs_partition(void)
+{
+	int mtd_rwfs;
+	const char *mp_rwfs = MP_MTD_RWFS;
+
+	if (check_if_dir_exist(mp_rwfs)) {
+		if (umount(mp_rwfs) == 0)
+			rmdir(mp_rwfs);
+	}
+
+	mtd_rwfs = mtd_dev_idx(MTD_PART_NAME_RWFS);
+	if (mtd_rwfs < 3)
+		return;
+
+	if (!is_module_loaded("ubi"))
+		return;
+
+	doSystem("ubidetach -p /dev/mtd%d 2>/dev/null", mtd_rwfs);
 }
 #else
-inline void attach_ubi_partition(void) {}
+inline void mount_rwfs_partition(void) {}
+inline void umount_rwfs_partition(void) {}
 #endif
 
 void

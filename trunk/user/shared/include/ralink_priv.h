@@ -170,6 +170,7 @@ typedef struct _PAIR_CHANNEL_FREQ_ENTRY
 
 #define MTD_PART_NAME_FACTORY	"Factory"
 #define MTD_PART_NAME_KERNEL	"Kernel"
+#define MTD_PART_NAME_RWFS	"RWFS"
 
 #if defined (CONFIG_RALINK_MT7621)
 #define OFFSET_MAC_GMAC0	0xE000

@@ -47,6 +47,9 @@ function initial(){
 		showhide_div('row_st_backup', 1);
 	}
 
+	if (support_mtd_rwfs())
+		showhide_div('tbl_rwfs', 1);
+
 	show_footer();
 }
 
@@ -68,6 +71,8 @@ function submitRule(){
 	document.form.nvram_manual.value = document.form.nvram_manual_fake.value;
 	document.form.rstats_stored.value = document.form.rstats_stored_fake.value;
 	document.form.stime_stored.value = document.form.stime_stored_fake.value;
+	if (support_mtd_rwfs())
+		document.form.mtd_rwfs_mount.value = document.form.mtd_rwfs_mount_fake.value;
 	document.form.submit();
 }
 
@@ -255,10 +260,11 @@ $j.fn.fileName = function() {
     <input type="hidden" name="next_page" value="Advanced_SettingBackup_Content.asp">
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="General;">
-    <input type="hidden" name="productid" value="<% nvram_get_x("", "productid"); %>">
+    <input type="hidden" name="productid" value="<% nvram_get_x("", "productid"); %>" readonly="1">
     <input type="hidden" name="nvram_manual" value="<% nvram_get_x("", "nvram_manual"); %>">
     <input type="hidden" name="rstats_stored" value="<% nvram_get_x("", "rstats_stored"); %>">
     <input type="hidden" name="stime_stored" value="<% nvram_get_x("", "stime_stored"); %>">
+    <input type="hidden" name="mtd_rwfs_mount" value="<% nvram_get_x("", "mtd_rwfs_mount"); %>">
     <input type="hidden" name="submit_fake" value="" onclick="submitRule();">
 
     <div class="container-fluid">
@@ -332,6 +338,21 @@ $j.fn.fileName = function() {
                                         </tr>
                                     </table>
 
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_rwfs" style="display:none">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#Adm_Setting_rwfs#></th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%"><#Adm_Setting_rwfs_mount#></th>
+                                            <td align="left">
+                                                <select class="input" name="mtd_rwfs_mount_fake" onchange="applyRule();" >
+                                                    <option value="0" <% nvram_match_x("", "mtd_rwfs_mount", "0", "selected"); %>><#checkbox_No#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("", "mtd_rwfs_mount", "1", "selected"); %>>UBIFS</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </table>
+
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th colspan="3" style="background-color: #E3E3E3;"><#Adm_Setting_store#></th>
@@ -373,6 +394,7 @@ $j.fn.fileName = function() {
                                             </td>
                                         </tr>
                                     </table>
+
                                 </div>
                             </div>
                         </div>

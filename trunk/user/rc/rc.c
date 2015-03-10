@@ -630,7 +630,7 @@ init_router(void)
 
 	init_gpio_leds_buttons();
 
-	attach_ubi_partition();
+	mount_rwfs_partition();
 
 	gen_ralink_config_2g(0);
 	gen_ralink_config_5g(0);
@@ -717,6 +717,8 @@ shutdown_router(int use_reboot)
 	stop_wifi_all_rt();
 	stop_logger();
 	stop_lan(is_ap_mode);
+
+	umount_rwfs_partition();
 
 #if defined (BOARD_GPIO_LED_LAN)
 	LED_CONTROL(BOARD_GPIO_LED_LAN, LED_OFF);

@@ -121,6 +121,9 @@
 			{"nvram_manual", "", NULL, FALSE},
 			{"rstats_stored", "", NULL, FALSE},
 			{"stime_stored", "", NULL, FALSE},
+#if defined (USE_NAND_FLASH)
+			{"mtd_rwfs_mount", "", NULL, FALSE},
+#endif
 			{"http_username", "", NULL, EVM_BLOCK_UNSAFE},
 			{"http_passwd", "", NULL, EVM_BLOCK_UNSAFE},
 			{"modem_rule", "", NULL, EVM_RESTART_MODEM},

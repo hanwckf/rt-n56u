@@ -28,6 +28,10 @@ struct nvram_pair router_defaults[] = {
 	{ "restore_defaults", "0" },		/* Set to 0 to not restore defaults on boot */
 	{ "nvram_manual", "0" },		/* Manual commit mode: 1: manual, 0: auto */
 
+#if defined (USE_NAND_FLASH)
+	{ "mtd_rwfs_mount", "0" },		/* Allow mount MTD RWFS partition on boot */
+#endif
+
 	/* Miscellaneous parameters */
 	{ "time_zone", DEF_TIMEZONE },
 	{ "log_float_ui", "1" },		/* WebUI syslog float panel mode */

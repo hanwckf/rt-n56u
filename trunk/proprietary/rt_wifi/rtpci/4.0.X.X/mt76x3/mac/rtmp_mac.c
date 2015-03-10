@@ -1630,13 +1630,9 @@ INT rtmp_mac_sys_reset(RTMP_ADAPTER *pAd, BOOLEAN bHardReset)
 	UINT32 mac_val;
 
 
-#ifdef MT_MAC
-	DBGPRINT(RT_DEBUG_TRACE, ("MAC [Ver: 0x%08x, Rev: 0x%08x]\n",
-				pAd->ChipID, pAd->HWVersion));
-#else
-	DBGPRINT(RT_DEBUG_TRACE, ("MAC [Ver: 0x%08x, Rev: 0x%08x]\n",
-				pAd->MACVersion, pAd->ChipID));
-#endif
+	DBGPRINT(RT_DEBUG_TRACE, ("%s():MACVersion[Ver:Rev=0x%08x]\n",
+			__FUNCTION__, pAd->MACVersion));
+
 
 #ifdef RTMP_MAC_PCI
 	if (bHardReset == TRUE)

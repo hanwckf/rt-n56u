@@ -3241,8 +3241,6 @@ VOID CmdSetTxPowerCtrl(RTMP_ADAPTER *pAd, UINT8 central_chl)
 		NdisCopyMemory(&CmdTxPwrCtrl.aucTempCompPower[0], &(pAd->EEPROMImage[STEP_NUM_NEG_7]), sizeof(CmdTxPwrCtrl.aucTempCompPower));
 	}
 
-	DBGPRINT(RT_DEBUG_OFF, ("PA type = %d\n", cap->pa_type));
-
 //	if (!(cap->pa_type & (1 << 1)))
 	if (1)
 	{

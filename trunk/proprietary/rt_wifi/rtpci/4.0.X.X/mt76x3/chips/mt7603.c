@@ -456,6 +456,8 @@ int mt7603_read_chl_pwr(RTMP_ADAPTER *pAd)
 	RT28xx_EEPROM_READ16(pAd, EEPROM_NIC1_OFFSET, Value);
 	cap->pa_type = GET_PA_TYPE(Value);
 
+	DBGPRINT(RT_DEBUG_OFF, ("PA type = %d\n", cap->pa_type));
+
 	return TRUE;
 }
 

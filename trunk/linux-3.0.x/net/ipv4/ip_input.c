@@ -212,6 +212,7 @@ static int ip_local_deliver_finish(struct sk_buff *skb)
 		if (ipprot != NULL) {
 			int ret;
 
+#ifdef CONFIG_NET_NS
 			if (!net_eq(net, &init_net) && !ipprot->netns_ok) {
 				if (net_ratelimit())
 					printk("%s: proto %d isn't netns-ready\n",
@@ -219,6 +220,7 @@ static int ip_local_deliver_finish(struct sk_buff *skb)
 				kfree_skb(skb);
 				goto out;
 			}
+#endif
 
 			if (!ipprot->no_policy) {
 				if (!xfrm4_policy_check(NULL, XFRM_POLICY_IN, skb)) {

@@ -35,7 +35,11 @@
 #define NUM_RX_MAX_PROCESS	16
 #endif
 
+#if defined (CONFIG_RAETH_NAPI_GRO) && defined (CONFIG_RALINK_MT7621)
+#define NAPI_WEIGHT		64
+#else
 #define NAPI_WEIGHT		32
+#endif
 
 #if defined (CONFIG_RALINK_MT7621)
 #define GMAC0_OFFSET		0xE000

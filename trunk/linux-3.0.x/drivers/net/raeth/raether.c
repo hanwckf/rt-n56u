@@ -1011,6 +1011,11 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 			else
 #endif
 #if defined (CONFIG_RAETH_NAPI)
+#if defined (CONFIG_RAETH_NAPI_GRO)
+			if (rx_skb->ip_summed == CHECKSUM_UNNECESSARY)
+				napi_gro_receive(&ei_local->napi, rx_skb);
+			else
+#endif
 			netif_receive_skb(rx_skb);
 #else
 			netif_rx(rx_skb);
@@ -1381,6 +1386,9 @@ static int ei_napi_poll(struct napi_struct *napi, int budget)
 			return work_done;
 		
 		/* exit from NAPI poll mode, ack and enable TX/RX interrupts */
+#if defined (CONFIG_RAETH_NAPI_GRO)
+		napi_gro_flush(napi);
+#endif
 		local_irq_save(flags);
 		__napi_complete(napi);
 		sysRegWrite(FE_INT_STATUS, FE_INT_MASK_TX_RX);
@@ -2127,7 +2135,9 @@ int __init raeth_init(void)
 
 	printk("Ralink APSoC Ethernet Driver %s (%s)\n", RAETH_VERSION, RAETH_DEV_NAME);
 	printk("%s: RX Ring %d, TX Ring %d*%d. Max packet size %d\n", RAETH_DEV_NAME, NUM_RX_DESC, NUM_TX_RING, NUM_TX_DESC, MAX_RX_LENGTH);
-#if defined (CONFIG_RAETH_NAPI)
+#if defined (CONFIG_RAETH_NAPI_GRO)
+	printk("%s: NAPI & GRO support, weight %d\n", RAETH_DEV_NAME, NAPI_WEIGHT);
+#else
 	printk("%s: NAPI support, weight %d\n", RAETH_DEV_NAME, NAPI_WEIGHT);
 #endif
 #if defined (CONFIG_RAETH_BQL)

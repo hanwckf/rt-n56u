@@ -8,6 +8,11 @@ config  RAETH_NAPI
 	default y
 	depends on RAETH
 
+#config  RAETH_NAPI_GRO
+#	bool "Use NAPI Generic Receive Offload (GRO)"
+#	depends on RAETH_NAPI && RAETH_CHECKSUM_OFFLOAD
+#	default n
+
 config  RAETH_32B_DESC
 	bool "32 bytes TX/RX ring descriptors (L1 cache aligned, no disable cache needed for TX/RX ring)"
 	default n

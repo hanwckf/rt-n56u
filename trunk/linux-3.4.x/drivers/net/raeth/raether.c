@@ -1847,7 +1847,7 @@ void ei_uninit(struct net_device *dev)
 
 #if defined (CONFIG_PSEUDO_SUPPORT)
 	if (ei_local->PseudoDev) {
-		unregister_netdev(ei_local->PseudoDev);
+		unregister_netdevice(ei_local->PseudoDev);
 		free_netdev(ei_local->PseudoDev);
 		ei_local->PseudoDev = NULL;
 	}

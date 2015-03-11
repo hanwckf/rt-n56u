@@ -2135,10 +2135,12 @@ int __init raeth_init(void)
 
 	printk("Ralink APSoC Ethernet Driver %s (%s)\n", RAETH_VERSION, RAETH_DEV_NAME);
 	printk("%s: RX Ring %d, TX Ring %d*%d. Max packet size %d\n", RAETH_DEV_NAME, NUM_RX_DESC, NUM_TX_RING, NUM_TX_DESC, MAX_RX_LENGTH);
+#if defined (CONFIG_RAETH_NAPI)
 #if defined (CONFIG_RAETH_NAPI_GRO)
 	printk("%s: NAPI & GRO support, weight %d\n", RAETH_DEV_NAME, NAPI_WEIGHT);
 #else
 	printk("%s: NAPI support, weight %d\n", RAETH_DEV_NAME, NAPI_WEIGHT);
+#endif
 #endif
 #if defined (CONFIG_RAETH_BQL)
 	printk("%s: Byte Queue Limits (BQL) support\n", RAETH_DEV_NAME);

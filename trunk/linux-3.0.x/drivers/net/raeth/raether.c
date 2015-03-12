@@ -1234,6 +1234,9 @@ static inline int raeth_xmit(struct sk_buff* skb, struct net_device *dev, END_DE
 #endif
 	{
 		tx_ring->txd_info1_u32 = dma_map_single(NULL, skb->data, skb->len, DMA_TO_DEVICE);
+#if defined (CONFIG_RAETH_SG_DMA_TX)
+		tx_ring->txd_info3_u32 = 0;
+#endif
 		tx_ring->txd_info2_u32 = (TX2_DMA_SDL0(skb->len) | TX2_DMA_LS0);
 	}
 

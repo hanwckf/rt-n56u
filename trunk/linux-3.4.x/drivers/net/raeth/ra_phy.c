@@ -14,6 +14,9 @@
 #include "ra_esw_rt305x.h"
 
 /*  PHY Vender ID list */
+#define EV_ICPLUS_PHY_ID0		0x0243
+#define EV_ICPLUS_PHY_ID1		0x0D90
+
 #define EV_MARVELL_PHY_ID0		0x0141
 #define EV_MARVELL_PHY_ID1		0x0CC2
 
@@ -22,40 +25,42 @@
 
 #if defined (CONFIG_GE1_RGMII_AN) || defined (CONFIG_P5_MAC_TO_PHY_MODE) || \
     defined (CONFIG_GE2_RGMII_AN) || defined (CONFIG_P4_MAC_TO_PHY_MODE)
-static int is_gigaphy_id(u32 phy_addr, u32 check_phy_id0, u32 check_phy_id1)
-{
-	u32 phy_id0 = 0, phy_id1 = 0;
-
-	if (!mii_mgr_read(phy_addr, 2, &phy_id0))
-		phy_id0 = 0;
-	if (!mii_mgr_read(phy_addr, 3, &phy_id1))
-		phy_id1 = 0;
-
-	if ((phy_id0 == check_phy_id0) && (phy_id1 == check_phy_id1))
-		return 1;
-
-	return 0;
-}
-
 void init_giga_phy(int ge)
 {
-	u32 phy_val = 0;
+	u32 phy_id0 = 0, phy_id1 = 0, phy_val = 0;
 #if defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2)
 	u32 phy_addr = (ge == 2) ? CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2 : CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
 #else
 	u32 phy_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
 #endif
 
-	if (is_gigaphy_id(phy_addr, EV_MARVELL_PHY_ID0, EV_MARVELL_PHY_ID1)) {
-		printk("%s GigaPHY is found!\n", "Marvell");
+	if (!mii_mgr_read(phy_addr, 2, &phy_id0))
+		return;
+	if (!mii_mgr_read(phy_addr, 3, &phy_id1))
+		return;
+
+	if ((phy_id0 == EV_ICPLUS_PHY_ID0) && ((phy_id1 & 0xfff0) == EV_ICPLUS_PHY_ID1)) {
+		printk("%s GigaPHY detected\n", "IC+");
+		mii_mgr_read(phy_addr, 4, &phy_val);
+		phy_val |= (1<<10);			// enable pause ability
+		mii_mgr_write(phy_addr, 4, phy_val);
+#if !defined (CONFIG_RAETH_ESW_CONTROL)
+		mii_mgr_read(phy_addr, 0, &phy_val);
+		phy_val |= (1<<9);			// restart AN
+		mii_mgr_write(phy_addr, 0, phy_val);
+#endif
+	} else
+	if ((phy_id0 == EV_MARVELL_PHY_ID0) && (phy_id1 == EV_MARVELL_PHY_ID1)) {
+		printk("%s GigaPHY detected\n", "Marvell");
 		mii_mgr_read(phy_addr, 20, &phy_val);
 		phy_val |= (1<<7);			// add delay to RX_CLK for RXD Outputs
 		mii_mgr_write(phy_addr, 20, phy_val);
 		mii_mgr_read(phy_addr, 0, &phy_val);
 		phy_val |= (1<<15);			// PHY Software Reset
 		mii_mgr_write(phy_addr, 0, phy_val);
-	} else if (is_gigaphy_id(phy_addr, EV_VTSS_PHY_ID0, EV_VTSS_PHY_ID1)) {
-		printk("%s GigaPHY is found!\n", "Vitesse");
+	} else
+	if ((phy_id0 == EV_VTSS_PHY_ID0) && (phy_id1 == EV_VTSS_PHY_ID1)) {
+		printk("%s GigaPHY detected\n", "Vitesse");
 		mii_mgr_write(phy_addr, 31, 0x0001);	// extended page
 		mii_mgr_read(phy_addr, 28, &phy_val);
 		phy_val |=  (0x3<<12);			// RGMII RX skew compensation= 2.0 ns

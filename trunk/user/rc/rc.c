@@ -462,9 +462,6 @@ storage_load_time(void)
 	struct tm storage_tm;
 	time_t storage_time = 0;
 
-	if (nvram_match("stime_stored", "0"))
-		return;
-
 	fp = fopen("/etc/storage/system_time", "r");
 	if (fp) {
 		if (fgets(buf, sizeof(buf), fp))

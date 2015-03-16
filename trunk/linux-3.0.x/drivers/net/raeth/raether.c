@@ -591,8 +591,9 @@ static void fe_pdma_init(END_DEVICE *ei_local)
 #else
 		ei_local->rx_ring[i].rxd_info2_u32 = RX2_DMA_LS0;
 #endif
-		dma_cache_sync(NULL, &ei_local->rx_ring[i], sizeof(struct PDMA_rxdesc), DMA_TO_DEVICE);
 	}
+
+	wmb();
 
 	/* clear PDMA */
 	regVal = sysRegRead(PDMA_GLO_CFG);
@@ -671,6 +672,8 @@ static void fe_pdma_uninit(END_DEVICE *ei_local)
 #endif
 		}
 	}
+
+	wmb();
 
 	/* clear adapter TX rings */
 	sysRegWrite(TX_BASE_PTR0, 0);
@@ -809,16 +812,15 @@ static void inc_rx_drop(END_DEVICE *ei_local, int gmac_no)
 
 static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 {
-	struct sk_buff *new_skb, *rx_skb;
 	struct PDMA_rxdesc *rx_ring;
-	unsigned int length;
-	unsigned int rxd_info4;
-#if defined (CONFIG_RAETH_HW_VLAN_RX)
-	unsigned int rx_vlan_vid;
-#endif
+	struct sk_buff *new_skb, *rx_skb;
 	int gmac_no = PSE_PORT_GMAC1;
-	int rx_dma_owner_idx;
 	int work_done = 0;
+	int rx_dma_owner_idx;
+	u32 rxd_info2, rxd_info4;
+#if defined (CONFIG_RAETH_HW_VLAN_RX)
+	u32 rxd_info3;
+#endif
 #if defined (CONFIG_RAETH_SPECIAL_TAG)
 	struct vlan_ethhdr *veth;
 #endif
@@ -831,15 +833,17 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 		if (!(rx_ring->rxd_info2_u32 & RX2_DMA_DONE))
 			break;
 		
-		length = RX2_DMA_SDL0_GET(rx_ring->rxd_info2_u32);
+		rx_skb = ei_local->rx_buff[rx_dma_owner_idx];
+		
+		rxd_info2 = rx_ring->rxd_info2_u32;
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
-		rx_vlan_vid = (rx_ring->rxd_info2_u32 & RX2_DMA_TAG) ? rx_ring->rxd_info3_u32 : 0;
+		rxd_info3 = rx_ring->rxd_info3_u32;
 #endif
 		rxd_info4 = rx_ring->rxd_info4_u32;
+		
 #if defined (CONFIG_PSEUDO_SUPPORT)
 		gmac_no = RX4_DMA_SP(rxd_info4);
 #endif
-		
 		/* We have to check the free memory size is big enough
 		 * before pass the packet to cpu */
 		new_skb = __dev_alloc_skb(MAX_RX_LENGTH + NET_IP_ALIGN, GFP_ATOMIC);
@@ -849,6 +853,9 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 #else
 			rx_ring->rxd_info2_u32 = RX2_DMA_LS0;
 #endif
+			wmb();
+			
+			/* move CPU pointer to next RXD */
 			sysRegWrite(RX_CALC_IDX0, cpu_to_le32(rx_dma_owner_idx));
 			
 			inc_rx_drop(ei_local, gmac_no);
@@ -866,21 +873,24 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 		skb_reserve(new_skb, NET_IP_ALIGN);
 #endif
 		/* map new buffer to ring (unmap is not required on generic mips mm) */
-		rx_ring->rxd_info1_u32 = (unsigned int)dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH, DMA_FROM_DEVICE);
+		ei_local->rx_buff[rx_dma_owner_idx] = new_skb;
+		rx_ring->rxd_info1_u32 = (u32)dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH, DMA_FROM_DEVICE);
 #if defined (RAETH_PDMA_V2)
 		rx_ring->rxd_info2_u32 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
 #else
 		rx_ring->rxd_info2_u32 = RX2_DMA_LS0;
 #endif
+		wmb();
+		
+		/* move CPU pointer to next RXD */
+		sysRegWrite(RX_CALC_IDX0, cpu_to_le32(rx_dma_owner_idx));
 		
 		/* skb processing */
-		rx_skb = ei_local->rx_buff[rx_dma_owner_idx];
-		
-		rx_skb->len = length;
+		rx_skb->len = RX2_DMA_SDL0_GET(rxd_info2);
 #if defined (RAETH_PDMA_V2)
 		rx_skb->data += NET_IP_ALIGN;
 #endif
-		rx_skb->tail = rx_skb->data + length;
+		rx_skb->tail = rx_skb->data + rx_skb->len;
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 		FOE_MAGIC_TAG(rx_skb) = FOE_MAGIC_GE;
@@ -893,11 +903,11 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
-		if (rx_vlan_vid && RX3_DMA_TPID(rx_vlan_vid) == 0x8100) {
+		if ((rxd_info2 & RX2_DMA_TAG) && rxd_info3) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-			__vlan_hwaccel_put_tag(rx_skb, __constant_htons(ETH_P_8021Q), RX3_DMA_VID(rx_vlan_vid));
+			__vlan_hwaccel_put_tag(rx_skb, __constant_htons(ETH_P_8021Q), RX3_DMA_VID(rxd_info3));
 #else
-			__vlan_hwaccel_put_tag(rx_skb, RX3_DMA_VID(rx_vlan_vid));
+			__vlan_hwaccel_put_tag(rx_skb, RX3_DMA_VID(rxd_info3));
 #endif
 		}
 #endif
@@ -949,11 +959,6 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 #endif
 		}
 		
-		ei_local->rx_buff[rx_dma_owner_idx] = new_skb;
-		
-		/* move point to next RXD which wants to alloc */
-		sysRegWrite(RX_CALC_IDX0, cpu_to_le32(rx_dma_owner_idx));
-		
 		work_done++;
 	}
 
@@ -962,7 +967,7 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 
 static inline int raeth_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE *ei_local, int gmac_no)
 {
-	struct PDMA_txdesc *tx_ring, *tx_ring_start;
+	struct PDMA_txdesc *tx_ring;
 	u32 i, nr_slots;
 	u32 tx_cpu_owner_idx;
 	u32 tx_cpu_owner_idx_next;
@@ -1105,7 +1110,6 @@ static inline int raeth_xmit(struct sk_buff* skb, struct net_device *dev, END_DE
 
 	/* write DMA TX desc (DDONE must be cleared last) */
 	tx_ring = &ei_local->tx_ring[tx_ring_idx][tx_cpu_owner_idx];
-	tx_ring_start = tx_ring;
 
 	tx_ring->txd_info4_u32 = txd_info4;
 #if defined (CONFIG_RAETH_SG_DMA_TX)
@@ -1155,7 +1159,7 @@ static inline int raeth_xmit(struct sk_buff* skb, struct net_device *dev, END_DE
 		tx_ring->txd_info2_u32 = (TX2_DMA_SDL0(skb->len) | TX2_DMA_LS0);
 	}
 
-	dma_cache_sync(NULL, tx_ring_start, nr_slots * sizeof(struct PDMA_txdesc), DMA_TO_DEVICE);
+	wmb();
 
 	/* kick the DMA TX */
 	sysRegWrite(tx_ring_ctx, cpu_to_le32(tx_cpu_owner_idx_next));
@@ -1203,7 +1207,6 @@ static inline void raeth_xmit_clean(struct net_device *dev, END_DEVICE *ei_local
 		
 		clean_done++;
 		
-		tx_ring->txd_info2_u32 = TX2_DMA_DONE;
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 		if (tx_skb != (struct sk_buff *)0xFFFFFFFF)
 #endif

@@ -8,10 +8,10 @@ config  RAETH_NAPI
 	default y
 	depends on RAETH
 
-#config  RAETH_NAPI_GRO
-#	bool "Use NAPI Generic Receive Offload (GRO)"
-#	depends on RAETH_NAPI && RAETH_CHECKSUM_OFFLOAD
-#	default n
+config  RAETH_NAPI_GRO
+	bool "Use NAPI Generic Receive Offload (GRO)"
+	depends on RAETH_NAPI && RAETH_CHECKSUM_OFFLOAD
+	default n
 
 config  RAETH_JUMBOFRAME
 	bool "Jumbo Frame up to 4K bytes"

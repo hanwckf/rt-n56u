@@ -4,9 +4,6 @@ raeth-objs := raether.o mii_mgr.o ra_mac.o ra_phy.o ra_ioctl.o
 
 ifeq ($(CONFIG_RALINK_RT3052),y)
 raeth-objs += ra_esw_rt305x.o
-ifeq ($(CONFIG_RALINK_RT3052_MP2),y)
-raeth-objs += mcast.o
-endif
 ifeq ($(CONFIG_RAETH_ESW),y)
 raeth-objs += ra_rfrw.o
 endif

@@ -68,11 +68,6 @@ extern int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf);
 #endif
 #endif
 
-#if defined (CONFIG_RALINK_RT3052_MP2)
-extern int32_t mcast_rx(struct sk_buff * skb);
-extern int32_t mcast_tx(struct sk_buff * skb);
-#endif
-
 #if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
 extern int vlan_double_tag;
 #endif
@@ -118,13 +113,8 @@ static void raeth_ring_free(END_DEVICE *ei_local)
 	}
 	
 	if (ei_local->rx_ring) {
-#if defined (CONFIG_RAETH_32B_DESC)
-		kfree(ei_local->rx_ring);
-#else
 		dma_free_coherent(NULL, NUM_RX_DESC*sizeof(struct PDMA_rxdesc), ei_local->rx_ring, ei_local->rx_ring_phy);
-#endif
 		ei_local->rx_ring = NULL;
-		ei_local->rx_ring_phy = 0;
 	}
 
 	/* free TX descriptors */
@@ -132,7 +122,6 @@ static void raeth_ring_free(END_DEVICE *ei_local)
 		if (ei_local->tx_ring[k]) {
 			dma_free_coherent(NULL, NUM_TX_DESC*sizeof(struct PDMA_txdesc), ei_local->tx_ring[k], ei_local->tx_ring_phy[k]);
 			ei_local->tx_ring[k] = NULL;
-			ei_local->tx_ring_phy[k] = 0;
 		}
 	}
 
@@ -172,12 +161,7 @@ static int raeth_ring_alloc(END_DEVICE *ei_local)
 	}
 
 	/* allocate RX descriptors and skbuff */
-#if defined (CONFIG_RAETH_32B_DESC)
-	ei_local->rx_ring = kmalloc(NUM_RX_DESC * sizeof(struct PDMA_rxdesc), GFP_KERNEL);
-	ei_local->rx_ring_phy = virt_to_phys(ei_local->rx_ring);
-#else
 	ei_local->rx_ring = dma_alloc_coherent(NULL, NUM_RX_DESC * sizeof(struct PDMA_rxdesc), &ei_local->rx_ring_phy, GFP_KERNEL);
-#endif
 	if (!ei_local->rx_ring)
 		goto err_cleanup;
 	
@@ -378,22 +362,21 @@ static void fe_forward_config(struct net_device *dev, END_DEVICE *ei_local)
 
 	sdmVal = sysRegRead(SDM_CON);
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
-	sdmVal |= (0x7<<16); // UDPCS, TCPCS, IPCS=1
+	sdmVal |= (SDM_IPCS | SDM_TCPCS | SDM_UDPCS);
 	
 	dev->features |= NETIF_F_RXCSUM; /* Can RX checksum */
 	printk("%s: HW IP/TCP/UDP checksum %s offload enabled\n", RAETH_DEV_NAME, "RX");
+#else
+	sdmVal &= ~(SDM_IPCS | SDM_TCPCS | SDM_UDPCS);
 #endif
 #if defined (CONFIG_RAETH_SPECIAL_TAG)
-	sdmVal |= (0x1<<20); // TCI_81XX
+	sdmVal |= SDM_TCI_81XX;
 #endif
 	sysRegWrite(SDM_CON, sdmVal);
 
 #else /* !RAETH_SDMA */
 
 	u32 regVal, regCsg;
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	u32 regVal2;
-#endif
 
 #if defined (CONFIG_PSEUDO_SUPPORT)
 	/* pad to 60 bytes (no VLAN tag) */
@@ -439,22 +422,14 @@ static void fe_forward_config(struct net_device *dev, END_DEVICE *ei_local)
 
 	regCsg = sysRegRead(CDMA_CSG_CFG);
 	regVal = sysRegRead(GDMA1_FWD_CFG);
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	regVal2 = sysRegRead(GDMA2_FWD_CFG);
-	/* set unicast/multicast/broadcast/other frames forward to cpu */
-	regVal2 &= ~0xFFFF;
-#endif
 
 #if defined (CONFIG_RALINK_MT7620)
 	/* GDMA1 frames destination port is port0 CPU */
 	regVal &= ~0x7;
 #else
-	/* set unicast/multicast/broadcast/other frames forward to cpu */
+	/* set unicast/multicast/broadcast/other frames forward to CPU (PDMA) */
 	regVal &= ~0xFFFF;
-#endif
-
-#if defined (CONFIG_RAETH_SPECIAL_TAG)
-	regVal |= GDM1_TCI_81XX;
+	regVal |= (GDM1_UFRC_P_CPU | GDM1_BFRC_P_CPU | GDM1_MFRC_P_CPU | GDM1_OFRC_P_CPU);
 #endif
 
 	regCsg &= ~0x7;
@@ -463,11 +438,7 @@ static void fe_forward_config(struct net_device *dev, END_DEVICE *ei_local)
 	regVal |= GDM1_ICS_EN;
 	regVal |= GDM1_TCS_EN;
 	regVal |= GDM1_UCS_EN;
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	regVal2 |= GDM1_ICS_EN;
-	regVal2 |= GDM1_TCS_EN;
-	regVal2 |= GDM1_UCS_EN;
-#endif
+
 	dev->features |= NETIF_F_RXCSUM; /* Can handle RX checksum */
 
 	if (hw_offload_csg) {
@@ -513,30 +484,23 @@ static void fe_forward_config(struct net_device *dev, END_DEVICE *ei_local)
 	regVal &= ~GDM1_TCS_EN;
 	regVal &= ~GDM1_UCS_EN;
 
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	regVal2 &= ~GDM1_ICS_EN;
-	regVal2 &= ~GDM1_TCS_EN;
-	regVal2 &= ~GDM1_UCS_EN;
+	dev->features &= ~(NETIF_F_IP_CSUM | NETIF_F_RXCSUM); /* disable checksum TCP/UDP over IPv4 */
 #endif
 
-	dev->features &= ~(NETIF_F_IP_CSUM | NETIF_F_RXCSUM); /* disable checksum TCP/UDP over IPv4 */
+#if defined (CONFIG_RAETH_SPECIAL_TAG)
+	regVal |= GDM1_TCI_81XX;
 #endif
 
 #if defined (CONFIG_RAETH_JUMBOFRAME)
 	regVal |= GDM1_JMB_EN;
 	regVal &= ~0xf0000000; /* clear bit28-bit31 */
 	regVal |= (((MAX_RX_LENGTH/1024)&0xf) << 28);
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	regVal2 |= GDM1_JMB_EN;
-	regVal2 &= ~0xf0000000; /* clear bit28-bit31 */
-	regVal2 |= (((MAX_RX_LENGTH/1024)&0xf) << 28);
-#endif
 #endif
 
 	sysRegWrite(CDMA_CSG_CFG, regCsg);
 	sysRegWrite(GDMA1_FWD_CFG, regVal);
 #if defined (CONFIG_PSEUDO_SUPPORT)
-	sysRegWrite(GDMA2_FWD_CFG, regVal2);
+	sysRegWrite(GDMA2_FWD_CFG, regVal);
 #endif
 
 /*
@@ -557,16 +521,11 @@ static void fe_forward_config(struct net_device *dev, END_DEVICE *ei_local)
 
 #if defined (CONFIG_RALINK_RT3883)
 	sysRegWrite(PSE_FQ_CFG, cpu_to_le32(INIT_VALUE_OF_RT3883_PSE_FQ_CFG));
-#elif defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_MT7620) || \
-      defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
-        /*use default value*/
-#else
+#elif defined (CONFIG_RALINK_RT3052)
 	sysRegWrite(PSE_FQ_CFG, cpu_to_le32(INIT_VALUE_OF_PSE_FQFC_CFG));
 #endif
 	/*
-	 *FE_RST_GLO register definition -
-	 *Bit 0: PSE Rest
-	 *Reset PSE after re-programming PSE_FQ_CFG.
+	 * Reset PSE after re-programming PSE_FQ_CFG.
 	 */
 	sysRegWrite(FE_RST_GLO, 1);
 	sysRegWrite(FE_RST_GLO, 0);	// update for RSTCTL issue
@@ -574,7 +533,7 @@ static void fe_forward_config(struct net_device *dev, END_DEVICE *ei_local)
 	regCsg = sysRegRead(CDMA_CSG_CFG);
 	regVal = sysRegRead(GDMA1_FWD_CFG);
 #if defined (CONFIG_PSEUDO_SUPPORT)
-	regVal2 = sysRegRead(GDMA2_FWD_CFG);
+	regVal = sysRegRead(GDMA2_FWD_CFG);
 #endif
 
 #endif /* RAETH_SDMA */
@@ -609,9 +568,6 @@ static void fe_pdma_init(END_DEVICE *ei_local)
 	/* init TX rings */
 	for (k = 0; k < NUM_TX_RING; k++) {
 		ei_local->tx_free_idx[k] = 0;
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-		ei_local->tx_calc_idx[k] = 0;
-#endif
 		for (i = 0; i < NUM_TX_DESC; i++) {
 			ei_local->tx_free[k][i] = NULL;
 			ei_local->tx_ring[k][i].txd_info1_u32 = 0;
@@ -661,9 +617,6 @@ static void fe_pdma_init(END_DEVICE *ei_local)
 	sysRegWrite(RX_MAX_CNT0, cpu_to_le32((u32)NUM_RX_DESC));
 	sysRegWrite(RX_CALC_IDX0, cpu_to_le32((u32)(NUM_RX_DESC - 1)));
 	sysRegWrite(PDMA_RST_CFG, PST_DRX_IDX0);
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-	ei_local->rx_calc_idx = sysRegRead(RX_CALC_IDX0);
-#endif
 
 #if NUM_TX_RING > 1 && defined (CONFIG_PSEUDO_SUPPORT)
 	/* TX Ring #0 weight == TX Ring #2 weight */
@@ -705,9 +658,6 @@ static void fe_pdma_uninit(END_DEVICE *ei_local)
 			}
 		}
 		ei_local->tx_free_idx[k] = 0;
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-		ei_local->tx_calc_idx[k] = 0;
-#endif
 	}
 
 	/* uninit RX ring */
@@ -721,10 +671,6 @@ static void fe_pdma_uninit(END_DEVICE *ei_local)
 #endif
 		}
 	}
-
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-	ei_local->rx_calc_idx = NUM_RX_DESC - 1;
-#endif
 
 	/* clear adapter TX rings */
 	sysRegWrite(TX_BASE_PTR0, 0);
@@ -755,9 +701,7 @@ static void fe_pdma_start(void)
 #if defined (RAETH_PDMA_V2)
 	pdma_glo_cfg |= RX_2B_OFFSET;
 #endif
-#if defined (CONFIG_RAETH_32B_DESC)
-	pdma_glo_cfg |= DESC_32B_EN;
-#endif
+
 	sysRegWrite(PDMA_GLO_CFG, pdma_glo_cfg);
 }
 
@@ -879,26 +823,14 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 	struct vlan_ethhdr *veth;
 #endif
 
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-	rx_dma_owner_idx = (ei_local->rx_calc_idx + 1) % NUM_RX_DESC;
-#else
-	rx_dma_owner_idx = (sysRegRead(RX_CALC_IDX0) + 1) % NUM_RX_DESC;
-#endif
-
-#if defined (CONFIG_RAETH_32B_DESC)
-	dma_cache_sync(NULL, &ei_local->rx_ring[rx_dma_owner_idx], sizeof(struct PDMA_rxdesc), DMA_FROM_DEVICE);
-#endif
+	rx_dma_owner_idx = sysRegRead(RX_CALC_IDX0);
 
 	while (work_done < work_todo) {
+		rx_dma_owner_idx = (rx_dma_owner_idx + 1) % NUM_RX_DESC;
 		rx_ring = &ei_local->rx_ring[rx_dma_owner_idx];
 		if (!(rx_ring->rxd_info2_u32 & RX2_DMA_DONE))
 			break;
 		
-		work_done++;
-		
-#if defined (CONFIG_32B_DESC)
-		prefetch(&ei_local->rx_ring[((rx_dma_owner_idx + 1) % NUM_RX_DESC)]);
-#endif
 		length = RX2_DMA_SDL0_GET(rx_ring->rxd_info2_u32);
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
 		rx_vlan_vid = (rx_ring->rxd_info2_u32 & RX2_DMA_TAG) ? rx_ring->rxd_info3_u32 : 0;
@@ -918,9 +850,7 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 			rx_ring->rxd_info2_u32 = RX2_DMA_LS0;
 #endif
 			sysRegWrite(RX_CALC_IDX0, cpu_to_le32(rx_dma_owner_idx));
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-			ei_local->rx_calc_idx = rx_dma_owner_idx;
-#endif
+			
 			inc_rx_drop(ei_local, gmac_no);
 #if !defined (CONFIG_RAETH_NAPI)
 			/* mean need reschedule */
@@ -941,9 +871,6 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 		rx_ring->rxd_info2_u32 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
 #else
 		rx_ring->rxd_info2_u32 = RX2_DMA_LS0;
-#endif
-#if defined (CONFIG_RAETH_32B_DESC)
-		dma_cache_sync(NULL, rx_ring, sizeof(struct PDMA_rxdesc), DMA_TO_DEVICE);
 #endif
 		
 		/* skb processing */
@@ -1005,11 +932,6 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 		   (ra_sw_nat_hook_rx != NULL && ra_sw_nat_hook_rx(rx_skb)))
 #endif
 		{
-#if defined (CONFIG_RALINK_RT3052_MP2)
-			if (mcast_rx(rx_skb) == 0)
-				kfree_skb(rx_skb);
-			else
-#endif
 #if defined (CONFIG_RAETH_NAPI)
 #if defined (CONFIG_RAETH_NAPI_GRO)
 			if (rx_skb->ip_summed == CHECKSUM_UNNECESSARY)
@@ -1026,11 +948,8 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 		
 		/* move point to next RXD which wants to alloc */
 		sysRegWrite(RX_CALC_IDX0, cpu_to_le32(rx_dma_owner_idx));
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-		ei_local->rx_calc_idx = rx_dma_owner_idx;
-#endif
-		/* update to next packet point that was received. */
-		rx_dma_owner_idx = (rx_dma_owner_idx + 1) % NUM_RX_DESC;
+		
+		work_done++;
 	}
 
 	return work_done;
@@ -1046,7 +965,7 @@ static inline int raeth_xmit(struct sk_buff* skb, struct net_device *dev, END_DE
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	u32 nr_frags, txd_info2;
 	const skb_frag_t *tx_frag;
-	struct skb_shared_info *shinfo;
+	struct skb_shared_info *shinfo = skb_shinfo(skb);
 #endif
 #if NUM_TX_RING > 1 && defined (CONFIG_PSEUDO_SUPPORT)
 	u32 tx_ring_idx = (gmac_no == PSE_PORT_GMAC2) ? 1 : 0;
@@ -1076,10 +995,6 @@ static inline int raeth_xmit(struct sk_buff* skb, struct net_device *dev, END_DE
 	}
 #endif
 
-#if defined (CONFIG_RALINK_RT3052_MP2)
-	mcast_tx(skb);
-#endif
-
 #if !defined (CONFIG_RALINK_MT7621)
 	if (skb->len < ei_local->min_pkt_len) {
 		if (skb_padto(skb, ei_local->min_pkt_len)) {
@@ -1093,14 +1008,9 @@ static inline int raeth_xmit(struct sk_buff* skb, struct net_device *dev, END_DE
 	}
 #endif
 
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-	tx_cpu_owner_idx = ei_local->tx_calc_idx[tx_ring_idx];
-#else
 	tx_cpu_owner_idx = sysRegRead(tx_ring_ctx);
-#endif
 
 #if defined (CONFIG_RAETH_SG_DMA_TX)
-	shinfo = skb_shinfo(skb);
 	nr_frags = shinfo->nr_frags;
 	nr_slots = (nr_frags >> 1) + 1;
 #else
@@ -1244,9 +1154,6 @@ static inline int raeth_xmit(struct sk_buff* skb, struct net_device *dev, END_DE
 
 	/* kick the DMA TX */
 	sysRegWrite(tx_ring_ctx, cpu_to_le32(tx_cpu_owner_idx_next));
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-	ei_local->tx_calc_idx[tx_ring_idx] = tx_cpu_owner_idx_next;
-#endif
 
 #if defined (CONFIG_RAETH_BQL)
 	netdev_sent_queue(dev, skb->len);
@@ -1266,7 +1173,7 @@ static inline void raeth_xmit_clean(struct net_device *dev, END_DEVICE *ei_local
 	struct netdev_queue *txq;
 	struct PDMA_txdesc *tx_ring;
 	struct sk_buff *tx_skb;
-	int cpu, clean_done = 0;
+	int clean_done = 0;
 	u32 tx_free_idx;
 #if defined (CONFIG_RAETH_BQL)
 	u32 pkts_sent = 0;
@@ -1278,9 +1185,8 @@ static inline void raeth_xmit_clean(struct net_device *dev, END_DEVICE *ei_local
 #define tx_ring_idx 0
 #endif
 
-	cpu = smp_processor_id();
 	txq = netdev_get_tx_queue(dev, 0);
-	__netif_tx_lock(txq, cpu);
+	__netif_tx_lock(txq, smp_processor_id());
 
 	tx_free_idx = ei_local->tx_free_idx[tx_ring_idx];
 
@@ -1832,7 +1738,7 @@ int ei_init(struct net_device *dev)
 #endif
 
 	if (raeth_ring_alloc(ei_local) != 0) {
-		printk(KERN_WARNING "raeth_ring_alloc FAILED!\n");
+		printk(KERN_WARNING "%s: ring_alloc FAILED!\n", RAETH_DEV_NAME);
 		return -ENOMEM;
 	}
 

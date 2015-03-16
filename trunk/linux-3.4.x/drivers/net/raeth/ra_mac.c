@@ -311,25 +311,13 @@ static int ra_txring_seq_show(struct seq_file *m, void *v)
 	END_DEVICE *ei_local = netdev_priv(dev_raether);
 
 	for (k = 0; k < NUM_TX_RING; k++) {
-		seq_printf(m, "- TX Ring[%d] -\n", k);
+		seq_printf(m, "- PDMA TX Ring[%d] -\n", k);
 		for (i = 0; i < NUM_TX_DESC; i++) {
-#if defined (CONFIG_RAETH_32B_DESC)
-			seq_printf(m, "%d: %08x %08x %08x %08x %08x %08x %08x %08x\n", i,
-				ei_local->tx_ring[k][i].txd_info1_u32,
-				ei_local->tx_ring[k][i].txd_info2_u32,
-				ei_local->tx_ring[k][i].txd_info3_u32,
-				ei_local->tx_ring[k][i].txd_info4_u32,
-				ei_local->tx_ring[k][i].txd_info5_u32,
-				ei_local->tx_ring[k][i].txd_info6_u32,
-				ei_local->tx_ring[k][i].txd_info7_u32,
-				ei_local->tx_ring[k][i].txd_info8_u32);
-#else
 			seq_printf(m, "%d: %08x %08x %08x %08x\n", i,
 				ei_local->tx_ring[k][i].txd_info1_u32,
 				ei_local->tx_ring[k][i].txd_info2_u32,
 				ei_local->tx_ring[k][i].txd_info3_u32,
 				ei_local->tx_ring[k][i].txd_info4_u32);
-#endif
 		}
 	}
 
@@ -341,24 +329,13 @@ static int ra_rxring_seq_show(struct seq_file *m, void *v)
 	int i;
 	END_DEVICE *ei_local = netdev_priv(dev_raether);
 
+	seq_printf(m, "- PDMA RX Ring[%d] -\n", 0);
 	for (i = 0; i < NUM_RX_DESC; i++) {
-#if defined (CONFIG_RAETH_32B_DESC)
-		seq_printf(m, "%d: %08x %08x %08x %08x %08x %08x %08x %08x\n", i,
-				ei_local->rx_ring[i].rxd_info1_u32,
-				ei_local->rx_ring[i].rxd_info2_u32,
-				ei_local->rx_ring[i].rxd_info3_u32,
-				ei_local->rx_ring[i].rxd_info4_u32,
-				ei_local->rx_ring[i].rxd_info5_u32,
-				ei_local->rx_ring[i].rxd_info6_u32,
-				ei_local->rx_ring[i].rxd_info7_u32,
-				ei_local->rx_ring[i].rxd_info8_u32);
-#else
 		seq_printf(m, "%d: %08x %08x %08x %08x\n", i,
 				ei_local->rx_ring[i].rxd_info1_u32,
 				ei_local->rx_ring[i].rxd_info2_u32,
 				ei_local->rx_ring[i].rxd_info3_u32,
 				ei_local->rx_ring[i].rxd_info4_u32);
-#endif
 	}
 
 	return 0;

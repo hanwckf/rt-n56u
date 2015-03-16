@@ -16,9 +16,6 @@
 #define DEV_NAME		"eth2"
 #define DEV2_NAME		"eth3"
 
-/* RT6856 workaround */
-//#define RAETH_PDMAPTR_FROM_VAR
-
 #if defined (CONFIG_PSEUDO_SUPPORT)
 #define NUM_TX_RING		2
 #else
@@ -28,10 +25,14 @@
 #if defined (CONFIG_RALINK_RT3052) || defined (MEMORY_OPTIMIZATION)
 #define NUM_TX_DESC		128
 #define NUM_RX_DESC		128
-#define NUM_RX_MAX_PROCESS	32
 #else
 #define NUM_TX_DESC		256
 #define NUM_RX_DESC		256
+#endif
+
+#if (NUM_RX_DESC < 256)
+#define NUM_RX_MAX_PROCESS	32
+#else
 #define NUM_RX_MAX_PROCESS	16
 #endif
 
@@ -98,10 +99,6 @@ typedef struct _END_DEVICE
 	unsigned int			min_pkt_len;
 
 	unsigned int			tx_free_idx[NUM_TX_RING];
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-	unsigned int			tx_calc_idx[NUM_TX_RING];
-	unsigned int			rx_calc_idx;
-#endif
 
 	struct PDMA_txdesc		*tx_ring[NUM_TX_RING];
 	struct PDMA_rxdesc		*rx_ring;

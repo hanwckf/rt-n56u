@@ -171,6 +171,11 @@
 #define SDM_RBCNT			(RALINK_FRAME_ENGINE_BASE+RASDM_OFFSET+0x10C) //Switch DMA rx byte count
 #define SDM_CS_ERR			(RALINK_FRAME_ENGINE_BASE+RASDM_OFFSET+0x110) //Switch DMA rx checksum error count
 
+#define SDM_TCI_81XX			BIT(20)
+#define SDM_UDPCS			BIT(18)
+#define SDM_TCPCS			BIT(17)
+#define SDM_IPCS			BIT(16)
+
 #elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 
 /* 1. Frame Engine Global Registers */
@@ -421,6 +426,7 @@
 #define GDM1_UFRC_P_CPU			(0 << 12)
 #if defined (CONFIG_RALINK_MT7621)
 #define GDM1_UFRC_P_PPE			(4 << 12)
+#define GDM1_UFRC_P_QDMA		(5 << 12)
 #else
 #define GDM1_UFRC_P_PPE			(6 << 12)
 #endif
@@ -429,6 +435,7 @@
 #define GDM1_BFRC_P_CPU			(0 << 8)
 #if defined (CONFIG_RALINK_MT7621)
 #define GDM1_BFRC_P_PPE			(4 << 8)
+#define GDM1_BFRC_P_QDMA		(5 << 8)
 #else
 #define GDM1_BFRC_P_PPE			(6 << 8)
 #endif
@@ -437,6 +444,7 @@
 #define GDM1_MFRC_P_CPU			(0 << 4)
 #if defined (CONFIG_RALINK_MT7621)
 #define GDM1_MFRC_P_PPE			(4 << 4)
+#define GDM1_MFRC_P_QDMA		(5 << 4)
 #else
 #define GDM1_MFRC_P_PPE			(6 << 4)
 #endif
@@ -445,6 +453,7 @@
 #define GDM1_OFRC_P_CPU			(0 << 0)
 #if defined (CONFIG_RALINK_MT7621)
 #define GDM1_OFRC_P_PPE			(4 << 0)
+#define GDM1_OFRC_P_QDMA		(5 << 0)
 #else
 #define GDM1_OFRC_P_PPE			(6 << 0)
 #endif
@@ -554,12 +563,6 @@ struct PDMA_rxdesc {
 	unsigned int rxd_info2_u32;
 	unsigned int rxd_info3_u32;
 	unsigned int rxd_info4_u32;
-#if defined (CONFIG_RAETH_32B_DESC)
-	unsigned int rxd_info5_u32;
-	unsigned int rxd_info6_u32;
-	unsigned int rxd_info7_u32;
-	unsigned int rxd_info8_u32;
-#endif
 };
 
 #define RX2_DMA_SDL0_GET(_x)		(((_x) >> 16) & 0x3fff)
@@ -608,12 +611,6 @@ struct PDMA_txdesc {
 	unsigned int txd_info2_u32;
 	unsigned int txd_info3_u32;
 	unsigned int txd_info4_u32;
-#if defined (CONFIG_RAETH_32B_DESC)
-	unsigned int txd_info5_u32;
-	unsigned int txd_info6_u32;
-	unsigned int txd_info7_u32;
-	unsigned int txd_info8_u32;
-#endif
 };
 
 #define TX2_DMA_SDL1(_x)		((_x) & 0x3fff)

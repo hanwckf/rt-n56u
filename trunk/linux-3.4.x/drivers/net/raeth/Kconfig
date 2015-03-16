@@ -13,13 +13,6 @@ config  RAETH_NAPI
 #	depends on RAETH_NAPI && RAETH_CHECKSUM_OFFLOAD
 #	default n
 
-config  RAETH_32B_DESC
-	bool "32 bytes TX/RX ring descriptors (L1 cache aligned, no disable cache needed for TX/RX ring)"
-	default n
-	depends on RAETH && (RALINK_MT7620 || RALINK_MT7621)
-	---help---
-	  At this moment, you cannot enable 32B description with Multiple RX ring at the same time.
-
 config  RAETH_JUMBOFRAME
 	bool "Jumbo Frame up to 4K bytes"
 	depends on RAETH && !(RALINK_RT3052 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7628)

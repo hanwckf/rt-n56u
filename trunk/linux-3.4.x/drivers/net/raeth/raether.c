@@ -910,6 +910,11 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 			rx_skb->protocol = eth_type_trans(rx_skb, dev);
 
 #if defined (CONFIG_RAETH_SPECIAL_TAG)
+#if defined (CONFIG_MT7530_GSW)
+#define ESW_TAG_ID	0x00
+#else
+#define ESW_TAG_ID	0x81
+#endif
 		// port0: 0x8100 => 0x8100 0001
 		// port1: 0x8101 => 0x8100 0002
 		// port2: 0x8102 => 0x8100 0003
@@ -917,7 +922,7 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 		// port4: 0x8104 => 0x8100 0005
 		// port5: 0x8105 => 0x8100 0006
 		veth = vlan_eth_hdr(rx_skb);
-		if ((veth->h_vlan_proto & 0xFF) == 0x81) {
+		if ((veth->h_vlan_proto & 0xFF) == ESW_TAG_ID) {
 			veth->h_vlan_TCI = htons( (((veth->h_vlan_proto >> 8) & 0xF) + 1) );
 			veth->h_vlan_proto = __constant_htons(ETH_P_8021Q);
 			rx_skb->protocol = veth->h_vlan_proto;

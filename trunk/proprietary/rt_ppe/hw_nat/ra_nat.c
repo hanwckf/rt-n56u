@@ -45,7 +45,6 @@
 #include "ra_nat.h"
 #include "foe_fdb.h"
 #include "frame_engine.h"
-#include "sys_rfrw.h"
 #include "policy.h"
 #include "util.h"
 
@@ -974,7 +973,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 	if (foe_entry_ppe->bfib1.state == BIND)
 		return 1;
 
-	/* copy original FoE entry */
+	/* copy original FoE entry to CPU */
 	memcpy(&foe_entry, foe_entry_ppe, sizeof(struct FoeEntry));
 
 	/* reset L2 fields */
@@ -1348,16 +1347,16 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 	/* enable cache by default */
 	foe_entry.bfib1.cah = 1;
 
-#if defined (CONFIG_RA_HW_NAT_PREBIND)
-	foe_entry.udib1.preb = 1;
-#else
-	/* change Foe Entry State to Binding State */
-	foe_entry.bfib1.state = BIND;
-#endif
-
-	/* write entry to FoE table */
+	/* write updated FoE entry to DMA */
 	memcpy(foe_entry_ppe, &foe_entry, sizeof(struct FoeEntry));
-	dma_cache_sync(NULL, foe_entry_ppe, sizeof(struct FoeEntry), DMA_TO_DEVICE);
+	wmb();
+
+	/* change FoE entry state to (pre)binding state */
+#if defined (CONFIG_RA_HW_NAT_PREBIND)
+	foe_entry_ppe->udib1.preb = 1;
+#else
+	foe_entry_ppe->bfib1.state = BIND;
+#endif
 
 #if !defined (CONFIG_RA_HW_NAT_PREBIND)
 #if defined (CONFIG_RA_HW_NAT_DEBUG)
@@ -1399,7 +1398,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 	if (foe_entry_ppe->bfib1.state == BIND)
 		return 1;
 
-	/* copy original FoE entry */
+	/* copy original FoE entry to CPU */
 	memcpy(&foe_entry, foe_entry_ppe, sizeof(struct FoeEntry));
 
 	/* reset L2 fields */
@@ -1586,12 +1585,12 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 	foe_entry.ipv4_hnapt.iblk2.fp = 1;
 #endif
 
-	/* change Foe Entry State to Binding State */
-	foe_entry.bfib1.state = BIND;
-
-	/* write entry to FoE table */
+	/* write updated FoE entry to DMA */
 	memcpy(foe_entry_ppe, &foe_entry, sizeof(struct FoeEntry));
-	dma_cache_sync(NULL, foe_entry_ppe, sizeof(struct FoeEntry), DMA_TO_DEVICE);
+	wmb();
+
+	/* change FoE entry state to binding state */
+	foe_entry_ppe->bfib1.state = BIND;
 
 #if defined (CONFIG_RA_HW_NAT_DEBUG)
 	/* Dump Binding Entry */
@@ -2528,6 +2527,8 @@ static int __init PpeInitMod(void)
 #if defined (CONFIG_RALINK_RT3052)
 	/* RT3052 with RF_REG0 > 0x53 has no bug UDP w/o checksum */
 	uint32_t phy_val = 0;
+	extern int rw_rf_reg(int write, int reg, int *data);
+
 	rw_rf_reg(0, 0, &phy_val);
 	ppe_udp_bug = ((phy_val & 0xFF) > 0x53) ? 0 : 1;
 #elif defined (CONFIG_RALINK_RT3352)

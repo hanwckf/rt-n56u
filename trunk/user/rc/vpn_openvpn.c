@@ -613,34 +613,45 @@ on_server_client_disconnect(int is_tun)
 static void
 on_client_ifup(void)
 {
-	int i, i_dns = 0;
-	char buf[256];
-	char *script_name = VPN_CLIENT_UPDOWN_SCRIPT;
+#define ENV_SCAN_MAX 20
+	int i, i_dns = 0, i_wins = 0, i_dom = 0, vpnc_pdns;
+	char buf[256], foption[32], fvalue[128], *value;
+	const char *script_name = VPN_CLIENT_UPDOWN_SCRIPT;
 
 	nvram_set_int_temp("vpnc_state_t", 1);
 
+	vpnc_pdns = nvram_get_int("vpnc_pdns");
+
 	buf[0] = 0;
-	if (nvram_get_int("vpnc_pdns") > 0) {
-		int buf_len;
-		char *value;
-		char foption[32], fdns[128];
-		
-		for (i = 0; i < 20 && i_dns < 3; i++) {
-			sprintf(foption, "foreign_option_%d", i);
-			value = getenv(foption);
-			if (value) {
-				fdns[0] = 0;
-				if (sscanf(value, "dhcp-option DNS %s", fdns) == 1) {
-					buf_len = strlen(buf);
-					snprintf(buf + buf_len, sizeof(buf) - buf_len, "%s%s", (buf_len) ? " " : "", fdns);
-					i_dns++;
-					if (i_dns == 1)
-						setenv("DNS1", fdns, 1);
-					else if (i_dns == 2)
-						setenv("DNS2", fdns, 1);
+	for (i = 0; i < ENV_SCAN_MAX; i++) {
+		sprintf(foption, "foreign_option_%d", i);
+		value = getenv(foption);
+		if (value) {
+			memset(fvalue, 0, sizeof(fvalue));
+			if (sscanf(value, "dhcp-option DNS %s", fvalue) == 1) {
+				if (vpnc_pdns > 0) {
+					int buf_len = strlen(buf);
+					snprintf(buf + buf_len, sizeof(buf) - buf_len, "%s%s", (buf_len) ? " " : "", fvalue);
 				}
+				i_dns++;
+				if (i_dns == 1)
+					setenv("DNS1", fvalue, 1);
+				else if (i_dns == 2)
+					setenv("DNS2", fvalue, 1);
+			} else if (sscanf(value, "dhcp-option WINS %s", fvalue) == 1) {
+				i_wins++;
+				if (i_wins == 1)
+					setenv("WINS1", fvalue, 1);
+				else if (i_wins == 2)
+					setenv("WINS2", fvalue, 1);
+			} else if (sscanf(value, "dhcp-option DOMAIN %s", fvalue) == 1) {
+				i_dom++;
+				if (i_dom == 1)
+					setenv("DOMAIN", fvalue, 1);
 			}
 		}
+		if (i_dom >= 1 && i_wins >= 2 && i_dns >= 2)
+			break;
 	}
 
 	nvram_set_temp("vpnc_dns_t", buf);
@@ -655,6 +666,12 @@ on_client_ifup(void)
 			unsetenv(env_pppd[i]);
 	}
 
+	if (i_dom > 0)
+		unsetenv("DOMAIN");
+	if (i_wins > 1)
+		unsetenv("WINS2");
+	if (i_wins > 0)
+		unsetenv("WINS1");
 	if (i_dns > 1)
 		unsetenv("DNS2");
 	if (i_dns > 0)
@@ -665,7 +682,7 @@ static void
 on_client_ifdown(void)
 {
 	int i;
-	char *script_name = VPN_CLIENT_UPDOWN_SCRIPT;
+	const char *script_name = VPN_CLIENT_UPDOWN_SCRIPT;
 
 	nvram_set_int_temp("vpnc_state_t", 0);
 

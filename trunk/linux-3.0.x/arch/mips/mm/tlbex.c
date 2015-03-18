@@ -375,6 +375,7 @@ static void __cpuinit build_r3000_tlb_refill_handler(void)
 		 (unsigned int)(p - tlb_handler));
 
 	memcpy((void *)ebase, tlb_handler, 0x80);
+	local_flush_icache_range(ebase, ebase + 0x80);
 
 	dump_handler((u32 *)ebase, 32);
 }
@@ -1396,6 +1397,7 @@ static void __cpuinit build_r4000_tlb_refill_handler(void)
 		 final_len);
 
 	memcpy((void *)ebase, final_handler, 0x100);
+	local_flush_icache_range(ebase, ebase + 0x100);
 
 	dump_handler((u32 *)ebase, 64);
 }

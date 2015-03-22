@@ -553,8 +553,10 @@ int __init init_ralink_pci(void)
 	ASSERT_SYSRST_PCIE(val);			// raise reset all PCIe ports
 	udelay(100);
 #if defined (GPIO_PERST)
-	RALINK_GPIOMODE &= ~((0x3<<PCIE_SHARE_PIN_SW) | (0x3<<UARTL3_SHARE_PIN_SW));
-	RALINK_GPIOMODE |=  ((0x1<<PCIE_SHARE_PIN_SW) | (0x1<<UARTL3_SHARE_PIN_SW));
+	val = RALINK_GPIOMODE;
+	val &= ~((0x3<<PCIE_SHARE_PIN_SW) | (0x3<<UARTL3_SHARE_PIN_SW));
+	val |=  ((0x1<<PCIE_SHARE_PIN_SW) | (0x1<<UARTL3_SHARE_PIN_SW));
+	RALINK_GPIOMODE = val;
 	val = 0;
 #if defined (CONFIG_PCIE_PORT0)
 	val |= (0x1<<GPIO_PCIE_PORT0);
@@ -566,6 +568,7 @@ int __init init_ralink_pci(void)
 	val |= (0x1<<GPIO_PCIE_PORT2);
 #endif
 	RALINK_GPIO_CTRL0 |= val;			// switch PERST_N pin to output mode
+	mdelay(10);
 	RALINK_GPIO_DATA0 &= ~(val);			// fall PERST_N pin (reset peripherals)
 	mdelay(100);					// wait 100 ms pulse
 #else /* !defined (GPIO_PERST) */

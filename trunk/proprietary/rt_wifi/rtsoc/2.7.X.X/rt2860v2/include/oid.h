@@ -1073,12 +1073,14 @@ typedef struct _RT_802_11_EVENT_TABLE {
 /* MIMO Tx parameter, ShortGI, MCS, STBC, etc.  these are fields in TXWI. Don't change this definition!!! */
 typedef union _MACHTTRANSMIT_SETTING {
 	struct {
-		USHORT MCS:7;	/* MCS */
-		USHORT BW:1;	/*channel bandwidth 20MHz or 40 MHz */
+		USHORT MCS:6;
+		USHORT ldpc:1;
+		USHORT BW:2;
 		USHORT ShortGI:1;
-		USHORT STBC:2;	/*SPACE */
-		USHORT rsv:3;
-		USHORT MODE:2;	/* Use definition MODE_xxx. */
+		USHORT STBC:1;
+		USHORT eTxBF:1;
+		USHORT iTxBF:1;
+		USHORT MODE:3;
 	} field;
 	USHORT word;
 } MACHTTRANSMIT_SETTING, *PMACHTTRANSMIT_SETTING;
@@ -1094,6 +1096,7 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	CHAR AvgRssi2;
 	UINT32 ConnectedTime;
 	MACHTTRANSMIT_SETTING TxRate;
+	UINT32 LastRxRate;
 } RT_802_11_MAC_ENTRY, *PRT_802_11_MAC_ENTRY;
 
 typedef struct _RT_802_11_MAC_TABLE {

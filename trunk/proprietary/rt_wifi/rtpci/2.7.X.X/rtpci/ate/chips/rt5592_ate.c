@@ -233,7 +233,7 @@ VOID RT55x2ATEFilterCalibration(
 			CalRF57_PassBand = (CalRF57_PassBand - 128);
 		}
 
-		DBGPRINT(RT_DEBUG_OFF, ("Retry = %d, BBP R57 = 0x%02x, CalRF57_PassBand = %d\n", ReTry, BBPValue, CalRF57_PassBand));
+		DBGPRINT(RT_DEBUG_TRACE, ("Retry = %d, BBP R57 = 0x%02x, CalRF57_PassBand = %d\n", ReTry, BBPValue, CalRF57_PassBand));
 		
 		/*
  		 * transmit tone frequency control of stopband test tone
@@ -261,7 +261,7 @@ VOID RT55x2ATEFilterCalibration(
 				RtmpOsMsDelay(1);
 
 				ATE_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R159, &BBPValue);
-				DBGPRINT(RT_DEBUG_OFF, ("Wait RF calibration done - BPP_R0 value = 0x%02x\n",BBPValue));
+				DBGPRINT(RT_DEBUG_TRACE, ("Wait RF calibration done - BPP_R0 value = 0x%02x\n",BBPValue));
 
 			} while ((ReTry++ < 20) && ((BBPValue & 0x80) == 0x80));
 
@@ -281,7 +281,7 @@ VOID RT55x2ATEFilterCalibration(
 				CalRF57_StopBand = (CalRF57_StopBand - 128);
 			}
 
-			DBGPRINT(RT_DEBUG_OFF, ("%s: loopcnt = %d, BBP_R57=0x%02x,\
+			DBGPRINT(RT_DEBUG_TRACE, ("%s: loopcnt = %d, BBP_R57=0x%02x,\
 					tx_agc_fc = 0x%02x, CalRF57_PassBand = 0x%02x,\
 					FilterTarget = 0x%02x, (CalRF57_PassBand - CalRF57_StopBand) = 0x%02x\n",
 					__FUNCTION__, loopcnt, CalRF57_StopBand, tx_agc_fc, CalRF57_PassBand, FilterTarget,
@@ -313,8 +313,7 @@ VOID RT55x2ATEFilterCalibration(
 			{
 				ATE_RF_IO_READ8_BY_REG_ID(pAd, RF_R30, &RFValue);
 				RFValue &= ~0x02;
-				ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R30, RFValue);			
-
+				ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R30, RFValue);
 			}
 			else
 			{

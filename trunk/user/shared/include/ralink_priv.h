@@ -61,7 +61,6 @@ typedef enum _RT_802_11_PHY_MODE {
 
 typedef union _MACHTTRANSMIT_SETTING {
 	struct {
-#if defined (USE_MT7610_AP) || defined (USE_MT76X2_AP) || defined (USE_MT76X3_AP)
 		unsigned short MCS:6;
 		unsigned short ldpc:1;
 		unsigned short BW:2;
@@ -70,16 +69,6 @@ typedef union _MACHTTRANSMIT_SETTING {
 		unsigned short eTxBF:1;
 		unsigned short iTxBF:1;
 		unsigned short MODE:3;
-#else
-		unsigned short MCS:7;
-		unsigned short BW:1;
-		unsigned short ShortGI:1;
-		unsigned short STBC:2;
-		unsigned short eTxBF:1;
-		unsigned short rsv:1;
-		unsigned short iTxBF:1;
-		unsigned short MODE:2;
-#endif
 	} field;
 	unsigned short word;
 } MACHTTRANSMIT_SETTING, *PMACHTTRANSMIT_SETTING;
@@ -95,15 +84,46 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	char		AvgRssi2;
 	unsigned int	ConnectedTime;
 	MACHTTRANSMIT_SETTING	TxRate;
-#if defined (USE_MT7610_AP) || defined (USE_MT76X2_AP) || defined (USE_MT76X3_AP)
 	unsigned int	LastRxRate;
-#endif
 } RT_802_11_MAC_ENTRY, *PRT_802_11_MAC_ENTRY;
 
 typedef struct _RT_802_11_MAC_TABLE {
-    unsigned long	Num;
-    RT_802_11_MAC_ENTRY Entry[MAX_NUMBER_OF_MAC];
+	unsigned long Num;
+	RT_802_11_MAC_ENTRY Entry[MAX_NUMBER_OF_MAC];
 } RT_802_11_MAC_TABLE, *PRT_802_11_MAC_TABLE;
+
+/* RT3352 iNIC_mii MAC_TABLE */
+typedef union _MACHTTRANSMIT_SETTING_INIC {
+	struct {
+		unsigned short MCS:7;
+		unsigned short BW:1;
+		unsigned short ShortGI:1;
+		unsigned short STBC:2;
+		unsigned short eTxBF:1;
+		unsigned short rsv:1;
+		unsigned short iTxBF:1;
+		unsigned short MODE:2;
+	} field;
+	unsigned short word;
+} MACHTTRANSMIT_SETTING_INIC, *PMACHTTRANSMIT_SETTING_INIC;
+
+typedef struct _RT_802_11_MAC_ENTRY_INIC {
+	unsigned char	ApIdx;
+	unsigned char	Addr[ETHER_ADDR_LEN];
+	unsigned char	Aid;
+	unsigned char	Psm;     // 0:PWR_ACTIVE, 1:PWR_SAVE
+	unsigned char	MimoPs;  // 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
+	char		AvgRssi0;
+	char		AvgRssi1;
+	char		AvgRssi2;
+	unsigned int	ConnectedTime;
+	MACHTTRANSMIT_SETTING_INIC	TxRate;
+} RT_802_11_MAC_ENTRY_INIC, *PRT_802_11_MAC_ENTRY_INIC;
+
+typedef struct _RT_802_11_MAC_TABLE_INIC {
+	unsigned long Num;
+	RT_802_11_MAC_ENTRY_INIC Entry[MAX_NUMBER_OF_MAC];
+} RT_802_11_MAC_TABLE_INIC, *PRT_802_11_MAC_TABLE_INIC;
 
 typedef struct _SITE_SURVEY 
 {

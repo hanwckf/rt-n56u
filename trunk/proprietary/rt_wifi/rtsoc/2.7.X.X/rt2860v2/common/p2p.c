@@ -2705,12 +2705,14 @@ VOID P2pEnable(
 		RTMP_IO_READ32(pAd, MAC_BSSID_DW1, &regValue);
 		regValue &= 0x0000FFFF;
 
+#ifndef NEW_MBSSID_MODE
 		if ((pAd->CurrentAddress[5] % 2 != 0)
 #ifdef P2P_ODD_MAC_ADJUST
 				&& FALSE
 #endif /* P2P_ODD_MAC_ADJUST */
 			)
 			DBGPRINT(RT_DEBUG_ERROR, ("The 2-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 2\n"));
+#endif
 		
 		regValue |= (1 << 16);
 		/*	set as 0/1 bit-21 of MAC_BSSID_DW1(offset: 0x1014) 

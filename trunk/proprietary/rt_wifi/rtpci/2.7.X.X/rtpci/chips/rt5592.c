@@ -871,9 +871,9 @@ VOID RT5592LoadRFNormalModeSetup(
 	RT30xxWriteRFRegister(pAd, RF_R30, RFValue);
 }
 
+#if 0
 static VOID RT5592FilterCalibration(IN PRTMP_ADAPTER pAd)
 {
-
 	UCHAR FilterTarget = 0x13;
 	UCHAR RFValue, BBPValue;
 	UCHAR CalRF57_PassBand = 0x00;
@@ -1044,7 +1044,7 @@ static VOID RT5592FilterCalibration(IN PRTMP_ADAPTER pAd)
 
 			if (loopcnt++ > 100)
 			{
-				DBGPRINT(RT_DEBUG_TRACE, ("%s - can not find a valid value, loopcnt = %d\
+				DBGPRINT(RT_DEBUG_OFF, ("%s - can not find a valid value, loopcnt = %d\
 						stop calibration\n", __FUNCTION__,loopcnt));
 				break;
 			}
@@ -1140,7 +1140,7 @@ static VOID RT5592FilterCalibration(IN PRTMP_ADAPTER pAd)
 	DBGPRINT(RT_DEBUG_TRACE, ("%s CaliBW20RfR24 = 0x%x, CaliBW40RfR24 = 0x%x\n", 
 					__FUNCTION__, pAd->Mlme.CaliBW20RfR24, pAd->Mlme.CaliBW40RfR24));
 }
-
+#endif
 
 static VOID NICInitRT5592RFRegisters(IN PRTMP_ADAPTER pAd)
 {
@@ -1439,7 +1439,7 @@ static VOID NICInitRT5592BbpRegisters(
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R254, BbpReg);
 		
 		RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R254, &BbpReg);
-		printk("BBP_R254 = %x\n", BbpReg);
+		DBGPRINT(RT_DEBUG_TRACE, ("BBP_R254 = %x\n", BbpReg));
 	}
 
 	DBGPRINT(RT_DEBUG_TRACE, ("<-- %s\n", __FUNCTION__));

@@ -1055,6 +1055,7 @@ VOID APMakeAllBssBeacon(
 	}	
 	else if (NumOfMacs <= 2)
 	{
+#ifndef NEW_MBSSID_MODE
 		if ((pAd->CurrentAddress[5] % 2 != 0)
 #ifdef P2P_SUPPORT
 #ifdef P2P_ODD_MAC_ADJUST
@@ -1063,23 +1064,25 @@ VOID APMakeAllBssBeacon(
 #endif /* P2P_SUPPORT */
 		)
 			DBGPRINT(RT_DEBUG_ERROR, ("The 2-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 2\n"));
-		
+#endif
 		regValue |= (1<<16);
 		pAd->ApCfg.MacMask = ~(2-1);
 	}
 	else if (NumOfMacs <= 4)
 	{
+#ifndef NEW_MBSSID_MODE
 		if (pAd->CurrentAddress[5] % 4 != 0)
 			DBGPRINT(RT_DEBUG_ERROR, ("The 4-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 4\n"));
-
+#endif
 		regValue |= (2<<16);
 		pAd->ApCfg.MacMask = ~(4-1);
 	}
 	else if (NumOfMacs <= 8)
 	{
+#ifndef NEW_MBSSID_MODE
 		if (pAd->CurrentAddress[5] % 8 != 0)
 			DBGPRINT(RT_DEBUG_ERROR, ("The 8-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 8\n"));
-	
+#endif
 		regValue |= (3<<16);
 		pAd->ApCfg.MacMask = ~(8-1);
 	}

@@ -3031,7 +3031,7 @@ typedef struct _MAC_TABLE_ENTRY {
 
 	UCHAR       RateLen;
 	struct _MAC_TABLE_ENTRY *pNext;
-    USHORT      TxSeq[NUM_OF_TID];
+	USHORT      TxSeq[NUM_OF_TID];
 	USHORT		NonQosDataSeq;
 
 	RSSI_SAMPLE	RssiSample;

@@ -963,7 +963,7 @@ INT	set_eFuseLoadFromBin_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
  	if(strlen(arg)>0)
 		NdisMoveMemory(src, arg, strlen(arg));
 	else
-		NdisMoveMemory(src, EEPROM_DEFAULT_BIN_FILE, strlen(EEPROM_DEFULT_BIN_FILE));
+		NdisMoveMemory(src, EEPROM_DEFAULT_BIN_FILE, strlen(EEPROM_DEFAULT_BIN_FILE));
 	DBGPRINT(RT_DEBUG_OFF, ("FileName=%s\n",src));
 
 	RtmpOSFSInfoChange(&osfsInfo, TRUE);

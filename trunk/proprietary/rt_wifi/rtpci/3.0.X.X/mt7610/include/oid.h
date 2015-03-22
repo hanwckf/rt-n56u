@@ -1030,7 +1030,8 @@ typedef struct _RT_802_11_EVENT_TABLE {
 /* MIMO Tx parameter, ShortGI, MCS, STBC, etc.  these are fields in TXWI. Don't change this definition!!! */
 typedef union _MACHTTRANSMIT_SETTING {
 	struct {
-		USHORT MCS:7;
+		USHORT MCS:6;
+		USHORT ldpc:1;
 		USHORT BW:2;
 		USHORT ShortGI:1;
 		USHORT STBC:1;
@@ -1052,7 +1053,6 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	CHAR AvgRssi2;
 	UINT32 ConnectedTime;
 	MACHTTRANSMIT_SETTING TxRate;
-	/* below not used for MT7610E, need for structure align */
 	UINT32 LastRxRate;
 } RT_802_11_MAC_ENTRY, *PRT_802_11_MAC_ENTRY;
 

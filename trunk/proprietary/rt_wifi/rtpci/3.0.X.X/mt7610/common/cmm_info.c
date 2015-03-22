@@ -2221,7 +2221,17 @@ VOID RTMPIoctlGetMacTableStaInfo(
 
 			/* the connected time per entry*/
 			pDst->ConnectedTime = pEntry->StaConnectTime;
-			pDst->TxRate.word = pEntry->HTPhyMode.word;
+
+			pDst->TxRate.field.MCS		= pEntry->HTPhyMode.field.MCS;
+			pDst->TxRate.field.ldpc		= 0;
+			pDst->TxRate.field.BW		= pEntry->HTPhyMode.field.BW;
+			pDst->TxRate.field.ShortGI	= pEntry->HTPhyMode.field.ShortGI;
+			pDst->TxRate.field.STBC		= pEntry->HTPhyMode.field.STBC;
+			pDst->TxRate.field.eTxBF	= pEntry->HTPhyMode.field.eTxBF;
+			pDst->TxRate.field.iTxBF	= pEntry->HTPhyMode.field.iTxBF;
+			pDst->TxRate.field.MODE		= pEntry->HTPhyMode.field.MODE;
+
+			pDst->LastRxRate = pEntry->LastRxRate;
 
 			pMacTab->Num += 1;
 		}
@@ -2282,7 +2292,17 @@ VOID RTMPIoctlGetMacTable(
 
 			/* the connected time per entry*/
 			pDst->ConnectedTime = pEntry->StaConnectTime;
-			pDst->TxRate.word = pEntry->HTPhyMode.word;
+
+			pDst->TxRate.field.MCS		= pEntry->HTPhyMode.field.MCS;
+			pDst->TxRate.field.ldpc		= 0;
+			pDst->TxRate.field.BW		= pEntry->HTPhyMode.field.BW;
+			pDst->TxRate.field.ShortGI	= pEntry->HTPhyMode.field.ShortGI;
+			pDst->TxRate.field.STBC		= pEntry->HTPhyMode.field.STBC;
+			pDst->TxRate.field.eTxBF	= pEntry->HTPhyMode.field.eTxBF;
+			pDst->TxRate.field.iTxBF	= pEntry->HTPhyMode.field.iTxBF;
+			pDst->TxRate.field.MODE		= pEntry->HTPhyMode.field.MODE;
+
+			pDst->LastRxRate = pEntry->LastRxRate;
 
 			pMacTab->Num += 1;
 		}

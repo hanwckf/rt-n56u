@@ -2461,8 +2461,18 @@ VOID RTMPIoctlGetMacTableStaInfo(
 
 			// the connected time per entry
 			MacTab.Entry[MacTab.Num].ConnectedTime = pAd->MacTab.Content[i].StaConnectTime;
-			MacTab.Entry[MacTab.Num].TxRate.word = pAd->MacTab.Content[i].HTPhyMode.word;
-			
+
+			MacTab.Entry[MacTab.Num].TxRate.field.MCS	= pAd->MacTab.Content[i].HTPhyMode.field.MCS;
+			MacTab.Entry[MacTab.Num].TxRate.field.ldpc	= 0;
+			MacTab.Entry[MacTab.Num].TxRate.field.BW	= pAd->MacTab.Content[i].HTPhyMode.field.BW;
+			MacTab.Entry[MacTab.Num].TxRate.field.ShortGI	= pAd->MacTab.Content[i].HTPhyMode.field.ShortGI;
+			MacTab.Entry[MacTab.Num].TxRate.field.STBC	= pAd->MacTab.Content[i].HTPhyMode.field.STBC;
+			MacTab.Entry[MacTab.Num].TxRate.field.eTxBF	= 0;
+			MacTab.Entry[MacTab.Num].TxRate.field.iTxBF	= pAd->MacTab.Content[i].HTPhyMode.field.TxBF;
+			MacTab.Entry[MacTab.Num].TxRate.field.MODE	= pAd->MacTab.Content[i].HTPhyMode.field.MODE;
+
+			MacTab.Entry[MacTab.Num].LastRxRate = pAd->MacTab.Content[i].LastRxRate;
+
 			MacTab.Num += 1;
 		}
 	}
@@ -2503,7 +2513,17 @@ VOID RTMPIoctlGetMacTable(
 
 			// the connected time per entry
 			MacTab.Entry[MacTab.Num].ConnectedTime = pAd->MacTab.Content[i].StaConnectTime;
-			MacTab.Entry[MacTab.Num].TxRate.word = pAd->MacTab.Content[i].HTPhyMode.word;
+
+			MacTab.Entry[MacTab.Num].TxRate.field.MCS	= pAd->MacTab.Content[i].HTPhyMode.field.MCS;
+			MacTab.Entry[MacTab.Num].TxRate.field.ldpc	= 0;
+			MacTab.Entry[MacTab.Num].TxRate.field.BW	= pAd->MacTab.Content[i].HTPhyMode.field.BW;
+			MacTab.Entry[MacTab.Num].TxRate.field.ShortGI	= pAd->MacTab.Content[i].HTPhyMode.field.ShortGI;
+			MacTab.Entry[MacTab.Num].TxRate.field.STBC	= pAd->MacTab.Content[i].HTPhyMode.field.STBC;
+			MacTab.Entry[MacTab.Num].TxRate.field.eTxBF	= 0;
+			MacTab.Entry[MacTab.Num].TxRate.field.iTxBF	= pAd->MacTab.Content[i].HTPhyMode.field.TxBF;
+			MacTab.Entry[MacTab.Num].TxRate.field.MODE	= pAd->MacTab.Content[i].HTPhyMode.field.MODE;
+
+			MacTab.Entry[MacTab.Num].LastRxRate = pAd->MacTab.Content[i].LastRxRate;
 			
 			MacTab.Num += 1;
 		}

@@ -457,24 +457,14 @@ VOID AsicSetMbssMode(RTMP_ADAPTER *pAd, UCHAR NumOfBcns)
 	}
 	else if (NumOfMacs <= 2)
 	{
-		if ((pAd->CurrentAddress[5] % 2 != 0)
-		)
-			DBGPRINT(RT_DEBUG_ERROR, ("The 2-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 2\n"));
-
 		pAd->ApCfg.MacMask = ~(2-1);
 	}
 	else if (NumOfMacs <= 4)
 	{
-		if (pAd->CurrentAddress[5] % 4 != 0)
-			DBGPRINT(RT_DEBUG_ERROR, ("The 4-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 4\n"));
-
 		pAd->ApCfg.MacMask = ~(4-1);
 	}
 	else if (NumOfMacs <= 8)
 	{
-		if (pAd->CurrentAddress[5] % 8 != 0)
-			DBGPRINT(RT_DEBUG_ERROR, ("The 8-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 8\n"));
-
 		pAd->ApCfg.MacMask = ~(8-1);
 	}
 	else if (NumOfMacs <= 16)
@@ -898,6 +888,7 @@ EXPORT_SYMBOL(AsicGetTsfTime);
 static UCHAR    check_point_num = 0;
 static VOID DumpBcnQMessage(RTMP_ADAPTER *pAd, INT apidx)
 {
+#if 0
 	int j = 0;
 	BSS_STRUCT *pMbss;
 	UINT32 tmp_value = 0, hif_br_start_base = 0x4540;
@@ -935,6 +926,7 @@ static VOID DumpBcnQMessage(RTMP_ADAPTER *pAd, INT apidx)
 		show_trinfo_proc(pAd, NULL);
 	}
 #endif /*DBG*/
+#endif
 }
 
 

@@ -704,7 +704,11 @@ getRate(MACHTTRANSMIT_SETTING HTSetting)
 }
 
 static int
+#if defined(USE_RT3352_MII)
+getRate_2g(MACHTTRANSMIT_SETTING_INIC HTSetting)
+#else
 getRate_2g(MACHTTRANSMIT_SETTING HTSetting)
+#endif
 {
 	int rate_count = sizeof(MCSMappingRateTable)/sizeof(int);
 	int rate_index = 0;
@@ -750,7 +754,7 @@ get_apcli_peer_connected(const char *ifname, struct iwreq *p_wrq)
 int
 is_mac_in_sta_list(const unsigned char* p_mac)
 {
-	int i, priv_cmd;
+	int i;
 	struct iwreq wrq;
 	char mac_table_data[4096];
 
@@ -776,28 +780,38 @@ is_mac_in_sta_list(const unsigned char* p_mac)
 	if (nvram_get_int("mlme_radio_rt") == 0)
 		return 0;
 	
-	priv_cmd = RTPRIV_IOCTL_GET_MAC_TABLE;
-#else
-	priv_cmd = RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT;
-#endif
-
 	/* query rt for authenticated sta list */
 	memset(mac_table_data, 0, sizeof(mac_table_data));
 	wrq.u.data.pointer = mac_table_data;
 	wrq.u.data.length = sizeof(mac_table_data);
 	wrq.u.data.flags = 0;
-	if (wl_ioctl(IFNAME_2G_MAIN, priv_cmd, &wrq) >= 0) {
-		RT_802_11_MAC_TABLE *mp2 = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
-		for (i = 0; i < mp2->Num; i++) {
-			if (memcmp(mp2->Entry[i].Addr, p_mac, ETHER_ADDR_LEN) == 0)
-				return (mp2->Entry[i].ApIdx == 0) ? 1 : 2;
+	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0) {
+		RT_802_11_MAC_TABLE_INIC *mp = (RT_802_11_MAC_TABLE_INIC *)wrq.u.data.pointer;
+		for (i = 0; i < mp->Num; i++) {
+			if (memcmp(mp->Entry[i].Addr, p_mac, ETHER_ADDR_LEN) == 0)
+				return (mp->Entry[i].ApIdx == 0) ? 1 : 2;
 		}
 	}
+#else
+	/* query rt for authenticated sta list */
+	memset(mac_table_data, 0, sizeof(mac_table_data));
+	wrq.u.data.pointer = mac_table_data;
+	wrq.u.data.length = sizeof(mac_table_data);
+	wrq.u.data.flags = 0;
+	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq) >= 0) {
+		RT_802_11_MAC_TABLE *mp = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
+		for (i = 0; i < mp->Num; i++) {
+			if (memcmp(mp->Entry[i].Addr, p_mac, ETHER_ADDR_LEN) == 0)
+				return (mp->Entry[i].ApIdx == 0) ? 1 : 2;
+		}
+	}
+#endif
 
 	return 0;
 }
 
-int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
+static int
+print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 {
 	int i, ret;
 	int hr, min, sec, rssi, stream_rx;
@@ -809,8 +823,8 @@ int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 		ret+=websWrite(wp, "\nAP Guest Stations List\n");
 
 	ret+=websWrite(wp, "----------------------------------------\n");
-	ret+=websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-5s%-4s%-12s\n",
-			   "MAC", "PhyMode", "BW", "MCS", "SGI", "STBC", "Rate", "RSSI", "PSM", "Connect Time");
+	ret+=websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-6s%-5s%-4s%-12s\n",
+			   "MAC", "PhyMode", " BW", "MCS", "SGI", "LDPC", "STBC", "TRate", "RSSI", "PSM", "Connect Time");
 
 	stream_rx = nvram_get_int("wl_stream_rx");
 
@@ -833,18 +847,19 @@ int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 					rssi = (int)mp->Entry[i].AvgRssi2;
 			}
 			
-			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %s %-3d %s %s  %-3dM  %-3d %s %02d:%02d:%02d\n",
+			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %3s %3d %3s %4s %4s %4dM %4d %3s %02d:%02d:%02d\n",
 				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
 				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
 				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
 				GetPhyMode(mp->Entry[i].TxRate.field.MODE),
 				GetBW(mp->Entry[i].TxRate.field.BW),
 				mp->Entry[i].TxRate.field.MCS,
-				mp->Entry[i].TxRate.field.ShortGI ? "Yes" : "NO ",
-				mp->Entry[i].TxRate.field.STBC ? "Yes" : "NO ",
+				mp->Entry[i].TxRate.field.ShortGI ? "YES" : "NO",
+				mp->Entry[i].TxRate.field.ldpc ? "YES" : "NO",
+				mp->Entry[i].TxRate.field.STBC ? "YES" : "NO",
 				getRate(mp->Entry[i].TxRate),
 				rssi,
-				mp->Entry[i].Psm ? "Yes" : "NO ",
+				mp->Entry[i].Psm ? "YES" : "NO",
 				hr, min, sec
 			);
 		}
@@ -853,7 +868,12 @@ int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 	return ret;
 }
 
-int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
+static int
+#if defined(USE_RT3352_MII)
+print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE_INIC* mp, unsigned char ApIdx)
+#else
+print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
+#endif
 {
 	int i, ret;
 	int hr, min, sec, rssi, stream_rx;
@@ -865,8 +885,8 @@ int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 		ret+=websWrite(wp, "\nAP Guest Stations List\n");
 
 	ret+=websWrite(wp, "----------------------------------------\n");
-	ret+=websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-5s%-4s%-12s\n",
-			   "MAC", "PhyMode", "BW", "MCS", "SGI", "STBC", "Rate", "RSSI", "PSM", "Connect Time");
+	ret+=websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-6s%-5s%-4s%-12s\n",
+			   "MAC", "PhyMode", " BW", "MCS", "SGI", "LDPC", "STBC", "TRate", "RSSI", "PSM", "Connect Time");
 
 	stream_rx = nvram_get_int("rt_stream_rx");
 
@@ -889,18 +909,19 @@ int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 					rssi = (int)mp->Entry[i].AvgRssi2;
 			}
 			
-			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %s %-3d %s %s  %-3dM  %-3d %s %02d:%02d:%02d\n",
+			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %3s %3d %3s %4s %4s %4dM %4d %3s %02d:%02d:%02d\n",
 				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
 				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
 				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
 				GetPhyMode(mp->Entry[i].TxRate.field.MODE),
 				GetBW(mp->Entry[i].TxRate.field.BW),
 				mp->Entry[i].TxRate.field.MCS,
-				mp->Entry[i].TxRate.field.ShortGI ? "Yes" : "NO ",
-				mp->Entry[i].TxRate.field.STBC ? "Yes" : "NO ",
+				mp->Entry[i].TxRate.field.ShortGI ? "YES" : "NO",
+				mp->Entry[i].TxRate.field.ldpc ? "YES" : "NO",
+				mp->Entry[i].TxRate.field.STBC ? "YES" : "NO",
 				getRate_2g(mp->Entry[i].TxRate),
 				rssi,
-				mp->Entry[i].Psm ? "Yes" : "NO ",
+				mp->Entry[i].Psm ? "YES" : "NO",
 				hr, min, sec
 			);
 		}
@@ -919,6 +940,8 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv)
 	char *caption;
 	struct iw_range	range;
 	double freq;
+	char mac_table_data[4096];
+	char buffer[sizeof(iwrange) * 2];
 	unsigned char mac[8];
 	struct iwreq wrq0;
 	struct iwreq wrq1;
@@ -984,7 +1007,6 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv)
 	if (wl_ioctl(IFNAME_5G_MAIN, SIOCGIWFREQ, &wrq1) < 0)
 		return ret;
 
-	char buffer[sizeof(iwrange) * 2];
 	bzero(buffer, sizeof(buffer));
 	wrq2.u.data.pointer = (caddr_t) buffer;
 	wrq2.u.data.length = sizeof(buffer);
@@ -1089,22 +1111,17 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv)
 		return ret;
 	}
 
-	char mac_table_data[4096];
 	memset(mac_table_data, 0, sizeof(mac_table_data));
 	wrq3.u.data.pointer = mac_table_data;
 	wrq3.u.data.length = sizeof(mac_table_data);
 	wrq3.u.data.flags = 0;
-
-	if (wl_ioctl(IFNAME_5G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq3) < 0)
-		return ret;
-
-	RT_802_11_MAC_TABLE* mp=(RT_802_11_MAC_TABLE*)wrq3.u.data.pointer;
-	
-	ret+=print_sta_list(wp, mp, 0);
-	
-	if (wl_mode_x != 1 && wl_mode_x != 3 && nvram_match("wl_guest_enable", "1"))
-	{
-		ret+=print_sta_list(wp, mp, 1);
+	if (wl_ioctl(IFNAME_5G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq3) >= 0) {
+		RT_802_11_MAC_TABLE* mp=(RT_802_11_MAC_TABLE*)wrq3.u.data.pointer;
+		
+		ret+=print_sta_list(wp, mp, 0);
+		
+		if (wl_mode_x != 1 && wl_mode_x != 3 && nvram_match("wl_guest_enable", "1"))
+			ret+=print_sta_list(wp, mp, 1);
 	}
 #endif
 	return ret;
@@ -1119,6 +1136,8 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 	char *caption;
 	struct iw_range	range;
 	double freq;
+	char mac_table_data[4096];
+	char buffer[sizeof(iwrange) * 2];
 	unsigned char mac[8];
 	struct iwreq wrq0;
 	struct iwreq wrq1;
@@ -1183,7 +1202,6 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 	if (wl_ioctl(IFNAME_2G_MAIN, SIOCGIWFREQ, &wrq1) < 0)
 		return ret;
 
-	char buffer[sizeof(iwrange) * 2];
 	bzero(buffer, sizeof(buffer));
 	wrq2.u.data.pointer = (caddr_t) buffer;
 	wrq2.u.data.length = sizeof(buffer);
@@ -1314,30 +1332,29 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 		return ret;
 	}
 
-	int priv_cmd;
-	char mac_table_data[4096];
 	memset(mac_table_data, 0, sizeof(mac_table_data));
 	wrq3.u.data.pointer = mac_table_data;
 	wrq3.u.data.length = sizeof(mac_table_data);
 	wrq3.u.data.flags = 0;
 
 #if defined(USE_RT3352_MII)
-	priv_cmd = RTPRIV_IOCTL_GET_MAC_TABLE;
-#else
-	priv_cmd = RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT;
-#endif
-
-	if (wl_ioctl(IFNAME_2G_MAIN, priv_cmd, &wrq3) < 0)
-		return ret;
-
-	RT_802_11_MAC_TABLE* mp=(RT_802_11_MAC_TABLE*)wrq3.u.data.pointer;
-	
-	ret+=print_sta_list_2g(wp, mp, 0);
-	
-	if (rt_mode_x != 1 && rt_mode_x != 3 && nvram_match("rt_guest_enable", "1"))
-	{
-		ret+=print_sta_list_2g(wp, mp, 1);
+	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq3) >= 0) {
+		RT_802_11_MAC_TABLE_INIC* mp = (RT_802_11_MAC_TABLE_INIC*)wrq3.u.data.pointer;
+		
+		ret+=print_sta_list_2g(wp, mp, 0);
+		
+		if (rt_mode_x != 1 && rt_mode_x != 3 && nvram_match("rt_guest_enable", "1"))
+			ret+=print_sta_list_2g(wp, mp, 1);
 	}
+#else
+	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq3) >= 0) {
+		RT_802_11_MAC_TABLE* mp = (RT_802_11_MAC_TABLE*)wrq3.u.data.pointer;
+		ret+=print_sta_list_2g(wp, mp, 0);
+		
+		if (rt_mode_x != 1 && rt_mode_x != 3 && nvram_match("rt_guest_enable", "1"))
+			ret+=print_sta_list_2g(wp, mp, 1);
+	}
+#endif
 
 	return ret;
 }
@@ -1346,7 +1363,7 @@ int
 ej_wl_auth_list(int eid, webs_t wp, int argc, char **argv)
 {
 	struct iwreq wrq;
-	int i, priv_cmd, firstRow = 1, ret = 0;
+	int i, firstRow = 1, ret = 0;
 	char mac_table_data[4096];
 	char mac[18];
 
@@ -1380,25 +1397,20 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char **argv)
 	if (nvram_get_int("inic_disable") == 1)
 		return ret;
 
-	priv_cmd = RTPRIV_IOCTL_GET_MAC_TABLE;
-#else
-	priv_cmd = RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT;
-#endif
-
 	/* query rt for authenticated sta list */
 	memset(mac_table_data, 0, sizeof(mac_table_data));
 	wrq.u.data.pointer = mac_table_data;
 	wrq.u.data.length = sizeof(mac_table_data);
 	wrq.u.data.flags = 0;
-	if (wl_ioctl(IFNAME_2G_MAIN, priv_cmd, &wrq) >= 0)
+	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
 	{
-		RT_802_11_MAC_TABLE *mp2 = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
-		for (i = 0; i<mp2->Num; i++)
+		RT_802_11_MAC_TABLE_INIC *mp = (RT_802_11_MAC_TABLE_INIC *)wrq.u.data.pointer;
+		for (i = 0; i < mp->Num; i++)
 		{
 			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X",
-				mp2->Entry[i].Addr[0], mp2->Entry[i].Addr[1],
-				mp2->Entry[i].Addr[2], mp2->Entry[i].Addr[3],
-				mp2->Entry[i].Addr[4], mp2->Entry[i].Addr[5]);
+				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
+				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
+				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5]);
 			
 			if (firstRow)
 				firstRow = 0;
@@ -1408,6 +1420,31 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char **argv)
 			ret+=websWrite(wp, "\"%s\"", mac);
 		}
 	}
+#else
+	/* query rt for authenticated sta list */
+	memset(mac_table_data, 0, sizeof(mac_table_data));
+	wrq.u.data.pointer = mac_table_data;
+	wrq.u.data.length = sizeof(mac_table_data);
+	wrq.u.data.flags = 0;
+	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq) >= 0)
+	{
+		RT_802_11_MAC_TABLE *mp = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
+		for (i = 0; i < mp->Num; i++)
+		{
+			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X",
+				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
+				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
+				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5]);
+			
+			if (firstRow)
+				firstRow = 0;
+			else
+				ret+=websWrite(wp, ", ");
+			
+			ret+=websWrite(wp, "\"%s\"", mac);
+		}
+	}
+#endif
 
 	return ret;
 }

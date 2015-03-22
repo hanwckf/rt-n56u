@@ -2785,7 +2785,6 @@ VOID RTMPIoctlGetMacTable(
 		{
 			pDst = &pMacTab->Entry[pMacTab->Num];
 
-
 			pDst->ApIdx = (UCHAR)pEntry->func_tb_idx;
 			COPY_MAC_ADDR(pDst->Addr, &pEntry->Addr);
 			pDst->Aid = (UCHAR)pEntry->Aid;
@@ -2802,8 +2801,9 @@ VOID RTMPIoctlGetMacTable(
 			/* the connected time per entry*/
 			pDst->ConnectedTime = pEntry->StaConnectTime;
 			pDst->TxRate.word = pEntry->HTPhyMode.word;
-									
-									
+
+			pDst->LastRxRate = pEntry->LastRxRate;
+			
 			pMacTab->Num += 1;
 		}
 	}

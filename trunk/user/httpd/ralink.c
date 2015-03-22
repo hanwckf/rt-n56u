@@ -917,7 +917,11 @@ print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 				GetBW(mp->Entry[i].TxRate.field.BW),
 				mp->Entry[i].TxRate.field.MCS,
 				mp->Entry[i].TxRate.field.ShortGI ? "YES" : "NO",
+#if defined(USE_RT3352_MII)
+				"NO",
+#else
 				mp->Entry[i].TxRate.field.ldpc ? "YES" : "NO",
+#endif
 				mp->Entry[i].TxRate.field.STBC ? "YES" : "NO",
 				getRate_2g(mp->Entry[i].TxRate),
 				rssi,

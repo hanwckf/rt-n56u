@@ -233,7 +233,7 @@ next:
 	return NF_ACCEPT;
 }
 
-static void ip_nat_sip_seq_adjust(struct sk_buff *skb, s16 off)
+static void ip_nat_sip_seq_adjust(struct sk_buff *skb, s32 off)
 {
 	enum ip_conntrack_info ctinfo;
 	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);

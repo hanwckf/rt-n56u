@@ -56,7 +56,7 @@ unsigned int (*nf_nat_sip_hook)(struct sk_buff *skb, unsigned int dataoff,
 				unsigned int *datalen) __read_mostly;
 EXPORT_SYMBOL_GPL(nf_nat_sip_hook);
 
-void (*nf_nat_sip_seq_adjust_hook)(struct sk_buff *skb, s16 off) __read_mostly;
+void (*nf_nat_sip_seq_adjust_hook)(struct sk_buff *skb, s32 off) __read_mostly;
 EXPORT_SYMBOL_GPL(nf_nat_sip_seq_adjust_hook);
 
 unsigned int (*nf_nat_sip_expect_hook)(struct sk_buff *skb,

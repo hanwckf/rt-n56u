@@ -26,7 +26,6 @@
 #define SPI_MBCTL_CMD_MASK	0x3f000000
 
 #define SPI_CTL_CLK_SEL_MASK	0x03000000
-#define SPI_OPCODE_MASK		0x000000ff
 
 
 #endif

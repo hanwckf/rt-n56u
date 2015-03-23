@@ -39,25 +39,28 @@
 //#define SPI_DEBUG
 //#define TEST_CS1_FLASH
 
-#if defined (CONFIG_MTD_SPI_READ_BUFF)
-#define MORE_BUF_MODE
-#elif defined (CONFIG_MTD_SPI_READ_FAST)
+#if defined (CONFIG_MTD_SPI_READ_FAST)
 #define RD_MODE_FAST
+#endif
+
+/* DUAL/QUAD and MORE_BUF_MODE can't be enabled together! */
+
+#if defined (CONFIG_MTD_SPI_READ_QOR)
+#define RD_MODE_QOR
+#elif defined (CONFIG_MTD_SPI_READ_QIOR)
+#define RD_MODE_QIOR
 #elif defined (CONFIG_MTD_SPI_READ_DOR)
 #define RD_MODE_DOR
 #elif defined (CONFIG_MTD_SPI_READ_DIOR)
 #define RD_MODE_DIOR
+#else
+#define MORE_BUF_MODE
 #endif
 
-#if defined(RD_MODE_DIOR) || defined(RD_MODE_DOR)
-#define RD_MODE_DUAL
-#elif defined(RD_MODE_QIOR) || defined(RD_MODE_QOR)
-#define RD_MODE_QUAD
-#endif
-
-// check DUAL/QUAD and MORE_BUF_MODE, they can't be enabled together
-#if defined(MORE_BUF_MODE) && (defined(RD_MODE_DIOR) || defined(RD_MODE_DOR) || defined(RD_MODE_QIOR) || defined(RD_MODE_QOR))
-#error "DUAL/QUAD mode and MORE_BUF_MODE can't be enabled together"
+#ifdef MORE_BUF_MODE
+#define SPI_BBU_MAX_XFER	32
+#else
+#define SPI_BBU_MAX_XFER	4
 #endif
 
 /******************************************************************************
@@ -151,31 +154,32 @@ static int bbu_spic_busy_wait(void)
 
 void spic_init(void)
 {
-	u32 clk_sys, clk_div, reg;
+	u32 clk_sys, clk_div, clk_reg, reg;
 
+#if defined (CONFIG_RALINK_MT7621)
+	clk_sys = 50;	/* bclk = 50MHz */
+#if defined (CONFIG_MTD_SPI_FAST_CLOCK)
+	clk_div = 1;	/* bclk/1 -> 50 MHz */
+	clk_reg = 1;
+#else
+	clk_div = 2;	/* bclk/2 -> 25 MHz */
+	clk_reg = 3;
+#endif
+#elif defined (CONFIG_RALINK_MT7628)
 	clk_sys = get_surfboard_sysclk() / 1000000;
-#if defined(CONFIG_RALINK_MT7621)
-	if (clk_sys > 230) {
-		/* OCP 1:3 */
 #if defined (CONFIG_MTD_SPI_FAST_CLOCK)
-		clk_div = 6;	/* hclk/6 -> 50 MHz */
+	clk_div = 4;	/* hclk/4 -> 50 MHz */
+	clk_reg = 2;
 #else
-		clk_div = 8;	/* hclk/8 -> 36 MHz */
+	clk_div = 6;	/* hclk/6 -> 33 MHz */
+	clk_reg = 4;
 #endif
-	} else
 #endif
-	{
-		/* OCP 1:4 or MT7628 */
-#if defined (CONFIG_MTD_SPI_FAST_CLOCK)
-		clk_div = 4;	/* hclk/4 -> 50 MHz */
-#else
-		clk_div = 6;	/* hclk/6 -> 33 MHz */
-#endif
-	}
 
 	reg = ra_inl(SPI_REG_MASTER);
-	reg &= ~(0xfff << 16);
-	reg |= ((clk_div-2) << 16);
+	reg &= ~(0x7);
+	reg &= ~(0x0fff << 16);
+	reg |= (clk_reg << 16);
 	ra_outl(SPI_REG_MASTER, reg);
 
 #ifdef TEST_CS1_FLASH
@@ -261,199 +265,197 @@ struct flash_info {
 	struct chip_info	*chip;
 };
 
-struct flash_info *flash = NULL;
+static struct flash_info *flash = NULL;
 
 #ifdef MORE_BUF_MODE
 static int bbu_mb_spic_trans(const u8 code, const u32 addr, u8 *buf, const size_t n_tx, const size_t n_rx, int flag)
 {
-	u32 reg;
+	u32 reg, reg_ctl, reg_data;
 	int i, q, r;
-	int rc = -1;
 
-	if (flag != SPIC_READ_BYTES && flag != SPIC_WRITE_BYTES) {
-		printk("we currently support more-byte-mode for reading and writing data only\n");
+	if (flag != SPIC_READ_BYTES && flag != SPIC_WRITE_BYTES)
 		return -1;
-	}
 
-	/* step 0. enable more byte mode */
-	ra_or(SPI_REG_MASTER, (1 << 2));
+	if (!flash)
+		return -1;
 
 	bbu_spic_busy_wait();
 
-	/* step 1. set opcode & address, and fix cmd bit count to 32 (or 40) */
-	if (flash && flash->chip->addr4b) {
-		ra_and(SPI_REG_CTL, ~SPI_CTL_ADDREXT_MASK);
-		ra_or(SPI_REG_CTL, (code << 24) & SPI_CTL_ADDREXT_MASK);
-		ra_outl(SPI_REG_OPCODE, addr);
-	}
-	else
-	{
-		ra_outl(SPI_REG_OPCODE, (code << 24) & 0xff000000);
-		ra_or(SPI_REG_OPCODE, (addr & 0xffffff));
-	}
-	ra_and(SPI_REG_MOREBUF, ~SPI_MBCTL_CMD_MASK);
-	if (flash && flash->chip->addr4b)
-		ra_or(SPI_REG_MOREBUF, (40 << 24));
-	else
-		ra_or(SPI_REG_MOREBUF, (32 << 24));
+	reg_ctl = ra_inl(SPI_REG_CTL);
+	reg_ctl &= ~SPI_CTL_TXRXCNT_MASK;
+	reg_ctl &= ~SPI_CTL_ADDREXT_MASK;
 
-	/* step 2. write DI/DO data #0 ~ #7 */
-	if (flag & SPIC_WRITE_BYTES) {
-		if (buf == NULL) {
-			printk("%s: write null buf\n", __func__);
-			goto RET_MB_TRANS;
-		}
-		for (i = 0; i < n_tx; i++) {
-			q = i / 4;
-			r = i % 4;
-			if (r == 0)
-				ra_outl(SPI_REG_DATA(q), 0);
-			ra_or(SPI_REG_DATA(q), (*(buf + i) << (r * 8)));
-		}
+	/* step 1. set opcode & address */
+	if (flash->chip->addr4b) {
+		reg_ctl |= ((code << 24) & SPI_CTL_ADDREXT_MASK);
+		ra_outl(SPI_REG_OPCODE, addr);
+	} else {
+		reg = (code << 24) | (addr & 0xffffff);
+		ra_outl(SPI_REG_OPCODE, reg);
 	}
+
+	reg = ra_inl(SPI_REG_MOREBUF);
+	reg &= ~SPI_MBCTL_TXRXCNT_MASK;
+	reg &= ~SPI_MBCTL_CMD_MASK;
+
+	/* step 2. set cmd bit count to 32 (or 40) */
+	if (flash->chip->addr4b)
+		reg |= ((5 << 3) << 24);
+	else
+		reg |= ((4 << 3) << 24);
 
 	/* step 3. set rx (miso_bit_cnt) and tx (mosi_bit_cnt) bit count */
-	ra_and(SPI_REG_MOREBUF, ~SPI_MBCTL_TXRXCNT_MASK);
-	ra_or(SPI_REG_MOREBUF, (n_rx << 3 << 12));
-	ra_or(SPI_REG_MOREBUF, n_tx << 3);
+	reg |= ((n_rx << 3) << 12);
+	reg |=  (n_tx << 3);
 
-	/* step 4. kick */
-	ra_or(SPI_REG_CTL, SPI_CTL_START);
+	ra_outl(SPI_REG_MOREBUF, reg);
 
-	/* step 5. wait spi_master_busy */
-	bbu_spic_busy_wait();
+#if defined(RD_MODE_FAST)
+	/* clear data bit for dummy bits in Fast IO Read */
+	if (flag & SPIC_READ_BYTES)
+		ra_outl(SPI_REG_DATA0, 0);
+#endif
+
+	/* step 4. write DI/DO data #0 ~ #7 */
 	if (flag & SPIC_WRITE_BYTES) {
-		rc = 0;
-		goto RET_MB_TRANS;
-	}
-
-	/* step 6. read DI/DO data #0 */
-	if (flag & SPIC_READ_BYTES) {
-		if (buf == NULL) {
-			printk("%s: read null buf\n", __func__);
+		if (!buf)
 			return -1;
-		}
-		for (i = 0; i < n_rx; i++) {
-			q = i / 4;
+		reg_data = 0;
+		for (i = 0; i < n_tx; i++) {
 			r = i % 4;
-			reg = ra_inl(SPI_REG_DATA(q));
-			*(buf + i) = (u8)(reg >> (r * 8));
+			if (r == 0)
+				reg_data = 0;
+			reg_data |= (*(buf + i) << (r * 8));
+			if (r == 3 || (i+1) == n_tx) {
+				q = i / 4;
+				ra_outl(SPI_REG_DATA(q), reg_data);
+			}
 		}
 	}
 
-	rc = 0;
-RET_MB_TRANS:
-	/* step #. disable more byte mode */
-	ra_and(SPI_REG_MASTER, ~(1 << 2));
-	return rc;
+	/* step 5. kick */
+	ra_outl(SPI_REG_CTL, reg_ctl | SPI_CTL_START);
+
+	/* step 6. wait spi_master_busy */
+	bbu_spic_busy_wait();
+
+	/* step 7. read DI/DO data #0 */
+	if (flag & SPIC_READ_BYTES) {
+		if (!buf)
+			return -1;
+		reg_data = 0;
+		for (i = 0; i < n_rx; i++) {
+			r = i % 4;
+			if (r == 0) {
+				q = i / 4;
+				reg_data = ra_inl(SPI_REG_DATA(q));
+			}
+			*(buf + i) = (u8)(reg_data >> (r * 8));
+		}
+	}
+
+	return 0;
 }
 #endif // MORE_BUF_MODE //
 
 static int bbu_spic_trans(const u8 code, const u32 addr, u8 *buf, const size_t n_tx, const size_t n_rx, int flag)
 {
-	u32 reg;
+	u32 reg_ctl, reg_opcode, reg_data;
 
 	bbu_spic_busy_wait();
 
-	/* step 1. set opcode & address */
-	if (flash && flash->chip->addr4b) {
-		ra_and(SPI_REG_CTL, ~SPI_CTL_ADDREXT_MASK);
-		ra_or(SPI_REG_CTL, addr & SPI_CTL_ADDREXT_MASK);
-	}
-	ra_outl(SPI_REG_OPCODE, ((addr & 0xffffff) << 8));
-	ra_or(SPI_REG_OPCODE, code);
+	reg_ctl = ra_inl(SPI_REG_CTL);
+	reg_ctl &= ~SPI_CTL_TXRXCNT_MASK;
+	reg_ctl &= ~SPI_CTL_ADDREXT_MASK;
 
-#if defined(RD_MODE_QUAD) || defined(RD_MODE_DUAL)
+	/* step 1. set opcode & address */
+	if (flash && flash->chip->addr4b)
+		reg_ctl |= (addr & SPI_CTL_ADDREXT_MASK);
+
+	reg_opcode = ((addr & 0xffffff) << 8) | code;
+
+#if defined(RD_MODE_QIOR) || defined(RD_MODE_QOR) || defined(RD_MODE_DIOR) || defined(RD_MODE_DOR) || defined(RD_MODE_FAST)
+	/* clear data bit for dummy bits in Quad/Dual/Fast IO Read */
 	if (flag & SPIC_READ_BYTES)
-		ra_outl(SPI_REG_DATA0, 0); // clear data bit for dummy bits in Dual/Quad IO Read
+		ra_outl(SPI_REG_DATA0, 0);
 #endif
+
 	/* step 2. write DI/DO data #0 */
 	if (flag & SPIC_WRITE_BYTES) {
-		if (buf == NULL) {
-			printk("%s: write null buf\n", __func__);
+		if (!buf)
 			return -1;
-		}
-		ra_outl(SPI_REG_DATA0, 0);
+		reg_data = 0;
 		switch (n_tx) {
 		case 8:
-			ra_or(SPI_REG_DATA0, (*(buf+3) << 24));
+			reg_data |= (*(buf+3) << 24);
 		case 7:
-			ra_or(SPI_REG_DATA0, (*(buf+2) << 16));
+			reg_data |= (*(buf+2) << 16);
 		case 6:
-			ra_or(SPI_REG_DATA0, (*(buf+1) << 8));
+			reg_data |= (*(buf+1) << 8);
 		case 5:
-			ra_or(SPI_REG_DATA0, *buf);
+			reg_data |= *buf;
 			break;
 		case 3:
-			reg = ra_inl(SPI_REG_CTL);
-			if (((reg & (0x3<<19)) == (0x3 << 19)) && (flash && flash->chip->addr4b)) 
-			{
-				ra_and(SPI_REG_CTL, ~SPI_CTL_ADDREXT_MASK);
-				ra_or(SPI_REG_CTL, (*buf << 24) & SPI_CTL_ADDREXT_MASK);
-				ra_and(SPI_REG_OPCODE, 0xff);
-				ra_or(SPI_REG_OPCODE, (*(buf+1) & 0xff) << 24);
-			}
-			else
-			{
-				ra_and(SPI_REG_OPCODE, 0xff);
-				ra_or(SPI_REG_OPCODE, (*buf & 0xff) << 24);
-				ra_or(SPI_REG_OPCODE, (*(buf+1) & 0xff) << 16);
+			reg_opcode &= 0xff;
+			if (flash->chip->addr4b && ((reg_ctl & SPI_CTL_SIZE_MASK) == SPI_CTL_SIZE_MASK)) {
+				reg_ctl &= ~SPI_CTL_ADDREXT_MASK;
+				reg_ctl |= ((*buf << 24) & SPI_CTL_ADDREXT_MASK);
+				
+				reg_opcode |= ((*(buf+1) & 0xff) << 24);
+			} else {
+				reg_opcode |= ((*buf & 0xff) << 24);
+				reg_opcode |= ((*(buf+1) & 0xff) << 16);
 			}
 			break;
 		case 2:
-			reg = ra_inl(SPI_REG_CTL);
-			if (((reg & (0x3<<19)) == (0x3 << 19)) && (flash && flash->chip->addr4b)) 
-			{
-				ra_and(SPI_REG_CTL, ~SPI_CTL_ADDREXT_MASK);
-				ra_or(SPI_REG_CTL, (*buf << 24) & SPI_CTL_ADDREXT_MASK);
-			}
-			else
-			{
-				ra_and(SPI_REG_OPCODE, 0xff);
-				ra_or(SPI_REG_OPCODE, (*buf & 0xff) << 24);
+			reg_opcode &= 0xff;
+			if (flash->chip->addr4b && ((reg_ctl & SPI_CTL_SIZE_MASK) == SPI_CTL_SIZE_MASK)) {
+				reg_ctl &= ~SPI_CTL_ADDREXT_MASK;
+				reg_ctl |= ((*buf << 24) & SPI_CTL_ADDREXT_MASK);
+			} else {
+				reg_opcode |= ((*buf & 0xff) << 24);
 			}
 			break;
 		default:
-			printk("%s: fixme, write of length %d\n", __func__, n_tx);
+			printk("%s: not support write of length %d\n", __func__, n_tx);
 			return -1;
 		}
+		
+		ra_outl(SPI_REG_DATA0, reg_data);
 	}
 
+	ra_outl(SPI_REG_OPCODE, reg_opcode);
+
 	/* step 3. set mosi_byte_cnt */
-	ra_and(SPI_REG_CTL, ~SPI_CTL_TXRXCNT_MASK);
-	ra_or(SPI_REG_CTL, (n_rx << 4));
+	reg_ctl |= (n_rx << 4);
 	if (flash && flash->chip->addr4b && n_tx >= 4)
-		ra_or(SPI_REG_CTL, (n_tx + 1));
+		reg_ctl |= (n_tx + 1);
 	else
-		ra_or(SPI_REG_CTL, n_tx);
+		reg_ctl |= n_tx;
 
 	/* step 4. kick */
-	ra_or(SPI_REG_CTL, SPI_CTL_START);
+	ra_outl(SPI_REG_CTL, reg_ctl | SPI_CTL_START);
 
 	/* step 5. wait spi_master_busy */
 	bbu_spic_busy_wait();
-	if (flag & SPIC_WRITE_BYTES)
-		return 0;
 
 	/* step 6. read DI/DO data #0 */
 	if (flag & SPIC_READ_BYTES) {
-		if (buf == NULL) {
-			printk("%s: read null buf\n", __func__);
+		if (!buf)
 			return -1;
-		}
-		reg = ra_inl(SPI_REG_DATA0);
+		reg_data = ra_inl(SPI_REG_DATA0);
 		switch (n_rx) {
 		case 4:
-			*(buf+3) = (u8)(reg >> 24);
+			*(buf+3) = (u8)(reg_data >> 24);
 		case 3:
-			*(buf+2) = (u8)(reg >> 16);
+			*(buf+2) = (u8)(reg_data >> 16);
 		case 2:
-			*(buf+1) = (u8)(reg >> 8);
+			*(buf+1) = (u8)(reg_data >> 8);
 		case 1:
-			*buf = (u8)reg;
+			*buf = (u8)reg_data;
 			break;
 		default:
-			printk("%s: fixme, read of length %d\n", __func__, n_rx);
+			printk("%s:  read of length %d\n", __func__, n_rx);
 			return -1;
 		}
 	}
@@ -461,7 +463,7 @@ static int bbu_spic_trans(const u8 code, const u32 addr, u8 *buf, const size_t n
 	return 0;
 }
 
-#if defined (RD_MODE_QUAD)
+#if defined(RD_MODE_QIOR) || defined(RD_MODE_QOR)
 static int raspi_write_rg16(u8 code, u8 *val)
 {
 	ssize_t retval;
@@ -511,48 +513,14 @@ static int raspi_set_quad(void)
 }
 #endif
 
-static int raspi_read_rg(u8 code, u8 *val);
-static int raspi_write_rg(u8 code, u8 *val);
 static int raspi_wait_ready(int sleep_ms);
-/*
- * read SPI flash device ID
- */
-static int raspi_read_devid(u8 *rxbuf, int n_rx)
-{
-	u8 code = OPCODE_RDID;
-	int retval;
-
-	retval = bbu_spic_trans(code, 0, rxbuf, 1, 3, SPIC_READ_BYTES);
-	if (!retval)
-		retval = n_rx;
-
-	if (retval != n_rx) {
-		printk("%s: ret: %x\n", __func__, retval);
-		return retval;
-	}
-
-	return retval;
-}
-
-static int raspi_read_sr(u8 *val)
-{
-	return raspi_read_rg(OPCODE_RDSR, val);
-}
-
-static int raspi_write_sr(u8 *val)
-{
-	return raspi_write_rg(OPCODE_WRSR, val);
-}
 
 /*
  * Read the status register, returning its value in the location
  */
 static int raspi_read_rg(u8 code, u8 *val)
 {
-	ssize_t retval;
-
-	retval = bbu_spic_trans(code, 0, val, 1, 1, SPIC_READ_BYTES);
-	return retval;
+	return bbu_spic_trans(code, 0, val, 1, 1, SPIC_READ_BYTES);
 }
 
 /*
@@ -560,37 +528,64 @@ static int raspi_read_rg(u8 code, u8 *val)
  */
 static int raspi_write_rg(u8 code, u8 *val)
 {
-	ssize_t retval;
 	u32 address = (*val) << 24;
 
 	// put the value to be written in address register, so it will be transfered
-	retval = bbu_spic_trans(code, address, val, 2, 0, SPIC_WRITE_BYTES);
+	return bbu_spic_trans(code, address, val, 2, 0, SPIC_WRITE_BYTES);
+}
+
+/*
+ * read SPI flash device ID
+ */
+static int raspi_read_devid(u8 *rxbuf, int n_rx)
+{
+	int retval;
+
+	retval = bbu_spic_trans(OPCODE_RDID, 0, rxbuf, 1, 4, SPIC_READ_BYTES);
+	if (retval)
+		printk("%s: ret: %x\n", __func__, retval);
+
 	return retval;
+}
+
+static inline int raspi_read_sr(u8 *val)
+{
+	return raspi_read_rg(OPCODE_RDSR, val);
+}
+
+static inline int raspi_write_sr(u8 *val)
+{
+	return raspi_write_rg(OPCODE_WRSR, val);
 }
 
 static int raspi_4byte_mode(int enable)
 {
+	u32 reg_ctl, reg_qctl;
 	ssize_t retval;
 
 	raspi_wait_ready(1);
 
+	reg_ctl  = ra_inl(SPI_REG_CTL);
+	reg_qctl = ra_inl(SPI_REG_Q_CTL);
+
+	if (enable) {
+		reg_ctl  |= SPI_CTL_SIZE_MASK;
+		reg_qctl |= (0x3 << 8);
+	} else {
+		reg_ctl  &= ~SPI_CTL_SIZE_MASK;
+		reg_ctl  |=  (0x2 << 19);
+		reg_qctl &= ~(0x3 << 8);
+		reg_qctl |=  (0x2 << 8);
+	}
+
+	ra_outl(SPI_REG_CTL, reg_ctl);
+	ra_outl(SPI_REG_Q_CTL, reg_qctl);
+
 	if (flash->chip->id == 0x1) // Spansion
 	{
 		u8 br, br_cfn; // bank register
-		if (enable)
-		{
-			ra_or(SPI_REG_CTL, 0x3 << 19);
-			ra_or(SPI_REG_Q_CTL, 0x3 << 8);
-			br = 0x81;
-		}
-		else
-		{
-			ra_and(SPI_REG_CTL, ~SPI_CTL_SIZE_MASK);
-			ra_or(SPI_REG_CTL, 0x2 << 19);
-			ra_and(SPI_REG_Q_CTL, ~(0x3 << 8));
-			ra_or(SPI_REG_Q_CTL, 0x2 << 8);
-			br = 0x0;
-		}
+		
+		br = (enable)? 0x81 : 0x0;
 		raspi_write_rg(OPCODE_BRWR, &br);
 		raspi_wait_ready(1);
 		raspi_read_rg(OPCODE_BRRD, &br_cfn);
@@ -604,18 +599,7 @@ static int raspi_4byte_mode(int enable)
 	{
 		u8 code;
 		
-		code = enable? 0xB7 : 0xE9; /* B7: enter 4B, E9: exit 4B */
-
-		if (enable) {
-			ra_or(SPI_REG_CTL, 0x3 << 19);
-			ra_or(SPI_REG_Q_CTL, 0x3 << 8);
-		}
-		else {
-			ra_and(SPI_REG_CTL, ~SPI_CTL_SIZE_MASK);
-			ra_or(SPI_REG_CTL, 0x2 << 19);
-			ra_and(SPI_REG_Q_CTL, ~(0x3 << 8));
-			ra_or(SPI_REG_Q_CTL, 0x2 << 8);
-		}
+		code = (enable)? 0xB7 : 0xE9; /* B7: enter 4B, E9: exit 4B */
 		retval = bbu_spic_trans(code, 0, NULL, 1, 0, 0);
 		if (retval != 0) {
 			printk("%s: ret: %x\n", __func__, retval);
@@ -644,7 +628,7 @@ static inline int raspi_write_disable(void)
  * Set all sectors (global) unprotected if they are protected.
  * Returns negative if error occurred.
  */
-static inline int raspi_unprotect(void)
+static int raspi_unprotect(void)
 {
 	u8 sr = 0;
 
@@ -739,14 +723,14 @@ static int raspi_erase_sector(u32 offset)
 struct chip_info *chip_prob(void)
 {
 	struct chip_info *info, *match;
-	u8 buf[5] = {0};
+	u8 buf[4] = {0};
 	u32 jedec, weight;
 	int i;
 
-	raspi_read_devid(buf, 5);
-	jedec = (u32)((u32)(buf[1] << 24) | ((u32)buf[2] << 16) | ((u32)buf[3] <<8) | (u32)buf[4]);
+	raspi_read_devid(buf, 4);
+	jedec = (u32)((u32)(buf[1] << 24) | ((u32)buf[2] << 16) | ((u32)buf[3] << 8));
 
-	ra_dbg("deice id : %x %x %x\n", buf[0], buf[1], buf[2]);
+	ra_dbg("deice id : %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3]);
 
 	// FIXME, assign default as AT25D
 	weight = 0xffffffff;
@@ -754,8 +738,7 @@ struct chip_info *chip_prob(void)
 	for (i = 0; i < ARRAY_SIZE(chips_data); i++) {
 		info = &chips_data[i];
 		if (info->id == buf[0]) {
-			if ((u8)(info->jedec_id >> 24 & 0xff) == buf[1] &&
-			    (u8)(info->jedec_id >> 16 & 0xff) == buf[2])
+			if ((info->jedec_id & 0xffffff00) == jedec)
 				return info;
 
 			if (weight > (info->jedec_id ^ jedec)) {
@@ -798,7 +781,6 @@ static int ramtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 			mutex_unlock(&flash->lock);
 			return -EIO;
 		}
-
 		addr += mtd->erasesize;
 		len -= mtd->erasesize;
 	}
@@ -818,7 +800,37 @@ static int ramtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 	size_t *retlen, u_char *buf)
 {
+	int rc;
 	size_t rdlen = 0;
+#ifdef MORE_BUF_MODE
+#if defined(RD_MODE_FAST)
+	u8 code = OPCODE_FAST_READ;
+	size_t n_tx = 1;
+#else
+	u8 code = OPCODE_READ;
+	size_t n_tx = 0;
+#endif
+#else
+#if defined(RD_MODE_DOR)
+	u8 code = OPCODE_DOR;
+	size_t n_tx = 5;
+#elif defined(RD_MODE_DIOR)
+	u8 code = OPCODE_DIOR;
+	size_t n_tx = 5;
+#elif defined(RD_MODE_QOR)
+	u8 code = OPCODE_QOR;
+	size_t n_tx = 5;
+#elif defined(RD_MODE_QIOR)
+	u8 code = OPCODE_QIOR;
+	size_t n_tx = 7;
+#elif defined(RD_MODE_FAST)
+	u8 code = OPCODE_FAST_READ;
+	size_t n_tx = 5;
+#else
+	u8 code = OPCODE_READ;
+	size_t n_tx = 4;
+#endif
+#endif
 
 	/* sanity checks */
 	if (len == 0)
@@ -843,76 +855,39 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 	if (flash->chip->addr4b)
 		raspi_4byte_mode(1);
 
-#ifndef MORE_BUF_MODE
-	ra_and(SPI_REG_MASTER, ~3);
-#if defined(RD_MODE_DUAL)
-	ra_or(SPI_REG_MASTER, 1);
-#elif defined(RD_MODE_QUAD)
+#ifdef MORE_BUF_MODE
+	/* SPI mode = more byte mode */
+	ra_or(SPI_REG_MASTER, 0x4);
+#else
+#if defined(RD_MODE_DIOR) || defined(RD_MODE_DOR)
+	/* SPI mode = dual mode */
+	ra_or(SPI_REG_MASTER, 0x1);
+#elif defined(RD_MODE_QIOR) || defined(RD_MODE_QOR)
+	/* SPI mode = quad mode */
 	raspi_set_quad();
-	ra_or(SPI_REG_MASTER, 2);
+	ra_or(SPI_REG_MASTER, 0x2);
 #endif
 #endif
 
-	do {
-		int rc;
+	while (rdlen < len) {
+		size_t r_part = len - rdlen;
+		if (r_part > SPI_BBU_MAX_XFER)
+			r_part = SPI_BBU_MAX_XFER;
 #ifdef MORE_BUF_MODE
-		int more = 32;
+		rc = bbu_mb_spic_trans(code, from, (buf+rdlen), n_tx, r_part, SPIC_READ_BYTES);
 #else
-		int more = 4;
-#if defined(RD_MODE_DOR)
-		u8 code = OPCODE_DOR;
-		size_t n_tx = 5;
-#elif defined(RD_MODE_DIOR)
-		u8 code = OPCODE_DIOR;
-		size_t n_tx = 5;
-#elif defined(RD_MODE_QOR)
-		u8 code = OPCODE_QOR;
-		size_t n_tx = 5;
-#elif defined(RD_MODE_QIOR)
-		u8 code = OPCODE_QIOR;
-		size_t n_tx = 7;
-#elif defined(RD_MODE_FAST)
-		u8 code = OPCODE_FAST_READ;
-		size_t n_tx = 5;
-#else
-		u8 code = OPCODE_READ;
-		size_t n_tx = 4;
+		rc = bbu_spic_trans(code, from, (buf+rdlen), n_tx, r_part, SPIC_READ_BYTES);
 #endif
-#endif
-
-		if (len - rdlen <= more) {
-#ifdef MORE_BUF_MODE
-			rc = bbu_mb_spic_trans(OPCODE_READ, from, (buf+rdlen), 0, (len-rdlen), SPIC_READ_BYTES);
-#else
-			rc = bbu_spic_trans(code, from, (buf+rdlen), n_tx, (len-rdlen), SPIC_READ_BYTES);
-#endif
-			if (rc != 0) {
-				printk("%s: failed\n", __func__);
-				break;
-			}
-			rdlen = len;
+		if (rc != 0) {
+			printk("%s: failed\n", __func__);
+			break;
 		}
-		else {
-#ifdef MORE_BUF_MODE
-			rc = bbu_mb_spic_trans(OPCODE_READ, from, (buf+rdlen), 0, more, SPIC_READ_BYTES);
-#else
-			rc = bbu_spic_trans(code, from, (buf+rdlen), n_tx, more, SPIC_READ_BYTES);
-#endif
-			if (rc != 0) {
-				printk("%s: failed\n", __func__);
-				break;
-			}
-			rdlen += more;
-			from += more;
-		}
-	} while (rdlen < len);
+		from += r_part;
+		rdlen += r_part;
+	}
 
-#ifndef MORE_BUF_MODE
-#if defined(RD_MODE_DUAL) || defined(RD_MODE_QUAD)
-	// serial mode = normal
-	ra_and(SPI_REG_MASTER, ~3);
-#endif
-#endif
+	/* SPI mode = normal */
+	ra_and(SPI_REG_MASTER, ~(0x7));
 
 	if (flash->chip->addr4b)
 		raspi_4byte_mode(0);
@@ -948,7 +923,7 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 {
 	u32 page_offset, page_size;
 	int rc = 0, exit_code = 0;
-	int wrto, wrlen, more;
+	int wrto, wrlen;
 	char *wrbuf;
 	int count = 0;
 
@@ -982,45 +957,33 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 	while (len > 0) {
 		page_size = min_t(size_t, len, FLASH_PAGESIZE-page_offset);
 		page_offset = 0;
-
+		
 		/* write the next page to flash */
-		raspi_wait_ready(3);
-		raspi_write_enable();
-
 		wrto = to;
 		wrlen = page_size;
 		wrbuf = (char *)buf;
-		rc = wrlen;
-		do {
+		
+		while (wrlen > 0) {
+			int w_part = (wrlen > SPI_BBU_MAX_XFER) ? SPI_BBU_MAX_XFER : wrlen;
+			
+			raspi_wait_ready(100);
+			raspi_write_enable();
 #ifdef MORE_BUF_MODE
-			more = 32;
+			ra_or(SPI_REG_MASTER, 0x4);
+			rc = bbu_mb_spic_trans(OPCODE_PP, wrto, wrbuf, w_part, 0, SPIC_WRITE_BYTES);
+			ra_and(SPI_REG_MASTER, ~(0x7));
 #else
-			more = 4;
+			rc = bbu_spic_trans(OPCODE_PP, wrto, wrbuf, w_part+4, 0, SPIC_WRITE_BYTES);
 #endif
-			if (wrlen <= more) {
-#ifdef MORE_BUF_MODE
-				bbu_mb_spic_trans(OPCODE_PP, wrto, wrbuf, wrlen, 0, SPIC_WRITE_BYTES);
-#else
-				bbu_spic_trans(OPCODE_PP, wrto, wrbuf, wrlen+4, 0, SPIC_WRITE_BYTES);
-#endif
-				wrlen = 0;
-			}
-			else {
-#ifdef MORE_BUF_MODE
-				bbu_mb_spic_trans(OPCODE_PP, wrto, wrbuf, more, 0, SPIC_WRITE_BYTES);
-#else
-				bbu_spic_trans(OPCODE_PP, wrto, wrbuf, more+4, 0, SPIC_WRITE_BYTES);
-#endif
-				wrto += more;
-				wrlen -= more;
-				wrbuf += more;
-			}
-			if (wrlen > 0) {
-				raspi_wait_ready(100);
-				raspi_write_enable();
-			}
-		} while (wrlen > 0);
+			if (rc != 0)
+				break;
+			
+			wrlen -= w_part;
+			wrto  += w_part;
+			wrbuf += w_part;
+		}
 
+		rc = page_size - wrlen;
 		if (rc > 0) {
 			if (retlen)
 				*retlen += rc;

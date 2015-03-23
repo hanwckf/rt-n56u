@@ -39,23 +39,19 @@ config MTD_SPI_FAST_CLOCK
 
 choice
 	prompt "SPI Read Mode"
-	default MTD_SPI_READ_NORM if !(RALINK_MT7621 || RALINK_MT7628)
-	default MTD_SPI_READ_BUFF if  (RALINK_MT7621 || RALINK_MT7628)
+	default MTD_SPI_READ_NORM
 	depends on MTD_SPI_RALINK
 
 	config MTD_SPI_READ_NORM
 		bool "Normal Read, opcode 0x03"
 	config MTD_SPI_READ_FAST
 		bool "Fast Read, opcode 0x0B"
-	config MTD_SPI_READ_BUFF
-		bool "Buffered Read"
-		depends on (RALINK_MT7621 || RALINK_MT7628)
 	config MTD_SPI_READ_DOR
 		bool "Fast Read Dual Out, opcode 0x3B"
-		depends on (RALINK_MT7620 || RALINK_MT7621 || RALINK_MT7628)
+		depends on RALINK_MT7620
 	config MTD_SPI_READ_DIOR
 		bool "Fast Read Dual I/O, opcode 0xBB"
-		depends on (RALINK_MT7620 || RALINK_MT7621 || RALINK_MT7628)
+		depends on RALINK_MT7620
 endchoice
 
 choice

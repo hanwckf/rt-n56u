@@ -134,7 +134,7 @@
 /* Step threshold (sec). std ntpd uses 0.128.
  * Using exact power of 2 (1/8) results in smaller code
  */
-#define STEP_THRESHOLD  0.25
+#define STEP_THRESHOLD  0.125
 /* Stepout threshold (sec). std ntpd uses 900 (11 mins (!)) */
 #define WATCH_THRESHOLD 128
 /* NB: set WATCH_THRESHOLD to ~60 when debugging to save time) */
@@ -149,7 +149,7 @@
 
 #define FREQ_TOLERANCE  0.000015 /* frequency tolerance (15 PPM) */
 #define BURSTPOLL       0       /* initial poll */
-#define MINPOLL         6       /* minimum poll interval. std ntpd uses 6 (6: 64 sec) */
+#define MINPOLL         5       /* minimum poll interval. std ntpd uses 6 (6: 64 sec) */
 /*
  * If offset > discipline_jitter * POLLADJ_GATE, and poll interval is > 2^BIGPOLL,
  * then it is decreased _at once_. (If <= 2^BIGPOLL, it will be decreased _eventually_).
@@ -2259,7 +2259,7 @@ int ntpd_main(int argc UNUSED_PARAM, char **argv)
 	 * since last reply does not come back instantaneously.
 	 * NB3: sync by single answer if exit after sync requested.
 	 */
-	cnt = G.peer_cnt * ((option_mask32 & OPT_q) ? 1 : (INITIAL_SAMPLES + 1));
+	cnt = G.peer_cnt * (INITIAL_SAMPLES + 1);
 
 	write_pidfile(CONFIG_PID_FILE_PATH "/ntpd.pid");
 

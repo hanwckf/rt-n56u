@@ -1,5 +1,5 @@
 SRC_NAME=openssh-5.9p1
-#SRC_NAME=openssh-6.7p1
+#SRC_NAME=openssh-6.8p1
 
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections

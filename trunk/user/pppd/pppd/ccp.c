@@ -765,7 +765,8 @@ ccp_cilen(f)
     ccp_options *go = &ccp_gotoptions[f->unit];
 
     return (go->bsd_compress? CILEN_BSD_COMPRESS: 0)
-	+ (go->deflate? CILEN_DEFLATE: 0)
+	+ (go->deflate && go->deflate_correct? CILEN_DEFLATE: 0)
+	+ (go->deflate && go->deflate_draft? CILEN_DEFLATE: 0)
 	+ (go->predictor_1? CILEN_PREDICTOR_1: 0)
 	+ (go->predictor_2? CILEN_PREDICTOR_2: 0)
 	+ (go->lzs? CILEN_LZS: 0)

@@ -3642,6 +3642,9 @@ static enum gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff 
 	int mac_len;
 	enum gro_result ret;
 
+	if (skb->pkt_type == PACKET_OTHERHOST)
+		goto normal;
+
 	if (!(skb->dev->features & NETIF_F_GRO) || netpoll_rx_on(skb))
 		goto normal;
 

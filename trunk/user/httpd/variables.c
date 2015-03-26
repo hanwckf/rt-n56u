@@ -20,6 +20,7 @@
 #include <sys/types.h>
 
 #include <notify_rc.h>
+#include <ralink_boards.h>
 
 #include "common.h"
 

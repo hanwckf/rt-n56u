@@ -119,7 +119,7 @@ const REG_PAIR RF5592Reg_5G_Default[] =
 	{RF_R62, 0x19},
 };
 
-REG_PAIR *RF5592Reg_5G = RF5592Reg_5G_Default;
+const REG_PAIR *RF5592Reg_5G = RF5592Reg_5G_Default;
 UCHAR NUM_RF5592REG_5G = (sizeof(RF5592Reg_5G_Default) / sizeof(REG_PAIR));
 
 /* RF for G band per channel */
@@ -179,7 +179,7 @@ const REG_PAIR_CHANNEL RF5592Reg_Channel_5G_Default[] =
 	{RF_R59, 116, 138, 0x7E},
 	{RF_R59, 140, 165, 0x7C},
 };
-REG_PAIR_CHANNEL *RF5592Reg_Channel_5G = RF5592Reg_Channel_5G_Default;
+const REG_PAIR_CHANNEL *RF5592Reg_Channel_5G = RF5592Reg_Channel_5G_Default;
 UCHAR NUM_RF5592REG_CHANNEL_5G = (sizeof(RF5592Reg_Channel_5G_Default) / sizeof(REG_PAIR_CHANNEL));
 
 #ifdef RT5592EP_SUPPORT
@@ -289,7 +289,7 @@ const REG_PAIR RF5592Reg_OFDM_2G[] =
 UCHAR NUM_RF5592REG_2G_5G = (sizeof(RF5592Reg_2G_5G) / sizeof(REG_PAIR));
 UCHAR NUM_RF5592REG_2G = (sizeof(RF5592Reg_2G) / sizeof(REG_PAIR));
 #ifdef RTMP_MAC_PCI
-REG_PAIR_CHANNEL *RF5592Reg_Channel_2G = RF5592Reg_Channel_2G_Default;
+const REG_PAIR_CHANNEL *RF5592Reg_Channel_2G = RF5592Reg_Channel_2G_Default;
 UCHAR NUM_RF5592REG_CHANNEL_2G = (sizeof(RF5592Reg_Channel_2G_Default) / sizeof(REG_PAIR_CHANNEL));
 #endif /* RTMP_MAC_PCI */
 UCHAR NUM_RF5592REG_BW_2G_5G = (sizeof(RF5592Reg_BW_2G_5G) / sizeof(REG_PAIR_BW));
@@ -2182,8 +2182,8 @@ static VOID RT5592_AsicGetAutoAgcOffsetForTemperatureSensor(
 {
 	RTMP_CHIP_CAP *pChipCap = &pAd->chipCap;
 	const TX_POWER_TUNING_ENTRY_STRUCT *TxPowerTuningTable;
-	TX_POWER_TUNING_ENTRY_STRUCT *TxPowerTuningTableEntry0 = NULL; /* Ant0 */
-	TX_POWER_TUNING_ENTRY_STRUCT *TxPowerTuningTableEntry1 = NULL; /* Ant1 */
+	const TX_POWER_TUNING_ENTRY_STRUCT *TxPowerTuningTableEntry0 = NULL; /* Ant0 */
+	const TX_POWER_TUNING_ENTRY_STRUCT *TxPowerTuningTableEntry1 = NULL; /* Ant1 */
 	BBP_R49_STRUC	BbpR49;
 	BOOLEAN			bAutoTxAgc = FALSE;
 	PCHAR			pTxAgcCompensate = NULL;

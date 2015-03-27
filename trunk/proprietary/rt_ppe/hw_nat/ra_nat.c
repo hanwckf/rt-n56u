@@ -91,7 +91,9 @@ extern int (*ra_sw_nat_hook_tx) (struct sk_buff * skb, int gmac_no);
 extern int (*ra_sw_nat_hook_rs) (struct net_device *dev, int hold);
 extern int (*ra_sw_nat_hook_ec) (int engine_init);
 
+#if !defined (CONFIG_RALINK_MT7621)
 static int		ppe_udp_bug = 0;
+#endif
 
 struct FoeEntry		*PpeFoeBase = NULL;
 dma_addr_t		PpeFoeBasePhy = 0;
@@ -537,6 +539,7 @@ static void PpeKeepAliveHandler(struct sk_buff *skb, int recover_header)
 			}
 		} else if (iph->protocol == IPPROTO_UDP) {
 			struct udphdr *uh = (struct udphdr *)((uint8_t *)iph + iph->ihl * 4);
+#if !defined (CONFIG_RALINK_MT7621)
 			if (!uh->check && ppe_udp_bug && foe_entry->bfib1.state == BIND) {
 				/* no UDP checksum, force unbind session from PPE for workaround PPE UDP bug */
 				spin_lock_bh(&ppe_foe_lock);
@@ -549,6 +552,7 @@ static void PpeKeepAliveHandler(struct sk_buff *skb, int recover_header)
 #endif
 				spin_unlock_bh(&ppe_foe_lock);
 			}
+#endif
 			if (recover_header)
 				FoeToOrgUdpHdr(foe_entry, iph, uh);
 		}
@@ -1071,7 +1075,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 					return 1;
 				
 				uh = (struct udphdr *)((uint8_t *)iph + iph->ihl * 4);
-				
+#if !defined (CONFIG_RALINK_MT7621)
 				/* check PPE bug */
 				if (ppe_udp_bug) {
 					if (!uh->check)
@@ -1081,7 +1085,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 					    uh->dest == __constant_htons(1701))		// L2TP
 						return 1;
 				}
-				
+#endif
 				/* fill L4 info */
 				foe_entry.ipv4_hnapt.new_sport = ntohs(uh->source);
 				foe_entry.ipv4_hnapt.new_dport = ntohs(uh->dest);

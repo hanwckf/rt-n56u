@@ -204,7 +204,7 @@ int PpeGetAGCnt(struct hwnat_ac_args * opt3)
 #elif defined (CONFIG_RALINK_MT7621)
 	opt3->ag_byte_cnt = RegRead(AC_BASE + opt3->ag_index * 16);     /* 64bit bytes cnt */
 	opt3->ag_byte_cnt |= ((unsigned long long)(RegRead(AC_BASE + opt3->ag_index * 16 + 4)) << 32);
-	opt3->ag_pkt_cnt = RegRead(AC_BASE + opt3->ag_index * 16 + 8);  /* 32bites packet cnt */
+	opt3->ag_pkt_cnt = RegRead(AC_BASE + opt3->ag_index * 16 + 8);  /* 32bit packet cnt */
 #endif
 	return HWNAT_SUCCESS;
 }

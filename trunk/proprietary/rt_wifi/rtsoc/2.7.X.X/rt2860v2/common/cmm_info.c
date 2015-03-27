@@ -2635,11 +2635,13 @@ VOID	RTMPSetHT(
 			break;
 	}
 
+#ifdef DOT11N_DRAFT3
 	if (pAd->CommonCfg.bForty_Mhz_Intolerant && (pHTPhyMode->BW == BW_40) /* && (pAd->CommonCfg.Channel <= 14)*/)
 	{
 		pHTPhyMode->BW = BW_20;
 		pAd->CommonCfg.HtCapability.HtCapInfo.Forty_Mhz_Intolerant = 1;
 	}
+#endif /* DOT11N_DRAFT3 */
 
 	if(pHTPhyMode->BW == BW_40)
 	{

@@ -1917,7 +1917,9 @@ typedef struct _COMMON_CONFIG {
     BOOLEAN                 bMIMOPSEnable;
     BOOLEAN					bBADecline;
 	BOOLEAN					bDisableReordering;
+#ifdef DOT11N_DRAFT3
 	BOOLEAN					bForty_Mhz_Intolerant;
+#endif // DOT11N_DRAFT3 //
 	BOOLEAN					bExtChannelSwitchAnnouncement;
 	BOOLEAN					bRcvBSSWidthTriggerEvents;
 	ULONG					LastRcvBSSWidthTriggerEventsTime;
@@ -2563,7 +2565,9 @@ typedef struct _MAC_TABLE {
 	BOOLEAN         fAnyStation20Only;		// Check if any Station can't support GF.
 	BOOLEAN			fAnyStationMIMOPSDynamic; // Check if any Station is MIMO Dynamic
 	BOOLEAN         fAnyBASession;   // Check if there is BA session.  Force turn on RTS/CTS 
+#ifdef DOT11N_DRAFT3
 	BOOLEAN		fAnyStaFortyIntolerant;		// Check if still has any station set the Intolerant bit on!
+#endif // DOT11N_DRAFT3 //
 
 //2008/10/28: KH add to support Antenna power-saving of AP<--
 #ifdef CONFIG_AP_SUPPORT
@@ -7952,8 +7956,10 @@ VOID dynamic_tune_be_tx_op(
 
 
 #ifdef DOT11_N_SUPPORT
+#ifdef DOT11N_DRAFT3
 VOID Handle_BSS_Width_Trigger_Events(
 	IN PRTMP_ADAPTER pAd);
+#endif // DOT11N_DRAFT3 //
 
 void build_ext_channel_switch_ie(
 	IN PRTMP_ADAPTER pAd,

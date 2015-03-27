@@ -285,11 +285,13 @@ VOID RTMPSetHT(
 			break;
 	}
 
+#ifdef DOT11N_DRAFT3
 	if (pAd->CommonCfg.bForty_Mhz_Intolerant && (pHTPhyMode->BW == BW_40))
 	{
 		pHTPhyMode->BW = BW_20;
 		ht_cap->HtCapInfo.Forty_Mhz_Intolerant = 1;
 	}
+#endif /* DOT11N_DRAFT3 */
 
 	// TODO: shiang-6590, how about the "bw" when channel 14 for JP region???
 	//CFG_TODO

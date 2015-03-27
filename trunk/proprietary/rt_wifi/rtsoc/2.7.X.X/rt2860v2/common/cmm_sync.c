@@ -1289,6 +1289,7 @@ VOID ScanNextChannel(
 
 #ifdef CONFIG_AP_SUPPORT
 #ifdef DOT11_N_SUPPORT
+#ifdef DOT11N_DRAFT3
 extern int DetectOverlappingPeriodicRound;
 
 VOID Handle_BSS_Width_Trigger_Events(
@@ -1308,6 +1309,7 @@ VOID Handle_BSS_Width_Trigger_Events(
         DetectOverlappingPeriodicRound = 31;
 	}
 }
+#endif /* DOT11N_DRAFT3 */
 #endif /* DOT11_N_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 

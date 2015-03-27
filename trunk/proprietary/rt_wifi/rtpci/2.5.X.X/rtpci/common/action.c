@@ -987,6 +987,7 @@ VOID PeerHTAction(
     					respond_ht_information_exchange_action(pAd, Elem);
     				}
 #ifdef CONFIG_AP_SUPPORT
+#ifdef DOT11N_DRAFT3
 				IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 				{
 	    				if (pHT_info->Forty_MHz_Intolerant)
@@ -994,6 +995,7 @@ VOID PeerHTAction(
 	    					Handle_BSS_Width_Trigger_Events(pAd);
 	    				}
 				}
+#endif // DOT11N_DRAFT3 //
 #endif // CONFIG_AP_SUPPORT //
 			}
     		break;

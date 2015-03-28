@@ -816,7 +816,7 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 	struct sk_buff *new_skb, *rx_skb;
 	int gmac_no = PSE_PORT_GMAC1;
 	int work_done = 0;
-	int rx_dma_owner_idx;
+	u32 rx_dma_owner_idx;
 	u32 rxd_info2, rxd_info4;
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
 	u32 rxd_info3;
@@ -968,14 +968,14 @@ static inline int raeth_recv(struct net_device* dev, END_DEVICE* ei_local, int w
 static inline int raeth_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE *ei_local, int gmac_no)
 {
 	struct PDMA_txdesc *tx_ring;
-	u32 i, nr_slots;
-	u32 tx_cpu_owner_idx;
-	u32 tx_cpu_owner_idx_next;
+	u32 i, tx_cpu_owner_idx, tx_cpu_owner_idx_next;
 	u32 txd_info4;
 #if defined (CONFIG_RAETH_SG_DMA_TX)
-	u32 nr_frags, txd_info2;
+	u32 nr_slots, nr_frags, txd_info2;
 	const skb_frag_t *tx_frag;
-	struct skb_shared_info *shinfo = skb_shinfo(skb);
+	const struct skb_shared_info *shinfo;
+#else
+#define nr_slots 1
 #endif
 #if NUM_TX_RING > 1 && defined (CONFIG_PSEUDO_SUPPORT)
 	u32 tx_ring_idx = (gmac_no == PSE_PORT_GMAC2) ? 1 : 0;
@@ -1021,11 +1021,11 @@ static inline int raeth_xmit(struct sk_buff* skb, struct net_device *dev, END_DE
 	tx_cpu_owner_idx = sysRegRead(tx_ring_ctx);
 
 #if defined (CONFIG_RAETH_SG_DMA_TX)
+	shinfo = skb_shinfo(skb);
 	nr_frags = shinfo->nr_frags;
 	nr_slots = (nr_frags >> 1) + 1;
-#else
-	nr_slots = 1;
 #endif
+
 	for (i = 0; i <= nr_slots; i++) {
 		tx_cpu_owner_idx_next = (tx_cpu_owner_idx + i) % NUM_TX_DESC;
 		if (ei_local->tx_free[tx_ring_idx][tx_cpu_owner_idx_next] ||

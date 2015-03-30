@@ -10,24 +10,32 @@
 
 #include "ra_ethreg.h"
 
-#define RAETH_VERSION		"v3.1.8"
+#define RAETH_VERSION		"v3.2.0"
 #define RAETH_DEV_NAME		"raeth"
 
 #define DEV_NAME		"eth2"
 #define DEV2_NAME		"eth3"
 
-#if defined (CONFIG_PSEUDO_SUPPORT)
-#define NUM_TX_RING		2
-#else
-#define NUM_TX_RING		1
-#endif
-
 #if defined (CONFIG_RALINK_RT3052) || defined (MEMORY_OPTIMIZATION)
-#define NUM_TX_DESC		128
 #define NUM_RX_DESC		128
+#if defined (CONFIG_RALINK_MT7621)
+#define NUM_TX_DESC		256
+#else
+#define NUM_TX_DESC		128
+#endif
+#else
+#define NUM_RX_DESC		256
+#if defined (CONFIG_RALINK_MT7621)
+#define NUM_TX_DESC		512
 #else
 #define NUM_TX_DESC		256
-#define NUM_RX_DESC		256
+#endif
+#endif
+
+#if defined (CONFIG_RAETH_QDMA)
+#define NUM_QRX_DESC		16	/* fake, for FQ only */
+#define NUM_QDMA_PAGE		NUM_TX_DESC
+#define QDMA_PAGE_SIZE		2048
 #endif
 
 #if (NUM_RX_DESC < 256)
@@ -95,22 +103,42 @@ typedef struct _END_DEVICE
 	struct tasklet_struct		rx_tasklet;
 	struct tasklet_struct		tx_tasklet;
 #endif
+	spinlock_t			page_lock;
+	spinlock_t			stat_lock;
+
 	unsigned int			active;
 	unsigned int			min_pkt_len;
 
-	unsigned int			tx_free_idx[NUM_TX_RING];
+	struct PDMA_rxdesc		*rxd_ring;
+#if defined (CONFIG_RAETH_QDMA)
+	struct QDMA_txdesc		*txd_cpu_ptr;
+	struct QDMA_txdesc		*txd_pool;
+	unsigned int			txd_pool_free_num;
+	unsigned int			txd_pool_free_head;
+	unsigned int			txd_pool_free_tail;
+#else
+	struct PDMA_txdesc		*txd_ring;
+	unsigned int			txd_free_idx;
+#endif
 
-	struct PDMA_txdesc		*tx_ring[NUM_TX_RING];
-	struct PDMA_rxdesc		*rx_ring;
-	struct sk_buff			*tx_free[NUM_TX_RING][NUM_TX_DESC];
-	struct sk_buff			*rx_buff[NUM_RX_DESC];
+	struct sk_buff			*rxd_buff[NUM_RX_DESC];
+	struct sk_buff			*txd_buff[NUM_TX_DESC];
+#if defined (CONFIG_RAETH_QDMA)
+	unsigned int			txd_pool_info[NUM_TX_DESC];
 
-	dma_addr_t			tx_ring_phy[NUM_TX_RING];
-	dma_addr_t			rx_ring_phy;
+#if defined (CONFIG_RA_HW_NAT_QDMA)
+	struct QDMA_txdesc		*free_head;
+	void				*free_head_page;
 
-	spinlock_t			page_lock;
+	dma_addr_t			free_head_phy;
+	dma_addr_t			free_head_page_phy;
+#endif
+	dma_addr_t			txd_pool_phy;
+#else
+	dma_addr_t			txd_ring_phy;
+#endif
+	dma_addr_t			rxd_ring_phy;
 
-	spinlock_t			stat_lock;
 	struct work_struct		stat_work;
 	struct timer_list		stat_timer;
 	struct rtnl_link_stats64	stat;

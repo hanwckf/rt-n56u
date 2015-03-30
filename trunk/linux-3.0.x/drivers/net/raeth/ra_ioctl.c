@@ -11,6 +11,11 @@
 #include "mii_mgr.h"
 #include "ra_ioctl.h"
 
+#if defined (CONFIG_RAETH_QDMA)
+#include <asm/rt2880/surfboard.h>
+extern u8 M2Q_table[64];
+#endif
+
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
 
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
@@ -91,6 +96,32 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	ra_mii_ioctl_data mii;
 
 	switch (cmd) {
+#if defined (CONFIG_RAETH_QDMA)
+		case RAETH_QDMA_REG_READ:
+			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
+			if (reg.off > REG_HQOS_MAX)
+				return -EINVAL;
+			reg.val = sysRegRead(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + reg.off);
+			copy_to_user(ifr->ifr_data, &reg, sizeof(reg));
+			break;
+		case RAETH_QDMA_REG_WRITE:
+			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
+			if (reg.off > REG_HQOS_MAX)
+				return -EINVAL;
+			sysRegWrite(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + reg.off, reg.val);
+			break;
+		case RAETH_QDMA_QUEUE_MAPPING:
+			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
+			if (reg.off > 63 || reg.val > 0x0f)
+				return -EINVAL;
+			M2Q_table[reg.off] = reg.val;
+			break;
+		case RAETH_QDMA_READ_CPU_CLK:
+			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
+			reg.val = get_surfboard_sysclk();
+			copy_to_user(ifr->ifr_data, &reg, sizeof(reg));
+			break;
+#endif
 		case RAETH_MII_READ:
 			copy_from_user(&mii, ifr->ifr_data, sizeof(mii));
 			mii_mgr_read(mii.phy_id, mii.reg_num, &mii.val_out);

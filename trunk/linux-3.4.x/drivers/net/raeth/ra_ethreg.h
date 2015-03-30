@@ -9,6 +9,8 @@
 #define ETHER_ADDR_LEN			6
 
 #define phys_to_bus(a)			(a & 0x1FFFFFFF)
+#define PHYS_TO_VIRT(x)			((void *)((x) | KSEG1))
+#define VIRT_TO_PHYS(x)			((unsigned int)((unsigned long)(x) & ~KSEG1))
 
 /* Register Map Detail */
 #define REG_SYSCFG1			(RALINK_SYSCTL_BASE + 0x14)
@@ -79,9 +81,20 @@
 #define FE_DLY_INIT_VALUE		0x84028402
 #endif
 
+#if defined (CONFIG_RAETH_QDMA)
+#define QFE_INT_INIT_VALUE		(RLS_DLY_INT)
+#define QFE_INT_MASK_TX_RX		(RLS_DLY_INT)
+#define QFE_INT_MASK_TX			(RLS_DLY_INT)
+
+#define FE_INT_INIT_VALUE		(RX_DLY_INT)
+#define FE_INT_MASK_TX_RX		(RX_DLY_INT)
+#define FE_INT_MASK_RX			(RX_DLY_INT)
+#else
 #define FE_INT_INIT_VALUE		(TX_DLY_INT | RX_DLY_INT)
 #define FE_INT_MASK_TX_RX		(TX_DLY_INT | RX_DLY_INT)
 #define FE_INT_MASK_TX			(TX_DLY_INT)
+#define FE_INT_MASK_RX			(RX_DLY_INT)
+#endif
 
 /* FE_INT_STATUS2 */
 #if defined (CONFIG_RALINK_MT7621)
@@ -225,6 +238,8 @@
 #define FE_INT_ENABLE			(RALINK_FRAME_ENGINE_BASE + RAPDMA_OFFSET+0x228)
 #define SCH_Q01_CFG			(RALINK_FRAME_ENGINE_BASE + RAPDMA_OFFSET+0x280)
 #define SCH_Q23_CFG			(RALINK_FRAME_ENGINE_BASE + RAPDMA_OFFSET+0x284)
+
+#define PDMA_FC_CFG			(RALINK_FRAME_ENGINE_BASE+0x100)
 
 #if defined (CONFIG_RALINK_MT7621)
 #define PSE_RELATED			0x0040
@@ -559,10 +574,10 @@
 =========================================*/
 
 struct PDMA_rxdesc {
-	unsigned int rxd_info1_u32;
-	unsigned int rxd_info2_u32;
-	unsigned int rxd_info3_u32;
-	unsigned int rxd_info4_u32;
+	unsigned int rxd_info1;
+	unsigned int rxd_info2;
+	unsigned int rxd_info3;
+	unsigned int rxd_info4;
 };
 
 #define RX2_DMA_SDL0_GET(_x)		(((_x) >> 16) & 0x3fff)
@@ -607,10 +622,10 @@ struct PDMA_rxdesc {
 =========================================*/
 
 struct PDMA_txdesc {
-	unsigned int txd_info1_u32;
-	unsigned int txd_info2_u32;
-	unsigned int txd_info3_u32;
-	unsigned int txd_info4_u32;
+	unsigned int txd_info1;
+	unsigned int txd_info2;
+	unsigned int txd_info3;
+	unsigned int txd_info4;
 };
 
 #define TX2_DMA_SDL1(_x)		((_x) & 0x3fff)
@@ -640,6 +655,89 @@ struct PDMA_txdesc {
 #define TX4_DMA_PN(_x)			((_x) << 24)
 #endif
 #define TX4_DMA_TUI_CO(_x)		((_x) << 29)
+
+#if defined (CONFIG_RALINK_MT7621)
+
+/*=========================================
+      QDMA TX Descriptor Format define
+=========================================*/
+
+struct QDMA_txdesc {
+	unsigned int txd_info1;
+	unsigned int txd_info2;
+	unsigned int txd_info3;
+	unsigned int txd_info4;
+};
+
+#define TX3_QDMA_QID(_x)	((_x) & 0x0F)
+#define TX3_QDMA_SWC		BIT(14)
+#define TX3_QDMA_BURST		BIT(15)
+#define TX3_QDMA_SDL(_x)	(((_x) & 0x3fff) << 16)
+#define TX3_QDMA_LS		BIT(30)
+#define TX3_QDMA_OWN		BIT(31)
+
+#define QDMA_RELATED		0x1800
+#define  QTX_CFG_0		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x000)
+#define  QTX_SCH_0		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x004)
+#define  QTX_HEAD_0		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x008)
+#define  QTX_TAIL_0		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x00C)
+
+#define  QRX_BASE_PTR0		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x100)
+#define  QRX_MAX_CNT0		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x104)
+#define  QRX_CRX_IDX0		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x108)
+#define  QRX_DRX_IDX0		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x10C)
+
+#define  QRX_BASE_PTR1		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x110)
+#define  QRX_MAX_CNT1		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x114)
+#define  QRX_CRX_IDX1		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x118)
+#define  QRX_DRX_IDX1		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x11C)
+
+#define  QDMA_INFO		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x200)
+#define  QDMA_GLO_CFG		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x204)
+#define  QDMA_RST_IDX		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x208)
+#define  QDMA_RST_CFG		(QDMA_RST_IDX)
+#define  QDMA_DELAY_INT		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x20C)
+#define  QDMA_FC_THRES		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x210)
+#define  QDMA_TX_SCH		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x214)
+#define  QDMA_INT_STS		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x218)
+#define  QFE_INT_STATUS		(QDMA_INT_STS)
+#define  QDMA_INT_MASK		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x21C)
+#define  QFE_INT_ENABLE		(QDMA_INT_MASK)
+#define  QDMA_TRTCM		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x220)
+#define  QDMA_DATA0		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x224)
+#define  QDMA_DATA1		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x228)
+#define  QDMA_RED_THRES		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x22C)
+#define  QDMA_TEST		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x230)
+#define  QDMA_DMA		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x234)
+#define  QDMA_BMU		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x238)
+
+#define  QDMA_HRED1		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x240)
+#define  QDMA_HRED2		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x244)
+#define  QDMA_SRED1		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x248)
+#define  QDMA_SRED2		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x24C)
+
+#define  QTX_CTX_PTR		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x300)
+#define  QTX_DTX_PTR		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x304)
+#define  QTX_FWD_CNT		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x308)
+#define  QTX_CRX_PTR		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x310)
+#define  QTX_DRX_PTR		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x314)
+#define  QTX_RLS_CNT		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x318)
+
+#define  QDMA_FQ_HEAD		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x320)
+#define  QDMA_FQ_TAIL		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x324)
+#define  QDMA_FQ_CNT		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x328)
+#define  QDMA_FQ_BLEN		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x32C)
+
+#define  QTX_Q0MIN_BK		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x350)
+#define  QTX_Q1MIN_BK		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x354)
+#define  QTX_Q2MIN_BK		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x358)
+#define  QTX_Q3MIN_BK		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x35C)
+#define  QTX_Q0MAX_BK		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x360)
+#define  QTX_Q1MAX_BK		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x364)
+#define  QTX_Q2MAX_BK		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x368)
+#define  QTX_Q3MAX_BK		(RALINK_FRAME_ENGINE_BASE + QDMA_RELATED + 0x36C)
+
+#endif
 
 
 #endif

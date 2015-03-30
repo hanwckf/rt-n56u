@@ -10,6 +10,13 @@
 #define RAETH_ESW_EGRESS_RATE		0x89F6
 #define RAETH_ESW_PHY_DUMP		0x89F7
 
+#define RAETH_QDMA_REG_READ		0x89F8
+#define RAETH_QDMA_REG_WRITE		0x89F9
+#define RAETH_QDMA_QUEUE_MAPPING	0x89FA
+#define RAETH_QDMA_READ_CPU_CLK		0x89FB
+
+#define REG_HQOS_MAX			0x3FFF
+
 typedef struct rt3052_esw_reg {
 	unsigned int off;
 	unsigned int val;

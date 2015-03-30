@@ -13,20 +13,25 @@ config  RAETH_NAPI_GRO
 	depends on RAETH_NAPI && RAETH_CHECKSUM_OFFLOAD
 	default n
 
+config  RAETH_BQL
+	bool "Support Tx Byte Queue Limit (BQL)"
+	depends on RAETH && BQL
+	default n
+
+config  RAETH_QDMA
+	bool "QDMA for Tx path (HW QoS -> 16 pipes)"
+	depends on RAETH && RALINK_MT7621
+	default n
+
 config  RAETH_JUMBOFRAME
 	bool "Jumbo Frame up to 4K bytes"
-	depends on RAETH && !(RALINK_RT3052 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7628)
+	depends on RAETH && !RAETH_QDMA && !(RALINK_RT3052 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7628)
 
 config  RAETH_HW_VLAN_RX
 	bool "Receive VLAN HW (DoubleVLAN is not supported)"
 	depends on RAETH && RALINK_MT7621
 	---help---
 	  Please disable HW_VLAN_RX if you need double vlan
-
-config  RAETH_BQL
-	bool "Support Tx Byte Queue Limit (BQL)"
-	depends on RAETH && BQL
-	default n
 
 config  RAETH_HW_VLAN_TX
 	bool "Transmit VLAN HW (DoubleVLAN is not supported)"

@@ -903,6 +903,7 @@ static int client6_recvadvert(const struct dhcp6_if *ifp, struct dhcp6_event *ev
 {
 	struct dhcp6_serverinfo *newserver, **sp;
 	struct dhcp6_eventdata *evd;
+	int have_ia = -1;
 
 	/*
 	 * The requesting router MUST ignore any Advertise message that
@@ -915,14 +916,18 @@ static int client6_recvadvert(const struct dhcp6_if *ifp, struct dhcp6_event *ev
 	 * a prefix.
 	 */
 	TAILQ_FOREACH(evd, &ev->data_list, link) {
+		struct dhcp6_listval *lv, *slv;
+		dhcp6_listval_type_t lvtype;
 		uint16_t stcode;
 
 		switch (evd->type) {
 		case D6_OPT_IA_PD:
 			stcode = D6_OPT_STCODE_NOPREFIXAVAIL;
+			lvtype = DHCP6_LISTVAL_PREFIX6;
 			break;
 		case D6_OPT_IA_NA:
 			stcode = D6_OPT_STCODE_NOADDRSAVAIL;
+			lvtype = DHCP6_LISTVAL_STATEFULADDR6;
 			break;
 		default:
 			continue;
@@ -932,6 +937,31 @@ static int client6_recvadvert(const struct dhcp6_if *ifp, struct dhcp6_event *ev
 			bb_error_msg("advertise contains %s status", dhcp6stcodestr(stcode));
 			return -1;
 		}
+
+		if (have_ia > 0 || TAILQ_EMPTY((struct dhcp6_list *)evd->data))
+			continue;
+		have_ia = 0;
+		TAILQ_FOREACH(lv, (struct dhcp6_list *)evd->data, link) {
+			slv = dhcp6_find_listval(&optinfo->ia_list,
+			    evd->type, &lv->val_ia, MATCHLIST_DH6OPTYPE);
+			if (slv == NULL)
+				continue;
+			TAILQ_FOREACH(slv, &slv->sublist, link) {
+				if (slv->lvtype == lvtype) {
+					have_ia = 1;
+					break;
+				}
+			}
+		}
+	}
+
+	/* Ignore message with none of requested addresses and/or
+	 * a prefixes as if NoAddrsAvail/NoPrefixAvail Status Code
+	 * was included.
+	 */
+	if (have_ia == 0) {
+		bb_error_msg("advertise contains no address/prefix");
+		return -1;
 	}
 
 	if (ev->state != DHCP6S_SOLICIT ||

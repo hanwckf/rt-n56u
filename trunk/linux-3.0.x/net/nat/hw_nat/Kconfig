@@ -316,6 +316,13 @@ config  RA_HW_NAT_IPV6
 	help
 	  IPv6 routing accelerated by HNAT
 
+config  RA_HW_NAT_QDMA
+	bool "Flow out to QDMA (HW QoS)"
+	depends on RA_HW_NAT && RAETH_QDMA && (RALINK_MT7621)
+	default n
+	help
+	  HW QoS concurrent with HNAT
+
 config  RA_HW_NAT_MCAST
 	bool "Multicast Acceleration"
 	depends on RA_HW_NAT && HNAT_V2

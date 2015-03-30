@@ -236,6 +236,36 @@ int FoeDumpCacheEntry(void)
 }
 #endif
 
+static void FoePrintInfoBlk1(uint32_t info_blk1)
+{
+	NAT_PRINT("Information Block 1: %08X\n", info_blk1);
+}
+
+static void FoePrintInfoBlk2(uint32_t info_blk2)
+{
+	struct _info_blk2 *iblk2 = (struct _info_blk2 *)&info_blk2;
+
+#if defined (CONFIG_HNAT_V2)
+#if defined (CONFIG_RALINK_MT7621)
+	NAT_PRINT("Information Block 2: %08X (DP=%d, FQOS=%d, QID=%d, MCAST=%d)\n",
+			info_blk2,
+			iblk2->dp,
+			iblk2->fqos,
+			iblk2->qid,
+			iblk2->mcast);
+#else
+	NAT_PRINT("Information Block 2: %08X (FPORT=%d)\n",
+			info_blk2,
+			iblk2->fpidx);
+#endif
+#else
+	NAT_PRINT("Information Block 2: %08X (DP=%d, FORCE=%d)\n",
+			info_blk2,
+			iblk2->dp,
+			iblk2->fd);
+#endif
+}
+
 void FoeDumpEntry(uint32_t Index)
 {
 	struct FoeEntry *entry;
@@ -259,10 +289,10 @@ void FoeDumpEntry(uint32_t Index)
 		NAT_PRINT("%02d: %08X\n", i, *(p+i));
 	}
 	NAT_PRINT("-----------------<Flow Info>------------------\n");
-	NAT_PRINT("Information Block 1: %08X\n", entry->ipv4_hnapt.info_blk1);
+	FoePrintInfoBlk1(entry->ipv4_hnapt.info_blk1);
 
 	if (IS_IPV4_HNAPT(entry)) {
-		NAT_PRINT("Information Block 2: %08X\n", entry->ipv4_hnapt.info_blk2);
+		FoePrintInfoBlk2(entry->ipv4_hnapt.info_blk2);
 		NAT_PRINT("Create IPv4 HNAPT entry\n");
 		NAT_PRINT
 		    ("IPv4 Org IP/Port: %u.%u.%u.%u:%d->%u.%u.%u.%u:%d\n",
@@ -273,7 +303,7 @@ void FoeDumpEntry(uint32_t Index)
 		     IP_FORMAT(entry->ipv4_hnapt.new_sip), entry->ipv4_hnapt.new_sport,
 		     IP_FORMAT(entry->ipv4_hnapt.new_dip), entry->ipv4_hnapt.new_dport);
 	} else if (IS_IPV4_HNAT(entry)) {
-		NAT_PRINT("Information Block 2: %08X\n", entry->ipv4_hnapt.info_blk2);
+		FoePrintInfoBlk2(entry->ipv4_hnapt.info_blk2);
 		NAT_PRINT("Create IPv4 HNAT entry\n");
 		NAT_PRINT("IPv4 Org IP: %u.%u.%u.%u->%u.%u.%u.%u\n",
 			  IP_FORMAT(entry->ipv4_hnapt.sip), IP_FORMAT(entry->ipv4_hnapt.dip));
@@ -282,14 +312,14 @@ void FoeDumpEntry(uint32_t Index)
 #if defined (CONFIG_RA_HW_NAT_IPV6)
 #if !defined (CONFIG_HNAT_V2)
 	} else if (IS_IPV6_1T_ROUTE(entry)) {
-		NAT_PRINT("Information Block 2: %08X\n", entry->ipv6_1t_route.info_blk2);
+		FoePrintInfoBlk2(entry->ipv6_1t_route.info_blk2);
 		NAT_PRINT("Create IPv6 Route entry\n");
 		NAT_PRINT("Destination IPv6: %08X:%08X:%08X:%08X",
 			  entry->ipv6_1t_route.ipv6_dip3, entry->ipv6_1t_route.ipv6_dip2,
 			  entry->ipv6_1t_route.ipv6_dip1, entry->ipv6_1t_route.ipv6_dip0);
 #else
 	} else if (IS_IPV4_DSLITE(entry)) {
-		NAT_PRINT("Information Block 2: %08X\n", entry->ipv4_dslite.info_blk2);
+		FoePrintInfoBlk2(entry->ipv4_dslite.info_blk2);
 		NAT_PRINT("Create IPv4 Ds-Lite entry\n");
 		NAT_PRINT
 		    ("IPv4 Ds-Lite: %u.%u.%u.%u.%d->%u.%u.%u.%u:%d\n ",
@@ -301,7 +331,7 @@ void FoeDumpEntry(uint32_t Index)
 			  entry->ipv4_dslite.tunnel_dipv6_0, entry->ipv4_dslite.tunnel_dipv6_1,
 			  entry->ipv4_dslite.tunnel_dipv6_2, entry->ipv4_dslite.tunnel_dipv6_3);
 	} else if (IS_IPV6_3T_ROUTE(entry)) {
-		NAT_PRINT("Information Block 2: %08X\n", entry->ipv6_3t_route.info_blk2);
+		FoePrintInfoBlk2(entry->ipv6_3t_route.info_blk2);
 		NAT_PRINT("Create IPv6 3-Tuple entry\n");
 		NAT_PRINT
 		    ("ING SIPv6->DIPv6: %08X:%08X:%08X:%08X-> %08X:%08X:%08X:%08X (Prot=%d)\n",
@@ -311,7 +341,7 @@ void FoeDumpEntry(uint32_t Index)
 		     entry->ipv6_3t_route.ipv6_dip2, entry->ipv6_3t_route.ipv6_dip3, 
 		     entry->ipv6_3t_route.prot);
 	} else if (IS_IPV6_5T_ROUTE(entry)) {
-		NAT_PRINT("Information Block 2: %08X\n", entry->ipv6_5t_route.info_blk2);
+		FoePrintInfoBlk2(entry->ipv6_5t_route.info_blk2);
 		NAT_PRINT("Create IPv6 5-Tuple entry\n");
 		if(IS_IPV6_FLAB_EBL()) {
 			NAT_PRINT ("ING SIPv6->DIPv6: %08X:%08X:%08X:%08X-> %08X:%08X:%08X:%08X (Flow Label=%08X) \n",
@@ -330,7 +360,7 @@ void FoeDumpEntry(uint32_t Index)
 				entry->ipv6_5t_route.dport);
 		}
 	} else if (IS_IPV6_6RD(entry)) {
-		NAT_PRINT("Information Block 2: %08X\n", entry->ipv6_6rd.info_blk2);
+		FoePrintInfoBlk2(entry->ipv6_6rd.info_blk2);
 		NAT_PRINT("Create IPv6 6RD entry\n");
 		if(IS_IPV6_FLAB_EBL()) {
 			NAT_PRINT ("ING SIPv6->DIPv6: %08X:%08X:%08X:%08X-> %08X:%08X:%08X:%08X (Flow Label=%08X) \n",
@@ -340,7 +370,6 @@ void FoeDumpEntry(uint32_t Index)
 				entry->ipv6_6rd.ipv6_dip2, entry->ipv6_6rd.ipv6_dip3, 
 				((entry->ipv6_5t_route.sport << 16) | (entry->ipv6_5t_route.dport))&0xFFFFF);
 		} else {
-
 			NAT_PRINT ("ING SIPv6->DIPv6: %08X:%08X:%08X:%08X:%d-> %08X:%08X:%08X:%08X:%d \n",
 				entry->ipv6_6rd.ipv6_sip0, entry->ipv6_6rd.ipv6_sip1,
 				entry->ipv6_6rd.ipv6_sip2, entry->ipv6_6rd.ipv6_sip3,

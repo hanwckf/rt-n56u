@@ -7,13 +7,18 @@ utils_dir_y			+= hw_nat
 # other utils
 utils_dir_y			+= cpu_usage
 
-# ESW
+# ESW control
 ifdef CONFIG_RAETH_ESW
 utils_dir_y			+= switch
 else
 ifdef CONFIG_MT7530_GSW
 utils_dir_y			+= switch
 endif
+endif
+
+# QDMA control
+ifdef CONFIG_RAETH_QDMA
+utils_dir_y			+= qdma
 endif
 
 # hub-ctrl

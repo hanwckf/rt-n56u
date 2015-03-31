@@ -148,9 +148,9 @@ ifeq ($(CONFIG_RT2880_FLASH_32M),y)
 	# can't bigger than 32964544 !!!
 else
 ifeq ($(CONFIG_RT2880_FLASH_16M),y)
-	# can't bigger than 16187328 !!!
+	# can't bigger than 16187136 !!!
 else
-	# can't bigger than 7995328 !!!
+	# can't bigger than 7995136 !!!
 endif
 endif
 else

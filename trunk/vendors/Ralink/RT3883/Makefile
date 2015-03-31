@@ -126,9 +126,9 @@ endif
 	  @wc -c $(KERNELZ).$(COMP)
 	# !!! Please make sure that Padded Kernel Image + Compressed Rootfs size
 ifneq ($(CONFIG_RT2880_FLASH_16M),y)
-	# can't bigger than 7995328 !!!
+	# can't bigger than 7995136 !!!
 else
-	# can't bigger than 16187328 !!!
+	# can't bigger than 16187136 !!!
 endif
 	#===========================================
 endif

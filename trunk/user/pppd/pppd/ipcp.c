@@ -179,10 +179,10 @@ static option_t ipcp_option_list[] = {
     { "noipdefault", o_bool, &disable_defaultip,
       "Don't use name for default IP adrs", 1 },
 
-    { "ms-dns", 1, (void *)setdnsaddr,
-      "DNS address for the peer's use" },
-    { "ms-wins", 1, (void *)setwinsaddr,
-      "Nameserver for SMB over TCP/IP for peer" },
+    { "ms-dns", o_special, (void *)setdnsaddr,
+      "DNS address for the peer's use", OPT_A2LIST },
+    { "ms-wins", o_special, (void *)setwinsaddr,
+      "Nameserver for SMB over TCP/IP for peer", OPT_A2LIST },
 
     { "ipcp-restart", o_int, &ipcp_fsm[0].timeouttime,
       "Set timeout for IPCP", OPT_PRIO },

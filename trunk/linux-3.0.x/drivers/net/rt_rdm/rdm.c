@@ -10,16 +10,16 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0)
 #include <asm/system.h>
 #endif
-#include <linux/wireless.h>
+
 #include "rdm.h"
 
 #define RDM_WIRELESS_ADDR	RALINK_11N_MAC_BASE // wireless control
 #define RDM_DEVNAME		"rdm0"
 
-static int register_control = RDM_WIRELESS_ADDR;
-int rdm_major = 253;
+static unsigned int register_control = RDM_SYSCTL_ADDR;
+static int rdm_major = 253;
 
-long rdm_ioctl (struct file *filp, unsigned int cmd, unsigned long arg)
+static long rdm_ioctl (struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	unsigned int rtvalue, baseaddr, offset;
 	unsigned int addr=0,count=0;
@@ -118,11 +118,9 @@ int __init rdm_init(void)
 		return result;
 	}
 
-	if (rdm_major == 0) {
+	if (rdm_major == 0)
 		rdm_major = result; /* dynamic */
-	}
 
-	printk("rdm_major = %d\n", rdm_major);
 	return 0;
 }
 

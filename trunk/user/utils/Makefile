@@ -21,6 +21,11 @@ ifdef CONFIG_RAETH_QDMA
 utils_dir_y			+= qdma
 endif
 
+# Ralink registers access
+ifdef CONFIG_RALINK_RDM
+utils_dir_y			+= reg
+endif
+
 # hub-ctrl
 ifdef CONFIG_USB_SUPPORT
 utils_dir_y			+= hub-ctrl

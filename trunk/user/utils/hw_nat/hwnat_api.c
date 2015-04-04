@@ -10,7 +10,7 @@
 #include "hwnat_api.h"
 
 static int
-HwNatIoCtlArgs(unsigned long request, struct hwnat_args *opt)
+HwNatIoCtlArgs(unsigned long request, void *opt)
 {
     int fd, result = HWNAT_SUCCESS;
 
@@ -65,21 +65,8 @@ int HwNatInvalidEntry(unsigned int entry_num)
 /*hnat qos*/
 int HwNatSetQoS(struct hwnat_qos_args *opt, int ioctl_id)
 {
-    int fd;
-
-    fd = open("/dev/"HW_NAT_DEVNAME, O_RDONLY);
-    if (fd < 0) {
-	printf("Open /dev/%s pseudo device failed!\n", HW_NAT_DEVNAME);
+    if (HwNatIoCtlArgs(ioctl_id, opt) != HWNAT_SUCCESS)
 	return HWNAT_FAIL;
-    }
-
-    if (ioctl(fd, ioctl_id, opt) < 0) {
-	printf("HW_NAT_API: ioctl error!\n");
-	close(fd);
-	return HWNAT_FAIL;
-    }
-
-    close(fd);
 
     return opt->result;
 }
@@ -94,24 +81,11 @@ int HwNatCacheDumpEntry(void)
 
 int HwNatGetAGCnt(struct hwnat_ac_args *opt)
 {
-    int fd;
-
-    fd = open("/dev/"HW_NAT_DEVNAME, O_RDONLY);
-    if (fd < 0) {
-	printf("Open /dev/%s pseudo device failed!\n", HW_NAT_DEVNAME);
+    if (HwNatIoCtlArgs(HW_NAT_GET_AC_CNT, opt) != HWNAT_SUCCESS)
 	return HWNAT_FAIL;
-    }
-
-    if (ioctl(fd, HW_NAT_GET_AC_CNT, opt) < 0) {
-	printf("HW_NAT_API: ioctl error!\n");
-	close(fd);
-	return HWNAT_FAIL;
-    }
-
-    close(fd);
 
     printf("AC %u Bytes: %llu\n", opt->ag_index, opt->ag_byte_cnt);
-    printf("AC %u Pkts:  %u\n",  opt->ag_index, opt->ag_pkt_cnt);
+    printf("AC %u Pkts:  %u\n", opt->ag_index, opt->ag_pkt_cnt);
 
     return opt->result;
 }
@@ -119,21 +93,8 @@ int HwNatGetAGCnt(struct hwnat_ac_args *opt)
 
 int HwNatSetConfig(struct hwnat_config_args *opt, int ioctl_id)
 {
-    int fd;
-
-    fd = open("/dev/"HW_NAT_DEVNAME, O_RDONLY);
-    if (fd < 0) {
-	printf("Open /dev/%s pseudo device failed!\n", HW_NAT_DEVNAME);
+    if (HwNatIoCtlArgs(ioctl_id, opt) != HWNAT_SUCCESS)
 	return HWNAT_FAIL;
-    }
-
-    if (ioctl(fd, ioctl_id, opt) < 0) {
-	printf("HW_NAT_API: ioctl error!\n");
-	close(fd);
-	return HWNAT_FAIL;
-    }
-
-    close(fd);
 
     return opt->result;
 }
@@ -285,3 +246,20 @@ int HwNatDebug(unsigned int debug)
     opt.debug = debug;
     return HwNatIoCtlArgs(HW_NAT_DEBUG, &opt);
 }
+
+#if defined (CONFIG_PPE_MCAST)
+int HwNatMcastIns(struct hwnat_mcast_args *opt)
+{
+    return HwNatIoCtlArgs(HW_NAT_MCAST_INS, opt);
+}
+
+int HwNatMcastDel(struct hwnat_mcast_args *opt)
+{
+    return HwNatIoCtlArgs(HW_NAT_MCAST_DEL, opt);
+}
+
+int HwNatMcastDump(void)
+{
+    return HwNatIoCtlArgs(HW_NAT_MCAST_DUMP, NULL);
+}
+#endif

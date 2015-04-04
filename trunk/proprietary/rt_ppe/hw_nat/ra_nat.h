@@ -18,7 +18,7 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
-#define HW_NAT_MODULE_VER "v2.51.6"
+#define HW_NAT_MODULE_VER "v2.51.7"
 
 /* ra0-15, wds0-4, apcli0, mesh0 interfaces */
 #if defined (CONFIG_RT2860V2_AP_MBSS)

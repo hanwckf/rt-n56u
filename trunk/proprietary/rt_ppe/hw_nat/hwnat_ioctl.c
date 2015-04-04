@@ -21,6 +21,10 @@
 #include "util.h"
 #include "ra_nat.h"
 
+#if defined (CONFIG_PPE_MCAST)
+#include "mcast_tbl.h"
+#endif
+
 extern int udp_offload;
 #if defined (CONFIG_RA_HW_NAT_IPV6)
 extern int ipv6_offload;
@@ -51,6 +55,10 @@ int HwNatIoctl(struct inode *inode, struct file *filp,
 	struct hwnat_qos_args *opt3 = (struct hwnat_qos_args *)arg;
 #endif
 	struct hwnat_config_args *opt4 = (struct hwnat_config_args *)arg;
+
+#if defined (CONFIG_PPE_MCAST)
+	struct hwnat_mcast_args *opt5 = (struct hwnat_mcast_args *)arg;
+#endif
 
 	switch (cmd) {
 	case HW_NAT_GET_ALL_ENTRIES:
@@ -160,6 +168,17 @@ int HwNatIoctl(struct inode *inode, struct file *filp,
 	case HW_NAT_ALLOW_IPV6:
 		opt4->result = PpeSetAllowIPv6(opt4->foe_allow_ipv6);
 		break;
+#if defined (CONFIG_PPE_MCAST)
+	case HW_NAT_MCAST_INS:
+		foe_mcast_entry_ins(opt5->mc_vid, opt5->dst_mac, opt5->mc_px_en, opt5->mc_px_qos_en, opt5->mc_qos_qid);
+		break;
+	case HW_NAT_MCAST_DEL:
+		foe_mcast_entry_del(opt5->mc_vid, opt5->dst_mac, opt5->mc_px_en, opt5->mc_px_qos_en);
+		break;
+	case HW_NAT_MCAST_DUMP:
+		foe_mcast_entry_dump();
+		break;
+#endif
 	default:
 		break;
 	}

@@ -7,4 +7,10 @@ hw_nat-objs += ac_policy.o ac_ioctl.o
 hw_nat-objs += mtr_policy.o mtr_ioctl.o
 endif
 
+ifeq ($(CONFIG_RA_HW_NAT_MCAST),y)
+ifeq ($(CONFIG_RALINK_MT7621),y)
+EXTRA_CFLAGS += -DCONFIG_PPE_MCAST
+hw_nat-objs += mcast_tbl.o
+endif
+endif
 

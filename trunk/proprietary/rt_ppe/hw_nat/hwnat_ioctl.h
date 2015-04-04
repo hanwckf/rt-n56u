@@ -25,6 +25,9 @@
 /*HNAT QOS*/
 #if defined (CONFIG_HNAT_V2)
 #define HW_NAT_GET_AC_CNT		(0x09)
+#define HW_NAT_MCAST_INS		(0x20)
+#define HW_NAT_MCAST_DEL		(0x21)
+#define HW_NAT_MCAST_DUMP		(0x22)
 #else
 #define HW_NAT_DSCP_REMARK		(0x09)
 #define HW_NAT_VPRI_REMARK		(0x0a)
@@ -170,6 +173,16 @@ struct hwnat_ac_args {
 	unsigned int ag_pkt_cnt;
 	unsigned long long ag_byte_cnt;
 	enum hwnat_status result;
+};
+
+struct hwnat_mcast_args {
+	unsigned int mc_vid:16;
+	unsigned int mc_px_en:4;
+	unsigned int valid:1;
+	unsigned int rev2:3;
+	unsigned int mc_px_qos_en:4;
+	unsigned int mc_qos_qid:4;
+	unsigned char dst_mac[6];
 };
 #endif
 

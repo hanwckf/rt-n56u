@@ -21,7 +21,7 @@
  * DEFINITIONS AND MACROS
  */
 #define MAC_ARG(x) ((u8*)(x))[0],((u8*)(x))[1],((u8*)(x))[2], \
-                       ((u8*)(x))[3],((u8*)(x))[4],((u8*)(x))[5]
+		   ((u8*)(x))[3],((u8*)(x))[4],((u8*)(x))[5]
 
 #define IPV6_ADDR(x) ntohs(x[0]),ntohs(x[1]),ntohs(x[2]),ntohs(x[3]),ntohs(x[4]),\
 		     ntohs(x[5]),ntohs(x[6]),ntohs(x[7])
@@ -40,176 +40,50 @@
 
 #if defined (CONFIG_HNAT_V2)
 
-#define FOE_TS		    RALINK_FRAME_ENGINE_BASE + 0x0010
+#define FOE_TS			RALINK_FRAME_ENGINE_BASE + 0x0010
 
-#define PPE_FQFC_CFG	    RALINK_PPE_BASE + 0x00
-#define PPE_IQ_CFG	    RALINK_PPE_BASE + 0x04
-#define PPE_QUE_STA	    RALINK_PPE_BASE + 0x08
-#define GDM2_FWD_CFG	    RALINK_PPE_BASE + 0x100
-#define GDM2_SHPR_CFG	    RALINK_PPE_BASE + 0x104
-#define PPE_GLO_CFG	    RALINK_PPE_BASE + 0x200
-#define PPE_FLOW_CFG	    RALINK_PPE_BASE + 0x204
-#define PPE_FLOW_SET	    PPE_FLOW_CFG
-#define PPE_IP_PROT_CHK	    RALINK_PPE_BASE + 0x208
-#define PPE_IP_PROT_0	    RALINK_PPE_BASE + 0x20C
-#define PPE_IP_PROT_1	    RALINK_PPE_BASE + 0x210
-#define PPE_IP_PROT_2	    RALINK_PPE_BASE + 0x214
-#define PPE_IP_PROT_3	    RALINK_PPE_BASE + 0x218
-#define PPE_TB_CFG	    RALINK_PPE_BASE + 0x21C
-#define PPE_FOE_CFG	    PPE_TB_CFG
-#define PPE_TB_BASE	    RALINK_PPE_BASE + 0x220
-#define PPE_FOE_BASE	    PPE_TB_BASE
-#define PPE_TB_USED	    RALINK_PPE_BASE + 0x224
-#define PPE_BNDR	    RALINK_PPE_BASE + 0x228
-#define PPE_FOE_BNDR	    PPE_BNDR
-#define PPE_BIND_LMT_0	    RALINK_PPE_BASE + 0x22C
-#define PPE_FOE_LMT1	    PPE_BIND_LMT_0
-#define PPE_BIND_LMT_1	    RALINK_PPE_BASE + 0x230
-#define PPE_FOE_LMT2	    PPE_BIND_LMT_1
-#define PPE_KA		    RALINK_PPE_BASE + 0x234
-#define PPE_FOE_KA	    PPE_KA
-#define PPE_UNB_AGE	    RALINK_PPE_BASE + 0x238
-#define PPE_FOE_UNB_AGE	    PPE_UNB_AGE
-#define PPE_BND_AGE_0	    RALINK_PPE_BASE + 0x23C
-#define PPE_FOE_BND_AGE0    PPE_BND_AGE_0
-#define PPE_BND_AGE_1	    RALINK_PPE_BASE + 0x240
-#define PPE_FOE_BND_AGE1    PPE_BND_AGE_1
-#define PPE_HASH_SEED	    RALINK_PPE_BASE + 0x244
+#define PPE_GLO_CFG		RALINK_PPE_BASE + 0x200
+#define PPE_FLOW_CFG		RALINK_PPE_BASE + 0x204
+#define PPE_FLOW_SET		PPE_FLOW_CFG
+#define PPE_IP_PROT_CHK		RALINK_PPE_BASE + 0x208
+#define PPE_IP_PROT_0		RALINK_PPE_BASE + 0x20C
+#define PPE_IP_PROT_1		RALINK_PPE_BASE + 0x210
+#define PPE_IP_PROT_2		RALINK_PPE_BASE + 0x214
+#define PPE_IP_PROT_3		RALINK_PPE_BASE + 0x218
+#define PPE_TB_CFG		RALINK_PPE_BASE + 0x21C
+#define PPE_FOE_CFG		PPE_TB_CFG
+#define PPE_TB_BASE		RALINK_PPE_BASE + 0x220
+#define PPE_FOE_BASE		PPE_TB_BASE
+#define PPE_TB_USED		RALINK_PPE_BASE + 0x224
+#define PPE_BNDR		RALINK_PPE_BASE + 0x228
+#define PPE_FOE_BNDR		PPE_BNDR
+#define PPE_BIND_LMT_0		RALINK_PPE_BASE + 0x22C
+#define PPE_FOE_LMT1		PPE_BIND_LMT_0
+#define PPE_BIND_LMT_1		RALINK_PPE_BASE + 0x230
+#define PPE_FOE_LMT2		PPE_BIND_LMT_1
+#define PPE_KA			RALINK_PPE_BASE + 0x234
+#define PPE_FOE_KA		PPE_KA
+#define PPE_UNB_AGE		RALINK_PPE_BASE + 0x238
+#define PPE_FOE_UNB_AGE		PPE_UNB_AGE
+#define PPE_BND_AGE_0		RALINK_PPE_BASE + 0x23C
+#define PPE_FOE_BND_AGE0	PPE_BND_AGE_0
+#define PPE_BND_AGE_1		RALINK_PPE_BASE + 0x240
+#define PPE_FOE_BND_AGE1	PPE_BND_AGE_1
+#define PPE_HASH_SEED		RALINK_PPE_BASE + 0x244
 
-#if defined (CONFIG_RALINK_MT7620)
+#define PPE_MTU_DRP		RALINK_PPE_BASE + 0x308
+#define PPE_MTU_VLYR_0		RALINK_PPE_BASE + 0x30C
+#define PPE_MTU_VLYR_1		RALINK_PPE_BASE + 0x310
+#define PPE_MTU_VLYR_2		RALINK_PPE_BASE + 0x314
+#define PPE_VPM_TPID		RALINK_PPE_BASE + 0x318
 
-#define PFC		    RALINK_ETH_SW_BASE + 0x0004
-#define TPF0		    RALINK_ETH_SW_BASE + 0x2030
-#define TPF1		    RALINK_ETH_SW_BASE + 0x2130
-#define TPF2		    RALINK_ETH_SW_BASE + 0x2230
-#define TPF3		    RALINK_ETH_SW_BASE + 0x2330
-#define TPF4		    RALINK_ETH_SW_BASE + 0x2430
-#define TPF5		    RALINK_ETH_SW_BASE + 0x2530
-#define TPF6		    RALINK_ETH_SW_BASE + 0x2630
+#define CAH_CTRL		RALINK_PPE_BASE + 0x320
+#define CAH_TAG_SRH		RALINK_PPE_BASE + 0x324
+#define CAH_LINE_RW		RALINK_PPE_BASE + 0x328
+#define CAH_WDATA		RALINK_PPE_BASE + 0x32C
+#define CAH_RDATA		RALINK_PPE_BASE + 0x330
 
-#define PMCR_P7		    RALINK_ETH_SW_BASE + 0x3700
-#define PSC_P7		    RALINK_ETH_SW_BASE + 0x270c
-
-#define PPE_FP_BMAP_0	    RALINK_PPE_BASE + 0x248
-#define PPE_FP_BMAP_1	    RALINK_PPE_BASE + 0x24C
-#define PPE_FP_BMAP_2	    RALINK_PPE_BASE + 0x250
-#define PPE_FP_BMAP_3	    RALINK_PPE_BASE + 0x254
-#define PPE_FP_BMAP_4	    RALINK_PPE_BASE + 0x258
-#define PPE_FP_BMAP_5	    RALINK_PPE_BASE + 0x25C
-#define PPE_FP_BMAP_6	    RALINK_PPE_BASE + 0x260
-#define PPE_FP_BMAP_7	    RALINK_PPE_BASE + 0x264
-
-#define PPE_TIPV4_0	    RALINK_PPE_BASE + 0x268
-#define PPE_TIPV4_1	    RALINK_PPE_BASE + 0x26C
-#define PPE_TIPV4_2	    RALINK_PPE_BASE + 0x270
-#define PPE_TIPV4_3	    RALINK_PPE_BASE + 0x274
-#define PPE_TIPV4_4	    RALINK_PPE_BASE + 0x278
-#define PPE_TIPV4_5	    RALINK_PPE_BASE + 0x27C
-#define PPE_TIPV4_6	    RALINK_PPE_BASE + 0x280
-#define PPE_TIPV4_7	    RALINK_PPE_BASE + 0x284
-
-#define PPE_TIPV6_127_0	    RALINK_PPE_BASE + 0x288
-#define PPE_TIPV6_95_0	    RALINK_PPE_BASE + 0x28C
-#define PPE_TIPV6_63_0	    RALINK_PPE_BASE + 0x290
-#define PPE_TIPV6_31_0	    RALINK_PPE_BASE + 0x294
-
-#define PPE_TIPV6_127_1	    RALINK_PPE_BASE + 0x298
-#define PPE_TIPV6_95_1	    RALINK_PPE_BASE + 0x29C
-#define PPE_TIPV6_63_1	    RALINK_PPE_BASE + 0x2A0
-#define PPE_TIPV6_31_1	    RALINK_PPE_BASE + 0x2A4
-
-#define PPE_TIPV6_127_2	    RALINK_PPE_BASE + 0x2A8
-#define PPE_TIPV6_95_2	    RALINK_PPE_BASE + 0x2AC
-#define PPE_TIPV6_63_2	    RALINK_PPE_BASE + 0x2B0
-#define PPE_TIPV6_31_2	    RALINK_PPE_BASE + 0x2B4
-
-#define PPE_TIPV6_127_3	    RALINK_PPE_BASE + 0x2B8
-#define PPE_TIPV6_95_3	    RALINK_PPE_BASE + 0x2BC
-#define PPE_TIPV6_63_3	    RALINK_PPE_BASE + 0x2C0
-#define PPE_TIPV6_31_3	    RALINK_PPE_BASE + 0x2C4
-
-#define PPE_TIPV6_127_4	    RALINK_PPE_BASE + 0x2C8
-#define PPE_TIPV6_95_4	    RALINK_PPE_BASE + 0x2CC
-#define PPE_TIPV6_63_4	    RALINK_PPE_BASE + 0x2D0
-#define PPE_TIPV6_31_4	    RALINK_PPE_BASE + 0x2D4
-
-#define PPE_TIPV6_127_5	    RALINK_PPE_BASE + 0x2D8
-#define PPE_TIPV6_95_5	    RALINK_PPE_BASE + 0x2DC
-#define PPE_TIPV6_63_5	    RALINK_PPE_BASE + 0x2E0
-#define PPE_TIPV6_31_5	    RALINK_PPE_BASE + 0x2E4
-
-#define PPE_TIPV6_127_6	    RALINK_PPE_BASE + 0x2E8
-#define PPE_TIPV6_95_6	    RALINK_PPE_BASE + 0x2EC
-#define PPE_TIPV6_63_6	    RALINK_PPE_BASE + 0x2F0
-#define PPE_TIPV6_31_6	    RALINK_PPE_BASE + 0x2F4
-
-#define PPE_TIPV6_127_7	    RALINK_PPE_BASE + 0x2F8
-#define PPE_TIPV6_95_7	    RALINK_PPE_BASE + 0x2FC
-#define PPE_TIPV6_63_7	    RALINK_PPE_BASE + 0x300
-#define PPE_TIPV6_31_7	    RALINK_PPE_BASE + 0x304
-
-#define PPE_MTU_DRP	    RALINK_PPE_BASE + 0x308
-#define PPE_MTU_VLYR_0	    RALINK_PPE_BASE + 0x30C
-#define PPE_MTU_VLYR_1	    RALINK_PPE_BASE + 0x310
-#define PPE_MTU_VLYR_2	    RALINK_PPE_BASE + 0x314
-
-#define PPE_VPM_TPID        RALINK_PPE_BASE + 0x318
-#define CAH_CTRL	    RALINK_PPE_BASE + 0x320
-#define CAH_TAG_SRH	    RALINK_PPE_BASE + 0x324
-#define CAH_LINE_RW	    RALINK_PPE_BASE + 0x328
-#define CAH_WDATA	    RALINK_PPE_BASE + 0x32C
-
-#elif defined (CONFIG_RALINK_MT7621)
-
-#define PPE_DFT_CPORT       RALINK_PPE_BASE + 0x248
-#define PPE_MCAST_PPSE      RALINK_PPE_BASE + 0x284
-#define PPE_MCAST_L_0       RALINK_PPE_BASE + 0x288
-#define PPE_MCAST_H_0       RALINK_PPE_BASE + 0x28C
-#define PPE_MCAST_L_1       RALINK_PPE_BASE + 0x290
-#define PPE_MCAST_H_1       RALINK_PPE_BASE + 0x294
-#define PPE_MCAST_L_2       RALINK_PPE_BASE + 0x298
-#define PPE_MCAST_H_2       RALINK_PPE_BASE + 0x29C
-#define PPE_MCAST_L_3       RALINK_PPE_BASE + 0x2A0
-#define PPE_MCAST_H_3       RALINK_PPE_BASE + 0x2A4
-#define PPE_MCAST_L_4       RALINK_PPE_BASE + 0x2A8
-#define PPE_MCAST_H_4       RALINK_PPE_BASE + 0x2AC
-#define PPE_MCAST_L_5       RALINK_PPE_BASE + 0x2B0
-#define PPE_MCAST_H_5       RALINK_PPE_BASE + 0x2B4
-#define PPE_MCAST_L_6       RALINK_PPE_BASE + 0x2BC
-#define PPE_MCAST_H_6       RALINK_PPE_BASE + 0x2C0
-#define PPE_MCAST_L_7       RALINK_PPE_BASE + 0x2C4
-#define PPE_MCAST_H_7       RALINK_PPE_BASE + 0x2C8
-#define PPE_MCAST_L_8       RALINK_PPE_BASE + 0x2CC
-#define PPE_MCAST_H_8       RALINK_PPE_BASE + 0x2D0
-#define PPE_MCAST_L_9       RALINK_PPE_BASE + 0x2D4
-#define PPE_MCAST_H_9       RALINK_PPE_BASE + 0x2D8
-#define PPE_MCAST_L_A       RALINK_PPE_BASE + 0x2DC
-#define PPE_MCAST_H_A       RALINK_PPE_BASE + 0x2E0
-#define PPE_MCAST_L_B       RALINK_PPE_BASE + 0x2E4
-#define PPE_MCAST_H_B       RALINK_PPE_BASE + 0x2E8
-#define PPE_MCAST_L_C       RALINK_PPE_BASE + 0x2EC
-#define PPE_MCAST_H_C       RALINK_PPE_BASE + 0x2F0
-#define PPE_MCAST_L_D       RALINK_PPE_BASE + 0x2F4
-#define PPE_MCAST_H_D       RALINK_PPE_BASE + 0x2F8
-#define PPE_MCAST_L_E       RALINK_PPE_BASE + 0x2FC
-#define PPE_MCAST_H_E       RALINK_PPE_BASE + 0x2E0
-#define PPE_MCAST_L_F       RALINK_PPE_BASE + 0x300
-#define PPE_MCAST_H_F       RALINK_PPE_BASE + 0x304
-#define PPE_MTU_DRP         RALINK_PPE_BASE + 0x308
-#define PPE_MTU_VLYR_0      RALINK_PPE_BASE + 0x30C
-#define PPE_MTU_VLYR_1      RALINK_PPE_BASE + 0x310
-#define PPE_MTU_VLYR_2      RALINK_PPE_BASE + 0x314
-#define PPE_VPM_TPID        RALINK_PPE_BASE + 0x318
-
-#define CAH_CTRL            RALINK_PPE_BASE + 0x320
-#define CAH_TAG_SRH         RALINK_PPE_BASE + 0x324
-#define CAH_LINE_RW         RALINK_PPE_BASE + 0x328
-#define CAH_WDATA           RALINK_PPE_BASE + 0x32C
-#define CAH_RDATA           RALINK_PPE_BASE + 0x330
-
-#endif /* CONFIG_RALINK_MT7621 */
-
-/* 
+/*
  * CAH_RDATA[17:16]
  *  0: invalid
  *  1: valid
@@ -218,138 +92,250 @@
  *
  * CAH_RDATA[15:0]: entry num
  */
-#define CAH_RDATA	    RALINK_PPE_BASE + 0x330
 
-#define GDM1_OFRC_P_CPU     (0 << 0)
-#define GDM1_MFRC_P_CPU     (0 << 4)
-#define GDM1_BFRC_P_CPU     (0 << 8)
-#define GDM1_UFRC_P_CPU     (0 << 12)
+#if defined (CONFIG_RALINK_MT7620)
 
-#if defined (CONFIG_RALINK_MT7621)
-#define AC_BASE		    RALINK_FRAME_ENGINE_BASE + 0x2000
-#define METER_BASE	    RALINK_FRAME_ENGINE_BASE + 0x2000
+#define PFC			RALINK_ETH_SW_BASE + 0x0004
+#define TPF0			RALINK_ETH_SW_BASE + 0x2030
+#define TPF1			RALINK_ETH_SW_BASE + 0x2130
+#define TPF2			RALINK_ETH_SW_BASE + 0x2230
+#define TPF3			RALINK_ETH_SW_BASE + 0x2330
+#define TPF4			RALINK_ETH_SW_BASE + 0x2430
+#define TPF5			RALINK_ETH_SW_BASE + 0x2530
+#define TPF6			RALINK_ETH_SW_BASE + 0x2630
 
-#define FE_GDMA1_FWD_CFG    RALINK_FRAME_ENGINE_BASE + 0x500
-#define FE_GDMA2_FWD_CFG    RALINK_FRAME_ENGINE_BASE + 0x1500
+#define PMCR_P7			RALINK_ETH_SW_BASE + 0x3700
+#define PSC_P7			RALINK_ETH_SW_BASE + 0x270c
 
-/* GDMA1 My MAC unicast frame destination port */
-#define GDM1_UFRC_P_CPU     (0 << 12)
-#define GDM1_UFRC_P_PPE     (4 << 12)
-#define GDM1_UFRC_P_QDMA    (5 << 12)
+#define AC_BASE			RALINK_FRAME_ENGINE_BASE + 0x1000
+#define METER_BASE		RALINK_FRAME_ENGINE_BASE + 0x1200
 
-/* GDMA1 broadcast frame MAC address destination port */
-#define GDM1_BFRC_P_CPU     (0 << 8)
-#define GDM1_BFRC_P_PPE     (4 << 8)
-#define GDM1_BFRC_P_QDMA    (5 << 8)
+#define PPE_FQFC_CFG		RALINK_PPE_BASE + 0x00
+#define PPE_IQ_CFG		RALINK_PPE_BASE + 0x04
+#define PPE_QUE_STA		RALINK_PPE_BASE + 0x08
+#define GDM2_FWD_CFG		RALINK_PPE_BASE + 0x100
+#define GDM2_SHPR_CFG		RALINK_PPE_BASE + 0x104
 
-/* GDMA1 multicast frame MAC address destination port */
-#define GDM1_MFRC_P_CPU     (0 << 4)
-#define GDM1_MFRC_P_PPE     (4 << 4)
-#define GDM1_MFRC_P_QDMA    (5 << 4)
+#define PPE_FP_BMAP_0		RALINK_PPE_BASE + 0x248
+#define PPE_FP_BMAP_1		RALINK_PPE_BASE + 0x24C
+#define PPE_FP_BMAP_2		RALINK_PPE_BASE + 0x250
+#define PPE_FP_BMAP_3		RALINK_PPE_BASE + 0x254
+#define PPE_FP_BMAP_4		RALINK_PPE_BASE + 0x258
+#define PPE_FP_BMAP_5		RALINK_PPE_BASE + 0x25C
+#define PPE_FP_BMAP_6		RALINK_PPE_BASE + 0x260
+#define PPE_FP_BMAP_7		RALINK_PPE_BASE + 0x264
 
-/* GDMA1 other MAC address frame destination port */
-#define GDM1_OFRC_P_CPU     (0 << 0)
-#define GDM1_OFRC_P_PPE     (4 << 0)
-#define GDM1_OFRC_P_QDMA    (5 << 0)
+#define PPE_TIPV4_0		RALINK_PPE_BASE + 0x268
+#define PPE_TIPV4_1		RALINK_PPE_BASE + 0x26C
+#define PPE_TIPV4_2		RALINK_PPE_BASE + 0x270
+#define PPE_TIPV4_3		RALINK_PPE_BASE + 0x274
+#define PPE_TIPV4_4		RALINK_PPE_BASE + 0x278
+#define PPE_TIPV4_5		RALINK_PPE_BASE + 0x27C
+#define PPE_TIPV4_6		RALINK_PPE_BASE + 0x280
+#define PPE_TIPV4_7		RALINK_PPE_BASE + 0x284
 
-#else
+#define PPE_TIPV6_127_0		RALINK_PPE_BASE + 0x288
+#define PPE_TIPV6_95_0		RALINK_PPE_BASE + 0x28C
+#define PPE_TIPV6_63_0		RALINK_PPE_BASE + 0x290
+#define PPE_TIPV6_31_0		RALINK_PPE_BASE + 0x294
+
+#define PPE_TIPV6_127_1		RALINK_PPE_BASE + 0x298
+#define PPE_TIPV6_95_1		RALINK_PPE_BASE + 0x29C
+#define PPE_TIPV6_63_1		RALINK_PPE_BASE + 0x2A0
+#define PPE_TIPV6_31_1		RALINK_PPE_BASE + 0x2A4
+
+#define PPE_TIPV6_127_2		RALINK_PPE_BASE + 0x2A8
+#define PPE_TIPV6_95_2		RALINK_PPE_BASE + 0x2AC
+#define PPE_TIPV6_63_2		RALINK_PPE_BASE + 0x2B0
+#define PPE_TIPV6_31_2		RALINK_PPE_BASE + 0x2B4
+
+#define PPE_TIPV6_127_3		RALINK_PPE_BASE + 0x2B8
+#define PPE_TIPV6_95_3		RALINK_PPE_BASE + 0x2BC
+#define PPE_TIPV6_63_3		RALINK_PPE_BASE + 0x2C0
+#define PPE_TIPV6_31_3		RALINK_PPE_BASE + 0x2C4
+
+#define PPE_TIPV6_127_4		RALINK_PPE_BASE + 0x2C8
+#define PPE_TIPV6_95_4		RALINK_PPE_BASE + 0x2CC
+#define PPE_TIPV6_63_4		RALINK_PPE_BASE + 0x2D0
+#define PPE_TIPV6_31_4		RALINK_PPE_BASE + 0x2D4
+
+#define PPE_TIPV6_127_5		RALINK_PPE_BASE + 0x2D8
+#define PPE_TIPV6_95_5		RALINK_PPE_BASE + 0x2DC
+#define PPE_TIPV6_63_5		RALINK_PPE_BASE + 0x2E0
+#define PPE_TIPV6_31_5		RALINK_PPE_BASE + 0x2E4
+
+#define PPE_TIPV6_127_6		RALINK_PPE_BASE + 0x2E8
+#define PPE_TIPV6_95_6		RALINK_PPE_BASE + 0x2EC
+#define PPE_TIPV6_63_6		RALINK_PPE_BASE + 0x2F0
+#define PPE_TIPV6_31_6		RALINK_PPE_BASE + 0x2F4
+
+#define PPE_TIPV6_127_7		RALINK_PPE_BASE + 0x2F8
+#define PPE_TIPV6_95_7		RALINK_PPE_BASE + 0x2FC
+#define PPE_TIPV6_63_7		RALINK_PPE_BASE + 0x300
+#define PPE_TIPV6_31_7		RALINK_PPE_BASE + 0x304
 
 /* TO PPE */
-#define IPV4_PPE_MYUC	    (1 << 0) // my mac
-#define IPV4_PPE_MC	    (1 << 1) // multicast
-#define IPV4_PPE_IPM	    (1 << 2) // ip multicast
-#define IPV4_PPE_BC	    (1 << 3) // broadcast
-#define IPV4_PPE_UC	    (1 << 4) // ipv4 learned UC frame
-#define IPV4_PPE_UN	    (1 << 5) // ipv4 unknown  UC frame
+#define IPV4_PPE_MYUC		(1 << 0) // my mac
+#define IPV4_PPE_MC		(1 << 1) // multicast
+#define IPV4_PPE_IPM		(1 << 2) // ip multicast
+#define IPV4_PPE_BC		(1 << 3) // broadcast
+#define IPV4_PPE_UC		(1 << 4) // ipv4 learned UC frame
+#define IPV4_PPE_UN		(1 << 5) // ipv4 unknown  UC frame
+#define IPV6_PPE_MYUC		(1 << 8) // my mac
+#define IPV6_PPE_MC		(1 << 9) // multicast
+#define IPV6_PPE_IPM		(1 << 10) // ipv6 multicast
+#define IPV6_PPE_BC		(1 << 11) // broadcast
+#define IPV6_PPE_UC		(1 << 12) // ipv6 learned UC frame
+#define IPV6_PPE_UN		(1 << 13) // ipv6 unknown  UC frame
 
-#define IPV6_PPE_MYUC	    (1 << 8) // my mac
-#define IPV6_PPE_MC	    (1 << 9) // multicast
-#define IPV6_PPE_IPM	    (1 << 10) // ipv6 multicast
-#define IPV6_PPE_BC	    (1 << 11) // broadcast
-#define IPV6_PPE_UC	    (1 << 12) // ipv6 learned UC frame
-#define IPV6_PPE_UN	    (1 << 13) // ipv6 unknown  UC frame
+#define GDM2_UFRC_P_PPE		(0 << 12)
+#define GDM2_BFRC_P_PPE		(0 << 8)
+#define GDM2_MFRC_P_PPE		(0 << 4)
+#define GDM2_OFRC_P_PPE		(0 << 0)
 
-#define AC_BASE		    RALINK_FRAME_ENGINE_BASE + 0x1000
-#define METER_BASE	    RALINK_FRAME_ENGINE_BASE + 0x1200
+#elif defined (CONFIG_RALINK_MT7621)
+
+#define AC_BASE			RALINK_FRAME_ENGINE_BASE + 0x2000
+#define METER_BASE		RALINK_FRAME_ENGINE_BASE + 0x2000
+
+#define FE_GDMA1_FWD_CFG	RALINK_FRAME_ENGINE_BASE + 0x500
+#define FE_GDMA2_FWD_CFG	RALINK_FRAME_ENGINE_BASE + 0x1500
+
+#define PPE_DFT_CPORT		RALINK_PPE_BASE + 0x248
+
+#define PPE_MCAST_PPSE		RALINK_PPE_BASE + 0x284
+#define PPE_MCAST_L_0		RALINK_PPE_BASE + 0x288
+#define PPE_MCAST_H_0		RALINK_PPE_BASE + 0x28C
+#define PPE_MCAST_L_1		RALINK_PPE_BASE + 0x290
+#define PPE_MCAST_H_1		RALINK_PPE_BASE + 0x294
+#define PPE_MCAST_L_2		RALINK_PPE_BASE + 0x298
+#define PPE_MCAST_H_2		RALINK_PPE_BASE + 0x29C
+#define PPE_MCAST_L_3		RALINK_PPE_BASE + 0x2A0
+#define PPE_MCAST_H_3		RALINK_PPE_BASE + 0x2A4
+#define PPE_MCAST_L_4		RALINK_PPE_BASE + 0x2A8
+#define PPE_MCAST_H_4		RALINK_PPE_BASE + 0x2AC
+#define PPE_MCAST_L_5		RALINK_PPE_BASE + 0x2B0
+#define PPE_MCAST_H_5		RALINK_PPE_BASE + 0x2B4
+#define PPE_MCAST_L_6		RALINK_PPE_BASE + 0x2BC
+#define PPE_MCAST_H_6		RALINK_PPE_BASE + 0x2C0
+#define PPE_MCAST_L_7		RALINK_PPE_BASE + 0x2C4
+#define PPE_MCAST_H_7		RALINK_PPE_BASE + 0x2C8
+#define PPE_MCAST_L_8		RALINK_PPE_BASE + 0x2CC
+#define PPE_MCAST_H_8		RALINK_PPE_BASE + 0x2D0
+#define PPE_MCAST_L_9		RALINK_PPE_BASE + 0x2D4
+#define PPE_MCAST_H_9		RALINK_PPE_BASE + 0x2D8
+#define PPE_MCAST_L_A		RALINK_PPE_BASE + 0x2DC
+#define PPE_MCAST_H_A		RALINK_PPE_BASE + 0x2E0
+#define PPE_MCAST_L_B		RALINK_PPE_BASE + 0x2E4
+#define PPE_MCAST_H_B		RALINK_PPE_BASE + 0x2E8
+#define PPE_MCAST_L_C		RALINK_PPE_BASE + 0x2EC
+#define PPE_MCAST_H_C		RALINK_PPE_BASE + 0x2F0
+#define PPE_MCAST_L_D		RALINK_PPE_BASE + 0x2F4
+#define PPE_MCAST_H_D		RALINK_PPE_BASE + 0x2F8
+#define PPE_MCAST_L_E		RALINK_PPE_BASE + 0x2FC
+#define PPE_MCAST_H_E		RALINK_PPE_BASE + 0x2E0
+#define PPE_MCAST_L_F		RALINK_PPE_BASE + 0x300
+#define PPE_MCAST_H_F		RALINK_PPE_BASE + 0x304
+
+/* GDMA1 My MAC unicast frame destination port */
+#define GDM1_UFRC_P_CPU		(0 << 12)
+#define GDM1_UFRC_P_PPE		(4 << 12)
+#define GDM1_UFRC_P_QDMA	(5 << 12)
+
+/* GDMA1 broadcast frame MAC address destination port */
+#define GDM1_BFRC_P_CPU		(0 << 8)
+#define GDM1_BFRC_P_PPE		(4 << 8)
+#define GDM1_BFRC_P_QDMA	(5 << 8)
+
+/* GDMA1 multicast frame MAC address destination port */
+#define GDM1_MFRC_P_CPU		(0 << 4)
+#define GDM1_MFRC_P_PPE		(4 << 4)
+#define GDM1_MFRC_P_QDMA	(5 << 4)
+
+/* GDMA1 other MAC address frame destination port */
+#define GDM1_OFRC_P_CPU		(0 << 0)
+#define GDM1_OFRC_P_PPE		(4 << 0)
+#define GDM1_OFRC_P_QDMA	(5 << 0)
+
 #endif /* CONFIG_RALINK_MT7621 */
 
 #else /* !CONFIG_HNAT_V2 */
 
-#define FE_GLO_BASE	    RALINK_FRAME_ENGINE_BASE
-#define PPE_BASE	    RALINK_FRAME_ENGINE_BASE + 0x200
-#define AC_BASE		    RALINK_FRAME_ENGINE_BASE + 0x400
-#define METER_BASE	    RALINK_FRAME_ENGINE_BASE + 0x600
+#define FE_GLO_BASE		RALINK_FRAME_ENGINE_BASE
+#define PPE_BASE		RALINK_FRAME_ENGINE_BASE + 0x200
+#define AC_BASE			RALINK_FRAME_ENGINE_BASE + 0x400
+#define METER_BASE		RALINK_FRAME_ENGINE_BASE + 0x600
 
-#define FOE_TS		    FE_GLO_BASE+0x1C
-#define GDMA1_BASE	    FE_GLO_BASE+0x20
-#define FE_GDMA1_SCH_CFG    GDMA1_BASE+0x04
-#define GDMA2_BASE	    FE_GLO_BASE+0x60
-#define FE_GDMA2_SCH_CFG    GDMA2_BASE+0x04
+#define FOE_TS			FE_GLO_BASE+0x1C
+#define GDMA1_BASE		FE_GLO_BASE+0x20
+#define FE_GDMA1_SCH_CFG	GDMA1_BASE+0x04
+#define GDMA2_BASE		FE_GLO_BASE+0x60
+#define FE_GDMA2_SCH_CFG	GDMA2_BASE+0x04
 
-#define PPE_GLO_CFG	    PPE_BASE + 0x00
-#define PPE_STD_GA_H	    PPE_BASE + 0x04
-#define PPE_STD_GA_L	    PPE_BASE + 0x08
-#define PPE_ETD_GA_H	    PPE_BASE + 0x0C
-#define PPE_EXT_GA_L	    PPE_BASE + 0x10
-#define PPE_FLOW_SET	    PPE_BASE + 0x14
-#define PPE_PRE_ACL	    PPE_BASE + 0x18
-#define PPE_PRE_MTR	    PPE_BASE + 0x1C
-#define PPE_PRE_AC	    PPE_BASE + 0x20
-#define PPE_POST_MTR	    PPE_BASE + 0x24
-#define PPE_POST_AC	    PPE_BASE + 0x28
-#define PPE_POL_CFG	    PPE_BASE + 0x2C
-#define PPE_FOE_CFG	    PPE_BASE + 0x30
-#define PPE_FOE_BASE	    PPE_BASE + 0x34
-#define PPE_FOE_USE	    PPE_BASE + 0x38
-#define PPE_FOE_BNDR	    PPE_BASE + 0x3C
-#define PPE_FOE_LMT1	    PPE_BASE + 0x40
-#define PPE_FOE_LMT2	    PPE_BASE + 0x44
-#define PPE_FOE_KA	    PPE_BASE + 0x48
-#define PPE_FOE_UNB_AGE	    PPE_BASE + 0x4C
-#define PPE_FOE_BND_AGE0    PPE_BASE + 0x50
-#define PPE_FOE_BND_AGE1    PPE_BASE + 0x54
-#define CPU_PORT_CFG	    PPE_BASE + 0x58
-#define GE1_PORT_CFG	    PPE_BASE + 0x5C
-#define DSCP0_7_MAP_UP	    PPE_BASE + 0x60
-#define DSCP8_15_MAP_UP	    PPE_BASE + 0x64
-#define DSCP16_23_MAP_UP    PPE_BASE + 0x68
-#define DSCP24_31_MAP_UP    PPE_BASE + 0x6C
-#define DSCP32_39_MAP_UP    PPE_BASE + 0x70
-#define DSCP40_47_MAP_UP    PPE_BASE + 0x74
-#define DSCP48_55_MAP_UP    PPE_BASE + 0x78
-#define DSCP56_63_MAP_UP    PPE_BASE + 0x7C
-#define AUTO_UP_CFG1	    PPE_BASE + 0x80
-#define AUTO_UP_CFG2	    PPE_BASE + 0x84
-#define UP_RES		    PPE_BASE + 0x88
-#define UP_MAP_VPRI	    PPE_BASE + 0x8C
-#define UP0_3_MAP_IDSCP	    PPE_BASE + 0x90
-#define UP4_7_MAP_IDSCP	    PPE_BASE + 0x94
-#define UP0_3_MAP_ODSCP	    PPE_BASE + 0x98
-#define UP4_7_MAP_ODSCP	    PPE_BASE + 0x9C
-#define UP_MAP_AC	    PPE_BASE + 0xA0
+#define FE_GDMA1_FWD_CFG	RALINK_FRAME_ENGINE_BASE + 0x20
+#define FE_GDMA2_FWD_CFG	RALINK_FRAME_ENGINE_BASE + 0x60
 
-#define FE_GDMA1_FWD_CFG    RALINK_FRAME_ENGINE_BASE + 0x20
-#define FE_GDMA2_FWD_CFG    RALINK_FRAME_ENGINE_BASE + 0x60
+#define PPE_GLO_CFG		PPE_BASE + 0x00
+#define PPE_STD_GA_H		PPE_BASE + 0x04
+#define PPE_STD_GA_L		PPE_BASE + 0x08
+#define PPE_ETD_GA_H		PPE_BASE + 0x0C
+#define PPE_EXT_GA_L		PPE_BASE + 0x10
+#define PPE_FLOW_SET		PPE_BASE + 0x14
+#define PPE_PRE_ACL		PPE_BASE + 0x18
+#define PPE_PRE_MTR		PPE_BASE + 0x1C
+#define PPE_PRE_AC		PPE_BASE + 0x20
+#define PPE_POST_MTR		PPE_BASE + 0x24
+#define PPE_POST_AC		PPE_BASE + 0x28
+#define PPE_POL_CFG		PPE_BASE + 0x2C
+#define PPE_FOE_CFG		PPE_BASE + 0x30
+#define PPE_FOE_BASE		PPE_BASE + 0x34
+#define PPE_FOE_USE		PPE_BASE + 0x38
+#define PPE_FOE_BNDR		PPE_BASE + 0x3C
+#define PPE_FOE_LMT1		PPE_BASE + 0x40
+#define PPE_FOE_LMT2		PPE_BASE + 0x44
+#define PPE_FOE_KA		PPE_BASE + 0x48
+#define PPE_FOE_UNB_AGE		PPE_BASE + 0x4C
+#define PPE_FOE_BND_AGE0	PPE_BASE + 0x50
+#define PPE_FOE_BND_AGE1	PPE_BASE + 0x54
+#define CPU_PORT_CFG		PPE_BASE + 0x58
+#define GE1_PORT_CFG		PPE_BASE + 0x5C
+#define DSCP0_7_MAP_UP		PPE_BASE + 0x60
+#define DSCP8_15_MAP_UP		PPE_BASE + 0x64
+#define DSCP16_23_MAP_UP	PPE_BASE + 0x68
+#define DSCP24_31_MAP_UP	PPE_BASE + 0x6C
+#define DSCP32_39_MAP_UP	PPE_BASE + 0x70
+#define DSCP40_47_MAP_UP	PPE_BASE + 0x74
+#define DSCP48_55_MAP_UP	PPE_BASE + 0x78
+#define DSCP56_63_MAP_UP	PPE_BASE + 0x7C
+#define AUTO_UP_CFG1		PPE_BASE + 0x80
+#define AUTO_UP_CFG2		PPE_BASE + 0x84
+#define UP_RES			PPE_BASE + 0x88
+#define UP_MAP_VPRI		PPE_BASE + 0x8C
+#define UP0_3_MAP_IDSCP		PPE_BASE + 0x90
+#define UP4_7_MAP_IDSCP		PPE_BASE + 0x94
+#define UP0_3_MAP_ODSCP		PPE_BASE + 0x98
+#define UP4_7_MAP_ODSCP		PPE_BASE + 0x9C
+#define UP_MAP_AC		PPE_BASE + 0xA0
 
 /* GDMA1 My MAC unicast frame destination port */
-#define GDM1_UFRC_P_CPU     (0 << 12)
-#define GDM1_UFRC_P_GDMA1   (1 << 12)
-#define GDM1_UFRC_P_PPE     (6 << 12)
+#define GDM1_UFRC_P_CPU		(0 << 12)
+#define GDM1_UFRC_P_GDMA1	(1 << 12)
+#define GDM1_UFRC_P_PPE		(6 << 12)
 
 /* GDMA1 broadcast frame MAC address destination port */
-#define GDM1_BFRC_P_CPU     (0 << 8)
-#define GDM1_BFRC_P_GDMA1   (1 << 8)
-#define GDM1_BFRC_P_PPE     (6 << 8)
+#define GDM1_BFRC_P_CPU		(0 << 8)
+#define GDM1_BFRC_P_GDMA1	(1 << 8)
+#define GDM1_BFRC_P_PPE		(6 << 8)
 
 /* GDMA1 multicast frame MAC address destination port */
-#define GDM1_MFRC_P_CPU     (0 << 4)
-#define GDM1_MFRC_P_GDMA1   (1 << 4)
-#define GDM1_MFRC_P_PPE     (6 << 4)
+#define GDM1_MFRC_P_CPU		(0 << 4)
+#define GDM1_MFRC_P_GDMA1	(1 << 4)
+#define GDM1_MFRC_P_PPE		(6 << 4)
 
 /* GDMA1 other MAC address frame destination port */
-#define GDM1_OFRC_P_CPU     (0 << 0)
-#define GDM1_OFRC_P_GDMA1   (1 << 0)
-#define GDM1_OFRC_P_PPE     (6 << 0)
+#define GDM1_OFRC_P_CPU		(0 << 0)
+#define GDM1_OFRC_P_GDMA1	(1 << 0)
+#define GDM1_OFRC_P_PPE		(6 << 0)
 
 #endif
 

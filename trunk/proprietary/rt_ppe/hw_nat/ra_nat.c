@@ -48,12 +48,22 @@
 #include "policy.h"
 #include "util.h"
 
+#if defined (CONFIG_PPE_MCAST)
+#include "mcast_tbl.h"
+#endif
+
 #if !defined (CONFIG_HNAT_V2)
 #include "acl_ioctl.h"
 #include "ac_ioctl.h"
 #include "acl_policy.h"
 #include "mtr_policy.h"
 #include "ac_policy.h"
+#endif
+
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#define DEFAULT_UDP_OFFLOAD	1
+#else
+#define DEFAULT_UDP_OFFLOAD	0
 #endif
 
 #define MAX_IF_HASH_NUM		256	/* must be 2^X */
@@ -64,7 +74,7 @@ module_param(wifi_offload, int, S_IRUGO);
 MODULE_PARM_DESC(wifi_offload, "PPE IPv4 NAT offload for wifi/extif");
 #endif
 
-static int udp_offload __read_mostly = 0;
+static int udp_offload __read_mostly = DEFAULT_UDP_OFFLOAD;
 module_param(udp_offload, int, S_IRUGO);
 MODULE_PARM_DESC(udp_offload, "PPE IPv4 NAT offload for UDP proto");
 
@@ -642,7 +652,16 @@ int PpeHitBindForceMcastToWiFiHandler(struct sk_buff *skb)
 	struct net_device *dev;
 
 	/* remove vlan tag from PPE packet */
-	if (skb->protocol == __constant_htons(ETH_P_8021Q)) {
+#if defined (CONFIG_RAETH_HW_VLAN_RX)
+	if (vlan_tx_tag_present(skb))
+		skb->vlan_tci = 0;
+	else
+#endif
+	if (skb->protocol == __constant_htons(ETH_P_8021Q)
+#if defined (CONFIG_RA_HW_NAT_QDMA)
+	 || skb->protocol == 0x5678
+#endif
+	) {
 		if (RemoveVlanTag(skb))
 			return 1;
 	}
@@ -773,14 +792,11 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 	/* QDMA QoS remove CPU reason, we use special tag to identify force to CPU.
 	 * Notes: CPU reason & Entry ID fileds are invalid at this moment
 	 */
-	if (foe_sp == 5) {
-		struct vlan_ethhdr *veth = vlan_eth_hdr(skb);
-		if (veth->h_vlan_proto == 0x5678) {
-			uint32_t foe_entry_num = ntohs(veth->h_vlan_TCI);
-			if (RemoveVlanTag(skb))
-				return 1;
-			return PpeHitBindForceToCpuHandler(skb, foe_entry_num);
-		}
+	if (foe_sp == 5 && skb->protocol == 0x5678) {
+		uint32_t foe_entry_num = ntohs(vlan_eth_hdr(skb)->h_vlan_TCI);
+		if (RemoveVlanTag(skb))
+			return 1;
+		return PpeHitBindForceToCpuHandler(skb, foe_entry_num);
 	}
 #endif
 
@@ -1326,7 +1342,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 				foe_entry->bfib1.vlan_layer = vlan_layer + 1;
 				foe_entry->ipv4_hnapt.etype = __constant_ntohs(0x5678);
 				if (vlan_layer > 0)
-					foe_entry->ipv4_hnapt.vlan2 = foe_entry->ipv4_hnapt.vlan1;
+					foe_entry->ipv4_hnapt.vlan2 = vlan1_id;
 				foe_entry->ipv4_hnapt.vlan1 = FOE_ENTRY_NUM(skb);
 			}
 			fpidx |= 0x8000;
@@ -1342,7 +1358,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 				foe_entry->bfib1.vlan_layer = vlan_layer + 1;
 				foe_entry->ipv6_5t_route.etype = __constant_ntohs(0x5678);
 				if (vlan_layer > 0)
-					foe_entry->ipv6_5t_route.vlan2 = foe_entry->ipv6_5t_route.vlan1;
+					foe_entry->ipv6_5t_route.vlan2 = vlan1_id;
 				foe_entry->ipv6_5t_route.vlan1 = FOE_ENTRY_NUM(skb);
 			}
 			fpidx |= 0x8000;
@@ -1378,11 +1394,11 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 		uint32_t fpidx = 8;	/* 8: no force port (use DA) */
 #endif
 #endif
-		if (IS_IPV4_GRP(foe_entry)) {
 #if !defined (CONFIG_RAETH_GMAC2)
-			if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) != lan_vid)
-				port_ag = 2;	/* account group #2 */
+		if ((vlan1_id & VLAN_VID_MASK) != lan_vid)
+			port_ag = 2;	/* account group #2 */
 #endif
+		if (IS_IPV4_GRP(foe_entry)) {
 #if defined (CONFIG_RA_HW_NAT_QDMA)
 			if (FOE_SP(skb) != 5) {
 				fpidx |= 0x8000;
@@ -1394,10 +1410,6 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 		}
 #if defined (CONFIG_RA_HW_NAT_IPV6)
 		else if (IS_IPV6_GRP(foe_entry)) {
-#if !defined (CONFIG_RAETH_GMAC2)
-			if ((foe_entry->ipv6_5t_route.vlan1 & VLAN_VID_MASK) != lan_vid)
-				port_ag = 2;	/* account group #2 */
-#endif
 #if defined (CONFIG_RA_HW_NAT_QDMA)
 			if (FOE_SP(skb) != 5) {
 				fpidx |= 0x8000;
@@ -1409,6 +1421,11 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 		}
 #endif
 	}
+
+#if defined (CONFIG_PPE_MCAST) && defined (CONFIG_RA_HW_NAT_QDMA)
+	if (is_mcast)
+		foe_mcast_entry_qid(vlan1_id, eth->h_dest, M2Q_table[(skb->mark & 0x3f)]);
+#endif
 
 	/******************** BIND ********************/
 
@@ -2046,7 +2063,10 @@ static void PpeSetFoeGloCfgEbl(uint32_t Ebl)
 		RegModifyBits(PPE_MCAST_PPSE, 0, 0, 4);  // multicast port0 map to PDMA
 		RegModifyBits(PPE_MCAST_PPSE, 1, 4, 4);  // multicast port1 map to GMAC1
 		RegModifyBits(PPE_MCAST_PPSE, 2, 8, 4);  // multicast port2 map to GMAC2
-		RegModifyBits(PPE_MCAST_PPSE, 5, 12, 4); // multicast port3 map to QDMA
+#if defined (CONFIG_RA_HW_NAT_QDMA)
+		/* raeth must support handle P5 RX ring (else use PDMA P0) */
+//		RegModifyBits(PPE_MCAST_PPSE, 5, 12, 4); // multicast port3 map to QDMA
+#endif
 #endif
 		/* default CPU port is port0 (PDMA) */
 		RegWrite(PPE_DFT_CPORT, 0);
@@ -2380,36 +2400,38 @@ uint32_t SetGdmaFwd(uint32_t Ebl)
 
 #if defined (CONFIG_RALINK_MT7620)
 	data = RegRead(GDM2_FWD_CFG);
+	data &= ~0x7777;
 	if (Ebl) {
-		data &= ~0x7777;
-		data |= GDM1_OFRC_P_CPU;
-		data |= GDM1_MFRC_P_CPU;
-		data |= GDM1_BFRC_P_CPU;
-		data |= GDM1_UFRC_P_CPU;
+		/* GDM2 U/B/M/O frames forward to PPE */
+		data |= GDM2_UFRC_P_PPE;
+		data |= GDM2_BFRC_P_PPE;
+		data |= GDM2_MFRC_P_PPE;
+		data |= GDM2_OFRC_P_PPE;
 	} else {
-		data |= 0x7777;
+		/* GDM2 U/B/M/O frames discard */
+		data |=  0x7777;
 	}
 	RegWrite(GDM2_FWD_CFG, data);
 #else
 	data = RegRead(FE_GDMA1_FWD_CFG);
 	data &= ~0x7777;
 	if (Ebl) {
-		//Uni-cast frames forward to PPE
+		/* Uni-cast frames forward to PPE */
 		data |= GDM1_UFRC_P_PPE;
 #if defined (CONFIG_RA_HW_NAT_MCAST) && defined (CONFIG_HNAT_V2)
-		//Multi-cast MAC address frames forward to PPE
+		/* Multi-cast MAC address frames forward to PPE */
 		data |= GDM1_MFRC_P_PPE;
 #endif
-		//Other MAC address frames forward to PPE
+		/* Other MAC address frames forward to PPE */
 		data |= GDM1_OFRC_P_PPE;
 	} else {
-		//Uni-cast frames forward to CPU
+		/* Uni-cast frames forward to CPU */
 		data |= GDM1_UFRC_P_CPU;
-		//Broad-cast MAC address frames forward to CPU
+		/* Broad-cast MAC address frames forward to CPU */
 		data |= GDM1_BFRC_P_CPU;
-		//Multi-cast MAC address frames forward to CPU
+		/* Multi-cast MAC address frames forward to CPU */
 		data |= GDM1_MFRC_P_CPU;
-		//Other MAC address frames forward to CPU
+		/* Other MAC address frames forward to CPU */
 		data |= GDM1_OFRC_P_CPU;
 	}
 	RegWrite(FE_GDMA1_FWD_CFG, data);
@@ -2418,22 +2440,22 @@ uint32_t SetGdmaFwd(uint32_t Ebl)
 	data = RegRead(FE_GDMA2_FWD_CFG);
 	data &= ~0x7777;
 	if (Ebl) {
-		//Uni-cast frames forward to PPE
+		/* Uni-cast frames forward to PPE */
 		data |= GDM1_UFRC_P_PPE;
 #if defined (CONFIG_RA_HW_NAT_MCAST) && defined (CONFIG_HNAT_V2)
-		//Multi-cast MAC address frames forward to PPE
+		/* Multi-cast MAC address frames forward to PPE */
 		data |= GDM1_MFRC_P_PPE;
 #endif
-		//Other MAC address frames forward to PPE
+		/* Other MAC address frames forward to PPE */
 		data |= GDM1_OFRC_P_PPE;
 	} else {
-		//Uni-cast frames forward to CPU
+		/* Uni-cast frames forward to CPU */
 		data |= GDM1_UFRC_P_CPU;
-		//Broad-cast MAC address frames forward to CPU
+		/* Broad-cast MAC address frames forward to CPU */
 		data |= GDM1_BFRC_P_CPU;
-		//Multi-cast MAC address frames forward to CPU
+		/* Multi-cast MAC address frames forward to CPU */
 		data |= GDM1_MFRC_P_CPU;
-		//Other MAC address frames forward to CPU
+		/* Other MAC address frames forward to CPU */
 		data |= GDM1_OFRC_P_CPU;
 	}
 	RegWrite(FE_GDMA2_FWD_CFG, data);
@@ -2574,6 +2596,9 @@ int PpeEcHandler(int engine_init)
 		
 #if defined (CONFIG_HNAT_V2)
 		PpeSetSwitchVlanChk(1);
+#endif
+#if defined (CONFIG_PPE_MCAST)
+		foe_mcast_entry_del_all();
 #endif
 	}
 

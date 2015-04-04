@@ -8,6 +8,7 @@
 
 #include "hwnat_ioctl.h"
 #include "hwnat_api.h"
+#include "util.h"
 
 void show_usage(void)
 {
@@ -89,6 +90,17 @@ void show_usage(void)
 #else
     printf("Get ByteCNT and PktCnt of AG_IDX\n");
     printf("Ex: hw_nat -A [AG index]\n\n");
+
+#if defined (CONFIG_PPE_MCAST)
+    printf("Add member port in multicast entry\n");
+    printf("Ex: hw_nat -B [vid] [mac] [px_en] [px_qos_en] [mc_qos_qid]\n\n");
+
+    printf("Del member port multicast entry\n");
+    printf("Ex: hw_nat -C [vid] [mac] [px_en] [px_qos_en]\n\n");
+
+    printf("Dump all multicast entry\n");
+    printf("Ex: hw_nat -D\n\n");
+#endif
 #endif
 
     printf("Set PPE Cofigurations:\n");
@@ -123,7 +135,7 @@ int main(int argc, char *argv[])
 #if !defined (CONFIG_HNAT_V2)
     char options[] = "efg?c:x:d:A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:T:U:V:Z:6:";
 #else
-    char options[] = "aefg?c:x:d:A:N:O:P:Q:T:U:V:Z:6:";
+    char options[] = "aefg?c:x:d:A:B:C:DN:O:P:Q:T:U:V:Z:6:";
 #endif
     int method = -1;
     unsigned int entry_state = 0;
@@ -136,6 +148,11 @@ int main(int argc, char *argv[])
 #endif
     struct hwnat_config_args args4;
     int result = 0;
+
+#if defined (CONFIG_PPE_MCAST)
+    struct hwnat_mcast_args args5;
+    unsigned char mac[6];
+#endif
 
     if(argc < 2) {
 	show_usage();
@@ -237,6 +254,29 @@ int main(int argc, char *argv[])
 		method = HW_NAT_GET_AC_CNT;
 		args3.ag_index = strtoll(optarg, NULL, 10);
 		break;
+#if defined (CONFIG_PPE_MCAST)
+	case 'B':
+		method = HW_NAT_MCAST_INS;
+		args5.mc_vid = strtoll(argv[2], NULL, 10);
+		str_to_mac(mac, argv[3]);
+		memcpy(args5.dst_mac, mac, sizeof(mac));
+		args5.mc_px_en = strtoll(argv[4], NULL, 10);
+		args5.mc_px_qos_en = strtoll(argv[5], NULL, 10);
+		args5.mc_qos_qid = strtoll(argv[6], NULL, 10);
+		break;
+	case 'C':
+		method = HW_NAT_MCAST_DEL;
+		args5.mc_vid = strtoll(argv[2], NULL, 10);
+		str_to_mac(mac, argv[3]);
+		memcpy(args5.dst_mac, mac, sizeof(mac));
+		memcpy(args5.dst_mac, mac, sizeof(mac));
+		args5.mc_px_en = strtoll(argv[4], NULL, 10);
+		args5.mc_px_qos_en = strtoll(argv[5], NULL, 10);
+		break;
+	case 'D':
+		method = HW_NAT_MCAST_DUMP;
+		break;
+#endif
 #endif
 	case 'N':
 		method = HW_NAT_BIND_THRESHOLD;
@@ -377,6 +417,17 @@ int main(int argc, char *argv[])
     case HW_NAT_ALLOW_IPV6:
 	    result = HwNatSetConfig(&args4, method);
 	    break;
+#if defined (CONFIG_PPE_MCAST)
+    case HW_NAT_MCAST_INS:
+	    result = HwNatMcastIns(&args5);
+	    break;
+    case HW_NAT_MCAST_DEL:
+	    result = HwNatMcastDel(&args5);
+	    break;
+    case HW_NAT_MCAST_DUMP:
+	    result = HwNatMcastDump();
+	    break;
+#endif
     default:
 	    result = HWNAT_FAIL;
 	    break;

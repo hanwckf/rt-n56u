@@ -988,6 +988,25 @@ static void esw_cpu_ports_down(void)
 	esw_reg_set(0x3600, 0x8000);
 }
 
+static void esw_mac_to_phy_enable(void)
+{
+	u32 i, mac_mask, reg_pmcr;
+
+	/* full AN */
+	reg_pmcr = 0x00056330;
+
+	mac_mask = (1u << LAN_PORT_4) | (1u << LAN_PORT_3) | (1u << LAN_PORT_2) | (1u << LAN_PORT_1);
+#if !defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) && !defined (CONFIG_GE2_INTERNAL_GPHY_P0) && \
+    !defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) && !defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+	mac_mask |= (1u << WAN_PORT_MAC);
+#endif
+
+	for (i = 0; i <= ESW_MAC_ID_MAX; i++) {
+		if ((mac_mask >> i) & 0x1)
+			esw_reg_set(REG_ESW_MAC_PMCR_P0 + 0x100*i, reg_pmcr);
+	}
+}
+
 static void esw_soft_reset(void)
 {
 #if !defined (CONFIG_MT7530_GSW)
@@ -1805,6 +1824,9 @@ int esw_control_post_init(void)
 	/* configure bridge isolation mode via forwards mask */
 	esw_mask_bridge_isolate(g_wan_bridge_mode, g_wan_bwan_isolation);
 #endif
+
+	/* enable MAC for all PHY ports */
+	esw_mac_to_phy_enable();
 
 	/* configure bridge isolation mode via VLAN */
 	esw_vlan_bridge_isolate(g_wan_bridge_mode, g_wan_bwan_isolation, 1, 1, 1);

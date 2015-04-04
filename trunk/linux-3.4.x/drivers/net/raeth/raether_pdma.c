@@ -424,12 +424,11 @@ dma_xmit_clean(struct net_device *dev, END_DEVICE *ei_local)
 	if (netif_running(dev)) {
 		txq = netdev_get_tx_queue(dev, 0);
 		__netif_tx_lock(txq, cpu);
+#if defined (CONFIG_RAETH_BQL)
+		netdev_tx_completed_queue(txq, 0, bytes_sent_ge1);
+#endif
 		if (netif_tx_queue_stopped(txq))
 			netif_tx_wake_queue(txq);
-#if defined (CONFIG_RAETH_BQL)
-		if (bytes_sent_ge1)
-			netdev_tx_completed_queue(txq, 0, bytes_sent_ge1);
-#endif
 		__netif_tx_unlock(txq);
 	}
 
@@ -437,12 +436,11 @@ dma_xmit_clean(struct net_device *dev, END_DEVICE *ei_local)
 	if (netif_running(ei_local->PseudoDev)) {
 		txq = netdev_get_tx_queue(ei_local->PseudoDev, 0);
 		__netif_tx_lock(txq, cpu);
+#if defined (CONFIG_RAETH_BQL)
+		netdev_tx_completed_queue(txq, 0, bytes_sent_ge2);
+#endif
 		if (netif_tx_queue_stopped(txq))
 			netif_tx_wake_queue(txq);
-#if defined (CONFIG_RAETH_BQL)
-		if (bytes_sent_ge2)
-			netdev_tx_completed_queue(txq, 0, bytes_sent_ge2);
-#endif
 		__netif_tx_unlock(txq);
 	}
 #endif

@@ -52,12 +52,12 @@ fe_dma_ring_alloc(END_DEVICE *ei_local)
 	u32 i;
 
 #if defined (CONFIG_RA_HW_NAT_QDMA)
-	/* allocate QDMA FQ descriptors */
+	/* allocate QDMA FQ pool */
 	ei_local->free_head_page = dma_alloc_coherent(NULL, NUM_QDMA_PAGE * QDMA_PAGE_SIZE, &ei_local->free_head_page_phy, GFP_KERNEL);
 	if (!ei_local->free_head_page)
 		goto err_cleanup;
 
-	/* allocate QDMA FQ pool */
+	/* allocate QDMA FQ descriptors */
 	ei_local->free_head = dma_alloc_coherent(NULL, NUM_QDMA_PAGE * sizeof(struct QDMA_txdesc), &ei_local->free_head_phy, GFP_KERNEL);
 	if (!ei_local->free_head)
 		goto err_cleanup;
@@ -269,7 +269,7 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 	struct QDMA_txdesc *cpu_ptr;
 	struct QDMA_txdesc *free_txd = NULL;
 	struct netdev_queue *txq;
-	u32 ctx_offset;
+	u32 ctx_offset, skb_len;
 	u32 txd_info3, txd_info4;
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	u32 i, nr_slots, nr_frags;
@@ -299,7 +299,10 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 	}
 #endif
 
-	txd_info3 = TX3_QDMA_QID(M2Q_table[(skb->mark & 0x3f)]) | TX3_QDMA_SWC;
+	txd_info3 = TX3_QDMA_SWC;
+	if (gmac_no != PSE_PORT_PPE)
+		txd_info3 |= TX3_QDMA_QID(M2Q_table[(skb->mark & 0x3f)]);
+
 	txd_info4 = TX4_DMA_FPORT(gmac_no);
 
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
@@ -368,14 +371,21 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 
 	ei_local->txd_cpu_ptr = free_txd;
 
-	if (!nr_frags)
+#if defined (CONFIG_RAETH_SG_DMA_TX)
+	if (nr_frags)
+		skb_len = skb_headlen(skb);
+	else
+#endif
+	{
+		skb_len = skb->len;
 		txd_info3 |= TX3_QDMA_LS;
+	}
 
 	/* write QDMA TX desc (QDMA_OWN must be cleared last) */
-	cpu_ptr->txd_info1 = (u32)dma_map_single(NULL, skb->data, skb_headlen(skb), DMA_TO_DEVICE);
+	cpu_ptr->txd_info1 = (u32)dma_map_single(NULL, skb->data, skb_len, DMA_TO_DEVICE);
 	cpu_ptr->txd_info2 = VIRT_TO_PHYS(free_txd);
 	cpu_ptr->txd_info4 = txd_info4;
-	cpu_ptr->txd_info3 = txd_info3 | TX3_QDMA_SDL(skb_headlen(skb));
+	cpu_ptr->txd_info3 = txd_info3 | TX3_QDMA_SDL(skb_len);
 
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	for (i = 0; i < nr_frags; i++) {
@@ -425,7 +435,7 @@ dma_xmit_clean(struct net_device *dev, END_DEVICE *ei_local)
 	struct netdev_queue *txq;
 	struct sk_buff *txd_buff;
 	int cpu, clean_done = 0;
-	struct QDMA_txdesc  *cpu_ptr, *dma_ptr, *tmp_ptr;
+	struct QDMA_txdesc *cpu_ptr, *dma_ptr, *htx_ptr;
 	u32 htx_offset = 0;
 #if defined (CONFIG_RAETH_BQL)
 	u32 bytes_sent_ge1 = 0;
@@ -443,8 +453,8 @@ dma_xmit_clean(struct net_device *dev, END_DEVICE *ei_local)
 		clean_done++;
 		
 		/* keep cpu next TXD */
-		tmp_ptr = PHYS_TO_VIRT(cpu_ptr->txd_info2);
-		htx_offset = GET_TXD_OFFSET(ei_local, tmp_ptr);
+		htx_ptr = PHYS_TO_VIRT(cpu_ptr->txd_info2);
+		htx_offset = GET_TXD_OFFSET(ei_local, htx_ptr);
 		txd_buff = ei_local->txd_buff[htx_offset];
 #if defined (CONFIG_RAETH_DEBUG)
 		BUG_ON(!txd_buff);
@@ -473,7 +483,7 @@ dma_xmit_clean(struct net_device *dev, END_DEVICE *ei_local)
 		put_free_txd(ei_local, htx_offset);
 		
 		/* update cpu_ptr to next ptr */
-		cpu_ptr = tmp_ptr;
+		cpu_ptr = htx_ptr;
 	}
 
 	if (clean_done)
@@ -489,12 +499,11 @@ dma_xmit_clean(struct net_device *dev, END_DEVICE *ei_local)
 	if (netif_running(dev)) {
 		txq = netdev_get_tx_queue(dev, 0);
 		__netif_tx_lock(txq, cpu);
+#if defined (CONFIG_RAETH_BQL)
+		netdev_tx_completed_queue(txq, 0, bytes_sent_ge1);
+#endif
 		if (netif_tx_queue_stopped(txq))
 			netif_tx_wake_queue(txq);
-#if defined (CONFIG_RAETH_BQL)
-		if (bytes_sent_ge1)
-			netdev_tx_completed_queue(txq, 0, bytes_sent_ge1);
-#endif
 		__netif_tx_unlock(txq);
 	}
 
@@ -502,12 +511,11 @@ dma_xmit_clean(struct net_device *dev, END_DEVICE *ei_local)
 	if (netif_running(ei_local->PseudoDev)) {
 		txq = netdev_get_tx_queue(ei_local->PseudoDev, 0);
 		__netif_tx_lock(txq, cpu);
+#if defined (CONFIG_RAETH_BQL)
+		netdev_tx_completed_queue(txq, 0, bytes_sent_ge2);
+#endif
 		if (netif_tx_queue_stopped(txq))
 			netif_tx_wake_queue(txq);
-#if defined (CONFIG_RAETH_BQL)
-		if (bytes_sent_ge2)
-			netdev_tx_completed_queue(txq, 0, bytes_sent_ge2);
-#endif
 		__netif_tx_unlock(txq);
 	}
 #endif

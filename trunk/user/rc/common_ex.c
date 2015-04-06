@@ -640,67 +640,80 @@ irq_affinity_set(int irq_num, int cpu)
 static void
 rps_queue_set(const char *ifname, int cpu_mask)
 {
-	char proc_path[64];
+	char proc_path[64], cmx[4];
 
 	snprintf(proc_path, sizeof(proc_path), "/sys/class/net/%s/queues/rx-%d/rps_cpus", ifname, 0);
-	fput_int(proc_path, cpu_mask);
+	snprintf(cmx, sizeof(cmx), "%x", cpu_mask);
+	fput_string(proc_path, cmx);
 }
 
 static void
 xps_queue_set(const char *ifname, int cpu_mask)
 {
-	char proc_path[64];
+	char proc_path[64], cmx[4];
 
 	snprintf(proc_path, sizeof(proc_path), "/sys/class/net/%s/queues/tx-%d/xps_cpus", ifname, 0);
-	fput_int(proc_path, cpu_mask);
+	snprintf(cmx, sizeof(cmx), "%x", cpu_mask);
+	fput_string(proc_path, cmx);
 }
 
 void
-set_cpu_affinity(void)
+set_cpu_affinity(int is_ap_mode)
 {
 	/* set initial IRQ affinity and RPS/XPS balancing */
 	int ncpu = sysconf(_SC_NPROCESSORS_ONLN);
 
 	if (ncpu == 4) {
 		irq_affinity_set( 3, 2);	/* GMAC  -> CPU:0, VPE:1 */
-		irq_affinity_set( 4, 4);	/* PCIe0 -> CPU:1, VPE:0 */
-		irq_affinity_set(24, 8);	/* PCIe1 -> CPU:1, VPE:1 */
+		irq_affinity_set( 4, 4);	/* PCIe0 -> CPU:1, VPE:0 (usually rai0) */
+		irq_affinity_set(24, 8);	/* PCIe1 -> CPU:1, VPE:1 (usually ra0) */
 		irq_affinity_set(25, 1);	/* PCIe2 -> CPU:0, VPE:0 */
 		irq_affinity_set(20, 4);	/* SDXC  -> CPU:1, VPE:0 */
 		irq_affinity_set(22, 8);	/* xHCI  -> CPU:1, VPE:1 */
 		
-		rps_queue_set("ra0", 0x2);
-		xps_queue_set("ra0", 0x2);
-		
-		rps_queue_set("rai0", 0x8);
-		xps_queue_set("rai0", 0x8);
-		
-		rps_queue_set("eth2", 0x1);
-		xps_queue_set("eth2", 0x1);
-		
-		rps_queue_set("eth3", 0x4);
-		xps_queue_set("eth3", 0x4);
+		rps_queue_set(IFNAME_2G_MAIN, 0x8);	/* CPU:1, VPE:1 */
+		xps_queue_set(IFNAME_2G_MAIN, 0x8);	/* CPU:1, VPE:1 */
+#if BOARD_HAS_5G_RADIO
+		rps_queue_set(IFNAME_5G_MAIN, 0x4);	/* CPU:1, VPE:0 */
+		xps_queue_set(IFNAME_5G_MAIN, 0x4);	/* CPU:1, VPE:0 */
+#endif
+		if (is_ap_mode) {
+			rps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
+			xps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
+		} else {
+			rps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 */
+			xps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 */
+			rps_queue_set(IFNAME_WAN, 0x4);	/* CPU:1, VPE:0 */
+			xps_queue_set(IFNAME_WAN, 0x4);	/* CPU:1, VPE:0 */
+		}
 		
 	} else if (ncpu == 2) {
 		irq_affinity_set( 3, 1);	/* GMAC  -> CPU:0, VPE:0 */
-		irq_affinity_set( 4, 2);	/* PCIe0 -> CPU:0, VPE:1 */
-		irq_affinity_set(24, 2);	/* PCIe1 -> CPU:0, VPE:1 */
+		irq_affinity_set( 4, 2);	/* PCIe0 -> CPU:0, VPE:1 (usually rai0) */
+		irq_affinity_set(24, 2);	/* PCIe1 -> CPU:0, VPE:1 (usually ra0) */
 		irq_affinity_set(25, 1);	/* PCIe2 -> CPU:0, VPE:0 */
 		irq_affinity_set(20, 2);	/* SDXC  -> CPU:0, VPE:1 */
 		irq_affinity_set(22, 2);	/* xHCI  -> CPU:0, VPE:1 */
 		
-		rps_queue_set("rai0", 0x1);
-		xps_queue_set("rai0", 0x1);
-		
-		rps_queue_set("eth2", 0x1);
-		xps_queue_set("eth2", 0x1);
-		
-		rps_queue_set("eth3", 0x2);
-		xps_queue_set("eth3", 0x2);
+		rps_queue_set(IFNAME_2G_MAIN, 0x2);	/* CPU:0, VPE:1 */
+		xps_queue_set(IFNAME_2G_MAIN, 0x2);	/* CPU:0, VPE:1 */
+#if BOARD_HAS_5G_RADIO
+		rps_queue_set(IFNAME_5G_MAIN, 0x2);	/* CPU:0, VPE:1 */
+		xps_queue_set(IFNAME_5G_MAIN, 0x2);	/* CPU:0, VPE:1 */
+#endif
+		if (is_ap_mode) {
+			rps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
+			xps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
+		} else {
+			rps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 */
+			xps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 */
+			rps_queue_set(IFNAME_WAN, 0x2);	/* CPU:0, VPE:1 */
+			xps_queue_set(IFNAME_WAN, 0x2);	/* CPU:0, VPE:1 */
+		}
 	}
 }
 #else
-inline void set_cpu_affinity(void) {}
+inline void set_cpu_affinity(int is_ap_mode) {}
 #endif
 
 #if defined (USE_NAND_FLASH)

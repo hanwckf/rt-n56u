@@ -638,22 +638,23 @@ init_router(void)
 	recreate_passwd_unix(1);
 
 	set_timezone();
-	set_cpu_affinity();
 	set_pagecache_reclaim();
 
 	storage_load_time();
 
-	is_ap_mode = get_ap_mode();
-
 	log_remote = nvram_invmatch("log_ipaddr", "");
 	if (!log_remote)
 		start_logger(1);
+
+	is_ap_mode = get_ap_mode();
 
 	init_loopback();
 	init_bridge(is_ap_mode);
 #if defined (USE_IPV6)
 	init_ipv6();
 #endif
+	set_cpu_affinity(is_ap_mode);
+
 	start_detect_link();
 	start_detect_internet(0);
 	start_lan(is_ap_mode, 0);

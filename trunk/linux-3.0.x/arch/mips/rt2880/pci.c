@@ -336,7 +336,7 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 			pci_irq = SURFBOARDINT_PCIE2;
 			break;
 		default:
-			pci_irq = SURFBOARDINT_PCIE0;
+			pci_irq = SURFBOARDINT_PCIE1;
 		}
 	} else if ((dev->bus->number == 2) && (slot == 0x1)) {
 		switch (pcie_link_status) {
@@ -345,7 +345,7 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 			pci_irq = SURFBOARDINT_PCIE2;
 			break;
 		default:
-			pci_irq = SURFBOARDINT_PCIE0;
+			pci_irq = SURFBOARDINT_PCIE1;
 		}
 	} else if ((dev->bus->number == 3) && (slot == 0x0)) {
 		pci_irq = SURFBOARDINT_PCIE2;

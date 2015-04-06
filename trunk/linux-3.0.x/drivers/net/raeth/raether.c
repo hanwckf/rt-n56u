@@ -248,11 +248,18 @@ fe_reset(void)
 		sysRegWrite(REG_CLK_CFG_0, val_clk);
 		udelay(1000);
 	}
-	val &= ~(RALINK_ETH_RST);
 #endif
 
 #if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628) || defined (CONFIG_RALINK_MT7620)
 	val &= ~(RALINK_ESW_RST);
+#endif
+
+#if defined (CONFIG_RALINK_MT7620)
+	val &= ~(RALINK_EPHY_RST);
+#endif
+
+#if defined (CONFIG_RALINK_MT7621)
+	val &= ~(RALINK_ETH_RST | RALINK_HSDMA_RST);
 #endif
 
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
@@ -261,7 +268,7 @@ fe_reset(void)
 
 	val &= ~(RALINK_FE_RST);
 	sysRegWrite(REG_RSTCTRL, val);
-	udelay(100);
+	udelay(1000);
 }
 
 static void

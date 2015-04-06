@@ -948,12 +948,6 @@ ei_interrupt(int irq, void *dev_id)
 #endif
 		/* enter to NAPI poll mode */
 		__napi_schedule(&ei_local->napi);
-	} else {
-		/* ack all interrupts (prevent race with poll) */
-		sysRegWrite(FE_INT_STATUS, FE_INT_INIT_VALUE);
-#if defined (CONFIG_RAETH_QDMA)
-		sysRegWrite(QFE_INT_STATUS, QFE_INT_INIT_VALUE);
-#endif
 	}
 #else
 	reg_int_val  = sysRegRead(FE_INT_STATUS);

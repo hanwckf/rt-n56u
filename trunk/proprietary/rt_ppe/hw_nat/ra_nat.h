@@ -159,7 +159,7 @@ typedef struct {
 #endif
 
 /*
- *    2bytes	    4bytes 
+ *    2bytes	    4bytes
  * +-----------+-------------------+
  * | Magic Tag | RX/TX Desc info4  |
  * +-----------+-------------------+
@@ -169,6 +169,7 @@ typedef struct {
 #define FOE_MAGIC_EXTIF		    0x7274
 #define FOE_MAGIC_GE		    0x7275
 #define FOE_MAGIC_PPE		    0x7276
+#define FOE_MAGIC_PPE_DWORD	    0x3fff7276UL	/* HNAT_V1: FVLD=0, HNAT_V2: FOE_Entry=0x3fff */
 
 /* choose one of them to keep HNAT related information in somewhere. */
 #define HNAT_USE_HEADROOM
@@ -231,7 +232,10 @@ typedef struct {
 #endif
 
 // fast fill FoE desc field
-#define DO_FILL_FOE_DESC(skb,desc)  (*(uint32_t *)(FOE_INFO_START_ADDR(skb)+2) = (uint32_t)desc)
+#define DO_FILL_FOE_DESC(skb,desc)  (*(uint32_t *)(FOE_INFO_START_ADDR(skb)+2) = (uint32_t)(desc))
+
+// fast fill FoE desc to DPORT PPE (magic_tag,entry_num)
+#define DO_FILL_FOE_DPORT_PPE(skb)  (*(uint32_t *)(FOE_INFO_START_ADDR(skb)) = FOE_MAGIC_PPE_DWORD)
 
 // fast clear FoE Info (magic_tag,entry_num)
 #define DO_FAST_CLEAR_FOE(skb)	    (*(uint32_t *)(FOE_INFO_START_ADDR(skb)) = 0UL)
@@ -241,8 +245,7 @@ typedef struct {
 
 #define IS_MAGIC_TAG_VALID(skb)	    ((FOE_MAGIC_TAG(skb) == FOE_MAGIC_GE))
 
-#define IS_DPORT_PPE_VALID(skb)	    ((FOE_MAGIC_TAG(skb) == FOE_MAGIC_PPE) && \
-				     (FOE_ENTRY_NUM(skb) == 0))
+#define IS_DPORT_PPE_VALID(skb)	    (*(uint32_t *)(FOE_INFO_START_ADDR(skb)) == FOE_MAGIC_PPE_DWORD)
 
 #define FOE_ALG_MARK(skb)	    if (IS_SPACE_AVAILABLED(skb) && !FOE_ALG(skb) && IS_MAGIC_TAG_VALID(skb)) FOE_ALG(skb)=1
 #define FOE_AI_UNHIT(skb)	    if (IS_SPACE_AVAILABLED(skb)) FOE_AI(skb)=UN_HIT

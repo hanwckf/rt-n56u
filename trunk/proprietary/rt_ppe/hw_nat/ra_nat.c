@@ -402,8 +402,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	}
 
 	/* redirect to PPE via GMAC1 (check FOE_MAGIC_PPE in raeth) */
-	FOE_MAGIC_TAG(skb) = FOE_MAGIC_PPE;
-	DO_FILL_FOE_DESC(skb, 0);
+	DO_FILL_FOE_DPORT_PPE(skb);
 	skb->dev = DstPort[DP_GMAC1];
 	dev_queue_xmit(skb);
 

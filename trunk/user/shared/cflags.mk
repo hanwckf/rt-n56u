@@ -49,6 +49,22 @@ endif
 endif
 endif
 
+ifdef CONFIG_RT_FIRST_IF_RANGE_2GHZ
+CFLAGS += -DUSE_WID_2G=$(CONFIG_RT_FIRST_CARD)
+else
+ifdef CONFIG_RT_SECOND_IF_RANGE_2GHZ
+CFLAGS += -DUSE_WID_2G=$(CONFIG_RT_SECOND_CARD)
+endif
+endif
+
+ifdef CONFIG_RT_FIRST_IF_RANGE_5GHZ
+CFLAGS += -DUSE_WID_5G=$(CONFIG_RT_FIRST_CARD)
+else
+ifdef CONFIG_RT_SECOND_IF_RANGE_5GHZ
+CFLAGS += -DUSE_WID_5G=$(CONFIG_RT_SECOND_CARD)
+endif
+endif
+
 ##################################################################
 # Project .config related params
 ##################################################################

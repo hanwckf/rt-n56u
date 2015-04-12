@@ -526,7 +526,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	FILE *fp;
 	char *p_str, *dat_file, *sku_file, *regspec, *prefix;
 	char macbuf[36], list[2048], sku_link[64];
-	int i, i_num,  i_val, i_wmm;
+	int i, i_num,  i_val, i_wmm, i_ldpc;
 	int i_mode_x, i_gmode, i_auth, i_encr, i_wep, i_wds;
 	int i_ssid_num, i_channel, i_channel_max, i_HTBW_MAX, i_VHTBW_MAX;
 	int i_stream_tx, i_stream_rx, i_mphy, i_mmcs, i_fix, i_mcs;
@@ -1279,7 +1279,9 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	fprintf(fp, "HT_DisallowTKIP=%d\n", 0);
 
 	//HT_LDPC
-	fprintf(fp, "HT_LDPC=%d\n", 1);
+	i_ldpc = nvram_wlan_get_int(prefix, "ldpc");
+	i_val = (i_ldpc == 1 || i_ldpc == 3) ? 1 : 0;
+	fprintf(fp, "HT_LDPC=%d\n", i_val);
 
 #if BOARD_HAS_5G_11AC
 	if (is_aband) {
@@ -1299,13 +1301,11 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		fprintf(fp, "VHT_BW_SIGNAL=%d\n", 0);
 		
 		//VHT_DisallowNonVHT
-		i_val = nvram_wlan_get_int(prefix, "VHT_Only");
-		if (i_val) i_val = 1;
-		if (i_gmode != 3 && i_gmode != 4) i_val = 0;
-		fprintf(fp, "VHT_DisallowNonVHT=%d\n", i_val);
+		fprintf(fp, "VHT_DisallowNonVHT=%d\n", 0);
 		
 		//VHT_LDPC
-		fprintf(fp, "VHT_LDPC=%d\n", 1);
+		i_val = (i_ldpc == 2 || i_ldpc == 3) ? 1 : 0;
+		fprintf(fp, "VHT_LDPC=%d\n", i_val);
 	}
 #endif
 

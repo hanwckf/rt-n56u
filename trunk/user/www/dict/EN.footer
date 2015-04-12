@@ -73,6 +73,7 @@ WIFIRegionCode=Region Code:
 WIFIStreamTX=HT Spatial Streams TX:
 WIFIStreamRX=HT Spatial Streams RX:
 WIFIGreenAP=Enable Energy Saving Green AP?
+WIFILDPC=Enable LDPC Code Support?
 WIFIRDG=Enable Reverse Direction Grant (RDG)?
 WIFIAutoBA=Enable Auto Block Acknowledgment (AutoBA)?
 WIFIGuestEnable=Enable Guest AP?

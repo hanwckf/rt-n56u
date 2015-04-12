@@ -196,7 +196,6 @@ struct nvram_pair router_defaults[] = {
 #else
 	{ "wl_HT_BW", "1" },
 #endif
-	{ "wl_VHT_Only", "0" },
 	{ "wl_txbf", "0" },
 	{ "wl_ssid2",  DEF_WLAN_5G_SSID },
 	{ "wl_mode_x", "0" },
@@ -215,6 +214,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_stream_rx", STR(BOARD_NUM_ANT_5G_RX) },
 	{ "wl_preamble", "1" },
 	{ "wl_greenap", "0" },
+	{ "wl_ldpc", "2" },
 	{ "wl_HT_RDG", "0" },
 	{ "wl_HT_AMSDU", "0" },
 	{ "wl_HT_MpduDensity", "5" },
@@ -306,6 +306,7 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_stream_rx", STR(BOARD_NUM_ANT_2G_RX) },
 	{ "rt_preamble", "0" },
 	{ "rt_greenap", "0" },
+	{ "rt_ldpc", "0" },
 	{ "rt_HT_RDG", "0" },
 	{ "rt_HT_AMSDU", "0" },
 	{ "rt_HT_MpduDensity", "5" },

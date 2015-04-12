@@ -45,8 +45,13 @@ function initial(){
 		$("col_goto5").width = "33%";
 	}
 
-	if (support_2g_stream_tx()<2)
+	if (support_2g_ldpc())
+		showhide_div("row_ldpc", 1);
+
+	if (support_2g_stream_tx()<2) {
 		document.form.rt_stream_tx.remove(1);
+		showhide_div("row_greenap", 0);
+	}
 
 	if (support_2g_stream_rx()<2)
 		document.form.rt_stream_rx.remove(1);
@@ -60,24 +65,15 @@ function initial(){
 }
 
 function change_wmm() {
-	var gmode = document.form.rt_gmode.value;
+	var gm = document.form.rt_gmode.value;
 	if (document.form.rt_wme.value == "0") {
-		$("row_wme_no_ack").style.display = "none";
-		$("row_apsd_cap").style.display = "none";
-	}
-	else {
-		if (gmode == "5" || gmode == "3" || gmode == "2") { // G/N, N, B/G/N
-			$("row_wme_no_ack").style.display = "none";
-		} else {
-			$("row_wme_no_ack").style.display = "";
-		}
-		$("row_apsd_cap").style.display = "";
-	}
-	if(gmode == "3") { // N only
-		$("row_greenfield").style.display = "";
+		showhide_div("row_wme_no_ack", 0);
+		showhide_div("row_apsd_cap", 0);
 	}else{
-		$("row_greenfield").style.display = "none";
+		showhide_div("row_wme_no_ack", (gm == "5" || gm == "3" || gm == "2")?0:1);
+		showhide_div("row_apsd_cap", 1);
 	}
+	showhide_div("row_greenfield", (gm == "3")?1:0);
 }
 
 function applyRule(){
@@ -180,7 +176,7 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_greenap">
                                             <th><#WIFIGreenAP#></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -272,6 +268,15 @@ function done_validating(action){
                                                     <option value="5" <% nvram_match_x("", "rt_mrate", "5", "selected"); %>>OFDM 12 Mbps</option>
                                                     <option value="6" <% nvram_match_x("", "rt_mrate", "6", "selected"); %>>HTMIX 15 Mbps</option>
                                                     <option value="7" <% nvram_match_x("", "rt_mrate", "7", "selected"); %>>HTMIX 30 Mbps</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_ldpc" style="display:none">
+                                            <th><#WIFILDPC#></th>
+                                            <td>
+                                                <select name="rt_ldpc" class="input">
+                                                    <option value="0" <% nvram_match_x("","rt_ldpc", "0","selected"); %>><#btn_Disable#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("","rt_ldpc", "1","selected"); %>>11n only</option>
                                                 </select>
                                             </td>
                                         </tr>

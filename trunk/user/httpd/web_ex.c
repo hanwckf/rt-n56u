@@ -2240,11 +2240,26 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 	int has_inic_mii = 0;
 #endif
 #if defined(USE_RTL8367)
-	int use_switch_type = 0; // Realtek RTL8367
+	int has_switch_type = 0; // Realtek RTL8367
 #elif defined(USE_MTK_ESW)
-	int use_switch_type = 1; // Mediatek MT7620 Embedded ESW
+	int has_switch_type = 1; // Mediatek MT7620 Embedded ESW
 #elif defined(USE_MTK_GSW)
-	int use_switch_type = 2; // Mediatek MT7621 Internal GSW (or MT7530)
+	int has_switch_type = 2; // Mediatek MT7621 Internal GSW (or MT7530)
+#endif
+#if defined(USE_WID_2G) && (USE_WID_2G==7602 || USE_WID_2G==7612)
+	int has_2g_ldpc = 1;
+#else
+	int has_2g_ldpc = 0;
+#endif
+#if defined(USE_WID_5G) && (USE_WID_5G==7612)
+	int has_5g_ldpc = 1;
+#else
+	int has_5g_ldpc = 0;
+#endif
+#if defined(USE_WID_5G) && (USE_WID_5G==7610 || USE_WID_5G==7612) && BOARD_HAS_5G_11AC
+	int has_5g_vht = 1;
+#else
+	int has_5g_vht = 0;
 #endif
 
 	websWrite(wp,
@@ -2295,6 +2310,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_2g_inic_mii() { return %d;}\n"
 		"function support_5g_radio() { return %d;}\n"
 		"function support_5g_11ac() { return %d;}\n"
+		"function support_5g_ldpc() { return %d;}\n"
+		"function support_2g_ldpc() { return %d;}\n"
 		"function support_5g_stream_tx() { return %d;}\n"
 		"function support_5g_stream_rx() { return %d;}\n"
 		"function support_2g_stream_tx() { return %d;}\n"
@@ -2309,12 +2326,14 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		has_mtd_rwfs,
 		has_usb,
 		has_usb3,
-		use_switch_type,
+		has_switch_type,
 		BOARD_NUM_ETH_EPHY,
 		BOARD_HAS_EPHY_W1000,
 		has_inic_mii,
 		BOARD_HAS_5G_RADIO,
-		BOARD_HAS_5G_11AC,
+		has_5g_vht,
+		has_5g_ldpc,
+		has_2g_ldpc,
 		BOARD_NUM_ANT_5G_TX,
 		BOARD_NUM_ANT_5G_RX,
 		BOARD_NUM_ANT_2G_TX,

@@ -34,7 +34,6 @@ $j(document).ready(function() {
 <script>
 
 function initial(){
-
 	show_banner(1);
 	show_menu(5,2,6);
 	show_footer();
@@ -50,10 +49,15 @@ function initial(){
 		o2.options[2].text = "3R (1300Mbps)";
 	}
 
+	if (support_5g_ldpc())
+		showhide_div("row_ldpc", 1);
+
 	if (support_5g_stream_tx()<3)
 		document.form.wl_stream_tx.remove(2);
-	if (support_5g_stream_tx()<2)
+	if (support_5g_stream_tx()<2) {
 		document.form.wl_stream_tx.remove(1);
+		showhide_div("row_greenap", 0);
+	}
 
 	if (support_5g_stream_rx()<3)
 		document.form.wl_stream_rx.remove(2);
@@ -66,23 +70,15 @@ function initial(){
 }
 
 function change_wmm() {
-	var gmode = document.form.wl_gmode.value;
+	var gm = document.form.wl_gmode.value;
 	if (document.form.wl_wme.value == "0") {
-		$("row_wme_no_ack").style.display = "none";
-		$("row_apsd_cap").style.display = "none";
+		showhide_div("row_wme_no_ack", 0);
+		showhide_div("row_apsd_cap", 0);
 	}else{
-		if (gmode != "0") { // != A only
-			$("row_wme_no_ack").style.display = "none";
-		} else {
-			$("row_wme_no_ack").style.display = "";
-		}
-		$("row_apsd_cap").style.display = "";
+		showhide_div("row_wme_no_ack", (gm != "0")?0:1);
+		showhide_div("row_apsd_cap", 1);
 	}
-	if(gmode == "1" || gmode == "3") { // N, N/AC
-		$("row_greenfield").style.display = "";
-	}else{
-		$("row_greenfield").style.display = "none";
-	}
+	showhide_div("row_greenfield", (gm == "1" || gm == "3")?1:0);
 }
 
 function applyRule(){
@@ -186,7 +182,7 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_greenap">
                                             <th><#WIFIGreenAP#></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -266,6 +262,17 @@ function done_validating(action){
                                             <td>
                                                 <input type="text" maxlength="4" size="5" name="wl_bcn" class="input" value="<% nvram_get_x("", "wl_bcn"); %>" onKeyPress="return is_number(this)" onBlur="validate_range(this, 20, 1000)">
                                                 &nbsp;<span style="color:#888;">[20..1000]</span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_ldpc" style="display:none">
+                                            <th><#WIFILDPC#></th>
+                                            <td>
+                                                <select name="wl_ldpc" class="input">
+                                                    <option value="0" <% nvram_match_x("","wl_ldpc", "0","selected"); %>><#btn_Disable#></option>
+                                                    <option value="1" <% nvram_match_x("","wl_ldpc", "1","selected"); %>>11n only</option>
+                                                    <option value="2" <% nvram_match_x("","wl_ldpc", "2","selected"); %>>11ac only (*)</option>
+                                                    <option value="3" <% nvram_match_x("","wl_ldpc", "3","selected"); %>>11n & 11ac</option>
+                                                </select>
                                             </td>
                                         </tr>
                                         <tr>

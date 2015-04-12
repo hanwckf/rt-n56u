@@ -87,6 +87,7 @@ WIFIRegionCode=Код региона:
 WIFIStreamTX=Число потоков передачи данных (TX):
 WIFIStreamRX=Число потоков приема данных (RX):
 WIFIGreenAP=Включить энергосбережение Green AP?
+WIFILDPC=Включить поддержку LDPC кодирования?
 WIFIRDG=Включить Reverse Direction Grant (RDG)?
 WIFIAutoBA=Включить Auto Block Acknowledgment (AutoBA)?
 WIFIGuestEnable=Включить гостевую точку доступа?

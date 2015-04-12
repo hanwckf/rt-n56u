@@ -30,7 +30,7 @@
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 
-#include <linux/ralink_gpio.h>
+#include <ralink/ralink_gpio.h>
 
 #include "ralink-flash.h"
 #include "ralink-flash-map.h"

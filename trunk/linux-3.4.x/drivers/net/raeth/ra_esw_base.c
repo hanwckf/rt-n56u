@@ -8,8 +8,6 @@
 #include <linux/string.h>
 #include <linux/interrupt.h>
 
-#include <linux/ralink_gpio.h>
-
 #include "ra_ethreg.h"
 #include "mii_mgr.h"
 #include "ra_esw_reg.h"

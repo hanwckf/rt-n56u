@@ -5,8 +5,6 @@
 #include <linux/slab.h>
 #include <linux/string.h>
 
-#include <linux/ralink_gpio.h>
-
 #include "ra_ethreg.h"
 #include "mii_mgr.h"
 #include "ra_esw_mt7621.h"

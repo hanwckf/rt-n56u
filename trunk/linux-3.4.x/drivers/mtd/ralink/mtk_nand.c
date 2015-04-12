@@ -18,7 +18,7 @@
 #include <asm/rt2880/rt_mmap.h>
 #include <asm/rt2880/surfboardint.h>
 
-#include <linux/mtd/mtk_nand_dev.h>
+#include <ralink/mtk_nand_dev.h>
 
 #include "mtk_nand_def.h"
 #include "mtk_nand.h"

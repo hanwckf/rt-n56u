@@ -22,7 +22,7 @@
 #include <linux/delay.h>
 #include <linux/spinlock.h>
 
-#include <linux/ralink_gpio.h>
+#include <ralink/ralink_gpio.h>
 
 #include "ralink_gpp.h"
 

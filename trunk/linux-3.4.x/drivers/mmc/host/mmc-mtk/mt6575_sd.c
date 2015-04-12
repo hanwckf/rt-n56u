@@ -62,7 +62,7 @@
 
 #include <asm/rt2880/rt_mmap.h>
 
-#include <linux/mmc/mmc_mtk.h>
+#include <ralink/mtk_mmc_dev.h>
 
 #include "mt6575_sd.h"
 #include "dbg.h"

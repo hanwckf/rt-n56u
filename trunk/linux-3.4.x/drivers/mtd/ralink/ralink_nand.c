@@ -15,7 +15,7 @@
 #include <linux/random.h>
 #endif
 
-#include <linux/ralink_gpio.h>
+#include <ralink/ralink_gpio.h>
 
 #include "ralink-flash.h"
 #include "ralink_nand.h"

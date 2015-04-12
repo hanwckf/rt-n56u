@@ -5,8 +5,6 @@
 #include <linux/delay.h>
 #include <linux/sched.h>
 
-#include <linux/ralink_gpio.h>
-
 #include "ra_ethreg.h"
 #include "mii_mgr.h"
 

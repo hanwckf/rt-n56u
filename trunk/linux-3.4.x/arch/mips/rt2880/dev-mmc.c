@@ -5,10 +5,10 @@
 #include <linux/err.h>
 #include <linux/platform_device.h>
 
-#include <linux/mmc/mmc_mtk.h>
-
 #include <asm/rt2880/surfboardint.h>
 #include <asm/rt2880/rt_mmap.h>
+
+#include <ralink/mtk_mmc_dev.h>
 
 #define MTK_SDXC_MEM_START	RALINK_MSDC_BASE
 

@@ -194,6 +194,7 @@ config  RT_SECOND_IF_RF_OFFSET
 config  RT_SECOND_CARD
 	int
 	default 0    if RT_SECOND_IF_NONE
+	default 3352 if RT_SECOND_IF_RT3352_INIC
 	default 3090 if RT_SECOND_IF_RT3090
 	default 5392 if RT_SECOND_IF_RT5392
 	default 5592 if RT_SECOND_IF_RT5592

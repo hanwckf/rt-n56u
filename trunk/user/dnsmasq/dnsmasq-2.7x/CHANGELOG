@@ -2,6 +2,9 @@ version 2.72+
             Fix crash at startup when an empty suffix is supplied to
 	    --conf-dir, also trivial memory leak. Thanks to 
 	    Tomas Hozza for spotting this.
+
+	    Fix crash on receipt of certain malformed DNS requests. Thanks
+	    to Nick Sampanis for spotting the problem.
 	
 
 version 2.72

@@ -81,8 +81,7 @@
 /*-------------------------------------------------------------------------*/
 
 #ifdef CONFIG_RALINK_GPIO_LED_USB
-#include <linux/ralink_gpio.h>
-extern int ralink_gpio_led_blink(int led_gpio);
+#include <ralink/ralink_gpio.h>
 
 static int usb_led_gpio = -1;
 module_param(usb_led_gpio, int, S_IRUGO|S_IWUSR);

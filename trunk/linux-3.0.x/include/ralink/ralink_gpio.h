@@ -38,9 +38,9 @@
 #include <asm/rt2880/rt_mmap.h>
 #endif
 
-#define NAME				"ralink_gpio"
+#define RALINK_GPIO_NAME		"ralink_gpio"
 #define RALINK_GPIO_DEVNAME		"gpio"
-#define GPIO_DEV			"/dev/gpio"	//userlevel devname
+#define RALINK_GPIO_DEVPATH		"/dev/gpio"	//userlevel devname
 
 /*
  * ioctl commands
@@ -52,11 +52,9 @@
 #define IOCTL_GPIO_WRITE		0x03
 
 #define IOCTL_GPIO_IRQ_SET		0x10
-#define IOCTL_GPIO_IRQ_INT_ENABLED	0x11
-
 #define IOCTL_GPIO_LED_SET		0x20
-#define IOCTL_GPIO_LED_TIMER_ENABLED	0x21
-
+#define IOCTL_GPIO_LED_ENABLED		0x21
+#define IOCTL_GPIO_LED_BLINK		0x22
 
 #if defined (CONFIG_RALINK_RT3052)
 #define RALINK_GPIO_HAS_5124		1
@@ -66,19 +64,19 @@
 #define RALINK_GPIO_HAS_4524		1
 #elif defined (CONFIG_RALINK_MT7620)
 #define RALINK_GPIO_HAS_7224		1
-#elif defined (CONFIG_RALINK_MT7621)
+#elif defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 #define RALINK_GPIO_HAS_9532		1
-#elif defined (CONFIG_RALINK_MT7628)
-#define RALINK_GPIO_HAS_3232		1 // To do
 #elif defined (CONFIG_RALINK_RT5350)
 #define RALINK_GPIO_HAS_2722		1
 #endif
 
-#if !defined (CONFIG_RALINK_RT5350)
-#define RALINK_GPIO_LED_LOW_ACT		1
+#if defined (CONFIG_RALINK_RT5350)
+#define RALINK_GPIO_LED_SHOW_VAL	1
+#else
+#define RALINK_GPIO_LED_SHOW_VAL	0
 #endif
 
-#define RALINK_GPIO_LED_INFINITY	4000
+#define RALINK_GPIO_LED_INFINITY	255
 
 /*
  * Address of RALINK_ Registers
@@ -392,9 +390,13 @@
 #elif defined (RALINK_GPIO_HAS_9524)
 #define RALINK_GPIO_NUMBER		96
 #elif defined (RALINK_GPIO_HAS_9532)
+#if defined (CONFIG_RALINK_MT7621)
+#define RALINK_GPIO_NUMBER		64	/* MT7621A/S=49 pins, MT7621N=61 pins */
+#elif defined (CONFIG_RALINK_MT7628)
+#define RALINK_GPIO_NUMBER		73	/* todo */
+#else
 #define RALINK_GPIO_NUMBER		96
-#elif defined (RALINK_GPIO_HAS_3232)
-#define RALINK_GPIO_NUMBER		32
+#endif
 #else
 #define RALINK_GPIO_NUMBER		24
 #endif
@@ -402,25 +404,24 @@
 #define RALINK_GPIO_DIR_IN		0
 #define RALINK_GPIO_DIR_OUT		1
 
-#define RALINK_GPIO(x)			(1u << x)
+#define RALINK_GPIO(x)			(1u << (x))
 
 /*
  * structure used at regsitration
  */
 typedef struct {
-	unsigned int gpio: 30;		// request irq gpio number
-	unsigned int rise: 1;		// notify rising edge
-	unsigned int fall: 1;		// notify falling edge
 	pid_t pid;			// process id to notify
+	unsigned char rise;		// notify rising edge
+	unsigned char fall;		// notify falling edge
 } ralink_gpio_irq_info;
 
 typedef struct {
-	int gpio;			// gpio number
-	unsigned int on;		// interval of led on
-	unsigned int off;		// interval of led off
-	unsigned int blinks;		// number of blinking cycles
-	unsigned int rests;		// number of break cycles
-	unsigned int times;		// blinking times
+	unsigned char invert;		// invert led (blink=on->off->on)
+	unsigned char on;		// interval of led on
+	unsigned char off;		// interval of led off
+	unsigned char blinks;		// number of blinking cycles
+	unsigned char rests;		// number of break cycles
+	unsigned char times;		// blinking times
 } ralink_gpio_led_info;
 
 #ifdef __KERNEL__
@@ -431,6 +432,11 @@ extern void ralink_gpio_mode_set_bit(u32 idx, u32 value);
 extern u32  ralink_gpio_mode_get_bit(u32 idx);
 extern void ralink_gpio_mode_set(u32 value);
 extern u32  ralink_gpio_mode_get(void);
+#ifdef CONFIG_RALINK_GPIO_LED
+extern int  ralink_gpio_led_set(u32 led_gpio, const ralink_gpio_led_info *led);
+extern int  ralink_gpio_led_enabled(u32 led_gpio, u32 enabled);
+extern int  ralink_gpio_led_blink(u32 led_gpio);
+#endif
 #endif
 
 #endif

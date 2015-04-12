@@ -46,8 +46,8 @@
 #include <linux/delay.h>
 #include <linux/wireless.h>
 
-#include <linux/ralink_gpio.h>
-#include "spi_drv.h"
+#include <ralink/ralink_gpio.h>
+#include <ralink/ralink_spi_drv.h>
 #if defined (CONFIG_MAC_TO_MAC_MODE) || defined (CONFIG_P5_RGMII_TO_MAC_MODE)
 #include "vtss.h"
 #endif

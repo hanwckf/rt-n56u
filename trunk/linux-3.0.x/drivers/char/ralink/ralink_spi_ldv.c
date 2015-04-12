@@ -45,8 +45,8 @@
 #include <asm/system.h>
 #endif
 
-#include <linux/ralink_gpio.h>
-#include "../mtd/ralink/ralink_spi.h"
+#include <ralink/ralink_gpio.h>
+#include "../../mtd/ralink/ralink_spi.h"
 
 #define LDV_DEVNAME	"ldv0"
 int ldv_major = 212;

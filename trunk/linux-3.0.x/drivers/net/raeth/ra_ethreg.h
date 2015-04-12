@@ -2,6 +2,7 @@
 #define __RA_ETHREG_H__
 
 #include <asm/rt2880/rt_mmap.h>
+#include <ralink/ralink_gpio.h>
 
 #define u32				unsigned int
 #define u16				unsigned short

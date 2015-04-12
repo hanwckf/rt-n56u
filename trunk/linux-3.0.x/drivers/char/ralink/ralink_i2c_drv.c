@@ -47,8 +47,8 @@
 #endif
 #include <linux/wireless.h>
 
-#include <linux/ralink_gpio.h>
-#include "i2c_drv.h"
+#include <ralink/ralink_gpio.h>
+#include <ralink/ralink_i2c_drv.h>
 
 #if defined(CONFIG_MTK_NFC_SUPPORT)
   #if defined(CONFIG_RALINK_RT3883)

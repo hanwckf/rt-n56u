@@ -50,9 +50,10 @@
 #include <linux/fs.h>
 #include <asm/uaccess.h>
 #include <asm/addrspace.h>
+
 #include <asm/rt2880/surfboardint.h>
 
-#include "ralink_gdma.h"
+#include <ralink/ralink_gdma.h>
 
 /*
  * RT305x:

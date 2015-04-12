@@ -28,8 +28,6 @@
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
 
-#include <linux/ralink_gpio.h>
-
 #include "ra_ethreg.h"
 #include "mii_mgr.h"
 

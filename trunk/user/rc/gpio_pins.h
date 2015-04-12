@@ -29,9 +29,8 @@ int cpu_gpio_get_pin(int pin, unsigned int *p_value);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int cpu_gpio_led_timer(int timer_on);
-int cpu_gpio_irq_enable(int irq_on);
-int cpu_gpio_irq_set(unsigned int irq_pin, unsigned int rising_edge, unsigned int falling_edge, pid_t pid);
-
+int cpu_gpio_led_set(unsigned int led_pin, int blink_inverted);
+int cpu_gpio_led_enabled(unsigned int led_pin, int enabled);
+int cpu_gpio_irq_set(unsigned int irq_pin, int rising_edge, int falling_edge, pid_t pid);
 
 #endif

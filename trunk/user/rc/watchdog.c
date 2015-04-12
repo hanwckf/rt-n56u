@@ -1184,7 +1184,6 @@ catch_sig_watchdog(int sig)
 #if defined (BOARD_GPIO_BTN_RESET)
 		cpu_gpio_irq_set(BOARD_GPIO_BTN_RESET, 0, 0, 0);
 #endif
-		cpu_gpio_irq_enable(0);
 		wd_alarmtimer(0, 0);
 		exit(0);
 		break;
@@ -1271,7 +1270,6 @@ watchdog_main(int argc, char *argv[])
 #if defined (BOARD_GPIO_BTN_RESET)
 	cpu_gpio_irq_set(BOARD_GPIO_BTN_RESET, 0, 1, pid);
 #endif
-	cpu_gpio_irq_enable(1);
 
 	/* set timer */
 	wd_alarmtimer(WD_NORMAL_PERIOD, 0);

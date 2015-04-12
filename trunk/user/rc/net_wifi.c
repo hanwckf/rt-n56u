@@ -351,6 +351,10 @@ stop_wifi_all_wl(void)
 	// stop AP (guest + main)
 	wif_control(IFNAME_5G_GUEST, 0);
 	wif_control(IFNAME_5G_MAIN, 0);
+
+#if defined (BOARD_GPIO_LED_SW5G)
+	LED_CONTROL(BOARD_GPIO_LED_SW5G, LED_OFF);
+#endif
 #endif
 }
 
@@ -375,6 +379,10 @@ stop_wifi_all_rt(void)
 	// stop AP (guest + main)
 	wif_control(IFNAME_2G_GUEST, 0);
 	wif_control(IFNAME_2G_MAIN, 0);
+
+#if defined (BOARD_GPIO_LED_SW2G)
+	LED_CONTROL(BOARD_GPIO_LED_SW2G, LED_OFF);
+#endif
 }
 
 void 
@@ -407,6 +415,11 @@ start_wifi_ap_wl(int radio_on)
 			brport_set_m2u(IFNAME_5G_GUEST, i_m2u);
 		}
 	}
+
+#if defined (BOARD_GPIO_LED_SW5G)
+	if (radio_on)
+		LED_CONTROL(BOARD_GPIO_LED_SW5G, LED_ON);
+#endif
 #endif
 }
 
@@ -460,6 +473,11 @@ start_wifi_ap_rt(int radio_on)
 			brport_set_m2u(IFNAME_2G_GUEST, i_m2u);
 		}
 	}
+#endif
+
+#if defined (BOARD_GPIO_LED_SW2G)
+	if (radio_on)
+		LED_CONTROL(BOARD_GPIO_LED_SW2G, LED_ON);
 #endif
 }
 

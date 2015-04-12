@@ -2383,7 +2383,7 @@ ej_hardware_pins_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_led_usb = 0;
 #endif
-#if defined (BOARD_GPIO_LED_WIFI)
+#if defined (BOARD_GPIO_LED_WIFI) || defined (BOARD_GPIO_LED_SW2G) || defined (BOARD_GPIO_LED_SW5G)
 	int has_led_wif = 1;
 #else
 	int has_led_wif = 0;

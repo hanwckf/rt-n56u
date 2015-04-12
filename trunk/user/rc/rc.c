@@ -149,11 +149,13 @@ init_gpio_leds_buttons(void)
 #if defined (BOARD_GPIO_LED_SW2G)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_SW2G, 1);
 	cpu_gpio_set_pin(BOARD_GPIO_LED_SW2G, LED_OFF);
+	cpu_gpio_led_set(BOARD_GPIO_LED_SW2G, 1);
 #endif
 	/* hide WiFi 5G soft-led  */
-#if defined (BOARD_GPIO_LED_SW5G)
+#if defined (BOARD_GPIO_LED_SW5G) && (!defined (BOARD_GPIO_LED_SW2G) || (BOARD_GPIO_LED_SW5G != BOARD_GPIO_LED_SW2G))
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_SW5G, 1);
 	cpu_gpio_set_pin(BOARD_GPIO_LED_SW5G, LED_OFF);
+	cpu_gpio_led_set(BOARD_GPIO_LED_SW5G, 1);
 #endif
 	/* hide WAN soft-led  */
 #if defined (BOARD_GPIO_LED_WAN)
@@ -562,6 +564,7 @@ void
 LED_CONTROL(int gpio_led, int flag)
 {
 	int front_led_x = 1;
+	int is_soft_blink = 0;
 
 	switch (gpio_led)
 	{
@@ -582,6 +585,28 @@ LED_CONTROL(int gpio_led, int flag)
 #if defined (BOARD_GPIO_LED_WIFI)
 	case BOARD_GPIO_LED_WIFI:
 		front_led_x = nvram_get_int("front_led_wif");
+		break;
+#endif
+#if defined (BOARD_GPIO_LED_SW2G)
+	case BOARD_GPIO_LED_SW2G:
+		is_soft_blink = 1;
+		front_led_x = nvram_get_int("front_led_wif");
+		if (front_led_x) {
+#if defined (BOARD_GPIO_LED_SW5G) && (BOARD_GPIO_LED_SW5G == BOARD_GPIO_LED_SW2G)
+			flag = (is_radio_on_rt() || is_radio_on_wl()) ? LED_ON : LED_OFF;
+#else
+			flag = (is_radio_on_rt()) ? LED_ON : LED_OFF;
+#endif
+		}
+		break;
+#endif
+#if defined (BOARD_GPIO_LED_SW5G) && (!defined (BOARD_GPIO_LED_SW2G) || (BOARD_GPIO_LED_SW5G != BOARD_GPIO_LED_SW2G))
+	case BOARD_GPIO_LED_SW5G:
+		is_soft_blink = 1;
+		front_led_x = nvram_get_int("front_led_wif");
+		if (front_led_x) {
+			flag = (is_radio_on_wl()) ? LED_ON : LED_OFF;
+		}
 		break;
 #endif
 #if defined (BOARD_GPIO_LED_USB)
@@ -623,10 +648,14 @@ LED_CONTROL(int gpio_led, int flag)
 	if (gpio_led == BOARD_GPIO_LED_WIFI) {
 		cpu_gpio_mode_set_bit(13, (flag == LED_OFF) ? 1 : 0); // change GPIO Mode for WLED
 		cpu_gpio_set_pin(gpio_led, LED_OFF); // always set GPIO to high
-	}
-	else
+	} else
 #endif
+	{
+		if (is_soft_blink)
+			cpu_gpio_led_enabled(gpio_led, (flag == LED_OFF) ? 0 : 1);
+		
 		cpu_gpio_set_pin(gpio_led, flag);
+	}
 }
 
 void 

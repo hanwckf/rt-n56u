@@ -24,30 +24,11 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 
+#include <ralink_gpio.h>
+
 ////////////////////////////////////////////////////////////////////////////////
 // IOCTL
 ////////////////////////////////////////////////////////////////////////////////
-
-#define RALINK_GPIO_DEVPATH		"/dev/gpio"
-
-#define IOCTL_GPIO_CMD_LENGTH_BITS	(8)
-
-#define IOCTL_GPIO_DIR_OUT		0x01
-#define IOCTL_GPIO_READ			0x02
-#define IOCTL_GPIO_WRITE		0x03
-
-#define IOCTL_GPIO_IRQ_SET		0x10
-#define IOCTL_GPIO_IRQ_INT_ENABLED	0x11
-
-#define IOCTL_GPIO_LED_SET		0x20
-#define IOCTL_GPIO_LED_TIMER_ENABLED	0x21
-
-typedef struct {
-	unsigned int gpio: 30;		//request irq pin number
-	unsigned int rise: 1;		//rising edge
-	unsigned int fall: 1;		//falling edge
-	pid_t pid;			//process id to notify
-} ralink_gpio_reg_info;
 
 static int
 ralink_gpio_ioctl(unsigned int cmd, unsigned int par, void *value)
@@ -77,29 +58,37 @@ ralink_gpio_ioctl(unsigned int cmd, unsigned int par, void *value)
 // GPIO LED
 ////////////////////////////////////////////////////////////////////////////////
 
-int cpu_gpio_led_timer(int timer_on)
+int cpu_gpio_led_set(unsigned int led_pin, int blink_inverted)
 {
-	return ralink_gpio_ioctl(IOCTL_GPIO_LED_TIMER_ENABLED, 0, &timer_on);
+	ralink_gpio_led_info gli;
+
+	gli.invert = (blink_inverted) ? 1 : 0;
+	gli.on = 1;
+	gli.off = 1;
+	gli.blinks = 1;
+	gli.rests = 1;
+	gli.times = 1;
+
+	return ralink_gpio_ioctl(IOCTL_GPIO_LED_SET, led_pin, &gli);
+}
+
+int cpu_gpio_led_enabled(unsigned int led_pin, int enabled)
+{
+	return ralink_gpio_ioctl(IOCTL_GPIO_LED_ENABLED, led_pin, &enabled);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // GPIO IRQ
 ////////////////////////////////////////////////////////////////////////////////
 
-int cpu_gpio_irq_enable(int irq_on)
+int cpu_gpio_irq_set(unsigned int irq_pin, int rising_edge, int falling_edge, pid_t pid)
 {
-	return ralink_gpio_ioctl(IOCTL_GPIO_IRQ_INT_ENABLED, 0, &irq_on);
-}
+	ralink_gpio_irq_info gii;
 
-int cpu_gpio_irq_set(unsigned int irq_pin, unsigned int rising_edge, unsigned int falling_edge, pid_t pid)
-{
-	ralink_gpio_reg_info reg;
+	gii.pid = pid;
+	gii.rise = (rising_edge) ? 1 : 0;
+	gii.fall = (falling_edge) ? 1 : 0;
 
-	reg.gpio = irq_pin;
-	reg.rise = rising_edge;
-	reg.fall = falling_edge;
-	reg.pid = pid;
-
-	return ralink_gpio_ioctl(IOCTL_GPIO_IRQ_SET, 0, &reg);
+	return ralink_gpio_ioctl(IOCTL_GPIO_IRQ_SET, irq_pin, &gii);
 }
 

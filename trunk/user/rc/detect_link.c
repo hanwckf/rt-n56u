@@ -309,11 +309,12 @@ dl_update_leds(void)
 		front_led_x = 0;
 	if (front_led_x == 3) {
 		LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
-		cpu_gpio_led_timer(1);
+		cpu_gpio_led_set(BOARD_GPIO_LED_USB, 0);
+		cpu_gpio_led_enabled(BOARD_GPIO_LED_USB, 1);
 		module_param_set_int("usbcore", "usb_led_gpio", BOARD_GPIO_LED_USB);
 	} else {
 		module_param_set_int("usbcore", "usb_led_gpio", -1);
-		cpu_gpio_led_timer(0);
+		cpu_gpio_led_enabled(BOARD_GPIO_LED_USB, 0);
 		LED_CONTROL(BOARD_GPIO_LED_USB, (dl_status_usb) ? LED_ON : LED_OFF);
 	}
 #endif
@@ -325,6 +326,12 @@ dl_update_leds(void)
 #endif
 #if defined (BOARD_GPIO_LED_POWER)
 	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
+#endif
+#if defined (BOARD_GPIO_LED_SW2G)
+	LED_CONTROL(BOARD_GPIO_LED_SW2G, LED_ON);
+#endif
+#if defined (BOARD_GPIO_LED_SW5G) && (!defined (BOARD_GPIO_LED_SW2G) || (BOARD_GPIO_LED_SW5G != BOARD_GPIO_LED_SW2G))
+	LED_CONTROL(BOARD_GPIO_LED_SW5G, LED_ON);
 #endif
 #if defined (BOARD_GPIO_LED_ROUTER)
 	LED_CONTROL(BOARD_GPIO_LED_ROUTER, (dl_is_ap_mode) ? LED_OFF : LED_ON);

@@ -2246,6 +2246,11 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #elif defined(USE_MTK_GSW)
 	int has_switch_type = 2; // Mediatek MT7621 Internal GSW (or MT7530)
 #endif
+#if defined(BOARD_GPIO_BTN_ROUTER) || defined(BOARD_GPIO_BTN_AP)
+	int has_btn_mode = 1;
+#else
+	int has_btn_mode = 0;
+#endif
 #if defined(USE_WID_2G) && (USE_WID_2G==7602 || USE_WID_2G==7612)
 	int has_2g_ldpc = 1;
 #else
@@ -2302,6 +2307,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_min_vlan() { return %d;}\n"
 		"function support_max_conn() { return %d;}\n"
 		"function support_mtd_rwfs() { return %d;}\n"
+		"function support_btn_mode() { return %d;}\n"
 		"function support_usb() { return %d;}\n"
 		"function support_usb3() { return %d;}\n"
 		"function support_switch_type() { return %d;}\n"
@@ -2324,6 +2330,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		min_vlan_ext,
 		max_conn,
 		has_mtd_rwfs,
+		has_btn_mode,
 		has_usb,
 		has_usb3,
 		has_switch_type,

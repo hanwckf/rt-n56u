@@ -148,27 +148,32 @@ init_gpio_leds_buttons(void)
 	/* hide WiFi 2G soft-led  */
 #if defined (BOARD_GPIO_LED_SW2G)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_SW2G, 1);
-	LED_CONTROL(BOARD_GPIO_LED_SW2G, LED_OFF);
+	cpu_gpio_set_pin(BOARD_GPIO_LED_SW2G, LED_OFF);
 #endif
 	/* hide WiFi 5G soft-led  */
 #if defined (BOARD_GPIO_LED_SW5G)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_SW5G, 1);
-	LED_CONTROL(BOARD_GPIO_LED_SW5G, LED_OFF);
+	cpu_gpio_set_pin(BOARD_GPIO_LED_SW5G, LED_OFF);
 #endif
 	/* hide WAN soft-led  */
 #if defined (BOARD_GPIO_LED_WAN)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_WAN, 1);
-	LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
+	cpu_gpio_set_pin(BOARD_GPIO_LED_WAN, LED_OFF);
 #endif
 	/* hide LAN soft-led  */
 #if defined (BOARD_GPIO_LED_LAN)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_LAN, 1);
-	LED_CONTROL(BOARD_GPIO_LED_LAN, LED_OFF);
+	cpu_gpio_set_pin(BOARD_GPIO_LED_LAN, LED_OFF);
 #endif
 	/* hide USB soft-led  */
 #if defined (BOARD_GPIO_LED_USB)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_USB, 1);
-	LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
+	cpu_gpio_set_pin(BOARD_GPIO_LED_USB, LED_OFF);
+#endif
+	/* hide ROUTER soft-led  */
+#if defined (BOARD_GPIO_LED_ROUTER)
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_ROUTER, 1);
+	cpu_gpio_set_pin(BOARD_GPIO_LED_ROUTER, LED_OFF);
 #endif
 	/* enable common led trigger */
 #if defined (BOARD_GPIO_LED_ALL)
@@ -202,6 +207,10 @@ init_gpio_leds_buttons(void)
 	/* init BTN WLTOG  */
 #if defined (BOARD_GPIO_BTN_WLTOG)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_WLTOG, 0);
+#endif
+	/* init BTN ROUTER  */
+#if defined (BOARD_GPIO_BTN_ROUTER)
+	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_ROUTER, 0);
 #endif
 }
 
@@ -291,6 +300,14 @@ nvram_convert_misc_values(void)
 {
 	char buff[64];
 	int sw_mode;
+#if defined (BOARD_GPIO_BTN_ROUTER)
+	int i_router_switch = 0;
+
+	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_ROUTER, &i_router_switch) >= 0) {
+		if (i_router_switch != 0)
+			nvram_set_int("sw_mode", 3);
+	}
+#endif
 
 	/* check router mode */
 	sw_mode = nvram_get_int("sw_mode");
@@ -307,10 +324,16 @@ nvram_convert_misc_values(void)
 		nvram_set_int("wan_nat_x", 0);
 		nvram_set("wan_route_x", "IP_Bridged");
 	} else {
+		sw_mode = 1;
 		nvram_set_int("sw_mode", 1);
 		nvram_set_int("wan_nat_x", 1);
 		nvram_set("wan_route_x", "IP_Routed");
 	}
+
+#if defined (BOARD_GPIO_LED_ROUTER)
+	if (sw_mode != 3)
+		LED_CONTROL(BOARD_GPIO_LED_ROUTER, LED_ON);
+#endif
 
 	if (strlen(nvram_wlan_get("wl", "ssid")) < 1)
 		nvram_wlan_set("wl", "ssid", DEF_WLAN_5G_SSID);
@@ -542,6 +565,10 @@ LED_CONTROL(int gpio_led, int flag)
 
 	switch (gpio_led)
 	{
+#if defined (BOARD_GPIO_LED_ROUTER)
+	case BOARD_GPIO_LED_ROUTER:
+		break;
+#endif
 #if defined (BOARD_GPIO_LED_WAN)
 	case BOARD_GPIO_LED_WAN:
 		front_led_x = nvram_get_int("front_led_wan");
@@ -620,12 +647,12 @@ init_router(void)
 
 	get_eeprom_params();
 
+	init_gpio_leds_buttons();
+
 	nvram_convert_misc_values();
 
 	if (nvram_need_commit)
 		nvram_commit();
-
-	init_gpio_leds_buttons();
 
 	mount_rwfs_partition();
 

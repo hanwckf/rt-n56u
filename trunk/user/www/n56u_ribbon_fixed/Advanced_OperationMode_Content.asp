@@ -32,21 +32,29 @@ function initial(){
 	}
 
 	setScenerion(sw_mode);
+
+	var o1 = document.form.sw_mode;
+	var vd = support_btn_mode();
+	o1[0].disabled = vd;
+	o1[1].disabled = vd;
+	o1[2].disabled = vd;
+	document.form.button.disabled = vd;
 }
 
 function saveMode(){
+	var o1 = document.form.sw_mode;
 	if(sw_mode == '1'){
-		if(document.form.sw_mode[0].checked == true){
+		if(o1[0].checked == true){
 			alert("<#op_already_configured#>");
 			return false;
 		}
 	}else if(sw_mode == '4'){
-		if(document.form.sw_mode[1].checked == true){
+		if(o1[1].checked == true){
 			alert("<#op_already_configured#>");
 			return false;
 		}
 	}else if(sw_mode == '3'){
-		if(document.form.sw_mode[2].checked == true){
+		if(o1[2].checked == true){
 			alert("<#op_already_configured#>");
 			return false;
 		}

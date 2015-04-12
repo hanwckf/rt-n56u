@@ -326,6 +326,9 @@ dl_update_leds(void)
 #if defined (BOARD_GPIO_LED_POWER)
 	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
 #endif
+#if defined (BOARD_GPIO_LED_ROUTER)
+	LED_CONTROL(BOARD_GPIO_LED_ROUTER, (dl_is_ap_mode) ? LED_OFF : LED_ON);
+#endif
 }
 
 static void

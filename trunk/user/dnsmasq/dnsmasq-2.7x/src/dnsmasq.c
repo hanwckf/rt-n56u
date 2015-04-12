@@ -617,6 +617,8 @@ int main (int argc, char **argv)
     }
   
 #ifdef HAVE_LINUX_NETWORK
+  free(hdr);
+  free(data);
   if (option_bool(OPT_DEBUG)) 
     prctl(PR_SET_DUMPABLE, 1, 0, 0, 0);
 #endif

@@ -246,7 +246,9 @@ void get_client_mac(struct in6_addr *client, int iface, unsigned char *mac, unsi
   neigh.code = 0;
   neigh.reserved = 0;
   neigh.target = *client;
-  
+  /* RFC4443 section-2.3: checksum has to be zero to be calculated */
+  neigh.checksum = 0;
+   
   memset(&addr, 0, sizeof(addr));
 #ifdef HAVE_SOCKADDR_SA_LEN
   addr.sin6_len = sizeof(struct sockaddr_in6);

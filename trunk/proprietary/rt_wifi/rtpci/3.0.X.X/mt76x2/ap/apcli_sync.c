@@ -672,6 +672,7 @@ static VOID ApCliEnqueueProbeRequest(
 			(pAd->CommonCfg.Channel > 14))
 		{
 			FrameLen += build_vht_ies(pAd, (UCHAR *)(pOutBuffer + FrameLen), SUBTYPE_PROBE_REQ);
+			pApCliEntry->MlmeAux.vht_cap_len = sizeof(VHT_CAP_IE);
 		}
 #endif /* DOT11_VHT_AC */
 #ifdef WSC_AP_SUPPORT

@@ -1326,7 +1326,7 @@ int cache_make_stat(struct txt_record *t)
 		}
 	    port = prettyprint_addr(&serv->addr, daemon->addrbuff);
 	    lenp = p++; /* length */
-	    bytes_avail = (p - buff) + bufflen;
+	    bytes_avail = bufflen - (p - buff );
 	    bytes_needed = snprintf(p, bytes_avail, "%s#%d %u %u", daemon->addrbuff, port, queries, failed_queries);
 	    if (bytes_needed >= bytes_avail)
 	      {
@@ -1340,7 +1340,7 @@ int cache_make_stat(struct txt_record *t)
 		lenp = p - 1;
 		buff = new;
 		bufflen = newlen;
-		bytes_avail = (p - buff) + bufflen;
+		bytes_avail =  bufflen - (p - buff );
 		bytes_needed = snprintf(p, bytes_avail, "%s#%d %u %u", daemon->addrbuff, port, queries, failed_queries);
 	      }
 	    *lenp = bytes_needed;

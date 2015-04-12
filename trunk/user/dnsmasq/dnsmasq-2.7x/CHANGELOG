@@ -3,6 +3,12 @@ version 2.72+
 	    --conf-dir, also trivial memory leak. Thanks to 
 	    Tomas Hozza for spotting this.
 
+	    Fix crash caused by looking up servers.bind, CHAOS text 
+	    record, when more than about five --servers= lines are 
+	    in the dnsmasq config. This causes memory corruption 
+	    which causes a crash later. Thanks to Matt Coddington for 
+	    sterling work chasing this down.
+
 	    Fix crash on receipt of certain malformed DNS requests. Thanks
 	    to Nick Sampanis for spotting the problem.
 	

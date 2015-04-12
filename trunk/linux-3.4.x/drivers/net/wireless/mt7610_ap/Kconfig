@@ -9,6 +9,16 @@ config  MT7610_AP_LED
 	depends on MT7610_AP
 	default y
 
+config  MT7610_AP_LED_SOFT
+	bool "Soft LED Support"
+	depends on MT7610_AP && !MT7610_AP_LED && RALINK_GPIO_LED
+	default n
+
+config  MT7610_AP_LED_SOFT_GPIO
+	int "Soft LED GPIO pin"
+	depends on MT7610_AP && MT7610_AP_LED_SOFT
+	default -1
+
 config  MT7610_AP_WSC
 	bool "WSC (WiFi Simple Config)"
 	depends on MT7610_AP

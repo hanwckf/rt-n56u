@@ -9,6 +9,16 @@ config  MT76X3_AP_LED
 	depends on MT76X3_AP
 	default y
 
+config  MT76X3_AP_LED_SOFT
+	bool "Soft LED Support"
+	depends on MT76X3_AP && !MT76X3_AP_LED && RALINK_GPIO_LED
+	default n
+
+config  MT76X3_AP_LED_SOFT_GPIO
+	int "Soft LED GPIO pin"
+	depends on MT76X3_AP && MT76X3_AP_LED_SOFT
+	default -1
+
 config  MT76X3_AP_WSC
 	bool "WSC (WiFi Simple Config)"
 	depends on MT76X3_AP

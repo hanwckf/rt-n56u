@@ -93,8 +93,13 @@ mlme_radio_wl(int is_on)
 		i_val = nvram_safe_get_int("wl_TxPower", 100, 0, 100);
 		doSystem("iwpriv %s set TxPower=%d", ifname_ap, i_val);
 	}
+
 #endif
 	mlme_state_wl(is_on);
+
+#if defined(BOARD_GPIO_LED_SW5G)
+	LED_CONTROL(BOARD_GPIO_LED_SW5G, (is_on) ? LED_ON : LED_OFF);
+#endif
 }
 
 void
@@ -110,6 +115,10 @@ mlme_radio_rt(int is_on)
 	}
 
 	mlme_state_rt(is_on);
+
+#if defined(BOARD_GPIO_LED_SW2G)
+	LED_CONTROL(BOARD_GPIO_LED_SW2G, (is_on) ? LED_ON : LED_OFF);
+#endif
 
 #if defined(USE_RT3352_MII)
 	// isolation iNIC port from all LAN ports
@@ -415,11 +424,6 @@ start_wifi_ap_wl(int radio_on)
 			brport_set_m2u(IFNAME_5G_GUEST, i_m2u);
 		}
 	}
-
-#if defined (BOARD_GPIO_LED_SW5G)
-	if (radio_on)
-		LED_CONTROL(BOARD_GPIO_LED_SW5G, LED_ON);
-#endif
 #endif
 }
 
@@ -473,11 +477,6 @@ start_wifi_ap_rt(int radio_on)
 			brport_set_m2u(IFNAME_2G_GUEST, i_m2u);
 		}
 	}
-#endif
-
-#if defined (BOARD_GPIO_LED_SW2G)
-	if (radio_on)
-		LED_CONTROL(BOARD_GPIO_LED_SW2G, LED_ON);
 #endif
 }
 
@@ -598,8 +597,7 @@ restart_wifi_wl(int radio_on, int need_reload_conf)
 
 	stop_wifi_all_wl();
 
-	if (need_reload_conf)
-	{
+	if (need_reload_conf) {
 		gen_ralink_config_5g(0);
 		nvram_set_int_temp("reload_svc_wl", 1);
 	}
@@ -613,6 +611,11 @@ restart_wifi_wl(int radio_on, int need_reload_conf)
 	restart_guest_lan_isolation();
 
 	check_apcli_wan(1, radio_on);
+
+#if defined (BOARD_GPIO_LED_SW5G)
+	if (radio_on)
+		LED_CONTROL(BOARD_GPIO_LED_SW5G, LED_ON);
+#endif
 #endif
 }
 
@@ -623,8 +626,7 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 
 	stop_wifi_all_rt();
 
-	if (need_reload_conf)
-	{
+	if (need_reload_conf) {
 		gen_ralink_config_2g(0);
 		nvram_set_int_temp("reload_svc_rt", 1);
 	}
@@ -638,6 +640,11 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 	restart_guest_lan_isolation();
 
 	check_apcli_wan(0, radio_on);
+
+#if defined (BOARD_GPIO_LED_SW2G)
+	if (radio_on)
+		LED_CONTROL(BOARD_GPIO_LED_SW2G, LED_ON);
+#endif
 }
 
 int is_need_8021x(char *auth_mode)

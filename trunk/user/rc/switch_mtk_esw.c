@@ -656,7 +656,7 @@ int show_mib_counters(unsigned int cmd)
 			"  TxGoodFrames: %u\n"
 			"  TxBadOctets: %u\n"
 			"  TxBadFrames: %u\n"
-			"  TxDropFrames: %u\n\n"
+			"  TxDropFrames: %u\n"
 			"  RxGoodOctets: %llu\n"
 			"  RxGoodFrames: %u\n"
 			"  RxBadOctets: %u\n"

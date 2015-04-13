@@ -171,6 +171,7 @@ init_gpio_leds_buttons(void)
 #if defined (BOARD_GPIO_LED_USB)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_USB, 1);
 	cpu_gpio_set_pin(BOARD_GPIO_LED_USB, LED_OFF);
+	cpu_gpio_led_set(BOARD_GPIO_LED_USB, 0);
 #endif
 	/* hide ROUTER soft-led  */
 #if defined (BOARD_GPIO_LED_ROUTER)

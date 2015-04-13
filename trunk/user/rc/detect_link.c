@@ -309,7 +309,6 @@ dl_update_leds(void)
 		front_led_x = 0;
 	if (front_led_x == 3) {
 		LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
-		cpu_gpio_led_set(BOARD_GPIO_LED_USB, 0);
 		cpu_gpio_led_enabled(BOARD_GPIO_LED_USB, 1);
 		module_param_set_int("usbcore", "usb_led_gpio", BOARD_GPIO_LED_USB);
 	} else {

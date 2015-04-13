@@ -8,6 +8,16 @@ config  RT2860V2_AP_LED
 	bool "LED Support"
 	depends on RT2860V2_AP
 
+config  RT2860V2_AP_LED_SOFT
+	bool "Soft LED Support"
+	depends on RT2860V2_AP && !RT2860V2_AP_LED && RALINK_GPIO_LED
+	default n
+
+config  RT2860V2_AP_LED_SOFT_GPIO
+	int "Soft LED GPIO pin"
+	depends on RT2860V2_AP && RT2860V2_AP_LED_SOFT
+	default -1
+
 config  RT2860V2_AP_WSC
 	bool "WSC (WiFi Simple Config)"
 	depends on RT2860V2_AP

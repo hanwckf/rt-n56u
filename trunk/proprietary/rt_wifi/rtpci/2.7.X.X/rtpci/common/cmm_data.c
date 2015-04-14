@@ -1110,7 +1110,9 @@ VOID RTMPDeQueuePacket(
 	BOOLEAN			firstRound;
 	RtmpDiagStruct	*pDiagStruct = &pAd->DiagStruct;
 #endif
-
+#if defined (LED_SOFT_SUPPORT)
+	ULONG HardTxTotal = 0;
+#endif
 
 	if (QIdx == NUM_OF_TX_RING)
 	{
@@ -1393,6 +1395,9 @@ VOID RTMPDeQueuePacket(
 #endif /* VENDOR_FEATURE1_SUPPORT */
 #endif /* RTMP_MAC_PCI */
 
+#if defined (LED_SOFT_SUPPORT)
+			HardTxTotal++;
+#endif
 		}
 
 		RTMP_STOP_DEQUEUE(pAd, QueIdx, IrqFlags);
@@ -1405,11 +1410,10 @@ VOID RTMPDeQueuePacket(
 			releaseNetIf(&pAd->blockQueueTab[QueIdx]);
 		}
 #endif /* BLOCK_NET_IF */
-
 	}
 
 #if defined (LED_SOFT_SUPPORT)
-	if (Count > 0)
+	if (HardTxTotal > 0)
 		ralink_gpio_led_blink(LED_SOFT_BLINK_GPIO);
 #endif
 }

@@ -740,7 +740,7 @@ control_gpio_led(int idx, int gpio_bit, u32 *led_set, u32 *led_clr)
 		if (ls->ticks && x == 0)
 			ls->offs++;
 #if RALINK_LED_DEBUG
-		printk("t%d gpio%d on,", ls->ticks, i);
+		printk("t%d gpio%d on,", ls->ticks, idx);
 #endif
 	}
 	else {
@@ -751,7 +751,7 @@ control_gpio_led(int idx, int gpio_bit, u32 *led_set, u32 *led_clr)
 		if (li->on == x)
 			ls->ons++;
 #if RALINK_LED_DEBUG
-		printk("t%d gpio%d off,", ls->ticks, i);
+		printk("t%d gpio%d off,", ls->ticks, idx);
 #endif
 	}
 

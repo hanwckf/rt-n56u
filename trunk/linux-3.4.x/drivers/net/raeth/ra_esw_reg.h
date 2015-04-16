@@ -1,7 +1,9 @@
 #ifndef __RA_ESW_REG_H__
 #define __RA_ESW_REG_H__
 
+#ifdef __KERNEL__
 #include <asm/rt2880/rt_mmap.h>
+#endif
 
 #if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
 #define ESW_PORT_PPE			7

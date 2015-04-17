@@ -1460,12 +1460,10 @@ int find_main(int argc UNUSED_PARAM, char **argv)
 				NULL,           /* user data */
 				0)              /* depth */
 		) {
-			status = EXIT_FAILURE;
-			goto out;
+			status |= EXIT_FAILURE;
 		}
 	}
 
-	IF_FEATURE_FIND_EXEC_PLUS(status = flush_exec_plus();)
-out:
+	IF_FEATURE_FIND_EXEC_PLUS(status |= flush_exec_plus();)
 	return status;
 }

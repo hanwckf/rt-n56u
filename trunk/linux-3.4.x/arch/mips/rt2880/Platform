@@ -42,7 +42,7 @@ load-$(CONFIG_RALINK_MT7620)	+= 0xffffffff80000000
 ## Ralink MT7621 board
 #
 platform-$(CONFIG_RALINK_MT7621)+= rt2880/
-cflags-$(CONFIG_RALINK_MT7621)	+= $(call cc-option,-mtune=1004kc)
+cflags-$(CONFIG_RALINK_MT7621)	+= -mtune=1004kc
 cflags-$(CONFIG_RALINK_MT7621)	+= -I$(srctree)/arch/mips/include/asm/rt2880
 load-$(CONFIG_RALINK_MT7621)	+= 0xffffffff80001000
 

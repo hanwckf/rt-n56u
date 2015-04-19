@@ -300,6 +300,8 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 		
 		store_lan_addr6(addr6s);
 	}
+
+	set_vpn_balancing(IFNAME_SIT);
 }
 
 void stop_sit_tunnel(void)

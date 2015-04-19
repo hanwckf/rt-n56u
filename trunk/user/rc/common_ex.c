@@ -712,8 +712,21 @@ set_cpu_affinity(int is_ap_mode)
 		}
 	}
 }
+
+void
+set_vpn_balancing(const char *vpn_ifname)
+{
+	/* set RPS/XPS balancing for PPP/SIT/TUN/TAP interfaces */
+	int ncpu = sysconf(_SC_NPROCESSORS_ONLN);
+
+	if (ncpu == 4) {
+		rps_queue_set(vpn_ifname, 0x8);	/* CPU:1, VPE:1 */
+		xps_queue_set(vpn_ifname, 0x8);	/* CPU:1, VPE:1 */
+	}
+}
 #else
 inline void set_cpu_affinity(int is_ap_mode) {}
+inline void set_vpn_balancing(const char *vpn_ifname) {}
 #endif
 
 #if defined (USE_NAND_FLASH)

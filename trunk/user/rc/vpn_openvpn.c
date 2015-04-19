@@ -528,6 +528,7 @@ openvpn_tapif_start(const char *ifname, int insert_to_bridge)
 	if (insert_to_bridge)
 		doSystem("brctl %s %s %s", "addif", IFNAME_BR, ifname);
 	doSystem("ifconfig %s %s %s", ifname, "0.0.0.0", "promisc up");
+	set_vpn_balancing(ifname);
 }
 
 static void
@@ -545,6 +546,7 @@ openvpn_tunif_start(const char *ifname)
 {
 	if (!is_interface_exist(ifname))
 		doSystem("%s %s --dev %s", OPENVPN_EXE, "--mktun", ifname);
+	set_vpn_balancing(ifname);
 }
 
 static void

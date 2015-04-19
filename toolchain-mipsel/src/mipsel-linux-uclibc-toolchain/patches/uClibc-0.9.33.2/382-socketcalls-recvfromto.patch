@@ -1,0 +1,64 @@
+From 7bc58308afc072fd5cff0e952b13493c55b300de
+From: Peter S. Mazinger <ps.m@gmx.net>
+Date: Mon, 21 Mar 2011 11:53:25 +0000
+Subject: socketcalls.c: prefer using recvfrom in recv and sendto in send
+
+Make socketcall the last alternative.
+
+Signed-off-by: Peter S. Mazinger <ps.m@gmx.net>
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+
+diff --git a/libc/inet/socketcalls.c b/libc/inet/socketcalls.c
+--- a/libc/inet/socketcalls.c
++++ b/libc/inet/socketcalls.c
+@@ -269,6 +269,11 @@ ssize_t __libc_recv(int sockfd, __ptr_t buffer, size_t len, int flags)
+ 	return result;
+ #endif
+ }
++#elif defined(__NR_recvfrom)
++ssize_t __libc_recv(int sockfd, __ptr_t buffer, size_t len, int flags)
++{
++	return (recvfrom(sockfd, buffer, len, flags, NULL, NULL));
++}
+ #elif defined(__NR_socketcall)
+ /* recv, recvfrom added by bir7@leland.stanford.edu */
+ ssize_t __libc_recv(int sockfd, __ptr_t buffer, size_t len, int flags)
+@@ -290,11 +295,6 @@ ssize_t __libc_recv(int sockfd, __ptr_t buffer, size_t len, int flags)
+ 	return result;
+ #endif
+ }
+-#elif defined(__NR_recvfrom)
+-ssize_t __libc_recv(int sockfd, __ptr_t buffer, size_t len, int flags)
+-{
+-	return (recvfrom(sockfd, buffer, len, flags, NULL, NULL));
+-}
+ #endif
+ weak_alias(__libc_recv,recv)
+ libc_hidden_weak(recv)
+@@ -409,6 +409,11 @@ ssize_t __libc_send(int sockfd, const void *buffer, size_t len, int flags)
+ 	return result;
+ #endif
+ }
++#elif defined(__NR_sendto)
++ssize_t __libc_send(int sockfd, const void *buffer, size_t len, int flags)
++{
++	return (sendto(sockfd, buffer, len, flags, NULL, 0));
++}
+ #elif defined(__NR_socketcall)
+ /* send, sendto added by bir7@leland.stanford.edu */
+ ssize_t __libc_send(int sockfd, const void *buffer, size_t len, int flags)
+@@ -431,11 +436,6 @@ ssize_t __libc_send(int sockfd, const void *buffer, size_t len, int flags)
+ #endif
+ }
+ 
+-#elif defined(__NR_sendto)
+-ssize_t __libc_send(int sockfd, const void *buffer, size_t len, int flags)
+-{
+-	return (sendto(sockfd, buffer, len, flags, NULL, 0));
+-}
+ #endif
+ weak_alias(__libc_send,send)
+ libc_hidden_weak(send)
+--
+cgit v0.9.0.1-2-gef13

@@ -1,0 +1,37 @@
+Simple workaround to prevent crash of host ldd when it try to find/check
+shared libraries from different architecture.
+
+Also build ldd.host with same bitness as target to provide proper functionality
+
+diff -uBp uClibc-0.9.30.1/utils/ldd.c uClibc/utils/ldd.c
+--- uClibc-0.9.30.1/utils/ldd.c	2008-10-29 22:40:21.000000000 +0300
++++ uClibc/utils/ldd.c	2009-09-06 12:43:18.000000000 +0400
+@@ -499,6 +499,8 @@ static int add_library(ElfW(Ehdr) *ehdr,
+ 	for (cur = lib_list; cur; cur = cur->next) {
+ 		/* Check if this library is already in the list */
+ 		tmp1 = tmp2 = cur->name;
++		if (!cur->name)
++			continue;
+ 		while (*tmp1) {
+ 			if (*tmp1 == '/')
+ 				tmp2 = tmp1 + 1;
+@@ -576,6 +578,8 @@ static struct library *find_elf_interpre
+ 		}
+ 		for (cur = lib_list; cur; cur = cur->next) {
+ 			/* Check if this library is already in the list */
++			if (!tmp1 || !cur->name)
++				return NULL;
+ 			if (strcmp(cur->name, tmp1) == 0) {
+ 				/*printf("find_elf_interpreter is replacing '%s' (already in list)\n", cur->name); */
+ 				newlib = cur;
+diff -uB a/utils/Makefile.in b/utils/Makefile.in
+--- a/utils/Makefile.in
++++ b/utils/Makefile.in
+@@ -59,6 +59,7 @@
+ 				-I$(top_srcdir)ldso/include
+ BUILD_CFLAGS-ldd.host      := \
+ 				-DBUILDING_LINKAGE \
++				$(if $(CONFIG_MIPS_ISA_MIPS64),,-m32) \
+ 				-I$(top_srcdir)ldso/include \
+ 				-include $(top_srcdir)include/elf.h
+ BUILD_CFLAGS-locale.host   := \

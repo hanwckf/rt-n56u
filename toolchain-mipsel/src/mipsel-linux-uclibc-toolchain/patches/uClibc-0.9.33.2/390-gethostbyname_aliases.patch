@@ -1,0 +1,146 @@
+gethostbyname* can't process 30 hostnames in DNS answer,
+which can fit in standard 512 bytes UDP packet.
+Returned code was ERANGE ("buffer too small for all addresses").
+
+Also save 1.5k static space (.bss) since buffer allocated dynamically now.
+
+Signed-off-by: Leonid Lisovskiy <lly.dev@gmail.com>
+---
+ libc/inet/resolv.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- uClibc-0.9.30.1/libc/inet/resolv.c	2008-11-02 03:25:33.000000000 +0300
++++ uClibc/libc/inet/resolv.c	2009-11-07 16:21:27.000000000 +0300
+@@ -299,6 +299,7 @@
+ #include <stdio.h>
+ #include <stdio_ext.h>
+ #include <signal.h>
++#include <malloc.h>
+ #include <errno.h>
+ #include <sys/poll.h>
+ #include <sys/socket.h>
+@@ -419,9 +420,14 @@ extern char * __nameserver[MAX_SERVERS]
+ extern char **__searchdomain attribute_hidden;
+ #ifdef __UCLIBC_HAS_IPV4__
+ extern const struct sockaddr_in __local_nameserver attribute_hidden;
++ #define GETXX_BUFSIZE 	(sizeof(struct in_addr) + sizeof(struct in_addr *) * 2 + \
++			/*sizeof(char *)*ALIAS_DIM */+ 456/*namebuffer*/ + 32/* margin */)
+ #else
+ extern const struct sockaddr_in6 __local_nameserver attribute_hidden;
++ #define GETXX_BUFSIZE 	(sizeof(struct in6_addr) + sizeof(struct in6_addr *) * 2 + \
++			/*sizeof(char *)*ALIAS_DIM */+ 456/*namebuffer*/ + 32/* margin */)
+ #endif
++extern char * static_getXXaddrbuf attribute_hidden;
+ /* Arbitrary */
+ #define MAXLEN_searchdomain 128
+ 
+@@ -478,6 +484,7 @@ extern void __open_nameservers(void) att
+ 		int maxlen) attribute_hidden;
+ extern void __open_nameservers(void) attribute_hidden;
+ extern void __close_nameservers(void) attribute_hidden;
++extern void __init_getXXaddrbuf(void) attribute_hidden;
+ 
+ /*
+  * Theory of operation.
+@@ -1215,6 +1222,15 @@ static int static_ns = 0;
+	return i + RRFIXEDSZ + a->rdlength;
+ }
+ 
++/* Commonplace for buffer for non-reentrant gethostXX functions */
++char *static_getXXaddrbuf = NULL;
++
++void attribute_hidden __init_getXXaddrbuf(void)
++{
++	if (!static_getXXaddrbuf)
++		static_getXXaddrbuf = (char *)__uc_malloc(GETXX_BUFSIZE);
++}
++
+ /* On entry:
+  *  a.buf(len) = auxiliary buffer for IP addresses after first one
+  *  a.add_count = how many additional addresses are there already
+@@ -2565,16 +2581,10 @@ libc_hidden_def(gethostent_r)
+ struct hostent *gethostent(void)
+ {
+ 	static struct hostent hoste;
+-	static char buf[
+-#ifndef __UCLIBC_HAS_IPV6__
+-			sizeof(struct in_addr) + sizeof(struct in_addr *) * 2 +
+-#else
+-			sizeof(struct in6_addr) + sizeof(struct in6_addr *) * 2 +
+-#endif /* __UCLIBC_HAS_IPV6__ */
+-			BUFSZ /*namebuffer*/ + 2 /* margin */];
+ 	struct hostent *host;
+ 
++	__init_getXXaddrbuf();
+-	gethostent_r(&hoste, buf, sizeof(buf), &host, &h_errno);
++	gethostent_r(&hoste, static_getXXaddrbuf, GETXX_BUFSIZE, &host, &h_errno);
+ 	return host;
+ }
+ #endif /* L_gethostent */
+@@ -2584,18 +2594,19 @@ libc_hidden_def(gethostbyname2)
+ 
+ struct hostent *gethostbyname2(const char *name, int family)
+ {
+-#ifndef __UCLIBC_HAS_IPV6__
+-	return family == AF_INET ? gethostbyname(name) : (struct hostent*)NULL;
+-#else
+ 	static struct hostent hoste;
+-	static char buf[sizeof(struct in6_addr) +
+-			sizeof(struct in6_addr *) * 2 +
+-			/*sizeof(char *)*ALIAS_DIM +*/ 384/*namebuffer*/ + 32/* margin */];
+ 	struct hostent *hp;
+ 
+-	gethostbyname2_r(name, family, &hoste, buf, sizeof(buf), &hp, &h_errno);
++	__init_getXXaddrbuf();
++#ifndef __UCLIBC_HAS_IPV6__
++	if (family != AF_INET)
++		return (struct hostent*)NULL;
++	gethostbyname_r(name, &hoste, static_getXXaddrbuf, GETXX_BUFSIZE, &hp, &h_errno);
++#else
++	gethostbyname2_r(name, family, &hoste, static_getXXaddrbuf, GETXX_BUFSIZE, &hp, &h_errno);
++#endif /* __UCLIBC_HAS_IPV6__ */
++
+ 	return hp;
+-#endif
+ }
+ libc_hidden_def(gethostbyname2)
+ #endif /* L_gethostbyname2 */
+@@ -2605,18 +2616,7 @@ void attribute_hidden __close_nameserver
+ 
+ struct hostent *gethostbyname(const char *name)
+ {
+-#ifndef __UCLIBC_HAS_IPV6__
+-	static struct hostent hoste;
+-	static char buf[sizeof(struct in_addr) +
+-			sizeof(struct in_addr *) * 2 +
+-			/*sizeof(char *)*ALIAS_DIM +*/ 384/*namebuffer*/ + 32/* margin */];
+-	struct hostent *hp;
+-
+-	gethostbyname_r(name, &hoste, buf, sizeof(buf), &hp, &h_errno);
+-	return hp;
+-#else
+ 	return gethostbyname2(name, AF_INET);
+-#endif
+ }
+ libc_hidden_def(gethostbyname)
+ link_warning(gethostbyname, "gethostbyname is obsolescent, use getnameinfo() instead.");
+@@ -2628,16 +2628,10 @@ libc_hidden_def(res_querydomain)
+ struct hostent *gethostbyaddr(const void *addr, socklen_t len, int type)
+ {
+ 	static struct hostent hoste;
+-	static char buf[
+-#ifndef __UCLIBC_HAS_IPV6__
+-			sizeof(struct in_addr) + sizeof(struct in_addr *)*2 +
+-#else
+-			sizeof(struct in6_addr) + sizeof(struct in6_addr *)*2 +
+-#endif /* __UCLIBC_HAS_IPV6__ */
+-			/*sizeof(char *)*ALIAS_DIM +*/ 384 /*namebuffer*/ + 32 /* margin */];
+ 	struct hostent *hp;
+ 
+-	gethostbyaddr_r(addr, len, type, &hoste, buf, sizeof(buf), &hp, &h_errno);
++	__init_getXXaddrbuf();
++	gethostbyaddr_r(addr, len, type, &hoste, static_getXXaddrbuf, GETXX_BUFSIZE, &hp, &h_errno);
+ 	return hp;
+ }
+ libc_hidden_def(gethostbyaddr)
+-- 

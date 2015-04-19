@@ -1,0 +1,126 @@
+From 024a23103f04282872d4352302b1bfe04391a7a4
+From: Jan Kratochvil <jan.kratochvil@redhat.com>
+Date: Mon, 17 Feb 2014 08:32:22 +0100
+Subject: [PATCH] PR binutils/16595
+
+abfd->section_count unexpectedly changes between 218 and 248 in:
+
+150 bfd_simple_get_relocated_section_contents (bfd *abfd,
+[...]
+218   saved_offsets = malloc (sizeof (struct saved_output_info)
+219                           * abfd->section_count);
+[...]
+230	  _bfd_generic_link_add_symbols (abfd, &link_info);
+[...]
+248   bfd_map_over_sections (abfd, simple_restore_output_info, saved_offsets);
+
+_bfd_generic_link_add_symbols increases section_count
+
+and simple_restore_output_info later reads unallocated part of saved_offsets.
+
+READ of size 8 at 0x601c0000c5c0 thread T0
+    #0 0x1124770 in simple_restore_output_info (.../gdb/gdb+0x1124770)
+    #1 0x10ecd51 in bfd_map_over_sections (.../gdb/gdb+0x10ecd51)
+    #2 0x1125150 in bfd_simple_get_relocated_section_contents (.../gdb/gdb+0x1125150)
+
+bfd/
+2014-02-17  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	PR binutils/16595
+	* simple.c (struct saved_offsets): New.
+	(simple_save_output_info): Use it for ptr.
+	(simple_restore_output_info): Use it for ptr.  Check section_count.
+	(bfd_simple_get_relocated_section_contents): Use it for saved_offsets.
+---
+
+diff --git a/bfd/simple.c b/bfd/simple.c
+--- a/bfd/simple.c
++++ b/bfd/simple.c
+@@ -101,14 +101,23 @@ struct saved_output_info
+   asection *section;
+ };
+ 
++struct saved_offsets
++{
++  int section_count;
++  struct saved_output_info *sections;
++};
++
+ static void
+ simple_save_output_info (bfd *abfd ATTRIBUTE_UNUSED,
+ 			 asection *section,
+ 			 void *ptr)
+ {
+-  struct saved_output_info *output_info = (struct saved_output_info *) ptr;
+-  output_info[section->index].offset = section->output_offset;
+-  output_info[section->index].section = section->output_section;
++  struct saved_offsets *saved_offsets = (struct saved_offsets *) ptr;
++  struct saved_output_info *output_info;
++
++  output_info = &saved_offsets->sections[section->index];
++  output_info->offset = section->output_offset;
++  output_info->section = section->output_section;
+   if ((section->flags & SEC_DEBUGGING) != 0
+       || section->output_section == NULL)
+     {
+@@ -122,9 +131,15 @@ simple_restore_output_info (bfd *abfd ATTRIBUTE_UNUSED,
+ 			    asection *section,
+ 			    void *ptr)
+ {
+-  struct saved_output_info *output_info = (struct saved_output_info *) ptr;
+-  section->output_offset = output_info[section->index].offset;
+-  section->output_section = output_info[section->index].section;
++  struct saved_offsets *saved_offsets = (struct saved_offsets *) ptr;
++  struct saved_output_info *output_info;
++
++  if (section->index >= saved_offsets->section_count)
++    return;
++
++  output_info = &saved_offsets->sections[section->index];
++  section->output_offset = output_info->offset;
++  section->output_section = output_info->section;
+ }
+ 
+ /*
+@@ -157,7 +172,7 @@ bfd_simple_get_relocated_section_contents (bfd *abfd,
+   struct bfd_link_callbacks callbacks;
+   bfd_byte *contents, *data;
+   int storage_needed;
+-  void *saved_offsets;
++  struct saved_offsets saved_offsets;
+ 
+   /* Don't apply relocation on executable and shared library.  See
+      PR 4756.  */
+@@ -215,15 +230,16 @@ bfd_simple_get_relocated_section_contents (bfd *abfd,
+      section->output_offset to equal section->vma, which we do by setting
+      section->output_section to point back to section.  Save the original
+      output offset and output section to restore later.  */
+-  saved_offsets = malloc (sizeof (struct saved_output_info)
+-			  * abfd->section_count);
+-  if (saved_offsets == NULL)
++  saved_offsets.section_count = abfd->section_count;
++  saved_offsets.sections = malloc (sizeof (*saved_offsets.sections)
++				   * saved_offsets.section_count);
++  if (saved_offsets.sections == NULL)
+     {
+       if (data)
+ 	free (data);
+       return NULL;
+     }
+-  bfd_map_over_sections (abfd, simple_save_output_info, saved_offsets);
++  bfd_map_over_sections (abfd, simple_save_output_info, &saved_offsets);
+ 
+   if (symbol_table == NULL)
+     {
+@@ -245,8 +261,8 @@ bfd_simple_get_relocated_section_contents (bfd *abfd,
+   if (contents == NULL && data != NULL)
+     free (data);
+ 
+-  bfd_map_over_sections (abfd, simple_restore_output_info, saved_offsets);
+-  free (saved_offsets);
++  bfd_map_over_sections (abfd, simple_restore_output_info, &saved_offsets);
++  free (saved_offsets.sections);
+ 
+   _bfd_generic_link_hash_table_free (link_info.hash);
+   return contents;
+-- 

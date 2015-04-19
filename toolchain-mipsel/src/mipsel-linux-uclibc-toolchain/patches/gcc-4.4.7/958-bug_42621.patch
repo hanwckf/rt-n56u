@@ -1,0 +1,46 @@
+[4.4 Regression] Computed gotos on AMD 800% slower
+
+ http://gcc.gnu.org/bugzilla/show_bug.cgi?id=42621
+
+--- trunk/gcc/ChangeLog	2010/01/10 21:46:42	155795
++++ trunk/gcc/ChangeLog	2010/01/10 23:31:30	155796
+@@ -267,6 +267,16 @@
+ 	* reload1.c (reload_as_needed): Invalidate all reload
+ 	registers when crossing a setjmp-type call.
+ 
++2011-06-10  Steven Bosscher  <steven@gcc.gnu.org>
++
++	Backport from mainline
++	2010-01-10  Steven Bosscher  <steven@gcc.gnu.org>
++
++	PR rtl-optimization/42621
++	* bb-reorder.c (gate_duplicated_computed_gotos): Only run if not
++	optimizing for size.
++	(duplicate_computed_gotos): Remove now-redundant check.
++
+ 2011-06-09  Eric Botcazou  <ebotcazou@adacore.com>
+ 
+ 	* config/sparc/sparc.md (return_internal): Adjust 'length' attribute.
+--- trunk/gcc/bb-reorder.c	2010/01/10 21:46:42	155795
++++ trunk/gcc/bb-reorder.c	2010/01/10 23:31:30	155796
+@@ -1985,7 +1985,9 @@
+ {
+   if (targetm.cannot_modify_jumps_p ())
+     return false;
+-  return (optimize > 0 && flag_expensive_optimizations);
++  return (optimize > 0
++	  && flag_expensive_optimizations
++	  && ! optimize_function_for_size_p (cfun));
+ }
+ 
+ 
+@@ -2076,9 +2078,6 @@
+ 	  || single_pred_p (single_succ (bb)))
+ 	continue;
+ 
+-      if (!optimize_bb_for_size_p (bb))
+-	continue;
+-
+       /* The successor block has to be a duplication candidate.  */
+       if (!bitmap_bit_p (candidates, single_succ (bb)->index))
+ 	continue;

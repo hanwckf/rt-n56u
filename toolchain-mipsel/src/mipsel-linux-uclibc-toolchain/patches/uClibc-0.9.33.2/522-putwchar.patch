@@ -1,0 +1,74 @@
+From 6da1949cb5c4245cfb1fcee1efadb049904be26f
+From: Peter S. Mazinger <ps.m@gmx.net>
+Date: Mon, 14 Mar 2011 22:11:32 +0000
+Subject: use fputwc in putwchar()
+
+use fputwc instead of fputc
+add hidden fputwc to avoid jump relocation
+
+Signed-off-by: Peter S. Mazinger <ps.m@gmx.net>
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+ include/wchar.h       |    1 +
+ libc/stdio/fputwc.c   |    2 ++
+ libc/stdio/putwchar.c |    5 +----
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/include/wchar.h b/include/wchar.h
+--- a/include/wchar.h
++++ b/include/wchar.h
+@@ -652,6 +652,7 @@ extern wint_t getwchar (void);
+    These functions are possible cancellation points and therefore not
+    marked with __THROW.  */
+ extern wint_t fputwc (wchar_t __wc, __FILE *__stream);
++libc_hidden_proto(fputwc)
+ extern wint_t putwc (wchar_t __wc, __FILE *__stream);
+ 
+ /* Write a character to stdout.
+diff --git a/libc/stdio/fputwc.c b/libc/stdio/fputwc.c
+index 7f46f48..b699e9d 100644
+--- a/libc/stdio/fputwc.c
++++ b/libc/stdio/fputwc.c
+@@ -19,6 +19,7 @@ libc_hidden_def(fputwc_unlocked)
+ strong_alias(fputwc_unlocked,putwc_unlocked)
+ #ifndef __UCLIBC_HAS_THREADS__
+ strong_alias(fputwc_unlocked,fputwc)
++libc_hidden_def(fputwc)
+ strong_alias(fputwc_unlocked,putwc)
+ #endif
+ 
+@@ -37,6 +38,7 @@ wint_t fputwc(wchar_t wc, register FILE *stream)
+ 
+ 	return retval;
+ }
++libc_hidden_def(fputwc)
+ 
+ strong_alias(fputwc,putwc)
+ 
+diff --git a/libc/stdio/putwchar.c b/libc/stdio/putwchar.c
+index 3fadb61..96de6a2 100644
+--- a/libc/stdio/putwchar.c
++++ b/libc/stdio/putwchar.c
+@@ -9,7 +9,6 @@
+ 
+ #ifdef __DO_UNLOCKED
+ 
+-
+ wint_t putwchar_unlocked(wchar_t wc)
+ {
+ 	return fputwc_unlocked(wc, stdout);
+@@ -21,11 +20,9 @@ strong_alias(putwchar_unlocked,putwchar)
+ 
+ #elif defined __UCLIBC_HAS_THREADS__
+ 
+-/* psm: should this be fputwc? */
+-
+ wint_t putwchar(wchar_t wc)
+ {
+-	return fputc(wc, stdout);
++	return fputwc(wc, stdout);
+ }
+ 
+ #endif
+--
+cgit v0.9.0.1-2-gef13

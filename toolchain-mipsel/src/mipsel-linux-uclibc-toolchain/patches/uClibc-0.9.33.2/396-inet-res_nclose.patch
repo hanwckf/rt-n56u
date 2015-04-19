@@ -1,0 +1,70 @@
+From 950fcf0f68732a9aafacb5dfd33e7a7612141722 Mon Sep 17 00:00:00 2001
+From: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+Date: Sat, 23 Feb 2013 08:46:21 +0000
+Subject: inet: res_nclose: free user-buffer, not global _res
+
+In res_iclose we were operating on the global _res even if called via
+res_nclose where we are supposed to operate on the user provided
+res_state.
+
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+(limited to 'libc/inet')
+
+diff --git a/libc/inet/resolv.c b/libc/inet/resolv.c
+index 0a1c0be..769b65f 100644
+--- a/libc/inet/resolv.c
++++ b/libc/inet/resolv.c
+@@ -3583,24 +3583,27 @@ __res_vinit(res_state rp, int preinit)
+ }
+ 
+ static void
+-__res_iclose(void)
++__res_iclose(res_state statp)
+ {
++	struct __res_state * rp = statp;
+ 	__UCLIBC_MUTEX_LOCK(__resolv_lock);
++	if (rp == NULL)
++		rp = __res_state();
+ 	__close_nameservers();
+ 	__res_sync = NULL;
+ #ifdef __UCLIBC_HAS_IPV6__
+ 	{
+-		char *p1 = (char*) &(_res.nsaddr_list[0]);
+-		int m = 0;
++		char *p1 = (char*) &(rp->nsaddr_list[0]);
++		unsigned int m = 0;
+ 		/* free nsaddrs[m] if they do not point to nsaddr_list[x] */
+-		while (m < ARRAY_SIZE(_res._u._ext.nsaddrs)) {
+-			char *p2 = (char*)(_res._u._ext.nsaddrs[m++]);
+-			if (p2 < p1 || (p2 - p1) > sizeof(_res.nsaddr_list))
++		while (m < ARRAY_SIZE(rp->_u._ext.nsaddrs)) {
++			char *p2 = (char*)(rp->_u._ext.nsaddrs[m++]);
++			if (p2 < p1 || (p2 - p1) > (signed)sizeof(rp->nsaddr_list))
+ 				free(p2);
+ 		}
+ 	}
+ #endif
+-	memset(&_res, 0, sizeof(_res));
++	memset(rp, 0, sizeof(struct __res_state));
+ 	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
+ }
+ 
+@@ -3615,13 +3618,13 @@ __res_iclose(void)
+ void
+ res_nclose(res_state statp)
+ {
+-	__res_iclose();
++	__res_iclose(statp);
+ }
+ 
+ #ifdef __UCLIBC_HAS_BSD_RES_CLOSE__
+ void res_close(void)
+ {
+-	__res_iclose();
++	__res_iclose(NULL);
+ }
+ #endif
+ 
+--
+cgit v0.9.1

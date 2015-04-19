@@ -1,0 +1,31 @@
+From caeba11c8373b9eae02f65cf17633fd728d77437
+From: Maciej W. Rozycki <macro@codesourcery.com>
+Date: Fri, 15 Nov 2013 21:57:11 +0000
+Subject: [PATCH] MIPS/opcodes: Add MFCR and MTCR data dependencies
+
+	* mips-opc.c (mips_builtin_opcodes): Add RD_2 to "mfcr" and
+	"mtcr".
+---
+
+diff --git a/opcodes/mips-opc.c b/opcodes/mips-opc.c
+--- a/opcodes/mips-opc.c
++++ b/opcodes/mips-opc.c
+@@ -1288,7 +1288,7 @@ const struct mips_opcode mips_builtin_opcodes[] =
+ {"mflo",		"d,9",		0x00000012, 0xff9f07ff, WR_1|RD_LO,		0,		0,		D32,	0 },
+ {"mflo1",		"d",		0x70000012, 0xffff07ff,	WR_1|RD_LO,		0,		EE,		0,	0 },
+ {"mflhxu",		"d",		0x00000052, 0xffff07ff,	WR_1|MOD_HILO,		0,		0,		SMT,	0 },
+-{"mfcr",		"t,s",		0x70000018, 0xfc00ffff, WR_1,			0,		XLR,		0,	0 },
++{"mfcr",		"t,s",		0x70000018, 0xfc00ffff, WR_1|RD_2,		0,		XLR,		0,	0 },
+ {"mfsa",		"d",		0x00000028, 0xffff07ff,	WR_1,			0,		EE,		0,	0 },
+ {"min.ob",		"X,Y,Q",	0x78000006, 0xfc20003f,	WR_1|RD_2|RD_3|FP_D,	0,		SB1,		MX,	0 },
+ {"min.ob",		"D,S,Q",	0x48000006, 0xfc20003f,	WR_1|RD_2|RD_3|FP_D,	0,		N54,		0,	0 },
+@@ -1381,7 +1381,7 @@ const struct mips_opcode mips_builtin_opcodes[] =
+ {"mtlo",		"s,7",		0x00000013, 0xfc1fe7ff, RD_1|WR_LO,		0,		0,		D32,	0 },
+ {"mtlo1",		"s",		0x70000013, 0xfc1fffff,	RD_1|WR_LO,		0,		EE,		0,	0 },
+ {"mtlhx",		"s",		0x00000053, 0xfc1fffff,	RD_1|MOD_HILO,		0,		0,		SMT,	0 },
+-{"mtcr",		"t,s",		0x70000019, 0xfc00ffff, RD_1,			0,		XLR,		0,	0 },
++{"mtcr",		"t,s",		0x70000019, 0xfc00ffff, RD_1|RD_2,		0,		XLR,		0,	0 },
+ {"mtm0",		"s",		0x70000008, 0xfc1fffff, RD_1,			0,		IOCT,		0,	0 },
+ {"mtm1",		"s",		0x7000000c, 0xfc1fffff, RD_1,			0,		IOCT,		0,	0 },
+ {"mtm2",		"s",		0x7000000d, 0xfc1fffff, RD_1,			0,		IOCT,		0,	0 },
+-- 

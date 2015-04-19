@@ -1,0 +1,97 @@
+Force inlining local syscalls in fsync, nanosleep, poll, select, sync_file_range.
+
+ Shrink code size by 0.2K (MIPS32):
+
+function                                             old     new   delta
+sync_file_range                                       56     124     +68
+select                                               244     292     +48
+fsync                                                164     184     +20
+nanosleep                                            184     200     +16
+poll                                                 204     216     +12
+__syscall_poll                                        60       -     -60
+__syscall_nanosleep                                   60       -     -60
+__syscall_fsync                                       60       -     -60
+__syscall_select                                      96       -     -96
+__syscall_sync_file_range                            112       -    -112
+------------------------------------------------------------------------------
+(add/remove: 0/5 grow/shrink: 5/0 up/down: 164/-388)         Total: -224 bytes
+
+Signed-off-by: Leonid Lisovskiy <lly.dev@gmail.com>
+---
+ libc/sysdeps/linux/common/fsync.c           |    2 +-
+ libc/sysdeps/linux/common/nanosleep.c       |    2 +-
+ libc/sysdeps/linux/common/poll.c            |    2 +-
+ libc/sysdeps/linux/common/select.c          |    4 ++--
+ libc/sysdeps/linux/common/sync_file_range.c |    2 +-
+ 5 files changed, 6 insertions(+), 6 deletions(-)
+
+diff -uBp a/libc/sysdeps/linux/common/fsync.c b/libc/sysdeps/linux/common/fsync.c
+--- a/libc/sysdeps/linux/common/fsync.c	2011-06-08 23:35:20.000000000 +0400
++++ b/libc/sysdeps/linux/common/fsync.c	2012-04-14 23:37:44.000000000 +0400
+@@ -17,7 +17,7 @@
+ #endif
+ 
+ #define __NR___syscall_fsync __NR_fsync
+-static inline _syscall1(int, __syscall_fsync, int, fd)
++static __always_inline _syscall1(int, __syscall_fsync, int, fd)
+ 
+ extern __typeof(fsync) __libc_fsync;
+ 
+diff -uBp a/libc/sysdeps/linux/common/nanosleep.c b/libc/sysdeps/linux/common/nanosleep.c
+--- a/libc/sysdeps/linux/common/nanosleep.c	2011-06-08 23:35:20.000000000 +0400
++++ b/libc/sysdeps/linux/common/nanosleep.c	2012-04-14 23:37:30.000000000 +0400
+@@ -18,7 +18,7 @@
+ #endif
+ 
+ #define __NR___syscall_nanosleep __NR_nanosleep
+-static inline _syscall2(int, __syscall_nanosleep, const struct timespec *, req,
++static __always_inline _syscall2(int, __syscall_nanosleep, const struct timespec *, req,
+ 						struct timespec *, rem);
+ 
+ extern __typeof(nanosleep) __libc_nanosleep;
+diff -uBp a/libc/sysdeps/linux/common/poll.c b/libc/sysdeps/linux/common/poll.c
+--- a/libc/sysdeps/linux/common/poll.c	2011-06-08 23:35:20.000000000 +0400
++++ b/libc/sysdeps/linux/common/poll.c	2012-04-14 23:37:06.000000000 +0400
+@@ -32,7 +32,7 @@ libc_hidden_proto(poll)
+ #if defined __ASSUME_POLL_SYSCALL && defined __NR_poll
+ 
+ #define __NR___syscall_poll __NR_poll
+-static inline _syscall3(int, __syscall_poll, struct pollfd *, fds,
++static __always_inline _syscall3(int, __syscall_poll, struct pollfd *, fds,
+ 			unsigned long int, nfds, int, timeout);
+ 
+ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
+diff -uBp a/libc/sysdeps/linux/common/select.c b/libc/sysdeps/linux/common/select.c
+--- a/libc/sysdeps/linux/common/select.c	2011-06-08 23:35:20.000000000 +0400
++++ b/libc/sysdeps/linux/common/select.c	2012-04-14 23:36:37.000000000 +0400
+@@ -23,7 +23,7 @@ extern __typeof(select) __libc_select;
+ 
+ #if !defined(__NR__newselect) && !defined(__NR_select) && defined __USE_XOPEN2K
+ # define __NR___libc_pselect6 __NR_pselect6
+-static _syscall6(int, __libc_pselect6, int, n, fd_set *, readfds, fd_set *, writefds,
++static __always_inline _syscall6(int, __libc_pselect6, int, n, fd_set *, readfds, fd_set *, writefds,
+         fd_set *, exceptfds, const struct timespec *, timeout,
+         const sigset_t *, sigmask)
+ 
+@@ -71,7 +71,7 @@ int __libc_select(int n, fd_set *readfds
+ # define __NR___syscall_select __NR_select
+ #endif
+ 
+-static _syscall5(int, __syscall_select, int, n, fd_set *, readfds,
++static __always_inline _syscall5(int, __syscall_select, int, n, fd_set *, readfds,
+ 		fd_set *, writefds, fd_set *, exceptfds, struct timeval *, timeout);
+ 
+ int __libc_select(int n, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+diff -uBp a/libc/sysdeps/linux/common/sync_file_range.c b/libc/sysdeps/linux/common/sync_file_range.c
+--- a/libc/sysdeps/linux/common/sync_file_range.c	2011-06-08 23:35:20.000000000 +0400
++++ b/libc/sysdeps/linux/common/sync_file_range.c	2012-04-15 00:15:43.000000000 +0400
+@@ -13,7 +13,7 @@
+ 
+ #if defined __NR_sync_file_range && defined __UCLIBC_HAS_LFS__
+ #define __NR___syscall_sync_file_range __NR_sync_file_range
+-static __inline__ _syscall6(int, __syscall_sync_file_range, int, fd,
++static __always_inline _syscall6(int, __syscall_sync_file_range, int, fd,
+ 		off_t, offset_hi, off_t, offset_lo,
+ 		off_t, nbytes_hi, off_t, nbytes_lo, unsigned int, flags)
+ int sync_file_range(int fd, off64_t offset, off64_t nbytes, unsigned int flags)
+-- 

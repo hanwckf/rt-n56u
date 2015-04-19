@@ -1,0 +1,35 @@
+From 03c239526ca7a9348a8d70a3652a9027f352e483
+From: Rainer Orth <ro@CeBiTec.Uni-Bielefeld.DE>
+Date: Fri, 7 Feb 2014 15:51:17 +0100
+Subject: [PATCH] 	* cache.c (bfd_cache_max_open): Cast RLIM_INFINITY to rlim_t.
+
+---
+ bfd/ChangeLog |    4 ++++
+ bfd/cache.c   |    2 +-
+ 2 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/bfd/ChangeLog b/bfd/ChangeLog
+--- a/bfd/ChangeLog
++++ b/bfd/ChangeLog
+@@ -1,3 +1,7 @@
++2014-02-07  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
++
++	* cache.c (bfd_cache_max_open): Cast RLIM_INFINITY to rlim_t.
++
+ 2013-12-20  Alan Modra  <amodra@gmail.com>
+ 
+ 	* elflink.c (_bfd_elf_merge_symbol): If merging a new weak
+diff --git a/bfd/cache.c b/bfd/cache.c
+--- a/bfd/cache.c
++++ b/bfd/cache.c
+@@ -82,7 +82,7 @@ bfd_cache_max_open (void)
+ #ifdef HAVE_GETRLIMIT
+       struct rlimit rlim;
+       if (getrlimit (RLIMIT_NOFILE, &rlim) == 0
+-	  && rlim.rlim_cur != RLIM_INFINITY)
++	  && rlim.rlim_cur != (rlim_t) RLIM_INFINITY)
+ 	max = rlim.rlim_cur / 8;
+       else
+ #endif /* HAVE_GETRLIMIT */
+-- 
+1.7.1

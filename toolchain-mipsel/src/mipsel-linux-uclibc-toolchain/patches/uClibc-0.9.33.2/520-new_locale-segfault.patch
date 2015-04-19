@@ -1,0 +1,29 @@
+locale: segfault freeing uninitialized memory
+
+ https://bugs.busybox.net/show_bug.cgi?id=4964
+
+ I'm using the live555 library to stream H.264 video on an embedded Linux
+ system.  Using the live555 testOnDemandRTSPServer function I get a segfault
+ starting to stream H.264 video to VLC.
+
+ I've patched the error as I see it.  It looks to me like the base structure is
+ not fully initialized with 0 (only a subset of the structure is initialized). 
+ This later results in a free of base->collate.index2weight in _locale_set_l. 
+ This free tries to free uninitialized memory and segfaults.  My patch fully
+ zeros out the structure.
+
+ Eric Nadler
+
+
+diff -uBp a/libc/misc/locale/locale.c b/libc/misc/locale/locale.c
+--- a/libc/misc/locale/locale.c	2011-06-08 23:35:20.000000000 +0400
++++ b/libc/misc/locale/locale.c	2012-04-05 15:01:02.000000000 +0400
+@@ -905,6 +905,8 @@ void attribute_hidden _locale_init_l(__l
+ #endif
+ 	base->code2flag = __code2flag;
+ 
++	base->collate.index2weight = NULL;
++
+ 	_locale_set_l((unsigned char*) C_LOCALE_SELECTOR, base);
+ }
+ 

@@ -1,0 +1,41 @@
+From d3abe2374c6597851ed2bd345e819739c17b9930
+From: Alan Modra <amodra@gmail.com>
+Date: Sat, 14 Dec 2013 13:10:04 +1030
+Subject: [PATCH] Correct elf_merge_st_other arguments for weak symbols
+
+	* elflink.c (_bfd_elf_merge_symbol): If merging a new weak
+	symbol that will be skipped, we don't have a new definition.
+---
+ bfd/ChangeLog |    5 +++++
+ bfd/elflink.c |    5 ++++-
+ 2 files changed, 9 insertions(+), 1 deletions(-)
+
+diff --git a/bfd/ChangeLog b/bfd/ChangeLog
+--- a/bfd/ChangeLog
++++ b/bfd/ChangeLog
+@@ -1,3 +1,8 @@
++2013-12-20  Alan Modra  <amodra@gmail.com>
++
++	* elflink.c (_bfd_elf_merge_symbol): If merging a new weak
++	symbol that will be skipped, we don't have a new definition.
++
+ 2013-12-02  Tristan Gingold  <gingold@adacore.com>
+ 
+ 	* configure.in: Bump version to 2.24
+diff --git a/bfd/elflink.c b/bfd/elflink.c
+--- a/bfd/elflink.c
++++ b/bfd/elflink.c
+@@ -1437,7 +1437,10 @@ _bfd_elf_merge_symbol (bfd *abfd,
+       if (!(oldbfd != NULL
+ 	    && (oldbfd->flags & BFD_PLUGIN) != 0
+ 	    && (abfd->flags & BFD_PLUGIN) == 0))
+-	*skip = TRUE;
++	{
++	  newdef = FALSE;
++	  *skip = TRUE;
++	}
+ 
+       /* Merge st_other.  If the symbol already has a dynamic index,
+ 	 but visibility says it should not be visible, turn it into a
+-- 
+1.7.1

@@ -1,0 +1,22 @@
+#!/bin/sh
+
+DIR=`pwd`
+
+. "$DIR/versions.inc"
+
+TARGET="mipsel-linux-uclibc"
+TARGET_DIR="$DIR/src/$TARGET-toolchain"
+
+ID_BINUTILS="binutils-$BINUTILSVER"
+ID_GCC="gcc-$GCCVER"
+ID_UCLIBC="uClibc-$UCLIBCVER"
+
+echo "=================REMOVE-OLD-BUILD-TREE=================="
+cd "$TARGET_DIR"
+rm -rf build-*
+rm -rf $ID_BINUTILS
+rm -rf $ID_GCC
+rm -rf $ID_UCLIBC
+rm -rf include
+cd "$DIR"
+echo "====================All IS DONE!========================"

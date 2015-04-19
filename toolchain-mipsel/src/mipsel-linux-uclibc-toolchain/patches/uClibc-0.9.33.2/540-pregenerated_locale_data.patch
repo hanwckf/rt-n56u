@@ -1,0 +1,26 @@
+--- a/extra/locale/Makefile.in
++++ b/extra/locale/Makefile.in
+@@ -168,6 +168,7 @@
+ endif
+ endif
+ 
++ifneq ($(UCLIBC_PREGENERATED_LOCALE_DATA),y)
+ # code needs to be modified to support top_builddir in almost all apps that write directly to a file
+ # grep fopen *.c
+ $(locale_OUT)/c8tables.h: $(locale_OUT)/gen_wc8bit $(locale_OUT)/codesets.txt
+@@ -197,6 +198,7 @@
+ 	$(Q)grep COL_IDX_ $(word 2,$^) | \
+ 		$(SED) -e "s/^.*COL_IDX_\([^, ]*\).*$$/\1/" | sort | uniq | \
+ 		xargs $< $(locale_DIR)/collation $(FLAG-locale-verbose) -o $@
++endif
+ 
+ $(locale_OUT)/$(LOCALE_DATA_FILENAME):
+ ifeq ($(UCLIBC_DOWNLOAD_PREGENERATED_LOCALE_DATA),y)
+@@ -215,6 +217,7 @@
+ # lt_defines.h/locale_data.c/uClibc_locale_data.h
+ 
+ $(locale_OUT)/uClibc_locale_data.h: $(locale_SRC)
++	touch -c $@
+ 
+ else
+ 

@@ -1,0 +1,36 @@
+--- a/libc/misc/dirent/readdir_r.c
++++ b/libc/misc/dirent/readdir_r.c
+@@ -22,7 +22,6 @@
+ 	    __set_errno(EBADF);
+ 	    return(EBADF);
+ 	}
+-	de = NULL;
+ 
+ 	__UCLIBC_MUTEX_LOCK(dir->dd_lock);
+ 
+@@ -31,6 +30,7 @@
+ 		/* read dir->dd_max bytes of directory entries. */
+ 		bytes = __getdents(dir->dd_fd, dir->dd_buf, dir->dd_max);
+ 		if (bytes <= 0) {
++		    de = NULL;
+ 		    *result = NULL;
+ 		    ret = (bytes==0)? 0 : errno;
+ 		    goto all_done;
+--- a/libc/misc/dirent/readdir64_r.c
++++ b/libc/misc/dirent/readdir64_r.c
+@@ -24,7 +24,6 @@
+ 	    __set_errno(EBADF);
+ 	    return(EBADF);
+ 	}
+-	de = NULL;
+ 
+ 	__UCLIBC_MUTEX_LOCK(dir->dd_lock);
+ 
+@@ -33,6 +32,7 @@
+ 		/* read dir->dd_max bytes of directory entries. */
+ 		bytes = __getdents64(dir->dd_fd, dir->dd_buf, dir->dd_max);
+ 		if (bytes <= 0) {
++		    de = NULL;
+ 		    *result = NULL;
+ 		    ret = (bytes==0)? 0 : errno;
+ 		    goto all_done;

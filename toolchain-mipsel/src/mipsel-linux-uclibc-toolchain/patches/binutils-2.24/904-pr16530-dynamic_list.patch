@@ -1,0 +1,129 @@
+From d6f6f455778b10037503bcc39352b5174bba5e45
+From: H.J. Lu <hjl.tools@gmail.com>
+Date: Thu, 6 Feb 2014 09:44:25 -0800
+Subject: [PATCH] Mark symbol in executables if it matches dynamic_list
+
+bfd/
+
+	PR gold/16530
+	* elflink.c (bfd_elf_gc_mark_dynamic_ref_symbol): Mark symbol in
+	executables if it matches dynamic_list.
+
+ld/testsuite/
+
+	PR gold/16530
+	* ld-elf/dynamic-1.c: New file.
+	* ld-elf/dynamic-1.rd: Likewise.
+	* ld-elf/dynamic-1.syms: Likewise.
+
+	* ld-elf/shared.exp (build_tests): Add dynamic-1.
+---
+ bfd/ChangeLog                      |    6 ++++++
+ bfd/elflink.c                      |    6 +++++-
+ ld/testsuite/ChangeLog             |    9 +++++++++
+ ld/testsuite/ld-elf/dynamic-1.c    |   10 ++++++++++
+ ld/testsuite/ld-elf/dynamic-1.rd   |    5 +++++
+ ld/testsuite/ld-elf/dynamic-1.syms |    3 +++
+ ld/testsuite/ld-elf/shared.exp     |    3 +++
+ 7 files changed, 41 insertions(+), 1 deletions(-)
+ create mode 100644 ld/testsuite/ld-elf/dynamic-1.c
+ create mode 100644 ld/testsuite/ld-elf/dynamic-1.rd
+ create mode 100644 ld/testsuite/ld-elf/dynamic-1.syms
+
+diff --git a/bfd/ChangeLog b/bfd/ChangeLog
+--- a/bfd/ChangeLog
++++ b/bfd/ChangeLog
+@@ -1,3 +1,9 @@
++2014-02-10  H.J. Lu  <hongjiu.lu@intel.com>
++
++	PR gold/16530
++	* elflink.c (bfd_elf_gc_mark_dynamic_ref_symbol): Mark symbol in
++	executables if it matches dynamic_list.
++
+ 2014-02-07  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+ 
+ 	* cache.c (bfd_cache_max_open): Cast RLIM_INFINITY to rlim_t.
+diff --git a/bfd/elflink.c b/bfd/elflink.c
+--- a/bfd/elflink.c
++++ b/bfd/elflink.c
+@@ -12119,11 +12119,15 @@ bfd_boolean
+ bfd_elf_gc_mark_dynamic_ref_symbol (struct elf_link_hash_entry *h, void *inf)
+ {
+   struct bfd_link_info *info = (struct bfd_link_info *) inf;
++  struct bfd_elf_dynamic_list *d = info->dynamic_list;
+ 
+   if ((h->root.type == bfd_link_hash_defined
+        || h->root.type == bfd_link_hash_defweak)
+       && (h->ref_dynamic
+-	  || ((!info->executable || info->export_dynamic)
++	  || ((!info->executable
++	       || info->export_dynamic
++	       || (d != NULL
++		   && (*d->match) (&d->head, NULL, h->root.root.string)))
+ 	      && h->def_regular
+ 	      && ELF_ST_VISIBILITY (h->other) != STV_INTERNAL
+ 	      && ELF_ST_VISIBILITY (h->other) != STV_HIDDEN
+diff --git a/ld/testsuite/ChangeLog b/ld/testsuite/ChangeLog
+--- a/ld/testsuite/ChangeLog
++++ b/ld/testsuite/ChangeLog
+@@ -1,3 +1,12 @@
++2014-02-10  H.J. Lu  <hongjiu.lu@intel.com>
++
++	PR gold/16530
++	* ld-elf/dynamic-1.c: New file.
++	* ld-elf/dynamic-1.rd: Likewise.
++	* ld-elf/dynamic-1.syms: Likewise.
++
++	* ld-elf/shared.exp (build_tests): Add dynamic-1.
++
+ 2013-11-19  Roland McGrath  <mcgrathr@google.com>
+ 
+ 	* ld-elf/ehdr_start-userdef.t: New file.
+diff --git a/ld/testsuite/ld-elf/dynamic-1.c b/ld/testsuite/ld-elf/dynamic-1.c
+new file mode 100644
+--- /dev/null
++++ b/ld/testsuite/ld-elf/dynamic-1.c
+@@ -0,0 +1,10 @@
++void
++dynamic ()
++{
++}
++
++int
++main ()
++{
++  return 0;
++}
+diff --git a/ld/testsuite/ld-elf/dynamic-1.rd b/ld/testsuite/ld-elf/dynamic-1.rd
+new file mode 100644
+--- /dev/null
++++ b/ld/testsuite/ld-elf/dynamic-1.rd
+@@ -0,0 +1,5 @@
++Symbol table '\.dynsym' contains [0-9]+ entries:
++ +Num: +Value +Size Type +Bind +Vis +Ndx Name
++#...
++ +[0-9]+: +[0-9a-f]+ +[0-9a-f]+ +FUNC +GLOBAL +DEFAULT +[0-9]+ +_?dynamic
++#...
+diff --git a/ld/testsuite/ld-elf/dynamic-1.syms b/ld/testsuite/ld-elf/dynamic-1.syms
+new file mode 100644
+--- /dev/null
++++ b/ld/testsuite/ld-elf/dynamic-1.syms
+@@ -0,0 +1,3 @@
++{
++  dynamic;
++};
+diff --git a/ld/testsuite/ld-elf/shared.exp b/ld/testsuite/ld-elf/shared.exp
+--- a/ld/testsuite/ld-elf/shared.exp
++++ b/ld/testsuite/ld-elf/shared.exp
+@@ -206,6 +206,9 @@ set build_tests {
+   {"Build librel.so"
+    "-shared" "-fPIC"
+    {rel.c} {} "librel.so"}
++  {"Build dynamic-1"
++   "-Wl,--dynamic-list,dynamic-1.syms -Wl,--gc-sections" "-ffunction-sections"
++   {dynamic-1.c} {{readelf {-s} dynamic-1.rd}} "dynamic-1"}
+ }
+ 
+ run_cc_link_tests $build_tests
+-- 
+1.7.1

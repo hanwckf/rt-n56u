@@ -3,7 +3,7 @@
 ROOTDIR=`pwd`
 export ROOTDIR=$ROOTDIR
 
-kernel_id="3.0.x"
+kernel_id="3.4.x"
 kernel_cf=""
 kernel_tf=""
 uclibc_id="0.9.33.2"
@@ -81,8 +81,8 @@ uclibc_cf="$ROOTDIR/configs/boards/$CONFIG_FIRMWARE_PRODUCT_ID/libc.config"
 kernel_cd="$ROOTDIR/configs/boards/$CONFIG_FIRMWARE_PRODUCT_ID"
 kernel_tf="$ROOTDIR/$CONFIG_LINUXDIR/.config"
 
-if [ "$CONFIG_LINUXDIR" = "linux-3.4.x" ] ; then
-	kernel_id="3.4.x"
+if [ "$CONFIG_LINUXDIR" = "linux-3.0.x" ] ; then
+	kernel_id="3.0.x"
 fi
 
 if [ "$CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM" = "y" ] ; then

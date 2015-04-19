@@ -1,0 +1,31 @@
+From 40f8f5f0336ddcd6f7ea2d45d4713b553a225843
+From: Bernhard Reutner-Fischer
+Date: Thu, 20 Oct 2011 16:49:48 +0000
+Subject: gethostbyname_r: set correct h_errno upon failure
+
+previously gethostbyname_r(ipv6.google.com);herror("ERROR:") gave
+Answer name = |ipv6.google.com|
+Answer type = |5|
+herrno=1
+h_errno=0
+ERROR:: Error 0
+
+herrno=1
+h_errno=1
+ERROR:: Unknown host
+
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+diff --git a/libc/inet/resolv.c b/libc/inet/resolv.c
+--- a/libc/inet/resolv.c
++++ b/libc/inet/resolv.c
+@@ -2390,6 +2390,7 @@ int gethostbyname_r(const char *name,
+ 	}
+ 
+ 	*h_errnop = HOST_NOT_FOUND;
++	__set_h_errno(HOST_NOT_FOUND);
+ 	i = TRY_AGAIN;
+ 
+  free_and_ret:
+--
+cgit v0.9.0.1-2-gef13

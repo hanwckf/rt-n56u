@@ -1,0 +1,252 @@
+[PATCH] resolv: fix gethostbyname2_r to match gethostbyname_r, fixing bugs with AAAA lookups
+
+
+The latter half of gethostbyname2_r (doing AAAA queries) is rather dramatically different
+from the corresponding portion of gethostbyname_r (doing A queries). This leads to problems
+like calls to getaddrinfo only returning one IPv6 address, even when multiple exist.
+
+Seems to be entirely a case of divergent evolution -- a half-decade of fixes for the IPv4 
+code but no love for IPv6. Until now. ;)
+
+DNS behaviour for IPv6 is really no different than for IPv4 -- beyond the difference in
+address sizes, there's no need for the functions to be so different.
+
+Consequently, this patch really is almost just a cut-and-paste of gethostbyname_r, with 
+the appropriate substitutions of in6_addr, AF_INET6, etc; while holding on to the few 
+extra bits that actually belong in there (eg #ifdef __UCLIBC_HAS_IPV6__).
+
+Signed-off-by: Wes Campaigne <westacular at gmail.com>
+
+---
+ libc/inet/resolv.c |  166 +++++++++++++++++++++++++++++++++-------------------
+ 1 files changed, 105 insertions(+), 61 deletions(-)
+
+diff --git a/libc/inet/resolv.c b/libc/inet/resolv.c
+index 47bab75..d935b76 100644
+--- a/libc/inet/resolv.c
++++ b/libc/inet/resolv.c
+@@ -2216,12 +2216,13 @@ int gethostbyname2_r(const char *name,
+ 		? gethostbyname_r(name, result_buf, buf, buflen, result, h_errnop)
+ 		: HOST_NOT_FOUND;
+ #else
+-	struct in6_addr *in;
+ 	struct in6_addr **addr_list;
++	char **alias;
++	char *alias0;
+ 	unsigned char *packet;
+ 	struct resolv_answer a;
+ 	int i;
+-	int nest = 0;
++	int packet_len;
+ 	int wrong_af = 0;
+ 
+ 	if (family == AF_INET)
+@@ -2236,10 +2237,9 @@ int gethostbyname2_r(const char *name,
+ 
+ 	/* do /etc/hosts first */
+ 	{
+-		int old_errno = errno;	/* Save the old errno and reset errno */
+-		__set_errno(0);			/* to check for missing /etc/hosts. */
+-
+-		i = __get_hosts_byname_r(name, AF_INET6 /*family*/, result_buf,
++		int old_errno = errno;  /* save the old errno and reset errno */
++		__set_errno(0);         /* to check for missing /etc/hosts. */
++		i = __get_hosts_byname_r(name, AF_INET6, result_buf,
+ 				buf, buflen, result, h_errnop);
+ 		if (i == NETDB_SUCCESS) {
+ 			__set_errno(old_errno);
+@@ -2260,42 +2260,58 @@ int gethostbyname2_r(const char *name,
+ 		}
+ 		__set_errno(old_errno);
+ 	}
++
+ 	DPRINTF("Nothing found in /etc/hosts\n");
+ 
+ 	*h_errnop = NETDB_INTERNAL;
+ 
++	/* prepare future h_aliases[0] */
++	i = strlen(name) + 1;
++	if ((ssize_t)buflen <= i)
++		return ERANGE;
++	memcpy(buf, name, i); /* paranoia: name might change */
++	alias0 = buf;
++	buf += i;
++	buflen -= i;
+ 	/* make sure pointer is aligned */
+ 	i = ALIGN_BUFFER_OFFSET(buf);
+ 	buf += i;
+ 	buflen -= i;
+ 	/* Layout in buf:
+-	 * struct in6_addr* in;
+-	 * struct in6_addr* addr_list[2];
+-	 * char scratch_buf[256];
++	 * char *alias[2];
++	 * struct in6_addr* addr_list[NN+1];
++	 * struct in6_addr* in[NN];
+ 	 */
+-	in = (struct in6_addr*)buf;
+-	buf += sizeof(*in);
+-	buflen -= sizeof(*in);
+-	addr_list = (struct in6_addr**)buf;
+-	buf += sizeof(*addr_list) * 2;
+-	buflen -= sizeof(*addr_list) * 2;
++	alias = (char **)buf;
++	buf += sizeof(alias[0]) * 2;
++	buflen -= sizeof(alias[0]) * 2;
++	addr_list = (struct in6_addr **)buf;
++	/* buflen may be < 0, must do signed compare */
+ 	if ((ssize_t)buflen < 256)
+ 		return ERANGE;
+-	addr_list[0] = in;
+-	addr_list[1] = NULL;
+-	strncpy(buf, name, buflen);
+-	buf[buflen] = '\0';
++
++	/* we store only one "alias" - the name itself */
++#ifdef __UCLIBC_MJN3_ONLY__
++#warning TODO -- generate the full list
++#endif
++	alias[0] = alias0;
++	alias[1] = NULL;
+ 
+ 	/* maybe it is already an address? */
+-	if (inet_pton(AF_INET6, name, in)) {
+-		result_buf->h_name = buf;
+-		result_buf->h_addrtype = AF_INET6;
+-		result_buf->h_length = sizeof(*in);
+-		result_buf->h_addr_list = (char **) addr_list;
+-		/* result_buf->h_aliases = ??? */
+-		*result = result_buf;
+-		*h_errnop = NETDB_SUCCESS;
+-		return NETDB_SUCCESS;
++	{
++		struct in6_addr *in = (struct in6_addr *)(buf + sizeof(addr_list[0]) * 2);
++		if (inet_pton(AF_INET6, name, in)) {
++			addr_list[0] = in;
++			addr_list[1] = NULL;
++			result_buf->h_name = alias0;
++			result_buf->h_aliases = alias;
++			result_buf->h_addrtype = AF_INET6;
++			result_buf->h_length = sizeof(struct in6_addr);
++			result_buf->h_addr_list = (char **) addr_list;
++			*result = result_buf;
++			*h_errnop = NETDB_SUCCESS;
++			return NETDB_SUCCESS;
++		}
+ 	}
+ 
+ 	/* what if /etc/hosts has it but it's not IPv6?
+@@ -2307,51 +2323,79 @@ int gethostbyname2_r(const char *name,
+ 	}
+ 
+ 	/* talk to DNS servers */
+-/* TODO: why it's so different from gethostbyname_r (IPv4 case)? */
+-	memset(&a, '\0', sizeof(a));
+-	for (;;) {
+-		int packet_len;
++	a.buf = buf;
++	/* take into account that at least one address will be there,
++	 * we'll need space of one in6_addr + two addr_list[] elems */
++	a.buflen = buflen - ((sizeof(addr_list[0]) * 2 + sizeof(struct in6_addr)));
++	a.add_count = 0;
++	packet_len = __dns_lookup(name, T_AAAA, &packet, &a);
++	if (packet_len < 0) {
++		*h_errnop = HOST_NOT_FOUND;
++		DPRINTF("__dns_lookup returned < 0\n");
++		return TRY_AGAIN;
++	}
+ 
+-/* Hmm why we memset(a) to zeros only once? */
+-		packet_len = __dns_lookup(buf, T_AAAA, &packet, &a);
+-		if (packet_len < 0) {
+-			*h_errnop = HOST_NOT_FOUND;
+-			return TRY_AGAIN;
++	if (a.atype == T_AAAA) { /* ADDRESS */
++		/* we need space for addr_list[] and one IPv6 address */
++		/* + 1 accounting for 1st addr (it's in a.rdata),
++		 * another + 1 for NULL in last addr_list[]: */
++		int need_bytes = sizeof(addr_list[0]) * (a.add_count + 1 + 1)
++				/* for 1st addr (it's in a.rdata): */
++				+ sizeof(struct in6_addr);
++		/* how many bytes will 2nd and following addresses take? */
++		int ips_len = a.add_count * a.rdlength;
++
++		buflen -= (need_bytes + ips_len);
++		if ((ssize_t)buflen < 0) {
++			DPRINTF("buffer too small for all addresses\n");
++			/* *h_errnop = NETDB_INTERNAL; - already is */
++			i = ERANGE;
++			goto free_and_ret;
+ 		}
+-		strncpy(buf, a.dotted, buflen);
+-		free(a.dotted);
+ 
+-		if (a.atype != T_CNAME)
+-			break;
++		/* if there are additional addresses in buf,
++		 * move them forward so that they are not destroyed */
++		DPRINTF("a.add_count:%d a.rdlength:%d a.rdata:%p\n", a.add_count, a.rdlength, a.rdata);
++		memmove(buf + need_bytes, buf, ips_len);
+ 
+-		DPRINTF("Got a CNAME in gethostbyname()\n");
+-		if (++nest > MAX_RECURSE) {
+-			*h_errnop = NO_RECOVERY;
+-			return -1;
++		/* 1st address is in a.rdata, insert it  */
++		buf += need_bytes - sizeof(struct in6_addr);
++		memcpy(buf, a.rdata, sizeof(struct in6_addr));
++
++		/* fill addr_list[] */
++		for (i = 0; i <= a.add_count; i++) {
++			addr_list[i] = (struct in6_addr*)buf;
++			buf += sizeof(struct in6_addr);
+ 		}
+-		i = __decode_dotted(packet, a.rdoffset, packet_len, buf, buflen);
+-		free(packet);
+-		if (i < 0) {
+-			*h_errnop = NO_RECOVERY;
+-			return -1;
++		addr_list[i] = NULL;
++
++		/* if we have enough space, we can report "better" name
++		 * (it may contain search domains attached by __dns_lookup,
++		 * or CNAME of the host if it is different from the name
++		 * we used to find it) */
++		if (a.dotted && buflen > strlen(a.dotted)) {
++			strcpy(buf, a.dotted);
++			alias0 = buf;
+ 		}
+-	}
+-	if (a.atype == T_AAAA) {	/* ADDRESS */
+-		memcpy(in, a.rdata, sizeof(*in));
+-		result_buf->h_name = buf;
++
++		result_buf->h_name = alias0;
++		result_buf->h_aliases = alias;
+ 		result_buf->h_addrtype = AF_INET6;
+-		result_buf->h_length = sizeof(*in);
++		result_buf->h_length = sizeof(struct in6_addr);
+ 		result_buf->h_addr_list = (char **) addr_list;
+-		/* result_buf->h_aliases = ??? */
+-		free(packet);
+ 		*result = result_buf;
+ 		*h_errnop = NETDB_SUCCESS;
+-		return NETDB_SUCCESS;
++		i = NETDB_SUCCESS;
++		goto free_and_ret;
+ 	}
+-	free(packet);
++
+ 	*h_errnop = HOST_NOT_FOUND;
+-	return TRY_AGAIN;
++	i = TRY_AGAIN;
+ 
++ free_and_ret:
++	free(a.dotted);
++	free(packet);
++	return i;
+ #endif /* __UCLIBC_HAS_IPV6__ */
+ }
+ libc_hidden_def(gethostbyname2_r)
+-- 
+1.7.1

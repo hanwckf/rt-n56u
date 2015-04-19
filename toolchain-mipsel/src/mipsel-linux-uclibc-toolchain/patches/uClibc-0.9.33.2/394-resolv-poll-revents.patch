@@ -1,0 +1,18 @@
+resolv: __dns_lookup - immediately switch to next server in case of poll() set error events
+
+ https://bugs.busybox.net/show_bug.cgi?id=3211
+
+diff -uBp a/libc/inet/resolv.c b/libc/inet/resolv.c
+--- a/libc/inet/resolv.c	2010-04-02 19:34:27.000000000 +0400
++++ b/libc/inet/resolv.c	2011-02-08 17:38:28.000000000 +0300
+@@ -1429,6 +1429,10 @@ int attribute_hidden __dns_lookup(const char *name,
+ 			 * to next nameserver */
+ 			goto try_next_server;
+ 		}
++		if (fds.revents & (POLLERR | POLLHUP | POLLNVAL)) {
++			DPRINTF("Bad event\n");
++			goto try_next_server;
++		}
+ /*TODO: better timeout accounting?*/
+ 		reply_timeout -= 1000;
+ #endif /* USE_SELECT */

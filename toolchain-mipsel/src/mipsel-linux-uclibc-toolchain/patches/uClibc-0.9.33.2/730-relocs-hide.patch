@@ -1,0 +1,168 @@
+hide relocations
+
+ 2e17280a398d1297103517f456ac114b70cf015a math: avoid jump relocation in libm
+ a716f8ad2c4ba124073ef517f0b4d2f49d3b4bb4 getpwnam: hide relocation
+ 2be3edacc1f7279ac57b98e49ba3a189ae40b1fd stdlib: avoid relocation
+
+---
+
+diff --git a/include/pwd.h b/include/pwd.h
+--- a/include/pwd.h
++++ b/include/pwd.h
+@@ -115,6 +115,7 @@ extern struct passwd *getpwuid (__uid_t __uid);
+    This function is a possible cancellation point and therefore not
+    marked with __THROW.  */
+ extern struct passwd *getpwnam (__const char *__name);
++libc_hidden_proto(getpwnam)
+ 
+ #if defined __USE_POSIX || defined __USE_MISC
+ 
+diff --git a/libc/pwd_grp/pwd_grp.c b/libc/pwd_grp/pwd_grp.c
+--- a/libc/pwd_grp/pwd_grp.c
++++ b/libc/pwd_grp/pwd_grp.c
+@@ -354,6 +354,7 @@ struct passwd *getpwnam(const char *name)
+ 	getpwnam_r(name, &resultbuf, buffer, sizeof(buffer), &result);
+ 	return result;
+ }
++libc_hidden_def(getpwnam)
+ 
+ #endif
+ /**********************************************************************/
+diff --git a/libc/sysdeps/linux/common/bits/mathcalls.h b/libc/sysdeps/linux/common/bits/mathcalls.h
+--- a/libc/sysdeps/linux/common/bits/mathcalls.h
++++ b/libc/sysdeps/linux/common/bits/mathcalls.h
+@@ -155,7 +155,7 @@ __BEGIN_NAMESPACE_C99
+ __MATHCALLI (exp2,, (_Mdouble_ __x))
+ 
+ /* Compute base-2 logarithm of X.  */
+-__MATHCALL (log2,, (_Mdouble_ __x))
++__MATHCALLI (log2,, (_Mdouble_ __x))
+ __END_NAMESPACE_C99
+ #endif
+ 
+@@ -223,7 +223,7 @@ __MATHCALL (drem,, (_Mdouble_ __x, _Mdouble_ __y))
+ 
+ 
+ /* Return the fractional part of X after dividing out `ilogb (X)'.  */
+-__MATHCALL (significand,, (_Mdouble_ __x))
++__MATHCALLI (significand,, (_Mdouble_ __x))
+ #endif /* Use misc.  */
+ 
+ #if defined __USE_MISC || defined __USE_ISOC99
+@@ -278,7 +278,7 @@ __END_NAMESPACE_C99
+ 
+ #if defined __USE_MISC || defined __USE_XOPEN
+ /* Obsolete alias for `lgamma'.  */
+-__MATHCALL (gamma,, (_Mdouble_))
++__MATHCALLI (gamma,, (_Mdouble_))
+ #endif
+ 
+ #ifdef __USE_MISC
+@@ -286,6 +286,8 @@ __MATHCALL (gamma,, (_Mdouble_))
+    `signgam'.  The reentrant version instead takes a pointer and stores
+    the value through it.  */
+ __MATHCALL (lgamma,_r, (_Mdouble_, int *__signgamp))
++/* __MATHCALLI does not work here, probably due to ,_r, */
++libm_hidden_proto(lgamma_r)
+ #endif
+ 
+ 
+@@ -376,5 +378,5 @@ __END_NAMESPACE_C99
+ #if (defined __USE_MISC || defined __USE_XOPEN_EXTENDED) \
+ 	&& defined __UCLIBC_SUSV3_LEGACY__
+ /* Return X times (2 to the Nth power).  */
+-__MATHCALL (scalb,, (_Mdouble_ __x, _Mdouble_ __n))
++__MATHCALLI (scalb,, (_Mdouble_ __x, _Mdouble_ __n))
+ #endif
+diff --git a/libm/e_lgamma_r.c b/libm/e_lgamma_r.c
+--- a/libm/e_lgamma_r.c
++++ b/libm/e_lgamma_r.c
+@@ -314,6 +314,7 @@ double lgamma_r(double x, int *signgamp)
+ #else
+ strong_alias(__ieee754_lgamma_r, lgamma_r)
+ #endif
++libm_hidden_def(lgamma_r)
+ 
+ /* __ieee754_lgamma(x)
+  * Return the logarithm of the Gamma function of x.
+@@ -358,6 +359,7 @@ strong_alias(lgamma, gamma)
+ strong_alias(__ieee754_lgamma_r, gamma_r)
+ strong_alias(__ieee754_lgamma, gamma)
+ #endif
++libm_hidden_def(gamma)
+ 
+ 
+ /* double tgamma(double x)
+diff --git a/libm/e_log2.c b/libm/e_log2.c
+--- a/libm/e_log2.c
++++ b/libm/e_log2.c
+@@ -116,3 +116,4 @@ double __ieee754_log2(double x)
+ 	}
+ }
+ strong_alias(__ieee754_log2,log2)
++libm_hidden_def(log2)
+diff --git a/libm/e_scalb.c b/libm/e_scalb.c
+--- a/libm/e_scalb.c
++++ b/libm/e_scalb.c
+@@ -55,5 +55,6 @@ double scalb(double x, double fn)
+ #else
+ strong_alias(__ieee754_scalb, scalb)
+ #endif
++libm_hidden_def(scalb)
+ 
+ #endif /* UCLIBC_SUSV3_LEGACY */
+diff --git a/libm/s_significand.c b/libm/s_significand.c
+--- a/libm/s_significand.c
++++ b/libm/s_significand.c
+@@ -22,3 +22,4 @@ double significand(double x)
+ {
+ 	return __ieee754_scalb(x,(double) -ilogb(x));
+ }
++libm_hidden_def(significand)
+diff --git a/include/malloc.h b/include/malloc.h
+--- a/include/malloc.h
++++ b/include/malloc.h
+@@ -124,6 +124,7 @@ extern void free __MALLOC_P ((__malloc_ptr_t __ptr));
+ 
+ /* Allocate SIZE bytes allocated to ALIGNMENT bytes.  */
+ extern __malloc_ptr_t memalign __MALLOC_P ((size_t __alignment, size_t __size));
++libc_hidden_proto(memalign)
+ 
+ /* Allocate SIZE bytes on a page boundary.  */
+ extern __malloc_ptr_t valloc __MALLOC_P ((size_t __size)) __attribute_malloc__;
+diff --git a/libc/stdlib/malloc-simple/alloc.c b/libc/stdlib/malloc-simple/alloc.c
+--- a/libc/stdlib/malloc-simple/alloc.c
++++ b/libc/stdlib/malloc-simple/alloc.c
+@@ -182,4 +182,5 @@ DONE:
+ 
+ 	return result;
+ }
++libc_hidden_def(memalign)
+ #endif
+diff --git a/libc/stdlib/malloc-standard/memalign.c b/libc/stdlib/malloc-standard/memalign.c
+--- a/libc/stdlib/malloc-standard/memalign.c
++++ b/libc/stdlib/malloc-standard/memalign.c
+@@ -127,4 +127,4 @@ void* memalign(size_t alignment, size_t bytes)
+     __MALLOC_UNLOCK;
+ 	return retval;
+ }
+-
++libc_hidden_def(memalign)
+diff --git a/libc/stdlib/malloc/memalign.c b/libc/stdlib/malloc/memalign.c
+--- a/libc/stdlib/malloc/memalign.c
++++ b/libc/stdlib/malloc/memalign.c
+@@ -30,6 +30,8 @@
+ */
+ 
+ void *memalign (size_t alignment, size_t size);
++/* XXX shadow outer malloc.h */
++libc_hidden_proto(memalign)
+ void *
+ memalign (size_t alignment, size_t size)
+ {
+@@ -92,3 +94,4 @@ memalign (size_t alignment, size_t size)
+ 
+   return MALLOC_SETUP (base, end_addr - (unsigned long)base);
+ }
++libc_hidden_def(memalign)
+-- 

@@ -1,0 +1,14 @@
+--- a/libpthread/linuxthreads/sysdeps/pthread/pthread.h
++++ b/libpthread/linuxthreads/sysdeps/pthread/pthread.h
+@@ -17,8 +17,8 @@
+ 
+ #include <features.h>
+ 
+-#include <sched.h>
+-#include <time.h>
++#include <linux/sched.h>
++#include <linux/time.h>
+ 
+ #define __need_sigset_t
+ #include <signal.h>
+

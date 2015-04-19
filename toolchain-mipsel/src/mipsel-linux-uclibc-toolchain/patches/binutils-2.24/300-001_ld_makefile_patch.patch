@@ -1,0 +1,50 @@
+--- a/ld/Makefile.am
++++ b/ld/Makefile.am
+@@ -54,7 +54,7 @@ endif
+ # We put the scripts in the directory $(scriptdir)/ldscripts.
+ # We can't put the scripts in $(datadir) because the SEARCH_DIR
+ # directives need to be different for native and cross linkers.
+-scriptdir = $(tooldir)/lib
++scriptdir = $(libdir)
+ 
+ EMUL = @EMUL@
+ EMULATION_OFILES = @EMULATION_OFILES@
+@@ -2322,11 +2322,11 @@ install-exec-local: ld-new$(EXEEXT) inst
+ 	if test "x$(install_as_default)" = "xyes"; then \
+ 	  ld=`echo ld | sed '$(transform)'`; \
+ 	  rm -f $(DESTDIR)$(bindir)/$$ld$(EXEEXT); \
+-	  ln $(DESTDIR)$(bindir)/$$n$(EXEEXT) $(DESTDIR)$(bindir)/$$ld$(EXEEXT) >/dev/null 2>/dev/null \
++	  ln -s $$n$(EXEEXT) $(DESTDIR)$(bindir)/$$ld$(EXEEXT) >/dev/null 2>/dev/null \
+ 	  || $(LIBTOOL) --mode=install $(INSTALL_PROGRAM) ld-new$(EXEEXT) $(DESTDIR)$(bindir)/$$ld$(EXEEXT); \
+ 	  if test "$(bindir)" != "$(tooldir)/bin"; then \
+ 	    rm -f $(DESTDIR)$(tooldir)/bin/ld$(EXEEXT); \
+-	    ln $(DESTDIR)$(bindir)/$$n$(EXEEXT) $(DESTDIR)$(tooldir)/bin/ld$(EXEEXT) >/dev/null 2>/dev/null \
++	    ln -s $(installed_linker)$(EXEEXT) $(DESTDIR)$(tooldir)/bin/ld$(EXEEXT) >/dev/null 2>/dev/null \
+ 	    || $(LIBTOOL) --mode=install $(INSTALL_PROGRAM) ld-new$(EXEEXT) $(DESTDIR)$(tooldir)/bin/ld$(EXEEXT); \
+ 	  fi; \
+ 	fi
+--- a/ld/Makefile.in
++++ b/ld/Makefile.in
+@@ -386,7 +386,7 @@ AM_CFLAGS = $(WARN_CFLAGS)
+ # We put the scripts in the directory $(scriptdir)/ldscripts.
+ # We can't put the scripts in $(datadir) because the SEARCH_DIR
+ # directives need to be different for native and cross linkers.
+-scriptdir = $(tooldir)/lib
++scriptdir = $(libdir)
+ BASEDIR = $(srcdir)/..
+ BFDDIR = $(BASEDIR)/bfd
+ INCDIR = $(BASEDIR)/include
+@@ -3738,11 +3738,11 @@ install-exec-local: ld-new$(EXEEXT) inst
+ 	if test "x$(install_as_default)" = "xyes"; then \
+ 	  ld=`echo ld | sed '$(transform)'`; \
+ 	  rm -f $(DESTDIR)$(bindir)/$$ld$(EXEEXT); \
+-	  ln $(DESTDIR)$(bindir)/$$n$(EXEEXT) $(DESTDIR)$(bindir)/$$ld$(EXEEXT) >/dev/null 2>/dev/null \
++	  ln -s $$n$(EXEEXT) $(DESTDIR)$(bindir)/$$ld$(EXEEXT) >/dev/null 2>/dev/null \
+ 	  || $(LIBTOOL) --mode=install $(INSTALL_PROGRAM) ld-new$(EXEEXT) $(DESTDIR)$(bindir)/$$ld$(EXEEXT); \
+ 	  if test "$(bindir)" != "$(tooldir)/bin"; then \
+ 	    rm -f $(DESTDIR)$(tooldir)/bin/ld$(EXEEXT); \
+-	    ln $(DESTDIR)$(bindir)/$$n$(EXEEXT) $(DESTDIR)$(tooldir)/bin/ld$(EXEEXT) >/dev/null 2>/dev/null \
++	    ln -s $(installed_linker)$(EXEEXT) $(DESTDIR)$(tooldir)/bin/ld$(EXEEXT) >/dev/null 2>/dev/null \
+ 	    || $(LIBTOOL) --mode=install $(INSTALL_PROGRAM) ld-new$(EXEEXT) $(DESTDIR)$(tooldir)/bin/ld$(EXEEXT); \
+ 	  fi; \
+ 	fi

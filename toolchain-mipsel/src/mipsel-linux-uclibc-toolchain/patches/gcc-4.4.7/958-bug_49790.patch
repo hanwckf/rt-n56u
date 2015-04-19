@@ -1,0 +1,36 @@
+[4.4 Regression] ICE in partition_view_bitmap, at tree-ssa-live.c:369
+
+ http://gcc.gnu.org/bugzilla/show_bug.cgi?id=49790
+
+--- trunk/gcc/ChangeLog	2009/09/26 14:38:38	152202
++++ trunk/gcc/ChangeLog	2009/09/26 16:46:43	152203
+@@ -43,6 +43,14 @@
+ 
+ 	* config/mips/mips.md (loadgp_newabi_<mode>): Add missing earlyclobber.
+ 
++	2011-12-28  Leonid Lisovskiy
++	Backport from 4.5
++	2009-09-26  Michael Matz  <matz@suse.de>
++
++	PR tree-optimization/49790
++	* tree-ssa-coalesce.c (coalesce_ssa_name): Add only SSA names
++	that are mentioned in the body.
++
+ 2011-12-21  Uros Bizjak  <ubizjak@gmail.com>
+ 
+ 	* config/alpha/linux-unwind.h: Update copyright years.
+--- trunk/gcc/tree-ssa-coalesce.c	2009/09/26 14:38:38	152202
++++ trunk/gcc/tree-ssa-coalesce.c	2009/09/26 16:46:43	152203
+@@ -1354,7 +1354,10 @@ coalesce_ssa_name (void)
+ 	{
+ 	  tree a = ssa_name (i);
+ 
+-	  if (a && SSA_NAME_VAR (a) && !DECL_ARTIFICIAL (SSA_NAME_VAR (a)))
++	  if (a
++	      && SSA_NAME_VAR (a)
++	      && !DECL_ARTIFICIAL (SSA_NAME_VAR (a))
++	      && (!has_zero_uses (a) || !SSA_NAME_IS_DEFAULT_DEF (a)))
+ 	    {
+ 	      tree *slot = (tree *) htab_find_slot (ssa_name_hash, a, INSERT);
+ 
+-- 

@@ -1,0 +1,158 @@
+[4.4 Regression] Mismatch on size of class when initializing hierarchy involving virtual inheritance and empty base classes
+
+ http://gcc.gnu.org/bugzilla/show_bug.cgi?id=48035
+
+--- gcc-4_5-branch/gcc/ChangeLog	2011/04/18 14:01:13	172646
++++ gcc-4_5-branch/gcc/ChangeLog	2011/04/18 14:02:22	172647
+@@ -419,6 +419,21 @@
+ 	register, return false if mode isn't a scalar integer mode.
+ 	* config/pa/pa64-regs.h (HARD_REGNO_MODE_OK): Likewise.
+ 
++2011-04-18  Richard Guenther  <rguenther@suse.de>
++
++	Backported from 4.5 branch
++	2011-03-05  Zdenek Dvorak  <ook@ucw.cz>
++
++	PR rtl-optimization/47899
++	* cfgloopmanip.c (fix_bb_placements): Fix first argument
++	to flow_loop_nested_p when moving the loop upward.
++
++	2011-03-15  Richard Guenther  <rguenther@suse.de>
++ 
++	PR middle-end/48031
++	* fold-const.c (fold_indirect_ref_1): Do not create new variable-sized
++	or variable-indexed array accesses when in gimple form.
++
+ 2011-04-16  Jakub Jelinek  <jakub@redhat.com>
+ 
+ 	Backported from 4.6 branch
+--- gcc-4_5-branch/gcc/cfgloopmanip.c	2011/04/18 14:01:13	172646
++++ gcc-4_5-branch/gcc/cfgloopmanip.c	2011/04/18 14:02:22	172647
+@@ -175,7 +175,7 @@
+ {
+   sbitmap in_queue;
+   basic_block *queue, *qtop, *qbeg, *qend;
+-  struct loop *base_loop;
++  struct loop *base_loop, *target_loop;
+   edge e;
+ 
+   /* We pass through blocks back-reachable from FROM, testing whether some
+@@ -215,12 +215,14 @@
+ 	  /* Subloop header, maybe move the loop upward.  */
+ 	  if (!fix_loop_placement (from->loop_father))
+ 	    continue;
++	  target_loop = loop_outer (from->loop_father);
+ 	}
+       else
+ 	{
+ 	  /* Ordinary basic block.  */
+ 	  if (!fix_bb_placement (from))
+ 	    continue;
++	  target_loop = from->loop_father;
+ 	}
+ 
+       FOR_EACH_EDGE (e, ei, from->succs)
+@@ -249,9 +251,12 @@
+ 	      && (nca == base_loop
+ 		  || nca != pred->loop_father))
+ 	    pred = pred->loop_father->header;
+-	  else if (!flow_loop_nested_p (from->loop_father, pred->loop_father))
++	  else if (!flow_loop_nested_p (target_loop, pred->loop_father))
+ 	    {
+-	      /* No point in processing it.  */
++	      /* If PRED is already higher in the loop hierarchy than the
++		 TARGET_LOOP to that we moved FROM, the change of the position
++		 of FROM does not affect the position of PRED, so there is no
++		 point in processing it.  */
+ 	      continue;
+ 	    }
+ 
+--- gcc-4_5-branch/gcc/fold-const.c	2011/04/18 14:01:13	172646
++++ gcc-4_5-branch/gcc/fold-const.c	2011/04/18 14:02:22	172647
+@@ -15553,12 +15553,17 @@ fold_indirect_ref_1 (tree type, tree op0)
+ 	}
+       /* *(foo *)&fooarray => fooarray[0] */
+       else if (TREE_CODE (optype) == ARRAY_TYPE
+-	       && type == TREE_TYPE (optype))
++	       && type == TREE_TYPE (optype)
++	       && (!in_gimple_form
++		   || TREE_CODE (TYPE_SIZE (type)) == INTEGER_CST))
+ 	{
+ 	  tree type_domain = TYPE_DOMAIN (optype);
+ 	  tree min_val = size_zero_node;
+ 	  if (type_domain && TYPE_MIN_VALUE (type_domain))
+ 	    min_val = TYPE_MIN_VALUE (type_domain);
++	  if (in_gimple_form
++	      && TREE_CODE (min_val) != INTEGER_CST)
++	    return NULL_TREE;
+ 	  return build4 (ARRAY_REF, type, op, min_val, NULL_TREE, NULL_TREE);
+ 	}
+       /* *(foo *)&complexfoo => __real__ complexfoo */
+@@ -15625,7 +15630,9 @@ fold_indirect_ref_1 (tree type, tree op0)
+   
+   /* *(foo *)fooarrptr => (*fooarrptr)[0] */
+   if (TREE_CODE (TREE_TYPE (subtype)) == ARRAY_TYPE
+-      && type == TREE_TYPE (TREE_TYPE (subtype)))
++      && type == TREE_TYPE (TREE_TYPE (subtype))
++      && (!in_gimple_form
++	  || TREE_CODE (TYPE_SIZE (type)) == INTEGER_CST))
+     {
+       tree type_domain;
+       tree min_val = size_zero_node;
+@@ -15633,6 +15640,9 @@ fold_indirect_ref_1 (tree type, tree op0)
+       type_domain = TYPE_DOMAIN (TREE_TYPE (sub));
+       if (type_domain && TYPE_MIN_VALUE (type_domain))
+ 	min_val = TYPE_MIN_VALUE (type_domain);
++      if (in_gimple_form
++	  && TREE_CODE (min_val) != INTEGER_CST)
++	return NULL_TREE;
+       return build4 (ARRAY_REF, type, sub, min_val, NULL_TREE, NULL_TREE);
+     }
+ 
+--- gcc-4_5-branch/gcc/testsuite/ChangeLog	2011/04/18 14:01:13	172646
++++ gcc-4_5-branch/gcc/testsuite/ChangeLog	2011/04/18 14:02:22	172647
+@@ -252,6 +252,14 @@
+ 
+ 	* g++.dg/template/operator11.C: New.
+ 
++2011-04-18  Richard Guenther  <rguenther@suse.de>
++
++	Backported from 4.5 branch 
++	2011-03-05  Zdenek Dvorak  <ook@ucw.cz>
++
++	PR rtl-optimization/47899
++	* gcc.dg/pr47899.c: New test.
++
+ 2011-04-16  Jakub Jelinek  <jakub@redhat.com>
+ 
+ 	Backported from 4.6 branch
+--- /dev/null
++++ gcc-4_5-branch/gcc/testsuite/gcc.dg/pr47899.c	2011/04/18 14:37:08	172652
+@@ -0,0 +1,26 @@
++/* PR rtl-optimization/47899 */
++/* { dg-do compile } */
++/* { dg-options "-O -funroll-loops" } */
++
++extern unsigned int a, b, c;
++extern int d;
++
++static int
++foo (void)
++{
++lab:
++  if (b)
++    for (d = 0; d >= 0; d--)
++      if (a || c)
++	for (; c; c++)
++	  ;
++      else
++	goto lab;
++}
++
++int
++main ()
++{
++  foo ();
++  return 0;
++}
+-- 

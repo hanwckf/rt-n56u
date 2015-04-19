@@ -1,0 +1,29 @@
+From cb43f2afba0633400387fa7c55dda3396517f58a
+From: Filippo Arcidiacono <filippo.arcidiacono@st.com>
+Date: Thu, 12 Jul 2012 07:24:39 +0000
+Subject: librt: re-add SIGCANCEL to the list of blocked signal in helper thread
+
+Indeed if the libpthread is before the libc in the library look up
+the SIGCANCEL is removed from the list of the blocked signal by
+sigfillset func, this can produce the handler not properly called.
+This commit revert what Denys modified in commit
+162cfaea20d807f0ae329efe39292a9b22593b41.
+
+Signed-off-by: Filippo Arcidiacono <filippo.arcidiacono@st.com>
+Signed-off-by: Carmelo Amoroso <carmelo.amoroso@st.com>
+---
+
+diff --git a/libpthread/nptl/sysdeps/unix/sysv/linux/timer_routines.c b/libpthread/nptl/sysdeps/unix/sysv/linux/timer_routines.c
+--- a/libpthread/nptl/sysdeps/unix/sysv/linux/timer_routines.c
++++ b/libpthread/nptl/sysdeps/unix/sysv/linux/timer_routines.c
+@@ -175,7 +175,7 @@ __start_helper_thread (void)
+   sigset_t ss;
+   sigset_t oss;
+   sigfillset (&ss);
+-  /*__sigaddset (&ss, SIGCANCEL); - already done by sigfillset */
++  __sigaddset (&ss, SIGCANCEL);
+   INTERNAL_SYSCALL_DECL (err);
+   INTERNAL_SYSCALL (rt_sigprocmask, err, 4, SIG_SETMASK, &ss, &oss, _NSIG / 8);
+ 
+--
+cgit v0.9.0.1-2-gef13

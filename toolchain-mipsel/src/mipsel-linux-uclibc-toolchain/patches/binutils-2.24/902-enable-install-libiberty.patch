@@ -1,0 +1,56 @@
+From 5f14d9c9e3f61cb79da5e7697af2fe264def852f
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Mon, 6 Jan 2014 18:15:31 +0000
+Subject: [PATCH] libiberty: fix --enable-install-libiberty flag [PR 56780]
+
+Commit 199570 fixed the --disable-install-libiberty behavior, but it also
+added a bug where the enable path never works because the initial clear
+of target_header_dir wasn't deleted.  So we end up initializing properly
+at the top only to reset it at the end all the time.
+
+git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@206367 138bc75d-0d04-0410-961f-82ee72b054a4
+(cherry picked from commit 369be6981b26787b2685e3b8c6da779dae8ce35f)
+---
+ libiberty/ChangeLog    |    6 ++++++
+ libiberty/configure    |    1 -
+ libiberty/configure.ac |    1 -
+ 3 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/libiberty/ChangeLog b/libiberty/ChangeLog
+--- a/libiberty/ChangeLog
++++ b/libiberty/ChangeLog
+@@ -1,3 +1,9 @@
++2014-01-06  Mike Frysinger  <vapier@gentoo.org>
++
++	PR other/56780
++	* configure.ac: Delete target_header_dir assignment.
++	* configure: Regenerated.
++
+ 2013-09-10  Paolo Carlini  <paolo.carlini@oracle.com>
+ 
+ 	PR bootstrap/58386
+diff --git a/libiberty/configure b/libiberty/configure
+index e601ccd..878fa53 100755
+--- a/libiberty/configure
++++ b/libiberty/configure
+@@ -5507,7 +5507,6 @@ fi
+ 
+ setobjs=
+ CHECK=
+-target_header_dir=
+ if test -n "${with_target_subdir}"; then
+ 
+   # We are being configured as a target library.  AC_REPLACE_FUNCS
+diff --git a/libiberty/configure.ac b/libiberty/configure.ac
+--- a/libiberty/configure.ac
++++ b/libiberty/configure.ac
+@@ -405,7 +405,6 @@ fi
+ 
+ setobjs=
+ CHECK=
+-target_header_dir=
+ if test -n "${with_target_subdir}"; then
+ 
+   # We are being configured as a target library.  AC_REPLACE_FUNCS
+-- 
+1.7.1

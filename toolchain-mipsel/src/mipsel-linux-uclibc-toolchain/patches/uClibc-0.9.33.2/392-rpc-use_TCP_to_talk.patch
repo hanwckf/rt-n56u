@@ -1,0 +1,41 @@
+From c533aca08e29d4f659ca0ac011e5162b483dc6a9 Mon Sep 17 00:00:00 2001
+From: Denys Vlasenko <vda.linux@googlemail.com>
+Date: Mon, 07 Oct 2013 14:42:26 +0000
+Subject: pmap_getport: use TCP to talk to portmapper if protocol == IPPROTO_TCP.
+
+Before the patch, the query itself was sent via UDP
+(the query contained correct protocol ID).
+
+The fix is taken from glibc.
+
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+---
+(limited to 'libc/inet')
+
+diff --git a/libc/inet/rpc/pm_getport.c b/libc/inet/rpc/pm_getport.c
+index ac20bb1..9a0e791 100644
+--- a/libc/inet/rpc/pm_getport.c
++++ b/libc/inet/rpc/pm_getport.c
+@@ -65,7 +65,19 @@ pmap_getport (struct sockaddr_in *address, u_long program, u_long version,
+   struct pmap parms;
+ 
+   address->sin_port = htons (PMAPPORT);
+-  client = clntudp_bufcreate (address, PMAPPROG,
++  if (protocol == IPPROTO_TCP)
++    {
++      // glibc does this:
++      ///* Don't need a reserved port to get ports from the portmapper.  */
++      //socket = __get_socket(address); // does socket(TCP),bind(),connect(address)
++      //if (_socket != -1)
++      //  closeit = true;
++      // do we need/want to do the same?
++      client = clnttcp_create (address, PMAPPROG,
++	      PMAPVERS, &_socket, RPCSMALLMSGSIZE, RPCSMALLMSGSIZE);
++    }
++  else
++    client = clntudp_bufcreate (address, PMAPPROG,
+ 	      PMAPVERS, timeout, &_socket, RPCSMALLMSGSIZE, RPCSMALLMSGSIZE);
+   if (client != (CLIENT *) NULL)
+     {
+--
+cgit v0.9.1

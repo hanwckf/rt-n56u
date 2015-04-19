@@ -1,0 +1,39 @@
+From: Timo Teras
+Date: Fri, 23 Dec 2011 14:15:16 +0100
+Subject: [PATCH 2/8] resolv: res_query for CNAMEs
+
+From: http://lists.busybox.net/pipermail/uclibc/2009-June/042583.html
+
+I had postfix failing for domains with MX->CNAME->A chain. In glibc it works.
+I tracked it to be a problem in uclibc res_query. It returns bogus data
+for CNAME entries, apparently intentionally, which is wrong.
+
+glibc return CNAME entries even for CNAME queries and most applications rely
+on this. So we should do the same in uclibc.
+
+Signed-off-by: Natanael Copa <ncopa@alpinelinux.org>
+
+---
+ libc/inet/resolv.c |    8 +++-----
+ 1 files changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/libc/inet/resolv.c b/libc/inet/resolv.c
+--- a/libc/inet/resolv.c
++++ b/libc/inet/resolv.c
+@@ -3786,11 +3786,9 @@ int res_query(const char *dname, int class, int type,
+ 
+ 	free(a.dotted);
+ 
+-	if (a.atype == type) { /* CNAME */
+-		if (i > anslen)
+-			i = anslen;
+-		memcpy(answer, packet, i);
+-	}
++	i = MIN(anslen, i);
++	memcpy(answer, packet, i);
++
+ 	free(packet);
+ 	return i;
+ }
+-- 
+1.7.8.4

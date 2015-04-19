@@ -1,0 +1,72 @@
+From ecc7aee9a0eb4f9fbdf4dc2972e8c6361e531b6a Mon Sep 17 00:00:00 2001
+From: Kenneth Soerensen <kenneth.sorensen@spectralink.com>
+Date: Wed, 10 Apr 2013 14:52:52 +0000
+Subject: Make res_init() thread safe.
+
+res_init() was not atomic, which could give undesired behaviour. Now
+res_init() is completely locked under one lock and the locking is
+removed from __res_vinit().
+
+Signed-off-by: Kenneth Soerensen <kenneth.sorensen@spectralink.com>
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+(limited to 'libc/inet')
+
+diff --git a/libc/inet/resolv.c b/libc/inet/resolv.c
+index ae0dce5..f334d05 100644
+--- a/libc/inet/resolv.c
++++ b/libc/inet/resolv.c
+@@ -3478,6 +3478,7 @@ static void res_sync_func(void)
+ 	 */
+ }
+ 
++/* has to be called under __resolv_lock */
+ static int
+ __res_vinit(res_state rp, int preinit)
+ {
+@@ -3486,7 +3487,6 @@ __res_vinit(res_state rp, int preinit)
+ 	int m = 0;
+ #endif
+ 
+-	__UCLIBC_MUTEX_LOCK(__resolv_lock);
+ 	__close_nameservers();
+ 	__open_nameservers();
+ 
+@@ -3578,7 +3578,6 @@ __res_vinit(res_state rp, int preinit)
+ 
+ 	rp->options |= RES_INIT;
+ 
+-	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
+ 	return 0;
+ }
+ 
+@@ -3628,11 +3627,12 @@ res_init(void)
+ 	if (!_res.id)
+ 		_res.id = res_randomid();
+ 
+-	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
+-
++	__res_sync = NULL;
+ 	__res_vinit(&_res, 1);
+ 	__res_sync = res_sync_func;
+ 
++	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
++
+ 	return 0;
+ }
+ libc_hidden_def(res_init)
+@@ -3736,7 +3735,11 @@ struct __res_state *__resp = &_res;
+ int
+ res_ninit(res_state statp)
+ {
+-	return __res_vinit(statp, 0);
++	int ret;
++	__UCLIBC_MUTEX_LOCK(__resolv_lock);
++	ret = __res_vinit(statp, 0);
++	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
++	return ret;
+ }
+ 
+ #endif /* L_res_init */
+--
+cgit v0.9.1

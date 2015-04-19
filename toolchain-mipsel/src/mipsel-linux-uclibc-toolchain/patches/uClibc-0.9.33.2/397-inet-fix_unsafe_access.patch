@@ -1,0 +1,30 @@
+From 6e16f1768d75a3f5c367dcd6a5ab63f65fce5f82 Mon Sep 17 00:00:00 2001
+From: Vanya Sergeev <vsergeev@gmail.com>
+Date: Sat, 08 Jun 2013 22:49:45 +0000
+Subject: inet: fix unsafe access to _res.options in res_mkquery()
+
+res_mkquery() takes out __resolv_lock to copy _res.options to function local
+_res_options on line 4204, but later unsafely accesses _res.options without a
+lock, instead of its local copy _res_options, on line 4221.  Looks like a
+period / underscore typo.
+
+Signed-off-by: Vanya Sergeev <vsergeev@gmail.com>
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+(limited to 'libc/inet')
+
+diff --git a/libc/inet/resolv.c b/libc/inet/resolv.c
+index ffd3fe8..8546b27 100644
+--- a/libc/inet/resolv.c
++++ b/libc/inet/resolv.c
+@@ -4274,7 +4274,7 @@ int res_mkquery(int op, const char *dname, int class, int type,
+ 	hp = (HEADER *) buf;
+ 	hp->id = getpid() & 0xffff;
+ 	hp->opcode = op;
+-	hp->rd = (_res.options & RES_RECURSE) != 0U;
++	hp->rd = (_res_options & RES_RECURSE) != 0U;
+ 	hp->rcode = NOERROR;
+ 
+ 	cp = buf + HFIXEDSZ;
+--
+cgit v0.9.1

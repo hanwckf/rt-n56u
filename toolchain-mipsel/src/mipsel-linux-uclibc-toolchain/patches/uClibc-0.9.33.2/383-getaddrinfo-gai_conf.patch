@@ -1,0 +1,181 @@
+Implement simplest variant of /etc/gai.conf to control IPv6/IPv4 names order
+resolution. Unfortunately, it incompatible with glibc due it(glibc) hasn't
+simple switch, just longest prefix matching list - consumes too much code.
+
+Default names resolution behavior remains old - IPv6 first, IPv4 second.
+To change it to IPv4 first, IPv6 second, create /etc/gai.conf containing
+single line:
+
+ precedence ipv4
+
+ bloat-o-meter report:
+add/remove: 1/0 grow/shrink: 3/1 up/down: 367/-36 (329)
+function                                     old     new   delta
+getaddrinfo                                  856    1128    +272
+gaih_inet                                   3256    3348     +92
+__gai_precedence                               -       1      +1
+__open_nameservers                          1400    1364     -36
+
+Signed-off-by: Leonid Lisovskiy <lly.dev@gmail.com>
+---
+ libc/inet/getaddrinfo.c |   75 ++++++++++++++++++++++++++++++++++++++++++++++--
+ libc/inet/resolv.c      |    6 ++-
+ 2 files changed, 76 insertions(+), 5 deletions(-)
+
+diff --git a/libc/inet/getaddrinfo.c b/libc/inet/getaddrinfo.c
+--- a/libc/inet/getaddrinfo.c
++++ b/libc/inet/getaddrinfo.c
+@@ -64,6 +64,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBI
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
++#include <stdbool.h>
+ #include <arpa/inet.h>
+ #include <sys/socket.h>
+ #include <netinet/in.h>
+@@ -350,6 +351,11 @@ gaih_inet_serv(const char *servicename, 
+ 	return 0;
+ }
+ 
++#if defined __UCLIBC_HAS_IPV6__
++static uint8_t __gai_precedence = 0;	/* =1 - IPv6, IPv4
++					   =2 - IPv4, IPv6 */
++#endif
++
+ /* NB: also uses h,pat,rc,no_data variables */
+ #define gethosts(_family, _type)						\
+ {										\
+@@ -554,21 +560,32 @@ gaih_inet(const char *name, const struct
+ 		if (at->family == AF_UNSPEC && !(req->ai_flags & AI_NUMERICHOST)) {
+ 			struct hostent *h;
+ 			struct gaih_addrtuple **pat = &at;
+-			int no_data = 0;
+-			int no_inet6_data;
++			int no_data, no_inet6_data;
++#if defined __UCLIBC_HAS_IPV6__
++			bool first_try = true;
++#endif
+ 
+ 			/*
+ 			 * If we are looking for both IPv4 and IPv6 address we don't want
+ 			 * the lookup functions to automatically promote IPv4 addresses to
+ 			 * IPv6 addresses.
+ 			 */
++			no_inet6_data = no_data = 0;
+ #if defined __UCLIBC_HAS_IPV6__
++			if (__gai_precedence == 2)
++				goto try_v4;
++
++ try_v6:
+ 			if (req->ai_family == AF_UNSPEC || req->ai_family == AF_INET6)
+ 				if (!(req->ai_flags & AI_ADDRCONFIG) || (seen & SEEN_IPV6))
+ 					gethosts(AF_INET6, struct in6_addr);
+-#endif
+ 			no_inet6_data = no_data;
++			if (!first_try)
++				goto tried_all;
++			first_try = false;
+ 
++ try_v4:
++#endif
+ 			if (req->ai_family == AF_INET
+ 			 || (!v4mapped && req->ai_family == AF_UNSPEC)
+ 			 || (v4mapped && (no_inet6_data != 0 || (req->ai_flags & AI_ALL)))
+@@ -576,7 +593,14 @@ gaih_inet(const char *name, const struct
+ 				if (!(req->ai_flags & AI_ADDRCONFIG) || (seen & SEEN_IPV4))
+ 					gethosts(AF_INET, struct in_addr);
+ 			}
++#if defined __UCLIBC_HAS_IPV6__
++			if (first_try) {
++				first_try = false;
++				goto try_v6;
++			}
+ 
++ tried_all:
++#endif
+ 			if (no_data != 0 && no_inet6_data != 0) {
+ 				/* If both requests timed out report this. */
+ 				if (no_data == EAI_AGAIN && no_inet6_data == EAI_AGAIN)
+@@ -777,6 +801,50 @@ static const struct gaih gaih[] = {
+ 	{ PF_UNSPEC, NULL }
+ };
+ 
++#if defined __UCLIBC_HAS_IPV6__
++/* Helpers. Both stop on EOL, if it's '\n', it is converted to NUL first */
++extern char *skip_nospace(char *p);
++extern char *skip_and_NUL_space(char *p);
++
++static void __gai_conf_parse(void)
++{
++	/* NO reread of /etc/gai.conf if it was modified for now. */
++
++	if (__gai_precedence == 0) {
++		FILE *fp;
++		char szBuffer[128];
++
++		__gai_precedence = 1; /* default IPv6 */
++
++		fp = fopen("/etc/gai.conf", "r");
++		if (!fp)
++			return;
++
++		while (fgets(szBuffer, sizeof(szBuffer), fp) != NULL) {
++			char *keyword, *p;
++
++			keyword = p = skip_and_NUL_space(szBuffer);
++			/* skip keyword */
++			p = skip_nospace(p);
++			/* find next word */
++			p = skip_and_NUL_space(p);
++
++			if (strcmp(keyword, "precedence") == 0) {
++				if (p != NULL) {
++					/* terminate param */
++					*skip_nospace(p) = '\0';
++					if (strcmp(p, "ipv4") == 0)
++						__gai_precedence = 2;
++				}
++			}
++		}
++		fclose(fp);
++	}
++}
++#else
++# define __gai_conf_parse(x)
++#endif
++
+ void
+ freeaddrinfo(struct addrinfo *ai)
+ {
+@@ -836,6 +904,7 @@ getaddrinfo(const char *name, const char
+ 	} else
+ 		pservice = NULL;
+ 
++	__gai_conf_parse();
+ 	g = gaih;
+ 	pg = NULL;
+ 	p = NULL;
+diff --git a/libc/inet/resolv.c b/libc/inet/resolv.c
+--- a/libc/inet/resolv.c
++++ b/libc/inet/resolv.c
+@@ -929,7 +929,8 @@ const struct sockaddr_in6 __local_namese
+ #endif
+ 
+ /* Helpers. Both stop on EOL, if it's '\n', it is converted to NUL first */
+-static char *skip_nospace(char *p)
++extern char *skip_nospace(char *p) attribute_hidden;
++char attribute_hidden *skip_nospace(char *p)
+ {
+ 	while (*p != '\0' && !isspace(*p)) {
+ 		if (*p == '\n') {
+@@ -940,7 +941,8 @@ static char *skip_nospace(char *p)
+ 	}
+ 	return p;
+ }
+-static char *skip_and_NUL_space(char *p)
++extern char *skip_and_NUL_space(char *p) attribute_hidden;
++char attribute_hidden *skip_and_NUL_space(char *p)
+ {
+ 	/* NB: '\n' is not isspace! */
+ 	while (1) {
+-- 

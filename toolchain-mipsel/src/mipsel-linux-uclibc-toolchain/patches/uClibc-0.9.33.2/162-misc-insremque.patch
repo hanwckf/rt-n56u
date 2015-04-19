@@ -1,0 +1,45 @@
+From f9ae36ebf1d8e300c77dfd16b55514ea5a96751f
+From: Bartosz Golaszewski <bartekgola@gmail.com>
+Date: Tue, 18 Jun 2013 21:02:20 +0000
+Subject: insque: fix segfault on (prev == NULL)
+
+Since version 2.5 glibc allows prev to be a NULL pointer in insque, whereas
+uClibc segfaults in this case. This fixes the issue and makes insque
+initialize q_forw and q_back with NULLs if prev == NULL.
+
+Signed-off-by: Bartosz Golaszewski <bartekgola@gmail.com>
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+
+diff --git a/libc/misc/search/insremque.c b/libc/misc/search/insremque.c
+--- a/libc/misc/search/insremque.c
++++ b/libc/misc/search/insremque.c
+@@ -27,12 +27,20 @@
+ void
+ insque (void *elem, void *prev)
+ {
+-  struct qelem *next = ((struct qelem *) prev)->q_forw;
+-  ((struct qelem *) prev)->q_forw = (struct qelem *) elem;
+-  if (next != NULL)
+-    next->q_back = (struct qelem *) elem;
+-  ((struct qelem *) elem)->q_forw = next;
+-  ((struct qelem *) elem)->q_back = (struct qelem *) prev;
++  if (prev == NULL)
++    {
++      ((struct qelem *) elem)->q_forw = NULL;
++      ((struct qelem *) elem)->q_back = NULL;
++    }
++  else
++    {
++      struct qelem *next = ((struct qelem *) prev)->q_forw;
++      ((struct qelem *) prev)->q_forw = (struct qelem *) elem;
++      if (next != NULL)
++        next->q_back = (struct qelem *) elem;
++      ((struct qelem *) elem)->q_forw = next;
++      ((struct qelem *) elem)->q_back = (struct qelem *) prev;
++    }
+ }
+ 
+ #endif
+--
+cgit v0.9.1

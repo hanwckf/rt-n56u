@@ -1,0 +1,21 @@
+--- a/configure
++++ b/configure
+@@ -3791,7 +3791,6 @@
+     noconfigdirs="$noconfigdirs ld gas gprof"
+     ;;
+   mips*-*-*)
+-    noconfigdirs="$noconfigdirs gprof"
+     ;;
+   sh-*-* | sh64-*-*)
+     case "${target}" in
+--- a/configure.ac
++++ b/configure.ac
+@@ -1127,7 +1127,6 @@
+     noconfigdirs="$noconfigdirs ld gas gprof"
+     ;;
+   mips*-*-*)
+-    noconfigdirs="$noconfigdirs gprof"
+     ;;
+   sh-*-* | sh64-*-*)
+     case "${target}" in
+

@@ -1,0 +1,35 @@
+libpthread: pthread_exit in static app. segfaults
+
+http://lists.uclibc.org/pipermail/uclibc/2013-June/047829.html
+-------
+
+Static applications that call pthread_exit on the main thread segfault.
+This is because after a thread terminates __uClibc_main decrements
+__nptl_nthreads which is only defined in pthread_create.
+Therefore the right solution is to add a requirement to pthread_create
+from pthread_exit.
+This patch has been backported from glibc:
+http://sourceware.org/git/?p=glibc.git;a=commitdiff;h=e1f0b2cfa14b058ab033431b70428ccda8ec6ed0
+For further detail see also glibc bug at:
+http://sourceware.org/bugzilla/show_bug.cgi?id=12310
+
+Signed-off-by: Filippo Arcidiacono <filippo.arcidiacono at st.com>
+
+---
+ libpthread/nptl/pthread_exit.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/libpthread/nptl/pthread_exit.c b/libpthread/nptl/pthread_exit.c
+--- a/libpthread/nptl/pthread_exit.c
++++ b/libpthread/nptl/pthread_exit.c
+@@ -30,3 +30,9 @@ __pthread_exit (void* value)
+   __do_cancel ();
+ }
+ strong_alias (__pthread_exit, pthread_exit)
++
++/*
++ * After a thread terminates, __uClibc_main decrements __nptl_nthreads
++ * defined in pthread_create.c.
++ */
++PTHREAD_STATIC_FN_REQUIRE (pthread_create)
+-- 

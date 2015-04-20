@@ -241,7 +241,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89
 HOSTCXXFLAGS = -O2
 
 # Decide whether to build built-in, modular, or both.
@@ -364,7 +364,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks
+		   -std=gnu89
+
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
@@ -554,13 +555,18 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
+include $(srctree)/arch/$(SRCARCH)/Makefile
+
+KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
+
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os -fno-caller-saves -fno-reorder-blocks
+KBUILD_CFLAGS	+= -Os -fno-caller-saves -fno-reorder-blocks $(call cc-disable-warning,maybe-uninitialized,)
 else
 KBUILD_CFLAGS	+= -O2
 endif
 
-include $(srctree)/arch/$(SRCARCH)/Makefile
+# Tell gcc to never replace conditional load with a non-conditional one
+KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
 
 ifneq ($(CONFIG_FRAME_WARN),0)
 KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
@@ -570,12 +576,6 @@ endif
 ifndef CONFIG_CC_STACKPROTECTOR
 KBUILD_CFLAGS += $(call cc-option, -fno-stack-protector)
 endif
-
-# fix ~10% performance regression in gcc >= 4.8.x
-KBUILD_CFLAGS += $(call cc-option,-fno-tree-slsr)
-
-# disable new loop optimization mode in gcc >= 4.8.x (fix loop regressions)
-#KBUILD_CFLAGS += $(call cc-option,-fno-aggressive-loop-optimizations)
 
 # This warning generated too much noise in a regular build.
 # Use make W=1 to enable this warning (see scripts/Makefile.build)
@@ -594,6 +594,7 @@ KBUILD_CFLAGS	+= -fomit-frame-pointer
 endif
 endif
 
+# fix gcc-4.9.x miscompilation of load_balance() in scheduler
 KBUILD_CFLAGS   += $(call cc-option, -fno-var-tracking-assignments)
 
 ifdef CONFIG_DEBUG_INFO
@@ -602,7 +603,8 @@ KBUILD_AFLAGS	+= -gdwarf-2
 endif
 
 ifdef CONFIG_DEBUG_INFO_REDUCED
-KBUILD_CFLAGS 	+= $(call cc-option, -femit-struct-debug-baseonly)
+KBUILD_CFLAGS 	+= $(call cc-option, -femit-struct-debug-baseonly) \
+		   $(call cc-option, -fno-var-tracking)
 endif
 
 ifdef CONFIG_FUNCTION_TRACER
@@ -1164,7 +1166,7 @@ endif # CONFIG_MODULES
 
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  += $(MODVERDIR)
-CLEAN_FILES +=	vmlinux System.map \
+CLEAN_FILES +=	linux vmlinux System.map Module.symvers \
                 .tmp_kallsyms* .tmp_version .tmp_vmlinux* .tmp_System.map \
                 scripts/kconfig/mconf scripts/kconfig/conf
 

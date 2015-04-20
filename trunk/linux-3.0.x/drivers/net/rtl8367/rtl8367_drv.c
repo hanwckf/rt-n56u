@@ -57,6 +57,10 @@
 #define MAX_STORM_RATE_VAL			RTL8367B_QOS_RATE_INPUT_MAX
 #endif
 
+#if defined(CONFIG_P5_RGMII_TO_MAC_MODE) && defined(CONFIG_P4_RGMII_TO_MAC_MODE)
+#include "../raeth/ra_esw_mt7620.h"
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 static DEFINE_MUTEX(asic_access_mutex);
@@ -199,6 +203,9 @@ static void asic_clear_mac_table(void)
 	rtl8367b_setAsicLutFlushMode(FLUSHMDOE_PORT);
 	rtl8367b_setAsicLutFlushType(FLUSHTYPE_DYNAMIC);
 	rtl8367b_setAsicLutForceFlush(RTL8367B_PORTMASK);
+#endif
+#if defined(CONFIG_P5_RGMII_TO_MAC_MODE) && defined(CONFIG_P4_RGMII_TO_MAC_MODE)
+	mt7620_esw_mac_table_clear();
 #endif
 }
 
@@ -787,6 +794,12 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	next_vid++;
 #endif
 
+#if defined(CONFIG_P5_RGMII_TO_MAC_MODE) && defined(CONFIG_P4_RGMII_TO_MAC_MODE)
+	/* clear vlan members on MT7620 ESW (slot idx 2..3) */
+	mt7620_esw_vlan_clear_idx(2);
+	mt7620_esw_vlan_clear_idx(3);
+#endif
+
 	/* check IPTV tagged */
 	if (pvid[SWAPI_VLAN_RULE_WAN_IPTV] >= MIN_EXT_VLAN_VID) {
 		vlan_idx = find_vlan_slot(vlan_entry, next_vid-1, pvid[SWAPI_VLAN_RULE_WAN_IPTV]);
@@ -795,6 +808,10 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 				vlan_entry[vlan_idx].valid = 1;
 				vlan_entry[vlan_idx].fid = next_fid++;
 				vlan_entry[vlan_idx].cvid = pvid[SWAPI_VLAN_RULE_WAN_IPTV];
+#if defined(CONFIG_P5_RGMII_TO_MAC_MODE) && defined(CONFIG_P4_RGMII_TO_MAC_MODE)
+				/* need add vlan members on MT7620 ESW P4 (ESW members P7|P6|P4) */
+				mt7620_esw_vlan_set_idx(2, pvid[SWAPI_VLAN_RULE_WAN_IPTV], 0xd0);
+#endif
 			}
 			vlan_entry[vlan_idx].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_X));
 			pvlan_member[WAN_PORT_X].tagg = 1;
@@ -809,6 +826,10 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 				vlan_entry[vlan_idx].valid = 1;
 				vlan_entry[vlan_idx].fid = next_fid++;
 				vlan_entry[vlan_idx].cvid = pvid[SWAPI_VLAN_RULE_WAN_INET];
+#if defined(CONFIG_P5_RGMII_TO_MAC_MODE) && defined(CONFIG_P4_RGMII_TO_MAC_MODE)
+				/* need add vlan members on MT7620 ESW P4 (ESW members P7|P6|P4) */
+				mt7620_esw_vlan_set_idx(3, pvid[SWAPI_VLAN_RULE_WAN_INET], 0xd0);
+#endif
 			}
 			vlan_entry[vlan_idx].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_X));
 			pvlan_member[WAN_PORT_X].tagg = 1;
@@ -1005,6 +1026,8 @@ static void asic_vlan_bridge_isolate(u32 wan_bridge_mode, int bridge_changed, in
 		
 		asic_vlan_apply_rules(wan_bridge_mode);
 	}
+
+	asic_clear_mac_table();
 }
 
 static void asic_led_mode(rtk_led_group_t group, u32 led_mode)
@@ -1796,7 +1819,7 @@ int rtl8367_get_traffic_port_inic(struct rtnl_link_stats64 *stats)
 EXPORT_SYMBOL(rtl8367_get_traffic_port_inic);
 #endif
 
-#if defined(RTL8367_SINGLE_EXTIF)
+#if defined(RTL8367_SINGLE_EXTIF) || !defined(CONFIG_RAETH_GMAC2)
 int rtl8367_get_traffic_port_wan(struct rtnl_link_stats64 *stats)
 {
 	rtk_api_ret_t retVal;

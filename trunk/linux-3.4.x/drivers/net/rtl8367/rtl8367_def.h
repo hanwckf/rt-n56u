@@ -21,7 +21,7 @@
 
 //#define RTL8367_DBG 1
 
-#define RTL8367_VERSION				"v2.7"
+#define RTL8367_VERSION				"v2.8"
 
 #define RTL8367_DEVNAME				"rtl8367"
 
@@ -40,7 +40,8 @@
 #define LAN_PORT_3				CONFIG_RTL8367_PORT_LAN3		/* 8P8C LAN3 */
 #define LAN_PORT_4				CONFIG_RTL8367_PORT_LAN4		/* 8P8C LAN4 */
 
-#if !defined(CONFIG_RAETH_GMAC2) || defined(CONFIG_RTL8367_ASIC_RVB) || defined(CONFIG_RTL8367_ASIC_R)
+#if defined(CONFIG_RTL8367_ASIC_RVB) || defined(CONFIG_RTL8367_ASIC_R) || \
+  !(defined(CONFIG_RAETH_GMAC2) || (defined(CONFIG_P5_RGMII_TO_MAC_MODE) && defined(CONFIG_P4_RGMII_TO_MAC_MODE)))
  #define RTL8367_SINGLE_EXTIF 1
 #endif
 

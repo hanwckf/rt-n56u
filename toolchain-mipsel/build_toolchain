@@ -48,9 +48,6 @@ if [ "$HOSTGCCVER" != "4.3" ] && [ "$HOSTGCCVER" != "4.4" ]; then
         HOSTCFLAGS="$HOSTCFLAGS -Wno-unused-but-set-variable -Wno-sizeof-pointer-memaccess"
         HOSTCFLAGS="$HOSTCFLAGS -fno-delete-null-pointer-checks"
     fi
-    if [ "$HOSTGCCVER" = "4.9" ]; then
-        HOSTCFLAGS="$HOSTCFLAGS -fno-var-tracking-assignments"
-    fi
 fi
 export CFLAGS="$HOSTCFLAGS"
 

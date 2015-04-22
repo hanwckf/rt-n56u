@@ -125,16 +125,9 @@ int main( int ArgCn, char *ArgVc[] ) {
         }
 
 	if ( !Log2Stderr ) {
-
-	    // Only daemon goes past this line...
-	    if (fork()) exit(0);
-
-	    // Detach daemon from terminal
-	    if ( close( 0 ) < 0 || close( 1 ) < 0 || close( 2 ) < 0
-		 || open( "/dev/null", 0 ) != 0 || dup2( 0, 1 ) < 0 || dup2( 0, 2 ) < 0
-		 || setpgrp() < 0
-	       ) {
+	    if ( daemon(1, 0) < 0 ) {
 		my_log( LOG_ERR, errno, "failed to detach daemon" );
+		exit(errno);
 	    }
 	}
 

@@ -39,7 +39,7 @@
                                       
 // Structure to keep configuration for VIFs...    
 struct vifconfig {
-    char*               name;
+    char                name[IF_NAMESIZE];
     short               state;
     int                 ratelimit;
     int                 threshold;
@@ -246,11 +246,7 @@ static struct vifconfig *parsePhyintToken() {
     tmpPtr->allowednets = NULL;
     tmpPtr->allowedgroups = NULL;
 
-    // Make a copy of the token to store the IF name
-    tmpPtr->name = strdup( token );
-    if(tmpPtr->name == NULL) {
-        my_log(LOG_ERR, 0, "Out of memory.");
-    }
+    strncpy(tmpPtr->name, token, sizeof(tmpPtr->name));
 
     // Set the altnet pointer to the allowednets pointer.
     anetPtr = &tmpPtr->allowednets;
@@ -333,7 +329,6 @@ static struct vifconfig *parsePhyintToken() {
 
     // Clean up after a parseerror...
     if(parseError) {
-        free(tmpPtr->name);
         free(tmpPtr);
         tmpPtr = NULL;
     }

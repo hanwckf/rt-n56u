@@ -41,7 +41,7 @@
 /**
 *   Common function for joining or leaving a MCast group.
 */
-static int joinleave( int Cmd, int UdpSock, struct IfDesc *IfDp, uint32_t mcastaddr ) {
+int joinleave( int Cmd, int UdpSock, struct IfDesc *IfDp, uint32_t mcastaddr ) {
     struct ip_mreq CtlReq;
     const char *CmdSt = Cmd == 'j' ? "join" : "leave";
     
@@ -65,22 +65,3 @@ static int joinleave( int Cmd, int UdpSock, struct IfDesc *IfDp, uint32_t mcasta
     return 0;
 }
 
-/**
-*   Joins the MC group with the address 'McAdr' on the interface 'IfName'. 
-*   The join is bound to the UDP socket 'UdpSock', so if this socket is 
-*   closed the membership is dropped.
-*          
-*   @return 0 if the function succeeds, 1 if parameters are wrong or the join fails
-*/
-int joinMcGroup( int UdpSock, struct IfDesc *IfDp, uint32_t mcastaddr ) {
-    return joinleave( 'j', UdpSock, IfDp, mcastaddr );
-}
-
-/**
-*   Leaves the MC group with the address 'McAdr' on the interface 'IfName'. 
-*          
-*   @return 0 if the function succeeds, 1 if parameters are wrong or the join fails
-*/
-int leaveMcGroup( int UdpSock, struct IfDesc *IfDp, uint32_t mcastaddr ) {
-    return joinleave( 'l', UdpSock, IfDp, mcastaddr );
-}

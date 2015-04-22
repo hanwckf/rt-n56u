@@ -65,18 +65,18 @@ struct RouteTable {
 static struct RouteTable   *routing_table;
 
 // Prototypes
-void logRouteTable(char *header);
-int  internAgeRoute(struct RouteTable*  croute);
-int internUpdateKernelRoute(struct RouteTable *route, int activate);
+static void logRouteTable(char *header);
+static int  internAgeRoute(struct RouteTable*  croute);
+static int internUpdateKernelRoute(struct RouteTable *route, int activate);
 
 // Socket for sending join or leave requests.
-int mcGroupSock = 0;
+static int mcGroupSock = 0;
 
 
 /**
 *   Function for retrieving the Multicast Group socket.
 */
-int getMcGroupSock() {
+static int getMcGroupSock() {
     if( ! mcGroupSock ) {
         mcGroupSock = openUdpSocket( INADDR_ANY, 0 );;
     }
@@ -114,7 +114,7 @@ void initRouteTable() {
 *   Internal function to send join or leave requests for
 *   a specified route upstream...
 */
-void sendJoinLeaveUpstream(struct RouteTable* route, int join) {
+static void sendJoinLeaveUpstream(struct RouteTable* route, int join) {
     struct IfDesc*      upstrIf;
     
     // Get the upstream VIF...
@@ -495,7 +495,7 @@ int lastMemberGroupAge(uint32_t group) {
 *   Remove a specified route. Returns 1 on success,
 *   and 0 if route was not found.
 */
-int removeRoute(struct RouteTable*  croute) {
+static int removeRoute(struct RouteTable*  croute) {
     struct Config       *conf = getCommonConfig();
     int result = 1;
     
@@ -550,7 +550,7 @@ int removeRoute(struct RouteTable*  croute) {
 /**
 *   Ages a specific route
 */
-int internAgeRoute(struct RouteTable*  croute) {
+static int internAgeRoute(struct RouteTable*  croute) {
     struct Config *conf = getCommonConfig();
     int result = 0;
 
@@ -621,7 +621,7 @@ int internAgeRoute(struct RouteTable*  croute) {
 *   Updates the Kernel routing table. If activate is 1, the route
 *   is (re-)activated. If activate is false, the route is removed.
 */
-int internUpdateKernelRoute(struct RouteTable *route, int activate) {
+static int internUpdateKernelRoute(struct RouteTable *route, int activate) {
     struct   MRouteDesc     mrDesc;
     struct   IfDesc         *Dp;
     unsigned                Ix;
@@ -671,7 +671,7 @@ int internUpdateKernelRoute(struct RouteTable *route, int activate) {
 *   Debug function that writes the routing table entries
 *   to the log.
 */
-void logRouteTable(char *header) {
+static void logRouteTable(char *header) {
         struct RouteTable*  croute = routing_table;
         unsigned            rcount = 0;
         int                 i;

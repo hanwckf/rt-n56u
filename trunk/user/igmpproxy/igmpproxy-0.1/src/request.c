@@ -40,7 +40,7 @@
 #include "igmpproxy.h"
 
 // Prototypes...
-void sendGroupSpecificMemberQuery(void *argument);  
+static void sendGroupSpecificMemberQuery(void *argument);  
     
 typedef struct {
     uint32_t      group;
@@ -157,7 +157,7 @@ void acceptLeaveMessage(uint32_t src, uint32_t group) {
 *   Sends a group specific member report query until the 
 *   group times out...
 */
-void sendGroupSpecificMemberQuery(void *argument) {
+static void sendGroupSpecificMemberQuery(void *argument) {
     struct  Config  *conf = getCommonConfig();
 
     // Cast argument to correct type...

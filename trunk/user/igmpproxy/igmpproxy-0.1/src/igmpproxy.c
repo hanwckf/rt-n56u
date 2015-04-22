@@ -51,9 +51,9 @@ PACKAGE_STRING "\n"
 
 // Local function Prototypes
 static void signalHandler(int);
-int     igmpProxyInit();
-void    igmpProxyCleanUp();
-void    igmpProxyRun();
+static int  igmpProxyInit();
+static void igmpProxyCleanUp();
+static void igmpProxyRun();
 
 // Global vars...
 static int sighandled = 0;
@@ -157,7 +157,7 @@ int main( int ArgCn, char *ArgVc[] ) {
 /**
 *   Handles the initial startup of the daemon.
 */
-int igmpProxyInit() {
+static int igmpProxyInit() {
     struct sigaction sa;
     int Err;
 
@@ -225,7 +225,7 @@ int igmpProxyInit() {
 /**
 *   Clean up all on exit...
 */
-void igmpProxyCleanUp() {
+static void igmpProxyCleanUp() {
 
     my_log( LOG_DEBUG, 0, "clean handler called" );
     
@@ -248,7 +248,7 @@ static void getuptime(struct timeval *tv)
 /**
 *   Main daemon loop.
 */
-void igmpProxyRun() {
+static void igmpProxyRun() {
     // Get the config.
     //struct Config *config = getCommonConfig();
     // Set some needed values.
@@ -300,7 +300,7 @@ void igmpProxyRun() {
 
         // log and ignore failures
         if( Rt < 0 ) {
-            my_log( LOG_WARNING, errno, "select() failure" );
+            if (errno != EINTR) my_log( LOG_WARNING, errno, "select() failure" );
             continue;
         }
         else if( Rt > 0 ) {

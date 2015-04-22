@@ -33,7 +33,7 @@
 
 #include "igmpproxy.h"
 
-struct IfDesc IfDescVc[ MAX_IF ], *IfDescEp = IfDescVc;
+static struct IfDesc IfDescVc[ MAX_IF ], *IfDescEp = IfDescVc;
 
 /*
 ** Builds up a vector with the interface of the machine. Calls to the other functions of 

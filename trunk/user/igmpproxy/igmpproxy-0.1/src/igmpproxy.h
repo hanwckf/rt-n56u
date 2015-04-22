@@ -238,8 +238,26 @@ int openUdpSocket( uint32_t PeerInAdr, uint16_t PeerPort );
 
 /* mcgroup.c
  */
-int joinMcGroup( int UdpSock, struct IfDesc *IfDp, uint32_t mcastaddr );
-int leaveMcGroup( int UdpSock, struct IfDesc *IfDp, uint32_t mcastaddr );
+extern int joinleave( int Cmd, int UdpSock, struct IfDesc *IfDp, uint32_t mcastaddr );
+/**
+*   Joins the MC group with the address 'McAdr' on the interface 'IfName'. 
+*   The join is bound to the UDP socket 'UdpSock', so if this socket is 
+*   closed the membership is dropped.
+*          
+*   @return 0 if the function succeeds, 1 if parameters are wrong or the join fails
+*/
+static inline int joinMcGroup( int UdpSock, struct IfDesc *IfDp, uint32_t mcastaddr ) {
+    return joinleave( 'j', UdpSock, IfDp, mcastaddr );
+}
+
+/**
+*   Leaves the MC group with the address 'McAdr' on the interface 'IfName'. 
+*          
+*   @return 0 if the function succeeds, 1 if parameters are wrong or the join fails
+*/
+static inline int leaveMcGroup( int UdpSock, struct IfDesc *IfDp, uint32_t mcastaddr ) {
+    return joinleave( 'l', UdpSock, IfDp, mcastaddr );
+}
 
 
 /* rttable.c

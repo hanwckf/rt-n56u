@@ -51,7 +51,7 @@ am_igmpproxy_OBJECTS = callout.$(OBJEXT) config.$(OBJEXT) \
 	confread.$(OBJEXT) ifvc.$(OBJEXT) igmp.$(OBJEXT) \
 	igmpproxy.$(OBJEXT) kern.$(OBJEXT) lib.$(OBJEXT) \
 	mcgroup.$(OBJEXT) mroute-api.$(OBJEXT) request.$(OBJEXT) \
-	rttable.$(OBJEXT) syslog.$(OBJEXT) udpsock.$(OBJEXT)
+	rttable.$(OBJEXT) syslog.$(OBJEXT)
 igmpproxy_OBJECTS = $(am_igmpproxy_OBJECTS)
 igmpproxy_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -177,8 +177,7 @@ igmpproxy_SOURCES = \
 	os-openbsd.h \
 	request.c \
 	rttable.c \
-	syslog.c \
-	udpsock.c
+	syslog.c
 
 all: all-am
 
@@ -274,7 +273,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/request.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rttable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/syslog.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/udpsock.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

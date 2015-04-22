@@ -19,5 +19,4 @@ igmpproxy_SOURCES = \
 	os-openbsd.h \
 	request.c \
 	rttable.c \
-	syslog.c \
-	udpsock.c
+	syslog.c

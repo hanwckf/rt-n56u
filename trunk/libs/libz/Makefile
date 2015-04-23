@@ -1,4 +1,4 @@
-SRC_NAME=zlib-1.2.6
+SRC_NAME=zlib-1.2.8
 
 all: config_test
 	$(MAKE) -C $(SRC_NAME)
@@ -13,7 +13,8 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
-		--prefix=$(STAGEDIR) ; \
+		--prefix=$(STAGEDIR) \
+		--shared ; \
 	)
 
 clean:

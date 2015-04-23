@@ -942,6 +942,7 @@ VOID ap_cmm_peer_assoc_req_action(
 	*/
 	pEntry->RateLen = ie_list->SupportedRatesLen;
 
+#ifdef DOT11_VHT_AC
 #ifdef RT_BIG_ENDIAN
 	NdisCopyMemory(&tmp_1,&ie_list->vht_cap.vht_cap, 4);
 	tmp_1=SWAP32(tmp_1);
@@ -953,6 +954,7 @@ VOID ap_cmm_peer_assoc_req_action(
 	//SWAP32((UINT32)vht_cap_ie.vht_cap);
 	//SWAP32((UINT32)vht_cap_ie.mcs_set);
 #endif /* RT_BIG_ENDIAN */
+#endif /* DOT11_VHT_AC */
 
 	RTMPSetSupportMCS(pAd,
 					OPMODE_AP,

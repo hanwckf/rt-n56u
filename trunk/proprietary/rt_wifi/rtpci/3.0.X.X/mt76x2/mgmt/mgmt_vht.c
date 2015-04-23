@@ -44,9 +44,9 @@
 VOID RTMPSetVHT(
 	IN RTMP_ADAPTER *pAd)
 {
+#ifdef VHT_TXBF_SUPPORT
 	VHT_CAP_INFO *vht_cap= &pAd->CommonCfg.vht_cap_ie.vht_cap;
 
-#ifdef VHT_TXBF_SUPPORT
 	if (pAd->chipCap.FlgHwTxBfCap)
 	{
 		/* Set ETxBF */

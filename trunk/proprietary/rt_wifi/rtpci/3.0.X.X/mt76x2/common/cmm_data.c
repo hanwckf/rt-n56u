@@ -48,7 +48,7 @@ UCHAR WMM_UP2AC_MAP[8] = {QID_AC_BE, QID_AC_BK,
 							QID_AC_VI, QID_AC_VI,
 							QID_AC_VO, QID_AC_VO};
 
-
+#ifdef DBG
 VOID dump_rxinfo(RTMP_ADAPTER *pAd, RXINFO_STRUC *pRxInfo)
 {
 	hex_dump("RxInfo Raw Data", (UCHAR *)pRxInfo, sizeof(RXINFO_STRUC));
@@ -139,7 +139,7 @@ VOID dump_rxwi(RTMP_ADAPTER *pAd, RXWI_STRUC *pRxWI)
 		dump_rtmp_rxwi(pAd, pRxWI);
 #endif /* RTMP_MAC */
 }
-
+#endif
 
 #ifdef DBG_DIAGNOSE
 static VOID dump_txblk(TX_BLK *pTxBlk)
@@ -180,10 +180,7 @@ static VOID dump_txblk(TX_BLK *pTxBlk)
 	DBGPRINT(RT_DEBUG_TRACE,("\tWcid=%d!\n", pTxBlk->Wcid));
 	DBGPRINT(RT_DEBUG_TRACE,("\tapidx=%d!\n", pTxBlk->apidx));
 	DBGPRINT(RT_DEBUG_TRACE,("----EndOfDump\n"));
-
 }
-#endif
-
 
 VOID dump_rxblk(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 {
@@ -231,6 +228,7 @@ VOID dump_rxblk(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	DBGPRINT(RT_DEBUG_TRACE,("\t\tSNR=%d:%d:%d\n", pRxBlk->snr[0], pRxBlk->snr[1], pRxBlk->snr[2]));
 	DBGPRINT(RT_DEBUG_TRACE,("\t\tFreqOffset=%d\n", pRxBlk->freq_offset));
 }
+#endif
 
 
 #ifdef DOT11_N_SUPPORT

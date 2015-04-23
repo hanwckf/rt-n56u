@@ -14090,10 +14090,10 @@ static INT Set_AP_VENDOR_SPECIFIC_IE(
 	IN PSTRING IE,
 	IN UINT32 IELen)
 {
+#ifdef CONFIG_HOTSPOT
 	POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
 	UCHAR apidx = pObj->ioctl_if;
 
-#ifdef CONFIG_HOTSPOT
 	PHOTSPOT_CTRL pHSCtrl =  &pAd->ApCfg.MBSSID[apidx].HotSpotCtrl;
 #endif
 

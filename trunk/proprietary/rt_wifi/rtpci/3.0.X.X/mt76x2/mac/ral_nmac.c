@@ -55,7 +55,7 @@ INT rlt_get_rxwi_snr(RTMP_ADAPTER *pAd, RXWI_STRUC *rxwi, INT size, UCHAR *snr)
 	return 0;
 }
 
-
+#ifdef DBG
 #ifdef RLT_MAC
 VOID dumpRxFCEInfo(RTMP_ADAPTER *pAd, RXFCE_INFO *pRxFceInfo)
 {
@@ -162,7 +162,7 @@ VOID dump_rlt_txinfo(RTMP_ADAPTER *pAd, TXINFO_STRUC *pTxInfo)
 	DBGPRINT(RT_DEBUG_OFF, ("\ttso=%d\n", pkt_txinfo->tso));
 	DBGPRINT(RT_DEBUG_OFF, ("\tpkt_len=0x%x\n", pkt_txinfo->pkt_len));
 }
-
+#endif /* DBG */
 
 #ifdef RTMP_MAC_PCI
 VOID rlt_asic_init_txrx_ring(RTMP_ADAPTER *pAd)

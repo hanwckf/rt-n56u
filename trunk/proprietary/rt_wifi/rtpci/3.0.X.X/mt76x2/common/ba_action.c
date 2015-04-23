@@ -1449,8 +1449,8 @@ VOID SendSMPSAction(RTMP_ADAPTER *pAd, UCHAR Wcid, UCHAR smps)
 #ifdef APCLI_SUPPORT
 	if (IS_ENTRY_APCLI(pEntry))
 	{
-		UINT apidx = pEntry->wdev_idx;
 #ifdef MAC_REPEATER_SUPPORT
+		UINT apidx = pEntry->wdev_idx;
 		if (pEntry->bReptCli)
 			ActHeaderInit(pAd, &Frame.Hdr, pEntry->Addr, pAd->ApCfg.ApCliTab[apidx].RepeaterCli[pEntry->MatchReptCliIdx].CurrentAddress, wdev->bssid);
 		else
@@ -2206,7 +2206,7 @@ VOID PeerDelBATxAdaptTimeOut(
 {
 	PMAC_TABLE_ENTRY pEntry = (PMAC_TABLE_ENTRY) FunctionContext;
 
-	DBGPRINT(RT_DEBUG_OFF, ("%s()\n", __FUNCTION__));
+	DBGPRINT(RT_DEBUG_TRACE, ("%s()\n", __FUNCTION__));
 		
 	/* Disable Tx Mac look up table (Ressume original setting) */
 	Peer_DelBA_Tx_Adapt_Disable(pEntry->pAd, pEntry);

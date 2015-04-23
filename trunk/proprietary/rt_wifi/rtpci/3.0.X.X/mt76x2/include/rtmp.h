@@ -5059,7 +5059,7 @@ VOID rtmp_read_wsc_user_parms_from_file(
 #endif/*WSC_INCLUDED*/
 
 #ifdef SINGLE_SKU_V2
-NDIS_STATUS	RTMPSetSingleSKUParameters(RTMP_ADAPTER *pAd);
+NDIS_STATUS	RTMPSetSingleSKUParameters(RTMP_ADAPTER *pAd, CHAR *sku_path);
 
 VOID InitSkuRateDiffTable(RTMP_ADAPTER *pAd );
 UCHAR GetSkuChannelBasePwr(RTMP_ADAPTER *pAd, UCHAR channel);

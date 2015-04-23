@@ -35,7 +35,7 @@ struct chip_map{
 struct chip_map RTMP_CHIP_E2P_FILE_TABLE[] = {
 	{0x7602,	"MT7602E_EEPROM.bin"},
 	{0x7612,	"MT7612E_EEPROM.bin"},
-	{0,}
+	{0, NULL}
 };
 
 UCHAR RtmpEepromGetDefault(

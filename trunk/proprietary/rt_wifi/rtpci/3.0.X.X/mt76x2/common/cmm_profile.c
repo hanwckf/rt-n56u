@@ -4409,7 +4409,7 @@ void rtmp_read_wsc_user_parms_from_file(IN	PRTMP_ADAPTER pAd, char *tmpbuf, char
 
 #ifdef SINGLE_SKU_V2
 NDIS_STATUS	RTMPSetSingleSKUParameters(
-	IN RTMP_ADAPTER *pAd)
+	IN RTMP_ADAPTER *pAd, CHAR *sku_path)
 {
 	PSTRING buffer;
 	PSTRING	readline, token;
@@ -4431,10 +4431,10 @@ NDIS_STATUS	RTMPSetSingleSKUParameters(
 
 	RtmpOSFSInfoChange(&osFSInfo, TRUE);
 	/* open card information file */
-	srcf = RtmpOSFileOpen(SINGLE_SKU_TABLE_FILE_NAME, O_RDONLY, 0);
+	srcf = RtmpOSFileOpen(sku_path, O_RDONLY, 0);
 	if (IS_FILE_OPEN_ERR(srcf)) {
 		/* card information file does not exist */
-		DBGPRINT(RT_DEBUG_ERROR, ("--> Error opening %s\n", SINGLE_SKU_TABLE_FILE_NAME));
+		DBGPRINT(RT_DEBUG_ERROR, ("--> Error opening %s\n", sku_path));
 		goto  free_resource;
 	}
 
@@ -4450,7 +4450,7 @@ NDIS_STATUS	RTMPSetSingleSKUParameters(
 	
 	if (retval < 0) {
 		/* read fail */
-		DBGPRINT(RT_DEBUG_ERROR,("--> Read %s error %d\n", SINGLE_SKU_TABLE_FILE_NAME, -retval));
+		DBGPRINT(RT_DEBUG_ERROR,("--> Read %s error %d\n", sku_path, -retval));
 	} else {
 		for (readline = ptr = buffer, index=0; (ptr = strchr(readline, '\n')) != NULL; readline = ptr + 1, index++)
 		{

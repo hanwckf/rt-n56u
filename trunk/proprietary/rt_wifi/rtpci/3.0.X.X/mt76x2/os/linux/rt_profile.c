@@ -49,9 +49,11 @@ struct dev_type_name_map{
 #define def_to_str(s)			#s
 
 #define FIRST_AP_PROFILE_PATH		"/etc/Wireless/RT2860/RT2860AP.dat"
+#define FIRST_AP_SINGLE_SKU_PATH	"/etc/Wireless/RT2860/SingleSKU.dat"
 #define FIRST_CHIP_ID			xdef_to_str(CONFIG_RT_FIRST_CARD)
 
 #define SECOND_AP_PROFILE_PATH		"/etc/Wireless/iNIC/iNIC_ap.dat"
+#define SECOND_AP_SINGLE_SKU_PATH	"/etc/Wireless/iNIC/SingleSKU.dat"
 #define SECOND_CHIP_ID			xdef_to_str(CONFIG_RT_SECOND_CARD)
 
 static struct dev_type_name_map prefix_map[] =
@@ -83,6 +85,7 @@ struct dev_id_name_map{
 VOID get_dev_config_idx(RTMP_ADAPTER *pAd)
 {
 	INT idx = 0;
+
 #if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612) && \
     (CONFIG_RT_SECOND_CARD == 7602 || CONFIG_RT_SECOND_CARD == 7612)
 	INT first_card = 0, second_card = 0;
@@ -90,17 +93,23 @@ VOID get_dev_config_idx(RTMP_ADAPTER *pAd)
 
 	A2Hex(first_card, FIRST_CHIP_ID);
 	A2Hex(second_card, SECOND_CHIP_ID);
-	DBGPRINT(RT_DEBUG_TRACE, ("chip_id1=0x%x, chip_id2=0x%x, pAd->MACVersion=0x%x\n", first_card, second_card, pAd->MACVersion));
 
-	if ((first_card == second_card) || IS_MT76x2(pAd)) {
+	if (first_card == second_card) {
 		idx = probe_cnt;
 		probe_cnt--;
+	} else if (IS_MT76x2(pAd)) {
+		UINT32 chip_id = (pAd->ChipID >> 16);
+		if (chip_id == second_card)
+			idx = 1;
 	} else {
 		if (IS_RT8592(pAd))
 			idx = 0;
 		else if (IS_RT5392(pAd) || IS_MT76x0(pAd))
 			idx = 1;
 	}
+
+	DBGPRINT(RT_DEBUG_OFF, ("chip_id1=0x%x, chip_id2=0x%x, pAd->MACVersion=0x%x, pAd->ChipID=0x%x, dev_idx=%d\n",
+		first_card, second_card, pAd->MACVersion, pAd->ChipID, idx));
 #endif
 
 	pAd->dev_idx = idx;
@@ -156,6 +165,24 @@ static UCHAR *get_dev_profile(RTMP_ADAPTER *pAd)
 	return src;
 }
 
+#ifdef SINGLE_SKU_V2
+static CHAR *get_sku_profile(RTMP_ADAPTER *pAd)
+{
+	CHAR *src = SINGLE_SKU_TABLE_FILE_NAME;
+
+#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612) && \
+    (CONFIG_RT_SECOND_CARD == 7602 || CONFIG_RT_SECOND_CARD == 7612)
+	INT card_idx = pAd->dev_idx;
+
+	if (card_idx == 0)
+		src = FIRST_AP_SINGLE_SKU_PATH;
+	else if (card_idx == 1)
+		src = SECOND_AP_SINGLE_SKU_PATH;
+#endif
+
+	return src;
+}
+#endif /* SINGLE_SKU_V2 */
 
 NDIS_STATUS	RTMPReadParametersHook(RTMP_ADAPTER *pAd)
 {
@@ -221,7 +248,7 @@ NDIS_STATUS	RTMPReadParametersHook(RTMP_ADAPTER *pAd)
 #endif /*HOSTAPD_SUPPORT */
 
 #ifdef SINGLE_SKU_V2
-	RTMPSetSingleSKUParameters(pAd);
+	RTMPSetSingleSKUParameters(pAd, get_sku_profile(pAd));
 #endif /* SINGLE_SKU_V2 */
 
 	return (retval);

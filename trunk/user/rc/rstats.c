@@ -355,7 +355,7 @@ static void calc(void)
 		
 		if (is_wwan || strcmp(ifdesc, IFDESC_WAN) == 0) {
 			tms = localtime(&now);
-			if (tms->tm_year >= (2012-1900)) {
+			if (tms->tm_year > (SYS_START_YEAR - 1900)) {
 				bump(history.daily, &history.dailyp, MAX_NDAILY, (tms->tm_year << 16) | ((uint32_t)tms->tm_mon << 8) | tms->tm_mday, counter);
 				n = 1;
 				mon = now + ((1 - n) * (60 * 60 * 24));

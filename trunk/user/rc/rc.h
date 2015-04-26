@@ -33,7 +33,7 @@
 #include <bin_sem_asus.h>
 
 /* do not set current year, it used for ntp done check! */
-#define SYS_START_YEAR			2010
+#define SYS_START_YEAR			2014
 
 #define SCRIPT_UDHCPC_LAN		"/tmp/udhcpc_lan.script"
 #define SCRIPT_UDHCPC_WAN		"/tmp/udhcpc.script"
@@ -589,6 +589,11 @@ void ip2class(const char *addr, const char *mask, char *out_buf, size_t out_len)
 void start_firewall_ex(void);
 
 /* ralink.c */
+int get_wired_mac_is_single(void);
+int get_wired_mac_e2p_offset(int is_wan);
+int get_wired_mac(int is_wan);
+int set_wired_mac(int is_wan, const char *mac);
+int get_wireless_mac_e2p_offset(int is_5ghz);
 int get_wireless_mac(int is_5ghz);
 int set_wireless_mac(int is_5ghz, const char *mac);
 int get_wireless_cc(void);
@@ -604,6 +609,7 @@ int get_apcli_connected(char *ifname);
 
 
 /* watchdog.c */
+int  is_ntpc_updated(void);
 int  ntpc_updated_main(int argc, char *argv[]);
 int  watchdog_main(int argc, char *argv[]);
 int  start_watchdog(void);

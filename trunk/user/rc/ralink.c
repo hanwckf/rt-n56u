@@ -33,23 +33,99 @@
 
 #define MAX_FRW 64
 
+inline int
+get_wired_mac_is_single(void)
+{
+#if defined (BOARD_N14U) || defined (BOARD_N11P)
+	return 1;
+#else
+	return 0;
+#endif
+}
+
+inline int
+get_wired_mac_e2p_offset(int is_wan)
+{
+#if defined (BOARD_N14U) || defined (BOARD_N11P)
+	return 0x018E;
+#else
+	return (is_wan) ? OFFSET_MAC_GMAC2 : OFFSET_MAC_GMAC0;
+#endif
+}
+
+int
+get_wired_mac(int is_wan)
+{
+	char macaddr[18] = {0};
+	unsigned char buffer[ETHER_ADDR_LEN] = {0};
+	int i_offset;
+
+	i_offset = get_wired_mac_e2p_offset(is_wan);
+	if (flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN) < 0) {
+		puts("Unable to read MAC from EEPROM!");
+		return -1;
+	}
+
+	if (is_wan && get_wired_mac_is_single())
+		buffer[5] |= 0x03;	// last 2 bits reserved for MBSSID, use 0x03 for WAN (ra1: 0x01, apcli0: 0x02)
+
+	ether_etoa(buffer, macaddr);
+
+	printf("%s EEPROM MAC address: %s\n", (is_wan) ? "WAN" : "LAN", macaddr);
+
+	return 0;
+}
+
+int
+set_wired_mac(int is_wan, const char *mac)
+{
+	unsigned char ea[ETHER_ADDR_LEN] = {0};
+	int i_offset;
+
+	if (is_wan && get_wired_mac_is_single()) {
+		printf("This device has only single wired MAC-address!\n");
+		return EINVAL;
+	}
+
+	if (ether_atoe(mac, ea)) {
+		i_offset = get_wired_mac_e2p_offset(is_wan);
+		if (flash_mtd_write(MTD_PART_NAME_FACTORY, i_offset, ea, ETHER_ADDR_LEN) == 0) {
+			if (get_wired_mac(is_wan) == 0)
+				puts("\nPlease reboot router!");
+		} else {
+			puts("Write MAC to EEPROM FAILED!");
+			return -1;
+		}
+	} else {
+		printf("MAC [%s] is not valid MAC address!\n", mac);
+		return EINVAL;
+	}
+
+	return 0;
+}
+
+inline int
+get_wireless_mac_e2p_offset(int is_5ghz)
+{
+#if BOARD_5G_IN_SOC
+	return (is_5ghz) ? OFFSET_MAC_ADDR_WSOC : OFFSET_MAC_ADDR_INIC;
+#else
+#if BOARD_HAS_5G_RADIO
+	return (is_5ghz) ? OFFSET_MAC_ADDR_INIC : OFFSET_MAC_ADDR_WSOC;
+#else
+	return OFFSET_MAC_ADDR_WSOC;
+#endif
+#endif
+}
+
 int
 get_wireless_mac(int is_5ghz)
 {
-	char macaddr[18];
-	unsigned char buffer[ETHER_ADDR_LEN];
-#if BOARD_5G_IN_SOC
-	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR_WSOC : OFFSET_MAC_ADDR_INIC;
-#else
-#if BOARD_HAS_5G_RADIO
-	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR_INIC : OFFSET_MAC_ADDR_WSOC;
-#else
-	int i_offset = OFFSET_MAC_ADDR_WSOC;
-#endif
-#endif
-	memset(buffer, 0, sizeof(buffer));
-	memset(macaddr, 0, sizeof(macaddr));
+	char macaddr[18] = {0};
+	unsigned char buffer[ETHER_ADDR_LEN] = {0};
+	int i_offset;
 
+	i_offset = get_wireless_mac_e2p_offset(is_5ghz);
 	if (flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN) < 0) {
 		puts("Unable to read MAC from EEPROM!");
 		return -1;
@@ -68,17 +144,11 @@ get_wireless_mac(int is_5ghz)
 int
 set_wireless_mac(int is_5ghz, const char *mac)
 {
-	unsigned char ea[ETHER_ADDR_LEN];
-#if BOARD_5G_IN_SOC
-	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR_WSOC : OFFSET_MAC_ADDR_INIC;
-#else
-#if BOARD_HAS_5G_RADIO
-	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR_INIC : OFFSET_MAC_ADDR_WSOC;
-#else
-	int i_offset = OFFSET_MAC_ADDR_WSOC;
-#endif
-#endif
+	unsigned char ea[ETHER_ADDR_LEN] = {0};
+	int i_offset;
+
 	if (ether_atoe(mac, ea)) {
+		i_offset = get_wireless_mac_e2p_offset(is_5ghz);
 		if (flash_mtd_write(MTD_PART_NAME_FACTORY, i_offset, ea, ETHER_ADDR_LEN) == 0) {
 			if (get_wireless_mac(is_5ghz) == 0)
 				puts("\nPlease reboot router!");
@@ -97,9 +167,8 @@ set_wireless_mac(int is_5ghz, const char *mac)
 int
 get_wireless_cc(void)
 {
-	unsigned char CC[4];
+	unsigned char CC[4] = {0};
 
-	memset(CC, 0, sizeof(CC));
 	if (flash_mtd_read(MTD_PART_NAME_FACTORY, OFFSET_COUNTRY_CODE, CC, 2) < 0) {
 		puts("Unable to read Country Code from EEPROM!");
 		return -1;
@@ -334,9 +403,8 @@ setPIN(const char *pin)
 int
 getBootVer(void)
 {
-	unsigned char bootv[5];
+	unsigned char bootv[5] = {0};
 
-	memset(bootv, 0, sizeof(bootv));
 	flash_mtd_read(MTD_PART_NAME_FACTORY, OFFSET_BOOT_VER, bootv, 4);
 	puts(bootv);
 
@@ -346,9 +414,8 @@ getBootVer(void)
 int
 getPIN(void)
 {
-	unsigned char PIN[9];
+	unsigned char PIN[9] = {0};
 
-	memset(PIN, 0, sizeof(PIN));
 	flash_mtd_read(MTD_PART_NAME_FACTORY, OFFSET_PIN_CODE, PIN, 8);
 	if (PIN[0]!=0xff)
 		puts(PIN);
@@ -1313,9 +1380,9 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	fprintf(fp, "WscConfMode=%d\n", 0);
 	fprintf(fp, "WscConfStatus=%d\n", 2);
 	fprintf(fp, "WscVendorPinCode=%s\n", nvram_safe_get("secret_code"));
-	fprintf(fp, "WscManufacturer=%s\n", "ASUSTeK Computer Inc.");
+	fprintf(fp, "WscManufacturer=%s\n", BOARD_VENDOR_NAME);
 	fprintf(fp, "WscModelName=%s\n", "WPS Router");
-	fprintf(fp, "WscDeviceName=%s\n", "ASUS WPS Router");
+	fprintf(fp, "WscDeviceName=%s\n", "WPS Router");
 	fprintf(fp, "WscModelNumber=%s\n", BOARD_NAME);
 	fprintf(fp, "WscSerialNumber=%s\n", "00000000");
 	fprintf(fp, "WscV2Support=%d\n", 1);

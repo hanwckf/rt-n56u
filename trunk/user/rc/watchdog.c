@@ -438,7 +438,6 @@ btn_check_wlt(void)
 }
 #endif
 
-
 static void
 refresh_ntp(void)
 {
@@ -468,10 +467,16 @@ refresh_ntp(void)
 	logmessage("NTP Client", "Synchronizing time to %s.", ntp_server);
 }
 
+int
+is_ntpc_updated(void)
+{
+	return (nvram_get_int("ntpc_counter") > 0) ? 1 : 0;
+}
+
 static void
 reset_ntpc_tries(void)
 {
-	if (nvram_get_int("ntpc_counter") < 1)
+	if (!is_ntpc_updated())
 		ntpc_tries = 30; // 10 times, total 5min
 }
 
@@ -497,7 +502,7 @@ ntpc_handler(void)
 	}
 	else if (ntpc_tries > 0)
 	{
-		if (nvram_get_int("ntpc_counter") < 1)
+		if (!is_ntpc_updated())
 		{
 			ntpc_tries--;
 			
@@ -754,11 +759,11 @@ ez_action_change_guest_wifi2(void)
 		i_guest_state = 1;
 		update_svc_status_wifi2();
 	}
-	
+
 	nvram_set_int("rt_guest_enable", i_guest_state);
-	
+
 	logmessage("watchdog", "Perform ez-button %s %s %s", (i_guest_state) ? "enable" : "disable", "2.4GHz", "AP Guest");
-	
+
 	control_guest_rt(i_guest_state, 1);
 }
 
@@ -777,11 +782,11 @@ ez_action_change_guest_wifi5(void)
 		i_guest_state = 1;
 		update_svc_status_wifi5();
 	}
-	
+
 	nvram_set_int("wl_guest_enable", i_guest_state);
-	
+
 	logmessage("watchdog", "Perform ez-button %s %s %s", (i_guest_state) ? "enable" : "disable", "5GHz", "AP Guest");
-	
+
 	control_guest_wl(i_guest_state, 1);
 #endif
 }
@@ -1079,7 +1084,6 @@ ntpc_updated_main(int argc, char *argv[])
 
 	return 0;
 }
-
 
 static void
 watchdog_on_sighup(void)

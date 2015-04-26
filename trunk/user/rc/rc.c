@@ -497,7 +497,7 @@ storage_load_time(void)
 
 	if (storage_time > 0) {
 		localtime_r(&storage_time, &storage_tm);
-		if (storage_tm.tm_year > (SYS_START_YEAR - 1900)) {
+		if (storage_tm.tm_year >= (SYS_START_YEAR - 1900)) {
 			storage_time = mktime(&storage_tm);
 			storage_time += 5; // add delta 5 sec (~boot time)
 			stime(&storage_time);
@@ -1549,6 +1549,22 @@ main(int argc, char **argv)
 		restart_wifi_wl(radio_on, 1);
 	}
 #endif
+	else if (!strcmp(base, "lan_eeprom_mac")) {
+		if (argc > 1 && strlen(argv[1]) == 17)
+			ret = set_wired_mac(0, argv[1]);
+		else {
+			printf("Usage: %s XX:XX:XX:XX:XX:XX\n\n", base);
+			ret = get_wired_mac(0);
+		}
+	}
+	else if (!strcmp(base, "wan_eeprom_mac")) {
+		if (argc > 1 && strlen(argv[1]) == 17)
+			ret = set_wired_mac(1, argv[1]);
+		else {
+			printf("Usage: %s XX:XX:XX:XX:XX:XX\n\n", base);
+			ret = get_wired_mac(1);
+		}
+	}
 #if (BOARD_NUM_USB_PORTS > 0)
 	else if (!strcmp(base, "ejusb")) {
 		int port = 0;

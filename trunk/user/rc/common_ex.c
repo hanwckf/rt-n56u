@@ -168,11 +168,7 @@ get_eeprom_params(void)
 	if (i_ret >= 0 && buffer[0] != 0xff)
 		ether_etoa(buffer, macaddr_rt);
 
-#if defined (BOARD_N14U) || defined (BOARD_N11P)
-	i_offset = 0x018E; // wdf?
-#else
-	i_offset = OFFSET_MAC_GMAC0;
-#endif
+	i_offset = get_wired_mac_e2p_offset(0);
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
 	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
 	if (buffer[0] == 0xff) {
@@ -186,26 +182,26 @@ get_eeprom_params(void)
 		ether_etoa(buffer, macaddr_lan);
 	}
 
-#if defined (BOARD_N14U) || defined (BOARD_N11P)
-	buffer[5] |= 0x03; // last 2 bits reserved by ASUS for MBSSID, use 0x03 for WAN (ra1: 0x01, apcli0: 0x02)
-	ether_etoa(buffer, macaddr_wan);
-#else
-	i_offset = OFFSET_MAC_GMAC2;
-	memset(buffer, 0xff, ETHER_ADDR_LEN);
-	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
-	if (buffer[0] == 0xff) {
-		if (ether_atoe(macaddr_rt, ea)) {
-			memcpy(buffer, ea, ETHER_ADDR_LEN);
-			strcpy(macaddr_wan, macaddr_rt);
-#if !defined (USE_SINGLE_MAC)
-			if (i_ret >= 0)
-				flash_mtd_write(MTD_PART_NAME_FACTORY, i_offset, ea, ETHER_ADDR_LEN);
-#endif
-		}
-	} else {
+	if (get_wired_mac_is_single()) {
+		buffer[5] |= 0x03;	// last 2 bits reserved for MBSSID, use 0x03 for WAN (ra1: 0x01, apcli0: 0x02)
 		ether_etoa(buffer, macaddr_wan);
-	}
+	} else {
+		i_offset = get_wired_mac_e2p_offset(1);
+		memset(buffer, 0xff, ETHER_ADDR_LEN);
+		i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
+		if (buffer[0] == 0xff) {
+			if (ether_atoe(macaddr_rt, ea)) {
+				memcpy(buffer, ea, ETHER_ADDR_LEN);
+				strcpy(macaddr_wan, macaddr_rt);
+#if !defined (USE_SINGLE_MAC)
+				if (i_ret >= 0)
+					flash_mtd_write(MTD_PART_NAME_FACTORY, i_offset, ea, ETHER_ADDR_LEN);
 #endif
+			}
+		} else {
+			ether_etoa(buffer, macaddr_wan);
+		}
+	}
 
 	nvram_set_temp("il0macaddr", macaddr_lan); // LAN
 	nvram_set_temp("il1macaddr", macaddr_wan); // WAN

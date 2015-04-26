@@ -798,15 +798,18 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 	ddns1_pass     = nvram_safe_get("ddns_passwd_x");
 
 	if (strcmp(ddns1_svc, "update@asus.com") == 0) {
-		char mac_str[16] = {0};
+		char *mac_nvram, mac_str[16] = {0};
 		unsigned char mac_bin[ETHER_ADDR_LEN] = {0};
 		
-#if defined (BOARD_N14U) || defined (BOARD_N11P)
-		/* use original MAC from EEPROM */
-		ether_atoe(nvram_safe_get("il0macaddr"), mac_bin);
-#else
-		ether_atoe(nvram_safe_get("il1macaddr"), mac_bin);
-#endif
+		if (get_wired_mac_is_single()) {
+			/* use original MAC LAN from EEPROM */
+			mac_nvram = "il0macaddr";
+		} else {
+			mac_nvram = "il1macaddr";
+		}
+		
+		ether_atoe(nvram_safe_get(mac_nvram), mac_bin);
+		
 		i_ddns1_ssl = 0;
 		ddns1_hname[1] = "";
 		ddns1_hname[2] = "";
@@ -821,7 +824,7 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 	ddns2_pass  = nvram_safe_get("ddns2_pass");
 
 	if (use_delay)
-		use_delay = (nvram_get_int("ntpc_counter") < 1) ? 15 : 3;
+		use_delay = (!is_ntpc_updated()) ? 15 : 3;
 
 	fp = fopen(conf_file, "w");
 	if (fp) {
@@ -951,7 +954,7 @@ void
 manual_ddns_hostname_check(void)
 {
 	int i_ddns_source;
-	char mac_str[16], wan_ifname[16];
+	char *mac_nvram, mac_str[16], wan_ifname[16];
 	const char *nvram_key = "ddns_return_code";
 	unsigned char mac_bin[ETHER_ADDR_LEN] = {0};
 	char *inadyn_argv[] = {
@@ -975,12 +978,14 @@ manual_ddns_hostname_check(void)
 
 	stop_ddns();
 
-#if defined (BOARD_N14U) || defined (BOARD_N11P)
-	/* use original MAC from EEPROM */
-	ether_atoe(nvram_safe_get("il0macaddr"), mac_bin);
-#else
-	ether_atoe(nvram_safe_get("il1macaddr"), mac_bin);
-#endif
+	if (get_wired_mac_is_single()) {
+		/* use original MAC LAN from EEPROM */
+		mac_nvram = "il0macaddr";
+	} else {
+		mac_nvram = "il1macaddr";
+	}
+
+	ether_atoe(nvram_safe_get(mac_nvram), mac_bin);
 
 	wan_ifname[0] = 0;
 	i_ddns_source = nvram_get_int("ddns_source");

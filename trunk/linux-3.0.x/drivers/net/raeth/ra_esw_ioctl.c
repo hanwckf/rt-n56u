@@ -1132,7 +1132,6 @@ static void esw_storm_control(u32 port_id, int set_bcast, int set_mcast, int set
 
 static void esw_jumbo_control(u32 jumbo_frames_enabled)
 {
-#if !defined (CONFIG_MT7530_GSW)
 	u32 reg_gmaccr;
 
 	reg_gmaccr = esw_reg_get(REG_ESW_MAC_GMACCR);
@@ -1146,9 +1145,6 @@ static void esw_jumbo_control(u32 jumbo_frames_enabled)
 	}
 
 	esw_reg_set(REG_ESW_MAC_GMACCR, reg_gmaccr);
-#else
-	// todo (mt7530 documentation needed)
-#endif
 }
 
 static void esw_eee_control(u32 green_ethernet_enabled)

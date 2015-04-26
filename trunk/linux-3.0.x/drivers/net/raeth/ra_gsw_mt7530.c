@@ -56,6 +56,9 @@ void mt7530_gsw_init(void)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x00056300);		// (P5, AN) ???
 #endif
 
+	/* disable MT7530 CKG_LNKDN_GLB */
+	mii_mgr_write(MT7530_MDIO_ADDR, REG_ESW_MAC_CKGCR, 0x1e02);
+
 	/* set MT7530 central align */
 	mii_mgr_read(MT7530_MDIO_ADDR, 0x7830, &regValue);
 	regValue &= ~1;

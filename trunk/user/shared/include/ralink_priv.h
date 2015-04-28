@@ -59,6 +59,17 @@ typedef enum _RT_802_11_PHY_MODE {
 	PHY_11VHT_N_MIXED = 15, /* 15 -> AC/AN mixed in 5G band */
 } RT_802_11_PHY_MODE;
 
+enum WIFI_MODE {
+	WMODE_INVALID = 0,
+	WMODE_A = 1 << 0,
+	WMODE_B = 1 << 1,
+	WMODE_G = 1 << 2,
+	WMODE_GN = 1 << 3,
+	WMODE_AN = 1 << 4,
+	WMODE_AC = 1 << 5,
+	WMODE_COMP = 6,	/* total types of supported wireless mode, add this value once yow add new type */
+};
+
 typedef union _MACHTTRANSMIT_SETTING {
 	struct {
 		unsigned short MCS:6;
@@ -179,6 +190,7 @@ typedef struct _PAIR_CHANNEL_FREQ_ENTRY
 #define OID_802_11_SSID			0x0509
 #define OID_802_11_BSSID		0x050A
 #define RT_OID_802_11_RADIO		0x050B
+#define RT_OID_802_11_PHY_MODE		0x050C
 #define OID_802_11_BSSID_LIST		0x0609
 #define OID_802_3_CURRENT_ADDRESS	0x060A
 #define OID_GEN_MEDIA_CONNECT_STATUS	0x060B

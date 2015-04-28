@@ -221,7 +221,7 @@
 #define SWAPI_LINK_SPEED_MODE_FORCE_10_HD	(9)
 
 #define SWAPI_LINK_FLOW_CONTROL_TX_RX		(0)
-#define SWAPI_LINK_FLOW_CONTROL_RX_ASYNC	(1)
+#define SWAPI_LINK_FLOW_CONTROL_TX_ASYNC	(1)
 #define SWAPI_LINK_FLOW_CONTROL_DISABLE		(2)
 
 /////////////////////////////////////////////////

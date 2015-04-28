@@ -1148,7 +1148,7 @@ static rtk_api_ret_t asic_status_link_port(rtk_port_t port, rtk_port_linkStatus_
 	return RT_ERR_OK;
 }
 
-static rtk_api_ret_t asic_status_speed_port(rtk_port_t port, rtk_port_linkStatus_t *pLinkStatus, rtk_data_t *pSpeed, rtk_data_t *pDuplex)
+static rtk_api_ret_t asic_status_speed_port(rtk_port_t port, u32 *port_status)
 {
 	u32 regData = 0;
 #if defined(CONFIG_RTL8367_API_8370)
@@ -1159,26 +1159,32 @@ static rtk_api_ret_t asic_status_speed_port(rtk_port_t port, rtk_port_linkStatus
 	if (retVal != RT_ERR_OK)
 		return retVal;
 
+	*port_status = 0;
+
 #if defined(CONFIG_RTL8367_API_8370)
 	if (regData & RTL8370_PORT0_STATUS_LINK_STATE_MASK)
 #else
 	if (regData & RTL8367B_PORT0_STATUS_LINK_STATE_MASK)
 #endif
 	{
-		*pLinkStatus = 1;
+		*port_status |= (1 << 16);
 #if defined(CONFIG_RTL8367_API_8370)
-		*pSpeed  = (regData & RTL8370_PORT0_STATUS_LINK_SPEED_MASK);
-		*pDuplex = (regData & RTL8370_PORT0_STATUS_FULL_DUPLUX_CAP_MASK) ? 1 : 0;
+		*port_status |= (regData & RTL8370_PORT0_STATUS_LINK_SPEED_MASK);
+		if (regData & RTL8370_PORT0_STATUS_FULL_DUPLUX_CAP_MASK)
+			*port_status |= (1 << 8);
+		if (regData & RTL8370_PORT0_STATUS_TX_FLOWCTRL_CAP_MASK)
+			*port_status |= (1 << 9);
+		if (regData & RTL8370_PORT0_STATUS_RX_FLOWCTRL_CAP_MASK)
+			*port_status |= (1 << 10);
 #else
-		*pSpeed  = (regData & RTL8367B_PORT0_STATUS_LINK_SPEED_MASK);
-		*pDuplex = (regData & RTL8367B_PORT0_STATUS_FULL_DUPLUX_CAP_MASK) ? 1 : 0;
+		*port_status |= (regData & RTL8367B_PORT0_STATUS_LINK_SPEED_MASK);
+		if (regData & RTL8367B_PORT0_STATUS_FULL_DUPLUX_CAP_MASK)
+			*port_status |= (1 << 8);
+		if (regData & RTL8367B_PORT0_STATUS_TX_FLOWCTRL_CAP_MASK)
+			*port_status |= (1 << 9);
+		if (regData & RTL8367B_PORT0_STATUS_RX_FLOWCTRL_CAP_MASK)
+			*port_status |= (1 << 10);
 #endif
-	}
-	else
-	{
-		*pLinkStatus = 0;
-		*pSpeed = 0;
-		*pDuplex = 0;
 	}
 
 	return RT_ERR_OK;
@@ -1463,10 +1469,10 @@ static void change_port_link_mode(rtk_port_t port, u32 port_link_mode)
 
 	switch (i_port_flowc)
 	{
-	case SWAPI_LINK_FLOW_CONTROL_RX_ASYNC:
+	case SWAPI_LINK_FLOW_CONTROL_TX_ASYNC:
 		phy_cfg.FC		 = 0;
 		phy_cfg.AsyFC		 = (phy_cfg.Full_1000) ? 1 : 0;
-		flow_desc		 = (phy_cfg.Full_1000) ? "RX Asy" : "OFF";
+		flow_desc		 = (phy_cfg.Full_1000) ? "TX Asy" : "OFF";
 		break;
 	case SWAPI_LINK_FLOW_CONTROL_DISABLE:
 		phy_cfg.FC		 = 0;

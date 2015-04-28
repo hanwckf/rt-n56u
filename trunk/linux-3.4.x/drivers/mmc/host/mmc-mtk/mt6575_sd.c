@@ -1653,7 +1653,7 @@ static void msdc_ops_request(struct mmc_host *mmc,struct mmc_request *mrq)
     }
 
     if (!is_card_present(host) || host->power_mode == MMC_POWER_OFF) {
-        ERR_MSG("cmd<%d> card<%d> power<%d>", mrq->cmd->opcode, is_card_present(host), host->power_mode);
+        N_MSG(WRN, "cmd<%d> card<%d> power<%d>", mrq->cmd->opcode, is_card_present(host), host->power_mode);
         mrq->cmd->error = (unsigned int)-ENOMEDIUM; 
 
 #if 1
@@ -2338,7 +2338,7 @@ static int msdc_drv_probe(struct platform_device *pdev)
         hw->register_pm(msdc_pm, (void*)host);  /* combo_sdio_register_pm() */
 #endif
         if(hw->flags & MSDC_SYS_SUSPEND) { /* will not set for WIFI */
-            ERR_MSG("MSDC_SYS_SUSPEND and register_pm both set");
+            N_MSG(WRN, "MSDC_SYS_SUSPEND and register_pm both set");
         }
         //mmc->pm_flags |= MMC_PM_IGNORE_PM_NOTIFY; /* pm not controlled by system but by client. */ /* --- by chhung */
     }
@@ -2386,7 +2386,7 @@ static int msdc_drv_remove(struct platform_device *pdev)
     host = mmc_priv(mmc);
     BUG_ON(!host);
 
-    ERR_MSG("removed !!!");
+    INIT_MSG("removed !!!");
 
     platform_set_drvdata(pdev, NULL);
     mmc_remove_host(host->mmc);

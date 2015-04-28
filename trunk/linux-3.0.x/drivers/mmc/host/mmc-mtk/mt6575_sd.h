@@ -918,7 +918,6 @@ struct msdc_host
 
     int                         irq;            /* host interrupt */
 
-    struct tasklet_struct       card_tasklet;
     struct delayed_work         card_delaywork;
 
     struct completion           cmd_done;

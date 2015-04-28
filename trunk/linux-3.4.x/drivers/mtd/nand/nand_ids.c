@@ -152,6 +152,8 @@ struct nand_manufacturers nand_manuf_ids[] = {
 	{NAND_MFR_AMD, "AMD/Spansion"},
 	{NAND_MFR_MACRONIX, "Macronix"},
 	{NAND_MFR_EON, "Eon/Zentel/ESMT"},
+	/* custom codes */
+	{0xc8, "ESMT"},
 	{0x0, "Unknown"}
 };
 

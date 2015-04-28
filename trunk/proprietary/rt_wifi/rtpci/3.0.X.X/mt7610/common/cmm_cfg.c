@@ -244,6 +244,21 @@ UCHAR *wmode_2_str(UCHAR wmode)
 		return NULL;
 }
 
+RT_802_11_PHY_MODE wmode_2_cfgmode(UCHAR wmode)
+{
+	INT i, mode_cnt = sizeof(CFG_WMODE_MAP) / sizeof(UCHAR);
+
+	for (i = 1; i < mode_cnt; i+=2)
+	{
+		if (CFG_WMODE_MAP[i] == wmode)
+			return CFG_WMODE_MAP[i - 1];
+	}
+
+	DBGPRINT(RT_DEBUG_ERROR, ("%s(): Cannot get cfgmode by wmode(%x)\n", 
+				__FUNCTION__, wmode));
+
+	return 0;
+}
 
 UCHAR cfgmode_2_wmode(UCHAR cfg_mode)
 {

@@ -6442,6 +6442,7 @@ INT RT_CfgSetWirelessMode(
 	IN	PRTMP_ADAPTER	pAd, 
 	IN	PSTRING			arg);
 
+RT_802_11_PHY_MODE wmode_2_cfgmode(UCHAR wmode);
 UCHAR cfgmode_2_wmode(UCHAR cfg_mode);
 UCHAR *wmode_2_str(UCHAR wmode);
 

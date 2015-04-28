@@ -13227,9 +13227,8 @@ INT RTMP_AP_IoctlHandle(
 					{
 						UINT modetmp = 0;
 						DBGPRINT(RT_DEBUG_TRACE, ("Query::Get phy mode (%02X) \n", pAd->CommonCfg.PhyMode));
-						modetmp = (UINT) pAd->CommonCfg.PhyMode;
+						modetmp = (UINT)wmode_2_cfgmode(pAd->CommonCfg.PhyMode);
 						wrq->u.data.length = 1;
-						/**(ULONG *)pData = (ULONG)pAd->CommonCfg.PhyMode; */
 						if (copy_to_user(pData, &modetmp, wrq->u.data.length))
 							Status = -EFAULT;							
 					}

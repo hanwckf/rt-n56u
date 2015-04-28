@@ -167,11 +167,11 @@ static int rtl8367_ioctl(unsigned int cmd, unsigned int par, unsigned int *value
 	return retVal;
 }
 
-int fill_eth_port_status(int port_id, char linkstate[32])
+int fill_eth_port_status(int port_id, char linkstate[40])
 {
 	unsigned int cmd = RTL8367_IOCTL_STATUS_SPEED_PORT_WAN;
-	int link_value = -1, has_link = 0;
-	char *link_duplex;
+	unsigned int link_value = 0;
+	int has_link = 0;
 
 	switch (port_id)
 	{
@@ -192,44 +192,48 @@ int fill_eth_port_status(int port_id, char linkstate[32])
 		break;
 	}
 
-	if (rtl8367_ioctl(cmd, 0, &link_value) < 0)
-		link_value = -1;
+	if (rtl8367_ioctl(cmd, 0, &link_value) < 0) {
+		strcpy(linkstate, "I/O Error");
+		return 0;
+	}
 
-	if (link_value >= 0)
-	{
-		if ((link_value >> 16) & 0x01)
+	has_link = (link_value >> 16) & 0x01;
+
+	if (has_link) {
+		int lspeed;
+		const char *text_fc = "";
+		const char *text_dup = "Half Duplex";
+		
+		switch (link_value & 0x03)
 		{
-			has_link = 1;
-			
-			if ((link_value >> 8) & 0x01)
-				link_duplex = "Full Duplex";
+		case 2:
+			lspeed = 1000;
+			break;
+		case 1:
+			lspeed = 100;
+			break;
+		default:
+			lspeed = 10;
+			break;
+		}
+		
+		if ((link_value >> 8) & 0x01) {
+			unsigned int link_fc = (link_value >> 9) & 0x03;
+			if (link_fc == 0x03)
+				text_fc = "TX/RX";
+			else if (link_fc == 0x01)
+				text_fc = "TX Asy";
+			else if (link_fc == 0x02)
+				text_fc = "RX Asy";
 			else
-				link_duplex = "Half Duplex";
-			
-			switch (link_value & 0x03)
-			{
-			case 2:
-				link_value = 1000;
-				break;
-			case 1:
-				link_value = 100;
-				break;
-			default:
-				link_value = 10;
-				break;
-			}
-			
-			sprintf(linkstate, "%d Mbps, %s", link_value, link_duplex);
+				text_fc = "OFF";
+			text_dup = "Full Duplex, FC ";
 		}
-		else
-		{
-			sprintf(linkstate, "No Link");
-		}
-	}
-	else
-	{
-		sprintf(linkstate, "I/O Error");
-	}
+		
+		/* 1000 Mbps, Full Duplex, FC TX/RX */
+		sprintf(linkstate, "%d Mbps, %s%s", lspeed, text_dup, text_fc);
+	} else
+		strcpy(linkstate, "No Link");
 
 	return has_link;
 }
@@ -238,7 +242,7 @@ static int fill_eth_status(int port_id, webs_t wp)
 {
 	int ret = 0;
 	unsigned int cmd = RTL8367_IOCTL_STATUS_CNT_PORT_WAN;
-	char etherlink[32] = {0};
+	char etherlink[40] = {0};
 	mib_counters_t mibc;
 
 	switch (port_id)

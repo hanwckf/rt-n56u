@@ -1613,7 +1613,7 @@ static int
 wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
-	char wan_dns[512], wan_mac[18], etherlink[32], apclilink[32];
+	char wan_dns[512], wan_mac[18], etherlink[40], apclilink[32];
 	char wan_desc[32], tmp[64], prefix[16];
 	char addr4_wan[INET_ADDRSTRLEN], addr4_man[INET_ADDRSTRLEN];
 	char *wan0_ip, *wanx_ip, *wan0_gw, *wanx_gw, *wan_ip6, *lan_ip6, *wan_ifname, *man_ifname;
@@ -1949,11 +1949,11 @@ wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 static int
 lanlink_hook(int eid, webs_t wp, int argc, char **argv)
 {
-	char etherlink0[32] = {0};
-	char etherlink1[32] = {0};
-	char etherlink2[32] = {0};
-	char etherlink3[32] = {0};
-	char etherlink4[32] = {0};
+	char etherlink0[40] = {0};
+	char etherlink1[40] = {0};
+	char etherlink2[40] = {0};
+	char etherlink3[40] = {0};
+	char etherlink4[40] = {0};
 
 	fill_eth_port_status(0, etherlink0);
 	fill_eth_port_status(1, etherlink1);

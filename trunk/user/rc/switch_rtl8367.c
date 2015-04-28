@@ -581,39 +581,39 @@ int show_status_gpio_pin(unsigned int par)
 int show_status_link(unsigned int cmd)
 {
 	int retVal;
-	unsigned int arg = 0;
-	char *portname = "";
+	unsigned int link_value = 0;
+	const char *portname = "";
 
-	retVal = rtl8367_ioctl(cmd, 0, &arg);
-	if (retVal == 0)
+	retVal = rtl8367_ioctl(cmd, 0, &link_value);
+	if (retVal != 0)
+		return retVal;
+
+	switch (cmd)
 	{
-		switch (cmd)
-		{
-		case RTL8367_IOCTL_STATUS_LINK_PORT_WAN:
-			portname = "WAN port";
-			break;
-		case RTL8367_IOCTL_STATUS_LINK_PORT_LAN1:
-			portname = "LAN1 port";
-			break;
-		case RTL8367_IOCTL_STATUS_LINK_PORT_LAN2:
-			portname = "LAN2 port";
-			break;
-		case RTL8367_IOCTL_STATUS_LINK_PORT_LAN3:
-			portname = "LAN3 port";
-			break;
-		case RTL8367_IOCTL_STATUS_LINK_PORT_LAN4:
-			portname = "LAN4 port";
-			break;
-		case RTL8367_IOCTL_STATUS_LINK_PORTS_WAN:
-			portname = "WAN ports";
-			break;
-		case RTL8367_IOCTL_STATUS_LINK_PORTS_LAN:
-			portname = "LAN ports";
-			break;
-		}
-		
-		printf("%s link state: %d\n", portname, arg);
+	case RTL8367_IOCTL_STATUS_LINK_PORT_WAN:
+		portname = "WAN port";
+		break;
+	case RTL8367_IOCTL_STATUS_LINK_PORT_LAN1:
+		portname = "LAN1 port";
+		break;
+	case RTL8367_IOCTL_STATUS_LINK_PORT_LAN2:
+		portname = "LAN2 port";
+		break;
+	case RTL8367_IOCTL_STATUS_LINK_PORT_LAN3:
+		portname = "LAN3 port";
+		break;
+	case RTL8367_IOCTL_STATUS_LINK_PORT_LAN4:
+		portname = "LAN4 port";
+		break;
+	case RTL8367_IOCTL_STATUS_LINK_PORTS_WAN:
+		portname = "WAN ports";
+		break;
+	case RTL8367_IOCTL_STATUS_LINK_PORTS_LAN:
+		portname = "LAN ports";
+		break;
 	}
+
+	printf("%s link state: %d\n", portname, link_value);
 
 	return retVal;
 }
@@ -621,57 +621,64 @@ int show_status_link(unsigned int cmd)
 int show_status_speed(unsigned int cmd)
 {
 	int retVal;
-	unsigned int arg = 0;
-	int lspeed;
-	char *portname = "";
-	char lstatus[32];
+	unsigned int link_value = 0;
+	const char *portname = "";
+	char linkstate[20];
 
-	retVal = rtl8367_ioctl(cmd, 0, &arg);
-	if (retVal == 0)
+	retVal = rtl8367_ioctl(cmd, 0, &link_value);
+	if (retVal != 0)
+		return retVal;
+
+	switch (cmd)
 	{
-		switch (cmd)
-		{
-		case RTL8367_IOCTL_STATUS_SPEED_PORT_WAN:
-			portname = "WAN port";
-			break;
-		case RTL8367_IOCTL_STATUS_SPEED_PORT_LAN1:
-			portname = "LAN1 port";
-			break;
-		case RTL8367_IOCTL_STATUS_SPEED_PORT_LAN2:
-			portname = "LAN2 port";
-			break;
-		case RTL8367_IOCTL_STATUS_SPEED_PORT_LAN3:
-			portname = "LAN3 port";
-			break;
-		case RTL8367_IOCTL_STATUS_SPEED_PORT_LAN4:
-			portname = "LAN4 port";
-			break;
-		}
-		
-		if ((arg >> 16) & 0x01)
-		{
-			switch (arg & 0x03)
-			{
-			case 2:
-				lspeed = 1000;
-				break;
-			case 1:
-				lspeed = 100;
-				break;
-			default:
-				lspeed = 10;
-				break;
-			}
-			
-			sprintf(lstatus, "link: %d %s", lspeed, ((arg >> 8) & 0x01) ? "FD" : "HD" );
-		}
-		else
-		{
-			sprintf(lstatus, "link: %s", "NO");
-		}
-		
-		printf("%s %s\n", portname, lstatus);
+	case RTL8367_IOCTL_STATUS_SPEED_PORT_WAN:
+		portname = "WAN port";
+		break;
+	case RTL8367_IOCTL_STATUS_SPEED_PORT_LAN1:
+		portname = "LAN1 port";
+		break;
+	case RTL8367_IOCTL_STATUS_SPEED_PORT_LAN2:
+		portname = "LAN2 port";
+		break;
+	case RTL8367_IOCTL_STATUS_SPEED_PORT_LAN3:
+		portname = "LAN3 port";
+		break;
+	case RTL8367_IOCTL_STATUS_SPEED_PORT_LAN4:
+		portname = "LAN4 port";
+		break;
 	}
+
+	if ((link_value >> 16) & 0x01) {
+		int lspeed;
+		const char *text_fc = "";
+		const char *text_dup = "HD";
+		
+		switch (link_value & 0x03)
+		{
+		case 2:
+			lspeed = 1000;
+			break;
+		case 1:
+			lspeed = 100;
+			break;
+		default:
+			lspeed = 10;
+			break;
+		}
+		
+		if ((link_value >> 8) & 0x01) {
+			unsigned int link_fc = (link_value >> 9) & 0x03;
+			if (link_fc)
+				text_fc = ", FC";
+			text_dup = "FD";
+		}
+		
+		/* 1000FD, FC */
+		snprintf(linkstate, sizeof(linkstate), "%d%s%s", lspeed, text_dup, text_fc);
+	} else
+		strcpy(linkstate, "NO");
+
+	printf("%s link: %s\n", portname, linkstate);
 
 	return retVal;
 }
@@ -680,7 +687,7 @@ int show_mib_counters(unsigned int cmd)
 {
 	int retVal;
 	mib_counters_t mibc;
-	char *portname = "";
+	const char *portname = "";
 
 	memset(&mibc, 0, sizeof(mib_counters_t));
 	retVal = rtl8367_ioctl(cmd, 0, (unsigned int *)&mibc);

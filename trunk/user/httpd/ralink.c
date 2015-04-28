@@ -810,6 +810,7 @@ is_mac_in_sta_list(const unsigned char* p_mac)
 	return 0;
 }
 
+#if BOARD_HAS_5G_RADIO
 static int
 print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 {
@@ -867,6 +868,7 @@ print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 
 	return ret;
 }
+#endif
 
 static int
 #if defined(USE_RT3352_MII)
@@ -934,6 +936,73 @@ print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 	return ret;
 }
 
+static int
+print_wmode(webs_t wp, unsigned int wmode, unsigned int phy_mode)
+{
+	char buf[16] = {0};
+	int ret = 0;
+
+	if (wmode) {
+		char *p = buf;
+		if (wmode & WMODE_A)
+			p += sprintf(p, "/a");
+		if (wmode & WMODE_B)
+			p += sprintf(p, "/b");
+		if (wmode & WMODE_G)
+			p += sprintf(p, "/g");
+		if (wmode & WMODE_GN)
+			p += sprintf(p, "/n");
+		if (wmode & WMODE_AN)
+			p += sprintf(p, "/n");
+		if (wmode & WMODE_AC)
+			p += sprintf(p, "/ac");
+		if (p != buf)
+			ret += websWrite(wp, "HT PHY Mode	: 11%s\n", buf+1);
+	} else {
+		switch (phy_mode)
+		{
+		case PHY_11BG_MIXED:
+			strcpy(buf, "b/g");
+			break;
+		case PHY_11B:
+			strcpy(buf, "b");
+			break;
+		case PHY_11A:
+			strcpy(buf, "a");
+			break;
+		case PHY_11ABG_MIXED:
+			strcpy(buf, "a/b/g");
+			break;
+		case PHY_11G:
+			strcpy(buf, "g");
+			break;
+		case PHY_11ABGN_MIXED:
+			strcpy(buf, "a/b/g/n");
+			break;
+		case PHY_11N:
+		case PHY_11N_5G:
+			strcpy(buf, "n");
+			break;
+		case PHY_11GN_MIXED:
+			strcpy(buf, "g/n");
+			break;
+		case PHY_11AN_MIXED:
+			strcpy(buf, "a/n");
+			break;
+		case PHY_11BGN_MIXED:
+			strcpy(buf, "b/g/n");
+			break;
+		case PHY_11AGN_MIXED:
+			strcpy(buf, "a/g/n");
+			break;
+		}
+		if (buf[0])
+			ret += websWrite(wp, "HT PHY Mode	: 11%s\n", buf);
+	}
+
+	return ret;
+}
+
 int
 ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv)
 {
@@ -951,7 +1020,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv)
 	struct iwreq wrq1;
 	struct iwreq wrq2;
 	struct iwreq wrq3;
-	unsigned long phy_mode;
+	unsigned int wmode, phy_mode;
 
 	if (nvram_match("wl_radio_x", "0")
 #if defined(USE_IWPRIV_RADIO_5G)
@@ -1022,22 +1091,25 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv)
 	if (ralink_get_range_info(&range, buffer, wrq2.u.data.length) < 0)
 		return ret;
 
+	wmode = 0;
+	phy_mode = 0;
+
 	bzero(buffer, sizeof(unsigned long));
 	wrq2.u.data.length = sizeof(unsigned long);
 	wrq2.u.data.pointer = (caddr_t) buffer;
-	wrq2.u.data.flags = RT_OID_GET_PHY_MODE;
+	wrq2.u.data.flags = RT_OID_802_11_PHY_MODE;
 
-	if (wl_ioctl(IFNAME_5G_MAIN, RT_PRIV_IOCTL, &wrq2) < 0)
-		return ret;
-
-#if BOARD_HAS_5G_11AC
-	if (wrq2.u.mode > PHY_11VHT_N_MIXED)
-#else
-	if (wrq2.u.mode > PHY_11N_5G)
-#endif
-		phy_mode = *(unsigned long*)wrq2.u.data.pointer;
-	else
-		phy_mode = wrq2.u.mode;
+	if (wl_ioctl(IFNAME_5G_MAIN, RT_PRIV_IOCTL, &wrq2) < 0) {
+		wrq2.u.data.flags = RT_OID_GET_PHY_MODE;
+		if (wl_ioctl(IFNAME_5G_MAIN, RT_PRIV_IOCTL, &wrq2) < 0)
+			return ret;
+		if (wrq2.u.data.length == 1)
+			memcpy(&phy_mode, wrq2.u.data.pointer, wrq2.u.data.length);
+		else
+			phy_mode = wrq2.u.mode;
+	} else {
+		memcpy(&wmode, wrq2.u.data.pointer, wrq2.u.data.length);
+	}
 
 	freq = iw_freq2float(&(wrq1.u.freq));
 	if (freq < KILO)
@@ -1075,20 +1147,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv)
 		ret+=websWrite(wp, "%s	: AP\n", caption);
 	}
 
-	caption = "HT PHY Mode";
-
-	if (phy_mode==PHY_11A)
-		ret+=websWrite(wp, "%s	: 11a\n", caption);
-	else if (phy_mode==PHY_11N || phy_mode==PHY_11N_5G)
-		ret+=websWrite(wp, "%s	: 11n\n", caption);
-	else if (phy_mode==PHY_11AN_MIXED)
-		ret+=websWrite(wp, "%s	: 11a/n\n", caption);
-#if BOARD_HAS_5G_11AC
-	else if (phy_mode==PHY_11VHT_N_A_MIXED)
-		ret+=websWrite(wp, "%s	: 11a/n/ac\n", caption);
-	else if (phy_mode==PHY_11VHT_N_MIXED)
-		ret+=websWrite(wp, "%s	: 11n/ac\n", caption);
-#endif
+	ret+=print_wmode(wp, wmode, phy_mode);
 
 	ret+=websWrite(wp, "Channel Main	: %d\n", channel);
 
@@ -1147,7 +1206,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 	struct iwreq wrq1;
 	struct iwreq wrq2;
 	struct iwreq wrq3;
-	unsigned long phy_mode;
+	unsigned int wmode, phy_mode;
 
 	if (nvram_match("rt_radio_x", "0")
 #if defined(USE_IWPRIV_RADIO_2G) || defined(USE_RT3352_MII)
@@ -1217,40 +1276,47 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 	if (ralink_get_range_info(&range, buffer, wrq2.u.data.length) < 0)
 		return ret;
 
+	wmode = 0;
+	phy_mode = 0;
+
 	bzero(buffer, sizeof(unsigned long));
 	wrq2.u.data.length = sizeof(unsigned long);
 	wrq2.u.data.pointer = (caddr_t) buffer;
-	wrq2.u.data.flags = RT_OID_GET_PHY_MODE;
+	wrq2.u.data.flags = RT_OID_802_11_PHY_MODE;
 
-	if (wl_ioctl(IFNAME_2G_MAIN, RT_PRIV_IOCTL, &wrq2) < 0)
-		wrq2.u.mode = 0xFF;
-
-	if (wrq2.u.mode >= PHY_11N_5G)
-	{
-		switch (nvram_get_int("rt_gmode"))
-		{
-		case 1:
-			phy_mode = PHY_11BG_MIXED;
-			break;
-		case 5:
-			phy_mode = PHY_11GN_MIXED;
-			break;
-		case 3:
-			phy_mode = PHY_11N;
-			break;
-		case 4:
-			phy_mode = PHY_11G;
-			break;
-		case 0:
-			phy_mode = PHY_11B;
-			break;
-		default:
-			phy_mode = PHY_11BGN_MIXED;
-			break;
+	if (wl_ioctl(IFNAME_2G_MAIN, RT_PRIV_IOCTL, &wrq2) < 0) {
+		wrq2.u.data.flags = RT_OID_GET_PHY_MODE;
+		if (wl_ioctl(IFNAME_2G_MAIN, RT_PRIV_IOCTL, &wrq2) < 0) {
+			switch (nvram_get_int("rt_gmode"))
+			{
+			case 1:
+				phy_mode = PHY_11BG_MIXED;
+				break;
+			case 5:
+				phy_mode = PHY_11GN_MIXED;
+				break;
+			case 3:
+				phy_mode = PHY_11N;
+				break;
+			case 4:
+				phy_mode = PHY_11G;
+				break;
+			case 0:
+				phy_mode = PHY_11B;
+				break;
+			default:
+				phy_mode = PHY_11BGN_MIXED;
+				break;
+			}
+		} else {
+			if (wrq2.u.data.length == 1)
+				memcpy(&phy_mode, wrq2.u.data.pointer, wrq2.u.data.length);
+			else
+				phy_mode = wrq2.u.mode;
 		}
+	} else {
+		memcpy(&wmode, wrq2.u.data.pointer, wrq2.u.data.length);
 	}
-	else
-		phy_mode = wrq2.u.mode;
 
 	freq = iw_freq2float(&(wrq1.u.freq));
 	if (freq < KILO)
@@ -1287,29 +1353,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 		ret+=websWrite(wp, "%s	: AP\n", caption);
 	}
 
-	caption = "HT PHY Mode";
-	if (phy_mode==PHY_11BG_MIXED)
-		ret+=websWrite(wp, "%s	: 11b/g\n", caption);
-	else if (phy_mode==PHY_11B)
-		ret+=websWrite(wp, "%s	: 11b\n", caption);
-	else if (phy_mode==PHY_11A)
-		ret+=websWrite(wp, "%s	: 11a\n", caption);
-	else if (phy_mode==PHY_11ABG_MIXED)
-		ret+=websWrite(wp, "%s	: 11a/b/g\n", caption);
-	else if (phy_mode==PHY_11G)
-		ret+=websWrite(wp, "%s	: 11g\n", caption);
-	else if (phy_mode==PHY_11ABGN_MIXED)
-		ret+=websWrite(wp, "%s	: 11a/b/g/n\n", caption);
-	else if (phy_mode==PHY_11N)
-		ret+=websWrite(wp, "%s	: 11n\n", caption);
-	else if (phy_mode==PHY_11GN_MIXED)
-		ret+=websWrite(wp, "%s	: 11g/n\n", caption);
-	else if (phy_mode==PHY_11AN_MIXED)
-		ret+=websWrite(wp, "%s	: 11a/n\n", caption);
-	else if (phy_mode==PHY_11BGN_MIXED)
-		ret+=websWrite(wp, "%s	: 11b/g/n\n", caption);
-	else if (phy_mode==PHY_11AGN_MIXED)
-		ret+=websWrite(wp, "%s	: 11a/g/n\n", caption);
+	ret+=print_wmode(wp, wmode, phy_mode);
 
 	ret+=websWrite(wp, "Channel Main	: %d\n", channel);
 

@@ -1242,9 +1242,8 @@ static u32 esw_status_link_port(u32 port_id)
 
 static u32 esw_status_speed_port(u32 port_id)
 {
-	u32 port_link;
-	u32 port_duplex;
-	u32 port_speed;
+	u32 port_link, port_duplex, port_speed;
+	u32 port_eee, port_fc_rx, port_fc_tx;
 	u32 reg_pmsr;
 
 #if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
@@ -1265,8 +1264,11 @@ static u32 esw_status_speed_port(u32 port_id)
 
 	port_duplex = (reg_pmsr >> 1) & 0x1;
 	port_speed  = (reg_pmsr >> 2) & 0x3;
+	port_fc_tx  = (reg_pmsr >> 4) & 0x1;
+	port_fc_rx  = (reg_pmsr >> 5) & 0x1;
+	port_eee    = (reg_pmsr >> 6) & 0x3;
 
-	return ((port_link << 16) | (port_duplex << 8) | port_speed);
+	return ((port_link << 16) | (port_eee << 11) | (port_fc_rx << 10) | (port_fc_tx << 9) | (port_duplex << 8) | port_speed);
 }
 
 static u32 esw_status_link_ports(int is_wan_ports)
@@ -1592,9 +1594,10 @@ static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 
 	switch (i_port_flowc)
 	{
+	case SWAPI_LINK_FLOW_CONTROL_TX_ASYNC:
 	case SWAPI_LINK_FLOW_CONTROL_DISABLE:
-		/* disable pause support (A5) */
-		esw_phy_ana &= ~(1<<10);
+		/* disable pause ability (A6,A5) */
+		esw_phy_ana &= ~((1<<11)|(1<<10));
 		flow_desc = "OFF";
 		break;
 	}
@@ -1634,6 +1637,14 @@ static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 			/* disable ability 100 FD, 100 HD, 10 FD, 10 HD */
 			esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<6)|(1<<5));
 			link_desc = "1000FD [AN]";
+		}
+		
+		/* set auto-negotiation advertisement register [11] */
+		if (i_port_speed <= SWAPI_LINK_SPEED_MODE_AUTO_1000_FD &&
+		    i_port_flowc == SWAPI_LINK_FLOW_CONTROL_TX_ASYNC) {
+			/* enable asymmetric pause ability (A6) */
+			esw_phy_ana |= (1<<11);
+			flow_desc = "TX Asy";
 		}
 		
 		/* set 1000Base-T control register [8,9] */

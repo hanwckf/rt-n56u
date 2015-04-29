@@ -214,7 +214,7 @@ static void mt7628_ephy_init(void)
 	udelay(5000);
 
 	/* set P0~P4 EPHY LED mode */
-	sysRegRead(RALINK_SYSCTL_BASE + 0x64);
+	val = sysRegRead(RALINK_SYSCTL_BASE + 0x64);
 	val &= 0xf003f003;
 	sysRegWrite(RALINK_SYSCTL_BASE + 0x64, val);
 
@@ -228,6 +228,12 @@ static void mt7628_ephy_init(void)
 		mii_mgr_read(i, 26, &phy_val);	// EEE setting
 		phy_val |= (1 << 5);
 		mii_mgr_write(i, 26, phy_val);
+#else
+		/* disable EEE */
+		mii_mgr_write(i, 13, 0x7);
+		mii_mgr_write(i, 14, 0x3C);
+		mii_mgr_write(i, 13, 0x4007);
+		mii_mgr_write(i, 14, 0x0);
 #endif
 		mii_mgr_write(i, 30, 0xa000);
 		mii_mgr_write(i, 31, 0xa000);	// change L2 page
@@ -236,17 +242,14 @@ static void mt7628_ephy_init(void)
 		mii_mgr_write(i, 24, 0x1610);
 		mii_mgr_write(i, 30, 0x1f15);
 		mii_mgr_write(i, 28, 0x6111);
-#if 0
+
 		mii_mgr_read(i, 4, &phy_val);
 		phy_val |= (1 << 10);
 		mii_mgr_write(i, 4, phy_val);
-		mii_mgr_write(i, 31, 0x2000);	// change G2 page
-		mii_mgr_write(i, 26, 0x0000);
-#endif
 	}
 
-	//100Base AOI setting
-	mii_mgr_write(0, 31, 0x5000);		//change G5 page
+	/* 100Base AOI setting */
+	mii_mgr_write(0, 31, 0x5000);		// change G5 page
 	mii_mgr_write(0, 19, 0x004a);
 	mii_mgr_write(0, 20, 0x015a);
 	mii_mgr_write(0, 21, 0x00ee);
@@ -259,6 +262,11 @@ static void mt7628_ephy_init(void)
 	mii_mgr_write(0, 28, 0x0233);
 	mii_mgr_write(0, 29, 0x000a);
 	mii_mgr_write(0, 30, 0x0000);
+
+	/* Fix EPHY idle state abnormal behavior */
+	mii_mgr_write(0, 31, 0x4000);		// change G4 page
+	mii_mgr_write(0, 29, 0x000d);
+	mii_mgr_write(0, 30, 0x0500);
 }
 #endif
 #endif

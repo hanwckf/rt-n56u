@@ -221,6 +221,11 @@ static void prom_init_pcie(void)
 
 	/* disable PCIe clock */
 	RALINK_CLKCFG1 &= ~RALINK_PCIE0_CLK_EN;
+
+#if !defined (CONFIG_PCI)
+	/* set  PCIe PHY to 1.3mA for power saving */
+	(*((volatile u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET))) = 0x10;
+#endif
 }
 #else
 static void prom_init_pcie(void)

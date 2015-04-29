@@ -18,18 +18,10 @@
 
 #if defined (CONFIG_RALINK_RT3052) || defined (MEMORY_OPTIMIZATION)
 #define NUM_RX_DESC		128
-#if defined (CONFIG_RALINK_MT7621)
 #define NUM_TX_DESC		256
-#else
-#define NUM_TX_DESC		128
-#endif
 #else
 #define NUM_RX_DESC		256
-#if defined (CONFIG_RALINK_MT7621)
 #define NUM_TX_DESC		512
-#else
-#define NUM_TX_DESC		256
-#endif
 #endif
 
 #if defined (CONFIG_RAETH_QDMA)

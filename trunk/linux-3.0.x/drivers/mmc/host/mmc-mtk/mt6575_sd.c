@@ -2483,8 +2483,9 @@ static int __init mt_msdc_init(void)
     reg |=  ((0x3<<26)|(0x3<<28)|(0x3<<30));
 #endif
     reg1 = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x1340));
-    reg1 &= ~(0x1<<11); //Normal mode(AP mode), SDXC CLK=PAD_GPIO0=GPIO11, driving = 6mA
+    reg1 |= (0x1<<11); // Normal mode(AP mode), SDXC CLK=PAD_GPIO0=GPIO11, driving = 8mA
     sdr_write32((volatile u32*)(RALINK_SYSCTL_BASE + 0x1340), reg1);
+
     reg1 = sdr_read32((volatile u32*)(RALINK_SYSCTL_BASE + 0x1350));
     reg1 |= (0x1<<11);
     sdr_write32((volatile u32*)(RALINK_SYSCTL_BASE + 0x1350), reg1);

@@ -1879,7 +1879,24 @@ void PpeSetFoeEbl(uint32_t FoeEbl)
 
 static void PpeSetFoeHashMode(uint32_t HashMode)
 {
+#if defined (CONFIG_RA_HW_NAT_IPV6) && defined (CONFIG_HNAT_V2)
+	/* these entries are bad every 128 entries */
+	int boundary_entry_offset[7] = {12, 25, 38, 51, 76, 89, 102};
+	int entry_base = 0, bad_entry, i, j;
+#endif
+
 	memset(PpeFoeBase, 0, PpeFoeTblSize * sizeof(struct FoeEntry));
+
+#if defined (CONFIG_RA_HW_NAT_IPV6) && defined (CONFIG_HNAT_V2)
+	for (i = 0; entry_base < FOE_4TB_SIZ; i++) {
+		/* set bad entries as static */
+		for (j = 0; j < 7; j++) {
+			bad_entry = entry_base + boundary_entry_offset[j];
+			PpeFoeBase[bad_entry].udib1.sta = 1;
+		}
+		entry_base = (i+1)*128;
+	}
+#endif
 
 	RegWrite(PPE_FOE_BASE, PpeFoeBasePhy);
 

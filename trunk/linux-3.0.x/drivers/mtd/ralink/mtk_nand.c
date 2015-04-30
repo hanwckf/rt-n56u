@@ -41,6 +41,7 @@
 
 #if defined(SKIP_BAD_BLOCK)
 static int shift_on_bbt = 0;
+static int is_skip_bad_block(struct mtd_info *mtd, int page);
 extern void nand_bbt_set_bad(struct mtd_info *mtd, int page);
 extern int nand_bbt_get(struct mtd_info *mtd, int page);
 #endif

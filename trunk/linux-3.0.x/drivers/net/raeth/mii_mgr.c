@@ -53,77 +53,73 @@ void enable_mdio(int enable)
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 static DEFINE_SPINLOCK(mii_mgr_lock);
 
-static u32 __mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data)
+static int __mii_mgr_busy(u32 *mii_data)
 {
 	u32 i;
-	u32 volatile status = 0, data = 0;
+	u32 volatile status;
 
-	// make sure previous read operation is complete
 	for (i = 0; i < MDIO_TIMEOUT_US; i++) {
-		if (!(sysRegRead(MDIO_PHY_CONTROL_0) & (0x1 << 31)))
-			break;
-		
+		status = sysRegRead(MDIO_PHY_CONTROL_0);
+		if (!(status & (1UL << 31))) {
+			if (mii_data)
+				*mii_data = (u32)(status & 0x0000FFFF);
+			return 0;
+		}
 		udelay(2);
 	}
 
-	if (i >= MDIO_TIMEOUT_US) {
-		printk("\n MDIO %s operation is ongoing!\n", "Read");
+	return 1;
+}
+
+/* clause 22 */
+static u32 __mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data)
+{
+	u32 volatile data;
+
+	/* make sure previous operation is complete */
+	if (__mii_mgr_busy(NULL)) {
+		printk("\n MDIO %s operation is ongoing!\n", "read");
 		return 0;
 	}
 
-	data  = (0x01 << 16) | (0x02 << 18) | (phy_addr << 20) | (phy_register << 25);
+	/* read 'clause 22' data */
+	data = (phy_register << 25) | (phy_addr << 20) | (0x02 << 18) | (0x01 << 16);
 	sysRegWrite(MDIO_PHY_CONTROL_0, data);
-	data |= (1<<31);
+	data |= (1UL<<31);
 	sysRegWrite(MDIO_PHY_CONTROL_0, data);
 
-	// make sure read operation is complete
-	for (i = 0; i < MDIO_TIMEOUT_US; i++) {
-		if (!(sysRegRead(MDIO_PHY_CONTROL_0) & (0x1 << 31))) {
-			status = sysRegRead(MDIO_PHY_CONTROL_0);
-			*read_data = (u32)(status & 0x0000FFFF);
-			return 1;
-		}
-		
-		udelay(2);
+	/* make sure read operation is complete */
+	if (__mii_mgr_busy(read_data)) {
+		printk("\n MDIO %s operation is ongoing and timeout!\n", "read");
+		return 0;
 	}
 
-	printk("\n MDIO %s operation is ongoing and Time Out!\n", "Read");
-	return 0;
+	return 1;
 }
 
 static u32 __mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data)
 {
-	u32 i;
 	u32 volatile data;
 
-	// make sure previous write operation is complete
-	for (i = 0; i < MDIO_TIMEOUT_US; i++) {
-		if (!(sysRegRead(MDIO_PHY_CONTROL_0) & (0x1 << 31)))
-			break;
-		
-		udelay(2);
-	}
-
-	if (i >= MDIO_TIMEOUT_US) {
-		printk("\n MDIO %s operation is ongoing!\n", "Write");
+	/* make sure previous operation is complete */
+	if (__mii_mgr_busy(NULL)) {
+		printk("\n MDIO %s operation is ongoing!\n", "write");
 		return 0;
 	}
 
-	data = (0x01 << 16)| (1<<18) | (phy_addr << 20) | (phy_register << 25) | write_data;
+	/* write 'clause 22' data */
+	data = (phy_register << 25) | (phy_addr << 20) | (0x01 << 18) | (0x01 << 16) | write_data;
 	sysRegWrite(MDIO_PHY_CONTROL_0, data);
-	data |= (1<<31);
-	sysRegWrite(MDIO_PHY_CONTROL_0, data); //start operation
+	data |= (1UL<<31);
+	sysRegWrite(MDIO_PHY_CONTROL_0, data);
 
-	// make sure write operation is complete
-	for (i = 0; i < MDIO_TIMEOUT_US; i++) {
-		if (!(sysRegRead(MDIO_PHY_CONTROL_0) & (0x1 << 31)))
-			return 1;
-		
-		udelay(2);
+	/* make sure write operation is complete */
+	if (__mii_mgr_busy(NULL)) {
+		printk("\n MDIO %s operation is ongoing and timeout!\n", "write");
+		return 0;
 	}
 
-	printk("\n MDIO %s operation is ongoing and Time Out!\n", "Write");
-	return 0;
+	return 1;
 }
 
 u32 mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data)
@@ -203,6 +199,101 @@ u32 mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data)
 
 	return result;
 }
+
+#if defined (CONFIG_RALINK_MT7621)
+/* clause 45 */
+u32 mii_mgr_read_cl45(u32 port_num, u32 dev_addr, u32 reg_addr, u32 *read_data)
+{
+	unsigned long flags;
+	u32 volatile data;
+	u32 result = 0;
+
+	spin_lock_irqsave(&mii_mgr_lock, flags);
+
+	/* make sure previous operation is complete */
+	if (__mii_mgr_busy(NULL)) {
+		printk("\n MDIO %s operation is ongoing!\n", "read_cl45");
+		goto cl45r_exit;
+	}
+
+	/* set 'clause 45' address (00) */
+	data = (dev_addr << 25) | (port_num << 20) | (0x00 << 18) | (0x00 << 16) | reg_addr;
+	sysRegWrite(MDIO_PHY_CONTROL_0, data);
+	data |= (1UL<<31);
+	sysRegWrite(MDIO_PHY_CONTROL_0, data);
+
+	/* make sure addr operation is complete */
+	if (__mii_mgr_busy(NULL)) {
+		printk("\n MDIO %s operation is ongoing and timeout!\n", "addr_cl45");
+		goto cl45r_exit;
+	}
+
+	/* read 'clause 45' data (11) */
+	data = (dev_addr << 25) | (port_num << 20) | (0x03 << 18) | (0x00 << 16);
+	sysRegWrite(MDIO_PHY_CONTROL_0, data);
+	data |= (1UL<<31);
+	sysRegWrite(MDIO_PHY_CONTROL_0, data);
+
+	/* make sure read operation is complete */
+	if (__mii_mgr_busy(read_data)) {
+		printk("\n MDIO %s operation is ongoing and timeout!\n", "read_cl45");
+		goto cl45r_exit;
+	}
+
+	result = 1;
+
+cl45r_exit:
+	spin_unlock_irqrestore(&mii_mgr_lock, flags);
+
+	return result;
+}
+
+u32 mii_mgr_write_cl45(u32 port_num, u32 dev_addr, u32 reg_addr, u32 write_data)
+{
+	unsigned long flags;
+	u32 volatile data;
+	u32 result = 0;
+
+	spin_lock_irqsave(&mii_mgr_lock, flags);
+
+	/* make sure previous operation is complete */
+	if (__mii_mgr_busy(NULL)) {
+		printk("\n MDIO %s operation is ongoing!\n", "write_cl45");
+		goto cl45w_exit;
+	}
+
+	/* set 'clause 45' address (00) */
+	data = (dev_addr << 25) | (port_num << 20) | (0x00 << 18) | (0x00 << 16) | reg_addr;
+	sysRegWrite(MDIO_PHY_CONTROL_0, data);
+	data |= (1UL<<31);
+	sysRegWrite(MDIO_PHY_CONTROL_0, data);
+
+	/* make sure addr operation is complete */
+	if (__mii_mgr_busy(NULL)) {
+		printk("\n MDIO %s operation is ongoing and timeout!\n", "addr_cl45");
+		goto cl45w_exit;
+	}
+
+	/* write 'clause 45' data (01) */
+	data = (dev_addr << 25) | (port_num << 20) | (0x01 << 18) | (0x00 << 16) | write_data;
+	sysRegWrite(MDIO_PHY_CONTROL_0, data);
+	data |= (1UL<<31);
+	sysRegWrite(MDIO_PHY_CONTROL_0, data);
+
+	/* make sure write operation is complete */
+	if (__mii_mgr_busy(NULL)) {
+		printk("\n MDIO %s operation is ongoing and timeout!\n", "write_cl45");
+		goto cl45w_exit;
+	}
+
+	result = 1;
+
+cl45w_exit:
+	spin_unlock_irqrestore(&mii_mgr_lock, flags);
+
+	return result;
+}
+#endif
 
 #else
 
@@ -350,15 +441,15 @@ u32 mii_mgr_init(void)
 	sysRegWrite(MDIO_CFG2, INIT_VALUE_OF_FORCE_1000_FD);
 #endif
 #elif defined (CONFIG_RALINK_MT7620)
-	/* set MDIO clock to 3.125 MHz, disable PHY auto-polling */
-	sysRegWrite(REG_ESW_PHY_POLLING, 0x44000504);
+	/* set MDIO clock to 4.167 MHz, disable PHY auto-polling */
+	sysRegWrite(REG_ESW_PHY_POLLING, 0x43000504);
 #if !defined (CONFIG_RAETH_ESW)
 	/* disable internal PHY 0~4, set internal PHY base address to 12 */
 	sysRegWrite(RALINK_ETH_SW_BASE+0x7014, 0x1fec000c);
 #endif
 #elif defined (CONFIG_RALINK_MT7621)
-	/* set MDIO clock to 3.125 MHz, disable PHY auto-polling */
-	sysRegWrite(REG_ESW_PHY_POLLING, 0x44000504);
+	/* set MDIO clock to 4.167 MHz, disable PHY auto-polling */
+	sysRegWrite(REG_ESW_PHY_POLLING, 0x43000504);
 #endif
 
 	/* set MDIO pins to Normal mode */

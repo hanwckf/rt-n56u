@@ -15,6 +15,9 @@
 #define RAETH_QDMA_QUEUE_MAPPING	0x89FA
 #define RAETH_QDMA_READ_CPU_CLK		0x89FB
 
+#define RAETH_MII_READ_CL45		0x89FC
+#define RAETH_MII_WRITE_CL45		0x89FD
+
 #define REG_HQOS_MAX			0x3FFF
 
 typedef struct rt3052_esw_reg {
@@ -27,6 +30,9 @@ typedef struct ralink_mii_ioctl_data {
 	unsigned int reg_num;
 	unsigned int val_in;
 	unsigned int val_out;
+	unsigned int port_num;
+	unsigned int dev_addr;
+	unsigned int reg_addr;
 } ra_mii_ioctl_data;
 
 typedef struct rt335x_esw_reg {

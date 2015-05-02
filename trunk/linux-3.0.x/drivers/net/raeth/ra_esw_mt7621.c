@@ -17,54 +17,30 @@ extern u32 ralink_asic_rev_id;
 static void turbo_rgmii_set_pll(void)
 {
 	// PLL to 150Mhz
-	mii_mgr_write(0, 13, 0x1f);
-	mii_mgr_write(0, 14, 0x404);
-	mii_mgr_write(0, 13, 0x401f);
-	mii_mgr_write(0, 14, 0x0780);	//40Mhz XTAL for 150Mhz CLK
+	mii_mgr_write_cl45(0, 0x1f, 0x0404, 0x0780);	// 40Mhz XTAL for 150Mhz CLK
 	mdelay(1);
 
-	mii_mgr_write(0, 13, 0x1f);
-	mii_mgr_write(0, 14, 0x409);
-	mii_mgr_write(0, 13, 0x401f);
-	mii_mgr_write(0, 14, 0x57);
+	mii_mgr_write_cl45(0, 0x1f, 0x0409, 0x0057);
 	mdelay(1);
 
-	mii_mgr_write(0, 13, 0x1f);
-	mii_mgr_write(0, 14, 0x40a);
-	mii_mgr_write(0, 13, 0x401f);
-	mii_mgr_write(0, 14, 0x57);
+	mii_mgr_write_cl45(0, 0x1f, 0x040a, 0x0057);
 
 	// PLL BIAS en
-	mii_mgr_write(0, 13, 0x1f);
-	mii_mgr_write(0, 14, 0x403);
-	mii_mgr_write(0, 13, 0x401f);
-	mii_mgr_write(0, 14, 0x1800);
+	mii_mgr_write_cl45(0, 0x1f, 0x0403, 0x1800);
 	mdelay(1);
 
 	// BIAS LPF en
-	mii_mgr_write(0, 13, 0x1f);
-	mii_mgr_write(0, 14, 0x403);
-	mii_mgr_write(0, 13, 0x401f);
-	mii_mgr_write(0, 14, 0x1c00);
+	mii_mgr_write_cl45(0, 0x1f, 0x0403, 0x1c00);
 
 	// sys PLL en
-	mii_mgr_write(0, 13, 0x1f);
-	mii_mgr_write(0, 14, 0x401);
-	mii_mgr_write(0, 13, 0x401f);
-	mii_mgr_write(0, 14, 0xc020);
+	mii_mgr_write_cl45(0, 0x1f, 0x0401, 0xc020);
 
 	// LCDDDS PWDS
-	mii_mgr_write(0, 13, 0x1f);
-	mii_mgr_write(0, 14, 0x406);
-	mii_mgr_write(0, 13, 0x401f);
-	mii_mgr_write(0, 14, 0xa030);
+	mii_mgr_write_cl45(0, 0x1f, 0x0406, 0xa030);
 	mdelay(1);
 
 	// GSW_2X_CLK
-	mii_mgr_write(0, 13, 0x1f);
-	mii_mgr_write(0, 14, 0x410);
-	mii_mgr_write(0, 13, 0x401f);
-	mii_mgr_write(0, 14, 0x0003);
+	mii_mgr_write_cl45(0, 0x1f, 0x0410, 0x0003);
 }
 
 #define REGBIT(x, n)	(x << n)
@@ -179,47 +155,27 @@ static void gsw_set_pll(void)
 		/* 40Mhz Xtal */
 		
 		/* disable MT7530 core clock */
-		mii_mgr_write(0, 13, 0x001f);
-		mii_mgr_write(0, 14, 0x0410);
-		mii_mgr_write(0, 13, 0x401f);
-		mii_mgr_write(0, 14, 0x0000);
+		mii_mgr_write_cl45(0, 0x1f, 0x0410, 0x0000);
 		
 		/* disable MT7530 PLL */
-		mii_mgr_write(0, 13, 0x001f);
-		mii_mgr_write(0, 14, 0x040d);
-		mii_mgr_write(0, 13, 0x401f);
-		mii_mgr_write(0, 14, 0x2020);
+		mii_mgr_write_cl45(0, 0x1f, 0x040d, 0x2020);
 		
 		/* MT7530 core clock = 500MHz */
-		mii_mgr_write(0, 13, 0x001f);
-		mii_mgr_write(0, 14, 0x040e);
-		mii_mgr_write(0, 13, 0x401f);
-		mii_mgr_write(0, 14, 0x0119);
+		mii_mgr_write_cl45(0, 0x1f, 0x040e, 0x0119);
 		
 		/* enable MT7530 PLL */
-		mii_mgr_write(0, 13, 0x001f);
-		mii_mgr_write(0, 14, 0x40d);
-		mii_mgr_write(0, 13, 0x401f);
-		mii_mgr_write(0, 14, 0x2820);
+		mii_mgr_write_cl45(0, 0x1f, 0x040d, 0x2820);
 		udelay(20);
 		
 		/* enable MT7530 core clock */
-		mii_mgr_write(0, 13, 0x001f);
-		mii_mgr_write(0, 14, 0x0410);
-		mii_mgr_write(0, 13, 0x401f);
 #if defined (CONFIG_GE1_TRGMII_FORCE_1200)
-		mii_mgr_write(0, 14, 0x0003);	/* TRGMII */
+		mii_mgr_write_cl45(0, 0x1f, 0x0410, 0x0003);	/* TRGMII */
 #else
-		mii_mgr_write(0, 14, 0x0001);	/* RGMII */
+		mii_mgr_write_cl45(0, 0x1f, 0x0410, 0x0001);	/* RGMII */
 #endif
 	} else {
 		/* 20Mhz Xtal - todo */
 	}
-
-#if defined (CONFIG_GE1_TRGMII_FORCE_1200)
-	/* enable MT7530 TRGMII */
-	mii_mgr_write(MT7530_MDIO_ADDR, 0x7830, 0x1);
-#endif
 }
 
 void mt7621_esw_fc_delay_set(int is_link_100)
@@ -300,8 +256,8 @@ void mt7621_esw_init(void)
 	/* config switch PLL */
 	gsw_set_pll();
 
-	/* set MT7530 central align */
 #if !defined (CONFIG_GE1_TRGMII_FORCE_1200)
+	/* set MT7530 central align */
 	mii_mgr_read(MT7530_MDIO_ADDR, 0x7830, &regValue);
 	regValue &= ~1;
 	regValue |= (1<<1);
@@ -312,6 +268,9 @@ void mt7621_esw_init(void)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a40, regValue);
 
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a78, 0x0855);
+#else
+	/* enable MT7530 TRGMII */
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7830, 0x1);
 #endif
 
 #if defined (CONFIG_GE2_INTERNAL_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P0)

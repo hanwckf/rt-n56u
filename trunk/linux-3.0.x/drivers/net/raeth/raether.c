@@ -1621,6 +1621,8 @@ __init raeth_init(void)
 
 	debug_proc_init();
 
+	fe_phy_init_early();
+
 #if defined (CONFIG_RAETH_ESW_CONTROL)
 	esw_ioctl_init();
 #endif

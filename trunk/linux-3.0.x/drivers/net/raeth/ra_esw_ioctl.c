@@ -979,13 +979,6 @@ static void esw_vlan_bridge_isolate(u32 wan_bridge_mode, u32 wan_bwan_isolation,
 #endif
 }
 
-static void esw_cpu_ports_down(void)
-{
-	/* force MAC P5/P6 link down */
-	esw_reg_set(0x3500, 0x8000);
-	esw_reg_set(0x3600, 0x8000);
-}
-
 static void esw_mac_to_phy_enable(void)
 {
 	u32 i, mac_mask, reg_pmcr;
@@ -1020,8 +1013,9 @@ static void esw_soft_reset(void)
 	/* disable switch interrupts */
 	esw_irq_uninit();
 
-	/* disable CPU ports link */
-	esw_cpu_ports_down();
+	/* disable CPU ports P5/P6 link */
+	esw_reg_set(0x3500, 0x8000);
+	esw_reg_set(0x3600, 0x8000);
 
 	/* reset MT7530 */
 	esw_reg_set(0x7000, 0x3);
@@ -2202,14 +2196,6 @@ int esw_ioctl_init(void)
 		printk(KERN_ERR MTK_ESW_DEVNAME ": unable to register character device\n");
 		return r;
 	}
-
-	/* early down all PHY (please enable from user-level) */
-#if defined (CONFIG_P5_MAC_TO_PHY_MODE) || defined (CONFIG_MT7530_GSW) || \
-    defined (CONFIG_P4_MAC_TO_PHY_MODE) || defined (CONFIG_GE2_RGMII_AN)
-	mii_mgr_init();
-#endif
-	power_down_all_phy();
-	esw_cpu_ports_down();
 
 	return 0;
 }

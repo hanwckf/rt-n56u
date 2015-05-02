@@ -191,6 +191,56 @@ void ge2_set_mode(int ge_mode, int need_mdio)
 }
 #endif
 
+/* called once on driver load */
+void fe_phy_init_early(void)
+{
+#if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
+#if defined (CONFIG_P5_MAC_TO_PHY_MODE) || defined (CONFIG_GE2_RGMII_AN)
+#define MAX_PHY_NUM	6
+#else
+#define MAX_PHY_NUM	5
+#endif
+	u32 i, phy_mdio_addr, phy_reg_mcr;
+#endif
+
+#if defined (CONFIG_P5_MAC_TO_PHY_MODE) || defined (CONFIG_MT7530_GSW) || \
+    defined (CONFIG_P4_MAC_TO_PHY_MODE) || defined (CONFIG_GE2_RGMII_AN)
+	/* enable MDIO port */
+	mii_mgr_init();
+#endif
+
+#if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
+	/* early down all switch PHY (please enable from user-level) */
+	for (i = 0; i < MAX_PHY_NUM; i++) {
+		phy_mdio_addr = i;
+#if defined (CONFIG_P4_MAC_TO_PHY_MODE)
+		if (i == 4)
+			phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
+#elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
+		if (i == 5)
+			phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
+#elif defined (CONFIG_GE2_RGMII_AN)
+		if (i == 5)
+			phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
+#endif
+		phy_reg_mcr = 0x3100;
+		if (mii_mgr_read(phy_mdio_addr, 0, &phy_reg_mcr)) {
+			if (phy_reg_mcr & (1<<11))
+				continue;
+			phy_reg_mcr &= ~(1<<9);
+			phy_reg_mcr |= ((1<<12)|(1<<11));
+			mii_mgr_write(phy_mdio_addr, 0, phy_reg_mcr);
+		}
+	}
+#endif
+
+#if defined (CONFIG_MT7530_GSW)
+	/* early P5/P6 MAC link down */
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x3500, 0x8000);
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x3600, 0x8000);
+#endif
+}
+
 void fe_phy_init(void)
 {
 	/* Case1: RT305x/RT335x/RT5350/MT7620/MT7628 + ESW/GSW/P5/P4 */

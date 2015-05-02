@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <getopt.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -107,7 +108,7 @@ int main(int argc, char *argv[])
 
 #if defined (CONFIG_RALINK_MT7628)
 	if(page_select){
-	        method2 = RAETH_MII_WRITE;
+		method2 = RAETH_MII_WRITE;
 		ret = ioctl(sk, method2, &ifr2);
 		if (ret < 0) {
 			printf("mii_mgr: ioctl error\n");
@@ -123,18 +124,20 @@ int main(int argc, char *argv[])
 		if (ret < 0) {
 			printf("mii_mgr: ioctl error\n");
 		}
-		else
+		else {
 			switch (method) {
-				case RAETH_MII_READ:
-					printf("Get: phy[%d].reg[%d] = %04x\n",
-						mii.phy_id, mii.reg_num, mii.val_out);
-					break;
-				case RAETH_MII_WRITE:
-					printf("Set: phy[%d].reg[%d] = %04x\n",
-						mii.phy_id, mii.reg_num, mii.val_in);
-					break;
+			case RAETH_MII_READ:
+				printf("Get: phy[%d].reg[%d] = %04x\n",
+					mii.phy_id, mii.reg_num, mii.val_out);
+				break;
+			case RAETH_MII_WRITE:
+				printf("Set: phy[%d].reg[%d] = %04x\n",
+					mii.phy_id, mii.reg_num, mii.val_in);
+				break;
 			}
+		}
 	}
+
 	close(sk);
 	return ret;
 }

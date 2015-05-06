@@ -226,6 +226,7 @@ function done_validating(action){
                                                     <option value="7" <% nvram_match_x("","ether_link_wan","7","selected"); %>>100 Mbps, Half Duplex: [Force]</option>
                                                     <option value="8" <% nvram_match_x("","ether_link_wan","8","selected"); %>>10 Mbps, Full Duplex: [Force]</option>
                                                     <option value="9" <% nvram_match_x("","ether_link_wan","9","selected"); %>>10 Mbps, Half Duplex: [Force]</option>
+                                                    <option value="15" <% nvram_match_x("","ether_link_wan","15","selected"); %>>Power Off</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -263,6 +264,7 @@ function done_validating(action){
                                                     <option value="7" <% nvram_match_x("","ether_link_lan1","7","selected"); %>>100 Mbps, Half Duplex: [Force]</option>
                                                     <option value="8" <% nvram_match_x("","ether_link_lan1","8","selected"); %>>10 Mbps, Full Duplex: [Force]</option>
                                                     <option value="9" <% nvram_match_x("","ether_link_lan1","9","selected"); %>>10 Mbps, Half Duplex: [Force]</option>
+                                                    <option value="15" <% nvram_match_x("","ether_link_lan1","15","selected"); %>>Power Off</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -300,6 +302,7 @@ function done_validating(action){
                                                     <option value="7" <% nvram_match_x("","ether_link_lan2","7","selected"); %>>100 Mbps, Half Duplex: [Force]</option>
                                                     <option value="8" <% nvram_match_x("","ether_link_lan2","8","selected"); %>>10 Mbps, Full Duplex: [Force]</option>
                                                     <option value="9" <% nvram_match_x("","ether_link_lan2","9","selected"); %>>10 Mbps, Half Duplex: [Force]</option>
+                                                    <option value="15" <% nvram_match_x("","ether_link_lan2","15","selected"); %>>Power Off</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -337,6 +340,7 @@ function done_validating(action){
                                                     <option value="7" <% nvram_match_x("","ether_link_lan3","7","selected"); %>>100 Mbps, Half Duplex: [Force]</option>
                                                     <option value="8" <% nvram_match_x("","ether_link_lan3","8","selected"); %>>10 Mbps, Full Duplex: [Force]</option>
                                                     <option value="9" <% nvram_match_x("","ether_link_lan3","9","selected"); %>>10 Mbps, Half Duplex: [Force]</option>
+                                                    <option value="15" <% nvram_match_x("","ether_link_lan3","15","selected"); %>>Power Off</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -374,6 +378,7 @@ function done_validating(action){
                                                     <option value="7" <% nvram_match_x("","ether_link_lan4","7","selected"); %>>100 Mbps, Half Duplex: [Force]</option>
                                                     <option value="8" <% nvram_match_x("","ether_link_lan4","8","selected"); %>>10 Mbps, Full Duplex: [Force]</option>
                                                     <option value="9" <% nvram_match_x("","ether_link_lan4","9","selected"); %>>10 Mbps, Half Duplex: [Force]</option>
+                                                    <option value="15" <% nvram_match_x("","ether_link_lan4","15","selected"); %>>Power Off</option>
                                                 </select>
                                             </td>
                                         </tr>

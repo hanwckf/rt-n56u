@@ -74,19 +74,13 @@
 
 #endif
 
-#if defined (CONFIG_RAETH_NAPI)
-/* aggregate up to 2 INT, max delay 40us */
-#define FE_DLY_INIT_VALUE		0x82028202
-#else
 /* aggregate up to 4 INT, max delay 40us */
 #define FE_DLY_INIT_VALUE		0x84028402
-#endif
 
 #if defined (CONFIG_RAETH_QDMA)
 #define QFE_INT_INIT_VALUE		(RLS_DLY_INT)
 #define QFE_INT_MASK_TX_RX		(RLS_DLY_INT)
 #define QFE_INT_MASK_TX			(RLS_DLY_INT)
-
 #define FE_INT_INIT_VALUE		(RX_DLY_INT)
 #define FE_INT_MASK_TX_RX		(RX_DLY_INT)
 #define FE_INT_MASK_RX			(RX_DLY_INT)

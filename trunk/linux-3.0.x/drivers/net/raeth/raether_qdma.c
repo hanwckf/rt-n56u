@@ -185,6 +185,8 @@ fe_dma_init(END_DEVICE *ei_local)
 	sysRegWrite(QDMA_FQ_TAIL, phys_to_bus((u32)free_tail_phy));
 	sysRegWrite(QDMA_FQ_CNT,  cpu_to_le32((u32)((NUM_TX_DESC << 16) | NUM_QDMA_PAGE)));
 	sysRegWrite(QDMA_FQ_BLEN, cpu_to_le32((u32)(QDMA_PAGE_SIZE << 16)));
+#else
+	sysRegWrite(QDMA_FQ_CNT,  cpu_to_le32((u32)(NUM_TX_DESC << 16)));
 #endif
 
 	/* GDMA1/2 -> QRX ring #0 (not used direct forward to P5, only via FQ) */
@@ -286,12 +288,11 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 	}
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-	if (IS_DPORT_PPE_VALID(skb))
-		gmac_no = PSE_PORT_PPE;
-	if (ra_sw_nat_hook_tx != NULL && gmac_no != PSE_PORT_PPE) {
-#else
 	if (ra_sw_nat_hook_tx != NULL) {
+#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
+		if (IS_DPORT_PPE_VALID(skb))
+			gmac_no = PSE_PORT_PPE;
+		else
 #endif
 		if (ra_sw_nat_hook_tx(skb, gmac_no) == 0) {
 			dev_kfree_skb(skb);
@@ -416,19 +417,16 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 	}
 #endif
 
+#if defined (CONFIG_RAETH_BQL)
+	netdev_tx_sent_queue(txq, skb->len);
+#endif
+
 	wmb();
 
 	/* kick the DMA TX */
 	sysRegWrite(QTX_CTX_PTR, VIRT_TO_PHYS(ei_local->txd_cpu_ptr));
 
 	spin_unlock(&ei_local->page_lock);
-
-#if defined (CONFIG_RAETH_BQL)
-#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-	if (gmac_no != PSE_PORT_PPE)
-#endif
-		netdev_tx_sent_queue(txq, skb->len);
-#endif
 
 	return NETDEV_TX_OK;
 }
@@ -454,33 +452,24 @@ dma_xmit_clean(struct net_device *dev, END_DEVICE *ei_local)
 	dma_ptr = PHYS_TO_VIRT(sysRegRead(QTX_DRX_PTR));
 
 	while (cpu_ptr != dma_ptr && (cpu_ptr->txd_info3 & TX3_QDMA_OWN)) {
-		clean_done++;
-		
 		/* keep cpu next TXD */
 		htx_ptr = PHYS_TO_VIRT(cpu_ptr->txd_info2);
 		htx_offset = GET_TXD_OFFSET(ei_local, htx_ptr);
 		txd_buff = ei_local->txd_buff[htx_offset];
-#if defined (CONFIG_RAETH_DEBUG)
-		BUG_ON(!txd_buff);
-#endif
 		
 		/* free skb */
+		if (txd_buff
 #if defined (CONFIG_RAETH_SG_DMA_TX)
-		if (txd_buff != (struct sk_buff *)0xFFFFFFFF)
+		 && txd_buff != (struct sk_buff *)0xFFFFFFFF
 #endif
-		{
+		    ) {
 #if defined (CONFIG_RAETH_BQL)
-#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-			if (!IS_DPORT_PPE_VALID(txd_buff))
-#endif
-			{
 #if defined (CONFIG_PSEUDO_SUPPORT)
-				if (txd_buff->dev == ei_local->PseudoDev)
-					bytes_sent_ge2 += txd_buff->len;
-				else
+			if (txd_buff->dev == ei_local->PseudoDev)
+				bytes_sent_ge2 += txd_buff->len;
+			else
 #endif
-					bytes_sent_ge1 += txd_buff->len;
-			}
+				bytes_sent_ge1 += txd_buff->len;
 #endif
 			dev_kfree_skb(txd_buff);
 		}
@@ -493,6 +482,9 @@ dma_xmit_clean(struct net_device *dev, END_DEVICE *ei_local)
 		
 		/* update cpu_ptr to next ptr */
 		cpu_ptr = htx_ptr;
+		
+		if (++clean_done > (NUM_TX_DESC-2))
+			break;
 	}
 
 	if (clean_done)

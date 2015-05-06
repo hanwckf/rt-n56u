@@ -839,17 +839,16 @@ static int
 ei_napi_poll(struct napi_struct *napi, int budget)
 {
 	END_DEVICE *ei_local = netdev_priv(napi->dev);
+	unsigned long flags;
 	int work_done;
-
-	/* cleanup TX queue */
-	dma_xmit_clean(napi->dev, ei_local);
 
 	/* process RX queue */
 	work_done = pdma_recv(napi->dev, ei_local, budget);
 
+	/* cleanup TX queue */
+	dma_xmit_clean(napi->dev, ei_local);
+
 	if (work_done < budget) {
-		unsigned long flags;
-		
 		dispatch_int_status2(ei_local);
 		
 #if defined (CONFIG_RAETH_NAPI_GRO)
@@ -1445,6 +1444,10 @@ ei_open(struct net_device *dev)
 	sysRegWrite(QFE_INT_ENABLE, QFE_INT_INIT_VALUE);
 #endif
 
+#if defined (CONFIG_RAETH_BQL)
+	netdev_reset_queue(dev);
+#endif
+
 #if defined (CONFIG_RAETH_NAPI)
 	napi_enable(&ei_local->napi);
 #endif
@@ -1454,9 +1457,6 @@ ei_open(struct net_device *dev)
 
 	fe_dma_start();
 
-#if defined (CONFIG_RAETH_BQL)
-	netdev_reset_queue(dev);
-#endif
 	netif_start_queue(dev);
 
 	/* counters overflow after ~34s for 1Gbps speed, use 20s period for safe */

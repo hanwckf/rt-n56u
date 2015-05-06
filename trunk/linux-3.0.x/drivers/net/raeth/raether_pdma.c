@@ -189,12 +189,11 @@ dma_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE *ei_local, int 
 	}
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-	if (IS_DPORT_PPE_VALID(skb))
-		gmac_no = PSE_PORT_PPE;
-	if (ra_sw_nat_hook_tx != NULL && gmac_no != PSE_PORT_PPE) {
-#else
 	if (ra_sw_nat_hook_tx != NULL) {
+#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
+		if (IS_DPORT_PPE_VALID(skb))
+			gmac_no = PSE_PORT_PPE;
+		else
 #endif
 		if (ra_sw_nat_hook_tx(skb, gmac_no) == 0) {
 			dev_kfree_skb(skb);
@@ -354,19 +353,16 @@ dma_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE *ei_local, int 
 		txd_ring->txd_info2 = (TX2_DMA_SDL0(skb->len) | TX2_DMA_LS0);
 	}
 
+#if defined (CONFIG_RAETH_BQL)
+	netdev_tx_sent_queue(txq, skb->len);
+#endif
+
 	wmb();
 
 	/* kick the DMA TX */
 	sysRegWrite(TX_CTX_IDX0, cpu_to_le32(tx_cpu_owner_idx_next));
 
 	spin_unlock(&ei_local->page_lock);
-
-#if defined (CONFIG_RAETH_BQL)
-#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-	if (gmac_no != PSE_PORT_PPE)
-#endif
-		netdev_tx_sent_queue(txq, skb->len);
-#endif
 
 	return NETDEV_TX_OK;
 }
@@ -402,17 +398,12 @@ dma_xmit_clean(struct net_device *dev, END_DEVICE *ei_local)
 #endif
 		{
 #if defined (CONFIG_RAETH_BQL)
-#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-			if (!IS_DPORT_PPE_VALID(txd_buff))
-#endif
-			{
 #if defined (CONFIG_PSEUDO_SUPPORT)
-				if (txd_buff->dev == ei_local->PseudoDev)
-					bytes_sent_ge2 += txd_buff->len;
-				else
+			if (txd_buff->dev == ei_local->PseudoDev)
+				bytes_sent_ge2 += txd_buff->len;
+			else
 #endif
-					bytes_sent_ge1 += txd_buff->len;
-			}
+				bytes_sent_ge1 += txd_buff->len;
 #endif
 			dev_kfree_skb(txd_buff);
 		}

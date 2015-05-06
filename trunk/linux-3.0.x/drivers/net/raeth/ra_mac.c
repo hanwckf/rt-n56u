@@ -373,7 +373,6 @@ static int ra_qdma_seq_show(struct seq_file *m, void *v)
 		weight = (temp & 0xf000) >> 12;
 		queue_head = sysRegRead(QTX_HEAD_0 + 0x10 * queue);
 		queue_tail = sysRegRead(QTX_TAIL_0 + 0x10 * queue);
-
 		seq_printf(m, "Queue#%d Information:\n", queue);
 		seq_printf(m, "%d packets in the queue; head address is 0x%08x, tail address is 0x%08x.\n",
 			tx_des_cnt, queue_head, queue_tail);
@@ -382,6 +381,25 @@ static int ra_qdma_seq_show(struct seq_file *m, void *v)
 		seq_printf(m, "Min_Rate_En is %d, Min_Rate is %dKbps; Max_Rate_En is %d, Max_Rate is %dKbps.\n\n",
 			min_en, min_rate, max_en, max_rate);
 	}
+
+	/* Scheduler Info */
+	temp = sysRegRead(QDMA_TX_SCH);
+	max_en = (temp & 0x00000800) >> 11;
+	max_rate = (temp & 0x000007f0) >> 4;
+	for (i = 0; i< (temp & 0xf); i++)
+		max_rate *= 10;
+	seq_printf(m, "SCH1 Information:\n");
+	seq_printf(m, "RATE_EN is %d; RATE is %dKbps.\n", max_en, max_rate);
+	max_en = (temp & 0x08000000) >> 27;
+	max_rate = (temp & 0x07f00000) >> 20;
+	for (i = 0; i< (temp & 0xf0000) >> 16; i++)
+		max_rate *= 10;
+	seq_printf(m, "SCH2 Information:\n");
+	seq_printf(m, "RATE_EN is %d; RATE is %dKbps.\n\n", max_en, max_rate);
+
+	/* General TXD Info */
+	temp = sysRegRead(QDMA_FQ_CNT);
+	seq_printf(m, "SW TXD: %d/%d; HW TXD: %d/%d\n\n ", temp >> 16, NUM_TX_DESC, temp & 0xffff, NUM_QDMA_PAGE);
 
 	seq_printf(m, "skb->mark to queue mapping(skb->mark, queue):\n");
 	for (i = 0; i < 64; i += 8) {

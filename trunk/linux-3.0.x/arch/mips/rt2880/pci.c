@@ -614,13 +614,13 @@ int __init init_ralink_pci(void)
 #if defined (CONFIG_PCIE_PORT2)
 	val |= (0x1<<GPIO_PCIE_PORT2);
 #endif
-	RALINK_GPIO_CTRL0 |= val;			// switch PERST_N pin to output mode
-	mdelay(10);
+	mdelay(50);
 	RALINK_GPIO_DATA0 &= ~(val);			// fall PERST_N pin (reset peripherals)
-	mdelay(100);					// wait 100 ms pulse
+	RALINK_GPIO_CTRL0 |= val;			// switch PERST_N pin to output mode
 #else /* !defined (GPIO_PERST) */
-	RALINK_GPIOMODE &= ~(0x3<<PCIE_SHARE_PIN_SW);
+	RALINK_GPIOMODE &= ~(0x3<<PCIE_SHARE_PIN_SW);	// fall PERST_N pin (reset peripherals)
 #endif
+	mdelay(100);					// wait 100 ms pulse
 
 	val = 0;
 #if defined (CONFIG_PCIE_PORT0)

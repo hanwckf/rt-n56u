@@ -386,7 +386,7 @@ static int exfat_cmpi(const struct dentry *parent, const struct inode *pinode,
 	blen = __exfat_striptail_len(len, str);
 	if (alen == blen) {
 		if (t == NULL) {
-			if (strnicmp(name->name, str, alen) == 0)
+			if (strncasecmp(name->name, str, alen) == 0)
 				return 0;
 		} else if (nls_strnicmp(t, name->name, str, alen) == 0)
 			return 0;

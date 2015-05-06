@@ -1091,13 +1091,18 @@ static void asic_soft_reset(void)
 		msleep(50);
 }
 
-static rtk_api_ret_t rtk_port_Enable_set(rtk_port_t port, rtk_enable_t enable)
+static rtk_api_ret_t rtk_port_Enable_set(rtk_port_t port, rtk_enable_t enable_phy)
 {
 	rtk_api_ret_t retVal;
 	rtk_port_phy_data_t data, new_data;
+	u32 i_port_speed;
 
 	if (port > RTK_PHY_ID_MAX)
 		return RT_ERR_PORT_ID;
+
+	i_port_speed = (g_port_link_mode[port] & 0x0F);
+	if (i_port_speed == SWAPI_LINK_SPEED_MODE_FORCE_POWER_OFF)
+		enable_phy = DISABLED;
 
 	data = 0;
 	if ((retVal = rtk_port_phyReg_get(port, PHY_CONTROL_REG, &data)) != RT_ERR_OK)
@@ -1105,17 +1110,19 @@ static rtk_api_ret_t rtk_port_Enable_set(rtk_port_t port, rtk_enable_t enable)
 
 	new_data = data;
 
-	if (enable == DISABLED)
-		new_data |= 0x0800;
+	if (enable_phy == DISABLED)
+		new_data |=  (1 << 11);
 	else
-		new_data &= ~0x0800;
+		new_data &= ~(1 << 11);
 
 	if (new_data != data) {
+		if (!(new_data & (1 << 11)) && (new_data & (1 << 12)))
+			new_data |= (1 << 9); // restart AN
 		if ((retVal = rtk_port_phyReg_set(port, PHY_CONTROL_REG, new_data)) != RT_ERR_OK)
 			return retVal;
 	}
 
-	g_port_phy_power[port] = (enable == DISABLED) ? 0 : 1;
+	g_port_phy_power[port] = (enable_phy == DISABLED) ? 0 : 1;
 
 	return RT_ERR_OK;
 }
@@ -1375,10 +1382,10 @@ static int change_led_mode_group2(u32 led_mode)
 
 static void change_port_link_mode(rtk_port_t port, u32 port_link_mode)
 {
-	u32 i_port_speed, i_port_flowc;
+	u32 i_port_speed, i_port_flowc, i_port_power;
 	rtk_api_ret_t retVal;
 	rtk_port_phy_ability_t phy_cfg;
-	char *link_desc = "Auto", *flow_desc = "ON";
+	const char *link_desc = "Auto", *flow_desc = "ON";
 	const char *port_desc;
 
 	if (g_port_link_mode[port] == port_link_mode)
@@ -1386,6 +1393,7 @@ static void change_port_link_mode(rtk_port_t port, u32 port_link_mode)
 
 	i_port_speed =  (port_link_mode & 0x0F);
 	i_port_flowc = ((port_link_mode >> 8) & 0x03);
+	i_port_power = (i_port_speed == SWAPI_LINK_SPEED_MODE_FORCE_POWER_OFF) ? 0 : 1;
 
 	phy_cfg.FC			 = 1; //  Symmetric Flow Control
 	phy_cfg.AsyFC			 = 0; // Asymmetric Flow Control (only for 1Gbps)
@@ -1483,20 +1491,30 @@ static void change_port_link_mode(rtk_port_t port, u32 port_link_mode)
 
 	port_desc = get_port_desc(port);
 
-	printk("%s - %s link speed: %s, flow control: %s\n", RTL8367_DEVNAME, port_desc, link_desc, flow_desc);
-
-	/* RTL8367 not support force link mode for 1000FD */
-	if (phy_cfg.AutoNegotiation || phy_cfg.Full_1000)
-		retVal = rtk_port_phyAutoNegoAbility_set(port, &phy_cfg);
+	if (!i_port_power)
+	{
+		link_desc = "Power OFF";
+		flow_desc = "N/A";
+		retVal = rtk_port_Enable_set(port, DISABLED);
+	}
 	else
-		retVal = rtk_port_phyForceModeAbility_set(port, &phy_cfg);
+	{
+		/* RTL8367 not support force link mode for 1000FD */
+		if (phy_cfg.AutoNegotiation || phy_cfg.Full_1000)
+			retVal = rtk_port_phyAutoNegoAbility_set(port, &phy_cfg);
+		else
+			retVal = rtk_port_phyForceModeAbility_set(port, &phy_cfg);
+	}
 
-	if (retVal != RT_ERR_OK) {
+	if (retVal != RT_ERR_OK)
+	{
 		printk("%s - %s, %s FAILED!\n", RTL8367_DEVNAME, port_desc, "phy ability set" );
 		return;
 	}
 
 	g_port_link_mode[port] = port_link_mode;
+
+	printk("%s - %s link speed: %s, flow control: %s\n", RTL8367_DEVNAME, port_desc, link_desc, flow_desc);
 }
 
 static void change_jumbo_frames_accept(u32 jumbo_frames_enabled)
@@ -1709,7 +1727,6 @@ static void reset_params_default(void)
 	g_rgmii_delay_rx                = CONFIG_RTL8367_RGMII_DELAY_RX;
 }
 
-
 static void reset_and_init_switch(int first_call)
 {
 	rtk_api_ret_t retVal;
@@ -1737,7 +1754,7 @@ static void reset_and_init_switch(int first_call)
 	if (first_call) {
 		/* disable link for all PHY ports (please enable from user-level) */
 		for (i = 0; i <= RTK_PHY_ID_MAX; i++)
-			rtk_port_Enable_set(i, 0);
+			rtk_port_Enable_set(i, DISABLED);
 	}
 
 	/* configure ExtIf */

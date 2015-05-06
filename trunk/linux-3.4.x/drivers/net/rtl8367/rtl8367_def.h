@@ -21,7 +21,7 @@
 
 //#define RTL8367_DBG 1
 
-#define RTL8367_VERSION				"v2.8"
+#define RTL8367_VERSION				"v2.9"
 
 #define RTL8367_DEVNAME				"rtl8367"
 

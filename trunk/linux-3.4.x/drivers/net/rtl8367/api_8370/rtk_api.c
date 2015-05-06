@@ -2746,7 +2746,7 @@ rtk_api_ret_t rtk_port_phyAutoNegoAbility_set(rtk_port_t port, rtk_port_phy_abil
         return retVal;
 
     /*Enable and restart auto negotiation*/
-    phyData &= ~(0x3140);
+    phyData &= ~(0x3940);
     phyData |= phyEnMsk0 | (1<<12) | (1<<9);
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_CONTROL_REG,phyData))!=RT_ERR_OK)
         return retVal;

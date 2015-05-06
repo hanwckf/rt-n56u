@@ -609,6 +609,8 @@ int get_apcli_connected(char *ifname);
 
 
 /* watchdog.c */
+void ez_event_short();
+void ez_event_long();
 int  is_ntpc_updated(void);
 int  ntpc_updated_main(int argc, char *argv[]);
 int  watchdog_main(int argc, char *argv[]);

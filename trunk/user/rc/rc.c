@@ -304,10 +304,10 @@ nvram_convert_misc_values(void)
 	char buff[64];
 	int sw_mode;
 #if defined (BOARD_GPIO_BTN_ROUTER)
-	int i_router_switch = 0;
+	int i_router_switch = BTN_PRESSED;
 
 	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_ROUTER, &i_router_switch) >= 0) {
-		if (i_router_switch != 0)
+		if (i_router_switch != BTN_PRESSED)
 			nvram_set_int("sw_mode", 3);
 	}
 #endif

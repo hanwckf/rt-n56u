@@ -1035,14 +1035,14 @@ static void esw_soft_reset(void)
 	atomic_set(&g_switch_inited, 0);
 }
 
-static void esw_port_phy_power(u32 phy_port_id, u32 power_on)
+static int esw_port_phy_power(u32 phy_port_id, u32 power_on, int is_force)
 {
 	u32 esw_phy_mcr = 0x3100;
 	u32 phy_mdio_addr = phy_port_id;
-	u32 i_port_speed;
+	u32 i_port_speed, is_power_on;
 
 	if (phy_port_id > ESW_PHY_ID_MAX)
-		return;
+		return 0;
 
 	/* external GigaPHY */
 #if defined (CONFIG_P4_MAC_TO_PHY_MODE)
@@ -1057,8 +1057,12 @@ static void esw_port_phy_power(u32 phy_port_id, u32 power_on)
 #endif
 
 	i_port_speed = (g_port_link_mode[phy_port_id] & 0x0F);
+	if (i_port_speed == SWAPI_LINK_SPEED_MODE_FORCE_POWER_OFF)
+		power_on = 0;
 
+	is_power_on = 0;
 	if (mii_mgr_read(phy_mdio_addr, 0, &esw_phy_mcr)) {
+		is_power_on = (esw_phy_mcr & (1<<11)) ? 0 : 1;
 		esw_phy_mcr &= ~((1<<11)|(1<<9));
 		
 		/* fix PHY init after buggy Uboot 4.3.0.0 */
@@ -1070,22 +1074,30 @@ static void esw_port_phy_power(u32 phy_port_id, u32 power_on)
 		else
 			esw_phy_mcr |= (1<<11);
 		
-		mii_mgr_write(phy_mdio_addr, 0, esw_phy_mcr);
+		if (is_force || (is_power_on ^ power_on))
+			mii_mgr_write(phy_mdio_addr, 0, esw_phy_mcr);
 	}
 
 	g_port_phy_power[phy_port_id] = (power_on) ? 1 : 0;
+
+	/* return 1 when PHY power is changed */
+	return (is_power_on ^ power_on) ? 1 : 0;
 }
 
 static void power_down_all_phy(void)
 {
 	u32 i;
+	int power_changed = 0;
 
 	/* block PHY changes */
 	atomic_set(&g_switch_allow_irq, 0);
 
 	/* down all PHY ports */
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
-		esw_port_phy_power(i, 0);
+		power_changed |= esw_port_phy_power(i, 0, 0);
+
+	if (power_changed)
+		msleep(500);
 }
 
 static void esw_storm_control(u32 port_id, int set_bcast, int set_mcast, int set_ucast, u32 rate_mbps)
@@ -1154,7 +1166,6 @@ static void esw_eee_control(u32 is_eee_enabled)
 
 	/* disable PHY ports link */
 	power_down_all_phy();
-	msleep(500);
 
 #if !defined (CONFIG_MT7530_GSW)
 	mt7620_esw_eee_enable(is_eee_enabled);
@@ -1171,7 +1182,7 @@ static void esw_eee_control(u32 is_eee_enabled)
 	/* restore PHY ports link */
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
 		if (port_phy_power[i])
-			esw_port_phy_power(i, 1);
+			esw_port_phy_power(i, 1, 1);
 	}
 }
 
@@ -1332,10 +1343,9 @@ static void change_ports_power(u32 power_on, u32 ports_mask)
 
 	ports_mask = get_ports_mask_from_user(ports_mask & 0xFF, 1);
 
-	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
-	{
+	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
 		if ((ports_mask >> i) & 0x1)
-			esw_port_phy_power(i, power_on);
+			esw_port_phy_power(i, power_on, 0);
 	}
 }
 
@@ -1349,12 +1359,9 @@ static int change_wan_lan_ports_power(u32 power_on, u32 is_wan)
 	else
 		ports_mask = get_ports_mask_lan(0);
 
-	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
-	{
-		if (((ports_mask >> i) & 0x1) && (g_port_phy_power[i] ^ power_on)) {
-			power_changed = 1;
-			esw_port_phy_power(i, power_on);
-		}
+	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
+		if ((ports_mask >> i) & 0x1)
+			power_changed |= esw_port_phy_power(i, power_on, 0);
 	}
 
 	return power_changed;
@@ -1491,8 +1498,7 @@ static void vlan_create_entry(u32 vlan4k_info, u32 vlan4k_mask, int set_port_vid
 
 static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 {
-	u32 i_port_speed;
-	u32 i_port_flowc;
+	u32 i_port_speed, i_port_flowc, i_port_power;
 	u32 esw_phy_ana = 0x05e1;
 	u32 esw_phy_mcr = 0x3100; /* 100 FD + auto-negotiation */
 	u32 phy_mdio_addr = phy_port_id;
@@ -1508,6 +1514,10 @@ static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 
 	i_port_speed =  (port_link_mode & 0x0F);
 	i_port_flowc = ((port_link_mode >> 8) & 0x03);
+	i_port_power = (i_port_speed == SWAPI_LINK_SPEED_MODE_FORCE_POWER_OFF) ? 0 : 1;
+
+	if (!i_port_power)
+		i_port_speed = SWAPI_LINK_SPEED_MODE_AUTO;
 
 	switch (i_port_speed)
 	{
@@ -1571,9 +1581,9 @@ static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 	{
 	case SWAPI_LINK_FLOW_CONTROL_TX_ASYNC:
 	case SWAPI_LINK_FLOW_CONTROL_DISABLE:
+		flow_desc = "OFF";
 		/* disable pause ability (A6,A5) */
 		esw_phy_ana &= ~((1<<11)|(1<<10));
-		flow_desc = "OFF";
 		break;
 	}
 
@@ -1638,7 +1648,7 @@ static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 	/* set PHY ability */
 	mii_mgr_write(phy_mdio_addr, 4, esw_phy_ana);
 
-	if (g_port_phy_power[phy_port_id]) {
+	if (i_port_power) {
 		if (!(esw_phy_mcr & (1<<12))) {
 			/* power-down PHY */
 			esw_phy_mcr |= (1<<11);
@@ -1647,7 +1657,7 @@ static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 			mii_mgr_write(phy_mdio_addr, 0, esw_phy_mcr);
 			
 			/* wait for PHY down */
-			msleep(300);
+			msleep(500);
 			
 			/* power-up PHY */
 			esw_phy_mcr &= ~(1<<11);
@@ -1665,7 +1675,13 @@ static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 
 	g_port_link_mode[phy_port_id] = port_link_mode;
 
-	printk("%s - %s link speed: %s, flow control: %s\n", MTK_ESW_DEVNAME, get_port_desc(phy_port_id), link_desc, flow_desc);
+	if (!i_port_power) {
+		link_desc = "Power OFF";
+		flow_desc = "N/A";
+	}
+
+	printk("%s - %s link speed: %s, flow control: %s\n",
+		MTK_ESW_DEVNAME, get_port_desc(phy_port_id), link_desc, flow_desc);
 }
 
 static void change_storm_control_multicast_unknown(u32 control_rate_mbps)
@@ -1854,7 +1870,6 @@ static void reset_and_init_switch(void)
 	memcpy(port_phy_power, g_port_phy_power, sizeof(g_port_phy_power));
 
 	power_down_all_phy();
-	msleep(300);
 
 	esw_soft_reset();
 	esw_control_post_init();
@@ -1862,7 +1877,7 @@ static void reset_and_init_switch(void)
 	/* restore PHY power state */
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
 		if (port_phy_power[i])
-			esw_port_phy_power(i, 1);
+			esw_port_phy_power(i, 1, 1);
 	}
 }
 

@@ -7,7 +7,6 @@
 
 #include "ra_ethreg.h"
 #include "mii_mgr.h"
-#include "ra_phy.h"
 #include "ra_esw_reg.h"
 #include "ra_esw_mt7621.h"
 
@@ -178,8 +177,112 @@ static void gsw_set_pll(void)
 	}
 }
 
+static void mt7621_esw_eee_10base_te(int is_eee_enabled)
+{
+	/* EEE 10Base-Te (global) */
+	mii_mgr_write_cl45(0, 0x1f, 0x027b, (is_eee_enabled) ? 0x1147 : 0x1177);
+}
+
+static void mt7621_esw_eee_port_enable(u32 port_id, int is_eee_enabled)
+{
+	/* EEE 1000/100 LPI */
+	mii_mgr_write_cl45(port_id, 0x07, 0x003c, (is_eee_enabled) ? 0x0006 : 0x0000);
+
+	/* Increase post_update_timer */
+	mii_mgr_write(port_id, 31, 0x3);
+	mii_mgr_write(port_id, 17, (is_eee_enabled) ? 0x004b : 0x0034);
+
+	/* Adjust 100_mse_threshold */
+	mii_mgr_write_cl45(port_id, 0x1e, 0x0123, (is_eee_enabled) ? 0xffff : 0x80a0);
+
+#if 0
+/****************************************************
+ slave mode EEE patch (look as voodoo)
+ note: play with 0x52b5 work only PHY is powered
+ note: forced slave mode is bad idea, this needed poll 'MASTER/SLAVE configuration fault'
+       (reg 10, bit 15), when both link partners is forced to slave, link failed.
+****************************************************/
+
+	/* Forced Slave mode */
+	mii_mgr_write(port_id,  9, (is_eee_enabled) ? 0x1600 : 0x0600);
+
+	/* Increase SlvDPSready time */
+	mii_mgr_write(port_id, 31, 0x52b5);
+	mii_mgr_write(port_id, 16, 0xafae);
+	mii_mgr_write(port_id, 18, (is_eee_enabled) ? 0x002f : 0x0004);
+	mii_mgr_write(port_id, 16, 0x8fae);
+
+	mii_mgr_write(port_id, 31, 0x52b5);
+	mii_mgr_write(port_id, 16, 0xb780);
+	mii_mgr_write(port_id, 17, (is_eee_enabled && has_link) ? 0x00e0 : 0x0000);
+	mii_mgr_write(port_id, 16, 0x9780);
+
+	/* Increase post_update_timer */
+	mii_mgr_write(port_id, 31, 0x3);
+	mii_mgr_write(port_id, 17, (is_eee_enabled) ? 0x004b : 0x0034);
+	mii_mgr_write(port_id, 31, 0x0);
+
+	/* Adjust 100_mse_threshold */
+	mii_mgr_write_cl45(port_id, 0x1e, 0x0123, (is_eee_enabled) ? 0xffff : 0x80a0);
+
+	/* Disable mcc */
+//	mii_mgr_write_cl45(port_id, 0x1e, 0x00a6, (is_eee_enabled) ? 0x0300 : 0x03e0);
+#endif
+}
+
+void mt7621_esw_eee_enable(int is_eee_enabled)
+{
+	u32 i;
+
+	for (i = 0; i <= 4; i++) {
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+		if (i == 4 && is_eee_enabled) continue;
+#elif defined (CONFIG_GE2_INTERNAL_GPHY_P0)
+		if (i == 0 && is_eee_enabled) continue;
+#endif
+		/* EEE 1000/100 LPI */
+		mt7621_esw_eee_port_enable(i, is_eee_enabled);
+	}
+
+	mt7621_esw_eee_10base_te(is_eee_enabled);
+}
+
+void mt7621_esw_eee_on_link(u32 port_id, int port_link, int is_eee_enabled)
+{
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+	if (port_id == 4) return;
+#elif defined (CONFIG_GE2_INTERNAL_GPHY_P0)
+	if (port_id == 0) return;
+#endif
+
+	if (port_id > 4)
+		return;
+
+	/* MT7621 ESW need update EEE params on link changed  */
+	if (!is_eee_enabled)
+		return;
+
+	/* Increase SlvDPSready time */
+	if (port_link) {
+		mii_mgr_write(port_id, 31, 0x52b5);
+		mii_mgr_write(port_id, 16, 0xafae);
+		mii_mgr_write(port_id, 18, 0x002f);
+		mii_mgr_write(port_id, 16, 0x8fae);
+	}
+
+	mii_mgr_write(port_id, 31, 0x52b5);
+	mii_mgr_write(port_id, 16, 0xb780);
+	mii_mgr_write(port_id, 17, (port_link) ? 0x00e0 : 0x0000);
+	mii_mgr_write(port_id, 16, 0x9780);
+}
+
 void mt7621_esw_fc_delay_set(int is_link_100)
 {
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P0)
+	/* MT7621 E2 has FC bug */
+	if ((ralink_asic_rev_id & 0xFFFF) != 0x0101)
+		return;
+
 	if (is_link_100) {
 		/* delay setting for 100M */
 		mii_mgr_write(MT7530_MDIO_ADDR, 0x7b00, 0x008);
@@ -187,12 +290,13 @@ void mt7621_esw_fc_delay_set(int is_link_100)
 		/* delay setting for 10/1000M */
 		mii_mgr_write(MT7530_MDIO_ADDR, 0x7b00, 0x102);
 	}
+#endif
 }
 
 /* MT7621 embedded switch (aka MT7350) */
 void mt7621_esw_init(void)
 {
-	u32 __maybe_unused i, regLink, regValue = 0;
+	u32 regLink, regValue = 0;
 
 	/* MT7621 E2 has FC bug */
 	if ((ralink_asic_rev_id & 0xFFFF) == 0x0101)
@@ -287,27 +391,13 @@ void mt7621_esw_init(void)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a74, 0x44);
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a7c, 0x44);
 
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P4)
-	/* disable P4 EEE LPI */
-	mii_mgr_write(4, 13, 0x0007);
-	mii_mgr_write(4, 14, 0x003c);
-	mii_mgr_write(4, 13, 0x4007);
-	mii_mgr_write(4, 14, 0x0000);
-#elif defined (CONFIG_GE2_INTERNAL_GPHY_P0)
-	/* disable P0 EEE LPI */
-	mii_mgr_write(0, 13, 0x0007);
-	mii_mgr_write(0, 14, 0x003c);
-	mii_mgr_write(0, 13, 0x4007);
-	mii_mgr_write(0, 14, 0x0000);
+#if !defined (CONFIG_RAETH_ESW_CONTROL)
+	/* disable 802.3az EEE by default */
+	mt7621_esw_eee_enable(0);
 #endif
 
 	/* enable switch INTR */
 	mii_mgr_read(MT7530_MDIO_ADDR, 0x7808, &regValue);
 	regValue |= (3<<16);
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7808, regValue);
-
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
-	/* autopoll GPHY P4/P0 */
-	enable_autopoll_phy(1);
-#endif
 }

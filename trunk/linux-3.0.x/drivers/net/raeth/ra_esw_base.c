@@ -12,6 +12,7 @@
 #include "mii_mgr.h"
 #include "ra_esw_reg.h"
 #include "ra_esw_base.h"
+#include "ra_esw_mt7620.h"
 
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
     defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
@@ -336,6 +337,14 @@ static void gsw_event_link(u32 port_id)
 	u32 reg_val;
 
 	reg_val = esw_reg_get(REG_ESW_MAC_PMSR_P0 + (port_id*0x100));
+
+#if !defined (CONFIG_RAETH_ESW_CONTROL)
+#if !defined (CONFIG_MT7530_GSW)
+	/* MT7620 ESW need disable EEE on every link down */
+	mt7620_esw_eee_on_link(port_id, reg_val & 0x1, 0);
+#endif
+#endif
+
 	esw_link_status_changed(port_id, reg_val & 0x1);
 }
 #elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \

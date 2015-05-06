@@ -9,10 +9,57 @@
 #include "ra_esw_reg.h"
 #include "ra_gsw_mt7530.h"
 
+static void mt7530_gsw_eee_10base_te(int is_eee_enabled)
+{
+	/* EEE 10Base-Te (global, cl45 via cl22) */
+	mii_mgr_write(0, 13, 0x1f);
+	mii_mgr_write(0, 14, 0x027b);
+	mii_mgr_write(0, 13, 0x401f);
+	mii_mgr_write(0, 14, (is_eee_enabled) ? 0x1147 : 0x1177);
+}
+
+static void mt7530_gsw_eee_port_enable(u32 port_id, int is_eee_enabled)
+{
+	/* EEE 1000/100 LPI (cl45 via cl22) */
+	mii_mgr_write(port_id, 13, 0x7);
+	mii_mgr_write(port_id, 14, 0x3c);
+	mii_mgr_write(port_id, 13, 0x4007);
+	mii_mgr_write(port_id, 14, (is_eee_enabled) ? 0x0006 : 0x0000);
+}
+
+void mt7530_gsw_eee_enable(int is_eee_enabled)
+{
+	u32 i;
+
+	for (i = 0; i <= 4; i++) {
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4)
+		if (i == 4 && is_eee_enabled) continue;
+#elif defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0)
+		if (i == 0 && is_eee_enabled) continue;
+#endif
+		/* EEE 1000/100 LPI */
+		mt7530_gsw_eee_port_enable(i, is_eee_enabled);
+	}
+
+	mt7530_gsw_eee_10base_te(is_eee_enabled);
+}
+
+void mt7530_gsw_eee_on_link(u32 port_id, int port_link, int is_eee_enabled)
+{
+	if (port_id > 4)
+		return;
+
+	/* MT7530 GSW need update EEE params on link changed  */
+	if (!is_eee_enabled)
+		return;
+
+	// todo
+}
+
 /* external GSW MT7350 */
 void mt7530_gsw_init(void)
 {
-	u32 i, regValue = 0;
+	u32 regValue = 0;
 
 	/* configure MT7530 HW-TRAP */
 	mii_mgr_read(MT7530_MDIO_ADDR, 0x7804, &regValue);
@@ -75,6 +122,19 @@ void mt7530_gsw_init(void)
 	/* set MT7530 delay setting for 10/1000M */
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7b00, 0x102);
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x7b04, 0x14);
+#endif
+
+	/* set lower Tx driving */
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a54, 0x44);
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a5c, 0x44);
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a64, 0x44);
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a6c, 0x44);
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a74, 0x44);
+	mii_mgr_write(MT7530_MDIO_ADDR, 0x7a7c, 0x44);
+
+#if !defined (CONFIG_RAETH_ESW_CONTROL)
+	/* disable 802.3az EEE by default */
+	mt7530_gsw_eee_enable(0);
 #endif
 
 	/* enable switch INTR */

@@ -73,6 +73,7 @@ static u32 g_vlan_rule_user[SWAPI_VLAN_RULE_NUM] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0
 ////////////////////////////////////////////////////////////////////////////////////
 
 static atomic_t g_switch_inited                  = ATOMIC_INIT(0);
+static atomic_t g_switch_allow_irq               = ATOMIC_INIT(0);
 static atomic_t g_port_link_changed              = ATOMIC_INIT(0);
 
 static bwan_member_t g_bwan_member[SWAPI_WAN_BRIDGE_NUM][ESW_MAC_ID_MAX+1];
@@ -1079,6 +1080,9 @@ static void power_down_all_phy(void)
 {
 	u32 i;
 
+	/* block PHY changes */
+	atomic_set(&g_switch_allow_irq, 0);
+
 	/* down all PHY ports */
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
 		esw_port_phy_power(i, 0);
@@ -1141,7 +1145,7 @@ static void esw_jumbo_control(u32 jumbo_frames_enabled)
 	esw_reg_set(REG_ESW_MAC_GMACCR, reg_gmaccr);
 }
 
-static void esw_eee_control(u32 green_ethernet_enabled)
+static void esw_eee_control(u32 is_eee_enabled)
 {
 	u32 i, port_phy_power[ESW_PHY_ID_MAX+1];
 
@@ -1153,39 +1157,16 @@ static void esw_eee_control(u32 green_ethernet_enabled)
 	msleep(500);
 
 #if !defined (CONFIG_MT7530_GSW)
-	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
-#if defined (CONFIG_P4_MAC_TO_PHY_MODE)
-		if (i == 4)
-			continue;
-#elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
-		if (i == 5)
-			continue;
-#endif
-		/* select PHY local page #3 */
-		mii_mgr_write(i, 31, 0xb000);
-		
-		/* set PHY EEE on/off */
-		mii_mgr_write(i, 17, (green_ethernet_enabled) ? 0x0002 : 0x0000);
-	}
+	mt7620_esw_eee_enable(is_eee_enabled);
 #else
 #if defined (CONFIG_RALINK_MT7621)
-	for (i = 0; i <= 4; i++) {
-		/* EEE 1000/100 LPI */
-		mii_mgr_write(i, 13, 0x0007);
-		mii_mgr_write(i, 14, 0x003c);
-		mii_mgr_write(i, 13, 0x4007);
-		mii_mgr_write(i, 14, (green_ethernet_enabled) ? 0x0006 : 0x0000);
-	}
-
-	/* EEE 10Base-Te (global) */
-	mii_mgr_write(0, 13, 0x001f);
-	mii_mgr_write(0, 14, 0x027b);
-	mii_mgr_write(0, 13, 0x401f);
-	mii_mgr_write(0, 14, (green_ethernet_enabled) ? 0x1147 : 0x1177);
+	mt7621_esw_eee_enable(is_eee_enabled);
 #else
-	/* not confirmed for external MT7530B/W */
+	mt7530_gsw_eee_enable(is_eee_enabled);
 #endif
 #endif
+	/* allow PHY changes */
+	atomic_set(&g_switch_allow_irq, 1);
 
 	/* restore PHY ports link */
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
@@ -1796,7 +1777,19 @@ static int change_vlan_rule(u32 vlan_rule_id, u32 vlan_rule)
 
 void esw_link_status_changed(u32 port_id, int port_link)
 {
-	char *port_state;
+	const char *port_state;
+
+	if (atomic_read(&g_switch_allow_irq) == 1) {
+#if !defined (CONFIG_MT7530_GSW)
+		mt7620_esw_eee_on_link(port_id, port_link, g_green_ethernet_enabled);
+#else
+#if defined (CONFIG_RALINK_MT7621)
+		mt7621_esw_eee_on_link(port_id, port_link, g_green_ethernet_enabled);
+#else
+		mt7530_gsw_eee_on_link(port_id, port_link, g_green_ethernet_enabled);
+#endif
+#endif
+	}
 
 	if (port_id <= ESW_PHY_ID_MAX)
 		atomic_set(&g_port_link_changed, 1);
@@ -1806,12 +1799,10 @@ void esw_link_status_changed(u32 port_id, int port_link)
 		return;
 #endif
 
-	if (port_link)
-		port_state = "Up";
-	else
-		port_state = "Down";
+	port_state = (port_link) ? "Up" : "Down";
 
-	printk("%s: Link Status Changed - Port %s Link %s\n", MTK_ESW_DEVNAME, get_port_desc(port_id), port_state);
+	printk("%s: Link Status Changed - Port %s Link %s\n",
+		MTK_ESW_DEVNAME, get_port_desc(port_id), port_state);
 }
 
 int esw_control_post_init(void)
@@ -1836,7 +1827,21 @@ int esw_control_post_init(void)
 	/* configure leds */
 	esw_led_mode(g_led_phy_mode);
 
+	/* disable 802.3az EEE by default */
+	if (!g_green_ethernet_enabled) {
+#if !defined (CONFIG_MT7530_GSW)
+		mt7620_esw_eee_enable(0);
+#else
+#if defined (CONFIG_RALINK_MT7621)
+		mt7621_esw_eee_enable(0);
+#else
+		mt7530_gsw_eee_enable(0);
+#endif
+#endif
+	}
+
 	atomic_set(&g_switch_inited, 1);
+	atomic_set(&g_switch_allow_irq, 1);
 
 	return 0;
 }

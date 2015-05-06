@@ -224,7 +224,7 @@ static void mt7628_ephy_init(void)
 	for(i=0; i<5; i++) {
 		mii_mgr_write(i, 31, 0x8000);	// change L0 page
 		mii_mgr_write(i,  0, 0x3100);
-#if defined (CONFIG_RAETH_8023AZ_EEE)
+#if 0
 		mii_mgr_read(i, 26, &phy_val);	// EEE setting
 		phy_val |= (1 << 5);
 		mii_mgr_write(i, 26, phy_val);
@@ -323,7 +323,7 @@ void rt305x_esw_init(void)
 #elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
 	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~(1 << 9);		// set RGMII to Normal mode
 	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_MDIO;// set MDIO to Normal mode
-	init_giga_phy(1);
+	init_ext_giga_phy(1);
 #if defined (CONFIG_RT3052_ASIC) || defined (CONFIG_RT3352_ASIC)
 	enable_autopoll_phy(1);
 #endif

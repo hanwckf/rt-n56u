@@ -15,8 +15,16 @@
 extern u32 ralink_asic_rev_id;
 
 #if defined (CONFIG_RAETH_ESW)
+
+#if defined (CONFIG_RAETH_HAS_PORT4)
+#define MAX_ESW_PHY_ID	3
+#else
+#define MAX_ESW_PHY_ID	4
+#endif
+
 static void mt7620_ephy_init(void)
 {
+	u32 i;
 	u32 is_BGA = (ralink_asic_rev_id >> 16) & 0x1;
 
 	/* PCIE_RC_MODE=1 */
@@ -33,7 +41,8 @@ static void mt7620_ephy_init(void)
 	* Reg16~30:Local/Global registers
 	*
 	*/
-	/*correct PHY setting L3.0 BGA*/
+
+	/* correct PHY setting L3.0 BGA */
 	mii_mgr_write(1, 31, 0x4000); //global, page 4
 
 	mii_mgr_write(1, 17, 0x7444);
@@ -68,25 +77,16 @@ static void mt7620_ephy_init(void)
 		mii_mgr_write(1, 25, 0x00ae);
 		mii_mgr_write(1, 26, 0x0fff);
 	}
-	mii_mgr_write(1, 31, 0x1000); //global, page 1
+	mii_mgr_write(1, 31, 0x1000); // global, page 1
 	mii_mgr_write(1, 17, 0xe7f8);
 
-	mii_mgr_write(1, 31, 0x8000); //local, page 0
-	mii_mgr_write(0, 30, 0xa000);
-	mii_mgr_write(1, 30, 0xa000);
-	mii_mgr_write(2, 30, 0xa000);
-	mii_mgr_write(3, 30, 0xa000);
-#if !defined (CONFIG_RAETH_HAS_PORT4)
-	mii_mgr_write(4, 30, 0xa000);
-#endif
+	mii_mgr_write(1, 31, 0x8000); // local, page 0
+	for (i = 0; i <= MAX_ESW_PHY_ID; i++)
+		mii_mgr_write(i, 30, 0xa000);
 
-	mii_mgr_write(0, 4, 0x05e1);
-	mii_mgr_write(1, 4, 0x05e1);
-	mii_mgr_write(2, 4, 0x05e1);
-	mii_mgr_write(3, 4, 0x05e1);
-#if !defined (CONFIG_RAETH_HAS_PORT4)
-	mii_mgr_write(4, 4, 0x05e1);
-#endif
+	/* set default ability */
+	for (i = 0; i <= MAX_ESW_PHY_ID; i++)
+		mii_mgr_write(i, 4, 0x05e1);
 
 	mii_mgr_write(1, 31, 0xa000); // local, page 2
 	mii_mgr_write(0, 16, 0x1111);
@@ -97,17 +97,46 @@ static void mt7620_ephy_init(void)
 	mii_mgr_write(4, 16, 0x1313);
 #endif
 
-#if 0
-	/* disable 802.3az EEE (need link down first) */
-	mii_mgr_write(1, 31, 0xb000); //local, page 3
-	mii_mgr_write(0, 17, 0x0000);
-	mii_mgr_write(1, 17, 0x0000);
-	mii_mgr_write(2, 17, 0x0000);
-	mii_mgr_write(3, 17, 0x0000);
-#if !defined (CONFIG_RAETH_HAS_PORT4)
-	mii_mgr_write(4, 17, 0x0000);
+#if !defined (CONFIG_RAETH_ESW_CONTROL)
+	/* disable 802.3az EEE by default */
+	mt7620_esw_eee_enable(0);
 #endif
-#endif
+
+	mii_mgr_write(1, 31, 0x8000); // local, page 0
+}
+
+void mt7620_esw_eee_enable(int is_eee_enabled)
+{
+	u32 i, reg_pmsr;
+
+	/* select PHY local page #3 */
+	mii_mgr_write(1, 31, 0xb000);
+
+	for (i = 0; i <= MAX_ESW_PHY_ID; i++) {
+		/* check port link before touch EEE */
+		reg_pmsr = sysRegRead(RALINK_ETH_SW_BASE + REG_ESW_MAC_PMSR_P0 + 0x100*i);
+		if (reg_pmsr & 0x01)
+			continue;
+		
+		/* set PHY EEE on/off */
+		mii_mgr_write(i, 17, (is_eee_enabled) ? 0x0002 : 0x0000);
+	}
+}
+
+void mt7620_esw_eee_on_link(u32 port_id, int port_link, int is_eee_enabled)
+{
+	if (port_id > MAX_ESW_PHY_ID)
+		return;
+
+	/* MT7620 ESW need disable EEE on every link down */
+	if (is_eee_enabled || port_link)
+		return;
+
+	/* select PHY local page #3 */
+	mii_mgr_write(port_id, 31, 0xb000);
+
+	/* set PHY EEE off */
+	mii_mgr_write(port_id, 17, 0x0000);
 }
 #endif
 
@@ -272,7 +301,7 @@ void mt7620_esw_init(void)
 	/* Use P5 for connect to external GigaPHY (with autopolling) */
 	ge1_set_mode(0, 1);
 	sysRegWrite(RALINK_ETH_SW_BASE+0x3500, 0x00056330);	// (P5, AN)
-	init_giga_phy(1);
+	init_ext_giga_phy(1);
 	enable_autopoll_phy(1);
 #else
 	/* Disable P5 */
@@ -301,7 +330,7 @@ void mt7620_esw_init(void)
 	/* Use P4 for connect to external GigaPHY (with autopolling) */
 	ge2_set_mode(0, 1);
 	sysRegWrite(RALINK_ETH_SW_BASE+0x3400, 0x00056330);	// (P4, AN)
-	init_giga_phy(2);
+	init_ext_giga_phy(2);
 	enable_autopoll_phy(1);
 #elif defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0)
 	/* Use P4 for connect to external MT7530 GigaPHY P4 or P0 (with autopolling) */

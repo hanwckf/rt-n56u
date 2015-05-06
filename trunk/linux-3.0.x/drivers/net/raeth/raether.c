@@ -825,11 +825,8 @@ dispatch_int_status2(END_DEVICE *ei_local)
 #endif
 		u32 link_state = sysRegRead(RALINK_ETH_SW_BASE+0x0208);
 		if (link_state & 0x1) {
-			/* MT7621 E2 has FC bug */
-			if ((ralink_asic_rev_id & 0xFFFF) == 0x0101) {
-				u32 link_speed = (link_state >> 2) & 0x3;
-				mt7621_esw_fc_delay_set((link_speed == 1) ? 1 : 0);
-			}
+			u32 link_speed = (link_state >> 2) & 0x3;
+			mt7621_esw_fc_delay_set((link_speed == 1) ? 1 : 0);
 		}
 		
 		esw_link_status_changed(port_id, link_state & 0x1);

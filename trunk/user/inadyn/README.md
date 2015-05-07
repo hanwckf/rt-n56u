@@ -1,14 +1,28 @@
-README
-======
-[![Build Status](https://travis-ci.org/troglobit/inadyn.png?branch=master)](https://travis-ci.org/troglobit/inadyn)[![Coverity Scan Status](https://scan.coverity.com/projects/2981/badge.svg)](https://scan.coverity.com/projects/2981)
+Inadyn | Small and simple DDNS client
+=====================================
+[![Travis Status]][Travis] [![Coverity Status]][Coverity Scan]
 
-Inadyn is a small and simple
-[DDNS](http://en.wikipedia.org/wiki/Dynamic_DNS) client with HTTPS
-support.  It is commonly available in many GNU/Linux distributions, used
-in off-the-shelf routers and Internet gateways to automate the task of
-keeping your DNS record up to date with any IP address changes from your
-[ISP](http://en.wikipedia.org/wiki/ISP).  It can also be used in
-installations with redundant (backup) connections to the Internet.
+
+Table of Contents
+-----------------
+
+* [Introduction](#introduction)
+* [Supported Providers](#supported-providers)
+* [Example Configuration](#example-configuration)
+* [Generic DDNS Plugin](#generic-ddns-plugin)
+* [Build & Install](#build--install)
+* [Origin & References](#origin--references)
+
+
+Introduction
+------------
+
+Inadyn is a small and simple [DDNS] client with HTTPS support.  It is
+commonly available in many GNU/Linux distributions, used in off the
+shelf routers and Internet gateways to automate the task of keeping your
+DNS record up to date with any IP address changes from your [ISP].  It
+can also be used in installations with redundant (backup) connections to
+the Internet.
 
 If your ISP provides you with a DHCP or PPPoE/PPPoA connection you risk
 losing your IP address every time you reconnect, or in DHCP even when
@@ -20,6 +34,10 @@ on demand when your IP changes.
 
 Inadyn can maintain multiple host names with the same IP address, and
 has a web based IP detection which runs well behind a NAT router.
+
+
+Supported Providers
+-------------------
 
 The following DDNS providers are supported natively, other providers,
 like http://twoDNS.de for instance, can be supported using the generic
@@ -42,9 +60,13 @@ DDNS plugin.  See below for configuration examples.
 * http://www.zerigo.com
 * http://www.dhis.org
 * https://nsupdate.info
-* https://duckdns.org
+* http://duckdns.org
 * https://www.loopia.com
 * https://www.namecheap.com
+* https://domains.google.com
+* https://www.ovh.com
+* https://www.dtdns.com
+* http://giradns.com
 
 Some of these services are free of charge for non-commercial use, others
 take a small fee, but also provide more domains to choose from.
@@ -60,15 +82,13 @@ Note: No HTTPS certificate validation is currently done, patches welcome!
 
 
 Example Configuration
-=====================
+---------------------
 
 Inadyn supports updating several DDNS servers, several accounts even on
 different DDNS providers.  The following example config file illustrates
-how it can be used.
+how it can be used.  Feature is courtesy of [Christian Eyrich].
 
-Feature is courtesy of [Christian Eyrich](http://eyrich-net.org/programmiertes.html)
-
-Example /etc/inadyn.conf:
+Example `/etc/inadyn.conf`:
 
     background
     verbose        1
@@ -108,9 +128,9 @@ a persistent store for the three cache files
 
 
 Generic DDNS Plugin
-===================
+-------------------
 
-Aside from the dedicated DDNS provider support Inadyn also has a generic
+Aside from dedicated DDNS provider support, Inadyn also has a generic
 DDNS provider plugin.  A DDNS provider like twoDNS.de can be setup like
 this:
 
@@ -148,19 +168,19 @@ code and the string "good" or "OK" in the HTTP response body.  You may
 have to modify Inadyn manually, any patches for this are most welcome!
 
 
-Building with/witouth HTTPS Support
-===================================
+Build & Install
+---------------
 
 By default Inadyn tries to build with GnuTLS for HTTPS support.  GnuTLS
 is the recommended SSL library to use on UNIX distributions which do not
 provide OpenSSL as a system library.  However, when OpenSSL is available
 as a system library, for example in many embedded systems:
 
-    USE_OPENSSL=1 make distclean all
+    ./configure --enable-openssl
 
 To completely disable the HTTPS support in Inadyn:
 
-    ENABLE_SSL=0 make distclean all
+    ./configure --disable-ssl
 
 For more details on the OpenSSL and GNU GPL license issue, see:
 
@@ -168,13 +188,20 @@ For more details on the OpenSSL and GNU GPL license issue, see:
 * https://people.gnome.org/~markmc/openssl-and-the-gpl
 
 
-Contact
-=======
+Origin & References
+-------------------
 
-This is the continuation of the
-[original INADYN](http://www.inatech.eu/inadyn/) by Narcis Ilisei.  It
-is currently being developed and maintained by
-[Joachim Nilsson](http://troglobit.com) at
-[GitHub](http://github.com/troglobit/inadyn).  Please file bug reports,
-clone it, or send pull requests for bug fixes and proposed extensions.
+This is the continuation of Narcis Ilisei's [original] INADYN.  Now
+maintained by [Joachim Nilsson] at [GitHub].  Please file bug reports,
+or send pull requests for bug fixes and proposed extensions.
 
+[original]:         http://www.inatech.eu/inadyn/
+[DDNS]:             http://en.wikipedia.org/wiki/Dynamic_DNS
+[ISP]:              http://en.wikipedia.org/wiki/ISP
+[Christian Eyrich]: http://eyrich-net.org/programmiertes.html
+[Joachim Nilsson]:  http://troglobit.com
+[GitHub]:           http://github.com/troglobit/inadyn
+[Travis]:           https://travis-ci.org/troglobit/inadyn
+[Travis Status]:    https://travis-ci.org/troglobit/inadyn.png?branch=master
+[Coverity Scan]:    https://scan.coverity.com/projects/2981
+[Coverity Status]:  https://scan.coverity.com/projects/2981/badge.svg

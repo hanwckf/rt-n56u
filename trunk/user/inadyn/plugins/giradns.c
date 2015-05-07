@@ -1,7 +1,6 @@
-/* Plugin for DuckDNS
+/* Plugin for GiraDNS
  *
- * Copyright (C) 2010-2014  Joachim Nilsson <troglobit@gmail.com>
- * Copyright (C) 2014       Andy Padavan <andy.padavan@gmail.com>
+ * Copyright (C) 2015  Thorsten Mühlfelder <thenktor@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,20 +21,20 @@
 
 #include "plugin.h"
 
-#define DUCKDNS_UPDATE_IP_HTTP_REQUEST					\
-	"GET %s?"							\
-	"domains=%s&"							\
-	"token=%s&"							\
-	"ip=%s& "							\
-	"HTTP/1.0\r\n"							\
-	"Host: %s\r\n"							\
+#define GIRADNS_UPDATE_IP_HTTP_REQUEST				\
+	"GET %s?"						\
+	"u=%s&"							\
+	"p=%s&"							\
+	"ip=%s "						\
+	"HTTP/1.0\r\n"						\
+	"Host: %s\r\n"						\
 	"User-Agent: " AGENT_NAME " " SUPPORT_ADDR "\r\n\r\n"
 
 static int request (ddns_t       *ctx,   ddns_info_t *info, ddns_alias_t *alias);
 static int response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias);
 
 static ddns_system_t plugin = {
-	.name         = "default@duckdns.org",
+	.name         = "default@gira.de",
 
 	.request      = (req_fn_t)request,
 	.response     = (rsp_fn_t)response,
@@ -43,30 +42,17 @@ static ddns_system_t plugin = {
 	.checkip_name = "ipv4.wtfismyip.com",
 	.checkip_url  = "/text",
 
-	.server_name  = "duckdns.org",
-	.server_url   = "/update"
+	.server_name  = "homeserver.gira.de",
+	.server_url   = "/hsdyndns.php"
 };
 
 static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 {
-	char h_name[SERVER_NAME_LEN], *p;
-
-	p = strstr(alias->name, "duckdns.org");
-	if ((p != NULL) && (p != alias->name) && (*(--p) == '.')) {
-		size_t h_len = (size_t)(p - alias->name);
-		if (h_len >= sizeof(h_name))
-			h_len = sizeof(h_name) - 1;
-		strncpy(h_name, alias->name, h_len);
-		h_name[h_len] = '\0';
-	} else {
-		snprintf(h_name, sizeof(h_name), "%s", alias->name);
-	}
-
 	return snprintf(ctx->request_buf, ctx->request_buflen,
-			DUCKDNS_UPDATE_IP_HTTP_REQUEST,
+			GIRADNS_UPDATE_IP_HTTP_REQUEST,
 			info->server_url,
-			h_name,
 			info->creds.username,
+			info->creds.password,
 			alias->address,
 			info->server_name.name);
 }
@@ -77,7 +63,7 @@ static int response(http_trans_t *trans, ddns_info_t *UNUSED(info), ddns_alias_t
 
 	DO(http_status_valid(trans->status));
 
-	if (strstr(resp, "KO") || strstr(resp, "OK") || strstr(resp, "good"))
+	if (strstr(resp, "OK"))
 		return RC_OK;
 
 	return RC_DYNDNS_RSP_NOTOK;

@@ -1,4 +1,4 @@
-VERSION       = 1.99.12
+VERSION       = 1.99.13
 NAME          = inadyn
 EXEC          = src/$(NAME)
 RM           ?= rm -f
@@ -12,6 +12,7 @@ PLUGIN_OBJS   = src/plugin.o		plugins/common.o	\
 		plugins/sitelutions.o	plugins/tunnelbroker.o	\
 		plugins/tzo.o		plugins/zoneedit.o	\
 		plugins/zerigo.o	plugins/dhis.o		\
+		plugins/dtdns.o		plugins/giradns.o	\
 		plugins/netassist.o
 
 BASE_OBJS     = src/main.o	src/ddns.o	src/cache.o	\

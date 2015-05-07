@@ -1,4 +1,4 @@
-/* Plugin for ChangeIP
+/* Plugin for ChangeIP and OVH
  *
  * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
  * Copyright (C) 2006       Steve Horbachuk
@@ -49,6 +49,19 @@ static ddns_system_t plugin = {
 	.server_url   = "/nic/update"
 };
 
+static ddns_system_t ovh = {
+	.name         = "default@ovh.com",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = DYNDNS_MY_IP_SERVER,
+	.checkip_url  = DYNDNS_MY_CHECKIP_URL,
+
+	.server_name  = "www.ovh.com",
+	.server_url   = "/nic/update"
+};
+
 static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 {
 	return snprintf(ctx->request_buf, ctx->request_buflen,
@@ -68,11 +81,13 @@ static int response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias)
 PLUGIN_INIT(plugin_init)
 {
 	plugin_register(&plugin);
+	plugin_register(&ovh);
 }
 
 PLUGIN_EXIT(plugin_exit)
 {
 	plugin_unregister(&plugin);
+	plugin_unregister(&ovh);
 }
 
 /**

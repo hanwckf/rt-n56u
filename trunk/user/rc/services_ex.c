@@ -715,6 +715,8 @@ static const struct inadyn_system_t {
 	{ "WWW.DHIS.ORG",         "default@dhis.org"           },
 	{ "WWW.NIC.RU",           "default@nic.ru"             },
 	{ "WWW.DUCKDNS.ORG",      "default@duckdns.org"        },
+	{ "WWW.DTDNS.COM",        "default@dtdns.com"          },
+	{ "WWW.OVH.COM",          "default@ovh.com"            },
 	{ "WWW.TUNNELBROKER.NET", "ipv6tb@he.net"              },
 	{ "DNS.HE.NET",           "dyndns@he.net"              },
 	{ "TB.NETASSIST.UA",      "ipv6tb@netassist.ua"        },
@@ -738,6 +740,7 @@ inadyn_checkip_url[] = {
 	"checkip.two-dns.de /",
 	"ipv4.wtfismyip.com /text",
 	"ipv4.nsupdate.info /myip",
+	"myip.dtdns.com /",
 };
 
 static const char *

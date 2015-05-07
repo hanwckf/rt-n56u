@@ -1484,6 +1484,8 @@ function openLink(s) {
             tourl = "https://www.nic.ru/dns/service/dns_hosting/dns_master/dynamic_dns.html";
         else if (o1.value == 'WWW.DUCKDNS.ORG')
             tourl = "https://duckdns.org/";
+        else if (o1.value == 'WWW.DTDNS.COM')
+            tourl = "https://www.dtdns.com/dtsite/register";
         else if (o1.value == 'WWW.DHIS.ORG')
             tourl = "http://dhis.org/WebEngine.ipo?context=dhis.website.register";
         else if (o1.value == 'TB.NETASSIST.UA')

@@ -379,6 +379,8 @@ function checkDDNSReturnCode(){
                                                     <option value="WWW.DHIS.ORG"         <% nvram_match_x("","ddns_server_x", "WWW.DHIS.ORG","selected"); %>>www.dhis.org</option>
                                                     <option value="WWW.NIC.RU"           <% nvram_match_x("","ddns_server_x", "WWW.NIC.RU","selected"); %>>www.nic.ru (RU-CENTER)</option>
                                                     <option value="WWW.DUCKDNS.ORG"      <% nvram_match_x("","ddns_server_x", "WWW.DUCKDNS.ORG","selected"); %>>www.duckdns.org</option>
+                                                    <option value="WWW.DTDNS.COM"        <% nvram_match_x("","ddns_server_x", "WWW.DTDNS.COM","selected"); %>>www.dtdns.com</option>
+                                                    <option value="WWW.OVH.COM"          <% nvram_match_x("","ddns_server_x", "WWW.OVH.COM","selected"); %>>www.ovh.com</option>
                                                     <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("","ddns_server_x", "WWW.TUNNELBROKER.NET","selected"); %>>www.tunnelbroker.net (HE)</option>
                                                     <option value="DNS.HE.NET"           <% nvram_match_x("","ddns_server_x", "DNS.HE.NET","selected"); %>>dns.he.net (HE)</option>
                                                     <option value="TB.NETASSIST.UA"      <% nvram_match_x("","ddns_server_x", "TB.NETASSIST.UA","selected"); %>>tb.netassist.ua</option>
@@ -467,6 +469,8 @@ function checkDDNSReturnCode(){
                                                     <option value="WWW.ZERIGO.COM"       <% nvram_match_x("","ddns2_server", "WWW.ZERIGO.COM","selected"); %>>www.zerigo.com</option>
                                                     <option value="WWW.DHIS.ORG"         <% nvram_match_x("","ddns2_server", "WWW.DHIS.ORG","selected"); %>>www.dhis.org</option>
                                                     <option value="WWW.DUCKDNS.ORG"      <% nvram_match_x("","ddns2_server", "WWW.DUCKDNS.ORG","selected"); %>>www.duckdns.org</option>
+                                                    <option value="WWW.DTDNS.COM"        <% nvram_match_x("","ddns2_server", "WWW.DTDNS.COM","selected"); %>>www.dtdns.com</option>
+                                                    <option value="WWW.OVH.COM"          <% nvram_match_x("","ddns2_server", "WWW.OVH.COM","selected"); %>>www.ovh.com</option>
                                                     <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("","ddns2_server", "WWW.TUNNELBROKER.NET","selected"); %>>www.tunnelbroker.net (HE)</option>
                                                     <option value="DNS.HE.NET"           <% nvram_match_x("","ddns2_server", "DNS.HE.NET","selected"); %>>dns.he.net (HE)</option>
                                                     <option value="TB.NETASSIST.UA"      <% nvram_match_x("","ddns2_server", "TB.NETASSIST.UA","selected"); %>>tb.netassist.ua</option>
@@ -539,6 +543,7 @@ function checkDDNSReturnCode(){
                                                     <option value="10" <% nvram_match_x("", "ddns_checkip", "10","selected"); %>>checkip.two-dns.de</option>
                                                     <option value="11" <% nvram_match_x("", "ddns_checkip", "11","selected"); %>>ipv4.wtfismyip.com/text</option>
                                                     <option value="12" <% nvram_match_x("", "ddns_checkip", "12","selected"); %>>ipv4.nsupdate.info/myip</option>
+                                                    <option value="13" <% nvram_match_x("", "ddns_checkip", "13","selected"); %>>myip.dtdns.com</option>
                                                 </select>
                                             </td>
                                         </tr>

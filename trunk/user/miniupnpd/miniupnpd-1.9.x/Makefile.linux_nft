@@ -1,35 +1,29 @@
-# $Id: Makefile.linux,v 1.90 2015/04/26 14:43:28 nanard Exp $
 # MiniUPnP project
-# (c) 2006-2015 Thomas Bernard
+# (c) 2015 Tomofumi Hayashi
 # http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
-# Author : Thomas Bernard
+# Author : Tomofumi Hayashi
 # for use with GNU Make
 #
 # options can be passed to genconfig.sh through CONFIG_OPTIONS :
 # $ CONFIG_OPTIONS="--ipv6 --igd2" make -f Makefile.linux
 #
 # To install use :
-# $ DESTDIR=/dummyinstalldir make -f Makefile.linux install
+# $ DESTDIR=/dummyinstalldir make -f Makefile.linux_nft install
 # or :
-# $ INSTALLPREFIX=/usr/local make -f Makefile.linux install
+# $ INSTALLPREFIX=/usr/local make -f Makefile.linux_nft install
 # or :
 # $ make -f Makefile.linux install
 # (default INSTALLPREFIX is /usr)
 #
-# if your system hasn't iptables libiptc headers and binary correctly
-# installed, you need to get iptables sources from http://netfilter.org/
-# ./configure them and build them then miniupnpd will build using :
-# $ IPTABLESPATH=/path/to/iptables-1.4.1 make -f Makefile.linux
 #
-#CFLAGS = -O -g -DDEBUG
+CFLAGS = -O -g #-DDEBUG
 CFLAGS ?= -Os
 CFLAGS += -fno-strict-aliasing
 CFLAGS += -fno-common
-CFLAGS += -D_GNU_SOURCE
+CPPFLAGS += -D_GNU_SOURCE 
 CFLAGS += -Wall
 CFLAGS += -Wextra -Wstrict-prototypes -Wdeclaration-after-statement
 #CFLAGS += -Wno-missing-field-initializers
-#CFLAGS += -ansi	# iptables headers does use typeof which is a gcc extension
 CC ?= gcc
 RM = rm -f
 INSTALL = install
@@ -37,20 +31,6 @@ STRIP ?= strip
 PKG_CONFIG ?= pkg-config
 CP = cp
 
-CFLAGS += -ffunction-sections -fdata-sections
-LDFLAGS += -Wl,--gc-sections
-
-LDLIBS  = $(IPTABLESPATH)/libiptc/.libs/libip4tc.a
-ifeq ($(ENABLE_IPV6),1)
-LDLIBS += $(IPTABLESPATH)/libiptc/.libs/libip6tc.a
-ifndef DISABLE_NFNETLINK
-CFLAGS += USE_LIBNFNETLINK
-LDLIBS += $(STAGEDIR)/lib/libnfnetlink.a
-endif
-endif
-#LDLIBS += lssl
-CFLAGS += -DIPTABLES_143 -I$(IPTABLESPATH)/include
-LDFLAGS += -L$(IPTABLESPATH)/libiptc/.libs
 
 INSTALLPREFIX ?= $(PREFIX)/usr
 SBININSTALLDIR = $(INSTALLPREFIX)/sbin
@@ -64,17 +44,41 @@ BASEOBJS = miniupnpd.o upnphttp.o upnpdescgen.o upnpsoap.o \
            upnpevents.o upnputils.o getconnstatus.o \
            upnppinhole.o pcplearndscp.o asyncsendto.o
 
-LNXOBJS = linux/getifstats.o linux/ifacewatcher.o
-ifeq ($(ENABLE_IPV6),1)
-LNXOBJS += linux/getroute.o
-endif
-NETFILTEROBJS = netfilter/iptcrdr.o netfilter/iptpinhole.o netfilter/nfct_get.o
+LNXOBJS = linux/getifstats.o linux/ifacewatcher.o linux/getroute.o
+NETFILTEROBJS = netfilter_nft/nftnlrdr.o netfilter_nft/nfct_get.o netfilter_nft/nftnlrdr_misc.o
 
 ALLOBJS = $(BASEOBJS) $(LNXOBJS) $(NETFILTEROBJS)
 
+PCFILE_FOUND := $(shell $(PKG_CONFIG) --exists libnftnl; echo $$?)
+
+ifeq (${PCFILE_FOUND},0)
+
+PKG_CONFIG_LIBS = libnftnl libmnl
+CFLAGS  += $(shell $(PKG_CONFIG) --cflags $(PKG_CONFIG_LIBS))
+LDLIBS  += $(shell $(PKG_CONFIG) --static --libs-only-l $(PKG_CONFIG_LIBS))
+LDFLAGS += $(shell $(PKG_CONFIG) --libs-only-L $(PKG_CONFIG_LIBS))
+LDFLAGS += $(shell $(PKG_CONFIG) --libs-only-other $(PKG_CONFIG_LIBS))
+else
+
+ARCH ?= $(shell uname -m | grep -q "x86_64" && echo 64)
+endif # ifdef PCFILE_FOUND
+
+#LDLIBS += -lnfnetlink
+
+TEST := $(shell $(PKG_CONFIG) --atleast-version=1.0.2 libnetfilter_conntrack && $(PKG_CONFIG) --atleast-version=1.0.3 libmnl && echo 1)
+ifeq ($(TEST),1)
+CPPFLAGS += -DUSE_NFCT
+LDLIBS += $(shell $(PKG_CONFIG) --static --libs-only-l libmnl)
+LDLIBS += $(shell $(PKG_CONFIG) --static --libs-only-l libnetfilter_conntrack)
+endif # ($(TEST),1)
+
+LDLIBS += $(shell $(PKG_CONFIG) --static --libs-only-l libssl)
+
 TESTUPNPDESCGENOBJS = testupnpdescgen.o upnpdescgen.o
 
-EXECUTABLES = miniupnpd miniupnpdctl
+EXECUTABLES = miniupnpd testupnpdescgen testgetifstats \
+              testupnppermissions miniupnpdctl testgetifaddr \
+              testgetroute testasyncsendto testportinuse
 
 .PHONY:	all clean install depend genuuid
 
@@ -134,7 +138,7 @@ testasyncsendto:	testasyncsendto.o asyncsendto.o upnputils.o \
 	linux/getroute.o
 
 testportinuse:	testportinuse.o portinuse.o getifaddr.o \
-	netfilter/iptcrdr.o
+	netfilter_nft/nftnlrdr.o netfilter_nft/nftnlrdr_misc.o
 
 miniupnpdctl:	miniupnpdctl.o
 
@@ -167,11 +171,11 @@ upnpsoap.o: getconnstatus.h upnpurns.h
 upnpreplyparse.o: upnpreplyparse.h minixml.h
 minixml.o: minixml.h
 portinuse.o: macros.h config.h upnpglobalvars.h upnppermissions.h
-portinuse.o: miniupnpdtypes.h getifaddr.h portinuse.h netfilter/iptcrdr.h
+portinuse.o: miniupnpdtypes.h getifaddr.h portinuse.h netfilter_nft/nftnlrdr.h
 portinuse.o: commonrdr.h
 upnpredirect.o: macros.h config.h upnpredirect.h upnpglobalvars.h
 upnpredirect.o: upnppermissions.h miniupnpdtypes.h upnpevents.h portinuse.h
-upnpredirect.o: netfilter/iptcrdr.h commonrdr.h
+upnpredirect.o: netfilter_nft/nftnlrdr.h commonrdr.h
 getifaddr.o: config.h getifaddr.h
 daemonize.o: daemonize.h config.h
 upnpglobalvars.o: config.h upnpglobalvars.h upnppermissions.h
@@ -187,7 +191,7 @@ natpmp.o: miniupnpdtypes.h getifaddr.h upnpredirect.h commonrdr.h upnputils.h
 natpmp.o: portinuse.h asyncsendto.h
 pcpserver.o: config.h pcpserver.h macros.h upnpglobalvars.h upnppermissions.h
 pcpserver.o: miniupnpdtypes.h pcplearndscp.h upnpredirect.h commonrdr.h
-pcpserver.o: getifaddr.h asyncsendto.h pcp_msg_struct.h netfilter/iptcrdr.h
+pcpserver.o: getifaddr.h asyncsendto.h pcp_msg_struct.h netfilter_nft/nftnlrdr.h
 pcpserver.o: commonrdr.h
 upnpevents.o: config.h upnpevents.h miniupnpdpath.h upnpglobalvars.h
 upnpevents.o: upnppermissions.h miniupnpdtypes.h upnpdescgen.h upnputils.h
@@ -196,7 +200,7 @@ upnputils.o: miniupnpdtypes.h getroute.h
 getconnstatus.o: getconnstatus.h getifaddr.h
 upnppinhole.o: macros.h config.h upnpredirect.h upnpglobalvars.h
 upnppinhole.o: upnppermissions.h miniupnpdtypes.h upnpevents.h
-upnppinhole.o: netfilter/iptpinhole.h
+#upnppinhole.o: netfilter/iptpinhole.h
 pcplearndscp.o: config.h upnpglobalvars.h upnppermissions.h miniupnpdtypes.h
 pcplearndscp.o: pcplearndscp.h
 asyncsendto.o: asyncsendto.h
@@ -205,11 +209,11 @@ linux/ifacewatcher.o: config.h ifacewatcher.h config.h minissdp.h
 linux/ifacewatcher.o: miniupnpdtypes.h getifaddr.h upnpglobalvars.h
 linux/ifacewatcher.o: upnppermissions.h natpmp.h
 linux/getroute.o: getroute.h upnputils.h
-netfilter/iptcrdr.o: macros.h config.h netfilter/iptcrdr.h commonrdr.h
-netfilter/iptcrdr.o: config.h upnpglobalvars.h upnppermissions.h
-netfilter/iptcrdr.o: miniupnpdtypes.h
-netfilter/iptpinhole.o: config.h netfilter/iptpinhole.h upnpglobalvars.h
-netfilter/iptpinhole.o: upnppermissions.h config.h miniupnpdtypes.h
+netfilter_nft/nftnlrdr.o: macros.h config.h netfilter_nft/nftnlrdr.h commonrdr.h
+netfilter_nft/nftnlrdr.o: config.h upnpglobalvars.h upnppermissions.h
+netfilter_nft/nftnlrdr.o: miniupnpdtypes.h
+netfilter_nft/iptpinhole.o: config.h netfilter_nft/iptpinhole.h upnpglobalvars.h
+netfilter_nft/iptpinhole.o: upnppermissions.h config.h miniupnpdtypes.h
 testupnpdescgen.o: macros.h config.h upnpdescgen.h upnpdescstrings.h
 testupnpdescgen.o: getifaddr.h
 upnpdescgen.o: config.h getifaddr.h upnpredirect.h upnpdescgen.h

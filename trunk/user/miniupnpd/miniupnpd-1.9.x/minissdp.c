@@ -1,4 +1,4 @@
-/* $Id: minissdp.c,v 1.73 2015/01/17 11:26:05 nanard Exp $ */
+/* $Id: minissdp.c,v 1.74 2015/04/30 08:59:51 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2015 Thomas Bernard
@@ -1168,6 +1168,8 @@ SendSSDPGoodbye(int * sockets, int n_sockets)
 
 	for(j=0; j<n_sockets; j++)
 	{
+		if(sockets[j] < 0)
+			continue;
 #ifdef ENABLE_IPV6
 		ipv6 = j & 1;
 		if(ipv6) {

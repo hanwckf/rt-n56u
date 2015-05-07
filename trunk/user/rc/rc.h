@@ -609,8 +609,10 @@ int get_apcli_connected(char *ifname);
 
 
 /* watchdog.c */
-void ez_event_short();
-void ez_event_long();
+#if defined (BOARD_GPIO_BTN_WPS) || defined (BOARD_GPIO_BTN_WLTOG)
+void ez_event_short(int btn_id);
+void ez_event_long(int btn_id);
+#endif
 int  is_ntpc_updated(void);
 int  ntpc_updated_main(int argc, char *argv[]);
 int  watchdog_main(int argc, char *argv[]);

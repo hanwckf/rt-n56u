@@ -58,6 +58,26 @@ function initial(){
 		}
 	}
 
+	if (support_but_wlt()){
+		if (!support_5g_radio()){
+			var o1 = document.form.wlt_action_short;
+			var o2 = document.form.wlt_action_long;
+			o1.options[2].text = "<#TweaksWPSItem02#>";
+			o1.options[5].text = "<#TweaksWPSItem03#>";
+			o2.options[1].text = o1.options[2].text;
+			o2.options[4].text = o1.options[5].text;
+			o1.remove(6);
+			o1.remove(6);
+			o1.remove(3);
+			o1.remove(3);
+			o2.remove(5);
+			o2.remove(5);
+			o2.remove(2);
+			o2.remove(2);
+		}
+		showhide_div('tbl_wlt_actions', 1);
+	}
+
 	var switch_type = support_switch_type();
 	if (switch_type != 0) {
 		var o3 = document.form.ether_led0;
@@ -220,6 +240,57 @@ function change_led_all(){
                                             </td>
                                         </tr>
                                     </table>
+
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_wlt_actions" style="display:none;">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#TweaksWLTAction#></th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%"><#TweaksWLTEventShort#></th>
+                                            <td>
+                                                <select name="wlt_action_short" class="input" style="width: 320px;">
+                                                    <option value="0"  <% nvram_match_x("", "wlt_action_short", "0", "selected"); %>><#TweaksWPSItem00#></option>
+                                                    <option value="1"  <% nvram_match_x("", "wlt_action_short", "1", "selected"); %>><#TweaksWPSItem01#></option>
+                                                    <option value="2"  <% nvram_match_x("", "wlt_action_short", "2", "selected"); %>><#TweaksWPSItem02#> 2.4</option>
+                                                    <option value="3"  <% nvram_match_x("", "wlt_action_short", "3", "selected"); %>><#TweaksWPSItem02#> 5</option>
+                                                    <option value="4"  <% nvram_match_x("", "wlt_action_short", "4", "selected"); %>><#TweaksWPSItem02#> 2.4 & 5</option>
+                                                    <option value="11" <% nvram_match_x("", "wlt_action_short", "11","selected"); %>><#TweaksWPSItem03#> 2.4</option>
+                                                    <option value="12" <% nvram_match_x("", "wlt_action_short", "12","selected"); %>><#TweaksWPSItem03#> 5</option>
+                                                    <option value="13" <% nvram_match_x("", "wlt_action_short", "13","selected"); %>><#TweaksWPSItem03#> 2.4 & 5</option>
+                                                    <option value="5"  <% nvram_match_x("", "wlt_action_short", "5", "selected"); %>><#TweaksWPSItem10#></option>
+                                                    <option value="10" <% nvram_match_x("", "wlt_action_short", "10","selected"); %>><#TweaksWPSItem11#></option>
+                                                    <option value="6"  <% nvram_match_x("", "wlt_action_short", "6", "selected"); %>><#TweaksWPSItem20#></option>
+                                                    <option value="7"  <% nvram_match_x("", "wlt_action_short", "7", "selected"); %>><#TweaksWPSItem21#></option>
+                                                    <option value="8"  <% nvram_match_x("", "wlt_action_short", "8", "selected"); %>><#TweaksWPSItem22#></option>
+                                                    <option value="9"  <% nvram_match_x("", "wlt_action_short", "9", "selected"); %>><#TweaksWPSItem32#> /opt/bin/on_wps.sh 1</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#TweaksWLTEventLong#></th>
+                                            <td>
+                                                <select name="wlt_action_long" class="input" style="width: 320px;">
+                                                    <option value="0"  <% nvram_match_x("", "wlt_action_long", "0", "selected"); %>><#TweaksWPSItem00#></option>
+                                                    <option value="1"  <% nvram_match_x("", "wlt_action_long", "1", "selected"); %>><#TweaksWPSItem02#> 2.4</option>
+                                                    <option value="2"  <% nvram_match_x("", "wlt_action_long", "2", "selected"); %>><#TweaksWPSItem02#> 5</option>
+                                                    <option value="3"  <% nvram_match_x("", "wlt_action_long", "3", "selected"); %>><#TweaksWPSItem02#> 2.4 & 5</option>
+                                                    <option value="12" <% nvram_match_x("", "wlt_action_long", "12","selected"); %>><#TweaksWPSItem03#> 2.4</option>
+                                                    <option value="13" <% nvram_match_x("", "wlt_action_long", "13","selected"); %>><#TweaksWPSItem03#> 5</option>
+                                                    <option value="14" <% nvram_match_x("", "wlt_action_long", "14","selected"); %>><#TweaksWPSItem03#> 2.4 & 5</option>
+                                                    <option value="4"  <% nvram_match_x("", "wlt_action_long", "4", "selected"); %>><#TweaksWPSItem10#></option>
+                                                    <option value="11" <% nvram_match_x("", "wlt_action_long", "11","selected"); %>><#TweaksWPSItem11#></option>
+                                                    <option value="5"  <% nvram_match_x("", "wlt_action_long", "5", "selected"); %>><#TweaksWPSItem20#></option>
+                                                    <option value="6"  <% nvram_match_x("", "wlt_action_long", "6", "selected"); %>><#TweaksWPSItem21#></option>
+                                                    <option value="9"  <% nvram_match_x("", "wlt_action_long", "9", "selected"); %>><#TweaksWPSItem22#></option>
+                                                    <option value="7"  <% nvram_match_x("", "wlt_action_long", "7", "selected"); %>><#TweaksWPSItem30#></option>
+                                                    <option value="8"  <% nvram_match_x("", "wlt_action_long", "8", "selected"); %>><#TweaksWPSItem31#></option>
+                                                    <option value="10" <% nvram_match_x("", "wlt_action_long", "10","selected"); %>><#TweaksWPSItem32#> /opt/bin/on_wps.sh 2</option>
+                                                    <option value="15" <% nvram_match_x("", "wlt_action_long", "15","selected"); %>><#TweaksWPSItem33#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </table>
+
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#TweaksLEDEvents#></th>

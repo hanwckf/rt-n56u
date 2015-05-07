@@ -270,6 +270,11 @@ btn_check_wps(void)
 	if (btn_count_reset > 0)
 		return 0;
 #endif
+#if defined (BOARD_GPIO_BTN_WLTOG)
+	/* check WLTOG pressed */
+	if (btn_count_wlt > 0)
+		return 0;
+#endif
 	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_WPS, &i_button_value) < 0)
 		return 0;
 
@@ -292,11 +297,11 @@ btn_check_wps(void)
 		if (press_count > BTN_EZ_WAIT_COUNT) {
 			/* pressed >= 3sec */
 			wd_alarmtimer(0, 0);
-			ez_event_long();
+			ez_event_long(0);
 		} else if (press_count > 0 && press_count < BTN_EZ_CANCEL_COUNT) {
 			/* pressed < 500ms */
 			wd_alarmtimer(0, 0);
-			ez_event_short();
+			ez_event_short(0);
 		}
 	}
 
@@ -313,6 +318,11 @@ btn_check_wlt(void)
 #if defined (BOARD_GPIO_BTN_RESET)
 	/* check RESET pressed */
 	if (btn_count_reset > 0)
+		return 0;
+#endif
+#if defined (BOARD_GPIO_BTN_WPS)
+	/* check WPS pressed */
+	if (btn_count_wps > 0)
 		return 0;
 #endif
 	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_WLTOG, &i_button_value) < 0)
@@ -337,10 +347,11 @@ btn_check_wlt(void)
 		if (press_count > BTN_EZ_WAIT_COUNT) {
 			/* pressed >= 3sec */
 			wd_alarmtimer(0, 0);
-			
+			ez_event_long(1);
 		} else if (press_count > 0 && press_count < BTN_EZ_CANCEL_COUNT) {
 			/* pressed < 500ms */
 			wd_alarmtimer(0, 0);
+			ez_event_short(1);
 		}
 	}
 
@@ -571,7 +582,8 @@ update_svc_status_wifi5()
 #endif
 }
 
-static void 
+#if defined (BOARD_GPIO_BTN_WPS) || defined (BOARD_GPIO_BTN_WLTOG)
+static void
 ez_action_toggle_wifi2(void)
 {
 	if (get_enabled_radio_rt())
@@ -587,7 +599,7 @@ ez_action_toggle_wifi2(void)
 	}
 }
 
-static void 
+static void
 ez_action_toggle_wifi5(void)
 {
 #if BOARD_HAS_5G_RADIO
@@ -605,7 +617,7 @@ ez_action_toggle_wifi5(void)
 #endif
 }
 
-static void 
+static void
 ez_action_change_wifi2(void)
 {
 	int i_radio_state;
@@ -631,7 +643,7 @@ ez_action_change_wifi2(void)
 #endif
 }
 
-static void 
+static void
 ez_action_change_wifi5(void)
 {
 #if BOARD_HAS_5G_RADIO
@@ -655,7 +667,7 @@ ez_action_change_wifi5(void)
 #endif
 }
 
-static void 
+static void
 ez_action_change_guest_wifi2(void)
 {
 	int i_guest_state;
@@ -677,7 +689,7 @@ ez_action_change_guest_wifi2(void)
 	control_guest_rt(i_guest_state, 1);
 }
 
-static void 
+static void
 ez_action_change_guest_wifi5(void)
 {
 #if BOARD_HAS_5G_RADIO
@@ -701,7 +713,7 @@ ez_action_change_guest_wifi5(void)
 #endif
 }
 
-static void 
+static void
 ez_action_usb_saferemoval(void)
 {
 #if (BOARD_NUM_USB_PORTS > 0)
@@ -711,7 +723,7 @@ ez_action_usb_saferemoval(void)
 #endif
 }
 
-static void 
+static void
 ez_action_wan_down(void)
 {
 	if (get_ap_mode())
@@ -722,7 +734,7 @@ ez_action_wan_down(void)
 	stop_wan();
 }
 
-static void 
+static void
 ez_action_wan_reconnect(void)
 {
 	if (get_ap_mode())
@@ -733,7 +745,7 @@ ez_action_wan_reconnect(void)
 	full_restart_wan();
 }
 
-static void 
+static void
 ez_action_wan_toggle(void)
 {
 	if (get_ap_mode())
@@ -753,7 +765,7 @@ ez_action_wan_toggle(void)
 	}
 }
 
-static void 
+static void
 ez_action_shutdown(void)
 {
 	logmessage("watchdog", "Perform ez-button %s...", "shutdown");
@@ -761,7 +773,7 @@ ez_action_shutdown(void)
 	sys_stop();
 }
 
-static void 
+static void
 ez_action_user_script(int script_param)
 {
 	char* opt_user_script = "/opt/bin/on_wps.sh";
@@ -785,11 +797,17 @@ ez_action_led_toggle(void)
 	notify_leds_detect_link();
 }
 
-#if defined (BOARD_GPIO_BTN_WPS)
 void
-ez_event_short(void)
+ez_event_short(int btn_id)
 {
-	int ez_action = nvram_get_int("ez_action_short");
+	int ez_action;
+
+#if defined (BOARD_GPIO_BTN_WLTOG)
+	if (btn_id == 1)
+		ez_action = nvram_get_int("wlt_action_short");
+	else
+#endif
+		ez_action = nvram_get_int("ez_action_short");
 
 #if defined (BOARD_GPIO_LED_POWER)
 	cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, get_state_led_pwr());
@@ -847,9 +865,17 @@ ez_event_short(void)
 }
 
 void
-ez_event_long(void)
+ez_event_long(int btn_id)
 {
-	int ez_action = nvram_get_int("ez_action_long");
+	int ez_action;
+
+#if defined (BOARD_GPIO_BTN_WLTOG)
+	if (btn_id == 1)
+		ez_action = nvram_get_int("wlt_action_long");
+	else
+#endif
+		ez_action = nvram_get_int("ez_action_long");
+
 #if defined (BOARD_GPIO_LED_POWER)
 	int led_state = LED_ON;
 

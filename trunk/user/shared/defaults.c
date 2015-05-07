@@ -350,7 +350,6 @@ struct nvram_pair router_defaults[] = {
 	{ "apps_dms", "0" },
 	{ "apps_itunes", "0"},
 	{ "sh_num", "0" },
-	{ "machine_name", BOARD_NAME },
 	{ "computer_name", BOARD_NAME },
 #if BOARD_RAM_SIZE < 128
 	{ "pcache_reclaim", "2" },
@@ -589,6 +588,12 @@ struct nvram_pair router_defaults[] = {
 	{ "ez_action_long", "15" },	/* Reset */
 #else
 	{ "ez_action_long", "0" },
+#endif
+	{ "wlt_action_short", "1" },
+#if BOARD_HAS_5G_RADIO
+	{ "wlt_action_long", "3" },
+#else
+	{ "wlt_action_long", "1" },
 #endif
 	{ "watchdog_cpu", "0" },
 	{ "front_led_all", "1" },

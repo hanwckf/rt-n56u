@@ -6,7 +6,8 @@
 - MediaTek MT7621 (MIPS 1004Kc)
 
 Для сборки кросс-toolchain требуется Linux окружение 32 или 64 бита. Сборка
-кросс-toolchain протестирована на Linux дистрибутиве Debian 'wheezy' 7.8.0.
+кросс-toolchain протестирована на Linux дистрибутивах Debian 'wheezy' 7.8.0 и
+Debian 'jessie' 8.0.0.
 
 Для сборки кросс-toolchain необходимо выполнить скрипт "build_toolchain"
 и дождаться окончания процедуры сборки. Сборка занимает от 10 минут до
@@ -30,14 +31,15 @@ uClibc-0.9.33.2 + upstream патчи
 
 * ПРИМЕЧАНИЕ *
 
-Для сборки кросс-toolchain из под Linux дистрибутива Debian 'wheezy' требуются пакеты:
+Для сборки кросс-toolchain из под Linux дистрибутива Debian 'wheezy'/'jessie' требуются
+пакеты (на других дистрибутивах состав и наименования пакетов могут отличаться):
+- sudo
 - build-essential
 - gawk
-- sudo
 - pkg-config
 - gettext
-- automake
 - autoconf
+- automake
 - libtool
 - bison
 - flex
@@ -49,5 +51,5 @@ uClibc-0.9.33.2 + upstream патчи
 
 
 -
-20.04.2015
+10.05.2015
 Padavan

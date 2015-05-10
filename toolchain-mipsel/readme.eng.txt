@@ -5,8 +5,8 @@ The cross-toolchain is builded to CPU with arch MIPS32_R2 LE:
 - MediaTek MT7620 (MIPS 24KEc)
 - MediaTek MT7621 (MIPS 1004Kc)
 
-To build the cross-toolchain, you need Linux environment. Debian 'wheezy' 7.8.0
-is recommended.
+To build the cross-toolchain, you need Linux environment. Debian 'wheezy' 7.8.0 and
+Debian 'jessie' 8.0.0 distros has been tested and recommended.
 
 Just run build script "build_toolchain" and wait for the build process complete.
 
@@ -27,14 +27,14 @@ uClibc-0.9.33.2 + upstream patches
 
 * NOTE *
 
-To build the cross-toolchain under Debian 'wheezy' you need the packages:
+To build the cross-toolchain under Debian 'wheezy'/'jessie' you need the packages:
+- sudo
 - build-essential
 - gawk
-- sudo
 - pkg-config
 - gettext
-- automake
 - autoconf
+- automake
 - libtool
 - bison
 - flex
@@ -47,5 +47,5 @@ To build the cross-toolchain under Debian 'wheezy' you need the packages:
 
 
 -
-04/20/2015
+05/10/2015
 Padavan

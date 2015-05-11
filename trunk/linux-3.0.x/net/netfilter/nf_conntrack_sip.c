@@ -897,7 +897,6 @@ static int set_expected_rtp_rtcp(struct sk_buff *skb, unsigned int dataoff,
 #endif
 			skip_expect = 1;
 	} while (!skip_expect);
-	rcu_read_unlock();
 
 	base_port = ntohs(tuple.dst.u.udp.port) & ~1;
 	rtp_port = htons(base_port);
@@ -911,8 +910,10 @@ static int set_expected_rtp_rtcp(struct sk_buff *skb, unsigned int dataoff,
 			goto err1;
 	}
 
-	if (skip_expect)
+	if (skip_expect) {
+		rcu_read_unlock();
 		return NF_ACCEPT;
+	}
 
 	rtp_exp = nf_ct_expect_alloc(ct);
 	if (rtp_exp == NULL)
@@ -943,6 +944,7 @@ static int set_expected_rtp_rtcp(struct sk_buff *skb, unsigned int dataoff,
 err2:
 	nf_ct_expect_put(rtp_exp);
 err1:
+	rcu_read_unlock();
 	return ret;
 }
 

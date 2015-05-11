@@ -2,12 +2,15 @@
 #define __NF_CONNTRACK_SIP_H__
 #ifdef __KERNEL__
 
+#include <linux/types.h>
+
 #define SIP_PORT	5060
 #define SIP_TIMEOUT	3600
 
 struct nf_ct_sip_master {
 	unsigned int	register_cseq;
 	unsigned int	invite_cseq;
+	__be16		forced_dport;
 };
 
 enum sip_expectation_classes {

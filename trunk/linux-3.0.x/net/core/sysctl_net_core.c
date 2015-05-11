@@ -30,8 +30,8 @@ EXPORT_SYMBOL(vlan_double_tag);
 
 static int zero = 0;
 static int ushort_max = USHRT_MAX;
-
-static int one = 1;
+static int min_sndbuf = SOCK_MIN_SNDBUF;
+static int min_rcvbuf = SOCK_MIN_RCVBUF;
 
 #ifdef CONFIG_RPS
 static int rps_sock_flow_sysctl(ctl_table *table, int write,
@@ -101,7 +101,7 @@ static struct ctl_table net_core_table[] = {
 		.maxlen		= sizeof(int),
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec_minmax,
-		.extra1		= &one,
+		.extra1		= &min_sndbuf,
 	},
 	{
 		.procname	= "rmem_max",
@@ -109,7 +109,7 @@ static struct ctl_table net_core_table[] = {
 		.maxlen		= sizeof(int),
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec_minmax,
-		.extra1		= &one,
+		.extra1		= &min_rcvbuf,
 	},
 	{
 		.procname	= "wmem_default",
@@ -117,7 +117,7 @@ static struct ctl_table net_core_table[] = {
 		.maxlen		= sizeof(int),
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec_minmax,
-		.extra1		= &one,
+		.extra1		= &min_sndbuf,
 	},
 	{
 		.procname	= "rmem_default",
@@ -125,7 +125,7 @@ static struct ctl_table net_core_table[] = {
 		.maxlen		= sizeof(int),
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec_minmax,
-		.extra1		= &one,
+		.extra1		= &min_rcvbuf,
 	},
 	{
 		.procname	= "dev_weight",

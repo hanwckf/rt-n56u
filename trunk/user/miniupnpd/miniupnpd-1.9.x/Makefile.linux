@@ -44,7 +44,7 @@ LDLIBS  = $(IPTABLESPATH)/libiptc/.libs/libip4tc.a
 ifeq ($(ENABLE_IPV6),1)
 LDLIBS += $(IPTABLESPATH)/libiptc/.libs/libip6tc.a
 ifndef DISABLE_NFNETLINK
-CFLAGS += USE_LIBNFNETLINK
+CFLAGS += -DUSE_LIBNFNETLINK
 LDLIBS += $(STAGEDIR)/lib/libnfnetlink.a
 endif
 endif

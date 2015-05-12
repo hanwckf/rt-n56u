@@ -734,10 +734,23 @@ int ddns_main_loop(ddns_t *ctx, int argc, char *argv[])
 			
 			/* else minimal sleep for try again */
 			ctx->sleep_sec = DYNDNS_MIN_SLEEP;
+		} else {
+			/* dynamic increase interval after 3x errors (upper limit 60 min) */
+			if (iterations_err > 3) {
+				int sleep_sec = ctx->sleep_sec * (iterations_err - 2);
+				if (sleep_sec > 3600)
+					sleep_sec = 3600;
+				ctx->sleep_sec = sleep_sec;
+			}
 		}
 
-		if (rc != RC_OK)
-			logit(LOG_WARNING, "Will retry again in %d sec...", ctx->sleep_sec);
+		if (rc != RC_OK) {
+			int minutes = ctx->sleep_sec / 60;
+			if (!minutes)
+				logit(LOG_WARNING, "Will retry again after %d %s...", ctx->sleep_sec, "sec");
+			else
+				logit(LOG_WARNING, "Will retry again after %d %s...", minutes, "min");
+		}
 
 		/* Now sleep a while. Using the time set in sleep_sec data member */
 		wait_for_cmd(ctx);

@@ -776,14 +776,14 @@ ez_action_shutdown(void)
 static void
 ez_action_user_script(int script_param)
 {
-	char* opt_user_script = "/opt/bin/on_wps.sh";
+	const char *ez_script = "/etc/storage/ez_buttons_script.sh";
 
-	if (check_if_file_exist(opt_user_script))
-	{
-		logmessage("watchdog", "Perform ez-button script: %s %d", opt_user_script, script_param);
-		
-		doSystem("%s %d &", opt_user_script, script_param);
-	}
+	if (!check_if_file_exist(ez_script))
+		return;
+
+	logmessage("watchdog", "Execute %s %d", ez_script, script_param);
+
+	doSystem("%s %d", ez_script, script_param);
 }
 
 static void
@@ -800,12 +800,13 @@ ez_action_led_toggle(void)
 void
 ez_event_short(int btn_id)
 {
-	int ez_action;
+	int ez_action, ez_param = 1;
 
 #if defined (BOARD_GPIO_BTN_WLTOG)
-	if (btn_id == 1)
+	if (btn_id == 1) {
 		ez_action = nvram_get_int("wlt_action_short");
-	else
+		ez_param = 3;
+	} else
 #endif
 		ez_action = nvram_get_int("ez_action_short");
 
@@ -845,8 +846,8 @@ ez_event_short(int btn_id)
 	case 8: // WAN up/down toggle
 		ez_action_wan_toggle();
 		break;
-	case 9: // Run user script (/opt/bin/on_wps.sh 1)
-		ez_action_user_script(1);
+	case 9: // Run user script
+		ez_action_user_script(ez_param);
 		break;
 	case 10: // Front LED toggle
 		ez_action_led_toggle();
@@ -867,12 +868,13 @@ ez_event_short(int btn_id)
 void
 ez_event_long(int btn_id)
 {
-	int ez_action;
+	int ez_action, ez_param = 2;
 
 #if defined (BOARD_GPIO_BTN_WLTOG)
-	if (btn_id == 1)
+	if (btn_id == 1) {
 		ez_action = nvram_get_int("wlt_action_long");
-	else
+		ez_param = 4;
+	} else
 #endif
 		ez_action = nvram_get_int("ez_action_long");
 
@@ -924,8 +926,8 @@ ez_event_long(int btn_id)
 	case 9: // WAN up/down toggle
 		ez_action_wan_toggle();
 		break;
-	case 10: // Run user script (/opt/bin/on_wps.sh 2)
-		ez_action_user_script(2);
+	case 10: // Run user script
+		ez_action_user_script(ez_param);
 		break;
 	case 11: // Front LED toggle
 		ez_action_led_toggle();

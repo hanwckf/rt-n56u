@@ -212,7 +212,7 @@ function change_led_all(){
                                                     <option value="6"  <% nvram_match_x("", "ez_action_short", "6", "selected"); %>><#TweaksWPSItem20#></option>
                                                     <option value="7"  <% nvram_match_x("", "ez_action_short", "7", "selected"); %>><#TweaksWPSItem21#></option>
                                                     <option value="8"  <% nvram_match_x("", "ez_action_short", "8", "selected"); %>><#TweaksWPSItem22#></option>
-                                                    <option value="9"  <% nvram_match_x("", "ez_action_short", "9", "selected"); %>><#TweaksWPSItem32#> /opt/bin/on_wps.sh 1</option>
+                                                    <option value="9"  <% nvram_match_x("", "ez_action_short", "9", "selected"); %>><#TweaksWPSItem32#> (arg: 1)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -234,7 +234,7 @@ function change_led_all(){
                                                     <option value="9"  <% nvram_match_x("", "ez_action_long", "9", "selected"); %>><#TweaksWPSItem22#></option>
                                                     <option value="7"  <% nvram_match_x("", "ez_action_long", "7", "selected"); %>><#TweaksWPSItem30#></option>
                                                     <option value="8"  <% nvram_match_x("", "ez_action_long", "8", "selected"); %>><#TweaksWPSItem31#></option>
-                                                    <option value="10" <% nvram_match_x("", "ez_action_long", "10","selected"); %>><#TweaksWPSItem32#> /opt/bin/on_wps.sh 2</option>
+                                                    <option value="10" <% nvram_match_x("", "ez_action_long", "10","selected"); %>><#TweaksWPSItem32#> (arg: 2)</option>
                                                     <option value="15" <% nvram_match_x("", "ez_action_long", "15","selected"); %>><#TweaksWPSItem33#></option>
                                                 </select>
                                             </td>
@@ -262,7 +262,7 @@ function change_led_all(){
                                                     <option value="6"  <% nvram_match_x("", "wlt_action_short", "6", "selected"); %>><#TweaksWPSItem20#></option>
                                                     <option value="7"  <% nvram_match_x("", "wlt_action_short", "7", "selected"); %>><#TweaksWPSItem21#></option>
                                                     <option value="8"  <% nvram_match_x("", "wlt_action_short", "8", "selected"); %>><#TweaksWPSItem22#></option>
-                                                    <option value="9"  <% nvram_match_x("", "wlt_action_short", "9", "selected"); %>><#TweaksWPSItem32#> /opt/bin/on_wps.sh 1</option>
+                                                    <option value="9"  <% nvram_match_x("", "wlt_action_short", "9", "selected"); %>><#TweaksWPSItem32#> (arg: 3)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -284,7 +284,7 @@ function change_led_all(){
                                                     <option value="9"  <% nvram_match_x("", "wlt_action_long", "9", "selected"); %>><#TweaksWPSItem22#></option>
                                                     <option value="7"  <% nvram_match_x("", "wlt_action_long", "7", "selected"); %>><#TweaksWPSItem30#></option>
                                                     <option value="8"  <% nvram_match_x("", "wlt_action_long", "8", "selected"); %>><#TweaksWPSItem31#></option>
-                                                    <option value="10" <% nvram_match_x("", "wlt_action_long", "10","selected"); %>><#TweaksWPSItem32#> /opt/bin/on_wps.sh 2</option>
+                                                    <option value="10" <% nvram_match_x("", "wlt_action_long", "10","selected"); %>><#TweaksWPSItem32#> (arg: 4)</option>
                                                     <option value="15" <% nvram_match_x("", "wlt_action_long", "15","selected"); %>><#TweaksWPSItem33#></option>
                                                 </select>
                                             </td>

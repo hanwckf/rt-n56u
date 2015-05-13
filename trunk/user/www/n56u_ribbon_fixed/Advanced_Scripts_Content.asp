@@ -38,6 +38,7 @@ function textarea_scripts_enabled(v){
 	inputCtrl(document.form['scripts.started_script.sh'], v);
 	inputCtrl(document.form['scripts.post_wan_script.sh'], v);
 	inputCtrl(document.form['scripts.post_iptables_script.sh'], v);
+	inputCtrl(document.form['scripts.ez_buttons_script.sh'], v);
 }
 
 function applyRule(){
@@ -143,10 +144,18 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_post_iptables_script">
-                                            <td style="padding-bottom: 0px;">
+                                            <td>
                                                 <a href="javascript:spoiler_toggle('script3')"><span><#RunPostFWL#></span></a>
                                                 <div id="script3" style="display:none;">
                                                     <textarea rows="24" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.post_iptables_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.post_iptables_script.sh",""); %></textarea>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding-bottom: 0px;">
+                                                <a href="javascript:spoiler_toggle('script4')"><span><#RunEzBtns#></span></a>
+                                                <div id="script4" style="display:none;">
+                                                    <textarea rows="24" wrap="off" spellcheck="false" maxlength="4096" class="span12" name="scripts.ez_buttons_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.ez_buttons_script.sh",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>

@@ -182,6 +182,7 @@
 			{"scripts.started_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
 			{"scripts.post_wan_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
 			{"scripts.post_iptables_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
+			{"scripts.ez_buttons_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
 			{"scripts.inet_state_script.sh", "File", NULL, FALSE},
 			{0,0,0,0}
 		};

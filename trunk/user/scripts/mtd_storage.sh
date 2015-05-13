@@ -144,6 +144,7 @@ func_fill()
 	script_inets="$dir_storage/inet_state_script.sh"
 	script_vpnsc="$dir_storage/vpns_client_script.sh"
 	script_vpncs="$dir_storage/vpnc_server_script.sh"
+	script_ezbtn="$dir_storage/ez_buttons_script.sh"
 
 	user_hosts="$dir_dnsmasq/hosts"
 	user_dnsmasq_conf="$dir_dnsmasq/dnsmasq.conf"
@@ -321,6 +322,21 @@ esac
 
 EOF
 		chmod 755 "$script_vpncs"
+	fi
+
+	# create Ez-Buttons script
+	if [ ! -f "$script_ezbtn" ] ; then
+		cat > "$script_ezbtn" <<EOF
+#!/bin/sh
+
+### Custom user script
+### Called on WPS or Wi-Fi button pressed
+### \$1 - button param
+
+[ -x /opt/bin/on_wps.sh ] && /opt/bin/on_wps.sh \$1 &
+
+EOF
+		chmod 755 "$script_ezbtn"
 	fi
 
 	# create user dnsmasq.conf

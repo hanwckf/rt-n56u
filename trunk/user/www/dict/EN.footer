@@ -396,6 +396,7 @@ RunPreStart=Run Before Router Initialized:
 RunPostStart=Run After Router Started:
 RunPostWAN=Run After WAN Up/Down Events:
 RunPostFWL=Run After Firewall Rules Restarted:
+RunEzBtns=Run On Press WPS/Wi-Fi Ez-Buttons:
 RunPostVPNS=Run the Script After VPN Client Connected/Disconnected:
 RunPostVPNC=Run the Script After Connected/Disconnected to VPN Server:
 RunInetState=Run the Script When the State of Internet Access is Changed:

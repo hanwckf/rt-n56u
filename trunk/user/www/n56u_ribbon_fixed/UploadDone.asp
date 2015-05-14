@@ -11,7 +11,7 @@
 </head>
 <body>
 <script>
-	alert("<#SET_fail_desc#>");
+	parent.showLoadingOne();
 </script>
 </body>
 </html>

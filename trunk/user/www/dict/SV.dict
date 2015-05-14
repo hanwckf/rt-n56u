@@ -688,7 +688,6 @@ Setting_factorydefault_hint1=Alla nuvarande inställningar raderas och routern k
 Setting_factorydefault_hint2=Är du säker på att du vill fortsätta?
 Setting_factorydefault_iphint=Standard LAN-IP för ZVMODELVZ är 192.168.1.1.\nOm du inte kan gå tillbaka till inställningssidan senare, uppdatera datorns IP-konfiguration.
 SET_ok_desc=Inställningarna laddas upp! Vänta i ungefär 30 sekunder.
-SET_fail_title=Kunde inte ladda upp inställningsfilen!
 SET_fail_desc=Kunde inte ladda upp inställningsfilen. Det kan bero på felaktig inställningsfil eller felaktig överföring. Kontrollera verifieringen av den fasta programvaran och försök igen.
 RHELP_desc4=Det står för destinationsnätverk eller värd i en routerregel. Det kan därmed vara en värdadress, t.ex. ”192.168.123.11” eller en nätverksadress, t.ex. ”192.168.0.0”.
 RHELP_desc5=Det anger antal bitar för nätverks-ID och delnäts-ID. Till exempel: om nätmasken är 255.255.255.0 så är dess bitantal 24. Om destinationen är en värd ska bitantalet för dess nätmask vara 32.

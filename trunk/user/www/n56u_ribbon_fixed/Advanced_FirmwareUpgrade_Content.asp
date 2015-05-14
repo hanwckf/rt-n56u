@@ -23,21 +23,19 @@ function initial(){
 	show_banner(1);
 	show_menu(5,7,4);
 	show_footer();
-	disableCheckChangedStatus();
 }
 
-function beforeUpload(o, s)
-{
+function fwUpload(){
 	if (!document.form.file.value) {
 		alert("<#JS_Shareblanktest#>");
 		document.form.file.focus();
 		return false;
 	}
-
-	onSubmitCtrlOnly(o, s);
+	disableCheckChangedStatus();
+	document.form.submit();
 }
 
-$j.fn.fileName = function() {
+$j.fn.fileName = function(){
 	var $this = $j(this),
 	$val = $this.val(),
 	valArray = $val.split('\\'),
@@ -46,7 +44,7 @@ $j.fn.fileName = function() {
 	if(newVal !== '') {
 		newVal = newVal.substring(0,26);
 		$button.text(newVal);
- 	}
+	}
 };
 
 </script>
@@ -62,14 +60,14 @@ $j.fn.fileName = function() {
 	text-align: center;
 
 	background-color: #f5f5f5;
-    *background-color: #e6e6e6;
-    background-image: -ms-linear-gradient(top, #ffffff, #e6e6e6);
-    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#e6e6e6));
-    background-image: -webkit-linear-gradient(top, #ffffff, #e6e6e6);
-    background-image: -o-linear-gradient(top, #ffffff, #e6e6e6);
-    background-image: linear-gradient(top, #ffffff, #e6e6e6);
-    background-image: -moz-linear-gradient(top, #ffffff, #e6e6e6);
-    border: 1px solid #ddd;
+	*background-color: #e6e6e6;
+	background-image: -ms-linear-gradient(top, #ffffff, #e6e6e6);
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#e6e6e6));
+	background-image: -webkit-linear-gradient(top, #ffffff, #e6e6e6);
+	background-image: -o-linear-gradient(top, #ffffff, #e6e6e6);
+	background-image: linear-gradient(top, #ffffff, #e6e6e6);
+	background-image: -moz-linear-gradient(top, #ffffff, #e6e6e6);
+	border: 1px solid #ddd;
 }
 /* style text of the upload field and add an attachment icon */
 .file .button {
@@ -190,7 +188,7 @@ $j.fn.fileName = function() {
                                         </tr>
                                         <tr>
                                             <td colspan="2">
-                                                <center><input type="button" name="button" class="btn btn-primary" style="width: 219px;" onclick="beforeUpload(this, 'Upload1');" value="<#CTL_upload#>" /></center>
+                                                <center><input type="button" name="button" class="btn btn-primary" style="width: 219px;" onclick="fwUpload();" value="<#CTL_upload#>" /></center>
                                             </td>
                                         </tr>
                                     </table>

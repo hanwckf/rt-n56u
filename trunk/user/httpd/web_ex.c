@@ -41,7 +41,6 @@
 #include <net/if.h>
 #include <linux/types.h>
 #include <linux/sockios.h>
-#include <sys/mman.h>
 
 #ifndef __user
 #define __user
@@ -56,26 +55,11 @@
 #include "nvram_x.h"
 #include "httpd.h"
 
-#ifndef O_BINARY
-#define O_BINARY	0
-#endif
-
-#include <image.h>
-#ifndef MAP_FAILED
-#define MAP_FAILED (-1)
-#endif
-
 #define MAX_GROUP_COUNT		64
 #define GROUP_FLAG_REFRESH 	0
 #define GROUP_FLAG_DELETE 	1
 #define GROUP_FLAG_ADD 		2
 #define GROUP_FLAG_REMOVE 	3
-
-#define IMAGE_HEADER		"HDR0"
-#define PROFILE_HEADER		"HDR1"
-#define PROFILE_HEADER_NEW	"HDR2"
-#define PROFILE_FIFO_UPLOAD	"/tmp/settings_u.prf"
-#define PROFILE_FIFO_DOWNLOAD	"/tmp/settings_d.prf"
 
 static int apply_cgi_group(webs_t wp, int sid, struct variable *var, const char *groupName, int flag);
 static int nvram_generate_table(webs_t wp, char *serviceId, char *groupName);
@@ -3034,9 +3018,7 @@ apply_cgi(const char *url, webs_t wp)
 	}
 	else if (!strcmp(value, " RestoreStorage "))
 	{
-		websApply(wp, "Restarting.asp");
-		doSystem("/sbin/mtd_storage.sh %s", "erase");
-		sys_reboot();
+		doSystem("/sbin/mtd_storage.sh %s", "reset");
 		return 0;
 	}
 	else if (!strcmp(value, " CommitFlash "))
@@ -3451,393 +3433,58 @@ do_apply_cgi(const char *url, FILE *stream)
 	apply_cgi(url, stream);
 }
 
-#define SWAP_LONG(x) \
-	((__u32)( \
-		(((__u32)(x) & (__u32)0x000000ffUL) << 24) | \
-		(((__u32)(x) & (__u32)0x0000ff00UL) <<  8) | \
-		(((__u32)(x) & (__u32)0x00ff0000UL) >>  8) | \
-		(((__u32)(x) & (__u32)0xff000000UL) >> 24) ))
-
-static int
-check_nvram_header(char *buf, long *filelen)
-{
-	long *filelenptr;
-
-	if (strncmp(buf, PROFILE_HEADER, 4) && strncmp(buf, PROFILE_HEADER_NEW, 4)) {
-		httpd_log("%s: Incorrect NVRAM profile header!", "NVRAM restore");
-		return -1;
-	}
-
-	filelenptr = (long*)(buf + 4);
-	*filelen = *filelenptr & 0xffffff;
-
-	return 0;
-}
-
-static int
-check_image_header(char *buf, long *filelen)
-{
-	int pid_asus_len;
-	char pid_asus[16];
-	image_header_t *hdr = (image_header_t *)buf;
-
-	/* check header magic */
-	if (SWAP_LONG(hdr->ih_magic) != IH_MAGIC) {
-		httpd_log("%s: Incorrect image header!", "Firmware update");
-		return -1;
-	}
-
-	pid_asus_len = strlen(BOARD_PID);
-	if (pid_asus_len > 12)
-		pid_asus_len = 12;
-
-	strncpy(pid_asus, buf+36, pid_asus_len);
-	pid_asus[pid_asus_len] = 0;
-
-	if (strcmp(pid_asus, BOARD_PID) != 0) {
-		httpd_log("%s: Incorrect image ProductID: %s! Expected is %s.", "Firmware update", pid_asus, BOARD_PID);
-		return -2;
-	}
-
-	*filelen = SWAP_LONG(hdr->ih_size) + sizeof(image_header_t);
-
-	return 0;
-}
-
-static int
-check_image_crc(const char *fw_image)
-{
-	int ifd;
-	uint32_t checksum, datalen;
-	struct stat sbuf;
-	unsigned char *ptr = (unsigned char *)MAP_FAILED;
-	image_header_t header2;
-	image_header_t *hdr, *hdr2=&header2;
-	int ret=0;
-
-	ifd = open(fw_image, O_RDONLY|O_BINARY);
-
-	if (ifd < 0) {
-		ret=-1;
-		goto checkcrc_end;
-	}
-
-	/* We're a bit of paranoid */
-#if defined(_POSIX_SYNCHRONIZED_IO) && !defined(__sun__) && !defined(__FreeBSD__)
-	(void) fdatasync (ifd);
-#else
-	(void) fsync (ifd);
-#endif
-	if (fstat(ifd, &sbuf) < 0) {
-		ret=-1;
-		goto checkcrc_fail;
-	}
-
-	if ((unsigned int)sbuf.st_size < (sizeof(image_header_t) + (2 * 1024 * 1024)) || 
-	    (unsigned int)sbuf.st_size > get_mtd_size(FW_MTD_NAME)) {
-		httpd_log("%s: Firmware image size is invalid!", "Firmware update");
-		ret=-1;
-		goto checkcrc_fail;
-	}
-
-	ptr = (unsigned char *)mmap(0, sbuf.st_size, PROT_READ, MAP_SHARED, ifd, 0);
-	if (ptr == (unsigned char *)MAP_FAILED) {
-		ret=-1;
-		goto checkcrc_fail;
-	}
-
-	hdr = (image_header_t *)ptr;
-
-	memcpy(hdr2, hdr, sizeof(image_header_t));
-	memset(&hdr2->ih_hcrc, 0, sizeof(uint32_t));
-	checksum = crc32_sp(0, (const char *)hdr2, sizeof(image_header_t));
-
-	if (checksum!=SWAP_LONG(hdr->ih_hcrc))
-	{
-		ret=-1;
-		httpd_log("%s: Firmware image %s has invalid CRC!", "Firmware update", "header");
-		goto checkcrc_fail;
-	}
-
-	datalen = SWAP_LONG(hdr->ih_size);
-	if (datalen > ((unsigned int)sbuf.st_size - sizeof(image_header_t)))
-	{
-		ret=-1;
-		httpd_log("%s: Firmware image is corrupted! Please check free space in /tmp!", "Firmware update");
-		goto checkcrc_fail;
-	}
-
-	checksum = crc32_sp(0, (const char *)(ptr + sizeof(image_header_t)), datalen);
-
-	if (checksum!=SWAP_LONG(hdr->ih_dcrc))
-	{
-		ret=-1;
-		httpd_log("%s: Firmware image %s has invalid CRC!", "Firmware update", "body");
-		goto checkcrc_fail;
-	}
-
-checkcrc_fail:
-	if (ptr != (unsigned char *)MAP_FAILED)
-		munmap((void *)ptr, sbuf.st_size);
-
-#if defined(_POSIX_SYNCHRONIZED_IO) && !defined(__sun__) && !defined(__FreeBSD__)
-	(void) fdatasync (ifd);
-#else
-	(void) fsync (ifd);
-#endif
-	if (close(ifd)) {
-		fprintf (stderr, "Read error on %s: %s\n", fw_image, strerror(errno));
-		ret=-1;
-	}
-checkcrc_end:
-	return ret;
-}
-
-static int chk_image_err = 1;
-static int chk_nvram_err = 1;
-
 static void
-do_upgrade_post(const char *url, FILE *stream, int clen, char *boundary)
+do_upgrade_fw_cgi(const char *url, FILE *stream)
 {
-	FILE *fifo = NULL;
-	char upload_fifo[] = FW_IMG_NAME;
-	char buf[4096];
-	int cnt, count, offset, ret, ch;
-	long filelen;
-	int valid_header = 0;
-
-	ret = EINVAL;
-	chk_image_err = 1;
-
-	// delete some files (need free space in /tmp)
-	unlink("/tmp/usb.log");
-	unlink("/tmp/syscmd.log");
-	doSystem("rm -rf %s", "/tmp/xupnpd-cache");
-	doSystem("rm -rf %s", "/tmp/xupnpd-feeds");
-
-	/* Look for our part */
-	while (clen > 0)
-	{
-		if (!fgets(buf, MIN(clen + 1, sizeof(buf)), stream))
-			goto err;
-		clen -= strlen(buf);
-		if (!strncasecmp(buf, "Content-Disposition:", 20) && strstr(buf, "name=\"file\""))
-			break;
-	}
-
-	/* Skip boundary and headers */
-	while (clen > 0) {
-		if (!fgets(buf, MIN(clen + 1, sizeof(buf)), stream))
-			goto err;
-		clen -= strlen(buf);
-		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
-			break;
-	}
-
-	fput_int("/proc/sys/vm/drop_caches", 1);
-
-	/* copy mtd_write to RAM */
-	doSystem("cp -f %s %s", "/bin/mtd_write", "/tmp");
-
-	if (!(fifo = fopen(upload_fifo, "w+"))) goto err;
-
-	filelen = clen;
-	offset = 0;
-	cnt = 0;
-
-	/* Pipe the rest to the FIFO */
-	while (clen > 0 && filelen > 0)
-	{
-		count = fread(buf + offset, 1, MIN(clen, sizeof(buf)-offset), stream);
-		if(count <= 0)
-			goto err;
-		
-		clen -= count;
-		
-		if (cnt == 0)
-		{
-			if (count + offset < sizeof(image_header_t))
-			{
-				offset += count;
-				continue;
-			}
-			
-			count += offset;
-			offset = 0;
-			cnt++;
-			
-			ret = check_image_header(buf, &filelen);
-			if (ret != 0)
-				goto err;
-			
-			valid_header=1;
-		}
-		
-		filelen -= count;
-		fwrite(buf, 1, count, fifo);
-	}
-
-	if (!valid_header)
-		goto err;
-
-	/* Slurp anything remaining in the request */
-	while (clen-- > 0)
-	{
-		if((ch = fgetc(stream)) == EOF)
-			break;
-		
-		if (filelen > 0) {
-			fwrite(&ch, 1, 1, fifo);
-			filelen--;
-		}
-	}
-
-	fclose(fifo);
-	fifo = NULL;
-
-	ret = check_image_crc(upload_fifo);
-
-err:
-	if (fifo)
-		fclose(fifo);
-
-	/* Slurp anything remaining in the request */
-	while (clen-- > 0)
-		if((ch = fgetc(stream)) == EOF)
-			break;
-
-	if ((ret == 0) && (valid_header))
-		chk_image_err = 0;
-}
-
-static void
-do_upgrade_cgi(const char *url, FILE *stream)
-{
-	if (chk_image_err == 0) {
+	if (f_exists(FW_IMG_NAME)) {
 		notify_rc("flash_firmware");
 		websApply(stream, "Updating.asp");
 	} else {
-		unlink(FW_IMG_NAME);
 		websApply(stream, "UpdateError.asp");
 	}
 }
 
 static void
-do_upload_post(const char *url, FILE *stream, int clen, char *boundary)
+do_restore_nv_cgi(const char *url, FILE *stream)
 {
-	FILE *fifo = NULL;
-	char upload_fifo[] = PROFILE_FIFO_UPLOAD;
-	char buf[1024];
-	int cnt, count, offset, ret, ch;
-	long filelen;
-	char valid_header = 0;
+	char *upload_file = PROFILE_FIFO_UPLOAD;
+	int ret = -1;
 
-	ret = EINVAL;
-	chk_nvram_err = 1;
-
-	/* Look for our part */
-	while (clen > 0) {
-		if (!fgets(buf, MIN(clen + 1, sizeof(buf)), stream))
-			goto err;
-		clen -= strlen(buf);
-		if (!strncasecmp(buf, "Content-Disposition:", 20) && strstr(buf, "name=\"file\""))
-			break;
+	if (f_exists(upload_file)) {
+		doSystem("killall %s %s", "-q", "watchdog");
+		sleep(1);
+		ret = eval("/usr/sbin/nvram", "restore", upload_file);
+		if (ret != 0) {
+			httpd_log("%s: Unable to extract %s file!", "NVRAM restore", "profile");
+			eval("/sbin/watchdog");
+		} else
+			nvram_commit();
+		unlink(upload_file);
 	}
 
-	/* Skip boundary and headers */
-	while (clen > 0) {
-		if (!fgets(buf, MIN(clen + 1, sizeof(buf)), stream))
-			goto err;
-		clen -= strlen(buf);
-		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
-			break;
+	/* Reboot if successful */
+	if (ret == 0) {
+		websApply(stream, "Uploading.asp");
+		sys_reboot();
+	} else {
+		websApply(stream, "UploadError.asp");
 	}
-
-	if (!(fifo = fopen(upload_fifo, "w+")))
-		goto err;
-
-	filelen = clen;
-	offset = 0;
-	cnt = 0;
-
-	/* Pipe the rest to the FIFO */
-	while (clen > 0 && filelen > 0)
-	{
-		count = fread(buf + offset, 1, MIN(clen, sizeof(buf)-offset), stream);
-		if (count <= 0)
-			goto err;
-		
-		clen -= count;
-		
-		if (cnt == 0)
-		{
-			if (count + offset < 8)
-			{
-				offset += count;
-				continue;
-			}
-			
-			count += offset;
-			offset = 0;
-			cnt++;
-			
-			ret = check_nvram_header(buf, &filelen);
-			if (ret != 0)
-				goto err;
-			
-			valid_header = 1;
-		}
-		
-		filelen -= count;
-		fwrite(buf, 1, count, fifo);
-	}
-
-	if (!valid_header)
-		goto err;
-
-	/* Slurp anything remaining in the request */
-	while (clen-- > 0)
-	{
-		if((ch = fgetc(stream)) == EOF)
-			break;
-		
-		if (filelen > 0) {
-			fwrite(&ch, 1, 1, fifo);
-			filelen--;
-		}
-	}
-
-	ret = 0;
-
-	fclose(fifo);
-	fifo = NULL;
-
-err:
-	if (fifo)
-		fclose(fifo);
-
-	/* Slurp anything remaining in the request */
-	while (clen-- > 0)
-		if((ch = fgetc(stream)) == EOF)
-			break;
-
-	if ((ret == 0) && (valid_header))
-		chk_nvram_err = 0;
 }
 
 static void
-do_upload_cgi(const char *url, FILE *stream)
+do_restore_st_cgi(const char *url, FILE *stream)
 {
-	/* Reboot if successful */
-	if (chk_nvram_err == 0) {
-		doSystem("killall %s %s", "-q", "watchdog");
-		sleep(1);
-		websApply(stream, "Uploading.asp");
-		eval("nvram", "restore", PROFILE_FIFO_UPLOAD);
-		nvram_commit();
-		sys_reboot();
+	const char *upload_file = STORAGE_FIFO_FILENAME;
+	int ret = -1;
+
+	if (f_exists(upload_file)) {
+		ret = eval("/sbin/mtd_storage.sh", "restore");
+		unlink(upload_file);
+	}
+
+	if (ret == 0) {
+		websApply(stream, "UploadDone.asp");
 	} else {
-		unlink(PROFILE_FIFO_UPLOAD);
 		websApply(stream, "UploadError.asp");
 	}
 }
@@ -3845,11 +3492,11 @@ do_upload_cgi(const char *url, FILE *stream)
 static void
 do_nvram_file(const char *url, FILE *stream)
 {
-	const char *nvram_file = PROFILE_FIFO_DOWNLOAD;
+	char *nvram_file = PROFILE_FIFO_DOWNLOAD;
 
 	unlink(nvram_file);
 	if (get_login_safe()) {
-		doSystem("nvram save %s", nvram_file);
+		eval("/usr/sbin/nvram", "save", nvram_file);
 		do_file(nvram_file, stream);
 		unlink(nvram_file);
 	}
@@ -3858,11 +3505,11 @@ do_nvram_file(const char *url, FILE *stream)
 static void
 do_storage_file(const char *url, FILE *stream)
 {
-	const char *storage_file = "/tmp/.storage_tar.bz2";
+	char *storage_file = STORAGE_FIFO_FILENAME;
 
 	unlink(storage_file);
 	if (get_login_safe()) {
-		doSystem("/sbin/mtd_storage.sh %s", "backup");
+		eval("/sbin/mtd_storage.sh", "backup");
 		do_file(storage_file, stream);
 		unlink(storage_file);
 	}
@@ -3942,8 +3589,10 @@ struct mime_handler mime_handlers[] = {
 	/* no-cached POST objects */
 	{ "update.cgi*", "text/javascript", no_cache_IE, do_html_apply_post, do_update_cgi, 1 },
 	{ "apply.cgi*", "text/html", no_cache_IE, do_html_apply_post, do_apply_cgi, 1 },
-	{ "upgrade.cgi*", "text/html", no_cache_IE, do_upgrade_post, do_upgrade_cgi, 1 },
-	{ "upload.cgi*", "text/html", no_cache_IE, do_upload_post, do_upload_cgi, 1 },
+
+	{ "upgrade.cgi*",    "text/html", no_cache_IE, do_upgrade_fw_post, do_upgrade_fw_cgi, 1 },
+	{ "restore_nv.cgi*", "text/html", no_cache_IE, do_restore_nv_post, do_restore_nv_cgi, 1 },
+	{ "restore_st.cgi*", "text/html", no_cache_IE, do_restore_st_post, do_restore_st_cgi, 1 },
 
 	{ NULL, NULL, NULL, NULL, NULL, 0 }
 };
@@ -3986,7 +3635,7 @@ ej_netdev(int eid, webs_t wp, int argc, char **argv)
 	return 0;
 }
 
-static int 
+static int
 ej_bandwidth(int eid, webs_t wp, int argc, char **argv)
 {
 	char *name, *sigs;

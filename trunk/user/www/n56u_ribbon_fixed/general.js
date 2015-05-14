@@ -1184,18 +1184,6 @@ function onSubmitCtrl(o, s) {
     return (onSubmit());
 }
 
-function onSubmitCtrlOnly(o, s) {
-    if (s != 'Upload' && s != 'Upload1')
-        document.form.action_mode.value = s;
-
-    if (s == 'Upload1') {
-        disableCheckChangedStatus();
-        document.form.submit();
-    }
-    disableCheckChangedStatus();
-    return true;
-}
-
 function validate_ddns_hostname(o) {
     dot = 0;
     s = o.value;

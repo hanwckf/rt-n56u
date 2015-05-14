@@ -31,6 +31,10 @@
 #define STORAGE_DNSMASQ_DIR	"/etc/storage/dnsmasq"
 #define STORAGE_SCRIPTS_DIR	"/etc/storage"
 
+#define PROFILE_FIFO_UPLOAD	"/tmp/settings_u.prf"
+#define PROFILE_FIFO_DOWNLOAD	"/tmp/settings_d.prf"
+#define STORAGE_FIFO_FILENAME	"/tmp/storage.tar.bz2"
+
 /* Generic MIME type handler */
 struct mime_handler {
 	char *pattern;
@@ -189,6 +193,11 @@ extern int ej_eth_status_lan1(int eid, webs_t wp, int argc, char **argv);
 extern int ej_eth_status_lan2(int eid, webs_t wp, int argc, char **argv);
 extern int ej_eth_status_lan3(int eid, webs_t wp, int argc, char **argv);
 extern int ej_eth_status_lan4(int eid, webs_t wp, int argc, char **argv);
+
+// upload.c
+extern void do_upgrade_fw_post(const char *url, FILE *stream, int clen, char *boundary);
+extern void do_restore_nv_post(const char *url, FILE *stream, int clen, char *boundary);
+extern void do_restore_st_post(const char *url, FILE *stream, int clen, char *boundary);
 
 // web_ex.c
 extern void nvram_commit_safe(void);

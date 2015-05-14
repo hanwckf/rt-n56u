@@ -690,7 +690,6 @@ Setting_factorydefault_hint1=Le routeur est réinitialisé et les paramètres ac
 Setting_factorydefault_hint2=Voulez-vous continuer ?
 Setting_factorydefault_iphint=L'adresse IP LAN du ZVMODELVZ est 192.168.1.1.\nSi vous ne pouvez plus accéder à la page de configuration, renouvelez la configuration IP de votre ordinateur.
 SET_ok_desc=La configuration est en cours de chargement! Veuillez patienter environ 60.
-SET_fail_title=Echec du chargement du fichier de configuration!
 SET_fail_desc=Echec du chargement du fichier de configuration. Ceci peut provenir d'un fichier de configuration incorrect ou d'une erreur de transmission. Vérifiez la validation de "Setting File" puis réessayez.
 RHELP_desc4=Réseau de destination ou hôte pour une règle de routage. Peut être une adresse d'hôte telle que 「192.168.123.11」ou l'adresse d'un réseau, par exemple 「192.168.0.0」.
 RHELP_desc5=Indique le nombre de bits utilisé pour l'identifiant réseau et l'identifiant du sous-réseau. Par exemple, si le masque de réseau est 255.255.255.0 alors le nombre de bits du masque de réseau est 24/ Si l'adresse de destination est un hôte, le nombre de bi

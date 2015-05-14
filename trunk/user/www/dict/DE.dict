@@ -687,7 +687,6 @@ Setting_factorydefault_hint1=Sämtliche aktuellen Einstellungen werden gelöscht
 Setting_factorydefault_hint2=Mochten Sie wirklich fortfahren?
 Setting_factorydefault_iphint=Die Standard-LAN-IP-Adresse ZVMODELVZ lautet 192.168.1.1.\nFalls Sie die Einstellungsseite nicht wiederherstellen können, erneuern Sie bitte die IP-Konfiguration Ihres Computers.
 SET_ok_desc=Einstellungen werden hochgeladen! Bitte warten Sie etwa 30 Sekunden.
-SET_fail_title=Hochladen der Einstellungsdatei fehlgeschlagen!
 SET_fail_desc=Hochladen der Einstellungsdatei fehlgeschlagen! Dies kann an einer defekten Einstellungsdatei oder einem Übertragungsfehler liegen. Bitte überprüfen Sie die Unversehrtheit der Einstellungsdatei und versuchen Sie es noch einmal.
 RHELP_desc4=Dies steht für das Zielnetzwerk oder einen Host mit einer Routerregel. Also kann dies eine Hostadresse wie 「192.168.123.11」 oder eine Netzwerkadresse wie 「192.168.0.0」 sein.
 RHELP_desc5=Zeigt an, wie viele Bits für Netzwerk-ID und Subnetz-ID verwendet werden. Beispiel: Falls die Netzwerkmaske in Dezimalschreibweise 255.255.255.0 lautet, ist die Netzmaske 24 Bit lang. Wenn das Ziel ein Host ist, sollte seine Netzmaske 32 Bit verwenden.

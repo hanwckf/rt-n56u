@@ -688,7 +688,6 @@ Setting_factorydefault_hint1=Alle nuværende indstillinger slettes, og routeren 
 Setting_factorydefault_hint2=Er du sikker på, at du vil fortsætte?
 Setting_factorydefault_iphint=ZVMODELVZ'ens lokalnets standard IP-adresse er 192.168.1.1. \nHvis siden ikke kan sættes tilbage senere, så forny IP-konfigurationen på computeren.
 SET_ok_desc=Indstillingen overføres! Vent i 30 sekunder.
-SET_fail_title=Det lykkedes ikke at overføre indstillingsfilen!
 SET_fail_desc=Det lykkedes ikke at overføre indstillingsfilen. Det kan skyldes en forkert indstillingsfil eller en transmissionsfejl. Kontroller indstillingsfilens validering, og forsøg igen.
 RHELP_desc4=Det står for destinationsnetværket eller en vært i en regel for routing. Så det kunne være en værtsadresse, såsom 「192.168.123.11」 eller en netværksadresse, såsom 「192.168.0.0」.
 RHELP_desc5=Den angiver, hvor mange bit, der er til netværks-ID og undernet-ID. For eksempel: Hvis den punktumopdelte er 255.255.255.0, så er dens netmaskebit 24. Hvis destinationen er en vært, skal dens netmaskebit være 32.

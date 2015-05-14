@@ -55,6 +55,9 @@ function LoadingProgress(seconds){
 }
 
 function showLoading(seconds, flag){
+	if(window.scrollTo)
+		window.scrollTo(0,0);
+
 	disableCheckChangedStatus();
 
 	// hide IE scrollbars
@@ -66,7 +69,6 @@ function showLoading(seconds, flag){
 	var sheight = document.documentElement.scrollHeight;
 	var cheight = document.documentElement.clientHeight
 
-	//blockmarginTop = (navigator.userAgent.indexOf("Safari")>=0)?document.documentElement.scrollHeight - document.documentElement.clientHeight+200:document.documentElement.scrollTop+200;
 	blockmarginTop = (navigator.userAgent.indexOf("Safari")>=0)?(sheight-cheight<=0)?200:sheight-cheight+200:document.documentElement.scrollTop+200;
 
 	//Lock modified it for Safari4 display issue.
@@ -81,6 +83,9 @@ function showLoading(seconds, flag){
 }
 
 function showLoadingBar(seconds){
+	if(window.scrollTo)
+		window.scrollTo(0,0);
+
 	disableCheckChangedStatus();
 
 	// hide IE scrollbars
@@ -88,9 +93,7 @@ function showLoadingBar(seconds){
 	htmlbodyforIE[0].style.overflow = "hidden";
 
 	winW_H();
-	//var blockmarginTop;
-	//blockmarginTop = document.documentElement.scrollTop + 200;
-	//$("loadingBarBlock").style.marginTop = blockmarginTop+"px";
+
 	$("LoadingBar").style.width = winW+"px";
 	$("LoadingBar").style.height = winH+"px";
 
@@ -98,6 +101,11 @@ function showLoadingBar(seconds){
 	progress = 100/loadingSeconds;
 	y = 0;
 	LoadingProgress(seconds);
+}
+
+function showLoadingOne(){
+	showLoading(1, "waiting");
+	setTimeout("location.href = location.href;", 1500);
 }
 
 function showResetBar(){
@@ -122,13 +130,3 @@ function hideLoading(flag){
 	$("Loading").style.visibility = "hidden";
 }
 
-function simpleSSID(obj){
-	var SSID = document.loginform.wl_ssid.value;
-
-	if(SSID.length < 16)
-		showtext(obj, SSID);
-	else{
-		obj.title = SSID;
-		showtext(obj, SSID.substring(0, 16)+"...");
-	}
-}

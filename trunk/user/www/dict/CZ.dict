@@ -690,7 +690,6 @@ Setting_factorydefault_hint1=Všechna současná nastavení budou smazána a rou
 Setting_factorydefault_hint2=Opravdu chcete pokračovat?
 Setting_factorydefault_iphint=Původní nastavení LAN IP ZVMODELVZ je 192.168.1.1.\n Pokud se později nebudete moci vrátit na tuto stránku, prosím ověřte IP konfiguraci svého PC.
 SET_ok_desc=Nastavení se nahrává! Prosím počkejte přibližně 30 vteřin.
-SET_fail_title=Nahrání souboru nastavení nebylo úspěšné!
 SET_fail_desc=Nahrání souboru nastavení nebylo úspěšné. Mohlo se tak stát nesprávným souborem nastavení, nebo chybou v přenosu. Prosím zkontrolujte platnost souboru nastavení a zkuste to znovu.
 RHELP_desc4=Značí cílovou síť nebo hostitele pravidla routování. Mohlo by se tedy jednat o adresu hostitele jako 「192.168.123.11」nebo sítovou adresu jako 「192.168.0.0」.
 RHELP_desc5=Značí kolik bitů je pro síťové ID a podsíťové ID. Například, pokud maska sítě je 255.255.255.0, potom její sítová maska je 24 bitů. Pokud je cílem host, měla by být síťová maska 32 bitů.

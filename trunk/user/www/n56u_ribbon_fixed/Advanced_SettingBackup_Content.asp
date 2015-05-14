@@ -45,6 +45,8 @@ function initial(){
 		showhide_div('row_nv_restore2', 1);
 		showhide_div('row_st_reset', 1);
 		showhide_div('row_st_backup', 1);
+		showhide_div('row_st_restore1', 1);
+		showhide_div('row_st_restore2', 1);
 	}
 
 	if (support_mtd_rwfs())
@@ -53,21 +55,22 @@ function initial(){
 	show_footer();
 }
 
-function switch_form_action(au, am){
-	if (au){
-		document.form.action = "upload.cgi";
-		document.form.enctype = "multipart/form-data";
-	}else{
-		document.form.action = "apply.cgi";
-		document.form.enctype = "application/x-www-form-urlencoded";
-	}
+function set_frm_action_apply(am){
+	document.form.action = "apply.cgi";
+	document.form.enctype = "application/x-www-form-urlencoded";
 	document.form.action_mode.value = am;
+}
+
+function set_frm_action_upload(at){
+	document.form.action = at;
+	document.form.enctype = "multipart/form-data";
+	document.form.action_mode.value = "";
 }
 
 function submitRule(){
 	$("commit_btn").style.display = (document.form.nvram_manual_fake.value == "0") ? "none" : "";
-	
-	switch_form_action(0, " Apply ");
+
+	set_frm_action_apply(" Apply ");
 	document.form.nvram_manual.value = document.form.nvram_manual_fake.value;
 	document.form.rstats_stored.value = document.form.rstats_stored_fake.value;
 	document.form.stime_stored.value = document.form.stime_stored_fake.value;
@@ -88,7 +91,7 @@ function restoreNVRAM(){
 	if(confirm(alert_string)){
 		document.form.action1.blur();
 		showLoading();
-		switch_form_action(0, " RestoreNVRAM ");
+		set_frm_action_apply(" RestoreNVRAM ");
 		document.form.submit();
 	}else
 		return false;
@@ -98,9 +101,8 @@ function restoreStorage(){
 	var alert_string = "<#Adm_Setting_store_hint#>";
 	alert_string += "\n<#Setting_factorydefault_hint2#>";
 	if(confirm(alert_string)){
-		document.form.st_action1.blur();
-		showLoading();
-		switch_form_action(0, " RestoreStorage ");
+		showLoadingOne();
+		set_frm_action_apply(" RestoreStorage ");
 		document.form.submit();
 	}
 	else
@@ -136,30 +138,45 @@ function send_commit_action(action_id,$button){
 }
 
 function saveSetting(){
-	switch_form_action(1, "");
+	set_frm_action_apply("");
 	location.href='Settings_' + document.form.productid.value + '.CFG';
 }
 
 function saveStorage(){
-	switch_form_action(1, "");
+	set_frm_action_apply("");
 	location.href='Storage_' + document.form.productid.value + '.TBZ';
 }
 
-function uploadSetting(){
-	var file_obj = document.form.file;
-	if(file_obj.value == ""){
+function checkFileName(obj,ext){
+	var fn = obj.value.toUpperCase();
+	if(fn == ""){
 		alert("<#JS_fieldblank#>");
-		file_obj.focus();
+		obj.focus();
+		return false;
 	}
-	else if(file_obj.value.length < 6 ||
-					file_obj.value.lastIndexOf(".CFG") < 0 ||
-					file_obj.value.lastIndexOf(".CFG") != (file_obj.value.length)-4){
+	else if(fn.length < 6 ||
+			fn.lastIndexOf(ext) < 0 ||
+			fn.lastIndexOf(ext) != (fn.length-ext.length)){
 		alert("<#Setting_upload_hint#>");
-		file_obj.focus();
+		obj.focus();
+		return false;
 	}
-	else{
+	return true;
+}
+
+function uploadSetting(){
+	document.form.file_st.value = "";
+	if(checkFileName(document.form.file_nv, ".CFG")){
 		disableCheckChangedStatus();
-		switch_form_action(1, "");
+		set_frm_action_upload("restore_nv.cgi");
+		document.form.submit();
+	}
+}
+
+function uploadStorage(){
+	document.form.file_nv.value = "";
+	if(checkFileName(document.form.file_st, ".TBZ")){
+		set_frm_action_upload("restore_st.cgi");
 		document.form.submit();
 	}
 }
@@ -312,13 +329,13 @@ $j.fn.fileName = function() {
                                         <tr id="row_nv_restore1" style="display:none">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,19,3)"><#Setting_upload_itemname#></a></th>
                                             <td>
-                                                <input name="file" type="file" size="36" />
+                                                <input name="file_nv" type="file" size="36" />
                                             </td>
                                         </tr>
                                         <tr id="row_nv_restore2" style="display:none">
                                             <th style="border-top: 0 none; padding-top: 0px;"></th>
                                             <td style="border-top: 0 none; padding-top: 0px;">
-                                                <input name="uploadbutton" class="btn btn-info" style="width: 219px;" onclick="uploadSetting();" type="button" value="<#CTL_upload#>"/>
+                                                <input name="upload_nv" class="btn btn-info" style="width: 219px;" onclick="uploadSetting();" type="button" value="<#CTL_upload#>"/>
                                             </td>
                                         </tr>
                                         <tr>
@@ -367,6 +384,18 @@ $j.fn.fileName = function() {
                                             <th><#Adm_Setting_store_backup#></th>
                                             <td>
                                                 <input name="st_action2" class="btn btn-info" style="width: 219px;" onclick="saveStorage();" type="button" value="<#CTL_onlysave#>"/>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_st_restore1" style="display:none">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,19,4)"><#Storage_upload_itemname#></a></th>
+                                            <td>
+                                                <input name="file_st" type="file" size="36" />
+                                            </td>
+                                        </tr>
+                                        <tr id="row_st_restore2" style="display:none">
+                                            <th style="border-top: 0 none; padding-top: 0px;"></th>
+                                            <td style="border-top: 0 none; padding-top: 0px;">
+                                                <input name="upload_st" class="btn btn-info" style="width: 219px;" onclick="uploadStorage();" type="button" value="<#CTL_upload#>"/>
                                             </td>
                                         </tr>
                                         <tr>

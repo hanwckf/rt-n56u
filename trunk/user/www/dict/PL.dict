@@ -690,7 +690,6 @@ Setting_factorydefault_hint1=Wszystkie bieżące ustawienia zostaną skasowane, 
 Setting_factorydefault_hint2=Jesteś pewny, że chcesz kontynuować?
 Setting_factorydefault_iphint=Domyślny adres LAN IP to 192.168.1.1\nJeżeli nie możesz mógł się połączyć, odśwież dzierżawę IP na Twoim komputerze.
 SET_ok_desc=Ustawienia przywrócone! Poczekaj około 30 sekund.
-SET_fail_title=Przywracanie ustawień zakończone niepowodzeniem.!
 SET_fail_desc=Przywracanie ustawień przerwane. Sprawdź poprawność pliku, połączenie między routerem a PC i spróboj ponownie!
 RHELP_desc4=Oznacza to docelową sieć lub hosta reguły routingu. Może więc być to adres hosta np..「192.168.123.11」 lub adres sieci np..「192.168.0.0」.
 RHELP_desc5=Oznacza to ilu bitowa jest podsieć IP. Na przykład 255.255.255.0 to podsieć 24 bitowa. Jeżeli adresem docelowym jest host, podsiec powinna mieć 32 bity.

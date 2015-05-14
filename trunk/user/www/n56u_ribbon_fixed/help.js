@@ -137,7 +137,8 @@ helpcontent[18] = new Array("",
 helpcontent[19] = new Array("",
 				"<#Setting_factorydefault_itemdesc#>",
 				"<#Setting_save_itemdesc#>",
-				"<#Setting_upload_itemdesc#>");
+				"<#Setting_upload_itemdesc#>",
+				"<#Storage_upload_itemdesc#>");
 // QoS
 helpcontent[20] = new Array("",
 				"<#BM_measured_uplink_speed_desc#>",

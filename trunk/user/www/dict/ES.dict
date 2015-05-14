@@ -687,7 +687,6 @@ Setting_factorydefault_hint1=Toda la configuración actual se eliminará y se re
 Setting_factorydefault_hint2=¿Está seguro de que desea continuar?
 Setting_factorydefault_iphint=La dirección IP LAN predeterminada de su ZVMODELVZ es 192.168.1.1.\nSi no puede volver a la página de configuración más tarde, renueve la configuración de dirección IP del equipo.
 SET_ok_desc=¡La configuración se está cargando! Espere aproximadamente 60 segundos.
-SET_fail_title=¡Error al cargar el archivo de configuración!
 SET_fail_desc=¡Error al cargar el archivo de configuración! Esta anomalía puede estar provocada por un archivo de configuración incorrecto o por una transmisión errónea. Compruebe la validación del archivo de configuración e inténtelo de nuevo.
 RHELP_desc4=Simboliza la red de destino o el host de una regla de ruta. Por tanto, podría ser una dirección de host, como por ejemplo __192.168.123.11__, o una dirección de red, como por ejemplo __192.168.0.0__.
 RHELP_desc5=Indica cuantos bits forman el identificador de red y el identificador de subred. Por ejemplo: si la máscara de red con puntos decimales es 255.255.255.0, entonces sus bits de máscara de red son 24. Si el destino es un host, sus bits de máscara de red son 32.

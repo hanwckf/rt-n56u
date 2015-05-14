@@ -684,7 +684,6 @@ Setting_factorydefault_hint1=A configuração será apagada e o roteador será r
 Setting_factorydefault_hint2=Você tem certeza que deseja continuar ?
 Setting_factorydefault_iphint=O IP padrão da LAN do ZVMODELVZ é 192.168.1.1\nSe depois você não conseguir retornar a página de configuração por favor renove o IP do seu computador.
 SET_ok_desc=A configuração está sendo carregada. Por favor aguarde aproximadamente 30 segundos.
-SET_fail_title=Upload do arquivo de configuração falhou !
 SET_fail_desc=Upload do arquivo de configuração falhou. Isto pode ter sido causado por um arquivo de configuração incorreto ou por erro de transmissão. Por favor verifique se o arquivo é válido e tente novamente.
 RHELP_desc4=Isto suporta a rede de destino ou a regra de roteamento do host. Então isso poderia ser um endereço de host como 「192.168.123.11」ou um enderço de rede como「192.168.0.0」.
 RHELP_desc5=Ela indica quantos bits são necessários para identificação de uma rede e sub-rede. Por exemplo: se a máscara decimal da rede é 255.255.255.0, então a máscara de rede possui 24 bits. Se o destino é um host sua máscara possui 32 bits.

@@ -381,6 +381,7 @@ function checkDDNSReturnCode(){
                                                     <option value="WWW.DUCKDNS.ORG"      <% nvram_match_x("","ddns_server_x", "WWW.DUCKDNS.ORG","selected"); %>>www.duckdns.org</option>
                                                     <option value="WWW.DTDNS.COM"        <% nvram_match_x("","ddns_server_x", "WWW.DTDNS.COM","selected"); %>>www.dtdns.com</option>
                                                     <option value="WWW.OVH.COM"          <% nvram_match_x("","ddns_server_x", "WWW.OVH.COM","selected"); %>>www.ovh.com</option>
+                                                    <option value="WWW.LOOPIA.COM"       <% nvram_match_x("","ddns_server_x", "WWW.LOOPIA.COM","selected"); %>>www.loopia.com</option>
                                                     <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("","ddns_server_x", "WWW.TUNNELBROKER.NET","selected"); %>>www.tunnelbroker.net (HE)</option>
                                                     <option value="DNS.HE.NET"           <% nvram_match_x("","ddns_server_x", "DNS.HE.NET","selected"); %>>dns.he.net (HE)</option>
                                                     <option value="TB.NETASSIST.UA"      <% nvram_match_x("","ddns_server_x", "TB.NETASSIST.UA","selected"); %>>tb.netassist.ua</option>
@@ -471,6 +472,7 @@ function checkDDNSReturnCode(){
                                                     <option value="WWW.DUCKDNS.ORG"      <% nvram_match_x("","ddns2_server", "WWW.DUCKDNS.ORG","selected"); %>>www.duckdns.org</option>
                                                     <option value="WWW.DTDNS.COM"        <% nvram_match_x("","ddns2_server", "WWW.DTDNS.COM","selected"); %>>www.dtdns.com</option>
                                                     <option value="WWW.OVH.COM"          <% nvram_match_x("","ddns2_server", "WWW.OVH.COM","selected"); %>>www.ovh.com</option>
+                                                    <option value="WWW.LOOPIA.COM"       <% nvram_match_x("","ddns2_server", "WWW.LOOPIA.COM","selected"); %>>www.loopia.com</option>
                                                     <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("","ddns2_server", "WWW.TUNNELBROKER.NET","selected"); %>>www.tunnelbroker.net (HE)</option>
                                                     <option value="DNS.HE.NET"           <% nvram_match_x("","ddns2_server", "DNS.HE.NET","selected"); %>>dns.he.net (HE)</option>
                                                     <option value="TB.NETASSIST.UA"      <% nvram_match_x("","ddns2_server", "TB.NETASSIST.UA","selected"); %>>tb.netassist.ua</option>

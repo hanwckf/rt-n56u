@@ -717,6 +717,7 @@ static const struct inadyn_system_t {
 	{ "WWW.DUCKDNS.ORG",      "default@duckdns.org"        },
 	{ "WWW.DTDNS.COM",        "default@dtdns.com"          },
 	{ "WWW.OVH.COM",          "default@ovh.com"            },
+	{ "WWW.LOOPIA.COM",       "default@loopia.com"         },
 	{ "WWW.TUNNELBROKER.NET", "ipv6tb@he.net"              },
 	{ "DNS.HE.NET",           "dyndns@he.net"              },
 	{ "TB.NETASSIST.UA",      "ipv6tb@netassist.ua"        },

@@ -1215,7 +1215,7 @@ static void ndisc_router_discovery(struct sk_buff *skb)
 			ND_PRINTK0(KERN_ERR
 				   "ICMPv6 RA: %s() got default router without neighbour.\n",
 				   __func__);
-			dst_release(&rt->dst);
+			ip6_rt_put(rt);
 			return;
 		}
 	}
@@ -1241,7 +1241,7 @@ static void ndisc_router_discovery(struct sk_buff *skb)
 			ND_PRINTK0(KERN_ERR
 				   "ICMPv6 RA: %s() got default router without neighbour.\n",
 				   __func__);
-			dst_release(&rt->dst);
+			ip6_rt_put(rt);
 			return;
 		}
 		neigh->flags |= NTF_ROUTER;
@@ -1408,8 +1408,7 @@ skip_routeinfo:
 			   "ICMPv6 RA: invalid RA options");
 	}
 out:
-	if (rt)
-		dst_release(&rt->dst);
+	ip6_rt_put(rt);
 	if (neigh)
 		neigh_release(neigh);
 }

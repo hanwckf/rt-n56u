@@ -175,7 +175,7 @@ function change_wizard(o, id){
 					document.form.vts_protono_x_0.value = wItem[i][1];
 				else
 					document.form.vts_port_x_0.value = wItem[i][1];
-				document.form.vts_desc_x_0.value = wItem[i][0]+" Server";
+				document.form.vts_desc_x_0.value = wItem[i][0];
 				break;
 			}
 		}

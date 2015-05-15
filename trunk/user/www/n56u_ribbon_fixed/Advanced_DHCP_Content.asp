@@ -300,28 +300,24 @@ function markGroupMDHCP(o, c, b) {
 }
 
 function showMDHCPList(){
-	var code = '<table width="100%" cellspacing="0" cellpadding="3" class="table">';
-
+	var code = '<table width="100%" cellspacing="0" cellpadding="3" class="table table-list">';
 	if(m_dhcp.length == 0)
 		code +='<tr><td colspan="4" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
-		for(var i = 0; i < m_dhcp.length; i++){
+	    for(var i = 0; i < m_dhcp.length; i++){
 		code +='<tr id="row' + i + '">';
-		code +='<td width="25%">' + m_dhcp[i][0] + '</td>';
-		code +='<td width="25%">' + m_dhcp[i][1] + '</td>';
-		code +='<td width="45%">' + m_dhcp[i][2] + '</td>';
+		code +='<td width="25%">&nbsp;' + m_dhcp[i][0] + '</td>';
+		code +='<td width="25%">&nbsp;' + m_dhcp[i][1] + '</td>';
+		code +='<td width="45%">&nbsp;' + m_dhcp[i][2] + '</td>';
 		code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="ManualDHCPList_s" value="' + m_dhcp[i][mdhcp_ifield] + '" onClick="changeBgColor(this,' + i + ');" id="check' + m_dhcp[i][mdhcp_ifield] + '"></td>';
 		code +='</tr>';
-		}
-		
+	    }
 		code += '<tr>';
 		code += '<td colspan="3">&nbsp;</td>'
-		code += '<td><button class="btn btn-danger" type="submit" onclick="return markGroupMDHCP(this, 64, \' Del \');" name="ManualDHCPList"><i class="icon icon-minus icon-white"></i></button></td>';
+		code += '<td><button class="btn btn-danger" type="submit" onclick="markGroupMDHCP(this, 64, \' Del \');" name="ManualDHCPList"><i class="icon icon-minus icon-white"></i></button></td>';
 		code += '</tr>'
 	}
-
 	code +='</table>';
-
 	$("MDHCPList_Block").innerHTML = code;
 }
 
@@ -333,6 +329,16 @@ function changeBgColor(obj, num){
 }
 
 </script>
+<style>
+.table-list td {
+    padding: 6px 8px;
+}
+.table-list input,
+.table-list select {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+</style>
 </head>
 
 <body onload="initial();" onunLoad="return unload_body();">

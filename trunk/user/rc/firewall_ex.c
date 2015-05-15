@@ -146,7 +146,7 @@ general_conv(char *ip_name, int idx)
 static char *
 filter_conv(char *proto, char *flag, char *srcip, char *srcport, char *dstip, char *dstport)
 {
-	char newstr[64];
+	char newstr[128];
 
 	strcpy(g_buf, "");
 
@@ -158,37 +158,37 @@ filter_conv(char *proto, char *flag, char *srcip, char *srcport, char *dstip, ch
 
 	if (strcmp(flag, "")!=0)
 	{
-		sprintf(newstr, " --tcp-flags %s %s", flag, flag);
+		snprintf(newstr, sizeof(newstr), " --tcp-flags %s %s", flag, flag);
 		strcat(g_buf, newstr);
 	}
 	
-	if (strcmp(srcip, "")!=0)
+	if (strcmp(srcip, "") != 0)
 	{
 		if (strchr(srcip , '-'))
-			sprintf(newstr, " --src-range %s", srcip);
-		else	
-			sprintf(newstr, " -s %s", srcip);
+			snprintf(newstr, sizeof(newstr), " --src-range %s", srcip);
+		else
+			snprintf(newstr, sizeof(newstr), " -s %s", srcip);
 		strcat(g_buf, newstr);
 	}
 
 	if (strcmp(srcport, "")!=0)
 	{
-		sprintf(newstr, " --sport %s", srcport);
+		snprintf(newstr, sizeof(newstr), " --sport %s", srcport);
 		strcat(g_buf, newstr);
 	}
 
 	if (strcmp(dstip, "")!=0)
 	{
 		if (strchr(dstip, '-'))
-			sprintf(newstr, " --dst-range %s", dstip);
-		else	
-			sprintf(newstr, " -d %s", dstip);
+			snprintf(newstr, sizeof(newstr), " --dst-range %s", dstip);
+		else
+			snprintf(newstr, sizeof(newstr), " -d %s", dstip);
 		strcat(g_buf, newstr);
 	}
 
 	if (strcmp(dstport, "")!=0)
 	{
-		sprintf(newstr, " --dport %s", dstport);
+		snprintf(newstr, sizeof(newstr), " --dport %s", dstport);
 		strcat(g_buf, newstr);
 	}
 
@@ -235,7 +235,7 @@ timematch_conv(char *mstr, char *nv_date, char *nv_time)
 }
 
 static char *
-iprange_ex_conv(char *ip_name, int idx)
+iprange_ex_conv(const char *ip_name, int idx)
 {
 	char *ip;
 	char itemname_arr[32];
@@ -243,8 +243,8 @@ iprange_ex_conv(char *ip_name, int idx)
 	int i, j, k;
 	int mask;
 
-	sprintf(itemname_arr,"%s%d", ip_name, idx);
-	ip=nvram_safe_get(itemname_arr);
+	snprintf(itemname_arr, sizeof(itemname_arr), "%s%d", ip_name, idx);
+	ip = nvram_safe_get(itemname_arr);
 	strcpy(g_buf, "");
 
 	// scan all ip string
@@ -275,11 +275,11 @@ iprange_ex_conv(char *ip_name, int idx)
 		sprintf(g_buf, "%s", startip);
 	else if (mask==0)
 		strcpy(g_buf, "");
-	else sprintf(g_buf, "%s/%d", startip, mask);
+	else
+		sprintf(g_buf, "%s/%d", startip, mask);
 
 	return (g_buf_alloc(g_buf));
 }
-
 
 static int
 is_valid_filter_date(char *nv_date)
@@ -604,29 +604,31 @@ static void
 include_vts_filter(FILE *fp, char *lan_ip, char *logaccept, int forward_chain)
 {
 	int i;
-	char *proto, *protono, *port, *lport, *dstip, *dtype;
-	char dstports[32];
+	char *proto, *protono, *port, *lport, *srcip, *dstip, *dtype;
+	char srcaddrs[64], dstports[32];
 
 	dtype = (forward_chain) ? "FORWARD" : "INPUT";
 
 	foreach_x("vts_num_x")
 	{
 		g_buf_init();
+		srcaddrs[0] = 0;
 		
 		dstip = ip_conv("vts_ipaddr_x", i);
 		if (!is_valid_ipv4(dstip))
 			continue;
 		
-		if (forward_chain)
-		{
+		if (forward_chain) {
 			if (strcmp(lan_ip, dstip) == 0)
 				continue;
-		}
-		else
-		{
+		} else {
 			if (strcmp(lan_ip, dstip) != 0)
 				continue;
 		}
+		
+		srcip = iprange_ex_conv("vts_srcip_x", i);
+		if (*srcip)
+			snprintf(srcaddrs, sizeof(srcaddrs), " -s %s", srcip);
 		
 		proto = proto_conv("vts_proto_x", i);
 		port = portrange_conv("vts_port_x", i);
@@ -637,20 +639,18 @@ include_vts_filter(FILE *fp, char *lan_ip, char *logaccept, int forward_chain)
 		else
 			snprintf(dstports, sizeof(dstports), "%s", port);
 		
-		if (*dstports)
-		{
+		if (*dstports) {
 			if (strcmp(proto, "tcp")==0 || strcmp(proto, "both")==0)
-				fprintf(fp, "-A %s -p %s -d %s --dport %s -j %s\n", dtype, "tcp", dstip, dstports, logaccept);
+				fprintf(fp, "-A %s -p %s%s -d %s --dport %s -j %s\n", dtype, "tcp", srcaddrs, dstip, dstports, logaccept);
 			
 			if (strcmp(proto, "udp")==0 || strcmp(proto, "both")==0)
-				fprintf(fp, "-A %s -p %s -d %s --dport %s -j %s\n", dtype, "udp", dstip, dstports, logaccept);
+				fprintf(fp, "-A %s -p %s%s -d %s --dport %s -j %s\n", dtype, "udp", srcaddrs, dstip, dstports, logaccept);
 		}
 		
-		if (strcmp(proto, "other")==0)
-		{
+		if (strcmp(proto, "other")==0) {
 			protono = portrange_conv("vts_protono_x", i);
 			if (*protono)
-				fprintf(fp, "-A %s -p %s -d %s -j %s\n", dtype, protono, dstip, logaccept);
+				fprintf(fp, "-A %s -p %s%s -d %s -j %s\n", dtype, protono, srcaddrs, dstip, logaccept);
 		}
 	}
 }
@@ -659,43 +659,46 @@ static void
 include_vts_nat(FILE *fp)
 {
 	int i;
-	char *proto, *protono, *port, *lport, *dstip, *dtype;
-	
+	char *proto, *protono, *port, *lport, *srcip, *dstip, *dtype;
+	char srcaddrs[64];
+
 	dtype = IPT_CHAIN_NAME_VSERVER;
-	
+
 	foreach_x("vts_num_x")
 	{
 		g_buf_init();
+		srcaddrs[0] = 0;
 		
 		dstip = ip_conv("vts_ipaddr_x", i);
 		if (!is_valid_ipv4(dstip))
 			continue;
 		
+		srcip = iprange_ex_conv("vts_srcip_x", i);
+		if (*srcip)
+			snprintf(srcaddrs, sizeof(srcaddrs), " -s %s", srcip);
+		
 		proto = proto_conv("vts_proto_x", i);
 		port = portrange_conv("vts_port_x", i);
 		lport = portrange_conv("vts_lport_x", i);
 		
-		if (strcmp(proto, "tcp")==0 || strcmp(proto, "both")==0)
-		{
+		if (strcmp(proto, "tcp")==0 || strcmp(proto, "both") == 0) {
 			if (lport && strlen(lport)!=0 && strcmp(port, lport)!=0)
-				fprintf(fp, "-A %s -p %s --dport %s -j DNAT --to-destination %s:%s\n", dtype, "tcp", port, dstip, lport);
+				fprintf(fp, "-A %s -p %s%s --dport %s -j DNAT --to-destination %s:%s\n", dtype, "tcp", srcaddrs, port, dstip, lport);
 			else
-				fprintf(fp, "-A %s -p %s --dport %s -j DNAT --to %s\n", dtype, "tcp", port, dstip);
+				fprintf(fp, "-A %s -p %s%s --dport %s -j DNAT --to %s\n", dtype, "tcp", srcaddrs, port, dstip);
 		}
 		
-		if (strcmp(proto, "udp")==0 || strcmp(proto, "both")==0)
-		{
+		if (strcmp(proto, "udp")==0 || strcmp(proto, "both") == 0) {
 			if (lport && strlen(lport)!=0 && strcmp(port, lport)!=0)
-				fprintf(fp, "-A %s -p %s --dport %s -j DNAT --to-destination %s:%s\n", dtype, "udp", port, dstip, lport);
+				fprintf(fp, "-A %s -p %s%s --dport %s -j DNAT --to-destination %s:%s\n", dtype, "udp", srcaddrs, port, dstip, lport);
 			else
-				fprintf(fp, "-A %s -p %s --dport %s -j DNAT --to %s\n", dtype, "udp", port, dstip);
+				fprintf(fp, "-A %s -p %s%s --dport %s -j DNAT --to %s\n", dtype, "udp", srcaddrs, port, dstip);
 		}
 		
-		if (strcmp(proto, "other")==0)
-		{
+		if (strcmp(proto, "other") == 0) {
 			protono = portrange_conv("vts_protono_x", i);
 			if (*protono)
-				fprintf(fp, "-A %s -p %s -j DNAT --to %s\n", dtype, protono, dstip);
+				fprintf(fp, "-A %s -p %s%s -j DNAT --to %s\n", dtype, protono, srcaddrs, dstip);
 		}
 	}
 }
@@ -1226,7 +1229,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 	fclose(fp);
 
 	if (ret & MODULE_WEBSTR_MASK)
-		doSystem("modprobe %s", "xt_webstr");
+		module_smart_load("xt_webstr", NULL);
 
 	doSystem("iptables-restore %s", ipt_file);
 
@@ -1605,7 +1608,7 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if,
 	fclose(fp);
 
 	if (ret & MODULE_WEBSTR_MASK)
-		doSystem("modprobe %s", "xt_webstr");
+		module_smart_load("xt_webstr", NULL);
 
 	doSystem("ip6tables-restore %s", ipt_file);
 

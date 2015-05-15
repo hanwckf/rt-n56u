@@ -184,29 +184,25 @@ function markGroupACL(o, c, b) {
 }
 
 function showACLList(){
-	var code = "";
-
+	var code = '';
 	if(ACLList.length == 0) {
 		code +='<tr><td colspan="3" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	}
 	else{
-		for(var i = 0; i < ACLList.length; i++){
-		    code +='<tr id="row' + i + '">';
-		    code +='<td width="35%">' + ACLList[i][0] + '</td>';
-		    code +='<td width="60%">' + ACLList[i][1] + '</td>';
-		    code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="ACLList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
-		    code +='</tr>';
-		}
-		
+	    for(var i = 0; i < ACLList.length; i++){
+		code +='<tr id="row' + i + '">';
+		code +='<td width="35%">&nbsp;' + ACLList[i][0] + '</td>';
+		code +='<td width="60%">&nbsp;' + ACLList[i][1] + '</td>';
+		code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="ACLList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
+		code +='</tr>';
+	    }
 		code += '<tr>';
 		code += '<td colspan="2">&nbsp;</td>'
 		code += '<td><button class="btn btn-danger" type="submit" onclick="return markGroupACL(this, 32, \' Del \');" name="ACLList"><i class="icon icon-minus icon-white"></i></button></td>';
 		code += '</tr>'
 	}
-
 	$j('#ACLList_Block').append(code);
 }
-
 
 function changeBgColor(obj, num){
 	if(obj.checked)
@@ -220,6 +216,16 @@ function done_validating(action){
 }
 
 </script>
+<style>
+.table-list td {
+    padding: 6px 8px;
+}
+.table-list input,
+.table-list select {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+</style>
 </head>
 
 <body onload="initial();">
@@ -289,7 +295,7 @@ function done_validating(action){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="ACLList_Block">
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table table-list" id="ACLList_Block">
                                         <tr>
                                             <th colspan="3" style="background-color: #E3E3E3;"><#FirewallConfig_MFList_groupitemname#></th>
                                         </tr>

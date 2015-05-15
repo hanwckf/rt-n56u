@@ -131,8 +131,7 @@ helpcontent[17] = new Array("",
 helpcontent[18] = new Array("",
 				"<#FirewallConfig_MFMethod_itemdesc#>",
 				"<#Port_format#>",
-				"<#IP_format#>",
-				"<#Port_format#>");
+				"<#IP_format#>");
 // Setting
 helpcontent[19] = new Array("",
 				"<#Setting_factorydefault_itemdesc#>",

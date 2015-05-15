@@ -711,6 +711,7 @@ struct nvram_pair tables_defaults[] = {
 	{ "vts_lport_x", "" },
 	{ "vts_proto_x", "" },
 	{ "vts_protono_x", "" },
+	{ "vts_srcip_x", "" },
 	{ "vts_desc_x", "" },
 
 	{ "filter_lw_srcip_x", "" },
@@ -718,7 +719,6 @@ struct nvram_pair tables_defaults[] = {
 	{ "filter_lw_dstip_x", "" },
 	{ "filter_lw_dstport_x", "" },
 	{ "filter_lw_proto_x", "" },
-	{ "filter_lw_desc_x", "" },
 
 	{ "macfilter_list_x", "" },
 	{ "macfilter_date_x", "" },

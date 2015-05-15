@@ -189,28 +189,6 @@ function markGroup(o, s, c, b) {
             else if (!validate_duplicate(document.form.rt_ACLList_s, document.form.rt_maclist_x_0.value, 12, 0))
                 return false;
         }
-        else if (s == 'LWFilterList') {
-            if (document.form.filter_lw_num_x_0.value >= c) cFlag = 1;
-            else if (!validate_iprange(document.form.filter_lw_srcip_x_0, "") ||
-                !validate_portrange(document.form.filter_lw_srcport_x_0, "") ||
-                !validate_iprange(document.form.filter_lw_dstip_x_0, "") ||
-                !validate_portrange(document.form.filter_lw_dstport_x_0, "")) return false;
-            else if (document.form.filter_lw_srcip_x_0.value == "" &&
-                document.form.filter_lw_srcport_x_0.value == "" &&
-                document.form.filter_lw_dstip_x_0.value == "" &&
-                document.form.filter_lw_dstport_x_0.value == "") bFlag = 1;
-
-            for (var i = 0; i < LWFilterList.length; i++) { //validate if the entry is duplicated in list.
-                if (document.form.filter_lw_srcip_x_0.value == LWFilterList[i][0] &&
-                    document.form.filter_lw_srcport_x_0.value == LWFilterList[i][1] &&
-                    document.form.filter_lw_dstip_x_0.value == LWFilterList[i][2] &&
-                    document.form.filter_lw_dstport_x_0.value == LWFilterList[i][3] &&
-                    document.form.filter_lw_proto_x_0.value == LWFilterList[i][4]) {
-                    alert("<#JS_duplicate#>");
-                    return false;
-                }
-            }
-        }
         else if (s == 'UrlList') {
             if (document.form.url_num_x_0.value >= c)
                 cFlag = 1;
@@ -741,12 +719,6 @@ function validate_ipaddrport(o, v) {
         o.select();
         return false;
     }
-    if (v == 'ExternalIPAddress' && document.form.wan_netmask.value == '') {
-        document.form.wan_netmask.value = "255.255.255.0";
-    }
-    else if (v == 'IPRouters' && document.form.lan_netmask.value == '') {
-        document.form.lan_netmask.value = "255.255.255.0";
-    }
     return true;
 }
 
@@ -830,12 +802,6 @@ function validate_iprange(o, v) {
         o.focus();
         o.select();
         return false;
-    }
-    if (v == 'ExternalIPAddress' && document.form.wan_netmask.value == '') {
-        document.form.wan_netmask.value = "255.255.255.0";
-    }
-    else if (v == 'IPRouters' && document.form.lan_netmask.value == '') {
-        document.form.lan_netmask.value = "255.255.255.0";
     }
     return true;
 }
@@ -1115,8 +1081,9 @@ function load_body() {
     if (document.form.current_page.value == "Advanced_Firewall_Content.asp") {
         wItem = new Array(
             new Array("WWW", "80", "TCP"),
-            new Array("TELNET", "23", "TCP"),
-            new Array("FTP", "20:21", "TCP")
+            new Array("FTP", "20:21", "TCP"),
+            new Array("SSH", "22", "TCP"),
+            new Array("TELNET", "23", "TCP")
         );
         free_options(document.form.LWKnownApps);
         add_option(document.form.LWKnownApps, "User Defined", "User Defined", 1);

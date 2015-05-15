@@ -41,6 +41,7 @@
 			{"vts_lport_x", "7", NULL, FALSE},
 			{"vts_proto_x", "8", NULL, FALSE},
 			{"vts_protono_x", "12", NULL, FALSE},
+			{"vts_srcip_x", "16", NULL, FALSE},
 			{"vts_desc_x", "20", NULL, FALSE},
 			{0,0,0,0}
 		};
@@ -51,7 +52,6 @@
 			{"filter_lw_dstip_x", "16", NULL, FALSE},
 			{"filter_lw_dstport_x", "12", NULL, FALSE},
 			{"filter_lw_proto_x", "8", NULL, FALSE},
-			{"filter_lw_desc_x", "20", NULL, FALSE},
 			{0,0,0,0}
 		};
 

@@ -607,11 +607,11 @@ ej_nvram_match_list_x(int eid, webs_t wp, int argc, char **argv)
 		websError(wp, 400, "Insufficient args\n");
 		return -1;
 	}
-	
+
 	if (nvram_match_list_x(name, match, which))
 		return websWrite(wp, output);
-	else
-		return 0;
+
+	return 0;
 }
 
 static int

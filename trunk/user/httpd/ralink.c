@@ -193,8 +193,8 @@ int
 ej_nat_table(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
-	int ret, i_loaded, sw_mode;
-	char line[256], tmp[255], target[16], proto[16], src[16], dst[16];
+	int ret, i_loaded, sw_mode, src_net, dst_net;
+	char line[256], tmp[255], target[16], proto[16], src[32], dst[32];
 	char *range, *host, *port, *ptr, *val;
 	char *hwnat_status;
 	char *nat_argv[] = {"iptables", "-t", "nat", "-nxL", NULL};
@@ -225,8 +225,11 @@ ej_nat_table(int eid, webs_t wp, int argc, char **argv)
 		
 		ret += websWrite(wp, "Port Forwards List\n");
 		ret += websWrite(wp, "----------------------------------------\n");
-		ret += websWrite(wp, "Destination     Proto. Port Range  Redirect to     Local port\n");
-//                                    255.255.255.255 other  65535:65535 255.255.255.255 65535:65535
+		ret += websWrite(wp, "Source             Proto  Port Range  Redirect to     Local port\n");
+//                                    255.255.255.255/24 other  65535:65535 255.255.255.255 65535:65535
+
+//		ret += websWrite(wp, "Source             Destination        Proto Port Range  Redirect to     Local port\n");
+//                                    255.255.255.255/24 255.255.255.255/24 other 65535:65535 255.255.255.255 65535:65535
 
 		_eval(nat_argv, ">/tmp/nat.log", 3, NULL);
 
@@ -241,10 +244,11 @@ ej_nat_table(int eid, webs_t wp, int argc, char **argv)
 			    "%15s%*[ \t]"		// target
 			    "%15s%*[ \t]"		// prot
 			    "%*s%*[ \t]"		// opt
-			    "%15[^/]/%*d%*[ \t]"	// source
-			    "%15[^/]/%*d%*[ \t]"	// destination
+			    "%15[^/]/%d%*[ \t]"		// source
+			    "%15[^/]/%d%*[ \t]"		// destination
 			    "%255[^\n]",		// options
-			    target, proto, src, dst, tmp) < 5) continue;
+			    target, proto, src, &src_net, dst, &dst_net, tmp) < 7)
+				continue;
 			
 			if (strcmp(target, "DNAT"))
 				continue;
@@ -252,8 +256,15 @@ ej_nat_table(int eid, webs_t wp, int argc, char **argv)
 			for (ptr = proto; *ptr; ptr++)
 				*ptr = toupper(*ptr);
 			
+			if (!strcmp(src, "0.0.0.0"))
+				strcpy(src, "ALL");
+			else
+				snprintf(src, sizeof(src), "%s/%d", src, src_net);
+			
 			if (!strcmp(dst, "0.0.0.0"))
 				strcpy(dst, "ALL");
+			else
+				snprintf(dst, sizeof(dst), "%s/%d", dst, dst_net);
 			
 			port = host = range = "";
 			ptr = tmp;
@@ -269,8 +280,8 @@ ej_nat_table(int eid, webs_t wp, int argc, char **argv)
 			}
 			
 			ret += websWrite(wp,
-				"%-15s %-6s %-11s %-15s %-11s\n",
-				dst, proto, range, host, port ? : range);
+				"%-18s %-6s %-11s %-15s %-11s\n",
+				src, proto, range, host, port ? : range);
 		}
 		fclose(fp);
 	}

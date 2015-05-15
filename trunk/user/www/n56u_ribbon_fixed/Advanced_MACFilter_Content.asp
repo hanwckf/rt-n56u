@@ -277,15 +277,14 @@ function showMFList(){
 		document.form.macfilter_date_x_0.value = "1111111";
 	}
 	else{
-		for(var i = 0; i < MACList.length; i++){
-		    code +='<tr id="row' + i + '">';
-		    code +='<td width="25%">' + MACList[i][0] + '</td>';
-		    code +='<td width="25%" style="text-align: center;">' + format_time(MACList[i][1]) + '</td>';
-		    code +='<td width="45%">' + format_date(MACList[i][2]) + '</td>';
-		    code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="MFList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
-		    code +='</tr>';
-		}
-		
+	    for(var i = 0; i < MACList.length; i++){
+		code +='<tr id="row' + i + '">';
+		code +='<td width="25%">&nbsp;' + MACList[i][0] + '</td>';
+		code +='<td width="25%" style="text-align: center;">' + format_time(MACList[i][1]) + '</td>';
+		code +='<td width="45%">' + format_date(MACList[i][2]) + '</td>';
+		code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="MFList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
+		code +='</tr>';
+	    }
 		code += '<tr>';
 		code += '<td colspan="3">&nbsp;</td>'
 		code += '<td><button class="btn btn-danger" type="submit" onclick="return markGroupMAC(this, 64, \' Del \');" name="MFList"><i class="icon icon-minus icon-white"></i></button></td>';
@@ -333,6 +332,14 @@ function done_validating(action){
 .radio.inline + .radio.inline,
 .checkbox.inline + .checkbox.inline {
     margin-left: 3px;
+}
+.table-list td {
+    padding: 6px 8px;
+}
+.table-list input,
+.table-list select {
+    margin-top: 0px;
+    margin-bottom: 0px;
 }
 </style>
 </head>
@@ -419,7 +426,7 @@ function done_validating(action){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="MFList_Block">
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table table-list" id="MFList_Block">
                                         <tr>
                                             <th colspan="4" style="background-color: #E3E3E3;"><#FirewallConfig_MFList_groupitemname#></th>
                                         </tr>

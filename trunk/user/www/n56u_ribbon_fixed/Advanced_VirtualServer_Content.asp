@@ -42,7 +42,9 @@ var wItem = new Array(new Array("", "", "TCP"),
 		new Array("HTTP", "80", "TCP"),
 		new Array("POP3", "110", "TCP"),
 		new Array("SNMP", "161", "UDP"),
-		new Array("SNMP TRAP", "162", "UDP"));
+		new Array("SNMP TRAP", "162", "UDP"),
+		new Array("GRE", "47", "OTHER"),
+		new Array("IPv6 Tunnel", "41", "OTHER"));
 
 var wItem2 = new Array(new Array("", "", "TCP"),
 		new Array("Age of Empires", "2302:2400,6073", "BOTH"),
@@ -82,10 +84,10 @@ function initial(){
 
 	change_upnp_enabled();
 	change_vts_enabled();
-	change_proto();
 
 	showLANIPList();
 	showVSList();
+	change_proto();
 }
 
 function applyRule(){
@@ -137,32 +139,45 @@ function change_vts_enabled(){
 }
 
 function change_proto(){
-	if (document.form.vts_proto_x_0.value == "OTHER")
-		inputCtrl(document.form.vts_protono_x_0, 1);
-	else
-		inputCtrl(document.form.vts_protono_x_0, 0);
+	var v = (document.form.vts_proto_x_0.options.selectedIndex == 3) ? 1 : 0;
+	inputCtrl(document.form.vts_protono_x_0, v);
+	inputCtrl(document.form.vts_port_x_0, !v);
+	inputCtrl(document.form.vts_lport_x_0, !v);
+	if(v){
+		document.form.vts_port_x_0.style.display = "none";
+		document.form.vts_protono_x_0.style.display = "";
+		$("col_port_proto").innerHTML = "<#IPConnection_VServerPNo_itemname#>";
+	}else{
+		document.form.vts_protono_x_0.style.display = "none";
+		document.form.vts_port_x_0.style.display = "";
+		$("col_port_proto").innerHTML = '<a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,2);"><#IPConnection_VServerPort_itemname#></a>';
+	}
 }
 
 function change_wizard(o, id){
+	var obj = document.form.vts_proto_x_0;
 	if(id == "KnownApps"){
 		$("KnownGames").value = 0;
 		
 		for(var i = 0; i < wItem.length; ++i){
-					if(wItem[i][0] != null && o.value == i){
-							if(wItem[i][2] == "TCP")
-								document.form.vts_proto_x_0.options[0].selected = 1;
-							else if(wItem[i][2] == "UDP")
-								document.form.vts_proto_x_0.options[1].selected = 1;
-							else if(wItem[i][2] == "BOTH")
-								document.form.vts_proto_x_0.options[2].selected = 1;
-							else
-								document.form.vts_proto_x_0.options[3].selected = 1;
-						
-						document.form.vts_ipaddr_x_0.value = client_ip;
-						document.form.vts_port_x_0.value = wItem[i][1];
-						document.form.vts_desc_x_0.value = wItem[i][0]+" Server";
-						break;
-					}
+			if(wItem[i][0] != null && o.value == i){
+				if(wItem[i][2] == "TCP")
+					obj.options[0].selected = 1;
+				else if(wItem[i][2] == "UDP")
+					obj.options[1].selected = 1;
+				else if(wItem[i][2] == "BOTH")
+					obj.options[2].selected = 1;
+				else
+					obj.options[3].selected = 1;
+				
+				document.form.vts_ipaddr_x_0.value = client_ip;
+				if (obj.options.selectedIndex == 3)
+					document.form.vts_protono_x_0.value = wItem[i][1];
+				else
+					document.form.vts_port_x_0.value = wItem[i][1];
+				document.form.vts_desc_x_0.value = wItem[i][0]+" Server";
+				break;
+			}
 		}
 		
 		document.form.vts_lport_x_0.value = "";
@@ -173,94 +188,102 @@ function change_wizard(o, id){
 		for(var i = 0; i < wItem2.length; ++i){
 			if(wItem2[i][0] != null && o.value == i){
 				if(wItem2[i][2] == "TCP")
-					document.form.vts_proto_x_0.options[0].selected = 1;
+					obj.options[0].selected = 1;
 				else if(wItem2[i][2] == "UDP")
-					document.form.vts_proto_x_0.options[1].selected = 1;
+					obj.options[1].selected = 1;
 				else if(wItem2[i][2] == "BOTH")
-					document.form.vts_proto_x_0.options[2].selected = 1;
+					obj.options[2].selected = 1;
 				else
-					document.form.vts_proto_x_0.options[3].selected = 1;
+					obj.options[3].selected = 1;
 				
 				document.form.vts_ipaddr_x_0.value = client_ip;
-				document.form.vts_port_x_0.value = wItem2[i][1];
+				if (obj.options.selectedIndex == 3)
+					document.form.vts_protono_x_0.value = wItem2[i][1];
+				else
+					document.form.vts_port_x_0.value = wItem2[i][1];
 				document.form.vts_desc_x_0.value = wItem2[i][0];
-				
 				break;
 			}
 		}
 	}
+	change_proto();
 }
 
-/*-----------------------------------------------------------------
-Old markGroup in general.js, change to single page at 2008/04/10
-------------------------------------------------------------------*/
-function markGroup2(o, s, c, b) {
-	document.form.group_id.value = s;
+function markGroupVS(o, c, b) {
+	var obj, proto_other;
+	document.form.group_id.value = "VSList";
 	if(b == " Add "){
-		if (document.form.vts_num_x_0.value >= c){  //vts_num_x_0: number of virtual server
+		proto_other = (document.form.vts_proto_x_0.options.selectedIndex == 3)?true:false;
+		if (document.form.vts_num_x_0.value >= c){
 			alert("<#JS_itemlimit1#> " + c + " <#JS_itemlimit2#>");
 			return false;
-		}else if (document.form.vts_ipaddr_x_0.value==""){
-			alert("<#JS_fieldblank#>");
-			document.form.vts_ipaddr_x_0.focus();
-			document.form.vts_ipaddr_x_0.select();
-			return false;
-		}else if(document.form.vts_port_x_0.value=="" && document.form.vts_proto_x_0.value != "OTHER"){
-			alert("<#JS_fieldblank#>");
-			document.form.vts_port_x_0.focus();
-			document.form.vts_port_x_0.select();
-			return false;
-		}else if (document.form.vts_proto_x_0.value == "OTHER"){
-			if (!validate_ipaddr_final(document.form.vts_ipaddr_x_0, '') ||
-					!validate_range(document.form.vts_protono_x_0, 0, 255)) return false;
-			else if (document.form.vts_protono_x_0.value==""){
-				alert("<#JS_fieldblank#>");
-				document.form.vts_protono_x_0.focus();
+		}
+		obj = document.form.vts_srcip_x_0;
+		if (obj.value!=""){
+			obj = document.form.vts_srcip_x_0;
+			if(obj.value.split("*").length >= 2){
+				if(!valid_IP_subnet(obj))
+					return false;
+			}else if(!validate_ipaddr_final(obj, ""))
 				return false;
-			}
+		}
+		obj = document.form.vts_port_x_0;
+		if(obj.value=="" && !proto_other){
+			alert("<#JS_fieldblank#>");
+			obj.focus();
+			return false;
+		}
+		obj = document.form.vts_ipaddr_x_0;
+		if (obj.value==""){
+			alert("<#JS_fieldblank#>");
+			obj.focus();
+			return false;
+		}else if (!validate_ipaddr_final(obj, "")){
+			return false;
+		}
+		if (proto_other){
+			obj = document.form.vts_protono_x_0;
+			if (obj.value==""){
+				alert("<#JS_fieldblank#>");
+				obj.focus();
+				return false;
+			}else if (!validate_range(obj, 0, 255))
+				return false;
 			
 			for(i=0; i< VSList.length; i++){
-				if (VSList[i][3] == 'OTHER' && VSList[i][4] == document.form.vts_protono_x_0.value) {
+				if (VSList[i][3] == 'OTHER' && VSList[i][4] == obj.value) {
 					alert('<#JS_duplicate#>' + ' (Protocol ' + VSList[i][4] + ')' );
-					document.form.vts_protono_x_0.focus();
-					document.form.vts_protono_x_0.select();
+					obj.focus();
+					obj.select();
 					return false;
 				}
 			}
-			
 			document.form.vts_port_x_0.value = "";
+			document.form.vts_lport_x_0.value = "";
 		}else{
-				if (!validate_ipaddr_final(document.form.vts_ipaddr_x_0, '') ||
-						!validate_portrange(document.form.vts_port_x_0, "") ||
-						!validate_range_sp(document.form.vts_lport_x_0, 1, 65535)) return false;
-				else if (document.form.vts_port_x_0.value==""){ 
-						alert("<#JS_fieldblank#>");
-						document.form.vts_port_x_0.focus();
+			obj = document.form.vts_port_x_0;
+			if (!validate_portrange(obj, "") || !validate_range_sp(document.form.vts_lport_x_0, 1, 65535))
+				return false;
+			for(i=0; i< VSList.length; i++){
+				if ((VSList[i][3] != 'OTHER') &&
+				    (VSList[i][3] == 'BOTH' || document.form.vts_proto_x_0.value == 'BOTH' ||
+				     VSList[i][3] == document.form.vts_proto_x_0.value)){
+					if(obj.value == VSList[i][0]){
+						alert('<#JS_duplicate#>' + ' (Port ' + VSList[i][0] + ')' );
+						obj.focus();
+						obj.select();
 						return false;
-				}else{
-					for(i=0; i< VSList.length; i++){
-						if ((VSList[i][3] != 'OTHER') && 
-						    (VSList[i][3] == 'BOTH' || document.form.vts_proto_x_0.value == 'BOTH' ||
-						     VSList[i][3] == document.form.vts_proto_x_0.value) ) {
-							if(document.form.vts_port_x_0.value == VSList[i][0]){
-									alert('<#JS_duplicate#>' + ' (Port ' + VSList[i][0] + ')' );
-									document.form.vts_port_x_0.focus();
-									document.form.vts_port_x_0.select();
-									return false;
-							}
-							if(!(portrange_min(document.form.vts_port_x_0.value, 11) > portrange_max(VSList[i][0], 11) ||
-									portrange_max(document.form.vts_port_x_0.value, 11) < portrange_min(VSList[i][0], 11))){
-									alert('<#JS_duplicate#>' + ' (Ports ' + VSList[i][0] + ')' );
-									document.form.vts_port_x_0.focus();
-									document.form.vts_port_x_0.select();
-									return false;
-							}
-						}
+					}
+					if(!(portrange_min(obj.value, 11) > portrange_max(VSList[i][0], 11) ||
+							portrange_max(obj.value, 11) < portrange_min(VSList[i][0], 11))){
+						alert('<#JS_duplicate#>' + ' (Ports ' + VSList[i][0] + ')' );
+						obj.focus();
+						obj.select();
+						return false;
 					}
 				}
-				
-				var vts_port_array = new Array();
-				document.form.vts_protono_x_0.value = "";
+			}
+			document.form.vts_protono_x_0.value = "";
 		}
 	}
 	pageChanged = 0;
@@ -272,7 +295,6 @@ var vts_rule_array = new Array();
 var count = 0;
 function split_vts_rule(s){
 	var count_dup = 0;
-	
 	if(typeof(s) != "undefined"){
 		this.vts_rule_array = s;
 	}
@@ -307,7 +329,7 @@ function split_vts_rule(s){
 				else{
 					if(entry_cmp(VSList[i][2], "", 5)==0){
 						if(!(portrange_min(document.form.vts_port_x_0.value, 11) > portrange_max(VSList[i][0], 11) ||
-				         	  	portrange_max(document.form.vts_port_x_0.value, 11) < portrange_min(VSList[i][0], 11))){
+							portrange_max(document.form.vts_port_x_0.value, 11) < portrange_min(VSList[i][0], 11))){
 							count_dup = count_dup + 1;
 						}
 					}
@@ -344,7 +366,6 @@ function setClientIP(num){
 function showLANIPList(){
 	var code = "";
 	var show_name = "";
-	
 	for(var i = 0; i < clients_info.length ; i++){
 		if(clients_info[i][0] && clients_info[i][0].length > 20)
 			show_name = clients_info[i][0].substring(0, 18) + "..";
@@ -383,29 +404,41 @@ function hideClients_Block(){
 }
 
 function showVSList(){
-	var code = "";
-
+	var code = '';
+	var proto, srcip, eport, lport;
 	if(VSList.length == 0)
 		code +='<tr><td colspan="7" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
-		for(var i = 0; i < VSList.length; i++){
+	    for(var i = 0; i < VSList.length; i++){
+		srcip = "*";
+		eport = VSList[i][0];
+		lport = VSList[i][2];
+		if(VSList[i][3] == "OTHER"){
+			proto = VSList[i][4];
+			eport = "";
+			lport = "";
+		}
+		else if (VSList[i][3] == "BOTH")
+			proto = "TCP/UDP";
+		else
+			proto = VSList[i][3];
+		if (VSList[i][5] != null && VSList[i][5] != "")
+			srcip = VSList[i][5];
 		code +='<tr id="row' + i + '">';
-		code +='<td><div>'+ VSList[i][5] + '</td>';			//desp
-		code +='<td width="15%">'+ VSList[i][0] + '</td>';	//Port  range
-		code +='<td width="23%">'+ VSList[i][1] + '</td>';	//local IP
-		code +='<td width="10%">' + VSList[i][2] + '</td>';	//local port
-		code +='<td width="12%">' + VSList[i][3] + '</td>';	//proto
-		code +='<td width="10%">' + VSList[i][4] + '</td>';	//proto no
+		code +='<td>&nbsp;'             + VSList[i][6] + '</td>';
+		code +='<td width="17%">&nbsp;' + srcip + '</td>';
+		code +='<td width="15%">&nbsp;' + eport + '</td>';
+		code +='<td width="22%">&nbsp;' + VSList[i][1] + '</td>';
+		code +='<td width="10%">&nbsp;' + lport + '</td>';
+		code +='<td width="11%">&nbsp;' + proto + '</td>';
 		code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="VSList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
 		code +='</tr>';
-		}
-
+	    }
 		code += '<tr>';
 		code += '<td colspan="6">&nbsp;</td>'
-		code += '<td><button class="btn btn-danger" type="submit" onclick="markGroup2(this, \'VSList\', 64,\' Del \');" name="VSList"><i class="icon icon-minus icon-white"></i></button></td>';
+		code += '<td><button class="btn btn-danger" type="submit" onclick="markGroupVS(this, 64,\' Del \');" name="VSList"><i class="icon icon-minus icon-white"></i></button></td>';
 		code += '</tr>'
 	}
-
 	$j('#VSList_Block').append(code);
 }
 
@@ -415,7 +448,42 @@ function changeBgColor(obj, num){
 	else
 		$("row" + num).style.background='whiteSmoke';
 }
+
+function valid_IP_subnet(obj){
+	var ipPattern1 = new RegExp("(^([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})\\.(\\*)$)", "gi");
+	var ipPattern2 = new RegExp("(^([0-9]{1,3})\\.([0-9]{1,3})\\.(\\*)\\.(\\*)$)", "gi");
+	var ipPattern3 = new RegExp("(^([0-9]{1,3})\\.(\\*)\\.(\\*)\\.(\\*)$)", "gi");
+	var ipPattern4 = new RegExp("(^(\\*)\\.(\\*)\\.(\\*)\\.(\\*)$)", "gi");
+	var parts = obj.value.split(".");
+	if(!ipPattern1.test(obj.value) && !ipPattern2.test(obj.value) && !ipPattern3.test(obj.value) && !ipPattern4.test(obj.value)){
+		alert(obj.value + " <#JS_validip#>");
+		obj.focus();
+		obj.select();
+		return false;
+	}else if(parts[0] == 0 || parts[0] > 255 || parts[1] > 255 || parts[2] > 255){
+		alert(obj.value + " <#JS_validip#>");
+		obj.focus();
+		obj.select();
+		return false;
+	}else
+		return true;
+}
+
 </script>
+<style>
+.table-list td {
+    padding: 6px 4px;
+}
+.table-list input,
+.table-list select {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+.table-list tr:nth-child(2) {
+    font-size: 75%;
+    font-weight: bold;
+}
+</style>
 </head>
 
 <body onload="initial();" onunLoad="return unload_body();">
@@ -573,25 +641,29 @@ function changeBgColor(obj, num){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="VSList_Block">
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table table-list" id="VSList_Block">
                                         <tr>
                                             <th colspan="7" style="background-color: #E3E3E3;"><#IPConnection_VSList_title#></th>
                                         </tr>
                                         <tr>
-                                            <th><#IPConnection_VServerDescript_itemname#></th>
-                                            <th width="15%"><#IPConnection_VServerPort_itemname#></th>
-                                            <th width="23%"><#IPConnection_VServerIP_itemname#></th>
-                                            <th width="10%"><#IPConnection_VServerLPort_itemname#></th>
-                                            <th width="12%"><#IPConnection_VServerProto_itemname#></th>
-                                            <th width="10%"><#IPConnection_VServerPNo_itemname#></th>
-                                            <th width="5%">&nbsp;</th>
+                                            <td><#IPConnection_VServerDescript_itemname#></td>
+                                            <td width="17%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,3);"><#IPConnection_VServerSrcIP_itemname#></a></td>
+                                            <td width="15%" id="col_port_proto"><#IPConnection_VServerPort_itemname#></td>
+                                            <td width="22%"><#IPConnection_VServerIP_itemname#></td>
+                                            <td width="10%"><#IPConnection_VServerLPort_itemname#></td>
+                                            <td width="11%"><#IPConnection_VServerProto_itemname#></td>
+                                            <td width="5%">&nbsp;</td>
                                         </tr>
                                         <tr>
                                             <td>
-                                                <input type="text" size="12" maxlength="30" name="vts_desc_x_0" class="span12" onkeypress="return is_string(this)" />
+                                                <input type="text" size="12" class="span12" maxlength="30" name="vts_desc_x_0" onkeypress="return is_string(this)" />
+                                            </td>
+                                            <td>
+                                                <input type="text" size="12" class="span12" maxlength="15" name="vts_srcip_x_0" onkeypress="return is_string(this)"/>
                                             </td>
                                             <td>
                                                 <input type="text" size="10" class="span12" name="vts_port_x_0" onkeypress="return is_portrange(this)" />
+                                                <input style="display:none" type="text" class="span12" maxlength="3" size="3" name="vts_protono_x_0" onkeypress="return is_number(this)" />
                                             </td>
                                             <td>
                                                 <div id="ClientList_Block" class="alert alert-info ddown-list"></div>
@@ -601,28 +673,25 @@ function changeBgColor(obj, num){
                                                 </div>
                                             </td>
                                             <td>
-                                                <input type="text" maxlength="5" size="5" class="span12" name="vts_lport_x_0" onkeypress="return is_number(this)" />
+                                                <input type="text" size="5" class="span12" maxlength="5" name="vts_lport_x_0" onkeypress="return is_number(this)" />
                                             </td>
                                             <td>
                                                 <select name="vts_proto_x_0" class="span12" onchange="change_proto()">
                                                     <option value="TCP">TCP</option>
                                                     <option value="UDP">UDP</option>
-                                                    <option value="BOTH">BOTH</option>
-                                                    <option value="OTHER">OTHER</option>
+                                                    <option value="BOTH">Both</option>
+                                                    <option value="OTHER">Other</option>
                                                 </select>
                                             </td>
                                             <td>
-                                                <input type="text" class="span12" maxlength="3" size="3" name="vts_protono_x_0" onkeypress="return is_number(this)" />
-                                            </td>
-                                            <td>
-                                                <button class="btn" type="submit" onclick="return markGroup2(this, 'VSList', 64, ' Add ');" name="VSList2"><i class="icon icon-plus"></i></button>
+                                                <button class="btn" type="submit" onclick="return markGroupVS(this, 64, ' Add ');" name="VSList2"><i class="icon icon-plus"></i></button>
                                             </td>
                                         </tr>
                                     </table>
 
                                     <table class="table">
                                         <tr>
-                                            <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary"  style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
+                                            <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
                                         </tr>
                                     </table>
                                 </div>

@@ -31,6 +31,8 @@ $j(document).ready(function() {
 </script>
 <script>
 
+var LWFilterList = [<% get_nvram_list("FirewallConfig", "LWFilterList"); %>];
+
 function initial(){
 	show_banner(1);
 	show_menu(5,5,5);
@@ -38,6 +40,7 @@ function initial(){
 
 	change_lw_enable1();
 	change_lw_enable2();
+	showLWFilterList();
 	load_body();
 }
 
@@ -55,8 +58,6 @@ function applyRule(){
 	}
 }
 
-var LWFilterList = [<% get_nvram_list("FirewallConfig", "LWFilterList"); %>];
-
 function validForm(){
 	if((document.form.fw_lw_enable_x[0].checked ==true || document.form.fw_lw_enable_x_1[0].checked ==true ) 
 		&& (document.form.filter_lw_date_x_Sun.checked ==false)
@@ -71,70 +72,71 @@ function validForm(){
 			document.form.fw_lw_enable_x[1].checked=true;
 			return false;
 	}
-	
-if(document.form.fw_lw_enable_x[0].checked == 1){
-	if(!validate_timerange(document.form.filter_lw_time_x_starthour, 0)
+
+	if(document.form.fw_lw_enable_x[0].checked == 1){
+		if(!validate_timerange(document.form.filter_lw_time_x_starthour, 0)
 			|| !validate_timerange(document.form.filter_lw_time_x_startmin, 1)
 			|| !validate_timerange(document.form.filter_lw_time_x_endhour, 2)
 			|| !validate_timerange(document.form.filter_lw_time_x_endmin, 3)
-			){	return false; }
+			)
+		return false;
 
-	var starttime = eval(document.form.filter_lw_time_x_starthour.value + document.form.filter_lw_time_x_startmin.value);
-	var endtime = eval(document.form.filter_lw_time_x_endhour.value + document.form.filter_lw_time_x_endmin.value);
-	
-	if(starttime > endtime){
-		alert("<#FirewallConfig_URLActiveTime_itemhint#>");
-		document.form.filter_lw_time_x_startmin.value="00";
-		document.form.filter_lw_time_x_starthour.value="00";
-		return false;  
-	}else if(starttime == endtime){
-		alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
-		document.form.filter_lw_time_x_startmin.value="00";
-		document.form.filter_lw_time_x_starthour.value="00";
-		return false;  
+		var starttime = eval(document.form.filter_lw_time_x_starthour.value + document.form.filter_lw_time_x_startmin.value);
+		var endtime = eval(document.form.filter_lw_time_x_endhour.value + document.form.filter_lw_time_x_endmin.value);
+
+		if(starttime > endtime){
+			alert("<#FirewallConfig_URLActiveTime_itemhint#>");
+			document.form.filter_lw_time_x_startmin.value="00";
+			document.form.filter_lw_time_x_starthour.value="00";
+			return false;
+		}else if(starttime == endtime){
+			alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
+			document.form.filter_lw_time_x_startmin.value="00";
+			document.form.filter_lw_time_x_starthour.value="00";
+			return false;
+		}
 	}
 
-}
-
-if(document.form.fw_lw_enable_x_1[0].checked == 1){
-	if(!validate_timerange(document.form.filter_lw_time_x_1_starthour, 0)
+	if(document.form.fw_lw_enable_x_1[0].checked == 1){
+		if(!validate_timerange(document.form.filter_lw_time_x_1_starthour, 0)
 			|| !validate_timerange(document.form.filter_lw_time_x_1_startmin, 1)
 			|| !validate_timerange(document.form.filter_lw_time_x_1_endhour, 2)
 			|| !validate_timerange(document.form.filter_lw_time_x_1_endmin, 3)
-			){	return false; }
-
-	var starttime_1 = eval(document.form.filter_lw_time_x_1_starthour.value + document.form.filter_lw_time_x_1_startmin.value);
-	var endtime_1 = eval(document.form.filter_lw_time_x_1_endhour.value + document.form.filter_lw_time_x_1_endmin.value);
-	
-	if(starttime_1 > endtime_1){
-		alert("<#FirewallConfig_URLActiveTime_itemhint#>");
-		document.form.filter_lw_time_x_1_startmin.value="00";
-		document.form.filter_lw_time_x_1_starthour.value="00";
-		return false;  
-	}else	if(starttime_1 == endtime_1){
-		alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
-		document.form.filter_lw_time_x_1_startmin.value="00";
-		document.form.filter_lw_time_x_1_starthour.value="00";
+			)
 		return false;
-	}
-}
 
-if(document.form.fw_lw_enable_x[0].checked == 1 && document.form.fw_lw_enable_x_1[0].checked == 1){
-	if(starttime < starttime_1){
-		if(!(endtime < starttime_1)){
-			alert("<#FirewallConfig_URLActiveTime_itemhint4#>");
-			return false; 
+		var starttime_1 = eval(document.form.filter_lw_time_x_1_starthour.value + document.form.filter_lw_time_x_1_startmin.value);
+		var endtime_1 = eval(document.form.filter_lw_time_x_1_endhour.value + document.form.filter_lw_time_x_1_endmin.value);
+
+		if(starttime_1 > endtime_1){
+			alert("<#FirewallConfig_URLActiveTime_itemhint#>");
+			document.form.filter_lw_time_x_1_startmin.value="00";
+			document.form.filter_lw_time_x_1_starthour.value="00";
+			return false;
+		}else if(starttime_1 == endtime_1){
+			alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
+			document.form.filter_lw_time_x_1_startmin.value="00";
+			document.form.filter_lw_time_x_1_starthour.value="00";
+			return false;
 		}
-	}else if(starttime_1 < starttime){
-		if(!(endtime_1 < starttime)){
-			alert("<#FirewallConfig_URLActiveTime_itemhint4#>");
-			return false; 
-		}
-	}else if(starttime == starttime_1){
-		alert("<#FirewallConfig_URLActiveTime_itemhint4#>");
-		return false;
 	}
-}
+
+	if(document.form.fw_lw_enable_x[0].checked == 1 && document.form.fw_lw_enable_x_1[0].checked == 1){
+		if(starttime < starttime_1){
+			if(!(endtime < starttime_1)){
+				alert("<#FirewallConfig_URLActiveTime_itemhint4#>");
+				return false; 
+			}
+		}else if(starttime_1 < starttime){
+			if(!(endtime_1 < starttime)){
+				alert("<#FirewallConfig_URLActiveTime_itemhint4#>");
+				return false; 
+			}
+		}else if(starttime == starttime_1){
+			alert("<#FirewallConfig_URLActiveTime_itemhint4#>");
+			return false;
+		}
+	}
 
 	if(!validate_portlist(document.form.filter_lw_icmp_x, 'filter_lw_icmp_x'))
 		return false;
@@ -171,23 +173,6 @@ function change_lw_enable2(){
 	showhide_div('row_lw_time2', v);
 }
 
-function valid_subnet(){
-	if(document.form.filter_lw_srcip_x_0.value.split("*").length >= 2){
-		if(!valid_IP_subnet(document.form.filter_lw_srcip_x_0))
-			return false;
-	}else if(!valid_IP_form(document.form.filter_lw_srcip_x_0))
-		return false;
-
-	if(document.form.filter_lw_dstip_x_0.value.split("*").length >= 2){
-		if(!valid_IP_subnet(document.form.filter_lw_dstip_x_0))
-			return false;
-	}else if(!valid_IP_form(document.form.filter_lw_dstip_x_0))
-		return false;
-
-	return true;
-}
-
-
 function valid_IP_subnet(obj){
 	var ipPattern1 = new RegExp("(^([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})\\.(\\*)$)", "gi");
 	var ipPattern2 = new RegExp("(^([0-9]{1,3})\\.([0-9]{1,3})\\.(\\*)\\.(\\*)$)", "gi");
@@ -209,29 +194,127 @@ function valid_IP_subnet(obj){
 }
 
 function valid_IP_form(obj){
-	if(obj.value == ""){
+	if(obj.value == "")
 		return true;
-	}else{
-		if(!validate_ipaddr_final(obj, obj.name)){
-			obj.focus();
-			obj.select();
+	if(!validate_ipaddr_final(obj, ""))
+		return false;
+	return true;
+}
+
+function markGroupLWF(o, c, b) {
+	document.form.group_id.value = "LWFilterList";
+	if(b == " Add "){
+		if (document.form.filter_lw_num_x_0.value >= c){
+			alert("<#JS_itemlimit1#> " + c + " <#JS_itemlimit2#>");
 			return false;
-		}else
-			return true;
+		}
+		if(document.form.filter_lw_srcip_x_0.value.split("*").length >= 2){
+			if(!valid_IP_subnet(document.form.filter_lw_srcip_x_0))
+				return false;
+		}else if(!valid_IP_form(document.form.filter_lw_srcip_x_0))
+			return false;
+		if (!validate_iprange(document.form.filter_lw_srcip_x_0, ""))
+			return false;
+		if (!validate_portrange(document.form.filter_lw_srcport_x_0, ""))
+			return false;
+		if(document.form.filter_lw_dstip_x_0.value.split("*").length >= 2){
+			if(!valid_IP_subnet(document.form.filter_lw_dstip_x_0))
+				return false;
+		}else if(!valid_IP_form(document.form.filter_lw_dstip_x_0))
+			return false;
+		if (!validate_iprange(document.form.filter_lw_dstip_x_0, ""))
+			return false;
+		if (!validate_portrange(document.form.filter_lw_dstport_x_0, ""))
+			return false;
+		if (document.form.filter_lw_srcip_x_0.value == "" &&
+				document.form.filter_lw_srcport_x_0.value == "" &&
+				document.form.filter_lw_dstip_x_0.value == "" &&
+				document.form.filter_lw_dstport_x_0.value == ""){
+			alert("<#JS_fieldblank#>");
+			return false;
+		}
+		for (var i = 0; i < LWFilterList.length; i++) {
+			if (document.form.filter_lw_srcip_x_0.value == LWFilterList[i][0] &&
+					document.form.filter_lw_srcport_x_0.value == LWFilterList[i][1] &&
+					document.form.filter_lw_dstip_x_0.value == LWFilterList[i][2] &&
+					document.form.filter_lw_dstport_x_0.value == LWFilterList[i][3] &&
+					document.form.filter_lw_proto_x_0.value == LWFilterList[i][4]) {
+				alert("<#JS_duplicate#>");
+				return false;
+			}
+		}
 	}
+	pageChanged = 0;
+	document.form.action_mode.value = b;
+	return true;
+}
+
+function showLWFilterList(){
+	var code = '';
+	var srcaddr, srcport, dstaddr, dstport;
+	if(LWFilterList.length == 0)
+		code +='<tr><td colspan="6" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
+	else{
+	    for(var i = 0; i < LWFilterList.length; i++){
+		srcaddr = "*";
+		dstaddr = "*";
+		srcport = "*";
+		dstport = "*";
+		if (LWFilterList[i][0] != null && LWFilterList[i][0] != "")
+			srcaddr = LWFilterList[i][0];
+		if (LWFilterList[i][1] != null && LWFilterList[i][1] != "")
+			srcport = LWFilterList[i][1];
+		if (LWFilterList[i][2] != null && LWFilterList[i][2] != "")
+			dstaddr = LWFilterList[i][2];
+		if (LWFilterList[i][3] != null && LWFilterList[i][3] != "")
+			dstport = LWFilterList[i][3];
+		code +='<tr id="row' + i + '">';
+		code +='<td>&nbsp;'             + srcaddr + '</td>';
+		code +='<td width="15%">&nbsp;' + srcport + '</td>';
+		code +='<td width="25%">&nbsp;' + dstaddr + '</td>';
+		code +='<td width="15%">&nbsp;' + dstport + '</td>';
+		code +='<td width="15%">&nbsp;' + LWFilterList[i][4] + '</td>';
+		code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="LWFilterList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
+		code +='</tr>';
+	    }
+		code += '<tr>';
+		code += '<td colspan="5">&nbsp;</td>'
+		code += '<td><button class="btn btn-danger" type="submit" onclick="markGroupLWF(this,64,\' Del \');" name="LWFilterList"><i class="icon icon-minus icon-white"></i></button></td>';
+		code += '</tr>'
+	}
+	$j('#LWFilterList_Block').append(code);
+}
+
+function changeBgColor(obj, num){
+	if(obj.checked)
+		$("row" + num).style.background='#D9EDF7';
+	else
+		$("row" + num).style.background='whiteSmoke';
 }
 
 </script>
 <style>
-    .nav-tabs > li > a {
-          padding-right: 6px;
-          padding-left: 6px;
-    }
+.nav-tabs > li > a {
+    padding-right: 6px;
+    padding-left: 6px;
+}
 
-    .radio.inline + .radio.inline,
-    .checkbox.inline + .checkbox.inline {
-      margin-left: 3px;
-    }
+.radio.inline + .radio.inline,
+.checkbox.inline + .checkbox.inline {
+    margin-left: 3px;
+}
+.table-list td {
+    padding: 6px 4px;
+}
+.table-list input,
+.table-list select {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+.table-list tr:nth-child(2) {
+    font-size: 75%;
+    font-weight: bold;
+}
 </style>
 </head>
 
@@ -370,55 +453,63 @@ function valid_IP_form(obj){
                                                 <input type="text" maxlength="32" class="input" size="32" name="filter_lw_icmp_x" value="<% nvram_get_x("FirewallConfig","filter_lw_icmp_x"); %>" onKeyPress="return is_portlist(this)">
                                             </td>
                                         </tr>
-                                    </table>
-
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="6" style="background-color: #E3E3E3;" id="LWFilterList"><#FirewallConfig_LWFilterList_groupitemdesc#></th>
-                                        </tr>
-                                        <tr>
-                                            <th colspan="2"><#FirewallConfig_LWFilterList_widzarddesc#></th>
+                                            <th><#FirewallConfig_LWFilterList_widzarddesc#></th>
                                             <td>
-                                                <select name="LWKnownApps" class="span12" onChange="change_wizard(this, 'LWKnownApps');">
+                                                <select name="LWKnownApps"  class="input" onChange="change_wizard(this, 'LWKnownApps');">
                                                     <option value="User Defined">User Defined</option>
                                                 </select>
                                             </td>
-                                            <td colspan="3">&nbsp;</td>
-                                            <!--<td rowspan="3" valign="bottom" bgcolor="#FFFFFF" style="width:50px;">
-                                                <input class="button" type="submit" onclick="if(validForm()){return markGroup(this, 'LWFilterList', 64, ' Add ');}" name="LWFilterList" value="<#CTL_add#>" style="padding:0px; margin:0px;"/>
-                                            </td> -->
+                                        </tr>
+                                    </table>
+
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table table-list" id="LWFilterList_Block">
+                                        <tr>
+                                            <th colspan="6" style="background-color: #E3E3E3;"><#FirewallConfig_LWFilterList_groupitemdesc#></th>
                                         </tr>
                                         <tr>
-                                            <th width="25%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,3);"><#FirewallConfig_LanWanSrcIP_itemname#></a></th>
-                                            <th width="15%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,2);"><#FirewallConfig_LanWanSrcPort_itemname#></a></th>
-                                            <th width="25%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,3);"><#FirewallConfig_LanWanDstIP_itemname#></a></th>
-                                            <th width="15%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,2);"><#FirewallConfig_LanWanDstPort_itemname#></a></th>
-                                            <th width="15%"><#FirewallConfig_LanWanProFlag_itemname#></th>
-                                            <th width="5%">&nbsp;</th>
+                                            <td><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,3);"><#FirewallConfig_LanWanSrcIP_itemname#></a></td>
+                                            <td width="15%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,2);"><#FirewallConfig_LanWanSrcPort_itemname#></a></td>
+                                            <td width="25%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,3);"><#FirewallConfig_LanWanDstIP_itemname#></a></td>
+                                            <td width="15%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,2);"><#FirewallConfig_LanWanDstPort_itemname#></a></td>
+                                            <td width="15%"><#FirewallConfig_LanWanProFlag_itemname#></td>
+                                            <td width="5%">&nbsp;</td>
                                         </tr>
                                         <tr>
-                                            <td><input type="text" maxlength="15" class="span12" size="14" name="filter_lw_srcip_x_0" onKeyPress="return is_iprange(this)" onKeyUp="change_iprange(this)"></td>
-                                            <td><input type="text" maxlength="11" class="span12" size="10" name="filter_lw_srcport_x_0" value="" onKeyPress="return is_portrange(this)"></td>
-                                            <td><input type="text" maxlength="15" class="span12" size="14" name="filter_lw_dstip_x_0" onKeyPress="return is_iprange(this)" onKeyUp="change_iprange(this)"></td>
-                                            <td><input type="text" maxlength="11" class="span12" size="10" name="filter_lw_dstport_x_0" value="" onKeyPress="return is_portrange(this)"></td>
-                                            <td><select name="filter_lw_proto_x_0" class="span12"><option value="TCP" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP","selected", 0); %>>TCP</option><option value="TCP ALL" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP ALL","selected", 0); %>>TCP ALL</option><option value="TCP SYN" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP SYN","selected", 0); %>>TCP SYN</option><option value="TCP ACK" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP ACK","selected", 0); %>>TCP ACK</option><option value="TCP FIN" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP FIN","selected", 0); %>>TCP FIN</option><option value="TCP RST" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP RST","selected", 0); %>>TCP RST</option><option value="TCP URG" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP URG","selected", 0); %>>TCP URG</option><option value="TCP PSH" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP PSH","selected", 0); %>>TCP PSH</option><option value="UDP" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "UDP","selected", 0); %>>UDP</option></select></td>
-                                            <td><button class="btn" type="submit" onclick="if(valid_subnet()){return markGroup(this, 'LWFilterList', 64, ' Add ');}" name="LWFilterList"><i class="icon icon-plus"></i></button></td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="5">
-                                                <select size="8" class="span12" name="LWFilterList_s" multiple="true" style="font-size:12px; font-weight:bold;">
-                                                    <% nvram_get_table_x("FirewallConfig","LWFilterList"); %>
+                                            <td>
+                                                <input type="text" maxlength="15" class="span12" size="14" name="filter_lw_srcip_x_0" onKeyPress="return is_iprange(this)" onKeyUp="change_iprange(this)">
+                                            </td>
+                                            <td>
+                                                <input type="text" maxlength="11" class="span12" size="10" name="filter_lw_srcport_x_0" value="" onKeyPress="return is_portrange(this)">
+                                            </td>
+                                            <td>
+                                                <input type="text" maxlength="15" class="span12" size="14" name="filter_lw_dstip_x_0" onKeyPress="return is_iprange(this)" onKeyUp="change_iprange(this)">
+                                            </td>
+                                            <td>
+                                                <input type="text" maxlength="11" class="span12" size="10" name="filter_lw_dstport_x_0" value="" onKeyPress="return is_portrange(this)">
+                                            </td>
+                                            <td>
+                                                <select name="filter_lw_proto_x_0" class="span12">
+                                                    <option value="TCP" <% nvram_match_list_x("","filter_lw_proto_x", "TCP","selected", 0); %>>TCP</option>
+                                                    <option value="TCP ALL" <% nvram_match_list_x("","filter_lw_proto_x", "TCP ALL","selected", 0); %>>TCP ALL</option>
+                                                    <option value="TCP SYN" <% nvram_match_list_x("","filter_lw_proto_x", "TCP SYN","selected", 0); %>>TCP SYN</option>
+                                                    <option value="TCP ACK" <% nvram_match_list_x("","filter_lw_proto_x", "TCP ACK","selected", 0); %>>TCP ACK</option>
+                                                    <option value="TCP FIN" <% nvram_match_list_x("","filter_lw_proto_x", "TCP FIN","selected", 0); %>>TCP FIN</option>
+                                                    <option value="TCP RST" <% nvram_match_list_x("","filter_lw_proto_x", "TCP RST","selected", 0); %>>TCP RST</option>
+                                                    <option value="TCP URG" <% nvram_match_list_x("","filter_lw_proto_x", "TCP URG","selected", 0); %>>TCP URG</option>
+                                                    <option value="TCP PSH" <% nvram_match_list_x("","filter_lw_proto_x", "TCP PSH","selected", 0); %>>TCP PSH</option>
+                                                    <option value="UDP"     <% nvram_match_list_x("","filter_lw_proto_x", "UDP","selected", 0); %>>UDP</option>
                                                 </select>
                                             </td>
                                             <td>
-                                                <button class="btn btn-danger" type="submit" onclick="return markGroup(this, 'LWFilterList', 64, ' Del ');" name="LWFilterList2"><i class="icon icon-minus icon-white"></i></button>
+                                                <button class="btn" type="submit" onclick="return markGroupLWF(this, 64, ' Add ');" name="LWFilterList2"><i class="icon icon-plus"></i></button>
                                             </td>
                                         </tr>
+                                    </table>
+
+                                    <table class="table">
                                         <tr>
-                                            <td colspan="6">
-                                                <br />
-                                                <center><input class="btn btn-primary" style="width: 219px" onclick="applyRule();" type="button" value="<#CTL_apply#>" /></center>
-                                            </td>
+                                            <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
                                         </tr>
                                     </table>
                                 </div>

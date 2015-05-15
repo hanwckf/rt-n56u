@@ -58,12 +58,11 @@ function done_validating(action){
 
 function change_sr_enabled(){
 	var v = document.form.sr_enable_x[0].checked;
-	showhide_div('tbl_sroutes', v);
+	showhide_div('GWStaticList_Block', v);
 }
 
-function GWStatic_markGroup(o, s, c, b) {
-	document.form.group_id.value = s;
-	
+function GWStatic_markGroup(o, c, b) {
+	document.form.group_id.value = "GWStatic";
 	if(b == " Add "){
 		if (document.form.sr_num_x_0.value > c){
 			alert("<#JS_itemlimit1#> " + c + " <#JS_itemlimit2#>");
@@ -72,32 +71,32 @@ function GWStatic_markGroup(o, s, c, b) {
 		else if (!validate_ipaddr_final(document.form.sr_ipaddr_x_0, '') ||
 				 !validate_ipaddr_final(document.form.sr_netmask_x_0, '') ||
 				 !validate_ipaddr_final(document.form.sr_gateway_x_0, '')){
-				 return false;
+			return false;
 		}
 		else if (document.form.sr_ipaddr_x_0.value == ""){
-				 alert("<#JS_fieldblank#>");
-				 document.form.sr_ipaddr_x_0.focus();
-				 return false;
+			alert("<#JS_fieldblank#>");
+			document.form.sr_ipaddr_x_0.focus();
+			return false;
 		}
 		else if (document.form.sr_netmask_x_0.value == ""){
-				 alert("<#JS_fieldblank#>");
-				 document.form.sr_netmask_x_0.focus();
-				 return false;
+			alert("<#JS_fieldblank#>");
+			document.form.sr_netmask_x_0.focus();
+			return false;
 		}
 		else if (document.form.sr_gateway_x_0.value == ""){
-				 alert("<#JS_fieldblank#>");
-				 document.form.sr_gateway_x_0.focus();
-				 return false;
+			alert("<#JS_fieldblank#>");
+			document.form.sr_gateway_x_0.focus();
+			return false;
 		}
 		else if (GWStatic_validate_duplicate_noalert(GWStaticList, document.form.sr_ipaddr_x_0.value, 16, 0) &&
 				 GWStatic_validate_duplicate_noalert(GWStaticList, document.form.sr_netmask_x_0.value, 16, 1) &&
 				 GWStatic_validate_duplicate_noalert(GWStaticList, document.form.sr_gateway_x_0.value, 16, 2) &&
-				 GWStatic_validate_duplicate(GWStaticList, document.form.sr_if_x_0.value, 2, 4)
-				) return false;  //Check the IP, Submask, gateway and Interface is duplicate or not.
+				 GWStatic_validate_duplicate(GWStaticList, document.form.sr_if_x_0.value, 2, 4)){
+			return false;
+		}
 	}
 
 	pageChanged = 0;
-
 	document.form.action_mode.value = b;
 	return true;
 }
@@ -105,7 +104,7 @@ function GWStatic_markGroup(o, s, c, b) {
 function GWStatic_validate_duplicate_noalert(o, v, l, off){
 	for (var i=0; i < o.length; i++)
 	{
-		if (entry_cmp(o[i][off], v, l)==0){ 
+		if (entry_cmp(o[i][off], v, l)==0){
 			return true;
 		}
 	}
@@ -123,32 +122,46 @@ function GWStatic_validate_duplicate(o, v, l, off){
 }
 
 function showGWStaticList(){
-	var code = "";
-	code +='<table width="100%" cellspacing="0" cellpadding="3" class="table">';
+	var code = '';
 	if(GWStaticList.length == 0)
 		code +='<tr><td colspan="6" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
 	    for(var i = 0; i < GWStaticList.length; i++){
 		code +='<tr id="row' + i + '">';
-		code +='<td width="28%">' + GWStaticList[i][0] + '</td>';	//IP
-		code +='<td width="22%">' + GWStaticList[i][1] + '</td>';	//Mask
-		code +='<td width="22%">' + GWStaticList[i][2] + '</td>';	//Gateway
-		code +='<td width="10%">' + GWStaticList[i][3] + '</td>';	//Metric
-		code +='<td width="13%">' + GWStaticList[i][4] + '</td>';	//Interface
-		code +='<td width="5%"><input type="checkbox" name="GWStatic_s" value="' + i + '" id="check' + i + '"></td>';
+		code +='<td width="28%">&nbsp;' + GWStaticList[i][0] + '</td>';
+		code +='<td width="22%">&nbsp;' + GWStaticList[i][1] + '</td>';
+		code +='<td width="22%">&nbsp;' + GWStaticList[i][2] + '</td>';
+		code +='<td width="10%">&nbsp;' + GWStaticList[i][3] + '</td>';
+		code +='<td width="13%">&nbsp;' + GWStaticList[i][4] + '</td>';
+		code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="GWStatic_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
 		code +='</tr>';
 	    }
 		code += '<tr>';
 		code += '<td colspan="5">&nbsp;</td>'
-		code += '<td style="padding-left: 0px; margin-right: 0px;" ><button class="btn btn-danger" type="submit" onclick="markGroup(this, \'GWStatic\', 64,\' Del \');"><i class="icon icon-minus icon-white"></i></button></td>';
+		code += '<td><button class="btn btn-danger" type="submit" onclick="GWStatic_markGroup(this, 64,\' Del \');" name="GWStatic"><i class="icon icon-minus icon-white"></i></button></td>';
 		code += '</tr>'
 	}
-	code +='</table>';
-	
-	$("GWStaticList_Block").innerHTML = code;
+	$j('#GWStaticList_Block').append(code);
+}
+
+function changeBgColor(obj, num){
+	if(obj.checked)
+		$("row" + num).style.background='#D9EDF7';
+	else
+		$("row" + num).style.background='whiteSmoke';
 }
 
 </script>
+<style>
+.table-list td {
+    padding: 6px 8px;
+}
+.table-list input,
+.table-list select {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+</style>
 </head>
 
 <body onload="initial();" onunLoad="return unload_body();">
@@ -238,7 +251,7 @@ function showGWStaticList(){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_sroutes">
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table table-list" id="GWStaticList_Block">
                                         <tr>
                                             <th colspan="6" style="background-color: #E3E3E3;"><#RouterConfig_GWStatic_groupitemdesc#></th>
                                         </tr>
@@ -263,15 +276,11 @@ function showGWStaticList(){
                                                 </select>
                                             </td>
                                             <td>
-                                                <button class="btn" type="submit" onClick="return GWStatic_markGroup(this, 'GWStatic', 64, ' Add ');" name="GWStatic"><i class="icon icon-plus"></i></button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="6" style="border-top: 0 none; padding: 0px;">
-                                                <div id="GWStaticList_Block"></div>
+                                                <button class="btn" type="submit" onClick="return GWStatic_markGroup(this, 64, ' Add ');" name="GWStatic2"><i class="icon icon-plus"></i></button>
                                             </td>
                                         </tr>
                                     </table>
+
                                     <table class="table">
                                         <tr>
                                             <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>

@@ -2,8 +2,10 @@
 #ifndef	__RDM__H__
 #define	__RDM__H__
 
-#include <linux/fs.h>       /* everything... */
+#ifdef __KERNEL__
+#include <linux/fs.h>
 #include <asm/rt2880/rt_mmap.h>
+#endif
 
 #define RTPRIV_ICOTL_SYSCTL		(SIOCIWFIRSTPRIV + 0x01) // system control
 #define RTPRIV_ICOTL_TIMER		(SIOCIWFIRSTPRIV + 0x02) // timer

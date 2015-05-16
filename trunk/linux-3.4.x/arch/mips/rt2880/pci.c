@@ -615,8 +615,9 @@ int __init init_ralink_pci(void)
 	val |= (0x1<<GPIO_PCIE_PORT2);
 #endif
 	mdelay(50);
-	RALINK_GPIO_DATA0 &= ~(val);			// fall PERST_N pin (reset peripherals)
 	RALINK_GPIO_CTRL0 |= val;			// switch PERST_N pin to output mode
+	mdelay(50);
+	RALINK_GPIO_DATA0 &= ~(val);			// fall PERST_N pin (reset peripherals)
 #else /* !defined (GPIO_PERST) */
 	RALINK_GPIOMODE &= ~(0x3<<PCIE_SHARE_PIN_SW);	// fall PERST_N pin (reset peripherals)
 #endif

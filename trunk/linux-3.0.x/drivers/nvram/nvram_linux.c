@@ -19,10 +19,12 @@
 #include <linux/string.h>
 #include <linux/spinlock.h>
 #include <linux/sched.h>
+#include <linux/slab.h>
 
 #include <linux/mm.h>
 #include <linux/version.h>
 #include <linux/proc_fs.h>
+#include <linux/seq_file.h>
 
 #include <linux/fs.h>
 #include <linux/mtd/mtd.h>
@@ -486,15 +488,15 @@ static long dev_nvram_ioctl(struct file *file, unsigned int req, unsigned long a
 	return -EINVAL;
 }
 
-static int
-nvram_proc_version_read(char *buf, char **start, off_t offset, int count, int *eof, void *data)
+static int nvram_ver_seq_show(struct seq_file *m, void *v)
 {
-	int len = 0;
-	struct mtd_info *nvram_mtd = get_mtd_device_nm(MTD_NVRAM_NAME);
+	struct mtd_info *nvram_mtd;
 
-	len += snprintf (buf+len, count-len, "nvram driver : v" NVRAM_DRIVER_VERSION "\n");
-	len += snprintf (buf+len, count-len, "nvram space  : 0x%x\n", NVRAM_SPACE);
-	len += snprintf (buf+len, count-len, "major number : %d\n", nvram_major);
+	seq_printf(m, "nvram driver : v%s\n", NVRAM_DRIVER_VERSION);
+	seq_printf(m, "nvram space  : %d\n", NVRAM_SPACE);
+	seq_printf(m, "major number : %d\n", nvram_major);
+
+	nvram_mtd = get_mtd_device_nm(MTD_NVRAM_NAME);
 	if (!IS_ERR(nvram_mtd)) {
 		char type[24];
 		
@@ -509,21 +511,32 @@ nvram_proc_version_read(char *buf, char **start, off_t offset, int count, int *e
 		else
 			snprintf(type, sizeof(type), "Unknown (%d)", nvram_mtd->type);
 		
-		len += snprintf (buf+len, count-len, "MTD\n");
-		len += snprintf (buf+len, count-len, "  index      : %d\n", nvram_mtd->index);
-		len += snprintf (buf+len, count-len, "  name       : %s\n", nvram_mtd->name);
-		len += snprintf (buf+len, count-len, "  type       : %s\n", type);
-		len += snprintf (buf+len, count-len, "  flags      : 0x%x\n", nvram_mtd->flags);
-		len += snprintf (buf+len, count-len, "  size       : 0x%llx\n", nvram_mtd->size);
-		len += snprintf (buf+len, count-len, "  erasesize  : 0x%x\n", nvram_mtd->erasesize);
-		len += snprintf (buf+len, count-len, "  writesize  : 0x%x\n", nvram_mtd->writesize);
+		seq_printf(m, "MTD\n");
+		seq_printf(m, "  index      : %d\n", nvram_mtd->index);
+		seq_printf(m, "  name       : %s\n", nvram_mtd->name);
+		seq_printf(m, "  type       : %s\n", type);
+		seq_printf(m, "  flags      : 0x%x\n", nvram_mtd->flags);
+		seq_printf(m, "  size       : 0x%llx\n", nvram_mtd->size);
+		seq_printf(m, "  erasesize  : 0x%x\n", nvram_mtd->erasesize);
+		seq_printf(m, "  writesize  : 0x%x\n", nvram_mtd->writesize);
 		
 		put_mtd_device(nvram_mtd);
 	}
 
-	*eof = 1;
-	return len;
+	return 0;
 }
+
+static int nvram_ver_seq_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, nvram_ver_seq_show, NULL);
+}
+
+static const struct file_operations nvram_ver_seq_fops = {
+	.open		= nvram_ver_seq_open,
+	.read		= seq_read,
+	.llseek		= seq_lseek,
+	.release	= single_release,
+};
 
 static int
 dev_nvram_open(struct inode *inode, struct file * file)
@@ -600,7 +613,13 @@ dev_nvram_init(void)
 
 	nvram_major = NVRAM_MAJOR;
 
-	g_pdentry = create_proc_read_entry("nvram", 0444, NULL, nvram_proc_version_read, NULL);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+	g_pdentry = proc_create("nvram", S_IRUGO, NULL, &nvram_ver_seq_fops);
+#else
+	g_pdentry = create_proc_entry("nvram", S_IRUGO, NULL);
+	if (g_pdentry)
+		g_pdentry->proc_fops = &nvram_ver_seq_fops;
+#endif
 	if (!g_pdentry) {
 		ret = -ENOMEM;
 		goto err;

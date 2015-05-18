@@ -60,6 +60,17 @@
 #include "ac_policy.h"
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
+#define skb_vlan_tag_present(x)			vlan_tx_tag_present(x)
+#define skb_vlan_tag_get(x)			vlan_tx_tag_get(x)
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+#define vlan_insert_tag_set_proto(x,y,z)	__vlan_put_tag(x,z)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
+#define vlan_insert_tag_set_proto(x,y,z)	__vlan_put_tag(x,y,z)
+#endif
+
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 #define DEFAULT_UDP_OFFLOAD	1
 #else
@@ -390,11 +401,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	} else
 #endif
 	{
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-		skb = __vlan_put_tag(skb, __constant_htons(ETH_P_8021Q), VirIfIdx);
-#else
-		skb = __vlan_put_tag(skb, VirIfIdx);
-#endif
+		skb = vlan_insert_tag_set_proto(skb, __constant_htons(ETH_P_8021Q), VirIfIdx);
 		if (unlikely(!skb)) {
 			NAT_DEBUG("HNAT: %s, unable tagging skb, memleak ? (VirIfIdx=%d)\n", __FUNCTION__, VirIfIdx);
 			return 0;
@@ -415,8 +422,8 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 	uint16_t VirIfIdx;
 
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
-	if (vlan_tx_tag_present(skb))
-		VirIfIdx = vlan_tx_tag_get(skb);
+	if (skb_vlan_tag_present(skb))
+		VirIfIdx = skb_vlan_tag_get(skb);
 	else
 #endif
 	if (skb->protocol == __constant_htons(ETH_P_8021Q)) {
@@ -440,7 +447,7 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 
 	/* remove vlan tag from current packet */
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
-	if (vlan_tx_tag_present(skb))
+	if (skb_vlan_tag_present(skb))
 		skb->vlan_tci = 0;
 	else
 #endif
@@ -457,10 +464,10 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 	   so check only if pkt_type PACKET_OTHERHOST */
 	if (skb->pkt_type == PACKET_OTHERHOST) {
 		struct ethhdr *eth = eth_hdr(skb);
-		if (!compare_ether_addr(eth->h_dest, dev->dev_addr))
+		if (ether_addr_equal(eth->h_dest, dev->dev_addr))
 			skb->pkt_type = PACKET_HOST;
 #if defined (CONFIG_RAETH_GMAC2)
-		else if (DstPort[DP_GMAC2] && !compare_ether_addr(eth->h_dest, DstPort[DP_GMAC2]->dev_addr))
+		else if (DstPort[DP_GMAC2] && ether_addr_equal(eth->h_dest, DstPort[DP_GMAC2]->dev_addr))
 			skb->pkt_type = PACKET_HOST;
 #endif
 	}
@@ -652,7 +659,7 @@ int PpeHitBindForceMcastToWiFiHandler(struct sk_buff *skb)
 
 	/* remove vlan tag from PPE packet */
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
-	if (vlan_tx_tag_present(skb))
+	if (skb_vlan_tag_present(skb))
 		skb->vlan_tci = 0;
 	else
 #endif
@@ -1043,7 +1050,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 	if (foe_entry->bfib1.state == BIND)
 		return 1;
 
-	if (eth_type == ETH_P_8021Q || vlan_tx_tag_present(skb)
+	if (eth_type == ETH_P_8021Q || skb_vlan_tag_present(skb)
 #if defined (CONFIG_RAETH_SPECIAL_TAG)
 	 || ((eth_type & 0xFF00) == ETH_P_8021Q)
 #endif
@@ -1051,9 +1058,9 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 		struct vlan_hdr *vh;
 		
 		vlan_layer++;
-		if (vlan_tx_tag_present(skb)) {
+		if (skb_vlan_tag_present(skb)) {
 			vlan_tag = ETH_P_8021Q;
-			vlan1_id = vlan_tx_tag_get(skb);
+			vlan1_id = skb_vlan_tag_get(skb);
 		} else {
 			vh = (struct vlan_hdr *)(skb->data + ETH_HLEN);
 			vlan_tag = eth_type;
@@ -1486,7 +1493,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 	if (foe_entry->bfib1.state == BIND)
 		return 1;
 
-	if (eth_type == ETH_P_8021Q || vlan_tx_tag_present(skb)) {
+	if (eth_type == ETH_P_8021Q || skb_vlan_tag_present(skb)) {
 		struct vlan_hdr *vh;
 		
 		if (eth_type == ETH_P_8021Q) {
@@ -1495,7 +1502,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 			vlan1_id = ntohs(vh->h_vlan_TCI);
 			eth_type = ntohs(vh->h_vlan_encapsulated_proto);
 		} else {
-			vlan1_id = vlan_tx_tag_get(skb);
+			vlan1_id = skb_vlan_tag_get(skb);
 		}
 		
 		/* VLAN + PPPoE */
@@ -1898,6 +1905,8 @@ static void PpeSetFoeHashMode(uint32_t HashMode)
 	}
 #endif
 
+	wmb();
+
 	RegWrite(PPE_FOE_BASE, PpeFoeBasePhy);
 
 	switch (PpeFoeTblSize) {
@@ -2278,6 +2287,8 @@ static int32_t PpeEngStop(void)
 	PpeSetPreAcEbl(0);
 	PpeSetPostAcEbl(0);
 #endif
+
+	wmb();
 
 	/* Unbind FOE table */
 	RegWrite(PPE_FOE_BASE, 0);

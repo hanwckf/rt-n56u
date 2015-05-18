@@ -466,3 +466,5 @@ module_init(webstr_init);
 module_exit(webstr_fini);
 
 MODULE_LICENSE("GPL");
+MODULE_ALIAS("ipt_webstr");
+MODULE_ALIAS("ip6t_webstr");

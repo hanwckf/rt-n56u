@@ -238,11 +238,11 @@ dma_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE *ei_local, int 
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
-	if (vlan_tx_tag_present(skb)) {
+	if (skb_vlan_tag_present(skb)) {
 #if defined (CONFIG_RALINK_MT7621)
-		txd_info4 |= (0x10000 | vlan_tx_tag_get(skb));
+		txd_info4 |= (0x10000 | skb_vlan_tag_get(skb));
 #else
-		u32 vlan_tci = vlan_tx_tag_get(skb);
+		u32 vlan_tci = skb_vlan_tag_get(skb);
 		txd_info4 |= (TX4_DMA_INSV | TX4_DMA_VPRI(vlan_tci));
 		txd_info4 |= (u32)vlan_4k_map[(vlan_tci & VLAN_VID_MASK)];
 #endif

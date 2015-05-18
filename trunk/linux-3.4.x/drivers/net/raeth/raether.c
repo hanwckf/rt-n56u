@@ -6,6 +6,7 @@
 #include <linux/skbuff.h>
 #include <linux/if_vlan.h>
 #include <linux/if_ether.h>
+#include <linux/tcp.h>
 #include <linux/delay.h>
 #include <linux/sched.h>
 
@@ -30,6 +31,21 @@
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 #include "../../../net/nat/hw_nat/ra_nat.h"
 #include "../../../net/nat/hw_nat/foe_fdb.h"
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+#define NETIF_F_HW_VLAN_CTAG_TX		NETIF_F_HW_VLAN_TX
+#define NETIF_F_HW_VLAN_CTAG_RX		NETIF_F_HW_VLAN_RX
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
+#define skb_vlan_tag_present(x)		vlan_tx_tag_present(x)
+#define skb_vlan_tag_get(x)		vlan_tx_tag_get(x)
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,14,0)
+#define prandom_seed(x)			net_srandom(x)
+#define prandom_u32()			net_random()
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
@@ -786,14 +802,20 @@ pdma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 		{
 #if defined (CONFIG_RAETH_NAPI)
 #if defined (CONFIG_RAETH_NAPI_GRO)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+			napi_gro_receive(&ei_local->napi, rx_skb);
+#else
 			if (rx_skb->ip_summed == CHECKSUM_UNNECESSARY)
 				napi_gro_receive(&ei_local->napi, rx_skb);
 			else
+				netif_receive_skb(rx_skb);
 #endif
+#else
 			netif_receive_skb(rx_skb);
+#endif	/* CONFIG_RAETH_NAPI_GRO */
 #else
 			netif_rx(rx_skb);
-#endif
+#endif	/* CONFIG_RAETH_NAPI */
 		}
 		
 		work_done++;
@@ -852,7 +874,11 @@ ei_napi_poll(struct napi_struct *napi, int budget)
 		dispatch_int_status2(ei_local);
 		
 #if defined (CONFIG_RAETH_NAPI_GRO)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+		napi_gro_flush(napi, false);
+#else
 		napi_gro_flush(napi);
+#endif
 #endif
 		/* exit from NAPI poll mode, ack and enable TX/RX interrupts */
 		local_irq_save(flags);
@@ -1183,9 +1209,9 @@ VirtualIF_init(struct net_device *dev_parent)
 	if (i < 0 || ((memcmp(addr.sa_data, zero1, 6) == 0) || (addr.sa_data[0] & 0x1)) ||
 	    (memcmp(addr.sa_data, zero2, 6) == 0)) {
 		unsigned char mac_addr01234[5] = {0x00, 0x0C, 0x43, 0x28, 0x80};
-		net_srandom(jiffies);
+		prandom_seed(jiffies);
 		memcpy(addr.sa_data, mac_addr01234, 5);
-		addr.sa_data[5] = net_random()&0xFF;
+		addr.sa_data[5] = prandom_u32()&0xFF;
 	}
 
 	memcpy(dev->dev_addr, addr.sa_data, dev->addr_len);
@@ -1311,9 +1337,9 @@ ei_init(struct net_device *dev)
 	if (i < 0 || ((memcmp(addr.sa_data, zero1, 6) == 0) || (addr.sa_data[0] & 0x1)) ||
 	    (memcmp(addr.sa_data, zero2, 6) == 0)) {
 		unsigned char mac_addr01234[5] = {0x00, 0x0C, 0x43, 0x28, 0x80};
-		net_srandom(jiffies);
+		prandom_seed(jiffies);
 		memcpy(addr.sa_data, mac_addr01234, 5);
-		addr.sa_data[5] = net_random()&0xFF;
+		addr.sa_data[5] = prandom_u32()&0xFF;
 	}
 
 	memcpy(dev->dev_addr, addr.sa_data, dev->addr_len);

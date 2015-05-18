@@ -313,8 +313,8 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
-	if (vlan_tx_tag_present(skb))
-		txd_info4 |= (0x10000 | vlan_tx_tag_get(skb));
+	if (skb_vlan_tag_present(skb))
+		txd_info4 |= (0x10000 | skb_vlan_tag_get(skb));
 #endif
 
 #if defined (CONFIG_RAETH_SG_DMA_TX)

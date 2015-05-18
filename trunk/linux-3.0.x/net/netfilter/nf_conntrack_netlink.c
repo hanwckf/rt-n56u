@@ -2022,7 +2022,7 @@ ctnetlink_create_expect(struct net *net,
 	if (!help) {
 		if (!cda[CTA_EXPECT_TIMEOUT]) {
 			err = -EINVAL;
-			goto out;
+			goto err_out;
 		}
 		exp->timeout.expires =
 		  jiffies + ntohl(nla_get_be32(cda[CTA_EXPECT_TIMEOUT])) * HZ;
@@ -2049,8 +2049,8 @@ ctnetlink_create_expect(struct net *net,
 	exp->mask.src.u.all = mask.src.u.all;
 
 	err = nf_ct_expect_related_report(exp, pid, report);
+err_out:
 	nf_ct_expect_put(exp);
-
 out:
 	nf_ct_put(nf_ct_tuplehash_to_ctrack(h));
 	return err;

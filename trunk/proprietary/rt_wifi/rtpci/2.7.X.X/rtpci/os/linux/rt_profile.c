@@ -173,8 +173,11 @@ NDIS_STATUS	RTMPReadParametersHook(
 		}
 		else 
 		{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,19,0)
+			ULONG fsize = (ULONG)file_inode(srcf)->i_size;
+#else
 			ULONG fsize = (ULONG)srcf->f_dentry->d_inode->i_size;
-
+#endif
 			/*	buffer = kmalloc(MAX_INI_BUFFER_SIZE, MEM_ALLOC_FLAG); */
 			os_alloc_mem(pAd, (UCHAR **)&buffer, fsize+1);
 

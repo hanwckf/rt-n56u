@@ -849,21 +849,12 @@ static inline void __RtmpOSFSInfoChange(OS_FS_INFO * pOSFSInfo, BOOLEAN bSet)
 		pOSFSInfo->fsuid = current->fsuid;
 		pOSFSInfo->fsgid = current->fsgid;
 		current->fsuid = current->fsgid = 0;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0)
+		pOSFSInfo->fsuid = __kuid_val(current_fsuid());
+		pOSFSInfo->fsgid = __kgid_val(current_fsgid());
 #else
-#ifdef CONFIG_UIDGID_STRICT_TYPE_CHECKS
-
-      kuid_t uid;
-      kgid_t gid;
-
-      uid = current_fsuid();
-      gid = current_fsgid(); 
-      pOSFSInfo->fsuid = (int)uid.val;
-      pOSFSInfo->fsgid = (int)gid.val;
-#else
-		pOSFSInfo->fsuid = (int)(current_fsuid());
-		pOSFSInfo->fsgid = (int)(current_fsgid());
-
-#endif
+		pOSFSInfo->fsuid = current_fsuid();
+		pOSFSInfo->fsgid = current_fsgid();
 #endif
 		pOSFSInfo->fs = get_fs();
 		set_fs(KERNEL_DS);

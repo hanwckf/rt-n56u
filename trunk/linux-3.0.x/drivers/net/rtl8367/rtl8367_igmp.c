@@ -232,7 +232,7 @@ lookup_mcast_member_entry(struct mcast_group_entry* mge, const u8 *haddr, u32 po
 	struct mcast_member_entry *mme, **prev;
 
 	for (prev = &mge->members[port_id], mme = *prev; mme; prev = &mme->next, mme = *prev) {
-		if (compare_ether_addr(mme->haddr, haddr) == 0)
+		if (ether_addr_equal(mme->haddr, haddr))
 			return mme;
 	}
 
@@ -263,7 +263,7 @@ lookup_mcast_group_entry(const u8 *maddr, u16 port_efid, u16 port_cvid_fid, int 
 	hash_idx = MCAST_ADDR_HASH_INDEX(maddr);
 
 	for (prev = &g_mtb.hash[hash_idx], mge = *prev; mge; prev = &mge->next, mge = *prev) {
-		if (mge->efid == port_efid && mge->cvid_fid == port_cvid_fid && compare_ether_addr(mge->maddr, maddr) == 0)
+		if (mge->efid == port_efid && mge->cvid_fid == port_cvid_fid && ether_addr_equal(mge->maddr, maddr))
 			return mge;
 	}
 

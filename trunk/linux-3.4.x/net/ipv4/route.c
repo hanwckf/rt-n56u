@@ -1339,12 +1339,9 @@ void rt_bind_peer(struct rtable *rt, __be32 daddr, int create)
 }
 
 #define IP_IDENTS_SZ 2048u
-struct ip_ident_bucket {
-	atomic_t	id;
-	u32		stamp32;
-};
 
-static struct ip_ident_bucket *ip_idents __read_mostly;
+static atomic_t *ip_idents __read_mostly;
+static u32 *ip_tstamps __read_mostly;
 
 /* In order to protect privacy, we add a perturbation to identifiers
  * if one generator is seldom used. This makes hard for an attacker
@@ -1352,19 +1349,20 @@ static struct ip_ident_bucket *ip_idents __read_mostly;
  */
 u32 ip_idents_reserve(u32 hash, int segs)
 {
-	struct ip_ident_bucket *bucket = ip_idents + hash % IP_IDENTS_SZ;
-	u32 old = ACCESS_ONCE(bucket->stamp32);
+	u32 *p_tstamp = ip_tstamps + hash % IP_IDENTS_SZ;
+	atomic_t *p_id = ip_idents + hash % IP_IDENTS_SZ;
+	u32 old = ACCESS_ONCE(*p_tstamp);
 	u32 now = (u32)jiffies;
 	u32 delta = 0;
 
-	if (old != now && cmpxchg(&bucket->stamp32, old, now) == old) {
+	if (old != now && cmpxchg(p_tstamp, old, now) == old) {
 		u64 x = random32();
 
 		x *= (now - old);
 		delta = (u32)(x >> 32);
 	}
 
-	return atomic_add_return(segs + delta, &bucket->id) - segs;
+	return atomic_add_return(segs + delta, p_id) - segs;
 }
 EXPORT_SYMBOL(ip_idents_reserve);
 
@@ -3459,6 +3457,10 @@ int __init ip_rt_init(void)
 		panic("IP: failed to allocate ip_idents\n");
 
 	get_random_bytes(ip_idents, IP_IDENTS_SZ * sizeof(*ip_idents));
+
+	ip_tstamps = kcalloc(IP_IDENTS_SZ, sizeof(*ip_tstamps), GFP_KERNEL);
+	if (!ip_tstamps)
+		panic("IP: failed to allocate ip_tstamps\n");
 
 #ifdef CONFIG_IP_ROUTE_CLASSID
 	ip_rt_acct = __alloc_percpu(256 * sizeof(struct ip_rt_acct), __alignof__(struct ip_rt_acct));

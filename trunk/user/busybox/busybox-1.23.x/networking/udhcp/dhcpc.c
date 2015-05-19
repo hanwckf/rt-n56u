@@ -1263,6 +1263,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	uint32_t xid = xid; /* for compiler */
 	int packet_num;
 	int timeout; /* must be signed */
+	int last_t1 = 60;
 	unsigned already_waited_sec;
 	unsigned opt;
 	IF_FEATURE_UDHCPC_ARPING(unsigned arpping_ms;)
@@ -1535,7 +1536,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 			case RENEW_REQUESTED: /* manual (SIGUSR1) renew */
 			case_RENEW_REQUESTED:
 			case RENEWING:
-				if (timeout > 25) {
+				if (timeout > MIN(60, last_t1)) {
 					/* send an unicast renew request */
 			/* Sometimes observed to fail (EADDRNOTAVAIL) to bind
 			 * a new UDP socket for sending inside send_renew.
@@ -1599,8 +1600,10 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				 * (Ab)use -A TIMEOUT value (usually 20 sec)
 				 * as a cap on the timeout.
 				 */
-				if (timeout > 30)
-					timeout = 30; /* allow first renew via unicast */
+				/* allow first renew via unicast */
+				int renew_limit = MIN(60, last_t1) + 1;
+				if (timeout > renew_limit)
+					timeout = renew_limit;
 				goto case_RENEW_REQUESTED;
 			}
 			/* Start things over */
@@ -1781,6 +1784,10 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				udhcp_run_script(&packet, state == REQUESTING ? "bound" : "renew");
 				already_waited_sec = (unsigned)monotonic_sec() - start;
 				timeout = lease_seconds / 2;
+				last_t1 = timeout;
+				/* allow at least one unicast request on lease time <= 120 */
+				if (last_t1 <= 60)
+					last_t1 >>= 1;
 				if ((unsigned)timeout < already_waited_sec) {
 					/* Something went wrong. Back to discover state */
 					timeout = already_waited_sec = 0;

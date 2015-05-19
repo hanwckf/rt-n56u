@@ -193,16 +193,15 @@ int
 ej_nat_table(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
-	int ret, i_loaded, sw_mode, src_net, dst_net;
-	char line[256], tmp[255], target[16], proto[16], src[32], dst[32];
+	int ret, i_loaded, sw_mode;
+	char line[256], tmp[256], target[16], proto[16], src[24], dst[24];
 	char *range, *host, *port, *ptr, *val;
 	char *hwnat_status;
 	char *nat_argv[] = {"iptables", "-t", "nat", "-nxL", NULL};
-	
+
 	ret = 0;
 	sw_mode = nvram_get_int("sw_mode");
-	if (sw_mode == 1 || sw_mode == 4)
-	{
+	if (sw_mode == 1 || sw_mode == 4) {
 		hwnat_status = "Disabled";
 		
 		i_loaded = is_hwnat_loaded();
@@ -217,9 +216,8 @@ ej_nat_table(int eid, webs_t wp, int argc, char **argv)
 		
 		ret += websWrite(wp, "Hardware NAT/Routing: %s\n", hwnat_status);
 	}
-	
-	if (sw_mode == 1)
-	{
+
+	if (sw_mode == 1) {
 //		ret += websWrite(wp, "Software QoS: %s\n", nvram_match("qos_enable", "1") ? "Enabled": "Disabled");
 		ret += websWrite(wp, "\n");
 		
@@ -237,17 +235,16 @@ ej_nat_table(int eid, webs_t wp, int argc, char **argv)
 		if (fp == NULL)
 			return ret;
 
-		while (fgets(line, sizeof(line), fp) != NULL)
-		{
+		while (fgets(line, sizeof(line), fp) != NULL) {
 			tmp[0] = 0;
 			if (sscanf(line,
 			    "%15s%*[ \t]"		// target
 			    "%15s%*[ \t]"		// prot
 			    "%*s%*[ \t]"		// opt
-			    "%15[^/]/%d%*[ \t]"		// source
-			    "%15[^/]/%d%*[ \t]"		// destination
+			    "%18s%*[ \t]"		// source
+			    "%18s%*[ \t]"		// destination
 			    "%255[^\n]",		// options
-			    target, proto, src, &src_net, dst, &dst_net, tmp) < 7)
+			    target, proto, src, dst, tmp) < 4)
 				continue;
 			
 			if (strcmp(target, "DNAT"))
@@ -256,15 +253,11 @@ ej_nat_table(int eid, webs_t wp, int argc, char **argv)
 			for (ptr = proto; *ptr; ptr++)
 				*ptr = toupper(*ptr);
 			
-			if (!strcmp(src, "0.0.0.0"))
+			if (!strcmp(src, "0.0.0.0/0"))
 				strcpy(src, "ALL");
-			else
-				snprintf(src, sizeof(src), "%s/%d", src, src_net);
 			
-			if (!strcmp(dst, "0.0.0.0"))
+			if (!strcmp(dst, "0.0.0.0/0"))
 				strcpy(dst, "ALL");
-			else
-				snprintf(dst, sizeof(dst), "%s/%d", dst, dst_net);
 			
 			port = host = range = "";
 			ptr = tmp;

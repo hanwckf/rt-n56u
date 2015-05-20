@@ -1,5 +1,9 @@
 version 2.72+
-            Fix crash at startup when an empty suffix is supplied to
+	    Cope with multiple interfaces with the same link-local 
+	    address. (IPv6 addresses are scoped, so this is allowed.)
+	    Thanks to Cory Benfield for help with this.
+
+	    Fix crash at startup when an empty suffix is supplied to
 	    --conf-dir, also trivial memory leak. Thanks to 
 	    Tomas Hozza for spotting this.
 
@@ -11,6 +15,23 @@ version 2.72+
 
 	    Fix crash on receipt of certain malformed DNS requests. Thanks
 	    to Nick Sampanis for spotting the problem.
+
+	    Fix crash in authoritative DNS code, if a .arpa zone 
+	    is declared as authoritative, and then a PTR query which
+	    is not to be treated as authoritative arrived. Normally, 
+	    directly declaring .arpa zone as authoritative is not 
+	    done, so this crash wouldn't be seen. Instead the 
+	    relevant .arpa zone should be specified as a subnet
+	    in the auth-zone declaration. Thanks to Johnny S. Lee
+	    for the bugreport and initial patch.
+
+	    Fix authoritative DNS code to correctly reply to NS 
+	    and SOA queries for .arpa zones for which we are 
+	    declared authoritative by means of a subnet in auth-zone.
+	    Previously we provided correct answers to PTR queries
+	    in such zones (including NS and SOA) but not direct
+	    NS and SOA queries. Thanks to Johnny S. Lee for 
+	    pointing out the problem.
 	
 
 version 2.72

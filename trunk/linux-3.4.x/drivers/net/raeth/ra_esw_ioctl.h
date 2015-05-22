@@ -83,6 +83,7 @@
 /////////////////////////////////////////////////
 
 #define MTK_ESW_IOCTL_VLAN_RESET_TABLE		60
+#define MTK_ESW_IOCTL_VLAN_PVID_WAN_GET		61
 #define MTK_ESW_IOCTL_VLAN_ACCEPT_PORT_MODE	62
 #define MTK_ESW_IOCTL_VLAN_CREATE_PORT_VID	63
 #define MTK_ESW_IOCTL_VLAN_CREATE_ENTRY		64

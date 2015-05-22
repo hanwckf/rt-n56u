@@ -93,7 +93,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-#define MIN_EXT_VLAN_VID		3
+#define MIN_EXT_VLAN_VID		2
 #define ESW_USE_IVL_MODE		1	/* always use IVL instead of SVL */
 #define ESW_PRINT_LINK_ALL		0	/* printk only WAN link changed */
 

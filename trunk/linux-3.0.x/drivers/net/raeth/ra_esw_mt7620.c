@@ -192,6 +192,13 @@ int mt7620_esw_vlan_clear_idx(u32 idx)
 	return mt7620_esw_write_vtcr(2, idx);
 }
 
+void mt7620_esw_pvid_set(u32 port_id, u32 pvid, u32 prio)
+{
+	u32 reg_ppbv = (1u << 16) | ((prio & 0x7) << 13) | (pvid & 0xfff);
+
+	sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_PORT_PPBV1_P0+0x100*port_id, reg_ppbv);
+}
+
 int mt7620_esw_mac_table_clear(void)
 {
 	u32 i, reg_atc;
@@ -266,10 +273,10 @@ void mt7620_esw_init(void)
 	sysRegWrite(RALINK_ETH_SW_BASE+0x2610, 0x81000000);	// P6 is user port, admit all frames
 	sysRegWrite(RALINK_ETH_SW_BASE+0x2510, 0x810000c0);	// P5 is transparent port, admit all frames
 	sysRegWrite(RALINK_ETH_SW_BASE+0x2410, 0x810000c0);	// P4 is transparent port, admit all frames
-	sysRegWrite(RALINK_ETH_SW_BASE+0x2514, 0x00010001);	// P5 PVID=1
-	sysRegWrite(RALINK_ETH_SW_BASE+0x2414, 0x00010002);	// P4 PVID=2
 	mt7620_esw_vlan_set_idx(0, 1, 0xe0);			// VID=1 members (P7|P6|P5)
 	mt7620_esw_vlan_set_idx(1, 2, 0xd0);			// VID=2 members (P7|P6|P4)
+	mt7620_esw_pvid_set(5, 1, 0);				// P5 PVID=1
+	mt7620_esw_pvid_set(4, 2, 0);				// P4 PVID=2
 	mt7620_esw_mac_table_clear();
 #endif
 #endif

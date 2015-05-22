@@ -5,4 +5,4 @@
 ##################################################################
 
 CFLAGS += -DBOARD_N56UB1 -DVENDOR_ASUS
-BOARD_NUM_USB_PORTS=1
+BOARD_NUM_USB_PORTS=2

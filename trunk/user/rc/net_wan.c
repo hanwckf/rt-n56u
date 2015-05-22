@@ -249,7 +249,7 @@ get_vlan_vid_wan(void)
 		vlan_vid = 0;
 
 	if (!is_vlan_vid_valid(vlan_vid))
-		vlan_vid = 2;
+		vlan_vid = phy_vlan_pvid_wan_get();
 
 	return vlan_vid;
 }
@@ -286,12 +286,12 @@ config_vinet_wan(void)
 	}
 
 	if (!is_vlan_vid_valid(vlan_vid[0])) {
-		vlan_vid[0] = 2;
+		vlan_vid[0] = phy_vlan_pvid_wan_get();
 		vlan_pri = 0;
 	}
 
 	if (!is_vlan_vid_valid(vlan_vid[1]))
-		vlan_vid[1] = 2;
+		vlan_vid[1] = phy_vlan_pvid_wan_get();
 
 	/* update VLAN VID for raeth (HW_VLAN_TX) */
 	hw_vlan_tx_map(6, vlan_vid[0]);
@@ -382,10 +382,10 @@ launch_viptv_wan(void)
 	}
 
 	if (!is_vlan_vid_valid(vlan_vid[0]))
-		vlan_vid[0] = 2;
+		vlan_vid[0] = phy_vlan_pvid_wan_get();
 
 	if (!is_vlan_vid_valid(vlan_vid[1])) {
-		vlan_vid[1] = 2;
+		vlan_vid[1] = phy_vlan_pvid_wan_get();
 		vlan_pri = 0;
 	}
 

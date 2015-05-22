@@ -404,6 +404,13 @@ int phy_vlan_reset_table(void)
 	return rtl8367_ioctl(RTL8367_IOCTL_VLAN_RESET_TABLE, 0, &unused);
 }
 
+int phy_vlan_pvid_wan_get(void)
+{
+	unsigned int pvid = 2;
+	rtl8367_ioctl(RTL8367_IOCTL_VLAN_PVID_WAN_GET, 0, &pvid);
+	return (int)pvid;
+}
+
 int phy_vlan_accept_port_mode(int accept_mode, unsigned int port_pask)
 {
 	return rtl8367_ioctl(RTL8367_IOCTL_VLAN_ACCEPT_PORT_MODE, accept_mode, &port_pask);
@@ -460,7 +467,7 @@ int cpu_gpio_get_pin(int pin, unsigned int *p_value)
 // STATUS
 ////////////////////////////////////////////////////////////////////////////////
 
-int show_usage(char *cmd)
+static int show_usage(char *cmd)
 {
 	printf("Usage: %s COMMAND [ARG1] [ARG2]\n"
 	" COMMAND:\n"
@@ -512,6 +519,7 @@ int show_usage(char *cmd)
 	"   55 [MASK] [PORT] Set port forward mask\n"
 	"\n"
 	"   60               Reset VLAN table and init VLAN1\n"
+	"   61               Show untagged WAN PVID\n"
 	"   62 [MASK] [0..2] Set VLAN accept mode for ports mask\n"
 	"   63 [MASK] [DATA] Create port-based VLAN entry\n"
 	"   64 [MASK] [DATA] Create VLAN entry\n"
@@ -554,7 +562,7 @@ int show_usage(char *cmd)
 	return 1;
 }
 
-int show_status_gpio_mode(void)
+static int show_status_gpio_mode(void)
 {
 	int retVal;
 	unsigned int arg = 0;
@@ -566,7 +574,7 @@ int show_status_gpio_mode(void)
 	return retVal;
 }
 
-int show_status_gpio_pin(unsigned int par)
+static int show_status_gpio_pin(unsigned int par)
 {
 	int retVal;
 	unsigned int arg = 0;
@@ -578,7 +586,7 @@ int show_status_gpio_pin(unsigned int par)
 	return retVal;
 }
 
-int show_status_link(unsigned int cmd)
+static int show_status_link(unsigned int cmd)
 {
 	int retVal;
 	unsigned int link_value = 0;
@@ -618,7 +626,7 @@ int show_status_link(unsigned int cmd)
 	return retVal;
 }
 
-int show_status_speed(unsigned int cmd)
+static int show_status_speed(unsigned int cmd)
 {
 	int retVal;
 	unsigned int link_value = 0;
@@ -683,7 +691,7 @@ int show_status_speed(unsigned int cmd)
 	return retVal;
 }
 
-int show_mib_counters(unsigned int cmd)
+static int show_mib_counters(unsigned int cmd)
 {
 	int retVal;
 	mib_counters_t mibc;
@@ -784,6 +792,20 @@ int show_mib_counters(unsigned int cmd)
 	return retVal;
 }
 
+static int show_vlan_pvid_wan(unsigned int cmd)
+{
+	int retVal;
+	unsigned int arg = 2;
+
+	retVal = rtl8367_ioctl(cmd, 0, &arg);
+	if (retVal != 0)
+		arg = 2;
+
+	printf("%d\n", arg);
+
+	return retVal;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // RTL8367 PROCESS
 ////////////////////////////////////////////////////////////////////////////////
@@ -842,6 +864,9 @@ int rtl8367_main(int argc, char **argv)
 	case RTL8367_IOCTL_STATUS_CNT_PORT_CPU_LAN:
 	case RTL8367_IOCTL_STATUS_CNT_PORT_INIC:
 		return show_mib_counters(cmd);
+	
+	case RTL8367_IOCTL_VLAN_PVID_WAN_GET:
+		return show_vlan_pvid_wan(cmd);
 	}
 
 	return rtl8367_ioctl(cmd, par, &arg);

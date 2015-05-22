@@ -2174,11 +2174,6 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_ipv6_ppe = 0;
 #endif
-#if defined(USE_RT3352_MII)
-	int min_vlan_ext = 4;
-#else
-	int min_vlan_ext = 3;
-#endif
 #if (BOARD_RAM_SIZE < 64)
 	int max_conn = 16384;
 #elif (BOARD_RAM_SIZE < 128)
@@ -2311,7 +2306,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		has_peap_ssl,
 		has_http_ssl,
 		has_ddns_ssl,
-		min_vlan_ext,
+		MIN_EXT_VLAN_VID,
 		max_conn,
 		has_mtd_rwfs,
 		has_btn_mode,

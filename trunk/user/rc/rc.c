@@ -1090,8 +1090,11 @@ handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, RCN_RESTART_SWITCH_VLAN) == 0)
 		{
+			int pvid = phy_vlan_pvid_wan_get();
 			notify_reset_detect_link();
 			switch_config_vlan(0);
+			if (phy_vlan_pvid_wan_get() != pvid)
+				full_restart_wan();
 		}
 		else if (strcmp(entry->d_name, RCN_RESTART_SYSLOG) == 0)
 		{

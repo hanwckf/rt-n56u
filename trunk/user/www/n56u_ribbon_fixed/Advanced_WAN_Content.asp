@@ -99,6 +99,7 @@ function validForm(){
 	var addr_obj;
 	var mask_obj;
 	var gate_obj;
+	var vlan_obj;
 
 	if($("tbl_dhcp_sect").style.display != "none" && !document.form.x_DHCPClient[0].checked){
 		addr_obj = document.form.wan_ipaddr;
@@ -180,23 +181,26 @@ function validForm(){
 			return false;
 
 	if(document.form.vlan_filter[0].checked){
-		if(document.form.vlan_vid_cpu.value.length > 0){
-			if(!validate_range(document.form.vlan_vid_cpu, min_vlan, 4094))
+		vlan_obj = document.form.vlan_vid_cpu;
+		if(vlan_obj.value.length > 0){
+			if(vlan_obj.value!="2" && !validate_range(vlan_obj, min_vlan, 4094))
 				return false;
 			if(!validate_range(document.form.vlan_pri_cpu, 0, 7))
 				return false;
 		}
 		
-		if(document.form.vlan_vid_iptv.value.length > 0){
-			if(!validate_range(document.form.vlan_vid_iptv, min_vlan, 4094))
+		vlan_obj = document.form.vlan_vid_iptv;
+		if(vlan_obj.value.length > 0){
+			if(vlan_obj.value!="2" && !validate_range(vlan_obj, min_vlan, 4094))
 				return false;
 			if(!validate_range(document.form.vlan_pri_iptv, 0, 7))
 				return false;
 		}
 		
 		if (wan_stb_x == "1" || wan_stb_x == "6" || wan_stb_x == "7"){
-			if(document.form.vlan_vid_lan1.value.length > 0){
-				if(!validate_range(document.form.vlan_vid_lan1, min_vlan, 4094))
+			vlan_obj = document.form.vlan_vid_lan1;
+			if(vlan_obj.value.length > 0){
+				if(vlan_obj.value!="2" && !validate_range(vlan_obj, min_vlan, 4094))
 					return false;
 				if(!validate_range(document.form.vlan_pri_lan1, 0, 7))
 					return false;
@@ -204,8 +208,9 @@ function validForm(){
 		}
 		
 		if (wan_stb_x == "2" || wan_stb_x == "6" || wan_stb_x == "7"){
-			if(document.form.vlan_vid_lan2.value.length > 0){
-				if(!validate_range(document.form.vlan_vid_lan2, min_vlan, 4094))
+			vlan_obj = document.form.vlan_vid_lan2;
+			if(vlan_obj.value.length > 0){
+				if(vlan_obj.value!="2" && !validate_range(vlan_obj, min_vlan, 4094))
 					return false;
 				if(!validate_range(document.form.vlan_pri_lan2, 0, 7))
 					return false;
@@ -213,8 +218,9 @@ function validForm(){
 		}
 		
 		if (wan_stb_x == "3" || wan_stb_x == "5" || wan_stb_x == "7"){
-			if(document.form.vlan_vid_lan3.value.length > 0){
-				if(!validate_range(document.form.vlan_vid_lan3, min_vlan, 4094))
+			vlan_obj = document.form.vlan_vid_lan3;
+			if(vlan_obj.value.length > 0){
+				if(vlan_obj.value!="2" && !validate_range(vlan_obj, min_vlan, 4094))
 					return false;
 				if(!validate_range(document.form.vlan_pri_lan3, 0, 7))
 					return false;
@@ -222,8 +228,9 @@ function validForm(){
 		}
 		
 		if (wan_stb_x == "4" || wan_stb_x == "5"){
-			if(document.form.vlan_vid_lan4.value.length > 0){
-				if(!validate_range(document.form.vlan_vid_lan4, min_vlan, 4094))
+			vlan_obj = document.form.vlan_vid_lan4;
+			if(vlan_obj.value.length > 0){
+				if(vlan_obj.value!="2" && !validate_range(vlan_obj, min_vlan, 4094))
 					return false;
 				if(!validate_range(document.form.vlan_pri_lan4, 0, 7))
 					return false;

@@ -406,9 +406,9 @@ void
 switch_config_vlan(int first_call)
 {
 	int bridge_mode, bwan_isolation, is_vlan_filter;
-	int vlan_vid[6];
-	int vlan_pri[6];
-	int vlan_tag[6];
+	int vlan_vid[SWAPI_VLAN_RULE_NUM];
+	int vlan_pri[SWAPI_VLAN_RULE_NUM];
+	int vlan_tag[SWAPI_VLAN_RULE_NUM];
 	unsigned int vrule;
 
 	if (get_ap_mode())
@@ -417,11 +417,11 @@ switch_config_vlan(int first_call)
 	bridge_mode = nvram_get_int("wan_stb_x");
 	if (bridge_mode < 0 || bridge_mode > 7)
 		bridge_mode = SWAPI_WAN_BRIDGE_DISABLE;
-	
+
 	bwan_isolation = nvram_get_int("wan_stb_iso");
 	if (bwan_isolation < 0 || bwan_isolation > 2)
 		bwan_isolation = SWAPI_WAN_BWAN_ISOLATION_NONE;
-	
+
 	is_vlan_filter = (nvram_match("vlan_filter", "1")) ? 1 : 0;
 	if (is_vlan_filter) {
 		bwan_isolation = SWAPI_WAN_BWAN_ISOLATION_FROM_CPU;
@@ -461,13 +461,13 @@ switch_config_vlan(int first_call)
 		memset(vlan_pri, 0, sizeof(vlan_pri));
 		memset(vlan_tag, 0, sizeof(vlan_tag));
 	}
-	
+
 	/* set vlan rule before change bridge mode! */
-	for (vrule = 0; vrule <= SWAPI_VLAN_RULE_WAN_LAN4; vrule++)
+	for (vrule = 0; vrule < SWAPI_VLAN_RULE_NUM; vrule++)
 		phy_vlan_rule_set(vrule, vlan_vid[vrule], vlan_pri[vrule], vlan_tag[vrule]);
-	
+
 	phy_bridge_mode(bridge_mode, bwan_isolation);
-	
+
 #if defined(USE_RT3352_MII)
 	if (!first_call) {
 		// clear isolation iNIC port from all LAN ports
@@ -480,6 +480,8 @@ switch_config_vlan(int first_call)
 int
 is_vlan_vid_valid(int vlan_vid)
 {
+	if (vlan_vid == 2)
+		return 1;
 	return (vlan_vid >= MIN_EXT_VLAN_VID && vlan_vid < 4095) ? 1 : 0;
 }
 

@@ -93,7 +93,7 @@
 #define INIC_GUEST_VLAN_VID		3
 #define MIN_EXT_VLAN_VID		4
 #else
-#define MIN_EXT_VLAN_VID		3
+#define MIN_EXT_VLAN_VID		2
 #endif
 
 #define IFNAME_SIT			"sit1"

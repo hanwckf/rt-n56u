@@ -89,9 +89,13 @@ static u32 g_port_link_inic                      = 0;
 static u32 g_rgmii_delay_tx                      = CONFIG_RTL8367_RGMII_DELAY_TX;	/* 0..1 */
 static u32 g_rgmii_delay_rx                      = CONFIG_RTL8367_RGMII_DELAY_RX;	/* 0..7 */
 
-static u32 g_vlan_cleared                        = 0;
 static u32 g_vlan_rule[SWAPI_VLAN_RULE_NUM]      = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 static u32 g_vlan_rule_user[SWAPI_VLAN_RULE_NUM] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+
+////////////////////////////////////////////////////////////////////////////////////
+
+static u32 g_vlan_cleared                        = 0;
+static u32 g_vlan_pvid_wan_untagged              = 2;
 
 static bwan_member_t g_bwan_member[SWAPI_WAN_BRIDGE_NUM][RTK_PHY_ID_MAX+1];
 
@@ -713,6 +717,30 @@ static u32 find_vlan_slot(vlan_entry_t *vlan_entry, u32 start_idx, u32 cvid)
 	return VLAN_ENTRY_ID_MAX + 1; // not found
 }
 
+static u32 find_free_min_pvid(u32 *pvid_list, u32 vid)
+{
+	u32 i, vid_new;
+
+	vid_new = vid;
+	for (i = 0; i < SWAPI_VLAN_RULE_NUM; i++) {
+		if (vid == pvid_list[i]
+#if defined(EXT_PORT_INIC)
+		 || vid == INIC_GUEST_VLAN_VID
+#endif
+		    ) {
+			/* recursion step */
+			vid_new = find_free_min_pvid(pvid_list, vid+1);
+			break;
+		}
+	}
+	return vid_new;
+}
+
+static int is_wan_vid_valid(u32 vid)
+{
+	return (vid == 2 || vid >= MIN_EXT_VLAN_VID) ? 1 : 0;
+}
+
 static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 {
 	vlan_entry_t vlan_entry[VLAN_ENTRY_ID_MAX+1];
@@ -720,13 +748,14 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	u32 pvid[SWAPI_VLAN_RULE_NUM];
 	u32 prio[SWAPI_VLAN_RULE_NUM];
 	u32 tagg[SWAPI_VLAN_RULE_NUM];
-	u32 i, next_fid, next_vid, vlan_idx, mask_ingress;
+	u32 i, cvid, untg_vid, next_idx, vlan_idx, mask_ingress, vlan_filter_on;
 #if !defined(RTL8367_SINGLE_EXTIF)
 	pvlan_member_t pvlan_member_cpu_wan;
 #endif
 
-	next_vid = 3;
-	next_fid = 3;
+	untg_vid = 2;	// default PVID for untagged WAN traffic
+	next_idx = 2;
+	vlan_filter_on = 0;
 
 	memset(vlan_entry, 0, sizeof(vlan_entry));
 	memset(pvlan_member, 0, sizeof(pvlan_member));
@@ -735,18 +764,26 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 		pvid[i] =  (g_vlan_rule_user[i] & 0xFFF);
 		prio[i] = ((g_vlan_rule_user[i] >> 16) & 0x7);
 		tagg[i] = ((g_vlan_rule_user[i] >> 24) & 0x1);
+		if (is_wan_vid_valid(pvid[i]))
+			vlan_filter_on = 1;
 	}
 
-	if (pvid[SWAPI_VLAN_RULE_WAN_INET] < MIN_EXT_VLAN_VID) {
-		pvid[SWAPI_VLAN_RULE_WAN_INET] = 2; // VID 2
+	/* find minimal unused VID, when VID=2 is used */
+	if (vlan_filter_on)
+		untg_vid = find_free_min_pvid(pvid, 2);
+
+	g_vlan_pvid_wan_untagged = untg_vid;
+
+	if (!is_wan_vid_valid(pvid[SWAPI_VLAN_RULE_WAN_INET])) {
+		pvid[SWAPI_VLAN_RULE_WAN_INET] = untg_vid; // VID 2
 		prio[SWAPI_VLAN_RULE_WAN_INET] = 0;
 		tagg[SWAPI_VLAN_RULE_WAN_INET] = 0;
 	} else {
 		tagg[SWAPI_VLAN_RULE_WAN_INET] = 1;
 	}
 
-	if (pvid[SWAPI_VLAN_RULE_WAN_IPTV] < MIN_EXT_VLAN_VID) {
-		pvid[SWAPI_VLAN_RULE_WAN_IPTV] = 2; // VID 2
+	if (!is_wan_vid_valid(pvid[SWAPI_VLAN_RULE_WAN_IPTV])) {
+		pvid[SWAPI_VLAN_RULE_WAN_IPTV] = untg_vid; // VID 2
 		prio[SWAPI_VLAN_RULE_WAN_IPTV] = 0;
 		tagg[SWAPI_VLAN_RULE_WAN_IPTV] = 0;
 	} else {
@@ -756,11 +793,11 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	mask_ingress = (1u << LAN_PORT_CPU) | (1u << WAN_PORT_CPU) | (1u << WAN_PORT_X);
 
 	/* fill WAN port (use PVID 2 for handle untagged traffic -> VID2) */
-	pvlan_member[WAN_PORT_X].pvid = 2;
+	pvlan_member[WAN_PORT_X].pvid = untg_vid;
 
 #if !defined(RTL8367_SINGLE_EXTIF)
 	/* fill CPU WAN port (use PVID 2 for handle untagged traffic -> VID2) */
-	pvlan_member_cpu_wan.pvid = 2;
+	pvlan_member_cpu_wan.pvid = untg_vid;
 	pvlan_member_cpu_wan.prio = 0;
 	pvlan_member_cpu_wan.tagg = 0;
 #endif
@@ -776,8 +813,8 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 
 	/* VID #2 */
 	vlan_entry[1].valid = 1;
-	vlan_entry[1].fid = 2;
-	vlan_entry[1].cvid = 2;
+	vlan_entry[1].fid = untg_vid;
+	vlan_entry[1].cvid = untg_vid;
 	vlan_entry[1].port_member |= ((1u << WAN_PORT_X) | (1u << WAN_PORT_CPU));
 	vlan_entry[1].port_untag  |=  (1u << WAN_PORT_X);
 
@@ -790,27 +827,33 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	vlan_entry[0].port_member |=  (1u << EXT_PORT_INIC);
 	vlan_entry[0].port_untag  |=  (1u << EXT_PORT_INIC);
 	mask_ingress |= (1u << EXT_PORT_INIC);
-	next_fid++;
-	next_vid++;
+	next_idx++;
 #endif
 
 #if defined(CONFIG_P5_RGMII_TO_MAC_MODE) && defined(CONFIG_P4_RGMII_TO_MAC_MODE)
 	/* clear vlan members on MT7620 ESW (slot idx 2..3) */
 	mt7620_esw_vlan_clear_idx(2);
 	mt7620_esw_vlan_clear_idx(3);
+
+	/* update VID=2 members (P7|P6|P4) */
+	mt7620_esw_vlan_set_idx(1, untg_vid, 0xd0);
+
+	/* set ESW P4 PVID */
+	mt7620_esw_pvid_set(4, untg_vid, 0);
 #endif
 
 	/* check IPTV tagged */
-	if (pvid[SWAPI_VLAN_RULE_WAN_IPTV] >= MIN_EXT_VLAN_VID) {
-		vlan_idx = find_vlan_slot(vlan_entry, next_vid-1, pvid[SWAPI_VLAN_RULE_WAN_IPTV]);
+	if (tagg[SWAPI_VLAN_RULE_WAN_IPTV]) {
+		cvid = pvid[SWAPI_VLAN_RULE_WAN_IPTV];
+		vlan_idx = find_vlan_slot(vlan_entry, next_idx, cvid);
 		if (vlan_idx <= VLAN_ENTRY_ID_MAX) {
 			if (!vlan_entry[vlan_idx].valid) {
 				vlan_entry[vlan_idx].valid = 1;
-				vlan_entry[vlan_idx].fid = next_fid++;
-				vlan_entry[vlan_idx].cvid = pvid[SWAPI_VLAN_RULE_WAN_IPTV];
+				vlan_entry[vlan_idx].fid = cvid;
+				vlan_entry[vlan_idx].cvid = cvid;
 #if defined(CONFIG_P5_RGMII_TO_MAC_MODE) && defined(CONFIG_P4_RGMII_TO_MAC_MODE)
 				/* need add vlan members on MT7620 ESW P4 (ESW members P7|P6|P4) */
-				mt7620_esw_vlan_set_idx(2, pvid[SWAPI_VLAN_RULE_WAN_IPTV], 0xd0);
+				mt7620_esw_vlan_set_idx(2, cvid, 0xd0);
 #endif
 			}
 			vlan_entry[vlan_idx].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_X));
@@ -819,16 +862,17 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	}
 
 	/* check INET tagged */
-	if (pvid[SWAPI_VLAN_RULE_WAN_INET] >= MIN_EXT_VLAN_VID) {
-		vlan_idx = find_vlan_slot(vlan_entry, next_vid-1, pvid[SWAPI_VLAN_RULE_WAN_INET]);
+	if (tagg[SWAPI_VLAN_RULE_WAN_INET]) {
+		cvid = pvid[SWAPI_VLAN_RULE_WAN_INET];
+		vlan_idx = find_vlan_slot(vlan_entry, next_idx, cvid);
 		if (vlan_idx <= VLAN_ENTRY_ID_MAX) {
 			if (!vlan_entry[vlan_idx].valid) {
 				vlan_entry[vlan_idx].valid = 1;
-				vlan_entry[vlan_idx].fid = next_fid++;
-				vlan_entry[vlan_idx].cvid = pvid[SWAPI_VLAN_RULE_WAN_INET];
+				vlan_entry[vlan_idx].fid = cvid;
+				vlan_entry[vlan_idx].cvid = cvid;
 #if defined(CONFIG_P5_RGMII_TO_MAC_MODE) && defined(CONFIG_P4_RGMII_TO_MAC_MODE)
 				/* need add vlan members on MT7620 ESW P4 (ESW members P7|P6|P4) */
-				mt7620_esw_vlan_set_idx(3, pvid[SWAPI_VLAN_RULE_WAN_INET], 0xd0);
+				mt7620_esw_vlan_set_idx(3, cvid, 0xd0);
 #endif
 			}
 			vlan_entry[vlan_idx].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_X));
@@ -841,17 +885,18 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	if (tagg[SWAPI_VLAN_RULE_WAN_INET] && pvid[SWAPI_VLAN_RULE_WAN_INET] == pvid[SWAPI_VLAN_RULE_WAN_IPTV]) {
 		/* update VID #2 members (do not forward untagged packets to WAN_CPU) */
 		vlan_entry[1].port_member &= ~(1u << WAN_PORT_CPU);
-		vlan_idx = find_vlan_slot(vlan_entry, next_vid-1, pvid[SWAPI_VLAN_RULE_WAN_INET]);
+		cvid = pvid[SWAPI_VLAN_RULE_WAN_INET];
+		vlan_idx = find_vlan_slot(vlan_entry, next_idx, cvid);
 		if (vlan_idx <= VLAN_ENTRY_ID_MAX && vlan_entry[vlan_idx].valid)
 			vlan_entry[vlan_idx].port_untag |= (1u << WAN_PORT_CPU);
-		pvlan_member_cpu_wan.pvid = pvid[SWAPI_VLAN_RULE_WAN_INET];
+		pvlan_member_cpu_wan.pvid = cvid;
 	} else if (!tagg[SWAPI_VLAN_RULE_WAN_INET] && !tagg[SWAPI_VLAN_RULE_WAN_IPTV]) {
 		/* update VID #2 untag members */
 		vlan_entry[1].port_untag |= (1u << WAN_PORT_CPU);
 	}
 #endif
 
-	/* fill LAN ports */
+	/* fill physical LAN ports */
 	for (i = 0; i <= RTK_PHY_ID_MAX; i++) {
 		int rule_id;
 		
@@ -871,31 +916,32 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 		}
 		
 		rule_id = g_bwan_member[wan_bridge_mode][i].rule;
-		if (pvid[rule_id] < MIN_EXT_VLAN_VID) {
-			pvlan_member[i].pvid = 2;
+		if (!is_wan_vid_valid(pvid[rule_id])) {
+			pvlan_member[i].pvid = untg_vid;
 			
 			/* VID #2 */
 			vlan_entry[1].port_member |= (1u << i);
 			vlan_entry[1].port_untag  |= (1u << i);
 		} else {
-			vlan_idx = find_vlan_slot(vlan_entry, next_vid-1, pvid[rule_id]);
+			cvid = pvid[rule_id];
+			vlan_idx = find_vlan_slot(vlan_entry, next_idx, cvid);
 			if (vlan_idx <= VLAN_ENTRY_ID_MAX) {
 				if (!vlan_entry[vlan_idx].valid) {
 					vlan_entry[vlan_idx].valid = 1;
-					vlan_entry[vlan_idx].fid = next_fid++;
-					vlan_entry[vlan_idx].cvid = pvid[rule_id];
+					vlan_entry[vlan_idx].fid = cvid;
+					vlan_entry[vlan_idx].cvid = cvid;
 				}
 				vlan_entry[vlan_idx].port_member |= ((1u << i) | (1u << WAN_PORT_X));
 				if (!tagg[rule_id])
 					vlan_entry[vlan_idx].port_untag |= (1u << i);
 				
-				pvlan_member[i].pvid = pvid[rule_id];
+				pvlan_member[i].pvid = cvid;
 				pvlan_member[i].prio = prio[rule_id];
 				pvlan_member[i].tagg = tagg[rule_id];
 				
 				pvlan_member[WAN_PORT_X].tagg = 1;
 			} else {
-				pvlan_member[i].pvid = 2;
+				pvlan_member[i].pvid = untg_vid;
 				
 				/* VID #2 */
 				vlan_entry[1].port_member |= (1u << i);
@@ -928,7 +974,7 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	/* set ingress filtering */
 	asic_vlan_set_ingress_ports(mask_ingress);
 
-	/* configure PHY ports */
+	/* configure physical LAN/WAN ports */
 	for (i = 0; i <= RTK_PHY_ID_MAX; i++) {
 		rtk_vlan_portPvid_set(i, pvlan_member[i].pvid, pvlan_member[i].prio);
 		rtk_vlan_portAcceptFrameType_set(i, (pvlan_member[i].tagg) ? ACCEPT_FRAME_TYPE_ALL : ACCEPT_FRAME_TYPE_UNTAG_ONLY);

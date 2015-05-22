@@ -103,11 +103,11 @@
   #define INIC_GUEST_VLAN_FID			INIC_GUEST_VLAN_VID
   #define MIN_EXT_VLAN_VID			4
  #else
-  #define MIN_EXT_VLAN_VID			3
+  #define MIN_EXT_VLAN_VID			2
  #endif
 #else
  #define WAN_PORT_CPU				SEC_PORT_MAC
- #define MIN_EXT_VLAN_VID			3
+ #define MIN_EXT_VLAN_VID			2
 #endif
 
 #define RTL8367_DEFAULT_JUMBO_FRAMES		1

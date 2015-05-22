@@ -244,6 +244,10 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 	case RTL8367_IOCTL_VLAN_RESET_TABLE:
 		asic_vlan_reset_table();
 		break;
+	case RTL8367_IOCTL_VLAN_PVID_WAN_GET:
+		uint_result = g_vlan_pvid_wan_untagged;
+		put_user(uint_result, (unsigned int __user *)arg);
+		break;
 	case RTL8367_IOCTL_VLAN_ACCEPT_PORT_MODE:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
 		asic_vlan_accept_port_mode(uint_param, uint_value);

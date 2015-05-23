@@ -22,6 +22,7 @@ enum {
 	O_DATE_STOP,
 	O_TIME_START,
 	O_TIME_STOP,
+	O_TIME_CONTIGUOUS,
 	O_MONTHDAYS,
 	O_WEEKDAYS,
 	O_LOCAL_TZ,
@@ -30,6 +31,7 @@ enum {
 	F_LOCAL_TZ  = 1 << O_LOCAL_TZ,
 	F_UTC       = 1 << O_UTC,
 	F_KERNEL_TZ = 1 << O_KERNEL_TZ,
+	F_TIME_CONTIGUOUS = 1 << O_TIME_CONTIGUOUS,
 };
 
 static const char *const week_days[] = {
@@ -41,6 +43,7 @@ static const struct xt_option_entry time_opts[] = {
 	{.name = "datestop", .id = O_DATE_STOP, .type = XTTYPE_STRING},
 	{.name = "timestart", .id = O_TIME_START, .type = XTTYPE_STRING},
 	{.name = "timestop", .id = O_TIME_STOP, .type = XTTYPE_STRING},
+	{.name = "contiguous", .id = O_TIME_CONTIGUOUS, .type = XTTYPE_NONE},
 	{.name = "weekdays", .id = O_WEEKDAYS, .type = XTTYPE_STRING,
 	 .flags = XTOPT_INVERT},
 	{.name = "monthdays", .id = O_MONTHDAYS, .type = XTTYPE_STRING,
@@ -273,6 +276,9 @@ static void time_parse(struct xt_option_call *cb)
 	case O_TIME_STOP:
 		info->daytime_stop = time_parse_minutes(cb->arg);
 		break;
+	case O_TIME_CONTIGUOUS:
+		info->flags |= XT_TIME_CONTIGUOUS;
+		break;
 	case O_LOCAL_TZ:
 		fprintf(stderr, "WARNING: --localtz is being replaced by "
 		        "--kerneltz, since \"local\" is ambiguous. Note the "
@@ -403,6 +409,8 @@ static void time_print(const void *ip, const struct xt_entry_match *match,
 	}
 	if (!(info->flags & XT_TIME_LOCAL_TZ))
 		printf(" UTC");
+	if (info->flags & XT_TIME_CONTIGUOUS)
+		printf(" contiguous");
 }
 
 static void time_save(const void *ip, const struct xt_entry_match *match)
@@ -429,6 +437,17 @@ static void time_save(const void *ip, const struct xt_entry_match *match)
 	time_print_date(info->date_stop, "--datestop");
 	if (info->flags & XT_TIME_LOCAL_TZ)
 		printf(" --kerneltz");
+	if (info->flags & XT_TIME_CONTIGUOUS)
+		printf(" --contiguous");
+}
+
+static void time_check(struct xt_fcheck_call *cb)
+{
+	const struct xt_time_info *info = (const void *) cb->data;
+	if ((cb->xflags & F_TIME_CONTIGUOUS) &&
+	     info->daytime_start < info->daytime_stop)
+		xtables_error(PARAMETER_PROBLEM,
+			"time: --contiguous only makes sense when stoptime is smaller than starttime");
 }
 
 static struct xtables_match time_match = {
@@ -442,6 +461,7 @@ static struct xtables_match time_match = {
 	.print         = time_print,
 	.save          = time_save,
 	.x6_parse      = time_parse,
+	.x6_fcheck     = time_check,
 	.x6_options    = time_opts,
 };
 

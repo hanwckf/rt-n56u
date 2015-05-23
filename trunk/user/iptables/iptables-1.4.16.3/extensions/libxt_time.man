@@ -30,6 +30,10 @@ Only match on the given weekdays. Possible values are \fBMon\fP, \fBTue\fP,
 to \fB7\fP, respectively. You may also use two-character variants (\fBMo\fP,
 \fBTu\fP, etc.).
 .TP
+\fB\-\-contiguous\fP
+When \fB\-\-timestop\fP is smaller than \fB\-\-timestart\fP value, match
+this as a single time period instead distinct intervals.  See EXAMPLES.
+.TP
 \fB\-\-kerneltz\fP
 Use the kernel timezone instead of UTC to determine whether a packet meets the
 time regulations.
@@ -84,3 +88,11 @@ The fourth Friday in the month:
 (Note that this exploits a certain mathematical property. It is not possible to
 say "fourth Thursday OR fourth Friday" in one rule. It is possible with
 multiple rules, though.)
+.PP
+Matching across days might not do what is expected.  For instance,
+.IP
+\-m time \-\-weekdays Mo \-\-timestart 23:00  \-\-timestop 01:00
+Will match Monday, for one hour from midnight to 1 a.m., and then
+again for another hour from 23:00 onwards.  If this is unwanted, e.g. if you
+would like 'match for two hours from Montay 23:00 onwards' you need to also specify
+the \-\-contiguous option in the example above.

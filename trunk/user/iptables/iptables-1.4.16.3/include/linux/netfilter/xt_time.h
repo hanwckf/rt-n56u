@@ -16,6 +16,7 @@ struct xt_time_info {
 enum {
 	/* Match against local time (instead of UTC) */
 	XT_TIME_LOCAL_TZ = 1 << 0,
+	XT_TIME_CONTIGUOUS = 1 << 1,
 
 	/* Shortcuts */
 	XT_TIME_ALL_MONTHDAYS = 0xFFFFFFFE,

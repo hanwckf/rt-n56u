@@ -40,6 +40,7 @@ var wItem = new Array(new Array("", "", "TCP"),
 		new Array("DNS", "53", "UDP"),
 		new Array("FINGER", "79", "TCP"),
 		new Array("HTTP", "80", "TCP"),
+		new Array("HTTPS", "443", "TCP"),
 		new Array("POP3", "110", "TCP"),
 		new Array("SNMP", "161", "UDP"),
 		new Array("SNMP TRAP", "162", "UDP"),
@@ -155,11 +156,12 @@ function change_proto(){
 }
 
 function change_wizard(o, id){
+	var i;
 	var obj = document.form.vts_proto_x_0;
 	if(id == "KnownApps"){
 		$("KnownGames").value = 0;
 		
-		for(var i = 0; i < wItem.length; ++i){
+		for(i = 0; i < wItem.length; ++i){
 			if(wItem[i][0] != null && o.value == i){
 				if(wItem[i][2] == "TCP")
 					obj.options[0].selected = 1;
@@ -185,7 +187,7 @@ function change_wizard(o, id){
 	else if(id == "KnownGames"){
 		$("KnownApps").value = 0;
 		
-		for(var i = 0; i < wItem2.length; ++i){
+		for(i = 0; i < wItem2.length; ++i){
 			if(wItem2[i][0] != null && o.value == i){
 				if(wItem2[i][2] == "TCP")
 					obj.options[0].selected = 1;
@@ -210,7 +212,7 @@ function change_wizard(o, id){
 }
 
 function markGroupVS(o, c, b) {
-	var obj, proto_other;
+	var i, obj, proto_other;
 	document.form.group_id.value = "VSList";
 	if(b == " Add "){
 		proto_other = (document.form.vts_proto_x_0.options.selectedIndex == 3)?true:false;
@@ -294,6 +296,7 @@ function markGroupVS(o, c, b) {
 var vts_rule_array = new Array();
 var count = 0;
 function split_vts_rule(s){
+	var i;
 	var count_dup = 0;
 	if(typeof(s) != "undefined"){
 		this.vts_rule_array = s;
@@ -386,7 +389,6 @@ function showLANIPList(){
 }
 
 function pullLANIPList(obj){
-	
 	if(isMenuopen == 0){
 		$j(obj).children('i').removeClass('icon-chevron-down').addClass('icon-chevron-up');
 		$("ClientList_Block").style.display = 'block';
@@ -404,29 +406,30 @@ function hideClients_Block(){
 }
 
 function showVSList(){
+	var i;
 	var code = '';
 	var proto, srcip, eport, lport;
 	if(VSList.length == 0)
 		code +='<tr><td colspan="7" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
-	    for(var i = 0; i < VSList.length; i++){
+	    for(i = 0; i < VSList.length; i++){
 		srcip = "*";
-		eport = VSList[i][0];
-		lport = VSList[i][2];
-		if(VSList[i][3] == "OTHER"){
+		eport = "";
+		lport = "";
+		proto = VSList[i][3];
+		if(proto == "OTHER"){
 			proto = VSList[i][4];
-			eport = "";
-			lport = "";
-		}
-		else if (VSList[i][3] == "BOTH")
+		}else if (proto == "BOTH"){
 			proto = "TCP/UDP";
-		else
-			proto = VSList[i][3];
+			eport = VSList[i][0];
+			if (VSList[i][2] != null && VSList[i][2] != "")
+				lport = VSList[i][2];
+		}
 		if (VSList[i][5] != null && VSList[i][5] != "")
 			srcip = VSList[i][5];
 		code +='<tr id="row' + i + '">';
 		code +='<td>&nbsp;'             + VSList[i][6] + '</td>';
-		code +='<td width="17%">&nbsp;' + srcip + '</td>';
+		code +='<td width="18%">&nbsp;' + srcip + '</td>';
 		code +='<td width="15%">&nbsp;' + eport + '</td>';
 		code +='<td width="22%">&nbsp;' + VSList[i][1] + '</td>';
 		code +='<td width="10%">&nbsp;' + lport + '</td>';
@@ -647,7 +650,7 @@ function valid_IP_subnet(obj){
                                         </tr>
                                         <tr>
                                             <td><#IPConnection_VServerDescript_itemname#></td>
-                                            <td width="17%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,3);"><#IPConnection_VServerSrcIP_itemname#></a></td>
+                                            <td width="18%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,3);"><#IPConnection_VServerSrcIP_itemname#></a></td>
                                             <td width="15%" id="col_port_proto"><#IPConnection_VServerPort_itemname#></td>
                                             <td width="22%"><#IPConnection_VServerIP_itemname#></td>
                                             <td width="10%"><#IPConnection_VServerLPort_itemname#></td>
@@ -656,10 +659,10 @@ function valid_IP_subnet(obj){
                                         </tr>
                                         <tr>
                                             <td>
-                                                <input type="text" size="12" class="span12" maxlength="30" name="vts_desc_x_0" onkeypress="return is_string(this)" />
+                                                <input type="text" size="10" class="span12" maxlength="30" name="vts_desc_x_0" onkeypress="return is_string(this)" />
                                             </td>
                                             <td>
-                                                <input type="text" size="12" class="span12" maxlength="15" name="vts_srcip_x_0" onkeypress="return is_string(this)"/>
+                                                <input type="text" size="12" class="span12" maxlength="15" name="vts_srcip_x_0" onKeyPress="return is_iprange(this)" onKeyUp="change_iprange(this)"/>
                                             </td>
                                             <td>
                                                 <input type="text" size="10" class="span12" name="vts_port_x_0" onkeypress="return is_portrange(this)" />

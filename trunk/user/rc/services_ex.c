@@ -660,6 +660,11 @@ update_upnp(void)
 		return;
 	}
 
+	if (nvram_get_int("wan_nat_x") == 0) {
+		stop_upnp();
+		return;
+	}
+
 	/* update upnp forwards from lease file */
 	if (check_if_file_exist(UPNPD_LEASE_FILE)) {
 		doSystem("killall %s %s", "-SIGUSR1", "miniupnpd");

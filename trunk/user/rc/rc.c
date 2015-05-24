@@ -1109,13 +1109,20 @@ handle_notifications(void)
 		{
 			notify_leds_detect_link();
 		}
-		else if (strcmp(entry->d_name, "restart_firewall_wan") == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_NETFILTER) == 0)
 		{
+			update_router_mode();
+			reload_nat_modules();
 			restart_firewall();
+			flush_conntrack_table(NULL);
 		}
 		else if (strcmp(entry->d_name, RCN_RESTART_FIREWALL) == 0)
 		{
 			reload_nat_modules();
+			restart_firewall();
+		}
+		else if (strcmp(entry->d_name, "restart_firewall_wan") == 0)
+		{
 			restart_firewall();
 		}
 		else if (strcmp(entry->d_name, RCN_RESTART_NTPC) == 0)
@@ -1137,8 +1144,7 @@ handle_notifications(void)
 			restart_all_sysctl();
 			
 			/* flush conntrack after NAT model changing */
-			if (nvram_nf_nat_type != nf_nat_type)
-			{
+			if (nvram_nf_nat_type != nf_nat_type) {
 				nvram_nf_nat_type = nf_nat_type;
 				flush_conntrack_table(NULL);
 			}

@@ -20,30 +20,64 @@
 <script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
+<script type="text/javascript" src="/client_function.js"></script>
 <script>
 var $j = jQuery.noConflict();
 
 $j(document).ready(function() {
-	init_itoggle('url_enable1', change_url_enable1);
-	init_itoggle('url_enable2', change_url_enable2);
+	init_itoggle('url_enable', change_url_enable);
 });
 
 </script>
 <script>
+
+var ipmonitor = [<% get_static_client(); %>];
+var wireless = [<% wl_auth_list(); %>];
+
+var clients_info = getclients(1,0);
+
+var isMenuopen = 0;
 
 function initial(){
 	show_banner(1);
 	show_menu(5,5,3);
 	show_footer();
 
-	change_url_enable1();
-	change_url_enable2();
+	change_url_enable();
+
+	document.form.url_date_x_Sun.checked = getDateCheck(document.form.url_date_x.value, 0);
+	document.form.url_date_x_Mon.checked = getDateCheck(document.form.url_date_x.value, 1);
+	document.form.url_date_x_Tue.checked = getDateCheck(document.form.url_date_x.value, 2);
+	document.form.url_date_x_Wed.checked = getDateCheck(document.form.url_date_x.value, 3);
+	document.form.url_date_x_Thu.checked = getDateCheck(document.form.url_date_x.value, 4);
+	document.form.url_date_x_Fri.checked = getDateCheck(document.form.url_date_x.value, 5);
+	document.form.url_date_x_Sat.checked = getDateCheck(document.form.url_date_x.value, 6);
+
+	document.form.url_time_x_starthour.value = getTimeRange(document.form.url_time_x.value, 0);
+	document.form.url_time_x_startmin.value = getTimeRange(document.form.url_time_x.value, 1);
+	document.form.url_time_x_endhour.value = getTimeRange(document.form.url_time_x.value, 2);
+	document.form.url_time_x_endmin.value = getTimeRange(document.form.url_time_x.value, 3);
+
+	showLANIPList();
+
 	load_body();
 }
 
 function applyRule(){
 	if(validForm()){
-		updateDateTime(document.form.current_page.value);
+		document.form.url_date_x.value = setDateCheck(
+			document.form.url_date_x_Sun,
+			document.form.url_date_x_Mon,
+			document.form.url_date_x_Tue,
+			document.form.url_date_x_Wed,
+			document.form.url_date_x_Thu,
+			document.form.url_date_x_Fri,
+			document.form.url_date_x_Sat);
+		document.form.url_time_x.value = setTimeRange(
+			document.form.url_time_x_starthour,
+			document.form.url_time_x_startmin,
+			document.form.url_time_x_endhour,
+			document.form.url_time_x_endmin);
 		
 		showLoading();
 		
@@ -56,7 +90,7 @@ function applyRule(){
 }
 
 function validForm(){
-	if(((document.form.url_enable_x[0].checked ==true) || (document.form.url_enable_x_1[0].checked ==true))
+	if((document.form.url_enable_x[0].checked ==true)
 		&& (document.form.url_date_x_Sun.checked ==false)
 		&& (document.form.url_date_x_Mon.checked ==false)
 		&& (document.form.url_date_x_Tue.checked ==false)
@@ -65,29 +99,20 @@ function validForm(){
 		&& (document.form.url_date_x_Fri.checked ==false)
 		&& (document.form.url_date_x_Sat.checked ==false)){
 			alert("<#FirewallConfig_URLActiveDate_itemname#><#JS_fieldblank#>");
-			document.form.url_enable_x[0].checked=false;
-			document.form.url_enable_x[1].checked=true;
-			document.form.url_enable_x_1[0].checked=false;
-			document.form.url_enable_x_1[1].checked=true;
 			return false;
 	}
 
-	if(document.form.url_enable_x[0].checked == 1){
+	if(document.form.url_enable_x[0].checked ==true){
 		if(!validate_timerange(document.form.url_time_x_starthour, 0)
 			|| !validate_timerange(document.form.url_time_x_startmin, 1)
 			|| !validate_timerange(document.form.url_time_x_endhour, 2)
 			|| !validate_timerange(document.form.url_time_x_endmin, 3)
-			){return false;}
-
-		var starttime = eval(document.form.url_time_x_starthour.value + document.form.url_time_x_startmin.value);
-		var endtime = eval(document.form.url_time_x_endhour.value + document.form.url_time_x_endmin.value);
-
-		if(starttime > endtime){
-			alert("<#FirewallConfig_URLActiveTime_itemhint#>");
-			document.form.url_time_x_starthour.focus();
-			document.form.url_time_x_starthour.select();
+			){
 			return false;
 		}
+		
+		var starttime = eval(document.form.url_time_x_starthour.value + document.form.url_time_x_startmin.value);
+		var endtime = eval(document.form.url_time_x_endhour.value + document.form.url_time_x_endmin.value);
 		if(starttime == endtime){
 			alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
 			document.form.url_time_x_starthour.focus();
@@ -96,59 +121,65 @@ function validForm(){
 		}
 	}
 
-	if(document.form.url_enable_x_1[0].checked == 1){
-		if(!validate_timerange(document.form.url_time_x_starthour_1, 0)
-			|| !validate_timerange(document.form.url_time_x_startmin_1, 1)
-			|| !validate_timerange(document.form.url_time_x_endhour_1, 2)
-			|| !validate_timerange(document.form.url_time_x_endmin_1, 3)
-			){return false;}
+	if (!validate_hwaddr(document.form.url_mac_x))
+		return false;
 
-		var starttime_1 = eval(document.form.url_time_x_starthour_1.value + document.form.url_time_x_startmin_1.value);
-		var endtime_1 = eval(document.form.url_time_x_endhour_1.value + document.form.url_time_x_endmin_1.value);
-		
-		if(starttime_1 > endtime_1){
-			alert("<#FirewallConfig_URLActiveTime_itemhint#>");
-			document.form.url_time_x_starthour_1.focus();
-			document.form.url_time_x_starthour_1.select();
-			return false;
-		}
-		if(starttime_1 == endtime_1){
-			alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
-			document.form.url_time_x_starthour_1.focus();
-			document.form.url_time_x_starthour_1.select();
-			return false;
-		}
-	}
-
-	if(document.form.url_enable_x[0].checked == 1 && document.form.url_enable_x_1[0].checked == 1){
-		if(starttime < starttime_1){
-			if(!(endtime < starttime_1)){
-				alert("<#FirewallConfig_URLActiveTime_itemhint4#>");
-				return false; 
-			}
-		}
-		if(starttime_1 < starttime){
-			if(!(endtime_1 < starttime)){
-				alert("<#FirewallConfig_URLActiveTime_itemhint4#>");
-				return false; 
-			}
-		}
-		if(starttime == starttime_1){
-			alert("<#FirewallConfig_URLActiveTime_itemhint4#>");
-			return false;
-		}
-	}
 	return true;
 }
 
-function change_url_enable1(){
+function change_url_enable(){
 	var v = document.form.url_enable_x[0].checked;
-	showhide_div('row_url_time1', v);
+	showhide_div('tbl_urlf_main', v);
 }
 
-function change_url_enable2(){
-	var v = document.form.url_enable_x_1[0].checked;
-	showhide_div('row_url_time2', v);
+function click_mac_inv(o){
+	document.form.url_inv_x.value = (o.checked) ? "1" : "0";
+}
+
+function setClientMAC(num){
+	document.form.url_mac_x.value = clients_info[num][2];
+	hideClients_Block();
+}
+
+function showLANIPList(){
+	var code = "";
+	var show_name = "";
+	
+	for(var i = 0; i < clients_info.length ; i++){
+		if(clients_info[i][0] && clients_info[i][0].length > 20)
+			show_name = clients_info[i][0].substring(0, 18) + "..";
+		else
+			show_name = clients_info[i][0];
+		
+		if(clients_info[i][2]){
+			code += '<a href="javascript:void(0)"><div onclick="setClientMAC('+i+');"><strong>'+clients_info[i][1]+'</strong>';
+			code += ' ['+clients_info[i][2]+']';
+			if(show_name && show_name.length > 0)
+				code += ' ('+show_name+')';
+			code += ' </div></a>';
+		}
+	}
+	if (code == "")
+		code = '<div style="text-align: center;" onclick="hideClients_Block();"><#Nodata#></div>';
+	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
+	$("ClientList_Block").innerHTML = code;
+}
+
+function hideClients_Block(){
+	$j("#chevron").children('i').removeClass('icon-chevron-up').addClass('icon-chevron-down');
+	$('ClientList_Block').style.display='none';
+	isMenuopen = 0;
+}
+
+function pullLANIPList(obj){
+	if(isMenuopen == 0){
+		$j(obj).children('i').removeClass('icon-chevron-down').addClass('icon-chevron-up');
+		$("ClientList_Block").style.display = 'block';
+		document.form.url_mac_x.focus();
+		isMenuopen = 1;
+	}
+	else
+		hideClients_Block();
 }
 
 function done_validating(action){
@@ -194,7 +225,7 @@ function done_validating(action){
 
     <input type="hidden" name="url_date_x" value="<% nvram_get_x("","url_date_x"); %>">
     <input type="hidden" name="url_time_x" value="<% nvram_get_x("","url_time_x"); %>">
-    <input type="hidden" name="url_time_x_1" value="<% nvram_get_x("","url_time_x_1"); %>">
+    <input type="hidden" name="url_inv_x" value="<% nvram_get_x("", "url_inv_x"); %>" />
     <input type="hidden" name="url_num_x_0" value="<% nvram_get_x("","url_num_x"); %>" readonly="1">
 
     <div class="container-fluid">
@@ -225,54 +256,28 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th width="50%"><#FirewallConfig_UrlFilterEnable_itemname#> 1?</th>
-                                            <td>
+                                            <th width="50%" style="padding-bottom: 0px; border-top: 0 none;"><#FirewallConfig_UrlFilterEnable_itemname#>?</th>
+                                            <td style="padding-bottom: 0px; border-top: 0 none;">
                                                 <div class="main_itoggle">
-                                                    <div id="url_enable1_on_of">
-                                                        <input type="checkbox" id="url_enable1_fake" <% nvram_match_x("", "url_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "url_enable_x", "0", "value=0"); %>>
+                                                    <div id="url_enable_on_of">
+                                                        <input type="checkbox" id="url_enable_fake" <% nvram_match_x("", "url_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "url_enable_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="url_enable_x" id="url_enable1_1" onClick="change_url_enable1();" <% nvram_match_x("","url_enable_x", "1", "checked"); %>><#CTL_Enabled#>
-                                                    <input type="radio" value="0" name="url_enable_x" id="url_enable1_0" onClick="change_url_enable1();" <% nvram_match_x("","url_enable_x", "0", "checked"); %>><#CTL_Disabled#>
+                                                    <input type="radio" value="1" name="url_enable_x" id="url_enable_1" onClick="change_url_enable();" <% nvram_match_x("","url_enable_x", "1", "checked"); %>><#CTL_Enabled#>
+                                                    <input type="radio" value="0" name="url_enable_x" id="url_enable_0" onClick="change_url_enable();" <% nvram_match_x("","url_enable_x", "0", "checked"); %>><#CTL_Disabled#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="row_url_time1" style="display:none">
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,9,2);"><#FirewallConfig_URLActiveTime_itemname#> 1:</a></th>
-                                            <td>
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_starthour" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_startmin" onKeyPress="return is_number(this)">-
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_endhour" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_endmin" onKeyPress="return is_number(this)">
-                                            </td>
+                                    </table>
+
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_urlf_main" style="display:none">
+                                        <tr>
+                                            <th colspan="3" style="background-color: #E3E3E3;"><#menu5_5_2#></th>
                                         </tr>
                                         <tr>
-                                            <th><#FirewallConfig_UrlFilterEnable_itemname#> 2?</th>
-                                            <td>
-                                                <div class="main_itoggle">
-                                                    <div id="url_enable2_on_of">
-                                                        <input type="checkbox" id="url_enable2_fake" <% nvram_match_x("", "url_enable_x_1", "1", "value=1 checked"); %><% nvram_match_x("", "url_enable_x_1", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="url_enable_x_1" id="url_enable2_1" onClick="change_url_enable2();" <% nvram_match_x("","url_enable_x_1", "1", "checked"); %>><#CTL_Enabled#>
-                                                    <input type="radio" value="0" name="url_enable_x_1" id="url_enable2_0" onClick="change_url_enable2();" <% nvram_match_x("","url_enable_x_1", "0", "checked"); %>><#CTL_Disabled#>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_url_time2" style="display:none">
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,9,2);"><#FirewallConfig_URLActiveTime_itemname#> 2:</a></th>
-                                            <td>
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_starthour_1" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_startmin_1" onKeyPress="return is_number(this)">-
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_endhour_1" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_endmin_1" onKeyPress="return is_number(this)">
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,9,1);"><#FirewallConfig_URLActiveDate_itemname#></a></th>
-                                            <td>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,9,1);"><#FirewallConfig_URLActiveDate_itemname#></a></th>
+                                            <td colspan="2">
                                                 <div class="controls">
                                                     <label class="checkbox inline"><input type="checkbox" name="url_date_x_Mon" class="input" onChange="return changeDate();"><#DAY_Mon#></label>
                                                     <label class="checkbox inline"><input type="checkbox" name="url_date_x_Tue" class="input" onChange="return changeDate();"><#DAY_Tue#></label>
@@ -285,29 +290,52 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th id="UrlList"><#FirewallConfig_UrlList_groupitemdesc#></th>
-                                            <td style="padding: 8px;">
-                                                <input type="text" maxlength="32" size="36" name="url_keyword_x_0" style="float: left; max-width: 450px; min-width: 260px;" onKeyPress="return is_string(this)">
-                                                <button class="btn" style="margin-left: 5px;" type="submit" onClick="if(validForm()){return markGroup(this, 'UrlList', 128, ' Add ');}" name="UrlList" size="12"><i class="icon icon-plus"></i></button>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,9,2);"><#FirewallConfig_URLActiveTime_itemname#>:</a></th>
+                                            <td colspan="2">
+                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_starthour" onKeyPress="return is_number(this)">:
+                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_startmin" onKeyPress="return is_number(this)">-
+                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_endhour" onKeyPress="return is_number(this)">:
+                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_endmin" onKeyPress="return is_number(this)">
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#FirewallConfig_UrlMAC#>:</th>
+                                            <td colspan="2" align="left">
+                                                <div id="ClientList_Block" class="alert alert-info ddown-list"></div>
+                                                <div class="input-append">
+                                                    <input type="text" maxlength="12" class="span12" size="15" name="url_mac_x" value="<% nvram_get_x("","url_mac_x"); %>" onKeyPress="return is_hwaddr()" style="float:left; width: 162px">
+                                                    <button class="btn btn-chevron" id="chevron" type="button" onclick="pullLANIPList(this);" title="Select the MAC of LAN clients."><i class="icon icon-chevron-down"></i></button>&nbsp;
+                                                    <label class="checkbox inline"><input type="checkbox" name="url_inv_fake" value="" onclick="click_mac_inv(this);" <% nvram_match_x("", "url_inv_x", "1", "checked"); %>/><#FirewallConfig_UrlInv#></label>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#FirewallConfig_UrlList_groupitemdesc#></th>
+                                            <td style="padding-right: 0px;">
+                                                <input type="text" class="span12" maxlength="64" size="36" name="url_keyword_x_0" onKeyPress="return is_string(this)">
+                                            </td>
+                                            <td align="left">
+                                                <button class="btn" type="submit" onClick="if(validForm()){return markGroup(this, 'UrlList', 128, ' Add ');}" name="UrlList"><i class="icon icon-plus"></i></button>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th>&nbsp;</th>
-                                            <td style="padding: 8px;">
-                                                <select size="8" name="UrlList_s" multiple="multiple" style="max-width: 460px; min-width: 270px; vertical-align:middle; float: left;">
+                                            <td style="padding-right: 0px;">
+                                                <select size="8" class="span12" name="UrlList_s" multiple="true" style="vertical-align:middle;">
                                                     <% nvram_get_table_x("FirewallConfig","UrlList"); %>
                                                 </select>
-                                                <button class="btn btn-danger" style="margin-left: 5px;" type="submit" onClick="return markGroup(this, 'UrlList', 128, ' Del ');" name="UrlList" size="12"><i class="icon icon-minus icon-white"></i></button>
                                             </td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2">
-                                                <br />
-                                                <center><input class="btn btn-primary" style="width: 219px" onclick="applyRule();" type="button" value="<#CTL_apply#>" /></center>
+                                            <td style="vertical-align:top">
+                                                <button class="btn btn-danger" type="submit" onClick="return markGroup(this, 'UrlList', 128, ' Del ');" name="UrlList"><i class="icon icon-minus icon-white"></i></button>
                                             </td>
                                         </tr>
                                     </table>
 
+                                    <table class="table">
+                                        <tr>
+                                            <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
+                                        </tr>
+                                    </table>
                                 </div>
                             </div>
                         </div>

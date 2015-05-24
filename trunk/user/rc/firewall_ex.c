@@ -37,8 +37,6 @@
 
 #define MODULE_WEBSTR_MASK	0x01
 
-#define DAYS_MATCH		" --kerneltz --weekdays "
-
 /* state match - xt_conntrack or xt_state (xt_conntrack more slower than xt_state) */
 #if defined (USE_MATCH_CONNTRACK)
 #define CT_STATE		"conntrack --ctstate"
@@ -46,8 +44,8 @@
 #define CT_STATE		"state --state"
 #endif
 
-char *g_buf;
-char g_buf_pool[1024];
+static char *g_buf;
+static char g_buf_pool[1024];
 
 static void
 g_buf_init()
@@ -65,80 +63,83 @@ g_buf_alloc(char *g_buf_now)
 }
 
 static char *
-proto_conv(char *proto_name, int idx)
+proto_conv(const char *proto_name, int idx)
 {
 	char *proto;
 	char itemname_arr[32];
 
-	sprintf(itemname_arr,"%s%d", proto_name, idx);
-	proto=nvram_safe_get(itemname_arr);
+	snprintf(itemname_arr, sizeof(itemname_arr), "%s%d", proto_name, idx);
+	proto = nvram_safe_get(itemname_arr);
 
-	if (!strncasecmp(proto, "Both", 3)) strcpy(g_buf, "both");
-	else if (!strncasecmp(proto, "TCP", 3)) strcpy(g_buf, "tcp");
-	else if (!strncasecmp(proto, "UDP", 3)) strcpy(g_buf, "udp");
-	else if (!strncasecmp(proto, "OTHER", 5)) strcpy(g_buf, "other");
-	else strcpy(g_buf,"tcp");
+	if (!strncasecmp(proto, "Both", 4))
+		strcpy(g_buf, "both");
+	else if (!strncasecmp(proto, "TCP", 3))
+		strcpy(g_buf, "tcp");
+	else if (!strncasecmp(proto, "UDP", 3))
+		strcpy(g_buf, "udp");
+	else if (!strncasecmp(proto, "OTHER", 5))
+		strcpy(g_buf, "other");
+	else
+		strcpy(g_buf, "tcp");
 
 	return (g_buf_alloc(g_buf));
 }
 
 static char *
-protoflag_conv(char *proto_name, int idx, int isFlag)
+protoflag_conv(const char *proto_name, int idx, int isFlag)
 {
 	char *proto;
 	char itemname_arr[32];
 
-	sprintf(itemname_arr,"%s%d", proto_name, idx);
-	proto=nvram_safe_get(itemname_arr);
+	snprintf(itemname_arr, sizeof(itemname_arr), "%s%d", proto_name, idx);
+	proto = nvram_safe_get(itemname_arr);
 
 	strcpy(g_buf, "");
 
-	if (!isFlag)
-	{
-		if (strncasecmp(proto, "UDP", 3)==0) strcpy(g_buf, "udp");
-		else strcpy(g_buf, "tcp");
-	}
-	else
-	{
-		if (strlen(proto)>3)
-		{
+	if (!isFlag) {
+		if (!strncasecmp(proto, "UDP", 3))
+			strcpy(g_buf, "udp");
+		else if (!strncasecmp(proto, "OTHER", 5))
+			strcpy(g_buf, "other");
+		else
+			strcpy(g_buf, "tcp");
+	} else {
+		if (strlen(proto)>3 && !strncasecmp(proto, "TCP", 3))
 			strcpy(g_buf, proto+4);
-		}
-		else strcpy(g_buf,"");
 	}
 
 	return (g_buf_alloc(g_buf));
 }
 
 static char *
-portrange_conv(char *port_name, int idx)
+portrange_conv(const char *port_name, int idx)
 {
 	char itemname_arr[32];
 
-	sprintf(itemname_arr,"%s%d", port_name, idx);
+	snprintf(itemname_arr, sizeof(itemname_arr), "%s%d", port_name, idx);
 	strcpy(g_buf, nvram_safe_get(itemname_arr));
 
 	return (g_buf_alloc(g_buf));
 }
 
 static char *
-ip_conv(char *ip_name, int idx)
+ip_conv(const char *ip_name, int idx)
 {
 	char itemname_arr[32];
 
-	sprintf(itemname_arr,"%s%d", ip_name, idx);
-	sprintf(g_buf, "%s", nvram_safe_get(itemname_arr));
+	snprintf(itemname_arr, sizeof(itemname_arr), "%s%d", ip_name, idx);
+	strcpy(g_buf, nvram_safe_get(itemname_arr));
 
 	return (g_buf_alloc(g_buf));
 }
 
 static char *
-general_conv(char *ip_name, int idx)
+general_conv(const char *ip_name, int idx)
 {
 	char itemname_arr[32];
 
-	sprintf(itemname_arr,"%s%d", ip_name, idx);
-	sprintf(g_buf, "%s", nvram_safe_get(itemname_arr));
+	snprintf(itemname_arr, sizeof(itemname_arr), "%s%d", ip_name, idx);
+	strcpy(g_buf, nvram_safe_get(itemname_arr));
 
 	return (g_buf_alloc(g_buf));
 }
@@ -150,20 +151,17 @@ filter_conv(char *proto, char *flag, char *srcip, char *srcport, char *dstip, ch
 
 	strcpy(g_buf, "");
 
-	if (strcmp(proto, "")!=0)
-	{
-		sprintf(newstr, " -p %s", proto);
+	if (strcmp(proto, "") != 0) {
+		snprintf(newstr, sizeof(newstr), " -p %s", proto);
 		strcat(g_buf, newstr);
 	}
 
-	if (strcmp(flag, "")!=0)
-	{
+	if (strcmp(flag, "") != 0) {
 		snprintf(newstr, sizeof(newstr), " --tcp-flags %s %s", flag, flag);
 		strcat(g_buf, newstr);
 	}
-	
-	if (strcmp(srcip, "") != 0)
-	{
+
+	if (strcmp(srcip, "") != 0) {
 		if (strchr(srcip , '-'))
 			snprintf(newstr, sizeof(newstr), " --src-range %s", srcip);
 		else
@@ -171,14 +169,12 @@ filter_conv(char *proto, char *flag, char *srcip, char *srcport, char *dstip, ch
 		strcat(g_buf, newstr);
 	}
 
-	if (strcmp(srcport, "")!=0)
-	{
+	if (strcmp(srcport, "") != 0) {
 		snprintf(newstr, sizeof(newstr), " --sport %s", srcport);
 		strcat(g_buf, newstr);
 	}
 
-	if (strcmp(dstip, "")!=0)
-	{
+	if (strcmp(dstip, "") != 0) {
 		if (strchr(dstip, '-'))
 			snprintf(newstr, sizeof(newstr), " --dst-range %s", dstip);
 		else
@@ -186,8 +182,7 @@ filter_conv(char *proto, char *flag, char *srcip, char *srcport, char *dstip, ch
 		strcat(g_buf, newstr);
 	}
 
-	if (strcmp(dstport, "")!=0)
-	{
+	if (strcmp(dstport, "") != 0) {
 		snprintf(newstr, sizeof(newstr), " --dport %s", dstport);
 		strcat(g_buf, newstr);
 	}
@@ -196,40 +191,65 @@ filter_conv(char *proto, char *flag, char *srcip, char *srcport, char *dstip, ch
 }
 
 static void
-timematch_conv(char *mstr, char *nv_date, char *nv_time)
+timematch_conv(char *mstr, const char *nv_date, const char *nv_time)
 {
-	char *datestr[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-	char *time, *date;
-	int i, comma;
+	const char *datestr[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+	char time_s[8], time_e[8], *time, *date;
+	int i, comma = 0;
 
 	date = nvram_get(nv_date);
-	time = nvram_get(nv_time);
+	if (!date)
+		date = "1111111";
 
-	if (!date) date = "1111111";
-	if (!time) time = "00002359";
+	time = nvram_get(nv_time);
+	if (!time)
+		time = "00002359";
 
 	mstr[0] = 0;
 
-	if (strlen(date) != 7 || !strcmp(date, "0000000") || strlen(time) != 8)
+	if (strlen(date) != 7 || strlen(time) != 8)
 		return;
 
-	if (strncmp(date, "1111111", 7) == 0 && strncmp(time, "00002359", 8) == 0) 
+	if (!strcmp(date, "0000000"))
 		return;
 
-	sprintf(mstr, " -m time --timestart %c%c:%c%c:00 --timestop %c%c:%c%c:59%s",
-		time[0], time[1], time[2], time[3], time[4], time[5], time[6], time[7], DAYS_MATCH);
+	/* check anytime */
+	if (!strcmp(date, "1111111") && !strcmp(time, "00002359"))
+		return;
 
-	comma = 0;
-	for (i=0; i<7; i++)
-	{
-		if (date[i] == '1')
-		{
-			if (comma)
-				strcat(mstr, ",");
-			else
-				comma = 1;
-			
-			strcat(mstr, datestr[i]);
+	strncpy(time_s, time+0, 4);
+	strncpy(time_e, time+4, 4);
+
+	time_s[4] = 0;
+	time_e[4] = 0;
+
+	/* check whole day */
+	if (!strcmp(time_s, "0000") && !strcmp(time_e, "2359")) {
+		sprintf(mstr, " -m time %s", "--kerneltz");
+	} else {
+		const char *contiguous = "";
+		
+		/* check cross-night */
+		if (atoi(time_s) >= atoi(time_e))
+			contiguous = " --contiguous";
+		
+		sprintf(mstr, " -m time --timestart %c%c:%c%c:00 --timestop %c%c:%c%c:59%s %s",
+			time[0], time[1], time[2], time[3], time[4], time[5], time[6], time[7],
+			contiguous, "--kerneltz");
+	}
+
+	/* check everyday */
+	if (strcmp(date, "1111111")) {
+		strcat(mstr, " --weekdays ");
+		for (i=0; i<7; i++) {
+			if (date[i] == '1') {
+				if (comma)
+					strcat(mstr, ",");
+				else
+					comma = 1;
+				
+				strcat(mstr, datestr[i]);
+			}
 		}
 	}
 }
@@ -251,17 +271,13 @@ iprange_ex_conv(const char *ip_name, int idx)
 	i=j=k=0;
 	mask=32;
 
-	while (*(ip+i))
-	{
-		if (*(ip+i)=='*')
-		{
+	while (*(ip+i)) {
+		if (*(ip+i)=='*') {
 			startip[j++] = '0';
 			endip[k++] = '0';
 			// 255 is for broadcast
 			mask-=8;
-		}
-		else
-		{
+		} else {
 			startip[j++] = *(ip+i);
 			endip[k++] = *(ip+i);
 		}
@@ -281,11 +297,13 @@ iprange_ex_conv(const char *ip_name, int idx)
 	return (g_buf_alloc(g_buf));
 }
 
+#if 0
 static int
-is_valid_filter_date(char *nv_date)
+is_valid_filter_date(const char *nv_date)
 {
 	char *date = nvram_get(nv_date);
-	if (!date) date = "1111111";
+	if (!date)
+		date = "1111111";
 
 	if (strlen(date) != 7 || !strcmp(date, "0000000"))
 		return 0;
@@ -294,65 +312,29 @@ is_valid_filter_date(char *nv_date)
 }
 
 static int
-is_valid_filter_time(char *nv_time, char *nv_time1, char *nv_enable, char *nv_enable1)
+is_valid_filter_time(const char *nv_time)
 {
-	char starttime1[8], endtime1[8];
-	char starttime2[8], endtime2[8];
-	int  enable1 = nvram_get_int(nv_enable);
-	int  enable2 = nvram_get_int(nv_enable1);
-	char *time1 = nvram_get(nv_time);
-	char *time2 = nvram_get(nv_time1);
-	if (!time1) time1 = "00002359";
-	if (!time2) time2 = "00002359";
+	char time_s[8], time_e[8], *time;
 
-	memset(starttime1, 0, sizeof(starttime1));
-	memset(starttime2, 0, sizeof(starttime2));
-	memset(endtime1, 0, sizeof(endtime1));
-	memset(endtime2, 0, sizeof(endtime2));
+	time = nvram_get(nv_time);
+	if (!time)
+		time = "00002359";
 
-	if (enable1 != 1 && enable2 != 1)
+	if (strlen(time) != 8)
 		return 0;
 
-	if (enable1 == 1)
-	{
-		if (strlen(time1) != 8)
-			goto err;
-		
-		strncpy(starttime1, time1, 4);
-		strncpy(endtime1, time1 + 4, 4);
-		
-		if (atoi(starttime1) >= atoi(endtime1))
-			goto err;
-	}
+	strncpy(time_s, time+0, 4);
+	strncpy(time_e, time+4, 4);
 
-	if (enable2 == 1)
-	{
-		if (strlen(time2) != 8)
-			goto err;
-		
-		strncpy(starttime2, time2, 4);
-		strncpy(endtime2, time2 + 4, 4);
-		
-		if (atoi(starttime2) >= atoi(endtime2))
-			goto err;
-	}
+	time_s[4] = 0;
+	time_e[4] = 0;
 
-	if (enable1 == 1 && enable2 == 1)
-	{
-		if ((atoi(starttime1) > atoi(starttime2)) && 
-			((atoi(starttime2) > atoi(endtime1)) || (atoi(endtime2) > atoi(endtime1))))
-			goto err;
-		
-		if ((atoi(starttime2) > atoi(starttime1)) && 
-			((atoi(starttime1) > atoi(endtime2)) || (atoi(endtime1) > atoi(endtime2))))
-			goto err;
-	}
+	if (atoi(time_s) == atoi(time_e))
+		return 0;
 
 	return 1;
-
-err:
-	return 0;
 }
+#endif
 
 void
 ip2class(const char *addr, const char *mask, char *out_buf, size_t out_len)
@@ -387,8 +369,7 @@ fill_static_routes(char *buf, int len, const char *ift)
 
 	buf[0] = '\0';
 
-	foreach_x("sr_num_x")
-	{
+	foreach_x("sr_num_x") {
 		g_buf_init();
 		
 		ip = general_conv("sr_ipaddr_x", i);
@@ -416,99 +397,6 @@ fill_static_routes(char *buf, int len, const char *ift)
 		buf[len_iter-1] = '\0';
 }
 
-static int
-include_mac_filter(FILE *fp, char *logdrop)
-{
-	int i, mac_num, mac_filter;
-	char mac_timematch[128], mac_buf[64], nv_date[32], nv_time[32];
-	char *filter_mac, *dtype, *ftype;
-	
-	mac_filter = nvram_get_int("macfilter_enable_x");
-	if (mac_filter > 0)
-	{
-		dtype = IPT_CHAIN_NAME_MAC_LIST;
-		
-		if (mac_filter == 2)
-			ftype = logdrop;
-		else
-			ftype = "RETURN";
-		
-		mac_num = 0;
-		foreach_x("macfilter_num_x")
-		{
-			g_buf_init();
-			
-			filter_mac = mac_conv("macfilter_list_x", i, mac_buf);
-			if (*filter_mac)
-			{
-				mac_num++;
-				sprintf(nv_date, "macfilter_date_x%d", i);
-				sprintf(nv_time, "macfilter_time_x%d", i);
-				timematch_conv(mac_timematch, nv_date, nv_time);
-				fprintf(fp, "-A %s -m mac --mac-source %s%s -j %s\n", dtype, filter_mac, mac_timematch, ftype);
-			}
-		}
-		
-		if (mac_filter != 2 && mac_num > 0)
-			fprintf(fp, "-A %s -j %s\n", dtype, logdrop);
-		
-		if (mac_num < 1)
-			mac_filter = 0;
-	}
-
-	return mac_filter;
-}
-
-static int
-include_webstr_filter(FILE *fp)
-{
-	int i, url_enable, url_enable_1, webstr_items;
-	char url_timematch[128], url_timematch_1[128], nvname[32], *filterstr, *dtype;
-
-	webstr_items = 0;
-
-	if (is_valid_filter_time("url_time_x", "url_time_x_1", "url_enable_x", "url_enable_x_1") && 
-	    is_valid_filter_date("url_date_x"))
-	{
-		dtype = IPT_CHAIN_NAME_URL_LIST;
-		
-		url_enable = nvram_get_int("url_enable_x");
-		url_enable_1 = nvram_get_int("url_enable_x_1");
-		
-		if (url_enable == 1)
-			timematch_conv(url_timematch, "url_date_x", "url_time_x");
-		if (url_enable_1 == 1)
-			timematch_conv(url_timematch_1, "url_date_x", "url_time_x_1");
-		
-		foreach_x("url_num_x")
-		{
-			sprintf(nvname, "url_keyword_x%d", i);
-			filterstr = nvram_safe_get(nvname);
-			if (strncasecmp(filterstr, "http://", 7) == 0)
-				filterstr += 7;
-			else if (strncasecmp(filterstr, "https://", 8) == 0)
-				filterstr += 8;
-			
-			if (*filterstr)
-			{
-				if (url_enable == 1)
-				{
-					fprintf(fp, "-A %s -p tcp%s -m webstr --url \"%s\" -j REJECT --reject-with tcp-reset\n", dtype, url_timematch, filterstr);
-					webstr_items++;
-				}
-				
-				if (url_enable_1 == 1)
-				{
-					fprintf(fp, "-A %s -p tcp%s -m webstr --url \"%s\" -j REJECT --reject-with tcp-reset\n", dtype, url_timematch_1, filterstr);
-					webstr_items++;
-				}
-			}
-		}
-	}
-
-	return webstr_items;
-}
-
 static void
 include_vpns_clients(FILE *fp)
 {
@@ -527,77 +415,157 @@ include_vpns_clients(FILE *fp)
 	}
 }
 
-static void
-include_lw_filter(FILE *fp, char *lan_if, char *wan_if, char *logaccept, char *logdrop)
+static int
+include_mac_filter(FILE *fp, int mac_filter_mode, char *logdrop)
 {
-	int i, lw_enable, lw_enable_1;
-	char lw_timematch[128], lw_timematch_1[128], icmp_ptr[64];
-	char *icmplist, *filterstr, *dtype, *ftype, *jtype;
-	char *proto, *flag, *srcip, *srcport, *dstip, *dstport;
+	int i, mac_num;
+	char mac_timematch[128], mac_buf[64], nv_date[32], nv_time[32];
+	char *filter_mac, *ftype;
+	const char *dtype = IPT_CHAIN_NAME_MAC_LIST;
 
-	dtype = "FORWARD";
-
-	if (is_valid_filter_time("filter_lw_time_x", "filter_lw_time_x_1", "fw_lw_enable_x", "fw_lw_enable_x_1") && 
-	    is_valid_filter_date("filter_lw_date_x"))
-	{
-		lw_enable = nvram_get_int("fw_lw_enable_x");
-		lw_enable_1 = nvram_get_int("fw_lw_enable_x_1");
-		
-		if (lw_enable == 1)
-			timematch_conv(lw_timematch, "filter_lw_date_x", "filter_lw_time_x");
-		if (lw_enable_1 == 1)
-			timematch_conv(lw_timematch_1, "filter_lw_date_x", "filter_lw_time_x_1");
-		
-		if (nvram_match("filter_lw_default_x", "DROP"))
-		{
-			jtype = logdrop;
-			ftype = logaccept;
-		}
-		else
-		{
-			jtype = logaccept;
+	if (mac_filter_mode > 0) {
+		if (mac_filter_mode == 2)
 			ftype = logdrop;
-		}
+		else
+			ftype = "RETURN";
 		
-		foreach_x("filter_lw_num_x")
-		{
+		mac_num = 0;
+		foreach_x("macfilter_num_x") {
 			g_buf_init();
 			
-			proto = protoflag_conv("filter_lw_proto_x", i, 0);
-			flag = protoflag_conv("filter_lw_proto_x", i, 1);
-			srcip = iprange_ex_conv("filter_lw_srcip_x", i);
-			srcport = portrange_conv("filter_lw_srcport_x", i);
-			dstip = iprange_ex_conv("filter_lw_dstip_x", i);
-			dstport = portrange_conv("filter_lw_dstport_x", i);
-			filterstr = filter_conv(proto, flag, srcip, srcport, dstip, dstport);
-			
-			if (*filterstr)
-			{
-				if (lw_enable == 1)
-					fprintf(fp, "-A %s -i %s %s%s -j %s\n", dtype, lan_if, filterstr, lw_timematch, ftype);
-				
-				if (lw_enable_1 == 1)
-					fprintf(fp, "-A %s -i %s %s%s -j %s\n", dtype, lan_if, filterstr, lw_timematch_1, ftype);
+			filter_mac = mac_conv("macfilter_list_x", i, mac_buf);
+			if (*filter_mac) {
+				mac_num++;
+				sprintf(nv_date, "macfilter_date_x%d", i);
+				sprintf(nv_time, "macfilter_time_x%d", i);
+				timematch_conv(mac_timematch, nv_date, nv_time);
+				fprintf(fp, "-A %s -m mac --mac-source %s%s -j %s\n", dtype, filter_mac, mac_timematch, ftype);
 			}
 		}
 		
-		// ICMP
-		icmp_ptr[0] = 0;
-		foreach(icmp_ptr, nvram_safe_get("filter_lw_icmp_x"), icmplist)
-		{
-			if (*icmp_ptr)
-			{
-				if (lw_enable == 1)
-					fprintf(fp, "-A %s -i %s -o %s -p icmp --icmp-type %s%s -j %s\n", dtype, lan_if, wan_if, icmp_ptr, lw_timematch, ftype);
-				
-				if (lw_enable_1 == 1)
-					fprintf(fp, "-A %s -i %s -o %s -p icmp --icmp-type %s%s -j %s\n", dtype, lan_if, wan_if, icmp_ptr, lw_timematch_1, ftype);
-			}
-		}
+		if (mac_filter_mode != 2 && mac_num > 0)
+			fprintf(fp, "-A %s -j %s\n", dtype, logdrop);
 		
-		// Default
-		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, jtype);
+		if (mac_num < 1)
+			mac_filter_mode = 0;
 	}
+
+	return mac_filter_mode;
+}
+
+static int
+include_webstr_filter(FILE *fp)
+{
+	int i, webstr_items, url_length, url_total;
+	char url_list[256], nv_name[32], *filterstr;
+	const char *dtype = IPT_CHAIN_NAME_URL_LIST;
+	const char *split = "<&nbsp;>";
+
+	/* webstr support max 256 bytes splitted URL */
+
+	url_total = 0;
+	url_list[0] = 0;
+
+	webstr_items = 0;
+
+	foreach_x("url_num_x") {
+		sprintf(nv_name, "url_keyword_x%d", i);
+		filterstr = nvram_safe_get(nv_name);
+		if (strncasecmp(filterstr, "http://", 7) == 0)
+			filterstr += 7;
+		else if (strncasecmp(filterstr, "https://", 8) == 0)
+			filterstr += 8;
+		
+		url_length = strlen(filterstr);
+		if (url_length < 1 || url_length >= sizeof(url_list))
+			continue;
+		
+		if (url_total > 0)
+			url_length += strlen(split);
+		
+		if (url_total + url_length < sizeof(url_list)) {
+			if (url_total > 0)
+				strcat(url_list, split);
+		} else {
+			url_length = strlen(filterstr);
+			
+			/* flush merged url */
+			fprintf(fp, "-A %s -p tcp -m webstr --url \"%s\" -j REJECT --reject-with tcp-reset\n",
+				dtype, url_list);
+			webstr_items++;
+			
+			url_total = 0;
+			url_list[0] = 0;
+		}
+		strcat(url_list, filterstr);
+		url_total += url_length;
+	}
+
+	if (url_total) {
+		fprintf(fp, "-A %s -p tcp -m webstr --url \"%s\" -j REJECT --reject-with tcp-reset\n",
+			dtype, url_list);
+		webstr_items++;
+	}
+
+	return webstr_items;
+}
+
+static int
+include_lw_filter(FILE *fp, char *wan_if, char *logaccept, char *logdrop)
+{
+	int i, lw_need_drop, lw_items;
+	char icmp_ptr[64], *icmplist, *filterstr, *ftype;
+	char *proto, *flag, *srcip, *srcport, *dstip, *dstport;
+	const char *dtype = IPT_CHAIN_NAME_LWF_LIST;
+
+	if (nvram_match("filter_lw_default_x", "DROP")) {
+		ftype = logaccept;
+		lw_need_drop = 1;
+	} else {
+		ftype = logdrop;
+		lw_need_drop = 0;
+	}
+
+	lw_items = 0;
+
+	foreach_x("filter_lw_num_x") {
+		g_buf_init();
+		
+		proto = protoflag_conv("filter_lw_proto_x", i, 0);
+		if (strcmp(proto, "other") == 0) {
+			proto = portrange_conv("filter_lw_protono_x", i);
+			flag = "";
+			srcport = "";
+			dstport = "";
+		} else {
+			flag = protoflag_conv("filter_lw_proto_x", i, 1);
+			srcport = portrange_conv("filter_lw_srcport_x", i);
+			dstport = portrange_conv("filter_lw_dstport_x", i);
+		}
+		
+		srcip = iprange_ex_conv("filter_lw_srcip_x", i);
+		dstip = iprange_ex_conv("filter_lw_dstip_x", i);
+		
+		filterstr = filter_conv(proto, flag, srcip, srcport, dstip, dstport);
+		if (*filterstr) {
+			fprintf(fp, "-A %s %s -j %s\n", dtype, filterstr, ftype);
+			lw_items++;
+		}
+	}
+
+	icmp_ptr[0] = 0;
+	foreach(icmp_ptr, nvram_safe_get("filter_lw_icmp_x"), icmplist) {
+		if (*icmp_ptr) {
+			fprintf(fp, "-A %s -o %s -p icmp --icmp-type %s -j %s\n",
+				dtype, wan_if, icmp_ptr, ftype);
+			lw_items++;
+		}
+	}
+
+	if (lw_items > 0 && lw_need_drop)
+		fprintf(fp, "-A %s -j %s\n", dtype, logdrop);
+
+	return lw_items;
 }
 
 static void
@@ -787,10 +755,11 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
                  char *logaccept, char *logdrop, int tcp_mss_need)
 {
 	FILE *fp;
-	char *ftype, *dtype;
+	char timematch[160], *ftype, *dtype;
 	const char *ipt_file = "/tmp/ipt_filter.rules";
 	int ret, wport, lport;
 	int is_nat_enabled, is_dos_enabled, is_fw_enabled, is_logaccept, is_logdrop;
+	int is_url_enabled, is_lwf_enabled;
 	int i_vpns_enable, i_vpns_type, i_vpns_actl, i_http_proto, i_bfplimit_ref;
 	int i_vpnc_enable, i_vpnc_type, i_vpnc_sfw, i_mac_filter;
 #if defined (APP_OPENVPN)
@@ -810,6 +779,10 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
 	is_dos_enabled = nvram_match("fw_dos_x", "1");
 	is_fw_enabled  = nvram_match("fw_enable_x", "1");
+	is_url_enabled = nvram_match("url_enable_x", "1");
+	is_lwf_enabled = nvram_match("fw_lw_enable_x", "1");
+
+	i_mac_filter   = nvram_get_int("macfilter_enable_x");
 
 	i_vpns_enable  = nvram_get_int("vpns_enable");
 	i_vpns_type    = nvram_get_int("vpns_type");
@@ -828,9 +801,13 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 	fprintf(fp, ":%s %s [0:0]\n", "OUTPUT", "ACCEPT");
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP4_FORWARD);
 	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_VPN_LIST);
-	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_MAC_LIST);
-	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_URL_LIST);
 	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_BFP_LIMIT);
+	if (i_mac_filter > 0)
+		fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_MAC_LIST);
+	if (is_url_enabled)
+		fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_URL_LIST);
+	if (is_lwf_enabled)
+		fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_LWF_LIST);
 	if (is_dos_enabled)
 		fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_DOS_LIMIT);
 	if (is_logaccept)
@@ -838,11 +815,11 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 	if (is_logdrop)
 		fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_LOG_DROP);
 
+	// maclist chain
+	i_mac_filter = include_mac_filter(fp, i_mac_filter, logdrop);
+
 	// INPUT chain
 	dtype = "INPUT";
-
-	// maclist chain
-	i_mac_filter = include_mac_filter(fp, logdrop);
 
 	/* Policy for all traffic from MAC-filtered LAN clients */
 	if (i_mac_filter > 0 && nvram_match("fw_mac_drop", "1"))
@@ -1005,9 +982,8 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 		}
 		
 		/* add Virtual Server rules for router host */
-		if (is_nat_enabled && nvram_match("vts_enable_x", "1")) {
+		if (is_nat_enabled && nvram_match("vts_enable_x", "1"))
 			include_vts_filter(fp, lan_ip, logaccept, 0);
-		}
 		
 		/* Accept ICMPv4 packets */
 		if (nvram_invmatch("misc_ping_x", "0")) {
@@ -1044,8 +1020,19 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 	}
 
 	/* use url filter before accepting ESTABLISHED packets */
-	if (include_webstr_filter(fp) > 0) {
-		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, IPT_CHAIN_NAME_URL_LIST);
+	if (is_url_enabled && include_webstr_filter(fp) > 0) {
+		char mac_buf[24] = {0};
+		timematch[0] = 0;
+		timematch_conv(timematch, "url_date_x", "url_time_x");
+		mac_conv("url_mac_x", -1, mac_buf);
+		if (strlen(mac_buf) == 17) {
+			strcat(timematch, " -m mac");
+			if (nvram_match("url_inv_x", "1"))
+				strcat(timematch, " !");
+			strcat(timematch, " --mac-source ");
+			strcat(timematch, mac_buf);
+		}
+		fprintf(fp, "-A %s -i %s%s -j %s\n", dtype, lan_if, timematch, IPT_CHAIN_NAME_URL_LIST);
 		ret |= MODULE_WEBSTR_MASK;
 	}
 
@@ -1087,27 +1074,15 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 	if (is_dos_enabled)
 		fprintf(fp, "-A %s -i %s -m %s %s -j %s\n", dtype, wan_if, CT_STATE, "NEW", IPT_CHAIN_NAME_DOS_LIMIT);
 
-	/* Block LAN outbound traffic for specified VPN packets */
-	if (nvram_match("fw_pt_pptp", "0"))
-		fprintf(fp, "-A %s -i %s -p %d -j %s\n", dtype, lan_if, 47, logdrop);
-	if (nvram_match("fw_pt_ipsec", "0")) {
-		fprintf(fp, "-A %s -i %s -p %d -j %s\n", dtype, lan_if, 50, logdrop);
-		fprintf(fp, "-A %s -i %s -p %d -j %s\n", dtype, lan_if, 51, logdrop);
-	}
-	if (nvram_match("fw_pt_pptp", "0"))
-		fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, lan_if, 1723, logdrop);
-	if (nvram_match("fw_pt_l2tp", "0"))
-		fprintf(fp, "-A %s -i %s -p udp --dport %d -j %s\n", dtype, lan_if, 1701, logdrop);
-	if (nvram_match("fw_pt_ipsec", "0")) {
-		fprintf(fp, "-A %s -i %s -p udp --dport %d -j %s\n", dtype, lan_if, 500, logdrop);
-		fprintf(fp, "-A %s -i %s -p udp --dport %d -j %s\n", dtype, lan_if, 4500, logdrop);
-	}
-
 	/* FILTER from LAN to WAN */
-	include_lw_filter(fp, lan_if, wan_if, logaccept, logdrop);
+	if (is_lwf_enabled && include_lw_filter(fp, wan_if, logaccept, logdrop) > 0) {
+		timematch[0] = 0;
+		timematch_conv(timematch, "filter_lw_date_x", "filter_lw_time_x");
+		fprintf(fp, "-A %s -i %s%s -j %s\n", dtype, lan_if, timematch, IPT_CHAIN_NAME_LWF_LIST);
+	}
 
 	if (is_fw_enabled) {
-		/* Accept LAN other outbound traffic  */
+		/* Accept LAN other outbound traffic */
 		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, "ACCEPT");
 		
 		/* Accept VPN server client's outbound traffic */
@@ -1251,13 +1226,11 @@ ipt_filter_default(void)
 
 	fprintf(fp, "*%s\n", "filter");
 	fprintf(fp, ":%s %s [0:0]\n", "INPUT", (is_fw_enabled) ? "DROP" : "ACCEPT");
-	fprintf(fp, ":%s %s [0:0]\n", "FORWARD", (is_fw_enabled) ? "DROP" :  "ACCEPT");
+	fprintf(fp, ":%s %s [0:0]\n", "FORWARD", (is_fw_enabled) ? "DROP" : "ACCEPT");
 	fprintf(fp, ":%s %s [0:0]\n", "OUTPUT", "ACCEPT");
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP4_FORWARD);
+	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_LWF_LIST);
 	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_VPN_LIST);
-	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_MAC_LIST);
-	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_URL_LIST);
-	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_BFP_LIMIT);
 
 	/* INPUT chain */
 	dtype = "INPUT";
@@ -1357,9 +1330,9 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if,
                   char *logaccept, char *logdrop, int tcp_mss_need)
 {
 	FILE *fp;
-	char *ftype, *dtype;
+	char timematch[160], *ftype, *dtype;
 	int ret, wport, lport;
-	int ipv6_type, is_fw_enabled, is_logaccept, is_logdrop;
+	int ipv6_type, is_fw_enabled, is_url_enabled, is_logaccept, is_logdrop;
 	int i_http_proto, i_bfplimit_ref, i_mac_filter;
 	const char *ipt_file = "/tmp/ip6t_filter.rules";
 
@@ -1369,6 +1342,9 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if,
 	ipv6_type = get_ipv6_type();
 
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
+	is_url_enabled = nvram_match("url_enable_x", "1");
+
+	i_mac_filter = nvram_get_int("macfilter_enable_x");
 
 	is_logaccept = (strcmp(logaccept, IPT_CHAIN_NAME_LOG_ACCEPT) == 0) ? 1 : 0;
 	is_logdrop = (strcmp(logdrop, IPT_CHAIN_NAME_LOG_DROP) == 0) ? 1 : 0;
@@ -1381,19 +1357,21 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if,
 	fprintf(fp, ":%s %s [0:0]\n", "FORWARD", (is_fw_enabled) ? "DROP" :  "ACCEPT");
 	fprintf(fp, ":%s %s [0:0]\n", "OUTPUT", "ACCEPT");
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP6_FORWARD);
-	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_MAC_LIST);
-	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_URL_LIST);
 	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_BFP_LIMIT);
+	if (i_mac_filter > 0)
+		fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_MAC_LIST);
+	if (is_url_enabled)
+		fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_URL_LIST);
 	if (is_logaccept)
 		fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_LOG_ACCEPT);
 	if (is_logdrop)
 		fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_LOG_DROP);
 
+	// maclist chain
+	i_mac_filter = include_mac_filter(fp, i_mac_filter, logdrop);
+
 	// INPUT chain (accept_source_route=0 by default, no needed drop RH0 packet)
 	dtype = "INPUT";
-
-	// maclist chain
-	i_mac_filter = include_mac_filter(fp, logdrop);
 
 	/* Policy for all traffic from MAC-filtered LAN clients */
 	if (i_mac_filter > 0 && nvram_match("fw_mac_drop", "1"))
@@ -1536,8 +1514,20 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if,
 	}
 
 	/* use url filter before accepting ESTABLISHED packets */
-	if (include_webstr_filter(fp) > 0) {
-		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, IPT_CHAIN_NAME_URL_LIST);
+	if (is_url_enabled && include_webstr_filter(fp) > 0) {
+		char mac_buf[24] = {0};
+		
+		timematch[0] = 0;
+		timematch_conv(timematch, "url_date_x", "url_time_x");
+		mac_conv("url_mac_x", -1, mac_buf);
+		if (strlen(mac_buf) == 17) {
+			strcat(timematch, " -m mac");
+			if (nvram_match("url_inv_x", "1"))
+				strcat(timematch, " !");
+			strcat(timematch, " --mac-source ");
+			strcat(timematch, mac_buf);
+		}
+		fprintf(fp, "-A %s -i %s%s -j %s\n", dtype, lan_if, timematch, IPT_CHAIN_NAME_URL_LIST);
 		ret |= MODULE_WEBSTR_MASK;
 	}
 

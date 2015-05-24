@@ -52,6 +52,7 @@
 			{"filter_lw_dstip_x", "16", NULL, FALSE},
 			{"filter_lw_dstport_x", "12", NULL, FALSE},
 			{"filter_lw_proto_x", "8", NULL, FALSE},
+			{"filter_lw_protono_x", "12", NULL, FALSE},
 			{0,0,0,0}
 		};
 
@@ -266,7 +267,7 @@
 
 	struct variable variables_IPConnection[] = {
 			{"sw_mode", "", NULL, EVM_RESTART_REBOOT},
-			{"wan_nat_x", "", NULL, EVM_RESTART_WAN},
+			{"wan_nat_x", "", NULL, EVM_RESTART_NETFILTER},
 			{"gw_arp_ping", "", NULL, EVM_RESTART_WAN},
 			{"hw_nat_mode", "", NULL, EVM_RESTART_FIREWALL},
 			{"sw_nat_mode", "", NULL, EVM_RESTART_FIREWALL},
@@ -372,23 +373,18 @@
 			{"udpxy_wport", "", NULL, EVM_RESTART_FIREWALL},
 			{"misc_lpr_x", "", NULL, EVM_RESTART_FIREWALL},
 			{"misc_ping_x", "", NULL, EVM_RESTART_FIREWALL},
-			{"fw_pt_pptp", "", NULL, EVM_RESTART_FIREWALL},
-			{"fw_pt_l2tp", "", NULL, EVM_RESTART_FIREWALL},
-			{"fw_pt_ipsec", "", NULL, EVM_RESTART_FIREWALL},
 			{"fw_pt_pppoe", "", NULL, EVM_RESTART_SYSCTL},
 			{"fw_lw_enable_x", "", NULL, EVM_RESTART_FIREWALL},
-			{"fw_lw_enable_x_1", "", NULL, EVM_RESTART_FIREWALL},
 			{"filter_lw_date_x", "", NULL, EVM_RESTART_FIREWALL},
 			{"filter_lw_time_x", "", NULL, EVM_RESTART_FIREWALL},
-			{"filter_lw_time_x_1", "", NULL, EVM_RESTART_FIREWALL},
 			{"filter_lw_default_x", "", NULL, EVM_RESTART_FIREWALL},
 			{"filter_lw_icmp_x", "", NULL,  EVM_RESTART_FIREWALL},
 			{"filter_lw_num_x", "", NULL, EVM_RESTART_FIREWALL},
 			{"url_enable_x", "", NULL, EVM_RESTART_FIREWALL},
-			{"url_enable_x_1", "", NULL, EVM_RESTART_FIREWALL},
 			{"url_date_x", "", NULL, EVM_RESTART_FIREWALL},
 			{"url_time_x", "", NULL, EVM_RESTART_FIREWALL},
-			{"url_time_x_1", "", NULL, EVM_RESTART_FIREWALL},
+			{"url_mac_x", "", NULL, EVM_RESTART_FIREWALL},
+			{"url_inv_x", "", NULL, EVM_RESTART_FIREWALL},
 			{"url_num_x", "", NULL, EVM_RESTART_FIREWALL},
 			{"macfilter_enable_x", "", NULL, EVM_RESTART_FIREWALL},
 			{"macfilter_num_x", "", NULL, EVM_RESTART_FIREWALL},
@@ -401,7 +397,7 @@
 			{"aria_ropen", "", NULL, EVM_RESTART_FIREWALL},
 			{"fw_syn_cook", "", NULL, EVM_RESTART_SYSCTL},
 			{"fw_mac_drop", "", NULL, EVM_RESTART_FIREWALL},
-			{"nf_nat_loop", "", NULL, EVM_RESTART_FIREWALL},
+			{"nf_nat_loop", "", NULL, EVM_RESTART_NETFILTER},
 			{"nf_nat_type", "", NULL, EVM_RESTART_SYSCTL},
 			{"nf_max_conn", "", NULL, EVM_RESTART_SYSCTL},
 			{"nf_alg_ftp0", "", NULL, EVM_RESTART_FIREWALL},
@@ -823,7 +819,8 @@
 #if (BOARD_NUM_USB_PORTS > 0)
 		{EVM_RESTART_MODEM,		EVT_RESTART_MODEM,		RCN_RESTART_MODEM,	EVM_RESTART_IPTV|EVM_RESTART_SWITCH_VLAN|EVM_RESTART_FIREWALL|EVM_RESTART_VPNCLI|EVM_RESTART_WAN},
 #endif
-		{EVM_RESTART_WAN,		EVT_RESTART_WAN,		RCN_RESTART_WAN,	EVM_RESTART_IPTV|EVM_RESTART_SWITCH_VLAN|EVM_RESTART_FIREWALL|EVM_RESTART_VPNCLI},
+		{EVM_RESTART_WAN,		EVT_RESTART_WAN,		RCN_RESTART_WAN,	EVM_RESTART_IPTV|EVM_RESTART_SWITCH_VLAN|EVM_RESTART_FIREWALL|EVM_RESTART_VPNCLI|EVM_RESTART_NETFILTER},
+		{EVM_RESTART_NETFILTER,		EVT_RESTART_NETFILTER,		RCN_RESTART_NETFILTER,	EVM_RESTART_FIREWALL},
 		{EVM_RESTART_RADVD,		EVT_RESTART_RADVD,		RCN_RESTART_RADVD,	EVM_RESTART_DHCPD},
 		{EVM_RESTART_IPTV,		EVT_RESTART_IPTV,		RCN_RESTART_IPTV,	EVM_RESTART_FIREWALL},
 		{EVM_RESTART_VPNSVR,		EVT_RESTART_VPNSVR,		RCN_RESTART_VPNSVR,	EVM_RESTART_FIREWALL},

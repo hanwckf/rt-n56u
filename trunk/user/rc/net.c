@@ -525,10 +525,8 @@ int
 is_fastnat_allow(void)
 {
 	if ( nvram_match("sw_nat_mode", "1") && nvram_match("sw_mode", "1") )
-	{
 		return 1;
-	}
-	
+
 	return 0;
 }
 
@@ -627,7 +625,7 @@ reload_nat_modules(void)
 	int wan_nat_x = nvram_get_int("wan_nat_x");
 	int hwnat_allow = is_hwnat_allow();
 	int hwnat_loaded = is_hwnat_loaded();
-	
+
 	if (!get_ap_mode())
 	{
 		needed_ftp0 = nvram_get_int("nf_alg_ftp0");
@@ -647,7 +645,7 @@ reload_nat_modules(void)
 		if (nvram_match("nf_alg_sip", "1"))
 			needed_sip = 1;
 	}
-	
+
 	if ((hwnat_loaded) && ((!hwnat_allow) || (hwnat_loaded != hwnat_allow)))
 	{
 		hwnat_loaded = 0;

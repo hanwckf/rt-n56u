@@ -51,6 +51,7 @@ typedef u_int8_t u8;
 #define EVM_RESTART_TIME		(1ULL <<  5)
 #define EVM_RESTART_NTPC		(1ULL <<  6)
 #define EVM_RESTART_SYSLOG		(1ULL <<  7)
+#define EVM_RESTART_NETFILTER		(1ULL <<  8)
 #define EVM_RESTART_VPNSVR		(1ULL << 10)
 #define EVM_RESTART_VPNCLI		(1ULL << 11)
 #define EVM_RESTART_WIFI2		(1ULL << 12)
@@ -95,6 +96,7 @@ typedef u_int8_t u8;
 #define EVT_RESTART_TIME		2
 #define EVT_RESTART_NTPC		1
 #define EVT_RESTART_SYSLOG		1
+#define EVT_RESTART_NETFILTER		1
 #define EVT_RESTART_VPNSVR		2
 #define EVT_RESTART_VPNCLI		2
 #if defined (USE_RT3352_MII)

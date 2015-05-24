@@ -123,8 +123,8 @@ arpping_gateway(int ap_mode)
 	wanmac[17]=0;
 	for(i=0; i<6; i++)
 	{
-		tmp[2]=0;
 		strncpy(tmp, wanmac+i*3, 2);
+		tmp[2]=0;
 		mac[i]=strtol(tmp, NULL, 16);
 	}
 

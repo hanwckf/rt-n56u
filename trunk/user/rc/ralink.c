@@ -1722,7 +1722,7 @@ static int
 wl_ioctl(char *ifname, int cmd, struct iwreq *pwrq)
 {
 	int ret = 0;
- 	int s;
+	int s;
 
 	/* open socket to kernel */
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {

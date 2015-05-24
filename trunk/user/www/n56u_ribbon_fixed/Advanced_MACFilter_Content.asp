@@ -114,7 +114,6 @@ function setClientMAC(num){
 function showLANIPList(){
 	var code = "";
 	var show_name = "";
-	
 	for(var i = 0; i < clients_info.length ; i++){
 		if(clients_info[i][0] && clients_info[i][0].length > 20)
 			show_name = clients_info[i][0].substring(0, 18) + "..";
@@ -189,14 +188,6 @@ function validNewRow(max_rows) {
 
 	var starttime = eval(document.form.macfilter_time_x_starthour.value + document.form.macfilter_time_x_startmin.value);
 	var endtime = eval(document.form.macfilter_time_x_endhour.value + document.form.macfilter_time_x_endmin.value);
-
-	if(starttime > endtime){
-		alert("<#FirewallConfig_URLActiveTime_itemhint#>");
-		document.form.macfilter_time_x_starthour.focus();
-		document.form.macfilter_time_x_starthour.select();
-		return false;
-	}
-
 	if(starttime == endtime){
 		alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
 		document.form.macfilter_time_x_starthour.focus();
@@ -400,8 +391,8 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,1);"><#FirewallConfig_MFMethod_itemname#></a></th>
-                                            <td>
+                                            <th width="50%" style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,1);"><#FirewallConfig_MFMethod_itemname#></a></th>
+                                            <td style="border-top: 0 none;">
                                                 <select name="macfilter_enable_x" class="input" onchange="change_macfilter()">
                                                     <option value="0" <% nvram_match_x("","macfilter_enable_x", "0","selected"); %>><#CTL_Disabled#></option>
                                                     <option value="1" <% nvram_match_x("","macfilter_enable_x", "1","selected"); %>><#FirewallConfig_MFMethod_item1#></option>

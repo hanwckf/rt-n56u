@@ -74,12 +74,9 @@ mac_conv(char *mac_name, int idx, char *buf)
 
 	mac = nvram_safe_get(name);
 
-	if (strlen(mac)==0)
-	{
+	if (strlen(mac) != 12)
 		buf[0] = 0;
-	}
-	else
-	{
+	else {
 		j=0;
 		for (i=0; i<12; i++)
 		{
@@ -106,15 +103,14 @@ mac_conv2(char *mac_name, int idx, char *buf)
 
 	mac = nvram_safe_get(name);
 
-	if(strlen(mac) == 0 || strlen(mac) != 17)
+	if (strlen(mac) != 17)
 		buf[0] = 0;
-	else{
+	else {
 		for(i = 0, j = 0; i < 17; ++i){
 			if(i%3 != 2){
 				buf[j] = mac[i];
 				++j;
 			}
-
 			buf[j] = 0;
 		}
 	}

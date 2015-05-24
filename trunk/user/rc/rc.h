@@ -62,6 +62,7 @@
 #define IPT_CHAIN_NAME_VPN_LIST		"vpnlist"
 #define IPT_CHAIN_NAME_MAC_LIST		"maclist"
 #define IPT_CHAIN_NAME_URL_LIST		"urllist"
+#define IPT_CHAIN_NAME_LWF_LIST		"lwflist"
 #define IPT_CHAIN_NAME_BFP_LIMIT	"bfplimit"
 #define IPT_CHAIN_NAME_DOS_LIMIT	"doslimit"
 #define IPT_CHAIN_NAME_LOG_ACCEPT	"logaccept"

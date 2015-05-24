@@ -23,6 +23,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <ctype.h>
 
 #include "rc.h"
 #include "switch.h"

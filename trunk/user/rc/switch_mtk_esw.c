@@ -732,14 +732,18 @@ int mtk_esw_main(int argc, char **argv)
 	if (argc < 2)
 		return show_usage(argv[0]);
 
-	cmd = atoi(argv[1]);
-	if (!cmd && argc < 3)
+	if (!isdigit(argv[1][0]))
 		return show_usage(argv[0]);
+
+	cmd = atoi(argv[1]);
 
 	if (argc > 2)
 		arg = get_param_int_hex(argv[2]);
 	if (argc > 3)
 		par = get_param_int_hex(argv[3]);
+
+	if (cmd == 0 && arg == 0)
+		return show_usage(argv[0]);
 
 	switch (cmd)
 	{

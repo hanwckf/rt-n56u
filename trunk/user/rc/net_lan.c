@@ -717,7 +717,7 @@ lan_up_manual(char *lan_ifname, char *lan_dname)
 	lock = file_lock("resolv");
 
 	/* Open resolv.conf */
-	fp = fopen("/etc/resolv.conf", "w+");
+	fp = fopen(DNS_RESOLV_CONF, "w+");
 	if (fp) {
 		if (strlen(lan_dname) > 0)
 			fprintf(fp, "domain %s\n", lan_dname);
@@ -761,7 +761,7 @@ lan_up_auto(char *lan_ifname, char *lan_gateway, char *lan_dname)
 		route_add(lan_ifname, 0, "0.0.0.0", lan_gateway, "0.0.0.0");
 
 	/* Open resolv.conf */
-	fp = fopen("/etc/resolv.conf", "w+");
+	fp = fopen(DNS_RESOLV_CONF, "w+");
 	if (fp) {
 		if (strlen(lan_dname) > 0)
 			fprintf(fp, "domain %s\n", lan_dname);
@@ -816,7 +816,7 @@ lan_down_auto(char *lan_ifname)
 		route_del(lan_ifname, 0, "0.0.0.0", lan_gateway, "0.0.0.0");
 
 	/* Clear resolv.conf */
-	fp = fopen("/etc/resolv.conf", "w+");
+	fp = fopen(DNS_RESOLV_CONF, "w+");
 	if (fp)
 		fclose(fp);
 

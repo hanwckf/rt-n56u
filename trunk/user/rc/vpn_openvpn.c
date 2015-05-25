@@ -648,8 +648,11 @@ on_client_ifup(void)
 					setenv("WINS2", fvalue, 1);
 			} else if (sscanf(value, "dhcp-option DOMAIN %s", fvalue) == 1) {
 				i_dom++;
-				if (i_dom == 1)
+				if (i_dom == 1) {
+					if (vpnc_pdns > 0)
+						nvram_set_temp("vpnc_dom_t", fvalue);
 					setenv("DOMAIN", fvalue, 1);
+				}
 			}
 		}
 		if (i_dom >= 1 && i_wins >= 2 && i_dns >= 2)

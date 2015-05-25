@@ -101,6 +101,7 @@ clear_wan_state(void)
 	set_wan_unit_value(0, "bytes_tx", "0");
 	nvram_set_int_temp("l2tp_wan_t", 0);
 	nvram_set_temp("vpnc_dns_t", "");
+	nvram_set_temp("vpnc_dom_t", "");
 }
 
 void
@@ -111,6 +112,7 @@ reset_man_vars(void)
 	nvram_set_temp("wanx_gateway", "");
 	nvram_set_temp("wanx_dns", "");
 	nvram_set_temp("wanx_lease", "");
+	nvram_set_temp("wanx_domain", "");
 	nvram_set_temp("wanx_mtu", "");
 	nvram_set_temp("wanx_routes", "");
 	nvram_set_temp("wanx_routes_ms", "");
@@ -147,6 +149,7 @@ reset_wan_vars(void)
 	set_wan_unit_value(unit, "dns", "");
 	set_wan_unit_value(unit, "wins", "");
 	set_wan_unit_value(unit, "lease", "");
+	set_wan_unit_value(unit, "domain", "");
 	set_wan_unit_value(unit, "routes", "");
 	set_wan_unit_value(unit, "routes_ms", "");
 	set_wan_unit_value(unit, "routes_rfc", "");
@@ -989,6 +992,9 @@ man_down(char *man_ifname, int unit)
 {
 	logmessage(LOGNAME, "%s %s (%s)", "MAN", "down", man_ifname);
 
+	/* for update dnsmasq.servers */
+	nvram_set_temp("wanx_domain", "");
+
 	/* stop multicast router */
 	stop_igmpproxy(man_ifname);
 }
@@ -1377,20 +1383,20 @@ update_resolvconf(int is_first_run, int do_not_notify)
 {
 	FILE *fp;
 	char word[512], *next, *wan_dns;
-	char *google_dns = "8.8.8.8";
-	char *resolv_conf, *resolv_temp;
+	const char *google_dns = "8.8.8.8";
+	const char *resolv_temp = "/etc/resolv.tmp";
 	int i, i_pdns, i_total_dns = 0;
 	int lock, dns_static, resolv_changed = 0;
 
-	resolv_conf = "/etc/resolv.conf";
-	resolv_temp = "/etc/resolv.tmp";
+	if (!is_first_run)
+		fill_dnsmasq_servers();
 
 	lock = file_lock("resolv");
 
 	i_pdns = nvram_get_int("vpnc_pdns");
 	dns_static = get_wan_dns_static();
 
-	fp = fopen((is_first_run) ? resolv_conf : resolv_temp, "w+");
+	fp = fopen((is_first_run) ? DNS_RESOLV_CONF : resolv_temp, "w+");
 	if (fp) {
 		/* dnsmasq will resolve localhost DNS queries */
 		fprintf(fp, "nameserver %s\n", "127.0.0.1");
@@ -1460,8 +1466,8 @@ update_resolvconf(int is_first_run, int do_not_notify)
 	}
 
 	if (!is_first_run) {
-		if (compare_text_files(resolv_conf, resolv_temp) != 0) {
-			rename(resolv_temp, resolv_conf);
+		if (compare_text_files(DNS_RESOLV_CONF, resolv_temp) != 0) {
+			rename(resolv_temp, DNS_RESOLV_CONF);
 			resolv_changed = 1;
 		}
 		unlink(resolv_temp);

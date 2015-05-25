@@ -154,6 +154,54 @@ fill_static_ethers(const char *lan_ip, const char *lan_mask)
 	return i_ethers;
 }
 
+int
+fill_dnsmasq_servers(void)
+{
+	FILE *fp;
+	int lock;
+	char word[256], *next, *wan_dns, *wan_dom;
+	const char *storage_dir = "/etc/storage/dnsmasq";
+
+	lock = file_lock("dservers");
+
+	fp = fopen(DNS_SERVERS_FILE, "w");
+	if (!fp) {
+		file_unlock(lock);
+		return -1;
+	}
+
+	/* add DNS servers (via specific domain) for static VPN client */
+	if (nvram_get_int("vpnc_pdns") > 0) {
+		wan_dom = nvram_safe_get("vpnc_dom_t");
+		wan_dns = nvram_safe_get("vpnc_dns_t");
+		if (strlen(wan_dom) > 1 && strlen(wan_dns) > 6) {
+			foreach(word, wan_dns, next) {
+				if (is_valid_ipv4(word))
+					fprintf(fp, "server=/%s/%s\n", wan_dom, word);
+			}
+		}
+	}
+
+	/* add DNS servers (via specific domain) for MAN subnet */
+	wan_dom = nvram_safe_get("wanx_domain");
+	wan_dns = nvram_safe_get("wanx_dns");
+	if (strlen(wan_dom) > 1 && strlen(wan_dns) > 6) {
+		foreach(word, wan_dns, next) {
+			if (is_valid_ipv4(word))
+				fprintf(fp, "server=/%s/%s\n", wan_dom, word);
+		}
+	}
+
+	/* fill from user dnsmasq.servers */
+	load_user_config(fp, storage_dir, "dnsmasq.servers", NULL);
+
+	fclose(fp);
+
+	file_unlock(lock);
+
+	return 0;
+}
+
 ///////////////////////////////////////////////////////////////////////
 // dnsmasq
 ///////////////////////////////////////////////////////////////////////
@@ -180,22 +228,20 @@ start_dns_dhcpd(int is_ap_mode)
 	int i_ethers, i_verbose, i_dhcp_enable, is_dhcp_used, is_dns_used;
 	char dhcp_start[32], dhcp_end[32], dns_all[64];
 	char *ipaddr, *netmask, *gw, *dns1, *dns2, *dns3, *wins, *domain;
-	char *leases_dhcp = DHCPD_LEASE_FILE;
-	char *resolv_conf = "/etc/resolv.conf";
-	char *storage_dir = "/etc/storage/dnsmasq";
+	const char *storage_dir = "/etc/storage/dnsmasq";
 
 	if (!is_ap_mode) {
 		/* create /etc/hosts */
 		update_hosts_router();
 		
 		/* touch resolv.conf if not exist */
-		create_file(resolv_conf);
+		create_file(DNS_RESOLV_CONF);
 	}
 
 	i_dhcp_enable = is_dhcpd_enabled(is_ap_mode);
 
 	/* touch dnsmasq.leases if not exist */
-	create_file(leases_dhcp);
+	create_file(DHCPD_LEASE_FILE);
 
 	i_verbose = nvram_get_int("dhcp_verbose");
 
@@ -220,14 +266,16 @@ start_dns_dhcpd(int is_ap_mode)
 		    "no-negcache\n"
 		    "clear-on-reload\n",
 		    SYS_USER_NOBODY,
-		    resolv_conf,
+		    DNS_RESOLV_CONF,
 		    IFNAME_BR,
 		    ipaddr);
 
 	if (!is_ap_mode) {
 		is_dns_used = 1;
+		fprintf(fp, "min-port=%d\n", 4096);
 		fprintf(fp, "cache-size=%d\n", DNS_RELAY_CACHE_MAX);
 		fprintf(fp, "addn-hosts=%s/hosts\n", storage_dir);
+		fprintf(fp, "servers-file=%s\n", DNS_SERVERS_FILE);
 	} else {
 		is_dns_used = 0;
 		fprintf(fp, "cache-size=%d\n", 0);
@@ -345,12 +393,15 @@ start_dns_dhcpd(int is_ap_mode)
 	}
 #endif
 	if (is_dhcp_used) {
-		fprintf(fp, "dhcp-leasefile=%s\n", leases_dhcp);
+		fprintf(fp, "dhcp-leasefile=%s\n", DHCPD_LEASE_FILE);
 		fprintf(fp, "dhcp-authoritative\n");
 	}
 
 	fprintf(fp, "conf-file=%s/dnsmasq.conf\n", storage_dir);
 	fclose(fp);
+
+	if (is_dns_used)
+		fill_dnsmasq_servers();
 
 	if (is_dns_used || is_dhcp_used)
 		return eval("/usr/sbin/dnsmasq");

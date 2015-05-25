@@ -60,6 +60,7 @@ function initial(){
 		showhide_div('row_dhcpd_rt', 0);
 		showhide_div('row_dhcpd_ap', 1);
 		showhide_div('row_domain', 0);
+		showhide_div('row_dservers', 0);
 		showhide_div('row_hosts', 0);
 	}
 
@@ -509,7 +510,15 @@ function changeBgColor(obj, num){
                                             <td colspan="2">
                                                 <a href="javascript:spoiler_toggle('spoiler_conf')"><span><#CustomConf#> "dnsmasq.conf"</span></a>
                                                 <div id="spoiler_conf" style="display:none;">
-                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="dnsmasq.dnsmasq.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("dnsmasq.dnsmasq.conf",""); %></textarea>
+                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="4096" class="span12" name="dnsmasq.dnsmasq.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("dnsmasq.dnsmasq.conf",""); %></textarea>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_dservers">
+                                            <td colspan="2">
+                                                <a href="javascript:spoiler_toggle('spoiler_dservers')"><span><#CustomConf#> "dnsmasq.servers"</span></a>
+                                                <div id="spoiler_dservers" style="display:none;">
+                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="16384" class="span12" name="dnsmasq.dnsmasq.servers" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("dnsmasq.dnsmasq.servers",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>

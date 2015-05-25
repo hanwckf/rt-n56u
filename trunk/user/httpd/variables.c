@@ -182,7 +182,7 @@
 			{"scripts.start_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
 			{"scripts.started_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
 			{"scripts.post_wan_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
-			{"scripts.post_iptables_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
+			{"scripts.post_iptables_script.sh", "File", NULL, EVM_RESTART_FIREWALL|EVM_BLOCK_UNSAFE},
 			{"scripts.ez_buttons_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
 			{"scripts.inet_state_script.sh", "File", NULL, FALSE},
 			{0,0,0,0}
@@ -461,6 +461,7 @@
 			{"dhcp_staticnum_x", "", NULL, EVM_RESTART_DHCPD},
 			{"dnsmasq.hosts", "File", NULL, EVM_RESTART_DHCPD},
 			{"dnsmasq.dnsmasq.conf", "File", NULL, EVM_RESTART_DHCPD},
+			{"dnsmasq.dnsmasq.servers", "File", NULL, EVM_RESTART_DHCPD},
 			{"http_access", "", NULL, EVM_RESTART_HTTPD},
 			{"http_proto", "", NULL, EVM_RESTART_HTTPD},
 			{"http_lanport", "", NULL, EVM_RESTART_HTTPD},

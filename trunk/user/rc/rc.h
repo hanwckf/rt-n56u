@@ -35,6 +35,9 @@
 /* do not set current year, it used for ntp done check! */
 #define SYS_START_YEAR			2014
 
+#define DNS_RESOLV_CONF			"/etc/resolv.conf"
+#define DNS_SERVERS_FILE		"/tmp/dnsmasq.servers"
+
 #define SCRIPT_UDHCPC_LAN		"/tmp/udhcpc_lan.script"
 #define SCRIPT_UDHCPC_WAN		"/tmp/udhcpc.script"
 #define SCRIPT_UDHCPC_VIPTV		"/tmp/udhcpc_viptv.script"
@@ -484,6 +487,7 @@ void stop_services_lan_wan(void);
 void stop_misc(void);
 
 /* services_ex.c */
+int fill_dnsmasq_servers(void);
 int is_dns_dhcpd_run(void);
 int is_dhcpd_enabled(int is_ap_mode);
 int start_dns_dhcpd(int is_ap_mode);

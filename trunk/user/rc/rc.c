@@ -410,6 +410,7 @@ nvram_convert_misc_values(void)
 	nvram_set_int_temp("vpnc_state_t", 0);
 	nvram_set_temp("deferred_wanup_t", "0000000000");
 	nvram_set_temp("vpnc_dns_t", "");
+	nvram_set_temp("vpnc_dom_t", "");
 	nvram_set_temp("viptv_ifname", "");
 
 	/* setup wan0 variables */

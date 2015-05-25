@@ -75,6 +75,7 @@ start_vpn_client(void)
 	}
 
 	nvram_set_temp("vpnc_dns_t", "");
+	nvram_set_temp("vpnc_dom_t", "");
 	nvram_set_int_temp("vpnc_state_t", 0);
 
 	i_type = nvram_get_int("vpnc_type");

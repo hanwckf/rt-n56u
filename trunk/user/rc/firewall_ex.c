@@ -1229,7 +1229,6 @@ ipt_filter_default(void)
 	fprintf(fp, ":%s %s [0:0]\n", "FORWARD", (is_fw_enabled) ? "DROP" : "ACCEPT");
 	fprintf(fp, ":%s %s [0:0]\n", "OUTPUT", "ACCEPT");
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP4_FORWARD);
-	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_LWF_LIST);
 	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_VPN_LIST);
 
 	/* INPUT chain */

@@ -188,6 +188,7 @@ func_fill()
 
 	user_hosts="$dir_dnsmasq/hosts"
 	user_dnsmasq_conf="$dir_dnsmasq/dnsmasq.conf"
+	user_dnsmasq_serv="$dir_dnsmasq/dnsmasq.servers"
 	user_ovpnsvr_conf="$dir_ovpnsvr/server.conf"
 	user_ovpncli_conf="$dir_ovpncli/client.conf"
 	user_inadyn_conf="$dir_inadyn/inadyn.conf"
@@ -400,9 +401,6 @@ dhcp-option=252,"\n"
 
 ### Examples:
 
-### Tells dnsmasq to forward queries for this domains to DNS 10.25.11.30
-#server=/mit.ru/izmuroma.ru/10.25.11.30
-
 ### Enable built-in TFTP server
 #enable-tftp
 
@@ -417,6 +415,17 @@ dhcp-option=252,"\n"
 
 EOF
 		chmod 644 "$user_dnsmasq_conf"
+	fi
+
+	# create user dns servers
+	if [ ! -f "$user_dnsmasq_serv" ] ; then
+		cat > "$user_dnsmasq_serv" <<EOF
+# Custom user servers file for dnsmasq
+# Example:
+#server=/mit.ru/izmuroma.ru/10.25.11.30
+
+EOF
+		chmod 644 "$user_dnsmasq_serv"
 	fi
 
 	# create user inadyn.conf"
@@ -447,6 +456,7 @@ EOF
 # Custom user hosts file
 # Example:
 # 192.168.1.100		Boo
+
 EOF
 		chmod 644 "$user_hosts"
 	fi
@@ -456,6 +466,7 @@ EOF
 	if [ ! -f "$dir_wlan/AP.dat" ] ; then
 		cat > "$dir_wlan/AP.dat" <<EOF
 # Custom user AP conf file
+
 EOF
 		chmod 644 "$dir_wlan/AP.dat"
 	fi
@@ -463,6 +474,7 @@ EOF
 	if [ ! -f "$dir_wlan/AP_5G.dat" ] ; then
 		cat > "$dir_wlan/AP_5G.dat" <<EOF
 # Custom user AP conf file
+
 EOF
 		chmod 644 "$dir_wlan/AP_5G.dat"
 	fi

@@ -845,10 +845,12 @@ handle_request(FILE *conn_fp, const conn_item_t *item)
 
 	method = path = line;
 	strsep(&path, " ");
-	while (*path == ' ') path++;
+	while (path && *path == ' ') path++;
+
 	protocol = path;
 	strsep(&protocol, " ");
-	while (*protocol == ' ') protocol++;
+	while (protocol && *protocol == ' ') protocol++;
+
 	cp = protocol;
 	strsep(&cp, " ");
 

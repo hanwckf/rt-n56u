@@ -46,6 +46,7 @@ enum {
 #include <linux/icmpv6.h>
 #include <linux/in6.h>
 #include <linux/types.h>
+#include <linux/hash.h>
 
 #include <net/neighbour.h>
 
@@ -83,7 +84,7 @@ static inline u32 ndisc_hashfn(const void *pkey, const struct net_device *dev, _
 {
 	const u32 *p32 = pkey;
 
-	return (((p32[0] ^ dev->ifindex) * hash_rnd[0]) +
+	return (((p32[0] ^ hash32_ptr(dev)) * hash_rnd[0]) +
 		(p32[1] * hash_rnd[1]) +
 		(p32[2] * hash_rnd[2]) +
 		(p32[3] * hash_rnd[3]));

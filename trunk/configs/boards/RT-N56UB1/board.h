@@ -1,7 +1,7 @@
 /* ASUS RT-N56U B1 */
 
 #define BOARD_PID		"RT-N56UB1"
-#define BOARD_NAME		"RT-N56UB1"
+#define BOARD_NAME		"RT-N56U_B1"
 #define BOARD_DESC		"ASUS RT-N56U B1 Wireless Router"
 #define BOARD_VENDOR_NAME	"ASUSTek Computer Inc."
 #define BOARD_VENDOR_URL	"http://www.asus.com/"

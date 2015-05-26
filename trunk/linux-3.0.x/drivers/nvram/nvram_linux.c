@@ -34,6 +34,7 @@
 #include "nvram.c"
 
 #define NVRAM_DRIVER_VERSION	"0.08"
+#define PROC_NVRAM_NAME		"nvram"
 #define MTD_NVRAM_NAME		"Config"
 #define NVRAM_VALUES_SPACE	(NVRAM_MTD_SIZE*2)
 
@@ -471,7 +472,8 @@ user_nvram_get(anvram_ioctl_t __user *nvr)
 	return ret;
 }
 
-static long dev_nvram_ioctl(struct file *file, unsigned int req, unsigned long arg)
+static long
+dev_nvram_ioctl(struct file *file, unsigned int req, unsigned long arg)
 {
 	switch(req)
 	{
@@ -488,7 +490,8 @@ static long dev_nvram_ioctl(struct file *file, unsigned int req, unsigned long a
 	return -EINVAL;
 }
 
-static int nvram_ver_seq_show(struct seq_file *m, void *v)
+static int
+nvram_ver_seq_show(struct seq_file *m, void *v)
 {
 	struct mtd_info *nvram_mtd;
 
@@ -526,7 +529,8 @@ static int nvram_ver_seq_show(struct seq_file *m, void *v)
 	return 0;
 }
 
-static int nvram_ver_seq_open(struct inode *inode, struct file *file)
+static int
+nvram_ver_seq_open(struct inode *inode, struct file *file)
 {
 	return single_open(file, nvram_ver_seq_show, NULL);
 }
@@ -552,7 +556,7 @@ dev_nvram_release(struct inode *inode, struct file * file)
 	return 0;
 }
 
-static struct file_operations dev_nvram_fops = {
+static const struct file_operations dev_nvram_fops = {
 	owner:		THIS_MODULE,
 	open:		dev_nvram_open,
 	release:	dev_nvram_release,
@@ -563,7 +567,7 @@ static void
 dev_nvram_exit(void)
 {
 	if (g_pdentry) {
-		remove_proc_entry(MTD_NVRAM_NAME, NULL);
+		remove_proc_entry(PROC_NVRAM_NAME, NULL);
 		g_pdentry = NULL;
 	}
 
@@ -584,7 +588,7 @@ static int __init
 dev_nvram_init(void)
 {
 	int ret, check_res = 1;
-	char *istatus;
+	const char *istatus;
 	struct nvram_header *header;
 
 	/* Initialize hash table lock */
@@ -614,9 +618,9 @@ dev_nvram_init(void)
 	nvram_major = NVRAM_MAJOR;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-	g_pdentry = proc_create("nvram", S_IRUGO, NULL, &nvram_ver_seq_fops);
+	g_pdentry = proc_create(PROC_NVRAM_NAME, S_IRUGO, NULL, &nvram_ver_seq_fops);
 #else
-	g_pdentry = create_proc_entry("nvram", S_IRUGO, NULL);
+	g_pdentry = create_proc_entry(PROC_NVRAM_NAME, S_IRUGO, NULL);
 	if (g_pdentry)
 		g_pdentry->proc_fops = &nvram_ver_seq_fops;
 #endif
@@ -637,7 +641,8 @@ dev_nvram_init(void)
 	else if (check_res == -4)
 		istatus = "CRC FAILED!";
 
-	printk("ASUS NVRAM, v%s. Available space: %d. Integrity: %s\n", NVRAM_DRIVER_VERSION, NVRAM_SPACE, istatus);
+	printk("ASUS NVRAM, v%s. Available space: %d. Integrity: %s\n",
+		NVRAM_DRIVER_VERSION, NVRAM_SPACE, istatus);
 
 	return 0;
 
@@ -648,5 +653,6 @@ err:
 
 late_initcall(dev_nvram_init);
 module_exit(dev_nvram_exit);
+
 MODULE_LICENSE("GPL");
 MODULE_VERSION(NVRAM_DRIVER_VERSION);

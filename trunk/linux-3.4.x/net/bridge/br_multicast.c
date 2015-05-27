@@ -1396,7 +1396,7 @@ static int br_ip6_multicast_mld2_report(struct net_bridge *br,
 		case MLD2_ALLOW_NEW_SOURCES:
 		case MLD2_BLOCK_OLD_SOURCES:
 			err = br_ip6_multicast_add_group(br, port, skb, &grec->grec_mca);
-			if (!err)
+			if (err)
 				goto mld2_out;
 			break;
 

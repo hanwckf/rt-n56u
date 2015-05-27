@@ -1315,8 +1315,21 @@ int ip6_route_add(struct fib6_config *cfg)
 		}
 		rt->dst.output = ip6_pkt_discard_out;
 		rt->dst.input = ip6_pkt_discard;
-		rt->dst.error = -ENETUNREACH;
 		rt->rt6i_flags = RTF_REJECT|RTF_NONEXTHOP;
+		switch (cfg->fc_type) {
+		case RTN_BLACKHOLE:
+			rt->dst.error = -EINVAL;
+			break;
+		case RTN_PROHIBIT:
+			rt->dst.error = -EACCES;
+			break;
+		case RTN_THROW:
+			rt->dst.error = -EAGAIN;
+			break;
+		default:
+			rt->dst.error = -ENETUNREACH;
+			break;
+		}
 		goto install_route;
 	}
 
@@ -2251,8 +2264,12 @@ static int rtm_to_fib6_config(struct sk_buff *skb, struct nlmsghdr *nlh,
 	cfg->fc_src_len = rtm->rtm_src_len;
 	cfg->fc_flags = RTF_UP;
 	cfg->fc_protocol = rtm->rtm_protocol;
+	cfg->fc_type = rtm->rtm_type;
 
-	if (rtm->rtm_type == RTN_UNREACHABLE)
+	if (rtm->rtm_type == RTN_UNREACHABLE ||
+	    rtm->rtm_type == RTN_BLACKHOLE ||
+	    rtm->rtm_type == RTN_PROHIBIT ||
+	    rtm->rtm_type == RTN_THROW)
 		cfg->fc_flags |= RTF_REJECT;
 
 	if (rtm->rtm_type == RTN_LOCAL)
@@ -2380,8 +2397,22 @@ static int rt6_fill_node(struct net *net,
 		table = RT6_TABLE_UNSPEC;
 	rtm->rtm_table = table;
 	NLA_PUT_U32(skb, RTA_TABLE, table);
-	if (rt->rt6i_flags&RTF_REJECT)
-		rtm->rtm_type = RTN_UNREACHABLE;
+	if (rt->rt6i_flags&RTF_REJECT) {
+		switch (rt->dst.error) {
+		case -EINVAL:
+			rtm->rtm_type = RTN_BLACKHOLE;
+			break;
+		case -EACCES:
+			rtm->rtm_type = RTN_PROHIBIT;
+			break;
+		case -EAGAIN:
+			rtm->rtm_type = RTN_THROW;
+			break;
+		default:
+			rtm->rtm_type = RTN_UNREACHABLE;
+			break;
+		}
+	}
 	else if (rt->rt6i_flags&RTF_LOCAL)
 		rtm->rtm_type = RTN_LOCAL;
 	else if (rt->rt6i_dev && (rt->rt6i_dev->flags&IFF_LOOPBACK))

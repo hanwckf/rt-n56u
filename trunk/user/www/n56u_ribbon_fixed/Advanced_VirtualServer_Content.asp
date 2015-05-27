@@ -419,8 +419,9 @@ function showVSList(){
 		proto = VSList[i][3];
 		if(proto == "OTHER"){
 			proto = VSList[i][4];
-		}else if (proto == "BOTH"){
-			proto = "TCP/UDP";
+		}else{
+			if (proto == "BOTH")
+				proto = "TCP/UDP";
 			eport = VSList[i][0];
 			if (VSList[i][2] != null && VSList[i][2] != "")
 				lport = VSList[i][2];

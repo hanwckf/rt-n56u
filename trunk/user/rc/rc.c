@@ -236,8 +236,8 @@ set_wan0_vars(void)
 		}
 	}
 
-	set_wan_unit_value(0, "unit", "0");
-	set_wan_unit_value(0, "primary", "1");
+	set_wan_unit_value_int(0, "unit", 0);
+	set_wan_unit_value_int(0, "primary", 1);
 	set_wan_unit_value(0, "ifname", IFNAME_WAN);
 }
 

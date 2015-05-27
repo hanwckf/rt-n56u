@@ -17,7 +17,6 @@
 var ddns_server_x = '<% nvram_get_x("", "ddns_server_x"); %>';
 var ddns_hostname_x = '<% nvram_get_x("", "ddns_hostname_x"); %>';
 var ddns_return_code = '<% nvram_get_ddns("", "ddns_return_code"); %>';
-var wan_ipaddr_t='<% nvram_get_x("", "wan_ipaddr_t"); %>';
 
 var ddns_hostname_title;
 var $j = jQuery.noConflict();

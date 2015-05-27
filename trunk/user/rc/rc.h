@@ -242,6 +242,7 @@ int  udhcpc_lan_main(int argc, char **argv);
 char* get_wan_unit_value(int unit, const char* param_name);
 int  get_wan_unit_value_int(int unit, const char* param_name);
 void set_wan_unit_value(int unit, const char* param_name, const char* value);
+void set_wan_unit_value_int(int unit, const char* param_name, int value);
 void set_wan_unit_param(int unit, const char* param_name);
 void reset_wan_temp(void);
 void reset_man_vars(void);

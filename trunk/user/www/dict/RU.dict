@@ -134,6 +134,7 @@ InetState5=Ожидание получения IP адреса...
 InetState6=Ожидание подключения PPP клиента...
 InetState7=PPP соединение не активно
 InetState8=Шлюз по умолчанию не задан
+InetState9=Конфликт адресов WAN и LAN подсетей!
 APCliRole=Роль беспроводного клиента:
 IPConnection_VSList_ftpport=Порт FTP-сервера:
 CTL_Commit=Записать

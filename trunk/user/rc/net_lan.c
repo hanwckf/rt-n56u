@@ -635,14 +635,21 @@ stop_lan(int is_ap_mode)
 void 
 full_restart_lan(void)
 {
+	int is_wan_err = 0, is_lan_stp = 0;
 	int is_ap_mode = get_ap_mode();
-	int lan_stp = nvram_match("lan_stp", "0") ? 0 : 1;
 	int log_remote = nvram_invmatch("log_ipaddr", "");
+
+	if (!is_ap_mode) {
+		is_wan_err = get_wan_unit_value_int(0, "err");
+		is_lan_stp = nvram_get_int("lan_stp");
+	}
 
 	// Stop logger if remote
 	if (log_remote)
 		stop_logger();
 
+	stop_lltd();
+	stop_infosvr();
 	stop_networkmap();
 	stop_upnp();
 	stop_vpn_server();
@@ -671,17 +678,23 @@ full_restart_lan(void)
 	start_dns_dhcpd(is_ap_mode);
 
 	if (!is_ap_mode) {
-		if (lan_stp) {
+		if (is_lan_stp) {
 			doSystem("brctl stp %s %d", IFNAME_BR, 1);
 			doSystem("brctl setfd %s %d", IFNAME_BR, 15);
 		}
 		
-		/* restart vpn server, firewall and miniupnpd */
-		restart_vpn_server();
+		if (is_wan_err) {
+			full_restart_wan();
+			start_vpn_server();
+		} else {
+			/* restart vpn server, firewall and miniupnpd */
+			restart_vpn_server();
+		}
 	}
 
 	/* restart igmpproxy, udpxy, xupnpd */
-	restart_iptv(is_ap_mode);
+	if (!is_wan_err)
+		restart_iptv(is_ap_mode);
 
 #if defined(APP_NFSD)
 	// reload NFS server exports
@@ -692,6 +705,9 @@ full_restart_lan(void)
 #if defined(APP_SMBD) || defined(APP_NMBD)
 	reload_nmbd();
 #endif
+
+	start_infosvr();
+	start_lltd();
 
 	/* start ARP network scanner */
 	start_networkmap(1);

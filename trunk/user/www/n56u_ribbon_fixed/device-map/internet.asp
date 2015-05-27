@@ -131,6 +131,8 @@ function fill_status(scode,wtype){
 		stext = "<#InetState7#>";
 	else if (scode == 8)
 		stext = "<#InetState8#>";
+	else if (scode == 9)
+		stext = "<#InetState9#>";
 	$("wan_status").innerHTML = '<span class="label label-' + (scode != 0 ? 'warning' : 'success') + '">' + stext + '</span>';
 
 	var wtext = wtype;

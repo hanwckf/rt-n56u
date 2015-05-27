@@ -120,6 +120,7 @@ InetState5=Waiting for obtain the IP address...
 InetState6=Waiting for PPP client connection...
 InetState7=PPP connection is not active
 InetState8=Default Gateway is not set
+InetState9=WAN subnet conflicts with LAN subnet!
 APCliRole=Wireless Client Role:
 IPConnection_VSList_ftpport=FTP Server Port:
 CTL_Commit=Commit

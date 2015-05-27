@@ -1581,6 +1581,7 @@ Internet connection status code:
 6 - Wait PPP interface connection
 7 - Inactive PPP state
 8 - No Default Gateway
+9 - Subnets conflict
 */
 
 #define INET_STATE_CONNECTED		0
@@ -1592,6 +1593,7 @@ Internet connection status code:
 #define INET_STATE_PPP_WAIT		6
 #define INET_STATE_PPP_INACTIVE		7
 #define INET_STATE_NO_DGW		8
+#define INET_STATE_SUBNETS_CONFLICT	9
 
 static int
 wanlink_hook(int eid, webs_t wp, int argc, char **argv)
@@ -1795,8 +1797,13 @@ wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 					status_code = (pids(l2tpd)) ? INET_STATE_PPP_WAIT : INET_STATE_PPP_INACTIVE;
 				} else
 					status_code = (pids("pppd")) ? INET_STATE_PPP_WAIT : INET_STATE_PPP_INACTIVE;
-			} else
-				status_code = (wan_ifstate == IF_STATE_UP) ? INET_STATE_NETIF_WAIT_DHCP : INET_STATE_NETIF_NOT_READY;
+			} else {
+				if (wan_ifstate == IF_STATE_UP) {
+					int wan_err = nvram_get_int(strcat_r(prefix, "err", tmp));
+					status_code = (wan_err == 1) ? INET_STATE_SUBNETS_CONFLICT : INET_STATE_NETIF_WAIT_DHCP;
+				} else
+					status_code = INET_STATE_NETIF_NOT_READY;
+			}
 		}
 		
 		if (need_eth_link) {

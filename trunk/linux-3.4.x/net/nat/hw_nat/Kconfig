@@ -325,7 +325,7 @@ config  RA_HW_NAT_QDMA
 
 config  RA_HW_NAT_MCAST
 	bool "Multicast Acceleration"
-	depends on RA_HW_NAT && HNAT_V2
+	depends on RA_HW_NAT && HNAT_V2 && !RA_HW_NAT_QDMA
 	default n
 	help
 	  Multicast flow accelerated by HNAT

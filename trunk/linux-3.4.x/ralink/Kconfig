@@ -348,16 +348,17 @@ config MTK_XHCI
 	select USB_ARCH_HAS_XHCI
 
 config RTDEV_USB
-bool
-default y if (RT305x_INIC_USB || RT3572_AP || RT5572_AP)
+	bool
+	default y if (RT305x_INIC_USB || RT3572_AP || RT5572_AP)
 
 config RTDEV_MII
-bool
-default y if (RT305x_INIC_MII || RT3352_INIC_MII)
+	bool
+	default y if (RT305x_INIC_MII || RT3352_INIC_MII)
 
 config RTDEV_PCI
-bool
-default y if (RT3090_AP || RT5392_AP || RT5592_AP || RT3593_AP || MT7610_AP || MT76X2_AP || MT76X3_AP)
+	bool
+	default y if (RT3090_AP || RT5392_AP || RT5592_AP || RT3593_AP || MT7610_AP || MT76X2_AP || MT76X3_AP)
+	select WLAN
 endmenu
 
 endmenu

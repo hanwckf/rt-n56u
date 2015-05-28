@@ -244,7 +244,7 @@ start_xupnpd(char *wan_ifname)
 	char *dir_dst = "/etc/storage/xupnpd";
 	char *xdir1[] = { "config", "playlists", NULL };
 	char *xdir2[] = { "plugins", "profiles", NULL };
-	char *xlua[] = { "", "_http", "_m3u", "_main", "_mime", "_soap", "_ssdp", "_webapp", NULL };
+	char *xlua[] = { "_http", "_m3u", "_main", "_mime", "_soap", "_ssdp", "_webapp", NULL };
 
 	if (!is_xupnpd_support())
 		return;
@@ -258,15 +258,13 @@ start_xupnpd(char *wan_ifname)
 	if (!check_if_dir_exist(dir_dst))
 		mkdir(dir_dst, 0755);
 
-	for (i=0; xdir1[i]; i++)
-	{
+	for (i=0; xdir1[i]; i++) {
 		snprintf(tmp2, sizeof(tmp2), "%s/%s", dir_dst, xdir1[i]);
 		if (!check_if_dir_exist(tmp2))
 			mkdir(tmp2, 0755);
 	}
 
-	for (i=0; xdir2[i]; i++)
-	{
+	for (i=0; xdir2[i]; i++) {
 		snprintf(tmp2, sizeof(tmp2), "%s/%s", dir_dst, xdir2[i]);
 		if (!check_if_dir_exist(tmp2)) {
 			snprintf(tmp1, sizeof(tmp1), "%s/%s", dir_src, xdir2[i]);
@@ -277,13 +275,15 @@ start_xupnpd(char *wan_ifname)
 		}
 	}
 
-	for (i=0; xlua[i]; i++)
-	{
-		snprintf(tmp1, sizeof(tmp1), "%s/xupnpd%s.lua", dir_src, xlua[i]);
+	for (i=0; xlua[i]; i++) {
 		snprintf(tmp2, sizeof(tmp2), "%s/xupnpd%s.lua", dir_dst, xlua[i]);
-		if (!check_if_file_exist(tmp2))
-			doSystem("cp -f %s %s", tmp1, tmp2);
+		unlink(tmp2);
 	}
+
+	snprintf(tmp1, sizeof(tmp1), "%s/xupnpd%s.lua", dir_src, "");
+	snprintf(tmp2, sizeof(tmp2), "%s/xupnpd%s.lua", dir_dst, "");
+	if (!check_if_file_exist(tmp2))
+		doSystem("cp -f %s %s", tmp1, tmp2);
 
 	snprintf(tmp1, sizeof(tmp1), "%s/config/common.lua.tmp", dir_dst);
 	snprintf(tmp2, sizeof(tmp2), "%s/config/common.lua", dir_dst);

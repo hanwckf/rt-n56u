@@ -285,7 +285,7 @@ function on_xupnpd_link(){
                                             </td>
                                         </tr>
                                         <tr id="row_xupnpd">
-                                            <th><#IPTVXUA#></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,6, 6);"><#IPTVXUA#></a></th>
                                             <td>
                                                 <input type="text" maxlength="5" class="input" size="15" name="xupnpd_enable_x" value="<% nvram_get_x("", "xupnpd_enable_x"); %>" onkeypress="return is_number(this);" onblur="valid_xupnpd();"/>
                                             </td>

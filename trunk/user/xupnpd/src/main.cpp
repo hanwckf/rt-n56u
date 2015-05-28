@@ -34,9 +34,6 @@ int main(int argc,char** argv)
 
         argv[0]=(char*)p+1;
     }
-#else
-    int rc = chdir("/etc/storage/xupnpd");
-#endif
 
     const char* root=getenv("XUPNPDROOTDIR");
     if(root && *root)
@@ -49,6 +46,9 @@ int main(int argc,char** argv)
         else
             rc=chdir("/usr/share/xupnpd/");
     }
+#else
+    int rc = chdir("/etc_ro/xupnpd");
+#endif
 
     lua_State* L=lua_open();
     if(L)
@@ -67,9 +67,13 @@ int main(int argc,char** argv)
         }
         lua_setglobal(L,"arg");
 
+#if 0
 //        char initfile[128];
 //        snprintf(initfile,sizeof(initfile),"%s.lua",argv[0]);
         const char initfile[]="xupnpd.lua";
+#else
+        const char initfile[]="/etc/storage/xupnpd/xupnpd.lua";
+#endif
 
         if(luaL_loadfile(L,initfile) || lua_pcall(L,0,0,0))
         {

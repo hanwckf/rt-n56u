@@ -2,6 +2,8 @@ sec_dlna_org_extras_none='*;DLNA.ORG_OP=00;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01700000
 
 profiles['Samsung-AllShare']=
 {
+    ['disabled']=false,
+
     ['desc']='Samsung AllShare uPnP/DLNA',
 
     -- SEC_HHP_[TV]UE32ES6757/1.0 DLNADOC/1.50

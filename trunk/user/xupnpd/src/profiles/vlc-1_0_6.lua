@@ -2,6 +2,8 @@
 
 profiles['VLC-1.0.6']=
 {
+    ['disabled']=false,
+
     ['desc']='VideoLAN Player 1.0.6',
 
     -- Linux/2.6.32-42-generic, UPnP/1.0, Portable SDK for UPnP devices/1.6.6

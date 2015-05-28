@@ -1,5 +1,7 @@
 profiles['MediaPlayer']=
 {
+    ['disabled']=false,
+
     ['desc']='Windows Media Player',
 
     -- Microsoft-Windows/6.1 UPnP/1.0 Windows-Media-Player-DMS/12.0.7601.17514 DLNADOC/1.50

@@ -1,5 +1,7 @@
 profiles['Xbox360']=
 {
+    ['disabled']=false,
+
     ['desc']='Microsoft Xbox 360',
 
     -- Xbox/2.0.12611.0 UPnP/1.0 Xbox/2.0.12611.0

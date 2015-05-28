@@ -5,14 +5,8 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/time.h>
-#include <linux/if_packet.h>
-#include <linux/if_ether.h>
-#include <net/if.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
+#include <netutils.h>
 #include <include/ibox.h>
 
 #include "networkmap.h"
@@ -91,8 +85,8 @@ asus_dd_query(struct in_addr *dst_ip, NET_CLIENT *pnet_client)
 				
 				NMP_DEBUG_M("DD: productID=%s\n", dd_info->ProductID);
 				if (!pnet_client->device_name[0] && is_valid_hostname(dd_info->ProductID)) {
-					memcpy(pnet_client->device_name, dd_info->ProductID, 16);
-					pnet_client->device_name[16] = 0;
+					memcpy(pnet_client->device_name, dd_info->ProductID, 18);
+					pnet_client->device_name[18] = 0;
 				}
 				
 				break;
@@ -271,10 +265,10 @@ nbns_query(struct in_addr *src_ip, struct in_addr *dst_ip, NET_CLIENT *pnet_clie
 		pnet_client->type = 1; // PC
 
 	if (device_name[0]) {
-		device_name[16] = 0;
+		device_name[17] = 0;
 		NMP_DEBUG("NBNS Name: %s\n", device_name);
 		if (!pnet_client->device_name[0] && is_valid_hostname(device_name))
-			memcpy(pnet_client->device_name, device_name, 17);
+			memcpy(pnet_client->device_name, device_name, 18);
 	} else {
 		NMP_DEBUG("NBNS: NO hostname!\n");
 	}
@@ -301,5 +295,4 @@ find_all_app(struct in_addr *src_ip, struct in_addr *dst_ip, NET_CLIENT *pnet_cl
 	/* check http server */
 	http_query(dst_ip, pnet_client);
 }
-
 

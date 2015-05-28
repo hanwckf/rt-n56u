@@ -1,54 +1,44 @@
 
-// Hardware type field in ARP message
-#define DIX_ETHERNET            1
-// Type number field in Ethernet frame
-#define IP_PACKET               0x0800
-#define ARP_PACKET              0x0806
-#define RARP_PACKET             0x8035
-// Message type field in ARP messages
-#define ARP_REQUEST             1
-#define ARP_RESPONSE            2
-#define RARP_REQUEST            3
-#define RARP_RESPONSE           4
-#define RCV_TIMEOUT             2 //sec
-#define MAXDATASIZE             512
-#define LPR                     0x02
-#define LPR_RESPONSE            0x00
+#include <include/bsd_queue.h>
 
-// Service Port
-#define HTTP_PORT               80
-#define NBNS_PORT               137
-#define NBSS_PORT		139
-#define LPD_PORT                515
-#define MDNS_PORT               5353
-#define RAW_PORT                9100
+// Service Ports
+#define HTTP_PORT	80
+#define NBNS_PORT	137
+#define NBSS_PORT	139
+#define LPD_PORT	515
+#define MDNS_PORT	5353
+#define RAW_PORT	9100
 
 #ifdef DEBUG
-	#define NMP_DEBUG(fmt, args...) printf(fmt, ## args)
+ #define NMP_DEBUG(fmt, args...) printf(fmt, ## args)
 #else
-	#define NMP_DEBUG(fmt, args...)
+ #define NMP_DEBUG(fmt, args...)
 #endif
 
 #ifdef DEBUG_MORE
-	#define NMP_DEBUG_M(fmt, args...) printf(fmt, ## args)
+ #define NMP_DEBUG_M(fmt, args...) printf(fmt, ## args)
 #else
-	#define NMP_DEBUG_M(fmt, args...)
+ #define NMP_DEBUG_M(fmt, args...)
 #endif
 
-typedef struct {
+typedef struct net_client {
+	SLIST_ENTRY(net_client) entry;
 	unsigned long ip_addr;
 	unsigned char mac_addr[6];
-	char          device_name[18];
-	unsigned char type;
-	unsigned char http;
 	unsigned char skip_ping;
+	unsigned char type;
+	unsigned char http:1;
 	unsigned char staled:1;
 	unsigned char probed:1;
 	unsigned char macval:1;
-	unsigned char pending:5;
-
-
+	unsigned char pending:4;
+	char          device_name[19];
 } NET_CLIENT, *PNET_CLIENT;
+
+typedef struct net_client_list {
+	SLIST_HEAD(, net_client) head;
+	unsigned int count;
+} NET_CLIENT_LIST, *PNET_CLIENT_LIST;
 
 // walf test
 typedef struct

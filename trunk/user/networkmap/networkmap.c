@@ -7,43 +7,41 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/ioctl.h>
+#include <netinet/if_ether.h>
 #include <linux/if_packet.h>
-#include <linux/if_ether.h>
 #include <net/if.h>
-#include <sys/time.h>
-#include <sys/sysinfo.h>
+#include <net/if_arp.h>
 #include <netdb.h>
-
-#include "networkmap.h"
 
 #include <shutils.h>
 #include <netutils.h>
 #include <nvram_linux.h>
 #include <bin_sem_asus.h>
 
-#define MAX_SUBNET  (23) /* 22..24 */
-#define NUM_CLIENTS (1U << (32U - MAX_SUBNET))
-#define MAX_CLIENTS (NUM_CLIENTS - 1)
+#include "networkmap.h"
 
-NET_CLIENT net_clients[NUM_CLIENTS];
-unsigned char my_hwaddr[8];
-struct in_addr my_ipaddr;
-struct in_addr my_ipmask;
+#define MAX_SUBNET_SCAN		(24) /* 23..24 */
+#define NUM_CLIENTS_SCAN	(1U << (32U - MAX_SUBNET_SCAN))
+#define MAX_CLIENT_ITEMS	4096
 
-unsigned int scan_max = MAX_CLIENTS;
-unsigned int scan_net = 0xC0A80A00;
+static NET_CLIENT_LIST net_clients;
+static unsigned char my_hwaddr[8];
+static struct in_addr my_ipaddr;
+static struct in_addr my_ipmask;
+
 volatile unsigned int scan_now = 0;
-volatile int networkmap_fullscan = 1;
-volatile int daemon_exit = 0;
-volatile int scan_block = 0;
-int arp_sockfd = -1;
+static unsigned int scan_max = NUM_CLIENTS_SCAN - 1;
+static unsigned int scan_net = 0xC0A80A00;
+static volatile int scan_block = 0;
+static volatile int networkmap_fullscan = 1;
+static volatile int daemon_exit = 0;
 
 /******** Build ARP Socket Function *********/
-struct sockaddr_ll src_sockll, dst_sockll;
+static int arp_sockfd = -1;
+static struct sockaddr_ll src_sockll, dst_sockll;
 
 static int
 iface_get_id(int fd, const char *device)
@@ -59,6 +57,7 @@ iface_get_id(int fd, const char *device)
 
 	return ifr.ifr_ifindex;
 }
+
 /*
  *  Bind the socket associated with FD to the given device.
  */
@@ -108,7 +107,8 @@ iface_bind(int fd, int ifindex)
 	return 0;
 }
 
-int create_socket(char *device)
+static int
+create_socket(const char *device)
 {
 	/* create socket */
 	int sock_fd, device_id;
@@ -129,7 +129,8 @@ int create_socket(char *device)
 	return sock_fd;
 }
 
-int sent_arppacket(int raw_sockfd, struct in_addr *dst_ip)
+static int
+sent_arppacket(int raw_sockfd, struct in_addr *dst_ip)
 {
 	char raw_buffer[46];
 	ARP_HEADER* arp;
@@ -139,11 +140,11 @@ int sent_arppacket(int raw_sockfd, struct in_addr *dst_ip)
 
 	// Allow 14 bytes for the ethernet header
 	arp = (ARP_HEADER *)raw_buffer;
-	arp->hardware_type = htons(DIX_ETHERNET);
-	arp->protocol_type = htons(IP_PACKET);
+	arp->hardware_type = htons(ARPHRD_ETHER);
+	arp->protocol_type = htons(ETH_P_IP);
 	arp->hwaddr_len = 6;
 	arp->ipaddr_len = 4;
-	arp->message_type = htons(ARP_REQUEST);
+	arp->message_type = htons(ARPOP_REQUEST);
 
 	// My hardware address and IP addresses
 	memcpy(arp->source_hwaddr, my_hwaddr, 6);
@@ -165,19 +166,28 @@ int sent_arppacket(int raw_sockfd, struct in_addr *dst_ip)
 
 /******* End of Build ARP Socket Function ********/
 
-long uptime(void)
+static void
+net_clients_release(void)
 {
-	struct sysinfo info;
-	sysinfo(&info);
-	return info.uptime;
+	NET_CLIENT *item, *next;
+
+	SLIST_FOREACH_SAFE(item, &net_clients.head, entry, next) {
+		free(item);
+	}
+
+	SLIST_INIT(&net_clients.head);
+	net_clients.count = 0;
 }
 
-void clear_resources()
+static void
+clear_resources(void)
 {
 	if (arp_sockfd > 0) {
 		close(arp_sockfd);
 		arp_sockfd = -1;
 	}
+
+	net_clients_release();
 
 	nvram_set_int_temp("networkmap_fullscan", 0);
 	remove("/var/run/networkmap.pid");
@@ -185,30 +195,32 @@ void clear_resources()
 
 /*********** Signal functions **************/
 
-static void sig_refresh(int sig)
+static void
+sig_refresh(int sig)
 {
 	networkmap_fullscan = 1;
 	scan_now = 0;
 }
 
-static void sig_exit(int sig)
+static void
+sig_exit(int sig)
 {
 	daemon_exit = 1;
-
 	clear_resources();
 
 	exit(0);
 }
 
-void net_clients_reset()
+static void
+net_clients_reset(void)
 {
 	FILE *fp;
 	int lock;
 
 	// reset exist ip table
-	memset(net_clients, 0, sizeof(net_clients));
-
 	lock = file_lock("networkmap");
+
+	net_clients_release();
 
 	fp = fopen("/tmp/static_ip.inf", "w");
 	if (fp)
@@ -225,35 +237,35 @@ void net_clients_reset()
 	nvram_set_int_temp("networkmap_fullscan", 1);
 }
 
-void net_clients_update()
+static void
+net_clients_update(void)
 {
 	FILE *fp;
+	NET_CLIENT *item;
 	int lock;
 	struct in_addr in;
-	unsigned int i, vcount;
-
-	vcount = 0;
+	unsigned int vcount;
 
 	lock = file_lock("networkmap");
 
+	vcount = 0;
 	fp = fopen("/tmp/static_ip.inf", "w");
 	if (fp) {
-		for (i=1; i<scan_max; i++) {
-			if (net_clients[i].ip_addr && net_clients[i].macval) {
-				in.s_addr = net_clients[i].ip_addr;
+		SLIST_FOREACH(item, &net_clients.head, entry) {
+			if (item->macval) {
+				in.s_addr = item->ip_addr;
 				
-				if (!net_clients[i].staled)
+				if (!item->staled)
 					vcount++;
 				
 				fprintf(fp, "%s,%02X:%02X:%02X:%02X:%02X:%02X,%s,%d,%d,%d\n",
 					inet_ntoa(in),
-					net_clients[i].mac_addr[0], net_clients[i].mac_addr[1],
-					net_clients[i].mac_addr[2], net_clients[i].mac_addr[3],
-					net_clients[i].mac_addr[4], net_clients[i].mac_addr[5],
-					net_clients[i].device_name,
-					net_clients[i].type,
-					net_clients[i].http,
-					net_clients[i].staled);
+					item->mac_addr[0], item->mac_addr[1], item->mac_addr[2],
+					item->mac_addr[3], item->mac_addr[4], item->mac_addr[5],
+					item->device_name,
+					item->type,
+					item->http,
+					item->staled);
 			}
 		}
 		
@@ -269,22 +281,38 @@ void net_clients_update()
 	file_unlock(lock);
 }
 
-static void
-fixup_hostname(NET_CLIENT* pnet_client)
+static int
+is_same_subnet(struct in_addr *ip1, struct in_addr *ip2, struct in_addr *msk)
 {
-	int i;
-	char *hname = (char *)pnet_client->device_name;
-	char *p = hname;
+	unsigned int mask = ntohl(msk->s_addr);
 
-	for (i = 0; i < 17; i++)
-	{
-		if (*p < 0x20)
-			*p = 0x0;
-		p++;
+	return ((ntohl(ip1->s_addr) & mask) == (ntohl(ip2->s_addr) & mask)) ? 1 : 0;
+}
+
+static NET_CLIENT *
+lookup_client(unsigned int ip_addr)
+{
+	NET_CLIENT *item;
+
+	SLIST_FOREACH(item, &net_clients.head, entry) {
+		if (item->ip_addr == ip_addr)
+			return item;
 	}
 
-	hname[17] = '\0';
-	trim_r(hname);
+	item = NULL;
+
+	/* item not found, try create */
+	if (net_clients.count < MAX_CLIENT_ITEMS) {
+		item = malloc(sizeof(*item));
+		if (item) {
+			memset(item, 0, sizeof(*item));
+			item->ip_addr = ip_addr;
+			SLIST_INSERT_HEAD(&net_clients.head, item, entry);
+			net_clients.count++;
+		}
+	}
+
+	return item;
 }
 
 static void
@@ -307,12 +335,29 @@ lookup_static_dhcp_list(struct in_addr *dst_ip, NET_CLIENT* pnet_client)
 		
 		sprintf(nvram_name, "dhcp_staticname_x%d", i);
 		sname = nvram_safe_get(nvram_name);
-		if (src_ip.s_addr == dst_ip->s_addr && is_valid_hostname(sname))
-		{
-			strncpy(pnet_client->device_name, sname, 17);
+		if (src_ip.s_addr == dst_ip->s_addr && is_valid_hostname(sname)) {
+			strncpy(pnet_client->device_name, sname, 18);
+			pnet_client->device_name[18] = 0;
 			break;
 		}
 	}
+}
+
+static void
+fixup_hostname(NET_CLIENT* pnet_client)
+{
+	int i;
+	char *hname = (char *)pnet_client->device_name;
+	char *p = hname;
+
+	for (i = 0; i < 18; i++) {
+		if (*p < 0x20)
+			*p = 0x0;
+		p++;
+	}
+
+	hname[18] = '\0';
+	trim_r(hname);
 }
 
 static int
@@ -330,13 +375,49 @@ resolve_hostname(struct in_addr *dst_ip, NET_CLIENT *pnet_client)
 			 hname, sizeof(hname), NULL, 0, NI_NAMEREQD|NI_NOFQDN) != 0)
 		return -1;
 
-	strncpy(pnet_client->device_name, hname, 17);
+	strncpy(pnet_client->device_name, hname, 18);
 	fixup_hostname(pnet_client);
 
 	if (!pnet_client->device_name[0])
 		return -1;
 
 	return 0;
+}
+
+static void
+arp_proc_fetch(void)
+{
+	FILE *fp;
+	NET_CLIENT *item;
+	char buffer[256], arp_ip[16], arp_if[16];
+	struct in_addr src_addr;
+	unsigned int arp_flags;
+
+	fp = fopen("/proc/net/arp", "r");
+	if (fp) {
+		// skip first line
+		fgets(buffer, sizeof(buffer), fp);
+		
+		while (fgets(buffer, sizeof(buffer), fp)) {
+			arp_flags = 0;
+			if (sscanf(buffer, "%15s %*s 0x%x %*s %*s %15s", arp_ip, &arp_flags, arp_if) == 3) {
+				if ((arp_flags & 0x02) && strcmp(arp_if, IFNAME_BR) == 0 && inet_aton(arp_ip, &src_addr)) {
+					if (src_addr.s_addr != my_ipaddr.s_addr && is_same_subnet(&src_addr, &my_ipaddr, &my_ipmask)) {
+						item = lookup_client(src_addr.s_addr);
+						if (item) {
+							item->macval = 0;
+							item->staled = 0;
+							item->probed = 1;
+							item->pending = 0;
+							item->skip_ping = 255; // next ping after ~2s
+						}
+					}
+				}
+			}
+		}
+		
+		fclose(fp);
+	}
 }
 
 static void
@@ -359,11 +440,13 @@ nmap_init(void)
 	scan_net = ntohl(my_ipaddr.s_addr) & ntohl(my_ipmask.s_addr);
 	lan_pool = ~(ntohl(my_ipmask.s_addr));
 
-	if (lan_pool < NUM_CLIENTS) {
+	if (lan_pool < NUM_CLIENTS_SCAN) {
 		scan_max = lan_pool;
 		scan_block = 0;
 		arp_timeout.tv_sec = 0;
 		arp_timeout.tv_usec = 60000;
+	} else {
+		arp_proc_fetch();
 	}
 
 error_exit:
@@ -372,44 +455,36 @@ error_exit:
 }
 
 static int
-is_same_subnet(struct in_addr *ip1, struct in_addr *ip2, struct in_addr *msk)
-{
-	unsigned int mask = ntohl(msk->s_addr);
-
-	return ((ntohl(ip1->s_addr) & mask) == (ntohl(ip2->s_addr) & mask)) ? 1 : 0;
-}
-
-static int
 nmap_ping_hosts_again(void)
 {
+	NET_CLIENT *item;
 	int need_update_file = 0;
-	unsigned int i;
 	struct in_addr in;
 
-	for (i=1; i<scan_max; i++) {
-		if (!net_clients[i].ip_addr || net_clients[i].staled)
+	SLIST_FOREACH(item, &net_clients.head, entry) {
+		if (item->staled)
 			continue;
 		
-		in.s_addr = net_clients[i].ip_addr;
+		in.s_addr = item->ip_addr;
 		if (!is_same_subnet(&in, &my_ipaddr, &my_ipmask))
 			continue;
 		
-		if (net_clients[i].pending > 2) {
+		if (item->pending > 2) {
 			NMP_DEBUG("address: %s is expired!!!\n", inet_ntoa(in));
 			
-			net_clients[i].staled = 1;
-			net_clients[i].probed = 0;
-			net_clients[i].pending = 0;
-			net_clients[i].skip_ping = 0;
+			item->staled = 1;
+			item->probed = 0;
+			item->pending = 0;
+			item->skip_ping = 0;
 			need_update_file = 1;
 			continue;
 		}
 		
-		net_clients[i].skip_ping++;
+		item->skip_ping++;
 		
-		if (!net_clients[i].skip_ping) {
-			net_clients[i].pending++;
-			net_clients[i].skip_ping = 224; // next ping after ~60s
+		if (!item->skip_ping) {
+			item->pending++;
+			item->skip_ping = 224; // next ping after ~60s
 			
 			sent_arppacket(arp_sockfd, &in);
 		}
@@ -424,12 +499,11 @@ nmap_receive_arp(void)
 	char buffer[64] = {0};
 	struct in_addr src_addr;
 	int arp_count, nmap_changed, need_update_file;
-	unsigned int ip_index, lan_pool;
+	NET_CLIENT *item;
 	ARP_HEADER *arp_ptr;
 
 	arp_count = 0;
 	need_update_file = 0;
-	lan_pool = ~(ntohl(my_ipmask.s_addr)) & MAX_CLIENTS;
 
 	while (!daemon_exit)
 	{
@@ -468,74 +542,80 @@ nmap_receive_arp(void)
 		
 		memcpy(&src_addr, arp_ptr->source_ipaddr, 4);
 		
+		// Check valid source IP
+		if (src_addr.s_addr == INADDR_ANY || src_addr.s_addr == INADDR_NONE)
+			continue;
+		
+		// Check own source IP
+		if (src_addr.s_addr == my_ipaddr.s_addr)
+			continue;
+		
 		// Check ARP packet if source ip and router ip at the same network
 		if (!is_same_subnet(&src_addr, &my_ipaddr, &my_ipmask))
 			continue;
 		
-		// Check valid source IP
-		ip_index = ntohl(src_addr.s_addr) & lan_pool;
-		if (ip_index < 1 || ip_index >= scan_max)
-			continue;
-		
 		// ARP Response packet to router
-		if( ntohs(arp_ptr->message_type) == ARP_RESPONSE &&
+		if( ntohs(arp_ptr->message_type) == ARPOP_REPLY &&
 			!memcmp(arp_ptr->dest_ipaddr, &my_ipaddr, 4) &&	// dest IP
 			!memcmp(arp_ptr->dest_hwaddr, my_hwaddr, 6) )	// dest MAC
 		{
 			NMP_DEBUG("   It's ARP Response Packet!\n");
 			
-			net_clients[ip_index].pending = 0;
-			net_clients[ip_index].skip_ping = (unsigned char)(random() % 31);
+			item = lookup_client(src_addr.s_addr);
+			if (!item)
+				continue;
 			
-			if (memcmp(arp_ptr->source_hwaddr, net_clients[ip_index].mac_addr, 6)) {
-				memcpy(net_clients[ip_index].mac_addr, arp_ptr->source_hwaddr, 6);
-				net_clients[ip_index].macval = 1;
+			item->pending = 0;
+			item->skip_ping = (unsigned char)(random() % 31);
+			
+			if (memcmp(arp_ptr->source_hwaddr, item->mac_addr, 6)) {
+				memcpy(item->mac_addr, arp_ptr->source_hwaddr, 6);
+				item->macval = 1;
 				nmap_changed = 1;
 			}
 			
-			if (net_clients[ip_index].ip_addr != src_addr.s_addr) {
-				net_clients[ip_index].ip_addr = src_addr.s_addr;
+			if (item->probed) {
+				item->probed = 0;
 				nmap_changed = 1;
 			}
 			
-			if (net_clients[ip_index].probed) {
-				net_clients[ip_index].probed = 0;
+			if (item->staled) {
+				item->staled = 0;
 				nmap_changed = 1;
 			}
 			
-			if (net_clients[ip_index].staled) {
-				net_clients[ip_index].staled = 0;
-				nmap_changed = 1;
-			}
-			
-			if (nmap_changed || !net_clients[ip_index].device_name[0]) {
-				if (resolve_hostname(&src_addr, &net_clients[ip_index]) == 0)
+			if (nmap_changed || !item->device_name[0]) {
+				if (resolve_hostname(&src_addr, item) == 0)
 					need_update_file |= 1;
 			}
 			
 			if (nmap_changed) {
 				// Set unknown type
-				net_clients[ip_index].type = 6;
-				net_clients[ip_index].http = 0;
+				item->type = 6;
+				item->http = 0;
 				
 				// Find all application
-				find_all_app(&my_ipaddr, &src_addr, &net_clients[ip_index]);
-				fixup_hostname(&net_clients[ip_index]);
-				if (!net_clients[ip_index].device_name[0])
-					lookup_static_dhcp_list(&src_addr, &net_clients[ip_index]);
+				find_all_app(&my_ipaddr, &src_addr, item);
+				fixup_hostname(item);
+				if (!item->device_name[0])
+					lookup_static_dhcp_list(&src_addr, item);
 				
 				need_update_file |= 1;
 			}
 			
-		} else if (src_addr.s_addr != my_ipaddr.s_addr && !networkmap_fullscan) {
+		} else if (!networkmap_fullscan) {
 			// Find a new IP! Send an ARP request to it
-			if (!net_clients[ip_index].ip_addr || net_clients[ip_index].staled) {
+			
+			item = lookup_client(src_addr.s_addr);
+			if (!item)
+				continue;
+			
+			if (!item->macval || item->staled) {
 				NMP_DEBUG("   New IP: %s\n", inet_ntoa(src_addr));
-				net_clients[ip_index].ip_addr = src_addr.s_addr;
-				net_clients[ip_index].staled = 0;
-				net_clients[ip_index].probed = 1;
-				net_clients[ip_index].pending = 0;
-				net_clients[ip_index].skip_ping = 254; // next ping after ~4s
+				item->staled = 0;
+				item->probed = 1;
+				item->pending = 0;
+				item->skip_ping = 254; // next ping after ~4s
 			}
 		}
 	}
@@ -554,8 +634,8 @@ nmap_iterate(void)
 		unsigned int scan_addr;
 		
 		if (scan_now == 0) {
-			nmap_init();
 			net_clients_reset();
+			nmap_init();
 		}
 		
 		scan_now++;
@@ -580,17 +660,14 @@ nmap_iterate(void)
 			
 			nvram_set_int_temp("networkmap_fullscan", 0);
 			
-			if (!scan_block)
+			if (!scan_block) {
 				NMP_DEBUG("fullscan complete!\n");
+			}
 		}
 	}
 
-	if (!scan_block)
-		nmap_receive_arp();
-	else
-		pause();
+	nmap_receive_arp();
 }
-
 
 /******************************************/
 
@@ -598,6 +675,9 @@ int main(int argc, char *argv[])
 {
 	FILE *fp;
 	int c, no_daemon = 0, do_wait = 0;
+
+	SLIST_INIT(&net_clients.head);
+	net_clients.count = 0;
 
 	// usage: networkmap [-w] [-b]
 	if (argc) {

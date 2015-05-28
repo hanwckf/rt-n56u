@@ -40,9 +40,10 @@
 #include <net/if.h>
 #include <ifaddrs.h>
 
+#include <bsd_queue.h>
+
 #include "httpd.h"
 #include "common.h"
-#include "queue.h"
 
 #define LOGIN_TIMEOUT		60
 #define SERVER_NAME		"httpd"
@@ -1311,7 +1312,7 @@ main(int argc, char **argv)
 	}
 
 	/* free all pending requests */
-	TAILQ_FOREACH(item, &pool.head, entry) {
+	TAILQ_FOREACH_SAFE(item, &pool.head, entry, next) {
 		if (item->fd >= 0) {
 			shutdown(item->fd, SHUT_RDWR);
 			close(item->fd);

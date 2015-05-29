@@ -362,7 +362,7 @@ function done_validating(action){
                                         <tr id="row_http_wport" style="display:none;">
                                             <th style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,3);"><#FirewallConfig_x_WanWebPort_itemname#></a></th>
                                             <td style="border-top: 0 none;">
-                                                <input type="text" maxlength="5" size="5" name="misc_httpport_x" class="input" value="<% nvram_get_x("", "misc_httpport_x"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" size="5" name="misc_httpport_x" class="input" value="<% nvram_get_x("", "misc_httpport_x"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[80..65535]</span>
                                             </td>
                                         </tr>
@@ -383,7 +383,7 @@ function done_validating(action){
                                         <tr id="row_https_wport" style="display:none;">
                                             <th style="border-top: 0 none;"><#Adm_System_https_wport#></th>
                                             <td style="border-top: 0 none;">
-                                                <input type="text" maxlength="5" size="5" name="https_wport" class="input" value="<% nvram_get_x("", "https_wport"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" size="5" name="https_wport" class="input" value="<% nvram_get_x("", "https_wport"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[81..65535]</span>
                                             </td>
                                         </tr>
@@ -404,7 +404,7 @@ function done_validating(action){
                                         <tr id="row_sshd_wport" style="display:none;">
                                             <th style="border-top: 0 none;"><#Adm_System_sshd_wport#></th>
                                             <td style="border-top: 0 none;">
-                                                <input type="text" maxlength="5" size="5" name="sshd_wport" class="input" value="<% nvram_get_x("","sshd_wport"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" size="5" name="sshd_wport" class="input" value="<% nvram_get_x("","sshd_wport"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[22..65535]</span>
                                             </td>
                                         </tr>
@@ -438,7 +438,7 @@ function done_validating(action){
                                         <tr id="row_ftpd_wport" style="display:none;">
                                             <th style="border-top: 0 none;"><#Adm_System_ftpd_wport#></th>
                                             <td style="border-top: 0 none;">
-                                                <input type="text" maxlength="5" size="5" name="ftpd_wport" class="input" value="<% nvram_get_x("","ftpd_wport"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" size="5" name="ftpd_wport" class="input" value="<% nvram_get_x("","ftpd_wport"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[21..65535]</span>
                                             </td>
                                         </tr>
@@ -459,7 +459,7 @@ function done_validating(action){
                                         <tr id="row_udpxy_wport" style="display:none;">
                                             <th style="border-top: 0 none;"><#Adm_System_udpxy_wport#></th>
                                             <td style="border-top: 0 none;">
-                                                <input type="text" maxlength="5" size="5" name="udpxy_wport" class="input" value="<% nvram_get_x("","udpxy_wport"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" size="5" name="udpxy_wport" class="input" value="<% nvram_get_x("","udpxy_wport"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[1024..65535]</span>
                                             </td>
                                         </tr>

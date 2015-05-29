@@ -625,7 +625,7 @@ function done_validating(action){
                                                 <#StorageNotifyDLNA#>
                                             </th>
                                             <td colspan="2">
-                                                <input type="text" name="dlna_disc" class="input" maxlength="5" size="5" value="<% nvram_get_x("", "dlna_disc"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" name="dlna_disc" class="input" maxlength="5" size="5" value="<% nvram_get_x("", "dlna_disc"); %>" onkeypress="return is_number(this,event);"/>
                                             </td>
                                         </tr>
                                         <tr id="row_dms_root">
@@ -708,7 +708,7 @@ function done_validating(action){
                                                 <#StoragePPortTRMD#>
                                             </th>
                                             <td colspan="2">
-                                                <input type="text" maxlength="5" size="5" name="trmd_pport" class="input" value="<% nvram_get_x("", "trmd_pport"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" size="5" name="trmd_pport" class="input" value="<% nvram_get_x("", "trmd_pport"); %>" onkeypress="return is_number(this,event);"/>
                                             </td>
                                         </tr>
                                         <tr id="row_trmd_rport">
@@ -716,7 +716,7 @@ function done_validating(action){
                                                 <#StorageRPortTRMD#>
                                             </th>
                                             <td>
-                                               <input type="text" maxlength="5" size="5" name="trmd_rport" class="input" value="<% nvram_get_x("", "trmd_rport"); %>" onkeypress="return is_number(this)"/>
+                                               <input type="text" maxlength="5" size="5" name="trmd_rport" class="input" value="<% nvram_get_x("", "trmd_rport"); %>" onkeypress="return is_number(this,event);"/>
                                             </td>
                                             <td>
                                                <a href="javascript:on_rpc_link();" id="web_rpc_link">Web control</a>
@@ -750,7 +750,7 @@ function done_validating(action){
                                                 <#StoragePPortTRMD#>
                                             </th>
                                             <td>
-                                                <input type="text" maxlength="5" size="5" name="aria_pport" class="input" value="<% nvram_get_x("", "aria_pport"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" size="5" name="aria_pport" class="input" value="<% nvram_get_x("", "aria_pport"); %>" onkeypress="return is_number(this,event);"/>
                                             </td>
                                         </tr>
                                         <tr id="row_aria_rport">
@@ -758,7 +758,7 @@ function done_validating(action){
                                                 <#StorageRPortTRMD#>
                                             </th>
                                             <td>
-                                               <input type="text" maxlength="5" size="5" name="aria_rport" class="input" value="<% nvram_get_x("", "aria_rport"); %>" onkeypress="return is_number(this)"/>
+                                               <input type="text" maxlength="5" size="5" name="aria_rport" class="input" value="<% nvram_get_x("", "aria_rport"); %>" onkeypress="return is_number(this,event);"/>
                                             </td>
                                         </tr>
                                     </table>

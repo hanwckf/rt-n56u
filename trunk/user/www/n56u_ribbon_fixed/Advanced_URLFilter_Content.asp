@@ -292,10 +292,10 @@ function done_validating(action){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,9,2);"><#FirewallConfig_URLActiveTime_itemname#>:</a></th>
                                             <td colspan="2">
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_starthour" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_startmin" onKeyPress="return is_number(this)">-
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_endhour" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_endmin" onKeyPress="return is_number(this)">
+                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_starthour" onKeyPress="return is_number(this,event);">:
+                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_startmin" onKeyPress="return is_number(this,event);">-
+                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_endhour" onKeyPress="return is_number(this,event);">:
+                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="url_time_x_endmin" onKeyPress="return is_number(this,event);">
                                             </td>
                                         </tr>
                                         <tr>
@@ -303,7 +303,7 @@ function done_validating(action){
                                             <td colspan="2" align="left">
                                                 <div id="ClientList_Block" class="alert alert-info ddown-list"></div>
                                                 <div class="input-append">
-                                                    <input type="text" maxlength="12" class="span12" size="15" name="url_mac_x" value="<% nvram_get_x("","url_mac_x"); %>" onKeyPress="return is_hwaddr()" style="float:left; width: 162px">
+                                                    <input type="text" maxlength="12" class="span12" size="15" name="url_mac_x" value="<% nvram_get_x("","url_mac_x"); %>" onKeyPress="return is_hwaddr(event);" style="float:left; width: 162px">
                                                     <button class="btn btn-chevron" id="chevron" type="button" onclick="pullLANIPList(this);" title="Select the MAC of LAN clients."><i class="icon icon-chevron-down"></i></button>&nbsp;
                                                     <label class="checkbox inline"><input type="checkbox" name="url_inv_fake" value="" onclick="click_mac_inv(this);" <% nvram_match_x("", "url_inv_x", "1", "checked"); %>/><#FirewallConfig_UrlInv#></label>
                                                 </div>
@@ -312,7 +312,7 @@ function done_validating(action){
                                         <tr>
                                             <th><#FirewallConfig_UrlList_groupitemdesc#></th>
                                             <td style="padding-right: 0px;">
-                                                <input type="text" class="span12" maxlength="64" size="36" name="url_keyword_x_0" onKeyPress="return is_string(this)">
+                                                <input type="text" class="span12" maxlength="64" size="36" name="url_keyword_x_0" onKeyPress="return is_string(this,event);">
                                             </td>
                                             <td align="left">
                                                 <button class="btn" type="submit" onClick="if(validForm()){return markGroup(this, 'UrlList', 128, ' Add ');}" name="UrlList"><i class="icon icon-plus"></i></button>

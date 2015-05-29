@@ -369,16 +369,16 @@ $j(document).ready(function() {
                                                 </tr>
                                             </thead>
 
-                                            <div id='bwm-controls'>
+                                            <tbody>
                                                 <tr>
                                                     <th width='50%'><#Traffic_Hours#>:</th>
-                                                        <td>
-                                                                <a href='javascript:switchHours(4);' id='hr4'>4</a>,
-                                                                <a href='javascript:switchHours(6);' id='hr6'>6</a>,
-                                                                <a href='javascript:switchHours(12);' id='hr12'>12</a>,
-                                                                <a href='javascript:switchHours(18);' id='hr18'>18</a>,
-                                                                <a href='javascript:switchHours(24);' id='hr24'>24</a>
-                                                        </td>
+                                                    <td>
+                                                        <a href='javascript:switchHours(4);' id='hr4'>4</a>,
+                                                        <a href='javascript:switchHours(6);' id='hr6'>6</a>,
+                                                        <a href='javascript:switchHours(12);' id='hr12'>12</a>,
+                                                        <a href='javascript:switchHours(18);' id='hr18'>18</a>,
+                                                        <a href='javascript:switchHours(24);' id='hr24'>24</a>
+                                                    </td>
                                                     </tr>
                                                 <tr>
                                                     <th width='50%'><#Traffic_Avg#>:</th>
@@ -400,17 +400,17 @@ $j(document).ready(function() {
                                                 <tr>
                                                     <th><#Traffic_SvgDisp#>:</th>
                                                     <td>
-                                                            <a href='javascript:switchDraw(0)' id='draw0'>Solid</a>,
-                                                            <a href='javascript:switchDraw(1)' id='draw1'>Line</a>
+                                                        <a href='javascript:switchDraw(0)' id='draw0'>Solid</a>,
+                                                        <a href='javascript:switchDraw(1)' id='draw1'>Line</a>
                                                     </td>
                                                 </tr>
                                                 <tr>
                                                     <th><#Traffic_Color#>:</th>
                                                     <td>
-                                                            <a href='javascript:switchColor()' id='drawcolor'>-</a><a href='javascript:switchColor(1)' id='drawrev'><#Traffic_Reverse#></a>
+                                                        <a href='javascript:switchColor()' id='drawcolor'>-</a><a href='javascript:switchColor(1)' id='drawrev'><#Traffic_Reverse#></a>
                                                     </td>
                                                 </tr>
-                                            </div>
+                                            </tbody>
                                         </table>
                                     </div>
                                 </div>

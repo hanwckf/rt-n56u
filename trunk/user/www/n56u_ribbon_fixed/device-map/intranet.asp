@@ -90,7 +90,7 @@ function update_lanip(){
   </tr>
   <tr>
     <th><#IP4_Addr#> LAN:</th>
-    <td><span id="LANIP4"></span></span></td>
+    <td><span id="LANIP4"></span></td>
   </tr>
   <tr>
     <th><#Gateway#> LAN:</th>

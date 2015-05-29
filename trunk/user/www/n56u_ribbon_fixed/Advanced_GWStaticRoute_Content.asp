@@ -264,10 +264,10 @@ function changeBgColor(obj, num){
                                             <th width="5%">&nbsp;</th>
                                         </tr>
                                         <tr>
-                                            <td><input type="text" maxlength="15" class="span12" size="12" name="sr_ipaddr_x_0" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)"/></td>
-                                            <td><input type="text" maxlength="15" class="span12" size="12" name="sr_netmask_x_0" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)"/></td>
-                                            <td><input type="text" maxlength="15" class="span12" size="12" name="sr_gateway_x_0" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)"/></td>
-                                            <td><input type="text" maxlength="3"  class="span12" size="1" name="sr_matric_x_0"  onkeypress="return is_number(this)"></td>
+                                            <td><input type="text" maxlength="15" class="span12" size="12" name="sr_ipaddr_x_0" onKeyPress="return is_ipaddr(this,event);" /></td>
+                                            <td><input type="text" maxlength="15" class="span12" size="12" name="sr_netmask_x_0" onKeyPress="return is_ipaddr(this,event);" /></td>
+                                            <td><input type="text" maxlength="15" class="span12" size="12" name="sr_gateway_x_0" onKeyPress="return is_ipaddr(this,event);" /></td>
+                                            <td><input type="text" maxlength="3"  class="span12" size="1" name="sr_matric_x_0"  onkeypress="return is_number(this,event);" /></td>
                                             <td>
                                                 <select name="sr_if_x_0" class="span12">
                                                     <option value="LAN" <% nvram_match_list_x("RouterConfig","sr_if_x", "LAN","selected", 0); %>>LAN</option>

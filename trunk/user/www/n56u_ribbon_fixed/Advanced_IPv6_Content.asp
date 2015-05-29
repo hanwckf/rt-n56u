@@ -467,37 +467,37 @@ function change_ip6_lan_dhcp(){
                                         <tr id="row_ip6_6in4_remote">
                                             <th width="50%"><#IP6_SIT_6in4R#></th>
                                             <td>
-                                                <input type="text" size="12" maxlength="15" name="ip6_6in4_remote" value="<% nvram_get_x("", "ip6_6in4_remote"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
+                                                <input type="text" size="12" maxlength="15" name="ip6_6in4_remote" value="<% nvram_get_x("", "ip6_6in4_remote"); %>" onkeypress="return is_ipaddr(this,event);" />
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_6to4_relay">
                                             <th width="50%"><#IP6_SIT_6to4R#></th>
                                             <td>
-                                                <input type="text" size="12" maxlength="15" name="ip6_6to4_relay" value="<% nvram_get_x("", "ip6_6to4_relay"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
+                                                <input type="text" size="12" maxlength="15" name="ip6_6to4_relay" value="<% nvram_get_x("", "ip6_6to4_relay"); %>" onkeypress="return is_ipaddr(this,event);" />
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_6rd_relay">
                                             <th width="50%"><#IP6_SIT_6rdR#></th>
                                             <td>
-                                                <input type="text" size="12" maxlength="15" name="ip6_6rd_relay" value="<% nvram_get_x("", "ip6_6rd_relay"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
+                                                <input type="text" size="12" maxlength="15" name="ip6_6rd_relay" value="<% nvram_get_x("", "ip6_6rd_relay"); %>" onkeypress="return is_ipaddr(this,event);" />
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_6rd_size">
                                             <th><#IP6_SIT_6rdM#></th>
                                             <td>
-                                                <input type="text" maxlength="2" style="width: 40px;" class="input" size="4" name="ip6_6rd_size" value="<% nvram_get_x("", "ip6_6rd_size"); %>" onkeypress="return is_number(this)" onblur="return validate_range(this, 0, 32)">
+                                                <input type="text" maxlength="2" style="width: 40px;" class="input" size="4" name="ip6_6rd_size" value="<% nvram_get_x("", "ip6_6rd_size"); %>" onkeypress="return is_number(this,event);" onblur="return validate_range(this, 0, 32);"/>
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_sit_mtu">
                                             <th><#IP6_SIT_MTU#></th>
                                             <td>
-                                                <input type="text" maxlength="4" style="width: 40px;" class="input" size="4" name="ip6_sit_mtu" value="<% nvram_get_x("", "ip6_sit_mtu"); %>" onkeypress="return is_number(this)" onblur="return validate_range(this, 1280, 1480)">
+                                                <input type="text" maxlength="4" style="width: 40px;" class="input" size="4" name="ip6_sit_mtu" value="<% nvram_get_x("", "ip6_sit_mtu"); %>" onkeypress="return is_number(this,event);" onblur="return validate_range(this, 1280, 1480);"/>
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_sit_ttl">
                                             <th><#IP6_SIT_TTL#></th>
                                             <td>
-                                                <input type="text" maxlength="3" style="width: 40px;" class="input" size="4" name="ip6_sit_ttl" value="<% nvram_get_x("", "ip6_sit_ttl"); %>" onkeypress="return is_number(this)" onblur="return validate_range(this, 1, 255)">
+                                                <input type="text" maxlength="3" style="width: 40px;" class="input" size="4" name="ip6_sit_ttl" value="<% nvram_get_x("", "ip6_sit_ttl"); %>" onkeypress="return is_number(this,event);" onblur="return validate_range(this, 1, 255);"/>
                                             </td>
                                         </tr>
                                     </table>
@@ -528,19 +528,19 @@ function change_ip6_lan_dhcp(){
                                         <tr id="row_ip6_wan_addr">
                                             <th id="lbl_ip6_wan_addr" width="50%"><#IP6_WAN_Addr#></th>
                                             <td>
-                                                <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_wan_addr" value="<% nvram_get_x("", "ip6_wan_addr"); %>" onkeypress="return is_string(this)" onblur="validate_ip6addr(this)">
+                                                <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_wan_addr" value="<% nvram_get_x("", "ip6_wan_addr"); %>" onkeypress="return is_string(this,event);" onblur="return validate_ip6addr(this);" />
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_wan_size">
                                             <th id="lbl_ip6_wan_size" width="50%"><#IP6_WAN_Pref#></th>
                                             <td>
-                                                <input type="text" maxlength="3" style="width: 30px;" class="input" size="4" name="ip6_wan_size" value="<% nvram_get_x("", "ip6_wan_size"); %>" onkeypress="return is_number(this)" onblur="return validate_range(this, 1, 128)">
+                                                <input type="text" maxlength="3" style="width: 30px;" class="input" size="4" name="ip6_wan_size" value="<% nvram_get_x("", "ip6_wan_size"); %>" onkeypress="return is_number(this,event);" onblur="return validate_range(this, 1, 128);" />
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_wan_gate">
                                             <th width="50%"><#IP6_WAN_Gate#></th>
                                             <td>
-                                                <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_wan_gate" value="<% nvram_get_x("", "ip6_wan_gate"); %>" onkeypress="return is_string(this)" onblur="validate_ip6addr(this)">
+                                                <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_wan_gate" value="<% nvram_get_x("", "ip6_wan_gate"); %>" onkeypress="return is_string(this,event);" onblur="return validate_ip6addr(this);" />
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_wan_priv" style="display:none;">
@@ -563,7 +563,7 @@ function change_ip6_lan_dhcp(){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ip6_dns_auto_on_of">
-                                                        <input type="checkbox" id="ip6_dns_auto_fake" <% nvram_match_x("", "ip6_dns_auto", "1", "value=1 checked"); %><% nvram_match_x("", "ip6_dns_auto", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="ip6_dns_auto_fake" <% nvram_match_x("", "ip6_dns_auto", "1", "value=1 checked"); %><% nvram_match_x("", "ip6_dns_auto", "0", "value=0"); %> />
                                                     </div>
                                                 </div>
 
@@ -576,19 +576,19 @@ function change_ip6_lan_dhcp(){
                                         <tr id="row_ip6_dns1">
                                             <th width="50%"><#IP6_DNS_Addr#>&nbsp;1:</th>
                                             <td>
-                                                <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_dns1" value="<% nvram_get_x("", "ip6_dns1"); %>" onkeypress="return is_string(this)" onblur="validate_ip6addr(this)">
+                                                <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_dns1" value="<% nvram_get_x("", "ip6_dns1"); %>" onkeypress="return is_string(this,event);" onblur="return validate_ip6addr(this);" />
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_dns2">
                                             <th width="50%"><#IP6_DNS_Addr#>&nbsp;2:</th>
                                             <td>
-                                                <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_dns2" value="<% nvram_get_x("", "ip6_dns2"); %>" onkeypress="return is_string(this)" onblur="validate_ip6addr(this)">
+                                                <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_dns2" value="<% nvram_get_x("", "ip6_dns2"); %>" onkeypress="return is_string(this,event);" onblur="return validate_ip6addr(this);" />
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_dns3">
                                             <th width="50%"><#IP6_DNS_Addr#>&nbsp;3:</th>
                                             <td>
-                                                <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_dns3" value="<% nvram_get_x("", "ip6_dns3"); %>" onkeypress="return is_string(this)" onblur="validate_ip6addr(this)">
+                                                <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_dns3" value="<% nvram_get_x("", "ip6_dns3"); %>" onkeypress="return is_string(this,event);" onblur="return validate_ip6addr(this);" />
                                             </td>
                                         </tr>
                                     </table>
@@ -602,7 +602,7 @@ function change_ip6_lan_dhcp(){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ip6_lan_auto_on_of">
-                                                        <input type="checkbox" id="ip6_lan_auto_fake" <% nvram_match_x("", "ip6_lan_auto", "1", "value=1 checked"); %><% nvram_match_x("", "ip6_lan_auto", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="ip6_lan_auto_fake" <% nvram_match_x("", "ip6_lan_auto", "1", "value=1 checked"); %><% nvram_match_x("", "ip6_lan_auto", "0", "value=0"); %> />
                                                     </div>
                                                 </div>
 
@@ -615,13 +615,13 @@ function change_ip6_lan_dhcp(){
                                         <tr id="row_ip6_lan_addr">
                                             <th width="50%"><#IP6_LAN_Addr#></th>
                                             <td>
-                                                <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_lan_addr" value="<% nvram_get_x("", "ip6_lan_addr"); %>" onkeypress="return is_string(this)" onblur="validate_ip6addr(this)">
+                                                <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_lan_addr" value="<% nvram_get_x("", "ip6_lan_addr"); %>" onkeypress="return is_string(this,event);" onblur="return validate_ip6addr(this);" />
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_lan_size">
                                             <th width="50%"><#IP6_LAN_Pref#></th>
                                             <td>
-                                                <input type="text" maxlength="3" style="width: 30px;" class="input" size="4" name="ip6_lan_size" value="<% nvram_get_x("", "ip6_lan_size"); %>" onkeypress="return is_number(this)" onblur="return validate_range(this, 48, 80)">
+                                                <input type="text" maxlength="3" style="width: 30px;" class="input" size="4" name="ip6_lan_size" value="<% nvram_get_x("", "ip6_lan_size"); %>" onkeypress="return is_number(this,event);" onblur="return validate_range(this, 48, 80);" />
                                             </td>
                                         </tr>
                                         <tr>
@@ -629,7 +629,7 @@ function change_ip6_lan_dhcp(){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ip6_lan_radv_on_of">
-                                                        <input type="checkbox" id="ip6_lan_radv_fake" <% nvram_match_x("", "ip6_lan_radv", "1", "value=1 checked"); %><% nvram_match_x("", "ip6_lan_radv", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="ip6_lan_radv_fake" <% nvram_match_x("", "ip6_lan_radv", "1", "value=1 checked"); %><% nvram_match_x("", "ip6_lan_radv", "0", "value=0"); %> />
                                                     </div>
                                                 </div>
 
@@ -653,14 +653,14 @@ function change_ip6_lan_dhcp(){
                                         <tr id="row_ip6_lan_pool" style="display:none;">
                                             <th><#IP6_LAN_Pool#></th>
                                             <td align="left">
-                                                <span class="input-prepend"><span class="add-on">::</span><input type="text" name="ip6_lan_sfps_fake" class="ip6_residual" size="4" maxlength="4" onkeypress="return is_string(this)" onblur="validate_ip6_part(this)"/>&nbsp;&nbsp;-&nbsp;&nbsp;</span>
-                                                <span class="input-prepend"><span class="add-on">::</span><input type="text" name="ip6_lan_sfpe_fake" class="ip6_residual" size="4" maxlength="4" onkeypress="return is_string(this)" onblur="validate_ip6_part(this)"/></span>
+                                                <span class="input-prepend"><span class="add-on">::</span><input type="text" name="ip6_lan_sfps_fake" class="ip6_residual" size="4" maxlength="4" onkeypress="return is_string(this,event);" onblur="return validate_ip6_part(this);"/>&nbsp;&nbsp;-&nbsp;&nbsp;</span>
+                                                <span class="input-prepend"><span class="add-on">::</span><input type="text" name="ip6_lan_sfpe_fake" class="ip6_residual" size="4" maxlength="4" onkeypress="return is_string(this,event);" onblur="return validate_ip6_part(this);"/></span>
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_lan_life" style="display:none;">
                                             <th><#LANHostConfig_LeaseTime_itemname#></th>
                                             <td align="left">
-                                                <input type="text" maxlength="6" size="6" name="ip6_lan_sflt" class="input" value="<% nvram_get_x("", "ip6_lan_sflt"); %>" onKeyPress="return is_number(this)">
+                                                <input type="text" maxlength="6" size="6" name="ip6_lan_sflt" class="input" value="<% nvram_get_x("", "ip6_lan_sflt"); %>" onKeyPress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[120..604800]</span>
                                             </td>
                                         </tr>
@@ -671,7 +671,6 @@ function change_ip6_lan_dhcp(){
                                             <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
                                         </tr>
                                     </table>
-
                                 </div>
                             </div>
                         </div>

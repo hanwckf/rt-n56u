@@ -46,20 +46,20 @@ function initial(){
 	show_banner(1);
 	show_menu(5,6,2);
 	show_footer();
-	
+
 	// show page's control
 	showShareStatusControl();
 	showAccountControl();
-	
+
 	// show accounts
 	showAccountMenu();
-	
+
 	// show the kinds of permission
 	showPermissionTitle();
-	
+
 	// the click event of the buttons
 	onEvent();
-	
+
 	// show folder's tree
 	setTimeout('get_disk_tree();', 1000);
 }

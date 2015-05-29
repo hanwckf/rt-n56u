@@ -237,9 +237,11 @@ function portrange_max(o, v) {
 }
 
 function isBlank(s) {
+    var i,c;
     for (i = 0; i < s.length; i++) {
         c = s.charAt(i);
-        if ((c != ' ') && (c != '\n') && (c != '\t'))return false;
+        if ((c != ' ') && (c != '\n') && (c != '\t'))
+            return false;
     }
     return true;
 }
@@ -259,9 +261,7 @@ function check_ptl() {
 }
 
 function entry_cmp(entry, match, len) {  //compare string length function
-
-    var j;
-
+    var j,c1,c2;
     if (entry.length < match.length)
         return (1);
 
@@ -287,7 +287,8 @@ function entry_cmp(entry, match, len) {  //compare string length function
 }
 
 function validate_duplicate_noalert(o, v, l, off) {
-    for (var i = 0; i < o.options.length; i++) {
+    var i;
+    for (i = 0; i < o.options.length; i++) {
         if (entry_cmp(o.options[i].text.substring(off).toLowerCase(), v.toLowerCase(), l) == 0)
             return false;
     }
@@ -295,7 +296,8 @@ function validate_duplicate_noalert(o, v, l, off) {
 }
 
 function validate_duplicate(o, v, l, off) {
-    for (var i = 0; i < o.options.length; i++) {
+    var i;
+    for (i = 0; i < o.options.length; i++) {
         if (entry_cmp(o.options[i].text.substring(off).toLowerCase(), v.toLowerCase(), l) == 0) {
             alert("<#JS_duplicate#>");
 
@@ -315,8 +317,9 @@ function validate_duplicate2(o, v, l, off) {
     return true;
 }
 
-function is_hwaddr() {
-    keyPressed = event.keyCode ? event.keyCode : event.which;
+function is_hwaddr(e) {
+    e = e || event;
+    keyPressed = e.keyCode ? e.keyCode : e.which;
     if ((keyPressed > 47 && keyPressed < 58) || (keyPressed > 64 && keyPressed < 71) || (keyPressed > 96 && keyPressed < 103))
         return true;
     else if (keyPressed == 0)
@@ -326,6 +329,7 @@ function is_hwaddr() {
 }
 
 function validate_hwaddr(o) {
+    var i,c;
     if (o.value.length == 0) return true;
     if (o.value != "") {
         if (o.value.length == 12) {
@@ -349,8 +353,9 @@ function validate_hwaddr(o) {
     return false;
 }
 
-function is_string(o) {
-    keyPressed = event.keyCode ? event.keyCode : event.which;
+function is_string(o,e) {
+    e = e || event;
+    keyPressed = e.keyCode ? e.keyCode : e.which;
     if (keyPressed == 0)
         return true;
     else if (keyPressed >= 0 && keyPressed <= 126)
@@ -359,15 +364,15 @@ function is_string(o) {
     return false;
 }
 
-function is_string2(o) {
-    keyPressed = event.keyCode ? event.keyCode : event.which;
+function is_string2(o,e) {
+    e = e || event;
+    keyPressed = e.keyCode ? e.keyCode : e.which;
     if (keyPressed == 0)
         return true;
     else if ((keyPressed >= 48 && keyPressed <= 57) ||
         (keyPressed >= 97 && keyPressed <= 122) ||
         (keyPressed >= 65 && keyPressed <= 90) ||
-        (keyPressed == 45)
-        )
+        (keyPressed == 45))
         return true;
     alert("<#JS_validchar#>");
     return false;
@@ -376,16 +381,13 @@ function is_string2(o) {
 function validate_ssidchar(ch) {
     if (ch >= 32 && ch <= 126)
         return true;
-
     return false;
 }
 
 function validate_string_ssid(o) {
-    var c;
-
-    for (var i = 0; i < o.value.length; ++i) {
+    var i,c;
+    for (i = 0; i < o.value.length; ++i) {
         c = o.value.charCodeAt(i);
-
         if (!validate_ssidchar(c)) {
             alert("<#JS_validSSID1#> " + o.value.charAt(i) + " <#JS_validSSID2#>");
             o.value = "";
@@ -394,23 +396,24 @@ function validate_string_ssid(o) {
             return false;
         }
     }
-
     return true;
 }
 
-function is_number(o) {
-    keyPressed = event.keyCode ? event.keyCode : event.which;
+function is_number(o,e) {
+    e = e || event;
+    keyPressed = e.keyCode ? e.keyCode : e.which;
     if (keyPressed == 0) return true;
     if (keyPressed > 47 && keyPressed < 58) {
-        if (keyPressed == 48 && o.length == 0) return false;
+        if (keyPressed == 48 && o.length == 0)
+            return false;
         return true;
     }
-    else {
+    else
         return false;
-    }
 }
 
 function validate_range(o, min, max) {
+    var i;
     for (i = 0; i < o.value.length; i++) {
         if (o.value.charAt(i) < '0' || o.value.charAt(i) > '9') {
             alert('<#JS_validrange#> ' + min + ' <#JS_validrange_to#> ' + max);
@@ -471,16 +474,15 @@ function decimalToHex(d, padding) {
 function change_ipaddr(o) {
 }
 
-function is_ipaddr(o) {
-    keyPressed = event.keyCode ? event.keyCode : event.which;
-
-    if (keyPressed == 0)
+function is_ipaddr(o,e) {
+    var i,j;
+    e = e || event;
+    keyPressed = e.keyCode ? e.keyCode : e.which;
+    if(keyPressed == 0)
         return true;
-
     if (o.value.length >= 16)
         return false;
-
-    if ((keyPressed > 47 && keyPressed < 58)){
+    if(keyPressed > 47 && keyPressed < 58){
         j = 0;
         for (i = 0; i < o.value.length; i++){
             if (o.value.charAt(i) == '.')
@@ -492,19 +494,16 @@ function is_ipaddr(o) {
         }
         return true;
     }
-    else if (keyPressed == 46){
+    else if(keyPressed == 46){
         j = 0;
         for (i = 0; i < o.value.length; i++){
             if (o.value.charAt(i) == '.')
                 j++;
         }
-
         if (o.value.charAt(i - 1) == '.' || j == 3)
             return false;
-
         return true;
     }
-
     return false;
 }
 
@@ -639,18 +638,17 @@ function validate_ipaddr_final(o, v) {
 function change_ipaddrport(o) {
 }
 
-function is_ipaddrport(o) {
-    keyPressed = event.keyCode ? event.keyCode : event.which;
-    if (keyPressed == 0) {
+function is_ipaddrport(o,e) {
+    e = e || event;
+    keyPressed = e.keyCode ? e.keyCode : e.which;
+    if (keyPressed == 0)
         return true;
-    }
-    if ((keyPressed > 47 && keyPressed < 58) || keyPressed == 46 || keyPressed == 58) {
+    if ((keyPressed > 47 && keyPressed < 58) || keyPressed == 46 || keyPressed == 58)
         return true;
-    }
     return false;
 }
 
-function validate_ipaddrport(o, v) {
+function validate_ipaddrport(o,v) {
     num = -1;
     pos = 0;
     if (o.value.length == 0)
@@ -706,15 +704,14 @@ function validate_ipaddrport(o, v) {
 function change_iprange(o) {
 }
 
-function is_iprange(o) {
-    var ret = is_ipaddr(o);
+function is_iprange(o,e) {
+    var ret = is_ipaddr(o,e);
     if (!ret && o.value.length < 16 && keyPressed == 42)
         return true;
-
     return ret;
 }
 
-function validate_iprange(o, v) {
+function validate_iprange(o,v) {
     num = -1;
     pos = 0;
     if (o.value.length == 0)
@@ -754,11 +751,12 @@ function validate_iprange(o, v) {
     return true;
 }
 
-function is_portrange(o) {
-    keyPressed = event.keyCode ? event.keyCode : event.which;
+function is_portrange(o,e) {
+    e = e || event;
+    keyPressed = e.keyCode ? e.keyCode : e.which;
     if (keyPressed == 0) return true;
 
-    if ((keyPressed > 47 && keyPressed < 58)) {
+    if ((keyPressed > 47 && keyPressed < 58)){
         return true;
     }
     else if (keyPressed == 58 && o.value.length > 0) {
@@ -786,7 +784,7 @@ function is_portrange(o) {
     }
 }
 
-function validate_portrange(o, v) {
+function validate_portrange(o,v) {
     if (o.value.length == 0)
         return true;
 
@@ -869,16 +867,15 @@ function validate_portrange(o, v) {
     return true;
 }
 
-function is_portlist(o) {
-    keyPressed = event.keyCode ? event.keyCode : event.which;
+function is_portlist(o,e) {
+    e = e || event;
+    keyPressed = e.keyCode ? e.keyCode : e.which;
     if (keyPressed == 0) return true;
     if (o.value.length > 36) return false;
     if ((keyPressed > 47 && keyPressed < 58) || keyPressed == 32) {
         return true;
     }
-    else {
-        return false;
-    }
+    return false;
 }
 function validate_portlist(o, v) {
     if (o.value.length == 0)

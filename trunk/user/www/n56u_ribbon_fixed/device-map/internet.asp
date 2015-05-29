@@ -49,8 +49,10 @@ function initial(){
 	if(!support_ipv6())
 		$j("#domore")[0].remove(2);
 
-	if(parent.modem_devnum().length > 0)
-		$("row_modem_prio").style.display = "";
+	if(typeof parent.modem_devnum === 'function'){
+		if(parent.modem_devnum().length > 0)
+			$("row_modem_prio").style.display = "";
+	}
 
 	fill_info();
 
@@ -331,7 +333,7 @@ function submitInternet(v){
   </tr>
   <tr>
     <th><#IP4_Addr#> WAN:</th>
-    <td colspan="2"><span id="WANIP4"></span></span></td>
+    <td colspan="2"><span id="WANIP4"></span></td>
   </tr>
   <tr id="row_man_ip4" style="display:none">
     <th><#IP4_Addr#> MAN:</th>

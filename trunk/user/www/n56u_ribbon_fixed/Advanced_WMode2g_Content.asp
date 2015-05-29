@@ -391,8 +391,8 @@ function hideClients_Block(){
                                             <td>
                                                 <div id="WDSAPList" class="alert alert-info ddown-list"></div>
                                                 <div class="input-append" style="float: left;">
-                                                    <input type="text" id="ctl_wds_1" name="rt_wdslist_x_0" value="" maxlength="12" size="14" onKeyPress="return is_hwaddr()" style="float:left; width: 175px;">
-                                                    <input type="text" id="ctl_apc_2" name="rt_sta_ssid" value="" maxlength="32" class="input" size="20" onKeyPress="return is_string(this);" style="float:left; width: 175px;"/>
+                                                    <input type="text" id="ctl_wds_1" name="rt_wdslist_x_0" value="" maxlength="12" size="14" onKeyPress="return is_hwaddr(event);" style="float:left; width: 175px;">
+                                                    <input type="text" id="ctl_apc_2" name="rt_sta_ssid" value="" maxlength="32" class="input" size="20" onKeyPress="return is_string(this,event);" style="float:left; width: 175px;"/>
                                                     <button class="btn btn-chevron" id="ctl_wds_2" type="button" onclick="pullLANIPList(this);" title="Select the Access Point"><i class="icon icon-chevron-down"></i></button>
                                                 </div>
 

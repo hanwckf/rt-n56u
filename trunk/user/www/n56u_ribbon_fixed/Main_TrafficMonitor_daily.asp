@@ -225,8 +225,8 @@ function switchPage(page){
     </div>
 
     <div id="footer"></div>
-</div>
 </form>
+</div>
 </body>
 </html>
 

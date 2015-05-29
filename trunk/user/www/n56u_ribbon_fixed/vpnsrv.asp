@@ -553,7 +553,7 @@ function showACLList(vnet_show,rnet_show,is_openvpn){
 	if (lastdot > 3)
 		addr_part = addr_part.slice(0, lastdot+1);
 
-	code = '<table width="100%" cellspacing="0" cellpadding="3" class="table">';
+	code = '<table width="100%" cellspacing="0" cellpadding="3" class="table table-list">';
 	if(ACLList.length == 0)
 		code +='<tr><td colspan="5" style="text-align: center; padding-bottom: 0px;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
@@ -577,10 +577,10 @@ function showACLList(vnet_show,rnet_show,is_openvpn){
 				acl_addr = addr_part + ACLList[i][2];
 			
 			code += '<tr id="row' + i + '">';
-			code += '<td width="20%">' + ACLList[i][0] + '</td>';
-			code += '<td width="20%">' + acl_pass + '</td>';
-			code += '<td width="20%">' + acl_addr + '</td>';
-			code += '<td width="35%">' + acl_rnet + '</td>';
+			code += '<td width="20%">&nbsp;' + ACLList[i][0] + '</td>';
+			code += '<td width="20%">&nbsp;' + acl_pass + '</td>';
+			code += '<td width="20%">&nbsp;' + acl_addr + '</td>';
+			code += '<td width="35%">&nbsp;' + acl_rnet + '</td>';
 			code += '<td width="5%" style="text-align: center;"><input type="checkbox" name="VPNSACLList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
 			code += '</tr>';
 		}
@@ -658,9 +658,17 @@ function getHash(){
 }
 </script>
 <style>
-    .caption-bold {
-        font-weight: bold;
-    }
+.caption-bold {
+    font-weight: bold;
+}
+.table-list td {
+    padding: 6px 8px;
+}
+.table-list input,
+.table-list select {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
 </style>
 </head>
 
@@ -794,14 +802,14 @@ function getHash(){
                                 <tr id="row_vpns_mtu">
                                     <th>MTU:</th>
                                     <td>
-                                        <input type="text" maxlength="4" size="5" name="vpns_mtu" class="input" value="<% nvram_get_x("", "vpns_mtu"); %>" onkeypress="return is_number(this)">
+                                        <input type="text" maxlength="4" size="5" name="vpns_mtu" class="input" value="<% nvram_get_x("", "vpns_mtu"); %>" onkeypress="return is_number(this,event);"/>
                                         &nbsp;<span style="color:#888;">[1000..1460]</span>
                                     </td>
                                 </tr>
                                 <tr id="row_vpns_mru">
                                     <th>MRU:</th>
                                     <td>
-                                        <input type="text" maxlength="4" size="5" name="vpns_mru" class="input" value="<% nvram_get_x("", "vpns_mru"); %>" onkeypress="return is_number(this)">
+                                        <input type="text" maxlength="4" size="5" name="vpns_mru" class="input" value="<% nvram_get_x("", "vpns_mru"); %>" onkeypress="return is_number(this,event);"/>
                                         &nbsp;<span style="color:#888;">[1000..1460]</span>
                                     </td>
                                 </tr>
@@ -826,7 +834,7 @@ function getHash(){
                                 <tr id="row_vpns_ov_port" style="display:none">
                                     <th><#OVPN_Port#></th>
                                     <td>
-                                        <input type="text" maxlength="5" size="5" name="vpns_ov_port" class="input" value="<% nvram_get_x("", "vpns_ov_port"); %>" onkeypress="return is_number(this)">
+                                        <input type="text" maxlength="5" size="5" name="vpns_ov_port" class="input" value="<% nvram_get_x("", "vpns_ov_port"); %>" onkeypress="return is_number(this,event);"/>
                                         &nbsp;<span style="color:#888;">[ 1194 ]</span>
                                     </td>
                                 </tr>
@@ -908,7 +916,7 @@ function getHash(){
                                 <tr id="row_vpns_vnet" style="display:none">
                                     <th><#VPNS_VNet#></th>
                                     <td>
-                                        <input type="text" maxlength="15" class="input" size="15" name="vpns_vnet" value="<% nvram_get_x("", "vpns_vnet"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
+                                        <input type="text" maxlength="15" class="input" size="15" name="vpns_vnet" value="<% nvram_get_x("", "vpns_vnet"); %>" onKeyPress="return is_ipaddr(this,event);">
                                         &nbsp;<span style="color:#888;">[ 10.8.0.0 ]</span>
                                     </td>
                                 </tr>
@@ -966,10 +974,10 @@ function getHash(){
                                     <th><#VPNS_VPool#></th>
                                     <td>
                                         <span id="lanip1"></span>
-                                        <input type="text" maxlength="3" size="2" name="vpns_cli0" value="<% nvram_get_x("", "vpns_cli0"); %>" style="width: 25px;" onKeyPress="return is_number(this)"/>
+                                        <input type="text" maxlength="3" size="2" name="vpns_cli0" value="<% nvram_get_x("", "vpns_cli0"); %>" style="width: 25px;" onKeyPress="return is_number(this,event);"/>
                                         <span>&nbsp;~&nbsp;</span>
                                         <span id="lanip2"></span>
-                                        <input type="text" maxlength="3" size="2" name="vpns_cli1" value="<% nvram_get_x("", "vpns_cli1"); %>" style="width: 25px;" onKeyPress="return is_number(this)"/>
+                                        <input type="text" maxlength="3" size="2" name="vpns_cli1" value="<% nvram_get_x("", "vpns_cli1"); %>" style="width: 25px;" onKeyPress="return is_number(this,event);"/>
                                     </td>
                                 </tr>
                                 <tr id="row_pool_view">
@@ -993,7 +1001,7 @@ function getHash(){
                                 <tr>
                                     <td align="right" style="border-top: 0 none; padding-top: 0px; text-align:right;">
                                         <span class="caption-bold">Server CN:</span>
-                                        <input id="vpns_gen_cn" type="text" maxlength="32" size="10" style="width: 105px;" placeholder="OpenVPN Server" onKeyPress="return is_string(this)"/>
+                                        <input id="vpns_gen_cn" type="text" maxlength="32" size="10" style="width: 105px;" placeholder="OpenVPN Server" onKeyPress="return is_string(this,event);"/>
                                     </td>
                                     <td align="left" style="border-top: 0 none; padding-top: 0px;">
                                         <span class="caption-bold">RSA bits:</span>
@@ -1004,7 +1012,7 @@ function getHash(){
                                     </td>
                                     <td align="left" style="border-top: 0 none; padding-top: 0px;">
                                         <span class="caption-bold">Days valid:</span>
-                                        <input id="vpns_gen_dv" type="text" maxlength="5" size="10" style="width: 35px;" value="365" onKeyPress="return is_number(this)"/>
+                                        <input id="vpns_gen_dv" type="text" maxlength="5" size="10" style="width: 35px;" value="365" onKeyPress="return is_number(this,event);"/>
                                     </td>
                                     <td align="left" style="border-top: 0 none; padding-top: 0px;">
                                         <input id="vpns_gen_bn" type="button" class="btn" style="width: 145px; outline:0" onclick="create_server_cert();" value="<#VPNS_GenNew#>"/>
@@ -1013,7 +1021,7 @@ function getHash(){
                                 <tr id="row_vpns_exp" style="display:none">
                                     <td align="right" style="text-align:right;">
                                         <span class="caption-bold">Client CN:</span>
-                                        <input id="vpns_exp_cn" type="text" maxlength="32" size="10" style="width: 105px;" placeholder="client@ovpn" onKeyPress="return is_string(this)"/>
+                                        <input id="vpns_exp_cn" type="text" maxlength="32" size="10" style="width: 105px;" placeholder="client@ovpn" onKeyPress="return is_string(this,event);"/>
                                     </td>
                                     <td align="left">
                                         <span class="caption-bold">RSA bits:</span>
@@ -1024,7 +1032,7 @@ function getHash(){
                                     </td>
                                     <td align="left">
                                         <span class="caption-bold">Days valid:</span>
-                                        <input id="vpns_exp_dv" type="text" maxlength="5" size="10" style="width: 35px;" value="365" onKeyPress="return is_number(this)"/>
+                                        <input id="vpns_exp_dv" type="text" maxlength="5" size="10" style="width: 35px;" value="365" onKeyPress="return is_number(this,event);"/>
                                     </td>
                                     <td align="left">
                                         <input id="vpns_exp_bn" type="button" class="btn" style="width: 145px; outline:0" onclick="export_client_ovpn('');" value="<#VPNS_Export#>"/>
@@ -1085,18 +1093,18 @@ function getHash(){
                                 </tr>
                                 <tr>
                                     <td>
-                                        <input type="text" size="14" class="span12" autocomplete="off" maxlength="32" name="vpns_user_x_0" onkeypress="return is_string(this)" />
+                                        <input type="text" size="14" class="span12" autocomplete="off" maxlength="32" name="vpns_user_x_0" onkeypress="return is_string(this,event);" />
                                     </td>
                                     <td>
-                                        <input type="text" size="14" class="span12" autocomplete="off" maxlength="32" name="vpns_pass_x_0" onkeypress="return is_string(this)" />
+                                        <input type="text" size="14" class="span12" autocomplete="off" maxlength="32" name="vpns_pass_x_0" onkeypress="return is_string(this,event);" />
                                     </td>
                                     <td>
                                         <span id="vpnip3"></span>
-                                        <input type="text" size="2" maxlength="3" autocomplete="off" style="width: 25px;" name="vpns_addr_x_0" onkeypress="return is_number(this)" />
+                                        <input type="text" size="2" maxlength="3" style="width: 25px;" name="vpns_addr_x_0" onkeypress="return is_number(this,event);" />
                                     </td>
                                     <td>
-                                        <input type="text" size="14" maxlength="15" name="vpns_rnet_x_0" style="width: 90px;" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />&nbsp;/
-                                        <input type="text" size="14" maxlength="15" name="vpns_rmsk_x_0" style="width: 90px;" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />
+                                        <input type="text" size="14" maxlength="15" name="vpns_rnet_x_0" style="width: 90px;" onkeypress="return is_ipaddr(this,event);" />&nbsp;/
+                                        <input type="text" size="14" maxlength="15" name="vpns_rmsk_x_0" style="width: 90px;" onkeypress="return is_ipaddr(this,event);" />
                                     </td>
                                     <td>
                                         <button class="btn" type="submit" onclick="return markGroupACL(this, 50, ' Add ');" name="VPNSACLList2"><i class="icon icon-plus"></i></button>

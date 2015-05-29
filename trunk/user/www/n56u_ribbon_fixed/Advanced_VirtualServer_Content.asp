@@ -582,30 +582,30 @@ function valid_IP_subnet(obj){
                                         <tr id="row_upnp_eports">
                                             <th><#UPnP_EPorts#></th>
                                             <td>
-                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="upnp_eport_min" value="<% nvram_get_x("", "upnp_eport_min"); %>" onkeypress="return is_number(this)"/>&nbsp;-
-                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="upnp_eport_max" value="<% nvram_get_x("", "upnp_eport_max"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="upnp_eport_min" value="<% nvram_get_x("", "upnp_eport_min"); %>" onkeypress="return is_number(this,event);"/>&nbsp;-
+                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="upnp_eport_max" value="<% nvram_get_x("", "upnp_eport_max"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[1..65535]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_upnp_iports">
                                             <th><#UPnP_IPorts#></th>
                                             <td>
-                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="upnp_iport_min" value="<% nvram_get_x("", "upnp_iport_min"); %>" onkeypress="return is_number(this)"/>&nbsp;-
-                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="upnp_iport_max" value="<% nvram_get_x("", "upnp_iport_max"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="upnp_iport_min" value="<% nvram_get_x("", "upnp_iport_min"); %>" onkeypress="return is_number(this,event);"/>&nbsp;-
+                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="upnp_iport_max" value="<% nvram_get_x("", "upnp_iport_max"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[1..65535]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_upnp_clean_int">
                                             <th><#UPnP_Clean_Int#></th>
                                             <td>
-                                                <input type="text" maxlength="5" class="input" size="32" name="upnp_clean_int" value="<% nvram_get_x("", "upnp_clean_int"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" class="input" size="32" name="upnp_clean_int" value="<% nvram_get_x("", "upnp_clean_int"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[0..86400]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_upnp_clean_min">
                                             <th><#UPnP_Clean_Min#></th>
                                             <td>
-                                                <input type="text" maxlength="3" class="input" size="32" name="upnp_clean_min" value="<% nvram_get_x("", "upnp_clean_min"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="3" class="input" size="32" name="upnp_clean_min" value="<% nvram_get_x("", "upnp_clean_min"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[1..999]</span>
                                             </td>
                                         </tr>
@@ -621,7 +621,7 @@ function valid_IP_subnet(obj){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="vts_enable_x_on_of">
-                                                        <input type="checkbox" id="vts_enable_x_fake" <% nvram_match_x("", "vts_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "vts_enable_x", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="vts_enable_x_fake" <% nvram_match_x("", "vts_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "vts_enable_x", "0", "value=0"); %> />
                                                     </div>
                                                 </div>
 
@@ -660,24 +660,24 @@ function valid_IP_subnet(obj){
                                         </tr>
                                         <tr>
                                             <td>
-                                                <input type="text" size="10" class="span12" maxlength="30" name="vts_desc_x_0" onkeypress="return is_string(this)" />
+                                                <input type="text" size="10" class="span12" maxlength="30" name="vts_desc_x_0" onkeypress="return is_string(this,event);" />
                                             </td>
                                             <td>
-                                                <input type="text" size="12" class="span12" maxlength="15" name="vts_srcip_x_0" onKeyPress="return is_iprange(this)" onKeyUp="change_iprange(this)"/>
+                                                <input type="text" size="12" class="span12" maxlength="15" name="vts_srcip_x_0" onKeyPress="return is_iprange(this,event);"/>
                                             </td>
                                             <td>
-                                                <input type="text" size="10" class="span12" name="vts_port_x_0" onkeypress="return is_portrange(this)" />
-                                                <input style="display:none" type="text" class="span12" maxlength="3" size="3" name="vts_protono_x_0" onkeypress="return is_number(this)" />
+                                                <input type="text" size="10" class="span12" name="vts_port_x_0" onkeypress="return is_portrange(this,event);" />
+                                                <input style="display:none" type="text" class="span12" maxlength="3" size="3" name="vts_protono_x_0" onkeypress="return is_number(this,event);" />
                                             </td>
                                             <td>
                                                 <div id="ClientList_Block" class="alert alert-info ddown-list"></div>
                                                 <div class="input-append">
-                                                    <input type="text" size="12" maxlength="15" name="vts_ipaddr_x_0" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" autocomplete="off" style="float:left; width: 94px"/>
+                                                    <input type="text" size="12" maxlength="15" name="vts_ipaddr_x_0" onkeypress="return is_ipaddr(this,event);" style="float:left; width: 94px"/>
                                                     <button class="btn btn-chevron" id="chevron" type="button" onclick="pullLANIPList(this);" title="Select the IP of LAN clients."><i class="icon icon-chevron-down"></i></button>
                                                 </div>
                                             </td>
                                             <td>
-                                                <input type="text" size="5" class="span12" maxlength="5" name="vts_lport_x_0" onkeypress="return is_number(this)" />
+                                                <input type="text" size="5" class="span12" maxlength="5" name="vts_lport_x_0" onkeypress="return is_number(this,event);" />
                                             </td>
                                             <td>
                                                 <select name="vts_proto_x_0" class="span12" onchange="change_proto()">

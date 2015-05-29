@@ -649,14 +649,13 @@ function trim(str){
 	return str.replace(/^\s+|\s+$/g, '');
 }
 
-function is_string(o){
-	keyPressed = event.keyCode ? event.keyCode : event.which;
-
+function is_string(o,e){
+	e = e || event;
+	keyPressed = e.keyCode ? e.keyCode : e.which;
 	if(keyPressed == 0)
 		return true;
 	else if(keyPressed >= 0 && keyPressed <= 126)
 		return true;
-
 	alert("<#JS_validchar#>");
 	return false;
 }
@@ -696,7 +695,6 @@ function validate_string(string_obj, flag){
 function validate_hex(obj){
 	var obj_value = obj.value
 	var re = new RegExp("[^a-fA-F0-9]+","gi");
-	
 	if(re.test(obj_value))
 		return false;
 	else
@@ -705,7 +703,6 @@ function validate_hex(obj){
 
 function validate_psk(psk_obj){
 	var psk_length = psk_obj.value.length;
-	
 	if(psk_length < 8){
 		alert("<#JS_passzero#>");
 		psk_obj.value = "00000000";
@@ -714,7 +711,6 @@ function validate_psk(psk_obj){
 		
 		return false;
 	}
-	
 	if(psk_length > 64){
 		alert("<#JS_PSK64Hex#>");
 		psk_obj.value = psk_obj.value.substring(0, 64);
@@ -723,7 +719,6 @@ function validate_psk(psk_obj){
 		
 		return false;
 	}
-	
 	if(psk_length >= 8 && psk_length <= 63 && !validate_string(psk_obj)){
 		alert("<#JS_PSK64Hex#>");
 		psk_obj.value = "00000000";
@@ -732,7 +727,6 @@ function validate_psk(psk_obj){
 		
 		return false;
 	}
-	
 	if(psk_length == 64 && !validate_hex(psk_obj)){
 		alert("<#JS_PSK64Hex#>");
 		psk_obj.value = "00000000";
@@ -741,7 +735,6 @@ function validate_psk(psk_obj){
 		
 		return false;
 	}
-	
 	return true;
 }
 

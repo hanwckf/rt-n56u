@@ -397,7 +397,7 @@ $j(document).ready(function() {
                                                 </tr>
                                             </thead>
 
-                                            <div id='bwm-controls'>
+                                            <tbody>
                                                 <tr>
                                                     <th width='50%'><#Traffic_Avg#></th>
                                                     <td>
@@ -418,17 +418,17 @@ $j(document).ready(function() {
                                                 <tr>
                                                     <th><#Traffic_Color#></th>
                                                     <td>
-                                                            <a href='javascript:switchDraw(0)' id='draw0'>Solid</a>,
-                                                            <a href='javascript:switchDraw(1)' id='draw1'>Line</a>
+                                                        <a href='javascript:switchDraw(0)' id='draw0'>Solid</a>,
+                                                        <a href='javascript:switchDraw(1)' id='draw1'>Line</a>
                                                     </td>
                                                 </tr>
                                                 <tr>
                                                     <th></th>
                                                     <td>
-                                                            <a href='javascript:switchColor()' id='drawcolor'>-</a><a href='javascript:switchColor(1)' id='drawrev'><#Traffic_Reverse#></a>
+                                                        <a href='javascript:switchColor()' id='drawcolor'>-</a><a href='javascript:switchColor(1)' id='drawrev'><#Traffic_Reverse#></a>
                                                     </td>
                                                 </tr>
-                                            </div>
+                                            </tbody>
                                         </table>
                                     </div>
                                 </div>

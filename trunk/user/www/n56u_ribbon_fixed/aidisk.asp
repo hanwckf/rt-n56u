@@ -325,7 +325,7 @@ function getASUSDDNS_enable(){
                                                 <tr>
                                                     <td valign="top">
                                                         <div class="alert alert-info" id="hint_body"></div>
-                                                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" style="width: 97%; height: 300px;" frameborder="0" /></iframe>
+                                                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" style="width: 97%; height: 300px;" frameborder="0"></iframe>
                                                     </td>
                                                 </tr>
                                             </table>

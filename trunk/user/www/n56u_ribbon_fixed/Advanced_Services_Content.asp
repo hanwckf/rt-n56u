@@ -286,21 +286,21 @@ function change_wins_enabled(){
                                         <tr id="row_http_lport">
                                             <th><#Adm_System_http_lport#></th>
                                             <td>
-                                                <input type="text" maxlength="5" size="15" name="http_lanport" class="input" value="<% nvram_get_x("", "http_lanport"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" size="15" name="http_lanport" class="input" value="<% nvram_get_x("", "http_lanport"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[80..65535]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_https_lport" style="display:none">
                                             <th><#Adm_System_https_lport#></th>
                                             <td>
-                                                <input type="text" maxlength="5" size="15" name="https_lport" class="input" value="<% nvram_get_x("", "https_lport"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" size="15" name="https_lport" class="input" value="<% nvram_get_x("", "https_lport"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[81..65535]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_https_clist" style="display:none">
                                             <th><#Adm_System_https_clist#></th>
                                             <td>
-                                                <input type="text" maxlength="256" size="15" name="https_clist" class="input" style="width: 286px;" value="<% nvram_get_x("", "https_clist"); %>" onkeypress="return is_string(this)"/>
+                                                <input type="text" maxlength="256" size="15" name="https_clist" class="input" style="width: 286px;" value="<% nvram_get_x("", "https_clist"); %>" onkeypress="return is_string(this,event);"/>
                                             </td>
                                         </tr>
                                         <tr>
@@ -322,7 +322,7 @@ function change_wins_enabled(){
                                         <tr id="row_https_gen" style="display:none">
                                             <td align="right" style="text-align:right;">
                                                 <span class="caption-bold">Server CN:</span>
-                                                <input id="https_gen_cn" type="text" maxlength="32" size="10" style="width: 105px;" placeholder="my.domain" onKeyPress="return is_string(this)"/>
+                                                <input id="https_gen_cn" type="text" maxlength="32" size="10" style="width: 105px;" placeholder="my.domain" onKeyPress="return is_string(this,event);"/>
                                             </td>
                                             <td align="left">
                                                 <span class="caption-bold">RSA bits:</span>
@@ -333,7 +333,7 @@ function change_wins_enabled(){
                                             </td>
                                             <td align="left">
                                                 <span class="caption-bold">Days valid:</span>
-                                                <input id="https_gen_dv" type="text" maxlength="5" size="10" style="width: 35px;" value="365" onKeyPress="return is_number(this)"/>
+                                                <input id="https_gen_dv" type="text" maxlength="5" size="10" style="width: 35px;" value="365" onKeyPress="return is_number(this,event);"/>
                                             </td>
                                             <td align="left">
                                                 <input id="https_gen_bn" type="button" class="btn" style="width: 145px; outline:0" onclick="create_server_cert();" value="<#VPNS_GenNew#>"/>

@@ -273,21 +273,21 @@ function done_validating(action){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,4,1);"><#LANHostConfig_IPRouters_itemname#></a></th>
                                             <td>
-                                                <input type="text" id="lan_ipaddr" name="lan_ipaddr" value="<% nvram_get_x("", "lan_ipaddr"); %>" maxlength="15" class="input" size="15" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
+                                                <input type="text" id="lan_ipaddr" name="lan_ipaddr" value="<% nvram_get_x("", "lan_ipaddr"); %>" maxlength="15" class="input" size="15" onKeyPress="return is_ipaddr(this,event);" />
                                                 &nbsp;<span style="color:#888;">192.168.1.1</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,4,2);"><#LANHostConfig_SubnetMask_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="lan_netmask" value="<% nvram_get_x("", "lan_netmask"); %>" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+                                                <input type="text" maxlength="15" class="input" size="15" name="lan_netmask" value="<% nvram_get_x("", "lan_netmask"); %>" onkeypress="return is_ipaddr(this,event);" />
                                                 &nbsp;<span style="color:#888;">255.255.255.0</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,4,3);"><#LANHostConfig_x_Gateway_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="lan_gateway" value="<% nvram_get_x("", "lan_gateway"); %>" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+                                                <input type="text" maxlength="15" class="input" size="15" name="lan_gateway" value="<% nvram_get_x("", "lan_gateway"); %>" onkeypress="return is_ipaddr(this,event);" />
                                             </td>
                                         </tr>
                                         <tr>
@@ -314,13 +314,13 @@ function done_validating(action){
                                         <tr>
                                             <th><#LANHostConfig_x_LDNSServer1_itemname#> 1:</th>
                                             <td>
-                                                <input type="text" name="lan_dns1" value="<% nvram_get_x("", "lan_dns1"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+                                                <input type="text" name="lan_dns1" value="<% nvram_get_x("", "lan_dns1"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this,event);" />
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><#LANHostConfig_x_LDNSServer1_itemname#> 2:</th>
                                             <td>
-                                                <input type="text" name="lan_dns2" value="<% nvram_get_x("", "lan_dns2"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+                                                <input type="text" name="lan_dns2" value="<% nvram_get_x("", "lan_dns2"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this,event);" />
                                             </td>
                                         </tr>
                                         <tr>

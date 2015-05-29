@@ -111,20 +111,20 @@ function done_validating(action){
                                         <tr>
                                             <th width="50%" style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,2,1);"><#WLANAuthentication11a_ExAuthDBIPAddr_itemname#></a></th>
                                             <td width="50%" style="border-top: 0 none;">
-                                                <input type="text" maxlength="15" class="input" size="15" name="wl_radius_ipaddr" value="<% nvram_get_x("","wl_radius_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)">
+                                                <input type="text" maxlength="15" class="input" size="15" name="wl_radius_ipaddr" value="<% nvram_get_x("","wl_radius_ipaddr"); %>" onKeyPress="return is_ipaddr(this,event);" />
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);"  onmouseover="openTooltip(this,2,2);"><#WLANAuthentication11a_ExAuthDBPortNumber_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="5" class="input" size="5" name="wl_radius_port" value="<% nvram_get_x("","wl_radius_port"); %>" onkeypress="return is_number(this)" onblur="return validate_portrange(this, '')"/>
+                                                <input type="text" maxlength="5" class="input" size="5" name="wl_radius_port" value="<% nvram_get_x("","wl_radius_port"); %>" onkeypress="return is_number(this,event);" onblur="return validate_portrange(this, '');"/>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);"  onmouseover="openTooltip(this,2,3);"><#WLANAuthentication11a_ExAuthDBPassword_itemname#></a></th>
                                             <td>
                                                 <div class="input-append">
-                                                    <input type="password" name="wl_radius_key" id="wl_radius_key" maxlength="64" size="32" style="width: 175px;" value="<% nvram_get_x("","wl_radius_key"); %>">
+                                                    <input type="password" name="wl_radius_key" id="wl_radius_key" maxlength="64" size="32" style="width: 175px;" value="<% nvram_get_x("","wl_radius_key"); %>"/>
                                                     <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('wl_radius_key')"><i class="icon-eye-close"></i></button>
                                                 </div>
                                             </td>
@@ -134,7 +134,7 @@ function done_validating(action){
                                     <table class="table">
                                         <tr>
                                             <td style="margin-top: 10px; border-top: 0 none;">
-                                                <input class="btn btn-info" type="button"  value="<#GO_2G#>" onclick="location.href='Advanced_WSecurity2g_Content.asp';">
+                                                <input class="btn btn-info" type="button"  value="<#GO_2G#>" onclick="location.href='Advanced_WSecurity2g_Content.asp';"/>
                                             </td>
                                             <td style="border-top: 0 none;">
                                                 <input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" />

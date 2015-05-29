@@ -367,14 +367,14 @@ function getHash(){
                                 <tr>
                                     <th><#VPNC_Peer#></th>
                                     <td>
-                                        <input type="text" name="vpnc_peer" class="input" maxlength="256" size="32" value="<% nvram_get_x("", "vpnc_peer"); %>" onKeyPress="return is_string(this)"/>
+                                        <input type="text" name="vpnc_peer" class="input" maxlength="256" size="32" value="<% nvram_get_x("", "vpnc_peer"); %>" onKeyPress="return is_string(this,event);"/>
                                         &nbsp;<span id="col_vpnc_state" style="display:none" class="label label-success"><#Connected#></span>
                                     </td>
                                 </tr>
                                 <tr id="row_vpnc_ov_port" style="display:none">
                                     <th><#OVPN_Port#></th>
                                     <td>
-                                        <input type="text" maxlength="5" size="5" name="vpnc_ov_port" class="input" value="<% nvram_get_x("", "vpnc_ov_port"); %>" onkeypress="return is_number(this)">
+                                        <input type="text" maxlength="5" size="5" name="vpnc_ov_port" class="input" value="<% nvram_get_x("", "vpnc_ov_port"); %>" onkeypress="return is_number(this,event);">
                                         &nbsp;<span style="color:#888;">[ 1194 ]</span>
                                     </td>
                                 </tr>
@@ -408,7 +408,7 @@ function getHash(){
                                 <tr id="row_vpnc_user">
                                     <th><#ISP_Authentication_user#></th>
                                     <td>
-                                       <input type="text" maxlength="64" class="input" size="32" name="vpnc_user" value="<% nvram_get_x("", "vpnc_user"); %>" onkeypress="return is_string(this)"/>
+                                       <input type="text" maxlength="64" class="input" size="32" name="vpnc_user" value="<% nvram_get_x("", "vpnc_user"); %>" onkeypress="return is_string(this,event);"/>
                                     </td>
                                 </tr>
                                 <tr id="row_vpnc_pass">
@@ -445,21 +445,21 @@ function getHash(){
                                 <tr id="row_vpnc_mtu">
                                     <th>MTU:</th>
                                     <td>
-                                        <input type="text" maxlength="4" size="5" name="vpnc_mtu" class="input" value="<% nvram_get_x("", "vpnc_mtu"); %>" onkeypress="return is_number(this)">
+                                        <input type="text" maxlength="4" size="5" name="vpnc_mtu" class="input" value="<% nvram_get_x("", "vpnc_mtu"); %>" onkeypress="return is_number(this,event);"/>
                                         &nbsp;<span style="color:#888;">[1000..1460]</span>
                                     </td>
                                 </tr>
                                 <tr id="row_vpnc_mru">
                                     <th>MRU:</th>
                                     <td>
-                                        <input type="text" maxlength="4" size="5" name="vpnc_mru" class="input" value="<% nvram_get_x("", "vpnc_mru"); %>" onkeypress="return is_number(this)">
+                                        <input type="text" maxlength="4" size="5" name="vpnc_mru" class="input" value="<% nvram_get_x("", "vpnc_mru"); %>" onkeypress="return is_number(this,event);"/>
                                         &nbsp;<span style="color:#888;">[1000..1460]</span>
                                     </td>
                                 </tr>
                                 <tr id="row_vpnc_pppd">
                                     <th style="padding-bottom: 0px;"><#PPPConnection_x_AdditionalOptions_itemname#></th>
                                     <td style="padding-bottom: 0px;">
-                                        <input type="text" name="vpnc_pppd" value="<% nvram_get_x("", "vpnc_pppd"); %>" class="input" maxlength="255" size="32" onKeyPress="return is_string(this)" onBlur="validate_string(this)"/>
+                                        <input type="text" name="vpnc_pppd" value="<% nvram_get_x("", "vpnc_pppd"); %>" class="input" maxlength="255" size="32" onKeyPress="return is_string(this,event);" />
                                     </td>
                                 </tr>
                                 <tr id="row_vpnc_ov_mdig" style="display:none">
@@ -578,8 +578,8 @@ function getHash(){
                                 <tr>
                                     <th width="50%"><#VPNC_RNet#></th>
                                     <td>
-                                        <input type="text" maxlength="15" size="14" name="vpnc_rnet" style="width: 94px;" value="<% nvram_get_x("", "vpnc_rnet"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);" />&nbsp;/
-                                        <input type="text" maxlength="15" size="14" name="vpnc_rmsk" style="width: 94px;" value="<% nvram_get_x("", "vpnc_rmsk"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);" />
+                                        <input type="text" maxlength="15" size="14" name="vpnc_rnet" style="width: 94px;" value="<% nvram_get_x("", "vpnc_rnet"); %>" onKeyPress="return is_ipaddr(this,event);" />&nbsp;/
+                                        <input type="text" maxlength="15" size="14" name="vpnc_rmsk" style="width: 94px;" value="<% nvram_get_x("", "vpnc_rmsk"); %>" onKeyPress="return is_ipaddr(this,event);" />
                                     </td>
                                 </tr>
                             </table>

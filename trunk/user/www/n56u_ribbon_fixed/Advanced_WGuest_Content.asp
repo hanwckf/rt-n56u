@@ -285,7 +285,7 @@ function change_guest_auth_mode(mflag) {
                                             <td style="border-top: 0 none;">
                                                 <div class="main_itoggle">
                                                     <div id="wl_guest_enable_on_of">
-                                                        <input type="checkbox" id="wl_guest_enable_fake" <% nvram_match_x("", "wl_guest_enable", "1", "value=1 checked"); %><% nvram_match_x("", "wl_guest_enable", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="wl_guest_enable_fake" <% nvram_match_x("", "wl_guest_enable", "1", "value=1 checked"); %><% nvram_match_x("", "wl_guest_enable", "0", "value=0"); %> />
                                                     </div>
                                                 </div>
 
@@ -310,10 +310,10 @@ function change_guest_auth_mode(mflag) {
                                         <tr id="row_guest_2" style="display:none;">
                                             <th style="border-top: 0 none;"><#WIFIGuestTime#></th>
                                             <td style="border-top: 0 none;">
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_starthour" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_startmin" onKeyPress="return is_number(this)">&nbsp;-&nbsp;
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_endhour" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_endmin" onKeyPress="return is_number(this)">
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_starthour" onKeyPress="return is_number(this,event);">:
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_startmin" onKeyPress="return is_number(this,event);">&nbsp;-&nbsp;
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_endhour" onKeyPress="return is_number(this,event);">:
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_endmin" onKeyPress="return is_number(this,event);">
                                             </td>
                                         </tr>
                                         <tr id="row_guest_3" style="display:none;">
@@ -328,22 +328,22 @@ function change_guest_auth_mode(mflag) {
                                         <tr id="row_guest_4" style="display:none;">
                                             <th style="border-top: 0 none;"><#WIFIGuestTime2#></th>
                                             <td style="border-top: 0 none;">
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_starthour" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_startmin" onKeyPress="return is_number(this)">&nbsp;-&nbsp;
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_endhour" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_endmin" onKeyPress="return is_number(this)">
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_starthour" onKeyPress="return is_number(this,event);">:
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_startmin" onKeyPress="return is_number(this,event);">&nbsp;-&nbsp;
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_endhour" onKeyPress="return is_number(this,event);">:
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_endmin" onKeyPress="return is_number(this,event);">
                                             </td>
                                         </tr>
                                         <tr id="row_guest_5" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 1);"><#WIFIGuestSSID#></a></th>
-                                            <td><input type="text" maxlength="32" class="input" size="32" name="wl_guest_ssid" value="" onkeypress="return is_string(this)"/></td>
+                                            <td><input type="text" maxlength="32" class="input" size="32" name="wl_guest_ssid" value="" onkeypress="return is_string(this,event);"/></td>
                                         </tr>
                                         <tr id="row_guest_6" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 2);"><#WLANConfig11b_x_BlockBCSSID_itemname#></a></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="wl_guest_closed_on_of">
-                                                        <input type="checkbox" id="wl_guest_closed_fake" <% nvram_match_x("", "wl_guest_closed", "1", "value=1 checked"); %><% nvram_match_x("", "wl_guest_closed", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="wl_guest_closed_fake" <% nvram_match_x("", "wl_guest_closed", "1", "value=1 checked"); %><% nvram_match_x("", "wl_guest_closed", "0", "value=0"); %> />
                                                     </div>
                                                 </div>
 
@@ -358,7 +358,7 @@ function change_guest_auth_mode(mflag) {
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="wl_guest_lan_isolate_on_of">
-                                                        <input type="checkbox" id="wl_guest_lan_isolate_fake" <% nvram_match_x("", "wl_guest_lan_isolate", "1", "value=1 checked"); %><% nvram_match_x("", "wl_guest_lan_isolate", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="wl_guest_lan_isolate_fake" <% nvram_match_x("", "wl_guest_lan_isolate", "1", "value=1 checked"); %><% nvram_match_x("", "wl_guest_lan_isolate", "0", "value=0"); %> />
                                                     </div>
                                                 </div>
 
@@ -373,7 +373,7 @@ function change_guest_auth_mode(mflag) {
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="wl_guest_ap_isolate_on_of">
-                                                        <input type="checkbox" id="wl_guest_ap_isolate_fake" <% nvram_match_x("", "wl_guest_ap_isolate", "1", "value=1 checked"); %><% nvram_match_x("", "wl_guest_ap_isolate", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="wl_guest_ap_isolate_fake" <% nvram_match_x("", "wl_guest_ap_isolate", "1", "value=1 checked"); %><% nvram_match_x("", "wl_guest_ap_isolate", "0", "value=0"); %> />
                                                     </div>
                                                 </div>
 
@@ -423,7 +423,7 @@ function change_guest_auth_mode(mflag) {
                                             <td>
                                                 <div class="input-append">
                                                     <input type="password" name="wl_guest_wpa_psk" id="wl_guest_wpa_psk" maxlength="64" size="32" value="" style="width: 175px;">
-                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('wl_guest_wpa_psk')"><i class="icon-eye-close"></i></button>
+                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('wl_guest_wpa_psk');"><i class="icon-eye-close"></i></button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -432,7 +432,7 @@ function change_guest_auth_mode(mflag) {
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="wl_guest_macrule_on_of">
-                                                        <input type="checkbox" id="wl_guest_macrule_fake" <% nvram_match_x("", "wl_guest_macrule", "1", "value=1 checked"); %><% nvram_match_x("", "wl_guest_macrule", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="wl_guest_macrule_fake" <% nvram_match_x("", "wl_guest_macrule", "1", "value=1 checked"); %><% nvram_match_x("", "wl_guest_macrule", "0", "value=0"); %> />
                                                     </div>
                                                 </div>
 

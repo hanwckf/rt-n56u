@@ -42,13 +42,13 @@ function initial(){
 	prepare_clients();
 	show_clients();
 	check_full_scan_done();
-	parent.hideLoading();
 }
 
 function prepare_clients(){
 	var i, j, k;
 
-	parent.show_client_status(clients.length);
+	if(typeof parent.show_client_status === 'function')
+		parent.show_client_status(clients.length);
 
 	if(list_type == '0'){
 		for(i = 0; i < clients.length; ++i){
@@ -260,7 +260,6 @@ function unBlockClient(blockedClient_order){
 }
 
 function do_block_client(){
-	parent.showLoading();
 	if(!checkDuplicateName(clients[this.selectedClientOrder][2], list_of_BlockedClient)){
 		document.macfilterForm.action_mode.value = " Add ";
 		document.macfilterForm.macfilter_list_x_0.value = clients[this.selectedClientOrder][2];
@@ -274,9 +273,7 @@ function do_block_client(){
 }
 
 function do_unblock_client(){
-	parent.showLoading();
 	document.macfilterForm.action_mode.value = " Del ";
-	
 	document.macfilterForm.submit();
 }
 
@@ -408,14 +405,13 @@ function networkmap_update(s){
 </table>
 
 <center>
-    <input type="button" id="applyClient" class="btn btn-primary span2" onclick="applyRule();" value="<#CTL_apply#>" >
-    <input type="button" id="refresh_list" class="btn btn-info span2" onclick="networkmap_update('networkmap_refresh');" value="<#CTL_refresh#>">
+    <input type="button" id="applyClient" class="btn btn-primary span2" onclick="applyRule();" value="<#CTL_apply#>" />
+    <input type="button" id="refresh_list" class="btn btn-info span2" onclick="networkmap_update('networkmap_refresh');" value="<#CTL_refresh#>" />
 </center>
 
-<p><div id="alert_block" class="alert alert-danger" style="margin-top:40px; display: none;">
-    <a href="/Advanced_MACFilter_Content.asp" target="_parent"><#menu5_5_3#></a> <#macfilter_alert_str1#>
-</div></p>
-
+<div id="alert_block" class="alert alert-danger" style="margin-top:40px; display: none;">
+    <p><a href="/Advanced_MACFilter_Content.asp" target="_parent"><#menu5_5_3#></a> <#macfilter_alert_str1#></p>
+</div>
 
 <form method="post" name="form" id="refreshForm" action="/start_apply.htm" target="">
 <input type="hidden" name="sid_list" value="LANHostConfig;">

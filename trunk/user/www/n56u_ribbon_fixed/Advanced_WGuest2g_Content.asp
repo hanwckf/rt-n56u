@@ -311,10 +311,10 @@ function change_guest_auth_mode(mflag) {
                                         <tr id="row_guest_2" style="display:none;">
                                             <th style="border-top: 0 none;"><#WIFIGuestTime#></th>
                                             <td style="border-top: 0 none;">
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time_x_starthour" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time_x_startmin" onKeyPress="return is_number(this)">&nbsp;-&nbsp;
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time_x_endhour" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time_x_endmin" onKeyPress="return is_number(this)">
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time_x_starthour" onKeyPress="return is_number(this,event);">:
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time_x_startmin" onKeyPress="return is_number(this,event);">&nbsp;-&nbsp;
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time_x_endhour" onKeyPress="return is_number(this,event);">:
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time_x_endmin" onKeyPress="return is_number(this,event);">
                                             </td>
                                         </tr>
                                         <tr id="row_guest_3" style="display:none;">
@@ -329,15 +329,15 @@ function change_guest_auth_mode(mflag) {
                                         <tr id="row_guest_4" style="display:none;">
                                             <th style="border-top: 0 none;"><#WIFIGuestTime2#></th>
                                             <td style="border-top: 0 none;">
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time2_x_starthour" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time2_x_startmin" onKeyPress="return is_number(this)">&nbsp;-&nbsp;
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time2_x_endhour" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time2_x_endmin" onKeyPress="return is_number(this)">
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time2_x_starthour" onKeyPress="return is_number(this,event);">:
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time2_x_startmin" onKeyPress="return is_number(this,event);">&nbsp;-&nbsp;
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time2_x_endhour" onKeyPress="return is_number(this,event);">:
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time2_x_endmin" onKeyPress="return is_number(this,event);">
                                             </td>
                                         </tr>
                                         <tr id="row_guest_5" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 1);"><#WIFIGuestSSID#></a></th>
-                                            <td><input type="text" maxlength="32" class="input" size="32" name="rt_guest_ssid" value="" onkeypress="return is_string(this)"/></td>
+                                            <td><input type="text" maxlength="32" class="input" size="32" name="rt_guest_ssid" value="" onkeypress="return is_string(this,event);"/></td>
                                         </tr>
                                         <tr id="row_guest_6" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 2);"><#WLANConfig11b_x_BlockBCSSID_itemname#></a></th>

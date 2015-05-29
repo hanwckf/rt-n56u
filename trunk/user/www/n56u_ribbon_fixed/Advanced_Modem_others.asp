@@ -368,7 +368,7 @@ function done_validating(action){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,2);"><#HSDPAConfig_pin_code_itemname#>:</a></th>
                                             <td>
                                                 <div class="input-append">
-                                                    <input id="modem_pin" name="modem_pin" class="input" type="password" maxlength="8" size="32" style="width: 175px;" value="<% nvram_get_x("", "modem_pin"); %>" onkeypress="return is_number(this)"/>
+                                                    <input id="modem_pin" name="modem_pin" class="input" type="password" maxlength="8" size="32" style="width: 175px;" value="<% nvram_get_x("", "modem_pin"); %>" onkeypress="return is_number(this,event);"/>
                                                     <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('modem_pin')"><i class="icon-eye-close"></i></button>
                                                     &nbsp;<span id="hint_pin" style="color:#888;"></span>
                                                 </div>
@@ -418,7 +418,7 @@ function done_validating(action){
                                         <tr>
                                             <th style="padding-bottom: 0px;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,4);">MTU:</a></th>
                                             <td style="padding-bottom: 0px;">
-                                                <input name="modem_mtu" class="input" type="text" maxlength="4" value="<% nvram_get_x("", "modem_mtu"); %>" onkeypress="return is_number(this)"/>
+                                                <input name="modem_mtu" class="input" type="text" maxlength="4" value="<% nvram_get_x("", "modem_mtu"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[1000..1500]</span>
                                             </td>
                                         </tr>
@@ -446,19 +446,19 @@ function done_validating(action){
                                         <tr id="row_wan_dns1">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,6);"><#IPConnection_x_DNSServer1_itemname#> 1:</a></th>
                                             <td>
-                                              <input type="text" maxlength="15" class="input" size="15" name="wan_dns1_x" value="<% nvram_get_x("", "wan_dns1_x"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
+                                              <input type="text" maxlength="15" class="input" size="15" name="wan_dns1_x" value="<% nvram_get_x("", "wan_dns1_x"); %>" onkeypress="return is_ipaddr(this,event);" />
                                             </td>
                                         </tr>
                                         <tr id="row_wan_dns2">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,7);"><#IPConnection_x_DNSServer1_itemname#> 2:</a></th>
                                             <td>
-                                               <input type="text" maxlength="15" class="input" size="15" name="wan_dns2_x" value="<% nvram_get_x("", "wan_dns2_x"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
+                                               <input type="text" maxlength="15" class="input" size="15" name="wan_dns2_x" value="<% nvram_get_x("", "wan_dns2_x"); %>" onkeypress="return is_ipaddr(this,event);" />
                                             </td>
                                         </tr>
                                         <tr id="row_wan_dns3">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,8);"><#IPConnection_x_DNSServer1_itemname#> 3:</a></th>
                                             <td>
-                                               <input type="text" maxlength="15" class="input" size="15" name="wan_dns3_x" value="<% nvram_get_x("", "wan_dns3_x"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
+                                               <input type="text" maxlength="15" class="input" size="15" name="wan_dns3_x" value="<% nvram_get_x("", "wan_dns3_x"); %>" onkeypress="return is_ipaddr(this,event);" />
                                             </td>
                                         </tr>
                                     </table>

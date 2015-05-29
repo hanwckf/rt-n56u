@@ -479,16 +479,16 @@ function changeBgColor(obj, num){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,10,2);"><#FirewallConfig_LanWanActiveTime_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="filter_lw_time_x_starthour" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="filter_lw_time_x_startmin" onKeyPress="return is_number(this)">-
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="filter_lw_time_x_endhour" onKeyPress="return is_number(this)">:
-                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="filter_lw_time_x_endmin" onKeyPress="return is_number(this)">
+                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="filter_lw_time_x_starthour" onKeyPress="return is_number(this,event);"/>:
+                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="filter_lw_time_x_startmin" onKeyPress="return is_number(this,event);"/>-
+                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="filter_lw_time_x_endhour" onKeyPress="return is_number(this,event);"/>:
+                                                <input type="text" maxlength="2" class="input" style="width: 25px;" size="2" name="filter_lw_time_x_endmin" onKeyPress="return is_number(this,event);"/>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,10,4);"><#FirewallConfig_LanWanICMP_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="32" class="input" size="32" name="filter_lw_icmp_x" value="<% nvram_get_x("","filter_lw_icmp_x"); %>" onKeyPress="return is_portlist(this)">
+                                                <input type="text" maxlength="36" class="input" size="32" name="filter_lw_icmp_x" value="<% nvram_get_x("","filter_lw_icmp_x"); %>" onKeyPress="return is_portlist(this,event)">
                                             </td>
                                         </tr>
                                         <tr>
@@ -515,17 +515,17 @@ function changeBgColor(obj, num){
                                         </tr>
                                         <tr>
                                             <td>
-                                                <input type="text" maxlength="15" class="span12" size="14" name="filter_lw_srcip_x_0" onKeyPress="return is_iprange(this)" onKeyUp="change_iprange(this)"/>
+                                                <input type="text" maxlength="15" class="span12" size="14" name="filter_lw_srcip_x_0" onKeyPress="return is_iprange(this,event);"/>
                                             </td>
                                             <td>
-                                                <input type="text" maxlength="11" class="span12" size="10" name="filter_lw_srcport_x_0" value="" onKeyPress="return is_portrange(this)"/>
+                                                <input type="text" maxlength="11" class="span12" size="10" name="filter_lw_srcport_x_0" value="" onKeyPress="return is_portrange(this,event);"/>
                                             </td>
                                             <td>
-                                                <input type="text" maxlength="15" class="span12" size="14" name="filter_lw_dstip_x_0" onKeyPress="return is_iprange(this)" onKeyUp="change_iprange(this)"/>
+                                                <input type="text" maxlength="15" class="span12" size="14" name="filter_lw_dstip_x_0" onKeyPress="return is_iprange(this,event);"/>
                                             </td>
                                             <td>
-                                                <input type="text" maxlength="11" class="span12" size="10" name="filter_lw_dstport_x_0" value="" onKeyPress="return is_portrange(this)"/>
-                                                <input style="display:none" type="text" class="span12" maxlength="3" size="3" name="filter_lw_protono_x_0" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="11" class="span12" size="10" name="filter_lw_dstport_x_0" value="" onKeyPress="return is_portrange(this,event);"/>
+                                                <input style="display:none" type="text" class="span12" maxlength="3" size="3" name="filter_lw_protono_x_0" onkeypress="return is_number(this,event);"/>
                                             </td>
                                             <td>
                                                 <select name="filter_lw_proto_x_0" class="span12" onchange="change_proto()">

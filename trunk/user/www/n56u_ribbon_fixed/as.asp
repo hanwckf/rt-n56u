@@ -128,9 +128,9 @@ function show_sitemap(){
                             <div class="round_bottom">
 
                                 <div class="row-fluid">
+                                    <div id="tabMenu"></div>
                                     <table class="table">
                                         <tr>
-                                            <div id="tabMenu"></div>
                                             <!--=====Beginning of Main Content=====-->
                                             <td style="border-top: 0 none;">
                                                 <table id="menu_body" width="100%" border="0" align="center" cellpadding="3" cellspacing="1" bgcolor="#CCCCCC" class="sitemap">

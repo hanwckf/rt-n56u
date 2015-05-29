@@ -178,7 +178,7 @@ function done_validating(action){
                                             <td>
                                                 <div id="ClientList_Block" class="alert alert-info ddown-list"></div>
                                                 <div class="input-append">
-                                                    <input type="text" maxlength="15" class="input" size="15" name="dmz_ip" value="<% nvram_get_x("","dmz_ip"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" style="float:left; width: 175px"/>
+                                                    <input type="text" maxlength="15" class="input" size="15" name="dmz_ip" value="<% nvram_get_x("","dmz_ip"); %>" onkeypress="return is_ipaddr(this,event);" style="float:left; width: 175px"/>
                                                     <button class="btn btn-chevron" id="chevron" type="button" onclick="pullLANIPList(this);" title="Select the IP of LAN clients."><i class="icon icon-chevron-down"></i></button>
                                                 </div>
                                             </td>
@@ -197,7 +197,7 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="sp_battle_ips_on_of">
-                                                        <input type="checkbox" id="sp_battle_ips_fake" <% nvram_match_x("", "sp_battle_ips", "1", "value=1 checked"); %><% nvram_match_x("", "sp_battle_ips", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="sp_battle_ips_fake" <% nvram_match_x("", "sp_battle_ips", "1", "value=1 checked"); %><% nvram_match_x("", "sp_battle_ips", "0", "value=0"); %> />
                                                     </div>
                                                 </div>
 

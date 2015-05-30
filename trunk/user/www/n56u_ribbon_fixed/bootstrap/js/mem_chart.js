@@ -10,12 +10,13 @@ var mem_chart =
     chart: {
         renderTo: 'mem_chart',
         zoomType: 'x',
+        animation: false,
         spacingRight: 20
     },
     xAxis: {
         type: 'datetime',
-            gapGridLineWidth: 0,
-            title: {
+        gapGridLineWidth: 0,
+        title: {
             text: null
         },
         labels: {
@@ -29,15 +30,15 @@ var mem_chart =
             text: 'Memory (MB)'
         },
         min: 0,
-        //max: 100,
+        max: 128,
         startOnTick: false,
         showFirstLabel: false
     },
     legend: {
         enabled: true,
-            verticalAlign: 'top',
-            floating: true,
-            align: 'right'
+        verticalAlign: 'top',
+        floating: true,
+        align: 'right'
 
     },
     rangeSelector: {
@@ -61,7 +62,9 @@ var mem_chart =
             selected: 1
     },
     tooltip:{
-        xDateFormat: '%H:%M:%S'
+        xDateFormat: '%H:%M:%S',
+        valueSuffix: ' MB',
+        valueDecimals: 2
     },
     title : {
         text : '<#menu5_8_2#> (MB)',
@@ -74,10 +77,6 @@ var mem_chart =
         type: 'spline',
         name: 'Used',
         gapSize: 5,
-        pointInterval: 2 * 1000,
-        tooltip: {
-            valueSuffix: 'MB'
-        },
         data: (function(){
             var data = [], time = (new Date()).getTime(), i;
 
@@ -96,10 +95,6 @@ var mem_chart =
         type: 'spline',
         name: 'Buffers',
         gapSize: 5,
-        pointInterval: 2 * 1000,
-        tooltip: {
-            valueSuffix: 'MB'
-        },
         data: (function(){
             var data = [], time = (new Date()).getTime(), i;
 
@@ -118,10 +113,6 @@ var mem_chart =
         type: 'spline',
         name: 'Cached',
         gapSize: 5,
-        pointInterval: 2 * 1000,
-        tooltip: {
-            valueSuffix: 'MB'
-        },
         data: (function(){
             var data = [], time = (new Date()).getTime(), i;
 

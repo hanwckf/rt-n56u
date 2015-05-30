@@ -13,25 +13,17 @@
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
-<script type="text/javascript" src="/state.js"></script>
-<script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/bootstrap/js/highstock.js"></script>
 <script type="text/javascript" src="/bootstrap/js/highchart_theme.js"></script>
 <script type="text/javascript" src="/bootstrap/js/cpu_chart.js"></script>
 <script type="text/javascript" src="/bootstrap/js/mem_chart.js"></script>
-
-<script>
-    function initial(){
-        show_banner(0);
-        show_menu(6,-1,0);
-        show_footer();
-    }
-</script>
-
+<script type="text/javascript" src="/state.js"></script>
+<script type="text/javascript" src="/popup.js"></script>
 <script>
 var $j = jQuery.noConflict();
 
-var chartCPU, chartMem;
+var arrCharts = [ null, null ];
+var arrHashes = ["cpu", "mem"];
 
 Highcharts.setOptions({
     global : {
@@ -39,99 +31,75 @@ Highcharts.setOptions({
     }
 });
 
-var arrHashes = ["cpu", "mem"];
+function initial(){
+    show_banner(0);
+    show_menu(6,-1,0);
+    show_footer();
+}
 
-function showChart(curHash)
-{
-    for(var i = 0; i < arrHashes.length; i++)
-    {
-        if(curHash == ('#'+arrHashes[i]))
-        {
+function showChart(curHash){
+    for(var i = 0; i < arrHashes.length; i++){
+        if(curHash == ('#'+arrHashes[i])){
             $j('#tab_'+arrHashes[i]+'_chart').parents('li').addClass('active');
-            $j('#'+arrHashes[i]+'_chart').removeClass('hide_chart').addClass('show_chart');
-        }
-        else
-        {
+            $j('#'+arrHashes[i]+'_chart').show();
+            arrCharts[i].redraw();
+        }else{
             $j('#tab_'+arrHashes[i]+'_chart').parents('li').removeClass('active');
-            $j('#'+arrHashes[i]+'_chart').removeClass('show_chart').addClass('hide_chart');
+            $j('#'+arrHashes[i]+'_chart').hide();
         }
     }
 
     window.location.hash = curHash.toUpperCase();
 }
 
-function getHash()
-{
+function getHash(){
     var curHash = window.location.hash.toLowerCase();
     return (curHash != '#cpu' && curHash != '#mem') ? '#cpu' : curHash;
 }
 
-$j(document).ready(function() {
-    showChart(getHash());
-
+$j(document).ready(function(){
     $j("#tab_cpu_chart, #tab_mem_chart").click(function(){
         var newHash = $j(this).attr('href').toLowerCase();
         showChart(newHash);
-
         return false;
     });
-
-    chartCPU = new Highcharts.StockChart(cpu_chart);
-    chartMem = new Highcharts.StockChart(mem_chart);
-});
-
-$j(window).bind('hashchange', function() {
+    arrCharts[0] = new Highcharts.StockChart(cpu_chart);
+    arrCharts[1] = new Highcharts.StockChart(mem_chart);
     showChart(getHash());
 });
 
-function bytesToMegabytes(bytes, precision)
-{
+$j(window).bind('hashchange', function(){
+    showChart(getHash());
+});
+
+function bytesToMegabytes(bytes, precision){
     var kilobyte = 1024;
     var megabyte = kilobyte * 1024;
-
     return parseFloat((bytes / megabyte).toFixed(precision));
 }
 
-function getSystemJsonData(jsonData)
-{
-    // cpu chart
-    var CPU = {};
-    CPU.busy = chartCPU.series[0];
-    CPU.busy.addPoint([CPU.busy.data[CPU.busy.data.length-1].x + 2000, parseInt(jsonData.cpu.busy)], true);
+function getSystemJsonData(jsonData){
+    var x = (new Date()).getTime();
+    x = parseInt(x/1000)*1000;
 
-    CPU.user = chartCPU.series[1];
-    CPU.user.addPoint([CPU.user.data[CPU.user.data.length-1].x + 2000, parseInt(jsonData.cpu.user)], true);
+    arrCharts[0].series[0].addPoint([x, parseInt(jsonData.cpu.busy)], false, false);
+    arrCharts[0].series[1].addPoint([x, parseInt(jsonData.cpu.user)], false, false);
+    arrCharts[0].series[2].addPoint([x, parseInt(jsonData.cpu.system)], false, false);
+    arrCharts[0].series[3].addPoint([x, parseInt(jsonData.cpu.sirq)], false, false);
 
-    CPU.system = chartCPU.series[2];
-    CPU.system.addPoint([CPU.system.data[CPU.system.data.length-1].x + 2000, parseInt(jsonData.cpu.system)], true);
+    arrCharts[1].yAxis[0].setExtremes(0, bytesToMegabytes(jsonData.ram.total*1024, 2), false);
+    arrCharts[1].series[0].addPoint([x, bytesToMegabytes(jsonData.ram.used*1024, 2)], false, false);
+    arrCharts[1].series[1].addPoint([x, bytesToMegabytes(jsonData.ram.buffers*1024, 2)], false, false);
+    arrCharts[1].series[2].addPoint([x, bytesToMegabytes(jsonData.ram.cached*1024, 2)], false, false);
 
-    CPU.sirq = chartCPU.series[3];
-    CPU.sirq.addPoint([CPU.sirq.data[CPU.sirq.data.length-1].x + 2000, parseInt(jsonData.cpu.sirq)], true);
-
-    // memory chart
-    var MEMORY = {};
-    chartMem.yAxis[0].setExtremes(0, bytesToMegabytes(jsonData.ram.total*1024, 2), true, true);
-
-    MEMORY.used = chartMem.series[0];
-    MEMORY.used.addPoint([MEMORY.used.data[MEMORY.used.data.length-1].x + 2000, bytesToMegabytes(jsonData.ram.used*1024, 2)], true);
-
-    MEMORY.buffers = chartMem.series[1];
-    MEMORY.buffers.addPoint([MEMORY.buffers.data[MEMORY.buffers.data.length-1].x + 2000, bytesToMegabytes(jsonData.ram.buffers*1024, 2)], true);
-
-    MEMORY.cached = chartMem.series[2];
-    MEMORY.cached.addPoint([MEMORY.cached.data[MEMORY.cached.data.length-1].x + 2000, bytesToMegabytes(jsonData.ram.cached*1024, 2)], true);
+    if ($('cpu_chart').style.display == 'none')
+        arrCharts[1].redraw();
+    else
+        arrCharts[0].redraw();
 }
 </script>
 <style>
-    .hide_chart{
-        position: absolute;
-        margin-left: -10000px;
-    }
-
-    .show_chart{
-        position: relative;
-        margin-left: 0px;
-    }
+    #tabs {margin-bottom: 0px;}
 </style>
 </head>
 <body onload="initial();">

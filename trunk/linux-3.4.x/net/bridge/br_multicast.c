@@ -196,12 +196,12 @@ static int br_mdb_copy(struct net_bridge_mdb_htable *new,
 }
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
-extern void rtl8367_mcast_group_event(const unsigned char *mac_src, const unsigned char *mac_dst,
+extern void rtl8367_mcast_group_event(const u8 *mac_src, const u8 *mac_dst,
 				      const char *dev_name, int is_leave);
 
-static void br_pg_notify_switch(struct net_bridge_port_group *p, int is_leave)
+static void br_pg_notify_switch(struct net_bridge_port_group *p, const u8 *src, int is_leave)
 {
-	unsigned char mac_dst[8];
+	u8 mac_dst[8];
 
 	if (p->port && p->port->dev) {
 #if IS_ENABLED(CONFIG_IPV6)
@@ -210,7 +210,9 @@ static void br_pg_notify_switch(struct net_bridge_port_group *p, int is_leave)
 		else
 #endif
 			ip_eth_mc_map(p->addr.u.ip4, mac_dst);
-		rtl8367_mcast_group_event(p->src_addr, mac_dst, p->port->dev->name, is_leave);
+		if (!src)
+			src = p->src_addr;
+		rtl8367_mcast_group_event(src, mac_dst, p->port->dev->name, is_leave);
 	}
 }
 #endif
@@ -221,7 +223,7 @@ static void br_multicast_free_pg(struct rcu_head *head)
 		container_of(head, struct net_bridge_port_group, rcu);
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
-	br_pg_notify_switch(p, 1);
+	br_pg_notify_switch(p, NULL, 1);
 #endif
 
 	kfree(p);
@@ -721,7 +723,7 @@ found:
 	mod_timer(&p->timer, now + br->multicast_membership_interval);
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
-	br_pg_notify_switch(p, 0);
+	br_pg_notify_switch(p, src, 0);
 #endif
 
 out:
@@ -1202,6 +1204,11 @@ static void br_multicast_leave_group(struct net_bridge *br,
 			if (!br_port_group_equal(p, port, src))
 				continue;
 
+#if defined(CONFIG_RTL8367_IGMP_SNOOPING)
+			/* direct notify switch for this source MAC */
+			if (src && !ether_addr_equal(src, p->src_addr))
+				br_pg_notify_switch(p, src, 1);
+#endif
 			if (!p->m2u && querier_exist)
 				break;
 
@@ -1234,6 +1241,11 @@ static void br_multicast_leave_group(struct net_bridge *br,
 		if (!br_port_group_equal(p, port, src))
 			continue;
 
+#if defined(CONFIG_RTL8367_IGMP_SNOOPING)
+		/* direct notify switch for this source MAC */
+		if (src && !ether_addr_equal(src, p->src_addr))
+			br_pg_notify_switch(p, src, 1);
+#endif
 		if (!p->m2u && querier_exist)
 			break;
 

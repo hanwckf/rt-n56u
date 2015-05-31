@@ -562,10 +562,10 @@ include_lw_filter(FILE *fp, char *wan_if, char *logaccept, char *logdrop)
 		}
 	}
 
-	if (lw_items > 0 && lw_need_drop)
+	if (lw_need_drop)
 		fprintf(fp, "-A %s -j %s\n", dtype, logdrop);
 
-	return lw_items;
+	return (lw_items | lw_need_drop);
 }
 
 static void

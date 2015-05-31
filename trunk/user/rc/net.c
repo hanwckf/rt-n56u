@@ -202,17 +202,14 @@ stop_udpxy(void)
 void
 start_udpxy(char *wan_ifname)
 {
-	int uport;
-
-	uport = nvram_get_int("udpxy_enable_x");
-	if (uport < 1024)
+	if (nvram_get_int("udpxy_enable_x") < 1024)
 		return;
 
 	eval("/usr/sbin/udpxy",
 		"-m", wan_ifname,
 		"-p", nvram_safe_get("udpxy_enable_x"),
 		"-B", "65536",
-		"-c", "5"
+		"-c", nvram_safe_get("udpxy_clients")
 		);
 }
 

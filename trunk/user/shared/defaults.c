@@ -528,6 +528,7 @@ struct nvram_pair router_defaults[] = {
 	{ "force_igmp", "0" },
 	{ "force_mld", "0" },
 	{ "udpxy_enable_x", "0" },
+	{ "udpxy_clients", "10" },
 	{ "xupnpd_enable_x", "0" },
 	{ "xupnpd_udpxy", "0" },
 

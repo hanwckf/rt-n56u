@@ -1898,7 +1898,7 @@ wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 		int is_first = 1;
 		char line_buf[96], dns_item[80];
 		while (fgets(line_buf, sizeof(line_buf), fp)) {
-			if (sscanf(line_buf, "nameserver %s\n", dns_item) < 1)
+			if (sscanf(line_buf, "nameserver %79s\n", dns_item) < 1)
 				continue;
 			if (strlen(dns_item) < 7)
 				continue;
@@ -2666,7 +2666,7 @@ static int ej_get_vpns_client(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
 	int first_client;
-	char ifname[16], addr_l[32], addr_r[32], peer_name[64];
+	char ifname[16], addr_l[64], addr_r[64], peer_name[64];
 
 	fp = fopen("/tmp/vpns.leases", "r");
 	if (!fp) {
@@ -2674,7 +2674,7 @@ static int ej_get_vpns_client(int eid, webs_t wp, int argc, char **argv)
 	}
 
 	first_client = 1;
-	while (fscanf(fp, "%s %s %s %[^\n]\n", ifname, addr_l, addr_r, peer_name) == 4) {
+	while (fscanf(fp, "%15s %63s %63s %63[^\n]\n", ifname, addr_l, addr_r, peer_name) == 4) {
 		if (first_client)
 			first_client = 0;
 		else
@@ -2740,23 +2740,22 @@ void get_cpudata(struct cpu_stats *st)
 void get_memdata(struct mem_stats *st)
 {
 	FILE *fp;
-	char buf[32];
 	char line_buf[64];
 
 	fp = fopen("/proc/meminfo", "r");
 	if (fp)
 	{
 		if (fgets(line_buf, sizeof(line_buf), fp) && 
-		    sscanf(line_buf, "MemTotal: %lu %s", &st->total, buf) == 2)
+		    sscanf(line_buf, "MemTotal: %lu %*s", &st->total) == 1)
 		{
 			fgets(line_buf, sizeof(line_buf), fp);
-			sscanf(line_buf, "MemFree: %lu %s", &st->free, buf);
+			sscanf(line_buf, "MemFree: %lu %*s", &st->free);
 			
 			fgets(line_buf, sizeof(line_buf), fp);
-			sscanf(line_buf, "Buffers: %lu %s", &st->buffers, buf);
+			sscanf(line_buf, "Buffers: %lu %*s", &st->buffers);
 			
 			fgets(line_buf, sizeof(line_buf), fp);
-			sscanf(line_buf, "Cached: %lu %s", &st->cached, buf);
+			sscanf(line_buf, "Cached: %lu %*s", &st->cached);
 		}
 		
 		fclose(fp);
@@ -3560,9 +3559,7 @@ struct mime_handler mime_handlers[] = {
 	{ "client_function.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "disk_functions.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "md5.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "tmcal.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "tmhist.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "tmmenu.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "net_chart_tabs.js", "text/javascript", NULL, NULL, do_file, 0 },
 
 	/* cached css  */
 	{ "**.css", "text/css", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
@@ -3626,7 +3623,8 @@ ej_netdev(int eid, webs_t wp, int argc, char **argv)
 			if (!ifdesc)
 				continue;
 			
-			if (sscanf(p + 1, "%llu%*u%*u%*u%*u%*u%*u%*u%llu", &rx, &tx) != 2) continue;
+			if (sscanf(p + 1, "%llu%*u%*u%*u%*u%*u%*u%*u%llu", &rx, &tx) != 2)
+				continue;
 			ret += websWrite(wp, "%c'%s':{rx:0x%llx,tx:0x%llx}", comma, ifdesc, rx, tx);
 			comma = ',';
 			ret += websWrite(wp, "\n");

@@ -298,7 +298,7 @@ var count = 0;
 function split_vts_rule(s){
 	var i;
 	var count_dup = 0;
-	if(typeof(s) != "undefined"){
+	if(typeof(s) !== "undefined"){
 		this.vts_rule_array = s;
 	}
 	if(this.vts_rule_array.length <= 0){

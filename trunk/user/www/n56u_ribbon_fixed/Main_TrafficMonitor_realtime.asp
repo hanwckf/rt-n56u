@@ -13,127 +13,167 @@
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
-<script type="text/javascript" src="state.js"></script>
-<script type="text/javascript" src="general.js"></script>
-<script type="text/javascript" src="popup.js"></script>
-<script type="text/javascript" src="tmmenu.js"></script>
-<script type="text/javascript" src="tmcal.js"></script>
 <script type="text/javascript" src="/bootstrap/js/highstock.js"></script>
 <script type="text/javascript" src="/bootstrap/js/highchart_theme.js"></script>
 <script type="text/javascript" src="/bootstrap/js/network_chart_template.js"></script>
+<script type="text/javascript" src="/net_chart_tabs.js"></script>
+<script type="text/javascript" src="/state.js"></script>
+<script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/popup.js"></script>
 <script>
 var $j = jQuery.noConflict();
 
-<% nvram("rstats_colors"); %>
-
-netdev = {};
+var netChart = [];
+var speed_history = [];
+var netdev_prev = [];
+var last_perf = 0;
 
 var cprefix = 'bw_r';
-var updateInt = 2;
-var updateDiv = updateInt;
-var updateMaxL = 300;
-var updateReTotal = 1;
-var prev = [];
-var speed_history = [];
-var debugTime = 0;
-var avgMode = 0;
-var wdog = null;
-var wdogWarn = null;
+var updateDiv = 1;
+var updateAvgLen = 5;
+var idReloadNetDev = 0;
 
-var ref = new TomatoRefresh('update.cgi', 'output=netdev', 2);
+Highcharts.setOptions({
+	global : {
+		useUTC : false
+	}
+});
 
-ref.stop = function() {
-	this.timer.start(1000);
-}
+$j(document).ready(function(){
+	idReloadNetDev = setTimeout(load_netdev, 100);
+});
 
-ref.refresh = function(text) {
-	var c, i, h, n, j, k;
+window.performance = window.performance || {};
+performance.now = (function() {
+	return performance.now ||
+	performance.mozNow ||
+	performance.msNow ||
+	performance.oNow ||
+	performance.webkitNow ||
+	function() { return new Date().getTime(); };
+})();
 
-	watchdogReset();
+function eval_netdev(response,now_perf){
+	var c, p, h, t, i, j;
+	var netdev = {};
+	var x = (new Date()).getTime();
+	var diff_time = (now_perf - last_perf);
 
-	++updating;
+	if (diff_time <= 0)
+		diff_time = 1000;
+
+	last_perf = now_perf;
+
+	x = parseInt(x/1000)*1000;
+
 	try {
-		netdev = {};
-		eval(text);
-		n = (new Date()).getTime();
-		if (this.timeExpect) {
-			if (debugTime) E('dtime').innerHTML = (this.timeExpect - n) + ' ' + ((this.timeExpect + 2000) - n);
-			this.timeExpect += 2000;
-			this.refreshTime = MAX(this.timeExpect - n, 500);
-		}
-		else {
-			this.timeExpect = n + 2000;
-		}
-		for (i in netdev) {
-			c = netdev[i];
-			if ((p = prev[i]) != null) {
-				var diff;
-				h = speed_history[i];
-				
-				h.rx.splice(0, 1);
-				if (c.rx < p.rx){
-					if (p.rx <= 0xFFFFFFFF && p.rx > 0xE0000000)
-						diff = (0xFFFFFFFF - p.rx) + c.rx;
-					else
-						diff = 0;
-				} else {
-					diff = (c.rx - p.rx);
-				}
-				h.rx.push(diff);
-				
-				h.tx.splice(0, 1);
-				if (c.tx < p.tx){
-					if (p.tx <= 0xFFFFFFFF && p.tx > 0xE0000000)
-						diff = (0xFFFFFFFF - p.tx) + c.tx;
-					else
-						diff = 0;
-				} else {
-					diff = (c.tx - p.tx);
-				}
-				h.tx.push(diff);
-			}
-			else if (!speed_history[i]) {
-				speed_history[i] = {};
-				h = speed_history[i];
-				h.rx = [];
-				h.tx = [];
-				for (j = 300; j > 0; --j) {
-					h.rx.push(0);
-					h.tx.push(0);
-				}
-				h.count = 0;
-			}
-			prev[i] = c;
-		}
-		loadData();
+		eval(response);
 	}
 	catch (ex) {
+		netdev = {};
 	}
-	--updating;
+
+	for (i in netdev) {
+		c = netdev[i];
+		p = netdev_prev[i];
+		h = speed_history[i];
+		if (h === undefined) {
+			speed_history[i] = {};
+			h = speed_history[i];
+			h.rx = [];
+			h.tx = [];
+			h.rx_avg = 0;
+			h.tx_avg = 0;
+			h.rx_max = 0;
+			h.tx_max = 0;
+			for (j = updateAvgLen; j > 0; --j) {
+				h.rx.push(0);
+				h.tx.push(0);
+			}
+		}
+		if (p !== undefined) {
+			var diff_rx, diff_tx;
+			
+			if (c.rx < p.rx){
+				if (p.rx <= 0xFFFFFFFF && p.rx > 0xE0000000)
+					diff_rx = (0xFFFFFFFF - p.rx) + c.rx;
+				else
+					diff_rx = 0;
+			} else {
+				diff_rx = (c.rx - p.rx);
+			}
+			diff_rx = (diff_rx * 1000) / diff_time;
+			
+			h.rx.splice(0, 1);
+			h.rx.push(diff_rx);
+			if (diff_rx > h.rx_max)
+				h.rx_max = diff_rx;
+			
+			t = 0;
+			for (j = (h.rx.length - updateAvgLen); j < h.rx.length; ++j)
+				t += h.rx[j];
+			h.rx_avg = t / updateAvgLen;
+			
+			if (c.tx < p.tx){
+				if (p.tx <= 0xFFFFFFFF && p.tx > 0xE0000000)
+					diff_tx = (0xFFFFFFFF - p.tx) + c.tx;
+				else
+					diff_tx = 0;
+			} else {
+					diff_tx = (c.tx - p.tx);
+			}
+			
+			diff_tx = (diff_tx * 1000) / diff_time;
+			h.tx.splice(0, 1);
+			h.tx.push(diff_tx);
+			if (diff_tx > h.tx_max)
+				h.tx_max = diff_tx;
+			
+			t = 0;
+			for (j = (h.tx.length - updateAvgLen); j < h.tx.length; ++j)
+				t += h.tx[j];
+			h.tx_avg = t / updateAvgLen;
+			
+			if (netChart[i] !== undefined){
+				netChart[i].series[0].addPoint([x, diff_rx*8/1000000], false, false);
+				netChart[i].series[1].addPoint([x, diff_tx*8/1000000], false, false);
+			}
+		}
+		h.rx_total = c.rx;
+		h.tx_total = c.tx;
+		netdev_prev[i] = c;
+	}
+
+	processTabs();
 }
 
-function watchdog()
-{
-	watchdogReset();
-	ref.stop();
-	//wdogWarn.style.display = '';
+function load_netdev(){
+	clearTimeout(idReloadNetDev);
+	$j.ajax({
+		type: "get",
+		url: "/update.cgi",
+		data: {
+			output: "netdev"
+		},
+		dataType: "script",
+		cache: true,
+		error: function(xhr) {
+			idReloadNetDev = setTimeout(load_netdev, 1000);
+		},
+		success: function(response) {
+			var now_perf = performance.now();
+			idReloadNetDev = setTimeout(load_netdev, 2000);
+			eval_netdev(response,now_perf);
+		}
+	});
 }
 
-function watchdogReset()
-{
-	if (wdog) clearTimeout(wdog)
-	wdog = setTimeout(watchdog, 10000);
-}
+function initial(){
+	show_banner(0);
+	show_menu(5, -1, 0);
+	show_footer();
 
-function initB()
-{
-	speed_history = [];
-
-	initCommon(2, 0, 0, 1);
-	wdogWarn = E('warnwd');
-	watchdogReset();
-
-	ref.start();
+	initTabs();
 }
 
 function switchPage(page){
@@ -141,117 +181,67 @@ function switchPage(page){
 		location.href = "/Main_TrafficMonitor_last24.asp";
 	else if(page == "3")
 		location.href = "/Main_TrafficMonitor_daily.asp";
-	else
-		return false;
+	return false;
 }
 
-var netChart = {};
+function createCharts(arrTabs,ifdesc){
+	var chartIdFirst = null;
 
-Highcharts.setOptions({
-    global : {
-        useUTC : false
-    }
-});
+	for(var i=0; i < arrTabs.length; i++){
+		var chartId = arrTabs[i][0].replace('speed-tab-', '');
+		if (i == 0)
+			chartIdFirst = chartId;
+		if (netChart[chartId] !== undefined)
+			continue;
+		
+		var tWidth = $j('#tab-area').parents('.box').width()-20;
+		var div  = '<tr id="tr_'+chartId+'" class="charts" style="display: none;">\n';
+		    div += '    <td style="text-align: center; padding:10px; width: 99%">\n';
+		    div += '        <div height="500px" style="width:'+tWidth+'px" id="chart_'+chartId+'"></div>\n';
+		    div += '    </td>\n';
+		    div += '</tr>\n';
+		
+		$j("#network_chart").append(div);
+		
+		var nc = {}; // new temp object
+		
+		// clone object network_chart to nc (true - is recursively)
+		$j.extend(true, nc, network_chart_template);
+		
+		// change id of chart
+		nc.chart.renderTo = 'chart_'+chartId;
+		
+		// get name of tab and set title of chart
+		var title = $j(E('speed-tab-'+chartId)).text();
+		nc.title.text = "<#menu4#>" + ': ' + title;
+		
+		// create new charts
+		netChart[chartId] = new Highcharts.StockChart(nc);
+	}
 
-function createCharts(arrTabs)
-{
-    for(var i=0; i < arrTabs.length; i++)
-    {
-        var chartId =  arrTabs[i][0].substring(10, arrTabs[i][0].length);
-            chartId = chartId.replace('.', '__'); // replace . (dot) -> __ (uderline two times)
+	$j("#tabs a").click(function(){
+		tabSelect(this.id);
+	});
 
-        var tWidth = $j('#tab-area').parents('.box').width()-20;
-
-        // create dom element <tr> for chart
-        var div  = '<tr id="tr_'+chartId+'" class="charts" style="display: none;">\n';
-            div += '    <td style="text-align: center; padding:10px; width: 99%">\n';
-            div += '        <div height="500px" style="width:'+tWidth+'px" id="chart_'+chartId+'"></div>\n';
-            div += '    </td>\n';
-            div += '</tr>\n';
-
-        $j("#network_chart").append(div);
-
-        var nc = {}; // new temp object
-
-        // clone object network_chart to nc (true - is recursively)
-        $j.extend(true, nc, network_chart_template);
-
-         // change id of chart
-        nc.chart.renderTo =  'chart_'+chartId;
-
-        // get name of tab and set title of chart
-        var title = $j(E('speed-tab-'+chartId)).text();
-        nc.title.text = "<#menu4#>" + ': ' + title;
-
-        // create new charts
-        netChart[chartId] = new Highcharts.StockChart(nc);
-    }
-
-
-    var enabledChartId = cookie.get(cprefix + 'tab');
-    $j("#tr_"+enabledChartId.replace('.', '__')).show();
+	if (ifdesc == null)
+		ifdesc = chartIdFirst;
+	if (ifdesc != null)
+		$j("#tr_"+ifdesc).show();
 }
 
-function bytesToKilobytes(bytes, precision)
-{
-    return parseFloat((bytes/1024).toFixed(precision));
+function tabSelect(name){
+	var ifdesc;
+
+	showTab(name);
+	$j('.charts').hide();
+	ifdesc = cookie.get(cprefix + 'tab');
+	$j("#tr_"+ifdesc).show();
 }
 
-function tabSelect(name)
-{
-    if (!updating)
-    {
-        showTab(name);
-
-        $j('.charts').hide();
-
-        var enabledChartId = cookie.get(cprefix + 'tab');
-            enabledChartId = enabledChartId.replace('.', '__');
-        $j("#tr_"+enabledChartId).show();
-    }
+function updateChart(ifdesc){
+	if (netChart[ifdesc] !== undefined)
+		netChart[ifdesc].redraw();
 }
-
-function updateSVG(data, ifdesc, maxValue, mode, rxColor, txColor, intv, maxLen, dataD, avgSamp, clock)
-{
-    var CHART  = {};
-
-    for(var iface in netChart)
-    {
-        var rxData = data[iface.replace('__', '.')].rx;
-        var txData = data[iface.replace('__', '.')].tx;
-
-        var fixedIface = iface.replace('.', '__');
-        CHART.upload    = netChart[iface].series[0];
-        CHART.download  = netChart[iface].series[1];
-
-        CHART.upload.addPoint([CHART.upload.data[CHART.upload.data.length-1].x + 2000, bytesToKilobytes(rxData[rxData.length-1]/2, 2)], true);
-        CHART.download.addPoint([CHART.download.data[CHART.download.data.length-1].x + 2000, bytesToKilobytes(txData[txData.length-1]/2, 2)], true);
-    }
-}
-
-function init()
-{
-    top.updateSVG = updateSVG;
-    top.svgReady = 1;
-    top.initData();
-}
-
-$j(document).ready(function() {
-    init();
-
-    // fix need to get all enabled ifaces
-    var idFindTabs = setInterval(function(){
-        if(tabs.length > 0)
-        {
-            clearInterval(idFindTabs);
-            createCharts(tabs);
-
-            $j("#tabs a").click(function(){
-                tabSelect(this.id);
-            });
-        }
-    }, 100);
-});
 
 </script>
 <style>
@@ -259,7 +249,7 @@ $j(document).ready(function() {
 </style>
 </head>
 
-<body onload="show_banner(0); show_menu(5, -1, 0); show_footer(); initB();" >
+<body onload="initial();" >
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -324,113 +314,37 @@ $j(document).ready(function() {
                                         <div style="min-height: 420px;"><table width="100%" id="network_chart"></table></div>
                                     </center>
 
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <td colspan="2">
-                                                <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
-                                                    <tr>
-                                                        <th width='8%' style="border-top: 0 none;"><#Network#></th>
-                                                        <th width='8%' style="border-top: 0 none;"><#Color#></th>
-                                                        <th width='8%' style="border-top: 0 none; text-align: right"><#Current#></th>
-                                                        <th width='8%' style="border-top: 0 none; text-align: right"><#Average#></th>
-                                                        <th width='8%' style="border-top: 0 none; text-align: right"><#Maximum#></th>
-                                                        <th width='8%' style="border-top: 0 none; text-align: right"><#Total#></th>
-                                                    </tr>
-                                                    <tr>
-                                                        <td width='8%' style="text-align:center; vertical-align: middle;"><#Downlink#></td>
-                                                        <td width='10%' style="text-align:center; vertical-align: middle;">
-                                                            <div id='rx-sel' class="span12" style="border-radius: 5px;">
-                                                                <ul id="navigation-1"><b style='border-bottom: 4px solid; display: none;' id='rx-name'></b>
-                                                                   <li>
-                                                                     <!-- @todo <a title="Color" style="color:#B7E1F7;"><i class="icon icon-chevron-up"></i></a>
-                                                                      <ul class="navigation-2">
-                                                                         <li><a title="Orange" style="background-color:#FF9000;" onclick="switchColorRX(0)"></a></li>
-                                                                         <li><a title="Blue" style="background-color:#003EBA;" onclick="switchColorRX(1)"></a></li>
-                                                                         <li><a title="Black" style="background-color:#000000;" onclick="switchColorRX(2)"></a></li>
-                                                                         <li><a title="Red" style="background-color:#dd0000;" onclick="switchColorRX(3)"></a></li>
-                                                                         <li><a title="Gray" style="background-color:#999999;" onclick="switchColorRX(4)"></a></li>
-                                                                         <li><a title="Green" style="background-color:#118811;"onclick="switchColorRX(5)"></a></li>
-                                                                      </ul> -->
-                                                                   </li>
-                                                                </ul>
-                                                            </div>
-                                                        </td>
-                                                        <td width='15%' align='center' valign='top' style="text-align:right;font-weight: bold;"><span id='rx-current'></span></td>
-                                                        <td width='15%' align='center' valign='top' style="text-align:right" id='rx-avg'></td>
-                                                        <td width='15%' align='center' valign='top' style="text-align:right" id='rx-max'></td>
-                                                        <td width='15%' align='center' valign='top' style="text-align:right" id='rx-total'></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td width='8%' style="text-align:center; vertical-align: middle;"><#Uplink#></td>
-                                                        <td width='10%' style="text-align:center; vertical-align: middle;">
-                                                            <div id='tx-sel' class="span12" style="border-radius: 5px;">
-                                                                <ul id="navigation-1"><b style='border-bottom: 4px solid; display: none;' id='tx-name'></b>
-                                                                   <li>
-                                                                      <!-- @todo <a  title="Color" style="color:#B7E1F7;"><i class="icon icon-chevron-up"></i></a>
-                                                                      <ul class="navigation-2">
-                                                                         <li><a title="Orange" style="background-color:#FF9000;" onclick="switchColorTX(0)"></a></li>
-                                                                         <li><a title="Blue" style="background-color:#003EBA;" onclick="switchColorTX(1)"></a></li>
-                                                                         <li><a title="Black" style="background-color:#000000;" onclick="switchColorTX(2)"></a></li>
-                                                                         <li><a title="Red" style="background-color:#dd0000;" onclick="switchColorTX(3)"></a></li>
-                                                                         <li><a title="Gray" style="background-color:#999999;" onclick="switchColorTX(4)"></a></li>
-                                                                         <li><a title="Green" style="background-color:#118811;"onclick="switchColorTX(5)"></a></li>
-                                                                      </ul> -->
-                                                                   </li>
-                                                                </ul>
-                                                            </div>
-                                                        </td>
-                                                        <td width='15%' align='center' valign='top' style="text-align:right;font-weight: bold;"><span id='tx-current'></span></td>
-                                                        <td width='15%' align='center' valign='top' style="text-align:right" id='tx-avg'></td>
-                                                        <td width='15%' align='center' valign='top' style="text-align:right" id='tx-max'></td>
-                                                        <td width='15%' align='center' valign='top' style="text-align:right" id='tx-total'></td>
-                                                    </tr>
-                                                 </table>
+                                            <th width='8%'><#Network#></th>
+                                            <th width='8%'><#Color#></th>
+                                            <th width='8%' style="text-align: right"><#Current#></th>
+                                            <th width='8%' style="text-align: right"><#Average#></th>
+                                            <th width='8%' style="text-align: right"><#Maximum#></th>
+                                            <th width='8%' style="text-align: right"><#Total#></th>
+                                        </tr>
+                                        <tr>
+                                            <td width='8%' style="text-align:center; vertical-align: middle;"><#Downlink#></td>
+                                            <td width='10%' style="text-align:center; vertical-align: middle;">
+                                                <div id='rx-sel' class="span12" style="border-radius: 5px;"></div>
                                             </td>
+                                            <td width='15%' align='center' valign='top' style="text-align:right;font-weight: bold;"><span id='rx-current'></span></td>
+                                            <td width='15%' align='center' valign='top' style="text-align:right" id='rx-avg'></td>
+                                            <td width='15%' align='center' valign='top' style="text-align:right" id='rx-max'></td>
+                                            <td width='15%' align='center' valign='top' style="text-align:right" id='rx-total'></td>
+                                        </tr>
+                                        <tr>
+                                        <td width='8%' style="text-align:center; vertical-align: middle;"><#Uplink#></td>
+                                            <td width='10%' style="text-align:center; vertical-align: middle;">
+                                                <div id='tx-sel' class="span12" style="border-radius: 5px;"></div>
+                                            </td>
+                                            <td width='15%' align='center' valign='top' style="text-align:right;font-weight: bold;"><span id='tx-current'></span></td>
+                                            <td width='15%' align='center' valign='top' style="text-align:right" id='tx-avg'></td>
+                                            <td width='15%' align='center' valign='top' style="text-align:right" id='tx-max'></td>
+                                            <td width='15%' align='center' valign='top' style="text-align:right" id='tx-total'></td>
                                         </tr>
                                     </table>
 
-                                    <div style="display: none;">
-                                        <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
-                                            <thead>
-                                                <tr>
-                                                    <td colspan="5" id="TriggerList">Display Options</td>
-                                                </tr>
-                                            </thead>
-
-                                            <tbody>
-                                                <tr>
-                                                    <th width='50%'><#Traffic_Avg#></th>
-                                                    <td>
-                                                        <a href='javascript:switchAvg(1)' id='avg1'>Off</a>,
-                                                        <a href='javascript:switchAvg(2)' id='avg2'>2x</a>,
-                                                        <a href='javascript:switchAvg(4)' id='avg4'>4x</a>,
-                                                        <a href='javascript:switchAvg(6)' id='avg6'>6x</a>,
-                                                        <a href='javascript:switchAvg(8)' id='avg8'>8x</a>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <th><#Traffic_Max#></th>
-                                                    <td>
-                                                        <a href='javascript:switchScale(0)' id='scale0'>Uniform</a>,
-                                                        <a href='javascript:switchScale(1)' id='scale1'>Per IF</a>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <th><#Traffic_Color#></th>
-                                                    <td>
-                                                        <a href='javascript:switchDraw(0)' id='draw0'>Solid</a>,
-                                                        <a href='javascript:switchDraw(1)' id='draw1'>Line</a>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <th></th>
-                                                    <td>
-                                                        <a href='javascript:switchColor()' id='drawcolor'>-</a><a href='javascript:switchColor(1)' id='drawrev'><#Traffic_Reverse#></a>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
                                 </div>
                             </div>
                         </div>

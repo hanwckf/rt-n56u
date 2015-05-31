@@ -13,50 +13,119 @@
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/net_chart_tabs.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
-<script type="text/javascript" src="/tmmenu.js"></script>
-<script type="text/javascript" src="/tmhist.js"></script>
 <script>
 
 <% nvram("rstats_enable"); %>
 
-try {
-	<% bandwidth("daily"); %>
-}
-catch (ex) {
-	daily_history = [];
+<% bandwidth("daily"); %>
+
+var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+var snames = [' KiB', ' MiB', ' GiB', ' TiB'];
+var dateFormat = -1;
+var scale = 2;
+
+function initial()
+{
+	show_banner(0);
+	show_menu(5, -1, 0);
+	show_footer();
+
+	if (nvram.rstats_enable != '1')
+		return;
+
+	var s = cookie.get('daily');
+	if (s != null) {
+		if (s.match(/^([0-3])$/))
+			E('scale').value = scale = RegExp.$1 * 1;
+	}
+	initDate('ymd');
+	daily_history.sort(cmpHist);
+	redraw();
 }
 
-function save()
-{
+function save(){
 	cookie.set('daily', scale, 31);
 }
 
-function genData()
-{
-	var w, i, h, t;
-
-	w = window.open('', 'tomato_data_d');
-	w.document.writeln('<pre>');
-	for (i = 0; i < daily_history.length-1; ++i) {
-		h = daily_history[i];
-		t = getYMD(h[0]);
-		w.document.writeln([t[0], t[1] + 1, t[2], h[1], h[2]].join(','));
-	}
-	w.document.writeln('</pre>');
-	w.document.close();
+function pad(n,min){
+	n = n.toString();
+	while (n.length < min) n = '0' + n;
+	return n;
 }
 
-function getYMD(n)
-{
-	// [y,m,d]
+function ymdText(yr, mo, da){
+	switch (dateFormat) {
+	case 1:
+		return (mo + 1) + '-' + pad(da,2) + '-' + yr;
+	case 2:
+		return months[mo] + ' ' + da + ', ' + yr;
+	case 3:
+		return pad(da,2) + '.' + pad(mo + 1, 2) + '.' + yr;
+	}
+	return yr + '-' + pad(mo + 1, 2) + '-' + pad(da, 2);
+}
+
+function getYMD(n){
 	return [(((n >> 16) & 0xFF) + 1900), ((n >>> 8) & 0xFF), (n & 0xFF)];
 }
 
-function redraw()
-{
+function initDate(c){
+	dateFormat = fixInt(cookie.get(c), 0, 3, 0);
+	E('dafm').value = dateFormat;
+}
+
+function changeDate(e, c){
+	dateFormat = e.value * 1;
+	cookie.set(c, e.value, 31);
+	redraw();
+}
+
+function comma(n){
+	n = '' + n;
+	var p = n;
+	while ((n = n.replace(/(\d+)(\d{3})/g, '$1,$2')) != p) p = n;
+	return n;
+}
+
+function rescale(n, z){
+	if ((z) && (n == 0))
+		return '-';
+	var d = 1024*1024;
+	if (scale == 1)
+		d = 1024;
+	else if (scale == 3)
+		d = 1024*1024*1024;
+	return (((z) && (n > 0)) ? '+' : '') + comma((n / d).toFixed(2)) + snames[scale];
+}
+
+function cmpHist(a, b){
+	a = parseInt(a[0], 0);
+	b = parseInt(b[0], 0);
+	if (a < b) return 1;
+	if (a > b) return -1;
+	return 0;
+}
+
+function changeScale(e){
+	scale = e.value * 1;
+	redraw();
+	save();
+}
+
+function makeRow(rclass, rtitle, dl, ul, total){
+	return '<tr class="' + rclass + '">' +
+		'<td class="rtitle">' + rtitle + '</td>' +
+		'<td class="dl">' + dl + '</td>' +
+		'<td class="ul">' + ul + '</td>' +
+		'<td class="total">' + total + '</td>' +
+		'</tr>';
+}
+
+function redraw(){
 	var h;
 	var grid;
 	var rows;
@@ -104,30 +173,12 @@ function redraw()
 	E('last-total').innerHTML = rescale(lastu + lastd);
 }
 
-function init()
-{
-	var s;
-
-	if (nvram.rstats_enable != '1') return;
-
-	if ((s = cookie.get('daily')) != null) {
-		if (s.match(/^([0-2])$/)) {
-			E('scale').value = scale = RegExp.$1 * 1;
-		}
-	}
-
-	initDate('ymd');
-	daily_history.sort(cmpHist);
-	redraw();
-}
-
 function switchPage(page){
 	if(page == "1")
 		location.href = "/Main_TrafficMonitor_realtime.asp";
 	else if(page == "2")
 		location.href = "/Main_TrafficMonitor_last24.asp";
-	else
-		return false;
+	return false;
 }
 </script>
 
@@ -138,7 +189,7 @@ function switchPage(page){
 
 </head>
 
-<body onload="show_banner(0); show_menu(5, -1, 0); show_footer(); init();" >
+<body onload="initial();" >
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -195,9 +246,10 @@ function switchPage(page){
                                     </select>
                                     <select onchange='changeScale(this)' id='scale'>
                                         <option value=0><#Scale#>:</option>
-                                        <option value=0>KB</option>
-                                        <option value=1>MB</option>
-                                        <option value=2 selected>GB</option>
+                                        <option value=0>KiB</option>
+                                        <option value=1>MiB</option>
+                                        <option value=2 selected>GiB</option>
+                                        <option value=3>TiB</option>
                                     </select>
                                     <select onchange="switchPage(this.options[this.selectedIndex].value)">
                                         <option><#switchpage#></option>
@@ -229,5 +281,3 @@ function switchPage(page){
 </div>
 </body>
 </html>
-
-

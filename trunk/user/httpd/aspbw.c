@@ -58,9 +58,11 @@ int f_exists(const char *path)	// note: anything but a directory
 
 static int _f_wait_exists(const char *name, int max, int invert)
 {
+	max *= 10;
 	while (max-- > 0) {
-		if (f_exists(name) ^ invert) return 1;
-		sleep(1);
+		if (f_exists(name) ^ invert)
+			return 1;
+		usleep(100000);
 	}
 	return 0;
 }

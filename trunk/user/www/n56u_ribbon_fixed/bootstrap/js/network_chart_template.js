@@ -10,6 +10,7 @@ var network_chart_template =
     chart: {
         renderTo: 'network_chart', // this is will be redefined
         zoomType: 'x',
+        animation: false,
         spacingRight: 20
     },
     xAxis: {
@@ -26,7 +27,7 @@ var network_chart_template =
     },
     yAxis: {
         title: {
-            text: 'Bandwidth (KB/s)'
+            text: 'Bandwidth (Mbps)'
         },
         min: 0,
         startOnTick: false,
@@ -34,16 +35,15 @@ var network_chart_template =
     },
     plotOptions: {
         areaspline: {
-                lineWidth: 1,
-                fillOpacity: 0.3
+            lineWidth: 1,
+            fillOpacity: 0.3
         }
     },
     legend: {
         enabled: true,
-            verticalAlign: 'top',
-            floating: true,
-            align: 'right'
-
+        verticalAlign: 'top',
+        floating: true,
+        align: 'right'
     },
     rangeSelector: {
         buttons: [{
@@ -67,6 +67,7 @@ var network_chart_template =
     },
     tooltip:{
         xDateFormat: '%H:%M:%S',
+        valueSuffix: ' Mbps',
         valueDecimals: 2
     },
     title : {
@@ -80,10 +81,6 @@ var network_chart_template =
         name: 'Downlink',
         color: '#FF9000',
         gapSize: 5,
-        pointInterval: 2 * 1000,
-        tooltip: {
-            valueSuffix: ' KB/s'
-        },
         data: (function(){
             var data = [], time = (new Date()).getTime(), i;
 
@@ -103,10 +100,6 @@ var network_chart_template =
         name: 'Uplink',
         color: '#003EBA',
         gapSize: 5,
-        pointInterval: 2 * 1000,
-        tooltip: {
-            valueSuffix: ' KB/s'
-        },
         data: (function(){
             var data = [], time = (new Date()).getTime(), i;
 

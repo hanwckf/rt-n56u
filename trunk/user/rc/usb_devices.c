@@ -52,7 +52,7 @@ check_root_partition(const char *devname)
 	{
 		while (fgets(line, sizeof(line), procpt))
 		{
-			if (sscanf(line, " %d %d %d %[^\n ]", &ma, &mi, &sz, ptname) != 4)
+			if (sscanf(line, " %d %d %d %31[^\n ]", &ma, &mi, &sz, ptname) != 4)
 				continue;
 			
 			for (i=1;i<15;i++) {

@@ -72,7 +72,7 @@ ej_lan_leases(int eid, webs_t wp, int argc, char **argv)
 		return ret;
 
 	while (fgets(buff, sizeof(buff), fp)) {
-		if (sscanf(buff, "%s %s %s %s %*s", dh_lease, dh_mac, dh_ip, dh_host) != 4)
+		if (sscanf(buff, "%31s %63s %63s %63s %*s", dh_lease, dh_mac, dh_ip, dh_host) != 4)
 			continue;
 		
 		if (strcmp(dh_lease, "duid") == 0)
@@ -109,7 +109,7 @@ ej_lan_leases(int eid, webs_t wp, int argc, char **argv)
 	fp = fopen("/tmp/dnsmasq.leases", "r");
 	if (fp) {
 		while (fgets(buff, sizeof(buff), fp)) {
-			if (sscanf(buff, "%s %s %s %s %*s", dh_lease, dh_mac, dh_ip, dh_host) != 4)
+			if (sscanf(buff, "%31s %63s %63s %63s %*s", dh_lease, dh_mac, dh_ip, dh_host) != 4)
 				continue;
 			
 			if (strcmp(dh_lease, "duid") == 0)
@@ -138,7 +138,7 @@ ej_vpns_leases(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
 	int ret = 0, i_clients = 0;
-	char ifname[16], addr_l[32], addr_r[32], peer_name[64];
+	char ifname[16], addr_l[64], addr_r[64], peer_name[64];
 	
 	ret += websWrite(wp, "#  IP Local         IP Remote        Login          NetIf\n");
 	
@@ -146,7 +146,7 @@ ej_vpns_leases(int eid, webs_t wp, int argc, char **argv)
 		return ret;
 	}
 	
-	while (fscanf(fp, "%s %s %s %[^\n]\n", ifname, addr_l, addr_r, peer_name) == 4) 
+	while (fscanf(fp, "%15s %63s %63s %63[^\n]\n", ifname, addr_l, addr_r, peer_name) == 4) 
 	{
 		i_clients++;
 		ret += websWrite(wp, "%-3u", i_clients);
@@ -356,16 +356,16 @@ ej_conntrack_table(int eid, webs_t wp, int argc, char **argv)
 	if (!(fp = fopen("/proc/net/nf_conntrack", "r"))) return 0;
 
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
-		if (sscanf(buff, "%s %*s %s", ipv, proto) < 2)
+		if (sscanf(buff, "%15s %*s %15s", ipv, proto) < 2)
 			continue;
 		
 		if (strcmp(proto, "tcp") == 0 || strcmp(proto, "sctp") == 0) {
-			if (sscanf(buff, "%*s %*s %*s %*s %*s %s src=%s dst=%s sport=%s dport=%s", state, src, dst, sport, dport) < 5)
+			if (sscanf(buff, "%*s %*s %*s %*s %*s %31s src=%63s dst=%63s sport=%7s dport=%7s", state, src, dst, sport, dport) < 5)
 				continue;
 			if (strcmp(state, "ESTABLISHED") != 0)
 				continue;
 		} else {
-			if (sscanf(buff, "%*s %*s %*s %*s %*s src=%s dst=%s sport=%s dport=%s", src, dst, sport, dport) < 4)
+			if (sscanf(buff, "%*s %*s %*s %*s %*s src=%63s dst=%63s sport=%7s dport=%7s", src, dst, sport, dport) < 4)
 				continue;
 		}
 #if defined (USE_IPV6)

@@ -595,7 +595,7 @@ on_server_client_disconnect(int is_tun)
 	fp1 = fopen(clients_l1, "r");
 	fp2 = fopen(clients_l2, "w");
 	if (fp1) {
-		while(fscanf(fp1, "%s %s %s %[^\n]\n", ifname, addr_l, addr_r, peer_name) == 4) {
+		while(fscanf(fp1, "%15s %63s %63s %63[^\n]\n", ifname, addr_l, addr_r, peer_name) == 4) {
 			if (strcmp(peer_addr_r, addr_r) != 0 || strcmp(peer_addr_l, addr_l) != 0) {
 				if (fp2)
 					fprintf(fp2, "%s %s %s %s\n", ifname, addr_l, addr_r, peer_name);
@@ -630,7 +630,7 @@ on_client_ifup(void)
 		value = getenv(foption);
 		if (value) {
 			memset(fvalue, 0, sizeof(fvalue));
-			if (sscanf(value, "dhcp-option DNS %s", fvalue) == 1) {
+			if (sscanf(value, "dhcp-option DNS %127s", fvalue) == 1) {
 				if (vpnc_pdns > 0) {
 					int buf_len = strlen(buf);
 					snprintf(buf + buf_len, sizeof(buf) - buf_len, "%s%s", (buf_len) ? " " : "", fvalue);
@@ -640,13 +640,13 @@ on_client_ifup(void)
 					setenv("DNS1", fvalue, 1);
 				else if (i_dns == 2)
 					setenv("DNS2", fvalue, 1);
-			} else if (sscanf(value, "dhcp-option WINS %s", fvalue) == 1) {
+			} else if (sscanf(value, "dhcp-option WINS %127s", fvalue) == 1) {
 				i_wins++;
 				if (i_wins == 1)
 					setenv("WINS1", fvalue, 1);
 				else if (i_wins == 2)
 					setenv("WINS2", fvalue, 1);
-			} else if (sscanf(value, "dhcp-option DOMAIN %s", fvalue) == 1) {
+			} else if (sscanf(value, "dhcp-option DOMAIN %127s", fvalue) == 1) {
 				i_dom++;
 				if (i_dom == 1) {
 					if (vpnc_pdns > 0)

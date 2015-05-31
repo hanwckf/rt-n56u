@@ -426,7 +426,7 @@ ipdown_vpns_main(int argc, char **argv)
 {
 	FILE *fp1, *fp2;
 	int i_clients;
-	char ifname[16], addr_l[32], addr_r[64], name_p[64];
+	char ifname[16], addr_l[64], addr_r[64], name_p[64];
 	char *peer_name;
 	char *clients_l1 = VPN_SERVER_LEASE_FILE;
 	char *clients_l2 = "/tmp/.vpns.leases";
@@ -449,7 +449,7 @@ ipdown_vpns_main(int argc, char **argv)
 	fp1 = fopen(clients_l1, "r");
 	fp2 = fopen(clients_l2, "w");
 	if (fp1) {
-		while(fscanf(fp1, "%s %s %s %[^\n]\n", ifname, addr_l, addr_r, name_p) == 4) {
+		while(fscanf(fp1, "%15s %63s %63s %63[^\n]\n", ifname, addr_l, addr_r, name_p) == 4) {
 			if (strcmp(ifname, argv[1])) {
 				i_clients++;
 				if (fp2)

@@ -56,7 +56,7 @@ disk_info_t *read_disk_data(void)
 	while (fgets(line, sizeof(line), fp))
 	{
 		device_name[0] = 0;
-		if (sscanf(line, "%u %u %llu %[^\n ]", &major, &minor, &device_size, device_name) != 4)
+		if (sscanf(line, "%u %u %llu %31[^\n ]", &major, &minor, &device_size, device_name) != 4)
 			continue;
 		if(major != USB_DISK_MAJOR)
 			continue;
@@ -520,7 +520,7 @@ partition_info_t *create_partition(const char *device_name, partition_info_t **n
 	partition_info_t *follow_part_info;
 	u32 partition_order;
 	u64 size_in_kilobytes = 0, total_kilobytes = 0, used_kilobytes = 0;
-	char buf1[PATH_MAX], buf2[64], buf3[PATH_MAX]; // options of mount info needs more buffer size.
+	char buf1[256], buf2[64], buf3[256]; // options of mount info needs more buffer size.
 	int len;
 
 	if(new_part_info == NULL)
@@ -694,7 +694,7 @@ int read_mount_data(const char *device_name, char *mount_point, char *type, char
 {
 	FILE *fp;
 	int ret, dev_len;
-	char line[256], dev_src[16], dev_dst[16];
+	char line[256], dev_dst[32];
 
 	if(!mount_point || !type || !right)
 		return 0;
@@ -713,7 +713,7 @@ int read_mount_data(const char *device_name, char *mount_point, char *type, char
 		if (strncmp(line, dev_dst, dev_len))
 			continue;
 		
-		if (sscanf(line, "%s %s %s %[^\n ]", dev_src, mount_point, type, right) != 4)
+		if (sscanf(line, "%*s %255s %63s %255[^\n ]", mount_point, type, right) != 3)
 			continue;
 		
 		right[2] = 0; // "rw"/"ro"

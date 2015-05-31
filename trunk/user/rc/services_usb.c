@@ -675,10 +675,9 @@ void restart_smbd(void)
 void write_nfsd_exports(void)
 {
 	FILE *procpt, *fp;
-	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160], acl_mask[64];
+	char line[256], devname[32], mpname[128], system_type[16], mount_mode[164], acl_mask[64];
 	const char* exports_link = "/etc/storage/exports";
 	const char* exports_file = "/etc/exports";
-	int dummy1, dummy2;
 	char *nfsmm, *lan_ipaddr, *lan_netmask;
 	unsigned int acl_addr;
 	struct in_addr ina;
@@ -717,7 +716,7 @@ void write_nfsd_exports(void)
 	procpt = fopen("/proc/mounts", "r");
 	if (procpt) {
 		while (fgets(line, sizeof(line), procpt)) {
-			if (sscanf(line, "%s %s %s %s %d %d", devname, mpname, system_type, mount_mode, &dummy1, &dummy2) != 6)
+			if (sscanf(line, "%31s %127s %15s %163s %*s %*s", devname, mpname, system_type, mount_mode) != 4)
 				continue;
 			
 			if (!strcmp(system_type, "fuseblk"))
@@ -777,15 +776,15 @@ void restart_nfsd(void)
 int create_mp_link(char *search_dir, char *link_path, int force_first_valid)
 {
 	FILE *procpt;
-	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160], target_path[256];
-	int dummy1, dummy2, link_created;
+	char line[256], devname[32], mpname[128], system_type[16], mount_mode[164], target_path[256];
+	int link_created;
 
 	link_created = 0;
 
 	procpt = fopen("/proc/mounts", "r");
 	if (procpt) {
 		while (fgets(line, sizeof(line), procpt)) {
-			if (sscanf(line, "%s %s %s %s %d %d", devname, mpname, system_type, mount_mode, &dummy1, &dummy2) != 6)
+			if (sscanf(line, "%31s %127s %15s %163s %*s %*s", devname, mpname, system_type, mount_mode) != 4)
 				continue;
 			
 #if 0
@@ -1076,10 +1075,8 @@ void run_itunes(void)
 		return;
 
 	unlink(link_path);
-	if (!create_mp_link(dest_dir, link_path, 0))
-	{
-		if (!create_mp_link(dest_dir, link_path, 1))
-		{
+	if (!create_mp_link(dest_dir, link_path, 0)) {
+		if (!create_mp_link(dest_dir, link_path, 1)) {
 			logmessage(apps_name, "Cannot start: unable to create DB dir (/%s) on any volumes!", dest_dir);
 			return;
 		}
@@ -1149,8 +1146,7 @@ void run_torrent(void)
 		return;
 
 	unlink(link_path);
-	if (!create_mp_link(dest_dir, link_path, 0))
-	{
+	if (!create_mp_link(dest_dir, link_path, 0)) {
 		logmessage(apps_name, "Cannot start: please create dir \"%s\" on target volume!", dest_dir);
 		return;
 	}
@@ -1215,8 +1211,7 @@ void run_aria(void)
 		return;
 
 	unlink(link_path);
-	if (!create_mp_link(dest_dir, link_path, 0))
-	{
+	if (!create_mp_link(dest_dir, link_path, 0)) {
 		logmessage(apps_name, "Cannot start: please create dir \"%s\" on target volume!", dest_dir);
 		return;
 	}
@@ -1245,36 +1240,29 @@ void
 umount_ejected(void)
 {
 	FILE *procpt, *procpt2;
-	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160], ptname[32];
-	int dummy1, dummy2, ma, mi, sz;
+	char line[256], devname[32], mpname[128], system_type[16], mount_mode[164], ptname[32];
+	int ma, mi, sz;
 	int active;
 
 	procpt = fopen("/proc/mounts", "r");
-	if (procpt)
-	{
-		while (fgets(line, sizeof(line), procpt))
-		{
-			if (sscanf(line, "%s %s %s %s %d %d", devname, mpname, system_type, mount_mode, &dummy1, &dummy2) != 6)
+	if (procpt) {
+		while (fgets(line, sizeof(line), procpt)) {
+			if (sscanf(line, "%31s %127s %15s %163s %*s %*s", devname, mpname, system_type, mount_mode) != 4)
 				continue;
-			if (strncmp(devname, "/dev/sd", 7) == 0)
-			{
+			if (strncmp(devname, "/dev/sd", 7) == 0) {
 				active = 0;
 				procpt2 = fopen("/proc/partitions", "r");
-				if (procpt2)
-				{
-					while (fgets(line, sizeof(line), procpt2))
-					{
-						if (sscanf(line, " %d %d %d %[^\n ]", &ma, &mi, &sz, ptname) != 4)
+				if (procpt2) {
+					while (fgets(line, sizeof(line), procpt2)) {
+						if (sscanf(line, " %d %d %d %31[^\n ]", &ma, &mi, &sz, ptname) != 4)
 							continue;
-						if (strcmp(devname+5, ptname) == 0)
-						{
+						if (strcmp(devname+5, ptname) == 0) {
 							active = 1;
 							break;
 						}
 					}
 					
-					if (!active)
-					{
+					if (!active) {
 						umount(mpname);
 						rmdir(mpname);
 					}
@@ -1292,8 +1280,7 @@ void
 umount_dev(char *sd_dev)
 {
 	FILE *procpt;
-	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160];
-	int dummy1, dummy2;
+	char line[256], devname[32], mpname[128], system_type[16], mount_mode[164];
 
 	if (!sd_dev)
 		return;
@@ -1301,7 +1288,7 @@ umount_dev(char *sd_dev)
 	procpt = fopen("/proc/mounts", "r");
 	if (procpt) {
 		while (fgets(line, sizeof(line), procpt)) {
-			if (sscanf(line, "%s %s %s %s %d %d", devname, mpname, system_type, mount_mode, &dummy1, &dummy2) != 6)
+			if (sscanf(line, "%31s %127s %15s %163s %*s %*s", devname, mpname, system_type, mount_mode) != 4)
 				continue;
 			if (!strncmp(devname, "/dev/sd", 7)) {
 				if (!strcmp(devname+5, sd_dev)) {
@@ -1321,8 +1308,7 @@ void
 umount_dev_all(char *sd_dev)
 {
 	FILE *procpt;
-	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160];
-	int dummy1, dummy2;
+	char line[256], devname[32], mpname[128], system_type[16], mount_mode[164];
 
 	if (!sd_dev || !(*sd_dev))
 		return;
@@ -1330,16 +1316,12 @@ umount_dev_all(char *sd_dev)
 	detach_swap_partition(sd_dev);
 
 	procpt = fopen("/proc/mounts", "r");
-	if (procpt)
-	{
-		while (fgets(line, sizeof(line), procpt))
-		{
-			if (sscanf(line, "%s %s %s %s %d %d", devname, mpname, system_type, mount_mode, &dummy1, &dummy2) != 6)
+	if (procpt) {
+		while (fgets(line, sizeof(line), procpt)) {
+			if (sscanf(line, "%31s %127s %15s %163s %*s %*s", devname, mpname, system_type, mount_mode) != 4)
 				continue;
-			if (!strncmp(devname, "/dev/sd", 7))
-			{
-				if (!strncmp(devname+5, sd_dev, 3))
-				{
+			if (!strncmp(devname, "/dev/sd", 7)) {
+				if (!strncmp(devname+5, sd_dev, 3)) {
 					eval("/usr/bin/opt-umount.sh", devname, mpname);
 					umount(mpname);
 					rmdir(mpname);
@@ -1355,20 +1337,16 @@ void
 umount_sddev_all(void)
 {
 	FILE *procpt;
-	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160];
-	int dummy1, dummy2;
-	
+	char line[256], devname[32], mpname[128], system_type[16], mount_mode[164];
+
 	detach_swap_partition(NULL);
-	
+
 	procpt = fopen("/proc/mounts", "r");
-	if (procpt)
-	{
-		while (fgets(line, sizeof(line), procpt))
-		{
-			if (sscanf(line, "%s %s %s %s %d %d", devname, mpname, system_type, mount_mode, &dummy1, &dummy2) != 6)
+	if (procpt) {
+		while (fgets(line, sizeof(line), procpt)) {
+			if (sscanf(line, "%31s %127s %15s %163s %*s %*s", devname, mpname, system_type, mount_mode) != 4)
 				continue;
-			if (!strncmp(devname, "/dev/sd", 7))
-			{
+			if (!strncmp(devname, "/dev/sd", 7)) {
 				umount(mpname);
 				rmdir(mpname);
 			}
@@ -1382,15 +1360,13 @@ int
 count_sddev_mountpoint(void)
 {
 	FILE *procpt;
-	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160];
-	int dummy1, dummy2, count = 0;
+	char line[256], devname[32], mpname[128], system_type[16], mount_mode[164];
+	int count = 0;
 
 	procpt = fopen("/proc/mounts", "r");
-	if (procpt)
-	{
-		while (fgets(line, sizeof(line), procpt))
-		{
-			if (sscanf(line, "%s %s %s %s %d %d", devname, mpname, system_type, mount_mode, &dummy1, &dummy2) != 6)
+	if (procpt) {
+		while (fgets(line, sizeof(line), procpt)) {
+			if (sscanf(line, "%31s %127s %15s %163s %*s %*s", devname, mpname, system_type, mount_mode) != 4)
 				continue;
 				
 			if (strstr(devname, "/dev/sd"))
@@ -1411,17 +1387,14 @@ count_sddev_partition(void)
 	int ma, mi, sz, count = 0;
 
 	procpt = fopen("/proc/partitions", "r");
-	if (procpt)
-	{
-		while (fgets(line, sizeof(line), procpt))
-		{
-			if (sscanf(line, " %d %d %d %[^\n ]", &ma, &mi, &sz, ptname) != 4)
+	if (procpt) {
+		while (fgets(line, sizeof(line), procpt)) {
+			if (sscanf(line, " %d %d %d %31[^\n ]", &ma, &mi, &sz, ptname) != 4)
 				continue;
 			
 			if (!strncmp(ptname, "sd", 2))
 				count++;
 		}
-
 		fclose(procpt);
 	}
 

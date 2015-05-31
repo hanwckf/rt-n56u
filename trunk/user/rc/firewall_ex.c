@@ -406,7 +406,7 @@ include_vpns_clients(FILE *fp)
 
 	fpls = fopen(VPN_SERVER_LEASE_FILE, "r");
 	if (fpls) {
-		while(fscanf(fpls, "%s %*s %*s %*s\n", ifname) > 0) {
+		while(fscanf(fpls, "%63s %*s %*s %*s\n", ifname) > 0) {
 			if (ppp_ifindex(ifname) >= VPN_SERVER_PPP_UNIT)
 				fprintf(fp, "-A %s -i %s -j %s\n", dtype, ifname, "ACCEPT");
 		}

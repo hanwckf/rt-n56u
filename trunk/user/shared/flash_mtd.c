@@ -55,7 +55,7 @@ mtd_dev_idx(const char *mtd_part)
 
 	fgets(line, sizeof(line), fp); //skip the 1st line
 	while (fgets(line, sizeof(line), fp)) {
-		if (sscanf(line, "mtd%d: %*s %*s \"%s\"", &idx, bnm) != 2)
+		if (sscanf(line, "mtd%d: %*s %*s \"%63s\"", &idx, bnm) != 2)
 			continue;
 		
 		/* strip tailed " character, if present. */

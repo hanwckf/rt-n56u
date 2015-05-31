@@ -69,7 +69,7 @@ static void
 arpbind_clear(void)
 {
 	FILE *fp;
-	char buffer[256], arp_ip[INET_ADDRSTRLEN], arp_if[32];
+	char buffer[256], arp_ip[16], arp_if[32];
 	unsigned int arp_flags;
 
 	fp = fopen("/proc/net/arp", "r");
@@ -79,7 +79,7 @@ arpbind_clear(void)
 		
 		while (fgets(buffer, sizeof(buffer), fp)) {
 			arp_flags = 0;
-			if (sscanf(buffer, "%s %*s 0x%x %*s %*s %s", arp_ip, &arp_flags, arp_if) == 3) {
+			if (sscanf(buffer, "%15s %*s 0x%x %*s %*s %31s", arp_ip, &arp_flags, arp_if) == 3) {
 				if ((arp_flags & 0x04) && strcmp(arp_if, IFNAME_BR) == 0)
 					doSystem("arp -i %s -d %s", IFNAME_BR, arp_ip);
 			}

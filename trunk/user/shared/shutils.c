@@ -475,7 +475,7 @@ get_mtd_size(const char *mtd)
 		fgets(line, sizeof(line), fp); //skip the 1st line
 		while (fgets(line, sizeof(line), fp)) {
 			unsigned int bsz = 0;
-			if (sscanf(line, "mtd%d: %x %*s \"%s\"", &idx, &bsz, bnm) > 2) {
+			if (sscanf(line, "mtd%d: %x %*s \"%63s\"", &idx, &bsz, bnm) > 2) {
 				/* strip tailed " character, if present. */
 				char *p = strchr(bnm, '"');
 				if (p)

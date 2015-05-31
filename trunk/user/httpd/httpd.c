@@ -278,7 +278,7 @@ find_mac_from_ip(const uaddr *ip, unsigned char *p_out_mac, int *p_out_lan)
 		
 		while (fgets(buffer, sizeof(buffer), fp)) {
 			arp_flags = 0;
-			if (sscanf(buffer, "%s %*s 0x%x %s %*s %s", s_addr2, &arp_flags, arp_mac, arp_if) == 4) {
+			if (sscanf(buffer, "%s %*s 0x%x %31s %*s %31s", s_addr2, &arp_flags, arp_mac, arp_if) == 4) {
 				if ((arp_flags & 0x02) && !strcmp(s_addr1, s_addr2) && strcmp(arp_mac, "00:00:00:00:00:00")) {
 					if (ether_atoe(arp_mac, p_out_mac)) {
 						if (p_out_lan)

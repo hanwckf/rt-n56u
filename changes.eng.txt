@@ -1,4 +1,4 @@
-        ASUS RT-N11P/N14U/N56U/N65U/AC51U custom firmware 3.X.3.9-091 by Padavan
+    ASUS RT-N11P/N14U/N56U/N65U/AC51U/AC54U/AC1200HP custom firmware 3.X.3.9-095 by Padavan
 
 
 Project sources:
@@ -33,6 +33,63 @@ After manual NVRAM reset:
 
 
                               LIST OF CHANGES
+
+3.X.3.9-095:
+----------------------------------------------------------
+[RT-N56U_B1]
+- Added support MT7621 SoC.
+- Initial release (please report any issues).
+[RT-AC54U]
+- Initial release (please report any issues).
+[RT-AC1200HP]
+- Initial release (please report any issues).
+[RT-AC51U]
+- Fixed broken 5GHz module.
+- Fixed reset VHT bandwidth to 40MHz on router startup.
+- Updated MT7610E AP driver to 3.0.0.8.
+[RT-N14U]
+- Fixed MT7620 rev.0203 issues.
+[RT-N65U]
+- Fixed iNIC guest AP security in AP mode.
+[Common changes]
+- Updated kernel-3.4.x to 3.4.107, more upstream fixes.
+- Updated busybox to 1.23.2+.
+- Updated OpenSSL to v1.0.1m.
+- Updated dropbear SSH to 2015.67.
+- Updated dnsmasq from upcoming 2.73 branch (critical upstream fixes).
+- Updated miniupnpd to 1.9.20150430.
+- Updated INADYN to v1.99.13+, added support new DDNS services.
+- Updated usb-modeswitch to 2.2.1, updated usb-modeswitch-data up to 2015-01-15.
+- Wireless: fixed episodic drop Wireless AP to 20MHz bw (now ignore 40MHz intolerant bit from buggy clients).
+- PPPoE kernel-mode: immediately close PPPoE socket on PADT received.
+- DHCPv4 client: use RFC2132-compliant T2 expired timer (7/8 lease time).
+- Networkmap: allow passive scan LAN with any subnet size, active scan is limited to /24 subnet.
+- WebUI: ability to direct set DHCP/ZeroConf/Static rule on VLAN CPU (IPTV) path.
+- WebUI: ability to set Source IP on Port Forwarding rules.
+- WebUI: ability to edit custom DNS servers list (dnsmasq --servers-file).
+- WebUI: ability to edit custom script for WPS/Wi-Fi buttons events.
+- WebUI: ability to restore Storage from backup file.
+- WebUI: ability to sort DHCP excludes list.
+- WebUI: added support cross-midnight time on URL filter, MAC filter, LAN-WAN filter.
+- WebUI: added source MAC (included/excluded) to URL filter.
+- WebUI: LAN-WAN filter changed to Network Services filter, added support block any protocol.
+- WebUI: drop redundant VPN passthrough rules (use Network Services filter to block any services).
+- WebUI: show Ethernet ports Flow Control and EEE status.
+- WebUI: optimized WebUI CPU/MEM/Traffic Highcharts redraw.
+- WebUI: fixed issues under Firefox 38.x.x.
+- Ethernet switch: allow VLAN ID #2 for tagged WAN traffic.
+- Ethernet switch: allow to disable any EPHY ports.
+- Ethernet switch: improved HW IGMP/MLD snooping, added IGMP static port control in AP mode.
+- Ethernet switch: fixed broken IPTV in AP mode on MT7620-based devices.
+- Ethernet driver: fixed TX ring full if HW_NAT Wireless acceleration enabled.
+- HW_NAT: fixed corrupted FoE 80b entries if MT7620/MT7621 IPv6 acceleration enabled.
+- Linux netfilter: implement RFC 1123 for FTP conntrack module.
+- Linux netfilter: xt_time: added support to ignore day transition (--contiguous).
+- Linux netfilter: SIP conntrack: added support Cisco 7941/7945 IP phones.
+- Fixed restart SMB server issue.
+- Fixed httpd server segfault on malformed requests.
+- Fixed WPS/Wi-Fi buttons event handler, limiting short-press detection pulse to 500ms.
+
 
 3.X.3.9-091:
 ----------------------------------------------------------
@@ -1109,5 +1166,5 @@ After manual NVRAM reset:
 
 
 -
-01/11/2015
+06/01/2015
 Padavan

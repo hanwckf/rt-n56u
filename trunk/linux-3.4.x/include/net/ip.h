@@ -102,7 +102,6 @@ extern int		ip_mr_input(struct sk_buff *skb);
 extern int		ip_output(struct sk_buff *skb);
 extern int		ip_mc_output(struct sk_buff *skb);
 extern int		ip_fragment(struct sk_buff *skb, int (*output)(struct sk_buff *));
-extern int		ip_do_nat(struct sk_buff *skb);
 extern int		__ip_local_out(struct sk_buff *skb);
 extern int		ip_local_out(struct sk_buff *skb);
 extern int		ip_queue_xmit(struct sk_buff *skb, struct flowi *fl);

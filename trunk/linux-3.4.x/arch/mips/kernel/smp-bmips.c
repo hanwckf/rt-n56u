@@ -385,7 +385,7 @@ struct plat_smp_ops bmips_smp_ops = {
 static void __cpuinit bmips_wr_vec(unsigned long dst, char *start, char *end)
 {
 	memcpy((void *)dst, start, end - start);
-	dma_cache_wback((unsigned long)start, end - start);
+	dma_cache_wback(dst, end - start);
 	local_flush_icache_range(dst, dst + (end - start));
 	instruction_hazard();
 }

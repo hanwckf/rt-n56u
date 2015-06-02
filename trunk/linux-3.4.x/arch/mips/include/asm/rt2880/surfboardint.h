@@ -27,6 +27,20 @@
 #if defined (CONFIG_RALINK_MT7621)
 
 /* MIPS GIC controller */
+#define MIPS_GIC_IRQ_BASE		(MIPS_CPU_IRQ_BASE)
+
+/* GCMP specific definitions */
+#define GCMP_BASE_ADDR			0x1fbf8000
+#define GCMP_ADDRSPACE_SZ		(256 * 1024)
+
+/* CPC specific definitions */
+#define CPC_BASE_ADDR			0x1fbf0000
+#define CPC_ADDRSPACE_SZ		(128 * 1024)
+
+/* GIC specific definitions */
+#define GIC_BASE_ADDR			0x1fbc0000
+#define GIC_ADDRSPACE_SZ		(128 * 1024)
+
 #define SURFBOARDINT_FE			3	/* FE */
 #define SURFBOARDINT_PCIE0		4	/* PCIE0 */
 #define SURFBOARDINT_AUX_TIMER		5	/* AUX timer (systick) */
@@ -60,7 +74,7 @@
 #define SURFBOARDINT_UART2		SURFBOARDINT_UART_LITE2
 
 /* 32 + 3 + IPI*NR_CPU (max 64) */
-#define SURFBOARDINT_END		63	/* NR_IRQS must be multiply of BITS_PER_LONG  */
+#define SURFBOARDINT_END		63
 
 #else
 
@@ -116,7 +130,7 @@
 #define SURFBOARDINT_UART2		SURFBOARDINT_UARTF
 #endif
 
-#define SURFBOARDINT_END		63	/* NR_IRQS must be multiply of BITS_PER_LONG  */
+#define SURFBOARDINT_END		37
 
 #endif
 
@@ -167,19 +181,5 @@
         : : "r" (value));
 
 /* bobtseng added --, 2006.3.6. */
-
-/*
- * GCMP Specific definitions
- */
-#define GCMP_BASE_ADDR		0x1fbf8000
-#define GCMP_ADDRSPACE_SZ	(256 * 1024)
-
-/*
- * GIC Specific definitions
- */
-#define GIC_BASE_ADDR		0x1fbc0000
-#define GIC_ADDRSPACE_SZ	(128 * 1024)
-#define MIPS_GIC_IRQ_BASE	(MIPS_CPU_IRQ_BASE)
-
 
 #endif

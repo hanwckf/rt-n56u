@@ -317,15 +317,37 @@ function validate_duplicate2(o, v, l, off) {
     return true;
 }
 
+function is_control_key(e){
+    if(e.which === 0){
+        if (e.keyCode == 35 //End
+         || e.keyCode == 36 //Home
+         || e.keyCode == 37 //<-
+         || e.keyCode == 39 //->
+         || e.keyCode == 45 //Insert
+         || e.keyCode == 46 //Del
+            )
+            return true;
+    }
+    if (e.keyCode == 8  //Backspace
+     || e.keyCode == 9  //Tab
+     || e.keyCode == 27 //Esc
+        )
+        return true;
+    return false;
+}
+
 function is_hwaddr(e) {
     e = e || event;
+    if (is_control_key(e))
+        return true;
     keyPressed = e.keyCode ? e.keyCode : e.which;
-    if ((keyPressed > 47 && keyPressed < 58) || (keyPressed > 64 && keyPressed < 71) || (keyPressed > 96 && keyPressed < 103))
+    if (keyPressed == 0)
         return true;
-    else if (keyPressed == 0)
+    if ((keyPressed > 47 && keyPressed < 58) ||
+        (keyPressed > 64 && keyPressed < 71) ||
+        (keyPressed > 96 && keyPressed < 103))
         return true;
-    else
-        return false;
+    return false;
 }
 
 function validate_hwaddr(o) {
@@ -355,10 +377,12 @@ function validate_hwaddr(o) {
 
 function is_string(o,e) {
     e = e || event;
+    if (is_control_key(e))
+        return true;
     keyPressed = e.keyCode ? e.keyCode : e.which;
     if (keyPressed == 0)
         return true;
-    else if (keyPressed >= 0 && keyPressed <= 126)
+    if (keyPressed > 0 && keyPressed <= 126)
         return true;
     alert("<#JS_validchar#>");
     return false;
@@ -366,10 +390,12 @@ function is_string(o,e) {
 
 function is_string2(o,e) {
     e = e || event;
+    if (is_control_key(e))
+        return true;
     keyPressed = e.keyCode ? e.keyCode : e.which;
     if (keyPressed == 0)
         return true;
-    else if ((keyPressed >= 48 && keyPressed <= 57) ||
+    if ((keyPressed >= 48 && keyPressed <= 57) ||
         (keyPressed >= 97 && keyPressed <= 122) ||
         (keyPressed >= 65 && keyPressed <= 90) ||
         (keyPressed == 45))
@@ -401,15 +427,17 @@ function validate_string_ssid(o) {
 
 function is_number(o,e) {
     e = e || event;
+    if (is_control_key(e))
+        return true;
     keyPressed = e.keyCode ? e.keyCode : e.which;
-    if (keyPressed == 0) return true;
+    if (keyPressed == 0)
+        return true;
     if (keyPressed > 47 && keyPressed < 58) {
         if (keyPressed == 48 && o.length == 0)
             return false;
         return true;
     }
-    else
-        return false;
+    return false;
 }
 
 function validate_range(o, min, max) {
@@ -477,8 +505,10 @@ function change_ipaddr(o) {
 function is_ipaddr(o,e) {
     var i,j;
     e = e || event;
+    if (is_control_key(e))
+        return true;
     keyPressed = e.keyCode ? e.keyCode : e.which;
-    if(keyPressed == 0)
+    if (keyPressed == 0)
         return true;
     if (o.value.length >= 16)
         return false;
@@ -640,6 +670,8 @@ function change_ipaddrport(o) {
 
 function is_ipaddrport(o,e) {
     e = e || event;
+    if (is_control_key(e))
+        return true;
     keyPressed = e.keyCode ? e.keyCode : e.which;
     if (keyPressed == 0)
         return true;
@@ -753,9 +785,11 @@ function validate_iprange(o,v) {
 
 function is_portrange(o,e) {
     e = e || event;
+    if (is_control_key(e))
+        return true;
     keyPressed = e.keyCode ? e.keyCode : e.which;
-    if (keyPressed == 0) return true;
-
+    if (keyPressed == 0)
+        return true;
     if ((keyPressed > 47 && keyPressed < 58)){
         return true;
     }
@@ -779,9 +813,7 @@ function is_portrange(o,e) {
         else
             return false;
     }
-    else {
-        return false;
-    }
+    return false;
 }
 
 function validate_portrange(o,v) {
@@ -869,14 +901,19 @@ function validate_portrange(o,v) {
 
 function is_portlist(o,e) {
     e = e || event;
+    if (is_control_key(e))
+        return true;
     keyPressed = e.keyCode ? e.keyCode : e.which;
-    if (keyPressed == 0) return true;
-    if (o.value.length > 36) return false;
+    if (keyPressed == 0)
+        return true;
+    if (o.value.length > 36)
+        return false;
     if ((keyPressed > 47 && keyPressed < 58) || keyPressed == 32) {
         return true;
     }
     return false;
 }
+
 function validate_portlist(o, v) {
     if (o.value.length == 0)
         return true;

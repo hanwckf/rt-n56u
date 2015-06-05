@@ -649,17 +649,6 @@ function trim(str){
 	return str.replace(/^\s+|\s+$/g, '');
 }
 
-function is_string(o,e){
-	e = e || event;
-	keyPressed = e.keyCode ? e.keyCode : e.which;
-	if(keyPressed == 0)
-		return true;
-	else if(keyPressed >= 0 && keyPressed <= 126)
-		return true;
-	alert("<#JS_validchar#>");
-	return false;
-}
-
 function validate_string(string_obj, flag){
 	if(string_obj.value.charAt(0) == '"'){
 		if(flag != "noalert")

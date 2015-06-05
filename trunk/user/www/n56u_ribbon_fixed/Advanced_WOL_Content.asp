@@ -80,7 +80,7 @@ function getVendors()
         {
             // this ajax request with hack from xdomainajax.js
             $j.ajax({
-                url: 'https://www.macvendorlookup.com/api/v2/'+hw_addr+'/json',
+                url: 'http://www.macvendorlookup.com/api/v2/'+hw_addr+'/json',
                 type: 'GET',
                 success: function(response){
                     try{

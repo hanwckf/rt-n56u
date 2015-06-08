@@ -309,6 +309,7 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 	{
 		uint32_t t;
 		move_from_unaligned32(t, ((char *)&eth_addr + 2));
+		t += getpid();
 		srand(t);
 	}
 	if (ip.s_addr == 0)

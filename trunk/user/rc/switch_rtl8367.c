@@ -419,7 +419,7 @@ int phy_vlan_accept_port_mode(int accept_mode, unsigned int port_pask)
 
 int phy_vlan_create_port_vid(int pvid, int priority, unsigned int member, unsigned int untag, int fid)
 {
-	unsigned int vlan4k_info = (((fid & 0xFF) << 16) | ((priority & 0x07) << 12) | (pvid & 0x0FFF));
+	unsigned int vlan4k_info = (((fid & 0x0FFF) << 16) | ((priority & 0x07) << 12) | (pvid & 0x0FFF));
 	unsigned int vlan4k_mask = (((untag & 0xFF) << 16) | (member & 0xFF));
 	
 	return rtl8367_ioctl(RTL8367_IOCTL_VLAN_CREATE_PORT_VID, vlan4k_info, &vlan4k_mask);
@@ -427,7 +427,7 @@ int phy_vlan_create_port_vid(int pvid, int priority, unsigned int member, unsign
 
 int phy_vlan_create_entry(int vid, unsigned int member, unsigned int untag, int fid)
 {
-	unsigned int vlan4k_info = (((fid & 0xFF) << 16) | (vid & 0x0FFF));
+	unsigned int vlan4k_info = (((fid & 0x0FFF) << 16) | (vid & 0x0FFF));
 	unsigned int vlan4k_mask = (((untag & 0xFF) << 16) | (member & 0xFF));
 	
 	return rtl8367_ioctl(RTL8367_IOCTL_VLAN_CREATE_ENTRY, vlan4k_info, &vlan4k_mask);

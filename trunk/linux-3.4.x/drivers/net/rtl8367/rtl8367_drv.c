@@ -578,7 +578,7 @@ static void asic_vlan_create_port_vid(u32 vlan4k_info, u32 vlan4k_mask)
 	pvid = (rtk_vlan_t)(vlan4k_info & 0x0FFF);
 	prio = (rtk_pri_t)((vlan4k_info >> 12) & 0x7);
 #if defined(CONFIG_RTL8367_API_8370)
-	fid  = (rtk_fid_t)((vlan4k_info >> 16) & 0xFF);
+	fid  = (rtk_fid_t)((vlan4k_info >> 16) & 0x0FFF);
 #else
 	fid  = RTK_IVL_MODE_FID;
 #endif
@@ -606,7 +606,7 @@ static void asic_vlan_create_entry(u32 vlan4k_info, u32 vlan4k_mask)
 
 	vid = (rtk_vlan_t)(vlan4k_info & 0x0FFF);
 #if defined(CONFIG_RTL8367_API_8370)
-	fid = (rtk_fid_t)((vlan4k_info >> 16) & 0xFF);
+	fid = (rtk_fid_t)((vlan4k_info >> 16) & 0x0FFF);
 #else
 	fid  = RTK_IVL_MODE_FID;
 #endif

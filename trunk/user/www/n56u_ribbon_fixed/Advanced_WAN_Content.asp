@@ -524,142 +524,94 @@ function change_wan_dns_enable(wan_type){
 }
 
 function change_stb_port_and_vlan(){
-	var wan_stb_x = document.form.wan_stb_x.value;
+	var wan_stb_x = parseInt(document.form.wan_stb_x.value);
 	var vlan_filter = document.form.vlan_filter[0].checked;
+	var vlan_l1 = 0, vlan_l2 = 0, vlan_l3 = 0, vlan_l4 = 0;
+	var o_wsp = document.form.wan_src_phy;
 
-	free_options(document.form.wan_src_phy);
-	add_option(document.form.wan_src_phy, "WAN", "0", 0);
+	free_options(o_wsp);
+	add_option(o_wsp, "WAN", "0", 0);
 
-	showhide_div("wan_stb_iso", !(wan_stb_x == "0" || vlan_filter));
+	showhide_div("wan_stb_iso", !(wan_stb_x == 0 || vlan_filter));
+	showhide_div("wan_src_phy", (wan_stb_x != 0));
 
-	if(wan_stb_x == "0") {
-		$("wan_src_phy").style.display = "none";
-		document.form.wan_src_phy.SelectedIndex = 0;
-	} else {
-		$("wan_src_phy").style.display = "";
+	if(wan_stb_x == 0) {
+		o_wsp.SelectedIndex = 0;
 	}
-
-	if(!vlan_filter) {
-		$("vlan_cpu").style.display = "none";
-		$("vlan_iptv").style.display = "none";
-		$("vlan_lan1").style.display = "none";
-		$("vlan_lan2").style.display = "none";
-		$("vlan_lan3").style.display = "none";
-		$("vlan_lan4").style.display = "none";
+	else if(wan_stb_x == 1) {
+		vlan_l1 = vlan_filter;
+		add_option(o_wsp, "LAN1", "1", (original_wan_src_phy == 1) ? 1 : 0);
 	}
-
-	if(wan_stb_x == "0") {
-		if(vlan_filter) {
-			$("vlan_cpu").style.display = "";
-			$("vlan_iptv").style.display = "";
-		}
-		$("vlan_lan1").style.display = "none";
-		$("vlan_lan2").style.display = "none";
-		$("vlan_lan3").style.display = "none";
-		$("vlan_lan4").style.display = "none";
+	else if(wan_stb_x == 2) {
+		vlan_l2 = vlan_filter;
+		add_option(o_wsp, "LAN2", "2", (original_wan_src_phy == 2) ? 1 : 0);
 	}
-	else if(wan_stb_x == "1") {
-		if(vlan_filter) {
-			$("vlan_cpu").style.display = "";
-			$("vlan_iptv").style.display = "";
-			$("vlan_lan1").style.display = "";
-		}
-		$("vlan_lan2").style.display = "none";
-		$("vlan_lan3").style.display = "none";
-		$("vlan_lan4").style.display = "none";
-		add_option(document.form.wan_src_phy, "LAN1", "1", (original_wan_src_phy == 1) ? 1 : 0);
+	else if(wan_stb_x == 3) {
+		vlan_l3 = vlan_filter;
+		add_option(o_wsp, "LAN3", "3", (original_wan_src_phy == 3) ? 1 : 0);
 	}
-	else if(wan_stb_x == "2") {
-		if(vlan_filter) {
-			$("vlan_cpu").style.display = "";
-			$("vlan_iptv").style.display = "";
-			$("vlan_lan2").style.display = "";
-		}
-		$("vlan_lan1").style.display = "none";
-		$("vlan_lan3").style.display = "none";
-		$("vlan_lan4").style.display = "none";
-		add_option(document.form.wan_src_phy, "LAN2", "2", (original_wan_src_phy == 2) ? 1 : 0);
+	else if(wan_stb_x == 4) {
+		vlan_l4 = vlan_filter;
+		add_option(o_wsp, "LAN4", "4", (original_wan_src_phy == 4) ? 1 : 0);
 	}
-	else if(wan_stb_x == "3") {
-		if(vlan_filter) {
-			$("vlan_cpu").style.display = "";
-			$("vlan_iptv").style.display = "";
-			$("vlan_lan3").style.display = "";
-		}
-		$("vlan_lan1").style.display = "none";
-		$("vlan_lan2").style.display = "none";
-		$("vlan_lan4").style.display = "none";
-		add_option(document.form.wan_src_phy, "LAN3", "3", (original_wan_src_phy == 3) ? 1 : 0);
+	else if(wan_stb_x == 5) {
+		vlan_l3 = vlan_filter;
+		vlan_l4 = vlan_filter;
+		add_option(o_wsp, "LAN3", "3", (original_wan_src_phy == 3) ? 1 : 0);
+		add_option(o_wsp, "LAN4", "4", (original_wan_src_phy == 4) ? 1 : 0);
 	}
-	else if(wan_stb_x == "4") {
-		if(vlan_filter) {
-			$("vlan_cpu").style.display = "";
-			$("vlan_iptv").style.display = "";
-			$("vlan_lan4").style.display = "";
-		}
-		$("vlan_lan1").style.display = "none";
-		$("vlan_lan2").style.display = "none";
-		$("vlan_lan3").style.display = "none";
-		add_option(document.form.wan_src_phy, "LAN4", "4", (original_wan_src_phy == 4) ? 1 : 0);
+	else if(wan_stb_x == 6) {
+		vlan_l1 = vlan_filter;
+		vlan_l2 = vlan_filter;
+		add_option(o_wsp, "LAN1", "1", (original_wan_src_phy == 1) ? 1 : 0);
+		add_option(o_wsp, "LAN2", "2", (original_wan_src_phy == 2) ? 1 : 0);
 	}
-	else if(wan_stb_x == "5") {
-		if(vlan_filter) {
-			$("vlan_cpu").style.display = "";
-			$("vlan_iptv").style.display = "";
-			$("vlan_lan3").style.display = "";
-			$("vlan_lan4").style.display = "";
-		}
-		$("vlan_lan1").style.display = "none";
-		$("vlan_lan2").style.display = "none";
-		add_option(document.form.wan_src_phy, "LAN3", "3", (original_wan_src_phy == 3) ? 1 : 0);
-		add_option(document.form.wan_src_phy, "LAN4", "4", (original_wan_src_phy == 4) ? 1 : 0);
-	}
-	else if(wan_stb_x == "6") {
-		if(vlan_filter) {
-			$("vlan_cpu").style.display = "";
-			$("vlan_iptv").style.display = "";
-			$("vlan_lan1").style.display = "";
-			$("vlan_lan2").style.display = "";
-		}
-		$("vlan_lan3").style.display = "none";
-		$("vlan_lan4").style.display = "none";
-		add_option(document.form.wan_src_phy, "LAN1", "1", (original_wan_src_phy == 1) ? 1 : 0);
-		add_option(document.form.wan_src_phy, "LAN2", "2", (original_wan_src_phy == 2) ? 1 : 0);
-	}
-	else if(wan_stb_x == "7") {
-		if(vlan_filter) {
-			$("vlan_cpu").style.display = "";
-			$("vlan_iptv").style.display = "";
-			$("vlan_lan1").style.display = "";
-			$("vlan_lan2").style.display = "";
-			$("vlan_lan3").style.display = "";
-		}
-		$("vlan_lan4").style.display = "none";
-		add_option(document.form.wan_src_phy, "LAN1", "1", (original_wan_src_phy == 1) ? 1 : 0);
-		add_option(document.form.wan_src_phy, "LAN2", "2", (original_wan_src_phy == 2) ? 1 : 0);
-		add_option(document.form.wan_src_phy, "LAN3", "3", (original_wan_src_phy == 3) ? 1 : 0);
+	else if(wan_stb_x == 7) {
+		vlan_l1 = vlan_filter;
+		vlan_l2 = vlan_filter;
+		vlan_l3 = vlan_filter;
+		add_option(o_wsp, "LAN1", "1", (original_wan_src_phy == 1) ? 1 : 0);
+		add_option(o_wsp, "LAN2", "2", (original_wan_src_phy == 2) ? 1 : 0);
+		add_option(o_wsp, "LAN3", "3", (original_wan_src_phy == 3) ? 1 : 0);
 	}
 
-	change_viptv_mode(vlan_filter);
+	showhide_div("vlan_inet", vlan_filter);
+	showhide_div("vlan_iptv", vlan_filter);
+	showhide_div("vlan_lan1", vlan_l1);
+	showhide_div("vlan_lan2", vlan_l2);
+	showhide_div("vlan_lan3", vlan_l3);
+	showhide_div("vlan_lan4", vlan_l4);
+
+	change_viptv_tag(vlan_filter);
 }
 
-function change_viptv_mode(vf){
-	var v = (document.form.viptv_mode.value == "2" && vf) ? 1 : 0;
+function change_viptv_tag(v){
+	if (v)
+		v = (document.form.vlan_vid_cpu.value !== document.form.vlan_vid_iptv.value);
+	showhide_div("viptv_mode", v);
+	inputCtrl(document.form.viptv_mode, v);
+	change_viptv_mode(v);
+}
+
+function change_viptv_mode(v){
+	if (v)
+		v = (document.form.viptv_mode.value == "2");
 	showhide_div("tbl_viptv_sect", v);
 	inputCtrl(document.form.viptv_ipaddr, v);
 	inputCtrl(document.form.viptv_netmask, v);
 	inputCtrl(document.form.viptv_gateway, v);
 }
 
-function click_untag_lan(lan_port) {
-	if (lan_port == 1)
-		document.form.vlan_tag_lan1.value = (document.form.untag_lan1.checked) ? "0" : "1";
-	else if (lan_port == 2)
-		document.form.vlan_tag_lan2.value = (document.form.untag_lan2.checked) ? "0" : "1";
-	else if (lan_port == 3)
-		document.form.vlan_tag_lan3.value = (document.form.untag_lan3.checked) ? "0" : "1";
-	else if (lan_port == 4)
-		document.form.vlan_tag_lan4.value = (document.form.untag_lan4.checked) ? "0" : "1";
+function click_untag_lan(o,lp) {
+	var v = (o.checked) ? "0" : "1";
+	if (lp == 1)
+		document.form.vlan_tag_lan1.value = v;
+	else if (lp == 2)
+		document.form.vlan_tag_lan2.value = v;
+	else if (lp == 3)
+		document.form.vlan_tag_lan3.value = v;
+	else if (lp == 4)
+		document.form.vlan_tag_lan4.value = v;
 }
 
 function AuthSelection(auth){
@@ -706,11 +658,9 @@ function simplyMAC(fullMAC){
 
 
 </script>
-
 <style>
-    .wlan_filter {width: 50px;}
+.wlan_filter {width: 50px;}
 </style>
-
 </head>
 
 <body onload="initial();" onunLoad="return unload_body();">
@@ -1184,20 +1134,20 @@ function simplyMAC(fullMAC){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="vlan_cpu">
+                                        <tr id="vlan_inet">
                                             <th>VLAN CPU (Internet):</th>
                                             <td>
-                                                <span class="input-prepend"><span class="add-on">VID</span><input type="text" name="vlan_vid_cpu" class="wlan_filter" size="4" maxlength="4" value="<% nvram_get_x("", "vlan_vid_cpu"); %>"/>&nbsp;&nbsp;</span>
-                                                <span class="input-prepend"><span class="add-on">PRIO</span><input type="text" name="vlan_pri_cpu" class="wlan_filter" size="2" maxlength="1" value="<% nvram_get_x("", "vlan_pri_cpu"); %>"/></span>
+                                                <span class="input-prepend"><span class="add-on">VID</span><input type="text" name="vlan_vid_cpu" class="wlan_filter" size="4" maxlength="4" value="<% nvram_get_x("", "vlan_vid_cpu"); %>" onkeypress="return is_number(this,event);" onblur="change_viptv_tag(1);"/>&nbsp;&nbsp;</span>
+                                                <span class="input-prepend"><span class="add-on">PRIO</span><input type="text" name="vlan_pri_cpu" class="wlan_filter" size="2" maxlength="1" value="<% nvram_get_x("", "vlan_pri_cpu"); %>" onkeypress="return is_number(this,event);"/></span>
                                             </td>
                                         </tr>
                                         <tr id="vlan_iptv">
                                             <th>VLAN CPU (IPTV):</th>
                                             <td>
-                                                <span class="input-prepend"><span class="add-on">VID</span><input type="text" name="vlan_vid_iptv" class="wlan_filter" size="4" maxlength="4" value="<% nvram_get_x("", "vlan_vid_iptv"); %>"/>&nbsp;&nbsp;</span>
-                                                <span class="input-prepend"><span class="add-on">PRIO</span><input type="text" name="vlan_pri_iptv" class="wlan_filter" size="2" maxlength="1" value="<% nvram_get_x("", "vlan_pri_iptv"); %>"/></span>
+                                                <span class="input-prepend"><span class="add-on">VID</span><input type="text" name="vlan_vid_iptv" class="wlan_filter" size="4" maxlength="4" value="<% nvram_get_x("", "vlan_vid_iptv"); %>" onkeypress="return is_number(this,event);" onblur="change_viptv_tag(1);"/>&nbsp;&nbsp;</span>
+                                                <span class="input-prepend"><span class="add-on">PRIO</span><input type="text" name="vlan_pri_iptv" class="wlan_filter" size="2" maxlength="1" value="<% nvram_get_x("", "vlan_pri_iptv"); %>" onkeypress="return is_number(this,event);"/></span>
                                                 <span class="input-prepend">&nbsp;
-                                                <select name="viptv_mode" class="input" style="width: 95px;" onchange="change_viptv_mode(1);">
+                                                <select name="viptv_mode" id="viptv_mode" class="input" style="width: 95px;" onchange="change_viptv_mode(1);">
                                                     <option value="0" <% nvram_match_x("", "viptv_mode", "0", "selected"); %>>DHCP (*)</option>
                                                     <option value="1" <% nvram_match_x("", "viptv_mode", "1", "selected"); %>>ZeroConf</option>
                                                     <option value="2" <% nvram_match_x("", "viptv_mode", "2", "selected"); %>>Static IP</option>
@@ -1208,33 +1158,33 @@ function simplyMAC(fullMAC){
                                         <tr id="vlan_lan1">
                                             <th>VLAN LAN1:</th>
                                             <td>
-                                                <span class="input-prepend"><span class="add-on">VID</span><input type="text" name="vlan_vid_lan1" class="wlan_filter" size="4" maxlength="4" value="<% nvram_get_x("", "vlan_vid_lan1"); %>"/>&nbsp;&nbsp;</span>
-                                                <span class="input-prepend"><span class="add-on">PRIO</span><input type="text" name="vlan_pri_lan1" class="wlan_filter" size="2" maxlength="1" value="<% nvram_get_x("", "vlan_pri_lan1"); %>"/>&nbsp;&nbsp;</span>
-                                                <label class="checkbox inline"><input type="checkbox" name="untag_lan1" value="" style="margin-left:10;" onclick="click_untag_lan(1);" <% nvram_match_x("", "vlan_tag_lan1", "0", "checked"); %>/><#UntagVLAN#></label>
+                                                <span class="input-prepend"><span class="add-on">VID</span><input type="text" name="vlan_vid_lan1" class="wlan_filter" size="4" maxlength="4" value="<% nvram_get_x("", "vlan_vid_lan1"); %>" onkeypress="return is_number(this,event);"/>&nbsp;&nbsp;</span>
+                                                <span class="input-prepend"><span class="add-on">PRIO</span><input type="text" name="vlan_pri_lan1" class="wlan_filter" size="2" maxlength="1" value="<% nvram_get_x("", "vlan_pri_lan1"); %>" onkeypress="return is_number(this,event);"/>&nbsp;&nbsp;</span>
+                                                <label class="checkbox inline"><input type="checkbox" name="untag_lan1" value="" style="margin-left:10;" onclick="click_untag_lan(this,1);" <% nvram_match_x("", "vlan_tag_lan1", "0", "checked"); %>/><#UntagVLAN#></label>
                                             </td>
                                         </tr>
                                         <tr id="vlan_lan2">
                                             <th>VLAN LAN2:</th>
                                             <td>
-                                                <span class="input-prepend"><span class="add-on">VID</span><input type="text" name="vlan_vid_lan2" class="wlan_filter" size="4" maxlength="4" value="<% nvram_get_x("", "vlan_vid_lan2"); %>"/>&nbsp;&nbsp;</span>
-                                                <span class="input-prepend"><span class="add-on">PRIO</span><input type="text" name="vlan_pri_lan2" class="wlan_filter" size="2" maxlength="1" value="<% nvram_get_x("", "vlan_pri_lan2"); %>"/>&nbsp;&nbsp;</span>
-                                                <label class="checkbox inline"><input type="checkbox" name="untag_lan2" value="" style="margin-left:10;" onclick="click_untag_lan(2);" <% nvram_match_x("", "vlan_tag_lan2", "0", "checked"); %>/><#UntagVLAN#></label>
+                                                <span class="input-prepend"><span class="add-on">VID</span><input type="text" name="vlan_vid_lan2" class="wlan_filter" size="4" maxlength="4" value="<% nvram_get_x("", "vlan_vid_lan2"); %>" onkeypress="return is_number(this,event);"/>&nbsp;&nbsp;</span>
+                                                <span class="input-prepend"><span class="add-on">PRIO</span><input type="text" name="vlan_pri_lan2" class="wlan_filter" size="2" maxlength="1" value="<% nvram_get_x("", "vlan_pri_lan2"); %>" onkeypress="return is_number(this,event);"/>&nbsp;&nbsp;</span>
+                                                <label class="checkbox inline"><input type="checkbox" name="untag_lan2" value="" style="margin-left:10;" onclick="click_untag_lan(this,2);" <% nvram_match_x("", "vlan_tag_lan2", "0", "checked"); %>/><#UntagVLAN#></label>
                                             </td>
                                         </tr>
                                         <tr id="vlan_lan3">
                                             <th>VLAN LAN3:</th>
                                             <td>
-                                                <span class="input-prepend"><span class="add-on">VID</span><input type="text" name="vlan_vid_lan3" class="wlan_filter" size="4" maxlength="4" value="<% nvram_get_x("", "vlan_vid_lan3"); %>"/>&nbsp;&nbsp;</span>
-                                                <span class="input-prepend"><span class="add-on">PRIO</span><input type="text" name="vlan_pri_lan3" class="wlan_filter" size="2" maxlength="1" value="<% nvram_get_x("", "vlan_pri_lan3"); %>"/>&nbsp;&nbsp;</span>
-                                                <label class="checkbox inline"><input type="checkbox" name="untag_lan3" value="" style="margin-left:10;" onclick="click_untag_lan(3);" <% nvram_match_x("", "vlan_tag_lan3", "0", "checked"); %>/><#UntagVLAN#></label>
+                                                <span class="input-prepend"><span class="add-on">VID</span><input type="text" name="vlan_vid_lan3" class="wlan_filter" size="4" maxlength="4" value="<% nvram_get_x("", "vlan_vid_lan3"); %>" onkeypress="return is_number(this,event);"/>&nbsp;&nbsp;</span>
+                                                <span class="input-prepend"><span class="add-on">PRIO</span><input type="text" name="vlan_pri_lan3" class="wlan_filter" size="2" maxlength="1" value="<% nvram_get_x("", "vlan_pri_lan3"); %>" onkeypress="return is_number(this,event);"/>&nbsp;&nbsp;</span>
+                                                <label class="checkbox inline"><input type="checkbox" name="untag_lan3" value="" style="margin-left:10;" onclick="click_untag_lan(this,3);" <% nvram_match_x("", "vlan_tag_lan3", "0", "checked"); %>/><#UntagVLAN#></label>
                                             </td>
                                         </tr>
                                         <tr id="vlan_lan4">
                                             <th>VLAN LAN4:</th>
                                             <td>
-                                                <span class="input-prepend"><span class="add-on">VID</span><input type="text" name="vlan_vid_lan4" class="wlan_filter" size="4" maxlength="4" value="<% nvram_get_x("", "vlan_vid_lan4"); %>"/>&nbsp;&nbsp;</span>
-                                                <span class="input-prepend"><span class="add-on">PRIO</span><input type="text" name="vlan_pri_lan4" class="wlan_filter" size="2" maxlength="1" value="<% nvram_get_x("", "vlan_pri_lan4"); %>"/>&nbsp;&nbsp;</span>
-                                                <label class="checkbox inline"><input type="checkbox" name="untag_lan4" value="" style="margin-left:10;" onclick="click_untag_lan(4);" <% nvram_match_x("", "vlan_tag_lan4", "0", "checked"); %>/><#UntagVLAN#></label>
+                                                <span class="input-prepend"><span class="add-on">VID</span><input type="text" name="vlan_vid_lan4" class="wlan_filter" size="4" maxlength="4" value="<% nvram_get_x("", "vlan_vid_lan4"); %>" onkeypress="return is_number(this,event);"/>&nbsp;&nbsp;</span>
+                                                <span class="input-prepend"><span class="add-on">PRIO</span><input type="text" name="vlan_pri_lan4" class="wlan_filter" size="2" maxlength="1" value="<% nvram_get_x("", "vlan_pri_lan4"); %>" onkeypress="return is_number(this,event);"/>&nbsp;&nbsp;</span>
+                                                <label class="checkbox inline"><input type="checkbox" name="untag_lan4" value="" style="margin-left:10;" onclick="click_untag_lan(this,4);" <% nvram_match_x("", "vlan_tag_lan4", "0", "checked"); %>/><#UntagVLAN#></label>
                                             </td>
                                         </tr>
                                     </table>

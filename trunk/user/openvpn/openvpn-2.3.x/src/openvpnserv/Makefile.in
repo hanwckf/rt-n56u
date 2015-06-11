@@ -261,6 +261,8 @@ OPTIONAL_SELINUX_LIBS = @OPTIONAL_SELINUX_LIBS@
 OPTIONAL_SYSTEMD_LIBS = @OPTIONAL_SYSTEMD_LIBS@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
+P11KIT_CFLAGS = @P11KIT_CFLAGS@
+P11KIT_LIBS = @P11KIT_LIBS@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -376,9 +378,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(top_srcdir)/build/ltrc.inc $(am_
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/openvpnserv/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign src/openvpnserv/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu src/openvpnserv/Makefile
+	  $(AUTOMAKE) --foreign src/openvpnserv/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

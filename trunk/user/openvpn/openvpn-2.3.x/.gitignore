@@ -26,6 +26,7 @@ config.h
 config.log
 config.status
 configure.h
+doxygen/
 stamp-h1
 
 version.sh

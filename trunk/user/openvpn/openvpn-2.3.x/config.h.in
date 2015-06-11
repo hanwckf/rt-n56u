@@ -9,6 +9,9 @@
 /* Use memory debugging function in OpenSSL */
 #undef CRYPTO_MDEBUG
 
+/* p11-kit proxy */
+#undef DEFAULT_PKCS11_MODULE
+
 /* Use dmalloc memory debugging library */
 #undef DMALLOC
 
@@ -334,9 +337,6 @@
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
 
-/* Define to 1 if you have the <netinet/if_ether.h> header file. */
-#undef HAVE_NETINET_IF_ETHER_H
-
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
 
@@ -393,9 +393,6 @@
 
 /* Define to 1 if you have the <resolv.h> header file. */
 #undef HAVE_RESOLV_H
-
-/* Define to 1 if you have the `res_init' function. */
-#undef HAVE_RES_INIT
 
 /* Define to 1 if you have the `sd_booted' function. */
 #undef HAVE_SD_BOOTED

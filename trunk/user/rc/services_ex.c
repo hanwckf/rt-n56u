@@ -397,6 +397,10 @@ start_dns_dhcpd(int is_ap_mode)
 		fprintf(fp, "dhcp-authoritative\n");
 	}
 
+#if (BOARD_NUM_USB_PORTS > 0)
+	fprintf(fp, "tftp-no-fail\n");
+#endif
+
 	fprintf(fp, "conf-file=%s/dnsmasq.conf\n", storage_dir);
 	fclose(fp);
 

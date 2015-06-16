@@ -126,7 +126,7 @@
 #define MAX_PrefixLen			128
 
 /* SLAAC (RFC4862) Constants and Derived Values */
-#define MIN_AdvValidLifetime		7203	/* slight >2 hours in secs */
+#define MIN_AdvValidLifetime		7200	/* hours in secs */
 
 /*
  * Mobile IPv6 extensions, off by default

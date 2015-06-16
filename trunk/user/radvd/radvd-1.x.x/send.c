@@ -217,7 +217,15 @@ int send_ra(struct Interface *iface, struct in6_addr *dest)
 
 			if (iface->cease_adv && prefix->DeprecatePrefixFlag) {
 				/* RFC4862, 5.5.3, step e) */
-				pinfo->nd_opt_pi_valid_time = htonl(MIN_AdvValidLifetime);
+				if (prefix->curr_validlft < MIN_AdvValidLifetime) {
+					if (prefix->DecrementLifetimesFlag) {
+						decrement_lifetime(secs_since_last_ra,
+						&prefix->curr_validlft);
+					}
+					pinfo->nd_opt_pi_valid_time = htonl(prefix->curr_validlft);
+				} else {
+					pinfo->nd_opt_pi_valid_time = htonl(MIN_AdvValidLifetime);
+				}
 				pinfo->nd_opt_pi_preferred_time = 0;
 			} else {
 				if (prefix->DecrementLifetimesFlag) {

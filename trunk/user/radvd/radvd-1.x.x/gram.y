@@ -655,11 +655,15 @@ prefixparms	: T_AdvOnLink SWITCH ';'
 		}
 		| T_DeprecatePrefix SWITCH ';'
 		{
-			prefix->DeprecatePrefixFlag = $2;
+			if (prefix) {
+				prefix->DeprecatePrefixFlag = $2;
+			}
 		}
 		| T_DecrementLifetimes SWITCH ';'
 		{
-			prefix->DecrementLifetimesFlag = $2;
+			if (prefix) {
+				prefix->DecrementLifetimesFlag = $2;
+			}
 		}
 		| T_Base6Interface name ';'
 		{

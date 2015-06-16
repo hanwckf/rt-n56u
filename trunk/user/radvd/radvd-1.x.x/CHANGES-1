@@ -1,3 +1,6 @@
+2014/11/16	Fix config file crash when no auto-select prefixes are found
+			debian-bug-716831
+
 2014/07/21	Fix capitalization of AdvLifeTime in scanner.l
 		release 1.15
 

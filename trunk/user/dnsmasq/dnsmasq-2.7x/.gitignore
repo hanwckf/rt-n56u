@@ -3,7 +3,7 @@ src/*.mo
 src/dnsmasq.pot
 src/dnsmasq
 src/dnsmasq_baseline
-src/.configured
+src/.copts_*
 contrib/wrt/dhcp_lease_time
 contrib/wrt/dhcp_release
 debian/base/

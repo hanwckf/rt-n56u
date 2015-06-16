@@ -1,11 +1,80 @@
-version 2.72+
+version 2.73
+            Fix crash at startup when an empty suffix is supplied to
+	    --conf-dir, also trivial memory leak. Thanks to 
+	    Tomas Hozza for spotting this.
+
+	    Remove floor of 4096 on advertised EDNS0 packet size when 
+	    DNSSEC in use, the original rationale for this has long gone.
+	    Thanks to Anders Kaseorg for spotting this.
+
+	    Use inotify for checking on updates to /etc/resolv.conf and
+	    friends under Linux. This fixes race conditions when the files are 
+	    updated rapidly and saves CPU by noy polling. To build
+	    a binary that runs on old Linux kernels without inotify,
+	    use make COPTS=-DNO_INOTIFY
+
+	    Fix breakage of --domain=<domain>,<subnet>,local - only reverse
+	    queries were intercepted. THis appears to have been broken 
+	    since 2.69. Thanks to Josh Stone for finding the bug.
+
+	    Eliminate IPv6 privacy addresses and deprecated addresses from
+	    the answers given by --interface-name. Note that reverse queries
+	    (ie looking for names, given addresses) are not affected. 
+	    Thanks to Michael Gorbach for the suggestion.
+
+	    Fix crash in DNSSEC code with long RRs. Thanks to Marco Davids
+	    for the bug report.
+	    
+	    Add --ignore-address option. Ignore replies to A-record 
+	    queries which include the specified address. No error is
+	    generated, dnsmasq simply continues to listen for another 
+	    reply. This is useful to defeat blocking strategies which
+	    rely on quickly supplying a forged answer to a DNS 
+	    request for certain domains, before the correct answer can
+            arrive. Thanks to Glen Huang for the patch.
+	
+	    Revisit the part of DNSSEC validation which determines if an 
+	    unsigned answer is legit, or is in some part of the DNS 
+	    tree which should be signed. Dnsmasq now works from the 
+	    DNS root downward looking for the limit of signed 
+	    delegations, rather than working bottom up. This is 
+	    both more correct, and less likely to trip over broken 
+	    nameservers in the unsigned parts of the DNS tree 
+	    which don't respond well to DNSSEC queries.
+
+	    Add --log-queries=extra option, which makes logs easier
+	    to search automatically.
+
+	    Add --min-cache-ttl option. I've resisted this for a long 
+	    time, on the grounds that disbelieving TTLs is never a 
+	    good idea, but I've been persuaded that there are 
+	    sometimes reasons to do it. (Step forward, GFW).
+	    To avoid misuse, there's a hard limit on the TTL 
+	    floor of one hour. Thansk to RinSatsuki for the patch.
+
 	    Cope with multiple interfaces with the same link-local 
 	    address. (IPv6 addresses are scoped, so this is allowed.)
 	    Thanks to Cory Benfield for help with this.
 
-	    Fix crash at startup when an empty suffix is supplied to
-	    --conf-dir, also trivial memory leak. Thanks to 
-	    Tomas Hozza for spotting this.
+	    Add --dhcp-hostsdir. This allows addition of new host
+	    configurations to a running dnsmasq instance much more 
+	    cheaply than having dnsmasq re-read all its existing
+	    configuration each time. 
+	
+	    Don't reply to DHCPv6 SOLICIT messages if we're not 
+	    configured to do stateful DHCPv6. Thanks to Win King Wan 
+	    for the patch.
+
+	    Fix broken DNSSEC validation of ECDSA signatures.
+
+	    Add --dnssec-timestamp option, which provides an automatic
+	    way to detect when the system time becomes valid after 
+	    boot on systems without an RTC, whilst allowing DNS 
+	    queries before the clock is valid so that NTP can run. 
+	    Thanks to Kevin Darbyshire-Bryant for developing this idea.
+
+	    Add --tftp-no-fail option. Thanks to Stefan Tomanek for
+	    the patch.
 
 	    Fix crash caused by looking up servers.bind, CHAOS text 
 	    record, when more than about five --servers= lines are 
@@ -13,10 +82,13 @@ version 2.72+
 	    which causes a crash later. Thanks to Matt Coddington for 
 	    sterling work chasing this down.
 
-	    Fix crash on receipt of certain malformed DNS requests. Thanks
-	    to Nick Sampanis for spotting the problem.
+	    Fix crash on receipt of certain malformed DNS requests.
+	    Thanks to Nick Sampanis for spotting the problem.
+	    Note that this is could allow the dnsmasq process's
+	    memory to be read by an attacker under certain
+	    circumstances, so it has a CVE, CVE-2015-3294 
 
-	    Fix crash in authoritative DNS code, if a .arpa zone 
+            Fix crash in authoritative DNS code, if a .arpa zone 
 	    is declared as authoritative, and then a PTR query which
 	    is not to be treated as authoritative arrived. Normally, 
 	    directly declaring .arpa zone as authoritative is not 
@@ -31,9 +103,39 @@ version 2.72+
 	    Previously we provided correct answers to PTR queries
 	    in such zones (including NS and SOA) but not direct
 	    NS and SOA queries. Thanks to Johnny S. Lee for 
-	    pointing out the problem.
-	
+ 	    pointing out the problem.
 
+	    Fix logging of DHCPREPLY which should be suppressed 
+	    by quiet-dhcp6. Thanks to J. Pablo Abonia for 
+	    spotting the problem.
+
+	    Try and handle net connections with broken fragmentation 
+	    that lose large UDP packets. If a server times out, 
+            reduce the maximum UDP packet size field in the EDNS0
+	    header to 1280 bytes. If it then answers, make that
+	    change permanent.
+
+	    Check IPv4-mapped IPv6 addresses when --stop-rebind
+	    is active. Thanks to Jordan Milne for spotting this.
+
+	    Allow DHCPv4 options T1 and T2 to be set using --dhcp-option.
+	    Thanks to Kevin Benton for patches and work on this.
+
+            Fix code for DHCPCONFIRM DHCPv6 messages to confirm addresses
+	    in the correct subnet, even of not in dynamic address 
+	    allocation range. Thanks to Steve Hirsch for spotting
+	    the problem.
+
+	    Add AddDhcpLease and DeleteDhcpLease DBus methods. Thanks
+	    to Nicolas Cavallari for the patch.
+
+	    Allow configuration of router advertisements without the 
+	    "on-link" bit set. Thanks to Neil Jerram for the patch.
+
+	    Extend --bridge-interface to DHCPv6 and router 
+	    advertisements. Thanks to Neil Jerram for the patch.
+	
+	
 version 2.72
             Add ra-advrouter mode, for RFC-3775 mobile IPv6 support.
 
@@ -77,7 +179,7 @@ version 2.72
             Fix problem with --local-service option on big-endian platforms
 	    Thanks to Richard Genoud for the patch.
 
-
+	
 version 2.71
             Subtle change to error handling to help DNSSEC validation 
 	    when servers fail to provide NODATA answers for 

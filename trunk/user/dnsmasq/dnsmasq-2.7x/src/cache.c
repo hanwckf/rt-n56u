@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2014 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2015 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -322,7 +322,7 @@ static int is_expired(time_t now, struct crec *crecp)
   return 1;
 }
 
-static int cache_scan_free(char *name, struct all_addr *addr, time_t now, unsigned short flags)
+static struct crec *cache_scan_free(char *name, struct all_addr *addr, time_t now, unsigned short flags)
 {
   /* Scan and remove old entries.
      If (flags & F_FORWARD) then remove any forward entries for name and any expired
@@ -331,8 +331,8 @@ static int cache_scan_free(char *name, struct all_addr *addr, time_t now, unsign
      entries in the whole cache.
      If (flags == 0) remove any expired entries in the whole cache. 
 
-     In the flags & F_FORWARD case, the return code is valid, and returns zero if the
-     name exists in the cache as a HOSTS or DHCP entry (these are never deleted)
+     In the flags & F_FORWARD case, the return code is valid, and returns a non-NULL pointer
+     to a cache entry if the name exists in the cache as a HOSTS or DHCP entry (these are never deleted)
 
      We take advantage of the fact that hash chains have stuff in the order <reverse>,<other>,<immortal>
      so that when we hit an entry which isn't reverse and is immortal, we're done. */
@@ -361,7 +361,7 @@ static int cache_scan_free(char *name, struct all_addr *addr, time_t now, unsign
 		  (((crecp->flags | flags) & F_CNAME) && !(crecp->flags & (F_DNSKEY | F_DS))))
 		{
 		  if (crecp->flags & (F_HOSTS | F_DHCP | F_CONFIG))
-		    return 0;
+		    return crecp;
 		  *up = crecp->hash_next;
 		  cache_unlink(crecp);
 		  cache_free(crecp);
@@ -378,7 +378,7 @@ static int cache_scan_free(char *name, struct all_addr *addr, time_t now, unsign
 		   crecp->addr.sig.type_covered == addr->addr.dnssec.type))
 		{
 		  if (crecp->flags & F_CONFIG)
-		    return 0;
+		    return crecp;
 		  *up = crecp->hash_next;
 		  cache_unlink(crecp);
 		  cache_free(crecp);
@@ -423,7 +423,7 @@ static int cache_scan_free(char *name, struct all_addr *addr, time_t now, unsign
 	    up = &crecp->hash_next;
     }
   
-  return 1;
+  return NULL;
 }
 
 /* Note: The normal calling sequence is
@@ -461,9 +461,11 @@ struct crec *cache_insert(char *name, struct all_addr *addr,
   if (flags & (F_IPV4 | F_IPV6 | F_CNAME))
     {
       log_query(flags | F_UPSTREAM, name, addr, NULL);
-      /* Don;t mess with TTL for DNSSEC records. */
+      /* Don't mess with TTL for DNSSEC records. */
       if (daemon->max_cache_ttl != 0 && daemon->max_cache_ttl < ttl)
 	ttl = daemon->max_cache_ttl;
+      if (daemon->min_cache_ttl != 0 && daemon->min_cache_ttl > ttl)
+	ttl = daemon->min_cache_ttl;
     }
 
   /* if previous insertion failed give up now. */
@@ -471,10 +473,26 @@ struct crec *cache_insert(char *name, struct all_addr *addr,
     return NULL;
   
   /* First remove any expired entries and entries for the name/address we
-     are currently inserting. Fail if we attempt to delete a name from
-     /etc/hosts or DHCP. */
-  if (!cache_scan_free(name, addr, now, flags))
+     are currently inserting. */
+  if ((new = cache_scan_free(name, addr, now, flags)))
     {
+      /* We're trying to insert a record over one from 
+	 /etc/hosts or DHCP, or other config. If the 
+	 existing record is for an A or AAAA and
+	 the record we're trying to insert is the same, 
+	 just drop the insert, but don't error the whole process. */
+      if ((flags & (F_IPV4 | F_IPV6)) && (flags & F_FORWARD))
+	{
+	  if ((flags & F_IPV4) && (new->flags & F_IPV4) &&
+	      new->addr.addr.addr.addr4.s_addr == addr->addr.addr4.s_addr)
+	    return new;
+#ifdef HAVE_IPV6
+	  else if ((flags & F_IPV6) && (new->flags & F_IPV6) &&
+		   IN6_ARE_ADDR_EQUAL(&new->addr.addr.addr.addr6, &addr->addr.addr6))
+	    return new;
+#endif
+	}
+      
       insert_error = 1;
       return NULL;
     }
@@ -817,27 +835,42 @@ static void add_hosts_entry(struct crec *cache, struct all_addr *addr, int addrl
      Only insert each unique address once into this hashing structure.
 
      This complexity avoids O(n^2) divergent CPU use whilst reading
-     large (10000 entry) hosts files. */
+     large (10000 entry) hosts files. 
+
+     Note that we only do this process when bulk-reading hosts files, 
+     for incremental reads, rhash is NULL, and we use cache lookups
+     instead.
+  */
   
-  /* hash address */
-  for (j = 0, i = 0; i < addrlen; i++)
-    j = (j*2 +((unsigned char *)addr)[i]) % hashsz;
-  
-  for (lookup = rhash[j]; lookup; lookup = lookup->next)
-    if ((lookup->flags & cache->flags & (F_IPV4 | F_IPV6)) &&
-	memcmp(&lookup->addr.addr, addr, addrlen) == 0)
-      {
-	cache->flags &= ~F_REVERSE;
-	break;
-      }
-  
-  /* maintain address hash chain, insert new unique address */
-  if (!lookup)
+  if (rhash)
     {
-      cache->next = rhash[j];
-      rhash[j] = cache;
+      /* hash address */
+      for (j = 0, i = 0; i < addrlen; i++)
+	j = (j*2 +((unsigned char *)addr)[i]) % hashsz;
+      
+      for (lookup = rhash[j]; lookup; lookup = lookup->next)
+	if ((lookup->flags & cache->flags & (F_IPV4 | F_IPV6)) &&
+	    memcmp(&lookup->addr.addr, addr, addrlen) == 0)
+	  {
+	    cache->flags &= ~F_REVERSE;
+	    break;
+	  }
+      
+      /* maintain address hash chain, insert new unique address */
+      if (!lookup)
+	{
+	  cache->next = rhash[j];
+	  rhash[j] = cache;
+	}
     }
-  
+  else
+    {
+      /* incremental read, lookup in cache */
+      lookup = cache_find_by_addr(NULL, addr, 0, cache->flags & (F_IPV4 | F_IPV6));
+      if (lookup && lookup->flags & F_HOSTS)
+	cache->flags &= ~F_REVERSE;
+    }
+
   cache->uid = index;
   memcpy(&cache->addr.addr, addr, addrlen);  
   cache_hash(cache);
@@ -894,7 +927,7 @@ static int gettok(FILE *f, char *token)
     }
 }
 
-static int read_hostsfile(char *filename, unsigned int index, int cache_size, struct crec **rhash, int hashsz)
+int read_hostsfile(char *filename, unsigned int index, int cache_size, struct crec **rhash, int hashsz)
 {  
   FILE *f = fopen(filename, "r");
   char *token = daemon->namebuff, *domain_suffix = NULL;
@@ -940,7 +973,7 @@ static int read_hostsfile(char *filename, unsigned int index, int cache_size, st
       addr_count++;
       
       /* rehash every 1000 names. */
-      if ((name_count - cache_size) > 1000)
+      if (rhash && ((name_count - cache_size) > 1000))
 	{
 	  rehash(name_count);
 	  cache_size = name_count;
@@ -987,7 +1020,9 @@ static int read_hostsfile(char *filename, unsigned int index, int cache_size, st
     } 
 
   fclose(f);
-  rehash(name_count);
+  
+  if (rhash)
+    rehash(name_count); 
   
   my_syslog(LOG_INFO, _("read %s - %d addresses"), filename, addr_count);
   
@@ -1098,16 +1133,22 @@ void cache_reload(void)
     {
       if (daemon->cachesize > 0)
 	my_syslog(LOG_INFO, _("cleared cache"));
-      return;
     }
-    
-  if (!option_bool(OPT_NO_HOSTS))
-    total_size = read_hostsfile(HOSTSFILE, SRC_HOSTS, total_size, (struct crec **)daemon->packet, revhashsz);
-  	   
-  daemon->addn_hosts = expand_filelist(daemon->addn_hosts);
-  for (ah = daemon->addn_hosts; ah; ah = ah->next)
-    if (!(ah->flags & AH_INACTIVE))
-      total_size = read_hostsfile(ah->fname, ah->index, total_size, (struct crec **)daemon->packet, revhashsz);
+  else
+    {
+      if (!option_bool(OPT_NO_HOSTS))
+	total_size = read_hostsfile(HOSTSFILE, SRC_HOSTS, total_size, (struct crec **)daemon->packet, revhashsz);
+      
+      daemon->addn_hosts = expand_filelist(daemon->addn_hosts);
+      for (ah = daemon->addn_hosts; ah; ah = ah->next)
+	if (!(ah->flags & AH_INACTIVE))
+	  total_size = read_hostsfile(ah->fname, ah->index, total_size, (struct crec **)daemon->packet, revhashsz);
+    }
+
+#ifdef HAVE_INOTIFY
+  set_dynamic_inotify(AH_HOSTS, total_size, (struct crec **)daemon->packet, revhashsz);
+#endif
+  
 } 
 
 #ifdef HAVE_DHCP
@@ -1358,6 +1399,20 @@ int cache_make_stat(struct txt_record *t)
   return 1;
 }
 
+/* There can be names in the cache containing control chars, don't 
+   mess up logging or open security holes. */
+static char *sanitise(char *name)
+{
+  unsigned char *r;
+  if (name)
+    for (r = (unsigned char *)name; *r; r++)
+      if (!isprint((int)*r))
+	return "<name unprintable>";
+
+  return name;
+}
+
+
 void dump_cache(time_t now)
 {
   struct server *serv, *serv1;
@@ -1411,9 +1466,9 @@ void dump_cache(time_t now)
 	    *a = 0;
 	    if (strlen(n) == 0 && !(cache->flags & F_REVERSE))
 	      n = "<Root>";
-	    p += sprintf(p, "%-30.30s ", n);
+	    p += sprintf(p, "%-30.30s ", sanitise(n));
 	    if ((cache->flags & F_CNAME) && !is_outdated_cname_pointer(cache))
-	      a = cache_get_cname_target(cache);
+	      a = sanitise(cache_get_cname_target(cache));
 #ifdef HAVE_DNSSEC
 	    else if (cache->flags & F_DS)
 	      {
@@ -1487,7 +1542,13 @@ char *record_source(unsigned int index)
   for (ah = daemon->addn_hosts; ah; ah = ah->next)
     if (ah->index == index)
       return ah->fname;
-  
+
+#ifdef HAVE_INOTIFY
+  for (ah = daemon->dynamic_dirs; ah; ah = ah->next)
+     if (ah->index == index)
+       return ah->fname;
+#endif
+
   return "<unknown>";
 }
 
@@ -1539,6 +1600,8 @@ void log_query(unsigned int flags, char *name, struct all_addr *addr, char *arg)
   
   if (!option_bool(OPT_LOG))
     return;
+
+  name = sanitise(name);
 
   if (addr)
     {
@@ -1622,7 +1685,16 @@ void log_query(unsigned int flags, char *name, struct all_addr *addr, char *arg)
   if (strlen(name) == 0)
     name = ".";
 
-  my_syslog(LOG_INFO, "%s %s %s %s", source, name, verb, dest);
+  if (option_bool(OPT_EXTRALOG))
+    {
+      int port = prettyprint_addr(daemon->log_source_addr, daemon->addrbuff2);
+      if (flags & F_NOEXTRA)
+	my_syslog(LOG_INFO, "* %s/%u %s %s %s %s", daemon->addrbuff2, port, source, name, verb, dest);
+      else
+	my_syslog(LOG_INFO, "%u %s/%u %s %s %s %s", daemon->log_display_id, daemon->addrbuff2, port, source, name, verb, dest);
+    }
+  else
+    my_syslog(LOG_INFO, "%s %s %s %s", source, name, verb, dest);
 }
 
  

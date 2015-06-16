@@ -251,6 +251,13 @@
 # the IP address 192.168.0.60
 #dhcp-host=id:01:02:02:04,192.168.0.60
 
+# Always give the Infiniband interface with hardware address
+# 80:00:00:48:fe:80:00:00:00:00:00:00:f4:52:14:03:00:28:05:81 the
+# ip address 192.168.0.61. The client id is derived from the prefix
+# ff:00:00:00:00:00:02:00:00:02:c9:00 and the last 8 pairs of
+# hex digits of the hardware address.
+#dhcp-host=id:ff:00:00:00:00:00:02:00:00:02:c9:00:f4:52:14:03:00:28:05:81,192.168.0.61
+
 # Always give the host with client identifier "marjorie"
 # the IP address 192.168.0.60
 #dhcp-host=id:marjorie,192.168.0.60
@@ -344,6 +351,14 @@
 
 # Ask client to poll for option changes every six hours. (RFC4242)
 #dhcp-option=option6:information-refresh-time,6h
+
+# Set option 58 client renewal time (T1). Defaults to half of the
+# lease time if not specified. (RFC2132)
+#dhcp-option=option:T1:1m
+
+# Set option 59 rebinding time (T2). Defaults to 7/8 of the
+# lease time if not specified. (RFC2132)
+#dhcp-option=option:T2:2m
 
 # Set the NTP time server address to be the same machine as
 # is running dnsmasq
@@ -485,6 +500,9 @@
 
 # Set the root directory for files available via FTP.
 #tftp-root=/var/ftpd
+
+# Do not abort if the tftp-root is unavailable
+#tftp-no-fail
 
 # Make the TFTP server more secure: with this set, only files owned by
 # the user dnsmasq is running as will be send over the net.

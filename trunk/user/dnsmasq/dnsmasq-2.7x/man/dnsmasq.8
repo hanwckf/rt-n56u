@@ -50,6 +50,10 @@ Additional hosts file. Read the specified file as well as /etc/hosts. If -h is g
 only the specified file. This option may be repeated for more than one
 additional hosts file. If a directory is given, then read all the files contained in that directory. 
 .TP
+.B --hostsdir=<path>
+Read all the hosts files contained in the directory. New or changed files
+are read automatically. See --dhcp-hostsdir for details.
+.TP
 .B \-E, --expand-hosts
 Add the domain to simple names (without a period) in /etc/hosts
 in the same way as for DHCP-derived names. Note that this does not
@@ -81,6 +85,12 @@ the upstream DNS servers.
 .B --max-cache-ttl=<time>
 Set a maximum TTL value for entries in the cache.
 .TP
+.B --min-cache-ttl=<time>
+Extend short TTL values to the time given when caching them. Note that
+artificially extending TTL values is in general a bad idea, do not do it 
+unless you have a good reason, and understand what you are doing. 
+Dnsmasq limits the value of this option to one hour, unless recompiled.
+.TP
 .B --auth-ttl=<time>
 Set the TTL value returned in answers from the authoritative server.
 .TP
@@ -98,7 +108,10 @@ only, to stop dnsmasq daemonising in production, use
 .B -k.
 .TP
 .B \-q, --log-queries
-Log the results of DNS queries handled by dnsmasq. Enable a full cache dump on receipt of SIGUSR1.
+Log the results of DNS queries handled by dnsmasq. Enable a full cache dump on receipt of SIGUSR1. If the argument "extra" is supplied, ie
+.B --log-queries=extra
+then the log has extra information at the start of each line.
+This consists of a serial number which ties together the log lines associated with an individual query, and the IP address of the requestor.
 .TP
 .B \-8, --log-facility=<facility>
 Set the facility to which dnsmasq will send syslog entries, this
@@ -293,6 +306,12 @@ an advertising web page in response to queries for unregistered names,
 instead of the correct NXDOMAIN response. This option tells dnsmasq to
 fake the correct response when it sees this behaviour. As at Sept 2003
 the IP address being returned by Verisign is 64.94.110.11
+.TP 
+.B \-B, --ignore-address=<ipaddr>
+Ignore replies to A-record queries which include the specified address. 
+No error is generated, dnsmasq simply continues to listen for another reply. 
+This is useful to defeat blocking strategies which rely on quickly supplying a
+forged answer to a DNS request for certain domain, before the correct answer can arrive.
 .TP
 .B \-f, --filterwin2k
 Later versions of windows make periodic DNS requests which don't get sensible answers from
@@ -441,7 +460,7 @@ but provides some syntactic sugar to make specifying address-to-name queries eas
 is exactly equivalent to 
 .B --server=/3.2.1.in-addr.arpa/192.168.0.1
 .TP
-.B \-A, --address=/<domain>/[domain/]<ipaddr>
+.B \-A, --address=/<domain>/[domain/][<ipaddr>]
 Specify an IP address to return for any host in the given domains.
 Queries in the domains are never forwarded and always replied to
 with the specified IP address which may be IPv4 or IPv6. To give
@@ -453,7 +472,10 @@ domain specification works in the same was as for --server, with the
 additional facility that /#/ matches any domain. Thus
 --address=/#/1.2.3.4 will always return 1.2.3.4 for any query not
 answered from /etc/hosts or DHCP and not sent to an upstream
-nameserver by a more specific --server directive.
+nameserver by a more specific --server directive. As for --server,
+one or more domains with no address returns a no-such-domain answer, so
+--address=/example.com/ is equivalent to --server=/example.com/ and returns 
+NXDOMAIN for example.com and all its subdomains.
 .TP
 .B --ipset=/<domain>/[domain/]<ipset>[,<ipset>]
 Places the resolved IP addresses of queries for the specified domains
@@ -497,7 +519,7 @@ zone files: the port, weight and priority numbers are in a different
 order. More than one SRV record for a given service/domain is allowed,
 all that match are returned.
 .TP
-.B --host-record=<name>[,<name>....][<IPv4-address>],[<IPv6-address>]
+.B --host-record=<name>[,<name>....],[<IPv4-address>],[<IPv6-address>]
 Add A, AAAA and PTR records to the DNS. This adds one or more names to
 the DNS with associated IPv4 (A) and IPv6 (AAAA) records. A name may
 appear in more than one 
@@ -655,6 +677,13 @@ that dnsmasq should be started with this flag when the platform determines that 
 reliable time is established, a SIGHUP should be sent to dnsmasq, which enables time checking, and purges the cache of DNS records
 which have not been throughly checked.
 .TP
+.B --dnssec-timestamp=<path>
+Enables an alternative way of checking the validity of the system time for DNSSEC (see --dnssec-no-timecheck). In this case, the 
+system time is considered to be valid once it becomes later than the timestamp on the specified file. The file is created and 
+its timestamp set automatically by dnsmasq. The file must be stored on a persistent filesystem, so that it and its mtime are carried 
+over system restarts. The timestamp file is created after dnsmasq has dropped root, so it must be in a location writable by the 
+unprivileged user that dnsmasq runs as.
+.TP
 .B --proxy-dnssec
 Copy the DNSSEC Authenticated Data bit from upstream servers to downstream clients and cache it.  This is an 
 alternative to having dnsmasq validate DNSSEC, but it depends on the security of the network between 
@@ -804,7 +833,7 @@ and
 for details.)
 
 For IPv6, the mode may be some combination of
-.B ra-only, slaac, ra-names, ra-stateless, ra-advrouter.
+.B ra-only, slaac, ra-names, ra-stateless, ra-advrouter, off-link.
 
 .B ra-only
 tells dnsmasq to offer Router Advertisement only on this subnet,
@@ -843,6 +872,9 @@ and
 enables a mode where router address(es) rather than prefix(es) are included in the advertisements.
 This is described in RFC-3775 section 7.2 and is used in mobile IPv6. In this mode the interval option
 is also included, as described in RFC-3775 section 7.3.
+
+.B off-link
+tells dnsmasq to advertise the prefix without the on-link (aka L) bit set.
 
 .TP
 .B \-G, --dhcp-host=[<hwaddr>][,id:<client_id>|*][,set:<tag>][,<ipaddr>][,<hostname>][,<lease_time>][,ignore]
@@ -962,6 +994,18 @@ is given, then read all the files contained in that directory. The advantage of
 using this option is the same as for --dhcp-hostsfile: the
 dhcp-optsfile will be re-read when dnsmasq receives SIGHUP. Note that
 it is possible to encode the information in a
+.TP
+.B --dhcp-hostsdir=<path>
+This is equivalent to dhcp-hostsfile, except for the following. The path MUST be a
+directory, and not an individual file. Changed or new files within
+the directory are read automatically, without the need to send SIGHUP.
+If a file is deleted for changed after it has been read by dnsmasq, then the
+host record it contained will remain until dnsmasq recieves a SIGHUP, or 
+is restarted; ie host records are only added dynamically.
+.TP
+.B --dhcp-optsdir=<path>
+This is equivalent to dhcp-optsfile, with the differences noted for --dhcp-hostsdir.
+.TP
 .B --dhcp-boot
 flag as DHCP options, using the options names bootfile-name,
 server-ip-address and tftp-server. This allows these to be included
@@ -1347,7 +1391,7 @@ enables dynamic allocation. With tags, only when the tags are all
 set. It may be repeated with different tag sets. 
 .TP
 .B \-5, --no-ping
-(IPv4 only) By default, the DHCP server will attempt to ensure that an address in
+(IPv4 only) By default, the DHCP server will attempt to ensure that an address is
 not in use before allocating it to a host. It does this by sending an
 ICMP echo request (aka "ping") to the address in question. If it gets
 a reply, then the address must already be in use, and another is
@@ -1556,11 +1600,13 @@ option also forces the leasechange script to be called on changes
 to the client-id and lease length and expiry time.
 .TP
 .B --bridge-interface=<interface>,<alias>[,<alias>]
-Treat DHCP request packets arriving at any of the <alias> interfaces
-as if they had arrived at <interface>. This option is necessary when
-using "old style" bridging on BSD platforms, since
-packets arrive at tap interfaces which don't have an IP address.
-A trailing '*' wildcard can be used in each <alias>.
+Treat DHCP (v4 and v6) request and IPv6 Router Solicit packets
+arriving at any of the <alias> interfaces as if they had arrived at
+<interface>.  This option allows dnsmasq to provide DHCP and RA
+service over unaddressed and unbridged Ethernet interfaces, e.g. on an
+OpenStack compute host where each such interface is a TAP interface to
+a VM, or as in "old style bridging" on BSD platforms.  A trailing '*'
+wildcard can be used in each <alias>.
 .TP
 .B \-s, --domain=<domain>[,<address range>[,local]]
 Specifies DNS domains for the DHCP server. Domains may be be given 
@@ -1670,6 +1716,9 @@ Absolute paths (starting with /) are allowed, but they must be within
 the tftp-root. If the optional interface argument is given, the
 directory is only used for TFTP requests via that interface.
 .TP
+.B --tftp-no-fail
+Do not abort startup if specified tftp root directories are inaccessible.
+.TP
 .B --tftp-unique-root
 Add the IP address of the TFTP client as a path component on the end
 of the TFTP-root (in standard dotted-quad format). Only valid if a
@@ -1767,7 +1816,8 @@ clears its cache and then re-loads
 .I /etc/hosts
 and 
 .I /etc/ethers 
-and any file given by --dhcp-hostsfile, --dhcp-optsfile or --addn-hosts.
+and any file given by --dhcp-hostsfile, --dhcp-hostsdir, --dhcp-optsfile, 
+--dhcp-optsdir, --addn-hosts or --hostsdir.
 The dhcp lease change script is called for all
 existing DHCP leases. If 
 .B

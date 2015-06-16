@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2014 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2015 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1396,6 +1396,7 @@ void add_update_server(int flags,
       serv->domain = domain_str;
       serv->next = next;
       serv->queries = serv->failed_queries = 0;
+      serv->edns_pktsz = daemon->edns_pktsz;
 #ifdef HAVE_LOOP
       serv->uid = rand32();
 #endif      
@@ -1442,6 +1443,7 @@ void check_servers(void)
 	  if (iface)
 	    {
 #if 0
+/* disable warning, noisy */
 	      my_syslog(LOG_WARNING, _("ignoring nameserver %s - local interface"), daemon->namebuff);
 #endif
 	      serv->flags |= SERV_MARK;
@@ -1461,7 +1463,7 @@ void check_servers(void)
 	    }
 	}
       
-      if (!(serv->flags & SERV_NO_REBIND))
+      if (!(serv->flags & SERV_NO_REBIND) && !(serv->flags & SERV_LITERAL_ADDRESS))
 	{
 	  if (serv->flags & (SERV_HAS_DOMAIN | SERV_FOR_NODOTS | SERV_USE_RESOLV))
 	    {
@@ -1477,7 +1479,7 @@ void check_servers(void)
 		my_syslog(LOG_INFO, _("using local addresses only for %s %s"), s1, s2);
 	      else if (serv->flags & SERV_USE_RESOLV)
 		my_syslog(LOG_INFO, _("using standard nameservers for %s %s"), s1, s2);
-	      else if (!(serv->flags & SERV_LITERAL_ADDRESS))
+	      else 
 		my_syslog(LOG_INFO, _("using nameserver %s#%d for %s %s"), daemon->namebuff, port, s1, s2);
 	    }
 #ifdef HAVE_LOOP

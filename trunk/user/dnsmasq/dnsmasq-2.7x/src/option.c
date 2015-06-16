@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2014 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2015 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -147,6 +147,13 @@ struct myoption {
 #define LOPT_LOCAL_SERVICE 335
 #define LOPT_DNSSEC_TIME   336
 #define LOPT_LOOP_DETECT   337
+#define LOPT_IGNORE_ADDR   338
+#define LOPT_MINCTTL       339
+#define LOPT_DHCP_INOTIFY  340
+#define LOPT_DHOPT_INOTIFY 341
+#define LOPT_HOST_INOTIFY  342
+#define LOPT_DNSSEC_STAMP  343
+#define LOPT_TFTP_NO_FAIL  344
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -159,7 +166,7 @@ static const struct myoption opts[] =
     { "no-poll", 0, 0, 'n' },
     { "help", 0, 0, 'w' },
     { "no-daemon", 0, 0, 'd' },
-    { "log-queries", 0, 0, 'q' },
+    { "log-queries", 2, 0, 'q' },
     { "user", 2, 0, 'u' },
     { "group", 2, 0, 'g' },
     { "resolv-file", 2, 0, 'r' },
@@ -181,6 +188,7 @@ static const struct myoption opts[] =
     { "local-service", 0, 0, LOPT_LOCAL_SERVICE },
     { "bogus-priv", 0, 0, 'b' },
     { "bogus-nxdomain", 1, 0, 'B' },
+    { "ignore-address", 1, 0, LOPT_IGNORE_ADDR },
     { "selfmx", 0, 0, 'e' },
     { "filterwin2k", 0, 0, 'f' },
     { "pid-file", 2, 0, 'x' },
@@ -196,6 +204,7 @@ static const struct myoption opts[] =
     { "local-ttl", 1, 0, 'T' },
     { "no-negcache", 0, 0, 'N' },
     { "addn-hosts", 1, 0, 'H' },
+    { "hostsdir", 1, 0, LOPT_HOST_INOTIFY },
     { "query-port", 1, 0, 'Q' },
     { "except-interface", 1, 0, 'I' },
     { "no-dhcp-interface", 1, 0, '2' },
@@ -227,6 +236,7 @@ static const struct myoption opts[] =
     { "dhcp-ignore-names", 2, 0, LOPT_NO_NAMES },
     { "enable-tftp", 2, 0, LOPT_TFTP },
     { "tftp-secure", 0, 0, LOPT_SECURE },
+    { "tftp-no-fail", 0, 0, LOPT_TFTP_NO_FAIL },
     { "tftp-unique-root", 0, 0, LOPT_APREF },
     { "tftp-root", 1, 0, LOPT_PREFIX },
     { "tftp-max", 1, 0, LOPT_TFTP_MAX },
@@ -244,6 +254,8 @@ static const struct myoption opts[] =
     { "interface-name", 1, 0, LOPT_INTNAME },
     { "dhcp-hostsfile", 1, 0, LOPT_DHCP_HOST },
     { "dhcp-optsfile", 1, 0, LOPT_DHCP_OPTS },
+    { "dhcp-hostsdir", 1, 0, LOPT_DHCP_INOTIFY },
+    { "dhcp-optsdir", 1, 0, LOPT_DHOPT_INOTIFY },
     { "dhcp-no-override", 0, 0, LOPT_OVERRIDE },
     { "tftp-port-range", 1, 0, LOPT_TFTPPORTS },
     { "stop-dns-rebind", 0, 0, LOPT_REBIND },
@@ -253,6 +265,7 @@ static const struct myoption opts[] =
     { "dhcp-broadcast", 2, 0, LOPT_BROADCAST },
     { "neg-ttl", 1, 0, LOPT_NEGTTL },
     { "max-ttl", 1, 0, LOPT_MAXTTL },
+    { "min-cache-ttl", 1, 0, LOPT_MINCTTL },
     { "max-cache-ttl", 1, 0, LOPT_MAXCTTL },
     { "dhcp-alternate-port", 2, 0, LOPT_ALTPORT },
     { "dhcp-scriptuser", 1, 0, LOPT_SCRIPTUSR },
@@ -290,6 +303,7 @@ static const struct myoption opts[] =
     { "dnssec-debug", 0, 0, LOPT_DNSSEC_DEBUG },
     { "dnssec-check-unsigned", 0, 0, LOPT_DNSSEC_CHECK },
     { "dnssec-no-timecheck", 0, 0, LOPT_DNSSEC_TIME },
+    { "dnssec-timestamp", 1, 0, LOPT_DNSSEC_STAMP },
 #ifdef OPTION6_PREFIX_CLASS 
     { "dhcp-prefix-class", 1, 0, LOPT_PREF_CLSS },
 #endif
@@ -331,9 +345,12 @@ static struct {
   { 'G', ARG_DUP, "<hostspec>", gettext_noop("Set address or hostname for a specified machine."), NULL },
   { LOPT_DHCP_HOST, ARG_DUP, "<path>", gettext_noop("Read DHCP host specs from file."), NULL },
   { LOPT_DHCP_OPTS, ARG_DUP, "<path>", gettext_noop("Read DHCP option specs from file."), NULL },
+  { LOPT_DHCP_INOTIFY, ARG_DUP, "<path>", gettext_noop("Read DHCP host specs from a directory."), NULL }, 
+  { LOPT_DHOPT_INOTIFY, ARG_DUP, "<path>", gettext_noop("Read DHCP options from a directory."), NULL }, 
   { LOPT_TAG_IF, ARG_DUP, "tag-expression", gettext_noop("Evaluate conditional tag expression."), NULL },
   { 'h', OPT_NO_HOSTS, NULL, gettext_noop("Do NOT load %s file."), HOSTSFILE },
   { 'H', ARG_DUP, "<path>", gettext_noop("Specify a hosts file to be read in addition to %s."), HOSTSFILE },
+  { LOPT_HOST_INOTIFY, ARG_DUP, "<path>", gettext_noop("Read hosts files from a directory."), NULL },
   { 'i', ARG_DUP, "<interface>", gettext_noop("Specify interface(s) to listen on."), NULL },
   { 'I', ARG_DUP, "<interface>", gettext_noop("Specify interface(s) NOT to listen on.") , NULL },
   { 'j', ARG_DUP, "set:<tag>,<class>", gettext_noop("Map DHCP user class to tag."), NULL },
@@ -355,7 +372,7 @@ static struct {
   { LOPT_FORCE, ARG_DUP, "<optspec>", gettext_noop("DHCP option sent even if the client does not request it."), NULL},
   { 'p', ARG_ONE, "<integer>", gettext_noop("Specify port to listen for DNS requests on (defaults to 53)."), NULL },
   { 'P', ARG_ONE, "<integer>", gettext_noop("Maximum supported UDP packet size for EDNS.0 (defaults to %s)."), "*" },
-  { 'q', OPT_LOG, NULL, gettext_noop("Log DNS queries."), NULL },
+  { 'q', ARG_DUP, NULL, gettext_noop("Log DNS queries."), NULL },
   { 'Q', ARG_ONE, "<integer>", gettext_noop("Force the originating port for upstream DNS queries."), NULL },
   { 'R', OPT_NO_RESOLV, NULL, gettext_noop("Do NOT read resolv.conf."), NULL },
   { 'r', ARG_DUP, "<path>", gettext_noop("Specify path to resolv.conf (defaults to %s)."), RESOLVFILE }, 
@@ -368,6 +385,8 @@ static struct {
   { 'T', ARG_ONE, "<integer>", gettext_noop("Specify time-to-live in seconds for replies from /etc/hosts."), NULL },
   { LOPT_NEGTTL, ARG_ONE, "<integer>", gettext_noop("Specify time-to-live in seconds for negative caching."), NULL },
   { LOPT_MAXTTL, ARG_ONE, "<integer>", gettext_noop("Specify time-to-live in seconds for maximum TTL to send to clients."), NULL },
+  { LOPT_MAXCTTL, ARG_ONE, "<integer>", gettext_noop("Specify time-to-live ceiling for cache."), NULL },
+  { LOPT_MINCTTL, ARG_ONE, "<integer>", gettext_noop("Specify time-to-live floor for cache."), NULL },
   { 'u', ARG_ONE, "<username>", gettext_noop("Change to this user after startup. (defaults to %s)."), CHUSER }, 
   { 'U', ARG_DUP, "set:<tag>,<class>", gettext_noop("Map DHCP vendor class to tag."), NULL },
   { 'v', 0, NULL, gettext_noop("Display dnsmasq version and copyright information."), NULL },
@@ -402,6 +421,7 @@ static struct {
   { LOPT_PREFIX, ARG_DUP, "<dir>[,<iface>]", gettext_noop("Export files by TFTP only from the specified subtree."), NULL },
   { LOPT_APREF, OPT_TFTP_APREF, NULL, gettext_noop("Add client IP address to tftp-root."), NULL },
   { LOPT_SECURE, OPT_TFTP_SECURE, NULL, gettext_noop("Allow access only to files owned by the user running dnsmasq."), NULL },
+  { LOPT_TFTP_NO_FAIL, OPT_TFTP_NO_FAIL, NULL, gettext_noop("Do not terminate the service if TFTP directories are inaccessible."), NULL },
   { LOPT_TFTP_MAX, ARG_ONE, "<integer>", gettext_noop("Maximum number of conncurrent TFTP transfers (defaults to %s)."), "#" },
   { LOPT_NOBLOCK, OPT_TFTP_NOBLOCK, NULL, gettext_noop("Disable the TFTP blocksize extension."), NULL },
   { LOPT_TFTP_LC, OPT_TFTP_LC, NULL, gettext_noop("Convert TFTP filenames to lowercase"), NULL },
@@ -448,6 +468,7 @@ static struct {
   { LOPT_DNSSEC_DEBUG, OPT_DNSSEC_DEBUG, NULL, gettext_noop("Disable upstream checking for DNSSEC debugging."), NULL },
   { LOPT_DNSSEC_CHECK, OPT_DNSSEC_NO_SIGN, NULL, gettext_noop("Ensure answers without DNSSEC are in unsigned zones."), NULL },
   { LOPT_DNSSEC_TIME, OPT_DNSSEC_TIME, NULL, gettext_noop("Don't check DNSSEC signature timestamps until first cache-reload"), NULL },
+  { LOPT_DNSSEC_STAMP, ARG_ONE, "<path>", gettext_noop("Timestamp file to verify system clock for DNSSEC"), NULL },
 #ifdef OPTION6_PREFIX_CLASS 
   { LOPT_PREF_CLSS, ARG_DUP, "set:tag,<class>", gettext_noop("Specify DHCPv6 prefix class"), NULL },
 #endif
@@ -457,6 +478,7 @@ static struct {
   { LOPT_QUIET_RA, OPT_QUIET_RA, NULL, gettext_noop("Do not log RA."), NULL },
   { LOPT_LOCAL_SERVICE, OPT_LOCAL_SERVICE, NULL, gettext_noop("Accept queries only from directly-connected networks"), NULL },
   { LOPT_LOOP_DETECT, OPT_LOOP_DETECT, NULL, gettext_noop("Detect and remove DNS forwarding loops"), NULL },
+  { LOPT_IGNORE_ADDR, ARG_DUP, "<ipaddr>", gettext_noop("Ignore DNS responses containing ipaddr."), NULL }, 
   { 0, 0, NULL, NULL, NULL }
 }; 
 
@@ -1702,9 +1724,12 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
       break;
 #endif /* HAVE_DHCP */
 
-    case LOPT_DHCP_HOST: /* --dhcp-hostfile */
-    case LOPT_DHCP_OPTS: /* --dhcp-optsfile */
-    case 'H': /* --addn-hosts */
+    case LOPT_DHCP_HOST:     /* --dhcp-hostsfile */
+    case LOPT_DHCP_OPTS:     /* --dhcp-optsfile */
+    case LOPT_DHCP_INOTIFY:  /* --dhcp-hostsdir */
+    case LOPT_DHOPT_INOTIFY: /* --dhcp-optsdir */
+    case LOPT_HOST_INOTIFY:  /* --hostsdir */
+    case 'H':                /* --addn-hosts */
       {
 	struct hostsfile *new = opt_malloc(sizeof(struct hostsfile));
 	static unsigned int hosts_index = SRC_AH;
@@ -1726,6 +1751,18 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	    new->next = daemon->dhcp_opts_file;
 	    daemon->dhcp_opts_file = new;
 	  } 	  
+	else 
+	  {
+	    new->next = daemon->dynamic_dirs;
+	    daemon->dynamic_dirs = new; 
+	    if (option == LOPT_DHCP_INOTIFY)
+	      new->flags |= AH_DHCP_HST;
+	    else if (option == LOPT_DHOPT_INOTIFY)
+	      new->flags |= AH_DHCP_OPT;
+	    else if (option == LOPT_HOST_INOTIFY)
+	      new->flags |= AH_HOSTS;
+	  }
+	
 	break;
       }
       
@@ -2119,14 +2156,23 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
       break;
       
     case 'B':  /* --bogus-nxdomain */
-      {
+    case LOPT_IGNORE_ADDR: /* --ignore-address */
+     {
 	struct in_addr addr;
 	unhide_metas(arg);
 	if (arg && (inet_pton(AF_INET, arg, &addr) > 0))
 	  {
 	    struct bogus_addr *baddr = opt_malloc(sizeof(struct bogus_addr));
-	    baddr->next = daemon->bogus_addr;
-	    daemon->bogus_addr = baddr;
+	    if (option == 'B')
+	      {
+		baddr->next = daemon->bogus_addr;
+		daemon->bogus_addr = baddr;
+	      }
+	    else
+	      {
+		baddr->next = daemon->ignore_addr;
+		daemon->ignore_addr = baddr;
+	      }
 	    baddr->addr = addr;
 	  }
 	else
@@ -2241,8 +2287,6 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	  {
 	    if (!(newlist->flags & SERV_NO_REBIND))
 	      newlist->flags |= SERV_NO_ADDR; /* no server */
-	    if (newlist->flags & SERV_LITERAL_ADDRESS)
-	      ret_err(gen_err);
 	  }
 
 	else if (strcmp(arg, "#") == 0)
@@ -2409,6 +2453,12 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	ret_err(gen_err);
       break;  
     
+    case 'q': /* --log-queries */
+      set_option_bool(OPT_LOG);
+      if (arg && strcmp(arg, "extra") == 0)
+	set_option_bool(OPT_EXTRALOG);
+      break;
+
     case LOPT_MAX_LOGS:  /* --log-async */
       daemon->max_logs = LOG_MAX; /* default */
       if (arg && !atoi_check(arg, &daemon->max_logs))
@@ -2438,6 +2488,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
     case 'T':         /* --local-ttl */
     case LOPT_NEGTTL: /* --neg-ttl */
     case LOPT_MAXTTL: /* --max-ttl */
+    case LOPT_MINCTTL: /* --min-cache-ttl */
     case LOPT_MAXCTTL: /* --max-cache-ttl */
     case LOPT_AUTHTTL: /* --auth-ttl */
       {
@@ -2448,6 +2499,12 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	  daemon->neg_ttl = (unsigned long)ttl;
 	else if (option == LOPT_MAXTTL)
 	  daemon->max_ttl = (unsigned long)ttl;
+	else if (option == LOPT_MINCTTL)
+	  {
+	    if (ttl > TTL_FLOOR_LIMIT)
+	      ttl = TTL_FLOOR_LIMIT;
+	    daemon->min_cache_ttl = (unsigned long)ttl;
+	  }
 	else if (option == LOPT_MAXCTTL)
 	  daemon->max_cache_ttl = (unsigned long)ttl;
 	else if (option == LOPT_AUTHTTL)
@@ -2642,6 +2699,8 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		  new->flags |= CONTEXT_RA_ROUTER | CONTEXT_RA;
 		else if (strcmp(a[leasepos], "ra-stateless") == 0)
 		  new->flags |= CONTEXT_RA_STATELESS | CONTEXT_DHCP | CONTEXT_RA;
+		else if (strcmp(a[leasepos], "off-link") == 0)
+		  new->flags |= CONTEXT_RA_OFF_LINK;
 		else if (leasepos == 1 && inet_pton(AF_INET6, a[leasepos], &new->end6))
 		  new->flags |= CONTEXT_DHCP; 
 		else if (strstr(a[leasepos], "constructor:") == a[leasepos])
@@ -3814,6 +3873,10 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
       }
 
 #ifdef HAVE_DNSSEC
+    case LOPT_DNSSEC_STAMP:
+      daemon->timestamp_file = opt_string_alloc(arg); 
+      break;
+
     case LOPT_TRUST_ANCHOR:
       {
 	struct ds_config *new = opt_malloc(sizeof(struct ds_config));
@@ -4012,6 +4075,20 @@ static void read_file(char *file, FILE *f, int hard_opt)
   fclose(f);
 }
 
+#ifdef HAVE_DHCP
+int option_read_dynfile(char *file, int flags)
+{
+  my_syslog(MS_DHCP | LOG_INFO, _("read %s"), file);
+  
+  if (flags & AH_DHCP_HST)
+    return one_file(file, LOPT_BANK);
+  else if (flags & AH_DHCP_OPT)
+    return one_file(file, LOPT_OPTS);
+  
+  return 0;
+}
+#endif
+
 static int one_file(char *file, int hard_opt)
 {
   FILE *f;
@@ -4109,7 +4186,7 @@ struct hostsfile *expand_filelist(struct hostsfile *list)
 	    
 	    /* don't read this as a file */
 	    ah->flags |= AH_INACTIVE;
-
+	    
 	    if (!(dir_stream = opendir(ah->fname)))
 	      my_syslog(LOG_ERR, _("cannot access directory %s: %s"), 
 			ah->fname, strerror(errno));
@@ -4423,15 +4500,19 @@ void read_opts(int argc, char **argv, char *compile_opts)
     {
       struct server *tmp;
       for (tmp = daemon->servers; tmp; tmp = tmp->next)
-	if (!(tmp->flags & SERV_HAS_SOURCE))
-	  {
-	    if (tmp->source_addr.sa.sa_family == AF_INET)
-	      tmp->source_addr.in.sin_port = htons(daemon->query_port);
+	{
+	  tmp->edns_pktsz = daemon->edns_pktsz;
+	 
+	  if (!(tmp->flags & SERV_HAS_SOURCE))
+	    {
+	      if (tmp->source_addr.sa.sa_family == AF_INET)
+		tmp->source_addr.in.sin_port = htons(daemon->query_port);
 #ifdef HAVE_IPV6
-	    else if (tmp->source_addr.sa.sa_family == AF_INET6)
-	      tmp->source_addr.in6.sin6_port = htons(daemon->query_port);
+	      else if (tmp->source_addr.sa.sa_family == AF_INET6)
+		tmp->source_addr.in6.sin6_port = htons(daemon->query_port);
 #endif 
-	  } 
+	    }
+	} 
     }
   
   if (daemon->if_addrs)

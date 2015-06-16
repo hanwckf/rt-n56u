@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2014 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2015 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,7 +17,9 @@
 #define FTABSIZ 150 /* max number of outstanding requests (default) */
 #define MAX_PROCS 20 /* max no children for TCP requests */
 #define CHILD_LIFETIME 150 /* secs 'till terminated (RFC1035 suggests > 120s) */
+#define TCP_MAX_QUERIES 100 /* Maximum number of queries per incoming TCP connection */
 #define EDNS_PKTSZ 4096 /* default max EDNS.0 UDP packet from RFC5625 */
+#define SAFE_PKTSZ 1280 /* "go anywhere" UDP packet size */
 #define KEYBLOCK_LEN 40 /* choose to mininise fragmentation when storing DNSSEC keys */
 #define DNSSEC_WORK 50 /* Max number of queries to validate one question */
 #define TIMEOUT 10 /* drop UDP queries after TIMEOUT seconds */
@@ -26,6 +28,7 @@
 #define RANDOM_SOCKS 64 /* max simultaneous random ports */
 #define LEASE_RETRY 60 /* on error, retry writing leasefile after LEASE_RETRY seconds */
 #define CACHESIZ 150 /* default cache size */
+#define TTL_FLOOR_LIMIT 3600 /* don't allow --min-cache-ttl to raise TTL above this under any circumstances */
 #define MAXLEASES 1000 /* maximum number of DHCP leases */
 #define PING_WAIT 3 /* wait for ping address-in-use test */
 #define PING_CACHE_TIME 30 /* Ping test assumed to be valid this long. */
@@ -113,6 +116,8 @@ HAVE_DNSSEC
 HAVE_LOOP
    include functionality to probe for and remove DNS forwarding loops.
 
+HAVE_INOTIFY
+   use the Linux inotify facility to efficiently re-read configuration files.
 
 NO_IPV6
 NO_TFTP
@@ -121,6 +126,7 @@ NO_DHCP6
 NO_SCRIPT
 NO_LARGEFILE
 NO_AUTH
+NO_INOTIFY
    these are avilable to explictly disable compile time options which would 
    otherwise be enabled automatically (HAVE_IPV6, >2Gb file sizes) or 
    which are enabled  by default in the distributed source tree. Building dnsmasq
@@ -149,11 +155,11 @@ RESOLVFILE
    has no library dependencies other than libc */
 
 #define HAVE_DHCP
-#define HAVE_DHCP6
+#define HAVE_DHCP6 
 #define HAVE_TFTP
 #define HAVE_SCRIPT
 #define HAVE_AUTH
-#define HAVE_IPSET
+#define HAVE_IPSET 
 #define HAVE_LOOP
 
 #define LEASEFILE "/tmp/dnsmasq.leases"
@@ -357,6 +363,10 @@ HAVE_SOCKADDR_SA_LEN
 #undef HAVE_LOOP
 #endif
 
+#if defined (HAVE_LINUX_NETWORK) && !defined(NO_INOTIFY)
+#define HAVE_INOTIFY
+#endif
+
 /* Define a string indicating which options are in use.
    DNSMASQP_COMPILE_OPTS is only defined in dnsmasq.c */
 
@@ -430,7 +440,11 @@ static char *compile_opts =
 #ifndef HAVE_LOOP
 "no-"
 #endif
-"loop-detect";
+"loop-detect "
+#ifndef HAVE_INOTIFY
+"no-"
+#endif
+"inotify";
 
 
 #endif

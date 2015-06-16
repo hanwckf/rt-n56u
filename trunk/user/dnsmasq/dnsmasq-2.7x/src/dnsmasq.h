@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2014 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2015 Simon Kelley
  
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define COPYRIGHT "Copyright (c) 2000-2014 Simon Kelley" 
+#define COPYRIGHT "Copyright (c) 2000-2015 Simon Kelley" 
 
 #ifndef NO_LARGEFILE
 /* Ensure we can use files >2GB (log files may grow this big) */
@@ -167,6 +167,7 @@ struct event_desc {
 #define EVENT_INIT      21
 #define EVENT_NEWADDR   22
 #define EVENT_NEWROUTE  23
+#define EVENT_TIME_ERR  24
 
 /* Exit codes. */
 #define EC_GOOD        0
@@ -238,7 +239,9 @@ struct event_desc {
 #define OPT_DNSSEC_NO_SIGN 48 
 #define OPT_LOCAL_SERVICE  49
 #define OPT_LOOP_DETECT    50
-#define OPT_LAST           51
+#define OPT_EXTRALOG       51
+#define OPT_TFTP_NO_FAIL   52
+#define OPT_LAST           53
 
 /* extra flags for my_syslog, we use a couple of facilities since they are known 
    not to occupy the same bits as priorities, no matter how syslog.h is set up. */
@@ -442,6 +445,7 @@ struct crec {
 #define F_NO_RR     (1u<<25)
 #define F_IPSET     (1u<<26)
 #define F_NSIGMATCH (1u<<27)
+#define F_NOEXTRA   (1u<<28)
 
 /* Values of uid in crecs with F_CONFIG bit set. */
 #define SRC_INTERFACE 0
@@ -500,7 +504,7 @@ struct server {
   char interface[IF_NAMESIZE+1];
   struct serverfd *sfd; 
   char *domain; /* set if this server only handles a domain. */ 
-  int flags, tcpfd;
+  int flags, tcpfd, edns_pktsz;
   unsigned int queries, failed_queries;
 #ifdef HAVE_LOOP
   u32 uid;
@@ -542,15 +546,26 @@ struct resolvc {
   int is_default, logged;
   time_t mtime;
   char *name;
+#ifdef HAVE_INOTIFY
+  int wd; /* inotify watch descriptor */
+  char *file; /* pointer to file part if path */
+#endif
 };
 
-/* adn-hosts parms from command-line (also dhcp-hostsfile and dhcp-optsfile */
+/* adn-hosts parms from command-line (also dhcp-hostsfile and dhcp-optsfile and dhcp-hostsdir*/
 #define AH_DIR      1
 #define AH_INACTIVE 2
+#define AH_WD_DONE  4
+#define AH_HOSTS    8
+#define AH_DHCP_HST 16
+#define AH_DHCP_OPT 32
 struct hostsfile {
   struct hostsfile *next;
   int flags;
   char *fname;
+#ifdef HAVE_INOTIFY
+  int wd; /* inotify watch descriptor */
+#endif
   unsigned int index; /* matches to cache entries for logging */
 };
 
@@ -565,8 +580,10 @@ struct hostsfile {
 #define STAT_SECURE_WILDCARD    7
 #define STAT_NO_SIG             8
 #define STAT_NO_DS              9
-#define STAT_NEED_DS_NEG       10
-#define STAT_CHASE_CNAME       11
+#define STAT_NO_NS             10
+#define STAT_NEED_DS_NEG       11
+#define STAT_CHASE_CNAME       12
+#define STAT_INSECURE_DS       13
 
 #define FREC_NOREBIND           1
 #define FREC_CHECKING_DISABLED  2
@@ -577,6 +594,7 @@ struct hostsfile {
 #define FREC_DO_QUESTION       64
 #define FREC_ADDED_PHEADER    128
 #define FREC_CHECK_NOSIGN     256
+#define FREC_TEST_PKTSZ       512
 
 #ifdef HAVE_DNSSEC
 #define HASH_SIZE 20 /* SHA-1 digest size */
@@ -594,13 +612,15 @@ struct frec {
 #endif
   unsigned int iface;
   unsigned short orig_id, new_id;
-  int fd, forwardall, flags;
+  int log_id, fd, forwardall, flags;
   time_t time;
   unsigned char *hash[HASH_SIZE];
 #ifdef HAVE_DNSSEC 
   int class, work_counter;
   struct blockdata *stash; /* Saved reply, whilst we validate */
-  size_t stash_len;
+  struct blockdata *orig_domain; /* domain of original query, whilst
+				    we're seeing is if in unsigned domain */
+  size_t stash_len, name_start, name_len;
   struct frec *dependent; /* Query awaiting internally-generated DNSKEY or DS query */
   struct frec *blocking_query; /* Query which is blocking us. */
 #endif
@@ -848,6 +868,7 @@ struct dhcp_context {
 #define CONTEXT_USED           (1u<<15)
 #define CONTEXT_OLD            (1u<<16)
 #define CONTEXT_V6             (1u<<17)
+#define CONTEXT_RA_OFF_LINK    (1u<<18)
 
 struct ping_result {
   struct in_addr addr;
@@ -884,6 +905,7 @@ struct addr_list {
 struct tftp_prefix {
   char *interface;
   char *prefix;
+  int missing;
   struct tftp_prefix *next;
 };
 
@@ -926,7 +948,7 @@ extern struct daemon {
   char *runfile; 
   char *lease_change_command;
   struct iname *if_names, *if_addrs, *if_except, *dhcp_except, *auth_peers, *tftp_interfaces;
-  struct bogus_addr *bogus_addr;
+  struct bogus_addr *bogus_addr, *ignore_addr;
   struct server *servers;
   struct ipsets *ipsets;
   int log_fac; /* log facility */
@@ -934,7 +956,7 @@ extern struct daemon {
   int max_logs;  /* queue limit */
   int cachesize, ftabsize;
   int port, query_port, min_port;
-  unsigned long local_ttl, neg_ttl, max_ttl, max_cache_ttl, auth_ttl;
+  unsigned long local_ttl, neg_ttl, max_ttl, min_cache_ttl, max_cache_ttl, auth_ttl;
   struct hostsfile *addn_hosts;
   struct dhcp_context *dhcp, *dhcp6;
   struct ra_interface *ra_interfaces;
@@ -952,7 +974,7 @@ extern struct daemon {
   int doing_ra, doing_dhcp6;
   struct dhcp_netid_list *dhcp_ignore, *dhcp_ignore_names, *dhcp_gen_names; 
   struct dhcp_netid_list *force_broadcast, *bootp_dynamic;
-  struct hostsfile *dhcp_hosts_file, *dhcp_opts_file;
+  struct hostsfile *dhcp_hosts_file, *dhcp_opts_file, *dynamic_dirs;
   int dhcp_max, tftp_max;
   int dhcp_server_port, dhcp_client_port;
   int start_tftp_port, end_tftp_port; 
@@ -970,6 +992,7 @@ extern struct daemon {
 #endif
 #ifdef HAVE_DNSSEC
   struct ds_config *ds;
+  char *timestamp_file;
 #endif
 
   /* globally used stuff for DNS */
@@ -995,9 +1018,14 @@ extern struct daemon {
   struct randfd randomsocks[RANDOM_SOCKS];
   int v6pktinfo; 
   struct addrlist *interface_addrs; /* list of all addresses/prefix lengths associated with all local interfaces */
+  int log_id, log_display_id; /* ids of transactions for logging */
+  union mysockaddr *log_source_addr;
 
   /* DHCP state */
   int dhcpfd, helperfd, pxefd; 
+#ifdef HAVE_INOTIFY
+  int inotifyfd;
+#endif
 #if defined(HAVE_LINUX_NETWORK)
   int netlinkfd;
 #elif defined(HAVE_BSD_NETWORK)
@@ -1026,6 +1054,7 @@ extern struct daemon {
 
   /* utility string buffer, hold max sized IP address as string */
   char *addrbuff;
+  char *addrbuff2; /* only allocated when OPT_EXTRALOG */
 
 } *daemon;
 
@@ -1052,6 +1081,8 @@ int cache_make_stat(struct txt_record *t);
 char *cache_get_name(struct crec *crecp);
 char *cache_get_cname_target(struct crec *crecp);
 struct crec *cache_enumerate(int init);
+int read_hostsfile(char *filename, unsigned int index, int cache_size, 
+		   struct crec **rhash, int hashsz);
 
 /* blockdata.c */
 #ifdef HAVE_DNSSEC
@@ -1089,6 +1120,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		      time_t now, int *ad_reqd, int *do_bit);
 int check_for_bogus_wildcard(struct dns_header *header, size_t qlen, char *name, 
 			     struct bogus_addr *addr, time_t now);
+int check_for_ignored_address(struct dns_header *header, size_t qlen, struct bogus_addr *baddr);
 unsigned char *find_pseudoheader(struct dns_header *header, size_t plen,
 				 size_t *len, unsigned char **p, int *is_sign);
 int check_for_local_domain(char *name, time_t now);
@@ -1118,14 +1150,15 @@ int in_zone(struct auth_zone *zone, char *name, char **cut);
 #endif
 
 /* dnssec.c */
-size_t dnssec_generate_query(struct dns_header *header, char *end, char *name, int class, int type, union mysockaddr *addr);
+size_t dnssec_generate_query(struct dns_header *header, char *end, char *name, int class, int type, union mysockaddr *addr, int edns_pktsz);
 int dnssec_validate_by_ds(time_t now, struct dns_header *header, size_t n, char *name, char *keyname, int class);
 int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname, int class);
-int dnssec_validate_reply(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname, int *class, int *neganswer);
+int dnssec_validate_reply(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname, int *class, int *neganswer, int *nons);
 int dnssec_chase_cname(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname);
 int dnskey_keytag(int alg, int flags, unsigned char *rdata, int rdlen);
 size_t filter_rrsigs(struct dns_header *header, size_t plen);
 unsigned char* hash_questions(struct dns_header *header, size_t plen, char *name);
+int setup_timestamp(void);
 
 /* util.c */
 void rand_init(void);
@@ -1149,7 +1182,7 @@ int is_same_net6(struct in6_addr *a, struct in6_addr *b, int prefixlen);
 u64 addr6part(struct in6_addr *addr);
 void setaddr6part(struct in6_addr *addr, u64 host);
 #endif
-int retry_send(void);
+int retry_send(ssize_t rc);
 void prettyprint_time(char *buf, unsigned int t);
 int prettyprint_addr(union mysockaddr *addr, char *buf);
 int parse_hex(char *in, unsigned char *out, int maxlen, 
@@ -1184,6 +1217,7 @@ void reset_option_bool(unsigned int opt);
 struct hostsfile *expand_filelist(struct hostsfile *list);
 char *parse_server(char *arg, union mysockaddr *addr, 
 		   union mysockaddr *source_addr, char *interface, int *flags);
+int option_read_dynfile(char *file, int flags);
 
 /* forward.c */
 void reply_query(int fd, int family, time_t now);
@@ -1272,9 +1306,10 @@ void lease_update_slaac(time_t now);
 void lease_set_iaid(struct dhcp_lease *lease, int iaid);
 void lease_make_duid(time_t now);
 #endif
-void lease_set_hwaddr(struct dhcp_lease *lease, unsigned char *hwaddr,
-		      unsigned char *clid, int hw_len, int hw_type, int clid_len, time_t now, int force);
-void lease_set_hostname(struct dhcp_lease *lease, char *name, int auth, char *domain, char *config_domain);
+void lease_set_hwaddr(struct dhcp_lease *lease, const unsigned char *hwaddr,
+		      const unsigned char *clid, int hw_len, int hw_type,
+		      int clid_len, time_t now, int force);
+void lease_set_hostname(struct dhcp_lease *lease, const char *name, int auth, char *domain, char *config_domain);
 void lease_set_expires(struct dhcp_lease *lease, unsigned int len, time_t now);
 void lease_set_interface(struct dhcp_lease *lease, int interface, time_t now);
 struct dhcp_lease *lease_find_by_client(unsigned char *hwaddr, int hw_len, int hw_type,  
@@ -1470,3 +1505,9 @@ void loop_send_probes();
 int detect_loop(char *query, int type);
 #endif
 
+/* inotify.c */
+#ifdef HAVE_INOTIFY
+void inotify_dnsmasq_init();
+int inotify_check(time_t now);
+void set_dynamic_inotify(int flag, int total_size, struct crec **rhash, int revhashsz);
+#endif

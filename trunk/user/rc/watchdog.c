@@ -395,13 +395,6 @@ is_ntpc_updated(void)
 }
 
 static void
-reset_ntpc_tries(void)
-{
-	if (!is_ntpc_updated())
-		ntpc_tries = 30; // 10 times, total 5min
-}
-
-static void
 ntpc_handler(void)
 {
 	int ntp_period = nvram_get_int("ntp_period");
@@ -416,24 +409,20 @@ ntpc_handler(void)
 
 	// update ntp every period time
 	ntpc_timer = (ntpc_timer + 1) % ntp_period;
-	if (ntpc_timer == 0)
-	{
+	if (ntpc_timer == 0) {
 		setenv_tz();
 		refresh_ntp();
-	}
-	else if (ntpc_tries > 0)
-	{
-		if (!is_ntpc_updated())
-		{
-			ntpc_tries--;
-			
-			if (!(ntpc_tries % 3))
-				refresh_ntp();
-		}
-		else
-		{
-			ntpc_tries = 0;
-		}
+	} else if (!is_ntpc_updated()) {
+		int ntp_skip = 3;	// update every 30s
+		
+		ntpc_tries++;
+		if (ntpc_tries > 60)
+			ntp_skip = 30;	// update every 5m
+		else if (ntpc_tries > 9)
+			ntp_skip = 6;	// update every 60s
+		
+		if (!(ntpc_tries % ntp_skip))
+			refresh_ntp();
 	}
 }
 
@@ -1023,8 +1012,10 @@ ntpc_updated_main(int argc, char *argv[])
 static void
 watchdog_on_sighup(void)
 {
-	reset_ntpc_tries();
-	ntpc_timer = -1; // want call now
+	if (!is_ntpc_updated()) {
+		ntpc_tries = 0;
+		ntpc_timer = -1; // want call now
+	}
 }
 
 static void
@@ -1197,7 +1188,6 @@ watchdog_main(int argc, char *argv[])
 		fclose(fp);
 	}
 
-	reset_ntpc_tries();
 	nvram_set_int_temp("wd_notify_id", 0);
 
 #if defined (BOARD_GPIO_BTN_WPS)

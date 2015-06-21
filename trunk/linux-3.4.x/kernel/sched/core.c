@@ -4032,13 +4032,10 @@ void rt_mutex_setprio(struct task_struct *p, int prio)
 	if (running)
 		p->sched_class->put_prev_task(rq, p);
 
-	if (rt_prio(prio)) {
+	if (rt_prio(prio))
 		p->sched_class = &rt_sched_class;
-	} else {
-		if (rt_prio(oldprio))
-			p->rt.timeout = 0;
+	else
 		p->sched_class = &fair_sched_class;
-	}
 
 	p->prio = prio;
 

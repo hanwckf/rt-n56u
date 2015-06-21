@@ -2387,10 +2387,14 @@ out_dio:
 	/* buffered aio wouldn't have proper lock coverage today */
 	BUG_ON(ret == -EIOCBQUEUED && !(file->f_flags & O_DIRECT));
 
+	if (unlikely(written <= 0))
+		goto no_sync;
+
 	if (((file->f_flags & O_DSYNC) && !direct_io) || IS_SYNC(inode) ||
 	    ((file->f_flags & O_DIRECT) && !direct_io)) {
-		ret = filemap_fdatawrite_range(file->f_mapping, *ppos,
-					       *ppos + count - 1);
+		ret = filemap_fdatawrite_range(file->f_mapping,
+					       iocb->ki_pos - written,
+					       iocb->ki_pos - 1);
 		if (ret < 0)
 			written = ret;
 
@@ -2403,10 +2407,12 @@ out_dio:
 		}
 
 		if (!ret)
-			ret = filemap_fdatawait_range(file->f_mapping, *ppos,
-						      *ppos + count - 1);
+			ret = filemap_fdatawait_range(file->f_mapping,
+						      iocb->ki_pos - written,
+						      iocb->ki_pos - 1);
 	}
 
+no_sync:
 	/*
 	 * deep in g_f_a_w_n()->ocfs2_direct_IO we pass in a ocfs2_dio_end_io
 	 * function pointer which is called when o_direct io completes so that
@@ -2468,9 +2474,7 @@ static ssize_t ocfs2_file_splice_write(struct pipe_inode_info *pipe,
 	struct address_space *mapping = out->f_mapping;
 	struct inode *inode = mapping->host;
 	struct splice_desc sd = {
-		.total_len = len,
 		.flags = flags,
-		.pos = *ppos,
 		.u.file = out,
 	};
 
@@ -2479,6 +2483,12 @@ static ssize_t ocfs2_file_splice_write(struct pipe_inode_info *pipe,
 			(unsigned long long)OCFS2_I(inode)->ip_blkno,
 			out->f_path.dentry->d_name.len,
 			out->f_path.dentry->d_name.name, len);
+
+	ret = generic_write_checks(out, ppos, &len, 0);
+	if (ret)
+		return ret;
+	sd.total_len = len;
+	sd.pos = *ppos;
 
 	if (pipe->inode)
 		mutex_lock_nested(&pipe->inode->i_mutex, I_MUTEX_PARENT);

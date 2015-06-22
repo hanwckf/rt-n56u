@@ -14,16 +14,20 @@
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
-<script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script>
 var $j = jQuery.noConflict();
+
+$j(document).ready(function(){
+	var textArea = E('textarea');
+	textArea.scrollTop = textArea.scrollHeight;
+});
 
 function initial(){
 	show_banner(2);
 	show_menu(5,10,1);
 	show_footer();
-	load_body();
+
 	showclock();
 }
 
@@ -47,13 +51,12 @@ function clearLog(){
 	document.form.action_mode.value = " ClearLog ";
 	document.form.submit();
 }
-
 </script>
 <style>
-    .nav-tabs > li > a {
-          padding-right: 6px;
-          padding-left: 6px;
-    }
+.nav-tabs > li > a {
+    padding-right: 6px;
+    padding-left: 6px;
+}
 </style>
 </head>
 
@@ -143,11 +146,4 @@ function clearLog(){
     <div id="footer"></div>
 </div>
 </body>
-<script type="text/javascript">
-	jQuery.noConflict();
-	(function($){
-		var textArea = document.getElementById('textarea');
-		textArea.scrollTop = textArea.scrollHeight;
-	})(jQuery);
-</script>
 </html>

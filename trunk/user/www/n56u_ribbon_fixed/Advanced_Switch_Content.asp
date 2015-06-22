@@ -102,11 +102,11 @@ function initial(){
 
 function applyRule(){
 	showLoading();
-	
+
 	document.form.action_mode.value = " Apply ";
 	document.form.current_page.value = "Advanced_Switch_Content.asp";
 	document.form.next_page.value = "";
-	
+
 	document.form.submit();
 }
 

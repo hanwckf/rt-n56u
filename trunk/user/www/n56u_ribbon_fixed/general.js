@@ -1288,91 +1288,11 @@ function validate_timerange(o, p) {
 function updateDateTime(s) {
 }
 
-function openLink(s) {
-    var tourl = "";
-    var link_params = "toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=640,height=480";
-    if (s == 'x_DDNSServer' || s == 'x_DDNSServer2') {
-        var o1 = (s == 'x_DDNSServer2') ? document.form.ddns2_server : document.form.ddns_server_x;
-        if (o1.value == "WWW.DYNDNS.ORG")
-            tourl = "https://account.dyn.com/entrance/";
-        else if (o1.value == 'WWW.TZO.COM')
-            tourl = "http://signup.tzo.com";
-        else if (o1.value == 'WWW.ZONEEDIT.COM')
-            tourl = "http://www.zoneedit.com/signUp.html";
-        else if (o1.value == 'WWW.EASYDNS.COM')
-            tourl = "https://web.easydns.com/Open_Account/";
-        else if (o1.value == 'WWW.NO-IP.COM')
-            tourl = "http://www.noip.com/newUser.php";
-        else if (o1.value == 'WWW.TUNNELBROKER.NET')
-            tourl = "http://www.tunnelbroker.net/register.php";
-        else if (o1.value == 'DNS.HE.NET')
-            tourl = "http://ipv6.he.net/certification/register.php";
-        else if (o1.value == 'WWW.DNSEXIT.COM')
-            tourl = "https://www.dnsexit.com/Direct.sv?cmd=signup";
-        else if (o1.value == 'WWW.CHANGEIP.COM')
-            tourl = "https://www.changeip.com/accounts/register.php";
-        else if (o1.value == 'WWW.DNSOMATIC.COM')
-            tourl = "https://www.dnsomatic.com/create/";
-        else if (o1.value == 'WWW.SITELUTIONS.COM')
-            tourl = "https://sitelutions.com/signup";
-        else if (o1.value == 'WWW.NIC.RU')
-            tourl = "https://www.nic.ru/dns/service/dns_hosting/dns_master/dynamic_dns.html";
-        else if (o1.value == 'WWW.DUCKDNS.ORG')
-            tourl = "https://duckdns.org/";
-        else if (o1.value == 'WWW.DTDNS.COM')
-            tourl = "https://www.dtdns.com/dtsite/register";
-        else if (o1.value == 'WWW.DHIS.ORG')
-            tourl = "http://dhis.org/WebEngine.ipo?context=dhis.website.register";
-        else if (o1.value == 'TB.NETASSIST.UA')
-            tourl = "http://tb.netassist.ua/reg.php";
-        else if (o1.value == 'IPV4.NSUPDATE.INFO')
-            tourl = "https://nsupdate.info/account/register/";
-        else if (o1.value == 'FREEDNS.AFRAID.ORG')
-            tourl = "http://freedns.afraid.org/signup/";
-        else
-            return;
-        link = window.open(tourl, "DDNSLink", link_params);
-    }
-    else if (s == 'x_NTPServer1') {
-        tourl = "http://support.ntp.org/bin/view/Servers/WebHome"
-        link = window.open(tourl, "NTPLink", link_params);
-    }
-    else if (s == 'x_FIsAnonymous' || s == 'x_FIsSuperuser') {
-        urlstr = location.href;
-        url = urlstr.indexOf("http://");
-        port = document.form.usb_ftpport_x.value;
-        if (url == -1) urlpref = LANIP;
-        else {
-            urlstr = urlstr.substring(7, urlstr.length);
-            url = urlstr.indexOf(":");
-            if (url != -1) {
-                urlpref = urlstr.substring(0, url);
-            }
-            else {
-                url = urlstr.indexOf("/");
-                if (url != -1) urlpref = urlstr.substring(0, url);
-                else urlpref = urlstr;
-            }
-        }
-        if (s == 'x_FIsAnonymous') {
-            user = 'anonymous';
-            tourl = "ftp://" + urlpref;
-        }
-        else {
-            user = 'admin';
-            tourl = "ftp://" + user + "@" + urlpref;
-        }
-        if (port != 21) tourl = tourl + ":" + port;
-        link = window.open(tourl, "FTPServer", link_params);
-    }
-    if (!link.opener) link.opener = self;
-}
-
 function blur_body() {
     alert("<#JS_focus#>");
 }
 
-function showhide(element, sh) {
+function showhide(e, sh) {
     var status;
     if (sh == 0)
         status = "none"
@@ -1380,14 +1300,14 @@ function showhide(element, sh) {
         status = "block";
 
     if (document.getElementById)
-        document.getElementById(element).style.display = status;
+        document.getElementById(e).style.display = status;
     else if (document.all)
-        document.all[element].style.display = status;
+        document.all[e].style.display = status;
     else if (document.layers)
-        document.layers[element].display = status;
+        document.layers[e].display = status;
 }
 
-function showhide_div(element, sh) {
+function showhide_div(e, sh) {
     var status;
     if (sh == 0)
         status = "none"
@@ -1395,9 +1315,9 @@ function showhide_div(element, sh) {
         status = "";
 
     if (document.getElementById)
-        document.getElementById(element).style.display = status;
+        document.getElementById(e).style.display = status;
     else if (document.all)
-        document.all[element].style.display = status;
+        document.all[e].style.display = status;
     else if (document.layers)
-        document.layers[element].display = status;
+        document.layers[e].display = status;
 }

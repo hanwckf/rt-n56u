@@ -63,40 +63,38 @@ function initial(){
 }
 
 function bytesToIEC(bytes, precision){
+	var absval = Math.abs(bytes);
 	var kilobyte = 1024;
 	var megabyte = kilobyte * 1024;
 	var gigabyte = megabyte * 1024;
 	var terabyte = gigabyte * 1024;
 	var petabyte = terabyte * 1024;
 
-	if ((bytes >= 0) && (bytes < kilobyte))
+	if (absval < kilobyte)
 		return bytes + ' B';
-	else if ((bytes >= kilobyte) && (bytes < megabyte))
+	else if (absval < megabyte)
 		return (bytes / kilobyte).toFixed(precision) + ' KiB';
-	else if ((bytes >= megabyte) && (bytes < gigabyte))
+	else if (absval < gigabyte)
 		return (bytes / megabyte).toFixed(precision) + ' MiB';
-	else if ((bytes >= gigabyte) && (bytes < terabyte))
+	else if (absval < terabyte)
 		return (bytes / gigabyte).toFixed(precision) + ' GiB';
-	else if ((bytes >= terabyte) && (bytes < petabyte))
+	else if (absval < petabyte)
 		return (bytes / terabyte).toFixed(precision) + ' TiB';
-	else if (bytes >= petabyte)
-		return (bytes / petabyte).toFixed(precision) + ' PiB';
 	else
-		return bytes + ' B';
+		return (bytes / petabyte).toFixed(precision) + ' PiB';
 }
 
 function kbitsToRate(kbits, precision){
+	var absval = Math.abs(kbits);
 	var megabit = 1000;
 	var gigabit = megabit * 1000;
 
-	if ((kbits >= 0) && (kbits < megabit))
+	if (absval < megabit)
 		return kbits + ' Kbps';
-	else if ((kbits >= megabit) && (kbits < gigabit))
+	else if (absval < gigabit)
 		return (kbits / megabit).toFixed(precision) + ' Mbps';
-	else if (bytes >= gigabit)
-		return (kbits / gigabit).toFixed(precision) + ' Gbps';
 	else
-		return kbits + ' Kbps';
+		return (kbits / gigabit).toFixed(precision) + ' Gbps';
 }
 
 function secondsToDHM(seconds){
@@ -198,8 +196,7 @@ function fill_wan_addr6(wan_ip,lan_ip){
 		$("row_lan_ip6").style.display = "none";
 }
 
-function fill_wan_bytes(rx,tx){
-	var now = performance.now();
+function fill_wan_bytes(rx,tx,now){
 	if (rx > 0 || tx > 0){
 		var diff_rx = 0;
 		var diff_tx = 0;
@@ -219,7 +216,7 @@ function fill_wan_bytes(rx,tx){
 						diff_tx = (0xFFFFFFFF - last_bytes_tx) + tx;
 				}else
 					diff_tx = tx - last_bytes_tx;
-				diff_tx = Math.floor(diff_tx * 8  / diff_time);
+				diff_tx = Math.floor(diff_tx * 8 / diff_time);
 			}
 		}
 		last_bytes_rx = rx;
@@ -239,12 +236,13 @@ function fill_wan_bytes(rx,tx){
 }
 
 function fill_info(){
+	var now = performance.now();
 	fill_status(wanlink_status(), wanlink_type());
 	fill_uptime(wanlink_uptime(), wanlink_dltime());
 	fill_phylink(wanlink_etherlink(), wanlink_apclilink());
 	fill_man_addr4(wanlink_ip4_man(), wanlink_gw4_man());
 	fill_wan_addr6(wanlink_ip6_wan(), wanlink_ip6_lan());
-	fill_wan_bytes(wanlink_bytes_rx(), wanlink_bytes_tx());
+	fill_wan_bytes(wanlink_bytes_rx(), wanlink_bytes_tx(), now);
 	$("WANIP4").innerHTML = wanlink_ip4_wan();
 	$("WANGW4").innerHTML = wanlink_gw4_wan();
 	$("WANDNS").innerHTML = wanlink_dns();

@@ -14,16 +14,22 @@
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
-<script type="text/javascript" src="/general.js"></script>
+<script>
+function initial(){
+	show_banner(1);
+	show_menu(5,10,5);
+	show_footer();
+}
+</script>
 <style>
-    .nav-tabs > li > a {
-          padding-right: 6px;
-          padding-left: 6px;
-    }
+.nav-tabs > li > a {
+    padding-right: 6px;
+    padding-left: 6px;
+}
 </style>
 </head>
 
-<body onload="show_banner(1); show_menu(5,10,5); show_footer();">
+<body onload="initial();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -34,17 +40,10 @@
             </div>
         </div>
     </div>
-    <div id="Loading" class="popup_bg"></div>
-    <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 
-    <form method="post" name="form" action="apply.cgi" >
-    <input type="hidden" name="current_page" value="Main_CTStatus_Content.asp">
-    <input type="hidden" name="next_page" value="">
-    <input type="hidden" name="next_host" value="">
-    <input type="hidden" name="sid_list" value="IPConnection;">
-    <input type="hidden" name="group_id" value="">
-    <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="action_script" value="">
+    <div id="Loading" class="popup_bg"></div>
+
+    <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -91,8 +90,6 @@
             </div>
          </div>
     </div>
-
-    </form>
 
     <div id="footer"></div>
 </div>

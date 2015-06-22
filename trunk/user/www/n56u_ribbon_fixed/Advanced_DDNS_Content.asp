@@ -232,6 +232,52 @@ function show_asus_alert(hname)
 		alert("<#LANHostConfig_x_DDNS_alarm_12#>");
 }
 
+function openLink(s) {
+	var tourl = "";
+	var link_params = "toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=640,height=480";
+	var o1 = (s == 'x_DDNSServer2') ? document.form.ddns2_server : document.form.ddns_server_x;
+	if (o1.value == "WWW.DYNDNS.ORG")
+		tourl = "https://account.dyn.com/entrance/";
+	else if (o1.value == 'WWW.TZO.COM')
+		tourl = "http://signup.tzo.com";
+	else if (o1.value == 'WWW.ZONEEDIT.COM')
+		tourl = "http://www.zoneedit.com/signUp.html";
+	else if (o1.value == 'WWW.EASYDNS.COM')
+		tourl = "https://web.easydns.com/Open_Account/";
+	else if (o1.value == 'WWW.NO-IP.COM')
+		tourl = "http://www.noip.com/newUser.php";
+	else if (o1.value == 'WWW.TUNNELBROKER.NET')
+		tourl = "http://www.tunnelbroker.net/register.php";
+	else if (o1.value == 'DNS.HE.NET')
+		tourl = "http://ipv6.he.net/certification/register.php";
+	else if (o1.value == 'WWW.DNSEXIT.COM')
+		tourl = "https://www.dnsexit.com/Direct.sv?cmd=signup";
+	else if (o1.value == 'WWW.CHANGEIP.COM')
+		tourl = "https://www.changeip.com/accounts/register.php";
+	else if (o1.value == 'WWW.DNSOMATIC.COM')
+		tourl = "https://www.dnsomatic.com/create/";
+	else if (o1.value == 'WWW.SITELUTIONS.COM')
+		tourl = "https://sitelutions.com/signup";
+	else if (o1.value == 'WWW.NIC.RU')
+		tourl = "https://www.nic.ru/dns/service/dns_hosting/dns_master/dynamic_dns.html";
+	else if (o1.value == 'WWW.DUCKDNS.ORG')
+		tourl = "https://duckdns.org/";
+	else if (o1.value == 'WWW.DTDNS.COM')
+		tourl = "https://www.dtdns.com/dtsite/register";
+	else if (o1.value == 'WWW.DHIS.ORG')
+		tourl = "http://dhis.org/WebEngine.ipo?context=dhis.website.register";
+	else if (o1.value == 'TB.NETASSIST.UA')
+		tourl = "http://tb.netassist.ua/reg.php";
+	else if (o1.value == 'IPV4.NSUPDATE.INFO')
+		tourl = "https://nsupdate.info/account/register/";
+	else if (o1.value == 'FREEDNS.AFRAID.ORG')
+		tourl = "http://freedns.afraid.org/signup/";
+	else
+		return;
+	link = window.open(tourl, "DDNSLink", link_params);
+	if (!link.opener) link.opener = self;
+}
+
 function validForm(){
 	if(document.form.ddns_enable_x[0].checked){
 		if(document.form.ddns_server_x.selectedIndex == 0){

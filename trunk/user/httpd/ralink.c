@@ -615,16 +615,16 @@ char* GetBW(int BW)
 {
 	switch(BW)
 	{
-		case BW_10:
-			return "10M";
-		case BW_20:
-			return "20M";
-		case BW_40:
-			return "40M";
-		case BW_80:
-			return "80M";
-		default:
-			return "N/A";
+	case BW_10:
+		return "10M";
+	case BW_20:
+		return "20M";
+	case BW_40:
+		return "40M";
+	case BW_80:
+		return "80M";
+	default:
+		return "N/A";
 	}
 }
 
@@ -632,22 +632,36 @@ char* GetPhyMode(int Mode)
 {
 	switch(Mode)
 	{
-		case MODE_CCK:
-			return "CCK";
-		case MODE_OFDM:
-			return "OFDM";
-		case MODE_HTMIX:
-			return "HTMIX";
-		case MODE_HTGREENFIELD:
-			return "GREEN";
-		case MODE_VHT:
-			return "VHT";
-		default:
-			return "N/A";
+	case MODE_CCK:
+		return "CCK";
+	case MODE_OFDM:
+		return "OFDM";
+	case MODE_HTMIX:
+		return "HTMIX";
+	case MODE_HTGREENFIELD:
+		return "GREEN";
+	case MODE_VHT:
+		return "VHT";
+	default:
+		return "N/A";
 	}
 }
 
-int MCSMappingRateTable[] =
+static int
+getMCS(MACHTTRANSMIT_SETTING HTSetting)
+{
+	int mcs_1ss = (int)HTSetting.field.MCS;
+
+	if (HTSetting.field.MODE >= MODE_VHT) {
+		if (mcs_1ss > 9)
+			mcs_1ss %= 16;
+	}
+
+	return mcs_1ss;
+}
+
+static const int
+MCSMappingRateTable[] =
 {
 	 2,  4,   11,  22,								// CCK
 
@@ -858,7 +872,7 @@ print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
 				GetPhyMode(mp->Entry[i].TxRate.field.MODE),
 				GetBW(mp->Entry[i].TxRate.field.BW),
-				mp->Entry[i].TxRate.field.MCS,
+				getMCS(mp->Entry[i].TxRate),
 				mp->Entry[i].TxRate.field.ShortGI ? "YES" : "NO",
 				mp->Entry[i].TxRate.field.ldpc ? "YES" : "NO",
 				mp->Entry[i].TxRate.field.STBC ? "YES" : "NO",

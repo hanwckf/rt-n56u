@@ -1873,14 +1873,14 @@ int rtl8367_get_traffic_port_inic(struct rtnl_link_stats64 *stats)
 		retVal = rtk_stat_port_get(EXT_PORT_INIC, STAT_IfInUcastPkts, &stats->rx_packets);
 		if (retVal == RT_ERR_OK) {
 			stats->rx_packets += stats->multicast;
-			stats->rx_bytes -= (stats->rx_packets * 8); // cut FCS and VLAN
+			stats->rx_bytes -= (stats->rx_packets * 4); // cut VLAN
 		}
 	}
 	retVal = rtk_stat_port_get(EXT_PORT_INIC, STAT_IfOutOctets, &stats->tx_bytes);
 	if (retVal == RT_ERR_OK) {
 		retVal = rtk_stat_port_get(EXT_PORT_INIC, STAT_IfOutUcastPkts, &stats->tx_packets);
 		if (retVal == RT_ERR_OK)
-			stats->tx_bytes -= (stats->tx_packets * 8); // cut FCS and VLAN
+			stats->tx_bytes -= (stats->tx_packets * 4); // cut VLAN
 	}
 
 	return 0;
@@ -1898,14 +1898,13 @@ int rtl8367_get_traffic_port_wan(struct rtnl_link_stats64 *stats)
 		retVal = rtk_stat_port_get(WAN_PORT_X, STAT_IfInUcastPkts, &stats->rx_packets);
 		if (retVal == RT_ERR_OK) {
 			stats->rx_packets += stats->multicast;
-			stats->rx_bytes -= (stats->rx_packets * 4); // cut FCS
 		}
 	}
 	retVal = rtk_stat_port_get(WAN_PORT_X, STAT_IfOutOctets, &stats->tx_bytes);
 	if (retVal == RT_ERR_OK) {
 		retVal = rtk_stat_port_get(WAN_PORT_X, STAT_IfOutUcastPkts, &stats->tx_packets);
-		if (retVal == RT_ERR_OK)
-			stats->tx_bytes -= (stats->tx_packets * 4); // cut FCS
+		if (retVal == RT_ERR_OK) {
+		}
 	}
 
 	return 0;

@@ -2791,8 +2791,6 @@ void get_wifidata(struct wifi_stats *st, int is_5ghz)
 #define LOAD_INT(x)	(unsigned)((x) >> 16)
 #define LOAD_FRAC(x)	LOAD_INT(((x) & ((1 << 16) - 1)) * 100)
 
-static struct cpu_stats g_cpu_old = {0};
-
 static int ej_system_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	struct sysinfo info;
@@ -2802,32 +2800,11 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char **argv)
 	struct wifi_stats wifi5;
 	struct stat log;
 	unsigned long updays, uphours, upminutes;
-	unsigned diff_total, u_user, u_nice, u_system, u_idle, u_iowait, u_irq, u_sirq, u_busy;
-
-	if (g_cpu_old.total == 0)
-	{
-		get_cpudata(&g_cpu_old);
-		usleep(100000);
-	}
 
 	get_cpudata(&cpu);
 	get_memdata(&mem);
 	get_wifidata(&wifi2, 0);
 	get_wifidata(&wifi5, 1);
-
-	diff_total = (unsigned)(cpu.total - g_cpu_old.total);
-	if (!diff_total) diff_total = 1;
-
-	u_user = (unsigned)(cpu.user - g_cpu_old.user) * 100 / diff_total;
-	u_nice = (unsigned)(cpu.nice - g_cpu_old.nice) * 100 / diff_total;
-	u_system = (unsigned)(cpu.system - g_cpu_old.system) * 100 / diff_total;
-	u_idle = (unsigned)(cpu.idle - g_cpu_old.idle) * 100 / diff_total;
-	u_iowait = (unsigned)(cpu.iowait - g_cpu_old.iowait) * 100 / diff_total;
-	u_irq = (unsigned)(cpu.irq - g_cpu_old.irq) * 100 / diff_total;
-	u_sirq = (unsigned)(cpu.sirq - g_cpu_old.sirq) * 100 / diff_total;
-	u_busy = (unsigned)(cpu.busy - g_cpu_old.busy) * 100 / diff_total;
-
-	memcpy(&g_cpu_old, &cpu, sizeof(struct cpu_stats));
 
 	sysinfo(&info);
 	updays = (unsigned long) info.uptime / (unsigned long)(60*60*24);
@@ -2841,22 +2818,22 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char **argv)
 	if (stat("/tmp/syslog.log", &log) != 0)
 		log.st_mtime = 0;
 
-	websWrite(wp, "{\"lavg\": \"%u.%02u %u.%02u %u.%02u\", "
-			"\"uptime\": {\"days\": %lu, \"hours\": %lu, \"minutes\": %lu}, "
-			"\"ram\": {\"total\": %lu, \"used\": %lu, \"free\": %lu, \"buffers\": %lu, \"cached\": %lu}, "
-			"\"swap\": {\"total\": %lu, \"used\": %lu, \"free\": %lu}, "
-			"\"cpu\": {\"busy\": %u, \"user\": %u, \"nice\": %u, \"system\": %u, "
-				  "\"idle\": %u, \"iowait\": %u, \"irq\": %u, \"sirq\": %u}, "
-			"\"wifi2\": {\"state\": %d, \"guest\": %d}, "
-			"\"wifi5\": {\"state\": %d, \"guest\": %d}, "
-			"\"logmt\": %ld }",
+	websWrite(wp, "{ lavg: \"%u.%02u %u.%02u %u.%02u\", "
+			"uptime: {days: %lu, hours: %lu, minutes: %lu}, "
+			"ram: {total: %lu, used: %lu, free: %lu, buffers: %lu, cached: %lu}, "
+			"swap: {total: %lu, used: %lu, free: %lu}, "
+			"cpu: {busy: 0x%llx, user: 0x%llx, nice: 0x%llx, system: 0x%llx, "
+			      "idle: 0x%llx, iowait: 0x%llx, irq: 0x%llx, sirq: 0x%llx, total: 0x%llx}, "
+			"wifi2: {state: %d, guest: %d}, "
+			"wifi5: {state: %d, guest: %d}, "
+			"logmt: %ld }",
 			LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]),
 			LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]),
 			LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]),
 			updays, uphours, upminutes,
 			mem.total, (mem.total - mem.free), mem.free, mem.buffers, mem.cached,
 			mem.sw_total, (mem.sw_total - mem.sw_free), mem.sw_free,
-			u_busy, u_user, u_nice, u_system, u_idle, u_iowait, u_irq, u_sirq,
+			cpu.busy, cpu.user, cpu.nice, cpu.system, cpu.idle, cpu.iowait, cpu.irq, cpu.sirq, cpu.total,
 			wifi2.radio, wifi2.ap_guest,
 			wifi5.radio, wifi5.ap_guest,
 			log.st_mtime

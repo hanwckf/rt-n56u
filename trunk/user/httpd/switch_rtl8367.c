@@ -167,6 +167,38 @@ static int rtl8367_ioctl(unsigned int cmd, unsigned int par, unsigned int *value
 	return retVal;
 }
 
+int get_eth_port_bytes(int port_id, uint64_t *rx, uint64_t *tx)
+{
+	port_bytes_t pb;
+	int ioctl_result;
+	unsigned int port_mask = SWAPI_PORTMASK_WAN;
+
+	switch (port_id)
+	{
+	case 1:
+		port_mask = SWAPI_PORTMASK_LAN1;
+		break;
+	case 2:
+		port_mask = SWAPI_PORTMASK_LAN2;
+		break;
+	case 3:
+		port_mask = SWAPI_PORTMASK_LAN3;
+		break;
+	case 4:
+		port_mask = SWAPI_PORTMASK_LAN4;
+		break;
+	}
+
+	ioctl_result = rtl8367_ioctl(RTL8367_IOCTL_STATUS_PORT_BYTES, port_mask, (unsigned int *)&pb);
+	if (ioctl_result < 0)
+		return ioctl_result;
+
+	*rx = pb.RX;
+	*tx = pb.TX;
+
+	return ioctl_result;
+}
+
 int fill_eth_port_status(int port_id, char linkstate[40])
 {
 	unsigned int cmd = RTL8367_IOCTL_STATUS_SPEED_PORT_WAN;
@@ -175,9 +207,6 @@ int fill_eth_port_status(int port_id, char linkstate[40])
 
 	switch (port_id)
 	{
-	case 0:
-		cmd = RTL8367_IOCTL_STATUS_SPEED_PORT_WAN;
-		break;
 	case 1:
 		cmd = RTL8367_IOCTL_STATUS_SPEED_PORT_LAN1;
 		break;
@@ -247,9 +276,6 @@ static int fill_eth_status(int port_id, webs_t wp)
 
 	switch (port_id)
 	{
-	case 0:
-		cmd = RTL8367_IOCTL_STATUS_CNT_PORT_WAN;
-		break;
 	case 1:
 		cmd = RTL8367_IOCTL_STATUS_CNT_PORT_LAN1;
 		break;

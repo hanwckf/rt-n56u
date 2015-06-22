@@ -202,6 +202,40 @@ int phy_link_port_lan4(unsigned int link_mode, unsigned int flow_mode)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+int phy_status_port_bytes(int port_id, uint64_t *rx, uint64_t *tx)
+{
+	port_bytes_t pb;
+	int ioctl_result;
+	unsigned int port_mask = SWAPI_PORTMASK_WAN;
+
+	switch (port_id)
+	{
+	case 1:
+		port_mask = SWAPI_PORTMASK_LAN1;
+		break;
+	case 2:
+		port_mask = SWAPI_PORTMASK_LAN2;
+		break;
+	case 3:
+		port_mask = SWAPI_PORTMASK_LAN3;
+		break;
+	case 4:
+		port_mask = SWAPI_PORTMASK_LAN4;
+		break;
+	}
+
+	ioctl_result = mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_PORT_BYTES, port_mask, (unsigned int *)&pb);
+	if (ioctl_result < 0)
+		return ioctl_result;
+
+	*rx = pb.RX;
+	*tx = pb.TX;
+
+	return ioctl_result;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 inline int phy_storm_unicast_unknown(unsigned int storm_rate_mbps)
 {
 	// N.A.
@@ -753,6 +787,9 @@ int mtk_esw_main(int argc, char **argv)
 	
 	case MTK_ESW_IOCTL_GPIO_PIN_GET_VAL:
 		return show_status_gpio_pin(arg);
+	
+	case MTK_ESW_IOCTL_STATUS_PORT_BYTES:
+		return 1;
 	
 	case MTK_ESW_IOCTL_STATUS_LINK_PORT_WAN:
 	case MTK_ESW_IOCTL_STATUS_LINK_PORT_LAN1:

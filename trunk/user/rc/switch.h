@@ -51,6 +51,8 @@ int phy_status_port_speed_lan2(unsigned int *p_speed_mode);
 int phy_status_port_speed_lan3(unsigned int *p_speed_mode);
 int phy_status_port_speed_lan4(unsigned int *p_speed_mode);
 
+int phy_status_port_bytes(int port_id, uint64_t *rx, uint64_t *tx);
+
 ////////////////////////////////////////////////////////////////////////////////
 // SWITCH CONTROL
 ////////////////////////////////////////////////////////////////////////////////

@@ -149,7 +149,7 @@ RESOLVFILE
    stable RTC (it uses uptime, not epoch time) and writes the DHCP leases file less often to avoid flash wear. 
 */
 
-#define HAVE_BROKEN_RTC
+/* #define HAVE_BROKEN_RTC */
 
 /* The default set of options to build. Built with these options, dnsmasq
    has no library dependencies other than libc */

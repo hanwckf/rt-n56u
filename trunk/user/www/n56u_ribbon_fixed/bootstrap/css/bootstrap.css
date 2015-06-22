@@ -1595,8 +1595,8 @@ table {
   -moz-border-radius-bottomright: 4px;
 }
 
-.table-striped tbody tr:nth-child(odd) td,
-.table-striped tbody tr:nth-child(odd) th {
+.table-striped tbody tr:nth-child(even) td,
+.table-striped tbody tr:nth-child(even) th {
   background-color: #f9f9f9;
 }
 

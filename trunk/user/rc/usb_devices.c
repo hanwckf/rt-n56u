@@ -414,8 +414,6 @@ int mdev_net_main(int argc, char **argv)
 	if(!check_hotplug_action(action)){
 		unlink(node_fname);
 		
-		create_file(FLAG_FILE_WWAN_GONE);
-		
 		ifconfig(device_name, 0, "0.0.0.0", NULL);
 		
 		if (get_usb_modem_wan(0))
@@ -479,8 +477,6 @@ int mdev_tty_main(int argc, char **argv)
 	// If remove the device?
 	if(!check_hotplug_action(action)){
 		unlink(node_fname);
-		
-		create_file(FLAG_FILE_WWAN_GONE);
 		
 		if (get_usb_modem_wan(0))
 			notify_rc("on_unplug_usb_modem");

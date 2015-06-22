@@ -562,7 +562,6 @@
 			{"log_ipaddr", "", NULL, EVM_RESTART_SYSLOG},
 			{"log_port", "", NULL, EVM_RESTART_SYSLOG},
 			{"log_float_ui", "", NULL, FALSE},
-			{"rstats_enable", "", NULL, FALSE},
 			{"time_zone", "", NULL, EVM_RESTART_TIME},
 			{"ntp_period", "", NULL, FALSE},
 			{"ntp_server0", "", NULL, EVM_RESTART_NTPC},

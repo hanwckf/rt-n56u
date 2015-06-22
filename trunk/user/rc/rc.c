@@ -34,6 +34,8 @@
 #include <sys/wait.h>
 #include <dirent.h>
 
+#include <rstats.h>
+
 #include "rc.h"
 #include "gpio_pins.h"
 #include "switch.h"
@@ -125,7 +127,7 @@ load_usb_modules(void)
 		reload_modem_modules(nvram_get_int("modem_type"), 0);
 
 	/* start usb host */
-#if defined (USE_USB3)
+#if defined (USE_USB_XHCI)
 	doSystem("modprobe %s %s=%d", "xhci-hcd", "usb3_disable", nvram_get_int("usb3_disable"));
 #else
 	doSystem("modprobe %s", "ehci-hcd");
@@ -413,6 +415,9 @@ nvram_convert_misc_values(void)
 	nvram_set_temp("vpnc_dom_t", "");
 	nvram_set_temp("viptv_ifname", "");
 
+	nvram_set_temp(RSTATS_NVKEY_24, (sw_mode != 3) ? IFDESC_WAN : IFDESC_LAN);
+	nvram_set_temp(RSTATS_NVKEY_DM, IFDESC_WAN);
+
 	/* setup wan0 variables */
 	set_wan0_vars();
 	set_wan_unit_value(0, "uptime", "0000000000");
@@ -430,7 +435,7 @@ nvram_convert_misc_values(void)
 	time_zone_x_mapping();
 }
 
-static void
+void
 write_storage_to_mtd(void)
 {
 	doSystem("/sbin/mtd_storage.sh %s", "save");
@@ -1260,12 +1265,10 @@ handle_notifications(void)
 	closedir(directory);
 }
 
-
 typedef struct {
 	const char *name;
 	int (*main)(int argc, char *argv[]);
 } applet_rc_t;
-
 
 static const applet_rc_t applets_rc[] = {
 	{ "udhcpc.script",	udhcpc_main		},

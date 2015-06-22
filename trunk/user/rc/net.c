@@ -369,7 +369,7 @@ start_igmpproxy(char *wan_ifname)
 	if (*viptv_iflast && is_interface_exist(viptv_iflast) && strcmp(wan_ifname, viptv_iflast))
 		return;
 
-	/* Allways close old instance of igmpproxy and udpxy (interface may changed) */
+	/* Always close old instance of igmpproxy and udpxy (interface may changed) */
 	stop_igmpproxy(wan_ifname);
 
 	start_udpxy(wan_ifname);

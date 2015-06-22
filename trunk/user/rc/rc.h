@@ -78,8 +78,6 @@
 #define QMI_CLIENT_ID			"/tmp/qmi-client-id"
 #define QMI_HANDLE_PDH			"/tmp/qmi-handle"
 
-#define FLAG_FILE_WWAN_GONE		"/tmp/.wwan_gone"
-
 #define DDNS_CONF_FILE			"/etc/inadyn.conf"
 #define DDNS_DONE_SCRIPT		"/sbin/ddns_updated"
 #define DDNS_CACHE_DIR			"/tmp/inadyn"
@@ -130,6 +128,7 @@ void shutdown_router(int use_reboot);
 void handle_notifications(void);
 void LED_CONTROL(int gpio_led, int flag);
 void storage_save_time(time_t delta);
+void write_storage_to_mtd(void);
 void erase_storage(void);
 void erase_nvram(void);
 

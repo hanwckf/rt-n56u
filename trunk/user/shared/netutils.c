@@ -45,27 +45,64 @@
 static const struct ifname_desc_t {
 	const char *ifname;
 	const char *ifdesc;
+	unsigned char is_dynamic;
+	unsigned char is_ap_mode;
+	unsigned char is_router_mode;
+	unsigned char wan_no;
 } ifname_descs[] = {
-	{ IFNAME_LAN,     IFDESC_LAN      },
-	{ IFNAME_2G_MAIN, IFDESC_WLAN_2G  },
-#if BOARD_HAS_5G_RADIO
-	{ IFNAME_5G_MAIN, IFDESC_WLAN_5G  },
+	/*IFNAME             IFDESC           DY AM RM WAN*/
+	{ IFNAME_WAN,        IFDESC_WAN,       0, 0, 1, 1 },
+#if defined(USE_SINGLE_MAC) && !defined(AP_MODE_LAN_TAGGED)
+	{ IFNAME_LAN,        IFDESC_LAN,       0, 0, 1, 0 },
+	{ IFNAME_MAC,        IFDESC_LAN,       0, 1, 0, 0 },
+#else
+	{ IFNAME_LAN,        IFDESC_LAN,       0, 0, 0, 0 },
 #endif
-	{ IFNAME_WAN,     IFDESC_WAN      },
-	{ IFNAME_RAS,     IFDESC_WWAN     },
-	{ IFNAME_USBNET1, IFDESC_WWAN     },
-	{ IFNAME_USBNET2, IFDESC_WWAN     },
-	{ NULL, NULL }
+#if defined(USE_RT3352_MII)
+	{ IFNAME_2G_MAIN,    IFDESC_WLAN2_MII, 0, 0, 0, 0 },
+#else
+	{ IFNAME_2G_MAIN,    IFDESC_WLAN2_AP0, 0, 0, 0, 0 },
+	{ IFNAME_2G_GUEST,   IFDESC_WLAN2_AP1, 0, 0, 0, 0 },
+	{ IFNAME_2G_APCLI,   IFDESC_WLAN2_APC, 0, 0, 0, 2 },
+	{ IFNAME_2G_WDS0,    IFDESC_WLAN2_WDS, 0, 0, 0, 0 },
+#endif
+#if BOARD_HAS_5G_RADIO
+	{ IFNAME_5G_MAIN,    IFDESC_WLAN5_AP0, 0, 0, 0, 0 },
+	{ IFNAME_5G_GUEST,   IFDESC_WLAN5_AP1, 0, 0, 0, 0 },
+	{ IFNAME_5G_APCLI,   IFDESC_WLAN5_APC, 0, 0, 0, 2 },
+	{ IFNAME_5G_WDS0,    IFDESC_WLAN5_WDS, 0, 0, 0, 0 },
+#endif
+#if defined(USE_USB_SUPPORT)
+	{ IFNAME_RAS,        IFDESC_WWAN,      1, 0, 1, 3 },
+	{ IFNAME_USBNET1,    IFDESC_WWAN,      1, 0, 1, 3 },
+	{ IFNAME_USBNET2,    IFDESC_WWAN,      1, 0, 1, 3 },
+#endif
+	{ IFNAME_CLIENT_PPP, IFDESC_VPNC,      1, 0, 1, 0 },
+	{ IFNAME_CLIENT_TAP, IFDESC_VPNC,      1, 0, 1, 0 },
+	{ IFNAME_CLIENT_TUN, IFDESC_VPNC,      1, 0, 1, 0 },
+
+	{ NULL, NULL, 0, 0, 0, 0 }
 };
 
 const char*
-get_ifname_descriptor(const char* ifname)
+get_ifname_descriptor(const char* ifname, int ap_mode, int *ifindex, int *wan_no)
 {
 	struct ifname_desc_t *ifd;
 
 	for (ifd = (struct ifname_desc_t *)&ifname_descs[0]; ifd->ifname; ifd++) {
-		if (strcmp(ifname, ifd->ifname) == 0)
+		if (ap_mode && ifd->is_router_mode)
+			continue;
+		if (!ap_mode && ifd->is_ap_mode)
+			continue;
+		if (strcmp(ifname, ifd->ifname) == 0) {
+			if (wan_no)
+				*wan_no = (int)ifd->wan_no;
+			if (ifd->is_dynamic)
+				*ifindex = get_interface_index(ifname);
+			else
+				*ifindex = 0;
 			return ifd->ifdesc;
+		}
 	}
 
 	return NULL;
@@ -390,6 +427,27 @@ get_interface_flags(const char *ifname)
 	close(sockfd);
 
 	return iflags;
+}
+
+int
+get_interface_index(const char *ifname)
+{
+	struct ifreq ifr;
+	int sockfd, ifindex;
+
+	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+		return -1;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	if (ioctl(sockfd, SIOCGIFINDEX, &ifr) < 0)
+		ifindex = -1;
+	else
+		ifindex = ifr.ifr_ifindex;
+
+	close(sockfd);
+
+	return ifindex;
 }
 
 int

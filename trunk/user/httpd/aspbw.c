@@ -58,11 +58,11 @@ int f_exists(const char *path)	// note: anything but a directory
 
 static int _f_wait_exists(const char *name, int max, int invert)
 {
-	max *= 10;
+	max *= 40;
 	while (max-- > 0) {
 		if (f_exists(name) ^ invert)
 			return 1;
-		usleep(100000);
+		usleep(25000);
 	}
 	return 0;
 }
@@ -134,7 +134,7 @@ void char_to_ascii(char *output, char *input)
 	*ptr = '\0';
 }
 
-void do_f(char *path, webs_t wp)
+void do_f(const char *path, webs_t wp)
 {
 	FILE *fp;
 	char buf[1024];

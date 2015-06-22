@@ -49,6 +49,7 @@
 #include <wireless.h>
 #include <ralink_priv.h>
 #include <notify_rc.h>
+#include <rstats.h>
 #include <bin_sem_asus.h>
 
 #include "common.h"
@@ -3574,90 +3575,146 @@ struct mime_handler mime_handlers[] = {
 };
 
 // traffic monitor
-static int 
+static int
 ej_netdev(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
 	char buf[256];
 	uint64_t rx, tx;
-	char *p, *ifname;
+	char *p, *ifname, comma;
 	const char *ifdesc;
-	char comma;
-	int ret = 0;
+	int is_ap_mode, ifindex;
+#if !defined(RSTATS_SKIP_ESW)
+	unsigned int i;
+#endif
 
-	ret += websWrite(wp, "\nnetdev = {\n");
-	if ((fp = fopen("/proc/net/dev", "r")) != NULL) {
+	is_ap_mode = get_ap_mode();
+
+	comma = ' ';
+
+	fprintf(wp, "\nnetdevs = {\n");
+	fp = fopen("/proc/net/dev", "r");
+	if (fp) {
 		fgets(buf, sizeof(buf), fp);
 		fgets(buf, sizeof(buf), fp);
-		comma = ' ';
 		while (fgets(buf, sizeof(buf), fp)) {
-			if ((p = strchr(buf, ':')) == NULL) continue;
+			if ((p = strchr(buf, ':')) == NULL)
+				continue;
 			*p = 0;
-			if ((ifname = strrchr(buf, ' ')) == NULL) ifname = buf;
-			else ++ifname;
+			if ((ifname = strrchr(buf, ' ')) == NULL)
+				ifname = buf;
+			else
+				++ifname;
 			
-			ifdesc = get_ifname_descriptor(ifname);
+			if (strcmp(ifname, "lo") == 0)
+				continue;
+			
+			ifindex = 0;
+			ifdesc = get_ifname_descriptor(ifname, is_ap_mode, &ifindex, NULL);
 			if (!ifdesc)
 				continue;
 			
 			if (sscanf(p + 1, "%llu%*u%*u%*u%*u%*u%*u%*u%llu", &rx, &tx) != 2)
 				continue;
-			ret += websWrite(wp, "%c'%s':{rx:0x%llx,tx:0x%llx}", comma, ifdesc, rx, tx);
-			comma = ',';
-			ret += websWrite(wp, "\n");
+			
+			fprintf(wp, "%c'%s':{id:%d,rx:0x%llx,tx:0x%llx}\n", comma, ifdesc, ifindex, rx, tx);
+			if (comma != ',')
+				comma = ',';
 		}
 		fclose(fp);
-		ret += websWrite(wp, "};");
 	}
+
+#if !defined(RSTATS_SKIP_ESW)
+	for (i = 0; i < BOARD_NUM_ETH_EPHY; i++) {
+		if (get_eth_port_bytes(i, &rx, &tx) < 0)
+			continue;
+		fprintf(wp, "%c'ESW_P%d':{id:%d,rx:0x%llx,tx:0x%llx}\n", comma, i, 0, rx, tx);
+		if (comma != ',')
+			comma = ',';
+	}
+#endif
+
+	fprintf(wp, "};\n");
+
+	fflush(wp);
+
 	return 0;
 }
 
 static int
 ej_bandwidth(int eid, webs_t wp, int argc, char **argv)
 {
-	char *name, *sigs;
-	int is_speed = 0;
+	char *netdev;
+	const char *fname = RSTATS_JS_SPEED, *nvkey = RSTATS_NVKEY_24;
+	int bw_id = 0, sig = SIGUSR1;
 
-	if (strcmp(argv[0], "speed") == 0) {
-		sigs = "-SIGUSR1";
-		name = "/var/spool/rstats-speed.js";
-		is_speed = 1;
-	} else {
-		sigs = "-SIGUSR2";
-		name = "/var/spool/rstats-history.js";
+	if (argc < 1)
+		return 0;
+
+	netdev = "";
+	if (argc > 1)
+		netdev = argv[1];
+
+	if (strcmp(argv[0], "history") == 0) {
+		bw_id = 1;
+		sig = SIGUSR2;
+		fname = RSTATS_JS_HISTORY;
+		nvkey = RSTATS_NVKEY_DM;
 	}
 
-	if (pids("rstats")) {
-		unlink(name);
-		doSystem("killall %s %s", sigs, "rstats");
-		f_wait_exists(name, 5);
-		do_f(name, wp);
+	if (strlen(netdev) > 1)
+		nvram_set_temp(nvkey, netdev);
+
+	unlink(fname);
+	if (kill_pidfile_s(RSTATS_PID_FILE, sig) == 0)
+		f_wait_exists(fname, 5);
+
+	if (f_exists(fname)) {
+		do_f(fname, wp);
 	} else {
-		if (f_exists(name)) {
-			do_f(name, wp);
+		if (bw_id == 0) {
+			websWrite(wp,
+				"\nnetdev = '%s';\n"
+				"speed_history = {'%s': {}};\n"
+				"data_period = %d;\n"
+				"poll_next = %d;\n",
+				IFDESC_LAN,
+				IFDESC_LAN,
+				RSTATS_INTERVAL,
+				RSTATS_INTERVAL
+			);
 		} else {
-			if (is_speed)
-				websWrite(wp, "\nspeed_history = {};\n");
-			else
-				websWrite(wp, "\ndaily_history = [];\nmonthly_history = [];\n");
+			websWrite(wp,
+				"\nnetdev = '%s';\n"
+				"netdevs = ['%s'];\n"
+				"daily_history = [];\n"
+				"monthly_history = [];\n"
+				"poll_next = %d;\n",
+				IFDESC_WAN,
+				IFDESC_WAN,
+				RSTATS_INTERVAL
+			);
 		}
 	}
 
 	return 0;
 }
 
-static int 
+static int
 ej_backup_nvram(int eid, webs_t wp, int argc, char **argv)
 {
 	char *list;
 	char *p, *k;
 	const char *v;
 
-	if ((argc != 1) || ((list = strdup(argv[0])) == NULL)) return 0;
+	if ((argc != 1) || ((list = strdup(argv[0])) == NULL))
+		return 0;
+
 	websWrite(wp, "\nnvram = {\n");
 	p = list;
 	while ((k = strsep(&p, ",")) != NULL) {
-		if (*k == 0) continue;
+		if (*k == 0)
+			continue;
 		v = nvram_safe_get(k);
 		websWrite(wp, "\t%s: '", k);
 		websWrite(wp, v);

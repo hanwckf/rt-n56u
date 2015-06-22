@@ -117,12 +117,26 @@
 #define IFNAME_USBNET1			"wwan0"
 #define IFNAME_USBNET2			"weth0"
 
+#define IFDESC_VPNC			"VPNC"
+#define IFDESC_WISP			"WISP"
+#define IFDESC_WWAN			"WWAN"
 #define IFDESC_WAN			"WAN"
 #define IFDESC_LAN			"LAN"
-#define IFDESC_WLAN_2G			"WLAN2"
-#define IFDESC_WLAN_5G			"WLAN5"
-#define IFDESC_WWAN			"WWAN"
-#define IFDESCS_MAX_NUM			5
+#define IFDESC_WLAN2_MII		"WLAN2_MII"
+#define IFDESC_WLAN2_AP0		"WLAN2_AP0"
+#define IFDESC_WLAN2_AP1		"WLAN2_AP1"
+#define IFDESC_WLAN2_APC		"WLAN2_APC"
+#define IFDESC_WLAN2_WDS		"WLAN2_WDS"
+#if BOARD_HAS_5G_RADIO
+#define IFDESC_WLAN5_AP0		"WLAN5_AP0"
+#define IFDESC_WLAN5_AP1		"WLAN5_AP1"
+#define IFDESC_WLAN5_APC		"WLAN5_APC"
+#define IFDESC_WLAN5_WDS		"WLAN5_WDS"
+#define IFDESCS_MAX_NUM			12
+#else
+#define IFDESCS_MAX_NUM			8
+#endif
+
 
 enum {
 	IPV4_WAN_PROTO_IPOE_STATIC = 0,
@@ -159,12 +173,13 @@ extern int       ifconfig(char *ifname, int flags, char *addr, char *mask);
 extern int       is_interface_exist(const char *ifname);
 extern int       is_interface_up(const char *ifname);
 extern int       get_interface_flags(const char *ifname);
+extern int       get_interface_index(const char *ifname);
 extern int       get_interface_mtu(const char *ifname);
 extern int       get_interface_hwaddr(const char *ifname, unsigned char mac[6]);
 extern in_addr_t get_interface_addr4(const char *ifname);
 extern int       get_ipv6_type(void);
 
-extern const char* get_ifname_descriptor(const char* ifname);
+extern const char* get_ifname_descriptor(const char* ifname, int ap_mode, int *ifindex, int *wan_no);
 extern uint64_t    get_ifstats_bytes_rx(const char* ifname);
 extern uint64_t    get_ifstats_bytes_tx(const char* ifname);
 

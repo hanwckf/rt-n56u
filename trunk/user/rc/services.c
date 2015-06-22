@@ -385,8 +385,6 @@ start_services_once(int is_ap_mode)
 			doSystem("brctl stp %s %d", IFNAME_BR, 1);
 			doSystem("brctl setfd %s %d", IFNAME_BR, 15);
 		}
-		
-		start_rstats();
 	} else {
 		start_udpxy(IFNAME_BR);
 #if defined(APP_XUPNPD)
@@ -397,6 +395,7 @@ start_services_once(int is_ap_mode)
 	start_lltd();
 	start_watchdog_cpu();
 	start_networkmap(1);
+	start_rstats();
 
 	return 0;
 }

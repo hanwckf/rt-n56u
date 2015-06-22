@@ -27,51 +27,63 @@
 #include <sys/sysinfo.h>
 #include <sys/stat.h>
 #include <stdint.h>
-#include <syslog.h>
 #include <fcntl.h>
 
+#include <include/bsd_queue.h>
+#include <rstats.h>
+
 #include "rc.h"
-
-#define STORAGE_PATH  "/etc/storage/rstats-history"
-
-#define K 1024
-#define M (1024 * 1024)
-#define G (1024 * 1024 * 1024)
+#include "switch.h"
 
 #define SMIN		60
-#define	SHOUR		(60 * 60)
-#define	SDAY		(60 * 60 * 24)
+#define SHOUR		(60 * 60)
+#define SDAY		(60 * 60 * 24)
 
-#define INTERVAL	60
-
-#define MAX_NSPEED	((24 * SHOUR) / INTERVAL)
+#define MAX_NSPEED	((24 * SHOUR) / RSTATS_INTERVAL)
 #define MAX_NDAILY	62
 #define MAX_NMONTHLY	25
+
+#if !defined(RSTATS_SKIP_ESW)
+#define MAX_SPEED_IF	(IFDESCS_MAX_NUM + BOARD_NUM_ETH_EPHY)
+#else
 #define MAX_SPEED_IF	IFDESCS_MAX_NUM
-#define MAX_ROLLOVER	(225 * M)
+#endif
+
+#if defined(USE_USB_SUPPORT)
+#define MAX_HISTORY_IF	3
+#else
+#define MAX_HISTORY_IF	2
+#endif
 
 #define MAX_COUNTER	2
-#define RX 		0
-#define TX 		1
+#define RX		0
+#define TX		1
 
 #define DAILY		0
 #define MONTHLY		1
 
 #define CURRENT_ID	0x31305352
 
+typedef struct speed_item {
+	SLIST_ENTRY(speed_item) entries;
+	char ifdesc[16];
+	int ifindex;
+	int tail;
+	int skips;
+	uint64_t last[MAX_COUNTER];
+	uint32_t speed[MAX_NSPEED][MAX_COUNTER];
+} speed_item_t;
+
+typedef struct speed_item_list {
+	SLIST_HEAD(, speed_item) head;
+	int count;
+	int tail;
+} speed_item_list_t;
+
 typedef struct {
 	uint32_t xtime;
 	uint64_t counter[MAX_COUNTER];
 } data_t;
-
-typedef struct {
-	char ifdesc[16];
-	long utime;
-	uint64_t speed[MAX_NSPEED][MAX_COUNTER];
-	uint64_t last[MAX_COUNTER];
-	int tail;
-	int sync;
-} speed_t;
 
 typedef struct {
 	uint32_t id;
@@ -81,15 +93,31 @@ typedef struct {
 	int monthlyp;
 } history_t;
 
-history_t history;
-speed_t speed[MAX_SPEED_IF];
-static int speed_count = 0;
-static int wwan_deleted = 0;
-static long now_uptime;
+static speed_item_list_t g_speed_list;
 
-volatile int gothup = 0;
-volatile int gotuser = 0;
-volatile int gotterm = 0;
+static history_t *g_history = NULL;
+
+static struct history_desc_t {
+	const char *ifdesc;
+	unsigned char is_wisp;
+	unsigned char is_active;
+} g_history_desc[MAX_HISTORY_IF] = {
+	{IFDESC_WAN,  0, 0},
+	{IFDESC_WISP, 1, 0},
+#if defined(USE_USB_SUPPORT)
+	{IFDESC_WWAN, 0, 0},
+#endif
+};
+
+static int g_ap_mode = 0;
+
+static long g_uptime_now = 0;
+static long g_uptime_old = 0;
+static long g_store_cntr = 0;
+
+static volatile sig_atomic_t gothup = 0;
+static volatile sig_atomic_t gotusr1 = 0;
+static volatile sig_atomic_t gotusr2 = 0;
 
 // ===========================================
 
@@ -119,123 +147,298 @@ static int f_write(const char *path, const void *buffer, int len)
 	return r;
 }
 
-static void clear_history(void)
+static int alloc_rstats(void)
 {
-	memset(speed, 0, sizeof(speed));
+	int i;
+	size_t sz_history = MAX_HISTORY_IF * sizeof(history_t);
 
-	memset(&history, 0, sizeof(history));
-	history.id = CURRENT_ID;
+	SLIST_INIT(&g_speed_list.head);
+	g_speed_list.count = 0;
+	g_speed_list.tail = 0;
+
+	g_history = malloc(sz_history);
+	if (!g_history)
+		return -1;
+
+	memset(g_history, 0, sz_history);
+
+	for (i = 0; i < MAX_HISTORY_IF; i++)
+		g_history[i].id = CURRENT_ID;
+
+	return 0;
 }
 
-static void load_history(void)
+static void free_rstats(void)
 {
-	int n;
-	history_t hist;
+	speed_item_t *item, *next;
 
-	if (nvram_match("rstats_stored", "0"))
-		return;
+	SLIST_FOREACH_SAFE(item, &g_speed_list.head, entries, next) {
+		free(item);
+	}
 
-	memset(&hist, 0, sizeof(hist));
-	n = f_read(STORAGE_PATH, &hist, sizeof(hist));
-	
-	if (n == sizeof(hist) && hist.id == CURRENT_ID) {
-		memcpy(&history, &hist, sizeof(history));
+	SLIST_INIT(&g_speed_list.head);
+	g_speed_list.count = 0;
+	g_speed_list.tail = 0;
+
+	if (g_history) {
+		free(g_history);
+		g_history = NULL;
 	}
 }
 
-static void save_history(void)
+static int is_history_active(const history_t *ph)
 {
-	if (nvram_match("rstats_stored", "0"))
-		return;
+	int i;
 
-	f_write(STORAGE_PATH, &history, sizeof(history));
+	for (i = 0; i < MAX_NDAILY; i++) {
+		if (ph->daily[i].xtime != 0)
+			return 1;
+	}
+
+	for (i = 0; i < MAX_NMONTHLY; i++) {
+		if (ph->monthly[i].xtime != 0)
+			return 1;
+	}
+
+	return 0;
 }
 
-static void save_speedjs(long next)
+static void load_history_raw(void)
 {
-	int i, j, k;
-	speed_t *sp;
-	int p;
-	FILE *f;
+	char h_path[40];
+	int i, n_len;
+	history_t hist;
+
+	if (g_ap_mode || nvram_match("rstats_stored", "0"))
+		return;
+
+	snprintf(h_path, sizeof(h_path), "%s/%s", "/etc/storage", "rstats-history");
+	for (i = 0; i < MAX_HISTORY_IF; i++) {
+		if (i > 0)
+			snprintf(h_path, sizeof(h_path), "%s/%s.%s", "/etc/storage", "rstats-history", g_history_desc[i].ifdesc);
+		n_len = f_read(h_path, &hist, sizeof(history_t));
+		if (n_len == sizeof(history_t) && hist.id == CURRENT_ID) {
+			memcpy(&g_history[i], &hist, sizeof(history_t));
+			if (is_history_active(&hist))
+				g_history_desc[i].is_active = 1;
+		}
+	}
+}
+
+static void save_history_raw(long ticks)
+{
+	char h_path[40];
+	int i, rstats_stored, auto_save_th;
+
+	if (g_ap_mode)
+		return;
+
+	rstats_stored = nvram_get_int("rstats_stored");
+	if (rstats_stored < 1)
+		return;
+
+	snprintf(h_path, sizeof(h_path), "%s/%s", "/etc/storage", "rstats-history");
+	for (i = 0; i < MAX_HISTORY_IF; i++) {
+		if (i > 0) {
+			if (!g_history_desc[i].is_active)
+				continue;
+			snprintf(h_path, sizeof(h_path), "%s/%s.%s", "/etc/storage", "rstats-history", g_history_desc[i].ifdesc);
+		}
+		f_write(h_path, &g_history[i], sizeof(history_t));
+	}
+
+	if (ticks < 1 || rstats_stored < 2)
+		return;
+
+	auto_save_th = 60 * 60 * 24 * 30;		// every month
+	switch (rstats_stored)
+	{
+	case 3:
+		auto_save_th = 60 * 60 * 24 * 14;	// every 2 weeks
+		break;
+	case 4:
+		auto_save_th = 60 * 60 * 24 * 7;	// every week
+		break;
+	case 5:
+		auto_save_th = 60 * 60 * 24 * 2;	// every 2 days
+		break;
+	case 6:
+		auto_save_th = 60 * 60 * 24;		// every day
+		break;
+	case 7:
+		auto_save_th = 60 * 60 * 12;		// every 12h
+		break;
+	}
+
+	g_store_cntr += (ticks * RSTATS_INTERVAL);
+	if (g_store_cntr >= auto_save_th) {
+		g_store_cntr = 0;
+		write_storage_to_mtd();
+	}
+}
+
+static void save_speed_json(long next_time)
+{
+	FILE *fp;
+	speed_item_t *item, *sp;
+	int i, j, k, p, tail;
 	uint64_t total;
-	uint64_t tmax;
-	uint64_t tnow;
-	char c;
+	uint32_t tnow, tmax;
+	char ch, *netdev, *netdev_1st;
+	const char *fn_tmp = RSTATS_JS_SPEED ".tmp";
 
-	if ((f = fopen("/var/tmp/rstats-speed.js", "w")) == NULL) return;
+	if (next_time < 1)
+		next_time = 1;
+	else if (next_time > RSTATS_INTERVAL)
+		next_time = RSTATS_INTERVAL;
 
-	fprintf(f, "\nspeed_history = {\n");
+	netdev = nvram_safe_get(RSTATS_NVKEY_24);
+	netdev_1st = "";
 
-	for (i = 0; i < speed_count; ++i) {
-		sp = &speed[i];
-		fprintf(f, "%s'%s': {\n", i ? " },\n" : "", sp->ifdesc);
+	sp = NULL;
+	SLIST_FOREACH(item, &g_speed_list.head, entries) {
+		if (strcmp(item->ifdesc, netdev) == 0) {
+			sp = item;
+			break;
+		}
+		netdev_1st = item->ifdesc;
+	}
+
+	if (!sp) {
+		netdev = netdev_1st;
+		nvram_set(RSTATS_NVKEY_24, netdev);
+	}
+
+	tail = g_speed_list.tail;
+
+	fp = fopen(fn_tmp, "w");
+	if (!fp)
+		return;
+
+	i = 0;
+	fprintf(fp, "\nnetdev = '%s';\n", netdev);
+	fprintf(fp, "speed_history = {\n");
+	SLIST_FOREACH(item, &g_speed_list.head, entries) {
+		fprintf(fp, "%s'%s': {\n", (i) ? " },\n" : "", item->ifdesc);
+		i++;
+		if (strcmp(item->ifdesc, netdev) != 0)
+			continue;
 		for (j = 0; j < MAX_COUNTER; ++j) {
 			total = 0;
 			tmax = 0;
-			fprintf(f, "%sx: [", j ? ",\n t" : " r");
-			p = sp->tail;
+			fprintf(fp, "%sx: [", j ? ",\n t" : " r");
+			p = tail;
 			for (k = 0; k < MAX_NSPEED; ++k) {
 				p = (p + 1) % MAX_NSPEED;
-				tnow = sp->speed[p][j];
-				fprintf(f, "%s%llu", k ? "," : "", tnow);
+				tnow = item->speed[p][j];
 				total += tnow;
-				if (tnow > tmax) tmax = tnow;
+				if (tnow > tmax)
+					tmax = tnow;
+				fprintf(fp, "%s%u", k ? "," : "", tnow);
 			}
-			fprintf(f, "],\n");
-			c = j ? 't' : 'r';
-			fprintf(f, " %cx_avg: %llu,\n %cx_max: %llu,\n %cx_total: %llu",
-				c, total / MAX_NSPEED, c, tmax, c, total);
+			total *= RSTATS_INTERVAL;
+			fprintf(fp, "],\n");
+			ch = j ? 't' : 'r';
+			fprintf(fp, " %cx_avg: %llu,\n %cx_max: %u,\n %cx_total: %llu\n",
+				ch, total / MAX_NSPEED, ch, tmax, ch, total);
 		}
 	}
-	fprintf(f, "%s_next: %ld};\n", speed_count ? "},\n" : "", ((next >= 1) ? next : 1));
-	fclose(f);
+	fprintf(fp, "%s\n};\n", (i > 0) ? " }" : "");
+	fprintf(fp, "data_period = %d;\npoll_next = %d;\n", RSTATS_INTERVAL, next_time);
 
-	rename("/var/tmp/rstats-speed.js", "/var/spool/rstats-speed.js");
+	fclose(fp);
+
+	rename(fn_tmp, RSTATS_JS_SPEED);
 }
 
-static void save_datajs(FILE *f, int mode)
+static void save_data_js(FILE *fp, const history_t *ph, int mode)
 {
-	data_t *data;
-	int p;
-	int max;
-	int k, kn;
-
-	fprintf(f, "\n%s_history = [\n", (mode == DAILY) ? "daily" : "monthly");
+	const data_t *data;
+	int p, max, k;
+	char comma = ' ';
 
 	if (mode == DAILY) {
-		data = history.daily;
-		p = history.dailyp;
+		data = ph->daily;
+		p = ph->dailyp;
 		max = MAX_NDAILY;
-	}
-	else {
-		data = history.monthly;
-		p = history.monthlyp;
+	} else {
+		data = ph->monthly;
+		p = ph->monthlyp;
 		max = MAX_NMONTHLY;
 	}
-	kn = 0;
+
+	fprintf(fp, "%s_history = [\n", (mode == DAILY) ? "daily" : "monthly");
 	for (k = max; k > 0; --k) {
 		p = (p + 1) % max;
-		if (data[p].xtime == 0) continue;
-		fprintf(f, "%s[0x%lx,0x%llx,0x%llx]", kn ? "," : "",
+		if (data[p].xtime == 0)
+			continue;
+		fprintf(fp, "%c[0x%lx,0x%llx,0x%llx]\n", comma,
 			(unsigned long)data[p].xtime, (data[p].counter[0] >> 10), (data[p].counter[1] >> 10));
-		++kn;
+		if (comma != ',')
+			comma = ',';
 	}
-	fprintf(f, "];\n");
+	fprintf(fp, "];\n");
 }
 
-static void save_histjs(void)
+static void save_history_json(long next_time)
 {
-	FILE *f;
+	FILE *fp;
+	int i, wan_idx;
+	char *netdev;
+	const history_t *ph;
+	const char *fn_tmp = RSTATS_JS_HISTORY ".tmp";
 
-	if ((f = fopen("/var/tmp/rstats-history.js", "w")) != NULL) {
-		save_datajs(f, DAILY);
-		save_datajs(f, MONTHLY);
-		fclose(f);
-		rename("/var/tmp/rstats-history.js", "/var/spool/rstats-history.js");
+	if (next_time < 1)
+		next_time = 1;
+	else if (next_time > RSTATS_INTERVAL)
+		next_time = RSTATS_INTERVAL;
+
+	netdev = nvram_safe_get(RSTATS_NVKEY_DM);
+
+	wan_idx = 0;
+	for (i = 0; i < MAX_HISTORY_IF; i++) {
+		if (strcmp(g_history_desc[i].ifdesc, netdev) == 0) {
+			wan_idx = i;
+			break;
+		}
+	}
+
+	ph = &g_history[wan_idx];
+
+	fp = fopen(fn_tmp, "w");
+	if (fp) {
+		fprintf(fp, "\nnetdev = '%s';\n", g_history_desc[wan_idx].ifdesc);
+		fprintf(fp, "netdevs = [");
+		for (i = 0; i < MAX_HISTORY_IF; i++) {
+			if (i > 0) {
+				if (!g_history_desc[i].is_active)
+					continue;
+			}
+			fprintf(fp, "%s'%s'", (i) ? "," : "", g_history_desc[i].ifdesc);
+		}
+		fprintf(fp, "];\n");
+		save_data_js(fp, ph, DAILY);
+		save_data_js(fp, ph, MONTHLY);
+		fprintf(fp, "poll_next = %ld;\n", next_time);
+		fclose(fp);
+		rename(fn_tmp, RSTATS_JS_HISTORY);
 	}
 }
 
-static void bump(data_t *data, int *tail, int max, uint32_t xnow, uint64_t *counter)
+static int is_system_time_valid(struct tm *tms)
+{
+	/* system time is not changed since boot */
+	if (tms->tm_year <= (SYS_START_YEAR - 1900))
+		return 0;
+
+	/* NTP client updated at least one time */
+	if (!is_ntpc_updated())
+		return 0;
+
+	return 1;
+}
+
+static void bump_history(data_t *data, int *tail, int max, uint32_t xnow, uint64_t *diff)
 {
 	int t, i;
 
@@ -253,171 +456,242 @@ static void bump(data_t *data, int *tail, int max, uint32_t xnow, uint64_t *coun
 			memset(data[t].counter, 0, sizeof(data[0].counter));
 		}
 	}
-	for (i = 0; i < MAX_COUNTER; ++i) {
-		data[t].counter[i] += counter[i];
-	}
+
+	for (i = 0; i < MAX_COUNTER; ++i)
+		data[t].counter[i] += diff[i];
 }
 
-static void calc(void)
+static void fill_speed_gaps(speed_item_t *sp, long ticks)
 {
-	FILE *f;
-	char buf[256];
-	char *p, *ifname;
-	const char *ifdesc;
-	uint64_t counter[MAX_COUNTER];
-	speed_t *sp;
-	int i, j, is_wwan, wwan_found;
-	time_t now;
-	time_t mon;
-	struct tm *tms;
-	uint64_t diff;
-	long tick, n;
+	int i, j, tail;
 
-	now = time(0);
-	wwan_found = 0;
+	tail = g_speed_list.tail;
 
-	if (check_if_file_exist(FLAG_FILE_WWAN_GONE)) {
-		wwan_deleted = 1;
-		unlink(FLAG_FILE_WWAN_GONE);
+	for (j = 0; j < ticks; ++j) {
+		tail = (tail + 1) % MAX_NSPEED;
+		for (i = 0; i < MAX_COUNTER; ++i)
+			sp->speed[tail][i] = 0;
 	}
-
-	if ((f = fopen("/proc/net/dev", "r")) == NULL) return;
-	fgets(buf, sizeof(buf), f);	// header
-	fgets(buf, sizeof(buf), f);	// "
-	while (fgets(buf, sizeof(buf), f)) {
-		if ((p = strchr(buf, ':')) == NULL) continue;
-		*p = 0;
-		if ((ifname = strrchr(buf, ' ')) == NULL) ifname = buf;
-		else ++ifname;
-		
-		ifdesc = get_ifname_descriptor(ifname);
-		if (!ifdesc)
-			continue;
-		
-		// <rx bytes, packets, errors, dropped, fifo errors, frame errors, compressed, multicast><tx ...>
-		if (sscanf(p + 1, "%llu%*u%*u%*u%*u%*u%*u%*u%llu", &counter[0], &counter[1]) != 2) continue;
-		
-		is_wwan = (strcmp(ifdesc, IFDESC_WWAN) == 0) ? 1 : 0;
-		
-		sp = speed;
-		for (i = speed_count; i > 0; --i) {
-			if (strcmp(sp->ifdesc, ifdesc) == 0) break;
-			++sp;
-		}
-		if (i == 0) {
-			if (speed_count >= MAX_SPEED_IF) continue;
-			i = speed_count++;
-			sp = &speed[i];
-			memset(sp, 0, sizeof(*sp));
-			strcpy(sp->ifdesc, ifdesc);
-			sp->sync = 1;
-			sp->utime = now_uptime;
-		}
-		if (sp->sync) {
-			sp->sync = 0;
-			memcpy(sp->last, counter, sizeof(sp->last));
-			memset(counter, 0, sizeof(counter));
-		}
-		else {
-			tick = now_uptime - sp->utime;
-			n = tick / INTERVAL;
-			if (n < 1) {
-				continue;
-			}
-			sp->utime += (n * INTERVAL);
-			
-			for (i = 0; i < MAX_COUNTER; ++i) {
-				if (counter[i] < sp->last[i]) {
-					uint64_t min_limit = 0x70000000; // ~40MB/s max for Wireless (Wired used 64 bit counters).
-					diff = 0;
-					if (is_wwan) {
-						min_limit = 0xD3000000; // ~12MB/s max for LTE
-						if (wwan_deleted && (counter[i] < 0x2CFFFFFFul))
-							diff = counter[i];
-					}
-					
-					if (!diff && (sp->last[i] <= 0xFFFFFFFFull) && (sp->last[i] > min_limit))
-						diff = (0xFFFFFFFFull - sp->last[i]) + counter[i];
-				}
-				else {
-					diff = counter[i] - sp->last[i];
-				}
-				sp->last[i] = counter[i];
-				counter[i] = diff;
-			}
-			for (j = 0; j < n; ++j) {
-				sp->tail = (sp->tail + 1) % MAX_NSPEED;
-				for (i = 0; i < MAX_COUNTER; ++i) {
-					sp->speed[sp->tail][i] = (counter[i] / n);
-				}
-			}
-		}
-		
-		if (is_wwan || strcmp(ifdesc, IFDESC_WAN) == 0) {
-			tms = localtime(&now);
-			if (tms->tm_year > (SYS_START_YEAR - 1900)) {
-				bump(history.daily, &history.dailyp, MAX_NDAILY, (tms->tm_year << 16) | ((uint32_t)tms->tm_mon << 8) | tms->tm_mday, counter);
-				n = 1;
-				mon = now + ((1 - n) * (60 * 60 * 24));
-				tms = localtime(&mon);
-				bump(history.monthly, &history.monthlyp, MAX_NMONTHLY, (tms->tm_year << 16) | ((uint32_t)tms->tm_mon << 8), counter);
-			}
-		}
-		
-		if (is_wwan)
-			wwan_found = 1;
-	}
-	fclose(f);
-
-	wwan_deleted = !wwan_found;
-
-	save_history();
 }
 
-static void sig_handler(int sig)
+static int iterate_netdev(const char *ifdesc, int ifindex, int wan_no, long ticks, uint64_t *counter)
+{
+	uint64_t diff[MAX_COUNTER];
+	speed_item_t *item, *sp;
+	int i, j, tail;
+
+	sp = NULL;
+	SLIST_FOREACH(item, &g_speed_list.head, entries) {
+		if (strcmp(item->ifdesc, ifdesc) == 0) {
+			sp = item;
+			break;
+		}
+	}
+
+	if (!sp) {
+		if (g_speed_list.count >= MAX_SPEED_IF)
+			return 0;
+		sp = malloc(sizeof(speed_item_t));
+		if (sp) {
+			memset(sp, 0, sizeof(speed_item_t));
+			strcpy(sp->ifdesc, ifdesc);
+			sp->ifindex = ifindex;
+			sp->tail = g_speed_list.tail;
+			memcpy(sp->last, counter, sizeof(sp->last));
+			SLIST_INSERT_HEAD(&g_speed_list.head, sp, entries);
+			g_speed_list.count++;
+		}
+		return 0;
+	}
+
+	if (ticks < 1)
+		return 0;
+
+	if (sp->ifindex != ifindex) {
+		sp->ifindex = ifindex;
+		memset(sp->last, 0, sizeof(sp->last));
+	}
+
+	for (i = 0; i < MAX_COUNTER; ++i) {
+		if (counter[i] < sp->last[i]) {
+			diff[i] = 0;
+			if ((sp->last[i] <= 0xFFFFFFFFull) && (sp->last[i] > 0x70000000ull))
+				diff[i] = (0xFFFFFFFFull - sp->last[i]) + counter[i];
+		} else
+			diff[i] = counter[i] - sp->last[i];
+		
+		sp->last[i] = counter[i];
+	}
+
+	tail = g_speed_list.tail;
+
+	for (j = 0; j < ticks; ++j) {
+		tail = (tail + 1) % MAX_NSPEED;
+		for (i = 0; i < MAX_COUNTER; ++i)
+			sp->speed[tail][i] = (uint32_t)(diff[i] / ticks / RSTATS_INTERVAL);
+	}
+
+	sp->tail = tail;
+	if (sp->skips)
+		sp->skips = 0;
+
+	if (wan_no > 0 && wan_no <= MAX_HISTORY_IF && !g_ap_mode) {
+		time_t now;
+		struct tm *tms;
+		history_t *ph;
+		
+		if (g_history_desc[wan_no-1].is_wisp) {
+			if (!get_wan_wisp_active(NULL))
+				return 1;
+		}
+		
+		now = time(NULL);
+		tms = localtime(&now);
+		
+		if (is_system_time_valid(tms)) {
+			ph = &g_history[wan_no-1];
+			if (!g_history_desc[wan_no-1].is_active)
+				g_history_desc[wan_no-1].is_active = 1;
+			bump_history(ph->daily, &ph->dailyp, MAX_NDAILY, (tms->tm_year << 16) | ((uint32_t)tms->tm_mon << 8) | tms->tm_mday, diff);
+			bump_history(ph->monthly, &ph->monthlyp, MAX_NMONTHLY, (tms->tm_year << 16) | ((uint32_t)tms->tm_mon << 8), diff);
+		}
+	}
+
+	return 1;
+}
+
+static void process_rstats(void)
+{
+	FILE *fp;
+	char buf[256], *p, *ifname;
+	const char *ifdesc;
+	speed_item_t *item, *next;
+	uint64_t counter[MAX_COUNTER];
+	long tick, ticks;
+	int i, ifindex, wan_no, tail_new;
+
+	tick = g_uptime_now - g_uptime_old;
+	ticks = tick / RSTATS_INTERVAL;
+
+	fp = fopen("/proc/net/dev", "r");
+	if (fp) {
+		fgets(buf, sizeof(buf), fp);
+		fgets(buf, sizeof(buf), fp);
+		while (fgets(buf, sizeof(buf), fp)) {
+			if ((p = strchr(buf, ':')) == NULL)
+				continue;
+			
+			*p = 0;
+			if ((ifname = strrchr(buf, ' ')) == NULL)
+				ifname = buf;
+			else
+				++ifname;
+			
+			if (strcmp(ifname, "lo") == 0)
+				continue;
+			
+			wan_no = 0;
+			ifindex = 0;
+			ifdesc = get_ifname_descriptor(ifname, g_ap_mode, &ifindex, &wan_no);
+			if (!ifdesc)
+				continue;
+			
+			// <rx bytes, packets, errors, dropped, fifo errors, frame errors, compressed, multicast><tx ...>
+			if (sscanf(p + 1, "%llu%*u%*u%*u%*u%*u%*u%*u%llu", &counter[0], &counter[1]) != 2)
+				continue;
+			
+			if (!iterate_netdev(ifdesc, ifindex, wan_no, ticks, counter))
+				continue;
+		}
+		fclose(fp);
+	}
+
+#if !defined(RSTATS_SKIP_ESW)
+	for (i = 0; i < BOARD_NUM_ETH_EPHY; i++) {
+		if (phy_status_port_bytes(i, &counter[0], &counter[1]) < 0)
+			continue;
+		snprintf(buf, sizeof(buf), "ESW_P%d", i);
+		if (!iterate_netdev(buf, 0, 0, ticks, counter))
+			continue;
+	}
+#endif
+
+	if (ticks > 0) {
+		tail_new = (g_speed_list.tail + ticks) % MAX_NSPEED;
+		SLIST_FOREACH_SAFE(item, &g_speed_list.head, entries, next) {
+			if (item->tail != tail_new) {
+				fill_speed_gaps(item, ticks);
+				item->tail = tail_new;
+				item->skips += ticks;
+				if (item->skips >= MAX_NSPEED) {
+					SLIST_REMOVE(&g_speed_list.head, item, speed_item, entries);
+					free(item);
+				}
+			}
+		}
+		g_speed_list.tail = tail_new;
+		g_uptime_old += (ticks * RSTATS_INTERVAL);
+		
+		save_history_raw(ticks);
+	}
+}
+
+static void catch_sig_rstats(int sig)
 {
 	switch (sig) {
 	case SIGTERM:
-	case SIGINT:
-		gotterm = 1;
+		save_history_raw(0);
+		free_rstats();
+		exit(0);
 		break;
 	case SIGHUP:
 		gothup = 1;
 		break;
 	case SIGUSR1:
-		gotuser = 1;
+		gotusr1 = 1;
 		break;
 	case SIGUSR2:
-		gotuser = 2;
+		gotusr2 = 1;
 		break;
 	}
 }
 
 void notify_rstats_time(void)
 {
-	doSystem("killall %s %s", "-SIGHUP", "rstats");
+	kill_pidfile_s(RSTATS_PID_FILE, SIGHUP);
 }
 
 int rstats_main(int argc, char *argv[])
 {
-	struct sigaction sa;
+	FILE *fp;
 	pid_t pid;
+	struct sigaction sa;
 	long z;
 
-	printf("rstats\nCopyright (C) 2006-2009 Jonathan Zarate\n\n");
-
-	sa.sa_handler = sig_handler;
-	sa.sa_flags = 0;
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = catch_sig_rstats;
 	sigemptyset(&sa.sa_mask);
+	sigaddset(&sa.sa_mask, SIGTERM);
+	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
 	sigaction(SIGUSR2, &sa, NULL);
-	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
-	sigaction(SIGINT, &sa, NULL);
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = SIG_IGN;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGPIPE, &sa, NULL);
+
+	printf("rstats\nCopyright (C) 2006-2009 Jonathan Zarate\n\n");
 
 	if (daemon(0, 0) < 0) {
 		perror("daemon");
 		exit(errno);
+	}
+
+	if (alloc_rstats() < 0) {
+		free_rstats();
+		exit(1);
 	}
 
 	pid = getpid();
@@ -425,34 +699,42 @@ int rstats_main(int argc, char *argv[])
 	/* never invoke oom killer */
 	oom_score_adjust(pid, OOM_SCORE_ADJ_MIN);
 
-	clear_history();
-	load_history();
+	/* write pid */
+	if ((fp = fopen(RSTATS_PID_FILE, "w")) != NULL) {
+		fprintf(fp, "%d", pid);
+		fclose(fp);
+	}
 
-	z = now_uptime = uptime();
+	g_ap_mode = get_ap_mode();
+
+	load_history_raw();
+
+	z = uptime();
+	g_uptime_now = z;
+	g_uptime_old = z;
+
 	while (1) {
-		while (now_uptime < z) {
-			sleep(z - now_uptime);
+		while (g_uptime_now < z) {
+			sleep(z - g_uptime_now);
 			if (gothup) {
 				setenv_tz();
 				gothup = 0;
 			}
-			if (gotterm) {
-				save_history();
-				exit(0);
+			if (gotusr1) {
+				save_speed_json(z - uptime());
+				gotusr1 = 0;
 			}
-			if (gotuser == 1) {
-				save_speedjs(z - uptime());
-				gotuser = 0;
+			if (gotusr2) {
+				save_history_json(z - uptime());
+				gotusr2 = 0;
 			}
-			else if (gotuser == 2) {
-				save_histjs();
-				gotuser = 0;
-			}
-			now_uptime = uptime();
+			g_uptime_now = uptime();
 		}
-		calc();
-		z += INTERVAL;
+		process_rstats();
+		z += RSTATS_INTERVAL;
 	}
+
+	free_rstats();
 
 	return 0;
 }

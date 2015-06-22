@@ -402,8 +402,14 @@ $j.fn.fileName = function() {
                                             <th width="50%"><#Adm_Setting_store_stats#></th>
                                             <td align="left">
                                                 <select class="input" name="rstats_stored_fake" onchange="applyRule();" >
-                                                    <option value="1" <% nvram_match_x("", "rstats_stored", "1", "selected"); %>><#checkbox_Yes#> (*)</option>
                                                     <option value="0" <% nvram_match_x("", "rstats_stored", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "rstats_stored", "1", "selected"); %>><#Adm_Setting_store_stats_item1#> (*)</option>
+                                                    <option value="2" <% nvram_match_x("", "rstats_stored", "2", "selected"); %>><#Adm_Setting_store_stats_item2#></option>
+                                                    <option value="3" <% nvram_match_x("", "rstats_stored", "3", "selected"); %>><#Adm_Setting_store_stats_item3#></option>
+                                                    <option value="4" <% nvram_match_x("", "rstats_stored", "4", "selected"); %>><#Adm_Setting_store_stats_item4#></option>
+                                                    <option value="5" <% nvram_match_x("", "rstats_stored", "5", "selected"); %>><#Adm_Setting_store_stats_item5#></option>
+                                                    <option value="6" <% nvram_match_x("", "rstats_stored", "6", "selected"); %>><#Adm_Setting_store_stats_item6#> (!)</option>
+                                                    <option value="7" <% nvram_match_x("", "rstats_stored", "7", "selected"); %>><#Adm_Setting_store_stats_item7#> (!)</option>
                                                 </select>
                                             </td>
                                         </tr>

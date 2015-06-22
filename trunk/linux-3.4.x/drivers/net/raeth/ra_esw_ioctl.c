@@ -2207,12 +2207,7 @@ int esw_get_traffic_port_wan(struct rtnl_link_stats64 *stats)
 	stats->tx_packets = esw_get_port_mib_tgpc(WAN_PORT_MAC);
 
 	stats->rx_bytes = rx_goct.QuadPart;
-	if (stats->rx_packets)
-		stats->rx_bytes -= (stats->rx_packets * 4); // cut FCS
-
 	stats->tx_bytes = tx_goct.QuadPart;
-	if (stats->tx_packets)
-		stats->tx_bytes -= (stats->tx_packets * 4); // cut FCS
 
 	return 0;
 }

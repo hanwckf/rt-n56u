@@ -3529,14 +3529,14 @@ struct mime_handler mime_handlers[] = {
 	{ "jquery.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "**bootstrap.min.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "**engage.itoggle.min.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "**highstock.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "**highcharts.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
+	{ "**highcharts_theme.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "**formcontrol.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "itoggle.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "modem_isp.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "client_function.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "disk_functions.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "md5.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
-	{ "net_chart_tabs.js", "text/javascript", NULL, NULL, do_file, 0 },
 
 	/* cached css  */
 	{ "**.css", "text/css", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23

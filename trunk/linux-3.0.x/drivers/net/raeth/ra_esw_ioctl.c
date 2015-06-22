@@ -163,6 +163,25 @@ static u32 get_ports_mask_from_user(u32 user_port_mask, int is_phy_id)
 	return gsw_ports_mask;
 }
 
+static u32 get_port_from_user(u32 user_port_mask)
+{
+	if (user_port_mask & SWAPI_PORTMASK_LAN1)
+		return LAN_PORT_1;
+	if (user_port_mask & SWAPI_PORTMASK_LAN2)
+		return LAN_PORT_2;
+	if (user_port_mask & SWAPI_PORTMASK_LAN3)
+		return LAN_PORT_3;
+	if (user_port_mask & SWAPI_PORTMASK_LAN4)
+		return LAN_PORT_4;
+	if (user_port_mask & SWAPI_PORTMASK_WAN)
+		return WAN_PORT_MAC;
+	if (user_port_mask & SWAPI_PORTMASK_CPU_LAN)
+		return LAN_PORT_CPU;
+	if (user_port_mask & SWAPI_PORTMASK_CPU_WAN)
+		return WAN_PORT_CPU;
+	return ESW_MAC_ID_MAX+1;
+}
+
 static const char* get_port_desc(u32 port_id)
 {
 	const char *port_desc;
@@ -1369,6 +1388,23 @@ static void esw_status_mib_port(u32 port_id, esw_mib_counters_t *mibc)
 #endif
 }
 
+static int esw_status_port_bytes(u32 port_mask, port_bytes_t *pb)
+{
+	ULARGE_INTEGER rx_goct, tx_goct;
+	u32 port_id = get_port_from_user(port_mask);
+
+	if (port_id > ESW_MAC_ID_MAX)
+		return -EINVAL;
+
+	rx_goct.u.LowPart = esw_get_port_mib_rgoc(port_id, &rx_goct.u.HighPart);
+	tx_goct.u.LowPart = esw_get_port_mib_tgoc(port_id, &tx_goct.u.HighPart);
+
+	pb->RX = rx_goct.QuadPart;
+	pb->TX = tx_goct.QuadPart;
+
+	return 0;
+}
+
 static void esw_status_mib_reset(void)
 {
 #if defined (CONFIG_MT7530_GSW)
@@ -1965,6 +2001,7 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 	int ioctl_result = 0;
 	u32 uint_value = 0;
 	u32 uint_result = 0;
+	port_bytes_t port_bytes = {0};
 	esw_mib_counters_t port_counters;
 
 	unsigned int uint_param = (req >> MTK_ESW_IOCTL_CMD_LENGTH_BITS);
@@ -2051,6 +2088,11 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 	case MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN4:
 		uint_result = esw_status_speed_port(LAN_PORT_4);
 		put_user(uint_result, (unsigned int __user *)arg);
+		break;
+
+	case MTK_ESW_IOCTL_STATUS_PORT_BYTES:
+		ioctl_result = esw_status_port_bytes(uint_param, &port_bytes);
+		copy_to_user((port_bytes_t __user *)arg, &port_bytes, sizeof(port_bytes_t));
 		break;
 
 	case MTK_ESW_IOCTL_STATUS_CNT_PORT_WAN:

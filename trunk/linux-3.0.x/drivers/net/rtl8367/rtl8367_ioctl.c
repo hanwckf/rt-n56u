@@ -8,6 +8,7 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 	rtk_api_ret_t         retVal;
 	rtk_port_linkStatus_t port_link = 0;
 	rtk_stat_port_cntr_t  port_counters;
+	port_bytes_t port_bytes = {0};
 
 	unsigned int uint_param = (req >> RTL8367_IOCTL_CMD_LENGTH_BITS);
 	req &= ((1u << RTL8367_IOCTL_CMD_LENGTH_BITS)-1);
@@ -130,6 +131,11 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 			put_user(uint_result, (unsigned int __user *)arg);
 		else
 			ioctl_result = -EIO;
+		break;
+
+	case RTL8367_IOCTL_STATUS_PORT_BYTES:
+		ioctl_result = asic_status_port_bytes(uint_param, &port_bytes);
+		copy_to_user((port_bytes_t __user *)arg, &port_bytes, sizeof(port_bytes_t));
 		break;
 
 	case RTL8367_IOCTL_STATUS_CNT_PORT_WAN:

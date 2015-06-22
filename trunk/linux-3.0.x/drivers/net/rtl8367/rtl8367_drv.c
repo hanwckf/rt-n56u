@@ -1296,6 +1296,25 @@ static u32 asic_status_link_changed(void)
 	return 0;
 }
 
+static int asic_status_port_bytes(u32 port_mask, port_bytes_t *pb)
+{
+	rtk_api_ret_t retVal;
+	rtk_port_t port = get_port_from_user(port_mask);
+
+	if (port >= RTK_MAX_NUM_OF_PORT)
+		return -EINVAL;
+
+	retVal = rtk_stat_port_get(port, STAT_IfInOctets, &pb->RX);
+	if (retVal != RT_ERR_OK)
+		return -EIO;
+
+	retVal = rtk_stat_port_get(port, STAT_IfOutOctets, &pb->TX);
+	if (retVal != RT_ERR_OK)
+		return -EIO;
+
+	return 0;
+}
+
 static void change_ports_power(u32 power_on, u32 ports_mask)
 {
 	int i;

@@ -54,6 +54,8 @@
 #define RTL8367_IOCTL_STATUS_SPEED_PORT_LAN3	23
 #define RTL8367_IOCTL_STATUS_SPEED_PORT_LAN4	24
 
+#define RTL8367_IOCTL_STATUS_PORT_BYTES		26
+
 #define RTL8367_IOCTL_STATUS_CNT_PORT_WAN	30
 #define RTL8367_IOCTL_STATUS_CNT_PORT_LAN1	31
 #define RTL8367_IOCTL_STATUS_CNT_PORT_LAN2	32
@@ -242,6 +244,14 @@
 #define SWAPI_LED_LINK_ACT_TX			(9)
 #define SWAPI_LED_DUPLEX_COLLISION		(10)
 #define SWAPI_LED_OFF				(11)
+
+/////////////////////////////////////////////////
+
+typedef struct port_bytes_s
+{
+	uint64_t RX;
+	uint64_t TX;
+} port_bytes_t;
 
 #endif
 

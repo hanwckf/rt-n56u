@@ -4,26 +4,45 @@ var wan_proto = '<% nvram_get_x("", "wan_proto"); %>';
 var lan_proto = '<% nvram_get_x("", "lan_proto_x"); %>';
 var log_float = '<% nvram_get_x("", "log_float_ui"); %>';
 var log_stamp = 0;
-
+var sysinfo = <% json_system_status(); %>;
 var uptimeStr = "<% uptime(); %>";
 var timezone = uptimeStr.substring(26,31);
 var newformat_systime = uptimeStr.substring(8,11) + " " + uptimeStr.substring(5,7) + " " + uptimeStr.substring(17,25) + " " + uptimeStr.substring(12,16);  //Ex format: Jun 23 10:33:31 2008
 var systime_millsec = Date.parse(newformat_systime); // millsec from system
 var JS_timeObj = new Date(); // 1970.1.1
+var cookie_pref = 'n56u_cookie_';
 
 var uagent = navigator.userAgent.toLowerCase();
 var is_ie11p = (/trident\/7\./).test(uagent);
 var is_mobile = (/iphone|ipod|ipad|iemobile|android|blackberry|fennec/).test(uagent);
 
 var new_wan_internet = '<% nvram_get_x("", "link_internet"); %>';
-var id_of_check_changed_status = 0;
+var id_check_status = 0;
+var id_system_info = 0;
+
+var cookie = {
+	set: function(key, value, days) {
+		document.cookie = cookie_pref + key + '=' + value + '; expires=' +
+			(new Date(new Date().getTime() + ((days ? days : 14) * 86400000))).toUTCString() + '; path=/';
+	},
+	get: function(key) {
+		var r = ('; ' + document.cookie + ';').match('; ' + cookie_pref + key + '=(.*?);');
+		return r ? r[1] : null;
+	},
+	unset: function(key) {
+		document.cookie = cookie_pref + key + '=; expires=' + (new Date(1)).toUTCString() + '; path=/';
+	}
+};
 
 <% firmware_caps_hook(); %>
+
+function get_ap_mode(){
+	return (wan_route_x == 'IP_Bridged' || sw_mode == '3') ? true : false;
+}
 
 function unload_body(){
 	disableCheckChangedStatus();
 	no_flash_button();
-
 	return true;
 }
 
@@ -37,12 +56,11 @@ function enableCheckChangedStatus(flag){
 	else if (new_wan_internet == '1')
 		tm_int_sec = 5;
 
-	id_of_check_changed_status = setTimeout("get_changed_status();", tm_int_sec * 1000);
+	id_check_status = setTimeout("get_changed_status();", tm_int_sec * 1000);
 }
 
 function disableCheckChangedStatus(){
-	clearTimeout(id_of_check_changed_status);
-	id_of_check_changed_status = 0;
+	clearTimeout(id_check_status);
 }
 
 function update_internet_status(){
@@ -56,18 +74,19 @@ function update_internet_status(){
 
 function notify_status_internet(wan_internet){
 	this.new_wan_internet = wan_internet;
-	if((location.pathname == "/" || location.pathname == "/index.asp") && (typeof update_internet_status === 'function'))
+	if((location.pathname == "/" || location.pathname == "/index.asp") && (typeof(update_internet_status) === 'function'))
 		update_internet_status();
 }
 
 function notify_status_vpn_client(vpnc_state){
-	if((location.pathname == "/vpncli.asp") && (typeof update_vpnc_status === 'function'))
+	if((location.pathname == "/vpncli.asp") && (typeof(update_vpnc_status) === 'function'))
 		update_vpnc_status(vpnc_state);
 }
 
-function get_changed_status() {
+function get_changed_status(){
 	var $j = jQuery.noConflict();
 	$j.ajax({
+		type: 'get',
 		url: '/status_internet.asp',
 		dataType: 'script',
 		cache: true,
@@ -82,131 +101,276 @@ function get_changed_status() {
 	});
 }
 
-function getRadioBandStatus(data)
-{
-    var $j = jQuery.noConflict();
-    if(typeof data.wifi2 === 'object' && typeof data.wifi5 === 'object')
-    {
-        var wifi2 = parseInt(data.wifi2.state);
-        var wifi5 = parseInt(data.wifi5.state);
-
-        var wifi2Guest = parseInt(data.wifi2.guest);
-        var wifi5Guest = parseInt(data.wifi5.guest);
-
-        if(wifi2 > 0)
-            $j('#wifi2_b').addClass('btn-info');
-        else
-            $j('#wifi2_b').removeClass('btn-info');
-
-        if(wifi5 > 0)
-            $j('#wifi5_b').addClass('btn-info');
-        else
-            $j('#wifi5_b').removeClass('btn-info');
-
-        // guest ap
-        if(wifi2Guest > 0)
-            $j('#wifi2_b_g').addClass('btn-info');
-        else
-            $j('#wifi2_b_g').removeClass('btn-info');
-
-        if(wifi5Guest > 0)
-            $j('#wifi5_b_g').addClass('btn-info');
-        else
-            $j('#wifi5_b_g').removeClass('btn-info');
-    }
+function get_system_info(){
+	var $j = jQuery.noConflict();
+	clearTimeout(id_system_info);
+	$j.ajax({
+		type: 'get',
+		url: '/system_status_data.asp',
+		dataType: 'script',
+		cache: true,
+		error: function(xhr) {
+			id_system_info = setTimeout('get_system_info()', 2000);
+		},
+		success: function(response) {
+			id_system_info = setTimeout('get_system_info()', 2000);
+			setSystemInfo(response);
+		}
+	});
 }
 
-var banner_code, menu_code="", menu1_code="", menu2_code="", tab_code="", footer_code;
+function bytesToSize(bytes, precision){
+	var absval = Math.abs(bytes);
+	var kilobyte = 1024;
+	var megabyte = kilobyte * 1024;
+	var gigabyte = megabyte * 1024;
+	var terabyte = gigabyte * 1024;
+
+	if (absval < kilobyte)
+		return bytes + ' B';
+	else if (absval < megabyte)
+		return (bytes / kilobyte).toFixed(precision) + ' KB';
+	else if (absval < gigabyte)
+		return (bytes / megabyte).toFixed(precision) + ' MB';
+	else if (absval < terabyte)
+		return (bytes / gigabyte).toFixed(precision) + ' GB';
+	else
+		return (bytes / terabyte).toFixed(precision) + ' TB';
+}
+
+function getLALabelStatus(num){
+	var la = parseFloat(num);
+	return la > 0.9 ? 'danger' : (la > 0.5 ? 'warning' : 'info');
+}
+
+function setSystemInfo(response){
+	if(typeof(si_new) !== 'object')
+		return;
+
+	var cpu_now = {};
+	var cpu_total = (si_new.cpu.total - sysinfo.cpu.total);
+	if (!cpu_total)
+		cpu_total = 1;
+
+	cpu_now.busy = parseInt((si_new.cpu.busy - sysinfo.cpu.busy) * 100 / cpu_total);
+	cpu_now.user = parseInt((si_new.cpu.user - sysinfo.cpu.user) * 100 / cpu_total);
+	cpu_now.nice = parseInt((si_new.cpu.nice - sysinfo.cpu.nice) * 100 / cpu_total);
+	cpu_now.system = parseInt((si_new.cpu.system - sysinfo.cpu.system) * 100 / cpu_total);
+	cpu_now.idle = parseInt((si_new.cpu.idle - sysinfo.cpu.idle) * 100 / cpu_total);
+	cpu_now.iowait = parseInt((si_new.cpu.iowait - sysinfo.cpu.iowait) * 100 / cpu_total);
+	cpu_now.irq = parseInt((si_new.cpu.irq - sysinfo.cpu.irq) * 100 / cpu_total);
+	cpu_now.sirq = parseInt((si_new.cpu.sirq - sysinfo.cpu.sirq) * 100 / cpu_total);
+
+	sysinfo = si_new;
+
+	showSystemInfo(cpu_now,1);
+}
+
+function showSystemInfo(cpu_now,force){
+	var $j = jQuery.noConflict();
+	var arrLA = sysinfo.lavg.split(' ');
+	var h = sysinfo.uptime.hours < 10 ? ('0'+sysinfo.uptime.hours) : sysinfo.uptime.hours;
+	var m = sysinfo.uptime.minutes < 10 ? ('0'+sysinfo.uptime.minutes) : sysinfo.uptime.minutes;
+
+	$j("#la_info").html('<span class="label label-'+getLALabelStatus(arrLA[0])+'">'+arrLA[0]+'</span>&nbsp;<span class="label label-'+getLALabelStatus(arrLA[1])+'">'+arrLA[1]+'</span>&nbsp;<span class="label label-'+getLALabelStatus(arrLA[2])+'">'+arrLA[2]+'</span>');
+	$j("#cpu_info").html(cpu_now.busy + '%');
+	$j("#mem_info").html(bytesToSize(sysinfo.ram.free*1024, 2) + " / " + bytesToSize(sysinfo.ram.total*1024, 2));
+	$j("#uptime_info").html(sysinfo.uptime.days + "<#Day#>".substring(0,1) + " " + h+"<#Hour#>".substring(0,1) + " " + m+"<#Minute#>".substring(0,1));
+
+	$j("#cpu_usage tr:nth-child(1) td:first").html('busy: '+cpu_now.busy+'%');
+	$j("#cpu_usage tr:nth-child(2) td:first").html('user: '+cpu_now.user+'%');
+	$j("#cpu_usage tr:nth-child(2) td:last").html('system: '+cpu_now.system+'%');
+	$j("#cpu_usage tr:nth-child(3) td:first").html('sirq: '+cpu_now.sirq+'%');
+	$j("#cpu_usage tr:nth-child(3) td:last").html('irq: '+cpu_now.irq+'%');
+	$j("#cpu_usage tr:nth-child(4) td:first").html('idle: '+cpu_now.idle+'%');
+	$j("#cpu_usage tr:nth-child(4) td:last").html('nice: '+cpu_now.nice+'%');
+
+	$j("#mem_usage tr:nth-child(1) td:first").html('total: '+bytesToSize(sysinfo.ram.total*1024, 2));
+	$j("#mem_usage tr:nth-child(2) td:first").html('free: '+bytesToSize(sysinfo.ram.free*1024, 2));
+	$j("#mem_usage tr:nth-child(2) td:last").html('used: '+bytesToSize(sysinfo.ram.used*1024, 2));
+	$j("#mem_usage tr:nth-child(3) td:first").html('cached: '+bytesToSize(sysinfo.ram.cached*1024, 2));
+	$j("#mem_usage tr:nth-child(3) td:last").html('buffers: '+bytesToSize(sysinfo.ram.buffers*1024, 2));
+	$j("#mem_usage tr:nth-child(4) td:first").html('swap: '+bytesToSize(sysinfo.swap.total*1024, 2));
+	$j("#mem_usage tr:nth-child(4) td:last").html('swap used: '+bytesToSize(sysinfo.swap.used*1024, 2));
+
+	if(parseInt(sysinfo.wifi2.state) > 0)
+		$j('#wifi2_b').addClass('btn-info');
+	else
+		$j('#wifi2_b').removeClass('btn-info');
+
+	if(parseInt(sysinfo.wifi5.state) > 0)
+		$j('#wifi5_b').addClass('btn-info');
+	else
+		$j('#wifi5_b').removeClass('btn-info');
+
+	if(parseInt(sysinfo.wifi2.guest) > 0)
+		$j('#wifi2_b_g').addClass('btn-info');
+	else
+		$j('#wifi2_b_g').removeClass('btn-info');
+
+	if(parseInt(sysinfo.wifi5.guest) > 0)
+		$j('#wifi5_b_g').addClass('btn-info');
+	else
+		$j('#wifi5_b_g').removeClass('btn-info');
+
+	setLogStamp(sysinfo.logmt);
+
+	if(force && typeof(parent.getSystemJsonData) === 'function')
+		getSystemJsonData(cpu_now, sysinfo.ram);
+}
+
+var menu_code="", menu1_code="", menu2_code="", tab_code="", footer_code;
 var enabled2Gclass = '<% nvram_match_x("","rt_radio_x", "1", "btn-info"); %>';
 var enabled5Gclass = '<% nvram_match_x("","wl_radio_x", "1", "btn-info"); %>';
 var enabledGuest2Gclass = '<% nvram_match_x("","rt_guest_enable", "1", "btn-info"); %>';
 var enabledGuest5Gclass = '<% nvram_match_x("","wl_guest_enable", "1", "btn-info"); %>';
 var enabledBtnCommit = '<% nvram_match_x("","nvram_manual", "0", "display:none;"); %>';
 
-function show_banner(L3){// L3 = The third Level of Menu
+// L3 = The third Level of Menu
+function show_banner(L3){
+	var bc = '';
+	var style_2g = 'width:55px;';
+	var style_5g = 'width:55px;';
+	if (!support_5g_radio()) {
+		style_2g = 'width:114px;';
+		style_5g = 'width:21px;display:none;';
+	}
 
-    var style_2g = 'width:55px;';
-    var style_5g = 'width:55px;';
-    var banner_code = "";
-    if (!support_5g_radio()) {
-        style_2g = 'width:114px;';
-        style_5g = 'width:21px;display:none;';
-    }
+	// log panel
+	if (!is_mobile && log_float != '0'){
+		bc += '<div class="syslog_panel">\n';
+		bc += '<button id="syslog_panel_button" class="handle" href="/"><span class="log_text">Log</span></button>\n';
+		bc += '<table class="" style="margin-top: 0px; margin-bottom: 5px" width="100%" border="0">\n';
+		bc += '  <tr>\n';
+		bc += '    <td width="60%" style="text-align: left"><b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time_log_area"></span></td>\n';
+		bc += '    <td style="text-align: right"><button type="button" id="clearlog_btn" class="btn btn-info" style="min-width: 170px;" onclick="clearlog();"><#CTL_clear#></button></td>\n';
+		bc += '  </tr>\n';
+		bc += '</table>\n';
+		bc += '<span><textarea rows="28" wrap="off" class="span12" readonly="readonly" id="log_area"></textarea></span>\n';
+		bc += '</div>\n';
+	}
 
-    // log panel
-    if (!is_mobile && log_float != '0'){
-        banner_code += '<div class="syslog_panel">\n';
-        banner_code += '<button id="syslog_panel_button" class="handle" href="/"><span class="log_text">Log</span></button>\n';
-        banner_code += '<table class="" style="margin-top: 0px; margin-bottom: 5px" width="100%" border="0">\n';
-        banner_code += '  <tr>\n';
-        banner_code += '    <td width="60%" style="text-align: left">\n';
-        banner_code += '      <b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time_log_area"></span></td>\n';
-        banner_code += '    <td style="text-align: right">\n';
-        banner_code += '      <button type="button" id="clearlog_btn" class="btn btn-info" style="min-width: 170px;" onclick="clearlog();"><#CTL_clear#></button></td>\n';
-        banner_code += '  </tr>\n';
-        banner_code += '</table>\n';
-        banner_code += '<span><textarea rows="28" wrap="off" class="span12" readonly="readonly" id="log_area"></textarea></span>\n';
-        banner_code += '</div>\n';
-    }
+	// for chang language
+	bc +='<form method="post" name="titleForm" id="titleForm" action="/start_apply.htm" target="hidden_frame">\n';
+	bc +='<input type="hidden" name="current_page" value="">\n';
+	bc +='<input type="hidden" name="sid_list" value="LANGUAGE;">\n';
+	bc +='<input type="hidden" name="action_mode" value=" Apply ">\n';
+	bc +='<input type="hidden" name="preferred_lang" value="">\n';
+	bc +='<input type="hidden" name="flag" value="">\n';
+	bc +='</form>\n';
 
-    // for chang language
-    banner_code +='<form method="post" name="titleForm" id="titleForm" action="/start_apply.htm" target="hidden_frame">\n';
-    banner_code +='<input type="hidden" name="current_page" value="">\n';
-    banner_code +='<input type="hidden" name="sid_list" value="LANGUAGE;">\n';
-    banner_code +='<input type="hidden" name="action_mode" value=" Apply ">\n';
-    banner_code +='<input type="hidden" name="preferred_lang" value="">\n';
-    banner_code +='<input type="hidden" name="flag" value="">\n';
-    banner_code +='</form>\n';
+	// --->
+	bc += '<div class="container-fluid" style="padding-left: 0px; margin-left: -6px;">\n';
+	bc += '<div class="row-fluid">\n';
 
-    // --->
-    banner_code += '<div class="container-fluid" style="padding-left: 0px; margin-left: -6px;">\n';
-    banner_code += '<div class="row-fluid">\n';
+	// block system info
+	bc += '<div class="span6">\n';
+	bc += '<div class="well" style="margin-bottom: 0px; height: 109px; padding: 7px 6px 6px 6px;">\n';
+	bc += '<div class="row-fluid">\n';
 
-    // block system info
-    banner_code += '<div class="span6">\n';
-    banner_code += '<div class="well" style="margin-bottom: 0px; padding: 7px 6px 6px 6px; height: 109px;">\n';
-    banner_code += '<div class="row-fluid">\n';
-    banner_code += '<iframe style="visibility:hidden;" onload="this.style.visibility = \'visible\'" src="/system_status.asp" frameborder="0" scrolling="no" width="100%" height="102px" ALLOWTRANSPARENCY="true"></iframe>\n';
-    banner_code += '</div>\n';
-    banner_code += '</div>\n';
-    banner_code += '</div>\n';
+	bc += '<div id="main_info">\n';
+	bc += '<table class="table table-condensed" width="100%" style="margin-bottom: 0px;">\n';
+	bc += '  <tr>\n';
+	bc += '    <td width="43%" style="border: 0 none;"><#SI_LoadAvg#></td>\n';
+	bc += '    <td style="border: 0 none; min-width: 115px;"><div id="la_info"> -- -- -- </div></td>\n';
+	bc += '  </tr>\n';
+	bc += '  <tr>\n';
+	bc += '    <td style="height: 20px;"><a class="adv_info" href="javascript:void(0)" onclick="click_info_cpu();"><#SI_LoadCPU#></a></td>\n';
+	bc += '    <td><span id="cpu_info"> -- % </span></td>\n';
+	bc += '  </tr>\n';
+	bc += '  <tr>\n';
+	bc += '    <td><a class="adv_info" href="javascript:void(0)" onclick="click_info_mem();"><#SI_FreeMem#></a></td>\n';
+	bc += '    <td><span id="mem_info"> -- MB / -- MB </span></td>\n';
+	bc += '  </tr>\n';
+	bc += '  <tr>\n';
+	bc += '    <td><#SI_Uptime#></td>\n';
+	bc += '    <td><span id="uptime_info">&nbsp;</span></td>\n';
+	bc += '  </tr>\n';
+	bc += '</table>\n';
+	bc += '</div>\n';
 
-    // block firmware version
-    banner_code += '<div class="span6">\n';
-    banner_code += '<div class="well" style="margin-bottom: 0px; height: 109px; padding: 5px 6px 8px 6px;">\n';
-    banner_code += '<div class="row-fluid">\n';
-    banner_code += '<table class="table table-condensed" style="margin-bottom: 0px">\n';
-    banner_code += '<tbody>\n';
-    banner_code += '<tr>\n';
-    banner_code += '    <td width="50%" style="border: 0 none;"><#menu5_1#>:</td>\n';
-    banner_code += '    <td style="border: 0 none; min-width: 115px;"><div class="form-inline"><input type="button" id="wifi2_b" class="btn btn-mini '+enabled2Gclass+'" style="'+style_2g+'" value="2.4GHz" onclick="go_setting(2);">&nbsp;<input type="button" id="wifi5_b" style="'+style_5g+'" class="btn btn-mini '+enabled5Gclass+'" value="5GHz" onclick="go_setting(5);"></div></td>\n';
-    banner_code += '</tr>\n';
-    banner_code += '<tr>\n';
-    banner_code += '    <td><#menu5_1_2#>:</td>\n';
-    banner_code += '    <td><div class="form-inline"><input type="button" id="wifi2_b_g" class="btn btn-mini '+enabledGuest2Gclass+'" style="'+style_2g+'" value="2.4GHz" onclick="go_wguest(2);">&nbsp;<input type="button" id="wifi5_b_g" style="'+style_5g+'" class="btn btn-mini '+enabledGuest5Gclass+'" value="5GHz" onclick="go_wguest(5);"></div></td>\n';
-    banner_code += '</tr>\n';
-    banner_code += '<tr><td><#General_x_FirmwareVersion_itemname#></td><td><a href="/Advanced_FirmwareUpgrade_Content.asp"><span id="firmver" class="time"></span></a></td></tr>\n';
-    banner_code += '<tr><td><button type="button" id="commit_btn" class="btn btn-mini" style="width: 114px; height: 21px; outline:0; '+enabledBtnCommit+'" onclick="commit();"><i class="icon icon-fire"></i>&nbsp;<#CTL_Commit#></button></td><td><button type="button" id="logout_btn" class="btn btn-mini" style="width: 114px; height: 21px; outline:0;" onclick="logout();"><#t1Logout#></button> <button type="button" id="reboto_btn" class="btn btn-mini" style="height: 21px; outline:0;" onclick="reboot();"><i class="icon icon-off"></i></button></td></tr>\n';
-    banner_code += '</tbody>\n';
-    banner_code += '</table>\n';
-    banner_code += '</div>\n';
-    banner_code += '</div>\n';
-    banner_code += '</div>\n';
-    banner_code += '</div>\n';
-    banner_code += '</div>\n';
+	bc += '<div id="cpu_usage" style="display: none;">\n';
+	bc += '<table class="table table-condensed" width="100%" style="margin-bottom: 0px;">\n';
+	bc += '  <tr>\n';
+	bc += '    <td width="43%" style="text-align:left; border: 0 none;"></td>\n';
+	bc += '    <td style="border: 0 none; text-align:right;"><a class="label" href="javascript:void(0)" onclick="hide_adv_info();">hide</a></td>\n';
+	bc += '  </tr>\n';
+	bc += '  <tr>\n';
+	bc += '    <td style="height: 20px;"></td>\n';
+	bc += '    <td></td>\n';
+	bc += '  </tr>\n';
+	bc += '  <tr>\n';
+	bc += '    <td></td>\n';
+	bc += '    <td></td>\n';
+	bc += '  </tr>\n';
+	bc += '  <tr>\n';
+	bc += '    <td></td>\n';
+	bc += '    <td></td>\n';
+	bc += '  </tr>\n';
+	bc += '</table>\n';
+	bc += '</div>\n';
 
-    banner_code +='</td></tr></table>\n';
+	bc += '<div id="mem_usage" style="display: none;">\n';
+	bc += '<table class="table table-condensed" width="100%" style="margin-bottom: 0px;">\n';
+	bc += '  <tr>\n';
+	bc += '    <td width="43%" style="text-align:left; border: 0 none;"></td>\n';
+	bc += '    <td style="border: 0 none; text-align:right;"><a class="label" href="javascript:void(0)" onclick="hide_adv_info();">hide</a></td>\n';
+	bc += '  </tr>\n';
+	bc += '  <tr>\n';
+	bc += '    <td style="height: 20px;"></td>\n';
+	bc += '    <td></td>\n';
+	bc += '  </tr>\n';
+	bc += '  <tr>\n';
+	bc += '    <td></td>\n';
+	bc += '    <td></td>\n';
+	bc += '  </tr>\n';
+	bc += '  <tr>\n';
+	bc += '    <td></td>\n';
+	bc += '    <td></td>\n';
+	bc += '  </tr>\n';
+	bc += '</table>\n';
+	bc += '</div>\n';
 
-    $("TopBanner").innerHTML = banner_code;
+	bc += '</div>\n';
+	bc += '</div>\n';
+	bc += '</div>\n';
 
-    show_loading_obj();
+	// block firmware version
+	bc += '<div class="span6">\n';
+	bc += '<div class="well" style="margin-bottom: 0px; height: 109px; padding: 5px 6px 8px 6px;">\n';
+	bc += '<div class="row-fluid">\n';
+	bc += '<table class="table table-condensed" style="margin-bottom: 0px">\n';
+	bc += '  <tr>\n';
+	bc += '    <td width="50%" style="border: 0 none;"><#menu5_1#>:</td>\n';
+	bc += '    <td style="border: 0 none; min-width: 115px;"><div class="form-inline"><input type="button" id="wifi2_b" class="btn btn-mini '+enabled2Gclass+'" style="'+style_2g+'" value="2.4GHz" onclick="go_setting(2);">&nbsp;<input type="button" id="wifi5_b" style="'+style_5g+'" class="btn btn-mini '+enabled5Gclass+'" value="5GHz" onclick="go_setting(5);"></div></td>\n';
+	bc += '  </tr>\n';
+	bc += '  <tr>\n';
+	bc += '    <td><#menu5_1_2#>:</td>\n';
+	bc += '    <td><div class="form-inline"><input type="button" id="wifi2_b_g" class="btn btn-mini '+enabledGuest2Gclass+'" style="'+style_2g+'" value="2.4GHz" onclick="go_wguest(2);">&nbsp;<input type="button" id="wifi5_b_g" style="'+style_5g+'" class="btn btn-mini '+enabledGuest5Gclass+'" value="5GHz" onclick="go_wguest(5);"></div></td>\n';
+	bc += '  </tr>\n';
+	bc += '  <tr>\n';
+	bc += '    <td><#General_x_FirmwareVersion_itemname#></td>\n';
+	bc += '    <td><a href="/Advanced_FirmwareUpgrade_Content.asp"><span id="firmver" class="time"></span></a></td>\n';
+	bc += '  </tr>\n';
+	bc += '  <tr>\n';
+	bc += '    <td><button type="button" id="commit_btn" class="btn btn-mini" style="width: 114px; height: 21px; outline:0; '+enabledBtnCommit+'" onclick="commit();"><i class="icon icon-fire"></i>&nbsp;<#CTL_Commit#></button></td>\n';
+	bc += '    <td><button type="button" id="logout_btn" class="btn btn-mini" style="width: 114px; height: 21px; outline:0;" onclick="logout();"><#t1Logout#></button> <button type="button" id="reboto_btn" class="btn btn-mini" style="height: 21px; outline:0;" onclick="reboot();"><i class="icon icon-off"></i></button></td>\n';
+	bc += '  </tr>\n';
+	bc += '</table>\n';
+	bc += '</div>\n';
+	bc += '</div>\n';
+	bc += '</div>\n';
 
-    id_of_check_changed_status = setTimeout('hideLoading();', 3000);
+	bc += '</div>\n';
+	bc += '</div>\n';
 
-    //show_time();
-    show_top_status();
+	bc +='</td></tr></table>\n';
+
+	$("TopBanner").innerHTML = bc;
+
+	show_loading_obj();
+	show_top_status();
 }
-
 
 var tabtitle = new Array(10);
 tabtitle[0] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
@@ -267,8 +431,6 @@ function show_menu(L1, L2, L3){
 		menuL1_title[3] = "";
 		menuL1_link[4] = "";  //remove VPN cli
 		menuL1_title[4] = "";
-		menuL1_link[5] = "";  //remove Traffic
-		menuL1_title[5] = "";
 		
 		if (lan_proto == '1'){
 			tabtitle[2].splice(2,1);
@@ -381,8 +543,22 @@ function show_footer(){
 }
 
 function show_top_status(){
+	var $j = jQuery.noConflict();
+
+	$j("#cpu_info").click(function(){
+		$j("#main_info").hide();
+		$j("#cpu_usage").show();
+	});
+	$j("#mem_info").click(function(){
+		$j("#main_info").hide();
+		$j("#mem_usage").show();
+	});
+
+	id_system_info = setTimeout('get_system_info()', 2000);
+	showSystemInfo({busy: 0, user: 0, nice: 0, system: 0, idle: 0, iowait: 0, irq: 0, sirq: 0}, 0);
+
 	showtext($("firmver"), '<% nvram_get_x("",  "firmver_sub"); %>');
-	
+
 	/*if(sw_mode == "3")
 		$("sw_mode_span").innerHTML = "AP";
 	else
@@ -403,7 +579,7 @@ function go_wguest(band){
 		location.href = "Advanced_WGuest_Content.asp";
 }
 
-function show_time(){	
+function show_time(){
 	JS_timeObj.setTime(systime_millsec); // Add millsec to it.
 	JS_timeObj3 = JS_timeObj.toString();
 	JS_timeObj3 = checkTime(JS_timeObj.getHours()) + ":" +
@@ -414,27 +590,26 @@ function show_time(){
 	stime_ID = setTimeout("show_time();", 1000);
 }
 
-function checkTime(i)
-{
-    if (i<10)
-        {i="0" + i}
-    return i
+function checkTime(i){
+	if (i<10)
+		{i="0" + i}
+	return i;
 }
 
 function show_loading_obj(){
-    var obj = $("Loading");
-    var code = "";
+	var code = '';
 
-    code += '<center><div id="loadingBlock" class="loadingBlock">';
-    code += '<div class="container-fluid">';
-    code += '<div class="well" style="background-color: #212121; width: 60%;">';
-    code += '<div class="progress progress-striped active" style="width: 50%; text-align: left;"><div class="bar" id="proceeding_bar" style="width: 0%;"><span id="proceeding_txt"></span></div></div>';
-    code += '<span id="proceeding_main_txt"><#Main_alert_proceeding_desc4#></span></span>';
-    code += '</div>';
-    code += '</div>';
-    code += '</div></center>';
+	code += '<center><div id="loadingBlock" class="loadingBlock">';
+	code += '<div class="container-fluid">';
+	code += '<div class="well" style="background-color: #212121; width: 60%;">';
+	code += '<div class="progress progress-striped active" style="width: 50%; text-align: left;"><div class="bar" id="proceeding_bar" style="width: 0%;"><span id="proceeding_txt"></span></div></div>';
+	code += '<span id="proceeding_main_txt"><#Main_alert_proceeding_desc4#></span></span>';
+	code += '</div>';
+	code += '</div>';
+	code += '</div></center>';
 
-    obj.innerHTML = code;
+	$("Loading").innerHTML = code;
+	id_check_status = setTimeout('hideLoading();', 3000);
 }
 
 function submit_language(){
@@ -472,6 +647,21 @@ function reboot(){
 	{
 		'action_mode': ' Reboot ',
 	});
+}
+
+function click_info_cpu(){
+	location.href="/Advanced_System_Info.asp#CPU";
+}
+
+function click_info_mem(){
+	location.href="/Advanced_System_Info.asp#MEM";
+}
+
+function hide_adv_info(){
+	var $j = jQuery.noConflict();
+	$j("#cpu_usage").hide();
+	$j("#mem_usage").hide();
+	$j("#main_info").show();
 }
 
 function reset_btn_commit(btn_id){
@@ -545,7 +735,7 @@ function simpleNum3(num){
 
 function $(){
 	var elements = new Array();
-	
+
 	for(var i = 0; i < arguments.length; ++i){
 		var element = arguments[i];
 	if(typeof element == 'string')
@@ -556,8 +746,12 @@ function $(){
 		
 		elements.push(element);
 	}
-	
+
 	return elements;
+}
+
+function E(e) {
+	return (typeof(e) === 'string') ? document.getElementById(e) : e;
 }
 
 function getElementsByName_iefix(tag, name){
@@ -565,10 +759,10 @@ function getElementsByName_iefix(tag, name){
 	var objsName;
 	var targetObjs = new Array();
 	var targetObjs_length;
-	
+
 	if(!(typeof(name) == "string" && name.length > 0))
 		return [];
-	
+
 	for(var i = 0, targetObjs_length = 0; i < tagObjs.length; ++i){
 		objsName = tagObjs[i].getAttribute("name");
 		
@@ -577,7 +771,7 @@ function getElementsByName_iefix(tag, name){
 			++targetObjs_length;
 		}
 	}
-	
+
 	return targetObjs;
 }
 
@@ -586,10 +780,10 @@ function getElementsByClassName_iefix(tag, name){
 	var objsName;
 	var targetObjs = new Array();
 	var targetObjs_length;
-	
+
 	if(!(typeof(name) == "string" && name.length > 0))
 		return [];
-	
+
 	for(var i = 0, targetObjs_length = 0; i < tagObjs.length; ++i){
 		if(navigator.appName == 'Netscape')
 			objsName = tagObjs[i].getAttribute("class");
@@ -601,7 +795,7 @@ function getElementsByClassName_iefix(tag, name){
 			++targetObjs_length;
 		}
 	}
-	
+
 	return targetObjs;
 }
 
@@ -612,7 +806,7 @@ function showtext(obj, str){
 
 function showhtmlspace(ori_str){
 	var str = "", head, tail_num;
-	
+
 	head = ori_str;
 	while((tail_num = head.indexOf(" ")) >= 0){
 		str += head.substring(0, tail_num);
@@ -621,13 +815,13 @@ function showhtmlspace(ori_str){
 		head = head.substr(tail_num+1, head.length-(tail_num+1));
 	}
 	str += head;
-	
+
 	return str;
 }
 
 function showhtmland(ori_str){
 	var str = "", head, tail_num;
-	
+
 	head = ori_str;
 	while((tail_num = head.indexOf("&")) >= 0){
 		str += head.substring(0, tail_num);
@@ -636,7 +830,7 @@ function showhtmland(ori_str){
 		head = head.substr(tail_num+1, head.length-(tail_num+1));
 	}
 	str += head;
-	
+
 	return str;
 }
 
@@ -793,9 +987,9 @@ function flash_button(){
 function no_flash_button(){
 	if(navigator.appName.indexOf("Microsoft") < 0)
 		return;
-	
+
 	var btnObj = getElementsByClassName_iefix("input", "button");
-	
+
 	for(var i = 0; i < btnObj.length; ++i){
 		btnObj[i].onmouseover = "";
 		
@@ -816,17 +1010,17 @@ function gotoprev(formObj){
 
 function add_option(selectObj, str, value, selected){
 	var tail = selectObj.options.length;
-	
+
 	if(typeof(str) != "undefined")
 		selectObj.options[tail] = new Option(str);
 	else
 		selectObj.options[tail] = new Option();
-	
+
 	if(typeof(value) != "undefined")
 		selectObj.options[tail].value = value;
 	else
 		selectObj.options[tail].value = "";
-	
+
 	if(selected == 1)
 		selectObj.options[tail].selected = selected;
 }
@@ -834,7 +1028,7 @@ function add_option(selectObj, str, value, selected){
 function free_options(selectObj){
 	if(selectObj == null)
 		return;
-	
+
 	for(var i = selectObj.options.length-1; i >= 0; --i){
 		selectObj.options[i].value = null;
 		selectObj.options[i] = null;
@@ -843,7 +1037,7 @@ function free_options(selectObj){
 
 function blocking(obj_id, show){
 	var state = show?'block':'none';
-	
+
 	if(document.getElementById)
 		$(obj_id).style.display = state;
 	else if(document.layers)
@@ -853,16 +1047,11 @@ function blocking(obj_id, show){
 }
 
 function inputCtrl(obj, flag){
-	if(flag == 0){
-		obj.disabled = true;
-	}
-	else{
-		obj.disabled = false;
-	}
+	obj.disabled = (flag == 0);
 }
 
 // add eagle23
-jQuery(document).ready(function() {
+jQuery(document).ready(function(){
     var $j = jQuery.noConflict();
 
     $j("#logo").click(function(){
@@ -908,13 +1097,11 @@ jQuery(document).ready(function() {
 });
 
 // fix for ie
-String.prototype.nl2br = function()
-{
+String.prototype.nl2br = function(){
     return this.replace(/\n/g, "\n\r");
 }
 
-function setLogStamp(mt)
-{
+function setLogStamp(mt){
     if(is_mobile || log_float == '0')
         return;
 
@@ -938,8 +1125,7 @@ function setLogStamp(mt)
     }
 }
 
-function setLogData()
-{
+function setLogData(){
     var $j = jQuery.noConflict();
     $j.get('/log_content.asp', function(data){
         // fix for ie
@@ -957,9 +1143,7 @@ function setLogData()
 }
 
 function showClockLogArea(){
-
-    if(jQuery('#system_time').size() == 0)
-    {
+    if(jQuery('#system_time').size() == 0){
         JS_timeObj.setTime(systime_millsec);
         systime_millsec += 1000;
 
@@ -971,21 +1155,18 @@ function showClockLogArea(){
         checkTime(JS_timeObj.getSeconds()) + "  " +
         JS_timeObj.getFullYear() + " GMT" + timezone;
     }
-
     jQuery("#system_time_log_area").html(JS_timeObj2);
     setTimeout("showClockLogArea()", 1000);
 }
 
-function onCompleteSlideOutLogArea()
-{
+function onCompleteSlideOutLogArea(){
     var idTimeout = setTimeout(function(){
         clearTimeout(idTimeout);
         jQuery(".log_text").html('Log');
     }, 1500);
 }
 
-function passwordShowHide(id)
-{
+function passwordShowHide(id){
     var obj = $j('#'+id);
     var changeTo = (obj.attr('type') == 'password') ? 'text' : 'password';
     if ($j.browser.msie && parseInt($j.browser.version, 10) < 9){
@@ -1005,8 +1186,7 @@ function passwordShowHide(id)
  * ckeck if localStorage available
  * @return void
  */
-function isLocalStorageAvailable()
-{
+function isLocalStorageAvailable(){
     try {
         return 'localStorage' in window && window['localStorage'] !== null;
     } catch (e) {
@@ -1019,10 +1199,8 @@ function isLocalStorageAvailable()
  * @param name string
  * @param value mixed
  */
-function setToLocalStorage(name, value)
-{
-    if(isLocalStorageAvailable())
-    {
+function setToLocalStorage(name, value){
+    if(isLocalStorageAvailable()){
         try {
             localStorage.setItem(name, value);
         } catch (e) {
@@ -1037,10 +1215,8 @@ function setToLocalStorage(name, value)
  * @param name
  * @return mixed
  */
-function getFromLocalStorage(name)
-{
-    if(isLocalStorageAvailable())
-    {
+function getFromLocalStorage(name){
+    if(isLocalStorageAvailable()){
         return localStorage.getItem(name);
     }
 }
@@ -1050,18 +1226,15 @@ function getFromLocalStorage(name)
  * @param name
  * @return void
  */
-function removeFromLocalStorage(name)
-{
-    if(isLocalStorageAvailable())
-    {
+function removeFromLocalStorage(name){
+    if(isLocalStorageAvailable()){
         localStorage.removeItem(name);
     }
 }
 
-
 (function($){
     var $j = $.noConflict();
-    $j.fn.tabSlideOut = function(callerSettings) {
+    $j.fn.tabSlideOut = function(callerSettings){
         var settings =  $j.extend({
             tabHandle: '.handle',
             speed: 300,
@@ -1109,7 +1282,6 @@ function removeFromLocalStorage(name)
             'line-height' : '1',
             'position' : settings.positioning
         });
-
 
         var properties = {
             containerWidth: parseInt(obj.outerWidth(), 10) + 'px',

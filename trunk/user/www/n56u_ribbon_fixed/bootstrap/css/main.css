@@ -14,8 +14,24 @@ body.body_iframe{
     margin: 0 auto;
 }
 
-#logo{background-image: url("/bootstrap/img/asus_logo.png"); width: 150px; height: 71px; margin-top: 40px;}
-#logo:hover{cursor: pointer;}
+#logo {
+    background-image: url("/bootstrap/img/asus_logo.png");
+    width: 150px;
+    height: 71px;
+    margin-top: 40px;
+}
+#logo:hover {
+    cursor: pointer;
+}
+
+#cpu_info, #mem_info, .adv_info {
+    text-decoration: none;
+    border-bottom: 1px dotted #005580;
+}
+#cpu_info:hover, #mem_info:hover, .adv_info:hover {
+    cursor: pointer;
+    text-decoration: none;
+}
 
 #footer{color: #F5F5F5}
 
@@ -35,8 +51,7 @@ body.body_iframe{
     border-radius: 0 3px 3px 0;
 }
 
-.popup_bg
-{
+.popup_bg {
     position:absolute;
     margin: auto;
     top: 0;
@@ -50,8 +65,7 @@ body.body_iframe{
     opacity: 0.95;
 }
 
-.popup_bar_bg
-{
+.popup_bar_bg {
     position:absolute;
     margin: auto;
     top: 0;
@@ -63,8 +77,7 @@ body.body_iframe{
     overflow:hidden;
 }
 
-.loadingBlock
-{
+.loadingBlock {
     font-size:20px;
     color:#FFFFFF;
     opacity: 1;
@@ -153,9 +166,7 @@ body.body_iframe{
 .side_nav div.accordion {
     margin-bottom: 0;
 }
-
-.side_nav ul a img
-{
+.side_nav ul a img {
     margin: 5px 5px -12px -3px;
     position: relative;
     top: -6px;
@@ -241,22 +252,19 @@ li:last-child > div.accordion > a:last-child {
     margin-bottom: 0;
 }
 
-.clearfix li.active a
-{
+.clearfix li.active a {
     border-radius: 0 0 0 0;
     cursor: default;
 }
 
-.clearfix li.active > a
-{
+.clearfix li.active > a {
     border-bottom: 1px solid #666666;
     border-top: 1px solid #888888;
     color: #FFFFFF;
     text-shadow: none !important;
 }
 
-.clearfix li div.accordion
-{
+.clearfix li div.accordion {
     border-top: 0 solid #FFFFFF;
     color: #666666;
 }
@@ -345,7 +353,6 @@ li div.accordion a {
 
 .padding-top-20{ padding-top: 20px;}
 
-
 #navigation-1 {
     padding:1px 0;
     margin:0px;
@@ -382,7 +389,6 @@ li div.accordion a {
     width:60px;
     height:13px;
     border:1px solid #B7E1F7;
-
 }
 #navigation-1 li ul.navigation-2 {
     margin:0;
@@ -472,8 +478,7 @@ textarea[readonly] {
     cursor: default;
 }
 
-.aidisk_table
-{
+.aidisk_table {
     background: #F5F5F5;
     margin: 0 5px 0 5px;
     width: 370px;
@@ -502,7 +507,7 @@ textarea[readonly] {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
-#syslog_panel_button{
+#syslog_panel_button {
     display: inline-block;
     *display: inline;
     margin-bottom: 0;
@@ -540,8 +545,7 @@ textarea[readonly] {
     font-size: 11px;
     line-height: 14px;
 }
-
-#syslog_panel_button:hover{
+#syslog_panel_button:hover {
     color: #333333;
     text-decoration: none;
     background-color: #e6e6e6;
@@ -578,29 +582,29 @@ textarea[readonly] {
     display:none;
 }
 
-.ddown-list div{
+.ddown-list div {
     height:20px;
     line-height:20px;
     text-decoration:none;
     padding-left:2px;
 }
 
-.ddown-list a{
+.ddown-list a {
     color:#000;
     font-size:12px;
     text-decoration:none;
 }
 
-.ddown-list div:hover, .share-list a:hover{
+.ddown-list div:hover, .share-list a:hover {
     cursor:default;
     color: #005580;
 }
 
-.input-append{
+.input-append {
     margin-bottom: 0px;
 }
 
-.input-append input{
+.input-append input {
     border-radius: 3px 0 0 3px;
 }
 

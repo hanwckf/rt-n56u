@@ -537,10 +537,6 @@ function is_ipaddr(o,e) {
     return false;
 }
 
-function get_ap_mode(){
-    return (wan_route_x == 'IP_Bridged' || sw_mode == '3') ? true : false;
-}
-
 function matchSubnet(ip1, ip2, sb1) {
     var nsb = inet_network(sb1);
 

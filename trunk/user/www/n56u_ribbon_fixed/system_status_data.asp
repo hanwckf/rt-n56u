@@ -1,1 +1,1 @@
-<% json_system_status(); %>
+var si_new=<% json_system_status(); %>;

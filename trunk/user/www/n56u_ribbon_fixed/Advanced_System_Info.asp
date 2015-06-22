@@ -13,8 +13,8 @@
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
-<script type="text/javascript" src="/bootstrap/js/highstock.js"></script>
-<script type="text/javascript" src="/bootstrap/js/highchart_theme.js"></script>
+<script type="text/javascript" src="/bootstrap/js/highcharts.js"></script>
+<script type="text/javascript" src="/bootstrap/js/highcharts_theme.js"></script>
 <script type="text/javascript" src="/bootstrap/js/cpu_chart.js"></script>
 <script type="text/javascript" src="/bootstrap/js/mem_chart.js"></script>
 <script type="text/javascript" src="/state.js"></script>

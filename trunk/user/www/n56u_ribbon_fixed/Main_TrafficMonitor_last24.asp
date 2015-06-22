@@ -13,8 +13,8 @@
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
-<script type="text/javascript" src="/bootstrap/js/highstock.js"></script>
-<script type="text/javascript" src="/bootstrap/js/highchart_theme.js"></script>
+<script type="text/javascript" src="/bootstrap/js/highcharts.js"></script>
+<script type="text/javascript" src="/bootstrap/js/highcharts_theme.js"></script>
 <script type="text/javascript" src="/bootstrap/js/network_chart_template.js"></script>
 <script type="text/javascript" src="/net_chart_tabs.js"></script>
 <script type="text/javascript" src="/state.js"></script>

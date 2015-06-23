@@ -628,7 +628,7 @@ void run_samba(void)
 	if (nvram_match("enable_samba", "0") || nvram_match("st_samba_mode", "0"))
 		return;
 
-	mkdir_if_none("/etc/samba");
+	mkdir_if_none("/etc/samba", "777");
 
 	has_nmbd = pids("nmbd");
 	if (!has_nmbd) {
@@ -803,7 +803,7 @@ int create_mp_link(char *search_dir, char *link_path, int force_first_valid)
 						}
 					}
 				} else {
-					if (mkdir_if_none(target_path)) {
+					if (mkdir_if_none(target_path, "777")) {
 						if (symlink(target_path, link_path) == 0) {
 							link_created = 1;
 							break;

@@ -184,7 +184,7 @@ start_rpl2tp(int unit)
 	char options[64];
 	const char *l2tp_conf = "/etc/l2tp/l2tp.conf";
 
-	mkdir_if_none("/etc/l2tp");
+	mkdir_if_none("/etc/l2tp", "777");
 
 	snprintf(options, sizeof(options), "/tmp/ppp/options.wan%d", unit);
 

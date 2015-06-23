@@ -170,7 +170,7 @@ void umount_rwfs_partition(void);
 void kill_services(char* svc_name[], int wtimeout, int forcekill);
 int kill_process_pidfile(char *pidfile, int wtimeout, int forcekill);
 int create_file(const char *fn);
-int mkdir_if_none(char *dir);
+int mkdir_if_none(const char *dirpath, const char *mode);
 int check_if_file_exist(const char *filepath);
 int check_if_dir_exist(const char *dirpath);
 int check_if_dev_exist(const char *devpath);

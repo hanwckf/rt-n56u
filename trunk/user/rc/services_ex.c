@@ -528,7 +528,7 @@ start_wins(void)
 	if (nvram_match("wins_enable", "0"))
 		return;
 
-	mkdir_if_none("/etc/samba");
+	mkdir_if_none("/etc/samba", "777");
 
 	fp = write_smb_conf_header();
 	if (fp)

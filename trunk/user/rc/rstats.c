@@ -344,7 +344,7 @@ static void save_speed_json(long next_time)
 		}
 	}
 	fprintf(fp, "%s\n};\n", (i > 0) ? " }" : "");
-	fprintf(fp, "data_period = %d;\npoll_next = %d;\n", RSTATS_INTERVAL, next_time);
+	fprintf(fp, "data_period = %d;\npoll_next = %ld;\n", RSTATS_INTERVAL, next_time);
 
 	fclose(fp);
 

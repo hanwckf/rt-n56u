@@ -714,7 +714,7 @@ launch_wan_modem_ras(int unit)
 	snprintf(call_file, sizeof(call_file), "modem.wan%d", unit);
 	snprintf(call_path, sizeof(call_path), "%s/%s", PPP_PEERS_DIR, call_file);
 
-	mkdir_if_none(PPP_PEERS_DIR);
+	mkdir_if_none(PPP_PEERS_DIR, "777");
 	unlink(call_path);
 
 	if (get_modem_node_ras(node_name, NULL)) {

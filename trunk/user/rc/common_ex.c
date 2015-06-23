@@ -879,14 +879,14 @@ check_if_dev_exist(const char *devpath)
 }
 
 int
-mkdir_if_none(char *dir)
+mkdir_if_none(const char *dirpath, const char *mode)
 {
 	DIR *dp;
-	if (!(dp=opendir(dir)))
-	{
-		umask(0000);
-		return !mkdir(dir, 0777);
-	}
+
+	dp = opendir(dirpath);
+	if (!dp)
+		return !doSystem("mkdir -p -m %s %s", mode, dirpath);
+
 	closedir(dp);
 	return 0;
 }

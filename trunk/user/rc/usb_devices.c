@@ -368,7 +368,7 @@ int mdev_wdm_main(int argc, char **argv)
 	}
 
 	// Write node file.
-	mkdir_if_none(MODEM_NODE_DIR);
+	mkdir_if_none(MODEM_NODE_DIR, "777");
 	fp = fopen(node_fname, "w+");
 	if (fp) {
 		fprintf(fp, "pref=%d\n", 1);
@@ -429,7 +429,7 @@ int mdev_net_main(int argc, char **argv)
 		devnum = get_usb_devnum(usb_port_id);
 
 	// Write node file.
-	mkdir_if_none(MODEM_NODE_DIR);
+	mkdir_if_none(MODEM_NODE_DIR, "777");
 	fp = fopen(node_fname, "w+");
 	if (fp) {
 		fprintf(fp, "pref=%d\n", 1);
@@ -497,7 +497,7 @@ int mdev_tty_main(int argc, char **argv)
 	}
 
 	// Write node file.
-	mkdir_if_none(MODEM_NODE_DIR);
+	mkdir_if_none(MODEM_NODE_DIR, "777");
 	fp = fopen(node_fname, "w+");
 	if (fp) {
 		fprintf(fp, "pref=%d\n", (has_int_pipe) ? 1 : 0);

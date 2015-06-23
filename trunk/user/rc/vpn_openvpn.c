@@ -719,8 +719,8 @@ start_openvpn_server(void)
 	sprintf(vpns_cfg, "%s/%s", SERVER_ROOT_DIR, server_conf);
 	sprintf(vpns_scr, "%s/%s", SERVER_ROOT_DIR, SCRIPT_OVPN_SERVER);
 
-	doSystem("mkdir -p -m %s %s", "755", SERVER_ROOT_DIR);
-	doSystem("mkdir -p -m %s %s", "777", COMMON_TEMP_DIR);
+	mkdir_if_none(SERVER_ROOT_DIR, "755");
+	mkdir_if_none(COMMON_TEMP_DIR, "777");
 
 	i_mode_tun = (nvram_get_int("vpns_ov_mode") == 1) ? 1 : 0;
 

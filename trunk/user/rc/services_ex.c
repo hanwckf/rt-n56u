@@ -33,6 +33,9 @@
 
 #include "rc.h"
 
+#define DHCPD_STATIC_MAX	64
+#define DHCPD_MULTIMAC_MAX	8
+#define DHCPD_HOSTS_DIR		"/etc/dnsmasq/dhcp"
 #define DHCPD_LEASE_FILE	"/tmp/dnsmasq.leases"
 #define UPNPD_LEASE_FILE	"/tmp/miniupnpd.leases"
 #define INADYN_USER_DIR		"/etc/storage/inadyn"
@@ -89,69 +92,132 @@ arpbind_clear(void)
 	}
 }
 
-/*
-static int
-find_static_mac(int idx, int num_items, const char *ip, char mac[13])
-{
-	int i;
-	in_addr_t ip1, ip2;
-	char nvram_mac[32], nvram_ip[32], *smac;
+struct ip4_items_t {
+	in_addr_t ip4;
+	int count;
+	char *hname;
+	char *mac[DHCPD_MULTIMAC_MAX];
+};
 
-	ip1 = inet_addr_safe(ip);
-
-	for (i = idx; i < num_items; i++) {
-		snprintf(nvram_mac, sizeof(nvram_mac), "dhcp_staticmac_x%d", i);
-		smac = nvram_safe_get(nvram_mac);
-		if (strlen(smac) == 12) {
-			snprintf(nvram_ip, sizeof(nvram_ip), "dhcp_staticip_x%d", i);
-			ip2 = inet_addr_safe(nvram_safe_get(nvram_ip));
-			if (ip2 == ip1 && ip2 != INADDR_NONE) {
-				strcpy(mac, smac);
-				return i;
-			}
-		}
-	}
-
-	return -1;
-}
-*/
-
-static int
+static void
 fill_static_ethers(const char *lan_ip, const char *lan_mask)
 {
-	FILE *fp;
-	int i, i_use_static, i_arpbind, i_max_items, i_ethers = 0;
-	char nvram_mac[32], nvram_ip[32], *smac, *sip;
+	FILE *fp[3];
+	in_addr_t ip4, ip4_lan;
+	struct ip4_items_t ip4_list[DHCPD_STATIC_MAX];
+	int i, j, i_max_items, i_arp_bind;
+	char dh_fn[64], nvram_key[32], *smac, *sip4, *shname;
 
-	i_use_static = nvram_get_int("dhcp_static_x");
+	memset(ip4_list, 0, sizeof(ip4_list));
 
-	/* create /etc/ethers */
-	fp = fopen("/etc/ethers", "w+");
-	if (fp) {
-		if (i_use_static == 1) {
-			i_arpbind = nvram_get_int("dhcp_static_arp");
-			i_max_items = nvram_safe_get_int("dhcp_staticnum_x", 0, 0, 64);
-			for (i = 0; i < i_max_items; i++) {
-				snprintf(nvram_mac, sizeof(nvram_mac), "dhcp_staticmac_x%d", i);
-				smac = nvram_safe_get(nvram_mac);
-				if (strlen(smac) == 12) {
-					snprintf(nvram_ip, sizeof(nvram_ip), "dhcp_staticip_x%d", i);
-					sip = nvram_safe_get(nvram_ip);
-					if (is_valid_ipv4(sip) && is_same_subnet(sip, lan_ip, lan_mask)) {
-						i_ethers++;
-						fprintf(fp, "%c%c:%c%c:%c%c:%c%c:%c%c:%c%c %s\n", 
-							smac[0], smac[1], smac[2], smac[3], smac[4], smac[5], 
-							smac[6], smac[7], smac[8], smac[9], smac[10], smac[11], sip);
-						if (i_arpbind)
-							doSystem("arp -i %s -s %s %s", IFNAME_BR, sip, smac);
+	mkdir_if_none(DHCPD_HOSTS_DIR, "755");
+	snprintf(dh_fn, sizeof(dh_fn), "%s/dhcp-hosts.rc", DHCPD_HOSTS_DIR);
+
+	fp[0] = fopen(dh_fn, "w+");
+	fp[1] = fopen("/etc/ethers", "w+");
+	fp[2] = fopen("/tmp/hosts.static", "w+");
+
+	if (nvram_get_int("dhcp_static_x") == 1) {
+		ip4_lan = inet_addr_safe(lan_ip);
+		i_arp_bind = nvram_get_int("dhcp_static_arp");
+		i_max_items = nvram_get_int("dhcp_staticnum_x");
+		if (i_max_items > DHCPD_STATIC_MAX)
+			i_max_items = DHCPD_STATIC_MAX;
+		
+		/* first pass */
+		for (j = 0; j < i_max_items; j++) {
+			snprintf(nvram_key, sizeof(nvram_key), "dhcp_staticmac_x%d", j);
+			smac = nvram_safe_get(nvram_key);
+			if (strlen(smac) != 12)
+				continue;
+			snprintf(nvram_key, sizeof(nvram_key), "dhcp_staticip_x%d", j);
+			sip4 = nvram_safe_get(nvram_key);
+			ip4 = inet_addr_safe(sip4);
+			if (ip4 == INADDR_ANY || ip4 == INADDR_NONE || ip4 == ip4_lan)
+				continue;
+			if (!is_same_subnet(sip4, lan_ip, lan_mask))
+				continue;
+			snprintf(nvram_key, sizeof(nvram_key), "dhcp_staticname_x%d", j);
+			shname = nvram_safe_get(nvram_key);
+			
+			/* fill multi-items array by IP */
+			for (i = 0; i < DHCPD_STATIC_MAX; i++) {
+				struct ip4_items_t *ipl = &ip4_list[i];
+				
+				if (!ipl->ip4) {
+					ipl->ip4 = ip4;
+					ipl->count = 1;
+					ipl->mac[0] = strdup(smac);
+					if (is_valid_hostname(shname))
+						ipl->hname = strdup(shname);
+					break;
+				}
+				if (ipl->ip4 == ip4) {
+					if (ipl->count < DHCPD_MULTIMAC_MAX) {
+						ipl->mac[ipl->count] = strdup(smac);
+						ipl->count++;
 					}
+					if (!ipl->hname && is_valid_hostname(shname))
+						ipl->hname = strdup(shname);
+					break;
 				}
 			}
 		}
-		fclose(fp);
+		
+		/* second pass */
+		for (i = 0; i < DHCPD_STATIC_MAX; i++) {
+			struct ip4_items_t *ipl = &ip4_list[i];
+			struct in_addr in;
+			
+			if (!ipl->ip4)
+				break;
+			
+			in.s_addr = ipl->ip4;
+			sip4 = inet_ntoa(in);
+			if (fp[0] && ipl->count > 0) {
+				for (j = 0; j < ipl->count; j++) {
+					smac = ipl->mac[j];
+					if (!smac)
+						continue;
+					fprintf(fp[0], "%c%c:%c%c:%c%c:%c%c:%c%c:%c%c,",
+						smac[0], smac[1], smac[2], smac[3], smac[4], smac[5],
+						smac[6], smac[7], smac[8], smac[9], smac[10], smac[11]);
+				}
+				fprintf(fp[0], "%s\n", sip4);
+			}
+			
+			/* use only unique IP for /etc/ethers (ARP binds) */
+			if (i_arp_bind && ipl->count == 1 && ipl->mac[0]) {
+				smac = ipl->mac[0];
+				if (fp[1]) {
+					fprintf(fp[1], "%c%c:%c%c:%c%c:%c%c:%c%c:%c%c %s\n",
+						smac[0], smac[1], smac[2], smac[3], smac[4], smac[5],
+						smac[6], smac[7], smac[8], smac[9], smac[10], smac[11], sip4);
+				}
+				doSystem("arp -i %s -s %s %s", IFNAME_BR, sip4, smac);
+			}
+			
+			if (fp[2] && ipl->hname)
+				fprintf(fp[2], "%s %s\n", sip4, sanity_hostname(ipl->hname));
+		}
+		
+		/* cleanup items */
+		for (i = 0; i < DHCPD_STATIC_MAX; i++) {
+			struct ip4_items_t *ipl = &ip4_list[i];
+			
+			for (j = 0; j < DHCPD_MULTIMAC_MAX; j++) {
+				if (ipl->mac[j])
+					free(ipl->mac[j]);
+			}
+			if (ipl->hname)
+				free(ipl->hname);
+		}
 	}
 
-	return i_ethers;
+	for (i = 0; i < ARRAY_SIZE(fp); i++) {
+		if (fp[i])
+			fclose(fp[i]);
+	}
 }
 
 int
@@ -225,32 +291,31 @@ int
 start_dns_dhcpd(int is_ap_mode)
 {
 	FILE *fp;
-	int i_ethers, i_verbose, i_dhcp_enable, is_dhcp_used, is_dns_used;
+	int i_verbose, i_dhcp_enable, is_dhcp_used, is_dns_used;
 	char dhcp_start[32], dhcp_end[32], dns_all[64];
 	char *ipaddr, *netmask, *gw, *dns1, *dns2, *dns3, *wins, *domain;
 	const char *storage_dir = "/etc/storage/dnsmasq";
 
-	if (!is_ap_mode) {
-		/* create /etc/hosts */
-		update_hosts_router();
-		
-		/* touch resolv.conf if not exist */
-		create_file(DNS_RESOLV_CONF);
-	}
-
 	i_dhcp_enable = is_dhcpd_enabled(is_ap_mode);
-
-	/* touch dnsmasq.leases if not exist */
-	create_file(DHCPD_LEASE_FILE);
-
 	i_verbose = nvram_get_int("dhcp_verbose");
 
 	ipaddr  = nvram_safe_get("lan_ipaddr");
 	netmask = nvram_safe_get("lan_netmask");
 	domain  = nvram_safe_get("lan_domain");
 
+	/* touch dnsmasq.leases if not exist */
+	create_file(DHCPD_LEASE_FILE);
+
 	/* create /etc/ethers */
-	i_ethers = fill_static_ethers(ipaddr, netmask);
+	fill_static_ethers(ipaddr, netmask);
+
+	if (!is_ap_mode) {
+		/* create /etc/hosts (run after fill_static_ethers!) */
+		update_hosts_router(ipaddr);
+		
+		/* touch resolv.conf if not exist */
+		create_file(DNS_RESOLV_CONF);
+	}
 
 	/* create /etc/dnsmasq.conf */
 	if (!(fp = fopen("/etc/dnsmasq.conf", "w")))
@@ -341,12 +406,8 @@ start_dns_dhcpd(int is_ap_mode)
 		else if (nvram_get_int("wins_enable"))
 			fprintf(fp, "dhcp-option=%d,%s\n", 44, ipaddr);
 #endif
-		
 		if (i_verbose == 0 || i_verbose == 2)
 			fprintf(fp, "quiet-dhcp\n");
-		
-		if (i_ethers)
-			fprintf(fp, "read-ethers\n");
 		
 		is_dhcp_used = 1;
 	}
@@ -393,6 +454,7 @@ start_dns_dhcpd(int is_ap_mode)
 	}
 #endif
 	if (is_dhcp_used) {
+		fprintf(fp, "dhcp-hostsfile=%s\n", DHCPD_HOSTS_DIR);
 		fprintf(fp, "dhcp-leasefile=%s\n", DHCPD_LEASE_FILE);
 		fprintf(fp, "dhcp-authoritative\n");
 	}

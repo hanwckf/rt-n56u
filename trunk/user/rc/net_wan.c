@@ -1522,24 +1522,16 @@ update_resolvconf(int is_first_run, int do_not_notify)
 }
 
 int
-update_hosts_router(void)
+update_hosts_router(const char *lan_ipaddr)
 {
 	FILE *fp;
-	int i, i_max, i_sdhcp;
-	char dhcp_ip[32], dhcp_name[32], *sip, *sname;
-	char *lan_ipaddr, *lan_hname, *lan_dname;
+	char *lan_hname, *lan_dname;
 
 	lan_hname = get_our_hostname();
 	lan_dname = nvram_safe_get("lan_domain");
 
 	sethostname(lan_hname, strlen(lan_hname));
 	setdomainname(lan_dname, strlen(lan_dname));
-
-	i_sdhcp = nvram_get_int("dhcp_static_x");
-	i_max  = nvram_get_int("dhcp_staticnum_x");
-	if (i_max > 64) i_max = 64;
-
-	lan_ipaddr = nvram_safe_get("lan_ipaddr");
 
 	fp = fopen("/etc/hostname", "w+");
 	if (fp) {
@@ -1555,16 +1547,10 @@ update_hosts_router(void)
 		else
 			fprintf(fp, "%s %s\n", lan_ipaddr, lan_hname);
 		fprintf(fp, "%s %s\n", lan_ipaddr, "my.router");
-		if (i_sdhcp == 1) {
-			for (i = 0; i < i_max; i++) {
-				sprintf(dhcp_ip, "dhcp_staticip_x%d", i);
-				sprintf(dhcp_name, "dhcp_staticname_x%d", i);
-				sip = nvram_safe_get(dhcp_ip);
-				sname = nvram_safe_get(dhcp_name);
-				if (is_valid_ipv4(sip) && inet_addr_safe(sip) != inet_addr_safe(lan_ipaddr) && is_valid_hostname(sname))
-					fprintf(fp, "%s %s\n", sip, sanity_hostname(sname));
-			}
-		}
+		
+		/* load static DHCP list */
+		load_user_config(fp, "/tmp", "hosts.static", NULL);
+		
 #if defined (USE_IPV6)
 		if (get_ipv6_type() != IPV6_DISABLED) {
 			fprintf(fp, "%s %s %s\n", "::1", "localhost.localdomain", "localhost");

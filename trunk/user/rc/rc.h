@@ -270,7 +270,7 @@ int  del_static_wan_routes(char *wan_ifname);
 int  add_static_man_routes(char *man_ifname);
 int  del_static_man_routes(char *man_ifname);
 int  update_resolvconf(int is_first_run, int do_not_notify);
-int  update_hosts_router(void);
+int  update_hosts_router(const char *lan_ipaddr);
 int  get_wan_ether_link_direct(int is_ap_mode);
 int  get_wan_dns_static(void);
 int  get_wan_wisp_active(int *p_has_link);

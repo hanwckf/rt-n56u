@@ -904,54 +904,6 @@ set_wifi_mrate(char* ifname, char* value)
 }
 
 static void
-set_wifi_mcs_mode(char* ifname, char* value)
-{
-	int i_value = atoi(value);
-	int i_fix = 0;  // FixedTxMode=OFF
-	int i_mcs = 33; // HT_MCS=Auto
-
-	switch (i_value)
-	{
-	case 1: // HTMIX (1S) 19.5-45 Mbps
-		i_mcs = 2;
-		break;
-	case 2: // HTMIX (1S) 15-30 Mbps
-		i_mcs = 1;
-		break;
-	case 3: // HTMIX (1S) 6.5-15 Mbps
-		i_mcs = 0;
-		break;
-	case 4: // OFDM 12 Mbps
-		i_fix = 2;
-		i_mcs = 2;
-		break;
-	case 5: // OFDM 9 Mbps
-		i_fix = 2;
-		i_mcs = 1;
-		break;
-	case 6: // OFDM 6 Mbps
-		i_fix = 2;
-		i_mcs = 0;
-		break;
-	case 7: // CCK 5.5 Mbps
-		i_fix = 1;
-		i_mcs = 2;
-		break;
-	case 8: // CCK 2 Mbps
-		i_fix = 1;
-		i_mcs = 1;
-		break;
-	case 9: // CCK 1 Mbps
-		i_fix = 1;
-		i_mcs = 0;
-		break;
-	}
-
-	doSystem("iwpriv %s set %s=%d", ifname, "FixedTxMode", i_fix);
-	doSystem("iwpriv %s set %s=%d", ifname, "HtMcs", i_mcs);
-}
-
-static void
 validate_nvram_lan_param(const char *nvram_name, in_addr_t lan_addr, in_addr_t lan_mask)
 {
 	struct in_addr ina;
@@ -1144,12 +1096,6 @@ validate_asp_apply(webs_t wp, int sid)
 				
 				wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 			}
-			else if (!strcmp(v->name, "wl_guest_mcs_mode"))
-			{
-				set_wifi_mcs_mode(IFNAME_5G_GUEST, value);
-				
-				wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
-			}
 			else if (!strcmp(v->name, "wl_guest_enable") ||
 			         !strcmp(v->name, "wl_guest_time_x") ||
 			         !strcmp(v->name, "wl_guest_time2_x") ||
@@ -1210,12 +1156,6 @@ validate_asp_apply(webs_t wp, int sid)
 			else if (!strcmp(v->name, "rt_mrate"))
 			{
 				set_wifi_mrate(IFNAME_2G_MAIN, value);
-				
-				rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
-			}
-			else if (!strcmp(v->name, "rt_guest_mcs_mode"))
-			{
-				set_wifi_mcs_mode(IFNAME_2G_GUEST, value);
 				
 				rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 			}

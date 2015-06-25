@@ -594,7 +594,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	char *p_str, *dat_file, *sku_file, *regspec, *c_val_mbss[2];
 	char macbuf[36], list[2048], sku_link[64];
 	int i, i_num,  i_val, i_wmm, i_ldpc;
-	int i_mode_x, i_phy_mode, i_auth, i_encr, i_wep, i_wds;
+	int i_mode_x, i_phy_mode, i_gfe, i_auth, i_encr, i_wep, i_wds;
 	int i_ssid_num, i_channel, i_channel_max, i_HTBW_MAX, i_VHTBW_MAX;
 	int i_stream_tx, i_stream_rx, i_mphy, i_mmcs, i_fphy[2], i_val_mbss[2];
 	const char *prefix = (is_aband) ? "wl" : "rt";
@@ -1107,16 +1107,16 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	fprintf(fp, "HT_LinkAdapt=%d\n", 0);
 
 	//HT_OpMode
-	i_val = nvram_wlan_get_int(is_aband, "HT_OpMode");
-	if (i_val) i_val = 1;
+	i_gfe = nvram_wlan_get_int(is_aband, "HT_OpMode");
+	if (i_gfe) i_gfe = 1;
 	if (!is_aband) {
 		if (i_phy_mode != PHY_11N)
-			i_val = 0; // GreenField only for N only
+			i_gfe = 0; // GreenField only for N only
 	} else {
 		if (i_phy_mode != PHY_11N_5G && i_phy_mode != PHY_11VHT_N_MIXED)
-			i_val = 0; // GreenField only for N, N/AC only
+			i_gfe = 0; // GreenField only for N, N/AC only
 	}
-	fprintf(fp, "HT_OpMode=%d\n", i_val);
+	fprintf(fp, "HT_OpMode=%d\n", i_gfe);
 
 	//HT_MpduDensity
 	i_val = nvram_wlan_get_int(is_aband, "HT_MpduDensity");
@@ -1363,12 +1363,12 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 			p_str = "CCK";
 		else if (i_phy_mode == PHY_11BG_MIXED || i_phy_mode == PHY_11G)
 			p_str = "OFDM";
-		else if (i_phy_mode == PHY_11N)
+		else if ((i_phy_mode == PHY_11N) && i_gfe)
 			p_str = "GREENFIELD";
 	} else {
 		if (i_phy_mode == PHY_11A)
 			p_str = "OFDM";
-		else if (i_phy_mode == PHY_11N_5G)
+		else if ((i_phy_mode == PHY_11N_5G || i_phy_mode == PHY_11VHT_N_MIXED) && i_gfe)
 			p_str = "GREENFIELD";
 	}
 	fprintf(fp, "WdsPhyMode=%s\n", p_str);

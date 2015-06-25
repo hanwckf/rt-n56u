@@ -133,7 +133,7 @@ function done_validating(action){
     <input type="hidden" name="group_id" value="">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="wl_gmode" value="<% nvram_get_x("","wl_gmode"); %>">
+    <input type="hidden" name="wl_gmode" value="<% nvram_get_x("","wl_gmode"); %>" readonly="1">
 
     <div class="container-fluid">
         <div class="row-fluid">

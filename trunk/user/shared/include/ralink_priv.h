@@ -28,6 +28,11 @@
 #define MAX_NUMBER_OF_MAC	32
 #endif
 
+#define FIXED_TXMODE_HT		0
+#define FIXED_TXMODE_CCK	1
+#define FIXED_TXMODE_OFDM 	2
+#define FIXED_TXMODE_VHT	3
+
 #define MODE_CCK		0
 #define MODE_OFDM		1
 #define MODE_HTMIX		2
@@ -39,6 +44,12 @@
 #define BW_80			2
 #define BW_BOTH			3
 #define BW_10			4 // not used
+
+#define WDS_DISABLE_MODE	0
+#define WDS_RESTRICT_MODE	1
+#define WDS_BRIDGE_MODE		2
+#define WDS_REPEATER_MODE	3
+#define WDS_LAZY_MODE		4
 
 typedef enum _RT_802_11_PHY_MODE {
 	PHY_11BG_MIXED = 0,

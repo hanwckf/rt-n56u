@@ -45,7 +45,14 @@ function initial(){
 	show_banner(1);
 	show_menu(5,2,2);
 	show_footer();
-	
+
+	if (!support_5g_11ac()){
+		o1 = document.form.wl_guest_mcs_mode;
+		o1.remove(1);
+		o1.remove(1);
+		o1.remove(1);
+	}
+
 	document.form.wl_guest_date_x_Sun.checked = getDateCheck(document.form.wl_guest_date_x.value, 0);
 	document.form.wl_guest_date_x_Mon.checked = getDateCheck(document.form.wl_guest_date_x.value, 1);
 	document.form.wl_guest_date_x_Tue.checked = getDateCheck(document.form.wl_guest_date_x.value, 2);
@@ -61,12 +68,12 @@ function initial(){
 	document.form.wl_guest_time2_x_startmin.value = getTimeRange(document.form.wl_guest_time2_x.value, 1);
 	document.form.wl_guest_time2_x_endhour.value = getTimeRange(document.form.wl_guest_time2_x.value, 2);
 	document.form.wl_guest_time2_x_endmin.value = getTimeRange(document.form.wl_guest_time2_x.value, 3);
-	
+
 	document.form.wl_guest_ssid.value = decodeURIComponent(document.form.wl_guest_ssid_org.value);
 	document.form.wl_guest_wpa_psk.value = decodeURIComponent(document.form.wl_guest_wpa_psk_org.value);
-	
+
 	load_body();
-	
+
 	change_guest_enabled(0);
 	change_guest_auth_mode(0);
 }
@@ -246,6 +253,7 @@ function change_guest_auth_mode(mflag) {
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
 
+    <input type="hidden" name="wl_gmode" value="<% nvram_get_x("","wl_gmode"); %>" readonly="1">
     <input type="hidden" name="wl_country_code" value="<% nvram_get_x("","wl_country_code"); %>">
     <input type="hidden" name="wl_guest_ssid_org" value="<% nvram_char_to_ascii("", "wl_guest_ssid"); %>">
     <input type="hidden" name="wl_guest_wpa_mode" value="<% nvram_get_x("","wl_guest_wpa_mode"); %>">
@@ -388,6 +396,9 @@ function change_guest_auth_mode(mflag) {
                                             <td>
                                                 <select name="wl_guest_mcs_mode" class="input">
                                                     <option value="0" <% nvram_match_x("", "wl_guest_mcs_mode", "0", "selected"); %>><#checkbox_No#> (*)</option>
+                                                    <option value="7" <% nvram_match_x("", "wl_guest_mcs_mode", "7", "selected"); %>>VHT (1S) 98 Mbps</option>
+                                                    <option value="8" <% nvram_match_x("", "wl_guest_mcs_mode", "8", "selected"); %>>VHT (1S) 65 Mbps</option>
+                                                    <option value="9" <% nvram_match_x("", "wl_guest_mcs_mode", "9", "selected"); %>>VHT (1S) 33 Mbps</option>
                                                     <option value="1" <% nvram_match_x("", "wl_guest_mcs_mode", "1", "selected"); %>>HTMIX (1S) 45 Mbps</option>
                                                     <option value="2" <% nvram_match_x("", "wl_guest_mcs_mode", "2", "selected"); %>>HTMIX (1S) 30 Mbps</option>
                                                     <option value="3" <% nvram_match_x("", "wl_guest_mcs_mode", "3", "selected"); %>>HTMIX (1S) 15 Mbps</option>

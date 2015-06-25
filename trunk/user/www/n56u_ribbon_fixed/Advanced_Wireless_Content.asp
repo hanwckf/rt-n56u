@@ -44,6 +44,10 @@ function initial(){
 		o1.remove(0);
 		o1.options[0].text = "a/n Mixed (*)";
 		insert_vht_bw(0);
+		o1 = document.form.wl_mcs_mode;
+		o1.remove(1);
+		o1.remove(1);
+		o1.remove(1);
 	}
 
 	document.form.wl_radio_date_x_Sun.checked = getDateCheck(document.form.wl_radio_date_x.value, 0);
@@ -433,6 +437,23 @@ function wl_nband_select(ch){
                                             <td>
                                                 <select name="wl_HT_EXTCHA" class="input">
                                                     <option value="1" selected>Auto</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#WIFIGuestMCS#></th>
+                                            <td>
+                                                <select name="wl_mcs_mode" class="input">
+                                                    <option value="0" <% nvram_match_x("", "wl_mcs_mode", "0", "selected"); %>><#checkbox_No#> (*)</option>
+                                                    <option value="7" <% nvram_match_x("", "wl_mcs_mode", "7", "selected"); %>>VHT (1S) 88 Mbps</option>
+                                                    <option value="8" <% nvram_match_x("", "wl_mcs_mode", "8", "selected"); %>>VHT (1S) 58 Mbps</option>
+                                                    <option value="9" <% nvram_match_x("", "wl_mcs_mode", "9", "selected"); %>>VHT (1S) 29 Mbps</option>
+                                                    <option value="1" <% nvram_match_x("", "wl_mcs_mode", "1", "selected"); %>>HTMIX (1S) 45 Mbps</option>
+                                                    <option value="2" <% nvram_match_x("", "wl_mcs_mode", "2", "selected"); %>>HTMIX (1S) 30 Mbps</option>
+                                                    <option value="3" <% nvram_match_x("", "wl_mcs_mode", "3", "selected"); %>>HTMIX (1S) 15 Mbps</option>
+                                                    <option value="4" <% nvram_match_x("", "wl_mcs_mode", "4", "selected"); %>>OFDM 12 Mbps</option>
+                                                    <option value="5" <% nvram_match_x("", "wl_mcs_mode", "5", "selected"); %>>OFDM 9 Mbps</option>
+                                                    <option value="6" <% nvram_match_x("", "wl_mcs_mode", "6", "selected"); %>>OFDM 6 Mbps</option>
                                                 </select>
                                             </td>
                                         </tr>

@@ -621,7 +621,7 @@ ez_action_change_wifi2(void)
 		update_svc_status_wifi2();
 	}
 
-	nvram_set_int("rt_radio_x", i_radio_state);
+	nvram_wlan_set_int(0, "radio_x", i_radio_state);
 
 	logmessage("watchdog", "Perform ez-button %s %s %s", (i_radio_state) ? "enable" : "disable", "2.4GHz", "radio");
 
@@ -648,7 +648,7 @@ ez_action_change_wifi5(void)
 		update_svc_status_wifi5();
 	}
 
-	nvram_set_int("wl_radio_x", i_radio_state);
+	nvram_wlan_set_int(1, "radio_x", i_radio_state);
 
 	logmessage("watchdog", "Perform ez-button %s %s %s", (i_radio_state) ? "enable" : "disable", "5GHz", "radio");
 
@@ -671,7 +671,7 @@ ez_action_change_guest_wifi2(void)
 		update_svc_status_wifi2();
 	}
 
-	nvram_set_int("rt_guest_enable", i_guest_state);
+	nvram_wlan_set_int(0, "guest_enable", i_guest_state);
 
 	logmessage("watchdog", "Perform ez-button %s %s %s", (i_guest_state) ? "enable" : "disable", "2.4GHz", "AP Guest");
 
@@ -694,7 +694,7 @@ ez_action_change_guest_wifi5(void)
 		update_svc_status_wifi5();
 	}
 
-	nvram_set_int("wl_guest_enable", i_guest_state);
+	nvram_wlan_set_int(1, "guest_enable", i_guest_state);
 
 	logmessage("watchdog", "Perform ez-button %s %s %s", (i_guest_state) ? "enable" : "disable", "5GHz", "AP Guest");
 

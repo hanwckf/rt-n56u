@@ -43,33 +43,6 @@ wif_bridge(char *wifname, int is_add)
 }
 
 void
-nvram_wlan_set(const char* prefix, const char* param, char *value)
-{
-	char wlan_param[64];
-
-	snprintf(wlan_param, sizeof(wlan_param), "%s_%s", prefix, param);
-	nvram_set(wlan_param, value);
-}
-
-char*
-nvram_wlan_get(const char* prefix, const char* param)
-{
-	char wlan_param[64];
-
-	snprintf(wlan_param, sizeof(wlan_param), "%s_%s", prefix, param);
-	return nvram_safe_get(wlan_param);
-}
-
-int
-nvram_wlan_get_int(const char* prefix, const char* param)
-{
-	char *value = nvram_wlan_get(prefix, param);
-	if (value)
-		return atoi(value);
-	return 0;
-}
-
-void
 mlme_state_wl(int is_on)
 {
 	nvram_set_int("mlme_radio_wl", is_on);
@@ -90,7 +63,7 @@ mlme_radio_wl(int is_on)
 
 	doSystem("iwpriv %s set RadioOn=%d", ifname_ap, (is_on) ? 1 : 0);
 	if (is_on) {
-		i_val = nvram_safe_get_int("wl_TxPower", 100, 0, 100);
+		i_val = nvram_wlan_get_int(1, "TxPower");
 		doSystem("iwpriv %s set TxPower=%d", ifname_ap, i_val);
 	}
 
@@ -110,7 +83,7 @@ mlme_radio_rt(int is_on)
 
 	doSystem("iwpriv %s set RadioOn=%d", ifname_ap, (is_on) ? 1 : 0);
 	if (is_on) {
-		i_val = nvram_safe_get_int("rt_TxPower", 100, 0, 100);
+		i_val = nvram_wlan_get_int(0, "TxPower");
 		doSystem("iwpriv %s set TxPower=%d", ifname_ap, i_val);
 	}
 
@@ -141,49 +114,49 @@ get_mlme_radio_rt(void)
 int
 get_enabled_radio_wl(void)
 {
-	return nvram_wlan_get_int("wl", "radio_x");
+	return nvram_wlan_get_int(1, "radio_x");
 }
 
 int
 get_enabled_radio_rt(void)
 {
-	return nvram_wlan_get_int("rt", "radio_x");
+	return nvram_wlan_get_int(0, "radio_x");
 }
 
 int
 get_enabled_guest_wl(void)
 {
-	return nvram_wlan_get_int("wl", "guest_enable");
+	return nvram_wlan_get_int(1, "guest_enable");
 }
 
 int
 get_enabled_guest_rt(void)
 {
-	return nvram_wlan_get_int("rt", "guest_enable");
+	return nvram_wlan_get_int(0, "guest_enable");
 }
 
 int
 get_mode_radio_wl(void)
 {
-	return nvram_wlan_get_int("wl", "mode_x");
+	return nvram_wlan_get_int(1, "mode_x");
 }
 
 int
 get_mode_radio_rt(void)
 {
-	return nvram_wlan_get_int("rt", "mode_x");
+	return nvram_wlan_get_int(0, "mode_x");
 }
 
 int
 is_apcli_wisp_wl(void)
 {
-	return nvram_wlan_get_int("wl", "sta_wisp");
+	return nvram_wlan_get_int(1, "sta_wisp");
 }
 
 int
 is_apcli_wisp_rt(void)
 {
-	return nvram_wlan_get_int("rt", "sta_wisp");
+	return nvram_wlan_get_int(0, "sta_wisp");
 }
 
 char *
@@ -194,13 +167,13 @@ get_apcli_wisp_ifname(void)
 #if !defined(USE_RT3352_MII)
 	i_mode_x = get_mode_radio_rt();
 	if (get_enabled_radio_rt() && (i_mode_x == 3 || i_mode_x == 4) && is_apcli_wisp_rt() &&
-	   (strlen(nvram_wlan_get("rt", "sta_ssid")) > 0))
+	   (strlen(nvram_wlan_get(0, "sta_ssid")) > 0))
 		return IFNAME_2G_APCLI;
 #endif
 #if BOARD_HAS_5G_RADIO
 	i_mode_x = get_mode_radio_wl();
 	if (get_enabled_radio_wl() && (i_mode_x == 3 || i_mode_x == 4) && is_apcli_wisp_wl() &&
-	   (strlen(nvram_wlan_get("wl", "sta_ssid")) > 0))
+	   (strlen(nvram_wlan_get(1, "sta_ssid")) > 0))
 		return IFNAME_5G_APCLI;
 #endif
 	return NULL;
@@ -302,7 +275,7 @@ start_inic_mii(void)
 		}
 		
 		/* add rai0 to bridge (needed for RADIUS) */
-		wif_bridge(ifname_inic, is_need_8021x(nvram_wlan_get("rt", "auth_mode")));
+		wif_bridge(ifname_inic, is_need_8021x(nvram_wlan_get(0, "auth_mode")));
 	} else {
 		/* force disable iNIC (e.g. broken module) */
 		
@@ -399,7 +372,7 @@ start_wifi_ap_wl(int radio_on)
 {
 #if BOARD_HAS_5G_RADIO
 	int i_mode_x = get_mode_radio_wl();
-	int i_m2u = nvram_wlan_get_int("wl", "IgmpSnEnable");
+	int i_m2u = nvram_wlan_get_int(1, "IgmpSnEnable");
 
 	// check WDS only, ApCli only or Radio disabled
 	if (i_mode_x == 1 || i_mode_x == 3 || !radio_on)
@@ -432,7 +405,7 @@ start_wifi_ap_rt(int radio_on)
 {
 	int i_mode_x = get_mode_radio_rt();
 #if !defined(USE_RT3352_MII)
-	int i_m2u = nvram_wlan_get_int("rt", "IgmpSnEnable");
+	int i_m2u = nvram_wlan_get_int(0, "IgmpSnEnable");
 #endif
 
 	// check WDS only, ApCli only or Radio disabled
@@ -485,7 +458,7 @@ start_wifi_wds_wl(int radio_on)
 {
 #if BOARD_HAS_5G_RADIO
 	int i_mode_x = get_mode_radio_wl();
-//	int i_m2u = nvram_wlan_get_int("wl", "IgmpSnEnable");
+//	int i_m2u = nvram_wlan_get_int(1, "IgmpSnEnable");
 
 	if (radio_on && (i_mode_x == 1 || i_mode_x == 2))
 	{
@@ -518,7 +491,7 @@ void
 start_wifi_wds_rt(int radio_on)
 {
 	int i_mode_x = get_mode_radio_rt();
-//	int i_m2u = nvram_wlan_get_int("rt", "IgmpSnEnable");
+//	int i_m2u = nvram_wlan_get_int(0, "IgmpSnEnable");
 
 	if (radio_on && (i_mode_x == 1 || i_mode_x == 2))
 	{
@@ -556,7 +529,7 @@ start_wifi_apcli_wl(int radio_on)
 	char *ifname_apcli = IFNAME_5G_APCLI;
 	int i_mode_x = get_mode_radio_wl();
 
-	if (radio_on && (i_mode_x == 3 || i_mode_x == 4) && (strlen(nvram_wlan_get("wl", "sta_ssid")) > 0))
+	if (radio_on && (i_mode_x == 3 || i_mode_x == 4) && (strlen(nvram_wlan_get(1, "sta_ssid")) > 0))
 	{
 		wif_control(ifname_apcli, 1);
 		wif_bridge(ifname_apcli, !is_apcli_wisp_wl());
@@ -574,7 +547,7 @@ start_wifi_apcli_rt(int radio_on)
 	char *ifname_apcli = IFNAME_2G_APCLI;
 	int i_mode_x = get_mode_radio_rt();
 
-	if (radio_on && (i_mode_x == 3 || i_mode_x == 4) && (strlen(nvram_wlan_get("rt", "sta_ssid")) > 0))
+	if (radio_on && (i_mode_x == 3 || i_mode_x == 4) && (strlen(nvram_wlan_get(0, "sta_ssid")) > 0))
 	{
 		wif_control(ifname_apcli, 1);
 #if !defined(USE_RT3352_MII)
@@ -664,7 +637,7 @@ start_8021x_wl(void)
 	if (!get_enabled_radio_wl())
 		return;
 
-	if (is_need_8021x(nvram_wlan_get("wl", "auth_mode")))
+	if (is_need_8021x(nvram_wlan_get(1, "auth_mode")))
 		eval("rt2860apd", "-i", IFNAME_5G_MAIN);
 #endif
 }
@@ -676,7 +649,7 @@ start_8021x_rt(void)
 	if (!get_enabled_radio_rt())
 		return;
 #endif
-	if (is_need_8021x(nvram_wlan_get("rt", "auth_mode")))
+	if (is_need_8021x(nvram_wlan_get(0, "auth_mode")))
 		eval("rtinicapd", "-i", IFNAME_2G_MAIN);
 }
 
@@ -845,7 +818,7 @@ control_guest_wl(int guest_on, int manual)
 	char *ifname_ap;
 	int radio_on = get_enabled_radio_wl();
 	int i_mode_x = get_mode_radio_wl();
-	int i_m2u = nvram_wlan_get_int("wl", "IgmpSnEnable");
+	int i_m2u = nvram_wlan_get_int(1, "IgmpSnEnable");
 
 	// check WDS only, ApCli only or Radio disabled (force or by schedule)
 	if ((guest_on) && (i_mode_x == 1 || i_mode_x == 3 || !radio_on || !is_interface_up(IFNAME_5G_MAIN)))
@@ -891,7 +864,7 @@ control_guest_rt(int guest_on, int manual)
 	int radio_on = get_enabled_radio_rt();
 	int i_mode_x = get_mode_radio_rt();
 #if !defined(USE_RT3352_MII)
-	int i_m2u = nvram_wlan_get_int("rt", "IgmpSnEnable");
+	int i_m2u = nvram_wlan_get_int(0, "IgmpSnEnable");
 #endif
 
 	// check WDS only, ApCli only or Radio disabled (force or by schedule)
@@ -954,17 +927,17 @@ restart_guest_lan_isolation(void)
 
 #if BOARD_HAS_5G_RADIO
 	if (is_interface_up(wl_ifname_guest)) {
-		if (nvram_wlan_get_int("wl", "guest_lan_isolate") && !ap_mode)
+		if (nvram_wlan_get_int(1, "guest_lan_isolate") && !ap_mode)
 			wl_need_ebtables |= 0x1;
-		if (nvram_wlan_get_int("wl", "mbssid_isolate"))
+		if (nvram_wlan_get_int(1, "mbssid_isolate"))
 			wl_need_ebtables |= 0x2;
 	}
 #endif
 
 	if (is_interface_up(rt_ifname_guest)) {
-		if (nvram_wlan_get_int("rt", "guest_lan_isolate") && !ap_mode)
+		if (nvram_wlan_get_int(0, "guest_lan_isolate") && !ap_mode)
 			rt_need_ebtables |= 0x1;
-		if (nvram_wlan_get_int("rt", "mbssid_isolate"))
+		if (nvram_wlan_get_int(0, "mbssid_isolate"))
 			rt_need_ebtables |= 0x2;
 	}
 
@@ -1062,7 +1035,7 @@ manual_change_radio_rt(int radio_on)
 		usleep(300000);
 	}
 
-	nvram_set_int("rt_radio_x", radio_on);
+	nvram_wlan_set_int(0, "radio_x", radio_on);
 
 	logmessage(LOGNAME, "Perform manual %s %s %s", (radio_on) ? "enable" : "disable", "2.4GHz", "radio");
 
@@ -1081,7 +1054,7 @@ manual_change_radio_wl(int radio_on)
 		usleep(300000);
 	}
 
-	nvram_set_int("wl_radio_x", radio_on);
+	nvram_wlan_set_int(1, "radio_x", radio_on);
 
 	logmessage(LOGNAME, "Perform manual %s %s %s", (radio_on) ? "enable" : "disable", "5GHz", "radio");
 
@@ -1102,7 +1075,7 @@ manual_change_guest_rt(int radio_on)
 		usleep(300000);
 	}
 
-	nvram_set_int("rt_guest_enable", radio_on);
+	nvram_wlan_set_int(0, "guest_enable", radio_on);
 
 	logmessage(LOGNAME, "Perform manual %s %s %s", (radio_on) ? "enable" : "disable", "2.4GHz", "AP Guest");
 
@@ -1121,7 +1094,7 @@ manual_change_guest_wl(int radio_on)
 		usleep(300000);
 	}
 
-	nvram_set_int("wl_guest_enable", radio_on);
+	nvram_wlan_set_int(1, "guest_enable", radio_on);
 
 	logmessage(LOGNAME, "Perform manual %s %s %s", (radio_on) ? "enable" : "disable", "5GHz", "AP Guest");
 

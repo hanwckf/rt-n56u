@@ -157,6 +157,7 @@ struct nvram_pair router_defaults[] = {
 #else
 	{ "wl_gmode", "2" },			/* A/N Mixed */
 #endif
+	{ "wl_mcs_mode", "0" },
 	{ "wl_channel", "0" },			/* Channel number */
 	{ "wl_bcn", "100" },			/* Beacon interval */
 	{ "wl_dtim", "1" },			/* DTIM period */
@@ -250,6 +251,7 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_country_code", DEF_WLAN_2G_CC },
 	{ "rt_ssid", DEF_WLAN_2G_SSID },
 	{ "rt_gmode", "5" },			/* g/n mixed */
+	{ "rt_mcs_mode", "0" },
 	{ "rt_channel", "0" },
 	{ "rt_bcn", "100" },
 	{ "rt_dtim", "1" },

@@ -27,6 +27,7 @@
 
 #include <nvram_linux.h>
 
+#include <rtutils.h>
 #include <netutils.h>
 #include <shutils.h>
 #include <notify_rc.h>
@@ -392,9 +393,6 @@ int ovpn_server_expcli_main(int argc, char **argv);
 #endif
 
 /* net_wifi.c */
-void  nvram_wlan_set(const char* prefix, const char* param, char *value);
-char* nvram_wlan_get(const char* prefix, const char* param);
-int   nvram_wlan_get_int(const char* prefix, const char* param);
 void mlme_state_wl(int is_on);
 void mlme_state_rt(int is_on);
 void mlme_radio_wl(int is_on);

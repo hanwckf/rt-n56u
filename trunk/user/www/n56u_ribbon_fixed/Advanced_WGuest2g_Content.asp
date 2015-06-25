@@ -247,6 +247,7 @@ function change_guest_auth_mode(mflag) {
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
 
+    <input type="hidden" name="rt_gmode" value="<% nvram_get_x("","rt_gmode"); %>" readonly="1">
     <input type="hidden" name="rt_country_code" value="<% nvram_get_x("","rt_country_code"); %>">
     <input type="hidden" name="rt_guest_ssid_org" value="<% nvram_char_to_ascii("", "rt_guest_ssid"); %>">
     <input type="hidden" name="rt_guest_wpa_mode" value="<% nvram_get_x("","rt_guest_wpa_mode"); %>">

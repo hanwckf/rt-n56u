@@ -340,54 +340,56 @@ nvram_convert_misc_values(void)
 		LED_CONTROL(BOARD_GPIO_LED_ROUTER, LED_ON);
 #endif
 
-	if (strlen(nvram_wlan_get("wl", "ssid")) < 1)
-		nvram_wlan_set("wl", "ssid", DEF_WLAN_5G_SSID);
-
-	if (strlen(nvram_wlan_get("rt", "ssid")) < 1)
-		nvram_wlan_set("rt", "ssid", DEF_WLAN_5G_SSID);
+#if BOARD_HAS_5G_RADIO
+	if (strlen(nvram_wlan_get(1, "ssid")) < 1)
+		nvram_wlan_set(1, "ssid", DEF_WLAN_5G_SSID);
 
 	memset(buff, 0, sizeof(buff));
-	char_to_ascii(buff, nvram_wlan_get("wl", "ssid"));
-	nvram_wlan_set("wl", "ssid2", buff);
+	char_to_ascii(buff, nvram_wlan_get(1, "ssid"));
+	nvram_wlan_set(1, "ssid2", buff);
 
-	memset(buff, 0, sizeof(buff));
-	char_to_ascii(buff, nvram_wlan_get("rt", "ssid"));
-	nvram_wlan_set("rt", "ssid2", buff);
-
-	if (strlen(nvram_safe_get("wl_wpa_mode")) < 1)
-		nvram_set_int("wl_wpa_mode", 0);
+	if (strlen(nvram_wlan_get(1, "wpa_mode")) < 1)
+		nvram_wlan_set_int(1, "wpa_mode", 0);
 
 #if BOARD_HAS_5G_11AC
-	if (strlen(nvram_safe_get("wl_gmode")) < 1)
-		nvram_set_int("wl_gmode", 4); // a/n/ac Mixed
+	if (strlen(nvram_wlan_get(1, "gmode")) < 1)
+		nvram_wlan_set_int(1, "gmode", 4); // a/n/ac Mixed
 
-	if (nvram_get_int("wl_HT_BW") > 2)
-		nvram_set_int("wl_HT_BW", 2);
+	if (nvram_wlan_get_int(1, "HT_BW") > 2)
+		nvram_wlan_set_int(1, "HT_BW", 2);
 #else
-	if (strlen(nvram_safe_get("wl_gmode")) < 1)
-		nvram_set_int("wl_gmode", 2); // a/n Mixed
+	if (strlen(nvram_wlan_get(1, "gmode")) < 1)
+		nvram_wlan_set_int(1, "gmode", 2); // a/n Mixed
 
-	if (nvram_get_int("wl_HT_BW") > 1)
-		nvram_set_int("wl_HT_BW", 1);
+	if (nvram_wlan_get_int(1, "HT_BW") > 1)
+		nvram_wlan_set_int(1, "HT_BW", 1);
 #endif
 
-	if (strlen(nvram_safe_get("rt_gmode")) < 1)
-		nvram_set_int("rt_gmode", 2); // b/g/n Mixed
+	if (nvram_wlan_get_int(1, "stream_tx") > BOARD_NUM_ANT_5G_TX)
+		nvram_wlan_set_int(1, "stream_tx", BOARD_NUM_ANT_5G_TX);
 
-	if (nvram_get_int("rt_HT_BW") > 1)
-		nvram_set_int("rt_HT_BW", 1);
+	if (nvram_wlan_get_int(1, "stream_rx") > BOARD_NUM_ANT_5G_RX)
+		nvram_wlan_set_int(1, "stream_rx", BOARD_NUM_ANT_5G_RX);
+#endif
 
-	if (nvram_get_int("wl_stream_tx") > BOARD_NUM_ANT_5G_TX)
-		nvram_set_int("wl_stream_tx", BOARD_NUM_ANT_5G_TX);
+	if (strlen(nvram_wlan_get(0, "ssid")) < 1)
+		nvram_wlan_set(0, "ssid", DEF_WLAN_2G_SSID);
 
-	if (nvram_get_int("wl_stream_rx") > BOARD_NUM_ANT_5G_RX)
-		nvram_set_int("wl_stream_rx", BOARD_NUM_ANT_5G_RX);
+	memset(buff, 0, sizeof(buff));
+	char_to_ascii(buff, nvram_wlan_get(0, "ssid"));
+	nvram_wlan_set(0, "ssid2", buff);
 
-	if (nvram_get_int("rt_stream_tx") > BOARD_NUM_ANT_2G_TX)
-		nvram_set_int("rt_stream_tx", BOARD_NUM_ANT_2G_TX);
+	if (strlen(nvram_wlan_get(0, "gmode")) < 1)
+		nvram_wlan_set_int(0, "gmode", 2); // b/g/n Mixed
 
-	if (nvram_get_int("rt_stream_rx") > BOARD_NUM_ANT_2G_RX)
-		nvram_set_int("rt_stream_rx", BOARD_NUM_ANT_2G_RX);
+	if (nvram_wlan_get_int(0, "HT_BW") > 1)
+		nvram_wlan_set_int(0, "HT_BW", 1);
+
+	if (nvram_wlan_get_int(0, "stream_tx") > BOARD_NUM_ANT_2G_TX)
+		nvram_wlan_set_int(0, "stream_tx", BOARD_NUM_ANT_2G_TX);
+
+	if (nvram_wlan_get_int(0, "stream_rx") > BOARD_NUM_ANT_2G_RX)
+		nvram_wlan_set_int(0, "stream_rx", BOARD_NUM_ANT_2G_RX);
 
 	nvram_set_temp("ntpc_counter", "0000000000");
 	nvram_set_temp("login_timestamp", "0000000000");

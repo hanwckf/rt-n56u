@@ -847,7 +847,7 @@ get_wifi_ifname(int is_5g)
 }
 
 static void
-set_wifi_param_int(char* ifname, char* param, char* value, int val_min, int val_max)
+set_wifi_param_int(const char* ifname, char* param, char* value, int val_min, int val_max)
 {
 	int i_value = atoi(value);
 	if (i_value < val_min) i_value = val_min;
@@ -857,47 +857,12 @@ set_wifi_param_int(char* ifname, char* param, char* value, int val_min, int val_
 }
 
 static void
-set_wifi_mrate(char* ifname, char* value)
+set_wifi_mrate(const char* ifname, const char* value, int is_aband)
 {
-	int i_value = atoi(value);
-	int i_mphy = 2; // OFDM
-	int i_mmcs = 0; // 6 Mbps
+	int i_mphy;
+	int i_mmcs = 0;
 
-	switch (i_value)
-	{
-	case 0: // Auto
-		i_mphy = 0;
-		i_mmcs = 0;
-		break;
-	case 1: // CCK 1 Mbps
-		i_mphy = 1;
-		i_mmcs = 0;
-		break;
-	case 2: // CCK 2 Mbps
-		i_mphy = 1;
-		i_mmcs = 1;
-		break;
-	case 3: // OFDM 6 Mbps
-		i_mphy = 2;
-		i_mmcs = 0;
-		break;
-	case 4: // OFDM 9 Mbps
-		i_mphy = 2;
-		i_mmcs = 1;
-		break;
-	case 5: // OFDM 12 Mbps
-		i_mphy = 2;
-		i_mmcs = 2;
-		break;
-	case 6: // HTMIX (1S) 6.5-15 Mbps
-		i_mphy = 3;
-		i_mmcs = 0;
-		break;
-	case 7: // HTMIX (1S) 15-30 Mbps
-		i_mphy = 3;
-		i_mmcs = 1;
-		break;
-	}
+	i_mphy = calc_mcast_tx_mode(atoi(value), is_aband, &i_mmcs);
 
 	doSystem("iwpriv %s set %s=%d", ifname, "McastPhyMode", i_mphy);
 	doSystem("iwpriv %s set %s=%d", ifname, "McastMcs", i_mmcs);
@@ -1092,7 +1057,7 @@ validate_asp_apply(webs_t wp, int sid)
 #endif
 			else if (!strcmp(v->name, "wl_mrate"))
 			{
-				set_wifi_mrate(IFNAME_5G_MAIN, value);
+				set_wifi_mrate(IFNAME_5G_MAIN, value, 1);
 				
 				wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 			}
@@ -1155,7 +1120,7 @@ validate_asp_apply(webs_t wp, int sid)
 #endif
 			else if (!strcmp(v->name, "rt_mrate"))
 			{
-				set_wifi_mrate(IFNAME_2G_MAIN, value);
+				set_wifi_mrate(IFNAME_2G_MAIN, value, 0);
 				
 				rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 			}

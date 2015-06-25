@@ -20,6 +20,7 @@
 
 #include <ralink_boards.h>
 #include <netutils.h>
+#include <rtutils.h>
 #include <shutils.h>
 #include <nvram_linux.h>
 

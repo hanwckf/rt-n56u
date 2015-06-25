@@ -223,11 +223,11 @@ get_eeprom_params(void)
 	strcpy(country_code, "GB");
 #endif
 
-	if (strlen(nvram_safe_get("rt_country_code")) == 0)
-		nvram_set("rt_country_code", country_code);
+	if (strlen(nvram_wlan_get(0, "country_code")) == 0)
+		nvram_wlan_set(0, "country_code", country_code);
 
-	if (strlen(nvram_safe_get("wl_country_code")) == 0)
-		nvram_set("wl_country_code", country_code);
+	if (strlen(nvram_wlan_get(1, "country_code")) == 0)
+		nvram_wlan_set(1, "country_code", country_code);
 
 #if defined (VENDOR_ASUS)
 	/* reserved for Ralink. used as ASUS RegSpec code. */
@@ -346,10 +346,7 @@ get_eeprom_params(void)
 			}
 		}
 		
-		if (count_0xff == 33)
-			nvram_set_int("wl_txbf_en", 0);
-		else
-			nvram_set_int("wl_txbf_en", 1);
+		nvram_wlan_set_int(1, "txbf_en", (count_0xff == 33) ? 0 : 1);
 	}
 #endif
 }

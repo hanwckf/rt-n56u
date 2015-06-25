@@ -435,6 +435,23 @@ function validate_wlphrase(s, v, obj){
                                             </td>
                                         </tr>
                                         <tr>
+                                            <th><#WIFIGuestMCS#></th>
+                                            <td>
+                                                <select name="rt_mcs_mode" class="input">
+                                                    <option value="0" <% nvram_match_x("", "rt_mcs_mode", "0", "selected"); %>><#checkbox_No#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("", "rt_mcs_mode", "1", "selected"); %>>HTMIX (1S) 45 Mbps</option>
+                                                    <option value="2" <% nvram_match_x("", "rt_mcs_mode", "2", "selected"); %>>HTMIX (1S) 30 Mbps</option>
+                                                    <option value="3" <% nvram_match_x("", "rt_mcs_mode", "3", "selected"); %>>HTMIX (1S) 15 Mbps</option>
+                                                    <option value="4" <% nvram_match_x("", "rt_mcs_mode", "4", "selected"); %>>OFDM 12 Mbps</option>
+                                                    <option value="5" <% nvram_match_x("", "rt_mcs_mode", "5", "selected"); %>>OFDM 9 Mbps</option>
+                                                    <option value="6" <% nvram_match_x("", "rt_mcs_mode", "6", "selected"); %>>OFDM 6 Mbps</option>
+                                                    <option value="7" <% nvram_match_x("", "rt_mcs_mode", "7", "selected"); %>>CCK 5.5 Mbps</option>
+                                                    <option value="8" <% nvram_match_x("", "rt_mcs_mode", "8", "selected"); %>>CCK 2 Mbps</option>
+                                                    <option value="9" <% nvram_match_x("", "rt_mcs_mode", "9", "selected"); %>>CCK 1 Mbps</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
                                             <td>
                                                 <select name="rt_auth_mode" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_auth_mode');">

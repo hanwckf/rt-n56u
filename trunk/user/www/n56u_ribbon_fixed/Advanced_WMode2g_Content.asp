@@ -346,7 +346,7 @@ function hideClients_Block(){
                                         </ul>
                                     </div>
 
-                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" style="margin-bottom: 0px;">
                                         <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);"  onmouseover="openTooltip(this, 1, 1);"><#WLANConfig11b_x_APMode_itemname#></a></th>
                                             <td>
@@ -377,8 +377,8 @@ function hideClients_Block(){
                                             </td>
                                         </tr>
                                         <tr id="row_wds_1" style="display:none;">
-                                            <th width="50%" style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 1, 3);"><#WLANConfig11b_x_BRApply_itemname#></a></th>
-                                            <td style="border-top: 0 none;">
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 1, 3);"><#WLANConfig11b_x_BRApply_itemname#></a></th>
+                                            <td>
                                                 <label class="radio inline"><input type="radio" value="1" name="rt_wdsapply_x" class="input" onClick="change_wdsapply();" <% nvram_match_x("","rt_wdsapply_x", "1", "checked"); %>><#checkbox_Yes#></label>
                                                 <label class="radio inline"><input type="radio" value="0" name="rt_wdsapply_x" class="input" onClick="change_wdsapply();" <% nvram_match_x("","rt_wdsapply_x", "0", "checked"); %>><#checkbox_No#></label>
                                             </td>
@@ -397,7 +397,7 @@ function hideClients_Block(){
                                                 </div>
 
                                                 <input class="btn btn-primary" id="RBRList" style="margin-left: 5px; width: 99px;" type="submit" onClick="return markGroup(this, 'rt_RBRList', 2, ' Add ');" name="rt_RBRList" value="<#CTL_add#>" size="12">
-                                                <div id="ctl_wds_3" class="alert alert-danger" style="margin-top: 5px;">* <#JS_validmac#></div>
+                                                <div id="ctl_wds_3" class="alert alert-danger" style="margin-top: 5px; margin-bottom: 0px;">* <#JS_validmac#></div>
                                             </td>
                                         </tr>
                                         <tr id="row_wds_2" style="display:none;">

@@ -109,13 +109,13 @@
 
 #if BOARD_HAS_5G_RADIO
 	struct variable variables_WLANConfig11a_RBRList[] = {
-			{"wl_wdslist_x", "32", NULL, EVM_RESTART_WIFI5},
+			{"wl_wdslist_x", "12", NULL, EVM_RESTART_WIFI5},
 			{0,0,0,0}
 		};
 #endif
 
 	struct variable variables_WLANConfig11b_rt_RBRList[] = {
-			{"rt_wdslist_x", "32", NULL, EVM_RESTART_WIFI2},
+			{"rt_wdslist_x", "12", NULL, EVM_RESTART_WIFI2},
 			{0,0,0,0}
 		};
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title><#Web_Title#> - <#menu4_2#> : <#menu4_2_3#></title>
+<title><#Web_Title#> - <#menu4#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="-1">
@@ -252,6 +252,7 @@ function redraw_history(){
 	if (hash == '#dy'){
 		$j('#tab_tr_mo').parents('li').removeClass('active');
 		$j('#tab_tr_dy').parents('li').addClass('active');
+		E('bx_label').innerHTML = '<#menu4#> - <#menu4_2_3#>';
 		E('dafm').disabled = 0;
 		for (i = 0; i < daily_history.length; ++i){
 			h = daily_history[i];
@@ -261,6 +262,7 @@ function redraw_history(){
 	}else{
 		$j('#tab_tr_dy').parents('li').removeClass('active');
 		$j('#tab_tr_mo').parents('li').addClass('active');
+		E('bx_label').innerHTML = '<#menu4#> - <#menu4_2_4#>';
 		E('dafm').disabled = 1;
 		for (i = 0; i < monthly_history.length; ++i){
 			h = monthly_history[i];
@@ -328,7 +330,7 @@ function switchPage(id){
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#menu4#> - <#menu4_2_3#></h2>
+                            <h2 id="bx_label" class="box_head round_top"><#menu4#></h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>

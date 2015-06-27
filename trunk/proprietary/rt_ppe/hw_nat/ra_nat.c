@@ -95,6 +95,10 @@ module_param(ipv6_offload, int, S_IRUGO);
 MODULE_PARM_DESC(ipv6_offload, "PPE IPv6 routes offload");
 #endif
 
+static int ttl_regen __read_mostly = DFL_FOE_TTL_REGEN;
+module_param(ttl_regen, int, S_IRUGO|S_IWUSR);
+MODULE_PARM_DESC(ttl_regen, "TTL regeneration On/Off");
+
 uint16_t lan_vid __read_mostly = CONFIG_RA_HW_NAT_LAN_VLANID;
 module_param(lan_vid, ushort, S_IRUGO|S_IWUSR);
 MODULE_PARM_DESC(lan_vid, "VLAN ID for LAN traffic");
@@ -1439,7 +1443,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 	foe_entry->bfib1.time_stamp = (uint16_t) (RegRead(FOE_TS) & 0xFFFF);
 
 	/* Ipv4: TTL / Ipv6: Hop Limit filed */
-	foe_entry->bfib1.ttl = DFL_FOE_TTL_REGEN;
+	foe_entry->bfib1.ttl = (ttl_regen) ? 1 : 0;
 
 	/* enable cache by default */
 	foe_entry->bfib1.cah = 1;
@@ -1667,7 +1671,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 	foe_entry->bfib1.time_stamp = (uint16_t) (RegRead(FOE_TS) & 0xFFFF);
 
 	/* Ipv4: TTL / Ipv6: Hop Limit filed */
-	foe_entry->bfib1.ttl = DFL_FOE_TTL_REGEN;
+	foe_entry->bfib1.ttl = (ttl_regen) ? 1 : 0;
 
 #if defined (CONFIG_RA_HW_NAT_ACL2UP_HELPER)
 	/* set user priority */

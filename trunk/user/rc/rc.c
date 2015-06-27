@@ -266,6 +266,13 @@ nvram_convert_old_params(void)
 		nvram_unset("pppoe_dhcp_route");
 	}
 
+	test_value = nvram_get("mr_ttl_fix");
+	if (test_value) {
+		if (atoi(test_value) > 0 && strlen(nvram_safe_get("wan_ttl_fix")) == 0)
+			nvram_set_int("wan_ttl_fix", 2);
+		nvram_unset("mr_ttl_fix");
+	}
+
 	test_value = nvram_get("wan_heartbeat_x");
 	if (test_value) {
 		if (strlen(test_value) > 0 && strlen(nvram_safe_get("wan_ppp_peer")) == 0)

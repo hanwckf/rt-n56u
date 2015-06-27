@@ -496,12 +496,10 @@ function show_menu(L1, L2, L3){
 	for(i = 1; i <= menuL1_title.length-1; i++){
 		if(menuL1_title[i] == "")
 			continue;
-		else if(L1 == i && L2 <= 0){
+		else if(L1 == i && L2 <= 0)
 			menu1_code += '<li class="active" id="option'+i+'"><a href="javascript:;"><i class="'+menuL1_icon[i]+'"></i>&nbsp;&nbsp;'+menuL1_title[i]+'</a></li>\n';
-		}
-		else{
+		else
 			menu1_code += '<li id="option'+i+'"><a href="'+menuL1_link[i]+'" title="'+menuL1_link[i]+'"><i class="'+menuL1_icon[i]+'"></i>&nbsp;&nbsp;'+menuL1_title[i]+'</a></li>\n';
-		}
 	}
 
 	$("mainMenu").innerHTML = menu1_code;

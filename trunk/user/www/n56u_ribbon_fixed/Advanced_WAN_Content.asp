@@ -1063,6 +1063,16 @@ function simplyMAC(fullMAC){
                                                 <button type="button" class="btn" onclick="showMAC();"><i class="icon icon-plus"></i></button>
                                             </td>
                                         </tr>
+                                        <tr>
+                                            <th><#WAN_TTL_Fix#></th>
+                                            <td>
+                                                <select name="wan_ttl_fix" class="input">
+                                                    <option value="0" <% nvram_match_x("", "wan_ttl_fix", "0", "selected"); %>><#WAN_TTL_Item0#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("", "wan_ttl_fix", "1", "selected"); %>><#WAN_TTL_Item1#></option>
+                                                    <option value="2" <% nvram_match_x("", "wan_ttl_fix", "2", "selected"); %>><#WAN_TTL_Item2#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
                                     </table>
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_viptv_sect" style="display:none">

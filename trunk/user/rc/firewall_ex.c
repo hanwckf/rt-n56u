@@ -1257,18 +1257,18 @@ ipt_filter_default(void)
 }
 
 static void
-ipt_mangle_rules(char *man_if)
+ipt_mangle_rules(const char *man_if, const char *wan_if, int use_man)
 {
 	FILE *fp;
-	int i_ttl_fixup;
-	char *dtype;
+	int i_wan_ttl_fix;
+	const char *dtype;
 	const char *ipt_file = "/tmp/ipt_mangle.rules";
 
-	i_ttl_fixup = 0;
-	if (nvram_match("mr_enable_x", "1"))
-		i_ttl_fixup = nvram_get_int("mr_ttl_fix");
+	i_wan_ttl_fix = nvram_get_int("wan_ttl_fix");
+	if (i_wan_ttl_fix == 2 && nvram_invmatch("mr_enable_x", "1"))
+		i_wan_ttl_fix = 0;
 
-	if (i_ttl_fixup > 0) {
+	if (i_wan_ttl_fix) {
 		module_smart_load("iptable_mangle", NULL);
 		module_smart_load("xt_HL", NULL);
 	}
@@ -1285,21 +1285,26 @@ ipt_mangle_rules(char *man_if)
 
 	dtype = "PREROUTING";
 
-	if (i_ttl_fixup > 0) {
-		char *viptv_iflast = nvram_safe_get("viptv_ifname");
+	if (i_wan_ttl_fix) {
+		const char *viptv_if = man_if;
+		const char *viptv_iflast = nvram_safe_get("viptv_ifname");
 		if (*viptv_iflast && is_interface_exist(viptv_iflast))
-			man_if = viptv_iflast;
+			viptv_if = viptv_iflast;
 		
-		if (i_ttl_fixup == 2)
-			fprintf(fp, "-A %s -i %s -p udp -d 224.0.0.0/4 -j TTL %s %d\n", dtype, man_if, "--ttl-set", 64);
-		else
-			fprintf(fp, "-A %s -i %s -p udp -d 224.0.0.0/4 -j TTL %s %d\n", dtype, man_if, "--ttl-inc", 1);
+		if (i_wan_ttl_fix == 1) {
+			fprintf(fp, "-A %s -i %s -j TTL %s %d\n", dtype, wan_if, "--ttl-inc", 1);
+			if (use_man)
+				fprintf(fp, "-A %s -i %s -j TTL %s %d\n", dtype, man_if, "--ttl-inc", 1);
+		}
+		
+		if (i_wan_ttl_fix == 2 || (strcmp(wan_if, viptv_if) && strcmp(man_if, viptv_if)))
+			fprintf(fp, "-A %s -i %s -p udp -d 224.0.0.0/4 -j TTL %s %d\n", dtype, viptv_if, "--ttl-inc", 1);
 	}
 
 	fprintf(fp, "COMMIT\n\n");
 	fclose(fp);
 
-	if (i_ttl_fixup > 0 || is_module_loaded("iptable_mangle"))
+	if (i_wan_ttl_fix || is_module_loaded("iptable_mangle"))
 		doSystem("iptables-restore %s", ipt_file);
 }
 
@@ -2045,7 +2050,7 @@ start_firewall_ex(void)
 	ipt_raw_rules();
 
 	/* IPv4 Mangle rules */
-	ipt_mangle_rules(man_if);
+	ipt_mangle_rules(man_if, wan_if, i_use_man);
 
 	/* IPv4 NAT rules */
 	ipt_nat_rules(man_if, man_ip, wan_if, wan_ip, lan_if, lan_ip, lan_net, i_use_man);

@@ -74,6 +74,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wan_dns3_x", "" },
 	{ "wan_hostname", "" },			/* WAN hostname */
 	{ "wan_vci", "" },			/* WAN vendor class identifier (OPT-60) */
+	{ "wan_ttl_fix", "0" },
 	{ "wan_hwaddr_x", "" },
 	{ "wan_nat_x", "1" },
 	{ "wan_mtu", "1500" },
@@ -146,7 +147,6 @@ struct nvram_pair router_defaults[] = {
 	{ "fw_dos_x", "0" },			// oleg patch
 	{ "dr_enable_x", "1" },			// oleg patch
 	{ "mr_enable_x", "0" },			// oleg patch
-	{ "mr_ttl_fix", "0" },
 
 #if BOARD_HAS_5G_RADIO
 	/* 5G Wireless parameters */

@@ -554,6 +554,7 @@ hwnat_configure(void)
 	}
 
 	module_param_set_int("hw_nat", "wan_vid", get_vlan_vid_wan());
+	module_param_set_int("hw_nat", "ttl_regen", (nvram_get_int("wan_ttl_fix") == 1) ? 0 : 1);
 
 	hw_nat_mode = nvram_get_int("hw_nat_mode");
 	udp_offload = (hw_nat_mode == 3 || hw_nat_mode == 4) ? 1 : 0;

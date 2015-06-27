@@ -40,7 +40,6 @@ function initial(){
 		if (lan_proto == '1')
 			id_menu--;
 		showhide_div('row_mroute', 0);
-		showhide_div('row_ttl_fix', 0);
 	}else{
 		on_click_mroute();
 	}
@@ -157,7 +156,6 @@ function valid_xupnpd(){
 }
 
 function on_click_mroute(){
-	showhide_div('row_ttl_fix', document.form.mr_enable_x[0].checked);
 }
 
 function on_click_snoop(){
@@ -263,16 +261,6 @@ function on_xupnpd_link(){
                                                     <input type="radio" value="1" name="mr_enable_x" id="mr_enable_x_1" class="input" onclick="on_click_mroute();" <% nvram_match_x("", "mr_enable_x", "1", "checked"); %> /><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="mr_enable_x" id="mr_enable_x_0" class="input" onclick="on_click_mroute();" <% nvram_match_x("", "mr_enable_x", "0", "checked"); %> /><#checkbox_No#>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_ttl_fix">
-                                            <th><#IPTVTTL#></th>
-                                            <td colspan="2">
-                                                <select name="mr_ttl_fix" class="input">
-                                                    <option value="0" <% nvram_match_x("", "mr_ttl_fix", "0", "selected"); %>><#checkbox_No#></option>
-                                                    <option value="1" <% nvram_match_x("", "mr_ttl_fix", "1", "selected"); %>><#checkbox_Yes#> (TTL+1)</option>
-                                                    <option value="2" <% nvram_match_x("", "mr_ttl_fix", "2", "selected"); %>><#checkbox_Yes#> (TTL=64)</option>
-                                                </select>
                                             </td>
                                         </tr>
                                         <tr>

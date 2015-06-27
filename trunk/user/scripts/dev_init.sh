@@ -64,6 +64,7 @@ fi
 # create symlinks
 ln -sf "/home/root" "/home/admin"
 ln -sf "/proc/mounts" "/etc/mtab"
+ln -sf "/etc_ro/ethertypes" "/etc/ethertypes"
 ln -sf "/etc_ro/protocols" "/etc/protocols"
 ln -sf "/etc_ro/services" "/etc/services"
 ln -sf "/etc_ro/shells" "/etc/shells"

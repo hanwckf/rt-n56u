@@ -8,5 +8,5 @@ clean:
 	$(MAKE) -C $(SRC_NAME) clean
 
 romfs:
-	cp $(SRC_NAME)/static ./ebtables
-	$(ROMFSINST) /bin/ebtables
+	$(ROMFSINST) $(SRC_NAME)/static /bin/ebtables
+	$(ROMFSINST) $(SRC_NAME)/ethertypes /etc_ro/ethertypes

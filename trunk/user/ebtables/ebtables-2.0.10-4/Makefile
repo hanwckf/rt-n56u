@@ -117,8 +117,7 @@ daemon: ebtablesd ebtablesu
 
 # a little scripting for a static binary, making one for ebtables-restore
 # should be completely analogous
-#static: extensions/ebt_*.c extensions/ebtable_*.c ebtables.c communication.c ebtables-standalone.c getethertype.c libebtc.c useful_functions.c
-static: extensions/ebt_standard.c extensions/ebtable_filter.c ebtables.c communication.c ebtables-standalone.c getethertype.c libebtc.c useful_functions.c
+static: extensions/ebt_*.c extensions/ebtable_*.c ebtables.c communication.c ebtables-standalone.c getethertype.c libebtc.c useful_functions.c
 	cp ebtables-standalone.c ebtables-standalone.c_ ; \
 	cp include/ebtables_u.h include/ebtables_u.h_ ; \
 	sed "s/ main(/ pseudomain(/" ebtables-standalone.c > ebtables-standalone.c__ ; \

@@ -34,6 +34,7 @@
 #include "br_private.h"
 
 static void br_multicast_start_querier(struct net_bridge *br);
+static void br_multicast_add_router(struct net_bridge *br, struct net_bridge_port *port);
 
 static inline int br_ip_equal(const struct br_ip *a, const struct br_ip *b)
 {
@@ -906,6 +907,8 @@ void br_multicast_enable_port(struct net_bridge_port *port)
 		goto out;
 
 	__br_multicast_enable_port(port);
+	if (port->multicast_router == 2 && hlist_unhashed(&port->rlist))
+		br_multicast_add_router(br, port);
 
 out:
 	spin_unlock(&br->multicast_lock);

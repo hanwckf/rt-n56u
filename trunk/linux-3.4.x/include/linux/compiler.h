@@ -246,7 +246,7 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
 	({ union { typeof(x) __val; char __c[1]; } __u; __read_once_size(&(x), __u.__c, sizeof(x)); __u.__val; })
 
 #define WRITE_ONCE(x, val) \
-	({ typeof(x) __val = (val); __write_once_size(&(x), &__val, sizeof(__val)); __val; })
+	({ union { typeof(x) __val; char __c[1]; } __u = { .__val = (val) }; __write_once_size(&(x), __u.__c, sizeof(x)); __u.__val; })
 
 #endif /* __KERNEL__ */
 
@@ -371,6 +371,11 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
 # define __same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
 #endif
 
+/* Is this type a native word size -- useful for atomic operations */
+#ifndef __native_word
+# define __native_word(t) (sizeof(t) == sizeof(char) || sizeof(t) == sizeof(short) || sizeof(t) == sizeof(int) || sizeof(t) == sizeof(long))
+#endif
+
 /* Compile time object size, -1 for unknown */
 #ifndef __compiletime_object_size
 # define __compiletime_object_size(obj) -1
@@ -419,6 +424,10 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
 #define compiletime_assert(condition, msg) \
 	_compiletime_assert(condition, msg, __compiletime_assert_, __LINE__)
 
+#define compiletime_assert_atomic_type(t)				\
+	compiletime_assert(__native_word(t),				\
+		"Need native word sized stores/loads for atomicity.")
+
 /*
  * Prevent the compiler from merging or refetching accesses.  The compiler
  * is also forbidden from reordering successive instances of ACCESS_ONCE(),
@@ -447,7 +456,9 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
 /* Ignore/forbid kprobes attach on very low level functions marked by this attribute: */
 #ifdef CONFIG_KPROBES
 # define __kprobes	__attribute__((__section__(".kprobes.text")))
+# define nokprobe_inline	__always_inline
 #else
 # define __kprobes
+# define nokprobe_inline	inline
 #endif
 #endif /* __LINUX_COMPILER_H */

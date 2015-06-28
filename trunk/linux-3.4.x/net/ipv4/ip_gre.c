@@ -710,6 +710,7 @@ static netdev_tx_t ipgre_tunnel_xmit(struct sk_buff *skb, struct net_device *dev
 	int    gre_hlen;
 	__be32 dst;
 	int    mtu;
+	u8     ttl;
 
 	if (dev->type == ARPHRD_ETHER)
 		IPCB(skb)->flags = 0;
@@ -769,6 +770,7 @@ static netdev_tx_t ipgre_tunnel_xmit(struct sk_buff *skb, struct net_device *dev
 			goto tx_error;
 	}
 
+	ttl = tiph->ttl;
 	tos = tiph->tos;
 	if (tos == 1) {
 		tos = 0;
@@ -861,6 +863,7 @@ static netdev_tx_t ipgre_tunnel_xmit(struct sk_buff *skb, struct net_device *dev
 		dev_kfree_skb(skb);
 		skb = new_skb;
 		old_iph = ip_hdr(skb);
+		/* Warning : tiph value might point to freed memory */
 	}
 
 	skb_reset_transport_header(skb);
@@ -883,8 +886,9 @@ static netdev_tx_t ipgre_tunnel_xmit(struct sk_buff *skb, struct net_device *dev
 	iph->tos		=	ipgre_ecn_encapsulate(tos, old_iph, skb);
 	iph->daddr		=	fl4.daddr;
 	iph->saddr		=	fl4.saddr;
+	iph->ttl		=	ttl;
 
-	if ((iph->ttl = tiph->ttl) == 0) {
+	if (ttl == 0) {
 		if (skb->protocol == htons(ETH_P_IP))
 			iph->ttl = old_iph->ttl;
 #if IS_ENABLED(CONFIG_IPV6)

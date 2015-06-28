@@ -508,25 +508,22 @@ static void ipgre_err(struct sk_buff *skb, u32 info)
 		break;
 	}
 
-	rcu_read_lock();
 	t = ipgre_tunnel_lookup(skb->dev, iph->daddr, iph->saddr,
 				flags & GRE_KEY ?
 				*(((__be32 *)p) + (grehlen / 4) - 1) : 0,
 				p[1]);
 	if (t == NULL || t->parms.iph.daddr == 0 ||
 	    ipv4_is_multicast(t->parms.iph.daddr))
-		goto out;
+		return;
 
 	if (t->parms.iph.ttl == 0 && type == ICMP_TIME_EXCEEDED)
-		goto out;
+		return;
 
 	if (time_before(jiffies, t->err_time + IPTUNNEL_ERR_TIMEO))
 		t->err_count++;
 	else
 		t->err_count = 1;
 	t->err_time = jiffies;
-out:
-	rcu_read_unlock();
 }
 
 static inline void ipgre_ecn_decapsulate(const struct iphdr *iph, struct sk_buff *skb)
@@ -564,7 +561,7 @@ static int ipgre_rcv(struct sk_buff *skb)
 	__be16 gre_proto;
 
 	if (!pskb_may_pull(skb, 16))
-		goto drop_nolock;
+		goto drop;
 
 	iph = ip_hdr(skb);
 	h = skb->data;
@@ -575,7 +572,7 @@ static int ipgre_rcv(struct sk_buff *skb)
 		   - We do not support routing headers.
 		 */
 		if (flags&(GRE_VERSION|GRE_ROUTING))
-			goto drop_nolock;
+			goto drop;
 
 		if (flags&GRE_CSUM) {
 			switch (skb->ip_summed) {
@@ -603,7 +600,6 @@ static int ipgre_rcv(struct sk_buff *skb)
 
 	gre_proto = *(__be16 *)(h + 2);
 
-	rcu_read_lock();
 	if ((tunnel = ipgre_tunnel_lookup(skb->dev,
 					  iph->saddr, iph->daddr, key,
 					  gre_proto))) {
@@ -676,14 +672,11 @@ static int ipgre_rcv(struct sk_buff *skb)
 
 		netif_rx(skb);
 
-		rcu_read_unlock();
 		return 0;
 	}
 	icmp_send(skb, ICMP_DEST_UNREACH, ICMP_PORT_UNREACH, 0);
 
 drop:
-	rcu_read_unlock();
-drop_nolock:
 	kfree_skb(skb);
 	return 0;
 }

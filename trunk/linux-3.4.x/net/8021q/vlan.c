@@ -403,7 +403,10 @@ static int vlan_device_event(struct notifier_block *unused, unsigned long event,
 
 		break;
 
-	case NETDEV_DOWN:
+	case NETDEV_DOWN: {
+		struct net_device *tmp;
+		LIST_HEAD(close_list);
+
 		if (dev->features & NETIF_F_HW_VLAN_FILTER)
 			vlan_vid_del(dev, 0);
 
@@ -419,11 +422,18 @@ static int vlan_device_event(struct notifier_block *unused, unsigned long event,
 
 			vlan = vlan_dev_priv(vlandev);
 			if (!(vlan->flags & VLAN_FLAG_LOOSE_BINDING))
-				dev_change_flags(vlandev, flgs & ~IFF_UP);
-			netif_stacked_transfer_operstate(dev, vlandev);
+				list_add(&vlandev->close_list, &close_list);
 		}
-		break;
 
+		dev_close_many(&close_list, false);
+
+		list_for_each_entry_safe(vlandev, tmp, &close_list, close_list) {
+			netif_stacked_transfer_operstate(dev, vlandev);
+			list_del_init(&vlandev->close_list);
+		}
+		list_del(&close_list);
+		break;
+	}
 	case NETDEV_UP:
 		/* Put all VLANs for this dev in the up state too.  */
 		for (i = 0; i < VLAN_N_VID; i++) {

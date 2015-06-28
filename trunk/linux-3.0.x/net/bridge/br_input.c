@@ -21,9 +21,11 @@
 /* Bridge group multicast address 802.1d (pg 51). */
 const u8 br_group_address[ETH_ALEN] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x00 };
 
+#if defined(CONFIG_BRIDGE_EBT_BROUTE) || defined(CONFIG_BRIDGE_EBT_BROUTE_MODULE)
 /* Hook for brouter */
 br_should_route_hook_t __rcu *br_should_route_hook __read_mostly;
 EXPORT_SYMBOL(br_should_route_hook);
+#endif
 
 static inline int br_pass_frame_up(struct sk_buff *skb)
 {
@@ -158,7 +160,9 @@ rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
 	struct net_bridge_port *p;
 	struct sk_buff *skb = *pskb;
 	const unsigned char *dest = eth_hdr(skb)->h_dest;
+#if defined(CONFIG_BRIDGE_EBT_BROUTE) || defined(CONFIG_BRIDGE_EBT_BROUTE_MODULE)
 	br_should_route_hook_t *rhook;
+#endif
 
 	if (unlikely(skb->pkt_type == PACKET_LOOPBACK))
 		return RX_HANDLER_PASS;
@@ -216,6 +220,7 @@ rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
 forward:
 	switch (p->state) {
 	case BR_STATE_FORWARDING:
+#if defined(CONFIG_BRIDGE_EBT_BROUTE) || defined(CONFIG_BRIDGE_EBT_BROUTE_MODULE)
 		rhook = rcu_dereference(br_should_route_hook);
 		if (rhook) {
 			if ((*rhook)(skb)) {
@@ -224,6 +229,7 @@ forward:
 			}
 			dest = eth_hdr(skb)->h_dest;
 		}
+#endif
 		/* fall through */
 	case BR_STATE_LEARNING:
 		if (!compare_ether_addr(p->br->dev->dev_addr, dest))

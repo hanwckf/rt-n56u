@@ -103,8 +103,10 @@ struct __fdb_entry {
 
 extern void brioctl_set(int (*ioctl_hook)(struct net *, unsigned int, void __user *));
 
+#if defined(CONFIG_BRIDGE_EBT_BROUTE) || defined(CONFIG_BRIDGE_EBT_BROUTE_MODULE)
 typedef int br_should_route_hook_t(struct sk_buff *skb);
 extern br_should_route_hook_t __rcu *br_should_route_hook;
+#endif
 
 #endif
 

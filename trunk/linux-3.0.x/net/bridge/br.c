@@ -22,6 +22,22 @@
 
 #include "br_private.h"
 
+#ifndef CONFIG_BRIDGE_NETFILTER
+#if defined(CONFIG_BRIDGE_NF_EBTABLES) || defined(CONFIG_BRIDGE_NF_EBTABLES_MODULE)
+int brnf_call_ebtables __read_mostly = 0;
+EXPORT_SYMBOL_GPL(brnf_call_ebtables);
+#endif
+
+inline int br_netfilter_run_hooks(void)
+{
+#if defined(CONFIG_BRIDGE_NF_EBTABLES) || defined(CONFIG_BRIDGE_NF_EBTABLES_MODULE)
+	return brnf_call_ebtables;
+#else
+	return 0;
+#endif
+}
+#endif
+
 static const struct stp_proto br_stp_proto = {
 	.rcv	= br_stp_rcv,
 };

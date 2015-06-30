@@ -47,7 +47,7 @@
 #define COUNTER_BASE(c, n, cpu) ((struct ebt_counter *)(((char *)c) + \
    COUNTER_OFFSET(n) * cpu))
 
-
+extern int brnf_call_ebtables;
 
 static DEFINE_MUTEX(ebt_mutex);
 

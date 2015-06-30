@@ -186,11 +186,6 @@ config BRIDGE_NETFILTER
 
 	  If unsure, say N.
 
-config BRIDGE_NF_FASTPATH
-	bool "Speed-up bridge netfilter by skip arptables/iptables/ip6tables hooks"
-	depends on BRIDGE_NETFILTER
-	default y
-
 source "net/netfilter/Kconfig"
 source "net/ipv4/netfilter/Kconfig"
 source "net/ipv6/netfilter/Kconfig"

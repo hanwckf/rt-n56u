@@ -59,7 +59,6 @@ static struct ebt_table frame_nat =
 	.me		= THIS_MODULE,
 };
 
-#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 static unsigned int
 ebt_nat_in(unsigned int hook, struct sk_buff *skb, const struct net_device *in
    , const struct net_device *out, int (*okfn)(struct sk_buff *))
@@ -115,7 +114,6 @@ static struct pernet_operations frame_nat_net_ops = {
 	.init = frame_nat_net_init,
 	.exit = frame_nat_net_exit,
 };
-#endif
 
 static int __init ebtable_nat_init(void)
 {
@@ -124,19 +122,15 @@ static int __init ebtable_nat_init(void)
 	ret = register_pernet_subsys(&frame_nat_net_ops);
 	if (ret < 0)
 		return ret;
-#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 	ret = nf_register_hooks(ebt_ops_nat, ARRAY_SIZE(ebt_ops_nat));
 	if (ret < 0)
 		unregister_pernet_subsys(&frame_nat_net_ops);
-#endif
 	return ret;
 }
 
 static void __exit ebtable_nat_fini(void)
 {
-#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 	nf_unregister_hooks(ebt_ops_nat, ARRAY_SIZE(ebt_ops_nat));
-#endif
 	unregister_pernet_subsys(&frame_nat_net_ops);
 }
 

@@ -367,7 +367,7 @@ int readArguments(int argc, char **argv)
 			case 'H': ModeMap = ModeMap + HUAWEI_MODE; break;
 			case 'J': ModeMap = ModeMap + HUAWEINEW_MODE; break;
 			case 'S': ModeMap = ModeMap + SIERRA_MODE; break;
-			case 'O': ModeMap = ModeMap + SONY_MODE; break;; break;
+			case 'O': ModeMap = ModeMap + SONY_MODE; break;
 			case 'B': ModeMap = ModeMap + QISDA_MODE; break;
 			case 'E': ModeMap = ModeMap + QUANTA_MODE; break;
 			case 'G': ModeMap = ModeMap + GCT_MODE; break;
@@ -496,7 +496,7 @@ int main(int argc, char **argv)
 
 	/* libusb initialization */
 	if ((libusbError = libusb_init(&ctx)) != LIBUSB_SUCCESS) {
-		fprintf(stderr, "Error: Failed to initialize libusb. %s (%d): %s\n\n", libusb_error_name(libusbError), libusbError, libusb_strerror(libusbError));
+		fprintf(stderr, "Error: Failed to initialize libusb. %s (%d)\n\n", libusb_error_name(libusbError), libusbError);
 		exit(1);
 	}
 
@@ -1507,7 +1507,7 @@ int sendMessage(char* message, int count)
 
 int checkSuccess()
 {
-	int ret, i;
+	int ret = 0, i = 0;
 	int newTargetCount, success=0;
 
 	SHOW_PROGRESS(output,"\nCheck for mode switch (max. %d times, once per second) ...\n", CheckSuccess);
@@ -1827,7 +1827,7 @@ int find_first_bulk_endpoint(int direction)
 
 int get_current_configuration()
 {
-	int ret, cfg=0;
+	int ret = 0, cfg = 0;
 	SHOW_PROGRESS(output,"Get the current device configuration ...\n");
 	if (active_config == NULL)
 		ret = libusb_get_active_config_descriptor(dev, &active_config);

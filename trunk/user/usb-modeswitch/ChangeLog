@@ -2,6 +2,16 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.2.2, 2015/06/27
+    Added catch for libusb init error (thanks, Henrik Gustafsson); removed
+    global function result variable; added catch for USB configuration
+    read error (both thanks to "otila"); fixed wrapper script where port
+    search for symlinking modem port was broken ("/dev/gsmmodem"); changed
+    PantechMode parameter to represent different targets; added global
+    config option to disable MBIM checking and setting alltogether (request
+    from "kai"); changed udev sh script so that systemd processing takes
+    precedence over upstart; changed systemd template unit parameter to
+    avoid escaping problems
 Version 2.2.1, 2015/01/15
     Fixed unreliable switching function for Cisco AM10
 Version 2.2.0, 2014/05/29
@@ -43,7 +53,7 @@ Version 2.0.0, 2013/09/01
     install the matching service file; you may want to adapt it better to
     your respective system, possibly adding dependencies/targets to the
     services. Note that the udev starter script usb_modeswitch.sh also
-    checks for the existence of the service files
+    checks for the existence of the service/unit files
 Version 1.2.7, 2013/08/07
     Two new dedicated control message functions to support Pantech LTE
     (thanks to Adam Goode) and Blackberry Q10/Z10 (thanks to Daniel Mende)

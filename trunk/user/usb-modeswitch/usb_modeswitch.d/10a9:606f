@@ -1,0 +1,6 @@
+# Pantech/Verizon UML295
+TargetVendor=0x10a9
+TargetProductList="6064"
+# Use 1 for automatic choice, 2 for RNDIS, 4 for QMI
+PantechMode=1
+NoDriverLoading=1

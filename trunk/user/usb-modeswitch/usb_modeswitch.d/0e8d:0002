@@ -1,4 +1,4 @@
-# MediaTek MT6276M and others
+# MediaTek/Medion S4222 and probably others
 TargetVendor=0x0e8d
 TargetProductList="00a1,00a2,00a5"
 MessageContent="555342431234567800000000000006f0010300000000000000000000000000"

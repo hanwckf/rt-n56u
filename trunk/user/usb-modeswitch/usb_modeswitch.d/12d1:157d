@@ -1,4 +1,4 @@
-# Huawei E3331
+# Huawei E3331, E3372
 TargetVendor=0x12d1
-TargetProduct=0x14db
+TargetProductList="14db,14dc"
 HuaweiNewMode=1

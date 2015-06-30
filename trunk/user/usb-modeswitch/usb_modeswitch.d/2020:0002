@@ -1,4 +1,4 @@
-# Mediatek MT6229, Micromax MMX 377G
+# Mediatek MT6229, Micromax MMX 377G, Olicard 300
 TargetVendor=0x2020
-TargetProductList="2000,4010"
+TargetProductList="2000,4000,4010"
 MessageContent="555342430820298900000000000003f0010100000000000000000000000000"

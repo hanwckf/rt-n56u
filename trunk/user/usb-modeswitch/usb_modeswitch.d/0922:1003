@@ -1,0 +1,5 @@
+# Dymo LabelManager 420P
+TargetVendor= 0x0922
+TargetProduct= 0x1004
+MessageContent="1b5a01"
+NoDriverLoading=1

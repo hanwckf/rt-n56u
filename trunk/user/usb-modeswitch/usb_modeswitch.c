@@ -1,6 +1,6 @@
 /*
   Mode switching tool for controlling mode of 'multi-state' USB devices
-  Version 2.2.1, 2015/01/15
+  Version 2.2.2 "Summer Is Here!", 2015/06/27
 
   Copyright (C) 2007 - 2015 Josua Dietze (mail to "digidietze" at the domain
   of the home page; or write a personal message through the forum to "Josh".
@@ -45,7 +45,7 @@
 
 /* Recommended tab size: 4 */
 
-#define VERSION "2.2.0"
+#define VERSION "2.2.2"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -120,7 +120,6 @@ int DefaultVendor=0, DefaultProduct=0, TargetVendor=0, TargetProduct=-1, TargetC
 int MessageEndpoint=0, ResponseEndpoint=0, ReleaseDelay=0;
 int targetDeviceCount=0, searchMode;
 int devnum=-1, busnum=-1;
-int ret;
 
 unsigned int ModeMap = 0;
 #define DETACHONLY_MODE		0x00000001
@@ -138,6 +137,7 @@ unsigned int ModeMap = 0;
 #define PANTECH_MODE		0x00001000
 #define HUAWEINEW_MODE		0x00002000
 
+int PantechMode=0;
 char verbose=0, show_progress=1, ResetUSB=0, CheckSuccess=0, config_read=0;
 char NeedResponse=0, NoDriverLoading=0, InquireDevice=0, sysmode=0, mbim=0;
 char StandardEject=0;
@@ -187,7 +187,7 @@ static struct option long_options[] = {
 	{"mobileaction-mode",	no_argument, 0, 'A'},
 	{"cisco-mode",	        no_argument, 0, 'L'},
 	{"blackberry-mode",		no_argument, 0, 'Z'},
-	{"pantech-mode",		no_argument, 0, 'F'},
+	{"pantech-mode",		required_argument, 0, 'F'},
 	{"std-eject",			no_argument, 0, 'K'},
 	{"need-response",		no_argument, 0, 'n'},
 	{"reset-usb",			no_argument, 0, 'R'},
@@ -228,7 +228,9 @@ void readConfigFile(const char *configFilename)
 	ParseParamBoolMap(configFilename, QisdaMode, ModeMap, QISDA_MODE);
 	ParseParamBoolMap(configFilename, QuantaMode, ModeMap, QUANTA_MODE);
 	ParseParamBoolMap(configFilename, BlackberryMode, ModeMap, BLACKBERRY_MODE);
-	ParseParamBoolMap(configFilename, PantechMode, ModeMap, PANTECH_MODE);
+	ParseParamInt(configFilename, PantechMode);
+	if (PantechMode)
+		ModeMap |= PANTECH_MODE;
 	ParseParamBool(configFilename, StandardEject);
 	ParseParamBool(configFilename, NoDriverLoading);
 	ParseParamHex(configFilename, MessageEndpoint);
@@ -422,9 +424,10 @@ int readArguments(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	int numDefaults=0, sonySuccess=0;
+	int ret=0, numDefaults=0, sonySuccess=0;
 	int currentConfig=0, defaultClass=0, interfaceClass=0;
 	struct libusb_device_descriptor descriptor;
+	enum libusb_error libusbError;
 
 	/* Make sure we have empty strings even if not set by config */
 	TargetProductList[0] = '\0';
@@ -492,7 +495,10 @@ int main(int argc, char **argv)
 	}
 
 	/* libusb initialization */
-	libusb_init(&ctx);
+	if ((libusbError = libusb_init(&ctx)) != LIBUSB_SUCCESS) {
+		fprintf(stderr, "Error: Failed to initialize libusb. %s (%d): %s\n\n", libusb_error_name(libusbError), libusbError, libusb_strerror(libusbError));
+		exit(1);
+	}
 
 	if (verbose)
 		libusb_set_debug(ctx, 3);
@@ -693,7 +699,10 @@ int main(int argc, char **argv)
 	}
 	if(ModeMap & PANTECH_MODE) {
 		detachDriver();
-		switchPantechMode();
+		if (PantechMode > 1)
+			switchPantechMode();
+		else
+			SHOW_PROGRESS(output,"Waiting for auto-switch of Pantech modem ...\n");
 	}
 	if(ModeMap & SONY_MODE) {
 		if (CheckSuccess)
@@ -710,8 +719,8 @@ int main(int argc, char **argv)
 		else
 			MessageContent3[0] = '\0';
 
-		strcpy(MessageContent,"5553424312345678000000000000061e000000000000000000000000000000");
-		strcpy(MessageContent2,"5553424312345679000000000000061b000000020000000000000000000000");
+		strcpy(MessageContent,"5553424387654321000000000000061e000000000000000000000000000000");
+		strcpy(MessageContent2,"5553424397654321000000000000061b000000020000000000000000000000");
 		NeedResponse = 1;
 		switchSendMessage();
 	} else if (ModeMap & HUAWEINEW_MODE) {
@@ -756,12 +765,11 @@ int main(int argc, char **argv)
 		devh = 0;
 	}
 
+	if (searchMode == SEARCH_BUSDEV && sysmode) {
+		printf("ok:busdev\n");
+		goto CLOSING;
+	}
 	if (CheckSuccess) {
-		if (searchMode == SEARCH_BUSDEV && sysmode) {
-			SHOW_PROGRESS(output,"Bus/dev search active, refer success check to wrapper. Bye!\n\n");
-			printf("ok:busdev\n");
-			goto CLOSING;
-		}
 		if (checkSuccess()) {
 			if (sysmode) {
 				if (NoDriverLoading)
@@ -803,6 +811,7 @@ CLOSING:
 /* Get descriptor strings if available (identification details) */
 void deviceDescription ()
 {
+	int ret=0;
 	char* c;
 	memset (imanufact, ' ', DESCR_MAX);
 	memset (iproduct, ' ', DESCR_MAX);
@@ -858,7 +867,7 @@ int deviceInquire ()
 	};
 	char *command;
 	char data[36];
-	int i;
+	int i, ret=0;
 
 	command = malloc(31);
 	if (command == NULL) {
@@ -1079,7 +1088,7 @@ skip:
 
 int switchConfiguration ()
 {
-	int count = SWITCH_CONFIG_MAXTRIES; 
+	int ret, count = SWITCH_CONFIG_MAXTRIES;
 
 	SHOW_PROGRESS(output,"Change configuration to %i ...\n", Configuration);
 	while (((ret = libusb_set_configuration(devh, Configuration)) < 0) && --count) {
@@ -1097,9 +1106,13 @@ int switchConfiguration ()
 
 int switchAltSetting ()
 {
-
+	int ret;
 	SHOW_PROGRESS(output,"Change to alt setting %i ...\n", AltSetting);
 	ret = libusb_claim_interface(devh, Interface);
+	if (ret < 0) {
+		SHOW_PROGRESS(output," Could not claim interface (error %d). Skip AltSetting\n", ret);
+		return 0;
+	}
 	ret = libusb_set_interface_alt_setting(devh, Interface, AltSetting);
 	libusb_release_interface(devh, Interface);
 	if (ret < 0) {
@@ -1112,19 +1125,20 @@ int switchAltSetting ()
 
 void switchHuaweiMode ()
 {
-
+	int ret;
 	SHOW_PROGRESS(output,"Send old Huawei control message ...\n");
 	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_STANDARD | LIBUSB_RECIPIENT_DEVICE, \
 		LIBUSB_REQUEST_SET_FEATURE, 00000001, 0, (unsigned char *)buffer, 0, 1000);
 	if (ret != 0) {
 		fprintf(stderr, "Error: Huawei control message failed (error %d). Abort\n\n", ret);
-		exit(1);
+		exit(0);
 	}
 }
 
 
 void switchSierraMode ()
 {
+	int ret;
 	SHOW_PROGRESS(output,"Send Sierra control message\n");
 	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_VENDOR, 0x0b, 00000001, 0, (unsigned char *)buffer, 0, 1000);
 	if (ret == LIBUSB_ERROR_PIPE) {
@@ -1133,13 +1147,14 @@ void switchSierraMode ()
 	}
 	if (ret < 0) {
 		fprintf(stderr, "Error: Sierra control message failed (error %d). Abort\n\n", ret);
-	    exit(1);
+	    exit(0);
 	}
 }
 
 
 void switchGCTMode ()
 {
+	int ret;
 	ret = libusb_claim_interface(devh, Interface);
 	if (ret != 0) {
 		SHOW_PROGRESS(output," Could not claim interface (error %d). Skip GCT sequence\n", ret);
@@ -1157,45 +1172,49 @@ void switchGCTMode ()
 	}
 	libusb_release_interface(devh, Interface);
 	if (ret < 0)
-		exit(1);
+		exit(0);
 }
 
 
 void switchKobilMode() {
+	int ret;
 	SHOW_PROGRESS(output,"Send Kobil control message ...\n");
 	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_IN,
 			0x88, 0, 0, (unsigned char *)buffer, 8, 1000);
 	if (ret < 0) {
 		fprintf(stderr, "Error: Kobil control message failed (error %d). Abort\n\n", ret);
-		exit(1);
+		exit(0);
 	}
 }
 
 
 void switchQisdaMode () {
+	int ret;
 	SHOW_PROGRESS(output,"Sending Qisda control message ...\n");
 	memcpy(buffer, "\x05\x8c\x04\x08\xa0\xee\x20\x00\x5c\x01\x04\x08\x98\xcd\xea\xbf", 16);
 	ret = libusb_control_transfer(devh, 0x40, 0x04, 0, 0, (unsigned char *)buffer, 16, 1000);
 	if (ret < 0) {
 		fprintf(stderr, "Error: Qisda control message failed (error %d). Abort\n\n", ret);
-		exit(1);
+		exit(0);
 	}
 }
 
 
 void switchQuantaMode() {
+	int ret;
 	SHOW_PROGRESS(output,"Send Quanta control message ...\n");
 	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_IN,
 			0xff, 0, 0, (unsigned char *)buffer, 0, 1000);
 	if (ret < 0) {
 		SHOW_PROGRESS(output,"Error: Quanta control message failed (error %d). Abort\n\n", ret);
-		exit(1);
+		exit(0);
 	}
 }
 
 
 void switchBlackberryMode ()
 {
+	int ret;
 	SHOW_PROGRESS(output,"Send Blackberry control message 1 ...\n");
 	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_IN,
 			0xb1, 0x0000, 0, (unsigned char *)buffer, 8, 1000);
@@ -1207,18 +1226,19 @@ void switchBlackberryMode ()
 			0xa9, 0x000e, 0, (unsigned char *)buffer, 2, 1000);
 	if (ret != 2) {
 		fprintf(stderr, "Error: Blackberry control message 2 failed (result %d). Abort\n\n", ret);
-		exit(1);
+		exit(0);
 	}
 }
 
 
 void switchPantechMode()
 {
-	SHOW_PROGRESS(output,"Send Pantech control message ...\n");
-	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE, 0x70, 2, 0, (unsigned char *)buffer, 0, 1000);
+	int ret;
+	SHOW_PROGRESS(output,"Send Pantech control message, wValue %d ...\n", PantechMode);
+	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE, 0x70, PantechMode, 0, (unsigned char *)buffer, 0, 1000);
 	if (ret < 0) {
 		SHOW_PROGRESS(output," Error: Pantech control message failed (error %d). Abort\n\n", ret);
-		exit(1);
+		exit(0);
 	}
 }
 
@@ -1237,7 +1257,7 @@ void switchPantechMode()
 
 void switchActionMode ()
 {
-	int i;
+	int ret, i;
 	SHOW_PROGRESS(output,"Send MobileAction control sequence ...\n");
 	memcpy(buffer, "\xb0\x04\x00\x00\x02\x90\x26\x86", SIZE);
 	libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_CLASS + LIBUSB_RECIPIENT_INTERFACE, 0x09, 0x0300, 0, (unsigned char *)buffer, SIZE, 1000);
@@ -1290,16 +1310,17 @@ void switchActionMode ()
 
 void switchSequansMode() {
 
+	int ret;
 	SHOW_PROGRESS(output,"Send Sequans control message\n");
 	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE, SQN_SET_DEVICE_MODE_REQUEST, SQN_CUSTOM_DEVICE_MODE, 0, (unsigned char *)buffer, 0, 1000);
 	if (ret < 0) {
 		fprintf(stderr, "Error: Sequans request failed (error %d). Abort\n\n", ret);
-	    exit(1);
+	    exit(0);
 	}
 }
 
 void switchCiscoMode() {
-	int i;
+	int ret, i;
 	char* msg[11];
 
 	msg[0] = "55534243f83bcd810002000080000afd000000030000000100000000000000";
@@ -1363,7 +1384,7 @@ skip:
 
 int switchSonyMode ()
 {
-	int i, found;
+	int ret, i, found;
 	detachDriver();
 
 	if (CheckSuccess) {
@@ -1374,7 +1395,7 @@ int switchSonyMode ()
 	ret = libusb_control_transfer(devh, 0xc0, 0x11, 2, 0, (unsigned char *)buffer, 3, 100);
 	if (ret < 0) {
 		fprintf(stderr, "Error: Sony control message failed (error %d). Abort\n\n", ret);
-		exit(1);
+		exit(0);
 	} else
 		SHOW_PROGRESS(output," OK, control message sent, wait for device to return ...\n");
 
@@ -1429,6 +1450,7 @@ int switchSonyMode ()
 int detachDriver()
 {
 
+	int ret;
 	// Driver already detached during SCSI inquiry ?
 	if (InquireDevice == 2)
 		return 1;
@@ -1462,7 +1484,7 @@ int detachDriver()
 
 int sendMessage(char* message, int count)
 {
-	int message_length;
+	int ret, message_length;
 
 	if (strlen(message) % 2 != 0) {
 		fprintf(stderr, "Error: MessageContent %d hex string has uneven length. Skipping ...\n", count);
@@ -1485,7 +1507,7 @@ int sendMessage(char* message, int count)
 
 int checkSuccess()
 {
-	int i=0;
+	int ret, i;
 	int newTargetCount, success=0;
 
 	SHOW_PROGRESS(output,"\nCheck for mode switch (max. %d times, once per second) ...\n", CheckSuccess);
@@ -1602,7 +1624,7 @@ int checkSuccess()
 
 int write_bulk(int endpoint, char *message, int length)
 {
-	ret = usb_bulk_io(devh, endpoint, message, length, 3000);
+	int ret = usb_bulk_io(devh, endpoint, message, length, 3000);
 	if (ret >= 0 ) {
 		SHOW_PROGRESS(output," OK, message successfully sent\n");
 	} else
@@ -1616,7 +1638,7 @@ int write_bulk(int endpoint, char *message, int length)
 
 int read_bulk(int endpoint, char *buffer, int length)
 {
-	ret = usb_bulk_io(devh, endpoint, buffer, length, 3000);
+	int ret = usb_bulk_io(devh, endpoint, buffer, length, 3000);
 	if (ret >= 0 ) {
 		SHOW_PROGRESS(output," Response successfully read (%d bytes).\n", ret);
 	} else
@@ -1805,17 +1827,17 @@ int find_first_bulk_endpoint(int direction)
 
 int get_current_configuration()
 {
-	int cfg;
+	int ret, cfg=0;
 	SHOW_PROGRESS(output,"Get the current device configuration ...\n");
 	if (active_config == NULL)
-		libusb_get_active_config_descriptor(dev, &active_config);
-
+		ret = libusb_get_active_config_descriptor(dev, &active_config);
+	if (ret < 0) {
+		SHOW_PROGRESS(output," Determining the active configuration failed (error %d). Abort\n", ret);
+		exit(1);
+	}
 	cfg = active_config->bConfigurationValue;
 	libusb_free_config_descriptor(active_config);
-	if (ret < 0)
-		exit(1);
-	else
-		return cfg;
+	return cfg;
 }
 
 int get_interface_class()

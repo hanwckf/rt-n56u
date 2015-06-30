@@ -7,18 +7,19 @@ http://www.draisberghof.de/usb_modeswitch
 What it is
 ==========
 
-USB_ModeSwitch is (surprise!) a small mode switching tool for controlling
-"flip flop" (multiple mode) USB devices.
+USB_ModeSwitch is - hardly surprising -  a mode switching tool for controlling
+USB devices with multiple "modes". Now, what does THAT mean?
 
 More and more USB devices have their MS Windows drivers onboard; when plugged
 in for the first time they act like a flash storage and offer their driver
 installation from there.
 After installation (and on every consecutive plugging) the driver switches the
-mode internally, the storage device vanishes (in most cases), and a new device
-(like an USB modem) shows up.
+mode internally by sending a certain command sequence; the storage device
+vanishes (in most cases) and a different device - like a USB modem - shows up.
+To the host, this is like unplugging one device and then plugging annother.
 
 At first this feature appeared on devices with cell phone chipsets, presumably
-because some of them were able to change the mode of their USB port anyway
+because some of them were already able to change the mode of their USB port
 from storage to communication - so why not make use of this in a modem stick?
 Modem maker "Option" calls that feature "ZeroCD (TM)" since it eliminates the
 need for shipping a separate driver carrier.
@@ -26,33 +27,43 @@ need for shipping a separate driver carrier.
 In the beginning, nothing of this was documented in any form and there was
 hardly any Linux/Unix support available.
 On the good side, most of the known devices are working out of the box in all
-modes with the available Linux modules like "usb-storage" or serial USB drivers.
+modes with available Linux modules like "usb-storage" or serial USB drivers.
 That leaves only the problem of the mode-switching from storage to whatever
 the thing is supposed to do.
 
-Fortunately there are things like human intelligence, USB sniffing programs and
-"libusb". It is possible to eavesdrop the communication of the MS Windows
-driver, to isolate the command or action that does the switching, and to replay
-the same sequence in the Unix system.
+Fortunately there are things like human smartness, USB sniffing programs and
+LibUSB. The obvious way is to eavesdrop on the communication of the MS Windows
+driver, to isolate the command or action that does the switching, and then re-
+play the same sequence in a non-Windows system.
 
-USB_ModeSwitch makes this process easy to handle by taking the relevant para-
-meters from a configuration file and doing all the initialization and communi-
-cation stuff, with heavy help from "libusb".
+In theory, this task could also be handled on the kernel driver level, but a
+userspace program is much more flexible and can easily be disabled if access
+to the initial mode of those devices should be desired. There has been a
+principle decision by kernel developers to keep mode-switching outside of the
+kernel.
 
-In Linux and friends it is intended to be used automatically - via udev events
+So USB_ModeSwitch has evolved to make this process easy to handle by taking the
+relevant parameters from configuration files and handling all initialization
+and communication business, with essential help from "libusb".
+
+In Linux and friends it is intended to work automatically - via udev events
 and rules - and doing the mode switch without any user interaction.
-However, the core program should be as portable als libusb itself; it does not
+However, the core C program should be as portable als libusb itself; it does not
 rely on specific Linux features.
-It can be run as an interactive command line tool, particularly useful when trying
-to manage hitherto unknown devices.
+It can also be run as an interactive command line tool, particularly useful when
+trying to tinker with hitherto unknown devices.
 
-We have already collected a wide range of information on how to switch all
+We have already collected a wide range of information on how to mode-switch all
 sorts of devices. If you run into a new one that is unknown yet, don't despair:
 we can find out what you need to do!
 
 
 How to install
 ==============
+
+If you only need the core C program, just run "make". All further steps de-
+scribed below are referring to a common, fairly current Linux system where
+USB_ModeSwitch is expected to do its work automatically.
 
 !! You need the usb-modeswitch-data package from the same source as this !!
 
@@ -62,8 +73,9 @@ old files might be orphaned but will not do any harm.
 
 The main prerequisite for installing from source is the development package for
 "libusb". It may be called "libusb-dev" or similar in your distribution. From
-usb_modeswitch 2.0.0 it should have an "1.x" in the name to reflect the change
-to libusb-1.
+usb_modeswitch 2.0.0 on, it should have an "1.x" in the name to reflect the change
+to libusb-1. There are also variants around called "libusbx" if libusb-1 is not
+available on your distribution.
 
 To install the tool set, unpack and run the install command (see below) in the
 newly created directory.
@@ -143,7 +155,8 @@ Again, remember that the rules file and the default device config folder
 
 
 ##########
-Important: libusb programs - like this tool - want to be run as root!
+Important: libusb programs - like this tool - want to be run with administrative
+privileges (as root or with sudo)!
 ##########
 
 
@@ -151,8 +164,8 @@ Important: libusb programs - like this tool - want to be run as root!
 Known working hardware, Troubleshooting
 =======================================
 
-Please see the homepage. Read carefully.
-For support questions use ONLY the forum.
+Please go to the homepage (see link at the top). Read carefully.
+For support questions use ONLY public posts in the forum.
 
 
 
@@ -175,8 +188,8 @@ forum (see above) or send it to the author (see below)!
 Whodunit
 ========
 
-Copyright 2007 - 2014 Josua Dietze (mail to "usb_admin" at the domain
-"draisberghof.de" or write a personal message through the forum to "Josh")
+Copyright 2007 - 2015 Josua Dietze (for non-support notifications write a personal
+message through the forum to "Josh"; everything else only in a forum thread)
 
  !!! NO SUPPORT QUESTIONS VIA E-MAIL, use the forum !!!
 
@@ -197,6 +210,9 @@ Config file parsing code borrowed from:
 
 Hexstr2bin function borrowed from:
  Jouni Malinen (http://hostap.epitest.fi/wpa_supplicant, from "common.c")
+
+Indispensable help with device research and compilation:
+ Lars Melin
 
 Code, fixes and ideas contributed by:
  Aki Makkonen
@@ -251,4 +267,4 @@ Or find it as the file COPYING in this folder.
 
 
 
-Last revised: 2014-01-28, Josua Dietze
+Last revised: 2015-06-27, Josua Dietze

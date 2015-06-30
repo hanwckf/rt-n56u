@@ -1,0 +1,4 @@
+# Vodafone (Huawei) R205
+TargetVendor=0x12d1
+TargetProduct=0x14cd
+HuaweiNewMode=1

@@ -46,20 +46,9 @@ static inline int plat_dma_supported(struct device *dev, u64 mask)
 	BUG();
 }
 
-static inline void plat_extra_sync_for_device(struct device *dev)
-{
-	BUG();
-}
-
 static inline int plat_device_is_coherent(struct device *dev)
 {
 	return 1;
-}
-
-static inline int plat_dma_mapping_error(struct device *dev,
-					 dma_addr_t dma_addr)
-{
-	BUG();
 }
 
 dma_addr_t phys_to_dma(struct device *dev, phys_addr_t paddr);

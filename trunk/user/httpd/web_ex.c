@@ -691,34 +691,18 @@ ej_uptime(int eid, webs_t wp, int argc, char **argv)
 static int
 dump_file(webs_t wp, char *filename)
 {
-	FILE *fp;
 	char *extensions;
-	char buf[MAX_FILE_LINE_SIZE];
-	int ret = 0;
 
 	if (!f_exists(filename)) {
-		ret += websWrite(wp, "%s", "");
-		return ret;
+		return websWrite(wp, "%s", "");
 	}
 
 	extensions = strrchr(filename, '.');
 	if (extensions && strcmp(extensions, ".key") == 0) {
-		ret += websWrite(wp, "%s", "# !!!This is hidden write-only secret key file!!!\n");
-		return ret;
+		return websWrite(wp, "%s", "# !!!This is hidden write-only secret key file!!!\n");
 	}
 
-	fp = fopen(filename, "r");
-	if (!fp) {
-		ret += websWrite(wp, "%s", "");
-		return ret;
-	}
-
-	while (fgets(buf, sizeof(buf), fp)!=NULL)
-		ret += websWrite(wp, buf);
-
-	fclose(fp);
-
-	return ret;
+	return do_f(filename, wp);
 }
 
 static int
@@ -2777,7 +2761,7 @@ static int ej_dump_syslog_hook(int eid, webs_t wp, int argc, char **argv)
 					lskip--;
 					continue;
 				}
-				websWrite(wp, buf);
+				fputs(buf, wp);
 				log_lines++;
 			}
 			
@@ -2786,7 +2770,9 @@ static int ej_dump_syslog_hook(int eid, webs_t wp, int argc, char **argv)
 	}
 
 	if (!log_lines)
-		websWrite(wp, "%s", "");
+		fputs("", wp);
+
+	fflush(wp);
 
 	return 0;
 }

@@ -42,8 +42,10 @@
 #include <linux/sysctl.h>
 #endif
 
+#if IS_ENABLED(CONFIG_BRIDGE_NF_EBTABLES)
 int brnf_call_ebtables __read_mostly = 0;
 EXPORT_SYMBOL_GPL(brnf_call_ebtables);
+#endif
 
 #define skb_origaddr(skb)	 (((struct bridge_skb_cb *) \
 				 (skb->nf_bridge->data))->daddr.ipv4)
@@ -54,7 +56,9 @@ EXPORT_SYMBOL_GPL(brnf_call_ebtables);
 static struct ctl_table_header *brnf_sysctl_header;
 static int brnf_call_iptables __read_mostly = 0;
 static int brnf_call_ip6tables __read_mostly = 0;
+#if IS_ENABLED(CONFIG_IP_NF_ARPTABLES)
 static int brnf_call_arptables __read_mostly = 0;
+#endif
 static int brnf_filter_vlan_tagged __read_mostly = 0;
 static int brnf_filter_pppoe_tagged __read_mostly = 0;
 #else
@@ -74,11 +78,19 @@ static int brnf_filter_pppoe_tagged __read_mostly = 0;
 #define IS_ARP(skb) \
 	(!vlan_tx_tag_present(skb) && skb->protocol == htons(ETH_P_ARP))
 
-
 inline int br_netfilter_run_hooks(void)
 {
-	return brnf_call_iptables | brnf_call_ip6tables | brnf_call_arptables |
-	       brnf_call_ebtables;
+	return brnf_call_iptables
+#if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
+	     | brnf_call_ip6tables
+#endif
+#if IS_ENABLED(CONFIG_IP_NF_ARPTABLES)
+	     | brnf_call_arptables
+#endif
+#if IS_ENABLED(CONFIG_BRIDGE_NF_EBTABLES)
+	     | brnf_call_ebtables
+#endif
+		;
 }
 
 static inline __be16 vlan_proto(const struct sk_buff *skb)
@@ -793,6 +805,7 @@ static unsigned int br_nf_forward_ip(unsigned int hook, struct sk_buff *skb,
 	return NF_STOLEN;
 }
 
+#if IS_ENABLED(CONFIG_IP_NF_ARPTABLES)
 static unsigned int br_nf_forward_arp(unsigned int hook, struct sk_buff *skb,
 				      const struct net_device *in,
 				      const struct net_device *out,
@@ -827,6 +840,7 @@ static unsigned int br_nf_forward_arp(unsigned int hook, struct sk_buff *skb,
 
 	return NF_STOLEN;
 }
+#endif
 
 #if IS_ENABLED(CONFIG_NF_CONNTRACK_IPV4)
 static int br_nf_dev_queue_xmit(struct sk_buff *skb)
@@ -935,6 +949,7 @@ static struct nf_hook_ops br_nf_ops[] __read_mostly = {
 		.hooknum = NF_BR_FORWARD,
 		.priority = NF_BR_PRI_BRNF - 1,
 	},
+#if IS_ENABLED(CONFIG_IP_NF_ARPTABLES)
 	{
 		.hook = br_nf_forward_arp,
 		.owner = THIS_MODULE,
@@ -942,6 +957,7 @@ static struct nf_hook_ops br_nf_ops[] __read_mostly = {
 		.hooknum = NF_BR_FORWARD,
 		.priority = NF_BR_PRI_BRNF,
 	},
+#endif
 	{
 		.hook = br_nf_post_routing,
 		.owner = THIS_MODULE,
@@ -980,6 +996,7 @@ int brnf_sysctl_call_tables(ctl_table * ctl, int write,
 }
 
 static ctl_table brnf_table[] = {
+#if IS_ENABLED(CONFIG_IP_NF_ARPTABLES)
 	{
 		.procname	= "bridge-nf-call-arptables",
 		.data		= &brnf_call_arptables,
@@ -987,6 +1004,7 @@ static ctl_table brnf_table[] = {
 		.mode		= 0644,
 		.proc_handler	= brnf_sysctl_call_tables,
 	},
+#endif
 	{
 		.procname	= "bridge-nf-call-iptables",
 		.data		= &brnf_call_iptables,

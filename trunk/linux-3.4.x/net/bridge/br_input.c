@@ -68,7 +68,7 @@ int br_handle_frame_finish(struct sk_buff *skb)
 		goto drop;
 
 #ifdef CONFIG_BRIDGE_EAP
-	if ((p->state == BR_STATE_LEARNING) && skb->protocol != htons(ETH_P_PAE))
+	if ((p->state == BR_STATE_LEARNING) && skb->protocol != __constant_htons(ETH_P_PAE))
 #else
 	if (p->state == BR_STATE_LEARNING)
 #endif
@@ -85,7 +85,7 @@ int br_handle_frame_finish(struct sk_buff *skb)
 	dst = NULL;
 
 #ifdef CONFIG_BRIDGE_EAP
-	if (skb->protocol == htons(ETH_P_PAE)) {
+	if (skb->protocol == __constant_htons(ETH_P_PAE)) {
 		skb2 = skb;
 		/* Do not forward 802.1x/EAP frames */
 		skb = NULL;

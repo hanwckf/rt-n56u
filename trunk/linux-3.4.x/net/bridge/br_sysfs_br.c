@@ -698,6 +698,7 @@ static ssize_t store_nf_call_ip6tables(
 static DEVICE_ATTR(nf_call_ip6tables, S_IRUGO | S_IWUSR,
 		   show_nf_call_ip6tables, store_nf_call_ip6tables);
 
+#if IS_ENABLED(CONFIG_IP_NF_ARPTABLES)
 static ssize_t show_nf_call_arptables(
 	struct device *d, struct device_attribute *attr, char *buf)
 {
@@ -719,6 +720,7 @@ static ssize_t store_nf_call_arptables(
 }
 static DEVICE_ATTR(nf_call_arptables, S_IRUGO | S_IWUSR,
 		   show_nf_call_arptables, store_nf_call_arptables);
+#endif
 #endif
 
 static struct attribute *bridge_attrs[] = {
@@ -760,7 +762,9 @@ static struct attribute *bridge_attrs[] = {
 #ifdef CONFIG_BRIDGE_NETFILTER
 	&dev_attr_nf_call_iptables.attr,
 	&dev_attr_nf_call_ip6tables.attr,
+#if IS_ENABLED(CONFIG_IP_NF_ARPTABLES)
 	&dev_attr_nf_call_arptables.attr,
+#endif
 #endif
 	NULL
 };

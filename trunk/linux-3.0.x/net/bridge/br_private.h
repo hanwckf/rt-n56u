@@ -193,7 +193,9 @@ struct net_bridge
 	struct rtable 			fake_rtable;
 	bool				nf_call_iptables;
 	bool				nf_call_ip6tables;
+#if defined(CONFIG_IP_NF_ARPTABLES) || defined(CONFIG_IP_NF_ARPTABLES_MODULE)
 	bool				nf_call_arptables;
+#endif
 #endif
 	unsigned long			flags;
 #define BR_SET_MAC_ADDR		0x00000001

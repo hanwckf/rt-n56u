@@ -34,6 +34,11 @@ else
 	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_CLASSIFY.*
 	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_IMQ.*
 endif
+ifdef CONFIG_NETFILTER_XT_MATCH_PHYSDEV
+	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libxt_physdev.* $(THISDIR)/$(SRC_NAME)/extensions
+else
+	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_physdev.*
+endif
 	( cd $(SRC_NAME) ; \
 	./configure \
 		--prefix= \

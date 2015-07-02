@@ -418,12 +418,12 @@ usbnet_get_stats64(struct net_device *net, struct rtnl_link_stats64 *stats64)
 		u64 tpackets, tbytes, rpackets, rbytes;
 
 		do {
-			start = u64_stats_fetch_begin(&stats->syncp);
+			start = u64_stats_fetch_begin_bh(&stats->syncp);
 			rpackets = stats->rx_packets;
 			tpackets = stats->tx_packets;
 			rbytes   = stats->rx_bytes;
 			tbytes   = stats->tx_bytes;
-		} while (u64_stats_fetch_retry(&stats->syncp, start));
+		} while (u64_stats_fetch_retry_bh(&stats->syncp, start));
 
 		stats64->rx_packets += rpackets;
 		stats64->tx_packets += tpackets;

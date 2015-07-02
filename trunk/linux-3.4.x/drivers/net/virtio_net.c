@@ -695,12 +695,12 @@ static struct rtnl_link_stats64 *virtnet_stats(struct net_device *dev,
 		u64 tpackets, tbytes, rpackets, rbytes;
 
 		do {
-			start = u64_stats_fetch_begin(&stats->syncp);
+			start = u64_stats_fetch_begin_bh(&stats->syncp);
 			tpackets = stats->tx_packets;
 			tbytes   = stats->tx_bytes;
 			rpackets = stats->rx_packets;
 			rbytes   = stats->rx_bytes;
-		} while (u64_stats_fetch_retry(&stats->syncp, start));
+		} while (u64_stats_fetch_retry_bh(&stats->syncp, start));
 
 		tot->rx_packets += rpackets;
 		tot->tx_packets += tpackets;

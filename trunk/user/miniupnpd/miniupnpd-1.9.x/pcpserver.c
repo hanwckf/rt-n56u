@@ -1,4 +1,4 @@
-/* $Id: pcpserver.c,v 1.38 2014/10/27 16:35:13 nanard Exp $ */
+/* $Id: pcpserver.c,v 1.39 2015/06/22 07:28:21 nanard Exp $ */
 /* MiniUPnP project
  * Website : http://miniupnp.free.fr/
  * Author : Peter Tatrai
@@ -533,7 +533,7 @@ static int parsePCPOption(void* pcp_buf, int remain, pcp_info_t *pcp_msg_info)
 #endif
 		opt_flp = (pcp_flow_priority_option_t*)pcp_buf;
 
-		if ( option_length != sizeof (*flp) ) {
+		if ( option_length != sizeof (*opt_flp) ) {
 			syslog(LOG_ERR, "PCP: Error processing DSCP. sizeof %d and remaining %d . flow len %d \n",
 			       (int)sizeof(pcp_flow_priority_option_t), remain, opt_flp->len);
 			pcp_msg_info->result_code = PCP_ERR_MALFORMED_OPTION;
@@ -770,7 +770,7 @@ static int CreatePCPPeer_NAT(pcp_info_t *pcp_msg_info)
 			       pcp_msg_info->peer_port,
 			       pcp_msg_info->desc);
 			pcp_msg_info->result_code = PCP_ERR_NO_RESOURCES;
-			return;
+			return PCP_ERR_NO_RESOURCES;
 		}
 	}
 #endif

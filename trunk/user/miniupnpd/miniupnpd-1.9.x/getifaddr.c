@@ -47,6 +47,7 @@ getifaddr(const char * ifname, char * buf, int len,
 		return -1;
 	}
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	ifr.ifr_name[IFNAMSIZ-1] = '\0';
 	if(ioctl(s, SIOCGIFFLAGS, &ifr, &ifrlen) < 0)
 	{
 		syslog(LOG_DEBUG, "ioctl(s, SIOCGIFFLAGS, ...): %m");

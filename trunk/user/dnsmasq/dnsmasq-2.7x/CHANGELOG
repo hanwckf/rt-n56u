@@ -1,3 +1,8 @@
+version 2.74
+            Fix reversion in 2.73 where --conf-file would attempt to
+	    read the default file, rather than no file.
+
+	
 version 2.73
             Fix crash at startup when an empty suffix is supplied to
 	    --conf-dir, also trivial memory leak. Thanks to 

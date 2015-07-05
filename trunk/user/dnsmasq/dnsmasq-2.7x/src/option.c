@@ -4371,7 +4371,7 @@ void read_opts(int argc, char **argv, char *compile_opts)
 {
   char *buff = opt_malloc(MAXDNAME);
   int option, conffile_opt = '7', testmode = 0;
-  char *arg, *conffile = NULL;
+  char *arg, *conffile = CONFFILE;
       
   opterr = 0;
 
@@ -4488,11 +4488,8 @@ void read_opts(int argc, char **argv, char *compile_opts)
   if (conffile)
     {
       one_file(conffile, conffile_opt);
-      free(conffile);
-    }
-  else
-    {
-      one_file(CONFFILE, conffile_opt);
+      if (conffile_opt == 0)
+	free(conffile);
     }
 
   /* port might not be known when the address is parsed - fill in here */

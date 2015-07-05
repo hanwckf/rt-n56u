@@ -1755,14 +1755,22 @@ int icmp_ping(struct in_addr addr)
      better not use any resources our caller has in use...)
      but we remain deaf to signals or further DHCP packets. */
 
-  int fd;
+  /* There can be a problem using dnsmasq_time() to end the loop, since
+     it's not monotonic, and can go backwards if the system clock is
+     tweaked, leading to the code getting stuck in this loop and
+     ignoring DHCP requests. To fix this, we check to see if select returned
+     as a result of a timeout rather than a socket becoming available. We
+     only allow this to happen as many times as it takes to get to the wait time
+     in quarter-second chunks. This provides a fallback way to end loop. */ 
+
+  int fd, rc;
   struct sockaddr_in saddr;
   struct { 
     struct ip ip;
     struct icmp icmp;
   } packet;
   unsigned short id = rand16();
-  unsigned int i, j;
+  unsigned int i, j, timeout_count;
   int gotreply = 0;
   time_t start, now;
 
@@ -1794,8 +1802,8 @@ int icmp_ping(struct in_addr addr)
   while (retry_send(sendto(fd, (char *)&packet.icmp, sizeof(struct icmp), 0, 
 			   (struct sockaddr *)&saddr, sizeof(saddr))));
   
-  for (now = start = dnsmasq_time(); 
-       difftime(now, start) < (float)PING_WAIT;)
+  for (now = start = dnsmasq_time(), timeout_count = 0; 
+       (difftime(now, start) < (float)PING_WAIT) && (timeout_count < PING_WAIT * 4);)
     {
       struct timeval tv;
       fd_set rset, wset;
@@ -1820,11 +1828,15 @@ int icmp_ping(struct in_addr addr)
 	}
 #endif
       
-      if (select(maxfd+1, &rset, &wset, NULL, &tv) < 0)
+      rc = select(maxfd+1, &rset, &wset, NULL, &tv);
+      
+      if (rc < 0)
 	{
 	  FD_ZERO(&rset);
 	  FD_ZERO(&wset);
 	}
+      else if (rc == 0)
+	timeout_count++;
 
       now = dnsmasq_time();
 

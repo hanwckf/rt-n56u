@@ -403,9 +403,11 @@ struct sk_buff {
 	struct nf_queue_entry	*nf_queue_entry;
 #endif
 
-#if defined(CONFIG_BRIDGE_NETFILTER) || defined(CONFIG_RTDEV_MII)
-	/* Needed ON for iNIC_mii.obj compatible */
+#if defined(CONFIG_BRIDGE_NETFILTER)
 	struct nf_bridge_info	*nf_bridge;
+#elif defined(CONFIG_RTDEV_MII)
+	/* Needed ON for iNIC_mii.obj compatible */
+	void			*nf_bridge_fake;
 #endif
 
 	int			skb_iif;

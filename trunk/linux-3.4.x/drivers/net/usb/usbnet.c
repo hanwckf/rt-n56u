@@ -1103,7 +1103,7 @@ static const struct ethtool_ops usbnet_ethtool_ops = {
  * especially now that control transfers can be queued.
  */
 static void
-kevent (struct work_struct *work)
+usbnet_deferred_kevent (struct work_struct *work)
 {
 	struct usbnet		*dev =
 		container_of(work, struct usbnet, kevent);
@@ -1211,8 +1211,7 @@ static void tx_complete (struct urb *urb)
 	if (urb->status == 0) {
 		struct usbnet_stats64 *stats = this_cpu_ptr(dev->stats64);
 		u64_stats_update_begin(&stats->syncp);
-		if (!(dev->driver_info->flags & FLAG_MULTI_PACKET))
-			stats->tx_packets++;
+		stats->tx_packets += entry->packets;
 		stats->tx_bytes += entry->length;
 		u64_stats_update_end(&stats->syncp);
 	} else {
@@ -1272,7 +1271,7 @@ netdev_tx_t usbnet_start_xmit (struct sk_buff *skb,
 				     struct net_device *net)
 {
 	struct usbnet		*dev = netdev_priv(net);
-	int			length;
+	unsigned int		length;
 	struct urb		*urb = NULL;
 	struct skb_data		*entry;
 	struct driver_info	*info = dev->driver_info;
@@ -1300,7 +1299,6 @@ netdev_tx_t usbnet_start_xmit (struct sk_buff *skb,
 			goto drop;
 		}
 	}
-	length = skb->len;
 
 	if (!(urb = usb_alloc_urb (0, GFP_ATOMIC))) {
 		netif_dbg(dev, tx_err, dev->net, "no urb\n");
@@ -1310,10 +1308,11 @@ netdev_tx_t usbnet_start_xmit (struct sk_buff *skb,
 	entry = (struct skb_data *) skb->cb;
 	entry->urb = urb;
 	entry->dev = dev;
-	entry->length = length;
 
 	usb_fill_bulk_urb (urb, dev->udev, dev->out,
 			skb->data, skb->len, tx_complete, skb);
+
+	length = urb->transfer_buffer_length;
 
 	/* don't assume the hardware handles USB_ZERO_PACKET
 	 * NOTE:  strictly conforming cdc-ether devices should expect
@@ -1333,6 +1332,18 @@ netdev_tx_t usbnet_start_xmit (struct sk_buff *skb,
 			}
 		} else
 			urb->transfer_flags |= URB_ZERO_PACKET;
+	}
+
+	if (info->flags & FLAG_MULTI_PACKET) {
+		/* Driver has set number of packets and a length delta.
+		 * Calculate the complete length and ensure that it's
+		 * positive.
+		 */
+		entry->length += length;
+		if (WARN_ON_ONCE(entry->length <= 0))
+			entry->length = length;
+	} else {
+		usbnet_set_skb_tx_stats(skb, 1, length);
 	}
 
 	spin_lock_irqsave(&dev->txq.lock, flags);
@@ -1385,7 +1396,7 @@ not_drop:
 		usb_free_urb (urb);
 	} else
 		netif_dbg(dev, tx_queued, dev->net,
-			  "> tx, len %d, type 0x%x\n", length, skb->protocol);
+			  "> tx, len %u, type 0x%x\n", length, skb->protocol);
 #ifdef CONFIG_PM
 deferred:
 #endif
@@ -1603,7 +1614,7 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 	skb_queue_head_init(&dev->rxq_pause);
 	dev->bh.func = usbnet_bh;
 	dev->bh.data = (unsigned long) dev;
-	INIT_WORK (&dev->kevent, kevent);
+	INIT_WORK (&dev->kevent, usbnet_deferred_kevent);
 	init_usb_anchor(&dev->deferred);
 	dev->delay.function = usbnet_bh;
 	dev->delay.data = (unsigned long) dev;

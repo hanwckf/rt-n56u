@@ -1020,7 +1020,6 @@ cdc_ncm_fill_tx_frame(struct usbnet *dev, struct sk_buff *skb, __le32 sign)
 	struct cdc_ncm_ctx *ctx = (struct cdc_ncm_ctx *)dev->data[0];
 	struct usb_cdc_ncm_nth16 *nth16;
 	struct usb_cdc_ncm_ndp16 *ndp16;
-	struct usbnet_stats64 *stats;
 	struct sk_buff *skb_out;
 	u16 n = 0, index, ndplen;
 	u8 ready2send = 0;
@@ -1173,19 +1172,17 @@ cdc_ncm_fill_tx_frame(struct usbnet *dev, struct sk_buff *skb, __le32 sign)
 
 	/* return skb */
 	ctx->tx_curr_skb = NULL;
-	stats = this_cpu_ptr(dev->stats64);
-	u64_stats_update_begin(&stats->syncp);
-	stats->tx_packets += ctx->tx_curr_frame_num;
-	/* usbnet has already counted all the framing overhead.
-	 * Adjust the stats so that the tx_bytes counter show real
-	 * payload data instead.
-	 */
-	stats->tx_bytes -= skb_out->len - ctx->tx_curr_frame_payload;
-	u64_stats_update_end(&stats->syncp);
 
 	/* keep private stats: framing overhead and number of NTBs */
 	ctx->tx_overhead += skb_out->len - ctx->tx_curr_frame_payload;
 	ctx->tx_ntbs++;
+
+	/* usbnet will count all the framing overhead by default.
+	 * Adjust the stats so that the tx_bytes counter show real
+	 * payload data instead.
+	 */
+	usbnet_set_skb_tx_stats(skb_out, n,
+				(long)ctx->tx_curr_frame_payload - skb_out->len);
 
 	return skb_out;
 

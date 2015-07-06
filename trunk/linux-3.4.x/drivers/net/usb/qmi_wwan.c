@@ -543,6 +543,8 @@ static const struct usb_device_id products[] = {
 
 	/* 3. Combined interface devices matching on interface number */
 	{QMI_FIXED_INTF(0x0408, 0xea42, 4)},	/* Yota / Megafon M100-1 */
+	{QMI_FIXED_INTF(0x0408, 0xd00a, 2)},	/* Yota (Quanta 1QDLZZZ0ST2), FW 20120301 */
+	{QMI_FIXED_INTF(0x0408, 0xd009, 3)},	/* Yota (Quanta 1QDLZZZ0ST2), FW 20120412 */
 	{QMI_FIXED_INTF(0x05c6, 0x7000, 0)},
 	{QMI_FIXED_INTF(0x05c6, 0x7001, 1)},
 	{QMI_FIXED_INTF(0x05c6, 0x7002, 1)},

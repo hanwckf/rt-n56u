@@ -13,7 +13,7 @@
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
-<script type="text/javascript" src="state.js"></script>
+<script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 
 <script>
@@ -99,10 +99,7 @@ function show_sitemap(){
 
     <div id="Loading" class="popup_bg"></div>
 
-    <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0" scrolling="no" style="position: absolute;"></iframe>
-
-    <form name="form">
-    </form>
+    <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 
     <div class="container-fluid">
         <div class="row-fluid">

@@ -60,7 +60,7 @@ function clearLog(){
 </style>
 </head>
 
-<body onload="initial();" >
+<body onload="initial();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -75,7 +75,7 @@ function clearLog(){
     <div id="Loading" class="popup_bg"></div>
 
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
-    <form method="post" name="form" action="apply.cgi" >
+    <form method="post" name="form" action="apply.cgi" class="form_thin">
     <input type="hidden" name="current_page" value="Main_LogStatus_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">

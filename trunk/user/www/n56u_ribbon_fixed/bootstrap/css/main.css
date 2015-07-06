@@ -35,6 +35,8 @@ body.body_iframe{
 
 #footer{color: #F5F5F5}
 
+.form_thin{margin-bottom: 0px}
+
 .round_all {
     border-radius: 3px 3px 3px 3px;
 }
@@ -333,23 +335,25 @@ li div.accordion a {
 }
 
 .big-icons{ background: url("../img/icons/big-icons.png") no-repeat top left;}
-.big-icons-globe{ background-position: 0 0; width: 47px; height: 47px; }
-.big-icons-laptop{ background-position: 0 -114px; width: 48px; height: 44px; }
-.big-icons-router{ background-position: 0 -222px; width: 48px; height: 48px; }
-.big-icons-usb{ background-position: 0 -338px; width: 48px; height: 48px; }
-.big-icons-usbhdd{ background-position: 0 -452px; width: 48px; height: 48px; }
-.big-icons-printer{ background-position: 0 -563px; width: 48px; height: 48px; }
-.big-icons-modem{ background-position: 0 -674px; width: 48px; height: 48px; }
-.big-icons-hub{ background-position: 0 -787px; width: 48px; height: 48px; }
+.big-icons-globe{ background-position: 0 0; width: 48px; height: 48px; }
+.big-icons-laptop{ background-position: 0 -114px; width: 48px; height: 48px; }
+.big-icons-router{ background-position: 0 -228px; width: 48px; height: 48px; }
+.big-icons-usb{ background-position: 0 -342px; width: 48px; height: 48px; }
+.big-icons-usbhdd{ background-position: 0 -456px; width: 48px; height: 48px; }
+.big-icons-printer{ background-position: 0 -570px; width: 48px; height: 48px; }
+.big-icons-modem{ background-position: 0 -684px; width: 48px; height: 48px; }
+.big-icons-hub{ background-position: 0 -798px; width: 48px; height: 48px; }
+.big-icons-mmc{ background-position: 0 -912px; width: 48px; height: 48px; }
 
-.big-icons-globe-active{ background-position: 0 -57px; width: 47px; height: 47px; }
-.big-icons-laptop-active{ background-position: 0 -168px; width: 48px; height: 44px; }
-.big-icons-router-active{ background-position: 0 -280px; width: 48px; height: 48px; }
-.big-icons-usb-active{ background-position: 0 -396px; width: 48px; height: 48px; }
-.big-icons-usbhdd-active{ background-position: 0 -508px; width: 48px; height: 48px; }
-.big-icons-printer-active{ background-position: 0 -618px; width: 48px; height: 48px; }
-.big-icons-modem-active{ background-position: 0 -729px; width: 48px; height: 48px; }
-.big-icons-hub-active{ background-position: 0 -844px; width: 48px; height: 48px; }
+.big-icons-globe-active{ background-position: 0 -57px; width: 48px; height: 48px; }
+.big-icons-laptop-active{ background-position: 0 -171px; width: 48px; height: 48px; }
+.big-icons-router-active{ background-position: 0 -285px; width: 48px; height: 48px; }
+.big-icons-usb-active{ background-position: 0 -399px; width: 48px; height: 48px; }
+.big-icons-usbhdd-active{ background-position: 0 -513px; width: 48px; height: 48px; }
+.big-icons-printer-active{ background-position: 0 -627px; width: 48px; height: 48px; }
+.big-icons-modem-active{ background-position: 0 -741px; width: 48px; height: 48px; }
+.big-icons-hub-active{ background-position: 0 -855px; width: 48px; height: 48px; }
+.big-icons-mmc-active{ background-position: 0 -969px; width: 48px; height: 48px; }
 
 .padding-top-20{ padding-top: 20px;}
 

@@ -73,15 +73,6 @@ function submitRules(){
 	document.aidiskForm.submit();
 }
 
-function show_footer(){
-	footer_code = '<div align="center" class="bottom-image"></div>';
-	footer_code +='<div align="center" class="copyright"><#footer_copyright_desc#></div>';
-	
-	$("footer").innerHTML = footer_code;
-
-	flash_button();
-}
-
 function get_accounts(){
 	return this.accounts;
 }

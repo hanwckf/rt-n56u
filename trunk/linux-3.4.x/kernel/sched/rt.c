@@ -166,7 +166,7 @@ int alloc_rt_sched_group(struct task_group *tg, struct task_group *parent)
 		goto err;
 	tg->rt_se = kzalloc(sizeof(rt_se) * nr_cpu_ids, GFP_KERNEL);
 	if (!tg->rt_se)
-		goto err;
+		goto err_free_rt_rq;
 
 	init_rt_bandwidth(&tg->rt_bandwidth,
 			ktime_to_ns(def_rt_bandwidth.rt_period), 0);
@@ -175,7 +175,7 @@ int alloc_rt_sched_group(struct task_group *tg, struct task_group *parent)
 		rt_rq = kzalloc_node(sizeof(struct rt_rq),
 				     GFP_KERNEL, cpu_to_node(i));
 		if (!rt_rq)
-			goto err;
+			goto err_free_rt_se;
 
 		rt_se = kzalloc_node(sizeof(struct sched_rt_entity),
 				     GFP_KERNEL, cpu_to_node(i));
@@ -191,6 +191,10 @@ int alloc_rt_sched_group(struct task_group *tg, struct task_group *parent)
 
 err_free_rq:
 	kfree(rt_rq);
+err_free_rt_se:
+	kfree(tg->rt_se);
+err_free_rt_rq:
+	kfree(tg->rt_rq);
 err:
 	return 0;
 }

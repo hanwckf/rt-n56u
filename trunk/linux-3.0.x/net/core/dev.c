@@ -2576,7 +2576,7 @@ void __skb_get_rxhash(struct sk_buff *skb)
 	const struct ipv6hdr *ip6;
 	const struct iphdr *ip;
 	const struct vlan_hdr *vlan;
-	u8 ip_proto;
+	u8 ip_proto = 0;
 	u32 addr1, addr2;
 	u16 proto;
 	union {

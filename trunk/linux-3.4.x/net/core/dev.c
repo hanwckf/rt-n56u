@@ -2679,7 +2679,7 @@ static inline
 bool skb_flow_dissect(const struct sk_buff *skb, struct flow_keys *flow)
 {
 	int poff, nhoff = skb_network_offset(skb);
-	u8 ip_proto;
+	u8 ip_proto = 0;
 	__be16 proto = skb->protocol;
 
 	memset(flow, 0, sizeof(*flow));

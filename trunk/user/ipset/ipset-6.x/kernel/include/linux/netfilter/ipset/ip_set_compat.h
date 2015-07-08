@@ -36,22 +36,25 @@
 					  PAGE_KERNEL)
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 5, 0)
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0)
 #include <linux/etherdevice.h>
 
-#if 0
-/* ether_addr_equal is already backported to our branch */
+/* ether_addr_equal is already backported to our 3.0.x & 3.4.x branch */
 static inline bool ether_addr_equal(const u8 *addr1, const u8 *addr2)
 {
 	return !compare_ether_addr(addr1, addr2);
 }
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 4, 0)
+/* nla_put_be64 is already backported to our 3.4.x branch */
 static inline int nla_put_be64(struct sk_buff *skb, int attrtype, __be64 value)
 {
 	return nla_put(skb, attrtype, sizeof(__be64), &value);
 }
 
+/* nla_put_net64 is already backported to our 3.4.x branch */
 static inline int nla_put_net64(struct sk_buff *skb, int attrtype, __be64 value)
 {
 	return nla_put_be64(skb, attrtype | NLA_F_NET_BYTEORDER, value);

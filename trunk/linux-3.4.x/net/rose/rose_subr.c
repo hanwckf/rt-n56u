@@ -392,14 +392,14 @@ static int rose_parse_ccitt(unsigned char *p, struct rose_facilities_struct *fac
 	return n;
 }
 
-int rose_parse_facilities(unsigned char *p, unsigned packet_len,
+int rose_parse_facilities(unsigned char *p, unsigned int packet_len,
 	struct rose_facilities_struct *facilities)
 {
 	int facilities_len, len;
 
 	facilities_len = *p++;
 
-	if (facilities_len == 0 || (unsigned)facilities_len > packet_len)
+	if (facilities_len == 0 || (unsigned int)facilities_len > packet_len)
 		return 0;
 
 	while (facilities_len >= 3 && *p == 0x00) {

@@ -209,8 +209,9 @@ INT Set_BasicRate_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT Set_BeaconPeriod_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
 INT Set_DtimPeriod_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
-INT Set_NoForwarding_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
+INT Set_NoForwarding_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_NoForwardingMBCast_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT Set_NoForwardingBTNSSID_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
 INT Set_AP_WmmCapable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
@@ -550,6 +551,7 @@ static struct {
 
 	{"NoForwarding",				Set_NoForwarding_Proc},
 	{"NoForwardingBTNBSSID",		Set_NoForwardingBTNSSID_Proc},
+	{"NoForwardingMBCast",			Set_NoForwardingMBCast_Proc},
 	{"HideSSID",					Set_HideSSID_Proc},
 	{"IEEE80211H",				Set_IEEE80211H_Proc},
 	{"VLANID",					Set_VLANID_Proc},
@@ -4041,8 +4043,32 @@ INT	Set_NoForwarding_Proc(
 	else
 		return FALSE;  /*Invalid argument */
 
-	DBGPRINT(RT_DEBUG_TRACE, ("IF(ra%d) Set_NoForwarding_Proc::(NoForwarding=%ld)\n",
+	DBGPRINT(RT_DEBUG_TRACE, ("IF(ra%d) Set_NoForwarding_Proc::(NoForwarding=%d)\n",
 		pObj->ioctl_if, pAd->ApCfg.MBSSID[pObj->ioctl_if].IsolateInterStaTraffic));
+
+	return TRUE;
+}
+
+
+INT	Set_NoForwardingMBCast_Proc(
+	IN	PRTMP_ADAPTER	pAd, 
+	IN	RTMP_STRING *arg)
+{
+	ULONG NoForwardingMBCast;
+
+	POS_COOKIE	pObj = (POS_COOKIE) pAd->OS_Cookie;
+
+	NoForwardingMBCast = simple_strtol(arg, 0, 10);
+
+	if (NoForwardingMBCast == 1)
+		pAd->ApCfg.MBSSID[pObj->ioctl_if].IsolateInterStaMBCast = TRUE;
+	else if (NoForwardingMBCast == 0)
+		pAd->ApCfg.MBSSID[pObj->ioctl_if].IsolateInterStaMBCast = FALSE;
+	else
+		return FALSE;  //Invalid argument 
+	
+	DBGPRINT(RT_DEBUG_TRACE, ("IF(ra%d) Set_NoForwardingMBCast_Proc::(IsolateInterStaMBCast=%d)\n", 
+		pObj->ioctl_if, pAd->ApCfg.MBSSID[pObj->ioctl_if].IsolateInterStaMBCast));
 
 	return TRUE;
 }
@@ -4071,7 +4097,7 @@ INT	Set_NoForwardingBTNSSID_Proc(
 	else
 		return FALSE;  /*Invalid argument */
 
-	DBGPRINT(RT_DEBUG_TRACE, ("Set_NoForwardingBTNSSID_Proc::(NoForwarding=%ld)\n", pAd->ApCfg.IsolateInterStaTrafficBTNBSSID));
+	DBGPRINT(RT_DEBUG_TRACE, ("Set_NoForwardingBTNSSID_Proc::(NoForwarding=%d)\n", pAd->ApCfg.IsolateInterStaTrafficBTNBSSID));
 
 	return TRUE;
 }

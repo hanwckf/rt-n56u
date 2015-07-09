@@ -2393,7 +2393,6 @@ VOID MlmeRadioOff(RTMP_ADAPTER *pAd)
 #ifdef LED_CONTROL_SUPPORT
 	RTMPSetLED(pAd, LED_RADIO_OFF);
 #endif /* LED_CONTROL_SUPPORT */
-
 #ifdef RTMP_MAC_PCI
 	if (IS_PCI_INF(pAd) || IS_RBUS_INF(pAd))
 		PciMlmeRadioOFF(pAd);
@@ -2410,7 +2409,6 @@ VOID MlmeRadioOn(RTMP_ADAPTER *pAd)
 #ifdef LED_CONTROL_SUPPORT
 	RTMPSetLED(pAd, LED_LINK_UP);
 #endif /* LED_CONTROL_SUPPORT */
-
 }
 
 

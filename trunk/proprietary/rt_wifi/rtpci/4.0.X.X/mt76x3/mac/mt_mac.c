@@ -300,7 +300,7 @@ VOID dump_rmac_info(RTMP_ADAPTER *pAd, UCHAR *rmac_info)
 
 	rxd_0 = (union rmac_rxd_0 *)rmac_info;
 	pkt_type = RMAC_RX_PKT_TYPE(rxd_0->word);
-	DBGPRINT(RT_DEBUG_OFF, ("RMAC_RXD Header Format :%s\n",
+	DBGPRINT(RT_DEBUG_TRACE, ("RMAC_RXD Header Format :%s\n",
 				rxd_pkt_type_str(pkt_type)));
 	switch (pkt_type)
 	{

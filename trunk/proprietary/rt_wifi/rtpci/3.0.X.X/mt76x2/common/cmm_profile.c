@@ -2773,7 +2773,7 @@ NDIS_STATUS	RTMPSetProfileParameters(
 					else /*Disable*/
 						pAd->ApCfg.MBSSID[i].IsolateInterStaTraffic = FALSE;
 
-					DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) NoForwarding=%ld\n", i, pAd->ApCfg.MBSSID[i].IsolateInterStaTraffic));
+					DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) NoForwarding=%d\n", i, pAd->ApCfg.MBSSID[i].IsolateInterStaTraffic));
 			    }
 			}
 
@@ -2802,7 +2802,7 @@ NDIS_STATUS	RTMPSetProfileParameters(
 				else /*Disable*/
 					pAd->ApCfg.IsolateInterStaTrafficBTNBSSID = FALSE;
 
-				DBGPRINT(RT_DEBUG_TRACE, ("NoForwardingBTNBSSID=%ld\n", pAd->ApCfg.IsolateInterStaTrafficBTNBSSID));
+				DBGPRINT(RT_DEBUG_TRACE, ("NoForwardingBTNBSSID=%d\n", pAd->ApCfg.IsolateInterStaTrafficBTNBSSID));
 			}
 			/*HideSSID*/
 			if(RTMPGetKeyParameter("HideSSID", tmpbuf, 32, pBuffer, TRUE))

@@ -2622,13 +2622,13 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			/* MaxStaNum*/
 			if (RTMPGetKeyParameter("MaxStaNum", tmpbuf, 32, pBuffer, TRUE))
 			{
-			    for (i = 0, macptr = rstrtok(tmpbuf,";"); macptr; macptr = rstrtok(NULL,";"), i++)
-			    {
+				for (i = 0, macptr = rstrtok(tmpbuf,";"); macptr; macptr = rstrtok(NULL,";"), i++)
+				{
 					if (i >= pAd->ApCfg.BssidNum)
 						break;
 					
 					ApCfg_Set_MaxStaNum_Proc(pAd, i, macptr);					
-			    }
+				}
 			}
 		
 			/* IdleTimeout*/
@@ -2640,8 +2640,8 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			/*NoForwarding*/
 			if(RTMPGetKeyParameter("NoForwarding", tmpbuf, 32, pBuffer, TRUE))
 			{
-			    for (i = 0, macptr = rstrtok(tmpbuf,";"); macptr; macptr = rstrtok(NULL,";"), i++)
-			    {
+				for (i = 0, macptr = rstrtok(tmpbuf,";"); macptr; macptr = rstrtok(NULL,";"), i++)
+				{
 					if (i >= pAd->ApCfg.BssidNum)
 						break;
 
@@ -2650,19 +2650,10 @@ NDIS_STATUS	RTMPSetProfileParameters(
 					else /*Disable*/
 						pAd->ApCfg.MBSSID[i].IsolateInterStaTraffic = FALSE;
 
-					DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) NoForwarding=%ld\n", i, pAd->ApCfg.MBSSID[i].IsolateInterStaTraffic));
-			    }
+					DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) NoForwarding=%d\n", i, pAd->ApCfg.MBSSID[i].IsolateInterStaTraffic));
+				}
 			}
-			/*NoForwardingBTNBSSID*/
-			if(RTMPGetKeyParameter("NoForwardingBTNBSSID", tmpbuf, 10, pBuffer, TRUE))
-			{
-				if(simple_strtol(tmpbuf, 0, 10) != 0)  /*Enable*/
-					pAd->ApCfg.IsolateInterStaTrafficBTNBSSID = TRUE;
-				else /*Disable*/
-					pAd->ApCfg.IsolateInterStaTrafficBTNBSSID = FALSE;
 
-				DBGPRINT(RT_DEBUG_TRACE, ("NoForwardingBTNBSSID=%ld\n", pAd->ApCfg.IsolateInterStaTrafficBTNBSSID));
-			}
 			//NoForwardingMBCast
 			if (RTMPGetKeyParameter("NoForwardingMBCast", tmpbuf, 32, pBuffer, TRUE))
 			{
@@ -2678,6 +2669,17 @@ NDIS_STATUS	RTMPSetProfileParameters(
 
 					DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) NoForwardingMBCast=%d\n", i, pAd->ApCfg.MBSSID[i].IsolateInterStaMBCast));
 				}
+			}
+
+			/*NoForwardingBTNBSSID*/
+			if(RTMPGetKeyParameter("NoForwardingBTNBSSID", tmpbuf, 10, pBuffer, TRUE))
+			{
+				if(simple_strtol(tmpbuf, 0, 10) != 0)  /*Enable*/
+					pAd->ApCfg.IsolateInterStaTrafficBTNBSSID = TRUE;
+				else /*Disable*/
+					pAd->ApCfg.IsolateInterStaTrafficBTNBSSID = FALSE;
+
+				DBGPRINT(RT_DEBUG_TRACE, ("NoForwardingBTNBSSID=%d\n", pAd->ApCfg.IsolateInterStaTrafficBTNBSSID));
 			}
 			/*HideSSID*/
 			if(RTMPGetKeyParameter("HideSSID", tmpbuf, 32, pBuffer, TRUE))

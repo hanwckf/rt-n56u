@@ -1308,8 +1308,8 @@ typedef struct _MULTISSID_STRUCT {
 	UCHAR PortSecured;
 	NDIS_802_11_PRIVACY_FILTER PrivacyFilter;
 	UCHAR BANClass3Data;
-	ULONG IsolateInterStaTraffic;
-	UCHAR IsolateInterStaMBCast;
+	BOOLEAN IsolateInterStaTraffic;
+	BOOLEAN IsolateInterStaMBCast;
 
 	UCHAR RSNIE_Len[2];
 	UCHAR RSN_IE[2][MAX_LEN_OF_RSNIE];
@@ -2400,7 +2400,7 @@ typedef struct _AP_ADMIN_CONFIG {
 	UCHAR BssidNum;
 	UCHAR MacMask;
 	MULTISSID_STRUCT MBSSID[HW_BEACON_MAX_NUM];
-	ULONG IsolateInterStaTrafficBTNBSSID;
+	BOOLEAN IsolateInterStaTrafficBTNBSSID;
 
 #ifdef APCLI_SUPPORT
 	UCHAR ApCliInfRunned;	/* Number of  ApClient interface which was running. value from 0 to MAX_APCLI_INTERFACE */
@@ -2427,7 +2427,6 @@ typedef struct _AP_ADMIN_CONFIG {
 	UINT32  ACSCheckCount;          /* if  ACSCheckCount > ACSCheckTime, then do ACS check */
 #endif /* AP_SCAN_SUPPORT */
 	BOOLEAN bAvoidDfsChannel;	/* 0: disable, 1: enable */
-	BOOLEAN bIsolateInterStaTraffic;
 	BOOLEAN bHideSsid;
 
 	/* temporary latch for Auto channel selection */

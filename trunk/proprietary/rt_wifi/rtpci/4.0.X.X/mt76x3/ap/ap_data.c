@@ -3025,7 +3025,6 @@ VOID AP_NDPA_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 }
 #endif /* VHT_TXBF_SUPPORT */
 
-
 /*
 	========================================================================
 	Routine Description:
@@ -3663,8 +3662,11 @@ INT ap_rx_foward_handle(RTMP_ADAPTER *pAd, struct wifi_dev *wdev, PNDIS_PACKET p
 	{
 		if ((pMbss->StaCount > 1)
 		) {
-			/* forward the M/Bcast packet back to air if connected STA > 1 */
-			to_air = TRUE;
+			if (pMbss->IsolateInterStaMBCast == FALSE)
+			{
+				/* forward the M/Bcast packet back to air if connected STA > 1 */
+				to_air = TRUE;
+			}
 		}
 	}
 	else
@@ -3683,7 +3685,7 @@ INT ap_rx_foward_handle(RTMP_ADAPTER *pAd, struct wifi_dev *wdev, PNDIS_PACKET p
 				*/
 				to_air = TRUE;
 				to_os = FALSE;
-				if (pMbss->IsolateInterStaTraffic == 1)
+				if (pMbss->IsolateInterStaTraffic == TRUE)
 					to_air = FALSE;
 			}
 			else
@@ -3696,7 +3698,7 @@ INT ap_rx_foward_handle(RTMP_ADAPTER *pAd, struct wifi_dev *wdev, PNDIS_PACKET p
 				*/
 				to_os = TRUE;
 				to_air = FALSE;
-				if (pAd->ApCfg.IsolateInterStaTrafficBTNBSSID == 1 ||
+				if (pAd->ApCfg.IsolateInterStaTrafficBTNBSSID == TRUE ||
 					(wdev->VLAN_VID != dst_wdev->VLAN_VID))
 					to_os = FALSE;
 			}

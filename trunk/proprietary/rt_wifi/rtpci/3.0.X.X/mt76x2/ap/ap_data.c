@@ -5488,7 +5488,7 @@ BOOLEAN APFowardWirelessStaToWirelessSta(
 			(FromWhichBSSID < HW_BEACON_MAX_NUM) &&
 			(pAd->ApCfg.MBSSID[FromWhichBSSID].StaCount > 1)))
 		{
-			if (pAd->ApCfg.MBSSID[FromWhichBSSID].IsolateInterStaMBCast == 0)
+			if (pAd->ApCfg.MBSSID[FromWhichBSSID].IsolateInterStaMBCast == FALSE)
 			{
 				bDirectForward  = TRUE;
 			}
@@ -5508,7 +5508,7 @@ BOOLEAN APFowardWirelessStaToWirelessSta(
 
 			if (FromWhichBSSID == pEntry->apidx)
 			{/* STAs in same SSID */
-				if ((pAd->ApCfg.MBSSID[pEntry->apidx].IsolateInterStaTraffic == 1))
+				if ((pAd->ApCfg.MBSSID[pEntry->apidx].IsolateInterStaTraffic == TRUE))
 				{
 					/* release the packet */
 					bDirectForward = FALSE;
@@ -5517,7 +5517,7 @@ BOOLEAN APFowardWirelessStaToWirelessSta(
 			}
 			else
 			{/* STAs in different SSID */
-				if (pAd->ApCfg.IsolateInterStaTrafficBTNBSSID == 1 ||
+				if (pAd->ApCfg.IsolateInterStaTrafficBTNBSSID == TRUE ||
 					((FromWhichBSSID < MAX_MBSSID_NUM(pAd)) &&
 					(FromWhichBSSID < HW_BEACON_MAX_NUM) &&
 					(pAd->ApCfg.MBSSID[pEntry->apidx].wdev.VLAN_VID != pAd->ApCfg.MBSSID[FromWhichBSSID].wdev.VLAN_VID)))

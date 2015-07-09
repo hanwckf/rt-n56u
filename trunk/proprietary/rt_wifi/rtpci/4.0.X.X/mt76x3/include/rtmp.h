@@ -1554,7 +1554,8 @@ typedef struct _BSS_STRUCT {
 	ULONG bcPktsRx;
 
 	UCHAR BANClass3Data;
-	ULONG IsolateInterStaTraffic;
+	BOOLEAN IsolateInterStaTraffic;
+	BOOLEAN IsolateInterStaMBCast;
 
 	/* outgoing BEACON frame buffer and corresponding TXWI */
 	BCN_BUF_STRUC bcn_buf;
@@ -2830,7 +2831,7 @@ typedef struct _AP_ADMIN_CONFIG {
 	UCHAR BssidNum;
 	UCHAR MacMask;
 	BSS_STRUCT MBSSID[HW_BEACON_MAX_NUM];
-	ULONG IsolateInterStaTrafficBTNBSSID;
+	BOOLEAN IsolateInterStaTrafficBTNBSSID;
 
 #ifdef APCLI_SUPPORT
 	UCHAR ApCliInfRunned;	/* Number of  ApClient interface which was running. value from 0 to MAX_APCLI_INTERFACE */
@@ -2870,7 +2871,6 @@ typedef struct _AP_ADMIN_CONFIG {
 	UINT32  ACSCheckCount;          /* if  ACSCheckCount > ACSCheckTime, then do ACS check */
 #endif /* AP_SCAN_SUPPORT */
 	BOOLEAN bAvoidDfsChannel;	/* 0: disable, 1: enable */
-	BOOLEAN bIsolateInterStaTraffic;
 	BOOLEAN bHideSsid;
 
 	/* temporary latch for Auto channel selection */

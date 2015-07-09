@@ -871,7 +871,10 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	i_val_mbss[0] = nvram_wlan_get_int(is_aband, "ap_isolate");
 	i_val_mbss[1] = nvram_wlan_get_int(is_aband, "guest_ap_isolate");
 	fprintf(fp, "NoForwarding=%d;%d\n", i_val_mbss[0], i_val_mbss[1]);
-	
+
+	//NoForwardingMBCast (MBSSID used)
+	fprintf(fp, "NoForwardingMBCast=%d;%d\n", i_val_mbss[0], i_val_mbss[1]);
+
 	//NoForwardingBTNBSSID
 	i_val = nvram_wlan_get_int(is_aband, "mbssid_isolate");
 	if (i_val) i_val = 1;

@@ -377,7 +377,7 @@ sys_call_table:
 	PTR	sys_connect			/* 4170 */
 	PTR	sys_getpeername
 	PTR	sys_getsockname
-	PTR	sys_getsockopt
+	PTR	compat_sys_getsockopt
 	PTR	sys_listen
 	PTR	compat_sys_recv			/* 4175 */
 	PTR	compat_sys_recvfrom

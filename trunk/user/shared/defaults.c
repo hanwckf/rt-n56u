@@ -245,6 +245,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_sta_crypto", "aes" },
 	{ "wl_sta_wpa_psk", "" },
 	{ "wl_sta_wisp", "0" },
+	{ "wl_sta_auto", "0" },
 #endif
 
 	/* 2G Wireless parameters */
@@ -338,6 +339,7 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_sta_crypto", "aes" },
 	{ "rt_sta_wpa_psk", "" },
 	{ "rt_sta_wisp", "0" },
+	{ "rt_sta_auto", "0" },
 
 	// USB related
 	{ "acc_num", "0" },

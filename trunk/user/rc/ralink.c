@@ -1467,6 +1467,8 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	p_str = nvram_wlan_get(is_aband, "sta_ssid");
 	if ((i_mode_x == 3 || i_mode_x == 4) && strlen(p_str) > 0)
 		i_val = 1;
+	if (i_mode_x == 3 && nvram_wlan_get_int(is_aband, "sta_auto"))
+		i_val = 0;
 	fprintf(fp, "ApCliEnable=%d\n", i_val);
 	fprintf(fp, "ApCliSsid=%s\n", p_str);
 	fprintf(fp, "ApCliBssid=\n");

@@ -895,6 +895,10 @@ handle_notifications(void)
 		{
 			manual_wan_disconnect();
 		}
+		else if(!strcmp(entry->d_name, "manual_wisp_reassoc"))
+		{
+			manual_wisp_reassoc();
+		}
 		else if(!strcmp(entry->d_name, "manual_ddns_hostname_check"))
 		{
 			manual_ddns_hostname_check();

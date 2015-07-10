@@ -1347,6 +1347,24 @@ manual_wan_reconnect(void)
 }
 
 void
+manual_wisp_reassoc(void)
+{
+	char *wisp_ifname = get_apcli_wisp_ifname();
+
+	if (!wisp_ifname)
+		return;
+
+	logmessage(LOGNAME, "Perform WISP %s %s", "manual", "reassoc");
+
+	if (strcmp(wisp_ifname, IFNAME_2G_APCLI) == 0)
+		reconnect_apcli_rt();
+#if BOARD_HAS_5G_RADIO
+	else if (strcmp(wisp_ifname, IFNAME_5G_APCLI) == 0)
+		reconnect_apcli_wl();
+#endif
+}
+
+void
 auto_wan_reconnect(void)
 {
 	logmessage(LOGNAME, "Perform WAN %s %s", "auto", "reconnect");

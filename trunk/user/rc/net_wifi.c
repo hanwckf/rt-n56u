@@ -31,13 +31,13 @@
 #include "gpio_pins.h"
 
 static int
-wif_control(char *wifname, int is_up)
+wif_control(const char *wifname, int is_up)
 {
 	return doSystem("ifconfig %s %s 2>/dev/null", wifname, (is_up) ? "up" : "down");
 }
 
 static int
-wif_bridge(char *wifname, int is_add)
+wif_bridge(const char *wifname, int is_add)
 {
 	return doSystem("brctl %s %s %s 2>/dev/null", (is_add) ? "addif" : "delif", IFNAME_BR, wifname);
 }
@@ -59,12 +59,12 @@ mlme_radio_wl(int is_on)
 {
 #if BOARD_HAS_5G_RADIO
 	int i_val;
-	char *ifname_ap = IFNAME_5G_MAIN;
+	const char *ifname_ap = IFNAME_5G_MAIN;
 
-	doSystem("iwpriv %s set RadioOn=%d", ifname_ap, (is_on) ? 1 : 0);
+	doSystem("iwpriv %s set %s=%d", ifname_ap, "RadioOn", (is_on) ? 1 : 0);
 	if (is_on) {
 		i_val = nvram_wlan_get_int(1, "TxPower");
-		doSystem("iwpriv %s set TxPower=%d", ifname_ap, i_val);
+		doSystem("iwpriv %s set %s=%d", ifname_ap, "TxPower", i_val);
 	}
 
 #endif
@@ -79,12 +79,12 @@ void
 mlme_radio_rt(int is_on)
 {
 	int i_val;
-	char *ifname_ap = IFNAME_2G_MAIN;
+	const char *ifname_ap = IFNAME_2G_MAIN;
 
-	doSystem("iwpriv %s set RadioOn=%d", ifname_ap, (is_on) ? 1 : 0);
+	doSystem("iwpriv %s set %s=%d", ifname_ap, "RadioOn", (is_on) ? 1 : 0);
 	if (is_on) {
 		i_val = nvram_wlan_get_int(0, "TxPower");
-		doSystem("iwpriv %s set TxPower=%d", ifname_ap, i_val);
+		doSystem("iwpriv %s set %s=%d", ifname_ap, "TxPower", i_val);
 	}
 
 	mlme_state_rt(is_on);
@@ -225,10 +225,10 @@ update_inic_mii(void)
 {
 #if 0
 	int i;
-	char *ifname_inic = IFNAME_INIC_MAIN;
+	const char *ifname_inic = IFNAME_INIC_MAIN;
 
 	// below params always set in new iNIC_mii.obj
-	doSystem("iwpriv %s set asiccheck=%d", ifname_inic, 1);
+	doSystem("iwpriv %s set %s=%d", ifname_inic, "asiccheck", 1);
 
 	// config RT3352 embedded switch for VLAN3 passthrough
 	doSystem("iwpriv %s switch setVlanId=%d,%d", ifname_inic, 2, INIC_GUEST_VLAN_VID);
@@ -249,7 +249,7 @@ update_inic_mii(void)
 static void
 start_inic_mii(void)
 {
-	char *ifname_inic = IFNAME_INIC_MAIN;
+	const char *ifname_inic = IFNAME_INIC_MAIN;
 
 	if (nvram_get_int("inic_disable") != 1) {
 		/* release iNIC reset pin */
@@ -271,7 +271,7 @@ start_inic_mii(void)
 			phy_isolate_inic(0);
 		} else {
 			/* disable mlme radio */
-			doSystem("iwpriv %s set RadioOn=%d", ifname_inic, 0);
+			doSystem("iwpriv %s set %s=%d", ifname_inic, "RadioOn", 0);
 		}
 		
 		/* add rai0 to bridge (needed for RADIUS) */
@@ -301,7 +301,7 @@ check_inic_mii_rebooted(void)
 	int rt_mode_x;
 
 	if (!get_mlme_radio_rt()) {
-		doSystem("iwpriv %s set RadioOn=%d", IFNAME_INIC_MAIN, 0);
+		doSystem("iwpriv %s set %s=%d", IFNAME_INIC_MAIN, "RadioOn", 0);
 		return;
 	}
 
@@ -526,13 +526,15 @@ void
 start_wifi_apcli_wl(int radio_on)
 {
 #if BOARD_HAS_5G_RADIO
-	char *ifname_apcli = IFNAME_5G_APCLI;
+	const char *ifname_apcli = IFNAME_5G_APCLI;
 	int i_mode_x = get_mode_radio_wl();
 
 	if (radio_on && (i_mode_x == 3 || i_mode_x == 4) && (strlen(nvram_wlan_get(1, "sta_ssid")) > 0))
 	{
 		wif_control(ifname_apcli, 1);
 		wif_bridge(ifname_apcli, !is_apcli_wisp_wl());
+		if (i_mode_x == 3 && nvram_wlan_get_int(1, "sta_auto"))
+			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 	}
 	else
 	{
@@ -544,7 +546,7 @@ start_wifi_apcli_wl(int radio_on)
 void
 start_wifi_apcli_rt(int radio_on)
 {
-	char *ifname_apcli = IFNAME_2G_APCLI;
+	const char *ifname_apcli = IFNAME_2G_APCLI;
 	int i_mode_x = get_mode_radio_rt();
 
 	if (radio_on && (i_mode_x == 3 || i_mode_x == 4) && (strlen(nvram_wlan_get(0, "sta_ssid")) > 0))
@@ -552,6 +554,8 @@ start_wifi_apcli_rt(int radio_on)
 		wif_control(ifname_apcli, 1);
 #if !defined(USE_RT3352_MII)
 		wif_bridge(ifname_apcli, !is_apcli_wisp_rt());
+		if (i_mode_x == 3 && nvram_wlan_get_int(0, "sta_auto"))
+			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 #endif
 	}
 #if !defined(USE_RT3352_MII)
@@ -560,6 +564,53 @@ start_wifi_apcli_rt(int radio_on)
 		wif_bridge(ifname_apcli, 0);
 	}
 #endif
+}
+
+void
+reconnect_apcli_wl(void)
+{
+#if BOARD_HAS_5G_RADIO
+	const char *ifname_apcli = IFNAME_5G_APCLI;
+	int i_mode_x = get_mode_radio_wl();
+
+	if (i_mode_x != 3 && i_mode_x != 4)
+		return;
+
+	if (!is_interface_up(ifname_apcli))
+		return;
+
+	if (i_mode_x == 3 && nvram_wlan_get_int(1, "sta_auto"))
+		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
+	else {
+		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliEnable", 0);
+		usleep(200000);
+		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliEnable", 1);
+	}
+#endif
+}
+
+void
+reconnect_apcli_rt(void)
+{
+	const char *ifname_apcli = IFNAME_2G_APCLI;
+	int i_mode_x = get_mode_radio_rt();
+
+	if (i_mode_x != 3 && i_mode_x != 4)
+		return;
+
+	if (!is_interface_up(ifname_apcli))
+		return;
+
+#if !defined(USE_RT3352_MII)
+	if (i_mode_x == 3 && nvram_wlan_get_int(0, "sta_auto"))
+		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
+	else
+#endif
+	{
+		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliEnable", 0);
+		usleep(200000);
+		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliEnable", 1);
+	}
 }
 
 void
@@ -815,7 +866,7 @@ control_guest_wl(int guest_on, int manual)
 {
 	int is_ap_changed = 0;
 #if BOARD_HAS_5G_RADIO
-	char *ifname_ap;
+	const char *ifname_ap = IFNAME_5G_GUEST;
 	int radio_on = get_enabled_radio_wl();
 	int i_mode_x = get_mode_radio_wl();
 	int i_m2u = nvram_wlan_get_int(1, "IgmpSnEnable");
@@ -825,8 +876,6 @@ control_guest_wl(int guest_on, int manual)
 	{
 		return 0;
 	}
-
-	ifname_ap = IFNAME_5G_GUEST;
 
 	if (guest_on)
 	{
@@ -860,7 +909,7 @@ int
 control_guest_rt(int guest_on, int manual)
 {
 	int is_ap_changed = 0;
-	char *ifname_ap;
+	const char *ifname_ap = IFNAME_2G_GUEST;
 	int radio_on = get_enabled_radio_rt();
 	int i_mode_x = get_mode_radio_rt();
 #if !defined(USE_RT3352_MII)
@@ -872,8 +921,6 @@ control_guest_rt(int guest_on, int manual)
 	{
 		return 0;
 	}
-
-	ifname_ap = IFNAME_2G_GUEST;
 
 	if (guest_on)
 	{
@@ -914,10 +961,10 @@ void
 restart_guest_lan_isolation(void)
 {
 	int rt_need_ebtables, wl_need_ebtables, ap_mode;
-	char *ifname_lan = IFNAME_LAN;
-	char *rt_ifname_guest = IFNAME_2G_GUEST;
+	const char *ifname_lan = IFNAME_LAN;
+	const char *rt_ifname_guest = IFNAME_2G_GUEST;
 #if BOARD_HAS_5G_RADIO
-	char *wl_ifname_guest = IFNAME_5G_GUEST;
+	const char *wl_ifname_guest = IFNAME_5G_GUEST;
 #endif
 
 	ap_mode = get_ap_mode();

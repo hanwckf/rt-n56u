@@ -156,6 +156,7 @@ InetState7=PPP connection is not active
 InetState8=Default Gateway is not set
 InetState9=WAN subnet conflicts with LAN subnet!
 APCliRole=Wireless Client Role:
+APCliAuto=Autoseek
 IPConnection_VSList_ftpport=FTP Server Port:
 CTL_Commit=Commit
 Commit_confirm=Save Settings (NVRAM) Permanently?

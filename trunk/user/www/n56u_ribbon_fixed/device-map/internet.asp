@@ -56,7 +56,7 @@ function initial(){
 
 	fill_info();
 
-	if ($j('tr:visible').length > 12)
+	if ($j('tr:visible').length > 13)
 		$("row_more_links").style.display = "none";
 
 	id_update_wanip = setTimeout("update_wanip();", 2500);
@@ -280,14 +280,14 @@ function submitInternet(v){
 <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_info">
   <tr>
     <th width="50%" style="border-top: 0 none;"><#InetControl#></th>
-    <td style="border-top: 0 none;" colspan="2">
+    <td style="border-top: 0 none;" colspan="3">
       <input type="button" id="btn_connect_1" class="btn btn-info" value="<#Connect#>" onclick="submitInternet('Connect');">
       <input type="button" id="btn_connect_0" class="btn btn-danger" value="<#Disconnect#>" onclick="submitInternet('Disconnect');">
     </td>
   </tr>
   <tr id="row_modem_prio" style="display:none">
     <th><#ModemPrio#></th>
-    <td colspan="2">
+    <td colspan="3">
         <select id="modem_prio" class="input" style="width: 260px;" onchange="submitInternet('ModemPrio');">
             <option value="0" <% nvram_match_x("", "modem_prio", "0", "selected"); %>><#ModemPrioItem0#></option>
             <option value="1" <% nvram_match_x("", "modem_prio", "1", "selected"); %>><#ModemPrioItem1#></option>
@@ -297,73 +297,74 @@ function submitInternet(v){
   </tr>
   <tr id="row_link_ether" style="display:none">
     <th><#SwitchState#></th>
-    <td colspan="2"><span id="WANEther"></span></td>
+    <td colspan="3"><span id="WANEther"></span></td>
   </tr>
   <tr id="row_link_apcli" style="display:none">
     <th><#InetStateWISP#></th>
     <td colspan="2"><span id="WANAPCli"></span></td>
+    <td width="40px" style="text-align: right; padding: 6px 8px"><button type="button" class="btn btn-mini" style="height: 21px; outline:0;" title="<#Connect#>" onclick="submitInternet('WispReassoc');"><i class="icon icon-refresh"></i></button></td>
   </tr>
   <tr>
     <th><#ConnectionStatus#></th>
-    <td id="wan_status" colspan="2"></td>
+    <td id="wan_status" colspan="3"></td>
   </tr>
   <tr>
     <th><#Connectiontype#>:</th>
-    <td colspan="2"><span id="WANType"></span></td>
+    <td colspan="3"><span id="WANType"></span></td>
   </tr>
   <tr id="row_uptime" style="display:none">
     <th><#WAN_Uptime#></th>
-    <td colspan="2"><span id="WANTime"></span></td>
+    <td colspan="3"><span id="WANTime"></span></td>
   </tr>
   <tr id="row_dltime" style="display:none">
     <th><#WAN_Lease#></th>
-    <td colspan="2"><span id="WANLease"></span></td>
+    <td colspan="3"><span id="WANLease"></span></td>
   </tr>
   <tr id="row_bytes" style="display:none">
     <th><#WAN_Bytes#></th>
     <td width="90px"><span id="WANBytesRX"></span></td>
-    <td><span id="WANBytesTX"></span></td>
+    <td colspan="2"><span id="WANBytesTX"></span></td>
   </tr>
   <tr id="row_brate" style="display:none">
     <th><#WAN_BRate#></th>
     <td width="90px"><span id="WANBRateRX"></span></td>
-    <td><span id="WANBRateTX"></span></td>
+    <td colspan="2"><span id="WANBRateTX"></span></td>
   </tr>
   <tr>
     <th><#IP4_Addr#> WAN:</th>
-    <td colspan="2"><span id="WANIP4"></span></td>
+    <td colspan="3"><span id="WANIP4"></span></td>
   </tr>
   <tr id="row_man_ip4" style="display:none">
     <th><#IP4_Addr#> MAN:</th>
-    <td colspan="2"><span id="MANIP4"></span></td>
+    <td colspan="3"><span id="MANIP4"></span></td>
   </tr>
   <tr id="row_wan_ip6" style="display:none">
     <th><#IP6_Addr#> WAN:</th>
-    <td colspan="2"><span id="WANIP6"></span></td>
+    <td colspan="3"><span id="WANIP6"></span></td>
   </tr>
   <tr id="row_lan_ip6" style="display:none">
     <th><#IP6_Addr#> LAN:</th>
-    <td colspan="2"><span id="LANIP6"></span></td>
+    <td colspan="3"><span id="LANIP6"></span></td>
   </tr>
   <tr>
     <th><#Gateway#> WAN:</th>
-    <td colspan="2"><span id="WANGW4"></span></td>
+    <td colspan="3"><span id="WANGW4"></span></td>
   </tr>
   <tr id="row_man_gw4" style="display:none">
     <th><#Gateway#> MAN:</th>
-    <td colspan="2"><span id="MANGW4"></span></td>
+    <td colspan="3"><span id="MANGW4"></span></td>
   </tr>
   <tr>
     <th>DNS:</th>
-    <td colspan="2"><span id="WANDNS"></span></td>
+    <td colspan="3"><span id="WANDNS"></span></td>
   </tr>
   <tr>
     <th><#MAC_Address#></th>
-    <td colspan="2"><span id="WANMAC"></span></td>
+    <td colspan="3"><span id="WANMAC"></span></td>
   </tr>
   <tr id="row_more_links">
     <td style="padding-bottom: 0px;">&nbsp;</td>
-    <td style="padding-bottom: 0px;" colspan="2">
+    <td style="padding-bottom: 0px;" colspan="3">
         <select id="domore" class="domore" style="width: 260px;" onchange="domore_link(this);">
           <option selected="selected"><#MoreConfig#>...</option>
           <option value="../Advanced_WAN_Content.asp"><#menu5_3_1#></option>

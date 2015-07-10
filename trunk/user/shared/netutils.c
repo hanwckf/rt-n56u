@@ -292,7 +292,7 @@ set_usb_modem_dev_wan(int unit, int devnum)
 }
 
 void
-brport_set_m2u(char *ifname, int m2u_on)
+brport_set_m2u(const char *ifname, int m2u_on)
 {
 	char brport_path[64];
 

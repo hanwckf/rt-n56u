@@ -94,7 +94,7 @@ int is_wan_addr6_static(void)
 	    ipv6_type == IPV6_6IN4 ||
 	   (ipv6_type == IPV6_6RD && nvram_match("ip6_6rd_dhcp", "0")))
 		return 1;
-	
+
 	return 0;
 }
 
@@ -111,7 +111,7 @@ int is_wan_dns6_static(void)
 	    ipv6_type == IPV6_6TO4 ||
 	    ipv6_type == IPV6_6RD)
 		return 1;
-	
+
 	return 0;
 }
 
@@ -126,7 +126,7 @@ int is_wan_ipv6_type_sit(void)
 	    ipv6_type == IPV6_6TO4 ||
 	    ipv6_type == IPV6_6RD)
 		return 1;
-	
+
 	return 0;
 }
 
@@ -134,7 +134,7 @@ int is_wan_ipv6_if_ppp(void)
 {
 	if (nvram_get_int("ip6_wan_if") == 0)
 		return 1;
-	
+
 	return 0;
 }
 

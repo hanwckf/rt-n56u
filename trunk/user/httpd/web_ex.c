@@ -623,7 +623,7 @@ ej_select_channel(int eid, webs_t wp, int argc, char **argv)
 	int idx = 0, channel;
 	char *value = nvram_safe_get("rt_country_code");
 	char *channel_s = nvram_safe_get("rt_channel");
-	
+
 	if (ejArgs(argc, argv, "%s", &sid) < 1) {
 		websError(wp, 400, "Insufficient args\n");
 		return -1;
@@ -1872,6 +1872,9 @@ wan_action_hook(int eid, webs_t wp, int argc, char **argv)
 		if (nvram_match("wan_proto", "static"))
 			needed_seconds = 2;
 		notify_rc("manual_wan_disconnect");
+	}
+	else if (!strcmp(wan_action, "WispReassoc")) {
+		notify_rc("manual_wisp_reassoc");
 	}
 #if (BOARD_NUM_USB_PORTS > 0)
 	else if (!strcmp(wan_action, "ModemPrio")) {

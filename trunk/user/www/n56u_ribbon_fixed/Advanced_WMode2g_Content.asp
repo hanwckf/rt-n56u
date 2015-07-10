@@ -71,6 +71,13 @@ function applyRule(){
 
 function validForm(){
 	var m = document.form.rt_mode_x.value;
+	if (m != "0") {
+		if (document.form.rt_channel.value == "0"){
+			alert("<#JS_fixchannel#>");
+			document.form.rt_channel.focus();
+			return false;
+		}
+	}
 	if (m == "3" || m == "4") {
 		if(!validate_string_ssid(document.form.rt_sta_ssid))
 			return false;
@@ -104,16 +111,8 @@ function wds_scan(){
 }
 
 function change_wireless_bridge(mflag){
+	var as_en = 0;
 	var m = document.form.rt_mode_x.value;
-	if (m != "0")
-	{
-		if (mflag == 1 && document.form.rt_channel.value == "0")
-		{
-			alert("<#JS_fixchannel#>");
-			document.form.rt_channel.options[0].selected = 0;
-			document.form.rt_channel.options[1].selected = 1;
-		}
-	}
 	if (m == "0") // AP only
 	{
 		inputRCtrl2(document.form.rt_wdsapply_x, 1);
@@ -157,6 +156,9 @@ function change_wireless_bridge(mflag){
 	{
 		var e1 = (sw_mode != "3" && !support_2g_inic_mii()) ? 1 : 0;
 		
+		if (m == "3")
+			as_en = 1;
+		
 		showhide_div("RBRList", 0);
 		showhide_div("ctl_wds_1", 0);
 		showhide_div("ctl_wds_3", 0);
@@ -171,6 +173,8 @@ function change_wireless_bridge(mflag){
 		showhide_div("row_apc_2", 1);
 		showhide_div("row_apc_3", 1);
 	}
+
+	showhide_div("auto_seek", as_en);
 }
 
 function change_wdsapply(){
@@ -214,6 +218,11 @@ function change_sta_auth_mode(mflag){
 	}
 }
 
+function click_auto_seek(o) {
+	var v = (o.checked) ? "1" : "0";
+	document.form.rt_sta_auto.value = v;
+}
+
 function setClientIP(num){
 	var smac = wds_aplist[num][1].split(":");
 	var mode = document.form.rt_mode_x.value;
@@ -221,6 +230,8 @@ function setClientIP(num){
 		document.form.rt_wdslist_x_0.value = smac[0] + smac[1] + smac[2] + smac[3] + smac[4] + smac[5];
 	else if (mode == "3" || mode == "4")
 		document.form.rt_sta_ssid.value = wds_aplist[num][0];
+	if (parseInt(wds_aplist[num][2]) > 0)
+		document.form.rt_channel.value = wds_aplist[num][2];
 	hideClients_Block();
 }
 
@@ -310,6 +321,7 @@ function hideClients_Block(){
     <input type="hidden" name="rt_wdsnum_x_0" value="<% nvram_get_x("", "rt_wdsnum_x"); %>" readonly="1">
     <input type="hidden" name="rt_channel_org" value="<% nvram_get_x("","rt_channel"); %>">
     <input type="hidden" name="rt_wdsapply_x_org" value="<% nvram_get_x("","rt_wdsapply_x"); %>">
+    <input type="hidden" name="rt_sta_auto" value="<% nvram_get_x("", "rt_sta_auto"); %>" />
     <input type="hidden" name="rt_sta_ssid_org" value="<% nvram_char_to_ascii("", "rt_sta_ssid"); %>">
     <input type="hidden" name="rt_sta_wpa_mode" value="<% nvram_get_x("","rt_sta_wpa_mode"); %>">
     <input type="hidden" name="rt_sta_wpa_psk_org" value="<% nvram_char_to_ascii("", "rt_sta_wpa_psk"); %>">
@@ -374,6 +386,8 @@ function hideClients_Block(){
                                                 <select name="rt_channel" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_channel')">
                                                     <% select_channel("WLANConfig11b"); %>
                                                 </select>
+                                                &nbsp;
+                                                <label id="auto_seek" class="checkbox inline"><input type="checkbox" name="auto_seek_fake" value="" style="margin-left:10;" onclick="click_auto_seek(this);" <% nvram_match_x("", "rt_sta_auto", "1", "checked"); %>/><#APCliAuto#></label>
                                             </td>
                                         </tr>
                                         <tr id="row_wds_1" style="display:none;">

@@ -273,6 +273,29 @@ BOOLEAN ApCliWaitProbRsp(
 	IN PRTMP_ADAPTER pAd,
 	IN USHORT ifIndex);
 
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+extern INT Set_ApCli_Enable_Proc(
+    IN  PRTMP_ADAPTER pAd,
+    IN  PSTRING arg);
+
+extern INT Set_ApCli_Bssid_Proc(
+    IN  PRTMP_ADAPTER pAd,
+    IN  PSTRING arg);
+
+BOOLEAN ApCliAutoConnectExec(
+	IN  PRTMP_ADAPTER   pAd);
+
+BOOLEAN ApcliCompareAuthEncryp(
+	IN PAPCLI_STRUCT					pApCliEntry,
+	IN NDIS_802_11_AUTHENTICATION_MODE	AuthMode,
+	IN NDIS_802_11_AUTHENTICATION_MODE	AuthModeAux,
+	IN NDIS_802_11_WEP_STATUS			WEPstatus,
+	IN CIPHER_SUITE						WPA);
+
+VOID ApCliSwitchCandidateAP(
+	IN PRTMP_ADAPTER pAd);
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
+
 #endif /* APCLI_SUPPORT */
 
 #endif /* _AP_APCLI_H_ */

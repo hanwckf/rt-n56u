@@ -351,6 +351,16 @@ BOOLEAN ApCliLinkUp(
 
 				pMacEntry->PortSecured = WPA_802_1X_PORT_SECURED;
 			}
+
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+			if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE) &&
+				(pMacEntry->PortSecured == WPA_802_1X_PORT_SECURED))
+			{
+				DBGPRINT(RT_DEBUG_TRACE, ("ApCli auto connected: ApCliLinkUp()\n"));
+				pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+			}
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
+
 			NdisGetSystemUpTime(&pApCliEntry->ApCliLinkUpTime);
 			/* Store appropriate RSN_IE for WPA SM negotiation later */
 			/* If WPAPSK/WPA2SPK mix mode, driver just stores either WPAPSK or WPA2PSK */
@@ -2320,5 +2330,240 @@ BOOLEAN ApCli_StatsGet(
 	return TRUE;
 }
 
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+/* 
+	===================================================
+	
+	Description:
+		Find the AP that is configured in the ApcliTab, and switch to 
+		the channel of that AP
+		
+	Arguments:
+		pAd: pointer to our adapter
+
+	Return Value:
+		TRUE: no error occured 
+		FALSE: otherwise
+
+	Note:
+	===================================================
+*/
+BOOLEAN ApCliAutoConnectExec(
+	IN  PRTMP_ADAPTER   pAd)
+{
+	POS_COOKIE  	pObj = (POS_COOKIE) pAd->OS_Cookie;
+	UCHAR			ifIdx, CfgSsidLen, entryIdx;
+	STRING			*pCfgSsid;
+	BSS_TABLE		*pScanTab, *pSsidBssTab;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("---> ApCliAutoConnectExec()\n"));
+
+	ifIdx = pObj->ioctl_if;
+	CfgSsidLen = pAd->ApCfg.ApCliTab[ifIdx].CfgSsidLen;
+	pCfgSsid = pAd->ApCfg.ApCliTab[ifIdx].CfgSsid;
+	pScanTab = &pAd->ScanTab;
+	pSsidBssTab = &pAd->MlmeAux.SsidBssTab;
+	pSsidBssTab->BssNr = 0;
+	
+	/*
+		Find out APs with the desired SSID.  
+	*/
+	for (entryIdx=0; entryIdx<pScanTab->BssNr;entryIdx++)
+	{
+		PBSS_ENTRY pBssEntry = &pScanTab->BssEntry[entryIdx];
+		
+		if ( pBssEntry->Channel == 0)
+			break;
+
+		if (NdisEqualMemory(pCfgSsid, pBssEntry->Ssid, CfgSsidLen) &&
+							(pBssEntry->SsidLen) &&
+							(pSsidBssTab->BssNr < MAX_LEN_OF_BSS_TABLE))
+		{	
+			if (ApcliCompareAuthEncryp(&pAd->ApCfg.ApCliTab[ifIdx],
+										pBssEntry->AuthMode,
+										pBssEntry->AuthModeAux,
+										pBssEntry->WepStatus,
+										pBssEntry->WPA) ||
+				ApcliCompareAuthEncryp(&pAd->ApCfg.ApCliTab[ifIdx],
+										pBssEntry->AuthMode,
+										pBssEntry->AuthModeAux,
+										pBssEntry->WepStatus,
+										pBssEntry->WPA2))
+			{
+				DBGPRINT(RT_DEBUG_TRACE, 
+						("Found desired ssid in Entry %2d:\n", entryIdx));
+				DBGPRINT(RT_DEBUG_TRACE,
+						("I/F(apcli%d) ApCliAutoConnectExec:(Len=%d,Ssid=%s, Channel=%d, Rssi=%d)\n", 
+						ifIdx, pBssEntry->SsidLen, pBssEntry->Ssid,
+						pBssEntry->Channel, pBssEntry->Rssi));
+				DBGPRINT(RT_DEBUG_TRACE,
+						("I/F(apcli%d) ApCliAutoConnectExec::(AuthMode=%s, EncrypType=%s)\n", ifIdx,
+						GetAuthMode(pBssEntry->AuthMode),
+						GetEncryptType(pBssEntry->WepStatus)) );
+				NdisMoveMemory(&pSsidBssTab->BssEntry[pSsidBssTab->BssNr++],
+								pBssEntry, sizeof(BSS_ENTRY));
+			} 
+		}		
+	}
+
+	NdisZeroMemory(&pSsidBssTab->BssEntry[pSsidBssTab->BssNr], sizeof(BSS_ENTRY));
+	
+	/*
+		Sort by Rssi in the increasing order, and connect to
+		the last entry (strongest Rssi)
+	*/
+	BssTableSortByRssi(pSsidBssTab, TRUE);
+
+	
+	if ((pSsidBssTab->BssNr == 0))
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("No match entry.\n"));
+		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+	}
+	else if (pSsidBssTab->BssNr > 0 &&
+			pSsidBssTab->BssNr <=MAX_LEN_OF_BSS_TABLE)
+	{	
+		/*
+			Switch to the channel of the candidate AP
+		*/
+		UCHAR tempBuf[20];
+		if (pAd->CommonCfg.Channel != pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Channel)
+		{
+			sprintf(tempBuf, "%d", pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Channel);
+			DBGPRINT(RT_DEBUG_TRACE, ("Switch to channel :%s\n", tempBuf));
+			Set_Channel_Proc(pAd, tempBuf);		
+		}
+			sprintf(tempBuf, "%02X:%02X:%02X:%02X:%02X:%02X", 
+					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[0],
+					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[1],
+					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[2],
+					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[3],
+					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[4],
+					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[5]);
+			Set_ApCli_Bssid_Proc(pAd, tempBuf);			
+	}
+	else 
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("Error! Out of table range: (BssNr=%d).\n", pSsidBssTab->BssNr) );
+		Set_ApCli_Enable_Proc(pAd, "1");
+		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+		DBGPRINT(RT_DEBUG_TRACE, ("<--- ApCliAutoConnectExec()\n"));
+		return FALSE;
+	}	
+	
+	Set_ApCli_Enable_Proc(pAd, "1");
+	DBGPRINT(RT_DEBUG_TRACE, ("<--- ApCliAutoConnectExec()\n"));
+	return TRUE;
+	
+}
+
+/* 
+	===================================================
+	
+	Description:
+		If the previous selected entry connected failed, this function will
+		choose next entry to connect. The previous entry will be deleted.
+				
+	Arguments:
+		pAd: pointer to our adapter
+
+	Note:
+		Note that the table is sorted by Rssi in the "increasing" order, thus
+		the last entry in table has stringest Rssi.
+	===================================================
+*/
+
+VOID ApCliSwitchCandidateAP(
+	IN PRTMP_ADAPTER pAd)
+{
+	POS_COOKIE  	pObj = (POS_COOKIE) pAd->OS_Cookie;
+	BSS_TABLE 		*pSsidBssTab;
+	PAPCLI_STRUCT	pApCliEntry;
+	UCHAR			lastEntryIdx, ifIdx = pObj->ioctl_if;
+
+
+	DBGPRINT(RT_DEBUG_TRACE, ("---> ApCliSwitchCandidateAP()\n"));
+	pSsidBssTab = &pAd->MlmeAux.SsidBssTab;
+	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIdx];
+	
+	/*
+		delete (zero) the previous connected-failled entry and always 
+		connect to the last entry in talbe until the talbe is empty.
+	*/
+	NdisZeroMemory(&pSsidBssTab->BssEntry[--pSsidBssTab->BssNr], sizeof(BSS_ENTRY));
+	lastEntryIdx = pSsidBssTab->BssNr -1;
+	
+	if ((pSsidBssTab->BssNr > 0) && (pSsidBssTab->BssNr < MAX_LEN_OF_BSS_TABLE))
+	{
+		UCHAR	tempBuf[20];
+		
+		sprintf(tempBuf, "%02X:%02X:%02X:%02X:%02X:%02X", 
+				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[0],
+				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[1],
+				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[2],
+				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[3],
+				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[4],
+				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[5]);
+		Set_ApCli_Bssid_Proc(pAd, tempBuf);
+		if (pAd->CommonCfg.Channel != pSsidBssTab->BssEntry[lastEntryIdx].Channel)
+		{
+			Set_ApCli_Enable_Proc(pAd, "0");
+			sprintf(tempBuf, "%d", pSsidBssTab->BssEntry[lastEntryIdx].Channel);
+			DBGPRINT(RT_DEBUG_TRACE, ("Switch to channel :%s\n", tempBuf));
+			Set_Channel_Proc(pAd, tempBuf);
+		}
+	}
+	else
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("No candidate AP, the process is about to stop.\n"));
+		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+	}
+	
+	Set_ApCli_Enable_Proc(pAd, "1");
+	DBGPRINT(RT_DEBUG_TRACE, ("---> ApCliSwitchCandidateAP()\n"));
+	
+}
+
+BOOLEAN ApcliCompareAuthEncryp(
+	IN PAPCLI_STRUCT pApCliEntry,
+	IN NDIS_802_11_AUTHENTICATION_MODE AuthMode,
+	IN NDIS_802_11_AUTHENTICATION_MODE AuthModeAux,
+	IN NDIS_802_11_WEP_STATUS			WEPstatus,
+	IN CIPHER_SUITE WPA)
+{
+	NDIS_802_11_AUTHENTICATION_MODE	tempAuthMode = pApCliEntry->AuthMode;
+	NDIS_802_11_WEP_STATUS				tempWEPstatus = pApCliEntry->WepStatus;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("ApcliAuthMode=%s, AuthMode=%s, AuthModeAux=%s, ApcliWepStatus=%s,	WepStatus=%s, GroupCipher=%s, PairCipher=%s,  \n",
+					GetAuthMode(pApCliEntry->AuthMode),
+					GetAuthMode(AuthMode),
+					GetAuthMode(AuthModeAux),
+					GetEncryptType(pApCliEntry->WepStatus),
+					GetEncryptType(WEPstatus),
+					GetEncryptType(WPA.GroupCipher),
+					GetEncryptType(WPA.PairCipher)));
+
+	if (tempAuthMode <= Ndis802_11AuthModeAutoSwitch)
+	{
+		tempAuthMode = Ndis802_11AuthModeOpen;
+		return ((tempAuthMode == AuthMode || 		
+				tempAuthMode == AuthModeAux) &&
+				(tempWEPstatus == WEPstatus) );
+	}
+	else if (tempAuthMode <= Ndis802_11AuthModeWPA2PSK)
+	{
+		return ((tempAuthMode == AuthMode || 		
+			tempAuthMode == AuthModeAux) &&
+			(tempWEPstatus == WPA.GroupCipher||
+			tempWEPstatus == WPA.PairCipher) );
+	}
+	else
+	{
+		/* not supported cases */
+		return FALSE;
+	}
+
+}
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
 #endif /* APCLI_SUPPORT */
 

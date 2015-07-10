@@ -654,6 +654,7 @@ VOID ScanNextChannel(
 			}
 #endif /* P2P_APCLI_SUPPORT */
 #ifdef APCLI_SUPPORT
+			int loop;
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 			if (pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
 			{
@@ -665,7 +666,6 @@ VOID ScanNextChannel(
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 
 			/* to prevent AP no beacon when do sitesurvey. each time we get back to origin channel, update RcvBcnTime */
-			int loop;
 			for (loop = 0; loop < MAX_APCLI_NUM; loop++)
 			{
 				PAPCLI_STRUCT pApCliEntry = &pAd->ApCfg.ApCliTab[loop];

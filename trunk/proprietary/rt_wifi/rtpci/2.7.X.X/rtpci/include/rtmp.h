@@ -2307,6 +2307,9 @@ typedef struct _APCLI_STRUCT {
 	ULONG AssocCurrState;
 	ULONG WpaPskCurrState;
 
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+	USHORT	ProbeReqCnt;
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
 	USHORT AuthReqCnt;
 	USHORT AssocReqCnt;
 
@@ -2406,7 +2409,11 @@ typedef struct _AP_ADMIN_CONFIG {
 	UCHAR ApCliInfRunned;	/* Number of  ApClient interface which was running. value from 0 to MAX_APCLI_INTERFACE */
 	BOOLEAN FlgApCliIsUapsdInfoUpdated;
 	APCLI_STRUCT ApCliTab[MAX_APCLI_NUM];	/*AP-client */
-#endif				/* APCLI_SUPPORT */
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+	BOOLEAN		ApCliAutoConnectRunning;
+	BOOLEAN		ApCliAutoConnectChannelSwitching;
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
+#endif /* APCLI_SUPPORT */
 
 	/* for wpa */
 	RALINK_TIMER_STRUCT CounterMeasureTimer;
@@ -5133,7 +5140,8 @@ VOID BssTableSsidSort(
 	IN  UCHAR SsidLen);
 
 VOID  BssTableSortByRssi(
-	IN OUT BSS_TABLE *OutTab);
+	IN OUT BSS_TABLE *OutTab,
+	IN BOOLEAN isInverseOrder);
 
 VOID BssCipherParse(
 	IN OUT  PBSS_ENTRY  pBss);

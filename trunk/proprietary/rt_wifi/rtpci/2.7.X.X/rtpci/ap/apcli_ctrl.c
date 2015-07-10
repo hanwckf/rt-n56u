@@ -283,13 +283,35 @@ static VOID ApCliCtrlJoinReqTimeoutAction(
 		return;
 	}
 
+	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
+
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+	pApCliEntry->ProbeReqCnt++;
+	DBGPRINT(RT_DEBUG_TRACE, ("(%s) Probe Req Timeout. ProbeReqCnt=%d\n",
+				__FUNCTION__, pApCliEntry->ProbeReqCnt));
+
+	if (pApCliEntry->ProbeReqCnt > 7)
+	{
+		/*
+			if exceed the APCLI_MAX_PROBE_RETRY_NUM (7),
+			switch to try next candidate AP.
+		*/
+		*pCurrState = APCLI_CTRL_DISCONNECTED;
+		NdisZeroMemory(pAd->MlmeAux.Bssid, MAC_ADDR_LEN);
+		NdisZeroMemory(pAd->MlmeAux.Ssid, MAX_LEN_OF_SSID);
+		pApCliEntry->ProbeReqCnt = 0;
+		
+		if (pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+			ApCliSwitchCandidateAP(pAd);
+		return;
+	}
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
+
 	/* stay in same state. */
 	*pCurrState = APCLI_CTRL_PROBE;
 
 	/* retry Probe Req. */
 	DBGPRINT(RT_DEBUG_TRACE, ("(%s) Retry Probe Req.\n", __FUNCTION__));
-
-	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
 
 	NdisZeroMemory(&JoinReq, sizeof(APCLI_MLME_JOIN_REQ_STRUCT));
 
@@ -382,6 +404,12 @@ static VOID ApCliCtrlProbeRspAction(
 	{
 		DBGPRINT(RT_DEBUG_TRACE, ("(%s) Probe respond fail.\n", __FUNCTION__));
 		*pCurrState = APCLI_CTRL_DISCONNECTED;
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+		if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+			)
+			ApCliSwitchCandidateAP(pAd);
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
+
 	}
 
 	return;
@@ -443,6 +471,11 @@ static VOID ApCliCtrlAuthRspAction(
 			NdisZeroMemory(pAd->ApCliMlmeAux.Ssid, MAX_LEN_OF_SSID);
 			pApCliEntry->AuthReqCnt = 0;
 			*pCurrState = APCLI_CTRL_DISCONNECTED;
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+			if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+				)
+				ApCliSwitchCandidateAP(pAd);
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
 		}
 	}
 
@@ -487,6 +520,11 @@ static VOID ApCliCtrlAuth2RspAction(
 		DBGPRINT(RT_DEBUG_TRACE, ("(%s) Sta Auth Rsp Failure.\n", __FUNCTION__));
 
 		*pCurrState = APCLI_CTRL_DISCONNECTED;
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+		if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+			)
+			ApCliSwitchCandidateAP(pAd);
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
 	}
 
 	return;
@@ -523,6 +561,11 @@ static VOID ApCliCtrlAuthReqTimeoutAction(
 		NdisZeroMemory(pAd->ApCliMlmeAux.Bssid, MAC_ADDR_LEN);
 		NdisZeroMemory(pAd->ApCliMlmeAux.Ssid, MAX_LEN_OF_SSID);
 		pApCliEntry->AuthReqCnt = 0;
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+		if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+			)
+			ApCliSwitchCandidateAP(pAd);
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
 		return;
 	}
 
@@ -600,6 +643,11 @@ static VOID ApCliCtrlAssocRspAction(
 			/* Reset the apcli interface as disconnected and Invalid. */
 			*pCurrState = APCLI_CTRL_DISCONNECTED;
 			pApCliEntry->Valid = FALSE;
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+			if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+				)
+				ApCliSwitchCandidateAP(pAd);
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
 		}
 	}
 	else
@@ -610,6 +658,11 @@ static VOID ApCliCtrlAssocRspAction(
 
 		/* set the apcli interface be valid. */
 		pApCliEntry->Valid = FALSE;
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+		if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+			)
+			ApCliSwitchCandidateAP(pAd);
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
 	}
 
 	return;
@@ -683,6 +736,11 @@ static VOID ApCliCtrlAssocReqTimeoutAction(
 		NdisZeroMemory(pAd->ApCliMlmeAux.Bssid, MAC_ADDR_LEN);
 		NdisZeroMemory(pAd->ApCliMlmeAux.Ssid, MAX_LEN_OF_SSID);
 		pApCliEntry->AuthReqCnt = 0;
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+		if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+			)
+			ApCliSwitchCandidateAP(pAd);
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
 		return;
 	}
 
@@ -760,6 +818,17 @@ static VOID ApCliCtrlPeerDeAssocReqAction(
 	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
 	if (pApCliEntry->Valid)
 		ApCliLinkDown(pAd, ifIndex);
+
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+	if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+		)
+	{
+		PMAC_TABLE_ENTRY pMacEntry;
+		pMacEntry = &pAd->MacTab.Content[pApCliEntry->MacTabWCID];
+		if (pMacEntry->PortSecured == WPA_802_1X_PORT_NOT_SECURED)
+			ApCliSwitchCandidateAP(pAd);
+	}
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */	
 
 	/* set the apcli interface be invalid. */
 	pApCliEntry->Valid = FALSE;

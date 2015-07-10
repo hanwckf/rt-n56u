@@ -8531,6 +8531,7 @@ INT Set_ReptMode_Enable_Proc(
 	AsicSetMacAddrExt(pAd, pAd->ApCfg.bMACRepeaterEn);
 	return TRUE;
 }
+#endif /* MAC_REPEATER_SUPPORT */
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 /*
@@ -8567,7 +8568,6 @@ INT Set_ApCli_AutoConnect_Proc(
 	DBGPRINT(RT_DEBUG_TRACE, ("I/F(apcli%d) Set_ApCli_AutoConnect_Proc::(Len=%d,Ssid=%s)\n",
 			ifIndex, pApCfg->ApCliTab[ifIndex].CfgSsidLen, pApCfg->ApCliTab[ifIndex].CfgSsid));
 
-
 	/*
 		use site survey function to trigger auto connecting (when pAd->ApCfg.ApAutoConnectRunning == TRUE)
 	*/
@@ -8577,7 +8577,6 @@ INT Set_ApCli_AutoConnect_Proc(
 }
 #endif  /* APCLI_AUTO_CONNECT_SUPPORT */
 
-#endif /* MAC_REPEATER_SUPPORT */
 
 #ifdef WSC_AP_SUPPORT
 INT Set_AP_WscSsid_Proc(

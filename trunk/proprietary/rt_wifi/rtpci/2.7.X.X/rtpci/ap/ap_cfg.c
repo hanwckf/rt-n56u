@@ -434,7 +434,9 @@ INT Set_ApCli_Key3_Proc(IN PRTMP_ADAPTER pAd, IN PSTRING arg);
 INT Set_ApCli_Key4_Proc(IN PRTMP_ADAPTER pAd, IN PSTRING arg);
 INT Set_ApCli_TxMode_Proc(IN PRTMP_ADAPTER pAd, IN  PSTRING arg);
 INT Set_ApCli_TxMcs_Proc(IN PRTMP_ADAPTER pAd, IN  PSTRING arg);
-
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+INT Set_ApCli_AutoConnect_Proc(IN PRTMP_ADAPTER pAd,	IN PSTRING arg);
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
 
 #ifdef APCLI_WPA_SUPPLICANT_SUPPORT
 INT Set_ApCli_Wpa_Support(IN PRTMP_ADAPTER pAd, IN	PSTRING	arg);
@@ -936,6 +938,9 @@ static struct {
 	{"ApCliKey4",					Set_ApCli_Key4_Proc},
 	{"ApCliTxMode",					Set_ApCli_TxMode_Proc},
 	{"ApCliTxMcs",					Set_ApCli_TxMcs_Proc},	
+#ifdef APCLI_AUTO_CONNECT_SUPPORT	
+	{"ApCliAutoConnect", 			Set_ApCli_AutoConnect_Proc},
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
 #ifdef APCLI_WPA_SUPPLICANT_SUPPORT
 	{"ApCliWpaSupport",					Set_ApCli_Wpa_Support},	
 	{"ApCliIEEE1X",					Set_ApCli_IEEE8021X_Proc},	
@@ -8911,6 +8916,50 @@ INT	Set_ApCli_IEEE8021X_Proc(
 	return TRUE;
 }
 #endif /* APCLI_WPA_SUPPLICANT_SUPPORT */
+
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+/* 
+    ==========================================================================
+    Description:
+        Trigger Apcli Auto connect to find the missed AP.
+    Return:
+        TRUE if all parameters are OK, FALSE otherwise
+    ==========================================================================
+*/
+INT Set_ApCli_AutoConnect_Proc(
+	IN PRTMP_ADAPTER pAd,
+	IN PSTRING arg)
+{
+	POS_COOKIE  		pObj= (POS_COOKIE) pAd->OS_Cookie;
+	UCHAR				ifIndex;
+	PAP_ADMIN_CONFIG	pApCfg;
+
+	if (pObj->ioctl_if_type != INT_APCLI)
+		return FALSE;
+	pApCfg = &pAd->ApCfg;
+	ifIndex = pObj->ioctl_if;
+
+	if (pApCfg->ApCliAutoConnectRunning == FALSE)
+	{
+		Set_ApCli_Enable_Proc(pAd, "0");
+		pApCfg->ApCliAutoConnectRunning = TRUE;
+	}
+	else
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("Set_ApCli_AutoConnect_Proc() is still running\n"));
+		return TRUE;
+	}
+	DBGPRINT(RT_DEBUG_TRACE, ("I/F(apcli%d) Set_ApCli_AutoConnect_Proc::(Len=%d,Ssid=%s)\n",
+			ifIndex, pApCfg->ApCliTab[ifIndex].CfgSsidLen, pApCfg->ApCliTab[ifIndex].CfgSsid));
+
+	/*
+		use site survey function to trigger auto connecting (when pAd->ApCfg.ApAutoConnectRunning == TRUE)
+	*/
+	Set_SiteSurvey_Proc(pAd, "");//pApCfg->ApCliTab[ifIndex].CfgSsid);
+
+	return TRUE;
+}
+#endif  /* APCLI_AUTO_CONNECT_SUPPORT */
 
 
 #ifdef WSC_AP_SUPPORT

@@ -158,7 +158,6 @@ ifeq ($(CONFIG_RT3090_AP_VIDEO_TURBINE),y)
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_video.o
 endif
 
-
 ###################
 #  CFLAGS
 ###################
@@ -288,8 +287,8 @@ endif
 endif
 
 ifeq ($(CONFIG_RT3090_AP_APCLI),y)
-EXTRA_CFLAGS += -DAPCLI_SUPPORT
-EXTRA_CFLAGS += -DMAT_SUPPORT
+EXTRA_CFLAGS += -DAPCLI_SUPPORT -DMAT_SUPPORT
+EXTRA_CFLAGS += -DAPCLI_AUTO_CONNECT_SUPPORT
 endif
 
 ifeq ($(CONFIG_RT3090_AP_IGMP_SNOOP),y)

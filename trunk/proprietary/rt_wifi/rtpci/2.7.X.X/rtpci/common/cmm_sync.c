@@ -521,6 +521,17 @@ VOID ScanNextChannel(
 #ifdef CONFIG_AP_SUPPORT
 		if (OpMode == OPMODE_AP)
 		{
+#ifdef APCLI_SUPPORT
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+			if (pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+			{
+				if (!ApCliAutoConnectExec(pAd))
+				{
+					DBGPRINT(RT_DEBUG_ERROR, ("Error in  %s\n", __FUNCTION__));
+				}
+			}
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
+#endif /* APCLI_SUPPORT */
 
 			pAd->Mlme.ApSyncMachine.CurrState = AP_SYNC_IDLE;
 			RTMPResumeMsduTransmission(pAd);

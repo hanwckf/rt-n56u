@@ -2573,8 +2573,7 @@ typedef struct _AP_ADMIN_CONFIG {
 	BOOLEAN FlgApCliIsUapsdInfoUpdated;
 	/*AP-client */
 	APCLI_STRUCT ApCliTab[MAX_APCLI_NUM];
-	RALINK_TIMER_STRUCT	ApCliScanTimer;
-#ifdef APCLI_AUTO_CONNECT_SUPPORT	
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
 	BOOLEAN		ApCliAutoConnectRunning;
 	BOOLEAN		ApCliAutoConnectChannelSwitching;
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */

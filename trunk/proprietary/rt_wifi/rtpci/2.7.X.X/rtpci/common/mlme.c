@@ -2237,6 +2237,43 @@ ULONG BssTableSetEntry(
 }
 
 
+/* IRQL = DISPATCH_LEVEL*/
+VOID BssTableSortByRssi(
+	IN OUT BSS_TABLE *OutTab,
+	IN BOOLEAN isInverseOrder)
+{
+	INT 	  i, j;
+	BSS_ENTRY *pTmpBss = NULL;
+
+	/* allocate memory */
+	os_alloc_mem(NULL, (UCHAR **)&pTmpBss, sizeof(BSS_ENTRY));
+	if (pTmpBss == NULL)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("%s: Allocate memory fail!!!\n", __FUNCTION__));
+		return;
+	}
+
+	for (i = 0; i < OutTab->BssNr - 1; i++) 
+	{
+		for (j = i+1; j < OutTab->BssNr; j++) 
+		{
+			if (OutTab->BssEntry[j].Rssi > OutTab->BssEntry[i].Rssi ?
+				!isInverseOrder : isInverseOrder)
+			{
+				if (OutTab->BssEntry[j].Rssi != OutTab->BssEntry[i].Rssi )
+				{
+					NdisMoveMemory(pTmpBss, &OutTab->BssEntry[j], sizeof(BSS_ENTRY));
+					NdisMoveMemory(&OutTab->BssEntry[j], &OutTab->BssEntry[i], sizeof(BSS_ENTRY));
+					NdisMoveMemory(&OutTab->BssEntry[i], pTmpBss, sizeof(BSS_ENTRY));
+				}
+			}
+		}
+	}
+
+	if (pTmpBss != NULL)
+		os_free_mem(NULL, pTmpBss);
+}
+
 
 VOID BssCipherParse(
 	IN OUT	PBSS_ENTRY	pBss)

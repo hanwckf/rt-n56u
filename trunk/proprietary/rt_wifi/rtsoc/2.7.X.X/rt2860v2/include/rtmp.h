@@ -3070,8 +3070,7 @@ typedef struct _AP_ADMIN_CONFIG {
 	UCHAR ApCliInfRunned;	/* Number of  ApClient interface which was running. value from 0 to MAX_APCLI_INTERFACE */
 	BOOLEAN FlgApCliIsUapsdInfoUpdated;
 	APCLI_STRUCT ApCliTab[MAX_APCLI_NUM];	/*AP-client */
-	RALINK_TIMER_STRUCT	ApCliScanTimer;
-#ifdef APCLI_AUTO_CONNECT_SUPPORT	
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
 	BOOLEAN		ApCliAutoConnectRunning;
 	BOOLEAN		ApCliAutoConnectChannelSwitching;
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */

@@ -447,8 +447,9 @@ static VOID ApCliCtrlJoinReqTimeoutAction(
 		return;
 	}
 
-#ifdef APCLI_AUTO_CONNECT_SUPPORT
 	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
+
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
 	pApCliEntry->ProbeReqCnt++;
 	DBGPRINT(RT_DEBUG_TRACE, ("(%s) Probe Req Timeout. ProbeReqCnt=%d\n",
 				__FUNCTION__, pApCliEntry->ProbeReqCnt));
@@ -475,8 +476,6 @@ static VOID ApCliCtrlJoinReqTimeoutAction(
 
 	/* retry Probe Req. */
 	DBGPRINT(RT_DEBUG_TRACE, ("(%s) Retry Probe Req.\n", __FUNCTION__));
-
-	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
 
 	NdisZeroMemory(&JoinReq, sizeof(APCLI_MLME_JOIN_REQ_STRUCT));
 

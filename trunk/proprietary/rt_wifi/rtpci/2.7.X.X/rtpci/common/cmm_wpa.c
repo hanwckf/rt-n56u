@@ -1332,6 +1332,22 @@ VOID PeerPairMsg3Action(
 		pEntry->PortSecured = WPA_802_1X_PORT_SECURED;
 		pEntry->PrivacyFilter = Ndis802_11PrivFilterAcceptAll;	
 
+#ifdef CONFIG_AP_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+		{				
+#ifdef APCLI_SUPPORT
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+			if((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+				)
+			{
+				DBGPRINT(RT_DEBUG_TRACE, ("Apcli auto connected:PeerPairMsg3Action() \n"));
+				pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+			}
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
+#endif /* APLCI_SUPPORT */
+		}
+#endif /* CONFIG_AP_SUPPORT */
+
 		DBGPRINT(RT_DEBUG_TRACE, ("PeerPairMsg3Action: AuthMode(%s) PairwiseCipher(%s) GroupCipher(%s) \n",
 									GetAuthMode(pEntry->AuthMode),
 									GetEncryptType(pEntry->WepStatus),
@@ -1694,6 +1710,22 @@ VOID	PeerGroupMsg1Action(
     /* open 802.1x port control and privacy filter*/
 	pEntry->PortSecured = WPA_802_1X_PORT_SECURED;
 	pEntry->PrivacyFilter = Ndis802_11PrivFilterAcceptAll;
+
+#ifdef CONFIG_AP_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+	{
+#ifdef APCLI_SUPPORT
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+		if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+			)
+			{
+				DBGPRINT(RT_DEBUG_TRACE, ("Apcli auto connected:PeerGroupMsg1Action() \n"));
+				pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+			}
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
+#endif /* APLCI_SUPPORT */
+	}
+#endif /* CONFIG_AP_SUPPORT */
 
 	
 	DBGPRINT(RT_DEBUG_TRACE, ("PeerGroupMsg1Action: AuthMode(%s) PairwiseCipher(%s) GroupCipher(%s) \n",

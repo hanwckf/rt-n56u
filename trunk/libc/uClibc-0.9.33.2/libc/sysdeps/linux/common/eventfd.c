@@ -15,7 +15,7 @@
  * eventfd()
  */
 #if defined __NR_eventfd || defined __NR_eventfd2
-int eventfd (int count, int flags)
+int eventfd (unsigned int count, int flags)
 {
 #if defined __NR_eventfd2
   return INLINE_SYSCALL (eventfd2, 2, count, flags);

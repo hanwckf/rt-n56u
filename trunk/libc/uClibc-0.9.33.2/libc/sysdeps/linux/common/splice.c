@@ -8,9 +8,10 @@
  */
 
 #include <sys/syscall.h>
-#include <fcntl.h>
 
-#ifdef __NR_splice
-_syscall6(ssize_t, splice, int, __fdin, __off64_t *, __offin, int, __fdout,
-	__off64_t *, __offout, size_t, __len, unsigned int, __flags)
+#if defined __NR_splice && defined __UCLIBC_HAS_LFS__ && defined __USE_GNU
+# include <fcntl.h>
+
+_syscall6(ssize_t, splice, int, __fdin, off64_t *, __offin, int, __fdout,
+	  off64_t *, __offout, size_t, __len, unsigned int, __flags)
 #endif

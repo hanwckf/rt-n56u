@@ -1,0 +1,321 @@
+From 18cd5bce47dc4a33dd1d8e3036b99d2fa7e3234f Mon Sep 17 00:00:00 2001
+From: Alan Modra <amodra@gmail.com>
+Date: Thu, 14 Aug 2014 13:49:31 +0930
+Subject: [PATCH] Linker part of PR16563 fix
+
+Presents .eh_frame input sections to the optimisation machinery in
+elf-eh-frame.c in the order they are given by the linker script.
+
+	PR 16563
+bfd/
+	* elflink.c (bfd_elf_discard_info): Process .eh_frame and .stab
+	in the order they are mapped to output sections.
+ld/
+	* ldlang.c (map_head_is_link_order): Rename from
+	stripped_excluded_sections.
+	(lang_clear_os_map): New function, extracted from..
+	(strip_excluded_output_sections): ..here.
+	* ldlang.h (lang_clear_os_map): Declare.
+	* ldwrite.c (ldwrite): Call lang_clear_os_map.
+	* emultempl/sh64elf.em (sh64_elf_${EMULATION_NAME}_after_allocation):
+	Likewise.
+---
+ bfd/ChangeLog           |    6 +++
+ bfd/elflink.c           |  109 ++++++++++++++++++++++++++--------------------
+ ld/ChangeLog            |   12 +++++
+ ld/emultempl/sh64elf.em |    3 +
+ ld/ldlang.c             |   42 +++++++++++++++---
+ ld/ldlang.h             |    2 +
+ ld/ldwrite.c            |    1 +
+ 7 files changed, 121 insertions(+), 54 deletions(-)
+
+diff --git a/bfd/ChangeLog b/bfd/ChangeLog
+--- a/bfd/ChangeLog
++++ b/bfd/ChangeLog
+@@ -1,3 +1,9 @@
++2014-08-14  Alan Modra  <amodra@gmail.com>
++
++	PR 16563
++	* elflink.c (bfd_elf_discard_info): Process .eh_frame and .stab
++	in the order they are mapped to output sections.
++
+ 2014-08-05  Maciej W. Rozycki  <macro@codesourcery.com>
+ 
+ 	* elfxx-mips.c (_bfd_mips_elf_discard_info): Set section's
+diff --git a/bfd/elflink.c b/bfd/elflink.c
+--- a/bfd/elflink.c
++++ b/bfd/elflink.c
+@@ -12655,8 +12655,7 @@ bfd_boolean
+ bfd_elf_discard_info (bfd *output_bfd, struct bfd_link_info *info)
+ {
+   struct elf_reloc_cookie cookie;
+-  asection *stab, *eh;
+-  const struct elf_backend_data *bed;
++  asection *o;
+   bfd *abfd;
+   bfd_boolean ret = FALSE;
+ 
+@@ -12664,70 +12663,86 @@ bfd_elf_discard_info (bfd *output_bfd, struct bfd_link_info *info)
+       || !is_elf_hash_table (info->hash))
+     return FALSE;
+ 
+-  _bfd_elf_begin_eh_frame_parsing (info);
+-  for (abfd = info->input_bfds; abfd != NULL; abfd = abfd->link_next)
++  o = bfd_get_section_by_name (output_bfd, ".stab");
++  if (o != NULL)
+     {
+-      if (bfd_get_flavour (abfd) != bfd_target_elf_flavour)
+-	continue;
++      asection *i;
+ 
+-      bed = get_elf_backend_data (abfd);
+-
+-      eh = NULL;
+-      if (!info->relocatable)
++      for (i = o->map_head.s; i != NULL; i = i->map_head.s)
+ 	{
+-	  eh = bfd_get_section_by_name (abfd, ".eh_frame");
+-	  while (eh != NULL
+-		 && (eh->size == 0
+-		     || bfd_is_abs_section (eh->output_section)))
+-	    eh = bfd_get_next_section_by_name (eh);
+-	}
+-
+-      stab = bfd_get_section_by_name (abfd, ".stab");
+-      if (stab != NULL
+-	  && (stab->size == 0
+-	      || bfd_is_abs_section (stab->output_section)
+-	      || stab->sec_info_type != SEC_INFO_TYPE_STABS))
+-	stab = NULL;
++	  if (i->size == 0
++	      || i->reloc_count == 0
++	      || i->sec_info_type != SEC_INFO_TYPE_STABS)
++	    continue;
+ 
+-      if (stab == NULL
+-	  && eh == NULL
+-	  && bed->elf_backend_discard_info == NULL)
+-	continue;
++	  abfd = i->owner;
++	  if (bfd_get_flavour (abfd) != bfd_target_elf_flavour)
++	    continue;
+ 
+-      if (!init_reloc_cookie (&cookie, info, abfd))
+-	return FALSE;
++	  if (!init_reloc_cookie_for_section (&cookie, info, i))
++	    return FALSE;
+ 
+-      if (stab != NULL
+-	  && stab->reloc_count > 0
+-	  && init_reloc_cookie_rels (&cookie, info, abfd, stab))
+-	{
+-	  if (_bfd_discard_section_stabs (abfd, stab,
+-					  elf_section_data (stab)->sec_info,
++	  if (_bfd_discard_section_stabs (abfd, i,
++					  elf_section_data (i)->sec_info,
+ 					  bfd_elf_reloc_symbol_deleted_p,
+ 					  &cookie))
+ 	    ret = TRUE;
+-	  fini_reloc_cookie_rels (&cookie, stab);
++
++	  fini_reloc_cookie_for_section (&cookie, i);
+ 	}
++    }
++
++  o = NULL;
++  if (!info->relocatable)
++    o = bfd_get_section_by_name (output_bfd, ".eh_frame");
++  if (o != NULL)
++    {
++      asection *i;
+ 
+-      while (eh != NULL
+-	     && init_reloc_cookie_rels (&cookie, info, abfd, eh))
++      _bfd_elf_begin_eh_frame_parsing (info);
++      for (i = o->map_head.s; i != NULL; i = i->map_head.s)
+ 	{
+-	  _bfd_elf_parse_eh_frame (abfd, info, eh, &cookie);
+-	  if (_bfd_elf_discard_section_eh_frame (abfd, info, eh,
++	  if (i->size == 0)
++	    continue;
++
++	  abfd = i->owner;
++	  if (bfd_get_flavour (abfd) != bfd_target_elf_flavour)
++	    continue;
++
++	  if (!init_reloc_cookie_for_section (&cookie, info, i))
++	    return FALSE;
++
++	  _bfd_elf_parse_eh_frame (abfd, info, i, &cookie);
++	  if (_bfd_elf_discard_section_eh_frame (abfd, info, i,
+ 						 bfd_elf_reloc_symbol_deleted_p,
+ 						 &cookie))
+ 	    ret = TRUE;
+-	  fini_reloc_cookie_rels (&cookie, eh);
+-	  eh = bfd_get_next_section_by_name (eh);
++
++	  fini_reloc_cookie_for_section (&cookie, i);
+ 	}
++      _bfd_elf_end_eh_frame_parsing (info);
++    }
+ 
+-      if (bed->elf_backend_discard_info != NULL
+-	  && (*bed->elf_backend_discard_info) (abfd, &cookie, info))
+-	ret = TRUE;
++  for (abfd = info->input_bfds; abfd != NULL; abfd = abfd->link_next)
++    {
++      const struct elf_backend_data *bed;
+ 
+-      fini_reloc_cookie (&cookie, abfd);
++      if (bfd_get_flavour (abfd) != bfd_target_elf_flavour)
++	continue;
++
++      bed = get_elf_backend_data (abfd);
++
++      if (bed->elf_backend_discard_info != NULL)
++	{
++	  if (!init_reloc_cookie (&cookie, info, abfd))
++	    return FALSE;
++
++	  if ((*bed->elf_backend_discard_info) (abfd, &cookie, info))
++	    ret = TRUE;
++
++	  fini_reloc_cookie (&cookie, abfd);
++	}
+     }
+-  _bfd_elf_end_eh_frame_parsing (info);
+ 
+   if (info->eh_frame_hdr
+       && !info->relocatable
+diff --git a/ld/ChangeLog b/ld/ChangeLog
+--- a/ld/ChangeLog
++++ b/ld/ChangeLog
+@@ -1,3 +1,15 @@
++2014-08-14  Alan Modra  <amodra@gmail.com>
++
++	PR 16563
++	* ldlang.c (map_head_is_link_order): Rename from
++	stripped_excluded_sections.
++	(lang_clear_os_map): New function, extracted from..
++	(strip_excluded_output_sections): ..here.
++	* ldlang.h (lang_clear_os_map): Declare.
++	* ldwrite.c (ldwrite): Call lang_clear_os_map.
++	* emultempl/sh64elf.em (sh64_elf_${EMULATION_NAME}_after_allocation):
++	Likewise.
++
+ 2013-11-25  Yufeng Zhang  <yufeng.zhang@arm.com>
+ 
+ 	Backport from master
+diff --git a/ld/emultempl/sh64elf.em b/ld/emultempl/sh64elf.em
+--- a/ld/emultempl/sh64elf.em
++++ b/ld/emultempl/sh64elf.em
+@@ -249,6 +249,9 @@ sh64_elf_${EMULATION_NAME}_after_allocation (void)
+ 
+   gld${EMULATION_NAME}_after_allocation ();
+ 
++  /* Needed, since we create link_orders here.  */
++  lang_clear_os_map ();
++
+   cranges = bfd_get_section_by_name (link_info.output_bfd,
+ 				     SH64_CRANGES_SECTION_NAME);
+ 
+diff --git a/ld/ldlang.c b/ld/ldlang.c
+--- a/ld/ldlang.c
++++ b/ld/ldlang.c
+@@ -56,7 +56,7 @@ static struct obstack map_obstack;
+ #define obstack_chunk_free free
+ static const char *entry_symbol_default = "start";
+ static bfd_boolean placed_commons = FALSE;
+-static bfd_boolean stripped_excluded_sections = FALSE;
++static bfd_boolean map_head_is_link_order = FALSE;
+ static lang_output_section_statement_type *default_common_section;
+ static bfd_boolean map_option_f;
+ static bfd_vma print_dot;
+@@ -2359,7 +2359,7 @@ lang_add_section (lang_statement_list_type *ptr,
+   section->output_section = output->bfd_section;
+ 
+   if (!link_info.relocatable
+-      && !stripped_excluded_sections)
++      && !map_head_is_link_order)
+     {
+       asection *s = output->bfd_section->map_tail.s;
+       output->bfd_section->map_tail.s = section;
+@@ -3886,10 +3886,6 @@ strip_excluded_output_sections (void)
+ 	      }
+ 	}
+ 
+-      /* TODO: Don't just junk map_head.s, turn them into link_orders.  */
+-      output_section->map_head.link_order = NULL;
+-      output_section->map_tail.link_order = NULL;
+-
+       if (exclude)
+ 	{
+ 	  /* We don't set bfd_section to NULL since bfd_section of the
+@@ -3901,10 +3897,42 @@ strip_excluded_output_sections (void)
+ 	  link_info.output_bfd->section_count--;
+ 	}
+     }
++}
++
++/* Called from ldwrite to clear out asection.map_head and
++   asection.map_tail for use as link_orders in ldwrite.
++   FIXME: Except for sh64elf.em which starts creating link_orders in
++   its after_allocation routine so needs to call it early.  */
++
++void
++lang_clear_os_map (void)
++{
++  lang_output_section_statement_type *os;
++
++  if (map_head_is_link_order)
++    return;
++
++  for (os = &lang_output_section_statement.head->output_section_statement;
++       os != NULL;
++       os = os->next)
++    {
++      asection *output_section;
++
++      if (os->constraint < 0)
++	continue;
++
++      output_section = os->bfd_section;
++      if (output_section == NULL)
++	continue;
++
++      /* TODO: Don't just junk map_head.s, turn them into link_orders.  */
++      output_section->map_head.link_order = NULL;
++      output_section->map_tail.link_order = NULL;
++    }
+ 
+   /* Stop future calls to lang_add_section from messing with map_head
+      and map_tail link_order fields.  */
+-  stripped_excluded_sections = TRUE;
++  map_head_is_link_order = TRUE;
+ }
+ 
+ static void
+diff --git a/ld/ldlang.h b/ld/ldlang.h
+--- a/ld/ldlang.h
++++ b/ld/ldlang.h
+@@ -599,6 +599,8 @@ extern void *stat_alloc
+   (size_t);
+ extern void strip_excluded_output_sections
+   (void);
++extern void lang_clear_os_map
++  (void);
+ extern void dprint_statement
+   (lang_statement_union_type *, int);
+ extern void lang_size_sections
+diff --git a/ld/ldwrite.c b/ld/ldwrite.c
+--- a/ld/ldwrite.c
++++ b/ld/ldwrite.c
+@@ -574,6 +574,7 @@ ldwrite (void)
+   /* Reset error indicator, which can typically something like invalid
+      format from opening up the .o files.  */
+   bfd_set_error (bfd_error_no_error);
++  lang_clear_os_map ();
+   lang_for_each_statement (build_link_order);
+ 
+   if (config.split_by_reloc != (unsigned) -1
+-- 

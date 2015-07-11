@@ -55,6 +55,17 @@
 # define __LONG_LONG_PAIR(HI, LO) HI, LO
 #endif
 
+#ifdef _LIBC
+# ifndef __ASSEMBLER__
+#  include <stdint.h>
+#  define OFF_HI(offset) (offset >> 31)
+#  define OFF_LO(offset) (offset)
+#  define OFF64_HI(offset) (uint32_t)(offset >> 32)
+#  define OFF64_LO(offset) (uint32_t)(offset & 0xffffffff)
+#  define OFF_HI_LO(offset) __LONG_LONG_PAIR(OFF_HI(offset), OFF_LO(offset))
+#  define OFF64_HI_LO(offset) __LONG_LONG_PAIR(OFF64_HI(offset), OFF64_LO(offset))
+# endif
+#endif
 
 #ifdef __USE_BSD
 /* Conversion interfaces.  */

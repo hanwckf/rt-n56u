@@ -1,0 +1,1238 @@
+[PATCH v5] pread_write.c: added cancellation for all architectures
+
+Tue May 24 20:47:20 UTC 2011
+
+Ported from future branch with minor changes:
+* removed fallback code for implementations not providing pread/pwrite syscalls
+* added copyright to include/cancel.h
+* include/cancel.h removed after installation
+
+Signed-off-by: Maksim Rayskiy <mrayskiy at broadcom.com>
+
+---
+ Makefile.in                              |    3 +-
+ include/cancel.h                         |  103 +++++++++++++++
+ include/endian.h                         |   11 ++
+ libc/sysdeps/linux/c6x/Makefile.arch     |    2 +-
+ libc/sysdeps/linux/c6x/pread_write.c     |  103 ---------------
+ libc/sysdeps/linux/common/pread_write.c  |  205 ++++++++----------------------
+ libc/sysdeps/linux/mips/pread_write.c    |  122 +++++-------------
+ libc/sysdeps/linux/powerpc/pread_write.c |  187 +++------------------------
+ libc/sysdeps/linux/sh/pread_write.c      |  115 ++---------------
+ libc/sysdeps/linux/xtensa/pread_write.c  |  189 +++------------------------
+ 10 files changed, 260 insertions(+), 780 deletions(-)
+ create mode 100644 include/cancel.h
+ delete mode 100644 libc/sysdeps/linux/c6x/pread_write.c
+
+diff --git a/Makefile.in b/Makefile.in
+index 2f8370b..2b686ca 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -227,7 +227,8 @@ HEADERS_RM- := \
+ 	tls.h \
+ 	rpc/des_crypt.h \
+ 	rpc/key_prot.h \
+-	rpc/rpc_des.h
++	rpc/rpc_des.h \
++	cancel.h
+ ifeq ($(UCLIBC_STRICT_HEADERS),y)
+ HEADERS_RM- += sgtty.h
+ endif
+diff --git a/include/cancel.h b/include/cancel.h
+new file mode 100644
+index 0000000..ae1794f
+--- /dev/null
++++ b/include/cancel.h
+@@ -0,0 +1,103 @@
++/* vi: set sw=4 ts=4: */
++/*
++ * cancellation macros for uClibc
++ *
++ * Copyright (C) 2011 Peter S. Mazinger <ps.m at gmx.net>
++ *
++ * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
++ */
++
++#ifndef _CANCEL_H
++#define _CANCEL_H
++
++/*
++ * Usage of this header:
++ * 1. define a static or hidden function __NC(NAME) - expands to __NAME_nocancel
++ * 2. if it is hidden, add the prototype to the appropiate header where NAME has
++ * it's prototype (guarded by _LIBC)
++ * 3. add a CANCELLABLE_SYSCALL(...) line at the end, this will create the function
++ * NAME (as weak) with enabled cancellation for NPTL (and later for new LT), for
++ * LT_OLD it will also create a strong_alias to __libc_NAME to be used in libpthread
++ * 4. if you need libc_hidden_(weak|def) line, use instead lt_libc_hidden, this will
++ * take care of the correct type, weak or strong depending on the THREADS type
++ * 5. If the implementation can't be done using CANCELLABLE_SYSCALL (like for fcntl)
++ * you need to manually add lt_strong_alias() line too, to optionally create the
++ * __libc_NAME alias
++ * 6. if functions are needed to implement __NC(NAME), that themselves are cancellable,
++ * decide how the cancellation should be solved, two variants are possible:
++ *  a. use the other function as __NC(FUNC), this way you access the non-cancellable
++ *  variant and provide by CANCELLABLE_SYSCALL(...) the dedicated cancellation for NAME.
++ *  be aware, that for this case __NC(FUNC) has to be hidden (not static)
++ *  b. use the other function with it's name (FUNC) and add LIBC_CANCEL_HANDLED(); at
++ *  the end of file with a comment telling us which function took care of the cancellation
++ * Note: LIBC_CANCEL_HANDLED() is noop on uClibc, glibc uses it only for tests, we use
++ * it only for "documentation".
++ *
++ * For now the use of this file is limited to libc, will expand later to support libpthread
++ * and librt as well.
++ */
++
++#include <features.h>
++
++#ifndef NOT_IN_libc
++
++#define __NC(name) _NC(name)
++#define _NC(name) __##name##_nocancel
++
++#define __NC_OLD(name) _NC_OLD(name)
++#define _NC_OLD(name) __libc_##name
++
++#define __NC_PROTO(name) extern __typeof(name) __NC(name) attribute_hidden;
++#define __NC_OLD_PROTO(name) extern __typeof(name) __NC_OLD(name);
++
++#if defined __UCLIBC_HAS_THREADS__ && !defined __LINUXTHREADS_OLD__
++# define __NEW_THREADS 1
++#else
++# define SINGLE_THREAD_P 1
++#endif
++
++#ifdef __NEW_THREADS
++# include <sysdep-cancel.h>
++
++# define CANCELLABLE_SYSCALL(res_type, name, param_list, params)	\
++res_type weak_function name param_list					\
++{									\
++	if (SINGLE_THREAD_P)						\
++		return __NC(name) params;				\
++	int oldtype = LIBC_CANCEL_ASYNC();				\
++	res_type result = __NC(name) params;				\
++	LIBC_CANCEL_RESET(oldtype);					\
++	return result;							\
++}
++
++# define lt_strong_alias(name)
++# define lt_libc_hidden(name) libc_hidden_def(name)
++
++#elif defined __LINUXTHREADS_OLD__
++
++# define CANCELLABLE_SYSCALL(res_type, name, param_list, params)	\
++weak_alias(__NC(name),name)						\
++lt_strong_alias(name)
++
++# define lt_strong_alias(name)						\
++__NC_OLD_PROTO(name)							\
++strong_alias(name,__NC_OLD(name))
++# define lt_libc_hidden(name) libc_hidden_weak(name)
++
++#else
++
++# define CANCELLABLE_SYSCALL(res_type, name, param_list, params)	\
++strong_alias(__NC(name),name)
++
++# define lt_strong_alias(name)
++# define lt_libc_hidden(name) libc_hidden_def(name)
++
++#endif
++
++/* disable it, useless, glibc uses it only for tests */
++# undef LIBC_CANCEL_HANDLED
++# define LIBC_CANCEL_HANDLED()
++
++#endif /* NOT_IN_libc */
++
++#endif
+diff --git a/include/endian.h b/include/endian.h
+index 0ba7384..1e2fc93 100644
+--- a/include/endian.h
++++ b/include/endian.h
+@@ -55,6 +55,17 @@
+ # define __LONG_LONG_PAIR(HI, LO) HI, LO
+ #endif
+ 
++#ifdef _LIBC
++# ifndef __ASSEMBLER__
++#  include <stdint.h>
++#  define OFF_HI(offset) (offset >> 31)
++#  define OFF_LO(offset) (offset)
++#  define OFF64_HI(offset) (uint32_t)(offset >> 32)
++#  define OFF64_LO(offset) (uint32_t)(offset & 0xffffffff)
++#  define OFF_HI_LO(offset) __LONG_LONG_PAIR(OFF_HI(offset), OFF_LO(offset))
++#  define OFF64_HI_LO(offset) __LONG_LONG_PAIR(OFF64_HI(offset), OFF64_LO(offset))
++# endif
++#endif
+ 
+ #ifdef __USE_BSD
+ /* Conversion interfaces.  */
+diff --git a/libc/sysdeps/linux/c6x/Makefile.arch b/libc/sysdeps/linux/c6x/Makefile.arch
+index 6bb44f2..5f8aaec 100644
+--- a/libc/sysdeps/linux/c6x/Makefile.arch
++++ b/libc/sysdeps/linux/c6x/Makefile.arch
+@@ -5,6 +5,6 @@
+ # Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+ #
+ 
+-CSRC := brk.c pread_write.c syscall.c prctl.c
++CSRC := brk.c syscall.c prctl.c
+ 
+ SSRC := __longjmp.S bsd-_setjmp.S bsd-setjmp.S clone.S setjmp.S _vfork.S
+diff --git a/libc/sysdeps/linux/c6x/pread_write.c b/libc/sysdeps/linux/c6x/pread_write.c
+deleted file mode 100644
+index f985b43..0000000
+--- a/libc/sysdeps/linux/c6x/pread_write.c
++++ /dev/null
+@@ -1,103 +0,0 @@
+-/* vi: set sw=4 ts=4:
+- *
+- * Copyright (C) 2002 by Erik Andersen <andersen@uclibc.org>
+- * Based in part on the files
+- *		./sysdeps/unix/sysv/linux/pwrite.c,
+- *		./sysdeps/unix/sysv/linux/pread.c,
+- *		sysdeps/posix/pread.c
+- *		sysdeps/posix/pwrite.c
+- * from GNU libc 2.2.5, but reworked considerably...
+- *
+- * This program is free software; you can redistribute it and/or modify it
+- * under the terms of the GNU Library General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or (at your
+- * option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful, but WITHOUT
+- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Library General Public License
+- * for more details.
+- *
+- * You should have received a copy of the GNU Library General Public License
+- * along with this program; if not, write to the Free Software Foundation,
+- * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+- */
+-
+-#define _LARGEFILE64_SOURCE
+-#include <features.h>
+-#undef __OPTIMIZE__
+-/* We absolutely do _NOT_ want interfaces silently
+- *  *  * renamed under us or very bad things will happen... */
+-#ifdef __USE_FILE_OFFSET64
+-# undef __USE_FILE_OFFSET64
+-#endif
+-
+-
+-#include <errno.h>
+-#include <sys/types.h>
+-#include <sys/syscall.h>
+-#include <unistd.h>
+-#include <stdint.h>
+-
+-extern __typeof(pread) __libc_pread;
+-extern __typeof(pwrite) __libc_pwrite;
+-#ifdef __UCLIBC_HAS_LFS__
+-extern __typeof(pread64) __libc_pread64;
+-extern __typeof(pwrite64) __libc_pwrite64;
+-#endif
+-
+-#ifdef __NR_pread64             /* Newer kernels renamed but it's the same.  */
+-# ifdef __NR_pread
+-#  error "__NR_pread and __NR_pread64 both defined???"
+-# endif
+-# define __NR_pread __NR_pread64
+-#endif
+-
+-#define __NR___syscall_pread __NR_pread
+-static inline _syscall5(ssize_t, __syscall_pread, int, fd, void *, buf,
+-		size_t, count, off_t, offset_hi, off_t, offset_lo);
+-
+-ssize_t __libc_pread(int fd, void *buf, size_t count, off_t offset)
+-{
+-	return(__syscall_pread(fd,buf,count,offset,offset >> 31));
+-}
+-weak_alias (__libc_pread, pread)
+-
+-#if defined __UCLIBC_HAS_LFS__
+-ssize_t __libc_pread64(int fd, void *buf, size_t count, off64_t offset)
+-{
+-    uint32_t low = offset & 0xffffffff;
+-    uint32_t high = offset >> 32;
+-	return(__syscall_pread(fd, buf, count, low, high));
+-}
+-weak_alias (__libc_pread64, pread64)
+-#endif /* __UCLIBC_HAS_LFS__  */
+-
+-
+-#ifdef __NR_pwrite64            /* Newer kernels renamed but it's the same.  */
+-# ifdef __NR_pwrite
+-#  error "__NR_pwrite and __NR_pwrite64 both defined???"
+-# endif
+-# define __NR_pwrite __NR_pwrite64
+-#endif
+-
+-#define __NR___syscall_pwrite __NR_pwrite
+-static inline _syscall5(ssize_t, __syscall_pwrite, int, fd, const void *, buf,
+-		size_t, count, off_t, offset_hi, off_t, offset_lo);
+-
+-ssize_t __libc_pwrite(int fd, const void *buf, size_t count, off_t offset)
+-{
+-	return(__syscall_pwrite(fd,buf,count,offset,offset >> 31));
+-}
+-weak_alias (__libc_pwrite, pwrite)
+-
+-#if defined __UCLIBC_HAS_LFS__
+-ssize_t __libc_pwrite64(int fd, const void *buf, size_t count, off64_t offset)
+-{
+-    uint32_t low = offset & 0xffffffff;
+-    uint32_t high = offset >> 32;
+-	return(__syscall_pwrite(fd, buf, count, low, high));
+-}
+-weak_alias (__libc_pwrite64, pwrite64)
+-#endif /* __UCLIBC_HAS_LFS__  */
+-
+diff --git a/libc/sysdeps/linux/common/pread_write.c b/libc/sysdeps/linux/common/pread_write.c
+index 88e6957..d5a7367 100644
+--- a/libc/sysdeps/linux/common/pread_write.c
++++ b/libc/sysdeps/linux/common/pread_write.c
+@@ -15,173 +15,74 @@
+ 
+ #include <sys/syscall.h>
+ #include <unistd.h>
+-#include <stdint.h>
+ #include <endian.h>
++#include <bits/wordsize.h>
++#include <cancel.h>
+ 
+-extern __typeof(pread) __libc_pread;
+-extern __typeof(pwrite) __libc_pwrite;
+-#ifdef __UCLIBC_HAS_LFS__
+-extern __typeof(pread64) __libc_pread64;
+-extern __typeof(pwrite64) __libc_pwrite64;
++#ifdef __NR_pread64
++# define __NR_pread __NR_pread64
+ #endif
+ 
+-#include <bits/kernel_types.h>
+-
+-#ifdef __NR_pread
+-
+-# define __NR___syscall_pread __NR_pread
+-static __inline__ _syscall5(ssize_t, __syscall_pread, int, fd, void *, buf,
+-		size_t, count, off_t, offset_hi, off_t, offset_lo)
+-
+-ssize_t __libc_pread(int fd, void *buf, size_t count, off_t offset)
+-{
+-	return __syscall_pread(fd, buf, count, __LONG_LONG_PAIR(offset >> 31, offset));
+-}
+-weak_alias(__libc_pread,pread)
+-
+-# ifdef __UCLIBC_HAS_LFS__
+-ssize_t __libc_pread64(int fd, void *buf, size_t count, off64_t offset)
+-{
+-	uint32_t low = offset & 0xffffffff;
+-	uint32_t high = offset >> 32;
+-	return __syscall_pread(fd, buf, count, __LONG_LONG_PAIR(high, low));
+-}
+-weak_alias(__libc_pread64,pread64)
+-# endif /* __UCLIBC_HAS_LFS__  */
+-
+-#endif /* __NR_pread */
+-
+-#ifdef __NR_pwrite
+-
+-# define __NR___syscall_pwrite __NR_pwrite
+-static __inline__ _syscall5(ssize_t, __syscall_pwrite, int, fd, const void *, buf,
+-		size_t, count, off_t, offset_hi, off_t, offset_lo)
+-
+-ssize_t __libc_pwrite(int fd, const void *buf, size_t count, off_t offset)
+-{
+-	return __syscall_pwrite(fd, buf, count, __LONG_LONG_PAIR(offset >> 31, offset));
+-}
+-weak_alias(__libc_pwrite,pwrite)
+-
+-# ifdef __UCLIBC_HAS_LFS__
+-ssize_t __libc_pwrite64(int fd, const void *buf, size_t count, off64_t offset)
+-{
+-	uint32_t low = offset & 0xffffffff;
+-	uint32_t high = offset >> 32;
+-	return __syscall_pwrite(fd, buf, count, __LONG_LONG_PAIR(high, low));
+-}
+-weak_alias(__libc_pwrite64,pwrite64)
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /* __NR_pwrite */
+-
+-#if ! defined __NR_pread || ! defined __NR_pwrite
+-
+-static ssize_t __fake_pread_write(int fd, void *buf,
+-		size_t count, off_t offset, int do_pwrite)
+-{
+-	int save_errno;
+-	ssize_t result;
+-	off_t old_offset;
+-
+-	/* Since we must not change the file pointer preserve the
+-	 * value so that we can restore it later.  */
+-	if ((old_offset=lseek(fd, 0, SEEK_CUR)) == (off_t) -1)
+-		return -1;
+-
+-	/* Set to wanted position.  */
+-	if (lseek(fd, offset, SEEK_SET) == (off_t) -1)
+-		return -1;
+-
+-	if (do_pwrite == 1) {
+-		/* Write the data.  */
+-		result = write(fd, buf, count);
+-	} else {
+-		/* Read the data.  */
+-		result = read(fd, buf, count);
+-	}
+-
+-	/* Now we have to restore the position.  If this fails we
+-	 * have to return this as an error.  */
+-	save_errno = errno;
+-	if (lseek(fd, old_offset, SEEK_SET) == (off_t) -1)
+-	{
+-		if (result == -1)
+-			__set_errno(save_errno);
+-		return -1;
+-	}
+-	__set_errno(save_errno);
+-	return(result);
+-}
+-
+-# ifdef __UCLIBC_HAS_LFS__
+-
+-static ssize_t __fake_pread_write64(int fd, void *buf,
+-		size_t count, off64_t offset, int do_pwrite)
+-{
+-	int save_errno;
+-	ssize_t result;
+-	off64_t old_offset;
+-
+-	/* Since we must not change the file pointer preserve the
+-	 * value so that we can restore it later.  */
+-	if ((old_offset=lseek64(fd, 0, SEEK_CUR)) == (off64_t) -1)
+-		return -1;
+-
+-	/* Set to wanted position.  */
+-	if (lseek64(fd, offset, SEEK_SET) == (off64_t) -1)
+-		return -1;
++#ifndef MY_PREAD
++# ifdef __NR_pread
++#  define __NR___syscall_pread __NR_pread
++static _syscall5(ssize_t, __syscall_pread, int, fd, void *, buf,
++		 size_t, count, off_t, offset_hi, off_t, offset_lo)
++#  define MY_PREAD(fd, buf, count, offset) __syscall_pread(fd, buf, count, OFF_HI_LO(offset))
++#  define MY_PREAD64(fd, buf, count, offset) __syscall_pread(fd, buf, count, OFF64_HI_LO(offset))
++# endif
++#endif
+ 
+-	if (do_pwrite == 1) {
+-		/* Write the data.  */
+-		result = write(fd, buf, count);
+-	} else {
+-		/* Read the data.  */
+-		result = read(fd, buf, count);
+-	}
++#ifdef __NR_pwrite64
++# define __NR_pwrite __NR_pwrite64
++#endif
+ 
+-	/* Now we have to restore the position. */
+-	save_errno = errno;
+-	if (lseek64(fd, old_offset, SEEK_SET) == (off64_t) -1) {
+-		if (result == -1)
+-			__set_errno (save_errno);
+-		return -1;
+-	}
+-	__set_errno (save_errno);
+-	return result;
+-}
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /*  ! defined __NR_pread || ! defined __NR_pwrite */
++#ifndef MY_PWRITE
++# ifdef __NR_pwrite
++#  define __NR___syscall_pwrite __NR_pwrite
++static _syscall5(ssize_t, __syscall_pwrite, int, fd, const void *, buf,
++		 size_t, count, off_t, offset_hi, off_t, offset_lo)
++#  define MY_PWRITE(fd, buf, count, offset) __syscall_pwrite(fd, buf, count, OFF_HI_LO(offset))
++#  define MY_PWRITE64(fd, buf, count, offset) __syscall_pwrite(fd, buf, count, OFF64_HI_LO(offset))
++# endif
++#endif
+ 
+-#ifndef __NR_pread
+-ssize_t __libc_pread(int fd, void *buf, size_t count, off_t offset)
++static ssize_t __NC(pread)(int fd, void *buf, size_t count, off_t offset)
+ {
+-	return __fake_pread_write(fd, buf, count, offset, 0);
++	return MY_PREAD(fd, buf, count, offset);
+ }
+-weak_alias(__libc_pread,pread)
++CANCELLABLE_SYSCALL(ssize_t, pread, (int fd, void *buf, size_t count, off_t offset),
++		    (fd, buf, count, offset))
+ 
+-# ifdef __UCLIBC_HAS_LFS__
+-ssize_t __libc_pread64(int fd, void *buf, size_t count, off64_t offset)
++static ssize_t __NC(pwrite)(int fd, const void *buf, size_t count, off_t offset)
+ {
+-	return __fake_pread_write64(fd, buf, count, offset, 0);
++	return MY_PWRITE(fd, buf, count, offset);
+ }
+-weak_alias(__libc_pread64,pread64)
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /* ! __NR_pread */
++CANCELLABLE_SYSCALL(ssize_t, pwrite, (int fd, const void *buf, size_t count, off_t offset),
++		    (fd, buf, count, offset))
+ 
+-#ifndef __NR_pwrite
+-ssize_t __libc_pwrite(int fd, const void *buf, size_t count, off_t offset)
++#ifdef __UCLIBC_HAS_LFS__
++# if __WORDSIZE == 32
++static ssize_t __NC(pread64)(int fd, void *buf, size_t count, off64_t offset)
+ {
+-	/* we won't actually be modifying the buffer,
+-	 *just cast it to get rid of warnings */
+-	return __fake_pread_write(fd, (void*)buf, count, offset, 1);
++	return MY_PREAD64(fd, buf, count, offset);
+ }
+-weak_alias(__libc_pwrite,pwrite)
++CANCELLABLE_SYSCALL(ssize_t, pread64, (int fd, void *buf, size_t count, off64_t offset),
++		    (fd, buf, count, offset))
+ 
+-# ifdef __UCLIBC_HAS_LFS__
+-ssize_t __libc_pwrite64(int fd, const void *buf, size_t count, off64_t offset)
++static ssize_t __NC(pwrite64)(int fd, const void *buf, size_t count, off64_t offset)
+ {
+-	return __fake_pread_write64(fd, (void*)buf, count, offset, 1);
++	return MY_PWRITE64(fd, buf, count, offset);
+ }
+-weak_alias(__libc_pwrite64,pwrite64)
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /* ! __NR_pwrite */
++CANCELLABLE_SYSCALL(ssize_t, pwrite64, (int fd, const void *buf, size_t count, off64_t offset),
++		    (fd, buf, count, offset))
++# else
++#  ifdef __LINUXTHREADS_OLD__
++weak_alias(pread,pread64)
++weak_alias(pwrite,pwrite64)
++#  else
++strong_alias_untyped(pread,pread64)
++strong_alias_untyped(pwrite,pwrite64)
++#  endif
++# endif
++#endif
+diff --git a/libc/sysdeps/linux/mips/pread_write.c b/libc/sysdeps/linux/mips/pread_write.c
+index ea6b15f..1174c99 100644
+--- a/libc/sysdeps/linux/mips/pread_write.c
++++ b/libc/sysdeps/linux/mips/pread_write.c
+@@ -4,112 +4,56 @@
+  *
+  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+  */
+-/*
+- * Based in part on the files
+- *		./sysdeps/unix/sysv/linux/pwrite.c,
+- *		./sysdeps/unix/sysv/linux/pread.c,
+- *		sysdeps/posix/pread.c
+- *		sysdeps/posix/pwrite.c
+- * from GNU libc 2.2.5, but reworked considerably...
+- */
+ 
+ #include <sys/syscall.h>
+ #include <unistd.h>
+-#include <stdint.h>
+ #include <endian.h>
+ #include <sgidefs.h>
+ 
+-#ifdef __NR_pread64             /* Newer kernels renamed but it's the same.  */
+-# ifdef __NR_pread
+-#  error "__NR_pread and __NR_pread64 both defined???"
+-# endif
++#ifdef __NR_pread64
+ # define __NR_pread __NR_pread64
+ #endif
+ 
+-extern __typeof(pread) __libc_pread;
+-extern __typeof(pwrite) __libc_pwrite;
+-#ifdef __UCLIBC_HAS_LFS__
+-extern __typeof(pread64) __libc_pread64;
+-extern __typeof(pwrite64) __libc_pwrite64;
+-#endif
+-
+-#include <bits/kernel_types.h>
+-
+-
+ #ifdef __NR_pread
+-
+-# if _MIPS_SIM == _MIPS_SIM_ABI64
+-#  define __NR___libc_pread __NR_pread
+-_syscall4(ssize_t, __libc_pread, int, fd, void *, buf, size_t, count, off_t, offset)
+-weak_alias (__libc_pread, pread)
+-#  ifdef __UCLIBC_HAS_LFS__
+-#   define __NR___libc_pread64 __NR_pread
+-_syscall4(ssize_t, __libc_pread64, int, fd, void *, buf, size_t, count, off64_t, offset)
+-weak_alias (__libc_pread64, pread64)
+-#  endif /* __UCLIBC_HAS_LFS__ */
++# if _MIPS_SIM == _MIPS_SIM_ABI64 /* glibc uses it for N32 as well */
++#  define __NR___syscall_pread __NR_pread
++static _syscall4(ssize_t, __syscall_pread, int, fd, void *, buf, size_t, count, off_t, offset)
++#  define MY_PREAD(fd, buf, count, offset) \
++	__syscall_pread(fd, buf, count, offset)
++#  define MY_PREAD64(fd, buf, count, offset) \
++	__syscall_pread(fd, buf, count, offset)
+ # else /* O32 || N32 */
+ #  define __NR___syscall_pread __NR_pread
+-static __inline__ _syscall6(ssize_t, __syscall_pread, int, fd, void *, buf,
+-		size_t, count, int, dummy, off_t, offset_hi, off_t, offset_lo)
+-
+-ssize_t __libc_pread(int fd, void *buf, size_t count, off_t offset)
+-{
+-	return(__syscall_pread(fd,buf,count,0,__LONG_LONG_PAIR(offset>>31,offset)));
+-}
+-weak_alias(__libc_pread,pread)
+-
+-#  ifdef __UCLIBC_HAS_LFS__
+-ssize_t __libc_pread64(int fd, void *buf, size_t count, off64_t offset)
+-{
+-	uint32_t low = offset & 0xffffffff;
+-	uint32_t high = offset >> 32;
+-	return(__syscall_pread(fd, buf, count, 0, __LONG_LONG_PAIR (high, low)));
+-}
+-weak_alias(__libc_pread64,pread64)
+-#  endif /* __UCLIBC_HAS_LFS__  */
+-# endif /* O32 || N32 */
+-
+-#endif /* __NR_pread */
+-
+-/**********************************************************************/
+-
+-#ifdef __NR_pwrite64            /* Newer kernels renamed but it's the same.  */
+-# ifdef __NR_pwrite
+-#  error "__NR_pwrite and __NR_pwrite64 both defined???"
++static _syscall6(ssize_t, __syscall_pread, int, fd, void *, buf,
++		 size_t, count, int, dummy, off_t, offset_hi, off_t, offset_lo)
++#  define MY_PREAD(fd, buf, count, offset) \
++	__syscall_pread(fd, buf, count, 0, OFF_HI_LO(offset))
++#  define MY_PREAD64(fd, buf, count, offset) \
++	__syscall_pread(fd, buf, count, 0, OFF64_HI_LO(offset))
+ # endif
++#endif
++
++#ifdef __NR_pwrite64
+ # define __NR_pwrite __NR_pwrite64
+ #endif
+ 
+ #ifdef __NR_pwrite
+-
+-# if _MIPS_SIM == _MIPS_SIM_ABI64
+-#  define __NR___libc_pwrite __NR_pwrite
+-_syscall4(ssize_t, __libc_pwrite, int, fd, const void *, buf, size_t, count, off_t, offset)
+-weak_alias (__libc_pwrite, pwrite)
+-#  ifdef __UCLIBC_HAS_LFS__
+-#   define __NR___libc_pwrite64 __NR_pwrite
+-_syscall4(ssize_t, __libc_pwrite64, int, fd, const void *, buf, size_t, count, off64_t, offset)
+-weak_alias (__libc_pwrite64, pwrite64)
+-#  endif /* __UCLIBC_HAS_LFS__  */
++# if _MIPS_SIM == _MIPS_SIM_ABI64 /* glibc uses it for N32 as well */
++#  define __NR___syscall_pwrite __NR_pwrite
++static _syscall4(ssize_t, __syscall_pwrite, int, fd, const void *, buf, size_t, count, off_t, offset)
++#  define MY_PWRITE(fd, buf, count, offset) \
++	__syscall_pwrite(fd, buf, count, offset)
++#  define MY_PWRITE64(fd, buf, count, offset) \
++	__syscall_pwrite(fd, buf, count, offset)
+ # else /* O32 || N32 */
+ #  define __NR___syscall_pwrite __NR_pwrite
+-static __inline__ _syscall6(ssize_t, __syscall_pwrite, int, fd, const void *, buf,
+-		size_t, count, int, dummy, off_t, offset_hi, off_t, offset_lo)
+-
+-ssize_t __libc_pwrite(int fd, const void *buf, size_t count, off_t offset)
+-{
+-	return(__syscall_pwrite(fd,buf,count,0,__LONG_LONG_PAIR(offset>>31,offset)));
+-}
+-weak_alias(__libc_pwrite,pwrite)
++static _syscall6(ssize_t, __syscall_pwrite, int, fd, const void *, buf,
++		 size_t, count, int, dummy, off_t, offset_hi, off_t, offset_lo)
++#  define MY_PWRITE(fd, buf, count, offset) \
++	__syscall_pwrite(fd, buf, count, 0, OFF_HI_LO(offset))
++#  define MY_PWRITE64(fd, buf, count, offset) \
++	__syscall_pwrite(fd, buf, count, 0, OFF64_HI_LO(offset))
++# endif
++#endif
+ 
+-#  ifdef __UCLIBC_HAS_LFS__
+-ssize_t __libc_pwrite64(int fd, const void *buf, size_t count, off64_t offset)
+-{
+-	uint32_t low = offset & 0xffffffff;
+-	uint32_t high = offset >> 32;
+-	return(__syscall_pwrite(fd, buf, count, 0, __LONG_LONG_PAIR (high, low)));
+-}
+-weak_alias(__libc_pwrite64,pwrite64)
+-#  endif /* __UCLIBC_HAS_LFS__  */
+-# endif /* O32 || N32 */
+-#endif /* __NR_pwrite */
++#include "../common/pread_write.c"
+diff --git a/libc/sysdeps/linux/powerpc/pread_write.c b/libc/sysdeps/linux/powerpc/pread_write.c
+index 7f988d3..dcc6967 100644
+--- a/libc/sysdeps/linux/powerpc/pread_write.c
++++ b/libc/sysdeps/linux/powerpc/pread_write.c
+@@ -1,183 +1,40 @@
+-/* vi: set sw=4 ts=4:
+- *
++/* vi: set sw=4 ts=4: */
++/*
+  * Copyright (C) 2000-2006 Erik Andersen <andersen@uclibc.org>
+  *
+  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+  */
+-/* Based in part on the files
+- *		./sysdeps/unix/sysv/linux/pwrite.c,
+- *		./sysdeps/unix/sysv/linux/pread.c,
+- *		sysdeps/posix/pread.c
+- *		sysdeps/posix/pwrite.c
+- * from GNU libc 2.2.5, but reworked considerably...
+- */
+ 
+ #include <sys/syscall.h>
+ #include <unistd.h>
+ #include <endian.h>
+ 
+-#ifndef __UCLIBC_HAS_LFS__
+-# define off64_t off_t
++#ifdef __NR_pread64
++# define __NR_pread __NR_pread64
+ #endif
+ 
+ #ifdef __NR_pread
+-extern __typeof(pread) __libc_pread;
+ # define __NR___syscall_pread __NR_pread
+-static __inline__ _syscall6(ssize_t, __syscall_pread, int, fd,
+-		void *, buf, size_t, count, int, dummy, off_t, offset_hi, off_t, offset_lo)
+-
+-ssize_t __libc_pread(int fd, void *buf, size_t count, off_t offset)
+-{
+-	return(__syscall_pread(fd, buf, count, 0, __LONG_LONG_PAIR(offset >> 31, offset)));
+-}
+-weak_alias(__libc_pread,pread)
+-
+-# ifdef __UCLIBC_HAS_LFS__
+-extern __typeof(pread64) __libc_pread64;
+-ssize_t __libc_pread64(int fd, void *buf, size_t count, off64_t offset)
+-{
+-	return(__syscall_pread(fd, buf, count, 0, __LONG_LONG_PAIR(offset >> 32, offset)));
+-}
+-weak_alias(__libc_pread64,pread64)
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /* __NR_pread */
++static _syscall6(ssize_t, __syscall_pread, int, fd, void *, buf,
++		 size_t, count, int, dummy, off_t, offset_hi, off_t, offset_lo)
++# define MY_PREAD(fd, buf, count, offset) \
++	__syscall_pread(fd, buf, count, 0, OFF_HI_LO(offset))
++# define MY_PREAD64(fd, buf, count, offset) \
++	__syscall_pread(fd, buf, count, 0, OFF64_HI_LO(offset))
++#endif
+ 
++#ifdef __NR_pwrite64
++# define __NR_pwrite __NR_pwrite64
++#endif
+ 
+ #ifdef __NR_pwrite
+-extern __typeof(pwrite) __libc_pwrite;
+ # define __NR___syscall_pwrite __NR_pwrite
+-static __inline__ _syscall6(ssize_t, __syscall_pwrite, int, fd,
+-		const void *, buf, size_t, count, int, dummy, off_t, offset_hi, off_t, offset_lo)
++static _syscall6(ssize_t, __syscall_pwrite, int, fd, const void *, buf,
++		 size_t, count, int, dummy, off_t, offset_hi, off_t, offset_lo)
++# define MY_PWRITE(fd, buf, count, offset) \
++	__syscall_pwrite(fd, buf, count, 0, OFF_HI_LO(offset))
++# define MY_PWRITE64(fd, buf, count, offset) \
++	__syscall_pwrite(fd, buf, count, 0, OFF64_HI_LO(offset))
++#endif
+ 
+-ssize_t __libc_pwrite(int fd, const void *buf, size_t count, off_t offset)
+-{
+-	return(__syscall_pwrite(fd, buf, count, 0, __LONG_LONG_PAIR(offset >> 31, offset)));
+-}
+-weak_alias(__libc_pwrite,pwrite)
+-
+-# ifdef __UCLIBC_HAS_LFS__
+-extern __typeof(pwrite64) __libc_pwrite64;
+-ssize_t __libc_pwrite64(int fd, const void *buf, size_t count, off64_t offset)
+-{
+-	return(__syscall_pwrite(fd, buf, count, 0, __LONG_LONG_PAIR(offset >> 32, offset)));
+-}
+-weak_alias(__libc_pwrite64,pwrite64)
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /* __NR_pwrite */
+-
+-
+-
+-#if ! defined __NR_pread || ! defined __NR_pwrite
+-
+-static ssize_t __fake_pread_write(int fd, void *buf,
+-		size_t count, off_t offset, int do_pwrite)
+-{
+-	int save_errno;
+-	ssize_t result;
+-	off_t old_offset;
+-
+-	/* Since we must not change the file pointer preserve the
+-	 * value so that we can restore it later.  */
+-	if ((old_offset=lseek(fd, 0, SEEK_CUR)) == (off_t) -1)
+-		return -1;
+-
+-	/* Set to wanted position.  */
+-	if (lseek (fd, offset, SEEK_SET) == (off_t) -1)
+-		return -1;
+-
+-	if (do_pwrite == 1) {
+-		/* Write the data.  */
+-		result = write(fd, buf, count);
+-	} else {
+-		/* Read the data.  */
+-		result = read(fd, buf, count);
+-	}
+-
+-	/* Now we have to restore the position.  If this fails we
+-	 * have to return this as an error.  */
+-	save_errno = errno;
+-	if (lseek(fd, old_offset, SEEK_SET) == (off_t) -1)
+-	{
+-		if (result == -1)
+-			__set_errno(save_errno);
+-		return -1;
+-	}
+-	__set_errno(save_errno);
+-	return(result);
+-}
+-
+-# ifdef __UCLIBC_HAS_LFS__
+-
+-static ssize_t __fake_pread_write64(int fd, void *buf,
+-		size_t count, off64_t offset, int do_pwrite)
+-{
+-	int save_errno;
+-	ssize_t result;
+-	off64_t old_offset;
+-
+-	/* Since we must not change the file pointer preserve the
+-	 * value so that we can restore it later.  */
+-	if ((old_offset=lseek64(fd, 0, SEEK_CUR)) == (off64_t) -1)
+-		return -1;
+-
+-	/* Set to wanted position.  */
+-	if (lseek64(fd, offset, SEEK_SET) == (off64_t) -1)
+-		return -1;
+-
+-	if (do_pwrite == 1) {
+-		/* Write the data.  */
+-		result = write(fd, buf, count);
+-	} else {
+-		/* Read the data.  */
+-		result = read(fd, buf, count);
+-	}
+-
+-	/* Now we have to restore the position. */
+-	save_errno = errno;
+-	if (lseek64 (fd, old_offset, SEEK_SET) == (off64_t) -1) {
+-		if (result == -1)
+-			__set_errno (save_errno);
+-		return -1;
+-	}
+-	__set_errno (save_errno);
+-	return result;
+-}
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /*  ! defined __NR_pread || ! defined __NR_pwrite */
+-
+-#ifndef __NR_pread
+-ssize_t __libc_pread(int fd, void *buf, size_t count, off_t offset);
+-ssize_t __libc_pread(int fd, void *buf, size_t count, off_t offset)
+-{
+-	return(__fake_pread_write(fd, buf, count, offset, 0));
+-}
+-weak_alias(__libc_pread,pread)
+-
+-# ifdef __UCLIBC_HAS_LFS__
+-ssize_t __libc_pread64(int fd, void *buf, size_t count, off64_t offset);
+-ssize_t __libc_pread64(int fd, void *buf, size_t count, off64_t offset)
+-{
+-	return(__fake_pread_write64(fd, buf, count, offset, 0));
+-}
+-weak_alias(__libc_pread64,pread64)
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /* ! __NR_pread */
+-
+-
+-#ifndef __NR_pwrite
+-ssize_t __libc_pwrite(int fd, const void *buf, size_t count, off_t offset);
+-ssize_t __libc_pwrite(int fd, const void *buf, size_t count, off_t offset)
+-{
+-	return(__fake_pread_write(fd, (void*)buf, count, offset, 1));
+-}
+-weak_alias(__libc_pwrite,pwrite)
+-
+-# ifdef __UCLIBC_HAS_LFS__
+-ssize_t __libc_pwrite64(int fd, const void *buf, size_t count, off64_t offset);
+-ssize_t __libc_pwrite64(int fd, const void *buf, size_t count, off64_t offset)
+-{
+-	return(__fake_pread_write64(fd, (void*)buf, count, offset, 1));
+-}
+-weak_alias(__libc_pwrite64,pwrite64)
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /* ! __NR_pwrite */
++#include "../common/pread_write.c"
+diff --git a/libc/sysdeps/linux/sh/pread_write.c b/libc/sysdeps/linux/sh/pread_write.c
+index 86feb9c..dcc6967 100644
+--- a/libc/sysdeps/linux/sh/pread_write.c
++++ b/libc/sysdeps/linux/sh/pread_write.c
+@@ -4,122 +4,37 @@
+  *
+  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+  */
+-/*
+- * Based in part on the files
+- *		./sysdeps/unix/sysv/linux/pwrite.c,
+- *		./sysdeps/unix/sysv/linux/pread.c,
+- *		sysdeps/posix/pread.c
+- *		sysdeps/posix/pwrite.c
+- * from GNU libc 2.2.5, but reworked considerably...
+- */
+ 
+ #include <sys/syscall.h>
+ #include <unistd.h>
+-#include <stdint.h>
+ #include <endian.h>
+ 
+-#ifdef __UCLIBC_HAS_THREADS_NATIVE__
+-#include <sysdep-cancel.h>
+-#else
+-#define SINGLE_THREAD_P 1
+-#endif
+-
+-
+-#ifdef __NR_pread64             /* Newer kernels renamed but it's the same.  */
+-# ifdef __NR_pread
+-#  error "__NR_pread and __NR_pread64 both defined???"
+-# endif
++#ifdef __NR_pread64
+ # define __NR_pread __NR_pread64
+ #endif
+ 
+ #ifdef __NR_pread
+-extern __typeof(pread) __libc_pread;
+ # define __NR___syscall_pread __NR_pread
+-static __inline__ _syscall6(ssize_t, __syscall_pread, int, fd, void *, buf,
+-		size_t, count, int, dummy, off_t, offset_hi, off_t, offset_lo)
+-
+-ssize_t __libc_pread(int fd, void *buf, size_t count, off_t offset)
+-{
+-	if (SINGLE_THREAD_P)
+-		return(__syscall_pread(fd,buf,count,0,__LONG_LONG_PAIR(offset >> 31,offset)));
+-
+-#ifdef __UCLIBC_HAS_THREADS_NATIVE__
+-	int oldtype = LIBC_CANCEL_ASYNC ();
+-	ssize_t result = __syscall_pread(fd,buf,count,0,__LONG_LONG_PAIR(offset >> 31,offset));
+-	LIBC_CANCEL_RESET (oldtype);
+-	return result;
+-#endif
+-}
+-weak_alias(__libc_pread,pread)
+-
+-# ifdef __UCLIBC_HAS_LFS__
+-extern __typeof(pread64) __libc_pread64;
+-ssize_t __libc_pread64(int fd, void *buf, size_t count, off64_t offset)
+-{
+-	uint32_t low = offset & 0xffffffff;
+-	uint32_t high = offset >> 32;
+-
+-	if (SINGLE_THREAD_P)
+-		return __syscall_pread(fd, buf, count, 0, __LONG_LONG_PAIR (high, low));
+-
+-#ifdef __UCLIBC_HAS_THREADS_NATIVE__
+-	int oldtype = LIBC_CANCEL_ASYNC ();
+-	ssize_t result = __syscall_pread(fd, buf, count, 0, __LONG_LONG_PAIR (high, low));
+-	LIBC_CANCEL_RESET (oldtype);
+-	return result;
++static _syscall6(ssize_t, __syscall_pread, int, fd, void *, buf,
++		 size_t, count, int, dummy, off_t, offset_hi, off_t, offset_lo)
++# define MY_PREAD(fd, buf, count, offset) \
++	__syscall_pread(fd, buf, count, 0, OFF_HI_LO(offset))
++# define MY_PREAD64(fd, buf, count, offset) \
++	__syscall_pread(fd, buf, count, 0, OFF64_HI_LO(offset))
+ #endif
+-}
+-weak_alias(__libc_pread64,pread64)
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /* __NR_pread */
+-
+-/**********************************************************************/
+ 
+-#ifdef __NR_pwrite64            /* Newer kernels renamed but it's the same.  */
+-# ifdef __NR_pwrite
+-#  error "__NR_pwrite and __NR_pwrite64 both defined???"
+-# endif
++#ifdef __NR_pwrite64
+ # define __NR_pwrite __NR_pwrite64
+ #endif
+ 
+ #ifdef __NR_pwrite
+-extern __typeof(pwrite) __libc_pwrite;
+ # define __NR___syscall_pwrite __NR_pwrite
+-static __inline__ _syscall6(ssize_t, __syscall_pwrite, int, fd, const void *, buf,
+-		size_t, count, int, dummy, off_t, offset_hi, off_t, offset_lo)
+-
+-ssize_t __libc_pwrite(int fd, const void *buf, size_t count, off_t offset)
+-{
+-	if (SINGLE_THREAD_P)
+-		return __syscall_pwrite(fd,buf,count,0,__LONG_LONG_PAIR(offset >> 31,offset));
+-
+-#ifdef __UCLIBC_HAS_THREADS_NATIVE__
+-	int oldtype = LIBC_CANCEL_ASYNC ();
+-	ssize_t result = __syscall_pwrite(fd,buf,count,0,__LONG_LONG_PAIR(offset >> 31,offset));
+-	LIBC_CANCEL_RESET (oldtype);
+-	return result;
++static _syscall6(ssize_t, __syscall_pwrite, int, fd, const void *, buf,
++		 size_t, count, int, dummy, off_t, offset_hi, off_t, offset_lo)
++# define MY_PWRITE(fd, buf, count, offset) \
++	__syscall_pwrite(fd, buf, count, 0, OFF_HI_LO(offset))
++# define MY_PWRITE64(fd, buf, count, offset) \
++	__syscall_pwrite(fd, buf, count, 0, OFF64_HI_LO(offset))
+ #endif
+ 
+-}
+-weak_alias(__libc_pwrite,pwrite)
+-
+-# ifdef __UCLIBC_HAS_LFS__
+-extern __typeof(pwrite64) __libc_pwrite64;
+-ssize_t __libc_pwrite64(int fd, const void *buf, size_t count, off64_t offset)
+-{
+-	uint32_t low = offset & 0xffffffff;
+-	uint32_t high = offset >> 32;
+-
+-	if (SINGLE_THREAD_P)
+-		return __syscall_pwrite(fd, buf, count, 0, __LONG_LONG_PAIR (high, low));
+-
+-#ifdef __UCLIBC_HAS_THREADS_NATIVE__
+-	int oldtype = LIBC_CANCEL_ASYNC ();
+-	ssize_t result = __syscall_pwrite(fd, buf, count, 0, __LONG_LONG_PAIR (high, low));
+-	LIBC_CANCEL_RESET (oldtype);
+-	return result;
+-#endif
+-}
+-weak_alias(__libc_pwrite64,pwrite64)
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /* __NR_pwrite */
++#include "../common/pread_write.c"
+diff --git a/libc/sysdeps/linux/xtensa/pread_write.c b/libc/sysdeps/linux/xtensa/pread_write.c
+index 71ba22b..dcc6967 100644
+--- a/libc/sysdeps/linux/xtensa/pread_write.c
++++ b/libc/sysdeps/linux/xtensa/pread_write.c
+@@ -4,186 +4,37 @@
+  *
+  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+  */
+-/*
+- * Based in part on the files
+- *		./sysdeps/unix/sysv/linux/pwrite.c,
+- *		./sysdeps/unix/sysv/linux/pread.c,
+- *		sysdeps/posix/pread.c
+- *		sysdeps/posix/pwrite.c
+- * from GNU libc 2.2.5, but reworked considerably...
+- */
+ 
+ #include <sys/syscall.h>
+ #include <unistd.h>
+-#include <stdint.h>
+ #include <endian.h>
+ 
+-extern __typeof(pread) __libc_pread;
+-extern __typeof(pwrite) __libc_pwrite;
+-#ifdef __UCLIBC_HAS_LFS__
+-extern __typeof(pread64) __libc_pread64;
+-extern __typeof(pwrite64) __libc_pwrite64;
++#ifdef __NR_pread64
++# define __NR_pread __NR_pread64
+ #endif
+ 
+-#include <bits/kernel_types.h>
+-
+ #ifdef __NR_pread
+-
+ # define __NR___syscall_pread __NR_pread
+-/* On Xtensa, 64-bit values are aligned in even/odd register pairs.  */
+-static __inline__ _syscall6(ssize_t, __syscall_pread, int, fd, void *, buf,
+-		size_t, count, int, pad, off_t, offset_hi, off_t, offset_lo)
+-
+-ssize_t __libc_pread(int fd, void *buf, size_t count, off_t offset)
+-{
+-	return __syscall_pread(fd, buf, count, 0, __LONG_LONG_PAIR(offset >> 31, offset));
+-}
+-weak_alias(__libc_pread,pread)
+-
+-# ifdef __UCLIBC_HAS_LFS__
+-ssize_t __libc_pread64(int fd, void *buf, size_t count, off64_t offset)
+-{
+-	uint32_t low = offset & 0xffffffff;
+-	uint32_t high = offset >> 32;
+-	return __syscall_pread(fd, buf, count, 0, __LONG_LONG_PAIR(high, low));
+-}
+-weak_alias(__libc_pread64,pread64)
+-# endif /* __UCLIBC_HAS_LFS__  */
++static _syscall6(ssize_t, __syscall_pread, int, fd, void *, buf,
++		 size_t, count, int, dummy, off_t, offset_hi, off_t, offset_lo)
++# define MY_PREAD(fd, buf, count, offset) \
++	__syscall_pread(fd, buf, count, 0, OFF_HI_LO(offset))
++# define MY_PREAD64(fd, buf, count, offset) \
++	__syscall_pread(fd, buf, count, 0, OFF64_HI_LO(offset))
++#endif
+ 
+-#endif /* __NR_pread */
++#ifdef __NR_pwrite64
++# define __NR_pwrite __NR_pwrite64
++#endif
+ 
+ #ifdef __NR_pwrite
+-
+ # define __NR___syscall_pwrite __NR_pwrite
+-/* On Xtensa, 64-bit values are aligned in even/odd register pairs.  */
+-static __inline__ _syscall6(ssize_t, __syscall_pwrite, int, fd, const void *, buf,
+-		size_t, count, int, pad, off_t, offset_hi, off_t, offset_lo)
+-
+-ssize_t __libc_pwrite(int fd, const void *buf, size_t count, off_t offset)
+-{
+-	return __syscall_pwrite(fd, buf, count, 0, __LONG_LONG_PAIR(offset >> 31, offset));
+-}
+-weak_alias(__libc_pwrite,pwrite)
+-
+-# ifdef __UCLIBC_HAS_LFS__
+-ssize_t __libc_pwrite64(int fd, const void *buf, size_t count, off64_t offset)
+-{
+-	uint32_t low = offset & 0xffffffff;
+-	uint32_t high = offset >> 32;
+-	return __syscall_pwrite(fd, buf, count, 0, __LONG_LONG_PAIR(high, low));
+-}
+-weak_alias(__libc_pwrite64,pwrite64)
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /* __NR_pwrite */
+-
+-#if ! defined __NR_pread || ! defined __NR_pwrite
+-
+-static ssize_t __fake_pread_write(int fd, void *buf,
+-		size_t count, off_t offset, int do_pwrite)
+-{
+-	int save_errno;
+-	ssize_t result;
+-	off_t old_offset;
+-
+-	/* Since we must not change the file pointer preserve the
+-	 * value so that we can restore it later.  */
+-	if ((old_offset=lseek(fd, 0, SEEK_CUR)) == (off_t) -1)
+-		return -1;
+-
+-	/* Set to wanted position.  */
+-	if (lseek(fd, offset, SEEK_SET) == (off_t) -1)
+-		return -1;
+-
+-	if (do_pwrite == 1) {
+-		/* Write the data.  */
+-		result = write(fd, buf, count);
+-	} else {
+-		/* Read the data.  */
+-		result = read(fd, buf, count);
+-	}
+-
+-	/* Now we have to restore the position.  If this fails we
+-	 * have to return this as an error.  */
+-	save_errno = errno;
+-	if (lseek(fd, old_offset, SEEK_SET) == (off_t) -1)
+-	{
+-		if (result == -1)
+-			__set_errno(save_errno);
+-		return -1;
+-	}
+-	__set_errno(save_errno);
+-	return(result);
+-}
+-
+-# ifdef __UCLIBC_HAS_LFS__
+-
+-static ssize_t __fake_pread_write64(int fd, void *buf,
+-		size_t count, off64_t offset, int do_pwrite)
+-{
+-	int save_errno;
+-	ssize_t result;
+-	off64_t old_offset;
+-
+-	/* Since we must not change the file pointer preserve the
+-	 * value so that we can restore it later.  */
+-	if ((old_offset=lseek64(fd, 0, SEEK_CUR)) == (off64_t) -1)
+-		return -1;
+-
+-	/* Set to wanted position.  */
+-	if (lseek64(fd, offset, SEEK_SET) == (off64_t) -1)
+-		return -1;
+-
+-	if (do_pwrite == 1) {
+-		/* Write the data.  */
+-		result = write(fd, buf, count);
+-	} else {
+-		/* Read the data.  */
+-		result = read(fd, buf, count);
+-	}
+-
+-	/* Now we have to restore the position. */
+-	save_errno = errno;
+-	if (lseek64(fd, old_offset, SEEK_SET) == (off64_t) -1) {
+-		if (result == -1)
+-			__set_errno (save_errno);
+-		return -1;
+-	}
+-	__set_errno (save_errno);
+-	return result;
+-}
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /*  ! defined __NR_pread || ! defined __NR_pwrite */
+-
+-#ifndef __NR_pread
+-ssize_t __libc_pread(int fd, void *buf, size_t count, off_t offset)
+-{
+-	return __fake_pread_write(fd, buf, count, offset, 0);
+-}
+-weak_alias(__libc_pread,pread)
+-
+-# ifdef __UCLIBC_HAS_LFS__
+-ssize_t __libc_pread64(int fd, void *buf, size_t count, off64_t offset)
+-{
+-	return __fake_pread_write64(fd, buf, count, offset, 0);
+-}
+-weak_alias(__libc_pread64,pread64)
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /* ! __NR_pread */
+-
+-#ifndef __NR_pwrite
+-ssize_t __libc_pwrite(int fd, const void *buf, size_t count, off_t offset)
+-{
+-	/* we won't actually be modifying the buffer,
+-	 *just cast it to get rid of warnings */
+-	return __fake_pread_write(fd, (void*)buf, count, offset, 1);
+-}
+-weak_alias(__libc_pwrite,pwrite)
++static _syscall6(ssize_t, __syscall_pwrite, int, fd, const void *, buf,
++		 size_t, count, int, dummy, off_t, offset_hi, off_t, offset_lo)
++# define MY_PWRITE(fd, buf, count, offset) \
++	__syscall_pwrite(fd, buf, count, 0, OFF_HI_LO(offset))
++# define MY_PWRITE64(fd, buf, count, offset) \
++	__syscall_pwrite(fd, buf, count, 0, OFF64_HI_LO(offset))
++#endif
+ 
+-# ifdef __UCLIBC_HAS_LFS__
+-ssize_t __libc_pwrite64(int fd, const void *buf, size_t count, off64_t offset)
+-{
+-	return __fake_pread_write64(fd, (void*)buf, count, offset, 1);
+-}
+-weak_alias(__libc_pwrite64,pwrite64)
+-# endif /* __UCLIBC_HAS_LFS__  */
+-#endif /* ! __NR_pwrite */
++#include "../common/pread_write.c"
+-- 
+1.7.4.1

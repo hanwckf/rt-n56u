@@ -227,7 +227,8 @@ HEADERS_RM- := \
 	tls.h \
 	rpc/des_crypt.h \
 	rpc/key_prot.h \
-	rpc/rpc_des.h
+	rpc/rpc_des.h \
+	cancel.h
 ifeq ($(UCLIBC_STRICT_HEADERS),y)
 HEADERS_RM- += sgtty.h
 endif

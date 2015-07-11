@@ -31,7 +31,7 @@
 # undef PSEUDO
 # define PSEUDO(name, syscall_name, args)				      \
   .align 2;								      \
-  99:									      \
+  99: move a0, v0; 							      \
   PTR_LA t9,__syscall_error;					 	      \
   /* manual cpreturn.  */						      \
   REG_L gp, STKOFF_GP(sp);						      \

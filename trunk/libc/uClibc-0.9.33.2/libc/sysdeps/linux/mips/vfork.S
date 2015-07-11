@@ -84,6 +84,7 @@ NESTED(__vfork,FRAMESZ,sp)
 
 	/* Something bad happened -- no child created.  */
 L(error):
+	move	a0, v0
 #ifdef __PIC__
 	PTR_LA		t9, __syscall_error
 	RESTORE_GP64

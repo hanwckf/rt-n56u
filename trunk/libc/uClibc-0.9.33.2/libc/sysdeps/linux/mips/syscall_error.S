@@ -43,7 +43,7 @@ ENTRY(__syscall_error)
 #ifdef __PIC__
 	SAVE_GP(GPOFF)
 #endif
-	REG_S	v0, V0OFF(sp)
+	REG_S	a0, V0OFF(sp)
 	REG_S	ra, RAOFF(sp)
 
 	/* Find our per-thread errno address  */

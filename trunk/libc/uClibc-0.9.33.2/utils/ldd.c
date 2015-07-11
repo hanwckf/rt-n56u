@@ -127,7 +127,6 @@
 #define ELFDATAM	ELFDATA2MSB
 #endif
 
-#define ARRAY_SIZE(v)	(sizeof(v) / sizeof(*v))
 #define TRUSTED_LDSO	UCLIBC_RUNTIME_PREFIX "lib/" UCLIBC_LDSO
 
 struct library {

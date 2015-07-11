@@ -21,8 +21,8 @@
 #include "pthreadP.h"
 
 
-void *
 attribute_protected
+void *
 __pthread_getspecific (pthread_key_t key)
 {
   struct pthread_key_data *data;

@@ -69,7 +69,7 @@ timer_sigev_thread (void *arg)
 
 
 /* Helper function to support starting threads for SIGEV_THREAD.  */
-static void *
+static attribute_noreturn void *
 timer_helper_thread (void *arg)
 {
   /* Wait for the SIGTIMER signal, allowing the setXid signal, and

@@ -581,6 +581,7 @@ class __pthread_cleanup_class
    function the compiler is free to decide inlining the change when
    needed or fall back on the copy which must exist somewhere
    else.  */
+void __pthread_cleanup_routine (struct __pthread_cleanup_frame *__frame);
 __extern_inline void
 __pthread_cleanup_routine (struct __pthread_cleanup_frame *__frame)
 {

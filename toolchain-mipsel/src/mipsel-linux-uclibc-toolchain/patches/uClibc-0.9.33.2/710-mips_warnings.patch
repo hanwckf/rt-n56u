@@ -1,0 +1,172 @@
+From d31846a1b993cfe4b7d983db0e5c140dac3b0220 Mon Sep 17 00:00:00 2001
+From: Steve Ellcey <sellcey@mips.com>
+Date: Wed, 29 Jan 2014 17:54:34 +0000
+Subject: mips: silence 'set but not used' warnings
+
+From ffffd5e2c29ec418aa0c9ba7bed4c0d2d46a3296 Mon Sep 17 00:00:00 2001
+From: Steve Ellcey <sellcey@mips.com>
+Date: Tue, 04 Feb 2014 22:20:40 +0000
+Subject: Fix warnings in MIPS build
+
+---
+diff --git a/libc/sysdeps/linux/mips/bits/atomic.h b/libc/sysdeps/linux/mips/bits/atomic.h
+index 60ee0a6..e4f9e3b 100644
+--- a/libc/sysdeps/linux/mips/bits/atomic.h
++++ b/libc/sysdeps/linux/mips/bits/atomic.h
+@@ -84,10 +84,10 @@ typedef uintmax_t uatomic_max_t;
+    in which values are returned.  */
+ 
+ #define __arch_compare_and_exchange_xxx_8_int(mem, newval, oldval, rel, acq) \
+-  (abort (), __prev = __cmp = 0)
++  (abort (), __prev = 0, __cmp = 0)
+ 
+ #define __arch_compare_and_exchange_xxx_16_int(mem, newval, oldval, rel, acq) \
+-  (abort (), __prev = __cmp = 0)
++  (abort (), __prev = 0, __cmp = 0)
+ 
+ #define __arch_compare_and_exchange_xxx_32_int(mem, newval, oldval, rel, acq) \
+      __asm__ __volatile__ (						      \
+@@ -111,7 +111,7 @@ typedef uintmax_t uatomic_max_t;
+ #if _MIPS_SIM == _ABIO32
+ /* We can't do an atomic 64-bit operation in O32.  */
+ #define __arch_compare_and_exchange_xxx_64_int(mem, newval, oldval, rel, acq) \
+-  (abort (), __prev = __cmp = 0)
++  (abort (), __prev = 0, __cmp = 0)
+ #else
+ #define __arch_compare_and_exchange_xxx_64_int(mem, newval, oldval, rel, acq) \
+      __asm__ __volatile__ ("\n"						      \
+@@ -136,22 +136,22 @@ typedef uintmax_t uatomic_max_t;
+ /* For all "bool" routines, we return FALSE if exchange succesful.  */
+ 
+ #define __arch_compare_and_exchange_bool_8_int(mem, new, old, rel, acq)	\
+-({ __typeof (*mem) __prev; int __cmp;					\
++({ __typeof (*mem) __prev attribute_unused; int __cmp;		\
+    __arch_compare_and_exchange_xxx_8_int(mem, new, old, rel, acq);	\
+    !__cmp; })
+ 
+ #define __arch_compare_and_exchange_bool_16_int(mem, new, old, rel, acq) \
+-({ __typeof (*mem) __prev; int __cmp;					\
++({ __typeof (*mem) __prev attribute_unused; int __cmp;		\
+    __arch_compare_and_exchange_xxx_16_int(mem, new, old, rel, acq);	\
+    !__cmp; })
+ 
+ #define __arch_compare_and_exchange_bool_32_int(mem, new, old, rel, acq) \
+-({ __typeof (*mem) __prev; int __cmp;					\
++({ __typeof (*mem) __prev attribute_unused; int __cmp;		\
+    __arch_compare_and_exchange_xxx_32_int(mem, new, old, rel, acq);	\
+    !__cmp; })
+ 
+ #define __arch_compare_and_exchange_bool_64_int(mem, new, old, rel, acq) \
+-({ __typeof (*mem) __prev; int __cmp;					\
++({ __typeof (*mem) __prev attribute_unused; int __cmp;		\
+    __arch_compare_and_exchange_xxx_64_int(mem, new, old, rel, acq);	\
+    !__cmp; })
+ 
+@@ -159,22 +159,22 @@ typedef uintmax_t uatomic_max_t;
+    successful or not.  */
+ 
+ #define __arch_compare_and_exchange_val_8_int(mem, new, old, rel, acq)	\
+-({ __typeof (*mem) __prev; int __cmp;					\
++({ __typeof (*mem) __prev attribute_unused; int __cmp attribute_unused;	\
+    __arch_compare_and_exchange_xxx_8_int(mem, new, old, rel, acq);	\
+    (__typeof (*mem))__prev; })
+ 
+ #define __arch_compare_and_exchange_val_16_int(mem, new, old, rel, acq) \
+-({ __typeof (*mem) __prev; int __cmp;					\
++({ __typeof (*mem) __prev attribute_unused; int __cmp attribute_unused;	\
+    __arch_compare_and_exchange_xxx_16_int(mem, new, old, rel, acq);	\
+    (__typeof (*mem))__prev; })
+ 
+ #define __arch_compare_and_exchange_val_32_int(mem, new, old, rel, acq) \
+-({ __typeof (*mem) __prev; int __cmp;					\
++({ __typeof (*mem) __prev attribute_unused; int __cmp attribute_unused;	\
+    __arch_compare_and_exchange_xxx_32_int(mem, new, old, rel, acq);	\
+    (__typeof (*mem))__prev; })
+ 
+ #define __arch_compare_and_exchange_val_64_int(mem, new, old, rel, acq) \
+-({ __typeof (*mem) __prev; int __cmp;					\
++({ __typeof (*mem) __prev attribute_unused; int __cmp attribute_unused;	\
+    __arch_compare_and_exchange_xxx_64_int(mem, new, old, rel, acq);	\
+    (__typeof (*mem))__prev; })
+ 
+diff --git a/libpthread/nptl/sysdeps/unix/sysv/linux/mips/lowlevellock.h b/libpthread/nptl/sysdeps/unix/sysv/linux/mips/lowlevellock.h
+index f3246ca..450a286 100644
+--- a/libpthread/nptl/sysdeps/unix/sysv/linux/mips/lowlevellock.h
++++ b/libpthread/nptl/sysdeps/unix/sysv/linux/mips/lowlevellock.h
+@@ -81,7 +81,7 @@
+ #define lll_futex_timed_wait(futexp, val, timespec, private) \
+   ({									      \
+     INTERNAL_SYSCALL_DECL (__err);					      \
+-    long int __ret;							      \
++    long int __ret attribute_unused;					      \
+     __ret = INTERNAL_SYSCALL (futex, __err, 4, (long) (futexp),		      \
+ 			      __lll_private_flag (FUTEX_WAIT, private),	      \
+ 			      (val), (timespec));			      \
+@@ -91,7 +91,7 @@
+ #define lll_futex_wake(futexp, nr, private) \
+   ({									      \
+     INTERNAL_SYSCALL_DECL (__err);					      \
+-    long int __ret;							      \
++    long int __ret attribute_unused;					      \
+     __ret = INTERNAL_SYSCALL (futex, __err, 4, (long) (futexp),		      \
+ 			      __lll_private_flag (FUTEX_WAKE, private),	      \
+ 			      (nr), 0);	      \
+@@ -111,7 +111,7 @@
+ #define lll_futex_requeue(futexp, nr_wake, nr_move, mutex, val, private) \
+   ({									      \
+     INTERNAL_SYSCALL_DECL (__err);					      \
+-    long int __ret;							      \
++    long int __ret attribute_unused;					      \
+     __ret = INTERNAL_SYSCALL (futex, __err, 6, (long) (futexp),		      \
+ 			      __lll_private_flag (FUTEX_CMP_REQUEUE, private),\
+ 			      (nr_wake), (nr_move), (mutex), (val));	      \
+@@ -122,7 +122,7 @@
+ #define lll_futex_wake_unlock(futexp, nr_wake, nr_wake2, futexp2, private) \
+   ({									      \
+     INTERNAL_SYSCALL_DECL (__err);					      \
+-    long int __ret;							      \
++    long int __ret attribute_unused;					      \
+ 									      \
+     __ret = INTERNAL_SYSCALL (futex, __err, 6, (futexp),		      \
+ 			      __lll_private_flag (FUTEX_WAKE_OP, private),    \
+diff --git a/libc/sysdeps/linux/mips/bits/syscalls.h b/libc/sysdeps/linux/mips/bits/syscalls.h
+index 944d038..787bb7d 100644
+--- a/libc/sysdeps/linux/mips/bits/syscalls.h
++++ b/libc/sysdeps/linux/mips/bits/syscalls.h
+@@ -29,7 +29,7 @@
+        }								\
+      result_var; })
+ 
+-#define INTERNAL_SYSCALL_DECL(err) long err
++#define INTERNAL_SYSCALL_DECL(err) long err attribute_unused
+ 
+ #define INTERNAL_SYSCALL_ERROR_P(val, err)   ((long) (err))
+ 
+diff --git a/libc/sysdeps/linux/mips/sysdep.h b/libc/sysdeps/linux/mips/sysdep.h
+index 46b6c53..b6d4f10 100644
+--- a/libc/sysdeps/linux/mips/sysdep.h
++++ b/libc/sysdeps/linux/mips/sysdep.h
+@@ -147,7 +147,7 @@ L(syse1):
+      result_var; })
+ 
+ #undef INTERNAL_SYSCALL_DECL
+-#define INTERNAL_SYSCALL_DECL(err) long err
++#define INTERNAL_SYSCALL_DECL(err) long err attribute_unused
+ 
+ #undef INTERNAL_SYSCALL_ERROR_P
+ #define INTERNAL_SYSCALL_ERROR_P(val, err)   ((long) (err))
+diff --git a/libpthread/nptl/sysdeps/mips/tls.h b/libpthread/nptl/sysdeps/mips/tls.h
+index c522f21..09baf12 100644
+--- a/libpthread/nptl/sysdeps/mips/tls.h
++++ b/libpthread/nptl/sysdeps/mips/tls.h
+@@ -121,7 +121,7 @@ typedef struct
+    operation can cause a failure 'errno' must not be touched.  */
+ # define TLS_INIT_TP(tcbp, secondcall) \
+   ({ INTERNAL_SYSCALL_DECL (err);					\
+-     long result_var;							\
++     long result_var attribute_unused;					\
+      result_var = INTERNAL_SYSCALL (set_thread_area, err, 1,		\
+ 				    (char *) (tcbp) + TLS_TCB_OFFSET);	\
+      INTERNAL_SYSCALL_ERROR_P (result_var, err)				\
+--
+cgit v0.9.1

@@ -99,6 +99,7 @@ unsigned int sleep (unsigned int seconds)
     /* This is not necessary but some buggy programs depend on this.  */
     if (seconds == 0) {
 #  ifdef CANCELLATION_P
+	int cancelhandling;
 	CANCELLATION_P (THREAD_SELF);
 #  endif
 	return 0;

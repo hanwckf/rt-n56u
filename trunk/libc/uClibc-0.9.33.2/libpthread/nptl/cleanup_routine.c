@@ -19,7 +19,7 @@
 
 #include <pthread.h>
 
-
+void __pthread_cleanup_routine (struct __pthread_cleanup_frame *f);
 void
 __pthread_cleanup_routine (struct __pthread_cleanup_frame *f)
 {

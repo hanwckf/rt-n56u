@@ -99,7 +99,7 @@ unwind_stop (int version, _Unwind_Action actions,
 }
 
 
-static void
+static attribute_noreturn void
 unwind_cleanup (_Unwind_Reason_Code reason, struct _Unwind_Exception *exc)
 {
   /* When we get here a C++ catch block didn't rethrow the object.  We
@@ -115,7 +115,7 @@ unwind_cleanup (_Unwind_Reason_Code reason, struct _Unwind_Exception *exc)
 
 
 void
-attribute_protected
+/*does not apply due to hidden_proto(): attribute_protected*/
 __cleanup_fct_attribute __attribute ((noreturn))
 #if !defined SHARED && !defined IS_IN_libpthread
 weak_function

@@ -22,7 +22,7 @@
 
 
 void
-attribute_protected
+attribute_protected attribute_noreturn
 __pthread_exit (void* value)
 {
   THREAD_SETMEM (THREAD_SELF, result, value);

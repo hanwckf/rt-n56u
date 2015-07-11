@@ -29,7 +29,7 @@
        }								\
      result_var; })
 
-#define INTERNAL_SYSCALL_DECL(err) long err
+#define INTERNAL_SYSCALL_DECL(err) long err attribute_unused
 
 #define INTERNAL_SYSCALL_ERROR_P(val, err)   ((long) (err))
 

@@ -1,0 +1,193 @@
+diff --git a/libpthread/nptl/cleanup_routine.c b/libpthread/nptl/cleanup_routine.c
+index cbf2318..54badf0 100644
+--- a/libpthread/nptl/cleanup_routine.c
++++ b/libpthread/nptl/cleanup_routine.c
+@@ -19,7 +19,7 @@
+ 
+ #include <pthread.h>
+ 
+-
++void __pthread_cleanup_routine (struct __pthread_cleanup_frame *f);
+ void
+ __pthread_cleanup_routine (struct __pthread_cleanup_frame *f)
+ {
+diff --git a/libpthread/nptl/pt-cleanup.c b/libpthread/nptl/pt-cleanup.c
+index d7394ae..aa0b9bb 100644
+--- a/libpthread/nptl/pt-cleanup.c
++++ b/libpthread/nptl/pt-cleanup.c
+@@ -23,7 +23,7 @@
+ #include <jmpbuf-unwind.h>
+ 
+ void
+-attribute_protected
++/*does not apply due to hidden_proto(): attribute_protected*/
+ __pthread_cleanup_upto (__jmp_buf target, char *targetframe)
+ {
+   struct pthread *self = THREAD_SELF;
+diff --git a/libpthread/nptl/pthread_exit.c b/libpthread/nptl/pthread_exit.c
+index 88d3859..98f67f2 100644
+--- a/libpthread/nptl/pthread_exit.c
++++ b/libpthread/nptl/pthread_exit.c
+@@ -22,7 +22,7 @@
+ 
+ 
+ void
+-attribute_protected
++attribute_protected attribute_noreturn
+ __pthread_exit (void* value)
+ {
+   THREAD_SETMEM (THREAD_SELF, result, value);
+diff --git a/libpthread/nptl/pthread_getspecific.c b/libpthread/nptl/pthread_getspecific.c
+index 639a4fd..a00fe0b 100644
+--- a/libpthread/nptl/pthread_getspecific.c
++++ b/libpthread/nptl/pthread_getspecific.c
+@@ -21,8 +21,8 @@
+ #include "pthreadP.h"
+ 
+ 
+-void *
+ attribute_protected
++void *
+ __pthread_getspecific (pthread_key_t key)
+ {
+   struct pthread_key_data *data;
+diff --git a/libpthread/nptl/sysdeps/pthread/pthread.h b/libpthread/nptl/sysdeps/pthread/pthread.h
+index 98c84ae..1ebf130 100644
+--- a/libpthread/nptl/sysdeps/pthread/pthread.h
++++ b/libpthread/nptl/sysdeps/pthread/pthread.h
+@@ -581,6 +581,7 @@ class __pthread_cleanup_class
+    function the compiler is free to decide inlining the change when
+    needed or fall back on the copy which must exist somewhere
+    else.  */
++void __pthread_cleanup_routine (struct __pthread_cleanup_frame *__frame);
+ __extern_inline void
+ __pthread_cleanup_routine (struct __pthread_cleanup_frame *__frame)
+ {
+diff --git a/libpthread/nptl/sysdeps/unix/sysv/linux/timer_routines.c b/libpthread/nptl/sysdeps/unix/sysv/linux/timer_routines.c
+index 4319d8d..1664af5 100644
+--- a/libpthread/nptl/sysdeps/unix/sysv/linux/timer_routines.c
++++ b/libpthread/nptl/sysdeps/unix/sysv/linux/timer_routines.c
+@@ -69,7 +69,7 @@ timer_sigev_thread (void *arg)
+ 
+ 
+ /* Helper function to support starting threads for SIGEV_THREAD.  */
+-static void *
++static attribute_noreturn void *
+ timer_helper_thread (void *arg)
+ {
+   /* Wait for the SIGTIMER signal, allowing the setXid signal, and
+diff --git a/libpthread/nptl/unwind.c b/libpthread/nptl/unwind.c
+index 671d702..3952885 100644
+--- a/libpthread/nptl/unwind.c
++++ b/libpthread/nptl/unwind.c
+@@ -99,7 +99,7 @@ unwind_stop (int version, _Unwind_Action actions,
+ }
+ 
+ 
+-static void
++static attribute_noreturn void
+ unwind_cleanup (_Unwind_Reason_Code reason, struct _Unwind_Exception *exc)
+ {
+   /* When we get here a C++ catch block didn't rethrow the object.  We
+@@ -115,7 +115,7 @@ unwind_cleanup (_Unwind_Reason_Code reason, struct _Unwind_Exception *exc)
+ 
+ 
+ void
+-attribute_protected
++/*does not apply due to hidden_proto(): attribute_protected*/
+ __cleanup_fct_attribute __attribute ((noreturn))
+ #if !defined SHARED && !defined IS_IN_libpthread
+ weak_function
+diff --git a/libpthread/nptl/sysdeps/pthread/pt-longjmp.c b/libpthread/nptl/sysdeps/pthread/pt-longjmp.c
+index f161380..fb0628d 100644
+--- a/libpthread/nptl/sysdeps/pthread/pt-longjmp.c
++++ b/libpthread/nptl/sysdeps/pthread/pt-longjmp.c
+@@ -21,6 +21,8 @@
+ #include <stdlib.h>
+ #include "pthreadP.h"
+ 
++extern __typeof(longjmp) __libc_longjmp attribute_noreturn;
++
+ void
+ longjmp (jmp_buf env, int val)
+ {
+diff --git a/libc/unistd/sleep.c b/libc/unistd/sleep.c
+index 9db115a..64753a8 100644
+--- a/libc/unistd/sleep.c
++++ b/libc/unistd/sleep.c
+@@ -99,6 +99,7 @@ unsigned int sleep (unsigned int seconds)
+     /* This is not necessary but some buggy programs depend on this.  */
+     if (seconds == 0) {
+ #  ifdef CANCELLATION_P
++	int cancelhandling;
+ 	CANCELLATION_P (THREAD_SELF);
+ #  endif
+ 	return 0;
+diff --git a/libpthread/nptl/pthreadP.h b/libpthread/nptl/pthreadP.h
+index 850562b..ae24afd 100644
+--- a/libpthread/nptl/pthreadP.h
++++ b/libpthread/nptl/pthreadP.h
+@@ -221,7 +221,7 @@ extern int __pthread_debug attribute_hidden;
+ /* Cancellation test.  */
+ #define CANCELLATION_P(self) \
+   do {									      \
+-    int cancelhandling = THREAD_GETMEM (self, cancelhandling);		      \
++    cancelhandling = THREAD_GETMEM (self, cancelhandling);		      \
+     if (CANCEL_ENABLED_AND_CANCELED (cancelhandling))			      \
+       {									      \
+ 	THREAD_SETMEM (self, result, PTHREAD_CANCELED);			      \
+diff --git a/libpthread/nptl/pthread_testcancel.c b/libpthread/nptl/pthread_testcancel.c
+index e9b17b4..fbd597a 100644
+--- a/libpthread/nptl/pthread_testcancel.c
++++ b/libpthread/nptl/pthread_testcancel.c
+@@ -24,5 +24,6 @@
+ void
+ pthread_testcancel (void)
+ {
++  int cancelhandling;
+   CANCELLATION_P (THREAD_SELF);
+ }
+diff --git a/libpthread/nptl/sysdeps/unix/sysv/linux/arm/lowlevellock.c b/libpthread/nptl/sysdeps/unix/sysv/linux/arm/lowlevellock.c
+index af864b3..cd42135 100644
+--- a/libpthread/nptl/sysdeps/unix/sysv/linux/arm/lowlevellock.c
++++ b/libpthread/nptl/sysdeps/unix/sysv/linux/arm/lowlevellock.c
+@@ -24,6 +24,9 @@
+ #include <tls.h>
+ 
+ void
++#ifndef IS_IN_libpthread
++weak_function
++#endif
+ __lll_lock_wait_private (int *futex)
+ {
+   do
+diff --git a/libpthread/nptl/sysdeps/unix/sysv/linux/lowlevellock.c b/libpthread/nptl/sysdeps/unix/sysv/linux/lowlevellock.c
+index 1aa7960..2a5bf6d 100644
+--- a/libpthread/nptl/sysdeps/unix/sysv/linux/lowlevellock.c
++++ b/libpthread/nptl/sysdeps/unix/sysv/linux/lowlevellock.c
+@@ -27,6 +27,9 @@
+ 
+ 
+ void
++#ifndef IS_IN_libpthread
++weak_function
++#endif
+ __lll_lock_wait_private (int *futex)
+ {
+   if (*futex == 2)
+diff --git a/libpthread/nptl/sysdeps/unix/sysv/linux/sparc/lowlevellock.c b/libpthread/nptl/sysdeps/unix/sysv/linux/sparc/lowlevellock.c
+index 3ff1b73..35c678e 100644
+--- a/libpthread/nptl/sysdeps/unix/sysv/linux/sparc/lowlevellock.c
++++ b/libpthread/nptl/sysdeps/unix/sysv/linux/sparc/lowlevellock.c
+@@ -26,6 +26,9 @@
+ 
+ 
+ void
++#ifndef IS_IN_libpthread
++weak_function
++#endif
+ __lll_lock_wait_private (int *futex)
+ {
+   do
+--
+cgit v0.9.1

@@ -24,5 +24,6 @@
 void
 pthread_testcancel (void)
 {
+  int cancelhandling;
   CANCELLATION_P (THREAD_SELF);
 }

@@ -147,7 +147,7 @@ L(syse1):
      result_var; })
 
 #undef INTERNAL_SYSCALL_DECL
-#define INTERNAL_SYSCALL_DECL(err) long err
+#define INTERNAL_SYSCALL_DECL(err) long err attribute_unused
 
 #undef INTERNAL_SYSCALL_ERROR_P
 #define INTERNAL_SYSCALL_ERROR_P(val, err)   ((long) (err))

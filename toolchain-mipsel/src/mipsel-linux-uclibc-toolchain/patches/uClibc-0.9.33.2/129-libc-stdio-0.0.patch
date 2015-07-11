@@ -1,0 +1,51 @@
+From f8e05f3850e51673522216f23533bf7146359dcd
+From: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+Date: Mon, 15 Dec 2014 15:13:01 +0000
+Subject: stdio: Fix printing 0.0
+
+We were relying on FE_DIVBYZERO being turned off when printing
+"%f", +-.0
+Avoid the whole issue by looking at the sign-bit (in a rough
+approximation).
+
+Note that we do not handle gracefully:
+  printf ("\n%llf\n", -0.0);
+  printf ("\n%llf\n",  0.0);
+nor %Lf for both when NOT cast to long double. Avoiding an FPE due to
+broken numbers like these does not make sense to me.
+
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+
+diff --git a/libc/stdio/_fpmaxtostr.c b/libc/stdio/_fpmaxtostr.c
+--- a/libc/stdio/_fpmaxtostr.c
++++ b/libc/stdio/_fpmaxtostr.c
+@@ -51,11 +51,6 @@
+  */
+ #define isnan(x)             ((x) != (x))
+ 
+-/* Without seminumerical functions to examine the sign bit, this is
+- * about the best we can do to test for '-0'.
+- */
+-#define zeroisnegative(x)    ((1./(x)) < 0)
+-
+ /*****************************************************************************/
+ /* Don't change anything that follows peroid!!!  ;-)                         */
+ /*****************************************************************************/
+@@ -279,7 +274,13 @@ ssize_t _fpmaxtostr(FILE * fp, __fpmax_t x, struct printf_info *info,
+ 
+ 	if (x == 0) {				/* Handle 0 now to avoid false positive. */
+ #ifdef __UCLIBC_HAVE_SIGNED_ZERO__
+-		if (zeroisnegative(x)) { /* Handle 'signed' zero. */
++		union {
++			double x;
++			struct {
++				unsigned int l1, l2;
++			} i;
++		} u = {x};
++		if (u.i.l1 ^ u.i.l2) { /* Handle 'signed' zero. */
+ 			*sign_str = '-';
+ 		}
+ #endif /* __UCLIBC_HAVE_SIGNED_ZERO__ */
+-- 
+cgit v0.9.1

@@ -654,8 +654,8 @@ int ps_main(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 		OPT_l = (1 << ENABLE_SELINUX) * (1 << ENABLE_FEATURE_SHOW_THREADS) * ENABLE_FEATURE_PS_LONG,
 	};
 #if ENABLE_FEATURE_PS_LONG
-	time_t now = now;
-	unsigned long uptime = 0;
+	time_t now = now; /* for compiler */
+	unsigned long uptime = uptime;
 #endif
 	/* If we support any options, parse argv */
 #if ENABLE_SELINUX || ENABLE_FEATURE_SHOW_THREADS || ENABLE_FEATURE_PS_WIDE || ENABLE_FEATURE_PS_LONG
@@ -786,9 +786,11 @@ int ps_main(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 
 		{
 			int sz = terminal_width - len;
-			char buf[sz + 1];
-			read_cmdline(buf, sz, p->pid, p->comm);
-			puts(buf);
+			if (sz >= 0) {
+				char buf[sz + 1];
+				read_cmdline(buf, sz, p->pid, p->comm);
+				puts(buf);
+			}
 		}
 	}
 	if (ENABLE_FEATURE_CLEAN_UP)

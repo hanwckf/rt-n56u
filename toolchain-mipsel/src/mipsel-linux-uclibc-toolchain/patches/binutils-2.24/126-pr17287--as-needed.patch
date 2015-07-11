@@ -1,0 +1,126 @@
+From 1240be6b7d0a5604c4e3efe12c9e1d08ebc246be Mon Sep 17 00:00:00 2001
+From: Alan Modra <amodra@gmail.com>
+Date: Mon, 18 Aug 2014 14:43:03 +0930
+Subject: [PATCH] PR 17287, DT_NEEDED of unneeded libraries affects --as-needed
+
+	PR 17287
+bfd/
+	* elflink.c (on_needed_list): Only consider libraries that have
+	been loaded.
+ld/
+	* ld.texinfo (--as-needed): Clarify that references from libraries
+	must be from needed libraries.
+ld/testsuite/
+	* ld-plugin/needed3.c: New file.
+	* ld-elf/shared.exp: Add needed3 test.
+---
+ bfd/ChangeLog                  |    6 ++++++
+ bfd/elflink.c                  |    3 ++-
+ ld/ChangeLog                   |    5 +++++
+ ld/ld.texinfo                  |    4 ++--
+ ld/testsuite/ChangeLog         |    5 +++++
+ ld/testsuite/ld-elf/needed3.c  |    8 ++++++++
+ ld/testsuite/ld-elf/shared.exp |   12 ++++++++++++
+ 7 files changed, 40 insertions(+), 3 deletions(-)
+ create mode 100644 ld/testsuite/ld-elf/needed3.c
+
+diff --git a/bfd/ChangeLog b/bfd/ChangeLog
+--- a/bfd/ChangeLog
++++ b/bfd/ChangeLog
+@@ -1,3 +1,9 @@
++2014-08-18  Alan Modra  <amodra@gmail.com>
++
++	PR 17287
++	* elflink.c (on_needed_list): Only consider libraries that have
++	been loaded.
++
+ 2014-08-14  Alan Modra  <amodra@gmail.com>
+ 
+ 	PR 16563
+diff --git a/bfd/elflink.c b/bfd/elflink.c
+--- a/bfd/elflink.c
++++ b/bfd/elflink.c
+@@ -3108,7 +3108,8 @@ static bfd_boolean
+ on_needed_list (const char *soname, struct bfd_link_needed_list *needed)
+ {
+   for (; needed != NULL; needed = needed->next)
+-    if (strcmp (soname, needed->name) == 0)
++    if ((elf_dyn_lib_class (needed->by) & DYN_AS_NEEDED) == 0
++	&& strcmp (soname, needed->name) == 0)
+       return TRUE;
+ 
+   return FALSE;
+diff --git a/ld/ChangeLog b/ld/ChangeLog
+--- a/ld/ChangeLog
++++ b/ld/ChangeLog
+@@ -1,3 +1,8 @@
++2014-08-18  Alan Modra  <amodra@gmail.com>
++
++	* ld.texinfo (--as-needed): Clarify that references from libraries
++	must be from needed libraries.
++
+ 2014-08-14  Alan Modra  <amodra@gmail.com>
+ 
+ 	PR 16563
+diff --git a/ld/ld.texinfo b/ld/ld.texinfo
+--- a/ld/ld.texinfo
++++ b/ld/ld.texinfo
+@@ -1149,8 +1149,8 @@ on the command line, regardless of whether the library is actually
+ needed or not.  @option{--as-needed} causes a DT_NEEDED tag to only be
+ emitted for a library that @emph{at that point in the link} satisfies a
+ non-weak undefined symbol reference from a regular object file or, if
+-the library is not found in the DT_NEEDED lists of other libraries, a
+-non-weak undefined symbol reference from another dynamic library.
++the library is not found in the DT_NEEDED lists of other needed libraries, a
++non-weak undefined symbol reference from another needed dynamic library.
+ Object files or libraries appearing on the command line @emph{after}
+ the library in question do not affect whether the library is seen as
+ needed.  This is similar to the rules for extraction of object files
+diff --git a/ld/testsuite/ChangeLog b/ld/testsuite/ChangeLog
+--- a/ld/testsuite/ChangeLog
++++ b/ld/testsuite/ChangeLog
+@@ -1,3 +1,8 @@
++2014-08-18  Alan Modra  <amodra@gmail.com>
++
++	* ld-plugin/needed3.c: New file.
++	* ld-elf/shared.exp: Add needed3 test.
++
+ 2014-02-10  H.J. Lu  <hongjiu.lu@intel.com>
+ 
+ 	PR gold/16530
+diff --git a/ld/testsuite/ld-elf/needed3.c b/ld/testsuite/ld-elf/needed3.c
+new file mode 100644
+--- /dev/null
++++ b/ld/testsuite/ld-elf/needed3.c
+@@ -0,0 +1,8 @@
++extern void foo (void);
++
++int
++main ()
++{
++  foo ();
++  return 0;
++}
+diff --git a/ld/testsuite/ld-elf/shared.exp b/ld/testsuite/ld-elf/shared.exp
+--- a/ld/testsuite/ld-elf/shared.exp
++++ b/ld/testsuite/ld-elf/shared.exp
+@@ -203,6 +203,18 @@ set build_tests {
+   {"Build needed1b.so with --no-copy-dt-needed-entries"
+    "-shared tmpdir/libneeded1pic.o -Wl,--no-copy-dt-needed-entries -Ltmpdir -lneeded1a" ""
+    {dummy.c} {} "needed1d.so"}
++  {"Build libneeded3a.so"
++   "-shared -Wl,--no-add-needed" "-fPIC"
++   {needed1a.c} {} "libneeded3a.so"}
++  {"Build libneeded3b.so"
++   "-shared -Wl,--no-as-needed,--add-needed -Ltmpdir -lneeded1b" "-fPIC"
++   {dummy.c} {} "libneeded3b.so"}
++  {"Build needed3.o"
++   "-r -nostdlib" ""
++   {needed3.c} {} "libneeded3.so"}
++  {"Build needed3"
++   "tmpdir/needed3.o -Wl,--as-needed -Ltmpdir -lneeded3a -lneeded3b -lneeded1b" ""
++   {dummy.c} {} "needed3"}
+   {"Build librel.so"
+    "-shared" "-fPIC"
+    {rel.c} {} "librel.so"}
+-- 

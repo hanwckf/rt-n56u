@@ -832,8 +832,6 @@ void* malloc(size_t bytes)
     }
 #endif
 
-    __MALLOC_LOCK;
-    av = get_malloc_state();
     /*
        Convert request size to internal form by adding (sizeof(size_t)) bytes
        overhead plus possibly more to obtain necessary alignment and/or
@@ -844,6 +842,9 @@ void* malloc(size_t bytes)
        */
 
     checked_request2size(bytes, nb);
+
+    __MALLOC_LOCK;
+    av = get_malloc_state();
 
     /*
        Bypass search if no frees yet

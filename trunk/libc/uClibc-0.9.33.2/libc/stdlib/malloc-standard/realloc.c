@@ -54,9 +54,9 @@ void* realloc(void* oldmem, size_t bytes)
 	return NULL;
     }
 
+    checked_request2size(bytes, nb);
     __MALLOC_LOCK;
     av = get_malloc_state();
-    checked_request2size(bytes, nb);
 
     oldp    = mem2chunk(oldmem);
     oldsize = chunksize(oldp);

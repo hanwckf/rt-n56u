@@ -1,0 +1,81 @@
+malloc: Locking upstream fixes
+
+ 85cfbc035370d2a3715ea9de3e590ba83fae52d1 malloc: checked_request2size failure deadlocks
+ be61486447ab447ac24892845af92489fe0b7148 malloc-standard: Add locking to malloc_trim
+ 39206e01eb5d27b61410a05f2ccf6051a305db02 malloc.h: Add missing feature guard
+
+---
+ libc/stdlib/malloc-standard/free.c     |    6 +++++-
+ libc/stdlib/malloc-standard/malloc.c   |    5 +++--
+ libc/stdlib/malloc-standard/memalign.c |    2 +-
+ libc/stdlib/malloc-standard/realloc.c  |    2 +-
+ 4 files changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/libc/stdlib/malloc-standard/free.c b/libc/stdlib/malloc-standard/free.c
+--- a/libc/stdlib/malloc-standard/free.c
++++ b/libc/stdlib/malloc-standard/free.c
+@@ -104,9 +104,13 @@ static int __malloc_trim(size_t pad, mstate av)
+ */
+ int malloc_trim(size_t pad)
+ {
++  int r;
++  __MALLOC_LOCK;
+   mstate av = get_malloc_state();
+   __malloc_consolidate(av);
+-  return __malloc_trim(pad, av);
++  r = __malloc_trim(pad, av);
++  __MALLOC_UNLOCK;
++  return r;
+ }
+ 
+ /*
+diff --git a/libc/stdlib/malloc-standard/malloc.c b/libc/stdlib/malloc-standard/malloc.c
+--- a/libc/stdlib/malloc-standard/malloc.c
++++ b/libc/stdlib/malloc-standard/malloc.c
+@@ -832,8 +832,6 @@ void* malloc(size_t bytes)
+     }
+ #endif
+ 
+-    __MALLOC_LOCK;
+-    av = get_malloc_state();
+     /*
+        Convert request size to internal form by adding (sizeof(size_t)) bytes
+        overhead plus possibly more to obtain necessary alignment and/or
+@@ -845,6 +843,9 @@ void* malloc(size_t bytes)
+ 
+     checked_request2size(bytes, nb);
+ 
++    __MALLOC_LOCK;
++    av = get_malloc_state();
++
+     /*
+        Bypass search if no frees yet
+        */
+diff --git a/libc/stdlib/malloc-standard/memalign.c b/libc/stdlib/malloc-standard/memalign.c
+--- a/libc/stdlib/malloc-standard/memalign.c
++++ b/libc/stdlib/malloc-standard/memalign.c
+@@ -52,8 +52,8 @@ void* memalign(size_t alignment, size_t bytes)
+ 	alignment = a;
+     }
+ 
+-    __MALLOC_LOCK;
+     checked_request2size(bytes, nb);
++    __MALLOC_LOCK;
+ 
+     /* Strategy: find a spot within that chunk that meets the alignment
+      * request, and then possibly free the leading and trailing space.  */
+diff --git a/libc/stdlib/malloc-standard/realloc.c b/libc/stdlib/malloc-standard/realloc.c
+--- a/libc/stdlib/malloc-standard/realloc.c
++++ b/libc/stdlib/malloc-standard/realloc.c
+@@ -54,9 +54,9 @@ void* realloc(void* oldmem, size_t bytes)
+ 	return NULL;
+     }
+ 
++    checked_request2size(bytes, nb);
+     __MALLOC_LOCK;
+     av = get_malloc_state();
+-    checked_request2size(bytes, nb);
+ 
+     oldp    = mem2chunk(oldmem);
+     oldsize = chunksize(oldp);
+-- 

@@ -170,8 +170,10 @@ static netdev_tx_t vlan_dev_hard_start_xmit(struct sk_buff *skb,
 
 	skb->dev = vlan_dev_priv(dev)->real_dev;
 	len = skb->len;
+#ifdef CONFIG_NETPOLL
 	if (netpoll_tx_running(dev))
 		return skb->dev->netdev_ops->ndo_start_xmit(skb, skb->dev);
+#endif
 	ret = dev_queue_xmit(skb);
 
 	if (likely(ret == NET_XMIT_SUCCESS || ret == NET_XMIT_CN)) {

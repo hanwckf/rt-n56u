@@ -2983,9 +2983,11 @@ int netif_rx(struct sk_buff *skb)
 {
 	int ret;
 
+#ifdef CONFIG_NETPOLL
 	/* if netpoll wants it, pretend we never saw it */
 	if (netpoll_rx(skb))
 		return NET_RX_DROP;
+#endif
 
 	if (netdev_tstamp_prequeue)
 		net_timestamp_check(skb);
@@ -3231,9 +3233,11 @@ static int __netif_receive_skb(struct sk_buff *skb)
 
 	trace_netif_receive_skb(skb);
 
+#ifdef CONFIG_NETPOLL
 	/* if we've gotten here through NAPI, check netpoll */
 	if (netpoll_receive_skb(skb))
 		return NET_RX_DROP;
+#endif
 
 	orig_dev = skb->dev;
 
@@ -3915,7 +3919,9 @@ static void net_rx_action(struct softirq_action *h)
 	struct softnet_data *sd = &__get_cpu_var(softnet_data);
 	unsigned long time_limit = jiffies + 2;
 	int budget = netdev_budget;
+#ifdef CONFIG_NETPOLL
 	void *have;
+#endif
 
 	local_irq_disable();
 
@@ -3939,7 +3945,9 @@ static void net_rx_action(struct softirq_action *h)
 		 */
 		n = list_first_entry(&sd->poll_list, struct napi_struct, poll_list);
 
+#ifdef CONFIG_NETPOLL
 		have = netpoll_poll_lock(n);
+#endif
 
 		weight = n->weight;
 
@@ -3975,7 +3983,9 @@ static void net_rx_action(struct softirq_action *h)
 				list_move_tail(&n->poll_list, &sd->poll_list);
 		}
 
+#ifdef CONFIG_NETPOLL
 		netpoll_poll_unlock(have);
+#endif
 	}
 out:
 	net_rps_action_and_irq_enable(sd);

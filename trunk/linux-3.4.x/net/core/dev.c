@@ -3127,9 +3127,11 @@ int netif_rx(struct sk_buff *skb)
 {
 	int ret;
 
+#ifdef CONFIG_NETPOLL
 	/* if netpoll wants it, pretend we never saw it */
 	if (netpoll_rx(skb))
 		return NET_RX_DROP;
+#endif
 
 	net_timestamp_check(netdev_tstamp_prequeue, skb);
 
@@ -3371,9 +3373,11 @@ static int __netif_receive_skb(struct sk_buff *skb)
 
 	trace_netif_receive_skb(skb);
 
+#ifdef CONFIG_NETPOLL
 	/* if we've gotten here through NAPI, check netpoll */
 	if (netpoll_receive_skb(skb))
 		return NET_RX_DROP;
+#endif
 
 	orig_dev = skb->dev;
 
@@ -4059,12 +4063,16 @@ EXPORT_SYMBOL(netif_napi_del);
 
 static int napi_poll(struct napi_struct *n, struct list_head *repoll)
 {
+#ifdef CONFIG_NETPOLL
 	void *have;
+#endif
 	int work, weight;
 
 	list_del_init(&n->poll_list);
 
+#ifdef CONFIG_NETPOLL
 	have = netpoll_poll_lock(n);
+#endif
 
 	weight = n->weight;
 
@@ -4098,7 +4106,9 @@ static int napi_poll(struct napi_struct *n, struct list_head *repoll)
 	list_add_tail(&n->poll_list, repoll);
 
 out_unlock:
+#ifdef CONFIG_NETPOLL
 	netpoll_poll_unlock(have);
+#endif
 
 	return work;
 }

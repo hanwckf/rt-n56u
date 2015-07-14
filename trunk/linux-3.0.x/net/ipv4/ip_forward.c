@@ -64,11 +64,15 @@ int ip_forward(struct sk_buff *skb)
 	if (unlikely(skb->sk))
 		goto drop;
 
+#ifdef CONFIG_INET_LRO
 	if (skb_warn_if_lro(skb))
 		goto drop;
+#endif
 
+#ifdef CONFIG_XFRM
 	if (!xfrm4_policy_check(NULL, XFRM_POLICY_FWD, skb))
 		goto drop;
+#endif
 
 	if (IPCB(skb)->opt.router_alert && ip_call_ra_chain(skb))
 		return NET_RX_SUCCESS;
@@ -83,8 +87,10 @@ int ip_forward(struct sk_buff *skb)
 	if (ip_hdr(skb)->ttl <= 1)
 		goto too_many_hops;
 
+#ifdef CONFIG_XFRM
 	if (!xfrm4_route_forward(skb))
 		goto drop;
+#endif
 
 	rt = skb_rtable(skb);
 
@@ -114,7 +120,8 @@ int ip_forward(struct sk_buff *skb)
 	if (rt->rt_flags&RTCF_DOREDIRECT && !opt->srr && !skb_sec_path(skb))
 		ip_rt_send_redirect(skb);
 
-	skb->priority = rt_tos2priority(iph->tos);
+	if (iph->tos)
+		skb->priority = rt_tos2priority(iph->tos);
 
 	return NF_HOOK(NFPROTO_IPV4, NF_INET_FORWARD, skb, skb->dev,
 		       rt->dst.dev, ip_forward_finish);

@@ -2556,6 +2556,7 @@ static inline bool skb_is_gso_v6(const struct sk_buff *skb)
 	return skb_shinfo(skb)->gso_type & SKB_GSO_TCPV6;
 }
 
+#ifdef CONFIG_INET_LRO
 extern void __skb_warn_lro_forwarding(const struct sk_buff *skb);
 
 static inline bool skb_warn_if_lro(const struct sk_buff *skb)
@@ -2571,6 +2572,7 @@ static inline bool skb_warn_if_lro(const struct sk_buff *skb)
 	}
 	return false;
 }
+#endif
 
 static inline void skb_forward_csum(struct sk_buff *skb)
 {

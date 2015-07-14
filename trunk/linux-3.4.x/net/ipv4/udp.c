@@ -1417,8 +1417,10 @@ int udp_queue_rcv_skb(struct sock *sk, struct sk_buff *skb)
 	/*
 	 *	Charge it to the socket, dropping if the queue is full.
 	 */
+#ifdef CONFIG_XFRM
 	if (!xfrm4_policy_check(sk, XFRM_POLICY_IN, skb))
 		goto drop;
+#endif
 	nf_reset(skb);
 
 	if (up->encap_type) {
@@ -1692,8 +1694,10 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
 		return 0;
 	}
 
+#ifdef CONFIG_XFRM
 	if (!xfrm4_policy_check(NULL, XFRM_POLICY_IN, skb))
 		goto drop;
+#endif
 	nf_reset(skb);
 
 	/* No socket. Drop packet silently, if checksum is wrong */

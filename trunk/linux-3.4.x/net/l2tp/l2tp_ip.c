@@ -201,8 +201,10 @@ pass_up:
 
 	sock_hold(sk);
 
+#ifdef CONFIG_XFRM
 	if (!xfrm4_policy_check(sk, XFRM_POLICY_IN, skb))
 		goto discard_put;
+#endif
 
 	nf_reset(skb);
 

@@ -519,8 +519,10 @@ int udpv6_queue_rcv_skb(struct sock * sk, struct sk_buff *skb)
 	if (!ipv6_addr_any(&inet6_sk(sk)->daddr))
 		sock_rps_save_rxhash(sk, skb);
 
+#ifdef CONFIG_XFRM
 	if (!xfrm6_policy_check(sk, XFRM_POLICY_IN, skb))
 		goto drop;
+#endif
 
 #if defined (CONFIG_INET_UDPLITE)
 	/*
@@ -783,8 +785,10 @@ int __udp6_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
 	sk = __udp6_lib_lookup_skb(skb, uh->source, uh->dest, udptable);
 
 	if (sk == NULL) {
+#ifdef CONFIG_XFRM
 		if (!xfrm6_policy_check(NULL, XFRM_POLICY_IN, skb))
 			goto discard;
+#endif
 
 		if (udp_lib_checksum_complete(skb))
 			goto discard;

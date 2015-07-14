@@ -3330,12 +3330,14 @@ bool skb_partial_csum_set(struct sk_buff *skb, u16 start, u16 off)
 }
 EXPORT_SYMBOL_GPL(skb_partial_csum_set);
 
+#ifdef CONFIG_INET_LRO
 void __skb_warn_lro_forwarding(const struct sk_buff *skb)
 {
 	net_warn_ratelimited("%s: received packets cannot be forwarded while LRO is enabled\n",
 			     skb->dev->name);
 }
 EXPORT_SYMBOL(__skb_warn_lro_forwarding);
+#endif
 
 /**
  * skb_gso_transport_seglen - Return length of individual segments of a gso packet

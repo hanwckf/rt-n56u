@@ -408,11 +408,13 @@ int rawv6_rcv(struct sock *sk, struct sk_buff *skb)
 	struct inet_sock *inet = inet_sk(sk);
 	struct raw6_sock *rp = raw6_sk(sk);
 
+#ifdef CONFIG_XFRM
 	if (!xfrm6_policy_check(sk, XFRM_POLICY_IN, skb)) {
 		atomic_inc(&sk->sk_drops);
 		kfree_skb(skb);
 		return NET_RX_DROP;
 	}
+#endif
 
 	if (!rp->checksum)
 		skb->ip_summed = CHECKSUM_UNNECESSARY;

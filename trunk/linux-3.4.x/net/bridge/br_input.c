@@ -63,7 +63,7 @@ int br_handle_frame_finish(struct sk_buff *skb)
 	br = p->br;
 	br_fdb_update(br, p, eth_hdr(skb)->h_source);
 
-	if (!is_broadcast_ether_addr(dest) && is_multicast_ether_addr(dest) &&
+	if (is_multicast_ether_addr(dest) && !is_broadcast_ether_addr(dest) &&
 	    br_multicast_rcv(br, p, skb))
 		goto drop;
 

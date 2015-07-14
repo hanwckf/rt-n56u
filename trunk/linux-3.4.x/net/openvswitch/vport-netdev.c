@@ -163,8 +163,10 @@ static int netdev_send(struct vport *vport, struct sk_buff *skb)
 		goto error;
 	}
 
+#ifdef CONFIG_INET_LRO
 	if (unlikely(skb_warn_if_lro(skb)))
 		goto error;
+#endif
 
 	skb->dev = netdev_vport->dev;
 	len = skb->len;

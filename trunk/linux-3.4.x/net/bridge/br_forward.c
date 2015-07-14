@@ -65,6 +65,7 @@ static void __br_deliver(const struct net_bridge_port *to, struct sk_buff *skb)
 {
 	skb->dev = to->dev;
 
+#ifdef CONFIG_NETPOLL
 	if (unlikely(netpoll_tx_running(to->dev))) {
 		if (packet_length(skb) > skb->dev->mtu && !skb_is_gso(skb))
 			kfree_skb(skb);
@@ -74,6 +75,7 @@ static void __br_deliver(const struct net_bridge_port *to, struct sk_buff *skb)
 		}
 		return;
 	}
+#endif
 
 	BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT, skb, NULL, skb->dev,
 		br_forward_finish);
@@ -83,10 +85,12 @@ static void __br_forward(const struct net_bridge_port *to, struct sk_buff *skb)
 {
 	struct net_device *indev;
 
+#ifdef CONFIG_INET_LRO
 	if (skb_warn_if_lro(skb)) {
 		kfree_skb(skb);
 		return;
 	}
+#endif
 
 	indev = skb->dev;
 	skb->dev = to->dev;

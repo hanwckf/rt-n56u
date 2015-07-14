@@ -959,6 +959,7 @@ int icmp_rcv(struct sk_buff *skb)
 	struct rtable *rt = skb_rtable(skb);
 	struct net *net = dev_net(rt->dst.dev);
 
+#ifdef CONFIG_XFRM
 	if (!xfrm4_policy_check(NULL, XFRM_POLICY_IN, skb)) {
 		struct sec_path *sp = skb_sec_path(skb);
 		int nh;
@@ -978,6 +979,7 @@ int icmp_rcv(struct sk_buff *skb)
 
 		skb_set_network_header(skb, nh);
 	}
+#endif
 
 	ICMP_INC_STATS_BH(net, ICMP_MIB_INMSGS);
 

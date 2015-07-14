@@ -1672,8 +1672,10 @@ process:
 		goto discard_and_relse;
 	}
 
+#ifdef CONFIG_XFRM
 	if (!xfrm4_policy_check(sk, XFRM_POLICY_IN, skb))
 		goto discard_and_relse;
+#endif
 	nf_reset(skb);
 
 	if (sk_filter(sk, skb))
@@ -1699,8 +1701,10 @@ process:
 	return ret;
 
 no_tcp_socket:
+#ifdef CONFIG_XFRM
 	if (!xfrm4_policy_check(NULL, XFRM_POLICY_IN, skb))
 		goto discard_it;
+#endif
 
 	if (tcp_checksum_complete(skb)) {
 bad_packet:
@@ -1719,10 +1723,12 @@ discard_and_relse:
 	goto discard_it;
 
 do_time_wait:
+#ifdef CONFIG_XFRM
 	if (!xfrm4_policy_check(NULL, XFRM_POLICY_IN, skb)) {
 		inet_twsk_put(inet_twsk(sk));
 		goto discard_it;
 	}
+#endif
 
 	if (tcp_checksum_complete(skb)) {
 		TCP_INC_STATS_BH(net, TCP_MIB_INERRS);

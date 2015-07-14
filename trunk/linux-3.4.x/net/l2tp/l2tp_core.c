@@ -721,7 +721,7 @@ EXPORT_SYMBOL(l2tp_recv_common);
  * Returns 1 if the packet was not a good data packet and could not be
  * forwarded.  All such packets are passed up to userspace to deal with.
  */
-static int l2tp_udp_recv_core(struct l2tp_tunnel *tunnel, struct sk_buff *skb,
+static inline int l2tp_udp_recv_core(struct l2tp_tunnel *tunnel, struct sk_buff *skb,
 			      int (*payload_hook)(struct sk_buff *skb))
 {
 	struct l2tp_session *session = NULL;

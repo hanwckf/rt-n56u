@@ -235,9 +235,11 @@ resubmit:
 			    !ipv6_is_mld(skb, nexthdr))
 				goto discard;
 		}
+#ifdef CONFIG_XFRM
 		if (!(ipprot->flags & INET6_PROTO_NOPOLICY) &&
 		    !xfrm6_policy_check(NULL, XFRM_POLICY_IN, skb))
 			goto discard;
+#endif
 
 		ret = ipprot->handler(skb);
 		if (ret > 0)
@@ -246,12 +248,16 @@ resubmit:
 			IP6_INC_STATS_BH(net, idev, IPSTATS_MIB_INDELIVERS);
 	} else {
 		if (!raw) {
+#ifdef CONFIG_XFRM
 			if (xfrm6_policy_check(NULL, XFRM_POLICY_IN, skb)) {
+#endif
 				IP6_INC_STATS_BH(net, idev,
 						 IPSTATS_MIB_INUNKNOWNPROTOS);
 				icmpv6_send(skb, ICMPV6_PARAMPROB,
 					    ICMPV6_UNK_NEXTHDR, nhoff);
+#ifdef CONFIG_XFRM
 			}
+#endif
 			kfree_skb(skb);
 		} else {
 			IP6_INC_STATS_BH(net, idev, IPSTATS_MIB_INDELIVERS);

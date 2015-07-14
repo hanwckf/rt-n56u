@@ -3511,8 +3511,10 @@ int netif_receive_skb(struct sk_buff *skb)
 {
 	net_timestamp_check(netdev_tstamp_prequeue, skb);
 
+#ifdef CONFIG_NETWORK_PHY_TIMESTAMPING
 	if (skb_defer_rx_timestamp(skb))
 		return NET_RX_SUCCESS;
+#endif
 
 #ifdef CONFIG_RPS
 	if (static_key_false(&rps_needed)) {

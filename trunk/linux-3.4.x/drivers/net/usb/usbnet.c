@@ -344,8 +344,10 @@ void usbnet_skb_return (struct usbnet *dev, struct sk_buff *skb)
 		  skb->len + sizeof (struct ethhdr), skb->protocol);
 	memset (skb->cb, 0, sizeof (struct skb_data));
 
+#ifdef CONFIG_NETWORK_PHY_TIMESTAMPING
 	if (skb_defer_rx_timestamp(skb))
 		return;
+#endif
 
 #if IS_ENABLED(CONFIG_RA_HW_NAT) && defined(CONFIG_RA_HW_NAT_PCI)
 	 /* ra_sw_nat_hook_rx return 1 --> continue

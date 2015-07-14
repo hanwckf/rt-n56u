@@ -165,6 +165,8 @@ static BRPORT_ATTR(flush, S_IWUSR, NULL, store_flush);
 
 BRPORT_ATTR_FLAG(hairpin_mode, BR_HAIRPIN_MODE);
 
+BRPORT_ATTR_FLAG(isolate_mode, BR_ISOLATE_MODE);
+
 #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
 static ssize_t show_multicast_router(struct net_bridge_port *p, char *buf)
 {
@@ -200,6 +202,7 @@ static struct brport_attribute *brport_attrs[] = {
 	&brport_attr_hold_timer,
 	&brport_attr_flush,
 	&brport_attr_hairpin_mode,
+	&brport_attr_isolate_mode,
 #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
 	&brport_attr_multicast_router,
 	&brport_attr_multicast_fast_leave,

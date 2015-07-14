@@ -84,14 +84,16 @@ int br_handle_frame_finish(struct sk_buff *skb)
 
 	dst = NULL;
 
+	if ((p->flags & BR_ISOLATE_MODE)
 #ifdef CONFIG_BRIDGE_EAP
-	if (skb->protocol == __constant_htons(ETH_P_PAE)) {
-		skb2 = skb;
-		/* Do not forward 802.1x/EAP frames */
-		skb = NULL;
-	} else
+	    || skb->protocol == __constant_htons(ETH_P_PAE)
 #endif
-	if (is_broadcast_ether_addr(dest))
+	    ) {
+		skb2 = skb;
+		/* Do not forward from isolated port (or all 802.1x/EAP frames) */
+		skb = NULL;
+	}
+	else if (is_broadcast_ether_addr(dest))
 		skb2 = skb;
 	else if (is_multicast_ether_addr(dest)) {
 		mdst = br_mdb_get(br, skb);

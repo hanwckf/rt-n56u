@@ -957,71 +957,90 @@ control_guest_rt(int guest_on, int manual)
 	return is_ap_changed;
 }
 
+static void
+ebtables_filter_guest_ap(const char *wifname, int i_need_dhcp)
+{
+#if !defined (AP_MODE_LAN_TAGGED)
+	const char *eifname = IFNAME_MAC;
+#else
+	const char *eifname = IFNAME_LAN;
+#endif
+
+	if (i_need_dhcp) {
+		/* drop all IPv4 traffic to router host (exclude DHCPv4)  */
+		doSystem("ebtables -A %s -i %s -p IPv4 --ip-protocol ! %s -j %s",
+				"INPUT", wifname, "udp", "DROP");
+		doSystem("ebtables -A %s -i %s -p IPv4 --ip-protocol %s --ip-destination-port ! %d -j %s",
+				"INPUT", wifname, "udp", 67, "DROP");
+	} else {
+		/* drop all traffic to router host  */
+		doSystem("ebtables -A %s -i %s -j %s",
+				"INPUT", wifname, "DROP");
+	}
+
+	/* drop forwards between wireless ifs */
+	doSystem("ebtables -A %s -i %s -o ! %s -j %s", "FORWARD", wifname, eifname, "DROP");
+}
+
 void
 restart_guest_lan_isolation(void)
 {
-	int rt_need_ebtables, wl_need_ebtables, ap_mode;
-	const char *ifname_lan = IFNAME_LAN;
+	int bp_isolate, is_need_ebtables = 0;
+	int is_ap_mode = get_ap_mode();
 	const char *rt_ifname_guest = IFNAME_2G_GUEST;
 #if BOARD_HAS_5G_RADIO
 	const char *wl_ifname_guest = IFNAME_5G_GUEST;
-#endif
 
-	ap_mode = get_ap_mode();
-
-	rt_need_ebtables = 0;
-	wl_need_ebtables = 0;
-
-#if BOARD_HAS_5G_RADIO
+	bp_isolate = 0;
 	if (is_interface_up(wl_ifname_guest)) {
-		if (nvram_wlan_get_int(1, "guest_lan_isolate") && !ap_mode)
-			wl_need_ebtables |= 0x1;
-		if (nvram_wlan_get_int(1, "mbssid_isolate"))
-			wl_need_ebtables |= 0x2;
+		if (nvram_wlan_get_int(1, "guest_lan_isolate")) {
+			if (!is_ap_mode)
+				bp_isolate = 1;
+			else
+				is_need_ebtables |= 0x10;
+		}
 	}
+
+	brport_set_param_int(wl_ifname_guest, "isolate_mode", bp_isolate);
 #endif
 
+	bp_isolate = 0;
 	if (is_interface_up(rt_ifname_guest)) {
-		if (nvram_wlan_get_int(0, "guest_lan_isolate") && !ap_mode)
-			rt_need_ebtables |= 0x1;
-		if (nvram_wlan_get_int(0, "mbssid_isolate"))
-			rt_need_ebtables |= 0x2;
+		if (nvram_wlan_get_int(0, "guest_lan_isolate")) {
+			if (!is_ap_mode)
+				bp_isolate = 1;
+			else
+				is_need_ebtables |= 0x01;
+		}
 	}
 
 #if defined(USE_RT3352_MII)
 	rt_ifname_guest = IFNAME_INIC_GUEST_VLAN;
 #endif
 
-#if !defined (AP_MODE_LAN_TAGGED)
-	if (ap_mode)
-		ifname_lan = IFNAME_MAC;
-#endif
+	brport_set_param_int(rt_ifname_guest, "isolate_mode", bp_isolate);
 
-	if (wl_need_ebtables || rt_need_ebtables) {
+	if (!is_ap_mode)
+		return;
+
+	if (is_need_ebtables) {
+		int i_need_dhcp = is_dhcpd_enabled(1);
+		
 		module_smart_load("ebtable_filter", NULL);
 		doSystem("ebtables %s", "-F");
 		doSystem("ebtables %s", "-X");
 #if BOARD_HAS_5G_RADIO
-		if ((wl_need_ebtables & 0x3) == 0x3) {
-			doSystem("ebtables -A %s -i %s -j DROP", "FORWARD", wl_ifname_guest);
-		} else if (wl_need_ebtables & 0x2) {
-			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", wl_ifname_guest, "! ", ifname_lan);
-		} else if (wl_need_ebtables & 0x1) {
-			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", wl_ifname_guest, "", ifname_lan);
-		}
+		if (is_need_ebtables & 0x10)
+			ebtables_filter_guest_ap(wl_ifname_guest, i_need_dhcp);
 #endif
-		if ((rt_need_ebtables & 0x3) == 0x3) {
-			doSystem("ebtables -A %s -i %s -j DROP", "FORWARD", rt_ifname_guest);
-		} else if (rt_need_ebtables & 0x2) {
-			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", rt_ifname_guest, "! ", ifname_lan);
-		} else if (rt_need_ebtables & 0x1) {
-			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", rt_ifname_guest, "", ifname_lan);
-		}
+		if (is_need_ebtables & 0x01)
+			ebtables_filter_guest_ap(rt_ifname_guest, i_need_dhcp);
 	}
 	else if (is_module_loaded("ebtables")) {
 		doSystem("ebtables %s", "-F");
 		doSystem("ebtables %s", "-X");
 		
+		module_smart_unload("ebt_ip", 0);
 		module_smart_unload("ebtable_filter", 0);
 		module_smart_unload("ebtables", 0);
 	}

@@ -164,7 +164,6 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_rts", "2347" },			/* RTS threshold */
 	{ "wl_frag", "2346" },			/* Fragmentation threshold */
 	{ "wl_ap_isolate", "0" },		/* AP isolate mode */
-	{ "wl_mbssid_isolate", "1" },		/* Isolate between AP and Guests AP */
 	{ "wl_closed", "0" },			/* Closed (hidden) network */
 	{ "wl_macmode", "disabled" },		/* "allow" only, "deny" only, or "disabled"(allow all) */
 	{ "wl_maclist", "" },			/* xx:xx:xx:xx:xx:xx ... */
@@ -260,7 +259,6 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_rts", "2347" },
 	{ "rt_frag", "2346" },
 	{ "rt_ap_isolate", "0" },
-	{ "rt_mbssid_isolate", "1" },		/* Isolate between AP and Guests AP */
 	{ "rt_closed", "0" },
 	{ "rt_macmode", "disabled" },
 	{ "rt_mrate", "2" },

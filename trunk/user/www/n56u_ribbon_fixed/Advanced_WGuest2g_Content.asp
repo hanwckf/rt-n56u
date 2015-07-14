@@ -65,6 +65,9 @@ function initial(){
 		$("col_goto5").width = "33%";
 	}
 
+	if (get_ap_mode())
+		$("col_isolate").innerHTML = "<#WIFIGuestIsolate#>";
+
 	load_body();
 
 	change_guest_enabled(0);
@@ -167,7 +170,7 @@ function change_guest_enabled(mflag) {
 	showhide_div('row_guest_4', v);
 	showhide_div('row_guest_5', v);
 	showhide_div('row_guest_6', v);
-	showhide_div('row_guest_lan_iso', (v && !get_ap_mode()));
+	showhide_div('row_guest_7', v);
 	showhide_div('row_guest_8', v);
 	showhide_div('row_guest_9', v);
 	showhide_div('row_guest_10', v);
@@ -355,8 +358,8 @@ function change_guest_auth_mode(mflag) {
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="row_guest_lan_iso" style="display:none;">
-                                            <th><#WIFIGuestIsoLAN#></th>
+                                        <tr id="row_guest_7" style="display:none;">
+                                            <th id="col_isolate"><#WIFIGuestIsoLAN#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="rt_guest_lan_isolate_on_of">

@@ -292,15 +292,21 @@ set_usb_modem_dev_wan(int unit, int devnum)
 }
 
 void
-brport_set_m2u(const char *ifname, int m2u_on)
+brport_set_param_int(const char *ifname, const char *param, int value)
 {
 	char brport_path[64];
 
-	snprintf(brport_path, sizeof(brport_path), "/sys/class/net/%s/brport/%s", ifname, "multicast_fast_leave");
-	fput_int(brport_path, (m2u_on) ? 1 : 0);
+	snprintf(brport_path, sizeof(brport_path), "/sys/class/net/%s/brport/%s", ifname, param);
+	fput_int(brport_path, value);
+}
 
-	snprintf(brport_path, sizeof(brport_path), "/sys/class/net/%s/brport/%s", ifname, "multicast_to_unicast");
-	fput_int(brport_path, (m2u_on) ? 1 : 0);
+void
+brport_set_m2u(const char *ifname, int m2u_on)
+{
+	int i_value = (m2u_on) ? 1 : 0;
+
+	brport_set_param_int(ifname, "multicast_fast_leave", i_value);
+	brport_set_param_int(ifname, "multicast_to_unicast", i_value);
 }
 
 int

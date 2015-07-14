@@ -105,7 +105,7 @@ function update_lanip(){
     <td><span id="LANMAC"></span></td>
   </tr>
   <tr>
-    <td>&nbsp;</td>
+    <td width="50%">&nbsp;</td>
     <td>
         <select id="domore" class="domore" onchange="domore_link(this);">
           <option selected="selected"><#MoreConfig#>...</option>

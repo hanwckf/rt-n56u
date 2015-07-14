@@ -170,6 +170,7 @@ InetState7=PPP з&#39;єднання не активне
 InetState8=Шлюз за замовчуванням не задано
 InetState9=Конфлікт адрес WAN та LAN підмереж!
 APCliRole=Роль бездротового клієнта:
+APCliAuto=Автопошук
 IPConnection_VSList_ftpport=Порт FTP-сервера:
 CTL_Commit=Записати
 Commit_confirm=Записати налаштування маршрутизатора (NVRAM) у флеш-пам\'ять?

@@ -24,7 +24,6 @@
 var $j = jQuery.noConflict();
 
 $j(document).ready(function() {
-	init_itoggle('wan_nat_x');
 	init_itoggle('gw_arp_ping');
 	init_itoggle('x_DHCPClient', change_wan_dhcp_auto);
 	init_itoggle('wan_dnsenable_x', change_wan_dns_auto);
@@ -747,21 +746,6 @@ function simplyMAC(fullMAC){
                                                     <option value="1" <% nvram_match_x("", "wan_pppoe_man", "1", "selected"); %>>DHCP or Static</option>
                                                     <option value="2" <% nvram_match_x("", "wan_pppoe_man", "2", "selected"); %>>ZeroConf (169.254.*.*)</option>
                                                 </select>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><#Enable_NAT#></th>
-                                            <td>
-                                                <div class="main_itoggle">
-                                                    <div id="wan_nat_x_on_of">
-                                                        <input type="checkbox" id="wan_nat_x_fake" <% nvram_match_x("", "wan_nat_x", "1", "value=1 checked"); %><% nvram_match_x("", "wan_nat_x", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="wan_nat_x" id="wan_nat_x_1" class="input" value="1" <% nvram_match_x("", "wan_nat_x", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="wan_nat_x" id="wan_nat_x_0" class="input" value="0" <% nvram_match_x("", "wan_nat_x", "0", "checked"); %>/><#checkbox_No#>
-                                                </div>
                                             </td>
                                         </tr>
                                         <tr>

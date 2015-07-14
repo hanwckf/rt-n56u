@@ -268,7 +268,6 @@
 
 	struct variable variables_IPConnection[] = {
 			{"sw_mode", "", NULL, EVM_RESTART_REBOOT},
-			{"wan_nat_x", "", NULL, EVM_RESTART_NETFILTER},
 			{"gw_arp_ping", "", NULL, EVM_RESTART_WAN},
 			{"hw_nat_mode", "", NULL, EVM_RESTART_FIREWALL},
 			{"sw_nat_mode", "", NULL, EVM_RESTART_FIREWALL},
@@ -398,6 +397,7 @@
 			{"aria_ropen", "", NULL, EVM_RESTART_FIREWALL},
 			{"fw_syn_cook", "", NULL, EVM_RESTART_SYSCTL},
 			{"fw_mac_drop", "", NULL, EVM_RESTART_FIREWALL},
+			{"wan_nat_x", "", NULL, EVM_RESTART_NETFILTER},
 			{"nf_nat_loop", "", NULL, EVM_RESTART_NETFILTER},
 			{"nf_nat_type", "", NULL, EVM_RESTART_SYSCTL},
 			{"nf_max_conn", "", NULL, EVM_RESTART_SYSCTL},

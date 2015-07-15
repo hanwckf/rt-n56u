@@ -652,6 +652,9 @@ start_wan(void)
 		/* bring up physical WAN interface */
 		doSystem("ifconfig %s mtu %d up %s", wan_ifname, 1500, "0.0.0.0");
 		
+		/* perform ApCli reconnect */
+		reconnect_apcli(wan_ifname, 0);
+		
 #if (BOARD_NUM_USB_PORTS > 0)
 		if (get_usb_modem_wan(unit))
 		{
@@ -1356,12 +1359,7 @@ manual_wisp_reassoc(void)
 
 	logmessage(LOGNAME, "Perform WISP %s %s", "manual", "reassoc");
 
-	if (strcmp(wisp_ifname, IFNAME_2G_APCLI) == 0)
-		reconnect_apcli_rt();
-#if BOARD_HAS_5G_RADIO
-	else if (strcmp(wisp_ifname, IFNAME_5G_APCLI) == 0)
-		reconnect_apcli_wl();
-#endif
+	reconnect_apcli(wisp_ifname, 1);
 }
 
 void

@@ -567,48 +567,37 @@ start_wifi_apcli_rt(int radio_on)
 }
 
 void
-reconnect_apcli_wl(void)
+reconnect_apcli(const char *ifname_apcli, int force)
 {
+	int is_aband, i_mode_x, i_sta_auto;
+
+	if (strcmp(ifname_apcli, IFNAME_2G_APCLI) == 0)
+		is_aband = 0;
 #if BOARD_HAS_5G_RADIO
-	const char *ifname_apcli = IFNAME_5G_APCLI;
-	int i_mode_x = get_mode_radio_wl();
-
-	if (i_mode_x != 3 && i_mode_x != 4)
-		return;
-
-	if (!is_interface_up(ifname_apcli))
-		return;
-
-	if (i_mode_x == 3 && nvram_wlan_get_int(1, "sta_auto"))
-		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
-	else {
-		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliEnable", 0);
-		usleep(200000);
-		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliEnable", 1);
-	}
+	else if (strcmp(ifname_apcli, IFNAME_5G_APCLI) == 0)
+		is_aband = 1;
 #endif
-}
-
-void
-reconnect_apcli_rt(void)
-{
-	const char *ifname_apcli = IFNAME_2G_APCLI;
-	int i_mode_x = get_mode_radio_rt();
-
-	if (i_mode_x != 3 && i_mode_x != 4)
-		return;
-
-	if (!is_interface_up(ifname_apcli))
-		return;
-
-#if !defined(USE_RT3352_MII)
-	if (i_mode_x == 3 && nvram_wlan_get_int(0, "sta_auto"))
-		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 	else
+		return;
+
+	if (!is_interface_up(ifname_apcli))
+		return;
+
+	i_mode_x = nvram_wlan_get_int(is_aband, "mode_x");
+	if (i_mode_x != 3 && i_mode_x != 4)
+		return;
+
+	i_sta_auto = nvram_wlan_get_int(is_aband, "sta_auto");
+#if defined(USE_RT3352_MII)
+	if (!is_aband)
+		i_sta_auto = 0; // iNIC not support ApCliAutoConnect
 #endif
-	{
+
+	if (i_mode_x == 3 && i_sta_auto) {
+		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
+	} else if (force) {
 		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliEnable", 0);
-		usleep(200000);
+		usleep(300000);
 		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliEnable", 1);
 	}
 }

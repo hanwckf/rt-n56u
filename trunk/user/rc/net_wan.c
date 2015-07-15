@@ -2390,6 +2390,9 @@ int start_udhcpc_wan(char *wan_ifname, int unit, int wait_lease)
 
 	snprintf(pidfile, sizeof(pidfile), "/var/run/udhcpc%d.pid", unit);
 
+	if (is_man_wisp(wan_ifname) || is_usbnet_interface(wan_ifname))
+		dhcp_argv[7] = "-t6";
+
 	if (wait_lease)
 		dhcp_argv[index++] = "-b";	/* Background if lease is not obtained (timeout 4*4 sec) */
 	else

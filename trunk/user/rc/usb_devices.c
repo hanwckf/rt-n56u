@@ -141,8 +141,8 @@ detach_swap_partition(char *part_name)
 int mdev_sd_main(int argc, char **argv)
 {
 	int isLock;
-	char aidisk_cmd[64], partno;
-	char *device_name, *action;
+	char aidisk_cmd[64];
+	char *device_name, *action, *partno;
 
 	if (argc != 3){
 		printf("Usage: %s [device_name] [action]\n", argv[0]);
@@ -175,18 +175,19 @@ int mdev_sd_main(int argc, char **argv)
 		goto out_unlock;
 	}
 
-	partno = device_name[3];
-	if (partno == '\0') {
+	if (device_name[3] == '\0') {
 		// sda, sdb, sdc...
 		system("/sbin/hddtune.sh $MDEV");
 		
 		if (check_root_partition(device_name))
 			goto out_unlock;
 		
-		partno = '1';
+		partno = "1";
+	} else {
+		partno = device_name + 3;
 	}
 
-	snprintf(aidisk_cmd, sizeof(aidisk_cmd), "/sbin/automount.sh $MDEV AiDisk_%c%c", device_name[2], partno);
+	snprintf(aidisk_cmd, sizeof(aidisk_cmd), "/sbin/automount.sh $MDEV AiDisk_%c%s", device_name[2], partno);
 
 	umask(0000);
 	if (system(aidisk_cmd) == 0)

@@ -698,8 +698,7 @@ full_restart_lan(void)
 
 #if defined(APP_NFSD)
 	// reload NFS server exports
-	if (pids("nfsd"))
-		run_nfsd();
+	reload_nfsd();
 #endif
 
 #if defined(APP_SMBD) || defined(APP_NMBD)

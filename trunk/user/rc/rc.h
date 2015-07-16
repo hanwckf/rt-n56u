@@ -543,6 +543,7 @@ void restart_ftpd(void);
 void unload_nfsd(void);
 void stop_nfsd(void);
 void run_nfsd(void);
+void reload_nfsd(void);
 void restart_nfsd(void);
 #endif
 #if defined(APP_MINIDLNA)

@@ -313,6 +313,10 @@ restart_vpn_server(void)
 
 	restart_firewall();
 
+#if defined(APP_NFSD)
+	reload_nfsd();
+#endif
+
 	/* restore L2TP WAN client or L2TP VPNC */
 	if (xl2tpd_killed_vpns && (nvram_match("l2tp_wan_t", "1") || nvram_match("l2tp_cli_t", "1")))
 		safe_start_xl2tpd();

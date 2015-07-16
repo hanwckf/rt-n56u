@@ -672,15 +672,15 @@ void restart_smbd(void)
 #endif
 
 #if defined(APP_NFSD)
-void write_nfsd_exports(void)
+static void
+write_nfsd_exports(void)
 {
 	FILE *procpt, *fp;
-	char line[256], devname[32], mpname[128], system_type[16], mount_mode[164], acl_mask[64];
-	const char* exports_link = "/etc/storage/exports";
-	const char* exports_file = "/etc/exports";
-	char *nfsmm, *lan_ipaddr, *lan_netmask;
-	unsigned int acl_addr;
-	struct in_addr ina;
+	char line[256], devname[32], mpname[128], system_type[16], mount_mode[164], acl_lan[32], acl_vpn[32];
+	const char *exports_link = "/etc/storage/exports";
+	const char *exports_file = "/etc/exports";
+	const char *exports_rule = "async,insecure,no_root_squash,no_subtree_check";
+	char *nfsmm, *acl_addr, *acl_mask;
 
 	unlink(exports_file);
 
@@ -693,23 +693,31 @@ void write_nfsd_exports(void)
 	if (!fp)
 		return;
 
-	lan_ipaddr  = nvram_safe_get("lan_ipaddr_t");
-	lan_netmask = nvram_safe_get("lan_netmask_t");
-	if (!lan_ipaddr || !*lan_ipaddr)
-		lan_ipaddr = nvram_safe_get("lan_ipaddr");
-	if (!lan_netmask || !*lan_netmask)
-		lan_netmask = nvram_safe_get("lan_netmask");
-	if (!lan_ipaddr || !*lan_ipaddr)
-		lan_ipaddr = "192.168.1.1";
-	if (!lan_netmask || !*lan_netmask)
-		lan_netmask = "255.255.255.0";
+	acl_addr = nvram_safe_get("lan_ipaddr_t");
+	acl_mask = nvram_safe_get("lan_netmask_t");
+	if (!is_valid_ipv4(acl_addr) || !is_valid_ipv4(acl_mask)) {
+		acl_addr = nvram_safe_get("lan_ipaddr");
+		acl_mask = nvram_safe_get("lan_netmask");
+	}
 
-	acl_addr = ntohl(inet_addr(lan_ipaddr));
-	acl_addr = acl_addr & ntohl(inet_addr(lan_netmask));
+	acl_lan[0] = 0;
+	ip2class(acl_addr, acl_mask, acl_lan, sizeof(acl_lan));
 
-	ina.s_addr = htonl(acl_addr);
-
-	sprintf(acl_mask, "%s/%s", inet_ntoa(ina), lan_netmask);
+	acl_vpn[0] = 0;
+	if (!get_ap_mode() && nvram_get_int("vpns_enable") && nvram_get_int("vpns_vuse")) {
+		acl_addr = nvram_safe_get("vpns_vnet");
+		acl_mask = VPN_SERVER_SUBNET_MASK;
+#if defined (APP_OPENVPN)
+		if (nvram_get_int("vpns_type") == 2) {
+			if (nvram_get_int("vpns_ov_mode") == 1)
+				ip2class(acl_addr, acl_mask, acl_vpn, sizeof(acl_vpn));
+		} else
+#endif
+			ip2class(acl_addr, acl_mask, acl_vpn, sizeof(acl_vpn));
+		
+		if (strcmp(acl_lan, acl_vpn) == 0)
+			acl_vpn[0] = 0;
+	}
 
 	fprintf(fp, "# %s\n\n", "auto-created file");
 
@@ -723,10 +731,12 @@ void write_nfsd_exports(void)
 				continue;
 			
 			if (!strncmp(devname, "/dev/sd", 7) && !strncmp(mpname, "/media/", 7)) {
-				nfsmm = "rw";
-				if (!strncmp(mount_mode, "ro", 2))
-					nfsmm = "ro";
-				fprintf(fp, "%s    %s(%s,async,insecure,no_root_squash,no_subtree_check)\n", mpname, acl_mask, nfsmm);
+				nfsmm = (strncmp(mount_mode, "ro", 2) == 0) ? "ro" : "rw";
+				fprintf(fp, "%s\t", mpname);
+				fprintf(fp, " %s(%s,%s)", acl_lan, nfsmm, exports_rule);
+				if (acl_vpn[0])
+					fprintf(fp, " %s(%s,%s)", acl_vpn, nfsmm, exports_rule);
+				fprintf(fp, "\n");
 			}
 		}
 		
@@ -758,6 +768,16 @@ void run_nfsd(void)
 	write_nfsd_exports();
 
 	eval("/usr/bin/nfsd.sh", "start");
+}
+
+void reload_nfsd(void)
+{
+	if (nvram_invmatch("nfsd_enable", "1"))
+		return;
+
+	write_nfsd_exports();
+
+	eval("/usr/bin/nfsd.sh", "reload");
 }
 
 void restart_nfsd(void)

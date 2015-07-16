@@ -188,9 +188,11 @@ static u32 pcie_phy(char rwmode, unsigned long addr, unsigned long val)
 	}
 	return 0;
 }
+#endif
 
 static void prom_init_pcie(void)
 {
+#if defined (CONFIG_RALINK_MT7620)
 	/* PCIe bypass DLL */
 	pcie_phy('w', 0x0, 0x80);
 	pcie_phy('w', 0x1, 0x04);
@@ -212,10 +214,7 @@ static void prom_init_pcie(void)
 		PPLL_CFG1 |= (1UL<<26);	// PPLL Power Down
 		PPLL_CFG0 |= (1UL<<31);	// PPLL SW Set
 	}
-}
 #elif defined (CONFIG_RALINK_MT7628)
-static void prom_init_pcie(void)
-{
 	/* assert PCIe RC RST */
 	RALINK_RSTCTRL |=  RALINK_PCIE0_RST;
 
@@ -226,12 +225,19 @@ static void prom_init_pcie(void)
 	/* set  PCIe PHY to 1.3mA for power saving */
 	(*((volatile u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET))) = 0x10;
 #endif
-}
-#else
-static void prom_init_pcie(void)
-{
-}
+#elif defined (CONFIG_RALINK_MT7621)
+#if !defined (CONFIG_PCI)
+	/* assert PCIe RC RST */
+	if ((ralink_asic_rev_id & 0xFFFF) == 0x0101)
+		RALINK_RSTCTRL |=  (RALINK_PCIE0_RST | RALINK_PCIE1_RST | RALINK_PCIE2_RST);
+	else
+		RALINK_RSTCTRL &= ~(RALINK_PCIE0_RST | RALINK_PCIE1_RST | RALINK_PCIE2_RST);
+
+	/* disable PCIe clock */
+	RALINK_CLKCFG1 &= ~(RALINK_PCIE0_CLK_EN | RALINK_PCIE1_CLK_EN | RALINK_PCIE2_CLK_EN);
 #endif
+#endif
+}
 
 static void prom_init_usb(void)
 {

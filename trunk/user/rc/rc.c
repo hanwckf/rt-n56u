@@ -754,6 +754,7 @@ init_router(void)
 
 	// system ready
 	system("/etc/storage/started_script.sh &");
+	start_rwfs_optware();
 }
 
 void

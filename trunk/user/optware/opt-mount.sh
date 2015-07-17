@@ -5,8 +5,12 @@ self_name="opt-mount.sh"
 # check params
 [ -z "$1" ] || [ -z "$2" ] && exit 1
 
-optw_enable=`nvram get optw_enable`
-[ "$optw_enable" != "1" -a "$optw_enable" != "2" ] && exit 0
+mtd_device=`echo "$1" | egrep '^/dev/mtd|^/dev/ubi'`
+
+if [ -z "$mtd_device" ] ; then
+	optw_enable=`nvram get optw_enable`
+	[ "$optw_enable" != "1" -a "$optw_enable" != "2" ] && exit 0
+fi
 
 # check /opt already mounted
 mountpoint -q /opt && exit 0
@@ -66,7 +70,7 @@ if [ -f /etc/storage/authorized_keys ] && [ ! -f /opt/home/admin/.ssh/authorized
 fi
 
 # check swap file exist
-if [ -f /opt/.swap ] ; then
+if [ -z "$mtd_device" ] && [ -f /opt/.swap ] ; then
 	swap_part=`cat /proc/swaps | grep 'partition' 2>/dev/null`
 	swap_file=`cat /proc/swaps | grep 'file' 2>/dev/null`
 	if [ -z "$swap_part" ] && [ -z "$swap_file" ] ; then
@@ -199,5 +203,18 @@ EOF
 fi
 
 # mark opt needed start
-nvram settmp usb_opt_start=1
+if [ -z "$mtd_device" ] ; then
+	nvram settmp usb_opt_start=1
+	exit 0
+fi
 
+logger -t "${self_name}" "call /opt/etc/init.d"
+
+# extend path to /opt
+export PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# start all services S* in /opt/etc/init.d
+for i in `ls /opt/etc/init.d/S??* 2>/dev/null` ; do
+	[ ! -x "${i}" ] && continue
+	${i} start
+done

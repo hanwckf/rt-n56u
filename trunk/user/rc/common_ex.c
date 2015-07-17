@@ -758,6 +758,8 @@ void umount_rwfs_partition(void)
 	const char *mp_rwfs = MP_MTD_RWFS;
 
 	if (check_if_dir_exist(mp_rwfs)) {
+		doSystem("/usr/bin/opt-umount.sh %s %s", "/dev/ubi", mp_rwfs);
+		
 		if (umount(mp_rwfs) == 0)
 			rmdir(mp_rwfs);
 	}
@@ -771,9 +773,27 @@ void umount_rwfs_partition(void)
 
 	doSystem("ubidetach -p /dev/mtd%d 2>/dev/null", mtd_rwfs);
 }
+
+void start_rwfs_optware(void)
+{
+	int mtd_rwfs;
+	char dev_ubi[16];
+	const char *mp_rwfs = MP_MTD_RWFS;
+
+	if (!check_if_dir_exist(mp_rwfs))
+		return;
+
+	mtd_rwfs = mtd_dev_idx(MTD_PART_NAME_RWFS);
+	if (mtd_rwfs < 3)
+		return;
+
+	snprintf(dev_ubi, sizeof(dev_ubi), "/dev/ubi%d_0", mtd_rwfs);
+	doSystem("/usr/bin/opt-mount.sh %s %s &", dev_ubi, mp_rwfs);
+}
 #else
 inline void mount_rwfs_partition(void) {}
 inline void umount_rwfs_partition(void) {}
+inline void start_rwfs_optware(void) {}
 #endif
 
 void

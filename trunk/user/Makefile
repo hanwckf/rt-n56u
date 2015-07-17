@@ -128,6 +128,7 @@ endif
 ifdef CONFIG_MTD_UBI
 ifndef CONFIG_USB_SUPPORT
 dir_y						+= util-linux
+dir_y						+= optware
 endif
 dir_y						+= mtd-utils
 endif

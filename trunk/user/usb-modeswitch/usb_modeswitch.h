@@ -2,7 +2,7 @@
   This file is part of usb_modeswitch, a mode switching tool for controlling
   the mode of 'multi-state' USB devices
 
-  Version 2.2.2 "Summer Is Here!", 2015/06/27
+  Version 2.2.5, 2015/07/16
   Copyright (C) 2007 - 2015  Josua Dietze
 
   Config file parsing stuff borrowed from Guillaume Dargaud
@@ -60,6 +60,8 @@ int hex2byte(const char *hex);
 int hexstr2bin(const char *hex, char *buffer, int len);
 void printVersion();
 void printHelp();
+void close_all();
+void abort();
 int readArguments(int argc, char **argv);
 void deviceDescription();
 int deviceInquire();

@@ -1,6 +1,6 @@
 /*
   Mode switching tool for controlling mode of 'multi-state' USB devices
-  Version 2.2.2 "Summer Is Here!", 2015/06/27
+  Version 2.2.5, 2015/07/16
 
   Copyright (C) 2007 - 2015 Josua Dietze (mail to "digidietze" at the domain
   of the home page; or write a personal message through the forum to "Josh".
@@ -45,7 +45,7 @@
 
 /* Recommended tab size: 4 */
 
-#define VERSION "2.2.2"
+#define VERSION "2.2.5"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -112,8 +112,8 @@ static int usb_interrupt_io(libusb_device_handle *handle, int ep, char *bytes,
 char *TempPP=NULL;
 
 static struct libusb_context *ctx = NULL;
-static struct libusb_device *dev;
-static struct libusb_device_handle *devh;
+static struct libusb_device *dev = NULL;
+static struct libusb_device_handle *devh = NULL;
 static struct libusb_config_descriptor *active_config = NULL;
 
 int DefaultVendor=0, DefaultProduct=0, TargetVendor=0, TargetProduct=-1, TargetClass=0;
@@ -340,7 +340,7 @@ int readArguments(int argc, char **argv)
 
 	while (1)
 	{
-		c = getopt_long (argc, argv, "hejWQDndKHJSOBEGTNALZFRItv:p:V:P:C:m:M:2:3:w:r:c:i:u:a:s:f:b:g:",
+		c = getopt_long (argc, argv, "hejWQDndKHJSOBEGTNALZF:RItv:p:V:P:C:m:M:2:3:w:r:c:i:u:a:s:f:b:g:",
 					long_options, &option_index);
 
 		/* Detect the end of the options. */
@@ -376,7 +376,8 @@ int readArguments(int argc, char **argv)
 			case 'A': ModeMap = ModeMap + MOBILEACTION_MODE; break;
 			case 'L': ModeMap = ModeMap + CISCO_MODE; break;
 			case 'Z': ModeMap = ModeMap + BLACKBERRY_MODE; break;
-			case 'F': ModeMap = ModeMap + PANTECH_MODE; break;
+			case 'F': ModeMap = ModeMap + PANTECH_MODE;
+						PantechMode = strtol(optarg, NULL, 10); break;
 			case 'c': readConfigFile(optarg); break;
 			case 't': readConfigFile("stdin"); break;
 			case 'W': verbose = 1; show_progress = 1; count--; break;
@@ -527,10 +528,12 @@ int main(int argc, char **argv)
 		SHOW_PROGRESS(output," Found devices in default mode (%d)\n", numDefaults);
 	} else {
 		SHOW_PROGRESS(output," No devices in default mode found. Nothing to do. Bye!\n\n");
+		close_all();
 		exit(0);
 	}
 	if (dev == NULL) {
 		SHOW_PROGRESS(output," No bus/device match. Is device connected? Abort\n\n");
+		close_all();
 		exit(0);
 	} else {
 		if (devnum == -1) {
@@ -541,12 +544,13 @@ int main(int argc, char **argv)
 		libusb_open(dev, &devh);
 		if (devh == NULL) {
 			SHOW_PROGRESS(output,"Error opening the device. Abort\n\n");
-			exit(1);
+			abort();
 		}
 	}
-	libusb_get_active_config_descriptor(dev, &active_config);
+
 
 	/* Get current configuration of default device if parameter is set */
+	libusb_get_active_config_descriptor(dev, &active_config);
 	if (Configuration > -1) {
 		currentConfig = active_config->bConfigurationValue;
 		SHOW_PROGRESS(output,"Current configuration number is %d\n", currentConfig);
@@ -568,30 +572,28 @@ int main(int argc, char **argv)
 			MessageEndpoint = find_first_bulk_endpoint(LIBUSB_ENDPOINT_OUT);
 		if (!ResponseEndpoint)
 			ResponseEndpoint = find_first_bulk_endpoint(LIBUSB_ENDPOINT_IN);
-		libusb_free_config_descriptor(active_config);
 		if (!MessageEndpoint) {
 			fprintf(stderr,"Error: message endpoint not given or found. Abort\n\n");
-			exit(1);
+			abort();
 		}
 		if (!ResponseEndpoint) {
 			fprintf(stderr,"Error: response endpoint not given or found. Abort\n\n");
-			exit(1);
+			abort();
 		}
 		SHOW_PROGRESS(output,"Use endpoints 0x%02x (out) and 0x%02x (in)\n", MessageEndpoint, ResponseEndpoint);
-	} else
-		libusb_free_config_descriptor(active_config);
+	}
 
 	if (interfaceClass == -1) {
 		fprintf(stderr, "Error: Could not get class of interface %d. Does it exist? Abort\n\n",Interface);
-		exit(1);
+		abort();
 	}
 
 	if (defaultClass == 0)
 		defaultClass = interfaceClass;
 	else
-		if (interfaceClass == 8 && defaultClass != 8) {
-			/* Weird device with default class other than 0 and differing interface class */
-			SHOW_PROGRESS(output,"Ambiguous Class/InterfaceClass: 0x%02x/0x08\n", defaultClass);
+		if (interfaceClass == 8 && defaultClass != 8 && defaultClass != 0xef && defaultClass != 0xff) {
+			/* Unexpected default class combined with differing interface class */
+			SHOW_PROGRESS(output,"Bogus Class/InterfaceClass: 0x%02x/0x08\n", defaultClass);
 			defaultClass = 8;
 		}
 
@@ -599,7 +601,7 @@ int main(int argc, char **argv)
 		if (defaultClass != 8) {
 			fprintf(stderr, "Error: can't use storage command in MessageContent with interface %d;\n"
 				"       interface class is %d, expected 8. Abort\n\n", Interface, defaultClass);
-			exit(1);
+			abort();
 		}
 
 	if (InquireDevice && show_progress) {
@@ -627,7 +629,7 @@ int main(int argc, char **argv)
 	 */
 	if ( ModeMap & (ModeMap-1) ) {
 		fprintf(output,"Multiple special modes selected; check configuration. Abort\n\n");
-		exit(1);
+		abort();
 	}
 
 	if ((strlen(MessageContent) || StandardEject) && ModeMap ) {
@@ -757,18 +759,20 @@ int main(int argc, char **argv)
 	/* No "removal" check if these are set */
 	if ((Configuration > 0 || AltSetting > -1) && !ResetUSB) {
 		libusb_close(devh);
-		devh = 0;
+		devh = NULL;
 	}
 
 	if (ResetUSB) {
 		resetUSB();
-		devh = 0;
+		devh = NULL;
 	}
 
 	if (searchMode == SEARCH_BUSDEV && sysmode) {
 		printf("ok:busdev\n");
-		goto CLOSING;
+		close_all();
+		exit(0);
 	}
+
 	if (CheckSuccess) {
 		if (checkSuccess()) {
 			if (sysmode) {
@@ -799,11 +803,7 @@ int main(int argc, char **argv)
 		else
 			SHOW_PROGRESS(output,"-> Run lsusb to note any changes. Bye!\n\n");
 	}
-CLOSING:
-	if (sysmode)
-		closelog();
-	if (devh)
-		libusb_close(devh);
+	close_all();
 	exit(0);
 }
 
@@ -1081,7 +1081,7 @@ int switchSendMessage ()
 skip:
 	SHOW_PROGRESS(output," Device is gone, skip any further commands\n");
 	libusb_close(devh);
-	devh = 0;
+	devh = NULL;
 	return 2;
 }
 
@@ -1339,7 +1339,7 @@ void switchCiscoMode() {
 	ret = libusb_claim_interface(devh, Interface);
 	if (ret < 0) {
 		SHOW_PROGRESS(output," Could not claim interface (error %d). Abort\n", ret);
-		exit(1);
+		abort();
 	}
 //	libusb_clear_halt(devh, MessageEndpoint);
 	if (show_progress)
@@ -1378,7 +1378,7 @@ void switchCiscoMode() {
 skip:
 	SHOW_PROGRESS(output,"Device returned error %d, skip further commands\n", ret);
 	libusb_close(devh);
-	devh = 0;
+	devh = NULL;
 }
 
 
@@ -1400,7 +1400,7 @@ int switchSonyMode ()
 		SHOW_PROGRESS(output," OK, control message sent, wait for device to return ...\n");
 
 	libusb_close(devh);
-	devh = 0;
+	devh = NULL;
 
 	/* Now waiting for the device to reappear */
 	devnum=-1;
@@ -1519,7 +1519,7 @@ int checkSuccess()
 	 */
 	if ((TargetVendor || TargetClass) && devh) {
 		libusb_close(devh);
-		devh = 0;
+		devh = NULL;
 	}
 
 	/* if target ID is not given but target class is, assign default as target;
@@ -1545,7 +1545,7 @@ int checkSuccess()
 			if (ret < 0) {
 				SHOW_PROGRESS(output," Original device can't be accessed anymore. Good.\n");
 				libusb_close(devh);
-				devh = 0;
+				devh = NULL;
 				break;
 			}
 			if (i == CheckSuccess-1) {
@@ -1568,7 +1568,7 @@ int checkSuccess()
 				libusb_open(dev, &devh);
 				deviceDescription();
 				libusb_close(devh);
-				devh = 0;
+				devh = NULL;
 				if (verbose) {
 					fprintf(output,"\nFound target device %03d on bus %03d\n", \
 					libusb_get_device_address(dev), libusb_get_bus_number(dev));
@@ -1652,12 +1652,9 @@ int read_bulk(int endpoint, char *buffer, int length)
 
 void release_usb_device(int __attribute__((unused)) dummy) {
 	SHOW_PROGRESS(output,"Program cancelled by system. Bye!\n\n");
-	if (devh) {
+	if (devh)
 		libusb_release_interface(devh, Interface);
-		libusb_close(devh);
-	}
-	if (sysmode)
-		closelog();
+	close_all();
 	exit(0);
 
 }
@@ -1827,17 +1824,17 @@ int find_first_bulk_endpoint(int direction)
 
 int get_current_configuration()
 {
-	int ret = 0, cfg = 0;
 	SHOW_PROGRESS(output,"Get the current device configuration ...\n");
-	if (active_config == NULL)
-		ret = libusb_get_active_config_descriptor(dev, &active_config);
+	if (active_config != NULL) {
+		libusb_free_config_descriptor(active_config);
+		active_config = NULL;
+	}
+	int ret = libusb_get_active_config_descriptor(dev, &active_config);
 	if (ret < 0) {
 		SHOW_PROGRESS(output," Determining the active configuration failed (error %d). Abort\n", ret);
-		exit(1);
+		abort();
 	}
-	cfg = active_config->bConfigurationValue;
-	libusb_free_config_descriptor(active_config);
-	return cfg;
+	return active_config->bConfigurationValue;
 }
 
 int get_interface_class()
@@ -1881,7 +1878,7 @@ char* ReadParseParam(const char* FileName, char *VariableName)
 			}
 			if (file==NULL) {
 				fprintf(stderr, "Error: Could not find file %s. Abort\n\n", FileName);
-				exit(1);
+				abort();
 			} else {
 				token = fgets(Str, LINE_DIM-1, file);
 			}
@@ -2003,11 +2000,32 @@ int hexstr2bin(const char *hex, char *buffer, int len)
 	return 0;
 }
 
+void close_all()
+{
+	if (active_config)
+		libusb_free_config_descriptor(active_config);
+	if (devh)
+		libusb_close(devh);
+	// libusb_exit will crash on Raspbian 7, crude protection
+#ifndef __ARMEL__
+	libusb_exit(NULL);
+#endif
+	if (sysmode)
+		closelog();
+}
+
+void abort()
+{
+	close_all();
+	exit(1);
+}
+
+
 void printVersion()
 {
 	char* version = VERSION;
 	fprintf(output,"\n * usb_modeswitch: handle USB devices with multiple modes\n"
-		" * Version %s (C) Josua Dietze 2014\n"
+		" * Version %s (C) Josua Dietze 2015\n"
 		" * Based on libusb1/libusbx\n\n"
 		" ! PLEASE REPORT NEW CONFIGURATIONS !\n\n", version);
 }
@@ -2043,6 +2061,7 @@ void printHelp()
 	" -L, --cisco-mode              apply a special procedure\n"
 	" -B, --qisda-mode              apply a special procedure\n"
 	" -E, --quanta-mode             apply a special procedure\n"
+	" -F, --pantech-mode NUM        apply a special procedure, pass NUM through\n"
 	" -R, --reset-usb               reset the device after all other actions\n"
 	" -Q, --quiet                   don't show progress or error messages\n"
 	" -W, --verbose                 print all settings and debug output\n"

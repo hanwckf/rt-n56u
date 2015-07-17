@@ -2,6 +2,20 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.2.5, 2015/07/16
+    Fixed bug in configuration check, possibly leading to segfault (thanks,
+    Leonid Lisovskiy); fixed Pantech commandline parameter evaluation (was
+    not working at all); added driver unbind step via sysfs in wrapper,
+    getting rid of the USB subsystem complaint "interface 0 claimed by
+    usb-storage while 'usb_modeswitch' <does this and that>"
+Version 2.2.4, 2015/07/14
+    Fixed buggy check of USB configuration selection (possibly leading
+    to segfault), tested with Alcatel X602D; removed call to 'libusb_strerror'
+    from libusb initialization - not available in earlier libusb1 versions
+Version 2.2.3, 2015/06/29
+    Fixed problem arising with systemd version 221 (220 untested), which
+    affects starting the usb_modeswitch systemd unit from the sh script
+    (reported by Archlinux users)
 Version 2.2.2, 2015/06/27
     Added catch for libusb init error (thanks, Henrik Gustafsson); removed
     global function result variable; added catch for USB configuration

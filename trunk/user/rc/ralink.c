@@ -592,10 +592,10 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 {
 	FILE *fp;
 	char *p_str, *dat_file, *sku_file, *regspec, *c_val_mbss[2];
-	char macbuf[36], list[2048], sku_link[64];
+	char list[2048], sku_link[64];
 	int i, i_num,  i_val, i_wmm, i_ldpc;
 	int i_mode_x, i_phy_mode, i_gfe, i_auth, i_encr, i_wep, i_wds;
-	int i_ssid_num, i_channel, i_channel_max, i_HTBW_MAX, i_VHTBW_MAX;
+	int i_ssid_num, i_channel, i_channel_max, i_HTBW_MAX;
 	int i_stream_tx, i_stream_rx, i_mphy, i_mmcs, i_fphy[2], i_val_mbss[2];
 	const char *prefix = (is_aband) ? "wl" : "rt";
 
@@ -1250,10 +1250,11 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 
 #if BOARD_HAS_5G_11AC
 	if (is_aband) {
-		//VHT_BW
-		i_VHTBW_MAX = 0;
+		int i_VHTBW_MAX = 0;
+		
 		if (i_phy_mode == PHY_11VHT_N_A_MIXED || i_phy_mode == PHY_11VHT_N_MIXED)
 			i_VHTBW_MAX = 1;
+		//VHT_BW
 		i_val = nvram_wlan_get_int(is_aband, "HT_BW");
 		i_val = (i_val > 1) ? 1 : 0;
 		if (i_HTBW_MAX == 0 || i_VHTBW_MAX == 0) i_val = 0;
@@ -1311,7 +1312,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	list[0] = 0;
 	if (i_val != 0)
 	{
-		char wlan_param[32];
+		char wlan_param[32], macbuf[24];
 		
 		sprintf(wlan_param, "%s_%s", prefix, "maclist_x");
 		i_num = nvram_wlan_get_int(is_aband, "macnum_x");
@@ -1387,7 +1388,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	//WdsList
 	list[0] = 0;
 	if (i_wds == 2 || i_wds == 3) {
-		char wlan_param[32];
+		char wlan_param[32], macbuf[24];
 		
 		sprintf(wlan_param, "%s_%s", prefix, "wdslist_x");
 		i_num = nvram_wlan_get_int(is_aband, "wdsnum_x");

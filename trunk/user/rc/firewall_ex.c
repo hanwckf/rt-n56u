@@ -419,7 +419,7 @@ static int
 include_mac_filter(FILE *fp, int mac_filter_mode, char *logdrop)
 {
 	int i, mac_num;
-	char mac_timematch[128], mac_buf[64], nv_date[32], nv_time[32];
+	char mac_timematch[128], mac_buf[24], nv_date[32], nv_time[32];
 	char *filter_mac, *ftype;
 	const char *dtype = IPT_CHAIN_NAME_MAC_LIST;
 

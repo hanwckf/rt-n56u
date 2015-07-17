@@ -62,52 +62,52 @@ rand_seed_by_time(void)
 
 /* convert mac address format from XXXXXXXXXXXX to XX:XX:XX:XX:XX:XX */
 char *
-mac_conv(char *mac_name, int idx, char *buf)
+mac_conv(const char *mac_nvkey, int idx, char *buf)
 {
 	char *mac, name[32];
 	int i, j;
 
-	if (idx!=-1)
-		sprintf(name, "%s%d", mac_name, idx);
+	if (idx < 0)
+		snprintf(name, sizeof(name), "%s", mac_nvkey);
 	else
-		sprintf(name, "%s", mac_name);
+		snprintf(name, sizeof(name), "%s%d", mac_nvkey, idx);
 
 	mac = nvram_safe_get(name);
 
-	if (strlen(mac) != 12)
-		buf[0] = 0;
-	else {
-		j=0;
-		for (i=0; i<12; i++)
-		{
-			if (i!=0&&i%2==0) buf[j++] = ':';
+	buf[0] = 0;
+	if (strlen(mac) == 12) {
+		for (i = 0, j = 0; i < 12; i++) {
+			if (i != 0 && (i%2) == 0)
+				buf[j++] = ':';
 			buf[j++] = mac[i];
 		}
 		buf[j] = 0;	// oleg patch
 	}
+
+	if (strcasecmp(buf, "FF:FF:FF:FF:FF:FF") == 0 || strcmp(buf, "00:00:00:00:00:00") == 0)
+		buf[0] = 0;
 
 	return (buf);
 }
 
 /* convert mac address format from XX:XX:XX:XX:XX:XX to XXXXXXXXXXXX */
 char *
-mac_conv2(char *mac_name, int idx, char *buf)
+mac_conv2(const char *mac_nvkey, int idx, char *buf)
 {
 	char *mac, name[32];
 	int i, j;
 
-	if(idx != -1)
-		sprintf(name, "%s%d", mac_name, idx);
+	if (idx < 0)
+		snprintf(name, sizeof(name), "%s", mac_nvkey);
 	else
-		sprintf(name, "%s", mac_name);
+		snprintf(name, sizeof(name), "%s%d", mac_nvkey, idx);
 
 	mac = nvram_safe_get(name);
 
-	if (strlen(mac) != 17)
-		buf[0] = 0;
-	else {
-		for(i = 0, j = 0; i < 17; ++i){
-			if(i%3 != 2){
+	buf[0] = 0;
+	if (strlen(mac) == 17 && strcasecmp(buf, "FF:FF:FF:FF:FF:FF") && strcmp(buf, "00:00:00:00:00:00")) {
+		for(i = 0, j = 0; i < 17; ++i) {
+			if (i%3 != 2){
 				buf[j] = mac[i];
 				++j;
 			}
@@ -115,7 +115,7 @@ mac_conv2(char *mac_name, int idx, char *buf)
 		}
 	}
 
-	return(buf);
+	return (buf);
 }
 
 int
@@ -652,13 +652,21 @@ set_cpu_affinity(int is_ap_mode)
 	/* set initial IRQ affinity and RPS/XPS balancing */
 	int ncpu = sysconf(_SC_NPROCESSORS_ONLN);
 
+#define GIC_OFFSET	0
+#define GIC_IRQ_FE	(GIC_OFFSET+3)
+#define GIC_IRQ_PCIE0	(GIC_OFFSET+4)
+#define GIC_IRQ_PCIE1	(GIC_OFFSET+24)
+#define GIC_IRQ_PCIE2	(GIC_OFFSET+25)
+#define GIC_IRQ_SDXC	(GIC_OFFSET+20)
+#define GIC_IRQ_XHCI	(GIC_OFFSET+22)
+
 	if (ncpu == 4) {
-		irq_affinity_set( 3, 2);	/* GMAC  -> CPU:0, VPE:1 */
-		irq_affinity_set( 4, 4);	/* PCIe0 -> CPU:1, VPE:0 (usually rai0) */
-		irq_affinity_set(24, 8);	/* PCIe1 -> CPU:1, VPE:1 (usually ra0) */
-		irq_affinity_set(25, 1);	/* PCIe2 -> CPU:0, VPE:0 */
-		irq_affinity_set(20, 4);	/* SDXC  -> CPU:1, VPE:0 */
-		irq_affinity_set(22, 8);	/* xHCI  -> CPU:1, VPE:1 */
+		irq_affinity_set(GIC_IRQ_FE,    2);	/* GMAC  -> CPU:0, VPE:1 */
+		irq_affinity_set(GIC_IRQ_PCIE0, 4);	/* PCIe0 -> CPU:1, VPE:0 (usually rai0) */
+		irq_affinity_set(GIC_IRQ_PCIE1, 8);	/* PCIe1 -> CPU:1, VPE:1 (usually ra0) */
+		irq_affinity_set(GIC_IRQ_PCIE2, 1);	/* PCIe2 -> CPU:0, VPE:0 */
+		irq_affinity_set(GIC_IRQ_SDXC,  4);	/* SDXC  -> CPU:1, VPE:0 */
+		irq_affinity_set(GIC_IRQ_XHCI,  8);	/* xHCI  -> CPU:1, VPE:1 */
 		
 		rps_queue_set(IFNAME_2G_MAIN, 0x8);	/* CPU:1, VPE:1 */
 		xps_queue_set(IFNAME_2G_MAIN, 0x8);	/* CPU:1, VPE:1 */
@@ -681,12 +689,12 @@ set_cpu_affinity(int is_ap_mode)
 		}
 		
 	} else if (ncpu == 2) {
-		irq_affinity_set( 3, 1);	/* GMAC  -> CPU:0, VPE:0 */
-		irq_affinity_set( 4, 2);	/* PCIe0 -> CPU:0, VPE:1 (usually rai0) */
-		irq_affinity_set(24, 2);	/* PCIe1 -> CPU:0, VPE:1 (usually ra0) */
-		irq_affinity_set(25, 1);	/* PCIe2 -> CPU:0, VPE:0 */
-		irq_affinity_set(20, 2);	/* SDXC  -> CPU:0, VPE:1 */
-		irq_affinity_set(22, 2);	/* xHCI  -> CPU:0, VPE:1 */
+		irq_affinity_set(GIC_IRQ_FE,    1);	/* GMAC  -> CPU:0, VPE:0 */
+		irq_affinity_set(GIC_IRQ_PCIE0, 2);	/* PCIe0 -> CPU:0, VPE:1 (usually rai0) */
+		irq_affinity_set(GIC_IRQ_PCIE1, 2);	/* PCIe1 -> CPU:0, VPE:1 (usually ra0) */
+		irq_affinity_set(GIC_IRQ_PCIE2, 1);	/* PCIe2 -> CPU:0, VPE:0 */
+		irq_affinity_set(GIC_IRQ_SDXC,  2);	/* SDXC  -> CPU:0, VPE:1 */
+		irq_affinity_set(GIC_IRQ_XHCI,  2);	/* xHCI  -> CPU:0, VPE:1 */
 		
 		rps_queue_set(IFNAME_2G_MAIN, 0x2);	/* CPU:0, VPE:1 */
 		xps_queue_set(IFNAME_2G_MAIN, 0x2);	/* CPU:0, VPE:1 */

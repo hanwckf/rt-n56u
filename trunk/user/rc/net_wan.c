@@ -143,7 +143,7 @@ void
 reset_wan_vars(void)
 {
 	int unit, wan_proto;
-	char macbuf[36], *man_addr, *man_mask, *man_gate, *man_mtu;
+	char mac_buf[24], *man_addr, *man_mask, *man_gate, *man_mtu;
 
 	unit = 0;
 
@@ -238,10 +238,10 @@ reset_wan_vars(void)
 		set_wan_unit_param(unit, "ppp_pppd");
 	}
 
-	macbuf[0] = 0;
-	mac_conv("wan_hwaddr_x", -1, macbuf);
-	if (strlen(macbuf) == 17 && strcasecmp(macbuf, "FF:FF:FF:FF:FF:FF") && strcmp(macbuf, "00:00:00:00:00:00"))
-		nvram_set("wan_hwaddr", macbuf);
+	mac_buf[0] = 0;
+	mac_conv("wan_hwaddr_x", -1, mac_buf);
+	if (strlen(mac_buf) == 17)
+		nvram_set("wan_hwaddr", mac_buf);
 	else
 		nvram_set("wan_hwaddr", nvram_safe_get("il1macaddr"));
 

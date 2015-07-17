@@ -126,6 +126,9 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_ARIA)		+= aria2
 endif
 
 ifdef CONFIG_MTD_UBI
+ifndef CONFIG_USB_SUPPORT
+dir_y						+= util-linux
+endif
 dir_y						+= mtd-utils
 endif
 

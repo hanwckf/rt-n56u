@@ -79,11 +79,9 @@
 
 #define MAX_IF_HASH_NUM		256	/* must be 2^X */
 
-#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 static int wifi_offload __read_mostly = 0;
 module_param(wifi_offload, int, S_IRUGO);
 MODULE_PARM_DESC(wifi_offload, "PPE IPv4 NAT offload for wifi/extif");
-#endif
 
 static int udp_offload __read_mostly = DEFAULT_UDP_OFFLOAD;
 module_param(udp_offload, int, S_IRUGO);

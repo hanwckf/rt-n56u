@@ -10,6 +10,11 @@ struct mod_arch_specific {
 	const struct exception_table_entry *dbe_start;
 	const struct exception_table_entry *dbe_end;
 	struct mips_hi16 *r_mips_hi16_list;
+
+	void *phys_plt_tbl;
+	void *virt_plt_tbl;
+	unsigned int phys_plt_offset;
+	unsigned int virt_plt_offset;
 };
 
 typedef uint8_t Elf64_Byte;		/* Type for a 8-bit quantity.  */

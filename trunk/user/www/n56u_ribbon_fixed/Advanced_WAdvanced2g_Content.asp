@@ -207,8 +207,8 @@ function done_validating(action){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 4);"><#WLANConfig11n_PremblesType_itemname#></a></th>
                                             <td>
                                                 <select name="rt_preamble" class="input">
-                                                    <option value="0" <% nvram_match_x("","rt_preamble", "0","selected"); %>>Long (*)</option>
-                                                    <option value="1" <% nvram_match_x("","rt_preamble", "1","selected"); %>>Short</option>
+                                                    <option value="0" <% nvram_match_x("","rt_preamble", "0","selected"); %>>Long</option>
+                                                    <option value="1" <% nvram_match_x("","rt_preamble", "1","selected"); %>>Short (*)</option>
                                                 </select>
                                             </td>
                                         </tr>

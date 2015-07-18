@@ -305,7 +305,7 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_wpa_mode", "2" },
 	{ "rt_stream_tx", STR(BOARD_NUM_ANT_2G_TX) },
 	{ "rt_stream_rx", STR(BOARD_NUM_ANT_2G_RX) },
-	{ "rt_preamble", "0" },
+	{ "rt_preamble", "1" },
 	{ "rt_greenap", "0" },
 	{ "rt_ldpc", "0" },
 	{ "rt_HT_RDG", "0" },

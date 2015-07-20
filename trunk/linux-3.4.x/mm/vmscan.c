@@ -3716,11 +3716,13 @@ void check_move_unevictable_pages(struct page **pages, int nr_pages)
 
 static void warn_scan_unevictable_pages(void)
 {
+#if 0
 	printk_once(KERN_WARNING
 		    "%s: The scan_unevictable_pages sysctl/node-interface has been "
 		    "disabled for lack of a legitimate use case.  If you have "
 		    "one, please send an email to linux-mm@kvack.org.\n",
 		    current->comm);
+#endif
 }
 
 /*

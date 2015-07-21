@@ -348,6 +348,13 @@ init_nodes(void)
 	mknod("/dev/ac0",    S_IFCHR | 0666, makedev(240, 0));
 	mknod("/dev/mtr0",   S_IFCHR | 0666, makedev(250, 0));
 #endif
+#if defined(APP_OPENVPN)
+	/* if kernel CONFIG_HOTPLUG is not set, mdev create /dev/tun instead of /dev/net/tun */
+	if (!check_if_dev_exist("/dev/net/tun")) {
+		mkdir("/dev/net", 0755);
+		mknod("/dev/net/tun", S_IFCHR | 0666, makedev(10, 200));
+	}
+#endif
 }
 
 static void

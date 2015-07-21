@@ -1054,7 +1054,7 @@ handle_notifications(void)
 		{
 			restart_nmbd();
 			restart_dhcpd();
-			reload_vpn_server();
+			reapply_vpn_server();
 		}
 #endif
 		else if (strcmp(entry->d_name, RCN_RESTART_LLTD) == 0)
@@ -1064,6 +1064,10 @@ handle_notifications(void)
 		else if (strcmp(entry->d_name, RCN_RESTART_ADSC) == 0)
 		{
 			restart_infosvr();
+		}
+		else if (strcmp(entry->d_name, RCN_REAPPLY_VPNSVR) == 0)
+		{
+			reapply_vpn_server();
 		}
 		else if (strcmp(entry->d_name, RCN_RESTART_VPNSVR) == 0)
 		{
@@ -1390,6 +1394,9 @@ main(int argc, char **argv)
 		erase_nvram();
 		sys_exit();
 	}
+	else if (!strcmp(base, "run_telnetd")) {
+		run_telnetd();
+	}
 	else if (!strcmp(base, "run_ftpsamba")) {
 #if defined(APP_SMBD)
 		restart_smbd();
@@ -1495,11 +1502,14 @@ main(int argc, char **argv)
 	else if (!strcmp(base, "restart_dhcpd")) {
 		restart_dhcpd();
 	}
+	else if (!strcmp(base, "restart_vpn_server")) {
+		restart_vpn_server();
+	}
+	else if (!strcmp(base, "restart_vpn_client")) {
+		restart_vpn_client();
+	}
 	else if (!strcmp(base, "restart_networkmap")) {
 		restart_networkmap();
-	}
-	else if (!strcmp(base, "run_telnetd")) {
-		run_telnetd();
 	}
 	else if (!strcmp(base, "restart_firewall")) {
 		restart_firewall();

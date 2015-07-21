@@ -96,7 +96,7 @@ start_vpn_client(void)
 	if (!(fp = fopen(vpnc_opt, "w"))) {
 		return -1;
 	}
-	
+
 	fprintf(fp, "noauth\n");
 	fprintf(fp, "user '%s'\n", safe_pppd_line(nvram_safe_get("vpnc_user"), tmp, sizeof(tmp)));
 	fprintf(fp, "password '%s'\n", safe_pppd_line(nvram_safe_get("vpnc_pass"), tmp, sizeof(tmp)));
@@ -121,8 +121,7 @@ start_vpn_client(void)
 		fprintf(fp, "refuse-mschap-v2\n");
 	}
 
-	if (i_type != 1)
-	{
+	if (i_type != 1) {
 		fprintf(fp, "plugin pptp.so\n");
 		fprintf(fp, "pptp_server '%s'\n", vpnc_peer);
 		fprintf(fp, "route_rdgw %d\n", (nvram_match("vpnc_dgw", "1")) ? 2 : 0);
@@ -207,7 +206,7 @@ start_vpn_client(void)
 	return 0;
 }
 
-void 
+void
 stop_vpn_client(void)
 {
 	char pppd_pid[32];
@@ -242,6 +241,9 @@ stop_vpn_client_force(void)
 void
 restart_vpn_client(void)
 {
+	if (get_ap_mode())
+		return;
+
 	xl2tpd_killed_vpnc = 0;
 
 	stop_vpn_client_force();
@@ -263,6 +265,7 @@ void
 restore_dns_from_vpnc(void)
 {
 	char *vpnc_dns = nvram_safe_get("vpnc_dns_t");
+
 	if (*vpnc_dns) {
 		nvram_set_temp("vpnc_dns_t", "");
 		update_resolvconf(0, 0);

@@ -62,50 +62,26 @@ safe_start_xl2tpd(void)
 		"access control = no\n"
 		"rand source = dev\n\n");
 
-	if (nvram_match("vpns_enable", "1") && nvram_match("vpns_type", "1"))
-	{
-		int i_cli0, i_cli1;
-		char pooll[32], pool1[32], pool2[32];
-		unsigned int laddr, lmask, lsnet;
+	if (nvram_match("vpns_enable", "1") && nvram_match("vpns_type", "1")) {
+		char sa_v[INET_ADDRSTRLEN], sp_b[INET_ADDRSTRLEN], sp_e[INET_ADDRSTRLEN];
+		unsigned int vaddr, vmask, vp_b, vp_e;
 		struct in_addr pool_in;
 		
-		if (nvram_get_int("vpns_vuse") == 0)
-		{
-			laddr = ntohl(inet_addr(nvram_safe_get("lan_ipaddr")));
-			lmask = ntohl(inet_addr(nvram_safe_get("lan_netmask")));
-			lsnet = (~lmask) - 1;
-			
-			i_cli0 = nvram_safe_get_int("vpns_cli0", 245, 1, 254);
-			i_cli1 = nvram_safe_get_int("vpns_cli1", 254, 2, 254);
-			if (i_cli0 >= (int)lsnet) i_cli0 = (int)(lsnet - 1);
-			if (i_cli1 > (int)lsnet) i_cli1 = (int)lsnet;
-			if (i_cli1 <= i_cli0) i_cli1 = i_cli0 + 1;
-			laddr = (laddr & lmask) | (unsigned int)i_cli0;
-			i_cli0 += 1;
-		}
-		else
-		{
-			laddr = ntohl(inet_addr(nvram_safe_get("vpns_vnet")));
-			lmask = ntohl(inet_addr(VPN_SERVER_SUBNET_MASK));
-			laddr = (laddr & lmask) | 1;
-			
-			i_cli0 = 2;
-			i_cli1 = i_cli0 + MAX_CLIENTS_NUM - 1;
-		}
+		get_vpns_pool(nvram_get_int("vpns_vuse"), &vaddr, &vmask, &vp_b, &vp_e);
 		
-		pool_in.s_addr = htonl(laddr);
-		strcpy(pooll, inet_ntoa(pool_in));
+		pool_in.s_addr = htonl(vaddr);
+		strcpy(sa_v, inet_ntoa(pool_in));
 		
-		pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli0);
-		strcpy(pool1, inet_ntoa(pool_in));
+		pool_in.s_addr = htonl((vaddr & vmask) | vp_b);
+		strcpy(sp_b, inet_ntoa(pool_in));
 		
-		pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli1);
-		strcpy(pool2, inet_ntoa(pool_in));
+		pool_in.s_addr = htonl((vaddr & vmask) | vp_e);
+		strcpy(sp_e, inet_ntoa(pool_in));
 		
 		fprintf(fp, "[lns default]\n");
 		fprintf(fp, "hostname = %s\n", get_our_hostname());
-		fprintf(fp, "local ip = %s\n", pooll);
-		fprintf(fp, "ip range = %s-%s\n", pool1, pool2);
+		fprintf(fp, "local ip = %s\n", sa_v);
+		fprintf(fp, "ip range = %s-%s\n", sp_b, sp_e);
 		fprintf(fp, "pppoptfile = %s\n", VPN_SERVER_PPPD_OPTIONS);
 		fprintf(fp, "require authentication = no\n");
 		fprintf(fp, "tunnel rws = %d\n", 8);

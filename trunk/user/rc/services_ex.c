@@ -325,15 +325,18 @@ start_dns_dhcpd(int is_ap_mode)
 		    "resolv-file=%s\n"
 		    "no-poll\n"
 		    "bogus-priv\n"
-		    "interface=%s\n"
-		    "listen-address=%s\n"
-		    "bind-dynamic\n"
 		    "no-negcache\n"
-		    "clear-on-reload\n",
+		    "clear-on-reload\n"
+		    "bind-dynamic\n"
+		    "interface=%s\n",
 		    SYS_USER_NOBODY,
 		    DNS_RESOLV_CONF,
-		    IFNAME_BR,
-		    ipaddr);
+		    IFNAME_BR);
+
+	if (!is_ap_mode) {
+		/* listen DNS queries from clients of VPN server */
+		fprintf(fp, "listen-address=%s\n", ipaddr);
+	}
 
 	if (!is_ap_mode) {
 		is_dns_used = 1;

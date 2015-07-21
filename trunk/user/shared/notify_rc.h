@@ -27,6 +27,7 @@
 #define RCN_RESTART_NTPC		"restart_ntpc"
 #define RCN_RESTART_SYSLOG		"restart_syslog"
 #define RCN_RESTART_NETFILTER		"restart_netfilter"
+#define RCN_REAPPLY_VPNSVR		"reapply_vpn_server"
 #define RCN_RESTART_VPNSVR		"restart_vpn_server"
 #define RCN_RESTART_VPNCLI		"restart_vpn_client"
 #define RCN_RESTART_WIFI2		"restart_wifi_rt"

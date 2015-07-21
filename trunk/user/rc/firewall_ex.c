@@ -955,15 +955,24 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 			} else
 #endif
 			if (i_vpns_type == 1) {
+				/* accept L2TP */
 				fprintf(fp, "-A %s -p %s --dport %d -j %s\n", dtype, "udp", 1701, logaccept);
 			} else {
+				/* accept PPTP */
 				fprintf(fp, "-A %s -p %s --dport %d -j %s\n", dtype, "tcp", 1723, logaccept);
 				fprintf(fp, "-A %s -p %d -j %s\n", dtype, 47, logaccept);
 			}
 			
 			/* Jump to vpnlist chain */
-			if (i_need_vpnlist && (i_vpns_actl == 0 || i_vpns_actl == 2))
-				fprintf(fp, "-A %s -j %s\n", dtype, IPT_CHAIN_NAME_VPN_LIST);
+			if (i_need_vpnlist) {
+				if (i_vpns_actl == 0 || i_vpns_actl == 2) {
+					/* accept all packets */
+					fprintf(fp, "-A %s -j %s\n", dtype, IPT_CHAIN_NAME_VPN_LIST);
+				} else {
+					/* accept DNS UDP packets only */
+					fprintf(fp, "-A %s -p %s --dport %d -j %s\n", dtype, "udp", 53, IPT_CHAIN_NAME_VPN_LIST);
+				}
+			}
 		}
 		
 		/* Accept to VPN client */
@@ -1096,6 +1105,8 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 			if (i_need_vpnlist) {
 				if (i_vpns_actl == 0 || i_vpns_actl == 1)
 					fprintf(fp, "-A %s -j %s\n", dtype, IPT_CHAIN_NAME_VPN_LIST);
+				else if (i_vpns_actl == 4)
+					fprintf(fp, "-A %s -o %s -j %s\n", dtype, wan_if, IPT_CHAIN_NAME_VPN_LIST);
 				else
 					fprintf(fp, "-A %s -o %s -j %s\n", dtype, lan_if, IPT_CHAIN_NAME_VPN_LIST);
 			}
@@ -1770,7 +1781,7 @@ ipt_nat_rules(char *man_if, char *man_ip,
 #if defined (APP_OPENVPN)
 				if (i_vpns_type == 2) {
 					if (nvram_get_int("vpns_ov_mode") == 1) {
-						if (i_vpns_actl == 0 || i_vpns_actl == 1)
+						if (i_vpns_actl == 0 || i_vpns_actl == 1 || i_vpns_actl == 4)
 							include_masquerade(fp, wan_if, wan_ip, vpn_net);
 						
 						/* masquerade VPN server clients to LAN */
@@ -1780,7 +1791,7 @@ ipt_nat_rules(char *man_if, char *man_ip,
 				} else
 #endif
 				{
-					if (i_vpns_vuse && (i_vpns_actl == 0 || i_vpns_actl == 1))
+					if (i_vpns_vuse && (i_vpns_actl == 0 || i_vpns_actl == 1 || i_vpns_actl == 4))
 						include_masquerade(fp, wan_if, wan_ip, vpn_net);
 					
 					/* masquerade VPN server clients to LAN */

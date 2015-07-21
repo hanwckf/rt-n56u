@@ -948,6 +948,7 @@ function getHash(){
                                             <option value="1" <% nvram_match_x("", "vpns_actl", "1","selected"); %>><#VPNS_ACtl_Item1#></option>
                                             <option value="2" <% nvram_match_x("", "vpns_actl", "2","selected"); %>><#VPNS_ACtl_Item2#></option>
                                             <option value="3" <% nvram_match_x("", "vpns_actl", "3","selected"); %>><#VPNS_ACtl_Item3#></option>
+                                            <option value="4" <% nvram_match_x("", "vpns_actl", "4","selected"); %>><#VPNS_ACtl_Item4#></option>
                                         </select>
                                     </td>
                                 </tr>

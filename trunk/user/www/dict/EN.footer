@@ -290,6 +290,7 @@ VPNS_ACtl_Item0=Full access
 VPNS_ACtl_Item1=LAN & Internet
 VPNS_ACtl_Item2=LAN & router host
 VPNS_ACtl_Item3=LAN only
+VPNS_ACtl_Item4=Internet only
 VPNS_CTun=VPN Tunnel Settings
 VPNS_PInfo=VPN Addressing
 VPNS_VAddr=VPN Server IP Address:

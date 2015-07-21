@@ -304,6 +304,7 @@ VPNS_ACtl_Item0=Полный
 VPNS_ACtl_Item1=LAN и Интернет
 VPNS_ACtl_Item2=LAN и хост роутера
 VPNS_ACtl_Item3=Только LAN
+VPNS_ACtl_Item4=Только Интернет
 VPNS_CTun=Параметры VPN-туннеля
 VPNS_PInfo=Адресация VPN-клиентов
 VPNS_VAddr=Локальный IP-адрес VPN-сервера:

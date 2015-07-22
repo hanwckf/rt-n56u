@@ -1,4 +1,4 @@
-/* $Id: getifstats.c,v 1.12 2013/04/29 10:18:20 nanard Exp $ */
+/* $Id: getifstats.c,v 1.13 2015/06/09 15:33:24 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2013 Thomas Bernard
@@ -98,7 +98,7 @@ getifstats(const char * ifname, struct ifdata * data)
 		break;
 	}
 	fclose(f);
-#if 0 /* Disable get speed. In 2.6.21 kernel not supported this. */
+#if 0 /* Disable get speed */
 	/* get interface speed */
 	/* NB! some interfaces, like ppp, don't support speed queries */
 	snprintf(fname, sizeof(fname), "/sys/class/net/%s/speed", ifname);
@@ -110,6 +110,8 @@ getifstats(const char * ifname, struct ifdata * data)
 				data->baudrate = 1000000*i;
 		}
 		fclose(f);
+	} else {
+		syslog(LOG_INFO, "cannot read %s file : %m", fname);
 	}
 #endif
 #ifdef GET_WIRELESS_STATS

@@ -1,4 +1,4 @@
-/* $Id: upnphttp.c,v 1.99 2014/12/09 17:25:30 nanard Exp $ */
+/* $Id: upnphttp.c,v 1.100 2015/06/09 15:34:46 nanard Exp $ */
 /* Project :  miniupnp
  * Website :  http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * Author :   Thomas Bernard

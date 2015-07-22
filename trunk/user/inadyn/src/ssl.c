@@ -22,7 +22,6 @@
 #include "debug.h"
 #include "ssl.h"
 
-
 #ifdef ENABLE_SSL
 /* SSL SNI support: tell the servername we want to speak to */
 static int set_server_name(SSL *ssl, const char *sn)
@@ -150,6 +149,72 @@ int ssl_exit(http_t *client)
 #endif
 }
 
+static ssize_t
+ssl_read_socket(SSL* ssl, char *buf, size_t len)
+{
+	int nr, err;
+	size_t total = 0;
+
+	do {
+		nr = SSL_read(ssl, buf + total, len - total);
+		if (nr > 0) {
+			total += (size_t)nr;
+		} else {
+			err = SSL_get_error(ssl, nr);
+			switch (err) {
+			case SSL_ERROR_ZERO_RETURN:
+				goto read_out;
+				break;
+			case SSL_ERROR_WANT_WRITE:
+			case SSL_ERROR_WANT_READ:
+				break;
+			default:
+				if (total == 0)
+					total = (ssize_t)-1;
+				logit(LOG_ERR, "SSL_read %s! (err: %d)", "FAILED", err);
+				goto read_out;
+			}
+		}
+	} while ((total < len) && SSL_pending(ssl));
+
+read_out:
+
+	return (ssize_t)total;
+}
+
+static ssize_t
+ssl_write_socket(SSL* ssl, const char *buf, size_t len)
+{
+	int nw, err;
+	size_t total = 0;
+
+	while (total < len) {
+		nw = SSL_write(ssl, buf + total, len - total);
+		if (nw > 0) {
+			total += (size_t)nw;
+		} else {
+			err = SSL_get_error(ssl, nw);
+			switch (err) {
+			case SSL_ERROR_ZERO_RETURN:
+				goto write_out;
+				break;
+			case SSL_ERROR_WANT_WRITE:
+			case SSL_ERROR_WANT_READ:
+				break;
+			default:
+				if (total == 0)
+					total = (ssize_t)-1;
+				logit(LOG_ERR, "SSL_write %s! (err: %d)", "FAILED", err);
+				goto write_out;
+			}
+		}
+	}
+
+write_out:
+
+	return (ssize_t)total;
+}
+
 int ssl_send(http_t *client, const char *buf, int len)
 {
 #ifndef ENABLE_SSL
@@ -158,14 +223,11 @@ int ssl_send(http_t *client, const char *buf, int len)
 	(void)len;
 	return RC_HTTPS_NO_SSL_SUPPORT;
 #else
-	int err, err_ssl;
+	ssize_t nw;
 
-	err = SSL_write(client->ssl, buf, len);
-	if (err <= 0) {
-		err_ssl = SSL_get_error(client->ssl, err);
-		logit(LOG_ERR, "SSL_write %s! (err: %d)", "FAILED", err_ssl);
+	nw = ssl_write_socket(client->ssl, buf, len);
+	if (nw <= 0)
 		return RC_HTTPS_SEND_ERROR;
-	}
 
 	if (client->verbose > 1)
 		logit(LOG_DEBUG, "Successfully sent DDNS update using HTTPS!");
@@ -183,24 +245,19 @@ int ssl_recv(http_t *client, char *buf, int buf_len, int *recv_len)
 	(void)recv_len;
 	return RC_HTTPS_NO_SSL_SUPPORT;
 #else
-	int len, err, err_ssl;
+	ssize_t nr;
 
-	/* Read HTTP header */
-	len = err = SSL_read(client->ssl, buf, buf_len);
-	if (err <= 0) {
-		err_ssl = SSL_get_error(client->ssl, err);
-		logit(LOG_ERR, "SSL_read %s! (err: %d)", "FAILED", err_ssl);
+	/* Read HTTP header & body */
+	nr = ssl_read_socket(client->ssl, buf, buf_len);
+	if (nr <= 0) {
+		*recv_len = 0;
 		return RC_HTTPS_RECV_ERROR;
 	}
 
-	/* Read HTTP body */
-	*recv_len = SSL_read(client->ssl, &buf[len], buf_len - len);
-	if (*recv_len <= 0)
-		*recv_len = 0;
-	*recv_len += len;
+	*recv_len = nr;
 
 	if (client->verbose > 1)
-		logit(LOG_DEBUG, "Successfully received DDNS update response (%d bytes) using HTTPS!", *recv_len);
+		logit(LOG_DEBUG, "Successfully received DDNS update response (%d bytes) using HTTPS!", nr);
 
 	return 0;
 #endif

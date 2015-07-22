@@ -4,12 +4,12 @@
 .\" groff -man -Tascii foo.1
 .\"
 .\" Copyright (C) 2004       Shaul Karl.
-.\" Copyright (C) 2010-2013  Joachim Nilsson.
+.\" Copyright (C) 2010-2015  Joachim Nilsson.
 .\"
 .\" You may modify and distribute this document for any purpose, as
 .\" long as this copyright notice remains intact.
 .\"
-.Dd November 27, 2013
+.Dd July 14, 2015
 .Dt INADYN 8 SMM
 .Os
 .Sh NAME
@@ -34,6 +34,7 @@
 .Op Fl H, -checkip-url Ar SERVER Ns Oo : Ns Ar PORT Oc Ar URL
 .Op Fl N, -server-name Ar SERVER Ns Op : Ns Ar PORT
 .Op Fl U, -server-url Ar PATH
+.Op Fl A, -append-myip
 .Op Fl S, -system Ar PROVIDER
 .Op Fl s, -ssl
 .Op Fl o, -once
@@ -102,6 +103,8 @@ https://domains.google.com
 https://www.ovh.com
 .It
 https://www.dtdns.com
+.It
+https://www.duiadns.net
 .El
 .Pp
 DDNS providers not listed here, like http://twoDNS.de, can often be
@@ -152,6 +155,12 @@ option so that the default servers will be taken. The
 option is useful for generic DynDNS services that support HTTP update.
 .It Fl U, -server-url Ar PATH
 The update path on the DynDNS server.
+.It Fl A, -append-myip
+Appends your current IP, instead of the hostname alias, to the update
+URL.  To use this setting you should encode the hostname alias in the
+.Fl -server-url .
+See example in
+.Xr inadyn.conf 5
 .It Fl S, -system Ar email@ddns-service.tld
 DNS service to connect to.  Defaults to
 .Ar default@dyndns.org .
@@ -194,6 +203,8 @@ https://nsupdate.info
 http://duckdns.org
 .It Cm default@loopia.com
 https://www.loopia.com
+.It Cm default@duiadns.net
+https://www.duiadns.net
 .It Cm custom@http_srv_basic_auth
 Try this if your DDNS service provider is not listed
 .El

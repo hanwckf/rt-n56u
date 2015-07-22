@@ -19,9 +19,9 @@
 .Nm /etc/inadyn.conf
 .Sh DESCRIPTION
 .Nm inadyn
-can read the very same command line options from a configuration file. This
-feature allows the user to write the options only once, and avoids frequent
-retyping.
+can read the very same command line options from a configuration file.
+This feature allows the user to write the options only once, and avoids
+frequent retyping.
 .Pp
 The format of the file follows the UN*X tradition:
 .Bl -bullet -offset abcd
@@ -111,12 +111,41 @@ system custom@http_srv_basic_auth
 .br
     alias example.dd-dns.de
 .br
+.Pp
+As of Inadyn 1.99.14 the generic plugin can also be used with providers
+that require the client's IP in the update request, as
+.Aq http://dyn.com
+requires:
+.Pp
+# This emulates default@dyndns.org
+.br
+system custom@http_srv_basic_auth
+.br
+    alias YOURHOST
+.br
+    server-name members.dyndns.org
+.br
+    ssl
+.br
+    server-url /nic/update?hostname=YOURHOST.dyndns.org&myip=
+.br
+    append-myip
+.br
+    username DYNUSERNAME
+.br
+    password DYNPASSWORD
+.Pp
+Notice the use of
+.Nm append-myip
+which differs from above previous examples.  Without this option set the
+default (backwards compatible) behavior is to add the hostname alias.
 .Sh "SEE ALSO"
 .Xr inadyn 8
 .Pp
 The
 .Nm inadyn
-home page is http://github.com/troglobit/inadyn
+home page is
+.Aq http://github.com/troglobit/inadyn
 .Sh AUTHORS
 This manual page was initially written for the
 .Em Debian GNU/Linux

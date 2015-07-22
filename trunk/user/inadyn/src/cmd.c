@@ -62,6 +62,7 @@ static int get_password_handler(cmd_data_t *cmd, int num, void *context);
 static int get_alias_handler(cmd_data_t *cmd, int num, void *context);
 static int get_dns_server_name_handler(cmd_data_t *cmd, int num, void *context);
 static int get_dns_server_url_handler(cmd_data_t *cmd, int num, void *context);
+static int append_myip(cmd_data_t *cmd, int num, void *context);
 static int get_checkip_name_handler(cmd_data_t *cmd, int num, void *context);
 static int get_dyndns_system_handler(cmd_data_t *cmd, int num, void *context);
 static int get_update_period_handler(cmd_data_t *cmd, int num, void *context);
@@ -156,8 +157,17 @@ static cmd_desc_t cmd_options_table[] = {
 
 	{"-U", 1, {get_dns_server_url_handler, NULL}, ""},
 	{"--server-url", 1, {get_dns_server_url_handler, NULL}, "<URL>\n"
-	 "\t\t\tFull URL relative to DynDNS server root.\n" "\t\t\tEx: /some_script.php?hostname=\n"},
+	 "\t\t\tFull URL relative to DynDNS server root.\n"
+	 "\t\t\tE.g. '/some_script.php?hostname='"},
 	{"--dyndns_server_url", 1, {get_dns_server_url_handler, NULL}, NULL},
+
+	{"-A",            0, {append_myip, NULL}, ""},
+	{"--append-myip", 0, {append_myip, NULL},
+	 "For custom@ setups, append current IP to server update URL.\n"
+	 "\t\t\tE.g., if custom server URL looks something like this (dyn.com):\n\n"
+	 "\t\t\t\t/nic/update?hostname=youralias.dyndns.org&myip=\n\n"
+	 "\t\t\tthis setting appends your current IP address to the end of the\n"
+	"\t\t\tURL.  Without this flag your hostname alias is added instead."},
 
 	{"-S", 1, {get_dyndns_system_handler, NULL}, ""},
 	{"--system", 1, {get_dyndns_system_handler, NULL}, "<PROVIDER>\n"
@@ -185,6 +195,7 @@ static cmd_desc_t cmd_options_table[] = {
 	 "\t\t\t     default@ovh.com\n"
 	 "\t\t\t     default@dtdns.com\n"
 	 "\t\t\t     default@gira.de\n"
+	 "\t\t\t     default@duiadns.net\n"
 	 "\t\t\t     ipv4@nsupdate.info\n"
 	 "\t\t\t     update@asus.com, register@asus.com\n"
 	 "\t\t\t     ipv6tb@netassist.ua\n"
@@ -700,6 +711,21 @@ int get_dns_server_url_handler(cmd_data_t *cmd, int num, void *context)
 		return RC_DYNDNS_BUFFER_TOO_SMALL;
 
 	strcpy(info->server_url, cmd->argv[num]);
+
+	return 0;
+}
+
+static int append_myip(cmd_data_t *cmd, int num, void *context)
+{
+	ddns_t *ctx = (ddns_t *)context;
+
+	(void)cmd;
+	(void)num;
+
+	if (ctx == NULL)
+		return RC_INVALID_POINTER;
+
+	ctx->info[infid].append_myip = 1;
 
 	return 0;
 }
@@ -1309,8 +1335,11 @@ static int validate_configuration(ddns_t *ctx)
 		int ok = 1;
 		ddns_info_t *account = &ctx->info[i];
 
-		check_setting(strlen(account->creds.username), i, "Missing username", &ok);
-//		check_setting(strlen(account->creds.password), i, "Missing password", &ok);
+		/* username, password not required for custom setups */
+		if (strncmp(account->system->name, "custom@", 7)) {
+			check_setting(strlen(account->creds.username), i, "Missing username", &ok);
+//			check_setting(strlen(account->creds.password), i, "Missing password", &ok);
+		}
 		check_setting(account->alias_count, i, "Missing your alias/hostname", &ok);
 		check_setting(strlen(account->server_name.name), i,
 			      "Missing DDNS server address, check DDNS provider", &ok);

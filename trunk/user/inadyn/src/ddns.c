@@ -650,7 +650,8 @@ int ddns_main_loop(ddns_t *ctx, int argc, char *argv[])
 	}
 
 	/* Check file system permissions and create pidfile */
-	DO(os_check_perms(ctx));
+	if (!ctx->update_once)
+		DO(os_check_perms(ctx));
 
 	/* if logfile provided, redirect output to log file */
 	if (strlen(ctx->dbg.p_logfilename) != 0)

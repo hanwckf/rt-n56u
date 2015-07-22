@@ -3,16 +3,39 @@ Change Log
 
 All notable changes to the project are documented in this file.
 
+[1.99.14][] - 2015-07-14
+------------------------
 
-[1.99.13] - 2015-02-08
-----------------------
+Improved support for configuring custom DDNS providers and support for
+running in Windows, using Cygwin!
 
 ### Changes
-- Add support for https://domains.google.com DDNS, by Justin McManus
-- Add support for https://www.ovh.com DDNS service, by Andres Gomez
-- Add support for http://dtdns.com DDNS, by Denton Gentry
+- New setting `append-myip` which, instead of appending your hostname
+  alias, appends the current IP to the server GET update URL.  See
+  [README][README.md] or the man pages for more details.
+- Prevent Inadyn from bugging out if it cannot write a cache file when
+  the `-o, --once` flag is given.
+- Add support for <http://GiraDNS.com>, thanks to Thorsten Mühlfelder!
+- Add support for <https://www.duiadns.net>, thanks to Ionut Slaveanu!
+- Add Cygwin support for running Inadyn in Windows, thanks to Scott Mann!
+
+### Fixes
+- Sanitized default logs by placing conditions for debug logs.  Thanks
+  to Frank Aurich for this work!
+- Fix issue #82: build failure, no rule to build target CHANGELOG, a
+  regression introduced in [1.99.13][].
+- Fix Duck DNS support, thanks to Ismani Nieuweboer!
+
+
+[1.99.13][] - 2015-02-08
+------------------------
+
+### Changes
+- Add support for <https://domains.google.com> DDNS, by Justin McManus
+- Add support for <https://www.ovh.com> DDNS service, by Andres Gomez
+- Add support for <http://dtdns.com> DDNS, by Denton Gentry
 - Rename `NEWS.md` to `CHANGELOG.md` and update formatting in an attempt
-  to align with http://keepachangelog.com -- this also means using ISO
+  to align with <http://keepachangelog.com> -- this also means using ISO
   date format, finally!
 
 ### Fixes
@@ -21,11 +44,11 @@ All notable changes to the project are documented in this file.
   space, by Andy Padavan
 
 
-[1.99.12] - 2014-10-20
-----------------------
+[1.99.12][] - 2014-10-20
+------------------------
 
 ### Changes
-- Add custom support for http://Namecheap.com, by Terzeus S. Dominguez
+- Add custom support for <http://Namecheap.com>, by Terzeus S. Dominguez
 
 ### Fixes
 - Fix cross compilation issues with OpenSSL (depends on libcrypto)
@@ -33,13 +56,13 @@ All notable changes to the project are documented in this file.
   autoconf check completely)
 
 
-[1.99.11] - 2014-10-15
-----------------------
+[1.99.11][] - 2014-10-15
+------------------------
 
 ### Changes
-- Add support for https://nsupdate.info, thanks to Thomas Waldmann
-- Add support for https://www.loopia.com DynDNS service extension
-- Add support for https://duckdns.org, thanks to Andy Padavan
+- Add support for <https://nsupdate.info>, thanks to Thomas Waldmann
+- Add support for <https://www.loopia.com> DynDNS service extension
+- Add support for <https://duckdns.org>, thanks to Andy Padavan
 - Updated man pages, both `inadyn(8)` and `inadyn.conf(5)` with examples
 
 ### Fixes
@@ -48,8 +71,8 @@ All notable changes to the project are documented in this file.
 - SSL mitigation fixes for POODLE
 
 
-[1.99.10] - 2014-09-13
-----------------------
+[1.99.10][] - 2014-09-13
+------------------------
 
 ### Changes
 - Refactor string functions `strcat()` and `strcpy()` to use secure
@@ -63,38 +86,39 @@ All notable changes to the project are documented in this file.
 - Fix include order problem with `error.h`
 
 
-[1.99.9] - 2014-05-21
----------------------
+[1.99.9][] - 2014-05-21
+-----------------------
 
 ### Changes
-- Support for http://www.zerigo.com DDNS provider
-- Support for http://www.dhis.org DDNS provider
+- Support for <http://www.zerigo.com> DDNS provider
+- Support for <http://www.dhis.org> DDNS provider
 
 ### Fixes
 - Fix memory leak in new HTTPS support, found by Valgrind
 - Other misc. Valgrind and Cppcheck fixes
 
 
-[1.99.8] - 2014-05-20
----------------------
+[1.99.8][] - 2014-05-20
+-----------------------
 
 ### Changes
 - Support for HTTPS to secure login credentials at DNS update, issue #36
 - Support for persistent cache files with new `--cache-dir PATH`
-- Support for http://twoDNS.de in generic plugin, see README for details
+- Support for <http://twoDNS.de> in generic plugin, see
+  [README][README.md] for details
 - Man page updates
 
 
-[1.99.7] - 2014-05-14
----------------------
+[1.99.7][] - 2014-05-14
+-----------------------
 
 ### Changes
 - Support for multiple cache files, one per DDNS provider, issue #35
 - Refactor DDNS providers as plugins, issue #30
 
 
-[1.99.6] - 2013-12-25
----------------------
+[1.99.6][] - 2013-12-25
+-----------------------
 
 ### Changes
 - Update documentation for custom servers and add missing compatibility
@@ -104,8 +128,8 @@ All notable changes to the project are documented in this file.
 - Fix nasty socket leak.
 
 
-[1.99.5] - 2013-11-27
----------------------
+[1.99.5][] - 2013-11-27
+-----------------------
 
 ### Changes
 - Support for `--fake-address` on new `SIGUSR1` (forced update)
@@ -117,14 +141,14 @@ All notable changes to the project are documented in this file.
 - Many minor bug fixes
 
 
-[1.99.4] - 2013-08-08
----------------------
+[1.99.4][] - 2013-08-08
+-----------------------
 
-This release fixes a base64 password encoding regression in [1.99.3]
+This release fixes a base64 password encoding regression in [1.99.3][]
 
 
-[1.99.3] - 2013-07-15 [YANKED]
-------------------------------
+[1.99.3][] - 2013-07-15 [YANKED]
+--------------------------------
 
 This release adds the ability to specify the cache file and the ability
 to check the IP of the interface (UNIX only).  If no interface is
@@ -145,30 +169,30 @@ bugfixes and code optimizations have been made.
 - Minor bugfixes and code optimization
 
 
-[1.99.2] - 2012-09-07
----------------------
+[1.99.2][] - 2012-09-07
+-----------------------
 
 ### Changes
-- Get http status description
+- Get HTTP status description
 
 ### Fixes
 - Fix inability to change update period (broken in 1.99.0)
 - Fix debug output description
 
 
-[1.99.1] - 2012-09-01
----------------------
+[1.99.1][] - 2012-09-01
+-----------------------
 
 ### Changes
 - Make HTTP status code check server-specific
 - Update maintainer e-mail address
 
 
-[1.99.0] - 2012-08-17
----------------------
+[1.99.0][] - 2012-08-17
+-----------------------
 
 ### Changes
-- Merge wl500g patches from http://code.google.com/p/wl500g:
+- Merge wl500g patches from <http://code.google.com/p/wl500g>:
   - `120-heipv6tb.patch` adds support for tunnelbroker
   - `121-hedyndns.patch` adds support for HE dyndns
   - `210-wildcard.patch` makes wildcard option account specific
@@ -193,8 +217,8 @@ bugfixes and code optimizations have been made.
 - Fix malformed HTTP request
 
 
-[1.98.1] - 2011-07-18
----------------------
+[1.98.1][] - 2011-07-18
+-----------------------
 
 ### Changes
 - Preserve time since last update (forced update counter) and num
@@ -208,8 +232,8 @@ bugfixes and code optimizations have been made.
 - Typo fixes and polish to man pages inadyn(8) and inadyn.conf(5)
 
 
-[1.98.0] - 2011-02-28
----------------------
+[1.98.0][] - 2011-02-28
+-----------------------
 
 ### Changes
 - New config file, command line, syntax (still backwards compatible!)
@@ -218,8 +242,8 @@ bugfixes and code optimizations have been made.
 - Documentation updates
 
 
-[1.97.4] - 2010-11-02
----------------------
+[1.97.4][] - 2010-11-02
+-----------------------
 
 ### Changes
 - Support for dynsip.org by milkfish, from DD-WRT
@@ -229,11 +253,11 @@ bugfixes and code optimizations have been made.
 - Clear DNS cache before calling `getaddrinfo()`, fixes GitHub issue #3
 
 
-[1.97.3] - 2010-11-02
----------------------
+[1.97.3][] - 2010-11-02
+-----------------------
 
 ### Changes
-- Merge wl500g patches from http://code.google.com/p/wl500g:
+- Merge wl500g patches from <http://code.google.com/p/wl500g>:
   - `101-http-request.patch`. This cleans up the DDNS server defintions
 	and callbacks, evidently originating from ideas implemented by
 	DD-WRT.
@@ -254,8 +278,8 @@ bugfixes and code optimizations have been made.
   incorrect.
 
 
-[1.97.2] - 2010-10-30
----------------------
+[1.97.2][] - 2010-10-30
+-----------------------
 
 ### Changes
 - Replace `gethostbyname()` with `getaddrinfo()` and improve logging at
@@ -267,8 +291,8 @@ bugfixes and code optimizations have been made.
   timeval`, not `int` as argument
 
 
-[1.97.1] - 2010-10-19
----------------------
+[1.97.1][] - 2010-10-19
+-----------------------
 
 ### Changes
 - Add support for properly restarting inadyn on `SIGHUP`
@@ -276,15 +300,15 @@ bugfixes and code optimizations have been made.
   output
 
 
-[1.97.0] - 2010-10-18
----------------------
+[1.97.0][] - 2010-10-18
+-----------------------
 
-- Apply patches by Neufbox4 from http://dev.efixo.net:
+- Apply patches by Neufbox4 from <http://dev.efixo.net>:
   - `100-inadyn-1.96.2.patch`, cache file support
   - `100-inadyn-1.96.2.patch`, bind interface support
   - `200-inadyn-1.96.2-64bits-fix.patch`
   - `300-inadyn-1.96.2-pidfile-and-improve.patch`
-- New README, COPYING and LICENSE file, remove readme.html
+- New [README][README.md], COPYING and LICENSE file, remove readme.html
 - Refactor and cleanup Makefile (renamed from makefile)
 - Add support for `SIGTERM` signal
 - Relocate include files to include directory
@@ -295,7 +319,7 @@ bugfixes and code optimizations have been made.
 - Improve error messages using `strerror()` and use `-1` as stale
   socket, not `0`
 - Fix nasty socket leak
-- Merge with inadyn-advanced (http://sf.net/projects/inadyn-advanced):
+- Merge with inadyn-advanced, <http://sf.net/projects/inadyn-advanced>:
   - Add support for 3322.org and easydns.org
   - Add support for domain wildcarding, `--wildcard` option NOTE: Domain
     wildcarding is now *disabled* by default
@@ -497,7 +521,8 @@ First stable version.
 - port to pSOS
 
 
-[UNRELEASED]: https://github.com/troglobit/inadyn/compare/1.99.13...HEAD
+[UNRELEASED]: https://github.com/troglobit/inadyn/compare/1.99.14...HEAD
+[1.99.14]: https://github.com/troglobit/inadyn/compare/1.99.13...1.99.14
 [1.99.13]: https://github.com/troglobit/inadyn/compare/1.99.12...1.99.13
 [1.99.12]: https://github.com/troglobit/inadyn/compare/1.99.11...1.99.12
 [1.99.11]: https://github.com/troglobit/inadyn/compare/1.99.10...1.99.11
@@ -519,3 +544,11 @@ First stable version.
 [1.97.2]: https://github.com/troglobit/inadyn/compare/1.97.1...1.97.2
 [1.97.1]: https://github.com/troglobit/inadyn/compare/1.97.0...1.97.1
 [1.97.0]: https://github.com/troglobit/inadyn/compare/1.96.2...1.97.0
+[libite]: https://github.com/troglobit/libite
+[README.md]: https://github.com/troglobit/inadyn/blob/master/README.md
+
+<!--
+  -- Local Variables:
+  -- mode: markdown
+  -- End:
+  -->

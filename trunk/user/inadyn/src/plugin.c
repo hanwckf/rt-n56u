@@ -25,6 +25,10 @@
 #include <dlfcn.h>		/* dlopen() et al */
 #include <dirent.h>		/* readdir() et al */
 #include <string.h>
+#ifdef __CYGWIN__
+#include <windows.h>
+#include <sys/cygwin.h>
+#endif
 
 #include "ddns.h"
 
@@ -45,12 +49,27 @@ int plugin_register(ddns_system_t *plugin)
 	}
 
 	if (!plugin->name) {
+		char *dli_fname = NULL;
+#ifdef __CYGWIN__
+		char posix_path[MAX_PATH];
+		char path[MAX_PATH];
+		MEMORY_BASIC_INFORMATION mbi;
+
+		VirtualQuery((void*)&plugin, &mbi, sizeof(mbi));
+		GetModuleFileNameA((HINSTANCE)mbi.AllocationBase, path, MAX_PATH);
+		cygwin_conv_path(CCP_WIN_A_TO_POSIX | CCP_RELATIVE, path, posix_path, MAX_PATH);
+		dli_fname = posix_path;
+#else
 		Dl_info info;
 
-		if (!dladdr(plugin, &info) || !info.dli_fname)
+		if (dladdr(plugin, &info))
+			dli_fname = (char *)info.dli_fname;
+#endif
+
+		if (!dli_fname)
 			plugin->name = "unknown";
 		else
-			plugin->name = (char *)info.dli_fname;
+			plugin->name = (char *)dli_fname;
 	}
 
 	/* Already registered? */

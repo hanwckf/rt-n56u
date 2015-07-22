@@ -20,7 +20,7 @@
  */
 
 #include "debug.h"
-#include "http.h"
+#include "ssl.h"
 
 
 #ifdef ENABLE_SSL
@@ -45,7 +45,7 @@ int ssl_init(http_t *client, char *msg)
 	(void)msg;
 	return 0;
 #else
-	int err, err_ssl;
+	int err, err_ssl, rc = 0;
 	char buf[256];
 	const char *sn;
 	X509 *cert;
@@ -53,60 +53,73 @@ int ssl_init(http_t *client, char *msg)
 	if (client->verbose > 1)
 		logit(LOG_INFO, "%s, initiating HTTPS ...", msg);
 
-	client->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
-	if (!client->ssl_ctx)
-		return RC_HTTPS_OUT_OF_MEMORY;
+	do {
+		client->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+		if (!client->ssl_ctx)
+			return RC_HTTPS_OUT_OF_MEMORY;
 
 #if defined(CONFIG_OPENSSL)
-	/* POODLE, only allow TLSv1.x or later */
-	SSL_CTX_set_options(client->ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+		/* POODLE, only allow TLSv1.x or later */
+		SSL_CTX_set_options(client->ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 #endif
 
-	client->ssl = SSL_new(client->ssl_ctx);
-	if (!client->ssl)
-		return RC_HTTPS_OUT_OF_MEMORY;
+		client->ssl = SSL_new(client->ssl_ctx);
+		if (!client->ssl) {
+			rc = RC_HTTPS_OUT_OF_MEMORY;
+			break;
+		}
 
 #ifdef SSL_MODE_SEND_FALLBACK_SCSV
-	SSL_set_mode(client->ssl, SSL_MODE_SEND_FALLBACK_SCSV);
+		SSL_set_mode(client->ssl, SSL_MODE_SEND_FALLBACK_SCSV);
 #endif
 
-	http_get_remote_name(client, &sn);
-	if (set_server_name(client->ssl, sn))
-		return RC_HTTPS_SNI_ERROR;
+		http_get_remote_name(client, &sn);
+		if (set_server_name(client->ssl, sn)) {
+			rc = RC_HTTPS_SNI_ERROR;
+			break;
+		}
 
-	SSL_set_fd(client->ssl, client->tcp.ip.socket);
-	err = SSL_connect(client->ssl);
-	if (err <= 0) {
-		err_ssl = SSL_get_error(client->ssl, err);
-		logit(LOG_ERR, "SSL_connect %s! (err: %d)", "FAILED", err_ssl);
-		return RC_HTTPS_FAILED_CONNECT;
+		SSL_set_fd(client->ssl, client->tcp.ip.socket);
+		err = SSL_connect(client->ssl);
+		if (err <= 0) {
+			err_ssl = SSL_get_error(client->ssl, err);
+			logit(LOG_ERR, "SSL_connect %s! (err: %d)", "FAILED", err_ssl);
+			rc = RC_HTTPS_FAILED_CONNECT;
+			break;
+		}
+
+		if (client->verbose > 0)
+			logit(LOG_INFO, "SSL connection using %s", SSL_get_cipher(client->ssl));
+
+		/* Get server's certificate (note: beware of dynamic allocation) - opt */
+		cert = SSL_get_peer_certificate(client->ssl);
+		if (!cert) {
+			logit(LOG_ERR, "SSL_get_peer_certificate %s!", "FAILED");
+			rc = RC_HTTPS_FAILED_GETTING_CERT;
+			break;
+		}
+
+		/* Logging some cert details. Please note: X509_NAME_oneline doesn't
+		   work when giving NULL instead of a buffer. */
+		buf[0] = 0;
+		X509_NAME_oneline(X509_get_subject_name(cert), buf, sizeof(buf));
+		if (client->verbose > 1)
+			logit(LOG_INFO, "SSL server cert subject: %s", buf);
+
+		buf[0] = 0;
+		X509_NAME_oneline(X509_get_issuer_name(cert), buf, sizeof(buf));
+		if (client->verbose > 1)
+			logit(LOG_INFO, "SSL server cert issuer: %s", buf);
+
+		/* We could do all sorts of certificate verification stuff here before
+		   deallocating the certificate. */
+		X509_free(cert);
+	} while (0);
+
+	if (rc) {
+		ssl_exit(client);
+		return rc;
 	}
-
-	if (client->verbose > 0)
-		logit(LOG_INFO, "SSL connection using %s", SSL_get_cipher(client->ssl));
-
-	/* Get server's certificate (note: beware of dynamic allocation) - opt */
-	cert = SSL_get_peer_certificate(client->ssl);
-	if (!cert) {
-		logit(LOG_ERR, "SSL_get_peer_certificate %s!", "FAILED");
-		return RC_HTTPS_FAILED_GETTING_CERT;
-	}
-
-	/* Logging some cert details. Please note: X509_NAME_oneline doesn't
-	   work when giving NULL instead of a buffer. */
-	buf[0] = 0;
-	X509_NAME_oneline(X509_get_subject_name(cert), buf, sizeof(buf));
-	if (client->verbose > 1)
-		logit(LOG_INFO, "SSL server cert subject: %s", buf);
-
-	buf[0] = 0;
-	X509_NAME_oneline(X509_get_issuer_name(cert), buf, sizeof(buf));
-	if (client->verbose > 1)
-		logit(LOG_INFO, "SSL server cert issuer: %s", buf);
-
-	/* We could do all sorts of certificate verification stuff here before
-	   deallocating the certificate. */
-	X509_free(cert);
 
 	return 0;
 #endif
@@ -118,12 +131,20 @@ int ssl_exit(http_t *client)
 	(void)client;
 	return 0;
 #else
-	/* SSL/TLS close_notify */
-	SSL_shutdown(client->ssl);
+	if (client->ssl) {
+		/* SSL/TLS close_notify */
+		SSL_shutdown(client->ssl);
+		
+		/* Clean up. */
+		SSL_free(client->ssl);
+		client->ssl = NULL;
+	}
 
-	/* Clean up. */
-	SSL_free(client->ssl);
-	SSL_CTX_free(client->ssl_ctx);
+	if (client->ssl_ctx) {
+		/* Clean up. */
+		SSL_CTX_free(client->ssl_ctx);
+		client->ssl_ctx = NULL;
+	}
 
 	return 0;
 #endif

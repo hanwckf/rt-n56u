@@ -614,6 +614,7 @@ void network_thread ()
                     l2tp_log (LOG_WARNING, "%s: received too small a packet\n",
                          __FUNCTION__);
                 }
+                if (st) st=st->next;
 		continue;
             }
 
@@ -734,26 +735,7 @@ void network_thread ()
                     /* Got some payload to send */
                     int result;
                     recycle_payload (buf, sc->container->peer);
-/*
-#ifdef DEBUG_FLOW_MORE
-                    l2tp_log (LOG_DEBUG, "%s: rws = %d, pSs = %d, pLr = %d\n",
-                         __FUNCTION__, sc->rws, sc->pSs, sc->pLr);
-#endif
-		    if ((sc->rws>0) && (sc->pSs > sc->pLr + sc->rws) && !sc->rbit) {
-#ifdef DEBUG_FLOW
-						log(LOG_DEBUG, "%s: throttling payload (call = %d, tunnel = %d, Lr = %d, Ss = %d, rws = %d)!\n",__FUNCTION__,
-								 sc->cid, sc->container->tid, sc->pLr, sc->pSs, sc->rws); 
-#endif
-						sc->throttle = -1;
-						We unthrottle in handle_packet if we get a payload packet, 
-						valid or ZLB, but we also schedule a dethrottle in which
-						case the R-bit will be set
-						FIXME: Rate Adaptive timeout? 						
-						tv.tv_sec = 2;
-						tv.tv_usec = 0;
-						sc->dethrottle = schedule(tv, dethrottle, sc); 					
-					} else */
-/*					while ((result=read_packet(buf,sc->fd,sc->frame & SYNC_FRAMING))>0) { */
+
                     while ((result =
                             read_packet (buf, sc->fd, SYNC_FRAMING)) > 0)
                     {

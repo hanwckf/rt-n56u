@@ -75,6 +75,10 @@ _get_flctags(char *filename, struct song_metadata *psong)
 			break;
 #if FLAC_API_VERSION_CURRENT >= 10
 		case FLAC__METADATA_TYPE_PICTURE:
+			if (psong->image) {
+				DPRINTF(E_INFO, L_SCANNER, "Ignoring additional image [%s]\n", filename);
+				break;
+			}
 			psong->image_size = block->data.picture.data_length;
 			if((psong->image = malloc(psong->image_size)))
 				memcpy(psong->image, block->data.picture.data, psong->image_size);

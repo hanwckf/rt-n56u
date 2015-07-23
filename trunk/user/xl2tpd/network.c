@@ -664,13 +664,10 @@ void network_thread ()
 	    {
 		do_packet_dump (buf);
 	    }
-	    if (!
-		(c = get_call (tunnel, call, from.sin_addr,
+			if (!(c = get_call (tunnel, call, from.sin_addr,
 			       from.sin_port, refme, refhim)))
 	    {
-		if ((c =
-		     get_tunnel (tunnel, from.sin_addr.s_addr,
-				 from.sin_port)))
+				if ((c = get_tunnel (tunnel, from.sin_addr.s_addr, from.sin_port)))
 		{
 		    /*
 		     * It is theoretically possible that we could be sent
@@ -709,14 +706,14 @@ void network_thread ()
 		{
 		    if (gconfig.debug_tunnel)
 			l2tp_log (LOG_DEBUG, "%s: bad packet\n", __FUNCTION__);
-		};
+		}
 		if (c->cnu)
 		{
 		    /* Send Zero Byte Packet */
 		    control_zlb (buf, c->container, c);
 		    c->cnu = 0;
 		}
-	    };
+		}
 	}
 	if (st) st=st->next;
 	}
@@ -782,6 +779,8 @@ int connect_pppol2tp(struct tunnel *t) {
             struct sockaddr_pppol2tp sax;
 
             struct sockaddr_in server;
+
+            memset(&server, 0, sizeof(struct sockaddr_in));
             server.sin_family = AF_INET;
             server.sin_addr.s_addr = gconfig.listenaddr;
             server.sin_port = htons (gconfig.port);
@@ -790,7 +789,7 @@ int connect_pppol2tp(struct tunnel *t) {
                 l2tp_log (LOG_CRIT, "%s: Unable to allocate UDP socket. Terminating.\n",
                     __FUNCTION__);
                 return -EINVAL;
-            };
+            }
 
             flags=1;
             setsockopt(ufd, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags));
@@ -798,21 +797,23 @@ int connect_pppol2tp(struct tunnel *t) {
 
             if (bind (ufd, (struct sockaddr *) &server, sizeof (server)))
             {
-                close (ufd);
                 l2tp_log (LOG_CRIT, "%s: Unable to bind UDP socket: %s. Terminating.\n",
                      __FUNCTION__, strerror(errno), errno);
+                close (ufd);
                 return -EINVAL;
-            };
+            }
             server = t->peer;
             flags = fcntl(ufd, F_GETFL);
             if (flags == -1 || fcntl(ufd, F_SETFL, flags | O_NONBLOCK) == -1) {
                 l2tp_log (LOG_WARNING, "%s: Unable to set UDP socket nonblock.\n",
                      __FUNCTION__);
+                close (ufd);
                 return -EINVAL;
             }
             if (connect (ufd, (struct sockaddr *) &server, sizeof(server)) < 0) {
                 l2tp_log (LOG_CRIT, "%s: Unable to connect UDP peer. Terminating.\n",
                  __FUNCTION__);
+                close(ufd);
                 return -EINVAL;
             }
 
@@ -828,6 +829,7 @@ int connect_pppol2tp(struct tunnel *t) {
             if (flags == -1 || fcntl(fd2, F_SETFL, flags | O_NONBLOCK) == -1) {
                 l2tp_log (LOG_WARNING, "%s: Unable to set PPPoL2TP socket nonblock.\n",
                      __FUNCTION__);
+                close(fd2);
                 return -EINVAL;
             }
             memset(&sax, 0, sizeof(sax));

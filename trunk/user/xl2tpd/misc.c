@@ -91,10 +91,15 @@ void set_error (struct call *c, int error, const char *fmt, ...)
 
 struct buffer *new_buf (int size)
 {
-    struct buffer *b = malloc (sizeof (struct buffer));
+    struct buffer *b = NULL;
 
-    if (!b || !size || size < 0)
+    if (!size || size < 0)
         return NULL;
+
+    b = malloc (sizeof (struct buffer));
+    if (!b)
+        return NULL;
+
     b->rstart = malloc (size);
     if (!b->rstart)
     {
@@ -236,7 +241,7 @@ struct ppp_opts *add_opt (struct ppp_opts *option, char *fmt, ...)
         l2tp_log (LOG_WARNING,
 		  "%s : Unable to allocate ppp option memory.  Expect a crash\n",
 		  __FUNCTION__);
-        return NULL;
+        return option;
     }
     new->next = NULL;
     va_start (args, fmt);

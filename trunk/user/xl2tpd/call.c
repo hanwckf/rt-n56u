@@ -483,6 +483,8 @@ void destroy_call (struct call *c)
             c->lac->rsched = schedule (tv, magic_lac_dial, c->lac);
         }
     }
+    if(c->oldptyconf)
+        free(c->oldptyconf);
 
     free (c);
 }
@@ -491,7 +493,7 @@ void destroy_call (struct call *c)
 struct call *new_call (struct tunnel *parent)
 {
     unsigned char entropy_buf[2] = "\0";
-    struct call *tmp = malloc (sizeof (struct call));
+    struct call *tmp = calloc (1, sizeof (struct call));
 
     if (!tmp)
         return NULL;

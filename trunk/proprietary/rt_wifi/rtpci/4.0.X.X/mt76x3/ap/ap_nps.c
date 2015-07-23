@@ -54,7 +54,7 @@ VOID RT28xx_UpdateTimToAsic(
 	IN ULONG FrameLen)
 {
 	TIM_BUF_STRUC *tim_buf = NULL;
-	UCHAR *buf, *hdr;
+	UCHAR *buf/*, *hdr*/;
 	INT len;
 	PNDIS_PACKET *pkt = NULL;
 
@@ -120,14 +120,14 @@ VOID APMakeBssTimFrame(RTMP_ADAPTER *pAd, INT apidx)
 	ULONG FrameLen = 0;
 	UCHAR *pTimFrame, *ptr, *tmac_info;
 	HTTRANSMIT_SETTING TimTransmit = {.word = 0};   /* MGMT frame PHY rate setting when operatin at HT rate. */
-	UINT8 TXWISize = pAd->chipCap.TXWISize;
+	//UINT8 TXWISize = pAd->chipCap.TXWISize;
 	UINT8 tx_hw_hdr_len = pAd->chipCap.tx_hw_hdr_len;
 	UCHAR Cat = 11;//Tim Category field
 	UCHAR Act = 0;//Tim Action field
 	UCHAR ChkBcn = 0;//Check Beacon field init from 0.
-	UCHAR *pTim;
-	UCHAR ID_1B, TimFirst, TimLast;
-	UINT  i;
+	//UCHAR *pTim;
+	//UCHAR ID_1B, TimFirst, TimLast;
+	//UINT  i;
 
 	if(!TimTransmitRequired(pAd, apidx, pMbss))
 		return;
@@ -270,7 +270,7 @@ static UCHAR GetTimNum(RTMP_ADAPTER *pAd)
 
 VOID APMakeAllTimFrame(RTMP_ADAPTER *pAd)
 {
-	INT i, j;
+	INT i;
 	UCHAR NumOfTims;
 
 	/* choose the Beacon number */

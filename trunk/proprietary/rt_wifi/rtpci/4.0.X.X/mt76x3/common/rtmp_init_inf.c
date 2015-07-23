@@ -104,8 +104,9 @@ INT rtmp_sys_exit(RTMP_ADAPTER *pAd)
 
 INT rtmp_sys_init(RTMP_ADAPTER *pAd)
 {
+#ifdef VOE_SUPPORT
 	NDIS_STATUS status;
-
+#endif /* VOE_SUPPORT */
 #ifdef DOT11_N_SUPPORT
 	/* Allocate BA Reordering memory*/
 	if (ba_reordering_resource_init(pAd, MAX_REORDERING_MPDU_NUM) != TRUE)
@@ -271,7 +272,7 @@ int rt28xx_init(VOID *pAdSrc, RTMP_STRING *pDefaultMac, RTMP_STRING *pHostName)
 		goto err6;
 
 	/* hook e2p operation */
-	RtmpChipOpsEepromHook(pAd, pAd->infType);
+	RtmpChipOpsEepromHook(pAd, pAd->infType, E2P_NONE);
 
 #if defined(MT7603_FPGA) || defined(MT7628_FPGA)
 	if (pAd->chipCap.hif_type == HIF_MT) {
@@ -745,7 +746,9 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	{
+#if defined(RTMP_MAC_USB) || defined(DOT11N_DRAFT3)
 		BOOLEAN Cancelled = FALSE;
+#endif /* defined(RTMP_MAC_USB) || defined(DOT11N_DRAFT3) */
 
 #ifdef DOT11N_DRAFT3
 		if (pAd->CommonCfg.Bss2040CoexistFlag & BSS_2040_COEXIST_TIMER_FIRED)

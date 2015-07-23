@@ -222,7 +222,9 @@ VOID MlmeDELBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	ULONG Idx;
 	FRAME_DELBA_REQ Frame;
 	ULONG FrameLen;
+#if	defined(RTMP_MAC) || defined(RTL_MAC)
 	FRAME_BAR FrameBar;
+#endif /* defined(RTMP_MAC) || defined(RTL_MAC) */
 	MAC_TABLE_ENTRY *pEntry = NULL;
 	struct wifi_dev *wdev;
 	UCHAR *src_addr = NULL;

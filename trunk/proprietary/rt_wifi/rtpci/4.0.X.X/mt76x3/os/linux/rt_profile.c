@@ -292,10 +292,12 @@ void tbtt_tasklet(unsigned long data)
 		if (pAd->ApCfg.DtimCount == 0)
 #endif /* RTMP_MAC_PCI */
 		{
+#ifndef MT_MAC
 			QUEUE_ENTRY *pEntry;
 			BOOLEAN bPS = FALSE;
 			UINT count = 0;
 			unsigned long IrqFlags;
+#endif /*MT_MAC*/
 			
 #ifdef MT_MAC
 			UINT apidx = 0, mac_val = 0, deq_cnt = 0;
@@ -335,7 +337,7 @@ void tbtt_tasklet(unsigned long data)
 				for(apidx=0;apidx<pAd->ApCfg.BssidNum;apidx++)		
             	{
 	                BSS_STRUCT *pMbss;
-					UINT wcid = 0, PseFcnt = 0, cnt = 0, bmc_cnt = 0;
+					UINT wcid = 0, bmc_cnt = 0;
 					STA_TR_ENTRY *tr_entry = NULL;
 			
 					pMbss = &pAd->ApCfg.MBSSID[apidx];
@@ -604,6 +606,14 @@ void announce_802_3_packet(
 #endif /* BG_FT_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
+#if defined (CONFIG_WIFI_PKT_FWD)
+	if (wf_fwd_rx_hook != NULL)
+	{
+		if (wf_fwd_rx_hook(pRxPkt) == 0)
+			return;
+	}
+#endif /* CONFIG_WIFI_PKT_FWD */
+
 	pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
 	netif_rx(pRxPkt);
 }
@@ -691,6 +701,59 @@ void STA_MonPktSend(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	}
 #endif /* DOT11_VHT_AC */
 
+#ifdef SNIFFER_MIB_CMD
+{
+	PSNIFFER_MIB_CTRL psniffer_mib_ctrl;
+	SNIFFER_MAC_CTRL *pMACEntry;
+	psniffer_mib_ctrl = &pAd->ApCfg.sniffer_mib_ctrl;
+	BOOLEAN  check = FALSE;
+	
+	RTMP_SEM_LOCK(&psniffer_mib_ctrl->MAC_ListLock);
+
+	if (psniffer_mib_ctrl->MAC_ListNum == 0) // no set mac to sniffer, means sniffer all
+	{
+		check = TRUE;
+		RTMP_SEM_UNLOCK(&psniffer_mib_ctrl->MAC_ListLock);
+		goto report_upper;
+	}
+	
+	DlListForEach(pMACEntry, &psniffer_mib_ctrl->MAC_List, SNIFFER_MAC_CTRL, List)
+	{
+		//only conpare addr1, addr2 , no addr3
+		if (NdisEqualMemory(pHeader->Addr1, pMACEntry->MACAddr, MAC_ADDR_LEN) 
+			|| NdisEqualMemory(pHeader->Addr2, pMACEntry->MACAddr, MAC_ADDR_LEN)
+			)
+		{
+
+#ifdef ALL_NET_EVENT
+		{
+			UCHAR bssid[MAC_ADDR_LEN] = {0}; //report zero bssid, to prevent too many check
+			wext_send_event(pNetDev,
+				pMACEntry->MACAddr,
+				bssid,
+				Channel,
+				MaxRssi,
+				FBT_LINK_STA_FOUND_NOTIFY);
+		}
+#endif /* ALL_NET_EVENT */
+		
+			check = TRUE;
+			RTMP_SEM_UNLOCK(&psniffer_mib_ctrl->MAC_ListLock);
+			goto report_upper;
+		}
+		//DBGPRINT(RT_DEBUG_ERROR, ("%s:: MAC [%d]=%02x:%02x:%02x:%02x:%02x:%02x\n", __FUNCTION__,i++, PRINT_MAC(pMACEntry->MACAddr)));
+	}
+	RTMP_SEM_UNLOCK(&psniffer_mib_ctrl->MAC_ListLock);
+
+	report_upper:
+		
+	if (check == FALSE)
+	{
+		goto err_free_sk_buff;
+	}
+}
+#endif /* SNIFFER_MIB_CMD */
+
 	if (sniffer_type == RADIOTAP_TYPE) {
 		send_radiotap_monitor_packets(pNetDev, pRxPacket, (void *)pHeader, pData, DataSize,
 									  L2PAD, PHYMODE, BW, ShortGI, MCS, LDPC, LDPC_EX_SYM, 
@@ -724,13 +787,16 @@ VOID RTMPFreeAdapter(VOID *pAdSrc)
 
 	os_cookie=(POS_COOKIE)pAd->OS_Cookie;
 
+#ifdef MULTIPLE_CARD_SUPPORT
 #ifdef RTMP_FLASH_SUPPORT
-	if (pAd->eebuf && (pAd->eebuf != pAd->chipCap.EEPROM_DEFAULT_BIN))
+	if (pAd->eebuf && (pAd->eebuf != pAd->EEPROMImage))
 	{
 		os_free_mem(NULL, pAd->eebuf);
 		pAd->eebuf = NULL;
 	}
 #endif /* RTMP_FLASH_SUPPORT */
+#endif /* MULTIPLE_CARD_SUPPORT */
+
 
 	NdisFreeSpinLock(&pAd->MgmtRingLock);
 	

@@ -854,35 +854,8 @@ UCHAR MlmeSelectTxRateAdapt(
 		pCurrTxRate - pointer to Rate table entry for rate
 		TxErrorRatio - the PER
 */
-static ULONG MlmeRAEstimateThroughput(
-	IN RTMP_ADAPTER *pAd,
-	IN MAC_TABLE_ENTRY *pEntry,
-	IN RTMP_RA_GRP_TB *pCurrTxRate,
-	IN ULONG TxErrorRatio)
-{
-	ULONG estTP = (100-TxErrorRatio)*pCurrTxRate->dataRate;
 
-	/*  Adjust rates for MCS32-40MHz mapped to MCS0-20MHz and for non-CCK 40MHz */
-	if (pCurrTxRate->CurrMCS == MCS_32)
-	{
-#ifdef DBG_CTRL_SUPPORT
-		if ((pAd->CommonCfg.DebugFlags & DBF_DISABLE_20MHZ_MCS0)==0)
-			estTP /= 2;
-#endif /* DBG_CTRL_SUPPORT */
-	}
-	else if ((pCurrTxRate->Mode==MODE_HTMIX) || (pCurrTxRate->Mode==MODE_HTGREENFIELD))
-	{
-		if (pEntry->MaxHTPhyMode.field.BW==BW_40 
-#ifdef DBG_CTRL_SUPPORT
-			|| (pAd->CommonCfg.DebugFlags & DBF_FORCE_40MHZ)
-#endif /* DBG_CTRL_SUPPORT */
-		)
-			estTP *= 2;
-	}
-
-	return estTP;
-}
-
+/*Nobody uses it currently*/
 /*
 	MlmeRAHybridRule - decide whether to keep the new rate or use old rate
 		pEntry - the MAC table entry for this STA
@@ -899,7 +872,7 @@ BOOLEAN MlmeRAHybridRule(
 	IN ULONG			NewTxOkCount,
 	IN ULONG			TxErrorRatio)
 {
-	ULONG newTP, oldTP;
+	//ULONG newTP, oldTP;
 
 
 
@@ -1080,7 +1053,7 @@ VOID NewRateAdaptMT(
 	UCHAR *pTable = pEntry->pTable;
 	UCHAR CurrRateIdx = pEntry->CurrTxRateIndex;
 	RTMP_RA_GRP_TB *pCurrTxRate = PTX_RA_GRP_ENTRY(pTable, CurrRateIdx);
-	UCHAR		index;
+	//UCHAR		index;
 
 	pEntry->LastSecTxRateChangeAction = RATE_NO_CHANGE;
 
@@ -1096,7 +1069,7 @@ VOID NewRateAdaptMT(
 		}
 
 	} else {
-		RTMP_RA_GRP_TB *pUpRate = PTX_RA_GRP_ENTRY(pTable, UpRateIdx);
+		//RTMP_RA_GRP_TB *pUpRate = PTX_RA_GRP_ENTRY(pTable, UpRateIdx);
 
 		if ( Rate1ErrorRatio <= TrainUp ) {
 			bTrainUp = TRUE;
@@ -1152,6 +1125,9 @@ VOID NewRateAdaptMT(
 #ifdef DBG_CTRL_SUPPORT
 		|| (pAd->CommonCfg.DebugFlags & DBF_FORCE_QUICK_DRS)
 #endif /* DBG_CTRL_SUPPORT */
+#ifdef DOT11N_DRAFT3
+		|| (pAd->CommonCfg.Bss2040CoexistFlag & BSS_2040_COEXIST_BW_SYNC)
+#endif /* DOT11N_DRAFT3 */
 	)
 	{
 		if (pEntry->LastSecTxRateChangeAction!=RATE_NO_CHANGE)
@@ -1211,7 +1187,6 @@ VOID QuickResponeForRateUpExecAdaptMT(/* actually for both up and down */
 {
 	PUCHAR					pTable;
 	UCHAR					CurrRateIdx;
-	ULONG					AccuTxTotalCnt, TxCnt;
 	ULONG					TxErrorRatio = 0;
 	MAC_TABLE_ENTRY			*pEntry;
 	RTMP_RA_GRP_TB *pCurrTxRate;
@@ -1281,21 +1256,6 @@ VOID QuickResponeForRateUpExecAdaptMT(/* actually for both up and down */
 		MlmeRALog(pAd, pEntry, RAL_QUICK_DRS, Rate1ErrorRatio, TxTotalCnt);
 #endif /* DBG_CTRL_SUPPORT */
 
-	/*  Handle the low traffic case */
-	//if (TxTotalCnt <= 15)
-	if ( (TxTotalCnt <= 15) && (pEntry->LastSecTxRateChangeAction == RATE_UP))
-	{
-		/*  Go back to the original rate */
-		MlmeRestoreLastRate(pEntry);
-		DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_RA, ("   QuickDRS: TxTotalCnt <= 15, back to original rate \n"));
-
-		MlmeNewTxRate(pAd, pEntry);
-
-		// TODO: should we reset all OneSecTx counters?
-		/* RESET_ONE_SEC_TX_CNT(pEntry); */
-
-		return;
-	}
 
 	if ( (TxTotalCnt <= 15) && (pEntry->LastSecTxRateChangeAction == RATE_DOWN))
 	{
@@ -1538,8 +1498,12 @@ VOID DynamicTxRateSwitchingAdaptMT(RTMP_ADAPTER *pAd, UINT i)
 	if (TxTotalCnt <= 15)
 	{
 		pEntry->lowTrafficCount++;
-		
-		if (pEntry->lowTrafficCount >= pAd->CommonCfg.lowTrafficThrd)
+
+		if (pEntry->lowTrafficCount >= pAd->CommonCfg.lowTrafficThrd
+#ifdef DOT11N_DRAFT3
+				|| (pAd->CommonCfg.Bss2040CoexistFlag & BSS_2040_COEXIST_BW_SYNC)
+#endif /* DOT11N_DRAFT3 */
+			)
 		{
 			UCHAR TxRateIdx;
 			CHAR mcs[24];
@@ -1571,7 +1535,11 @@ VOID DynamicTxRateSwitchingAdaptMT(RTMP_ADAPTER *pAd, UINT i)
 
 			pEntry->CurrTxRateIndex = TxRateIdx;
 
-			if ( pEntry->CurrTxRateIndex != pEntry->lastRateIdx )
+			if ( pEntry->CurrTxRateIndex != pEntry->lastRateIdx
+#ifdef DOT11N_DRAFT3
+				|| (pAd->CommonCfg.Bss2040CoexistFlag & BSS_2040_COEXIST_BW_SYNC)
+#endif /* DOT11N_DRAFT3 */
+				)
 				MlmeNewTxRate(pAd, pEntry);
 
 			if (!pEntry->fLastSecAccordingRSSI)
@@ -1737,7 +1705,7 @@ VOID APQuickResponeForRateUpExecAdapt(/* actually for both up and down */
 	}
 
 
-	DBGPRINT(RT_DEBUG_INFO, ("Quick PER %ld, Total Cnt %ld\n", TxErrorRatio, TxTotalCnt));
+	DBGPRINT(RT_DEBUG_INFO, ("Quick PER %lu, Total Cnt %lu\n", TxErrorRatio, TxTotalCnt));
 
 #ifdef MFB_SUPPORT
 	if (pEntry->fLastChangeAccordingMfb == TRUE)

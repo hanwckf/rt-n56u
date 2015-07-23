@@ -878,7 +878,9 @@ VOID APMlmeSetTxRate(
 	IN RTMP_RA_LEGACY_TB *pTxRate)
 {
 	UCHAR tx_mode = pTxRate->Mode;
+#ifdef DOT11_VHT_AC
 	UCHAR tx_bw = pTxRate->BW;
+#endif
 
 #ifdef DOT11_VHT_AC
 	if ((pAd->chipCap.phy_caps & fPHY_CAP_VHT) && 
@@ -1010,6 +1012,7 @@ DBGPRINT(RT_DEBUG_INFO, ("%s(): txbw=%d, txmode=%d\n", __FUNCTION__, tx_bw, tx_m
 
 	/* BW depends on BSSWidthTrigger and Negotiated BW */
 	if (pAd->CommonCfg.bRcvBSSWidthTriggerEvents ||
+		(pAd->CommonCfg.AddHTInfo.AddHtInfo.RecomWidth == 0) ||
 		(pEntry->MaxHTPhyMode.field.BW==BW_20) ||
 		(pAd->CommonCfg.BBPCurrentBW==BW_20))
 		pEntry->HTPhyMode.field.BW = BW_20;

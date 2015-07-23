@@ -22,7 +22,7 @@
 #include "mcu/mt7603_e2_firmware.h"
 #endif /* MT7603_E2 */
 #include "eeprom/mt7603_e2p.h"
-//#include "phy/wf_phy_back.h"
+#include "phy/wf_phy_back.h"
 
 static VOID mt7603_bbp_adjust(RTMP_ADAPTER *pAd)
 {
@@ -50,103 +50,7 @@ static VOID mt7603_bbp_adjust(RTMP_ADAPTER *pAd)
 #endif /* DOT11_N_SUPPORT */
 }
 
-static void mt7603_tx_pwr_gain(RTMP_ADAPTER *pAd, UINT8 channel)
-{
-	UINT32 value;
-	CHAR tx_0_pwr;
-	struct MT_TX_PWR_CAP *cap = &pAd->chipCap.MTTxPwrCap;
-
-
-	tx_0_pwr = cap->tx_0_target_pwr_g_band;
-	tx_0_pwr += cap->tx_0_chl_pwr_delta_g_band[get_low_mid_hi_index(channel)];
-
-	RTMP_IO_READ32(pAd, TMAC_FP0R0, &value);
-
-	value &= ~LG_OFDM0_FRAME_POWER0_DBM_MASK;
-	value |= LG_OFDM0_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_g_band_ofdm_6_9);
-
-	value &= ~LG_OFDM1_FRAME_POWER0_DBM_MASK;
-	value |= LG_OFDM1_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_g_band_ofdm_12_18);
-
-	value &= ~LG_OFDM2_FRAME_POWER0_DBM_MASK;
-	value |= LG_OFDM2_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_g_band_ofdm_24_36);
-
-	value &= ~LG_OFDM3_FRAME_POWER0_DBM_MASK;
-	value |= LG_OFDM3_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_g_band_ofdm_48);
-
-	RTMP_IO_WRITE32(pAd, TMAC_FP0R0, value);
-
-	RTMP_IO_READ32(pAd, TMAC_FP0R1, &value);
-
-	value &= ~HT20_0_FRAME_POWER0_DBM_MASK;
-	value |= HT20_0_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_ht_bpsk_mcs_0_8);
-
-	value &= ~HT20_1_FRAME_POWER0_DBM_MASK;
-	value |= HT20_1_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_ht_qpsk_mcs_1_2_9_10);
-
-	value &= ~HT20_2_FRAME_POWER0_DBM_MASK;
-	value |= HT20_2_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_ht_16qam_mcs_3_4_11_12);
-
-	value &= ~HT20_3_FRAME_POWER0_DBM_MASK;
-	value |= HT20_3_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_ht_64qam_mcs_5_13);
-
-	RTMP_IO_WRITE32(pAd, TMAC_FP0R1, value);
-
-	RTMP_IO_READ32(pAd, TMAC_FP0R2, &value);
-
-	value &= ~HT40_0_FRAME_POWER0_DBM_MASK;
-	value |= HT40_0_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_ht_bpsk_mcs_0_8
-											+ cap->delta_tx_pwr_bw40_g_band);
-
-	value &= ~HT40_1_FRAME_POWER0_DBM_MASK;
-	value |= HT40_1_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_ht_qpsk_mcs_1_2_9_10
-											+ cap->delta_tx_pwr_bw40_g_band);
-
-	value &= ~HT40_2_FRAME_POWER0_DBM_MASK;
-	value |= HT40_2_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_ht_16qam_mcs_3_4_11_12
-											+ cap->delta_tx_pwr_bw40_g_band);
-
-	value &= ~HT40_3_FRAME_POWER0_DBM_MASK;
-	value |= HT40_3_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_ht_64qam_mcs_5_13
-											+ cap->delta_tx_pwr_bw40_g_band);
-
-	RTMP_IO_WRITE32(pAd, TMAC_FP0R2, value);
-
-	RTMP_IO_READ32(pAd, TMAC_FP0R3, &value);
-
-	value &= ~CCK0_FRAME_POWER0_DBM_MASK;
-	value |= CCK0_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_cck_1_2);
-
-	value &= ~LG_OFDM4_FRAME_POWER0_DBM_MASK;
-	value |= LG_OFDM4_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_g_band_ofdm_54);
-
-	value &= ~CCK1_FRAME_POWER0_DBM_MASK;
-	value |= CCK1_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_cck_5_11);
-
-	value &= ~HT40_6_FRAME_POWER0_DBM_MASK;
-	value |= HT40_6_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_ht_bpsk_mcs_32 + cap->delta_tx_pwr_bw40_g_band);
-
-	RTMP_IO_WRITE32(pAd, TMAC_FP0R3, value);
-
-	RTMP_IO_READ32(pAd, TMAC_FP0R4, &value);
-
-	value &= ~HT20_4_FRAME_POWER0_DBM_MASK;
-	value |= HT20_4_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_ht_64qam_mcs_6_14);
-
-	value &= ~HT20_5_FRAME_POWER0_DBM_MASK;
-	value |= HT20_5_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_ht_64qam_mcs_7_15);
-
-	value &= ~HT40_4_FRAME_POWER0_DBM_MASK;
-	value |= HT40_4_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_ht_64qam_mcs_6_14
-												+ cap->delta_tx_pwr_bw40_g_band);
-
-	value &= ~HT40_5_FRAME_POWER0_DBM_MASK;
-	value |= HT40_5_FRAME_POWER0_DBM(tx_0_pwr + cap->tx_pwr_ht_64qam_mcs_7_15
-												+ cap->delta_tx_pwr_bw40_g_band);
-
-	RTMP_IO_WRITE32(pAd, TMAC_FP0R4, value);
-}
-
+/*Nobody uses it currently*/
 
 static void mt7603_switch_channel(RTMP_ADAPTER *pAd, UCHAR channel, BOOLEAN scan)
 {
@@ -186,9 +90,9 @@ static INT asic_set_tmac_info_template(RTMP_ADAPTER *pAd)
 		UINT32 dw[5];
 		TMAC_TXD_2 *dw2 = (TMAC_TXD_2 *)(&dw[0]);
 		TMAC_TXD_3 *dw3 = (TMAC_TXD_3 *)(&dw[1]);
-		TMAC_TXD_4 *dw4 = (TMAC_TXD_4 *)(&dw[2]);
+		//TMAC_TXD_4 *dw4 = (TMAC_TXD_4 *)(&dw[2]);
 		TMAC_TXD_5 *dw5 = (TMAC_TXD_5 *)(&dw[3]);
-		TMAC_TXD_6 *dw6 = (TMAC_TXD_6 *)(&dw[4]);
+		//TMAC_TXD_6 *dw6 = (TMAC_TXD_6 *)(&dw[4]);
 
 		NdisZeroMemory((UCHAR *)(&dw[0]), sizeof(dw));
 
@@ -315,6 +219,15 @@ static VOID mt7603_init_mac_cr(RTMP_ADAPTER *pAd)
 	mac_val |= 0x2000; // RxRing 1
 	RTMP_IO_WRITE32(pAd, DMA_VCFR0, mac_val);
 
+    	/* RMAC dropping criteria for max/min recv. packet length */
+	RTMP_IO_READ32(pAd, RMAC_RMACDR, &mac_val);
+	mac_val |= SELECT_RXMAXLEN_20BIT;
+	RTMP_IO_WRITE32(pAd, RMAC_RMACDR, mac_val);
+	RTMP_IO_READ32(pAd, RMAC_MAXMINLEN, &mac_val);
+	mac_val &= ~RMAC_DROP_MAX_LEN_MASK;
+	mac_val |= RMAC_DROP_MAX_LEN;
+	RTMP_IO_WRITE32(pAd, RMAC_MAXMINLEN, mac_val);
+
 	/* Enable RX Group to HIF */
 	AsicSetRxGroup(pAd, HIF_PORT, RXS_GROUP1|RXS_GROUP2|RXS_GROUP3, TRUE);
 	AsicSetRxGroup(pAd, MCU_PORT, RXS_GROUP1|RXS_GROUP2|RXS_GROUP3, TRUE);
@@ -324,7 +237,7 @@ static VOID mt7603_init_mac_cr(RTMP_ADAPTER *pAd)
 	AsicSetBARTxCntLimit(pAd, TRUE, 1); 
 
 	/* RTS Retry setting */
-	AsicSetRTSTxCntLimit(pAd, TRUE, 0xf); 
+	AsicSetRTSTxCntLimit(pAd, TRUE, MT_RTS_RETRY); 
 
 	/* Configure the BAR rate setting */
 	RTMP_IO_READ32(pAd, AGG_ACR, &mac_val);
@@ -426,7 +339,7 @@ int mt7603_read_chl_pwr(RTMP_ADAPTER *pAd)
 {
 	UINT32 i, choffset;
 	struct MT_TX_PWR_CAP *cap = &pAd->chipCap.MTTxPwrCap;
-	UINT16 Value;
+	USHORT Value;
 
 	mt7603_get_tx_pwr_info(pAd);
 
@@ -1075,15 +988,8 @@ static const RTMP_CHIP_CAP MT7603_ChipCap = {
 	.MaxNumOfBbpId = 200,
 	.pBBPRegTable = NULL,
 	.bbpRegTbSize = 0,
-#ifdef NEW_MBSSID_MODE
-#ifdef ENHANCE_NEW_MBSSID_MODE
+	/* Force MT7603 use MBSSID_MODE2~ MBSSID_MODE6 of ENHANCE_NEW_MBSSID_MODE*/
 	.MBSSIDMode = MBSSID_MODE4,
-#else
-	.MBSSIDMode = MBSSID_MODE1,
-#endif /* ENHANCE_NEW_MBSSID_MODE */
-#else
-	.MBSSIDMode = MBSSID_MODE0,
-#endif /* NEW_MBSSID_MODE */
 #ifdef RTMP_EFUSE_SUPPORT
 	.EFUSE_USAGE_MAP_START = 0x1e0,
 	.EFUSE_USAGE_MAP_END = 0x1fc,
@@ -1126,8 +1032,8 @@ static const RTMP_CHIP_CAP MT7603_ChipCap = {
 #endif /* CONFIG_WIFI_TEST */
 	.hif_type = HIF_MT,
 	.rf_type = RF_MT,
-	.RxBAWinSize = 21,
-	.AMPDUFactor = 2,
+	.RxBAWinSize = 64,
+	.AMPDUFactor = 3,
 };
 
 

@@ -41,13 +41,15 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 {
 	UINT i;
 	PUCHAR pTable;
-	UCHAR TableSize = 0, InitTxRateIdx, TrainUp, TrainDown;
-	UCHAR UpRateIdx, DownRateIdx, CurrRateIdx;
+	UCHAR TableSize = 0, InitTxRateIdx;
 	MAC_TABLE_ENTRY *pEntry;
+#ifndef NEW_RATE_ADAPT_SUPPORT
+	UCHAR TrainUp, TrainDown;
+	UCHAR UpRateIdx, DownRateIdx, CurrRateIdx;
 	RTMP_RA_LEGACY_TB *pCurrTxRate, *pTmpTxRate = NULL;
 	CHAR Rssi, TmpIdx = 0;
 	ULONG TxTotalCnt, TxErrorRatio = 0, TxSuccess, TxRetransmit, TxFailCount;
-
+#endif /* NEW_RATE_ADAPT_SUPPORT */
 #ifdef CONFIG_ATE
    	if (ATE_ON(pAd))
    	{
@@ -408,6 +410,11 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 
 #endif /* NEW_RATE_ADAPT_SUPPORT */
     }
+
+#ifdef DOT11N_DRAFT3
+	if (pAd->CommonCfg.Bss2040CoexistFlag & BSS_2040_COEXIST_BW_SYNC)
+		pAd->CommonCfg.Bss2040CoexistFlag &= (~BSS_2040_COEXIST_BW_SYNC);
+#endif /* DOT11N_DRAFT3 */
 
 	RTMP_SEM_UNLOCK(&pAd->AutoRateLock);
 }

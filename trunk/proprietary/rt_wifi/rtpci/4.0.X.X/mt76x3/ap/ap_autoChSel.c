@@ -598,11 +598,12 @@ static inline UCHAR SelectClearChannelBusyTime(
 	)
 {
 	PCHANNELINFO pChannelInfo = pAd->pChannelInfo;
-	INT ch = 1, channel_idx, BssTab_idx;
-	BSSENTRY *pBss;
-	UINT32 min_dirty, min_falsecca, min_busytime;
+	INT ch = 1, channel_idx;
+	//BSSENTRY *pBss;
+	UINT32 min_busytime;
+	//UINT32 min_dirty;
 	int candidate_ch;
-	UCHAR  ExChannel[2] = {0}, candidate_ExChannel[2] = {0};
+	//UCHAR  ExChannel[2] = {0}, candidate_ExChannel[2] = {0};
 	UCHAR base;
 
 

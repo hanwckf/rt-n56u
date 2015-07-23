@@ -721,6 +721,9 @@ typedef	struct	_WSC_CTRL
 	BOOLEAN				bRegenPublicKey; /* For negative test */
 	UCHAR				NfcModel; /* 0:Password_Token, 1:Configuration_Token, 2:Handover */
 #endif /* WSC_NFC_SUPPORT */	
+#ifdef CONFIG_AP_SUPPORT
+	BOOLEAN				bWscAutoTriggerDisable; /* Default setting is FALSE */
+#endif /* CONFIG_AP_SUPPORT */
 }	WSC_CTRL, *PWSC_CTRL;
 
 typedef struct GNU_PACKED _WSC_CONFIGURED_VALUE {

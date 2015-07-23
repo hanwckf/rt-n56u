@@ -808,6 +808,9 @@ VOID MlmeHandler(RTMP_ADAPTER *pAd)
 
 				case APCLI_SYNC_STATE_MACHINE:
 					apcliIfIndex = Elem->Priv;
+#ifdef MULTI_APCLI_SUPPORT
+					DBGPRINT(RT_DEBUG_TRACE, ("\x1b[35m APCLI_SYNC_STATE_MACHINE  apcliIfindex = %d  SyncCurrState=%d \x1b[m\n", apcliIfIndex, pAd->ApCfg.ApCliTab[apcliIfIndex].SyncCurrState));
+#endif /* MULTI_APCLI_SUPPORT */
 					if(isValidApCliIf(apcliIfIndex))
 						StateMachinePerformAction(pAd, &pAd->Mlme.ApCliSyncMachine, Elem,
 							(pAd->ApCfg.ApCliTab[apcliIfIndex].SyncCurrState));
@@ -815,6 +818,11 @@ VOID MlmeHandler(RTMP_ADAPTER *pAd)
 
 				case APCLI_CTRL_STATE_MACHINE:
 					apcliIfIndex = Elem->Priv;
+
+#ifdef MULTI_APCLI_SUPPORT
+					DBGPRINT(RT_DEBUG_TRACE, ("\x1b[34m APCLI_CTRL_STATE_MACHINE  apcliIfindex=%d  CtrlCurrState=%d \x1b[m\n", apcliIfIndex, pAd->ApCfg.ApCliTab[apcliIfIndex].CtrlCurrState));
+#endif /* MULTI_APCLI_SUPPORT */
+					
 #ifdef MAC_REPEATER_SUPPORT
 					if (apcliIfIndex >= 64)
 						apcliIfIndex = ((apcliIfIndex - 64) / 16);		
@@ -1050,6 +1058,15 @@ NDIS_STATUS MlmeInit(RTMP_ADAPTER *pAd)
 		BTMStateMachineInit(pAd, &pAd->Mlme.BTMMachine, pAd->Mlme.BTMFunc);
 #endif
 
+#ifdef ACL_V2_SUPPORT
+		ACL_V2_CtrlInit(pAd);
+#endif /* ACL_V2_SUPPORT */
+
+
+#ifdef SNIFFER_MIB_CMD
+		sniffer_mib_ctrlInit(pAd);
+#endif /* SNIFFER_MIB_CMD */
+
 
 		ActionStateMachineInit(pAd, &pAd->Mlme.ActMachine, pAd->Mlme.ActFunc);
 
@@ -1186,6 +1203,15 @@ VOID MlmeHalt(RTMP_ADAPTER *pAd)
 #ifdef CONFIG_DOT11V_WNM
 	WNMCtrlExit(pAd);
 #endif
+
+#ifdef ACL_V2_SUPPORT
+	ACL_V2_CtrlExit(pAd);
+#endif /* ACL_V2_SUPPORT */
+
+#ifdef SNIFFER_MIB_CMD
+		sniffer_mib_ctrlExit(pAd);
+#endif /* SNIFFER_MIB_CMD */
+
 
 
 	if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST))
@@ -1515,7 +1541,7 @@ VOID MlmePeriodicExec(
 					if ((pAd->MacTab.Size == 1) 
 						&& (pAd->CommonCfg.bEnableTxBurst))
                 { /* Only update TxOP for racing */
-                    AsicUpdateTxOP(pAd, WMM_PARAM_AC_1, 0x60);
+                    AsicUpdateTxOP(pAd, WMM_PARAM_AC_1, 0x80);
                 }
                 else
                 {
@@ -3735,8 +3761,16 @@ BOOLEAN MlmeEnqueueForRecv(
 			*/
 			for (i = 0; i < pAd->ApCfg.ApCliNum; i++)
 			{
-				if (MAC_ADDR_EQUAL(pAd->ApCfg.ApCliTab[i].MlmeAux.Bssid, pFrame->Hdr.Addr2))
+				if (MAC_ADDR_EQUAL(pAd->ApCfg.ApCliTab[i].MlmeAux.Bssid, pFrame->Hdr.Addr2)
+#ifdef MULTI_APCLI_SUPPORT
+					|| MAC_ADDR_EQUAL(pAd->ApCfg.ApCliTab[i].wdev.if_addr, pFrame->Hdr.Addr1)
+#endif /* MULTI_APCLI_SUPPORT */
+					
+					)
 				{
+#ifdef MULTI_APCLI_SUPPORT
+					ApCliIdx  = i;
+#endif /* MULTI_APCLI_SUPPORT */
 					bToApCli = TRUE;
 					break;
 				}

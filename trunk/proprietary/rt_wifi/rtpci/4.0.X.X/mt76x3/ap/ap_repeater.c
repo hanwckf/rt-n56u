@@ -182,6 +182,32 @@ VOID RTMPInsertRepeaterEntry(
 			IdxToUse = 0;
 		NdisCopyMemory(tempMAC, SPEC_ADDR[IdxToUse], 3);
 	}
+	// replace to all real mac
+	else if (pAd->ApCfg.MACRepeaterOuiMode == 3)
+	{
+		INT IdxToUse;
+		
+		for (idx = 0; idx < pAd->ApCfg.ReptMacList.Num; idx++)
+		{
+			if ((pAd->ApCfg.ReptMacList.Entry[idx].bSet) && (!pAd->ApCfg.ReptMacList.Entry[idx].bUsed))
+				break;
+		}
+
+		/* If there is a matched one, use the next one; otherwise, use the first one. */
+		if (idx >= 0  && idx < pAd->ApCfg.ReptMacList.Num)
+		{
+			IdxToUse = idx;
+		}
+		else
+		{
+			/* actually the real mac shouldn't be duplicate, this need the system to take care about this! */
+			IdxToUse = 0;
+		}
+
+		pAd->ApCfg.ReptMacList.Entry[IdxToUse].bUsed = 1;
+		
+		NdisCopyMemory(tempMAC, &pAd->ApCfg.ReptMacList.Entry[IdxToUse].Addr[0], MAC_ADDR_LEN);
+	}
 	else
 	{
 		NdisCopyMemory(tempMAC, pAd->ApCfg.ApCliTab[apidx].wdev.if_addr, 3);

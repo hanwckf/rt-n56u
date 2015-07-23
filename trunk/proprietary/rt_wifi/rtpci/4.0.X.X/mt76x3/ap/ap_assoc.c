@@ -1723,7 +1723,16 @@ SendAssocResponse:
 
 		/* send wireless event - for association */
 		RTMPSendWirelessEvent(pAd, IW_ASSOC_EVENT_FLAG, pEntry->Addr, 0, 0);
-    	
+
+#ifdef ALL_NET_EVENT
+		wext_send_event(pEntry->wdev->if_dev,
+			pEntry->Addr,
+			pEntry->bssid,
+			pAd->CommonCfg.Channel,
+			RTMPAvgRssi(pAd, &pEntry->RssiSample),
+			FBT_LINK_ONLINE_NOTIFY);
+#endif /* ALL_NET_EVENT */
+
 		/* This is a reassociation procedure */
 		pEntry->IsReassocSta = isReassoc;
 		
@@ -2041,6 +2050,16 @@ VOID APPeerDisassocReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	
 		/* send wireless event - for disassociation */
 		RTMPSendWirelessEvent(pAd, IW_DISASSOC_EVENT_FLAG, Addr2, 0, 0);
+
+#ifdef ALL_NET_EVENT
+		wext_send_event(pEntry->wdev->if_dev,
+			pEntry->Addr,
+			pEntry->bssid,
+			pAd->CommonCfg.Channel,
+			RTMPAvgRssi(pAd, &pEntry->RssiSample),
+			FBT_LINK_OFFLINE_NOTIFY);
+#endif /* ALL_NET_EVENT */
+
         ApLogEvent(pAd, Addr2, EVENT_DISASSOCIATED);
 
 		MacTableDeleteEntry(pAd, Elem->Wcid, Addr2);
@@ -2131,6 +2150,16 @@ VOID APMlmeKickOutSta(RTMP_ADAPTER *pAd, UCHAR *pStaAddr, UCHAR Wcid, USHORT Rea
 	{
 		/* send wireless event - for disassocation */
 		RTMPSendWirelessEvent(pAd, IW_DISASSOC_EVENT_FLAG, pStaAddr, 0, 0);
+
+#ifdef ALL_NET_EVENT
+		wext_send_event(pEntry->wdev->if_dev,
+			pEntry->Addr,
+			pEntry->bssid,
+			pAd->CommonCfg.Channel,
+			RTMPAvgRssi(pAd, &pEntry->RssiSample),
+			FBT_LINK_OFFLINE_NOTIFY);
+#endif /* ALL_NET_EVENT */
+		
         ApLogEvent(pAd, pStaAddr, EVENT_DISASSOCIATED);
 
 	    /* 2. send out a DISASSOC request frame */

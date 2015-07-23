@@ -29,12 +29,14 @@
 #ifndef __WF_PHY_BACK_H__
 #define __WF_PHY_BACK_H__
 
-
+#ifndef WF_PHY_BASE
 #define WF_PHY_BASE     0x00010000
-
+#endif
 
 /* ??? */
+#ifndef CR_PHYMUX_11
 #define CR_PHYMUX_11    (WF_PHY_BASE + 0x422c)
+#endif
 typedef union _CR_PHYMUX_11_STRUCT{
     struct {
         UINT32 rsv_0:16;

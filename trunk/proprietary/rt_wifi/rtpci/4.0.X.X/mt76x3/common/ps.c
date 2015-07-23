@@ -137,10 +137,6 @@ VOID RtmpCleanupPsQueue(RTMP_ADAPTER *pAd, QUEUE_HEADER *pQueue)
 VOID RtmpHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isActive)
 {
 	MAC_TABLE_ENTRY *pMacEntry;
-	BOOLEAN       IsDequeu= FALSE;
-	INT           DequeuAC = QID_AC_BE;
-	INT           DequeuCOUNT;
-	INT i, Total_Packet_Number = 0;
 	STA_TR_ENTRY *tr_entry = NULL;
 
 	ASSERT(wcid < MAX_LEN_OF_MAC_TABLE);

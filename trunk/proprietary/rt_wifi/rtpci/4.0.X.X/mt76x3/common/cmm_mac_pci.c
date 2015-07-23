@@ -1698,7 +1698,7 @@ VOID RTMPRingCleanUp(RTMP_ADAPTER *pAd, UCHAR RingType)
 	TXD_STRUC *pDestTxD, TxD;
 	RXD_STRUC *pDestRxD, RxD;
 #endif /* RT_BIG_ENDIAN */
-	QUEUE_ENTRY *pEntry;
+	//QUEUE_ENTRY *pEntry;
 	PNDIS_PACKET pPacket;
 	RTMP_TX_RING *pTxRing;
 	ULONG IrqFlags;
@@ -1985,7 +1985,6 @@ VOID PDMAResetAndRecovery(RTMP_ADAPTER *pAd)
 	UINT32 Value;
 	UINT32 RestoreValue;
 	UINT32 Loop = 0;
-	UINT32 i;
 	ULONG IrqFlags;
 
 	/* Stop SW Dequeue */
@@ -1998,7 +1997,7 @@ VOID PDMAResetAndRecovery(RTMP_ADAPTER *pAd)
 
 	RtmpOsMsDelay(1);
 
-	pAd->RxRest = 1;
+	pAd->RxReset = 1;
 
 	/* Assert csr_force_tx_eof */
 	RTMP_IO_READ32(pAd, MT_WPDMA_GLO_CFG , &Value);
@@ -2070,9 +2069,9 @@ VOID PDMAResetAndRecovery(RTMP_ADAPTER *pAd)
 	RTMP_IRQ_LOCK(&pAd->BcnRingLock, IrqFlags);
 	if (pAd->OpMode == OPMODE_AP)
 	{
-        BSS_STRUCT *pMbss;
+		BSS_STRUCT *pMbss;
 		pMbss = &pAd->ApCfg.MBSSID[MAIN_MBSSID];
-        ASSERT(pMbss);
+		ASSERT(pMbss);
 		if (pMbss) 
 		{
 			pMbss->bcn_buf.bcn_state = BCN_TX_IDLE;
@@ -2347,7 +2346,7 @@ VOID RT28xx_UpdateBeaconToAsic(
 	IN ULONG UpdatePos)
 {
 	BCN_BUF_STRUC *bcn_buf = NULL;
-	UCHAR *buf, *hdr;
+	UCHAR *buf	/*, *hdr*/;
 	INT len;
 	PNDIS_PACKET *pkt = NULL;
 
@@ -2571,7 +2570,9 @@ BOOLEAN RT28xxPciAsicRadioOff(
 	IN UCHAR Level, 
 	IN USHORT TbttNumToNextWakeUp) 
 {
+#if defined(RTMP_MAC) || defined(RLT_MAC)
     UINT32 RxDmaIdx, RxCpuIdx;
+#endif /* defined(RTMP_MAC) || defined(RLT_MAC) */
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
@@ -2829,7 +2830,7 @@ ra_dma_addr_t RtmpDrvPciMapSingle(
 		}
 		else
 		{
-			return (ra_dma_addr_t)NULL;
+			return (UINT)NULL;
 		}
 
 	}
@@ -2918,6 +2919,36 @@ INT rtmp_irq_init(RTMP_ADAPTER *pAd)
 	pAd->int_disable_mask = 0;
 	pAd->int_pending = 0;
 	RTMP_INT_UNLOCK(&pAd->irq_lock, irqFlags);
+
+#ifdef INT_STATISTIC
+
+	pAd->INTCNT = 0;
+#ifdef MT_MAC
+	pAd->INTWFMACINT0CNT = 0;
+	pAd->INTWFMACINT1CNT = 0;
+	pAd->INTWFMACINT2CNT = 0;
+	pAd->INTWFMACINT3CNT = 0;
+	pAd->INTWFMACINT4CNT = 0;
+	pAd->INTBCNDLY = 0;
+	pAd->INTBMCDLY = 0;
+#endif
+	pAd->INTTxCoherentCNT = 0;
+	pAd->INTRxCoherentCNT = 0;
+	pAd->INTFifoStaFullIntCNT = 0;
+	pAd->INTMGMTDLYCNT =0;
+	pAd->INTRXDATACNT =0;
+	pAd->INTRXCMDCNT =0;
+	pAd->INTHCCACNT =0;
+	pAd->INTAC3CNT =0;
+	pAd->INTAC2CNT =0;
+	pAd->INTAC1CNT =0;
+	pAd->INTAC0CNT =0;
+
+	pAd->INTPreTBTTCNT =0;
+	pAd->INTTBTTIntCNT =0;
+	pAd->INTGPTimeOutCNT =0;
+	pAd->INTAutoWakeupIntCNT =0;
+#endif
 
 	return 0;
 }

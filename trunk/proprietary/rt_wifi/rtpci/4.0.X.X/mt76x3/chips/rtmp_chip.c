@@ -402,8 +402,11 @@ UINT8 NICGetBandSupported(RTMP_ADAPTER *pAd)
 
 INT WaitForAsicReady(RTMP_ADAPTER *pAd)
 {
-	UINT32 mac_val = 0, reg;
+	UINT32 mac_val = 0;
+#if defined(RTMP_MAC) || defined(RLT_MAC)
+	UINT32 reg;
 	int idx = 0;
+#endif /* defined(RTMP_MAC) || defined(RLT_MAC) */
 
 	// TODO: shiang-7603
 	return TRUE;
@@ -486,7 +489,9 @@ int RtmpChipOpsHook(VOID *pCB)
 {
 	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)pCB;
 	RTMP_CHIP_CAP *pChipCap = &pAd->chipCap;
+#if defined(RTMP_MAC) || defined(RLT_MAC) || defined(RT65xx)
 	UINT32 MacValue;
+#endif /* defined(RTMP_MAC) || defined(RLT_MAC) || defined(RT65xx) */
 	int ret = 0;
 #ifdef GREENAP_SUPPORT
 	RTMP_CHIP_OP *pChipOps = &pAd->chipOps;

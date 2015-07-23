@@ -1705,6 +1705,7 @@ UCHAR get_nss_by_mcs(UCHAR phy_mode, UCHAR mcs, BOOLEAN stbc);
 #define MT_TX_RETRY_UNLIMIT		0x1f
 #define MT_TX_SHORT_RETRY		0x0f
 #define MT_TX_LONG_RETRY		0x0f
+#define MT_RTS_RETRY			0x0f
 
 #endif /* __MT_MAC_H__ */
 

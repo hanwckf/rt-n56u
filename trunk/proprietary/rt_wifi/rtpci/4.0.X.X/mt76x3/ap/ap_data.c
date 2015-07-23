@@ -112,21 +112,7 @@ struct reason_id_str{
 	INT id;
 	RTMP_STRING *code_str;
 };
-
-static struct reason_id_str pkt_drop_code[]={
-		{PKT_SUCCESS, "TxSuccess"},
-		{INVALID_PKT_LEN, "pkt error"},
-		{INVALID_TR_WCID, "invalid TR wcid"},
-		{INVALID_TR_ENTRY, "wrong TR entry type"},
-		{INVALID_WDEV, "Invalid wdev"},
-		{INVALID_ETH_TYPE, "ether type check fail"},
-		{DROP_PORT_SECURE, "port not secure"},
-		{DROP_PSQ_FULL, "PsQ full"},
-		{DROP_TXQ_FULL, "TxQ full"},
-		{DROP_TX_JAM, "Tx jam"},
-		{DROP_TXQ_ENQ_FAIL, "TxQ EnQ fail"},
-};
-
+/*Nodbody uses it currently*/
 
 /*
 	========================================================================
@@ -492,7 +478,9 @@ static inline VOID APFindCipherAlgorithm(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	UCHAR KeyIdx = 0, CipherAlg = CIPHER_NONE;
 	UCHAR RAWcid = pTxBlk->Wcid;
 	MAC_TABLE_ENTRY *pMacEntry = pTxBlk->pMacEntry;
+#if defined(APCLI_SUPPORT) && defined(WPA_SUPPLICANT_SUPPORT)
 	STA_TR_ENTRY *tr_entry = pTxBlk->tr_entry;
+#endif
 	BSS_STRUCT *pMbss;
 	struct wifi_dev *wdev;
 
@@ -916,7 +904,7 @@ static inline PUCHAR AP_Build_ARalink_Frame_Header(RTMP_ADAPTER *pAd, TX_BLK *pT
 	PNDIS_PACKET pNextPacket;
 	UINT32 nextBufLen;
 	PQUEUE_ENTRY pQEntry;
-	UINT8 TXWISize = pAd->chipCap.TXWISize;
+	//UINT8 TXWISize = pAd->chipCap.TXWISize;
 		
 	APFindCipherAlgorithm(pAd, pTxBlk);
 	APBuildCommon802_11Header(pAd, pTxBlk);
@@ -1063,9 +1051,12 @@ VOID AP_AMPDU_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	PQUEUE_ENTRY pQEntry;
 	BOOLEAN bHTCPlus = FALSE;
 	UINT hdr_offset, cache_sz;
+#if !defined(MT7603) && !defined(MT7628) || defined(CONFIG_TSO_SUPPORT)
 	UINT8 TXWISize = pAd->chipCap.TXWISize;
+#endif /* !defined(MT7603) && !defined(MT7628) || defined(CONFIG_TSO_SUPPORT) */
+#if (defined(MT7603) || defined(MT7628)) && !defined(VENDOR_FEATURE1_SUPPORT)
 	UINT8 tx_hw_hdr_len = pAd->chipCap.tx_hw_hdr_len;
-
+#endif /*defined(MT7603) || defined(MT7628) && !defined(VENDOR_FEATURE1_SUPPORT)*/
 	ASSERT(pTxBlk);
 
 	pQEntry = RemoveHeadQueue(&pTxBlk->TxPacketList);
@@ -1624,7 +1615,7 @@ VOID AP_AMSDU_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	USHORT FirstTx = 0, LastTxIdx = 0;
 	int frameNum = 0;
 	PQUEUE_ENTRY pQEntry;
-	STA_TR_ENTRY *tr_entry;
+	//STA_TR_ENTRY *tr_entry;
 #ifdef CONFIG_AP_SUPPORT
 #ifdef APCLI_SUPPORT
 	PAPCLI_STRUCT pApCliEntry = NULL;
@@ -1633,8 +1624,9 @@ VOID AP_AMSDU_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
 #endif /* MAC_REPEATER_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef WFA_VHT_PF
 	MAC_TABLE_ENTRY *pMacEntry = pTxBlk->pMacEntry;
-	
+#endif /* WFA_VHT_PF */	
 	ASSERT((pTxBlk->TxPacketList.Number > 1));
 
 	while (pTxBlk->TxPacketList.Head)
@@ -1860,7 +1852,7 @@ VOID AP_Legacy_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	USHORT freeCnt = 1;
 	BOOLEAN bVLANPkt;
 	QUEUE_ENTRY *pQEntry;
-	UINT8 TXWISize = pAd->chipCap.TXWISize;
+	//UINT8 TXWISize = pAd->chipCap.TXWISize;
 	
 	ASSERT(pTxBlk);
 
@@ -2349,7 +2341,7 @@ VOID AP_Fragment_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	USHORT freeCnt = 1;
 	BOOLEAN bVLANPkt;
 	QUEUE_ENTRY *pQEntry;
-	UINT8 TXWISize = pAd->chipCap.TXWISize;
+	//UINT8 TXWISize = pAd->chipCap.TXWISize;
 	PACKET_INFO PacketInfo;
 #ifdef SOFT_ENCRYPT
 	UCHAR *tmp_ptr = NULL;
@@ -2361,7 +2353,7 @@ VOID AP_Fragment_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	UINT32 FreeMpduSize, SrcRemainingBytes;
 	USHORT AckDuration;
 	UINT NextMpduSize;
-	UINT8 tx_hw_hdr_len = pAd->chipCap.tx_hw_hdr_len;
+	//UINT8 tx_hw_hdr_len = pAd->chipCap.tx_hw_hdr_len;
 	
 	ASSERT(pTxBlk);
 	ASSERT(TX_BLK_TEST_FLAG(pTxBlk, fTX_bAllowFrag));
@@ -3362,8 +3354,9 @@ VOID APRxErrorHandle(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	}
 }
 
-
+#ifdef RLT_MAC_DBG
 static int dump_next_valid = 0;
+#endif /* RLT_MAC_DBG */
 BOOLEAN APCheckVaildDataFrame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 {
 	HEADER_802_11 *pHeader = pRxBlk->pHeader;
@@ -3424,7 +3417,6 @@ INT ap_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	HEADER_802_11 *pHeader = pRxBlk->pHeader;
 	FRAME_CONTROL *pFmeCtrl = &pHeader->FC;
 	MAC_TABLE_ENTRY *pEntry = NULL;
-	INT wdev_idx;
 	INT hdr_len = 0;
 
 	pEntry = PACInquiry(pAd, pRxBlk->wcid);
@@ -3571,7 +3563,9 @@ INT ap_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	ASSERT(pEntry->Aid == pRxBlk->wcid);
 
 	return hdr_len;
+#if defined(WDS_SUPPORT) || defined(CLIENT_WDS)
 err:
+#endif /* defined((WDS_SUPPORT) || defined(CLIENT_WDS)  */
 
 	return FALSE;
 }

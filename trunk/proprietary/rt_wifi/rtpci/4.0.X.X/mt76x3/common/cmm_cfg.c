@@ -1129,7 +1129,6 @@ INT RTMP_COM_IoctlHandle(
 			PMAC_TABLE_ENTRY pMacEntry = NULL;
 #endif /* CONFIG_AP_SUPPORT */
 			RT_CMD_IW_STATS *pStats = (RT_CMD_IW_STATS *)pData;
-			CHAR max_avg_rssi;
 
 			pStats->qual = 0;
 			pStats->level = 0;
@@ -1293,13 +1292,8 @@ INT RTMP_COM_IoctlHandle(
 				HtPhyMode = pAd->WdsTab.WdsEntry[pObj->ioctl_if].wdev.HTPhyMode;
 			else
 #endif /* WDS_SUPPORT */
-			{
 				HtPhyMode = pAd->ApCfg.MBSSID[pObj->ioctl_if].wdev.HTPhyMode;
-#ifdef MBSS_SUPPORT
-				/* reset phy mode for MBSS */
-				MBSS_PHY_MODE_RESET(pObj->ioctl_if, HtPhyMode);
-#endif /* MBSS_SUPPORT */
-			}
+
 			RtmpDrvMaxRateGet(pAd, HtPhyMode.field.MODE, HtPhyMode.field.ShortGI,
 							HtPhyMode.field.BW, HtPhyMode.field.MCS,
 							(UINT32 *)&pRate->BitRate);
@@ -1818,4 +1812,45 @@ VOID StatRateToString(RTMP_ADAPTER *pAd, CHAR *Output, UCHAR TxRx, UINT32 RawDat
 	sprintf(Output+strlen(Output), "%s%s\n", phyMode[(phy_mode) & 0x3], ((RawData>>10) & 0x3)? ", STBC": " ");
 
 }
+
+
+INT Set_themal_sensor(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	/* 0: get temperature; 1: get adc */
+	UINT32 value;
+	value = simple_strtol(arg, 0, 10);
+
+	if ((value == 0) || (value == 1))
+		CmdGetThemalSensorResult(pAd, value);
+	else
+		DBGPRINT(RT_DEBUG_OFF, (":%s: 0: get temperature; 1: get adc\n", __FUNCTION__));
+
+	return TRUE;
+}
 #endif
+
+#ifdef SINGLE_SKU_V2
+INT SetSKUEnable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	UCHAR value;
+	
+	value = simple_strtol(arg, 0, 10);
+	
+	if (value)
+	{
+		pAd->SKUEn = 1;
+		DBGPRINT(RT_DEBUG_ERROR, ("==>SetSKUEnable_Proc (ON)\n"));
+	}
+	else
+	{
+		pAd->SKUEn = 0;
+		DBGPRINT(RT_DEBUG_ERROR, ("==>SetSKUEnable_Proc (OFF)\n"));
+	}
+
+	AsicSwitchChannel(pAd, pAd->CommonCfg.Channel, FALSE);
+	
+	return TRUE;
+}
+#endif /* SINGLE_SKU_V2 */
+
+

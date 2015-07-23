@@ -76,8 +76,8 @@ VOID tr_tb_reset_entry(RTMP_ADAPTER *pAd, UCHAR tr_tb_idx)
 {
 	struct _STA_TR_ENTRY *tr_entry;
 	INT qidx;
-	ULONG irq_flags;
-	PNDIS_PACKET pPacket;
+	//ULONG irq_flags;
+	//PNDIS_PACKET pPacket;
 
 	if (tr_tb_idx >= MAX_LEN_OF_TR_TABLE)
 		return;
@@ -103,10 +103,10 @@ VOID tr_tb_reset_entry(RTMP_ADAPTER *pAd, UCHAR tr_tb_idx)
 VOID tr_tb_set_entry(RTMP_ADAPTER *pAd, UCHAR tr_tb_idx, MAC_TABLE_ENTRY *pEntry)
 {
 	struct _STA_TR_ENTRY *tr_entry;
-	INT qidx, tid;
+	INT qidx, tid,upId;
     MAC_TABLE_ENTRY *mac_entry;
     struct wtbl_entry tb_entry;
-    struct wtbl_2_struc *wtbl_2;
+    //struct wtbl_2_struc *wtbl_2;
 
 	if (tr_tb_idx < MAX_LEN_OF_TR_TABLE)
 	{
@@ -121,7 +121,14 @@ VOID tr_tb_set_entry(RTMP_ADAPTER *pAd, UCHAR tr_tb_idx, MAC_TABLE_ENTRY *pEntry
 
 		tr_entry->NonQosDataSeq = 0;
 		for (tid = 0; tid < NUM_OF_TID; tid++)
+		{
 			tr_entry->TxSeq[tid] = 0;
+		}
+		
+		for(upId = 0 ; upId < NUM_OF_UP ; upId ++)
+		{		
+			tr_entry->cacheSn[upId] = -1;
+		}
 
         /* Reset BA SSN & Score Board Bitmap, for BA Receiptor */
         NdisZeroMemory(&tb_entry, sizeof(tb_entry));
@@ -359,7 +366,6 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 	UCHAR HashIdx;
 	int i, FirstWcid;
 	MAC_TABLE_ENTRY *pEntry = NULL, *pCurrEntry;
-	BOOLEAN Cancelled;
 
 	if (pAd->MacTab.Size >= MAX_LEN_OF_MAC_TABLE)
 		return NULL;
@@ -936,10 +942,10 @@ VOID MacTableReset(RTMP_ADAPTER *pAd)
 #ifdef RTMP_MAC_PCI
 		RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
 #endif /* RTMP_MAC_PCI */
-		DBGPRINT(RT_DEBUG_TRACE, ("McastPsQueue.Number %d...\n", pAd->MacTab.McastPsQueue.Number));
+		DBGPRINT(RT_DEBUG_TRACE, ("McastPsQueue.Number %u...\n", pAd->MacTab.McastPsQueue.Number));
 		if (pAd->MacTab.McastPsQueue.Number > 0)
 			APCleanupPsQueue(pAd, &pAd->MacTab.McastPsQueue);
-		DBGPRINT(RT_DEBUG_TRACE, ("2McastPsQueue.Number %d...\n", pAd->MacTab.McastPsQueue.Number));
+		DBGPRINT(RT_DEBUG_TRACE, ("2McastPsQueue.Number %u...\n", pAd->MacTab.McastPsQueue.Number));
 
 		/* ENTRY PREEMPTION: Zero Mac Table but entry's content */
 /*		NdisZeroMemory(&pAd->MacTab, sizeof(MAC_TABLE));*/
@@ -971,8 +977,10 @@ MAC_TABLE_ENTRY *InsertMacRepeaterEntry(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR I
 		pApCliEntry = &pAd->ApCfg.ApCliTab[IfIdx];
 		pEntry->Aid = pApCliEntry->MacTabWCID + 1; // TODO: We need to record count of STAs
 		COPY_MAC_ADDR(pEntry->Addr, pApCliEntry->MlmeAux.Bssid);
+#ifdef DBG
 		printk("sn - InsertMacRepeaterEntry: Aid = %d\n", pEntry->Aid);
 		hex_dump("sn - InsertMacRepeaterEntry pEntry->Addr", pEntry->Addr, 6);
+#endif
 		/* Add this entry into ASIC RX WCID search table */
 		RTMP_STA_ENTRY_ADD(pAd, pEntry);
 		os_free_mem(NULL, pEntry);

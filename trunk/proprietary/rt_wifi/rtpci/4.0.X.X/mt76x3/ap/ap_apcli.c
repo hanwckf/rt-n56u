@@ -388,6 +388,13 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 					wdev->AuthMode, GetAuthMode(wdev->AuthMode),
 					wdev->WepStatus, GetEncryptType(wdev->WepStatus));
 
+#if defined (CONFIG_WIFI_PKT_FWD)
+		{
+			if (wf_fwd_entry_insert_hook)
+				wf_fwd_entry_insert_hook (wdev->if_dev, pAd->net_dev);
+		}
+#endif /* CONFIG_WIFI_PKT_FWD */
+
 		/* Insert the Remote AP to our MacTable. */
 		/*pMacEntry = MacTableInsertApCliEntry(pAd, (PUCHAR)(pAd->ApCfg.ApCliTab[0].MlmeAux.Bssid)); */
 #ifdef MAC_REPEATER_SUPPORT
@@ -409,7 +416,11 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 {
 		if (CliIdx == 0xff && pAd->chipCap.hif_type == HIF_MT)
 		{
-                AsicUpdateRxWCIDTable(pAd, APCLI_MCAST_WCID, (PUCHAR)(pApCliEntry->MlmeAux.Bssid));
+#ifdef MULTI_APCLI_SUPPORT
+			AsicUpdateRxWCIDTable(pAd, APCLI_MCAST_WCID(ifIndex), (PUCHAR)(pApCliEntry->MlmeAux.Bssid));	
+#else /* MULTI_APCLI_SUPPORT */
+			AsicUpdateRxWCIDTable(pAd, APCLI_MCAST_WCID, (PUCHAR)(pApCliEntry->MlmeAux.Bssid));
+#endif /*! MULTI_APCLI_SUPPORT */
 		}
 }
 #endif /* MT_MAC */
@@ -424,6 +435,12 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 			tr_entry = &pAd->MacTab.tr_entry[pMacEntry->wcid];
 			pMacEntry->Sst = SST_ASSOC;
 			pMacEntry->wdev = &pApCliEntry->wdev;
+
+#ifdef MULTI_APCLI_SUPPORT
+			pMacEntry->wdev ->tr_tb_idx = APCLI_MCAST_WCID(ifIndex);
+			tr_tb_set_mcast_entry(pAd, APCLI_MCAST_WCID(ifIndex), pMacEntry->wdev);
+#endif /* MULTI_APCLI_SUPPORT */
+
 #ifdef MAC_REPEATER_SUPPORT
 			if (CliIdx != 0xFF)
 			{
@@ -587,7 +604,11 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 							if (pAd->chipCap.hif_type == HIF_MT)
 							{
 								CmdProcAddRemoveKey(pAd, 0, pMacEntry->func_tb_idx, idx, pMacEntry->wcid, PAIRWISEKEYTABLE, pKey, pMacEntry->Addr);
+#ifdef MULTI_APCLI_SUPPORT
+								CmdProcAddRemoveKey(pAd, 0, pMacEntry->func_tb_idx, idx, APCLI_MCAST_WCID(ifIndex), SHAREDKEYTABLE, pKey, BROADCAST_ADDR);
+#else /* MULTI_APCLI_SUPPORT */
 								CmdProcAddRemoveKey(pAd, 0, pMacEntry->func_tb_idx, idx, APCLI_MCAST_WCID, SHAREDKEYTABLE, pKey, BROADCAST_ADDR);
+#endif /* !MULTI_APCLI_SUPPORT */
 							}
 #endif /* MT_MAC */
 
@@ -726,7 +747,13 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 #endif /* MAC_APCLI_SUPPORT */
 #ifdef MT_MAC
 				if (pAd->chipCap.hif_type == HIF_MT)
+				{
+#ifdef MULTI_APCLI_SUPPORT
+					AsicSetBssid(pAd, pApCliEntry->MlmeAux.Bssid, (0x1 + ifIndex));					
+#else /* MULTI_APCLI_SUPPORT */
 					AsicSetBssid(pAd, pApCliEntry->MlmeAux.Bssid, 0x1);
+#endif /* !MULTI_APCLI_SUPPORT */
+				}
 #endif
 			}
 
@@ -832,6 +859,13 @@ VOID ApCliLinkDown(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 		)
 		return;
 
+#if defined (CONFIG_WIFI_PKT_FWD)
+	{
+		if (wf_fwd_entry_delete_hook)
+			wf_fwd_entry_delete_hook (pApCliEntry->wdev.if_dev, pAd->net_dev);
+	}
+#endif /* CONFIG_WIFI_PKT_FWD */
+
 #ifdef MAC_REPEATER_SUPPORT
 	if (CliIdx == 0xFF)
 #endif /* MAC_REPEATER_SUPPORT */
@@ -846,7 +880,11 @@ VOID ApCliLinkDown(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 
 	MacTableDeleteEntry(pAd, MacTabWCID, APCLI_ROOT_BSSID_GET(pAd, pApCliEntry->MacTabWCID));
 #ifdef MT_MAC
+#ifdef MULTI_APCLI_SUPPORT
+    RTMP_STA_ENTRY_MAC_RESET(pAd, APCLI_MCAST_WCID(ifIndex));//MT_MAC clear mcast entry of rootAP.
+#else /* MULTI_APCLI_SUPPORT */
     RTMP_STA_ENTRY_MAC_RESET(pAd, APCLI_MCAST_WCID);//MT_MAC clear mcast entry of rootAP.
+#endif /* !MULTI_APCLI_SUPPORT */
 #endif
 
 #ifdef MAC_REPEATER_SUPPORT
@@ -1194,6 +1232,10 @@ BOOLEAN preCheckMsgTypeSubset(
 
 			/* Only Sta have chance to receive Probe-Rsp. */
 			case SUBTYPE_PROBE_RSP:
+#ifdef MULTI_APCLI_SUPPORT
+				DBGPRINT(RT_DEBUG_TRACE,("\x1b[36m preCheckMsgTypeSubset SUBTYPE_PROBE_RSP....\x1b[m\n"));
+#endif /* MULTI_APCLI_SUPPORT */
+
 				*Machine = APCLI_SYNC_STATE_MACHINE;
 				*MsgType = APCLI_MT2_PEER_PROBE_RSP;
 				break;
@@ -1527,7 +1569,7 @@ INT ApCliAllowToSendPacket(
 				{
 					if (RTMPRepeaterVaildMacEntry(pAd, pSrcBufVA + MAC_ADDR_LEN))
 					{
-						tr_entry = &pAd->MacTab.Content[pAd->ApCfg.ApCliTab[idx].MacTabWCID];
+						tr_entry = &pAd->MacTab.tr_entry[pAd->ApCfg.ApCliTab[idx].MacTabWCID];
 						if ((tr_entry) && (tr_entry->PortSecured == WPA_802_1X_PORT_SECURED))
 						{
 							RTMPInsertRepeaterEntry(pAd, idx, (pSrcBufVA + MAC_ADDR_LEN));
@@ -2494,38 +2536,43 @@ VOID APCli_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 		}
 		else {
 			volatile UINT32 Value;
-			UCHAR MacByte = 0;
 
 			//TODO: shall we make choosing which byte to be selectable???
 			Value = 0x00000000L;
 			RTMP_IO_READ32(pAd, LPON_BTEIR, &Value);//read BTEIR bit[31:29] for determine to choose which byte to extend BSSID mac address.
-			Value = Value | (0x2 << 29);//Note: Carter, make default will use byte4 bit[31:28] to extend Mac Address
-			RTMP_IO_WRITE32(pAd, LPON_BTEIR, Value);
-			MacByte = Value >> 29;
+			Value = Value | ((pAd->chipCap.MBSSIDMode -2) << 29);
 
 
 			//Carter, I make apcli interface use HWBSSID1 to go.
 			//so fill own_mac and BSSID here.
 			wdev->if_addr[0] |= 0x2;
 
-			switch (MacByte) {
+			switch ((pAd->chipCap.MBSSIDMode -2)) {
 				case 0x1: /* choose bit[23:20]*/
+					//mapping to MBSSID_MODE3
 					wdev->if_addr[2] = (wdev->if_addr[2] = wdev->if_addr[2] & 0x0f);
 					break;
 				case 0x2: /* choose bit[31:28]*/
+					//mapping to MBSSID_MODE4					
 					wdev->if_addr[3] = (wdev->if_addr[3] = wdev->if_addr[3] & 0x0f);
 					break;
 				case 0x3: /* choose bit[39:36]*/
+					//mapping to MBSSID_MODE5					
 					wdev->if_addr[4] = (wdev->if_addr[4] = wdev->if_addr[4] & 0x0f);
 					break;
 				case 0x4: /* choose bit [47:44]*/
+					//mapping to MBSSID_MODE6					
 					wdev->if_addr[5] = (wdev->if_addr[5] = wdev->if_addr[5] & 0x0f);
 					break;
 				default: /* choose bit[15:12]*/
+					//mapping to MBSSID_MODE2					
 					wdev->if_addr[1] = (wdev->if_addr[1] = wdev->if_addr[1] & 0x0f);
 					break;
 			}
-
+			
+#ifdef MULTI_APCLI_SUPPORT //tmp use byte5 to distinguish, may refine this by setting
+			wdev->if_addr[MAC_ADDR_LEN - 1] = (wdev->if_addr[MAC_ADDR_LEN - 1] + idx);
+#endif /* MULTI_APCLI_SUPPORT */
 //			AsicSetDevMac(pAd, wdev->if_addr, 0x1);//set own_mac to HWBSSID1
 			//AsicSetBssid(pAd, wdev->if_addr, 0x1);
 		}
@@ -2588,7 +2635,12 @@ BOOLEAN ApCli_Open(RTMP_ADAPTER *pAd, PNET_DEV dev_p)
 
             pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
             wdev = &pApCliEntry->wdev;
-            AsicSetDevMac(pAd, wdev->if_addr, 1);//Apcli OwnMac start from HWBSSID 1.
+
+#ifdef MULTI_APCLI_SUPPORT
+			AsicSetDevMac(pAd, wdev->if_addr, (1+ifIndex));//Apcli OwnMac start from HWBSSID 1.	
+#else /* MULTI_APCLI_SUPPORT */
+			AsicSetDevMac(pAd, wdev->if_addr, 1);//Apcli OwnMac start from HWBSSID 1.
+#endif /* !MULTI_APCLI_SUPPORT */
 
 			ApCliIfUp(pAd);
 

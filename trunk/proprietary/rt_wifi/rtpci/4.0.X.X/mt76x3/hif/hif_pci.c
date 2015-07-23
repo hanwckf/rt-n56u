@@ -5,8 +5,9 @@
 #ifdef RTMP_MAC_PCI
 INT NICInitPwrPinCfg(RTMP_ADAPTER *pAd)
 {
+#if defined(RTMP_MAC) || defined(RLT_MAC)
 	UINT32 mac_val = 0;
-
+#endif /* defined(RTMP_MAC) || defined(RLT_MAC) */
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
 		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",

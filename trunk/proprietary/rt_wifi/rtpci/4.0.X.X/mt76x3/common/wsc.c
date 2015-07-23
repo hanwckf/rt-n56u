@@ -1420,22 +1420,52 @@ VOID WscEapEnrolleeAction(
 				; /* Do NOT need to generate EnrolleeRandom and DH public key here. */
 			else 
 #endif /* WSC_NFC_SUPPORT */
-			if (pWscControl->RegData.ReComputePke == 1)
 			{
-				INT idx;
-                DH_Len = sizeof(pWscControl->RegData.Pke);
-				/* Enrollee 192 random bytes for DH key generation */
-				for (idx = 0; idx < 192; idx++)
-					pWscControl->RegData.EnrolleeRandom[idx] = RandomByte(pAdapter);
-            	RT_DH_PublicKey_Generate (
-                    WPS_DH_G_VALUE, sizeof(WPS_DH_G_VALUE),
-            	    WPS_DH_P_VALUE, sizeof(WPS_DH_P_VALUE),
-            	    pWscControl->RegData.EnrolleeRandom, sizeof(pWscControl->RegData.EnrolleeRandom),
-            	    pWscControl->RegData.Pke, (UINT *) &DH_Len);
-				
-				pWscControl->RegData.ReComputePke = 0;
-			}
+#ifdef CONFIG_AP_SUPPORT
+				/*
+					We don't need to consider P2P case.
+				*/
+				IF_DEV_CONFIG_OPMODE_ON_AP(pAdapter)
+				{					
+					if ((pWscControl->bWscAutoTriggerDisable == TRUE) &&
+						(pWscControl->bWscTrigger == FALSE))
+					{
+						if (bUPnPMsg == TRUE)
+						{
+							DBGPRINT(RT_DEBUG_TRACE, 
+								("%s(%d): WscAutoTrigger is disabled.\n", __FUNCTION__, __LINE__));
+							WscUPnPErrHandle(pAdapter, pWscControl, Elem->TimeStamp.u.LowPart);
+							return;
+						}
+						else if (pEntry && IS_ENTRY_CLIENT(pEntry))
+						{
+							DBGPRINT(RT_DEBUG_TRACE, 
+								("%s(%d): WscAutoTrigger is disabled! Send EapFail to STA.\n", __FUNCTION__, __LINE__));
+							WscSendEapFail(pAdapter, pWscControl, TRUE);
+							return;
+						}
+						else
+							; /* Keep going. APCLI shall be the else case. */
+					}
+				}
+#endif /* CONFIG_AP_SUPPORT */
 
+				if (pWscControl->RegData.ReComputePke == 1)
+				{
+					INT idx;
+                	DH_Len = sizeof(pWscControl->RegData.Pke);
+					/* Enrollee 192 random bytes for DH key generation */
+					for (idx = 0; idx < 192; idx++)
+						pWscControl->RegData.EnrolleeRandom[idx] = RandomByte(pAdapter);
+            		RT_DH_PublicKey_Generate (
+                    	WPS_DH_G_VALUE, sizeof(WPS_DH_G_VALUE),
+            	    	WPS_DH_P_VALUE, sizeof(WPS_DH_P_VALUE),
+            	    	pWscControl->RegData.EnrolleeRandom, sizeof(pWscControl->RegData.EnrolleeRandom),
+            	    	pWscControl->RegData.Pke, (UINT *) &DH_Len);
+				
+					pWscControl->RegData.ReComputePke = 0;
+				}
+			}
 			OpCode |= WSC_OPCODE_MSG;
             
 			DataLen = BuildMessageM1(pAdapter, pWscControl, WscData);
@@ -6255,8 +6285,9 @@ BOOLEAN	WscPBCExec(
 #ifdef WSC_LED_SUPPORT
 	UCHAR WPSLEDStatus;
 #endif /* WSC_LED_SUPPORT */
+#if defined(CONFIG_STA_SUPPORT ) || defined(APCLI_SUPPORT)
 	UCHAR CurOpMode = AP_MODE;
-
+#endif /* defined(CONFIG_STA_SUPPORT ) || defined(APCLI_SUPPORT) */ 
 	if (pWscControl == NULL)
 		return FALSE;
 
@@ -6349,16 +6380,24 @@ BOOLEAN	WscPBCExec(
 #ifdef APCLI_SUPPORT
 	if (CurOpMode == AP_MODE)
 	{
+#ifdef RTMP_TIMER_TASK_SUPPORT	
 		RTMP_STRING ChStr[5] = {0};
-
+#else
+		UCHAR channel;
+#endif		
 		NdisMoveMemory(pWscControl->RegData.SelfInfo.MacAddr,
 	                   pAd->ApCfg.ApCliTab[BSS0].wdev.if_addr,
 	                   MAC_ADDR_LEN);
 
+#ifdef RTMP_TIMER_TASK_SUPPORT
 		// TODO: shiang-usw, check about this Channel setting here? Original it indicate to pAd->MlmeAux.Channel!
 		snprintf(ChStr, sizeof(ChStr), "%d", pAd->ApCfg.ApCliTab[BSS0].MlmeAux.Channel);
 		Set_Channel_Proc(pAd, ChStr);
-		
+#else
+		channel = pAd->ApCfg.ApCliTab[BSS0].MlmeAux.Channel;
+		RTEnqueueInternalCmd(pAd, CMDTHREAD_APCLI_PBC_TIMEOUT, (VOID *)&channel, sizeof(UCHAR));
+#endif	
+
 	    /* bring apcli interface down first */
 		if(pAd->ApCfg.ApCliTab[BSS0].Enable == TRUE)
 		{
@@ -6631,8 +6670,9 @@ VOID WscPBCBssTableSort(
 	BSS_ENTRY *pInBss;
 	UUID_BSSID_CH_INFO	*ApUuidBssid = NULL;
 	BOOLEAN rv = FALSE;
+#if defined(CONFIG_STA_SUPPORT ) || defined(APCLI_SUPPORT)
 	UCHAR CurOpMode = AP_MODE;
-
+#endif /* defined(CONFIG_STA_SUPPORT ) || defined(APCLI_SUPPORT) */
 
 #ifdef APCLI_SUPPORT
 if (CurOpMode == AP_MODE)
@@ -7386,7 +7426,7 @@ INT	WscGetConfWithoutTrigger(
 #define WSC_SINGLE_TRIGGER_APPNAME  "goahead"
 
         struct task_struct *p;
-        read_lock(&tasklist_lock);
+        rcu_read_lock();
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,21)
 	for_each_process(p)
 #else
@@ -7396,7 +7436,7 @@ INT	WscGetConfWithoutTrigger(
             if(!strcmp(p->comm, WSC_SINGLE_TRIGGER_APPNAME))
                 send_sig(SIGXFSZ, p, 0);
         }
-        read_unlock(&tasklist_lock);
+        rcu_read_unlock();
     }
 /* ---  added by YYHuang@Ralink, 08/03/12 */
 #endif /* WSC_SINGLE_TRIGGER */
@@ -8523,7 +8563,7 @@ VOID WSC_HDR_BTN_CheckHandler(
 	IN	PRTMP_ADAPTER	pAd)
 {
  	POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
-	BOOLEAN flg_pressed;
+	BOOLEAN flg_pressed = FALSE;
 
 
 	WSC_HDR_BTN_MR_PRESS_FLG_GET(pAd, flg_pressed);

@@ -91,6 +91,8 @@
 #define RXD_SIZE		16	
 
 #define RXINFO_OFFSET	12
+#define NUM_OF_UP 9 /*number of user priority: 2set WMM+ non QoS*/
+
 
 /* TXINFO_SIZE + TXWI_SIZE + 802.11 Header Size + AMSDU sub frame header */
 #define TX_DMA_1ST_BUFFER_SIZE  96	/* only the 1st physical buffer is pre-allocated */
@@ -140,7 +142,11 @@
 */
 
 #define MAX_PACKETS_IN_MCAST_PS_QUEUE		128
+#ifdef BB_SOC
+#define MAX_PACKETS_IN_PS_QUEUE				64
+#else /* BB_SOC */
 #define MAX_PACKETS_IN_PS_QUEUE				128	/*32 */
+#endif /* !BB_SOC */
 #define WMM_NUM_OF_AC                       4	/* AC0, AC1, AC2, and AC3 */
 
 #ifdef CONFIG_AP_SUPPORT
@@ -471,7 +477,11 @@ enum WIFI_MODE{
 #define MAX_APCLI_NUM				0
 #ifdef APCLI_SUPPORT
 #undef MAX_APCLI_NUM
+#ifdef MULTI_APCLI_SUPPORT
+#define MAX_APCLI_NUM				2
+#else /* MULTI_APCLI_SUPPORT*/
 #define MAX_APCLI_NUM				1
+#endif /* !MULTI_APCLI_SUPPORT */
 #endif /* APCLI_SUPPORT */
 
 #define MAX_P2P_NUM				0
@@ -598,7 +608,13 @@ enum WIFI_MODE{
 /*============================================================ */
 #define BSSID_WCID		1	/* in infra mode, always put bssid with this WCID */
 #define MCAST_WCID	0x0
+
+#ifdef MULTI_APCLI_SUPPORT
+#define APCLI_MCAST_WCID(_num)\
+	(MAX_LEN_OF_MAC_TABLE + HW_BEACON_MAX_NUM + MAX_APCLI_NUM + _num)
+#else /* MULTI_APCLI_SUPPORT */
 #define APCLI_MCAST_WCID    (MAX_LEN_OF_MAC_TABLE + HW_BEACON_MAX_NUM + MAX_APCLI_NUM)
+#endif /* !MULTI_APCLI_SUPPORT */
 #define BSS0Mcast_WCID	0x0
 #define BSS1Mcast_WCID	0xf8
 #define BSS2Mcast_WCID	0xf9
@@ -1958,6 +1974,10 @@ typedef struct _WIFI_NODE_TYPE {
 #endif /* WSC_INCLUDED */
 /* End - WIRELESS EVENTS definition */
 
+
+#ifdef ALL_NET_EVENT
+#define	IW_ALL_NET_EVENT        				0x0800
+#endif /* ALL_NET_EVENT */
 
 #ifdef MCAST_RATE_SPECIFIC
 #define MCAST_DISABLE	0

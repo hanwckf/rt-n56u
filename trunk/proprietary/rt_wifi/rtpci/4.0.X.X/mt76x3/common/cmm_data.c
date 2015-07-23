@@ -115,48 +115,7 @@ VOID dbg_diag_deque_log(RTMP_ADAPTER *pAd)
 }
 #endif /* DBG_DIAGNOSE */
 
-
-static VOID dump_txblk(TX_BLK *pTxBlk)
-{
-	NDIS_PACKET *pPacket;
-	int i, frameNum;
-	PQUEUE_ENTRY	pQEntry;
-
-	DBGPRINT(RT_DEBUG_TRACE,("Dump TX_BLK Structure:\n"));
-	DBGPRINT(RT_DEBUG_TRACE,("\tTxFrameType=%d!\n", pTxBlk->TxFrameType));
-	DBGPRINT(RT_DEBUG_TRACE,("\tTotalFrameLen=%d\n", pTxBlk->TotalFrameLen));
-	DBGPRINT(RT_DEBUG_TRACE,("\tTotalFrameNum=%d!\n", pTxBlk->TxPacketList.Number));
-	DBGPRINT(RT_DEBUG_TRACE,("\tTotalFragNum=%d!\n", pTxBlk->TotalFragNum));
-	DBGPRINT(RT_DEBUG_TRACE,("\tpPacketList=\n"));
-
-	frameNum = pTxBlk->TxPacketList.Number;
-
-	for(i=0; i < frameNum; i++)
-	{	int j;
-		UCHAR	*pBuf;
-
-		pQEntry = RemoveHeadQueue(&pTxBlk->TxPacketList);
-		pPacket = QUEUE_ENTRY_TO_PACKET(pQEntry);
-		if (pPacket)
-		{
-			pBuf = GET_OS_PKT_DATAPTR(pPacket);
-			DBGPRINT(RT_DEBUG_TRACE,("\t\t[%d]:ptr=0x%x, Len=%d!\n", i, (UINT32)(GET_OS_PKT_DATAPTR(pPacket)), GET_OS_PKT_LEN(pPacket)));
-			DBGPRINT(RT_DEBUG_TRACE,("\t\t"));
-			for (j =0 ; j < GET_OS_PKT_LEN(pPacket); j++)
-			{
-				DBGPRINT(RT_DEBUG_TRACE,("%02x ", (pBuf[j] & 0xff)));
-				if (j == 16)
-					break;
-			}
-			InsertTailQueue(&pTxBlk->TxPacketList, PACKET_TO_QUEUE_ENTRY(pPacket));
-		}
-	}
-	DBGPRINT(RT_DEBUG_TRACE,("\tWcid=%d!\n", pTxBlk->Wcid));
-	DBGPRINT(RT_DEBUG_TRACE,("\twdev_idx=%d!\n", pTxBlk->wdev_idx));
-	DBGPRINT(RT_DEBUG_TRACE,("----EndOfDump\n"));
-
-}
-
+/*Nobody uses it currently*/
 
 VOID dump_rxblk(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 {
@@ -475,6 +434,16 @@ UINT32 parse_rx_packet_type(RTMP_ADAPTER *ad, RX_BLK *rx_blk, VOID *rx_packet)
 #endif /* RT_BIG_ENDIAN */
 
 #ifdef RTMP_PCI_SUPPORT
+
+	if (rx_blk->PDMALen != RMAC_RX_PKT_RX_BYTE_COUNT(rxd_0->word))
+	{
+
+		DBGPRINT(RT_DEBUG_ERROR, ("drop rx length = 0x%x, pdma length = 0x%x packet\n", 
+				RMAC_RX_PKT_RX_BYTE_COUNT(rxd_0->word), rx_blk->PDMALen));
+		return 0;
+	
+	}
+
 	if (RMAC_RX_PKT_RX_BYTE_COUNT(rxd_0->word) > RX_BUFFER_AGGRESIZE)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("drop rx length = 0x%x packet\n", 
@@ -546,9 +515,11 @@ UINT32 parse_rx_packet_type(RTMP_ADAPTER *ad, RX_BLK *rx_blk, VOID *rx_packet)
                     {
                         TXS_STRUC *txs_entry = (TXS_STRUC *)ptr;
                         TXS_D_0 *txs_d0 = &txs_entry->txs_d0;
+#ifdef RT_BIG_ENDIAN
                         TXS_D_1 *txs_d1 = &txs_entry->txs_d1;
                         TXS_D_2 *txs_d2 = &txs_entry->txs_d2;
                         TXS_D_3 *txs_d3 = &txs_entry->txs_d3;
+#endif
                         TXS_D_4 *txs_d4 = &txs_entry->txs_d4;
 #ifdef RT_BIG_ENDIAN
 						*(((UINT32 *)txs_d0)) = SWAP32(*(((UINT32 *)txs_d0)));
@@ -593,6 +564,9 @@ UINT32 parse_rx_packet_type(RTMP_ADAPTER *ad, RX_BLK *rx_blk, VOID *rx_packet)
             UINT32 q_idx = QID_AC_BE;
             HEADER_802_11 *pWifi_hdr;
             UCHAR *qos_p;
+#ifdef UAPSD_SUPPORT
+			UCHAR ac_idx = 0;
+#endif /* UAPSD_SUPPORT */
 
             tr_entry = &ad->MacTab.tr_entry[txd_1->wlan_idx];
 			pEntry = &ad->MacTab.Content[txd_1->wlan_idx];
@@ -615,6 +589,17 @@ UINT32 parse_rx_packet_type(RTMP_ADAPTER *ad, RX_BLK *rx_blk, VOID *rx_packet)
             sa = pWifi_hdr->Addr2;
             qos_p = ((UCHAR *)pWifi_hdr) + sizeof(HEADER_802_11);
 
+#ifdef UAPSD_SUPPORT
+			/*
+				Sanity Check for UAPSD condition for correct QoS index.
+			*/
+			if (qos_p[0] >= 8)
+				qos_p[0] = 1; /* shout not be here */
+			
+			/* get the AC ID of incoming packet */
+			ac_idx = WMM_UP2AC_MAP[qos_p[0]];
+#endif /* UAPSD_SUPPORT */
+
 #ifdef CONFIG_TRACE_SUPPORT
 			TRACE_PS_RETRIEVE_PACKET(0, txd_1->wlan_idx, hdr_info, padding, tr_entry->EntryType, tr_entry->ps_state, qos_p[0],
 									 qos_p[1], tr_entry->ps_qbitmap, tr_entry->ps_queue.Number, tr_entry->TokenCount[qos_p[0]]);		
@@ -630,7 +615,7 @@ UINT32 parse_rx_packet_type(RTMP_ADAPTER *ad, RX_BLK *rx_blk, VOID *rx_packet)
 					//DBGPRINT(RT_DEBUG_ERROR, ("txd_1->wlan_idx=%d, got token:%d, tr_entry->ps_qbitmap=%x\n", txd_1->wlan_idx, qos_p[0], tr_entry->ps_qbitmap));                  
 					if (tr_entry->ps_qbitmap == 0x0)
 					{
-						QUEUE_ENTRY *pQEntry;
+						//QUEUE_ENTRY *pQEntry;
 						UINT32 wlan_idx = 0;
 						int for_qid;
 						
@@ -700,19 +685,20 @@ UINT32 parse_rx_packet_type(RTMP_ADAPTER *ad, RX_BLK *rx_blk, VOID *rx_packet)
 					DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("parse_rx_packet_type  not token txd_1->wlan_idx: %x, rx_packet addr: %x rx_wcid: %x\n",txd_1->wlan_idx,(u32)rx_packet,RTMP_GET_PACKET_WCID(rx_packet)));
 					RTMP_SET_PACKET_WDEV(rx_packet, tr_entry->wdev->wdev_idx);
 
-					/* sanity Check for UAPSD condition */
-					if (qos_p[0] >= 8)
-						qos_p[0] = 1; /* shout not be here */
-
-					/* get the AC ID of incoming packet */
-					q_idx = WMM_UP2AC_MAP[qos_p[0]];
-
 					RTMP_IRQ_LOCK(&ad->irq_lock, IrqFlags);
-					InsertTailQueue(&tr_entry->ps_queue, PACKET_TO_QUEUE_ENTRY(rx_packet));
+					if (tr_entry->ps_queue.Number >= MAX_PACKETS_IN_PS_QUEUE)
+					{
+						// drop the ps retrive pks due to limit ps queue max length
+						RELEASE_NDIS_PACKET(ad, rx_packet, NDIS_STATUS_FAILURE);
+					}
+					else
+					{
+						InsertTailQueue(&tr_entry->ps_queue, PACKET_TO_QUEUE_ENTRY(rx_packet));
+					}
 					RTMP_IRQ_UNLOCK(&ad->irq_lock, IrqFlags);
 
 #ifdef UAPSD_SUPPORT
-					if (UAPSD_MR_IS_NOT_TIM_BIT_NEEDED_HANDLED(&ad->MacTab.Content[tr_entry->wcid], q_idx))
+					if (UAPSD_MR_IS_NOT_TIM_BIT_NEEDED_HANDLED(&ad->MacTab.Content[tr_entry->wcid], ac_idx))
 					{
 						/*
 							1. the station is UAPSD station;
@@ -753,7 +739,7 @@ UINT32 parse_rx_packet_type(RTMP_ADAPTER *ad, RX_BLK *rx_blk, VOID *rx_packet)
             {
                 TMR_FRM_STRUC *tmr = (TMR_FRM_STRUC *)(GET_OS_PKT_DATAPTR(rx_packet));
                 struct rmac_rxd_0_tmr *ptmr_d0 = &tmr->tmr_d0;
-                TMR_D_1 *ptmr_d1 = &tmr->tmr_d1;
+                //TMR_D_1 *ptmr_d1 = &tmr->tmr_d1;
                 UINT32 *ptod_0 = &tmr->tod_0;
                 UINT32 *ptoa_0 = &tmr->toa_0;
                 TMR_D_6 *tmr_d6 = &tmr->tmr_d6;
@@ -1139,21 +1125,25 @@ void AP_QueuePsActionPacket(
 #ifdef UAPSD_CC_FUNC_PS_MGMT_TO_LEGACY
 Label_Legacy_PS:
 #endif /* UAPSD_CC_FUNC_PS_MGMT_TO_LEGACY */
-		if (tr_entry->ps_queue.Number >= MAX_PACKETS_IN_PS_QUEUE)
+
+		DBGPRINT(RT_DEBUG_TRACE, ("ps> mgmt to legacy ps queue... (%d)\n", FlgIsDeltsFrame));
+
+		if (tr_entry->ps_queue.Number >= MAX_PACKETS_IN_PS_QUEUE ||
+			rtmp_enq_req(pAd, pPacket, MgmtQid, tr_entry, FlgIsLocked,NULL) == FALSE)
 		{
+			DBGPRINT(RT_DEBUG_TRACE, 	("%s(%d): WLAN_TX_DROP, pPacket=%p, QueIdx=%d, ps_queue_num=%d, wcid=%d\n",
+					__FUNCTION__, __LINE__, pPacket, MgmtQid, tr_entry->ps_queue.Number, tr_entry->wcid));
+			
 			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_RESOURCES);
 			return;
 		}
 		else
 		{
-			ULONG IrqFlags=0;
-
-			DBGPRINT(RT_DEBUG_TRACE, ("ps> mgmt to legacy ps queue... (%d)\n", FlgIsDeltsFrame));
-			rtmp_enq_req(pAd, pPacket, MgmtQid, tr_entry, FlgIsLocked,NULL);
+			/* mark corresponding TIM bit in outgoing BEACON frame*/
+			WLAN_MR_TIM_BIT_SET(pAd, pMacEntry->func_tb_idx, pMacEntry->Aid);
 		}
 
-		/* mark corresponding TIM bit in outgoing BEACON frame*/
-		WLAN_MR_TIM_BIT_SET(pAd, pMacEntry->func_tb_idx, pMacEntry->Aid);
+
 	}
 }
 #endif /* CONFIG_AP_SUPPORT */
@@ -1194,7 +1184,7 @@ NDIS_STATUS MlmeHardTransmit(
 #ifdef CONFIG_AP_SUPPORT
 	MAC_TABLE_ENTRY *pEntry = NULL;
 	HEADER_802_11 *pHeader_802_11;
-	UINT8 TXWISize = pAd->chipCap.TXWISize;
+	//UINT8 TXWISize = pAd->chipCap.TXWISize;
 	UINT8 tx_hw_hdr_len = pAd->chipCap.tx_hw_hdr_len;
 #endif /* CONFIG_AP_SUPPORT */
 	PACKET_INFO PacketInfo;
@@ -2234,7 +2224,7 @@ INT rtmp_tx_swq_exit(RTMP_ADAPTER *pAd, UCHAR wcid)
 		}
 	}
 
-	for (wcid = wcid_start; wcid < wcid_end; wcid++) {
+	for (wcid = wcid_start; wcid <= wcid_end; wcid++) {
 		tr_entry = &pAd->MacTab.tr_entry[wcid];
 
 		if (IS_ENTRY_NONE(tr_entry))
@@ -2290,7 +2280,8 @@ INT rtmp_enq_req(RTMP_ADAPTER *pAd, PNDIS_PACKET pkt, UCHAR qidx, STA_TR_ENTRY *
 	if (FlgIsLocked == FALSE)
 		RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
 
-	if(tr_entry->enqCount > SQ_ENQ_NORMAL_MAX)
+	if ((tr_entry->enqCount > SQ_ENQ_NORMAL_MAX)
+		&&(tr_entry->tx_queue[qidx].Number > SQ_ENQ_RESERVE_PERAC))
 	{
 		occupied_wcid = fifo_swq->swq[enq_idx];
 		enq_done = FALSE;
@@ -2354,7 +2345,7 @@ enq_end:
 #endif /* DBG_DIAGNOSE */
 
 		DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_TXQ,
-					("\t FailedCause =>OccupiedWCID:%d,EnqCap:%d\n",
+					("\t FailedCause =>OccupiedWCID:%u,EnqCap:%d\n",
 					occupied_wcid, tr_entry->enq_cap));
 	}
 
@@ -2539,7 +2530,6 @@ done:
 
 INT rtmp_deq_report(RTMP_ADAPTER *pAd, struct dequeue_info *info)
 {
-	ULONG IrqFlags;
 	UINT tx_cnt = info->deq_pkt_cnt, qidx = info->cur_q;
 	struct tx_swq_fifo *fifo_swq;
 
@@ -2582,7 +2572,7 @@ INT rtmp_deq_report(RTMP_ADAPTER *pAd, struct dequeue_info *info)
 INT deq_mgmt_frame(RTMP_ADAPTER *pAd, PNDIS_PACKET pkt, UCHAR qIdx, BOOLEAN bLocked)
 {
 	NDIS_STATUS Status;
-	unsigned long IrqFlags;
+	//unsigned long IrqFlags;
 
 #ifdef RTMP_MAC_PCI
 	if (RTMP_GET_PACKET_MGMT_PKT_DATA_QUE(pkt) == 1)
@@ -2658,7 +2648,6 @@ INT deq_packet_gatter(RTMP_ADAPTER *pAd, struct dequeue_info *deq_info, TX_BLK *
 	PQUEUE_ENTRY qEntry = NULL;
 	PNDIS_PACKET pPacket;
 	PQUEUE_HEADER pQueue;
-	unsigned long IrqFlags;
 	UCHAR QueIdx = deq_info->cur_q;
 	UCHAR wcid = deq_info->cur_wcid;
 
@@ -2968,12 +2957,10 @@ VOID RTMPDeQueuePacket(
 		}
 #endif /* RTMP_MAC_PCI */
 
-#ifdef DBG
 		if (round >= 1024) {
 			DBGPRINT(RT_DEBUG_OFF, ("%s():ForceToBreak!!Buggy here?\n", __FUNCTION__));
 			break;
 		}
-#endif /* DBG */
 
 	}while(1);
 

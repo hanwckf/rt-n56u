@@ -742,7 +742,7 @@ INT Set_EepromBufferWriteBack_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 /*************************************************************************
   *	Public function declarations for prom operation callback functions setting
   ************************************************************************/
-INT RtmpChipOpsEepromHook(struct _RTMP_ADAPTER *pAd, INT infType);
+INT RtmpChipOpsEepromHook(struct _RTMP_ADAPTER *pAd, INT infType, INT forceMode);
 
 INT NICReadEEPROMParameters(struct _RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr);
 BOOLEAN rt28xx_eeprom_read16(struct _RTMP_ADAPTER *pAd, USHORT offset, USHORT *value);

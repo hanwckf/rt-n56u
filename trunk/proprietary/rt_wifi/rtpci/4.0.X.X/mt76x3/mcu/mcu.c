@@ -76,10 +76,6 @@ INT32 MCUSysInit(RTMP_ADAPTER *pAd)
 		AsicDMASchedulerInit(pAd, DMA_SCH_LMAC);
 #endif
 
-#ifdef CONFIG_AP_SUPPORT
-		CmdPsRetrieveReq(pAd , pAd->bPS_Retrieve);
-#endif
-
 	}
 #endif /* MT_MAC */
 

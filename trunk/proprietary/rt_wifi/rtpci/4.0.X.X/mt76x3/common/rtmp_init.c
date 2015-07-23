@@ -859,6 +859,15 @@ VOID UserCfgExit(RTMP_ADAPTER *pAd)
 #ifdef MAC_REPEATER_SUPPORT
 	NdisFreeSpinLock(&pAd->ApCfg.ReptCliEntryLock);
 #endif /* MAC_REPEATER_SUPPORT */
+
+#ifdef CONFIG_AP_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+	{
+#ifdef BAND_STEERING
+		BndStrg_Release(pAd);
+#endif /* BAND_STEERING */
+	}
+#endif /* CONFIG_AP_SUPPORT */
 }
 
 
@@ -1568,9 +1577,14 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 	pAd->PDMAResetFailCount = 0;
 	pAd->TxDMACheckTimes = 0;
 	pAd->RxDMACheckTimes = 0;
-	pAd->RxRest = 0;
+	pAd->RxResetDropCount = 0;
+	pAd->RxReset = 0;
 	pAd->DropInvalidPacket = 0;
 #endif
+
+#ifdef LOAD_FW_ONE_TIME
+	pAd->FWLoad = 0;
+#endif /* LOAD_FW_ONE_TIME */
 
     pAd->bPS_Retrieve =1;
 
@@ -2085,7 +2099,7 @@ INT RtmpRaDevCtrlInit(VOID *pAdSrc, RTMP_INF_TYPE infType)
 
 #ifdef CONFIG_AP_SUPPORT
 	pAd->OpMode = OPMODE_AP;
-	printk("%s AP Driver version: %s\n", "MT76x3", AP_DRIVER_VERSION);
+	printk("%s AP Driver version: %s\n", "MT7603", AP_DRIVER_VERSION);
 #endif /* CONFIG_AP_SUPPORT */
 
 	DBGPRINT(RT_DEBUG_TRACE, ("pAd->infType=%d\n", pAd->infType));
@@ -2139,6 +2153,10 @@ INT RtmpRaDevCtrlInit(VOID *pAdSrc, RTMP_INF_TYPE infType)
 		}
 	}
 #endif /* MCS_LUT_SUPPORT */
+
+#ifdef SINGLE_SKU_V2
+	pAd->SKUEn = 1;
+#endif /* SINGLE_SKU_V2 */
 
 #ifdef MT_MAC
 	if (pAd->chipCap.hif_type != HIF_MT) 
@@ -2265,6 +2283,12 @@ VOID CMDHandler(RTMP_ADAPTER *pAd)
 					break;
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef SNIFFER_MIB_CMD
+				case CMDTHREAD_CHAN_RESTORE:
+					sniffer_channel_restore(pAd);
+					break;					
+#endif /* SNIFFER_MIB_CMD */
+
 				case CMDTHREAD_REG_HINT:
 #ifdef LINUX
 #ifdef RT_CFG80211_SUPPORT
@@ -2321,6 +2345,17 @@ VOID CMDHandler(RTMP_ADAPTER *pAd)
 					}
 					break;
 #endif /* MT_PS */
+
+				case CMDTHREAD_APCLI_PBC_TIMEOUT:
+					{
+						UCHAR channel = 0;
+						RTMP_STRING ChStr[5] = {0};
+						NdisMoveMemory(&channel , pData, sizeof(UCHAR));
+						DBGPRINT(RT_DEBUG_TRACE | DBG_FUNC_PS, ("channel=%d CMDTHREAD_APCLI_PBC_TIMEOUT\n", channel));
+						snprintf(ChStr, sizeof(ChStr), "%d", channel);
+						Set_Channel_Proc(pAd, ChStr);
+					}
+					break;
 #endif /* MT_MAC */
 				default:
 					DBGPRINT(RT_DEBUG_ERROR, ("--> Control Thread !! ERROR !! Unknown(cmdqelmt->command=0x%x) !! \n", cmdqelmt->command));

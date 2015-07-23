@@ -55,6 +55,9 @@ VOID APPeerProbeReqAction(
 	UCHAR RSNIe=IE_WPA, RSNIe2=IE_WPA2;
 	BSS_STRUCT *mbss;
 	struct wifi_dev *wdev;
+#ifdef BAND_STEERING
+	BOOLEAN bBndStrgCheck = TRUE;
+#endif /* BAND_STEERING */
 
 #ifdef WSC_AP_SUPPORT
 	UCHAR Addr3[MAC_ADDR_LEN];
@@ -109,6 +112,17 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION_
 			continue; /* check next BSS */
 		}
 
+
+#ifdef BAND_STEERING
+		BND_STRG_CHECK_CONNECTION_REQ(	pAd,
+											NULL, 
+											ProbeReqParam.Addr2,
+											Elem->MsgType,
+											Elem->rssi_info,
+											&bBndStrgCheck);
+		if (bBndStrgCheck == FALSE)
+			return;
+#endif /* BAND_STEERING */
 
 		/* allocate and send out ProbeRsp frame */
 		NStatus = MlmeAllocateMemory(pAd, &pOutBuffer);
@@ -946,8 +960,15 @@ VOID APPeerBeaconAction(
 #ifdef APCLI_SUPPORT
 #ifdef MT_MAC
         //if ((Elem->Wcid == APCLI_MCAST_WCID) || (Elem->Wcid == 255) || (Elem->Wcid == 0))
-        if (Elem->Wcid == APCLI_MCAST_WCID)        
+#ifdef MULTI_APCLI_SUPPORT
+        if (Elem->Wcid == APCLI_MCAST_WCID(0) || Elem->Wcid == APCLI_MCAST_WCID(1))
+        {
+        	ApCliWcid = TRUE;
+        }
+#else /* MULTI_APCLI_SUPPORT */
+        if (Elem->Wcid == APCLI_MCAST_WCID)
 		    ApCliWcid = TRUE;
+#endif /* !MULTI_APCLI_SUPPORT */
 #endif
 		if (Elem->Wcid < MAX_LEN_OF_MAC_TABLE
 #ifdef MT_MAC

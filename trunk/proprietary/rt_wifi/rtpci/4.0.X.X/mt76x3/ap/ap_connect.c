@@ -248,7 +248,9 @@ VOID APMakeBssBeacon(RTMP_ADAPTER *pAd, INT apidx)
 	LARGE_INTEGER FakeTimestamp;
 	ULONG FrameLen = 0;
 	UCHAR *pBeaconFrame, *tmac_info;
+#if defined(DOT11_N_SUPPORT) && defined(DOT11K_RRM_SUPPORT)
 	UINT i;
+#endif
 	HTTRANSMIT_SETTING BeaconTransmit = {.word = 0};   /* MGMT frame PHY rate setting when operatin at HT rate. */
 	UCHAR PhyMode, SupRateLen;
 	UINT8 TXWISize = pAd->chipCap.TXWISize;
@@ -663,10 +665,10 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 		step 1 - update BEACON's Capability
 	*/
 	ptr = pBeaconFrame + pMbss->bcn_buf.cap_ie_pos;
-	*ptr = (UCHAR)(pMbss->CapabilityInfo & 0x00ff);
-	*(ptr+1) = (UCHAR)((pMbss->CapabilityInfo & 0xff00) >> 8);
 
-	/*
+		//prevent little/big endian issue. and let asic_write_bcn_buf() handle it.
+	*(UINT16 *)ptr = pMbss->CapabilityInfo;
+		/*
 		step 2 - update TIM IE
 		TODO: enlarge TIM bitmap to support up to 64 STAs
 		TODO: re-measure if RT2600 TBTT interrupt happens faster than BEACON sent out time
@@ -1332,14 +1334,14 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 	/* step 7. move BEACON TXWI and frame content to on-chip memory */
 	RT28xx_UpdateBeaconToAsic(pAd, apidx, FrameLen, UpdatePos);
 
-#ifdef DBG
+
 	{
 	    UINT32   Lowpart, Highpart;
 
 	    AsicGetTsfTime(pAd, &Highpart, &Lowpart);
 	    pMbss->WriteBcnDoneTime[pMbss->timer_loop] = Lowpart;
 	}
-#endif /* DBG */
+
 }
 
 
@@ -1472,6 +1474,7 @@ VOID APUpdateAllBeaconFrame(RTMP_ADAPTER *pAd)
 				pAd->CommonCfg.AddHTInfo.AddHtInfo.ExtChanOffset,
 				prevBW, prevExtChOffset));
 		pAd->CommonCfg.Bss2040CoexistFlag |= BSS_2040_COEXIST_INFO_NOTIFY;
+		pAd->CommonCfg.Bss2040CoexistFlag |= BSS_2040_COEXIST_BW_SYNC;
 	}
 #endif /* DOT11N_DRAFT3 */
 #endif /* DOT11_N_SUPPORT */

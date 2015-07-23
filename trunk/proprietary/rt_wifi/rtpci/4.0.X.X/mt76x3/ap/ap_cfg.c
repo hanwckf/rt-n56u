@@ -169,7 +169,16 @@ INT Set_ChGeography_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT Set_AP_PKT_PWR(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 #endif /* SPECIFIC_TX_POWER_SUPPORT */
 
+#ifdef DBG
+INT Set_AP_TEST2_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_AP_TEST3_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+#endif
+
 INT Set_AP_SSID_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+
+#ifdef CONFIG_SNIFFER_SUPPORT
+INT Set_AP_Monitor_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+#endif /* CONFIG_SNIFFER_SUPPORT */
 
 INT Set_TxRate_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
@@ -300,6 +309,10 @@ INT Set_ApCli_AutoConnect_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
 #ifdef MAC_REPEATER_SUPPORT
 INT Set_ReptMode_Enable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+
+INT Set_ReptOUIMode_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_MACReptAddEntry_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_MACReptMACShowAll_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 #endif /* MAC_REPEATER_SUPPORT */
 
 #ifdef WSC_AP_SUPPORT
@@ -391,7 +404,9 @@ INT	Set_WscMaxPinAttack_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
 INT	Set_WscSetupLockTime_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 #endif /* WSC_V2_SUPPORT */
-
+INT	Set_WscAutoTriggerDisable_Proc(
+	IN	RTMP_ADAPTER *pAd, 
+	IN	RTMP_STRING *arg);
 #endif /* WSC_AP_SUPPORT */
 
 
@@ -477,6 +492,13 @@ static struct {
 	{"ChGeography",				Set_ChGeography_Proc},
 #endif /* EXT_BUILD_CHANNEL_LIST */
 	{"SSID",						Set_AP_SSID_Proc},
+#ifdef CONFIG_SNIFFER_SUPPORT
+	{"Monitor",						Set_AP_Monitor_Proc},
+#endif /* CONFIG_SNIFFER_SUPPORT */
+#ifdef DBG
+	{"test2",					Set_AP_TEST2_Proc},
+	{"test3",					Set_AP_TEST3_Proc},
+#endif
 	{"WirelessMode",				Set_WirelessMode_Proc},
 	{"BasicRate",					Set_BasicRate_Proc},
 	{"ShortSlot",					Set_ShortSlot_Proc},
@@ -587,6 +609,11 @@ static struct {
 	{"ResetCounter",				Set_ResetStatCounter_Proc},
 	{"DisConnectSta",				Set_DisConnectSta_Proc},
 	{"DisConnectAllSta",			Set_DisConnectAllSta_Proc},
+#ifdef ACL_V2_SUPPORT
+	{"del_sta",					Set_ACL_V2_DisConnectSta_Proc},
+	{"fbt_delsta_vendor",			Set_ACL_V2_DisConnectOUI_Proc},
+	{"fbt_delsta_interval",			Set_ACL_V2_EntryExpire_Proc},
+#endif /* ACL_V2_SUPPORT */
 #ifdef DOT1X_SUPPORT
 	{"IEEE8021X",					Set_IEEE8021X_Proc},
 	{"PreAuth",						Set_PreAuth_Proc},
@@ -733,6 +760,9 @@ static struct {
 
 #ifdef MAC_REPEATER_SUPPORT
 	{"MACRepeaterEn",			Set_ReptMode_Enable_Proc},
+	{"MACRepeaterOuiMode",		Set_ReptOUIMode_Proc},
+	{"MACReptAddEntry",			Set_MACReptAddEntry_Proc},
+	{"MACReptShowAll",			Set_MACReptMACShowAll_Proc},
 #endif /* MAC_REPEATER_SUPPORT */
 
 #ifdef WSC_AP_SUPPORT
@@ -771,6 +801,7 @@ static struct {
 	{"DoWpsByNFC",					Set_DoWpsByNFC_Proc},
 	{"NfcRegenPK",					Set_NfcRegenPK_Proc}, /* For NFC negative test */
 #endif /* WSC_NFC_SUPPORT */
+	{"WscAutoTriggerDisable", 		Set_WscAutoTriggerDisable_Proc},
 #endif /* WSC_AP_SUPPORT */
 #ifdef UAPSD_SUPPORT
 	{"UAPSDCapable",				Set_UAPSD_Proc},
@@ -964,7 +995,39 @@ static struct {
 	{"pdma_dbg", Set_PDMAWatchDog_Proc},
 	{"pse_dbg", SetPSEWatchDog_Proc},
 #endif
+
+	{"get_thermal_sensor", Set_themal_sensor},
+
+
 #endif
+#ifdef SINGLE_SKU_V2
+	{"SKUEnable",				SetSKUEnable_Proc},
+#endif /* SINGLE_SKU_V2 */
+#ifdef BAND_STEERING
+	{"BndStrgEnable", 		Set_BndStrg_Enable},
+	{"BndStrgRssiDiff", 	Set_BndStrg_RssiDiff},
+	{"BndStrgRssiLow", 		Set_BndStrg_RssiLow},
+	{"BndStrgAge", 			Set_BndStrg_Age},
+	{"BndStrgHoldTime", 	Set_BndStrg_HoldTime},
+	{"BndStrgCheckTime", 	Set_BndStrg_CheckTime5G},
+	{"BndStrgCndChk", 	Set_BndStrg_CndChkFlag},
+	{"BndStrgFrmChk", 	Set_BndStrg_FrmChkFlag},
+#ifdef BND_STRG_DBG
+	{"BndStrgMntAddr", 	Set_BndStrg_MonitorAddr},
+#endif /* BND_STRG_DBG */
+#endif /* BAND_STEERING */
+#ifdef SNIFFER_MIB_CMD
+	{"exsta",				exsta_proc}, //add the MAC want to sniffer
+	{"exsta_list",				exsta_list_proc}, // show the MAC's want to sniffer
+	{"exsta_clear",				exsta_clear_proc}, //clear all tje MAC's want to sniffer
+	{"exstascan",				exsta_scan_proc}, //trigger sniffer
+
+	{"set_mib_passive_scan",		set_mib_passive_scan_proc}, //select the scan type, 0 => uknown, 1 => passive, 2 => active 	
+	{"set_mib_scan_interval",		set_mib_scan_interval_proc}, //set the listen interval , unit : ms
+	{"set_mib_scan_scope",			set_mib_scan_scope_proc}, // 0 => all channel (no need to implement), 1 => dedicate channel
+	{"set_mib_scan_channel",		set_mib_scan_channel_proc}, // set the channel to listen
+#endif /* SNIFFER_MIB_CMD */
+
 	{NULL,}
 };
 
@@ -1003,6 +1066,10 @@ static struct {
 	{"txqinfo",			show_txqinfo_proc},
 	{"rfinfo", 				ShowRFInfo},
 	{"bbpinfo", 			ShowBBPInfo},
+#ifdef BAND_STEERING
+	{"BndStrgList", 		Show_BndStrg_List},
+	{"BndStrgInfo", 		Show_BndStrg_Info},
+#endif /* BAND_STEERING */
 #ifdef WDS_SUPPORT
 	{"wdsinfo",				Show_WdsTable_Proc},
 #endif /* WDS_SUPPORT */
@@ -1048,6 +1115,11 @@ static struct {
 #ifdef WSC_NFC_SUPPORT
 	{"NfcStatus", 			Get_NfcStatus_Proc},
 #endif /* WSC_NFC_SUPPORT */
+#ifdef ACL_V2_SUPPORT
+	{"del_sta",					Show_ACL_V2_STAEntry_Proc},
+	{"fbt_delsta_vendor",			Show_ACL_V2_OUI_Proc},
+	{"fbt_delsta_interval",			Show_ACL_V2_EntryExpire_Proc},
+#endif /* ACL_V2_SUPPORT */
 #endif /* WSC_AP_SUPPORT */
 #endif /* DBG */
 	{NULL,}
@@ -2386,12 +2458,17 @@ INT RTMPAPSetInformation(
 
 #ifdef CONFIG_DOT11V_WNM
 #endif
-   		default:
+
+#ifdef BAND_STEERING
+	case OID_BNDSTRG_MSG:
+		BndStrg_MsgHandle(pAd, wrq);
+		break;
+#endif /* BAND_STEERING */
+		default:
 			DBGPRINT(RT_DEBUG_TRACE, ("Set::unknown IOCTL's subcmd = 0x%08x\n", cmd));
 			Status = -EOPNOTSUPP;
 			break;
-    }
-
+	}
 
 	return Status;
 }
@@ -3742,6 +3819,28 @@ INT Set_CountryString_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 }
 
 
+#ifdef DBG
+INT Set_AP_TEST2_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+    UINT32 mac_val = 0;
+    pAd->testaddr = simple_strtol(arg, 0, 16);
+    RTMP_MCU_IO_READ32(pAd, pAd->testaddr, &mac_val);
+    printk ("test2 addr[0x%08x]=0x%08x\n", pAd->testaddr, mac_val);
+
+    return TRUE;
+}
+
+
+INT Set_AP_TEST3_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+    pAd->testdata = simple_strtol(arg, 0, 16);
+    printk ("test3 addr[0x%08x]=0x%08x\n", pAd->testaddr, pAd->testdata);
+    RTMP_MCU_IO_WRITE32(pAd, pAd->testaddr, pAd->testdata);
+
+    return TRUE;
+}
+#endif
+
 /*
     ==========================================================================
     Description:
@@ -3799,6 +3898,50 @@ INT	Set_AP_SSID_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 	return success;
 }
+
+
+#ifdef CONFIG_SNIFFER_SUPPORT
+INT Set_AP_Monitor_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	UINT32 Value = 0;
+	UINT32 IdMbss =0;
+
+	pAd->ApCfg.bMonitorON = (UCHAR) simple_strtol(arg, 0, 10);
+
+	DBGPRINT(RT_DEBUG_TRACE,("%s:  pAd->ApCfg.OriginalType=%u\n", __FUNCTION__ ,pAd->ApCfg.OriginalType));
+
+    	if (pAd->ApCfg.bMonitorON)
+	{
+#define RADIOTAP_TYPE 0
+#define PRISM_TYPE 1
+
+		pAd->sniffer_ctl.sniffer_type = RADIOTAP_TYPE;
+
+		if (RTMP_OS_NETDEV_GET_TYPE(pAd->ApCfg.MBSSID[IdMbss].wdev.if_dev) != ARPHRD_IEEE80211_RADIOTAP)
+		{
+			set_sniffer_mode(pAd->ApCfg.MBSSID[IdMbss].wdev.if_dev, pAd->sniffer_ctl.sniffer_type);
+			pAd->ApCfg.OriginalType = RTMP_OS_NETDEV_GET_TYPE(pAd->ApCfg.MBSSID[IdMbss].wdev.if_dev);
+			RTMP_OS_NETDEV_SET_TYPE(pAd->ApCfg.MBSSID[IdMbss].wdev.if_dev, ARPHRD_IEEE80211_RADIOTAP);
+		}
+		DBGPRINT(RT_DEBUG_TRACE, ("===>:: (MONITOR ON)\n"));
+	}
+	else
+	{
+		if (RTMP_OS_NETDEV_GET_TYPE(pAd->ApCfg.MBSSID[IdMbss].wdev.if_dev) == ARPHRD_IEEE80211_RADIOTAP)
+		{
+			RTMP_OS_NETDEV_SET_TYPE(pAd->ApCfg.MBSSID[IdMbss].wdev.if_dev, pAd->ApCfg.OriginalType);			
+		}
+		DBGPRINT(RT_DEBUG_TRACE, ("===>:: (MONITOR OFF)\n"));		
+	}
+
+	/* Set Rx Filter after eaxctly know what mode currently we work on */
+	AsicSetRxFilter(pAd);
+
+    DBGPRINT(RT_DEBUG_TRACE, ("%s::(bMonitorON=%u)\n",__FUNCTION__ ,pAd->ApCfg.bMonitorON));
+
+    return TRUE;
+}
+#endif
 
 
 /*
@@ -5098,6 +5241,159 @@ INT	Set_ACLShowAll_Proc(
 	return TRUE;
 }
 
+#ifdef MAC_REPEATER_SUPPORT
+/*
+    ==========================================================================
+    Description:
+        Add one entry or several entries(if allowed to)
+        	into Access control mac table list
+    Return:
+        TRUE if all parameters are OK, FALSE otherwise
+    ==========================================================================
+*/
+INT	Set_MACReptAddEntry_Proc(
+	IN	PRTMP_ADAPTER	pAd,
+	IN	RTMP_STRING *arg)
+{
+	UCHAR					macAddr[MAC_ADDR_LEN];
+	RTMP_STRING *this_char;
+	RTMP_STRING *value;
+	INT						i, j;
+	BOOLEAN					isDuplicate=FALSE;
+
+
+		pAd->ApCfg.ReptMacList.Num = 0;
+		for (i=0; i<MAX_NUMBER_OF_MAC_LIST; i++)
+		{
+			pAd->ApCfg.ReptMacList.Entry[i].bSet = 0;
+			pAd->ApCfg.ReptMacList.Entry[i].bUsed = 0;
+			//NdisZeroMemory(pAd->ApCfg.ReptMacList.Entry[i].Addr, MAC_ADDR_LEN)
+		}
+		
+
+	while ((this_char = strsep((char **)&arg, ";")) != NULL)
+	{
+		if (*this_char == '\0')
+		{
+			DBGPRINT(RT_DEBUG_WARN, ("An unnecessary delimiter entered!\n"));
+			continue;
+		}
+		if (strlen(this_char) != 17)  /*Mac address acceptable format 01:02:03:04:05:06 length 17 */
+		{
+			DBGPRINT(RT_DEBUG_ERROR, ("illegal MAC address length!\n"));
+			continue;
+		}
+		
+       	 for (i=0, value = rstrtok(this_char,":"); value; value = rstrtok(NULL,":"))
+		{
+			if((strlen(value) != 2) || (!isxdigit(*value)) || (!isxdigit(*(value+1))) )
+			{
+				DBGPRINT(RT_DEBUG_ERROR, ("illegal MAC address format or octet!\n"));
+				/* Do not use "continue" to replace "break" */
+				break;
+			}
+			AtoH(value, &macAddr[i++], 1);
+		}
+
+		if (i != MAC_ADDR_LEN)
+		{
+			continue;
+		}
+
+
+		/* Check if this entry is duplicate. */
+		isDuplicate = FALSE;
+		for (j=0; j<pAd->ApCfg.ReptMacList.Num; j++)
+		{
+			if (memcmp(pAd->ApCfg.ReptMacList.Entry[j].Addr, &macAddr, MAC_ADDR_LEN) == 0)
+			{
+				isDuplicate = TRUE;
+				DBGPRINT(RT_DEBUG_WARN, ("You have added an entry before :\n"));
+	        		DBGPRINT(RT_DEBUG_WARN, ("The duplicate entry is %02x:%02x:%02x:%02x:%02x:%02x\n",
+	        		macAddr[0],macAddr[1],macAddr[2],macAddr[3],macAddr[4],macAddr[5]));
+			}
+		}
+
+		if (!isDuplicate)
+		{
+			NdisMoveMemory(pAd->ApCfg.ReptMacList.Entry[pAd->ApCfg.ReptMacList.Num++].Addr, &macAddr, MAC_ADDR_LEN);
+			pAd->ApCfg.ReptMacList.Entry[pAd->ApCfg.ReptMacList.Num].bSet = 1;
+		}
+
+		if (pAd->ApCfg.ReptMacList.Num == MAX_NUMBER_OF_MAC_LIST)
+	    	{
+			DBGPRINT(RT_DEBUG_WARN, ("The AccessControlList is full, and no more entry can join the list!\n"));
+        		DBGPRINT(RT_DEBUG_WARN, ("The last entry of ACL is %02x:%02x:%02x:%02x:%02x:%02x\n",
+        		macAddr[0],macAddr[1],macAddr[2],macAddr[3],macAddr[4],macAddr[5]));
+			break;
+		}
+	}
+
+	ASSERT(pAd->ApCfg.ReptMacList.Num < MAX_NUMBER_OF_MAC_LIST);
+
+	DBGPRINT(RT_DEBUG_TRACE, ("Set::%s(Entry#=%ld)\n",
+		__FUNCTION__ , pAd->ApCfg.ReptMacList.Num));
+
+	return TRUE;
+}
+
+/*
+    ==========================================================================
+    Description:
+        Dump all the entries in the Access control
+        	mac table list of a specified BSS
+    Return:
+        TRUE if all parameters are OK, FALSE otherwise
+    ==========================================================================
+*/
+INT	Set_MACReptMACShowAll_Proc(
+	IN	PRTMP_ADAPTER	pAd,
+	IN	RTMP_STRING *arg)
+{
+	BOOLEAN					bDumpAll=FALSE;
+	INT						i, j;
+
+	bDumpAll = simple_strtol(arg, 0, 10);
+
+	if (bDumpAll == 1)
+	{
+		bDumpAll = TRUE;
+	}
+	else if (bDumpAll == 0)
+	{
+		bDumpAll = FALSE;
+		DBGPRINT(RT_DEBUG_WARN, ("Your input is 0!\n"));
+		DBGPRINT(RT_DEBUG_WARN, ("The Access Control List will not be dumped!\n"));
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;  /* Invalid argument */
+	}
+
+	/* Check if the list is already empty. */
+	if (pAd->ApCfg.ReptMacList.Num == 0)
+	{
+		DBGPRINT(RT_DEBUG_WARN, ("The MAC Entry List is empty!\n"));
+		return TRUE;
+	}
+
+	ASSERT(((bDumpAll == 1) && (pAd->ApCfg.ReptMacList.Num > 0)));
+
+	/* Dump the entry in the list one by one */
+	printk("===============  MAC Entry List  ===============\n");
+	for (i=0; i<pAd->ApCfg.ReptMacList.Num; i++)
+	{
+		printk("Entry #%02d: ", i+1);
+		for (j=0; j<MAC_ADDR_LEN; j++)
+		   printk("%02X ", pAd->ApCfg.ReptMacList.Entry[i].Addr[j]);
+		printk("\n");
+	}
+
+	return TRUE;
+}
+#endif /* MAC_REPEATER_SUPPORT */
+
 
 /*
     ==========================================================================
@@ -5470,7 +5766,6 @@ INT Show_DriverInfo_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 INT Show_StaCount_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	INT i;
-    	UINT32 RegValue;
 
 	printk("\n");
 
@@ -6980,11 +7275,11 @@ VOID RTMPAPIoctlBBP(
 #if defined (MT7603) || defined (MT7628)
 VOID RTMPAPIoctlRF_mt7603(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
 {
-	CHAR				*value;
+	//CHAR				*value;
 	UINT32				regRF = 0;
 	CHAR				*mpool, *msg;
 	BOOLEAN				bIsPrintAllRF = TRUE;
-	UINT				rfidx =0, offset = 0;
+	UINT				offset = 0;
 	INT					memLen = sizeof(CHAR) * 50000;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("==>RTMPIoctlRF\n"));
@@ -7118,6 +7413,7 @@ VOID RTMPAPIoctlRF(
 	IN	PRTMP_ADAPTER	pAdapter,
 	IN	RTMP_IOCTL_INPUT_STRUCT	*wrq)
 {
+#ifdef RT_RF
 	RTMP_STRING *this_char;
 	RTMP_STRING *value;
 	UCHAR				regRF = 0;
@@ -7127,7 +7423,6 @@ VOID RTMPAPIoctlRF(
 	INT					rfId, maxRFIdx;
 	LONG				rfValue;
 	BOOLEAN				bIsPrintAllRF = FALSE, bFromUI;
-#ifdef RT_RF
 	INT					memLen = sizeof(CHAR) * (2048+256+12);
 #endif /* RT_RF */
 
@@ -7555,9 +7850,6 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
     UCHAR idx = 0;
 #endif /* WSC_AP_SUPPORT */
 	ULONG txCount = 0;
-#ifdef MT_MAC
-	ULONG txFailCount = 0;
-#endif /* MT_MAC */
 	UINT32 rxCount = 0;
 #ifdef ENHANCED_STAT_DISPLAY
 	ULONG per, plr;
@@ -8531,6 +8823,29 @@ INT Set_ReptMode_Enable_Proc(
 	AsicSetMacAddrExt(pAd, pAd->ApCfg.bMACRepeaterEn);
 	return TRUE;
 }
+
+
+INT Set_ReptOUIMode_Proc(
+	IN  PRTMP_ADAPTER pAd,
+	IN  RTMP_STRING *arg)
+{
+	UCHAR oui_mode = simple_strtol(arg, 0, 10);
+
+	//sofar only 1~3
+	if (oui_mode > 1 && oui_mode <=3)
+	{
+		pAd->ApCfg.MACRepeaterOuiMode = oui_mode;
+		DBGPRINT(RT_DEBUG_TRACE, ("MACRepeaterOuiMode = %d\n", pAd->ApCfg.MACRepeaterOuiMode));
+	}
+	else
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("illigal oui_mode = %d\n", oui_mode));
+	}
+
+	return TRUE;
+}
+
+
 #endif /* MAC_REPEATER_SUPPORT */
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
@@ -10084,6 +10399,25 @@ INT	Set_WscSetupLockTime_Proc(
 }
 
 #endif /* WSC_V2_SUPPORT */
+
+INT	Set_WscAutoTriggerDisable_Proc(
+	IN	RTMP_ADAPTER *pAd, 
+	IN	RTMP_STRING *arg)
+{
+	POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
+	UCHAR bEnable = (UCHAR)simple_strtol(arg, 0, 10);
+	PWSC_CTRL pWscCtrl = &pAd->ApCfg.MBSSID[pObj->ioctl_if].WscControl;
+
+	if (bEnable == 0)
+		pWscCtrl->bWscAutoTriggerDisable = FALSE;
+	else
+		pWscCtrl->bWscAutoTriggerDisable = TRUE;
+	
+	DBGPRINT(RT_DEBUG_TRACE, ("Set_WscAutoTriggerDisable_Proc::(bWscAutoTriggerDisable=%d)\n",
+								pWscCtrl->bWscAutoTriggerDisable));
+	return TRUE;
+}
+
 #endif /* WSC_AP_SUPPORT */
 
 
@@ -10959,7 +11293,7 @@ INT Set_AP_DumpTime_Proc(
     BSS_STRUCT *pMbss;
 
     printk("\n\t%-10s\t%-10s\n", "PreTBTTTime", "TBTTTime");
-    printk("%-10ld\t%-10ld\n", pAd->HandlePreInterruptTime, pAd->HandleInterruptTime);
+    printk("%-10lu\t%-10lu\n", pAd->HandlePreInterruptTime, pAd->HandleInterruptTime);
 
     for (apidx = 0; apidx < pAd->ApCfg.BssidNum; apidx++) {
         pMbss = &pAd->ApCfg.MBSSID[apidx];
@@ -10970,7 +11304,7 @@ INT Set_AP_DumpTime_Proc(
         printk("\n%s:%d\tBcn_State:%d\t%-10s: %d\n", "Apidx", apidx, pMbss->bcn_buf.bcn_state, "recover", pMbss->bcn_recovery_num);
         printk("\t%-10s\t%-10s\t%-10s\t%-10s\n", "WriteBcnRing", "BcnDmaDone", "TXS_TSF", "TXS_SN");
         for (i = 0; i < MAX_TIME_RECORD; i++) {
-            printk("Idx[%d]:\t%-10ld\t%-10ld\t%-10ld\t%-10ld\n", i, pMbss->WriteBcnDoneTime[i], pMbss->BcnDmaDoneTime[i], pMbss->TXS_TSF[i], pMbss->TXS_SN[i]);
+            printk("Idx[%d]:\t%-10lu\t%-10lu\t%-10lu\t%-10lu\n", i, pMbss->WriteBcnDoneTime[i], pMbss->BcnDmaDoneTime[i], pMbss->TXS_TSF[i], pMbss->TXS_SN[i]);
         }
     }
 
@@ -10985,7 +11319,6 @@ INT Set_BcnStateCtrl_Proc(
     POS_COOKIE pObj = (POS_COOKIE)pAd->OS_Cookie;
     UCHAR apIndex = pObj->ioctl_if;
     BSS_STRUCT *pMbss = NULL;
-    UINT32  value = 0;
 
     bcn_state = simple_strtol(arg, 0, 10);
 
@@ -11395,8 +11728,8 @@ INT RTMP_AP_IoctlHandle(
 			if (pBssidStr != NULL)
 			{
 				memcpy(pBssidDest, pBssidStr, ETH_ALEN);
-				DBGPRINT(RT_DEBUG_TRACE, ("IOCTL::SIOCGIWAP(=%02x:%02x:%02x:%02x:%02x:%02x)\n",
-						PRINT_MAC(pBssidStr)));
+				DBGPRINT(RT_DEBUG_TRACE, ("IOCTL::SIOCGIWAP(%02x:%02x:%02x:%02x:%02x:%02x)\n",
+						PRINT_MAC(pBssidDest)));
 			}
 			else
 			{
@@ -11421,14 +11754,7 @@ INT RTMP_AP_IoctlHandle(
 				HtPhyMode = pAd->WdsTab.WdsEntry[pObj->ioctl_if].wdev.HTPhyMode;
 			else
 #endif /* WDS_SUPPORT */
-			{
 				HtPhyMode = pAd->ApCfg.MBSSID[pObj->ioctl_if].wdev.HTPhyMode;
-
-#ifdef MBSS_SUPPORT
-				/* reset phy mode for MBSS */
-				MBSS_PHY_MODE_RESET(pObj->ioctl_if, HtPhyMode);
-#endif /* MBSS_SUPPORT */
-			}
 
 			RtmpDrvMaxRateGet(pAd, HtPhyMode.field.MODE, HtPhyMode.field.ShortGI,
 							HtPhyMode.field.BW, HtPhyMode.field.MCS,
@@ -11580,10 +11906,10 @@ static INT Set_AP_VENDOR_SPECIFIC_IE(
 	IN RTMP_STRING *IE,
 	IN UINT32 IELen)
 {
+#ifdef CONFIG_HOTSPOT	
 	POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
 	UCHAR apidx = pObj->ioctl_if;
 
-#ifdef CONFIG_HOTSPOT
 	PHOTSPOT_CTRL pHSCtrl =  &pAd->ApCfg.MBSSID[apidx].HotSpotCtrl;
 #endif
 

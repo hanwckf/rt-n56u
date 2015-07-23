@@ -1092,6 +1092,8 @@ NDIS_STATUS IgmpPktClone(
 							{
 								DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): (wcid=%u)STA tx_queue full\n", __FUNCTION__, __LINE__,pMacEntry->wcid));
 								RELEASE_NDIS_PACKET(pAd, pSkbClone, NDIS_STATUS_FAILURE);
+								return NDIS_STATUS_FAILURE;
+								
 							}
 						}
 
@@ -1110,6 +1112,7 @@ NDIS_STATUS IgmpPktClone(
 						{
 							DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): (wcid=%u)STA rtmp_enq_req() fail!\n", __FUNCTION__, __LINE__,pMacEntry->wcid));
 							RELEASE_NDIS_PACKET(pAd, pSkbClone, NDIS_STATUS_FAILURE);
+							return NDIS_STATUS_FAILURE;
 						}
 
 

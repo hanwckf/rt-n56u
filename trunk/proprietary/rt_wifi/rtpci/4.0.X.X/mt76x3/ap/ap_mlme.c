@@ -28,6 +28,13 @@
 #include "rt_config.h"
 #include <stdarg.h>
 
+#ifdef BTCOEX_CONCURRENT
+extern void MT7662ReceCoexFromOtherCHip(
+	IN UCHAR channel,
+	IN UCHAR centralchannel,
+	IN UCHAR channel_bw
+	);
+#endif
 
 #ifdef DOT11_N_SUPPORT
 
@@ -122,6 +129,11 @@ VOID APMlmePeriodicExec(
 		take care all of the client's situation
 		ToDo: need to verify compatibility issue with WiFi product.
 	*/
+
+#ifdef BTCOEX_CONCURRENT
+	MT7662ReceCoexFromOtherCHip(pAd->CommonCfg.Channel,pAd->CommonCfg.CentralChannel,pAd->CommonCfg.BBPCurrentBW);
+#endif
+
 #ifdef CARRIER_DETECTION_SUPPORT
 	if (isCarrierDetectExist(pAd) == TRUE)
 	{
@@ -283,6 +295,7 @@ VOID APMlmePeriodicExec(
 #endif /* !DFS_SUPPORT */
 		}
 #endif /* A_BAND_SUPPORT */
+
 
 
 }

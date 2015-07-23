@@ -779,6 +779,7 @@ static VOID TpcReqDelete(RTMP_ADAPTER *pAd, UINT8 DialogToken)
 	Return	: Current Time Stamp.
 	==========================================================================
  */
+#ifdef VOE_SUPPORT
 static UINT64 GetCurrentTimeStamp(RTMP_ADAPTER *pAd)
 {
 	/* get current time stamp.*/
@@ -800,6 +801,7 @@ static UINT8 GetCurTxPwr(RTMP_ADAPTER *pAd, UINT8 Wcid)
 {
 	return 16; /* 16 dBm */
 }
+#endif
 
 
 /*

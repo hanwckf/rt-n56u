@@ -83,6 +83,11 @@ config  MT76X3_AP_CARRIER
 	depends on MT76X3_AP
 	default n
 
+config  MT76X3_AP_BAND_STEERING
+	bool "Band Steering support"
+	depends on MT76X3_AP
+	default n
+
 #config  MT76X3_AP_EXT_CHANNEL_LIST
 #	bool "Extension Channel List"
 #	depends on MT76X3_AP

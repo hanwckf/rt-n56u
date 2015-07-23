@@ -66,13 +66,52 @@ VOID MtSetIgnorePsm(
 	
 	RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);  
 }
+
+VOID CheckSkipTX(
+	RTMP_ADAPTER *pAd,
+	MAC_TABLE_ENTRY *pEntry)
+{
+	struct wtbl_entry tb_entry;
+	union WTBL_1_DW3 *dw3 = (union WTBL_1_DW3 *)&tb_entry.wtbl_1.wtbl_1_d3.word;
+	STA_TR_ENTRY *tr_entry;
+	CHAR isChange = FALSE;
+
+	NdisZeroMemory(&tb_entry, sizeof(tb_entry));
+	if (mt_wtbl_get_entry234(pAd, pEntry->wcid, &tb_entry) == FALSE) 
+	{
+		DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("%s():Cannot found WTBL2/3/4\n",__FUNCTION__));
+		return;
+	}
+	tr_entry = &pAd->MacTab.tr_entry[pEntry->wcid];
+
+	RTMP_IO_READ32(pAd, tb_entry.wtbl_addr[0]+12, &dw3->word);
+	if ((tr_entry->ps_state != APPS_RETRIEVE_START_PS) && (dw3->field.skip_tx == 1))
+	{
+		dw3->field.skip_tx = 0;
+		isChange = TRUE;
+	}
+
+	if ((tr_entry->ps_state < APPS_RETRIEVE_DONE) && (dw3->field.du_i_psm == 1))
+	{
+		dw3->field.du_i_psm = 0;
+		dw3->field.i_psm = 0;
+		isChange = TRUE;
+	}
+	
+	if (isChange == TRUE) {
+		pAd->SkipTxRCount++;
+		RTMP_IO_WRITE32(pAd, tb_entry.wtbl_addr[0]+12, dw3->word);
+	}
+	return;
+}
+
+
 #endif /* MT_PS */
 
 #ifdef MT7603
 INT  MtPSDummyCR(RTMP_ADAPTER *pAd)
 {
 	INT value;
-	INT restore_remap_addr;
 	
 	RTMP_IO_READ32(pAd, 0x817c, &value);
 	value &= 0xff;
@@ -96,16 +135,14 @@ VOID MtTriggerMCUINT(RTMP_ADAPTER *pAd)
 
 BOOLEAN  MtStartPSRetrieve(RTMP_ADAPTER *pAd, USHORT wcid)
 {
-	INT value;
-	INT restore_remap_addr;
-
 	if (MtPSDummyCR(pAd) != 0) {
 		return FALSE;
 	}
 	
 	RTMP_IO_WRITE32(pAd, 0x817c, wcid);
+		
 #ifdef RTMP_MAC_PCI
-	MtTriggerMCUINT(pAd);
+//	MtTriggerMCUINT(pAd);
 #endif /* RTMP_MAC_PCI */		
 
 	return TRUE;
@@ -129,7 +166,7 @@ VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isAc
 	INT           DequeuAC = QID_AC_BE;
 	INT           DequeuCOUNT;
 	INT i, Total_Packet_Number = 0;
-	struct tx_swq_fifo *fifo_swq;
+	//struct tx_swq_fifo *fifo_swq;
 
 	ASSERT(wcid < MAX_LEN_OF_MAC_TABLE);
 
@@ -251,11 +288,14 @@ VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isAc
 			tr_entry->TokenCount[QID_AC_VO]));
 
 #ifdef UAPSD_SUPPORT
-		/* deliver all queued UAPSD packets */
-		UAPSD_AllPacketDeliver(pAd, pMacEntry);
+		if (CLIENT_STATUS_TEST_FLAG(pMacEntry, fCLIENT_STATUS_APSD_CAPABLE))
+		{
+			/* deliver all queued UAPSD packets */
+			UAPSD_AllPacketDeliver(pAd, pMacEntry);
 
-		/* end the SP if exists */
-		UAPSD_MR_ENTRY_RESET(pAd, pMacEntry);
+			/* end the SP if exists */
+			UAPSD_MR_ENTRY_RESET(pAd, pMacEntry);
+		}
 #endif /* UAPSD_SUPPORT */
 
 		if (tr_entry->enqCount > 0) 
@@ -520,7 +560,6 @@ VOID MtPsSendToken(
 VOID MtEnqTxSwqFromPsQueue(RTMP_ADAPTER *pAd, UCHAR qidx, STA_TR_ENTRY *tr_entry)
 {
 	unsigned long IrqFlags;
-	INT enq_idx;
 	struct tx_swq_fifo *fifo_swq;
 	QUEUE_ENTRY *pQEntry;
 	QUEUE_HEADER *pAcPsQue;

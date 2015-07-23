@@ -149,7 +149,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
  #define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/iNIC/SingleSKU.dat"
  #define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860APCard.dat"
 #endif
-#define AP_DRIVER_VERSION		"4.0.0.7"
+#define AP_DRIVER_VERSION		"4.0.0.9"
 #endif /* RTMP_MAC_PCI */
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -325,16 +325,27 @@ typedef spinlock_t			OS_NDIS_SPIN_LOCK;
 #define OS_NdisFreeSpinLock(lock)				\
 	do{}while(0)
 
-
+#ifdef MULTI_CORE_SUPPORT
 #define OS_SEM_LOCK(__lock)						\
-{												\
-	spin_lock_bh((spinlock_t *)(__lock));		\
-}
+    {                                               \
+        spin_lock_irq((spinlock_t *)(__lock));      \
+    }
+    
+#define OS_SEM_UNLOCK(__lock)					\
+    {                                               \
+        spin_unlock_irq((spinlock_t *)(__lock));        \
+    }
+#else
+#define OS_SEM_LOCK(__lock)						\
+		{												\
+			spin_lock_bh((spinlock_t *)(__lock));		\
+		}
 
 #define OS_SEM_UNLOCK(__lock)					\
-{												\
-	spin_unlock_bh((spinlock_t *)(__lock));		\
-}
+		{												\
+			spin_unlock_bh((spinlock_t *)(__lock));		\
+		}
+#endif /* MULTI_CORE_SUPPORT */
 
 
 /* sample, use semaphore lock to replace IRQ lock, 2007/11/15 */
@@ -1162,6 +1173,12 @@ do {	\
 extern int (*ra_sw_nat_hook_rx)(VOID *skb);
 extern int (*ra_sw_nat_hook_tx)(VOID *skb, int gmac_no);
 #endif
+
+#if defined (CONFIG_WIFI_PKT_FWD)
+extern int (*wf_fwd_rx_hook) (struct sk_buff *skb);
+extern unsigned char (*wf_fwd_entry_insert_hook) (struct net_device *src, struct net_device *dest);
+extern unsigned char (*wf_fwd_entry_delete_hook) (struct net_device *src, struct net_device *dest);
+#endif /* CONFIG_WIFI_PKT_FWD */
 
 void RTMP_GetCurrentSystemTime(LARGE_INTEGER *time);
 int rt28xx_packet_xmit(VOID *skb);

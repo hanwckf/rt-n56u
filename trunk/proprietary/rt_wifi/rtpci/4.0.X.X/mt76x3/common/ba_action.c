@@ -503,12 +503,7 @@ VOID BAOriSessionSetUp(
 
 	pEntry->BAOriWcidArray[TID] = Idx;
 
-#ifdef APCLI_SUPPORT // fix vs DIR655 IOT can't set ba size to 21
-	if (IS_ENTRY_APCLI(pEntry) && pAd->CommonCfg.BACapability.field.TxBAWinLimit > 16)
-		pAd->CommonCfg.BACapability.field.TxBAWinLimit = 16;
-#endif	
-
-    BAWinSize = pAd->CommonCfg.BACapability.field.TxBAWinLimit;
+	BAWinSize = pAd->CommonCfg.BACapability.field.TxBAWinLimit;
 
 
 	/* Initialize BA session */
@@ -543,12 +538,14 @@ VOID BAOriSessionAdd(
 	BOOLEAN Cancelled;
 	UCHAR TID;
 	USHORT Idx;
+	UCHAR MaxPeerBufSize;
+#if	defined(RTMP_MAC) || defined(RTL_MAC)
 	UCHAR *pOutBuffer2 = NULL;
 	NDIS_STATUS NStatus;
+	MAC_TABLE_ENTRY *mac_entry;
 	ULONG FrameLen;
 	FRAME_BAR FrameBar;
-	UCHAR MaxPeerBufSize;
-	MAC_TABLE_ENTRY *mac_entry;
+#endif /* defined(RTMP_MAC) || defined(RTL_MAC) */
 	STA_TR_ENTRY *tr_entry;
 
 	TID = pFrame->BaParm.TID;
@@ -663,11 +660,6 @@ BOOLEAN BARecSessionAdd(
 
 	/* find TID*/
 	TID = pFrame->BaParm.TID;
-
-#ifdef APCLI_SUPPORT // fix vs DIR655 IOT can't set ba size to 21
-	if (IS_ENTRY_APCLI(pEntry) && pAd->CommonCfg.BACapability.field.RxBAWinLimit > 16)
-		pAd->CommonCfg.BACapability.field.RxBAWinLimit = 16;
-#endif	
 
 	BAWinSize = min(((UCHAR)pFrame->BaParm.BufSize), (UCHAR)pAd->CommonCfg.BACapability.field.RxBAWinLimit);
 

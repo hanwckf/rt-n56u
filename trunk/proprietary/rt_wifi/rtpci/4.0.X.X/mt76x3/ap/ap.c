@@ -112,14 +112,13 @@ INT set_wdev_if_addr(RTMP_ADAPTER *pAd, struct wifi_dev *wdev, INT opmode)
 		{
 			//TODO: Carter, Apcli interface and MESH interface shall use HWBSSID1 or HWBSSID2???
 			UINT32 Value;
-			UCHAR MacByte = 0, MacMask = 0;
+			UCHAR MacMask = 0;
 
 			//TODO: shall we make choosing which byte to be selectable???
 			Value = 0x00000000;
 			RTMP_IO_READ32(pAd, LPON_BTEIR, &Value);//read BTEIR bit[31:29] for determine to choose which byte to extend BSSID mac address.
-			Value = Value | (0x2 << 29);//Note: Carter, make default will use byte4 bit[31:28] to extend Mac Address
-			RTMP_IO_WRITE32(pAd, LPON_BTEIR, Value);
-			MacByte = Value >> 29;
+						Value = Value | ((pAd->chipCap.MBSSIDMode -2) << 29);
+						RTMP_IO_WRITE32(pAd, LPON_BTEIR, Value);
 
 			Value = 0x00000000;
 			RTMP_IO_READ32(pAd, RMAC_RMACDR, &Value);
@@ -158,24 +157,29 @@ INT set_wdev_if_addr(RTMP_ADAPTER *pAd, struct wifi_dev *wdev, INT opmode)
 				/* MT7603, bit1 in byte0 shall always be b'1 for Multiple BSSID */
 				wdev->if_addr[0] |= 0x2;
 
-				switch (MacByte) {
+				switch ((pAd->chipCap.MBSSIDMode -2)) {				
 					case 0x1: /* choose bit[23:20]*/
+						//mapping to MBSSID_MODE3
 						wdev->if_addr[2] = wdev->if_addr[2] & MacMask;//clear high 4 bits,
 						wdev->if_addr[2] = (wdev->if_addr[2] | (idx << 4));
 						break;
 					case 0x2: /* choose bit[31:28]*/
+						//mapping to MBSSID_MODE4
 						wdev->if_addr[3] = wdev->if_addr[3] & MacMask;//clear high 4 bits,
 						wdev->if_addr[3] = (wdev->if_addr[3] | (idx << 4));
 						break;
 					case 0x3: /* choose bit[39:36]*/
+						//mapping to MBSSID_MODE5
 						wdev->if_addr[4] = wdev->if_addr[4] & MacMask;//clear high 4 bits,
 						wdev->if_addr[4] = (wdev->if_addr[4] | (idx << 4));
 						break;
 					case 0x4: /* choose bit [47:44]*/
+						//mapping to MBSSID_MODE6
 						wdev->if_addr[5] = wdev->if_addr[5] & MacMask;//clear high 4 bits,
 						wdev->if_addr[5] = (wdev->if_addr[5] | (idx << 4));
 						break;
 					default: /* choose bit[15:12]*/
+						//mapping to MBSSID_MODE2
 						wdev->if_addr[1] = wdev->if_addr[1] & MacMask;//clear high 4 bits,
 						wdev->if_addr[1] = (wdev->if_addr[1] | (idx << 4));
 						break;
@@ -364,6 +368,11 @@ static INT ap_security_init(RTMP_ADAPTER *pAd, struct wifi_dev *wdev, INT idx)
 
 	/* Generate the corresponding RSNIE */
 	RTMPMakeRSNIE(pAd, wdev->AuthMode, wdev->WepStatus, idx);
+
+#ifdef BAND_STEERING
+		if (pAd->ApCfg.BandSteering && idx == BSS0)
+			BndStrg_Init(pAd);
+#endif /* BAND_STEERING */
 
 		return TRUE;
 }
@@ -655,7 +664,9 @@ static void update_edca_param(RTMP_ADAPTER *pAd)
  */
 VOID APStartUp(RTMP_ADAPTER *pAd)
 {
+#if defined(INF_AMAZON_SE) || defined(RTMP_MAC_USB)
 	UINT32 i;
+#endif /*defined(INF_AMAZON_SE) || defined(RTMP_MAC_USB)*/
 	UCHAR idx;
 	UCHAR phy_mode = pAd->CommonCfg.cfg_wmode;
 	BOOLEAN bWmmCapable = FALSE;
@@ -758,13 +769,16 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 	if (!WMODE_CAP_N(pAd->CommonCfg.PhyMode))
 		pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth = BW_20; /* Patch UI */
 
-	AsicSetRDG(pAd, pAd->CommonCfg.bRdg);
-#ifdef MT_MAC
     if (pAd->chipCap.hif_type == HIF_MT)
     {
-        AsicUpdateTxOP(pAd, WMM_PARAM_AC_1, 0x0);
+		AsicSetRDG(pAd, pAd->CommonCfg.bRdg);
+		AsicWtblSetRDG(pAd, pAd->CommonCfg.bRdg);
+
+		if (pAd->CommonCfg.bRdg)
+			AsicUpdateTxOP(pAd, WMM_PARAM_AC_1, 0x80);
+		else
+			AsicUpdateTxOP(pAd, WMM_PARAM_AC_1, 0);
     }
-#endif /* MT_MAC */
 
 	AsicSetRalinkBurstMode(pAd, pAd->CommonCfg.bRalinkBurstMode);
 
@@ -1022,6 +1036,8 @@ VOID APStop(RTMP_ADAPTER *pAd)
 
 
 
+
+
 }
 
 /*
@@ -1040,7 +1056,7 @@ VOID APCleanupPsQueue(RTMP_ADAPTER *pAd, QUEUE_HEADER *pQueue)
 
 	while (pQueue->Head)
 	{
-		DBGPRINT(RT_DEBUG_TRACE, ("%s():%d...\n", __FUNCTION__, pQueue->Number));
+		DBGPRINT(RT_DEBUG_TRACE, ("%s():%u...\n", __FUNCTION__, pQueue->Number));
 
 		pEntry = RemoveHeadQueue(pQueue);
 		/*pPacket = CONTAINING_RECORD(pEntry, NDIS_PACKET, MiniportReservedEx); */
@@ -1167,6 +1183,10 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 
 		if (!IS_ENTRY_CLIENT(pEntry))
 			continue;
+
+#ifdef MT_PS
+				CheckSkipTX(pAd, pEntry);
+#endif /* MT_PS */
 
 		if (pEntry->NoDataIdleCount == 0)
 			pEntry->StationKeepAliveCount = 0;
@@ -1360,6 +1380,15 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 					pEntry->ContinueTxFailCnt, pAd->ApCfg.EntryLifeCheck));
 			}
 		}
+#ifdef BAND_STEERING
+		else if (pAd->ApCfg.BndStrgTable.bEnabled == TRUE)
+		{
+			if (BndStrg_IsClientStay(pAd, pEntry) == FALSE)
+			{
+				bDisconnectSta = TRUE;
+			}
+		}
+#endif /* BAND_STEERING */
 
 		if ((pMbss->RssiLowForStaKickOut != 0) &&
 			  ( (avgRssi=RTMPAvgRssi(pAd, &pEntry->RssiSample)) < pMbss->RssiLowForStaKickOut))
@@ -1370,6 +1399,32 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 					avgRssi));
 
 		}
+
+
+#ifdef ALL_NET_EVENT
+		{
+			CHAR tmpRssi = RTMPAvgRssi(pAd, &pEntry->RssiSample);
+			if (tmpRssi > -75)
+			{
+				wext_send_event(pEntry->wdev->if_dev,
+					pEntry->Addr,
+					pEntry->bssid,
+					pAd->CommonCfg.Channel,
+					tmpRssi,
+					FBT_LINK_STRONG_NOTIFY);
+			}
+			else if (tmpRssi <= -75)
+			{
+				wext_send_event(pEntry->wdev->if_dev,
+					pEntry->Addr,
+					pEntry->bssid,
+					pAd->CommonCfg.Channel,
+					tmpRssi,
+					FBT_LINK_WEAK_NOTIFY);				
+			}
+		}
+#endif /* ALL_NET_EVENT */
+
 
 		if (bDisconnectSta)
 		{
@@ -1615,6 +1670,13 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 	}
 #endif /* GREENAP_SUPPORT */
 
+	if (pAd->MacTab.Size > 3) 
+	{
+		AsicSetRTSTxCntLimit(pAd, TRUE, 0x7);	
+	} else {		
+		AsicSetRTSTxCntLimit(pAd, TRUE, MT_RTS_RETRY);	
+	}
+
 	if (bRdgActive != RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE))
     {
         AsicSetRDG(pAd, bRdgActive);
@@ -1628,7 +1690,7 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
             else if ((pAd->MacTab.Size == 1) 
 					&& (pAd->CommonCfg.bEnableTxBurst))
             {
-                AsicUpdateTxOP(pAd, WMM_PARAM_AC_1, 0x60);
+                AsicUpdateTxOP(pAd, WMM_PARAM_AC_1, 0x80);
             }
             else
             {
@@ -2014,6 +2076,13 @@ BOOLEAN ApCheckAccessControlList(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR Apidx)
 {
 	BOOLEAN Result = TRUE;
 
+#ifdef ACL_V2_SUPPORT
+	if((Result = ACL_V2_List_Check(pAd,pAddr,Apidx)) == FALSE)
+	{
+		goto done;
+	}
+#endif /* ACL_V2_SUPPORT */
+
     if (pAd->ApCfg.MBSSID[Apidx].AccessControlList.Policy == 0)       /* ACL is disabled */
         Result = TRUE;
     else
@@ -2032,6 +2101,10 @@ BOOLEAN ApCheckAccessControlList(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR Apidx)
             }
         }
     }
+
+#ifdef ACL_V2_SUPPORT
+done:
+#endif /* ACL_V2_SUPPORT */
 
     if (Result == FALSE)
     {
@@ -2472,6 +2545,8 @@ VOID APOverlappingBSSScan(RTMP_ADAPTER *pAd)
 		pAd->CommonCfg.AddHTInfo.AddHtInfo.ExtChanOffset = 0;
 		pAd->CommonCfg.LastBSSCoexist2040.field.BSS20WidthReq = 1;
 		pAd->CommonCfg.Bss2040CoexistFlag |= BSS_2040_COEXIST_INFO_SYNC;
+		pAd->CommonCfg.Bss2040NeedFallBack = 1;
+		pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = 0;
 	}
 
 	return;

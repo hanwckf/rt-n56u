@@ -128,6 +128,30 @@ VOID AndesFreeCmdMsg(struct cmd_msg *msg)
 	ctl->free_cmd_msg++;
 }
 
+VOID AndesForceFreeCmdMsg(struct cmd_msg *msg)
+{
+	PNDIS_PACKET net_pkt = msg->net_pkt;
+	RTMP_ADAPTER *ad = (RTMP_ADAPTER *)(msg->priv);
+	struct MCU_CTRL *ctl = &ad->MCUCtrl;
+
+	if (msg->need_wait) {
+		RTMP_OS_EXIT_COMPLETION(&msg->ack_done);
+	}
+
+#ifdef RTMP_SDIO_SUPPORT
+        RTMP_OS_EXIT_COMPLETION(&msg->tx_sdio_done);
+#endif
+
+
+
+	os_free_mem(NULL, msg);
+
+	if (net_pkt)
+		RTMPFreeNdisPacket(ad, net_pkt);
+
+	ctl->free_cmd_msg++;
+}
+
 
 BOOLEAN IsInbandCmdProcessing(RTMP_ADAPTER *ad)
 {
@@ -277,22 +301,7 @@ UINT32 AndesQueueLen(struct MCU_CTRL *ctl, DL_LIST *list)
 	return qlen;
 }
 
-
-static INT32 AndesQueueEmpty(struct MCU_CTRL *ctl, DL_LIST *list)
-{
-	unsigned long flags;
-	int is_empty;
-	NDIS_SPIN_LOCK *lock;
-
-	lock = AndesGetSpinLock(ctl, list);
-
-	RTMP_SPIN_LOCK_IRQSAVE(lock, &flags);
-	is_empty = DlListEmpty(list);
-	RTMP_SPIN_UNLOCK_IRQRESTORE(lock, &flags);
-
-	return is_empty;
-}
-
+/*Nobody uses it currently*/
 
 static VOID AndesQueueInit(struct MCU_CTRL *ctl, DL_LIST *list)
 {
@@ -617,7 +626,6 @@ VOID AndesCtrlInit(RTMP_ADAPTER *pAd)
 static VOID AndesCtrlPciExit(RTMP_ADAPTER *ad)
 {
 	struct MCU_CTRL *ctl = &ad->MCUCtrl;
-	unsigned long flags;
 	INT32 Ret;
 
 	RTMP_SEM_EVENT_WAIT(&(ad->mcu_atomic), Ret);
@@ -712,7 +720,7 @@ static INT32 AndesDequeueAndKickOutCmdMsgs(RTMP_ADAPTER *ad)
 				|| RTMP_TEST_FLAG(ad, fRTMP_ADAPTER_NIC_NOT_EXIST)
 				|| RTMP_TEST_FLAG(ad, fRTMP_ADAPTER_SUSPEND)) {
 			if (!msg->need_wait)
-				AndesFreeCmdMsg(msg);
+				AndesForceFreeCmdMsg(msg);
 			continue;
 		}
 
@@ -807,7 +815,7 @@ INT32 AndesSendCmdMsg(PRTMP_ADAPTER ad, struct cmd_msg *msg)
 		else if (RTMP_TEST_FLAG(ad, fRTMP_ADAPTER_SUSPEND))
 			DBGPRINT(RT_DEBUG_ERROR, ("%s: Could not send in band command due to fRTMP_ADAPTER_SUSPEND\n", __FUNCTION__));
 
-		AndesFreeCmdMsg(msg);
+		AndesForceFreeCmdMsg(msg);
 
 		RTMP_SEM_EVENT_UP(&(ad->mcu_atomic));
 

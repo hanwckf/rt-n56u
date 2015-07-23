@@ -267,28 +267,28 @@ VOID dump_rmac_info_normal(RTMP_ADAPTER *pAd, UCHAR *rmac_info)
 
 VOID dump_rmac_info_txs(RTMP_ADAPTER *pAd, UCHAR *rmac_info)
 {
-	TXS_FRM_STRUC *txs_frm = (TXS_FRM_STRUC *)rmac_info;
+	//TXS_FRM_STRUC *txs_frm = (TXS_FRM_STRUC *)rmac_info;
 
 }
 
 
 VOID dump_rmac_info_rxv(RTMP_ADAPTER *pAd, UCHAR *rmac_info)
 {
-	RXV_FRM_STRUC *rxv_frm = (RXV_FRM_STRUC *)rmac_info;
+	//RXV_FRM_STRUC *rxv_frm = (RXV_FRM_STRUC *)rmac_info;
 
 }
 
 
 VOID dump_rmac_info_rfb(RTMP_ADAPTER *pAd, UCHAR *rmac_info)
 {
-	RXD_BASE_STRUCT *rfb_frm = (RXD_BASE_STRUCT *)rmac_info;
+	//RXD_BASE_STRUCT *rfb_frm = (RXD_BASE_STRUCT *)rmac_info;
 
 }
 
 
 VOID dump_rmac_info_tmr(RTMP_ADAPTER *pAd, UCHAR *rmac_info)
 {
-	TMR_FRM_STRUC *rxd_base = (TMR_FRM_STRUC *)rmac_info;
+	//TMR_FRM_STRUC *rxd_base = (TMR_FRM_STRUC *)rmac_info;
 
 }
 
@@ -399,18 +399,19 @@ VOID NICUpdateRawCounters(RTMP_ADAPTER *pAd)
 {
 	UINT32 OldValue, ampdu_range_cnt[4];
 	UINT32 mac_val, rx_err_cnt, fcs_err_cnt;
-	UINT32 TxSuccessCount = 0, bss_tx_cnt;
-	UINT32 TxFailCount = 0;
-	UINT32 TxRetryCount = 0;
+	//UINT32 TxSuccessCount = 0;
+#ifdef DBG_DIAGNOSE
+	UINT32 TxFailCount = 0, bss_tx_cnt;
+#endif /* DBG_DIAGNOSE */
+	//UINT32 TxRetryCount = 0;
 	COUNTER_RALINK		*pRalinkCounters;
+	/* for PER debug */
+	UINT32 AmpduTxCount = 0;
+	UINT32 AmpduTxSuccessCount = 0;
 
 
 	pRalinkCounters = &pAd->RalinkCounters;
 
-
-	/* for PER debug */
-	UINT32 AmpduTxCount = 0;
-	UINT32 AmpduTxSuccessCount = 0;
 
 
 	pRalinkCounters = &pAd->RalinkCounters;
@@ -685,6 +686,28 @@ UCHAR get_nss_by_mcs(UCHAR phy_mode, UCHAR mcs, BOOLEAN stbc)
 
 	========================================================================
 */
+static UCHAR wmm_aci_2_hw_ac_queue[] =
+{
+		Q_IDX_AC1, /* 0: QID_AC_BE */
+		Q_IDX_AC0, /* 1: QID_AC_BK */
+		Q_IDX_AC2, /* 2: QID_AC_VI */
+		Q_IDX_AC3, /* 3:QID_AC_VO */
+		4, /* 4:QID_AC_VO */
+		5,
+		6,
+		7,
+		8,
+		9,
+		10,
+		11,
+		12,
+		13,
+		14,
+		15,
+		16,
+		17,
+};
+
 VOID write_tmac_info(
 	IN RTMP_ADAPTER *pAd,
 	IN UCHAR *tmac_info,
@@ -703,7 +726,6 @@ VOID write_tmac_info(
 	TMAC_TXD_6 *txd_6 = &txd.txd_6;
 	INT txd_size = sizeof(TMAC_TXD_S);
 	TXS_CTL *TxSCtl = &pAd->TxSCtl;
-    UINT32 value = 0;
 
 	if (info->WCID < MAX_LEN_OF_MAC_TABLE)
 		mac_entry = &pAd->MacTab.Content[info->WCID];
@@ -716,18 +738,6 @@ VOID write_tmac_info(
 	stbc = pTransmit->field.STBC;
 	phy_mode = pTransmit->field.MODE;
 	bw = (phy_mode <= MODE_OFDM) ? (BW_20) : (pTransmit->field.BW);
-
-#ifdef DOT11_N_SUPPORT
-#ifdef DOT11N_DRAFT3
-#ifdef CONFIG_ATE
-	if (!ATE_ON(pAd))
-#endif
-	{
-		if (bw)
-			bw = (pAd->CommonCfg.AddHTInfo.AddHtInfo.RecomWidth == 0) ? (BW_20) : (pTransmit->field.BW);
-	}
-#endif /* DOT11N_DRAFT3 */
-#endif /* DOT11_N_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
 #ifdef CONFIG_ATE
@@ -746,7 +756,10 @@ VOID write_tmac_info(
 
 	/* DWORD 0 */
 	txd_0->p_idx = (to_mcu ? P_IDX_MCU : P_IDX_LMAC);
-	txd_0->q_idx = q_idx;
+	if (q_idx < 4) {
+		txd_0->q_idx = wmm_aci_2_hw_ac_queue[q_idx];
+	} else
+		txd_0->q_idx = q_idx;
 
 
 
@@ -758,7 +771,7 @@ VOID write_tmac_info(
 	if (info->hdr_pad)  // TODO: depends on QoS to decide if need to padding
 		txd_1->hdr_pad = (TMI_HDR_PAD_MODE_TAIL << TMI_HDR_PAD_BIT_MODE) | info->hdr_pad;
 	txd_1->no_ack = (info->Ack ? 0 : 1);
-	txd_1->tid = 0;
+	txd_1->tid = info->TID;
 
 	txd_1->own_mac = 0 ;
 	if (txd_0->q_idx == Q_IDX_BCN) {
@@ -772,8 +785,14 @@ VOID write_tmac_info(
 	}
 
 	if (mac_entry && IS_ENTRY_APCLI(mac_entry))
+	{
+#ifdef MULTI_APCLI_SUPPORT
+		txd_1->own_mac = (0x1 + mac_entry->func_tb_idx);
+#else /* MULTI_APCLI_SUPPORT */
 		txd_1->own_mac = 0x1; //Carter, refine this
-	else if (mac_entry && IS_ENTRY_CLIENT(mac_entry)) {
+#endif /* !MULTI_APCLI_SUPPORT */
+
+	} else if (mac_entry && IS_ENTRY_CLIENT(mac_entry)) {
 		if (mac_entry->func_tb_idx == 0)
 			txd_1->own_mac = 0x0;
 		else if (mac_entry->func_tb_idx >= 1 && mac_entry->func_tb_idx <= 15)
@@ -807,11 +826,14 @@ VOID write_tmac_info(
 		/* DWORD 3 */
         if (txd_0->q_idx == Q_IDX_BCN)
             txd_3->remain_tx_cnt = MT_TX_RETRY_UNLIMIT;
-        else if (txd_2->frm_type == SUBTYPE_BLOCK_ACK_REQ)
+        else if ((txd_2->frm_type == FC_TYPE_CNTL) && (txd_2->sub_type == SUBTYPE_BLOCK_ACK_REQ))
             txd_3->remain_tx_cnt = 1;			
-        else
-            txd_3->remain_tx_cnt = MT_TX_SHORT_RETRY;
-
+        else {
+			if (pAd->shortretry != 0)
+				txd_3->remain_tx_cnt = pAd->shortretry;
+        	else
+            	txd_3->remain_tx_cnt = MT_TX_SHORT_RETRY;
+        }
 		/* DWORD 4 */
 
 		/* DWORD 6 */
@@ -951,29 +973,6 @@ VOID write_tmac_info(
 #endif
 }
 
-
-static UCHAR wmm_aci_2_hw_ac_queue[] =
-{
-		Q_IDX_AC1, /* 0: QID_AC_BE */
-		Q_IDX_AC0, /* 1: QID_AC_BK */
-		Q_IDX_AC2, /* 2: QID_AC_VI */
-		Q_IDX_AC3, /* 3:QID_AC_VO */
-		4, /* 4:QID_AC_VO */
-		5,
-		6,
-		7,
-		8,
-		9,
-		10,
-		11,
-		12,
-		13,
-		14,
-		15,
-		16,
-		17,
-};
-
 VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 {
 	MAC_TABLE_ENTRY *pMacEntry = pTxBlk->pMacEntry;
@@ -983,14 +982,13 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 	TMAC_TXD_L *txd_l = (TMAC_TXD_L *)buf;
 	TMAC_TXD_0 *txd_0 = &txd_s->txd_0;
 	TMAC_TXD_1 *txd_1 = &txd_s->txd_1;
-	UCHAR TBD = 0, txd_size;
+	UCHAR txd_size;
 	BOOLEAN txd_long = FALSE;
 	struct rtmp_mac_ctrl *wtbl_ctrl = &pAd->mac_ctrl;
 	STA_TR_ENTRY *tr_entry;
 	struct wtbl_entry tb_entry;
 	union WTBL_1_DW0 *dw0 = (union WTBL_1_DW0 *)&tb_entry.wtbl_1.wtbl_1_d0.word;
 	TXS_CTL *TxSCtl = &pAd->TxSCtl;
-    UINT32 value = 0;
 
 		wcid = pTxBlk->Wcid;
 
@@ -1064,6 +1062,9 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 		else if (pMacEntry->func_tb_idx >= 1 && pMacEntry->func_tb_idx <= 15)
 			txd_1->own_mac = 0x10 | pMacEntry->func_tb_idx;
 	}
+	else if (pMacEntry && IS_ENTRY_WDS(pMacEntry)) {
+			txd_1->own_mac = 0x0;
+	}
 	else {
 #ifdef USE_BMC
 		if (pTxBlk->wdev_idx == 0)
@@ -1081,7 +1082,7 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 		txd_size = sizeof(TMAC_TXD_S);
 	} else {
 		TMAC_TXD_2 *txd_2 = &txd_l->txd_2;
-		TMAC_TXD_3 *txd_3 = &txd_l->txd_3;
+		//TMAC_TXD_3 *txd_3 = &txd_l->txd_3;
 		TMAC_TXD_5 *txd_5 = &txd_l->txd_5;
 		TMAC_TXD_6 *txd_6 = &txd_l->txd_6;
 		HTTRANSMIT_SETTING *pTransmit = pTxBlk->pTransmit;
@@ -1113,12 +1114,16 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
             }
         }
 
-		txd_2->sub_type = (*((UINT16 *)(pTxBlk->wifi_hdr + sizeof(TMAC_TXD_L))) & (0xf << 4)) >> 4;
-		txd_2->frm_type = (*((UINT16 *)(pTxBlk->wifi_hdr + sizeof(TMAC_TXD_L))) & (0x3 << 2)) >> 2;
+		txd_2->sub_type = (*((UINT16 *)(pTxBlk->wifi_hdr)) & (0xf << 4)) >> 4;
+		txd_2->frm_type = (*((UINT16 *)(pTxBlk->wifi_hdr)) & (0x3 << 2)) >> 2;
 
-		if (txd_2->frm_type == SUBTYPE_BLOCK_ACK_REQ)
-			txd_l->txd_3.remain_tx_cnt = 1;			
-		else
+		if (pMacEntry)
+		{
+			if (pAd->shortretry != 0)
+				txd_l->txd_3.remain_tx_cnt = pAd->shortretry;
+			else
+				txd_l->txd_3.remain_tx_cnt = pMacEntry->ucMaxTxRetryCnt;
+		} else
 			txd_l->txd_3.remain_tx_cnt = MT_TX_SHORT_RETRY;
 
 		if ((pTxBlk->TxFrameType == TX_LEGACY_FRAME) 

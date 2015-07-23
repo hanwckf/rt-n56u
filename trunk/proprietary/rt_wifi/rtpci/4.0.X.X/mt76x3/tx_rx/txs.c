@@ -20,10 +20,10 @@
 INT32 BcnTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
 {	
 	TXS_STRUC *txs_entry = (TXS_STRUC *)Data;
-	TXS_D_0 *txs_d0 = &txs_entry->txs_d0;
+	//TXS_D_0 *txs_d0 = &txs_entry->txs_d0;
 	TXS_D_1 *txs_d1 = &txs_entry->txs_d1;
-	TXS_D_2 *txs_d2 = &txs_entry->txs_d2;
-	TXS_D_3 *txs_d3 = &txs_entry->txs_d3;
+	//TXS_D_2 *txs_d2 = &txs_entry->txs_d2;
+	//TXS_D_3 *txs_d3 = &txs_entry->txs_d3;
 	TXS_D_4 *txs_d4 = &txs_entry->txs_d4;
 
 #ifdef CONFIG_AP_SUPPORT
@@ -44,14 +44,16 @@ INT32 BcnTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
 #ifdef DBG
 			pMbss->TXS_TSF[pMbss->timer_loop] = txs_d1->timestamp;
 			pMbss->TXS_SN[pMbss->timer_loop] = txs_d4->sn;
+#endif /* DBG */
 			pMbss->timer_loop++;
 			if (pMbss->timer_loop >= MAX_TIME_RECORD)
 				pMbss->timer_loop = 0;
-#endif /* DBG */
+
 		}
 #endif /* CONFIG_AP_SUPPORT */
 	return 0;
 }
+
 
 INT32 PsDataTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
 {
@@ -149,7 +151,7 @@ INT32 ExitTxSTypeTable(RTMP_ADAPTER *pAd)
 	ULONG Flags;
 	TXS_CTL *TxSCtl = &pAd->TxSCtl;
 	TXS_TYPE *TxSType = NULL, *TmpTxSType = NULL;
-	TXS_STATUS *TxSStatus = NULL, *TmpTxSStatus = NULL;
+	//TXS_STATUS *TxSStatus = NULL, *TmpTxSStatus = NULL;
 
 	for (Index = 0; Index < TOTAL_PID_HASH_NUMS; Index++)
 	{
@@ -521,8 +523,8 @@ INT32 ParseTxSPacket(RTMP_ADAPTER *pAd, UINT32 Pid, UINT8 Format, CHAR *Data)
 					}
 				}
 
-				TxSType->TxSHandler(pAd, Data, Priv);	
 				RTMP_SPIN_UNLOCK_IRQRESTORE(&TxSCtl->TxSTypePerPktTypeLock[PktType][PktSubType % TOTAL_PID_HASH_NUMS_PER_PKT_TYPE], &Flags);
+				TxSType->TxSHandler(pAd, Data, Priv);	
 				return 0;
 			}
 		}

@@ -384,11 +384,11 @@ error:
 
 static VOID CmdReStartDLRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 {
-	UINT8 Status;
+	FW_RXD_2 Status;
+	Status = *(FW_RXD_2 *)Data;
 
-	Status = *Data;
-
-	switch (Status)
+	
+	switch (Status.field.ext_eid)
 	{
 		case WIFI_FW_DOWNLOAD_SUCCESS:
 			DBGPRINT(RT_DEBUG_OFF, ("%s: WiFI FW Download Success\n", __FUNCTION__));
@@ -409,7 +409,7 @@ static VOID CmdReStartDLRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 			DBGPRINT(RT_DEBUG_OFF, ("%s: WiFi FW Download Timeout\n", __FUNCTION__));
 			break;
 		default:
-			DBGPRINT(RT_DEBUG_OFF, ("%s: Unknow Status(%d)\n", __FUNCTION__, Status));
+			DBGPRINT(RT_DEBUG_OFF, ("%s: Unknow Status(%u)\n", __FUNCTION__, Status.field.ext_eid));
 			break;
 	}
 }
@@ -421,7 +421,7 @@ static VOID CmdSecKeyRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 	UINT32 Status;
 	UINT32 WlanIndex;
 
-	EvtSecKey = (P_EVENT_SEC_ADDREMOVE_STRUC_T)Data;
+	EvtSecKey = (struct _EVENT_SEC_ADDREMOVE_STRUC_T *)Data;
 
 	Status = le2cpu32(EvtSecKey->u4Status);
 	WlanIndex = le2cpu32(EvtSecKey->u4WlanIdx);
@@ -457,7 +457,6 @@ static VOID CmdPsRetrieveStartRspFromCR(RTMP_ADAPTER *pAd, char *Data, UINT16 Le
 	unsigned char q_idx;
 	struct tx_swq_fifo *ps_fifo_swq;
 	UINT deq_qid;
-	unsigned long IrqFlags;
 
 	EvtPsRetrieveStart = (P_EXT_EVENT_AP_PS_RETRIEVE_T)Data;
 	WlanIdx = le2cpu32(EvtPsRetrieveStart->u4Param1);
@@ -476,7 +475,13 @@ static VOID CmdPsRetrieveStartRspFromCR(RTMP_ADAPTER *pAd, char *Data, UINT16 Le
    
 	DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("---->%s: Start to send TOKEN frames, WlanIdx=%d\n", __FUNCTION__, WlanIdx));
 
+	if (tr_entry->ps_state != APPS_RETRIEVE_START_PS)
+	{
+		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s Entry(wcid=%d) ps state(%d) is not APPS_RETRIEVE_START_PS\n", __FUNCTION__, WlanIdx, tr_entry->ps_state));
+		goto NEXT;
+	}
 	tr_entry->ps_state = APPS_RETRIEVE_GOING;
+	CheckSkipTX(pAd, pEntry);
 	tr_entry->ps_qbitmap = 0;
 
 #ifdef CONFIG_TRACE_SUPPORT
@@ -536,17 +541,17 @@ NEXT:
 		tr_entry = &pAd->MacTab.tr_entry[WlanIdx];
 
 		if (pEntry->PsMode == PWR_ACTIVE) {
-			tr_entry->ps_state = APPS_RETRIEVE_IDLE;
 			ps_fifo_swq->swq[deq_qid]  = 0;
 			INC_RING_INDEX(ps_fifo_swq->deqIdx, TX_SWQ_FIFO_LEN);	
-			deq_qid = ps_fifo_swq->deqIdx;
+			tr_entry->ps_state = APPS_RETRIEVE_IDLE;
 			MtHandleRxPsPoll(pAd, &pEntry->Addr[0], WlanIdx, TRUE);
 			deq_qid = ps_fifo_swq->deqIdx;
 		} else {
-			tr_entry->ps_state = APPS_RETRIEVE_START_PS;
-			MtStartPSRetrieve(pAd, ps_fifo_swq->swq[deq_qid]);	
-			ps_fifo_swq->swq[deq_qid]  = 0;
-			INC_RING_INDEX(ps_fifo_swq->deqIdx, TX_SWQ_FIFO_LEN);	
+			if (MtStartPSRetrieve(pAd, ps_fifo_swq->swq[deq_qid]) == TRUE) {
+				ps_fifo_swq->swq[deq_qid]  = 0;
+				INC_RING_INDEX(ps_fifo_swq->deqIdx, TX_SWQ_FIFO_LEN);	
+				tr_entry->ps_state = APPS_RETRIEVE_START_PS;
+			}
 			break;
 		}
 	}
@@ -653,16 +658,13 @@ static VOID CmdPsRetrieveStartRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 
 static VOID CmdPsClearRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 {
-	UINT8 Status;
-        MAC_TABLE_ENTRY *pEntry;
-	QUEUE_ENTRY *pQEntry;
+	MAC_TABLE_ENTRY *pEntry;
+	//QUEUE_ENTRY *pQEntry;
 	P_CMD_AP_PS_CLEAR_STRUC_T EvtPsClear;
 	RTMP_ADAPTER *ad = (RTMP_ADAPTER *)msg->priv;
 	STA_TR_ENTRY *tr_entry;
-	unsigned long IrqFlags;
-	struct wtbl_entry tb_entry;
+	//struct wtbl_entry tb_entry;
 	UINT32 WlanIndex;
-	union WTBL_1_DW3 *dw3 = (union WTBL_1_DW3 *)&tb_entry.wtbl_1.wtbl_1_d3.word;
 	unsigned char q_idx = 0;
 
 	EvtPsClear = (struct _CMD_AP_PS_CLEAR_STRUC_T *)Data;
@@ -732,7 +734,6 @@ static VOID CmdPsClearRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 			RtmpEnqueueNullFrame(ad, pEntry->Addr, pEntry->CurrTxRate,
 								pEntry->Aid, pEntry->func_tb_idx, TRUE, TRUE, tr_entry->EospNullUp);
 
-			RTMPDeQueuePacket(ad, TRUE, AcQueId, pEntry->wcid, 1);
 #ifdef UAPSD_DEBUG
 			DBGPRINT(RT_DEBUG_ERROR, ("%s: send a EOSP QoS Null frame!\n", __FUNCTION__));
 #endif /* UAPSD_DEBUG */
@@ -941,94 +942,7 @@ error:
 	return ret;
 }
 
-
-static VOID CmdPatchSemRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
-{
-	UINT8 Status;
-	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)msg->priv;
-	struct MCU_CTRL *Ctl = &pAd->MCUCtrl;
-
-	Ctl->SemStatus = *Data;
-
-	DBGPRINT(RT_DEBUG_OFF,("Patch SEM Status=%d\n", Ctl->SemStatus));
-}
-
-
-static INT32 CmdPatchSemGet(RTMP_ADAPTER *ad, UINT32 Semaphore)
-{
-	struct cmd_msg *msg;
-	int ret = 0;
-	UINT32 value;
-
-	msg = AndesAllocCmdMsg(ad, 4);
-
-	if (!msg) {
-		ret = NDIS_STATUS_RESOURCES;
-		goto error;
-	}
-
-	AndesInitCmdMsg(msg, P1_Q0, MT_PATCH_SEM_CONTROL, CMD_NA, EXT_CMD_NA, TRUE, 0, TRUE, TRUE, 0, NULL, CmdPatchSemRsp);
-
-	/* Semaphore */
-	value = cpu2le32(Semaphore);
-	AndesAppendCmdMsg(msg, (char *)&value, 4);
-
-	ret = AndesSendCmdMsg(ad, msg);
-
-error:
-	DBGPRINT(RT_DEBUG_OFF, ("%s:(ret = %d)\n", __FUNCTION__, ret));
-	return ret;
-}
-
-
-static VOID CmdHIFLoopbackRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
-{
-	UINT8 Status;
-
-	Status = *Data;
-
-	printk("HIF Loopback status=%d\n", Status);
-	switch (Status)
-	{
-		case TARGET_ADDRESS_LEN_SUCCESS:
-			DBGPRINT(RT_DEBUG_INFO, ("%s: Request target address and length success\n", __FUNCTION__));
-			break;
-		default:
-			DBGPRINT(RT_DEBUG_ERROR, ("%s: Unknow Status(%d)\n", __FUNCTION__, Status));
-			break;
-	}
-}
-
-
-static INT32 CmdHIFLoopbackReq(RTMP_ADAPTER *ad, UINT32 enable, UINT32 qidx)
-{
-	struct cmd_msg *msg;
-	int ret = 0;
-	UINT32 value;
-
-	msg = AndesAllocCmdMsg(ad, 4);
-
-	if (!msg) {
-		ret = NDIS_STATUS_RESOURCES;
-		goto error;
-	}
-
-	AndesInitCmdMsg(msg, P1_Q0, MT_HIF_LOOPBACK, CMD_NA, EXT_CMD_NA, TRUE, 0, TRUE, TRUE, 0, NULL, CmdHIFLoopbackRsp);
-
-	/* start enable */
-	enable = (qidx << 16) | (enable & 0xffff);
-	value = cpu2le32(enable);
-	printk("loopback value=0x%x\n", value);
-
-	AndesAppendCmdMsg(msg, (char *)&value, 4);
-
-	ret = AndesSendCmdMsg(ad, msg);
-
-error:
-	DBGPRINT(RT_DEBUG_OFF, ("%s:(ret = %d)\n", __FUNCTION__, ret));
-	return ret;
-}
-
+/*Nobody use it currently*/
 
 static VOID CmdAddrellLenRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 {
@@ -1161,7 +1075,6 @@ static INT32 CmdPatchFinishReq(RTMP_ADAPTER *ad)
 {
 	struct cmd_msg *msg;
 	int ret = 0;
-	UINT32 value;
 
 	DBGPRINT(RT_DEBUG_OFF, ("%s\n", __FUNCTION__));
 
@@ -1714,6 +1627,22 @@ static VOID EventExtCmdResult(struct cmd_msg *msg, char *Data, UINT16 Len)
 	RTMP_OS_TXRXHOOK_CALL(WLAN_CALIB_TEST_RSP,NULL,EventExtCmdResult->u4Status,pAd);
 }
 
+static VOID EventExtCmdResultHandler(RTMP_ADAPTER *pAd, char *Data, UINT16 Len)
+{
+	struct _EVENT_EXT_CMD_RESULT_T *EventExtCmdResult = (struct _EVENT_EXT_CMD_RESULT_T *)Data;
+	//RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)msg->priv;
+
+	DBGPRINT(RT_DEBUG_INFO, ("%s: EventExtCmdResult.ucExTenCID = 0x%x\n",
+									__FUNCTION__, EventExtCmdResult->ucExTenCID));
+
+	EventExtCmdResult->u4Status = le2cpu32(EventExtCmdResult->u4Status);
+
+	DBGPRINT(RT_DEBUG_INFO, ("%s: EventExtCmdResult.u4Status = 0x%x\n",
+									__FUNCTION__, EventExtCmdResult->u4Status));
+
+	RTMP_OS_TXRXHOOK_CALL(WLAN_CALIB_TEST_RSP,NULL,EventExtCmdResult->u4Status,pAd);
+}
+
 
 INT32 CmdRfTest(RTMP_ADAPTER *pAd, UINT8 Action, UINT8 Mode, UINT8 CalItem)
 {
@@ -1947,6 +1876,7 @@ INT32 CmdChannelSwitch(RTMP_ADAPTER *pAd, UINT8 control_chl, UINT8 central_chl,
 	}
  
 #ifdef SINGLE_SKU_V2
+	if  (pAd->SKUEn)
 	mt_FillSkuParameter(pAd,central_chl,CmdChanSwitch.aucTxPowerSKU);
 #endif	
 	AndesAppendCmdMsg(msg, (char *)&CmdChanSwitch, sizeof(CmdChanSwitch));
@@ -1961,7 +1891,7 @@ error:
 
 static VOID EventExtNicCapability(struct cmd_msg *msg, char *Data, UINT16 Len)
 {
-	EXT_EVENT_NIC_CAPABILITY *ExtEventNicCapability = (EXT_EVENT_NIC_CAPABILITY *)Data;
+	struct _EXT_EVENT_NIC_CAPABILITY_T *ExtEventNicCapability = (EXT_EVENT_NIC_CAPABILITY *)Data;
 	UINT32 Loop;
 
 	DBGPRINT(RT_DEBUG_OFF, ("The data code of firmware:"));
@@ -2042,14 +1972,13 @@ error:
 static NDIS_STATUS AndesMTLoadFwMethod1(RTMP_ADAPTER *ad)
 {
 	UINT32 value, loop, dl_len;
-	UINT32 ret;
+	UINT32 ret = 0;
 	RTMP_CHIP_CAP *cap = &ad->chipCap;
 	POS_COOKIE obj = (POS_COOKIE)ad->OS_Cookie;
 	struct MCU_CTRL *Ctl = &ad->MCUCtrl;
 #ifdef RTMP_PCI_SUPPORT
 	UINT32 RemapBase, RemapOffset;
 	UINT32 RestoreValue;
-	UINT32 Value;
 #endif
 
 	if (cap->load_code_method == BIN_FILE_METHOD) {
@@ -2125,10 +2054,18 @@ static NDIS_STATUS AndesMTLoadFwMethod1(RTMP_ADAPTER *ad)
 
 	/* check ram code if running, if it is, need to do optional cmd procedure */
 	if ((value & 0x02) == 0x02) {
+
+#ifdef LOAD_FW_ONE_TIME
+		ret = NDIS_STATUS_SUCCESS;
+		Ctl->Stage = FW_RUN_TIME;
+		ad->FWLoad = 1;
+		goto done;
+#else /* LOAD_FW_ONE_TIME */
 		ret = CmdRestartDLReq(ad);
 
 		if (ret)
 			goto done;
+#endif /* !LOAD_FW_ONE_TIME */
 	}
 
 	/* check rom code if ready */
@@ -2471,7 +2408,7 @@ NDIS_STATUS AndesMTLoadRomPatch(RTMP_ADAPTER *ad)
 	UINT32 ret;
 	RTMP_CHIP_CAP *cap = &ad->chipCap;
 	RTMP_CHIP_OP *pChipOps = &ad->chipOps;
-	POS_COOKIE obj = (POS_COOKIE)ad->OS_Cookie;
+	//POS_COOKIE obj = (POS_COOKIE)ad->OS_Cookie;
 	struct MCU_CTRL *Ctl = &ad->MCUCtrl;
 	UINT32 patch_len = 0, total_checksum = 0;
 
@@ -2614,9 +2551,8 @@ INT32 AndesMTEraseFw(RTMP_ADAPTER *pAd)
 
 static VOID EventChPrivilegeHandler(RTMP_ADAPTER *pAd, UINT8 *Data, UINT32 Length)
 {
-	struct cmd_msg *msg, *msg_tmp;
+	//struct cmd_msg *msg, *msg_tmp;
 	struct MCU_CTRL *ctl = &pAd->MCUCtrl;
-	unsigned long flags;
 	UINT32 Value;
 
 	if (IS_MT7603(pAd) || IS_MT7628(pAd))
@@ -2646,12 +2582,12 @@ static VOID ExtEventFwLog2HostHandler(RTMP_ADAPTER *pAd, UINT8 *Data, UINT32 Len
 }
 
 
-static VOID EventExtEventHandler(RTMP_ADAPTER *pAd, struct cmd_msg *msg, UINT8 ExtEID, UINT8 *Data, UINT32 Length)
+static VOID EventExtEventHandler(RTMP_ADAPTER *pAd, UINT8 ExtEID, UINT8 *Data, UINT32 Length)
 {
 	switch (ExtEID)
 	{
 		case EXT_EVENT_CMD_RESULT:
-			EventExtCmdResult(msg, Data, Length);
+			EventExtCmdResultHandler(pAd, Data, Length);
 			break;
 		case EXT_EVENT_FW_LOG_2_HOST:
 			ExtEventFwLog2HostHandler(pAd, Data, Length);
@@ -2666,9 +2602,12 @@ static VOID EventExtEventHandler(RTMP_ADAPTER *pAd, struct cmd_msg *msg, UINT8 E
 										ExtEID));
 			break;
 	}
+
+
 }
 
-static VOID UnsolicitedEventHandler(RTMP_ADAPTER *pAd, struct cmd_msg *msg, UINT8 EID, UINT8 ExtEID, UINT8 *Data, UINT32 Length)
+
+static VOID UnsolicitedEventHandler(RTMP_ADAPTER *pAd, UINT8 EID, UINT8 ExtEID, UINT8 *Data, UINT32 Length)
 {
 	switch (EID)
 	{
@@ -2676,13 +2615,14 @@ static VOID UnsolicitedEventHandler(RTMP_ADAPTER *pAd, struct cmd_msg *msg, UINT
 			EventChPrivilegeHandler(pAd, Data, Length);
 			break;
 		case EXT_EVENT:
-			EventExtEventHandler(pAd, msg, ExtEID, Data, Length);
+			EventExtEventHandler(pAd, ExtEID, Data, Length);
 			break;
 		default:
 			DBGPRINT(RT_DEBUG_OFF, ("%s: Unknown Event(%x)\n", __FUNCTION__, EID));
 			break;
 	}
 }
+
 
 static VOID AndesMTRxProcessEvent(RTMP_ADAPTER *pAd, struct cmd_msg *rx_msg)
 {
@@ -2708,7 +2648,7 @@ static VOID AndesMTRxProcessEvent(RTMP_ADAPTER *pAd, struct cmd_msg *rx_msg)
 
 	if ((event_rxd->fw_rxd_1.field.seq_num == 0) || (event_rxd->fw_rxd_2.field.ext_eid == EXT_EVENT_FW_LOG_2_HOST)) {
 		/* if have callback function */
-		UnsolicitedEventHandler(pAd, rx_msg,
+		UnsolicitedEventHandler(pAd,
 					event_rxd->fw_rxd_1.field.eid,
 					event_rxd->fw_rxd_2.field.ext_eid,
 					GET_OS_PKT_DATAPTR(net_pkt) + sizeof(*event_rxd),
@@ -2739,7 +2679,7 @@ static VOID AndesMTRxProcessEvent(RTMP_ADAPTER *pAd, struct cmd_msg *rx_msg)
 						|| (event_rxd->fw_rxd_1.field.eid == MT_RESTART_DL_RSP)
 						|| (event_rxd->fw_rxd_1.field.eid == MT_TARGET_ADDRESS_LEN_RSP)
 						|| (event_rxd->fw_rxd_1.field.eid == MT_PATCH_SEM_RSP)) {
-					msg->rsp_handler(msg, GET_OS_PKT_DATAPTR(net_pkt) + sizeof(*event_rxd) - 4,
+					msg->rsp_handler(msg, (GET_OS_PKT_DATAPTR(net_pkt) + sizeof(*event_rxd) - 4),
 											event_rxd->fw_rxd_0.field.length - sizeof(*event_rxd) + 4);
 
 				}
@@ -2883,11 +2823,29 @@ VOID AndesMTSdioFwExit(RTMP_ADAPTER *pAd)
 static VOID CmdEfuseBufferModeRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 {
 	struct _EVENT_EXT_CMD_RESULT_T *EventExtCmdResult = (struct _EVENT_EXT_CMD_RESULT_T *)Data;
-	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)msg->priv;
+	//RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)msg->priv;
 
 	DBGPRINT(RT_DEBUG_INFO, ("%s: EventExtCmdResult.ucExTenCID = 0x%x\n",__FUNCTION__, EventExtCmdResult->ucExTenCID));
 	EventExtCmdResult->u4Status = le2cpu32(EventExtCmdResult->u4Status);
 	DBGPRINT(RT_DEBUG_INFO, ("%s: EventExtCmdResult.u4Status = 0x%x\n",__FUNCTION__, EventExtCmdResult->u4Status));
+}
+
+static VOID CmdThemalSensorRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
+{
+	struct _EXT_EVENT_GET_SENSOR_RESULT_T *EventExtCmdResult = (struct _EXT_EVENT_GET_SENSOR_RESULT_T *)Data;
+	//RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)msg->priv;
+
+	EventExtCmdResult->u4SensorResult = le2cpu32(EventExtCmdResult->u4SensorResult);
+	DBGPRINT(RT_DEBUG_OFF, ("ThemalSensor = 0x%x\n", EventExtCmdResult->u4SensorResult));
+}
+
+
+static inline VOID bufferModeFieldSet(RTMP_ADAPTER *pAd,EXT_CMD_EFUSE_BUFFER_MODE_T *pCmd,UINT16 addr)
+{
+	UINT32 i = pCmd->ucCount;
+	pCmd->aBinContent[i].u2Addr = cpu2le16(addr);
+	pCmd->aBinContent[i].ucValue = pAd->EEPROMImage[addr] ;
+	pCmd->ucCount++;	
 }
 
 static VOID CmdFillEeprom(RTMP_ADAPTER *pAd,EXT_CMD_EFUSE_BUFFER_MODE_T *pCmd)
@@ -3078,6 +3036,36 @@ static VOID CmdFillEeprom(RTMP_ADAPTER *pAd,EXT_CMD_EFUSE_BUFFER_MODE_T *pCmd)
 	i++;
 
 	pCmd->ucCount = i;
+	/*check endian and transfer it is needed*/
+	for(i=0;i<pCmd->ucCount ;i++)
+	{
+		pCmd->aBinContent[i].u2Addr = cpu2le16(pCmd->aBinContent[i].u2Addr);
+	}
+
+	/*extend for function requset, need backward compatible*/
+	bufferModeFieldSet(pAd,pCmd,0x24);	
+	bufferModeFieldSet(pAd,pCmd,0x25);
+	bufferModeFieldSet(pAd,pCmd,0x34);
+	bufferModeFieldSet(pAd,pCmd,0x39);
+	bufferModeFieldSet(pAd,pCmd,0x3b);
+	bufferModeFieldSet(pAd,pCmd,0x42);
+	bufferModeFieldSet(pAd,pCmd,0x43);
+	bufferModeFieldSet(pAd,pCmd,0x9e);
+	bufferModeFieldSet(pAd,pCmd,0x9f);
+	bufferModeFieldSet(pAd,pCmd,0xf2);
+	bufferModeFieldSet(pAd,pCmd,0xf8);
+	bufferModeFieldSet(pAd,pCmd,0xf9);
+	bufferModeFieldSet(pAd,pCmd,0xfa);
+	bufferModeFieldSet(pAd,pCmd,0x12e);	
+
+	for(i=0;i<=0xf;i++)
+	{
+		bufferModeFieldSet(pAd,pCmd,0x130+i);
+	}
+	
+	/*need minus 1 for add one more time*/
+	pCmd->ucCount--;
+	
 }
 
 VOID CmdEfusBufferModeSet(RTMP_ADAPTER *pAd)
@@ -3086,7 +3074,6 @@ VOID CmdEfusBufferModeSet(RTMP_ADAPTER *pAd)
 	struct cmd_msg *msg;
 	EXT_CMD_EFUSE_BUFFER_MODE_T CmdEfuseBufferMode;
 	int ret = 0;
-	int i;
 	msg = AndesAllocCmdMsg(pAd, sizeof(EXT_CMD_EFUSE_BUFFER_MODE_T));
 
 	if (!msg)
@@ -3108,11 +3095,6 @@ VOID CmdEfusBufferModeSet(RTMP_ADAPTER *pAd)
 	{
 		CmdEfuseBufferMode.ucSourceMode = EEPROM_MODE_BUFFER;
 		CmdFillEeprom(pAd,&CmdEfuseBufferMode);
-		/*check endian and transfer it is needed*/
-		for(i=0;i<CmdEfuseBufferMode.ucCount;i++)
-		{
-			CmdEfuseBufferMode.aBinContent[i].u2Addr = cpu2le16(CmdEfuseBufferMode.aBinContent[i].u2Addr);
-		}
 	}
 	break;
 	default:
@@ -3135,7 +3117,7 @@ VOID CmdSetTxPowerCtrl(RTMP_ADAPTER *pAd, UINT8 central_chl)
 	int ret = 0;
 	int i, j;
 	UINT8 PwrPercentageDelta = 0;
-	UINT16 Value;
+	USHORT Value;
 	struct MT_TX_PWR_CAP *cap = &pAd->chipCap.MTTxPwrCap;
 
 	msg = AndesAllocCmdMsg(pAd, sizeof(EXT_CMD_TX_POWER_CTRL_T));
@@ -3229,15 +3211,12 @@ VOID CmdSetTxPowerCtrl(RTMP_ADAPTER *pAd, UINT8 central_chl)
 
 		NdisCopyMemory(&CmdTxPwrCtrl.aucRatePowerDelta[0], &(pAd->EEPROMImage[TX_PWR_CCK_1_2M]), sizeof(CmdTxPwrCtrl.aucRatePowerDelta));
         CmdTxPwrCtrl.ucBWPowerDelta = pAd->EEPROMImage[G_BAND_20_40_BW_PWR_DELTA];
-		NdisCopyMemory(&CmdTxPwrCtrl.aucCHPowerDelta[0], &(pAd->EEPROMImage[TX0_G_BAND_OFFSET_LOW]), sizeof(CmdTxPwrCtrl.aucCHPowerDelta));
-		NdisCopyMemory(&CmdTxPwrCtrl.aucCHPowerDelta[1], &(pAd->EEPROMImage[TX0_G_BAND_CHL_PWR_DELTA_MID]), sizeof(CmdTxPwrCtrl.aucCHPowerDelta));
-		NdisCopyMemory(&CmdTxPwrCtrl.aucCHPowerDelta[2], &(pAd->EEPROMImage[TX0_G_BAND_OFFSET_HIGH]), sizeof(CmdTxPwrCtrl.aucCHPowerDelta));
-		NdisCopyMemory(&CmdTxPwrCtrl.aucCHPowerDelta[3], &(pAd->EEPROMImage[TX1_G_BAND_CHL_PWR_DELATE_LOW]), sizeof(CmdTxPwrCtrl.aucCHPowerDelta));
-		DBGPRINT(RT_DEBUG_INFO, ("pAd->EEPROMImage[TX1_G_BAND_CHL_PWR_DELATE_LOW]=%x, %x\n", pAd->EEPROMImage[TX1_G_BAND_CHL_PWR_DELATE_LOW], CmdTxPwrCtrl.aucCHPowerDelta[3]));
-		NdisCopyMemory(&CmdTxPwrCtrl.aucCHPowerDelta[4], &(pAd->EEPROMImage[TX1_G_BAND_CHL_PWR_DELTA_MID]), sizeof(CmdTxPwrCtrl.aucCHPowerDelta));
-		DBGPRINT(RT_DEBUG_INFO, ("pAd->EEPROMImage2[TX1_G_BAND_CHL_PWR_DELATE_LOW]=%x, %x\n", pAd->EEPROMImage[TX1_G_BAND_CHL_PWR_DELATE_LOW], CmdTxPwrCtrl.aucCHPowerDelta[3]));
-		NdisCopyMemory(&CmdTxPwrCtrl.aucCHPowerDelta[5], &(pAd->EEPROMImage[TX1_G_BAND_CHL_PWR_DELTA_HIGH]), sizeof(CmdTxPwrCtrl.aucCHPowerDelta));
-		DBGPRINT(RT_DEBUG_INFO, ("pAd->EEPROMImage3[TX1_G_BAND_CHL_PWR_DELATE_LOW]=%x, %x\n", pAd->EEPROMImage[TX1_G_BAND_CHL_PWR_DELATE_LOW], CmdTxPwrCtrl.aucCHPowerDelta[3]));
+		NdisCopyMemory(&CmdTxPwrCtrl.aucCHPowerDelta[0], &(pAd->EEPROMImage[TX0_G_BAND_OFFSET_LOW]), sizeof(CmdTxPwrCtrl.aucCHPowerDelta[0]));
+		NdisCopyMemory(&CmdTxPwrCtrl.aucCHPowerDelta[1], &(pAd->EEPROMImage[TX0_G_BAND_CHL_PWR_DELTA_MID]), sizeof(CmdTxPwrCtrl.aucCHPowerDelta[1]));
+		NdisCopyMemory(&CmdTxPwrCtrl.aucCHPowerDelta[2], &(pAd->EEPROMImage[TX0_G_BAND_OFFSET_HIGH]), sizeof(CmdTxPwrCtrl.aucCHPowerDelta[2]));
+		NdisCopyMemory(&CmdTxPwrCtrl.aucCHPowerDelta[5], &(pAd->EEPROMImage[TX1_G_BAND_CHL_PWR_DELTA_HIGH]), sizeof(CmdTxPwrCtrl.aucCHPowerDelta[5]));
+		NdisCopyMemory(&CmdTxPwrCtrl.aucCHPowerDelta[3], &(pAd->EEPROMImage[TX1_G_BAND_CHL_PWR_DELATE_LOW]), sizeof(CmdTxPwrCtrl.aucCHPowerDelta[3]));
+		NdisCopyMemory(&CmdTxPwrCtrl.aucCHPowerDelta[4], &(pAd->EEPROMImage[TX1_G_BAND_CHL_PWR_DELTA_MID]), sizeof(CmdTxPwrCtrl.aucCHPowerDelta[4]));
 		NdisCopyMemory(&CmdTxPwrCtrl.aucTempCompPower[0], &(pAd->EEPROMImage[STEP_NUM_NEG_7]), sizeof(CmdTxPwrCtrl.aucTempCompPower));
 	}
 
@@ -3247,17 +3226,8 @@ VOID CmdSetTxPowerCtrl(RTMP_ADAPTER *pAd, UINT8 central_chl)
 
 		if (pAd->CommonCfg.TxPowerPercentage > 90)
 		{
-#ifdef CONFIG_ATE
-			if (ATE_ON(pAd))
-			{
 				PwrPercentageDelta = 0;
 			}
-			else
-#endif
-			{
-				PwrPercentageDelta = 0;
-			}
-		}
 		else if (pAd->CommonCfg.TxPowerPercentage > 60)	/* reduce Pwr for 1 dB. */
 		{
 			PwrPercentageDelta = 1;
@@ -3284,16 +3254,7 @@ VOID CmdSetTxPowerCtrl(RTMP_ADAPTER *pAd, UINT8 central_chl)
 		DBGPRINT(RT_DEBUG_INFO, ("Before apply tx pwr percentage, CmdTxPwrCtrl.aucTargetPower[1] = 0x%x\n", CmdTxPwrCtrl.aucTargetPower[1]));
 		DBGPRINT(RT_DEBUG_INFO, ("Percentage = 0x%x\n", PwrPercentageDelta));
 
-		PwrPercentageDelta = PwrPercentageDelta*2;
-//		if (CmdTxPwrCtrl.aucTargetPower[0] > PwrPercentageDelta)
-			CmdTxPwrCtrl.aucTargetPower[0] -= PwrPercentageDelta;
-
-//		if (CmdTxPwrCtrl.aucTargetPower[1] > PwrPercentageDelta)
-			CmdTxPwrCtrl.aucTargetPower[1] -= PwrPercentageDelta;
-		
-		DBGPRINT(RT_DEBUG_INFO, ("After apply tx pwr percentage, CmdTxPwrCtrl.aucTargetPower[0] = 0x%x\n", CmdTxPwrCtrl.aucTargetPower[0]));
-		
-		DBGPRINT(RT_DEBUG_INFO, ("After apply tx pwr percentage, CmdTxPwrCtrl.aucTargetPower[1] = 0x%x\n", CmdTxPwrCtrl.aucTargetPower[1]));
+		CmdTxPwrCtrl.ucReserved = PwrPercentageDelta;
 	}
 	else
 	{
@@ -3331,6 +3292,33 @@ error:
 	return;
 }
 
+VOID CmdGetThemalSensorResult(struct _RTMP_ADAPTER *pAd, UINT8 option)
+{
+	struct cmd_msg *msg;
+	EXT_CMD_GET_SENSOR_RESULT_T CmdSensorResult;
+	INT32 ret;
+	
+	ret = 0;
+		
+	msg = AndesAllocCmdMsg(pAd, sizeof(EXT_CMD_GET_SENSOR_RESULT_T));
+	
+	if (!msg)
+	{
+		ret = NDIS_STATUS_RESOURCES;
+		goto error;
+	}
+
+	AndesInitCmdMsg(msg, P1_Q0, EXT_CID, CMD_SET, EXT_CMD_GET_THEMAL_SENSOR, TRUE, 0, TRUE, TRUE, 8, NULL, CmdThemalSensorRsp);
+	CmdSensorResult.ucActionIdx = option;
+
+	AndesAppendCmdMsg(msg, (char *)&CmdSensorResult, sizeof(CmdSensorResult));
+	ret = AndesSendCmdMsg(pAd, msg);
+	
+error:
+	DBGPRINT(RT_DEBUG_INFO, ("%s:(ret = %d)\n", __FUNCTION__, ret));
+	return ; 
+}
+
 INT AndesLedOP(
 	IN PRTMP_ADAPTER pAd,
 	IN UCHAR LedIdx,
@@ -3339,9 +3327,9 @@ INT AndesLedOP(
 	struct cmd_msg *msg;
 	CHAR *Pos, *pBuf;
 	UINT32 VarLen;
-	UINT32 Value, arg0, arg1;
+	UINT32 arg0, arg1;
 	INT32 ret;
-	int i;
+	UINT32 blinkSel = 2; // 2 : data only, 0 : all Tx frames, 1 : Exclude Tx Beacon and TIM broadcast frames
 
 	ret = 0;
 	
@@ -3360,7 +3348,7 @@ INT AndesLedOP(
 	/* Calibration ID and Parameter */
 	VarLen = 8;
 	arg0 = cpu2le32(LedIdx);
-	arg1 = cpu2le32(LinkStatus);
+	arg1 = cpu2le32(LinkStatus | (blinkSel << 24));
 	os_alloc_mem(pAd, (UCHAR **)&pBuf, VarLen);
 	if (pBuf == NULL)
 	{

@@ -96,8 +96,13 @@ VOID ApCliSyncStateMachineInit(
 	for (i = 0; i < MAX_APCLI_NUM; i++)
 	{
 		/* timer init */
+#ifdef MULTI_APCLI_SUPPORT
+		pAd->ApCfg.ApCliTab[i].TimerInfo.pAd = pAd;
+		pAd->ApCfg.ApCliTab[i].TimerInfo.Ifindex= i;
+		RTMPInitTimer(pAd, &pAd->ApCfg.ApCliTab[i].MlmeAux.ProbeTimer, GET_TIMER_FUNCTION(ApCliProbeTimeout), &pAd->ApCfg.ApCliTab[i].TimerInfo, FALSE);
+#else /* MULTI_APCLI_SUPPORT */
 		RTMPInitTimer(pAd, &pAd->ApCfg.ApCliTab[i].MlmeAux.ProbeTimer, GET_TIMER_FUNCTION(ApCliProbeTimeout), pAd, FALSE);
-
+#endif /* !MULTI_APCLI_SUPPORT */
 		pAd->ApCfg.ApCliTab[i].SyncCurrState = APCLI_SYNC_IDLE;
 	}
 
@@ -116,11 +121,21 @@ static VOID ApCliProbeTimeout(
 	IN PVOID SystemSpecific2, 
 	IN PVOID SystemSpecific3)
 {
+		
+#ifdef MULTI_APCLI_SUPPORT
+	PRTMP_ADAPTER pAd;
+	USHORT ifIndex = 0;
+	PTIMER_INFO TimerInfo = (PTIMER_INFO)FunctionContext;
+	pAd = TimerInfo->pAd;
+	ifIndex = TimerInfo->Ifindex;
+	DBGPRINT(RT_DEBUG_TRACE, ("ApCli_SYNC - ProbeReqTimeout, ifIndex=%u\n",ifIndex));
+	MlmeEnqueue(pAd, APCLI_SYNC_STATE_MACHINE, APCLI_MT2_PROBE_TIMEOUT, 0, NULL, ifIndex);
+#else /* MULTI_APCLI_SUPPORT */
 	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)FunctionContext;
-
 	DBGPRINT(RT_DEBUG_TRACE, ("ApCli_SYNC - ProbeReqTimeout\n"));
-
 	MlmeEnqueue(pAd, APCLI_SYNC_STATE_MACHINE, APCLI_MT2_PROBE_TIMEOUT, 0, NULL, 0);
+#endif /* !MULTI_APCLI_SUPPORT */
+
 	RTMP_MLME_HANDLER(pAd);
 
 	return;
@@ -142,7 +157,7 @@ static VOID ApCliMlmeProbeReqAction(
 	PULONG pCurrState = &pAd->ApCfg.ApCliTab[ifIndex].SyncCurrState;
 	APCLI_STRUCT *pApCliEntry = NULL;
 
-	DBGPRINT(RT_DEBUG_TRACE, ("ApCli SYNC - ApCliMlmeProbeReqAction(Ssid %s)\n", Info->Ssid));
+	DBGPRINT(RT_DEBUG_TRACE, ("ApCli SYNC - ApCliMlmeProbeReqAction(Ssid %s), ifIndex=%d\n", Info->Ssid,ifIndex));
 
 	if (ifIndex >= MAX_APCLI_NUM)
 		return;
@@ -565,7 +580,7 @@ static VOID ApCliInvalidStateWhenJoin(
 	MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_PROBE_RSP,
 		sizeof(APCLI_CTRL_MSG_STRUCT), &ApCliCtrlMsg, ifIndex);
 
-	DBGPRINT(RT_DEBUG_TRACE, ("APCLI_AYNC - ApCliInvalidStateWhenJoin(state=%ld). Reset SYNC machine\n", *pCurrState));
+	DBGPRINT(RT_DEBUG_TRACE, ("APCLI_AYNC - ApCliInvalidStateWhenJoin[%d](state=%ld). Reset SYNC machine\n", ifIndex,*pCurrState));
 
 	return;
 }

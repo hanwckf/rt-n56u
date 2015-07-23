@@ -131,7 +131,7 @@ RTMP_STRING *rtstrstr(RTMP_STRING *s1,const RTMP_STRING *s2)
 
 	l2 = strlen(s2);
 	if (!l2)
-		return s1;
+		return (RTMP_STRING *)s1;
 	
 	l1 = strlen(s1);
 	
@@ -139,7 +139,7 @@ RTMP_STRING *rtstrstr(RTMP_STRING *s1,const RTMP_STRING *s2)
 	{
 		l1--;
 		if (!memcmp(s1,s2,l2))
-			return s1;
+			return (RTMP_STRING *)s1;
 		s1++;
 	}
 	
@@ -1823,15 +1823,15 @@ static void HTParametersHook(
 
 		if (Value >= 1 && Value <= 64)
 		{		
-			pAd->CommonCfg.REGBACapability.field.RxBAWinLimit = min((UINT8)Value, pChipCap->RxBAWinSize);
-			pAd->CommonCfg.BACapability.field.RxBAWinLimit = min((UINT8)Value, pChipCap->RxBAWinSize);
-			DBGPRINT(RT_DEBUG_TRACE, ("HT: BA Window Size = %d\n", min((UINT8)Value, pChipCap->RxBAWinSize)));
+			pAd->CommonCfg.REGBACapability.field.RxBAWinLimit = min((UINT8)Value, (UINT8)pChipCap->RxBAWinSize);
+			pAd->CommonCfg.BACapability.field.RxBAWinLimit = min((UINT8)Value, (UINT8)pChipCap->RxBAWinSize);
+			DBGPRINT(RT_DEBUG_TRACE, ("HT: BA Windw Size = %d\n", min((UINT8)Value, (UINT8)pChipCap->RxBAWinSize)));
 		}
 		else
 		{
-			pAd->CommonCfg.REGBACapability.field.RxBAWinLimit = min((UINT8)64, pChipCap->RxBAWinSize);
-			pAd->CommonCfg.BACapability.field.RxBAWinLimit = min((UINT8)64, pChipCap->RxBAWinSize);
-			DBGPRINT(RT_DEBUG_TRACE, ("HT: BA Window Size = %d\n", min((UINT8)64, pChipCap->RxBAWinSize)));
+			pAd->CommonCfg.REGBACapability.field.RxBAWinLimit = min((UINT8)64, (UINT8)pChipCap->RxBAWinSize);
+			pAd->CommonCfg.BACapability.field.RxBAWinLimit = min((UINT8)64, (UINT8)pChipCap->RxBAWinSize);
+			DBGPRINT(RT_DEBUG_TRACE, ("HT: BA Windw Size = %d\n", min((UINT8)64, (UINT8)pChipCap->RxBAWinSize)));
 		}
 
 	}
@@ -2590,8 +2590,16 @@ NDIS_STATUS	RTMPSetProfileParameters(
 				pAd->ApCfg.DtimPeriod = (UCHAR) simple_strtol(tmpbuf, 0, 10);
 				DBGPRINT(RT_DEBUG_TRACE, ("DtimPeriod=%d\n", pAd->ApCfg.DtimPeriod));
 			}
+#ifdef BAND_STEERING
+			/* Band Steering Enable/Disable */
+			if(RTMPGetKeyParameter("BandSteering", tmpbuf, 10, pBuffer, TRUE))
+			{
+				pAd->ApCfg.BandSteering = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+				DBGPRINT(RT_DEBUG_TRACE, ("BandSteering=%d\n", pAd->ApCfg.BandSteering));
+			}
+#endif /* BAND_STEERING */
 		}
-#endif /* CONFIG_AP_SUPPORT */					
+#endif /* CONFIG_AP_SUPPORT */
 	    /*TxPower*/
 		if(RTMPGetKeyParameter("TxPower", tmpbuf, 10, pBuffer, TRUE))
 		{
@@ -3379,6 +3387,43 @@ NDIS_STATUS	RTMPSetProfileParameters(
 						DBGPRINT(RT_DEBUG_TRACE, ("MACRepeaterOuiMode=%d\n", pAd->ApCfg.MACRepeaterOuiMode));
 		
 					}
+
+					//replace all real mac
+					if (RTMPGetKeyParameter("MACRepeaterMACList", tmpbuf, MAX_PARAM_BUFFER_SIZE, pBuffer, FALSE))
+					{
+						UCHAR macAddress[MAC_ADDR_LEN];
+						INT j;
+						
+						for (i=0, macptr = rstrtok(tmpbuf,";"); macptr; macptr = rstrtok(NULL,";"), i++) 
+						{
+							if (strlen(macptr) != 17)  /* Mac address acceptable format 01:02:03:04:05:06 length 17*/
+								continue;
+
+
+							ASSERT(pAd->ApCfg.ReptMacList.Num <= MAX_NUMBER_OF_MAC_LIST);
+							
+							for (j=0; j<MAC_ADDR_LEN; j++)
+							{
+								AtoH(macptr, &macAddress[j], 1);
+								macptr=macptr+3;
+							}
+
+							if (pAd->ApCfg.ReptMacList.Num == MAX_NUMBER_OF_MAC_LIST)
+							{
+								DBGPRINT(RT_DEBUG_ERROR, ("The ReptMacList is full, and no more entry can join the list!\n"));
+			        				DBGPRINT(RT_DEBUG_ERROR, ("The last entry of MAC is %02x:%02x:%02x:%02x:%02x:%02x\n",
+			        				macAddress[0],macAddress[1],macAddress[2],macAddress[3],macAddress[4],macAddress[5]));
+
+							    break;
+							}
+							
+							pAd->ApCfg.ReptMacList.Num ++;
+							NdisMoveMemory(pAd->ApCfg.ReptMacList.Entry[(pAd->ApCfg.ReptMacList.Num -1)].Addr, macAddress, MAC_ADDR_LEN);				
+						}
+						DBGPRINT(RT_DEBUG_TRACE, ("MACRepeaterMACList.Num = %ld\n", pAd->ApCfg.ReptMacList.Num));
+					}
+
+
 #endif /* MAC_REPEATER_SUPPORT */
 				}
 
@@ -3570,6 +3615,23 @@ NDIS_STATUS	RTMPSetProfileParameters(
 							DBGPRINT(RT_DEBUG_TRACE, ("Wsc_Uuid_E[%d]", i+1));
 							hex_dump("", &pWpsCtrl->Wsc_Uuid_E[0], UUID_LEN_HEX);
 						}
+					}
+
+					/* WSC AutoTrigger Disable */
+					if(RTMPGetKeyParameter("WscAutoTriggerDisable", tmpbuf, 10, pBuffer, TRUE))
+					{
+						BOOLEAN	bEn = FALSE;
+						
+						if ((strncmp(tmpbuf, "0", 1) == 0))
+							bEn = FALSE;
+						else
+							bEn = TRUE;
+
+						for (i = 0; i < pAd->ApCfg.BssidNum; i++)
+						{
+							pAd->ApCfg.MBSSID[i].WscControl.bWscAutoTriggerDisable = bEn;
+						}
+						DBGPRINT(RT_DEBUG_TRACE, ("bWscAutoTriggerDisable=%d\n", bEn));
 					}
 
 		
@@ -3805,6 +3867,20 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			Set_MO_FalseCCATh_Proc(pAd, tmpbuf);
 #endif /* MICROWAVE_OVEN_SUPPORT */
 
+
+#if  defined(CONFIG_STA_SUPPORT) || defined(CONFIG_AP_SUPPORT)
+#ifdef CONFIG_SNIFFER_SUPPORT
+		if (RTMPGetKeyParameter("SnifferType", tmpbuf, 10, pBuffer, TRUE)) {
+			pAd->sniffer_ctl.sniffer_type = simple_strtol(tmpbuf, 0, 10);
+
+#ifdef CONFIG_AP_SUPPORT
+			set_sniffer_mode(pAd->ApCfg.MBSSID[0].wdev.if_dev, pAd->sniffer_ctl.sniffer_type);
+#endif /* CONFIG_AP_SUPPORT */
+
+			DBGPRINT(RT_DEBUG_OFF, ("SnifferType = %d\n", pAd->sniffer_ctl.sniffer_type));
+		}
+#endif /* CONFIG_SNIFFER_SUPPORT */
+#endif /* defined(CONFIG_STA_SUPPORT) || defined(CONFIG_AP_SUPPORT) */
 
       if (RTMPGetKeyParameter("PS_RETRIEVE", tmpbuf, 10, pBuffer, TRUE))
       {   

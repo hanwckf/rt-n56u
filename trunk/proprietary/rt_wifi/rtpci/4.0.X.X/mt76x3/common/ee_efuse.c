@@ -95,7 +95,6 @@ UCHAR eFuseReadRegisters(PRTMP_ADAPTER pAd, UINT16 Offset, UINT16 Length, UINT16
 	UINT32 efuseDataOffset;
 	UINT32 data;
 	UINT32 efuse_ctrl_reg = EFUSE_CTRL;
-    BOOLEAN IsEmpty = 0;
 	
 
 #ifdef MT_MAC
@@ -1246,11 +1245,26 @@ INT eFuse_init(RTMP_ADAPTER *pAd)
 		rtmp_ee_load_from_bin(pAd);
 
 		/* Forse to use BIN eeprom buffer mode */
-		pAd->E2pAccessMode = E2P_BIN_MODE;
-		RtmpChipOpsEepromHook(pAd, pAd->infType);
+		RtmpChipOpsEepromHook(pAd, pAd->infType,E2P_BIN_MODE);
+
+#ifdef CAL_FREE_IC_SUPPORT
+	    RTMP_CAL_FREE_IC_CHECK(pAd,bCalFree);
+	    if (bCalFree)
+	    {
+	        DBGPRINT(RT_DEBUG_OFF, ("Cal Free IC!!\n"));
+	        RTMP_CAL_FREE_DATA_GET(pAd);
+	    }
+	    else
+	    {
+	        DBGPRINT(RT_DEBUG_OFF, ("Non Cal Free IC!!\n"));
+	    }
+#endif /* CAL_FREE_IC_SUPPORT */
 
 	}
-
+	else
+	{
+		rtmp_ee_load_from_efuse(pAd);
+	}
 	return 0;
 }
 
@@ -1290,30 +1304,42 @@ INT efuse_probe(RTMP_ADAPTER *pAd)
 	return 0;
 }
 
+VOID  rtmp_ee_load_from_efuse(RTMP_ADAPTER *pAd)
+{
+	UINT16 efuse_val=0;
+	UINT free_blk = 0;
+	UINT i;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("Load EEPROM buffer from efuse, and change to BIN buffer mode\n"));	
+
+	/* If the number of the used block is less than 5, assume the efuse is not well-calibrated, and force to use buffer mode */
+	eFuseGetFreeBlockCount(pAd, &free_blk);
+	if (free_blk > (pAd->chipCap.EFUSE_USAGE_MAP_SIZE - 5))
+		return ;
+
+	NdisZeroMemory(pAd->EEPROMImage, MAX_EEPROM_BIN_FILE_SIZE);
+	for(i=0; i<MAX_EEPROM_BIN_FILE_SIZE; i+=2)
+	{
+			eFuseRead(pAd, i,&efuse_val, 2);
+			efuse_val = cpu2le16 (efuse_val);
+			NdisMoveMemory(&pAd->EEPROMImage[i],&efuse_val,2);
+	}		
+	
+	/* Change to BIN eeprom buffer mode */
+	RtmpChipOpsEepromHook(pAd, pAd->infType,E2P_BIN_MODE);
+}
+
 
 #ifdef CONFIG_ATE
 INT Set_LoadEepromBufferFromEfuse_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	UINT bEnable = simple_strtol(arg, 0, 10);
-	UINT free_blk = 0;
-	
+
 	if (bEnable < 0)
 		return FALSE;
 	else
 	{
-		DBGPRINT(RT_DEBUG_TRACE, ("Load EEPROM buffer from efuse, and change to BIN buffer mode\n"));	
-
-		/* If the number of the used block is less than 5, assume the efuse is not well-calibrated, and force to use buffer mode */
-		eFuseGetFreeBlockCount(pAd, &free_blk);
-		if (free_blk > (pAd->chipCap.EFUSE_USAGE_MAP_SIZE - 5))
-			return FALSE;
-		
-		NdisZeroMemory(pAd->EEPROMImage, MAX_EEPROM_BIN_FILE_SIZE);
-		eFuseRead(pAd, 0, (PUSHORT)&pAd->EEPROMImage[0], MAX_EEPROM_BIN_FILE_SIZE);		
-
-		/* Change to BIN eeprom buffer mode */
-		pAd->E2pAccessMode = E2P_BIN_MODE;
-		RtmpChipOpsEepromHook(pAd, pAd->infType);
+		rtmp_ee_load_from_efuse(pAd);
 		return TRUE;
 	}
 }

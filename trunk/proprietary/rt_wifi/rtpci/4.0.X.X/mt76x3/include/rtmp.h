@@ -124,6 +124,19 @@ typedef struct _RTMP_CHIP_CAP RTMP_CHIP_CAP;
 #include "sniffer/sniffer.h"
 #endif
 
+#ifdef ACL_V2_SUPPORT
+#include "ap_acl_v2.h"
+#endif /* ACL_V2_SUPPORT */
+
+#ifdef SNIFFER_MIB_CMD
+#include "sniffer_mib.h"
+#endif /* SNIFFER_MIB_CMD */
+
+#ifdef ALL_NET_EVENT
+#include "all_net_event.h"
+#endif /* ALL_NET_EVENT */
+
+
 
 #ifdef MT_MAC
 #include "cmm_asic_mt.h"
@@ -392,6 +405,7 @@ typedef union _CAPTURE_MODE_PACKET_BUFFER {
 
 #define SQ_ENQ_PS_MAX 		512
 #define SQ_ENQ_NORMAL_MAX 	512
+#define SQ_ENQ_RESERVE_PERAC 	(SQ_ENQ_NORMAL_MAX/2)
 
 #ifdef USB_BULK_BUF_ALIGMENT
 #define CUR_WRITE_IDX_INC(_idx, _RingSize)    \
@@ -428,7 +442,10 @@ typedef struct _RTMP_SCATTER_GATHER_LIST {
 
 #define INFRA_ON(_p)                (OPSTATUS_TEST_FLAG(_p, fOP_STATUS_INFRA_ON))
 #define ADHOC_ON(_p)                (OPSTATUS_TEST_FLAG(_p, fOP_STATUS_ADHOC_ON))
-#define MONITOR_ON(_p)              (((_p)->StaCfg.BssType) == BSS_MONITOR)
+
+#ifdef CONFIG_AP_SUPPORT
+#define MONITOR_ON(_p)              (((_p)->ApCfg.bMonitorON))
+#endif /* CONFIG_STA_SUPPORT */
 #define IDLE_ON(_p)                 (!INFRA_ON(_p) && !ADHOC_ON(_p))
 
 /* Check LEAP & CCKM flags */
@@ -1223,6 +1240,7 @@ typedef enum _BSS2040COEXIST_FLAG {
 	BSS_2040_COEXIST_TIMER_FIRED = 1,
 	BSS_2040_COEXIST_INFO_SYNC = 2,
 	BSS_2040_COEXIST_INFO_NOTIFY = 4,
+	BSS_2040_COEXIST_BW_SYNC = 8,
 } BSS2040COEXIST_FLAG;
 
 typedef struct _BssCoexChRange_ {
@@ -1569,7 +1587,9 @@ typedef struct _BSS_STRUCT {
 
 
 	RT_802_11_ACL AccessControlList;
-
+#ifdef ACL_V2_SUPPORT 
+	ACL_V2_CTRL AccessControlList_V2;
+#endif /* ACL_V2_SUPPORT */
 	/* EDCA QoS */
 	/*BOOLEAN bWmmCapable;*/	/* 0:disable WMM, 1:enable WMM */
 	BOOLEAN bDLSCapable;	/* 0:disable DLS, 1:enable DLS */
@@ -2187,6 +2207,8 @@ typedef struct _STA_TR_ENTRY{
  	clear: when a PS data is sent or two period passed.
  */
 	UINT8 PsDeQWaitCnt;
+	INT cacheSn[NUM_OF_UP];
+
 }STA_TR_ENTRY;
 
 
@@ -2368,6 +2390,7 @@ typedef struct _MAC_TABLE_ENTRY {
 #ifdef MCS_LUT_SUPPORT
 	UCHAR LowestTxRateIndex;
 #endif /* MCS_LUT_SUPPORT */
+	UCHAR ucMaxTxRetryCnt;
 
 #ifdef NEW_RATE_ADAPT_SUPPORT
 	UCHAR lowTrafficCount;
@@ -2721,6 +2744,14 @@ typedef struct _REPEATER_CTRL_STRUCT {
 } REPEATER_CTRL_STRUCT, *PREPEATER_CTRL_STRUCT;
 #endif /* MAC_REPEATER_SUPPORT */
 
+
+#ifdef MULTI_APCLI_SUPPORT
+typedef struct _TIMER_INFO {
+	PVOID pAd;
+	USHORT Ifindex;
+} TIMER_INFO, *PTIMER_INFO;	
+#endif /* MULTI_APCLI_SUPPORT */
+
 /***************************************************************************
   *	AP APCLI related data structures
   **************************************************************************/
@@ -2816,6 +2847,10 @@ typedef struct _APCLI_STRUCT {
 	PSPOLL_FRAME PsPollFrame;
 	HEADER_802_11 NullFrame;
 
+#ifdef MULTI_APCLI_SUPPORT
+	TIMER_INFO	TimerInfo;
+#endif /* MULTI_APCLI_SUPPORT */
+
 #ifdef MAC_REPEATER_SUPPORT
 	REPEATER_CLIENT_ENTRY RepeaterCli[MAX_EXT_MAC_ADDR_SIZE];
 	REPEATER_CLIENT_ENTRY_MAP RepeaterCliMap[MAX_EXT_MAC_ADDR_SIZE];
@@ -2848,6 +2883,7 @@ typedef struct _AP_ADMIN_CONFIG {
 	NDIS_SPIN_LOCK ReptCliEntryLock;
 	REPEATER_CLIENT_ENTRY *ReptCliHash[HASH_TABLE_SIZE];
 	REPEATER_CLIENT_ENTRY_MAP *ReptMapHash[HASH_TABLE_SIZE];
+	RT_802_11_MACLIST ReptMacList;
 	UCHAR BridgeAddress[MAC_ADDR_LEN];
 	REPEATER_CTRL_STRUCT ReptControl;
 #endif /* MAC_REPEATER_SUPPORT */
@@ -2963,6 +2999,25 @@ typedef struct _AP_ADMIN_CONFIG {
 	UINT8 EthApCliIdx;
 	UCHAR RepeaterCliSize;
 #endif /* MAC_REPEATER_SUPPORT */
+
+#ifdef BAND_STEERING
+	/* 
+		This is used to let user config band steering on/off by profile.
+		0: OFF / 1: ON / 2: Auto ONOFF
+	*/
+	BOOLEAN BandSteering; 
+	BND_STRG_CLI_TABLE BndStrgTable;
+#endif /* BAND_STEERING */
+
+#ifdef CONFIG_SNIFFER_SUPPORT
+	UCHAR bMonitorON;
+	USHORT OriginalType;
+#endif /* CONFIG_SNIFFER_SUPPORT */
+
+#ifdef SNIFFER_MIB_CMD
+	SNIFFER_MIB_CTRL sniffer_mib_ctrl;
+#endif /* SNIFFER_MIB_CMD */
+
 } AP_ADMIN_CONFIG;
 
 #ifdef IGMP_SNOOP_SUPPORT
@@ -3640,6 +3695,11 @@ struct _RTMP_ADAPTER {
 	VOID *OS_Cookie;	/* save specific structure relative to OS */
 	PNET_DEV net_dev;
 
+#ifdef DBG
+	UINT32 testaddr;
+	UINT32 testdata;
+#endif
+
 #ifdef RTMP_MAC_PCI
 /*****************************************************************************************/
 /*      PCI related parameters                                                           								  */
@@ -3677,6 +3737,37 @@ struct _RTMP_ADAPTER {
 	NDIS_SPIN_LOCK RxRingLock[NUM_OF_RX_RING];	/* Rx Ring spinlock */
 	NDIS_SPIN_LOCK LockInterrupt;
 	NDIS_SPIN_LOCK tssi_lock;
+#ifdef INT_STATISTIC
+	ULONG INTCNT;
+#ifdef MT_MAC
+	ULONG	INTWFMACINT0CNT;
+	ULONG	INTWFMACINT1CNT;
+	ULONG	INTWFMACINT2CNT;
+	ULONG	INTWFMACINT3CNT;
+	ULONG	INTWFMACINT4CNT;
+	ULONG 	INTBCNDLY;
+	ULONG	INTBMCDLY;
+#endif
+	ULONG INTTxCoherentCNT;
+	ULONG INTRxCoherentCNT;
+	ULONG INTTxRxCoherentCNT;
+	ULONG INTFifoStaFullIntCNT;
+	ULONG INTMGMTDLYCNT;
+	ULONG INTRXDATACNT;
+	ULONG INTRXCMDCNT;
+	ULONG INTHCCACNT;
+	ULONG INTAC3CNT;
+	ULONG INTAC2CNT;
+	ULONG INTAC1CNT;
+	ULONG INTAC0CNT;
+
+	ULONG INTPreTBTTCNT;
+	ULONG INTTBTTIntCNT;
+	ULONG INTGPTimeOutCNT;
+	ULONG INTRadarCNT;
+	ULONG INTAutoWakeupIntCNT;
+#endif
+
 #endif /* RTMP_MAC_PCI */
 
 	NDIS_SPIN_LOCK irq_lock;
@@ -3686,6 +3777,12 @@ struct _RTMP_ADAPTER {
 	NDIS_SPIN_LOCK CmdQLock;	/* CmdQLock spinlock */
 	RTMP_OS_TASK cmdQTask;
     RTMP_OS_SEM mcu_atomic;
+
+#ifdef DOT11_N_SUPPORT
+	BA_TABLE BATable;
+	NDIS_SPIN_LOCK BATabLock;
+	RALINK_TIMER_STRUCT RECBATimer;
+#endif /* DOT11_N_SUPPORT */
 
 
 #ifdef RTMP_SDIO_SUPPORT
@@ -3833,7 +3930,8 @@ struct _RTMP_ADAPTER {
 
 	UCHAR EEPROMImage[MAX_EEPROM_BUFFER_SIZE];
 	UCHAR E2pAccessMode; /* Used to identify flash, efuse, eeprom or bin from start-up */
-
+	UCHAR e2pCurMode;
+	
 #ifdef RTMP_FLASH_SUPPORT
 	UCHAR *eebuf;
 	UINT32 flash_offset;
@@ -4071,12 +4169,6 @@ struct _RTMP_ADAPTER {
 	/*About MacTab, the sta driver will use #0 and #1 for multicast and AP. */
 	MAC_TABLE MacTab;	/* ASIC on-chip WCID entry table.  At TX, ASIC always use key according to this on-chip table. */
 	NDIS_SPIN_LOCK MacTabLock;
-
-#ifdef DOT11_N_SUPPORT
-	BA_TABLE BATable;
-	NDIS_SPIN_LOCK BATabLock;
-	RALINK_TIMER_STRUCT RECBATimer;
-#endif /* DOT11_N_SUPPORT */
 
 	EXT_CAP_INFO_ELEMENT ExtCapInfo;
 
@@ -4320,6 +4412,7 @@ struct _RTMP_ADAPTER {
 #endif /* CONFIG_MULTI_CHANNEL */
 
 #ifdef SINGLE_SKU_V2
+	BOOLEAN SKUEn;
 	DL_LIST SingleSkuPwrList;
 	UCHAR DefaultTargetPwr;
 	CHAR SingleSkuRatePwrDiff[19];
@@ -4371,7 +4464,8 @@ struct _RTMP_ADAPTER {
 #endif
 #ifdef RTMP_PCI_SUPPORT
 	UINT32 DropInvalidPacket;
-	BOOLEAN RxRest;
+	UINT32 RxResetDropCount;
+	BOOLEAN RxReset;
 	BOOLEAN PDMAWatchDogEn;
 	BOOLEAN PDMAWatchDogDbg;
 	UINT8 TxDMACheckTimes;
@@ -4387,6 +4481,14 @@ struct _RTMP_ADAPTER {
 	ULONG PSETriggerType1Count;
 	ULONG PSETriggerType2Count;
 	ULONG PSEResetFailCount;
+
+	ULONG SkipTxRCount;
+	UINT shortretry;
+	
+#ifdef LOAD_FW_ONE_TIME
+	BOOLEAN  FWLoad;
+#endif /* LOAD_FW_ONE_TIME */
+
 };
 
 #if defined(RTMP_INTERNAL_TX_ALC) || defined(RTMP_TEMPERATURE_COMPENSATION)
@@ -4605,6 +4707,9 @@ typedef struct _RX_BLK
 	UCHAR *pTransData;
 	USHORT TransDataSize;
 #endif /* HDR_TRANS_SUPPORT */
+#ifdef RTMP_PCI_SUPPORT
+	UINT32 PDMALen;
+#endif
 } RX_BLK;
 
 
@@ -6886,6 +6991,9 @@ INT Set_LoadEepromBufferFromEfuse_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT set_eFuseBufferModeWriteBack_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT set_BinModeWriteBack_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 #endif /* CONFIG_ATE */
+
+VOID  rtmp_ee_load_from_efuse(RTMP_ADAPTER *pAd);
+
 #endif /* RTMP_EFUSE_SUPPORT */
 
 
@@ -7038,6 +7146,7 @@ INT set_pbf_rx_drop(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT set_get_fid(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT set_fw_log(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT SetManualTxOP(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_themal_sensor(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 #endif
 
 #ifdef RTMP_MAC_PCI
@@ -8317,6 +8426,9 @@ typedef struct _DefaultKeyIdxValue
 } DefaultKeyIdxValue, *PDefaultKeyIdxValue;
 #endif
 
+#if defined(CONFIG_STA_SUPPORT) || defined(CONFIG_AP_SUPPORT)
+void STA_MonPktSend(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk);
+#endif
 
 
 INT	Set_FixedTxMode_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
@@ -8468,6 +8580,14 @@ VOID RTMP_IO_WRITE32(RTMP_ADAPTER *pAd, UINT32 Offset, UINT32 Value);
 
 BOOLEAN CHAN_PropertyCheck(RTMP_ADAPTER *pAd, UINT32 ChanNum, UCHAR Property);
 
+#ifdef SINGLE_SKU_V2
+INT SetSKUEnable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+#endif /* SINGLE_SKU_V2 */
+
+
+#ifdef CONFIG_SNIFFER_SUPPORT
+INT Set_AP_Monitor_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+#endif /* CONFIG_SNIFFER_SUPPORT */
 
 void  getRate(HTTRANSMIT_SETTING HTSetting, ULONG* fLastTxRxRate);
 
@@ -8569,6 +8689,7 @@ BOOLEAN MtPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm);
 VOID MtPsRedirectDisableCheck(RTMP_ADAPTER *pAd, UCHAR wcid);
 VOID MtPsSendToken(RTMP_ADAPTER *pAd, UINT32 WlanIdx);
 VOID MtSetIgnorePsm(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, UCHAR value);
+VOID CheckSkipTX(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry);
 VOID MtEnqTxSwqFromPsQueue(RTMP_ADAPTER *pAd, UCHAR qidx, STA_TR_ENTRY *tr_entry);
 #endif /* MT_MAC */
 

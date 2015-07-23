@@ -1028,6 +1028,7 @@ BOOLEAN RTMPSoftDecryptCCMP(
 	return TRUE;
 }
 
+#if 0
 /*
 	========================================================================
 	
@@ -1148,7 +1149,6 @@ VOID CCMP_test_vector(
 	}	
 	
 	printk("== CCMP test vector == \n");
+}
 
-	}
-
-
+#endif

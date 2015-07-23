@@ -78,6 +78,12 @@
 #define MAX_LENGTH_OF_SUPPORT_RATES		12	/* 1, 2, 5.5, 11, 6, 9, 12, 18, 24, 36, 48, 54 */
 #define MAX_NUMBER_OF_DLS_ENTRY			4
 
+#ifdef MAC_REPEATER_SUPPORT
+/*seems different chip have different size , use 16 (minimum size) tmply */
+#define MAX_NUMBER_OF_MAC_LIST			16  /* MAX_EXT_MAC_ADDR_SIZE */
+#endif /* MAC_REPEATER_SUPPORT */
+
+
 #define RT_QUERY_SIGNAL_CONTEXT				0x0402
 #define RT_SET_IAPP_PID                 	0x0404
 #define RT_SET_APD_PID						0x0405
@@ -1108,6 +1114,19 @@ typedef struct GNU_PACKED _RT_802_11_ACL {
 	ULONG Num;
 	RT_802_11_ACL_ENTRY Entry[MAX_NUMBER_OF_ACL];
 } RT_802_11_ACL, *PRT_802_11_ACL;
+
+#ifdef MAC_REPEATER_SUPPORT
+typedef struct _RT_802_11_REALMAC_ENTRY {
+	UCHAR Addr[MAC_ADDR_LEN];
+	UCHAR bSet;	
+	UCHAR bUsed;
+} RT_802_11_REALMAC_ENTRY, *PRT_802_11_REALMAC_ENTRY;
+
+typedef struct GNU_PACKED _RT_802_11_MACLIST {
+	ULONG Num;
+	RT_802_11_REALMAC_ENTRY Entry[MAX_NUMBER_OF_MAC_LIST];
+} RT_802_11_MACLIST, *PRT_802_11_MACLIST;
+#endif /* MAC_REPEATER_SUPPORT */
 
 typedef struct _RT_802_11_WDS {
 	ULONG Num;

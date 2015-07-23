@@ -91,6 +91,16 @@ static VOID APMlmeDeauthReqAction(
 		
 		/* send wireless event - for deauthentication */
 		RTMPSendWirelessEvent(pAd, IW_DEAUTH_EVENT_FLAG, pInfo->Addr, 0, 0);  
+
+#ifdef ALL_NET_EVENT
+		wext_send_event(pEntry->wdev->if_dev,
+			pEntry->Addr,
+			pEntry->bssid,
+			pAd->CommonCfg.Channel,
+			RTMPAvgRssi(pAd, &pEntry->RssiSample),
+			FBT_LINK_OFFLINE_NOTIFY);
+#endif /* ALL_NET_EVENT */
+
 		ApLogEvent(pAd, pInfo->Addr, EVENT_DISASSOCIATED);
 
 		apidx = pEntry->func_tb_idx;
@@ -149,11 +159,14 @@ static VOID APPeerDeauthReqAction(
 			unsigned char *tmp2 = (unsigned char *)&Fr->Hdr.Addr1;
 			if (memcmp(&Fr->Hdr.Addr1, pMbss->wdev.bssid, 6) != 0)
 			{
-				printk("da not match bssid,bssid:0x%02x%02x%02x%02x%02x%02x, addr1:0x%02x%02x%02x%02x%02x%02x\n",*tmp, *(tmp+1), *(tmp+2), *(tmp+3), *(tmp+4), *(tmp+5), *tmp2, *(tmp2+1), *(tmp2+2), *(tmp2+3), *(tmp2+4), *(tmp2+5));
+				DBGPRINT(RT_DEBUG_OFF, ("da not match bssid,bssid:0x%02x%02x%02x%02x%02x%02x, addr1:0x%02x%02x%02x%02x%02x%02x\n",
+					*tmp, *(tmp+1), *(tmp+2), *(tmp+3), *(tmp+4), *(tmp+5), *tmp2, *(tmp2+1), *(tmp2+2), *(tmp2+3), *(tmp2+4), *(tmp2+5)));
 				return;
 			}
 			else
-				printk("da match,0x%02x%02x%02x%02x%02x%02x\n", *tmp, *(tmp+1), *(tmp+2), *(tmp+3), *(tmp+4), *(tmp+5));
+			{
+				DBGPRINT(RT_DEBUG_TRACE, ("da match,0x%02x%02x%02x%02x%02x%02x\n", *tmp, *(tmp+1), *(tmp+2), *(tmp+3), *(tmp+4), *(tmp+5)));
+			}
 		}
 #ifdef DOT1X_SUPPORT    
 		/* Notify 802.1x daemon to clear this sta info */
@@ -173,6 +186,16 @@ static VOID APPeerDeauthReqAction(
 
 		/* send wireless event - for deauthentication */
 		RTMPSendWirelessEvent(pAd, IW_DEAUTH_EVENT_FLAG, Addr2, 0, 0);  
+
+#ifdef ALL_NET_EVENT
+		wext_send_event(pEntry->wdev->if_dev,
+			pEntry->Addr,
+			pEntry->bssid,
+			pAd->CommonCfg.Channel,
+			RTMPAvgRssi(pAd, &pEntry->RssiSample),
+			FBT_LINK_OFFLINE_NOTIFY);
+#endif /* ALL_NET_EVENT */
+
 		ApLogEvent(pAd, Addr2, EVENT_DISASSOCIATED);
 
 		if (pEntry->CMTimerRunning == TRUE)
@@ -337,7 +360,9 @@ static VOID APPeerAuthReqAtIdleAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	UCHAR ChTxtIe = 16, ChTxtLen = CIPHER_TEXT_LEN;
 	BSS_STRUCT *pMbss;
 	struct wifi_dev *wdev;
-
+#ifdef BAND_STEERING
+	BOOLEAN bBndStrgCheck = TRUE;
+#endif /* BAND_STEERING */
 
 
 	if (pAd->ApCfg.BANClass3Data == TRUE)
@@ -441,6 +466,18 @@ SendAuth:
 				"Status code = %d\n", MLME_UNSPECIFY_FAIL));
 		return;
     }
+
+
+#ifdef BAND_STEERING
+	BND_STRG_CHECK_CONNECTION_REQ(	pAd,
+										NULL, 
+										auth_info.addr2,
+										Elem->MsgType,
+										Elem->rssi_info,
+										&bBndStrgCheck);
+	if (bBndStrgCheck == FALSE)
+		return;
+#endif /* BAND_STEERING */
 
 	if ((auth_info.auth_alg == AUTH_MODE_OPEN) && 
 		(pMbss->wdev.AuthMode != Ndis802_11AuthModeShared)) 
@@ -657,6 +694,7 @@ VOID APCls2errAction(
 	ULONG FrameLen = 0;
 	USHORT Reason = REASON_CLS2ERR;
 	MAC_TABLE_ENTRY *pEntry = NULL;
+	UCHAR apidx;
 
 	if (Wcid < MAX_LEN_OF_MAC_TABLE)
 		pEntry = &(pAd->MacTab.Content[Wcid]);
@@ -668,13 +706,12 @@ VOID APCls2errAction(
 	}
 	else
 	{
-		UCHAR bssid[MAC_ADDR_LEN];
-
-		NdisMoveMemory(bssid, pHeader->Addr1, MAC_ADDR_LEN);
-		bssid[5] &= pAd->ApCfg.MacMask;
-
-		if (NdisEqualMemory(pAd->CurrentAddress, bssid, MAC_ADDR_LEN) == 0)
+		apidx = get_apidx_by_addr(pAd, pHeader->Addr1);
+		if (apidx >= pAd->ApCfg.BssidNum)
+		{
+			DBGPRINT(RT_DEBUG_TRACE,("AUTH - Class 2 error but not my bssid %02x:%02x:%02x:%02x:%02x:%02x\n", PRINT_MAC(pHeader->Addr1))); 
 			return;
+		}
 	}
 
 	/* send out DEAUTH frame */

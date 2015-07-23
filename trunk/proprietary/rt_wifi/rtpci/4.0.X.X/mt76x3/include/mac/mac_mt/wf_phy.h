@@ -15,6 +15,7 @@
 #define CR_RFINTF_00		WF_PHY_BASE + 0x0200
 #define CR_RFINTF_CAL_NSS_MASK (0x3 << 28)
 #define CR_RFINTF_CAL_NSS(p) (((p) & 0x3) << 28)
+#define CR_RFINTF_01		WF_PHY_BASE + 0x0204
 
 #define CR_RFINTF_02		WF_PHY_BASE + 0x0208
 #define CR_RFINTF_03        WF_PHY_BASE + 0x020C
@@ -31,9 +32,12 @@
 
 #define CR_TSSI_0           WF_PHY_BASE + 0x0D00
 #define CR_TSSI_1           WF_PHY_BASE + 0x0D04
+#define CR_TSSI_3			WF_PHY_BASE + 0x0D14
 #define CR_TSSI_6			WF_PHY_BASE + 0x0D18
 #define CR_TSSI_9           WF_PHY_BASE + 0x0D24
+#define CR_TSSI_13			WF_PHY_BASE + 0x0D34
 
+#define CR_WF1_RFINTF_01	WF_PHY_BASE + 0x1204
 #define CR_WF1_RFINTF_02	WF_PHY_BASE + 0x1208
 
 #define CR_TXFE1_3          WF_PHY_BASE + 0x1A08
@@ -41,9 +45,10 @@
 
 #define CR_WF1_TSSI_0       WF_PHY_BASE + 0x1D00
 #define CR_WF1_TSSI_1       WF_PHY_BASE + 0x1D04
+#define CR_WF1_TSSI_3		WF_PHY_BASE + 0x1D14
 #define CR_WF1_TSSI_6		WF_PHY_BASE + 0x1D18
 #define CR_WF1_TSSI_9       WF_PHY_BASE + 0x1D24
-
+#define CR_WF1_TSSI_13      WF_PHY_BASE + 0x1D34
 
 /* WF_PHY_BACK */
 #define CR_BK_RST_CTRL      WF_PHY_BASE + 0x4004
@@ -62,6 +67,10 @@
 #define CR_PHYMUX_5         WF_PHY_BASE + 0x4214
 #define CR_PHYMUX_10        WF_PHY_BASE + 0x4228
 #define CR_PHYMUX_11        WF_PHY_BASE + 0x422C
+#define CR_PHYMUX_24        WF_PHY_BASE + 0x4260
+#define CR_PHYMUX_25		WF_PHY_BASE + 0x4264
+#define CR_PHYMUX_26		WF_PHY_BASE + 0x4268
+#define CR_PHYMUX_27		WF_PHY_BASE + 0x426C
 
 #define CR_TXFD_0           WF_PHY_BASE + 0x4700
 #define CR_TXFD_1           WF_PHY_BASE + 0x4704

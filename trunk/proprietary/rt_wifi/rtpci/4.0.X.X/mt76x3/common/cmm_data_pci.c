@@ -96,7 +96,7 @@ BOOLEAN MonitorTxRing(RTMP_ADAPTER *pAd)
 	{
 		/* Check if TX DMA busy */
 		RTMP_IO_READ32(pAd, MT_WPDMA_GLO_CFG, &Value);
-	
+
 
 		if ((Value & TX_DMA_BUSY) == TX_DMA_BUSY)
 		{
@@ -110,7 +110,7 @@ BOOLEAN MonitorTxRing(RTMP_ADAPTER *pAd)
 			}
 
 			if (((Value & (1 << 8)) == 0) || ((Value & 0xf) == 0xf))
-			{			
+			{
 				pAd->TxDMACheckTimes = 0;
 				return FALSE;
 			}
@@ -142,7 +142,7 @@ BOOLEAN MonitorRxRing(RTMP_ADAPTER *pAd)
 	{
 		/* Check if RX DMA busy */
 		RTMP_IO_READ32(pAd, MT_WPDMA_GLO_CFG, &Value);
-	
+
 		if ((Value & RX_DMA_BUSY) == RX_DMA_BUSY)
 		{
 
@@ -203,16 +203,16 @@ BOOLEAN MonitorRxPse(RTMP_ADAPTER *pAd)
 			RemapBase = GET_REMAP_2_BASE(0x800c006c) << 19;
 			RemapOffset = GET_REMAP_2_OFFSET(0x800c006c);
 			RTMP_IO_WRITE32(pAd, MCU_PCIE_REMAP_2, RemapBase);
-	
+
 			RTMP_IO_WRITE32(pAd, 0x80000 + RemapOffset, 3);
 
 			RTMP_IO_READ32(pAd, 0x80000 + RemapOffset, &Value);
-		
+
 			if (pAd->PDMAWatchDogDbg)
 			{
 				DBGPRINT(RT_DEBUG_OFF, ("%s: check point 0, Value = %x\n", __FUNCTION__, Value));
-			}	
-	
+			}
+
 			if(((Value & (0x8001 << 16)) == (0x8001 << 16)) ||
 					((Value & (0xe001 << 16)) == (0xe001 << 16)) ||
 					((Value & (0x4001 << 16)) == (0x4001 << 16)))
@@ -398,8 +398,9 @@ USHORT RtmpPCI_WriteSingleTxResource(
 #endif
 	UINT32 BufBasePaLow;
 	RTMP_TX_RING *pTxRing;
+#if defined(RT_BIG_ENDIAN) && (defined(RTMP_MAC) || defined(RLT_MAC))
 	UINT tx_hw_hdr_len = pAd->chipCap.tx_hw_hdr_len; // TXWISize + TSO_SIZE
-
+#endif
 #ifdef MT_MAC
 #ifdef USE_BMC
 	if (pTxBlk->QueIdx == QID_BMC)
@@ -482,7 +483,7 @@ USHORT RtmpPCI_WriteSingleTxResource(
 #ifdef CONFIG_WIFI_TEST
 	pTxRing->Cell[TxIdx].DataOut = 1;
 	pTxRing->Cell[TxIdx].TimePeriod = 0;
-#endif	
+#endif
 
 	*FreeNumber -= 1;
 
@@ -507,9 +508,11 @@ USHORT RtmpPCI_WriteMultiTxResource(
 #endif
 	UINT32 BufBasePaLow;
 	RTMP_TX_RING *pTxRing;
+#if !defined(MT7603) && !defined(MT7628)
 	USHORT hwHdrLen;
+#endif
 	UINT32 firstDMALen = 0;
-	UINT8 TXWISize = pAd->chipCap.TXWISize;
+	//UINT8 TXWISize = pAd->chipCap.TXWISize;
 	UINT tx_hw_hdr_len = pAd->chipCap.tx_hw_hdr_len; // TXWISize + TSO_SIZE
 
 	ASSERT((pTxBlk->TxFrameType == TX_AMSDU_FRAME || pTxBlk->TxFrameType == TX_RALINK_FRAME));
@@ -547,7 +550,7 @@ USHORT RtmpPCI_WriteMultiTxResource(
 
 		hwHdrLen = pTxBlk->MpduHeaderLen + pTxBlk->HdrPadLen;
 
-		firstDMALen = TXWISize + hwHdrLen;
+		firstDMALen = pAd->chipCap.TXWISize + hwHdrLen;
 	}
 	else
 	{
@@ -600,7 +603,7 @@ USHORT RtmpPCI_WriteMultiTxResource(
 	if (pAd->chipCap.hif_type == HIF_RTMP || pAd->chipCap.hif_type == HIF_RLT)
 	{
 	if (frameNum == 0)
-		RTMPFrameEndianChange(pAd, (PUCHAR)(pDMAHeaderBufVA + TXWISize), DIR_WRITE, FALSE);
+		RTMPFrameEndianChange(pAd, (PUCHAR)(pDMAHeaderBufVA + pAd->chipCap.TXWISize), DIR_WRITE, FALSE);
 	if (frameNum != 0)
 		RTMPWIEndianChange(pAd, (PUCHAR)pDMAHeaderBufVA, TYPE_TXWI);
 	}
@@ -695,8 +698,9 @@ USHORT	RtmpPCI_WriteFragTxResource(
 #endif
 	UINT32 BufBasePaLow;
 	RTMP_TX_RING *pTxRing;
+#if defined(RT_BIG_ENDIAN) && (defined(RTMP_MAC) || defined(RLT_MAC))
 	UINT8 TXWISize = pAd->chipCap.TXWISize;
-
+#endif /* defined(RT_BIG_ENDIAN) && (defined(RTMP_MAC) || defined(RLT_MAC)) */
 	/* Get Tx Ring Resource*/
 	pTxRing = &pAd->TxRing[pTxBlk->QueIdx];
 	TxIdx = pAd->TxRing[pTxBlk->QueIdx].TxCpuIdx;
@@ -879,33 +883,33 @@ static VOID trPsTokenUpdate(RTMP_ADAPTER *pAd,UINT QueIdx,PNDIS_PACKET pPacket)
 {
 	struct tx_swq_fifo *fifo_swq;
 	STA_TR_ENTRY *tr_entry;
-	INT enq_idx;					
+	INT enq_idx;
 	UCHAR wcid;
 
-	wcid = RTMP_GET_PACKET_WCID(pPacket); 
+	wcid = RTMP_GET_PACKET_WCID(pPacket);
 
 	if(wcid < MAX_LEN_OF_TR_TABLE)
 	{
-	
+
 		tr_entry = &pAd->MacTab.tr_entry[wcid];
-		
-		if (tr_entry->tx_queue[QueIdx].Number == 0) 
+
+		if (tr_entry->tx_queue[QueIdx].Number == 0)
 		{
 			tr_entry->TokenCount[QueIdx] = 0;
 		} else
-		if ((tr_entry->ps_state == APPS_RETRIEVE_IDLE) && (tr_entry->TokenCount[QueIdx] > 0)) 
+		if ((tr_entry->ps_state == APPS_RETRIEVE_IDLE) && (tr_entry->TokenCount[QueIdx] > 0))
 		{
 			fifo_swq = &pAd->tx_swq[QueIdx];
 			enq_idx = fifo_swq->enqIdx;
 
-			if ((fifo_swq->swq[enq_idx] == 0) && (tr_entry->enq_cap)) 
+			if ((fifo_swq->swq[enq_idx] == 0) && (tr_entry->enq_cap))
 			{
 				fifo_swq->swq[enq_idx] = tr_entry->wcid;
 				INC_RING_INDEX(fifo_swq->enqIdx, TX_SWQ_FIFO_LEN);
 				TR_TOKEN_COUNT_DEC(tr_entry, QueIdx);
-			}				
+			}
 		}
-	} 
+	}
 }
 
 #endif
@@ -1487,8 +1491,9 @@ VOID RTMPHandleTTTTInterrupt(RTMP_ADAPTER *pAd)
 {
 //+++Add by Carter
 #ifdef MT_MAC
-	printk("%s\n", __func__);
+
 	volatile UINT32 en_cr, stat_cr;
+	printk("%s\n", __func__);
 
 	stat_cr = 0x00000000L;
 	en_cr = 0x00000000L;
@@ -1727,7 +1732,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 	NDIS_PHYSICAL_ADDRESS AllocPa;
 	BOOLEAN bReschedule = FALSE;
 	RTMP_DMACB *pRxCell;
-	UINT8 RXWISize = pAd->chipCap.RXWISize;
+	//UINT8 RXWISize = pAd->chipCap.RXWISize;
 	UINT8 rx_hw_hdr_len = pAd->chipCap.RXWISize;
 
 	pRxRing = &pAd->RxRing[RxRingNo];
@@ -1783,7 +1788,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 		else
 			pAd->DropInvalidPacket = 0;
 
-		if (pAd->DropInvalidPacket == 1)
+		if (pAd->DropInvalidPacket >= 1)
 		{
 			/* unmap the rx buffer*/
 			PCI_UNMAP_SINGLE(pAd, pRxCell->DmaBuf.AllocPa,
@@ -1840,7 +1845,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 	pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RX_BUFFER_AGGRESIZE, FALSE, &AllocVa, &AllocPa);
 #endif /* WLAN_SKB_RECYCLE */
 
-	if (pNewPacket && !pAd->RxRest)
+	if (pNewPacket && !pAd->RxReset)
 	{
 		/* unmap the rx buffer*/
 		PCI_UNMAP_SINGLE(pAd, pRxCell->DmaBuf.AllocPa,
@@ -1851,6 +1856,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 		pRxPacket = pRxCell->pNdisPacket;
 
 		pRxBlk->Flags = 0;
+		pRxBlk->PDMALen = pRxD->SDL0;
 #ifdef MT_MAC
 		if (pAd->chipCap.hif_type == HIF_MT) {
 			rx_hw_hdr_len = parse_rx_packet_type(pAd, pRxBlk, pRxPacket);
@@ -1878,7 +1884,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 		}
 
 		pRxCell->DmaBuf.AllocSize = RX_BUFFER_AGGRESIZE;
-		pRxCell->pNdisPacket = (PNDIS_PACKET) pNewPacket;
+		pRxCell->pNdisPacket = (PNDIS_PACKET)pNewPacket;
 		pRxCell->DmaBuf.AllocVa = AllocVa;
 		pRxCell->DmaBuf.AllocPa = AllocPa;
 
@@ -1896,7 +1902,14 @@ PNDIS_PACKET GetPacketFromRxRing(
 			RELEASE_NDIS_PACKET(pAd, pNewPacket, NDIS_STATUS_SUCCESS);
 		}
 
-		pAd->RxRest = 0;
+		pAd->RxResetDropCount++;
+
+		if (pAd->RxResetDropCount > 10)
+		{
+			pAd->RxReset = 0;
+			pAd->RxResetDropCount = 0;
+		}
+
 		pRxD->SDL0 = RX_BUFFER_AGGRESIZE;
 		pRxPacket = NULL;
 		bReschedule = TRUE;
@@ -2019,7 +2032,9 @@ NDIS_STATUS MlmeHardTransmitTxRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACKET
 	UINT32 SwIdx;
 	ULONG FreeNum;
 	MAC_TABLE_ENTRY *pMacEntry = NULL;
+#if defined(VHT_TXBF_SUPPORT) || (!defined(MT7603) && !defined(MT7628))
 	UINT8 TXWISize = pAd->chipCap.TXWISize;
+#endif /* defined(VHT_TXBF_SUPPORT) || (!defined(MT7603) && !defined(MT7628)) */
 	UINT8 tx_hw_hdr_len = pAd->chipCap.tx_hw_hdr_len;
 	HTTRANSMIT_SETTING *transmit, TransmitSetting;
 	MAC_TX_INFO mac_info;
@@ -2074,7 +2089,7 @@ NDIS_STATUS MlmeHardTransmitTxRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACKET
 		MlmeRate = pAd->CommonCfg.MlmeRate;
 
 	if (((pHeader_802_11->FC.Type == FC_TYPE_DATA) &&
-		(pHeader_802_11->FC.SubType == SUBTYPE_QOS_NULL)) || 
+		(pHeader_802_11->FC.SubType == SUBTYPE_QOS_NULL)) ||
 		((pHeader_802_11->FC.Type == FC_TYPE_CNTL) &&
 		(pHeader_802_11->FC.SubType == SUBTYPE_BLOCK_ACK_REQ)))
 	{
@@ -2239,7 +2254,7 @@ NDIS_STATUS MlmeHardTransmitTxRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACKET
 				mac_info.PID = PID_CTL_BAR;
 				mac_info.hdr_len = 16;
 				mac_info.SpeEn = 0;
-				mac_info.TID = pBar->BarControl.TID; 
+				mac_info.TID = pBar->BarControl.TID;
 				if (pAd->CommonCfg.Channel > 14)
 				{ /* 2.4G */
 					TransmitSetting.field.MODE = MODE_OFDM;
@@ -2296,7 +2311,7 @@ NDIS_STATUS MlmeHardTransmitTxRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACKET
 		RTMPWIEndianChange(pAd, tmac_info, TYPE_TXWI);
 #endif
 #endif
-	
+
 #ifdef VHT_TXBF_SUPPORT
 	if (pHeader_802_11->FC.Type == FC_TYPE_CNTL && pHeader_802_11->FC.SubType == SUBTYPE_VHT_NDPA)
 	{
@@ -2346,7 +2361,7 @@ NDIS_STATUS MlmeHardTransmitTxRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACKET
 	INC_RING_INDEX(pAd->TxRing[QueIdx].TxCpuIdx, TX_RING_SIZE);
 
 #ifdef CONFIG_TRACE_SUPPORT
-	TRACE_PCI_TX_RING_IDX("MlmeHardTransmitTxRing", QueIdx, pAd->TxRing[QueIdx].hw_desc_base, 
+	TRACE_PCI_TX_RING_IDX("MlmeHardTransmitTxRing", QueIdx, pAd->TxRing[QueIdx].hw_desc_base,
 		pAd->TxRing[QueIdx].TxCpuIdx, pAd->TxRing[QueIdx].TxDmaIdx, pAd->TxRing[QueIdx].TxSwFreeIdx);
 #endif
 
@@ -2452,8 +2467,7 @@ VOID RTMPHandleTxRing8DmaDoneInterrupt(RTMP_ADAPTER *pAd)
 /*	int 		 i;*/
 	UCHAR	FREE = 0;
 	RTMP_CTRL_RING *pCtrlRing = &pAd->CtrlRing;
-	UINT8 TXWISize = pAd->chipCap.TXWISize;
-	unsigned long flags;
+	//UINT8 TXWISize = pAd->chipCap.TXWISize;
 
 	NdisAcquireSpinLock(&pAd->CtrlRingLock);
 
@@ -2515,12 +2529,10 @@ VOID RTMPHandleBcnDmaDoneInterrupt(RTMP_ADAPTER *pAd)
 	UCHAR *tmac_info = NULL;
 
 #ifdef CONFIG_AP_SUPPORT
-DBGPRINT(RT_DEBUG_FPGA, ("-->%s():bcn_state=%d\n", __FUNCTION__, pAd->ApCfg.MBSSID[0].bcn_buf.bcn_state));
-#ifdef DBG
     BSS_STRUCT *pMbss = &pAd->ApCfg.MBSSID[0];
     UCHAR bss_idx = 0;
     UINT32   Lowpart, Highpart;
-#endif
+DBGPRINT(RT_DEBUG_FPGA, ("-->%s():bcn_state=%d\n", __FUNCTION__, pAd->ApCfg.MBSSID[0].bcn_buf.bcn_state));
 #endif /* CONFIG_AP_SUPPORT */
 
 	RTMP_SEM_LOCK(&pAd->BcnRingLock);
@@ -2552,7 +2564,6 @@ DBGPRINT(RT_DEBUG_FPGA, ("-->%s():bcn_state=%d\n", __FUNCTION__, pAd->ApCfg.MBSS
 		RTMP_DCACHE_FLUSH(pBcnRing->Cell[pBcnRing->TxSwFreeIdx].AllocPa, TXD_SIZE);
 
 #ifdef CONFIG_AP_SUPPORT//Carter commented for update beacon by TxS, instead of dma_done
-#ifdef DBG
 		// TODO: shiang-MT7603, big endian!!
 		if (tmac_info) {
 //+++Add by Carter for MT7603
@@ -2570,7 +2581,7 @@ DBGPRINT(RT_DEBUG_FPGA, ("-->%s():bcn_state=%d\n", __FUNCTION__, pAd->ApCfg.MBSS
 		NdisCopyMemory(&temp_txd1, txd_1, sizeof(TMAC_TXD_1));
 		*(((UINT32 *)&temp_txd1)) = SWAP32(*(((UINT32 *)&temp_txd1)));
 		txd_1 = &temp_txd1;
-#endif /* RT_BIG_ENDIAN */				
+#endif /* RT_BIG_ENDIAN */
 
 			if (txd_1->own_mac > 0x10 && txd_1->own_mac <= 0x1f)
 				bss_idx = txd_1->own_mac & 0x0f;
@@ -2592,7 +2603,6 @@ DBGPRINT(RT_DEBUG_FPGA, ("-->%s():bcn_state=%d\n", __FUNCTION__, pAd->ApCfg.MBSS
 		{
 			DBGPRINT(RT_DEBUG_ERROR, ("%s():Err, cannot found tmac_info!\n", __FUNCTION__));
 		}
-#endif /* DBG */
 #endif /* CONFIG_AP_SUPPORT */
 
 		INC_RING_INDEX(pBcnRing->TxSwFreeIdx, BCN_RING_SIZE);
@@ -2603,6 +2613,19 @@ DBGPRINT(RT_DEBUG_FPGA, ("-->%s():bcn_state=%d\n", __FUNCTION__, pAd->ApCfg.MBSS
 #endif
 
 	}
+
+    RTMP_IO_READ32(pAd, pBcnRing->hw_cidx_addr, &pBcnRing->TxCpuIdx);
+    if (pBcnRing->TxCpuIdx == pBcnRing->TxDmaIdx)
+    {
+        for(bss_idx=0; bss_idx<pAd->ApCfg.BssidNum; bss_idx++)
+        {
+            pMbss = &pAd->ApCfg.MBSSID[bss_idx];
+            if (pMbss->bcn_buf.bcn_state == BCN_TX_WRITE_TO_DMA) {
+                DBGPRINT(RT_DEBUG_ERROR, ("%s():idx:%d check cidx & didx\n", __func__, bss_idx));
+                pMbss->bcn_buf.bcn_state = BCN_TX_DMA_DONE;
+            }
+        }
+    }
 
 	RTMP_SEM_UNLOCK(&pAd->BcnRingLock);
 

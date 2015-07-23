@@ -34,7 +34,7 @@ INT32 MTShowPartialBBP(RTMP_ADAPTER *pAd, UINT32 Start, UINT32 End)
 	for (Offset = Start; Offset <= End; Offset += 4)
 	{
 		RTMP_IO_READ32(pAd, Offset, &Value);
-		DBGPRINT(RT_DEBUG_OFF, ("%s(): 0x%04x 0x%08x\n", __FUNCTION__, Offset, Value));
+		DBGPRINT(RT_DEBUG_OFF, ("%s():%u 0x%04x 0x%08x\n", __FUNCTION__, __LINE__, Offset, Value));
 	}
 
 	return TRUE;
@@ -48,7 +48,7 @@ INT32 MTShowAllBBP(RTMP_ADAPTER *pAd)
 	for (Offset = 0x10000; Offset <= 0x20000; Offset += 4)
 	{
 		RTMP_IO_READ32(pAd, Offset, &Value);
-		DBGPRINT(RT_DEBUG_OFF, ("%s(): 0x%04x 0x%08x\n", __FUNCTION__, Offset, Value));
+		DBGPRINT(RT_DEBUG_OFF, ("%s():%u 0x%04x 0x%08x\n", __FUNCTION__, __LINE__, Offset, Value));
 	}
 
 	return TRUE;

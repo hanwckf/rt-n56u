@@ -380,13 +380,12 @@
 
 #define MBSSID_MODE0 	0
 #define MBSSID_MODE1 	1	/* Enhance NEW MBSSID MODE mapping to mode 0 */
-#ifdef ENHANCE_NEW_MBSSID_MODE
+//Force selectable
 #define MBSSID_MODE2	2	/* Enhance NEW MBSSID MODE mapping to mode 1 */
 #define MBSSID_MODE3	3	/* Enhance NEW MBSSID MODE mapping to mode 2 */
 #define MBSSID_MODE4	4	/* Enhance NEW MBSSID MODE mapping to mode 3 */
 #define MBSSID_MODE5	5	/* Enhance NEW MBSSID MODE mapping to mode 4 */
 #define MBSSID_MODE6	6	/* Enhance NEW MBSSID MODE mapping to mode 5 */
-#endif /* ENHANCE_NEW_MBSSID_MODE */
 
 enum FREQ_CAL_INIT_MODE {
 	FREQ_CAL_INIT_MODE0,

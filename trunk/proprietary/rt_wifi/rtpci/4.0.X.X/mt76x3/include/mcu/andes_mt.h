@@ -157,6 +157,7 @@ enum EXT_CMD_TYPE {
 	EXT_CMD_PS_RETRIEVE_START = 0x14,
 	EXT_CMD_LED_CTRL=0x17,
 	EXT_CMD_EFUSE_BUFFER_MODE=0x21,
+	EXT_CMD_GET_THEMAL_SENSOR=0x2C,
 };
 
 /*
@@ -449,7 +450,7 @@ typedef struct _EXT_CMD_TX_POWER_CTRL_T {
 	UINT8 ucCenterChannel;
 	UINT8 ucTSSIEnable;
 	UINT8 ucTempCompEnable;
-	CHAR aucTargetPower[2];
+	UINT8 aucTargetPower[2];
 	UINT8 aucRatePowerDelta[14];
 	UINT8 ucBWPowerDelta;
 	UINT8 aucCHPowerDelta[6];
@@ -528,11 +529,12 @@ typedef struct _BIN_CONTENT_T {
 	UINT8          ucReserved;
 } BIN_CONTENT_T, *P_BIN_CONTENT_T;
 
+#define EFUSE_CONTENT_BUFFER_SIZE 0xff
 typedef struct _EXT_CMD_EFUSE_BUFFER_MODE_T {
 UINT8 ucSourceMode;
 UINT8 ucCount;
 UINT8 aucReserved[2];
-BIN_CONTENT_T aBinContent[70];
+	BIN_CONTENT_T aBinContent[EFUSE_CONTENT_BUFFER_SIZE];
 } EXT_CMD_EFUSE_BUFFER_MODE_T, *P_EXT_CMD_EFUSE_BUFFER_MODE_T;
 
 
@@ -540,6 +542,17 @@ enum {
 	 EEPROM_MODE_EFUSE=0,
 	 EEPROM_MODE_BUFFER=1,
 };
+
+typedef struct _EXT_CMD_GET_SENSOR_RESULT_T {
+	UINT8 ucActionIdx;
+	UINT8 aucReserved[3];
+} EXT_CMD_GET_SENSOR_RESULT_T, *P_EXT_CMD_GET_SENSOR_RESULT_T;
+
+typedef struct _EXT_EVENT_GET_SENSOR_RESULT_T
+{
+	UINT32 u4SensorResult;
+	UINT32 u4Reserved;
+} EXT_EVENT_GET_SENSOR_RESULT_T, *P_EXT_EVENT_GET_SENSOR_RESULT_T;
 
 #ifdef RT_BIG_ENDIAN
 typedef struct GNU_PACKED _LED_NMAC_CMD{
@@ -612,6 +625,7 @@ VOID CmdIOWrite32(struct _RTMP_ADAPTER *pAd, UINT32 Offset, UINT32 Value);
 VOID CmdIORead32(struct _RTMP_ADAPTER *pAd, UINT32 Offset, UINT32 *Value);
 VOID CmdEfusBufferModeSet(struct _RTMP_ADAPTER *pAd);
 VOID CmdSetTxPowerCtrl(struct _RTMP_ADAPTER *pAd, UINT8 central_chl);
+VOID CmdGetThemalSensorResult(struct _RTMP_ADAPTER *pAd, UINT8 option);
 INT AndesLedOP(struct _RTMP_ADAPTER *pAd,UCHAR LedIdx,UCHAR LinkStatus);
 #endif /* __ANDES_MT_H__ */
 

@@ -1,5 +1,27 @@
 Release Note:
 
+[V4.0.0.8]
+1. Fixed Single-SKU bug & Support Tx Power %
+2. Fix Big-Endian platform beacon capbility is not correct.
+3. Fix MacRepeater is not working.
+4. MT7603 thermal sensor command support, Add fw cmd EXT_CMD_ID_GET_SENSOR_RESULT for supporting
+5. Fix TMP_SPIN_UNLOCK_IRQRESTORE of lock issue.
+6. Correct QoS index when received retrieved packet in UAPSD case.
+7. Bug fixed: correct the BAR refresh index.
+8. Correct Rx filter setting to receive apcli multicast frames.
+9. Reassign Rx BA Windown size setting: enlarge to 64.
+10. Bug fixed: fix When APUT turn on IGMP, and exceed the queue length, the APUT will crash (skb currupt).
+11. Bug fixed: fix the APUT send the wrong BAR address2 to peer side, and let the traffic loss.
+12. Bug fixed: fix the DBG flag off will lead function not work.
+13. Bug fixed: Fix Win7 STA with APUT as enrollee (PBC) popup wrong icon issue.
+14. Correct config for MCAST_RATE_SPECIFIC.
+15. Correct 802.11QoS index before packet header changed to 802.3.
+16. Fixed AP PS retrieve bug. When write PS CR fail, the ps state is wrong.
+17. Correct device_id reading endian.
+18. COEX: Call MT7662ReceCoexFromOtherCHip for 7603+7612 channel communicate.
+19. Fix big-endian k-free issue. 
+
+
 [V4.0.0.7]
 Host Driver:
 1. Bug fixed for TGn 4.2.12 PMK caching and 4.2.11 pre-authentication issue.

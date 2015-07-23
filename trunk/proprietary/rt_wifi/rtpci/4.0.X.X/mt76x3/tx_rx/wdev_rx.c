@@ -612,7 +612,9 @@ VOID rx_eapol_frm_handle(
 	UCHAR *pTmpBuf;
 	BOOLEAN to_mlme = TRUE, to_daemon = FALSE;
 	struct wifi_dev *wdev;
+#if defined(WPA_SUPPLICANT_SUPPORT) && defined(CONFIG_AP_SUPPORT)
 	STA_TR_ENTRY *tr_entry;
+#endif/*defined(WPA_SUPPLICANT_SUPPORT) && defined(CONFIG_AP_SUPPORT)*/
 
 	ASSERT(wdev_idx < WDEV_NUM_MAX);
 	if (wdev_idx >= WDEV_NUM_MAX)
@@ -727,7 +729,6 @@ VOID rx_eapol_frm_handle(
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
-TO_MLME:
 	/*
 	   Special DATA frame that has to pass to MLME
 	   1. Cisco Aironet frames for CCX2. We need pass it to MLME for special process
@@ -751,7 +752,7 @@ TO_MLME:
 			      pRxBlk->DataSize));
 	}
 
-TO_DAEMON:
+
 	if (to_daemon == TRUE)
 	{
 		Indicate_Legacy_Packet(pAd, pRxBlk, wdev_idx);
@@ -1044,7 +1045,7 @@ VOID dev_rx_ctrl_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 //+++Add by shiang for debug
 // TODO: shiang-MT7603, remove this!
 			{
-				UCHAR *ptr, *ra, *ta, *bainfo;
+				UCHAR *ptr, *ra, *ta/*, *bainfo*/;
 				BA_CONTROL *ba_ctrl;
 				DBGPRINT(RT_DEBUG_OFF, ("%s():BlockAck From WCID:%d\n", __FUNCTION__, pRxBlk->wcid));
 
@@ -1390,7 +1391,6 @@ VOID rx_data_frm_announce(
 	UCHAR *pData = pRxBlk->pData;
 	UINT data_len = pRxBlk->DataSize;
 	UCHAR wdev_idx = wdev->wdev_idx;
-	STA_TR_ENTRY *tr_entry;
 
 	ASSERT(wdev_idx < WDEV_NUM_MAX);
 	if (wdev_idx >= WDEV_NUM_MAX) {
@@ -1522,6 +1522,65 @@ VOID rx_data_frm_announce(
 			rx_eapol_frm_handle(pAd, pEntry, pRxBlk, wdev_idx);
 		}
 	}
+}
+
+
+
+#define SN_NQOS_INDEX 8
+static INT rx_chk_duplicate_frame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
+{
+	HEADER_802_11 *pHeader = pRxBlk->pHeader;
+	FRAME_CONTROL *pFmeCtrl = &pHeader->FC;
+	UCHAR up = pRxBlk->UserPriority;
+	UCHAR wcid = pRxBlk->wcid;
+	STA_TR_ENTRY *trEntry= NULL;
+	INT sn = pHeader->Sequence;
+
+	/*check if AMPDU frame ignore it, since AMPDU wil handle reorder problem and AMSDU is the set of AMPDU*/
+	if(RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU) || RX_BLK_TEST_FLAG(pRxBlk,fRX_AMSDU))
+	{
+		return NDIS_STATUS_SUCCESS;
+	}
+
+	/*check is vaild sta entry*/
+	if(wcid >= MAX_LEN_OF_TR_TABLE)
+	{
+		return NDIS_STATUS_SUCCESS;
+	}
+
+	/*check sta tr entry is exist*/
+	trEntry = &pAd->MacTab.tr_entry[wcid];
+	if(!trEntry)
+	{
+		return NDIS_STATUS_SUCCESS;
+	}
+	/*check frame is QoS or Non-QoS frame*/
+	if(!(pFmeCtrl->SubType & 0x08))
+	{
+		up = SN_NQOS_INDEX;
+	}
+
+	/*check is not retry frame or check sn is duplicate or not, update sn only*/
+	if(!pFmeCtrl->Retry || trEntry->cacheSn[up] != sn)
+	{
+		/*update cache*/
+		trEntry->cacheSn[up] = sn;
+		return NDIS_STATUS_SUCCESS;
+	}
+
+	if(pFmeCtrl->Retry)
+	{
+		return NDIS_STATUS_SUCCESS;
+	}
+
+	/* Middle/End of fragment */
+	if (pHeader->Frag && pHeader->Frag != pAd->FragFrame.LastFrag)
+	{
+		return NDIS_STATUS_SUCCESS;
+	}
+
+	/*is duplicate frame, should return failed*/
+	return NDIS_STATUS_FAILURE;
 }
 
 
@@ -1717,6 +1776,15 @@ VOID dev_rx_data_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 		pRxBlk->DataSize -= 2;
 	}
 	pRxBlk->UserPriority = UserPriority;
+
+	
+	/*check if duplicate frame, ignore it and then drop*/
+	if(rx_chk_duplicate_frame(pAd,pRxBlk) == NDIS_STATUS_FAILURE)
+	{
+	        DBGPRINT(RT_DEBUG_ERROR, ("%s(): duplicate frame drop it!\n", __FUNCTION__));
+		goto drop;
+	}
+
 
 
 	/* 3. Order bit: A-Ralink or HTC+ */
@@ -1993,7 +2061,6 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 	{
 		if ((RTMP_TEST_FLAG(pAd, (fRTMP_ADAPTER_RADIO_OFF |
 								fRTMP_ADAPTER_RESET_IN_PROGRESS |
-								fRTMP_ADAPTER_HALT_IN_PROGRESS |
 								fRTMP_ADAPTER_NIC_NOT_EXIST)) ||
 				(!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_START_UP))
 			)
@@ -2053,6 +2120,16 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
                 }
 		if (pRxPacket == NULL)
 			break;
+
+		/* Fix Rx Ring FULL lead DMA Busy, when DUT is in reset stage */
+		if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS))
+		{
+			if (pRxPacket)
+			{
+				RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_SUCCESS);
+				continue;
+			}
+		}
 
 		/* get rx descriptor and data buffer */
 		pHeader = rxblk.pHeader;
@@ -2193,6 +2270,17 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 		}
 #endif /* CONFIG_ATE */
 
+#if  defined(CONFIG_STA_SUPPORT) || defined(CONFIG_AP_SUPPORT)
+#ifdef CONFIG_SNIFFER_SUPPORT
+		if(MONITOR_ON(pAd))
+		{			
+
+
+			STA_MonPktSend(pAd, &rxblk);
+			continue;
+		}
+#endif /* CONFIG_SNIFFER_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef STATS_COUNT_SUPPORT
 		INC_COUNTER64(pAd->WlanCounters.ReceivedFragmentCount);

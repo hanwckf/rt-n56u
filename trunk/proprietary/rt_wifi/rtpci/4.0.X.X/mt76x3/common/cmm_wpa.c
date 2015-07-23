@@ -916,7 +916,8 @@ VOID WPAStart4WayHS(
 		INC_UINT16_TO_ARRARY(pEapolFrame->Body_Len, 6 + LEN_PMKID);
 	}
 #ifdef DOT11W_PMF_SUPPORT
-        else if (pEntry->AuthMode == Ndis802_11AuthModeWPA2PSK)
+        else if ((pEntry->AuthMode == Ndis802_11AuthModeWPA2PSK)
+        	&& (CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_PMF_CAPABLE)))
         {
                 UCHAR digest[80], PMK_key[20];
                 PKEY_DESCRIPTER  pKeyDesc = &pEapolFrame->KeyDesc;
@@ -2012,6 +2013,15 @@ VOID MlmeDeAuthAction(
 
 	/* send wireless event - for send disassication */
 	RTMPSendWirelessEvent(pAd, IW_DEAUTH_EVENT_FLAG, pEntry->Addr, pEntry->wdev->wdev_idx, 0);
+
+#ifdef ALL_NET_EVENT
+		wext_send_event(pEntry->wdev->if_dev,
+			pEntry->Addr,
+			pEntry->bssid,
+			pAd->CommonCfg.Channel,
+			RTMPAvgRssi(pAd, &pEntry->RssiSample),
+			FBT_LINK_OFFLINE_NOTIFY);
+#endif /* ALL_NET_EVENT */
 
 	DBGPRINT(RT_DEBUG_TRACE,
 				("Send DEAUTH frame with ReasonCode(%d) to %02x:%02x:%02x:%02x:%02x:%02x \n",
@@ -3669,9 +3679,17 @@ BOOLEAN RTMPParseEapolKeyData(
 
             WPAInstallSharedKey(pAd,
                 pApcli_entry->GroupCipher,
+#ifdef MULTI_APCLI_SUPPORT
+		pEntry->func_tb_idx,
+#else /* MULTI_APCLI_SUPPORT */
                 BSS0,
+#endif /* !MULTI_APCLI_SUPPORT */
                 DefaultIdx,
+#ifdef MULTI_APCLI_SUPPORT
+                APCLI_MCAST_WCID(IfIdx),
+#else /* MULTI_APCLI_SUPPORT */
                 APCLI_MCAST_WCID,
+#endif /* !MULTI_APCLI_SUPPORT */
                 FALSE,
                 GTK,
                 GTKLEN);
@@ -4990,12 +5008,21 @@ VOID WPAInstallSharedKey(
 	}
 
 #if (defined(MT_MAC) && defined(APCLI_SUPPORT))
+#ifdef MULTI_APCLI_SUPPORT
+    if (Wcid == APCLI_MCAST_WCID(BssIdx))
+    {
+        PAPCLI_STRUCT pApCliEntry = NULL;
+        pApCliEntry = &pAd->ApCfg.ApCliTab[BssIdx];
+        pSharedKey = &pApCliEntry->SharedKey[KeyIdx];
+    }
+#else /* MULTI_APCLI_SUPPORT */
     if (Wcid == APCLI_MCAST_WCID)
     {
         PAPCLI_STRUCT pApCliEntry = NULL;
         pApCliEntry = &pAd->ApCfg.ApCliTab[0];//TODO: Carter, find a better way to know index.
         pSharedKey = &pApCliEntry->SharedKey[KeyIdx];
     }
+#endif /* !MULTI_APCLI_SUPPORT */
     else
 #endif
     {

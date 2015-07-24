@@ -149,6 +149,7 @@ int ssl_exit(http_t *client)
 #endif
 }
 
+#ifdef ENABLE_SSL
 static ssize_t
 ssl_read_socket(SSL* ssl, char *buf, size_t len)
 {
@@ -214,6 +215,7 @@ write_out:
 
 	return (ssize_t)total;
 }
+#endif
 
 int ssl_send(http_t *client, const char *buf, int len)
 {

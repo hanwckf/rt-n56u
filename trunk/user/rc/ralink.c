@@ -667,9 +667,10 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 			if (strcasecmp(p_str, "US") == 0 ||
 			    strcasecmp(p_str, "TW") == 0 ||
 			    strcasecmp(p_str, "JP") == 0) { // Use FCC fallback rule yet
-				spec_fallback = "FCC";
 				if (strcasecmp(regspec, "NCC") == 0)
 					sku_exist = check_sku_file_exist("", "NCC", sku_link, sizeof(sku_link));
+				if (!sku_exist)
+					sku_exist = check_sku_file_exist("", "FCC", sku_link, sizeof(sku_link));
 			} else {
 				if (strcasecmp(regspec, "AU") == 0)
 					sku_exist = check_sku_file_exist("", "AU", sku_link, sizeof(sku_link));
@@ -702,13 +703,15 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 			    strcasecmp(p_str, "TW") == 0 ||
 			    strcasecmp(p_str, "JP") == 0 || // Use FCC fallback rule yet
 			    strcasecmp(p_str, "DB") == 0) {
-				spec_fallback = "FCC";
 				if (strcasecmp(regspec, "NCC") == 0)
 					sku_exist = check_sku_file_exist("_5G", "NCC", sku_link, sizeof(sku_link));
 				else if (strcasecmp(regspec, "SG") == 0)
 					sku_exist = check_sku_file_exist("_5G", "SG", sku_link, sizeof(sku_link));
 				else if (strcasecmp(regspec, "AU") == 0)
 					sku_exist = check_sku_file_exist("_5G", "AU", sku_link, sizeof(sku_link));
+				
+				if (!sku_exist)
+					sku_exist = check_sku_file_exist("_5G", "FCC", sku_link, sizeof(sku_link));
 			}
 			
 			if (!sku_exist)

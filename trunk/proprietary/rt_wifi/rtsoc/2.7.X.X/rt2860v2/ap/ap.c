@@ -2568,7 +2568,7 @@ BOOLEAN DOT1X_InternalCmdAction(
 	else
 	{
 		/* Fake a Source Address for transmission */
-		NdisMoveMemory(s_addr, pAd->ApCfg.MBSSID[apidx].Bssid, MAC_ADDR_LENGTH);
+		NdisMoveMemory(s_addr, pAd->ApCfg.MBSSID[apidx].Bssid, MAC_ADDR_LEN);
 		s_addr[0] |= 0x80;
 	}
 

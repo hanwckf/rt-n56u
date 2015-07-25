@@ -1160,7 +1160,7 @@ VOID MlmePeriodicExec(
 		{
 			if (pAd->Mlme.PeriodicRound %MLME_TASK_EXEC_MULTIPLE == 0)
 			{
-				UCHAR BbpReg = 0, bbp_196 = 0;
+				UCHAR BbpReg = 0;
 
 				RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R66, &BbpReg);
 

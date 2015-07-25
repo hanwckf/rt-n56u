@@ -1301,7 +1301,7 @@ USHORT APBuildAssociation(
 /*	UCHAR 		KeyIdx; */
 #ifdef HOSTAPD_SUPPORT
 	UCHAR Addr[6];
-	NdisMoveMemory(Addr,pEntry->Addr,MAC_ADDR_LENGTH);
+	NdisMoveMemory(Addr,pEntry->Addr,MAC_ADDR_LEN);
 #endif /*HOSTAPD_SUPPORT*/
     switch (MaxSupportedRateIn500Kbps)
     {

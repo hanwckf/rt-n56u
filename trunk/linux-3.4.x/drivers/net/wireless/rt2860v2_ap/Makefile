@@ -53,8 +53,10 @@ rt2860v2_ap-objs += ../rt2860v2/ap/ap_sync.o
 rt2860v2_ap-objs += ../rt2860v2/ap/ap_wpa.o
 rt2860v2_ap-objs += ../rt2860v2/ap/ap_data.o
 rt2860v2_ap-objs += ../rt2860v2/ap/ap_autoChSel.o
-rt2860v2_ap-objs += ../rt2860v2/ap/ap_qload.o
 rt2860v2_ap-objs += ../rt2860v2/ap/ap_cfg.o
+ifeq ($(CONFIG_RT2860V2_AP_QLOAD),y)
+rt2860v2_ap-objs += ../rt2860v2/ap/ap_qload.o
+endif
 
 rt2860v2_ap-objs += ../rt2860v2/os/linux/rt_proc.o
 rt2860v2_ap-objs += ../rt2860v2/os/linux/rt_linux.o
@@ -154,6 +156,10 @@ rt2860v2_ap-objs += ../rt2860v2/common/wapi_crypt.obj
 rt2860v2_ap-objs += ../rt2860v2/common/wapi_sms4.obj
 endif
 
+ifeq ($(CONFIG_RT2860V2_AP_BAND_STEERING),y)
+rt2860v2_ap-objs += ../rt2860v2/ap/ap_band_steering.o
+endif
+
 rt2860v2_ap-objs += ../rt2860v2/chips/rtmp_chip.o
 rt2860v2_ap-objs += ../rt2860v2/common/rt_rf.o
 
@@ -221,7 +227,9 @@ EXTRA_CFLAGS += -DEEPROM_COUNTRY_UNLOCK
 #EXTRA_CFLAGS += -DIAPP_SUPPORT
 
 # provide information on the current STA population and traffic levels in the QBSS
-#EXTRA_CFLAGS += -DAP_QLOAD_SUPPORT -DQLOAD_FUNC_BUSY_TIME_STATS
+ifeq ($(CONFIG_RT2860V2_AP_QLOAD),y)
+EXTRA_CFLAGS += -DAP_QLOAD_SUPPORT -DQLOAD_FUNC_BUSY_TIME_STATS
+endif
 
 ifneq ($(CONFIG_RA_HW_NAT_WIFI),y)
 EXTRA_CFLAGS += -DCONFIG_RA_NAT_NONE
@@ -396,6 +404,10 @@ endif
 
 ifeq ($(CONFIG_RT2860V2_AP_GREENAP),y)
 EXTRA_CFLAGS += -DGREENAP_SUPPORT
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_BAND_STEERING),y)
+EXTRA_CFLAGS += -DBAND_STEERING
 endif
 
 ifeq ($(CONFIG_RT2860V2_AP_EXT_CHANNEL_LIST),y)

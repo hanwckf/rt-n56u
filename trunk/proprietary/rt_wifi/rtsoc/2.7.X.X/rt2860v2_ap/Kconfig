@@ -5,11 +5,11 @@ config RT2860V2_AP
 	select WEXT_PRIV
 
 config  RT2860V2_AP_LED
-	bool "LED Support"
+	bool "LED support"
 	depends on RT2860V2_AP
 
 config  RT2860V2_AP_LED_SOFT
-	bool "Soft LED Support"
+	bool "Soft LED support"
 	depends on RT2860V2_AP && !RT2860V2_AP_LED && RALINK_GPIO_LED
 	default n
 
@@ -46,11 +46,11 @@ config  RT2860V2_AP_MBSS_NEW_MBSSID_MODE
 	depends on RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620
 
 config  RT2860V2_AP_APCLI
-	bool "AP-CLient Support"
+	bool "AP-Client support"
 	depends on RT2860V2_AP
 
 config  RT2860V2_AP_MAC_REPEATER
-	bool "MAC Repeater Support"
+	bool "MAC Repeater support"
 	depends on RT2860V2_AP_APCLI
 	depends on RALINK_MT7620
 	default n
@@ -70,20 +70,25 @@ config  RT2860V2_AP_CARRIER
 	help
 	Carrier Sense Multi-Access/Collision Detection.
 
+#config  RT2860V2_AP_BAND_STEERING
+#	bool "Band Steering support"
+#	depends on RT2860V2_AP
+#	default n
+
 #config  RT2860V2_AP_EXT_CHANNEL_LIST
 #	bool "Extension Channel List"
 #	depends on RT2860V2_AP
 
 config  RT2860V2_AP_DLS
-	bool "DLS (Direct-Link Setup) Support"
+	bool "DLS (Direct-Link Setup) support"
 	depends on RT2860V2_AP
 
 config  RT2860V2_AP_IDS
-	bool "IDS (Intrusion Detection System) Support"
+	bool "IDS (Intrusion Detection System) support"
 	depends on RT2860V2_AP
 
 config  RT2860V2_AP_ANTENNA_DIVERSITY
-	bool "Antenna Diversity Support"
+	bool "Antenna Diversity support"
 	depends on RT2860V2_AP
 	depends on RALINK_RT5350
 
@@ -96,7 +101,7 @@ config  RT2860V2_AP_VIDEO_TURBINE
 	depends on RT2860V2_AP
 
 config  RT2860V2_AP_TXBF
-	bool "Tx Beam Forming Support (Only 3883)"
+	bool "Tx Beam Forming support (Only 3883)"
 	depends on RT2860V2_AP
 	depends on RALINK_RT3883
 
@@ -164,7 +169,7 @@ config  RT2860V2_AP_SINGLE_SKU
 	depends on RT2860V2_AP
 
 #config  RT2860V2_AP_SNMP
-#	bool "Net-SNMP Support"
+#	bool "Net-SNMP support"
 #	depends on RT2860V2_AP
 
 #config  RT2860V2_AP_BRIDGE_FASTPATH
@@ -175,6 +180,11 @@ config  RT2860V2_AP_MEMORY_OPTIMIZATION
 	bool "Memory Optimization"
 	depends on RT2860V2_AP
 	default n
+
+#config  RT2860V2_AP_QLOAD
+#	bool "Provide information on the current STA population and traffic levels in the QBSS"
+#	default n
+#	depends on RT2860V2_AP
 
 config  RT2860V2_AP_ATE
 	bool "Provide ATE testmode commands support"

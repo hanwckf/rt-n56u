@@ -42,6 +42,19 @@ config  RT2860V2_STA_VIDEO_TURBINE
 	bool "Video Turbine support"
 	depends on RT2860V2_STA
 
+choice
+	prompt "Choose Power Design"
+	depends on RT2860V2_STA
+	depends on RALINK_MT7620
+	default INTERNAL_PA_INTERNAL_LNA
+config  INTERNAL_PA_INTERNAL_LNA
+	bool "Internal PA and Internal LNA"
+config  INTERNAL_PA_EXTERNAL_LNA
+	bool "Internal PA and External LNA"
+config  EXTERNAL_PA_EXTERNAL_LNA
+	bool "External PA and External LNA"
+endchoice
+
 config  RT2860V2_STA_RTMP_INTERNAL_TX_ALC
 	bool "TSSI Compensation"
 	depends on RT2860V2_STA

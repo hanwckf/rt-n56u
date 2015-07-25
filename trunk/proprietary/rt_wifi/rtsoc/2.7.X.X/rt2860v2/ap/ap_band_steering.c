@@ -55,6 +55,10 @@ INT Set_BndStrg_Enable(
 
 	if (table->Ops)
 		table->Ops->SetEnable(table, enable);
+	else if (enable) {
+		pAd->ApCfg.BandSteering = TRUE;
+		BndStrg_Init(pAd);
+	}
 
 	return TRUE;
 }
@@ -217,11 +221,6 @@ INT BndStrg_Release(PRTMP_ADAPTER pAd)
 
 	if ((table->b2GInfReady == FALSE && table->b5GInfReady == FALSE))
 		ret_val = BndStrg_TableRelease(table);
-	if (ret_val != BND_STRG_SUCCESS)
-	{
-		BND_STRG_DBGPRINT(RT_DEBUG_ERROR,
-					("Error in %s(), error code = %d!\n", __FUNCTION__, ret_val));
-	}
 
 	return ret_val;
 }
@@ -236,12 +235,6 @@ INT BndStrg_TableRelease(PBND_STRG_CLI_TABLE table)
 	
 	OS_NdisFreeSpinLock(&table->Lock);
 	table->bInitialized = FALSE;
-
-	if (ret_val != BND_STRG_SUCCESS)
-	{
-		BND_STRG_DBGPRINT(RT_DEBUG_ERROR,
-					("Error in %s(), error code = %d!\n", __FUNCTION__, ret_val));
-	}
 
 	return ret_val;
 }
@@ -686,7 +679,7 @@ static INT D_SetEnable(
 	DBGPRINT(RT_DEBUG_OFF, 
 			("%s(): enable = %u\n", __FUNCTION__,  enable));
 
-	if (!(table->bEnabled ^ enable))
+	if (!(pAd->ApCfg.BandSteering ^ enable))
 	{
 		/* Already enabled/disabled */
 		BND_STRG_DBGPRINT(RT_DEBUG_OFF, /* TRACE */
@@ -695,7 +688,7 @@ static INT D_SetEnable(
 		return BND_STRG_SUCCESS;
 	}
 
-	pAd->ApCfg.BandSteering = enable;
+	pAd->ApCfg.BandSteering = (enable) ? TRUE : FALSE;
 
 	if (enable)
 		ret_val = BndStrg_Init(pAd);
@@ -847,7 +840,7 @@ static VOID D_MsgHandle(
 
 }
 
-static BNDSTRG_OPS D_BndStrgOps = {
+BNDSTRG_OPS D_BndStrgOps = {
 	.ShowTableInfo = D_ShowTableInfo,
 	.ShowTableEntries = D_ShowTableEntries,
 	.TableEntryAdd = BndStrg_InsertEntry,

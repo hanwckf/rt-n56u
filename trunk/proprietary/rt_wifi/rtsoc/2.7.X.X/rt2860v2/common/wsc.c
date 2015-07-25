@@ -7087,18 +7087,7 @@ VOID WscStop(
 	RTMPSetLED(pAd, WPSLEDStatus);
 #endif /* WSC_LED_SUPPORT */
 
-#ifdef CONFIG_AP_SUPPORT
-	if (CurOpMode == AP_MODE)
-	{
-#ifdef APCLI_SUPPORT
-		if (!bFromApCli)
-#endif /* APCLI_SUPPORT */
-		{
-			pAd->ApCfg.MBSSID[apidx].WscIEBeacon.ValueLen = 0;
-			pAd->ApCfg.MBSSID[apidx].WscIEProbeResp.ValueLen = 0;
-		}
-	}
-#endif /* CONFIG_AP_SUPPORT */
+
 }
 
 #ifdef CON_WPS

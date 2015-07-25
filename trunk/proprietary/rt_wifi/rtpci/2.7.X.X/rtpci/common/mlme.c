@@ -2934,6 +2934,12 @@ BOOLEAN MlmeEnqueue(
 
 	NdisAcquireSpinLock(&(Queue->Lock));
 	Tail = Queue->Tail;
+	/* Double check for safety multi-thread system. */
+	if (Queue->Entry[Tail].Occupied)
+	{
+		NdisReleaseSpinLock(&(Queue->Lock));
+		return FALSE;
+	}
 	Queue->Tail++;
 	Queue->Num++;
 	if (Queue->Tail == MAX_LEN_OF_MLME_QUEUE) 
@@ -3071,6 +3077,12 @@ BOOLEAN MlmeEnqueueForRecv(
 
 	NdisAcquireSpinLock(&(Queue->Lock));
 	Tail = Queue->Tail;
+	/* Double check for safety multi-thread system. */
+	if (Queue->Entry[Tail].Occupied)
+	{
+		NdisReleaseSpinLock(&(Queue->Lock));
+		return FALSE;
+	}
 	Queue->Tail++;
 	Queue->Num++;
 	if (Queue->Tail == MAX_LEN_OF_MLME_QUEUE) 
@@ -3152,6 +3164,12 @@ BOOLEAN MlmeEnqueueForWsc(
     /* OK, we got all the informations, it is time to put things into queue*/
 	NdisAcquireSpinLock(&(Queue->Lock));
     Tail = Queue->Tail;
+    /* Double check for safety multi-thread system. */
+    if (Queue->Entry[Tail].Occupied)
+    {
+        NdisReleaseSpinLock(&(Queue->Lock));
+        return FALSE;
+    }
     Queue->Tail++;
     Queue->Num++;
     if (Queue->Tail == MAX_LEN_OF_MLME_QUEUE) 
@@ -3302,7 +3320,7 @@ BOOLEAN MlmeQueueFull(
 	if (SendId == 0)
 		Ans = ((Queue->Num >= (MAX_LEN_OF_MLME_QUEUE / 2)) || Queue->Entry[Queue->Tail].Occupied);
 	else
-		Ans = (Queue->Num == MAX_LEN_OF_MLME_QUEUE);
+		Ans = (Queue->Num == MAX_LEN_OF_MLME_QUEUE)  || Queue->Entry[Queue->Tail].Occupied;
 	NdisReleaseSpinLock(&(Queue->Lock));
 
 	return Ans;

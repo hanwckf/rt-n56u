@@ -325,28 +325,15 @@ typedef spinlock_t			OS_NDIS_SPIN_LOCK;
 #define OS_NdisFreeSpinLock(lock)				\
 	do{}while(0)
 
-#ifdef MULTI_CORE_SUPPORT
 #define OS_SEM_LOCK(__lock)						\
-    {                                               \
-        spin_lock_irq((spinlock_t *)(__lock));      \
-    }
-    
-#define OS_SEM_UNLOCK(__lock)					\
-    {                                               \
-        spin_unlock_irq((spinlock_t *)(__lock));        \
-    }
-#else
-#define OS_SEM_LOCK(__lock)						\
-		{												\
-			spin_lock_bh((spinlock_t *)(__lock));		\
-		}
+{												\
+	spin_lock_bh((spinlock_t *)(__lock));		\
+}
 
 #define OS_SEM_UNLOCK(__lock)					\
-		{												\
-			spin_unlock_bh((spinlock_t *)(__lock));		\
-		}
-#endif /* MULTI_CORE_SUPPORT */
-
+{												\
+	spin_unlock_bh((spinlock_t *)(__lock));		\
+}
 
 /* sample, use semaphore lock to replace IRQ lock, 2007/11/15 */
 #ifdef MULTI_CORE_SUPPORT

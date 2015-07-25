@@ -2054,7 +2054,7 @@ ra_dma_addr_t RtmpDrvPciMapSingle(
 	{
 		TX_BLK *pTxBlk = (TX_BLK *)(ptr);
 		return (pTxBlk->SrcBufLen) ? linux_pci_map_single(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
-					pTxBlk->pSrcBufData, pTxBlk->SrcBufLen, 0, direction):(ra_dma_addr_t)NULL;
+					pTxBlk->pSrcBufData, pTxBlk->SrcBufLen, 0, direction):(ra_dma_addr_t)0;
 	}
 	else
 		return linux_pci_map_single(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,

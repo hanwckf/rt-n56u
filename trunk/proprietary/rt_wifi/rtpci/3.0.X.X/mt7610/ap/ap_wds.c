@@ -632,7 +632,10 @@ VOID WdsPeerBeaconProc(
 		if (ClientRalinkIe & 0x00000004)
 			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_RALINK_CHIPSET);
 		else
+		{
 			CLIENT_STATUS_CLEAR_FLAG(pEntry, fCLIENT_STATUS_RALINK_CHIPSET);
+			CLIENT_STATUS_CLEAR_FLAG(pEntry, fCLIENT_STATUS_RDG_CAPABLE);
+		}
 			
 		if (pAd->CommonCfg.bAggregationCapable)
 		{
@@ -699,6 +702,8 @@ VOID WdsPeerBeaconProc(
 				CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_HTC_CAPABLE);
 			if (pAd->CommonCfg.bRdg && pHtCapability->ExtHtCapInfo.RDGSupport)
 				CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_RDG_CAPABLE);	
+			else
+				CLIENT_STATUS_CLEAR_FLAG(pEntry, fCLIENT_STATUS_RDG_CAPABLE);
 			if (pHtCapability->ExtHtCapInfo.MCSFeedback == 0x03)
 				CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_MCSFEEDBACK_CAPABLE);
 

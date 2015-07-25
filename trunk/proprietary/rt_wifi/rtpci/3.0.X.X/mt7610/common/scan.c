@@ -95,9 +95,10 @@ INT scan_ch_restore(RTMP_ADAPTER *pAd, UCHAR OpMode)
 			APStartUp(pAd);
 		}
 
-		if (((pAd->CommonCfg.Channel > 14) &&
+		if ((pAd->CommonCfg.Channel > 14) &&
 			(pAd->CommonCfg.bIEEE80211H == TRUE) &&
-			RadarChannelCheck(pAd, pAd->CommonCfg.Channel)))
+			RadarChannelCheck(pAd, pAd->CommonCfg.Channel) &&
+			pAd->Dot11_H.RDMode != RD_SWITCHING_MODE)
 		{
 			if (pAd->Dot11_H.InServiceMonitorCount)
 			{
@@ -287,7 +288,7 @@ static INT scan_active(RTMP_ADAPTER *pAd, UCHAR OpMode, UCHAR ScanType)
 #ifdef DOT11_VHT_AC
 	if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode) &&
 		(pAd->MlmeAux.Channel > 14)) {		
-		FrameLen += build_vht_ies(pAd, (UCHAR *)(frm_buf + FrameLen), SUBTYPE_PROBE_REQ);
+		FrameLen += build_vht_ies(pAd, (UCHAR *)(frm_buf + FrameLen), SUBTYPE_PROBE_REQ, pAd->CommonCfg.vht_max_mcs_cap);
 	}
 #endif /* DOT11_VHT_AC */
 
@@ -358,7 +359,7 @@ VOID ScanNextChannel(
 	UCHAR ScanType = pAd->MlmeAux.ScanType;
 	UINT ScanTimeIn5gChannel = SHORT_CHANNEL_TIME;
 	BOOLEAN ScanPending = FALSE;
-	RALINK_TIMER_STRUCT *sc_timer;
+	RALINK_TIMER_STRUCT *sc_timer = NULL;
 	UINT stay_time = 0;
 			
 
@@ -384,6 +385,25 @@ VOID ScanNextChannel(
 		AsicSwitchChannel(pAd, pAd->MlmeAux.Channel, TRUE);
 		AsicLockChannel(pAd, pAd->MlmeAux.Channel);
 
+		{
+			BOOLEAN bScanPassive = FALSE;
+			if (pAd->MlmeAux.Channel > 14)
+			{
+				if ((pAd->CommonCfg.bIEEE80211H == 1)
+					&& RadarChannelCheck(pAd, pAd->MlmeAux.Channel))
+					bScanPassive = TRUE;
+			}
+#ifdef CARRIER_DETECTION_SUPPORT
+			if (pAd->CommonCfg.CarrierDetect.Enable == TRUE)
+				bScanPassive = TRUE;
+#endif /* CARRIER_DETECTION_SUPPORT */ 
+
+			if (bScanPassive)
+			{
+				ScanType = SCAN_PASSIVE;
+				ScanTimeIn5gChannel = MIN_CHANNEL_TIME;
+			}
+		}
 
 		/* Check if channel if passive scan under current regulatory domain */
 		if (CHAN_PropertyCheck(pAd, pAd->MlmeAux.Channel, CHANNEL_PASSIVE_SCAN) == TRUE)

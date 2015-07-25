@@ -636,6 +636,22 @@ BOOLEAN ApCliLinkUp(
 							&pApCliEntry->ApCliMlmeAux.HtCapability,
 							pApCliEntry->ApCliMlmeAux.HtCapabilityLen);
 
+#ifdef DISANLE_VHT80_256_QAM
+			/*
+				To check SupportVHTMCS for APCLI again.
+			*/
+			if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode) && pApCliEntry->ApCliMlmeAux.vht_cap_len &&  pApCliEntry->ApCliMlmeAux.vht_op_len)
+			{
+				if (pApCliEntry->ApCliMlmeAux.vht_op.vht_op_info.ch_width != VHT_BW_80)
+				{
+					pMacEntry->SupportVHTMCS[8] = TRUE;
+					if (pMacEntry->MaxHTPhyMode.field.BW == BW_40)
+					{
+						pMacEntry->SupportVHTMCS[9] = TRUE;
+					}
+				}
+			}
+#endif /* DISANLE_VHT80_256_QAM */
 			
 			if (pAd->ApCfg.ApCliTab[ifIndex].bAutoTxRateSwitch == FALSE)
 			{
@@ -847,6 +863,7 @@ VOID ApCliLinkDown(
 	else
 #endif /* MAC_REPEATER_SUPPORT */
 	pApCliEntry->Valid = FALSE;	/* This link doesn't associated with any remote-AP */
+	pAd->ApCfg.ApCliTab[ifIndex].bPeerExist = FALSE;
 
 #ifdef APCLI_WPA_SUPPLICANT_SUPPORT
 	if (pApCliEntry->WpaSupplicantUP) 
@@ -870,7 +887,7 @@ VOID ApCliIfUp(
 	PAPCLI_STRUCT pApCliEntry;
 #ifdef APCLI_CONNECTION_TRIAL
 	PULONG pCurrState = NULL;
-#endif
+#endif /* APCLI_CONNECTION_TRIAL */
 
 	/* Reset is in progress, stop immediately */
 	if ( RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RESET_IN_PROGRESS) ||
@@ -894,11 +911,26 @@ VOID ApCliIfUp(
 			&& (pApCliEntry->Valid == FALSE)
 #ifdef	APCLI_CONNECTION_TRIAL
 			&& (ifIndex == 0)
-#endif
+#endif /* APCLI_CONNECTION_TRIAL */
 		)
 		{
+			if (IS_DOT11_H_RADAR_STATE(pAd, RD_SILENCE_MODE))
+			{	
+				if (pApCliEntry->bPeerExist == TRUE)
+				{
+					/* Got peer's beacon; change to normal mode */
+					pAd->Dot11_H.RDCount = pAd->Dot11_H.ChMovingTime;
+					DBGPRINT(RT_DEBUG_TRACE, ("ApCliIfUp - PeerExist\n"));
+				}
+				else
+					DBGPRINT(RT_DEBUG_TRACE, ("ApCliIfUp - Stop probing while Radar state is silent\n"));
+				
+				continue;
+			}
 			DBGPRINT(RT_DEBUG_TRACE, ("(%s) ApCli interface[%d] startup.\n", __FUNCTION__, ifIndex));
 			MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_JOIN_REQ, 0, NULL, ifIndex);
+			/* Reset bPeerExist each time in case we could keep old status */
+			pApCliEntry->bPeerExist = FALSE;
 		}
 #ifdef APCLI_CONNECTION_TRIAL
 		else if (
@@ -914,7 +946,7 @@ VOID ApCliIfUp(
 			DBGPRINT(RT_DEBUG_TRACE, ("(%s) Enqueue APCLI_CTRL_TRIAL_CONNECT\n", __func__));
 			MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_TRIAL_CONNECT, 0, NULL, ifIndex);
 		}
-#endif
+#endif /* APCLI_CONNECTION_TRIAL */
 	}
 
 	return;
@@ -2483,6 +2515,33 @@ VOID ApCliUpdateMlmeRate(
 
 	DBGPRINT(RT_DEBUG_TRACE, ("RTMPUpdateMlmeRate ==>   MlmeTransmit = 0x%x  \n" , pAd->CommonCfg.MlmeTransmit.word));
 }
+
+
+VOID ApCliCheckPeerExistence(RTMP_ADAPTER *pAd, CHAR *Ssid, UCHAR SsidLen, UCHAR Channel)
+{
+	UCHAR ifIndex;
+	APCLI_STRUCT *pApCliEntry;
+	
+	for (ifIndex = 0; ifIndex < MAX_APCLI_NUM; ifIndex++)
+	{
+		pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
+
+
+		if (pApCliEntry->bPeerExist == TRUE)
+			continue;
+
+		else if (Channel == pAd->CommonCfg.Channel &&
+			(NdisEqualMemory(Ssid, pApCliEntry->CfgSsid, SsidLen) || SsidLen == 0 /* Hidden */))
+		{
+			pApCliEntry->bPeerExist = TRUE;
+		}
+		else
+		{
+			/* No Root AP match the SSID */
+		}
+	}
+}
+
 
 VOID APCli_Init(
 	IN	PRTMP_ADAPTER				pAd,

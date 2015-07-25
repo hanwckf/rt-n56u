@@ -58,7 +58,9 @@
 #ifdef RT_CFG80211_SUPPORT
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28))
 #include <net/mac80211.h>
+#ifndef EXT_BUILD_CHANNEL_LIST
 #define EXT_BUILD_CHANNEL_LIST		/* must define with CRDA */
+#endif /* EXT_BUILD_CHANNEL_LIST */
 #else /* LINUX_VERSION_CODE */
 #undef RT_CFG80211_SUPPORT
 #endif /* LINUX_VERSION_CODE */
@@ -131,7 +133,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
  #define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860APCard.dat"
 #endif
 #define AP_NIC_DEVICE_NAME		"MT7610_AP"
-#define AP_DRIVER_VERSION		"3.0.0.8"
+#define AP_DRIVER_VERSION		"3.0.0.8a_rev3"
 #endif /* RTMP_MAC_PCI */
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -480,10 +482,11 @@ do { \
 #define	THREAD_PID_INIT_VALUE	NULL
 /* TODO: Use this IOCTL carefully when linux kernel version larger than 2.6.27, because the PID only correct when the user space task do this ioctl itself. */
 /*#define RTMP_GET_OS_PID(_x, _y)    _x = get_task_pid(current, PIDTYPE_PID); */
-#define RT_GET_OS_PID(_x, _y)		do{rcu_read_lock(); _x=current->pids[PIDTYPE_PID].pid; rcu_read_unlock();}while(0)
 #ifdef OS_ABL_FUNC_SUPPORT
+#define RT_GET_OS_PID(_x, _y)		do{rcu_read_lock(); _x=(ULONG)current->pids[PIDTYPE_PID].pid; rcu_read_unlock();}while(0)
 #define RTMP_GET_OS_PID(_a, _b)			RtmpOsGetPid(&_a, _b)
 #else
+#define RT_GET_OS_PID(_x, _y)		do{rcu_read_lock(); _x=current->pids[PIDTYPE_PID].pid; rcu_read_unlock();}while(0)
 #define RTMP_GET_OS_PID(_a, _b)			RT_GET_OS_PID(_a, _b)
 #endif
 #define	GET_PID_NUMBER(_v)	pid_nr((_v))
@@ -647,6 +650,7 @@ struct os_cookie {
 #endif /* WAPI_SUPPORT */
 	INT						ioctl_if_type;
 	INT 					ioctl_if;
+	BOOLEAN In_suspend;
 };
 
 typedef struct os_cookie	* POS_COOKIE;
@@ -1230,7 +1234,11 @@ do{ \
 #ifdef WFA_VHT_PF
 #define MAX_PACKETS_IN_QUEUE				2048 /*(512)*/
 #else
+#ifdef NOISE_TEST_ADJUST
+#define MAX_PACKETS_IN_QUEUE				2048 /*(512)*/
+#else
 #define MAX_PACKETS_IN_QUEUE				1024 /*(512)*/
+#endif /* NOISE_TEST_ADJUST */
 #endif /* WFA_VHT_PF */
 #else
 #define MAX_PACKETS_IN_QUEUE				(512)

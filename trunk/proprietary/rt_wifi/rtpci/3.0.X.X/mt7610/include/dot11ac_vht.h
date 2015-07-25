@@ -33,9 +33,18 @@
 
 #include "rtmp_type.h"
 
+#ifdef DISANLE_VHT80_256_QAM
+#define DISABLE_VHT80_256_QAM		0x1
+#endif /* DISANLE_VHT80_256_QAM */
 
 #define IE_VHT_CAP		191
 #define IE_VHT_OP		192
+#define IE_EXT_BSS_LOAD			193
+#define IE_WIDE_BW_CH_SWITCH		194
+#define IE_VHT_TXPWR_ENV			195
+#define IE_CH_SWITCH_WRAPPER		196
+#define IE_AID						197
+#define IE_QUIET_CHANNEL			198
 
 
 /*
@@ -400,6 +409,30 @@ typedef struct GNU_PACKED _CH_SEG_PAIR{
 	UINT8 seg_ch_width;
 }CH_SEG_PAIR;
 
+/*
+	max_tx_pwr_cnt:
+		0: Local Maximum Transmit Power For 20 MHz.
+		1: Local Maximum Transmit Power For 20, 40MHz
+		2: Local Maximum Transmit Power For 20, 40, 80MHz
+		3: Local Maximum Transmit Power For 20, 40, 80, 160/80+80MHz
+		4~7: rsv
+	
+	max_tx_pwr_interpretation:
+		0: EIRP
+		1~7: rsv
+*/
+#define TX_PWR_INTERPRET_EIRP		0
+typedef struct GNU_PACKED _VHT_TX_PWR_INFO_{
+#ifdef RT_BIG_ENDIAN
+	UINT8 rsv6:2;
+	UINT8 max_tx_pwr_interpretation:3;
+	UINT8 max_tx_pwr_cnt: 3;
+#else
+	UINT8 max_tx_pwr_cnt: 3;
+	UINT8 max_tx_pwr_interpretation:3;
+	UINT8 rsv6:2;
+#endif
+}VHT_TX_PWR_INFO;
 
 /*
 	IEEE 802.11AC D2.0, sec 8.4.2.164
@@ -416,13 +449,9 @@ typedef struct GNU_PACKED _CH_SEG_PAIR{
 		ch_seg_width: Segment Channel Width
 */
 typedef struct GNU_PACKED _VHT_TXPWR_ENV_IE{
-	UINT8 e_id;
-	UINT8 len;
-	UINT8 max_txpwr;
-	CH_SEG_PAIR ch_seg_pair[0];
+	VHT_TX_PWR_INFO tx_pwr_info;
+	UINT8 tx_pwr_bw[4];
 }VHT_TXPWR_ENV_IE;
-
-
 
 typedef struct  GNU_PACKED _VHT_CONTROL{
 #ifdef RT_BIG_ENDIAN

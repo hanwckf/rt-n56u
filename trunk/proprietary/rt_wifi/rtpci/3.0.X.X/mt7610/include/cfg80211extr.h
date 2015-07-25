@@ -28,6 +28,9 @@
 #define RT_CFG80211_BEACON_CR_PARSE(__pAd, __pVIE, __LenVIE)				\
 	CFG80211_BeaconCountryRegionParse((VOID *)__pAd, __pVIE, __LenVIE);
 
+#define RT_CFG80211_BEACON_TIM_UPDATE(__pAd)                                \
+        CFG80211_UpdateBeacon((VOID *)__pAd, NULL, 0, NULL, 0, FALSE);
+
 #define RT_CFG80211_CRDA_REG_HINT(__pAd, __pCountryIe, __CountryIeLen)		\
 	CFG80211_RegHint((VOID *)__pAd, __pCountryIe, __CountryIeLen);
 
@@ -195,6 +198,14 @@ VOID CFG80211_RFKillStatusUpdate(
 VOID CFG80211_UnRegister(
 	IN VOID						*pAdOrg,
 	IN VOID						*pNetDev);
+
+INT CFG80211_ApStaDelSendEvent(
+	IN VOID *pAdCB, 
+	IN const PUCHAR mac_addr);
+
+INT CFG80211_setApDefaultKey(
+	IN VOID                    *pAdCB,
+	IN UINT 					Data);
 
 #endif /* RT_CFG80211_SUPPORT */
 

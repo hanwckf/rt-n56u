@@ -979,7 +979,11 @@ BOOLEAN RTMPSoftDecryptCCMP(
 	/* skip ccmp header */
 	cipherData_ptr = pData + LEN_CCMP_HDR;
 	cipherData_len = *DataLen - LEN_CCMP_HDR;
-		
+
+	/*skip payload length is zero*/
+	if ((*DataLen ) <= LEN_CCMP_HDR)
+		return FALSE;
+
 	/* Construct AAD header */
 	RTMPConstructCCMPAAD(pHdr, 
 						 (frame_type == BTYPE_DATA), 

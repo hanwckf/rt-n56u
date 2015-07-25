@@ -528,6 +528,10 @@ VOID RTMPRepeaterReconnectionCheck(
 	{
 		for (i = 0; i < MAX_APCLI_NUM; i++)
 		{
+			if (!APCLI_IF_UP_CHECK(pAd, i) ||
+				(pAd->ApCfg.ApCliTab[i].Enable == FALSE))
+				continue;
+			
 			pApCliSsid = pAd->ApCfg.ApCliTab[i].Ssid;
 			pApCliCfgSsid = pAd->ApCfg.ApCliTab[i].CfgSsid;
 			CfgSsidLen = pAd->ApCfg.ApCliTab[i].CfgSsidLen;

@@ -368,11 +368,12 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 	}
 
 #ifdef PEER_DELBA_TX_ADAPT
-	if (RTMP_GET_PACKET_LOWRATE(pTxBlk->pPacket) || 
-		(pTxBlk->TxFrameType == TX_MCAST_FRAME))
-		pTxWI->TxWILutEn = 0;
+	if (RTMP_GET_PACKET_LOWRATE(pTxBlk->pPacket) ||
+		(pTxBlk->TxFrameType == TX_MCAST_FRAME) ||
+		(pMacEntry && (pMacEntry->MmpsMode == MMPS_STATIC)))
+	    pTxWI->TxWILutEn = 0;
 	else
-	pTxWI->TxWILutEn = 1;
+	    pTxWI->TxWILutEn = 1;
 #endif /* PEER_DELBA_TX_ADAPT */
 #endif /* MCS_LUT_SUPPORT */
 
@@ -582,7 +583,8 @@ VOID RTMPWriteTxWI_Cache(
 
 #ifdef PEER_DELBA_TX_ADAPT
 	if (RTMP_GET_PACKET_LOWRATE(pTxBlk->pPacket) || 
-		(pTxBlk->TxFrameType == TX_MCAST_FRAME))
+		(pTxBlk->TxFrameType == TX_MCAST_FRAME) ||
+		(pMacEntry && (pMacEntry->MmpsMode == MMPS_STATIC)))
 		pTxWI->TxWILutEn = 0;
 	else
 		pTxWI->TxWILutEn = 1;

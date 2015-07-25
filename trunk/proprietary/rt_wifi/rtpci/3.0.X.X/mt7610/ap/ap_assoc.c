@@ -200,6 +200,9 @@ static USHORT update_associated_mac_entry(
 	{
 		/* Force to None-HT mode due to WiFi 11n policy */
 		ie_list->ht_cap_len = 0;
+#ifdef DOT11_VHT_AC
+		ie_list->vht_cap_len = 0;
+#endif /* DOT11_VHT_AC */
 		DBGPRINT(RT_DEBUG_TRACE, ("%s : Force the STA as Non-HT mode\n", __FUNCTION__));
 	}
 
@@ -288,7 +291,7 @@ static USHORT update_associated_mac_entry(
 #ifdef DOT11_VHT_AC
 		if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode) &&
 			(pAd->CommonCfg.Channel > 14) &&
-			ie_list->vht_cap_len)
+			(ie_list->vht_cap_len))
 		{
 			VHT_CAP_INFO *vht_cap_info = &ie_list->vht_cap.vht_cap;
 
@@ -296,7 +299,8 @@ static USHORT update_associated_mac_entry(
 			if ((pEntry->MaxHTPhyMode.field.BW == BW_40) && (wdev->DesiredHtPhyInfo.vht_bw == VHT_BW_80))
 				pEntry->MaxHTPhyMode.field.BW = BW_80;
 
-			if (ie_list->vht_cap.mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_9)
+			if ((ie_list->vht_cap.mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_9) && 
+				(pAd->CommonCfg.vht_max_mcs_cap == VHT_MCS_CAP_9))
 			{
 #ifdef MT76x0
 				/* 
@@ -310,7 +314,8 @@ static USHORT update_associated_mac_entry(
 #endif /* MT76x0 */
 				pEntry->MaxHTPhyMode.field.MCS = 9;
 			}
-			else if (ie_list->vht_cap.mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_8)
+			else if ((ie_list->vht_cap.mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_8) &&
+				(pAd->CommonCfg.vht_max_mcs_cap == VHT_MCS_CAP_8))
 				pEntry->MaxHTPhyMode.field.MCS = 8;
 
 			if (vht_cap_info->sgi_80M)
@@ -335,6 +340,12 @@ static USHORT update_associated_mac_entry(
 	{
 		pAd->MacTab.fAnyStationIsLegacy = TRUE;
 		NdisZeroMemory(&pEntry->HTCapability, sizeof(HT_CAPABILITY_IE));
+#ifdef DOT11_VHT_AC
+		// TODO: shiang-usw, it's ugly and need to revise it
+		NdisZeroMemory(&pEntry->vht_cap_ie, sizeof(VHT_CAP_IE));
+		NdisZeroMemory(&pEntry->SupportVHTMCS, sizeof(pEntry->SupportVHTMCS));
+		pEntry->SupportRateMode &= (~SUPPORT_VHT_MODE);
+#endif /* DOT11_VHT_AC */
 	}
 #endif /* DOT11_N_SUPPORT */
 
@@ -373,11 +384,12 @@ static USHORT update_associated_mac_entry(
 	if (wdev->bAutoTxRateSwitch == TRUE)
 	{
 		UCHAR TableSize = 0;
-		
+
+		pEntry->bAutoTxRateSwitch = TRUE;
+
 		MlmeSelectTxRateTable(pAd, pEntry, &pEntry->pTable, &TableSize, &pEntry->CurrTxRateIndex);
 		MlmeNewTxRate(pAd, pEntry);
 
-		pEntry->bAutoTxRateSwitch = TRUE;
 
 #ifdef NEW_RATE_ADAPT_SUPPORT
 		if (! ADAPT_RATE_TABLE(pEntry->pTable))
@@ -501,6 +513,10 @@ static USHORT APBuildAssociation(
 #ifdef HOSTAPD_SUPPORT
 				&& (wdev->Hostapd == TRUE)
 #endif
+#ifdef RT_CFG80211_SUPPORT
+				&& (wdev->CFG_HOSTAPD == TRUE)
+#endif /*RT_CFG80211_SUPPORT*/
+
 		)
 		{
 #ifdef WSC_AP_SUPPORT
@@ -512,8 +528,12 @@ static USHORT APBuildAssociation(
 #endif /* WSC_V2_SUPPORT */
 	                )
 #ifdef HOSTAPD_SUPPORT
-					|| wdev->Hostapd == TRUE
+					|| (wdev->Hostapd == TRUE)
 #endif /*HOSTAPD_SUPPORT*/
+#ifdef RT_CFG80211_SUPPORT
+					|| (wdev->CFG_HOSTAPD== TRUE)
+#endif /*RT_CFG80211_SUPPORT*/
+
 	                )
 	            {
 	                pEntry->Sst = SST_ASSOC;
@@ -840,14 +860,12 @@ VOID ap_cmm_peer_assoc_req_action(
 #ifdef DOT11_VHT_AC
 	if (ie_list->vht_cap_len)
 	{
-#ifdef DBG
 //+++Add by shiang for debug
 		if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode)) {
 			DBGPRINT(RT_DEBUG_TRACE, ("%s():Peer is VHT capable device!\n", __FUNCTION__));
 			//dump_vht_cap(pAd, &ie_list->vht_cap);
 		}
 //---Add by shiang for debug
-#endif
 	}
 #endif /* DOT11_VHT_AC */
 
@@ -915,6 +933,10 @@ VOID ap_cmm_peer_assoc_req_action(
 
 		goto LabelOK;
 	}
+
+#ifdef RT_CFG80211_SUPPORT
+	CFG80211OS_NewSta(wdev->MSSIDDev, ie_list->Addr2, (PUCHAR)Elem->Msg, Elem->MsgLen);
+#endif /* RT_CFG80211_SUPPORT */
 
 	MgtMacHeaderInit(pAd, &AssocRspHdr, SubType, 0, ie_list->Addr2, 
 						wdev->Bssid);
@@ -1102,7 +1124,7 @@ VOID ap_cmm_peer_assoc_req_action(
 			(pAd->CommonCfg.Channel > 14) &&
 			(ie_list->vht_cap_len))
 		{
-			FrameLen += build_vht_ies(pAd, pOutBuffer + FrameLen, SUBTYPE_ASSOC_RSP);
+			FrameLen += build_vht_ies(pAd, pOutBuffer + FrameLen, SUBTYPE_ASSOC_RSP, pAd->CommonCfg.vht_max_mcs_cap);
 		}
 #endif /* DOT11_VHT_AC */
 	}
@@ -1280,6 +1302,9 @@ VOID ap_cmm_peer_assoc_req_action(
 #ifdef WSC_AP_SUPPORT
 				&& !pEntry->bWscCapable
 #endif /* WSC_AP_SUPPORT */
+#ifdef RT_CFG80211_SUPPORT
+				&& (pAd->VifNextMode == RT_CMD_80211_IFTYPE_NOT_USED)
+#endif /* RT_CFG80211_SUPPORT */
 				)
 			{
         		/* Enqueue a EAPOL-start message with the pEntry */
@@ -1306,6 +1331,9 @@ VOID ap_cmm_peer_assoc_req_action(
 #ifdef WSC_AP_SUPPORT
 					&& !pEntry->bWscCapable
 #endif /* WSC_AP_SUPPORT */
+#ifdef RT_CFG80211_SUPPORT
+					&& (pAd->VifNextMode == RT_CMD_80211_IFTYPE_NOT_USED)
+#endif /* RT_CFG80211_SUPPORT */
 				)
 				{
 					/* Enqueue a EAPOL-start message with the pEntry */
@@ -1336,6 +1364,9 @@ VOID ap_cmm_peer_assoc_req_action(
 #ifdef HOSTAPD_SUPPORT
 				&& wdev->Hostapd == FALSE
 #endif/*HOSTAPD_SUPPORT*/
+#ifdef RT_CFG80211_SUPPORT
+				&& (pAd->VifNextMode == RT_CMD_80211_IFTYPE_NOT_USED)
+#endif /* RT_CFG80211_SUPPORT */
 			)
 			{
       	  			pEntry->EnqueueEapolStartTimerRunning = EAPOL_START_1X;

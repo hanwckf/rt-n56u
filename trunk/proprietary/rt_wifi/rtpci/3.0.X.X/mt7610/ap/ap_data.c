@@ -66,6 +66,9 @@ VOID RTMP_BASetup(
 					))
 			)
 		{
+#ifdef NOISE_TEST_ADJUST
+			if (pAd->MacTab.Size < 5)
+#endif /* NOISE_TEST_ADJUST */
 			BAOriSessionSetUp(pAd, pMacEntry, UserPriority, 0, 10, FALSE);
 		}
 	}
@@ -1659,6 +1662,9 @@ VOID AP_AMPDU_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 #endif /* VENDOR_FEATURE1_SUPPORT */
 
 		pMacEntry->isCached = TRUE;
+
+		if (RTMP_GET_PACKET_LOWRATE(pTxBlk->pPacket))
+			pMacEntry->isCached = FALSE;
 	}
 
 #ifdef TXBF_SUPPORT
@@ -1968,6 +1974,7 @@ REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
 #endif /* MAC_REPEATER_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
+	MAC_TABLE_ENTRY *pMacEntry = pTxBlk->pMacEntry;
 	
 	ASSERT((pTxBlk->TxPacketList.Number > 1));
 
@@ -2005,6 +2012,10 @@ REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
 
 			/* NOTE: TxWI->TxWIMPDUByteCnt will be updated after final frame was handled. */
 			RTMPWriteTxWI_Data(pAd, (TXWI_STRUC *)(&pTxBlk->HeaderBuf[TXINFO_SIZE]), pTxBlk);
+			
+			if (RTMP_GET_PACKET_LOWRATE(pTxBlk->pPacket))
+				if (pMacEntry) 
+					pMacEntry->isCached = FALSE;
 		}
 		else
 		{
@@ -2513,9 +2524,10 @@ VOID AP_Legacy_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 
 	RTMPWriteTxWI_Data(pAd, (TXWI_STRUC *)(&pTxBlk->HeaderBuf[TXINFO_SIZE]), pTxBlk);
 
-	if (pTxBlk->pMacEntry)
-		pTxBlk->pMacEntry->isCached = FALSE;
-	
+	if (RTMP_GET_PACKET_LOWRATE(pTxBlk->pPacket))
+		if (pTxBlk->pMacEntry)
+			pTxBlk->pMacEntry->isCached = FALSE;
+
 	HAL_WriteTxResource(pAd, pTxBlk, TRUE, &freeCnt);
 	
 
@@ -3564,8 +3576,31 @@ VOID APHandleRxPsPoll(
 	/*	  Aid, pAddr[0], pAddr[1], pAddr[2], pAddr[3], pAddr[4], pAddr[5])); */
 
 	pMacEntry = &pAd->MacTab.Content[Aid];
+
+	if ((Aid == 0) && (isActive == FALSE))
+	{
+		pMacEntry =  MacTableLookup(pAd, pAddr);
+
+		if (pMacEntry == NULL)
+		{
+			DBGPRINT(RT_DEBUG_ERROR,("%s:pMacEntry == NULL\n", __FUNCTION__) );
+			return;
+		}
+                              
+		DBGPRINT(RT_DEBUG_ERROR,("SW_WK: rcv PS-POLL (AID=%d not match) correct to %d from %02x:%02x:%02x:%02x:%02x:%02x\n", 
+				Aid, pMacEntry->Aid, PRINT_MAC(pAddr)));
+	}
+
 	if (RTMPEqualMemory(pMacEntry->Addr, pAddr, MAC_ADDR_LEN))
 	{
+#ifdef DROP_MASK_SUPPORT
+		/* Disable Drop Mask */
+		set_drop_mask_per_client(pAd, pMacEntry, 2, 0);
+#endif /* DROP_MASK_SUPPORT */
+#ifdef PS_ENTRY_MAITENANCE
+			pMacEntry->continuous_ps_count = 0;
+#endif /* PS_ENTRY_MAITENANCE */
+
 		/*
 			Sta is change to Power Active stat.
 			Reset ContinueTxFailCnt
@@ -3719,6 +3754,9 @@ VOID detect_wmm_traffic(
 	IN UCHAR UserPriority,
 	IN UCHAR FlgIsOutput)
 {
+	if (pAd == NULL)
+		return;
+
 	/* For BE & BK case and TxBurst function is disabled */
 	if ((pAd->CommonCfg.bEnableTxBurst == FALSE) 
 #ifdef DOT11_N_SUPPORT
@@ -3881,17 +3919,21 @@ VOID dynamic_tune_be_tx_op(RTMP_ADAPTER *pAd, ULONG nonBEpackets)
 		}
 		else
 		{
-			if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_DYNAMIC_BE_TXOP_ACTIVE)==0)
+			if ((RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_DYNAMIC_BE_TXOP_ACTIVE)==0)
+#ifdef MULTI_CLIENT_SUPPORT
+				 || (pAd->ApCfg.ChangeTxOpClient != pAd->MacTab.Size)
+#endif /* MULTI_CLIENT_SUPPORT */
+			)
 			{
 				/* enable AC0(BE) TX_OP */
 				UCHAR	txop_value_burst = 0x20;	/* default txop for Tx-Burst */
 				UCHAR   txop_value;
-
-#ifdef LINUX
-#endif /* LINUX */
+#ifdef MULTI_CLIENT_SUPPORT
+				pAd->ApCfg.ChangeTxOpClient = pAd->MacTab.Size;
+#endif /* MULTI_CLIENT_SUPPORT */
 
 				RTMP_IO_READ32(pAd, EDCA_AC0_CFG, &RegValue);
-				
+
 				if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE))
 					txop_value = 0x80;				
 				else if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE))
@@ -3900,6 +3942,11 @@ VOID dynamic_tune_be_tx_op(RTMP_ADAPTER *pAd, ULONG nonBEpackets)
 					txop_value = txop_value_burst;
 				else
 					txop_value = 0;
+
+#ifdef MULTI_CLIENT_SUPPORT
+				if(pAd->MacTab.Size > 2)
+					txop_value = 0;
+#endif /* MULTI_CLIENT_SUPPORT */
 
 				RegValue  &= 0xFFFFFF00;
 				/*if ((RegValue & 0x0000FF00) == 0x00005400)
@@ -4377,15 +4424,14 @@ VOID APRxEAPOLFrameIndicate(
 
 
 	
-#ifdef HOSTAPD_SUPPORT
-	if ((pEntry) && pAd->ApCfg.MBSSID[pEntry->apidx].Hostapd == TRUE)
+#ifdef RT_CFG80211_SUPPORT
+	if((pEntry) && (pAd->VifNextMode != RT_CMD_80211_IFTYPE_NOT_USED))
 	{
-		DBGPRINT(RT_DEBUG_TRACE, ("Indicate_Legacy_Packet\n"));
+		DBGPRINT(RT_DEBUG_TRACE, ("CFG80211 EAPOL Indicate_Legacy_Packet\n"));
 		Indicate_Legacy_Packet(pAd, pRxBlk, FromWhichBSSID);
-		return;
+        return;
 	}
-#endif/*HOSTAPD_SUPPORT*/
-
+#endif /* RT_CFG80211_SUPPORT */
 
 #ifdef APCLI_SUPPORT
 #ifdef APCLI_WPA_SUPPLICANT_SUPPORT
@@ -5074,7 +5120,13 @@ VOID APHandleRxDataFrame(
 
 			OldUP = (*(pRxBlk->pData+LENGTH_802_11) & 0x07);
 	    	if (OldPwrMgmt == PWR_SAVE)
+		{
+#ifdef DROP_MASK_SUPPORT
+			/* Disable Drop Mask */
+			set_drop_mask_per_client(pAd, pEntry, 2, 0);
+#endif /* DROP_MASK_SUPPORT */
 	    		UAPSD_TriggerFrameHandle(pAd, pEntry, OldUP);
+		}
 	    	/* End of if */
 		}
     } /* End of if */

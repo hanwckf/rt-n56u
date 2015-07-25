@@ -808,6 +808,10 @@ BOOLEAN RTMPSoftDecryptTKIP(
 	ciphertext_ptr = pData + LEN_TKIP_IV_HDR;
 	ciphertext_len = *DataByteCnt - LEN_TKIP_IV_HDR;
 
+	/* skip payload length is zero*/
+	if ((*DataByteCnt) <= LEN_TKIP_IV_HDR)
+		return FALSE;
+
 	/* WEP Decapsulation */
 	/* Generate an RC4 key stream */
 	ARC4_INIT(&ARC4_CTX, &RC4Key[0], 16);

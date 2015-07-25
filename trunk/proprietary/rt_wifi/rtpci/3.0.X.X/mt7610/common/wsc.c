@@ -1422,6 +1422,35 @@ VOID WscEapEnrolleeAction(
 			if (MsgType == WSC_MSG_EAP_REQ_START)
 				DBGPRINT(RT_DEBUG_TRACE, ("WscEapEnrolleeAction : Rx Wsc_Start(ReComputePke=%d)\n", pWscControl->RegData.ReComputePke));
 			
+#ifdef CONFIG_AP_SUPPORT
+			/*
+				We don't need to consider P2P case.
+			*/
+			IF_DEV_CONFIG_OPMODE_ON_AP(pAdapter)
+			{					
+				if ((pWscControl->bWscAutoTriggerDisable == TRUE) &&
+					(pWscControl->bWscTrigger == FALSE))
+				{
+					if (bUPnPMsg == TRUE)
+					{
+						DBGPRINT(RT_DEBUG_TRACE, 
+							("%s(%d): WscAutoTrigger is disabled.\n", __FUNCTION__, __LINE__));
+						WscUPnPErrHandle(pAdapter, pWscControl, Elem->TimeStamp.u.LowPart);
+						return;
+					}
+					else if (pEntry && IS_ENTRY_CLIENT(pEntry))
+					{
+						DBGPRINT(RT_DEBUG_TRACE, 
+							("%s(%d): WscAutoTrigger is disabled! Send EapFail to STA.\n", __FUNCTION__, __LINE__));
+						WscSendEapFail(pAdapter, pWscControl, TRUE);
+						return;
+					}
+					else
+						; /* Keep going. APCLI shall be the else case. */
+				}
+			}
+#endif /* CONFIG_AP_SUPPORT */
+			
 			if (pWscControl->RegData.ReComputePke == 1)
 			{
 				INT idx;

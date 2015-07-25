@@ -298,7 +298,11 @@ NDIS_STATUS rtmp_nv_init(PRTMP_ADAPTER pAd)
 		DBGPRINT(RT_DEBUG_ERROR, ("pAd->chipCap.eebuf == NULL!!!\n"));
 		return NDIS_STATUS_FAILURE;
 	}
+#ifdef RTMP_FLASH_SUPPORT
+	RtmpFlashRead(pAd->chipCap.eebuf, RF_OFFSET, 0x400);
+#else
 	RtmpFlashRead(pAd->chipCap.eebuf, RF_OFFSET, EEPROM_SIZE);
+#endif
 	
 
 	return rtmp_ee_flash_init(pAd, pAd->chipCap.eebuf);

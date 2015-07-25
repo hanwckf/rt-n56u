@@ -72,6 +72,121 @@ MAC_TABLE_ENTRY *MacTableLookup(
 	return pEntry;
 }
 
+#ifdef MULTI_CLIENT_SUPPORT
+/* for Multi-Clients */
+VOID changeTxRetry(
+	IN PRTMP_ADAPTER pAd, 
+	IN USHORT num)
+{		
+	UINT32	TxRtyCfg, MacReg = 0;
+	
+	if (pAd->CommonCfg.txRetryCfg == 0) {
+		/* txRetryCfg is invalid, should not be 0 */
+		DBGPRINT(RT_DEBUG_TRACE, ("txRetryCfg=%x\n", pAd->CommonCfg.txRetryCfg));
+		return ;
+	}
+
+	if (num < 3)
+	{
+		/* Tx date retry default 15 */
+		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
+		TxRtyCfg = ((TxRtyCfg & 0xffff0000) | (pAd->CommonCfg.txRetryCfg & 0x0000ffff));
+		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
+
+		/* Tx RTS retry default 32 */
+		RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
+		MacReg &= 0xFFFFFF00;
+		MacReg |= 0x20;
+		RTMP_IO_WRITE32(pAd, TX_RTS_CFG, MacReg);
+	}
+	else
+	{
+		/* Tx date retry 7 */
+		TxRtyCfg = 0x4100070A;
+		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);	
+
+		/* Tx RTS retry 3 */
+		RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
+		MacReg &= 0xFEFFFF00;
+		MacReg |= 0x01000003;
+		RTMP_IO_WRITE32(pAd, TX_RTS_CFG, MacReg);
+
+		/* En fbk lgcy */
+		RTMP_IO_WRITE32(pAd, HT_FBK_TO_LEGACY, 0x1818);
+	}
+}
+
+VOID pktAggrNumChange(
+	IN PRTMP_ADAPTER pAd, 
+	IN USHORT num)
+{
+#ifdef NOISE_TEST_ADJUST
+	if (num >= 5)
+	{
+		UCHAR idx;
+		MAC_TABLE_ENTRY *pEntry = NULL;
+
+		for (idx = 1; idx < MAX_LEN_OF_MAC_TABLE; idx++)
+		{
+			pEntry = &pAd->MacTab.Content[idx];
+
+			if (pEntry && IS_ENTRY_CLIENT(pEntry))
+			{
+				BASessionTearDownALL(pAd, pEntry->Aid);
+			}
+		}
+	}
+#endif /* NOISE_TEST_ADJUST */
+}
+
+VOID tuneBEWMM(
+	IN PRTMP_ADAPTER pAd, 
+	IN USHORT num)
+{
+	UCHAR  bssCwmin = 4, apCwmin = 4, apCwmax = 6;
+			
+	if (num <= 4)
+	{
+		/* use profile cwmin */
+		if (pAd->CommonCfg.APCwmin > 0 && pAd->CommonCfg.BSSCwmin > 0 && pAd->CommonCfg.APCwmax > 0)
+		{
+			apCwmin = pAd->CommonCfg.APCwmin;
+			apCwmax = pAd->CommonCfg.APCwmax;
+			bssCwmin = pAd->CommonCfg.BSSCwmin;
+		}
+	}
+	else if (num > 4 && num <= 8)
+	{
+		apCwmin = 4;
+		apCwmax = 6;
+		bssCwmin = 5;
+	}
+	else if (num > 8 && num <= 16)
+	{
+		apCwmin = 4;
+		apCwmax = 6;
+		bssCwmin = 6;
+	}
+	else if (num > 16 && num <= 64)
+	{
+		apCwmin = 4;
+		apCwmax = 6;
+		bssCwmin = 7;
+	}
+	else if (num > 64 && num <= 128)
+	{
+		apCwmin = 4;
+		apCwmax = 6;
+		bssCwmin = 8;
+	}
+	
+	pAd->CommonCfg.APEdcaParm.Cwmin[0] = apCwmin;
+	pAd->CommonCfg.APEdcaParm.Cwmax[0] = apCwmax;
+	pAd->ApCfg.BssEdcaParm.Cwmin[0] = bssCwmin;
+			
+	AsicSetEdcaParm(pAd, &pAd->CommonCfg.APEdcaParm);
+}
+#endif /* MULTI_CLIENT_SUPPORT */
 
 MAC_TABLE_ENTRY *MacTableInsertEntry(
 	IN  PRTMP_ADAPTER   pAd,
@@ -129,9 +244,15 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 		{
 			pEntry = &pAd->MacTab.Content[i];
 
-			/* ENTRY PREEMPTION: initialize the entry */
-			RTMPCancelTimer(&pEntry->RetryTimer, &Cancelled);
-			RTMPCancelTimer(&pEntry->EnqueueStartForPSKTimer, &Cancelled);
+#ifdef RT_CFG80211_SUPPORT
+			if (pAd->VifNextMode == RT_CMD_80211_IFTYPE_NOT_USED)
+#endif /* RT_CFG80211_SUPPORT */
+			{
+				/* ENTRY PREEMPTION: initialize the entry */
+				RTMPCancelTimer(&pEntry->RetryTimer, &Cancelled);
+				RTMPCancelTimer(&pEntry->EnqueueStartForPSKTimer, &Cancelled);
+			}
+
 
 			NdisZeroMemory(pEntry, sizeof(MAC_TABLE_ENTRY));
 
@@ -205,7 +326,12 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 
 			pEntry->bIAmBadAtheros = FALSE;
 
-			RTMPInitTimer(pAd, &pEntry->EnqueueStartForPSKTimer, GET_TIMER_FUNCTION(EnqueueStartForPSKExec), pEntry, FALSE);
+#ifdef RT_CFG80211_SUPPORT
+			if (pAd->VifNextMode == RT_CMD_80211_IFTYPE_NOT_USED)
+#endif /* RT_CFG80211_SUPPORT */
+			{
+				RTMPInitTimer(pAd, &pEntry->EnqueueStartForPSKTimer, GET_TIMER_FUNCTION(EnqueueStartForPSKExec), pEntry, FALSE);
+			}
 
 
 #ifdef CONFIG_AP_SUPPORT
@@ -213,9 +339,14 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 			{
 				if (IS_ENTRY_CLIENT(pEntry)) /* Only Clent entry need the retry timer.*/
 				{
-					RTMPInitTimer(pAd, &pEntry->RetryTimer, GET_TIMER_FUNCTION(WPARetryExec), pEntry, FALSE);
+#ifdef RT_CFG80211_SUPPORT
+					if (pAd->VifNextMode == RT_CMD_80211_IFTYPE_NOT_USED)
+#endif /* RT_CFG80211_SUPPORT */
+					{
+						RTMPInitTimer(pAd, &pEntry->RetryTimer, GET_TIMER_FUNCTION(WPARetryExec), pEntry, FALSE);
+					}
 
-	/*				RTMP_OS_Init_Timer(pAd, &pEntry->RetryTimer, GET_TIMER_FUNCTION(WPARetryExec), pAd);*/
+
 				}
 #ifdef APCLI_SUPPORT
 				else if (IS_ENTRY_APCLI(pEntry))
@@ -364,6 +495,10 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 #endif /* WDS_SUPPORT */
 			pEntry->TimeStamp_toTxRing = 0;
 			InitializeQueueHeader(&pEntry->PsQueue);
+#ifdef PS_ENTRY_MAITENANCE
+			pEntry->continuous_ps_count = 0;
+#endif /* PS_ENTRY_MAITENANCE */
+
 
 #ifdef STREAM_MODE_SUPPORT
 			/* Enable Stream mode for first three entries in MAC table */
@@ -391,6 +526,13 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 			/* Add this entry into ASIC RX WCID search table */
 			RTMP_STA_ENTRY_ADD(pAd, pEntry);
 
+#ifdef PEER_DELBA_TX_ADAPT
+			Peer_DelBA_Tx_Adapt_Init(pAd, pEntry);
+#endif /* PEER_DELBA_TX_ADAPT */
+
+#ifdef DROP_MASK_SUPPORT
+			drop_mask_init_per_client(pAd, pEntry);
+#endif /* DROP_MASK_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
 			IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -448,6 +590,23 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 
 	}
 
+#ifdef CONFIG_AP_SUPPORT
+#ifdef MULTI_CLIENT_SUPPORT
+	/* for Multi-Clients */
+	if (pAd->MacTab.Size < MAX_LEN_OF_MAC_TABLE) 
+	{	
+		USHORT size;
+
+		size = pAd->ApCfg.EntryClientCount;
+		changeTxRetry(pAd, size);
+		pktAggrNumChange(pAd, size);
+	
+		if (pAd->CommonCfg.bWmm)
+			tuneBEWMM(pAd, size);
+	}
+#endif /* MULTI_CLIENT_SUPPORT */
+#endif // CONFIG_AP_SUPPORT //
+
 	NdisReleaseSpinLock(&pAd->MacTabLock);
 	return pEntry;
 }
@@ -485,12 +644,21 @@ BOOLEAN MacTableDeleteEntry(
 
 	if (pEntry && !IS_ENTRY_NONE(pEntry))
 	{
-		/* ENTRY PREEMPTION: Cancel all timers */
-		RTMPCancelTimer(&pEntry->RetryTimer, &Cancelled);
-		RTMPCancelTimer(&pEntry->EnqueueStartForPSKTimer, &Cancelled);
+#ifdef RT_CFG80211_SUPPORT
+		if (pAd->VifNextMode == RT_CMD_80211_IFTYPE_NOT_USED)
+#endif /* RT_CFG80211_SUPPORT */
+		{
+			/* ENTRY PREEMPTION: Cancel all timers */
+			RTMPCancelTimer(&pEntry->RetryTimer, &Cancelled);
+			RTMPCancelTimer(&pEntry->EnqueueStartForPSKTimer, &Cancelled);
+		}
 
 		if (MAC_ADDR_EQUAL(pEntry->Addr, pAddr))
 		{
+#ifdef RT_CFG80211_SUPPORT 
+			CFG80211_ApStaDelSendEvent(pAd, pEntry->Addr);	
+#endif /* RT_CFG80211_SUPPORT  */
+
 
 			/* Delete this entry from ASIC on-chip WCID Table*/
 			RTMP_STA_ENTRY_MAC_RESET(pAd, wcid);
@@ -521,7 +689,12 @@ BOOLEAN MacTableDeleteEntry(
 				INT		PmkCacheIdx = -1;
 #endif /* DOT1X_SUPPORT */
 			
+#ifdef RT_CFG80211_SUPPORT
+			if (pAd->VifNextMode == RT_CMD_80211_IFTYPE_NOT_USED)
+#endif /* RT_CFG80211_SUPPORT */
+			{
 				RTMPReleaseTimer(&pEntry->RetryTimer, &Cancelled);
+			}
 
 #ifdef DOT1X_SUPPORT    
 				/* Notify 802.1x daemon to clear this sta info*/
@@ -629,12 +802,17 @@ BOOLEAN MacTableDeleteEntry(
 #endif /* CONFIG_AP_SUPPORT */
 #endif /* UAPSD_SUPPORT */
 
-		if (pEntry->EnqueueEapolStartTimerRunning != EAPOL_START_DISABLE)
+#ifdef RT_CFG80211_SUPPORT
+		if (pAd->VifNextMode == RT_CMD_80211_IFTYPE_NOT_USED)
+#endif /* RT_CFG80211_SUPPORT */
 		{
-            RTMPCancelTimer(&pEntry->EnqueueStartForPSKTimer, &Cancelled);
-			pEntry->EnqueueEapolStartTimerRunning = EAPOL_START_DISABLE;
-        }
-		RTMPReleaseTimer(&pEntry->EnqueueStartForPSKTimer, &Cancelled);
+			if (pEntry->EnqueueEapolStartTimerRunning != EAPOL_START_DISABLE)
+			{
+	            RTMPCancelTimer(&pEntry->EnqueueStartForPSKTimer, &Cancelled);
+				pEntry->EnqueueEapolStartTimerRunning = EAPOL_START_DISABLE;
+	        }
+			RTMPReleaseTimer(&pEntry->EnqueueStartForPSKTimer, &Cancelled);
+		}
 
 
 #ifdef CONFIG_AP_SUPPORT
@@ -665,6 +843,10 @@ BOOLEAN MacTableDeleteEntry(
 #endif /* CONFIG_AP_SUPPORT */
 
 
+#ifdef DROP_MASK_SUPPORT
+			drop_mask_release_per_client(pAd, pEntry);
+#endif /* DROP_MASK_SUPPORT */
+
 //   			NdisZeroMemory(pEntry, sizeof(MAC_TABLE_ENTRY));
 			NdisZeroMemory(pEntry->Addr, MAC_ADDR_LEN);
 			/* invalidate the entry */
@@ -693,6 +875,21 @@ BOOLEAN MacTableDeleteEntry(
 		RTMP_UPDATE_PROTECT(pAd, 0, ALLN_SETPROTECT, TRUE, 0);
 	}
 #ifdef CONFIG_AP_SUPPORT
+#ifdef MULTI_CLIENT_SUPPORT
+	/* for Multi-Clients */
+	if (pAd->MacTab.Size < MAX_LEN_OF_MAC_TABLE) 
+	{	
+		USHORT size;
+
+		size = pAd->ApCfg.EntryClientCount;
+		changeTxRetry(pAd, size);
+		pktAggrNumChange(pAd, size);
+	
+		if (pAd->CommonCfg.bWmm)
+			tuneBEWMM(pAd, size);
+	}
+#endif /* MULTI_CLIENT_SUPPORT */
+
 	/*APUpdateCapabilityAndErpIe(pAd);*/
 	RTMP_AP_UPDATE_CAPABILITY_AND_ERPIE(pAd);  /* edit by johnli, fix "in_interrupt" error when call "MacTableDeleteEntry" in Rx tasklet*/
 #endif /* CONFIG_AP_SUPPORT */
@@ -741,7 +938,13 @@ VOID MacTableReset(
 	   		/* Delete a entry via WCID */
 
 			/*MacTableDeleteEntry(pAd, i, pAd->MacTab.Content[i].Addr);*/
-			RTMPReleaseTimer(&pAd->MacTab.Content[i].EnqueueStartForPSKTimer, &Cancelled);
+#ifdef RT_CFG80211_SUPPORT
+			if (pAd->VifNextMode == RT_CMD_80211_IFTYPE_NOT_USED)
+#endif /* RT_CFG80211_SUPPORT */
+			{
+				RTMPReleaseTimer(&pAd->MacTab.Content[i].EnqueueStartForPSKTimer, &Cancelled);
+			}
+
             pAd->MacTab.Content[i].EnqueueEapolStartTimerRunning = EAPOL_START_DISABLE;
 
 #ifdef CONFIG_AP_SUPPORT

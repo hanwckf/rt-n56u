@@ -582,6 +582,18 @@ VOID MlmeResetRalinkCounters(
 	return;
 }
 #ifdef DYNAMIC_VGA_SUPPORT
+VOID DyncVgaLockTimeout(
+	IN PVOID SystemSpecific1,
+	IN PVOID FunctionContext,
+	IN PVOID SystemSpecific2,
+	IN PVOID SystemSpecific3)
+{
+	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *) FunctionContext;
+
+	pAd->CommonCfg.MO_Cfg.bDyncVgaEnable = TRUE;
+	DBGPRINT(RT_DEBUG_ERROR, ("%s - locked for 1 min, resume dynamic vga \n",__FUNCTION__));
+}
+
 void update_rssi_for_channel_model(RTMP_ADAPTER * pAd)
 {
 	INT32 rx0_rssi, rx1_rssi;
@@ -616,6 +628,7 @@ void update_rssi_for_channel_model(RTMP_ADAPTER * pAd)
 /* get ap counts from some channel*/
 #ifdef ED_MONITOR
 ULONG BssChannelAPCount(
+	IN PRTMP_ADAPTER pAd,
 	IN BSS_TABLE *Tab, 
 	IN UCHAR	 Channel) 
 {
@@ -623,8 +636,10 @@ ULONG BssChannelAPCount(
 	ULONG ap_count = 0;
 	
 	for (i = 0; i < Tab->BssNr; i++) 
-	{
-		if (Tab->BssEntry[i].Channel == Channel)
+	{		
+		//change to also check rssi threshold
+		if ((Tab->BssEntry[i].Channel == Channel) && 
+		(Tab->BssEntry[i].Rssi > pAd->ed_rssi_threshold))		
 		{
 			ap_count ++; 
 		}
@@ -881,7 +896,7 @@ VOID MlmePeriodicExec(
 
 			//dynamic VGA adjust
 			BOOLEAN disableByLongRange = TRUE;			
-			DBGPRINT(RT_DEBUG_TRACE,("%s() : avg_rssi_0 == %d pAd->CommonCfg.BBPCurrentBW == %d ,init gain =0x%x\n",
+			DBGPRINT(RT_DEBUG_INFO,("%s() : avg_rssi_0 == %d pAd->CommonCfg.BBPCurrentBW == %d ,init gain =0x%x\n",
 						__FUNCTION__, pAd->chipCap.avg_rssi_all,pAd->CommonCfg.BBPCurrentBW,pAd->CommonCfg.MO_Cfg.Stored_BBP_R66));
 			if( pAd->OpMode == OPMODE_AP &&
 				((pAd->chipCap.avg_rssi_all > -82 && pAd->CommonCfg.BBPCurrentBW == BW_20)  || 
@@ -909,7 +924,7 @@ VOID MlmePeriodicExec(
 #ifdef DFS_SUPPORT
 			        pAd->CommonCfg.RadarDetect.bAdjustDfsAgc = TRUE;
 #endif					
-					DBGPRINT(RT_DEBUG_TRACE,
+					DBGPRINT(RT_DEBUG_INFO,
 						("%s() : AP AvgRssi0 : %d  BW : 0x%x  disable Dynamic VGA! resume gain: 0x%x\n",
 						__FUNCTION__,pAd->chipCap.avg_rssi_all, pAd->CommonCfg.BBPCurrentBW
 						,pAd->CommonCfg.MO_Cfg.Stored_BBP_R66));
@@ -926,19 +941,28 @@ VOID MlmePeriodicExec(
 				RTMP_BBP_IO_READ32(pAd, bbp_reg, &bbp_val);
 				val = ((bbp_val & (0x0000ff00)) >> 8) & 0xff;
 
-				DBGPRINT(RT_DEBUG_TRACE,
+				DBGPRINT(RT_DEBUG_INFO,
 					("one second False CCA=%d, fixed R66 at 0x%x\n", pAd->RalinkCounters.OneSecFalseCCACnt, val));
 
 				if (pAd->RalinkCounters.OneSecFalseCCACnt > pAd->CommonCfg.MO_Cfg.nFalseCCATh)
 				{
-					if (val > (pAd->CommonCfg.MO_Cfg.Stored_BBP_R66 - 0x10))
+					if (val > (pAd->CommonCfg.MO_Cfg.Stored_BBP_R66 - 0x14))
 					{
 						val -= 2;
 						bbp_val = (bbp_val & 0xffff00ff) | (val << 8);
 						RTMP_BBP_IO_WRITE32(pAd, bbp_reg, bbp_val);
 #ifdef DFS_SUPPORT
-        					pAd->CommonCfg.RadarDetect.bAdjustDfsAgc = TRUE;
+        				pAd->CommonCfg.RadarDetect.bAdjustDfsAgc = TRUE;
 #endif
+
+						//gain down-up-down-up detection
+						if(pAd->CommonCfg.MO_Cfg.bPreviousTuneVgaUP)
+							pAd->CommonCfg.MO_Cfg.TuneGainReverseTimes++;						
+						else //tune down 2 times, cancel lock detect
+							pAd->CommonCfg.MO_Cfg.TuneGainReverseTimes = 0;
+
+						pAd->CommonCfg.MO_Cfg.bPreviousTuneVgaUP = FALSE; //record this time's action
+							
 					}
 				}
 				else if (pAd->RalinkCounters.OneSecFalseCCACnt < pAd->CommonCfg.MO_Cfg.nLowFalseCCATh)
@@ -949,10 +973,38 @@ VOID MlmePeriodicExec(
 						bbp_val = (bbp_val & 0xffff00ff) | (val << 8);
 						RTMP_BBP_IO_WRITE32(pAd, bbp_reg, bbp_val);
 #ifdef DFS_SUPPORT
-					        pAd->CommonCfg.RadarDetect.bAdjustDfsAgc = TRUE;
+					    pAd->CommonCfg.RadarDetect.bAdjustDfsAgc = TRUE;
 #endif
+						//gain down-up-down-up detection
+						if(pAd->CommonCfg.MO_Cfg.bPreviousTuneVgaUP == FALSE)
+							pAd->CommonCfg.MO_Cfg.TuneGainReverseTimes++;							
+						else //tune up 2 times, cancel lock detect
+							pAd->CommonCfg.MO_Cfg.TuneGainReverseTimes = 0;
+
+						pAd->CommonCfg.MO_Cfg.bPreviousTuneVgaUP = TRUE; //record this time's action
 					}
 				}
+				else
+				{
+					pAd->CommonCfg.MO_Cfg.TuneGainReverseTimes = 0; // no up or down this time, cancel lock detect
+				}
+
+				//gain down-up-down-up detected
+				if(pAd->CommonCfg.MO_Cfg.TuneGainReverseTimes >= 4)
+				{
+					ULONG Timeout = 30000; /*30 sec*/
+					pAd->CommonCfg.MO_Cfg.bDyncVgaEnable = FALSE;
+					pAd->CommonCfg.MO_Cfg.TuneGainReverseTimes = 0;
+					RTMPSetTimer(&pAd->CommonCfg.MO_Cfg.DyncVgaLockTimer, Timeout);
+					if(pAd->CommonCfg.MO_Cfg.bPreviousTuneVgaUP)
+					{
+						val -= 2;
+						bbp_val = (bbp_val & 0xffff00ff) | (val << 8);
+						RTMP_BBP_IO_WRITE32(pAd, bbp_reg, bbp_val);
+					}
+					DBGPRINT(RT_DEBUG_ERROR, ("%s - Dynamic VGA gain reversed 2 times, lock gain to 0x%x\n",__FUNCTION__,val));
+				}
+				
 #ifdef ED_MONITOR
 				dynamic_ed_cca_threshold_adjust(pAd);
 #endif
@@ -1020,7 +1072,7 @@ VOID MlmePeriodicExec(
 				{
 					INT32 temperature_diff = 0;
 					MT76x0_TempSensor(pAd);
-					DBGPRINT(RT_DEBUG_TRACE,("VGA_EXT: MT76x0_TempSensor --> %d\n", pAd->chipCap.NowTemperature));
+					DBGPRINT(RT_DEBUG_INFO,("VGA_EXT: MT76x0_TempSensor --> %d\n", pAd->chipCap.NowTemperature));
 
 					temperature_diff = (pAd->chipCap.NowTemperature - pAd->chipCap.LastTemperatureforVCO);
 					if ((temperature_diff > 20) || 
@@ -1029,7 +1081,7 @@ VOID MlmePeriodicExec(
 						DBGPRINT(RT_DEBUG_OFF, ("%s - Do VCORecalibration again!(LastTemperatureforVCO=%d, NowTemperature = %d)\n", 
 							__FUNCTION__, pAd->chipCap.LastTemperatureforVCO, pAd->chipCap.NowTemperature));
 						pAd->chipCap.LastTemperatureforVCO = pAd->chipCap.NowTemperature;
-						MT76x0_VCO_CalibrationMode3(pAd);
+						MT76x0_VCO_CalibrationMode3(pAd, pAd->hw_cfg.cent_ch);
 					}
 
 					temperature_diff = (pAd->chipCap.NowTemperature - pAd->chipCap.LastTemperatureforCal);
@@ -1048,7 +1100,7 @@ VOID MlmePeriodicExec(
 #ifdef VCORECAL_SUPPORT
 #ifdef MT76x0
 					if (IS_MT76x0(pAd))
-						MT76x0_VCO_CalibrationMode3(pAd);
+						MT76x0_VCO_CalibrationMode3(pAd, pAd->hw_cfg.cent_ch);
 					else
 #endif /* MT76x0 */
 					AsicVCORecalibration(pAd);
@@ -4353,8 +4405,13 @@ VOID RTMPUpdateLegacyTxSetting(
 		PMAC_TABLE_ENTRY	pEntry)
 {
 	HTTRANSMIT_SETTING TransmitSetting;
-	
-	if (fixed_tx_mode == FIXED_TXMODE_HT)
+
+	if ((fixed_tx_mode != FIXED_TXMODE_CCK) &&
+		(fixed_tx_mode != FIXED_TXMODE_OFDM)
+#ifdef DOT11_VHT_AC
+		&& (fixed_tx_mode != FIXED_TXMODE_VHT)
+#endif /* DOT11_VHT_AC */
+	)
 		return;
 							 				
 	TransmitSetting.word = 0;
@@ -4362,6 +4419,17 @@ VOID RTMPUpdateLegacyTxSetting(
 	TransmitSetting.field.MODE = pEntry->HTPhyMode.field.MODE;
 	TransmitSetting.field.MCS = pEntry->HTPhyMode.field.MCS;
 						
+#ifdef DOT11_VHT_AC
+	if (fixed_tx_mode == FIXED_TXMODE_VHT)
+	{
+		TransmitSetting.field.MODE = MODE_VHT;
+		TransmitSetting.field.BW = pEntry->MaxHTPhyMode.field.BW;
+		/* CCK mode allow MCS 0~3*/
+		if (TransmitSetting.field.MCS > ((1 << 4) + MCS_7))
+			TransmitSetting.field.MCS = ((1 << 4) + MCS_7);
+	}
+	else
+#endif /* DOT11_VHT_AC */
 	if (fixed_tx_mode == FIXED_TXMODE_CCK)
 	{
 		TransmitSetting.field.MODE = MODE_CCK;

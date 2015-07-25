@@ -134,8 +134,13 @@
 	clConfig.clNum = RX_RING_SIZE * 4;
 */
 
+#ifdef NOISE_TEST_ADJUST
+#define MAX_PACKETS_IN_MCAST_PS_QUEUE	128 /*64*/
+#define MAX_PACKETS_IN_PS_QUEUE			256 /*32 */
+#else
 #define MAX_PACKETS_IN_MCAST_PS_QUEUE		32
 #define MAX_PACKETS_IN_PS_QUEUE				128	/*32 */
+#endif /* NOISE_TEST_ADJUST */
 #define WMM_NUM_OF_AC                       4	/* AC0, AC1, AC2, and AC3 */
 
 #ifdef CONFIG_AP_SUPPORT
@@ -1488,6 +1493,7 @@ enum WIFI_MODE{
 #define REGION_19_A_BAND                  19
 #define REGION_20_A_BAND                  20
 #define REGION_21_A_BAND                  21
+#define REGION_22_A_BAND                  22
 #define REGION_MAXIMUM_A_BAND             37
 
 /* The security mode definition in MAC register */

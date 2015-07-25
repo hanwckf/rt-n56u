@@ -3552,3 +3552,154 @@ VOID StopDmaTx(
 	DBGPRINT(RT_DEBUG_TRACE, ("<==== %s\n", __FUNCTION__));
 }
 
+#ifdef DROP_MASK_SUPPORT
+VOID drop_mask_init_per_client(
+	PRTMP_ADAPTER	ad,
+	PMAC_TABLE_ENTRY entry)
+{
+	BOOLEAN cancelled = 0;
+	
+	if (entry->dropmask_timer.Valid)
+			RTMPCancelTimer(&entry->dropmask_timer, &cancelled);
+	RTMPInitTimer(ad, &entry->dropmask_timer, GET_TIMER_FUNCTION(drop_mask_timer_action), entry, FALSE);
+	
+	NdisAllocateSpinLock(ad, &entry->drop_mask_lock);
+	
+	entry->tx_fail_drop_mask_enabled = 0;
+	entry->ps_drop_mask_enabled = 0;
+	asic_set_drop_mask(ad, entry->Aid, 0);
+
+#ifdef NOISE_TEST_ADJUST
+	if ((ad->ApCfg.EntryClientCount >= 3) && IS_ENTRY_CLIENT(entry))
+		entry->pMbss->WPAREKEY.ReKeyMethod |= MAX_REKEY;
+#endif /* NOISE_TEST_ADJUST */
+}
+
+VOID drop_mask_release_per_client(
+	PRTMP_ADAPTER	ad,
+	PMAC_TABLE_ENTRY entry)
+{
+	BOOLEAN cancelled = 0;
+	
+	RTMPCancelTimer(&entry->dropmask_timer, &cancelled);
+	RTMPReleaseTimer(&entry->dropmask_timer, &cancelled);
+	NdisFreeSpinLock(&entry->drop_mask_lock);
+
+	entry->tx_fail_drop_mask_enabled = 0;
+	entry->ps_drop_mask_enabled = 0;
+	asic_set_drop_mask(ad, entry->Aid, 0);
+
+	if (ad->ApCfg.EntryClientCount == 2)
+	{
+		/* clear drop mask before client number fall below to threshold */
+		drop_mask_per_client_reset(ad);
+	}
+}
+
+VOID drop_mask_per_client_reset(
+	PRTMP_ADAPTER	ad)
+{
+	INT i;
+	UINT32 max_wcid_num = MAX_LEN_OF_MAC_TABLE;
+	
+	for ( i = 0; i < max_wcid_num; i++)
+	{
+		PMAC_TABLE_ENTRY entry = &ad->MacTab.Content[i];
+		if (entry && (!IS_ENTRY_NONE(entry)))
+		{
+			NdisAcquireSpinLock(&entry->drop_mask_lock);
+			entry->tx_fail_drop_mask_enabled = 0;
+			entry->ps_drop_mask_enabled = 0;
+			NdisReleaseSpinLock(&entry->drop_mask_lock);
+#ifdef NOISE_TEST_ADJUST
+			if (IS_ENTRY_CLIENT(entry))
+				entry->pMbss->WPAREKEY.ReKeyMethod &= (~MAX_REKEY);
+#endif /* NOISE_TEST_ADJUST */
+		}
+	}
+
+	asic_drop_mask_reset(ad);
+	
+}
+
+VOID set_drop_mask_per_client(
+	PRTMP_ADAPTER		ad,
+	PMAC_TABLE_ENTRY 	entry,
+	UINT8				type,
+	BOOLEAN				enable)
+{
+	BOOLEAN cancelled = 0;
+	BOOLEAN write_to_mac = 0;
+	UINT32 timeout = 0;
+
+#ifdef NOISE_TEST_ADJUST
+	if (ad->ApCfg.EntryClientCount < 3)
+		return;
+#endif /* NOISE_TEST_ADJUST */
+
+
+	switch (type)
+	{
+		case 1: /* set drop mask due to tx_fail too high */
+		{
+			write_to_mac = (enable ^ entry->tx_fail_drop_mask_enabled);
+			NdisAcquireSpinLock(&entry->drop_mask_lock);
+			entry->tx_fail_drop_mask_enabled = (enable ? 1:0);
+			NdisReleaseSpinLock(&entry->drop_mask_lock);
+			timeout = 10;
+			break;
+		}
+		case 2: /* set drop mask due to client is in power saving */
+		{
+			write_to_mac = (enable ^ entry->ps_drop_mask_enabled);
+			NdisAcquireSpinLock(&entry->drop_mask_lock);
+			entry->ps_drop_mask_enabled = (enable ? 1:0);
+			NdisReleaseSpinLock(&entry->drop_mask_lock);
+			timeout = 1000;
+			break;
+		}
+		default:
+			break;
+	}
+
+	RTMPCancelTimer(&entry->dropmask_timer, &cancelled);
+
+	if (enable)
+	{		
+		RTMPSetTimer(&entry->dropmask_timer, timeout /* ms */);
+	}
+
+	/* if we don't need to change mac reg, just return */
+	if (!write_to_mac)
+		return;
+
+	if (enable) {
+		asic_set_drop_mask(ad, entry->Aid, enable);
+	} else {
+		if (!entry->tx_fail_drop_mask_enabled &&
+			!entry->ps_drop_mask_enabled)
+		{
+			asic_set_drop_mask(ad, entry->Aid, enable);
+		}
+	}
+}
+
+VOID  drop_mask_timer_action(
+	IN PVOID SystemSpecific1, 
+	IN PVOID FunctionContext, 
+	IN PVOID SystemSpecific2, 
+	IN PVOID SystemSpecific3)
+{
+	PMAC_TABLE_ENTRY     entry = (MAC_TABLE_ENTRY *)FunctionContext;
+	PRTMP_ADAPTER ad = (PRTMP_ADAPTER)entry->pAd;
+
+	/* Disable drop mask */
+	if (entry->tx_fail_drop_mask_enabled)
+		set_drop_mask_per_client(ad, entry, 1, 0);
+
+	if (entry->ps_drop_mask_enabled)
+		set_drop_mask_per_client(ad, entry, 2, 0);
+
+}
+#endif /* DROP_MASK_SUPPORT */
+

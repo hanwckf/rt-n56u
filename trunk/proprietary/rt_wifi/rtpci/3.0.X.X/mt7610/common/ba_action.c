@@ -1331,6 +1331,11 @@ VOID PeerAddBAReqAction(
 	/* What is the Status code??  need to check.*/
 	ADDframe.StatusCode = Status;
 	ADDframe.BaParm.BAPolicy = IMMED_BA;
+#ifdef DOT11_VHT_AC
+	if (pMacEntry && (pMacEntry->MaxHTPhyMode.field.MODE == MODE_VHT) && (Status == 0))
+		ADDframe.BaParm.AMSDUSupported = pAddreqFrame->BaParm.AMSDUSupported;
+	else
+#endif
 	ADDframe.BaParm.AMSDUSupported = 0;
 	ADDframe.BaParm.TID = pAddreqFrame->BaParm.TID;
 	ADDframe.BaParm.BufSize = min(((UCHAR)pAddreqFrame->BaParm.BufSize), (UCHAR)pAd->CommonCfg.BACapability.field.RxBAWinLimit);
@@ -2267,6 +2272,14 @@ VOID BaReOrderingBufferMaintain(
 
 
 #ifdef PEER_DELBA_TX_ADAPT
+VOID Peer_DelBA_Tx_Adapt_Init(
+	IN PRTMP_ADAPTER pAd,
+	IN PMAC_TABLE_ENTRY pEntry)
+{
+	pEntry->bPeerDelBaTxAdaptEn = 0;
+	RTMPInitTimer(pAd, &pEntry->DelBA_tx_AdaptTimer, GET_TIMER_FUNCTION(PeerDelBATxAdaptTimeOut), pEntry, FALSE);
+}
+
 static VOID Peer_DelBA_Tx_Adapt_Enable(
 	IN PRTMP_ADAPTER pAd,
 	IN PMAC_TABLE_ENTRY pEntry)
@@ -2291,23 +2304,22 @@ static VOID Peer_DelBA_Tx_Adapt_Enable(
 	if (pEntry)
 	{	
 		USHORT RegId = 0;
-		UINT32 MacReg = 0, BitLUT;
+		UINT32 MacReg = 0;
+		BOOLEAN Cancelled;
+
+		RTMPCancelTimer(&pEntry->DelBA_tx_AdaptTimer, &Cancelled);
 		pEntry->bPeerDelBaTxAdaptEn = 1;
+
 		/* Enable Tx Mac look up table */
 		RTMP_IO_READ32(pAd, TX_FBK_LIMIT, &MacReg);
-		BitLUT = (MacReg & ((1 << 18)));
-		if (BitLUT)
-		{
-			/* Keep original register setting in this flag */
-			pEntry->bPeerDelBaTxAdaptEn |= BitLUT;
-		}
-		else
-		{
+		if ((MacReg & (1 << 18)) == 0) {
 			MacReg |= (1 << 18);
 			RTMP_IO_WRITE32(pAd, TX_FBK_LIMIT, MacReg);
 		}
+
 		RegId = 0x1C00 + (pEntry->Aid << 3);
-		RTMP_IO_WRITE32(pAd, RegId, 0x4007); /* Legacy OFDM / no STBC / LGI / BW20 / MCS 7 */
+		RTMP_IO_WRITE32(pAd, RegId, 0x2007); /* Legacy OFDM / no STBC / LGI / BW20 / MCS 7 */
+		RTMPSetTimer(&pEntry->DelBA_tx_AdaptTimer, 1000); /* 1000ms */
 		DBGPRINT(RT_DEBUG_TRACE,
 				("%s():MacReg = 0x%08x, bPeerDelBaTxAdaptEn = 0x%x\n",
 				__FUNCTION__, MacReg, pEntry->bPeerDelBaTxAdaptEn));
@@ -2331,11 +2343,9 @@ static VOID Peer_DelBA_Tx_Adapt_Disable(
 	
 	if (pEntry && pEntry->bPeerDelBaTxAdaptEn)
 	{
-		UINT32 BitLUT;
-		BitLUT = (pEntry->bPeerDelBaTxAdaptEn & (1 << 18));
-		if (!BitLUT)
-		{
+		BOOLEAN Cancelled;
 			UINT32 MacReg = 0;
+
 			/* Disable Tx Mac look up table (Ressume original setting) */
 			RTMP_IO_READ32(pAd, TX_FBK_LIMIT, &MacReg);
 			MacReg &= ~(1 << 18);
@@ -2343,14 +2353,31 @@ static VOID Peer_DelBA_Tx_Adapt_Disable(
 			DBGPRINT(RT_DEBUG_TRACE,
 					("%s():TX_FBK_LIMIT = 0x%08x\n",
 					__FUNCTION__, MacReg));
-		}
+
 		/* TODO: ressume MSC rate of the MAC look up table? */
 		pEntry->bPeerDelBaTxAdaptEn = 0;
+		RTMPCancelTimer(&pEntry->DelBA_tx_AdaptTimer, &Cancelled);
+		asic_mcs_lut_update(pAd, pEntry);
+
 		DBGPRINT(RT_DEBUG_TRACE,
 				("%s():bPeerDelBaTxAdaptEn = 0x%x\n",
 				__FUNCTION__, pEntry->bPeerDelBaTxAdaptEn));
 	}
 #endif /* MCS_LUT_SUPPORT */
+}
+
+VOID PeerDelBATxAdaptTimeOut(
+	IN PVOID SystemSpecific1, 
+	IN PVOID FunctionContext, 
+	IN PVOID SystemSpecific2, 
+	IN PVOID SystemSpecific3) 
+{
+	PMAC_TABLE_ENTRY pEntry = (PMAC_TABLE_ENTRY) FunctionContext;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("%s()\n", __FUNCTION__));
+		
+	/* Disable Tx Mac look up table (Ressume original setting) */
+	Peer_DelBA_Tx_Adapt_Disable(pEntry->pAd, pEntry);
 }
 #endif /* PEER_DELBA_TX_ADAPT */
 #endif /* DOT11_N_SUPPORT */

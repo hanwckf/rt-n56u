@@ -65,11 +65,11 @@
 
 #define NDIS_802_11_LENGTH_RATES        8
 #define NDIS_802_11_LENGTH_RATES_EX     16
-#define MAC_ADDR_LENGTH                 6
+#define MAC_ADDR_LEN                 6
 /*#define MAX_NUM_OF_CHS					49 */ /* 14 channels @2.4G +  12@UNII + 4 @MMAC + 11 @HiperLAN2 + 7 @Japan + 1 as NULL terminationc */
 /*#define MAX_NUM_OF_CHS             		54 */ /* 14 channels @2.4G +  12@UNII(lower/middle) + 16@HiperLAN2 + 11@UNII(upper) + 0 @Japan + 1 as NULL termination */
 #define MAX_NUMBER_OF_EVENT				10	/* entry # in EVENT table */
-#define MAX_NUMBER_OF_MAC				64	/* if MAX_MBSSID_NUM is 8, this value can't be larger than 211 */
+#define MAX_NUMBER_OF_MAC				32	/* if MAX_MBSSID_NUM is 8, this value can't be larger than 211 */
 #define MAX_NUMBER_OF_ACL				64
 #define MAX_LENGTH_OF_SUPPORT_RATES		12	/* 1, 2, 5.5, 11, 6, 9, 12, 18, 24, 36, 48, 54 */
 #define MAX_NUMBER_OF_DLS_ENTRY			4
@@ -422,6 +422,7 @@ typedef enum _NDIS_802_11_NETWORK_TYPE {
 	Ndis802_11Automode,
 	Ndis802_11OFDM5_N,
 	Ndis802_11OFDM24_N,
+	Ndis802_11OFDM5_AC,
 	Ndis802_11NetworkTypeMax	/* not a real type, defined as an upper bound */
 } NDIS_802_11_NETWORK_TYPE, *PNDIS_802_11_NETWORK_TYPE;
 
@@ -1016,7 +1017,7 @@ typedef struct _RT_802_11_LINK_STATUS {
 #ifdef SYSTEM_LOG_SUPPORT
 typedef struct _RT_802_11_EVENT_LOG {
 	LARGE_INTEGER SystemTime;	/* timestammp via NdisGetCurrentSystemTime() */
-	UCHAR Addr[MAC_ADDR_LENGTH];
+	UCHAR Addr[MAC_ADDR_LEN];
 	USHORT Event;		/* EVENT_xxx */
 } RT_802_11_EVENT_LOG, *PRT_802_11_EVENT_LOG;
 
@@ -1044,7 +1045,7 @@ typedef union _MACHTTRANSMIT_SETTING {
 
 typedef struct _RT_802_11_MAC_ENTRY {
 	UCHAR ApIdx;
-	UCHAR Addr[MAC_ADDR_LENGTH];
+	UCHAR Addr[MAC_ADDR_LEN];
 	UCHAR Aid;
 	UCHAR Psm;		/* 0:PWR_ACTIVE, 1:PWR_SAVE */
 	UCHAR MimoPs;		/* 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled */
@@ -1129,7 +1130,7 @@ typedef struct _OID_BACAP_STRUC {
 } OID_BACAP_STRUC, *POID_BACAP_STRUC;
 
 typedef struct _RT_802_11_ACL_ENTRY {
-	UCHAR Addr[MAC_ADDR_LENGTH];
+	UCHAR Addr[MAC_ADDR_LEN];
 	USHORT Rsv;
 } RT_802_11_ACL_ENTRY, *PRT_802_11_ACL_ENTRY;
 
@@ -1220,7 +1221,7 @@ typedef struct _WSC_CREDENTIAL {
 	USHORT EncrType;	/* mandatory, 1: none, 2: wep, 4: tkip, 8: aes */
 	UCHAR Key[64];		/* mandatory, Maximum 64 byte */
 	USHORT KeyLength;
-	UCHAR MacAddr[MAC_ADDR_LENGTH];	/* mandatory, AP MAC address */
+	UCHAR MacAddr[MAC_ADDR_LEN];	/* mandatory, AP MAC address */
 	UCHAR KeyIndex;		/* optional, default is 1 */
 	UCHAR bFromUPnP;	/* TRUE: This credential is from external UPnP registrar */
 	UCHAR Rsvd[2];		/* Make alignment */
@@ -1240,12 +1241,12 @@ typedef enum _WAPI_PORT_SECURE_STATE {
 } WAPI_PORT_SECURE_STATE, *PWAPI_PORT_SECURE_STATE;
 
 typedef struct _WAPI_PORT_SECURE_STRUCT {
-	UCHAR Addr[MAC_ADDR_LENGTH];
+	UCHAR Addr[MAC_ADDR_LEN];
 	USHORT state;
 } WAPI_PORT_SECURE_STRUCT, *PWAPI_PORT_SECURE_STRUCT;
 
 typedef struct _WAPI_UCAST_KEY_STRUCT {
-	UCHAR Addr[MAC_ADDR_LENGTH];
+	UCHAR Addr[MAC_ADDR_LEN];
 	USHORT key_id;
 	UCHAR PTK[64];		/* unicast and additional key */
 } WAPI_UCAST_KEY_STRUCT, *PWAPI_UCAST_KEY_STRUCT;

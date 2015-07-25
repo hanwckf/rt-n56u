@@ -184,7 +184,8 @@ VOID CarrierDetectionPeriodicStateCtrl(
 		CarrierDetectionStatusGet(pAd, &TrStatus);
 		if (TrStatus)
 		{
-			if (*pCD_State == CD_NORMAL)
+			if (*pCD_State == CD_NORMAL &&
+				(--pCarrierDetect->recheck) == 0)
 			{
 				DBGPRINT(RT_DEBUG_OFF, 
 						   ("Carrier Detected ! (TrStatus = 0x%x)\n", TrStatus));
@@ -192,13 +193,17 @@ VOID CarrierDetectionPeriodicStateCtrl(
 				/* stop all TX actions including Beacon sending.*/
 				AsicDisableSync(pAd);
 			}
+			else if (*pCD_State == CD_SILENCE)
+			{
 			*pOneSecIntCount  = pCarrierDetect->CarrierGoneThreshold;
+			}
 			CarrierDetectionResetStatus(pAd);
-			
 		}
 		else
+		{
+			pCarrierDetect->recheck = pCarrierDetect->recheck1;
 			*pOneSecIntCount  = 0;
-
+		}
 		/*CarrierDetectionResetStatus(pAd);*/
 	}
 	
@@ -736,6 +741,7 @@ VOID CarrierDetectionStop(IN PRTMP_ADAPTER	pAd)
 	/* Stop firmware CS action */
 	AsicSendCommandToMcu(pAd, CD_ONOFF_MCU_CMD, 0xff, 0x00, 0x00, FALSE);
 #endif /* CARRIER_DETECTION_FIRMWARE_SUPPORT */
+
 	return;
 }
 
@@ -876,7 +882,6 @@ VOID ToneRadarProgram_v3(PRTMP_ADAPTER pAd, ULONG threshold)
 	RTMP_BBP_IO_WRITE32(pAd, TR_R6, 0x80100000);
 	CarrierDetectionEnable(pAd, 1);	
 }
-
-
 #endif /* CARRIER_DETECTION_SUPPORT */
+
 

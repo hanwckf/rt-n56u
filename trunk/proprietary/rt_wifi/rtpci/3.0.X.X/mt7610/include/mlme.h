@@ -116,7 +116,11 @@ extern UINT32 CW_MAX_IN_BITS;
 #define BSS_NOT_FOUND                    0xFFFFFFFF
 
 #ifdef CONFIG_AP_SUPPORT
+#ifdef NOISE_TEST_ADJUST
+#define MAX_LEN_OF_MLME_QUEUE            40 /*10 */
+#else
 #define MAX_LEN_OF_MLME_QUEUE            20 /*10 */
+#endif /* NOISE_TEST_ADJUST */
 #endif /* CONFIG_AP_SUPPORT */
 
 #undef MAX_LEN_OF_MLME_QUEUE
@@ -1307,6 +1311,7 @@ typedef struct _MLME_AUX {
 	UCHAR vht_op_len;
 	VHT_CAP_IE vht_cap;
 	VHT_OP_IE vht_op;
+	UCHAR vht_max_mcs_cap;
 #endif /* DOT11_VHT_AC */
 
     /* new for QOS */

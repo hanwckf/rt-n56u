@@ -87,12 +87,12 @@ config  MT7610_AP_CARRIER
 	default n
 
 config  MT7610_AP_ED_MONITOR
-	bool "ED CCA Monitor Support"
+	bool "ED CCA Monitor support"
 	depends on MT7610_AP
 	default n
 
 config  MT7610_AP_BAND_STEERING
-	bool "Band Steering"
+	bool "Band Steering support"
 	depends on MT7610_AP
 	default n
 

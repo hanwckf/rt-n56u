@@ -463,6 +463,52 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 			ptr += sizeof(HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE);
 			FrameLen += sizeof(HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE);
 		}
+#ifdef DOT11_VHT_AC
+		if (WMODE_CAP_AC(PhyMode)) {
+			INT tp_len, wb_len = 0;
+			UCHAR *ch_sw_wrapper;
+			VHT_TXPWR_ENV_IE txpwr_env;
+
+
+			*ptr = IE_CH_SWITCH_WRAPPER;
+			ch_sw_wrapper = (UCHAR *)(ptr + 1); // reserve for length
+			ptr += 2; // skip len
+
+			if (pComCfg->RegTransmitSetting.field.BW == BW_40) {
+				WIDE_BW_CH_SWITCH_IE wb_info;
+
+				*ptr = IE_WIDE_BW_CH_SWITCH;
+				*(ptr + 1) = sizeof(WIDE_BW_CH_SWITCH_IE);
+				ptr += 2;
+				NdisZeroMemory(&wb_info, sizeof(WIDE_BW_CH_SWITCH_IE));
+				if (pComCfg->vht_bw == VHT_BW_2040)
+					wb_info.new_ch_width = 0;
+				else
+					wb_info.new_ch_width = 1;
+
+				if (pComCfg->vht_bw == VHT_BW_80) {
+					wb_info.center_freq_1 = vht_cent_ch_freq(pAd, pComCfg->Channel);
+					wb_info.center_freq_2 = 0;
+				}
+				NdisMoveMemory(ptr, &wb_info, sizeof(WIDE_BW_CH_SWITCH_IE));
+				wb_len = sizeof(WIDE_BW_CH_SWITCH_IE);
+				ptr += wb_len;
+				wb_len += 2;
+			}
+
+			*ptr = IE_VHT_TXPWR_ENV;
+			NdisZeroMemory(&txpwr_env, sizeof(VHT_TXPWR_ENV_IE));
+			tp_len = build_vht_txpwr_envelope(pAd, (UCHAR *)&txpwr_env);
+			*(ptr + 1) = tp_len;
+			ptr += 2;
+			NdisMoveMemory(ptr, &txpwr_env, tp_len);
+			ptr += tp_len;
+			tp_len += 2;
+			*ch_sw_wrapper = wb_len + tp_len;
+
+			FrameLen += (2 + wb_len + tp_len);
+		}
+#endif /* DOT11_VHT_AC */
 #endif /* DOT11_N_SUPPORT */
 	}
 #endif /* A_BAND_SUPPORT */
@@ -557,7 +603,7 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 #ifdef DOT11_VHT_AC
 		if (WMODE_CAP_AC(PhyMode) && (pComCfg->Channel > 14))
 		{
-			int _len = build_vht_ies(pAd, (UCHAR *)(pBeaconFrame+FrameLen), SUBTYPE_BEACON);
+			int _len = build_vht_ies(pAd, (UCHAR *)(pBeaconFrame+FrameLen), SUBTYPE_BEACON, pAd->CommonCfg.vht_max_mcs_cap);
 			FrameLen += _len;
 		}
 #endif /* DOT11_VHT_AC */
@@ -589,7 +635,6 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 		}
 #endif /* DOT11N_DRAFT3 */
 #endif /* DOT11_N_SUPPORT */
-
 
 		pInfo = (PUCHAR)(&extCapInfo);
 		for (infoPos = 0; infoPos < extInfoLen; infoPos++)
@@ -713,6 +758,22 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 						1,							&PwrConstraint,
 						END_OF_ARGS);
 		FrameLen += TmpLen;
+#ifdef DOT11_VHT_AC
+		if (WMODE_CAP_AC(PhyMode)) {
+			ULONG TmpLen;
+			UINT8 vht_txpwr_env_ie = IE_VHT_TXPWR_ENV;
+			UINT8 ie_len;
+			VHT_TXPWR_ENV_IE txpwr_env;
+
+			ie_len = build_vht_txpwr_envelope(pAd, (UCHAR *)&txpwr_env);
+			MakeOutgoingFrame(pBeaconFrame+FrameLen, &TmpLen,
+						1,							&vht_txpwr_env_ie,
+						1,							&ie_len,
+						ie_len,						&txpwr_env,
+						END_OF_ARGS);
+			FrameLen += TmpLen;
+		}
+#endif /* DOT11_VHT_AC */
 	}
 #endif /* A_BAND_SUPPORT */
 

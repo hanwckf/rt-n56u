@@ -2063,6 +2063,8 @@ VOID	RTMPCommSiteSurveyData(
 			sprintf(msg+strlen(msg),"%-7s", "11a");
 		else if (wireless_mode == Ndis802_11OFDM5_N)
 			sprintf(msg+strlen(msg),"%-7s", "11a/n");
+		else if (wireless_mode == Ndis802_11OFDM5_AC)
+			sprintf(msg+strlen(msg),"%-7s", "11a/n/ac");
 		else if (wireless_mode == Ndis802_11OFDM24)
 			sprintf(msg+strlen(msg),"%-7s", "11b/g");
 		else if (wireless_mode == Ndis802_11OFDM24_N)
@@ -2947,6 +2949,11 @@ INT	Set_HtBaWinSize_Proc(
 	
 	Value = simple_strtol(arg, 0, 10);
 
+#ifdef CONFIG_AP_SUPPORT
+	/* Intel IOT*/
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+		Value = 64;
+#endif /* CONFIG_AP_SUPPORT */
 
 	if (Value >=1 && Value <= 64)
 	{
@@ -4743,8 +4750,10 @@ INT Show_MacTable_Proc(RTMP_ADAPTER *pAd, PSTRING arg)
 #endif /* DOT11_VHT_AC */
 			printk("%-6d", pEntry->MaxHTPhyMode.field.MCS);
 			printk("%-6d", pEntry->MaxHTPhyMode.field.ShortGI);
-			printk("%-6d\n", pEntry->MaxHTPhyMode.field.STBC);
-
+			printk("%-6d", pEntry->MaxHTPhyMode.field.STBC);
+#ifdef PS_ENTRY_MAITENANCE
+			printk("\tcontinuous_ps_count = %u\n", pEntry->continuous_ps_count);
+#endif /* PS_ENTRY_MAITENANCE */
 			printk("\n");
 		}
 	} 
@@ -4752,6 +4761,18 @@ INT Show_MacTable_Proc(RTMP_ADAPTER *pAd, PSTRING arg)
 	return TRUE;
 }
 
+INT Show_Scanning_Proc(RTMP_ADAPTER *pAd, PSTRING arg)
+{
+	if(ApScanRunning(pAd))
+	{
+		DBGPRINT(RT_DEBUG_OFF, ("### Driver Scanning\n"));
+	}
+	else
+	{
+		DBGPRINT(RT_DEBUG_OFF, ("### Driver Idle\n"));
+	}
+	return 0;
+}
 
 INT show_devinfo_proc(RTMP_ADAPTER *pAd, PSTRING arg)
 {

@@ -237,7 +237,8 @@ VOID MT76x0_AntennaSelCtrl(
 	IN struct _RTMP_ADAPTER *pAd);
 
 VOID MT76x0_VCO_CalibrationMode3(
-	IN struct _RTMP_ADAPTER *pAd);
+	IN struct _RTMP_ADAPTER *pAd,
+	IN UCHAR Channel);
 
 VOID MT76x0_Calibration(
 	IN struct _RTMP_ADAPTER *pAd,

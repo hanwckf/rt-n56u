@@ -1580,6 +1580,14 @@ VOID APMlmeDynamicTxRateSwitchingAdapt(RTMP_ADAPTER *pAd, ULONG i)
 				RssiOffset = 5;
 			}
 
+#ifdef NOISE_TEST_ADJUST
+			if (pAd->MacTab.Size > 5) {
+				if (Rssi > -73)
+					Rssi = -73;
+				else
+					RssiOffset += 3;
+			}
+#endif /* NOISE_TEST_ADJUST */
 			/* Select the Tx rate based on the RSSI */
 			TxRateIdx = MlmeSelectTxRateAdapt(pAd, pEntry, mcs, Rssi, RssiOffset);
 				pEntry->lastRateIdx = pEntry->CurrTxRateIndex;

@@ -686,6 +686,9 @@ typedef	struct	_WSC_CTRL
 	RALINK_TIMER_STRUCT M2DTimer;
 	BOOLEAN				bM2DTimerRunning;
 	INT					M2DACKBalance;
+#ifdef CONFIG_AP_SUPPORT
+	BOOLEAN				bWscAutoTriggerDisable; /* Default setting is FALSE */
+#endif /* CONFIG_AP_SUPPORT */
 }	WSC_CTRL, *PWSC_CTRL;
 
 typedef struct GNU_PACKED _WSC_CONFIGURED_VALUE {

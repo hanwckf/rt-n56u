@@ -260,6 +260,12 @@ BOOLEAN APCliInstallSharedKey(
 	IN	UCHAR			DefaultKeyIdx,
 	IN  MAC_TABLE_ENTRY *pEntry);
 
+VOID ApCliCheckPeerExistence(
+	IN RTMP_ADAPTER *pAd,
+	IN CHAR *Ssid,
+	IN UCHAR SsidLen,
+	IN UCHAR Channel);
+
 VOID ApCliUpdateMlmeRate(
 	IN PRTMP_ADAPTER pAd,
 	IN USHORT ifIndex);

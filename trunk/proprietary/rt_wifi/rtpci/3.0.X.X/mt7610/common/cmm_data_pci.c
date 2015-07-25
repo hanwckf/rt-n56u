@@ -183,21 +183,6 @@ VOID ral_write_txd(
 	pTxD->DMADONE = 0;
 }
 
-#ifdef RLT_MAC
-VOID rlt_update_txinfo(
-	IN RTMP_ADAPTER *pAd,
-	IN TXINFO_STRUC *pTxInfo,
-	IN TX_BLK *pTxBlk)
-{
-	if (pTxBlk->naf_type) {
-		struct _TXINFO_NMAC_PKT *nmac_info;
-		nmac_info = (struct _TXINFO_NMAC_PKT *)pTxInfo;
-	}
-}
-#endif /* RLT_MAC */
-
-
-
 /* IRQL = DISPATCH_LEVEL */
 VOID ComposeNullFrame(
 	IN PRTMP_ADAPTER pAd)
@@ -1169,7 +1154,11 @@ VOID	RTMPHandlePreTBTTInterrupt(
 #ifdef CONFIG_AP_SUPPORT
 	if (pAd->OpMode == OPMODE_AP)
 	{
+#ifdef RT_CFG80211_SUPPORT
+		RT_CFG80211_BEACON_TIM_UPDATE(pAd);
+#else /* RT_CFG80211_SUPPORT */
 		APUpdateAllBeaconFrame(pAd);
+#endif /* !RT_CFG80211_SUPPORT */
 	}
 	else
 #endif /* CONFIG_AP_SUPPORT */

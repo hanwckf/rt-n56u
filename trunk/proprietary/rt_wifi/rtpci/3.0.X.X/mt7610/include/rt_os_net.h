@@ -421,6 +421,12 @@ VOID RTMP_P2P_Remove(
 
 
 #ifdef RT_CFG80211_SUPPORT
+
+
+PNET_DEV RTMP_CFG80211_FindVifEntry_ByType(
+              VOID     *pAdSrc,
+              UINT32    devType);
+
 #define RTMP_DRIVER_80211_CB_GET(__pAd, __ppCB)							\
 	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_CB_GET, 0, __ppCB, 0)
 #define RTMP_DRIVER_80211_CB_SET(__pAd, __pCB)							\
@@ -428,13 +434,13 @@ VOID RTMP_P2P_Remove(
 #define RTMP_DRIVER_80211_CHAN_SET(__pAd, __pChan)						\
 	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_CHAN_SET, 0, __pChan, 0)
 #define RTMP_DRIVER_80211_VIF_SET(__pAd, __Filter, __IfType)			\
-	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_VIF_CHG, 0, &__Filter, __IfType)
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_VIF_CHG, 0, __Filter, __IfType)
 #define RTMP_DRIVER_80211_SCAN(__pAd)									\
 	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_SCAN, 0, NULL, 0)
 #define RTMP_DRIVER_80211_IBSS_JOIN(__pAd, __pInfo)						\
 	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_IBSS_JOIN, 0, __pInfo, 0)
-#define RTMP_DRIVER_80211_STA_LEAVE(__pAd)								\
-	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_STA_LEAVE, 0, NULL, 0)
+#define RTMP_DRIVER_80211_STA_LEAVE(__pAd, __ifType)								\
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_STA_LEAVE, 0, NULL, __ifType)
 #define RTMP_DRIVER_80211_STA_GET(__pAd, __pStaInfo)					\
 	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_STA_GET, 0, __pStaInfo, 0)
 #define RTMP_DRIVER_80211_KEY_ADD(__pAd, __pKeyInfo)					\
@@ -455,6 +461,41 @@ VOID RTMP_P2P_Remove(
 	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_SURVEY_GET, 0, __pSurveyInfo, 0)
 #define RTMP_DRIVER_80211_PMKID_CTRL(__pAd, __pPmkidInfo)				\
 	RTMP_STA_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_STA_SIOCSIWPMKSA, 0, __pPmkidInfo, 0, 0);
+
+#define RTMP_DRIVER_80211_CHANNEL_LOCK(__pAd, __Chan)                   \
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_CHANNEL_LOCK, 0, NULL , __Chan)
+#define RTMP_DRIVER_80211_MGMT_FRAME_SEND(__pAd, __pFrame, __Len)                       \
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_MGMT_FRAME_SEND, 0, __pFrame, __Len)
+#define RTMP_DRIVER_80211_MGMT_FRAME_REG(__pAd, __devPtr, __Reg) \
+    RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_MGMT_FRAME_REG, 0, __devPtr, __Reg)
+#define RTMP_DRIVER_80211_ACTION_FRAME_REG(__pAd, __devPtr, __Reg) \
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_ACTION_FRAME_REG, 0, __devPtr, __Reg)
+#define RTMP_DRIVER_80211_CHANGE_BSS_PARM(__pAd, __pBssInfo)                                        \
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_CHANGE_BSS_PARM, 0, __pBssInfo, 0)
+#define RTMP_DRIVER_80211_AP_STA_DEL(__pAd, __pMac) \
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_AP_STA_DEL, 0, __pMac, 0)
+#define RTMP_DRIVER_80211_AP_MLME_PORT_SECURED(__pAd, __pMac, __Reg) \
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_PORT_SECURED,  0, __pMac, __Reg)
+#define RTMP_DRIVER_80211_RESET(__pAd)				\
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_RESET,  0, NULL, 0)
+#define RTMP_DRIVER_80211_SCAN_STATUS_LOCK_INIT(__pAd, __isInit)	\
+     RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_SCAN_STATUS_LOCK_INIT, 0, NULL, __isInit)
+#define RTMP_DRIVER_80211_AP_PROBE_RSP(__pAd, __pFrame, __Len) \
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_AP_PROBE_RSP, 0, __pFrame, __Len)
+#define RTMP_DRIVER_80211_BEACON_SET(__pAd, __pBeacon) \
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_BEACON_SET, 0, __pBeacon, 0)
+#define RTMP_DRIVER_80211_BEACON_ADD(__pAd, __pBeacon) \
+        RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_BEACON_ADD, 0, __pBeacon, 0)
+#define RTMP_DRIVER_80211_BEACON_DEL(__pAd) \
+		RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_BEACON_DEL, 0, NULL, 0)
+#define RTMP_DRIVER_80211_AP_KEY_DEL(__pAd, __pKeyInfo)                                        \
+        RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_AP_KEY_DEL, 0, __pKeyInfo, 0)
+#define RTMP_DRIVER_80211_AP_KEY_ADD(__pAd, __pKeyInfo)                                        \
+        RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_AP_KEY_ADD, 0, __pKeyInfo, 0)
+#define RTMP_DRIVER_80211_AP_KEY_DEFAULT_SET(__pAd, __KeyId)				\
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_AP_KEY_DEFAULT_SET, 0, NULL, __KeyId)
+#define RTMP_DRIVER_80211_STA_KEY_DEFAULT_SET(__pAd, __KeyId)				\
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_80211_STA_KEY_DEFAULT_SET, 0, NULL, __KeyId)	
 #endif /* RT_CFG80211_SUPPORT */
 
 /* mesh */

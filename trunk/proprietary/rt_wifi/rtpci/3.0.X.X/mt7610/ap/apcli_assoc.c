@@ -409,7 +409,19 @@ static VOID ApCliMlmeAssocReqAction(
 				(pAd->CommonCfg.Channel > 14) &&
 				(pApCliEntry->ApCliMlmeAux.vht_cap_len))
 			{
-				FrameLen += build_vht_ies(pAd, (UCHAR *)(pOutBuffer + FrameLen), SUBTYPE_ASSOC_REQ);
+#ifdef DISANLE_VHT80_256_QAM
+				if ((pApCliEntry->ApCliMlmeAux.vht_op.vht_op_info.ch_width == VHT_BW_80) &&
+					(pAd->CommonCfg.disable_vht_256QAM & DISABLE_VHT80_256_QAM))
+				{
+					pApCliEntry->ApCliMlmeAux.vht_max_mcs_cap = VHT_MCS_CAP_7;
+				}
+				else
+#endif /* DISANLE_VHT80_256_QAM */
+				{
+					pApCliEntry->ApCliMlmeAux.vht_max_mcs_cap = VHT_MCS_CAP_9;
+				}
+
+				FrameLen += build_vht_ies(pAd, (UCHAR *)(pOutBuffer + FrameLen), SUBTYPE_ASSOC_REQ, pApCliEntry->ApCliMlmeAux.vht_max_mcs_cap);
 			}
 #endif /* DOT11_VHT_AC */
 

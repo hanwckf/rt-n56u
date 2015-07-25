@@ -747,7 +747,7 @@ VOID APMlmeSetTxRate(
 #ifdef DOT11_N_SUPPORT
 	if (tx_mode == MODE_HTMIX || tx_mode == MODE_HTGREENFIELD)
 	{
-		if ((pTxRate->STBC) && (pEntry->MaxHTPhyMode.field.STBC))
+		if ((pTxRate->STBC) && (pEntry->MaxHTPhyMode.field.STBC) && (pAd->Antenna.field.TxPath >= 2))
 			pEntry->HTPhyMode.field.STBC = STBC_USE;
 		else
 			pEntry->HTPhyMode.field.STBC = STBC_NONE;
@@ -777,12 +777,6 @@ VOID APMlmeSetTxRate(
 					else
 						bw_cap = pAdaptTbEntry->BW;
 					break;
-#if 0
-/* MaxHTPhyMode.field.BW length is 2bits, no BW_10 caps */
-				case BW_10:
-					bw_cap = BW_10;
-					break;
-#endif
 				case BW_20:
 				default:
 					if (pAdaptTbEntry->BW == BW_80 || pAdaptTbEntry->BW == BW_40)
@@ -808,7 +802,8 @@ VOID APMlmeSetTxRate(
 		else
 			pEntry->HTPhyMode.field.ShortGI = GI_800;
 
-		if (pTxRate->STBC && (CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_VHT_RXSTBC_CAPABLE)))
+		if (pTxRate->STBC && (CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_VHT_RXSTBC_CAPABLE))
+			&& (pAd->Antenna.field.TxPath >= 2))
 			pEntry->HTPhyMode.field.STBC = STBC_USE;
 		else
 			pEntry->HTPhyMode.field.STBC = STBC_NONE;
@@ -2197,11 +2192,13 @@ VOID RTMPSetSupportMCS(
 					{							
 						for (i = 0; i <= 7; i++)
 							pEntry->SupportVHTMCS[i] = TRUE;
-						if (vht_cap->mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_8)
+						if ((vht_cap->mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_8) &&
+							(pAd->CommonCfg.vht_max_mcs_cap >= VHT_MCS_CAP_8))
 						{
 							pEntry->SupportVHTMCS[8] = TRUE;
 						}
-						else if (vht_cap->mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_9)
+						else if ((vht_cap->mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_9) &&
+							(pAd->CommonCfg.vht_max_mcs_cap == VHT_MCS_CAP_9))
 						{
 							pEntry->SupportVHTMCS[8] = TRUE;
 #ifdef MT76x0

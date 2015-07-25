@@ -579,6 +579,8 @@ typedef	union _LED_CFG_STRUC {
 #define TX_CHAIN_ADDR3_L	0x105C
 #define TX_CHAIN_ADDR3_H	0x1060
 
+#define TX_WCID_DROP_MASK0	0x106C
+
 #ifdef RT_BIG_ENDIAN
 typedef union _TX_CHAIN_ADDR0_L_STRUC {
 	struct {

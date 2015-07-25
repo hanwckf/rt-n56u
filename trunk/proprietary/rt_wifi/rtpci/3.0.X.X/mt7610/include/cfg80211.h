@@ -24,6 +24,48 @@
 
 #include <linux/ieee80211.h>
 
+
+/* get RALINK pAd control block in 80211 Ops */
+#define MAC80211_PAD_GET(__pAd, __pWiphy)							\
+	{																\
+		ULONG *__pPriv;												\
+		__pPriv = (ULONG *)(wiphy_priv(__pWiphy));					\
+		__pAd = (VOID *)(*__pPriv);									\
+		if (__pAd == NULL)											\
+		{															\
+			CFG80211DBG(RT_DEBUG_ERROR,								\
+					("80211> %s but pAd = NULL!", __FUNCTION__));	\
+			return -EINVAL;											\
+		}															\
+	}
+
+#define MAC80211_PAD_GET_NO_RV(__pAd, __pWiphy)						\
+	{																\
+		ULONG *__pPriv;												\
+		__pPriv = (ULONG *)(wiphy_priv(__pWiphy));					\
+		__pAd = (VOID *)(*__pPriv);									\
+		if (__pAd == NULL)											\
+		{															\
+			CFG80211DBG(RT_DEBUG_ERROR,								\
+					("80211> %s but pAd = NULL!", __FUNCTION__));	\
+			return;											\
+		}															\
+	}
+
+#define MAC80211_PAD_GET_RETURN_NULL(__pAd, __pWiphy)				\
+	{																\
+		ULONG *__pPriv;												\
+		__pPriv = (ULONG *)(wiphy_priv(__pWiphy));					\
+		__pAd = (VOID *)(*__pPriv);									\
+		if (__pAd == NULL)											\
+		{															\
+			CFG80211DBG(RT_DEBUG_ERROR,								\
+					("80211> %s but pAd = NULL!", __FUNCTION__));	\
+			return NULL;											\
+		}															\
+	}
+
+
 typedef struct __CFG80211_CB {
 
 	/* we can change channel/rate information on the fly so we backup them */
@@ -42,6 +84,9 @@ typedef struct __CFG80211_CB {
 
 	/* channel information */
 	struct ieee80211_channel ChanInfo[MAX_NUM_OF_CHANNELS];
+
+	/* to protect scan status */
+	spinlock_t scan_notify_lock;
 } CFG80211_CB;
 
 
@@ -73,6 +118,49 @@ BOOLEAN CFG80211_Register(
 	struct net_device			*pNetDev);
 
 
+BOOLEAN CFG80211DRV_OpsBeaconSet(
+    VOID                                            *pAdOrg,
+    VOID                                            *pData,
+	BOOLEAN                                          isAdd);
+
+VOID CFG80211_UpdateBeacon(
+	VOID                                            *pAdOrg,
+	UCHAR 										    *beacon_head_buf,
+	UINT32											beacon_head_len,
+	UCHAR 										    *beacon_tail_buf,
+	UINT32											beacon_tail_len,
+	BOOLEAN											isAllUpdate);
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0))
+INT CFG80211_OpsSetBeacon(
+        struct wiphy *pWiphy,
+        struct net_device *netdev,
+        struct beacon_parameters *info);
+
+INT CFG80211_OpsAddBeacon(
+        struct wiphy *pWiphy,
+        struct net_device *netdev,
+        struct beacon_parameters *info);
+
+INT CFG80211_OpsDelBeacon(
+        struct wiphy *pWiphy,
+        struct net_device *netdev);
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0) */
+INT CFG80211_OpsStartAp(
+	struct wiphy *pWiphy,
+	struct net_device *netdev,
+	struct cfg80211_ap_settings *settings);
+
+INT CFG80211_OpsChangeBeacon(
+	struct wiphy *pWiphy,
+	struct net_device *netdev,
+	struct cfg80211_beacon_data *info);
+
+INT CFG80211_OpsStopAp(
+	struct wiphy *pWiphy,
+	struct net_device *netdev);
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0) */
 #endif /* RT_CFG80211_SUPPORT */
 
 /* End of cfg80211.h */
+

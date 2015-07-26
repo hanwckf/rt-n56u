@@ -155,6 +155,10 @@ ifeq ($(CONFIG_RT5392_AP_VIDEO_TURBINE),y)
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_video.o
 endif
 
+ifeq ($(CONFIG_RT5392_AP_BAND_STEERING),y)
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_band_steering.o
+endif
+
 ###################
 #  CFLAGS
 ###################
@@ -299,6 +303,10 @@ endif
 
 ifeq ($(CONFIG_RT5392_AP_VIDEO_TURBINE),y)
 EXTRA_CFLAGS += -DVIDEO_TURBINE_SUPPORT
+endif
+
+ifeq ($(CONFIG_RT5392_AP_BAND_STEERING),y)
+EXTRA_CFLAGS += -DBAND_STEERING
 endif
 
 ifeq ($(CONFIG_RT5392_AP_EXT_CHANNEL_LIST),y)

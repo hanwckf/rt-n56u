@@ -56,6 +56,11 @@ config  RT5392_AP_IDS
 	bool "IDS (Intrusion Detection System) Support"
 	depends on RT5392_AP
 
+#config  RT5392_AP_BAND_STEERING
+#	bool "Band Steering Support"
+#	depends on RT5392_AP
+#	default n
+
 config  RT5392_AP_GREENAP
 	bool "Green AP mode support"
 	depends on RT5392_AP

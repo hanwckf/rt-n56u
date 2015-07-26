@@ -76,6 +76,11 @@ config  RT3593_AP_IDS
 	bool "IDS (Intrusion Detection System) Support"
 	depends on RT3593_AP
 
+#config RT3593_AP_BAND_STEERING
+#	bool "Band Steering Support"
+#	depends on RT3593_AP
+#	default n
+
 config  RT3593_AP_GREENAP
 	bool "Green AP mode support"
 	depends on RT3593_AP

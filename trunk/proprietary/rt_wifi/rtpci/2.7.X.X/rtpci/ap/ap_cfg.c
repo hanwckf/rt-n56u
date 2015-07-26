@@ -1125,6 +1125,16 @@ static struct {
 	{"bufferLoadFromBin", 			Set_LoadEepromBufferFromBin_Proc},
 	{"bufferWriteBack", 			Set_EepromBufferWriteBack_Proc},
 
+#ifdef BAND_STEERING
+	{"BndStrgEnable", 		Set_BndStrg_Enable},
+	{"BndStrgRssiCheck", 	Set_BndStrg_RssiCheck},
+	{"BndStrgAge", 		Set_BndStrg_Age},
+	{"BndStrgHoldTime", 	Set_BndStrg_HoldTime},
+	{"BndStrgCheckTime", 	Set_BndStrg_CheckTime5G},
+#ifdef BND_STRG_DBG
+	{"BndStrgMntAddr", 	Set_BndStrg_MonitorAddr},
+#endif /* BND_STRG_DBG */
+#endif /* BAND_STEERING */
 	
 	{NULL,}
 };
@@ -1177,6 +1187,12 @@ static struct {
 #ifdef WSC_AP_SUPPORT
 	{"WscPeerList", 		WscApShowPeerList},
 #endif /* WSC_AP_SUPPORT */
+
+#ifdef BAND_STEERING
+	{"BndStrgList", 		Show_BndStrg_List},
+	{"BndStrgInfo", 		Show_BndStrg_Info},
+#endif /* BAND_STEERING */
+
 	{NULL,}
 };
 
@@ -3051,6 +3067,11 @@ INT RTMPAPSetInformation(
 			break;
 #endif /*HOSTAPD_SUPPORT*/
 
+#ifdef BAND_STEERING
+	case OID_BNDSTRG_MSG:
+		BndStrg_MsgHandle(pAd, wrq);
+		break;
+#endif /* BAND_STEERING */
 
    		default:
 			DBGPRINT(RT_DEBUG_TRACE, ("Set::unknown IOCTL's subcmd = 0x%08x\n", cmd));

@@ -2526,6 +2526,15 @@ typedef struct _AP_ADMIN_CONFIG {
 #endif /* DOT11_N_SUPPORT */
 
 	UCHAR	EntryClientCount;
+
+#ifdef BAND_STEERING
+	/* 
+		This is used to let user config band steering on/off by profile.
+		0: OFF / 1: ON / 2: Auto ONOFF
+	*/
+	BOOLEAN BandSteering;
+	BND_STRG_CLI_TABLE BndStrgTable;
+#endif /* BAND_STEERING */
 } AP_ADMIN_CONFIG, *PAP_ADMIN_CONFIG;
 
 #ifdef IGMP_SNOOP_SUPPORT

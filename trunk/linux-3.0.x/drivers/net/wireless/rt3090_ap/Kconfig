@@ -56,6 +56,11 @@ config  RT3090_AP_IDS
 	bool "IDS (Intrusion Detection System) Support"
 	depends on RT3090_AP
 
+#config  RT3090_AP_BAND_STEERING
+#	bool "Band Steering Support"
+#	depends on RT3090_AP
+#	default n
+
 config  RT3090_AP_GREENAP
 	bool "Green AP mode support"
 	depends on RT3090_AP

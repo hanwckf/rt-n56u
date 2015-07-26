@@ -295,7 +295,10 @@ VOID APStartUp(
 				WscOnOff(pAd, apidx, FALSE);
 		}
 #endif /* WSC_V2_SUPPORT */
-
+#ifdef BAND_STEERING
+		if (pAd->ApCfg.BandSteering && apidx == BSS0)
+			BndStrg_Init(pAd);
+#endif /* BAND_STEERING */
 	}
 
 #ifdef DOT11_N_SUPPORT

@@ -60,6 +60,9 @@
 #endif /* RT_CFG80211_SUPPORT */
 #endif /* LINUX */
 
+#ifdef BAND_STEERING
+#include "band_steering_def.h"
+#endif /* BAND_STEERING */
 
 #include "mlme.h"
 #include "crypt_md5.h"
@@ -205,6 +208,10 @@
 #include <linux/workqueue.h>
 #endif /* WORKQUEUE_BH / */
 #endif /* RT_SOC_SUPPORT */
+
+#ifdef BAND_STEERING
+#include "band_steering.h"
+#endif /* BAND_STEERING */
 
 #ifdef RTMP_FREQ_CALIBRATION_SUPPORT
 #include "frq_cal.h"

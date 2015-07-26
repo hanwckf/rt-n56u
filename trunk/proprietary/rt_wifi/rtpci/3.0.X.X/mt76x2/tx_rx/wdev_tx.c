@@ -242,6 +242,19 @@ VOID wdev_tx_pkts(NDIS_HANDLE dev_hnd, PPNDIS_PACKET pkt_list, UINT pkt_cnt, str
 			continue;
 		}
 
+#ifdef RT_CFG80211_SUPPORT
+	if (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP && (wdev->Hostapd != Hostapd_CFG)
+#ifdef RT_CFG80211_P2P_SUPPORT
+	&& (!RTMP_CFG80211_VIF_P2P_GO_ON(pAd)) 
+#endif 	/*RT_CFG80211_P2P_SUPPORT*/
+		)
+		{
+			/* Drop send request since hardware is in reset state */
+			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
+			continue;
+		}
+#endif /*RT_CFG80211_SUPPORT*/
+
 		if ((wdev->allow_data_tx == TRUE) && (wdev->tx_pkt_allowed))
 			allowToSend = wdev->tx_pkt_allowed(pAd, wdev, pPacket, &wcid);
 		else

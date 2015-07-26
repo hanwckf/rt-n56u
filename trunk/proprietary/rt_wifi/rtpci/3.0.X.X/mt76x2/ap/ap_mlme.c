@@ -29,6 +29,13 @@
 #include <stdarg.h>
 
 extern UCHAR  ZeroSsid[32];
+
+#ifdef BTCOEX_CONCURRENT
+extern int CoexCenctralChannel;
+extern int CoexChannel;
+extern int CoexChannelBw;
+#endif
+
 #ifdef DOT11_N_SUPPORT
 
 int DetectOverlappingPeriodicRound;
@@ -158,8 +165,17 @@ VOID APMlmePeriodicExec(
 	/* for SmartBit 64-byte stream test */
 	/* removed based on the decision of Ralink congress at 2011/7/06 */
 /*	if (pAd->MacTab.Size > 0) */
+#ifdef RT6352
+	if (IS_RT6352(pAd))
+		RT6352_AsicAdjustTxPower(pAd);
+	else
+#endif /* RT6352 */
 	AsicAdjustTxPower(pAd);
 /*#endif // WIFI_TEST */
+
+#ifdef THERMAL_PROTECT_SUPPORT
+	thermal_protection(pAd);
+#endif /* THERMAL_PROTECT_SUPPORT */
 
 	RTMP_CHIP_ASIC_TEMPERATURE_COMPENSATION(pAd);
 
@@ -232,7 +248,7 @@ VOID APMlmePeriodicExec(
 		BOOLEAN IsUseBA = TRUE;
 #endif /* APCLI_CERT_SUPPORT */
 #ifdef MAC_REPEATER_SUPPORT
-		if (pAd->ApCfg.bMACRepeaterEn)
+		if (pAd->ApCfg.bMACRepeaterEn == TRUE)
 		{
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 			RTMPRepeaterReconnectionCheck(pAd);

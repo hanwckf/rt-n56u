@@ -36,6 +36,8 @@
 #ifdef MT76x2
 // Divider phase calibration closed loop definition
 #define RX0TX0     0
+#define RX0TX1     1
+#define RX1TX0     4
 #define RX1TX1     5
 
 #define ADC0_RX0_2R   8
@@ -210,6 +212,23 @@ INT ITxBFDividerCalibrationStartUp(
 	IN int calFunction,
 	IN int calMethod,
 	OUT UCHAR *divPhase);
+
+INT ITxBFLoPhaseCalibrationStartUp(
+	IN RTMP_ADAPTER *pAd,
+	IN BOOLEAN eepromUpdateFlg,
+	OUT UCHAR *LoPhase);
+
+INT ITxBFLNACalibrationStartUp(
+	IN RTMP_ADAPTER *pAd,
+	IN INT calFunction,
+	IN INT calMethod,
+	IN BOOLEAN gBand);
+
+INT ITxBFPhaseCalibrationStartUp(
+	IN RTMP_ADAPTER *pAd,
+	IN INT calFunction,
+	IN BOOLEAN loOffsetCkFlg,
+	IN USHORT ch);
 #endif
 
 INT ITxBFDividerCalibration(
@@ -234,6 +253,11 @@ INT mt76x2_ITxBFDividerCalibration(
 	IN int calMethod,
 	OUT UCHAR *divPhase);
 
+INT mt76x2_ITxBFLoPhaseCalibration(
+	IN RTMP_ADAPTER *pAd,
+	IN BOOLEAN eepromUpdateFlg,
+	OUT UCHAR *LoPhase);
+
 VOID mt76x2_ITxBFLoadLNAComp(
 	IN RTMP_ADAPTER *pAd);
 
@@ -243,21 +267,10 @@ int mt76x2_ITxBFLNACalibration(
 	IN int calMethod,
 	IN BOOLEAN gBand);
 
-
-INT ITxBFLNACalibrationStartUp(
+INT mt76x2_ITxBFPhaseCalibration(
 	IN RTMP_ADAPTER *pAd,
 	IN INT calFunction,
-	IN INT calMethod,
-	IN BOOLEAN gBand);
-
-INT ITxBFPhaseCalibrationStartUp(
-	IN RTMP_ADAPTER *pAd,
-	IN INT calFunction,
-	IN USHORT ch);
-
-INT ITxBFPhaseCalibration(
-	IN RTMP_ADAPTER *pAd,
-	IN INT calFunction,
+	IN BOOLEAN loOffsetCkFlg,
 	IN USHORT ch);
 #endif
 

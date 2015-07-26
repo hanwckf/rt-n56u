@@ -340,6 +340,44 @@ UCHAR NextChannel(RTMP_ADAPTER *pAd, UCHAR channel)
 	return next_channel;
 }
 
+
+/* 
+	==========================================================================
+	Description:
+
+	Return:
+		scan_channel - channel to scan.
+	Note:
+		return 0 if no more next channel
+	==========================================================================
+ */
+UCHAR RTMPFindScanChannel(
+	IN PRTMP_ADAPTER pAd, 
+	UINT8			  LastScanChannel)
+{
+	UCHAR scan_channel = 0;
+#ifdef CONFIG_AP_SUPPORT
+#ifdef AP_PARTIAL_SCAN_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+	{
+		if (pAd->ApCfg.bPartialScanning == TRUE)
+		{
+			scan_channel = FindPartialScanChannel(pAd);
+			return scan_channel;
+		}
+	}
+#endif /* AP_PARTIAL_SCAN_SUPPORT */
+#endif /* CONFIG_AP_SUPPORT */
+
+	if (LastScanChannel == 0)
+		scan_channel = FirstChannel(pAd);
+	else
+		scan_channel = NextChannel(pAd, LastScanChannel);
+
+	return scan_channel;
+}
+
+
 /* 
 	==========================================================================
 	Description:
@@ -404,6 +442,10 @@ CHAR ConvertToRssi(RTMP_ADAPTER *pAd, CHAR Rssi, UCHAR rssi_idx)
 		RssiOffset = pAd->BGRssiOffset[rssi_idx];
 
 	BaseVal = -12;
+#ifdef RT6352
+	if (IS_RT6352(pAd))
+		BaseVal = -2;
+#endif /* RT6352 */
 
 #ifdef RT65xx
 	/*
@@ -454,7 +496,10 @@ extern int DetectOverlappingPeriodicRound;
 VOID Handle_BSS_Width_Trigger_Events(RTMP_ADAPTER *pAd) 
 {
 	ULONG Now32;
-	
+#ifdef DOT11N_DRAFT3
+	if (pAd->CommonCfg.bBssCoexEnable == FALSE)
+		return;
+#endif
 	if ((pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth == BW_40) &&
 		(pAd->CommonCfg.Channel <=14))
 	{	

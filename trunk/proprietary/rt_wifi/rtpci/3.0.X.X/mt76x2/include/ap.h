@@ -72,7 +72,11 @@ NDIS_STATUS APInsertPsQueue(
 	IN MAC_TABLE_ENTRY *pMacEntry,
 	IN UCHAR QueIdx);
 
+#ifdef TXBF_SUPPORT
+NDIS_STATUS APHardTransmit(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk, UCHAR QueIdx, UCHAR TxSndgTypePerEntry);
+#else
 NDIS_STATUS APHardTransmit(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk, UCHAR QueIdx);
+#endif
 
 VOID APRxEAPOLFrameIndicate(
 	IN	PRTMP_ADAPTER	pAd,
@@ -134,6 +138,7 @@ VOID APMakeBssBeacon(RTMP_ADAPTER *pAd, INT apidx);
 VOID  APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx);
 VOID APMakeAllBssBeacon(RTMP_ADAPTER *pAd);
 VOID  APUpdateAllBeaconFrame(RTMP_ADAPTER *pAd);
+void updateAllBeacon(RTMP_ADAPTER *pAd, INT apidx, ULONG FrameLen);
 
 /* ap_sync.c */
 VOID APSyncStateMachineInit(
@@ -164,6 +169,11 @@ VOID SupportRate(
 
 
 BOOLEAN ApScanRunning(RTMP_ADAPTER *pAd);
+
+#ifdef AP_PARTIAL_SCAN_SUPPORT
+UCHAR FindPartialScanChannel(
+	IN PRTMP_ADAPTER pAd);
+#endif /* AP_PARTIAL_SCAN_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
 VOID APUpdateOperationMode(RTMP_ADAPTER *pAd);

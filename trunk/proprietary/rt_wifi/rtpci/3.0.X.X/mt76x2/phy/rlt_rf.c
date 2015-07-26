@@ -44,6 +44,11 @@ static inline BOOLEAN rf_csr_poll_idle(RTMP_ADAPTER *pAd, UINT32 *rfcsr)
 		RTMP_IO_READ32(pAd, RF_CSR_CFG, rfcsr);
 
 		csr_val = (RF_CSR_CFG_STRUC *)rfcsr;
+#ifdef RT6352
+		if (IS_RT6352(pAd))
+			idle = csr_val->bank_6352.RF_CSR_KICK;
+		else
+#endif /* RT6352 */
 #ifdef RT65xx
 		if (IS_RT65XX(pAd))
 			idle = csr_val->bank_65xx.RF_CSR_KICK;
@@ -102,6 +107,16 @@ NDIS_STATUS rlt_rf_write(
 	if (rf_csr_poll_idle(pAd, &rfcsr.word) != IDLE)
 		goto done;
 
+#ifdef RT6352
+	if (IS_RT6352(pAd))
+	{
+		rfcsr.bank_6352.RF_CSR_WR = 1;
+		rfcsr.bank_6352.RF_CSR_KICK = 1;
+		rfcsr.bank_6352.TESTCSR_RFACC_REGNUM = (regID | (bank << 6));
+		rfcsr.bank_6352.RF_CSR_DATA = value;
+	}
+	else
+#endif /* RT6352 */
 #ifdef RT65xx
 	if (IS_RT65XX(pAd)) {
 		rfcsr.bank_65xx.RF_CSR_WR = 1;
@@ -176,6 +191,15 @@ NDIS_STATUS rlt_rf_read(
 			break;
 
 		rfcsr.word = 0;
+#ifdef RT6352
+		if (IS_RT6352(pAd))
+		{
+			rfcsr.bank_6352.RF_CSR_WR = 0;
+			rfcsr.bank_6352.RF_CSR_KICK = 1;
+			rfcsr.bank_6352.TESTCSR_RFACC_REGNUM = (regID | (bank << 6));
+		}
+		else
+#endif /* RT6352 */
 #ifdef RT65xx
 		if (IS_RT65XX(pAd)) {
 			rfcsr.bank_65xx.RF_CSR_WR = 0;
@@ -195,6 +219,13 @@ NDIS_STATUS rlt_rf_read(
 		rf_status = rf_csr_poll_idle(pAd, &rfcsr.word);
 		if (rf_status == IDLE)
 		{
+#ifdef RT6352
+			if (IS_RT6352(pAd) && ((rfcsr.bank_6352.TESTCSR_RFACC_REGNUM & 0x3F) == regID))
+			{
+				*pValue = (UCHAR)(rfcsr.bank_6352.RF_CSR_DATA);
+				break;
+			}
+#endif /* RT6352 */
 #ifdef RT65xx
 			if (IS_RT65XX(pAd) && (rfcsr.bank_65xx.RF_CSR_REG_ID == regID) &&
 				(rfcsr.bank_65xx.RF_CSR_REG_BANK == bank))

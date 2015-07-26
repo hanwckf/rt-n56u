@@ -85,10 +85,20 @@ VOID STARxEAPOLFrameIndicate(
 	IN	RX_BLK			*pRxBlk,
 	IN	UCHAR			FromWhichBSSID);
 
+#ifdef TXBF_SUPPORT
+NDIS_STATUS	STAHardTransmit(
+	IN PRTMP_ADAPTER	pAd,
+	IN TX_BLK			*pTxBlk,
+	IN UCHAR			QueIdx,
+	IN UCHAR            TxSndgTypePerEntry);
+
+#else
+
 NDIS_STATUS	STAHardTransmit(
 	IN PRTMP_ADAPTER	pAd,
 	IN TX_BLK			*pTxBlk,
 	IN  UCHAR			QueIdx);
+#endif
 
 INT STASendPacket(
 	IN RTMP_ADAPTER *pAd,

@@ -713,7 +713,7 @@ VOID RTMPTkipMixKey(
 	TRUE: Success!
 	FALSE: Decrypt Error!
 */
-BOOLEAN RTMPSoftDecryptTKIP(
+NDIS_STATUS RTMPSoftDecryptTKIP(
 	IN 		PRTMP_ADAPTER 	pAd,
 	IN 		PUCHAR			pHdr,
 	IN 		UCHAR    		UserPriority,
@@ -752,7 +752,7 @@ BOOLEAN RTMPSoftDecryptTKIP(
 	if (pKey->KeyLen == 0)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("%s : the key is empty)\n", __FUNCTION__));
-		return FALSE;
+		return NDIS_STATUS_FAILURE;
 	}
 
 	/* Indicate type and subtype of Frame Control field */
@@ -810,7 +810,7 @@ BOOLEAN RTMPSoftDecryptTKIP(
 
 	/* skip payload length is zero*/
 	if ((*DataByteCnt) <= LEN_TKIP_IV_HDR)
-		return FALSE;
+		return NDIS_STATUS_FAILURE;
 
 	/* WEP Decapsulation */
 	/* Generate an RC4 key stream */
@@ -836,7 +836,7 @@ BOOLEAN RTMPSoftDecryptTKIP(
     if(crc32 != cpu2le32(trailfcs))
     {
 		DBGPRINT(RT_DEBUG_ERROR, ("! WEP Data CRC Error !\n"));	 /*CRC error.*/
-		return FALSE;
+		return NDIS_STATUS_FAILURE;
 	}
 
 	/* Extract peer's MIC and subtract MIC length from total data length */
@@ -850,7 +850,7 @@ BOOLEAN RTMPSoftDecryptTKIP(
 	if (!NdisEqualMemory(MIC, TrailMIC, LEN_TKIP_MIC))
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("! TKIP MIC Error !\n"));	 /*MIC error.*/
-		return FALSE;		
+		return NDIS_STATUS_MICERROR;		
 	}
 
 	/* Update the total data length */
@@ -859,7 +859,7 @@ BOOLEAN RTMPSoftDecryptTKIP(
 #ifdef RT_BIG_ENDIAN
 	RTMPFrameEndianChange(pAd, pHdr, DIR_READ, FALSE);
 #endif	
-	return TRUE;
+	return NDIS_STATUS_SUCCESS;
 }
 
 /*

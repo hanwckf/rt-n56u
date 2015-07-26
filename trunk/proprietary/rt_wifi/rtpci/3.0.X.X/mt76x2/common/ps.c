@@ -145,6 +145,15 @@ VOID RtmpHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN is
 	pMacEntry = &pAd->MacTab.Content[wcid];
 	if (RTMPEqualMemory(pMacEntry->Addr, pAddr, MAC_ADDR_LEN))
 	{
+#ifdef DROP_MASK_SUPPORT
+		/* Disable Drop Mask */
+		set_drop_mask_per_client(pAd, pMacEntry, 2, 0);
+#endif /* DROP_MASK_SUPPORT */
+
+#ifdef PS_ENTRY_MAITENANCE
+		pMacEntry->continuous_ps_count = 0;
+#endif /* PS_ENTRY_MAITENANCE */
+
 		/* Sta is change to Power Active stat. Reset ContinueTxFailCnt */
 		pMacEntry->ContinueTxFailCnt = 0;
 
@@ -321,6 +330,15 @@ BOOLEAN RtmpPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm)
 
 		if ((old_psmode == PWR_SAVE) && (Psm == PWR_ACTIVE))
 		{
+#ifdef DROP_MASK_SUPPORT
+			/* Disable Drop Mask */
+			set_drop_mask_per_client(pAd, pEntry, 2, 0);
+#endif /* DROP_MASK_SUPPORT */
+
+#ifdef PS_ENTRY_MAITENANCE
+			pEntry->continuous_ps_count = 0;
+#endif /* PS_ENTRY_MAITENANCE */
+
 #ifdef RTMP_MAC_PCI
 #ifdef DOT11_N_SUPPORT
 			/*
@@ -335,6 +353,12 @@ BOOLEAN RtmpPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm)
 			/* sleep station awakes, move all pending frames from PSQ to TXQ if any */
 			RtmpHandleRxPsPoll(pAd, pAddr, pEntry->wcid, TRUE);
 		}
+#ifdef DROP_MASK_SUPPORT
+		else if ((old_psmode == PWR_ACTIVE) && (Psm == PWR_SAVE)) {
+			/* Enable Drop Mask */
+			set_drop_mask_per_client(pAd, pEntry, 2, 1);
+		}
+#endif /* DROP_MASK_SUPPORT */
 
 	return old_psmode;
 }

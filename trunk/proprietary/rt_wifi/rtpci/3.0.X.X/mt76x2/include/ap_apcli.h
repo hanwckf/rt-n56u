@@ -38,6 +38,9 @@
 #define ASSOC_TIMEOUT	300         /* unit: msec */
 /*#define JOIN_TIMEOUT	2000        // unit: msec // not used in Ap-client mode, remove it */
 #define PROBE_TIMEOUT	1000        /* unit: msec */
+#ifdef APCLI_CONNECTION_TRIAL
+#define TRIAL_TIMEOUT	400	/* unit: msec */
+#endif /* APCLI_CONNECTION_TRIAL */
   
 #define APCLI_ROOT_BSSID_GET(pAd, wcid) ((pAd)->MacTab.Content[(wcid)].Addr)
 
@@ -131,12 +134,14 @@ BOOLEAN ApCliCheckHt(
 	IN OUT	ADD_HT_INFO_IE 		*pAddHtInfo);
 #endif /* DOT11_N_SUPPORT */
 
+#ifdef DOT11_VHT_AC
 BOOLEAN ApCliCheckVht(
 	IN PRTMP_ADAPTER pAd,
 	IN UCHAR Wcid,
 	IN MAC_TABLE_ENTRY  *pEntry,
 	IN VHT_CAP_IE *vht_cap,
 	IN VHT_OP_IE *vht_op);
+#endif /* DOT11_VHT_AC */
 	
 BOOLEAN ApCliLinkUp(
 	IN PRTMP_ADAPTER pAd,
@@ -234,6 +239,12 @@ BOOLEAN APCliInstallSharedKey(
 	IN  UCHAR           KeyLen,
 	IN	UCHAR			DefaultKeyIdx,
 	IN  MAC_TABLE_ENTRY *pEntry);
+
+VOID ApCliCheckPeerExistence(
+	IN RTMP_ADAPTER *pAd,
+	IN CHAR *Ssid,
+	IN UCHAR SsidLen,
+	IN UCHAR Channel);
 
 VOID ApCliUpdateMlmeRate(RTMP_ADAPTER *pAd, USHORT ifIndex);
 

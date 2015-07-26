@@ -136,9 +136,8 @@ UINT dataRate[] = {65, 130, 195, 260, 390, 520, 585, 650,
 VOID rtmp_asic_set_bf(
 	IN RTMP_ADAPTER *pAd)
 {
-	UINT8 byteValue = 0;
-	UINT Value32;
 
+	UINT Value32;
 
 
 #ifdef MT76x2
@@ -174,6 +173,15 @@ VOID rtmp_asic_set_bf(
 		Value32 &= ~((0x1 << 6) | 0x2);
 
 	RTMP_IO_WRITE32(pAd, PFMU_R0, Value32);
+
+    //Set eBF profile timeout
+    RTMP_IO_WRITE32(pAd, TX_TXBF_CFG_3, 0xFFFF);  //set eBF timeout
+    RTMP_IO_WRITE32(pAd, PFMU_R8, 0xFFFF);        //set iBF timeout
+
+    //Set iBF profile extension enable
+    RTMP_IO_READ32(pAd, PFMU_R51, &Value32 );
+    Value32 |= 0x003F0000;
+    RTMP_IO_WRITE32(pAd, PFMU_R51, Value32);
 #endif
 }
 
@@ -378,6 +386,20 @@ void setETxBFCap(RTMP_ADAPTER *pAd, HT_BF_CAP *pTxBFCap)
 #endif
 		pTxBFCap->ChanEstimation = pAd->Antenna.field.RxPath-1;
 	}
+
+    // Disable BFee in AP mode to avoid IOT issue, beacuse MT76x2 can not response to 3x3 or 4x4 sounding
+#if defined(CONFIG_AP_SUPPORT) && defined(MT76x2)
+    IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+    {
+        if (!pAd->CommonCfg.ETxBfeeEn )
+        {
+          pTxBFCap->RxNDPCapable =  FALSE;
+          pTxBFCap->RxSoundCapable = FALSE;
+          pTxBFCap->ExpNoComBF = HT_ExBF_FB_CAP_NONE;
+		  pTxBFCap->ExpComBF = HT_ExBF_FB_CAP_NONE;           
+        }
+    }
+#endif /*CONFIG_AP_SUPPORT && MT76x2*/
 }
 
 #ifdef VHT_TXBF_SUPPORT
@@ -398,6 +420,18 @@ void setVHTETxBFCap(RTMP_ADAPTER *pAd, VHT_CAP_INFO *pTxBFCap)
 		pTxBFCap->num_snd_dimension = 1;
 		pTxBFCap->cmp_st_num_bfer = 1;
 	}
+
+    // Disable BFee in AP mode to avoid IOT issue, beacuse MT76x2 can not response to 3x3 or 4x4 sounding
+#if defined(CONFIG_AP_SUPPORT) && defined(MT76x2)
+    IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+    {   
+        if (!pAd->CommonCfg.ETxBfeeEn )
+        {
+          pTxBFCap->bfee_cap_mu = FALSE;
+    	  pTxBFCap->bfee_cap_su = FALSE;		
+        }
+    }
+#endif /*CONFIG_AP_SUPPORT && MT76x2*/
 }
 #endif
 
@@ -822,7 +856,6 @@ VOID handleBfFb(
 	IN	PRTMP_ADAPTER	pAd,
 	IN	RX_BLK			*pRxBlk)
 {
-	RXWI_STRUC *pRxWI = pRxBlk->pRxWI;
 	MAC_TABLE_ENTRY *pEntry = NULL;		
 
 	if (pRxBlk->wcid >= MAX_LEN_OF_MAC_TABLE)

@@ -87,12 +87,17 @@ VOID CFG80211RemainOnChannelTimeout(
 #endif /*RT_CFG80211_P2P_CONCURRENT_DEVICE */		
 	{
 		DBGPRINT(RT_DEBUG_TRACE, ("CFG80211_ROC: RemainOnChannelTimeout -- FINISH\n"));
-		
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
+		cfg80211_remain_on_channel_expired( CFG80211_GetEventDevice(pAd),	
+        		pCfg80211_ctrl->Cfg80211ChanInfo.cookie, pCfg80211_ctrl->Cfg80211ChanInfo.chan
+        		,GFP_KERNEL);
+#else
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,34))
         	cfg80211_remain_on_channel_expired( CFG80211_GetEventDevice(pAd),	
         		pCfg80211_ctrl->Cfg80211ChanInfo.cookie, pCfg80211_ctrl->Cfg80211ChanInfo.chan, 
         		pCfg80211_ctrl->Cfg80211ChanInfo.ChanType, GFP_KERNEL);
 #endif /* LINUX_VERSION_CODE 2.6.34 */
+#endif /* LINUX_VERSION_CODE 3.8.0 */
 
 		pCfg80211_ctrl->Cfg80211RocTimerRunning = FALSE;
 	}

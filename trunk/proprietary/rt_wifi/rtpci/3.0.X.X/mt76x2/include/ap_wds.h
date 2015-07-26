@@ -125,6 +125,10 @@ VOID WdsPeerBeaconProc(
 	IN UCHAR MaxSupportedRateLen,
 	IN BOOLEAN bWmmCapable,
 	IN ULONG ClientRalinkIe,
+#ifdef DOT11_VHT_AC
+	IN UCHAR vht_cap_len,
+	IN VHT_CAP_IE *vht_cap,
+#endif /* DOT11_VHT_AC */
 	IN HT_CAPABILITY_IE *pHtCapability,
 	IN UCHAR HtCapabilityLen);
 

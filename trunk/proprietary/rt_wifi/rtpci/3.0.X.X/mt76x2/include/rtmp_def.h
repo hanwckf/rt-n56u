@@ -135,8 +135,13 @@
 	clConfig.clNum = RX_RING_SIZE * 4;
 */
 
+#ifdef NOISE_TEST_ADJUST
+#define MAX_PACKETS_IN_MCAST_PS_QUEUE	128 /*64*/
+#define MAX_PACKETS_IN_PS_QUEUE			256 /*32 */
+#else
 #define MAX_PACKETS_IN_MCAST_PS_QUEUE		32
 #define MAX_PACKETS_IN_PS_QUEUE				128	/*32 */
+#endif /* NOISE_TEST_ADJUST */
 #define WMM_NUM_OF_AC                       4	/* AC0, AC1, AC2, and AC3 */
 
 #ifdef CONFIG_AP_SUPPORT
@@ -466,6 +471,10 @@ enum WIFI_MODE{
 #ifdef APCLI_SUPPORT
 #undef	MAX_APCLI_NUM
 #define MAX_APCLI_NUM				1
+#ifdef APCLI_CONNECTION_TRIAL
+#undef	MAX_APCLI_NUM
+#define MAX_APCLI_NUM				2
+#endif /* APCLI_CONNECTION_TRIAL */
 #endif /* APCLI_SUPPORT */
 
 #define MAX_P2P_NUM				0
@@ -1201,7 +1210,12 @@ enum WIFI_MODE{
 #define APMT2_MLME_SCAN_REQ		3
 #define APMT2_SCAN_TIMEOUT		4
 #define APMT2_MLME_SCAN_CNCL		5
+#ifdef CON_WPS
+#define APMT2_MLME_SCAN_COMPLETE        6
+#define AP_MAX_SYNC_MSG                 7
+#else
 #define AP_MAX_SYNC_MSG			6
+#endif /* CON_WPS */
 #else
 #define AP_MAX_SYNC_MSG			3
 #endif
@@ -1262,7 +1276,13 @@ enum WIFI_MODE{
 #define APCLI_CTRL_ASSOC                  4
 #define APCLI_CTRL_DEASSOC                5
 #define APCLI_CTRL_CONNECTED              6
+#ifndef	APCLI_CONNECTION_TRIAL
 #define APCLI_MAX_CTRL_STATE              7
+#else
+#undef APCLI_MAC_CTRL_STATE
+#define APCLI_CTRL_TRIAL_TRIGGERED        7
+#define APCLI_MAX_CTRL_STATE              8
+#endif	/* APCLI_CONNECTION_TRIAL */
 
 #define APCLI_CTRL_MACHINE_BASE           0
 #define APCLI_CTRL_JOIN_REQ               0
@@ -1279,7 +1299,13 @@ enum WIFI_MODE{
 #define APCLI_CTRL_MT2_ASSOC_REQ		  11
 #define APCLI_CTRL_SCAN_DONE              12
 #define APCLI_MIC_FAILURE_REPORT_FRAME 13
+#ifndef APCLI_CONNECTION_TRIAL
 #define APCLI_MAX_CTRL_MSG                14
+#else
+#undef APCLI_MAX_CTRL_MSG
+#define	APCLI_CTRL_TRIAL_CONNECT	14
+#define APCLI_MAX_CTRL_MSG		15
+#endif
 
 #define APCLI_CTRL_FUNC_SIZE              (APCLI_MAX_CTRL_STATE * APCLI_MAX_CTRL_MSG)
 
@@ -1596,7 +1622,7 @@ enum WIFI_MODE{
 #define DEF_RA_TIME_INTRVAL			500
 
 /*definition of DRS */
-#define MAX_TX_RATE_INDEX			33		/* Maximum Tx Rate Table Index value */
+#define MAX_TX_RATE_INDEX			50		/* Maximum Tx Rate Table Index value */
 
 /* pre-allocated free NDIS PACKET/BUFFER poll for internal usage */
 #define MAX_NUM_OF_FREE_NDIS_PACKET 128
@@ -1869,6 +1895,7 @@ enum WIFI_MODE{
 #define MCAST_CCK		1
 #define MCAST_OFDM		2
 #define MCAST_HTMIX		3
+#define MCAST_VHT		4
 #endif /* MCAST_RATE_SPECIFIC */
 
 /* For AsicRadioOff/AsicRadioOn function */
@@ -1901,6 +1928,11 @@ enum {
 #define MO_MEAS_PERIOD	0	/* 0 ~ 100 ms */
 #define MO_IDLE_PERIOD	1	/* 100 ~ 1000 ms */
 #endif /* MICROWAVE_OVEN_SUPPORT */
+
+typedef enum _ETHER_BAND_BINDDING {
+	EtherTrafficBand2G,
+ 	EtherTrafficBand5G,
+} ETHER_BAND_BINDDING, *PETHER_BAND_BINDDING;
 
 /* definition for Antenna Diversity flag */
 typedef enum {
@@ -1956,6 +1988,7 @@ enum DOT11U_ADVERTISMENT_PROTOCOL_ID {
 };
 
 #define ABS(_x, _y) ((_x) > (_y)) ? ((_x) -(_y)) : ((_y) -(_x))
+#define ABS_One(_x) ((_x) < 0x0) ? (0x0 - (_x)) : (_x)
 
 #define A2Dec(_X, _p) 				\
 {									\

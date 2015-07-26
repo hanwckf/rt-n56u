@@ -4307,6 +4307,9 @@ NDIS_STATUS	RTMPSoftDecryptionAction(
 	INOUT 	PUCHAR			pData,
 	INOUT 	UINT16			*DataByteCnt)
 {		
+	NDIS_STATUS NStatus;
+	NStatus =0;
+	
 	switch (pKey->CipherAlg)
     {    	        	        
 		case CIPHER_WEP64:
@@ -4322,13 +4325,19 @@ NDIS_STATUS	RTMPSoftDecryptionAction(
 			
 		case CIPHER_TKIP:
 			/* handle TKIP decryption */
-			if (RTMPSoftDecryptTKIP(pAd, pHdr, UserPriority, 
-								pKey, pData, &(*DataByteCnt)) == FALSE)
+			NStatus = RTMPSoftDecryptTKIP(pAd, pHdr, UserPriority, pKey, pData, &(*DataByteCnt));
+			if (NStatus == NDIS_STATUS_FAILURE)
 			{
 				DBGPRINT(RT_DEBUG_ERROR, ("ERROR : SW decrypt TKIP data fails.\n"));
 				/* give up this frame*/
 				return NDIS_STATUS_FAILURE; 
 			}        											
+			else if (NStatus == NDIS_STATUS_MICERROR)
+			{
+				DBGPRINT(RT_DEBUG_ERROR, ("ERROR : SW decrypt TKIP data mic error.\n"));
+				/* give up this frame*/
+				return NDIS_STATUS_MICERROR; 
+			}           											
 			break;
 			
 		case CIPHER_AES:
@@ -5093,3 +5102,54 @@ void inc_byte_array(UCHAR *counter, int len)
 		pos--;
 	}
 }
+
+#ifdef RT_CFG80211_SUPPORT
+BOOLEAN RTMPIsValidIEs(UCHAR *Ies, INT32 Len)
+{
+    /* Validate if the IE is in correct format. */
+    INT32 Pos = 0;
+    INT32 IeLen = 0;
+    while (Pos < Len)
+    {
+        if ((IeLen = (INT32)(Ies[Pos+1]) + 2) < 0)
+            return FALSE;
+        Pos += IeLen;
+    }
+    if (Pos == Len)
+        return TRUE;
+    else
+        return FALSE;
+}
+
+/* Find specific IE Id in a buffer containing multiple IEs */
+const UCHAR *RTMPFindIE(UCHAR Eid, const UCHAR *Ies, INT32 Len)
+{
+	while (Len > 2 && Ies[0] != Eid) {
+		Len -= Ies[1] + 2;
+		Ies += Ies[1] + 2;
+	}
+	if (Len < 2)
+		return NULL;
+	if (Len < 2 + Ies[1])
+		return NULL;
+	return Ies;
+}
+
+/* Find WPS IE Id in a buffer containing multiple IEs */
+const UCHAR *RTMPFindWPSIE(const UCHAR *Ies, INT32 Len)
+{
+    const UCHAR *Ptr = Ies;
+    UCHAR WPSOUI[]={0x00, 0x50, 0xf2, 0x04};
+    if (!Ies || ! Len)
+        return NULL;
+    while ((Ptr = RTMPFindIE(WLAN_EID_VENDOR_SPECIFIC, Ptr, Len-(Ptr-Ies))) != NULL)
+    {
+        if (!NdisCmpMemory(Ptr+2, WPSOUI, 4))
+            break;
+        Ptr += Ptr[1] + 2;
+    }
+    return Ptr;
+}
+#endif /* RT_CFG80211_SUPPORT */
+
+

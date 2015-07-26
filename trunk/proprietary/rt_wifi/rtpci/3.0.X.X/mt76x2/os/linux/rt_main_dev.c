@@ -47,6 +47,11 @@ MODULE_LICENSE("GPL");
 // TODO: End---
 
 
+#ifdef BTCOEX_CONCURRENT
+int CoexChannel;
+int CoexCenctralChannel;
+int CoexChannelBw;
+#endif
 
 /*---------------------------------------------------------------------*/
 /* Private Variables Used                                              */
@@ -209,7 +214,7 @@ Note:
 int rt28xx_close(VOID *dev)
 {
 	struct net_device * net_dev = (struct net_device *)dev;
-    VOID	*pAd = NULL;
+	VOID	*pAd = NULL;
 
 	GET_PAD_FROM_NET_DEV(pAd, net_dev);	
 
@@ -344,6 +349,12 @@ int rt28xx_open(VOID *dev)
 	printk("Number of Packet Allocated in open = %lu\n", OS_NumOfPktAlloc);
 	printk("Number of Packet Freed in open = %lu\n", OS_NumOfPktFree);
 #endif /* VENDOR_FEATURE2_SUPPORT */
+
+#ifdef BTCOEX_CONCURRENT
+	CoexChannel =-1;
+	CoexCenctralChannel = -1;
+	CoexChannelBw = -1;
+#endif
 
 	return (retval);
 
@@ -743,6 +754,19 @@ int RtmpOSIRQRequest(IN PNET_DEV pNetDev)
 	}
 #endif /* RTMP_PCI_SUPPORT */
 
+#ifdef RTMP_RBUS_SUPPORT
+	if (infType == RTMP_DEV_INF_RBUS)
+	{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
+		if ((retval = request_irq(net_dev->irq, rt2860_interrupt, IRQF_SHARED, net_dev->name ,net_dev))) 
+#else
+		if ((retval = request_irq(net_dev->irq,rt2860_interrupt, SA_INTERRUPT, net_dev->name ,net_dev))) 
+#endif
+		{
+			printk("RT2860: request_irq  ERROR(%d)\n", retval);
+		}
+	}
+#endif /* RTMP_RBUS_SUPPORT */
 
 	return retval; 
 }

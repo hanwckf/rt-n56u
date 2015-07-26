@@ -223,6 +223,8 @@ enum CALIBRATION_ID_7662 {
 	DPD_CALIBRATION_7662,
 	RXIQC_FI_CALIBRATION_7662,
 	RXIQC_FD_CALIBRATION_7662,
+	PWR_ON_CALIBRATION_7662,
+	TX_SHAPING_CALIBRATION_7662,
 };
 
 enum CALIBRATION_TYPE {
@@ -387,7 +389,7 @@ int andes_pci_load_rom_patch(struct _RTMP_ADAPTER *ad);
 int andes_pci_erase_rom_patch(struct _RTMP_ADAPTER *ad);
 int andes_pci_loadfw(struct _RTMP_ADAPTER *ad);
 int andes_pci_erasefw(struct _RTMP_ADAPTER *ad);
-void pci_rx_cmd_msg_complete(struct _RTMP_ADAPTER *ad, RXFCE_INFO *fce_info);
+void pci_rx_cmd_msg_complete(struct _RTMP_ADAPTER *ad, RXFCE_INFO *fce_info, PUCHAR payload);
 void andes_pci_fw_init(struct _RTMP_ADAPTER *ad);
 #endif /* RTMP_PCI_SUPPORT */
 void andes_ctrl_init(struct _RTMP_ADAPTER *ad);

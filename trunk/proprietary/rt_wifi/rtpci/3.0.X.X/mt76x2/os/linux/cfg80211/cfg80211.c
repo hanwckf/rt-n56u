@@ -45,6 +45,9 @@
 
 #define RTMP_MODULE_OS
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0))
+#include <linux/random.h>
+#endif
 #include "rtmp_comm.h"
 #include "rt_os_util.h"
 #include "rt_os_net.h"
@@ -1381,7 +1384,12 @@ static int CFG80211_OpsRemainOnChannel(
 	dev = pWdev->netdev;	
 #endif /* LINUX_VERSION_CODE: 3.6.0 */
 
-	rndCookie = ((RandomByte2(pAd) * 256 * 256* 256) + (RandomByte2(pAd) * 256 * 256) + (RandomByte2(pAd) * 256) + RandomByte2(pAd)) |1;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0))
+	rndCookie = prandom_u32() | 1;
+#else
+	rndCookie = random32() | 1;	
+#endif
+
 	CFG80211DBG(RT_DEBUG_TRACE, ("80211> %s ==>\n", __FUNCTION__));
 
 	MAC80211_PAD_GET(pAd, pWiphy);
@@ -1413,7 +1421,7 @@ static int CFG80211_OpsRemainOnChannel(
 static void CFG80211_OpsMgmtFrameRegister(
     struct wiphy *pWiphy,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
-	struct wireless_dev *wdev
+	struct wireless_dev *wdev,
 #else	
     struct net_device *dev,
 #endif /* LINUX_VERSION_CODE: 3.6.0 */	
@@ -1675,6 +1683,7 @@ static int CFG80211_OpsStartAp(
     
     MAC80211_PAD_GET(pAd, pWiphy);	
     CFG80211DBG(RT_DEBUG_TRACE, ("80211> %s ==>\n", __FUNCTION__));
+	NdisZeroMemory(&bcn,sizeof(CMD_RTPRIV_IOCTL_80211_BEACON));
 	
 	if (settings->beacon.head_len > 0) 
 	{
@@ -1694,6 +1703,7 @@ static int CFG80211_OpsStartAp(
 	bcn.beacon_tail = beacon_tail_buf;
 	bcn.dtim_period = settings->dtim_period;
         bcn.interval = settings->beacon_interval;
+	bcn.hidden_ssid = settings->hidden_ssid;
 
 
 	RTMP_DRIVER_80211_BEACON_ADD(pAd, &bcn);
@@ -2050,7 +2060,7 @@ struct cfg80211_ops CFG80211_Ops = {
 
 	/* set channel for a given wireless interface */
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
-	.set_monitor_channel = CFG80211_OpsMonitorChannelSet,
+	//.set_monitor_channel = CFG80211_OpsMonitorChannelSet,
 #else	
 	.set_channel	     = CFG80211_OpsChannelSet,
 #endif /* LINUX_VERSION_CODE: 3.6.0 */
@@ -2390,6 +2400,7 @@ BOOLEAN CFG80211_Register(
 	CFG80211_BAND BandInfo;
 	INT err;
 
+	DBGPRINT(RT_DEBUG_OFF, ("80211> CFG80211_Register!\n"));
 
 	/* allocate Main Device Info structure */
 	os_alloc_mem(NULL, (UCHAR **)&pCfg80211_CB, sizeof(CFG80211_CB));
@@ -2432,11 +2443,14 @@ BOOLEAN CFG80211_Register(
 	RTMP_DRIVER_80211_SCAN_STATUS_LOCK_INIT(pAd, TRUE);	
 
 
+	
+/*#ifdef CONFIG_STA_SUPPORT //reg notifier in AP case 7620&7612 will hang
 	err = register_netdevice_notifier(&cfg80211_netdev_notifier);
 	if (err) 
 	{
 		CFG80211DBG(RT_DEBUG_ERROR, ("80211> Failed to register notifierl %d\n", err));
 	}
+#endif CONFIG_STA_SUPPORT*/
 
 	CFG80211DBG(RT_DEBUG_ERROR, ("80211> CFG80211_Register\n"));
 	return TRUE;

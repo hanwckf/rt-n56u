@@ -168,89 +168,80 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 		/* different calculation in APQuickResponeForRateUpExec() */
 		Rssi = RTMPAvgRssi(pAd, &pEntry->RssiSample);
 
+#ifdef THERMAL_PROTECT_SUPPORT
+		if (pAd->force_one_tx_stream == TRUE) {
+			if (pEntry->CurrTxRateIndex > 0x0b)
+				pEntry->CurrTxRateIndex = TableSize - 1;
+		}
+#endif /* THERMAL_PROTECT_SUPPORT */
+
 		CurrRateIdx = UpRateIdx = DownRateIdx = pEntry->CurrTxRateIndex;
 
 		/* decide the next upgrade rate and downgrade rate, if any */
 		pCurrTxRate = PTX_RA_LEGACY_ENTRY(pTable, CurrRateIdx);
 
-		if ((pCurrTxRate->Mode <= MODE_CCK) && (pEntry->SupportRateMode <= SUPPORT_CCK_MODE))
-		{
-			TmpIdx = CurrRateIdx + 1;
-			while(TmpIdx < TableSize)
-			{
-				pTmpTxRate = PTX_RA_LEGACY_ENTRY(pTable, TmpIdx);
-				if (pEntry->SupportCCKMCS[pTmpTxRate->CurrMCS] == TRUE)
-				{
-					UpRateIdx = TmpIdx;
-					break;
-				}
-				TmpIdx++;
-			}
-
-			TmpIdx = CurrRateIdx - 1;
-			while(TmpIdx >= 0)
-			{
-				pTmpTxRate = PTX_RA_LEGACY_ENTRY(pTable, TmpIdx);
-				if (pEntry->SupportCCKMCS[pTmpTxRate->CurrMCS] == TRUE)
-				{
-					DownRateIdx = TmpIdx;
-					break;
-				}
-				TmpIdx--;
-			}
-		}		
-		else if ((pCurrTxRate->Mode <= MODE_OFDM) && (pEntry->SupportRateMode < SUPPORT_HT_MODE))
-		{
-			TmpIdx = CurrRateIdx + 1;
-			while(TmpIdx < TableSize)
-			{
-				pTmpTxRate = PTX_RA_LEGACY_ENTRY(pTable, TmpIdx);
-				if (pEntry->SupportOFDMMCS[pTmpTxRate->CurrMCS] == TRUE)
-				{
-					UpRateIdx = TmpIdx;
-					break;
-				}
-				TmpIdx++;
-			}
-
-			TmpIdx = CurrRateIdx - 1;
-			while(TmpIdx >= 0)
-			{
-				pTmpTxRate = PTX_RA_LEGACY_ENTRY(pTable, TmpIdx);
-				if (pEntry->SupportOFDMMCS[pTmpTxRate->CurrMCS] == TRUE)
-				{
-					DownRateIdx = TmpIdx;
-					break;
-				}
-				TmpIdx--;
-			}
-		}
-		else
-		{
-			/* decide the next upgrade rate and downgrade rate, if any*/
+		/* decide the next upgrade rate and downgrade rate, if any*/
 		if ((CurrRateIdx > 0) && (CurrRateIdx < (TableSize - 1)))
 		{
-				TmpIdx = CurrRateIdx + 1;
-				while(TmpIdx < TableSize)
+			TmpIdx = CurrRateIdx + 1;
+			while(TmpIdx < TableSize)
+			{
+				pTmpTxRate = PTX_RA_LEGACY_ENTRY(pTable, TmpIdx);
+				if (pTmpTxRate->Mode <= MODE_CCK)
 				{
-					pTmpTxRate = PTX_RA_LEGACY_ENTRY(pTable, TmpIdx);
-					if (pEntry->SupportHTMCS[pTmpTxRate->CurrMCS] == TRUE)
-					{
+				if (pEntry->SupportCCKMCS[pTmpTxRate->CurrMCS] == TRUE)
+				{
+					UpRateIdx = TmpIdx;
+					break;
+				}
+			}
+				else if (pTmpTxRate->Mode <= MODE_OFDM)
+			{
+					if (pEntry->SupportOFDMMCS[pTmpTxRate->CurrMCS] == TRUE)
+				{
 						UpRateIdx = TmpIdx;
+					break;
+				}
+		}		
+				else
+			{
+					if (pEntry->SupportHTMCS[pTmpTxRate->CurrMCS] == TRUE)
+				{
+					UpRateIdx = TmpIdx;
+					break;
+				}
+				}
+				TmpIdx++;
+			}
+
+			TmpIdx = CurrRateIdx - 1;
+			while(TmpIdx >= 0)
+			{
+				pTmpTxRate = PTX_RA_LEGACY_ENTRY(pTable, TmpIdx);
+				if (pTmpTxRate->Mode <= MODE_CCK)
+				{
+					if (pEntry->SupportCCKMCS[pTmpTxRate->CurrMCS] == TRUE)
+				{
+					DownRateIdx = TmpIdx;
+					break;
+				}
+		}
+				else if (pTmpTxRate->Mode <= MODE_OFDM)
+		{
+					if (pEntry->SupportOFDMMCS[pTmpTxRate->CurrMCS] == TRUE)
+					{
+						DownRateIdx = TmpIdx;
 						break;
 					}
-					TmpIdx++;
 				}
-
-				TmpIdx = CurrRateIdx - 1;
-				while(TmpIdx >= 0)
+				else
 				{
-					pTmpTxRate = PTX_RA_LEGACY_ENTRY(pTable, TmpIdx);
 					if (pEntry->SupportHTMCS[pTmpTxRate->CurrMCS] == TRUE)
 					{
 						DownRateIdx = TmpIdx;
 						break;
 					}
+				}
 					TmpIdx--;
 				}
 		}
@@ -260,11 +251,30 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 				while(TmpIdx < TableSize)
 				{
 					pTmpTxRate = PTX_RA_LEGACY_ENTRY(pTable, TmpIdx);
+				if (pTmpTxRate->Mode <= MODE_CCK)
+				{
+					if (pEntry->SupportCCKMCS[pTmpTxRate->CurrMCS] == TRUE)
+					{
+						UpRateIdx = TmpIdx;
+						break;
+					}
+				}
+				else if (pTmpTxRate->Mode <= MODE_OFDM)
+				{
+					if (pEntry->SupportOFDMMCS[pTmpTxRate->CurrMCS] == TRUE)
+					{
+						UpRateIdx = TmpIdx;
+						break;
+					}
+				}
+				else
+				{
 					if (pEntry->SupportHTMCS[pTmpTxRate->CurrMCS] == TRUE)
 					{
 						UpRateIdx = TmpIdx;
 						break;
 					}
+				}
 					TmpIdx++;
 				}
 
@@ -278,13 +288,31 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 				while(TmpIdx >= 0)
 				{
 					pTmpTxRate = PTX_RA_LEGACY_ENTRY(pTable, TmpIdx);
+					if (pTmpTxRate->Mode <= MODE_CCK)
+					{
+						if (pEntry->SupportCCKMCS[pTmpTxRate->CurrMCS] == TRUE)
+						{
+							DownRateIdx = TmpIdx;
+							break;
+						}
+					}
+					else if (pTmpTxRate->Mode <= MODE_OFDM)
+					{
+						if (pEntry->SupportOFDMMCS[pTmpTxRate->CurrMCS] == TRUE)
+						{
+							DownRateIdx = TmpIdx;
+							break;
+						}
+					}
+					else
+					{
 					if (pEntry->SupportHTMCS[pTmpTxRate->CurrMCS] == TRUE)
 					{
 						DownRateIdx = TmpIdx;
 						break;
 					}
-					TmpIdx--;
 				}
+					TmpIdx--;
 			}
 		}
 
@@ -296,8 +324,13 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 		*/
 		if ((Rssi > -65) && (pCurrTxRate->Mode >= MODE_HTMIX))
 		{
+#ifdef NOISE_TEST_ADJUST
+			TrainUp		= (pCurrTxRate->TrainUp << 1);
+			TrainDown	= (pCurrTxRate->TrainDown << 1);
+#else
 			TrainUp		= (pCurrTxRate->TrainUp + (pCurrTxRate->TrainUp >> 1));
 			TrainDown	= (pCurrTxRate->TrainDown + (pCurrTxRate->TrainDown >> 1));
+#endif /* NOISE_TEST_ADJUST */
 		}
 		else
 #endif /* DOT11_N_SUPPORT */
@@ -320,12 +353,23 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
         {
 			UCHAR	TxRateIdx;
 			CHAR	mcs[24];
+			CHAR	RssiOffset = 0;
+
+			pEntry->lowTrafficCount++;
 
 			/* Check existence and get the index of each MCS */
 			MlmeGetSupportedMcs(pAd, pTable, mcs);
 
+#ifdef NOISE_TEST_ADJUST
+			if (pAd->MacTab.Size > 5) {
+				if (Rssi > -78)
+					Rssi = -78;
+				else
+					RssiOffset += 3;
+			}
+#endif /* NOISE_TEST_ADJUST */
 			/* Select the Tx rate based on the RSSI */
-			TxRateIdx = MlmeSelectTxRate(pAd, pEntry, mcs, Rssi, 0);
+			TxRateIdx = MlmeSelectTxRate(pAd, pEntry, mcs, Rssi, RssiOffset);
 
 
 			if (TxRateIdx != pEntry->CurrTxRateIndex
@@ -353,6 +397,8 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 #endif /* TXBF_SUPPORT */
 			continue;
         }
+
+		pEntry->lowTrafficCount = 0;
 
 		if (pEntry->fLastSecAccordingRSSI == TRUE)
 		{
@@ -542,6 +588,13 @@ VOID APQuickResponeForRateUpExec(
 			}
 #endif /* FIFO_EXT_SUPPORT */
 		}
+
+#ifdef THERMAL_PROTECT_SUPPORT
+		if (pAd->force_one_tx_stream == TRUE) {
+			if (pEntry->CurrTxRateIndex > 0x0b)
+				pEntry->CurrTxRateIndex = TableSize - 1;
+		}
+#endif /* THERMAL_PROTECT_SUPPORT */
 
 		CurrRateIdx = pEntry->CurrTxRateIndex;
 #ifdef TXBF_SUPPORT
@@ -765,9 +818,25 @@ VOID MlmeOldRateAdapt(
 #endif /* TXBF_SUPPORT */
 		if (CurrRateIdx != DownRateIdx)
 		{
+#ifdef NOISE_TEST_ADJUST
+			UCHAR *pTable = pEntry->pTable;
+			CHAR Rssi;
+			RTMP_RA_LEGACY_TB *pCurrTxRate;
+
+			Rssi = RTMPAvgRssi(pAd, &pEntry->RssiSample);
+			pCurrTxRate = PTX_RA_LEGACY_ENTRY(pTable, CurrRateIdx);
+
+			if((Rssi > -60) && (pCurrTxRate->CurrMCS == 3) && (pCurrTxRate->Mode >= MODE_HTMIX))
+			{
+				pEntry->LastSecTxRateChangeAction = RATE_NO_CHANGE;
+			}
+			else
+#endif /* NOISE_TEST_ADJUST */
+			{
 			pEntry->CurrTxRateIndex = DownRateIdx;
 			pEntry->LastSecTxRateChangeAction = RATE_DOWN;
 		}
+	}
 	}
 	else
 	{
@@ -901,4 +970,11 @@ VOID MlmeOldRateAdapt(
 		/* Update PHY rate */
 		MlmeNewTxRate(pAd, pEntry);
 	}
+
+#ifdef THERMAL_PROTECT_SUPPORT
+	if ((pAd->force_one_tx_stream == TRUE) &&
+		(pEntry->LastSecTxRateChangeAction == RATE_NO_CHANGE)) {
+		MlmeNewTxRate(pAd, pEntry);
+	}
+#endif /* THERMAL_PROTECT_SUPPORT */
 }

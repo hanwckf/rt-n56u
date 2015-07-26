@@ -770,6 +770,13 @@ VOID CFG80211_UnRegister(
 	}
 	pCfg80211_ctrl->ExtraIeLen = 0;
 
+    if(pCfg80211_ctrl->pAssocRspIe)
+    {
+        os_free_mem(NULL, pCfg80211_ctrl->pAssocRspIe);
+        pCfg80211_ctrl->pAssocRspIe = NULL;
+    }
+    pCfg80211_ctrl->assocRspIeLen = 0;
+
 /*
 CFG_TODO
      if (pAd->pTxStatusBuf != NULL)

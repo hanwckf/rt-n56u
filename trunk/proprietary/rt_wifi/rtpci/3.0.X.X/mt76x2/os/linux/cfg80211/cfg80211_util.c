@@ -344,8 +344,12 @@ BOOLEAN CFG80211_SupBandInit(
 		if (IsRadarChannel(Cfg80211_Chan[IdLoop]))
 		{
 			pChannels[IdLoop].flags = 0;
-			printk("====> Rader Channel %d\n", Cfg80211_Chan[IdLoop]);
+			CFG80211DBG(RT_DEBUG_TRACE, ("====> Rader Channel %d\n", Cfg80211_Chan[IdLoop]));
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
+			pChannels[IdLoop].flags |= (IEEE80211_CHAN_RADAR | IEEE80211_CHAN_NO_IR);
+#else
 			pChannels[IdLoop].flags |= (IEEE80211_CHAN_RADAR | IEEE80211_CHAN_PASSIVE_SCAN);
+#endif
 		}
 /*		CFG_TODO:
 		pChannels[IdLoop].flags
@@ -945,6 +949,23 @@ void CFG80211OS_P2pClientConnectResultInform(
 
 BOOLEAN CFG80211OS_RxMgmt(IN PNET_DEV pNetDev, IN INT32 freq, IN PUCHAR frame, IN UINT32 len) 
 {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,12,0))
+	return cfg80211_rx_mgmt(pNetDev->ieee80211_ptr,
+                                freq,
+                                0,       //CFG_TODO return 0 in dbm
+                                frame,
+                                len,
+                                NL80211_RXMGMT_FLAG_ANSWERED,
+                                GFP_ATOMIC);
+#else
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
+	return cfg80211_rx_mgmt(pNetDev->ieee80211_ptr,
+                                freq,
+                                0,       //CFG_TODO return 0 in dbm
+                                frame,
+                                len,
+                                GFP_ATOMIC);
+#else	
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0))
 	return cfg80211_rx_mgmt(pNetDev,
 				freq,
@@ -961,19 +982,18 @@ BOOLEAN CFG80211OS_RxMgmt(IN PNET_DEV pNetDev, IN INT32 freq, IN PUCHAR frame, I
 	return cfg80211_rx_action(pNetDev, freq, frame, len, GFP_ATOMIC);
 #else
 	return FALSE;
-#endif /* LINUX_VERSION_CODE 2.6.34*/
-#endif /* LINUX_VERSION_CODE 2.6.37*/
-#endif /* LINUX_VERSION_CODE 3.4.0*/
+#endif /* LINUX_VERSION_CODE: 2.6.34 */
+#endif /* LINUX_VERSION_CODE: 2.6.37 */
+#endif /* LINUX_VERSION_CODE: 3.4.0 */
+#endif /* LINUX_VERSION_CODE: 3.6.0 */
+#endif /* LINUX_VERSION_CODE: 3.12.0 */
 
 }
 
 VOID CFG80211OS_TxStatus(IN PNET_DEV pNetDev, IN INT32 cookie, IN PUCHAR frame, IN UINT32 len, IN BOOLEAN ack)
 {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
-	struct wireless_dev *pWdev;
-	pWdev = pNetDev->ieee80211_ptr ;
-
-	return cfg80211_mgmt_tx_status(pNetDev, cookie, frame, len, ack, GFP_ATOMIC);
+	return cfg80211_mgmt_tx_status(pNetDev->ieee80211_ptr, cookie, frame, len, ack, GFP_ATOMIC);
 #else
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
 	return cfg80211_mgmt_tx_status(pNetDev, cookie, frame, len, ack, GFP_ATOMIC);
@@ -1040,15 +1060,20 @@ VOID CFG80211OS_Roamed(
 VOID CFG80211OS_RecvObssBeacon(VOID *pCB, const PUCHAR pFrame, INT frameLen, INT freq)
 {
 	CFG80211_CB *pCfg80211_CB = (CFG80211_CB *)pCB;
-	struct wiphy *pWiphy = pCfg80211_CB->pCfg80211_Wdev->wiphy;
+	struct wiphy *pWiphy;
+	pWiphy = pCfg80211_CB->pCfg80211_Wdev->wiphy; /* To avoid compile warning: unused variable @20140529 */
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0))
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0))
-        cfg80211_report_obss_beacon(pWiphy, pFrame,frameLen, freq, 50, GFP_ATOMIC);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
+	cfg80211_report_obss_beacon(pWiphy, pFrame,frameLen, freq, 0 /*dbm*/);
 #else
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0))
+	cfg80211_report_obss_beacon(pWiphy, pFrame,frameLen, freq, 0 /*dbm*/, GFP_ATOMIC);
+#else
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0))
 	cfg80211_report_obss_beacon(pWiphy, pFrame,frameLen, freq, GFP_ATOMIC);
-#endif /*LINUX_VERSION_CODE: 3.4.0*/
 #endif /* LINUX_VERSION_CODE: 3.3.0 */	
+#endif /* LINUX_VERSION_CODE: 3.4.0 */
+#endif /* LINUX_VERSION_CODE: 3.8.0 */
 }
 
 #endif /* RT_CFG80211_SUPPORT */

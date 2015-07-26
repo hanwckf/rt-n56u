@@ -54,6 +54,24 @@
 #define EEPROM_DEFAULT_FILE_PATH	"/etc_ro/Wireless/MT7602E_EEPROM.bin"
 #endif
 
+#ifdef RTMP_FLASH_SUPPORT
+static USHORT EE_FLASH_ID_LIST[] __maybe_unused = {
+
+#ifdef RT6352
+	0x6352,
+	0x7620,
+#endif /* RT6352 */
+
+#ifdef MT76x2
+#ifdef RTMP_MAC_PCI
+	0x7662,
+#endif /* RTMP_MAC_PCI */
+#endif /* MT76x0 */
+
+};
+#define EE_FLASH_ID_NUM  (sizeof(EE_FLASH_ID_LIST) / sizeof(USHORT))
+#endif /* RTMP_FLASH_SUPPORT */
+
 /* For ioctl check usage */
 #define EEPROM_IS_PROGRAMMED		0x80
 
@@ -127,7 +145,7 @@ typedef union _EEPROM_NIC_CINFIG2_STRUC {
 		USHORT ExternalLNA:1;			
 #else			
 		USHORT Rsv1:1;	/* must be 0 */
-#endif			
+#endif /* MT76x2 */
 		USHORT BW40MAvailForA:1;	/* 0:enable, 1:disable */
 		USHORT BW40MAvailForG:1;	/* 0:enable, 1:disable */
 		USHORT EnableWPSPBC:1;	/* WPS PBC Control bit */
@@ -158,7 +176,7 @@ typedef union _EEPROM_NIC_CINFIG2_STRUC {
 		USHORT ExternalLNA:1;
 #else			
 		USHORT Rsv1:1;	/* must be 0 */
-#endif			
+#endif /* MT76x2 */
 		USHORT AntDiversity:1;	/* Antenna diversity */
 		USHORT AntOpt:1;	/* Fix Antenna Option: 0:Main; 1: Aux */
 		USHORT bInternalTxALC:1;	/* Internal Tx ALC */
@@ -167,7 +185,7 @@ typedef union _EEPROM_NIC_CINFIG2_STRUC {
 	} field;
 	USHORT word;
 } EEPROM_NIC_CONFIG2_STRUC, *PEEPROM_NIC_CONFIG2_STRUC;
-#endif
+#endif /* RT_BIG_ENDIAN */
 
 
 #if defined(BT_COEXISTENCE_SUPPORT) || defined(RT3290) || defined(RT8592) || defined(MT76x2)
@@ -187,7 +205,7 @@ typedef union _EEPROM_NIC_CINFIG3_STRUC {
 		USHORT rx_temp_comp:1;
 		USHORT CrystalShared:2;
 		USHORT CoexAnt:1;
-#endif			
+#endif /* MT76x2 */
 		USHORT TxStream:4;	/* Number of Tx stream */
 		USHORT RxStream:4;	/* Number of rx stream */
 	} field;
@@ -209,11 +227,11 @@ typedef union _EEPROM_NIC_CINFIG3_STRUC {
 		USHORT CrystalShared:2;
 		USHORT rx_temp_comp:1;
 		USHORT Rsv1:4;	/* must be 0 */
-#endif			
+#endif /* MT76x2 */
 	} field;
 	USHORT word;
 } EEPROM_NIC_CONFIG3_STRUC, *PEEPROM_NIC_CONFIG3_STRUC;
-#endif
+#endif /* RT_BIG_ENDIAN */
 #endif /* RTMP_PCI_SUPPORT */
 #endif /* defined(BT_COEXISTENCE_SUPPORT) || defined(RT3290) || defined(RT8592) || defined(MT76x2) */
 
@@ -310,7 +328,7 @@ typedef union _EEPROM_TXPOWER_DELTA_STRUC {
 	} field;
 	UCHAR value;
 } EEPROM_TXPOWER_DELTA_STRUC, *PEEPROM_TXPOWER_DELTA_STRUC;
-#endif
+#endif /* RT_BIG_ENDIAN */
 
 
 #ifdef RT_BIG_ENDIAN
@@ -826,8 +844,10 @@ INT rtmp_ee_load_from_bin(
 INT rtmp_ee_write_to_bin(
 	IN struct _RTMP_ADAPTER *pAd);
 
+#ifdef RT65xx
 INT rtmp_ee_write_to_prom(
 	IN struct _RTMP_ADAPTER *pAd);
+#endif /* RT65xx */
 	
 INT Set_LoadEepromBufferFromBin_Proc(
 	IN struct _RTMP_ADAPTER *pAd,

@@ -236,7 +236,9 @@ VOID TriggerQuickInitMCSRate(
 
 BOOLEAN QuickInitMCSRate(
     IN struct _RTMP_ADAPTER *pAd,
-    IN struct _MAC_TABLE_ENTRY	*pEntry);
+    IN struct _MAC_TABLE_ENTRY	*pEntry,
+    IN UINT16 PacketSucc,
+	IN UINT16 PacketErro);
 
 VOID MlmeSetMcsGroup(struct _RTMP_ADAPTER *pAd, struct _MAC_TABLE_ENTRY *pEnt);
 

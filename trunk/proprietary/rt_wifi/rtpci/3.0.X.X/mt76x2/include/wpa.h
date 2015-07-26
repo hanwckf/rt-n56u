@@ -454,7 +454,7 @@ BOOLEAN RTMPSoftDecryptWEP(
  	function prototype in cmm_tkip.c
  =====================================	
 */
-BOOLEAN RTMPSoftDecryptTKIP(
+NDIS_STATUS RTMPSoftDecryptTKIP(
 	IN PRTMP_ADAPTER pAd,
 	IN PUCHAR pHdr,
 	IN UCHAR UserPriority,
@@ -512,5 +512,18 @@ VOID CCMP_test_vector(
 	IN INT input);
 
 void inc_byte_array(UCHAR *counter, int len);
+
+#ifdef RT_CFG80211_SUPPORT
+BOOLEAN RTMPIsValidIEs(
+    IN UCHAR *Ies, 
+    IN INT32 Len);
+const UCHAR *RTMPFindIE(
+    IN UCHAR Eid, 
+    IN const UCHAR *Ies, 
+    IN INT32 Len);
+const UCHAR *RTMPFindWPSIE(
+    IN const UCHAR *Ies, 
+    IN INT32 Len);
+#endif /* RT_CFG80211_SUPPORT */
 
 #endif

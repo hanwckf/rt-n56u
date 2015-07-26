@@ -43,6 +43,16 @@
 #define EAP_TYPE_NOTIFY		0x02
 #define	EAP_TYPE_WSC		0xfe
 
+#ifdef CON_WPS
+typedef struct GNU_PACKED _WSC_UPNP_CTRL_WSC_BAND_STOP
+{
+	char    ifName[IFNAMSIZ];
+	CHAR    is2gBand;
+	CHAR    isApCli;
+	INT 	status;
+} WSC_UPNP_CTRL_WSC_BAND_STOP, *PWSC_UPNP_CTRL_WSC_BAND_STOP;
+#endif /* CON_WPS */
+
 /* structure to store Simple Config Attributes Info */
 typedef struct GNU_PACKED _WSC_LV_INFO {
     USHORT  ValueLen;
@@ -718,6 +728,9 @@ typedef	struct	_WSC_CTRL
 	BOOLEAN				bRegenPublicKey; /* For negative test */
 	UCHAR				NfcModel; /* 0:Password_Token, 1:Configuration_Token, 2:Handover */
 #endif /* WSC_NFC_SUPPORT */	
+#ifdef CONFIG_AP_SUPPORT
+	BOOLEAN				bWscAutoTriggerDisable; /* Default setting is FALSE */
+#endif /* CONFIG_AP_SUPPORT */
 }	WSC_CTRL, *PWSC_CTRL;
 
 typedef struct GNU_PACKED _WSC_CONFIGURED_VALUE {

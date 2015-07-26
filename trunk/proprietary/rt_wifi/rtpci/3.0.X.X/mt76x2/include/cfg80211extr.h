@@ -360,12 +360,15 @@ BOOLEAN CFG80211_P2pHandleNoAAttri(
 	IN PUCHAR pData);
 
 #endif /* RT_CFG80211_P2P_SUPPORT */
+#ifdef CONFIG_AP_SUPPORT
+VOID CFG80211_ParseBeaconIE(RTMP_ADAPTER *pAd, MULTISSID_STRUCT *pMbss, struct wifi_dev *wdev,UCHAR *wpa_ie,UCHAR *rsn_ie);
+#endif
 
 //--------------------------------
 VOID CFG80211_Convert802_3Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR *pHeader802_3);
 VOID CFG80211_Announce802_3Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR FromWhichBSSID);
 VOID CFG80211_SendMgmtFrameDone(RTMP_ADAPTER *pAd, USHORT Sequence);
-VOID CFG80211_ParseBeaconIE(RTMP_ADAPTER *pAd, MULTISSID_STRUCT *pMbss, struct wifi_dev *wdev,UCHAR *wpa_ie,UCHAR *rsn_ie);
+
 VOID CFG80211_SwitchTxChannel(RTMP_ADAPTER *pAd, ULONG Data);
 
 BOOLEAN CFG80211DRV_OpsBeaconSet(

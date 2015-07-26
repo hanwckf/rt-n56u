@@ -116,6 +116,17 @@ VOID APPeerProbeReqAction(
 	    	
 
 
+#ifdef BAND_STEERING
+	BND_STRG_CHECK_CONNECTION_REQ(	pAd,
+										NULL, 
+										ProbeReqParam.Addr2,
+										Elem->MsgType,
+										Elem->Rssi0,
+										Elem->Rssi1,
+										Elem->Rssi2,
+										NULL);
+#endif /* BAND_STEERING */
+
 		/* allocate and send out ProbeRsp frame */
 		NStatus = MlmeAllocateMemory(pAd, &pOutBuffer);
 		if (NStatus != NDIS_STATUS_SUCCESS)
@@ -167,27 +178,6 @@ VOID APPeerProbeReqAction(
 							  END_OF_ARGS);
 			FrameLen += TmpLen;
 		}
-
-#ifdef A_BAND_SUPPORT
-		/* add Channel switch announcement IE */
-		if ((pAd->CommonCfg.Channel > 14)
-			&& (pAd->CommonCfg.bIEEE80211H == 1)
-			&& (pAd->Dot11_H.RDMode == RD_SWITCHING_MODE))
-		{
-			UCHAR CSAIe=IE_CHANNEL_SWITCH_ANNOUNCEMENT;
-			UCHAR CSALen=3;
-			UCHAR CSAMode=1;
-
-			MakeOutgoingFrame(pOutBuffer+FrameLen,      &TmpLen,
-							  1,                        &CSAIe,
-							  1,                        &CSALen,
-							  1,                        &CSAMode,
-							  1,                        &pAd->CommonCfg.Channel,
-							  1,                        &pAd->Dot11_H.CSCount,
-							  END_OF_ARGS);
-			FrameLen += TmpLen;
-		}
-#endif /* A_BAND_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
 		if (WMODE_CAP_N(PhyMode) &&
@@ -583,9 +573,9 @@ VOID APPeerProbeReqAction(
 				MakeOutgoingFrame(pOutBuffer + FrameLen, &TmpLen,
 								  sizeof(HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE),	&HtExtChannelSwitchIe,
 								  END_OF_ARGS);
+				FrameLen += TmpLen;
 			}
 #endif /* DOT11_N_SUPPORT */
-			FrameLen += TmpLen;
 		}
 #endif /* A_BAND_SUPPORT */
 
@@ -745,10 +735,10 @@ VOID APPeerProbeReqAction(
 		    MAC_TABLE_ENTRY *pEntry=NULL;
 
 			DBGPRINT(RT_DEBUG_ERROR, ("SYNC - Send PROBE_RSP to %02x:%02x:%02x:%02x:%02x:%02x...\n",
-										PRINT_MAC(Addr2)));
+										PRINT_MAC(ProbeReqParam.Addr2)));
 	    
 			RalinkSpecificIe[5] |= 0x8;
-			pEntry = MacTableLookup(pAd, Addr2);
+			pEntry = MacTableLookup(pAd, ProbeReqParam.Addr2);
 
 			if (pEntry != NULL)
 			{
@@ -942,6 +932,8 @@ VOID APPeerBeaconAction(
 #endif /* DOT11_N_SUPPORT */
 
 #ifdef APCLI_SUPPORT
+		ApCliCheckPeerExistence(pAd, ie_list->Ssid, ie_list->SsidLen, ie_list->Channel);
+
 		if (Elem->Wcid < MAX_LEN_OF_MAC_TABLE)
 		{
 			PMAC_TABLE_ENTRY pEntry = NULL;
@@ -974,6 +966,7 @@ VOID APPeerBeaconAction(
 						(ie_list->AddHtInfo.AddHtInfo.RecomWidth == 0))
 					{
 #ifdef MAC_REPEATER_SUPPORT
+						PMAC_TABLE_ENTRY pMacEntry = NULL;
 						UCHAR CliIdx;
 						REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
 #endif /* MAC_REPEATER_SUPPORT */
@@ -988,9 +981,9 @@ VOID APPeerBeaconAction(
 
 								if ((pReptEntry->CliEnable) && (pReptEntry->CliValid))
 								{
-									pEntry = &pAd->MacTab.Content[pReptEntry->MacTabWCID];
-									if (pEntry)
-										pEntry->HTPhyMode.field.BW = 0;
+									pMacEntry = &pAd->MacTab.Content[pReptEntry->MacTabWCID];
+									if (pMacEntry)
+										pMacEntry->HTPhyMode.field.BW = 0;
 								}
 							}
 						}
@@ -1004,6 +997,7 @@ VOID APPeerBeaconAction(
 						(ie_list->HtCapability.HtCapInfo.ChannelWidth == 1))
 					{
 #ifdef MAC_REPEATER_SUPPORT
+						PMAC_TABLE_ENTRY pMacEntry = NULL;
 						UCHAR CliIdx;
 						REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
 #endif /* MAC_REPEATER_SUPPORT */
@@ -1017,9 +1011,9 @@ VOID APPeerBeaconAction(
 
 								if ((pReptEntry->CliEnable) && (pReptEntry->CliValid))
 								{
-									pEntry = &pAd->MacTab.Content[pReptEntry->MacTabWCID];
-									if (pEntry)
-										pEntry->HTPhyMode.field.BW = 1;
+									pMacEntry = &pAd->MacTab.Content[pReptEntry->MacTabWCID];
+									if (pMacEntry)
+										pMacEntry->HTPhyMode.field.BW = 1;
 								}
 							}
 						}
@@ -1061,6 +1055,17 @@ VOID APPeerBeaconAction(
 				{
 					MlmeEnqueue(pAd, APCLI_SYNC_STATE_MACHINE, APCLI_MT2_PEER_BEACON, Elem->MsgLen, Elem->Msg, ifIndex);
 				}
+				if ( (pAd->CommonCfg.bIEEE80211H == 1) &&
+					ie_list->NewChannel != 0 &&
+					pAd->CommonCfg.Channel != ie_list->NewChannel &&
+					pAd->Dot11_H.RDMode != RD_SWITCHING_MODE)
+				{
+					pAd->CommonCfg.Channel = ie_list->NewChannel;
+					pAd->Dot11_H.RDMode = RD_SWITCHING_MODE;
+					DBGPRINT(RT_DEBUG_TRACE,
+						("[APCLI]  Following root AP to switch channel to ch%u\n",
+						pAd->CommonCfg.Channel));
+				}
 			}
 		}
 #endif /* APCLI_SUPPORT */
@@ -1079,7 +1084,12 @@ VOID APPeerBeaconAction(
 			{
 				WdsPeerBeaconProc(pAd, pEntry, ie_list->CapabilityInfo,
 								MaxSupportedRate, RatesLen, bWmmCapable,
-								ie_list->RalinkIe, &ie_list->HtCapability,
+								ie_list->RalinkIe,
+#ifdef DOT11_VHT_AC
+								ie_list->vht_cap_len,
+								&ie_list->vht_cap_ie,
+#endif /* DOT11_VHT_AC */
+								&ie_list->HtCapability,
 								ie_list->HtCapabilityLen);
 			}
 		} while(FALSE);
@@ -1243,7 +1253,11 @@ VOID APScanTimeout(
  */
 VOID APScanTimeoutAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 {
+#ifdef AP_PARTIAL_SCAN_SUPPORT
+	pAd->MlmeAux.Channel = RTMPFindScanChannel(pAd, pAd->MlmeAux.Channel);
+#else
 	pAd->MlmeAux.Channel = NextChannel(pAd, pAd->MlmeAux.Channel);
+#endif /* AP_PARTIAL_SCAN_SUPPORT */
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	{		
@@ -1267,6 +1281,44 @@ VOID APScanTimeoutAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 #endif /* CONFIG_AP_SUPPORT */
 	ScanNextChannel(pAd, OPMODE_AP);
 }
+
+#ifdef CON_WPS
+VOID APMlmeScanCompleteAction(PRTMP_ADAPTER pAd, MLME_QUEUE_ELEM *Elem)
+{
+	PWSC_CTRL   pWscControl;
+	PWSC_CTRL   pApCliWscControl;
+	UCHAR       apidx;
+	INT         IsAPConfigured;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("AP SYNC - APMlmeScanCompleteAction\n"));
+
+	/* If We catch the SR=TRUE in last scan_res, stop the AP Wsc SM */	
+	pApCliWscControl = &pAd->ApCfg.ApCliTab[BSS0].WscControl;
+	WscPBCBssTableSort(pAd, pApCliWscControl);
+	
+	for(apidx=0; apidx<pAd->ApCfg.BssidNum; apidx++)
+	{
+		pWscControl = &pAd->ApCfg.MBSSID[apidx].WscControl;
+		IsAPConfigured = pWscControl->WscConfStatus;
+		
+		DBGPRINT(RT_DEBUG_TRACE, ("CON_WPS[%d]: info %d, %d\n", apidx, pWscControl->WscState, pWscControl->bWscTrigger));
+		if ((pWscControl->WscConfMode != WSC_DISABLE) && 
+		    (pWscControl->bWscTrigger == TRUE) &&
+		    (pApCliWscControl->WscPBCBssCount > 0))
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("CON_WPS[%d]: Stop the AP Wsc Machine\n", apidx));
+			WscBuildBeaconIE(pAd, IsAPConfigured, FALSE, 0, 0, apidx, NULL, 0, AP_MODE);
+			WscBuildProbeRespIE(pAd, WSC_MSGTYPE_AP_WLAN_MGR, IsAPConfigured, FALSE, 0, 0, apidx, NULL, 0, AP_MODE);
+			APUpdateBeaconFrame(pAd, apidx);
+			WscStop(pAd, FALSE, pWscControl);
+			/* AP: For stop the other side of the band with WSC SM */
+			WscConWpsStop(pAd, FALSE, pWscControl);
+			continue;
+		}
+	}
+
+}
+#endif /* CON_WPS*/
 
 /*
     ==========================================================================
@@ -1298,7 +1350,11 @@ VOID APMlmeScanReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		NdisMoveMemory(pAd->MlmeAux.Ssid, Ssid, SsidLen);
 
 		/* start from the first channel */
+#ifdef AP_PARTIAL_SCAN_SUPPORT
+		pAd->MlmeAux.Channel = RTMPFindScanChannel(pAd, 0);
+#else
 		pAd->MlmeAux.Channel = FirstChannel(pAd);
+#endif /* AP_PARTIAL_SCAN_SUPPORT */
 
 		/* Let BBP register at 20MHz to do scan */
 		bbp_set_bw(pAd, BW_20);
@@ -1541,9 +1597,24 @@ VOID ApSiteSurvey(
 {
     MLME_SCAN_REQ_STRUCT    ScanReq;
 
+	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))
+	{
+		/*	
+		* Still scanning, ignore this scan.
+		*/
+		DBGPRINT(RT_DEBUG_TRACE, ("ApSiteSurvey:: Scanning now\n"));
+		return;
+	}
+
     AsicDisableSync(pAd);
 
+#ifdef AP_PARTIAL_SCAN_SUPPORT
+	if (((pAd->ApCfg.bPartialScanning == TRUE) && (pAd->ApCfg.LastPartialScanChannel == 0)) ||
+		(pAd->ApCfg.bPartialScanning == FALSE))
+#endif /* AP_PARTIAL_SCAN_SUPPORT */
+	{
     BssTableInit(&pAd->ScanTab);
+	}
     pAd->Mlme.ApSyncMachine.CurrState = AP_SYNC_IDLE;
 
 	RTMPZeroMemory(ScanReq.Ssid, MAX_LEN_OF_SSID);
@@ -1566,6 +1637,54 @@ BOOLEAN ApScanRunning(RTMP_ADAPTER *pAd)
 {
 	return (pAd->Mlme.ApSyncMachine.CurrState == AP_SCAN_LISTEN) ? TRUE : FALSE;
 }
+
+#ifdef AP_PARTIAL_SCAN_SUPPORT
+/* 
+	==========================================================================
+	Description:
+
+	Return:
+		scan_channel - channel to scan.
+	Note:
+		return 0 if no more next channel
+	==========================================================================
+ */
+UCHAR FindPartialScanChannel(
+	IN PRTMP_ADAPTER pAd)
+{
+	UCHAR scan_channel = 0;
+	if (pAd->ApCfg.PartialScanChannelNum > 0)
+	{
+		pAd->ApCfg.PartialScanChannelNum--;
+		
+		if (pAd->ApCfg.LastPartialScanChannel == 0)
+			scan_channel = FirstChannel(pAd);
+		else
+			scan_channel = NextChannel(pAd, pAd->ApCfg.LastPartialScanChannel);
+		
+		/* update last scanned channel */
+		pAd->ApCfg.LastPartialScanChannel = scan_channel;
+		if (scan_channel == 0)
+		{
+			pAd->ApCfg.bPartialScanning = FALSE;
+			pAd->ApCfg.PartialScanChannelNum = DEFLAUT_PARTIAL_SCAN_CH_NUM;
+		}
+	}
+	else
+	{
+		/* Pending for next partial scan */
+		scan_channel = 0;
+		pAd->ApCfg.PartialScanChannelNum = DEFLAUT_PARTIAL_SCAN_CH_NUM;
+	}
+	DBGPRINT(RT_DEBUG_TRACE, ("%s, %u, scan_channel = %u, PartialScanChannelNum = %u, LastPartialScanChannel = %u, bPartialScanning = %u\n",
+			__FUNCTION__, __LINE__,
+			scan_channel,
+			pAd->ApCfg.PartialScanChannelNum,
+			pAd->ApCfg.LastPartialScanChannel,
+			pAd->ApCfg.bPartialScanning));
+	return scan_channel;
+}
+#endif /* AP_PARTIAL_SCAN_SUPPORT */
 #endif /* AP_SCAN_SUPPORT */
 
 
@@ -1596,6 +1715,9 @@ VOID APSyncStateMachineInit(
 	#endif /* P2P_SUPPORT || RT_CFG80211_SUPPORT */
 #ifdef AP_SCAN_SUPPORT
 	StateMachineSetAction(Sm, AP_SYNC_IDLE, APMT2_MLME_SCAN_REQ, (STATE_MACHINE_FUNC)APMlmeScanReqAction);
+#ifdef CON_WPS
+	StateMachineSetAction(Sm, AP_SYNC_IDLE, APMT2_MLME_SCAN_COMPLETE, (STATE_MACHINE_FUNC)APMlmeScanCompleteAction);
+#endif /* CON_WPS */
 
 	/* scan_listen state */
 	StateMachineSetAction(Sm, AP_SCAN_LISTEN, APMT2_MLME_SCAN_REQ, (STATE_MACHINE_FUNC)APInvalidStateWhenScan);

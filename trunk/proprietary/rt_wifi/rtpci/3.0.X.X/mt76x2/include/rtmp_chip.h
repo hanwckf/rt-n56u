@@ -63,6 +63,9 @@ struct _RSSI_SAMPLE;
 
 
 
+#ifdef RT6352
+#include "chip/rt6352.h"
+#endif /* RT6352 */
 
 
 #ifdef RT65xx
@@ -510,7 +513,7 @@ typedef union _EEPROM_ANTENNA_STRUC {
 	struct {
 		USHORT RssiIndicationMode:1; 	/* RSSI indication mode */
 		USHORT BoardType:2; 		/* 0: mini card; 1: USB pen */
-		USHORT RfIcType:54;			/* see E2PROM document */
+		USHORT RfIcType:5;			/* see E2PROM document */
 		USHORT TxPath:4;			/* 1: 1T, 2: 2T, 3: 3T */
 		USHORT RxPath:4;			/* 1: 1R, 2: 2R, 3: 3R */
 	} field;
@@ -618,6 +621,10 @@ struct _RTMP_CHIP_CAP_ {
 	/* use UINT8, not bit-or to speed up driver */
 	BOOLEAN FlgIsHwWapiSup;
 
+#ifdef THERMAL_PROTECT_SUPPORT
+	BOOLEAN ThermalProtectSup;
+#endif /* THERMAL_PROTECT_SUPPORT */
+
 	/* VCO calibration mode */
 	UINT8 VcoPeriod; /* default 10s */
 #define VCO_CAL_DISABLE		0	/* not support */
@@ -659,6 +666,7 @@ struct _RTMP_CHIP_CAP_ {
 	BOOLEAN temp_tx_alc_enable;
 	INT32 temp_25_ref; /* a quantification value of temperature, but not ¢J */
 	INT32 current_temp; /* unit ¢J */
+	INT32 temp_val;
 #ifdef RTMP_TEMPERATURE_TX_ALC
 	UINT32 high_temp_slope_a_band; /* slope with unit (¢J /dB) */
 	UINT32 low_temp_slope_a_band; /* slope with unit (¢J /dB) */
@@ -777,6 +785,13 @@ struct _RTMP_CHIP_CAP_ {
 	UINT32 Priv; /* Flag for RT5592 EP */
 #endif /* RT5592EP_SUPPORT */
 
+#ifdef RT6352
+	INT16 DPDCalPassThres;
+	INT16 DPDCalPassLowThresTX0;
+	INT16 DPDCalPassLowThresTX1;
+	INT16 DPDCalPassHighThresTX0;
+	INT16 DPDCalPassHighThresTX1;
+#endif /* RT6352 */
 #ifdef RT65xx
 	UINT8 PAType; /* b'00: 2.4G+5G external PA, b'01: 5G external PA, b'10: 2.4G external PA, b'11: Internal PA */
 	UINT8 LNA_type; /* b'00: 2.4G+5G external LNA, b'01: 5G external LNA, b'10: 2.4G external LNA, b'11: Internal LNA */
@@ -795,7 +810,7 @@ struct _RTMP_CHIP_CAP_ {
 	u32 ilm_offset;
 	u32 dlm_offset;
 	u32 rom_patch_offset;
-#endif
+#endif /* CONFIG_ANDES_SUPPORT */
 
 	UINT8 cmd_header_len;
 	UINT8 cmd_padding_len;
@@ -1006,7 +1021,7 @@ struct _RTMP_CHIP_OP_ {
 	int (*sendCommandToMcu)(struct _RTMP_ADAPTER *pAd, UCHAR cmd, UCHAR token, UCHAR arg0, UCHAR arg1, BOOLEAN FlgIsNeedLocked);	/* int (*sendCommandToMcu)(RTMP_ADAPTER *pAd, UCHAR cmd, UCHAR token, UCHAR arg0, UCHAR arg1); */
 #ifdef CONFIG_ANDES_SUPPORT
 	int (*sendCommandToAndesMcu)(struct _RTMP_ADAPTER *pAd, UCHAR QueIdx, UCHAR cmd, UCHAR *pData, USHORT DataLen, BOOLEAN FlgIsNeedLocked);
-#endif
+#endif /* CONFIG_ANDES_SUPPORT */
 
 	void (*AsicRfInit)(struct _RTMP_ADAPTER *pAd);
 	void (*AsicBbpInit)(struct _RTMP_ADAPTER *pAd);
@@ -1045,6 +1060,13 @@ struct _RTMP_CHIP_OP_ {
 
 	/* IQ Calibration */
 	VOID (*ChipIQCalibration)(struct _RTMP_ADAPTER *pAd, UCHAR Channel);
+
+	UINT32 (*ChipGetCurrentTemp)(struct _RTMP_ADAPTER *pAd);	
+#ifdef THERMAL_PROTECT_SUPPORT
+	VOID (*ThermalProDefaultCond)(struct _RTMP_ADAPTER *pAd);
+	VOID (*ThermalPro1stCond)(struct _RTMP_ADAPTER *pAd);
+	VOID (*ThermalPro2ndCond)(struct _RTMP_ADAPTER *pAd);
+#endif /* THERMAL_PROTECT_SUPPORT */
 
 	/* TX ALC */
 	UINT32 (*TSSIRatio)(INT32 delta_power);
@@ -1101,6 +1123,7 @@ struct _RTMP_CHIP_OP_ {
 	/* MCU */
 	void (*MCUCtrlInit)(struct _RTMP_ADAPTER *ad);
 	void (*MCUCtrlExit)(struct _RTMP_ADAPTER *ad);
+#ifdef CONFIG_ANDES_SUPPORT
 	void (*fw_init)(struct _RTMP_ADAPTER *ad);
 	int (*BurstWrite)(struct _RTMP_ADAPTER *ad, UINT32 Offset, UINT32 *Data, UINT32 Cnt);
 	int (*BurstRead)(struct _RTMP_ADAPTER *ad, UINT32 Offset, UINT32 Cnt, UINT32 *Data);
@@ -1112,16 +1135,21 @@ struct _RTMP_CHIP_OP_ {
 	int (*RFRandomWrite)(struct _RTMP_ADAPTER *ad, BANK_RF_REG_PAIR *RegPair, UINT32 Num);
 	int (*sc_random_write)(struct _RTMP_ADAPTER *ad, CR_REG *table, u32 num, u32 flags);
 	int (*sc_rf_random_write)(struct _RTMP_ADAPTER *ad, BANK_RF_CR_REG *table, u32 num, u32 flags);
+	int (*Calibration)(struct _RTMP_ADAPTER *pAd, UINT32 CalibrationID, ANDES_CALIBRATION_PARAM *param);
+#endif /* CONFIG_ANDES_SUPPORT */
 	void (*DisableTxRx)(struct _RTMP_ADAPTER *ad, UCHAR Level);
 	BOOLEAN (*AsicRadioOn)(struct _RTMP_ADAPTER *ad, UCHAR Level);
 	BOOLEAN (*AsicRadioOff)(struct _RTMP_ADAPTER *ad, UCHAR Level, USHORT TbttNumToNextWakeUp);
-	int (*Calibration)(struct _RTMP_ADAPTER *pAd, UINT32 CalibrationID, ANDES_CALIBRATION_PARAM *param);
 
 #ifdef MICROWAVE_OVEN_SUPPORT
 	VOID (*AsicMeasureFalseCCA)(IN struct _RTMP_ADAPTER *pAd);
 
 	VOID (*AsicMitigateMicrowave)(IN struct _RTMP_ADAPTER *pAd);
 #endif /* MICROWAVE_OVEN_SUPPORT */
+
+#ifdef DYNAMIC_VGA_SUPPORT
+	VOID (*AsicDynamicVgaGainControl)(IN struct _RTMP_ADAPTER *pAd);
+#endif /* DYNAMIC_VGA_SUPPORT */
 
 #if (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT)
 	VOID (*AsicWOWEnable)(struct _RTMP_ADAPTER *ad);
@@ -1216,6 +1244,32 @@ do {	\
 		if (__pAd->chipOps.AsicFreqCalStop != NULL)	\
 			__pAd->chipOps.TSSIRatio(__DeltaPwr);	\
 } while (0)
+
+#define RTMP_CHIP_GET_CURRENT_TEMP(__pAd, __pCurrentTemp) \
+do {	\
+		if (__pAd->chipOps.ChipGetCurrentTemp != NULL) \
+			__pCurrentTemp = __pAd->chipOps.ChipGetCurrentTemp(__pAd); \
+} while (0)
+			
+#ifdef THERMAL_PROTECT_SUPPORT
+#define RTMP_CHIP_THERMAL_PRO_DEFAULT_COND(__pAd)	\
+do {	\
+		if (__pAd->chipOps.ThermalProDefaultCond != NULL) \
+			__pAd->chipOps.ThermalProDefaultCond(__pAd); \
+} while (0)
+
+#define RTMP_CHIP_THERMAL_PRO_1st_COND(__pAd)	\
+do {	\
+		if (__pAd->chipOps.ThermalPro1stCond != NULL)	\
+			__pAd->chipOps.ThermalPro1stCond(__pAd);	\
+} while (0)
+
+#define RTMP_CHIP_THERMAL_PRO_2nd_COND(__pAd)	\
+do {	\
+		if (__pAd->chipOps.ThermalPro2ndCond != NULL)	\
+			__pAd->chipOps.ThermalPro2ndCond(__pAd);	\
+} while (0)
+#endif /* THERMAL_PROTECT_SUPPORT */
 
 #define RTMP_CHIP_ASIC_FREQ_CAL_STOP(__pAd)	\
 do {	\
@@ -1475,6 +1529,13 @@ do {	\
 	}\
 } while (0)
 
+#ifdef DYNAMIC_VGA_SUPPORT
+#define RTMP_ASIC_DYNAMIC_VGA_GAIN_CONTROL(_pAd)	\
+		do {	\
+			if (_pAd->chipOps.AsicDynamicVgaGainControl != NULL)	\
+				_pAd->chipOps.AsicDynamicVgaGainControl(_pAd);	\
+		} while (0)
+#endif /* DYNAMIC_VGA_SUPPORT */
 
 int RtmpChipOpsHook(VOID *pCB);
 VOID RtmpChipBcnInit(struct _RTMP_ADAPTER *pAd);
@@ -1510,6 +1571,10 @@ VOID EnableAPMIMOPSv1(struct _RTMP_ADAPTER *pAd, BOOLEAN ReduceCorePower);
 VOID DisableAPMIMOPSv1(struct _RTMP_ADAPTER *pAd);
 #endif /* GREENAP_SUPPORT */
 
+#ifdef RTMP_MAC
+VOID RTxx_default_Init(struct _RTMP_ADAPTER *pAd);
+#endif /* RTMP_MAC */
+
 /* global variable */
 extern FREQUENCY_ITEM RtmpFreqItems3020[];
 extern FREQUENCY_ITEM FreqItems3020_Xtal20M[];
@@ -1527,7 +1592,9 @@ INT rtmp_asic_top_init(struct _RTMP_ADAPTER *pAd);
 INT StopDmaTx(struct _RTMP_ADAPTER *pAd, UCHAR Level);
 INT StopDmaRx(struct _RTMP_ADAPTER *pAd, UCHAR Level);
 
+#ifdef RT65xx
 BOOLEAN isExternalPAMode(struct _RTMP_ADAPTER *ad, INT channel);
 BOOLEAN is_external_lna_mode(struct _RTMP_ADAPTER *ad, INT channel);
+#endif /* RT65xx */
 #endif /* __RTMP_CHIP_H__ */
 

@@ -599,6 +599,8 @@ VOID AsicSwitchChannel(RTMP_ADAPTER *pAd, UCHAR Channel, BOOLEAN bScan)
 	rtmp_asic_set_bf(pAd); // FW will initialize TxBf HW status. Re-calling this AP could recover previous status
 	
 #ifdef MT76x2
+	if (IS_MT76x2(pAd))
+	{
 	// Disable BF HW to apply profile to packets when nSS == 2.
 	// Maybe it can be initialized at chip init but removing the same CR initialization from FW will be better
 	RTMP_IO_READ32(pAd, TXO_R4, &value32);
@@ -609,6 +611,7 @@ VOID AsicSwitchChannel(RTMP_ADAPTER *pAd, UCHAR Channel, BOOLEAN bScan)
 	RTMP_IO_READ32(pAd, RXO_R13, &value32);
 	value32 |= 0x100;
 	RTMP_IO_WRITE32(pAd, RXO_R13, value32);
+	}
 #endif /* MT76x2 */
 #endif /* TXBF_SUPPORT */	
 }
@@ -916,7 +919,7 @@ INT AsicSetRxFilter(RTMP_ADAPTER *pAd)
 #endif /* CONFIG_AP_SUPPORT */
 	}
 #ifdef CONFIG_SNIFFER_SUPPORT
-	if ((MONITOR_ON(pAd))) /* Enable Rx with promiscuous reception */
+	if ((MONITOR_ON(pAd)) && pAd->monitor_ctrl.current_monitor_mode == MONITOR_MODE_FULL) /* Enable Rx with promiscuous reception */
 			rx_filter_flag = 0x3;
 #endif
 	RTMP_IO_WRITE32(pAd, RX_FILTR_CFG, rx_filter_flag);
@@ -1259,6 +1262,14 @@ VOID AsicSetEdcaParm(RTMP_ADAPTER *pAd, PEDCA_PARM pEdcaParm)
 
 
 		Ac2Cfg.field.AcTxop = (pEdcaParm->Txop[QID_AC_VI] * 6) / 10;
+#ifdef RTMP_RBUS_SUPPORT
+		if(pAd->Antenna.field.TxPath == 1)
+		{
+			Ac2Cfg.field.Cwmin = pEdcaParm->Cwmin[QID_AC_VI] + 1;
+			Ac2Cfg.field.Cwmax = pEdcaParm->Cwmax[QID_AC_VI] + 1;			
+		}
+		else
+#endif 			
 		{
 			Ac2Cfg.field.Cwmin = pEdcaParm->Cwmin[QID_AC_VI];
 			Ac2Cfg.field.Cwmax = pEdcaParm->Cwmax[QID_AC_VI];
@@ -1955,6 +1966,9 @@ VOID AsicAddPairwiseKeyEntry(
 	UCHAR CipherAlg = pCipherKey->CipherAlg;
 #ifdef RTMP_MAC
 #ifdef RTMP_MAC_PCI
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
+	unsigned long irqFlag = 0;
+#endif /* SPECIFIC_BCN_BUF_SUPPORT */
 #endif /* RTMP_MAC_PCI */
 #endif /* RTMP_MAC */
 
@@ -1969,6 +1983,9 @@ VOID AsicAddPairwiseKeyEntry(
 		pairwise_key_base = PAIRWISE_KEY_TABLE_BASE;
 		pairwise_key_len = HW_KEY_ENTRY_SIZE;
 #ifdef RTMP_MAC_PCI
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
+		RTMP_MAC_SHR_MSEL_LOCK(pAd, LOWER_SHRMEM, irqFlag);
+#endif /* SPECIFIC_BCN_BUF_SUPPORT */
 #endif /* RTMP_MAC_PCI */
 	}
 #endif /* RTMP_MAC */
@@ -2011,6 +2028,11 @@ VOID AsicAddPairwiseKeyEntry(
 	}
 #ifdef RTMP_MAC
 #ifdef RTMP_MAC_PCI
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
+	if (pAd->chipCap.hif_type == HIF_RTMP) {
+		RTMP_MAC_SHR_MSEL_UNLOCK(pAd, LOWER_SHRMEM, irqFlag);
+	}
+#endif /* SPECIFIC_BCN_BUF_SUPPORT*/
 #endif /* RTMP_MAC_PCI */
 #endif /* RTMP_MAC */
 	DBGPRINT(RT_DEBUG_TRACE,("AsicAddPairwiseKeyEntry: WCID #%d Alg=%s\n",WCID, CipherName[CipherAlg]));
@@ -2244,6 +2266,136 @@ VOID AsicUpdateWAPIPN(
 
 
 
+#ifdef VCORECAL_SUPPORT
+VOID AsicVCORecalibration(
+	IN PRTMP_ADAPTER pAd)
+{
+	UCHAR RFValue = 0;
+	UINT32 TxPinCfg = 0;
+	UINT8 mode = pAd->chipCap.FlgIsVcoReCalMode;
+
+	if (mode == VCO_CAL_DISABLE)
+		return;
+
+#ifdef RT6352
+	if (IS_RT6352(pAd) && (pAd->bCalibrationDone == FALSE))
+		return;
+#endif /* RT6352 */
+
+
+#ifdef RTMP_INTERNAL_TX_ALC
+#endif /* RTMP_INTERNAL_TX_ALC */
+
+	RTMP_IO_READ32(pAd, TX_PIN_CFG, &TxPinCfg);
+	TxPinCfg &= 0xFCFFFFF0;
+	RTMP_IO_WRITE32(pAd, TX_PIN_CFG, TxPinCfg);
+
+	switch (mode)
+	{
+		case VCO_CAL_MODE_1:
+			RT30xxReadRFRegister(pAd, RF_R07, (PUCHAR)&RFValue);
+			RFValue = RFValue | 0x01; /* bit 0 = vcocal_en */
+			RT30xxWriteRFRegister(pAd, RF_R07, (UCHAR)RFValue);
+			break;
+
+		case VCO_CAL_MODE_2:
+			RT30xxReadRFRegister(pAd, RF_R03, (PUCHAR)&RFValue);
+			RFValue = RFValue | 0x80; /* bit 7 = vcocal_en */
+			RT30xxWriteRFRegister(pAd, RF_R03, (UCHAR)RFValue);
+			break;
+
+		case VCO_CAL_MODE_3:
+#ifdef RT6352
+			if (IS_RT6352(pAd)) {
+				RT635xWriteRFRegister(pAd, RF_BANK0, RF_R05, 0x40);
+				RT635xWriteRFRegister(pAd, RF_BANK0, RF_R04, 0x0C);
+
+				RT635xReadRFRegister(pAd, RF_BANK0, RF_R04, &RFValue);
+				RFValue = RFValue | 0x80; /* bit 7=vcocal_en*/
+				RT635xWriteRFRegister(pAd, RF_BANK0, RF_R04, RFValue);
+			}
+#endif /* RT6352 */
+#ifdef RT8592
+			if (IS_RT8592(pAd))
+			{
+				RT30xxReadRFRegister(pAd, RF_R05, (PUCHAR)&RFValue);
+				RFValue = RFValue | 0x80; /* bit 7 = vcocal_en */
+				RT30xxWriteRFRegister(pAd, RF_R05, (UCHAR)RFValue);
+			}
+#endif /* RT8592 */
+			break;
+			
+		default:
+			return;
+	}
+
+	if (mode == VCO_CAL_MODE_3 && (!IS_RT6352(pAd)))
+		RtmpusecDelay(100);
+	else
+		RtmpOsMsDelay(1);
+
+	RTMP_IO_READ32(pAd, TX_PIN_CFG, &TxPinCfg);
+	if (pAd->CommonCfg.Channel <= 14)
+	{
+		if (pAd->Antenna.field.TxPath == 1
+#ifdef GREENAP_SUPPORT
+			|| pAd->ApCfg.bGreenAPActive == TRUE	 /* avoid to corrupt GreenAP operation */
+#endif /* GREENAP_SUPPORT */
+		)
+			TxPinCfg |= 0x2;
+		else if (pAd->Antenna.field.TxPath == 2)
+			TxPinCfg |= 0xA;
+		else if (pAd->Antenna.field.TxPath == 3)
+			TxPinCfg |= 0x0200000A;
+	}
+	else
+	{
+		if (pAd->Antenna.field.TxPath == 1
+#ifdef GREENAP_SUPPORT
+			|| pAd->ApCfg.bGreenAPActive == TRUE	 /* avoid to corrupt GreenAP operation */
+#endif /* GREENAP_SUPPORT */
+		)
+			TxPinCfg |= 0x1;
+		else if (pAd->Antenna.field.TxPath == 2)
+			TxPinCfg |= 0x5;
+		else if (pAd->Antenna.field.TxPath == 3)
+			TxPinCfg |= 0x01000005;
+	}
+	RTMP_IO_WRITE32(pAd, TX_PIN_CFG, TxPinCfg);
+
+#ifdef TXBF_SUPPORT
+		// Do a Divider Calibration and update BBP registers
+		if (pAd->CommonCfg.RegTransmitSetting.field.ITxBfEn
+#ifdef DBG_CTRL_SUPPORT
+			&& (pAd->CommonCfg.DebugFlags & DBF_DISABLE_CAL)==0
+#endif /* DBG_CTRL_SUPPORT */
+		)
+		{
+			pAd->chipOps.fITxBfDividerCalibration(pAd, 2, 0, NULL);
+		}
+
+		if (pAd->CommonCfg.ETxBfEnCond)
+		{
+			INT idx;
+			
+			for (idx = 1; idx < MAX_LEN_OF_MAC_TABLE; idx++)
+			{
+				MAC_TABLE_ENTRY *pEntry;
+
+				pEntry = &pAd->MacTab.Content[idx];
+				if ((IS_ENTRY_CLIENT(pEntry)) && (pEntry->eTxBfEnCond))
+				{
+					BOOLEAN Cancelled;
+
+					RTMPCancelTimer(&pEntry->eTxBfProbeTimer, &Cancelled);
+					pEntry->bfState = READY_FOR_SNDG0;
+					eTxBFProbing(pAd, pEntry);
+				}
+			}
+		}
+#endif // TXBF_SUPPORT //
+}
+#endif /* VCORECAL_SUPPORT */
 
 
 #ifdef STREAM_MODE_SUPPORT
@@ -2514,7 +2666,12 @@ INT StopDmaRx(RTMP_ADAPTER *pAd, UCHAR Level)
 		pRxBlk = &RxBlk;
 		pRxPacket = GetPacketFromRxRing(pAd, pRxBlk, &bReschedule, &RxPending, &bCmdRspPacket, 0);
 		if ((RxPending == 0) && (bReschedule == FALSE))
+		{
+			if (pRxPacket)
+				RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_SUCCESS);
+			
 			break;
+		}
 		else
 			RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_SUCCESS);
 	}
@@ -3007,4 +3164,257 @@ VOID RT28xxAndesWOWDisable(
 }
 
 #endif /* NEW_WOW_SUPPORT */
+
+#ifdef THERMAL_PROTECT_SUPPORT
+VOID thermal_protection(
+	IN RTMP_ADAPTER 	*pAd)
+{
+	RTMP_CHIP_OP *pChipOps = &pAd->chipOps;
+	INT32 temp_diff = 0, current_temp = 0;	
+
+	if (pAd->chipCap.ThermalProtectSup == FALSE)
+		return;
+
+#ifdef MT76x2
+	UINT32 mac_reg = 0;
+	if (IS_MT76x2(pAd))
+	{
+		current_temp = pAd->chipCap.current_temp;
+		/* 2T2R to 1T2R */
+		if (pAd->thermal_HighEn == TRUE)
+		{
+			if ((current_temp > pAd->thermal_HighTempTh) &&
+               (pAd->force_one_tx_stream == FALSE))
+			{
+				pAd->force_one_tx_stream = TRUE;
+				
+				/* 0x504: Trun on BIT[13][14] */
+				RTMP_IO_READ32(pAd, RLT_RF_BYPASS_0, &mac_reg);
+				mac_reg |= (3 << 13);
+				RTMP_IO_WRITE32(pAd, RLT_RF_BYPASS_0, mac_reg);
+		 
+				/* 0x50C: Trun off BIT[13][14] */
+				RTMP_IO_READ32(pAd, RLT_RF_SETTING_0, &mac_reg);
+				mac_reg &= ~(3 << 13);
+				RTMP_IO_WRITE32(pAd, RLT_RF_SETTING_0, mac_reg);
+				
+				DBGPRINT(RT_DEBUG_OFF, ("%s - current temp=%d > HighTempTh =%d switch to 1T\n",
+					__FUNCTION__, current_temp, pAd->thermal_HighTempTh));
+			}
+		}
+
+		/* 1T2R to 2T2R */
+		if (pAd->thermal_LowEn == TRUE)
+        {       
+            if ((current_temp < pAd->thermal_LowTempTh) &&
+	    		(pAd->force_one_tx_stream == TRUE))
+			{	
+				
+                /* 0x504: Trun off BIT[13][14] */
+                RTMP_IO_READ32(pAd, RLT_RF_BYPASS_0, &mac_reg);
+                mac_reg &= ~(3 << 13);
+                RTMP_IO_WRITE32(pAd, RLT_RF_BYPASS_0, mac_reg);
+ 
+                /* 0x50C: Trun off BIT[13][14] */
+                RTMP_IO_READ32(pAd, RLT_RF_SETTING_0, &mac_reg);
+                mac_reg &= ~(3 << 13);
+                RTMP_IO_WRITE32(pAd, RLT_RF_SETTING_0, mac_reg);
+                                
+                DBGPRINT(RT_DEBUG_OFF, ("%s - current temp=%d > HighTempTh =%d switch to 1T\n",
+                        __FUNCTION__, current_temp, pAd->thermal_HighTempTh));
+
+                pAd->force_one_tx_stream = FALSE;
+				DBGPRINT(RT_DEBUG_OFF, ("%s - current temp=%d < HighTempTh =%d restore to 2T\n",
+                                        __FUNCTION__, current_temp, pAd->thermal_LowTempTh));
+			}
+                }		
+
+		return;
+	}
+#endif /* MT76x2 */
+
+	RTMP_CHIP_GET_CURRENT_TEMP(pAd, current_temp);
+	temp_diff = current_temp - pAd->last_thermal_pro_temp;
+	pAd->last_thermal_pro_temp = current_temp;
+
+	DBGPRINT(RT_DEBUG_INFO, ("%s - current temp=%d, temp diff=%d\n", 
+					__FUNCTION__, current_temp, temp_diff));
+	
+	if (temp_diff > 0) {
+		if (current_temp > (pAd->thermal_pro_criteria + 10) /* 90 */)
+			RTMP_CHIP_THERMAL_PRO_2nd_COND(pAd);
+		else if (current_temp > pAd->thermal_pro_criteria /* 80 */)
+			RTMP_CHIP_THERMAL_PRO_1st_COND(pAd);
+		else
+			RTMP_CHIP_THERMAL_PRO_DEFAULT_COND(pAd);
+	} else if (temp_diff < 0) {
+		if (current_temp < (pAd->thermal_pro_criteria - 5) /* 75 */)
+			RTMP_CHIP_THERMAL_PRO_DEFAULT_COND(pAd);
+		else if (current_temp < (pAd->thermal_pro_criteria + 5) /* 85 */)
+			RTMP_CHIP_THERMAL_PRO_1st_COND(pAd);
+		else
+			RTMP_CHIP_THERMAL_PRO_2nd_COND(pAd);
+	}
+}
+#endif /* THERMAL_PROTECT_SUPPORT */
+
+#ifdef DROP_MASK_SUPPORT
+VOID asic_set_drop_mask(
+	PRTMP_ADAPTER ad,
+	USHORT	wcid,
+	BOOLEAN enable)
+{
+	UINT32 mac_reg = 0, reg_id, group_index;
+	UINT32 drop_mask = (1 << (wcid % 32));
+
+	/* each group has 32 entries */
+	group_index = (wcid - (wcid % 32)) >> 5 /* divided by 32 */;
+	reg_id = (TX_WCID_DROP_MASK0 + 4*group_index);
+	
+	RTMP_IO_READ32(ad, reg_id, &mac_reg);
+
+	mac_reg = (enable ? \
+				(mac_reg | drop_mask):(mac_reg & ~drop_mask));
+	RTMP_IO_WRITE32(ad, reg_id, mac_reg);
+	DBGPRINT(RT_DEBUG_TRACE,
+			("%s(%u):, wcid = %u, reg_id = 0x%08x, mac_reg = 0x%08x, group_index = %u, drop_mask = 0x%08x\n",
+			__FUNCTION__, enable, wcid, reg_id, mac_reg, group_index, drop_mask));
+}
+
+
+VOID asic_drop_mask_reset(
+	PRTMP_ADAPTER ad)
+{
+	UINT32 i, reg_id;
+	
+	for ( i = 0; i < 8 /* num of drop mask group */; i++)
+	{
+		reg_id = (TX_WCID_DROP_MASK0 + i*4);
+		RTMP_IO_WRITE32(ad, reg_id, 0);
+	}
+
+	DBGPRINT(RT_DEBUG_TRACE, ("%s()\n", __FUNCTION__));
+}
+#endif /* DROP_MASK_SUPPORT */
+
+#ifdef MULTI_CLIENT_SUPPORT
+VOID asic_change_tx_retry(
+	IN PRTMP_ADAPTER pAd, 
+	IN USHORT num)
+{		
+	UINT32	TxRtyCfg, MacReg = 0;
+	
+	if (pAd->CommonCfg.txRetryCfg == 0) {
+		/* txRetryCfg is invalid, should not be 0 */
+		DBGPRINT(RT_DEBUG_TRACE, ("txRetryCfg=%x\n", pAd->CommonCfg.txRetryCfg));
+		return ;
+	}
+
+	if (num < 3)
+	{
+		/* Tx date retry default 15 */
+		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
+		TxRtyCfg = ((TxRtyCfg & 0xffff0000) | (pAd->CommonCfg.txRetryCfg & 0x0000ffff));
+		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
+
+		/* Tx RTS retry default 32 */
+		RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
+		MacReg &= 0xFEFFFF00;
+		MacReg |= 0x20;
+		RTMP_IO_WRITE32(pAd, TX_RTS_CFG, MacReg);
+	}
+	else
+	{
+		/* Tx date retry 10 */
+		TxRtyCfg = 0x4100080A;
+		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);	
+
+		/* Tx RTS retry 3 */
+		RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
+		MacReg &= 0xFEFFFF00;
+		MacReg |= 0x01000003;
+		RTMP_IO_WRITE32(pAd, TX_RTS_CFG, MacReg);
+
+		/* enable fallback legacy */
+		if (pAd->CommonCfg.Channel > 14)
+			RTMP_IO_WRITE32(pAd, HT_FBK_TO_LEGACY, 0x1818);
+		else
+			RTMP_IO_WRITE32(pAd, HT_FBK_TO_LEGACY, 0x1010);
+	}
+}
+
+VOID pkt_aggr_num_change(
+	IN PRTMP_ADAPTER pAd, 
+	IN USHORT num)
+{
+	if (IS_RT6352(pAd))
+	{
+		if (num < 5)
+		{
+			/* use default */
+			RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_20M1S, 0x77777777);
+			RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_20M2S, 0x77777777);
+			RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M1S, 0x77777777);
+			RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M2S, 0x77777777);
+		}
+		else
+		{
+			/* modify by MCS */
+			RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_20M1S, 0x77754433);
+			RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_20M2S, 0x77765543);
+			RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M1S, 0x77765544);
+			RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M2S, 0x77765544);
+		}
+	}
+
+}
+
+VOID asic_tune_be_wmm(
+	IN PRTMP_ADAPTER pAd, 
+	IN USHORT num)
+{
+	UCHAR  bssCwmin = 4, apCwmin = 4, apCwmax = 6;
+			
+	if (num <= 4)
+	{
+		/* use profile cwmin */
+		if (pAd->CommonCfg.APCwmin > 0 && pAd->CommonCfg.BSSCwmin > 0 && pAd->CommonCfg.APCwmax > 0)
+		{
+			apCwmin = pAd->CommonCfg.APCwmin;
+			apCwmax = pAd->CommonCfg.APCwmax;
+			bssCwmin = pAd->CommonCfg.BSSCwmin;
+		}
+	}
+	else if (num > 4 && num <= 8)
+	{
+		apCwmin = 4;
+		apCwmax = 6;
+		bssCwmin = 5;
+	}
+	else if (num > 8 && num <= 16)
+	{
+		apCwmin = 4;
+		apCwmax = 6;
+		bssCwmin = 6;
+	}
+	else if (num > 16 && num <= 64)
+	{
+		apCwmin = 4;
+		apCwmax = 6;
+		bssCwmin = 7;
+	}
+	else if (num > 64 && num <= 128)
+	{
+		apCwmin = 4;
+		apCwmax = 6;
+		bssCwmin = 8;
+	}
+	
+	pAd->CommonCfg.APEdcaParm.Cwmin[0] = apCwmin;
+	pAd->CommonCfg.APEdcaParm.Cwmax[0] = apCwmax;
+	pAd->ApCfg.BssEdcaParm.Cwmin[0] = bssCwmin;
+			
+	AsicSetEdcaParm(pAd, &pAd->CommonCfg.APEdcaParm);
+}
+#endif /* MULTI_CLIENT_SUPPORT */
 

@@ -182,6 +182,8 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 		MULTISSID_STRUCT *pMbss = &pAd->ApCfg.MBSSID[idx];
 		struct wifi_dev *wdev = &pMbss->wdev;
 
+		wdev->channel = pAd->CommonCfg.Channel;
+
 		if ((pMbss->SsidLen <= 0) || (pMbss->SsidLen > MAX_LEN_OF_SSID))
 		{
 			NdisMoveMemory(pMbss->Ssid, "HT_AP", 5);
@@ -373,6 +375,10 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 				WscOnOff(pAd, idx, FALSE);
 		}
 #endif /* WSC_V2_SUPPORT */
+#ifdef BAND_STEERING
+		if (pAd->ApCfg.BandSteering && idx == BSS0)
+			BndStrg_Init(pAd);
+#endif /* BAND_STEERING */
 	}
 
 #ifdef DOT11_N_SUPPORT
@@ -685,6 +691,11 @@ DBGPRINT(RT_DEBUG_OFF, ("%s(): AP Set CentralFreq at %d(Prim=%d, HT-CentCh=%d, V
 	/* Pre-tbtt interrupt setting. */
 	AsicSetPreTbttInt(pAd, TRUE);
 
+#ifdef RTMP_MAC_PCI
+	//enable IRQ after init ready
+	RTMP_IRQ_ENABLE(pAd);
+#endif /*RTMP_MAC_PCI*/
+
 #ifdef WAPI_SUPPORT
 	RTMPStartWapiRekeyTimerAction(pAd, NULL);
 #endif /* WAPI_SUPPORT */
@@ -785,6 +796,10 @@ VOID APStop(
 	ApCliIfDown(pAd);
 #endif /* APCLI_SUPPORT */
 
+#ifdef RTMP_MAC_PCI
+	//disable IRQ before init ready
+	RTMP_ASIC_INTERRUPT_DISABLE(pAd);
+#endif /*RTMP_MAC_PCI*/
 	MacTableReset(pAd);
 
 	RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS);
@@ -959,9 +974,11 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 
 				if ((pEntry->bReptEthCli) && (pEntry->ReptCliIdleCount >= MAC_TABLE_AGEOUT_TIME))
 				{
-					MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL,
-									(64 + (MAX_EXT_MAC_ADDR_SIZE * pEntry->wdev_idx) + pEntry->MatchReptCliIdx));
-					RTMP_MLME_HANDLER(pAd);
+#ifdef DOT11_N_SUPPORT
+					/* free resources of BA*/
+					BASessionTearDownALL(pAd, pEntry->wcid);
+#endif /* DOT11_N_SUPPORT */
+					RTMPRemoveRepeaterDisconnectEntry(pAd, pEntry->wdev_idx, pEntry->MatchReptCliIdx);
 					RTMPRemoveRepeaterEntry(pAd, pEntry->wdev_idx, pEntry->MatchReptCliIdx);
 					continue;
 				}
@@ -982,6 +999,28 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 			}
 		}
 #endif /* APCLI_SUPPORT */
+
+#ifdef WDS_SUPPORT
+		if (IS_ENTRY_WDS(pEntry))
+		{
+			if (!CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_RALINK_CHIPSET))
+				pMacTable->fAllStationAsRalink = FALSE;	
+
+			if (pAd->CommonCfg.bRdg && pMacTable->fAllStationAsRalink)
+			{
+				bRdgActive = TRUE;
+			}
+			else
+			{
+				bRdgActive = FALSE;
+			}
+
+			if (bRdgActive != RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE))
+				AsicSetRDG(pAd, bRdgActive);
+
+			continue;
+		}
+#endif /* WDS_SUPPORT */
 
 		if (!IS_ENTRY_CLIENT(pEntry))
 			continue;
@@ -1011,7 +1050,12 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 		/* 1. check if there's any associated STA in power-save mode. this affects outgoing */
 		/*    MCAST/BCAST frames should be stored in PSQ till DtimCount=0 */
 		if (pEntry->PsMode == PWR_SAVE)
+		{
 			pMacTable->fAnyStationInPsm = TRUE;
+#ifdef PS_ENTRY_MAITENANCE
+			pEntry->continuous_ps_count++;
+#endif /* PS_ENTRY_MAITENANCE */
+		}
 
 #ifdef DOT11_N_SUPPORT
 		if (pEntry->MmpsMode == MMPS_DYNAMIC)
@@ -1142,9 +1186,18 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 		}
 
 		/* 2. delete those MAC entry that has been idle for a long time */
-		if (pEntry->NoDataIdleCount >= pEntry->StaIdleTimeout)
+		if ((pEntry->NoDataIdleCount >= pEntry->StaIdleTimeout)
+#ifdef PS_ENTRY_MAITENANCE
+			|| (pEntry->continuous_ps_count > pAd->ps_timeout)
+#endif /* PS_ENTRY_MAITENANCE */
+			)
 		{
 			bDisconnectSta = TRUE;
+
+#ifdef PS_ENTRY_MAITENANCE
+			if (pEntry->continuous_ps_count > pAd->ps_timeout)
+				DBGPRINT(RT_DEBUG_WARN, ("ps_timeout(%u) !!!\n", pEntry->Aid));
+#endif /* PS_ENTRY_MAITENANCE */
 			DBGPRINT(RT_DEBUG_WARN, ("ageout %02x:%02x:%02x:%02x:%02x:%02x after %d-sec silence\n",
 					PRINT_MAC(pEntry->Addr), pEntry->StaIdleTimeout));
 			ApLogEvent(pAd, pEntry->Addr, EVENT_AGED_OUT);
@@ -1233,9 +1286,11 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 					{
 						apCliIdx = pReptEntry->MatchApCliIdx;
 						CliIdx = pReptEntry->MatchLinkIdx;
-						MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL,
-										(64 + MAX_EXT_MAC_ADDR_SIZE*apCliIdx + CliIdx));
-								RTMP_MLME_HANDLER(pAd);
+#ifdef DOT11_N_SUPPORT
+						/* free resources of BA*/
+						BASessionTearDownALL(pAd, pReptEntry->MacTabWCID);
+#endif /* DOT11_N_SUPPORT */
+						RTMPRemoveRepeaterDisconnectEntry(pAd, apCliIdx, CliIdx);
 								RTMPRemoveRepeaterEntry(pAd, apCliIdx, CliIdx);
 					}
 				}
@@ -1250,7 +1305,11 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 		if (pEntry->PsQueue.Head)
 		{
 			pEntry->PsQIdleCount++;
+#ifdef NOISE_TEST_ADJUST
+			if (pEntry->PsQIdleCount > 4)
+#else
 			if (pEntry->PsQIdleCount > 2)
+#endif /* NOISE_TEST_ADJUST */
 			{
 				ULONG irq_flags;
 				RTMP_IRQ_LOCK(&pAd->irq_lock, irq_flags);
@@ -1387,6 +1446,18 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 		if(pAd->MacTab.fAnyStationIsHT == FALSE
 			&& pAd->ApCfg.bGreenAPEnable == TRUE)
 		{
+#ifdef RTMP_RBUS_SUPPORT
+#ifdef COC_SUPPORT
+			if ((pAd->MacTab.Size==0) &&
+				(pAd->ApCfg.GreenAPLevel != GREENAP_WITHOUT_ANY_STAS_CONNECT))
+			{
+					RTMP_CHIP_ENABLE_AP_MIMOPS(pAd,TRUE);
+					pAd->ApCfg.GreenAPLevel = GREENAP_WITHOUT_ANY_STAS_CONNECT;
+				
+			}
+			else
+#endif /* COC_SUPPORT */
+#endif /* RTMP_RBUS_SUPPORT */
 			if (pAd->ApCfg.GreenAPLevel!=GREENAP_ONLY_11BG_STAS)
 			{
 				RTMP_CHIP_ENABLE_AP_MIMOPS(pAd,FALSE);
@@ -1433,7 +1504,11 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 		UINT bss_index;
 
 		pMacTable->PsQIdleCount ++;
+#ifdef NOISE_TEST_ADJUST
+		if (pMacTable->PsQIdleCount > 2)
+#else
 		if (pMacTable->PsQIdleCount > 1)
+#endif /* NOISE_TEST_ADJUST */
 		{
 
 			/*NdisAcquireSpinLock(&pAd->MacTabLock); */

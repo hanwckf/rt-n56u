@@ -67,6 +67,9 @@ BUILD_TIMER_FUNCTION(APQuickResponeForRateUpExec);
 #ifdef IDS_SUPPORT
 BUILD_TIMER_FUNCTION(RTMPIdsPeriodicExec);
 #endif /* IDS_SUPPORT */
+#ifdef DROP_MASK_SUPPORT
+BUILD_TIMER_FUNCTION(drop_mask_timer_action);
+#endif /* DROP_MASK_SUPPORT */
 
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -94,6 +97,10 @@ BUILD_TIMER_FUNCTION(WscSetupLockTimeout);
 
 
 #endif /* WSC_INCLUDED */
+
+#if defined(BAND_STEERING) && !defined(BNDSTRG_DAEMON)
+BUILD_TIMER_FUNCTION(BndStrg_PeriodicExec);
+#endif /* BAND_STEERING && !BNDSTRG_DAEMON */
 
 
 

@@ -72,6 +72,13 @@ typedef VOID	pregs;
 #endif /* RTMP_MAC_PCI */
 
 
+#ifdef RTMP_RBUS_SUPPORT
+/* This used for rbus-based chip, maybe we can integrate it together. */
+#define RTMP_FIRMWARE_FILE_NAME		"/etc_ro/Wireless/RT2860AP/RT2860AP.bin"
+#define PROFILE_PATH			"/etc/Wireless/RT2860i.dat"
+#define AP_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860.dat"
+#define RT2880_AP_DRIVER_VERSION	"1.0.0.0"
+#endif /* RTMP_RBUS_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
 
@@ -122,6 +129,7 @@ typedef char 				* PNDIS_BUFFER;
 #define NDIS_STATUS_FAILURE                     0x01
 #define NDIS_STATUS_INVALID_DATA				0x02
 #define NDIS_STATUS_RESOURCES                   0x03
+#define NDIS_STATUS_MICERROR                   0x04
 
 #define NDIS_SET_PACKET_STATUS(_p, _status)			do{} while(0)
 #define NdisWriteErrorLogEntry(_a, _b, _c, _d)		do{} while(0)
@@ -145,7 +153,11 @@ typedef char 				* PNDIS_BUFFER;
  ***********************************************************************************/
 
 #ifdef DOT11_VHT_AC
+#ifdef NOISE_TEST_ADJUST
+#define MAX_PACKETS_IN_QUEUE				2048 /*(512)*/
+#else
 #define MAX_PACKETS_IN_QUEUE				1024 /*(512)*/
+#endif /* NOISE_TEST_ADJUST */
 #else
 #define MAX_PACKETS_IN_QUEUE				(512)
 #endif /* DOT11_VHT_AC */
@@ -416,7 +428,9 @@ void linux_pci_unmap_single(void *handle, ra_dma_addr_t dma_addr, size_t size, i
 	linux_pci_map_single(_handle, _ptr, _size, _sd_idx, _dir)
 	
 #define PCI_UNMAP_SINGLE(_pAd, _ptr, _size, _dir)						\
-	linux_pci_unmap_single(((POS_COOKIE)(_pAd->OS_Cookie))->pci_dev, _ptr, _size, _dir)
+	if ((_pAd->infType) == RTMP_DEV_INF_RBUS){linux_pci_unmap_single(NULL , _ptr, _size, _dir);}	\
+	else {linux_pci_unmap_single(((POS_COOKIE)(_pAd->OS_Cookie))->pci_dev, _ptr, _size, _dir);}
+	/*linux_pci_unmap_single(((POS_COOKIE)(_pAd->OS_Cookie))->pci_dev, _ptr, _size, _dir)*/
 
 #define PCI_ALLOC_CONSISTENT(_pci_dev, _size, _ptr)							\
 	pci_alloc_consistent(_pci_dev, _size, _ptr)
@@ -579,6 +593,18 @@ void linux_pci_unmap_single(void *handle, ra_dma_addr_t dma_addr, size_t size, i
 	writel(_V, (void *)((_A)->CSRBaseAddress + (_R)));								\
 }
 
+#ifdef RTMP_RBUS_SUPPORT
+/* This is actually system IO */
+#define RTMP_SYS_IO_READ32(_R, _pV)		\
+{										\
+	(*_pV = readl((void *)(_R)));			\
+}
+
+#define RTMP_SYS_IO_WRITE32(_R, _V)		\
+{										\
+	writel(_V, (void *)(_R));				\
+}
+#endif /* RTMP_RBUS_SUPPORT */
 
 
 #if defined(BRCM_6358) || defined(RALINK_2880) || defined(RALINK_3052) || defined(RALINK_2883) || defined(RTMP_RBUS_SUPPORT) || defined(MT76x2)
@@ -744,6 +770,22 @@ extern ULONG RtmpOsGetUnalignedlong(
 void RTMP_GetCurrentSystemTime(LARGE_INTEGER *time);
 
 
+#ifdef RTMP_RBUS_SUPPORT
+#ifndef CONFIG_RALINK_FLASH_API
+void FlashWrite(UCHAR * p, ULONG a, ULONG b);
+void FlashRead(UCHAR * p, ULONG a, ULONG b);
+#endif /* CONFIG_RALINK_FLASH_API */
+
+int wl_proc_init(void);
+int wl_proc_exit(void);
+
+#ifdef LINUX
+#if defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE)
+extern volatile unsigned long classifier_cur_cycle;
+extern int (*ra_classifier_hook_rx) (struct sk_buff *skb, unsigned long cycle);
+#endif /* defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE) */
+#endif /* LINUX */
+#endif /* RTMP_RBUS_SUPPORT */
 
 
 

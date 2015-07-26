@@ -33,6 +33,8 @@
 #include <linux/pci.h>
 
 
+/* Index 0 for 2.4G, 1 for 5Ghz Card */
+VOID*  pAdGlobalList[2] = {NULL, NULL};
 /*
 	Driver module load/unload function
 */
@@ -47,6 +49,11 @@ static int __init wifi_drv_init_module(void)
 #endif /* RTMP_PCI_SUPPORT */
 
 
+#ifdef RTMP_RBUS_SUPPORT
+	status = rt2880_module_init();
+	if (status)
+                printk("Register RBUS device driver failed(%d)!\n", status);
+#endif /* RTMP_RBUS_SUPPORT */
 
 	return status;
 }
@@ -62,6 +69,9 @@ static void __exit wifi_drv_cleanup_module(void)
 #endif /* RTMP_PCI_SUPPORT */
 
 
+#ifdef RTMP_RBUS_SUPPORT
+	rt2880_module_exit();
+#endif /* RTMP_RBUS_SUPPORT */
 }
 
 

@@ -99,6 +99,17 @@ typedef	union _RF_CSR_CFG_STRUC {
 		UINT32 RF_CSR_DATA:8;			/* DATA */
 	} non_bank;
 #ifdef RLT_RF
+#ifdef RT6352
+	struct {
+		UINT32 Rsvd26:6;
+		UINT32 TESTCSR_RFACC_REGNUM:10;	/* RF register ID */
+		UINT32 RF_CSR_DATA:8;			/* DATA */
+		UINT32 Rsvd5:3;				/* Reserved */
+		UINT32 RF_CSR_WR:1;			/* 0: read  1: write */
+		UINT32 Rsvd1:3;				/* Reserved */
+		UINT32 RF_CSR_KICK:1;			/* kick RF register read/write */
+	} bank_6352;
+#endif /* RT6352 */
 #ifdef RT65xx
 	struct {
 		UINT32 RF_CSR_KICK:1;
@@ -119,6 +130,17 @@ typedef	union _RF_CSR_CFG_STRUC {
 		UINT32 Rsvd18:14;
 	} non_bank;
 #ifdef RLT_RF
+#ifdef RT6352
+	struct {
+		UINT32 RF_CSR_KICK:1;
+		UINT32 Rsvd1:3;
+		UINT32 RF_CSR_WR:1;
+		UINT32 Rsvd5:3;
+		UINT32 RF_CSR_DATA:8;
+		UINT32 TESTCSR_RFACC_REGNUM:10;
+		UINT32 Rsvd26:6;
+	} bank_6352;
+#endif /* RT6352 */
 #ifdef RT65xx
 	struct {
 		UINT32 RF_CSR_DATA:8;

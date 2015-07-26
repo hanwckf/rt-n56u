@@ -298,6 +298,7 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 						pEntry->AuthMode = pAd->ApCfg.MBSSID[apidx].wdev.AuthMode;
 						pEntry->WepStatus = pAd->ApCfg.MBSSID[apidx].wdev.WepStatus;
 						pEntry->GroupKeyWepStatus = pAd->ApCfg.MBSSID[apidx].wdev.GroupKeyWepStatus;
+						pEntry->wdev_idx = pEntry->apidx;
 					
 						if (pEntry->AuthMode < Ndis802_11AuthModeWPA)
 							pEntry->WpaState = AS_NOTUSE;
@@ -365,11 +366,20 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 			pEntry->ContinueTxFailCnt = 0;
 			pEntry->StatTxRetryOkCount = 0;
 			pEntry->StatTxFailCount = 0;
+            {
+				int tid;
+			 	for (tid=0; tid<NUM_OF_TID; tid++)
+			    		pEntry->TxBarSeq[tid] = -1;
+			}
 #ifdef WDS_SUPPORT
 			pEntry->LockEntryTx = FALSE;
 #endif /* WDS_SUPPORT */
 			pEntry->TimeStamp_toTxRing = 0;
 			InitializeQueueHeader(&pEntry->PsQueue);
+
+#ifdef PS_ENTRY_MAITENANCE
+			pEntry->continuous_ps_count = 0;
+#endif /* PS_ENTRY_MAITENANCE */
 
 #ifdef STREAM_MODE_SUPPORT
 			/* Enable Stream mode for first three entries in MAC table */
@@ -404,6 +414,10 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 #ifdef PEER_DELBA_TX_ADAPT
 			Peer_DelBA_Tx_Adapt_Init(pAd, pEntry);
 #endif /* PEER_DELBA_TX_ADAPT */
+
+#ifdef DROP_MASK_SUPPORT
+			drop_mask_init_per_client(pAd, pEntry);
+#endif /* DROP_MASK_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
 			IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -458,6 +472,23 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 
 
 	}
+
+#ifdef CONFIG_AP_SUPPORT
+#ifdef MULTI_CLIENT_SUPPORT
+	if (pAd->MacTab.Size < MAX_LEN_OF_MAC_TABLE) 
+	{	
+		USHORT size;
+
+		size = pAd->ApCfg.EntryClientCount;
+		asic_change_tx_retry(pAd, size);
+
+		pkt_aggr_num_change(pAd, size);
+
+		if (pAd->CommonCfg.bWmm)
+			asic_tune_be_wmm(pAd, size);
+	}
+#endif /* MULTI_CLIENT_SUPPORT */
+#endif // CONFIG_AP_SUPPORT //
 
 	NdisReleaseSpinLock(&pAd->MacTabLock);
 	return pEntry;
@@ -666,11 +697,16 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 #endif /* WSC_AP_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef DROP_MASK_SUPPORT
+			drop_mask_release_per_client(pAd, pEntry);
+#endif /* DROP_MASK_SUPPORT */
+
 
 //   			NdisZeroMemory(pEntry, sizeof(MAC_TABLE_ENTRY));
 			NdisZeroMemory(pEntry->Addr, MAC_ADDR_LEN);
 			/* invalidate the entry */
 			SET_ENTRY_NONE(pEntry);
+			pEntry->PortSecured = WPA_802_1X_PORT_NOT_SECURED;
 
 			pAd->MacTab.Size--;
 
@@ -698,6 +734,21 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 	}
 
 #ifdef CONFIG_AP_SUPPORT
+#ifdef MULTI_CLIENT_SUPPORT
+		if (pAd->MacTab.Size < MAX_LEN_OF_MAC_TABLE) 
+		{	
+			USHORT size;
+	
+			size = pAd->ApCfg.EntryClientCount;
+			asic_change_tx_retry(pAd, size);
+	
+			pkt_aggr_num_change(pAd, size);
+
+			if (pAd->CommonCfg.bWmm)
+				asic_tune_be_wmm(pAd, size);
+		}
+#endif /* MULTI_CLIENT_SUPPORT */
+
 	/*APUpdateCapabilityAndErpIe(pAd);*/
 	RTMP_AP_UPDATE_CAPABILITY_AND_ERPIE(pAd);  /* edit by johnli, fix "in_interrupt" error when call "MacTableDeleteEntry" in Rx tasklet*/
 #endif /* CONFIG_AP_SUPPORT */

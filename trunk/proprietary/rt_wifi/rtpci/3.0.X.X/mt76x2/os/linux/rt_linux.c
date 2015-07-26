@@ -92,6 +92,12 @@ ULONG RTDebugFunc = 0;
 ULONG RTPktOffsetData = 0, RTPktOffsetLen = 0, RTPktOffsetCB = 0;
 #endif /* OS_ABL_FUNC_SUPPORT */
 
+#ifdef RTMP_RBUS_SUPPORT
+#if defined(CONFIG_RA_CLASSIFIER) || defined(CONFIG_RA_CLASSIFIER_MODULE)
+extern int (*ra_classifier_hook_rx) (struct sk_buff *skb, unsigned long cycle);
+extern volatile unsigned long classifier_cur_cycle;
+#endif /* CONFIG_RA_CLASSIFIER */
+#endif /* RTMP_RBUS_SUPPORT */
 
 #ifdef VENDOR_FEATURE4_SUPPORT
 ULONG OS_NumOfMemAlloc = 0, OS_NumOfMemFree = 0;
@@ -2110,6 +2116,14 @@ int RtmpOSIRQRelease(
 	}
 #endif /* RTMP_PCI_SUPPORT */
 
+#ifdef RTMP_RBUS_SUPPORT
+	if (infType == RTMP_DEV_INF_RBUS) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,0)
+		synchronize_irq(net_dev->irq);
+#endif
+		free_irq(net_dev->irq, (net_dev));
+	}
+#endif /* RTMP_RBUS_SUPPORT */
 
 	return 0;
 }

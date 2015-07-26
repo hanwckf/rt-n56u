@@ -133,7 +133,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
  #define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/iNIC/SingleSKU.dat"
  #define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860APCard.dat"
 #endif
-#define AP_DRIVER_VERSION		"3.0.3.2"
+#define AP_DRIVER_VERSION		"3.0.3.2_rev2"
 #endif /* RTMP_MAC_PCI */
 
 #endif /* CONFIG_AP_SUPPORT */
@@ -152,6 +152,13 @@ extern	const struct iw_handler_def rt28xx_ap_iw_handler_def;
 #define INOUT
 #define NDIS_STATUS		INT
 
+#ifdef RTMP_RBUS_SUPPORT
+/* This used for rbus-based chip, maybe we can integrate it together. */
+#define RTMP_FIRMWARE_FILE_NAME		"/etc_ro/Wireless/RT2860AP/RT2860AP.bin"
+#define PROFILE_PATH			"/etc/Wireless/RT2860i.dat"
+#define AP_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860.dat"
+#define RT2880_AP_DRIVER_VERSION	"1.0.0.0"
+#endif /* RTMP_RBUS_SUPPORT */
 
 /***********************************************************************************
  *	OS Specific definitions and data structures
@@ -228,6 +235,7 @@ struct iw_statistics *rt28xx_get_wireless_stats(
 #define NDIS_STATUS_FAILURE                     0x01
 #define NDIS_STATUS_INVALID_DATA				0x02
 #define NDIS_STATUS_RESOURCES                   0x03
+#define NDIS_STATUS_MICERROR                   0x04
 
 #define NDIS_SET_PACKET_STATUS(_p, _status)			do{} while(0)
 #define NdisWriteErrorLogEntry(_a, _b, _c, _d)		do{} while(0)
@@ -251,7 +259,11 @@ struct iw_statistics *rt28xx_get_wireless_stats(
  ***********************************************************************************/
 
 #ifdef DOT11_VHT_AC
+#ifdef NOISE_TEST_ADJUST
+#define MAX_PACKETS_IN_QUEUE				2048 /*(512)*/
+#else
 #define MAX_PACKETS_IN_QUEUE				1024 /*(512)*/
+#endif /* NOISE_TEST_ADJUST */
 #else
 #define MAX_PACKETS_IN_QUEUE				(512)
 #endif /* DOT11_VHT_AC */
@@ -269,8 +281,8 @@ typedef struct file* RTMP_OS_FD;
 
 typedef struct _OS_FS_INFO_
 {
-	uid_t				fsuid;
-	gid_t				fsgid;
+	uid_t		fsuid;
+	gid_t		fsgid;
 	mm_segment_t	fs;
 } OS_FS_INFO;
 
@@ -487,7 +499,7 @@ do { \
 #define RTMP_GET_OS_PID(_a, _b)			RtmpOsGetPid(&_a, _b)
 #else
 #define RTMP_GET_OS_PID(_a, _b)			RT_GET_OS_PID(_a, _b)
-#endif
+#endif /* OS_ABL_FUNC_SUPPORT */
 #define	GET_PID_NUMBER(_v)	pid_nr((_v))
 #define CHECK_PID_LEGALITY(_pid)	if (pid_nr((_pid)) > 0)
 #define KILL_THREAD_PID(_A, _B, _C)	kill_pid((_A), (_B), (_C))
@@ -1092,8 +1104,37 @@ extern int (*ra_sw_nat_hook_rx)(VOID *skb);
 extern int (*ra_sw_nat_hook_tx)(VOID *skb, int gmac_no);
 #endif
 
+#if defined (CONFIG_WIFI_PKT_FWD)
+extern int (*wf_fwd_tx_hook) (struct sk_buff *skb);
+extern int (*wf_fwd_rx_hook) (struct sk_buff *skb);
+extern unsigned char (*wf_fwd_entry_insert_hook) (struct net_device *src, struct net_device *dest);
+extern unsigned char (*wf_fwd_entry_delete_hook) (struct net_device *src, struct net_device *dest);
+extern void (*wf_fwd_get_rep_hook) (unsigned char idx);
+extern void (*wf_fwd_pro_active_hook) (void);
+extern void (*wf_fwd_pro_halt_hook) (void);
+extern void (*wf_fwd_show_entry_hook) (void);
+extern void (*wf_fwd_delete_entry_hook) (unsigned char idx);
+extern void (*packet_source_show_entry_hook) (void);
+extern void (*packet_source_delete_entry_hook) (unsigned char idx);
+#endif /* CONFIG_WIFI_PKT_FWD */
+
 void RTMP_GetCurrentSystemTime(LARGE_INTEGER *time);
 int rt28xx_packet_xmit(VOID *skb);
+
+#ifdef RTMP_RBUS_SUPPORT
+#ifndef CONFIG_RALINK_FLASH_API
+void FlashWrite(UCHAR * p, ULONG a, ULONG b);
+void FlashRead(UCHAR * p, ULONG a, ULONG b);
+#endif /* CONFIG_RALINK_FLASH_API */
+
+int wl_proc_init(void);
+int wl_proc_exit(void);
+
+#if defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE)
+extern volatile unsigned long classifier_cur_cycle;
+extern int (*ra_classifier_hook_rx) (struct sk_buff *skb, unsigned long cycle);
+#endif /* defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE) */
+#endif /* RTMP_RBUS_SUPPORT */
 
 #if LINUX_VERSION_CODE <= 0x20402	/* Red Hat 7.1 */
 struct net_device *alloc_netdev(int sizeof_priv, const char *mask, void (*setup)(struct net_device *));
@@ -1163,7 +1204,7 @@ typedef struct usb_device_id USB_DEVICE_ID;
 #else
 #define RTUSB_URB_ALLOC_BUFFER(_dev, _size, _dma)	usb_buffer_alloc(_dev, _size, GFP_ATOMIC, _dma)
 #define RTUSB_URB_FREE_BUFFER(_dev, _size, _addr, _dma)	usb_buffer_free(_dev, _size, _addr, _dma)
-#endif
+#endif /* LINUX_VERSION_CODE */
 
 #define RTUSB_FILL_BULK_URB(_urb, _dev, _pipe, _buffer, _buffer_len, _complete_fn, _context) usb_fill_bulk_urb(_urb, _dev, _pipe, _buffer, _buffer_len, _complete_fn, _context)
 #else
@@ -1353,7 +1394,7 @@ USBHST_STATUS RTUSBBulkCmdRspEventComplete(URBCompleteStatus Status, purbb_t pUR
 				}while(0)
 
 #define	RTUSB_URB_DMA_MAPPING(pUrb)
-#endif
+#endif /* LINUX_VERSION_CODE */
 
 
 #define RTUSB_CONTROL_MSG(pUsb_Dev, uEndpointAddress, Request, RequestType, Value,Index, tmpBuf, TransferBufferLength, timeout, ret)	\
@@ -1442,6 +1483,10 @@ extern int rausb_control_msg(VOID *dev,
 #endif /* RTMP_MAC_PCI */
 
 
+#ifdef RTMP_RBUS_SUPPORT
+int __init rt2880_module_init(void);
+VOID __exit rt2880_module_exit(void);
+#endif /* RTMP_RBUS_SUPPORT */
 
 #endif /* RALINK_ATE */
 

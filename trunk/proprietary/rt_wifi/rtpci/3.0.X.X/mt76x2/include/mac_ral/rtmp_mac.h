@@ -600,6 +600,8 @@ typedef	union _LED_CFG_STRUC {
 #define TX_CHAIN_ADDR3_L	0x105C
 #define TX_CHAIN_ADDR3_H	0x1060
 
+#define TX_WCID_DROP_MASK0	0x106C
+
 #ifdef RT_BIG_ENDIAN
 typedef union _TX_CHAIN_ADDR0_L_STRUC {
 	struct {
@@ -970,7 +972,7 @@ typedef	union _EDCA_AC_CFG_STRUC {
 	} field;
 	UINT32 word;
 } EDCA_AC_CFG_STRUC;
-#endif
+#endif /* RT_BIG_ENDIAN */
 
 #define EDCA_TID_AC_MAP	0x1310
 
@@ -1148,6 +1150,18 @@ typedef	union _TX_RTS_CFG_STRUC	 {
 #endif
 
 
+#ifdef RT6352
+#define TX0_RF_GAIN_CORRECT 	0x13A0
+#define TX1_RF_GAIN_CORRECT 	0x13A4
+
+#define TX0_RF_GAIN_ATTEN		0x13A8
+#define TX1_RF_GAIN_ATTEN		0x13AC
+
+#define TX_ALG_CFG_0			0x13B0
+#define TX_ALG_CFG_1			0x13B4
+#define TX0_BB_GAIN_ATTEN		0x13C0
+#define TX1_BB_GAIN_ATTEN		0x13C4
+#endif /* RT6352 */
 
 #ifndef MT76x2
 #define TX_TXBF_CFG_0 			0x138c
@@ -1217,7 +1231,7 @@ typedef	union _TX_TIMEOUT_CFG_STRUC {
 	} field;
 	UINT32 word;
 } TX_TIMEOUT_CFG_STRUC;
-#endif
+#endif /* RT_BIG_ENDIAN */
 
 
 #define TX_RTY_CFG	0x134c
@@ -2599,10 +2613,73 @@ typedef	union _QOS_CSR1_STRUC {
 
 
 
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
+#define LOWER_SHRMEM		0
+#define HIGHER_SHRMEM		1
+
+/*
+	Shared memory access selection.
+ 	0: address 0x4000 ~ 0x7FFF mapping to lower 16kB of shared memory
+ 	1: address 0x4000 ~ 0x5FFF mapping to higher 8kB of shared memory
+
+	When you swtich shr_mem to high, you can not access MCU, just like
+		H2M_MAILBOX_CSR			0x7010
+		H2M_MAILBOX_CID			0x7014
+		H2M_MAILBOX_STATUS		0x701c
+		H2M_INT_SRC				0x7024
+		H2M_BBP_AGENT			0x7028
+*/
+
+#ifdef RTMP_MAC_PCI
+#define RTMP_MAC_SHR_MSEL_PROTECT_LOCK(__pAd, __IrqFlags)					\
+	if (__pAd->chipCap.FlgIsSupSpecBcnBuf == TRUE)							\
+		RTMP_INT_LOCK(&__pAd->ShrMemLock, __IrqFlags);
+
+#define RTMP_MAC_SHR_MSEL_PROTECT_UNLOCK(__pAd, __IrqFlags)					\
+	if (__pAd->chipCap.FlgIsSupSpecBcnBuf == TRUE)							\
+		RTMP_INT_UNLOCK(&__pAd->ShrMemLock, __IrqFlags);
+
+/* 	
+	Disable irq to make sure the shared memory status(Mac Reg : 0x0400, bit-19)
+	doesn't been changed.
+	Becasue the PRE-TBTT interrupt would change this status. */	
+#define	RTMP_MAC_SHR_MSEL_LOCK(_pAd, _shr_msel, _irqFlag) \
+	do{										\
+		if (_pAd->chipCap.FlgIsSupSpecBcnBuf == TRUE) \
+		{\
+			UINT32 _val, _bit = (1 << 19); \
+												\
+			RTMP_INT_LOCK(&_pAd->ShrMemLock, _irqFlag);	\
+			_pAd->ShrMSel = _shr_msel;						\
+			RTMP_IO_READ32(_pAd, PBF_SYS_CTRL, &_val);\
+			_val = (_shr_msel == HIGHER_SHRMEM) ? (_val | _bit) : (_val & (~_bit));\
+			RTMP_IO_WRITE32(_pAd, PBF_SYS_CTRL, _val);\
+		}\
+	} while(0)
+
+
+#define	RTMP_MAC_SHR_MSEL_UNLOCK(_pAd, _shr_msel, _irqFlag)	\
+	do{	\
+		if (_pAd->chipCap.FlgIsSupSpecBcnBuf == TRUE)	\
+		{\
+			UINT32 _val, _bit = (1 << 19);	\
+										\
+			_pAd->ShrMSel = _shr_msel;	\
+			RTMP_IO_READ32(_pAd, PBF_SYS_CTRL, &_val);\
+			_val = (_shr_msel == HIGHER_SHRMEM) ? (_val | _bit) : (_val & (~_bit));\
+			RTMP_IO_WRITE32(_pAd, PBF_SYS_CTRL, _val); \
+			RTMP_INT_UNLOCK(&_pAd->ShrMemLock, _irqFlag);	\
+		}\
+	} while(0)
+#endif /* RTMP_MAC_PCI */
+
+
+#else
 
 #define RTMP_MAC_SHR_MSEL_PROTECT_LOCK(__pAd, __IrqFlags)	__IrqFlags = __IrqFlags;
 #define RTMP_MAC_SHR_MSEL_PROTECT_UNLOCK(__pAd, __IrqFlags) __IrqFlags = __IrqFlags;
 
+#endif /* SPECIFIC_BCN_BUF_SUPPORT */
 
 #define SHAREDKEYTABLE			0
 #define PAIRWISEKEYTABLE		1

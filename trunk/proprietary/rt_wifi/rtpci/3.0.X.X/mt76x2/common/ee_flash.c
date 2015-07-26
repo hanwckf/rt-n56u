@@ -39,23 +39,6 @@ static NDIS_STATUS rtmp_ee_flash_init(PRTMP_ADAPTER pAd, PUCHAR start);
 
 
 
-static USHORT EE_FLASH_ID_LIST[]={
-
-
-
-
-#ifdef MT76x2
-#ifdef RTMP_MAC_PCI
-	0x7662,
-#endif /* RTMP_MAC_PCI */
-#endif /* MT76x0 */
-
-};
-
-#define EE_FLASH_ID_NUM  (sizeof(EE_FLASH_ID_LIST) / sizeof(USHORT))
-
-
-
 /*******************************************************************************
   *
   *	Flash-based EEPROM read/write procedures.

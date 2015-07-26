@@ -88,6 +88,9 @@ VOID dumpIPMacTb(
 	IPMacMappingEntry *pHead;
 	int startIdx, endIdx;
 
+	if (pMatCfg->status == MAT_ENGINE_STAT_EXITED)
+		return;
+
 	pIPMacTable = (IPMacMappingTable *)pMatCfg->MatTableSet.IPMacTable;
 	if (!pIPMacTable)
 		return;
@@ -575,12 +578,27 @@ static PUCHAR MATProto_IP_Rx(
 
 		wcid = RTMP_GET_PACKET_WCID(pSkb);
 		
+		if (VALID_WCID(wcid))
+		{
 		pEntry = &pAd->MacTab.Content[wcid];
-		pReptEntry = &pAd->ApCfg.ApCliTab[pEntry->wdev_idx].RepeaterCli[pEntry->MatchReptCliIdx];
+		}
+		else
+		{
+			DBGPRINT(RT_DEBUG_ERROR, ("%s():ERROR! inValid wcid!\n", __FUNCTION__));
+			return pMacAddr;
+		}
 
-		if (pEntry->bReptCli)
+		if (pEntry == NULL)
+		{
+			DBGPRINT(RT_DEBUG_ERROR, ("%s():ERROR! pEntry is null!\n", __FUNCTION__));
+			return pMacAddr;
+		}
+
+		if (pEntry && IS_ENTRY_APCLI(pEntry) && (pEntry->bReptCli == TRUE))
 		{
 			PUCHAR pPktHdr, pLayerHdr;
+
+			pReptEntry = &pAd->ApCfg.ApCliTab[pEntry->wdev_idx].RepeaterCli[pEntry->MatchReptCliIdx];
 
 			pPktHdr = GET_OS_PKT_DATAPTR(pSkb);
 			pLayerHdr = (pPktHdr + MAT_ETHER_HDR_LEN);
@@ -634,6 +652,7 @@ static PUCHAR MATProto_IP_Tx(
 	PUCHAR pSrcIP;
 	BOOLEAN needUpdate;
 	PUCHAR pPktHdr;
+	PNDIS_PACKET pModSkb = NULL;
 
 	pPktHdr = GET_OS_PKT_DATAPTR(pSkb);
 	
@@ -661,6 +680,23 @@ static PUCHAR MATProto_IP_Tx(
 			UINT16 bootpFlag;	
 			PUCHAR dhcpHdr;
 			
+			if(OS_PKT_CLONED(pSkb))
+			{
+				pModSkb = (PNDIS_PACKET) OS_PKT_COPY(pSkb);
+				pPktHdr = GET_OS_PKT_DATAPTR(pModSkb);
+				if (IS_VLAN_PACKET(pPktHdr))
+					pLayerHdr = pPktHdr + MAT_VLAN_ETH_HDR_LEN;
+				else
+					pLayerHdr = pPktHdr + MAT_ETHER_HDR_LEN;
+
+				udpHdr = pLayerHdr + 20;
+				srcPort = OS_NTOHS(get_unaligned((PUINT16)(udpHdr)));
+				dstPort = OS_NTOHS(get_unaligned((PUINT16)(udpHdr+2)));
+
+				if (!pModSkb)
+					return NULL;
+			}
+			
 			bootpHdr = udpHdr + 8;
 			bootpFlag = OS_NTOHS(get_unaligned((PUINT16)(bootpHdr+10)));
 			DBGPRINT(RT_DEBUG_TRACE, ("is bootp packet! bootpFlag=0x%x\n", bootpFlag));
@@ -681,6 +717,8 @@ static PUCHAR MATProto_IP_Tx(
 #ifdef MAC_REPEATER_SUPPORT
 			if (pMatCfg->bMACRepeaterEn)
 			{
+				if (RTMPLookupRepeaterCliEntry(pMatCfg->pPriv, FALSE, pDevMacAdr) != NULL)
+				{
 				NdisMoveMemory((bootpHdr+28), pDevMacAdr, MAC_ADDR_LEN);
 
 				if (NdisEqualMemory(dhcpHdr, DHCP_MAGIC, 4))
@@ -709,6 +747,7 @@ static PUCHAR MATProto_IP_Tx(
 				}
 				bHdrChanged = TRUE;
 		}
+			}
 #endif /* MAC_REPEATER_SUPPORT */	
 		}
 
@@ -716,7 +755,7 @@ static PUCHAR MATProto_IP_Tx(
 			NdisZeroMemory((udpHdr+6), 2); /* Modify the UDP chksum as zero */
 	}
 
-	return NULL;
+	return pModSkb;	
 }
 
 

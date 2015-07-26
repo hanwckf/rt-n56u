@@ -421,10 +421,23 @@ typedef union _BBP_R182_STRUC {
 } BBP_R182_STRUC, *PBBP_R182_STRUC;
 #endif /* RT_BIG_ENDIAN */
 
+#ifdef RTMP_RBUS_SUPPORT
+/* TODO: for this definition, need to modify it!! */
+	/*#define MAX_BBP_ID	255 */
+	#define MAX_BBP_ID	200
+
+#else
 	#define MAX_BBP_ID	136
 
+#endif /* RTMP_RBUS_SUPPORT */
 
 
+#if defined(RT5572) || defined(RT6352)
+#undef MAX_BBP_ID
+#define MAX_BBP_ID	248
+#undef MAX_BBP_MSG_SIZE
+#define MAX_BBP_MSG_SIZE 4096
+#endif /* defined(RT5572) || defined(RT6352) */
 
 
 /* */

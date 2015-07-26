@@ -33,6 +33,11 @@
 #include "rt_os_net.h"
 #include <linux/pci.h>
 
+#ifdef MULTI_INF_SUPPORT
+/* Index 0 for 2.4G, 1 for 5Ghz Card */
+extern VOID* pAdGlobalList[2];
+#endif /* MULTI_INF_SUPPORT */
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)
 #define DEVEXIT
 #define DEVEXIT_P
@@ -306,6 +311,15 @@ static int DEVINIT rt_pci_probe(struct pci_dev *pdev, const struct pci_device_id
 	rv = RTMPAllocAdapterBlock(handle, &pAd);	/* we may need the pdev for allocate structure of "RTMP_ADAPTER" */
 	if (rv != NDIS_STATUS_SUCCESS) 
 		goto err_out_iounmap;
+
+#ifdef MULTI_INF_SUPPORT
+	if (pAdGlobalList[0] == NULL)
+		pAdGlobalList[0] = pAd;
+	else if (pAdGlobalList[1] == NULL) 	
+		pAdGlobalList[1] = pAd;
+	else
+		DBGPRINT(RT_DEBUG_ERROR, ("%s(): pAdGlobalList assign Error !\n", __FUNCTION__));	
+#endif /* MULTI_INF_SUPPORT */
 
 	RTMP_DRIVER_PCI_CSR_SET(pAd, csr_addr);
 

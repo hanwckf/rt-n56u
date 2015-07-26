@@ -77,6 +77,9 @@ VOID ApCliSyncStateMachineInit(
 	OUT STATE_MACHINE_FUNC Trans[])
 {
 	UCHAR i;
+#ifdef APCLI_CONNECTION_TRIAL		
+	PAPCLI_STRUCT	pApCliEntry;
+#endif /*APCLI_CONNECTION_TRIAL*/
 
 	StateMachineInit(Sm, (STATE_MACHINE_FUNC*)Trans,
 		APCLI_MAX_SYNC_STATE, APCLI_MAX_SYNC_MSG,
@@ -96,8 +99,15 @@ VOID ApCliSyncStateMachineInit(
 	for (i = 0; i < MAX_APCLI_NUM; i++)
 	{
 		/* timer init */
-		RTMPInitTimer(pAd, &pAd->ApCfg.ApCliTab[i].MlmeAux.ProbeTimer, GET_TIMER_FUNCTION(ApCliProbeTimeout), pAd, FALSE);
+#ifdef APCLI_CONNECTION_TRIAL		
+		pApCliEntry = &pAd->ApCfg.ApCliTab[i];
+#endif /*APCLI_CONNECTION_TRIAL*/
 
+#ifdef APCLI_CONNECTION_TRIAL	
+		RTMPInitTimer(pAd, &pAd->ApCfg.ApCliTab[i].MlmeAux.ProbeTimer, GET_TIMER_FUNCTION(ApCliProbeTimeout), (PVOID)pApCliEntry, FALSE);
+#else
+		RTMPInitTimer(pAd, &pAd->ApCfg.ApCliTab[i].MlmeAux.ProbeTimer, GET_TIMER_FUNCTION(ApCliProbeTimeout), pAd, FALSE);
+#endif /* APCLI_CONNECTION_TRIAL */
 		pAd->ApCfg.ApCliTab[i].SyncCurrState = APCLI_SYNC_IDLE;
 	}
 
@@ -116,11 +126,19 @@ static VOID ApCliProbeTimeout(
 	IN PVOID SystemSpecific2, 
 	IN PVOID SystemSpecific3)
 {
+#ifdef APCLI_CONNECTION_TRIAL
+	PAPCLI_STRUCT pApCliEntry = (APCLI_STRUCT *)FunctionContext;
+	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)pApCliEntry->pAd;
+#else
 	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)FunctionContext;
+#endif /*APCLI_CONNECTION_TRIAL*/
 
 	DBGPRINT(RT_DEBUG_TRACE, ("ApCli_SYNC - ProbeReqTimeout\n"));
-
+#ifndef APCLI_CONNECTION_TRIAL
 	MlmeEnqueue(pAd, APCLI_SYNC_STATE_MACHINE, APCLI_MT2_PROBE_TIMEOUT, 0, NULL, 0);
+#else
+	MlmeEnqueue(pAd, APCLI_SYNC_STATE_MACHINE, APCLI_MT2_PROBE_TIMEOUT, 0, NULL, pApCliEntry->ifIndex);
+#endif /* APCLI_CONNECTION_TRIAL */
 	RTMP_MLME_HANDLER(pAd);
 
 	return;
@@ -153,7 +171,34 @@ static VOID ApCliMlmeProbeReqAction(
 	RTMPCancelTimer(&(pApCliEntry->MlmeAux.ProbeTimer), &Cancelled);
 
 	pApCliEntry->MlmeAux.Rssi = -9999;
+	ULONG bss_idx = BSS_NOT_FOUND;
+	bss_idx = BssSsidTableSearchBySSID(&pAd->ScanTab, (PCHAR)Info->Ssid, Info->SsidLen);
+	if (bss_idx == BSS_NOT_FOUND)
+	{
+#ifdef APCLI_CONNECTION_TRIAL
+		if (pApCliEntry->TrialCh ==0)
+			pApCliEntry->MlmeAux.Channel = pAd->CommonCfg.Channel;
+		else
+			pApCliEntry->MlmeAux.Channel = pApCliEntry->TrialCh;
+#else
 	pApCliEntry->MlmeAux.Channel = pAd->CommonCfg.Channel;
+#endif /* APCLI_CONNECTION_TRIAL */
+	}
+	else
+	{
+#ifdef APCLI_CONNECTION_TRIAL
+		if (pApCliEntry->TrialCh ==0)
+			pApCliEntry->MlmeAux.Channel = pAd->CommonCfg.Channel;
+		else
+			pApCliEntry->MlmeAux.Channel = pApCliEntry->TrialCh;
+#else
+		DBGPRINT(RT_DEBUG_TRACE, ("%s, Found %s in scanTable , goto channel %d\n", 
+				__FUNCTION__, pAd->ScanTab.BssEntry[bss_idx].Ssid,  
+				pAd->ScanTab.BssEntry[bss_idx].Channel));
+
+		pApCliEntry->MlmeAux.Channel = pAd->ScanTab.BssEntry[bss_idx].Channel;
+#endif /* APCLI_CONNECTION_TRIAL */
+	}
 	
 #ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
 	pApCliEntry->MlmeAux.SupRateLen = pAd->cfg80211_ctrl.P2pSupRateLen;
@@ -171,6 +216,13 @@ static VOID ApCliMlmeProbeReqAction(
 #endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
 
 	RTMPSetTimer(&(pApCliEntry->MlmeAux.ProbeTimer), PROBE_TIMEOUT);
+
+#ifdef APCLI_CONNECTION_TRIAL
+	NdisZeroMemory(pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.Bssid, MAC_ADDR_LEN);
+	NdisZeroMemory(pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.Ssid, MAX_LEN_OF_SSID);
+	NdisCopyMemory(pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.Bssid, pAd->ApCfg.ApCliTab[ifIndex].CfgApCliBssid, MAC_ADDR_LEN);
+	NdisCopyMemory(pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.Ssid, pAd->ApCfg.ApCliTab[ifIndex].CfgSsid, pAd->ApCfg.ApCliTab[ifIndex].CfgSsidLen);
+#endif /* APCLI_CONNECTION_TRIAL */
 
 	ApCliEnqueueProbeRequest(pAd, Info->SsidLen, (PCHAR) Info->Ssid, ifIndex);
 
@@ -546,6 +598,11 @@ static VOID ApCliProbeTimeoutAtJoinAction(
 	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
 	*pCurrState = SYNC_IDLE;
 
+#ifdef APCLI_CONNECTION_TRIAL
+	if (ifIndex == 1)
+		*pCurrState = APCLI_CTRL_DISCONNECTED;
+#endif /* APCLI_CONNECTION_TRIAL */
+
 	DBGPRINT(RT_DEBUG_TRACE, ("APCLI_SYNC - MlmeAux.Bssid=%02x:%02x:%02x:%02x:%02x:%02x\n",
 								PRINT_MAC(pApCliEntry->MlmeAux.Bssid)));
 
@@ -671,6 +728,8 @@ static VOID ApCliEnqueueProbeRequest(
 		if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode) &&
 			(pAd->CommonCfg.Channel > 14))
 		{
+			build_vht_cap_ie(pAd, (UCHAR *)&pApCliEntry->MlmeAux.vht_cap);
+			pApCliEntry->MlmeAux.vht_cap_len = sizeof(VHT_CAP_IE);
 			FrameLen += build_vht_ies(pAd, (UCHAR *)(pOutBuffer + FrameLen), SUBTYPE_PROBE_REQ);
 			pApCliEntry->MlmeAux.vht_cap_len = sizeof(VHT_CAP_IE);
 		}

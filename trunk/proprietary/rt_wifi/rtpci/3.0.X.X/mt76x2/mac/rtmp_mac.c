@@ -109,10 +109,17 @@ VOID RTMPWriteTxWI(
 	sgi = pTransmit->field.ShortGI;
 	
 #ifdef MT76x2
+#ifdef THERMAL_PROTECT_SUPPORT
+	if (IS_MT76x2(pAd) && pAd->force_one_tx_stream == TRUE) 
+	{
+		tx_stream_mode = 0; /* SKIP 1SS2T when 1T Status on */
+	}
+	else
+#endif /* THERMAL_PROTECT_SUPPORT */
 	if (MT_REV_GTE(pAd, MT76x2, REV_MT76x2E4))
-		tx_stream_mode = 0x3;
+		tx_stream_mode = 0x13;
 	else if (MT_REV_ET(pAd, MT76x2, REV_MT76x2E3))
-		tx_stream_mode = (pTransmit->field.MODE <= MODE_OFDM) ? 0x83 : 0x0;
+		tx_stream_mode = (pTransmit->field.MODE <= MODE_OFDM) ? 0x93 : 0x0;
 #endif /* MT76x2 */
 	
 #ifdef DOT11_N_SUPPORT
@@ -292,10 +299,17 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 	bw = (pTransmit->field.MODE <= MODE_OFDM) ? (BW_20) : (pTransmit->field.BW);
 
 #ifdef MT76x2
+#ifdef THERMAL_PROTECT_SUPPORT
+        if (IS_MT76x2(pAd) && pAd->force_one_tx_stream == TRUE)
+        {
+                tx_stream_mode = 0;
+        }
+        else
+#endif /* THERMAL_PROTECT_SUPPORT */
 	if (MT_REV_GTE(pAd, MT76x2, REV_MT76x2E4))
-		tx_stream_mode = 0x3;
+		tx_stream_mode = 0x13;
 	else if (MT_REV_ET(pAd, MT76x2, REV_MT76x2E3))
-		tx_stream_mode = (pTransmit->field.MODE <= MODE_OFDM) ? 0x83 : 0x0;
+		tx_stream_mode = (pTransmit->field.MODE <= MODE_OFDM) ? 0x93 : 0x0;
 #endif /* MT76x2 */
 
 #ifdef DOT11_N_SUPPORT
@@ -477,8 +491,8 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 		if (pTxBlk->TxSndgPkt == SNDG_TYPE_NDP  || pTxBlk->TxSndgPkt == SNDG_TYPE_SOUNDING)
 			lut_enable = FALSE;
 	}
-#endif	
-#endif
+#endif /* MCS_LUT_SUPPORT */
+#endif /* TXBF_SUPPORT */
 
 #ifdef RLT_MAC
 	if (pAd->chipCap.hif_type == HIF_RLT) {
@@ -577,6 +591,9 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 		txwi_o->NDPSndRate = ndp_rate;
 		txwi_o->NDPSndBW = ndp_bw;
 #endif /* TXBF_SUPPORT */
+#ifdef MCS_LUT_SUPPORT
+		txwi_o->TXLUT = lut_enable;
+#endif /* MCS_LUT_SUPPORT */
 	}
 #endif /* RTMP_MAC */
 }
@@ -611,10 +628,17 @@ VOID RTMPWriteTxWI_Cache(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 	pMacEntry->LastTxRate = pTransmit->word;
 
 #ifdef MT76x2
+#ifdef THERMAL_PROTECT_SUPPORT
+        if (IS_MT76x2(pAd) && pAd->force_one_tx_stream == TRUE)
+        {
+                tx_stream_mode = 0;
+        }
+        else
+#endif /* THERMAL_PROTECT_SUPPORT */
 	if (MT_REV_GTE(pAd, MT76x2, REV_MT76x2E4))
-		tx_stream_mode = 0x3;
+		tx_stream_mode = 0x13;
 	else if (MT_REV_ET(pAd, MT76x2, REV_MT76x2E3))
-		tx_stream_mode = (pTransmit->field.MODE <= MODE_OFDM) ? 0x83 : 0x0;
+		tx_stream_mode = (pTransmit->field.MODE <= MODE_OFDM) ? 0x93 : 0x0;
 #endif /* MT76x2 */
 
 #ifdef DOT11_N_SUPPORT
@@ -855,6 +879,9 @@ VOID RTMPWriteTxWI_Cache(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 		txwi_o->NDPSndRate = ndp_rate;
 		txwi_o->NDPSndBW = ndp_bw;
 #endif /* TXBF_SUPPORT */
+#ifdef MCS_LUT_SUPPORT
+		txwi_o->TXLUT = lut_enable;
+#endif /* MCS_LUT_SUPPORT */
 	}
 #endif /* RTMP_MAC */
 }
@@ -1066,6 +1093,35 @@ VOID rtmp_mac_bcn_buf_init(IN RTMP_ADAPTER *pAd)
 #ifdef RTMP_MAC
 	if (pAd->chipCap.hif_type == HIF_RTMP)
 	{
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
+		if (pAd->chipCap.FlgIsSupSpecBcnBuf == TRUE)
+		{
+			RTMP_REG_PAIR BcnSpecMACRegTable[] = {
+				/* 	
+					That means all beacon's size are 512 bytes 
+					and their starting address are "0x4000, 0x4200, 0x4400, 0x4600, ....." 
+					in the second(higher) 8KB shared memory . 
+
+					The formula is : 0x4000 + BCNx_OFFSET*64
+						ex : the address of BSS0 = 0x4000 + 0x00 * 64 = 0x4000
+							 the address of BSS1 = 0x4000 + 0x08 * 64 = 0x4200
+				*/
+				{BCN_OFFSET0,			0x18100800}, 
+				{BCN_OFFSET1,			0x38302820}, 
+				{BCN_OFFSET2,			0x58504840}, 
+				{BCN_OFFSET3,			0x78706860}, 
+			};
+
+			tb_size = (sizeof(BcnSpecMACRegTable) / sizeof(RTMP_REG_PAIR));
+			/* re-set beacon offset */
+			for(idx = 0; idx < tb_size; idx++)
+			{
+				RTMP_IO_WRITE32(pAd, (USHORT)BcnSpecMACRegTable[idx].Register, 
+										BcnSpecMACRegTable[idx].Value);
+			}
+		}
+		else
+#endif /* SPECIFIC_BCN_BUF_SUPPORT */
 		{
 			RTMP_REG_PAIR bcn_legacy_reg_tb[] = {
 #if defined(HW_BEACON_OFFSET) && (HW_BEACON_OFFSET == 0x200)

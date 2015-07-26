@@ -728,24 +728,27 @@ VOID WPARetryExec(
 	{
 		if (pEntry->AuthMode == Ndis802_11AuthModeWPA || pEntry->AuthMode == Ndis802_11AuthModeWPAPSK)
 		{						
-			PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pEntry->pAd;
+			PRTMP_ADAPTER pAd __maybe_unused = (PRTMP_ADAPTER)pEntry->pAd;
 
 			if (pEntry->wdev_idx < MAX_APCLI_NUM)
 			{		
+#ifdef MAC_REPEATER_SUPPORT
 				UCHAR ifIndex = pEntry->wdev_idx;
 								
 				DBGPRINT(RT_DEBUG_TRACE, ("(%s) ApCli interface[%d] startdown.\n", __FUNCTION__, ifIndex));
-#ifdef MAC_REPEATER_SUPPORT
 				if ((pEntry->bReptCli) && (pAd->ApCfg.bMACRepeaterEn == TRUE))
 					ifIndex = (64 + ifIndex*MAX_EXT_MAC_ADDR_SIZE + pEntry->MatchReptCliIdx);
 #endif /* MAC_REPEATER_SUPPORT */
-				MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL, ifIndex);
+
 #ifdef MAC_REPEATER_SUPPORT
 				if ( (pAd->ApCfg.bMACRepeaterEn == TRUE) && (pEntry->bReptCli))
 				{
-					RTMP_MLME_HANDLER(pAd);
+
+					RTMPRemoveRepeaterDisconnectEntry(pAd, pEntry->wdev_idx, pEntry->MatchReptCliIdx);
 					RTMPRemoveRepeaterEntry(pAd, pEntry->wdev_idx, pEntry->MatchReptCliIdx);
 				}
+				else
+					MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL, ifIndex);
 #endif /* MAC_REPEATER_SUPPORT */
 			}
 		}
@@ -833,6 +836,12 @@ VOID GREKEYPeriodicExec(
                 {
 					pEntry->GTKState = REKEY_NEGOTIATING;
 						
+#ifdef DROP_MASK_SUPPORT
+					/* Disable Drop Mask */
+					set_drop_mask_per_client(pAd, pEntry, 1, 0);
+					set_drop_mask_per_client(pAd, pEntry, 2, 0);
+#endif /* DROP_MASK_SUPPORT */
+
                 	WPAStart2WayGroupHS(pAd, pEntry);
                     DBGPRINT(RT_DEBUG_TRACE, ("Rekey interval excess, Update Group Key for  %x %x %x  %x %x %x , DefaultKeyId= %x \n",\
 										PRINT_MAC(pEntry->Addr), wdev->DefaultKeyId));

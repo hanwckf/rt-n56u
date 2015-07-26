@@ -20,7 +20,7 @@
 
 static INT desc_ring_alloc(RTMP_ADAPTER *pAd, RTMP_DMABUF *pDescRing, INT size)
 {
-	VOID *pci_dev = ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
+	VOID *pci_dev = (pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
 
 	pDescRing->AllocSize = size;
 	RtmpAllocDescBuf(pci_dev,
@@ -45,7 +45,7 @@ static INT desc_ring_alloc(RTMP_ADAPTER *pAd, RTMP_DMABUF *pDescRing, INT size)
 
 static INT desc_ring_free(RTMP_ADAPTER *pAd, RTMP_DMABUF *pDescRing)
 {
-	VOID *pci_dev = ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
+	VOID *pci_dev = (pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
 	
 	if (pDescRing->AllocVa)
 	{
@@ -161,7 +161,7 @@ VOID RTMPResetTxRxRingMemory(RTMP_ADAPTER *pAd)
 VOID RTMPFreeTxRxRingMemory(RTMP_ADAPTER *pAd)
 {
 	INT num;
-	VOID *pci_dev = ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
+	VOID *pci_dev = (pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("--> RTMPFreeTxRxRingMemory\n"));
 
@@ -385,7 +385,7 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 			pDmaBuf->AllocSize = RX_BUFFER_AGGRESIZE;
 			pPacket = RTMP_AllocateRxPacketBuffer(
 				pAd,
-				((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
+				(pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
 				pDmaBuf->AllocSize,
 				FALSE,
 				&pDmaBuf->AllocVa,
@@ -483,7 +483,7 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 	NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
 	INT num;
 	ULONG ErrorValue = 0;
-	VOID *pci_dev = ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
+	VOID *pci_dev = (pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
 	
 	DBGPRINT(RT_DEBUG_TRACE, ("-->RTMPAllocTxRxRingMemory\n"));
 	do
@@ -657,7 +657,7 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 			*/
 			pAd->TxBufSpace[num].AllocSize = TX_RING_SIZE * TX_DMA_1ST_BUFFER_SIZE;
 			RTMP_AllocateFirstTxBuffer(
-				((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
+				(pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
 				num,
 				pAd->TxBufSpace[num].AllocSize,
 				FALSE,
@@ -860,7 +860,7 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 				pDmaBuf->AllocSize = RX_BUFFER_AGGRESIZE;
 				pPacket = RTMP_AllocateRxPacketBuffer(
 					pAd,
-					((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
+					(pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
 					pDmaBuf->AllocSize,
 					FALSE,
 					&pDmaBuf->AllocVa,
@@ -1079,7 +1079,7 @@ VOID RTMPFreeTxRxRingMemory(RTMP_ADAPTER *pAd)
 			RTMPDescriptorEndianChange((PUCHAR)pTxD, TYPE_TXD);
 #else
 			pTxD = (PTXD_STRUC) (pCtrlRing->Cell[pCtrlRing->TxSwFreeIdx].AllocVa);
-#endif
+#endif /* RT_BIG_ENDIAN */
 			pTxD->DMADONE = 0;
 			pPacket = pCtrlRing->Cell[pCtrlRing->TxSwFreeIdx].pNdisPacket;
 
@@ -1108,7 +1108,7 @@ VOID RTMPFreeTxRxRingMemory(RTMP_ADAPTER *pAd)
 #ifdef RT_BIG_ENDIAN
 	        RTMPDescriptorEndianChange((PUCHAR)pTxD, TYPE_TXD);
 	        WriteBackToDescriptor((PUCHAR)pDestTxD, (PUCHAR)pTxD, TRUE, TYPE_TXD);
-#endif
+#endif /* RT_BIG_ENDIAN */
 		}
 		NdisReleaseSpinLock(&pAd->CtrlRingLock);
 	}
@@ -1130,7 +1130,7 @@ VOID RTMPFreeTxRxRingMemory(RTMP_ADAPTER *pAd)
 		NdisZeroMemory(pAd->RxRing[j].Cell, RX_RING_SIZE * sizeof(RTMP_DMACB));
 		
 		if (pAd->RxDescRing[j].AllocVa)
-			RtmpFreeDescBuf(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
+			RtmpFreeDescBuf((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
 								pAd->RxDescRing[j].AllocSize,
 								pAd->RxDescRing[j].AllocVa,
 								pAd->RxDescRing[j].AllocPa);
@@ -1140,14 +1140,14 @@ VOID RTMPFreeTxRxRingMemory(RTMP_ADAPTER *pAd)
 
 	if (pAd->MgmtDescRing.AllocVa)
 	{
-		RtmpFreeDescBuf(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->MgmtDescRing.AllocSize, pAd->MgmtDescRing.AllocVa, pAd->MgmtDescRing.AllocPa);
+		RtmpFreeDescBuf((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->MgmtDescRing.AllocSize, pAd->MgmtDescRing.AllocVa, pAd->MgmtDescRing.AllocPa);
 	}
 	NdisZeroMemory(&pAd->MgmtDescRing, sizeof(RTMP_DMABUF));
 
 #ifdef CONFIG_ANDES_SUPPORT
 	if (pAd->CtrlDescRing.AllocVa)
 	{
-		RtmpFreeDescBuf(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->CtrlDescRing.AllocSize, pAd->CtrlDescRing.AllocVa, pAd->CtrlDescRing.AllocPa);
+		RtmpFreeDescBuf((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->CtrlDescRing.AllocSize, pAd->CtrlDescRing.AllocVa, pAd->CtrlDescRing.AllocPa);
 	}
 	NdisZeroMemory(&pAd->CtrlDescRing, sizeof(RTMP_DMABUF));
 #endif /* CONFIG_ANDES_SUPPORT */
@@ -1156,13 +1156,13 @@ VOID RTMPFreeTxRxRingMemory(RTMP_ADAPTER *pAd)
 	{
     	if (pAd->TxBufSpace[num].AllocVa)
 		{
-			RTMP_FreeFirstTxBuffer(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->TxBufSpace[num].AllocSize, FALSE, pAd->TxBufSpace[num].AllocVa, pAd->TxBufSpace[num].AllocPa);
+			RTMP_FreeFirstTxBuffer((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->TxBufSpace[num].AllocSize, FALSE, pAd->TxBufSpace[num].AllocVa, pAd->TxBufSpace[num].AllocPa);
 	    }
 	    NdisZeroMemory(&pAd->TxBufSpace[num], sizeof(RTMP_DMABUF));
 	    
     	if (pAd->TxDescRing[num].AllocVa)
 		{
-			RtmpFreeDescBuf(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->TxDescRing[num].AllocSize, pAd->TxDescRing[num].AllocVa, pAd->TxDescRing[num].AllocPa);
+			RtmpFreeDescBuf((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->TxDescRing[num].AllocSize, pAd->TxDescRing[num].AllocVa, pAd->TxDescRing[num].AllocPa);
 	    }
 	    NdisZeroMemory(&pAd->TxDescRing[num], sizeof(RTMP_DMABUF));
 	}
@@ -1489,6 +1489,9 @@ BOOLEAN AsicCheckCommanOk(RTMP_ADAPTER *pAd, UCHAR Command)
 {
 	UINT32	CmdStatus = 0, CID = 0, i;
 	UINT32	ThisCIDMask = 0;
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
+	ULONG	IrqFlags = 0;
+#endif /* SPECIFIC_BCN_BUF_SUPPORT */
 
 #ifdef RT65xx
 	if (IS_RT65XX(pAd))
@@ -1496,6 +1499,9 @@ BOOLEAN AsicCheckCommanOk(RTMP_ADAPTER *pAd, UCHAR Command)
 #endif /* RT65xx */
 
 
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
+	RTMP_MAC_SHR_MSEL_PROTECT_LOCK(pAd, IrqFlags);
+#endif /* SPECIFIC_BCN_BUF_SUPPORT */
 	i = 0;
 	do
 	{
@@ -1539,6 +1545,9 @@ BOOLEAN AsicCheckCommanOk(RTMP_ADAPTER *pAd, UCHAR Command)
 			DBGPRINT(RT_DEBUG_TRACE, ("--> AsicCheckCommanOk CID = 0x%x, CmdStatus= 0x%x \n", CID, CmdStatus));
 			RTMP_IO_WRITE32(pAd, H2M_MAILBOX_STATUS, 0xffffffff);
 			RTMP_IO_WRITE32(pAd, H2M_MAILBOX_CID, 0xffffffff);
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
+			RTMP_MAC_SHR_MSEL_PROTECT_UNLOCK(pAd, IrqFlags);
+#endif /* SPECIFIC_BCN_BUF_SUPPORT */
 			return TRUE;
 		}
 		DBGPRINT(RT_DEBUG_TRACE, ("--> AsicCheckCommanFail1 CID = 0x%x, CmdStatus= 0x%x \n", CID, CmdStatus));
@@ -1550,6 +1559,9 @@ BOOLEAN AsicCheckCommanOk(RTMP_ADAPTER *pAd, UCHAR Command)
 	/* Clear Command and Status.*/
 	RTMP_IO_WRITE32(pAd, H2M_MAILBOX_STATUS, 0xffffffff);
 	RTMP_IO_WRITE32(pAd, H2M_MAILBOX_CID, 0xffffffff);
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
+   	RTMP_MAC_SHR_MSEL_PROTECT_UNLOCK(pAd, IrqFlags);
+#endif /* SPECIFIC_BCN_BUF_SUPPORT */
 	return FALSE;
 }
 
@@ -1633,11 +1645,31 @@ VOID RT28xx_UpdateBeaconToAsic(
 		}
 
 		/* Update CapabilityInfo in Beacon*/
+		if (IS_RT6352(pAd))
+		{
+			/* Update CapabilityInfo in Beacon*/
+			for (i = CapInfoPos; i < (CapInfoPos+2); i++)
+			{
+				RTMP_CHIP_UPDATE_BEACON(pAd, pAd->BeaconOffset[bcn_idx] + TXWISize + i, *ptr_capinfo, 1);
+				ptr_capinfo ++;
+			}
+			
+			if (FrameLen > UpdatePos)
+			{
+				for (i= UpdatePos; i< (FrameLen); i++)
+				{
+					RTMP_CHIP_UPDATE_BEACON(pAd, pAd->BeaconOffset[bcn_idx] + TXWISize + i, *ptr_update, 1);
+					ptr_update ++;
+				}
+			}
+		}
+		else
+		{
 		if (wr_bytes > 1)
 			CapInfoPos = (CapInfoPos & (~(wr_bytes - 1)));
 #ifdef CONFIG_AP_SUPPORT
 		ptr_capinfo = (PUCHAR)&pMbss->BeaconBuf[CapInfoPos];
-#endif
+#endif /* CONFIG_AP_SUPPORT */
 		for (i = CapInfoPos; i < (CapInfoPos+2); i += wr_bytes)
 		{
 #ifdef RT_BIG_ENDIAN		
@@ -1645,7 +1677,7 @@ VOID RT28xx_UpdateBeaconToAsic(
 			RTMP_CHIP_UPDATE_BEACON(pAd, pAd->BeaconOffset[bcn_idx] + TXWISize + i, longptr, wr_bytes);
 #else
 			RTMP_CHIP_UPDATE_BEACON(pAd, pAd->BeaconOffset[bcn_idx] + TXWISize + i, *((UINT32 *)ptr_capinfo), wr_bytes);
-#endif
+#endif /* RT_BIG_ENDIAN */
 			ptr_capinfo += wr_bytes;
 		}
 
@@ -1655,7 +1687,7 @@ VOID RT28xx_UpdateBeaconToAsic(
 				UpdatePos = (UpdatePos & (~(wr_bytes - 1)));
 #ifdef CONFIG_AP_SUPPORT
 			ptr_update  = (PUCHAR)&pMbss->BeaconBuf[UpdatePos];
-#endif
+#endif /* CONFIG_AP_SUPPORT */
 			for (i = UpdatePos; i < (FrameLen); i += wr_bytes)
 			{
 				UINT32 longptr =  *ptr_update + (*(ptr_update+1)<<8) + (*(ptr_update+2)<<16) + (*(ptr_update+3)<<24);
@@ -1664,6 +1696,7 @@ VOID RT28xx_UpdateBeaconToAsic(
 			}
 		}
 	}
+}
 }
 
 
@@ -1699,6 +1732,7 @@ BOOLEAN RT28xxPciAsicRadioOn(RTMP_ADAPTER *pAd, UCHAR Level)
     	if (Level == GUI_IDLE_POWER_SAVE)
     	{
  /*2009/06/09: AP and stations need call the following function*/
+ #ifndef RTMP_RBUS_SUPPORT
  			/* add by johnli, RF power sequence setup, load RF normal operation-mode setup*/
 
 		RTMP_CHIP_OP *pChipOps = &pAd->chipOps;
@@ -1709,6 +1743,7 @@ BOOLEAN RT28xxPciAsicRadioOn(RTMP_ADAPTER *pAd, UCHAR Level)
 
 		}
 		else
+#endif /* RTMP_RBUS_SUPPORT */
 		{
 	    		/* In Radio Off, we turn off RF clk, So now need to call ASICSwitchChannel again.*/
 #ifdef CONFIG_AP_SUPPORT
@@ -1874,6 +1909,10 @@ VOID RT28xxPciMlmeRadioOn(RTMP_ADAPTER *pAd)
     	RTMPRingCleanUp(pAd, QID_MGMT);
     	RTMPRingCleanUp(pAd, QID_RX);
 
+#ifdef RTMP_RBUS_SUPPORT
+		if (pAd->infType == RTMP_DEV_INF_RBUS)
+			NICResetFromError(pAd);
+#endif /* RTMP_RBUS_SUPPORT */
 #ifdef RTMP_PCI_SUPPORT
 #ifdef RT65xx
 		if (IS_RT8592(pAd))
@@ -1981,6 +2020,38 @@ VOID RT28xxPciMlmeRadioOFF(RTMP_ADAPTER *pAd)
 	}
 #endif /* RTMP_PCI_SUPPORT */
 
+#ifdef RTMP_RBUS_SUPPORT
+	if (pAd->infType == RTMP_DEV_INF_RBUS)
+	{
+		int	i;
+		WPDMA_GLO_CFG_STRUC GloCfg;
+
+		/* Disable Tx/Rx DMA*/
+		RTMP_IO_READ32(pAd, WPDMA_GLO_CFG, &GloCfg.word);	   /* disable DMA */
+		GloCfg.field.EnableTxDMA = 0;
+		GloCfg.field.EnableRxDMA = 0;
+		RTMP_IO_WRITE32(pAd, WPDMA_GLO_CFG, GloCfg.word);	   /* abort all TX rings*/
+
+		
+		/* MAC_SYS_CTRL => value = 0x0 => 40mA*/
+		RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, 0);
+		
+		/* PWR_PIN_CFG => value = 0x0 => 40mA*/
+		RTMP_IO_WRITE32(pAd, PWR_PIN_CFG, 0);
+		
+		/* TX_PIN_CFG => value = 0x0 => 20mA*/
+		RTMP_IO_WRITE32(pAd, TX_PIN_CFG, 0x00010000);
+
+		// TODO: shiang-6590, here we need to make sure the CentralChannel is the same as Channel.
+		if (pAd->CommonCfg.CentralChannel)
+			AsicTurnOffRFClk(pAd, pAd->CommonCfg.CentralChannel);
+		else
+			AsicTurnOffRFClk(pAd, pAd->CommonCfg.Channel);
+
+		/* Waiting for DMA idle*/
+		AsicWaitPDMAIdle(pAd, 100, 1000);
+	}
+#endif /* RTMP_RBUS_SUPPORT */
 }
 
 
@@ -2012,11 +2083,11 @@ ra_dma_addr_t RtmpDrvPciMapSingle(
 	if (sd_idx == 1)
 	{
 		TX_BLK *pTxBlk = (TX_BLK *)(ptr);
-		return (pTxBlk->SrcBufLen) ? linux_pci_map_single(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
+		return (pTxBlk->SrcBufLen) ? linux_pci_map_single((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
 					pTxBlk->pSrcBufData, pTxBlk->SrcBufLen, 0, direction):(ra_dma_addr_t)NULL;
 	}
 	else
-		return linux_pci_map_single(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
+		return linux_pci_map_single((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
 					ptr, size, 0, direction);
 }
 

@@ -1370,6 +1370,7 @@ INT set_eFuseBufferModeWriteBack_Proc(
 	}
 }
 
+#ifdef TXBF_SUPPORT
 INT set_BinModeWriteBack_Proc(
 	IN PRTMP_ADAPTER	pAd,
 	IN PSTRING			arg)
@@ -1380,12 +1381,21 @@ INT set_BinModeWriteBack_Proc(
 		return FALSE;
 	else
 	{
+		
+		if (pAd->chipCap.FlgITxBfBinWrite)
+	  {
 		DBGPRINT(RT_DEBUG_TRACE, ("%s::Write EEPROM buffer back to BIN\n", __FUNCTION__));	
 		Set_EepromBufferWriteBack_Proc(pAd, "4");
-		
+	  }
+	  else
+	  {
+	  	DBGPRINT(RT_DEBUG_TRACE, ("%s::Write EEPROM buffer back to flash\n", __FUNCTION__));	
+		  Set_EepromBufferWriteBack_Proc(pAd, "2");
+	  }	
 		return TRUE;
 	}
 }
+#endif /* TXBF SUPPORT */
 
 #endif /* RALINK_ATE */
 #endif /* RTMP_EFUSE_SUPPORT */

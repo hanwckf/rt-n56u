@@ -124,7 +124,7 @@ UCHAR *get_dev_name_prefix(RTMP_ADAPTER *pAd, INT dev_type)
 	do {
 		map = &prefix_map[type_idx];
 		if (map->type == dev_type) {
-			DBGPRINT(RT_DEBUG_TRACE, ("%s(): dev_idx = %d, dev_name_prefix=%s\n",
+			DBGPRINT(RT_DEBUG_OFF, ("%s(): dev_idx = %d, dev_name_prefix=%s\n",
 						__FUNCTION__, dev_idx, map->prefix[dev_idx]));
 			return map->prefix[dev_idx];
 		}
@@ -138,7 +138,19 @@ UCHAR *get_dev_name_prefix(RTMP_ADAPTER *pAd, INT dev_type)
 static UCHAR *get_dev_profile(RTMP_ADAPTER *pAd)
 {
 	UCHAR *src = NULL;
+#ifdef RTMP_RBUS_SUPPORT
+	if (pAd->infType == RTMP_DEV_INF_RBUS)
+	{
+#ifdef CONFIG_AP_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+		{
+			src = AP_PROFILE_PATH_RBUS;
+		}
+#endif /* CONFIG_AP_SUPPORT */
 
+	}
+	else
+#endif /* RTMP_RBUS_SUPPORT */
 	{
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -590,7 +602,7 @@ VOID RT28xx_Monitor_Init(VOID *pAd, PNET_DEV main_dev_p)
 	netDevOpHook.stop = Monitor_VirtualIF_Close;
 	netDevOpHook.xmit = rt28xx_send_packets;
 	netDevOpHook.ioctl = rt28xx_ioctl;
-	DBGPRINT(RT_DEBUG_OFF, ("%s: %d !!!!####!!!!!!\n",__FUNCTION__, __LINE__)); //Kyle
+	DBGPRINT(RT_DEBUG_OFF, ("%s: %d !!!!####!!!!!!\n",__FUNCTION__, __LINE__)); 
 	RTMP_COM_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_SNIFF_INIT,	0, &netDevOpHook, 0);
 
 }
@@ -672,7 +684,10 @@ void STA_MonPktSend(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	STBC = pRxBlk->rx_rate.field.STBC;
 	RSSI1 = pRxBlk->rssi[1];
 	//if(pRxBlk->pRxWI->RXWI_N.bbp_rxinfo[12] != 0)
+#ifdef RLT_MAC
 	NdisCopyMemory(&timestamp,&pRxBlk->pRxWI->RXWI_N.bbp_rxinfo[12],4);
+#endif
+
 	BssMonitorFlag11n = 0;
 #ifdef MONITOR_FLAG_11N_SNIFFER_SUPPORT
 	BssMonitorFlag11n = (pAd->StaCfg.BssMonitorFlag & MONITOR_FLAG_11N_SNIFFER);
@@ -733,7 +748,7 @@ VOID RTMPFreeAdapter(VOID *pAdSrc)
 
 #ifdef MULTIPLE_CARD_SUPPORT
 #ifdef RTMP_FLASH_SUPPORT
-	if (pAd->eebuf && (pAd->eebuf != pAd->chipCap.EEPROM_DEFAULT_BIN))
+	if (pAd->eebuf && (pAd->eebuf != pAd->EEPROMImage))
 	{
 		os_free_mem(NULL, pAd->eebuf);
 		pAd->eebuf = NULL;
@@ -768,10 +783,13 @@ VOID RTMPFreeAdapter(VOID *pAdSrc)
 #ifdef CONFIG_ANDES_SUPPORT
 	NdisFreeSpinLock(&pAd->CtrlRingLock);
 	NdisFreeSpinLock(&pAd->mcu_atomic);
-#endif
+#endif /* CONFIG_ANDES_SUPPORT */
 	NdisFreeSpinLock(&pAd->tssi_lock);
 #endif /* RTMP_MAC_PCI */
 
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
+	NdisFreeSpinLock(&pAd->ShrMemLock);
+#endif /* SPECIFIC_BCN_BUF_SUPPORT */
 
 #ifdef UAPSD_SUPPORT
 	NdisFreeSpinLock(&pAd->UAPSDEOSPLock); /* OS_ABL_SUPPORT */
@@ -869,6 +887,17 @@ int RTMPSendPackets(
 		RTMP_SET_PACKET_5VT(pPacket, 1);
 	}
 #endif /* CONFIG_5VT_ENHANCE */
+
+#if defined (CONFIG_WIFI_PKT_FWD)
+	if (wf_fwd_tx_hook != NULL)
+	{
+		if (wf_fwd_tx_hook(pPacket) == 1)
+		{
+			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
+			return 0;
+		}
+	}
+#endif /* CONFIG_WIFI_PKT_FWD */
 
 	wdev_tx_pkts((NDIS_HANDLE)pAd, (PPNDIS_PACKET) &pPacket, 1, wdev);
 
@@ -1086,4 +1115,3 @@ VOID AP_WDS_KeyNameMakeUp(
 	snprintf(pKey, KeyMaxSize, "Wds%dKey", KeyId);
 }
 #endif /* WDS_SUPPORT */
-

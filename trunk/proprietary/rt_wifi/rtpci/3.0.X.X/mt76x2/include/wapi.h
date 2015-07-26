@@ -88,6 +88,22 @@ VOID RTMPConstructWPIIVHdr(
 	IN	UCHAR			*tx_iv, 
 	OUT UCHAR 			*iv_hdr);
 
+#ifdef RTMP_RBUS_SUPPORT
+INT RTMPSoftEncryptSMS4(
+	IN	PUCHAR			pHeader,
+	IN  PUCHAR			pData,
+	IN	UINT32			data_len,				
+	IN	UCHAR			key_id,
+	IN	PUCHAR 			pKey,
+	IN	PUCHAR			pIv);
+
+INT RTMPSoftDecryptSMS4(
+	IN		PUCHAR			pHdr,
+	IN		BOOLEAN			bSanityIV,
+	IN 		PCIPHER_KEY		pKey,
+	INOUT 	PUCHAR			pData,
+	INOUT 	UINT16			*DataByteCnt);
+#else
 extern INT	RTMPSoftEncryptSMS4(
 		IN	PUCHAR			pHeader,
 		IN  PUCHAR			pData,
@@ -101,6 +117,7 @@ extern INT	RTMPSoftDecryptSMS4(
 		IN 		PCIPHER_KEY		pKey,
 		INOUT 	PUCHAR			pData,
 		INOUT 	UINT16			*DataByteCnt);
+#endif /* RTMP_RBUS_SUPPORT */
 
 VOID RTMPDeriveWapiGTK(
 	IN	PUCHAR			nmk,

@@ -268,15 +268,15 @@ static NewDFSTable NewDFSTable1[] =
 };
 
 /* 7610/7662 DFS table */
-static NewDFSTable NewDFSTable2[] = {
+static NewDFSTable NewDFSTable2_BW20[] = {
 	/* For BW_20 & BW_40  */
 	{
 		NEW_DFS_FCC,
 		{
 			{0, 0, 8, 2, 7, 106, 150,  5, 2900,  80100,  5,  0, 2147483647, 0x1400000, 0x13dc},
 			{1, 0, 8, 2, 7, 106, 140,  5,27600,  27900,  5,  0, 2147483647, 0x1400000, 0x19dd},
-			{2, 0,40, 4,36,  96, 480,150, 2900,  80100, 40,  0, 2147483647, 0xe4e1c00, 0x12dc},
-			{3, 2,60,15,48, 940,2080, 32,19600,  40200, 32,  0, 2147483647, 0xe4e1c00, 0x1289},
+			{2, 0,40, 4,44,  96, 480,150, 2900,  80100, 40,  0, 2147483647, 0xe4e1c00, 0x12cc},
+			{3, 2,60,15,48, 640,2080, 32,19600,  40200, 32,  0, 60000000,   0x57BCF00, 0x1289},
 		}
 	},
 
@@ -284,7 +284,7 @@ static NewDFSTable NewDFSTable2[] = {
                 NEW_DFS_EU,
                 {
 			{0, 0, 8, 2,  9, 106,  150, 10, 4900, 100096, 10, 0, 2147483647, 0x1400000, 0x19cc},
-			{1, 0,40, 4, 36,  96,  380,150, 4900, 100096, 40, 0, 2147483647, 0x1400000, 0x19dc},
+			{1, 0,40, 4, 44,  96,  380,150, 4900, 100096, 40, 0, 2147483647, 0x1400000, 0x19cc},
 			{2, 3,60,20, 46, 300,  640, 80, 4900,  10100, 80, 0, 2147483647, 0xe4e1c00, 0x19dd},
 			{3, 8, 8, 2,  9, 106,  150, 32, 4900, 296704, 32, 0, 2147483647, 0x1400000, 0x15cc},
                 }
@@ -295,21 +295,74 @@ static NewDFSTable NewDFSTable2[] = {
                 {
 			{0, 0, 8, 2, 9, 106, 150, 20,28400,  77000, 20,  0, 2147483647, 0x1400000, 0x16cc},
 			{1, 0, 0, 0, 0,   0,   0,  0,    0,      0,  0,  0,          0,         0,      0},
-			{2, 0,40, 4,36,  96, 200,150,28400,  77000, 60,  0, 2147483647, 0xe4e1c00, 0x16dc},
+			{2, 0,40, 4,44,  96, 200,150,28400,  77000, 60,  0, 2147483647, 0xe4e1c00, 0x16cc},
 			{3, 0, 0, 0, 0,   0,   0,  0,    0,      0,  0,  0,          0,         0,      0},
+		}
+	},
+
+	{
+		NEW_DFS_JAP,
+		{
+			{0, 0, 8, 2, 7, 106, 150, 5,2900,  80100, 5,  0, 2147483647, 0x1400000, 0x13dc},
+			{1, 0, 8, 2, 7, 106, 140,  5,27600,  27900,  5,  0, 2147483647, 0x1400000, 0x19dd},
+			{2, 0,40, 4,44,  96, 480,150, 2900,  80100, 40,  0, 2147483647, 0xe4e1c00, 0x12cc},
+			{3, 2,60,15,48, 700,2080, 32,19600,  40200, 32,  0,   60000000, 0x57BCF00, 0x1289},
 		}
 	},
 };
 
-static NewDFSTable NewDFSTable3[] =  {
-	/* For BW_80 */
+static NewDFSTable NewDFSTable2_BW40[] = {
+	/* For BW_20 & BW_40  */
+	{
+		NEW_DFS_FCC,
+		{
+			{0, 0, 8, 2, 7, 106, 150,  5, 2900,  80100,  5,  0, 2147483647, 0x1400000, 0x13dc},
+			{1, 0, 8, 2, 7, 106, 140,  5,27600,  27900,  5,  0, 2147483647, 0x1400000, 0x19dd},
+			{2, 0,40, 4,44,  96, 480,150, 2900,  80100, 40,  0, 2147483647, 0xe4e1c00, 0x12cc},
+			{3, 2,60,15,48, 640,2080, 32,19600,  40200, 32,  0, 60000000,   0x57BCF00, 0x1289},
+		}
+	},
+
+	{
+		NEW_DFS_EU,
+		{
+			{0, 0, 8, 2,  9, 106,  150, 10, 4900, 100096, 10, 0, 2147483647, 0x1400000, 0x19cc},
+			{1, 0,40, 4, 44,  96,  380,150, 4900, 100096, 40, 0, 2147483647, 0x1400000, 0x19cc},
+			{2, 3,60,20, 46, 300,  640, 80, 4900,  10100, 80, 0, 2147483647, 0xe4e1c00, 0x19dd},
+			{3, 8, 8, 2,  9, 106,  150, 32, 4900, 296704, 32, 0, 2147483647, 0x1400000, 0x15cc},
+		}
+	},
+
+	{
+		NEW_DFS_JAP_W53,
+		{
+			{0, 0, 8, 2, 9, 106, 150, 20,28400,  77000, 20,  0, 2147483647, 0x1400000, 0x16cc},
+			{1, 0, 0, 0, 0,   0,   0,  0,    0,      0,  0,  0,          0,         0,      0},
+			{2, 0,40, 4,44,  96, 200,150,28400,  77000, 60,  0, 2147483647, 0xe4e1c00, 0x16cc},
+			{3, 0, 0, 0, 0,   0,   0,  0,    0,      0,  0,  0,          0,         0,      0},
+		}
+	},
+
+	{
+		NEW_DFS_JAP,
+		{
+			{0, 0, 8, 2, 7, 106, 150, 5,2900,  80100, 5,  0, 2147483647, 0x1400000, 0x13dc},
+			{1, 0, 8, 2, 7, 106, 140,  5,27600,  27900,  5,  0, 2147483647, 0x1400000, 0x19dd},
+			{2, 0,40, 4,44,  96, 480,150, 2900,  80100, 40,  0, 2147483647, 0xe4e1c00, 0x12cc},
+			{3, 2,60,15,48, 940,2080, 32,19600,  40200, 32,  0,   60000000, 0x57BCF00, 0x1289},
+		}
+	},
+};
+
+static NewDFSTable NewDFSTable2_BW80[] = {
+	/* For BW_20 & BW_40  */
 	{
                 NEW_DFS_FCC,
                 {
                        {0, 0, 8, 2, 9, 106, 150, 15, 2900,  80100, 15,  0, 2147483647, 0x1400000, 0x16cc},
                        {1, 0, 8, 2, 7, 106, 140,  5,27600,  27900,  5,  0, 2147483647, 0x1400000, 0x19dd},
-                       {2, 0,40, 4,36,  96, 480,150, 2900,  80100, 40,  0, 2147483647, 0xe4e1c00, 0x12dc},
-                       {3, 2,60,15,48, 940,2080, 32,19600,  40200, 32,  0, 2147483647, 0xe4e1c00, 0x1289},
+			{2, 0,40, 4,44,  96, 480,150, 2900,  80100, 40,  0, 2147483647, 0xe4e1c00, 0x12cc},
+			{3, 2,60,15,48, 640,2080, 32,19600,  40200, 32,  0, 60000000,   0x57BCF00, 0x1289},
                 }
 	},
 
@@ -317,7 +370,7 @@ static NewDFSTable NewDFSTable3[] =  {
                 NEW_DFS_EU,
                 {
                        {0, 0, 8, 2,  9, 106,  150, 10, 4900, 100096, 10, 0, 2147483647, 0x1400000, 0x19cc},                        
-		       {1, 0,40, 4, 36,  96,  380,150, 4900, 100096, 40, 0, 2147483647, 0x1400000, 0x19dc},
+			{1, 0,40, 4, 44,  96,  380,150, 4900, 100096, 40, 0, 2147483647, 0x1400000, 0x19cc},
                        {2, 3,60,20, 46, 300,  640, 80, 4900,  10100, 80, 0, 2147483647, 0xe4e1c00, 0x19dd},
                        {3, 8, 8, 2,  9, 106,  150, 32, 4900, 296704, 32, 0, 2147483647, 0x1400000, 0x15cc},
                 }
@@ -328,8 +381,18 @@ static NewDFSTable NewDFSTable3[] =  {
                 {
                        {0, 0, 8, 2, 9, 106, 150, 20,28400,  77000, 20,  0, 2147483647, 0x1400000, 0x16cc},
                        {1, 0, 0, 0, 0,   0,   0,  0,    0,      0,  0,  0,          0,         0,      0},
-                       {2, 0,40, 4,36,  96, 200,150,28400,  77000, 60,  0, 2147483647, 0xe4e1c00, 0x16dc},
+			{2, 0,40, 4,44,  96, 200,150,28400,  77000, 60,  0, 2147483647, 0xe4e1c00, 0x16cc},
                        {3, 0, 0, 0, 0,   0,   0,  0,    0,      0,  0,  0,          0,         0,      0},
+		}
+	},
+
+	{
+		NEW_DFS_JAP,
+		{
+			{0, 0, 8, 2, 9, 106, 150, 15,2900,  80100, 15,  0, 2147483647, 0x1400000, 0x16cc},
+			{1, 0, 8, 2, 7, 106, 140,  5,27600,  27900,  5,  0, 2147483647, 0x1400000, 0x19dd},
+			{2, 0,40, 4,44,  96, 480,150, 2900,  80100, 40,  0, 2147483647, 0xe4e1c00, 0x12cc},
+			{3, 2,60,15,48, 940,2080, 32,19600,  40200, 32,  0,   60000000, 0x57BCF00, 0x1289},
 		}
 	},
 };
@@ -1236,38 +1299,58 @@ void NewRadarDetectionStart(PRTMP_ADAPTER pAd)
 		if (pAd->CommonCfg.BBPCurrentBW == BW_80) {
 			// New update: 20130606
 			if (pAd->CommonCfg.RDDurRegion == CE) {
-				*ppDFSTable = &NewDFSTable3[1];
+				*ppDFSTable = &NewDFSTable2_BW80[1];
 			}
 			else if (pAd->CommonCfg.RDDurRegion == FCC) {
-				*ppDFSTable = &NewDFSTable3[0];
+				*ppDFSTable = &NewDFSTable2_BW80[0];
 			}
 			else if ((pAd->CommonCfg.Channel >= 52) 
 					&& (pAd->CommonCfg.Channel <= 64)) { 	
 				/* JAP_W53 */
-				*ppDFSTable = &NewDFSTable3[2];
+				*ppDFSTable = &NewDFSTable2_BW80[2];
 			}
 			else {
 				/* JAP_W56 */
-				*ppDFSTable = &NewDFSTable3[0];
+				*ppDFSTable = &NewDFSTable2_BW80[3];
 			}
 		}
-		else { // below BW_80 using Table2
+		else if (pAd->CommonCfg.BBPCurrentBW == BW_40) {
+			// New update: 20130606
 			if (pAd->CommonCfg.RDDurRegion == CE) {
-				*ppDFSTable = &NewDFSTable2[1];
+				*ppDFSTable = &NewDFSTable2_BW40[1];
 			}
 			else if (pAd->CommonCfg.RDDurRegion == FCC) {
-				*ppDFSTable = &NewDFSTable2[0];
+				*ppDFSTable = &NewDFSTable2_BW40[0];
 			}
 			else if ((pAd->CommonCfg.Channel >= 52) 
 					&& (pAd->CommonCfg.Channel <= 64)) { 	
 				/* JAP_W53 */
-				*ppDFSTable = &NewDFSTable2[2];
+				*ppDFSTable = &NewDFSTable2_BW40[2];
 			}
 			else {
 				/* JAP_W56 */
-				*ppDFSTable = &NewDFSTable2[0];
+				*ppDFSTable = &NewDFSTable2_BW40[3];
 			}
+			}
+		else if (pAd->CommonCfg.BBPCurrentBW == BW_20){
+			if (pAd->CommonCfg.RDDurRegion == CE) {
+				*ppDFSTable = &NewDFSTable2_BW20[1];
 		}
+			else if (pAd->CommonCfg.RDDurRegion == FCC) {
+				*ppDFSTable = &NewDFSTable2_BW20[0];
+			}
+			else if ((pAd->CommonCfg.Channel >= 52) 
+					&& (pAd->CommonCfg.Channel <= 64)) { 	
+				/* JAP_W53 */
+				*ppDFSTable = &NewDFSTable2_BW20[2];
+			}
+			else {
+				/* JAP_W56 */
+				*ppDFSTable = &NewDFSTable2_BW20[3];
+		}
+	}
+		else
+		{}
 	}
 #endif /* MT76x0 */
 
@@ -2444,28 +2527,7 @@ BOOLEAN DfsSwCheckOnHwDetection(
 		return FALSE;
 	}
 
-	if (pDFSTable->type == NEW_DFS_JAP && 
-		((pAd->CommonCfg.Channel >= 52) && (pAd->CommonCfg.Channel <= 64)))
-	{
-		if (RadarWidth > 130) // pulse width less than 6.4us is report is 6.4us
-		{
-			 /*block W53 very large and short width*/
-			DBGPRINT(RT_DEBUG_TRACE,
-				 ("Radar check: ch=%u, T=%lu, W=%lu, blocked\n", DfsChannel, RadarPeriod, RadarWidth));
-		 	bRadarCheck = FALSE;
-		}
-		else if ((RadarPeriod < 28360) ||
-			(RadarPeriod > 28700 && RadarPeriod < 76900) ||
-			(RadarPeriod > 76940))
-		{ 
-			/*(0~1418), (1435~3845us) and (3847us~) according to the spec*/
-			DBGPRINT(RT_DEBUG_TRACE,
-				("Radar check: ch=%u, T=%lu, W=%lu, blocked\n", DfsChannel, RadarPeriod, RadarWidth));
-			bRadarCheck = FALSE;
-		}
-	}
-	else if (pDFSTable->type == NEW_DFS_JAP && 
-		((pAd->CommonCfg.Channel >= 100) && (pAd->CommonCfg.Channel <= 140)))
+	if (pDFSTable->type == NEW_DFS_JAP)
 	{
 		/* Double check on pusle Width and Period*/
 		if (DfsChannel < 3)
@@ -2885,40 +2947,58 @@ void modify_table1(PRTMP_ADAPTER pAd, ULONG idx, ULONG value)
 	{
 		if (pAd->CommonCfg.BBPCurrentBW == BW_80) {
 			if (pAd->CommonCfg.RDDurRegion == CE) {
-				pDFSTable = &NewDFSTable3[1];
+				pDFSTable = &NewDFSTable2_BW80[1];
 			}
 			else if (pAd->CommonCfg.RDDurRegion == FCC) {
-				pDFSTable = &NewDFSTable3[0];
+				pDFSTable = &NewDFSTable2_BW80[0];
 			}
-			//else if (pAd->CommonCfg.RDDurRegion == JAP) {
 			else if ((pAd->CommonCfg.Channel >= 52) 
 					&& (pAd->CommonCfg.Channel <= 64)) { 	
 				/* JAP_W53 */
-				pDFSTable = &NewDFSTable3[2];
+				pDFSTable = &NewDFSTable2_BW80[2];
 			}
 			else {
 				/* JAP_W56 */
-				pDFSTable = &NewDFSTable3[0];
+				pDFSTable = &NewDFSTable2_BW80[3];
 			}
+		}
+		else if (pAd->CommonCfg.BBPCurrentBW == BW_40) {
+			// New update: 20130606
+			if (pAd->CommonCfg.RDDurRegion == CE) {
+				pDFSTable = &NewDFSTable2_BW40[1];
+			}
+			else if (pAd->CommonCfg.RDDurRegion == FCC) {
+				pDFSTable = &NewDFSTable2_BW40[0];
+			}
+			else if ((pAd->CommonCfg.Channel >= 52) 
+					&& (pAd->CommonCfg.Channel <= 64)) {
+				/* JAP_W53 */
+				pDFSTable = &NewDFSTable2_BW40[2];
 		}
 		else {
+				/* JAP_W56 */
+				pDFSTable = &NewDFSTable2_BW40[3];
+			}
+		}
+		else if (pAd->CommonCfg.BBPCurrentBW == BW_20){
 			if (pAd->CommonCfg.RDDurRegion == CE) {
-				pDFSTable = &NewDFSTable2[1];
+				pDFSTable = &NewDFSTable2_BW20[1];
 			}
 			else if (pAd->CommonCfg.RDDurRegion == FCC) {
-				pDFSTable = &NewDFSTable2[0];
+				pDFSTable = &NewDFSTable2_BW20[0];
 			}
-			//else if (pAd->CommonCfg.RDDurRegion == JAP) {
 			else if ((pAd->CommonCfg.Channel >= 52) 
 					&& (pAd->CommonCfg.Channel <= 64)) { 	
 				/* JAP_W53 */
-				pDFSTable = &NewDFSTable2[2];
+				pDFSTable = &NewDFSTable2_BW20[2];
 			}
 			else {
 				/* JAP_W56 */
-				pDFSTable = &NewDFSTable2[0];
+				pDFSTable = &NewDFSTable2_BW20[3];
 			}
 		}
+		else
+		{}
 	}
 #endif /* MT76x0 */
 

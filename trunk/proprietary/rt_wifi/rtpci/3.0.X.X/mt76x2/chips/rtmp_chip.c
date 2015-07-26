@@ -55,6 +55,12 @@ VOID RtmpChipWriteHighMemory(
 	IN UINT8 Unit)
 {
 #ifdef RTMP_MAC_PCI
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
+unsigned long irqFlag = 0;
+	RTMP_MAC_SHR_MSEL_LOCK(pAd, HIGHER_SHRMEM, irqFlag);
+	RtmpChipWriteMemory(pAd, Offset, Value, Unit);
+	RTMP_MAC_SHR_MSEL_UNLOCK(pAd, LOWER_SHRMEM, irqFlag);
+#endif /* SPECIFIC_BCN_BUF_SUPPORT */
 #endif /* RTMP_MAC_PCI */
 }
 
@@ -113,6 +119,44 @@ Note:
 */
 VOID RtmpChipBcnSpecInit(RTMP_ADAPTER *pAd)
 {
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
+	RTMP_CHIP_CAP *pChipCap = &pAd->chipCap;
+
+
+	pChipCap->FlgIsSupSpecBcnBuf = TRUE;
+	pChipCap->BcnMaxHwNum = 16;
+	pChipCap->WcidHwRsvNum = 255;
+
+/* 	In 16-MBSS support mode, if AP-Client is enabled, 
+	the last 8-MBSS would be occupied for AP-Client using. */
+#ifdef APCLI_SUPPORT
+	pChipCap->BcnMaxNum = (8 - MAX_MESH_NUM);
+#else
+	pChipCap->BcnMaxNum = (16 - MAX_MESH_NUM);
+#endif /* APCLI_SUPPORT */
+
+	pChipCap->BcnMaxHwSize = 0x2000;
+
+	/* It's allowed to use the higher(secordary) 8KB shared memory */
+	pChipCap->BcnBase[0] = 0x4000;
+	pChipCap->BcnBase[1] = 0x4200;
+	pChipCap->BcnBase[2] = 0x4400;
+	pChipCap->BcnBase[3] = 0x4600;
+	pChipCap->BcnBase[4] = 0x4800;
+	pChipCap->BcnBase[5] = 0x4A00;
+	pChipCap->BcnBase[6] = 0x4C00;
+	pChipCap->BcnBase[7] = 0x4E00;
+	pChipCap->BcnBase[8] = 0x5000;
+	pChipCap->BcnBase[9] = 0x5200;
+	pChipCap->BcnBase[10] = 0x5400;
+	pChipCap->BcnBase[11] = 0x5600;
+	pChipCap->BcnBase[12] = 0x5800;
+	pChipCap->BcnBase[13] = 0x5A00;
+	pChipCap->BcnBase[14] = 0x5C00;
+	pChipCap->BcnBase[15] = 0x5E00;
+
+	pAd->chipOps.BeaconUpdate = RtmpChipWriteHighMemory;
+#endif /* SPECIFIC_BCN_BUF_SUPPORT */
 }
 
 
@@ -421,6 +465,24 @@ int RtmpChipOpsHook(VOID *pCB)
 	/* default init */
 	RTMP_DRS_ALG_INIT(pAd, RATE_ALG_LEGACY);
 
+#ifdef RTMP_RBUS_SUPPORT
+	if (pAd->infType == RTMP_DEV_INF_RBUS)
+	{
+		RTMP_SYS_IO_READ32(0xb000000c, &pAd->CommonCfg.CID);
+		RTMP_SYS_IO_READ32(0xb0000000, &pAd->CommonCfg.CN);
+
+#ifdef RT6352
+		if (IS_RT6352(pAd)) {
+			pAd->CommonCfg.PKG_ID = (UCHAR)((pAd->CommonCfg.CID >> 16) & 0x0001);
+			pAd->CommonCfg.Chip_VerID = (UCHAR)((pAd->CommonCfg.CID >> 8) & 0x0f);
+			pAd->CommonCfg.Chip_E_Number = (UCHAR)((pAd->CommonCfg.CID) & 0x0f);
+		}
+#endif /* RT6352 */
+
+		DBGPRINT(RT_DEBUG_TRACE, ("CN: %lx\tCID = %lx\n",
+				pAd->CommonCfg.CN, pAd->CommonCfg.CID));
+	}
+#endif /* RTMP_RBUS_SUPPORT */
 
 	/* EDCCA */
 	pChipOps->ChipSetEDCCA= NULL;
@@ -432,13 +494,24 @@ int RtmpChipOpsHook(VOID *pCB)
 	}
 #endif /* RT8592 */
 
-
 #ifdef MT76x2
 	if (IS_MT76x2(pAd)) {
 		mt76x2_init(pAd);
 		goto done;
 	}
 #endif
+
+#ifdef RT6352
+	if (IS_RT6352(pAd)) {
+		RT6352_Init(pAd);
+		goto done;
+	}
+#endif /* RT6352 */
+
+#ifdef RTMP_MAC
+	// TODO: default settings for rest of the chips!! change this to really default chip.
+	RTxx_default_Init(pAd);
+#endif /* RTMP_MAC */
 
 	/* We depends on RfICType and MACVersion to assign the corresponding operation callbacks. */
 
@@ -452,7 +525,7 @@ done:
 	return ret;
 }
 
-
+#ifdef RT65xx
 BOOLEAN isExternalPAMode(RTMP_ADAPTER *ad, INT channel)
 {
 	BOOLEAN pa_mode = FALSE;
@@ -496,4 +569,5 @@ BOOLEAN is_external_lna_mode(RTMP_ADAPTER *ad, INT channel)
 	
 	return lna_mode;
 }
+#endif /* RT65xx */
 

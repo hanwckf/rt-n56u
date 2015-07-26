@@ -340,6 +340,11 @@ static USHORT update_associated_mac_entry(
 			if ((pEntry->MaxHTPhyMode.field.BW== BW_40) && (wdev->DesiredHtPhyInfo.vht_bw == VHT_BW_80))
 				pEntry->MaxHTPhyMode.field.BW = BW_80;
 
+			pEntry->VhtMaxRAmpduFactor = ie_list->vht_cap.vht_cap.max_ampdu_exp;
+
+			DBGPRINT(RT_DEBUG_TRACE, ("Orig HT MaxRAmpduFactor %d , VHT MaxRAmpduFactor %d \n"
+			,ie_list->HTCapability.HtCapParm.MaxRAmpduFactor,ie_list->vht_cap.vht_cap.max_ampdu_exp));
+			
 			/* TODO: implement get_vht_max_mcs to get peer max MCS */
 			if (ie_list->vht_cap.mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_9) {
 				if ((pEntry->MaxHTPhyMode.field.BW == BW_20))
@@ -470,11 +475,11 @@ static USHORT update_associated_mac_entry(
 	if (wdev->bAutoTxRateSwitch == TRUE)
 	{
 		UCHAR TableSize = 0;
+
+		pEntry->bAutoTxRateSwitch = TRUE;
 		
 		MlmeSelectTxRateTable(pAd, pEntry, &pEntry->pTable, &TableSize, &pEntry->CurrTxRateIndex);
 		MlmeNewTxRate(pAd, pEntry);
-
-		pEntry->bAutoTxRateSwitch = TRUE;
 
 #ifdef NEW_RATE_ADAPT_SUPPORT
 		if (! ADAPT_RATE_TABLE(pEntry->pTable))
@@ -1759,9 +1764,11 @@ VOID APPeerDisassocReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 			{
 				apCliIdx = pReptEntry->MatchApCliIdx;
 				CliIdx = pReptEntry->MatchLinkIdx;
-				MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL,
-								(64 + MAX_EXT_MAC_ADDR_SIZE*apCliIdx + CliIdx));
-						RTMP_MLME_HANDLER(pAd);
+#ifdef DOT11_N_SUPPORT
+				/* free resources of BA*/
+				BASessionTearDownALL(pAd, pReptEntry->MacTabWCID);
+#endif /* DOT11_N_SUPPORT */
+				RTMPRemoveRepeaterDisconnectEntry(pAd, apCliIdx, CliIdx);
 						RTMPRemoveRepeaterEntry(pAd, apCliIdx, CliIdx);
 			}
 		}

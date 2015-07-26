@@ -92,7 +92,7 @@ typedef	union _WPDMA_GLO_CFG_STRUC	{
 #endif
 
 #define PBF_SYS_CTRL 	 0x0400
-#define PBF_CFG         0x0404
+//#define PBF_CFG         0x0404
 
 #define PBF_CTRL			0x0410
 #define MCU_INT_STA		0x0414

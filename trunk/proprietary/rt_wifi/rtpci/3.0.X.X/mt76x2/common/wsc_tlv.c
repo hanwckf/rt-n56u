@@ -635,6 +635,18 @@ int BuildMessageM1(
 #endif /* CONFIG_AP_SUPPORT */
 
     
+	// Enrollee 16 byte E-S1 generation
+    for (idx = 0; idx < 16; idx++)
+    {
+        pReg->Es1[idx] = RandomByte(pAdapter);
+    }
+
+    // Enrollee 16 byte E-S2 generation
+    for (idx = 0; idx < 16; idx++)
+    {
+        pReg->Es2[idx] = RandomByte(pAdapter);
+    }
+		
 	/* 1. Version */
 	templen = AppendWSCTLV(WSC_ID_VERSION, pData, &pReg->SelfInfo.Version, 0);
 	pData += templen;
@@ -883,6 +895,18 @@ int BuildMessageM2(
 
 	pReg = (PWSC_REG_DATA) &pWscControl->RegData;
 
+	// Enrollee 16 byte E-S1 generation
+    for (idx = 0; idx < 16; idx++)
+    {
+        pReg->Es1[idx] = RandomByte(pAdapter);
+    }
+
+    // Enrollee 16 byte E-S2 generation
+    for (idx = 0; idx < 16; idx++)
+    {
+        pReg->Es2[idx] = RandomByte(pAdapter);
+    }
+	
    	DH_Len = sizeof(pReg->SecretKey);
 	RT_DH_SecretKey_Generate (
 	    pReg->Pke, sizeof(pReg->Pke),
@@ -1377,6 +1401,9 @@ int BuildMessageM3(
 	/* Copy first 16 bytes to PSK1 */
 	NdisMoveMemory(pReg->Psk1, TB, 16);
 
+	hex_dump("Es1", pReg->Es1, 16);
+	hex_dump("Es2", pReg->Es2, 16);
+
 	/* Create input for E-Hash1 */
 	NdisMoveMemory(pHash, pReg->Es1, 16);
 	NdisMoveMemory(pHash + 16, pReg->Psk1, 16);
@@ -1542,6 +1569,8 @@ int BuildMessageM4(
 	/* Copy first 16 bytes to PSK1 */
 	NdisMoveMemory(pReg->Psk1, TB, 16);
 
+	hex_dump("Es1", pReg->Es1, 16);
+	hex_dump("Es2", pReg->Es2, 16);
 	/* Create input for R-Hash1 */
 	NdisMoveMemory(pHash, pReg->Es1, 16);
 	NdisMoveMemory(pHash + 16, pReg->Psk1, 16);

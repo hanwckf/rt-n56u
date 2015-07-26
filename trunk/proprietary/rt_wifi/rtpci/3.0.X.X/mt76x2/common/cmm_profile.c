@@ -740,6 +740,19 @@ static void rtmp_read_ap_client_from_file(
 	    }
 	}
 
+#ifdef APCLI_CONNECTION_TRIAL
+	if(RTMPGetKeyParameter("ApCliTrialCh", tmpbuf, 128, buffer, TRUE))
+	{
+		for (i = 0; i < MAX_APCLI_NUM; i++)
+		{
+			pApCliEntry = &pAd->ApCfg.ApCliTab[i];
+			pApCliEntry->TrialCh = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+			DBGPRINT(RT_DEBUG_TRACE, ("TrialChannel=%d\n", pApCliEntry->TrialCh));
+		}
+		
+	}
+#endif /* APCLI_CONNECTION_TRIAL */
+
 	/*ApCliSsid*/
 	if(RTMPGetKeyParameter("ApCliSsid", tmpbuf, MAX_PARAM_BUFFER_SIZE, buffer, FALSE))
 	{
@@ -1140,6 +1153,9 @@ static void rtmp_read_ap_wmm_parms_from_file(IN  PRTMP_ADAPTER pAd, PSTRING tmpb
 			{
 				pAd->ApCfg.MBSSID[i].wdev.bWmmCapable = TRUE;
 				bEnableWmm = TRUE;
+#ifdef MULTI_CLIENT_SUPPORT
+				pAd->CommonCfg.bWmm = TRUE;
+#endif /* MULTI_CLIENT_SUPPORT */
 			}
 			else
 			{
@@ -1202,6 +1218,12 @@ static void rtmp_read_ap_wmm_parms_from_file(IN  PRTMP_ADAPTER pAd, PSTRING tmpb
 	    {
 			pAd->CommonCfg.APEdcaParm.Cwmin[i] = (UCHAR) simple_strtol(macptr, 0, 10);
 
+#ifdef MULTI_CLIENT_SUPPORT
+			/* record profile cwmin */
+			if (i == 0)
+				pAd->CommonCfg.APCwmin = pAd->CommonCfg.APEdcaParm.Cwmin[0];
+#endif /* MULTI_CLIENT_SUPPORT */
+
 			DBGPRINT(RT_DEBUG_TRACE, ("APCwmin[%d]=%d\n", i, pAd->CommonCfg.APEdcaParm.Cwmin[i]));
 	    }
 	}
@@ -1211,6 +1233,12 @@ static void rtmp_read_ap_wmm_parms_from_file(IN  PRTMP_ADAPTER pAd, PSTRING tmpb
 	    for (i = 0, macptr = rstrtok(tmpbuf,";"); macptr; macptr = rstrtok(NULL,";"), i++)
 	    {
 			pAd->CommonCfg.APEdcaParm.Cwmax[i] = (UCHAR) simple_strtol(macptr, 0, 10);
+
+#ifdef MULTI_CLIENT_SUPPORT
+			/* record profile cwmax */
+			if (i == 0)
+				pAd->CommonCfg.APCwmax= pAd->CommonCfg.APEdcaParm.Cwmax[0];
+#endif /* MULTI_CLIENT_SUPPORT */
 
 			DBGPRINT(RT_DEBUG_TRACE, ("APCwmax[%d]=%d\n", i, pAd->CommonCfg.APEdcaParm.Cwmax[i]));
 	    }
@@ -1251,6 +1279,12 @@ static void rtmp_read_ap_wmm_parms_from_file(IN  PRTMP_ADAPTER pAd, PSTRING tmpb
 	    for (i = 0, macptr = rstrtok(tmpbuf,";"); macptr; macptr = rstrtok(NULL,";"), i++)
 	    {
 			pAd->ApCfg.BssEdcaParm.Cwmin[i] = (UCHAR) simple_strtol(macptr, 0, 10);
+
+#ifdef MULTI_CLIENT_SUPPORT
+			/* record profile cwmin */
+			if (i == 0)
+				pAd->CommonCfg.BSSCwmin = pAd->ApCfg.BssEdcaParm.Cwmin[0];
+#endif /* MULTI_CLIENT_SUPPORT */
 
 			DBGPRINT(RT_DEBUG_TRACE, ("BSSCwmin[%d]=%d\n", i, pAd->ApCfg.BssEdcaParm.Cwmin[i]));
 	    }
@@ -1600,6 +1634,11 @@ static void VHTParametersHook(
 			pAd->CommonCfg.vht_bw = VHT_BW_80;
 		else
 			pAd->CommonCfg.vht_bw = VHT_BW_2040;
+
+#ifdef MCAST_RATE_SPECIFIC
+		if (pAd->CommonCfg.vht_bw == VHT_BW_80)
+			pAd->CommonCfg.MCastPhyMode.field.BW = BW_80;
+#endif /* MCAST_RATE_SPECIFIC */
 
 		DBGPRINT(RT_DEBUG_TRACE, ("VHT: Channel Width = %s\n",
 					(pAd->CommonCfg.vht_bw == VHT_BW_80) ? "80 MHz" : "20/40 MHz" ));
@@ -2214,6 +2253,8 @@ void RTMPSetCountryCode(RTMP_ADAPTER *pAd, PSTRING CountryCode)
 	pAd->CommonCfg.CountryCode[2] = ' ';
 	if (strlen((PSTRING) pAd->CommonCfg.CountryCode) != 0)
 		pAd->CommonCfg.bCountryFlag = TRUE;
+	else
+		pAd->CommonCfg.bCountryFlag = FALSE;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("CountryCode=%s\n", pAd->CommonCfg.CountryCode));
 }
@@ -2402,6 +2443,16 @@ NDIS_STATUS	RTMPSetProfileParameters(
 				pAd->Dot11_H.org_ch = pAd->CommonCfg.Channel;
 		}
 
+		/* EtherTrafficBand */
+		if (RTMPGetKeyParameter("EtherTrafficBand", tmpbuf, 10, pBuffer, TRUE))
+		{
+			pAd->CommonCfg.EtherTrafficBand = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+			DBGPRINT(RT_DEBUG_TRACE, ("EtherTrafficBand=%d\n", pAd->CommonCfg.EtherTrafficBand));
+			
+			if (pAd->CommonCfg.EtherTrafficBand > EtherTrafficBand5G)
+				pAd->CommonCfg.EtherTrafficBand = EtherTrafficBand5G;
+		}
+
 		/*WirelessMode*/
 		/*Note: BssidNum must be put before WirelessMode in dat file*/
 		if(RTMPGetKeyParameter("WirelessMode", tmpbuf, 32, pBuffer, TRUE))
@@ -2462,9 +2513,27 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			else
 				pAd->CommonCfg.BeaconPeriod = 100;	/* Default value*/
 			
+#ifdef APCLI_CONNECTION_TRIAL
+			pAd->CommonCfg.BeaconPeriod = 200;
+#endif /* APCLI_CONNECTION_TRIAL */
+			
 			DBGPRINT(RT_DEBUG_TRACE, ("BeaconPeriod=%d\n", pAd->CommonCfg.BeaconPeriod));
 		}
 
+#ifdef RTMP_RBUS_SUPPORT
+		/*FreqOffsetDelta*/
+		if (pAd->infType == RTMP_DEV_INF_RBUS)
+		{
+		if(RTMPGetKeyParameter("FreqDelta", tmpbuf, 10, pBuffer, TRUE))
+		{
+			pAd->RfFreqDelta = (USHORT) simple_strtol(tmpbuf, 0, 10);
+			
+			if (pAd->RfFreqDelta > 0x20)
+				pAd->RfFreqDelta = 0;
+			DBGPRINT(RT_DEBUG_TRACE, ("FreqDelta=%d\n", pAd->RfFreqDelta));
+		}
+		}
+#endif /* RTMP_RBUS_SUPPORT */
 
 
 #ifdef CONFIG_AP_SUPPORT
@@ -2600,6 +2669,14 @@ NDIS_STATUS	RTMPSetProfileParameters(
 				pAd->ApCfg.DtimPeriod = (UCHAR) simple_strtol(tmpbuf, 0, 10);
 				DBGPRINT(RT_DEBUG_TRACE, ("DtimPeriod=%d\n", pAd->ApCfg.DtimPeriod));
 			}
+#ifdef BAND_STEERING
+			/* Band Steering Enable/Disable */
+			if(RTMPGetKeyParameter("BandSteering", tmpbuf, 10, pBuffer, TRUE))
+			{
+				pAd->ApCfg.BandSteering = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+				DBGPRINT(RT_DEBUG_TRACE, ("BandSteering=%d\n", pAd->ApCfg.BandSteering));
+			}
+#endif /* BAND_STEERING */
 		}
 #endif /* CONFIG_AP_SUPPORT */					
 	    /*TxPower*/
@@ -2839,6 +2916,13 @@ NDIS_STATUS	RTMPSetProfileParameters(
 						break;
 
 					pAd->ApCfg.MBSSID[apidx].StationKeepAliveTime = simple_strtol(macptr, 0, 10);
+#ifdef NOISE_TEST_ADJUST
+					if (!pAd->ApCfg.MBSSID[apidx].StationKeepAliveTime)
+						pAd->ApCfg.MBSSID[apidx].StationKeepAliveTime = 10;
+					else if (pAd->ApCfg.MBSSID[apidx].StationKeepAliveTime == 0xFF)
+						pAd->ApCfg.MBSSID[apidx].StationKeepAliveTime = 0;
+#endif /* NOISE_TEST_ADJUST */
+
 					DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) StationKeepAliveTime=%d\n", i, pAd->ApCfg.MBSSID[apidx].StationKeepAliveTime));
 				}
 			}
@@ -2989,6 +3073,13 @@ NDIS_STATUS	RTMPSetProfileParameters(
 				rtmp_asic_set_bf(pAd);
 			}
 
+			/* ETxBfeeEn*/
+			if(RTMPGetKeyParameter("ETxBfeeEn", tmpbuf, 32, pBuffer, TRUE))
+			{
+				pAd->CommonCfg.ETxBfeeEn = simple_strtol(tmpbuf, 0, 10);
+				DBGPRINT(RT_DEBUG_TRACE, ("ETxBfeeEn = %ld\n", pAd->CommonCfg.ETxBfeeEn));
+			}
+
 			/* ETxBfTimeout*/
 			if(RTMPGetKeyParameter("ETxBfTimeout", tmpbuf, 32, pBuffer, TRUE))
 			{
@@ -3088,6 +3179,9 @@ NDIS_STATUS	RTMPSetProfileParameters(
 		
 #ifdef DFS_SUPPORT
 	{
+#ifdef RTMP_RBUS_SUPPORT	
+		PRADAR_DETECT_STRUCT pRadarDetect = &pAd->CommonCfg.RadarDetect;
+#endif /* RTMP_RBUS_SUPPORT */
 		/*CSPeriod*/
 		if(RTMPGetKeyParameter("CSPeriod", tmpbuf, 10, pBuffer, TRUE))
 		{
@@ -3673,6 +3767,23 @@ NDIS_STATUS	RTMPSetProfileParameters(
 						}
 					}
 
+					/* WSC AutoTrigger Disable */
+					if(RTMPGetKeyParameter("WscAutoTriggerDisable", tmpbuf, 10, pBuffer, TRUE))
+					{
+						BOOLEAN	bEn = FALSE;
+						
+						if ((strncmp(tmpbuf, "0", 1) == 0))
+							bEn = FALSE;
+						else
+							bEn = TRUE;
+
+						for (i = 0; i < pAd->ApCfg.BssidNum; i++)
+						{
+							pAd->ApCfg.MBSSID[i].WscControl.bWscAutoTriggerDisable = bEn;
+						}
+						DBGPRINT(RT_DEBUG_TRACE, ("bWscAutoTriggerDisable=%d\n", bEn));
+					}
+
 		
 #endif /* WSC_AP_SUPPORT */
 
@@ -3705,7 +3816,7 @@ NDIS_STATUS	RTMPSetProfileParameters(
 					if (RTMPGetKeyParameter("McastPhyMode", tmpbuf, 32, pBuffer, TRUE))
 					{	
 						UCHAR PhyMode = simple_strtol(tmpbuf, 0, 10);
-									pAd->CommonCfg.MCastPhyMode.field.BW = pAd->CommonCfg.RegTransmitSetting.field.BW;
+						//pAd->CommonCfg.MCastPhyMode.field.BW = pAd->CommonCfg.RegTransmitSetting.field.BW;
 						switch (PhyMode)
 						{
 										case MCAST_DISABLE: /* disable*/
@@ -3720,16 +3831,22 @@ NDIS_STATUS	RTMPSetProfileParameters(
 
 										case MCAST_OFDM:	/* OFDM*/
 											pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_OFDM;
+								pAd->CommonCfg.MCastPhyMode.field.BW =  BW_20;
 								break;
 #ifdef DOT11_N_SUPPORT
 										case MCAST_HTMIX:	/* HTMIX*/
 											pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_HTMIX;
 								break;
 #endif /* DOT11_N_SUPPORT */									
+#ifdef DOT11_VHT_AC
+							case MCAST_VHT:	/* VHT */
+								pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_VHT;
+								break;
+#endif /* DOT11_VHT_AC */	
 
 							default:
-								DBGPRINT(RT_DEBUG_OFF, ("unknow Muticast PhyMode %d.\n", PhyMode));
-								DBGPRINT(RT_DEBUG_OFF, ("0:Disable 1:CCK, 2:OFDM, 3:HTMIX.\n"));
+								DBGPRINT(RT_DEBUG_OFF, ("Unknown Muticast PhyMode %d\n", PhyMode));
+								DBGPRINT(RT_DEBUG_OFF, ("0:Disable 1:CCK, 2:OFDM, 3:HTMIX, 4:VHT\n"));
 								break;
 						}
 					}
@@ -3752,7 +3869,7 @@ NDIS_STATUS	RTMPSetProfileParameters(
 
 							case MODE_OFDM:
 								if (Mcs > 7)
-									DBGPRINT(RT_DEBUG_OFF, ("MCS must in range from 0 to 7 for CCK Mode.\n"));
+									DBGPRINT(RT_DEBUG_OFF, ("MCS must in range from 0 to 7 for OFDM Mode.\n"));
 								else
 									pAd->CommonCfg.MCastPhyMode.field.MCS = Mcs;
 								break;
@@ -3858,6 +3975,60 @@ NDIS_STATUS	RTMPSetProfileParameters(
 
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef RTMP_RBUS_SUPPORT
+#ifdef VIDEO_TURBINE_SUPPORT 
+				if (RTMPGetKeyParameter("VideoTurbine", tmpbuf, 10, pBuffer, TRUE))
+				{
+					pAd->VideoTurbine.Enable = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+					DBGPRINT(RT_DEBUG_TRACE, ("Video Enable=%d\n", pAd->VideoTurbine.Enable));
+				}
+				if (RTMPGetKeyParameter("VideoClassifierEnable", tmpbuf, 10, pBuffer, TRUE))
+				{
+					pAd->VideoTurbine.ClassifierEnable = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+					DBGPRINT(RT_DEBUG_TRACE, ("Video ClassifierEnable=%d\n", pAd->VideoTurbine.ClassifierEnable));
+				}
+				if (RTMPGetKeyParameter("VideoHighTxMode", tmpbuf, 10, pBuffer, TRUE))
+				{
+					pAd->VideoTurbine.HighTxMode = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+					DBGPRINT(RT_DEBUG_TRACE, ("Video HighTxMode=%d\n", pAd->VideoTurbine.HighTxMode));
+				}
+				if (RTMPGetKeyParameter("VideoTxPwr", tmpbuf, 10, pBuffer, TRUE))
+				{
+					pAd->VideoTurbine.TxPwr = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+					DBGPRINT(RT_DEBUG_TRACE, ("Video TxPwr=%d\n", pAd->VideoTurbine.TxPwr));
+				}
+				if (RTMPGetKeyParameter("VideoMCSEnable", tmpbuf, 10, pBuffer, TRUE))
+				{
+					pAd->VideoTurbine.VideoMCSEnable = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+					DBGPRINT(RT_DEBUG_TRACE, ("Video VideoMCSEnable=%d\n", pAd->VideoTurbine.VideoMCSEnable));
+				}
+				if (RTMPGetKeyParameter("VideoMCS", tmpbuf, 10, pBuffer, TRUE))
+				{
+					pAd->VideoTurbine.VideoMCS = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+					DBGPRINT(RT_DEBUG_TRACE, ("Video VideoMCS=%d\n", pAd->VideoTurbine.VideoMCS));
+				}
+				if (RTMPGetKeyParameter("VideoTxBASize", tmpbuf, 10, pBuffer, TRUE))
+				{
+					pAd->VideoTurbine.TxBASize = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+					DBGPRINT(RT_DEBUG_TRACE, ("Video TxBASize=%d\n", pAd->VideoTurbine.TxBASize));
+				}
+				if (RTMPGetKeyParameter("VideoTxLifeTimeMode", tmpbuf, 10, pBuffer, TRUE))
+				{
+					pAd->VideoTurbine.TxLifeTimeMode = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+					DBGPRINT(RT_DEBUG_TRACE, ("Video TxLifeTimeMode=%d\n", pAd->VideoTurbine.TxLifeTimeMode));
+				}
+				if (RTMPGetKeyParameter("VideoTxLifeTime", tmpbuf, 10, pBuffer, TRUE))
+				{
+					pAd->VideoTurbine.TxLifeTime = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+					DBGPRINT(RT_DEBUG_TRACE, ("Video TxLifeTime=%d\n", pAd->VideoTurbine.TxLifeTime));
+				}
+				if (RTMPGetKeyParameter("VideoTxRetryLimit", tmpbuf, 10, pBuffer, TRUE))
+				{
+					pAd->VideoTurbine.TxRetryLimit = (UCHAR) simple_strtol(tmpbuf, 0, 10);
+					DBGPRINT(RT_DEBUG_TRACE, ("Video TxRetryLimit=%d\n", pAd->VideoTurbine.TxRetryLimit));
+				}
+#endif /* VIDEO_TURBINE_SUPPORT */
+#endif /* RTMP_RBUS_SUPPORT */
 
 #ifdef SINGLE_SKU
 				if(RTMPGetKeyParameter("AntGain", tmpbuf, 10, pBuffer, TRUE))
@@ -4430,6 +4601,9 @@ NDIS_STATUS	RTMPSetSingleSKUParameters(
 		return FALSE;
 
 	RtmpOSFSInfoChange(&osFSInfo, TRUE);
+
+	pAd->bOpenFileSuccess = FALSE;
+
 	/* open card information file */
 	srcf = RtmpOSFileOpen(sku_path, O_RDONLY, 0);
 	if (IS_FILE_OPEN_ERR(srcf)) {
@@ -4626,6 +4800,8 @@ NDIS_STATUS	RTMPSetSingleSKUParameters(
 			DBGPRINT(RT_DEBUG_TRACE,("%d ", ch->PwrVHT80[i]));
 		DBGPRINT(RT_DEBUG_TRACE,("\n"));
 	}
+
+	pAd->bOpenFileSuccess = TRUE;
 
 	/* close file */
 	retval = RtmpOSFileClose(srcf);

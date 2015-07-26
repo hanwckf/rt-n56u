@@ -42,7 +42,9 @@
 #ifdef AGS_SUPPORT
 #include "ags.h"
 #endif /* AGS_SUPPORT */
-
+#ifdef BAND_STEERING
+#include "band_steering_def.h"
+#endif /* BAND_STEERING */
 #ifdef CONFIG_FPGA_MODE
 #include "fpga/fpga_ctl.h"
 #endif
@@ -75,6 +77,9 @@
 
 #include "rt_os_net.h"
 
+#ifdef RT6352
+#include "rt_cal.h"
+#endif /* RT6352 */
 
 #ifdef UAPSD_SUPPORT
 #include "uapsd.h"
@@ -134,6 +139,11 @@
 #endif /* RALINK_QA */
 
 
+#ifdef RTMP_RBUS_SUPPORT
+#ifdef RT3XXX_ANTENNA_DIVERSITY_SUPPORT
+#include "ap_diversity.h"
+#endif /* RT3XXX_ANTENNA_DIVERSITY_SUPPORT */
+#endif /* RTMP_RBUS_SUPPORT */
 
 #ifdef WAPI_SUPPORT
 #include "wapi.h"
@@ -195,11 +205,20 @@
 
 
 
+#ifdef RTMP_RBUS_SUPPORT
+#ifdef VIDEO_TURBINE_SUPPORT
+#include "video.h"
+#endif /* VIDEO_TURBINE_SUPPORT */
+#endif /* RTMP_RBUS_SUPPORT */
 
 #ifdef WORKQUEUE_BH
 #include <linux/workqueue.h>
 #endif /* WORKQUEUE_BH / */
 
+
+#ifdef BAND_STEERING
+#include "band_steering.h"
+#endif /* BAND_STEERING */
 
 #ifdef TXBF_SUPPORT
 #include "rt_txbf.h"

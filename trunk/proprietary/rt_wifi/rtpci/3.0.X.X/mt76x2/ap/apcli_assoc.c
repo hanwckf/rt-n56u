@@ -879,6 +879,10 @@ static VOID ApCliPeerDisassocAction(
 #endif /* MAC_REPEATER_SUPPORT */
 		pCurrState = &pAd->ApCfg.ApCliTab[ifIndex].AssocCurrState;
 
+#ifdef MAC_REPEATER_SUPPORT
+	DBGPRINT(RT_DEBUG_WARN, (" (%s) ifIndex = %d, CliIdx = %d !!!\n", __FUNCTION__, ifIndex, CliIdx));
+#endif /* MAC_REPEATER_SUPPORT */
+
 	if(PeerDisassocSanity(pAd, Elem->Msg, Elem->MsgLen, Addr2, &Reason))
 	{
 		if (MAC_ADDR_EQUAL(pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.Bssid, Addr2))
@@ -886,17 +890,21 @@ static VOID ApCliPeerDisassocAction(
 			*pCurrState = APCLI_ASSOC_IDLE;
 
 #ifdef MAC_REPEATER_SUPPORT
-			ifIndex = (USHORT)(Elem->Priv);
-#endif /* MAC_REPEATER_SUPPORT */
-			MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_PEER_DISCONNECT_REQ, 0, NULL, ifIndex);
-#ifdef MAC_REPEATER_SUPPORT
-			if ((pAd->ApCfg.bMACRepeaterEn == TRUE) && (ifIndex >= 64))
+			if ((pAd->ApCfg.bMACRepeaterEn == TRUE) && (CliIdx != 0xFF))
 			{
-				RTMP_MLME_HANDLER(pAd);
-				ifIndex = ((ifIndex - 64) / 16);
+#ifdef DOT11_N_SUPPORT
+				/* free resources of BA*/
+				BASessionTearDownALL(pAd, pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].MacTabWCID);
+#endif /* DOT11_N_SUPPORT */
+				RTMPRemoveRepeaterDisconnectEntry(pAd, ifIndex, CliIdx);
 				RTMPRemoveRepeaterEntry(pAd, ifIndex, CliIdx);
 			}
+			else
 #endif /* MAC_REPEATER_SUPPORT */
+			{
+				MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_PEER_DISCONNECT_REQ, 0, NULL, ifIndex);
+				RTMP_MLME_HANDLER(pAd);
+			}
         }
     }
     else

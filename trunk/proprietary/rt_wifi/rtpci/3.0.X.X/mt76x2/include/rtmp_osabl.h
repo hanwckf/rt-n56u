@@ -34,7 +34,9 @@
 #endif /* OS_ABL_OS_USB_SUPPORT */
 
 #ifdef OS_ABL_OS_RBUS_SUPPORT
+#ifndef RTMP_RBUS_SUPPORT
 #define RTMP_RBUS_SUPPORT
+#endif /* RTMP_RBUS_SUPPORT */
 #endif /* OS_ABL_OS_RBUS_SUPPORT */
 
 #ifdef OS_ABL_OS_AP_SUPPORT

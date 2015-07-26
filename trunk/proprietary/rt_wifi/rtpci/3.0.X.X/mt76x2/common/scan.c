@@ -84,7 +84,11 @@ static INT scan_ch_restore(RTMP_ADAPTER *pAd, UCHAR OpMode)
 	{
 #ifdef APCLI_SUPPORT
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
-			if (pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+			if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+#ifdef AP_PARTIAL_SCAN_SUPPORT
+				&& (pAd->ApCfg.bPartialScanning == FALSE)
+#endif /* AP_PARTIAL_SCAN_SUPPORT */
+				)
 			{
 				if (!ApCliAutoConnectExec(pAd))
 				{
@@ -95,6 +99,14 @@ static INT scan_ch_restore(RTMP_ADAPTER *pAd, UCHAR OpMode)
 #endif /* APCLI_SUPPORT */
 		pAd->Mlme.ApSyncMachine.CurrState = AP_SYNC_IDLE;
 		RTMPResumeMsduTransmission(pAd);
+
+#ifdef CON_WPS
+		if (pAd->conWscStatus != CON_WPS_STATUS_DISABLED)
+		{
+			MlmeEnqueue(pAd, AP_SYNC_STATE_MACHINE, APMT2_MLME_SCAN_COMPLETE, 0, NULL,0 );
+			RTMP_MLME_HANDLER(pAd);
+		}
+#endif /* CON_WPS*/
 
 		/* iwpriv set auto channel selection*/
 		/* scanned all channels*/
@@ -111,7 +123,8 @@ static INT scan_ch_restore(RTMP_ADAPTER *pAd, UCHAR OpMode)
 
 		if (((pAd->CommonCfg.Channel > 14) &&
 			(pAd->CommonCfg.bIEEE80211H == TRUE) &&
-			RadarChannelCheck(pAd, pAd->CommonCfg.Channel)))
+			RadarChannelCheck(pAd, pAd->CommonCfg.Channel)) &&
+			pAd->Dot11_H.RDMode != RD_SWITCHING_MODE)
 		{
 			if (pAd->Dot11_H.InServiceMonitorCount)
 			{
@@ -181,12 +194,14 @@ static INT scan_active(RTMP_ADAPTER *pAd, UCHAR OpMode, UCHAR ScanType)
 	
 	/* There is no need to send broadcast probe request if active scan is in effect.*/
 	SsidLen = 0;
+#ifndef APCLI_CONNECTION_TRIAL
 	if ((ScanType == SCAN_ACTIVE) || (ScanType == FAST_SCAN_ACTIVE)
 #ifdef WSC_STA_SUPPORT
 		|| ((ScanType == SCAN_WSC_ACTIVE) && (OpMode == OPMODE_STA))
 #endif /* WSC_STA_SUPPORT */
 		)
 		SsidLen = pAd->MlmeAux.SsidLen;
+#endif /* APCLI_CONNECTION_TRIAL */
 
 	{
 #ifdef CONFIG_AP_SUPPORT
@@ -458,6 +473,25 @@ VOID ScanNextChannel(RTMP_ADAPTER *pAd, UCHAR OpMode)
 		AsicSwitchChannel(pAd, pAd->MlmeAux.Channel, TRUE);
 		AsicLockChannel(pAd, pAd->MlmeAux.Channel);
 
+		{
+			BOOLEAN bScanPassive = FALSE;
+			if (pAd->MlmeAux.Channel > 14)
+			{
+				if ((pAd->CommonCfg.bIEEE80211H == 1)
+					&& RadarChannelCheck(pAd, pAd->MlmeAux.Channel))
+					bScanPassive = TRUE;
+			}
+#ifdef CARRIER_DETECTION_SUPPORT
+			if (pAd->CommonCfg.CarrierDetect.Enable == TRUE)
+				bScanPassive = TRUE;
+#endif /* CARRIER_DETECTION_SUPPORT */ 
+
+			if (bScanPassive)
+			{
+				ScanType = SCAN_PASSIVE;
+				ScanTimeIn5gChannel = MIN_CHANNEL_TIME;
+			}
+		}
 
 		/* Check if channel if passive scan under current regulatory domain */
 		if (CHAN_PropertyCheck(pAd, pAd->MlmeAux.Channel, CHANNEL_PASSIVE_SCAN) == TRUE)
@@ -499,6 +533,40 @@ VOID ScanNextChannel(RTMP_ADAPTER *pAd, UCHAR OpMode)
 		{
 			if (scan_active(pAd, OpMode, ScanType) == FALSE)
 				return;
+
+#ifdef CONFIG_AP_SUPPORT
+#ifdef APCLI_SUPPORT
+#ifdef AP_PARTIAL_SCAN_SUPPORT
+			if (pAd->ApCfg.bPartialScanning == TRUE)
+			{
+				/* Enhance Connectivity & for Hidden Ssid Scanning*/
+				CHAR desiredSsid[MAX_LEN_OF_SSID], backSsid[MAX_LEN_OF_SSID];
+				UCHAR desiredSsidLen, backSsidLen;
+
+				desiredSsidLen= pAd->ApCfg.ApCliTab[0].CfgSsidLen;
+
+				if (desiredSsidLen  > 0)
+				{
+					//printk("=====================>specific the %s scanning\n", pAd->ApCfg.ApCliTab[0].CfgSsid);
+					/* 1. backup the original MlmeAux */
+					backSsidLen = pAd->MlmeAux.SsidLen;
+					NdisCopyMemory(backSsid, pAd->MlmeAux.Ssid, backSsidLen);
+					
+					/* 2. fill the desried ssid into SM */
+					pAd->MlmeAux.SsidLen = desiredSsidLen;
+					NdisCopyMemory(pAd->MlmeAux.Ssid, pAd->ApCfg.ApCliTab[0].CfgSsid, desiredSsidLen);
+
+					/* 3. scan action */
+					scan_active(pAd, OpMode, ScanType);
+			
+					/* 4. restore to MlmeAux */
+					pAd->MlmeAux.SsidLen = backSsidLen;
+					NdisCopyMemory(pAd->MlmeAux.Ssid, backSsid, backSsidLen);
+				}
+			}
+#endif /* AP_PARTIAL_SCAN_SUPPORT */
+#endif /* APCLI_SUPPORT */
+#endif /* CONFIG_AP_SUPPORT */
 		}
 
 		/* For SCAN_CISCO_PASSIVE, do nothing and silently wait for beacon or other probe reponse*/

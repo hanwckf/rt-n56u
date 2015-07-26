@@ -191,10 +191,17 @@ VOID RtmpMgmtTaskExit(
 
 static inline void rt2860_int_enable(PRTMP_ADAPTER pAd, unsigned int mode)
 {
-	u32 regValue;
+	u32 regValue = 0;
 
 	pAd->int_disable_mask &= ~(mode);
+#ifdef RLT_MAC
+	if (pAd->chipCap.hif_type == HIF_RLT)
 	regValue = pAd->int_enable_reg & ~(pAd->int_disable_mask | RLT_INT_AC0_DLY);
+#endif /* RLT_MAC */
+#ifdef RTMP_MAC
+	if (pAd->chipCap.hif_type == HIF_RTMP)
+		regValue = pAd->int_enable_reg & ~(pAd->int_disable_mask);
+#endif /* RTMP_MAC */
 	RTMP_IO_WRITE32(pAd, INT_MASK_CSR, regValue);
 #ifdef RTMP_MAC_PCI
 	//RTMP_IO_READ32(pAd, INT_MASK_CSR, &regValue); /* Push write command to take effect quickly (i.e. flush the write data) */
@@ -711,8 +718,14 @@ static void ac0_dma_done_tasklet(unsigned long data)
 	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS | fRTMP_ADAPTER_NIC_NOT_EXIST))
 	{
 		RTMP_INT_LOCK(&pAd->LockInterrupt, flags);
+#ifdef RLT_MAC
+		if (pAd->chipCap.hif_type == HIF_RLT)
 		pAd->int_disable_mask &= ~(INT_TX_DLY); 
-		//pAd->int_disable_mask &= ~(INT_AC0_DLY); 
+#endif /* RLT_MAC*/
+#ifdef RTMP_MAC
+		if (pAd->chipCap.hif_type == HIF_RTMP)
+			pAd->int_disable_mask &= ~(RTMP_INT_AC0_DMA_DONE);
+#endif /* RTMP_MAC */
 		RTMP_INT_UNLOCK(&pAd->LockInterrupt, flags);
 		return;
 	}
@@ -720,24 +733,51 @@ static void ac0_dma_done_tasklet(unsigned long data)
 	pObj = (POS_COOKIE) pAd->OS_Cookie;
 
 	RTMP_INT_LOCK(&pAd->LockInterrupt, flags);
-	//pAd->int_pending &= ~INT_AC0_DLY;
+#ifdef RLT_MAC
+	if (pAd->chipCap.hif_type == HIF_RLT)
 	pAd->int_pending &= ~INT_TX_DLY;
+#endif /* RLT_MAC*/
+#ifdef RTMP_MAC
+	if (pAd->chipCap.hif_type == HIF_RTMP)
+		pAd->int_pending &= ~RTMP_INT_AC0_DMA_DONE;
+#endif /* RTMP_MAC */
 	RTMP_INT_UNLOCK(&pAd->LockInterrupt, flags);
 
 	bReschedule = RTMPHandleTxRingDmaDoneInterrupt(pAd, TX_AC0_DONE);
 	
 	RTMP_INT_LOCK(&pAd->LockInterrupt, flags);
 	/* double check to avoid lose of interrupts */
-	//if ((pAd->int_pending & INT_AC0_DLY) || bReschedule)
+#ifdef RLT_MAC
+	if (pAd->chipCap.hif_type == HIF_RLT)
+	{
 	if ((pAd->int_pending & INT_TX_DLY) || bReschedule)
 	{
 		RTMP_OS_TASKLET_SCHE(&pObj->ac0_dma_done_task);
 		RTMP_INT_UNLOCK(&pAd->LockInterrupt, flags);    
 		return;
 	}
+	}
+#endif /* RLT_MAC*/
+#ifdef RTMP_MAC
+	if (pAd->chipCap.hif_type == HIF_RTMP)
+	{
+		if ((pAd->int_pending & RTMP_INT_AC0_DMA_DONE) || bReschedule)
+		{
+			RTMP_OS_TASKLET_SCHE(&pObj->ac0_dma_done_task);
+			RTMP_INT_UNLOCK(&pAd->LockInterrupt, flags);	
+			return;
+		}
+	}
+#endif /* RTMP_MAC */
 
+#ifdef RLT_MAC
+	if (pAd->chipCap.hif_type == HIF_RLT)
 	rt2860_int_enable(pAd, INT_TX_DLY);
-	//rt2860_int_enable(pAd, INT_AC0_DLY);
+#endif /* RLT_MAC*/
+#ifdef RTMP_MAC
+	if (pAd->chipCap.hif_type == HIF_RTMP)
+		rt2860_int_enable(pAd, RTMP_INT_AC0_DMA_DONE);
+#endif /* RTMP_MAC */
 	RTMP_INT_UNLOCK(&pAd->LockInterrupt, flags);    
 }
 
@@ -1089,6 +1129,9 @@ redo:
 	}
 
 	//if (IntSource & INT_TX_DLY) {
+#ifdef RLT_MAC
+	if (pAd->chipCap.hif_type == HIF_RLT)
+	{
 	if ( (IntSource & INT_TX_DLY) && (IntSource & INT_AC0_DLY) ) {
 		RTMP_INT_LOCK(&pAd->LockInterrupt, flags);
 		pAd->int_pending |= INT_TX_DLY;
@@ -1098,6 +1141,22 @@ redo:
 		
 		RTMP_INT_UNLOCK(&pAd->LockInterrupt, flags);
 	}
+	}
+#endif /* RLT_MAC*/
+#ifdef RTMP_MAC
+	if (pAd->chipCap.hif_type == HIF_RTMP)
+	{
+		if ( (IntSource & RTMP_INT_AC0_DLY) && (IntSource & INT_AC0_DLY) ) {
+			RTMP_INT_LOCK(&pAd->LockInterrupt, flags);
+			pAd->int_pending |= RTMP_INT_AC0_DLY;
+
+			if ((pAd->int_disable_mask & RTMP_INT_AC0_DLY) == 0) 
+				rt2860_int_disable(pAd, RTMP_INT_AC0_DLY);
+
+			RTMP_INT_UNLOCK(&pAd->LockInterrupt, flags);
+		}
+	}
+#endif /* RTMP_MAC */
 
 	if (IntSource & INT_AC0_DLY)
 	{

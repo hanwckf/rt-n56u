@@ -155,6 +155,10 @@ int rt28xx_init(VOID *pAdSrc, PSTRING pDefaultMac, PSTRING pHostName)
 	RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_IN_USE);
 
 	/* initialize MLME*/
+#ifdef RT6352
+	if (IS_RT6352(pAd))
+		pAd->bCalibrationDone = FALSE;
+#endif /* RT6352 */
 	
 	Status = RtmpMgmtTaskInit(pAd);
 	if (Status != NDIS_STATUS_SUCCESS)
@@ -270,6 +274,96 @@ int rt28xx_init(VOID *pAdSrc, PSTRING pDefaultMac, PSTRING pHostName)
 		Do necessary calibration after ASIC initialized
 		this's chip variant and may different for different chips
 	*/
+#ifdef RT6352
+	if (IS_RT6352(pAd))
+	{
+		RtmpKickOutHwNullFrame(pAd, TRUE, FALSE);
+
+#if defined(RT6352_EP_SUPPORT) || defined(RT6352_EL_SUPPORT)
+		{
+			ULONG SysRegValue;
+
+			RTMP_SYS_IO_READ32(0xb0000060, &SysRegValue);
+			if ((SysRegValue & 0x100000) == 0x0)
+			{
+				SysRegValue |= 0x100000;
+				RTMP_SYS_IO_WRITE32(0xb0000060, SysRegValue);
+				DBGPRINT(RT_DEBUG_ERROR,("Change as GPIO Mode(0x%x)\n", SysRegValue));
+			}
+		}
+#endif /* defined(RT6352_EP_SUPPORT) || defined(RT6352_EL_SUPPORT) */
+
+		/* Do R-Calibration */
+		R_Calibration(pAd);
+
+#ifdef RTMP_TEMPERATURE_CALIBRATION
+		/* Temperature Init */
+		RT6352_Temperature_Init(pAd);		
+		RT6352_TemperatureCalibration(pAd);
+#endif /* RTMP_TEMPERATURE_CALIBRATION */
+
+#ifdef RTMP_TEMPERATURE_COMPENSATION
+		/*
+			read out tempature reference value (0x80 ~ 0x7F)
+			TssiPlusBoundaryG [7] [6] [5] [4] [3] [2] [1] [0] (smaller) +
+			TssiMinusBoundaryG[0] [1] [2] [3] [4] [5] [6] [7] (larger)
+		*/
+		RT6352_EEPROM_TSSI_24G_READ(pAd);
+		/* 
+			pAd->TssiCalibratedOffset: 
+			reference temperature(e2p[D1h])
+		*/				
+		/* adjust the boundary table by pAd->TssiCalibratedOffset */
+		RT6352_TssiTableAdjust(pAd);
+
+		/* ATE temperature(e2p[77h]) */
+		RT6352_TssiMpAdjust(pAd);
+
+		DBGPRINT(RT_DEBUG_OFF,("E2PROM: G Tssi[-7 .. +7] = %d %d %d %d %d %d %d - %d - %d %d %d %d %d %d %d, offset=%d, tuning=%d\n",
+			pAd->TssiMinusBoundaryG[7], pAd->TssiMinusBoundaryG[6], pAd->TssiMinusBoundaryG[5],
+			pAd->TssiMinusBoundaryG[4], pAd->TssiMinusBoundaryG[3], pAd->TssiMinusBoundaryG[2], pAd->TssiMinusBoundaryG[1],
+			pAd->TssiRefG,
+			pAd->TssiPlusBoundaryG[1], pAd->TssiPlusBoundaryG[2], pAd->TssiPlusBoundaryG[3], pAd->TssiPlusBoundaryG[4],
+			pAd->TssiPlusBoundaryG[5], pAd->TssiPlusBoundaryG[6], pAd->TssiPlusBoundaryG[7],
+			pAd->TssiCalibratedOffset, pAd->bAutoTxAgcG));
+#endif /* RTMP_TEMPERATURE_COMPENSATION */
+
+		AsicSwitchChannel(pAd, pAd->CommonCfg.Channel, TRUE);
+		AsicLockChannel(pAd, pAd->CommonCfg.Channel);
+
+		/* RF Self TX DC Calibration */
+		RF_SELF_TXDC_CAL(pAd);
+
+		/* Rx DCOC Calibration */
+		RxDCOC_Calibration(pAd);
+
+		/* BandWidth Filter Calibration */
+		BW_Filter_Calibration(pAd,TRUE);
+		BW_Filter_Calibration(pAd,FALSE);
+
+		/* Do LOFT and IQ Calibration */
+		LOFT_IQ_Calibration(pAd);
+
+		/* DPD_Calibration */
+#ifdef RT6352_EP_SUPPORT
+		if (pAd->bExtPA == FALSE)
+#endif /* RT6352_EP_SUPPORT */
+		{
+			DoDPDCalibration(pAd);
+			pAd->DoDPDCurrTemperature = 0x7FFFFFFF;
+		}
+
+		/* Rx DCOC Calibration */
+		RxDCOC_Calibration(pAd);
+
+		/* Do RXIQ Calibration */
+		RXIQ_Calibration(pAd);
+
+#if defined(RT6352_EP_SUPPORT) || defined(RT6352_EL_SUPPORT)
+		RT6352_Init_ExtPA_ExtLNA(pAd, FALSE);
+#endif /* defined(RT6352_EP_SUPPORT) || defined(RT6352_EL_SUPPORT) */
+	}
+#endif /* RT6352 */
 
 #ifdef RALINK_ATE
 	if (ATEInit(pAd) != NDIS_STATUS_SUCCESS)
@@ -285,6 +379,10 @@ int rt28xx_init(VOID *pAdSrc, PSTRING pDefaultMac, PSTRING pHostName)
 	RTMP_CHIP_ASIC_TSSI_TABLE_INIT(pAd);
 #endif /* RTMP_INTERNAL_TX_ALC */
 
+#ifdef RT6352
+	if (IS_RT6352(pAd))
+		InitRfPaModeTable(pAd);
+#endif /* RT6352 */
 
 #ifdef RT8592
 	// TODO: shiang-6590, actually, this operation shall be move to bbp_init
@@ -342,6 +440,12 @@ int rt28xx_init(VOID *pAdSrc, PSTRING pDefaultMac, PSTRING pHostName)
 
 
 #ifdef RTMP_INTERNAL_TX_ALC
+#ifdef RT6352
+	if (IS_RT6352(pAd) && (pAd->TxPowerCtrl.bInternalTxALC == TRUE))
+	{
+		RT635xTssiDcCalibration(pAd);
+	}
+#endif /* RT6352 */
 #endif /* RTMP_INTERNAL_TX_ALC */
 
 	/*
@@ -437,6 +541,19 @@ int rt28xx_init(VOID *pAdSrc, PSTRING pDefaultMac, PSTRING pHostName)
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef RT6352
+		if (IS_RT6352(pAd))
+		{
+#ifdef DYNAMIC_VGA_SUPPORT
+			if (pAd->CommonCfg.lna_vga_ctl.bDyncVgaEnable == TRUE)
+			{
+				rt6352_dynamic_vga_enable(pAd);
+			}
+#endif /* DYNAMIC_VGA_SUPPORT */
+
+			pAd->bCalibrationDone = TRUE;
+		}
+#endif /* RT6352 */
 
 	}
 
@@ -455,6 +572,18 @@ int rt28xx_init(VOID *pAdSrc, PSTRING pDefaultMac, PSTRING pHostName)
 	RTMP_MATOpsInit(pAd);
 #endif /* MAT_SUPPORT */
 
+#ifdef RTMP_RBUS_SUPPORT
+	if (pAd->infType == RTMP_DEV_INF_RBUS)
+	{
+#ifdef VIDEO_TURBINE_SUPPORT
+		VideoTurbineDynamicTune(pAd);
+#endif /* VIDEO_TURBINE_SUPPORT */
+
+#ifdef RT3XXX_ANTENNA_DIVERSITY_SUPPORT
+		RT3XXX_AntDiversity_Init(pAd);
+#endif /* RT3XXX_ANTENNA_DIVERSITY_SUPPORT */
+	}
+#endif /* RTMP_RBUS_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -471,9 +600,10 @@ int rt28xx_init(VOID *pAdSrc, PSTRING pDefaultMac, PSTRING pHostName)
 
 
 	/* auto-fall back settings */
-#ifdef RANGE_EXTEND
+#ifdef RT6352
+	if (IS_RT6352(pAd))
 	RTMP_IO_WRITE32(pAd, HT_FBK_CFG1, 0xedcba980);
-#endif // RANGE_EXTEND //
+#endif /* RT6352 */
 #ifdef DOT11N_SS3_SUPPORT
 	if (pAd->CommonCfg.TxStream >= 3)
 	{
@@ -573,7 +703,11 @@ err0:
 VOID RTMPDrvOpen(VOID *pAdSrc)
 {
 	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)pAdSrc;
-
+#ifdef BTCOEX_CONCURRENT
+	BT_COEX_VAL btcoex_val;
+	UINT32 val;
+	USHORT ee_tmp;
+#endif
 	RTMP_CLEAR_PSFLAG(pAd, fRTMP_PS_MCU_SLEEP);
 
 #ifdef RTMP_MAC
@@ -662,6 +796,32 @@ VOID RTMPDrvOpen(VOID *pAdSrc)
 	/* WSC hardware push button function 0811 */
 	WSC_HDR_BTN_Init(pAd);
 #endif /* WSC_INCLUDED */
+
+#ifdef CONFIG_AP_SUPPORT
+#ifdef MULTI_CLIENT_SUPPORT
+	pAd->CommonCfg.txRetryCfg = 0;
+
+	{
+		UINT32	TxRtyCfg;
+
+		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
+		pAd->CommonCfg.txRetryCfg = TxRtyCfg;
+	}
+#endif /* MULTI_CLIENT_SUPPORT */
+#endif /* CONFIG_AP_SUPPORT */
+
+#ifdef BTCOEX_CONCURRENT
+	RT28xx_EEPROM_READ16(pAd, 0x22, ee_tmp);
+	btcoex_val.eeprom23=(ee_tmp & 0xFF00)>>8;
+	
+	RT28xx_EEPROM_READ16(pAd, 0x24, ee_tmp);
+	btcoex_val.eeprom24=(ee_tmp & 0x00FF);	
+	btcoex_val.eeprom25=(ee_tmp & 0xFF00)>>8;
+
+	NdisCopyMemory(&val, &btcoex_val, sizeof(UINT32));
+	printk("val = 0x%x\n",val);
+	andes_fun_set(pAd, 11, val);
+#endif
 }
 
 
@@ -673,6 +833,16 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 #ifdef LED_CONTROL_SUPPORT
 	RTMPExitLEDMode(pAd);
 #endif // LED_CONTROL_SUPPORT
+
+#ifdef RT_CFG80211_SUPPORT
+#ifdef CONFIG_AP_SUPPORT
+		if (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP && RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_START_UP))
+		{
+			CFG80211DRV_DisableApInterface(pAd);
+			pAd->cfg80211_ctrl.isCfgInApMode = RT_CMD_80211_IFTYPE_STATION;			
+		}
+#endif /* CONFIG_AP_SUPPORT */	
+#endif/*RT_CFG80211_SUPPORT*/
 
 	RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_MCU_SEND_IN_BAND_CMD);
 #ifdef BB_SOC
@@ -690,6 +860,12 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 #endif /* BG_FT_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef RTMP_RBUS_SUPPORT
+#ifdef RT3XXX_ANTENNA_DIVERSITY_SUPPORT
+	if (pAd->infType == RTMP_DEV_INF_RBUS)
+	RT3XXX_AntDiversity_Fini(pAd);
+#endif /* RT3XXX_ANTENNA_DIVERSITY_SUPPORT */
+#endif /* RTMP_RBUS_SUPPORT */
 
 
 #if ((defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT)) && defined(WOW_IFDOWN_SUPPORT)

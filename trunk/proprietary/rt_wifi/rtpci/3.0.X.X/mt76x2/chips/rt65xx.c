@@ -266,7 +266,7 @@ void MT76xx_PciMlmeRadioOn(RTMP_ADAPTER *pAd)
    	RTMPRingCleanUp(pAd, QID_RX);
 #ifdef CONFIG_ANDES_SUPPORT
 	RTMPRingCleanUp(pAd, QID_CTRL); 
-#endif
+#endif /* CONFIG_ANDES_SUPPORT */
 	
 	RTMP_ASIC_INTERRUPT_ENABLE(pAd);
 	

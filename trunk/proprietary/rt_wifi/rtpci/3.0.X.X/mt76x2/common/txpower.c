@@ -471,6 +471,36 @@ VOID AsicGetAutoAgcOffsetForTemperatureSensor(
 #define MDSM_BBP_R1_STATIC_TX_POWER_CONTROL_MASK		0x03
 
 
+#ifdef RT6352
+VOID InitRfPaModeTable(
+	IN PRTMP_ADAPTER	pAd)
+{
+	UINT32 mac_value;
+	UCHAR bit, pa_value;
+
+	RTMP_IO_READ32(pAd, RF_PA_MODE_CFG0, &mac_value);
+	
+	for (bit = 0; bit < 8; bit += 2) /* CCK */
+	{
+		pa_value = (UCHAR)((mac_value >> bit) & (0x03));
+		pAd->rf_pa_mode_over_cck[bit/2] = pa_value;
+	}
+
+	for (bit = 8; bit < 24; bit += 2) /* OFDM */
+	{
+		pa_value = (UCHAR)((mac_value >> bit) & (0x03));
+		pAd->rf_pa_mode_over_ofdm[(bit - 8)/2] = pa_value;
+	}
+		
+	RTMP_IO_READ32(pAd, RF_PA_MODE_CFG1, &mac_value);
+	
+	for (bit = 0; bit < 32; bit += 2) /* HT */
+	{
+		pa_value = (UCHAR)((mac_value >> bit) & (0x03));
+		pAd->rf_pa_mode_over_ht[bit/2] = pa_value;
+	}
+}
+#endif /* RT6352 */
 
 
 VOID AsicGetTxPowerOffset(RTMP_ADAPTER *pAd, ULONG *TxPwr)
@@ -1267,6 +1297,12 @@ VOID RTMPReadTxPwrPerRate(RTMP_ADAPTER *pAd)
 #endif
 
 
+#ifdef RT6352
+	if (IS_RT6352(pAd)) {
+		RT6352_RTMPReadTxPwrPerRate(pAd);
+		return;
+	}
+#endif /* RT6352 */
 
 
 	/* For default one, go here!! */

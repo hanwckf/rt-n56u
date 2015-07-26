@@ -28,6 +28,12 @@
 
 #include	"rt_config.h"
 
+#ifdef BTCOEX_CONCURRENT
+extern int CoexCenctralChannel;
+extern int CoexChannel;
+extern int CoexChannelBw;
+#endif
+
 #ifdef RTMP_PCI_SUPPORT
 int andes_pci_load_rom_patch(RTMP_ADAPTER *ad)
 {
@@ -888,7 +894,14 @@ void andes_rx_process_cmd_msg(RTMP_ADAPTER *ad, struct cmd_msg *rx_msg)
 		DBGPRINT(RT_DEBUG_ERROR, ("packet is not command response/self event\n"));
 		return;
 	} 
-
+#ifdef DBG
+	#define LOG2HOST 3
+	if (rx_info->evt_type == LOG2HOST)
+	{
+	    PUCHAR pRxRspEvtPayload = GET_OS_PKT_DATAPTR(net_pkt) + sizeof(RXFCE_INFO_CMD);
+	    DBGPRINT(RT_DEBUG_WARN, ("[FW]%s\n", pRxRspEvtPayload));
+	}
+#endif
 	if (rx_info->self_gen) {
 		/* if have callback function */
 		RTEnqueueInternalCmd(ad, CMDTHREAD_RESPONSE_EVENT_CALLBACK, 
@@ -945,7 +958,7 @@ void andes_rx_process_cmd_msg(RTMP_ADAPTER *ad, struct cmd_msg *rx_msg)
 }
 
 #ifdef RTMP_PCI_SUPPORT
-void pci_rx_cmd_msg_complete(RTMP_ADAPTER *ad, RXFCE_INFO *fce_info)
+void pci_rx_cmd_msg_complete(RTMP_ADAPTER *ad, RXFCE_INFO *fce_info, PUCHAR payload)
 {
 	struct cmd_msg *msg;
 	struct MCU_CTRL *ctl = &ad->MCUCtrl;
@@ -960,8 +973,12 @@ void pci_rx_cmd_msg_complete(RTMP_ADAPTER *ad, RXFCE_INFO *fce_info)
 	
 	if (!msg)
 		return;
-
+#ifdef MT76x2
+	andes_append_cmd_msg(msg, (char *)fce_info, sizeof(*fce_info));
+	andes_append_cmd_msg(msg, (char *)payload, fce_info->pkt_len);
+#else
 	andes_append_cmd_msg(msg, (char *)fce_info, sizeof(*fce_info) + fce_info->pkt_len);
+#endif /* MT76x2 */
 	
 	andes_rx_process_cmd_msg(ad, msg);
 
@@ -2133,7 +2150,11 @@ int andes_fun_set(RTMP_ADAPTER *ad, u32 fun_id, u32 param)
 		goto error;
 	}
 
-	if (fun_id != Q_SELECT)
+	if (fun_id != Q_SELECT
+#ifdef BTCOEX_CONCURRENT
+		&& fun_id != 11
+#endif
+		)
 		andes_init_cmd_msg(msg, CMD_FUN_SET_OP, TRUE, 0, TRUE, TRUE, 0, NULL, NULL);
 	else 
 		andes_init_cmd_msg(msg, CMD_FUN_SET_OP, FALSE, 0, FALSE, FALSE, 0, NULL, NULL);
@@ -2390,7 +2411,7 @@ int andes_dynamic_vga(RTMP_ADAPTER *ad, UINT8 channel, BOOLEAN mode, BOOLEAN ext
 	DBGPRINT(RT_DEBUG_INFO, ("%s:channel(%d), ap/sta mode(%d), extension(%d), rssi(%d), false cca count(%d)\n", 
 		__FUNCTION__, channel, mode, ext, rssi, false_cca));
 	
-	msg = andes_alloc_cmd_msg(ad, 8);
+	msg = andes_alloc_cmd_msg(ad, 12);
 
 	if (!msg) {
 		ret = NDIS_STATUS_RESOURCES;
@@ -2489,3 +2510,19 @@ void andes_pci_fw_init(RTMP_ADAPTER *ad)
 #endif /* RTMP_PCI_SUPPORT */
 
 
+#ifdef BTCOEX_CONCURRENT
+void MT7662ReceCoexFromOtherCHip(
+	IN UCHAR channel,
+	IN UCHAR centralchannel,
+	IN UCHAR channel_bw
+	)
+{	
+	CoexChannel = channel;
+	CoexCenctralChannel=centralchannel;
+	CoexChannelBw=channel_bw;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("-->MT7662ReceCoexFromOtherCHip channel=%d centralchannel=%d channel_bw=%d\n",CoexChannel, CoexCenctralChannel, CoexChannelBw));
+	
+}
+EXPORT_SYMBOL(MT7662ReceCoexFromOtherCHip);
+#endif

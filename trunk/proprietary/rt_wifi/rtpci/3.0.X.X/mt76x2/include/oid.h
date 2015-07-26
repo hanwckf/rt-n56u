@@ -229,6 +229,9 @@
 #define RT_OID_802_11_QUERY_TXBF_TABLE				0x067C
 #endif
 
+#ifdef RTMP_RBUS_SUPPORT
+#define OID_802_11_QUERY_WirelessMode				0x0718
+#endif /* RTMP_RBUS_SUPPORT */
 
 #ifdef HOSTAPD_SUPPORT
 #define SIOCSIWGENIE	0x8B30
@@ -925,6 +928,10 @@ typedef struct _NDIS_802_11_CAPABILITY {
 #ifdef WSC_NFC_SUPPORT
 #define RT_OID_NFC_STATUS							0x0930
 #endif /* WSC_NFC_SUPPORT */
+
+#ifdef CON_WPS
+#define RT_OID_WSC_SET_CON_WPS_STOP                 0x0764
+#endif /* CON_WPS */
 
 
 

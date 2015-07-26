@@ -33,7 +33,8 @@ static RTMP_REG_PAIR mt76x2_mac_cr_table[] = {
 	{PIFS_TX_CFG, 0x00060FFF},
 	{RX_FILTR_CFG, 0x00015F97},
 	{LEGACY_BASIC_RATE, 0x0000017F},
-	{HT_BASIC_RATE, 0x00008003},
+	{HT_BASIC_RATE, 0x00004003},
+	{HT_CTRL_CFG, 0x000001FF},
 	{0x150C, 0x00000002}, /* Enable TX length > 4095 bytes */
 	{0x1608, 0x00000002},
 	{0xa44,	0x0},
@@ -70,6 +71,7 @@ static RTMP_REG_PAIR mt76x2_mac_cr_table[] = {
 	{0x1478, 0x00000004},
 	{0x1384, 0x00001818},
 	{0x1358, 0xEDCBA980},
+	{0x1648, 0x00830083}, /* default use 2 stream to Tx HW auto gened packets */
 };
 static UCHAR mt76x2_mac_cr_nums = (sizeof(mt76x2_mac_cr_table) / sizeof(RTMP_REG_PAIR));
 
@@ -81,7 +83,6 @@ RTMP_REG_PAIR mt76x2_mac_g_band_cr_table[] = {
 	{TX_ALC_CFG_2, 0x35160A00},
 	{TX_ALC_CFG_3, 0x35160A06},
 	{TX_ALC_CFG_4, 0x00000606},
-	{0x1648, 0x00000000},
 };
 UCHAR mt76x2_mac_g_band_cr_nums = (sizeof(mt76x2_mac_g_band_cr_table) / sizeof(RTMP_REG_PAIR));
 
@@ -127,7 +128,6 @@ RTMP_REG_PAIR mt76x2_mac_a_band_internal_pa_cr_table[] = {
 	{TX0_BB_GAIN_ATTEN, 0x00000000},
 	{PAMODE_PWR_ADJ0, 0x00000000},
 	{PAMODE_PWR_ADJ1, 0x00000000},
-	{0x1648, 0x00000000},
 };
 UCHAR mt76x2_mac_a_band_internal_pa_cr_nums = (sizeof(mt76x2_mac_a_band_internal_pa_cr_table) / sizeof(RTMP_REG_PAIR));
 
@@ -137,7 +137,6 @@ RTMP_REG_PAIR mt76x2_mac_a_band_external_pa_cr_table[] = {
 	{TX0_BB_GAIN_ATTEN, 0x00001818},
 	{PAMODE_PWR_ADJ0, 0x04000000},
 	{PAMODE_PWR_ADJ1, 0x04000000},
-	{0x1648, 0x00830083},
 };
 UCHAR mt76x2_mac_a_band_external_pa_cr_nums = (sizeof(mt76x2_mac_a_band_external_pa_cr_table) / sizeof(RTMP_REG_PAIR));
 
@@ -640,7 +639,7 @@ UCHAR get_chl_grp(u8 channel)
 	return chl_grp;
 }
 
-static UCHAR get_low_mid_hi_index(u8 channel)
+UCHAR get_low_mid_hi_index(u8 channel)
 {
 	UCHAR index = G_BAND_LOW;
 
@@ -834,7 +833,7 @@ void mt76x2_adjust_per_rate_pwr_delta(RTMP_ADAPTER *ad, u8 channel, char delta_p
 	RTMP_IO_WRITE32(ad, TX_PWR_CFG_9, value);
 }
 
-static void mt76x2_tx_pwr_gain(RTMP_ADAPTER *ad, u8 channel, u8 bw)
+void mt76x2_tx_pwr_gain(RTMP_ADAPTER *ad, u8 channel, u8 bw)
 {
 	RTMP_CHIP_CAP *cap = &ad->chipCap;
 	CHAR tx_0_pwr, tx_1_pwr;
@@ -1056,11 +1055,9 @@ static void mt76x2_switch_channel(RTMP_ADAPTER *ad, u8 channel, BOOLEAN scan)
 	}
 #endif
 
-
-	if (IS_MT7602(ad)) {
-		/* default use 2 stream to Tx HW auto gened packets */
-		RTMP_IO_WRITE32(ad, 0x1648, 0x00830083);
-	}
+#ifdef DYNAMIC_VGA_SUPPORT
+	ad->chipCap.dynamic_chE_mode = 0xEE;
+#endif /* DYNAMIC_VGA_SUPPORT */
 
 	/* Fine tune tx power ramp on time based on BBP Tx delay */
 	if (isExternalPAMode(ad, channel))
@@ -1483,6 +1480,45 @@ void mt76x2_calibration(RTMP_ADAPTER *ad, u8 channel)
 	/* TEMP SENSOR */
 	CHIP_CALIBRATION(ad, TEMP_SENSOR_CALIBRATION_7662, 0x00);
 
+	/* Trigger TX-Shaping */
+	CHIP_CALIBRATION(ad, TX_SHAPING_CALIBRATION_7662, 0x00);
+
+#ifdef TXBF_SUPPORT 
+	/* Do a Divider Calibration and update BBP registers */
+	//if (ad->CommonCfg.RegTransmitSetting.field.ITxBfEn)
+	{
+		ULONG stTimeChk0, stTimeChk1;
+		UCHAR i;
+			
+		NdisGetSystemUpTime(&stTimeChk0);
+			
+		/* Disable TX Phase Compensation */
+		RTMP_IO_READ32(ad, TXBE_R12, &value);
+		RTMP_IO_WRITE32(ad, TXBE_R12, value & (~0x28));
+	
+		/* Clear Tx/Rx Phase compensated values */
+		RTMP_IO_READ32(ad, CAL_R0, &value);
+		value &= ~0x60;
+	
+		// Clear Tx phase
+		RTMP_IO_WRITE32(ad, CAL_R0, value);
+		RTMP_IO_WRITE32(ad, TXBE_R13, 0);
+	
+		// Clear Rx phase
+		for (i=0; i<3; i++)
+		{
+			RTMP_IO_WRITE32(ad, CAL_R0, value | (i << 5));
+			RTMP_IO_WRITE32(ad, RXFE_R3,  0);
+		}		
+	
+		/* Start to do the divider calibration */
+		ad->chipOps.fITxBfDividerCalibration(ad, 3, 0, NULL);
+	
+		NdisGetSystemUpTime(&stTimeChk1);
+	
+		DBGPRINT(RT_DEBUG_INFO,("%s : Divider calibration duration = %d ms\n", __FUNCTION__, (stTimeChk1 - stTimeChk0)*1000/OS_HZ));
+	}
+#endif /* TXBF_SUPPORT */	
 
 
 	/* enable TX/RX */
@@ -3468,6 +3504,7 @@ void mt76x2_get_current_temp(RTMP_ADAPTER *ad)
 	INT32 temp_val = 0;
 
 	read_reg(ad, 0x40, 0xD000, &temp_val);
+	pChipCap->temp_val = temp_val;
 	temp_val &= 0x7F;
 
 	if ( pChipCap->temp_25_ref == 0 )
@@ -3589,7 +3626,6 @@ void mt76x2_temp_tx_alc(RTMP_ADAPTER *ad)
 #endif /* SINGLE_SKU_V2 */
 
 	if (pChipCap->temp_tx_alc_enable) {
-		mt76x2_get_current_temp(ad);
 		temp_diff = pChipCap->current_temp - 25;
 		
 		if (ad->CommonCfg.Channel > 14) {
@@ -3646,23 +3682,23 @@ void mt76x2_temp_tx_alc(RTMP_ADAPTER *ad)
 void mt76x2_single_sku(RTMP_ADAPTER *ad, u8 channel)
 {
 	CHAR sku_base_pwr = 0, ch_pwr_adj = 0;
-	UCHAR delta_power = 0;
+	CHAR delta_power = 0;
 	UINT32 reg_val = 0;
 
 	if (channel > 14) {			
 		if ((ad->chipCap.temp_tx_alc_enable == FALSE) && (ad->chipCap.tssi_enable == TRUE)) {
 			if ((channel >= 36) && (channel <= 48))
-				ad->DefaultTargetPwr = ad->chipCap.tssi_54m_target_pwr_a_band[A_BAND_GRP0_CHL];
-			else if ((channel >= 52) && (channel <= 64))
 				ad->DefaultTargetPwr = ad->chipCap.tssi_54m_target_pwr_a_band[A_BAND_GRP1_CHL];
-			else if ((channel >= 98) && (channel <= 114))
+			else if ((channel >= 52) && (channel <= 64))
 				ad->DefaultTargetPwr = ad->chipCap.tssi_54m_target_pwr_a_band[A_BAND_GRP2_CHL];
-			else if ((channel >= 116) && (channel <= 144))
+			else if ((channel >= 98) && (channel <= 114))
 				ad->DefaultTargetPwr = ad->chipCap.tssi_54m_target_pwr_a_band[A_BAND_GRP3_CHL];
-			else if ((channel >= 149) && (channel <= 165))
+			else if ((channel >= 116) && (channel <= 144))
 				ad->DefaultTargetPwr = ad->chipCap.tssi_54m_target_pwr_a_band[A_BAND_GRP4_CHL];
-			else
+			else if ((channel >= 149) && (channel <= 165))
 				ad->DefaultTargetPwr = ad->chipCap.tssi_54m_target_pwr_a_band[A_BAND_GRP5_CHL];
+			else
+				ad->DefaultTargetPwr = ad->chipCap.tssi_54m_target_pwr_a_band[A_BAND_GRP0_CHL];
 		} else
 			ad->DefaultTargetPwr = ad->chipCap.tssi_off_54m_target_pwr_a_band;
 #ifdef DOT11_VHT_AC
@@ -3698,12 +3734,8 @@ void mt76x2_single_sku(RTMP_ADAPTER *ad, u8 channel)
 
 		Increase or decrease 0x13b0<5:0> when bandwidth is changed
 	*/
-	if ((ad->CommonCfg.BBPCurrentBW != BW_20) && (delta_power & 0x80)) {
-		if (delta_power & 0x40)
-			ad->DefaultTargetPwr += (delta_power & 0x3F);
-		else
-			ad->DefaultTargetPwr -= (delta_power & 0x3F);
-	}
+	if (ad->CommonCfg.BBPCurrentBW != BW_20)
+		ad->DefaultTargetPwr = (CHAR)ad->DefaultTargetPwr + delta_power;
 
 	DBGPRINT(RT_DEBUG_ERROR, ("%s::DefaultTargetPwr = 0x%x, delta_power = 0x%x\n", 
 		__FUNCTION__, ad->DefaultTargetPwr, delta_power));
@@ -4289,7 +4321,7 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 	INT32 i = 0, j = 0, pwr_delta = 0;
 	UINT32 reg_val = 0; 
 	CHAR ch_delta_pwr = 0;
-	INT32 rate_pwr = 0;
+	INT32 rate_pwr = 0, rate_pwr_before_adjust = 0, sku_pwr = 0;
 	BOOLEAN bFound = FALSE;
 	UCHAR start_ch = 0;
 	const CHAR DefaultTargetPwr = ad->DefaultTargetPwr;
@@ -4331,13 +4363,15 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 						DBGPRINT(RT_DEBUG_TRACE, ("%s ==> CCK[%d].MCS_Power = %d, DefaultTargetPwr = %d, ch_delta_pwr = %d\n", 
 							__FUNCTION__, i, ad->chipCap.rate_pwr_table.CCK[i].mcs_pwr, DefaultTargetPwr, ch_delta_pwr));
 
-						rate_pwr = ad->chipCap.rate_pwr_table.CCK[i].mcs_pwr + DefaultTargetPwr + ch_delta_pwr;
-						pwr_delta = rate_pwr - ch->PwrCCK[i];
-						if (pwr_delta > 0) /* power exceed */
-							ad->chipCap.rate_pwr_table.CCK[i].mcs_pwr -= pwr_delta;
+						rate_pwr_before_adjust = ad->chipCap.rate_pwr_table.CCK[i].mcs_pwr + DefaultTargetPwr;
+						rate_pwr =  rate_pwr_before_adjust + ch_delta_pwr;
+						sku_pwr = (ch->PwrCCK[i] > rate_pwr_before_adjust) ? \
+									rate_pwr_before_adjust : ch->PwrCCK[i];
+						pwr_delta = sku_pwr - rate_pwr;
+						ad->chipCap.rate_pwr_table.CCK[i].mcs_pwr += pwr_delta;
 
-						DBGPRINT(RT_DEBUG_TRACE, ("%s ==> rate_pwr (%d) - ch->PwrCCK[%d] (%d) = rate_delta (%d)\n", 
-							__FUNCTION__, rate_pwr, i, ch->PwrCCK[i], pwr_delta));
+						DBGPRINT(RT_DEBUG_TRACE, ("%s ==> sku_pwr (%d) - rate_pwr (%d) = rate_delta (%d)\n", 
+							__FUNCTION__, sku_pwr, rate_pwr, pwr_delta));
 						
 						DBGPRINT(RT_DEBUG_TRACE, ("%s ==> new CCK[%d].MCS_Power = %d\n\n", 
 							__FUNCTION__, i, ad->chipCap.rate_pwr_table.CCK[i].mcs_pwr));
@@ -4349,13 +4383,15 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 						DBGPRINT(RT_DEBUG_TRACE, ("%s ==> OFDM[%d].MCS_Power = %d, DefaultTargetPwr = %d, ch_delta_pwr = %d\n", 
 							__FUNCTION__, i, ad->chipCap.rate_pwr_table.OFDM[i].mcs_pwr, DefaultTargetPwr, ch_delta_pwr));
 
-						rate_pwr = ad->chipCap.rate_pwr_table.OFDM[i].mcs_pwr + DefaultTargetPwr + ch_delta_pwr;
-						pwr_delta = rate_pwr - ch->PwrOFDM[i];
-						if (pwr_delta > 0) /* power exceed */
-							ad->chipCap.rate_pwr_table.OFDM[i].mcs_pwr -= pwr_delta;
+						rate_pwr_before_adjust = ad->chipCap.rate_pwr_table.OFDM[i].mcs_pwr + DefaultTargetPwr;
+						rate_pwr =  rate_pwr_before_adjust + ch_delta_pwr;
+						sku_pwr = (ch->PwrOFDM[i] > rate_pwr_before_adjust) ? \
+									rate_pwr_before_adjust : ch->PwrOFDM[i];
+						pwr_delta = sku_pwr - rate_pwr;
+						ad->chipCap.rate_pwr_table.OFDM[i].mcs_pwr += pwr_delta;
 
-						DBGPRINT(RT_DEBUG_TRACE, ("%s ==> rate_pwr (%d) - ch->PwrOFDM[%d] (%d) = rate_delta (%d)\n", 
-							__FUNCTION__, rate_pwr, i, ch->PwrOFDM[i], pwr_delta));
+						DBGPRINT(RT_DEBUG_TRACE, ("%s ==> sku_pwr (%d) - rate_pwr (%d) = rate_delta (%d)\n", 
+							__FUNCTION__, sku_pwr, rate_pwr, pwr_delta));
 						
 						DBGPRINT(RT_DEBUG_TRACE, ("%s ==> new OFDM[%d].MCS_Power = %d\n\n", 
 							__FUNCTION__, i, ad->chipCap.rate_pwr_table.OFDM[i].mcs_pwr));
@@ -4368,24 +4404,22 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> HT[%d].MCS_Power = %d, DefaultTargetPwr = %d, ch_delta_pwr = %d\n", 
 								__FUNCTION__, i, ad->chipCap.rate_pwr_table.HT[i].mcs_pwr, DefaultTargetPwr, ch_delta_pwr));		
 
-							rate_pwr = ad->chipCap.rate_pwr_table.HT[i].mcs_pwr + DefaultTargetPwr + ch_delta_pwr;
+							rate_pwr_before_adjust = ad->chipCap.rate_pwr_table.HT[i].mcs_pwr + DefaultTargetPwr;
+							rate_pwr =  rate_pwr_before_adjust + ch_delta_pwr;
 							
 							if (ad->CommonCfg.BBPCurrentBW == BW_20) {									
-								pwr_delta = rate_pwr - ch->PwrHT20[i];
-
-								DBGPRINT(RT_DEBUG_TRACE, ("%s ==> rate_pwr (%d) - ch->PwrHT20[%d] (%d) = rate_delta (%d)\n", 
-									__FUNCTION__, rate_pwr, i, ch->PwrHT20[i], pwr_delta));
-							
+								sku_pwr = (ch->PwrHT20[i] > rate_pwr_before_adjust) ? \
+											rate_pwr_before_adjust : ch->PwrHT20[i];
 							} else if (ad->CommonCfg.BBPCurrentBW == BW_40) {					
-								pwr_delta = rate_pwr - ch->PwrHT40[i];
-
-								DBGPRINT(RT_DEBUG_TRACE, ("%s ==> rate_pwr (%d) - ch->PwrHT40[%d] (%d) = rate_delta (%d)\n", 
-									__FUNCTION__, rate_pwr, i, ch->PwrHT40[i], pwr_delta));
+								sku_pwr = (ch->PwrHT40[i] > rate_pwr_before_adjust) ? \
+											rate_pwr_before_adjust : ch->PwrHT40[i];
 							}
 
-							if (pwr_delta > 0)
-								ad->chipCap.rate_pwr_table.HT[i].mcs_pwr -= pwr_delta;
+							pwr_delta = sku_pwr - rate_pwr;
+							ad->chipCap.rate_pwr_table.HT[i].mcs_pwr += pwr_delta;
 							
+							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> sku_pwr (%d) - rate_pwr (%d) = rate_delta (%d)\n", 
+								__FUNCTION__, sku_pwr, rate_pwr, pwr_delta));							
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> new HT[%d].MCS_Power = %d\n\n", 
 								__FUNCTION__, i, ad->chipCap.rate_pwr_table.HT[i].mcs_pwr));
 						}
@@ -4398,17 +4432,24 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> VHT2SS[%d].MCS_Power = %d, DefaultTargetPwr = %d, ch_delta_pwr = %d\n", 
 								__FUNCTION__, i, ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr, DefaultTargetPwr, ch_delta_pwr));
 
-							rate_pwr = ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr + DefaultTargetPwr + ch_delta_pwr;
 							pwr_delta = rate_pwr - ch->PwrVHT80[i];
 
-							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> rate_pwr (%d) - ch->PwrVHT80[%d] (%d) = rate_delta (%d)\n", 
-								__FUNCTION__, rate_pwr, i, ch->PwrVHT80[i], pwr_delta));
-						
-							if (pwr_delta > 0) {
-								ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr -= pwr_delta;
-								ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr -= pwr_delta;
-							}
+							rate_pwr_before_adjust = ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr + DefaultTargetPwr;
+							rate_pwr =  rate_pwr_before_adjust + ch_delta_pwr;
+							sku_pwr = (ch->PwrVHT80[i] > rate_pwr_before_adjust) ? \
+										rate_pwr_before_adjust : ch->PwrVHT80[i];
+							pwr_delta = sku_pwr - rate_pwr;
+							ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr += pwr_delta;
+
+							rate_pwr_before_adjust = ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr + DefaultTargetPwr;
+							rate_pwr =  rate_pwr_before_adjust + ch_delta_pwr;
+							sku_pwr = (ch->PwrVHT80[i] > rate_pwr_before_adjust) ? \
+										rate_pwr_before_adjust : ch->PwrVHT80[i];
+							pwr_delta = sku_pwr - rate_pwr;
+							ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr += pwr_delta;
 							
+							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> sku_pwr (%d) - rate_pwr (%d) = rate_delta (%d)\n", 
+								__FUNCTION__, sku_pwr, rate_pwr, pwr_delta));
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> new VHT1SS[%d].MCS_Power = %d\n", 
 								__FUNCTION__, i, ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr));
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> new VHT2SS[%d].MCS_Power = %d\n\n", 
@@ -4423,21 +4464,27 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> VHT2SS[%d].MCS_Power = %d, DefaultTargetPwr = %d, ch_delta_pwr = %d\n", 
 								__FUNCTION__, i, ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr, DefaultTargetPwr, ch_delta_pwr));
 
-							rate_pwr = ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr + DefaultTargetPwr + ch_delta_pwr;
-							pwr_delta = rate_pwr - ch->PwrVHT80[i];
+							rate_pwr_before_adjust = ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr + DefaultTargetPwr;
+							rate_pwr =  rate_pwr_before_adjust + ch_delta_pwr;
+							sku_pwr = (ch->PwrVHT80[i] > rate_pwr_before_adjust) ? \
+										rate_pwr_before_adjust : ch->PwrVHT80[i];
+							pwr_delta = sku_pwr - rate_pwr;
+							ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr += pwr_delta;
 
-							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> rate_pwr (%d) - ch->PwrVHT80[%d] (%d) = rate_delta (%d)\n", 
-								__FUNCTION__, rate_pwr, i, ch->PwrVHT80[i], pwr_delta));
-						
-							if (pwr_delta > 0) {
-								ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr -= pwr_delta;
-								ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr -= pwr_delta;
+							rate_pwr_before_adjust = ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr + DefaultTargetPwr;
+							rate_pwr =  rate_pwr_before_adjust + ch_delta_pwr;
+							sku_pwr = (ch->PwrVHT80[i] > rate_pwr_before_adjust) ? \
+										rate_pwr_before_adjust : ch->PwrVHT80[i];
+							pwr_delta = sku_pwr - rate_pwr;
+							ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr += pwr_delta;
+
 								if (i < 8) {
 									ad->chipCap.rate_pwr_table.HT[i].mcs_pwr = ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr;
 									ad->chipCap.rate_pwr_table.HT[i + 8].mcs_pwr = ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr;
 								}
-							}
 							
+							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> sku_pwr (%d) - rate_pwr (%d) = rate_delta (%d)\n", 
+								__FUNCTION__, sku_pwr, rate_pwr, pwr_delta));
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> new VHT1SS[%d].MCS_Power = %d\n", 
 								__FUNCTION__, i, ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr));
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> new VHT2SS[%d].MCS_Power = %d\n\n", 
@@ -4627,12 +4674,12 @@ static const RTMP_CHIP_CAP MT76x2_ChipCap = {
 #ifdef DOT11_VHT_AC
 	.max_vht_mcs = VHT_MCS_CAP_9,
 	.ac_off_mode = 0,
-#endif
+#endif /* DOT11_VHT_AC */
 	.TXWISize = 20,
 	.RXWISize = 28,
 #ifdef RTMP_MAC_PCI
 	.WPDMABurstSIZE = 3,
-#endif
+#endif /* RTMP_MAC_PCI */
 	.SnrFormula = SNR_FORMULA3,
 	.FlgIsHwWapiSup = TRUE,
 	.VcoPeriod = 10,
@@ -4641,14 +4688,14 @@ static const RTMP_CHIP_CAP MT76x2_ChipCap = {
 	.Flg7662ChipCap = TRUE,
 #ifdef STREAM_MODE_SUPPORT
 	.FlgHwStreamMode = FALSE,
-#endif
+#endif /* STREAM_MODE_SUPPORT */
 #ifdef TXBF_SUPPORT
 	.FlgHwTxBfCap = TRUE,
 	.FlgITxBfBinWrite = FALSE,
-#endif
+#endif /* TXBF_SUPPORT */
 #ifdef FIFO_EXT_SUPPORT
 	.FlgHwFifoExtCap = TRUE,
-#endif
+#endif /* FIFO_EXT_SUPPORT */
 	.asic_caps = (fASIC_CAP_PMF_ENC | fASIC_CAP_MCS_LUT),
 	.phy_caps = (fPHY_CAP_24G | fPHY_CAP_5G | fPHY_CAP_HT | fPHY_CAP_VHT | fPHY_CAP_LDPC),
 	.MaxNumOfRfId = MAX_RF_ID,
@@ -4658,7 +4705,7 @@ static const RTMP_CHIP_CAP MT76x2_ChipCap = {
 	.bbpRegTbSize = 0,
 #ifdef DFS_SUPPORT
 	.DfsEngineNum = 4,
-#endif
+#endif /* DFS_SUPPORT */
 #ifdef CARRIER_DETECTION_SUPPORT
 	.carrier_func = TONE_RADAR_V3,
 #endif /* CARRIER_DETECTION_SUPPORT */
@@ -4676,7 +4723,7 @@ static const RTMP_CHIP_CAP MT76x2_ChipCap = {
 	.EFUSE_USAGE_MAP_END = 0x1fc,
 	.EFUSE_USAGE_MAP_SIZE = 29,
 	.EFUSE_RESERVED_SIZE = 21,	// Cal-Free is 22 free block
-#endif
+#endif /* RTMP_EFUSE_SUPPORT */
 	.EEPROM_DEFAULT_BIN = MT76x2_E2PImage,
 	.EEPROM_DEFAULT_BIN_SIZE = sizeof(MT76x2_E2PImage),
 #ifdef CONFIG_ANDES_SUPPORT
@@ -4692,7 +4739,7 @@ static const RTMP_CHIP_CAP MT76x2_ChipCap = {
 	.ilm_offset = 0x80000,
 	.dlm_offset = 0x110000,
 	.rom_patch_offset = 0x90000,
-#endif
+#endif /* CONFIG_ANDES_SUPPORT */
 	.MCUType = ANDES,
 	.cmd_header_len = 4,
 #ifdef RTMP_PCI_SUPPORT
@@ -4742,7 +4789,9 @@ static const RTMP_CHIP_CAP MT76x2_ChipCap = {
 #ifdef DOT11W_PMF_SUPPORT
 	.FlgPMFEncrtptMode = PMF_ENCRYPT_MODE_1, 
 #endif /* DOT11W_PMF_SUPPORT */
-
+#ifdef THERMAL_PROTECT_SUPPORT
+	.ThermalProtectSup = TRUE,
+#endif /* THERMAL_PROTECT_SUPPORT */
 };
 
 static const RTMP_CHIP_OP MT76x2_ChipOp = {

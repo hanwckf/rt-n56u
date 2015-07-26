@@ -616,14 +616,93 @@ BOOLEAN RTMPFreeTXDUponTxDmaDone(
 	TXD_STRUC TxD, *pOriTxD;
 	BOOLEAN bReschedule = FALSE;
 	UINT8 TXWISize = pAd->chipCap.TXWISize;
-
-
+#ifdef RALINK_ATE
+#ifdef TXBF_SUPPORT
+        PATE_INFO pATEInfo = &(pAd->ate);
+	ULONG stTimeChk;
+#endif
+#endif
 	ASSERT(QueIdx < NUM_OF_TX_RING);
 	if (QueIdx >= NUM_OF_TX_RING)
 		return FALSE;
 
 	pTxRing = &pAd->TxRing[QueIdx];
 	RTMP_IO_READ32(pAd, pTxRing->hw_didx_addr, &pTxRing->TxDmaIdx);
+#ifdef RALINK_ATE
+#ifdef TXBF_SUPPORT
+	pATEInfo->TxDoneCount = 0;
+	
+	/* ATE special mode: Every 500ms, insert one sounding packet into TX ring. 
+	After the packet is sent out, revert the packet back to normal packet */
+
+	NdisGetSystemUpTime(&stTimeChk);   // get system time
+
+        //if TxDmaIdx overflow happens, reset sounding packet 
+        if ((pTxRing->TxDmaIdx < pAd->txDmaIdx_backup) &&
+            (pAd->timeout_flg == FALSE) && (pAd->ceBfCertificationFlg == TRUE))   
+        {
+	
+	       if ( pTxRing->TxDmaIdx > 30)
+       	       {			
+			pAd->timeout_flg = TRUE;
+
+			pATEInfo->TxLength = pAd->txLengthBackup;////2050;
+
+            		pATEInfo->txSoundingMode =0; 
+       	       }
+        }
+		
+	if ((((stTimeChk - pAd->sounding_periodic_count)*1000/OS_HZ) >= 500) &&   //500ms period  
+             (pTxRing->TxDmaIdx >= (TX_RING_SIZE - 10)) && 
+             (pAd->ceBfCertificationFlg == TRUE))
+	{
+		pAd->timeout_flg = FALSE;
+		NdisGetSystemUpTime(&pAd->sounding_periodic_count);    //get and save system time
+		
+  
+		pATEInfo->TxLength = 258;
+		pATEInfo->txSoundingMode = pAd->soundingMode;
+
+
+            	//if ( pAd->soundingPacketDone == 0)
+                {
+
+                pAd->soundingPacketDone = 1;
+                /* Abort Tx, Rx DMA. */
+		RtmpSoundingDmaEnable(pAd, 0);
+
+                
+        if (pATEInfo->TxWI.TXWI_N.PHYMODE == MODE_VHT && pATEInfo->bTxBF == TRUE && pATEInfo->txSoundingMode != 0)
+		{
+             
+			if (ATESetUpNDPAFrame(pAd, TX_RING_SIZE-1) != 0)
+				return NDIS_STATUS_FAILURE;
+
+                        if (ATESetUpNDPAFrame(pAd, 100) != 0)
+				return NDIS_STATUS_FAILURE;
+		}
+		else
+		{
+			if (ATESetUpFrame(pAd, TX_RING_SIZE-1) != 0)
+				return NDIS_STATUS_FAILURE;
+
+                        if (ATESetUpFrame(pAd, 100) != 0)
+				return NDIS_STATUS_FAILURE;
+		} 
+               
+		/* Start Tx, Rx DMA. */
+		RtmpSoundingDmaEnable(pAd, 1);
+                }                
+
+            	pAd->txDmaIdx_backup = pTxRing->TxDmaIdx;
+
+                RTMP_IO_READ32(pAd, pTxRing->hw_didx_addr, &pTxRing->TxDmaIdx);
+		//DBGPRINT(RT_DEBUG_OFF, ("****[7]TxDmaIdx =%d,TxCpuIdx =%d, Put Sounding Packet[%d]\n", pTxRing->TxDmaIdx, pTxRing->TxCpuIdx,TX_RING_SIZE-1));
+
+
+	}
+#endif	
+#endif
 	while (pTxRing->TxSwFreeIdx != pTxRing->TxDmaIdx)
 	{
 		pAd->tx_packet_counter++;
@@ -1082,10 +1161,21 @@ VOID RTMPHandleTBTTInterrupt(RTMP_ADAPTER *pAd)
 VOID RTMPHandlePreTBTTInterrupt(RTMP_ADAPTER *pAd)
 {
 #ifdef CONFIG_AP_SUPPORT
-	if (pAd->OpMode == OPMODE_AP)
+struct wifi_dev *wdev;
+wdev = &pAd->ApCfg.MBSSID[0].wdev;
+	if (pAd->OpMode == OPMODE_AP  
+#ifdef RT_CFG80211_SUPPORT
+			&& (wdev->Hostapd == Hostapd_CFG)
+#endif /*RT_CFG80211_SUPPORT*/
+	)
 	{
 
+#ifdef RT_CFG80211_SUPPORT
+			RT_CFG80211_BEACON_TIM_UPDATE(pAd);
+#else
 		APUpdateAllBeaconFrame(pAd);
+#endif /* RT_CFG80211_SUPPORT  */
+
 	}
 	else
 #endif /* CONFIG_AP_SUPPORT */
@@ -1245,7 +1335,7 @@ PNDIS_PACKET RxRingDeQueue(
 		if (unlikely(skb==NULL))
 		{
 			pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, 
-													((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, 
+													(pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, 
 													RX_BUFFER_AGGRESIZE, 
 													FALSE, 
 													&pRxCell->DmaBuf.AllocVa, 
@@ -1255,11 +1345,11 @@ PNDIS_PACKET RxRingDeQueue(
 		{
 			pNewPacket = OSPKT_TO_RTPKT(skb);
 			pRxCell->DmaBuf.AllocVa = GET_OS_PKT_DATAPTR(pNewPacket);
-			pRxCell->DmaBuf.AllocPa = PCI_MAP_SINGLE_DEV(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pRxCell->DmaBuf.AllocVa, RX_BUFFER_AGGRESIZE,  -1, RTMP_PCI_DMA_FROMDEVICE);
+			pRxCell->DmaBuf.AllocPa = PCI_MAP_SINGLE_DEV((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pRxCell->DmaBuf.AllocVa, RX_BUFFER_AGGRESIZE,  -1, RTMP_PCI_DMA_FROMDEVICE);
 		}
 	}
 #else
-	pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RX_BUFFER_AGGRESIZE, FALSE, &pRxCell->DmaBuf.AllocVa, &pRxCell->DmaBuf.AllocPa);
+	pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, (pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RX_BUFFER_AGGRESIZE, FALSE, &pRxCell->DmaBuf.AllocVa, &pRxCell->DmaBuf.AllocPa);
 #endif /* WLAN_SKB_RECYCLE */
 
 	if (pNewPacket)
@@ -1520,16 +1610,16 @@ PNDIS_PACKET GetPacketFromRxRing(
 		struct sk_buff *skb = __skb_dequeue_tail(&pAd->rx0_recycle);
 
 		if (unlikely(skb==NULL))
-			pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RX_BUFFER_AGGRESIZE, FALSE, &AllocVa, &AllocPa);
+			pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, (pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RX_BUFFER_AGGRESIZE, FALSE, &AllocVa, &AllocPa);
 		else
 		{
 			pNewPacket = OSPKT_TO_RTPKT(skb);
 			AllocVa = GET_OS_PKT_DATAPTR(pNewPacket);
-			AllocPa = PCI_MAP_SINGLE_DEV(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, AllocVa, RX_BUFFER_AGGRESIZE,  -1, RTMP_PCI_DMA_FROMDEVICE);
+			AllocPa = PCI_MAP_SINGLE_DEV((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, AllocVa, RX_BUFFER_AGGRESIZE,  -1, RTMP_PCI_DMA_FROMDEVICE);
 		}
 	}
 #else
-	pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RX_BUFFER_AGGRESIZE, FALSE, &AllocVa, &AllocPa);
+	pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, (pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RX_BUFFER_AGGRESIZE, FALSE, &AllocVa, &AllocPa);
 #endif /* WLAN_SKB_RECYCLE */
 
 	if (pNewPacket)
@@ -1603,6 +1693,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 			
 			pRxBlk->rx_rate.field.MODE = rxwi_o->phy_mode;
 			pRxBlk->rx_rate.field.MCS = rxwi_o->mcs;
+			pRxBlk->rx_rate.field.ldpc = 0;
 			pRxBlk->rx_rate.field.BW = rxwi_o->bw;
 			pRxBlk->rx_rate.field.STBC = rxwi_o->stbc;
 			pRxBlk->rx_rate.field.ShortGI = rxwi_o->sgi;
@@ -2051,7 +2142,7 @@ BOOLEAN RxRing1DoneInterruptHandle(RTMP_ADAPTER *pAd)
 		if (pFceInfo->info_type == CMD_PACKET)
 		{
 			DBGPRINT(RT_DEBUG_INFO, ("%s: Receive command packet.\n", __FUNCTION__));
-			pci_rx_cmd_msg_complete(pAd, pFceInfo);
+			pci_rx_cmd_msg_complete(pAd, pFceInfo, (PUCHAR)pRxInfo);
 			RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_SUCCESS);
 			continue;
 		} else {

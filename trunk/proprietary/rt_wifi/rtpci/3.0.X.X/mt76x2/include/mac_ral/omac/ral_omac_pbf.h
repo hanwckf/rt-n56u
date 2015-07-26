@@ -97,6 +97,10 @@ typedef union _RTMP_PBF_SYS_CTRL_STRUC {
 #define BCN_OFFSET0		0x042C
 #define BCN_OFFSET1		0x0430
 #define TXRXQ_STA		0x0434
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
+#define BCN_OFFSET2		0x0444
+#define BCN_OFFSET3		0x0448
+#endif /* SPECIFIC_BCN_BUF_SUPPORT */
 
 #endif /* __RAL_OMAC_PBF_H__ */
 

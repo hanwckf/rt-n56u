@@ -26,9 +26,15 @@
 extern UCHAR ZeroSsid[32];
 
 static inline INT GetABandChOffset(
+	IN PRTMP_ADAPTER pAd,
 	IN INT Channel)
 {
 #ifdef A_BAND_SUPPORT
+	UCHAR region = GetCountryRegionFromCountryCode(pAd);
+	if((region==CE || region==JAP) && Channel >= 140)
+		return 0;
+	if(region==FCC && Channel >= 116 && Channel <= 128)
+		return 0;
 	if ((Channel == 36) || (Channel == 44) 
 			|| (Channel == 52) || (Channel == 60) 
 			|| (Channel == 100) || (Channel == 108) 
@@ -260,14 +266,19 @@ static inline UCHAR SelectClearChannelRandom(
 
 #ifdef DOT11_N_SUPPORT
 			/* Check N-group of BW40 */
-			if (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40 &&
+			if ((pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40 
+#ifdef DOT11_VHT_AC
+				&&(pAd->CommonCfg.vht_bw == VHT_BW_2040)
+#endif
+				) &&
 				!(pAd->ChannelList[i].Flags & CHANNEL_40M_CAP))
 				continue;
 
 #ifdef DOT11_VHT_AC
 			/* Check VHT-group of BW80 */
 			if (pAd->CommonCfg.vht_bw == VHT_BW_80 &&
-				!(pAd->ChannelList[i].Flags & CHANNEL_80M_CAP))
+				!(pAd->ChannelList[i].Flags & CHANNEL_80M_CAP) &&
+				!AC_ChannelGroupCheck(pAd, ch))
 				continue;
 #endif /* DOT11_VHT_AC */
 #endif /* DOT11_N_SUPPORT */
@@ -467,12 +478,16 @@ static inline UCHAR SelectClearChannelCCA(
 				In the case, ignor all channel
 				doesn't support 40MHz Bandwidth.
 			*/
-			if ((pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40) 
-				&& (pChannelInfo->IsABand && (GetABandChOffset(ch) == 0))) {
+			if (((pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40) 
+#ifdef DOT11_VHT_AC
+				&& (pAd->CommonCfg.vht_bw == VHT_BW_2040)
+#endif
+				)
+				&& (pChannelInfo->IsABand && (GetABandChOffset(pAd,ch) == 0))) {
 				continue;
 			}
 #ifdef DOT11_VHT_AC
-			else if (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_80) {
+			else if (pAd->CommonCfg.vht_bw == VHT_BW_80) {
 				if (!AC_ChannelGroupCheck(pAd, ch)) { 
 					/* not in the BW_80 channel group */
 					continue;
@@ -487,28 +502,36 @@ static inline UCHAR SelectClearChannelCCA(
 			if (pAd->pChannelInfo->IsABand)
 			{ 
 				/* 5G Hz */
-				if (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40) {
-					if (((channel_idx + GetABandChOffset(ch)) >=0)
-							&& ((channel_idx + GetABandChOffset(ch)) < pAd->ChannelListNum))
+				if ((pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40) 
+#ifdef DOT11_VHT_AC
+				&& (pAd->CommonCfg.vht_bw == VHT_BW_2040)
+#endif
+				)
+				{
+					if (((channel_idx + GetABandChOffset(pAd,ch)) >=0)
+							&& ((channel_idx + GetABandChOffset(pAd,ch)) < pAd->ChannelListNum))
 					{
-						INT ChOffsetIdx = channel_idx + GetABandChOffset(ch);
+						INT ChOffsetIdx = channel_idx + GetABandChOffset(pAd,ch);
 						dirtyness += pChannelInfo->dirtyness[ChOffsetIdx];
 					}
 				}
 #ifdef DOT11_VHT_AC
-				else if (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_80) {
+				else if (pAd->CommonCfg.vht_bw == VHT_BW_80) {
 					/* the same dirtyness with neighbor */
 					INT	vht_ch_idx = get_vht_neighbor_index(ch);
-					
-					dirtyness = pChannelInfo->dirtyness[vht_ch_idx+channel_idx] +
+					if (vht_ch_idx != (MAX_NUM_OF_CHANNELS+1))
+					{
+					    dirtyness = pChannelInfo->dirtyness[vht_ch_idx+channel_idx] +
 						pChannelInfo->dirtyness[vht_ch_idx+(channel_idx+1)] +
 						pChannelInfo->dirtyness[vht_ch_idx+(channel_idx+2)] +
 						pChannelInfo->dirtyness[vht_ch_idx+(channel_idx+3)];
+					}
 				}
 #endif /* DOT11_VHT_AC */
 			}
 			else
 			{ /* 2.4G Hz */
+				UCHAR ExChannel_idx = 0;
 				if (pAd->ChannelList[channel_idx].Channel == 14)
 				{
 					dirtyness = 0xFFFFFFFF;
@@ -516,26 +539,17 @@ static inline UCHAR SelectClearChannelCCA(
 				}
 				else
 				{
-					UCHAR ExChannel_idx = 0;
-					if (pAd->ChannelList[channel_idx].Channel == 14)
+					NdisZeroMemory(ExChannel, sizeof(ExChannel));
+					if (((channel_idx - 4) >=0) && ((channel_idx - 4) < pAd->ChannelListNum))
 					{
-						dirtyness = 0xFFFFFFFF;
-						break;
+						dirtyness += pChannelInfo->dirtyness[channel_idx - 4];
+						ExChannel[ExChannel_idx++] = pAd->ChannelList[channel_idx - 4].Channel;
 					}
-					else
-					{
-						NdisZeroMemory(ExChannel, sizeof(ExChannel));
-						if (((channel_idx - 4) >=0) && ((channel_idx - 4) < pAd->ChannelListNum))
-						{
-							dirtyness += pChannelInfo->dirtyness[channel_idx - 4];
-							ExChannel[ExChannel_idx++] = pAd->ChannelList[channel_idx - 4].Channel;
-						}
 
-						if (((channel_idx + 4) >=0) && ((channel_idx + 4) < pAd->ChannelListNum))
-						{
-							dirtyness += pChannelInfo->dirtyness[channel_idx + 4];
-							ExChannel[ExChannel_idx++] = pAd->ChannelList[channel_idx + 4].Channel;
-						}
+					if (((channel_idx + 4) >=0) && ((channel_idx + 4) < pAd->ChannelListNum))
+					{
+						dirtyness += pChannelInfo->dirtyness[channel_idx + 4];
+						ExChannel[ExChannel_idx++] = pAd->ChannelList[channel_idx + 4].Channel;
 					}
 				}
 			}
@@ -558,7 +572,11 @@ static inline UCHAR SelectClearChannelCCA(
 		printk("ExChannel = %d , %d\n", candidate_ExChannel[0], candidate_ExChannel[1]);
 		if (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_20)
 			printk("BW        = %s\n", "20");
-		else if (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40)
+		else if ((pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40)
+#ifdef DOT11_VHT_AC
+		&& (pAd->CommonCfg.vht_bw == VHT_BW_2040)
+#endif
+		)
 			printk("BW        = %s\n", "40");
 		else
 			printk("BW        = %s\n", "80");
@@ -581,13 +599,17 @@ static inline UCHAR SelectClearChannelCCA(
 			ch = pAd->ChannelList[channel_idx].Channel;
 
 #ifdef DOT11_N_SUPPORT
-			if ((pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40) 
-				&& (pChannelInfo->IsABand && (GetABandChOffset(ch) == 0))) {
+			if (((pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40) 
+#ifdef DOT11_VHT_AC
+				&&(pAd->CommonCfg.vht_bw == VHT_BW_2040)
+#endif
+				)
+				&& (pChannelInfo->IsABand && (GetABandChOffset(pAd,ch) == 0))) {
 				continue;
 			}
 #endif /* DOT11_N_SUPPORT */
 #ifdef DOT11_VHT_AC
-			else if (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_80) {
+			else if (pAd->CommonCfg.vht_bw == VHT_BW_80) {
 				if (!AC_ChannelGroupCheck(pAd, ch)) { 
 					/* not in the BW_80 channel group */
 					continue;
@@ -595,21 +617,29 @@ static inline UCHAR SelectClearChannelCCA(
 			}
 #endif /* DOT11_VHT_AC */
 
-			if (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40) {
-				if ((GetABandChOffset(ch) != 0)
-						&& ((channel_idx + GetABandChOffset(ch)) >=0)
-						&& ((channel_idx + GetABandChOffset(ch)) < pAd->ChannelListNum))
+			if ((pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40) 
+#ifdef DOT11_VHT_AC
+				&& (pAd->CommonCfg.vht_bw == VHT_BW_2040)
+#endif
+			)
+
+			{
+				if ((GetABandChOffset(pAd,ch) != 0)
+						&& ((channel_idx + GetABandChOffset(pAd,ch)) >=0)
+						&& ((channel_idx + GetABandChOffset(pAd,ch)) < pAd->ChannelListNum))
 				{
-					INT ChOffsetIdx = channel_idx + GetABandChOffset(ch);
+					INT ChOffsetIdx = channel_idx + GetABandChOffset(pAd,ch);
 					falsecca += (pChannelInfo->FalseCCA[ChOffsetIdx] +
 							pChannelInfo->dirtyness[ChOffsetIdx]);
 				}
 			}
 #ifdef DOT11_VHT_AC
-			else if (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_80) {
+			else if (pAd->CommonCfg.vht_bw == VHT_BW_80) {
 				/* the same falsecca with neighbor */
 				INT	vht_ch_idx = get_vht_neighbor_index(ch);
 
+				if (vht_ch_idx != (MAX_NUM_OF_CHANNELS+1))
+				{
 				falsecca = (pChannelInfo->dirtyness[vht_ch_idx+channel_idx] +
 					pChannelInfo->FalseCCA[vht_ch_idx+channel_idx]) +
 					(pChannelInfo->dirtyness[vht_ch_idx+(channel_idx+1)] +
@@ -618,6 +648,7 @@ static inline UCHAR SelectClearChannelCCA(
 					pChannelInfo->FalseCCA[vht_ch_idx+(channel_idx+2)]) +
 					(pChannelInfo->dirtyness[vht_ch_idx+(channel_idx+3)] +
 					pChannelInfo->FalseCCA[vht_ch_idx+(channel_idx+3)]);
+			}
 			}
 #endif /* DOT11_VHT_AC */
 
@@ -660,6 +691,14 @@ static inline UCHAR SelectClearChannelCCA(
 			&& (pChannelInfo->IsABand == TRUE)
 			&& RadarChannelCheck(pAd, ch))
 			continue;
+#ifdef DOT11_VHT_AC
+		if (pAd->CommonCfg.vht_bw == VHT_BW_80) {
+			if (!AC_ChannelGroupCheck(pAd, ch)) { 
+				/* not in the BW_80 channel group */
+				continue;
+			}
+		}
+#endif /* DOT11_VHT_AC */
 
 		break;
 	}
@@ -712,7 +751,11 @@ static inline UCHAR SelectClearChannelApCnt(
 			    int Channel = pAd->ChannelList[channel_index].Channel;
 				
 			    /*Make secondary channel dirty */
-			    if(pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40)
+			    if((pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40)
+#ifdef DOT11_VHT_AC
+				 && (pAd->CommonCfg.vht_bw == VHT_BW_2040)
+#endif
+				)
 			    {
 					if (Channel > 14)
 					{
@@ -741,12 +784,16 @@ static inline UCHAR SelectClearChannelApCnt(
 					}
 				}
 #ifdef DOT11_VHT_AC
-				else if(pAd->CommonCfg.RegTransmitSetting.field.BW == BW_80) {
+				else if(pAd->CommonCfg.vht_bw == VHT_BW_80) {
 					INT	vht_ch_idx = get_vht_neighbor_index(pAd->ChannelList[channel_index].Channel);
+
+					if (vht_ch_idx != (MAX_NUM_OF_CHANNELS+1))
+					{
 					pChannelInfo->dirtyness[vht_ch_idx+channel_index]++;
 					pChannelInfo->dirtyness[vht_ch_idx+(channel_index+1)]++;
 					pChannelInfo->dirtyness[vht_ch_idx+(channel_index+2)]++;
 					pChannelInfo->dirtyness[vht_ch_idx+(channel_index+3)]++;
+				}
 				}
 #endif /* DOT11_VHT_AC */
 			}
@@ -845,7 +892,7 @@ static inline UCHAR SelectClearChannelApCnt(
 			}
 		} 
 #ifdef DOT11_VHT_AC
-		else if (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_80) {
+		else if (pAd->CommonCfg.vht_bw == VHT_BW_80) {
 			if (!AC_ChannelGroupCheck(pAd, pAd->ChannelList[channel_index].Channel)) {
 				printk ("channel_%d is not in BW_80 channel group\n", 
 						pAd->ChannelList[channel_index].Channel);
@@ -905,12 +952,16 @@ static inline UCHAR SelectClearChannelApCnt(
 				if (candidate[channel_index] && (pChannelInfo->ApCnt[channel_index] < min_ApCnt))
 				{
 
-					if((pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40)
+					if(((pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40) 
+#ifdef DOT11_VHT_AC
+						&& (pAd->CommonCfg.vht_bw == VHT_BW_2040)
+#endif
+						)
 						&& (BW40_ChannelCheck(pAd->ChannelList[channel_index].Channel) == FALSE)) {
 						continue;
 					} 
 #ifdef DOT11_VHT_AC
-					else if (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_80) {
+					else if (pAd->CommonCfg.vht_bw == VHT_BW_80) {
 						if (!AC_ChannelGroupCheck(pAd, pAd->ChannelList[channel_index].Channel)) {
 							/* not in the BW_80 channel group */
 							continue;
@@ -945,14 +996,20 @@ static inline UCHAR SelectClearChannelApCnt(
 		if (AutoChannelSkipListCheck(pAd, final_channel))
 			continue;
 
-		if (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40) {
-			if (!N_ChannelGroupCheck(pAd, pAd->ChannelList[channel_index].Channel)) {
+		if ((pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40) 
+#ifdef DOT11_VHT_AC
+		&& (pAd->CommonCfg.vht_bw == VHT_BW_2040)
+#endif
+		)
+		{
+			if (!N_ChannelGroupCheck(pAd, pAd->ChannelList[channel_index].Channel)) 
+			{
 				/* not in the BW_40 channel group */
 				continue;
 			}
 		}
 #ifdef DOT11_VHT_AC
-		else if (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_80) {
+		else if (pAd->CommonCfg.vht_bw == VHT_BW_80) {
 			if (!AC_ChannelGroupCheck(pAd, pAd->ChannelList[channel_index].Channel)) {
 				/* not in the BW_80 channel group */
 				continue;

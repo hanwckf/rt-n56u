@@ -314,6 +314,8 @@
 /* 0x2f00 ~ */
 #define PFMU_R0     (BBP_PFMU + 0x00)
 #define PFMU_R1     (BBP_PFMU + 0x04)
+#define PFMU_R8     (BBP_PFMU + 0x20)
+#define PFMU_R9     (BBP_PFMU + 0x24)
 #define PFMU_R10    (BBP_PFMU + 0x28)
 #define PFMU_R11    (BBP_PFMU + 0x2C)
 #define PFMU_R12    (BBP_PFMU + 0x30)
@@ -325,6 +327,7 @@
 #define PFMU_R21	(BBP_PFMU + 0x54)
 #define PFMU_R22	(BBP_PFMU + 0x58)
 #define PFMU_R23	(BBP_PFMU + 0x5C)
+#define PFMU_R51	(BBP_PFMU + 0xCC)
 #define PFMU_R54	(BBP_PFMU + 0xD8)
 #define PFMU_R57    (BBP_PFMU + 0xE4)
 

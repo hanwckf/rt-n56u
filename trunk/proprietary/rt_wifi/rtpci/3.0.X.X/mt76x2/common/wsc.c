@@ -46,6 +46,11 @@
 #define PF_NOFREEZE  0
 #endif
 
+#ifdef MULTI_INF_SUPPORT
+/* Index 0 for 2.4G, 1 for 5Ghz Card */
+extern VOID* pAdGlobalList[2];
+#endif /* MULTI_INF_SUPPORT */
+
 char WSC_MSG_SIGNATURE[]={"RAWSCMSG"};
 
 extern UCHAR   WPS_OUI[];
@@ -192,6 +197,29 @@ INT WscGenerateUUID(
 	UINT16 clkSeq;
 	char uuidTmpStr[UUID_LEN_STR+2];	
 	
+#ifdef MULTI_INF_SUPPORT
+#ifdef CON_WPS_AP_SAME_UUID
+	PRTMP_ADAPTER pOpposAd;
+	PWSC_CTRL pWscControl;
+
+	/* We Assume the 5G init phase after 2.4Ghz */
+	if (pAd == pAdGlobalList[1])
+	{
+		pOpposAd = (PRTMP_ADAPTER) pAdGlobalList[0];	
+		pWscControl = &pOpposAd->ApCfg.MBSSID[apIdx].WscControl;
+
+		NdisCopyMemory(uuidHexStr, &pWscControl->Wsc_Uuid_E[0], UUID_LEN_HEX);
+		NdisCopyMemory(uuidAscStr, &pWscControl->Wsc_Uuid_Str[0], UUID_LEN_STR);
+		
+		goto show;		
+	}
+#endif /* CON_WPS_AP_SAME_UUID */
+#endif /* MULTI_INF_SUPPORT */
+
+#ifdef RTMP_RBUS_SUPPORT	
+/* for fixed UUID -  YYHuang 07/10/09 */
+#define FIXED_UUID
+#endif /* RTMP_RBUS_SUPPORT */
 	
 	/* Get the current time. */
 	if (bUseCurrentTime)
@@ -203,6 +231,11 @@ INT WscGenerateUUID(
 	uuid_time *= 10000000;
 	uuid_time += 0x01b21dd213814000LL;
 	
+#ifdef RTMP_RBUS_SUPPORT	
+#ifdef FIXED_UUID
+    uuid_time  = 0x2880288028802880LL;
+#endif
+#endif /* RTMP_RBUS_SUPPORT */
 
 	
 	uuid_t.timeLow = (UINT32)uuid_time & 0xFFFFFFFF;
@@ -212,6 +245,11 @@ INT WscGenerateUUID(
 
 	/* Get the clock sequence. */
 	clkSeq = (UINT16)(0x0601/*jiffies*/ & 0xFFFF);		/* Again, we fix this to make JumpStart happy! */
+#ifdef RTMP_RBUS_SUPPORT
+#ifdef FIXED_UUID
+	clkSeq = (UINT16)0x2880;
+#endif
+#endif /* RTMP_RBUS_SUPPORT */
 
 	uuid_t.clockSeqLow = clkSeq & 0xFF;
 	uuid_t.clockSeqHi_Var = (clkSeq & 0x3F00) >> 8;
@@ -246,6 +284,7 @@ INT WscGenerateUUID(
 	NdisMoveMemory(&uuidHexStr[9], &uuid_t.clockSeqLow, 1);
 	NdisMoveMemory(&uuidHexStr[10], &uuid_t.node[0], 6);
 
+show:
 	DBGPRINT(RT_DEBUG_TRACE, ("The UUID Hex string is:"));
 	for (i=0; i< 16; i++)
 	{
@@ -518,6 +557,25 @@ VOID WscEAPOLStartAction(
 		DBGPRINT(RT_DEBUG_ERROR, ("%s: pWpsCtrl == NULL!\n", __FUNCTION__));
 		return;
 	}
+
+#ifdef CONFIG_AP_SUPPORT
+#ifdef CON_WPS
+	PWSC_CTRL pApCliWpsCtrl = NULL;
+	pApCliWpsCtrl = &pAd->ApCfg.ApCliTab[BSS0].WscControl;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("CON_WPS: Stop the ApCli WPS, state [%d]\n", pApCliWpsCtrl->WscState));
+
+	if ((pAd->conWscStatus != CON_WPS_STATUS_DISABLED) && 
+		(pApCliWpsCtrl->WscState != WSC_STATE_OFF))
+	{
+		WscStop(pAd, TRUE, pApCliWpsCtrl);
+		pApCliWpsCtrl->WscConfMode = WSC_DISABLE;
+        /* APCLI: For stop the other side of the band with WSC SM */
+        WscConWpsStop(pAd, TRUE, pApCliWpsCtrl);
+
+	}
+#endif /* CON_WPS */
+#endif /* CONFIG_AP_SUPPORT */
 
 	RTMP_SEM_LOCK(&pWpsCtrl->WscPeerListSemLock);
 	WscInsertPeerEntryByMAC(&pWpsCtrl->WscPeerList, pEntry->Addr);	
@@ -904,6 +962,14 @@ VOID WscEAPAction(
 			if (CurOpMode == AP_MODE)
 			{
 				pWscControl->WscConfMode = WSC_DISABLE;
+#ifdef CON_WPS
+				/* ApCli: WPS Done notify the other side of band to stop */
+				if (pAdapter->conWscStatus != CON_WPS_STATUS_DISABLED)
+				{
+					WscConWpsStop(pAdapter, TRUE, pWscControl);
+					pAdapter->conWscStatus = CON_WPS_STATUS_DISABLED;
+				}
+#endif /* CON_WPS */
 				/* Bring apcli interface down first */
 				if(pEntry && IS_ENTRY_APCLI(pEntry) && pAdapter->ApCfg.ApCliTab[BSS0].Enable == TRUE )
 				{
@@ -1395,6 +1461,36 @@ VOID WscEapEnrolleeAction(
 				; /* Do NOT need to generate EnrolleeRandom and DH public key here. */
 			else 
 #endif /* WSC_NFC_SUPPORT */			
+			{
+#ifdef CONFIG_AP_SUPPORT
+				/*
+					We don't need to consider P2P case.
+				*/
+				IF_DEV_CONFIG_OPMODE_ON_AP(pAdapter)
+				{					
+					if ((pWscControl->bWscAutoTriggerDisable == TRUE) &&
+						(pWscControl->bWscTrigger == FALSE))
+					{
+						if (bUPnPMsg == TRUE)
+						{
+							DBGPRINT(RT_DEBUG_TRACE, 
+								("%s(%d): WscAutoTrigger is disabled.\n", __FUNCTION__, __LINE__));
+							WscUPnPErrHandle(pAdapter, pWscControl, Elem->TimeStamp.u.LowPart);
+							return;
+						}
+						else if (pEntry && IS_ENTRY_CLIENT(pEntry))
+						{
+							DBGPRINT(RT_DEBUG_TRACE, 
+								("%s(%d): WscAutoTrigger is disabled! Send EapFail to STA.\n", __FUNCTION__, __LINE__));
+							WscSendEapFail(pAdapter, pWscControl, TRUE);
+							return;
+						}
+						else
+							; /* Keep going. APCLI shall be the else case. */
+					}
+				}
+#endif /* CONFIG_AP_SUPPORT */
+
 			if (pWscControl->RegData.ReComputePke == 1)
 			{
 				INT idx;
@@ -1410,7 +1506,7 @@ VOID WscEapEnrolleeAction(
 				
 				pWscControl->RegData.ReComputePke = 0;
 			}
-
+			}
 			OpCode |= WSC_OPCODE_MSG;
             
 			DataLen = BuildMessageM1(pAdapter, pWscControl, WscData);
@@ -2330,6 +2426,15 @@ VOID WscEapRegistrarAction(
 					/* Send EAP-Fail */
 					WscSendEapFail(pAdapter, pWscControl, FALSE);
 					pWscControl->WscStatus = STATUS_WSC_CONFIGURED;
+
+#ifdef CON_WPS
+					/* AP: stop the other side of band */
+					if (pAdapter->conWscStatus != CON_WPS_STATUS_DISABLED)
+					{
+						WscConWpsStop(pAdapter, FALSE, pWscControl);
+						pAdapter->conWscStatus = CON_WPS_STATUS_DISABLED;
+					}
+#endif /* CON_WPS */
 				}
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -3057,6 +3162,14 @@ VOID Wsc2MinsTimeOutAction(
 			return;
 		}
 #ifdef CONFIG_AP_SUPPORT
+#ifdef CON_WPS
+		if (pAd->conWscStatus != CON_WPS_STATUS_DISABLED)
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("CON_WPS: Reset the status to default.\n"));
+			pAd->conWscStatus = CON_WPS_STATUS_DISABLED;
+		}	
+#endif /* CON_WPS */
+
 				IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 					CurOpMode = AP_MODE;
 #endif /* CONFIG_AP_SUPPORT */
@@ -4504,7 +4617,12 @@ VOID WscBuildProbeRespIE(
 		*/
 #ifdef WSC_V2_SUPPORT
 		if (pWpsCtrl->WscV2Info.bEnableWpsV2)
+		{
+			if (pWpsCtrl->WscConfStatus == WSC_SCSTATE_CONFIGURED)
+				tempVal = pWpsCtrl->WscConfigMethods & 0xF9FF;
+			else
 	tempVal = pWpsCtrl->WscConfigMethods & 0xF97F;
+		}
 		else
 #endif /* WSC_V2_SUPPORT */
 			tempVal = pWpsCtrl->WscConfigMethods & 0x00FF;
@@ -5623,6 +5741,109 @@ VOID WscStop(
 #endif /* WSC_LED_SUPPORT */
 
 }
+
+#ifdef CON_WPS
+VOID WscConWpsStop(
+        IN  PRTMP_ADAPTER   pAd,
+    	IN  BOOLEAN         bFromApCli,
+	IN  PWSC_CTRL       pWscControl)
+{
+
+	UCHAR   apidx = (pWscControl->EntryIfIdx & 0x0F);
+
+	DBGPRINT(RT_DEBUG_TRACE, ("-----> WscConWpsStop\n"));
+
+	if (pAd->conWscStatus == CON_WPS_STATUS_DISABLED)
+		return;
+
+#ifdef MULTI_INF_SUPPORT
+	/* Single Driver ctrl the WSC SM between the two pAd */
+	PRTMP_ADAPTER pOpposAd;
+ 	PWSC_CTRL pWpsCtrl = NULL;
+    INT IsAPConfigured = 0;
+	UCHAR pAdListInfo[2] = {0, 0};
+	INT myBandIdx = 0, opsBandIdx = 0;
+
+	/* Update the Global pAd List Band Info */
+	pOpposAd = (PRTMP_ADAPTER)pAdGlobalList[0];
+	pAdListInfo[0] = RFIC_IS_5G_BAND(pOpposAd);
+	
+	pOpposAd = (PRTMP_ADAPTER)pAdGlobalList[1];
+	pAdListInfo[1] = RFIC_IS_5G_BAND(pOpposAd);
+	
+	DBGPRINT(RT_DEBUG_TRACE, ("%s pAdListInfo is5G---> [%d, %d]\n",
+		pAdListInfo[0], pAdListInfo[1]));
+
+	/* which band from function in */
+	if (RFIC_IS_5G_BAND(pAd) == pAdListInfo[0])
+	{
+		myBandIdx = 0;
+		opsBandIdx = 1;
+	}
+	else if (RFIC_IS_5G_BAND(pAd) == pAdListInfo[1])
+	{
+		myBandIdx = 1;
+		opsBandIdx = 0;
+	}
+	else
+		;
+		
+
+	pOpposAd = (PRTMP_ADAPTER) pAdGlobalList[opsBandIdx];
+
+	if (bFromApCli)
+	{
+		pWpsCtrl = &pOpposAd->ApCfg.ApCliTab[BSS0].WscControl;
+		DBGPRINT(RT_DEBUG_TRACE, ("CON_WPS: Stop the Band[%d] ApCli WPS, state [%d]\n",
+                                                        opsBandIdx, pWpsCtrl->WscState));
+        if (pWpsCtrl->WscState != WSC_STATE_OFF)
+        {
+        	WscStop(pOpposAd, TRUE, pWpsCtrl);
+                pWpsCtrl->WscConfMode = WSC_DISABLE;
+        }
+	}
+	else
+	{
+        pWpsCtrl = &pOpposAd->ApCfg.MBSSID[apidx].WscControl;
+        IsAPConfigured = pWpsCtrl->WscConfStatus;
+
+        if ((pWpsCtrl->WscConfMode != WSC_DISABLE) &&
+             (pWpsCtrl->bWscTrigger == TRUE))
+        {
+        	DBGPRINT(RT_DEBUG_TRACE, ("CON_WPS[%d]: Stop the AP Wsc Machine\n", opsBandIdx));
+                WscBuildBeaconIE(pOpposAd, IsAPConfigured, FALSE, 0, 0, apidx, NULL, 0, AP_MODE);
+                WscBuildProbeRespIE(pOpposAd, WSC_MSGTYPE_AP_WLAN_MGR, IsAPConfigured, FALSE, 0, 0,
+                                          	                          apidx, NULL, 0, AP_MODE);
+                APUpdateBeaconFrame(pOpposAd, apidx);
+                WscStop(pOpposAd, FALSE, pWpsCtrl);
+        }
+	}
+
+
+#else
+	/* Separate Driver used to MiniUpnpd to comunicate each other. */
+        PWSC_UPNP_CTRL_WSC_BAND_STOP pWscUpnpBandStop;
+
+        os_alloc_mem(NULL, (UCHAR **)&pWscUpnpBandStop, sizeof(WSC_UPNP_CTRL_WSC_BAND_STOP));
+
+        if (pWscUpnpBandStop != NULL)
+        {
+        	NdisCopyMemory(pWscUpnpBandStop->ifName, pAd->net_dev->name, IFNAMSIZ);
+                pWscUpnpBandStop->is2gBand = !RFIC_IS_5G_BAND(pAd);
+                pWscUpnpBandStop->isApCli = bFromApCli;
+
+                DBGPRINT(RT_DEBUG_TRACE, ("CON_WPS: WSC_UPNP_CTRL_WSC_BAND_STOP[%s] is2G[%d], isApCli[%d]\n",
+                				pWscUpnpBandStop->ifName,
+                                                pWscUpnpBandStop->is2gBand, pWscUpnpBandStop->isApCli));
+
+                WscSendUPnPMessage(pAd, apidx, WSC_OPCODE_UPNP_CTRL, 99, pWscUpnpBandStop,
+                                sizeof(WSC_UPNP_CTRL_WSC_BAND_STOP), 0, 0, NULL, AP_MODE);
+                os_free_mem(NULL, pWscUpnpBandStop);
+         }
+#endif /* MULTI_INF_SUPPORT */
+	DBGPRINT(RT_DEBUG_TRACE, ("<----- WscConWpsStop\n"));
+}
+#endif /* CON_WPS */
 
 VOID WscInit(
 	IN	PRTMP_ADAPTER	pAd,
@@ -7723,6 +7944,29 @@ INT	WscGetConfWithoutTrigger(
 	UCHAR		apIdx;
 
 #ifdef LINUX
+#ifdef RTMP_RBUS_SUPPORT
+/* +++  added by YYHuang@Ralink, 08/03/12 */
+/*
+ Notify user space application that WPS procedure will begin.
+*/
+    {
+#define WSC_SINGLE_TRIGGER_APPNAME  "goahead"
+
+        struct task_struct *p;
+        read_lock(&tasklist_lock);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,21)
+	for_each_process(p)
+#else
+	for_each_task(p)
+#endif
+	{
+            if(!strcmp(p->comm, WSC_SINGLE_TRIGGER_APPNAME))
+                send_sig(SIGXFSZ, p, 0);
+        }
+        read_unlock(&tasklist_lock);
+    }
+/* ---  added by YYHuang@Ralink, 08/03/12 */
+#endif /* RTMP_RBUS_SUPPORT */
 #endif /* LINUX */
 
 
@@ -7983,6 +8227,11 @@ VOID WscWriteConfToDatFile(RTMP_ADAPTER *pAd, UCHAR CurOpMode)
 			return;
 		}
 		pWscControl = &pAd->ApCfg.MBSSID[apidx].WscControl;
+#ifdef RTMP_RBUS_SUPPORT
+		if (pAd->infType == RTMP_DEV_INF_RBUS)
+			fileName = AP_PROFILE_PATH_RBUS;
+		else
+#endif /* RTMP_RBUS_SUPPORT */
 			fileName = AP_PROFILE_PATH;
 
 		snprintf((PSTRING) WepKeyName, sizeof(WepKeyName), "Key%dStr%d=", pAd->ApCfg.MBSSID[apidx].wdev.DefaultKeyId+1, apidx+1);

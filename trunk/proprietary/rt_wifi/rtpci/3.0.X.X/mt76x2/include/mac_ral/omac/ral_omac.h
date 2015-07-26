@@ -154,6 +154,15 @@ typedef	struct GNU_PACKED _TXWI_OMAC {
 	/* Word 3 */
 	UINT32		EIV;
 
+#if defined(RT5592) || defined(RT6352)
+	/* Word 4 */
+	/* For Expert Antenna */
+	UINT32		Reserved:11;
+	UINT32		CCP:1;
+	UINT32		TxPwrAdj:4;
+	UINT32		TxStreamMode:8;
+	UINT32		EncodedAntID:8;
+#endif /* defined(RT5592) || defined(RT6352) */
 }	TXWI_OMAC;
 #else
 typedef	struct GNU_PACKED _TXWI_OMAC {
@@ -194,10 +203,21 @@ typedef	struct GNU_PACKED _TXWI_OMAC {
 	/*Word3 */
 	UINT32		EIV;
 
+#if defined(RT5592) || defined(RT6352)
+	/* Word 4 */
+	/* For Expert Antenna */
+	UINT32      EncodedAntID:8;
+	UINT32      TxStreamMode:8;
+	UINT32      TxPwrAdj:4;
+	UINT32      CCP:1;
+	UINT32      Reserved:11; 	
+#endif /* defined(RT5592) || defined(RT6352) */
 }	TXWI_OMAC;
 #endif
 
 
+#ifdef RTMP_RBUS_SUPPORT
+#endif /* RTMP_RBUS_SUPPORT */
 
 /*
 	RXWI wireless information format, in PBF. invisible in driver.
@@ -236,7 +256,16 @@ typedef	struct GNU_PACKED _RXWI_OMAC{
 	UINT32		SNR1:8;
 	UINT32		SNR0:8;
 	
+#if defined(RT2883) || defined(RT3883) || defined(RT3593) || defined(RT5592) || defined(RT6352)
+	UINT32		rsv3;
+#endif /* defined(RT2883) || defined(RT3883) || defined(RT3593) || defined(RT5592) || defined(RT6352) */
 
+#if defined(RT5592) || defined(RT6352)
+	/* Word 5 */
+	/* For Exper Antenna */
+	UINT32		rsv4:24;
+	UINT32		EANT_ID:8;
+#endif /* defined(RT5592) || defined(RT6352) */
 }	RXWI_OMAC;
 #else
 typedef	struct GNU_PACKED _RXWI_OMAC{
@@ -272,7 +301,16 @@ typedef	struct GNU_PACKED _RXWI_OMAC{
 	UINT32		SNR2:8;
 	UINT32		FOFFSET:8;
 
+#if defined(RT2883) || defined(RT3883) || defined(RT3593) || defined(RT5592) || defined(RT6352)
+	UINT32		rsv3;
+#endif /* defined(RT2883) || defined(RT3883) || defined(RT3593) || defined(RT5592) || defined(RT6352) */
 
+#if defined(RT5592) || defined(RT6352)
+	/* Word 5 */
+	/* For Exper Antenna */
+	UINT32      EANT_ID:8;
+	UINT32      rsv4:24;
+#endif /* defined(RT5592) || defined(RT6352) */
 }	RXWI_OMAC;
 #endif
 

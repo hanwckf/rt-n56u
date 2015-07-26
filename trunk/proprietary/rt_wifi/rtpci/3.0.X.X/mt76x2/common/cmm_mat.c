@@ -352,6 +352,8 @@ NDIS_STATUS MATEngineExit(
 	if(pAd->MatCfg.status == MAT_ENGINE_STAT_EXITED)
 		return TRUE;
 	
+	pAd->MatCfg.status = MAT_ENGINE_STAT_EXITED;
+
 	/* For each registered protocol, we call it's exit handler. */
 	for (i=0; i<MAX_MAT_SUPPORT_PROTO_NUM; i++)
 	{
@@ -369,8 +371,6 @@ NDIS_STATUS MATEngineExit(
 	}
 #endif
 
-	pAd->MatCfg.status = MAT_ENGINE_STAT_EXITED;
-	
 	return TRUE;
 	
 }

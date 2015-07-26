@@ -86,100 +86,6 @@ BOOLEAN CFG80211_SyncPacketWmmIe(RTMP_ADAPTER *pAd, VOID *pData, ULONG dataLen)
 
 	return FALSE;	
 }
-#endif /* CONFIG_AP_SUPPORT */
-
-static
-PCFG80211_TX_PACKET CFG80211_TxMgmtFrameSearch(RTMP_ADAPTER *pAd, USHORT Sequence)
-{
-	PLIST_HEADER  pPacketList = &pAd->cfg80211_ctrl.cfg80211TxPacketList;
-	PCFG80211_TX_PACKET pTxPkt = NULL;
-	PLIST_ENTRY pListEntry = NULL;
-
-	DBGPRINT(RT_DEBUG_ERROR, ("CFG_TX_STATUS: Search %d\n", Sequence));
-	pListEntry = pPacketList->pHead;
-	pTxPkt = (PCFG80211_TX_PACKET)pListEntry;
-
-	while (pTxPkt != NULL)
-	{
-		if (pTxPkt->TxStatusSeq == Sequence)
-		{
-			DBGPRINT(RT_DEBUG_ERROR, ("CFG_TX_STATUS: got %d\n", Sequence));
-			return pTxPkt;
-		}	
-		
-		pListEntry = pListEntry->pNext;
-		pTxPkt = (PCFG80211_TX_PACKET)pListEntry;
-	}	
-
-}
-
-INT CFG80211_SendMgmtFrame(RTMP_ADAPTER *pAd, VOID *pData, ULONG Data)
-{
-	if (pData != NULL) 
-	{
-		{		
-			PCFG80211_CTRL pCfg80211_ctrl = &pAd->cfg80211_ctrl;
-
-			pCfg80211_ctrl->TxStatusInUsed = TRUE;
-			pCfg80211_ctrl->TxStatusSeq = pAd->Sequence;
-
-			if (pCfg80211_ctrl->pTxStatusBuf != NULL)
-			{
-				os_free_mem(NULL, pCfg80211_ctrl->pTxStatusBuf);
-				pCfg80211_ctrl->pTxStatusBuf = NULL;
-			}
-
-			os_alloc_mem(NULL, (UCHAR **)&pCfg80211_ctrl->pTxStatusBuf, Data);
-			if (pCfg80211_ctrl->pTxStatusBuf != NULL)
-			{
-				NdisCopyMemory(pCfg80211_ctrl->pTxStatusBuf, pData, Data);
-				pCfg80211_ctrl->TxStatusBufLen = Data;
-			}
-			else
-			{
-				pCfg80211_ctrl->TxStatusBufLen = 0;
-				DBGPRINT(RT_DEBUG_ERROR, ("CFG_TX_STATUS: MEM ALLOC ERROR\n"));
-				return NDIS_STATUS_FAILURE;
-			}
-			CFG80211_CheckActionFrameType(pAd, "TX", pData, Data);
-
-#ifdef CONFIG_AP_SUPPORT
-			struct ieee80211_mgmt *mgmt;
-        		mgmt = (struct ieee80211_mgmt *)pData;
-        		if (ieee80211_is_probe_resp(mgmt->frame_control))
-			{
-				//BOOLEAN res;
-				INT offset = sizeof(HEADER_802_11) + 12;
-				CFG80211_SyncPacketWmmIe(pAd, pData + offset , Data - offset);
-				//hex_dump("probe_rsp:", pData, Data);
-			}
-#endif /* CONFIG_AP_SUPPORT */
-
-			MiniportMMRequest(pAd, 0, pData, Data);
-		}
-	}
-
-}
-
-VOID CFG80211_SendMgmtFrameDone(RTMP_ADAPTER *pAd, USHORT Sequence)
-{
-//RTMP_USB_SUPPORT/RTMP_PCI_SUPPORT
-	PCFG80211_CTRL pCfg80211_ctrl = &pAd->cfg80211_ctrl;
-
-	if (pCfg80211_ctrl->TxStatusInUsed && pCfg80211_ctrl->pTxStatusBuf 
-		/*&& (pAd->TxStatusSeq == pHeader->Sequence)*/)
-	{
-		DBGPRINT(RT_DEBUG_INFO, ("CFG_TX_STATUS: REAL send %d\n", Sequence));
-		
-		CFG80211OS_TxStatus(CFG80211_GetEventDevice(pAd), 5678, 
-							pCfg80211_ctrl->pTxStatusBuf, pCfg80211_ctrl->TxStatusBufLen, 
-							TRUE);
-		pCfg80211_ctrl->TxStatusSeq = 0;
-		pCfg80211_ctrl->TxStatusInUsed = FALSE;
-	} 
-
-
-}
 VOID CFG80211_ParseBeaconIE(RTMP_ADAPTER *pAd, MULTISSID_STRUCT *pMbss, struct wifi_dev *wdev,UCHAR *wpa_ie,UCHAR *rsn_ie)
 {
 	PEID_STRUCT 		 pEid;
@@ -482,6 +388,102 @@ VOID CFG80211_ParseBeaconIE(RTMP_ADAPTER *pAd, MULTISSID_STRUCT *pMbss, struct w
 			}
 		}	
 	}
+
+#endif /* CONFIG_AP_SUPPORT */
+
+static
+PCFG80211_TX_PACKET CFG80211_TxMgmtFrameSearch(RTMP_ADAPTER *pAd, USHORT Sequence)
+{
+	PLIST_HEADER  pPacketList = &pAd->cfg80211_ctrl.cfg80211TxPacketList;
+	PCFG80211_TX_PACKET pTxPkt = NULL;
+	PLIST_ENTRY pListEntry = NULL;
+
+	DBGPRINT(RT_DEBUG_ERROR, ("CFG_TX_STATUS: Search %d\n", Sequence));
+	pListEntry = pPacketList->pHead;
+	pTxPkt = (PCFG80211_TX_PACKET)pListEntry;
+
+	while (pTxPkt != NULL)
+	{
+		if (pTxPkt->TxStatusSeq == Sequence)
+		{
+			DBGPRINT(RT_DEBUG_ERROR, ("CFG_TX_STATUS: got %d\n", Sequence));
+			return pTxPkt;
+		}	
+		
+		pListEntry = pListEntry->pNext;
+		pTxPkt = (PCFG80211_TX_PACKET)pListEntry;
+	}	
+
+}
+
+INT CFG80211_SendMgmtFrame(RTMP_ADAPTER *pAd, VOID *pData, ULONG Data)
+{
+	if (pData != NULL) 
+	{
+		{		
+			PCFG80211_CTRL pCfg80211_ctrl = &pAd->cfg80211_ctrl;
+
+			pCfg80211_ctrl->TxStatusInUsed = TRUE;
+			pCfg80211_ctrl->TxStatusSeq = pAd->Sequence;
+
+			if (pCfg80211_ctrl->pTxStatusBuf != NULL)
+			{
+				os_free_mem(NULL, pCfg80211_ctrl->pTxStatusBuf);
+				pCfg80211_ctrl->pTxStatusBuf = NULL;
+			}
+
+			os_alloc_mem(NULL, (UCHAR **)&pCfg80211_ctrl->pTxStatusBuf, Data);
+			if (pCfg80211_ctrl->pTxStatusBuf != NULL)
+			{
+				NdisCopyMemory(pCfg80211_ctrl->pTxStatusBuf, pData, Data);
+				pCfg80211_ctrl->TxStatusBufLen = Data;
+			}
+			else
+			{
+				pCfg80211_ctrl->TxStatusBufLen = 0;
+				DBGPRINT(RT_DEBUG_ERROR, ("CFG_TX_STATUS: MEM ALLOC ERROR\n"));
+				return NDIS_STATUS_FAILURE;
+			}
+			CFG80211_CheckActionFrameType(pAd, "TX", pData, Data);
+
+#ifdef CONFIG_AP_SUPPORT
+			struct ieee80211_mgmt *mgmt;
+        		mgmt = (struct ieee80211_mgmt *)pData;
+        		if (ieee80211_is_probe_resp(mgmt->frame_control))
+			{
+				//BOOLEAN res;
+				INT offset = sizeof(HEADER_802_11) + 12;
+				CFG80211_SyncPacketWmmIe(pAd, pData + offset , Data - offset);
+				//hex_dump("probe_rsp:", pData, Data);
+			}
+#endif /* CONFIG_AP_SUPPORT */
+
+			MiniportMMRequest(pAd, 0, pData, Data);
+		}
+	}
+
+}
+
+VOID CFG80211_SendMgmtFrameDone(RTMP_ADAPTER *pAd, USHORT Sequence)
+{
+//RTMP_USB_SUPPORT/RTMP_PCI_SUPPORT
+	PCFG80211_CTRL pCfg80211_ctrl = &pAd->cfg80211_ctrl;
+
+	if (pCfg80211_ctrl->TxStatusInUsed && pCfg80211_ctrl->pTxStatusBuf 
+		/*&& (pAd->TxStatusSeq == pHeader->Sequence)*/)
+	{
+		DBGPRINT(RT_DEBUG_INFO, ("CFG_TX_STATUS: REAL send %d\n", Sequence));
+		
+		CFG80211OS_TxStatus(CFG80211_GetEventDevice(pAd), 5678, 
+							pCfg80211_ctrl->pTxStatusBuf, pCfg80211_ctrl->TxStatusBufLen, 
+							TRUE);
+		pCfg80211_ctrl->TxStatusSeq = 0;
+		pCfg80211_ctrl->TxStatusInUsed = FALSE;
+	} 
+
+
+}
+
 #endif /* RT_CFG80211_SUPPORT */
 
 

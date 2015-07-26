@@ -333,7 +333,10 @@ int main(int argc ,char *argv[])
 			//strcat(infname, "/mcu/bin/WIFI_RAM_CODE_ALL_tssi_average.bin");
 			//strcat(infname, "/mcu/bin/WIFI_RAM_CODE_ALL_tssi_0618.bin");
 			//strcat(infname, "/mcu/bin/mt7662_firmware_e3_v1.4.bin");
-			strcat(infname, "/mcu/bin/mt7662_firmware_e3_v1.5.bin");
+			strcat(infname, "/mcu/bin/mt7662_firmware_e3_v1.7.bin");
+			//strcat(infname, "/mcu/bin/mt7662_firmware_e3_v1.6_20140905.bin");
+			//strcat(infname, "/mcu/bin/mt7662_firmware_e3_v1.6.bin");
+			//strcat(infname, "/mcu/bin/mt7662_firmware_e3_v1.5.bin");
 			//strcat(infname, "/mcu/bin/mt7662_firmware_e3_20140220.bin");
 			//strcat(infname, "/mcu/bin/mt7662_firmware_e3_20140213.bin");
 			//strcat(infname, "/mcu/bin/mt7662_firmware_e3_v1.3.bin");
@@ -392,7 +395,8 @@ int main(int argc ,char *argv[])
 			//strcat(infname, "/mcu/bin/WIFI_RAM_CODE_ALL_20130304_fpga.bin");
     			strcat(outfname, "/include/mcu/mt7662_firmware.h");
 			strcat(fw_name, "MT7662_FirmwareImage");
-			strcat(in_rom_patch, "/mcu/bin/mt7662_patch_e3_hdr_v0.0.2_P48.bin");
+			strcat(in_rom_patch, "/mcu/bin/mt7662_patch_e3_hdr_v0.0.2_P69.bin");
+			//strcat(in_rom_patch, "/mcu/bin/mt7662_patch_e3_hdr_v0.0.2_P48.bin");
 			//strcat(in_rom_patch, "/mcu/bin/mt7662_patch_e3_hdr_v0.0.0.1.bin");
 			//strcat(in_rom_patch, "/mcu/bin/mt7662_patch_e1_hdr_v0.0.0.9.bin");
 			//strcat(in_rom_patch, "/mcu/bin/mt7662_patch_e1_hdr_coex_v0.0.0.2.bin");

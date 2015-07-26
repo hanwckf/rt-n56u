@@ -1758,9 +1758,11 @@ NDIS_802_11_NETWORK_TYPE NetworkTypeInUseSanity(BSS_ENTRY *pBss)
 	if (pBss->HtCapabilityLen != 0)
 	{
 		if (NetWorkType == Ndis802_11OFDM5) {
+#ifdef DOT11_VHT_AC
 			if (pBss->vht_cap_len != 0)
 				NetWorkType = Ndis802_11OFDM5_AC;
 			else
+#endif /* DOT11_VHT_AC */
 				NetWorkType = Ndis802_11OFDM5_N;
 		} else
 			NetWorkType = Ndis802_11OFDM24_N;
@@ -2125,6 +2127,14 @@ BOOLEAN PeerProbeReqSanity(
 	        case IE_VENDOR_SPECIFIC:
 				if (eid_len <= 4)
 					break;
+#ifdef RSSI_FEEDBACK
+		if (NdisEqualMemory(eid_data, RALINK_OUI, 3) && (eid_len == 7))
+		{
+			if (*(eid_data + 3/* skip RALINK_OUI */) & 0x8)
+				ProbeReqParam->bRequestRssi = TRUE;
+			break;
+		}
+#endif /* RSSI_FEEDBACK */
 
                 if (NdisEqualMemory(eid_data, WPS_OUI, 4)
  					)

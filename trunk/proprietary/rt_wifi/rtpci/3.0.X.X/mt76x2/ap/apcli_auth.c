@@ -564,18 +564,24 @@ static VOID ApCliPeerDeauthAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 
 
 #ifdef MAC_REPEATER_SUPPORT
-		ifIndex = (USHORT)(Elem->Priv);
-#endif /* MAC_REPEATER_SUPPORT */
-
-		MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_PEER_DISCONNECT_REQ, 0, NULL, ifIndex);
-#ifdef MAC_REPEATER_SUPPORT
-		if ((pAd->ApCfg.bMACRepeaterEn == TRUE) && (ifIndex >= 64))
+		if ((pAd->ApCfg.bMACRepeaterEn == TRUE) && (CliIdx != 0xFF))
 		{
-			RTMP_MLME_HANDLER(pAd);
-			ifIndex = ((ifIndex - 64) / 16);
+#ifdef APCLI_LINK_COVER_SUPPORT
+#ifdef DOT11_N_SUPPORT
+			/* free resources of BA*/
+			BASessionTearDownALL(pAd, pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].MacTabWCID);
+#endif /* DOT11_N_SUPPORT */
+#endif /* APCLI_LINK_COVER_SUPPORT */
+			RTMPRemoveRepeaterDisconnectEntry(pAd, ifIndex, CliIdx);
 			RTMPRemoveRepeaterEntry(pAd, ifIndex, CliIdx);
+
 		}
+		else
 #endif /* MAC_REPEATER_SUPPORT */
+		{
+			MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_PEER_DISCONNECT_REQ, 0, NULL, ifIndex);
+			RTMP_MLME_HANDLER(pAd);
+		}
 	}
 	else
 	{

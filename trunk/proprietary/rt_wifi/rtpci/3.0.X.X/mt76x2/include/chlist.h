@@ -66,13 +66,13 @@ typedef struct _CH_REGION {
 extern CH_REGION ChRegion[];
 #endif /* EXT_BUILD_CHANNEL_LIST */
 
-#ifdef ED_MONITOR
+
 typedef struct _COUNTRY_PROP {
 	UCHAR CountReg[3];
 	UCHAR DfsType;			/* 0: CE, 1: FCC, 2: JAP, 3:JAP_W53, JAP_W56 */
 	BOOLEAN edcca_on;
 } COUNTRY_PROP, *PCOUNTRY_PROP;
-#endif /* ED_MONITOR */
+
 
 #ifdef SINGLE_SKU_V2
 // TODO: shiang-usw, integrate these data structures to a single one!
@@ -128,6 +128,8 @@ VOID BuildBeaconChList(
 	OUT PUCHAR pBuf,
 	OUT	PULONG pBufLen);
 #endif /* EXT_BUILD_CHANNEL_LIST */
+
+UCHAR GetCountryRegionFromCountryCode(PRTMP_ADAPTER pAd);
 
 #ifdef DOT11_N_SUPPORT
 VOID N_ChannelCheck(RTMP_ADAPTER *pAd);

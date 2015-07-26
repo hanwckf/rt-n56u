@@ -101,6 +101,7 @@ UCHAR ZeroSsid[32] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 
 
+#ifdef MT76x2
 #ifdef DYNAMIC_VGA_SUPPORT
 void dynamic_ed_cca_threshold_adjust(RTMP_ADAPTER * pAd)
 {
@@ -404,8 +405,8 @@ BOOLEAN dynamic_channel_model_adjust(RTMP_ADAPTER *pAd)
 void periodic_monitor_false_cca_adjust_vga(RTMP_ADAPTER *pAd)
 {
 	if ((pAd->CommonCfg.lna_vga_ctl.bDyncVgaEnable) &&
-		(pAd->chipCap.dynamic_vga_support) &&
 		(pAd->MacTab.Size > 0) &&
+		(pAd->chipCap.dynamic_vga_support) &&
 		OPSTATUS_TEST_FLAG(pAd, fOP_AP_STATUS_MEDIA_STATE_CONNECTED)) {
 		UCHAR val1, val2;
 		UINT32 bbp_val1, bbp_val2;
@@ -489,6 +490,7 @@ void periodic_monitor_false_cca_adjust_vga(RTMP_ADAPTER *pAd)
 }
 
 #endif /* DYNAMIC_VGA_SUPPORT */
+#endif /* MT76x2 */
 
 #ifdef MT76x2
 #endif
@@ -1272,6 +1274,18 @@ VOID MlmePeriodicExec(
 #endif /* MT76x2 */
 #endif /* DYNAMIC_VGA_SUPPORT */
 
+#ifdef MT76x2
+	if ((pAd->Mlme.OneSecPeriodicRound % 1 == 0) && IS_MT76x2(pAd))
+		mt76x2_get_current_temp(pAd);
+#endif /* MT76x2 */
+
+
+#ifdef CONFIG_AP_SUPPORT
+#ifdef CARRIER_DETECTION_SUPPORT
+	if (pAd->CommonCfg.CarrierDetect.Enable)
+		CarrierDetectionPeriodicStateCtrl(pAd);
+#endif /* CARRIER_DETECTION_SUPPORT */
+#endif /* CONFIG_AP_SUPPORT */
 
 	/* by default, execute every 500ms */
 	if ((pAd->ra_interval) && 
@@ -1347,9 +1361,17 @@ VOID MlmePeriodicExec(
 					periodic_monitor_false_cca_adjust_vga(pAd);
 			}
 		}
-#endif
+#endif /* MT76x2 */
 #endif /* CONFIG_AP_SUPPORT */
 
+
+#ifdef RT6352
+		if (IS_RT6352(pAd)) {
+			if (pAd->Mlme.OneSecPeriodicRound % 1 == 0) {
+				RTMP_ASIC_DYNAMIC_VGA_GAIN_CONTROL(pAd);
+			}
+		}
+#endif /* RT6352 */
 #endif /* DYNAMIC_VGA_SUPPORT */
 
 	/*
@@ -1407,7 +1429,6 @@ VOID MlmePeriodicExec(
 			(RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RADIO_OFF | 
 				fRTMP_ADAPTER_DISABLE_DEQUEUEPACKET) == FALSE)) {
 			if ((pAd->Mlme.OneSecPeriodicRound % 1) == 0) {
-					mt76x2_get_current_temp(pAd);
 #ifdef CONFIG_AP_SUPPORT
 					mt76x2_tssi_compensation(pAd, pAd->hw_cfg.cent_ch);
 #endif
@@ -1421,6 +1442,9 @@ VOID MlmePeriodicExec(
 			if ((pAd->Mlme.OneSecPeriodicRound % 10) == 0)
 			{
 				{
+#ifdef VCORECAL_SUPPORT
+					AsicVCORecalibration(pAd);
+#endif /* VCORECAL_SUPPORT */
 				}
 			}
 		}
@@ -1505,6 +1529,71 @@ VOID MlmePeriodicExec(
 		RTMP_MLME_HANDLER(pAd);
 	}
 
+#ifdef CONFIG_AP_SUPPORT
+#ifdef AP_PARTIAL_SCAN_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+	{
+		if ((pAd->ApCfg.bPartialScanning == TRUE)  &&
+			(pAd->ApCfg.PartialScanChannelNum == DEFLAUT_PARTIAL_SCAN_CH_NUM))/* pAd->ApCfg.PartialScanChannelNum == DEFLAUT_PARTIAL_SCAN_CH_NUM means that one partial scan is finished */
+		{
+			if (((pAd->ApCfg.PartialScanBreakTime++)%DEFLAUT_PARTIAL_SCAN_BREAK_TIME) == 0)
+				ApSiteSurvey(pAd, NULL, SCAN_ACTIVE, FALSE); /* To check: when EXT_BUILD_CHANNEL_LIST, is the ScanType switched to SCAN_PASSIVE for DFS channels?*/
+		}
+	}
+#endif /* AP_PARTIAL_SCAN_SUPPORT */
+#endif /* CONFIG_AP_SUPPORT */
+
+#ifdef RT6352
+	if (IS_RT6352(pAd)) {
+	if (pAd->CommonCfg.bEnTemperatureTrack == TRUE)
+	{
+#ifdef RTMP_INTERNAL_TX_ALC
+		if (pAd->TxPowerCtrl.bInternalTxALC)
+		{
+
+			if (RT635xCheckTssiCompensation(pAd))
+			{
+#ifdef RTMP_TEMPERATURE_CALIBRATION
+				RT6352_TemperatureCalibration(pAd);
+#endif /* RTMP_TEMPERATURE_CALIBRATION */
+				DoDPDCalibration(pAd);
+			}
+		}
+		else
+#endif /* RTMP_INTERNAL_TX_ALC */
+#ifdef RTMP_TEMPERATURE_COMPENSATION
+		if (pAd->bAutoTxAgcG)
+		{
+			if (RT6352_TemperatureCompensation(pAd, FALSE) == TRUE)
+				pAd->CommonCfg.bEnTemperatureTrack = FALSE;
+		}
+		else
+#endif /* RTMP_TEMPERATURE_COMPENSATION */
+		{
+#ifdef RTMP_TEMPERATURE_CALIBRATION
+			UCHAR bbpval;
+			CHAR BBPR49;
+
+			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R47, &bbpval);
+			if ((bbpval & 0x10) == 0)
+			{
+				bbpval &= 0xf8;
+				bbpval |= 0x04;
+				RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R47, bbpval);
+
+				/* save temperature */ 
+				RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R49, &BBPR49);
+				pAd->CurrTemperature = (INT32) BBPR49;
+
+				DBGPRINT(RT_DEBUG_INFO, ("Current Temperature from BBP_R49=0x%x\n", pAd->CurrTemperature));
+				RT6352_TemperatureCalibration(pAd);
+				pAd->CommonCfg.bEnTemperatureTrack = FALSE;
+			}
+#endif /* RTMP_TEMPERATURE_CALIBRATION */
+		}
+	}
+	}
+#endif /* RT6352 */
 #ifdef WSC_INCLUDED
 	WSC_HDR_BTN_MR_HANDLE(pAd);
 #endif /* WSC_INCLUDED */

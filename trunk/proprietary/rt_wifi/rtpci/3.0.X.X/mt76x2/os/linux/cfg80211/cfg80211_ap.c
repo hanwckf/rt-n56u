@@ -170,7 +170,11 @@ static INT CFG80211DRV_UpdateApSettingFromBeacon(PRTMP_ADAPTER pAd, UINT mbss_id
 VOID CFG80211DRV_DisableApInterface(PRTMP_ADAPTER pAd)
 {
 	/*CFG_TODO: IT Should be set fRTMP_ADAPTER_HALT_IN_PROGRESS */
+	MULTISSID_STRUCT *pMbss = &pAd->ApCfg.MBSSID[MAIN_MBSSID];
+	struct wifi_dev *wdev = &pMbss->wdev;
+	
 	pAd->ApCfg.MBSSID[MAIN_MBSSID].bBcnSntReq = FALSE;
+	wdev->Hostapd = Hostapd_Diable;
 
   	/* For AP - STA switch */
 	if (pAd->CommonCfg.BBPCurrentBW != BW_40)
@@ -271,10 +275,13 @@ VOID CFG80211_UpdateBeacon(
 	}	 
  
     BeaconTransmit.word = 0;
+#ifdef RT_CFG80211_P2P_SUPPORT
+
 	/* Should be Find the P2P IE Then Set Basic Rate to 6M */	
 	if (RTMP_CFG80211_VIF_P2P_GO_ON(pAd)) 
 	BeaconTransmit.field.MODE = MODE_OFDM; /* Use 6Mbps */
 	else
+#endif
 		BeaconTransmit.field.MODE = MODE_CCK;	
 	BeaconTransmit.field.MCS = MCS_RATE_6;
 
@@ -282,10 +289,7 @@ VOID CFG80211_UpdateBeacon(
 	RTMPWriteTxWI(pAd, (UCHAR *)pTxWI, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, 0, BSS0Mcast_WCID,
                 	beacon_len, PID_MGMT, 0, 0, IFS_HTTXOP, &BeaconTransmit);
 
-	/* CFG_TODO */		
-	RT28xx_UpdateBeaconToAsic(pAd, MAIN_MBSSID, beacon_len, 
-			pAd->ApCfg.MBSSID[MAIN_MBSSID].TimIELocationInBeacon);		
-	
+	updateAllBeacon(pAd, MAIN_MBSSID, beacon_len);
 }
 
 BOOLEAN CFG80211DRV_OpsBeaconSet(VOID *pAdOrg, VOID *pData)
@@ -309,13 +313,6 @@ BOOLEAN CFG80211DRV_OpsBeaconAdd(VOID *pAdOrg, VOID *pData)
 	INT i;
 	PMULTISSID_STRUCT pMbss = &pAd->ApCfg.MBSSID[MAIN_MBSSID];
 	struct wifi_dev *wdev = &pMbss->wdev;
-
-#ifdef RT_CFG80211_SUPPORT
-#ifdef RT_CFG80211_P2P_SUPPORT
-	if (!RTMP_CFG80211_VIF_P2P_GO_ON(pAd)) 
-#endif 		
-		wdev->Hostapd=Hostapd_CFG;
-#endif
 
 	CFG80211DBG(RT_DEBUG_TRACE, ("80211> %s ==>\n", __FUNCTION__));
 
@@ -447,7 +444,9 @@ BOOLEAN CFG80211DRV_OpsBeaconAdd(VOID *pAdOrg, VOID *pData)
 #endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
 	
 	/*AP */
-	if (wdev->Hostapd == Hostapd_CFG)
+#ifdef RT_CFG80211_P2P_SUPPORT
+	if (!RTMP_CFG80211_VIF_P2P_GO_ON(pAd)) 
+#endif
 		MlmeUpdateTxRates(pAd, FALSE, MIN_NET_DEVICE_FOR_MBSSID);
 		
 #ifdef DOT11_N_SUPPORT 
@@ -478,7 +477,12 @@ BOOLEAN CFG80211DRV_OpsBeaconAdd(VOID *pAdOrg, VOID *pData)
 
 	OPSTATUS_SET_FLAG(pAd, fOP_AP_STATUS_MEDIA_STATE_CONNECTED);	
 	RTMP_IndicateMediaState(pAd, NdisMediaStateConnected);
-
+#ifdef RT_CFG80211_SUPPORT
+#ifdef RT_CFG80211_P2P_SUPPORT
+	if (!RTMP_CFG80211_VIF_P2P_GO_ON(pAd)) 
+#endif 	/*RT_CFG80211_P2P_SUPPORT*/	
+		wdev->Hostapd=Hostapd_CFG;
+#endif /*RT_CFG80211_SUPPORT*/
 	return TRUE;
 }
 

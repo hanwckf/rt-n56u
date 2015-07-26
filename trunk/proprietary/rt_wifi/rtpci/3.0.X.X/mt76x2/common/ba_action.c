@@ -64,6 +64,14 @@ VOID BA_MaxWinSizeReasign(
 	else
 		MaxPeerRxSize = (((1 << (pEntryPeer->MaxRAmpduFactor + 3)) * 10) / 16) -1;
 
+	if(pEntryPeer->MaxHTPhyMode.field.MODE == MODE_VHT)
+	{
+		if (CLIENT_STATUS_TEST_FLAG(pEntryPeer, fCLIENT_STATUS_RALINK_CHIPSET))
+			MaxPeerRxSize = (1 << (pEntryPeer->VhtMaxRAmpduFactor + 3));  /* (2^(13 + exp)) / 2048 bytes */
+		else
+			MaxPeerRxSize = (((1 << (pEntryPeer->VhtMaxRAmpduFactor + 3)) * 10) / 16) -1;
+	}	
+
 #ifdef RT65xx
 	if (IS_RT65XX(pAd)) {
 
@@ -80,6 +88,13 @@ VOID BA_MaxWinSizeReasign(
 	}
 	else
 #endif /* RT65xx */
+#ifdef RT6352
+	if (IS_RT6352(pAd))
+	{
+		MaxSize = 21;
+	}
+	else
+#endif /* RT6352 */
 	if (pAd->Antenna.field.TxPath == 3 &&
 		(pEntryPeer->HTCapability.MCSSet[2] != 0))
 		MaxSize = 31; 		/* for 3x3, MaxSize use ((48KB/1.5KB) -1) = 31 */
@@ -2186,6 +2201,18 @@ static VOID Peer_DelBA_Tx_Adapt_Disable(
 	
 	if (pEntry && pEntry->bPeerDelBaTxAdaptEn) {
 		BOOLEAN Cancelled;
+
+		if (IS_RT6352(pAd))
+		{
+			UINT32 MacReg = 0;
+			/* Disable Tx Mac look up table (Ressume original setting) */
+			RTMP_IO_READ32(pAd, TX_FBK_LIMIT, &MacReg);
+			MacReg &= ~(1 << 18);
+			RTMP_IO_WRITE32(pAd, TX_FBK_LIMIT, MacReg);
+			DBGPRINT(RT_DEBUG_TRACE,
+					("%s():TX_FBK_LIMIT = 0x%08x\n",
+					__FUNCTION__, MacReg));
+		}
 
 		pEntry->bPeerDelBaTxAdaptEn = 0;
 		RTMPCancelTimer(&pEntry->DelBA_tx_AdaptTimer, &Cancelled);

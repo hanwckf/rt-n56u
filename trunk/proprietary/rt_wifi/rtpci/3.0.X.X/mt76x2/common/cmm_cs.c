@@ -189,10 +189,10 @@ VOID CarrierDetectionPeriodicStateCtrl(
 		UINT8 TrStatus = 0;
 		
 		CarrierDetectionStatusGet(pAd, &TrStatus);
-		if (TrStatus &&
-			((--pCarrierDetect->recheck) == 0))
+		if (TrStatus)
 		{
-			if (*pCD_State == CD_NORMAL)
+			if (*pCD_State == CD_NORMAL &&
+				(--pCarrierDetect->recheck) == 0)
 			{
 				DBGPRINT(RT_DEBUG_OFF, 
 						   ("Carrier Detected ! (TrStatus = 0x%x)\n", TrStatus));
@@ -200,9 +200,11 @@ VOID CarrierDetectionPeriodicStateCtrl(
 				/* stop all TX actions including Beacon sending.*/
 				AsicDisableSync(pAd);
 			}
+			else if (*pCD_State == CD_SILENCE)
+			{
 			*pOneSecIntCount  = pCarrierDetect->CarrierGoneThreshold;
+			}
 			CarrierDetectionResetStatus(pAd);
-			
 		}
 		else
 		{
@@ -760,9 +762,9 @@ VOID CarrierDetectionStop(IN PRTMP_ADAPTER	pAd)
 	/* Stop firmware CS action */
 	AsicSendCommandToMcu(pAd, CD_ONOFF_MCU_CMD, 0xff, 0x00, 0x00, FALSE);
 #endif /* CARRIER_DETECTION_FIRMWARE_SUPPORT */
-	if ((pAd->chipCap.carrier_func == TONE_RADAR_V3)
+	if (pAd->chipCap.carrier_func == TONE_RADAR_V3 
 #ifdef DFS_SUPPORT
-		&& (pAd->CommonCfg.RadarDetect.bDfsInit == FALSE)
+		&& pAd->CommonCfg.RadarDetect.bDfsInit == FALSE
 #endif
 	)
 	{
@@ -910,8 +912,34 @@ VOID ToneRadarProgram_v3(PRTMP_ADAPTER pAd, ULONG threshold)
 	RTMP_BBP_IO_WRITE32(pAd, TR_R5, 0x80000000);
 	RTMP_BBP_IO_WRITE32(pAd, TR_R6, 0x80100000);
 	CarrierDetectionEnable(pAd, 1);	
+	RTMP_IO_WRITE32(pAd, 0x212C, 0x0c350001);
+
+
+#else
+	UCHAR bbp;
+
+	/* programe delta delay & division bit*/
+	DBGPRINT(RT_DEBUG_TRACE, ("ToneRadarProgram v3\n"));
+	bbp = pAd->CommonCfg.CarrierDetect.delta |							\
+			((pAd->CommonCfg.CarrierDetect.SymRund & 0x3) << 4)	 |		\
+			((pAd->CommonCfg.CarrierDetect.div_flag & 0x1) << 6) |		\
+			0x80;	/* Full 40MHz Detection Mode */
+	RTMP_CARRIER_IO_WRITE8(pAd, 5, bbp);
+	
+	/* program *_mask*/
+	RTMP_CARRIER_IO_WRITE8(pAd, 2, pAd->CommonCfg.CarrierDetect.VGA_Mask);
+	RTMP_CARRIER_IO_WRITE8(pAd, 3, pAd->CommonCfg.CarrierDetect.Packet_End_Mask);
+	RTMP_CARRIER_IO_WRITE8(pAd, 4, pAd->CommonCfg.CarrierDetect.Rx_PE_Mask);
+
+	/* program threshold*/
+	RTMP_CARRIER_IO_WRITE8(pAd, 6, threshold & 0xff);
+	RTMP_CARRIER_IO_WRITE8(pAd, 7, (threshold & 0xff00) >> 8);
+	RTMP_CARRIER_IO_WRITE8(pAd, 8, (threshold & 0xff0000) >> 16);
+	RTMP_CARRIER_IO_WRITE8(pAd, 9, (threshold & 0xff000000) >> 24);
+
+	/* ToneRadarEnable v2 */
+	RTMP_CARRIER_IO_WRITE8(pAd, 0, 1);
+#endif
 }
 
-
-#endif /* CARRIER_DETECTION_SUPPORT */
 

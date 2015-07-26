@@ -219,9 +219,11 @@ static VOID APPeerDeauthReqAction(
 			{
 				apCliIdx = pReptEntry->MatchApCliIdx;
 				CliIdx = pReptEntry->MatchLinkIdx;
-				MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL,
-								(64 + MAX_EXT_MAC_ADDR_SIZE*apCliIdx + CliIdx));
-						RTMP_MLME_HANDLER(pAd);
+#ifdef DOT11_N_SUPPORT
+				/* free resources of BA*/
+				BASessionTearDownALL(pAd, pReptEntry->MacTabWCID);
+#endif /* DOT11_N_SUPPORT */
+				RTMPRemoveRepeaterDisconnectEntry(pAd, apCliIdx, CliIdx);
 						RTMPRemoveRepeaterEntry(pAd, apCliIdx, CliIdx);
 			}
 		}
@@ -251,7 +253,9 @@ static VOID APPeerAuthReqAtIdleAction(
 	MULTISSID_STRUCT *pMbss;
 	struct wifi_dev *wdev;
 	CHAR rssi;
-
+#ifdef BAND_STEERING
+	BOOLEAN bAuthCheck = TRUE;
+#endif /* BAND_STEERING */
 
 
 	if (! APPeerAuthSanity(pAd, Elem->Msg, Elem->MsgLen, Addr1,
@@ -370,6 +374,19 @@ SendAuth:
 				"Status code = %d\n", MLME_UNSPECIFY_FAIL));
 		return;
     }
+
+#ifdef BAND_STEERING
+	BND_STRG_CHECK_CONNECTION_REQ(	pAd,
+										NULL, 
+										Addr2,
+										Elem->MsgType,
+										Elem->Rssi0,
+										Elem->Rssi1,
+										Elem->Rssi2,
+										&bAuthCheck);
+	if (bAuthCheck == FALSE)
+		return;
+#endif /* BAND_STEERING */
 
 	if ((Alg == AUTH_MODE_OPEN) && 
 		(pMbss->wdev.AuthMode != Ndis802_11AuthModeShared)) 

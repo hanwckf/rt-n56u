@@ -293,6 +293,23 @@ static INT rtmp_bbp_init(RTMP_ADAPTER *pAd)
 	/* Initialize BBP register to default value*/
 	for (Index = 0; Index < NUM_BBP_REG_PARMS; Index++)
 	{
+#ifdef RTMP_RBUS_SUPPORT
+		if (pAd->infType == RTMP_DEV_INF_RBUS)
+		{
+			if (Index == BBP_R105)
+			{
+				/*
+					kurtis:0x01 ori 0x05 is for rt2860E to turn on FEQ control. 
+							It is safe for rt2860D and before, because Bit 7:2 
+							are reserved in rt2860D and before.
+				*/
+				BBPRegTable[Index].Value=0x01;
+				DBGPRINT(RT_DEBUG_TRACE, 
+					("RBUS:BBP[%d] = %x\n",(INT)Index, 
+					BBPRegTable[Index].Value));
+			}
+		}
+#endif /* RTMP_RBUS_SUPPORT */
 
 #ifdef MICROWAVE_OVEN_SUPPORT
 #endif /* MICROWAVE_OVEN_SUPPORT */
@@ -528,6 +545,21 @@ static INT rtmp_bbp_set_mmps(struct _RTMP_ADAPTER *pAd, BOOLEAN ReduceCorePower)
 	if (bbp_val != org_val)
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, bbp_val);
 
+#ifdef RT6352
+	if (IS_RT6352(pAd))
+	{
+		RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R95, &org_val);
+		bbp_val = org_val;
+		if (ReduceCorePower) {
+			bbp_val &= ~(0x80); /* bit 7 */
+		} else {
+			if (pAd->Antenna.field.RxPath > 1)
+				bbp_val |= 0x80;
+		}
+		if (bbp_val != org_val)
+			RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R95, bbp_val);
+	}
+#endif /* RT6352*/
 
 	return TRUE;
 }

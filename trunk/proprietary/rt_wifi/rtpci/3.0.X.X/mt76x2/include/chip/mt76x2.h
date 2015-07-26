@@ -25,6 +25,10 @@ int mt76x2_reinit_hi_lna_gain(struct _RTMP_ADAPTER *ad, u8 channel);
 void mt76x2_get_external_lna_gain(struct _RTMP_ADAPTER *ad);
 void mt76x2_get_agc_gain(struct _RTMP_ADAPTER *ad, BOOLEAN init_phase);
 UCHAR get_chl_grp(u8 channel);
+
+UCHAR get_low_mid_hi_index(u8 channel);
+void mt76x2_tx_pwr_gain(struct _RTMP_ADAPTER *ad, u8 channel, u8 bw);
+
 void percentage_delta_pwr(struct _RTMP_ADAPTER *ad);
 
 void mt76x2_get_current_temp(struct _RTMP_ADAPTER *ad);
@@ -50,6 +54,7 @@ void mt7612_set_ed_cca(struct _RTMP_ADAPTER *ad, BOOLEAN enable);
 #ifdef RALINK_ATE
 VOID mt76x2_ate_do_calibration(
 	struct _RTMP_ADAPTER *ad, UINT32 cal_id, UINT32 param);
+VOID mt76x2_ate_SendNullFrame(struct _RTMP_ADAPTER *ad);
 #endif /* RALINK_ATE */
 
 struct mt76x2_frequency_item {

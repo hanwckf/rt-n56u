@@ -281,10 +281,11 @@ static int udelay_recal(void)
 	printk("%d CPUs re-calibrate udelay (lpj = %d)\n", nr_cpu_ids, lpj);
 
 #if defined (CONFIG_RALINK_CPUSLEEP)
-	lpj = (*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x10)));
-	lpj &= ~(0xF<<8);
-	lpj |=  (0x2<<8);
-	(*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x10))) = lpj;
+	/* set CPU ratio for sleep mode */
+	i = (*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x10)));
+	i &= ~0x0f0f;
+	i |=  0x0404;	/* CPU ratio 1/4 for sleep mode (220MHz) */
+	(*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x10))) = i;
 #endif
 
 	return 0;

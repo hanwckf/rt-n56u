@@ -124,7 +124,7 @@ choice
 	default MT7628_ASIC
 
 config  MT7628_ASIC
-	bool "MT7628-ASIC"
+	bool "MT7628/MT7688-ASIC"
 endchoice
 
 endif

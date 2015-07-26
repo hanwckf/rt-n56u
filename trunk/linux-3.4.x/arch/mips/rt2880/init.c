@@ -303,6 +303,13 @@ static void prom_init_sysclk(void)
 	else
 		asic_id[6] = 'S';
 	asic_id[7] = '\0';
+#elif defined (CONFIG_RALINK_MT7628)
+	/* PKG_ID [16:16], 0: DRQFN-120 (KN), 1: DRQFN-156 (AN)  */
+	if (ralink_asic_rev_id & (1UL<<16))
+		asic_id[6] = 'A';
+	else
+		asic_id[6] = 'K';
+	asic_id[7] = '\0';
 #endif
 
 	reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x10)));

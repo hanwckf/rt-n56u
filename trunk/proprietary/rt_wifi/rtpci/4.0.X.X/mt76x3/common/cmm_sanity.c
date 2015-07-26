@@ -1558,13 +1558,12 @@ BOOLEAN PeerProbeReqSanity(
 					break;
 
 #ifdef RSSI_FEEDBACK
-                if (ProbeReqParam->bRssiRequested &&  
-					 NdisEqualMemory(eid_data, RALINK_OUI, 3) && (eid_len == 7))
-                {
-					if (*(eid_data + 3/* skip RALINK_OUI */) & 0x8)
-                    	ProbeReqParam->bRssiRequested = TRUE;
-                    break;
-                }
+		if (NdisEqualMemory(eid_data, RALINK_OUI, 3) && (eid_len == 7))
+		{
+			if (*(eid_data + 3/* skip RALINK_OUI */) & 0x8)
+				ProbeReqParam->bRequestRssi = TRUE;
+			break;
+		}
 #endif /* RSSI_FEEDBACK */
 
                 if (NdisEqualMemory(eid_data, WPS_OUI, 4)

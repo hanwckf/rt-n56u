@@ -2264,7 +2264,7 @@ INT rtmp_tx_swq_exit(RTMP_ADAPTER *pAd, UCHAR wcid)
 
 INT rtmp_enq_req(RTMP_ADAPTER *pAd, PNDIS_PACKET pkt, UCHAR qidx, STA_TR_ENTRY *tr_entry, BOOLEAN FlgIsLocked,QUEUE_HEADER *pPktQueue)
 {
-	unsigned long IrqFlags;
+	unsigned long IrqFlags = 0;
 	BOOLEAN enq_done = FALSE;
 	INT enq_idx = 0;
 	struct tx_swq_fifo *fifo_swq;

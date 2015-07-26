@@ -846,11 +846,10 @@ typedef struct _NDIS_802_11_CAPABILITY {
 #define OID_802_11_LONGRETRYLIMIT				0x0709
 #define RT_OID_802_11_PRODUCTID					0x0710
 #define RT_OID_802_11_MANUFACTUREID				0x0711
+#endif /* SNMP_SUPPORT */
 
 /* //dot11Phy(4) */
 #define OID_802_11_CURRENTCHANNEL				0x0712
-
-#endif /* SNMP_SUPPORT */
 
 /*dot11mac */
 #define RT_OID_802_11_MAC_ADDRESS				0x0713

@@ -1274,12 +1274,6 @@ VOID MlmePeriodicExec(
 #endif /* MT76x2 */
 #endif /* DYNAMIC_VGA_SUPPORT */
 
-#ifdef MT76x2
-	if ((pAd->Mlme.OneSecPeriodicRound % 1 == 0) && IS_MT76x2(pAd))
-		mt76x2_get_current_temp(pAd);
-#endif /* MT76x2 */
-
-
 #ifdef CONFIG_AP_SUPPORT
 #ifdef CARRIER_DETECTION_SUPPORT
 	if (pAd->CommonCfg.CarrierDetect.Enable)
@@ -1318,6 +1312,11 @@ VOID MlmePeriodicExec(
 	if (pAd->Mlme.PeriodicRound %MLME_TASK_EXEC_MULTIPLE == 0)
 	{
 		pAd->Mlme.OneSecPeriodicRound ++;
+
+#ifdef MT76x2
+		if ((pAd->Mlme.OneSecPeriodicRound % 1 == 0) && IS_MT76x2(pAd))
+			mt76x2_get_current_temp(pAd);
+#endif /* MT76x2 */
 
 #ifdef CONFIG_AP_SUPPORT
 #ifdef APCLI_SUPPORT

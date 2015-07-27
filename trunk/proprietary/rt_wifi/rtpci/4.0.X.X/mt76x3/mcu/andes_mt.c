@@ -460,26 +460,34 @@ static VOID CmdPsRetrieveStartRspFromCR(RTMP_ADAPTER *pAd, char *Data, UINT16 Le
 
 	EvtPsRetrieveStart = (P_EXT_EVENT_AP_PS_RETRIEVE_T)Data;
 	WlanIdx = le2cpu32(EvtPsRetrieveStart->u4Param1);
-	if (!(VALID_TR_WCID(WlanIdx))) {
-		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s INVALID_TR_WCID(WlanIndex)\n", __FUNCTION__));
+
+	if (!(VALID_WCID(WlanIdx))) {
+		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s INVALID_MAC_WCID(%d)\n", __FUNCTION__, WlanIdx));
 		goto NEXT;
 	}
 
 	pEntry = &pAd->MacTab.Content[WlanIdx];
-	tr_entry = &pAd->MacTab.tr_entry[WlanIdx];	
 	if (IS_ENTRY_NONE(pEntry))
 	{
+		MtPsRedirectDisableCheck(pAd, WlanIdx);
 		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s Entry(wcid=%d) left.\n", __FUNCTION__, WlanIdx));
 		goto NEXT;
 	}
-   
-	DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("---->%s: Start to send TOKEN frames, WlanIdx=%d\n", __FUNCTION__, WlanIdx));
 
+	if (!(VALID_TR_WCID(WlanIdx))) {
+		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s INVALID_TR_WCID(%d)\n", __FUNCTION__, WlanIdx));
+		goto NEXT;
+	}
+
+	tr_entry = &pAd->MacTab.tr_entry[WlanIdx];
 	if (tr_entry->ps_state != APPS_RETRIEVE_START_PS)
 	{
 		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s Entry(wcid=%d) ps state(%d) is not APPS_RETRIEVE_START_PS\n", __FUNCTION__, WlanIdx, tr_entry->ps_state));
 		goto NEXT;
 	}
+
+	DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("---->%s: Start to send TOKEN frames, WlanIdx=%d\n", __FUNCTION__, WlanIdx));
+
 	tr_entry->ps_state = APPS_RETRIEVE_GOING;
 	CheckSkipTX(pAd, pEntry);
 	tr_entry->ps_qbitmap = 0;
@@ -573,21 +581,28 @@ static VOID CmdPsRetrieveStartRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 
 	EvtPsRetrieveStart = (P_EXT_EVENT_AP_PS_RETRIEVE_T)Data;
 	WlanIdx = le2cpu32(EvtPsRetrieveStart->u4Param1);
-	if (!(VALID_TR_WCID(WlanIdx))) {
-		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s INVALID_TR_WCID(WlanIndex)\n", __FUNCTION__));
+
+	if (!(VALID_WCID(WlanIdx))) {
+		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s INVALID_MAC_WCID(%d)\n", __FUNCTION__, WlanIdx));
 		return;
 	}
-   
+
 	pEntry = &pAd->MacTab.Content[WlanIdx];
-	tr_entry = &pAd->MacTab.tr_entry[WlanIdx];
 	if (IS_ENTRY_NONE(pEntry))
 	{
+		MtPsRedirectDisableCheck(pAd, WlanIdx);
 		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s Entry(wcid=%d) left.\n", __FUNCTION__, WlanIdx));
 		return;
 	}
-   
+
+	if (!(VALID_TR_WCID(WlanIdx))) {
+		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s INVALID_TR_WCID(%d)\n", __FUNCTION__, WlanIdx));
+		return;
+	}
+
 	DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("---->%s: Start to send TOKEN frames, WlanIdx=%d\n", __FUNCTION__, WlanIdx));
-   
+
+	tr_entry = &pAd->MacTab.tr_entry[WlanIdx];
 	tr_entry->ps_state = APPS_RETRIEVE_GOING;
 	tr_entry->ps_qbitmap = 0;
    
@@ -2003,11 +2018,17 @@ static NDIS_STATUS AndesMTLoadFwMethod1(RTMP_ADAPTER *ad)
 
 	Ctl->Stage = FW_DOWNLOAD;
 
-	DBGPRINT(RT_DEBUG_TRACE, ("Build Date:"));
-
-	for (loop = 0; loop < 9; loop++) {
-		DBGPRINT(RT_DEBUG_OFF, ("%c", *(cap->FWImageName + cap->fw_len - 20 + loop)));
+	DBGPRINT(RT_DEBUG_OFF, ("FW Version:"));
+	for (loop = 0; loop < 10; loop++) {
+		DBGPRINT(RT_DEBUG_OFF, ("%c", *(cap->FWImageName + cap->fw_len - 29 + loop)));
 	}
+	DBGPRINT(RT_DEBUG_OFF, ("\n"));
+
+	DBGPRINT(RT_DEBUG_OFF, ("FW Build Date:"));
+	for (loop = 0; loop < 15; loop++) {
+		DBGPRINT(RT_DEBUG_OFF, ("%c", *(cap->FWImageName + cap->fw_len - 19 + loop)));
+	}
+	DBGPRINT(RT_DEBUG_OFF, ("\n"));
 
 	dl_len = (*(cap->FWImageName + cap->fw_len - 1) << 24) |
 				(*(cap->FWImageName + cap->fw_len - 2) << 16) |
@@ -2696,6 +2717,13 @@ static VOID AndesMTRxProcessEvent(RTMP_ADAPTER *pAd, struct cmd_msg *rx_msg)
 						msg->rsp_handler(msg, GET_OS_PKT_DATAPTR(net_pkt) + sizeof(*event_rxd), 
 												event_rxd->fw_rxd_0.field.length - sizeof(*event_rxd));
 					}
+				}
+				else if ((msg->rsp_payload_len == 0) &&
+						(msg->rsp_handler == NULL) &&
+						((event_rxd->fw_rxd_0.field.length - sizeof(*event_rxd)) == 8))
+				{
+					/* Just need to wait for the command finished */
+					DBGPRINT(RT_DEBUG_OFF, ("command response(ack) success\n"));
 				}
 				else
 				{

@@ -296,8 +296,7 @@ _eval(char *const argv[], char *path, int timeout, int *ppid)
 		}
 		
 		/* execute command */
-		dprintf("%s\n", argv[0]);
-		setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
+		setenv("PATH", SYS_EXEC_PATH, 1);
 		alarm(timeout);
 		execvp(argv[0], argv);
 		perror(argv[0]);

@@ -60,8 +60,6 @@ extern void recreate_passwd_unix(int force_create);
  * @return	return value of executed command or errno
  */
 extern int _eval(char *const argv[], char *path, int timeout, pid_t *ppid);
-extern int _eval2(char *const argv[], char *path, int timeout, pid_t *ppid);
-extern int _eval3(char *const argv[]);
 
 /* 
  * Kills process whose PID is stored in plaintext in pidfile

@@ -51,8 +51,11 @@ function initial(){
 	if (!found_app_ovpn())
 		document.form.vpnc_type.remove(2);
 
-	if (fw_enable_x == "0")
-		document.form.vpnc_sfw.remove(2);
+	if (fw_enable_x == "0"){
+		var o1 = document.form.vpnc_sfw;
+		o1.remove(0);
+		o1.remove(0);
+	}
 
 	change_vpnc_enabled();
 
@@ -546,8 +549,9 @@ function getHash(){
                                 <tr>
                                     <th><#VPNC_SFW#></th>
                                     <td>
-                                        <select name="vpnc_sfw" class="input">
+                                        <select name="vpnc_sfw" class="input" style="width: 320px;">
                                             <option value="1" <% nvram_match_x("", "vpnc_sfw", "1","selected"); %>><#VPNC_SFW_Item1#></option>
+                                            <option value="3" <% nvram_match_x("", "vpnc_sfw", "3","selected"); %>><#VPNC_SFW_Item3#></option>
                                             <option value="0" <% nvram_match_x("", "vpnc_sfw", "0","selected"); %>><#VPNC_SFW_Item0#></option>
                                             <option value="2" <% nvram_match_x("", "vpnc_sfw", "2","selected"); %>><#VPNC_SFW_Item2#></option>
                                         </select>

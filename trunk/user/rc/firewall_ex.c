@@ -1954,9 +1954,6 @@ ipt_nat_rules(char *man_if, char *man_ip,
 			if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD)
 				fprintf(fp, "-A %s -p %d -j DNAT --to-destination %s\n", dtype, 41, lan_ip);
 #endif
-			/* pre-route for local ping */
-			if (nvram_invmatch("misc_ping_x", "0"))
-				fprintf(fp, "-A %s -p icmp -j DNAT --to-destination %s\n", dtype, lan_ip);
 		}
 		
 		/* Virtual Server mappings */
@@ -1967,9 +1964,9 @@ ipt_nat_rules(char *man_if, char *man_ip,
 		if (nvram_invmatch("upnp_enable_x", "0"))
 			fprintf(fp, "-A %s -j %s\n", dtype, MINIUPNPD_CHAIN_IP4_NAT);
 		
-		/* Exposed station (DMZ) */
+		/* Exposed station (DMZ), DNAT all packets, except ICMP (use Port Forwarding to redirect ICMP) */
 		if (is_use_dmz)
-			fprintf(fp, "-A %s -j DNAT --to %s\n", dtype, dmz_ip);
+			fprintf(fp, "-A %s ! -p icmp -j DNAT --to %s\n", dtype, dmz_ip);
 	}
 
 	fprintf(fp, "COMMIT\n\n");

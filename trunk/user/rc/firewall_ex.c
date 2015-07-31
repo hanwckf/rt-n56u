@@ -1094,6 +1094,14 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 		/* Accept LAN other outbound traffic */
 		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, "ACCEPT");
 		
+		/* Pass ICMPv4 in gateway mode w/o NAT */
+		if (!is_nat_enabled) {
+			if (nvram_invmatch("misc_ping_x", "0"))
+				fprintf(fp, "-A %s -p icmp -j %s\n", dtype, logaccept);
+			else
+				fprintf(fp, "-A %s -p icmp ! --icmp-type %s -j %s\n", dtype, "echo-request", logaccept);
+		}
+		
 		/* Accept VPN server client's outbound traffic */
 		if (i_vpns_enable) {
 			int i_need_vpnlist = 1;

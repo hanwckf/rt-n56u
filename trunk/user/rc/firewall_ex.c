@@ -755,7 +755,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
                  char *logaccept, char *logdrop, int tcp_mss_need)
 {
 	FILE *fp;
-	char timematch[160], *ftype, *dtype;
+	char timematch[160], *ftype, *dtype, *vpnc_if;
 	const char *ipt_file = "/tmp/ipt_filter.rules";
 	int ret, wport, lport;
 	int is_nat_enabled, is_dos_enabled, is_fw_enabled, is_logaccept, is_logdrop;
@@ -764,7 +764,6 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 	int i_vpnc_enable, i_vpnc_type, i_vpnc_sfw, i_mac_filter;
 #if defined (APP_OPENVPN)
 	int i_vpns_ov_mode = nvram_get_int("vpns_ov_mode");
-	int i_vpnc_ov_mode = nvram_get_int("vpnc_ov_mode");
 #endif
 #if defined (USE_IPV6)
 	int ipv6_type = get_ipv6_type();
@@ -791,6 +790,19 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 	i_vpnc_enable  = nvram_get_int("vpnc_enable");
 	i_vpnc_type    = nvram_get_int("vpnc_type");
 	i_vpnc_sfw     = nvram_get_int("vpnc_sfw");
+
+	vpnc_if = NULL;
+	if (i_vpnc_enable) {
+#if defined (APP_OPENVPN)
+		if (i_vpnc_type == 2) {
+			if (nvram_get_int("vpnc_ov_mode") == 1)
+				vpnc_if = IFNAME_CLIENT_TUN;
+			else if (nvram_get_int("vpnc_ov_cnat") == 1)
+				vpnc_if = IFNAME_CLIENT_TAP;
+		} else
+#endif
+			vpnc_if = IFNAME_CLIENT_PPP;
+	}
 
 	if (!(fp=fopen(ipt_file, "w")))
 		return 0;
@@ -859,6 +871,14 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 		fprintf(fp, "-A %s -i %s -m %s %s -j %s\n", dtype, wan_if, CT_STATE, "NEW", IPT_CHAIN_NAME_DOS_LIMIT);
 
 	if (is_fw_enabled) {
+		/* Block or Accept inbound traffic from VPN client */
+		if (vpnc_if) {
+			if (i_vpnc_sfw == 1)
+				fprintf(fp, "-A %s -i %s ! -p icmp -j %s\n", dtype, vpnc_if, "DROP");
+			else if (i_vpnc_sfw == 0 || i_vpnc_sfw == 2)
+				fprintf(fp, "-A %s -i %s -j %s\n", dtype, vpnc_if, "ACCEPT");
+		}
+		
 		/* Accept DHCPv4 */
 		fprintf(fp, "-A %s -p udp --sport %d --dport %d -j %s\n", dtype, 67, 68, logaccept);
 		
@@ -924,7 +944,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 			if (nvram_match("trmd_ropen", "1")) {
 				wport = nvram_get_int("trmd_rport");
 				if (wport < 1024 || wport > 65535) wport = TRANSMISSION_RPORT;
-				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, wport, logaccept);
+				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, wport, logaccept);
 			}
 		}
 #endif
@@ -938,7 +958,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 			if (nvram_match("aria_ropen", "1")) {
 				wport = nvram_get_int("aria_rport");
 				if (wport < 1024 || wport > 65535) wport = ARIA_RPORT;
-				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, wport, logaccept);
+				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, wport, logaccept);
 			}
 		}
 #endif
@@ -972,21 +992,6 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 					/* accept DNS UDP packets only */
 					fprintf(fp, "-A %s -p %s --dport %d -j %s\n", dtype, "udp", 53, IPT_CHAIN_NAME_VPN_LIST);
 				}
-			}
-		}
-		
-		/* Accept to VPN client */
-		if (i_vpnc_enable && (i_vpnc_sfw == 0 || i_vpnc_sfw == 2)) {
-#if defined (APP_OPENVPN)
-			if (i_vpnc_type == 2) {
-				if (i_vpnc_ov_mode == 1)
-					fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_CLIENT_TUN, "ACCEPT");
-				else if (nvram_get_int("vpnc_ov_cnat") == 1)
-					fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_CLIENT_TAP, "ACCEPT");
-			} else
-#endif
-			{
-				fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_CLIENT_PPP, "ACCEPT");
 			}
 		}
 		
@@ -1120,19 +1125,12 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 			}
 		}
 		
-		/* Accept inbound traffic from VPN client (do not log) */
-		if (i_vpnc_enable && (i_vpnc_sfw == 0 || i_vpnc_sfw == 2)) {
-#if defined (APP_OPENVPN)
-			if (i_vpnc_type == 2) {
-				if (i_vpnc_ov_mode == 1)
-					fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_CLIENT_TUN, "ACCEPT");
-				else if (nvram_get_int("vpnc_ov_cnat") == 1)
-					fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_CLIENT_TAP, "ACCEPT");
-			} else
-#endif
-			{
-				fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_CLIENT_PPP, "ACCEPT");
-			}
+		/* Block or Accept inbound traffic from VPN client (do not log) */
+		if (vpnc_if) {
+			if (i_vpnc_sfw == 1)
+				fprintf(fp, "-A %s -i %s -j %s\n", dtype, vpnc_if, "DROP");
+			else if (i_vpnc_sfw == 0 || i_vpnc_sfw == 2)
+				fprintf(fp, "-A %s -i %s -j %s\n", dtype, vpnc_if, "ACCEPT");
 		}
 		
 		if (is_nat_enabled) {
@@ -1528,12 +1526,6 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if,
 	if (is_fw_enabled) {
 		/* Pass the redirect, might be seen as INVALID, packets */
 		fprintf(fp, "-A %s -i %s -o %s -j %s\n", dtype, lan_if, lan_if, "ACCEPT");
-		
-		/* Pass ICMPv6 (ICMPv6 may be INVALID state!) */
-		if (nvram_invmatch("misc_ping_x", "0"))
-			fprintf(fp, "-A %s -p %d -j %s\n", dtype, 58, logaccept);
-		else
-			fprintf(fp, "-A %s -p %d ! --icmpv6-type %s -j %s\n", dtype, 58, "echo-request", logaccept);
 	}
 
 	/* use url filter before accepting ESTABLISHED packets */
@@ -1562,6 +1554,12 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if,
 	fprintf(fp, "-A %s -m %s %s -j %s\n", dtype, CT_STATE, "ESTABLISHED,RELATED", "ACCEPT");
 
 	if (is_fw_enabled) {
+		/* Pass ICMPv6 (ICMPv6 may be in INVALID state!) */
+		if (nvram_invmatch("misc_ping_x", "0"))
+			fprintf(fp, "-A %s -p %d -j %s\n", dtype, 58, logaccept);
+		else
+			fprintf(fp, "-A %s -p %d ! --icmpv6-type %s -j %s\n", dtype, 58, "echo-request", logaccept);
+		
 		/* Drop all packets in the INVALID state */
 		fprintf(fp, "-A %s -m %s %s -j %s\n", dtype, CT_STATE, "INVALID", logdrop);
 		
@@ -1705,14 +1703,12 @@ ipt_nat_rules(char *man_if, char *man_ip,
               int use_man)
 {
 	FILE *fp;
-	char *dtype;
+	char *dtype, *vpnc_if;
 	const char *ipt_file = "/tmp/ipt_nat.rules";
 	int wport, lport, is_nat_enabled, is_fw_enabled;
 	int i_vpns_enable, i_vpnc_enable, i_vpns_type, i_vpnc_type, i_vpnc_sfw, i_http_proto;
 #if defined (APP_OPENVPN)
 	int i_vpns_ov_mode = nvram_get_int("vpns_ov_mode");
-	int i_vpnc_ov_mode = nvram_get_int("vpnc_ov_mode");
-	int i_vpnc_ov_cnat = nvram_get_int("vpnc_ov_cnat");
 #endif
 
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
@@ -1723,6 +1719,19 @@ ipt_nat_rules(char *man_if, char *man_ip,
 	i_vpns_type = nvram_get_int("vpns_type");
 	i_vpnc_type = nvram_get_int("vpnc_type");
 	i_vpnc_sfw = nvram_get_int("vpnc_sfw");
+
+	vpnc_if = NULL;
+	if (i_vpnc_enable) {
+#if defined (APP_OPENVPN)
+		if (i_vpnc_type == 2) {
+			if (nvram_get_int("vpnc_ov_mode") == 1)
+				vpnc_if = IFNAME_CLIENT_TUN;
+			else if (nvram_get_int("vpnc_ov_cnat") == 1)
+				vpnc_if = IFNAME_CLIENT_TAP;
+		} else
+#endif
+			vpnc_if = IFNAME_CLIENT_PPP;
+	}
 
 	if (!is_valid_ipv4(wan_ip))
 		wan_ip = NULL;
@@ -1752,17 +1761,8 @@ ipt_nat_rules(char *man_if, char *man_ip,
 		fprintf(fp, "-A PREROUTING -d %s -j %s\n", man_ip, dtype);
 
 	/* pre-routing from VPN client */
-	if (i_vpnc_enable && i_vpnc_sfw == 3) {
-#if defined (APP_OPENVPN)
-		if (i_vpnc_type == 2) {
-			if (i_vpnc_ov_mode == 1)
-				fprintf(fp, "-A PREROUTING -i %s ! -d %s -j %s\n", IFNAME_CLIENT_TUN, lan_net, dtype);
-			else if (i_vpnc_ov_cnat == 1)
-				fprintf(fp, "-A PREROUTING -i %s ! -d %s -j %s\n", IFNAME_CLIENT_TAP, lan_net, dtype);
-		} else
-#endif
-			fprintf(fp, "-A PREROUTING -i %s ! -d %s -j %s\n", IFNAME_CLIENT_PPP, lan_net, dtype);
-	}
+	if (vpnc_if && i_vpnc_sfw == 3)
+		fprintf(fp, "-A PREROUTING -i %s ! -d %s -j %s\n", vpnc_if, lan_net, dtype);
 
 	if (is_nat_enabled) {
 		char dmz_ip[16];
@@ -1785,17 +1785,8 @@ ipt_nat_rules(char *man_if, char *man_ip,
 			include_masquerade(fp, man_if, man_ip, lan_net);
 		
 		/* masquerade VPN client connection for LAN clients */
-		if (i_vpnc_enable && i_vpnc_sfw != 2) {
-#if defined (APP_OPENVPN)
-			if (i_vpnc_type == 2) {
-				if (i_vpnc_ov_mode == 1)
-					include_masquerade(fp, IFNAME_CLIENT_TUN, NULL, lan_net);
-				else if (i_vpnc_ov_cnat == 1)
-					include_masquerade(fp, IFNAME_CLIENT_TAP, NULL, lan_net);
-			} else
-#endif
-				include_masquerade(fp, IFNAME_CLIENT_PPP, NULL, lan_net);
-		}
+		if (vpnc_if && i_vpnc_sfw != 2)
+			include_masquerade(fp, vpnc_if, NULL, lan_net);
 		
 		/* masquerade WAN connection for VPN server clients */
 		if (i_vpns_enable) {
@@ -1964,7 +1955,7 @@ ipt_nat_rules(char *man_if, char *man_ip,
 #endif
 		}
 		
-		/* Virtual Server mappings */
+		/* Port Forwarding (Virtual Server) mappings */
 		if (nvram_match("vts_enable_x", "1"))
 			include_vts_nat(fp);
 		

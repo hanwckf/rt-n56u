@@ -1185,18 +1185,6 @@ static void br_multicast_leave_group(struct net_bridge *br,
 	if (!mp)
 		goto out;
 
-	querier_exist = timer_pending(&br->multicast_querier_timer);
-
-	time = jiffies + br->multicast_last_member_count *
-			 br->multicast_last_member_interval;
-
-	if (br->multicast_querier && !querier_exist) {
-		__br_multicast_send_query(br, port, &mp->addr);
-
-		mod_timer(port ? &port->multicast_query_timer :
-				 &br->multicast_query_timer, time);
-	}
-
 	if (port && (port->flags & BR_MULTICAST_FAST_LEAVE)) {
 		struct net_bridge_port_group __rcu **pp;
 
@@ -1211,9 +1199,6 @@ static void br_multicast_leave_group(struct net_bridge *br,
 			if (src && !ether_addr_equal(src, p->src_addr))
 				br_pg_notify_switch(p, src, 1);
 #endif
-			if (!p->m2u && querier_exist)
-				break;
-
 			rcu_assign_pointer(*pp, p->next);
 			hlist_del_init(&p->mglist);
 			del_timer(&p->timer);
@@ -1226,8 +1211,24 @@ static void br_multicast_leave_group(struct net_bridge *br,
 		goto out;
 	}
 
+	querier_exist = timer_pending(&br->multicast_querier_timer);
+#if !defined(CONFIG_RTL8367_IGMP_SNOOPING)
+	if (querier_exist)
+		goto out;
+#endif
+
+	time = jiffies + br->multicast_last_member_count *
+			 br->multicast_last_member_interval;
+
+	if (!querier_exist && br->multicast_querier) {
+		__br_multicast_send_query(br, port, &mp->addr);
+
+		mod_timer(port ? &port->multicast_query_timer :
+				 &br->multicast_query_timer, time);
+	}
+
 	if (!port) {
-		if (mp->mglist &&
+		if (!querier_exist && mp->mglist &&
 		    (timer_pending(&mp->timer) ?
 		     time_after(mp->timer.expires, time) :
 		     try_to_del_timer_sync(&mp->timer) >= 0)) {
@@ -1247,10 +1248,9 @@ static void br_multicast_leave_group(struct net_bridge *br,
 		/* direct notify switch for this source MAC */
 		if (src && !ether_addr_equal(src, p->src_addr))
 			br_pg_notify_switch(p, src, 1);
-#endif
-		if (!p->m2u && querier_exist)
+		if (querier_exist)
 			break;
-
+#endif
 		if (!hlist_unhashed(&p->mglist) &&
 		    (timer_pending(&p->timer) ?
 		     time_after(p->timer.expires, time) :

@@ -646,7 +646,7 @@ allocate_stack (const struct pthread_attr *attr, struct pthread **pdp,
 			prot) != 0)
 	    goto mprot_error;
 #elif defined _STACK_GROWS_UP
-	  if (mprotect ((char *) pd - pd->guardsize,
+	  if (mprotect ((char *) (((uintptr_t) pd - pd->guardsize) & ~pagesize_m1),
 			pd->guardsize - guardsize, prot) != 0)
 	    goto mprot_error;
 #endif

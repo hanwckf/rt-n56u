@@ -1,0 +1,25 @@
+From 60c1fe7f456b1cd17c71ea6a9c4a234d9f147b7b Mon Sep 17 00:00:00 2001
+From: Markos Chandras <markos.chandras@imgtec.com>
+Date: Tue, 12 Feb 2013 13:44:25 +0000
+Subject: nptl/allocatestack.c: Fix stack mprotect alignment for STACK_GROWS_UP
+
+mprotect() expects the first argument to be aligned to a page boundary.
+
+Signed-off-by: Markos Chandras <markos.chandras@imgtec.com>
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+diff --git a/libpthread/nptl/allocatestack.c b/libpthread/nptl/allocatestack.c
+index 9399c2a..3f0586d 100644
+--- a/libpthread/nptl/allocatestack.c
++++ b/libpthread/nptl/allocatestack.c
+@@ -646,7 +646,7 @@ allocate_stack (const struct pthread_attr *attr, struct pthread **pdp,
+ 			prot) != 0)
+ 	    goto mprot_error;
+ #elif defined _STACK_GROWS_UP
+-	  if (mprotect ((char *) pd - pd->guardsize,
++	  if (mprotect ((char *) (((uintptr_t) pd - pd->guardsize) & ~pagesize_m1),
+ 			pd->guardsize - guardsize, prot) != 0)
+ 	    goto mprot_error;
+ #endif
+--
+cgit v0.9.1

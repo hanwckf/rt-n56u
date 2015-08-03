@@ -169,7 +169,8 @@ start_rpl2tp(int unit)
 		return -1;
 	}
 
-	fprintf(fp, "# automagically generated\n"
+	fprintf(fp, "# automatically generated\n");
+	fprintf(fp,
 		"global\n"
 		"load-handler \"sync-pppd.so\"\n"
 		"load-handler \"cmd.so\"\n\n"
@@ -357,7 +358,7 @@ launch_wan_pppd(int unit, int wan_proto)
 	/* looks like pptp also likes them */
 	fprintf(fp, "nopcomp noaccomp\n");
 
-	/* pppoe disables "vj bsdcomp deflate" automagically */
+	/* pppoe disables "vj bsdcomp deflate" automatically */
 	/* ccp should still be enabled - mppe/mppc requires this */
 	fprintf(fp, "novj nobsdcomp nodeflate\n");
 

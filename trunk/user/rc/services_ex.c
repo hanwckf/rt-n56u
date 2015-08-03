@@ -695,7 +695,8 @@ start_upnp(void)
 		return errno;
 	}
 
-	fprintf(fp, "# automagically generated\n"
+	fprintf(fp, "# automatically generated\n");
+	fprintf(fp,
 		"ext_ifname=%s\n"
 		"listening_ip=%s\n"
 		"port=%d\n"

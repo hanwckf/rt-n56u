@@ -147,6 +147,7 @@ struct nvram_pair router_defaults[] = {
 	{ "fw_dos_x", "0" },			// oleg patch
 	{ "dr_enable_x", "1" },			// oleg patch
 	{ "mr_enable_x", "0" },			// oleg patch
+	{ "mr_qleave_x", "1" },
 
 #if BOARD_HAS_5G_RADIO
 	/* 5G Wireless parameters */

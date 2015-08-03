@@ -377,28 +377,28 @@ start_igmpproxy(char *wan_ifname)
 	start_xupnpd(wan_ifname);
 #endif
 
-	if (nvram_match("mr_enable_x", "1")) 
-	{
-		if ((fp = fopen(igmpproxy_conf, "w")))
-		{
-			altnet = nvram_safe_get("mr_altnet_x");
-			if (altnet && strlen(altnet) > 0)
-				altnet_mask = altnet;
-			else
-				altnet_mask = "0.0.0.0/0";
-			fprintf(fp, "# automagically generated from web settings\n"
-				"quickleave\n\n"
-				"phyint %s upstream  ratelimit 0  threshold 1\n"
-				"\taltnet %s\n\n"
-				"phyint %s downstream  ratelimit 0  threshold 1\n\n",
-				wan_ifname, 
-				altnet_mask, 
-				IFNAME_BR);
-			fclose(fp);
-			
-			eval("/bin/igmpproxy", igmpproxy_conf);
-		}
+	if (nvram_invmatch("mr_enable_x", "1"))
+		return;
+
+	fp = fopen(igmpproxy_conf, "w");
+	if (fp) {
+		altnet = nvram_get("mr_altnet_x");
+		if (altnet && strlen(altnet) > 6)
+			altnet_mask = altnet;
+		else
+			altnet_mask = "0.0.0.0/0";
+		fprintf(fp, "# automatically generated\n");
+		if (nvram_invmatch("mr_qleave_x", "0"))
+			fprintf(fp, "quickleave\n");
+		fprintf(fp, "\nphyint %s %s  ratelimit 0  threshold 1\n", wan_ifname, "upstream");
+		fprintf(fp, "\taltnet %s\n", altnet_mask);
+		fprintf(fp, "\nphyint %s %s  ratelimit 0  threshold 1\n", IFNAME_BR, "downstream");
+		fprintf(fp, "\n");
+		
+		fclose(fp);
 	}
+
+	eval("/bin/igmpproxy", igmpproxy_conf);
 }
 
 void

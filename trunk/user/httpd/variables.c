@@ -417,6 +417,7 @@
 			{"sr_enable_x", "", NULL, EVM_RESTART_WAN},
 			{"dr_enable_x", "", NULL, EVM_RESTART_WAN},
 			{"mr_enable_x", "", NULL, EVM_RESTART_IPTV},
+			{"mr_qleave_x", "", NULL, EVM_RESTART_IPTV},
 			{"sr_rip_x", "", NULL, EVM_RESTART_WAN},
 			{"sr_num_x", "", NULL, EVM_RESTART_WAN},
 			{"dr_static_rip_x", "", NULL, EVM_RESTART_WAN},

@@ -537,23 +537,23 @@ function getHash(){
                                     <th colspan="2" style="background-color: #E3E3E3;"><#VPNC_VPNS#></th>
                                 </tr>
                                 <tr>
-                                    <th width="50%"><#VPNC_PDNS#></th>
-                                    <td>
-                                        <select name="vpnc_pdns" class="input">
-                                            <option value="0" <% nvram_match_x("", "vpnc_pdns", "0","selected"); %>><#checkbox_No#></option>
-                                            <option value="1" <% nvram_match_x("", "vpnc_pdns", "1","selected"); %>><#VPNC_PDNS_Item1#></option>
-                                            <option value="2" <% nvram_match_x("", "vpnc_pdns", "2","selected"); %>><#VPNC_PDNS_Item2#></option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th><#VPNC_SFW#></th>
+                                    <th width="50%"><#VPNC_SFW#></th>
                                     <td>
                                         <select name="vpnc_sfw" class="input" style="width: 320px;">
                                             <option value="1" <% nvram_match_x("", "vpnc_sfw", "1","selected"); %>><#VPNC_SFW_Item1#></option>
                                             <option value="3" <% nvram_match_x("", "vpnc_sfw", "3","selected"); %>><#VPNC_SFW_Item3#></option>
                                             <option value="0" <% nvram_match_x("", "vpnc_sfw", "0","selected"); %>><#VPNC_SFW_Item0#></option>
                                             <option value="2" <% nvram_match_x("", "vpnc_sfw", "2","selected"); %>><#VPNC_SFW_Item2#></option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th><#VPNC_PDNS#></th>
+                                    <td>
+                                        <select name="vpnc_pdns" class="input">
+                                            <option value="0" <% nvram_match_x("", "vpnc_pdns", "0","selected"); %>><#checkbox_No#></option>
+                                            <option value="1" <% nvram_match_x("", "vpnc_pdns", "1","selected"); %>><#VPNC_PDNS_Item1#></option>
+                                            <option value="2" <% nvram_match_x("", "vpnc_pdns", "2","selected"); %>><#VPNC_PDNS_Item2#></option>
                                         </select>
                                     </td>
                                 </tr>

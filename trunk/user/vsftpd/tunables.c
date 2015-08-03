@@ -230,7 +230,7 @@ tunables_load_defaults()
   tunable_isolate_network = 1;
   tunable_ftp_enable = 1;
   tunable_http_enable = 0;
-  tunable_seccomp_sandbox = 1;
+  tunable_seccomp_sandbox = 0;
   tunable_allow_writeable_chroot = 0;
 
   tunable_accept_timeout = 60;

@@ -111,7 +111,9 @@ parseconf_bool_array[] =
   { "isolate_network", &tunable_isolate_network },
   { "ftp_enable", &tunable_ftp_enable },
   { "http_enable", &tunable_http_enable },
+#if defined(__linux__) && defined(__x86_64__)
   { "seccomp_sandbox", &tunable_seccomp_sandbox },
+#endif
   { "allow_writeable_chroot", &tunable_allow_writeable_chroot },
   { 0, 0 }
 };

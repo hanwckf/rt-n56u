@@ -42,7 +42,7 @@ hash_alloc(unsigned int buckets, unsigned int key_size,
   p_hash->key_size = key_size;
   p_hash->value_size = value_size;
   p_hash->hash_func = hash_func;
-  size = sizeof(struct hash_node*) * buckets;
+  size = (unsigned int) sizeof(struct hash_node*) * buckets;
   p_hash->p_nodes = vsf_sysutil_malloc(size);
   vsf_sysutil_memclr(p_hash->p_nodes, size);
   return p_hash;

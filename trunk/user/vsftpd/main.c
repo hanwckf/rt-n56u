@@ -40,7 +40,7 @@ main(int argc, const char* argv[])
   struct vsf_session the_session =
   {
     /* Control connection */
-    0, 0, 0,
+    0, 0, 0, 0, 0,
     /* Data connection */
     -1, 0, -1, 0, 0, 0, 0,
     /* Login */
@@ -202,8 +202,12 @@ main(int argc, const char* argv[])
   }
   if (tunable_deny_email_enable)
   {
-    int retval = str_fileread(&the_session.banned_email_str,
-                              tunable_banned_email_file, VSFTP_CONF_FILE_MAX);
+    int retval = -1;
+    if (tunable_banned_email_file)
+    {
+      retval = str_fileread(&the_session.banned_email_str,
+                            tunable_banned_email_file, VSFTP_CONF_FILE_MAX);
+    }
     if (vsf_sysutil_retval_is_error(retval))
     {
       die2("cannot read anon e-mail list file:", tunable_banned_email_file);
@@ -220,9 +224,13 @@ main(int argc, const char* argv[])
   }
   if (tunable_secure_email_list_enable)
   {
-    int retval = str_fileread(&the_session.email_passwords_str,
-                              tunable_email_password_file,
-                              VSFTP_CONF_FILE_MAX);
+    int retval = -1;
+    if (tunable_email_password_file)
+    {
+      retval = str_fileread(&the_session.email_passwords_str,
+                            tunable_email_password_file,
+                            VSFTP_CONF_FILE_MAX);
+    }
     if (vsf_sysutil_retval_is_error(retval))
     {
       die2("cannot read email passwords file:", tunable_email_password_file);
@@ -332,8 +340,11 @@ session_init(struct vsf_session* p_sess)
   /* If anonymous mode is active, fetch the uid of the anonymous user */
   if (tunable_anonymous_enable)
   {
-    const struct vsf_sysutil_user* p_user =
-      vsf_sysutil_getpwnam(tunable_ftp_username);
+    const struct vsf_sysutil_user* p_user = 0;
+    if (tunable_ftp_username)
+    {
+      p_user = vsf_sysutil_getpwnam(tunable_ftp_username);
+    }
     if (p_user == 0)
     {
       die2("vsftpd: cannot locate user specified in 'ftp_username':",
@@ -343,8 +354,11 @@ session_init(struct vsf_session* p_sess)
   }
   if (tunable_guest_enable)
   {
-    const struct vsf_sysutil_user* p_user =
-      vsf_sysutil_getpwnam(tunable_guest_username);
+    const struct vsf_sysutil_user* p_user = 0;
+    if (tunable_guest_username)
+    {
+      p_user = vsf_sysutil_getpwnam(tunable_guest_username);
+    }
     if (p_user == 0)
     {
       die2("vsftpd: cannot locate user specified in 'guest_username':",
@@ -354,8 +368,11 @@ session_init(struct vsf_session* p_sess)
   }
   if (tunable_chown_uploads)
   {
-    const struct vsf_sysutil_user* p_user =
-      vsf_sysutil_getpwnam(tunable_chown_username);
+    const struct vsf_sysutil_user* p_user = 0;
+    if (tunable_chown_username)
+    {
+      p_user = vsf_sysutil_getpwnam(tunable_chown_username);
+    }
     if (p_user == 0)
     {
       die2("vsftpd: cannot locate user specified in 'chown_username':",

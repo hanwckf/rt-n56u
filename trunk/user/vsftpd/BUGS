@@ -13,10 +13,6 @@ complies here, almost all other FTPd's don't
 directory name itself
 - In ASCII mode, the SIZE command needs to take into account the size of
 the file _after_ ASCII linefeed mangling?
-- ASCII mode uploads: we're only supposed to remove \r if they preceed \n,
-but I rip them out unconditionally.
-- Security model: vsf_privop_get_ftp_port_sock() should probably do the
-connect() to the remote location itself.
 - If someone has one of the timeouts (command, data) setup, but not the other,
 then timeout will behave whackily.
 

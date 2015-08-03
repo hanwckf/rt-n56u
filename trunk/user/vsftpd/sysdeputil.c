@@ -330,7 +330,7 @@ vsf_sysdep_check_auth(struct mystr* p_user_str,
                       const struct mystr* p_pass_str,
                       const struct mystr* p_remote_host)
 {
-  int retval;
+  int retval = -1;
   pam_item_t item;
   const char* pam_user_name = 0;
   struct pam_conv the_conv =
@@ -343,8 +343,11 @@ vsf_sysdep_check_auth(struct mystr* p_user_str,
     bug("vsf_sysdep_check_auth");
   }
   str_copy(&s_pword_str, p_pass_str);
-  retval = pam_start(tunable_pam_service_name,
-                     str_getbuf(p_user_str), &the_conv, &s_pamh);
+  if (tunable_pam_service_name)
+  {
+    retval = pam_start(tunable_pam_service_name,
+                       str_getbuf(p_user_str), &the_conv, &s_pamh);
+  }
   if (retval != PAM_SUCCESS)
   {
     s_pamh = 0;

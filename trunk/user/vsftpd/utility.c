@@ -18,7 +18,7 @@ die(const char* p_text)
 #ifdef DIE_DEBUG
   bug(p_text);
 #endif
-  vsf_sysutil_exit(1);
+  vsf_sysutil_exit(2);
 }
 
 void
@@ -26,7 +26,14 @@ die2(const char* p_text1, const char* p_text2)
 {
   struct mystr die_str = INIT_MYSTR;
   str_alloc_text(&die_str, p_text1);
-  str_append_text(&die_str, p_text2);
+  if (p_text2)
+  {
+    str_append_text(&die_str, p_text2);
+  }
+  else
+  {
+    str_append_text(&die_str, "(null)");
+  }
   die(str_getbuf(&die_str));
 }
 
@@ -39,7 +46,7 @@ bug(const char* p_text)
   (void) vsf_sysutil_write_loop(VSFTP_COMMAND_FD, p_text,
                                 vsf_sysutil_strlen(p_text));
   (void) vsf_sysutil_write_loop(VSFTP_COMMAND_FD, "\r\n", 2);
-  vsf_sysutil_exit(1);
+  vsf_sysutil_exit(2);
 }
 
 void

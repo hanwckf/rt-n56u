@@ -53,8 +53,11 @@ vsf_banner_dir_changed(struct vsf_session* p_sess, int ftpcode)
      */
     {
       struct mystr msg_file_str = INIT_MYSTR;
-      (void) str_fileread(&msg_file_str, tunable_message_file,
-                          VSFTP_MAX_MSGFILE_SIZE);
+      if (tunable_message_file)
+      {
+        (void) str_fileread(&msg_file_str, tunable_message_file,
+                            VSFTP_MAX_MSGFILE_SIZE);
+      }
       vsf_banner_write(p_sess, &msg_file_str, ftpcode);
       str_free(&msg_file_str);
     }

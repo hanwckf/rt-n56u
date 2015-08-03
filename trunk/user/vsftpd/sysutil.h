@@ -344,7 +344,7 @@ void vsf_sysutil_sleep(double seconds);
 int vsf_sysutil_setmodtime(const char* p_file, long the_time, int is_localtime);
 
 /* Limits */
-void vsf_sysutil_set_address_space_limit(long bytes);
+void vsf_sysutil_set_address_space_limit(unsigned long bytes);
 void vsf_sysutil_set_no_fds(void);
 void vsf_sysutil_set_no_procs(void);
 

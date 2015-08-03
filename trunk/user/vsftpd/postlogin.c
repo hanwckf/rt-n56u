@@ -103,7 +103,11 @@ process_post_login(struct vsf_session* p_sess)
     bug("should not be reached");
   }
 
-  if (tunable_async_abor_enable)
+  /* Don't support async ABOR if we have an SSL channel. The spec says SHOULD
+   * NOT, and I think there are synchronization issues between command and
+   * data reads.
+   */
+  if (tunable_async_abor_enable && !p_sess->control_use_ssl)
   {
     vsf_sysutil_install_sighandler(kVSFSysUtilSigURG, handle_sigurg, p_sess, 0);
     vsf_sysutil_activate_sigurg(VSFTP_COMMAND_FD);
@@ -183,7 +187,7 @@ process_post_login(struct vsf_session* p_sess)
     }
     else if (str_equal_text(&p_sess->ftp_cmd_str, "QUIT"))
     {
-      vsf_cmdio_write_exit(p_sess, FTP_GOODBYE, "Goodbye.");
+      vsf_cmdio_write_exit(p_sess, FTP_GOODBYE, "Goodbye.", 0);
     }
     else if (str_equal_text(&p_sess->ftp_cmd_str, "PWD") ||
              str_equal_text(&p_sess->ftp_cmd_str, "XPWD"))
@@ -438,6 +442,15 @@ process_post_login(struct vsf_session* p_sess)
     {
       /* Deliberately ignore to avoid NAT device bugs. ProFTPd does the same. */
     }
+    else if (str_equal_text(&p_sess->ftp_cmd_str, "GET") ||
+             str_equal_text(&p_sess->ftp_cmd_str, "POST") ||
+             str_equal_text(&p_sess->ftp_cmd_str, "HEAD") ||
+             str_equal_text(&p_sess->ftp_cmd_str, "OPTIONS") ||
+             str_equal_text(&p_sess->ftp_cmd_str, "CONNECT"))
+    {
+      vsf_cmdio_write_exit(p_sess, FTP_BADCMD,
+                           "HTTP protocol commands not allowed.", 1);
+    }
     else
     {
       vsf_cmdio_write(p_sess, FTP_BADCMD, "Unknown command.");
@@ -445,6 +458,11 @@ process_post_login(struct vsf_session* p_sess)
     if (vsf_log_entry_pending(p_sess))
     {
       vsf_log_do_log(p_sess, 0);
+    }
+    if (p_sess->data_timeout)
+    {
+      vsf_cmdio_write_exit(p_sess, FTP_DATA_TIMEOUT,
+                           "Data timeout. Reconnect. Sorry.", 1);
     }
   }
 }
@@ -460,7 +478,7 @@ handle_pwd(struct vsf_session* p_sess)
   /* Enclose pathname in quotes */
   str_alloc_text(&s_pwd_res_str, "\"");
   str_append_str(&s_pwd_res_str, &s_cwd_buf_mangle_str);
-  str_append_text(&s_pwd_res_str, "\"");
+  str_append_text(&s_pwd_res_str, "\" is the current directory");
   vsf_cmdio_write_str(p_sess, FTP_PWDOK, &s_pwd_res_str);
 }
 
@@ -588,7 +606,7 @@ handle_pasv(struct vsf_session* p_sess, int is_epsv)
   {
     str_alloc_text(&s_pasv_res_str, "Entering Extended Passive Mode (|||");
     str_append_ulong(&s_pasv_res_str, (unsigned long) the_port);
-    str_append_text(&s_pasv_res_str, "|).");
+    str_append_text(&s_pasv_res_str, "|)");
     vsf_cmdio_write_str(p_sess, FTP_EPSVOK, &s_pasv_res_str);
     return;
   }
@@ -763,7 +781,11 @@ handle_retr(struct vsf_session* p_sess, int is_http)
   }
   else if (trans_ret.retval == -2)
   {
-    vsf_cmdio_write(p_sess, FTP_BADSENDNET, "Failure writing network stream.");
+    if (!p_sess->data_timeout)
+    {
+      vsf_cmdio_write(p_sess, FTP_BADSENDNET,
+                      "Failure writing network stream.");
+    }
   }
   else
   {
@@ -905,18 +927,22 @@ handle_dir_common(struct vsf_session* p_sess, int full_details, int stat_cmd)
   {
     vsf_cmdio_write(p_sess, FTP_STATFILE_OK, "End of status");
   }
+  else if (retval != 0)
+  {
+    if (!p_sess->data_timeout)
+    {
+      vsf_cmdio_write(p_sess, FTP_BADSENDNET,
+                      "Failure writing network stream.");
+    }
+  }
   else if (p_dir == 0 || !dir_allow_read)
   {
     vsf_cmdio_write(p_sess, FTP_TRANSFEROK,
                     "Transfer done (but failed to open directory).");
   }
-  else if (retval == 0)
-  {
-    vsf_cmdio_write(p_sess, FTP_TRANSFEROK, "Directory send OK.");
-  }
   else
   {
-    vsf_cmdio_write(p_sess, FTP_BADSENDNET, "Failure writing network stream.");
+    vsf_cmdio_write(p_sess, FTP_TRANSFEROK, "Directory send OK.");
   }
   check_abor(p_sess);
 dir_close_out:
@@ -969,8 +995,7 @@ handle_port(struct vsf_session* p_sess)
     vsf_cmdio_write(p_sess, FTP_BADCMD, "Illegal PORT command.");
     return;
   }
-  the_port = vals[4] << 8;
-  the_port |= vals[5];
+  the_port = (unsigned short) ((vals[4] << 8) | vals[5]);
   vsf_sysutil_sockaddr_clone(&p_sess->p_port_sockaddr, p_sess->p_local_addr);
   vsf_sysutil_sockaddr_set_ipv4addr(p_sess->p_port_sockaddr, vals);
   vsf_sysutil_sockaddr_set_port(p_sess->p_port_sockaddr, the_port);
@@ -1141,9 +1166,13 @@ handle_upload_common(struct vsf_session* p_sess, int is_append, int is_unique)
   {
     vsf_cmdio_write(p_sess, FTP_BADSENDFILE, "Failure writing to local file.");
   }
-  else if (trans_ret.retval == -2 || p_sess->abor_received)
+  else if (trans_ret.retval == -2)
   {
-    vsf_cmdio_write(p_sess, FTP_BADSENDNET, "Failure reading network stream.");
+    if (!p_sess->data_timeout)
+    {
+      vsf_cmdio_write(p_sess, FTP_BADSENDNET,
+                      "Failure reading network stream.");
+    }
   }
   else
   {
@@ -1752,7 +1781,7 @@ handle_eprt(struct vsf_session* p_sess)
   {
     if (!vsf_sysutil_sockaddr_addr_equal(p_sess->p_remote_addr,
                                          p_sess->p_port_sockaddr) ||
-        vsf_sysutil_is_port_reserved(port))
+        vsf_sysutil_is_port_reserved((unsigned short) port))
     {
       vsf_cmdio_write(p_sess, FTP_BADCMD, "Illegal EPRT command.");
       port_cleanup(p_sess);
@@ -1796,17 +1825,28 @@ get_unique_filename(struct mystr* p_outstr, const struct mystr* p_base_str)
    * two sessions are using the same file prefix at the same time.
    */
   static struct vsf_sysutil_statbuf* s_p_statbuf;
+  static struct mystr s_stou_str;
   unsigned int suffix = 1;
-  /* Do not add any suffix at all if the name is not taken. */
-  int retval = str_stat(p_base_str, &s_p_statbuf);
-  if (vsf_sysutil_retval_is_error(retval))
+  const struct mystr* p_real_base_str = p_base_str;
+  int retval;
+  if (str_isempty(p_real_base_str))
   {
-    str_copy(p_outstr, p_base_str);
-    return;
+    str_alloc_text(&s_stou_str, "STOU");
+    p_real_base_str = &s_stou_str;
+  }
+  else
+  {
+    /* Do not add any suffix at all if the name is not taken. */
+    retval = str_stat(p_real_base_str, &s_p_statbuf);
+    if (vsf_sysutil_retval_is_error(retval))
+    {
+       str_copy(p_outstr, p_real_base_str);
+       return;
+    }
   }
   while (1)
   {
-    str_copy(p_outstr, p_base_str);
+    str_copy(p_outstr, p_real_base_str);
     str_append_char(p_outstr, '.');
     str_append_ulong(p_outstr, suffix);
     retval = str_stat(p_outstr, &s_p_statbuf);

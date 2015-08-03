@@ -30,7 +30,6 @@ static void vsf_log_do_log_to_file(int fd, struct mystr* p_str);
 void
 vsf_log_init(struct vsf_session* p_sess)
 {
-  int retval;
   if (tunable_syslog_enable || tunable_tcp_wrappers)
   {
     vsf_sysutil_openlog(1);
@@ -41,7 +40,12 @@ vsf_log_init(struct vsf_session* p_sess)
   }
   if (tunable_dual_log_enable || tunable_xferlog_std_format)
   {
-    retval = vsf_sysutil_create_or_open_file_append(tunable_xferlog_file, 0600);
+    int retval = -1;
+    if (tunable_xferlog_file)
+    {
+      retval = vsf_sysutil_create_or_open_file_append(tunable_xferlog_file,
+                                                      0600);
+    }
     if (vsf_sysutil_retval_is_error(retval))
     {
       die2("failed to open xferlog log file:", tunable_xferlog_file);
@@ -52,8 +56,12 @@ vsf_log_init(struct vsf_session* p_sess)
   {
     if (!tunable_syslog_enable)
     {
-      retval = vsf_sysutil_create_or_open_file_append(tunable_vsftpd_log_file,
-                                                      0600);
+      int retval = -1;
+      if (tunable_vsftpd_log_file)
+      {
+        retval = vsf_sysutil_create_or_open_file_append(tunable_vsftpd_log_file,
+                                                        0600);
+      }
       if (vsf_sysutil_retval_is_error(retval))
       {
         die2("failed to open vsftpd log file:", tunable_vsftpd_log_file);

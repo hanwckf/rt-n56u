@@ -21,6 +21,7 @@
 #include "secutil.h"
 #include "sysstr.h"
 #include "sysdeputil.h"
+#include "seccompsandbox.h"
 
 static void minimize_privilege(struct vsf_session* p_sess);
 static void process_post_login_req(struct vsf_session* p_sess);
@@ -95,8 +96,14 @@ minimize_privilege(struct vsf_session* p_sess)
     unsigned int caps = 0;
     struct mystr user_str = INIT_MYSTR;
     struct mystr dir_str = INIT_MYSTR;
-    str_alloc_text(&user_str, tunable_nopriv_user);
-    str_alloc_text(&dir_str, tunable_secure_chroot_dir);
+    if (tunable_nopriv_user)
+    {
+      str_alloc_text(&user_str, tunable_nopriv_user);
+    }
+    if (tunable_secure_chroot_dir)
+    {
+      str_alloc_text(&dir_str, tunable_secure_chroot_dir);
+    }
     if (tunable_chown_uploads)
     {
       caps |= kCapabilityCAP_CHOWN;
@@ -110,6 +117,9 @@ minimize_privilege(struct vsf_session* p_sess)
     str_free(&user_str);
     str_free(&dir_str);
   }
+  seccomp_sandbox_init();
+  seccomp_sandbox_setup_postlogin_broker();
+  seccomp_sandbox_lockdown();
 }
 
 static void

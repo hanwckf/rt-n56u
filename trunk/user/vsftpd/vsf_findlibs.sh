@@ -16,6 +16,7 @@ if find_func pam_start sysdeputil.o; then
   locate_library /lib/libpam.so.0 && echo "/lib/libpam.so.0";
   locate_library /usr/lib/libpam.so && echo "-lpam";
   locate_library /usr/lib64/libpam.so && echo "-lpam";
+  locate_library /lib/x86_64-linux-gnu/libpam.so.0 && echo "-lpam";
   # HP-UX ends shared libraries with .sl
   locate_library /usr/lib/libpam.sl && echo "-lpam";
   # AIX ends shared libraries with .a
@@ -24,6 +25,7 @@ else
   locate_library /lib/libcrypt.so && echo "-lcrypt";
   locate_library /usr/lib/libcrypt.so && echo "-lcrypt";
   locate_library /usr/lib64/libcrypt.so && echo "-lcrypt";
+  locate_library /lib/x86_64-linux-gnu/libcrypt.so && echo "-lcrypt";
 fi
 
 # Look for the dynamic linker library. Needed by older RedHat when

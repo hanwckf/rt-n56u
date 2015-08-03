@@ -80,7 +80,8 @@ vsf_standalone_main(void)
   {
     struct vsf_sysutil_sockaddr* p_sockaddr = 0;
     vsf_sysutil_sockaddr_alloc_ipv4(&p_sockaddr);
-    vsf_sysutil_sockaddr_set_port(p_sockaddr, tunable_listen_port);
+    vsf_sysutil_sockaddr_set_port(p_sockaddr,
+                                  (unsigned short) tunable_listen_port);
     if (!tunable_listen_address)
     {
       vsf_sysutil_sockaddr_set_any(p_sockaddr);
@@ -103,7 +104,8 @@ vsf_standalone_main(void)
   {
     struct vsf_sysutil_sockaddr* p_sockaddr = 0;
     vsf_sysutil_sockaddr_alloc_ipv6(&p_sockaddr);
-    vsf_sysutil_sockaddr_set_port(p_sockaddr, tunable_listen_port);
+    vsf_sysutil_sockaddr_set_port(p_sockaddr,
+                                  (unsigned short) tunable_listen_port);
     if (!tunable_listen_address6)
     {
       vsf_sysutil_sockaddr_set_any(p_sockaddr);
@@ -272,7 +274,7 @@ hash_ip(unsigned int buckets, void* p_key)
   unsigned int i;
   for (i = 0; i < s_ipaddr_size; ++i)
   {
-    val ^= p_raw_ip[i] << shift;
+    val = val ^ (unsigned int) (p_raw_ip[i] << shift);
     shift -= 8;
     if (shift < 0)
     {

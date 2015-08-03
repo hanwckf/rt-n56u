@@ -21,6 +21,8 @@ struct vsf_session
   struct vsf_sysutil_sockaddr* p_local_addr;
   struct vsf_sysutil_sockaddr* p_remote_addr;
   char* p_control_line_buf;
+  int idle_timeout;
+  int data_timeout;
 
   /* Details of the data connection */
   int pasv_listen_fd;

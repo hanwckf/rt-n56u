@@ -83,6 +83,7 @@ ftp_read_data(struct vsf_session* p_sess, char* p_buf, unsigned int len)
   {
     int ret;
     priv_sock_send_cmd(p_sess->ssl_consumer_fd, PRIV_SOCK_DO_SSL_READ);
+    priv_sock_send_int(p_sess->ssl_consumer_fd, len);
     ret = priv_sock_get_int(p_sess->ssl_consumer_fd);
     priv_sock_recv_buf(p_sess->ssl_consumer_fd, p_buf, len);
     /* Need to do this here too because it is useless in the slave process. */

@@ -73,7 +73,7 @@ check_limits(struct vsf_session* p_sess)
     str_alloc_text(&str_log_line, "Connection refused: too many sessions.");
     vsf_log_line(p_sess, kVSFLogEntryConnection, &str_log_line);
     vsf_cmdio_write_exit(p_sess, FTP_TOO_MANY_USERS,
-      "There are too many connected users, please try later.");
+      "There are too many connected users, please try later.", 1);
   }
   if (tunable_max_per_ip > 0 &&
       p_sess->num_this_ip > tunable_max_per_ip)
@@ -82,14 +82,14 @@ check_limits(struct vsf_session* p_sess)
                    "Connection refused: too many sessions for this address.");
     vsf_log_line(p_sess, kVSFLogEntryConnection, &str_log_line);
     vsf_cmdio_write_exit(p_sess, FTP_IP_LIMIT,
-      "There are too many connections from your internet address.");
+      "There are too many connections from your internet address.", 1);
   }
   if (!p_sess->tcp_wrapper_ok)
   {
     str_alloc_text(&str_log_line,
                    "Connection refused: tcp_wrappers denial.");
     vsf_log_line(p_sess, kVSFLogEntryConnection, &str_log_line);
-    vsf_cmdio_write_exit(p_sess, FTP_IP_DENY, "Service not available.");
+    vsf_cmdio_write_exit(p_sess, FTP_IP_DENY, "Service not available.", 1);
   }
   vsf_log_line(p_sess, kVSFLogEntryConnection, &str_log_line);
 }
@@ -133,7 +133,7 @@ parse_username_password(struct vsf_session* p_sess)
       }
       else if (str_equal_text(&p_sess->ftp_cmd_str, "QUIT"))
       {
-        vsf_cmdio_write_exit(p_sess, FTP_GOODBYE, "Goodbye.");
+        vsf_cmdio_write_exit(p_sess, FTP_GOODBYE, "Goodbye.", 0);
       }
       else if (str_equal_text(&p_sess->ftp_cmd_str, "FEAT"))
       {
@@ -228,16 +228,14 @@ handle_user_command(struct vsf_session* p_sess)
   if (tunable_ssl_enable && !is_anon && !p_sess->control_use_ssl &&
       tunable_force_local_logins_ssl)
   {
-    vsf_cmdio_write(
-      p_sess, FTP_LOGINERR, "Non-anonymous sessions must use encryption.");
-    vsf_sysutil_exit(0);
+    vsf_cmdio_write_exit(
+      p_sess, FTP_LOGINERR, "Non-anonymous sessions must use encryption.", 1);
   }
   if (tunable_ssl_enable && is_anon && !p_sess->control_use_ssl &&
       tunable_force_anon_logins_ssl)
   { 
-    vsf_cmdio_write(
-      p_sess, FTP_LOGINERR, "Anonymous sessions must use encryption.");
-    vsf_sysutil_exit(0);
+    vsf_cmdio_write_exit(
+      p_sess, FTP_LOGINERR, "Anonymous sessions must use encryption.", 1);
   }
   if (tunable_userlist_enable)
   {
@@ -299,6 +297,7 @@ static void check_login_fails(struct vsf_session* p_sess)
 {
   if (++p_sess->login_fails >= tunable_max_login_fails)
   {
-    vsf_sysutil_exit(0);
+    vsf_sysutil_shutdown_failok(VSFTP_COMMAND_FD);
+    vsf_sysutil_exit(1);
   }
 }

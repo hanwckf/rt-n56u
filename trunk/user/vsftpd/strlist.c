@@ -22,6 +22,8 @@ struct mystr_list_node
 };
 
 /* File locals */
+static const unsigned int kMaxStrlist = 10 * 1000 * 1000;
+
 static struct mystr s_null_str;
 
 static int sort_compare_func(const void* p1, const void* p2);
@@ -46,7 +48,7 @@ str_list_free(struct mystr_list* p_list)
   }
 }
 
-int
+unsigned int
 str_list_get_length(const struct mystr_list* p_list)
 {
   return p_list->list_len;
@@ -78,15 +80,19 @@ str_list_add(struct mystr_list* p_list, const struct mystr* p_str,
     if (p_list->alloc_len == 0)
     {
       p_list->alloc_len = 32;
-      p_list->p_nodes = vsf_sysutil_malloc(p_list->alloc_len *
-                                           sizeof(struct mystr_list_node));
+      p_list->p_nodes = vsf_sysutil_malloc(
+          p_list->alloc_len * (unsigned int) sizeof(struct mystr_list_node));
     }
     else
     {
       p_list->alloc_len *= 2;
-      p_list->p_nodes = vsf_sysutil_realloc(p_list->p_nodes,
-                                            p_list->alloc_len *
-                                            sizeof(struct mystr_list_node));
+      if (p_list->alloc_len > kMaxStrlist)
+      {
+        die("excessive strlist");
+      }
+      p_list->p_nodes = vsf_sysutil_realloc(
+          p_list->p_nodes,
+          p_list->alloc_len * (unsigned int) sizeof(struct mystr_list_node));
     }
   }
   p_node = &p_list->p_nodes[p_list->list_len];

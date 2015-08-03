@@ -1274,3 +1274,104 @@ on chroot_local_user but such is life.
 
 At this point: v2.3.5 released!
 ===============================
+
+- Update vsf_findlibs.sh to work on Ubuntu 11.10+
+- Make listen mode the default.
+- Add -Werror to build flags.
+- Fix missing "const" in ssl.c
+- Add seccompsandbox.c to support a seccomp filter sandbox; works against Ubuntu
+12.04 ABI.
+- Rearrange ftppolicy.c a bit so the syscall list is easily comparable with
+seccompsandbox.c
+- Rename deprecated "sandbox" to "ptrace_sandbox".
+- Add a few more state checks to the privileged helper processes.
+- Add tunable "seccomp_sandbox", default on.
+- Use hardened build flags. Distros of course override these and provide their
+own build flags but no harm in showing how it could be done.
+- Retry creating a PASV socket upon port reuse race between bind() and listen(),
+patch from Ralph Wuerthner <ralph.wuerthner@de.ibm.com>.
+- Don't die() if recv() indicates a closed remote connection. Problem report
+on a Windows client from Herbert van den Bergh,
+<herbert.van.den.bergh@oracle.com>.
+- Add new config setting "allow_writeable_chroot" to help people in a bit of
+a spot with the v2.3.5 defensive change. Only applies to non-anonymous.
+- Remove a couple of fixed things from BUGS.
+- strlen() trunction fix -- no particular impact.
+- Apply some tidyups from mmoufid@yorku.ca.
+(vsftpd-3.0.0-pre1)
+- Fix delete_failed_uploads if there is a timeout. Report from Alejandro
+Hernández Hdez <aalejandrohdez@gmail.com>.
+- Fix other data channel bugs such as failure to log failure upon timeout.
+- Use exit codes a bit more consistently.
+- Fix bad interaction between SSL and trans_chunk_size.
+- Redo data timeout to fire properly for SSL sessions.
+- Redo idle timeout to fire properly for SSL sessions.
+- Make sure PROT_EXEC isn't allowed, thanks to Will Drewry for noticing.
+- Use 10 minutes as a max linger time just in case an alarm gets lost.
+(vsftpd-3.0.0-pre2)
+- Change PR_SET_NO_NEW_PRIVS define, from Kees Cook.
+- Add AES128-SHA to default SSL cipher suites for FileZilla compatibility.
+Unfortunately the default vsftpd SSL confiuration still doesn't fully work
+with FileZilla, because FileZilla has a data connection security problem:
+no client certificate presentation and no session reuse. At least the error
+message is now very clear.
+- Add restart_syscall to seccomp policy. Triggers reliably if you strace whilst
+a data transfer is in progress.
+- Fix delete_failed_uploads for anonymous sessions.
+- Don't listen for urgent data if the control connection is SSL, due to possible
+protocol synchronization issues.
+
+At this point: v3.0.0 released!
+===============================
+
+- Fix some seccomp related build errors on certain CentOS and Debian versions.
+- Seccomp filter sandbox: missing munmap() -- oops. Did you know that qsort()
+opens and maps /proc/meminfo but only for larger item counts?
+- Seccomp filter sandbox: deny socket() gracefully for text_userdb_names.
+- Fix various NULL crashes with nonsensical config settings. Noted by Tianyin Xu
+<tixu@cs.ucsd.edu>.
+- Force cast to unsigned char in is* char functions.
+- Fix harmless integer issues in strlist.c.
+- Started on a (possibly ill-advised?) crusade to compile cleanly with
+Wconversion. Decided to suspend the effort half-way through.
+
+At this point: v3.0.1 released!
+===============================
+
+- One more seccomp policy fix: mremap (denied).
+- Support STOU with no filename, uses a STOU. prefix.
+
+At this point: v3.0.2 released!
+===============================
+
+- Increase VSFTP_AS_LIMIT to 200MB; various reports.
+- Make the PWD response more RFC compliant; report from Barry Kelly
+<barry@modeltwozero.com>.
+- Remove the trailing period from EPSV response to work around BT Internet
+issues; report from Tim Bishop <tdb@mirrorservice.org>.
+- Fix syslog_enable issues vs. seccomp filtering. Report from Michal Vyskocil
+<mvyskocil@suse.cz>. At least, syslogging seems to work on my Fedora now.
+- Allow gettimeofday() in the seccomp sandbox. I can't repro failures, but I
+probably have a different distro / libc / etc. and there are multiple reports.
+- Some kernels support PR_SET_NO_NEW_PRIVS but not PR_SET_SECCOMP, so handle
+this case gracefully. Report from Vasily Averin <vvs@odin.com>.
+- List the TLS1.2 cipher AES128-GCM-SHA256 as first preference by default.
+- Make some compile-time SSL defaults (such as correct client shutdown
+handling) stricter.
+- Disable Nagle algorithm during SSL data connection shutdown, to avoid 200ms
+delays. From Tim Kosse <tim.kosse@filezilla-project.org>.
+- Kill the FTP session if we see HTTP protocol commands, to avoid
+cross-protocol attacks. A report from Jann Horn <jann@thejh.net>.
+- Kill the FTP session if we see session re-use failure. A report from
+Tim Kosse <tim.kosse@filezilla-project.org>.
+(vsftpd-3.0.3pre1)
+- Enable ECDHE, Tim Kosse <tim.kosse@filezilla-project.org>.
+- Default cipher list is now just ECDHE-RSA-AES256-GCM-SHA384.
+- Minor SSL logging improvements.
+- Un-default tunable_strict_ssl_write_shutdown again. We still have
+tunable_strict_ssl_read_eof defaulted now, which is the important one to prove
+upload integrity.
+(vsftpd-3.0.3pre2)
+
+At this point: v3.0.3 released!
+===============================

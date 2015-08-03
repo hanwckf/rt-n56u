@@ -133,7 +133,8 @@ vsf_secutil_change_credentials(const struct mystr* p_user_str,
   /* Misconfiguration check: don't ever chroot() to a directory writable by
    * the current user.
    */
-  if (options & VSF_SECUTIL_OPTION_CHROOT)
+  if ((options & VSF_SECUTIL_OPTION_CHROOT) &&
+      !(options & VSF_SECUTIL_OPTION_ALLOW_WRITEABLE_ROOT))
   {
     if (!tunable_allow_writable_root && vsf_sysutil_write_access("/"))
     {

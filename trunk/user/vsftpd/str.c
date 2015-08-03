@@ -42,7 +42,12 @@ private_str_alloc_memchunk(struct mystr* p_str, const char* p_src,
                            unsigned int len)
 {
   /* Make sure this will fit in the buffer */
-  unsigned int buf_needed = len + 1;
+  unsigned int buf_needed;
+  if (len + 1 < len)
+  {
+    bug("integer overflow");
+  }
+  buf_needed = len + 1;
   if (buf_needed > p_str->alloc_bytes)
   {
     str_free(p_str);
@@ -58,7 +63,17 @@ void
 private_str_append_memchunk(struct mystr* p_str, const char* p_src,
                             unsigned int len)
 {
-  unsigned int buf_needed = p_str->len + len + 1;
+  unsigned int buf_needed;
+  if (len + p_str->len < len)
+  {
+    bug("integer overflow");
+  }
+  buf_needed = len + p_str->len;
+  if (buf_needed + 1 < buf_needed)
+  {
+    bug("integer overflow");
+  }
+  buf_needed++;
   if (buf_needed > p_str->alloc_bytes)
   {
     p_str->p_buf = vsf_sysutil_realloc(p_str->p_buf, buf_needed);
@@ -98,6 +113,10 @@ str_alloc_alt_term(struct mystr* p_str, const char* p_src, char term)
   {
     p_search++;
     len++;
+    if (len == 0)
+    {
+      bug("integer overflow");
+    }
   }
   private_str_alloc_memchunk(p_str, p_src, len);
 }
@@ -150,6 +169,10 @@ str_reserve(struct mystr* p_str, unsigned int res_len)
 {
   /* Reserve space for the trailing zero as well. */
   res_len++;
+  if (res_len == 0)
+  {
+    bug("integer overflow");
+  }
   if (res_len > p_str->alloc_bytes)
   {
     p_str->p_buf = vsf_sysutil_realloc(p_str->p_buf, res_len);
@@ -266,7 +289,7 @@ str_upper(struct mystr* p_str)
   unsigned int i;
   for (i=0; i < p_str->len; i++)
   {
-    p_str->p_buf[i] = vsf_sysutil_toupper(p_str->p_buf[i]);
+    p_str->p_buf[i] = (char) vsf_sysutil_toupper(p_str->p_buf[i]);
   }
 }
 
@@ -640,12 +663,20 @@ str_getline(const struct mystr* p_str, struct mystr* p_line_str,
   while (curr_pos < buf_len && p_buf[curr_pos] != '\n')
   {
     curr_pos++;
+    if (curr_pos == 0)
+    {
+      bug("integer overflow");
+    }
   }
   out_len = curr_pos - start_pos;
   /* If we ended on a \n - skip it */
   if (curr_pos < buf_len && p_buf[curr_pos] == '\n')
   {
     curr_pos++;
+    if (curr_pos == 0)
+    {
+      bug("integer overflow");
+    }
   }
   private_str_alloc_memchunk(p_line_str, p_buf + start_pos, out_len);
   *p_pos = curr_pos;

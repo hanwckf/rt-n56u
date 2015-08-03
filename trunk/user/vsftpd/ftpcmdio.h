@@ -51,7 +51,7 @@ void vsf_cmdio_write_raw(struct vsf_session* p_sess, const char* p_text);
  * write is _guaranteed_ to not block (ditching output if neccessary).
  */
 void vsf_cmdio_write_exit(struct vsf_session* p_sess, int status,
-                          const char* p_text);
+                          const char* p_text, int exit_val);
 
 /* vsf_cmdio_write_str()
  * PURPOSE

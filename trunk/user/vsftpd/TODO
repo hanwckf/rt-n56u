@@ -1,9 +1,12 @@
 CRITICAL
 ========
 
+
 NOT SO CRITICAL
 ===============
 
+- ABOR handling broken for SSL connections (does any client actually use it?)
+- Add -Wconversion
 - Don't leak SSL private key to compromised process? May be impossible. We'll
 see, would be an interesting security story.
 - Better reporting of failed uploads due to out of device space or quota all
@@ -25,8 +28,6 @@ can result in a non-zero exit code.
 - add example global bandwidth limiting.
 - have a chown_uploads for non-anon users too; also more control over
 permissions of uploaded file
-- Fix SSL session timeout more gracefully. Currently, clients report an SSL read
-error rather than an FTP status message saying timeout.
 
 ON THE BACK BURNER
 ==================

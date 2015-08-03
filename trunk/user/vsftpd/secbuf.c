@@ -72,6 +72,7 @@ vsf_secbuf_free(char** p_ptr)
   {
     return;
   }
+
   /* Calculate the actual start of the mmap region */
   page_offset = (unsigned long) p_mmap % page_size;
   if (page_offset)
@@ -83,6 +84,7 @@ vsf_secbuf_free(char** p_ptr)
   vsf_sysutil_memprotect(p_mmap, page_size, kVSFSysUtilMapProtReadOnly);
   /* Extract the mapping size */
   map_size = *((unsigned int*)p_mmap);
+
   /* Lose the mapping */
   vsf_sysutil_memunmap(p_mmap, map_size);
 }

@@ -64,7 +64,9 @@ parseconf_bool_array[] =
   { "port_promiscuous", &tunable_port_promiscuous },
   { "passwd_chroot_enable", &tunable_passwd_chroot_enable },
   { "no_anon_password", &tunable_no_anon_password },
+#ifdef VSF_BUILD_TCPWRAPPERS
   { "tcp_wrappers", &tunable_tcp_wrappers },
+#endif
   { "use_sendfile", &tunable_use_sendfile },
   { "force_dot_files", &tunable_force_dot_files },
   { "listen_ipv6", &tunable_listen_ipv6 },
@@ -79,6 +81,7 @@ parseconf_bool_array[] =
   { "secure_email_list_enable", &tunable_secure_email_list_enable },
   { "run_as_launching_user", &tunable_run_as_launching_user },
   { "no_log_lock", &tunable_no_log_lock },
+#ifdef VSF_BUILD_SSL
   { "ssl_enable", &tunable_ssl_enable },
   { "allow_anon_ssl", &tunable_allow_anon_ssl },
   { "force_local_logins_ssl", &tunable_force_local_logins_ssl },
@@ -86,27 +89,30 @@ parseconf_bool_array[] =
   { "ssl_sslv2", &tunable_sslv2 },
   { "ssl_sslv3", &tunable_sslv3 },
   { "ssl_tlsv1", &tunable_tlsv1 },
-  { "tilde_user_enable", &tunable_tilde_user_enable },
   { "force_anon_logins_ssl", &tunable_force_anon_logins_ssl },
   { "force_anon_data_ssl", &tunable_force_anon_data_ssl },
-  { "mdtm_write", &tunable_mdtm_write },
-  { "lock_upload_files", &tunable_lock_upload_files },
-  { "pasv_addr_resolve", &tunable_pasv_addr_resolve },
-  { "utf8", &tunable_utf8 },
   { "debug_ssl", &tunable_debug_ssl },
   { "require_cert", &tunable_require_cert },
   { "validate_cert", &tunable_validate_cert },
   { "strict_ssl_read_eof", &tunable_strict_ssl_read_eof },
   { "strict_ssl_write_shutdown", &tunable_strict_ssl_write_shutdown },
   { "ssl_request_cert", &tunable_ssl_request_cert },
-  { "delete_failed_uploads", &tunable_delete_failed_uploads },
   { "implicit_ssl", &tunable_implicit_ssl },
-  { "sandbox", &tunable_sandbox },
   { "require_ssl_reuse", &tunable_require_ssl_reuse },
+#endif
+  { "tilde_user_enable", &tunable_tilde_user_enable },
+  { "mdtm_write", &tunable_mdtm_write },
+  { "lock_upload_files", &tunable_lock_upload_files },
+  { "pasv_addr_resolve", &tunable_pasv_addr_resolve },
+  { "utf8", &tunable_utf8 },
+  { "delete_failed_uploads", &tunable_delete_failed_uploads },
+  { "ptrace_sandbox", &tunable_ptrace_sandbox },
   { "isolate", &tunable_isolate },
   { "isolate_network", &tunable_isolate_network },
   { "ftp_enable", &tunable_ftp_enable },
   { "http_enable", &tunable_http_enable },
+  { "seccomp_sandbox", &tunable_seccomp_sandbox },
+  { "allow_writeable_chroot", &tunable_allow_writeable_chroot },
   { 0, 0 }
 };
 
@@ -157,7 +163,9 @@ parseconf_str_array[] =
   { "ftpd_banner", &tunable_ftpd_banner },
   { "banned_email_file", &tunable_banned_email_file },
   { "chroot_list_file", &tunable_chroot_list_file },
+#ifdef VSF_BUILD_PAM
   { "pam_service_name", &tunable_pam_service_name },
+#endif
   { "guest_username", &tunable_guest_username },
   { "userlist_file", &tunable_userlist_file },
   { "anon_root", &tunable_anon_root },
@@ -172,12 +180,14 @@ parseconf_str_array[] =
   { "deny_file", &tunable_deny_file },
   { "user_sub_token", &tunable_user_sub_token },
   { "email_password_file", &tunable_email_password_file },
+#ifdef VSF_BUILD_SSL
   { "rsa_cert_file", &tunable_rsa_cert_file },
   { "dsa_cert_file", &tunable_dsa_cert_file },
   { "ssl_ciphers", &tunable_ssl_ciphers },
   { "rsa_private_key_file", &tunable_rsa_private_key_file },
   { "dsa_private_key_file", &tunable_dsa_private_key_file },
   { "ca_certs_file", &tunable_ca_certs_file },
+#endif
   { "cmds_denied", &tunable_cmds_denied },
   { 0, 0 }
 };
@@ -344,7 +354,8 @@ vsf_parseconf_load_setting(const char* p_setting, int errs_fatal)
         }
         else
         {
-          *(p_uint_setting->p_variable) = str_atoi(&s_value_str);
+          /* TODO: we could reject negatives instead of converting them? */
+          *(p_uint_setting->p_variable) = (unsigned int) str_atoi(&s_value_str);
         }
         return;
       }

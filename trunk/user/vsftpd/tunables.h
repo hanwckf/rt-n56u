@@ -83,12 +83,14 @@ extern int tunable_strict_ssl_write_shutdown; /* Need SSL_shutdown() on write */
 extern int tunable_ssl_request_cert;          /* Ask client for cert */
 extern int tunable_delete_failed_uploads;     /* Delete an upload that failed */
 extern int tunable_implicit_ssl;              /* Use implicit SSL protocol */
-extern int tunable_sandbox;                   /* Deploy ptrace sandbox */
+extern int tunable_ptrace_sandbox;            /* DEPRECATED ptrace sandbox */
 extern int tunable_require_ssl_reuse;         /* Require re-used data conn */
 extern int tunable_isolate;                   /* Use container clone() flags */
 extern int tunable_isolate_network;           /* Use CLONE_NEWNET */
 extern int tunable_ftp_enable;                /* Allow FTP protocol */
 extern int tunable_http_enable;               /* Allow HTTP protocol */
+extern int tunable_seccomp_sandbox;           /* seccomp filter sandbox */
+extern int tunable_allow_writeable_chroot;    /* Allow misconfiguration */
 
 /* Integer/numeric defines */
 extern unsigned int tunable_accept_timeout;

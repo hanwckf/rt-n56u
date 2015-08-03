@@ -3,7 +3,7 @@
 
 #undef VSF_BUILD_TCPWRAPPERS
 #undef VSF_BUILD_PAM
-#undef VSF_BUILD_SSL
+//#undef VSF_BUILD_SSL
 
 #endif /* VSF_BUILDDEFS_H */
 

@@ -21,12 +21,11 @@
 #include "readwrite.h"
 
 /* Internal functions */
-static void control_getline(struct mystr* p_str, struct vsf_session* p_sess);
+static int control_getline(struct mystr* p_str, struct vsf_session* p_sess);
 static void ftp_write_text_common(struct vsf_session* p_sess, int status,
-                                  const char* p_text, int noblock, char sep);
+                                  const char* p_text, char sep);
 static void ftp_write_str_common(struct vsf_session* p_sess, int status,
-                                 char sep, const struct mystr* p_str,
-                                 int noblock);
+                                 char sep, const struct mystr* p_str);
 static void handle_alarm_timeout(void* p_private);
 
 void
@@ -41,20 +40,22 @@ static void
 handle_alarm_timeout(void* p_private)
 {
   struct vsf_session* p_sess = (struct vsf_session*) p_private;
-  vsf_cmdio_write_exit(p_sess, FTP_IDLE_TIMEOUT, "Timeout.");
+  p_sess->idle_timeout = 1;
+  vsf_sysutil_activate_noblock(VSFTP_COMMAND_FD);
+  vsf_sysutil_shutdown_read_failok(VSFTP_COMMAND_FD);
 }
 
 void
 vsf_cmdio_write(struct vsf_session* p_sess, int status, const char* p_text)
 {
-  ftp_write_text_common(p_sess, status, p_text, 0, ' ');
+  ftp_write_text_common(p_sess, status, p_text, ' ');
 }
 
 void
 vsf_cmdio_write_hyphen(struct vsf_session* p_sess, int status,
                        const char* p_text)
 {
-  ftp_write_text_common(p_sess, status, p_text, 0, '-');
+  ftp_write_text_common(p_sess, status, p_text, '-');
 }
 
 void
@@ -75,45 +76,47 @@ vsf_cmdio_write_raw(struct vsf_session* p_sess, const char* p_text)
 }
 
 void
-vsf_cmdio_write_exit(struct vsf_session* p_sess, int status, const char* p_text)
+vsf_cmdio_write_exit(struct vsf_session* p_sess, int status, const char* p_text,
+                     int exit_val)
 {
   /* Unblock any readers on the dying control channel. This is needed for SSL
    * connections, where the SSL control channel slave is in a separate
    * process.
    */
+  vsf_sysutil_activate_noblock(VSFTP_COMMAND_FD);
   vsf_sysutil_shutdown_read_failok(VSFTP_COMMAND_FD);
-  ftp_write_text_common(p_sess, status, p_text, 1, ' ');
+  vsf_cmdio_write(p_sess, status, p_text);
   vsf_sysutil_shutdown_failok(VSFTP_COMMAND_FD);
-  vsf_sysutil_exit(0);
+  vsf_sysutil_exit(exit_val);
 }
 
 static void
 ftp_write_text_common(struct vsf_session* p_sess, int status,
-                      const char* p_text, int noblock, char sep)
+                      const char* p_text, char sep)
 {
   /* XXX - could optimize */
   static struct mystr s_the_str;
   str_alloc_text(&s_the_str, p_text);
-  ftp_write_str_common(p_sess, status, sep, &s_the_str, noblock);
+  ftp_write_str_common(p_sess, status, sep, &s_the_str);
 }
 
 void
 vsf_cmdio_write_str_hyphen(struct vsf_session* p_sess, int status,
                            const struct mystr* p_str)
 {
-  ftp_write_str_common(p_sess, status, '-', p_str, 0);
+  ftp_write_str_common(p_sess, status, '-', p_str);
 }
 
 void
 vsf_cmdio_write_str(struct vsf_session* p_sess, int status,
                     const struct mystr* p_str)
 {
-  ftp_write_str_common(p_sess, status, ' ', p_str, 0);
+  ftp_write_str_common(p_sess, status, ' ', p_str);
 }
 
 static void
 ftp_write_str_common(struct vsf_session* p_sess, int status, char sep,
-                     const struct mystr* p_str, int noblock)
+                     const struct mystr* p_str)
 {
   static struct mystr s_write_buf_str;
   static struct mystr s_text_mangle_str;
@@ -136,18 +139,10 @@ ftp_write_str_common(struct vsf_session* p_sess, int status, char sep,
   str_append_char(&s_write_buf_str, sep);
   str_append_str(&s_write_buf_str, &s_text_mangle_str);
   str_append_text(&s_write_buf_str, "\r\n");
-  if (noblock)
-  {
-    vsf_sysutil_activate_noblock(VSFTP_COMMAND_FD);
-  }
   retval = ftp_write_str(p_sess, &s_write_buf_str, kVSFRWControl);
-  if (retval != 0 && !noblock)
+  if (retval != 0)
   {
     die("ftp_write");
-  }
-  if (noblock)
-  {
-    vsf_sysutil_deactivate_noblock(VSFTP_COMMAND_FD);
   }
 }
 
@@ -168,13 +163,26 @@ void
 vsf_cmdio_get_cmd_and_arg(struct vsf_session* p_sess, struct mystr* p_cmd_str,
                           struct mystr* p_arg_str, int set_alarm)
 {
+  int ret;
   /* Prepare an alarm to timeout the session.. */
   if (set_alarm)
   {
     vsf_cmdio_set_alarm(p_sess);
   }
   /* Blocks */
-  control_getline(p_cmd_str, p_sess);
+  ret = control_getline(p_cmd_str, p_sess);
+  if (p_sess->idle_timeout)
+  {
+    vsf_cmdio_write_exit(p_sess, FTP_IDLE_TIMEOUT, "Timeout.", 1);
+  }
+  if (ret == 0)
+  {
+    /* Remote end hung up without a polite QUIT. The shutdown is to make
+     * sure buggy clients don't ever see an OOPS message.
+     */
+    vsf_sysutil_shutdown_failok(VSFTP_COMMAND_FD);
+    vsf_sysutil_exit(1);
+  }
   /* View a single space as a command of " ", which although a useless command,
    * permits the caller to distinguish input of "" from " ".
    */
@@ -207,7 +215,7 @@ vsf_cmdio_get_cmd_and_arg(struct vsf_session* p_sess, struct mystr* p_cmd_str,
   }
 }
 
-static void
+static int
 control_getline(struct mystr* p_str, struct vsf_session* p_sess)
 {
   int ret;
@@ -216,9 +224,13 @@ control_getline(struct mystr* p_str, struct vsf_session* p_sess)
     vsf_secbuf_alloc(&p_sess->p_control_line_buf, VSFTP_MAX_COMMAND_LINE);
   }
   ret = ftp_getline(p_sess, p_str, p_sess->p_control_line_buf);
-  if (ret < 0)
+  if (ret == 0)
   {
-    vsf_cmdio_write_exit(p_sess, FTP_BADCMD, "Input line too long.");
+    return ret;
+  }
+  else if (ret < 0)
+  {
+    vsf_cmdio_write_exit(p_sess, FTP_BADCMD, "Input line too long.", 1);
   }
   /* As mandated by the FTP specifications.. */
   str_replace_char(p_str, '\0', '\n');
@@ -231,5 +243,6 @@ control_getline(struct mystr* p_str, struct vsf_session* p_sess)
       --len;
     }
   }
+  return 1;
 }
 

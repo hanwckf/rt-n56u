@@ -92,7 +92,6 @@ vsf_ls_populate_dir_list(struct vsf_session* p_sess,
   }
   while (1)
   {
-    int len;
     static struct mystr s_next_filename_str;
     static struct mystr s_next_path_and_filename_str;
     static struct vsf_sysutil_statbuf* s_p_statbuf;
@@ -104,18 +103,20 @@ vsf_ls_populate_dir_list(struct vsf_session* p_sess,
     /* Padavan */
     if (!asus_check_file_visible(p_sess, &s_next_filename_str))
       continue;
-    len = str_getlen(&s_next_filename_str);
-    if (len > 0 && str_get_char_at(&s_next_filename_str, 0) == '.')
     {
-      if (!a_option && !tunable_force_dot_files)
+      unsigned int len = str_getlen(&s_next_filename_str);
+      if (len > 0 && str_get_char_at(&s_next_filename_str, 0) == '.')
       {
-        continue;
-      }
-      if (!a_option &&
-          ((len == 2 && str_get_char_at(&s_next_filename_str, 1) == '.') ||
-           len == 1))
-      {
-        continue;
+        if (!a_option && !tunable_force_dot_files)
+        {
+          continue;
+        }
+        if (!a_option &&
+            ((len == 2 && str_get_char_at(&s_next_filename_str, 1) == '.') ||
+             len == 1))
+        {
+          continue;
+        }
       }
     }
     /* Don't show hidden directory entries */

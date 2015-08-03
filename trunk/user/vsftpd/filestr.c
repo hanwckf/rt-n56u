@@ -50,7 +50,7 @@ str_fileread(struct mystr* p_str, const char* p_filename, unsigned int maxsize)
     {
       die("read size mismatch");
     }
-    str_alloc_memchunk(p_str, p_sec_buf, size);
+    str_alloc_memchunk(p_str, p_sec_buf, (unsigned int) size);
   }
 free_out:
   vsf_sysutil_free(p_stat);

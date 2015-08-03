@@ -29,6 +29,7 @@ str_netfd_alloc(struct vsf_session* p_sess,
   unsigned int i;
   char* p_readpos = p_readbuf;
   unsigned int left = maxlen;
+  str_empty(p_str);
   while (1)
   {
     if (p_readpos + left != p_readbuf + maxlen)
@@ -38,7 +39,6 @@ str_netfd_alloc(struct vsf_session* p_sess,
     /* Did we hit the max? */
     if (left == 0)
     {
-      str_empty(p_str);
       return -1;
     }
     retval = (*p_peekfunc)(p_sess, p_readpos, left);
@@ -48,7 +48,7 @@ str_netfd_alloc(struct vsf_session* p_sess,
     }
     else if (retval == 0)
     {
-      die("vsf_sysutil_recv_peek: no data");
+      return 0;
     }
     bytes_read = (unsigned int) retval;
     /* Search for the terminator */
@@ -57,13 +57,14 @@ str_netfd_alloc(struct vsf_session* p_sess,
       if (p_readpos[i] == term)
       {
         /* Got it! */
-        retval = (*p_readfunc)(p_sess, p_readpos, i + 1);
+        i++;
+        retval = (*p_readfunc)(p_sess, p_readpos, i);
         if (vsf_sysutil_retval_is_error(retval) ||
-            (unsigned int) retval != i + 1)
+            (unsigned int) retval != i)
         {
           die("vsf_sysutil_read_loop");
         }
-        if (p_readpos[i] != term)
+        if (p_readpos[i - 1] != term)
         {
           die("missing terminator in str_netfd_alloc");
         }

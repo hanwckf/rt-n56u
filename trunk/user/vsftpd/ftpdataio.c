@@ -61,12 +61,11 @@ vsf_ftpdataio_dispose_transfer_fd(struct vsf_session* p_sess)
   {
     bug("no data descriptor in vsf_ftpdataio_dispose_transfer_fd");
   }
-  /* Reset the data connection alarm so it runs anew with the blocking close */
-  start_data_alarm(p_sess);
   vsf_sysutil_uninstall_io_handler();
   if (p_sess->data_use_ssl && p_sess->ssl_slave_active)
   {
     char result;
+    start_data_alarm(p_sess);
     priv_sock_send_cmd(p_sess->ssl_consumer_fd, PRIV_SOCK_DO_SSL_CLOSE);
     result = priv_sock_get_result(p_sess->ssl_consumer_fd);
     if (result != PRIV_SOCK_RESULT_OK)
@@ -76,7 +75,16 @@ vsf_ftpdataio_dispose_transfer_fd(struct vsf_session* p_sess)
   }
   else if (p_sess->p_data_ssl)
   {
+    start_data_alarm(p_sess);
     dispose_ret = ssl_data_close(p_sess);
+  }
+  if (!p_sess->abor_received && !p_sess->data_timeout && dispose_ret == 1)
+  {
+    /* If we didn't get a failure, linger on the close() in order to get more
+     * accurate transfer times.
+     */
+    start_data_alarm(p_sess);
+    vsf_sysutil_activate_linger(p_sess->data_fd);
   }
   /* This close() blocks because we set SO_LINGER */
   retval = vsf_sysutil_close_failok(p_sess->data_fd);
@@ -86,11 +94,15 @@ vsf_ftpdataio_dispose_transfer_fd(struct vsf_session* p_sess)
     vsf_sysutil_deactivate_linger_failok(p_sess->data_fd);
     (void) vsf_sysutil_close_failok(p_sess->data_fd);
   }
+  p_sess->data_fd = -1;
   if (tunable_data_connection_timeout > 0)
   {
     vsf_sysutil_clear_alarm();
   }
-  p_sess->data_fd = -1;
+  if (p_sess->abor_received || p_sess->data_timeout)
+  {
+    dispose_ret = 0;
+  }
   return dispose_ret;
 }
 
@@ -169,15 +181,13 @@ vsf_ftpdataio_post_mark_connect(struct vsf_session* p_sess)
   }
   if (ret != 1)
   {
-    static struct mystr s_err_msg;
-    str_alloc_text(&s_err_msg, "SSL connection failed");
     if (tunable_require_ssl_reuse)
     {
-      str_append_text(&s_err_msg, "; session reuse required");
-      str_append_text(
-          &s_err_msg, ": see require_ssl_reuse option in vsftpd.conf man page");
+      vsf_cmdio_write_exit(p_sess, FTP_DATATLSBAD,
+                           "SSL connection failed: session reuse required", 1);
+    } else {
+      vsf_cmdio_write(p_sess, FTP_DATATLSBAD, "SSL connection failed");
     }
-    vsf_cmdio_write_str(p_sess, FTP_DATATLSBAD, &s_err_msg);
   }
   return ret;
 }
@@ -188,11 +198,16 @@ handle_sigalrm(void* p_private)
   struct vsf_session* p_sess = (struct vsf_session*) p_private;
   if (!p_sess->data_progress)
   {
-    vsf_cmdio_write_exit(p_sess, FTP_DATA_TIMEOUT,
-                         "Data timeout. Reconnect. Sorry.");
+    p_sess->data_timeout = 1;
+    vsf_sysutil_shutdown_failok(p_sess->data_fd);
+    vsf_sysutil_shutdown_read_failok(VSFTP_COMMAND_FD);
+    vsf_sysutil_activate_noblock(VSFTP_COMMAND_FD);
   }
-  p_sess->data_progress = 0;
-  start_data_alarm(p_sess);
+  else
+  {
+    p_sess->data_progress = 0;
+    start_data_alarm(p_sess);
+  }
 }
 
 void
@@ -224,10 +239,6 @@ init_data_sock_params(struct vsf_session* p_sess, int sock_fd)
   vsf_sysutil_activate_keepalive(sock_fd);
   /* And in the vague hope it might help... */
   vsf_sysutil_set_iptos_throughput(sock_fd);
-  /* Set up lingering, so that we wait for all data to transfer, and report
-   * more accurate transfer rates.
-   */
-  vsf_sysutil_activate_linger(sock_fd);
   /* Start the timeout monitor */
   vsf_sysutil_install_io_handler(handle_io, p_sess);
   start_data_alarm(p_sess);

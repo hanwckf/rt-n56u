@@ -41,41 +41,52 @@ policy_setup(struct pt_sandbox* p_sandbox, const struct vsf_session* p_sess)
    */
   ptrace_sandbox_permit_read(p_sandbox);
   ptrace_sandbox_permit_write(p_sandbox);
+  /* Reading FTP commands from the network. */
+  ptrace_sandbox_permit_recv(p_sandbox);
   /* Querying time is harmless; used for log timestamps and internally to
    * OpenSSL
    */
   ptrace_sandbox_permit_query_time(p_sandbox);
-  /* Stat'ing is needed for downloading and directory listings. Can blanket
-   * enable for any filename thanks to the chroot().
-   */
-  ptrace_sandbox_permit_file_stats(p_sandbox);
-  ptrace_sandbox_permit_fd_stats(p_sandbox);
-  /* Querying and changing directory. */
-  ptrace_sandbox_permit_getcwd(p_sandbox);
-  ptrace_sandbox_permit_chdir(p_sandbox);
-  /* Setting umask. */
-  ptrace_sandbox_permit_umask(p_sandbox);
+
+  /* Typically post-login things follow. */
   /* Since we're in a chroot(), we can just blanket allow filesystem readonly
    * open.
    */
   ptrace_sandbox_permit_open(p_sandbox, 0);
   ptrace_sandbox_permit_close(p_sandbox);
-  /* High-speed transfers... */
-  ptrace_sandbox_permit_sendfile(p_sandbox);
-  /* Reading directories. */
-  ptrace_sandbox_permit_getdents(p_sandbox);
-  /* Reading symlink targets. */
+  /* Other pathname-based metadata queries. */
+  ptrace_sandbox_permit_file_stats(p_sandbox);
   ptrace_sandbox_permit_readlink(p_sandbox);
-  /* File locking. */
-  ptrace_sandbox_permit_fcntl(p_sandbox);
-  /* Seeking for REST. */
+  /* Querying, reading and changing directory. */
+  ptrace_sandbox_permit_getcwd(p_sandbox);
+  ptrace_sandbox_permit_chdir(p_sandbox);
+  ptrace_sandbox_permit_getdents(p_sandbox);
+  /* Simple fd-based operations. */
+  ptrace_sandbox_permit_fd_stats(p_sandbox);
   ptrace_sandbox_permit_seek(p_sandbox);
+  ptrace_sandbox_permit_shutdown(p_sandbox);
+  ptrace_sandbox_permit_fcntl(p_sandbox);
+  ptrace_sandbox_permit_setsockopt(p_sandbox);
+  ptrace_sandbox_set_setsockopt_validator(p_sandbox, setsockopt_validator, 0);
+  /* Misc */
+  /* Setting umask. */
+  ptrace_sandbox_permit_umask(p_sandbox);
   /* Select for data connection readyness. */
   ptrace_sandbox_permit_select(p_sandbox);
   /* Always need ability to take signals (SIGPIPE) */
   ptrace_sandbox_permit_sigreturn(p_sandbox);
   /* Sleeping (bandwidth limit, connect retires, anon login fails) */
   ptrace_sandbox_permit_sleep(p_sandbox);
+  /* High-speed transfers... */
+  ptrace_sandbox_permit_sendfile(p_sandbox);
+  /* TODO - Grrrr! nscd cache access is leaking into child. Need to find out
+   * out how to disable that. Also means that text_userdb_names loads values
+   * from the real system data.
+   */
+  if (tunable_text_userdb_names)
+  {
+    ptrace_sandbox_permit_mremap(p_sandbox);
+  }
   /* May need ability to install signal handlers. */
   if (tunable_async_abor_enable ||
       tunable_idle_session_timeout > 0 ||
@@ -88,17 +99,7 @@ policy_setup(struct pt_sandbox* p_sandbox, const struct vsf_session* p_sess)
   {
     ptrace_sandbox_permit_alarm(p_sandbox);
   }
-  /* TODO - Grrrr! nscd cache access is leaking into child. Need to find out
-   * out how to disable that. Also means that text_userdb_names loads values
-   * from the real system data.
-   */
-  if (tunable_text_userdb_names)
-  {
-    ptrace_sandbox_permit_mremap(p_sandbox);
-  }
   /* Set up network permissions according to config and session. */
-  ptrace_sandbox_permit_recv(p_sandbox);
-  ptrace_sandbox_permit_shutdown(p_sandbox);
   ptrace_sandbox_permit_socket(p_sandbox);
   ptrace_sandbox_set_socket_validator(p_sandbox,
                                       socket_validator,
@@ -108,9 +109,6 @@ policy_setup(struct pt_sandbox* p_sandbox, const struct vsf_session* p_sess)
   ptrace_sandbox_set_bind_validator(p_sandbox,
                                     connect_validator,
                                     (void*) p_sess);
-  ptrace_sandbox_permit_setsockopt(p_sandbox);
-  ptrace_sandbox_set_setsockopt_validator(p_sandbox, setsockopt_validator, 0);
-  ptrace_sandbox_permit_shutdown(p_sandbox);
   if (tunable_port_enable)
   {
     ptrace_sandbox_permit_connect(p_sandbox);

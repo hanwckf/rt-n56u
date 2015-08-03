@@ -28,7 +28,8 @@ typedef int (*str_netfd_read_t)(struct vsf_session*
  * p_readfunc   - a function called to read data from the network
  * RETURNS
  * -1 upon reaching max buffer length without seeing terminator, or the number
- * of bytes read, _excluding_ the terminator.
+ * of bytes read, _including_ the terminator. 0 for an EOF on the socket.
+ * Does not return (exits) for a serious socket error.
  */
 int str_netfd_alloc(struct vsf_session* p_sess,
                     struct mystr* p_str,

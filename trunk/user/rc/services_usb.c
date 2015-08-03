@@ -234,52 +234,54 @@ write_vsftpd_conf(void)
 	int i_maxuser, i_ftp_mode;
 
 	fp=fopen("/etc/vsftpd.conf", "w");
-	if (!fp) return;
-	
-	fprintf(fp, "listen%s=YES\n", 
+	if (!fp)
+		return;
+
 #if defined (USE_IPV6)
-	(get_ipv6_type() != IPV6_DISABLED) ? "_ipv6" :
+	if (get_ipv6_type() != IPV6_DISABLED) {
+		fprintf(fp, "listen_ipv6=%s\n", "YES");
+		fprintf(fp, "listen=%s\n", "NO");
+	} else
 #endif
-	"");
-	fprintf(fp, "background=YES\n");
-	fprintf(fp, "connect_from_port_20=NO\n");
-	fprintf(fp, "pasv_enable=YES\n");
+		fprintf(fp, "listen=%s\n", "YES");
+
+	fprintf(fp, "background=%s\n", "YES");
+	fprintf(fp, "connect_from_port_20=%s\n", "NO");
+	fprintf(fp, "pasv_enable=%s\n", "YES");
 	fprintf(fp, "pasv_min_port=%d\n", 50000);
 	fprintf(fp, "pasv_max_port=%d\n", 50100);
-	fprintf(fp, "ssl_enable=NO\n");
-	fprintf(fp, "tcp_wrappers=NO\n");
-	fprintf(fp, "isolate=NO\n");
-	fprintf(fp, "isolate_network=NO\n");
-	fprintf(fp, "use_sendfile=YES\n");
+	fprintf(fp, "use_sendfile=%s\n", "YES");
+#if defined (SUPPORT_FTPD_SSL)
+	fprintf(fp, "ssl_enable=%s\n", "NO");
+#endif
 
 	i_ftp_mode = nvram_get_int("st_ftp_mode");
 	if (i_ftp_mode == 1 || i_ftp_mode == 3) {
 		fprintf(fp, "local_enable=%s\n", "NO");
 		fprintf(fp, "anonymous_enable=%s\n", "YES");
 		if (i_ftp_mode == 1){
-			fprintf(fp, "anon_upload_enable=YES\n");
-			fprintf(fp, "anon_mkdir_write_enable=YES\n");
-			fprintf(fp, "anon_other_write_enable=YES\n");
-			fprintf(fp, "anon_umask=000\n");
+			fprintf(fp, "anon_upload_enable=%s\n", "YES");
+			fprintf(fp, "anon_mkdir_write_enable=%s\n", "YES");
+			fprintf(fp, "anon_other_write_enable=%s\n", "YES");
+			fprintf(fp, "anon_umask=%s\n", "000");
 		}
-	}
-	else {
+	} else {
 		fprintf(fp, "local_enable=%s\n", "YES");
-		fprintf(fp, "local_umask=000\n");
+		fprintf(fp, "local_umask=%s\n", "000");
 		fprintf(fp, "anonymous_enable=%s\n", (i_ftp_mode == 2) ? "NO" : "YES");
 	}
 
-	fprintf(fp, "nopriv_user=root\n");
-	fprintf(fp, "write_enable=YES\n");
-	fprintf(fp, "chroot_local_user=YES\n");
-	fprintf(fp, "allow_writable_root=YES\n");
-	fprintf(fp, "check_shell=NO\n");
-	fprintf(fp, "xferlog_enable=NO\n");
+	fprintf(fp, "nopriv_user=%s\n", "root");
+	fprintf(fp, "write_enable=%s\n", "YES");
+	fprintf(fp, "chroot_local_user=%s\n", "YES");
+	fprintf(fp, "allow_writable_root=%s\n", "YES");
+	fprintf(fp, "check_shell=%s\n", "NO");
+	fprintf(fp, "xferlog_enable=%s\n", "NO");
 	fprintf(fp, "syslog_enable=%s\n", (nvram_get_int("st_ftp_log") == 0) ? "NO" : "YES");
-	fprintf(fp, "force_dot_files=YES\n");
-	fprintf(fp, "dirmessage_enable=YES\n");
-	fprintf(fp, "hide_ids=YES\n");
-	fprintf(fp, "utf8=YES\n");
+	fprintf(fp, "force_dot_files=%s\n", "YES");
+	fprintf(fp, "dirmessage_enable=%s\n", "YES");
+	fprintf(fp, "hide_ids=%s\n", "YES");
+	fprintf(fp, "utf8=%s\n", "YES");
 	fprintf(fp, "idle_session_timeout=%d\n", 600);
 
 	i_maxuser = nvram_get_int("st_max_user");
@@ -288,7 +290,7 @@ write_vsftpd_conf(void)
 
 	fprintf(fp, "max_clients=%d\n", i_maxuser);
 	fprintf(fp, "max_per_ip=%d\n", i_maxuser);
-	fprintf(fp, "ftpd_banner=Welcome to ASUS %s FTP service.\n", nvram_safe_get("productid"));
+	fprintf(fp, "ftpd_banner=Welcome to %s FTP service.\n", nvram_safe_get("productid"));
 	
 	fclose(fp);
 }

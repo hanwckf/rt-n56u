@@ -154,12 +154,18 @@ function hide_usb_share_list(idx){
 
 function set_usb_share(num, idx){
 	var path = usb_share_list[num][1];
-	if (idx == 0)
-		document.form.dlna_src1.value = "A,"+path+"/Audio";
-	else if (idx == 1)
-		document.form.dlna_src2.value = "V,"+path+"/Video";
+	var src1 = document.form.dlna_src1;
+	var src2 = document.form.dlna_src2;
+	var src3 = document.form.dlna_src3;
+	if (idx == 0){
+		if (src2.value == "" && src3.value == "")
+			src1.value = path;
+		else
+			src1.value = "A,"+path+"/Audio";
+	}else if (idx == 1)
+		src2.value = "V,"+path+"/Video";
 	else
-		document.form.dlna_src3.value = "P,"+path+"/Photo";
+		src3.value = "P,"+path+"/Photo";
 	hide_usb_share_list(idx);
 }
 
@@ -577,7 +583,7 @@ function done_validating(action){
                                                 <div id="share_list1" class="alert alert-info ddown-list"></div>
                                                 <div class="input-append">
                                                     <input type="text" name="dlna_src1" class="input" maxlength="255" size="32" value="<% nvram_get_x("", "dlna_src1"); %>" style="float:left; width: 260px"/>
-                                                    <button class="btn btn-chevron" id="chevron1" type="button" onclick="pull_usb_share_list(this, 0);" title="Select share for audio"><i class="icon icon-chevron-down"></i></button>
+                                                    <button class="btn btn-chevron" id="chevron1" type="button" onclick="pull_usb_share_list(this, 0);" title="Select common (or audio) share"><i class="icon icon-chevron-down"></i></button>
                                                 </div>
                                             </td>
                                         </tr>

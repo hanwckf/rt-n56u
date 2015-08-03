@@ -76,7 +76,7 @@ _get_flctags(char *filename, struct song_metadata *psong)
 #if FLAC_API_VERSION_CURRENT >= 10
 		case FLAC__METADATA_TYPE_PICTURE:
 			if (psong->image) {
-				DPRINTF(E_INFO, L_SCANNER, "Ignoring additional image [%s]\n", filename);
+				DPRINTF(E_MAXDEBUG, L_SCANNER, "Ignoring additional image [%s]\n", filename);
 				break;
 			}
 			psong->image_size = block->data.picture.data_length;

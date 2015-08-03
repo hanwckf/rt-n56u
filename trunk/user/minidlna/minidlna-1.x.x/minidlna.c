@@ -564,6 +564,8 @@ init(int argc, char **argv)
 						MAX_LAN_ADDR, word);
 					break;
 				}
+				while (isspace(*word))
+					word++;
 				runtime_vars.ifaces[ifaces++] = word;
 			}
 			break;
@@ -730,7 +732,8 @@ init(int argc, char **argv)
 				/* Symbolic username given, not UID. */
 				struct passwd *entry = getpwnam(ary_options[i].value);
 				if (!entry)
-					DPRINTF(E_FATAL, L_GENERAL, "Bad user '%s'.\n", argv[i]);
+					DPRINTF(E_FATAL, L_GENERAL, "Bad user '%s'.\n",
+						ary_options[i].value);
 				uid = entry->pw_uid;
 			}
 			break;
@@ -1069,6 +1072,7 @@ main(int argc, char **argv)
 	if (sssdp < 0)
 	{
 		DPRINTF(E_INFO, L_GENERAL, "Failed to open socket for receiving SSDP. Trying to use MiniSSDPd\n");
+		reload_ifaces(0);	/* populate lan_addr[0].str */
 		if (SubmitServicesToMiniSSDPD(lan_addr[0].str, runtime_vars.port) < 0)
 			DPRINTF(E_FATAL, L_GENERAL, "Failed to connect to MiniSSDPd. EXITING");
 	}

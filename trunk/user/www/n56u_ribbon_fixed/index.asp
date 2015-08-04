@@ -53,6 +53,12 @@ function detect_update_info(){
 			refreshpage();
 }
 
+function show_default_icon(){
+	var icon_name = "iconClient";
+	$("statusframe").src = "/device-map/clients.asp";
+	clickEvent($(icon_name));
+}
+
 function set_default_choice(){
 	var icon_name;
 	if(flag && flag.length > 0 && sw_mode != "3"){
@@ -65,20 +71,16 @@ function set_default_choice(){
 		else if(flag == "Router5g")
 			$("statusframe").src = "/device-map/router.asp";
 		else{
-			clickEvent($("iconRouter"));
+			show_default_icon();
 			return;
 		}
-		if(flag == "Router2g" || flag == "Router5g" )
+		if(flag == "Router2g" || flag == "Router5g")
 			icon_name = "iconRouter";
 		else
 			icon_name = "icon"+flag;
 		clickEvent($(icon_name));
-	}
-	else {
-		$("statusframe").src = "/device-map/clients.asp";
-		icon_name = "iconClient";
-		clickEvent($(icon_name));
-	}
+	}else
+		show_default_icon();
 }
 
 function showMapWANStatus(flag){
@@ -678,7 +680,7 @@ $j(document).ready(function(){
     <script>
     if(flag == "Internet" || flag == "Client")
         $("statusframe").src = "";
-        initial()
+        initial();
     </script>
 </div>
 </body>

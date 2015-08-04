@@ -204,6 +204,7 @@ extern void do_restore_st_post(const char *url, FILE *stream, int clen, char *bo
 // web_ex.c
 extern void nvram_commit_safe(void);
 extern void do_uncgi_query(const char *query);
+extern void do_cgi_clear(void);
 
 #if defined (SUPPORT_HTTPS)
 extern int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_file, char *ssl_cipher_list);

@@ -727,6 +727,8 @@ eat_post_data(FILE *conn_fp, int clen)
 {
 	char fake_buf[128];
 
+	do_cgi_clear();
+
 	if (!fgets(fake_buf, MIN(clen+1, sizeof(fake_buf)), conn_fp))
 		return;
 
@@ -990,6 +992,8 @@ handle_request(FILE *conn_fp, const conn_item_t *item)
 	} else {
 		if (query)
 			do_uncgi_query(query);
+		else if (handler->output == do_ej)
+			do_cgi_clear();
 	}
 
 	if (handler->output == do_file) {

@@ -2380,16 +2380,12 @@ static int openvpn_cli_cert_hook(int eid, webs_t wp, int argc, char **argv)
 
 static int ej_get_parameter(int eid, webs_t wp, int argc, char **argv) {
 	int ret = 0;
-	
-	if (argc < 1) {
-		websError(wp, 400,
-				"get_parameter() used with no arguments, but at least one "
-				"argument is required to specify the parameter name\n");
+
+	if (argc < 1)
 		return -1;
-	}
-	
+
 	char *value = websGetVar(wp, argv[0], "");
-	websWrite(wp, "%s", value);//*/
+	websWrite(wp, "%s", value);
 	return ret;
 }
 
@@ -3245,6 +3241,13 @@ nvram_generate_table(webs_t wp, char *serviceId, char *groupName)
 }
 
 void
+do_cgi_clear(void)
+{
+	init_cgi(NULL);
+	post_buf[0] = 0;
+}
+
+void
 do_uncgi_query(const char *query)
 {
 	size_t query_len;
@@ -3252,10 +3255,12 @@ do_uncgi_query(const char *query)
 	init_cgi(NULL);
 
 	query_len = MIN(strlen(query), sizeof(post_buf)-1);
-	strncpy(post_buf, query, query_len);
+	if (query_len > 0)
+		strncpy(post_buf, query, query_len);
 	post_buf[query_len] = 0;
 
-	init_cgi(post_buf);
+	if (strlen(post_buf) > 0)
+		init_cgi(post_buf);
 }
 
 static void

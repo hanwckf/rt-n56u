@@ -1000,6 +1000,13 @@ validate_asp_apply(webs_t wp, int sid)
 		if (!strcmp(v->name, "lan_ipaddr") || !strcmp(v->name, "lan_netmask"))
 			lanip_changed = 1;
 		
+		/* update sw_mode before nvram_commit */
+		if (!strcmp(v->name, "wan_nat_x")) {
+			int wan_nat_x = atoi(value);
+			if (nvram_get_int("sw_mode") != 3)
+				nvram_set_int("sw_mode", (wan_nat_x) ? 1 : 4);
+		}
+		
 #if BOARD_HAS_5G_RADIO
 		if (!strncmp(v->name, "wl_", 3) && strcmp(v->name, "wl_ssid2"))
 		{

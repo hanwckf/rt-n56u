@@ -452,19 +452,25 @@ CHAR ConvertToRssi(RTMP_ADAPTER *pAd, CHAR Rssi, UCHAR rssi_idx)
 		Recommended by CSD team about MT76x0:
 		SW/QA owners should read the "external-LNA gain" and "RSSI OFFSET" content in EEPROM as "SIGNED".
 		2.4G : RSSI_report = RSSI_bpp + EEPROM_0x46[15:8 or 7:0] - EEPROM_0x44[7:0]
-		5G : RSSI_report = RSSI_bbp + EEPROM_0x4A[15:8 or 7:0] - EEPROM_0x44 or 0x48 or 0x4c[15:8]
+		5G   : RSSI_report = RSSI_bbp + EEPROM_0x4A[15:8 or 7:0] - EEPROM_0x44 or 0x48 or 0x4c[15:8]
 	*/
 	if (IS_MT76x0(pAd))
 		return (Rssi + (CHAR)RssiOffset - (CHAR)LNAGain);
 
 	if (IS_MT76x2(pAd)) {
+		CHAR sLNAGain = (CHAR)(LNAGain & 0x7f);
+		
+		/* bit7 on MT7612 mean sign (1: [+], 0: [-]) */
+		if (!(LNAGain & 0x80))
+			sLNAGain = -sLNAGain;
+		
 		if (is_external_lna_mode(pAd, pAd->CommonCfg.Channel) == TRUE)
-			LNAGain = 0;
+			sLNAGain = 0;
 		
 		if (pAd->LatchRfRegs.Channel > 14)
-			return (Rssi + pAd->ARssiOffset[rssi_idx] - (CHAR)LNAGain);
+			return (Rssi + pAd->ARssiOffset[rssi_idx] - sLNAGain);
 		else
-			return (Rssi + pAd->BGRssiOffset[rssi_idx] - (CHAR)LNAGain);
+			return (Rssi + pAd->BGRssiOffset[rssi_idx] - sLNAGain);
 	}
 
 	if (IS_RT8592(pAd))

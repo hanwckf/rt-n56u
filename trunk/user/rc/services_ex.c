@@ -844,7 +844,7 @@ static const struct inadyn_system_t {
 	{ "WWW.DTDNS.COM",        "default@dtdns.com"          },
 	{ "WWW.OVH.COM",          "default@ovh.com"            },
 	{ "WWW.LOOPIA.COM",       "default@loopia.com"         },
-	{ "WWW.TUNNELBROKER.NET", "ipv6tb@he.net"              },
+	{ "WWW.TUNNELBROKER.NET", "default@tunnelbroker.net"   },
 	{ "DNS.HE.NET",           "dyndns@he.net"              },
 	{ "TB.NETASSIST.UA",      "ipv6tb@netassist.ua"        },
 	{ "IPV4.NSUPDATE.INFO",   "ipv4@nsupdate.info"         },
@@ -1051,7 +1051,7 @@ get_ddns_fqdn(void)
 		return NULL;
 
 	ddns_svc = get_inadyn_system(nvram_safe_get("ddns_server_x"));
-	if (ddns_svc && strncmp(ddns_svc, "ipv6tb@", 7) != 0) {
+	if (ddns_svc && strncmp(ddns_svc, "ipv6tb@", 7) != 0 && !strstr(ddns_svc, "tunnelbroker.net")) {
 		ddns_fqdn = nvram_safe_get("ddns_hostname_x");
 		if (strcmp(ddns_svc, "update@asus.com") == 0) {
 			if (!strstr(ddns_fqdn, ".asuscomm.com"))
@@ -1070,7 +1070,7 @@ get_ddns_fqdn(void)
 
 	if (!ddns_fqdn) {
 		ddns_svc = get_inadyn_system(nvram_safe_get("ddns2_server"));
-		if (ddns_svc && strncmp(ddns_svc, "ipv6tb@", 7) != 0) {
+		if (ddns_svc && strncmp(ddns_svc, "ipv6tb@", 7) != 0 && !strstr(ddns_svc, "tunnelbroker.net")) {
 			ddns_fqdn = nvram_safe_get("ddns2_hname");
 			if (!strchr(ddns_fqdn, '.'))
 				ddns_fqdn = NULL;

@@ -3,14 +3,14 @@
 # This file is put in the public domain.
 #
 # Tomasz Sochański <nerdhero@gmail.com>, 2005.
-# Jan Psota <jasiupsota@gmail.com>, 2008, 2009, 2010, 2011, 2013.
+# Jan Psota <jasiupsota@gmail.com>, 2008-2015.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: pl\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2009-06-10 20:57+0100\n"
-"PO-Revision-Date: 2014-09-23 12:45+0100\n"
+"PO-Revision-Date: 2015-07-15 02:08+0100\n"
 "Last-Translator: Jan Psota <jasiupsota@gmail.com>\n"
 "Language-Team: polski <>\n"
 "Language: pl\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Poedit 1.6.9\n"
+"X-Generator: Poedit 1.5.5\n"
 "X-Language: pl_PL\n"
 
 #: cache.c:523
@@ -185,14 +185,12 @@ msgid "Read DHCP option specs from file."
 msgstr "Wskazanie pliku z wartościami 'dhcp-option='."
 
 #: option.c:348
-#, fuzzy
 msgid "Read DHCP host specs from a directory."
-msgstr "Wskazanie pliku z wartościami 'dhcp-host='."
+msgstr "Odczyt specyfikacji hostów dla DHCP z katalogu."
 
 #: option.c:349
-#, fuzzy
 msgid "Read DHCP options from a directory."
-msgstr "Wskazanie pliku z wartościami 'dhcp-option='."
+msgstr "Odczyt opcji DHCP z katalogu."
 
 #: option.c:350
 msgid "Evaluate conditional tag expression."
@@ -209,9 +207,8 @@ msgid "Specify a hosts file to be read in addition to %s."
 msgstr "Wskazanie dodatkowego pliku 'hosts' oprócz %s."
 
 #: option.c:353
-#, fuzzy
 msgid "Read hosts files from a directory."
-msgstr "Wskazanie pliku z wartościami 'dhcp-host='."
+msgstr "Odczyt pliku hostów z katalogu."
 
 #: option.c:354
 msgid "Specify interface(s) to listen on."
@@ -355,14 +352,12 @@ msgid "Specify time-to-live in seconds for maximum TTL to send to clients."
 msgstr "Ograniczenie maksymalnego czasu ważności odpowiedzi (TTL) podawanego klientom [w sekundach]."
 
 #: option.c:388
-#, fuzzy
 msgid "Specify time-to-live ceiling for cache."
-msgstr "Określenie (w sekundach) czasu ważności negatywnych odpowiedzi."
+msgstr "Określenie górnej granicy czasu ważności dla wpisów w pamięci podręcznej."
 
 #: option.c:389
-#, fuzzy
 msgid "Specify time-to-live floor for cache."
-msgstr "Określenie (w sekundach) czasu ważności negatywnych odpowiedzi."
+msgstr "Określenie dolnej granicy czasu ważności dla wpisów w pamięci podręcznej."
 
 #: option.c:390
 #, c-format
@@ -508,7 +503,7 @@ msgstr "Ograniczenie dostępu do plików przez TFTP do tych, których właścici
 
 #: option.c:424
 msgid "Do not terminate the service if TFTP directories are inaccessible."
-msgstr ""
+msgstr "Nieprzerywanie działania serwisu mimo braku dostępu do katalogów TFTP."
 
 #: option.c:425
 #, c-format
@@ -697,7 +692,7 @@ msgstr "Wyłączenie sprawdzania sygnatur czasowych DNSSEC do pierwszego przeła
 
 #: option.c:471
 msgid "Timestamp file to verify system clock for DNSSEC"
-msgstr ""
+msgstr "Plik znacznika czasu do weryfikacji zegara systemowego dla potrzeb DNSSEC."
 
 #: option.c:473
 msgid "Specify DHCPv6 prefix class"
@@ -729,7 +724,7 @@ msgstr "Wykrywanie i usuwanie pętli zapytań DNS."
 
 #: option.c:481
 msgid "Ignore DNS responses containing ipaddr."
-msgstr ""
+msgstr "Ignorowanie odpowiedzi DNS zawierających ipaddr."
 
 #: option.c:683
 #, c-format
@@ -1082,34 +1077,34 @@ msgstr "spróbuj: -w"
 msgid "bad command line options: %s"
 msgstr "nieprawidłowa opcja w linii poleceń %s"
 
-#: option.c:4544
+#: option.c:4541
 #, c-format
 msgid "cannot get host-name: %s"
 msgstr "nie można pobrać nazwy hosta: %s"
 
-#: option.c:4572
+#: option.c:4569
 msgid "only one resolv.conf file allowed in no-poll mode."
 msgstr "w trybie no-poll można wskazać najwyżej jeden plik resolv.conf."
 
-#: option.c:4582
+#: option.c:4579
 msgid "must have exactly one resolv.conf to read domain from."
 msgstr "musisz mieć dokładnie jeden plik resolv.conf do odczytu domen."
 
-#: option.c:4585 network.c:1507 dhcp.c:777
+#: option.c:4582 network.c:1507 dhcp.c:777
 #, c-format
 msgid "failed to read %s: %s"
 msgstr "nie udało się odczytać %s: %s"
 
-#: option.c:4602
+#: option.c:4599
 #, c-format
 msgid "no search directive found in %s"
 msgstr "brak wytycznych wyszukiwania w %s"
 
-#: option.c:4623
+#: option.c:4620
 msgid "there must be a default domain when --dhcp-fqdn is set"
 msgstr "w przypadku używania --dhcp-fqdn trzeba wskazać domyślną domenę"
 
-#: option.c:4632
+#: option.c:4629
 msgid "syntax check OK"
 msgstr "składnia sprawdzona, jest prawidłowa"
 
@@ -1132,11 +1127,11 @@ msgstr "serwer nazw %s odmawia wykonania zapytania rekurencyjnego"
 msgid "possible DNS-rebind attack detected: %s"
 msgstr "prawdopodobnie wykryto atak DNS-rebind: %s"
 
-#: forward.c:1209 forward.c:1785
+#: forward.c:1209 forward.c:1815
 msgid "Ignoring query from non-local network"
 msgstr "Ignorowanie zapytań z sieci pozalokalnych."
 
-#: forward.c:2256
+#: forward.c:2286
 #, c-format
 msgid "Maximum number of concurrent DNS queries reached (max: %d)"
 msgstr "Osiągnięto graniczną ilość jednocześnie obsługiwanych zapytań DNS (maks: %d)"
@@ -1228,17 +1223,15 @@ msgstr "używam serwera nazw %s#%d"
 
 #: dnsmasq.c:163
 msgid "dhcp-hostsdir, dhcp-optsdir and hostsdir are not supported on this platform"
-msgstr ""
+msgstr "dhcp-hostsdir, dhcp-optsdir i hostsdir nie znajdują zastosowania na tej platformie"
 
 #: dnsmasq.c:170
-#, fuzzy
 msgid "no trust anchors provided for DNSSEC"
-msgstr "Nie wskazano punktów zaufania dla DNSSEC."
+msgstr "nie wskazano punktów zaufania dla DNSSEC"
 
 #: dnsmasq.c:173
-#, fuzzy
 msgid "cannot reduce cache size from default when DNSSEC enabled"
-msgstr "Brak możliwości zmniejszenia pamięci podręcznej poniżej wielkości domyślnej w przypadku używania DNSSEC."
+msgstr "brak możliwości zmniejszenia pamięci podręcznej poniżej wielkości domyślnej w przypadku używania DNSSEC"
 
 #: dnsmasq.c:175
 msgid "DNSSEC not available: set HAVE_DNSSEC in src/config.h"
@@ -1249,14 +1242,12 @@ msgid "TFTP server not available: set HAVE_TFTP in src/config.h"
 msgstr "Serwer TFTP nie został wkompilowany -- ustaw HAVE_TFTP w src/config.h"
 
 #: dnsmasq.c:186
-#, fuzzy
 msgid "cannot use --conntrack AND --query-port"
-msgstr "--conntrack i --query-port wykluczają się wzajemnie"
+msgstr "--conntrack i --query-port wzajemnie się wykluczają"
 
 #: dnsmasq.c:189
-#, fuzzy
 msgid "conntrack support not available: set HAVE_CONNTRACK in src/config.h"
-msgstr "Wsparcie dla przekazywania znaczników połączeń (conntrack) nie zostało wkompilowane - ustaw HAVE_CONNTRACK w src/config.h"
+msgstr "wsparcie przekazywania znaczników połączeń (conntrack) nie zostało wkompilowane - ustaw HAVE_CONNTRACK w src/config.h"
 
 #: dnsmasq.c:194
 msgid "asychronous logging is not available under Solaris"
@@ -1271,9 +1262,8 @@ msgid "authoritative DNS not available: set HAVE_AUTH in src/config.h"
 msgstr "tryb autorytatywny DNS-a niedostępny - ustaw HAVE_AUTH w src/config.h"
 
 #: dnsmasq.c:209
-#, fuzzy
 msgid "loop detection not available: set HAVE_LOOP in src/config.h"
-msgstr "Wykrywanie pętli zapytań nie zostało wkompilowane - ustaw HAVE_LOOP w src/config.h"
+msgstr "wykrywanie pętli zapytań nie zostało wkompilowane - ustaw HAVE_LOOP w src/config.h"
 
 #: dnsmasq.c:217
 msgid "zone serial must be configured in --auth-soa"
@@ -1297,7 +1287,7 @@ msgstr "błąd podczas tworzenia listy interfejsów sieciowych: %s"
 msgid "unknown interface %s"
 msgstr "nieznany interfejs %s"
 
-#: dnsmasq.c:354 dnsmasq.c:1037
+#: dnsmasq.c:354 dnsmasq.c:997
 #, c-format
 msgid "DBus error: %s"
 msgstr "błąd DBus: %s"
@@ -1357,14 +1347,13 @@ msgid "DNSSEC signature timestamps not checked until first cache reload"
 msgstr "sprawdzanie sygnatur czasowych DNSSEC wyłączone do czasu przeładowania pamięci podręcznej"
 
 #: dnsmasq.c:733
-#, fuzzy
 msgid "DNSSEC signature timestamps not checked until system time valid"
-msgstr "sprawdzanie sygnatur czasowych DNSSEC wyłączone do czasu przeładowania pamięci podręcznej"
+msgstr "sprawdzanie sygnatur czasowych DNSSEC wyłączone do czasu zsynchronizowania się zegara systemowego"
 
 #: dnsmasq.c:738
 #, c-format
 msgid "warning: failed to change owner of %s: %s"
-msgstr "UWAGA! Nie udało się zmienić użytkownika pliku %s: %s"
+msgstr "uwaga: nie udało się zmienić użytkownika pliku %s: %s"
 
 #: dnsmasq.c:742
 msgid "setting --bind-interfaces option because of OS limitations"
@@ -1397,121 +1386,121 @@ msgstr "anonsowanie rutera IPv6 włączone"
 msgid "DHCP, sockets bound exclusively to interface %s"
 msgstr "DHCP, gniazda dowiązane na wyłączność interfejsowi %s"
 
-#: dnsmasq.c:808
+#: dnsmasq.c:804
 msgid "root is "
 msgstr "z głównym katalogiem w "
 
-#: dnsmasq.c:808
+#: dnsmasq.c:804
 msgid "enabled"
 msgstr "włączony"
 
-#: dnsmasq.c:810
+#: dnsmasq.c:806
 msgid "secure mode"
 msgstr "w trybie bezpiecznym"
 
-#: dnsmasq.c:813
+#: dnsmasq.c:809
 #, c-format
 msgid "warning: %s inaccessible"
-msgstr ""
+msgstr "uwaga: %s niedostępny"
 
-#: dnsmasq.c:817
-#, fuzzy, c-format
+#: dnsmasq.c:813
+#, c-format
 msgid "warning: TFTP directory %s inaccessible"
-msgstr "katalog TFTP %s nie jest dostępny: %s"
+msgstr "uwaga: katalog TFTP %s nie jest dostępny"
 
-#: dnsmasq.c:843
+#: dnsmasq.c:839
 #, c-format
 msgid "restricting maximum simultaneous TFTP transfers to %d"
 msgstr "ograniczam ilość jednoczesnych przesłań TFTP do %d"
 
-#: dnsmasq.c:1039
+#: dnsmasq.c:999
 msgid "connected to system DBus"
 msgstr "podłączono do DBus-a"
 
-#: dnsmasq.c:1189
+#: dnsmasq.c:1149
 #, c-format
 msgid "cannot fork into background: %s"
 msgstr "nie potrafię przełączyć się do pracy w tle: %s"
 
-#: dnsmasq.c:1192
+#: dnsmasq.c:1152
 #, c-format
 msgid "failed to create helper: %s"
 msgstr "nie udało się utworzyć procesu pomocniczego: %s"
 
-#: dnsmasq.c:1195
+#: dnsmasq.c:1155
 #, c-format
 msgid "setting capabilities failed: %s"
 msgstr "nie powiodło się ustawianie ograniczeń (capabilities): %s"
 
-#: dnsmasq.c:1198
+#: dnsmasq.c:1158
 #, c-format
 msgid "failed to change user-id to %s: %s"
 msgstr "nie udało się zmienić użytkownika procesu na %s: %s"
 
-#: dnsmasq.c:1201
+#: dnsmasq.c:1161
 #, c-format
 msgid "failed to change group-id to %s: %s"
 msgstr "nie udało się zmienić grupy procesu na %s: %s"
 
-#: dnsmasq.c:1204
+#: dnsmasq.c:1164
 #, c-format
 msgid "failed to open pidfile %s: %s"
 msgstr "nie udało się otworzyć pliku z PID-em %s: %s"
 
-#: dnsmasq.c:1207
+#: dnsmasq.c:1167
 #, c-format
 msgid "cannot open log %s: %s"
 msgstr "nie udało się otworzyć logu %s: %s"
 
-#: dnsmasq.c:1210
+#: dnsmasq.c:1170
 #, c-format
 msgid "failed to load Lua script: %s"
 msgstr "nie udało się wczytać skryptu Lua: %s"
 
-#: dnsmasq.c:1213
+#: dnsmasq.c:1173
 #, c-format
 msgid "TFTP directory %s inaccessible: %s"
 msgstr "katalog TFTP %s nie jest dostępny: %s"
 
-#: dnsmasq.c:1216
-#, fuzzy, c-format
+#: dnsmasq.c:1176
+#, c-format
 msgid "cannot create timestamp file %s: %s"
-msgstr "nie potrafię otworzyć albo utworzyć pliku dzierżaw %s: %s"
+msgstr "nie potrafię utworzyć pliku znacznika czasu %s: %s"
 
-#: dnsmasq.c:1237
+#: dnsmasq.c:1197
 msgid "now checking DNSSEC signature timestamps"
 msgstr "trwa sprawdzanie sygnatur czasowych podpisów DNSSEC"
 
-#: dnsmasq.c:1304
+#: dnsmasq.c:1264
 #, c-format
 msgid "script process killed by signal %d"
 msgstr "skrypt został zabity sygnałem %d"
 
-#: dnsmasq.c:1308
+#: dnsmasq.c:1268
 #, c-format
 msgid "script process exited with status %d"
 msgstr "skrypt zakończył się z kodem powrotu %d"
 
-#: dnsmasq.c:1312
+#: dnsmasq.c:1272
 #, c-format
 msgid "failed to execute %s: %s"
 msgstr "nie udało się uruchomić %s: %s"
 
-#: dnsmasq.c:1367
+#: dnsmasq.c:1327
 msgid "exiting on receipt of SIGTERM"
 msgstr "zakończyłem działanie z powodu odebrania SIGTERM"
 
-#: dnsmasq.c:1395
+#: dnsmasq.c:1355
 #, c-format
 msgid "failed to access %s: %s"
 msgstr "brak dostępu do %s: %s"
 
-#: dnsmasq.c:1425
+#: dnsmasq.c:1385
 #, c-format
 msgid "reading %s"
 msgstr "czytanie %s"
 
-#: dnsmasq.c:1436
+#: dnsmasq.c:1396
 #, c-format
 msgid "no servers found in %s, will retry"
 msgstr "w %s nie znalazłem serwerów, spróbuję ponownie później"
@@ -1789,12 +1778,12 @@ msgstr "próba ustawienia adresu IPv6 serwera przez DBus, ale brak obsługi IPv6
 #: dbus.c:439
 #, c-format
 msgid "Enabling --%s option from D-Bus"
-msgstr ""
+msgstr "opcja --%s została właśnie aktywowana za pomocą D-Bus"
 
 #: dbus.c:444
 #, c-format
 msgid "Disabling --%s option from D-Bus"
-msgstr ""
+msgstr "opcja --%s została właśnie dezaktywowana za pomocą D-Bus"
 
 #: dbus.c:691
 msgid "setting upstream servers from DBus"
@@ -1866,7 +1855,7 @@ msgstr "przepełnienie: stracono %d wpisów do logów"
 msgid "log failed: %s"
 msgstr "nie udało się zapisać komunikatów do %s"
 
-#: log.c:472
+#: log.c:469
 msgid "FAILED to start up"
 msgstr "BŁĄD: nie udało się uruchomić dnsmasq-a"
 
@@ -2069,9 +2058,9 @@ msgid "failed to create IPset control socket: %s"
 msgstr "nie powiodło się otwieranie gniazda sterującego IPset: %s"
 
 #: dnssec.c:449 dnssec.c:493
-#, fuzzy, c-format
+#, c-format
 msgid "failed to update mtime on %s: %s"
-msgstr "nie udało się otworzyć pliku z PID-em %s: %s"
+msgstr "nie udało się uaktualnić znacznika czasu pliku %s: %s"
 
 #: blockdata.c:58
 #, c-format
@@ -2121,35 +2110,44 @@ msgstr "uwaga: DIOCR%sADDRS: %s"
 msgid "%d addresses %s"
 msgstr "%d adresów %s"
 
-#: inotify.c:46
-#, fuzzy, c-format
-msgid "failed to create inotify: %s"
-msgstr "nie udało się utworzyć procesu pomocniczego: %s"
-
-#: inotify.c:60
-#, fuzzy, c-format
-msgid "cannot cannonicalise resolv-file %s: %s"
-msgstr "nie potrafię otworzyć albo utworzyć pliku dzierżaw %s: %s"
-
-#: inotify.c:72
+#: inotify.c:59
 #, c-format
-msgid "directory %s for resolv-file is missing, cannot poll"
-msgstr ""
-
-#: inotify.c:75 inotify.c:112
-#, fuzzy, c-format
-msgid "failed to create inotify for %s: %s"
-msgstr "nie udało się otworzyć gniazda %s: %s"
-
-#: inotify.c:97
-#, fuzzy, c-format
-msgid "bad dynamic directory %s: %s"
+msgid "cannot access path %s: %s"
 msgstr "brak dostępu do katalogu %s: %s"
 
-#: inotify.c:197
+#: inotify.c:92
+#, c-format
+msgid "failed to create inotify: %s"
+msgstr "nie udało się uruchomić powiadamiania inotify: %s"
+
+#: inotify.c:105
+#, c-format
+msgid "too many symlinks following %s"
+msgstr "zbyt wiele odniesień począwszy od %s"
+
+#: inotify.c:121
+#, c-format
+msgid "directory %s for resolv-file is missing, cannot poll"
+msgstr "katalog %s z resolv-file nie istnieje - nie ma czego odpytywać"
+
+#: inotify.c:125 inotify.c:162
+#, c-format
+msgid "failed to create inotify for %s: %s"
+msgstr "nie udało się utworzyć powiadamiania dla %s: %s"
+
+#: inotify.c:147
+#, c-format
+msgid "bad dynamic directory %s: %s"
+msgstr "zły katalog dynamiczny %s: %s"
+
+#: inotify.c:247
 #, c-format
 msgid "inotify, new or changed file %s"
-msgstr ""
+msgstr "inotify: pojawił się lub uległ zmianie plik %s"
+
+#, fuzzy
+#~ msgid "cannot cannonicalise resolv-file %s: %s"
+#~ msgstr "nie potrafię otworzyć albo utworzyć pliku dzierżaw %s: %s"
 
 #~ msgid "Always send frequent router-advertisements"
 #~ msgstr "Rozsyłanie wielokrotne anonsów rutera (RA)"

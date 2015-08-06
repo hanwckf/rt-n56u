@@ -749,8 +749,7 @@ char *dbus_init(void)
 }
  
 
-void set_dbus_listeners(int *maxfdp,
-			fd_set *rset, fd_set *wset, fd_set *eset)
+void set_dbus_listeners(void)
 {
   struct watch *w;
   
@@ -760,19 +759,17 @@ void set_dbus_listeners(int *maxfdp,
 	unsigned int flags = dbus_watch_get_flags(w->watch);
 	int fd = dbus_watch_get_unix_fd(w->watch);
 	
-	bump_maxfd(fd, maxfdp);
-	
 	if (flags & DBUS_WATCH_READABLE)
-	  FD_SET(fd, rset);
+	  poll_listen(fd, POLLIN);
 	
 	if (flags & DBUS_WATCH_WRITABLE)
-	  FD_SET(fd, wset);
+	  poll_listen(fd, POLLOUT);
 	
-	FD_SET(fd, eset);
+	poll_listen(fd, POLLERR);
       }
 }
 
-void check_dbus_listeners(fd_set *rset, fd_set *wset, fd_set *eset)
+void check_dbus_listeners()
 {
   DBusConnection *connection = (DBusConnection *)daemon->dbus;
   struct watch *w;
@@ -783,13 +780,13 @@ void check_dbus_listeners(fd_set *rset, fd_set *wset, fd_set *eset)
 	unsigned int flags = 0;
 	int fd = dbus_watch_get_unix_fd(w->watch);
 	
-	if (FD_ISSET(fd, rset))
+	if (poll_check(fd, POLLIN))
 	  flags |= DBUS_WATCH_READABLE;
 	
-	if (FD_ISSET(fd, wset))
+	if (poll_check(fd, POLLOUT))
 	  flags |= DBUS_WATCH_WRITABLE;
 	
-	if (FD_ISSET(fd, eset))
+	if (poll_check(fd, POLLERR))
 	  flags |= DBUS_WATCH_ERROR;
 
 	if (flags != 0)

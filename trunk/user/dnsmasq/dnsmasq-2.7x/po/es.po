@@ -1129,35 +1129,35 @@ msgstr "pruebe -w"
 msgid "bad command line options: %s"
 msgstr "opciones de línea de comandos erróneas: %s"
 
-#: option.c:4544
+#: option.c:4541
 #, c-format
 msgid "cannot get host-name: %s"
 msgstr "no se puede obtener host-name (nombre de host): %s"
 
-#: option.c:4572
+#: option.c:4569
 msgid "only one resolv.conf file allowed in no-poll mode."
 msgstr "solo un archivo resolv.conf está permitido en modo no-poll."
 
-#: option.c:4582
+#: option.c:4579
 msgid "must have exactly one resolv.conf to read domain from."
 msgstr "debe haber exáctamente un resolv.conf desde donde leer dominio."
 
-#: option.c:4585 network.c:1507 dhcp.c:777
+#: option.c:4582 network.c:1507 dhcp.c:777
 #, fuzzy, c-format
 msgid "failed to read %s: %s"
 msgstr "no se pudo leer %s: %s"
 
-#: option.c:4602
+#: option.c:4599
 #, c-format
 msgid "no search directive found in %s"
 msgstr "ninguna directiva de búsqueda encontrada en %s"
 
-#: option.c:4623
+#: option.c:4620
 #, fuzzy
 msgid "there must be a default domain when --dhcp-fqdn is set"
 msgstr "debe haber un dominio predeterminado cuando --dhcp-fqdn está fijado"
 
-#: option.c:4632
+#: option.c:4629
 msgid "syntax check OK"
 msgstr "revisión de sintaxis OK"
 
@@ -1180,11 +1180,11 @@ msgstr "servidor DNS %s rechazó realizar una búsqueda recursiva"
 msgid "possible DNS-rebind attack detected: %s"
 msgstr "posible ataque de revinculación DNS detectado"
 
-#: forward.c:1209 forward.c:1785
+#: forward.c:1209 forward.c:1815
 msgid "Ignoring query from non-local network"
 msgstr ""
 
-#: forward.c:2256
+#: forward.c:2286
 #, fuzzy, c-format
 msgid "Maximum number of concurrent DNS queries reached (max: %d)"
 msgstr "Número máximo de búsquedas DNS simultáneas alcanzado. (%s por predeterminado)"
@@ -1348,7 +1348,7 @@ msgstr "no se pudo encontrar lista de interfases: %s"
 msgid "unknown interface %s"
 msgstr "interfase desconocida %s"
 
-#: dnsmasq.c:354 dnsmasq.c:1037
+#: dnsmasq.c:354 dnsmasq.c:997
 #, c-format
 msgid "DBus error: %s"
 msgstr "error DBus: %s"
@@ -1448,122 +1448,122 @@ msgstr "Anuncio de router IPv6 habilitado"
 msgid "DHCP, sockets bound exclusively to interface %s"
 msgstr ""
 
-#: dnsmasq.c:808
+#: dnsmasq.c:804
 msgid "root is "
 msgstr "root está "
 
-#: dnsmasq.c:808
+#: dnsmasq.c:804
 #, fuzzy
 msgid "enabled"
 msgstr "habilitado"
 
-#: dnsmasq.c:810
+#: dnsmasq.c:806
 msgid "secure mode"
 msgstr "modo seguro"
 
-#: dnsmasq.c:813
+#: dnsmasq.c:809
 #, c-format
 msgid "warning: %s inaccessible"
 msgstr ""
 
-#: dnsmasq.c:817
+#: dnsmasq.c:813
 #, fuzzy, c-format
 msgid "warning: TFTP directory %s inaccessible"
 msgstr "directorio TFTP % inaccesible: %s"
 
-#: dnsmasq.c:843
+#: dnsmasq.c:839
 #, c-format
 msgid "restricting maximum simultaneous TFTP transfers to %d"
 msgstr "limitando número máximo de transferencias TFTP simultáneas a %d"
 
-#: dnsmasq.c:1039
+#: dnsmasq.c:999
 msgid "connected to system DBus"
 msgstr "conectado a DBus de sistema"
 
-#: dnsmasq.c:1189
+#: dnsmasq.c:1149
 #, c-format
 msgid "cannot fork into background: %s"
 msgstr "no se puede hacer fork en background: %s"
 
-#: dnsmasq.c:1192
+#: dnsmasq.c:1152
 #, fuzzy, c-format
 msgid "failed to create helper: %s"
 msgstr "no se pudo crear ayudante: %s"
 
-#: dnsmasq.c:1195
+#: dnsmasq.c:1155
 #, fuzzy, c-format
 msgid "setting capabilities failed: %s"
 msgstr "configuración de capacidades ha fallado: %s"
 
-#: dnsmasq.c:1198
+#: dnsmasq.c:1158
 #, fuzzy, c-format
 msgid "failed to change user-id to %s: %s"
 msgstr "no se pudo cambiar user-id a %s: %s"
 
-#: dnsmasq.c:1201
+#: dnsmasq.c:1161
 #, fuzzy, c-format
 msgid "failed to change group-id to %s: %s"
 msgstr "no se pudo cambiar group-id a %s: %s"
 
-#: dnsmasq.c:1204
+#: dnsmasq.c:1164
 #, fuzzy, c-format
 msgid "failed to open pidfile %s: %s"
 msgstr "no se pudo abrir archivo PID %s: %s"
 
-#: dnsmasq.c:1207
+#: dnsmasq.c:1167
 #, fuzzy, c-format
 msgid "cannot open log %s: %s"
 msgstr "no se puede abrir registro %s: %s"
 
-#: dnsmasq.c:1210
+#: dnsmasq.c:1170
 #, fuzzy, c-format
 msgid "failed to load Lua script: %s"
 msgstr "no se pudo cargar script Lua %s: %s"
 
-#: dnsmasq.c:1213
+#: dnsmasq.c:1173
 #, c-format
 msgid "TFTP directory %s inaccessible: %s"
 msgstr "directorio TFTP % inaccesible: %s"
 
-#: dnsmasq.c:1216
+#: dnsmasq.c:1176
 #, fuzzy, c-format
 msgid "cannot create timestamp file %s: %s"
 msgstr "no se puede abrir o crear archivo de concesión %s: %s"
 
-#: dnsmasq.c:1237
+#: dnsmasq.c:1197
 msgid "now checking DNSSEC signature timestamps"
 msgstr ""
 
-#: dnsmasq.c:1304
+#: dnsmasq.c:1264
 #, fuzzy, c-format
 msgid "script process killed by signal %d"
 msgstr "proceso script eliminado por señal %d"
 
-#: dnsmasq.c:1308
+#: dnsmasq.c:1268
 #, fuzzy, c-format
 msgid "script process exited with status %d"
 msgstr "proceso script salió con con estado %d"
 
-#: dnsmasq.c:1312
+#: dnsmasq.c:1272
 #, fuzzy, c-format
 msgid "failed to execute %s: %s"
 msgstr "no se pudo ejecutar %s: %s"
 
-#: dnsmasq.c:1367
+#: dnsmasq.c:1327
 msgid "exiting on receipt of SIGTERM"
 msgstr "saliendo al recibir SIGTERM"
 
-#: dnsmasq.c:1395
+#: dnsmasq.c:1355
 #, fuzzy, c-format
 msgid "failed to access %s: %s"
 msgstr "no se pudo acceder %s: %s"
 
-#: dnsmasq.c:1425
+#: dnsmasq.c:1385
 #, c-format
 msgid "reading %s"
 msgstr "leyendo %s"
 
-#: dnsmasq.c:1436
+#: dnsmasq.c:1396
 #, fuzzy, c-format
 msgid "no servers found in %s, will retry"
 msgstr "ningún servidor encontrado en %s, se reintentará"
@@ -1918,7 +1918,7 @@ msgstr "desbordamiento: %d entradas de registro perdidas"
 msgid "log failed: %s"
 msgstr "registro falló: %s"
 
-#: log.c:472
+#: log.c:469
 msgid "FAILED to start up"
 msgstr "el inicio ha FALLADO"
 
@@ -2177,35 +2177,44 @@ msgstr ""
 msgid "%d addresses %s"
 msgstr "dirección IP errónea"
 
-#: inotify.c:46
+#: inotify.c:59
+#, fuzzy, c-format
+msgid "cannot access path %s: %s"
+msgstr "no se puede acceder %s: %s"
+
+#: inotify.c:92
 #, fuzzy, c-format
 msgid "failed to create inotify: %s"
 msgstr "no se pudo crear ayudante: %s"
 
-#: inotify.c:60
-#, fuzzy, c-format
-msgid "cannot cannonicalise resolv-file %s: %s"
-msgstr "no se puede abrir o crear archivo de concesión %s: %s"
+#: inotify.c:105
+#, c-format
+msgid "too many symlinks following %s"
+msgstr ""
 
-#: inotify.c:72
+#: inotify.c:121
 #, c-format
 msgid "directory %s for resolv-file is missing, cannot poll"
 msgstr ""
 
-#: inotify.c:75 inotify.c:112
+#: inotify.c:125 inotify.c:162
 #, fuzzy, c-format
 msgid "failed to create inotify for %s: %s"
 msgstr "no se pudo crear un zócalo de escucha: %s"
 
-#: inotify.c:97
+#: inotify.c:147
 #, fuzzy, c-format
 msgid "bad dynamic directory %s: %s"
 msgstr "no se puede acceder a directorio %s: %s"
 
-#: inotify.c:197
+#: inotify.c:247
 #, c-format
 msgid "inotify, new or changed file %s"
 msgstr ""
+
+#, fuzzy
+#~ msgid "cannot cannonicalise resolv-file %s: %s"
+#~ msgstr "no se puede abrir o crear archivo de concesión %s: %s"
 
 #~ msgid "no interface with address %s"
 #~ msgstr "ninguna interfase con dirección %s"

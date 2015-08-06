@@ -604,17 +604,27 @@ experimental. Also note that exposing MAC addresses in this way may
 have security and privacy implications. The warning about caching
 given for --add-subnet applies to --add-mac too.
 .TP 
-.B --add-subnet[[=<IPv4 prefix length>],<IPv6 prefix length>]
-Add the subnet address of the requestor to the DNS queries which are
-forwarded upstream. The amount of the address forwarded depends on the
-prefix length parameter: 32 (128 for IPv6) forwards the whole address,
-zero forwards none of it but still marks the request so that no
-upstream nameserver will add client address information either. The
-default is zero for both IPv4 and IPv6. Note that upstream nameservers
-may be configured to return different results based on this
-information, but the dnsmasq cache does not take account. If a dnsmasq
-instance is configured such that different results may be encountered,
-caching should be disabled.
+.B --add-subnet[[=[<IPv4 address>/]<IPv4 prefix length>][,[<IPv6 address>/]<IPv6 prefix length>]]
+Add a subnet address to the DNS queries which are forwarded
+upstream. If an address is specified in the flag, it will be used,
+otherwise, the address of the requestor will be used. The amount of
+the address forwarded depends on the prefix length parameter: 32 (128
+for IPv6) forwards the whole address, zero forwards none of it but
+still marks the request so that no upstream nameserver will add client
+address information either. The default is zero for both IPv4 and
+IPv6. Note that upstream nameservers may be configured to return
+different results based on this information, but the dnsmasq cache
+does not take account. If a dnsmasq instance is configured such that
+different results may be encountered, caching should be disabled.
+
+For example,
+.B --add-subnet=24,96
+will add the /24 and /96 subnets of the requestor for IPv4 and IPv6 requestors, respectively.
+.B --add-subnet=1.2.3.4/24
+will add 1.2.3.0/24 for IPv4 requestors and ::/0 for IPv6 requestors.
+.B --add-subnet=1.2.3.4/24,1.2.3.4/24
+will add 1.2.3.0/24 for both IPv4 and IPv6 requestors.
+
 .TP
 .B \-c, --cache-size=<cachesize>
 Set the size of dnsmasq's cache. The default is 150 names. Setting the cache size to zero disables caching.

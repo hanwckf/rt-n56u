@@ -9,10 +9,10 @@
 # Simon Kelley <simon@thekelleys.org.uk>, 2005.
 msgid ""
 msgstr ""
-"Project-Id-Version: dnsmasq 2.73\n"
+"Project-Id-Version: dnsmasq 2.74\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2009-06-18 12:24+0100\n"
-"PO-Revision-Date: 2015-01-19 15:43+0100\n"
+"PO-Revision-Date: 2015-07-22 23:07+0200\n"
 "Last-Translator: Conrad Kostecki <ck@conrad-kostecki.de>\n"
 "Language-Team: German <de@li.org>\n"
 "Language: de\n"
@@ -20,7 +20,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 1.7.3\n"
+"X-Generator: Poedit 1.8.3\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 #: cache.c:523
@@ -191,14 +191,12 @@ msgid "Read DHCP option specs from file."
 msgstr "DHCP-Optionen aus Datei lesen."
 
 #: option.c:348
-#, fuzzy
 msgid "Read DHCP host specs from a directory."
-msgstr "DHCP-Host-Angaben aus Datei lesen."
+msgstr "DHCP-Host-Angaben aus einem Verzeichnis lesen."
 
 #: option.c:349
-#, fuzzy
 msgid "Read DHCP options from a directory."
-msgstr "DHCP-Optionen aus Datei lesen."
+msgstr "DHCP-Optionen aus einem Verzeichnis lesen."
 
 #: option.c:350
 msgid "Evaluate conditional tag expression."
@@ -215,9 +213,8 @@ msgid "Specify a hosts file to be read in addition to %s."
 msgstr "Hosts-Datei festlegen, die zusätzlich zu %s gelesen wird."
 
 #: option.c:353
-#, fuzzy
 msgid "Read hosts files from a directory."
-msgstr "DHCP-Host-Angaben aus Datei lesen."
+msgstr "DHCP-Host-Dateien aus einem Verzeichnis lesen."
 
 #: option.c:354
 msgid "Specify interface(s) to listen on."
@@ -361,14 +358,12 @@ msgid "Specify time-to-live in seconds for maximum TTL to send to clients."
 msgstr "Gültigkeitsdauer in Sekunden für Caching negativer Ergebnisse festlegen."
 
 #: option.c:388
-#, fuzzy
 msgid "Specify time-to-live ceiling for cache."
-msgstr "Gültigkeitsdauer in Sekunden für Caching negativer Ergebnisse festlegen."
+msgstr "Spezifiziere time-to-live ceiling für Cache."
 
 #: option.c:389
-#, fuzzy
 msgid "Specify time-to-live floor for cache."
-msgstr "Gültigkeitsdauer in Sekunden für Caching negativer Ergebnisse festlegen."
+msgstr "Spezifiziere time-to-live floor für Cache."
 
 #: option.c:390
 #, c-format
@@ -514,7 +509,7 @@ msgstr "Zugriff nur auf Dateien gestatten, die dem dnsmasq aufrufenden Benutzer 
 
 #: option.c:424
 msgid "Do not terminate the service if TFTP directories are inaccessible."
-msgstr ""
+msgstr "Der Dienst sollte nicht beendet werden, wenn die TFTP-Verzeichnisse nicht zugreifbar sind."
 
 #: option.c:425
 #, c-format
@@ -704,7 +699,7 @@ msgstr "DNSSEC Signatur-Zeitstempel nicht prüfen, bis erstmalig der Cache neuge
 
 #: option.c:471
 msgid "Timestamp file to verify system clock for DNSSEC"
-msgstr ""
+msgstr "Zeitstempel-Datei für die Verifizierung der Systemuhrzeit für DNSSEC"
 
 #: option.c:473
 msgid "Specify DHCPv6 prefix class"
@@ -736,7 +731,7 @@ msgstr "Erkennen und Entfernen von DNS-Weiterleitungsschleifen"
 
 #: option.c:481
 msgid "Ignore DNS responses containing ipaddr."
-msgstr ""
+msgstr "Ignoriere DNS-Antworten, welche ipaddr enthalten."
 
 #: option.c:683
 #, c-format
@@ -1237,15 +1232,13 @@ msgstr "Benutze Namensserver %s#%d"
 
 #: dnsmasq.c:163
 msgid "dhcp-hostsdir, dhcp-optsdir and hostsdir are not supported on this platform"
-msgstr ""
+msgstr "dhcp-hostsdir, dhcp-optsdir und hostsdir sind auf dieser Plattform nicht unterstüzt"
 
 #: dnsmasq.c:170
-#, fuzzy
 msgid "no trust anchors provided for DNSSEC"
 msgstr "Keine Vertrauensursprünge (Trust Anchor) für DNSSEC verfügbar"
 
 #: dnsmasq.c:173
-#, fuzzy
 msgid "cannot reduce cache size from default when DNSSEC enabled"
 msgstr "Kann die Standard Cachegröße nicht verkleinern, wenn DNSSEC aktiviert ist"
 
@@ -1258,14 +1251,12 @@ msgid "TFTP server not available: set HAVE_TFTP in src/config.h"
 msgstr "TFTP-Server nicht verfügbar, setzen Sie HAVE_TFTP in src/config.h"
 
 #: dnsmasq.c:186
-#, fuzzy
 msgid "cannot use --conntrack AND --query-port"
 msgstr "Kann nicht --conntrack UND --query-port einsetzen"
 
 #: dnsmasq.c:189
-#, fuzzy
 msgid "conntrack support not available: set HAVE_CONNTRACK in src/config.h"
-msgstr "Conntrack-Unterstützung nicht verfügbar: setze HAVE_CONNTRACK in src/config.h"
+msgstr "Conntrack-Unterstützung nicht verfügbar: Aktiviere HAVE_CONNTRACK in src/config.h"
 
 #: dnsmasq.c:194
 msgid "asychronous logging is not available under Solaris"
@@ -1280,9 +1271,8 @@ msgid "authoritative DNS not available: set HAVE_AUTH in src/config.h"
 msgstr "Authoritatives DNS nicht verfügbar: Es muss HAVE_AUTH in src/config.h gesetzt sein"
 
 #: dnsmasq.c:209
-#, fuzzy
 msgid "loop detection not available: set HAVE_LOOP in src/config.h"
-msgstr "Loop-Erkennung nicht verfügbar, setzen Sie HAVE_LOOP in src/config.h"
+msgstr "Loop-Erkennung nicht verfügbar, Aktiviere HAVE_LOOP in src/config.h"
 
 #: dnsmasq.c:217
 msgid "zone serial must be configured in --auth-soa"
@@ -1367,9 +1357,8 @@ msgid "DNSSEC signature timestamps not checked until first cache reload"
 msgstr "DNSSEC Signatur-Zeitstempel werden erst ab dem ersten Neuladen des Caches überprüft"
 
 #: dnsmasq.c:733
-#, fuzzy
 msgid "DNSSEC signature timestamps not checked until system time valid"
-msgstr "DNSSEC Signatur-Zeitstempel werden erst ab dem ersten Neuladen des Caches überprüft"
+msgstr "DNSSEC Signatur-Zeitstempel werden erst überprüft, sobald die Systemuhrzeit gültig ist"
 
 #: dnsmasq.c:738
 #, c-format
@@ -1423,12 +1412,12 @@ msgstr "sicherer Modus"
 #: dnsmasq.c:813
 #, c-format
 msgid "warning: %s inaccessible"
-msgstr ""
+msgstr "Warnung: %s nicht zugreifbar"
 
 #: dnsmasq.c:817
-#, fuzzy, c-format
+#, c-format
 msgid "warning: TFTP directory %s inaccessible"
-msgstr "Das TFTP-Verzeichnis %s ist nicht zugreifbar: %s"
+msgstr "Warnung: Das TFTP-Verzeichnis %s ist nicht zugreifbar"
 
 #: dnsmasq.c:843
 #, c-format
@@ -1485,9 +1474,9 @@ msgid "TFTP directory %s inaccessible: %s"
 msgstr "Das TFTP-Verzeichnis %s ist nicht zugreifbar: %s"
 
 #: dnsmasq.c:1216
-#, fuzzy, c-format
+#, c-format
 msgid "cannot create timestamp file %s: %s"
-msgstr "kann Lease-Datei %s nicht öffnen: %s"
+msgstr "Kann keine timestamp-Datei %s erzeugen: %s "
 
 #: dnsmasq.c:1237
 msgid "now checking DNSSEC signature timestamps"
@@ -1806,12 +1795,12 @@ msgstr "Versuch, via DBus eine IPv6-Serveradresse zu setzen: keine IPv6-Unterst�
 #: dbus.c:439
 #, c-format
 msgid "Enabling --%s option from D-Bus"
-msgstr ""
+msgstr "Aktiviere --%s Option von D-Bus"
 
 #: dbus.c:444
 #, c-format
 msgid "Disabling --%s option from D-Bus"
-msgstr ""
+msgstr "Deaktiviere --%s Option von D-Bus"
 
 #: dbus.c:691
 msgid "setting upstream servers from DBus"
@@ -2087,9 +2076,9 @@ msgid "failed to create IPset control socket: %s"
 msgstr "konnte IPset-Kontroll-Socket nicht erzeugen: %s"
 
 #: dnssec.c:449 dnssec.c:493
-#, fuzzy, c-format
+#, c-format
 msgid "failed to update mtime on %s: %s"
-msgstr "kann die Prozessidentifikations-(PID)-Datei %s nicht öffnen: %s"
+msgstr "kann die mtime nicht auf %s aktualisieren: %s"
 
 #: blockdata.c:58
 #, c-format
@@ -2140,34 +2129,34 @@ msgid "%d addresses %s"
 msgstr "%d Adressen %s"
 
 #: inotify.c:46
-#, fuzzy, c-format
+#, c-format
 msgid "failed to create inotify: %s"
-msgstr "kann Helfer nicht erzeugen: %s"
+msgstr "Kann kein inotify erzeugen: %s"
 
 #: inotify.c:60
-#, fuzzy, c-format
+#, c-format
 msgid "cannot cannonicalise resolv-file %s: %s"
-msgstr "kann Lease-Datei %s nicht öffnen: %s"
+msgstr "Kann die resolv-file %s nicht kanonisieren: %s"
 
 #: inotify.c:72
 #, c-format
 msgid "directory %s for resolv-file is missing, cannot poll"
-msgstr ""
+msgstr "Verzeichnis %s für resolv-file fehlt, kann nicht pollen"
 
 #: inotify.c:75 inotify.c:112
-#, fuzzy, c-format
+#, c-format
 msgid "failed to create inotify for %s: %s"
-msgstr "Konnte Empfangs-Socket für %s: %s nicht erzeugen"
+msgstr "Konnte inotify für %s: %s nicht erzeugen"
 
 #: inotify.c:97
-#, fuzzy, c-format
+#, c-format
 msgid "bad dynamic directory %s: %s"
-msgstr "Kann auf Verzeichnis %s nicht zugreifen: %s"
+msgstr "fehlerhaftes dynamisches Verzeichnis %s: %s"
 
 #: inotify.c:197
 #, c-format
 msgid "inotify, new or changed file %s"
-msgstr ""
+msgstr "inotify, neue oder geänderte Datei %s"
 
 #~ msgid "no interface with address %s"
 #~ msgstr "keine Schnittstelle mit Adresse %s"

@@ -850,8 +850,19 @@ void reply_query(int fd, int family, time_t now)
 		/* We only cache sigs when we've validated a reply.
 		   Avoid caching a reply with sigs if there's a vaildated break in the 
 		   DS chain, so we don't return replies from cache missing sigs. */
-		status = STAT_INSECURE_DS;
-	      else if (status == STAT_NO_NS || status == STAT_NO_SIG)
+              	status = STAT_INSECURE_DS;
+	      else if (status == STAT_NO_SIG)
+                {
+                  if (option_bool(OPT_DNSSEC_NO_SIGN))
+                    {
+		      status = send_check_sign(forward, now, header, n, daemon->namebuff, daemon->keyname);
+		      if (status == STAT_INSECURE)
+			status = STAT_INSECURE_DS;
+		    }
+		  else
+		    status = STAT_INSECURE_DS;
+		}
+              else if (status == STAT_NO_NS)
 		status = STAT_BOGUS;
 	    }
 	  else if (forward->flags & FREC_CHECK_NOSIGN)
@@ -997,8 +1008,19 @@ void reply_query(int fd, int family, time_t now)
 			   Avoid caching a reply with sigs if there's a vaildated break in the 
 			   DS chain, so we don't return replies from cache missing sigs. */
 			status = STAT_INSECURE_DS;
-		      else if (status == STAT_NO_NS || status == STAT_NO_SIG)
-			status = STAT_BOGUS; 
+		       else if (status == STAT_NO_SIG)
+			 {
+			   if (option_bool(OPT_DNSSEC_NO_SIGN))
+			     {
+			       status = send_check_sign(forward, now, header, n, daemon->namebuff, daemon->keyname); 
+			       if (status == STAT_INSECURE)
+				 status = STAT_INSECURE_DS;
+			     }
+			   else
+			     status = STAT_INSECURE_DS;
+			 }
+		       else if (status == STAT_NO_NS)
+			 status = STAT_BOGUS;
 		    }
 		  else if (forward->flags & FREC_CHECK_NOSIGN)
 		    {
@@ -1418,7 +1440,7 @@ static int send_check_sign(struct frec *forward, time_t now, struct dns_header *
 static int do_check_sign(struct frec *forward, int status, time_t now, char *name, char *keyname)
 {
   /* get domain we're checking back from blockdata store, it's stored on the original query. */
-  while (forward->dependent)
+  while (forward->dependent && !forward->orig_domain)
     forward = forward->dependent;
 
   blockdata_retrieve(forward->orig_domain, forward->name_len, name);
@@ -1451,7 +1473,7 @@ static int do_check_sign(struct frec *forward, int status, time_t now, char *nam
       
       /* Have entered non-signed part of DNS tree. */ 
       if (status == STAT_NO_DS)
-	return STAT_INSECURE;
+	return forward->dependent ? STAT_INSECURE_DS : STAT_INSECURE;
 
       if (status == STAT_BOGUS)
 	return STAT_BOGUS;
@@ -1657,7 +1679,18 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
 	{
 	  if (new_status == STAT_NO_DS)
 	    new_status = STAT_INSECURE_DS;
-	  else if (new_status == STAT_NO_NS || new_status == STAT_NO_SIG)
+	  if (new_status == STAT_NO_SIG)
+	   {
+	     if (option_bool(OPT_DNSSEC_NO_SIGN))
+	       {
+		 new_status = tcp_check_for_unsigned_zone(now, header, n, class, name, keyname, server, keycount);
+		 if (new_status == STAT_INSECURE)
+		   new_status = STAT_INSECURE_DS;
+	       }
+	     else
+	       new_status = STAT_INSECURE_DS;
+	   }
+	  else if (new_status == STAT_NO_NS)
 	    new_status = STAT_BOGUS;
 	}
     }
@@ -1722,8 +1755,19 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
 		    {
 		      if (new_status == STAT_NO_DS)
 			new_status = STAT_INSECURE_DS;
-		      else if (new_status == STAT_NO_NS || new_status == STAT_NO_SIG)
-			new_status = STAT_BOGUS; /* Validated no DS */
+		      else if (new_status == STAT_NO_SIG)
+			{
+			  if (option_bool(OPT_DNSSEC_NO_SIGN))
+			    {
+			      new_status = tcp_check_for_unsigned_zone(now, header, n, class, name, keyname, server, keycount); 
+			      if (new_status == STAT_INSECURE)
+				new_status = STAT_INSECURE_DS;
+			    }
+			  else
+			    new_status = STAT_INSECURE_DS;
+			}
+		      else if (new_status == STAT_NO_NS)
+			new_status = STAT_BOGUS;
 		    }
 		}
 	      else if (status == STAT_CHASE_CNAME)
@@ -1887,7 +1931,7 @@ unsigned char *tcp_request(int confd, time_t now,
 			     dst_addr_4, netmask, now, &ad_question, &do_bit);
 	  
 	  /* Do this by steam now we're not in the select() loop */
-	  check_log_writer(NULL); 
+	  check_log_writer(1); 
 	  
 	  if (m == 0)
 	    {
@@ -2108,7 +2152,7 @@ unsigned char *tcp_request(int confd, time_t now,
 	    }
 	}
 	  
-      check_log_writer(NULL);
+      check_log_writer(1);
       
       *length = htons(m);
            

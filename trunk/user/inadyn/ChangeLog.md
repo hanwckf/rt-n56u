@@ -3,6 +3,20 @@ Change Log
 
 All notable changes to the project are documented in this file.
 
+[UNRELEASED][]
+--------------
+
+Minor bugfix release.
+
+### Changes
+- Support for new API at https://tunnelbroker.net, fixes issue #83.
+  Use `default@tunnelbroker.net` to use the DYN.com API to update
+  the IPv4 address for your IPv6-in-IPv4 tunnel.  Thanks goes to
+  Horst Venzke for reporting this problem.
+- The old API for the IPv6-in-IPv4 system `ipv6tb@he.net` is now
+  deprecated.  Users should migrate to `default@tunnelbroker.net`
+
+
 [1.99.14][] - 2015-07-14
 ------------------------
 

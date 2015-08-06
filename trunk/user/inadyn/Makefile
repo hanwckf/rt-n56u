@@ -9,7 +9,7 @@ PLUGIN_OBJS   = src/plugin.o		plugins/common.o	\
 		plugins/dyndns.o	plugins/changeip.o	\
 		plugins/dnsexit.o	plugins/easydns.o	\
 		plugins/freedns.o	plugins/generic.o	\
-		plugins/sitelutions.o	plugins/tunnelbroker.o	\
+		plugins/sitelutions.o				\
 		plugins/tzo.o		plugins/zoneedit.o	\
 		plugins/zerigo.o	plugins/dhis.o		\
 		plugins/dtdns.o		plugins/giradns.o	\

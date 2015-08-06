@@ -60,55 +60,56 @@ Common DDNS service providers supported by
 .Pp
 .Bl -bullet -compact
 .It
-http://www.dyndns.org
+.Aq http://www.dyndns.org
 .It
-http://freedns.afraid.org
+.Aq http://freedns.afraid.org
 .It
-http://zoneedit.com
+.Aq http://zoneedit.com
 .It
-http://www.no-ip.com
+.Aq http://www.no-ip.com
 .It
-http://www.easydns.com
+.Aq http://www.easydns.com
 .It
-http://www.tzo.com
+.Aq http://www.tzo.com
 .It
-http://www.3322.org
+.Aq http://www.3322.org
 .It
-http://www.dnsomatic.com
+.Aq http://www.dnsomatic.com
 .It
-http://www.tunnelbroker.net
+.Aq http://www.tunnelbroker.net
 .It
-http://dns.he.net
+.Aq http://dns.he.net
 .It
-http://www.dynsip.org
+.Aq http://www.dynsip.org
 .It
-http://www.sitelutions.com
+.Aq http://www.sitelutions.com
 .It
-http://www.dnsexit.com
+.Aq http://www.dnsexit.com
 .It
-http://www.changeip.com
+.Aq http://www.changeip.com
 .It
-http://www.zerigo.com
+.Aq http://www.zerigo.com
 .It
-http://www.dhis.org
+.Aq http://www.dhis.org
 .It
-https://nsupdate.info
+.Aq https://nsupdate.info
 .It
-http://duckdns.org
+.Aq http://duckdns.org
 .It
-https://www.loopia.com
+.Aq https://www.loopia.com
 .It
-https://domains.google.com
+.Aq https://domains.google.com
 .It
-https://www.ovh.com
+.Aq https://www.ovh.com
 .It
-https://www.dtdns.com
+.Aq https://www.dtdns.com
 .It
-https://www.duiadns.net
+.Aq https://www.duiadns.net
 .El
 .Pp
-DDNS providers not listed here, like http://twoDNS.de, can often be
-configured using the generic DDNS provider plugin.  See
+DDNS providers not listed here, like
+.Aq http://twoDNS.de ,
+can often be configured using the generic DDNS provider plugin.  See
 .Xr inadyn.conf 5
 for example configurations.
 .Pp
@@ -146,7 +147,8 @@ Detect IP address by calling
 .Ar PATH
 from this
 .Ar SERVER Ns Oo : Ns Ar PORT Oc .
-Default: http://checkip.dyndns.org
+Default:
+.Aq http://checkip.dyndns.org
 .It Fl N, -server-name Ar SERVER Ns Op : Ns Ar PORT
 The server that receives the update DNS requests.  When no proxy is specified it is
 sufficient to set the
@@ -166,45 +168,59 @@ DNS service to connect to.  Defaults to
 .Ar default@dyndns.org .
 .Bl -tag -width TERM -compact -offset indent
 .It Cm default@dyndns.org
-http://www.dyndns.org
+Connect to
+.Aq http://www.dyndns.org ,
+this is the default.
 .It Cm default@freedns.afraid.org
-http://freedns.afraid.org
+.Aq http://freedns.afraid.org
 .It Cm default@zoneedit.com
-http://zoneedit.com
+.Aq http://zoneedit.com
 .It Cm default@no-ip.com
-http://www.no-ip.com
+.Aq http://www.no-ip.com
 .It Cm default@easydns.com
-http://www.easydns.com
+.Aq http://www.easydns.com
 .It Cm default@tzo.com
-http://www.tzo.com
+.Aq http://www.tzo.com
 .It Cm dyndns@3322.org
-http://www.3322.org
+.Aq http://www.3322.org
 .It Cm default@dnsomatic.com
-http://www.dnsomatic.com
-.It Cm ipv6tb@he.net
-http://www.tunnelbroker.net
+.Aq http://www.dnsomatic.com
 .It Cm dyndns@he.net
-http://dns.he.net
+.Aq http://dns.he.net
+.It Cm ipv6tb@he.net
+.Em Deprecated OLD API
+for
+.Aq http://www.tunnelbroker.net
+Users should migrate to
+.Cm default@tunnelbroker.net .
+.It Cm default@tunnelbroker.net
+.Em NEW API
+for
+.Aq https://www.tunnelbroker.net
+Please use this system for the IPv6 tunnelbroker service provided by
+Hurricane Electric.  The old one works, but is deprecated.  See
+.Xr inadyn.conf 5
+for an example.
 .It Cm default@dynsip.org
-http://www.dynsip.org
+.Aq http://www.dynsip.org
 .It Cm default@sitelutions.com
-http://www.sitelutions.com
+.Aq http://www.sitelutions.com
 .It Cm default@dnsexit.com
-http://www.dnsexit.com
+.Aq http://www.dnsexit.com
 .It Cm default@changeip.com
-http://www.changeip.com
+.Aq http://www.changeip.com
 .It Cm default@zerigo.com
-http://www.zerigo.com
+.Aq http://www.zerigo.com
 .It Cm default@dhis.org
-http://www.dhis.org
+.Aq http://www.dhis.org
 .It Cm ipv4@nsupdate.info
-https://nsupdate.info
+.Aq https://nsupdate.info
 .It Cm default@duckdns.org
-http://duckdns.org
+.Aq http://duckdns.org
 .It Cm default@loopia.com
-https://www.loopia.com
+.Aq https://www.loopia.com
 .It Cm default@duiadns.net
-https://www.duiadns.net
+.Aq https://www.duiadns.net
 .It Cm custom@http_srv_basic_auth
 Try this if your DDNS service provider is not listed
 .El
@@ -444,14 +460,14 @@ writes its process ID to
 The
 .Nm
 home page is at GitHub:
-.Pa https://github.com/troglobit/inadyn
+.Aq https://github.com/troglobit/inadyn
 .Sh AUTHORS
 .Nm
 was originally written by
 .Bl -bullet -compact
 .It
 Narcis Ilisei
-.Pa inarcis2002@hotpop.com
+.Aq mailto:inarcis2002@hotpop.com
 and
 .It
 Steve Horbachuk
@@ -461,7 +477,7 @@ It is now maintained at GitHub by
 .Bl -bullet -compact
 .It
 Joachim Nilsson
-.Pa troglobit@gmail.com
+.Aq mailto:troglobit@gmail.com
 with a lot of help from
 .It
 Andrey Tikhomirov, and
@@ -473,7 +489,7 @@ This manual page was originally written for the
 .Em Debian GNU/Linux
 project by
 .An -nosplit
-.An Shaul Karl Aq shaul@debian.org .
+.An Shaul Karl Aq mailto:shaul@debian.org .
 Currently maintained by
 .An -nosplit
 .An Joachim Nilsson.

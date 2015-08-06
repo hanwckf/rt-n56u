@@ -110,6 +110,12 @@ Example `/etc/inadyn.conf`:
       username xxyx
       password xxxy
       alias yyy
+    
+    system default@tunnelbroker.net
+      ssl
+      username xyzzy
+      password update-key-in-advanced-tab
+      alias tunnel-id
 
 In a multi-user setup, make sure to chmod your .conf to 600 (read-write
 only by you/root) to prevent other users from accessing your DDNS server
@@ -120,12 +126,18 @@ still use regular HTTP.  See below for SSL build instructions.
 
 The example has two commented out lines: logfile is disabled, causing
 Inadyn to default to use syslog, the pidfile is also commented out, so
-Inadyn defaults to create `/var/run/inadyn/inadyn.pid` instead.
+Inadyn defaults to create `/var/run/inadyn/inadyn.pid` instead.  These
+two settings will change in Inadyn 2.0.
 
 The example also has a cache directory specified, which in this case is
 a persistent store for the three cache files
 `/mnt/ddns/yyy.dyndns.org.cache`, `/mnt/ddns/zzz.dyndns.org.cache` and
 `/mnt/ddns/yyy.no-ip.com.cache`
+
+The last system defined is the IPv6 <https://tunnelbroker.net> service
+provided by Hurricane Electric.  Here `alias` is set to the tunnel ID
+and password **must** be the *Update key* found in the *Advanced*
+configuration tab.  Also, `default@tunnelbroker.net` requires SSL!
 
 
 Generic DDNS Plugin
@@ -240,6 +252,7 @@ pull requests for bug fixes and proposed extensions at [GitHub][].
 [original]:         http://www.inatech.eu/inadyn/
 [DDNS]:             http://en.wikipedia.org/wiki/Dynamic_DNS
 [ISP]:              http://en.wikipedia.org/wiki/ISP
+[tunnelbroker]:     https://tunnelbroker.net/
 [Christian Eyrich]: http://eyrich-net.org/programmiertes.html
 [Joachim Nilsson]:  http://troglobit.com
 [GitHub]:           http://github.com/troglobit/inadyn

@@ -151,8 +151,10 @@ int read_cache_file(ddns_t *ctx)
 		ddns_info_t *info = &ctx->info[i];
 		int nonslookup = 0;
 		/* Exception for tunnelbroker.net - no name to lookup */
+		/* Exception for ipv6tb@netassist.ua - no name to lookup */
 		/* Exception for register@asus.com - no name to lookup */
-		if (!strcmp(info->system->name, "ipv6tb@he.net") ||
+		if (!strcmp(info->system->name, "ipv6tb@netassist.ua") ||
+		    !strcmp(info->system->name, "default@tunnelbroker.net") ||
 		    !strcmp(info->system->name, "register@asus.com"))
 			nonslookup = 1;
 // XXX: TODO better plugin identifiction here

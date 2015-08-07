@@ -16,8 +16,8 @@
 #define BOARD_GPIO_LED_SW2G	14	/* soft led */
 #define BOARD_GPIO_LED_SW5G	15	/* soft led */
 #define BOARD_GPIO_LED_POWER	12
-#define BOARD_GPIO_LED_LAN	7
-#define BOARD_GPIO_LED_WAN	16
+#define BOARD_GPIO_LED_LAN	16
+#define BOARD_GPIO_LED_WAN	7
 #define BOARD_GPIO_LED_USB	13
 #undef  BOARD_GPIO_LED_ROUTER
 #undef  BOARD_GPIO_PWR_USB

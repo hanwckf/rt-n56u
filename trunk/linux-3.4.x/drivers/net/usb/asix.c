@@ -273,6 +273,8 @@ static int asix_rx_fixup_internal(struct usbnet *dev, struct sk_buff *skb,
 			netdev_err(dev->net, "asix_rx_fixup() Bad RX Length %d\n",
 				   rx->size);
 			kfree_skb(rx->ax_skb);
+			rx->ax_skb = NULL;
+			rx->size = 0U;
 			return 0;
 		}
 
@@ -343,6 +345,8 @@ static struct sk_buff *asix_tx_fixup(struct usbnet *dev, struct sk_buff *skb,
 		memcpy(skb_tail_pointer(skb), &padbytes, sizeof(padbytes));
 		skb_put(skb, sizeof(padbytes));
 	}
+
+	usbnet_set_skb_tx_stats(skb, 1, 0);
 	return skb;
 }
 
@@ -1582,9 +1586,9 @@ static const struct usb_device_id	products [] = {
 	USB_DEVICE (0x2001, 0x3c05),
 	.driver_info = (unsigned long) &ax88772_info,
 }, {
-       // DLink DUB-E100 H/W Ver C1
-       USB_DEVICE (0x2001, 0x1a02),
-       .driver_info = (unsigned long) &ax88772_info,
+	// DLink DUB-E100 H/W Ver C1
+	USB_DEVICE (0x2001, 0x1a02),
+	.driver_info = (unsigned long) &ax88772_info,
 }, {
 	// Linksys USB1000
 	USB_DEVICE (0x1737, 0x0039),

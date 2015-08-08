@@ -134,7 +134,7 @@ config USB_NET_AX8817X
 	tristate "ASIX AX88xxx Based USB 2.0 Ethernet Adapters"
 	depends on USB_USBNET
 	select CRC32
-	default y
+	default n
 	help
 	  This option adds support for ASIX AX88xxx based USB 2.0
 	  10/100 Ethernet adapters.
@@ -153,6 +153,23 @@ config USB_NET_AX8817X
 	    * Intellinet USB 2.0 Ethernet
 	    * ST Lab USB 2.0 Ethernet
 	    * TrendNet TU2-ET100
+
+	  This driver creates an interface named "ethX", where X depends on
+	  what other networking devices you have in use.
+
+config USB_NET_AX88179_178A
+	tristate "ASIX AX88179/178A USB 3.0/2.0 to Gigabit Ethernet"
+	depends on USB_USBNET
+	select CRC32
+	default n
+	help
+	  This option adds support for ASIX AX88179 based USB 3.0/2.0
+	  to Gigabit Ethernet adapters.
+
+	  This driver should work with at least the following devices:
+	    * ASIX AX88179
+	    * ASIX AX88178A
+	    * Sitcomm LN-032
 
 	  This driver creates an interface named "ethX", where X depends on
 	  what other networking devices you have in use.

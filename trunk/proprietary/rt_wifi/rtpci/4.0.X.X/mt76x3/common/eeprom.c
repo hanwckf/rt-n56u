@@ -845,7 +845,18 @@ INT rtmp_ee_load_from_bin(
 	else
 #endif /* MULTIPLE_CARD_SUPPORT */
 #endif /* RT_SOC_SUPPORT */
-		src = BIN_FILE_PATH;
+	{
+#ifdef MT7603
+		if (IS_MT7603(pAd))
+		{
+			src = EEPROM_DEFAULT_7603_FILE_PATH;
+		}
+		else
+#endif /* MT_MAC */
+		{
+			src = EEPROM_DEFAULT_FILE_PATH;
+		}
+	}
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s::FileName=%s\n", __FUNCTION__, src));
 

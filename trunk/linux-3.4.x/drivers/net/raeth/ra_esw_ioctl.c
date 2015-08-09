@@ -366,7 +366,6 @@ static void esw_igmp_mld_snooping(u32 enable_igmp, u32 enable_mld)
 	}
 
 	if (enable_igmp) {
-		dst_igmp |= (1u << 10);		// IPM_224
 		dst_igmp |= (1u << 8);		// IPM_01
 		
 		src_join |= (1u << 6);		// IGMP3_JOIN_EN

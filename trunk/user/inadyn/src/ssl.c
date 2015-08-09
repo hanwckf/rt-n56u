@@ -258,8 +258,17 @@ int ssl_recv(http_t *client, char *buf, int buf_len, int *recv_len)
 
 	*recv_len = nr;
 
+	/* Read HTTP body */
+	buf_len -= nr;
+	if (buf_len > 0) {
+		buf += nr;
+		nr = ssl_read_socket(client->ssl, buf, buf_len);
+		if (nr > 0)
+			*recv_len += nr;
+	}
+
 	if (client->verbose > 1)
-		logit(LOG_DEBUG, "Successfully received DDNS update response (%d bytes) using HTTPS!", nr);
+		logit(LOG_DEBUG, "Successfully received DDNS update response (%d bytes) using HTTPS!", *recv_len);
 
 	return 0;
 #endif

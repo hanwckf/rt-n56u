@@ -960,7 +960,7 @@ static int client6_recvadvert(const struct dhcp6_if *ifp, struct dhcp6_event *ev
 	 * was included.
 	 */
 	if (have_ia == 0) {
-		bb_error_msg("advertise contains no address/prefix");
+		bb_info_msg("advertise contains no address/prefix");
 		return -1;
 	}
 

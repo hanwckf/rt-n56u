@@ -1,5 +1,0 @@
-repo: d7da3b1e15401eb234ec866d5eac992fc4cd5878
-node: 48a0ba346de446e413433f93b731187fb4772508
-branch: default
-latesttag: DROPBEAR_2015.67
-latesttagdistance: 2

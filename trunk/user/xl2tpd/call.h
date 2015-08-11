@@ -70,7 +70,6 @@ struct call
      */
     struct tunnel *container;   /* Tunnel we belong to */
     int fd;                     /* File descriptor for pty */
-    struct termios *oldptyconf;
     int die;
     int nego;                   /* Show negotiation? */
     int pppd;                   /* PID of pppd */
@@ -78,7 +77,6 @@ struct call
     int error;                  /* Error code */
     int fbit;                   /* Use sequence numbers? */
     int ourfbit;                /* Do we want sequence numbers? */
-/*	int ourrws;		Our RWS for the call */
     int cnu;                    /* Do we need to send updated Ns, Nr values? */
     int pnu;                    /* ditto for payload packet */
     char errormsg[MAXSTRLEN];   /* Error message */

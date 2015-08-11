@@ -60,7 +60,7 @@
 struct tunnel_list tunnels;
 int rand_source;
 int ppd = 1;                    /* Packet processing delay */
-int control_fd;                 /* descriptor of control area */
+int control_fd = -1;            /* descriptor of control area */
 char *args;
 
 char *dial_no_tmp;              /* jz: Dialnumber for Outgoing Call */
@@ -282,7 +282,7 @@ void death_handler (int signal)
      */
     struct tunnel *st, *st2;
     int sec;
-    l2tp_log (LOG_CRIT, "%s: Fatal signal %d received\n", __FUNCTION__, signal);
+    l2tp_log (LOG_INFO, "%s: Fatal signal %d received\n", __FUNCTION__, signal);
 #ifdef USE_KERNEL
         if (kernel_support || signal != SIGTERM) {
 #else
@@ -309,7 +309,11 @@ void death_handler (int signal)
     /* erase pid and control files */
     unlink (gconfig.pidfile);
     unlink (gconfig.controlfile);
+
     free(dial_no_tmp);
+    close(server_socket);
+    close(control_fd);
+    closelog();
 
     exit (1);
 }
@@ -454,7 +458,6 @@ int start_pppd (struct call *c, struct ppp_opts *opts)
         /* set fd opened above to not echo so we don't see read our own packets
            back of the file descriptor that we just wrote them to */
         tcgetattr (c->fd, &ptyconf);
-        *(c->oldptyconf) = ptyconf;
         ptyconf.c_cflag &= ~(ICANON | ECHO);
         ptyconf.c_lflag &= ~ECHO;
         tcsetattr (c->fd, TCSANOW, &ptyconf);
@@ -529,10 +532,16 @@ int start_pppd (struct call *c, struct ppp_opts *opts)
         }
 
         /* close the UDP socket fd */
-        close (server_socket);
+        if (server_socket > 0) {
+            close (server_socket);
+            server_socket = -1;
+        }
 
         /* close the control pipe fd */
-        close (control_fd);
+        if (control_fd > 0) {
+            close (control_fd);
+            control_fd = -1;
+        }
 
         if( c->dialing[0] )
         {
@@ -651,8 +660,6 @@ void destroy_tunnel (struct tunnel *t)
         close (t->udp_fd);
     route_del(&t->rt);
     free (t);
-    if(me->oldptyconf)
-        free(me->oldptyconf);
     free (me);
 }
 

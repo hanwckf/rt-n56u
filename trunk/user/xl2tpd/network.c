@@ -32,7 +32,7 @@
 #include "misc.h"    /* for IPADDY macro */
 
 char hostname[256];
-int server_socket;              /* Server socket */
+int server_socket = -1;         /* Server socket */
 #ifdef USE_KERNEL
 int kernel_support;             /* Kernel Support there or not? */
 #endif

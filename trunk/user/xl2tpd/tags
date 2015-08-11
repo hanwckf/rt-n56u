@@ -451,7 +451,6 @@ null_handler	l2tpd.c	/^void null_handler(int sig)$/;"	f
 num	avp.h	/^    int num;                    \/* Number of AVP *\/$/;"	m	struct:avp
 o_pad	l2tp.h	/^    _u16 o_pad;                 \/* Optional offset padding *\/$/;"	m	struct:payload_hdr
 o_size	l2tp.h	/^    _u16 o_size;                \/* Optional offset size *\/$/;"	m	struct:payload_hdr
-oldptyconf	call.h	/^    struct termios *oldptyconf;$/;"	m	struct:call
 opt_destroy	misc.c	/^void opt_destroy (struct ppp_opts *option)$/;"	f
 option	misc.h	/^    char option[MAXSTRLEN];$/;"	m	struct:ppp_opts
 ourbc	l2tp.h	/^    int ourbc;                  \/* Our bearer channels *\/$/;"	m	struct:tunnel

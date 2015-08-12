@@ -69,22 +69,21 @@ typedef struct kw_s     {
 extern kw_t kw_EN;
 extern kw_t kw_XX;
 
-#define INC_ITEM        128
-#define REALLOC_VECTOR(p, len, size, item_size) {                      \
-        assert ((len) >= 0 && (len) <= (size));                        \
-        if (len == size)        {                                      \
-                int new_size;                                          \
-                void *np;                                              \
-                /* out of vector, reallocate */                        \
-                new_size = size + INC_ITEM;                            \
-                np = malloc (new_size * (item_size));                  \
-                assert (np != NULL);                                   \
-                bzero (np, new_size * (item_size));                    \
-                memcpy (np, p, len * (item_size));                     \
-                free (p);                                              \
-                p = np;                                                \
-                size = new_size;                                       \
-        }    \
+#define INC_ITEM	256
+#define REALLOC_VECTOR(p, len, size, item_size) {		\
+	assert ((len) >= 0 && (len) <= (size));			\
+	if (len == size) {					\
+		int new_size = size + INC_ITEM;			\
+		void *np = malloc(new_size * (item_size));	\
+		assert(np != NULL);				\
+		bzero(np, new_size * (item_size));		\
+		if (p) {					\
+			memcpy(np, p, len * (item_size));	\
+			free(p);				\
+		}						\
+		p = np;						\
+		size = new_size;				\
+	}							\
 }
 
 typedef FILE * webs_t;

@@ -212,7 +212,7 @@ load_dictionary(char *lang, pkw_t pkw)
 	FILE *dfp;
 	char dfn[16];
 	char *p, *q;
-	int dict_size = 0;
+	int res, dict_size = 0;
 
 	if (!pkw)
 		return 0;
@@ -224,35 +224,44 @@ load_dictionary(char *lang, pkw_t pkw)
 
 	memset(pkw, 0, sizeof(kw_t));
 
-	snprintf(pkw->dict, sizeof(pkw->dict), "%s", lang);
-
 	fseek(dfp, 0L, SEEK_END);
-	dict_size = ftell (dfp) + 128;
+	dict_size = ftell(dfp) + 128;
+
+	pkw->buf = malloc(dict_size);
+	if (!pkw->buf) {
+		fclose(dfp);
+		return 0;
+	}
+
+	snprintf(pkw->dict, sizeof(pkw->dict), "%s", lang);
 	REALLOC_VECTOR (pkw->idx, pkw->len, pkw->tlen, sizeof (unsigned char*));
-	pkw->buf = q = malloc (dict_size);
 
 	fseek(dfp, 0L, SEEK_SET);
 
-	while ((fscanf(dfp, "%[^\n]", q)) != EOF) {
+	q = pkw->buf;
+
+	while ((res = fscanf(dfp, "%[^\n]", q)) != EOF) {
 		fgetc(dfp);
-
-		// if pkw->idx is not enough, add 32 item to pkw->idx
+		
+		if (res < 1)
+			continue;
+		
+		p = strchr(q, '=');
+		if (!p)
+			continue;
+		
 		REALLOC_VECTOR (pkw->idx, pkw->len, pkw->tlen, sizeof (unsigned char*));
-
-		if ((p = strchr (q, '=')) != NULL) {
-			pkw->idx[pkw->len] = q;
-			pkw->len++;
-			q = p + strlen (p);
-			*q = '\0';
-			q++;
-		}
+		pkw->idx[pkw->len] = q;
+		pkw->len++;
+		q = p + strlen(p);
+		*q = '\0';
+		q++;
 	}
 
 	fclose(dfp);
 
 	return 1;
 }
-
 
 // This translation engine can not process <%...%> interlace with <#...#>
 void

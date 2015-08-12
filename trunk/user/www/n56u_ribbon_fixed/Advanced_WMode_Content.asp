@@ -30,29 +30,17 @@ function initial(){
 	show_footer();
 	load_body();
 
-	wl_nband_select(1);
+	insertChannelOption();
+	document.form.wl_channel.remove(0);
 
 	showLANIPList();
 
-	change_wireless_bridge(0);
+	change_wireless_bridge();
 	change_sta_auth_mode(0);
 
 	document.form.wl_channel.value = document.form.wl_channel_org.value;
 	document.form.wl_sta_ssid.value = decodeURIComponent(document.form.wl_sta_ssid_org.value);
 	document.form.wl_sta_wpa_psk.value = decodeURIComponent(document.form.wl_sta_wpa_psk_org.value);
-}
-
-function wl_nband_select(ch){
-	if(ch == "1"){
-		document.form.wl_nband.value = 1;
-		insertExtChannelOption();
-		return change_common_radio(this, 'WLANConfig11a', 'wl_nband', '1');
-	}
-	else{
-		document.form.wl_nband.value = 2;
-		insertExtChannelOption();
-		return change_common_radio(this, 'WLANConfig11a', 'wl_nband', '2');
-	}
 }
 
 function applyRule(){
@@ -71,13 +59,6 @@ function applyRule(){
 
 function validForm(){
 	var m = document.form.wl_mode_x.value;
-	if (m != "0") {
-		if (document.form.wl_channel.value == "0"){
-			alert("<#JS_fixchannel#>");
-			document.form.wl_channel.focus();
-			return false;
-		}
-	}
 	if (m == "3" || m == "4") {
 		if(!validate_string_ssid(document.form.wl_sta_ssid))
 			return false;
@@ -110,106 +91,81 @@ function wds_scan(){
 	});
 }
 
-function change_wireless_bridge(mflag){
-	var as_en = 0;
+function change_wireless_bridge(){
 	var m = document.form.wl_mode_x.value;
-	if (m == "0")
-	{
-		inputRCtrl2(document.form.wl_wdsapply_x, 1);
-		inputRCtrl1(document.form.wl_wdsapply_x, 0);
-		
-		showhide_div("row_wds_1", 0);
-		showhide_div("row_wds_2", 0);
-		showhide_div("row_wds_apc", 0);
-		
-		showhide_div("row_apc_wisp", 0);
-		showhide_div("row_apc_1", 0);
-		showhide_div("row_apc_2", 0);
-		showhide_div("row_apc_3", 0);
-	}
-	else if (m == "1" || m == "2")
-	{
-		var e1 = 1;
-		var e2 = 0;
-		if (m == "2"){
-			e1 = (document.form.wl_wdsapply_x_org.value == "0") ? 0 : 1;
-			e2 = 1;
-		}
-		
-		showhide_div("ctl_apc_1", 0);
-		showhide_div("ctl_apc_2", 0);
-		showhide_div("row_apc_wisp", 0);
-		showhide_div("row_apc_1", 0);
-		showhide_div("row_apc_2", 0);
-		showhide_div("row_apc_3", 0);
-		
-		inputRCtrl2(document.form.wl_wdsapply_x, !e1);
-		inputRCtrl1(document.form.wl_wdsapply_x, e2);
-		showhide_div("ctl_wds_1", 1);
-		showhide_div("ctl_wds_3", 1);
-		showhide_div("row_wds_1", 1);
-		showhide_div("row_wds_2", e1);
-		showhide_div("row_wds_apc", e1);
-		showhide_div("RBRList", 1);
-	}
-	else if (m == "3" || m == "4")
-	{
-		if (m == "3")
-			as_en = 1;
-		showhide_div("RBRList", 0);
-		showhide_div("ctl_wds_1", 0);
-		showhide_div("ctl_wds_3", 0);
-		showhide_div("row_wds_1", 0);
-		showhide_div("row_wds_2", 0);
-		
-		showhide_div("row_wds_apc", 1);
-		showhide_div("ctl_apc_1", 1);
-		showhide_div("ctl_apc_2", 1);
-		showhide_div("row_apc_wisp", (get_ap_mode()) ? 0 : 1);
-		showhide_div("row_apc_1", 1);
-		showhide_div("row_apc_2", 1);
-		showhide_div("row_apc_3", 1);
+	var is_apo = (m == "0") ? 1 : 0;
+	var is_wds = (m == "1" || m == "2") ? 1 : 0;
+	var is_apc = (m == "3" || m == "4") ? 1 : 0;
+	var is_wds_list = 0;
+	var is_apc_wisp = 0;
+	var is_apc_auto = 0;
+
+	if (is_wds){
+		if (document.form.wl_wdsapply_x.value == "1")
+			is_wds_list = 1;
 	}
 
-	showhide_div("auto_seek", as_en);
+	if (is_apc){
+		if (m == "3")
+			is_apc_auto = 1;
+		if (!get_ap_mode())
+			is_apc_wisp = 1;
+	}
+
+	inputCtrl(document.form.wl_channel, !is_apo);
+	inputCtrl(document.form.wl_wdsapply_x, is_wds);
+
+	showhide_div("inf_wisp", is_apc_wisp);
+	showhide_div("inf_apc", is_apc);
+	showhide_div("inf_wds", is_wds);
+
+	showhide_div("row_channel", !is_apo);
+	showhide_div("auto_seek", is_apc_auto);
+
+	showhide_div("ctl_wds_1", is_wds);
+	showhide_div("ctl_wds_3", is_wds);
+	showhide_div("row_wds_1", is_wds);
+	showhide_div("row_wds_2", is_wds_list);
+	showhide_div("row_wds_apc", (is_apc || is_wds_list));
+	showhide_div("RBRList", is_wds);
+
+	showhide_div("ctl_apc_1", is_apc);
+	showhide_div("ctl_apc_2", is_apc);
+	showhide_div("row_apc_wisp", is_apc_wisp);
+	showhide_div("row_apc_1", is_apc);
+	showhide_div("row_apc_2", is_apc);
+	showhide_div("row_apc_3", is_apc);
 }
 
 function change_wdsapply(){
 	var m = document.form.wl_mode_x.value;
-	if (m == "2")
-	{
-		var e1 = document.form.wl_wdsapply_x[0].checked;
-		showhide_div("row_wds_2", e1);
-		showhide_div("row_wds_apc", e1);
+	if (m == "1" || m == "2"){
+		var v = (document.form.wl_wdsapply_x.value == "1") ? 1 : 0;
+		showhide_div("row_wds_2", v);
+		showhide_div("row_wds_apc", v);
 	}
 }
 
 function change_sta_auth_mode(mflag){
 	var mode = document.form.wl_sta_auth_mode.value;
 	var opts = document.form.wl_sta_auth_mode.options;
-	if(mode == "psk")
-	{
+	if(mode == "psk"){
 		inputCtrl(document.form.wl_sta_crypto, 1);
 		inputCtrl(document.form.wl_sta_wpa_psk, 1);
-		if(opts[opts.selectedIndex].text == "WPA2-Personal")
-		{
-			if (mflag == 1) {
+		if(opts[opts.selectedIndex].text == "WPA2-Personal"){
+			if (mflag == 1){
 				document.form.wl_sta_crypto.options[0].selected = 0;
 				document.form.wl_sta_crypto.options[1].selected = 1;
 				document.form.wl_sta_wpa_mode.value = "2";
 			}
-		}
-		else
-		{
-			if (mflag == 1) {
+		}else{
+			if (mflag == 1){
 				document.form.wl_sta_crypto.options[1].selected = 0;
 				document.form.wl_sta_crypto.options[0].selected = 1;
 				document.form.wl_sta_wpa_mode.value = "1";
 			}
 		}
-	}
-	else
-	{
+	}else{
 		inputCtrl(document.form.wl_sta_crypto, 0);
 		inputCtrl(document.form.wl_sta_wpa_psk, 0);
 	}
@@ -261,7 +217,7 @@ function showLANIPList(){
 		code += '<div style="font-weight:bold;cursor:pointer;" onclick="rescan();"><#AP_survey#>&nbsp;</div>';
 	}
 	else{
-		code += '<div style="width: 207px"><center><img style="padding-top: 4px;display: block;" src="/bootstrap/img/ajax-loader.gif"></center></div>';
+		code += '<div style="width: 207px"><center><img style="padding-top: 4px; display: block;" src="/bootstrap/img/ajax-loader.gif"></center></div>';
 	}
 
 	code +='<!--[if lte IE 6.5]><iframe class="hackiframe_wdssurvey"></iframe><![endif]-->';
@@ -312,12 +268,10 @@ function hideClients_Block(){
     <input type="hidden" name="group_id" value="RBRList">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="wl_country_code" value="<% nvram_get_x("",  "wl_country_code"); %>">
-    <input type="hidden" name="wl_HT_BW" value="<% nvram_get_x("",  "wl_HT_BW"); %>">
-    <input type="hidden" name="wl_nband" value="1">
-    <input type="hidden" name="wl_wdsnum_x_0" value="<% nvram_get_x("", "wl_wdsnum_x"); %>" readonly="1">
+
+    <input type="hidden" name="wl_country_code" value="<% nvram_get_x("", "wl_country_code"); %>">
     <input type="hidden" name="wl_channel_org" value="<% nvram_get_x("","wl_channel"); %>">
-    <input type="hidden" name="wl_wdsapply_x_org" value="<% nvram_get_x("","wl_wdsapply_x"); %>">
+    <input type="hidden" name="wl_wdsnum_x_0" value="<% nvram_get_x("", "wl_wdsnum_x"); %>" readonly="1">
     <input type="hidden" name="wl_sta_auto" value="<% nvram_get_x("", "wl_sta_auto"); %>" />
     <input type="hidden" name="wl_sta_ssid_org" value="<% nvram_char_to_ascii("", "wl_sta_ssid"); %>">
     <input type="hidden" name="wl_sta_wpa_mode" value="<% nvram_get_x("","wl_sta_wpa_mode"); %>">
@@ -348,23 +302,29 @@ function hideClients_Block(){
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <div class="alert alert-info" style="margin: 10px;">
-                                        <#WLANConfig11b_display3_sectiondesc#>
-                                        <ul>
-                                            <li><#WLANConfig11b_display3_sectiondesc2#></li>
-                                            <li><#WLANConfig11b_display3_sectiondesc3#></li>
+                                        <#WdsDesc0#>
+                                        <ul id="inf_wds" style="display:none;">
+                                            <li><#WdsDesc1#></li>
+                                            <li><#WdsDesc2#></li>
+                                            <li><#WdsDesc3#></li>
+                                        </ul>
+                                        <ul id="inf_apc" style="display:none;">
+                                            <li><#WdsDesc4#></li>
+                                            <li><#WdsDesc5#></li>
+                                            <li id="inf_wisp"><#WdsDesc6#></li>
                                         </ul>
                                     </div>
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" style="margin-bottom: 0px;">
                                         <tr>
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);"  onmouseover="openTooltip(this, 1, 1);"><#WLANConfig11b_x_APMode_itemname#></a></th>
-                                            <td>
-                                                <select name="wl_mode_x" class="input" onChange="change_wireless_bridge(1);">
-                                                    <option value="0" <% nvram_match_x("","wl_mode_x", "0","selected"); %>>AP only</option>
-                                                    <option value="1" <% nvram_match_x("","wl_mode_x", "1","selected"); %>>WDS only</option>
-                                                    <option value="2" <% nvram_match_x("","wl_mode_x", "2","selected"); %>>AP & WDS</option>
-                                                    <option value="3" <% nvram_match_x("","wl_mode_x", "3","selected"); %>>AP-Client only</option>
-                                                    <option value="4" <% nvram_match_x("","wl_mode_x", "4","selected"); %>>AP & AP-Client</option>
+                                            <th width="50%" style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);"  onmouseover="openTooltip(this, 1, 1);"><#WLANConfig11b_x_APMode_itemname#></a></th>
+                                            <td style="border-top: 0 none;">
+                                                <select name="wl_mode_x" class="input" onChange="change_wireless_bridge();">
+                                                    <option value="0" <% nvram_match_x("","wl_mode_x", "0","selected"); %>><#WdsMode0#></option>
+                                                    <option value="1" <% nvram_match_x("","wl_mode_x", "1","selected"); %>><#WdsMode1#></option>
+                                                    <option value="2" <% nvram_match_x("","wl_mode_x", "2","selected"); %>><#WdsMode2#></option>
+                                                    <option value="3" <% nvram_match_x("","wl_mode_x", "3","selected"); %>><#WdsMode3#></option>
+                                                    <option value="4" <% nvram_match_x("","wl_mode_x", "4","selected"); %>><#WdsMode4#></option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -377,7 +337,7 @@ function hideClients_Block(){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_channel" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 1, 2);"><#WLANConfig11b_Channel_itemname#></a></th>
                                             <td>
                                                 <select name="wl_channel" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_channel')"></select>
@@ -386,10 +346,12 @@ function hideClients_Block(){
                                             </td>
                                         </tr>
                                         <tr id="row_wds_1" style="display:none;">
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 1, 3);"><#WLANConfig11b_x_BRApply_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 1, 3);"><#WLANConfig11b_x_BRApply_itemname#></a></th>
                                             <td>
-                                                <label class="radio inline"><input type="radio" value="1" name="wl_wdsapply_x" class="input" onClick="change_wdsapply();" <% nvram_match_x("","wl_wdsapply_x", "1", "checked"); %>><#checkbox_Yes#></label>
-                                                <label class="radio inline"><input type="radio" value="0" name="wl_wdsapply_x" class="input" onClick="change_wdsapply();" <% nvram_match_x("","wl_wdsapply_x", "0", "checked"); %>><#checkbox_No#></label>
+                                                <select name="wl_wdsapply_x" class="input" onChange="change_wdsapply();">
+                                                    <option value="0" <% nvram_match_x("","wl_wdsapply_x", "0","selected"); %>><#WdsLazy#></option>
+                                                    <option value="1" <% nvram_match_x("","wl_wdsapply_x", "1","selected"); %>><#checkbox_Yes#></option>
+                                                </select>
                                             </td>
                                         </tr>
                                     </table>
@@ -405,7 +367,7 @@ function hideClients_Block(){
                                                     <button class="btn btn-chevron" id="ctl_wds_2" type="button" onclick="pullLANIPList(this);" title="Select the Access Point"><i class="icon icon-chevron-down"></i></button>
                                                 </div>
 
-                                                <input class="btn btn-primary" id="RBRList" style="margin-left: 5px; width: 99px;" type="submit" onClick="return markGroup(this, 'RBRList', 2, ' Add ');" name="RBRList" value="<#CTL_add#>" size="12">
+                                                <input class="btn btn-primary" id="RBRList" style="margin-left: 5px; width: 99px;" type="submit" onClick="return markGroup(this, 'RBRList', 4, ' Add ');" name="RBRList" value="<#CTL_add#>" size="12">
                                                 <div id="ctl_wds_3" class="alert alert-danger" style="margin-top: 5px; margin-bottom: 0px;">* <#JS_validmac#></div>
                                             </td>
                                         </tr>

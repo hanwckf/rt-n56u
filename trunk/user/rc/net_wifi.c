@@ -458,24 +458,31 @@ start_wifi_wds_wl(int radio_on)
 {
 #if BOARD_HAS_5G_RADIO
 	int i_mode_x = get_mode_radio_wl();
-//	int i_m2u = nvram_wlan_get_int(1, "IgmpSnEnable");
 
 	if (radio_on && (i_mode_x == 1 || i_mode_x == 2))
 	{
+		int i_wds_num = 4;
+		
+		if (nvram_wlan_get_int(1, "wdsapply_x") == 1)
+			i_wds_num = nvram_wlan_get_int(1, "wdsnum_x");
+		
+		if (i_wds_num > 3) {
+			wif_control(IFNAME_5G_WDS3, 1);
+			wif_bridge(IFNAME_5G_WDS3, 1);
+		}
+		
+		if (i_wds_num > 2) {
+			wif_control(IFNAME_5G_WDS2, 1);
+			wif_bridge(IFNAME_5G_WDS2, 1);
+		}
+		
+		if (i_wds_num > 1) {
+			wif_control(IFNAME_5G_WDS1, 1);
+			wif_bridge(IFNAME_5G_WDS1, 1);
+		}
+		
 		wif_control(IFNAME_5G_WDS0, 1);
-		wif_control(IFNAME_5G_WDS1, 1);
-		wif_control(IFNAME_5G_WDS2, 1);
-		wif_control(IFNAME_5G_WDS3, 1);
-		
 		wif_bridge(IFNAME_5G_WDS0, 1);
-		wif_bridge(IFNAME_5G_WDS1, 1);
-		wif_bridge(IFNAME_5G_WDS2, 1);
-		wif_bridge(IFNAME_5G_WDS3, 1);
-		
-//		brport_set_m2u(IFNAME_5G_WDS0, i_m2u);
-//		brport_set_m2u(IFNAME_5G_WDS1, i_m2u);
-//		brport_set_m2u(IFNAME_5G_WDS2, i_m2u);
-//		brport_set_m2u(IFNAME_5G_WDS3, i_m2u);
 	}
 	else
 	{
@@ -491,24 +498,38 @@ void
 start_wifi_wds_rt(int radio_on)
 {
 	int i_mode_x = get_mode_radio_rt();
-//	int i_m2u = nvram_wlan_get_int(0, "IgmpSnEnable");
 
 	if (radio_on && (i_mode_x == 1 || i_mode_x == 2))
 	{
+		int i_wds_num = 4;
+		
+		if (nvram_wlan_get_int(0, "wdsapply_x") == 1)
+			i_wds_num = nvram_wlan_get_int(0, "wdsnum_x");
+		
+		if (i_wds_num > 3) {
+			wif_control(IFNAME_2G_WDS3, 1);
+#if !defined(USE_RT3352_MII)
+			wif_bridge(IFNAME_2G_WDS3, 1);
+#endif
+		}
+		
+		if (i_wds_num > 2) {
+			wif_control(IFNAME_2G_WDS2, 1);
+#if !defined(USE_RT3352_MII)
+			wif_bridge(IFNAME_2G_WDS2, 1);
+#endif
+		}
+		
+		if (i_wds_num > 1) {
+			wif_control(IFNAME_2G_WDS1, 1);
+#if !defined(USE_RT3352_MII)
+			wif_bridge(IFNAME_2G_WDS1, 1);
+#endif
+		}
+		
 		wif_control(IFNAME_2G_WDS0, 1);
-		wif_control(IFNAME_2G_WDS1, 1);
-		wif_control(IFNAME_2G_WDS2, 1);
-		wif_control(IFNAME_2G_WDS3, 1);
 #if !defined(USE_RT3352_MII)
 		wif_bridge(IFNAME_2G_WDS0, 1);
-		wif_bridge(IFNAME_2G_WDS1, 1);
-		wif_bridge(IFNAME_2G_WDS2, 1);
-		wif_bridge(IFNAME_2G_WDS3, 1);
-		
-//		brport_set_m2u(IFNAME_2G_WDS0, i_m2u);
-//		brport_set_m2u(IFNAME_2G_WDS1, i_m2u);
-//		brport_set_m2u(IFNAME_2G_WDS2, i_m2u);
-//		brport_set_m2u(IFNAME_2G_WDS3, i_m2u);
 #endif
 	}
 #if !defined(USE_RT3352_MII)
@@ -755,20 +776,20 @@ is_radio_on_rt(void)
 int 
 is_radio_allowed_wl(void)
 {
-	return timecheck_wifi("wl_radio_date_x", "wl_radio_time_x", "wl_radio_time2_x");
+	return timecheck_wifi(1, "radio_date_x", "radio_time_x", "radio_time2_x");
 }
 
 int 
 is_radio_allowed_rt(void)
 {
-	return timecheck_wifi("rt_radio_date_x", "rt_radio_time_x", "rt_radio_time2_x");
+	return timecheck_wifi(0, "radio_date_x", "radio_time_x", "radio_time2_x");
 }
 
 int 
 is_guest_allowed_wl(void)
 {
 	if (get_enabled_guest_wl())
-		return timecheck_wifi("wl_guest_date_x", "wl_guest_time_x", "wl_guest_time2_x");
+		return timecheck_wifi(1, "guest_date_x", "guest_time_x", "guest_time2_x");
 	return 0;
 }
 
@@ -776,7 +797,7 @@ int
 is_guest_allowed_rt(void)
 {
 	if (get_enabled_guest_rt())
-		return timecheck_wifi("rt_guest_date_x", "rt_guest_time_x", "rt_guest_time2_x");
+		return timecheck_wifi(0, "guest_date_x", "guest_time_x", "guest_time2_x");
 	return 0;
 }
 
@@ -1161,7 +1182,7 @@ manual_change_guest_wl(int radio_on)
 
 
 int 
-timecheck_wifi(char *nv_date, char *nv_time1, char *nv_time2)
+timecheck_wifi(int is_aband, const char *nv_date, const char *nv_time1, const char *nv_time2)
 {
 #define DOW_MASK_SUN (1 << 0)
 #define DOW_MASK_MON (1 << 1)
@@ -1170,15 +1191,15 @@ timecheck_wifi(char *nv_date, char *nv_time1, char *nv_time2)
 #define DOW_MASK_THU (1 << 4)
 #define DOW_MASK_FRI (1 << 5)
 #define DOW_MASK_SAT (1 << 6)
-	
+
 	time_t now;
 	struct tm *tm;
 	char *aDate, *aTime1, *aTime2;
 	int i, current_min, current_dow, schedul_dow, iTime1B, iTime1E, iTime2B, iTime2E;
 
-	aDate  = nvram_safe_get(nv_date);
-	aTime1 = nvram_safe_get(nv_time1);
-	aTime2 = nvram_safe_get(nv_time2);
+	aDate  = nvram_wlan_get(is_aband, nv_date);
+	aTime1 = nvram_wlan_get(is_aband, nv_time1);
+	aTime2 = nvram_wlan_get(is_aband, nv_time2);
 
 	if (strlen(aDate) != 7 || strlen(aTime1) != 8 || strlen(aTime2) != 8)
 		return 1;

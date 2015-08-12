@@ -1143,14 +1143,11 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv)
 
 	if (wl_mode_x == 1)
 	{
-		ret+=websWrite(wp, "%s	: WDS\n", caption);
+		ret+=websWrite(wp, "%s	: WDS bridge\n", caption);
 	}
 	else if (wl_mode_x == 2)
 	{
-		if (nvram_match("wl_wdsapply_x", "1"))
-			ret+=websWrite(wp, "%s	: AP & WDS\n", caption);
-		else
-			ret+=websWrite(wp, "%s	: AP\n", caption);
+		ret+=websWrite(wp, "%s	: WDS repeater (bridge + AP)\n", caption);
 	}
 	else if (wl_mode_x == 3)
 	{
@@ -1158,7 +1155,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv)
 	}
 	else if (wl_mode_x == 4)
 	{
-		ret+=websWrite(wp, "%s	: AP & AP-Client\n", caption);
+		ret+=websWrite(wp, "%s	: AP-Client + AP\n", caption);
 	}
 	else
 	{
@@ -1347,16 +1344,14 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 	}
 
 	caption = "Operation Mode";
+
 	if (rt_mode_x == 1)
 	{
-		ret+=websWrite(wp, "%s	: WDS\n", caption);
+		ret+=websWrite(wp, "%s	: WDS bridge\n", caption);
 	}
 	else if (rt_mode_x == 2)
 	{
-		if (nvram_match("rt_wdsapply_x", "1"))
-			ret+=websWrite(wp, "%s	: AP & WDS\n", caption);
-		else
-			ret+=websWrite(wp, "%s	: AP\n", caption);
+		ret+=websWrite(wp, "%s	: WDS repeater (bridge + AP)\n", caption);
 	}
 	else if (rt_mode_x == 3)
 	{
@@ -1364,7 +1359,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 	}
 	else if (rt_mode_x == 4)
 	{
-		ret+=websWrite(wp, "%s	: AP & AP-Client\n", caption);
+		ret+=websWrite(wp, "%s	: AP-Client + AP\n", caption);
 	}
 	else
 	{

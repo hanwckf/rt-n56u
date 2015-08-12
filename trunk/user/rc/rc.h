@@ -449,7 +449,7 @@ int  manual_change_radio_rt(int radio_on);
 int  manual_change_radio_wl(int radio_on);
 int  manual_change_guest_rt(int radio_on);
 int  manual_change_guest_wl(int radio_on);
-int  timecheck_wifi(char *nv_date, char *nv_time1, char *nv_time2);
+int  timecheck_wifi(int is_aband, const char *nv_date, const char *nv_time1, const char *nv_time2);
 
 /* services.c */
 void stop_syslogd();

@@ -90,13 +90,17 @@ function change_common_wl(o, s, v) {
         selected_key.focus();
         selected_key.select();
     }
-    else if (s == "WLANConfig11a" && v == "wl_channel") {
+    else if (v == "wl_country_code") {
+        insertChannelOption();
         insertExtChannelOption();
     }
-    else if (s == "WLANConfig11a" && v == "wl_HT_BW") {
+    else if (v == "wl_channel") {
         insertExtChannelOption();
     }
-    else if (s == "WLANConfig11a" && v == "wl_gmode") {
+    else if (v == "wl_HT_BW") {
+        insertExtChannelOption();
+    }
+    else if (v == "wl_gmode") {
         enableExtChRows(o);
         insertExtChannelOption();
         nmode_limitation();
@@ -120,13 +124,6 @@ function change_common_wl(o, s, v) {
     }
     else if (v == "wl_guest_crypto_1") {
         wl_auth_mode_change_guest(0);
-    }
-    else if (s == "WLANConfig11a" && v == "Channel" && document.form.current_page.value == "Advanced_WMode_Content.asp") {
-        if (document.form.WLANConfig11b_x_APMode.value != "0" && document.form.WLANConfig11b_Channel.value == "0") {
-            alert("<#JS_fixchannel#>");
-            document.form.WLANConfig11b_Channel.options[0].selected = 0;
-            document.form.WLANConfig11b_Channel.options[1].selected = 1;
-        }
     }
 
     return true;
@@ -474,7 +471,8 @@ function enableExtChRows(o) {
         insert_vht_bw(0);
 }
 
-function insertExtChannelOption() {
+function insertChannelOption() {
+    var channels;
     var country = document.form.wl_country_code.value;
     var orig = document.form.wl_channel.value;
     free_options(document.form.wl_channel);
@@ -597,9 +595,12 @@ function insertExtChannelOption() {
         ch_v[i] = channels[i];
     }
     if (ch_v[0] == "0")
-        channels[0] = "Auto";
+        channels[0] = "<#APChnAuto#>";
 
     add_options_x2(document.form.wl_channel, channels, ch_v, orig);
+}
+
+function insertExtChannelOption() {
 }
 
 function insert_vht_bw(ins){

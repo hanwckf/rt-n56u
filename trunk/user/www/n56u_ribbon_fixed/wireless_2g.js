@@ -109,16 +109,18 @@ function change_common_rt(o, s, v) {
         selected_key.focus();
         selected_key.select();
     }
-    else if (s == "WLANConfig11b" && v == "rt_channel") {
+    else if (v == "rt_country_code") {
+        insertChannelOption();
         insertExtChannelOption();
     }
-    else if (s == "WLANConfig11b" && v == "rt_HT_BW") {
+    else if (v == "rt_channel") {
+        insertExtChannelOption();
+    }
+    else if (v == "rt_HT_BW") {
         automode_hint();
         insertExtChannelOption();
     }
-    else if (s == "WLANConfig11b" && v == "rt_gmode_protection") {
-    }
-    else if (s == "WLANConfig11b" && v == "rt_gmode") {
+    else if (v == "rt_gmode") {
         enableExtChRows(o);
         insertExtChannelOption();
         nmode_limitation();
@@ -142,16 +144,6 @@ function change_common_rt(o, s, v) {
     }
     else if (v == "rt_guest_crypto_1") {
         rt_auth_mode_change_guest(0);
-    }
-    else if (s == "WLANConfig11b" && v == "x_Mode11g") {
-        RefreshRateSetList(document.form.WLANConfig11b_x_Mode11g.value, true);
-    }
-    else if (s == "WLANConfig11b" && v == "Channel" && document.form.current_page.value == "Advanced_WMode2g_Content.asp") {
-        if (document.form.WLANConfig11b_x_APMode.value != "0" && document.form.WLANConfig11b_Channel.value == "0") {
-            alert("<#JS_fixchannel#>");
-            document.form.WLANConfig11b_Channel.options[0].selected = 0;
-            document.form.WLANConfig11b_Channel.options[1].selected = 1;
-        }
     }
 
     return true;
@@ -498,6 +490,34 @@ function enableExtChRows(o) {
     }
 }
 
+function insertChannelOption() {
+    var channels;
+    var country = document.form.rt_country_code.value;
+    var orig = document.form.rt_channel.value;
+    free_options(document.form.rt_channel);
+
+    channels = new Array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
+
+    if (country == "CA" || country == "CO" ||
+        country == "DO" || country == "GT" ||
+        country == "MX" || country == "NO" ||
+        country == "PA" || country == "PR" ||
+        country == "TW" || country == "US" ||
+        country == "UZ")
+        channels.splice(12,3);
+    else if (country != "DB")
+        channels.splice(14,1);
+
+    var ch_v = new Array();
+    for (var i = 0; i < channels.length; i++) {
+        ch_v[i] = channels[i];
+    }
+    if (ch_v[0] == "0")
+        channels[0] = "<#APChnAuto#>";
+
+    add_options_x2(document.form.rt_channel, channels, ch_v, orig);
+}
+
 function insertExtChannelOption() {
     var wmode = document.form.rt_gmode.value;
     var CurrentCh = document.form.rt_channel.value;
@@ -551,9 +571,9 @@ function insertExtChannelOption() {
             x.options[0].value = 0;
         }
         else {
-            x.options[0].text = "Below";
+            x.options[0].text = "<#APChnBelow#>";
             x.options[0].value = "0";
-            add_a_option(document.form.rt_HT_EXTCHA, 1, "Above");
+            add_a_option(document.form.rt_HT_EXTCHA, 1, "<#APChnAbove#>");
             if (document.form.rt_HT_EXTCHA_old.value == 1)
                 document.form.rt_HT_EXTCHA.options.selectedIndex = 1;
         }

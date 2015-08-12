@@ -65,6 +65,7 @@ function initial(){
 	if(document.form.rt_wpa_psk.value.length < 1)
 		document.form.rt_wpa_psk.value = "Please type Password";
 
+	insertChannelOption();
 	rt_auth_mode_change(1);
 
 	document.form.rt_channel.value = document.form.rt_channel_orig.value;
@@ -268,7 +269,6 @@ function validate_wlphrase(s, v, obj){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
 
-    <input type="hidden" name="rt_country_code" value="<% nvram_get_x("","rt_country_code"); %>">
     <input type="hidden" name="rt_radio_date_x" value="<% nvram_get_x("","rt_radio_date_x"); %>">
     <input type="hidden" name="rt_radio_time_x" value="<% nvram_get_x("","rt_radio_time_x"); %>">
     <input type="hidden" name="rt_radio_time2_x" value="<% nvram_get_x("","rt_radio_time2_x"); %>">
@@ -284,7 +284,6 @@ function validate_wlphrase(s, v, obj){
     <input type="hidden" name="rt_mode_x" value="<% nvram_get_x("","rt_mode_x"); %>">
     <input type="hidden" name="rt_nmode" value="<% nvram_get_x("","rt_nmode"); %>">
     <input type="hidden" name="rt_HT_EXTCHA_old" value="<% nvram_get_x("","rt_HT_EXTCHA"); %>">
-    <input type="hidden" name="rt_nband" value="2">
     <input type="hidden" name="rt_key_type" value='<% nvram_get_x("","rt_key_type"); %>'>
     <input type="hidden" name="rt_channel_orig" value='<% nvram_get_x("","rt_channel"); %>'>
 
@@ -418,10 +417,9 @@ function validate_wlphrase(s, v, obj){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a id="rt_channel_select" class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 3);"><#WLANConfig11b_Channel_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 3);"><#WLANConfig11b_Channel_itemname#></a></th>
                                             <td>
                                                 <select name="rt_channel" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_channel')">
-                                                    <% select_channel("WLANConfig11b"); %>
                                                 </select>
                                             </td>
                                         </tr>
@@ -547,7 +545,7 @@ function validate_wlphrase(s, v, obj){
                                         <tr>
                                             <th><#WIFIRegionCode#></th>
                                             <td>
-                                                <select name="rt_country_code" class="input">
+                                                <select name="rt_country_code" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_country_code')">
                                                     <option value="US" <% nvram_match_x("", "rt_country_code", "US","selected"); %>>USA (channels 1-11)</option>
                                                     <option value="TW" <% nvram_match_x("", "rt_country_code", "TW","selected"); %>>Taiwan (channels 1-11)</option>
                                                     <option value="GB" <% nvram_match_x("", "rt_country_code", "GB","selected"); %>>Europe (channels 1-13)</option>

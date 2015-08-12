@@ -979,7 +979,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	{
 		i_auth = 8; // 8021X EAP with Radius
 	}
-	
+
 	i_val = nvram_wlan_get_int(is_aband, "guest_wpa_mode");
 	p_str = nvram_wlan_get(is_aband, "guest_auth_mode");
 	if (!strcmp(p_str, "psk"))
@@ -1349,15 +1349,13 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	//WdsEnable
 	i_wds = WDS_DISABLE_MODE;
 	if (i_mode_x == 1 || i_mode_x == 2) {
-		// WDS support only OPEN+NONE, OPEN+WEP and WPA2PSK+AES
-		if ((i_auth == 0) || (i_auth == 3 && i_encr == 3)) {
+		// WDS support only OPEN+NONE, OPEN+WEP, WPAPSK+TKIP, WPA2PSK+AES
+		if ((i_auth == 0) || (i_auth == 2 && i_encr == 2) || (i_auth == 3 && i_encr == 3)) {
+			int i_wds_lazy = (nvram_wlan_get_int(is_aband, "wdsapply_x") == 0);
 			if (i_mode_x == 2) {
-				if (nvram_wlan_get_int(is_aband, "wdsapply_x") == 0)
-					i_wds = WDS_LAZY_MODE;
-				else
-					i_wds = WDS_REPEATER_MODE;
+				i_wds = (i_wds_lazy) ? WDS_LAZY_MODE : WDS_REPEATER_MODE;
 			} else {
-				i_wds = WDS_BRIDGE_MODE;
+				i_wds = (i_wds_lazy) ? WDS_LAZY_MODE : WDS_BRIDGE_MODE;
 			}
 		}
 	}
@@ -1378,15 +1376,17 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		else if ((i_phy_mode == PHY_11N_5G || i_phy_mode == PHY_11VHT_N_MIXED) && i_gfe)
 			p_str = "GREENFIELD";
 	}
-	fprintf(fp, "WdsPhyMode=%s\n", p_str);
+	fprintf(fp, "WdsPhyMode=%s;%s;%s;%s\n", p_str, p_str, p_str, p_str);
 
 	//WdsEncrypType
-	p_str = "NONE;NONE;NONE;NONE";
+	p_str = "NONE";
 	if (i_auth == 0 && i_wep != 0)
-		p_str = "WEP;WEP;WEP;WEP";
+		p_str = "WEP";
+	else if (i_auth == 2 && i_encr == 2)
+		p_str = "TKIP";
 	else if (i_auth == 3 && i_encr == 3)
-		p_str = "AES;AES;AES;AES";
-	fprintf(fp, "WdsEncrypType=%s\n", p_str);
+		p_str = "AES";
+	fprintf(fp, "WdsEncrypType=%s;%s;%s;%s\n", p_str, p_str, p_str, p_str);
 
 	//WdsList
 	list[0] = 0;
@@ -1410,11 +1410,8 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		fprintf(fp, "WdsDefaultKeyID=%d;%d;%d;%d\n", i_val, i_val, i_val, i_val);
 		sprintf(list, "%s_key%d", prefix, i_val);
 		p_str = nvram_safe_get(list);
-	} else if (i_auth == 3 && i_encr == 3) {
-		fprintf(fp, "WdsDefaultKeyID=\n");
+	} else if ((i_auth == 2 && i_encr == 2) || (i_auth == 3 && i_encr == 3)) {
 		p_str = nvram_wlan_get(is_aband, "wpa_psk");
-	} else {
-		fprintf(fp, "WdsDefaultKeyID=\n");
 	}
 
 	for (i = 0; i < 4; i++)

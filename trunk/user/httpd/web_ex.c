@@ -616,50 +616,6 @@ ej_nvram_match_list_x(int eid, webs_t wp, int argc, char **argv)
 }
 
 static int
-ej_select_channel(int eid, webs_t wp, int argc, char **argv)
-{
-	char *sid, chstr[32];
-	int ret = 0;
-	int idx = 0, channel;
-	char *value = nvram_safe_get("rt_country_code");
-	char *channel_s = nvram_safe_get("rt_channel");
-
-	if (ejArgs(argc, argv, "%s", &sid) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return -1;
-	}
-
-	channel = atoi(channel_s);
-
-	for (idx = 0; idx < 12; idx++)
-	{
-		if (idx == 0)
-			strcpy(chstr, "Auto");
-		else
-			sprintf(chstr, "%d", idx);
-		ret += websWrite(wp, "<option value=\"%d\" %s>%s</option>", idx, (idx == channel)? "selected" : "", chstr);
-	}
-
-	if (    strcasecmp(value, "CA") && strcasecmp(value, "CO") && strcasecmp(value, "DO") &&
-		strcasecmp(value, "GT") && strcasecmp(value, "MX") && strcasecmp(value, "NO") &&
-		strcasecmp(value, "PA") && strcasecmp(value, "PR") && strcasecmp(value, "TW") &&
-		strcasecmp(value, "US") && strcasecmp(value, "UZ") )
-	{
-		for (idx = 12; idx < 14; idx++)
-		{
-			sprintf(chstr, "%d", idx);
-			ret += websWrite(wp, "<option value=\"%d\" %s>%s</option>", idx, (idx == channel)? "selected" : "", chstr);
-		}
-	}
-
-	if ((strcmp(value, "") == 0) || (strcasecmp(value, "DB") == 0)/* || (strcasecmp(value, "JP") == 0)*/)
-		ret += websWrite(wp, "<option value=\"14\" %s>14</option>", (14 == channel)? "selected" : "");
-
-	return ret;
-}
-
-
-static int
 ej_nvram_char_to_ascii(int eid, webs_t wp, int argc, char **argv)
 {
 	char *sid, *name;
@@ -3737,7 +3693,6 @@ struct ej_handler ej_handlers[] =
 	{ "get_static_client", ej_get_static_client},
 	{ "get_static_ccount", ej_get_static_ccount},
 	{ "get_vpns_client", ej_get_vpns_client},
-	{ "select_channel", ej_select_channel},
 	{ "wl_auth_list", ej_wl_auth_list},
 	{ "wl_scan_5g", ej_wl_scan_5g},
 	{ "wl_scan_2g", ej_wl_scan_2g},

@@ -77,7 +77,7 @@ function initial(){
 	if(document.form.wl_wpa_psk.value.length < 1)
 		document.form.wl_wpa_psk.value = "Please type Password";
 
-	wl_nband_select(1);
+	insertChannelOption();
 	wl_auth_mode_change(1);
 
 	document.form.wl_channel.value = document.form.wl_channel_orig.value;
@@ -86,6 +86,7 @@ function initial(){
 
 	automode_hint();
 	enableExtChRows(document.form.wl_gmode);
+	insertExtChannelOption();
 }
 
 function applyRule(){
@@ -247,18 +248,6 @@ function validate_wlphrase(s, v, obj){
 	return true;
 }
 
-function wl_nband_select(ch){
-	if(ch == "1"){
-		document.form.wl_nband.value = 1;
-		insertExtChannelOption();
-		return change_common_radio(this, 'WLANConfig11a', 'wl_nband', '1');
-	}
-	else{
-		document.form.wl_nband.value = 2;
-		insertExtChannelOption();
-		return change_common_radio(this, 'WLANConfig11a', 'wl_nband', '2');
-	}
-}
 </script>
 </head>
 
@@ -300,7 +289,6 @@ function wl_nband_select(ch){
     <input type="hidden" name="wl_phrase_x_org" value="<% nvram_char_to_ascii("", "wl_phrase_x"); %>">
     <input type="hidden" name="wl_mode_x" value="<% nvram_get_x("","wl_mode_x"); %>">
     <input type="hidden" name="wl_nmode" value="<% nvram_get_x("","wl_nmode"); %>">
-    <input type="hidden" name="wl_nband" value="1">
     <input type="hidden" name="wl_key_type" value='<% nvram_get_x("","wl_key_type"); %>'>
     <input type="hidden" name="wl_channel_orig" value='<% nvram_get_x("","wl_channel"); %>'>
 
@@ -425,10 +413,9 @@ function wl_nband_select(ch){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a id="wl_channel_select" class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 3);"><#WLANConfig11b_Channel_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 3);"><#WLANConfig11b_Channel_itemname#></a></th>
                                             <td>
                                                 <select name="wl_channel" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_channel')">
-                                                    <!-- % select_channel("WLANConfig11a"); % -->
                                                 </select>
                                             </td>
                                         </tr>
@@ -553,7 +540,7 @@ function wl_nband_select(ch){
                                         <tr>
                                             <th><#WIFIRegionCode#></th>
                                             <td>
-                                                <select name="wl_country_code" class="input">
+                                                <select name="wl_country_code" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_country_code')">
                                                     <option value="US" <% nvram_match_x("", "wl_country_code", "US","selected"); %>>USA (channels 36,40,44,48,149,153,157,161,165)</option>
                                                     <option value="NO" <% nvram_match_x("", "wl_country_code", "NO","selected"); %>>Norway (channels 36,40,44,48,149,153,157,161,165)</option>
                                                     <option value="FR" <% nvram_match_x("", "wl_country_code", "FR","selected"); %>>France (channels 36,40,44,48)</option>

@@ -184,7 +184,6 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_radius_ipaddr", ""},		/* RADIUS server IP address */
 	{ "wl_radius_port", "1812" },		/* RADIUS server UDP port */
 	{ "wl_radius_key", "" },		/* RADIUS shared secret */
-	{ "wl_lazywds", "0" },			/* Enable "lazy" WDS mode (0|1) */
 	{ "wl_radio_x", "1" },			/* Enable (1) or disable (0) radio */
 	{ "wl_IgmpSnEnable", "1" },
 	{ "wl_TxPower", "100" },
@@ -286,7 +285,6 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_key2", "" },
 	{ "rt_key3", "" },
 	{ "rt_key4", "" },
-	{ "rt_lazywds", "0" },
 	{ "rt_radius_ipaddr", "" },
 	{ "rt_radius_port", "1812" },
 	{ "rt_radius_key", "" },

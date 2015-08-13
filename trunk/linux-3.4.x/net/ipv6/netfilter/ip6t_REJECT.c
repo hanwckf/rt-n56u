@@ -186,7 +186,6 @@ reject_tg6(struct sk_buff *skb, const struct xt_action_param *par)
 	const struct ip6t_reject_info *reject = par->targinfo;
 	struct net *net = dev_net((par->in != NULL) ? par->in : par->out);
 
-	pr_debug("%s: medium point\n", __func__);
 	switch (reject->with) {
 	case IP6T_ICMP6_NO_ROUTE:
 		send_unreach(net, skb, ICMPV6_NOROUTE, par->hooknum);
@@ -208,9 +207,6 @@ reject_tg6(struct sk_buff *skb, const struct xt_action_param *par)
 		break;
 	case IP6T_TCP_RESET:
 		send_reset(net, skb);
-		break;
-	default:
-		net_info_ratelimited("case %u not handled yet\n", reject->with);
 		break;
 	}
 

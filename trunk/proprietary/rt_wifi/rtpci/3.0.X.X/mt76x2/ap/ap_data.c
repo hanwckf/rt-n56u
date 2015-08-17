@@ -4680,22 +4680,17 @@ VOID APHandleRxDataFrame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 
 		if (pEntry && IS_ENTRY_APCLI(pEntry))
 		{
-			ULONG Now32;
-
-			if (!(pEntry && APCLI_IF_UP_CHECK(pAd, pEntry->wdev_idx)))
+			if (!(APCLI_IF_UP_CHECK(pAd, pEntry->wdev_idx)))
 				goto err;
 
 			pApCliEntry = &pAd->ApCfg.ApCliTab[pEntry->wdev_idx];
 
-			if (pApCliEntry)
-			{
-				NdisGetSystemUpTime(&Now32);
-				pApCliEntry->ApCliRcvBeaconTime = Now32;
-			}
+			/* ApCli reconnect workaround - update ApCliRcvBeaconTime on RX activity too */
+			pApCliEntry->ApCliRcvBeaconTime = pAd->Mlme.Now32;
 
 #ifdef STATS_COUNT_SUPPORT
-			pAd->ApCfg.ApCliTab[pEntry->wdev_idx].ApCliCounter.ReceivedByteCount.QuadPart += pRxBlk->MPDUtotalByteCnt;
-			pAd->ApCfg.ApCliTab[pEntry->wdev_idx].ApCliCounter.ReceivedFragmentCount++;
+			pApCliEntry->ApCliCounter.ReceivedByteCount.QuadPart += pRxBlk->MPDUtotalByteCnt;
+			pApCliEntry->ApCliCounter.ReceivedFragmentCount++;
 #endif /* STATS_COUNT_SUPPORT */
 
 			FromWhichBSSID = pEntry->wdev_idx + MIN_NET_DEVICE_FOR_APCLI;
@@ -4705,7 +4700,7 @@ VOID APHandleRxDataFrame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 			if (pRxInfo->Mcast || pRxInfo->Bcast)
 			{
 #ifdef STATS_COUNT_SUPPORT
-				pAd->ApCfg.ApCliTab[pEntry->wdev_idx].ApCliCounter.MulticastReceivedFrameCount++;
+				pApCliEntry->ApCliCounter.MulticastReceivedFrameCount++;
 #endif /* STATS_COUNT_SUPPORT */
 				/* Process the received broadcast frame for AP-Client. */
 				if (!ApCliHandleRxBroadcastFrame(pAd, pRxBlk, pEntry, FromWhichBSSID))

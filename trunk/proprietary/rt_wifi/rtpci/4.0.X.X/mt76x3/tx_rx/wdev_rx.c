@@ -1344,18 +1344,21 @@ INT sta_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 
 #if defined(APCLI_SUPPORT)
 	if (IS_ENTRY_APCLI(pEntry)) {
-#ifdef STATS_COUNT_SUPPORT
 		if (pEntry->func_tb_idx < MAX_APCLI_NUM) {
 			APCLI_STRUCT *pApCli = &pAd->ApCfg.ApCliTab[pEntry->func_tb_idx];
-
+			
+			/* ApCli reconnect workaround - update ApCliRcvBeaconTime on RX activity too */
+			pApCli->ApCliRcvBeaconTime = pAd->Mlme.Now32;
+			
+#ifdef STATS_COUNT_SUPPORT
 			pApCli->ApCliCounter.ReceivedByteCount.QuadPart += pRxBlk->MPDUtotalByteCnt;
 			pApCli->ApCliCounter.ReceivedFragmentCount++;
-
+			
 			if(IS_MULTICAST_MAC_ADDR(pHeader->Addr3))
 				pApCli->ApCliCounter.MulticastReceivedFrameCount++;
-		}
 #endif /* STATS_COUNT_SUPPORT */
-
+		}
+		
 		RX_BLK_SET_FLAG(pRxBlk, fRX_AP);
 		goto ret;
 	}

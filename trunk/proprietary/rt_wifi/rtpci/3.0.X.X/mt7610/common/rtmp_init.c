@@ -3183,6 +3183,13 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 	NdisZeroMemory(&pAd->ApCfg.ReptControl, sizeof(REPEATER_CTRL_STRUCT));
 #endif /* MAC_REPEATER_SUPPORT */
 
+#ifdef APCLI_SUPPORT
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+	pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+	pAd->ApCfg.ApCliAutoConnectChannelSwitching = FALSE;
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
+#endif /* APCLI_SUPPORT */
+
 #ifdef FPGA_MODE
 	pAd->fpga_on = 0x0;
 	pAd->tx_kick_cnt = 0;

@@ -279,6 +279,10 @@ MAC_TABLE_ENTRY *MacTableInsertWDSEntry(
 			pEntry->HTPhyMode.word = pEntry->MaxHTPhyMode.word;
 
 #ifdef DOT11_N_SUPPORT
+			/* default */
+			pEntry->MpduDensity = 5;
+			pEntry->MaxRAmpduFactor = 3;
+
 			if (wdev->PhyMode >= MODE_HTMIX)
 			{
 				if (wdev->DesiredTransmitSetting.field.MCS != MCS_AUTO)

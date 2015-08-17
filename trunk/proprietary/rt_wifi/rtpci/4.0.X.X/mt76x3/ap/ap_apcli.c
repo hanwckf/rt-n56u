@@ -1545,7 +1545,7 @@ INT ApCliAllowToSendPacket(
 	for(idx = 0; idx < MAX_APCLI_NUM; idx++)
 	{
 		apcli_entry = &pAd->ApCfg.ApCliTab[idx];
-		if (&apcli_entry->wdev == wdev)
+		if (apcli_entry && (&apcli_entry->wdev == wdev))
 		{
 			if (ValidApCliEntry(pAd, idx) == FALSE)
 				break;

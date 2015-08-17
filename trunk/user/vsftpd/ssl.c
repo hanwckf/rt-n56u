@@ -31,8 +31,6 @@
 #include <errno.h>
 #include <limits.h>
 
-//#define HAVE_ECDH
-
 static char* get_ssl_error();
 static SSL* get_ssl(struct vsf_session* p_sess, int fd);
 static int ssl_session_init(struct vsf_session* p_sess);
@@ -122,7 +120,7 @@ ssl_init(struct vsf_session* p_sess)
     {
       die("SSL: RNG is not seeded");
     }
-#if defined(HAVE_ECDH)
+#ifndef OPENSSL_NO_ECDH
     {
       EC_KEY* key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
       if (key == NULL)

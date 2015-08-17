@@ -11,10 +11,14 @@ LOPTS=-Wl,--gc-sections -L$(DESTDIR)/lib
 
 OPENSSL_APPS = no-speed
 
-OPENSSL_CIPHERS = no-camellia no-capieng no-cms no-gmp no-jpake no-krb5 no-mdc2 no-rfc3779 no-seed \
-                  no-ec no-ecdh no-ec2m no-ecdsa no-err no-threads no-idea no-rc2 no-rc5 \
-                  no-engine no-hw no-md2 no-sse2 no-dso no-ts no-ripemd no-rmd160 no-sha0 \
-                  no-smime no-ans1 no-cast no-whirlpool no-sctp no-srp no-jpake no-ssl2 no-ssl3
+OPENSSL_CIPHERS = no-camellia no-capieng no-cms no-gmp no-jpake no-rfc3779 no-seed \
+                  no-ec2m no-err no-threads no-idea no-rc2 no-rc5 no-ripemd no-rmd160 \
+                  no-engine no-hw no-md2 no-sse2 no-dso no-ts no-sha0 no-mdc2 no-krb5 \
+                  no-smime no-ans1 no-cast no-whirlpool no-sctp no-srp no-ssl2 no-ssl3
+
+ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC),y)
+OPENSSL_CIPHERS += no-ec
+endif
 
 all: config_test
 	$(MAKE) -C $(SRC_NAME)

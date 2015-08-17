@@ -2234,14 +2234,103 @@ VOID RTMPIoctlGetSiteSurvey(
 #endif
 
 
+static VOID
+copy_mac_table_entry(RT_802_11_MAC_ENTRY *pDst, MAC_TABLE_ENTRY *pEntry)
+{
+	COPY_MAC_ADDR(pDst->Addr, &pEntry->Addr);
+	pDst->Aid = (UCHAR)pEntry->Aid;
+	pDst->Psm = pEntry->PsMode;
+
+#ifdef DOT11_N_SUPPORT
+	pDst->MimoPs = pEntry->MmpsMode;
+#endif /* DOT11_N_SUPPORT */
+
+	/* Fill in RSSI per entry*/
+	pDst->AvgRssi0 = pEntry->RssiSample.AvgRssi0;
+	pDst->AvgRssi1 = pEntry->RssiSample.AvgRssi1;
+	pDst->AvgRssi2 = pEntry->RssiSample.AvgRssi2;
+
+	/* the connected time per entry*/
+	pDst->ConnectedTime = pEntry->StaConnectTime;
+
+	pDst->TxRate.word = pEntry->HTPhyMode.word;
+	pDst->LastRxRate = pEntry->LastRxRate;
+}
+
+
 VOID RTMPIoctlGetMacTableStaInfo(
 	IN PRTMP_ADAPTER pAd, 
 	IN RTMP_IOCTL_INPUT_STRUCT *wrq)
 {
-	INT i;
+	INT i, MacTabWCID;
+	UINT16 wrq_len = wrq->u.data.length;
+	POS_COOKIE pObj = (POS_COOKIE)pAd->OS_Cookie;
 	RT_802_11_MAC_TABLE *pMacTab = NULL;
 	PRT_802_11_MAC_ENTRY pDst;
 	MAC_TABLE_ENTRY *pEntry;
+
+	wrq->u.data.length = 0;
+
+#ifdef APCLI_SUPPORT
+	if (pObj->ioctl_if_type == INT_APCLI)
+	{
+		if (wrq_len < sizeof(RT_802_11_MAC_ENTRY))
+			return;
+		if (pObj->ioctl_if >= MAX_APCLI_NUM)
+			return;
+		if (pAd->ApCfg.ApCliTab[pObj->ioctl_if].CtrlCurrState != APCLI_CTRL_CONNECTED)
+			return;
+		MacTabWCID = pAd->ApCfg.ApCliTab[pObj->ioctl_if].MacTabWCID;
+		if (!VALID_WCID(MacTabWCID))
+			return;
+		pEntry = &pAd->MacTab.Content[MacTabWCID];
+		if (IS_ENTRY_APCLI(pEntry) && (pEntry->Sst == SST_ASSOC) && (pEntry->PortSecured == WPA_802_1X_PORT_SECURED))
+		{
+			RT_802_11_MAC_ENTRY MacEntry;
+			
+			pDst = &MacEntry;
+			pDst->ApIdx = pObj->ioctl_if;
+			copy_mac_table_entry(pDst, pEntry);
+			
+			wrq->u.data.length = sizeof(RT_802_11_MAC_ENTRY);
+			copy_to_user(wrq->u.data.pointer, pDst, wrq->u.data.length);
+		}
+		
+		return;
+	}
+#endif
+
+#ifdef WDS_SUPPORT
+	if (pObj->ioctl_if_type == INT_WDS)
+	{
+		if (wrq_len < sizeof(RT_802_11_MAC_ENTRY))
+			return;
+		if (pObj->ioctl_if >= MAX_WDS_ENTRY)
+			return;
+		if (pAd->WdsTab.WdsEntry[pObj->ioctl_if].Valid != TRUE)
+			return;
+		MacTabWCID = pAd->WdsTab.WdsEntry[pObj->ioctl_if].MacTabMatchWCID;
+		if (!VALID_WCID(MacTabWCID))
+			return;
+		pEntry = &pAd->MacTab.Content[MacTabWCID];
+		if (IS_ENTRY_WDS(pEntry))
+		{
+			RT_802_11_MAC_ENTRY MacEntry;
+			
+			pDst = &MacEntry;
+			pDst->ApIdx = pObj->ioctl_if;
+			copy_mac_table_entry(pDst, pEntry);
+			
+			wrq->u.data.length = sizeof(RT_802_11_MAC_ENTRY);
+			copy_to_user(wrq->u.data.pointer, pDst, wrq->u.data.length);
+		}
+		
+		return;
+	}
+#endif
+
+	if (wrq_len < sizeof(RT_802_11_MAC_TABLE))
+		return;
 
 	/* allocate memory */
 	os_alloc_mem(NULL, (UCHAR **)&pMacTab, sizeof(RT_802_11_MAC_TABLE));
@@ -2258,26 +2347,8 @@ VOID RTMPIoctlGetMacTableStaInfo(
 		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
 		{
 			pDst = &pMacTab->Entry[pMacTab->Num];
-
-			pDst->ApIdx = pEntry->apidx;
-			COPY_MAC_ADDR(pDst->Addr, &pEntry->Addr);
-			pDst->Aid = (UCHAR)pEntry->Aid;
-			pDst->Psm = pEntry->PsMode;
-
-#ifdef DOT11_N_SUPPORT
-			pDst->MimoPs = pEntry->MmpsMode;
-#endif /* DOT11_N_SUPPORT */
-
-			/* Fill in RSSI per entry*/
-			pDst->AvgRssi0 = pEntry->RssiSample.AvgRssi0;
-			pDst->AvgRssi1 = pEntry->RssiSample.AvgRssi1;
-			pDst->AvgRssi2 = pEntry->RssiSample.AvgRssi2;
-
-			/* the connected time per entry*/
-			pDst->ConnectedTime = pEntry->StaConnectTime;
-			pDst->TxRate.word = pEntry->HTPhyMode.word;
-			pDst->LastRxRate = pEntry->LastRxRate;
-
+			pDst->ApIdx = (UCHAR)pEntry->apidx;
+			copy_mac_table_entry(pDst, pEntry);
 			pMacTab->Num += 1;
 		}
 	}
@@ -2288,8 +2359,7 @@ VOID RTMPIoctlGetMacTableStaInfo(
 		DBGPRINT(RT_DEBUG_TRACE, ("%s: copy_to_user() fail\n", __FUNCTION__));
 	}
 
-	if (pMacTab != NULL)
-		os_free_mem(NULL, pMacTab);
+	os_free_mem(NULL, pMacTab);
 }
 
 
@@ -2299,10 +2369,18 @@ VOID RTMPIoctlGetMacTable(
 	IN RTMP_IOCTL_INPUT_STRUCT *wrq)
 {
 	INT i;
+	UINT16 wrq_len = wrq->u.data.length;
 	RT_802_11_MAC_TABLE *pMacTab = NULL;
 	RT_802_11_MAC_ENTRY *pDst;
 	MAC_TABLE_ENTRY *pEntry;
+#ifdef DBG
 	char *msg;
+#endif
+
+	wrq->u.data.length = 0;
+
+	if (wrq_len < sizeof(RT_802_11_MAC_TABLE))
+		return;
 
 	/* allocate memory */
 	os_alloc_mem(NULL, (UCHAR **)&pMacTab, sizeof(RT_802_11_MAC_TABLE));
@@ -2320,27 +2398,8 @@ VOID RTMPIoctlGetMacTable(
 		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
 		{
 			pDst = &pMacTab->Entry[pMacTab->Num];
-
 			pDst->ApIdx = (UCHAR)pEntry->apidx;
-			COPY_MAC_ADDR(pDst->Addr, &pEntry->Addr);
-			pDst->Aid = (UCHAR)pEntry->Aid;
-			pDst->Psm = pEntry->PsMode;
-#ifdef DOT11_N_SUPPORT
-			pDst->MimoPs = pEntry->MmpsMode;
-#endif /* DOT11_N_SUPPORT */
-
-			/* Fill in RSSI per entry*/
-			pDst->AvgRssi0 = pEntry->RssiSample.AvgRssi0;
-			pDst->AvgRssi1 = pEntry->RssiSample.AvgRssi1;
-			pDst->AvgRssi2 = pEntry->RssiSample.AvgRssi2;
-
-			/* the connected time per entry*/
-			pDst->ConnectedTime = pEntry->StaConnectTime;
-			pDst->TxRate.word = pEntry->HTPhyMode.word;
-#ifdef RTMP_RBUS_SUPPORT
-			pDst->LastRxRate = pEntry->LastRxRate;
-/*			pDst->TxPER = pEntry->SaveTxPER; */
-#endif /* RTMP_RBUS_SUPPORT */
+			copy_mac_table_entry(pDst, pEntry);
 			pMacTab->Num += 1;
 		}
 	}
@@ -2351,6 +2410,7 @@ VOID RTMPIoctlGetMacTable(
 		DBGPRINT(RT_DEBUG_TRACE, ("%s: copy_to_user() fail\n", __FUNCTION__));
 	}
 
+#ifdef DBG
 	os_alloc_mem(NULL, (UCHAR **)&msg, sizeof(CHAR)*(MAX_LEN_OF_MAC_TABLE*MAC_LINE_LEN));
 	if (msg == NULL)
 	{
@@ -2365,7 +2425,7 @@ VOID RTMPIoctlGetMacTable(
 
 	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
 	{
-		MAC_TABLE_ENTRY *pEntry = &pAd->MacTab.Content[i];
+		pEntry = &(pAd->MacTab.Content[i]);
 
 		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
 		{
@@ -2390,8 +2450,8 @@ VOID RTMPIoctlGetMacTable(
 	os_free_mem(NULL, msg);
 
 LabelOK:
-	if (pMacTab != NULL)
-		os_free_mem(NULL, pMacTab);
+#endif
+	os_free_mem(NULL, pMacTab);
 }
 
 #if defined(INF_AR9) || defined(BB_SOC)

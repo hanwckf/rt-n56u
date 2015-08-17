@@ -2492,56 +2492,141 @@ VOID RTMPIoctlGetSiteSurvey(
 }
 #endif
 
+
+static VOID
+copy_mac_table_entry(RT_802_11_MAC_ENTRY *pDst, MAC_TABLE_ENTRY *pEntry)
+{
+	COPY_MAC_ADDR(pDst->Addr, &pEntry->Addr);
+	pDst->Aid = (UCHAR)pEntry->Aid;
+	pDst->Psm = pEntry->PsMode;
+
+#ifdef DOT11_N_SUPPORT
+	pDst->MimoPs = pEntry->MmpsMode;
+#endif /* DOT11_N_SUPPORT */
+
+	/* Fill in RSSI per entry*/
+	pDst->AvgRssi0 = pEntry->RssiSample.AvgRssi0;
+	pDst->AvgRssi1 = pEntry->RssiSample.AvgRssi1;
+	pDst->AvgRssi2 = pEntry->RssiSample.AvgRssi2;
+
+	/* the connected time per entry*/
+	pDst->ConnectedTime = pEntry->StaConnectTime;
+
+	pDst->TxRate.field.MCS		= pEntry->HTPhyMode.field.MCS;
+	pDst->TxRate.field.ldpc		= 0;
+	pDst->TxRate.field.BW		= pEntry->HTPhyMode.field.BW;
+	pDst->TxRate.field.ShortGI	= pEntry->HTPhyMode.field.ShortGI;
+	pDst->TxRate.field.STBC		= pEntry->HTPhyMode.field.STBC;
+	pDst->TxRate.field.eTxBF	= 0;
+	pDst->TxRate.field.iTxBF	= pEntry->HTPhyMode.field.iTxBF;
+	pDst->TxRate.field.MODE		= pEntry->HTPhyMode.field.MODE;
+
+	pDst->LastRxRate = pEntry->LastRxRate;
+}
+
+
 VOID RTMPIoctlGetMacTableStaInfo(
 	IN PRTMP_ADAPTER pAd, 
 	IN struct iwreq *wrq)
 {
-	INT i;
-	RT_802_11_MAC_TABLE MacTab;
+	INT i, MacTabWCID;
+	UINT16 wrq_len = wrq->u.data.length;
+	POS_COOKIE pObj = (POS_COOKIE)pAd->OS_Cookie;
+	RT_802_11_MAC_TABLE *pMacTab = NULL;
+	PRT_802_11_MAC_ENTRY pDst;
+	MAC_TABLE_ENTRY *pEntry;
 
-	NdisZeroMemory(&MacTab, sizeof(RT_802_11_MAC_TABLE));
+	wrq->u.data.length = 0;
 
-	MacTab.Num = 0;
+#ifdef APCLI_SUPPORT
+	if (pObj->ioctl_if_type == INT_APCLI)
+	{
+		if (wrq_len < sizeof(RT_802_11_MAC_ENTRY))
+			return;
+		if (pObj->ioctl_if >= MAX_APCLI_NUM)
+			return;
+		if (pAd->ApCfg.ApCliTab[pObj->ioctl_if].CtrlCurrState != APCLI_CTRL_CONNECTED)
+			return;
+		MacTabWCID = pAd->ApCfg.ApCliTab[pObj->ioctl_if].MacTabWCID;
+		if (!VALID_WCID(MacTabWCID))
+			return;
+		pEntry = &pAd->MacTab.Content[MacTabWCID];
+		if (IS_ENTRY_APCLI(pEntry) && (pEntry->Sst == SST_ASSOC) && (pEntry->PortSecured == WPA_802_1X_PORT_SECURED))
+		{
+			RT_802_11_MAC_ENTRY MacEntry;
+			
+			pDst = &MacEntry;
+			pDst->ApIdx = pObj->ioctl_if;
+			copy_mac_table_entry(pDst, pEntry);
+			
+			wrq->u.data.length = sizeof(RT_802_11_MAC_ENTRY);
+			copy_to_user(wrq->u.data.pointer, pDst, wrq->u.data.length);
+		}
+		
+		return;
+	}
+#endif
+
+#ifdef WDS_SUPPORT
+	if (pObj->ioctl_if_type == INT_WDS)
+	{
+		if (wrq_len < sizeof(RT_802_11_MAC_ENTRY))
+			return;
+		if (pObj->ioctl_if >= MAX_WDS_ENTRY)
+			return;
+		if (pAd->WdsTab.WdsEntry[pObj->ioctl_if].Valid != TRUE)
+			return;
+		MacTabWCID = pAd->WdsTab.WdsEntry[pObj->ioctl_if].MacTabMatchWCID;
+		if (!VALID_WCID(MacTabWCID))
+			return;
+		pEntry = &pAd->MacTab.Content[MacTabWCID];
+		if (IS_ENTRY_WDS(pEntry))
+		{
+			RT_802_11_MAC_ENTRY MacEntry;
+			
+			pDst = &MacEntry;
+			pDst->ApIdx = pObj->ioctl_if;
+			copy_mac_table_entry(pDst, pEntry);
+			
+			wrq->u.data.length = sizeof(RT_802_11_MAC_ENTRY);
+			copy_to_user(wrq->u.data.pointer, pDst, wrq->u.data.length);
+		}
+		
+		return;
+	}
+#endif
+
+	if (wrq_len < sizeof(RT_802_11_MAC_TABLE))
+		return;
+
+	/* allocate memory */
+	os_alloc_mem(NULL, (UCHAR **)&pMacTab, sizeof(RT_802_11_MAC_TABLE));
+	if (pMacTab == NULL)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("%s: Allocate memory fail!!!\n", __FUNCTION__));
+		return;
+	}
+
+	NdisZeroMemory(pMacTab, sizeof(RT_802_11_MAC_TABLE));
 	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
 	{
-		if (IS_ENTRY_CLIENT(&pAd->MacTab.Content[i]) && (pAd->MacTab.Content[i].Sst == SST_ASSOC))
+		pEntry = &(pAd->MacTab.Content[i]);
+		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
 		{
-			MacTab.Entry[MacTab.Num].ApIdx = (UCHAR)pAd->MacTab.Content[i].apidx;
-			COPY_MAC_ADDR(MacTab.Entry[MacTab.Num].Addr, &pAd->MacTab.Content[i].Addr);
-			MacTab.Entry[MacTab.Num].Aid = (UCHAR)pAd->MacTab.Content[i].Aid;
-			MacTab.Entry[MacTab.Num].Psm = pAd->MacTab.Content[i].PsMode;
-#ifdef DOT11_N_SUPPORT
-			MacTab.Entry[MacTab.Num].MimoPs = pAd->MacTab.Content[i].MmpsMode;
-#endif // DOT11_N_SUPPORT //
-
-			// Fill in RSSI per entry
-			MacTab.Entry[MacTab.Num].AvgRssi0 = pAd->MacTab.Content[i].RssiSample.AvgRssi0;
-			MacTab.Entry[MacTab.Num].AvgRssi1 = pAd->MacTab.Content[i].RssiSample.AvgRssi1;
-			MacTab.Entry[MacTab.Num].AvgRssi2 = pAd->MacTab.Content[i].RssiSample.AvgRssi2;
-
-			// the connected time per entry
-			MacTab.Entry[MacTab.Num].ConnectedTime = pAd->MacTab.Content[i].StaConnectTime;
-
-			MacTab.Entry[MacTab.Num].TxRate.field.MCS	= pAd->MacTab.Content[i].HTPhyMode.field.MCS;
-			MacTab.Entry[MacTab.Num].TxRate.field.ldpc	= 0;
-			MacTab.Entry[MacTab.Num].TxRate.field.BW	= pAd->MacTab.Content[i].HTPhyMode.field.BW;
-			MacTab.Entry[MacTab.Num].TxRate.field.ShortGI	= pAd->MacTab.Content[i].HTPhyMode.field.ShortGI;
-			MacTab.Entry[MacTab.Num].TxRate.field.STBC	= pAd->MacTab.Content[i].HTPhyMode.field.STBC;
-			MacTab.Entry[MacTab.Num].TxRate.field.eTxBF	= 0;
-			MacTab.Entry[MacTab.Num].TxRate.field.iTxBF	= pAd->MacTab.Content[i].HTPhyMode.field.iTxBF;
-			MacTab.Entry[MacTab.Num].TxRate.field.MODE	= pAd->MacTab.Content[i].HTPhyMode.field.MODE;
-
-			MacTab.Entry[MacTab.Num].LastRxRate = pAd->MacTab.Content[i].LastRxRate;
-			
-			MacTab.Num += 1;
+			pDst = &pMacTab->Entry[pMacTab->Num];
+			pDst->ApIdx = (UCHAR)pEntry->apidx;
+			copy_mac_table_entry(pDst, pEntry);
+			pMacTab->Num += 1;
 		}
 	}
 
 	wrq->u.data.length = sizeof(RT_802_11_MAC_TABLE);
-	if (copy_to_user(wrq->u.data.pointer, &MacTab, wrq->u.data.length))
+	if (copy_to_user(wrq->u.data.pointer, pMacTab, wrq->u.data.length))
 	{
 		DBGPRINT(RT_DEBUG_TRACE, ("%s: copy_to_user() fail\n", __FUNCTION__));
 	}
+
+	os_free_mem(NULL, pMacTab);
 }
 
 
@@ -2551,60 +2636,55 @@ VOID RTMPIoctlGetMacTable(
 	IN struct iwreq *wrq)
 {
 	INT i;
-	RT_802_11_MAC_TABLE MacTab;
+	UINT16 wrq_len = wrq->u.data.length;
+	RT_802_11_MAC_TABLE *pMacTab = NULL;
+	RT_802_11_MAC_ENTRY *pDst;
+	MAC_TABLE_ENTRY *pEntry;
+#ifdef DBG
 	char *msg;
+#endif
 
-	NdisZeroMemory(&MacTab, sizeof(RT_802_11_MAC_TABLE));
+	wrq->u.data.length = 0;
 
-	MacTab.Num = 0;
+	if (wrq_len < sizeof(RT_802_11_MAC_TABLE))
+		return;
+
+	/* allocate memory */
+	os_alloc_mem(NULL, (UCHAR **)&pMacTab, sizeof(RT_802_11_MAC_TABLE));
+	if (pMacTab == NULL)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("%s: Allocate memory fail!!!\n", __FUNCTION__));
+		return;
+	}
+
+	NdisZeroMemory(pMacTab, sizeof(RT_802_11_MAC_TABLE));
 	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
 	{
-		if (IS_ENTRY_CLIENT(&pAd->MacTab.Content[i]) && (pAd->MacTab.Content[i].Sst == SST_ASSOC))
+		pEntry = &(pAd->MacTab.Content[i]);
+
+		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
 		{
-			MacTab.Entry[MacTab.Num].ApIdx = (UCHAR)pAd->MacTab.Content[i].apidx;
-			COPY_MAC_ADDR(MacTab.Entry[MacTab.Num].Addr, &pAd->MacTab.Content[i].Addr);
-			MacTab.Entry[MacTab.Num].Aid = (UCHAR)pAd->MacTab.Content[i].Aid;
-			MacTab.Entry[MacTab.Num].Psm = pAd->MacTab.Content[i].PsMode;
-#ifdef DOT11_N_SUPPORT
-			MacTab.Entry[MacTab.Num].MimoPs = pAd->MacTab.Content[i].MmpsMode;
-#endif // DOT11_N_SUPPORT //
-
-			// Fill in RSSI per entry
-			MacTab.Entry[MacTab.Num].AvgRssi0 = pAd->MacTab.Content[i].RssiSample.AvgRssi0;
-			MacTab.Entry[MacTab.Num].AvgRssi1 = pAd->MacTab.Content[i].RssiSample.AvgRssi1;
-			MacTab.Entry[MacTab.Num].AvgRssi2 = pAd->MacTab.Content[i].RssiSample.AvgRssi2;
-
-			// the connected time per entry
-			MacTab.Entry[MacTab.Num].ConnectedTime = pAd->MacTab.Content[i].StaConnectTime;
-
-			MacTab.Entry[MacTab.Num].TxRate.field.MCS	= pAd->MacTab.Content[i].HTPhyMode.field.MCS;
-			MacTab.Entry[MacTab.Num].TxRate.field.ldpc	= 0;
-			MacTab.Entry[MacTab.Num].TxRate.field.BW	= pAd->MacTab.Content[i].HTPhyMode.field.BW;
-			MacTab.Entry[MacTab.Num].TxRate.field.ShortGI	= pAd->MacTab.Content[i].HTPhyMode.field.ShortGI;
-			MacTab.Entry[MacTab.Num].TxRate.field.STBC	= pAd->MacTab.Content[i].HTPhyMode.field.STBC;
-			MacTab.Entry[MacTab.Num].TxRate.field.eTxBF	= 0;
-			MacTab.Entry[MacTab.Num].TxRate.field.iTxBF	= pAd->MacTab.Content[i].HTPhyMode.field.iTxBF;
-			MacTab.Entry[MacTab.Num].TxRate.field.MODE	= pAd->MacTab.Content[i].HTPhyMode.field.MODE;
-
-			MacTab.Entry[MacTab.Num].LastRxRate = pAd->MacTab.Content[i].LastRxRate;
-			
-			MacTab.Num += 1;
+			pDst = &pMacTab->Entry[pMacTab->Num];
+			pDst->ApIdx = (UCHAR)pEntry->apidx;
+			copy_mac_table_entry(pDst, pEntry);
+			pMacTab->Num += 1;
 		}
 	}
 
 	wrq->u.data.length = sizeof(RT_802_11_MAC_TABLE);
-	if (copy_to_user(wrq->u.data.pointer, &MacTab, wrq->u.data.length))
+	if (copy_to_user(wrq->u.data.pointer, pMacTab, wrq->u.data.length))
 	{
 		DBGPRINT(RT_DEBUG_TRACE, ("%s: copy_to_user() fail\n", __FUNCTION__));
 	}
 
-
-	msg = kmalloc(sizeof(CHAR)*(MAX_LEN_OF_MAC_TABLE*MAC_LINE_LEN), MEM_ALLOC_FLAG);
+#ifdef DBG
+	os_alloc_mem(NULL, (UCHAR **)&msg, sizeof(CHAR)*(MAX_LEN_OF_MAC_TABLE*MAC_LINE_LEN));
 	if (msg == NULL)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("%s():Alloc memory failed\n", __FUNCTION__));
-		return;
+		goto LabelOK;
 	}
+
 	memset(msg, 0 ,MAX_LEN_OF_MAC_TABLE*MAC_LINE_LEN );
 	sprintf(msg,"%s","\n");
 	sprintf(msg+strlen(msg),"%-14s%-4s%-4s%-4s%-4s%-6s%-6s%-10s%-10s%-10s\n",
@@ -2612,7 +2692,7 @@ VOID RTMPIoctlGetMacTable(
 	
 	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
 	{
-		PMAC_TABLE_ENTRY pEntry = &pAd->MacTab.Content[i];
+		pEntry = &(pAd->MacTab.Content[i]);
 		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
 		{
 			if((strlen(msg)+MAC_LINE_LEN ) >= (MAX_LEN_OF_MAC_TABLE*MAC_LINE_LEN) )
@@ -2635,7 +2715,11 @@ VOID RTMPIoctlGetMacTable(
 	// for compatible with old API just do the printk to console
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s", msg));
-	kfree(msg);
+	os_free_mem(NULL, msg);
+
+LabelOK:
+#endif
+	os_free_mem(NULL, pMacTab);
 }
 
 #ifdef INF_AR9

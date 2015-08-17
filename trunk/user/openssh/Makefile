@@ -27,6 +27,7 @@ configure:
 		--with-privsep-user=sshd \
 		--with-sandbox=no \
 		--without-pam \
+		--without-ssh1 \
 		--without-selinux \
 		--without-bsd-auth \
 		--without-kerberos5 \
@@ -52,6 +53,7 @@ romfs:
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSH),y)
 	mkdir -p $(INSTALLDIR)/etc_ro/ssh
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/moduli /etc_ro/ssh/moduli
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/libssh.so /lib/libssh.so
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/scp /usr/bin/scp
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/ssh /usr/bin/ssh
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/ssh-keygen /usr/bin/ssh-keygen

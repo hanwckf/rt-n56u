@@ -19,6 +19,7 @@
 #define _httpd_h_
 
 #include <ralink_boards.h>
+#include <ralink_priv.h>
 #include <netutils.h>
 #include <rtutils.h>
 #include <shutils.h>
@@ -171,6 +172,7 @@ extern char *initial_available_disk_names_and_sizes(void);
 struct ifreq;
 struct iwreq;
 extern int get_apcli_peer_connected(const char *ifname, struct iwreq *p_wrq);
+extern int get_apcli_wds_entry(const char *ifname, RT_802_11_MAC_ENTRY *pme);
 extern int is_mac_in_sta_list(const unsigned char* p_mac);
 extern int ej_lan_leases(int eid, webs_t wp, int argc, char **argv);
 extern int ej_vpns_leases(int eid, webs_t wp, int argc, char **argv);
@@ -178,12 +180,14 @@ extern int ej_nat_table(int eid, webs_t wp, int argc, char **argv);
 extern int ej_route_table(int eid, webs_t wp, int argc, char **argv);
 extern int ej_conntrack_table(int eid, webs_t wp, int argc, char **argv);
 extern int wl_ioctl(const char *ifname, int cmd, struct iwreq *pwrq);
-extern int ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv);
-extern int ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv);
 extern int ej_wl_auth_list(int eid, webs_t wp, int argc, char **argv);
+#if BOARD_HAS_5G_RADIO
+extern int ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv);
 extern int ej_wl_scan_5g(int eid, webs_t wp, int argc, char **argv);
-extern int ej_wl_scan_2g(int eid, webs_t wp, int argc, char **argv);
 extern int ej_wl_bssid_5g(int eid, webs_t wp, int argc, char **argv);
+#endif
+extern int ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv);
+extern int ej_wl_scan_2g(int eid, webs_t wp, int argc, char **argv);
 extern int ej_wl_bssid_2g(int eid, webs_t wp, int argc, char **argv);
 
 // rtl8367.c or mtk_esw.c

@@ -42,7 +42,6 @@
 #include <net/if_arp.h>
 
 #include <iwlib.h>
-#include <ralink_priv.h>
 
 #include "common.h"
 #include "httpd.h"
@@ -721,52 +720,40 @@ getRate(MACHTTRANSMIT_SETTING HTSetting)
 	return (MCSMappingRateTable[rate_index] * num_ss_vht * 5)/10;
 }
 
-static int
-#if defined(USE_RT3352_MII)
-getRate_2g(MACHTTRANSMIT_SETTING_INIC HTSetting)
-#else
-getRate_2g(MACHTTRANSMIT_SETTING HTSetting)
-#endif
-{
-	int rate_count = sizeof(MCSMappingRateTable)/sizeof(int);
-	int rate_index = 0;
-
-	if (HTSetting.field.MODE >= MODE_HTMIX)
-		rate_index = 12 + ((unsigned char)HTSetting.field.BW * 24) + ((unsigned char)HTSetting.field.ShortGI * 48) + ((unsigned char)HTSetting.field.MCS);
-	else if (HTSetting.field.MODE == MODE_OFDM)
-		rate_index = (unsigned char)(HTSetting.field.MCS) + 4;
-	else if (HTSetting.field.MODE == MODE_CCK)
-		rate_index = (unsigned char)(HTSetting.field.MCS);
-
-	if (rate_index < 0)
-		rate_index = 0;
-
-	if (rate_index >= rate_count)
-		rate_index = rate_count-1;
-
-	return (MCSMappingRateTable[rate_index] * 5)/10;
-}
-
 int
 get_apcli_peer_connected(const char *ifname, struct iwreq *p_wrq)
 {
-	int apcli_con = 0;
-
-	if (wl_ioctl(ifname, SIOCGIWAP, p_wrq) >= 0)
-	{
+	if (wl_ioctl(ifname, SIOCGIWAP, p_wrq) >= 0) {
 		p_wrq->u.ap_addr.sa_family = ARPHRD_ETHER;
 		if (p_wrq->u.ap_addr.sa_data[0] ||
 		    p_wrq->u.ap_addr.sa_data[1] ||
 		    p_wrq->u.ap_addr.sa_data[2] ||
 		    p_wrq->u.ap_addr.sa_data[3] ||
 		    p_wrq->u.ap_addr.sa_data[4] ||
-		    p_wrq->u.ap_addr.sa_data[5] )
-		{
-			apcli_con = 1;
+		    p_wrq->u.ap_addr.sa_data[5] ) {
+			return 1;
 		}
 	}
 
-	return apcli_con;
+	return 0;
+}
+
+int
+get_apcli_wds_entry(const char *ifname, RT_802_11_MAC_ENTRY *pme)
+{
+	struct iwreq wrq;
+
+	bzero(pme, sizeof(RT_802_11_MAC_ENTRY));
+	wrq.u.data.pointer = pme;
+	wrq.u.data.length = sizeof(RT_802_11_MAC_ENTRY);
+	wrq.u.data.flags = 0;
+
+	if (wl_ioctl(ifname, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq) >= 0 &&
+	    wrq.u.data.length == sizeof(RT_802_11_MAC_ENTRY)) {
+		return 1;
+	}
+
+	return 0;
 }
 
 int
@@ -828,48 +815,88 @@ is_mac_in_sta_list(const unsigned char* p_mac)
 	return 0;
 }
 
-#if BOARD_HAS_5G_RADIO
 static int
-print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
+print_apcli_wds_header(webs_t wp, const char *caption)
 {
-	int i, ret;
-	int hr, min, sec, rssi, stream_rx;
+	int ret = 0;
+
+	ret += websWrite(wp, caption);
+	ret += websWrite(wp, "----------------------------------------\n");
+	ret += websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-6s%-5s\n",
+				   "BSSID", "PhyMode", " BW", "MCS", "SGI", "LDPC", "STBC", "TRate", "RSSI");
+
+	return ret;
+}
+
+static int
+print_apcli_wds_entry(webs_t wp, RT_802_11_MAC_ENTRY *me, int num_ss_rx)
+{
+	int ret, rssi;
 
 	ret = 0;
-	if (ApIdx == 0)
-		ret+=websWrite(wp, "\nAP Main Stations List\n");
-	else
-		ret+=websWrite(wp, "\nAP Guest Stations List\n");
 
-	ret+=websWrite(wp, "----------------------------------------\n");
-	ret+=websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-6s%-5s%-4s%-12s\n",
+	rssi = -127;
+	if ((int)me->AvgRssi0 > rssi && me->AvgRssi0 != 0)
+		rssi = (int)me->AvgRssi0;
+	if (num_ss_rx > 1) {
+		if ((int)me->AvgRssi1 > rssi && me->AvgRssi1 != 0)
+			rssi = (int)me->AvgRssi1;
+	}
+	if (num_ss_rx > 2) {
+		if ((int)me->AvgRssi2 > rssi && me->AvgRssi2 != 0)
+			rssi = (int)me->AvgRssi2;
+	}
+
+	ret += websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %3s %3d %3s %4s %4s %4dM %4d\n",
+			me->Addr[0], me->Addr[1], me->Addr[2],
+			me->Addr[3], me->Addr[4], me->Addr[5],
+			GetPhyMode(me->TxRate.field.MODE),
+			GetBW(me->TxRate.field.BW),
+			getMCS(me->TxRate),
+			me->TxRate.field.ShortGI ? "YES" : "NO",
+			me->TxRate.field.ldpc ? "YES" : "NO",
+			me->TxRate.field.STBC ? "YES" : "NO",
+			getRate(me->TxRate),
+			rssi
+		);
+
+	return ret;
+}
+
+static int
+print_sta_list(webs_t wp, RT_802_11_MAC_TABLE *mp, int num_ss_rx, int ap_idx)
+{
+	int ret, i, hr, min, sec, rssi;
+
+	ret = 0;
+
+	ret += websWrite(wp, "\nAP %s Stations List\n", (ap_idx == 0) ? "Main" : "Guest");
+	ret += websWrite(wp, "----------------------------------------\n");
+	ret += websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-6s%-5s%-4s%-12s\n",
 			   "MAC", "PhyMode", " BW", "MCS", "SGI", "LDPC", "STBC", "TRate", "RSSI", "PSM", "Connect Time");
 
-	stream_rx = nvram_get_int("wl_stream_rx");
-
-	for (i=0;i<mp->Num;i++)
-	{
-		if (mp->Entry[i].ApIdx == ApIdx)
-		{
-			hr = mp->Entry[i].ConnectedTime/3600;
-			min = (mp->Entry[i].ConnectedTime % 3600)/60;
-			sec = mp->Entry[i].ConnectedTime - hr*3600 - min*60;
-			rssi = -127;
-			if ((int)mp->Entry[i].AvgRssi0 > rssi && mp->Entry[i].AvgRssi0 != 0)
-				rssi = (int)mp->Entry[i].AvgRssi0;
-			if (stream_rx > 1) {
-				if ((int)mp->Entry[i].AvgRssi1 > rssi && mp->Entry[i].AvgRssi1 != 0)
-					rssi = (int)mp->Entry[i].AvgRssi1;
-			}
-			if (stream_rx > 2) {
-				if ((int)mp->Entry[i].AvgRssi2 > rssi && mp->Entry[i].AvgRssi2 != 0)
-					rssi = (int)mp->Entry[i].AvgRssi2;
-			}
-			
-			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %3s %3d %3s %4s %4s %4dM %4d %3s %02d:%02d:%02d\n",
-				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
-				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
-				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
+	for (i = 0; i < mp->Num; i++) {
+		if ((int)mp->Entry[i].ApIdx != ap_idx)
+			continue;
+		
+		hr = mp->Entry[i].ConnectedTime / 3600;
+		min = (mp->Entry[i].ConnectedTime % 3600) / 60;
+		sec = mp->Entry[i].ConnectedTime - hr * 3600 - min * 60;
+		rssi = -127;
+		if ((int)mp->Entry[i].AvgRssi0 > rssi && mp->Entry[i].AvgRssi0 != 0)
+			rssi = (int)mp->Entry[i].AvgRssi0;
+		if (num_ss_rx > 1) {
+			if ((int)mp->Entry[i].AvgRssi1 > rssi && mp->Entry[i].AvgRssi1 != 0)
+				rssi = (int)mp->Entry[i].AvgRssi1;
+		}
+		if (num_ss_rx > 2) {
+			if ((int)mp->Entry[i].AvgRssi2 > rssi && mp->Entry[i].AvgRssi2 != 0)
+				rssi = (int)mp->Entry[i].AvgRssi2;
+		}
+		
+		ret += websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %3s %3d %3s %4s %4s %4dM %4d %3s %02d:%02d:%02d\n",
+				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1], mp->Entry[i].Addr[2],
+				mp->Entry[i].Addr[3], mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
 				GetPhyMode(mp->Entry[i].TxRate.field.MODE),
 				GetBW(mp->Entry[i].TxRate.field.BW),
 				getMCS(mp->Entry[i].TxRate),
@@ -881,78 +908,104 @@ print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 				mp->Entry[i].Psm ? "YES" : "NO",
 				hr, min, sec
 			);
-		}
 	}
 
 	return ret;
 }
-#endif
+
+#if defined(USE_RT3352_MII)
+static int
+getRate_inic(MACHTTRANSMIT_SETTING_INIC HTSetting)
+{
+	int rate_count = sizeof(MCSMappingRateTable)/sizeof(int);
+	int rate_index = 0;
+
+	if (HTSetting.field.MODE >= MODE_HTMIX)
+		rate_index = 12 + ((unsigned char)HTSetting.field.BW * 24) + ((unsigned char)HTSetting.field.ShortGI * 48) + ((unsigned char)HTSetting.field.MCS);
+	else if (HTSetting.field.MODE == MODE_OFDM)
+		rate_index = (unsigned char)(HTSetting.field.MCS) + 4;
+	else if (HTSetting.field.MODE == MODE_CCK)
+		rate_index = (unsigned char)(HTSetting.field.MCS);
+
+	if (rate_index < 0)
+		rate_index = 0;
+
+	if (rate_index >= rate_count)
+		rate_index = rate_count-1;
+
+	return (MCSMappingRateTable[rate_index] * 5)/10;
+}
 
 static int
-#if defined(USE_RT3352_MII)
-print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE_INIC* mp, unsigned char ApIdx)
-#else
-print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
-#endif
+print_sta_list_inic(webs_t wp, RT_802_11_MAC_TABLE_INIC* mp, int num_ss_rx, int ap_idx)
 {
-	int i, ret;
-	int hr, min, sec, rssi, stream_rx;
+	int ret, i, hr, min, sec, rssi;
 
 	ret = 0;
-	if (ApIdx == 0)
-		ret+=websWrite(wp, "\nAP Main Stations List\n");
-	else
-		ret+=websWrite(wp, "\nAP Guest Stations List\n");
 
-	ret+=websWrite(wp, "----------------------------------------\n");
-	ret+=websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-6s%-5s%-4s%-12s\n",
+	ret += websWrite(wp, "\nAP %s Stations List\n", (ap_idx == 0) ? "Main" : "Guest");
+	ret += websWrite(wp, "----------------------------------------\n");
+	ret += websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-6s%-5s%-4s%-12s\n",
 			   "MAC", "PhyMode", " BW", "MCS", "SGI", "LDPC", "STBC", "TRate", "RSSI", "PSM", "Connect Time");
 
-	stream_rx = nvram_get_int("rt_stream_rx");
-
-	for (i=0;i<mp->Num;i++)
-	{
-		if (mp->Entry[i].ApIdx == ApIdx)
-		{
-			hr = mp->Entry[i].ConnectedTime/3600;
-			min = (mp->Entry[i].ConnectedTime % 3600)/60;
-			sec = mp->Entry[i].ConnectedTime - hr*3600 - min*60;
-			rssi = -127;
-			if ((int)mp->Entry[i].AvgRssi0 > rssi && mp->Entry[i].AvgRssi0 != 0)
-				rssi = (int)mp->Entry[i].AvgRssi0;
-			if (stream_rx > 1) {
-				if ((int)mp->Entry[i].AvgRssi1 > rssi && mp->Entry[i].AvgRssi1 != 0)
-					rssi = (int)mp->Entry[i].AvgRssi1;
-			}
-			if (stream_rx > 2) {
-				if ((int)mp->Entry[i].AvgRssi2 > rssi && mp->Entry[i].AvgRssi2 != 0)
-					rssi = (int)mp->Entry[i].AvgRssi2;
-			}
-			
-			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %3s %3d %3s %4s %4s %4dM %4d %3s %02d:%02d:%02d\n",
-				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
-				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
-				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
+	for (i = 0; i < mp->Num; i++) {
+		if ((int)mp->Entry[i].ApIdx != ap_idx)
+			continue;
+		
+		hr = mp->Entry[i].ConnectedTime / 3600;
+		min = (mp->Entry[i].ConnectedTime % 3600) / 60;
+		sec = mp->Entry[i].ConnectedTime - hr * 3600 - min * 60;
+		rssi = -127;
+		if ((int)mp->Entry[i].AvgRssi0 > rssi && mp->Entry[i].AvgRssi0 != 0)
+			rssi = (int)mp->Entry[i].AvgRssi0;
+		if (num_ss_rx > 1) {
+			if ((int)mp->Entry[i].AvgRssi1 > rssi && mp->Entry[i].AvgRssi1 != 0)
+				rssi = (int)mp->Entry[i].AvgRssi1;
+		}
+		
+		ret += websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %3s %3d %3s %4s %4s %4dM %4d %3s %02d:%02d:%02d\n",
+				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1], mp->Entry[i].Addr[2],
+				mp->Entry[i].Addr[3], mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
 				GetPhyMode(mp->Entry[i].TxRate.field.MODE),
 				GetBW(mp->Entry[i].TxRate.field.BW),
 				mp->Entry[i].TxRate.field.MCS,
 				mp->Entry[i].TxRate.field.ShortGI ? "YES" : "NO",
-#if defined(USE_RT3352_MII)
 				"NO",
-#else
-				mp->Entry[i].TxRate.field.ldpc ? "YES" : "NO",
-#endif
 				mp->Entry[i].TxRate.field.STBC ? "YES" : "NO",
-				getRate_2g(mp->Entry[i].TxRate),
+				getRate_inic(mp->Entry[i].TxRate),
 				rssi,
 				mp->Entry[i].Psm ? "YES" : "NO",
 				hr, min, sec
 			);
-		}
 	}
 
 	return ret;
 }
+
+static int
+print_mac_table_inic(webs_t wp, const char *wif_name, int num_ss_rx, int is_guest_on)
+{
+	char mac_table_data[4096];
+	struct iwreq wrq;
+	RT_802_11_MAC_TABLE_INIC *mp;
+	int ret = 0;
+
+	bzero(mac_table_data, sizeof(mac_table_data));
+	wrq.u.data.pointer = mac_table_data;
+	wrq.u.data.length = sizeof(mac_table_data);
+	wrq.u.data.flags = 0;
+
+	if (wl_ioctl(wif_name, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0) {
+		mp = (RT_802_11_MAC_TABLE_INIC*)wrq.u.data.pointer;
+		
+		ret += print_sta_list_inic(wp, mp, num_ss_rx, 0);
+		if (is_guest_on)
+			ret += print_sta_list_inic(wp, mp, num_ss_rx, 1);
+	}
+
+	return ret;
+}
+#endif
 
 static int
 print_wmode(webs_t wp, unsigned int wmode, unsigned int phy_mode)
@@ -975,7 +1028,7 @@ print_wmode(webs_t wp, unsigned int wmode, unsigned int phy_mode)
 		if (wmode & WMODE_AC)
 			p += sprintf(p, "/ac");
 		if (p != buf)
-			ret += websWrite(wp, "HT PHY Mode	: 11%s\n", buf+1);
+			ret += websWrite(wp, "WPHY Mode\t: 11%s\n", buf+1);
 	} else {
 		switch (phy_mode)
 		{
@@ -1015,236 +1068,105 @@ print_wmode(webs_t wp, unsigned int wmode, unsigned int phy_mode)
 			break;
 		}
 		if (buf[0])
-			ret += websWrite(wp, "HT PHY Mode	: 11%s\n", buf);
+			ret += websWrite(wp, "WPHY Mode\t: 11%s\n", buf);
 	}
 
 	return ret;
 }
 
-int
-ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv)
+static int
+print_mac_table(webs_t wp, const char *wif_name, int num_ss_rx, int is_guest_on)
 {
+	char mac_table_data[4096];
+	struct iwreq wrq;
+	RT_802_11_MAC_TABLE *mp;
 	int ret = 0;
+
+	bzero(mac_table_data, sizeof(mac_table_data));
+	wrq.u.data.pointer = mac_table_data;
+	wrq.u.data.length = sizeof(mac_table_data);
+	wrq.u.data.flags = 0;
+
+	if (wl_ioctl(wif_name, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq) >= 0) {
+		mp = (RT_802_11_MAC_TABLE*)wrq.u.data.pointer;
+		
+		ret += print_sta_list(wp, mp, num_ss_rx, 0);
+		if (is_guest_on)
+			ret += print_sta_list(wp, mp, num_ss_rx, 1);
+	}
+
+	return ret;
+}
+
+static int
+print_radio_status(webs_t wp, int is_aband)
+{
+	int ret, i, channel, op_mode, ht_mode, is_guest_on, num_ss_rx;
+	unsigned int wmode, phy_mode;
+	const char *caption, *wif_ap[2], *wif_wds[4], *wif_apcli;
+	struct iw_range range;
+	double freq;
+	char buffer[sizeof(iwrange) * 2];
+	unsigned char mac[8];
+	struct iwreq wrq0;
+	struct iwreq wrq1;
+	struct iwreq wrq2;
+
+	ret = 0;
+
 #if BOARD_HAS_5G_RADIO
-	int channel;
-	int wl_mode_x;
-	char *caption;
-	struct iw_range	range;
-	double freq;
-	char mac_table_data[4096];
-	char buffer[sizeof(iwrange) * 2];
-	unsigned char mac[8];
-	struct iwreq wrq0;
-	struct iwreq wrq1;
-	struct iwreq wrq2;
-	struct iwreq wrq3;
-	unsigned int wmode, phy_mode;
-
-	if (nvram_match("wl_radio_x", "0")
+	if (is_aband) {
+		if (nvram_match("wl_radio_x", "0")
 #if defined(USE_IWPRIV_RADIO_5G)
-	 || nvram_match("mlme_radio_wl", "0")
+		 || nvram_match("mlme_radio_wl", "0")
 #endif
-	   )
-	{
-		ret+=websWrite(wp, "Radio is disabled\n");
-		return ret;
-	}
-
-	wl_mode_x = nvram_get_int("wl_mode_x");
-
-	caption = (wl_mode_x == 1) ? "WDS" : "AP Main";
-
-	if (wl_mode_x != 3)
-	{
-		if (wl_ioctl(IFNAME_5G_MAIN, SIOCGIWAP, &wrq0) < 0)
-		{
-			ret+=websWrite(wp, "Radio is disabled\n");
+		   ) {
+			ret += websWrite(wp, "Radio %s is disabled\n", "5GHz");
 			return ret;
 		}
-		wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
-		ret+=websWrite(wp, "MAC (%s)	: %02X:%02X:%02X:%02X:%02X:%02X\n", caption,
-			(unsigned char)wrq0.u.ap_addr.sa_data[0],
-			(unsigned char)wrq0.u.ap_addr.sa_data[1],
-			(unsigned char)wrq0.u.ap_addr.sa_data[2],
-			(unsigned char)wrq0.u.ap_addr.sa_data[3],
-			(unsigned char)wrq0.u.ap_addr.sa_data[4],
-			(unsigned char)wrq0.u.ap_addr.sa_data[5]);
-	}
-
-	if (wl_mode_x != 1 && wl_mode_x != 3 && nvram_match("wl_guest_enable", "1"))
-	{
-		if (wl_ioctl(IFNAME_5G_GUEST, SIOCGIWAP, &wrq0) >= 0)
-		{
-			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
-			ret+=websWrite(wp, "MAC (AP Guest)	: %02X:%02X:%02X:%02X:%02X:%02X\n", 
-				(unsigned char)wrq0.u.ap_addr.sa_data[0],
-				(unsigned char)wrq0.u.ap_addr.sa_data[1],
-				(unsigned char)wrq0.u.ap_addr.sa_data[2],
-				(unsigned char)wrq0.u.ap_addr.sa_data[3],
-				(unsigned char)wrq0.u.ap_addr.sa_data[4],
-				(unsigned char)wrq0.u.ap_addr.sa_data[5]);
-		}
-	}
-
-	if (wl_mode_x == 3 || wl_mode_x == 4)
-	{
-		if (get_interface_hwaddr(IFNAME_5G_APCLI, mac) == 0)
-		{
-			ret+=websWrite(wp, "MAC (STA)	: %02X:%02X:%02X:%02X:%02X:%02X\n",
-				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-		}
-	}
-
-	if (wl_ioctl(IFNAME_5G_MAIN, SIOCGIWFREQ, &wrq1) < 0)
-		return ret;
-
-	bzero(buffer, sizeof(buffer));
-	wrq2.u.data.pointer = (caddr_t) buffer;
-	wrq2.u.data.length = sizeof(buffer);
-	wrq2.u.data.flags = 0;
-
-	if (wl_ioctl(IFNAME_5G_MAIN, SIOCGIWRANGE, &wrq2) < 0)
-		return ret;
-
-	if (ralink_get_range_info(&range, buffer, wrq2.u.data.length) < 0)
-		return ret;
-
-	wmode = 0;
-	phy_mode = 0;
-
-	bzero(buffer, sizeof(unsigned long));
-	wrq2.u.data.length = sizeof(unsigned long);
-	wrq2.u.data.pointer = (caddr_t) buffer;
-	wrq2.u.data.flags = RT_OID_802_11_PHY_MODE;
-
-	if (wl_ioctl(IFNAME_5G_MAIN, RT_PRIV_IOCTL, &wrq2) < 0) {
-		wrq2.u.data.flags = RT_OID_GET_PHY_MODE;
-		if (wl_ioctl(IFNAME_5G_MAIN, RT_PRIV_IOCTL, &wrq2) < 0)
-			return ret;
-		if (wrq2.u.data.length == 1)
-			memcpy(&phy_mode, wrq2.u.data.pointer, wrq2.u.data.length);
-		else
-			phy_mode = wrq2.u.mode;
-	} else {
-		memcpy(&wmode, wrq2.u.data.pointer, wrq2.u.data.length);
-	}
-
-	freq = iw_freq2float(&(wrq1.u.freq));
-	if (freq < KILO)
-		channel = (int) freq;
-	else
-	{
-		channel = iw_freq_to_channel(freq, &range);
-		if (channel < 0)
-			return ret;
-	}
-
-	caption = "Operation Mode";
-
-	if (wl_mode_x == 1)
-	{
-		ret+=websWrite(wp, "%s	: WDS bridge\n", caption);
-	}
-	else if (wl_mode_x == 2)
-	{
-		ret+=websWrite(wp, "%s	: WDS repeater (bridge + AP)\n", caption);
-	}
-	else if (wl_mode_x == 3)
-	{
-		ret+=websWrite(wp, "%s	: AP-Client\n", caption);
-	}
-	else if (wl_mode_x == 4)
-	{
-		ret+=websWrite(wp, "%s	: AP-Client + AP\n", caption);
-	}
-	else
-	{
-		ret+=websWrite(wp, "%s	: AP\n", caption);
-	}
-
-	ret+=print_wmode(wp, wmode, phy_mode);
-
-	ret+=websWrite(wp, "Channel Main	: %d\n", channel);
-
-	if (wl_mode_x == 3 || wl_mode_x == 4)
-	{
-		if (get_apcli_peer_connected(IFNAME_5G_APCLI, &wrq0))
-		{
-			ret+=websWrite(wp, "STA Connected	: YES -> [%02X:%02X:%02X:%02X:%02X:%02X]\n",
-					(unsigned char)wrq0.u.ap_addr.sa_data[0],
-					(unsigned char)wrq0.u.ap_addr.sa_data[1],
-					(unsigned char)wrq0.u.ap_addr.sa_data[2],
-					(unsigned char)wrq0.u.ap_addr.sa_data[3],
-					(unsigned char)wrq0.u.ap_addr.sa_data[4],
-					(unsigned char)wrq0.u.ap_addr.sa_data[5]);
-		}
-		else
-		{
-			ret+=websWrite(wp, "STA Connected	: NO\n");
-		}
-	}
-
-	if (wl_mode_x == 1 || wl_mode_x == 3)
-	{
-		return ret;
-	}
-
-	memset(mac_table_data, 0, sizeof(mac_table_data));
-	wrq3.u.data.pointer = mac_table_data;
-	wrq3.u.data.length = sizeof(mac_table_data);
-	wrq3.u.data.flags = 0;
-	if (wl_ioctl(IFNAME_5G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq3) >= 0) {
-		RT_802_11_MAC_TABLE* mp=(RT_802_11_MAC_TABLE*)wrq3.u.data.pointer;
 		
-		ret+=print_sta_list(wp, mp, 0);
-		
-		if (wl_mode_x != 1 && wl_mode_x != 3 && nvram_match("wl_guest_enable", "1"))
-			ret+=print_sta_list(wp, mp, 1);
-	}
+		wif_ap[0]  = IFNAME_5G_MAIN;
+		wif_ap[1]  = IFNAME_5G_GUEST;
+		wif_wds[0] = IFNAME_5G_WDS0;
+		wif_wds[1] = IFNAME_5G_WDS1;
+		wif_wds[2] = IFNAME_5G_WDS2;
+		wif_wds[3] = IFNAME_5G_WDS3;
+		wif_apcli  = IFNAME_5G_APCLI;
+	} else
 #endif
-	return ret;
-}
-
-int
-ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
-{
-	int ret = 0;
-	int channel;
-	int rt_mode_x;
-	char *caption;
-	struct iw_range	range;
-	double freq;
-	char mac_table_data[4096];
-	char buffer[sizeof(iwrange) * 2];
-	unsigned char mac[8];
-	struct iwreq wrq0;
-	struct iwreq wrq1;
-	struct iwreq wrq2;
-	struct iwreq wrq3;
-	unsigned int wmode, phy_mode;
-
-	if (nvram_match("rt_radio_x", "0")
+	{
+		if (nvram_match("rt_radio_x", "0")
 #if defined(USE_IWPRIV_RADIO_2G) || defined(USE_RT3352_MII)
-	 || nvram_match("mlme_radio_rt", "0")
+		 || nvram_match("mlme_radio_rt", "0")
 #endif
-	   )
-	{
-		ret+=websWrite(wp, "Radio is disabled\n");
-		return ret;
+		   ) {
+			ret += websWrite(wp, "Radio %s is disabled\n", "2.4GHz");
+			return ret;
+		}
+		
+		wif_ap[0]  = IFNAME_2G_MAIN;
+		wif_ap[1]  = IFNAME_2G_GUEST;
+		wif_wds[0] = IFNAME_2G_WDS0;
+		wif_wds[1] = IFNAME_2G_WDS1;
+		wif_wds[2] = IFNAME_2G_WDS2;
+		wif_wds[3] = IFNAME_2G_WDS3;
+		wif_apcli  = IFNAME_2G_APCLI;
 	}
 
-	rt_mode_x = nvram_get_int("rt_mode_x");
-	caption = (rt_mode_x == 1) ? "WDS" : "AP Main";
+	op_mode = nvram_wlan_get_int(is_aband, "mode_x");
+	ht_mode = nvram_wlan_get_int(is_aband, "gmode");
+	num_ss_rx = nvram_wlan_get_int(is_aband, "stream_rx");
+	is_guest_on = (nvram_wlan_get_int(is_aband, "guest_enable") == 1);
 
-	if (rt_mode_x != 3)
-	{
-		if (wl_ioctl(IFNAME_2G_MAIN, SIOCGIWAP, &wrq0) < 0)
-		{
-			ret+=websWrite(wp, "Radio is disabled\n");
+	caption = (op_mode == 1) ? "WDS" : "AP Main";
+
+	if (op_mode != 3) {
+		if (wl_ioctl(wif_ap[0], SIOCGIWAP, &wrq0) < 0) {
+			ret += websWrite(wp, "Radio is disabled\n");
 			return ret;
 		}
 		wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
-		ret+=websWrite(wp, "MAC (%s)	: %02X:%02X:%02X:%02X:%02X:%02X\n", caption,
+		ret += websWrite(wp, "MAC (%s)\t: %02X:%02X:%02X:%02X:%02X:%02X\n", caption,
 			(unsigned char)wrq0.u.ap_addr.sa_data[0],
 			(unsigned char)wrq0.u.ap_addr.sa_data[1],
 			(unsigned char)wrq0.u.ap_addr.sa_data[2],
@@ -1253,12 +1175,10 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 			(unsigned char)wrq0.u.ap_addr.sa_data[5]);
 	}
 
-	if (rt_mode_x != 1 && rt_mode_x != 3 && nvram_match("rt_guest_enable", "1"))
-	{
-		if (wl_ioctl(IFNAME_2G_GUEST, SIOCGIWAP, &wrq0) >= 0)
-		{
+	if (op_mode != 1 && op_mode != 3 && is_guest_on) {
+		if (wl_ioctl(wif_ap[1], SIOCGIWAP, &wrq0) >= 0) {
 			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
-			ret+=websWrite(wp, "MAC (AP Guest)	: %02X:%02X:%02X:%02X:%02X:%02X\n", 
+			ret += websWrite(wp, "MAC (%s)\t: %02X:%02X:%02X:%02X:%02X:%02X\n", "AP Guest",
 				(unsigned char)wrq0.u.ap_addr.sa_data[0],
 				(unsigned char)wrq0.u.ap_addr.sa_data[1],
 				(unsigned char)wrq0.u.ap_addr.sa_data[2],
@@ -1268,16 +1188,14 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 		}
 	}
 
-	if (rt_mode_x == 3 || rt_mode_x == 4)
-	{
-		if (get_interface_hwaddr(IFNAME_2G_APCLI, mac) == 0)
-		{
-			ret+=websWrite(wp, "MAC (STA)	: %02X:%02X:%02X:%02X:%02X:%02X\n",
+	if (op_mode == 3 || op_mode == 4) {
+		if (get_interface_hwaddr(wif_apcli, mac) == 0) {
+			ret += websWrite(wp, "MAC (%s)\t: %02X:%02X:%02X:%02X:%02X:%02X\n", "AP-Client",
 				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 		}
 	}
 
-	if (wl_ioctl(IFNAME_2G_MAIN, SIOCGIWFREQ, &wrq1) < 0)
+	if (wl_ioctl(wif_ap[0], SIOCGIWFREQ, &wrq1) < 0)
 		return ret;
 
 	bzero(buffer, sizeof(buffer));
@@ -1285,7 +1203,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 	wrq2.u.data.length = sizeof(buffer);
 	wrq2.u.data.flags = 0;
 
-	if (wl_ioctl(IFNAME_2G_MAIN, SIOCGIWRANGE, &wrq2) < 0)
+	if (wl_ioctl(wif_ap[0], SIOCGIWRANGE, &wrq2) < 0)
 		return ret;
 
 	if (ralink_get_range_info(&range, buffer, wrq2.u.data.length) < 0)
@@ -1299,30 +1217,10 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 	wrq2.u.data.pointer = (caddr_t) buffer;
 	wrq2.u.data.flags = RT_OID_802_11_PHY_MODE;
 
-	if (wl_ioctl(IFNAME_2G_MAIN, RT_PRIV_IOCTL, &wrq2) < 0) {
+	if (wl_ioctl(wif_ap[0], RT_PRIV_IOCTL, &wrq2) < 0) {
 		wrq2.u.data.flags = RT_OID_GET_PHY_MODE;
-		if (wl_ioctl(IFNAME_2G_MAIN, RT_PRIV_IOCTL, &wrq2) < 0) {
-			switch (nvram_get_int("rt_gmode"))
-			{
-			case 1:
-				phy_mode = PHY_11BG_MIXED;
-				break;
-			case 5:
-				phy_mode = PHY_11GN_MIXED;
-				break;
-			case 3:
-				phy_mode = PHY_11N;
-				break;
-			case 4:
-				phy_mode = PHY_11G;
-				break;
-			case 0:
-				phy_mode = PHY_11B;
-				break;
-			default:
-				phy_mode = PHY_11BGN_MIXED;
-				break;
-			}
+		if (wl_ioctl(wif_ap[0], RT_PRIV_IOCTL, &wrq2) < 0) {
+			phy_mode = calc_phy_mode(ht_mode, is_aband);
 		} else {
 			if (wrq2.u.data.length == 1)
 				memcpy(&phy_mode, wrq2.u.data.pointer, wrq2.u.data.length);
@@ -1334,90 +1232,98 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
 	}
 
 	freq = iw_freq2float(&(wrq1.u.freq));
-	if (freq < KILO)
+	if (freq < KILO) {
 		channel = (int) freq;
-	else
-	{
+	} else {
 		channel = iw_freq_to_channel(freq, &range);
 		if (channel < 0)
-			return ret;
+			channel = 0;
 	}
 
 	caption = "Operation Mode";
 
-	if (rt_mode_x == 1)
-	{
-		ret+=websWrite(wp, "%s	: WDS bridge\n", caption);
-	}
-	else if (rt_mode_x == 2)
-	{
-		ret+=websWrite(wp, "%s	: WDS repeater (bridge + AP)\n", caption);
-	}
-	else if (rt_mode_x == 3)
-	{
-		ret+=websWrite(wp, "%s	: AP-Client\n", caption);
-	}
-	else if (rt_mode_x == 4)
-	{
-		ret+=websWrite(wp, "%s	: AP-Client + AP\n", caption);
-	}
+	if (op_mode == 1)
+		ret += websWrite(wp, "%s\t: WDS bridge\n", caption);
+	else if (op_mode == 2)
+		ret += websWrite(wp, "%s\t: WDS repeater (bridge + AP)\n", caption);
+	else if (op_mode == 3)
+		ret += websWrite(wp, "%s\t: AP-Client\n", caption);
+	else if (op_mode == 4)
+		ret += websWrite(wp, "%s\t: AP-Client + AP\n", caption);
 	else
-	{
-		ret+=websWrite(wp, "%s	: AP\n", caption);
-	}
+		ret += websWrite(wp, "%s\t: AP\n", caption);
 
-	ret+=print_wmode(wp, wmode, phy_mode);
+	ret += print_wmode(wp, wmode, phy_mode);
 
-	ret+=websWrite(wp, "Channel Main	: %d\n", channel);
+	ret += websWrite(wp, "Channel Main\t: %d\n", channel);
 
-	if (rt_mode_x == 3 || rt_mode_x == 4)
-	{
-		if (get_apcli_peer_connected(IFNAME_2G_APCLI, &wrq0))
-		{
-			ret+=websWrite(wp, "STA Connected	: YES -> [%02X:%02X:%02X:%02X:%02X:%02X]\n",
-					(unsigned char)wrq0.u.ap_addr.sa_data[0],
-					(unsigned char)wrq0.u.ap_addr.sa_data[1],
-					(unsigned char)wrq0.u.ap_addr.sa_data[2],
-					(unsigned char)wrq0.u.ap_addr.sa_data[3],
-					(unsigned char)wrq0.u.ap_addr.sa_data[4],
-					(unsigned char)wrq0.u.ap_addr.sa_data[5]);
-		}
-		else
-		{
-			ret+=websWrite(wp, "STA Connected	: NO\n");
-		}
-	}
-
-	if (rt_mode_x == 1 || rt_mode_x == 3)
-	{
-		return ret;
-	}
-
-	memset(mac_table_data, 0, sizeof(mac_table_data));
-	wrq3.u.data.pointer = mac_table_data;
-	wrq3.u.data.length = sizeof(mac_table_data);
-	wrq3.u.data.flags = 0;
-
+	if (op_mode == 3 || op_mode == 4) {
+		struct iwreq wrq;
+		
+		if (get_apcli_peer_connected(wif_apcli, &wrq)) {
 #if defined(USE_RT3352_MII)
-	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq3) >= 0) {
-		RT_802_11_MAC_TABLE_INIC* mp = (RT_802_11_MAC_TABLE_INIC*)wrq3.u.data.pointer;
-		
-		ret+=print_sta_list_2g(wp, mp, 0);
-		
-		if (rt_mode_x != 1 && rt_mode_x != 3 && nvram_match("rt_guest_enable", "1"))
-			ret+=print_sta_list_2g(wp, mp, 1);
-	}
-#else
-	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq3) >= 0) {
-		RT_802_11_MAC_TABLE* mp = (RT_802_11_MAC_TABLE*)wrq3.u.data.pointer;
-		ret+=print_sta_list_2g(wp, mp, 0);
-		
-		if (rt_mode_x != 1 && rt_mode_x != 3 && nvram_match("rt_guest_enable", "1"))
-			ret+=print_sta_list_2g(wp, mp, 1);
-	}
+			if (!is_aband) {
+				ret += websWrite(wp, "STA Connected\t: YES -> [%02X:%02X:%02X:%02X:%02X:%02X]\n",
+					(unsigned char)wrq.u.ap_addr.sa_data[0],
+					(unsigned char)wrq.u.ap_addr.sa_data[1],
+					(unsigned char)wrq.u.ap_addr.sa_data[2],
+					(unsigned char)wrq.u.ap_addr.sa_data[3],
+					(unsigned char)wrq.u.ap_addr.sa_data[4],
+					(unsigned char)wrq.u.ap_addr.sa_data[5]);
+			} else
 #endif
+			{
+				RT_802_11_MAC_ENTRY me;
+				
+				if (get_apcli_wds_entry(wif_apcli, &me)) {
+					ret += print_apcli_wds_header(wp, "\nAP-Client Connection\n");
+					ret += print_apcli_wds_entry(wp, &me, num_ss_rx);
+				}
+			}
+		} else {
+			ret += websWrite(wp, "STA Connected\t: %s\n", "NO");
+		}
+	}
+
+	if ((op_mode == 1 || op_mode == 2)
+#if defined(USE_RT3352_MII)
+	    && (is_aband)
+#endif
+	    ) {
+		RT_802_11_MAC_ENTRY me;
+		
+		ret += print_apcli_wds_header(wp, "\nWDS Peers\n");
+		
+		for (i = 0; i < 4; i++) {
+			if (get_apcli_wds_entry(wif_wds[i], &me))
+				ret += print_apcli_wds_entry(wp, &me, num_ss_rx);
+		}
+	}
+
+	if (op_mode != 1 && op_mode != 3) {
+#if defined(USE_RT3352_MII)
+		if (!is_aband)
+			ret += print_mac_table_inic(wp, wif_ap[0], num_ss_rx, is_guest_on);
+		else
+#endif
+		ret += print_mac_table(wp, wif_ap[0], num_ss_rx, is_guest_on);
+	}
 
 	return ret;
+}
+
+#if BOARD_HAS_5G_RADIO
+int
+ej_wl_status_5g(int eid, webs_t wp, int argc, char **argv)
+{
+	return print_radio_status(wp, 1);
+}
+#endif
+
+int
+ej_wl_status_2g(int eid, webs_t wp, int argc, char **argv)
+{
+	return print_radio_status(wp, 0);
 }
 
 int 
@@ -1514,10 +1420,10 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char **argv)
 #define SSURV_LINE_LEN		(4+33+20+23+9+7+7+3)		// Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType
 #define SSURV_LINE_LEN_WPS	(4+33+20+23+9+7+7+3+4+5)	// Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType+WPS+PIN
 
-int 
+#if BOARD_HAS_5G_RADIO
+int
 ej_wl_scan_5g(int eid, webs_t wp, int argc, char **argv)
 {
-#if BOARD_HAS_5G_RADIO
 	int retval = 0;
 	int apCount = 0;
 	char data[8192];
@@ -1616,10 +1522,8 @@ ej_wl_scan_5g(int eid, webs_t wp, int argc, char **argv)
 	retval += websWrite(wp, "]");
 
 	return retval;
-#else
-	return websWrite(wp, "[%s]", "[\"\", \"\", \"\", \"\"]");
-#endif
 }
+#endif
 
 int 
 ej_wl_scan_2g(int eid, webs_t wp, int argc, char **argv)
@@ -1722,29 +1626,27 @@ ej_wl_scan_2g(int eid, webs_t wp, int argc, char **argv)
 	return retval;
 }
 
-int 
+#if BOARD_HAS_5G_RADIO
+int
 ej_wl_bssid_5g(int eid, webs_t wp, int argc, char **argv)
 {
 	char bssid[32] = {0};
-#if BOARD_HAS_5G_RADIO
 	unsigned char mac[8];
-#endif
 
 	snprintf(bssid, sizeof(bssid), "%s", nvram_safe_get("wl_macaddr"));
-#if BOARD_HAS_5G_RADIO
 	if (get_interface_hwaddr(IFNAME_5G_MAIN, mac) == 0)
 	{
 		sprintf(bssid, "%02X:%02X:%02X:%02X:%02X:%02X",
 			mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	}
-#endif
 
 	websWrite(wp, "function get_bssid_ra0() { return '%s';}\n", bssid);
 
 	return 0;
 }
+#endif
 
-int 
+int
 ej_wl_bssid_2g(int eid, webs_t wp, int argc, char **argv)
 {
 	char bssid[32] = {0};

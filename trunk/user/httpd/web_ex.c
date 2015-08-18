@@ -677,9 +677,12 @@ ej_dump(int eid, webs_t wp, int argc, char **argv)
 	if (strlen(script) > 1)
 		sys_script(script);
 
+#if BOARD_HAS_5G_RADIO
 	if (strcmp(file, "wlan11b.log")==0)
 		return (ej_wl_status_5g(eid, wp, 0, NULL));
-	else if (strcmp(file, "wlan11b_2g.log")==0)
+	else
+#endif
+	if (strcmp(file, "wlan11b_2g.log")==0)
 		return (ej_wl_status_2g(eid, wp, 0, NULL));
 	else if (strcmp(file, "eth_wan.log")==0)
 		return ej_eth_status_wan(eid, wp, 0, NULL);
@@ -1571,6 +1574,15 @@ wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 						(unsigned char)wrq.u.ap_addr.sa_data[3],
 						(unsigned char)wrq.u.ap_addr.sa_data[4],
 						(unsigned char)wrq.u.ap_addr.sa_data[5]);
+						
+#if 0
+					{
+						RT_802_11_MAC_ENTRY me;
+						
+						if (get_apcli_wds_entry(man_ifname, &me)) {
+						}
+					}
+#endif
 				} else {
 					strcpy(apclilink, "---");
 					phy_failed = 2; // STA not connected
@@ -3694,10 +3706,12 @@ struct ej_handler ej_handlers[] =
 	{ "get_static_ccount", ej_get_static_ccount},
 	{ "get_vpns_client", ej_get_vpns_client},
 	{ "wl_auth_list", ej_wl_auth_list},
+#if BOARD_HAS_5G_RADIO
 	{ "wl_scan_5g", ej_wl_scan_5g},
-	{ "wl_scan_2g", ej_wl_scan_2g},
 	{ "wl_bssid_5g", ej_wl_bssid_5g},
+#endif
 	{ "wl_bssid_2g", ej_wl_bssid_2g},
+	{ "wl_scan_2g", ej_wl_scan_2g},
 	{ "shown_language_option", ej_shown_language_option},
 	{ "hardware_pins", ej_hardware_pins_hook},
 	{ "detect_internet", ej_detect_internet_hook},

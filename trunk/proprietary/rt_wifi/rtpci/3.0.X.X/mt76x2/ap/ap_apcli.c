@@ -425,14 +425,14 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 			}
 #endif /* MAC_REPEATER_SUPPORT */
 
-			DBGPRINT(RT_DEBUG_TRACE, ("!!! APCLI LINK UP - IF(apcli%d) AuthMode(%d)=%s, WepStatus(%d)=%s !!!\n", 
-					ifIndex, 
+			DBGPRINT(RT_DEBUG_TRACE, ("!!! APCLI LINK UP - IF(%s%d) AuthMode(%d)=%s, WepStatus(%d)=%s !!!\n", 
+					INF_APCLI_DEV_NAME, ifIndex, 
 					pAd->ApCfg.ApCliTab[ifIndex].wdev.AuthMode, GetAuthMode(pAd->ApCfg.ApCliTab[ifIndex].wdev.AuthMode),
 					pAd->ApCfg.ApCliTab[ifIndex].wdev.WepStatus, GetEncryptType(pAd->ApCfg.ApCliTab[ifIndex].wdev.WepStatus)));
 		}
 		else
 		{
-			DBGPRINT(RT_DEBUG_ERROR, ("!!! ERROR : APCLI LINK UP - IF(apcli%d)!!!\n", ifIndex));
+			DBGPRINT(RT_DEBUG_ERROR, ("!!! ERROR : APCLI LINK UP - IF(%s%d)!!!\n", INF_APCLI_DEV_NAME, ifIndex));
 			result = FALSE;
 			break;
 		}
@@ -451,15 +451,15 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 #endif /* MAC_REPEATER_SUPPORT */
 			)
 		{
-			DBGPRINT(RT_DEBUG_ERROR, ("!!! ERROR : This link had existed - IF(apcli%d)!!!\n", ifIndex));
+			DBGPRINT(RT_DEBUG_ERROR, ("!!! ERROR : This link had existed - IF(%s%d)!!!\n", INF_APCLI_DEV_NAME, ifIndex));
 			result = FALSE;
 			break;
 		}
 #endif /* APCLI_CONNECTION_TRIAL */	
 
 		wdev = &pApCliEntry->wdev;
-		printk("!!! APCLI LINK UP - IF(apcli%d) AuthMode(%d)=%s, WepStatus(%d)=%s!\n",
-					ifIndex, 
+		printk("!!! APCLI LINK UP - IF(%s%d) AuthMode(%d)=%s, WepStatus(%d)=%s!\n",
+					INF_APCLI_DEV_NAME, ifIndex, 
 					wdev->AuthMode, GetAuthMode(wdev->AuthMode),
 					wdev->WepStatus, GetEncryptType(wdev->WepStatus));
 
@@ -677,8 +677,8 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 				 
 				if (wdev->DesiredTransmitSetting.field.MCS != MCS_AUTO)
 				{
-					DBGPRINT(RT_DEBUG_TRACE, ("IF-apcli%d : Desired MCS = %d\n",
-								ifIndex, wdev->DesiredTransmitSetting.field.MCS));
+					DBGPRINT(RT_DEBUG_TRACE, ("IF-%s%d : Desired MCS = %d\n",
+								INF_APCLI_DEV_NAME, ifIndex, wdev->DesiredTransmitSetting.field.MCS));
 
 					set_ht_fixed_mcs(pAd, pMacEntry, wdev->DesiredTransmitSetting.field.MCS, wdev->HTPhyMode.field.MCS);
 				}
@@ -958,15 +958,15 @@ VOID ApCliLinkDown(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 		{
 			CliIdx = ((ifIndex - 64) % 16);
 			ifIndex = ((ifIndex - 64) / 16);
-			printk("!!! REPEATER CLI LINK DOWN - IF(apcli%d) Cli %d !!!\n", ifIndex, CliIdx);
+			printk("!!! REPEATER CLI LINK DOWN - IF(%s%d) Cli %d !!!\n", INF_APCLI_DEV_NAME, ifIndex, CliIdx);
 		}
 		else
 #endif /* MAC_REPEATER_SUPPORT */
-		printk("!!! APCLI LINK DOWN - IF(apcli%d)!!!\n", ifIndex);
+		printk("!!! APCLI LINK DOWN - IF(%s%d)!!!\n", INF_APCLI_DEV_NAME, ifIndex);
 	}
 	else
 	{
-		DBGPRINT(RT_DEBUG_TRACE, ("!!! ERROR : APCLI LINK DOWN - IF(apcli%d)!!!\n", ifIndex));
+		DBGPRINT(RT_DEBUG_TRACE, ("!!! ERROR : APCLI LINK DOWN - IF(%s%d)!!!\n", INF_APCLI_DEV_NAME, ifIndex));
 		return;
 	}
 
@@ -1229,7 +1229,7 @@ VOID ApCliIfMonitor(RTMP_ADAPTER *pAd)
 					if ((pMacEntry->PortSecured != WPA_802_1X_PORT_SECURED) &&
 						RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pReptCliEntry->CliTriggerTime + (5 * OS_HZ))))
 					{
-							DBGPRINT(RT_DEBUG_TRACE, ("%s, wcid = %d, ApCli%d, CliIdx = %d\n", __func__, Wcid, index, CliIdx));
+							DBGPRINT(RT_DEBUG_TRACE, ("%s, wcid = %d, %s%d, CliIdx = %d\n", __func__, Wcid, INF_APCLI_DEV_NAME, index, CliIdx));
 							RTMPRemoveRepeaterDisconnectEntry(pAd, index, CliIdx);
 #ifdef DOT11_N_SUPPORT
 							/* free resources of BA*/
@@ -1242,7 +1242,7 @@ VOID ApCliIfMonitor(RTMP_ADAPTER *pAd)
 					{
 						if (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pReptCliEntry->CliTriggerTime + (5 * OS_HZ))))
 						{
-							DBGPRINT(RT_DEBUG_TRACE, ("%s, ApCli%d, CliIdx = %d\n", __func__, index, CliIdx));
+							DBGPRINT(RT_DEBUG_TRACE, ("%s, %s%d, CliIdx = %d\n", __func__, INF_APCLI_DEV_NAME, index, CliIdx));
 						RTMPRemoveRepeaterEntry(pAd, index, CliIdx);
 					}
 				}
@@ -3015,11 +3015,11 @@ BOOLEAN ApCliAutoConnectExec(
 				DBGPRINT(RT_DEBUG_TRACE, 
 						("Found desired ssid in Entry %2d:\n", entryIdx));
 				DBGPRINT(RT_DEBUG_TRACE,
-						("I/F(apcli%d) ApCliAutoConnectExec:(Len=%d,Ssid=%s, Channel=%d, Rssi=%d)\n", 
-						ifIdx, pBssEntry->SsidLen, pBssEntry->Ssid,
+						("I/F(%s%d) ApCliAutoConnectExec:(Len=%d,Ssid=%s, Channel=%d, Rssi=%d)\n", 
+						INF_APCLI_DEV_NAME, ifIdx, pBssEntry->SsidLen, pBssEntry->Ssid,
 						pBssEntry->Channel, pBssEntry->Rssi));
 				DBGPRINT(RT_DEBUG_TRACE,
-						("I/F(apcli%d) ApCliAutoConnectExec::(AuthMode=%s, EncrypType=%s)\n", ifIdx,
+						("I/F(%s%d) ApCliAutoConnectExec::(AuthMode=%s, EncrypType=%s)\n", INF_APCLI_DEV_NAME, ifIdx,
 						GetAuthMode(pBssEntry->AuthMode),
 						GetEncryptType(pBssEntry->WepStatus)) );
 				NdisMoveMemory(&pSsidBssTab->BssEntry[pSsidBssTab->BssNr++],

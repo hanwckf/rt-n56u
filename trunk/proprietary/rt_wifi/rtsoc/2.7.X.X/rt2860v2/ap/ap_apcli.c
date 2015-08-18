@@ -329,14 +329,14 @@ BOOLEAN ApCliLinkUp(
 			}
 #endif /* MAC_REPEATER_SUPPORT */
 
-			printk("!!! APCLI LINK UP - IF(apcli%d) AuthMode(%d)=%s, WepStatus(%d)=%s !!!\n", 
-										ifIndex, 
+			printk("!!! APCLI LINK UP - IF(%s%d) AuthMode(%d)=%s, WepStatus(%d)=%s !!!\n", 
+										INF_APCLI_DEV_NAME, ifIndex, 
 										pAd->ApCfg.ApCliTab[ifIndex].AuthMode, GetAuthMode(pAd->ApCfg.ApCliTab[ifIndex].AuthMode),
 										pAd->ApCfg.ApCliTab[ifIndex].WepStatus, GetEncryptType(pAd->ApCfg.ApCliTab[ifIndex].WepStatus));
 		}
 		else
 		{
-			DBGPRINT(RT_DEBUG_TRACE, ("!!! ERROR : APCLI LINK UP - IF(apcli%d)!!!\n", ifIndex));
+			DBGPRINT(RT_DEBUG_TRACE, ("!!! ERROR : APCLI LINK UP - IF(%s%d)!!!\n", INF_APCLI_DEV_NAME, ifIndex));
 			result = FALSE;
 			break;
 		}
@@ -355,7 +355,7 @@ BOOLEAN ApCliLinkUp(
 #endif /* MAC_REPEATER_SUPPORT */
 			)
 		{
-			DBGPRINT(RT_DEBUG_ERROR, ("!!! ERROR : This link had existed - IF(apcli%d)!!!\n", ifIndex));
+			DBGPRINT(RT_DEBUG_ERROR, ("!!! ERROR : This link had existed - IF(%s%d)!!!\n", INF_APCLI_DEV_NAME, ifIndex));
 			result = FALSE;
 			break;
 		}
@@ -633,7 +633,7 @@ BOOLEAN ApCliLinkUp(
 				 
 				if (pAd->ApCfg.ApCliTab[ifIndex].DesiredTransmitSetting.field.MCS != MCS_AUTO)
 				{
-					DBGPRINT(RT_DEBUG_TRACE, ("IF-apcli%d : Desired MCS = %d\n", ifIndex,
+					DBGPRINT(RT_DEBUG_TRACE, ("IF-%s%d : Desired MCS = %d\n", INF_APCLI_DEV_NAME, ifIndex,
 						pAd->ApCfg.ApCliTab[ifIndex].DesiredTransmitSetting.field.MCS));
 
 					if (pAd->ApCfg.ApCliTab[ifIndex].DesiredTransmitSetting.field.MCS == 32)
@@ -928,15 +928,15 @@ VOID ApCliLinkDown(
 		{
 			CliIdx = ((ifIndex - 64) % 16);
 			ifIndex = ((ifIndex - 64) / 16);
-			printk("!!! REPEATER CLI LINK DOWN - IF(apcli%d) Cli %d !!!\n", ifIndex, CliIdx);
+			printk("!!! REPEATER CLI LINK DOWN - IF(%s%d) Cli %d !!!\n", INF_APCLI_DEV_NAME, ifIndex, CliIdx);
 		}
 		else
 #endif /* MAC_REPEATER_SUPPORT */
-		printk("!!! APCLI LINK DOWN - IF(apcli%d)!!!\n", ifIndex);
+		printk("!!! APCLI LINK DOWN - IF(%s%d)!!!\n", INF_APCLI_DEV_NAME, ifIndex);
 	}
 	else
 	{
-		printk("!!! ERROR : APCLI LINK DOWN - IF(apcli%d)!!!\n", ifIndex);
+		printk("!!! ERROR : APCLI LINK DOWN - IF(%s%d)!!!\n", INF_APCLI_DEV_NAME, ifIndex);
 		return;
 	}
     	
@@ -2927,11 +2927,11 @@ BOOLEAN ApCliAutoConnectExec(
 				DBGPRINT(RT_DEBUG_TRACE, 
 						("Found desired ssid in Entry %2d:\n", entryIdx));
 				DBGPRINT(RT_DEBUG_TRACE,
-						("I/F(apcli%d) ApCliAutoConnectExec:(Len=%d,Ssid=%s, Channel=%d, Rssi=%d)\n", 
-						ifIdx, pBssEntry->SsidLen, pBssEntry->Ssid,
+						("I/F(%s%d) ApCliAutoConnectExec:(Len=%d,Ssid=%s, Channel=%d, Rssi=%d)\n", 
+						INF_APCLI_DEV_NAME, ifIdx, pBssEntry->SsidLen, pBssEntry->Ssid,
 						pBssEntry->Channel, pBssEntry->Rssi));
 				DBGPRINT(RT_DEBUG_TRACE,
-						("I/F(apcli%d) ApCliAutoConnectExec::(AuthMode=%s, EncrypType=%s)\n", ifIdx,
+						("I/F(%s%d) ApCliAutoConnectExec::(AuthMode=%s, EncrypType=%s)\n", INF_APCLI_DEV_NAME, ifIdx,
 						GetAuthMode(pBssEntry->AuthMode),
 						GetEncryptType(pBssEntry->WepStatus)) );
 				NdisMoveMemory(&pSsidBssTab->BssEntry[pSsidBssTab->BssNr++],

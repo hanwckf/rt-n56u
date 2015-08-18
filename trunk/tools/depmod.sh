@@ -1,5 +1,7 @@
 #!/bin/sh
 
+depmod_bin="/sbin/depmod"
+
 # check env
 if [ -z "${ROOTDIR}" ]; then
 	echo "ROOTDIR is not set!"
@@ -16,6 +18,11 @@ if [ -z "${INSTALL_MOD_PATH}" ]; then
 	exit 1
 fi
 
+if [ ! -x "$depmod_bin" ]; then
+	echo "$depmod_bin is not found! Please install package module-init-tools (kmod)"
+	exit 1
+fi
+
 if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" = "y" ] ; then
 	ipset_dir="${ROOTDIR}/user/ipset/ipset-6.x/kernel/net/netfilter"
 	mkdir -p "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/net/netfilter/ipset"
@@ -24,7 +31,7 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" = "y" ] ; then
 fi
 
 # call depmod
-sudo /sbin/depmod -ae -F System.map -b "${INSTALL_MOD_PATH}" -r ${KERNELRELEASE}
+sudo $depmod_bin -ae -F System.map -b "${INSTALL_MOD_PATH}" -r ${KERNELRELEASE}
 
 # clear unneeded depmod files
 rm -f "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/modules.alias"

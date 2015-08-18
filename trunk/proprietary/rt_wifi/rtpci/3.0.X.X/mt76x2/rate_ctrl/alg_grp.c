@@ -645,6 +645,8 @@ UCHAR get_rate_idx_by_rate(RTMP_ADAPTER *pAd, UCHAR *rate_tb,  USHORT rate)
 	return tb_idx;
 }
 
+#ifdef NEW_RATE_ADAPT_QUICK_DOWN
+/* QuickInitMCSRate now has bad algorithm and periodic drop PhyMode to CCK/0 */
 VOID TriggerQuickInitMCSRate(
     	IN PRTMP_ADAPTER 	pAd,
 	    IN PMAC_TABLE_ENTRY	pEntry,
@@ -740,6 +742,7 @@ BOOLEAN QuickInitMCSRate(
         return FALSE;
     }
 }
+#endif
 
 /*
 	MlmeSelectTxRateAdapt - select the MCS based on the RSSI and the available MCSs
@@ -1601,8 +1604,11 @@ VOID APQuickResponeForRateUpExecAdapt(/* actually for both up and down */
 #endif /*  FIFO_EXT_SUPPORT */
 	}
 
+#ifdef NEW_RATE_ADAPT_QUICK_DOWN
+/* QuickInitMCSRate now has bad algorithm and periodic drop PhyMode to CCK/0 */
     if(QuickInitMCSRate(pAd,pEntry, TxSuccess, TxRetransmit) == TRUE)
         return;
+#endif
 
 	DBGPRINT(RT_DEBUG_INFO, ("Quick PER %ld, Total Cnt %ld\n", TxErrorRatio, TxTotalCnt));
 
@@ -2069,11 +2075,14 @@ VOID APMlmeDynamicTxRateSwitchingAdapt(RTMP_ADAPTER *pAd, UINT i)
 
         pEntry->fLastSecAccordingRSSI = TRUE;
 
+#ifdef NEW_RATE_ADAPT_QUICK_DOWN
+/* QuickInitMCSRate now has bad algorithm and periodic drop PhyMode to CCK/0 */
         if(TxTotalCnt) {
     		TriggerQuickInitMCSRate(pAd, pEntry, pAd->ra_fast_interval >> 1);
     		DBGPRINT(RT_DEBUG_TRACE ,("Trigger @ RSSI Mapping (Light Packet)\n"));
     		MlmeClearAllTxQuality(pEntry);	/* clear all history */
         }
+#endif
 		return;
 	}
 
@@ -2101,12 +2110,14 @@ VOID APMlmeDynamicTxRateSwitchingAdapt(RTMP_ADAPTER *pAd, UINT i)
 			eTxBFProbing(pAd, pEntry);
 #endif /* TXBF_SUPPORT */
 
+#ifdef NEW_RATE_ADAPT_QUICK_DOWN
+/* QuickInitMCSRate now has bad algorithm and periodic drop PhyMode to CCK/0 */
         if(TxTotalCnt) {
     		TriggerQuickInitMCSRate(pAd, pEntry, pAd->ra_fast_interval >> 1);
 	    	DBGPRINT(RT_DEBUG_TRACE ,("Trigger @ RSSI Mapping (Light to Heavy Packet)\n"));
 		    MlmeClearAllTxQuality(pEntry);	/* clear all history */
         }
-
+#endif
 		return;
 	}
 

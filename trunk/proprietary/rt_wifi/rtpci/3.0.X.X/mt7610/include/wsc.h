@@ -377,6 +377,7 @@ static inline BOOLEAN WscCheckWSCHeader(
 #define WSC_ENTRY_GET_EAPOL_START   0x1
 #define WSC_ENTRY_GET_EAP_RSP_ID    0x2
 
+#define WSC_WR_FILE_MAX_BUF 		1500
 /* Pack struct to align at byte */
 /*#pragma pack(1) */
 

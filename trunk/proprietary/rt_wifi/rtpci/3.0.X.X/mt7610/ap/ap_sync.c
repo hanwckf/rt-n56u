@@ -1007,35 +1007,7 @@ VOID APPeerBeaconAction(
 #endif /* DOT11N_DRAFT3 */
 #endif /* DOT11_N_SUPPORT */
 
-#ifdef ED_MONITOR
-		if (pAd->ed_chk) // only updat scan table when AP turn on edcca
-		{
-			ULONG Idx, ap_count;
-			CHAR    Rssi;
-			
-		       Idx = BssTableSearch(&pAd->ScanTab, ie_list->Bssid, ie_list->Channel);
 
-			if (Idx != BSS_NOT_FOUND)
-		            Rssi = pAd->ScanTab.BssEntry[Idx].Rssi;
-
-		        /* TODO: 2005-03-04 dirty patch. we should change all RSSI related variables to SIGNED SHORT for easy/efficient reading and calaulation */
-				RealRssi = RTMPMaxRssi(pAd, ConvertToRssi(pAd, Elem->Rssi0, RSSI_0), ConvertToRssi(pAd, Elem->Rssi1, RSSI_1), ConvertToRssi(pAd, Elem->Rssi2, RSSI_2));
-		        if ((RealRssi + pAd->BbpRssiToDbmDelta) > Rssi)
-		            Rssi = RealRssi + pAd->BbpRssiToDbmDelta;
-
-				Idx = BssTableSetEntry(pAd, &pAd->ScanTab, ie_list, Rssi, LenVIE, pVIE);
-
-				
-				if (Idx != BSS_NOT_FOUND)
-				{
-					NdisMoveMemory(pAd->ScanTab.BssEntry[Idx].PTSF, &Elem->Msg[24], 4);
-					NdisMoveMemory(&pAd->ScanTab.BssEntry[Idx].TTSF[0], &Elem->TimeStamp.u.LowPart, 4);
-					NdisMoveMemory(&pAd->ScanTab.BssEntry[Idx].TTSF[4], &Elem->TimeStamp.u.LowPart, 4);
-				}
-
-
-		}
-#endif /* ED_MONITOR */
 	}
 	/* sanity check fail, ignore this frame */
 

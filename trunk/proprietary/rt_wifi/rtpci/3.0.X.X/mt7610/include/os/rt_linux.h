@@ -133,7 +133,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
  #define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860APCard.dat"
 #endif
 #define AP_NIC_DEVICE_NAME		"MT7610_AP"
-#define AP_DRIVER_VERSION		"3.0.0.8a_rev3"
+#define AP_DRIVER_VERSION		"3.0.0.9"
 #endif /* RTMP_MAC_PCI */
 #endif /* CONFIG_AP_SUPPORT */
 

@@ -118,6 +118,10 @@ BUILD_TIMER_FUNCTION(PeerDelBATxAdaptTimeOut);
 BUILD_TIMER_FUNCTION(DyncVgaLockTimeout);
 #endif/* DYNAMIC_VGA_SUPPORT */
 
+#if defined (ED_MONITOR) && defined (ED_SMART)
+BUILD_TIMER_FUNCTION(ed_testing_timeout);
+#endif /*ED_MONITOR*/
+
 
 
 

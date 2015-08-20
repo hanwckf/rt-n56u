@@ -136,7 +136,23 @@ VOID RTMPWriteTxWI(
 	{
         if (pAd->CommonCfg.bMIMOPSEnable)
         {
-    		if ((pMac->MmpsMode == MMPS_DYNAMIC) && (pTransmit->field.MCS > 7))
+		UCHAR MaxMcs_1ss;
+	
+		/* 10.2.4 SM power save, IEEE 802.11/2012, p.1010
+		A STA in static SM power save mode maintains only a single receive chain active.
+	
+		An HT STA may use the SM Power Save frame to communicate its SM Power Save state. A non-AP HT
+		STA may also use SM Power Save bits in the HT Capabilities element of its Association Request to achieve
+		the same purpose. The latter allows the STA to use only a single receive chain immediately after association.
+		*/
+#ifdef DOT11_VHT_AC
+		if (IS_VHT_STA(pMac))
+			MaxMcs_1ss = 9;
+		else
+#endif /* DOT11_VHT_AC */
+			MaxMcs_1ss = 7; 
+
+    		if ((pMac->MmpsMode == MMPS_DYNAMIC) && (pTransmit->field.MCS > MaxMcs_1ss))
 			{
 				/* Dynamic MIMO Power Save Mode*/
 				pTxWI->TxWIMIMOps = 1;
@@ -144,9 +160,9 @@ VOID RTMPWriteTxWI(
 			else if (pMac->MmpsMode == MMPS_STATIC)
 			{
 				/* Static MIMO Power Save Mode*/
-				if (pTransmit->field.MODE >= MODE_HTMIX && pTransmit->field.MCS > 7)
+				if (pTransmit->field.MODE >= MODE_HTMIX && pTransmit->field.MCS > MaxMcs_1ss)
 				{
-					pTxWI->TxWIMCS = 7;
+					pTxWI->TxWIMCS = MaxMcs_1ss;
 					pTxWI->TxWIMIMOps = 0;
 				}
 			}
@@ -275,7 +291,23 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 #ifdef DOT11_N_SUPPORT
 	if (pMacEntry)
 	{
-		if ((pMacEntry->MmpsMode == MMPS_DYNAMIC) && (pTransmit->field.MCS > 7))
+		UCHAR MaxMcs_1ss;
+
+		/* 10.2.4 SM power save, IEEE 802.11/2012, p.1010
+		A STA in static SM power save mode maintains only a single receive chain active.
+
+		An HT STA may use the SM Power Save frame to communicate its SM Power Save state. A non-AP HT
+		STA may also use SM Power Save bits in the HT Capabilities element of its Association Request to achieve
+		the same purpose. The latter allows the STA to use only a single receive chain immediately after association.
+		*/
+#ifdef DOT11_VHT_AC
+		if (IS_VHT_STA(pMacEntry))
+			MaxMcs_1ss = 9;
+		else
+#endif /* DOT11_VHT_AC */
+			MaxMcs_1ss = 7; 
+
+		if ((pMacEntry->MmpsMode == MMPS_DYNAMIC) && (pTransmit->field.MCS > MaxMcs_1ss))
 		{
 			/* Dynamic MIMO Power Save Mode*/
 			pTxWI->TxWIMIMOps = 1;
@@ -284,9 +316,9 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 		{
 			/* Static MIMO Power Save Mode*/
 			if ((pTransmit->field.MODE == MODE_HTMIX || pTransmit->field.MODE == MODE_HTGREENFIELD) && 
-				(pTransmit->field.MCS > 7))
+				(pTransmit->field.MCS > MaxMcs_1ss))
 			{
-				pTxWI->TxWIMCS = 7;
+				pTxWI->TxWIMCS = MaxMcs_1ss;
 				pTxWI->TxWIMIMOps = 0;
 			}
 		}
@@ -447,8 +479,24 @@ VOID RTMPWriteTxWI_Cache(
 
     if (pAd->CommonCfg.bMIMOPSEnable)
     {
+		UCHAR MaxMcs_1ss;
+
+		/* 10.2.4 SM power save, IEEE 802.11/2012, p.1010
+		A STA in static SM power save mode maintains only a single receive chain active.
+
+		An HT STA may use the SM Power Save frame to communicate its SM Power Save state. A non-AP HT
+		STA may also use SM Power Save bits in the HT Capabilities element of its Association Request to achieve
+		the same purpose. The latter allows the STA to use only a single receive chain immediately after association.
+		*/
+#ifdef DOT11_VHT_AC
+		if (IS_VHT_STA(pMacEntry))
+			MaxMcs_1ss = 9;
+		else
+#endif /* DOT11_VHT_AC */
+			MaxMcs_1ss = 7;
+
 		/* MIMO Power Save Mode*/
-		if ((pMacEntry->MmpsMode == MMPS_DYNAMIC) && (pTransmit->field.MCS > 7))
+		if ((pMacEntry->MmpsMode == MMPS_DYNAMIC) && (pTransmit->field.MCS > MaxMcs_1ss))
 		{
 			/* Dynamic MIMO Power Save Mode*/
 			pTxWI->TxWIMIMOps = 1;
@@ -456,9 +504,9 @@ VOID RTMPWriteTxWI_Cache(
 		else if (pMacEntry->MmpsMode == MMPS_STATIC)
 		{
 			/* Static MIMO Power Save Mode*/
-			if ((pTransmit->field.MODE >= MODE_HTMIX) && (pTransmit->field.MCS > 7))
+			if ((pTransmit->field.MODE >= MODE_HTMIX) && (pTransmit->field.MCS > MaxMcs_1ss))
 			{
-				pTxWI->TxWIMCS = 7;
+				pTxWI->TxWIMCS = MaxMcs_1ss;
 				pTxWI->TxWIMIMOps = 0;
 			}
 		}

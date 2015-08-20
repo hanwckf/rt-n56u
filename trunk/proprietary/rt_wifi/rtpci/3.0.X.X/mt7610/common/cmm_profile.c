@@ -2955,12 +2955,26 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			pAd->ed_threshold = count;
 			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_threshold = %u\n", count));
 		}
+		if (RTMPGetKeyParameter("ED_MODE", tmpbuf, 32, pBuffer, TRUE))
+		{
+			 UINT8 mode = simple_strtol(tmpbuf, 0, 10);
+			 pAd->ed_chk = mode;
+			 DBGPRINT(RT_DEBUG_OFF, ("pAd->ed_chk = %u\n", mode));
+		}
 
 		if (RTMPGetKeyParameter("EDCCA_FALSE_CCA_TH", tmpbuf, 32, pBuffer, TRUE))
 		{
 			ULONG count = (ULONG) simple_strtol(tmpbuf, 0, 10);
-			pAd->false_cca_threshold = count;
+			pAd->ed_false_cca_threshold = count;
 			DBGPRINT(RT_DEBUG_TRACE, ("pAd->false_cca_threshold = %u\n", count));
+		}
+
+		
+		if (RTMPGetKeyParameter("ED_LEARN_TH", tmpbuf, 32, pBuffer, TRUE))
+		{
+			INT count = simple_strtol(tmpbuf, 0, 10);			
+			pAd->ed_learning_time_threshold = count;
+			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_learning_time_threshold = %u\n", count));
 		}
 
 		if (RTMPGetKeyParameter("EDCCA_BLOCK_CHECK_TH", tmpbuf, 32, pBuffer, TRUE))
@@ -2970,6 +2984,7 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_block_tx_threshold = %u\n", count));
 		}
 #endif /* ED_MONITOR */			
+
 
 		/*ShortSlot*/
 		if(RTMPGetKeyParameter("ShortSlot", tmpbuf, 10, pBuffer, TRUE))

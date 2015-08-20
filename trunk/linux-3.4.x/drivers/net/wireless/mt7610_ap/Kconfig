@@ -105,10 +105,6 @@ config  MT7610_AP_BAND_STEERING
 #	depends on MT7610_AP
 #	default n
 
-#config  MT7610_AP_GREENAP
-#	bool "Green AP mode support"
-#	depends on MT7610_AP
-
 config  MT7610_AP_DLS
 	bool "802.11e DLS (Direct-Link Setup) Support"
 	depends on MT7610_AP

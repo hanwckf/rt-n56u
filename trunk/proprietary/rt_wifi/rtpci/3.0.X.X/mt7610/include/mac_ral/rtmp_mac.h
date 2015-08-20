@@ -765,6 +765,13 @@ typedef union _TX_CHAIN_ADDR3_H_STRUC {
 #endif
 
 
+#define TX_BCN_BYPASS_MASK          0x108C 
+typedef union _BCN_BYPASS_MASK_STRUC {
+        struct {
+                UINT32 BeaconDropMask:16;  
+        } field;
+        UINT32 word;
+} BCN_BYPASS_MASK_STRUC;
 
 /*  4.2 MAC TIMING  configuration registers (offset:0x1100) */
 #define XIFS_TIME_CFG             0x1100

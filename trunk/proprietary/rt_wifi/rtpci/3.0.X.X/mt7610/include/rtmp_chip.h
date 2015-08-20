@@ -671,6 +671,7 @@ struct _RTMP_CHIP_CAP_ {
 		INT32 avg_rssi_0;
 		INT32 avg_rssi_1;
 		INT32 avg_rssi_all;
+		UCHAR dynamic_chE_mode;
 #endif
 
 
@@ -858,6 +859,12 @@ struct _RTMP_CHIP_OP_ {
 
 	/* EDCCA */
 	VOID (*ChipSetEDCCA)(struct _RTMP_ADAPTER *pAd, BOOLEAN bOn);
+
+#ifdef DYNAMIC_VGA_SUPPORT
+	VOID (*AsicDynamicVgaGainControl)(IN struct _RTMP_ADAPTER *pAd);
+	VOID (*UpdateRssiForDynamicVga)(IN struct _RTMP_ADAPTER *pAd);
+#endif /* DYNAMIC_VGA_SUPPORT */
+
 
 	/* IQ Calibration */
 	VOID (*ChipIQCalibration)(struct _RTMP_ADAPTER *pAd, UCHAR Channel);
@@ -1086,6 +1093,20 @@ do {	\
 		if (_pAd->chipOps.RFRandomWrite != NULL)	\
 			_pAd->chipOps.RFRandomWrite(_pAd, _RegPair, _Num);	\
 } while (0)
+
+#ifdef DYNAMIC_VGA_SUPPORT
+#define RTMP_ASIC_DYNAMIC_VGA_GAIN_CONTROL(_pAd)	\
+do {	\
+	if (_pAd->chipOps.AsicDynamicVgaGainControl != NULL)	\
+		_pAd->chipOps.AsicDynamicVgaGainControl(_pAd);	\
+} while (0)
+
+#define RTMP_UPDATE_RSSI_FOR_DYNAMIC_VGA(_pAd)	\
+	do {	\
+		if (_pAd->chipOps.UpdateRssiForDynamicVga != NULL)	\
+			_pAd->chipOps.UpdateRssiForDynamicVga(_pAd);	\
+	} while (0)
+#endif /* DYNAMIC_VGA_SUPPORT */
 
 
 /* function prototype */

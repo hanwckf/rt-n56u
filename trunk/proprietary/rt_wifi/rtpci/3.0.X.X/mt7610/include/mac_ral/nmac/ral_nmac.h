@@ -948,6 +948,11 @@ VOID ral_wlan_chip_onoff(
 #define RF_PA_MODE_CFG0 0x121C
 #define RF_PA_MODE_CFG1	0x1220
 #define TX_ALC_CFG_0	0x13B0
+#define TX_ALC_CFG_0_CH_INT_0_MASK (0x3f)
+#define TX_ALC_CFG_0_CH_INT_0(p) ((p) & 0x3f)
+#define TX_ALC_CFG_0_CH_INT_1_MASK ((0x3f) << 8)
+#define TX_ALC_CFG_0_CH_INT_1(p) (((p) & 0x3f) << 8)
+
 #define TX_ALC_CFG_1	0x13B4
 
 #define TX0_RF_GAIN_CORR	0x13A0

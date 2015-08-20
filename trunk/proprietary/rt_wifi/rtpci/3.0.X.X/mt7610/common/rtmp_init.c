@@ -1479,7 +1479,8 @@ NDIS_STATUS	NICInitializeAsic(
 			if (MACRegTable[Index].Register == MAX_LEN_CFG)
 			{
 				RTMP_IO_READ32(pAd, MAX_LEN_CFG, &MACRegTable[Index].Value);
-				continue;
+				MACRegTable[Index].Value &= ~(0xFFF);
+				MACRegTable[Index].Value |= (MAX_AGGREGATION_SIZE);
 			}
 
 			if (MACRegTable[Index].Register == PWR_PIN_CFG)
@@ -1617,12 +1618,11 @@ NDIS_STATUS	NICInitializeAsic(
 #if defined(RT2883) || defined(RT3883) || defined(RT3593) || defined(RT65xx)
 		if (IS_RT2883(pAd) || IS_RT3883(pAd) || IS_RT3593(pAd) || IS_RT65XX(pAd))
 		{
-			csr |= 0x3fff;
+			csr |= 0x3000;
 		}
 		else
 #endif /* defined(RT2883) || defined(RT3883) || defined(RT3593) */
 		{
-			csr &= 0xFFF;
 			csr |= 0x2000;
 		}
 		RTMP_IO_WRITE32(pAd, MAX_LEN_CFG, csr);
@@ -3220,8 +3220,11 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 	pAd->CommonCfg.disable_vht_256QAM = DISABLE_VHT80_256_QAM;
 #endif /* DISANLE_VHT80_256_QAM */
 #endif /* DOT11_VHT_AC */
+
 #ifdef ED_MONITOR
 	pAd->ed_chk = FALSE; //let country region to turn on
+	pAd->ed_learning_time_threshold = 50; //5 sec
+	pAd->ed_debug = FALSE;
 
 #ifdef CONFIG_AP_SUPPORT
 	pAd->ed_sta_threshold = 1;
@@ -3232,10 +3235,17 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 	pAd->ed_rssi_threshold = -80;
 
 	pAd->ed_chk_period = 100;
-	pAd->ed_threshold = 90;
-	pAd->false_cca_threshold = 10000;
+	pAd->ed_threshold = 85;
+	pAd->ed_false_cca_threshold = 180;	
 	pAd->ed_block_tx_threshold = 2;
 #endif /* ED_MONITOR */
+
+#ifdef CONFIG_AP_SUPPORT
+	pAd->ApCfg.fAllStatIsHighTraffic = FALSE;
+	pAd->ApCfg.fDisableTrafficCnt = FALSE;
+	pAd->ApCfg.StalowTrafficThrd = 15;
+#endif /* CONFIG_AP_SUPPORT */
+
 	DBGPRINT(RT_DEBUG_TRACE, ("<-- UserCfgInit\n"));
 }
 

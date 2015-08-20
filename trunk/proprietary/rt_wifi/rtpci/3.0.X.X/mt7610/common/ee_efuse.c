@@ -1032,6 +1032,7 @@ INT	set_eFuseLoadFromBin_Proc(
 					if(eFuseReadRegisters(pAd,ReadedByte, 2,(PUSHORT)&DATA)!=0x3f)
 						eFuseWriteRegistersFromBin(pAd,(USHORT)ReadedByte-15, 16, PDATA);
 				}
+				RtmpOsMsDelay(8);
 				/*
 				for(l=0;l<8;l++)
 					printk("%04x ",PDATA[l]);
@@ -1169,9 +1170,17 @@ static NTSTATUS eFuseWriteRegistersFromBin(
 			tempbuffer=((pData[2*i+1]<<16)&0xffff0000)|pData[2*i];
 
 
-			RTMP_IO_WRITE32(pAd, efuseDataOffset,tempbuffer);			
+			RTMP_IO_WRITE32(pAd, efuseDataOffset,tempbuffer);
+#if defined(RT3290) || defined(RT65xx)
+			if(IS_RT3290(pAd) || IS_RT65XX(pAd))
+				efuseDataOffset += 4;		
+			else
+#endif 			
 			efuseDataOffset -= 4;		
 
+				
+
+			RtmpOsMsDelay(5);
 		}
 
 		/*Step1.1.1. Write 10-bit of address to EFSROM_AIN (0x580, bit25:bit16). The address must be 16-byte alignment.*/
@@ -1184,9 +1193,10 @@ static NTSTATUS eFuseWriteRegistersFromBin(
 		/*Step1.1.3. Write EFSROM_KICK (0x580, bit30) to 1 to kick-off physical write procedure.*/
 		eFuseCtrlStruc.field.EFSROM_KICK = 1;
 
-		NdisMoveMemory(&data, &eFuseCtrlStruc, 4);	
-		
+		NdisMoveMemory(&data, &eFuseCtrlStruc, 4);
+		RtmpOsMsDelay(3);		
 		RTMP_IO_WRITE32(pAd, EFUSE_CTRL, data);	
+		RtmpOsMsDelay(3);
 
 		/*Step1.1.4. Polling EFSROM_KICK(0x580, bit30) until it become 0 again. It¡¦s done.*/
 		i = 0;
@@ -1219,8 +1229,9 @@ static NTSTATUS eFuseWriteRegistersFromBin(
 		eFuseCtrlStruc.field.EFSROM_KICK = 1;
 
 		NdisMoveMemory(&data, &eFuseCtrlStruc, 4);
+		RtmpOsMsDelay(3);
 		RTMP_IO_WRITE32(pAd, EFUSE_CTRL, data);	
-
+		RtmpOsMsDelay(3);
 		/*Step1.2.3. Polling EFSROM_KICK(0x580, bit30) until it become 0 again.*/
 		i = 0;
 		while(i < 500)
@@ -1242,7 +1253,13 @@ static NTSTATUS eFuseWriteRegistersFromBin(
 		for(i=0; i< 4; i++)
 		{
 			RTMP_IO_READ32(pAd, efuseDataOffset, (PUINT32) &buffer[i]);
-			efuseDataOffset -=  4;		
+#if defined(RT3290) || defined(RT65xx)
+			if(IS_RT3290(pAd) || IS_RT65XX(pAd))
+				efuseDataOffset += 4;		
+			else
+#endif 			
+			efuseDataOffset -= 4;
+
 		}
 		/*Step1.2.5. Check if the data of efuse and the writing data are the same.*/
 		for(i =0; i<4; i++)

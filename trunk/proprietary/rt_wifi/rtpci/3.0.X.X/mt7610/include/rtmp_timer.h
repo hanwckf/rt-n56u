@@ -185,5 +185,7 @@ DECLARE_TIMER_FUNCTION(PeerDelBATxAdaptTimeOut);
 #ifdef DYNAMIC_VGA_SUPPORT
 DECLARE_TIMER_FUNCTION(DyncVgaLockTimeout);
 #endif/* DYNAMIC_VGA_SUPPORT */
-
+#if defined (ED_MONITOR) && defined (ED_SMART)
+DECLARE_TIMER_FUNCTION(ed_testing_timeout);
+#endif /*ED_MONITOR*/
 #endif /* __RTMP_TIMER_H__ */

@@ -1168,12 +1168,17 @@ typedef struct _BssCoexChRange_ {
 } BSS_COEX_CH_RANGE;
 #endif /* DOT11N_DRAFT3 */
 
+#define IS_VHT_STA(_pMacEntry)	(_pMacEntry->MaxHTPhyMode.field.MODE == MODE_VHT)
 #define IS_HT_STA(_pMacEntry)	\
 	(_pMacEntry->MaxHTPhyMode.field.MODE >= MODE_HTMIX)
 
 #define IS_HT_RATE(_pMacEntry)	\
 	(_pMacEntry->HTPhyMode.field.MODE >= MODE_HTMIX)
 
+#ifdef DOT11_VHT_AC
+#define IS_VHT_RATE(_pMacEntry)	\
+	(_pMacEntry->HTPhyMode.field.MODE == MODE_VHT)
+#endif
 #define PEER_IS_HT_RATE(_pMacEntry)	\
 	(_pMacEntry->HTPhyMode.field.MODE >= MODE_HTMIX)
 
@@ -1584,6 +1589,7 @@ typedef struct _COMMON_CONFIG {
 	UCHAR TxPower;		/* in unit of mW */
 	ULONG TxPowerPercentage;	/* 0~100 % */
 	ULONG TxPowerDefault;	/* keep for TxPowerPercentage */
+	BOOLEAN TxPowerPercentageWithBBP;  /* if true , we're using BBP 2710 to do power percentage, disable TSSI */
 	UINT8 PwrConstraint;
 
 #ifdef DOT11_N_SUPPORT
@@ -2072,6 +2078,9 @@ typedef struct _MAC_TABLE_ENTRY {
 #endif /* NEW_RATE_ADAPT_SUPPORT */
 	enum RATE_ADAPT_ALG rateAlg;
 
+	UCHAR ContinuelowTrafficCnt;
+	BOOLEAN ContinuelowTraffic;
+	
 #ifdef PEER_DELBA_TX_ADAPT
 	BOOLEAN bPeerDelBaTxAdaptEn;
 	RALINK_TIMER_STRUCT DelBA_tx_AdaptTimer;
@@ -2338,6 +2347,12 @@ typedef struct _MAC_TABLE {
 #ifdef WAPI_SUPPORT
 	BOOLEAN fAnyWapiStation;
 #endif				/* WAPI_SUPPORT */
+
+#ifdef CONFIG_AP_SUPPORT	
+	BOOLEAN fAllStaIsHighTraffic;
+	UCHAR fStationHighTrafficCount;
+#endif /* CONFIG_AP_SUPPORT */
+
 } MAC_TABLE, *PMAC_TABLE;
 
 
@@ -2763,6 +2778,10 @@ typedef struct _AP_ADMIN_CONFIG {
 #endif /* BAND_STEERING */
 
 	UCHAR ChangeTxOpClient;
+	BOOLEAN fAllStatIsHighTraffic;
+	UCHAR fStaHighTrafficCount;
+	BOOLEAN fDisableTrafficCnt;
+	USHORT StalowTrafficThrd;
 } AP_ADMIN_CONFIG, *PAP_ADMIN_CONFIG;
 
 #ifdef IGMP_SNOOP_SUPPORT
@@ -3105,6 +3124,13 @@ typedef struct _BBP_RESET_CTL
 	BOOLEAN	AsicCheckEn;
 } BBP_RESET_CTL, *PBBP_RESET_CTL;
 
+#ifdef ED_MONITOR
+enum ed_state
+{
+	ED_OFF_AND_LEARNING=0,
+	ED_TESTING=1
+};
+#endif /* ED_MONITOR */
 
 typedef struct tx_agc_ctrl{
 	BOOLEAN bAutoTxAgc;	/* Enable driver auto Tx Agc control */
@@ -3866,6 +3892,9 @@ struct _RTMP_ADAPTER {
 
 #ifdef ED_MONITOR
 	BOOLEAN ed_chk;
+	BOOLEAN ed_debug;
+	BOOLEAN	ed_vga_at_lowest_gain;
+	UINT ed_learning_time_threshold; //50 * 100ms = 5 sec
 
 //for AP Mode's threshold
 #ifdef CONFIG_AP_SUPPORT
@@ -3878,6 +3907,7 @@ struct _RTMP_ADAPTER {
 	CHAR ed_rssi_threshold;
 
 	UCHAR ed_threshold;
+	UINT ed_false_cca_threshold;
 	UINT false_cca_threshold;
 	UINT ed_block_tx_threshold;
 	INT ed_chk_period;  // in unit of ms
@@ -3900,6 +3930,12 @@ struct _RTMP_ADAPTER {
 	ULONG chk_time[ED_STAT_CNT];
 	RALINK_TIMER_STRUCT ed_timer;
 	BOOLEAN ed_timer_inited;
+	enum ed_state ed_current_state;
+#define EDCCA_OFF 0
+#define EDCCA_ON  1
+#ifdef ED_SMART
+#define EDCCA_SMART 2
+#endif /* ED_SMART */
 #endif /* ED_MONITOR */
 
 #ifdef FPGA_MODE
@@ -3952,6 +3988,14 @@ struct _RTMP_ADAPTER {
 INT ed_status_read(RTMP_ADAPTER *pAd);
 INT ed_monitor_init(RTMP_ADAPTER *pAd);
 INT ed_monitor_exit(RTMP_ADAPTER *pAd);
+#ifdef ED_SMART
+INT ed_state_judge(RTMP_ADAPTER *pAd);
+VOID ed_testing_timeout(
+	IN PVOID SystemSpecific1, 
+	IN PVOID FunctionContext, 
+	IN PVOID SystemSpecific2, 
+	IN PVOID SystemSpecific3);
+#endif /* ED_SMART */
 #endif /* ED_MONITOR */
 
 #if defined(RTMP_INTERNAL_TX_ALC) || defined(RTMP_TEMPERATURE_COMPENSATION) 
@@ -8914,6 +8958,14 @@ VOID drop_mask_timer_action(
 #ifdef PEER_DELBA_TX_ADAPT
 VOID Peer_DelBA_Tx_Adapt_Init(
 	IN RTMP_ADAPTER *pAd,
+	IN PMAC_TABLE_ENTRY pEntry);
+	
+VOID Peer_DelBA_Tx_Adapt_Enable(
+	IN PRTMP_ADAPTER pAd,
+	IN PMAC_TABLE_ENTRY pEntry);
+
+VOID Peer_DelBA_Tx_Adapt_Disable(
+	IN PRTMP_ADAPTER pAd,
 	IN PMAC_TABLE_ENTRY pEntry);
 
 VOID PeerDelBATxAdaptTimeOut(

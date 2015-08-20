@@ -2135,16 +2135,16 @@ BOOLEAN AC_ChannelGroupCheck(
 			if (Channel == vht_ch_group[idx]) {
 				if (((region == CE || region == JAP) && vht_ch_group[idx] >= 132) || ((region == FCC) && vht_ch_group[idx] >= 116 && vht_ch_group[idx] <= 128))
 				{
-					continue;				
+					continue;
 				}
 				else
 				{
-				/* in BW_80 channel group */
-				RetVal = TRUE;
-				break;
+					/* in BW_80 channel group */
+					RetVal = TRUE;
+					break;
+				}
 			}
 		}
-	}
 	}
 
 	return RetVal;

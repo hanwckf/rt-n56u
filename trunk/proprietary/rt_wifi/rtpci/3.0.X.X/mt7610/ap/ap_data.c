@@ -66,9 +66,6 @@ VOID RTMP_BASetup(
 					))
 			)
 		{
-#ifdef NOISE_TEST_ADJUST
-			if (pAd->MacTab.Size < 5)
-#endif /* NOISE_TEST_ADJUST */
 			BAOriSessionSetUp(pAd, pMacEntry, UserPriority, 0, 10, FALSE);
 		}
 	}
@@ -3919,18 +3916,13 @@ VOID dynamic_tune_be_tx_op(RTMP_ADAPTER *pAd, ULONG nonBEpackets)
 		}
 		else
 		{
-			if ((RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_DYNAMIC_BE_TXOP_ACTIVE)==0)
-#ifdef MULTI_CLIENT_SUPPORT
-				 || (pAd->ApCfg.ChangeTxOpClient != pAd->MacTab.Size)
-#endif /* MULTI_CLIENT_SUPPORT */
-			)
+			if ((RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_DYNAMIC_BE_TXOP_ACTIVE) == 0)
+				)
 			{
 				/* enable AC0(BE) TX_OP */
 				UCHAR	txop_value_burst = 0x20;	/* default txop for Tx-Burst */
 				UCHAR   txop_value;
-#ifdef MULTI_CLIENT_SUPPORT
-				pAd->ApCfg.ChangeTxOpClient = pAd->MacTab.Size;
-#endif /* MULTI_CLIENT_SUPPORT */
+
 
 				RTMP_IO_READ32(pAd, EDCA_AC0_CFG, &RegValue);
 
@@ -3943,10 +3935,6 @@ VOID dynamic_tune_be_tx_op(RTMP_ADAPTER *pAd, ULONG nonBEpackets)
 				else
 					txop_value = 0;
 
-#ifdef MULTI_CLIENT_SUPPORT
-				if(pAd->MacTab.Size > 2)
-					txop_value = 0;
-#endif /* MULTI_CLIENT_SUPPORT */
 
 				RegValue  &= 0xFFFFFF00;
 				/*if ((RegValue & 0x0000FF00) == 0x00005400)

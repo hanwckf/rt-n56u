@@ -573,4 +573,3 @@ PNET_DEV RTMP_CFG80211_FindVifEntry_ByType(
 
 #endif /* __RT_OS_NET_H__ */
 
-

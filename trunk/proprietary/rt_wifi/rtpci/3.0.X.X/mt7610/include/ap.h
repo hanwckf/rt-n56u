@@ -297,6 +297,11 @@ VOID RTMPSetPiggyBack(
 	IN PRTMP_ADAPTER	pAd,
 	IN BOOLEAN			bPiggyBack);
 
+VOID AsicCtrlBcnMask(
+	IN PRTMP_ADAPTER	pAd,
+	IN INT mask);
+
+
 VOID APAsicEvaluateRxAnt(
 	IN PRTMP_ADAPTER	pAd);
 

@@ -17,15 +17,6 @@
 
 static void ba_mpdu_blk_free(PRTMP_ADAPTER pAd, struct reordering_mpdu *mpdu_blk);
 
-#ifdef PEER_DELBA_TX_ADAPT
-static VOID Peer_DelBA_Tx_Adapt_Enable(
-	IN PRTMP_ADAPTER pAd,
-	IN PMAC_TABLE_ENTRY pEntry);
-
-static VOID Peer_DelBA_Tx_Adapt_Disable(
-	IN PRTMP_ADAPTER pAd,
-	IN PMAC_TABLE_ENTRY pEntry);
-#endif /* PEER_DELBA_TX_ADAPT */
 
 BA_ORI_ENTRY *BATableAllocOriEntry(
 								  IN  PRTMP_ADAPTER   pAd,
@@ -2280,7 +2271,7 @@ VOID Peer_DelBA_Tx_Adapt_Init(
 	RTMPInitTimer(pAd, &pEntry->DelBA_tx_AdaptTimer, GET_TIMER_FUNCTION(PeerDelBATxAdaptTimeOut), pEntry, FALSE);
 }
 
-static VOID Peer_DelBA_Tx_Adapt_Enable(
+VOID Peer_DelBA_Tx_Adapt_Enable(
 	IN PRTMP_ADAPTER pAd,
 	IN PMAC_TABLE_ENTRY pEntry)
 {
@@ -2328,7 +2319,7 @@ static VOID Peer_DelBA_Tx_Adapt_Enable(
 }
 
 
-static VOID Peer_DelBA_Tx_Adapt_Disable(
+VOID Peer_DelBA_Tx_Adapt_Disable(
 	IN PRTMP_ADAPTER pAd,
 	IN PMAC_TABLE_ENTRY pEntry)
 {

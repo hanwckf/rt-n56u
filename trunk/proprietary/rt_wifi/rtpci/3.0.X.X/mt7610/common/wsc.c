@@ -1436,6 +1436,7 @@ VOID WscEapEnrolleeAction(
 						DBGPRINT(RT_DEBUG_TRACE, 
 							("%s(%d): WscAutoTrigger is disabled.\n", __FUNCTION__, __LINE__));
 						WscUPnPErrHandle(pAdapter, pWscControl, Elem->TimeStamp.u.LowPart);
+						os_free_mem(NULL, WscData);
 						return;
 					}
 					else if (pEntry && IS_ENTRY_CLIENT(pEntry))
@@ -1443,6 +1444,7 @@ VOID WscEapEnrolleeAction(
 						DBGPRINT(RT_DEBUG_TRACE, 
 							("%s(%d): WscAutoTrigger is disabled! Send EapFail to STA.\n", __FUNCTION__, __LINE__));
 						WscSendEapFail(pAdapter, pWscControl, TRUE);
+						os_free_mem(NULL, WscData);
 						return;
 					}
 					else
@@ -7760,7 +7762,7 @@ void    WscWriteConfToDatFile(
 		offset = (PCHAR) rtstrstr((PSTRING) cfgData, "Default\n");
 		offset += strlen("Default\n");
 		RtmpOSFileWrite(file_w, (PSTRING)cfgData, (int)(offset-cfgData));
-		os_alloc_mem(NULL, (UCHAR **)&pTempStr, 512);
+		os_alloc_mem(NULL, (UCHAR **)&pTempStr, WSC_WR_FILE_MAX_BUF);
 		if (!pTempStr)
 		{
 			DBGPRINT(RT_DEBUG_TRACE, ("pTempStr kmalloc fail. (512)\n"));
@@ -7774,15 +7776,17 @@ void    WscWriteConfToDatFile(
 			PSTRING ptr;
 			BOOLEAN	bNewFormat = TRUE;
 
-			NdisZeroMemory(pTempStr, 512);
-			ptr = (PSTRING) offset;
-			while(*ptr && *ptr != '\n')
-			{
-				pTempStr[i++] = *ptr++;
-			}
-			pTempStr[i] = 0x00;
+			NdisZeroMemory(pTempStr, WSC_WR_FILE_MAX_BUF);
+
 			if ((size_t)(offset - cfgData) < fileLen)
 			{
+				ptr = (PSTRING) offset;
+				while(*ptr && *ptr != '\n')
+				{
+					pTempStr[i++] = *ptr++;
+				}
+				pTempStr[i] = 0x00;
+
 				offset += strlen(pTempStr) + 1;
 				if ((strncmp(pTempStr, "SSID=", strlen("SSID=")) == 0) || 
 					strncmp(pTempStr, "SSID1=", strlen("SSID1=")) == 0 ||
@@ -7798,8 +7802,8 @@ void    WscWriteConfToDatFile(
 				}
 				else if (strncmp(pTempStr, "AuthMode=", strlen("AuthMode=")) == 0)
 				{
-					NdisZeroMemory(pTempStr, 512);
-					snprintf(pTempStr, 512, "AuthMode=");
+					NdisZeroMemory(pTempStr, WSC_WR_FILE_MAX_BUF);
+					snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "AuthMode=");
 #ifdef CONFIG_AP_SUPPORT
 					if (CurOpMode == AP_MODE)
 					{
@@ -7808,9 +7812,9 @@ void    WscWriteConfToDatFile(
 							if (pAd->ApCfg.MBSSID[index].SsidLen)
 							{
 								if (index == 0)
-									snprintf(pTempStr, 512, "%s%s", pTempStr, RTMPGetRalinkAuthModeStr(pAd->ApCfg.MBSSID[index].AuthMode));
+									snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "%s%s", pTempStr, RTMPGetRalinkAuthModeStr(pAd->ApCfg.MBSSID[index].AuthMode));
 								else
-									snprintf(pTempStr, 512, "%s;%s", pTempStr, RTMPGetRalinkAuthModeStr(pAd->ApCfg.MBSSID[index].AuthMode));
+									snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "%s;%s", pTempStr, RTMPGetRalinkAuthModeStr(pAd->ApCfg.MBSSID[index].AuthMode));
 							}
 						}
 					}
@@ -7818,17 +7822,17 @@ void    WscWriteConfToDatFile(
 				}
 			else if (strncmp(pTempStr, "EncrypType=", strlen("EncrypType=")) == 0)
 				{
-					NdisZeroMemory(pTempStr, 512);
-					snprintf(pTempStr, 512, "EncrypType=");
+					NdisZeroMemory(pTempStr, WSC_WR_FILE_MAX_BUF);
+					snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "EncrypType=");
 #ifdef CONFIG_AP_SUPPORT
 					if (CurOpMode == AP_MODE)
 					{
 						for (index = 0; index < pAd->ApCfg.BssidNum; index++)
 						{
 							if (index == 0)
-								snprintf(pTempStr, 512, "%s%s", pTempStr, RTMPGetRalinkEncryModeStr(pAd->ApCfg.MBSSID[index].WepStatus));
+								snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "%s%s", pTempStr, RTMPGetRalinkEncryModeStr(pAd->ApCfg.MBSSID[index].WepStatus));
 							else
-								snprintf(pTempStr, 512, "%s;%s", pTempStr, RTMPGetRalinkEncryModeStr(pAd->ApCfg.MBSSID[index].WepStatus));
+								snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "%s;%s", pTempStr, RTMPGetRalinkEncryModeStr(pAd->ApCfg.MBSSID[index].WepStatus));
 						}
 					}
 #endif /* CONFIG_AP_SUPPORT */
@@ -7846,45 +7850,45 @@ void    WscWriteConfToDatFile(
 				}
 				else if (strncmp(pTempStr, "WscConfMode=", strlen("WscConfMode=")) == 0)
 				{
-						snprintf(pTempStr, 512, "WscConfMode=");
+						snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "WscConfMode=");
 #ifdef CONFIG_AP_SUPPORT
 						for (index = 0; index < pAd->ApCfg.BssidNum; index++)
 						{
 							pWscControl = &pAd->ApCfg.MBSSID[index].WscControl;
 							if (index == 0)
-								snprintf(pTempStr, 512, "%s%d", pTempStr, pWscControl->WscConfMode);
+								snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "%s%d", pTempStr, pWscControl->WscConfMode);
 							else
-								snprintf(pTempStr, 512, "%s;%d", pTempStr, pWscControl->WscConfMode);
+								snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "%s;%d", pTempStr, pWscControl->WscConfMode);
 						}
 #endif /* CONFIG_AP_SUPPORT */
 				}
 				else if (strncmp(pTempStr, "WscConfStatus=", strlen("WscConfStatus=")) == 0)
 				{
-						snprintf(pTempStr, 512, "WscConfStatus=");
+						snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "WscConfStatus=");
 #ifdef CONFIG_AP_SUPPORT
 						for (index = 0; index < pAd->ApCfg.BssidNum; index++)
 						{
 							pWscControl = &pAd->ApCfg.MBSSID[index].WscControl;
 							if (index == 0)
-								snprintf(pTempStr, 512, "%s%d", pTempStr, pWscControl->WscConfStatus);
+								snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "%s%d", pTempStr, pWscControl->WscConfStatus);
 							else
-								snprintf(pTempStr, 512, "%s;%d", pTempStr, pWscControl->WscConfStatus);
+								snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "%s;%d", pTempStr, pWscControl->WscConfStatus);
 						}
 #endif /* CONFIG_AP_SUPPORT */
 				}
 				else if (strncmp(pTempStr, "DefaultKeyID=", strlen("DefaultKeyID=")) == 0)
 				{
-					NdisZeroMemory(pTempStr, 512);
-					snprintf(pTempStr, 512, "DefaultKeyID=");
+					NdisZeroMemory(pTempStr, WSC_WR_FILE_MAX_BUF);
+					snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "DefaultKeyID=");
 #ifdef CONFIG_AP_SUPPORT
 					if (CurOpMode == AP_MODE)
 					{
 						for (index = 0; index < pAd->ApCfg.BssidNum; index++)
 						{
 							if (index == 0)
-								snprintf(pTempStr, 512, "%s%d", pTempStr, pAd->ApCfg.MBSSID[index].DefaultKeyId+1);
+								snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "%s%d", pTempStr, pAd->ApCfg.MBSSID[index].DefaultKeyId+1);
 							else
-								snprintf(pTempStr, 512, "%s;%d", pTempStr, pAd->ApCfg.MBSSID[index].DefaultKeyId+1);
+								snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "%s;%d", pTempStr, pAd->ApCfg.MBSSID[index].DefaultKeyId+1);
 						}
 					}
 #endif /* CONFIG_AP_SUPPORT */
@@ -7915,17 +7919,17 @@ void    WscWriteConfToDatFile(
 								KeyType[idx] = (UCHAR)(*pTempStr - 0x30);
 						}
 						pTempStr = temp_ptr;			
-						NdisZeroMemory(pTempStr, 512);
+						NdisZeroMemory(pTempStr, WSC_WR_FILE_MAX_BUF);
 						NdisMoveMemory(pTempStr, WepKeyFormatName, strlen(WepKeyFormatName));
 						for (idx = 0; idx < pAd->ApCfg.BssidNum; idx++)
 						{
 							if (idx == apidx)  
-								snprintf(pTempStr, 512, "%s0", pTempStr);
+								snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "%s0", pTempStr);
 							else
-								snprintf(pTempStr, 512, "%s%d", pTempStr, KeyType[idx]);
+								snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "%s%d", pTempStr, KeyType[idx]);
 							
 							if (apidx < (pAd->ApCfg.BssidNum - 1))
-								snprintf(pTempStr, 512, "%s;", pTempStr);
+								snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "%s;", pTempStr);
 						}
 					}
 				}
@@ -7935,7 +7939,7 @@ void    WscWriteConfToDatFile(
 					pCredentail = &pAd->ApCfg.MBSSID[apidx].WscControl.WscProfile.Profile[0];
 					if (pAd->ApCfg.MBSSID[apidx].WepStatus == Ndis802_11WEPEnabled)
 					{
-						NdisZeroMemory(pTempStr, 512);
+						NdisZeroMemory(pTempStr, WSC_WR_FILE_MAX_BUF);
 						NdisMoveMemory(pTempStr, WepKeyName, strlen(WepKeyName));
 						tempStrLen = strlen(pTempStr);
 						if (pCredentail->KeyLength)
@@ -7945,7 +7949,7 @@ void    WscWriteConfToDatFile(
 							{
 								int jjj=0;
 								for (jjj=0; jjj<pCredentail->KeyLength; jjj++)
-									snprintf(pTempStr, 512, "%s%02x", pTempStr, pCredentail->Key[jjj]);
+									snprintf(pTempStr, WSC_WR_FILE_MAX_BUF, "%s%02x", pTempStr, pCredentail->Key[jjj]);
 							}
 							else if ((pCredentail->KeyLength == 10) ||
 								(pCredentail->KeyLength == 26))

@@ -599,8 +599,7 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 
 		size = pAd->ApCfg.EntryClientCount;
 		changeTxRetry(pAd, size);
-		pktAggrNumChange(pAd, size);
-	
+		
 		if (pAd->CommonCfg.bWmm)
 			tuneBEWMM(pAd, size);
 	}
@@ -847,6 +846,13 @@ BOOLEAN MacTableDeleteEntry(
 			drop_mask_release_per_client(pAd, pEntry);
 #endif /* DROP_MASK_SUPPORT */
 
+#ifdef PEER_DELBA_TX_ADAPT
+			Peer_DelBA_Tx_Adapt_Disable(pAd, pEntry);
+			pEntry->bPeerDelBaTxAdaptEn = 0;
+			RTMPReleaseTimer(&pEntry->DelBA_tx_AdaptTimer, &Cancelled);
+#endif /* PEER_DELBA_TX_ADAPT */
+
+
 //   			NdisZeroMemory(pEntry, sizeof(MAC_TABLE_ENTRY));
 			NdisZeroMemory(pEntry->Addr, MAC_ADDR_LEN);
 			/* invalidate the entry */
@@ -883,8 +889,7 @@ BOOLEAN MacTableDeleteEntry(
 
 		size = pAd->ApCfg.EntryClientCount;
 		changeTxRetry(pAd, size);
-		pktAggrNumChange(pAd, size);
-	
+		
 		if (pAd->CommonCfg.bWmm)
 			tuneBEWMM(pAd, size);
 	}

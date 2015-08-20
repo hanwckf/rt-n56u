@@ -904,4 +904,3 @@ extern UINT32 RT_RateSize;
 INT32  RtPrivIoctlSetVal(VOID);
 
 #endif /* __RT_OS_UTIL_H__ */
-

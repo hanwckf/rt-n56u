@@ -372,6 +372,20 @@ config_apcli_wisp(void)
 	set_wan_unit_value(0, "ifname", wisp_ifname);
 }
 
+static int
+wait_apcli_connected(const char *ifname, int wait_sec)
+{
+	int i;
+
+	for (i = 0; i <= (wait_sec * 2); i++) {
+		usleep(500000);
+		if (get_apcli_connected(ifname))
+			return 1;
+	}
+
+	return 0;
+}
+
 static void
 launch_viptv_wan(void)
 {
@@ -492,7 +506,7 @@ launch_wanx(char *man_ifname, int unit, int wait_dhcpc, int use_zcip)
 
 	/* add a bit delay for AP-Client ready */
 	if (is_man_wisp(man_ifname))
-		sleep(1);
+		wait_apcli_connected(man_ifname, 3);
 
 	if (use_zcip || !is_valid_ipv4(man_addr)) {
 		/* PPPoE connection not needed WAN physical address first, skip wait DHCP lease */
@@ -752,7 +766,7 @@ start_wan(void)
 			
 			/* add a bit delay for AP-Client ready */
 			if (is_man_wisp(wan_ifname))
-				sleep(1);
+				wait_apcli_connected(wan_ifname, 3);
 			
 			/* Assign static IP address to i/f */
 			if (wan_proto == IPV4_WAN_PROTO_IPOE_STATIC) {

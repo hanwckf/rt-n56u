@@ -1561,7 +1561,7 @@ gen_ralink_config_5g(int disable_autoscan)
 }
 
 static int
-wl_ioctl(char *ifname, int cmd, struct iwreq *pwrq)
+wl_ioctl(const char *ifname, int cmd, struct iwreq *pwrq)
 {
 	int ret = 0;
 	int s;
@@ -1583,23 +1583,24 @@ wl_ioctl(char *ifname, int cmd, struct iwreq *pwrq)
 }
 
 int
-get_apcli_connected(char *ifname)
+get_apcli_connected(const char *ifname)
 {
-	int apcli_con = 0;
 	struct iwreq wrq;
 
+	memset(&wrq, 0, sizeof(struct iwreq));
+	wrq.u.ap_addr.sa_family = ARPHRD_ETHER;
+
 	if (wl_ioctl(ifname, SIOCGIWAP, &wrq) >= 0) {
-		wrq.u.ap_addr.sa_family = ARPHRD_ETHER;
 		if (wrq.u.ap_addr.sa_data[0] ||
 		    wrq.u.ap_addr.sa_data[1] ||
 		    wrq.u.ap_addr.sa_data[2] ||
 		    wrq.u.ap_addr.sa_data[3] ||
 		    wrq.u.ap_addr.sa_data[4] ||
 		    wrq.u.ap_addr.sa_data[5])
-			apcli_con = 1;
+			return 1;
 	}
 
-	return apcli_con;
+	return 0;
 }
 
 

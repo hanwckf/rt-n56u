@@ -614,7 +614,7 @@ int setPIN(const char *pin);
 int getBootVer(void);
 int getCountryRegion(const char *str);
 int getCountryRegionABand(const char *str);
-int get_apcli_connected(char *ifname);
+int get_apcli_connected(const char *ifname);
 
 
 /* watchdog.c */

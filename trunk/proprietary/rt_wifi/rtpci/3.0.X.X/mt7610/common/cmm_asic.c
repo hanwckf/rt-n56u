@@ -171,12 +171,19 @@ VOID AsicUpdateProtect(
 	}
 	else
 	{
-		/*ProtCfg.field.ProtectRate = pAd->CommonCfg.RtsRate;*/
-		ProtCfg.field.ProtectCtrl = 0;			/* CCK do not need to be protected*/
-		Protect[REG_IDX_CCK] = ProtCfg.word;
-		ProtCfg.field.ProtectCtrl = ASIC_CTS;	/* OFDM needs using CCK to protect*/
-		Protect[REG_IDX_OFDM] = ProtCfg.word;
-		pAd->FlgCtsEnabled = 1; /* CTS-self is used */
+		if (pAd->CommonCfg.Channel <= 14) {
+			/*ProtCfg.field.ProtectRate = pAd->CommonCfg.RtsRate;*/
+			ProtCfg.field.ProtectCtrl = 0;			/* CCK do not need to be protected*/
+			Protect[REG_IDX_CCK] = ProtCfg.word;
+			ProtCfg.field.ProtectCtrl = ASIC_CTS;	/* OFDM needs using CCK to protect*/
+			Protect[REG_IDX_OFDM] = ProtCfg.word;
+			pAd->FlgCtsEnabled = 1; /* CTS-self is used */
+		} else {
+			ProtCfg.field.ProtectCtrl = 0;
+			Protect[REG_IDX_CCK] = ProtCfg.word;
+			Protect[REG_IDX_OFDM] = ProtCfg.word;
+			pAd->FlgCtsEnabled = 0; /* CTS-self is not used */
+		}
 	}
 
 #ifdef DOT11_N_SUPPORT
@@ -521,7 +528,8 @@ VOID AsicSwitchChannel(
 {
 	UCHAR bw;
 
-
+	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RADIO_OFF))
+		return;
 
 #ifdef CONFIG_AP_SUPPORT
 #ifdef AP_QLOAD_SUPPORT

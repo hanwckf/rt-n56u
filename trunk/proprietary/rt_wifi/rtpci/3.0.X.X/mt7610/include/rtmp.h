@@ -8810,6 +8810,9 @@ VOID mgmt_tb_set_mcast_entry(RTMP_ADAPTER *pAd);
 VOID set_entry_phy_cfg(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry);
 VOID MacTableReset(RTMP_ADAPTER *pAd);
 MAC_TABLE_ENTRY *MacTableLookup(RTMP_ADAPTER *pAd, UCHAR *pAddr);
+#ifdef MULTI_CLIENT_SUPPORT
+VOID changeTxRetry(IN PRTMP_ADAPTER pAd, IN USHORT num);
+#endif
 BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr);
 MAC_TABLE_ENTRY *MacTableInsertEntry(
     IN RTMP_ADAPTER *pAd,

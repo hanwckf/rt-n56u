@@ -1369,6 +1369,15 @@ VOID ApSiteSurvey(
 {
     MLME_SCAN_REQ_STRUCT    ScanReq;
 
+	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))
+	{
+		/*	
+		* Still scanning, ignore this scan.
+		*/
+		DBGPRINT(RT_DEBUG_TRACE, ("ApSiteSurvey:: Scanning now\n"));
+		return;
+	}
+
     AsicDisableSync(pAd);
 
     BssTableInit(&pAd->ScanTab);

@@ -26,6 +26,10 @@
 	John Chang  2004-09-01      add WMM support
 */
 #include "rt_config.h"
+#ifdef DOT11R_FT_SUPPORT
+#include "ft.h"
+#include "ft_cmm.h"
+#endif /* DOT11R_FT_SUPPORT */
 
 extern UCHAR	CISCO_OUI[];
 
@@ -245,6 +249,574 @@ BOOLEAN PeerDelBAActionSanity(
 }
 
 
+BOOLEAN PeerBeaconAndProbeRspSanity_Old(
+    IN PRTMP_ADAPTER pAd,
+    IN VOID *Msg, 
+    IN ULONG MsgLen, 
+    IN UCHAR  MsgChannel,
+    OUT PUCHAR pAddr2, 
+    OUT PUCHAR pBssid, 
+    OUT CHAR Ssid[], 
+    OUT UCHAR *pSsidLen, 
+    OUT UCHAR *pBssType, 
+    OUT USHORT *pBeaconPeriod, 
+    OUT UCHAR *pChannel, 
+    OUT UCHAR *pNewChannel, 
+    OUT LARGE_INTEGER *pTimestamp, 
+    OUT CF_PARM *pCfParm, 
+    OUT USHORT *pAtimWin, 
+    OUT USHORT *pCapabilityInfo, 
+    OUT UCHAR *pErp,
+    OUT UCHAR *pDtimCount, 
+    OUT UCHAR *pDtimPeriod, 
+    OUT UCHAR *pBcastFlag, 
+    OUT UCHAR *pMessageToMe, 
+    OUT UCHAR SupRate[],
+    OUT UCHAR *pSupRateLen,
+    OUT UCHAR ExtRate[],
+    OUT UCHAR *pExtRateLen,
+    OUT UCHAR *pCkipFlag,
+    OUT UCHAR *pAironetCellPowerLimit,
+    OUT PEDCA_PARM pEdcaParm,
+    OUT PQBSS_LOAD_PARM pQbssLoad,
+    OUT PQOS_CAPABILITY_PARM pQosCapability,
+    OUT ULONG *pRalinkIe,
+    OUT UCHAR *pHtCapabilityLen,
+    OUT HT_CAPABILITY_IE *pHtCapability,
+    OUT EXT_CAP_INFO_ELEMENT	*pExtCapInfo,
+    OUT UCHAR *AddHtInfoLen,
+    OUT ADD_HT_INFO_IE *AddHtInfo,
+    OUT UCHAR *NewExtChannelOffset,		/* Ht extension channel offset(above or below)*/
+    OUT USHORT *LengthVIE,	
+    OUT PNDIS_802_11_VARIABLE_IEs pVIE)
+{
+    UCHAR				*Ptr;
+    PFRAME_802_11		pFrame;
+    PEID_STRUCT         pEid;
+    UCHAR				Sanity;
+    /*UCHAR				ECWMin, ECWMax;*/
+    /*MAC_CSR9_STRUC		Csr9;*/
+    ULONG				Length = 0;
+	UCHAR				*pPeerWscIe = NULL;
+	INT					PeerWscIeLen = 0;
+	BOOLEAN				bWscCheck = TRUE;
+    UCHAR				LatchRfChannel = 0;
+
+
+	/*
+		For some 11a AP which didn't have DS_IE, we use two conditions to decide the channel
+		1. If the AP is 11n enabled, then check the control channel.
+		2. If the AP didn't have any info about channel, use the channel we received this 
+			frame as the channel. (May inaccuracy!!)
+	*/
+	UCHAR			CtrlChannel = 0;
+	
+	
+	os_alloc_mem(NULL, &pPeerWscIe, 512);
+    /* Add for 3 necessary EID field check*/
+    Sanity = 0;
+
+    *pAtimWin = 0;
+    *pErp = 0;	
+    *pDtimCount = 0;
+    *pDtimPeriod = 0;
+    *pBcastFlag = 0;
+    *pMessageToMe = 0;
+    *pExtRateLen = 0;
+    *pCkipFlag = 0;			        /* Default of CkipFlag is 0*/
+    *pAironetCellPowerLimit = 0xFF;  /* Default of AironetCellPowerLimit is 0xFF*/
+    *LengthVIE = 0;					/* Set the length of VIE to init value 0*/
+    *pHtCapabilityLen = 0;					/* Set the length of VIE to init value 0*/
+    *AddHtInfoLen = 0;					/* Set the length of VIE to init value 0*/
+    NdisZeroMemory(pExtCapInfo, sizeof(EXT_CAP_INFO_ELEMENT));
+    *pRalinkIe = 0;
+    *pNewChannel = 0;
+    *NewExtChannelOffset = 0xff;	/*Default 0xff means no such IE*/
+    pCfParm->bValid = FALSE;        /* default: no IE_CF found*/
+    pQbssLoad->bValid = FALSE;      /* default: no IE_QBSS_LOAD found*/
+    pEdcaParm->bValid = FALSE;      /* default: no IE_EDCA_PARAMETER found*/
+    pQosCapability->bValid = FALSE; /* default: no IE_QOS_CAPABILITY found*/
+    
+    pFrame = (PFRAME_802_11)Msg;
+
+
+    /* get Addr2 and BSSID from header*/
+    COPY_MAC_ADDR(pAddr2, pFrame->Hdr.Addr2);
+    COPY_MAC_ADDR(pBssid, pFrame->Hdr.Addr3);
+    
+/*	hex_dump("Beacon", Msg, MsgLen);*/
+
+    Ptr = pFrame->Octet;
+    Length += LENGTH_802_11;
+    
+    /* get timestamp from payload and advance the pointer*/
+    NdisMoveMemory(pTimestamp, Ptr, TIMESTAMP_LEN);
+
+	pTimestamp->u.LowPart = cpu2le32(pTimestamp->u.LowPart);
+	pTimestamp->u.HighPart = cpu2le32(pTimestamp->u.HighPart);
+
+    Ptr += TIMESTAMP_LEN;
+    Length += TIMESTAMP_LEN;
+
+    /* get beacon interval from payload and advance the pointer*/
+    NdisMoveMemory(pBeaconPeriod, Ptr, 2);
+    Ptr += 2;
+    Length += 2;
+
+    /* get capability info from payload and advance the pointer*/
+    NdisMoveMemory(pCapabilityInfo, Ptr, 2);
+    Ptr += 2;
+    Length += 2;
+
+    if (CAP_IS_ESS_ON(*pCapabilityInfo)) 
+        *pBssType = BSS_INFRA;
+    else 
+        *pBssType = BSS_ADHOC;
+
+    pEid = (PEID_STRUCT) Ptr;
+
+    /* get variable fields from payload and advance the pointer*/
+    while ((Length + 2 + pEid->Len) <= MsgLen)    
+    {
+        
+        /* Secure copy VIE to VarIE[MAX_VIE_LEN] didn't overflow.*/
+        if ((*LengthVIE + pEid->Len + 2) >= MAX_VIE_LEN)
+        {
+            DBGPRINT(RT_DEBUG_WARN, ("%s() - Variable IEs out of resource [len(=%d) > MAX_VIE_LEN(=%d)]\n",
+                    __FUNCTION__, (*LengthVIE + pEid->Len + 2), MAX_VIE_LEN));
+            break;
+        }
+
+        switch(pEid->Eid)
+        {
+            case IE_SSID:
+                /* Already has one SSID EID in this beacon, ignore the second one*/
+                if (Sanity & 0x1)
+                    break;
+                if(pEid->Len <= MAX_LEN_OF_SSID)
+                {
+                    NdisMoveMemory(Ssid, pEid->Octet, pEid->Len);
+                    *pSsidLen = pEid->Len;
+                    Sanity |= 0x1;
+                }
+                else
+                {
+                    DBGPRINT(RT_DEBUG_TRACE, ("%s() - wrong IE_SSID (len=%d)\n", __FUNCTION__, pEid->Len));
+                    goto SanityCheck;
+                }
+                break;
+
+            case IE_SUPP_RATES:
+                if(pEid->Len <= MAX_LEN_OF_SUPPORTED_RATES)
+                {
+                    Sanity |= 0x2;
+                    NdisMoveMemory(SupRate, pEid->Octet, pEid->Len);
+                    *pSupRateLen = pEid->Len;
+
+                    /*
+						TODO: 2004-09-14 not a good design here, cause it exclude extra 
+							rates from ScanTab. We should report as is. And filter out 
+							unsupported rates in MlmeAux
+					*/
+                    /* Check against the supported rates*/
+                    /* RTMPCheckRates(pAd, SupRate, pSupRateLen);*/
+                }
+                else
+                {
+                    DBGPRINT(RT_DEBUG_TRACE, ("%s() - wrong IE_SUPP_RATES (len=%d)\n",__FUNCTION__, pEid->Len));
+                    goto SanityCheck;
+                }
+                break;
+
+            case IE_HT_CAP:
+			if (pEid->Len >= SIZE_HT_CAP_IE)  /*Note: allow extension.!!*/
+			{
+				NdisMoveMemory(pHtCapability, pEid->Octet, sizeof(HT_CAPABILITY_IE));
+				*pHtCapabilityLen = SIZE_HT_CAP_IE;	/* Nnow we only support 26 bytes.*/
+
+				*(USHORT *)(&pHtCapability->HtCapInfo) = cpu2le16(*(USHORT *)(&pHtCapability->HtCapInfo));
+#ifdef UNALIGNMENT_SUPPORT
+				{
+					EXT_HT_CAP_INFO extHtCapInfo;
+					NdisMoveMemory((PUCHAR)(&extHtCapInfo), (PUCHAR)(&pHtCapability->ExtHtCapInfo), sizeof(EXT_HT_CAP_INFO));
+					*(USHORT *)(&extHtCapInfo) = cpu2le16(*(USHORT *)(&extHtCapInfo));
+					NdisMoveMemory((PUCHAR)(&pHtCapability->ExtHtCapInfo), (PUCHAR)(&extHtCapInfo), sizeof(EXT_HT_CAP_INFO));
+				}
+#else
+				*(USHORT *)(&pHtCapability->ExtHtCapInfo) = cpu2le16(*(USHORT *)(&pHtCapability->ExtHtCapInfo));
+#endif /* UNALIGNMENT_SUPPORT */
+
+			}
+			else
+			{
+				DBGPRINT(RT_DEBUG_WARN, ("%s() - wrong IE_HT_CAP. pEid->Len = %d\n", __FUNCTION__, pEid->Len));
+			}
+			
+		break;
+            case IE_ADD_HT:
+			if (pEid->Len >= sizeof(ADD_HT_INFO_IE))				
+			{
+				/* 
+					This IE allows extension, but we can ignore extra bytes beyond our 
+					knowledge , so only copy first sizeof(ADD_HT_INFO_IE)
+				*/
+				NdisMoveMemory(AddHtInfo, pEid->Octet, sizeof(ADD_HT_INFO_IE));
+				*AddHtInfoLen = SIZE_ADD_HT_INFO_IE;
+
+				CtrlChannel = AddHtInfo->ControlChan;
+				
+				*(USHORT *)(&AddHtInfo->AddHtInfo2) = cpu2le16(*(USHORT *)(&AddHtInfo->AddHtInfo2));
+				*(USHORT *)(&AddHtInfo->AddHtInfo3) = cpu2le16(*(USHORT *)(&AddHtInfo->AddHtInfo3));
+           
+			}
+			else
+			{
+				DBGPRINT(RT_DEBUG_WARN, ("%s() - wrong IE_ADD_HT. \n", __FUNCTION__));
+			}
+				
+		break;
+            case IE_SECONDARY_CH_OFFSET:
+			if (pEid->Len == 1)
+			{
+				*NewExtChannelOffset = pEid->Octet[0];
+			}
+			else
+			{
+				DBGPRINT(RT_DEBUG_WARN, ("%s() - wrong IE_SECONDARY_CH_OFFSET. \n", __FUNCTION__));
+			}
+				
+		break;
+            case IE_FH_PARM:
+                DBGPRINT(RT_DEBUG_TRACE, ("%s(IE_FH_PARM) \n", __FUNCTION__));
+                break;
+
+            case IE_DS_PARM:
+                if(pEid->Len == 1)
+                {
+                    *pChannel = *pEid->Octet;
+                    Sanity |= 0x4;
+                }
+                else
+                {
+                    DBGPRINT(RT_DEBUG_TRACE, ("%s() - wrong IE_DS_PARM (len=%d)\n",__FUNCTION__,pEid->Len));
+                    goto SanityCheck;
+                }
+                break;
+
+            case IE_CF_PARM:
+                if(pEid->Len == 6)
+                {
+                    pCfParm->bValid = TRUE;
+                    pCfParm->CfpCount = pEid->Octet[0];
+                    pCfParm->CfpPeriod = pEid->Octet[1];
+                    pCfParm->CfpMaxDuration = pEid->Octet[2] + 256 * pEid->Octet[3];
+                    pCfParm->CfpDurRemaining = pEid->Octet[4] + 256 * pEid->Octet[5];
+                }
+                else
+                {
+                    DBGPRINT(RT_DEBUG_TRACE, ("%s() - wrong IE_CF_PARM\n", __FUNCTION__));
+					if (pPeerWscIe)
+						os_free_mem(NULL, pPeerWscIe);
+                    return FALSE;
+                }
+                break;
+
+            case IE_IBSS_PARM:
+                if(pEid->Len == 2)
+                {
+                    NdisMoveMemory(pAtimWin, pEid->Octet, pEid->Len);
+                }
+                else
+                {
+                    DBGPRINT(RT_DEBUG_TRACE, ("%s() - wrong IE_IBSS_PARM\n", __FUNCTION__));
+					if (pPeerWscIe)
+						os_free_mem(NULL, pPeerWscIe);
+                    return FALSE;
+                }
+                break;
+
+            case IE_CHANNEL_SWITCH_ANNOUNCEMENT:
+                if(pEid->Len == 3)
+                {
+                	*pNewChannel = pEid->Octet[1];	/*extract new channel number*/
+                }
+                break;
+
+            /* 
+				New for WPA
+				CCX v2 has the same IE, we need to parse that too
+				Wifi WMM use the same IE vale, need to parse that too
+			*/
+            /* case IE_WPA:*/
+            case IE_VENDOR_SPECIFIC:
+                /* Check the OUI version, filter out non-standard usage*/
+                if (NdisEqualMemory(pEid->Octet, RALINK_OUI, 3) && (pEid->Len == 7))
+                {
+			if (pEid->Octet[3] != 0)
+        				*pRalinkIe = pEid->Octet[3];
+        			else
+        				*pRalinkIe = 0xf0000000; /* Set to non-zero value (can't set bit0-2) to represent this is Ralink Chip. So at linkup, we will set ralinkchip flag.*/
+                }
+                else if (NdisEqualMemory(pEid->Octet, WPA_OUI, 4))
+                {
+                    /* Copy to pVIE which will report to bssid list.*/
+                    Ptr = (PUCHAR) pVIE;
+                    NdisMoveMemory(Ptr + *LengthVIE, &pEid->Eid, pEid->Len + 2);
+                    *LengthVIE += (pEid->Len + 2);
+                }
+                else if (NdisEqualMemory(pEid->Octet, WME_PARM_ELEM, 6) && (pEid->Len == 24))
+                {
+                    PUCHAR ptr;
+                    int i;
+
+                    /* parsing EDCA parameters*/
+                    pEdcaParm->bValid          = TRUE;
+                    pEdcaParm->bQAck           = FALSE; /* pEid->Octet[0] & 0x10;*/
+                    pEdcaParm->bQueueRequest   = FALSE; /* pEid->Octet[0] & 0x20;*/
+                    pEdcaParm->bTxopRequest    = FALSE; /* pEid->Octet[0] & 0x40;*/
+                    pEdcaParm->EdcaUpdateCount = pEid->Octet[6] & 0x0f;
+                    pEdcaParm->bAPSDCapable    = (pEid->Octet[6] & 0x80) ? 1 : 0;
+                    ptr = &pEid->Octet[8];
+                    for (i=0; i<4; i++)
+                    {
+                        UCHAR aci = (*ptr & 0x60) >> 5; /* b5~6 is AC INDEX*/
+                        pEdcaParm->bACM[aci]  = (((*ptr) & 0x10) == 0x10);   /* b5 is ACM*/
+                        pEdcaParm->Aifsn[aci] = (*ptr) & 0x0f;               /* b0~3 is AIFSN*/
+                        pEdcaParm->Cwmin[aci] = *(ptr+1) & 0x0f;             /* b0~4 is Cwmin*/
+                        pEdcaParm->Cwmax[aci] = *(ptr+1) >> 4;               /* b5~8 is Cwmax*/
+                        pEdcaParm->Txop[aci]  = *(ptr+2) + 256 * (*(ptr+3)); /* in unit of 32-us*/
+                        ptr += 4; /* point to next AC*/
+                    }
+                }
+                else if (NdisEqualMemory(pEid->Octet, WME_INFO_ELEM, 6) && (pEid->Len == 7))
+                {
+                    /* parsing EDCA parameters*/
+                    pEdcaParm->bValid          = TRUE;
+                    pEdcaParm->bQAck           = FALSE; /* pEid->Octet[0] & 0x10;*/
+                    pEdcaParm->bQueueRequest   = FALSE; /* pEid->Octet[0] & 0x20;*/
+                    pEdcaParm->bTxopRequest    = FALSE; /* pEid->Octet[0] & 0x40;*/
+                    pEdcaParm->EdcaUpdateCount = pEid->Octet[6] & 0x0f;
+                    pEdcaParm->bAPSDCapable    = (pEid->Octet[6] & 0x80) ? 1 : 0;
+
+                    /* use default EDCA parameter*/
+                    pEdcaParm->bACM[QID_AC_BE]  = 0;
+                    pEdcaParm->Aifsn[QID_AC_BE] = 3;
+                    pEdcaParm->Cwmin[QID_AC_BE] = pAd->wmm_cw_min;
+                    pEdcaParm->Cwmax[QID_AC_BE] = pAd->wmm_cw_max;
+                    pEdcaParm->Txop[QID_AC_BE]  = 0;
+
+                    pEdcaParm->bACM[QID_AC_BK]  = 0;
+                    pEdcaParm->Aifsn[QID_AC_BK] = 7;
+                    pEdcaParm->Cwmin[QID_AC_BK] = pAd->wmm_cw_min;
+                    pEdcaParm->Cwmax[QID_AC_BK] = pAd->wmm_cw_max;
+                    pEdcaParm->Txop[QID_AC_BK]  = 0;
+
+                    pEdcaParm->bACM[QID_AC_VI]  = 0;
+                    pEdcaParm->Aifsn[QID_AC_VI] = 2;
+                    pEdcaParm->Cwmin[QID_AC_VI] = pAd->wmm_cw_min - 1;
+                    pEdcaParm->Cwmax[QID_AC_VI] = pAd->wmm_cw_max;
+                    pEdcaParm->Txop[QID_AC_VI]  = 96;   /* AC_VI: 96*32us ~= 3ms*/
+
+                    pEdcaParm->bACM[QID_AC_VO]  = 0;
+                    pEdcaParm->Aifsn[QID_AC_VO] = 2;
+                    pEdcaParm->Cwmin[QID_AC_VO] = pAd->wmm_cw_min - 2;
+                    pEdcaParm->Cwmax[QID_AC_VO] = pAd->wmm_cw_max - 1;
+                    pEdcaParm->Txop[QID_AC_VO]  = 48;   /* AC_VO: 48*32us ~= 1.5ms*/
+                }
+				else if (NdisEqualMemory(pEid->Octet, WPS_OUI, 4)
+ 				)
+                {
+					if (pPeerWscIe)
+					{
+						/* Ignore old WPS IE fragments, if we get the version 0x10 */
+						if (pEid->Octet[4] == 0x10) //First WPS IE will have version 0x10
+						{
+							NdisMoveMemory(pPeerWscIe, pEid->Octet+4, pEid->Len - 4);
+							PeerWscIeLen = (pEid->Len - 4);
+						}
+						else // reassembly remanning, other IE fragmentations will not have version 0x10
+						{
+							if ((PeerWscIeLen +(pEid->Len - 4)) <= 512)
+							{
+								NdisMoveMemory(pPeerWscIe+PeerWscIeLen, pEid->Octet+4, pEid->Len - 4);
+								PeerWscIeLen += (pEid->Len - 4);
+							}
+							else /* ((PeerWscIeLen +(pEid->Len - 4)) > 512) */
+							{
+								bWscCheck = FALSE;
+								DBGPRINT(RT_DEBUG_ERROR, ("%s: Error!!! Sum of All PeerWscIeLen = %d (> 512)\n", __FUNCTION__, (PeerWscIeLen +(pEid->Len - 4))));
+							}
+						}
+					}
+					else
+					{
+						bWscCheck = FALSE;
+						DBGPRINT(RT_DEBUG_ERROR, ("%s: Error!!! pPeerWscIe is empty!\n", __FUNCTION__));
+					}
+
+					
+
+					
+                }
+
+                
+                break;
+
+            case IE_EXT_SUPP_RATES:
+                if (pEid->Len <= MAX_LEN_OF_SUPPORTED_RATES)
+                {
+                    NdisMoveMemory(ExtRate, pEid->Octet, pEid->Len);
+                    *pExtRateLen = pEid->Len;
+
+                    /*
+						TODO: 2004-09-14 not a good design here, cause it exclude extra rates
+								from ScanTab. We should report as is. And filter out unsupported
+								rates in MlmeAux
+					*/
+                    /* Check against the supported rates*/
+                    /* RTMPCheckRates(pAd, ExtRate, pExtRateLen);*/
+                }
+                break;
+
+            case IE_ERP:
+                if (pEid->Len == 1)
+                {
+                    *pErp = (UCHAR)pEid->Octet[0];
+                }
+                break;
+
+            case IE_AIRONET_CKIP:
+                /*
+					0. Check Aironet IE length, it must be larger or equal to 28
+						Cisco AP350 used length as 28
+						Cisco AP12XX used length as 30
+				*/
+                if (pEid->Len < (CKIP_NEGOTIATION_LENGTH - 2))
+                    break;
+
+                /* 1. Copy CKIP flag byte to buffer for process*/
+                *pCkipFlag = *(pEid->Octet + 8);				
+                break;
+
+            case IE_AP_TX_POWER:
+                /* AP Control of Client Transmit Power*/
+                /*0. Check Aironet IE length, it must be 6*/
+                if (pEid->Len != 0x06)
+                    break;
+
+                /* Get cell power limit in dBm*/
+                if (NdisEqualMemory(pEid->Octet, CISCO_OUI, 3) == 1)
+                    *pAironetCellPowerLimit = *(pEid->Octet + 4);	
+                break;
+
+            /* WPA2 & 802.11i RSN*/
+            case IE_RSN:
+                /* There is no OUI for version anymore, check the group cipher OUI before copying*/
+                if (RTMPEqualMemory(pEid->Octet + 2, RSN_OUI, 3))
+                {
+                    /* Copy to pVIE which will report to microsoft bssid list.*/
+                    Ptr = (PUCHAR) pVIE;
+                    NdisMoveMemory(Ptr + *LengthVIE, &pEid->Eid, pEid->Len + 2);
+                    *LengthVIE += (pEid->Len + 2);
+                }
+                break;
+#ifdef WAPI_SUPPORT
+			/* WAPI information element*/
+            case IE_WAPI:                
+                if (RTMPEqualMemory(pEid->Octet + 4, WAPI_OUI, 3))
+                {
+                    /* Copy to pVIE*/
+                    Ptr = (PUCHAR) pVIE;
+                    NdisMoveMemory(Ptr + *LengthVIE, &pEid->Eid, pEid->Len + 2);
+                    *LengthVIE += (pEid->Len + 2);
+                }
+                break;
+#endif /* WAPI_SUPPORT */
+
+
+            case IE_QBSS_LOAD:
+                if (pEid->Len == 5)
+                {
+                    pQbssLoad->bValid = TRUE;
+                    pQbssLoad->StaNum = pEid->Octet[0] + pEid->Octet[1] * 256;
+                    pQbssLoad->ChannelUtilization = pEid->Octet[2];
+                    pQbssLoad->RemainingAdmissionControl = pEid->Octet[3] + pEid->Octet[4] * 256;
+
+					/* Copy to pVIE*/
+                    Ptr = (PUCHAR) pVIE;
+                    NdisMoveMemory(Ptr + *LengthVIE, &pEid->Eid, pEid->Len + 2);
+                    *LengthVIE += (pEid->Len + 2);
+                }
+                break;
+                
+
+#ifdef DOT11R_FT_SUPPORT
+			case IE_FT_MDIE:
+				Ptr = (PUCHAR) pVIE;
+                NdisMoveMemory(Ptr + *LengthVIE, &pEid->Eid, pEid->Len + 2);
+                *LengthVIE += (pEid->Len + 2);
+				break;
+#endif /* DOT11R_FT_SUPPORT */
+
+			case IE_EXT_CAPABILITY:
+				if (pEid->Len >= 1)
+				{
+					UCHAR MaxSize;
+					UCHAR MySize = sizeof(EXT_CAP_INFO_ELEMENT);
+
+					MaxSize = min(pEid->Len, MySize);
+
+					NdisMoveMemory(pExtCapInfo,&pEid->Octet[0], MaxSize);
+				}
+				break;
+            default:
+                break;
+        }
+        
+        Length = Length + 2 + pEid->Len;  /* Eid[1] + Len[1]+ content[Len]*/
+        pEid = (PEID_STRUCT)((UCHAR*)pEid + 2 + pEid->Len);        
+    }
+
+	LatchRfChannel = MsgChannel;
+
+		if ((pAd->LatchRfRegs.Channel > 14) && ((Sanity & 0x4) == 0))
+		{
+			if (CtrlChannel != 0)
+				*pChannel = CtrlChannel;
+			else
+				*pChannel = LatchRfChannel;
+			Sanity |= 0x4;
+		}
+
+
+		if (pPeerWscIe && (PeerWscIeLen > 0) && (PeerWscIeLen <= 512) && ( bWscCheck == TRUE))
+		{
+			UCHAR WscIe[] = {0xdd, 0x00, 0x00, 0x50, 0xF2, 0x04};
+			Ptr = (PUCHAR) pVIE;
+			WscIe[1] = PeerWscIeLen + 4;
+			NdisMoveMemory(Ptr + *LengthVIE, WscIe, 6);
+			NdisMoveMemory(Ptr + *LengthVIE + 6, pPeerWscIe, PeerWscIeLen);
+			*LengthVIE += (PeerWscIeLen + 6);
+		}
+		
+
+SanityCheck:
+	if (pPeerWscIe)
+		os_free_mem(NULL, pPeerWscIe);
+
+	if ((Sanity != 0x7) || ( bWscCheck == FALSE))
+	{
+		DBGPRINT(RT_DEBUG_LOUD, ("%s() - missing field, Sanity=0x%02x\n", __FUNCTION__, Sanity));
+		return FALSE;
+	}
+	else
+	{
+		return TRUE;
+	}
+
+}
+
+
 /* 
     ==========================================================================
     Description:
@@ -263,12 +835,12 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 	IN UCHAR  MsgChannel,
 	OUT BCN_IE_LIST *ie_list,
 	OUT USHORT *LengthVIE,	
-	OUT PNDIS_802_11_VARIABLE_IEs pVIE)
+	OUT PNDIS_802_11_VARIABLE_IEs pVIE,
+	IN BOOLEAN bGetDtim)
 {
 	UCHAR *Ptr;
 	PFRAME_802_11 pFrame;
 	PEID_STRUCT pEid;
-	UCHAR SubType;
 	UCHAR Sanity;
 	ULONG Length = 0;
 	UCHAR *pPeerWscIe = NULL;
@@ -294,9 +866,7 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 	*LengthVIE = 0; /* Set the length of VIE to init value 0*/
 	
 	pFrame = (PFRAME_802_11)Msg;
-    
-	/* get subtype from header*/
-	SubType = (UCHAR)pFrame->Hdr.FC.SubType;
+
 
     /* get Addr2 and BSSID from header*/
     COPY_MAC_ADDR(&ie_list->Addr2[0], pFrame->Hdr.Addr2);
@@ -702,6 +1272,13 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 			break;
 
 
+#ifdef DOT11R_FT_SUPPORT
+		case IE_FT_MDIE:
+			Ptr = (PUCHAR) pVIE;
+			NdisMoveMemory(Ptr + *LengthVIE, &pEid->Eid, pEid->Len + 2);
+			*LengthVIE += (pEid->Len + 2);
+			break;
+#endif /* DOT11R_FT_SUPPORT */
 
 		case IE_EXT_CAPABILITY:
 			if (pEid->Len >= 1)
@@ -899,7 +1476,15 @@ BOOLEAN MlmeScanReqSanity(
 	OUT UCHAR *pBssType, 
 	OUT CHAR Ssid[], 
 	OUT UCHAR *pSsidLen, 
-	OUT UCHAR *pScanType) 
+	OUT UCHAR *pScanType
+#ifdef CONFIG_AP_SUPPORT
+#ifdef CUSTOMER_DCC_FEATURE
+	,
+	OUT UINT	*pChannel,
+	OUT UINT	*pTimeout 
+#endif
+#endif
+								) 
 {
 	MLME_SCAN_REQ_STRUCT *Info;
 
@@ -908,6 +1493,12 @@ BOOLEAN MlmeScanReqSanity(
 	*pSsidLen = Info->SsidLen;	
 	NdisMoveMemory(Ssid, Info->Ssid, *pSsidLen);
 	*pScanType = Info->ScanType;
+#ifdef CONFIG_AP_SUPPORT
+#ifdef CUSTOMER_DCC_FEATURE
+	*pChannel = Info->Channel;
+	*pTimeout = Info->Timeout;
+#endif
+#endif
 
 	if ((*pBssType == BSS_INFRA || *pBssType == BSS_ADHOC || *pBssType == BSS_ANY)
 		&& (SCAN_MODE_VALID(*pScanType))
@@ -937,6 +1528,26 @@ UCHAR ChannelSanity(
     }
     return 0;
 }
+
+#ifdef P2P_CHANNEL_LIST_SEPARATE
+/* IRQL = DISPATCH_LEVEL*/
+UCHAR P2PChannelSanity(
+    IN PRTMP_ADAPTER pAd, 
+    IN UCHAR channel)
+{
+    int i;
+	PCFG80211_CTRL pCfg80211_Ctrl = &pAd->cfg80211_ctrl;
+
+    for (i = 0; i < pCfg80211_Ctrl->ChannelListNum; i ++)
+    {
+        if (channel == pCfg80211_Ctrl->ChannelList[i].Channel)
+            return 1;
+    }
+    return 0;
+}
+#endif /* P2P_CHANNEL_LIST_SEPARATE */
+
+
 
 /* 
     ==========================================================================
@@ -1025,6 +1636,12 @@ BOOLEAN PeerAuthSanity(
             return FALSE;
         }
     } 
+#ifdef DOT11R_FT_SUPPORT
+	else if (*pAlg == AUTH_MODE_FT)
+	{
+		return TRUE;
+	}
+#endif /* DOT11R_FT_SUPPORT */
     else 
     {
         DBGPRINT(RT_DEBUG_TRACE, ("PeerAuthSanity fail - wrong algorithm\n"));
@@ -1056,6 +1673,9 @@ BOOLEAN MlmeAuthReqSanity(
     *pAlg = pInfo->Alg;
     
     if (((*pAlg == AUTH_MODE_KEY) ||(*pAlg == AUTH_MODE_OPEN)
+#ifdef DOT11R_FT_SUPPORT
+		|| (*pAlg == AUTH_MODE_FT)
+#endif /* DOT11R_FT_SUPPORT */
      	) && 
         ((*pAddr & 0x01) == 0)) 
     {
@@ -1207,292 +1827,6 @@ NDIS_802_11_NETWORK_TYPE NetworkTypeInUseSanity(BSS_ENTRY *pBss)
 }	
 
 
-#ifdef QOS_DLS_SUPPORT
-BOOLEAN PeerDlsReqSanity(
-    IN PRTMP_ADAPTER pAd, 
-    IN VOID *Msg, 
-    IN ULONG MsgLen,
-    OUT PUCHAR pDA,
-    OUT PUCHAR pSA,
-    OUT USHORT *pCapabilityInfo, 
-    OUT USHORT *pDlsTimeout,
-    OUT UCHAR *pRatesLen,
-    OUT UCHAR Rates[],
-	OUT UCHAR *pHtCapabilityLen,
-    OUT HT_CAPABILITY_IE *pHtCapability)
-{
-	CHAR            *Ptr;
-    PFRAME_802_11	Fr = (PFRAME_802_11)Msg;
-	PEID_STRUCT  eid_ptr;
-
-    /* to prevent caller from using garbage output value*/
-    *pCapabilityInfo	= 0;
-    *pDlsTimeout	= 0;
-	*pHtCapabilityLen = 0;
-
-    Ptr = (PCHAR)Fr->Octet;
-
-	/* offset to destination MAC address (Category and Action field)*/
-    Ptr += 2;
-
-    /* get DA from payload and advance the pointer*/
-    NdisMoveMemory(pDA, Ptr, MAC_ADDR_LEN);
-    Ptr += MAC_ADDR_LEN;
-
-    /* get SA from payload and advance the pointer*/
-    NdisMoveMemory(pSA, Ptr, MAC_ADDR_LEN);
-    Ptr += MAC_ADDR_LEN;
-
-    /* get capability info from payload and advance the pointer*/
-    NdisMoveMemory(pCapabilityInfo, Ptr, 2);
-    Ptr += 2;
-
-    /* get capability info from payload and advance the pointer*/
-    NdisMoveMemory(pDlsTimeout, Ptr, 2);
-    Ptr += 2;
-
-	/* Category and Action field + DA + SA + capability + Timeout*/
-	eid_ptr = (PEID_STRUCT) &Fr->Octet[18];	
-
-	while (((UCHAR*)eid_ptr + eid_ptr->Len + 1) < ((UCHAR*)Fr + MsgLen))
-	{
-		switch(eid_ptr->Eid)
-		{
-			case IE_SUPP_RATES:
-                if ((eid_ptr->Len <= MAX_LEN_OF_SUPPORTED_RATES) && (eid_ptr->Len > 0))
-                {
-                    NdisMoveMemory(Rates, eid_ptr->Octet, eid_ptr->Len);
-                    DBGPRINT(RT_DEBUG_TRACE, ("PeerDlsReqSanity - IE_SUPP_RATES., Len=%d. Rates[0]=%x\n",eid_ptr->Len, Rates[0]));
-                    DBGPRINT(RT_DEBUG_TRACE, ("Rates[1]=%x %x %x %x %x %x %x\n", Rates[1], Rates[2], Rates[3], Rates[4], Rates[5], Rates[6], Rates[7]));
-                    *pRatesLen = eid_ptr->Len;
-                }
-                else
-                {
-                    *pRatesLen = 8;
-					Rates[0] = 0x82;
-					Rates[1] = 0x84;
-					Rates[2] = 0x8b;
-					Rates[3] = 0x96;
-					Rates[4] = 0x12;
-					Rates[5] = 0x24;
-					Rates[6] = 0x48;
-					Rates[7] = 0x6c;
-                    DBGPRINT(RT_DEBUG_TRACE, ("PeerDlsReqSanity - wrong IE_SUPP_RATES., Len=%d\n",eid_ptr->Len));
-                }
-				break;
-
-			case IE_EXT_SUPP_RATES:
-                if (eid_ptr->Len + *pRatesLen <= MAX_LEN_OF_SUPPORTED_RATES)
-                {
-                    NdisMoveMemory(&Rates[*pRatesLen], eid_ptr->Octet, eid_ptr->Len);
-                    *pRatesLen = (*pRatesLen) + eid_ptr->Len;
-                }
-                else
-                {
-                    NdisMoveMemory(&Rates[*pRatesLen], eid_ptr->Octet, MAX_LEN_OF_SUPPORTED_RATES - (*pRatesLen));
-                    *pRatesLen = MAX_LEN_OF_SUPPORTED_RATES;
-                }
-				break;
-
-			case IE_HT_CAP:
-				if (eid_ptr->Len >= sizeof(HT_CAPABILITY_IE))
-				{
-					NdisMoveMemory(pHtCapability, eid_ptr->Octet, sizeof(HT_CAPABILITY_IE));
-
-					*(USHORT *)(&pHtCapability->HtCapInfo) = cpu2le16(*(USHORT *)(&pHtCapability->HtCapInfo));
-#ifdef UNALIGNMENT_SUPPORT
-					{
-						EXT_HT_CAP_INFO extHtCapInfo;
-
-						NdisMoveMemory((PUCHAR)(&extHtCapInfo), (PUCHAR)(&pHtCapability->ExtHtCapInfo), sizeof(EXT_HT_CAP_INFO));
-						*(USHORT *)(&extHtCapInfo) = cpu2le16(*(USHORT *)(&extHtCapInfo));
-						NdisMoveMemory((PUCHAR)(&pHtCapability->ExtHtCapInfo), (PUCHAR)(&extHtCapInfo), sizeof(EXT_HT_CAP_INFO));		
-					}
-#else				
-					*(USHORT *)(&pHtCapability->ExtHtCapInfo) = cpu2le16(*(USHORT *)(&pHtCapability->ExtHtCapInfo));
-#endif /* UNALIGNMENT_SUPPORT */
-					*pHtCapabilityLen = sizeof(HT_CAPABILITY_IE);
-
-					DBGPRINT(RT_DEBUG_TRACE, ("PeerDlsReqSanity - IE_HT_CAP\n"));
-				}
-				else
-				{
-					DBGPRINT(RT_DEBUG_TRACE, ("PeerDlsReqSanity - wrong IE_HT_CAP.eid_ptr->Len = %d\n", eid_ptr->Len));
-				}
-				break;
-
-			default:
-				break;
-		}
-
-		eid_ptr = (PEID_STRUCT)((UCHAR*)eid_ptr + 2 + eid_ptr->Len);
-	}
-
-    return TRUE;
-}
-
-BOOLEAN PeerDlsRspSanity(
-    IN PRTMP_ADAPTER pAd, 
-    IN VOID *Msg, 
-    IN ULONG MsgLen,
-    OUT PUCHAR pDA,
-    OUT PUCHAR pSA,
-    OUT USHORT *pCapabilityInfo, 
-    OUT USHORT *pStatus,
-    OUT UCHAR *pRatesLen,
-    OUT UCHAR Rates[],
-    OUT UCHAR *pHtCapabilityLen,
-    OUT HT_CAPABILITY_IE *pHtCapability) 
-{
-    CHAR            *Ptr;
-    PFRAME_802_11	Fr = (PFRAME_802_11)Msg;
-	PEID_STRUCT  eid_ptr;
-
-    /* to prevent caller from using garbage output value*/
-	if (pStatus)
-    *pStatus		= 0;
-    *pCapabilityInfo	= 0;
-	*pHtCapabilityLen = 0;
-
-    Ptr = (PCHAR)Fr->Octet;
-
-	/* offset to destination MAC address (Category and Action field)*/
-    Ptr += 2;
-
-	/* get status code from payload and advance the pointer*/
-	if (pStatus)
-		NdisMoveMemory(pStatus, Ptr, 2);
-    Ptr += 2;
-
-    /* get DA from payload and advance the pointer*/
-    NdisMoveMemory(pDA, Ptr, MAC_ADDR_LEN);
-    Ptr += MAC_ADDR_LEN;
-
-    /* get SA from payload and advance the pointer*/
-    NdisMoveMemory(pSA, Ptr, MAC_ADDR_LEN);
-    Ptr += MAC_ADDR_LEN;
-
-	if (pStatus == 0)
-	{
-	    /* get capability info from payload and advance the pointer*/
-	    NdisMoveMemory(pCapabilityInfo, Ptr, 2);
-	    Ptr += 2;
-	}
-
-	/* Category and Action field + status code + DA + SA + capability*/
-	eid_ptr = (PEID_STRUCT) &Fr->Octet[18];	
-
-	while (((UCHAR*)eid_ptr + eid_ptr->Len + 1) < ((UCHAR*)Fr + MsgLen))
-	{
-		switch(eid_ptr->Eid)
-		{
-			case IE_SUPP_RATES:
-                if ((eid_ptr->Len <= MAX_LEN_OF_SUPPORTED_RATES) && (eid_ptr->Len > 0))
-                {
-                    NdisMoveMemory(Rates, eid_ptr->Octet, eid_ptr->Len);
-                    DBGPRINT(RT_DEBUG_TRACE, ("PeerDlsRspSanity - IE_SUPP_RATES., Len=%d. Rates[0]=%x\n",eid_ptr->Len, Rates[0]));
-                    DBGPRINT(RT_DEBUG_TRACE, ("Rates[1]=%x %x %x %x %x %x %x\n", Rates[1], Rates[2], Rates[3], Rates[4], Rates[5], Rates[6], Rates[7]));
-                    *pRatesLen = eid_ptr->Len;
-                }
-                else
-                {
-                    *pRatesLen = 8;
-					Rates[0] = 0x82;
-					Rates[1] = 0x84;
-					Rates[2] = 0x8b;
-					Rates[3] = 0x96;
-					Rates[4] = 0x12;
-					Rates[5] = 0x24;
-					Rates[6] = 0x48;
-					Rates[7] = 0x6c;
-                    DBGPRINT(RT_DEBUG_TRACE, ("PeerDlsRspSanity - wrong IE_SUPP_RATES., Len=%d\n",eid_ptr->Len));
-                }
-				break;
-
-			case IE_EXT_SUPP_RATES:
-                if (eid_ptr->Len + *pRatesLen <= MAX_LEN_OF_SUPPORTED_RATES)
-                {
-                    NdisMoveMemory(&Rates[*pRatesLen], eid_ptr->Octet, eid_ptr->Len);
-                    *pRatesLen = (*pRatesLen) + eid_ptr->Len;
-                }
-                else
-                {
-                    NdisMoveMemory(&Rates[*pRatesLen], eid_ptr->Octet, MAX_LEN_OF_SUPPORTED_RATES - (*pRatesLen));
-                    *pRatesLen = MAX_LEN_OF_SUPPORTED_RATES;
-                }
-				break;
-
-			case IE_HT_CAP:
-				if (eid_ptr->Len >= sizeof(HT_CAPABILITY_IE))
-				{
-					NdisMoveMemory(pHtCapability, eid_ptr->Octet, sizeof(HT_CAPABILITY_IE));
-
-					*(USHORT *)(&pHtCapability->HtCapInfo) = cpu2le16(*(USHORT *)(&pHtCapability->HtCapInfo));
-#ifdef UNALIGNMENT_SUPPORT
-					{
-						EXT_HT_CAP_INFO extHtCapInfo;
-
-						NdisMoveMemory((PUCHAR)(&extHtCapInfo), (PUCHAR)(&pHtCapability->ExtHtCapInfo), sizeof(EXT_HT_CAP_INFO));
-						*(USHORT *)(&extHtCapInfo) = cpu2le16(*(USHORT *)(&extHtCapInfo));
-						NdisMoveMemory((PUCHAR)(&pHtCapability->ExtHtCapInfo), (PUCHAR)(&extHtCapInfo), sizeof(EXT_HT_CAP_INFO));		
-					}
-#else				
-					*(USHORT *)(&pHtCapability->ExtHtCapInfo) = cpu2le16(*(USHORT *)(&pHtCapability->ExtHtCapInfo));
-#endif /* UNALIGNMENT_SUPPORT */
-					*pHtCapabilityLen = sizeof(HT_CAPABILITY_IE);
-
-					DBGPRINT(RT_DEBUG_TRACE, ("PeerDlsRspSanity - IE_HT_CAP\n"));
-				}
-				else
-				{
-					DBGPRINT(RT_DEBUG_TRACE, ("PeerDlsRspSanity - wrong IE_HT_CAP.eid_ptr->Len = %d\n", eid_ptr->Len));
-				}
-				break;
-
-			default:
-				break;
-		}
-
-		eid_ptr = (PEID_STRUCT)((UCHAR*)eid_ptr + 2 + eid_ptr->Len);
-	}
-
-    return TRUE;
-}
-
-BOOLEAN PeerDlsTearDownSanity(
-    IN PRTMP_ADAPTER pAd, 
-    IN VOID *Msg, 
-    IN ULONG MsgLen,
-    OUT PUCHAR pDA,
-    OUT PUCHAR pSA,
-    OUT USHORT *pReason) 
-{
-    CHAR            *Ptr;
-    PFRAME_802_11	Fr = (PFRAME_802_11)Msg;
-
-    /* to prevent caller from using garbage output value*/
-    *pReason	= 0;
-
-    Ptr = (PCHAR)Fr->Octet;
-
-	/* offset to destination MAC address (Category and Action field)*/
-    Ptr += 2;
-
-    /* get DA from payload and advance the pointer*/
-    NdisMoveMemory(pDA, Ptr, MAC_ADDR_LEN);
-    Ptr += MAC_ADDR_LEN;
-
-    /* get SA from payload and advance the pointer*/
-    NdisMoveMemory(pSA, Ptr, MAC_ADDR_LEN);
-    Ptr += MAC_ADDR_LEN;
-
-	/* get reason code from payload and advance the pointer*/
-    NdisMoveMemory(pReason, Ptr, 2);
-    Ptr += 2;
-
-    return TRUE;
-}
-#endif /* QOS_DLS_SUPPORT */
 
 
 /* 
@@ -1513,7 +1847,9 @@ BOOLEAN PeerProbeReqSanity(
     UCHAR		*Ptr;
     UCHAR		eid =0, eid_len = 0, *eid_data;
 #ifdef CONFIG_AP_SUPPORT
+#if defined(WSC_INCLUDED) || defined(EASY_CONFIG_SETUP)
     UCHAR       apidx = MAIN_MBSSID;
+#endif 
 	UCHAR       Addr1[MAC_ADDR_LEN];
 #ifdef WSC_INCLUDED
 	UCHAR		*pPeerWscIe = NULL;
@@ -1556,7 +1892,6 @@ BOOLEAN PeerProbeReqSanity(
 	        case IE_VENDOR_SPECIFIC:
 				if (eid_len <= 4)
 					break;
-
 #ifdef RSSI_FEEDBACK
 		if (NdisEqualMemory(eid_data, RALINK_OUI, 3) && (eid_len == 7))
 		{

@@ -37,6 +37,11 @@
 #include "dot11i_wpa.h"
 #include <linux/rtnetlink.h>
 
+#ifdef CONFIG_TRACE_SUPPORT
+#define CREATE_TRACE_POINTS
+#include "os/trace_linux.h"
+#endif
+
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 #include "../../../../../../net/nat/hw_nat/ra_nat.h"
 #include "../../../../../../net/nat/hw_nat/frame_engine.h"
@@ -465,11 +470,11 @@ PNDIS_PACKET DuplicatePacket(PNET_DEV pNetDev, PNDIS_PACKET pPacket)
 {
 	struct sk_buff *skb;
 	PNDIS_PACKET pRetPacket = NULL;
-	USHORT DataSize;
-	UCHAR *pData;
+	//USHORT DataSize;
+	//UCHAR *pData;
 
-	DataSize = (USHORT) GET_OS_PKT_LEN(pPacket);
-	pData = (PUCHAR) GET_OS_PKT_DATAPTR(pPacket);
+	//DataSize = (USHORT) GET_OS_PKT_LEN(pPacket);
+	//pData = (PUCHAR) GET_OS_PKT_DATAPTR(pPacket);
 
 	skb = skb_clone(RTPKT_TO_OSPKT(pPacket), MEM_ALLOC_FLAG);
 	if (skb) {
@@ -1569,9 +1574,7 @@ void RtmpOSNetDevDetach(PNET_DEV pNetDev)
 	struct net_device_ops *pNetDevOps = (struct net_device_ops *)pNetDev->netdev_ops;
 #endif
 
-    //RtmpOSNetDevProtect(1);
 	unregister_netdevice(pNetDev);
-    //RtmpOSNetDevProtect(0);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
 	vfree(pNetDevOps);
@@ -2072,8 +2075,9 @@ int RtmpOSIRQRelease(
 	IN PPCI_DEV pci_dev,
 	IN BOOLEAN *pHaveMsi)
 {
+#if defined(RTMP_PCI_SUPPORT) || defined(RTMP_RBUS_SUPPORT)
 	struct net_device *net_dev = (struct net_device *)pNetDev;
-
+#endif /* defined(RTMP_PCI_SUPPORT) || defined(RTMP_RBUS_SUPPORT) */
 #ifdef RTMP_PCI_SUPPORT
 	if (infType == RTMP_DEV_INF_PCI || infType == RTMP_DEV_INF_PCIE) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,0)

@@ -150,6 +150,9 @@
 #include "wapi.h"
 #endif /* WAPI_SUPPORT */
 
+#ifdef DOT11K_RRM_SUPPORT
+#include "rrm.h"
+#endif /* DOT11K_RRM_SUPPORT */
 
 
 #if defined(AP_WSC_INCLUDED) || defined(STA_WSC_INCLUDED)
@@ -187,12 +190,21 @@
 #include "vr_ikans.h"
 #endif /* IKANOS_VX_1X0 */
 
+#ifdef DOT11R_FT_SUPPORT
+#include	"ft.h"
+#endif /* DOT11R_FT_SUPPORT */
 
+#ifdef DOT11K_RRM_SUPPORT
+#include "rrm.h"
+#endif /* DOT11K_RRM_SUPPORT */
 
 #ifdef DOT11W_PMF_SUPPORT
 #include "pmf.h"
 #endif /* DOT11W_PMF_SUPPORT */
 
+#ifdef DOT11V_WNM_SUPPORT
+#include "wnm.h"
+#endif /* DOT11V_WNM_SUPPORT */
 
 #ifdef WAPI_SUPPORT
 #include "wapi.h"
@@ -224,6 +236,7 @@
 
 #ifdef MT_MAC
 #include "mt_io.h"
+#include "mt_ps.h"
 #endif
 
 #ifdef CONFIG_SNIFFER_SUPPORT
@@ -261,12 +274,6 @@
 
 #ifdef CONFIG_HOTSPOT
 #include "hotspot.h"
-#endif
-
-#ifdef LINUX
-#ifdef CONFIG_TRACE_SUPPORT
-#include "os/trace.h"
-#endif
 #endif
 
 #endif	/* __RT_CONFIG_H__ */

@@ -319,6 +319,10 @@ static USHORT ba_indicate_reordering_mpdus_in_order(
 
 		/* dequeue in-order frame from reodering list */
 		mpdu_blk = ba_reordering_mpdu_dequeue(&pBAEntry->list);
+		if(mpdu_blk == NULL)
+		{
+			break;
+		}
 		/* pass this frame up */
 		ANNOUNCE_REORDERING_PACKET(pAd, mpdu_blk);
 		/* move to next sequence */
@@ -349,6 +353,10 @@ static void ba_indicate_reordering_mpdus_le_seq(
 		{
 			/* dequeue in-order frame from reodering list */
 			mpdu_blk = ba_reordering_mpdu_dequeue(&pBAEntry->list);
+			if(mpdu_blk == NULL)
+			{
+				break;
+			}
 			/* pass this frame up */
 			ANNOUNCE_REORDERING_PACKET(pAd, mpdu_blk);
 			/* free mpdu_blk */
@@ -502,8 +510,9 @@ VOID BAOriSessionSetUp(
 		return;
 
 	pEntry->BAOriWcidArray[TID] = Idx;
+	
 
-	BAWinSize = pAd->CommonCfg.BACapability.field.TxBAWinLimit;
+    BAWinSize = pAd->CommonCfg.BACapability.field.TxBAWinLimit;
 
 
 	/* Initialize BA session */
@@ -538,14 +547,8 @@ VOID BAOriSessionAdd(
 	BOOLEAN Cancelled;
 	UCHAR TID;
 	USHORT Idx;
+
 	UCHAR MaxPeerBufSize;
-#if	defined(RTMP_MAC) || defined(RTL_MAC)
-	UCHAR *pOutBuffer2 = NULL;
-	NDIS_STATUS NStatus;
-	MAC_TABLE_ENTRY *mac_entry;
-	ULONG FrameLen;
-	FRAME_BAR FrameBar;
-#endif /* defined(RTMP_MAC) || defined(RTL_MAC) */
 	STA_TR_ENTRY *tr_entry;
 
 	TID = pFrame->BaParm.TID;
@@ -597,46 +600,8 @@ VOID BAOriSessionAdd(
 					__FUNCTION__, pEntry->TXBAbitmap, pBAEntry->amsdu_cap,
 					pBAEntry->BAWinSize, pBAEntry->ORIBATimer.TimerValue));
 
-#if	defined(RTMP_MAC) || defined(RTL_MAC)
-		if ((pAd->chipCap.hif_type == HIF_RTMP) || (pAd->chipCap.hif_type == HIF_RLT))
-		{
-			/* SEND BAR */
-			NStatus = MlmeAllocateMemory(pAd, &pOutBuffer2);  /*Get an unused nonpaged memory*/
-			if (NStatus != NDIS_STATUS_SUCCESS)
-			{
-				DBGPRINT(RT_DEBUG_TRACE,("BA - BAOriSessionAdd() allocate memory failed \n"));
-				return;
-			}
-
-			// TODO: shiang, is the mac_entry and pEntry the same one??
-			mac_entry = &pAd->MacTab.Content[pBAEntry->Wcid];
-#ifdef APCLI_SUPPORT
-			if (IS_ENTRY_APCLI(mac_entry))
-			{
-#ifdef MAC_REPEATER_SUPPORT
-				struct wifi_dev *wdev = mac_entry->wdev;
-				UINT apidx = pEntry->func_tb_idx;
-				if (pEntry->bReptCli)
-					BarHeaderInit(pAd, &FrameBar, mac_entry->Addr,
-									pAd->ApCfg.ApCliTab[apidx].RepeaterCli[pEntry->MatchReptCliIdx].CurrentAddress);
-				else
-#endif /* MAC_REPEATER_SUPPORT */
-					BarHeaderInit(pAd, &FrameBar, mac_entry->Addr, mac_entry->wdev->if_addr);
-			}
-			else
-#endif /* APCLI_SUPPORT */	
-			BarHeaderInit(pAd, &FrameBar, mac_entry->Addr, mac_entry->wdev->if_addr);
-
-			FrameBar.StartingSeq.field.FragNum = 0;	/* make sure sequence not clear in DEL function.*/
-			FrameBar.StartingSeq.field.StartSeq = pBAEntry->Sequence; /* make sure sequence not clear in DEL funciton.*/
-			FrameBar.BarControl.TID = pBAEntry->TID; /* make sure sequence not clear in DEL funciton.*/
-			MakeOutgoingFrame(pOutBuffer2, &FrameLen,
-								sizeof(FRAME_BAR), &FrameBar,
-								END_OF_ARGS);
-			MiniportMMRequest(pAd, (MGMT_USE_QUEUE_FLAG | QID_AC_BE), pOutBuffer2, FrameLen);
-			MlmeFreeMemory(pAd, pOutBuffer2);
-		}
-#endif
+        /* Send BAR after BA session is build up */
+        SendRefreshBAR(pAd, pEntry);
 
 		if (pBAEntry->ORIBATimer.TimerValue)
 			RTMPSetTimer(&pBAEntry->ORIBATimer, pBAEntry->ORIBATimer.TimerValue); /* in mSec */
@@ -803,7 +768,7 @@ VOID BATableFreeOriEntry(RTMP_ADAPTER *pAd, ULONG Idx)
 	if ((Idx == 0) || (Idx >= MAX_LEN_OF_BA_ORI_TABLE))
 		return;
 
-	pBAEntry = &pAd->BATable.BAOriEntry[Idx];
+	pBAEntry =&pAd->BATable.BAOriEntry[Idx];
 
 	NdisAcquireSpinLock(&pAd->BATabLock);
 	if (pBAEntry->ORI_BA_Status != Originator_NONE)
@@ -811,23 +776,24 @@ VOID BATableFreeOriEntry(RTMP_ADAPTER *pAd, ULONG Idx)
 		pEntry = &pAd->MacTab.Content[pBAEntry->Wcid];
 		pEntry->BAOriWcidArray[pBAEntry->TID] = 0;
 		DBGPRINT(RT_DEBUG_TRACE, ("%s: Wcid = %d, TID = %d\n", __FUNCTION__, pBAEntry->Wcid, pBAEntry->TID));
-		
+
 		if (pBAEntry->ORI_BA_Status == Originator_Done)
 		{
 			pAd->BATable.numDoneOriginator -= 1;
-			pEntry->TXBAbitmap &= (~(1<<(pBAEntry->TID) ));
+		 	pEntry->TXBAbitmap &= (~(1<<(pBAEntry->TID) ));
 			DBGPRINT(RT_DEBUG_TRACE, ("BATableFreeOriEntry numAsOriginator= %ld\n", pAd->BATable.numAsRecipient));
 			/* Erase Bitmap flag.*/
 		}
-		
+	
 		ASSERT(pAd->BATable.numAsOriginator != 0);
-		
+
 		pAd->BATable.numAsOriginator -= 1;
 		
 		pBAEntry->ORI_BA_Status = Originator_NONE;
 		pBAEntry->Token = 0;
 	}
 	NdisReleaseSpinLock(&pAd->BATabLock);
+	
 }
 
 
@@ -836,21 +802,22 @@ VOID BATableFreeRecEntry(RTMP_ADAPTER *pAd, ULONG Idx)
 	BA_REC_ENTRY    *pBAEntry = NULL;
 	MAC_TABLE_ENTRY *pEntry;
 
+
 	if ((Idx == 0) || (Idx >= MAX_LEN_OF_BA_REC_TABLE))
 		return;
 
-	pBAEntry = &pAd->BATable.BARecEntry[Idx];
+	pBAEntry =&pAd->BATable.BARecEntry[Idx];
 
-	NdisAcquireSpinLock(&pAd->BATabLock);
+	NdisAcquireSpinLock(&pAd->BATabLock);	
 	if (pBAEntry->REC_BA_Status != Recipient_NONE)
 	{
 		pEntry = &pAd->MacTab.Content[pBAEntry->Wcid];
 		pEntry->BARecWcidArray[pBAEntry->TID] = 0;
-		
+
 		ASSERT(pAd->BATable.numAsRecipient != 0);
-		
+
 		pAd->BATable.numAsRecipient -= 1;
-		
+
 		pBAEntry->REC_BA_Status = Recipient_NONE;
 	}
 	NdisReleaseSpinLock(&pAd->BATabLock);
@@ -1157,7 +1124,7 @@ VOID PeerAddBAReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	PUCHAR pOutBuffer = NULL;
 	NDIS_STATUS NStatus;
 	PFRAME_ADDBA_REQ pAddreqFrame =  (PFRAME_ADDBA_REQ)(&Elem->Msg[0]);
-	ULONG FrameLen, *ptemp;
+	ULONG FrameLen/*, *ptemp*/;
 	MAC_TABLE_ENTRY *pMacEntry;
 #ifdef CONFIG_AP_SUPPORT
 	INT apidx;
@@ -1171,7 +1138,13 @@ VOID PeerAddBAReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	
 	pMacEntry = &pAd->MacTab.Content[Elem->Wcid];
 	DBGPRINT(RT_DEBUG_TRACE,("BA - PeerAddBAReqAction----> \n"));
-	ptemp = (PULONG)Elem->Msg;
+    if ((pMacEntry == NULL) || (pMacEntry->wdev == NULL))
+    {
+        DBGPRINT(RT_DEBUG_ERROR,(" %s: HIT the pMacEntry or pMacEntry->wdev NULL check\n", __FUNCTION__));
+        return;
+    }
+	
+	//ptemp = (PULONG)Elem->Msg;
 
 	if (PeerAddBAReqActionSanity(pAd, Elem->Msg, Elem->MsgLen, pAddr))
 	{
@@ -1211,7 +1184,7 @@ VOID PeerAddBAReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	if (pMacEntry)
 	{
 		{
-			ActHeaderInit(pAd, &ADDframe.Hdr, pAddr, pMacEntry->wdev->if_addr, pMacEntry->bssid);
+			ActHeaderInit(pAd, &ADDframe.Hdr, pAddr, pMacEntry->wdev->if_addr,  pMacEntry->wdev->bssid /*pMacEntry->bssid*/);
 		}
 	}
 #else
@@ -1245,7 +1218,7 @@ VOID PeerAddBAReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		}
 	}
 #endif /* CONFIG_AP_SUPPORT */
-#endif /* P2P_SUPPORT */
+#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT */
 	ADDframe.Category = CATEGORY_BA;
 	ADDframe.Action = ADDBA_RESP;
 	ADDframe.Token = pAddreqFrame->Token;
@@ -1547,7 +1520,7 @@ VOID SendBeaconRequest(RTMP_ADAPTER *pAd, UCHAR Wcid)
 		DBGPRINT(RT_DEBUG_ERROR,("Radio - SendBeaconRequest() allocate memory failed \n"));
 		return;
 	}
-	apidx = pAd->MacTab.Content[Wcid].apidx;
+	apidx = pAd->MacTab.Content[Wcid].func_tb_idx;
 	ActHeaderInit(pAd, &Frame.Hdr, pAd->MacTab.Content[Wcid].Addr, pAd->ApCfg.MBSSID[apidx].wdev.if_addr, pAd->ApCfg.MBSSID[apidx].wdev.bssid);
 
 	Frame.Category = CATEGORY_RM;

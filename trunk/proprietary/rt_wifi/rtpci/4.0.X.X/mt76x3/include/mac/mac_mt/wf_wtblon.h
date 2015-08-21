@@ -123,7 +123,7 @@ union WTBL_1_DW2 {
 		UINT32 cf_ack:1;
 		UINT32 rts:1;
 		UINT32 r:1;
-		UINT32 rx_ps:1;
+		UINT32 tx_ps:1;
 		UINT32 af:3;
 		UINT32 dis_rhtr:1;
 		UINT32 fd:1;
@@ -144,7 +144,7 @@ union WTBL_1_DW2 {
 		UINT32 fd:1;
 		UINT32 dis_rhtr:1;
 		UINT32 af:3;
-		UINT32 rx_ps:1;
+		UINT32 tx_ps:1;
 		UINT32 r:1;
 		UINT32 rts:1;
 		UINT32 cf_ack:1;

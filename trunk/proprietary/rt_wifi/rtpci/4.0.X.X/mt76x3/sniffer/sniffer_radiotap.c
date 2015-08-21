@@ -19,6 +19,7 @@
 #include "rtmp_comm.h"
 #include "rtmp_osabl.h"
 #include "rt_os_util.h"
+#include "rt_config.h"
 
 #define ETH_P_ECONET 0x0018
 #define ETH_P_80211_RAW (ETH_P_ECONET + 1)
@@ -44,7 +45,8 @@ void send_radiotap_monitor_packets(
 			  			UCHAR Channel,
 			  			UCHAR CentralChannel,
 						UCHAR sideband_index,
-			  			UINT32 MaxRssi) {
+			  			CHAR MaxRssi,
+			  			UINT32 timestamp) {
 	struct sk_buff *pOSPkt;
 	int rate_index = 0;
 	USHORT header_len = 0;
@@ -127,6 +129,9 @@ void send_radiotap_monitor_packets(
 	if (PHYMODE < MODE_HTMIX)
 		varlen += 1;
 
+	/* dBm ANT Signal */
+	varlen += 1;
+	
 	/* channel frequency */
 	padding_len = ((varlen % 2) == 0) ? 0 : (2 - (varlen % 2));
 	varlen += (2 + padding_len);
@@ -202,6 +207,8 @@ void send_radiotap_monitor_packets(
 	}
 
 	mtk_rt_hdr->rt_hdr.it_present |= cpu2le32(1 << IEEE80211_RADIOTAP_CHANNEL);
+	
+	mtk_rt_hdr->rt_hdr.it_present |= cpu2le32(1 << IEEE80211_RADIOTAP_DBM_ANTSIGNAL);
 
 	if ((PHYMODE == MODE_HTMIX) || (PHYMODE == MODE_HTGREENFIELD)) {
 		mtk_rt_hdr->rt_hdr.it_present |= cpu2le32(1 << IEEE80211_RADIOTAP_MCS);	
@@ -222,7 +229,7 @@ void send_radiotap_monitor_packets(
 	varlen += padding_len;
 
 	/* tsf */
-	tmp64 = 0;
+	tmp64 = timestamp;
 	NdisMoveMemory(pos, &tmp64, 8);
 	pos += 8;
 	varlen += 8;
@@ -273,6 +280,11 @@ void send_radiotap_monitor_packets(
 	NdisMoveMemory(pos, &tmp16, 2);
 	pos += 2;
 	varlen += 2;
+
+	/* dBm ANT Signal */	
+	*pos = MaxRssi;
+	pos++;
+	varlen++;
 
 	/* HT MCS */
 	if ((PHYMODE == MODE_HTMIX) || (PHYMODE == MODE_HTGREENFIELD)) {
@@ -440,3 +452,118 @@ err_free_sk_buff:
 	return;
 }
 
+
+VOID Monitor_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
+{
+
+	PNET_DEV new_dev_p;
+	INT idx=0;
+	struct wifi_dev *wdev;
+	
+	UINT32 MC_RowID = 0, IoctlIF = 0;
+	char *dev_name;
+
+	if(pAd->monitor_ctrl.monitor_initiated != FALSE)
+	{
+		printk("monitor interface already initiated.\n");		
+		return;
+	}
+
+#ifdef MULTIPLE_CARD_SUPPORT
+		MC_RowID = pAd->MC_RowID;
+#endif /* MULTIPLE_CARD_SUPPORT */
+
+	dev_name = get_dev_name_prefix(pAd, INT_MONITOR);
+	//dev_name = "mon";
+	
+	new_dev_p = RtmpOSNetDevCreate(MC_RowID, &IoctlIF, INT_MONITOR, idx,sizeof(struct mt_dev_priv), dev_name);
+	if (!new_dev_p) {
+		DBGPRINT(RT_DEBUG_ERROR, ("%s(): Create net_device for %s(%d) fail!\n",
+					__FUNCTION__, dev_name, idx));
+		return;
+	}
+		
+	wdev = &pAd->monitor_ctrl.monitor_wdev;
+		
+	//wdev->func_dev = pApCliEntry;
+	wdev->sys_handle = (void *)pAd;
+	wdev->if_dev = new_dev_p;
+	//wdev->tx_pkt_allowed = ApCliAllowToSendPacket;
+	RTMP_OS_NETDEV_SET_PRIV(new_dev_p, pAd);
+	RTMP_OS_NETDEV_SET_WDEV(new_dev_p, wdev);
+	if (rtmp_wdev_idx_reg(pAd, wdev) < 0) {
+		DBGPRINT(RT_DEBUG_ERROR, ("Assign wdev idx for %s failed, free net device!\n",
+					RTMP_OS_NETDEV_GET_DEVNAME(new_dev_p)));
+		RtmpOSNetDevFree(new_dev_p);
+		return;
+	}
+
+	/* init MAC address of virtual network interface */
+	COPY_MAC_ADDR(wdev->if_addr, pAd->CurrentAddress);
+	
+	pNetDevOps->priv_flags = INT_MONITOR; /* we are virtual interface */
+	pNetDevOps->needProtcted = TRUE;
+	pNetDevOps->wdev = wdev;
+	NdisMoveMemory(pNetDevOps->devAddr, &wdev->if_addr[0], MAC_ADDR_LEN);
+
+	/* register this device to OS */
+	RtmpOSNetDevAttach(pAd->OpMode, new_dev_p, pNetDevOps);
+	pAd->monitor_ctrl.monitor_initiated = TRUE;	
+	return;
+}
+
+
+VOID Monitor_Remove(RTMP_ADAPTER *pAd)
+{
+	struct wifi_dev *wdev;
+	wdev = &pAd->monitor_ctrl.monitor_wdev;
+	if (wdev->if_dev)
+	{
+		RtmpOSNetDevProtect(1);
+		RtmpOSNetDevDetach(wdev->if_dev);
+		RtmpOSNetDevProtect(0);
+		rtmp_wdev_idx_unreg(pAd, wdev);
+		RtmpOSNetDevFree(wdev->if_dev);
+
+		wdev->if_dev = NULL;
+		pAd->monitor_ctrl.monitor_initiated = FALSE;
+	}
+	
+}
+BOOLEAN Monitor_Open(RTMP_ADAPTER *pAd, PNET_DEV dev_p)
+{
+	//UINT32	Value = 0;
+	if (pAd->monitor_ctrl.monitor_wdev.if_dev == dev_p)
+	{
+		RTMP_OS_NETDEV_SET_TYPE(pAd->monitor_ctrl.monitor_wdev.if_dev,ARPHRD_IEEE80211_RADIOTAP);
+		
+//RxFilter will be decided by iwpriv set MonitorMode	
+	}
+
+	return TRUE;
+}
+
+
+BOOLEAN Monitor_Close(RTMP_ADAPTER *pAd, PNET_DEV dev_p)
+{	
+	//UINT32	Value = 0;
+	if (pAd->monitor_ctrl.monitor_wdev.if_dev == dev_p)
+	{
+		/* RTMP_OS_NETDEV_STOP_QUEUE(dev_p); */
+		
+		/* resume normal settings */
+		pAd->ApCfg.BssType = BSS_INFRA;
+		
+		AsicSetRxFilter(pAd);
+		
+/*		RTMP_IO_READ32(pAd, MAC_SYS_CTRL, &Value); 
+		Value &= ~(0x80); 
+		RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, Value);		*/
+		
+		return TRUE;
+	}
+
+
+	
+	return FALSE;
+}

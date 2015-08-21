@@ -133,7 +133,7 @@ static VOID ApCliProbeTimeout(
 #else /* MULTI_APCLI_SUPPORT */
 	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)FunctionContext;
 	DBGPRINT(RT_DEBUG_TRACE, ("ApCli_SYNC - ProbeReqTimeout\n"));
-	MlmeEnqueue(pAd, APCLI_SYNC_STATE_MACHINE, APCLI_MT2_PROBE_TIMEOUT, 0, NULL, 0);
+	MlmeEnqueue(pAd, APCLI_SYNC_STATE_MACHINE, APCLI_MT2_PROBE_TIMEOUT, 0, NULL, 0);	
 #endif /* !MULTI_APCLI_SUPPORT */
 
 	RTMP_MLME_HANDLER(pAd);
@@ -157,7 +157,7 @@ static VOID ApCliMlmeProbeReqAction(
 	PULONG pCurrState = &pAd->ApCfg.ApCliTab[ifIndex].SyncCurrState;
 	APCLI_STRUCT *pApCliEntry = NULL;
 
-	DBGPRINT(RT_DEBUG_TRACE, ("ApCli SYNC - ApCliMlmeProbeReqAction(Ssid %s), ifIndex=%d\n", Info->Ssid,ifIndex));
+	DBGPRINT(RT_DEBUG_TRACE, ("ApCli SYNC - ApCliMlmeProbeReqAction(Ssid %s)\n", Info->Ssid));
 
 	if (ifIndex >= MAX_APCLI_NUM)
 		return;
@@ -171,15 +171,22 @@ static VOID ApCliMlmeProbeReqAction(
 
 #ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
 	//Get Channel from ScanTable
+	pApCliEntry->MlmeAux.SupRateLen = pAd->cfg80211_ctrl.P2pSupRateLen;
+	NdisMoveMemory(pApCliEntry->MlmeAux.SupRate, pAd->cfg80211_ctrl.P2pSupRate, pAd->cfg80211_ctrl.P2pSupRateLen);
+	
+	pApCliEntry->MlmeAux.ExtRateLen = pAd->cfg80211_ctrl.P2pExtRateLen;
+	NdisMoveMemory(pApCliEntry->MlmeAux.ExtRate, pAd->cfg80211_ctrl.P2pExtRate, pAd->cfg80211_ctrl.P2pExtRateLen);
+	
 #else
 	pApCliEntry->MlmeAux.Channel = pAd->CommonCfg.Channel;
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
+
 	pApCliEntry->MlmeAux.SupRateLen = pAd->CommonCfg.SupRateLen;
 	NdisMoveMemory(pApCliEntry->MlmeAux.SupRate, pAd->CommonCfg.SupRate, pAd->CommonCfg.SupRateLen);
 
 	/* Prepare the default value for extended rate */
 	pApCliEntry->MlmeAux.ExtRateLen = pAd->CommonCfg.ExtRateLen;
 	NdisMoveMemory(pApCliEntry->MlmeAux.ExtRate, pAd->CommonCfg.ExtRate, pAd->CommonCfg.ExtRateLen);
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
 
 	RTMPSetTimer(&(pApCliEntry->MlmeAux.ProbeTimer), PROBE_TIMEOUT);
 
@@ -208,6 +215,7 @@ static VOID ApCliPeerProbeRspAtJoinAction(
 	NDIS_802_11_VARIABLE_IEs *pVIE = NULL;
 	APCLI_CTRL_MSG_STRUCT ApCliCtrlMsg;
 	PAPCLI_STRUCT pApCliEntry = NULL;
+	struct wifi_dev *wdev;
 #ifdef DOT11_N_SUPPORT
 	UCHAR CentralChannel;
 #endif /* DOT11_N_SUPPORT */
@@ -243,7 +251,8 @@ static VOID ApCliPeerProbeRspAtJoinAction(
 								Elem->Channel,
 								ie_list,
 								&LenVIE,
-								pVIE))
+								pVIE,
+								TRUE))
 	{
 		/*
 			BEACON from desired BSS/IBSS found. We should be able to decide most
@@ -260,10 +269,13 @@ static VOID ApCliPeerProbeRspAtJoinAction(
 		INT matchFlag = FALSE;
 
 		ULONG   Bssidx;
+#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)
 		CHAR Rssi0 = ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_0);
                 CHAR Rssi1 = ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_1);
                 CHAR Rssi2 = ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_2);
                 LONG RealRssi = (LONG)(RTMPMaxRssi(pAd, Rssi0, Rssi1, Rssi2));
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE || CFG80211_MULTI_STA */
+
 
 		/* Update ScanTab */
 		Bssidx = BssTableSearch(&pAd->ScanTab, ie_list->Bssid, ie_list->Channel);
@@ -288,13 +300,14 @@ static VOID ApCliPeerProbeRspAtJoinAction(
 			NdisMoveMemory(pAd->ScanTab.BssEntry[Bssidx].MacAddr, ie_list->Addr2, MAC_ADDR_LEN);
 		}
 
-#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
+#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)
                 DBGPRINT(RT_DEBUG_TRACE, ("Info: Update the SSID %s in Kernel Table\n", ie_list->Ssid));
                 RT_CFG80211_SCANNING_INFORM(pAd, Bssidx, ie_list->Channel, (UCHAR *)Elem->Msg, Elem->MsgLen, RealRssi);
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE || CFG80211_MULTI_STA */
 
 
 		pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
+		wdev = &pApCliEntry->wdev;
 
 		/* Check the Probe-Rsp's Bssid. */
 		if(!MAC_ADDR_EQUAL(pApCliEntry->CfgApCliBssid, ZERO_MAC_ADDR))
@@ -332,10 +345,10 @@ static VOID ApCliPeerProbeRspAtJoinAction(
                 		&& ((pApCliEntry->WscControl.WscConfMode == WSC_DISABLE) || 
                 		(pApCliEntry->WscControl.bWscTrigger == FALSE))
 #endif /* WSC_AP_SUPPORT */
-#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
+#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)
 				/* When using CFG80211 and trigger WPS, do not check security. */
 				&& ! (pApCliEntry->wpa_supplicant_info.WpaSupplicantUP & WPA_SUPPLICANT_ENABLE_WPS)
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE || CFG80211_MULTI_STA */
                 	)
 			{
 				if (ApCliValidateRSNIE(pAd, (PEID_STRUCT)pVIE, LenVIE, ifIndex))
@@ -418,8 +431,12 @@ static VOID ApCliPeerProbeRspAtJoinAction(
 			NdisZeroMemory(pApCliEntry->RxMcsSet,sizeof(pApCliEntry->RxMcsSet));
 			/* filter out un-supported ht rates */
 			if ((ie_list->HtCapabilityLen > 0) && 
-				(pApCliEntry->wdev.DesiredHtPhyInfo.bHtEnable) &&
-				WMODE_CAP_N(pAd->CommonCfg.PhyMode))
+#ifndef RT_CFG80211_P2P_CONCURRENT_DEVICE
+				(pApCliEntry->wdev.DesiredHtPhyInfo.bHtEnable) && 
+#endif /*RT_CFG80211_P2P_CONCURRENT_DEVICE */
+				WMODE_CAP_N(pAd->CommonCfg.PhyMode) &&
+				/* For Dissallow TKIP rule on STA */
+				!(pAd->CommonCfg.HT_DisallowTKIP && IS_INVALID_HT_SECURITY(wdev->WepStatus)))
 			{
 				RTMPZeroMemory(&pApCliEntry->MlmeAux.HtCapability, SIZE_HT_CAP_IE);
 				pApCliEntry->MlmeAux.NewExtChannelOffset = ie_list->NewExtChannelOffset;
@@ -580,7 +597,7 @@ static VOID ApCliInvalidStateWhenJoin(
 	MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_PROBE_RSP,
 		sizeof(APCLI_CTRL_MSG_STRUCT), &ApCliCtrlMsg, ifIndex);
 
-	DBGPRINT(RT_DEBUG_TRACE, ("APCLI_AYNC - ApCliInvalidStateWhenJoin[%d](state=%ld). Reset SYNC machine\n", ifIndex,*pCurrState));
+	DBGPRINT(RT_DEBUG_TRACE, ("APCLI_AYNC - ApCliInvalidStateWhenJoin(state=%ld). Reset SYNC machine\n", *pCurrState));
 
 	return;
 }
@@ -605,6 +622,7 @@ static VOID ApCliEnqueueProbeRequest(
 	UCHAR ssidLen;
 	CHAR ssid[MAX_LEN_OF_SSID];
 	APCLI_STRUCT *pApCliEntry = NULL;
+	BOOLEAN bHasWscIe = FALSE;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("force out a ProbeRequest ...\n"));
 
@@ -665,7 +683,42 @@ static VOID ApCliEnqueueProbeRequest(
 		}
 #endif /* DOT11_VHT_AC */
 
-#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
+#ifdef WSC_AP_SUPPORT
+/* Append WSC information in probe request if WSC state is running */
+		if ((pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscConfMode != WSC_DISABLE) &&
+			(pAd->ApCfg.ApCliTab[ifIndex].WscControl.bWscTrigger))
+		{
+			bHasWscIe = TRUE;
+		}
+#ifdef WSC_V2_SUPPORT
+		else if (pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscV2Info.bEnableWpsV2)
+		{
+			bHasWscIe = TRUE;	
+		}
+#endif /* WSC_V2_SUPPORT */
+		if (bHasWscIe)
+		{
+			UCHAR		/* WscBuf[256], */ WscIeLen = 0;
+			UCHAR		*WscBuf = NULL;
+			ULONG 		WscTmpLen = 0;
+			/* allocate memory */
+			os_alloc_mem(NULL, (UCHAR **)&WscBuf, 512);
+			if (WscBuf != NULL)
+			{
+				NdisZeroMemory(WscBuf, 512);
+				WscBuildProbeReqIE(pAd, STA_MODE, &pApCliEntry->WscControl, WscBuf, &WscIeLen);
+				MakeOutgoingFrame(pOutBuffer + FrameLen,              &WscTmpLen,
+								WscIeLen,                             WscBuf,
+								END_OF_ARGS);
+				FrameLen += WscTmpLen;
+				os_free_mem(NULL, WscBuf);
+			}
+			else
+				DBGPRINT(RT_DEBUG_ERROR, ("%s: Allocate memory fail!!!\n", __FUNCTION__));
+		}
+#endif /*WSC_AP_SUPPORT*/
+
+#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)
          if ((pAd->StaCfg.wpa_supplicant_info.WpaSupplicantUP != WPA_SUPPLICANT_DISABLE) &&
 		    (pAd->cfg80211_ctrl.ExtraIeLen > 0))
         {
@@ -677,7 +730,7 @@ static VOID ApCliEnqueueProbeRequest(
 
                 FrameLen += ExtraIeTmpLen;
         }
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE*/		
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE || CFG80211_MULTI_STA */		
 
 		MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
 		MlmeFreeMemory(pAd, pOutBuffer);

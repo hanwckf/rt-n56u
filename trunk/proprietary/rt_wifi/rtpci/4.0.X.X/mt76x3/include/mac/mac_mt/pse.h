@@ -12,7 +12,6 @@
 
 /* PSE Buffer Control Register */
 #define BC (PSE_BASE + 0x14)
-#define PSE_BC (PSE_BASE + 0x14)
 #define TOTAL_PAGE_NUM_MASK (0xfff)
 #define GET_TOTAL_PAGE_NUM(p) (((p) & 0xfff))
 #define PAGE_NUM_LMT_EN (1 << 12)

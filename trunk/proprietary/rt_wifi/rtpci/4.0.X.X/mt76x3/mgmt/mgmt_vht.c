@@ -44,8 +44,6 @@
 VOID RTMPSetVHT(
 	IN RTMP_ADAPTER *pAd)
 {
-	VHT_CAP_INFO *vht_cap= &pAd->CommonCfg.vht_cap_ie.vht_cap;
-
 }
 
 

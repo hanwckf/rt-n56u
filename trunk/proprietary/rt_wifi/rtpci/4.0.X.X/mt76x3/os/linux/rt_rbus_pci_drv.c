@@ -1059,7 +1059,7 @@ void mt_mac_int_3_tasklet(unsigned long data)
 		RTMP_INT_LOCK(&pAd->LockInterrupt, flags);
 		pAd->int_disable_mask &= ~(WF_MAC_INT_3);
 		RTMP_INT_UNLOCK(&pAd->LockInterrupt, flags);
-		DBGPRINT(RT_DEBUG_FPGA, ("<--%s():HALT in progress(Flags=0x%lx)!\n", __FUNCTION__, pAd->Flags));
+DBGPRINT(RT_DEBUG_FPGA, ("<--%s():HALT in progress(Flags=0x%lx)!\n", __FUNCTION__, pAd->Flags));
 		return;
 	}
 
@@ -1292,22 +1292,27 @@ VOID RTMPHandleInterrupt(VOID *pAdSrc)
 	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)pAdSrc;
 	UINT32 IntSource;
 //+++Add by Carter
-	UINT32 StatusRegister, EnableRegister, stat_reg = 0, en_reg = 0;
+	UINT32 StatusRegister, EnableRegister;
+#ifdef MT_MAC
+	UINT32 en_reg = 0, stat_reg = 0;
+#endif
 //---Add by Carter
 	POS_COOKIE pObj;
 	unsigned long flags=0;
 	UINT32 INT_RX_DATA = 0, INT_RX_CMD=0, TxCoherent = 0, RxCoherent = 0, FifoStaFullInt = 0;
 	UINT32 INT_MGMT_DLY = 0, INT_HCCA_DLY = 0, INT_AC3_DLY = 0, INT_AC2_DLY = 0, INT_AC1_DLY = 0, INT_AC0_DLY = 0, INT_BMC_DLY = 0;
+#if defined(CONFIG_AP_SUPPORT) && defined(CARRIER_DETECTION_SUPPORT)
 	UINT32 RadarInt = 0;
-#if defined(RLT_MAC) || defined(RTMP_MAC)
+#endif /* defined(CONFIG_AP_SUPPORT) && defined(CARRIER_DETECTION_SUPPORT) */
+#if defined(RTMP_MAC) || defined(RLT_MAC) 
 	UINT32 PreTBTTInt = 0, TBTTInt = 0;
-#endif /* defined(RLT_MAC) || defined(RTMP_MAC) */
-#if defined(RLT_MAC) || defined(RTMP_MAC) || (defined(CONFIG_AP_SUPPORT) && defined(DFS_SUPPORT))
-	UINT32 GPTimeOutInt = 0;
-#endif /* defined(RLT_MAC) || defined(RTMP_MAC) || (defined(CONFIG_AP_SUPPORT) && defined(DFS_SUPPORT)) */
-#if defined(RLT_MAC) || defined(RTMP_MAC) || defined(CONFIG_STA_SUPPORT)
+#endif /* defined(RTMP_MAC) || defined(RLT_MAC)  */
+#if defined(RTMP_MAC) || defined(RLT_MAC) || defined(CONFIG_STA_SUPPORT)
 	UINT32 AutoWakeupInt = 0;
-#endif /* defined(RLT_MAC) || defined(RTMP_MAC)  || defined(CONFIG_STA_SUPPORT) */
+#endif /* defined(RTMP_MAC) || defined(RLT_MAC) || defined(CONFIG_STA_SUPPORT) */
+#if (defined(CONFIG_AP_SUPPORT) && defined(DFS_SUPPORT)) || defined(RTMP_MAC) || defined(RLT_MAC)
+	UINT32 GPTimeOutInt = 0;
+#endif /* (defined(CONFIG_AP_SUPPORT) && defined(DFS_SUPPORT)) || defined(RTMP_MAC) || defined(RLT_MAC) */
 
 
 	pObj = (POS_COOKIE) pAd->OS_Cookie;
@@ -1419,7 +1424,9 @@ VOID RTMPHandleInterrupt(VOID *pAdSrc)
 //		TBTTInt = MT_TBTTInt;
 //		FifoStaFullInt = MT_FifoStaFullInt;
 //		GPTimeOutInt = MT_GPTimeOutInt;
+#if defined(CONFIG_AP_SUPPORT) && defined(CARRIER_DETECTION_SUPPORT)
 		RadarInt = 0;
+#endif /* defined(CONFIG_AP_SUPPORT) && defined(CARRIER_DETECTION_SUPPORT) */
 //		AutoWakeupInt = MT_AutoWakeupInt;
 		//McuCommand = MT_McuCommand;
 	}
@@ -1440,7 +1447,9 @@ VOID RTMPHandleInterrupt(VOID *pAdSrc)
 		PreTBTTInt = RLT_PreTBTTInt;
 		TBTTInt = RLT_TBTTInt;
 		GPTimeOutInt = RLT_GPTimeOutInt;
+#if defined(CONFIG_AP_SUPPORT) && defined(CARRIER_DETECTION_SUPPORT)
 		RadarInt = RLT_RadarInt;
+#endif /* defined(CONFIG_AP_SUPPORT) && defined(CARRIER_DETECTION_SUPPORT) */
 		AutoWakeupInt = RLT_AutoWakeupInt;
 		//McuCommand = RLT_McuCommand;
 	}
@@ -1460,7 +1469,9 @@ VOID RTMPHandleInterrupt(VOID *pAdSrc)
 		PreTBTTInt = RTMP_PreTBTTInt;
 		TBTTInt = RTMP_TBTTInt;
 		GPTimeOutInt = RTMP_GPTimeOutInt;
+#if defined(CONFIG_AP_SUPPORT) && defined(CARRIER_DETECTION_SUPPORT)
 		RadarInt = RTMP_RadarInt;
+#endif /* defined(CONFIG_AP_SUPPORT) && defined(CARRIER_DETECTION_SUPPORT) */
 		AutoWakeupInt = RTMP_AutoWakeupInt;
 		//McuCommand = RTMP_McuCommand;
 	}
@@ -1480,116 +1491,6 @@ redo:
 		RTMP_SET_FLAG(pAd, (fRTMP_ADAPTER_NIC_NOT_EXIST | fRTMP_ADAPTER_HALT_IN_PROGRESS));
 		return;
 	}
-
-#ifdef INT_STATISTIC
-	pAd->INTCNT++;
-#ifdef MT_MAC
-
-	if (IntSource & WF_MAC_INT_0)
-	{
-		pAd->INTWFMACINT0CNT++;
-	}
-	if (IntSource & WF_MAC_INT_1)
-	{
-		pAd->INTWFMACINT1CNT++;
-	}
-	if (IntSource & WF_MAC_INT_2)
-	{
-		pAd->INTWFMACINT2CNT++;
-	}
-	if (IntSource & WF_MAC_INT_3)
-	{
-		pAd->INTWFMACINT3CNT++;
-	}
-	if (IntSource & WF_MAC_INT_4)
-	{
-		pAd->INTWFMACINT4CNT++;
-	}
-	if (IntSource & MT_INT_BCN_DLY)
-	{
-		pAd->INTBCNDLY++;
-	}
-	if (IntSource & INT_BMC_DLY)
-	{
-		pAd->INTBMCDLY++;
-	}
-
-#endif
-	if (IntSource & TxCoherent)
-	{
-		pAd->INTTxCoherentCNT++;
-	}
-	if (IntSource & RxCoherent)
-	{
-		pAd->INTRxCoherentCNT++;
-
-	}
-	if (IntSource & FifoStaFullInt)
-	{
-		pAd->INTFifoStaFullIntCNT++;
-	}
-	if (IntSource & INT_MGMT_DLY)
-	{
-		pAd->INTMGMTDLYCNT++;
-	}
-	if (IntSource & INT_RX_DATA)
-	{
-		pAd->INTRXDATACNT++;
-	}
-#ifdef CONFIG_ANDES_SUPPORT
-	if (IntSource & INT_RX_CMD)
-	{
-		pAd->INTRXCMDCNT++;
-	}
-#endif
-	if (IntSource & INT_HCCA_DLY)
-	{
-		pAd->INTHCCACNT++;
-	}
-	if (IntSource & INT_AC3_DLY)
-	{
-		pAd->INTAC3CNT++;
-	}
-	if (IntSource & INT_AC2_DLY)
-	{
-		pAd->INTAC2CNT++;
-	}
-	if (IntSource & INT_AC1_DLY)
-	{
-		pAd->INTAC1CNT++;
-	}
-	if (IntSource & INT_AC0_DLY)
-	{
-		pAd->INTAC0CNT++;
-
-	}
-#if defined(RTMP_MAC) || defined(RLT_MAC)
-	if (IntSource & PreTBTTInt){
-		pAd->INTPreTBTTCNT++;
-	}
-	if (IntSource & TBTTInt){
-		pAd->INTTBTTIntCNT++;
-	}
-#endif 
-
-#ifdef CONFIG_AP_SUPPORT
-	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-	{
-#ifdef DFS_SUPPORT
-		if (IntSource & GPTimeOutInt){
-			pAd->INTGPTimeOutCNT++;
-		}
-#endif /* DFS_SUPPORT */
-#ifdef CARRIER_DETECTION_SUPPORT
-		if ((IntSource & RadarInt))
-		{
-			pAd->INTRadarCNT++;
-		}
-#endif /* CARRIER_DETECTION_SUPPORT*/
-	}
-#endif
-
-#endif
 
 //+++Add by Carter
 #ifdef MT_MAC
@@ -1636,7 +1537,6 @@ redo:
 			if ((pAd->int_disable_mask & WF_MAC_INT_3) == 0)
 			{
                 UINT32   Lowpart, Highpart;
-
                 rt2860_int_disable(pAd, WF_MAC_INT_3);
                 RTMP_IO_WRITE32(pAd, HWIER3, en_reg);
                 if (stat_reg & BIT31) {

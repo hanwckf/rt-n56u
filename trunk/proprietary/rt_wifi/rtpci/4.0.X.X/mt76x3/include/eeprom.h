@@ -78,6 +78,7 @@
 #define EEPROM_1ST_FILE_DIR		"/etc_ro/Wireless/iNIC/"
 #define EEPROM_2ND_FILE_DIR		"/etc_ro/Wireless/iNIC/"
 
+
 #ifdef RT_BIG_ENDIAN
 typedef	union _EEPROM_WORD_STRUC {
 	struct {
@@ -680,7 +681,7 @@ struct _RTMP_ADAPTER;
 /*************************************************************************
   *	Public function declarations for prom-based chipset
   ************************************************************************/
-BOOLEAN rtmp_ee_prom_read16(struct _RTMP_ADAPTER *pAd, USHORT Offset, USHORT *pVal);
+BOOLEAN rtmp_ee_prom_read16(struct _RTMP_ADAPTER *pAd, UINT16 Offset, UINT16 *pVal);
 int rtmp_ee_prom_write16(struct _RTMP_ADAPTER *pAd, USHORT Offset, USHORT val);
 #endif /* RTMP_PCI_SUPPORT */
 
@@ -719,7 +720,7 @@ INT efuse_probe(struct _RTMP_ADAPTER *pAd);
 /*************************************************************************
   *	Public function declarations for using BIN buffer mode to access eeprom contents
   ************************************************************************/
-BOOLEAN rtmp_ee_bin_read16(struct _RTMP_ADAPTER *pAd, USHORT Offset, USHORT *pValue);
+BOOLEAN rtmp_ee_bin_read16(struct _RTMP_ADAPTER *pAd, UINT16 Offset, UINT16 *pValue);
 
 INT rtmp_ee_bin_write16(
 	IN struct _RTMP_ADAPTER *pAd,
@@ -742,7 +743,7 @@ INT Set_EepromBufferWriteBack_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 /*************************************************************************
   *	Public function declarations for prom operation callback functions setting
   ************************************************************************/
-INT RtmpChipOpsEepromHook(struct _RTMP_ADAPTER *pAd, INT infType, INT forceMode);
+INT RtmpChipOpsEepromHook(struct _RTMP_ADAPTER *pAd, INT infType,INT forceMode);
 
 INT NICReadEEPROMParameters(struct _RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr);
 BOOLEAN rt28xx_eeprom_read16(struct _RTMP_ADAPTER *pAd, USHORT offset, USHORT *value);

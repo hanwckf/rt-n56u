@@ -14,8 +14,8 @@
 	mt_io.h
 */
 
-#ifndef __MT_IO_H__
-#define __MT_IO_H__
+#ifndef __MT_WIFI_IO_H__
+#define __MT_WIFI_IO_H__
 
 UINT32 mt_physical_addr_map(UINT32 addr);
 BOOLEAN mt_mac_cr_range_mapping(UINT32 *mac_addr);

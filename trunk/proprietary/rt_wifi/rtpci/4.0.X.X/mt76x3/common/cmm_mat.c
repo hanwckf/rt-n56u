@@ -112,7 +112,14 @@ PUCHAR MATDBEntryAlloc(IN MAT_STRUCT *pMatStruct, IN UINT32 size)
 #else
 	UCHAR *pPtr = NULL;
 
+	if (pMatStruct->nodeCount >= 128)
+	{
+		return NULL;
+	}
+	else 
+	{
 	os_alloc_mem(NULL, (PUCHAR *)&pPtr, size);
+	}
 
 #endif
 

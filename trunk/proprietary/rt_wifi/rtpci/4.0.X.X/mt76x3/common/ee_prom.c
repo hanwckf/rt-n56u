@@ -164,7 +164,7 @@ static inline VOID EWDS(RTMP_ADAPTER *pAd)
 
 
 /* IRQL = PASSIVE_LEVEL*/
-BOOLEAN rtmp_ee_prom_read16(RTMP_ADAPTER *pAd, USHORT Offset, USHORT *pValue)
+BOOLEAN rtmp_ee_prom_read16(RTMP_ADAPTER *pAd, UINT16 Offset, UINT16 *pValue)
 {
 	UINT32 x;
 	UINT16 data;
@@ -205,7 +205,7 @@ BOOLEAN rtmp_ee_prom_read16(RTMP_ADAPTER *pAd, USHORT Offset, USHORT *pValue)
 }
 
 
-int rtmp_ee_prom_write16(RTMP_ADAPTER *pAd, USHORT Offset, USHORT Data)
+int rtmp_ee_prom_write16(RTMP_ADAPTER *pAd, USHORT Offset, UINT16 Data)
 {
 	UINT32 x;
 

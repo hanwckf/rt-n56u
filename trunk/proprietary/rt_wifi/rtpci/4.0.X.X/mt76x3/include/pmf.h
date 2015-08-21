@@ -104,15 +104,15 @@ void rtmp_read_pmf_parameters_from_file(
 	
 INT Set_PMFMFPC_Proc (
 	IN PRTMP_ADAPTER pAd, 
-	IN PCHAR arg);
+	IN RTMP_STRING *arg);
 
 INT Set_PMFMFPR_Proc (
 	IN PRTMP_ADAPTER pAd, 
-	IN PCHAR arg);
+	IN RTMP_STRING *arg);
  
 INT Set_PMFSHA256_Proc (
 	IN PRTMP_ADAPTER pAd, 
-	IN PCHAR arg);
+	IN RTMP_STRING *arg);
  
 #endif /* DOT11W_PMF_SUPPORT */
 

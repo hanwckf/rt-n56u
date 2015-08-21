@@ -374,7 +374,7 @@ MAC_TABLE_ENTRY *WdsTableLookupByWcid(
 			if(bResetIdelCount) {
 				pCurEntry->NoDataIdleCount = 0;
 				// TODO: shiang-usw,  remove upper setting becasue we need to migrate to tr_entry!
-				pAd->MacTab.tr_entry[pEntry->wcid].NoDataIdleCount = 0;
+				pAd->MacTab.tr_entry[pCurEntry->wcid].NoDataIdleCount = 0;
 			}
 			pEntry = pCurEntry;
 			break;
@@ -807,7 +807,6 @@ VOID APWdsInitialize(RTMP_ADAPTER *pAd)
 }
 
 
-#ifdef DBG
 INT Show_WdsTable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	INT 	i;
@@ -849,7 +848,7 @@ INT Show_WdsTable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 	return TRUE;
 }
-#endif /* DBG */
+
 
 VOID rtmp_read_wds_from_file(RTMP_ADAPTER *pAd, RTMP_STRING *tmpbuf, RTMP_STRING *buffer)
 {
@@ -1323,7 +1322,7 @@ VOID WDS_Remove(RTMP_ADAPTER *pAd)
 	{
 		wdev = &pAd->WdsTab.WdsEntry[index].wdev;
 		if (wdev->if_dev)
-	    {
+		{
 			RtmpOSNetDevProtect(1);
 			RtmpOSNetDevDetach(wdev->if_dev);
 			RtmpOSNetDevProtect(0);

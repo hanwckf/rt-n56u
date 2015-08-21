@@ -544,6 +544,12 @@ INT RTMPSetLED(RTMP_ADAPTER *pAd, UCHAR Status)
 {
 	// TODO: shiang-7603
 
+#ifdef LED_CONTROL_METHOD_1
+	if (pAd->LedCntl.LedConfigMethod == 1)
+		return TRUE;
+#endif /* LED_CONTROL_Method1 */
+
+
 #ifdef RTMP_MAC_PCI
 	if (IS_PCI_INF(pAd) || IS_RBUS_INF(pAd))
 	{

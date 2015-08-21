@@ -317,7 +317,6 @@ static VOID ApCliMlmeAssocReqAction(
 			return;
 		}
 
-	
 
 		DBGPRINT(RT_DEBUG_TRACE, ("APCLI_ASSOC - Send ASSOC request...\n"));
 		ApCliMgtMacHeaderInit(pAd, &AssocHdr, SUBTYPE_ASSOC_REQ, 0, ApAddr, ApAddr, ifIndex);
@@ -473,6 +472,30 @@ static VOID ApCliMlmeAssocReqAction(
 			FrameLen += tmp;
 		}
 
+#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)
+		apcli_entry->ReqVarIELen = 0;
+        NdisZeroMemory(apcli_entry->ReqVarIEs, MAX_VIE_LEN);
+
+        if ((apcli_entry->wpa_supplicant_info.WpaSupplicantUP & 0x7F ) ==  WPA_SUPPLICANT_ENABLE)
+        {
+                DBGPRINT(RT_DEBUG_TRACE,("%s:: APCLI WPA_ASSOC_IE FROM SUPPLICANT\n", __FUNCTION__));
+                ULONG TmpWpaAssocIeLen = 0;
+                MakeOutgoingFrame(pOutBuffer + FrameLen, &TmpWpaAssocIeLen,
+                                apcli_entry->wpa_supplicant_info.WpaAssocIeLen, apcli_entry->wpa_supplicant_info.pWpaAssocIe,
+                                END_OF_ARGS);
+
+                FrameLen += TmpWpaAssocIeLen;
+
+                VarIesOffset = 0;
+                NdisMoveMemory(apcli_entry->ReqVarIEs + VarIesOffset, 
+		       apcli_entry->wpa_supplicant_info.pWpaAssocIe, apcli_entry->wpa_supplicant_info.WpaAssocIeLen);
+                VarIesOffset += apcli_entry->wpa_supplicant_info.WpaAssocIeLen;
+
+                // Set Variable IEs Length
+                apcli_entry->ReqVarIELen = VarIesOffset;
+        }
+        else
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE || CFG80211_MULTI_STA */
 		/* Append RSN_IE when WPAPSK OR WPA2PSK, */
 		if (((wdev->AuthMode == Ndis802_11AuthModeWPAPSK) || 
             		(wdev->AuthMode == Ndis802_11AuthModeWPA2PSK))
@@ -500,7 +523,33 @@ static VOID ApCliMlmeAssocReqAction(
 			FrameLen += tmp;	
 		}	
 
+#ifdef WSC_AP_SUPPORT
+		/* Add WSC IE if we are connecting to WSC AP */
+		if ((pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscConfMode != WSC_DISABLE) &&
+			(pAd->ApCfg.ApCliTab[ifIndex].WscControl.bWscTrigger)) 
+			{
+			UCHAR *pWscBuf = NULL, WscIeLen = 0;
+			ULONG WscTmpLen = 0;
 
+			os_alloc_mem(pAd, (UCHAR **) &pWscBuf, 512);
+/*			if( (pWscBuf = kmalloc(512, GFP_ATOMIC)) != NULL) */
+			if (pWscBuf != NULL) {
+				NdisZeroMemory(pWscBuf, 512);
+				WscBuildAssocReqIE(&pAd->ApCfg.ApCliTab[ifIndex].WscControl, pWscBuf, &WscIeLen);
+
+				MakeOutgoingFrame(pOutBuffer + FrameLen,
+						  &WscTmpLen, WscIeLen, pWscBuf,
+						  END_OF_ARGS);
+
+				FrameLen += WscTmpLen;
+/*				kfree(pWscBuf); */
+				os_free_mem(NULL, pWscBuf);
+			} else
+				DBGPRINT(RT_DEBUG_WARN,
+					 ("%s:: WscBuf Allocate failed!\n",
+					  __FUNCTION__));
+		}
+#endif /* WSC_AP_SUPPORT */
 
 		MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
 		MlmeFreeMemory(pAd, pOutBuffer);
@@ -619,6 +668,11 @@ static VOID ApCliMlmeDisassocReqAction(
 	MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DEASSOC_RSP,
 		sizeof(APCLI_CTRL_MSG_STRUCT), &ApCliCtrlMsg, ifIndex);
 
+
+#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)	
+	RT_CFG80211_LOST_GO_INFORM(pAd);
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE || CFG80211_MULTI_STA */
+
 	return;
 }
 
@@ -650,7 +704,10 @@ static VOID ApCliPeerAssocRspAction(
 	UCHAR				NewExtChannelOffset = 0xff;
 	USHORT ifIndex = (USHORT)(Elem->Priv);
 	ULONG *pCurrState = NULL;
+#ifdef DOT11_VHT_AC 
 	PAPCLI_STRUCT pApCliEntry = NULL;
+#endif /* DOT11_VHT_AC */
+
 #ifdef MAC_REPEATER_SUPPORT
 	UCHAR CliIdx = 0xFF;
 #endif /* MAC_REPEATER_SUPPORT */
@@ -674,8 +731,9 @@ static VOID ApCliPeerAssocRspAction(
 #endif /* MAC_REPEATER_SUPPORT */
 		pCurrState = &pAd->ApCfg.ApCliTab[ifIndex].AssocCurrState;
 
+#ifdef DOT11_VHT_AC 
 	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
-
+#endif /* DOT11_VHT_AC */
 	os_alloc_mem(pAd, (UCHAR **)&ie_list, sizeof(IE_LISTS));
 	if (ie_list == NULL) {
 		DBGPRINT(RT_DEBUG_OFF, ("%s():mem alloc failed!\n", __FUNCTION__));
@@ -691,6 +749,16 @@ static VOID ApCliPeerAssocRspAction(
 		if(MAC_ADDR_EQUAL(Addr2, pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.Bssid))
 		{
 			DBGPRINT(RT_DEBUG_TRACE, ("APCLI_ASSOC - receive ASSOC_RSP to me (status=%d)\n", Status));
+#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)			
+			/* Store the AssocRsp Frame to wpa_supplicant via CFG80211 */
+            NdisZeroMemory(pAd->ApCfg.ApCliTab[ifIndex].ResVarIEs, MAX_VIE_LEN);
+            pAd->ApCfg.ApCliTab[ifIndex].ResVarIELen = 0;
+
+            PFRAME_802_11 pFrame =  (PFRAME_802_11) (Elem->Msg);
+            pAd->ApCfg.ApCliTab[ifIndex].ResVarIELen = Elem->MsgLen - 6 - sizeof (HEADER_802_11);
+            NdisCopyMemory(pAd->ApCfg.ApCliTab[ifIndex].ResVarIEs, &pFrame->Octet[6], pAd->ApCfg.ApCliTab[ifIndex].ResVarIELen);
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE || CFG80211_MULTI_STA */
+
 #ifdef MAC_REPEATER_SUPPORT
 			if (CliIdx != 0xFF)
 				RTMPCancelTimer(&pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].ApCliAssocTimer, &Cancelled);
@@ -806,7 +874,7 @@ static VOID ApCliPeerDisassocAction(
 			{
 				RTMP_MLME_HANDLER(pAd);
 				ifIndex = ((ifIndex - 64) / 16);
-				RTMPRemoveRepeaterEntry(pAd, ifIndex, CliIdx);
+				//RTMPRemoveRepeaterEntry(pAd, ifIndex, CliIdx);
 			}
 #endif /* MAC_REPEATER_SUPPORT */
         }

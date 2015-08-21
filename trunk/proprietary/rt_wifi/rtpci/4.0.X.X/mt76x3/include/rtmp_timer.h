@@ -124,7 +124,7 @@ void rtmp_timer_##_func(unsigned long data)										\
 }
 #endif /* RTMP_TIMER_TASK_SUPPORT */
 
-DECLARE_TIMER_FUNCTION(MlmePeriodicExec);
+DECLARE_TIMER_FUNCTION(MlmePeriodicExecTimer);
 DECLARE_TIMER_FUNCTION(MlmeRssiReportExec);
 DECLARE_TIMER_FUNCTION(AsicRxAntEvalTimeout);
 DECLARE_TIMER_FUNCTION(APSDPeriodicExec);
@@ -155,6 +155,9 @@ DECLARE_TIMER_FUNCTION(APQuickResponeForRateUpExec);
 DECLARE_TIMER_FUNCTION(RTMPIdsPeriodicExec);
 #endif /* IDS_SUPPORT */
 
+#ifdef DOT11R_FT_SUPPORT
+DECLARE_TIMER_FUNCTION(FT_KDP_InfoBroadcast);
+#endif /* DOT11R_FT_SUPPORT */
 
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -174,9 +177,10 @@ DECLARE_TIMER_FUNCTION(WscSkipTurnOffLEDTimer);
 #endif /* WSC_LED_SUPPORT */
 #ifdef CONFIG_AP_SUPPORT
 DECLARE_TIMER_FUNCTION(WscUpdatePortCfgTimeout);
-#ifdef WSC_V2_SUPPORT
 DECLARE_TIMER_FUNCTION(WscSetupLockTimeout);
-#endif /* WSC_V2_SUPPORT */
+#ifdef MT_MAC
+DECLARE_TIMER_FUNCTION(WscEapReqIdRetryTimeout);
+#endif /* MT_MAC */
 #endif /* CONFIG_AP_SUPPORT */
 #endif /* WSC_INCLUDED */
 

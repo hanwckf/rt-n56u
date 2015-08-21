@@ -73,10 +73,10 @@ RTMP_DECLARE_DRV_OPS_FUNCTION(pci);
 #else
 
 #ifdef MT_MAC
-#define RTMP_DRV_NAME	"mt_drv"
+#define RTMP_DRV_NAME   "mt_drv"
 #else
 #define RTMP_DRV_NAME	"rt2860"
-#endif
+#endif /* RTMP_MAC_USB */
 
 #endif /* OS_ABL_FUNC_SUPPORT */
 

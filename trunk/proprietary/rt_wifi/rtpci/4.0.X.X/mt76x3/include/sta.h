@@ -41,6 +41,16 @@
 #define CKIP_CMIC_ON(_p)			((((_p)->StaCfg.CkipFlag) & 0x08) && ((_p)->StaCfg.bCkipCmicOn == TRUE))
 
 #define STA_EXTRA_SETTING(_pAd)
+#ifdef DOT11R_FT_SUPPORT
+#undef STA_EXTRA_SETTING
+#define STA_EXTRA_SETTING(_pAd) \
+{ \
+	if ((_pAd)->StaCfg.Dot11RCommInfo.bFtSupport && \
+		(_pAd)->MlmeAux.MdIeInfo.Len && \
+		(_pAd)->StaCfg.AuthMode == Ndis802_11AuthModeWPA2PSK) \
+		(_pAd)->StaCfg.Dot11RCommInfo.bInMobilityDomain = TRUE; \
+}
+#endif /* DOT11R_FT_SUPPORT */
 
 #define STA_PORT_SECURED(_pAd) \
 { \
@@ -110,5 +120,12 @@ INT sta_func_init(RTMP_ADAPTER *pAd);
 
 INT STAInitialize(RTMP_ADAPTER *pAd);
 
+/* AD-HOC Related Function */ 
+BOOLEAN Adhoc_AddPeerfromBeacon(RTMP_ADAPTER *pAd, BCN_IE_LIST *bcn_ie_list,
+                                NDIS_802_11_VARIABLE_IEs *pVIE, USHORT LenVIE);
+
+VOID Adhoc_checkPeerBeaconLost(RTMP_ADAPTER *pAd);
+VOID LinkUp_Adhoc(RTMP_ADAPTER *pAd, struct wifi_dev *wdev);
+ULONG MakeIbssBeacon(RTMP_ADAPTER *pAd);
 #endif /* __STA_H__ */
 

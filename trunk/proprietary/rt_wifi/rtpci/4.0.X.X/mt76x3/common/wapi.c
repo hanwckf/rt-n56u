@@ -1057,7 +1057,7 @@ VOID RTMPGetWapiTxTscFromAsic(
 		for (i=0 ; i < wapi_pn_size; i++)
 			RTMP_IO_READ8(pAd, offset+i, &tx_tsc[iveiv_tb_size + i]); 
 
-		DBGPRINT(RT_DEBUG_TRACE, ("%s : WCID(%d) ", __FUNCTION__, Wcid));			
+		DBGPRINT(RT_DEBUG_TRACE, ("%s : WCID(%d) offset(%u)", __FUNCTION__, Wcid,offset));			
 		hex_dump("TxTsc", tx_tsc, LEN_WAPI_TSC);
 	}
 	else

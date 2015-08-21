@@ -202,6 +202,11 @@ VOID RTMPSetHT(
 #ifdef CONFIG_AP_SUPPORT
 	INT apidx;
 #endif /* CONFIG_AP_SUPPORT */
+#if defined(RT_CFG80211_SUPPORT) && defined(RT_CFG80211_P2P_CONCURRENT_DEVICE)
+	BSS_STRUCT *pMbss = &pAd->ApCfg.MBSSID[CFG_GO_BSSID_IDX];
+	struct wifi_dev *wdev = &pMbss->wdev;
+#endif /* defined(RT_CFG80211_SUPPORT) && defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) */
+
 	INT bw;
 	RT_HT_CAPABILITY *rt_ht_cap = &pAd->CommonCfg.DesiredHtPhy;
 	HT_CAPABILITY_IE *ht_cap= &pAd->CommonCfg.HtCapability;
@@ -368,6 +373,14 @@ VOID RTMPSetHT(
 		pAd->CommonCfg.vht_cent_ch)
 		bw = BW_80;
 #endif /* DOT11_VHT_AC */
+
+#if defined(RT_CFG80211_SUPPORT) && defined(RT_CFG80211_P2P_CONCURRENT_DEVICE)
+	if ((wdev->bw == BW_20) && (wdev->channel != 0))
+		bbp_set_bw(pAd, wdev->bw);
+	else if (INFRA_ON(pAd))
+		bbp_set_bw(pAd, pAd->StaCfg.wdev.bw);
+	else
+#endif /* defined(RT_CFG80211_SUPPORT) && defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) */
 	bbp_set_bw(pAd, bw);
 
 

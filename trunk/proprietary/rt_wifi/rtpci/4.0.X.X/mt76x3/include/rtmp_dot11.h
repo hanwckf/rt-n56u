@@ -18,6 +18,11 @@
 #endif /* DOT11_N_SUPPORT */
 
 
+#ifdef DOT11K_RRM_SUPPORT
+#include "dot11k_rrm.h"
+#endif /* DOT11K_RRM_SUPPORT */
+
+
 /* 4-byte HTC field.  maybe included in any frame except non-QOS data frame.  The Order bit must set 1. */
 typedef struct GNU_PACKED _HT_CONTROL{
 #ifdef RT_BIG_ENDIAN

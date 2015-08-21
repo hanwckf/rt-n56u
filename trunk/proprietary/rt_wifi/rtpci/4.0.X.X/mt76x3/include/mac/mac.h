@@ -161,15 +161,16 @@ typedef struct _MAC_TX_INFO{
 
 
 struct _RTMP_ADAPTER;
-#ifdef DBG
+
 VOID dump_txinfo(struct _RTMP_ADAPTER *pAd, TXINFO_STRUC *pTxInfo);
 VOID dump_rxinfo(struct _RTMP_ADAPTER *pAd, RXINFO_STRUC *pRxInfo);
+
 VOID dump_tmac_info(struct _RTMP_ADAPTER *pAd, UCHAR *tmac_info);
 VOID dump_rmac_info(struct _RTMP_ADAPTER *pAd, UCHAR *rmac_info);
+
 #ifdef RTMP_PCI_SUPPORT
 VOID dump_txd(struct _RTMP_ADAPTER *pAd, struct _TXD_STRUC *pTxD);
 VOID dump_rxd(struct _RTMP_ADAPTER *pAd, struct _RXD_STRUC *pRxD);
 #endif
-#endif /* DBG */
 #endif /* __MAC_H__ */
 

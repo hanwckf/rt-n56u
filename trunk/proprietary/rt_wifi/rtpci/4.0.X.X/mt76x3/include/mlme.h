@@ -33,6 +33,12 @@
 #include "rtmp_dot11.h"
 
 
+#ifdef DOT11R_FT_SUPPORT
+#include "link_list.h"
+#include "ft_cmm.h"
+#endif /* DOT11R_FT_SUPPORT */
+
+
 
 /* maximum supported capability information - */
 /* ESS, IBSS, Privacy, Short Preamble, Spectrum mgmt, Short Slot */
@@ -113,11 +119,9 @@
 #define BSS_NOT_FOUND                    0xFFFFFFFF
 
 #ifdef CONFIG_AP_SUPPORT
-#define MAX_LEN_OF_MLME_QUEUE            20 /*10 */
+#define MAX_LEN_OF_MLME_QUEUE            64 /*20*/ /*10 */
 #endif /* CONFIG_AP_SUPPORT */
 
-#undef MAX_LEN_OF_MLME_QUEUE
-#define MAX_LEN_OF_MLME_QUEUE 64
 
 enum SCAN_MODE{
 	/* Active scan, send probe request, and wait beacon and probe response */
@@ -130,6 +134,10 @@ enum SCAN_MODE{
 #ifdef DOT11N_DRAFT3
 	SCAN_2040_BSS_COEXIST = 0x4,
 #endif /* DOT11N_DRAFT3 */
+#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
+	SCAN_P2P = 0x5,
+	SCAN_P2P_SEARCH = 0x6,
+#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT */
 	SCAN_ACTIVE_MAX,
 	
 	/* Passive scan, no probe request, only wait beacon and probe response */
@@ -330,13 +338,13 @@ typedef struct GNU_PACKED _EXT_CAP_INFO_ELEMENT{
 	UINT32 rsv63:1;
 	UINT32 operating_mode_notification:1;
 	UINT32 tdls_wider_bw:1;
-	UINT32 rsv49:13;
+	UINT32 rsv49:12;
 	UINT32 utf8_ssid:1;
 	UINT32 rsv47:1;
 	UINT32 wnm_notification:1;
 	UINT32 uapsd_coex:1;
 	UINT32 id_location:1;
-	UINT32 service_interval_granularity:2;
+	UINT32 service_interval_granularity:3;
 	UINT32 reject_unadmitted_frame:1;
 	UINT32 TDLSChSwitchProhibited:1; /* bit39: TDLS Channel Switching Prohibited */
 	UINT32 TDLSProhibited:1; /* bit38: TDLS Prohibited */
@@ -356,13 +364,13 @@ typedef struct GNU_PACKED _EXT_CAP_INFO_ELEMENT{
 	UINT32 TDLSProhibited:1; /* bit38: TDLS Prohibited */
 	UINT32 TDLSChSwitchProhibited:1; /* bit39: TDLS Channel Switching Prohibited */
 	UINT32 reject_unadmitted_frame:1;
-	UINT32 service_interval_granularity:2;
+	UINT32 service_interval_granularity:3;
 	UINT32 id_location:1;
 	UINT32 uapsd_coex:1;
 	UINT32 wnm_notification:1;
 	UINT32 rsv47:1;
 	UINT32 utf8_ssid:1;
-	UINT32 rsv49:13;
+	UINT32 rsv49:12;
 	UINT32 tdls_wider_bw:1;
 	UINT32 operating_mode_notification:1;
 	UINT32 rsv63:1;
@@ -910,7 +918,10 @@ typedef struct _BSS_ENTRY{
 	EXT_CAP_INFO_ELEMENT ExtCapInfo;	/* this is the extened capibility IE appreed in MGMT frames. Doesn't need to update once set in Init. */
 	UCHAR NewExtChanOffset;
 	CHAR Rssi;
-
+#ifdef CUSTOMER_DCC_FEATURE
+	UCHAR  Snr0;
+	UCHAR  Snr1;
+#endif
 #ifdef CFG80211_SCAN_SIGNAL_AVG
 	SHORT	AvgRssiX8;
 	CHAR	AvgRssi;
@@ -983,6 +994,11 @@ typedef struct _BSS_ENTRY{
 
 
 
+#ifdef DOT11K_RRM_SUPPORT
+	UINT8 RegulatoryClass;
+	UINT8 CondensedPhyType;
+	UINT8 RSNI;
+#endif /* DOT11K_RRM_SUPPORT */
 } BSS_ENTRY;
 
 typedef struct {
@@ -1004,6 +1020,10 @@ typedef struct _MLME_QUEUE_ELEM {
 	ULONG MsgLen;
 	LARGE_INTEGER TimeStamp;
 	struct raw_rssi_info rssi_info;
+#ifdef CUSTOMER_DCC_FEATURE
+	UCHAR Snr0;
+	UCHAR Snr1;
+#endif
 	UCHAR Signal;
 	UCHAR Channel;
 	UCHAR Wcid;
@@ -1060,7 +1080,10 @@ typedef struct _MLME_AUX {
 	USHORT			Alg;
 	UCHAR			ScanType;
 	UCHAR			Channel;
+
+	UCHAR			DtimPeriod;
 	UCHAR               CentralChannel;
+	UCHAR               InfraChannel;
 	USHORT              Aid;
 	USHORT              CapabilityInfo;
 	USHORT              BeaconPeriod;
@@ -1097,10 +1120,8 @@ typedef struct _MLME_AUX {
     /* new to keep Ralink specific feature */
     ULONG               APRalinkIe;
     
-#if defined(CONFIG_STA_SUPPORT) || defined(APCLI_SUPPORT)
     BSS_TABLE           SsidBssTab;     /* AP list for the same SSID */
     BSS_TABLE           RoamTab;        /* AP list eligible for roaming */
-#endif /* CONFIG_STA_SUPPORT || APCLI_SUPPORT */
     ULONG               BssIdx;
     ULONG               RoamIdx;
 	BOOLEAN				CurrReqIsFromNdis;
@@ -1210,6 +1231,12 @@ typedef struct _MLME_SCAN_REQ_STRUCT {
     UCHAR      ScanType;
     UCHAR      SsidLen;
     CHAR       Ssid[MAX_LEN_OF_SSID];
+#ifdef CONFIG_AP_SUPPORT
+#ifdef CUSTOMER_DCC_FEATURE
+	UINT	   Channel;
+	UINT	   Timeout;
+#endif
+#endif
 } MLME_SCAN_REQ_STRUCT, *PMLME_SCAN_REQ_STRUCT;
 
 typedef struct _MLME_START_REQ_STRUCT {
@@ -1275,6 +1302,12 @@ typedef struct _IE_lists {
 #endif /* WSC_AP_SUPPORT */
 	ULONG RalinkIe;
 	EXT_CAP_INFO_ELEMENT ExtCapInfo;
+#ifdef DOT11R_FT_SUPPORT
+	FT_INFO FtInfo;
+#endif /* DOT11R_FT_SUPPORT */
+#ifdef DOT11K_RRM_SUPPORT
+	RRM_EN_CAP_IE RrmEnCap;
+#endif /* DOT11K_RRM_SUPPORT */
 	UCHAR ht_cap_len;
 	HT_CAPABILITY_IE HTCapability;
 #ifdef DOT11_VHT_AC

@@ -120,18 +120,20 @@ static inline BOOLEAN WscCheckWSCHeader(UCHAR *pData)
 
 /* bit3: WPS PBC function is controlled through GPIO[3] */
 /* currently only for RT2860 & RT2870 */
-// TODO: shiang-7603
 #define WSC_HDR_BTN_MR_PRESS_FLG_GET(__pAd, __FlgIsPressed)				\
 	{																	\
 		UINT32 __gpio_value, mask;											\
 		if (__pAd->chipCap.hif_type == HIF_MT) {\
-			DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n", __FUNCTION__, __LINE__));\
+			if (RTMP_TEST_MORE_FLAG(__pAd, fRTMP_ADAPTER_WSC_PBC_PIN0))		\
+				__FlgIsPressed = !GPIOGetValue(__pAd, WSC_HDR_BTN_GPIO_0);	\
+			else															\
+				__FlgIsPressed = !GPIOGetValue(__pAd, WSC_HDR_BTN_GPIO_3);	\
 		} else {\
 			RTMP_IO_READ32(__pAd, GPIO_CTRL_CFG, (&__gpio_value));			\
 			if (RTMP_TEST_MORE_FLAG(__pAd, fRTMP_ADAPTER_WSC_PBC_PIN0))		\
-				mask = WSC_HDR_BTN_GPIO_0;									\
+				mask = (1<<WSC_HDR_BTN_GPIO_0);								\
 			else															\
-				mask = WSC_HDR_BTN_GPIO_3;									\
+				mask = (1<<WSC_HDR_BTN_GPIO_3);								\
 			if (__gpio_value & mask)										\
 				__FlgIsPressed = 0;											\
 			else															\
@@ -356,11 +358,9 @@ static inline BOOLEAN WscCheckWSCHeader(UCHAR *pData)
 #define WSC_WPS_TURN_OFF_LED_TIMEOUT			1000			/* 1 second. */
 #endif /* WSC_LED_SUPPORT */
 
-#ifdef WSC_V2_SUPPORT
 #define WSC_WPS_AP_SETUP_LOCK_TIME				60		/* 60 mins */
 #define WSC_WPS_AP_MAX_PIN_ATTACK				3
 #define WSC_LOCK_FOREVER_PIN_ATTACK				10
-#endif /* WSC_V2_SUPPORT */
 
 #define WSC_INIT_ENTRY_APIDX        0xFF
 #define WSC_MAX_DATA_LEN            1024
@@ -368,6 +368,8 @@ static inline BOOLEAN WscCheckWSCHeader(UCHAR *pData)
 #define WSC_ENTRY_GET_EAPOL_START   0x1
 #define WSC_ENTRY_GET_EAP_RSP_ID    0x2
 
+/* Following Size is calculated base on MAX_NUMBER_OF_ACL is 64 */
+#define WSC_WR_FILE_MAX_BUF 1500
 /* Pack struct to align at byte */
 /*#pragma pack(1) */
 

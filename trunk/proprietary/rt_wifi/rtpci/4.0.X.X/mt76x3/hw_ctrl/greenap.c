@@ -37,12 +37,10 @@ VOID EnableAPMIMOPSv2(RTMP_ADAPTER *pAd, BOOLEAN ReduceCorePower)
 		if (pAd->Antenna.field.RxPath == 2)
 			AsicSetRxStream(pAd, 1);
 	}
-#else	
-	{
-		bbp_set_mmps(pAd, ReduceCorePower);
-		rtmp_mac_set_mmps(pAd, ReduceCorePower);
-	}
-#endif /* defined (MT7603) || defined (MT7628) */
+#else
+	bbp_set_mmps(pAd, ReduceCorePower);
+	rtmp_mac_set_mmps(pAd, ReduceCorePower);
+#endif
 
 	pAd->ApCfg.bGreenAPActive=TRUE;
 	DBGPRINT(RT_DEBUG_INFO, ("EnableAPMIMOPSNew, 30xx changes the # of antenna to 1\n"));
@@ -56,12 +54,10 @@ VOID DisableAPMIMOPSv2(RTMP_ADAPTER *pAd)
 		if (pAd->Antenna.field.RxPath == 2)
 			AsicSetRxStream(pAd, pAd->Antenna.field.RxPath);
 	}
-#else	
-	{
-		bbp_set_mmps(pAd, FALSE);
-		rtmp_mac_set_mmps(pAd, FALSE);
-	}
-#endif /* defined (MT7603) || defined (MT7628) */
+#else
+	bbp_set_mmps(pAd, FALSE);
+	rtmp_mac_set_mmps(pAd, FALSE);
+#endif
 
 	pAd->ApCfg.bGreenAPActive=FALSE;
 	DBGPRINT(RT_DEBUG_INFO, ("DisableAPMIMOPSNew, 30xx reserve only one antenna\n"));

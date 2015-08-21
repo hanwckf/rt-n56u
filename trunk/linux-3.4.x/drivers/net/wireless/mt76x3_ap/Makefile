@@ -98,6 +98,7 @@ $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/chips/mt7603.o
 
 ifeq ($(CONFIG_MT76X3_AP_ATE),y)
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/mt_mac/mt_ate.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/inf/ate_pci.o
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/ate_agent.o
 ifeq ($(CONFIG_MT76X3_AP_QA),y)
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ate/qa_agent.o
@@ -106,11 +107,6 @@ endif
 
 ifeq ($(CONFIG_MT76X3_AP_LED),y)
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rt_led.o
-endif
-
-ifeq ($(CONFIG_MT76X3_AP_80211AC_VHT),y)
-$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/vht.o
-$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/mgmt/mgmt_vht.o
 endif
 
 ifeq ($(CONFIG_MT76X3_AP_80211W_PMF),y)
@@ -192,11 +188,6 @@ ifeq ($(CONFIG_MT76X3_AP_CARRIER),y)
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_cs.o
 endif
 
-ifeq ($(CONFIG_MT76X3_AP_TXBF_SUPPORT),y)
-$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_txbf.o
-$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/cmm_txbf_cal.o
-endif
-
 ifeq ($(CONFIG_MT76X3_AP_CSO),y)
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/naf/net_acc.o
 endif
@@ -209,6 +200,20 @@ ifeq ($(CONFIG_MT76X3_AP_BAND_STEERING),y)
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_band_steering.o
 endif
 
+ifeq ($(CONFIG_MT76X3_AP_DOT11R_FT_SUPPORT),y)
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ft.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ft_tlv.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ft_iocl.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/ft_rc.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/ap/ap_ftkd.o
+endif
+
+ifeq ($(CONFIG_MT76X3_AP_DOT11K_RRM_SUPPORT),y)
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rrm_tlv.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rrm_sanity.o
+$(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/rrm.o
+endif
+
 ifeq ($(CONFIG_MT76X3_AP_DBG),y)
 $(RT_DRV_NAME)-objs += $(RT_DRV_PATH)/common/sys_log.o
 endif
@@ -217,7 +222,7 @@ endif
 #  CFLAGS
 ##################
 
-EXTRA_CFLAGS  = -Wall -Wstrict-prototypes -Wno-trigraphs -Wno-unused -Wno-declaration-after-statement
+EXTRA_CFLAGS  = -Wall -Wstrict-prototypes -Wno-trigraphs -Wframe-larger-than=4096 -Wno-unused -Wno-declaration-after-statement
 EXTRA_CFLAGS += -Idrivers/net/wireless/$(RT_DRV_DIR)/include
 ifeq ($(CONFIG_MT76X3_AP_ATE),y)
 EXTRA_CFLAGS += -Idrivers/net/wireless/$(RT_DRV_DIR)/ate/include
@@ -255,7 +260,7 @@ EXTRA_CFLAGS += -DWORKQUEUE_BH
 endif
 
 ### MT7603
-EXTRA_CFLAGS += -DMT7603 -DMT7603_E2
+EXTRA_CFLAGS += -DMT7603
 #EXTRA_CFLAGS += -DCONFIG_FPGA_MODE
 EXTRA_CFLAGS += -DMT_MAC -DMT_PS -DMT_BBP -DMT_RF -DRTMP_RF_RW_SUPPORT
 EXTRA_CFLAGS += -DRX_DMA_SCATTER -DCONFIG_ANDES_SUPPORT
@@ -263,8 +268,9 @@ EXTRA_CFLAGS += -DNEW_RATE_ADAPT_SUPPORT
 EXTRA_CFLAGS += -DFIFO_EXT_SUPPORT
 EXTRA_CFLAGS += -DMCS_LUT_SUPPORT
 #EXTRA_CFLAGS += -DPEER_DELBA_TX_ADAPT
-EXTRA_CFLAGS += -DRTMP_WLAN_HOOK_SUPPORT -DUSE_BMC
+EXTRA_CFLAGS += -DRTMP_WLAN_HOOK_SUPPORT -DUSE_BMC -DDMA_RESET_SUPPORT
 EXTRA_CFLAGS += -DRTMP_EFUSE_SUPPORT -DCAL_FREE_IC_SUPPORT
+
 
 ifeq ($(CONFIG_MT76X3_AP_READ_MAC_FROM_MTD),y)
 EXTRA_CFLAGS += -DREAD_MAC_FROM_EEPROM
@@ -272,6 +278,7 @@ endif
 
 ifeq ($(CONFIG_MT76X3_AP_DBG),y)
 EXTRA_CFLAGS += -DDBG -DUAPSD_DEBUG
+EXTRA_CFLAGS += -DTXRXCR_DEBUG_SUPPORT
 #EXTRA_CFLAGS += -DDBG_DIAGNOSE -DDBG_RX_MCS -DDBG_TX_MCS
 EXTRA_CFLAGS += -DSYSTEM_LOG_SUPPORT
 #EXTRA_CFLAGS += -DINT_STATISTIC
@@ -360,18 +367,19 @@ endif
 
 ifeq ($(CONFIG_MT76X3_AP_MBSS),y)
 EXTRA_CFLAGS += -DMBSS_SUPPORT
-ifeq ($(CONFIG_MT76X3_AP_MBSS_NEW_MBSSID_MODE),y)
-EXTRA_CFLAGS += -DNEW_MBSSID_MODE
-EXTRA_CFLAGS += -DENHANCE_NEW_MBSSID_MODE
-endif
 endif
 
 ifeq ($(CONFIG_MT76X3_AP_APCLI),y)
 EXTRA_CFLAGS += -DAPCLI_SUPPORT -DMAT_SUPPORT
 EXTRA_CFLAGS += -DAPCLI_AUTO_CONNECT_SUPPORT
-#EXTRA_CFLAGS += -DMULTI_APCLI_SUPPORT
+ifeq ($(CONFIG_MT76X3_AP_MULTI_APCLI_SUPPORT),y)
+EXTRA_CFLAGS += -DMULTI_APCLI_SUPPORT
+endif
 ifeq ($(CONFIG_MT76X3_AP_MAC_REPEATER),y)
 EXTRA_CFLAGS += -DMAC_REPEATER_SUPPORT
+endif
+ifeq ($(CONFIG_MT76X3_AP_AIRPLAY_SUPPORT),y)
+EXTRA_CFLAGS += -DAIRPLAY_SUPPORT
 endif
 endif
 
@@ -395,8 +403,12 @@ ifeq ($(CONFIG_MT76X3_AP_BAND_STEERING),y)
 EXTRA_CFLAGS += -DBAND_STEERING
 endif
 
-ifeq ($(CONFIG_MT76X3_AP_EXT_CHANNEL_LIST),y)
-EXTRA_CFLAGS += -DEXT_BUILD_CHANNEL_LIST
+ifeq ($(CONFIG_MT76X3_AP_DOT11R_FT_SUPPORT),y)
+EXTRA_CFLAGS += -DDOT11R_FT_SUPPORT -DIAPP_SUPPORT
+endif
+
+ifeq ($(CONFIG_MT76X3_AP_DOT11K_RRM_SUPPORT),y)
+EXTRA_CFLAGS += -DDOT11K_RRM_SUPPORT -DAPPLE_11K_IOT
 endif
 
 ifeq ($(CONFIG_MT76X3_AP_SINGLE_SKU),y)

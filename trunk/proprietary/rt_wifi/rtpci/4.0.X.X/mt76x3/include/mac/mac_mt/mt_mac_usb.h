@@ -197,7 +197,12 @@ typedef struct __HTTX_BUFFER{
 #define EDCA_AC1_PIPE	1	/* Bulk EP2 OUT */
 #define EDCA_AC2_PIPE	2	/* Bulk EP3	OUT */
 #define	EDCA_AC3_PIPE	3	/* Bulk EP4 OUT */
+#ifndef MT_MAC
 #define	HCCA_PIPE		4	/* Bulk EP5	OUT */
+#endif /*not MT_MAC*/
+#ifdef USE_BMC
+#define EDCA_BMC_PIPE   4   /* Bulk EP8 OUT */
+#endif /* USE_BMC */
 #define	EDCA_WMM1_AC0_PIPE	9	/* Bulk EP9 OUT */
 
 /* used to track driver-generated write irps */
@@ -205,6 +210,10 @@ typedef struct _TX_CONTEXT
 {
 	PVOID			pAd;		/*Initialized in MiniportInitialize */
 	PURB			pUrb;			/*Initialized in MiniportInitialize */
+#ifdef USB_IOT_WORKAROUND2
+	UINT8 			*usb_iot_w2_buf;
+	ra_dma_addr_t	usb_iot_w2_data_dma;		/* urb dma on linux */
+#endif	
 	PIRP			pIrp;			/*used to cancel pending bulk out. */
 									/*Initialized in MiniportInitialize */
 	PTX_BUFFER		TransferBuffer;	/*Initialized in MiniportInitialize */
@@ -234,10 +243,24 @@ typedef struct _TX_CONTEXT
 typedef struct _HT_TX_CONTEXT
 {
 	PVOID			pAd;		/*Initialized in MiniportInitialize */
+#ifdef USB_BULK_BUF_ALIGMENT
+	PURB			pUrb[BUF_ALIGMENT_RINGSIZE];			/*Initialized in MiniportInitialize */
+#else
 	PURB			pUrb;			/*Initialized in MiniportInitialize */
+#ifdef USB_IOT_WORKAROUND2
+	UINT8 			*usb_iot_w2_buf;
+	ra_dma_addr_t	usb_iot_w2_data_dma;		/* urb dma on linux */
+#endif
+#endif /* USB_BULK_BUF_ALIGMENT */
+
 	PIRP			pIrp;			/*used to cancel pending bulk out. */
 									/*Initialized in MiniportInitialize */
+#ifdef USB_BULK_BUF_ALIGMENT
+	PHTTX_BUFFER	TransferBuffer[BUF_ALIGMENT_RINGSIZE];	/*Initialized in MiniportInitialize */
+#else
 	PHTTX_BUFFER	TransferBuffer;	/*Initialized in MiniportInitialize */
+#endif /* USB_BULK_BUF_ALIGMENT */
+
 	ULONG			BulkOutSize;	/* Indicate the total bulk-out size in bytes in one bulk-transmission */
 	UCHAR			BulkOutPipeId;
 	BOOLEAN			IRPPending;
@@ -252,10 +275,16 @@ typedef struct _HT_TX_CONTEXT
 	ULONG			NextBulkOutPosition;	/* Indicate the buffer start offset of a bulk-transmission */
 	ULONG			ENextBulkOutPosition;	/* Indicate the buffer end offset of a bulk-transmission */
 	UINT			TxRate;
+#ifdef USB_BULK_BUF_ALIGMENT
+	ra_dma_addr_t		data_dma[BUF_ALIGMENT_RINGSIZE];		/* urb dma on linux */
+#else
 	ra_dma_addr_t		data_dma;		/* urb dma on linux */
+#endif /* USB_BULK_BUF_ALIGMENT */
+
 #ifdef USB_BULK_BUF_ALIGMENT
 	ULONG 			CurWriteIdx;	/* pointer to next 32k bytes position when wirte tx resource or when bulk out sizze not > 0x6000 */
 	ULONG 			NextBulkIdx;	/* pointer to next alignment section when bulk ot */
+	ULONG 			CurtBulkIdx;	/* pointer to next alignment section when bulk ot */
 #endif /* USB_BULK_BUF_ALIGMENT */
 
 }	HT_TX_CONTEXT, *PHT_TX_CONTEXT, **PPHT_TX_CONTEXT;
@@ -276,20 +305,16 @@ typedef struct _CMD_CONTEXT
 /* */
 typedef struct _RX_CONTEXT
 {
-	PUCHAR				TransferBuffer;
-	PVOID				pAd;
-	PIRP				pIrp;/*used to cancel pending bulk in. */
-	PURB				pUrb;
-	/*These 2 Boolean shouldn't both be 1 at the same time. */
-	ULONG				BulkInOffset;	/* number of packets waiting for reordering . */
-/*	BOOLEAN				ReorderInUse;	// At least one packet in this buffer are in reordering buffer and wait for receive indication */
-	BOOLEAN				bRxHandling;	/* Notify this packet is being process now. */
-	BOOLEAN				InUse;			/* USB Hardware Occupied. Wait for USB HW to put packet. */
-	BOOLEAN				Readable;		/* Receive Complete back. OK for driver to indicate receiving packet. */
-	BOOLEAN				IRPPending;		/* TODO: To be removed */
-	/*atomic_t				IrpLock; */
-	NDIS_SPIN_LOCK		RxContextLock;
-	ra_dma_addr_t			data_dma;		/* urb dma on linux */
+	DL_LIST list;
+	UINT8 Id;
+	BOOLEAN URBCancel;
+	ULONG ReadPosition;
+	PUCHAR TransferBuffer;
+	PVOID pAd;
+	PURB pUrb;
+	ULONG BulkInOffset;
+	NDIS_SPIN_LOCK RxContextLock;
+	ra_dma_addr_t data_dma;
 }	RX_CONTEXT, *PRX_CONTEXT;
 
 
@@ -430,6 +455,17 @@ typedef struct _CMD_RSP_CONTEXT
 																\
 	RTEnqueueInternalCmd(pAd, CMDTHREAD_SET_CLIENT_MAC_ENTRY, 	\
 							&Info, sizeof(RT_SET_ASIC_WCID));	\
+}
+
+/* Host got update event from fw, update new beacon */
+#define RTMP_UPDATE_BCN(pAd)                         \
+{                                                               \
+    RTEnqueueInternalCmd(pAd, HWCMD_ID_BCN_UPDATE, NULL, 0);   \
+}
+
+#define RTMP_UPDATE_BMC_CNT(_pAd, _func_idx)                         \
+{                                                                    \
+    RTEnqueueInternalCmd(pAd, HWCMD_ID_BMC_CNT_UPDATE, &_func_idx, sizeof(CHAR));   \
 }
 
 /* ----------------- Security Related MACRO ----------------- */

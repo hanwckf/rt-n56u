@@ -23,8 +23,15 @@ int mt7603_read_chl_pwr(struct _RTMP_ADAPTER *pAd);
 void mt7603_pwrOn(struct _RTMP_ADAPTER *pAd);
 void mt7603_calibration(struct _RTMP_ADAPTER *pAd, UCHAR channel);
 void mt7603_tssi_compensation(struct _RTMP_ADAPTER *pAd, UCHAR channel);
+void mt7603_set_ed_cca(struct _RTMP_ADAPTER *pAd, BOOLEAN enable);
 
+#ifdef LED_CONTROL_SUPPORT
 INT Set_MT7603LED_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_MT7603LED_Enhance_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_MT7603LED_Behavor_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+#endif /* LED_CONTROL_SUPPORT */
+
+
 
 #endif // __MT7603_H__
 

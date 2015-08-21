@@ -133,8 +133,6 @@ BOOLEAN RtmpOsCmdDisplayLenCheck(
 
 
 
-
-
 INT32  RtPrivIoctlSetVal(VOID)
 {
     return (INT32)RTPRIV_IOCTL_SET;

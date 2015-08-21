@@ -181,5 +181,13 @@ BOOLEAN HSIPv4Check(
 			UINT16 dscPort);
 #endif
 
+#ifdef CONFIG_HOTSPOT_R2	
+struct _sta_hs_info {
+	//UCHAR	addr[6];
+	UCHAR	version;
+	UCHAR	ppsmo_exist;
+	USHORT	ppsmo_id;
+};
+#endif
 #endif /* __HOTSPOT_H__ */
 

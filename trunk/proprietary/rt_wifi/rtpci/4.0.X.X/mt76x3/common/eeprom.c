@@ -43,6 +43,7 @@ struct chip_map RTMP_CHIP_E2P_FILE_TABLE[] = {
 	{0, NULL}
 };
 
+
 INT rtmp_read_txmixer_gain_from_eeprom(RTMP_ADAPTER *pAd)
 {
 	UINT16 value;
@@ -67,7 +68,9 @@ INT rtmp_read_txmixer_gain_from_eeprom(RTMP_ADAPTER *pAd)
 			value &= 0x07;
 			pAd->TxMixerGain24G = (UCHAR)value;
 		}
+
 	}
+
 
 	return TRUE;
 }
@@ -181,6 +184,8 @@ INT rtmp_read_freq_offset_from_eeprom(RTMP_ADAPTER *pAd)
 			pAd->RfFreqOffset = 0;
 	}
 
+
+
 	DBGPRINT(RT_DEBUG_TRACE, ("E2PROM: RF FreqOffset=0x%x \n", pAd->RfFreqOffset));
 
 	return TRUE;
@@ -196,11 +201,7 @@ INT rtmp_read_txpwr_from_eeprom(RTMP_ADAPTER *pAd)
 		mt7603_read_chl_pwr(pAd);
 	else
 #endif
-	{
-#ifdef RTMP_MAC
 		RTMPReadChannelPwr(pAd);
-#endif /* RTMP_MAC */
-	}
 
 	RTMPReadTxPwrPerRate(pAd);
 
@@ -389,6 +390,9 @@ INT NICReadEEPROMParameters(RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr)
 		Antenna.word = pAd->EEPROMDefaultValue[EEPROM_NIC_CFG1_OFFSET];
 
 
+
+
+
 	// TODO: shiang, why we only check oxff00??
 	if (((Antenna.word & 0xFF00) == 0xFF00) || IS_MT76x2(pAd))
 /*	if (Antenna.word == 0xFFFF)*/
@@ -452,6 +456,8 @@ INT NICReadEEPROMParameters(RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr)
 	/* Set the RfICType here, then we can initialize RFIC related operation callbacks*/
 	pAd->Mlme.RealRxPath = (UCHAR) Antenna.field.RxPath;
 	pAd->RfIcType = (UCHAR) Antenna.field.RfIcType;
+
+
 
 
 #ifdef MT7603
@@ -527,6 +533,10 @@ INT NICReadEEPROMParameters(RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr)
 #endif /* RTMP_INTERNAL_TX_ALC */
 
 
+
+
+
+
 	DBGPRINT(RT_DEBUG_TRACE, ("%s: pAd->Antenna.field.BoardType = %d, IS_MINI_CARD(pAd) = %d, IS_RT5390U(pAd) = %d\n",
 		__FUNCTION__,
 		pAd->Antenna.field.BoardType,
@@ -592,6 +602,25 @@ UCHAR RtmpEepromGetDefault(RTMP_ADAPTER *pAd)
 	return e2p_default;
 }
 
+
+#if defined(RTMP_EFUSE_SUPPORT) && defined(RTMP_FLASH_SUPPORT)
+static USHORT EE_FLASH_ID_LIST[]={
+
+
+
+
+
+#ifdef MT7603
+    0x7603,
+#endif
+};
+
+#define EE_FLASH_ID_NUM  (sizeof(EE_FLASH_ID_LIST) / sizeof(USHORT))
+#endif /* defined(RTMP_EFUSE_SUPPORT) && defined(RTMP_FLASH_SUPPORT) */
+
+
+
+
 static NDIS_STATUS rtmp_ee_bin_init(PRTMP_ADAPTER pAd)
 {
 #ifdef CAL_FREE_IC_SUPPORT
@@ -616,12 +645,51 @@ static NDIS_STATUS rtmp_ee_bin_init(PRTMP_ADAPTER pAd)
 	return NDIS_STATUS_SUCCESS;
 }
 
+#if defined(RTMP_EFUSE_SUPPORT) && defined(RTMP_FLASH_SUPPORT)
+static VOID RtmpEepromTypeAdjust(RTMP_ADAPTER *pAd, UCHAR *pE2pType)
+{
+	UINT EfuseFreeBlock=0;
+
+	eFuseGetFreeBlockCount(pAd, &EfuseFreeBlock);	
+	
+	if (EfuseFreeBlock >= pAd->chipCap.EFUSE_RESERVED_SIZE)
+	{
+		DBGPRINT(RT_DEBUG_OFF, ("NVM is efuse and the information is too less to bring up the interface\n"));
+		DBGPRINT(RT_DEBUG_OFF, ("Force to use Flash mode\n"));
+		*pE2pType = E2P_FLASH_MODE;
+	}
+	else 
+	{
+		USHORT eeFlashId = 0;
+		int listIdx;
+		BOOLEAN bFound = FALSE;
+
+		rtmp_ee_efuse_read16(pAd, 0, &eeFlashId);
+		DBGPRINT(RT_DEBUG_OFF, ("%s:: eeFlashId = 0x%x.\n", __FUNCTION__, eeFlashId));
+		for(listIdx =0 ; listIdx < EE_FLASH_ID_NUM; listIdx++)
+		{
+			if (eeFlashId == EE_FLASH_ID_LIST[listIdx])
+			{			
+				bFound = TRUE;
+				break;
+			}
+		}
+
+		if (bFound == FALSE)
+		{
+			*pE2pType = E2P_FLASH_MODE;
+		}
+	}
+}
+#endif /* defined(RTMP_EFUSE_SUPPORT) && defined(RTMP_FLASH_SUPPORT) */
 
 INT RtmpChipOpsEepromHook(RTMP_ADAPTER *pAd, INT infType,INT forceMode)
 {
 	RTMP_CHIP_OP *pChipOps = &pAd->chipOps;
 	UCHAR e2p_type;
+#ifdef RTMP_PCI_SUPPORT
 	UINT32 val;
+#endif /* RTMP_PCI_SUPPORT */
 	UCHAR e2p_default = 0;
 
 	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST))
@@ -636,33 +704,34 @@ INT RtmpChipOpsEepromHook(RTMP_ADAPTER *pAd, INT infType,INT forceMode)
 	if(forceMode != E2P_NONE && forceMode < NUM_OF_E2P_MODE)
 	{
 		e2p_type = forceMode;
-
-		DBGPRINT(RT_DEBUG_OFF, ("%s::e2p_type=%d, inf_Type=%d\n",
+		DBGPRINT(RT_DEBUG_OFF, ("%s::forceMode: %d , infType: %d\n",
 					__FUNCTION__, e2p_type, infType));
-
 	}
 	else
 	{
 		e2p_type = pAd->E2pAccessMode;
 
-		e2p_default = RtmpEepromGetDefault(pAd);
-		/* If e2p_type is out of range, get the default mode */
-		e2p_type = ((e2p_type != 0) && (e2p_type < NUM_OF_E2P_MODE)) ? e2p_type : e2p_default;
-
-		if(pAd->E2pAccessMode==E2P_NONE)
-		{
-			pAd->E2pAccessMode = e2p_default;
-		}
-
 		DBGPRINT(RT_DEBUG_OFF, ("%s::e2p_type=%d, inf_Type=%d\n",
 					__FUNCTION__, e2p_type, infType));
 
+		e2p_default = RtmpEepromGetDefault(pAd);
+		/* If e2p_type is out of range, get the default mode */
+		e2p_type = ((e2p_type != 0) && (e2p_type < NUM_OF_E2P_MODE)) ? e2p_type : e2p_default;
 
 		if (infType == RTMP_DEV_INF_RBUS)
 		{
 			e2p_type = E2P_FLASH_MODE;
 			pChipOps->loadFirmware = NULL;
 		}
+#if defined(RTMP_EFUSE_SUPPORT) && defined(RTMP_FLASH_SUPPORT)
+		else if (pAd->E2pAccessMode == E2P_NONE)
+		{
+			/*
+				User doesn't set E2pAccessMode in profile, adjust access mode automatically here.
+			*/
+			RtmpEepromTypeAdjust(pAd, &e2p_type);
+		}
+#endif /* defined(RTMP_EFUSE_SUPPORT) && defined(RTMP_FLASH_SUPPORT) */
 
 #ifdef RTMP_EFUSE_SUPPORT
 		if (e2p_type != E2P_EFUSE_MODE)
@@ -672,9 +741,9 @@ INT RtmpChipOpsEepromHook(RTMP_ADAPTER *pAd, INT infType,INT forceMode)
 		DBGPRINT(RT_DEBUG_OFF, ("%s: E2P type(%d), E2pAccessMode = %d, E2P default = %d\n", __FUNCTION__, e2p_type, pAd->E2pAccessMode, e2p_default));
 		pAd->eeprom_type = (e2p_type==E2P_EFUSE_MODE)  ? EEPROM_EFUSE: EEPROM_FLASH;
 	}
-	
-	pAd->e2pCurMode = e2p_type;
 
+	pAd->e2pCurMode = e2p_type;
+	
 	switch (e2p_type)
 	{
 		case E2P_EEPROM_MODE:
@@ -702,7 +771,7 @@ INT RtmpChipOpsEepromHook(RTMP_ADAPTER *pAd, INT infType,INT forceMode)
 			if ( pAd->dev_idx == 1 )
 				pAd->flash_offset = CONFIG_RT_SECOND_IF_RF_OFFSET;
 #endif
-			DBGPRINT(RT_DEBUG_OFF, ("NVM is FLASH mode\n"));
+			DBGPRINT(RT_DEBUG_OFF, ("NVM is FLASH mode, flash_offset = 0x%x\n", pAd->flash_offset));
 			return 0;
 		}
 #endif /* RTMP_FLASH_SUPPORT */
@@ -732,7 +801,7 @@ INT RtmpChipOpsEepromHook(RTMP_ADAPTER *pAd, INT infType,INT forceMode)
 			DBGPRINT(RT_DEBUG_OFF, ("NVM is BIN mode\n"));
 			return 0;
 	}
-	
+
 	/* Hook functions based on interface types for EEPROM */
 	switch (infType)
 	{
@@ -791,7 +860,7 @@ BOOLEAN rtmp_get_default_bin_file_by_chip(
 }
 
 
-BOOLEAN rtmp_ee_bin_read16(RTMP_ADAPTER *pAd, USHORT Offset, USHORT *pValue)
+BOOLEAN rtmp_ee_bin_read16(RTMP_ADAPTER *pAd, UINT16 Offset, UINT16 *pValue)
 {
 	BOOLEAN IsEmpty = 0;
 
@@ -914,10 +983,6 @@ INT rtmp_ee_write_to_bin(
 	INT ret_val;
 	RTMP_OS_FD srcf;
 	RTMP_OS_FS_INFO osFSInfo;
-	const INT PCI_EFUSE_SIZE = 10;
-	UCHAR pci_pm[PCI_EFUSE_SIZE];
-	UCHAR pci_efuse[PCI_EFUSE_SIZE];
-	INT i = 0;
 
 #ifdef RT_SOC_SUPPORT
 #ifdef MULTIPLE_CARD_SUPPORT
@@ -967,49 +1032,13 @@ INT rtmp_ee_write_to_bin(
 		DBGPRINT(RT_DEBUG_ERROR, ("%s::Error %d closing %s\n", __FUNCTION__, -ret_val, src));
 
 	RtmpOSFSInfoChange(&osFSInfo, FALSE);
-
-#ifdef RTMP_MAC_PCI
-#ifdef RTMP_EFUSE_SUPPORT
-#ifdef MT7603
-	NdisZeroMemory(pci_pm, PCI_EFUSE_SIZE);
-	NdisZeroMemory(pci_efuse, PCI_EFUSE_SIZE);
-	/* 0x26 ~ 0x2F */
-	for(i=0;i<PCI_EFUSE_SIZE;i+=2){
-		UINT16 buf_reg = 0;
-		buf_reg |= pAd->EEPROMImage[0x26+i+1];
-		buf_reg <<= 8;
-		buf_reg |= pAd->EEPROMImage[0x26+i];
-		buf_reg = le2cpu16 (buf_reg);
-		NdisMoveMemory(&pci_pm[i], &buf_reg, 2);
-	}
-	eFuseRead(pAd, 0x26, (USHORT *)pci_efuse, PCI_EFUSE_SIZE);
-
-	DBGPRINT(RT_DEBUG_TRACE, ("PCIE_PM: "));
-	for(i=0;i<PCI_EFUSE_SIZE;i++){
-		DBGPRINT(RT_DEBUG_TRACE, ("%x ",pci_pm[i]));
-	}
-	DBGPRINT(RT_DEBUG_TRACE, ("\n"));
-	DBGPRINT(RT_DEBUG_TRACE, ("PCIE_EFUSE: "));
-	for(i=0;i<PCI_EFUSE_SIZE;i++){
-		DBGPRINT(RT_DEBUG_TRACE, ("%x ",pci_efuse[i]));
-	}
-	DBGPRINT(RT_DEBUG_TRACE, ("\n"));
-	if (!NdisEqualMemory(pci_pm, pci_efuse, PCI_EFUSE_SIZE)){
-		eFuseWrite(pAd, 0x26, (USHORT *)pci_pm, PCI_EFUSE_SIZE);
-		DBGPRINT(RT_DEBUG_TRACE, ("%s, write pci efuse val  to efuse\n", __FUNCTION__));
-	}else{
-		DBGPRINT(RT_DEBUG_TRACE, ("%s, 0x26~0x2F efuse and bin file has same val\n", __FUNCTION__));
-	}
-#endif	/* MT7603 */
-#endif
-#endif /* RTMP_MAC_PCI */
 	return TRUE;
 }
 
 
 INT Set_LoadEepromBufferFromBin_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
-	UINT bEnable = simple_strtol(arg, 0, 10);
+	INT bEnable = simple_strtol(arg, 0, 10);
 	INT result;
 
 	if (bEnable < 0)

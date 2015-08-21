@@ -46,7 +46,6 @@ enum GAS_STATE GASPeerCurrentState(
 	PGAS_CTRL pGASCtrl;
 	PGAS_PEER_ENTRY GASPeerEntry;
 	PGAS_EVENT_DATA Event = (PGAS_EVENT_DATA)Elem->Msg;
-	INT32 Ret;
 
 #ifdef CONFIG_AP_SUPPORT
 	pGASCtrl = &pAd->ApCfg.MBSSID[Event->ControlIndex].GASCtrl;
@@ -150,7 +149,6 @@ VOID SendGASRsp(
 	PGAS_CTRL pGASCtrl = &pAd->ApCfg.MBSSID[Event->ControlIndex].GASCtrl;
 	GAS_PEER_ENTRY *GASPeerEntry;
 	BOOLEAN Cancelled;
-	unsigned long irqFlags=0;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s\n", __FUNCTION__));
 	
@@ -499,7 +497,6 @@ static VOID SendGASCBRsp(
 	PGAS_CTRL pGASCtrl = &pAd->ApCfg.MBSSID[Event->ControlIndex].GASCtrl;
 	BOOLEAN bGASQueryRspFragFound = FALSE;
 	BOOLEAN Cancelled;
-	unsigned long irqFlags=0;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s\n", __FUNCTION__));
 

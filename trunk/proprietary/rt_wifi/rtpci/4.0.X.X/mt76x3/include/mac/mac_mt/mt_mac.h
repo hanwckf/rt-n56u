@@ -1417,6 +1417,10 @@ typedef struct wtbl_entry {
 #define MT_PSE_WTBL_2_ADDR	0xa5000000  /* get from CR setting of PSE.BUFS_DAA (0x164) */
 #define MT_PSE_BASE_ADDR		0xa0000000
 
+#define MT_TOP_REMAP_ADDR		0x80000000 //TOP start address 8002-0000, but only can remap to 8000-0000
+#define MT_TOP_REMAP_ADDR_THEMAL	 0xa2000 //Get Thermal sensor adc cal value: 0x80022000 bits(8,14), Offset 0x80000 + 0x22000 = 0xa2000
+#define MT_TOP_THEMAL_ADC	0x80022000 //Get Thermal sensor adc cal value: 0x80022000 bits(8,14)
+
 #define MCU_CFG_BASE		0x2000
 #define MCU_PCIE_REMAP_1	(MCU_CFG_BASE + 0x500)
 #define REMAP_1_OFFSET_MASK (0x3ffff)
@@ -1478,6 +1482,8 @@ typedef struct wtbl_entry {
 #define QID_AC_VO               3
 #define QID_HCCA                4
 #define NUM_OF_TX_RING		4
+/* USB need 5 , PCI only 4 */
+
 #define NUM_OF_WMM1_TX_RING	1
 
 #define QID_BMC                 8
@@ -1509,6 +1515,12 @@ enum {
 	PID_DATA_NO_ACK,
 	PID_CTL_BAR,
 	PID_PS_DATA,
+	PID_TDLS,
+	PID_UAPSD,
+	PID_WSC_EAP,
+	PID_NULL_FRAME_PWR_ACTIVE,
+	PID_NULL_FRAME_PWR_SAVE,
+	PID_QOS_NULL_FRAME,
 	PID_MAX = 0x40,
 };
 
@@ -1575,6 +1587,7 @@ typedef struct _TXS_CTL {
 	ULONG TxSFailCount;
 	UINT8 TxSPid;
 	TXS_STATUS TxSStatus[TXS_STATUS_NUM];
+	BOOLEAN TxSValid;
 } TXS_CTL, *PTXS_CTL;
 
 #define TXS_TYPE0 0 /* Per Pkt */
@@ -1595,7 +1608,6 @@ typedef struct _TXS_TYPE {
 typedef INT32 (*TXS_HANDLER)(struct _RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv);
 
 INT32 InitTxSTypeTable(struct _RTMP_ADAPTER *pAd);
-INT32 InitTxSCommonCallBack(struct _RTMP_ADAPTER *pAd);
 INT32 ExitTxSTypeTable(struct _RTMP_ADAPTER *pAd);
 INT32 AddTxSTypePerPkt(struct _RTMP_ADAPTER *pAd, UINT32 Pid, UINT8 Format, 
 						TXS_HANDLER TxSHandler);
@@ -1605,6 +1617,14 @@ INT32 TxSTypeCtlPerPkt(struct _RTMP_ADAPTER *pAd, UINT32 Pid, UINT8 Format,
 						BOOLEAN DumpTxSReport, ULONG DumpTxSReportTimes);
 INT32 ParseTxSPacket(struct _RTMP_ADAPTER *pAd, UINT32 Pid, UINT8 Format, CHAR *Data);
 INT32 BcnTxSHandler(struct _RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv);
+INT32 NullFramePM1TxSHandler(struct _RTMP_ADAPTER *pAd, CHAR *Data);
+INT32 NullFramePM0TxSHandler(struct _RTMP_ADAPTER *pAd, CHAR *Data);
+#ifdef CFG_TDLS_SUPPORT
+INT32 TdlsTxSHandler(struct _RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv);
+#endif //CFG_TDLS_SUPPORT
+#ifdef UAPSD_SUPPORT
+INT32 UAPSDTxSHandler(struct _RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv);
+#endif
 INT32 AddTxSTypePerPktType(struct _RTMP_ADAPTER *pAd, UINT8 Type, UINT8 Subtype,
 							UINT8 Format, TXS_HANDLER TxSHandler);
 INT32 RemoveTxSTypePerPktType(struct _RTMP_ADAPTER *pAd, UINT8 Type, UINT8 Subtype, 
@@ -1677,8 +1697,6 @@ typedef struct __TX_CNT_INFO {
 
 #define E2PROM_CSR          0x0004
 #define GPIO_CTRL_CFG	0x0228
-#define WSC_HDR_BTN_GPIO_0			((UINT32)0x00000001) /* bit 0 for RT2860/RT2870 */
-#define WSC_HDR_BTN_GPIO_3			((UINT32)0x00000008) /* bit 3 for RT2860/RT2870 */
 
 #define LEGACY_BASIC_RATE	0x1408
 
@@ -1686,15 +1704,16 @@ typedef struct __TX_CNT_INFO {
 #define HW_BEACON_MAX_SIZE(__pAd)      ((__pAd)->chipCap.BcnMaxHwSize)
 
 struct _RTMP_ADAPTER;
-#ifdef DBG
 VOID dump_mt_mac_cr(struct _RTMP_ADAPTER *pAd);
+
+INT mt_mac_init(struct _RTMP_ADAPTER *pAd);
+INT mt_hw_tb_init(struct _RTMP_ADAPTER *pAd, BOOLEAN bHardReset);
+
+INT mt_wtbl_get_entry234(struct _RTMP_ADAPTER *pAd, UCHAR idx, struct wtbl_entry *ent);
 VOID dump_wtbl_entry(struct _RTMP_ADAPTER *pAd, struct wtbl_entry *ent);
 VOID dump_wtbl_info(struct _RTMP_ADAPTER *pAd, UINT wtbl_idx);
 VOID dump_wtbl_base_info(struct _RTMP_ADAPTER *pAd);
-#endif /* DBG */
-INT mt_mac_init(struct _RTMP_ADAPTER *pAd);
-INT mt_hw_tb_init(struct _RTMP_ADAPTER *pAd, BOOLEAN bHardReset);
-INT mt_wtbl_get_entry234(struct _RTMP_ADAPTER *pAd, UCHAR idx, struct wtbl_entry *ent);
+
 INT mt_mac_set_ctrlch(struct _RTMP_ADAPTER *pAd, UINT8 extch);
 
 USHORT tx_rate_to_tmi_rate(UCHAR mode, UCHAR mcs, UCHAR nss, BOOLEAN stbc, UCHAR preamble);

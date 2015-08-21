@@ -175,6 +175,8 @@ typedef struct _LED_CONTROL
 	UCHAR				RssiSingalstrengthOffet;
 	BOOLEAN				bLedOnScanning;
 	UCHAR				LedStatus;
+	UCHAR				LedConfigMethod;
+	UCHAR				LedconnectFailCountdown;
 }LED_CONTROL, *PLED_CONTROL;
 
 void RTMPStartLEDMode(IN RTMP_ADAPTER *pAd);

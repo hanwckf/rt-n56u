@@ -573,7 +573,7 @@ static VOID ApCliPeerDeauthAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		{
 			RTMP_MLME_HANDLER(pAd);
 			ifIndex = ((ifIndex - 64) / 16);
-			RTMPRemoveRepeaterEntry(pAd, ifIndex, CliIdx);
+			//RTMPRemoveRepeaterEntry(pAd, ifIndex, CliIdx);
 		}
 #endif /* MAC_REPEATER_SUPPORT */
 	}

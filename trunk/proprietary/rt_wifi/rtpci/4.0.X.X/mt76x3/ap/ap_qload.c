@@ -267,6 +267,9 @@ VOID QBSS_LoadInit(RTMP_ADAPTER *pAd)
 	for(IdBss=0; IdBss<pAd->ApCfg.BssidNum; IdBss++)
 	{
 		if ((pAd->ApCfg.MBSSID[IdBss].wdev.bWmmCapable)
+#ifdef DOT11K_RRM_SUPPORT
+			|| (IS_RRM_ENABLE(pAd, IdBss))
+#endif /* DOT11K_RRM_SUPPORT */
 			)
 		{
 			pAd->phy_ctrl.FlgQloadEnable = TRUE;
@@ -460,6 +463,39 @@ BOOLEAN QBSS_LoadIsBusyTimeAccepted(
 	return TRUE;
 }
 
+#ifdef CONFIG_HOTSPOT_R2
+UINT32 QBSS_LoadElementAppend_HSTEST(
+ 	IN		RTMP_ADAPTER	*pAd,
+	OUT		UINT8			*pBeaconBuf,
+	IN		UCHAR			apidx)
+{
+	ELM_QBSS_LOAD load, *pLoad = &load;
+	ULONG ElmLen;
+
+	/* check whether channel busy time calculation is enabled */
+	if (pAd->phy_ctrl.FlgQloadEnable == 0)
+		return 0;
+	/* End of if */
+
+	/* init */
+	pLoad->ElementId = ELM_QBSS_LOAD_ID;
+	pLoad->Length = ELM_QBSS_LOAD_LEN;
+	
+	pLoad->StationCount = le2cpu16(pAd->ApCfg.MBSSID[apidx].HotSpotCtrl.QLoadStaCnt);
+	pLoad->ChanUtil = pAd->ApCfg.MBSSID[apidx].HotSpotCtrl.QLoadCU;
+
+	/* because no ACM is supported, the available bandwidth is 1 sec */
+	pLoad->AvalAdmCap = le2cpu16(0xffff); /* 0x7a12 * 32us = 1 second */
+	
+
+	/* copy the element to the frame */
+    MakeOutgoingFrame(pBeaconBuf, &ElmLen,
+						sizeof(ELM_QBSS_LOAD),	pLoad,
+						END_OF_ARGS);
+
+	return ElmLen;
+} /* End of QBSS_LoadElementAppend */
+#endif
 
 /*
 ========================================================================

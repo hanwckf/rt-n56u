@@ -146,6 +146,7 @@ enum EXT_CMD_TYPE {
     EXT_CMD_RF_TEST = 0x04,
 	EXT_CMD_RADIO_ON_OFF_CTRL = 0x05,
 	EXT_CMD_WIFI_RX_DISABLE = 0x06,
+    EXT_CMD_PM_STATE_CTRL = 0x07,
 	EXT_CMD_CHANNEL_SWITCH = 0x08,
 	EXT_CMD_NIC_CAPABILITY = 0x09,
 	EXT_CMD_PWR_SAVING = 0x0A,
@@ -156,8 +157,18 @@ enum EXT_CMD_TYPE {
 	EXT_CMD_FW_LOG_2_HOST = 0x13,
 	EXT_CMD_PS_RETRIEVE_START = 0x14,
 	EXT_CMD_LED_CTRL=0x17,
-	EXT_CMD_EFUSE_BUFFER_MODE=0x21,
+	EXT_CMD_ID_PACKET_FILTER = 0x18,
+	EXT_CMD_ID_PWR_MGT_BIT_WIFI = 0x1B,
+	EXT_CMD_EFUSE_BUFFER_MODE = 0x21,
+	EXT_CMD_THERMAL_PROTECT = 0x23,
+	EXT_CMD_ID_EDCA_SET = 0x27,
+	EXT_CMD_ID_SLOT_TIME_SET = 0x28,
+	EXT_CMD_ID_CONFIG_INTERNAL_SETTING = 0x29,
+	EXT_CMD_ID_NOA_OFFLOAD_CTRL = 0x2B,
 	EXT_CMD_GET_THEMAL_SENSOR=0x2C,
+	EXT_CMD_ID_WAKEUP_OPTION = 0x2E,
+	EXT_CMD_ID_AC_QUEUE_CONTROL = 0x31,
+    EXT_CMD_ID_BCN_UPDATE = 0x33
 };
 
 /*
@@ -168,6 +179,9 @@ enum EXT_EVENT_TYPE {
 	EXT_EVENT_RF_REG_ACCESS = 0x2,
 	EXT_EVENT_MULTI_CR_ACCESS = 0x0E,
 	EXT_EVENT_FW_LOG_2_HOST = 0x13,
+	EXT_EVENT_BEACON_LOSS = 0x1A,
+	EXT_EVENT_THERMAL_PROTECT = 0x22,
+    EXT_EVENT_BCN_UPDATE = 0x31,
 };
 
 /*
@@ -331,6 +345,15 @@ struct _INIT_CMD_ACCESS_REG {
 #define CMD_CH_PRIV_REQ_JOIN 0
 #define CMD_CH_PRIV_REQ_P2P_LISTEN 1
 
+typedef struct _EXT_CMD_AC_QUEUE_CONTROL_T
+{
+    UINT8  ucAction;   // 0: stop; 1: flush; 2: start
+    UINT8  ucBssidIdx;
+    UINT8  aucReserve[2];  // 4-bytes alignment    
+    UINT32 u4AcQueueMap;
+} EXT_CMD_AC_QUEUE_CONTROL_T, *P_EXT_CMD_AC_QUEUE_CONTROL_T;
+
+
 typedef struct _CMD_SEC_ADDREMOVE_KEY_STRUC_T {
 	UINT8		ucAddRemove;
 	UINT8		ucTxKey;
@@ -409,7 +432,7 @@ typedef struct _EXT_CMD_RADIO_ON_OFF_CTRL_T {
 /* OPMODE */
 #define OPERATION_NORMAL_MODE     0
 #define OPERATION_RFTEST_MODE     1
-
+#define OPERATION_ICAP_OVERLAP 	  3
 
 typedef struct _PARAM_MTK_WIFI_TEST_STRUC_T {
     UINT32         u4FuncIndex;
@@ -417,8 +440,9 @@ typedef struct _PARAM_MTK_WIFI_TEST_STRUC_T {
 } PARAM_MTK_WIFI_TEST_STRUC_T, *P_PARAM_MTK_WIFI_TEST_STRUC_T;
 
 typedef struct _CMD_TEST_CTRL_T {
-    UINT8          ucAction;
-    UINT8          aucReserved[3];
+    UINT8 ucAction;
+	UINT8 ucIcapLen;
+    UINT8 aucReserved[2];
     union {
         UINT32                     u4OpMode;
         UINT32                     u4ChannelFreq;
@@ -432,6 +456,38 @@ typedef struct _EXT_CMD_WIFI_RX_DISABLE_T {
 	UINT8 ucWiFiRxDisableCtrl;
 	UINT8 aucReserve[3];
 } EXT_CMD_WIFI_RX_DISABLE_T;
+
+
+enum {
+	PM4 = 0x04,
+	PM5 = 0x05,
+	PM6 = 0x06,
+	PM7 = 0x07,
+};
+
+enum {
+	ENTER_PM_STATE = 1,
+	EXIT_PM_STATE = 2,
+};
+
+
+typedef struct _EXT_CMD_PM_STATE_CTRL_T 
+{
+	UINT8 ucPmNumber;
+	UINT8 ucPmState;
+    UINT8 aucBssid[6];
+    UINT8 ucDtimPeriod;
+    UINT8 ucWlanIdx;
+    UINT16 u2BcnInterval;
+    UINT32 u4Aid;
+    UINT32 u4RxFilter;
+    UINT8 aucReserve0[4];
+    UINT32 u4Feature;
+    UINT8 ucOwnMacIdx;
+    UINT8 ucWmmIdx;
+    UINT8 ucBcnLossCount;
+    UINT8 ucBcnSpDuration;
+} EXT_CMD_PM_STATE_CTRL_T, *P_EXT_CMD_PM_STATE_CTRL_T;
 
 #define SKU_SIZE 21
 typedef struct _EXT_CMD_CHAN_SWITCH_T {
@@ -509,6 +565,19 @@ typedef struct _EXT_CMD_FW_LOG_2_HOST_CTRL_T {
 	UINT8 ucReserve[3];
 } EXT_CMD_FW_LOG_2_HOST_CTRL_T;
 
+typedef struct _EXT_CMD_NOA_CTRL_T {
+	UINT8 ucMode0;
+	UINT8 acuReserved0[3];
+
+	UINT8 ucMode1;
+    UINT8 acuReserved1[3];
+
+	UINT8 ucMode2;
+    UINT8 acuReserved2[3];
+
+	UINT8 ucMode3;
+    UINT8 acuReserved3[3];
+} EXT_CMD_NOA_CTRL_T, *P_EXT_CMD_NOA_CTRL_T;
 
 typedef struct _CMD_AP_PS_RETRIEVE_T {
     UINT32 u4Option; /* 0: AP_PWS enable, 1: redirect disable */
@@ -537,6 +606,25 @@ UINT8 aucReserved[2];
 	BIN_CONTENT_T aBinContent[EFUSE_CONTENT_BUFFER_SIZE];
 } EXT_CMD_EFUSE_BUFFER_MODE_T, *P_EXT_CMD_EFUSE_BUFFER_MODE_T;
 
+typedef enum _EXT_ENUM_PM_FEATURE_T 
+{
+    PM_CMD_FEATURE_PSPOLL_OFFLOAD       = 0x00000001,
+    PM_CMD_FEATURE_PS_TX_REDIRECT        = 0x00000002,
+    PM_CMD_FEATURE_SMART_BCN_SP          = 0x00000004
+} EXT_ENUM_PM_FEATURE_T;
+
+typedef struct _EXT_CMD_PWR_MGT_BIT_T
+{
+	UINT8		ucWlanIdx;
+	UINT8		ucPwrMgtBit;
+	UINT8		aucReserve[2];
+} EXT_CMD_PWR_MGT_BIT_T, *P_EXT_CMD_PWR_MGT_BIT_T;
+
+typedef struct _EXT_EVENT_BEACON_LOSS_T
+{
+	UINT8		aucBssid[6];
+	UINT8		aucReserves[2];
+} EXT_EVENT_BEACON_LOSS_T, *P_EXT_EVENT_BEACON_LOSS_T;
 
 enum {
 	 EEPROM_MODE_EFUSE=0,
@@ -570,6 +658,225 @@ typedef struct GNU_PACKED _LED_NMAC_CMD{
 }LED_NMAC_CMD;
 #endif /* RT_BIG_ENDIAN */
 
+enum {
+	HIGH_TEMP_THD = 0,
+	LOW_TEMP_THD = 1,
+};
+
+typedef struct _EXT_CMD_THERMAL_PROTECT_T {
+	UINT8 ucHighEnable;
+	CHAR cHighTempThreshold;
+	UINT8 ucLowEnable;
+	CHAR cLowTempThreshold;
+} EXT_CMD_THERMAL_PROTECT_T, *P_EXT_CMD_THERMAL_PROTECT_T;
+
+typedef struct _EXT_EVENT_THERMAL_PROTECT_T {
+	UINT8 ucHLType;
+	CHAR cCurrentTemp;
+	UINT8 aucReserve[2];
+} EXT_EVENT_THERMAL_PROTECT_T, *P_EXT_EVENT_THERMAL_PROTECT_T;
+
+#define CMD_EDCA_AIFS_BIT 		1 << 0
+#define CMD_EDCA_WIN_MIN_BIT 	1<<1
+#define CMD_EDCA_WIN_MAX_BIT 	1 <<2 
+#define CMD_EDCA_TXOP_BIT 		1<<3 
+#define CMD_EDCA_ALL_BITS 		CMD_EDCA_AIFS_BIT | CMD_EDCA_WIN_MIN_BIT | CMD_EDCA_WIN_MAX_BIT |CMD_EDCA_TXOP_BIT
+
+#define CMD_EDCA_AC_MAX 4
+
+typedef struct _TX_AC_PARAM_T
+{
+	UINT8    ucAcNum;               
+	UINT8    ucVaildBit;
+	UINT8	ucAifs;        
+	UINT8  	ucWinMin;
+	UINT16  u2WinMax;              
+	UINT16  u2Txop;
+	
+}TX_AC_PARAM_T,*P_TX_AC_PARAM_T;
+
+
+typedef struct _CMD_EDCA_SET_T {
+
+	UINT8		 	 ucTotalNum;
+	UINT8			 aucReserve[3];
+	TX_AC_PARAM_T rAcParam[CMD_EDCA_AC_MAX];
+	
+} CMD_EDCA_SET_T, *P_CMD_EDCA_SET_T;
+
+#ifdef BCN_OFFLOAD_SUPPORT
+typedef struct _EXT_CMD_BCN_UPDATE_T {
+    UINT8 ucHwBssidIdx;
+    UINT8 ucExtBssidIdx;
+    UINT8 ucEnable;
+    UINT8 aucReserved1[1];
+
+    UINT16 u2BcnPeriod;
+    UINT8 aucReserved2[2];
+
+} CMD_BCN_UPDATE_T, *P_CMD_BCN_UPDATE_T;
+#endif
+
+typedef struct _CMD_SLOT_TIME_SET_T
+{
+    UINT8   ucSlotTime;
+    UINT8   ucSifs;
+    UINT8   ucRifs;
+    UINT8   ucReserve1;
+    UINT16  u2Eifs;
+    UINT16  u2Reserve2;
+}CMD_SLOT_TIME_SET_T,*P_CMD_SLOT_TIME_SET_T;
+
+
+
+#ifdef MT_WOW_SUPPORT
+enum ENUM_PACKETFILTER_TYPE 
+{
+	_ENUM_TYPE_MAGIC 			= 0,
+	_ENUM_TYPE_BITMAP 			= 1,
+	_ENUM_TYPE_ARPNS 			= 2,
+	_ENUM_TYPE_GTK_REKEY 		= 3,
+	_ENUM_TYPE_CF 				= 4,
+	_ENUM_TYPE_GLOBAL_EN 		= 5,
+	_ENUM_TYPE_TCP_SYN 			= 6,
+	_ENUM_TYPE_DETECTION_MASK 	= 7,
+};
+
+enum ENUM_FUNCTION_SELECT 
+{
+	_ENUM_PF					= 0,
+	_ENUM_GLOBAL_MAGIC			= 1,
+	_ENUM_GLOBAL_BITMAP			= 2,
+	_ENUM_GLOBAL_EAPOL			= 3,
+	_ENUM_GLOBAL_TDLS			= 4,
+	_ENUM_GLOBAL_ARPNS			= 5,
+	_ENUM_GLOBAL_CF				= 6,
+	_ENUM_GLOBAL_MODE			= 7,
+	_ENUM_GLOBAL_BSSID			= 8,
+	_ENUM_GLOBAL_MGMT			= 9,
+	_ENUM_GLOBAL_BMC_DROP		= 10,
+	_ENUM_GLOBAL_UC_DROP		= 11,
+	_ENUM_GLOBAL_ALL_TOMCU		= 12,
+	_ENUM_GLOBAL_WOW_EN         = 16,		
+};
+
+enum ENUM_PF_MODE_T 
+{
+	PF_MODE_WHITE_LIST		= 0,
+	PF_MODE_BLACK_LIST		= 1,
+	PF_MODE_NUM
+};
+
+
+typedef struct _CMD_PACKET_FILTER_WAKEUP_OPTION_T {
+    UINT32	WakeupInterface;
+	UINT32	GPIONumber;
+	UINT32	GPIOTimer;
+	UINT32	GpioParameter;
+} CMD_PACKET_FILTER_WAKEUP_OPTION_T, *P_CMD_PACKET_FILTER_WAKEUP_OPTION_T;
+
+typedef struct _CMD_PACKET_FILTER_GLOBAL_T {
+    UINT32	PFType;
+	UINT32	FunctionSelect;
+	UINT32	Enable;
+} CMD_PACKET_FILTER_GLOBAL_T, *P_CMD_PACKET_FILTER_GLOBAL_T;
+
+typedef struct _CMD_PACKET_FILTER_MAGIC_PACKET_T {
+    UINT32	PFType;
+	UINT32	BssidEnable;
+} CMD_PACKET_FILTER_MAGIC_PACKET_T, *P_CMD_PACKET_FILTER_MAGIC_PACKET_T;
+
+typedef struct _CMD_PACKET_FILTER_BITMAP_PATTERN_T {
+    UINT32	PFType;
+	UINT32	Index;
+	UINT32	Enable;
+	UINT32	BssidEnable;
+	UINT32	Offset;
+	UINT32	FeatureBits;
+	UINT32	Resv;
+	UINT32	PatternLength;
+	UINT32	Mask[4];
+	UINT32	Pattern[32];
+} CMD_PACKET_FILTER_BITMAP_PATTERN_T, *P_CMD_PACKET_FILTER_BITMAP_PATTERN_T;
+
+typedef struct _CMD_PACKET_FILTER_ARPNS_T {
+    UINT32	PFType;
+	UINT32	IPIndex;
+	UINT32	Enable;
+	UINT32	BssidEnable;
+	UINT32	Offload;
+	UINT32	Type;
+	UINT32	FeatureBits;
+	UINT32	Resv;
+	UINT32	IPAddress[4];
+} CMD_PACKET_FILTER_ARPNS_T, *P_CMD_PACKET_FILTER_ARPNS_T;
+
+typedef struct _CMD_PACKET_FILTER_GTK_T {
+    UINT32	PFType;
+	UINT32	WPAVersion;
+	UINT32	PTK[16];
+	UINT32	ReplayCounter[2];
+	UINT32	PairKeyIndex;
+	UINT32	GroupKeyIndex;
+	UINT32	BssidIndex;
+	UINT32	OwnMacIndex;
+	UINT32 	WmmIndex;
+	UINT32	Resv1;
+} CMD_PACKET_FILTER_GTK_T, *P_CMD_PACKET_FILTER_GTK_T;
+
+typedef struct _CMD_PACKET_FILTER_COALESCE_T {
+    UINT32	PFType;
+	UINT32	FilterID;
+	UINT32	Enable;
+	UINT32	BssidEnable;
+	UINT32	PacketType;
+	UINT32	CoalesceOP;
+	UINT32	FeatureBits;
+	UINT8	Resv;
+	UINT8	FieldLength;
+	UINT8	CompareOP;
+	UINT8	FieldID;
+	UINT32	Mask[2];
+	UINT32 	Pattern[4];
+} CMD_PACKET_FILTER_COALESCE_T, *P_CMD_PACKET_FILTER_COALESCE_T;
+
+typedef struct _CMD_PACKET_TCPSYN_T {
+    UINT32	PFType;
+	UINT32	AddressType;
+	UINT32	Enable;
+	UINT32	BssidEnable;
+	UINT32	PacketType;
+	UINT32	FeatureBits;
+	UINT32	TCPSrcPort;
+	UINT32 	TCPDstPort;
+	UINT32	SourceIP[4];
+	UINT32	DstIP[4];
+} CMD_PACKET_FILTER_TCPSYN_T, *P_CMD_PACKET_FILTER_TCPSYN_T;
+
+
+typedef struct _EXT_EVENT_PF_GENERAL_T {
+ 	UINT32   u4PfCmdType;
+ 	UINT32   u4Status;
+ 	UINT32   u4Resv;
+} EXT_EVENT_PF_GENERAL_T, *P_EXT_EVENT_PF_GENERAL_T;
+
+typedef struct _EXT_EVENT_WAKEUP_OPTION_T {
+ 	UINT32   u4PfCmdType;
+ 	UINT32   u4Status;
+} EXT_EVENT_WAKEUP_OPTION_T, *P_EXT_EVENT_WAKEUP_OPTION_T;
+#endif
+
+enum {
+	DPD_CONF = 1,
+};
+
+#define DPD_OFF 0
+#define DPD_ON  1
+
+typedef struct _CMD_CONFIG_INTERNAL_SETTING_T {
+	UINT8 ucSubOpcode;
+	UINT8 aucPara[3];
+} CMD_CONFIG_INTERNAL_SETTING_T, *P_CMD_CONFIG_INTERNAL_SETTING_T;
 
 #define MT_UPLOAD_FW_UNIT (1024 * 4)
 
@@ -612,9 +919,11 @@ INT32 CmdPsRetrieveReq(struct _RTMP_ADAPTER *pAd, UINT32 enable);
 #ifdef MT_PS
 INT32 CmdPsRetrieveStartReq(struct _RTMP_ADAPTER *pAd, UINT32 WlanIdx);
 INT32 CmdPsClearReq(struct _RTMP_ADAPTER *pAd, UINT32 wlanidx, BOOLEAN p_wait);
+VOID AndesPsRetrieveStartRsp(struct _RTMP_ADAPTER *pAd, char *Data, UINT16 Len);
 #endif /* MT_PS */
 INT32 CmdSecKeyReq(struct _RTMP_ADAPTER *pAd, UINT8 AddRemove, UINT8 Keytype, UINT8 *pAddr, UINT8 Alg, UINT8 KeyID, UINT8 KeyLen, UINT8 WlanIdx, UINT8 *KeyMaterial);
 INT32 CmdRfTest(struct _RTMP_ADAPTER *pAd, UINT8 Action, UINT8 Mode, UINT8 CalItem);
+INT32 CmdIcapOverLap(struct _RTMP_ADAPTER *pAd, UINT32 IcapLen);
 NDIS_STATUS AndesMTLoadRomPatch(struct _RTMP_ADAPTER *ad);
 INT32 CmdMultipleMacRegAccessWrite(struct _RTMP_ADAPTER *pAd, RTMP_REG_PAIR *RegPair, UINT32 Num);
 INT32 CmdMultiPleMacRegAccessRead(struct _RTMP_ADAPTER *pAd, RTMP_REG_PAIR *RegPair, UINT32 Num);
@@ -626,6 +935,31 @@ VOID CmdIORead32(struct _RTMP_ADAPTER *pAd, UINT32 Offset, UINT32 *Value);
 VOID CmdEfusBufferModeSet(struct _RTMP_ADAPTER *pAd);
 VOID CmdSetTxPowerCtrl(struct _RTMP_ADAPTER *pAd, UINT8 central_chl);
 VOID CmdGetThemalSensorResult(struct _RTMP_ADAPTER *pAd, UINT8 option);
+#ifdef LED_CONTROL_SUPPORT
 INT AndesLedOP(struct _RTMP_ADAPTER *pAd,UCHAR LedIdx,UCHAR LinkStatus);
+INT AndesLedEnhanceOP(struct _RTMP_ADAPTER *pAd,UCHAR LedIdx,UCHAR on_time, UCHAR off_time, UCHAR led_parameter);
+#endif /*LED_CONTROL_SUPPORT*/
+INT32 CmdExtPwrMgtBitWifi(struct _RTMP_ADAPTER *pAd, UINT8 ucWlanIdx, UINT8 ucPwrMgtBit, UINT8 ucDirectCall);
+INT32 CmdExtPmStateCtrl(struct _RTMP_ADAPTER *pAd, UINT8 ucWlanIdx, UINT8 ucPmNumber, UINT8 ucPmState);
+
+#ifdef BCN_OFFLOAD_SUPPORT
+VOID RT28xx_UpdateBeaconToMcu(
+    IN struct _RTMP_ADAPTER *pAd,
+    IN INT apidx,
+    IN UCHAR HWBssidIdx,
+    IN BOOLEAN Enable,
+    IN ULONG FrameLen,
+    IN ULONG UpdatePos);
+
+INT32 CmdBcnUpdateSet(struct _RTMP_ADAPTER *pAd, CMD_BCN_UPDATE_T bcn_update);
+#endif
+
+INT32 CmdThermalProtect(struct _RTMP_ADAPTER *ad, UINT8 HighEn, CHAR HighTempTh, UINT8 LowEn, CHAR LowTempTh);
+INT32 CmdEdcaParameterSet(struct _RTMP_ADAPTER *pAd, CMD_EDCA_SET_T EdcaParam);
+INT32 CmdSlotTimeSet(struct _RTMP_ADAPTER *pAd, UINT8 SlotTime,UINT8 SifsTime,UINT8 RifsTime,UINT16 EifsTime);
+INT32 CmdIdConfigInternalSetting(struct _RTMP_ADAPTER *pAd, UINT8 SubOpCode, UINT8 Param);
+INT32 CmdACQueue_Control(struct _RTMP_ADAPTER *ad, UINT8 ucation, UINT8 BssidIdx, UINT32 u4AcQueueMap);
+
+INT32 CmdP2pNoaOffloadCtrl(struct _RTMP_ADAPTER *pAd, UINT8 enable);
 #endif /* __ANDES_MT_H__ */
 

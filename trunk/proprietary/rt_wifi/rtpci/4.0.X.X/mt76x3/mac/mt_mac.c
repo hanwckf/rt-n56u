@@ -165,6 +165,7 @@ VOID dump_tmac_info(RTMP_ADAPTER *pAd, UCHAR *tmac_info)
 		DBGPRINT(RT_DEBUG_OFF, ("\t\tpn_low=0x%x\n", txd_4->pn_low));
 
 		DBGPRINT(RT_DEBUG_OFF, ("\tTMAC_TXD_5:\n"));
+		DBGPRINT(RT_DEBUG_OFF, ("\t\tpwr_mgmt=%d\n", txd_5->pwr_mgmt));
 		DBGPRINT(RT_DEBUG_OFF, ("\t\ttx_status_2_host=%d\n", txd_5->tx_status_2_host));
 		DBGPRINT(RT_DEBUG_OFF, ("\t\ttx_status_2_mcu=%d\n", txd_5->tx_status_2_mcu));
 		DBGPRINT(RT_DEBUG_OFF, ("\t\ttx_status_fmt=%d\n", txd_5->tx_status_fmt));
@@ -397,17 +398,31 @@ VOID NicGetTxRawCounters(
 */
 VOID NICUpdateRawCounters(RTMP_ADAPTER *pAd)
 {
+	RTEnqueueInternalCmd(pAd, CMDTHREAD_PERODIC_CR_ACCESS_NIC_UPDATE_RAW_COUNTERS, NULL, 0);
+}
+
+NTSTATUS MtCmdNICUpdateRawCounters(RTMP_ADAPTER *pAd, PCmdQElmt CMDQelmt)
+{
 	UINT32 OldValue, ampdu_range_cnt[4];
 	UINT32 mac_val, rx_err_cnt, fcs_err_cnt;
-	//UINT32 TxSuccessCount = 0;
-#ifdef DBG_DIAGNOSE
-	UINT32 TxFailCount = 0, bss_tx_cnt;
-#endif /* DBG_DIAGNOSE */
-	//UINT32 TxRetryCount = 0;
-	COUNTER_RALINK		*pRalinkCounters;
+	//UINT32 TxSuccessCount = 0, bss_tx_cnt;
 	/* for PER debug */
 	UINT32 AmpduTxCount = 0;
 	UINT32 AmpduTxSuccessCount = 0;
+
+#ifdef DBG_DIAGNOSE
+	UINT32 bss_tx_cnt = 0;
+	UINT32 TxFailCount = 0;
+#endif
+	//UINT32 TxRetryCount = 0;
+	COUNTER_RALINK		*pRalinkCounters;
+
+
+	if (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_DOZE))
+	{
+		DBGPRINT(RT_DEBUG_INFO, ("%s(%d): H/W in PM4, return\n", __FUNCTION__, __LINE__));
+		return NDIS_STATUS_SUCCESS;
+	}
 
 
 	pRalinkCounters = &pAd->RalinkCounters;
@@ -529,7 +544,7 @@ VOID NICUpdateRawCounters(RTMP_ADAPTER *pAd)
 	}
 #endif /* DBG_DIAGNOSE */
 
-	return;
+	return NDIS_STATUS_SUCCESS;
 }
 
 
@@ -686,7 +701,7 @@ UCHAR get_nss_by_mcs(UCHAR phy_mode, UCHAR mcs, BOOLEAN stbc)
 
 	========================================================================
 */
-static UCHAR wmm_aci_2_hw_ac_queue[] =
+const UCHAR wmm_aci_2_hw_ac_queue[18] =
 {
 		Q_IDX_AC1, /* 0: QID_AC_BE */
 		Q_IDX_AC0, /* 1: QID_AC_BK */
@@ -707,7 +722,6 @@ static UCHAR wmm_aci_2_hw_ac_queue[] =
 		16,
 		17,
 };
-
 VOID write_tmac_info(
 	IN RTMP_ADAPTER *pAd,
 	IN UCHAR *tmac_info,
@@ -753,13 +767,25 @@ VOID write_tmac_info(
 	}
 #endif /* DOT11_N_SUPPORT */
 
+#ifdef DOT11K_RRM_SUPPORT
+	if (pAd->CommonCfg.VoPwrConstraintTest == TRUE)
+	{
+		info->AMPDU = 0;
+		mcs = 0;
+		ldpc = 0;
+		bw = 0;
+		sgi = 0;
+		stbc = 0;
+		phy_mode = MODE_OFDM;
+	}
+#endif /* DOT11K_RRM_SUPPORT */
 
 	/* DWORD 0 */
 	txd_0->p_idx = (to_mcu ? P_IDX_MCU : P_IDX_LMAC);
 	if (q_idx < 4) {
 		txd_0->q_idx = wmm_aci_2_hw_ac_queue[q_idx];
 	} else
-		txd_0->q_idx = q_idx;
+	txd_0->q_idx = q_idx;
 
 
 
@@ -782,6 +808,13 @@ VOID write_tmac_info(
 
         //TODO:Carter, for Adhoc Beacon, use own_mac = 0 now,
         //but what if need to consider GO/client case, it shall be refined.
+#ifdef RT_CFG80211_P2P_SUPPORT
+		/* For Concurrent case, it should check by Entry */
+		if (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP) 
+		{
+			txd_1->own_mac = 0x1;
+		}
+#endif /* RT_CFG80211_P2P_SUPPORT */
 	}
 
 	if (mac_entry && IS_ENTRY_APCLI(mac_entry))
@@ -793,10 +826,15 @@ VOID write_tmac_info(
 #endif /* !MULTI_APCLI_SUPPORT */
 
 	} else if (mac_entry && IS_ENTRY_CLIENT(mac_entry)) {
+		/* handle HW_BSSID_0 & Extend from 0 to 15 */
 		if (mac_entry->func_tb_idx == 0)
 			txd_1->own_mac = 0x0;
 		else if (mac_entry->func_tb_idx >= 1 && mac_entry->func_tb_idx <= 15)
 			txd_1->own_mac = 0x10 | mac_entry->func_tb_idx;
+
+		/* for concurrent to handle HW_BSSID_1/2/3 */
+		if (mac_entry->wdev->hw_bssid_idx != 0)
+            txd_1->own_mac = mac_entry->wdev->hw_bssid_idx ;
 	}
 
 	if (txd_1->ft == TMI_FT_LONG) {
@@ -829,11 +867,12 @@ VOID write_tmac_info(
         else if ((txd_2->frm_type == FC_TYPE_CNTL) && (txd_2->sub_type == SUBTYPE_BLOCK_ACK_REQ))
             txd_3->remain_tx_cnt = 1;			
         else {
-			if (pAd->shortretry != 0)
-				txd_3->remain_tx_cnt = pAd->shortretry;
-        	else
-            	txd_3->remain_tx_cnt = MT_TX_SHORT_RETRY;
+		if (pAd->shortretry != 0)
+			txd_3->remain_tx_cnt = pAd->shortretry;
+        else
+            txd_3->remain_tx_cnt = MT_TX_SHORT_RETRY;
         }
+
 		/* DWORD 4 */
 
 		/* DWORD 6 */
@@ -848,11 +887,6 @@ VOID write_tmac_info(
 			txd_6->ITxBF = 0;
 			txd_6->ldpc = ldpc;
 			txd_6->gi = sgi;
-
-#ifdef GREENAP_SUPPORT
-			if (pAd->ApCfg.bGreenAPActive == TRUE)
-				txd_6->spe_en = 0;
-#endif /* GREENAP_SUPPORT */
 
 			if (txd_6->fix_rate_mode == TMI_FIX_RATE_BY_TXD)
 			{
@@ -964,14 +998,8 @@ VOID write_tmac_info(
 		dump_tmac_info(pAd, tmac_info);
 	}
 #endif /* DBG */
-
-#ifdef CONFIG_TRACE_SUPPORT
-	if (txd_1->ft == TMI_FT_SHORT)
-		TRACE_TX_MAC_SINFO((TMAC_TXD_S *)&txd);
-	else
-		TRACE_TX_MAC_LINFO(&txd);
-#endif
 }
+
 
 VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 {
@@ -985,7 +1013,7 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 	UCHAR txd_size;
 	BOOLEAN txd_long = FALSE;
 	struct rtmp_mac_ctrl *wtbl_ctrl = &pAd->mac_ctrl;
-	STA_TR_ENTRY *tr_entry;
+	//STA_TR_ENTRY *tr_entry;
 	struct wtbl_entry tb_entry;
 	union WTBL_1_DW0 *dw0 = (union WTBL_1_DW0 *)&tb_entry.wtbl_1.wtbl_1_d0.word;
 	TXS_CTL *TxSCtl = &pAd->TxSCtl;
@@ -1047,11 +1075,9 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 	else
 	txd_1->protect_frm = 0;
 	if (pMacEntry && IS_ENTRY_APCLI(pMacEntry)) {
-		tr_entry = &pAd->MacTab.tr_entry[pMacEntry->wcid];
-
+		//tr_entry = &pAd->MacTab.tr_entry[pMacEntry->wcid];
 		tb_entry.wtbl_addr[0] = wtbl_ctrl->wtbl_base_addr[0] +
 							pMacEntry->wcid * wtbl_ctrl->wtbl_entry_size[0];
-
 		RTMP_IO_READ32(pAd, tb_entry.wtbl_addr[0], &tb_entry.wtbl_1.wtbl_1_d0.word);
 		txd_1->own_mac = dw0->field.muar_idx; //Carter, refine this
 		//printk("txd_1->own_mac = %x\n", txd_1->own_mac);
@@ -1061,6 +1087,11 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 			txd_1->own_mac = 0x0;
 		else if (pMacEntry->func_tb_idx >= 1 && pMacEntry->func_tb_idx <= 15)
 			txd_1->own_mac = 0x10 | pMacEntry->func_tb_idx;
+
+		/* for concurrent to handle HW_BSSID_1/2/3 */
+		if (pTxBlk->wdev->hw_bssid_idx != 0)
+            txd_1->own_mac = pTxBlk->wdev->hw_bssid_idx ;
+
 	}
 	else if (pMacEntry && IS_ENTRY_WDS(pMacEntry)) {
 			txd_1->own_mac = 0x0;
@@ -1074,6 +1105,9 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 #else
 		txd_1->own_mac = 0; // TODO: revise this
 #endif /* USE_BMC */
+
+		if (pTxBlk->wdev->hw_bssid_idx != 0)
+        	txd_1->own_mac = pTxBlk->wdev->hw_bssid_idx ;
 	}
 
 	if (txd_long == FALSE)
@@ -1116,7 +1150,7 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 
 		txd_2->sub_type = (*((UINT16 *)(pTxBlk->wifi_hdr)) & (0xf << 4)) >> 4;
 		txd_2->frm_type = (*((UINT16 *)(pTxBlk->wifi_hdr)) & (0x3 << 2)) >> 2;
-
+		
 		if (pMacEntry)
 		{
 			if (pAd->shortretry != 0)
@@ -1125,10 +1159,6 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 				txd_l->txd_3.remain_tx_cnt = pMacEntry->ucMaxTxRetryCnt;
 		} else
 			txd_l->txd_3.remain_tx_cnt = MT_TX_SHORT_RETRY;
-
-		if ((pTxBlk->TxFrameType == TX_LEGACY_FRAME) 
-			|| (pTxBlk->TxFrameType == TX_RALINK_FRAME))
-			txd_2->ba_disable = 1; 
 
 #ifdef MT7603
 		if (MTK_REV_GTE(pAd, MT7603, MT7603E1))
@@ -1229,7 +1259,13 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 		//txd_5->da_select = TMI_DAS_FROM_MPDU;
 #endif /* HDR_TRANS_SUPPORT */
 		txd_5->bar_sn_ctrl = TMI_PM_BIT_CFG_BY_SW;
+
+		/* For  MT STA LP control, use H/W control mode for PM bit */
+#if defined(CONFIG_STA_SUPPORT) && defined(CONFIG_PM_BIT_HW_MODE)
+ 		txd_5->pwr_mgmt = TMI_PM_BIT_CFG_BY_HW;
+#else
  		txd_5->pwr_mgmt = TMI_PM_BIT_CFG_BY_SW;
+#endif /* CONFIG_STA_SUPPORT && CONFIG_PM_BIT_HW_MODE */		
 	}
 
 	txd_0->tx_byte_cnt = txd_size +
@@ -1259,13 +1295,6 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 #endif /* DBG_TX_MCS */
 	}
 #endif /* DBG_DIAGNOSE */
-
-#ifdef CONFIG_TRACE_SUPPORT
-	if (txd_1->ft == TMI_FT_SHORT)
-		TRACE_TX_MAC_SINFO(txd_s);
-	else
-		TRACE_TX_MAC_LINFO(txd_l);
-#endif
 }
 
 
@@ -1568,7 +1597,7 @@ VOID dump_wtbl_1_info(RTMP_ADAPTER *pAd, struct wtbl_1_struc *tb)
 	DBGPRINT(RT_DEBUG_OFF, ("\ttd/fd:%d/%d\n", wtbl_1_d2->field.td, wtbl_1_d2->field.fd));
 	DBGPRINT(RT_DEBUG_OFF, ("\tdis_rhtr:%d\n", wtbl_1_d2->field.dis_rhtr));
 	DBGPRINT(RT_DEBUG_OFF, ("\taf:%d\n", wtbl_1_d2->field.af));
-	DBGPRINT(RT_DEBUG_OFF, ("\trx_ps:%d\n", wtbl_1_d2->field.rx_ps));
+	DBGPRINT(RT_DEBUG_OFF, ("\ttx_ps:%d\n", wtbl_1_d2->field.tx_ps));
 	DBGPRINT(RT_DEBUG_OFF, ("\tr:%d\n", wtbl_1_d2->field.r));
 	DBGPRINT(RT_DEBUG_OFF, ("\trts:%d\n", wtbl_1_d2->field.rts));
 	DBGPRINT(RT_DEBUG_OFF, ("\tcf_ack:%d\n", wtbl_1_d2->field.cf_ack));

@@ -295,7 +295,7 @@ int rt28xx_open(VOID *dev)
 		is changed as register_netdevice().
 		Or in some PC, kernel will panic (Fedora 4)
 	*/
-#if defined(P2P_APCLI_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
+#if defined(P2P_APCLI_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT) || defined(CFG80211_MULTI_STA)
 
 #else
 	RT28xx_MBSS_Init(pAd, net_dev);
@@ -307,11 +307,15 @@ int rt28xx_open(VOID *dev)
 #endif /* WDS_SUPPORT */
 
 #ifdef APCLI_SUPPORT
-#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) ||  defined(P2P_APCLI_SUPPORT)
+#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) ||  defined(P2P_APCLI_SUPPORT) || defined(CFG80211_MULTI_STA)
 #else
 	RT28xx_ApCli_Init(pAd, net_dev);
 #endif /* P2P_APCLI_SUPPORT */
 #endif /* APCLI_SUPPORT */
+
+#ifdef CONFIG_SNIFFER_SUPPORT
+	RT28xx_Monitor_Init(pAd, net_dev);
+#endif /* CONFIG_SNIFFER_SUPPORT */
 
 
 
@@ -319,6 +323,9 @@ int rt28xx_open(VOID *dev)
 #ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
 	RTMP_CFG80211_DummyP2pIf_Init(pAd);
 #endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
+#ifdef CFG80211_MULTI_STA
+	RTMP_CFG80211_MutliStaIf_Init(pAd);
+#endif /* CFG80211_MULTI_STA */
 #else
 #endif /* RT_CFG80211_SUPPORT */
 
@@ -574,7 +581,7 @@ INT rt28xx_ioctl(PNET_DEV net_dev, struct ifreq *rq, INT cmd)
 #ifdef CONFIG_AP_SUPPORT
 /*	IF_DEV_CONFIG_OPMODE_ON_AP(pAd) */
 	RT_CONFIG_IF_OPMODE_ON_AP(OpMode)
-	{
+	{		
 		ret = rt28xx_ap_ioctl(net_dev, rq, cmd);
 	}
 #endif /* CONFIG_AP_SUPPORT */
@@ -651,7 +658,7 @@ BOOLEAN RtmpPhyNetDevExit(VOID *pAd, PNET_DEV net_dev)
 
 #ifdef CONFIG_AP_SUPPORT
 #ifdef APCLI_SUPPORT
-#if defined(P2P_APCLI_SUPPORT) || defined(RT_CFG80211_P2P_CONCURRENT_DEVICE)
+#if defined(P2P_APCLI_SUPPORT) || defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)
 #else
 	/* remove all AP-client virtual interfaces. */
 	RT28xx_ApCli_Remove(pAd);
@@ -664,7 +671,7 @@ BOOLEAN RtmpPhyNetDevExit(VOID *pAd, PNET_DEV net_dev)
 #endif /* WDS_SUPPORT */
 
 #ifdef MBSS_SUPPORT
-#if defined(P2P_APCLI_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
+#if defined(P2P_APCLI_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT) || defined(CFG80211_MULTI_STA)
 
 #else
 	RT28xx_MBSS_Remove(pAd);
@@ -672,11 +679,20 @@ BOOLEAN RtmpPhyNetDevExit(VOID *pAd, PNET_DEV net_dev)
 #endif /* MBSS_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_SNIFFER_SUPPORT
+	RT28xx_Monitor_Remove(pAd);
+#endif	/* CONFIG_SNIFFER_SUPPORT */
+
 #ifdef RT_CFG80211_SUPPORT
 #ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
+#ifndef RT_CFG80211_P2P_STATIC_CONCURRENT_DEVICE
 	RTMP_CFG80211_AllVirtualIF_Remove(pAd);
+#endif /* RT_CFG80211_P2P_STATIC_CONCURRENT_DEVICE */
 	RTMP_CFG80211_DummyP2pIf_Remove(pAd);
 #endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
+#ifdef CFG80211_MULTI_STA
+	RTMP_CFG80211_MutliStaIf_Remove(pAd);
+#endif /* CFG80211_MULTI_STA */
 #else
 #endif /* RT_CFG80211_SUPPORT */
 
@@ -726,7 +742,12 @@ int RtmpOSIRQRequest(IN PNET_DEV pNetDev)
 /*		RTMP_MSI_ENABLE(pAd); */
 		RTMP_DRIVER_PCI_MSI_ENABLE(pAd, &pci_dev);
 
-		retval = request_irq(pci_dev->irq,  rt2860_interrupt, SA_SHIRQ, (net_dev)->name, (net_dev));
+#ifdef CONFIG_ARCH_MT7623
+		retval = request_irq(pci_dev->irq,	rt2860_interrupt, SA_SHIRQ|IRQF_TRIGGER_LOW, (net_dev)->name, (net_dev));
+#else
+		retval = request_irq(pci_dev->irq,	rt2860_interrupt, SA_SHIRQ, (net_dev)->name, (net_dev));
+#endif
+
 		if (retval != 0)
 			printk("RT2860: request_irq  ERROR(%d)\n", retval);
 	}

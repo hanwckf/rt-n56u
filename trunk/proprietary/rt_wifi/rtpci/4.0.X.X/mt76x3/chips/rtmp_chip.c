@@ -184,7 +184,7 @@ VOID mt_bcn_buf_init(RTMP_ADAPTER *pAd)
 
 	pChipCap->FlgIsSupSpecBcnBuf = FALSE;
 	pChipCap->BcnMaxHwNum = 16;
-	pChipCap->BcnMaxNum = HW_BEACON_MAX_NUM;
+	pChipCap->BcnMaxNum = 16;
 
 #if defined(MT7603_FPGA) || defined(MT7628_FPGA) || defined(MT7636_FPGA)
 	pChipCap->WcidHwRsvNum = 20;
@@ -406,7 +406,7 @@ INT WaitForAsicReady(RTMP_ADAPTER *pAd)
 #if defined(RTMP_MAC) || defined(RLT_MAC)
 	UINT32 reg;
 	int idx = 0;
-#endif /* defined(RTMP_MAC) || defined(RLT_MAC) */
+#endif
 
 	// TODO: shiang-7603
 	return TRUE;

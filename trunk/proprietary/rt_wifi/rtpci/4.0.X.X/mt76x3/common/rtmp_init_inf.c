@@ -26,6 +26,9 @@
 	--------    ----------    ----------------------------------------------
 */
 #include	"rt_config.h"
+#ifdef DOT11R_FT_SUPPORT
+#include	"ft.h"
+#endif /* DOT11R_FT_SUPPORT */
 
 
 
@@ -86,10 +89,8 @@ RTMP_BUILD_DRV_OPS_FUNCTION_BODY
 INT rtmp_sys_exit(RTMP_ADAPTER *pAd)
 {
 
-#ifdef VOE_SUPPORT
 	MeasureReqTabExit(pAd);
 	TpcReqTabExit(pAd);
-#endif /* VOE_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
 	if(pAd->mpdu_blk_pool.mem) {
@@ -104,9 +105,8 @@ INT rtmp_sys_exit(RTMP_ADAPTER *pAd)
 
 INT rtmp_sys_init(RTMP_ADAPTER *pAd)
 {
-#ifdef VOE_SUPPORT
 	NDIS_STATUS status;
-#endif /* VOE_SUPPORT */
+
 #ifdef DOT11_N_SUPPORT
 	/* Allocate BA Reordering memory*/
 	if (ba_reordering_resource_init(pAd, MAX_REORDERING_MPDU_NUM) != TRUE)
@@ -116,7 +116,7 @@ INT rtmp_sys_init(RTMP_ADAPTER *pAd)
 #ifdef BLOCK_NET_IF
 	initblockQueueTab(pAd);
 #endif /* BLOCK_NET_IF */
-#ifdef VOE_SUPPORT
+
 	status = MeasureReqTabInit(pAd);
 	if (status != NDIS_STATUS_SUCCESS)
 	{
@@ -129,7 +129,7 @@ INT rtmp_sys_init(RTMP_ADAPTER *pAd)
 		DBGPRINT_ERR(("TpcReqTabInit failed, Status[=0x%08x]\n", status));
 		goto err;
 	}
-#endif /* VOE_SUPPORT */
+
 
 	return TRUE;
 
@@ -170,6 +170,8 @@ INT rtmp_cfg_init(RTMP_ADAPTER *pAd, RTMP_STRING *pHostName)
 					__FUNCTION__));
 	}
 
+    
+    RTMPPreReadParametersHook(pAd);
 	status = RTMPReadParametersHook(pAd);
 	if (status != NDIS_STATUS_SUCCESS)
 	{
@@ -228,6 +230,9 @@ int rt28xx_init(VOID *pAdSrc, RTMP_STRING *pDefaultMac, RTMP_STRING *pHostName)
 				pAd->MACVersion, pAd->ChipID));
 #endif
 
+	/* TxS Setting */
+	InitTxSTypeTable(pAd);
+	
 	if (hif_sys_init(pAd, TRUE) != TRUE)
 		goto err1;
 
@@ -324,6 +329,10 @@ int rt28xx_init(VOID *pAdSrc, RTMP_STRING *pDefaultMac, RTMP_STRING *pHostName)
 		/* Init BssTab & ChannelInfo tabbles for auto channel select.*/
 		AutoChBssTableInit(pAd);
 		ChannelInfoInit(pAd);
+#ifdef CUSTOMER_DCC_FEATURE
+				/* init rate multiplication and shift factor table */
+		InitRateMultiplicationAndShiftFactor(pAd);		
+#endif
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -351,6 +360,8 @@ int rt28xx_init(VOID *pAdSrc, RTMP_STRING *pDefaultMac, RTMP_STRING *pHostName)
 
 	NICInitAsicFromEEPROM(pAd);
 
+
+	
 #ifdef LED_CONTROL_SUPPORT
 	/* Send LED Setting to MCU */
 	RTMPInitLEDMode(pAd);
@@ -538,6 +549,21 @@ int rt28xx_init(VOID *pAdSrc, RTMP_STRING *pDefaultMac, RTMP_STRING *pHostName)
 
 
 
+#ifdef LED_CONTROL_METHOD_1
+	AndesLedEnhanceOP(pAd, 0, 200, 200, 31);
+#endif	
+
+#ifdef MT_WOW_SUPPORT
+	ASIC_WOW_INIT(pAd);
+#endif
+
+#ifdef USB_IOT_WORKAROUND2
+	pAd->bUSBIOTReady = TRUE;
+#endif
+#ifdef CUSTOMER_DCC_FEATURE
+	pAd->ChannelInfo.GetChannelInfo = FALSE;
+#endif
+
 	DBGPRINT_S(("<==== rt28xx_init, Status=%x\n", Status));
 
 	return TRUE;
@@ -630,6 +656,26 @@ VOID RTMPDrvOpen(VOID *pAdSrc)
 
 
 
+#if defined(RT_CFG80211_P2P_SUPPORT) && defined(SUPPORT_ACS_ALL_CHANNEL_RANK)
+    if (pAd->ApCfg.bAutoChannelAtBootup && pAd->ApCfg.bAutoChannelScaned == 0)
+    {
+#ifdef RTMP_MAC_PCI
+        /* Enable Interrupt first due to we need to scan channel to receive beacons.*/
+        RTMP_IRQ_ENABLE(pAd);
+#endif /* RTMP_MAC_PCI */
+        /* Now Enable RxTx*/
+        RTMPEnableRxTx(pAd);
+        //RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_START_UP);
+        
+        RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_START_UP);
+        /* Let BBP register at 20MHz to do scan */
+        bbp_set_bw(pAd, BW_20);
+        DBGPRINT(RT_DEBUG_ERROR, ("SYNC - BBP R4 to 20MHz.l\n"));
+        AP_AUTO_CH_SEL(pAd, pAd->ApCfg.AutoChannelAlg);
+        pAd->ApCfg.bAutoChannelScaned = 1;
+    }
+#endif /* SUPPORT_ACS_ALL_CHANNEL_RANK */
+
 #ifdef WSC_INCLUDED
 #ifdef CONFIG_AP_SUPPORT
 	if ((pAd->OpMode == OPMODE_AP)
@@ -639,7 +685,7 @@ VOID RTMPDrvOpen(VOID *pAdSrc)
 		for (index = 0; index < pAd->ApCfg.BssidNum; index++)
 		{
 #ifdef HOSTAPD_SUPPORT
-			if (pAd->ApCfg.MBSSID[index].Hostapd == TRUE)
+			if (pAd->ApCfg.MBSSID[index].Hostapd == Hostapd_EXT)
 			{
 				DBGPRINT(RT_DEBUG_TRACE, ("WPS is control by hostapd now.\n"));
 			}
@@ -664,7 +710,11 @@ VOID RTMPDrvOpen(VOID *pAdSrc)
 
 			pWpsCtrl->pAd = pAd;
 			NdisZeroMemory(pWpsCtrl->EntryAddr, MAC_ADDR_LEN);
+#ifdef WSC_V2_SUPPORT
+			pWpsCtrl->WscConfigMethods= 0x278C;
+#else
 			pWpsCtrl->WscConfigMethods= 0x018C;
+#endif /* WSC_V2_SUPPORT */
 			RTMP_AP_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_WSC_INIT, 0, (VOID *)&pAd->ApCfg.ApCliTab[index], index);
 		}
 #endif /* APCLI_SUPPORT */
@@ -681,8 +731,32 @@ VOID RTMPDrvOpen(VOID *pAdSrc)
 #ifdef RTMP_PCI_SUPPORT
 	pAd->PDMAWatchDogEn = 1;
 #endif
+
+#ifdef DMA_RESET_SUPPORT
+	pAd->bcn_reset_en = TRUE;
+#endif /* DMA_RESET_SUPPORT */
+
+#ifdef MT_WOW_SUPPORT
+	pAd->WOW_Cfg.bWoWRunning = FALSE;
 #endif
 
+#endif
+
+	/* Only turn EDCCA on in CE region */
+	{
+		BOOLEAN bEdcca = FALSE;
+		bEdcca = GetEDCCASupport(pAd);
+		if (bEdcca)
+		{
+			//pAd->ed_current_region_is_CE = TRUE;
+			ed_monitor_init(pAd);		
+		}
+		else
+		{
+			ed_monitor_exit(pAd);
+		}
+	}
+	
 }
 
 
@@ -696,6 +770,13 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 #ifdef RTMP_PCI_SUPPORT
 	pAd->PDMAWatchDogEn = 0;
 #endif
+
+#ifdef DMA_RESET_SUPPORT
+	pAd->bcn_reset_en = FALSE;
+	pAd->PSEResetFailRecover = FALSE;
+	pAd->PSEResetFailRetryQuota = FALSE;
+#endif /* DMA_RESET_SUPPORT */
+
 #endif
 
 
@@ -707,9 +788,9 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 
 
 
-#if ((defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT)) && defined(WOW_IFDOWN_SUPPORT)
-	if (pAd->WOW_Cfg.bEnable == FALSE)
-#endif /* ((defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT)) && defined(WOW_IFDOWN_SUPPORT) */
+#if ((defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT) || defined(MT_WOW_SUPPORT)) && defined(WOW_IFDOWN_SUPPORT)
+	if (!((pAd->WOW_Cfg.bEnable == TRUE) && INFRA_ON(pAd)))
+#endif /* ((defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT) || defined(MT_WOW_SUPPORT)) && defined(WOW_IFDOWN_SUPPORT) */
 	{
 #ifdef MT_MAC
 		if (pAd->chipCap.hif_type != HIF_MT)
@@ -746,9 +827,9 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	{
-#if defined(RTMP_MAC_USB) || defined(DOT11N_DRAFT3)
+#if (defined(RTMP_MAC_USB) && !defined(BCN_OFFLOAD_SUPPORT)) || defined(DOT11N_DRAFT3)
 		BOOLEAN Cancelled = FALSE;
-#endif /* defined(RTMP_MAC_USB) || defined(DOT11N_DRAFT3) */
+#endif /* (defined(RTMP_MAC_USB) && !defined(BCN_OFFLOAD_SUPPORT)) || defined(DOT11N_DRAFT3) */
 
 #ifdef DOT11N_DRAFT3
 		if (pAd->CommonCfg.Bss2040CoexistFlag & BSS_2040_COEXIST_TIMER_FIRED)
@@ -774,6 +855,14 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 #ifdef CLIENT_WDS
 		CliWds_ProxyTabDestory(pAd);
 #endif /* CLIENT_WDS */
+
+#ifdef DMA_RESET_SUPPORT
+		pAd->bcn_not_idle_tx_dma_busy=0;
+		pAd->bcn_didx_val = 255;
+		pAd->pse_reset_flag = FALSE;
+		pAd->dma_force_reset_count=0;
+#endif	/* DMA_RESET_SUPPORT */			
+
 		/* Shutdown Access Point function, release all related resources */
 		APShutdown(pAd);
 	}
@@ -784,10 +873,9 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 
 	/* Stop Mlme state machine*/
 	MlmeHalt(pAd);
-#ifdef VOE_SUPPORT	
+	
 	MeasureReqTabExit(pAd);
 	TpcReqTabExit(pAd);
-#endif /* VOE_SUPPORT */
 
 #ifdef LED_CONTROL_SUPPORT
 	RTMPExitLEDMode(pAd);
@@ -808,6 +896,7 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 
 #ifdef RTMP_MAC_PCI
 	{
+		RTMPDisableRxTx(pAd);
 		{
 			if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_ACTIVE))
 			{
@@ -863,6 +952,8 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 		}
 	}
 #endif /* SINGLE_SKU_V2 */
+
+	MCU_CTRL_EXIT(pAd);
 
 	/* Free Ring or USB buffers*/
 #ifdef RESOURCE_PRE_ALLOC
@@ -929,8 +1020,11 @@ VOID RTMPInfClose(VOID *pAdSrc)
 		MbssKickOutStas(pAd, MAIN_MBSSID, REASON_DISASSOC_INACTIVE);
 	}
 
+	//CFG_TODO
+#ifndef RT_CFG80211_SUPPORT
 	APMakeAllBssBeacon(pAd);
 	APUpdateAllBeaconFrame(pAd);
+#endif /* RT_CFG80211_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
 

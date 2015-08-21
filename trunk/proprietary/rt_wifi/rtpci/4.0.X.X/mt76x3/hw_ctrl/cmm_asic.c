@@ -728,8 +728,7 @@ VOID AsicSetMbssMode(RTMP_ADAPTER *pAd, UCHAR NumOfBcns)
 	else if (NumOfMacs <= 2)
 	{
 #ifndef NEW_MBSSID_MODE
-		if ((pAd->CurrentAddress[5] % 2 != 0)
-		)
+		if ((pAd->CurrentAddress[5] % 2 != 0))
 			DBGPRINT(RT_DEBUG_ERROR, ("The 2-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 2\n"));
 #endif
 		regValue |= (1<<16);
@@ -885,6 +884,10 @@ INT AsicSetRxFilter(RTMP_ADAPTER *pAd)
 	return TRUE;
 }
 
+INT AsicClearRxFilter(RTMP_ADAPTER *pAd)
+{
+	return TRUE;
+}
 
 #ifdef DOT11_N_SUPPORT
 INT AsicSetRDG(RTMP_ADAPTER *pAd, BOOLEAN bEnable)
@@ -950,7 +953,7 @@ VOID RTMPSetPiggyBack(RTMP_ADAPTER *pAd, BOOLEAN bPiggyBack)
 
 static INT AsicSetIntTimerEn(RTMP_ADAPTER *pAd, BOOLEAN enable, UINT32 type, UINT32 timeout)
 {
-	UINT32 val, mask, time_mask = 0;
+	UINT32 val, mask, time_mask;
 
 	if (type == INT_TIMER_EN_PRE_TBTT) {
 		mask = 0x1;
@@ -3362,4 +3365,3 @@ VOID RT28xxAndesWOWDisable(
 }
 
 #endif /* NEW_WOW_SUPPORT */
-

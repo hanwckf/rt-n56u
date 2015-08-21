@@ -72,6 +72,8 @@ typedef VOID	pregs;
 #endif /* RTMP_MAC_PCI */
 
 
+
+
 #endif /* CONFIG_AP_SUPPORT */
 
 
@@ -292,6 +294,7 @@ struct os_cookie {
 	RTMP_NET_TASK_STRUCT	mt_mac_int_3_task;
 	RTMP_NET_TASK_STRUCT	mt_mac_int_4_task;
     RTMP_NET_TASK_STRUCT	bcn_dma_done_task;
+    RTMP_NET_TASK_STRUCT    bmc_dma_done_task;
 #endif /*MT_MAC */
 
 #ifdef RTMP_MAC_PCI
@@ -299,9 +302,6 @@ struct os_cookie {
 #ifdef CONFIG_ANDES_SUPPORT
 	RTMP_NET_TASK_STRUCT	rx1_done_task;
 #endif /* CONFIG_ANDES_SUPPORT */
-#ifdef MT_MAC
-	RTMP_NET_TASK_STRUCT    bmc_dma_done_task;
-#endif /* MT_MAC */
 #endif /* RTMP_MAC_PCI */
 
 #ifdef UAPSD_SUPPORT

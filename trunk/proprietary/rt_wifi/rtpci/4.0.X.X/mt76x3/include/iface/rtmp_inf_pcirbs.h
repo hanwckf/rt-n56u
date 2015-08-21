@@ -72,7 +72,14 @@
 			/*RtmpPCIDataLastTxIdx(_pAd, _QueIdx,_LastTxIdx)*/
 
 #define HAL_KickOutTx(_pAd, _pTxBlk, _QueIdx)	\
-			RTMP_IO_WRITE32((_pAd), (_pAd)->TxRing[(_QueIdx)].hw_cidx_addr, (_pAd)->TxRing[(_QueIdx)].TxCpuIdx)
+    {                                           \
+        if (_QueIdx == QID_BMC) {   \
+            RTMP_IO_WRITE32((_pAd), (_pAd)->TxBmcRing.hw_cidx_addr, (_pAd)->TxBmcRing.TxCpuIdx); \
+		AsicSetBmcQCR(_pAd, BMC_CNT_UPDATE, CR_WRITE, _pAd->wdev_list[_pTxBlk->wdev_idx]->func_idx, NULL ); \
+        } \
+        else                        \
+			RTMP_IO_WRITE32((_pAd), (_pAd)->TxRing[(_QueIdx)].hw_cidx_addr, (_pAd)->TxRing[(_QueIdx)].TxCpuIdx); \
+    }
 
 #define HAL_KickOutTxBMC(_pAd, _pTxBlk, _QueIdx)	\
 			RTMP_IO_WRITE32((_pAd), (_pAd)->TxBmcRing.hw_cidx_addr, (_pAd)->TxBmcRing.TxCpuIdx)
@@ -86,9 +93,11 @@
 			 :	\
 			(_pAd->TxRing[_QueIdx].TxSwFreeIdx + TX_RING_SIZE - _pAd->TxRing[_QueIdx].TxCpuIdx - 1);
 
-#define IS_TXRING_EMPTY(_pAd, _QueIdx)\
+#define IS_TXRING_EMPTY(_pAd, _QueIdx) \
 	(_pAd->TxRing[_QueIdx].TxDmaIdx == _pAd->TxRing[_QueIdx].TxCpuIdx)	? 1: 0;
-	
+
+#define IS_RXRING_FULL(_pAd, _QueIdx)\
+	(_pAd->RxRing[_QueIdx].RxDmaIdx == _pAd->RxRing[_QueIdx].RxCpuIdx)	? 1: 0;
 
 #define GET_MGMTRING_FREENO(_pAd) \
 	(_pAd->MgmtRing.TxSwFreeIdx > _pAd->MgmtRing.TxCpuIdx)	? \

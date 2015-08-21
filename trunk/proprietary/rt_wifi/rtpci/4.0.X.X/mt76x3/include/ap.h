@@ -28,6 +28,9 @@
 #ifndef __AP_H__
 #define __AP_H__
 
+#ifdef DOT11R_FT_SUPPORT
+#include "ft_cmm.h"
+#endif /* DOT11R_FT_SUPPORT */
 
 
 
@@ -54,6 +57,16 @@
 	}																	\
 }
 
+#ifdef CUSTOMER_DCC_FEATURE
+#define TIMESTAMP_GET(__pAd, __TimeStamp)				\
+	{													\
+		UINT32 tsf_l=0, tsf_h=0; UINT64 __Value64;		\
+		AsicGetTsfTime((__pAd), &tsf_h, &tsf_l);		\
+		__TimeStamp = (UINT64)tsf_l;					\
+		__Value64 = (UINT64)tsf_h;						\
+		__TimeStamp |= (__Value64 << 32);					\
+	}
+#endif
 
 typedef struct _AUTH_FRAME_INFO{
 	UCHAR addr1[MAC_ADDR_LEN];
@@ -62,6 +75,9 @@ typedef struct _AUTH_FRAME_INFO{
 	USHORT auth_seq;
 	USHORT auth_status;
 	CHAR Chtxt[CIPHER_TEXT_LEN];
+#ifdef DOT11R_FT_SUPPORT
+	FT_INFO FtInfo;
+#endif /* DOT11R_FT_SUPPORT */
 }AUTH_FRAME_INFO;
 
 
@@ -177,6 +193,37 @@ VOID ApSiteSurvey(
 	IN	UCHAR				ScanType,
 	IN	BOOLEAN				ChannelSel);
 
+#ifdef CUSTOMER_DCC_FEATURE
+
+UCHAR Channel2Index(   
+	IN PRTMP_ADAPTER 	pAd,
+	IN UCHAR 			channel);
+
+VOID ApSiteSurveyNew(
+	IN	PRTMP_ADAPTER  		pAd,
+	IN 	UINT				Channel,
+	IN  UINT 				Timeout,
+	IN	UCHAR				ScanType,
+	IN	BOOLEAN				ChannelSel);
+
+VOID RemoveOldBssEntry(
+	IN PRTMP_ADAPTER 		pAd);
+
+VOID RemoveOldStaList(
+	IN PRTMP_ADAPTER 		pAd);
+
+VOID ReadChannelStats(
+	IN PRTMP_ADAPTER 		pAd);
+
+VOID ClearChannelStats(
+	IN PRTMP_ADAPTER  		pAd);
+
+VOID ResetChannelStatus(
+	IN PRTMP_ADAPTER 		 pAd);
+
+VOID APResetStreamingStatus(
+	IN PRTMP_ADAPTER  		pAd);
+#endif
 VOID SupportRate(
 	IN PUCHAR SupRate,
 	IN UCHAR SupRateLen,
@@ -273,6 +320,9 @@ VOID QBSS_LoadUpdate(RTMP_ADAPTER *pAd, ULONG UpTime);
 VOID QBSS_LoadStatusClear(RTMP_ADAPTER *pAd);
 
 INT	Show_QoSLoad_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+#ifdef CONFIG_HOTSPOT_R2
+UINT32 QBSS_LoadElementAppend_HSTEST(RTMP_ADAPTER *pAd, UINT8 *pBeaconBuf, UCHAR apidx);
+#endif /* CONFIG_HOTSPOT_R2 */
 #endif /* AP_QLOAD_SUPPORT */
 
 
@@ -293,6 +343,10 @@ BOOLEAN DOT1X_EapTriggerAction(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry);
 VOID AP_E2PROM_IOCTL_PostCtrl(RTMP_IOCTL_INPUT_STRUCT *wrq, RTMP_STRING *msg);
 
 VOID IAPP_L2_UpdatePostCtrl(RTMP_ADAPTER *pAd, UINT8 *mac, INT wdev_idx);
+
+#ifdef AIRPLAY_SUPPORT
+#define AIRPLAY_ON(_pAd)          ((_pAd)->bAirplayEnable == 1)
+#endif /* AIRPLAY_SUPPORT*/
 
 #endif  /* __AP_H__ */
 

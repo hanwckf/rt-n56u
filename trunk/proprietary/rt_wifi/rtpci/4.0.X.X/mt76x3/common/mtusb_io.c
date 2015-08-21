@@ -131,7 +131,19 @@ NTSTATUS mtusb_read_reg(RTMP_ADAPTER *pAd, UINT32 addr, UINT32 *value)
 	UINT32 localVal;
 	UINT32 global_addr = mt_physical_addr_map(addr);
 
-	Status = mtusb_multiread(pAd, global_addr, &localVal, 4);
+#if defined(CONFIG_STA_SUPPORT) && defined(STA_LP_PHASE_1_SUPPORT)
+	if (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_DOZE))
+	{
+		if (pAd->CountDowntoPsm == 0)
+		{
+			pAd->CountDowntoPsm = 2;	/* 100 ms; stay awake 200ms at most, average will be 1xx ms */	
+		}
+
+		AsicForceWakeup(pAd, TRUE);
+	}
+#endif /* #ifdef CONFIG_STA_SUPPORT && STA_LP_PHASE_1_SUPPORT */
+
+	Status = mtusb_multiread(pAd, global_addr, (PUCHAR)&localVal, 4);
 	
 	*value = le2cpu32(localVal);
 	
@@ -147,7 +159,19 @@ NTSTATUS mtusb_write_reg(RTMP_ADAPTER *pAd, UINT32 addr, UINT32 value)
 	NTSTATUS Status;
 	UINT32 global_addr = mt_physical_addr_map(addr);
 
-	Status = mtusb_multiwrite(pAd, global_addr, &value, 4, 4); 
+#if defined(CONFIG_STA_SUPPORT) && defined(STA_LP_PHASE_1_SUPPORT)
+	if (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_DOZE))
+	{	
+		if (pAd->CountDowntoPsm == 0)
+		{
+			pAd->CountDowntoPsm = 2;	/* 100 ms; stay awake 200ms at most, average will be 1xx ms */	
+		}
+
+		AsicForceWakeup(pAd, TRUE);
+	}
+#endif /* #ifdef CONFIG_STA_SUPPORT && STA_LP_PHASE_1_SUPPORT */
+
+	Status = mtusb_multiwrite(pAd, global_addr, (PUCHAR)&value, 4, 4); 
 
 	return Status;
 }
@@ -159,12 +183,12 @@ NTSTATUS RTUSBMultiWrite(
 	IN USHORT length,
 	IN BOOLEAN bWriteHigh)
 {
-
+	return NDIS_STATUS_SUCCESS;
 }
 
 NTSTATUS RTUSBMultiWrite_OneByte(RTMP_ADAPTER *pAd, USHORT Offset, UCHAR *pData)
 {
-
+	return NDIS_STATUS_SUCCESS;
 }
 
 NTSTATUS RTUSBMultiWrite_nBytes(
@@ -174,13 +198,23 @@ NTSTATUS RTUSBMultiWrite_nBytes(
 	IN USHORT len,
 	IN USHORT batchLen)
 {
-
+	return NDIS_STATUS_SUCCESS;
 }
+
+NTSTATUS RTUSBWriteMACRegister(
+	IN RTMP_ADAPTER *pAd,
+	IN USHORT Offset,
+	IN UINT32 Value,
+	IN BOOLEAN bWriteHigh)
+{
+	mtusb_multiwrite(pAd, Offset, (PUCHAR)&Value, 4, 4);
+	
+	return NDIS_STATUS_SUCCESS;
+}
+
 
 static NTSTATUS ResetBulkOutHdlr(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
 {
-	int ret=0;
-
 	DBGPRINT(RT_DEBUG_TRACE, ("CMDTHREAD_RESET_BULK_OUT(ResetPipeid=0x%0x)===>\n", pAd->bulkResetPipeid));
 
 	return NDIS_STATUS_SUCCESS;
@@ -190,8 +224,6 @@ static NTSTATUS ResetBulkOutHdlr(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
 /* All transfers must be aborted or cancelled before attempting to reset the pipe.*/
 static NTSTATUS ResetBulkInHdlr(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
 {
-	NTSTATUS ntStatus;
-
 	DBGPRINT_RAW(RT_DEBUG_TRACE, ("CmdThread : CMDTHREAD_RESET_BULK_IN === >\n"));
 
 	DBGPRINT_RAW(RT_DEBUG_TRACE, ("CmdThread : CMDTHREAD_RESET_BULK_IN <===\n"));
@@ -488,10 +520,6 @@ static NTSTATUS RT_Mac80211_ScanEnd(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
 
 static NTSTATUS RT_Mac80211_ConnResultInfom(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
 {
-	RT_CFG80211_CONN_RESULT_INFORM(pAd, pAd->MlmeAux.Bssid,
-								pAd->StaCfg.ReqVarIEs, pAd->StaCfg.ReqVarIELen,
-								CMDQelmt->buffer, CMDQelmt->bufferlength,
-								TRUE);
 	return NDIS_STATUS_SUCCESS;
 }
 #endif /* RT_CFG80211_SUPPORT */

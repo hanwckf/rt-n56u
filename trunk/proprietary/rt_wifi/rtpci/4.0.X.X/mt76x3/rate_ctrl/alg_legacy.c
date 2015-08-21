@@ -41,15 +41,14 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 {
 	UINT i;
 	PUCHAR pTable;
-	UCHAR TableSize = 0, InitTxRateIdx;
-	MAC_TABLE_ENTRY *pEntry;
-#ifndef NEW_RATE_ADAPT_SUPPORT
-	UCHAR TrainUp, TrainDown;
+	UCHAR TableSize = 0, InitTxRateIdx, TrainUp, TrainDown;
 	UCHAR UpRateIdx, DownRateIdx, CurrRateIdx;
+	MAC_TABLE_ENTRY *pEntry;
 	RTMP_RA_LEGACY_TB *pCurrTxRate, *pTmpTxRate = NULL;
 	CHAR Rssi, TmpIdx = 0;
 	ULONG TxTotalCnt, TxErrorRatio = 0, TxSuccess, TxRetransmit, TxFailCount;
-#endif /* NEW_RATE_ADAPT_SUPPORT */
+    UINT32 ret;
+
 #ifdef CONFIG_ATE
    	if (ATE_ON(pAd))
    	{
@@ -57,7 +56,10 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
    	}
 #endif /* CONFIG_ATE */
 
-	RTMP_SEM_LOCK(&pAd->AutoRateLock);
+    RTMP_SEM_EVENT_WAIT(&pAd->AutoRateLock, ret);
+
+	if(ret != 0)
+		DBGPRINT(RT_DEBUG_ERROR, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,ret));
 
 	/* walk through MAC table, see if need to change AP's TX rate toward each entry */
 	for (i = 1; i < MAX_LEN_OF_MAC_TABLE; i++) 
@@ -97,17 +99,11 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 			if (pAd->chipCap.hif_type == HIF_MT) 
 			{
 				DynamicTxRateSwitchingAdaptMT(pAd, i);
-			} else
+			}
+			else
 #endif /* MT_MAC */
-#if defined(RTMP_MAC) || defined(RLT_MAC)
-			if (pAd->chipCap.hif_type == HIF_RLT || pAd->chipCap.hif_type == HIF_RTMP)
 			{
 				APMlmeDynamicTxRateSwitchingAdapt(pAd, i);
-			} else
-#endif /* RTMP_MAC || RLT_MAC */
-			{
-				DBGPRINT(RT_DEBUG_ERROR, ("%s(): Error! Invalid hif_type (%u) for rate adaption",
-							__FUNCTION__, pAd->chipCap.hif_type));
 			}
 
 
@@ -115,7 +111,11 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 			{
 				if ( ((pTable == RateSwitchTableAdapt11N2S) && pEntry->HTPhyMode.field.MCS >= 14 ) ||
 					((pTable == RateSwitchTableAdapt11N1S) && pEntry->HTPhyMode.field.MCS >= 6 ) )
+#ifdef MSTAR_SUPPORT
+					pAd->bDisableRtsProtect = FALSE;
+#else
 					pAd->bDisableRtsProtect = TRUE;
+#endif /* MSTAR_SUPPORT */
 				else
 					pAd->bDisableRtsProtect = FALSE;
 			}
@@ -124,9 +124,16 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 				pAd->bDisableRtsProtect = FALSE;
 			}
 
+#ifdef MSTAR_SUPPORT
+            AsicUpdateProtect(pAd, pAd->MlmeAux.AddHtInfo.AddHtInfo2.OperaionMode,
+                        ALLN_SETPROTECT, pAd->bDisableBGProtect, pAd->bNonGFExist);
+#endif /* MSTAR_SUPPORT */
+
+
 			continue;
 		}
-#else /* Old Rate Adaptation */ // TODO: we should put below code into a function
+#endif /* NEW_RATE_ADAPT_SUPPORT */
+
 #ifdef AGS_SUPPORT
 		if (SUPPORT_AGS(pAd) && AGS_IS_USING(pAd, pTable))
 		{
@@ -408,15 +415,18 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 		RESET_ONE_SEC_TX_CNT(pEntry);
 
 
-#endif /* NEW_RATE_ADAPT_SUPPORT */
     }
 
 #ifdef DOT11N_DRAFT3
 	if (pAd->CommonCfg.Bss2040CoexistFlag & BSS_2040_COEXIST_BW_SYNC)
 		pAd->CommonCfg.Bss2040CoexistFlag &= (~BSS_2040_COEXIST_BW_SYNC);
 #endif /* DOT11N_DRAFT3 */
+#ifdef THERMAL_PROTECT_SUPPORT
+    pAd->fgThermalProtectToggle = FALSE;
+#endif /* THERMAL_PROTECT_SUPPORT */
 
-	RTMP_SEM_UNLOCK(&pAd->AutoRateLock);
+    RTMP_SEM_EVENT_UP(&pAd->AutoRateLock);
+
 }
 
 
@@ -489,6 +499,11 @@ VOID APQuickResponeForRateUpExec(
 			continue;
 
 		MlmeSelectTxRateTable(pAd, pEntry, &pTable, &TableSize, &InitTxRateIdx);
+#ifdef MSTAR_SUPPORT
+		if (pTable == NULL)
+			continue;
+#endif /* MSTAR_SUPPORT */
+
 		pEntry->pTable = pTable;
 
 #ifdef NEW_RATE_ADAPT_SUPPORT
@@ -592,7 +607,23 @@ VOID APQuickResponeForRateUpExec(
 			TrainUp		= pCurrTxRate->TrainUp;
 			TrainDown	= pCurrTxRate->TrainDown;
 		}
+		DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_RA,(
+				"   QuickDRS:Wcid=%d, TxSuccess=%ld, TxRetransmit=%ld, TxFail=%ld\n",
+				pEntry->wcid, TxSuccess, TxRetransmit, TxFailCount));
 
+
+		DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_RA,(
+				"   QuickDRS: CurrTxRateIdx=%d, MCS=%d %c, STBC=%d, ShortGI=%d, Mode=%d, TrainUp/Dn=%d/%d, LastIdx=%d, PER=%ld%%, TP=%ld\n",
+				CurrRateIdx,
+				pEntry->HTPhyMode.field.MCS,
+				pEntry->HTPhyMode.field.eTxBF? 'E': (pEntry->HTPhyMode.field.iTxBF? 'I': '-'),
+				pEntry->HTPhyMode.field.STBC,
+				pEntry->HTPhyMode.field.ShortGI,
+				pCurrTxRate->Mode,
+				TrainUp, TrainDown,
+				pEntry->lastRateIdx,
+				TxErrorRatio,
+				(100-TxErrorRatio)*TxTotalCnt*RA_INTERVAL/(100*pAd->ra_fast_interval)));	/* Normalized packets per RA Interval */
 			
 #ifdef DBG_CTRL_SUPPORT
 		/* Debug option: Concise RA log */
@@ -720,7 +751,7 @@ VOID APQuickResponeForRateUpExec(
 
 
 
-#ifndef NEW_RATE_ADAPT_SUPPORT
+
 /*
 	MlmeOldRateAdapt - perform Rate Adaptation based on PER using old RA algorithm
 		pEntry - the MAC table entry
@@ -821,5 +852,3 @@ VOID MlmeOldRateAdapt(
 		MlmeNewTxRate(pAd, pEntry);
 	}
 }
-#endif /* !=NEW_RATE_ADAPT_SUPPORT */
-

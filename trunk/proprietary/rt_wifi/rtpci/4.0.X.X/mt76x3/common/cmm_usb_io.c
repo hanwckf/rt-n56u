@@ -108,7 +108,7 @@ NTSTATUS RTUSB_VendorRequest(
 
 	if(in_interrupt())
 	{
-		DBGPRINT(RT_DEBUG_ERROR, ("BUG: RTUSB_VendorRequest is called from invalid context ==> Req:%d, Val:%d, Idx:%d\n", Request, Value, Index));
+		DBGPRINT(RT_DEBUG_ERROR, ("BUG: RTUSB_VendorRequest is called from invalid context ==> %d,%d,%d\n", Request, Value, Index));
 		return NDIS_STATUS_FAILURE;
 	}
 
@@ -430,9 +430,11 @@ static NTSTATUS ResetBulkOutHdlr(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
 	}
 
 	DBGPRINT_RAW(RT_DEBUG_TRACE, ("CmdThread : CMDTHREAD_RESET_BULK_OUT<===\n"));
+#endif
+
 	return NDIS_STATUS_SUCCESS;
 
-#endif
+
 }
 
 
@@ -549,16 +551,20 @@ static NTSTATUS ResetBulkInHdlr(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
 	}
 
 	DBGPRINT_RAW(RT_DEBUG_TRACE, ("CmdThread : CMDTHREAD_RESET_BULK_IN <===\n"));
-	return NDIS_STATUS_SUCCESS;
 #endif
+
+	return NDIS_STATUS_SUCCESS;
+
 }
 
 
 static NTSTATUS SetAsicWcidHdlr(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
 {
 	RT_SET_ASIC_WCID	SetAsicWcid;
+#ifndef MT_MAC
 	USHORT		offset;
 	UINT32		MACValue, MACRValue = 0;
+#endif
 	
 	SetAsicWcid = *((PRT_SET_ASIC_WCID)(CMDQelmt->buffer));
 
@@ -592,7 +598,7 @@ static NTSTATUS SetAsicWcidHdlr(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
 	} else
 #endif /* MT_MAC */		
 	{
-		DBGPRINT_RAW(RT_DEBUG_TRACE, ("CmdThread : CMDTHREAD_SET_ASIC_WCID : WCID = %ld, Tid  = %lx, SN = %d, BaSize = %d, IsAdd = %d, Ses_type = %d.\n",
+		DBGPRINT_RAW(RT_DEBUG_TRACE, ("CmdThread : CMDTHREAD_SET_ASIC_WCID : WCID = %ld, Tid  = %x, SN = %d, BaSize = %d, IsAdd = %d, Ses_type = %d.\n",
 						SetAsicWcid.WCID, SetAsicWcid.Tid, SetAsicWcid.SN, SetAsicWcid.Basize, SetAsicWcid.IsAdd, SetAsicWcid.Ses_type));
 						
 		AsicUpdateBASession(pAd, SetAsicWcid.WCID, SetAsicWcid.Tid, SetAsicWcid.SN, SetAsicWcid.Basize, SetAsicWcid.IsAdd, SetAsicWcid.Ses_type);
@@ -887,10 +893,6 @@ static NTSTATUS RT_Mac80211_ScanEnd(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
 
 static NTSTATUS RT_Mac80211_ConnResultInfom(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
 {
-	RT_CFG80211_CONN_RESULT_INFORM(pAd, pAd->MlmeAux.Bssid,
-								pAd->StaCfg.ReqVarIEs, pAd->StaCfg.ReqVarIELen,
-								CMDQelmt->buffer, CMDQelmt->bufferlength,
-								TRUE);
 	return NDIS_STATUS_SUCCESS;
 }
 #endif /* RT_CFG80211_SUPPORT */
@@ -918,6 +920,118 @@ static NTSTATUS AddRemoveKeyHdlr(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
 	return NDIS_STATUS_SUCCESS;
 }
 #endif /* MT_MAC */
+
+#ifdef MT_PS
+static NTSTATUS MtCmdPsClearReqHdlr(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
+{
+	UINT32 wlanidx = 0;
+
+	NdisMoveMemory(&wlanidx , CMDQelmt->buffer, sizeof(UINT32));
+	DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("wcid=0x%x, Send Ps Clear CMD to MCU\n", wlanidx));
+	CmdPsClearReq(pAd, wlanidx, TRUE);
+					
+	return NDIS_STATUS_SUCCESS;
+}
+
+static NTSTATUS MtCmdPsRetrieveStartReqHdlr(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
+{
+	MAC_TABLE_ENTRY *pEntry = (MAC_TABLE_ENTRY *)(CMDQelmt->buffer);
+
+	DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("wcid=%d CmdPsRetrieveStartReq CMD to MCU\n", pEntry->wcid));
+	CmdPsRetrieveStartReq(pAd, pEntry->wcid);
+					
+	return NDIS_STATUS_SUCCESS;
+}
+
+static NTSTATUS MtCmdPsRetrieveRspHdlr(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
+{
+	AndesPsRetrieveStartRsp(pAd, CMDQelmt->buffer, CMDQelmt->bufferlength);
+	return NDIS_STATUS_SUCCESS;
+}
+
+static NTSTATUS MtCmdPsSetIgnorePsm(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
+{
+	UCHAR bVal;
+	MAC_TABLE_ENTRY *pEntry = NULL;
+
+	os_alloc_mem(NULL, (UCHAR **) &pEntry, sizeof(MAC_TABLE_ENTRY));
+	if (pEntry)
+	{
+		NdisMoveMemory(&bVal , CMDQelmt->buffer, sizeof(UCHAR));
+		NdisMoveMemory(pEntry , CMDQelmt->buffer+1, sizeof(MAC_TABLE_ENTRY));
+		MtSetIgnorePsm(pAd, pEntry, bVal);
+		os_free_mem(NULL, pEntry);
+	}
+	return NDIS_STATUS_SUCCESS;
+}
+#endif /* MT_PS */
+#ifdef CFG_TDLS_SUPPORT
+
+static NTSTATUS CFGTdlsSendCHSWSetupHdlr(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
+{
+	return NDIS_STATUS_SUCCESS;
+}
+
+static NTSTATUS CFGTdlsAutoTeardownHdlr(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
+{
+	MAC_TABLE_ENTRY *pEntry = (MAC_TABLE_ENTRY *)(CMDQelmt->buffer);
+	cfg_tdls_auto_teardown(pAd, pEntry->Addr);
+	return NDIS_STATUS_SUCCESS;
+}
+
+#endif /* CFG_TDLS_SUPPORT */
+
+#ifdef BCN_OFFLOAD_SUPPORT
+static NTSTATUS HwCtrlBcnUpdate(RTMP_ADAPTER *pAd, PCmdQElmt CMDQelmt)
+{
+#ifdef CONFIG_AP_SUPPORT
+#ifdef RT_CFG80211_P2P_SUPPORT
+    if (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP)
+#else
+    IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+#endif /* RT_CFG80211_P2P_SUPPORT */
+    {
+        ULONG UpTime;
+
+        /* update channel utilization */
+        NdisGetSystemUpTime(&UpTime);
+
+#ifdef AP_QLOAD_SUPPORT
+        QBSS_LoadUpdate(pAd, UpTime);
+#endif /* AP_QLOAD_SUPPORT */
+
+#ifdef DOT11K_RRM_SUPPORT
+            RRM_QuietUpdata(pAd);
+#endif /* DOT11K_RRM_SUPPORT */
+
+#ifdef RT_CFG80211_P2P_SUPPORT
+        RT_CFG80211_BEACON_TIM_UPDATE(pAd);
+#else
+        APUpdateAllBeaconFrame(pAd);
+#endif /* RT_CFG80211_P2P_SUPPORT */
+    }
+#endif /* CONFIG_AP_SUPPORT */
+
+    return NDIS_STATUS_SUCCESS;
+}
+
+static NTSTATUS HwCtrlBmcCntUpdate(RTMP_ADAPTER *pAd, PCmdQElmt CMDQelmt)
+{
+    CHAR *pfunc_idx, idx = 0;
+    pfunc_idx = (CHAR *)CMDQelmt->buffer;
+
+    idx = *pfunc_idx;
+
+    /* BMC start */
+    if (AsicSetBmcQCR(pAd, BMC_CNT_UPDATE, CR_WRITE, idx, NULL)
+        == FALSE)
+    {
+        return NDIS_STATUS_FAILURE;
+    }
+    return NDIS_STATUS_SUCCESS;
+}
+#endif /* BCN_OFFLOAD_SUPPORT */
+
 
 typedef NTSTATUS (*CMDHdlr)(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt);
 
@@ -1022,6 +1136,38 @@ static CMDHdlr CMDHdlrTable[] = {
 #else
 	NULL,
 #endif /* MT_MAC */		
+
+#ifdef MT_PS
+	MtCmdPsClearReqHdlr,         /* CMDTHREAD_PS_CLEAR */
+	MtCmdPsRetrieveStartReqHdlr, /* CMDTHREAD_PS_RETRIEVE_START */
+	MtCmdPsRetrieveRspHdlr,      /* CMDTHREAD_PS_RETRIEVE_RSP */
+	MtCmdPsSetIgnorePsm,         /* CMDTHREAD_PS_IGNORE_PSM_SET */
+#else /* MT_PS */
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+#endif /* !MT_PS */
+#ifdef CFG_TDLS_SUPPORT
+	CFGTdlsSendCHSWSetupHdlr, /* CMDTHREAD_TDLS_SEND_CH_SW_SETUP */
+	CFGTdlsAutoTeardownHdlr,  /* CMDTHREAD_TDLS_AUTO_TEARDOWN */
+#else
+	NULL,
+	NULL,
+#endif /* CFG_TDLS_SUPPORT */
+#ifdef BCN_OFFLOAD_SUPPORT
+    HwCtrlBcnUpdate,        /*HWCMD_ID_BCN_UPDATE*/
+    HwCtrlBmcCntUpdate,     /*HWCMD_ID_BMC_CNT_UPDATE*/
+#else
+    NULL,
+    NULL,
+#endif /* BCN_OFFLOAD_SUPPORT */
+	MtCmdAsicUpdateProtect, 			/*CMDTHREAD_PERODIC_CR_ACCESS_ASIC_UPDATE_PROTECT*/
+	NULL,
+	MtCmdNICUpdateRawCounters, 	/*CMDTHREAD_PERODIC_CR_ACCESS_NIC_UPDATE_RAW_COUNTERS*/
+	MtCmdWtbl2RateTableUpdate,		/*CMDTHREAD_PERODIC_CR_ACCESS_WTBL_RATE_TABLE_UPDATE*/
+	MlmePeriodicExec,				/*CMDTHREAD_MLME_PERIOIDC_EXEC*/
+	MtCmdWtblTxpsUpdate			/*CMDTHREAD_PWR_MGT_BIT*/
 };
 
 
@@ -1051,13 +1197,13 @@ static inline BOOLEAN ValidCMD(IN PCmdQElmt CMDQelmt)
 VOID CMDHandler(RTMP_ADAPTER *pAd)
 {
 	PCmdQElmt		cmdqelmt;
-	NDIS_STATUS		NdisStatus = NDIS_STATUS_SUCCESS;
-	NTSTATUS		ntStatus;
+	//NDIS_STATUS		NdisStatus = NDIS_STATUS_SUCCESS;
+	//NTSTATUS		ntStatus;
 /*	unsigned long	IrqFlags;*/
 
 	while (pAd && pAd->CmdQ.size > 0)
 	{
-		NdisStatus = NDIS_STATUS_SUCCESS;
+		//NdisStatus = NDIS_STATUS_SUCCESS;
 
 		NdisAcquireSpinLock(&pAd->CmdQLock);
 		RTThreadDequeueCmd(&pAd->CmdQ, &cmdqelmt);
@@ -1070,7 +1216,7 @@ VOID CMDHandler(RTMP_ADAPTER *pAd)
 		if(!(RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST) || RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS)))
 		{
 			if(ValidCMD(cmdqelmt)) 
-				ntStatus = (*CMDHdlrTable[cmdqelmt->command - CMDTHREAD_FIRST_CMD_ID])(pAd, cmdqelmt);
+				/*ntStatus =*/ (*CMDHdlrTable[cmdqelmt->command - CMDTHREAD_FIRST_CMD_ID])(pAd, cmdqelmt);
 		}
 
 		if (cmdqelmt->CmdFromNdis == TRUE)

@@ -11,7 +11,6 @@ VOID sniffer_timeout(
 
 BUILD_TIMER_FUNCTION(sniffer_timeout);
 
-
 INT sniffer_channel_restore(IN RTMP_ADAPTER *pAd)
 {
 	INT bw, ch;
@@ -64,7 +63,7 @@ void sniffer_timeout(
 	
 	//set back the sniffer mode to off
 #ifdef CONFIG_SNIFFER_SUPPORT		
-	Set_AP_Monitor_Proc(pAd,"0");
+	Set_MonitorMode_Proc(pAd,"0");
 #endif /* CONFIG_SNIFFER_SUPPORT */
 
 	//if (psniffer_mib_ctrl->scan_channel != 0) // restore to original channel
@@ -75,6 +74,39 @@ void sniffer_timeout(
 	
 }
 
+
+#ifdef CONFIG_SNIFFER_SUPPORT
+#ifdef ALL_NET_EVENT
+VOID vSnifferMacTimeout(
+    IN PVOID SystemSpecific1, 
+    IN PVOID FunctionContext, 
+    IN PVOID SystemSpecific2, 
+    IN PVOID SystemSpecific3)
+{
+	INT32 i4AvgRssi = 0;
+	SNIFFER_MAC_CTRL *pMACEntry = (SNIFFER_MAC_CTRL *)FunctionContext;
+	PSNIFFER_MAC_NOTIFY_T pMACEntryNotify = NULL;
+	UCHAR bssid[MAC_ADDR_LEN] = {0}; //report zero bssid, to prevent too many check
+
+	if(pMACEntry == NULL)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("%s():%d: pMACEntry is NULL!\n", __FUNCTION__,__LINE__));
+		return;
+	}
+
+	pMACEntryNotify = &pMACEntry->rNotify;
+	if(pMACEntryNotify->i4RxPacketConut > 0)
+	{
+		i4AvgRssi = pMACEntryNotify->i4RssiAccum/pMACEntryNotify->i4RxPacketConut;
+		wext_send_event(pMACEntryNotify->pNetDev,pMACEntry->MACAddr,bssid,pMACEntryNotify->u4Channel,i4AvgRssi,FBT_LINK_STA_FOUND_NOTIFY);
+
+		// Only clear data for next collection.
+		NdisZeroMemory(pMACEntryNotify,sizeof(*pMACEntryNotify));
+	}
+}
+BUILD_TIMER_FUNCTION(vSnifferMacTimeout);
+#endif /* ALL_NET_EVENT */
+#endif /* CONFIG_SNIFFER_SUPPORT */
 
 VOID sniffer_mib_ctrlInit(IN PRTMP_ADAPTER pAd)
 {
@@ -112,6 +144,11 @@ VOID sniffer_mib_ctrlExit(IN PRTMP_ADAPTER pAd)
 	RTMP_SEM_LOCK(&psniffer_mib_ctrl->MAC_ListLock);
 	DlListForEachSafe(pMACEntry, pMACEntryTmp, &psniffer_mib_ctrl->MAC_List, SNIFFER_MAC_CTRL, List)
 	{
+#ifdef CONFIG_SNIFFER_SUPPORT
+#ifdef ALL_NET_EVENT
+		RTMPReleaseTimer(&pMACEntry->rNotifyTimer, &Cancelled);
+#endif /* ALL_NET_EVENT */
+#endif /* CONFIG_SNIFFER_SUPPORT */
 		DlListDel(&pMACEntry->List);
 		os_free_mem(NULL, pMACEntry);
 	}
@@ -184,7 +221,13 @@ INT exsta_proc(IN RTMP_ADAPTER *pAd, IN RTMP_STRING *arg)
 	if (find_list == FALSE) 
 	{
 		RTMP_SEM_LOCK(&psniffer_mib_ctrl->MAC_ListLock);
+		NdisZeroMemory(pMACEntry,sizeof(*pMACEntry));
 		NdisMoveMemory(pMACEntry->MACAddr, macAddr, MAC_ADDR_LEN);
+#ifdef CONFIG_SNIFFER_SUPPORT
+#ifdef ALL_NET_EVENT
+		RTMPInitTimer(pAd, &pMACEntry->rNotifyTimer, GET_TIMER_FUNCTION(vSnifferMacTimeout), pMACEntry, TRUE);
+#endif /* ALL_NET_EVENT */
+#endif /* CONFIG_SNIFFER_SUPPORT */
 		DlListAddTail(&psniffer_mib_ctrl->MAC_List, &pMACEntry->List);
 		psniffer_mib_ctrl->MAC_ListNum ++;
 		RTMP_SEM_UNLOCK(&psniffer_mib_ctrl->MAC_ListLock);
@@ -231,6 +274,11 @@ INT exsta_clear_proc(IN RTMP_ADAPTER *pAd, IN RTMP_STRING *arg)
 	RTMP_SEM_LOCK(&psniffer_mib_ctrl->MAC_ListLock);
 	DlListForEachSafe(pMACEntry, pMACEntryTmp, &psniffer_mib_ctrl->MAC_List, SNIFFER_MAC_CTRL, List)
 	{
+#ifdef CONFIG_SNIFFER_SUPPORT
+#ifdef ALL_NET_EVENT
+		RTMPReleaseTimer(&pMACEntry->rNotifyTimer, &Cancelled);
+#endif /* ALL_NET_EVENT */
+#endif /* CONFIG_SNIFFER_SUPPORT */
 		DlListDel(&pMACEntry->List);
 		os_free_mem(NULL, pMACEntry);
 	}
@@ -310,69 +358,106 @@ INT set_monitor_channel(IN RTMP_ADAPTER *ad, IN INT bw, IN INT channel, IN INT p
 INT exsta_scan_proc(IN RTMP_ADAPTER *pAd, IN RTMP_STRING *arg)
 {
 	BOOLEAN Cancelled;
+	ULONG start = 0;
 	PSNIFFER_MIB_CTRL psniffer_mib_ctrl;
 	psniffer_mib_ctrl = &pAd->ApCfg.sniffer_mib_ctrl;
+#ifdef CONFIG_SNIFFER_SUPPORT
+#ifdef ALL_NET_EVENT
+	SNIFFER_MAC_CTRL *pMACEntry = NULL;
+	PSNIFFER_MAC_NOTIFY_T pMACEntryNotify = NULL;
+#endif /* ALL_NET_EVENT */
+#endif /* CONFIG_SNIFFER_SUPPORT */
 	
 	DBGPRINT(RT_DEBUG_ERROR, ("%s: ==>\n",__FUNCTION__));
 
+	start = simple_strtol(arg, 0, 10);
 
 	if(psniffer_mib_ctrl->AgeOutTimer_Running == TRUE)
 	{
 		RTMPCancelTimer(&psniffer_mib_ctrl->AgeOutTimer, &Cancelled);
 		psniffer_mib_ctrl->AgeOutTimer_Running = FALSE;
+#ifdef CONFIG_SNIFFER_SUPPORT
+#ifdef ALL_NET_EVENT
+		RTMP_SEM_LOCK(&psniffer_mib_ctrl->MAC_ListLock);
+		DlListForEach(pMACEntry, &psniffer_mib_ctrl->MAC_List, SNIFFER_MAC_CTRL, List)
+		{
+			if(pMACEntry)
+			{
+				RTMPCancelTimer(&pMACEntry->rNotifyTimer, &Cancelled);
+			}
+		}
+		RTMP_SEM_UNLOCK(&psniffer_mib_ctrl->MAC_ListLock);
+#endif /* ALL_NET_EVENT */
+#endif /* CONFIG_SNIFFER_SUPPORT */
 	}
 
-	if (psniffer_mib_ctrl->AgeOutTime)
+	if(start)
 	{
-		RTMPSetTimer(&psniffer_mib_ctrl->AgeOutTimer, psniffer_mib_ctrl->AgeOutTime);
-		psniffer_mib_ctrl->AgeOutTimer_Running = TRUE;
+		if (psniffer_mib_ctrl->AgeOutTime)
+		{
+			RTMPSetTimer(&psniffer_mib_ctrl->AgeOutTimer, psniffer_mib_ctrl->AgeOutTime);
+			psniffer_mib_ctrl->AgeOutTimer_Running = TRUE;
 
-		psniffer_mib_ctrl->bbp_bw = pAd->CommonCfg.BBPCurrentBW;//pAd->hw_cfg.bbp_bw;
+			psniffer_mib_ctrl->bbp_bw = pAd->CommonCfg.BBPCurrentBW;//pAd->hw_cfg.bbp_bw;
 #ifdef DOT11_VHT_AC
-		psniffer_mib_ctrl->vht_cent_ch = pAd->CommonCfg.vht_cent_ch;
+			psniffer_mib_ctrl->vht_cent_ch = pAd->CommonCfg.vht_cent_ch;
 #endif /* DOT11_VHT_AC */
-		psniffer_mib_ctrl->CentralChannel = pAd->CommonCfg.CentralChannel;
-		psniffer_mib_ctrl->Channel = pAd->CommonCfg.Channel;
+			psniffer_mib_ctrl->CentralChannel = pAd->CommonCfg.CentralChannel;
+			psniffer_mib_ctrl->Channel = pAd->CommonCfg.Channel;
 
 #ifdef DOT11_VHT_AC
-		DBGPRINT(RT_DEBUG_ERROR, ("%s: psniffer_mib_ctrl->bbp_bw=%d,psniffer_mib_ctrl->CentralChannel=%d,psniffer_mib_ctrl->Channel\n",__FUNCTION__,
-		psniffer_mib_ctrl->bbp_bw,psniffer_mib_ctrl->CentralChannel,psniffer_mib_ctrl->Channel));
+			DBGPRINT(RT_DEBUG_ERROR, ("%s: psniffer_mib_ctrl->bbp_bw=%d,psniffer_mib_ctrl->CentralChannel=%d,psniffer_mib_ctrl->Channel\n",__FUNCTION__,
+			psniffer_mib_ctrl->bbp_bw,psniffer_mib_ctrl->CentralChannel,psniffer_mib_ctrl->Channel));
 #else /* DOT11_VHT_AC */
-		DBGPRINT(RT_DEBUG_ERROR, ("%s: psniffer_mib_ctrl->bbp_bw=%d, psniffer_mib_ctrl->vht_cent_ch=%d,psniffer_mib_ctrl->CentralChannel=%d,psniffer_mib_ctrl->Channel\n",__FUNCTION__,
-		psniffer_mib_ctrl->bbp_bw,psniffer_mib_ctrl->vht_cent_ch,psniffer_mib_ctrl->CentralChannel,psniffer_mib_ctrl->Channel));
+			DBGPRINT(RT_DEBUG_ERROR, ("%s: psniffer_mib_ctrl->bbp_bw=%d, psniffer_mib_ctrl->vht_cent_ch=%d,psniffer_mib_ctrl->CentralChannel=%d,psniffer_mib_ctrl->Channel\n",__FUNCTION__,
+			psniffer_mib_ctrl->bbp_bw,psniffer_mib_ctrl->vht_cent_ch,psniffer_mib_ctrl->CentralChannel,psniffer_mib_ctrl->Channel));
 #endif /* !DOT11_VHT_AC */
 
-		// no cmd to set bw, keep the original bw
-		if (psniffer_mib_ctrl->scan_channel == 0)
-		{
-			;// do nothing, don't switch channel
+			// no cmd to set bw, keep the original bw
+			if (psniffer_mib_ctrl->scan_channel == 0)
+			{
+				;// do nothing, don't switch channel
+			}
+			else
+			{
+				if (pAd->hw_cfg.bbp_bw !=BW_20 )
+				{
+					if (psniffer_mib_ctrl->scan_channel <=7 ) //EXTCHA_ABOVE , ch 1~7 use EXTCHA_ABOVE
+					{
+						set_monitor_channel(pAd,psniffer_mib_ctrl->bbp_bw, psniffer_mib_ctrl->scan_channel, 0);
+					}
+					else // others use EXTCHA_BELOW
+					{
+						set_monitor_channel(pAd,psniffer_mib_ctrl->bbp_bw, psniffer_mib_ctrl->scan_channel, 1);
+					}
+				}
+				else //BW_20 case
+				{
+					set_monitor_channel(pAd,psniffer_mib_ctrl->bbp_bw, psniffer_mib_ctrl->scan_channel, 0);				
+				}
+			}
+
+#ifdef CONFIG_SNIFFER_SUPPORT
+#ifdef ALL_NET_EVENT
+			RTMP_SEM_LOCK(&psniffer_mib_ctrl->MAC_ListLock);
+			DlListForEach(pMACEntry, &psniffer_mib_ctrl->MAC_List, SNIFFER_MAC_CTRL, List)
+			{
+				if(pMACEntry)
+				{
+					pMACEntryNotify = &pMACEntry->rNotify;
+					NdisZeroMemory(pMACEntryNotify,sizeof(*pMACEntryNotify));
+					RTMPSetTimer(&pMACEntry->rNotifyTimer, SNIFFER_MAC_TIMEOUT);
+				}
+			}
+			RTMP_SEM_UNLOCK(&psniffer_mib_ctrl->MAC_ListLock);
+#endif /* ALL_NET_EVENT */
+#endif /* CONFIG_SNIFFER_SUPPORT */
+			Set_MonitorMode_Proc(pAd,"2");
 		}
 		else
 		{
-			if (pAd->hw_cfg.bbp_bw !=BW_20 )
-			{
-				if (psniffer_mib_ctrl->scan_channel <=7 ) //EXTCHA_ABOVE , ch 1~7 use EXTCHA_ABOVE
-				{
-					set_monitor_channel(pAd,psniffer_mib_ctrl->bbp_bw, psniffer_mib_ctrl->scan_channel, 0);
-				}
-				else // others use EXTCHA_BELOW
-				{
-					set_monitor_channel(pAd,psniffer_mib_ctrl->bbp_bw, psniffer_mib_ctrl->scan_channel, 1);
-				}
-			}
-			else //BW_20 case
-			{
-				set_monitor_channel(pAd,psniffer_mib_ctrl->bbp_bw, psniffer_mib_ctrl->scan_channel, 0);				
-			}
+			DBGPRINT(RT_DEBUG_ERROR, ("%s: psniffer_mib_ctrl->AgeOutTime=%lu, not start timer!\n",__FUNCTION__,psniffer_mib_ctrl->AgeOutTime));
 		}
-
-#ifdef CONFIG_SNIFFER_SUPPORT
-		Set_AP_Monitor_Proc(pAd, "1");
-#endif /* CONFIG_SNIFFER_SUPPORT */
-	}
-	else
-	{
-		DBGPRINT(RT_DEBUG_ERROR, ("%s: psniffer_mib_ctrl->AgeOutTime=%u, not start timmer!\n",__FUNCTION__,psniffer_mib_ctrl->AgeOutTime));
 	}
 	return TRUE;
 }

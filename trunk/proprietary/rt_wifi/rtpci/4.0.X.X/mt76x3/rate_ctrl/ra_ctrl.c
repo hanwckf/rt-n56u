@@ -306,13 +306,13 @@ UCHAR RateSwitchTableAdapt11G[] = {
 */
 	 8,    7,  0,  0,    0,   0,    0,     0,   0,   0,
 	 0, 0x10,  0,  20, 101,   0,    1,     1,   1,   6, /* OFDM 6M */
-	 1, 0x10,  1,  20,  35,   1,    2,     2,   2,   9, /* OFDM 9M */
-	 2, 0x10,  2,  20,  35,   2,    3,     3,   3,  12, /* OFDM 12M */
-	 3, 0x10,  3,  16,  35,   3,    4,     4,   4,  18, /* OFDM 18M*/
-	 4, 0x10,  4,  10,  25,   4,    5,     5,   5,  24, /* OFDM 24M */
-	 5, 0x10,  5,  16,  25,   5,    6,     6,   6,  36, /* OFDM 36M */
-	 6, 0x10,  6,  10,  25,   6,    7,     7,   7,  48, /* OFDM 48M */
-	 7, 0x10,  7,  10,  13,   7,    8,     8,   8,  54, /* OFDM 54M */
+	 1, 0x10,  1,  20,  35,   0,    2,     2,   2,   9, /* OFDM 9M */
+	 2, 0x10,  2,  20,  35,   1,    3,     3,   3,  12, /* OFDM 12M */
+	 3, 0x10,  3,  16,  35,   2,    4,     4,   4,  18, /* OFDM 18M*/
+	 4, 0x10,  4,  10,  25,   3,    5,     5,   5,  24, /* OFDM 24M */
+	 5, 0x10,  5,  16,  25,   4,    6,     6,   6,  36, /* OFDM 36M */
+	 6, 0x10,  6,  10,  25,   5,    7,     7,   7,  48, /* OFDM 48M */
+	 7, 0x10,  7,  10,  13,   6,    7,     7,   7,  54, /* OFDM 54M */
 };
 
 #ifdef RANGE_EXTEND
@@ -335,19 +335,19 @@ UCHAR RateSwitchTableAdapt11N1S[] = {
            mode   lowPERThrd  downMcs     upMcs2
 */
 	 12,   7,  0,  0,   0,   0,    0,     0,   0,   0,
-	 0, 0x21,  0, 30,  50,  11,    1,     8,   1,   7,/* mcs0 */
-	 1, 0x21,  1, 20,  50,   0,   16,     9,   2,  13,/* mcs1 */
-	 2, 0x21,  2, 20,  50,   1,   17,     9,   3,  20,/* mcs2 */
-	 3, 0x21,  3, 15,  50,   2,   17,    10,   4,  26,/* mcs3 */
-	 4, 0x21,  4, 15,  30,   3,   18,    11,   5,  39,/* mcs4 */
-	 5, 0x21,  5, 10,  25,   4,   18,    12,   6,  52,/* mcs5 */
-	 6, 0x21,  6,  8,  14,   5,   19,    12,   7,  59,/* mcs6 */
-	 7, 0x21,  7,  8,  14,   6,   19,    12,   8,  65,/* mcs7 */
-	 8, 0x23,  7,  8,  14,   7,   19,    12,   8,  72,/* mcs7+short gi */
+	 0, 0x21,  0, 30,  50,  11,    1,     1,   1,   7,/* mcs0 */
+	 1, 0x21,  1, 20,  50,   0,    2,     2,   2,  13,/* mcs1 */
+	 2, 0x21,  2, 20,  50,   1,    3,     3,   3,  20,/* mcs2 */
+	 3, 0x21,  3, 15,  50,   2,    4,     4,   4,  26,/* mcs3 */
+	 4, 0x21,  4, 15,  30,   3,    5,     5,   5,  39,/* mcs4 */
+	 5, 0x21,  5, 10,  25,   4,    6,     6,   6,  52,/* mcs5 */
+	 6, 0x21,  6,  8,  14,   5,    7,     7,   7,  59,/* mcs6 */
+	 7, 0x21,  7,  8,  14,   6,    8,     8,   8,  65,/* mcs7 */
+	 8, 0x23,  7,  8,  14,   7,    8,     8,   8,  72,/* mcs7+short gi */
 
-	 9, 0x00,  0, 40,  101,  9 ,   9,     9,   10,  1, /* cck-1M */
-	10, 0x00,  1, 40,  50,   9,   10,    10,   11,  2, /* cck-2M */
-	11, 0x21, 32, 30,  50,  10,    0,     8,    0,  7, /* mcs32 or 20M/mcs0 */
+	 9, 0x00,  0, 40,  101,  9 ,  10,    10,   10,  1, /* cck-1M */
+	10, 0x00,  1, 40,  50,   9,   11,    11,   11,  2, /* cck-2M */
+	11, 0x10,  0, 30,  50,  10,    0,     0,   0,   6, /* OFDM 6M */	
 };
 
 #ifdef SUPPORT_SHORT_GI_RA
@@ -362,41 +362,41 @@ UCHAR RateSwitchTableAdapt11N2S[] = {
         mode   lowPERThrd  downMcs    upMcs2
 */
 	22,   15,  0,  0,   0,   0,    0,   0,   0,   0,
-     0, 0x21,  0, 30,  50,  21,    1,   8,   1,   7,/* mcs0 */
-	 1, 0x21,  1, 20,  50,   0,   16,   9,   2,  13,/* mcs1 */
-	 2, 0x21,  2, 20,  50,   1,   17,   9,   3,  20,/* mcs2 */
-	 3, 0x21,  3, 15,  50,   2,   17,  10,   4,  26,/* mcs3 */
-	 4, 0x21,  4, 15,  30,   3,   18,  11,   5,  39,/* mcs4 */
-	 5, 0x21,  5, 10,  25,   4,   18,  12,   6,  52,/* mcs5 */
-	 6, 0x21,  6,  8,  14,   5,   19,  12,   7,  59,/* mcs6 */
+	 0, 0x21,  0, 30,  50,  21,    8,   8,   1,   7,/* mcs0 */
+	 1, 0x21,  1, 20,  50,   0,    9,   9,   2,  13,/* mcs1 */
+	 2, 0x21,  2, 20,  50,   1,    9,   9,   3,  20,/* mcs2 */
+	 3, 0x21,  3, 15,  50,   2,   10,  10,   4,  26,/* mcs3 */
+	 4, 0x21,  4, 15,  30,   3,   11,  11,   5,  39,/* mcs4 */
+	 5, 0x21,  5, 10,  25,   4,   12,  12,   6,  52,/* mcs5 */
+	 6, 0x21,  6,  8,  14,   5,   12,  12,   7,  59,/* mcs6 */
 #ifdef SUPPORT_SHORT_GI_RA
-	 7, 0x21,  7,  8,  14,   6,   19,  12, sg07,  65,/* mcs7 */
+	 7, 0x21,  7,  8,  14,   6,   12,  12, sg07,  65,/* mcs7 */
 #else
-	 7, 0x21,  7,  8,  14,   6,   19,  12,   7,  65,/* mcs7 */
+	 7, 0x21,  7,  8,  14,   6,   12,  12,   7,  65,/* mcs7 */
 #endif
-	 8, 0x20,  8, 30,  50,   0,   16,   9,   2,  13,/* mcs8 */
-	 9, 0x20,  9, 20,  50,   8,   17,  10,   4,  26,/* mcs9 */
-	10, 0x20, 10, 20,  40,   9,   18,  11,   5,  39,/* mcs10 */
-	11, 0x20, 11, 15,  30,  10,   18,  12,   6,  52,/* mcs11 */
-	12, 0x20, 12, 15,  30,  11,   20,  13,  12,  78,/* mcs12 */
-	13, 0x20, 13,  8,  20,  12,   20,  14,  13, 104,/* mcs13 */
+	 8, 0x20,  8, 30,  50,   0,    9,   9,   2,  13,/* mcs8 */
+	 9, 0x20,  9, 20,  50,   8,   10,  10,   4,  26,/* mcs9 */
+	10, 0x20, 10, 20,  40,   9,   11,  11,   5,  39,/* mcs10 */
+	11, 0x20, 11, 15,  30,  10,   12,  12,   6,  52,/* mcs11 */
+	12, 0x20, 12, 15,  30,  11,   13,  13,  12,  78,/* mcs12 */
+	13, 0x20, 13,  8,  20,  12,   14,  14,  13, 104,/* mcs13 */
 #ifdef SUPPORT_SHORT_GI_RA
-	14, 0x20, 14,  8,  18,  13,   21,  15,sg14, 117,/* mcs14 */
-	15, 0x20, 15,  8,  25,  14,   21,sg15,sg14, 130,/* mcs15 */
-	16, 0x22, 15,  8,  25,  15,   21,sg15,sg15, 144,/* mcs15+shortGI */
+	14, 0x20, 14,  8,  18,  13,   15,  15,sg14, 117,/* mcs14 */
+	15, 0x20, 15,  8,  25,  14, sg15,sg15,sg14, 130,/* mcs15 */
+	16, 0x22, 15,  8,  25,  15, sg15,sg15,sg15, 144,/* mcs15+shortGI */
 
-    17, 0x22, 14,  8,  14,  14,   21,sg15,  15, 130, /* mcs14+shortGI */
-    18, 0x23,  7,  8,  14,   7,   19,  12,sg07,  72, /* mcs7+shortGI */
+	17, 0x22, 14,  8,  14,  14, sg15,sg15,  15, 130, /* mcs14+shortGI */
+	18, 0x23,  7,  8,  14,   7,   12,  12,sg07,  72, /* mcs7+shortGI */
 #else
-	14, 0x20, 14,  8,  18,  13,   21,  15,  14, 117,/* mcs14 */
-	15, 0x20, 15,  8,  25,  14,   21,  16,  15, 130,/* mcs15 */
-	16, 0x22, 15,  8,  25,  15,   21,  16,  16, 144,/* mcs15+shortGI */
-    17,    0,  0,  0,   0,   0,   0,    0,   0,   0,
-    18,    0,  0,  0,   0,   0,   0,    0,   0,   0,
+	14, 0x20, 14,  8,  18,  13,   15,  15,  14, 117,/* mcs14 */
+	15, 0x20, 15,  8,  25,  14,   16,  16,  15, 130,/* mcs15 */
+	16, 0x22, 15,  8,  25,  15,   16,  16,  16, 144,/* mcs15+shortGI */
+  17,    0,  0,  0,   0,   0,   0,    0,   0,   0,
+  18,    0,  0,  0,   0,   0,   0,    0,   0,   0,
 #endif
-    19, 0x00,  0, 40,  101, 19 ,  19,    19,   20,  1, /* cck-1M */
-    20, 0x00,  1, 40,  50,  19,   20,    20,   21,  2, /* cck-2M */
-    21, 0x21, 32, 30,  50,  20,   0,     8,    0,   7, /* mcs32 or 20M/mcs0 */
+  19, 0x00,  0, 40,  101, 19 ,  19,    19,   20,  1, /* cck-1M */
+  20, 0x00,  1, 40,  50,  19,   20,    20,   21,  2, /* cck-2M */
+    21, 0x10,  0, 30,  50,  20,   8,     8,    0,   6, /* OFDM 6M */
 };
 
 #ifdef SUPPORT_SHORT_GI_RA
@@ -880,9 +880,7 @@ VOID APMlmeSetTxRate(
 	UCHAR tx_mode = pTxRate->Mode;
 #ifdef DOT11_VHT_AC
 	UCHAR tx_bw = pTxRate->BW;
-#endif
 
-#ifdef DOT11_VHT_AC
 	if ((pAd->chipCap.phy_caps & fPHY_CAP_VHT) && 
 		((pEntry->pTable == RateTableVht2S) || (pEntry->pTable == RateTableVht1S) ||
 		 (pEntry->pTable == RateTableVht1S_MCS9) ||
@@ -906,9 +904,9 @@ VOID APMlmeSetTxRate(
 					else
 						bw_cap = pAdaptTbEntry->BW;
 					break;
-				case BW_10:
-					bw_cap = BW_10;
-					break;
+				//case BW_10:
+					//bw_cap = BW_10;
+					//break;
 				case BW_20:
 				default:
 					if (pAdaptTbEntry->BW == BW_80 || pAdaptTbEntry->BW == BW_40)
@@ -1362,6 +1360,9 @@ VOID MlmeSelectTxRateTable(
 		if ((pEntry->SupportRateMode & (SUPPORT_OFDM_MODE)) && 
 			(pEntry->HTCapability.MCSSet[0] != 0x00) &&
 			(pEntry->HTCapability.MCSSet[1] != 0x00) && 
+#ifdef THERMAL_PROTECT_SUPPORT
+			(pAd->force_one_tx_stream == FALSE) &&
+#endif /* THERMAL_PROTECT_SUPPORT */
 			(((pAd->Antenna.field.TxPath == 3) && (pEntry->HTCapability.MCSSet[2] == 0x00)) || (pAd->CommonCfg.TxStream == 2)))
 		{/* 11BGN 2S AP*/
 #ifdef AGS_SUPPORT
@@ -1425,7 +1426,11 @@ VOID MlmeSelectTxRateTable(
 
 		/*else if ((pAd->StaActive.SupportedPhyInfo.MCSSet[0] == 0xff) && ((pAd->StaActive.SupportedPhyInfo.MCSSet[1] == 0x00) || (pAd->Antenna.field.TxPath == 1)))*/
 		if ((pEntry->HTCapability.MCSSet[0] != 0x00) && 
-			((pEntry->HTCapability.MCSSet[1] == 0x00) || (pAd->CommonCfg.TxStream == 1)))
+			((pEntry->HTCapability.MCSSet[1] == 0x00) || (pAd->CommonCfg.TxStream == 1)
+#ifdef THERMAL_PROTECT_SUPPORT
+			|| (pAd->force_one_tx_stream == TRUE)
+#endif /* THERMAL_PROTECT_SUPPORT */
+			))
 		{/* 11N 1S AP*/
 #ifdef AGS_SUPPORT
 			if (SUPPORT_AGS(pAd))
@@ -1887,6 +1892,8 @@ VOID MlmeRAInit(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 	pEntry->lastRateIdx = 0xFF;
 	pEntry->lowTrafficCount = 0;
 	pEntry->perThrdAdj = PER_THRD_ADJ;
+	pEntry->TrafficLoading = RA_INIT_STATE;
+	pEntry->RaHoldTime = 0;
 #endif /* NEW_RATE_ADAPT_SUPPORT */
 
 
@@ -2013,7 +2020,7 @@ VOID MlmeCheckRDG(
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return;
 	}
@@ -2161,6 +2168,24 @@ VOID MlmeNewTxRate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 	else
 #endif /* NEW_RATE_ADAPT_SUPPORT */
 		pNextTxRate = PTX_RA_LEGACY_ENTRY(pTable, pEntry->CurrTxRateIndex);
+
+#ifdef NEW_RATE_ADAPT_SUPPORT
+#ifdef WAPI_SUPPORT
+	if (IS_MT7603(pAd) || IS_MT7628(pAd) || IS_MT7636(pAd))
+	{
+		if ((pEntry->AuthMode == Ndis802_11AuthModeWAICERT) || (pEntry->AuthMode == Ndis802_11AuthModeWAIPSK))
+		{
+			if (pTable == RateSwitchTableAdapt11N2S)
+			{
+				if ((pEntry->CurrTxRateIndex >= 14) && (pEntry->CurrTxRateIndex <= 16))
+				{
+					  pNextTxRate = (RTMP_RA_LEGACY_TB *)PTX_RA_GRP_ENTRY(pTable, 13);
+				}
+			}
+		}
+	}
+#endif /* WAPI_SUPPORT */
+#endif /* NEW_RATE_ADAPT_SUPPORT */
 
 	/*  Set new rate */
 #ifdef CONFIG_AP_SUPPORT

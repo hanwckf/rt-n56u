@@ -91,8 +91,6 @@
 #define RXD_SIZE		16	
 
 #define RXINFO_OFFSET	12
-#define NUM_OF_UP 9 /*number of user priority: 2set WMM+ non QoS*/
-
 
 /* TXINFO_SIZE + TXWI_SIZE + 802.11 Header Size + AMSDU sub frame header */
 #define TX_DMA_1ST_BUFFER_SIZE  96	/* only the 1st physical buffer is pre-allocated */
@@ -121,6 +119,9 @@
 #ifdef WLAN_SKB_RECYCLE
 #define NUM_RX_DESC     128
 #endif /* WLAN_SKB_RECYCLE */
+
+#define NUM_OF_UP 9 /*number of user priority: 2set WMM+ non QoS*/
+
 
 /*
 	WMM Note: If memory of your system is not much, please reduce the definition;
@@ -318,6 +319,9 @@ enum WIFI_MODE{
 #define fOP_STATUS_WAKEUP_NOW               0x00008000
 #define fOP_STATUS_ADVANCE_POWER_SAVE_PCIE_DEVICE       0x00020000
 
+#ifdef DOT11V_WNM_SUPPORT
+#define fOP_STATUS_FMS_ENABLE       0x00400000
+#endif /* DOT11V_WNM_SUPPORT */
 #define fOP_AP_STATUS_MEDIA_STATE_CONNECTED	0x00200000
 
 
@@ -392,10 +396,16 @@ enum WIFI_MODE{
 #define fCLIENT_STATUS_CLI_WDS					0x00200000
 #endif /* CLIENT_WDS */
 
+#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
+#define fCLIENT_STATUS_P2P_CLI					0x00400000
+#endif /* defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT) */
 
 #define fCLIENT_STATUS_VHT_RX_LDPC_CAPABLE		0x00800000
 #define fCLIENT_STATUS_HT_RX_LDPC_CAPABLE		0x01000000
 
+#ifdef CONFIG_HOTSPOT_R2
+#define fCLIENT_STATUS_OSEN_CAPABLE             0x02000000
+#endif
 
 /*
 	STA configuration flags
@@ -502,11 +512,8 @@ enum WIFI_MODE{
 #else
 #define HW_BEACON_MAX_COUNT(__pAd)	8
 #endif /* MBSS_SUPPORT */
-#ifdef ECONET_ALPHA_RELEASE
-#define HW_BEACON_MAX_NUM			8
-#else
+
 #define HW_BEACON_MAX_NUM			16
-#endif /* ECONET_ALPHA_RELEASE */
 
 
 #define WDEV_NUM_MAX		(HW_BEACON_MAX_NUM + MAX_WDS_ENTRY + \
@@ -658,12 +665,11 @@ enum WIFI_MODE{
 #define MAX_LEN_OF_BSS_TABLE             1
 #define MAX_REORDERING_MPDU_NUM			 256
 #else
-
-#ifdef ECONET_ALPHA_RELEASE
-#define MAX_LEN_OF_BSS_TABLE             96 /* 64 */
-#else
+#ifndef CUSTOMER_DCC_FEATURE
 #define MAX_LEN_OF_BSS_TABLE             128 /* 64 */
-#endif /* ECONET_ALPHA_RELEASE */
+#else
+#define MAX_LEN_OF_BSS_TABLE             64
+#endif
 #define MAX_REORDERING_MPDU_NUM			 512
 #endif
 
@@ -684,7 +690,7 @@ enum WIFI_MODE{
 #define PWR_MMPS                        2	/*MIMO power save */
 
 /* For AP PS retrieve status */
-#define APPS_RETRIEVE_IDLE			0
+#define APPS_RETRIEVE_IDLE       0
 #define APPS_RETRIEVE_CR_PADDING	1
 #define APPS_RETRIEVE_START_PS		2
 #define APPS_RETRIEVE_GOING			3
@@ -742,6 +748,9 @@ enum WIFI_MODE{
 #define REASON_QOS_REQUEST_TIMEOUT        39
 #define REASON_QOS_CIPHER_NOT_SUPPORT     45
 
+#ifdef DOT11V_WNM_SUPPORT
+#define REASON_DISASSOC_DUE_TO_BSS_TRANSITION_MANAGEMENT	12
+#endif /* DOT11V_WNM_SUPPORT */
 
 #define REASON_FT_INVALID_FTIE				55
 
@@ -903,14 +912,18 @@ enum WIFI_MODE{
 #define WPA_STATE_MACHINE            		23
 
 
-#ifdef QOS_DLS_SUPPORT
-#define DLS_STATE_MACHINE               26
-#endif /* QOS_DLS_SUPPORT */
+
+#ifdef DOT11R_FT_SUPPORT
+#define FT_OTA_AUTH_STATE_MACHINE      	27
+#define FT_OTD_ACT_STATE_MACHINE      	28
+#endif /* DOT11R_FT_SUPPORT */
 
 
 
 
-
+#ifdef DOT11V_WNM_SUPPORT
+#define WNM_BSS_TM_STATE_MACHINE      	37
+#endif /* DOT11V_WNM_SUPPORT */
 
 
 
@@ -1036,6 +1049,13 @@ enum WIFI_MODE{
 
 #define MAX_ACT_MSG				(MAX_IEEE_STD_CATE + 7)
 
+#ifdef DOT11V_WNM_SUPPORT
+#define WNM_CATEGORY_BSS_TRANSITION  			18
+#undef MAX_ACT_MSG
+#define MAX_ACT_MSG						(MAX_IEEE_STD_CATE + 8)
+#undef MAX_PEER_CATE_MSG
+#define MAX_PEER_CATE_MSG                   (MAX_IEEE_STD_CATE + 8)
+#endif /* DOT11V_WNM_SUPPORT */
 
 #define MT2_ACT_VENDOR				0x7F
 
@@ -1264,7 +1284,12 @@ enum WIFI_MODE{
 #define APMT2_MLME_SCAN_REQ		3
 #define APMT2_SCAN_TIMEOUT		4
 #define APMT2_MLME_SCAN_CNCL		5
+#ifndef CUSTOMER_DCC_FEATURE
 #define AP_MAX_SYNC_MSG			6
+#else
+#define APMT2_CHANNEL_SWITCH 6
+#define AP_MAX_SYNC_MSG			7
+#endif
 #else
 #define AP_MAX_SYNC_MSG			3
 #endif
@@ -1358,7 +1383,10 @@ enum WIFI_MODE{
 #define BLOCK_ACK                   0x60	/* b6:5 = 11 */
 
 #ifdef USB_BULK_BUF_ALIGMENT
+#ifndef BUF_ALIGMENT_RINGSIZE
+#undef BUF_ALIGMENT_RINGSIZE
 #define BUF_ALIGMENT_RINGSIZE         6	/*BUF_ALIGMENT_RINGSIZE must  >= 3 */
+#endif
 #endif /* USB_BULK_BUF_ALIGMENT */
 
 
@@ -1745,6 +1773,8 @@ enum WIFI_MODE{
 #define INT_APCLI			0x0400
 #define INT_MESH			0x0500
 #define INT_P2P				0x0600
+#define INT_MONITOR			0x0700
+
 
 // TODO: Shiang-usw, need to revise this, consider both wdev->wdev_type and pEntry->EntryType!!
 
@@ -1801,11 +1831,17 @@ typedef struct _WIFI_NODE_TYPE {
 
 #define ENTRY_NONE			ENTRY_CAT_NONE
 
+#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
+#define P2P_ENTRY_NONE		0
+#define P2P_GO_ENTRY		1
+#define P2P_CLI_ENTRY		2
+#endif /* defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT) */
 
 #define IS_ENTRY_NONE(_x)		((_x)->EntryType == ENTRY_CAT_NONE)
 #define IS_ENTRY_CLIENT(_x)		((_x)->EntryType == ENTRY_CLIENT)
 #define IS_ENTRY_WDS(_x)		((_x)->EntryType & ENTRY_CAT_WDS)
 #define IS_ENTRY_APCLI(_x)		((_x)->EntryType == ENTRY_APCLI)
+#define IS_ENTRY_ADHOC(_x)		((_x)->EntryType & ENTRY_ADHOC)
 #define IS_ENTRY_AP(_x)			((_x)->EntryType & ENTRY_CAT_AP)
 #define IS_ENTRY_MESH(_x)		((_x)->EntryType & ENTRY_CAT_MESH)
 #define IS_ENTRY_DLS(_x)		((_x)->EntryType == ENTRY_DLS)
@@ -1813,6 +1849,12 @@ typedef struct _WIFI_NODE_TYPE {
 #ifdef CLIENT_WDS
 #define IS_ENTRY_CLIWDS(_x)		CLIENT_STATUS_TEST_FLAG((_x), fCLIENT_STATUS_CLI_WDS)
 #endif /* CLIENT_WDS */
+#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
+#define IS_ENTRY_P2PCLI(_x)		CLIENT_STATUS_TEST_FLAG((_x), fCLIENT_STATUS_P2P_CLI)
+#define IS_P2P_ENTRY_NONE(_x)	((_x)->P2PEntryType == P2P_ENTRY_NONE)
+#define IS_P2P_GO_ENTRY(_x)		((_x)->P2PEntryType == P2P_GO_ENTRY)
+#define IS_P2P_CLI_ENTRY(_x)	((_x)->P2PEntryType == P2P_CLI_ENTRY)
+#endif /* defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT) */
 
 #define IS_VALID_ENTRY(_x)		(((_x) != NULL) && ((_x)->EntryType != ENTRY_NONE))
 
@@ -1821,12 +1863,20 @@ typedef struct _WIFI_NODE_TYPE {
 #define SET_ENTRY_WDS(_x)		((_x)->EntryType = ENTRY_WDS)
 #define SET_ENTRY_APCLI(_x)		((_x)->EntryType = ENTRY_APCLI)
 #define SET_ENTRY_AP(_x)		((_x)->EntryType = ENTRY_AP)
+#define SET_ENTRY_ADHOC(_x)                ((_x)->EntryType = ENTRY_ADHOC)
 #define SET_ENTRY_MESH(_x)		((_x)->EntryType = ENTRY_MESH)
 #define SET_ENTRY_DLS(_x)		((_x)->EntryType = ENTRY_DLS)
 #define SET_ENTRY_TDLS(_x)		((_x)->EntryType = ENTRY_TDLS)
 #ifdef CLIENT_WDS
 #define SET_ENTRY_CLIWDS(_x)	CLIENT_STATUS_SET_FLAG((_x), fCLIENT_STATUS_CLI_WDS)
 #endif /* CLIENT_WDS */
+#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
+#define SET_ENTRY_P2PCLI(_x)	CLIENT_STATUS_SET_FLAG((_x), fCLIENT_STATUS_P2P_CLI)
+#define SET_P2P_GO_ENTRY(_x)	((_x)->P2PEntryType = P2P_GO_ENTRY)
+#define SET_P2P_CLI_ENTRY(_x)	((_x)->P2PEntryType = P2P_CLI_ENTRY)
+#define SET_P2P_ENTRY_NONE(_x)	((_x)->P2PEntryType = P2P_ENTRY_NONE)
+#endif /* defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT) */
+//CFG_TODO
 #define SET_PKT_OPMODE_AP(_x)		((_x)->OpMode = OPMODE_AP)
 #define SET_PKT_OPMODE_STA(_x)		((_x)->OpMode = OPMODE_STA)
 #define IS_PKT_OPMODE_AP(_x)		((_x)->OpMode == OPMODE_AP)
@@ -1835,6 +1885,7 @@ typedef struct _WIFI_NODE_TYPE {
 
 #define IS_OPMODE_AP(_x)		((_x)->OpMode == OPMODE_AP)
 #define IS_OPMODE_STA(_x)		((_x)->OpMode == OPMODE_STA)
+
 
 #if (CONFIG_RT_FIRST_CARD == 7603)
 #define INF_MAIN_DEV_NAME		"ra"
@@ -1853,6 +1904,7 @@ typedef struct _WIFI_NODE_TYPE {
 #define INF_P2P_DEV_NAME		"p2pi"
 #define INF_MONITOR_DEV_NAME		"moni"
 #endif
+
 
 /* WEP Key TYPE */
 #define WEP_HEXADECIMAL_TYPE    0

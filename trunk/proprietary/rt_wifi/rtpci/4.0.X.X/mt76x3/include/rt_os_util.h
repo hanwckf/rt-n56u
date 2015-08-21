@@ -180,7 +180,9 @@ void send_radiotap_monitor_packets(
 		UCHAR Channel,
 		UCHAR CentralChannel,
 		UCHAR sideband_index,
-		UINT32 MaxRssi);
+		CHAR MaxRssi,
+		UINT32 timestamp);
+
 #endif /* CONFIG_SNIFFER_SUPPORT */
 
 UCHAR VLAN_8023_Header_Copy(
@@ -745,6 +747,22 @@ VOID CFG80211OS_Roamed(
 	PNET_DEV pNetDev, IN UCHAR *pBSSID,
 	IN UCHAR *pReqIe, IN UINT32 ReqIeLen,
 	IN UCHAR *pRspIe, IN UINT32 RspIeLen);
+
+VOID CFG80211OS_InformBSS(
+	IN VOID *pCB,
+	IN UCHAR *pBssid,
+	IN UINT16 beacon_interval,
+	IN UCHAR *pBeacon,
+	IN UINT32 BeaconLen);
+VOID CFG80211OS_JoinIBSS(IN PNET_DEV pNetDev, IN const PUCHAR pBssid);
+
+#ifdef CFG80211_BUILD_CHANNEL_LIST
+INT32 CFG80211OS_UpdateRegRuleByRegionIdx(
+    IN VOID *pCB,
+    IN VOID *pChDesc2G,
+    IN VOID *pChDesc5G);
+#endif /* CFG80211_BUILD_CHANNEL_LIST */
+
 #endif /* RT_CFG80211_SUPPORT */
 
 

@@ -60,10 +60,17 @@ typedef struct _CH_REGION {
 	UCHAR CountReg[3];
 	UCHAR DfsType;			/* 0: CE, 1: FCC, 2: JAP, 3:JAP_W53, JAP_W56 */
 	CH_DESP *pChDesp;
+	BOOLEAN edcca_on;
 } CH_REGION, *PCH_REGION;
 
 extern CH_REGION ChRegion[];
 #endif /* EXT_BUILD_CHANNEL_LIST */
+
+typedef struct _COUNTRY_PROP {
+	UCHAR CountReg[3];
+	UCHAR DfsType;			/* 0: CE, 1: FCC, 2: JAP, 3:JAP_W53, JAP_W56 */
+	BOOLEAN edcca_on;
+} COUNTRY_PROP, *PCOUNTRY_PROP;
 
 #ifdef SINGLE_SKU_V2
 // TODO: shiang-usw, integrate these data structures to a single one!
@@ -105,6 +112,8 @@ extern int CH_HZ_ID_MAP_NUM;
 /* Check if it is Japan W53(ch52,56,60,64) channel. */
 #define JapanChannelCheck(_ch)  ((_ch == 52) || (_ch == 56) || (_ch == 60) || (_ch == 64))
 
+BOOLEAN GetEDCCASupport(
+	IN PRTMP_ADAPTER pAd);
 
 #ifdef EXT_BUILD_CHANNEL_LIST
 VOID BuildChannelListEx(
@@ -149,6 +158,10 @@ UCHAR GetChannelFlag(
 
 UINT16 TotalChNum(
 	IN PCH_DESC pChDesc);
+#ifdef CFG80211_BUILD_CHANNEL_LIST	
+INT32 TotalRuleNum(
+    IN PCH_DESC pChDesc);
+#endif /* CFG80211_BUILD_CHANNEL_LIST */
 	
 #endif /* __CHLIST_H__ */
 

@@ -34,6 +34,7 @@
 #include "../../../../../../net/nat/hw_nat/frame_engine.h"
 #endif
 
+
 struct dev_type_name_map{
 	INT type;
 	RTMP_STRING *prefix[2];
@@ -46,6 +47,7 @@ struct dev_type_name_map{
 #define SECOND_INF_APCLI_DEV_NAME	"apclii"
 #define SECOND_INF_MESH_DEV_NAME	"meshi"
 #define SECOND_INF_P2P_DEV_NAME		"p2pi"
+#define SECOND_INF_MONITOR_DEV_NAME	"moni"
 
 #define xdef_to_str(s)			def_to_str(s)
 #define def_to_str(s)			#s
@@ -71,13 +73,13 @@ static struct dev_type_name_map prefix_map[] =
 #endif /* WDS_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_SNIFFER_SUPPORT
+	{INT_MONITOR,		{INF_MONITOR_DEV_NAME, SECOND_INF_MONITOR_DEV_NAME}},
+#endif /* CONFIG_SNIFFER_SUPPORT */
+
 	{0},
 };
 
-struct dev_id_name_map{
-	INT chip_id;
-	RTMP_STRING *chip_name;
-};
 
 INT get_dev_config_idx(RTMP_ADAPTER *pAd)
 {
@@ -148,8 +150,8 @@ static UCHAR *get_dev_profile(RTMP_ADAPTER *pAd)
 			}
 		}
 #endif /* CONFIG_AP_SUPPORT */
-
 	}
+
 #ifdef MULTIPLE_CARD_SUPPORT
 	src = (RTMP_STRING *)pAd->MC_FileName;
 #endif /* MULTIPLE_CARD_SUPPORT */
@@ -157,6 +159,17 @@ static UCHAR *get_dev_profile(RTMP_ADAPTER *pAd)
 	return src;
 }
 
+void RTMPPreReadParametersHook(RTMP_ADAPTER *pAd)
+{
+
+#if defined(RT_CFG80211_P2P_SUPPORT) && defined(SUPPORT_ACS_ALL_CHANNEL_RANK)
+    pAd->ApCfg.AutoChannelAlg = ChannelAlgCombined;
+    pAd->ApCfg.bAutoChannelAtBootup = TRUE;
+    pAd->ApCfg.bAutoChannelScaned = FALSE;
+#endif
+
+    return;
+}
 
 NDIS_STATUS	RTMPReadParametersHook(RTMP_ADAPTER *pAd)
 {
@@ -220,7 +233,7 @@ NDIS_STATUS	RTMPReadParametersHook(RTMP_ADAPTER *pAd)
 #ifdef HOSTAPD_SUPPORT
 	for (i = 0; i < pAd->ApCfg.BssidNum; i++)
 	{
-		pAd->ApCfg.MBSSID[i].Hostapd=FALSE;
+		pAd->ApCfg.MBSSID[i].Hostapd = Hostapd_Diable;
 		DBGPRINT(RT_DEBUG_TRACE, ("Reset ra%d hostapd support=FLASE", i));
 	}
 #endif /*HOSTAPD_SUPPORT */
@@ -230,6 +243,7 @@ NDIS_STATUS	RTMPReadParametersHook(RTMP_ADAPTER *pAd)
 #endif /* SINGLE_SKU_V2 */
 
 	return (retval);
+
 }
 
 
@@ -271,6 +285,9 @@ void tbtt_tasklet(unsigned long data)
 		QBSS_LoadUpdate(pAd, 0);
 #endif /* AP_QLOAD_SUPPORT */
 
+#ifdef DOT11K_RRM_SUPPORT
+		RRM_QuietUpdata(pAd);
+#endif /* DOT11K_RRM_SUPPORT */
 	}
 #endif /* RTMP_MAC_PCI */
 
@@ -291,37 +308,39 @@ void tbtt_tasklet(unsigned long data)
 		*/
 		if (pAd->ApCfg.DtimCount == 0)
 #endif /* RTMP_MAC_PCI */
-		{
-#ifndef MT_MAC
-			QUEUE_ENTRY *pEntry;
-			BOOLEAN bPS = FALSE;
+		{	
+#ifdef RTMP_MAC_PCI
+			QUEUE_ENTRY *pEntry;	
+			QUEUE_ENTRY *pTail;
 			UINT count = 0;
-			unsigned long IrqFlags;
-#endif /*MT_MAC*/
+			unsigned long IrqFlags;			
+#endif /* RTMP_MAC_PCI */
+		
+#ifndef MT_MAC
+			BOOLEAN bPS = FALSE;
+#endif
 			
 #ifdef MT_MAC
-			UINT apidx = 0, mac_val = 0, deq_cnt = 0;
+			UINT apidx = 0, deq_cnt = 0;
 			
 			if ((pAd->chipCap.hif_type == HIF_MT) && (pAd->MacTab.fAnyStationInPsm == TRUE))
 			{
 #ifdef USE_BMC
 				#define MAX_BMCCNT 16
-				int fcnt = 0, max_bss_cnt = 0;
+				int max_bss_cnt = 0;
+				UINT mac_val = 0;
 
 				/* BMC Flush */
 				mac_val = 0x7fff0001;
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR1, mac_val);
+                if (AsicSetBmcQCR(
 				
-				for (fcnt=0;fcnt<100;fcnt++)
-				{
-				RTMP_IO_READ32(pAd, ARB_BMCQCR1, &mac_val);
-					if (mac_val == 0)
-						break;
-				}
+                        pAd,
+                        BMC_FLUSH,
+                        CR_WRITE,
+                        apidx,
+                        &mac_val) == FALSE)
 				
-				if (fcnt == 100)
 				{
-					DBGPRINT(RT_DEBUG_ERROR, ("%s: flush not complete, flush cnt=%d\n", __FUNCTION__, fcnt));
 					return;
 				}
 				
@@ -337,7 +356,7 @@ void tbtt_tasklet(unsigned long data)
 				for(apidx=0;apidx<pAd->ApCfg.BssidNum;apidx++)		
             	{
 	                BSS_STRUCT *pMbss;
-					UINT wcid = 0, bmc_cnt = 0;
+					UINT wcid = 0;
 					STA_TR_ENTRY *tr_entry = NULL;
 			
 					pMbss = &pAd->ApCfg.MBSSID[apidx];
@@ -348,9 +367,15 @@ void tbtt_tasklet(unsigned long data)
 					if (tr_entry->tx_queue[QID_AC_BE].Head != NULL)
 					{
 #ifdef USE_BMC
+						UINT bmc_cnt = 0;
+
+                        if (AsicSetBmcQCR(pAd, BMC_CNT_UPDATE, CR_READ, apidx, &mac_val)
+                            == FALSE)
+                        {
+                            return;
+                        }
 						if ((apidx >= 0) && (apidx <= 4))
 						{
-							RTMP_IO_READ32(pAd, ARB_BMCQCR2, &mac_val);
 							if (apidx == 0)
 								bmc_cnt = mac_val & 0xf;
 							else 
@@ -358,19 +383,13 @@ void tbtt_tasklet(unsigned long data)
 						}
 						else if ((apidx >= 5) && (apidx <= 12))
 						{
-							RTMP_IO_READ32(pAd, ARB_BMCQCR3, &mac_val);
 							bmc_cnt = (mac_val >> (4*(apidx-5))) & 0xf;
 						}
 						else if ((apidx >=13) && (apidx <= 15))
 						{
-							RTMP_IO_READ32(pAd, ARB_BMCQCR3, &mac_val);
 							bmc_cnt = (mac_val >> (4*(apidx-13))) & 0xf;
 						}
-						else
-						{
-							DBGPRINT(RT_DEBUG_ERROR, ("%s: apidx(%d) not support\n", __FUNCTION__, apidx));
-		                    return;
-						}	
+
 						
 						if (bmc_cnt >= max_bss_cnt)
 							deq_cnt = 0;
@@ -380,21 +399,55 @@ void tbtt_tasklet(unsigned long data)
 						if (tr_entry->tx_queue[QID_AC_BE].Number <= deq_cnt)
 #endif /* USE_BMC */
 							deq_cnt = tr_entry->tx_queue[QID_AC_BE].Number;
-					
+
+
+#ifdef RTMP_MAC_PCI
+						RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
+						pEntry = tr_entry->tx_queue[QID_AC_BE].Head;
+						pTail = tr_entry->tx_queue[QID_AC_BE].Tail;
+
+						/* Only last pkt no need to mark the more bit */
+						if (pEntry!=NULL && (tr_entry->tx_queue[QID_AC_BE].Number >=2) && deq_cnt >=2) 
+						{
+							count = 1; //first pkt
+							
+							while((pEntry!=pTail) && (count<deq_cnt))
+							{
+								RTMP_SET_PACKET_MOREDATA(QUEUE_ENTRY_TO_PACKET(pEntry), TRUE);
+								pEntry = pEntry->Next;
+								count ++;
+							}
+						}
+						RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
+#endif /* RTMP_MAC_PCI */
+
+
 						RTMPDeQueuePacket(pAd, FALSE, QID_AC_BE, wcid, deq_cnt); 
 			
 						DBGPRINT(RT_DEBUG_INFO, ("%s: bss:%d, deq_cnt = %d\n", __FUNCTION__, apidx, deq_cnt));
 					}
 			
-					if (tr_entry->tx_queue[QID_AC_BE].Head == NULL)
-						WLAN_MR_TIM_BCMC_CLEAR(tr_entry->func_tb_idx);	/* clear MCAST/BCAST TIM bit */
+					if (WLAN_MR_TIM_BCMC_GET(apidx) == 0x01)
+					{
+						if  ( (tr_entry->tx_queue[QID_AC_BE].Head == NULL) && 
+							(tr_entry->EntryType == ENTRY_CAT_MCAST))
+						{
+							WLAN_MR_TIM_BCMC_CLEAR(tr_entry->func_tb_idx);	/* clear MCAST/BCAST TIM bit */
+							DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_UAPSD, ("%s: clear MCAST/BCAST TIM bit \n", __FUNCTION__));
+						}
+					}
 				}
 #ifdef USE_BMC				
 				/* BMC start */
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR0, 0x7fff0001);
+                mac_val = 0x7fff0001;
+                if (AsicSetBmcQCR(pAd, BMC_ENABLE, CR_WRITE, apidx, &mac_val)
+                    == FALSE)
+                {
+                    return;
+                }
 #endif				
 			}
-#else			
+#else /* MT_MAC */
 			RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
 			while (pAd->MacTab.McastPsQueue.Head)
 			{
@@ -434,7 +487,7 @@ void tbtt_tasklet(unsigned long data)
 				// TODO: shiang-usw, modify the WCID_ALL to pMBss->tr_entry because we need to tx B/Mcast frame here!!
 				RTMPDeQueuePacket(pAd, FALSE, NUM_OF_TX_RING, WCID_ALL, /*MAX_TX_IN_TBTT*/MAX_PACKETS_IN_MCAST_PS_QUEUE);
 			}
-#endif /* MT_MAC */			
+#endif /* !MT_MAC */			
 		}
 	}
 #endif /* CONFIG_AP_SUPPORT */
@@ -497,6 +550,9 @@ void announce_802_3_packet(
 	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)pAdSrc;
 	struct sk_buff *pRxPkt;
 
+#ifdef DOT11V_WNM_SUPPORT
+#endif /* DOT11V_WNM_SUPPORT */
+
 	ASSERT(pNetPkt);
 	MEM_DBG_PKT_FREE_INC(pNetPkt);
 
@@ -515,7 +571,7 @@ void announce_802_3_packet(
 #endif /* CONFIG_AP_SUPPORT */
 
 
-    /* Push up the protocol stack */
+	/* Push up the protocol stack */
 #ifdef CONFIG_AP_SUPPORT
 #if defined(PLATFORM_BL2348) || defined(PLATFORM_BL23570)
 	{
@@ -548,7 +604,7 @@ void announce_802_3_packet(
 				ret = ppa_hook_directpath_send_fn(pAd->g_if_id, pNetPkt, pNetPkt->len, ppa_flags);
 				if (ret == 0)
 				{
-					pNetPkt = NULL;
+					pRxPkt = NULL;
 					return;
 				}
 				netif_rx(pRxPkt);
@@ -563,7 +619,7 @@ void announce_802_3_packet(
 				dev_kfree_skb_any(pRxPkt);
 				MEM_DBG_PKT_FREE_INC(pAd);
 			}
-		}
+		}	
 		else
 		{
 			pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
@@ -575,8 +631,15 @@ void announce_802_3_packet(
 #endif /* INF_PPA_SUPPORT */
 
 #ifdef CONFIG_RT2880_BRIDGING_ONLY
-	PACKET_CB_ASSIGN(pNetPkt, 22) = 0xa8;
+	PACKET_CB_ASSIGN(pRxPkt, 22) = 0xa8;
 #endif
+
+#if defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE)
+	if(ra_classifier_hook_rx!= NULL)
+	{
+		ra_classifier_hook_rx(pNetPkt, classifier_cur_cycle);
+	}
+#endif /* CONFIG_RA_CLASSIFIER */
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 #if !defined (CONFIG_RA_NAT_NONE)
@@ -588,7 +651,7 @@ void announce_802_3_packet(
 	{
 		pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
 		FOE_MAGIC_TAG(pRxPkt) = FOE_MAGIC_EXTIF;
-		if(ra_sw_nat_hook_rx(pRxPkt))
+		if (ra_sw_nat_hook_rx(pRxPkt))
 		{
 			FOE_MAGIC_TAG(pRxPkt) = 0;
 			netif_rx(pRxPkt);
@@ -606,20 +669,88 @@ void announce_802_3_packet(
 #endif /* BG_FT_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
-#if defined (CONFIG_WIFI_PKT_FWD)
-	if (wf_fwd_rx_hook != NULL)
+	pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
+
+#if defined(BB_SOC) && defined(BB_RA_HWNAT_WIFI)
+	if (ra_sw_nat_hook_set_magic)
+		ra_sw_nat_hook_set_magic(pNetPkt, FOE_MAGIC_WLAN);
+
+	if (ra_sw_nat_hook_rx != NULL) 
 	{
-		if (wf_fwd_rx_hook(pRxPkt) == 0)
+		if (ra_sw_nat_hook_rx(pNetPkt) == 0)
 			return;
 	}
-#endif /* CONFIG_WIFI_PKT_FWD */
+#endif
 
-	pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
 	netif_rx(pRxPkt);
 }
 
 
 #ifdef CONFIG_SNIFFER_SUPPORT
+
+INT Monitor_VirtualIF_Open(PNET_DEV dev_p)
+{
+	VOID *pAd;
+
+	pAd = RTMP_OS_NETDEV_GET_PRIV(dev_p);
+	ASSERT(pAd);
+
+	DBGPRINT(RT_DEBUG_ERROR, ("%s: ===> %s\n", __FUNCTION__, RTMP_OS_NETDEV_GET_DEVNAME(dev_p)));
+
+	if (VIRTUAL_IF_UP(pAd) != 0)
+		return -1;
+
+	/* increase MODULE use count */
+	RT_MOD_INC_USE_COUNT();
+	RTMP_COM_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_SNIFF_OPEN, 0, dev_p, 0);
+
+
+	//Monitor_Open(pAd,dev_p);
+
+	return 0;
+}
+
+INT Monitor_VirtualIF_Close(PNET_DEV dev_p)
+{
+	VOID *pAd;
+
+	pAd = RTMP_OS_NETDEV_GET_PRIV(dev_p);
+	ASSERT(pAd);
+
+	DBGPRINT(RT_DEBUG_TRACE, ("%s: ===> %s\n", __FUNCTION__, RTMP_OS_NETDEV_GET_DEVNAME(dev_p)));
+
+	RTMP_COM_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_SNIFF_CLOSE, 0, dev_p, 0);
+	//Monitor_Close(pAd,dev_p);
+
+	VIRTUAL_IF_DOWN(pAd);
+
+	RT_MOD_DEC_USE_COUNT();
+
+	return 0;
+}
+
+
+VOID RT28xx_Monitor_Init(VOID *pAd, PNET_DEV main_dev_p)
+{
+	RTMP_OS_NETDEV_OP_HOOK netDevOpHook;	
+
+	/* init operation functions */
+	NdisZeroMemory(&netDevOpHook, sizeof(RTMP_OS_NETDEV_OP_HOOK));
+	netDevOpHook.open = Monitor_VirtualIF_Open;
+	netDevOpHook.stop = Monitor_VirtualIF_Close;
+	netDevOpHook.xmit = rt28xx_send_packets;
+	netDevOpHook.ioctl = rt28xx_ioctl;
+	DBGPRINT(RT_DEBUG_OFF, ("%s: %d !!!!####!!!!!!\n",__FUNCTION__, __LINE__)); 
+	RTMP_COM_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_SNIFF_INIT,	0, &netDevOpHook, 0);
+
+}
+VOID RT28xx_Monitor_Remove(VOID *pAd)
+{
+
+	RTMP_COM_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_SNIFF_REMOVE, 0, NULL, 0);
+	
+}
+
 void STA_MonPktSend(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 {
 	PNET_DEV pNetDev;
@@ -627,8 +758,10 @@ void STA_MonPktSend(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	PHEADER_802_11 pHeader;
 	USHORT DataSize;
 	UINT32 MaxRssi;
+	UINT32 timestamp = 0;
+	CHAR RssiForRadiotap = 0;
 	UCHAR L2PAD, PHYMODE, BW, ShortGI, MCS, LDPC, LDPC_EX_SYM, AMPDU, STBC, RSSI1;
-	UCHAR BssMonitorFlag11n, Channel, CentralChannel;
+	UCHAR BssMonitorFlag11n, Channel, CentralChannel = 0;
 	UCHAR *pData, *pDevName;
 	UCHAR sniffer_type = pAd->sniffer_ctl.sniffer_type;
 	UCHAR sideband_index = 0;
@@ -659,7 +792,15 @@ void STA_MonPktSend(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 				ConvertToRssi(pAd, (struct raw_rssi_info *)(&pRxBlk->rx_signal.raw_rssi[0]), RSSI_IDX_1),
 				ConvertToRssi(pAd, (struct raw_rssi_info *)(&pRxBlk->rx_signal.raw_rssi[0]), RSSI_IDX_2));
 
-	pNetDev = get_netdev_from_bssid(pAd, BSS0); 
+	if (sniffer_type == RADIOTAP_TYPE){
+		RssiForRadiotap = RTMPMaxRssi(pAd,
+				ConvertToRssi(pAd, (struct raw_rssi_info *)(&pRxBlk->rx_signal.raw_rssi[0]), RSSI_IDX_0),
+				ConvertToRssi(pAd, (struct raw_rssi_info *)(&pRxBlk->rx_signal.raw_rssi[0]), RSSI_IDX_1),
+				ConvertToRssi(pAd, (struct raw_rssi_info *)(&pRxBlk->rx_signal.raw_rssi[0]), RSSI_IDX_2));
+	}
+
+	pNetDev = pAd->monitor_ctrl.monitor_wdev.if_dev;  //send packet to mon0
+	//pNetDev = get_netdev_from_bssid(pAd, BSS0);
 	pRxPacket = pRxBlk->pRxPacket;
 	pHeader = pRxBlk->pHeader;
 	pData = pRxBlk->pData;
@@ -679,6 +820,14 @@ void STA_MonPktSend(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	AMPDU = pRxBlk->pRxInfo->AMPDU;
 	STBC = pRxBlk->rx_rate.field.STBC;
 	RSSI1 = pRxBlk->rx_signal.raw_rssi[1];
+	//if(pRxBlk->pRxWI->RXWI_N.bbp_rxinfo[12] != 0)
+#ifdef RLT_MAC
+	NdisCopyMemory(&timestamp,&pRxBlk->pRxWI->RXWI_N.bbp_rxinfo[12],4);
+#endif
+#ifdef MT_MAC
+	timestamp = pRxBlk->TimeStamp;
+#endif
+
 	BssMonitorFlag11n = 0;
 #ifdef MONITOR_FLAG_11N_SNIFFER_SUPPORT
 	BssMonitorFlag11n = (pAd->StaCfg.BssMonitorFlag & MONITOR_FLAG_11N_SNIFFER);
@@ -724,22 +873,35 @@ void STA_MonPktSend(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 			|| NdisEqualMemory(pHeader->Addr2, pMACEntry->MACAddr, MAC_ADDR_LEN)
 			)
 		{
-
 #ifdef ALL_NET_EVENT
-		{
-			UCHAR bssid[MAC_ADDR_LEN] = {0}; //report zero bssid, to prevent too many check
-			wext_send_event(pNetDev,
-				pMACEntry->MACAddr,
-				bssid,
-				Channel,
-				MaxRssi,
-				FBT_LINK_STA_FOUND_NOTIFY);
-		}
+			PSNIFFER_MAC_NOTIFY_T pMACEntryNotify = &pMACEntry->rNotify;
+			if(pMACEntryNotify->i4RxPacketConut >= SNIFFER_MAC_MAX_RX_PACKET_COUNT)
+			{
+				BOOLEAN fgCancelled;
+				INT32 i4AvgRssi = pMACEntryNotify->i4RssiAccum/pMACEntryNotify->i4RxPacketConut;
+				UCHAR bssid[MAC_ADDR_LEN] = {0}; //report zero bssid, to prevent too many check
+				wext_send_event(pNetDev,pMACEntry->MACAddr,bssid,Channel,i4AvgRssi,FBT_LINK_STA_FOUND_NOTIFY);
+				
+				// Clear data and reset timer for next collection.
+				NdisZeroMemory(pMACEntryNotify,sizeof(*pMACEntryNotify));
+				RTMPCancelTimer(&pMACEntry->rNotifyTimer, &fgCancelled);
+				RTMPSetTimer(&pMACEntry->rNotifyTimer, SNIFFER_MAC_TIMEOUT);
+			}
+			else
+			{
+				RSSI_SAMPLE rRssiSample;
+				NdisZeroMemory(&rRssiSample,sizeof(rRssiSample));
+				rRssiSample.AvgRssi[0] = ConvertToRssi(pAd, (struct raw_rssi_info *)(&pRxBlk->rx_signal.raw_rssi[0]), RSSI_IDX_0);
+				rRssiSample.AvgRssi[1] = ConvertToRssi(pAd, (struct raw_rssi_info *)(&pRxBlk->rx_signal.raw_rssi[0]), RSSI_IDX_1);
+				rRssiSample.AvgRssi[2] = ConvertToRssi(pAd, (struct raw_rssi_info *)(&pRxBlk->rx_signal.raw_rssi[0]), RSSI_IDX_2);
+					
+				pMACEntryNotify->pNetDev = pNetDev;
+				pMACEntryNotify->u4Channel = Channel;
+				pMACEntryNotify->i4RssiAccum += RTMPAvgRssi(pAd,&rRssiSample);
+				pMACEntryNotify->i4RxPacketConut++;
+			}
 #endif /* ALL_NET_EVENT */
-		
 			check = TRUE;
-			RTMP_SEM_UNLOCK(&psniffer_mib_ctrl->MAC_ListLock);
-			goto report_upper;
 		}
 		//DBGPRINT(RT_DEBUG_ERROR, ("%s:: MAC [%d]=%02x:%02x:%02x:%02x:%02x:%02x\n", __FUNCTION__,i++, PRINT_MAC(pMACEntry->MACAddr)));
 	}
@@ -758,7 +920,7 @@ void STA_MonPktSend(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 		send_radiotap_monitor_packets(pNetDev, pRxPacket, (void *)pHeader, pData, DataSize,
 									  L2PAD, PHYMODE, BW, ShortGI, MCS, LDPC, LDPC_EX_SYM, 
 									  AMPDU, STBC, RSSI1, pDevName, Channel, CentralChannel,
-							 		  sideband_index, MaxRssi);
+							 		  sideband_index, RssiForRadiotap,timestamp);
 	}
 
 	if (sniffer_type == PRISM_TYPE) {
@@ -774,7 +936,7 @@ err_free_sk_buff:
 	RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
 	return;
 }
-#endif /* CONFIG_STA_SUPPORT */
+#endif /* CONFIG_SNIFFER_SUPPORT */
 
 
 extern NDIS_SPIN_LOCK TimerSemLock;
@@ -786,7 +948,6 @@ VOID RTMPFreeAdapter(VOID *pAdSrc)
 	int index;	
 
 	os_cookie=(POS_COOKIE)pAd->OS_Cookie;
-
 #ifdef MULTIPLE_CARD_SUPPORT
 #ifdef RTMP_FLASH_SUPPORT
 	if (pAd->eebuf && (pAd->eebuf != pAd->EEPROMImage))
@@ -796,8 +957,6 @@ VOID RTMPFreeAdapter(VOID *pAdSrc)
 	}
 #endif /* RTMP_FLASH_SUPPORT */
 #endif /* MULTIPLE_CARD_SUPPORT */
-
-
 	NdisFreeSpinLock(&pAd->MgmtRingLock);
 	
 #ifdef RTMP_MAC_PCI
@@ -829,8 +988,6 @@ VOID RTMPFreeAdapter(VOID *pAdSrc)
 #ifdef MT_MAC
 	NdisFreeSpinLock(&pAd->BcnRingLock);
 #endif /* MT_MAC */
-
-	NdisFreeSpinLock(&pAd->AutoRateLock);
 
 	NdisFreeSpinLock(&pAd->tssi_lock);
 #endif /* RTMP_MAC_PCI */
@@ -883,6 +1040,8 @@ VOID RTMPFreeAdapter(VOID *pAdSrc)
 		os_free_mem(NULL, os_cookie);
 }
 
+
+
 int RTMPSendPackets(
 	IN NDIS_HANDLE dev_hnd,
 	IN PPNDIS_PACKET pkt_list,
@@ -896,6 +1055,13 @@ int RTMPSendPackets(
 
 	ASSERT(wdev->sys_handle);
 	pAd = (RTMP_ADAPTER *)wdev->sys_handle;
+
+	if(pAd == NULL)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("%s(): pAd is NULL!\n", __FUNCTION__));
+		return 0;
+	}
+
 	INC_COUNTER64(pAd->WlanCounters.TransmitCountFrmOs);
 
 	if (!pPacket)
@@ -931,21 +1097,13 @@ int RTMPSendPackets(
 	}
 #endif /* WSC_NFC_SUPPORT */
 
-#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-#if !defined (CONFIG_RA_NAT_NONE)
-	if (ra_sw_nat_hook_tx != NULL)
-	{
-		ra_sw_nat_hook_tx(pPacket, 0);
-	}
-#endif
-#endif
-
 #ifdef CONFIG_5VT_ENHANCE
 	RTMP_SET_PACKET_5VT(pPacket, 0);
 	if (*(int*)(GET_OS_PKT_CB(pPacket)) == BRIDGE_TAG) {
 		RTMP_SET_PACKET_5VT(pPacket, 1);
 	}
 #endif /* CONFIG_5VT_ENHANCE */
+
 
 	return wdev_tx_pkts((NDIS_HANDLE)pAd, (PPNDIS_PACKET) &pPacket, 1, wdev);
 }
@@ -985,7 +1143,6 @@ INT RTMP_AP_IoctlPrepare(RTMP_ADAPTER *pAd, VOID *pCB)
 	{
 		if (pConfig->pCmdData == NULL)
 			return Status;
-		
 		if (RtPrivIoctlSetVal() == pConfig->CmdId_RTPRIV_IOCTL_SET)
 		{
 			if (TRUE
@@ -1003,12 +1160,14 @@ INT RTMP_AP_IoctlPrepare(RTMP_ADAPTER *pAd, VOID *pCB)
 		else
 			return -ENETDOWN;
     }
+	
 
     /* determine this ioctl command is comming from which interface. */
     if (pConfig->priv_flags == INT_MAIN)
     {
 		pObj->ioctl_if_type = INT_MAIN;
 		pObj->ioctl_if = MAIN_MBSSID;
+		
     }
     else if (pConfig->priv_flags == INT_MBSSID)
     {
@@ -1024,9 +1183,11 @@ INT RTMP_AP_IoctlPrepare(RTMP_ADAPTER *pAd, VOID *pCB)
 	    	        break;
 	    	    }
 	    	}
+	    	
 	        /* Interface not found! */
 	        if(index == pAd->ApCfg.BssidNum)
 	            return -ENETDOWN;
+            
 	    }
 	    else    /* ioctl command from I/F(ra0) */
 	    {
@@ -1077,11 +1238,12 @@ INT RTMP_AP_IoctlPrepare(RTMP_ADAPTER *pAd, VOID *pCB)
 #endif /* APCLI_SUPPORT */
     else
     {
-	/* DBGPRINT(RT_DEBUG_WARN, ("IOCTL is not supported in WDS interface\n")); */
+	/* DBGPRINT(RT_DEBUG_WARN, ("IOCTL is not supported in WDS interface\n")); */	
     	return -EOPNOTSUPP;
     }
 
 	pConfig->apidx = pObj->ioctl_if;
+	
 	return Status;
 }
 

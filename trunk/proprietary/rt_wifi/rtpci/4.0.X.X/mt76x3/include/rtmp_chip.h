@@ -829,6 +829,9 @@ struct _RTMP_CHIP_CAP {
 	UINT8 TxBAWinSize;
 	UINT8 RxBAWinSize;
 	UINT8 AMPDUFactor;
+    UINT8 BiTxOpOn;
+
+    UINT32  CurrentTxOP;
 };
 
 
@@ -839,7 +842,7 @@ struct _RTMP_CHIP_OP {
 
 	/*  Calibration access related callback functions */
 	int (*eeinit)(struct _RTMP_ADAPTER *pAd);
-	BOOLEAN (*eeread)(struct _RTMP_ADAPTER *pAd, USHORT offset, USHORT *pValue);
+	BOOLEAN (*eeread)(struct _RTMP_ADAPTER *pAd, UINT16 offset, USHORT *pValue);
 	int (*eewrite)(struct _RTMP_ADAPTER *pAd, USHORT offset, USHORT value);
 
 	/* ITxBf calibration */
@@ -889,6 +892,9 @@ struct _RTMP_CHIP_OP {
 	
 	/* Channel */
 	VOID (*ChipSwitchChannel)(struct _RTMP_ADAPTER *pAd, UCHAR ch, BOOLEAN bScan);
+
+	/* EDCCA */
+	VOID (*ChipSetEDCCA)(struct _RTMP_ADAPTER *pAd, BOOLEAN bOn);
 
 	/* IQ Calibration */
 	VOID (*ChipIQCalibration)(struct _RTMP_ADAPTER *pAd, UCHAR Channel);
@@ -989,21 +995,16 @@ struct _RTMP_CHIP_OP {
 	VOID (*AsicMitigateMicrowave)(IN struct _RTMP_ADAPTER *pAd);
 #endif /* MICROWAVE_OVEN_SUPPORT */
 
-#if (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT)
+#if (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT) || defined(MT_WOW_SUPPORT)
 	VOID (*AsicWOWEnable)(struct _RTMP_ADAPTER *ad);
 	VOID (*AsicWOWDisable)(struct _RTMP_ADAPTER *ad);
-#endif /* (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT) */
+	VOID (*AsicWOWInit)(struct _RTMP_ADAPTER *ad);
+#endif /* (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT)  || defined(MT_WOW_SUPPORT) */
 
 	void (*usb_cfg_read)(struct _RTMP_ADAPTER *ad, UINT32 *value);
 	void (*usb_cfg_write)(struct _RTMP_ADAPTER *ad, UINT32 value);
 	void (*show_pwr_info)(struct _RTMP_ADAPTER *ad);
 	void (*cal_test)(struct _RTMP_ADAPTER *ad, UINT32 type);
-
-#ifdef GREENAP_SUPPORT
-	void (*EnableAPMIMOPSv2)(struct _RTMP_ADAPTER *ad, BOOLEAN ReduceCorePower);
-	void (*DisableAPMIMOPSv2)(struct _RTMP_ADAPTER *ad);
-#endif /* GREENAP_SUPPORT */
-	
 };
 
 #define RTMP_CHIP_ENABLE_AP_MIMOPS(__pAd, __ReduceCorePower)	\
@@ -1159,6 +1160,13 @@ do {	\
 			__pAd->chipOps.TemperCompensation(__pAd);	\
 } while (0)
 
+#define RTMP_CHIP_ASIC_SET_EDCCA(__pAd,__bOn)			\
+do {	\
+		if (__pAd->chipOps.ChipSetEDCCA != NULL)						\
+			__pAd->chipOps.ChipSetEDCCA(__pAd, __bOn);	\
+} while (0)
+
+
 
 #define RTMP_CHIP_UPDATE_BEACON(__pAd, Offset, Value, Unit)	\
 do {	\
@@ -1303,7 +1311,7 @@ do {	\
 } while (0)
 #endif /* MICROWAVE_OVEN_SUPPORT */
 
-#if (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT)
+#if (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT) || defined(MT_WOW_SUPPORT)
 #define ASIC_WOW_ENABLE(_pAd)	\
 do {	\
 	if (_pAd->chipOps.AsicWOWEnable != NULL)	\
@@ -1315,7 +1323,14 @@ do {	\
 	if (_pAd->chipOps.AsicWOWDisable != NULL)	\
 		_pAd->chipOps.AsicWOWDisable(_pAd);	\
 } while(0)
-#endif /* (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT) */
+
+#define ASIC_WOW_INIT(_pAd) \
+do {	\
+	if (_pAd->chipOps.AsicWOWInit != NULL)	\
+		_pAd->chipOps.AsicWOWInit(_pAd);	\
+} while(0)
+
+#endif /* (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT) || defined(MT_WOW_SUPPORT) */
 
 #define MCU_CTRL_INIT(_pAd)	\
 do {	\
@@ -1444,11 +1459,36 @@ VOID AsicSetBARTxCntLimit(struct _RTMP_ADAPTER *pAd, BOOLEAN Enable, UINT32 Coun
 VOID AsicSetRTSTxCntLimit(struct _RTMP_ADAPTER *pAd, BOOLEAN Enable, UINT32 Count);
 VOID AsicSetTxSClassifyFilter(struct _RTMP_ADAPTER *pAd, UINT32 Port, UINT8 DestQ, 
 										UINT32 AggNums, UINT32 Filter);
+
+BOOLEAN AsicSetBmcQCR(
+        IN struct _RTMP_ADAPTER *pAd,
+        IN UCHAR Operation,
+        IN UCHAR CrReadWrite,
+        IN UINT32 apidx,
+        INOUT UINT32    *pcr_val);
+
+#define CR_READ         1
+#define CR_WRITE        2
+
+#define BMC_FLUSH       1
+#define BMC_ENABLE      2
+#define BMC_CNT_UPDATE  3
+
+#define AC_QUEUE_STOP 0
+#define AC_QUEUE_FLUSH 1
+#define AC_QUEUE_START 2
+
 #endif /* MT_MAC */
 
 INT StopDmaTx(struct _RTMP_ADAPTER *pAd, UCHAR Level);
 INT StopDmaRx(struct _RTMP_ADAPTER *pAd, UCHAR Level);
 
 
+VOID MtAsicSetRxPspollFilter(struct _RTMP_ADAPTER *pAd, CHAR enable);
+
+#if defined(MT7603) || defined(MT7628)
+INT32 MtAsicGetThemalSensor(struct _RTMP_ADAPTER *pAd, CHAR type);
+VOID MtAsicACQueue(struct _RTMP_ADAPTER *pAd, UINT8 ucation, UINT8 BssidIdx, UINT32 u4AcQueueMap);
+#endif /* MT7603 || MT7628 */
 #endif /* __RTMP_CHIP_H__ */
 

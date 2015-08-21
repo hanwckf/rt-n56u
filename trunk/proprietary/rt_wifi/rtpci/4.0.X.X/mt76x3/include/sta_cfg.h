@@ -35,7 +35,7 @@ INT RTMPSTAPrivIoctlSet(
 	IN RTMP_STRING *SetProcName,
 	IN RTMP_STRING *ProcArg);
 
-#if (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT)
+#if (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT) || defined(MT_WOW_SUPPORT)
 /* set WOW enable */
 INT Set_WOW_Enable(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 /* set GPIO pin for wake-up signal */
@@ -46,7 +46,18 @@ INT Set_WOW_Delay(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT Set_WOW_Hold(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 /* set wakeup signal type */
 INT Set_WOW_InBand(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
-#endif /* (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT) */
+/* set wakeup interface */
+INT Set_WOW_Interface(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+/* set wakeup GPIO High Low */
+INT Set_WOW_GPIOHighLow(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
+#endif /* (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT)  || defined(MT_WOW_SUPPORT)*/
+
+
+#ifdef HE_BD_CFG80211_SUPPORT
+/* 1: recover to original bit setting 
+   0: reset to HT40_DISABLE_SHORT_GI and BSS_COEX_DISABLE setting */
+INT set_ht40_test_enable(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+#endif /* HE_BD_CFG80211_SUPPORT */
 #endif /* __STA_CFG_H__ */
 

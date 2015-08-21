@@ -93,17 +93,23 @@ UCHAR eFuseReadRegisters(PRTMP_ADAPTER pAd, UINT16 Offset, UINT16 Length, UINT16
 	EFUSE_CTRL_STRUC eFuseCtrlStruc;
 	INT32 i;
 	UINT32 efuseDataOffset;
-	UINT32 data;
+	UINT32 data=0;
 	UINT32 efuse_ctrl_reg = EFUSE_CTRL;
-	
+    int ret;
+	RTMP_SEM_EVENT_WAIT(&(pAd->e2p_read_lock), ret);
+
+	if(ret != 0)
+		DBGPRINT(RT_DEBUG_ERROR, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,ret));
+    
+
 
 #ifdef MT_MAC
 	if (pAd->chipCap.hif_type == HIF_MT)
 		efuse_ctrl_reg = MT_EFUSE_CTRL; 
 #endif /* MT_MAC */
-	
-	EFUSE_IO_READ32(pAd, efuse_ctrl_reg, &eFuseCtrlStruc.word);
 
+	EFUSE_IO_READ32(pAd, efuse_ctrl_reg, &eFuseCtrlStruc.word);
+	
 	/* Step0. Write 10-bit of address to EFSROM_AIN (0x580, bit25:bit16). The address must be 16-byte alignment.*/
 	/*Use the eeprom logical address and covert to address to block number*/
 	eFuseCtrlStruc.field.EFSROM_AIN = Offset & 0xfff0;
@@ -117,13 +123,16 @@ UCHAR eFuseReadRegisters(PRTMP_ADAPTER pAd, UINT16 Offset, UINT16 Length, UINT16
 	NdisMoveMemory(&data, &eFuseCtrlStruc, 4);
 	EFUSE_IO_WRITE32(pAd, efuse_ctrl_reg, data);
 
+	
 	/* Step3. Polling EFSROM_KICK(0x580, bit30) until it become 0 again.*/
 	i = 0;
 	while(i < 500)
 	{	
 		if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST))
+		{
+			RTMP_SEM_EVENT_UP(&(pAd->e2p_read_lock));
 			return 0x3f;
-	
+		}
 		/*rtmp.HwMemoryReadDword(EFUSE_CTRL, (DWORD *) &eFuseCtrlStruc, 4);*/
 		EFUSE_IO_READ32(pAd, efuse_ctrl_reg, &eFuseCtrlStruc.word);
 		
@@ -135,18 +144,26 @@ UCHAR eFuseReadRegisters(PRTMP_ADAPTER pAd, UINT16 Offset, UINT16 Length, UINT16
 		RtmpusecDelay(2);
 		i++;	
 	}
-
+	
 	/*if EFSROM_AOUT is not found in physical address, write 0xffff*/
 	if (eFuseCtrlStruc.field.EFSROM_AOUT == 0x3f)
 	{
 		for(i = 0; i < Length / 2; i++) {
 			*(pData +2 * i) = 0xffff;
         }
-        	return 0x3f;
+			
+		RTMP_SEM_EVENT_UP(&(pAd->e2p_read_lock));
+    	return 0x3f;
 	} else {
 #ifdef MT_MAC
         if (pAd->chipCap.hif_type == HIF_MT) {
             if (!eFuseCtrlStruc.field.EFSROM_DOUT_VLD) {
+            
+				for(i = 0; i < Length / 2; i++){
+					*(pData +2 * i) = 0xffff;
+				}
+
+    	        RTMP_SEM_EVENT_UP(&(pAd->e2p_read_lock));
                 return 0x3f;
             }
         }
@@ -163,7 +180,9 @@ UCHAR eFuseReadRegisters(PRTMP_ADAPTER pAd, UINT16 Offset, UINT16 Length, UINT16
 
 		/*data hold 4 bytes data.*/
 		/*In EFUSE_IO_READ32 will automatically execute 32-bytes swapping*/
+		
 		EFUSE_IO_READ32(pAd, efuseDataOffset, &data);
+		
 		/*Decide the upper 2 bytes or the bottom 2 bytes.*/
 		/* Little-endian		S	|	S	Big-endian*/
 		/* addr	3	2	1	0	|	0	1	2	3*/
@@ -180,8 +199,10 @@ UCHAR eFuseReadRegisters(PRTMP_ADAPTER pAd, UINT16 Offset, UINT16 Length, UINT16
 #endif /* RT_BIG_ENDIAN */
 		
 		NdisMoveMemory(pData, &data, Length);
+		
 	}
 
+	RTMP_SEM_EVENT_UP(&(pAd->e2p_read_lock));
     return eFuseCtrlStruc.field.EFSROM_AOUT;
 }
 
@@ -940,7 +961,7 @@ INT	set_eFuseLoadFromBin_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	INT 						retval, memSize;
 	RTMP_STRING *buffer, *memPtr;
 	INT						TotalByte= 0;
-	USHORT					*PDATA;
+	//USHORT					*PDATA;
 	UCHAR					all_ff[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 	UCHAR					*ptr;
 	UCHAR					index;
@@ -956,7 +977,7 @@ INT	set_eFuseLoadFromBin_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	NdisZeroMemory(memPtr, memSize);
 	src = memPtr; /* kmalloc(128, MEM_ALLOC_FLAG);*/
 	buffer = src + 128;		/* kmalloc(MAX_EEPROM_BIN_FILE_SIZE, MEM_ALLOC_FLAG);*/
-	PDATA = (USHORT*)(buffer + MAX_EEPROM_BIN_FILE_SIZE);	/* kmalloc(sizeof(USHORT)*8,MEM_ALLOC_FLAG);*/
+	//PDATA = (USHORT*)(buffer + MAX_EEPROM_BIN_FILE_SIZE);	/* kmalloc(sizeof(USHORT)*8,MEM_ALLOC_FLAG);*/
 	ptr = buffer;
 	
  	if(strlen(arg)>0)
@@ -1033,7 +1054,7 @@ recoverFS:
 
 
 
-BOOLEAN rtmp_ee_efuse_read16(RTMP_ADAPTER *pAd, USHORT Offset, USHORT *pValue)
+BOOLEAN rtmp_ee_efuse_read16(RTMP_ADAPTER *pAd, UINT16 Offset, UINT16 *pValue)
 {
 	UCHAR Value;
 
@@ -1248,16 +1269,16 @@ INT eFuse_init(RTMP_ADAPTER *pAd)
 		RtmpChipOpsEepromHook(pAd, pAd->infType,E2P_BIN_MODE);
 
 #ifdef CAL_FREE_IC_SUPPORT
-	    RTMP_CAL_FREE_IC_CHECK(pAd,bCalFree);
-	    if (bCalFree)
-	    {
-	        DBGPRINT(RT_DEBUG_OFF, ("Cal Free IC!!\n"));
-	        RTMP_CAL_FREE_DATA_GET(pAd);
-	    }
-	    else
-	    {
-	        DBGPRINT(RT_DEBUG_OFF, ("Non Cal Free IC!!\n"));
-	    }
+		RTMP_CAL_FREE_IC_CHECK(pAd,bCalFree);
+		if (bCalFree)
+		{
+			DBGPRINT(RT_DEBUG_OFF, ("Cal Free IC!!\n"));
+			RTMP_CAL_FREE_DATA_GET(pAd);
+		}
+		else
+		{
+			DBGPRINT(RT_DEBUG_OFF, ("Non Cal Free IC!!\n"));
+		}
 #endif /* CAL_FREE_IC_SUPPORT */
 
 	}
@@ -1265,6 +1286,7 @@ INT eFuse_init(RTMP_ADAPTER *pAd)
 	{
 		rtmp_ee_load_from_efuse(pAd);
 	}
+
 	return 0;
 }
 
@@ -1287,7 +1309,7 @@ INT efuse_probe(RTMP_ADAPTER *pAd)
 
 	EFUSE_IO_READ32(pAd, ctrl_reg, &eFuseCtrl);
 
-	printk("%s: efuse = %x\n", __FUNCTION__, eFuseCtrl);
+	DBGPRINT(RT_DEBUG_OFF, ("%s: efuse = %x\n", __FUNCTION__, eFuseCtrl));
 
 	if (pAd->chipCap.hif_type == HIF_MT)
 	{
@@ -1304,13 +1326,14 @@ INT efuse_probe(RTMP_ADAPTER *pAd)
 	return 0;
 }
 
+
 VOID  rtmp_ee_load_from_efuse(RTMP_ADAPTER *pAd)
 {
 	UINT16 efuse_val=0;
 	UINT free_blk = 0;
 	UINT i;
 
-	DBGPRINT(RT_DEBUG_TRACE, ("Load EEPROM buffer from efuse, and change to BIN buffer mode\n"));	
+	DBGPRINT(RT_DEBUG_OFF,("Load EEPROM buffer from efuse, and change to BIN buffer mode\n"));
 
 	/* If the number of the used block is less than 5, assume the efuse is not well-calibrated, and force to use buffer mode */
 	eFuseGetFreeBlockCount(pAd, &free_blk);
@@ -1335,6 +1358,7 @@ INT Set_LoadEepromBufferFromEfuse_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	UINT bEnable = simple_strtol(arg, 0, 10);
 
+	
 	if (bEnable < 0)
 		return FALSE;
 	else

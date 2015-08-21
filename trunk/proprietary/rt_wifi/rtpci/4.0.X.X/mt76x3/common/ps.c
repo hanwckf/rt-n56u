@@ -45,11 +45,14 @@ NDIS_STATUS RtmpInsertPsQueue(
 	MAC_TABLE_ENTRY *pMacEntry,
 	UCHAR QueIdx)
 {
-	STA_TR_ENTRY *tr_entry;
-	ULONG IrqFlags;
+	ULONG IrqFlags = 0;
+#ifdef UAPSD_SUPPORT
+	UINT32 ac_id;
+#endif
+	STA_TR_ENTRY *tr_entry = &pAd->MacTab.tr_entry[pMacEntry->wcid];;
 #ifdef UAPSD_SUPPORT
 	/* put the U-APSD packet to its U-APSD queue by AC ID */
-	UINT32 ac_id = QueIdx - QID_AC_BE; /* should be >= 0 */
+	ac_id = QueIdx - QID_AC_BE; /* should be >= 0 */
 
 	tr_entry = &pAd->MacTab.tr_entry[pMacEntry->wcid];
 
@@ -57,6 +60,9 @@ NDIS_STATUS RtmpInsertPsQueue(
 	{
 		UAPSD_PacketEnqueue(pAd, pMacEntry, pPacket, ac_id, FALSE);
 
+#ifdef CFG_TDLS_SUPPORT
+		cfg_tdls_send_PeerTrafficIndication(pAd,pMacEntry->Addr);
+#endif /* CFG_TDLS_SUPPORT */
 	}
 	else
 #endif /* UAPSD_SUPPORT */
@@ -143,7 +149,7 @@ VOID RtmpHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN is
 
 	pMacEntry = &pAd->MacTab.Content[wcid];
 	tr_entry = &pAd->MacTab.tr_entry[wcid];
-	
+
 	if (!RTMPEqualMemory(pMacEntry->Addr, pAddr, MAC_ADDR_LEN))
 	{
 		DBGPRINT(RT_DEBUG_WARN | DBG_FUNC_PS,("%s(%d) PS-POLL (MAC addr not match) from %02x:%02x:%02x:%02x:%02x:%02x. Why???\n", 
@@ -184,7 +190,7 @@ VOID RtmpHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN is
 	/* Reset ContinueTxFailCnt */
 	pMacEntry->ContinueTxFailCnt = 0;
 	pAd->MacTab.tr_entry[pMacEntry->wcid].ContinueTxFailCnt = 0;
-	
+
 	if (isActive == FALSE)
 	{
 		if (tr_entry->PsDeQWaitCnt == 0) {
@@ -242,7 +248,6 @@ BOOLEAN RtmpPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm)
 		return RalPsIndicate(pAd, pAddr, wcid, Psm);
 	}
 #endif /* RTMP_MAC || RLT_MAC */
-
 	return FALSE;
 }
 

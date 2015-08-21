@@ -213,6 +213,8 @@ NDIS_STATUS APInitialize(RTMP_ADAPTER *pAd)
 		RTMPInitTimer(pAd, &pAd->ApCfg.MBSSID[i].REKEYTimer, GET_TIMER_FUNCTION(GREKEYPeriodicExec), pAd,  TRUE);
 
 	RTMPInitTimer(pAd, &pAd->ApCfg.CounterMeasureTimer, GET_TIMER_FUNCTION(CMTimerExec), pAd, FALSE);
+#ifndef BCN_OFFLOAD_SUPPORT
+#endif
 
 #ifdef IDS_SUPPORT
 	/* Init intrusion detection timer */
@@ -229,7 +231,13 @@ NDIS_STATUS APInitialize(RTMP_ADAPTER *pAd)
 	MulticastFilterTableInit(pAd, &pAd->pMulticastFilterTable);
 #endif /* IGMP_SNOOP_SUPPORT */
 
+#ifdef DOT11V_WNM_SUPPORT
+	initList(&pAd->DMSEntryList);
+#endif /* DOT11V_WNM_SUPPORT */
 
+#ifdef DOT11K_RRM_SUPPORT
+	RRM_CfgInit(pAd);
+#endif /* DOT11K_RRM_SUPPORT */
 
 	DBGPRINT(RT_DEBUG_TRACE, ("<--- APInitialize\n"));
 	return Status;
@@ -256,6 +264,9 @@ VOID APShutdown(RTMP_ADAPTER *pAd)
 	MultiCastFilterTableReset(&pAd->pMulticastFilterTable);
 #endif /* IGMP_SNOOP_SUPPORT */
 
+#ifdef DOT11V_WNM_SUPPORT
+	DMSTable_Release(pAd);
+#endif /* DOT11V_WNM_SUPPORT */
 
 	NdisFreeSpinLock(&pAd->MacTabLock);
 
@@ -322,6 +333,8 @@ static INT ap_pmf_init(RTMP_ADAPTER *pAd, BSS_STRUCT *pMbss, INT idx)
             DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s:: apidx=%d, MFPC=%d, MFPR=%d, SHA256=%d\n",
 						__FUNCTION__, idx, pMbss->PmfCfg.MFPC,
 						pMbss->PmfCfg.MFPR, pMbss->PmfCfg.PMFSHA256));
+
+			return TRUE;
 }
 #endif /* DOT11W_PMF_SUPPORT */
 
@@ -534,7 +547,7 @@ static INT ap_hw_tb_init(RTMP_ADAPTER *pAd)
 	return TRUE;
 }
 
-
+/*Nobody uses it currently*/
 
 static INT ap_phy_rrm_init(RTMP_ADAPTER *pAd)
 {
@@ -596,6 +609,10 @@ static INT ap_mlme_set_capability(RTMP_ADAPTER *pAd, BSS_STRUCT *pMbss)
 										pAd->CommonCfg.bUseShortSlotTime,
 										SpectrumMgmt);
 
+#ifdef DOT11K_RRM_SUPPORT
+	if (pMbss->RrmCfg.bDot11kRRMEnable == TRUE)
+		pMbss->CapabilityInfo |= RRM_CAP_BIT;
+#endif /* DOT11K_RRM_SUPPORT */
 
 	if (pMbss->wdev.bWmmCapable == TRUE)
 	{
@@ -666,7 +683,7 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 {
 #if defined(INF_AMAZON_SE) || defined(RTMP_MAC_USB)
 	UINT32 i;
-#endif /*defined(INF_AMAZON_SE) || defined(RTMP_MAC_USB)*/
+#endif /* defined(INF_AMAZON_SE) || defined(RTMP_MAC_USB) */
 	UCHAR idx;
 	UCHAR phy_mode = pAd->CommonCfg.cfg_wmode;
 	BOOLEAN bWmmCapable = FALSE;
@@ -687,6 +704,18 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 		UCHAR tr_tb_idx = MAX_LEN_OF_MAC_TABLE + idx;
 
 		pMbss->mbss_idx = idx;
+#ifdef AIRPLAY_SUPPORT
+		if (AIRPLAY_ON(pAd))
+			pMbss->bcn_buf.bBcnSntReq = TRUE;
+		else
+			pMbss->bcn_buf.bBcnSntReq = FALSE;
+#endif /* AIRPLAY_SUPPORT */
+		pMbss->bcn_buf.bcn_state = BCN_TX_IDLE;
+		
+#ifdef BCN_OFFLOAD_SUPPORT
+		pMbss->updateEventIsTriggered = FALSE;
+#endif /* BCN_OFFLOAD_SUPPORT */
+
 		if ((pMbss->SsidLen <= 0) || (pMbss->SsidLen > MAX_LEN_OF_SSID))
 		{
 			NdisMoveMemory(pMbss->Ssid, "HT_AP", 5);
@@ -828,6 +857,9 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 
 	/* Set the RadarDetect Mode as Normal, bc the APUpdateAllBeaconFram() will refer this parameter. */
 	pAd->Dot11_H.RDMode = RD_NORMAL_MODE;
+#ifdef CUSTOMER_DCC_FEATURE
+	pAd->CommonCfg.channelSwitch.CHSWMode = NORMAL_MODE;
+#endif
 
 	/* Disable Protection first. */
 	AsicUpdateProtect(pAd, 0, (ALLN_SETPROTECT|CCKSETPROTECT|OFDMSETPROTECT), TRUE, FALSE);
@@ -838,7 +870,7 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 #endif /* DOT11_N_SUPPORT */
 
 #ifdef LED_CONTROL_SUPPORT
-	RTMPSetLED(pAd, LED_LINK_UP);
+	RTMPSetLED(pAd, LED_LINK_UP);	
 #endif /* LED_CONTROL_SUPPORT */
 
 	ap_key_tb_init(pAd);
@@ -867,12 +899,6 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 	/* start sending BEACON out */
 	APMakeAllBssBeacon(pAd);
 	APUpdateAllBeaconFrame(pAd);
-
-#ifdef MT_MAC
-	if (pAd->chipCap.hif_type == HIF_MT) {
-		InitTxSCommonCallBack(pAd);
-	}
-#endif /* MT_MAC */
 
 #ifdef DFS_SUPPORT
 	if (IS_DOT11_H_RADAR_STATE(pAd, RD_SILENCE_MODE))
@@ -922,6 +948,9 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 
 
 
+#ifdef DOT11R_FT_SUPPORT
+	FT_Init(pAd);
+#endif /* DOT11R_FT_SUPPORT */
 
 
 
@@ -932,6 +961,9 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 	DBGPRINT(RT_DEBUG_OFF, ("Main bssid = %02x:%02x:%02x:%02x:%02x:%02x\n",
 						PRINT_MAC(pAd->ApCfg.MBSSID[BSS0].wdev.bssid)));
 
+#ifdef CUSTOMER_DCC_FEATURE
+	pAd->CommonCfg.NewExtChanOffset.NewExtChanOffset = pAd->CommonCfg.RegTransmitSetting.field.EXTCHA;
+#endif
 	DBGPRINT(RT_DEBUG_TRACE, ("<=== APStartUp\n"));
 
 }
@@ -979,7 +1011,7 @@ VOID APStop(RTMP_ADAPTER *pAd)
 	ApCliIfDown(pAd);
 #endif /* APCLI_SUPPORT */
 
-	MacTableReset(pAd);
+	MacTableReset(pAd, 1);
 
 	RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS);
 
@@ -1011,6 +1043,9 @@ VOID APStop(RTMP_ADAPTER *pAd)
 			RTMPCancelTimer(&pMbss->REKEYTimer, &Cancelled);
 			pMbss->REKEYTimerRunning = FALSE;
 		}
+		
+		pMbss->bcn_buf.bcn_state = BCN_TX_IDLE;
+
 	}
 
 	if (pAd->ApCfg.CMTimerRunning == TRUE)
@@ -1034,7 +1069,13 @@ VOID APStop(RTMP_ADAPTER *pAd)
 	RTMPIdsStop(pAd);
 #endif /* IDS_SUPPORT */
 
+#ifdef DOT11R_FT_SUPPORT
+	FT_Release(pAd);
+#endif /* DOT11R_FT_SUPPORT */
 
+#ifdef DOT11V_WNM_SUPPORT
+	DMSTable_Release(pAd);
+#endif /* DOT11V_WNM_SUPPORT */
 
 
 
@@ -1082,9 +1123,13 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 	ULONG MinimumAMPDUSize = pAd->CommonCfg.DesiredHtPhy.MaxRAmpduFactor; /*Default set minimum AMPDU Size to 2, i.e. 32K */
 	BOOLEAN	bRdgActive;
 	BOOLEAN bRalinkBurstMode;
+#ifdef MT_MAC
+	UCHAR nLegacySTA = 0;	/* number of legacy stations */
+	UCHAR iLegacySTA[MAX_LEN_OF_TR_TABLE];	/* wtbl index of legacy stations */
+#endif /* MT_MAC */
 #endif /* DOT11_N_SUPPORT */
 #ifdef RTMP_MAC_PCI
-	unsigned long	IrqFlags;
+	ULONG IrqFlags = 0;
 #endif /* RTMP_MAC_PCI */
 	UINT fAnyStationPortSecured[HW_BEACON_MAX_NUM];
  	UINT bss_index;
@@ -1159,7 +1204,7 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 					MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL,
 									(64 + (MAX_EXT_MAC_ADDR_SIZE * pEntry->func_tb_idx) + pEntry->MatchReptCliIdx));
 					RTMP_MLME_HANDLER(pAd);
-					RTMPRemoveRepeaterEntry(pAd, pEntry->func_tb_idx, pEntry->MatchReptCliIdx);
+					//RTMPRemoveRepeaterEntry(pAd, pEntry->func_tb_idx, pEntry->MatchReptCliIdx);
 					continue;
 				}
 			}
@@ -1174,7 +1219,7 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 				if (CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE))
 					ApclibQosNull = TRUE;
 
-			       ApCliRTMPSendNullFrame(pAd,pEntry->CurrTxRate, ApclibQosNull, pEntry);
+			       ApCliRTMPSendNullFrame(pAd,pEntry->CurrTxRate, ApclibQosNull, pEntry, PWR_ACTIVE);
 
 				continue;
 			}
@@ -1185,9 +1230,8 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 			continue;
 
 #ifdef MT_PS
-				CheckSkipTX(pAd, pEntry);
+		CheckSkipTX(pAd, pEntry);
 #endif /* MT_PS */
-
 		if (pEntry->NoDataIdleCount == 0)
 			pEntry->StationKeepAliveCount = 0;
 
@@ -1241,7 +1285,13 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 			pMacTable->fAnyStationNonGF = TRUE;
 
 		if ((pEntry->MaxHTPhyMode.field.MODE == MODE_OFDM) || (pEntry->MaxHTPhyMode.field.MODE == MODE_CCK))
+		{
 			pMacTable->fAnyStationIsLegacy = TRUE;
+#ifdef MT_MAC
+			iLegacySTA[nLegacySTA] = i;
+			nLegacySTA ++;
+#endif /* MT_MAC */
+		}
 #ifdef GREENAP_SUPPORT
 		else
 			pMacTable->fAnyStationIsHT=TRUE;
@@ -1474,7 +1524,7 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 						MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL,
 										(64 + MAX_EXT_MAC_ADDR_SIZE*apCliIdx + CliIdx));
 								RTMP_MLME_HANDLER(pAd);
-								RTMPRemoveRepeaterEntry(pAd, apCliIdx, CliIdx);
+								//RTMPRemoveRepeaterEntry(pAd, apCliIdx, CliIdx);
 					}
 				}
 #endif /* MAC_REPEATER_SUPPORT */
@@ -1484,6 +1534,39 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 			continue;
 		}
 
+#ifdef CONFIG_HOTSPOT_R2
+		if (pEntry->BTMDisassocCount == 1)
+		{
+			PUCHAR      pOutBuffer = NULL;
+			NDIS_STATUS NStatus;
+			ULONG       FrameLen = 0;
+			HEADER_802_11 DisassocHdr;
+			USHORT      Reason;
+
+			/*  send out a DISASSOC request frame */
+			NStatus = MlmeAllocateMemory(pAd, &pOutBuffer);
+			if (NStatus != NDIS_STATUS_SUCCESS) 
+			{
+				DBGPRINT(RT_DEBUG_TRACE, (" MlmeAllocateMemory fail  ..\n"));
+				/*NdisReleaseSpinLock(&pAd->MacTabLock); */
+				continue;
+			}
+
+			Reason = REASON_DISASSOC_INACTIVE;
+			DBGPRINT(RT_DEBUG_ERROR, ("BTM ASSOC - Send DISASSOC  Reason = %d frame  TO %x %x %x %x %x %x \n",Reason,pEntry->Addr[0],
+				pEntry->Addr[1],pEntry->Addr[2],pEntry->Addr[3],pEntry->Addr[4],pEntry->Addr[5]));
+			MgtMacHeaderInit(pAd, &DisassocHdr, SUBTYPE_DISASSOC, 0, pEntry->Addr, pMbss->wdev.if_addr, pMbss->wdev.bssid);
+			MakeOutgoingFrame(pOutBuffer, &FrameLen, sizeof(HEADER_802_11), &DisassocHdr, 2, &Reason, END_OF_ARGS);
+			MiniportMMRequest(pAd, MGMT_USE_PS_FLAG, pOutBuffer, FrameLen);
+			MlmeFreeMemory(pAd, pOutBuffer);
+			//JERRY
+			if (!pEntry->IsKeep)
+				MacTableDeleteEntry(pAd, pEntry->Aid, pEntry->Addr);
+			continue;
+		}
+		if (pEntry->BTMDisassocCount != 0)
+			pEntry->BTMDisassocCount--;
+#endif /* CONFIG_HOTSPOT_R2 */
 
 		/* 3. garbage collect the ps_queue if the STA has being idle for a while */
 		if ((pEntry->PsMode == PWR_SAVE) && (tr_entry->ps_state == APPS_RETRIEVE_DONE || tr_entry->ps_state == APPS_RETRIEVE_IDLE))
@@ -1491,7 +1574,7 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 			 if (tr_entry->enqCount > 0) 
 			{
 				tr_entry->PsQIdleCount++;
-				if (tr_entry->PsQIdleCount > 5)
+				if (tr_entry->PsQIdleCount > 2)
 				{
 					rtmp_tx_swq_exit(pAd, pEntry->wcid);
 					tr_entry->PsQIdleCount = 0;
@@ -1577,7 +1660,7 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 
 			if ((bPreAnyStationInPsm == TRUE) &&  (tr_entry->tx_queue[QID_AC_BE].Head != NULL)) {
 					if (tr_entry->tx_queue[QID_AC_BE].Number > MAX_PACKETS_IN_MCAST_PS_QUEUE)
-						RTMPDeQueuePacket(pAd, FALSE, NUM_OF_TX_RING, wcid, MAX_PACKETS_IN_MCAST_PS_QUEUE);
+					RTMPDeQueuePacket(pAd, FALSE, NUM_OF_TX_RING, wcid, MAX_PACKETS_IN_MCAST_PS_QUEUE);
 					else
 						RTMPDeQueuePacket(pAd, FALSE, NUM_OF_TX_RING, wcid, tr_entry->tx_queue[QID_AC_BE].Number);
 			}
@@ -1646,7 +1729,6 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 	else
 		bRalinkBurstMode = FALSE;
 
-#ifdef DOT11_N_SUPPORT
 #ifdef GREENAP_SUPPORT
 	if (WMODE_CAP_N(pAd->CommonCfg.PhyMode))
 	{
@@ -1683,20 +1765,6 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 #ifdef MT_MAC
 		if (pAd->chipCap.hif_type == HIF_MT)
         {
-            if (bRdgActive)
-            {
-                AsicUpdateTxOP(pAd, WMM_PARAM_AC_1, 0x80);
-            }
-            else if ((pAd->MacTab.Size == 1) 
-					&& (pAd->CommonCfg.bEnableTxBurst))
-            {
-                AsicUpdateTxOP(pAd, WMM_PARAM_AC_1, 0x80);
-            }
-            else
-            {
-                AsicUpdateTxOP(pAd, WMM_PARAM_AC_1, 0x0);
-            }
-
             AsicWtblSetRDG(pAd, bRdgActive);
         }
 #endif /* MT_MAC */
@@ -1704,12 +1772,35 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 
 	if (bRalinkBurstMode != RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE))
 		AsicSetRalinkBurstMode(pAd, bRalinkBurstMode);
-#endif /* DOT11_N_SUPPORT */
 
 	if ((pMacTable->fAnyStationBadAtheros == FALSE) && (pAd->CommonCfg.IOTestParm.bRTSLongProtOn == TRUE))
 	{
 		AsicUpdateProtect(pAd, pAd->CommonCfg.AddHTInfo.AddHtInfo2.OperaionMode, ALLN_SETPROTECT, FALSE, pMacTable->fAnyStationNonGF);
 	}
+
+#ifdef MT_MAC
+	/* Under EDCCA_OFF condition, for TGn 4.2.7 fail issue, 
+		Tx PER rate is very high when running with Intel 6300 testbed STA,
+		but low data rate has no any imprevement to get Tx PER lower.
+		That should be caused by collision situation.
+
+		Thus we enable RTS/CTS to let retrying happens on RTS frames.
+		Data frame can keeps low Tx PER and can slow down the rate adaption.
+		Only legacy STAs are focused because we don't expect any behavior of 11n STA is changed.
+	*/
+	if (nLegacySTA == 1)
+	{
+		AsicWtblSetRTS(pAd, iLegacySTA[0], FALSE);
+	}
+	else if (nLegacySTA >= 2)
+	{
+		UCHAR j;
+
+		for (j = 0; j < nLegacySTA; j ++)
+			AsicWtblSetRTS(pAd, iLegacySTA[j], TRUE);
+	}
+#endif /* MT_MAC */
+	
 #endif /* DOT11_N_SUPPORT */
 
 #ifdef RTMP_MAC_PCI
@@ -1882,7 +1973,7 @@ VOID APUpdateOperationMode(RTMP_ADAPTER *pAd)
 		bDisableBGProtect = TRUE;
 	}
 
-	if (pAd->MacTab.fAnyStationIsLegacy)
+	if (pAd->MacTab.fAnyStationIsLegacy || pAd->MacTab.Size > 1)
 	{
 		pAd->CommonCfg.AddHTInfo.AddHtInfo2.OperaionMode = 3;
 		bDisableBGProtect = TRUE;
@@ -2083,6 +2174,31 @@ BOOLEAN ApCheckAccessControlList(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR Apidx)
 	}
 #endif /* ACL_V2_SUPPORT */
 
+#ifdef CUSTOMER_DCC_FEATURE
+	if(pAd->ApDisableSTAConnectFlag == TRUE)
+	{
+
+		INT		count, i;
+		UINT32	time;
+		
+		Result = FALSE;
+		time = jiffies_to_msecs(jiffies);
+		count = pAd->AllowedStaList.StaCount;
+		for(i = 0; i < count; i++)
+		{
+			if(NdisEqualMemory(&(pAd->AllowedStaList.AllowedSta[i].MacAddr[0]), pAddr, MAC_ADDR_LEN))
+			{
+				if((time - pAd->AllowedStaList.AllowedSta[i].DissocTime) < 30000)
+				{
+					Result = TRUE;
+				}
+			}
+		}
+		
+		if(!Result)
+			return Result;
+	}
+#endif
     if (pAd->ApCfg.MBSSID[Apidx].AccessControlList.Policy == 0)       /* ACL is disabled */
         Result = TRUE;
     else
@@ -2660,6 +2776,22 @@ BOOLEAN DOT1X_EapTriggerAction(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 		/* Prepare a fake eapol-start body */
 		NdisMoveMemory(&FrameBuf[offset], eapol_start_1x_hdr, sizeof(eapol_start_1x_hdr));
 
+#ifdef CONFIG_HOTSPOT_R2
+		if (pEntry)
+		{
+        		BSS_STRUCT *pMbss = pEntry->pMbss;
+			if ((pMbss->HotSpotCtrl.HotSpotEnable == 1) && (pMbss->wdev.AuthMode == Ndis802_11AuthModeWPA2) && (pEntry->hs_info.ppsmo_exist == 1))
+			{
+                		UCHAR HS2_Header[4] = {0x50,0x6f,0x9a,0x12};
+				memcpy(&FrameBuf[offset+sizeof(eapol_start_1x_hdr)], HS2_Header, 4);
+				memcpy(&FrameBuf[offset+sizeof(eapol_start_1x_hdr)+4], &pEntry->hs_info, sizeof(struct _sta_hs_info));
+				frame_len += 4+sizeof(struct _sta_hs_info);
+				DBGPRINT(RT_DEBUG_TRACE, ("event eapol start, %x:%x:%x:%x\n", 
+						FrameBuf[offset+sizeof(eapol_start_1x_hdr)+4],FrameBuf[offset+sizeof(eapol_start_1x_hdr)+5], 
+						FrameBuf[offset+sizeof(eapol_start_1x_hdr)+6],FrameBuf[offset+sizeof(eapol_start_1x_hdr)+7]));
+            		}
+		}
+#endif	
 		/* Report to upper layer */
 		if (RTMP_L2_FRAME_TX_ACTION(pAd, apidx, FrameBuf, frame_len) == FALSE)
 			return FALSE;

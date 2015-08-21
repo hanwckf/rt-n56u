@@ -105,6 +105,9 @@ BOOLEAN HSIPv4Check(
 	
 	pMbss =  &pAd->ApCfg.MBSSID[wdev->func_idx];
 	if ((pMbss->HotSpotCtrl.HotSpotEnable) 
+#ifdef CONFIG_HOTSPOT_R2
+    || (pMbss->HotSpotCtrl.bASANEnable)
+#endif
     )
 	{
 		if (srcPort  == 0x43 && dstPort == 0x44)
@@ -114,7 +117,7 @@ BOOLEAN HSIPv4Check(
 			UCHAR *pTargetMACAddr = pSrcBuf + 36;
 						
 			/* Convert group-address DHCP packets to individually-addressed 802.11 frames */
-			if (*pWcid == MCAST_WCID && pMbss->HotSpotCtrl.DGAFDisable)
+			if (*pWcid == pMbss->wdev.tr_tb_idx && pMbss->HotSpotCtrl.DGAFDisable) /* MCAST_WCID Fix */
 			{
 					UCHAR Index;
 					PUCHAR pSrcBufOriginal = GET_OS_PKT_DATAPTR(pPacket);
@@ -127,7 +130,7 @@ BOOLEAN HSIPv4Check(
 					
 					DBGPRINT(RT_DEBUG_OFF, ("Convert broadcast dhcp to unicat frame when dgaf disable\n"));
 						
-					if (!ApAllowToSendPacket(pAd, &pAd->ApCfg.MBSSID[wdev_idx].wdev, pPacket, pWcid))
+					if (!ApAllowToSendPacket(pAd, &pAd->ApCfg.MBSSID[wdev_idx].wdev, pPacket, (UCHAR *)pWcid))
 						return FALSE;
 							
 					RTMP_SET_PACKET_WCID(pPacket, *pWcid);
@@ -271,6 +274,14 @@ INT Set_HotSpot_Param(
 		case PARAM_GAS_COME_BACK_DELAY:
 			pGASCtrl->cb_delay = Value;
 			break;
+#ifdef CONFIG_HOTSPOT_R2			
+		case PARAM_WNM_NOTIFICATION:
+			pWNMCtrl->WNMNotifyEnable = Value;
+			break;
+		case PARAM_QOSMAP:
+			pHSCtrl->QosMapEnable = Value;
+			break;	
+#endif			
 		default:
 			DBGPRINT(RT_DEBUG_ERROR, ("Unknow Parameter:%d\n", Param));
 			break;
@@ -536,7 +547,6 @@ static VOID HSCtrlOff(
     IN MLME_QUEUE_ELEM  *Elem)
 {
 	PHOTSPOT_CTRL pHSCtrl;
-	PGAS_CTRL pGASCtrl;
 	PNET_DEV NetDev;
 	HSCTRL_EVENT_DATA *Event = (HSCTRL_EVENT_DATA *)Elem->Msg;
 #ifdef CONFIG_DOT11V_WNM		
@@ -549,8 +559,11 @@ static VOID HSCtrlOff(
 #ifdef CONFIG_AP_SUPPORT
 	NetDev = pAd->ApCfg.MBSSID[Event->ControlIndex].wdev.if_dev;
 	pHSCtrl = &pAd->ApCfg.MBSSID[Event->ControlIndex].HotSpotCtrl;
-	pGASCtrl = &pAd->ApCfg.MBSSID[Event->ControlIndex].GASCtrl;
 
+#ifdef CONFIG_HOTSPOT_R2	
+	pHSCtrl->bASANEnable = 0;
+	pHSCtrl->QLoadTestEnable = 0;
+#endif			
 #endif /* CONFIG_AP_SUPPORT */
 
  	pHSCtrl->HotSpotEnable = 0;
@@ -561,6 +574,20 @@ static VOID HSCtrlOff(
 	
 #ifdef CONFIG_DOT11V_WNM	
 	pWNMCtrl->ProxyARPEnable = 0;
+#ifdef CONFIG_HOTSPOT_R2			
+	pWNMCtrl->WNMNotifyEnable = 0;
+	pHSCtrl->QosMapEnable = 0;
+	for(tmp = 0;tmp<21;tmp++)
+	{
+		pHSCtrl->DscpException[tmp] = 0xff;
+		pHSCtrl->DscpException[tmp] |= (0xff << 8);
+	}
+	for(tmp = 0;tmp<8;tmp++)
+	{
+		pHSCtrl->DscpRange[tmp] = 0xff;
+		pHSCtrl->DscpRange[tmp] |= (0xff << 8);
+	}
+#endif	
 #endif	
 	
 #ifdef CONFIG_AP_SUPPORT

@@ -112,7 +112,8 @@ struct reason_id_str{
 	INT id;
 	RTMP_STRING *code_str;
 };
-/*Nodbody uses it currently*/
+
+/*Nobody uses it currently*/
 
 /*
 	========================================================================
@@ -157,7 +158,7 @@ INT APSendPacket(RTMP_ADAPTER *pAd, PNDIS_PACKET pPacket)
 #endif /* IGMP_SNOOP_SUPPORT */
 	STA_TR_ENTRY *tr_entry = NULL;
 	struct wifi_dev *wdev;
-	enum pkt_tx_status drop_reason = PKT_SUCCESS;
+	enum pkt_tx_status drop_reason = PKT_SUCCESS;	
 	INT ret=0;
 	
 
@@ -207,7 +208,7 @@ INT APSendPacket(RTMP_ADAPTER *pAd, PNDIS_PACKET pPacket)
 	if (IS_ENTRY_CLIENT(tr_entry)) {
 		BSS_STRUCT *pMbss = (BSS_STRUCT *)wdev->func_dev;
 
-		if ((wcid == MCAST_WCID) && 
+		if ((wcid == pMbss->wdev.tr_tb_idx) && 
 			(pMbss->HotSpotCtrl.HotSpotEnable || pMbss->HotSpotCtrl.bASANEnable) &&
 			pMbss->HotSpotCtrl.DGAFDisable) {
 			DBGPRINT(RT_DEBUG_INFO, ("Drop broadcast/multicast packet when dgaf disable\n"));
@@ -411,7 +412,7 @@ INT APSendPacket(RTMP_ADAPTER *pAd, PNDIS_PACKET pPacket)
 		/* If the data is unicast and the station is in PWR_SAVE, we set STA TIM bit */
 		if (tr_entry->EntryType == ENTRY_CAT_MCAST)
 		{
-			if (pAd->MacTab.fAnyStationInPsm == 1)
+			if (pAd->MacTab.fAnyStationInPsm == TRUE)
 				WLAN_MR_TIM_BCMC_SET(tr_entry->func_tb_idx); /* mark MCAST/BCAST TIM bit */
 		}
 		else
@@ -437,9 +438,6 @@ INT APSendPacket(RTMP_ADAPTER *pAd, PNDIS_PACKET pPacket)
 			}
 		}
 	}
-
-//dump_tr_entry(pAd, wcid, __FUNCTION__, __LINE__);
-//DBGPRINT(RT_DEBUG_OFF, ("%s(%d): shiang-dbg EnQDone done\n", __FUNCTION__, __LINE__));
 
 	// TODO: shiang-usw, backup code here for ACM/WDS->LockTx related functions
 
@@ -480,15 +478,18 @@ static inline VOID APFindCipherAlgorithm(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	MAC_TABLE_ENTRY *pMacEntry = pTxBlk->pMacEntry;
 #if defined(APCLI_SUPPORT) && defined(WPA_SUPPLICANT_SUPPORT)
 	STA_TR_ENTRY *tr_entry = pTxBlk->tr_entry;
-#endif
+#endif /* defined(APCLI_SUPPORT) && defined(WPA_SUPPLICANT_SUPPORT) */
+#ifdef WAPI_SUPPORT
 	BSS_STRUCT *pMbss;
+#endif /* WAPI_SUPPORT */
 	struct wifi_dev *wdev;
 
 	ASSERT(pTxBlk->wdev_idx < WDEV_NUM_MAX);
 	wdev = pAd->wdev_list[pTxBlk->wdev_idx];
 	ASSERT(wdev->func_idx < pAd->ApCfg.BssidNum);
+#ifdef WAPI_SUPPORT
 	pMbss = &pAd->ApCfg.MBSSID[wdev->func_idx];
-
+#endif /* WAPI_SUPPORT */
 	// TODO: shiang-usw, we should use this check to replace rest of the codes!
 
 	/* These EAPoL frames must be clear before 4-way handshaking is completed. */
@@ -665,10 +666,10 @@ static inline VOID APBuildCache802_11Header(
 {
 	STA_TR_ENTRY *tr_entry;
 	HEADER_802_11 *pHeader80211;
-	MAC_TABLE_ENTRY *pMacEntry;
-
+#if defined(MESH_SUPPORT) || defined(APCLI_SUPPORT)
+	MAC_TABLE_ENTRY *pMacEntry = pTxBlk->pMacEntry;
+#endif
 	pHeader80211 = (PHEADER_802_11)pHeader;
-	pMacEntry = pTxBlk->pMacEntry;
 	tr_entry = pTxBlk->tr_entry;
 
 	/*
@@ -904,7 +905,6 @@ static inline PUCHAR AP_Build_ARalink_Frame_Header(RTMP_ADAPTER *pAd, TX_BLK *pT
 	PNDIS_PACKET pNextPacket;
 	UINT32 nextBufLen;
 	PQUEUE_ENTRY pQEntry;
-	//UINT8 TXWISize = pAd->chipCap.TXWISize;
 		
 	APFindCipherAlgorithm(pAd, pTxBlk);
 	APBuildCommon802_11Header(pAd, pTxBlk);
@@ -996,6 +996,9 @@ static inline PUCHAR AP_Build_AMSDU_Frame_Header(RTMP_ADAPTER *pAd, TX_BLK *pTxB
 	buf_ptr = pTxBlk->wifi_hdr;
 	wifi_hdr = (HEADER_802_11 *)buf_ptr;
 
+	if(wifi_hdr == NULL)
+		DBGPRINT(RT_DEBUG_TRACE, ("wifi_hdr is NULL.\n"));
+
 	/* skip common header */
 	buf_ptr += pTxBlk->wifi_hdr_len;
 
@@ -1051,12 +1054,7 @@ VOID AP_AMPDU_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	PQUEUE_ENTRY pQEntry;
 	BOOLEAN bHTCPlus = FALSE;
 	UINT hdr_offset, cache_sz;
-#if !defined(MT7603) && !defined(MT7628) || defined(CONFIG_TSO_SUPPORT)
-	UINT8 TXWISize = pAd->chipCap.TXWISize;
-#endif /* !defined(MT7603) && !defined(MT7628) || defined(CONFIG_TSO_SUPPORT) */
-#if (defined(MT7603) || defined(MT7628)) && !defined(VENDOR_FEATURE1_SUPPORT)
-	UINT8 tx_hw_hdr_len = pAd->chipCap.tx_hw_hdr_len;
-#endif /*defined(MT7603) || defined(MT7628) && !defined(VENDOR_FEATURE1_SUPPORT)*/
+
 	ASSERT(pTxBlk);
 
 	pQEntry = RemoveHeadQueue(&pTxBlk->TxPacketList);
@@ -1066,7 +1064,19 @@ VOID AP_AMPDU_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 		BSS_STRUCT *pMbss = pTxBlk->pMbss;
 
 		if (pMbss != NULL)
+		{
 			pMbss->TxDropCount++;
+#ifdef CUSTOMER_DCC_FEATURE
+#ifdef MBSS_802_11_STATISTICS
+	   		pMacEntry = pTxBlk->pMacEntry;	
+			if (IS_ENTRY_CLIENT(pMacEntry))
+			{
+				pMacEntry->TxDropCount++;
+				
+			}
+#endif
+#endif
+		}
 #endif /* STATS_COUNT_SUPPORT */
 
 		RELEASE_NDIS_PACKET(pAd, pTxBlk->pPacket, NDIS_STATUS_FAILURE);
@@ -1077,7 +1087,7 @@ VOID AP_AMPDU_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	// TODO: shiang-7603
 	hdr_offset = pAd->chipCap.tx_hw_hdr_len;
 #else
-	hdr_offset = TXINFO_SIZE + TXWISize + TSO_SIZE;
+	hdr_offset = TXINFO_SIZE + pAd->chipCap.TXWISize + TSO_SIZE;
 #endif /* defined(MT7603) || defined(MT7628) */
 	pMacEntry = pTxBlk->pMacEntry;
 	tr_entry = pTxBlk->tr_entry;
@@ -1088,7 +1098,7 @@ VOID AP_AMPDU_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 #ifndef VENDOR_FEATURE1_SUPPORT
 		NdisMoveMemory((UCHAR *)(&pTxBlk->HeaderBuf[0]), 
 							(UCHAR *)(&tr_entry->CachedBuf[0]),
-							tx_hw_hdr_len + sizeof(HEADER_802_11));
+							pAd->chipCap.tx_hw_hdr_len + sizeof(HEADER_802_11));
 #else
 		pTxBlk->HeaderBuf = (UCHAR *)(tr_entry->HeaderBuf);
 #endif /* VENDOR_FEATURE1_SUPPORT */
@@ -1096,7 +1106,7 @@ VOID AP_AMPDU_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 #ifndef VENDOR_FEATURE1_SUPPORT
 		NdisMoveMemory((UCHAR *)(&pTxBlk->HeaderBuf[TXINFO_SIZE]),
 							(UCHAR *)(&tr_entry->CachedBuf[0]),
-							TXWISize + sizeof(HEADER_802_11));
+							pAd->chipCap.TXWISize + sizeof(HEADER_802_11));
 #else
 		pTxBlk->HeaderBuf = (UCHAR *)(tr_entry->HeaderBuf);
 #endif /* VENDOR_FEATURE1_SUPPORT */
@@ -1353,6 +1363,23 @@ VOID AP_AMPDU_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 		{
 			pMbss->TransmittedByteCount.QuadPart += pTxBlk->SrcBufLen;
 			pMbss->TxCount ++;
+#ifdef CUSTOMER_DCC_FEATURE
+			pAd->RadioStatsCounter.TxDataCount++;
+#ifdef MBSS_802_11_STATISTICS
+			/* increment Tx counts and calculate Tx activity time */
+			if (IS_ENTRY_CLIENT(pMacEntry))
+			{
+				pMacEntry->TransmittedByteCount += pTxBlk->SrcBufLen;
+				pMacEntry->TxCount++;
+			}
+#endif
+			{
+				UINT32 Index, Length;
+				Length = pTxBlk->SrcBufLen + pTxBlk->MpduHeaderLen + pTxBlk->HdrPadLen;
+				GetMultShiftFactorIndex(*(pTxBlk->pTransmit), &Index);
+				RTMPCalculateAPTxRxActivityTime(pAd, Index, Length, pMbss, pMacEntry);
+			}
+#endif
 
 #ifdef STATS_COUNT_SUPPORT
 			if(IS_MULTICAST_MAC_ADDR(pTxBlk->pSrcBufHeader))
@@ -1368,6 +1395,7 @@ VOID AP_AMPDU_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 		{
 			INC_COUNTER64(pMacEntry->TxPackets);
 			pMacEntry->TxBytes+=pTxBlk->SrcBufLen;
+            pAd->TxTotalByteCnt += pTxBlk->SrcBufLen;
 		}
 	}
 
@@ -1546,7 +1574,23 @@ VOID AP_AMPDU_Frame_Tx_Hdr_Trns(
 		{
 			pMbss->TransmittedByteCount.QuadPart += pTxBlk->SrcBufLen;
 			pMbss->TxCount++;
-
+#ifdef CUSTOMER_DCC_FEATURE
+			pAd->RadioStatsCounter.TxDataCount++;
+#ifdef MBSS_802_11_STATISTICS
+			/* increment Tx counts and calculate Tx activity time */
+			if (IS_ENTRY_CLIENT(pMacEntry))
+			{
+				pMacEntry->TransmittedByteCount += pTxBlk->SrcBufLen;
+				pMacEntry->TxCount++;
+			}
+#endif
+			{
+				UINT32 Index, Length;
+				Length = pTxBlk->SrcBufLen + pTxBlk->MpduHeaderLen + pTxBlk->HdrPadLen;
+				GetMultShiftFactorIndex(*(pTxBlk->pTransmit), &Index);
+				RTMPCalculateAPTxRxActivityTime(pAd, Index, Length, pMbss, pMacEntry);
+			}
+#endif
 #ifdef STATS_COUNT_SUPPORT
 			if(IS_MULTICAST_MAC_ADDR(pTxBlk->pSrcBufHeader))
 				pMbss->mcPktsTx++;
@@ -1612,9 +1656,12 @@ VOID AP_AMSDU_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	USHORT subFramePayloadLen = 0;	/* AMSDU Subframe length without AMSDU-Header / Padding */
 	USHORT totalMPDUSize = 0;
 	UCHAR padding = 0;
-	USHORT FirstTx = 0, LastTxIdx = 0;
+	USHORT FirstTx = 0/*, LastTxIdx = 0*/;
 	int frameNum = 0;
 	PQUEUE_ENTRY pQEntry;
+#ifdef CUSTOMER_DCC_FEATURE
+	MAC_TABLE_ENTRY *pMacEntry = NULL;
+#endif
 	//STA_TR_ENTRY *tr_entry;
 #ifdef CONFIG_AP_SUPPORT
 #ifdef APCLI_SUPPORT
@@ -1626,7 +1673,8 @@ REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
 #endif /* CONFIG_AP_SUPPORT */
 #ifdef WFA_VHT_PF
 	MAC_TABLE_ENTRY *pMacEntry = pTxBlk->pMacEntry;
-#endif /* WFA_VHT_PF */	
+#endif /* WFA_VHT_PF */
+	
 	ASSERT((pTxBlk->TxPacketList.Number > 1));
 
 	while (pTxBlk->TxPacketList.Head)
@@ -1638,7 +1686,18 @@ REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
 			BSS_STRUCT *pMbss = pTxBlk->pMbss;
 
 			if (pMbss != NULL)
+			{
 				pMbss->TxDropCount++;
+#ifdef CUSTOMER_DCC_FEATURE
+#ifdef MBSS_802_11_STATISTICS
+				pMacEntry = pTxBlk->pMacEntry;	
+				if (IS_ENTRY_CLIENT(pMacEntry))
+				{
+					pMacEntry->TxDropCount++;
+				}
+#endif
+#endif
+			}
 #endif /* STATS_COUNT_SUPPORT */
 			RELEASE_NDIS_PACKET(pAd, pTxBlk->pPacket, NDIS_STATUS_FAILURE);
 			continue;
@@ -1760,7 +1819,7 @@ REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
 		if (frameNum == 0)
 			FirstTx = HAL_WriteMultiTxResource(pAd, pTxBlk, frameNum, &freeCnt);
 		else
-			LastTxIdx = HAL_WriteMultiTxResource(pAd, pTxBlk, frameNum, &freeCnt);
+			/*LastTxIdx = */HAL_WriteMultiTxResource(pAd, pTxBlk, frameNum, &freeCnt);
 
 #ifdef DBG_CTRL_SUPPORT
 #ifdef INCLUDE_DEBUG_QUEUE
@@ -1798,7 +1857,22 @@ REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
 			{
 				pMbss->TransmittedByteCount.QuadPart += totalMPDUSize;
 				pMbss->TxCount++;
-
+#ifdef CUSTOMER_DCC_FEATURE
+				pAd->RadioStatsCounter.TxDataCount++;
+#ifdef MBSS_802_11_STATISTICS
+				if (IS_ENTRY_CLIENT(pTxBlk->pMacEntry))
+				{
+					pTxBlk->pMacEntry->TransmittedByteCount += totalMPDUSize;
+					pTxBlk->pMacEntry->TxCount++;
+				}
+#endif			
+				{
+					UINT32 Index, Length;
+					Length = totalMPDUSize;
+					GetMultShiftFactorIndex(*(pTxBlk->pTransmit), &Index);
+					RTMPCalculateAPTxRxActivityTime(pAd, Index, Length, pMbss, pMacEntry);
+				}
+#endif
 #ifdef STATS_COUNT_SUPPORT
 				if(IS_MULTICAST_MAC_ADDR(pTxBlk->pSrcBufHeader))
 					pMbss->mcPktsTx++;
@@ -1813,6 +1887,7 @@ REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
 			{
 				INC_COUNTER64(pMacEntry->TxPackets);
 				pMacEntry->TxBytes+=pTxBlk->SrcBufLen;
+                pAd->TxTotalByteCnt += pTxBlk->SrcBufLen;
 			}
 		}
 
@@ -1835,7 +1910,7 @@ REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
 	}
 
 	HAL_FinalWriteTxResource(pAd, pTxBlk, totalMPDUSize, FirstTx);
-	HAL_LastTxIdx(pAd, pTxBlk->QueIdx, LastTxIdx);
+	HAL_LastTxIdx(pAd, pTxBlk->QueIdx, 0/*LastTxIdx*/);
 	
 	/*
 		Kick out Tx
@@ -1853,7 +1928,9 @@ VOID AP_Legacy_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	BOOLEAN bVLANPkt;
 	QUEUE_ENTRY *pQEntry;
 	//UINT8 TXWISize = pAd->chipCap.TXWISize;
-	
+#ifdef CUSTOMER_DCC_FEATURE
+	MAC_TABLE_ENTRY *pMacEntry = NULL;
+#endif
 	ASSERT(pTxBlk);
 
 	pQEntry = RemoveHeadQueue(&pTxBlk->TxPacketList);
@@ -1863,7 +1940,18 @@ VOID AP_Legacy_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 		BSS_STRUCT *pMbss = pTxBlk->pMbss;
 
 		if (pMbss != NULL)
+		{
 			pMbss->TxDropCount++;
+#ifdef CUSTOMER_DCC_FEATURE
+#ifdef MBSS_802_11_STATISTICS
+			pMacEntry = pTxBlk->pMacEntry;	
+			if (IS_ENTRY_CLIENT(pMacEntry))
+			{
+				pMacEntry->TxDropCount++;
+			}
+#endif
+#endif
+		}
 #endif /* STATS_COUNT_SUPPORT */
 
 		RELEASE_NDIS_PACKET(pAd, pTxBlk->pPacket, NDIS_STATUS_FAILURE);
@@ -1926,8 +2014,17 @@ DBGPRINT(RT_DEBUG_TRACE, ("<--%s(%d): ##########Fail#########\n", __FUNCTION__, 
 			pTxBlk->Pid = PID_PS_DATA;
 	}
 
+#if defined(MT_MAC) && defined(WSC_INCLUDED) && defined(CONFIG_AP_SUPPORT)	
+	if (RTMP_GET_PACKET_CLEAR_EAP_FRAME(pTxBlk->pPacket) & 0x80)
+	{
+		pTxBlk->Pid = PID_WSC_EAP;
+	}
+#endif /* defined(MT_MAC) && defined(WSC_INCLUDED) && defined(CONFIG_AP_SUPPORT) */
+
 	pHeaderBufPtr = pTxBlk->wifi_hdr;
 	wifi_hdr = (HEADER_802_11 *)pHeaderBufPtr;
+	if(wifi_hdr == NULL)
+		DBGPRINT(RT_DEBUG_TRACE, ("wifi_hdr is NULL.\n"));
 
 	/* skip common header */
 	pHeaderBufPtr += pTxBlk->wifi_hdr_len;
@@ -2013,11 +2110,43 @@ DBGPRINT(RT_DEBUG_TRACE, ("<--%s(%d): ##########Fail#########\n", __FUNCTION__, 
 		if (pTxBlk->pMacEntry->WapiUskRekeyTimerRunning && pAd->CommonCfg.wapi_usk_rekey_method == REKEY_METHOD_PKT)
 			pTxBlk->pMacEntry->wapi_usk_rekey_cnt += pTxBlk->SrcBufLen;
 #endif /* WAPI_SUPPORT */
-	
+#ifdef CUSTOMER_DCC_FEATURE
+		if(pMbss == NULL)
+		{
+			UINT32 apidx;
+			for (apidx = 0; apidx < pAd->ApCfg.BssidNum; apidx++)
+			{
+				if ((pAd->ApCfg.MBSSID[apidx].wdev.if_dev != NULL) &&
+						(RTMP_OS_NETDEV_STATE_RUNNING(pAd->ApCfg.MBSSID[apidx].wdev.if_dev)) &&
+							NdisEqualMemory(pAd->ApCfg.MBSSID[apidx].wdev.bssid, pTxBlk->wifi_hdr + 10, MAC_ADDR_LEN))
+					{
+						pMbss = &pAd->ApCfg.MBSSID[apidx];
+						break;	
+					}
+			}
+			
+		}
+#endif
 		if (pMbss != NULL)
 		{
 			pMbss->TransmittedByteCount.QuadPart += pTxBlk->SrcBufLen;
 			pMbss->TxCount++;
+#ifdef CUSTOMER_DCC_FEATURE
+			pAd->RadioStatsCounter.TxDataCount++;
+#ifdef MBSS_802_11_STATISTICS			
+			if (pMacEntry && IS_ENTRY_CLIENT(pTxBlk->pMacEntry))
+			{
+				pTxBlk->pMacEntry->TransmittedByteCount += pTxBlk->SrcBufLen;
+				pTxBlk->pMacEntry->TxCount++;
+			}
+#endif		
+			{
+				UINT32 Index, Length;
+				Length = pTxBlk->SrcBufLen + pTxBlk->MpduHeaderLen + pTxBlk->HdrPadLen;
+				GetMultShiftFactorIndex(*(pTxBlk->pTransmit), &Index);
+				RTMPCalculateAPTxRxActivityTime(pAd, Index, Length, pMbss, pMacEntry);
+			}
+#endif
 
 #ifdef STATS_COUNT_SUPPORT
 			if(IS_MULTICAST_MAC_ADDR(pTxBlk->pSrcBufHeader))
@@ -2033,6 +2162,7 @@ DBGPRINT(RT_DEBUG_TRACE, ("<--%s(%d): ##########Fail#########\n", __FUNCTION__, 
 		{
 			INC_COUNTER64(pMacEntry->TxPackets);
 			pMacEntry->TxBytes+=pTxBlk->SrcBufLen;
+            pAd->TxTotalByteCnt += pTxBlk->SrcBufLen;
 		}
 	}
 
@@ -2062,16 +2192,13 @@ DBGPRINT(RT_DEBUG_TRACE, ("<--%s(%d): ##########Fail#########\n", __FUNCTION__, 
 	if (!pTxBlk->pMacEntry) {
 		struct wifi_dev *wdev = pAd->wdev_list[pTxBlk->wdev_idx];
 		ASSERT(wdev != NULL);
-		GET_GroupKey_WCID(pAd, pTxBlk->Wcid, wdev->func_idx);
+		if(wdev != NULL)
+		{
+			GET_GroupKey_WCID(pAd, pTxBlk->Wcid, wdev->func_idx);
+		}
 	}
 
 	write_tmac_info_Data(pAd, &pTxBlk->HeaderBuf[0], pTxBlk);
-
-//hex_dump("Legacy_Frame-FirstBufContent", pTxBlk->HeaderBuf, 128);
-//hex_dump("Legacy_Frame-FirstBufContent - WiFi Hdr Segment", pTxBlk->wifi_hdr, pTxBlk->wifi_hdr_len);
-//DBGPRINT(RT_DEBUG_OFF, ("%s(): pTxBlk->MpduHeaderLen=%d, wifi_hdr_len=%d, HdrPadLen=%d, hw_rsv_len=%d\n",
-//			__FUNCTION__, pTxBlk->MpduHeaderLen, pTxBlk->wifi_hdr_len, pTxBlk->HdrPadLen, pTxBlk->hw_rsv_len));
-//dump_tmac_info(pAd, &pTxBlk->HeaderBuf[pTxBlk->hw_rsv_len]);
 
 	if (RTMP_GET_PACKET_LOWRATE(pTxBlk->pPacket))
 		if (pTxBlk->tr_entry)
@@ -2090,69 +2217,6 @@ DBGPRINT(RT_DEBUG_TRACE, ("<--%s(%d): ##########Fail#########\n", __FUNCTION__, 
 	/*
 		Kick out Tx
 	*/
-#ifdef USE_BMC
-	if (pTxBlk->QueIdx == QID_BMC)
-	{
-		struct wifi_dev *wdev = pAd->wdev_list[pTxBlk->wdev_idx];
-		
-		HAL_KickOutTxBMC(pAd, pTxBlk, pTxBlk->QueIdx);
-		switch (wdev->func_idx)
-		{
-			case 0:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR2, 0x1);
-				break;
-			case 1:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR2, 0x10000);
-				break;
-			case 2:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR2, 0x100000);
-				break;
-			case 3:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR2, 0x1000000);
-				break;
-			case 4:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR2, 0x10000000);
-				break;
-			case 5:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR3, 0x1);
-				break;
-			case 6:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR3, 0x10);
-				break;
-			case 7:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR3, 0x100);
-				break;
-			case 8:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR3, 0x1000);
-				break;
-			case 9:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR3, 0x10000);
-				break;
-			case 10:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR3, 0x100000);
-				break;
-			case 11:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR3, 0x1000000);
-				break;
-			case 12:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR3, 0x10000000);
-				break;
-			case 13:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR4, 0x1);
-				break;
-			case 14:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR4, 0x10);
-				break;
-			case 15:
-				RTMP_IO_WRITE32(pAd, ARB_BMCQCR4, 0x100);
-				break;
-			default:
-				DBGPRINT(RT_DEBUG_ERROR, ("<--%s(%d):no func_idx (%d)\n", __FUNCTION__, __LINE__, wdev->func_idx));
-				break;									
-		}
-	}
-	else
-#endif /* USE_BMC */
 	HAL_KickOutTx(pAd, pTxBlk, pTxBlk->QueIdx);
 
 	pAd->RalinkCounters.KickTxCount++;
@@ -2244,6 +2308,23 @@ VOID AP_Legacy_Frame_Tx_Hdr_Trns(
 		{
 			pMbss->TransmittedByteCount.QuadPart += pTxBlk->SrcBufLen;
 			pMbss->TxCount++;
+#ifdef CUSTOMER_DCC_FEATURE
+			pAd->RadioStatsCounter.TxDataCount++;
+#ifdef MBSS_802_11_STATISTICS
+			/* increment Tx counts and calculate Tx activity time */
+			if (IS_ENTRY_CLIENT(pMacEntry))
+			{
+				pMacEntry->TransmittedByteCount += pTxBlk->SrcBufLen;
+				pMacEntry->TxCount++;
+			}
+#endif
+			{
+				UINT32 Index, Length;
+				Length = pTxBlk->SrcBufLen + pTxBlk->MpduHeaderLen + pTxBlk->HdrPadLen;
+				GetMultShiftFactorIndex(*(pTxBlk->pTransmit), &Index);
+				RTMPCalculateAPTxRxActivityTime(pAd, Index, Length, pMbss, pMacEntry);
+			}
+#endif
 
 #ifdef STATS_COUNT_SUPPORT
 			if(IS_MULTICAST_MAC_ADDR(pTxBlk->pSrcBufHeader))
@@ -2354,6 +2435,9 @@ VOID AP_Fragment_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	USHORT AckDuration;
 	UINT NextMpduSize;
 	//UINT8 tx_hw_hdr_len = pAd->chipCap.tx_hw_hdr_len;
+#ifdef CUSTOMER_DCC_FEATURE
+	MAC_TABLE_ENTRY 	*pMacEntry = NULL;
+#endif
 	
 	ASSERT(pTxBlk);
 	ASSERT(TX_BLK_TEST_FLAG(pTxBlk, fTX_bAllowFrag));
@@ -2367,7 +2451,18 @@ VOID AP_Fragment_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 		BSS_STRUCT *pMbss = pTxBlk->pMbss;
 
 		if (pMbss != NULL)
+		{
 			pMbss->TxDropCount++;
+#ifdef CUSTOMER_DCC_FEATURE
+#ifdef MBSS_802_11_STATISTICS
+			pMacEntry = pTxBlk->pMacEntry;	
+			if (IS_ENTRY_CLIENT(pMacEntry))
+			{
+				pMacEntry->TxDropCount++;
+			}
+#endif
+#endif	
+		}
 #endif /* STATS_COUNT_SUPPORT */
 
 		RELEASE_NDIS_PACKET(pAd, pTxBlk->pPacket, NDIS_STATUS_FAILURE);
@@ -2510,7 +2605,10 @@ DBGPRINT(RT_DEBUG_TRACE, ("%s(): Before Frag, pTxBlk->MpduHeaderLen=%d, wifi_hdr
 	if (pTxBlk->CipherAlg == CIPHER_TKIP) {
 		struct wifi_dev *wdev = pAd->wdev_list[pTxBlk->wdev_idx];
 		ASSERT(wdev != NULL);
-		RTMPCalculateMICValue(pAd, pTxBlk->pPacket, pTxBlk->pExtraLlcSnapEncap, pTxBlk->pKey, wdev->func_idx);
+		if(wdev != NULL)
+		{
+			RTMPCalculateMICValue(pAd, pTxBlk->pPacket, pTxBlk->pExtraLlcSnapEncap, pTxBlk->pKey, wdev->func_idx);
+		}
 
 		/*
 			NOTE: DON'T refer the skb->len directly after following copy. Becasue the length is not adjust
@@ -2539,6 +2637,16 @@ DBGPRINT(RT_DEBUG_TRACE, ("%s(): Before Frag, pTxBlk->MpduHeaderLen=%d, wifi_hdr
 		{
 			pMbss->TransmittedByteCount.QuadPart += pTxBlk->SrcBufLen;
 			pMbss->TxCount++;
+#ifdef CUSTOMER_DCC_FEATURE
+			pAd->RadioStatsCounter.TxDataCount++;
+#ifdef MBSS_802_11_STATISTICS			
+			if (IS_ENTRY_CLIENT(pTxBlk->pMacEntry))
+			{
+				pTxBlk->pMacEntry->TransmittedByteCount += pTxBlk->SrcBufLen;
+				pTxBlk->pMacEntry->TxCount++;
+			}	
+#endif		
+#endif
 
 #ifdef STATS_COUNT_SUPPORT
 			if(IS_MULTICAST_MAC_ADDR(pTxBlk->pSrcBufHeader))
@@ -2554,6 +2662,7 @@ DBGPRINT(RT_DEBUG_TRACE, ("%s(): Before Frag, pTxBlk->MpduHeaderLen=%d, wifi_hdr
 		{
 			INC_COUNTER64(pMacEntry->TxPackets);
 			pMacEntry->TxBytes+=pTxBlk->SrcBufLen;
+            pAd->TxTotalByteCnt += pTxBlk->SrcBufLen;
 		}
 	}
 
@@ -2685,7 +2794,17 @@ DBGPRINT(RT_DEBUG_TRACE, ("%s(): Before Frag, pTxBlk->MpduHeaderLen=%d, wifi_hdr
 			pTxBlk->TotalFrameLen += ext_offset;
 		}
 #endif /* SOFT_ENCRYPT */
-		
+#ifdef CUSTOMER_DCC_FEATURE
+		{
+			UINT32 Index, Length;
+			BSS_STRUCT *pMbss = pTxBlk->pMbss;
+			MAC_TABLE_ENTRY *pMacEntry=pTxBlk->pMacEntry;
+
+			Length = pTxBlk->SrcBufLen + pTxBlk->MpduHeaderLen + pTxBlk->HdrPadLen;
+			GetMultShiftFactorIndex(*(pTxBlk->pTransmit), &Index);
+			RTMPCalculateAPTxRxActivityTime(pAd, Index, Length, pMbss, pMacEntry);
+		}
+#endif		
 		write_tmac_info_Data(pAd, &pTxBlk->HeaderBuf[0], pTxBlk);
 
 
@@ -2772,7 +2891,9 @@ VOID AP_ARalink_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	int frameNum = 0;
 	BOOLEAN bVLANPkt;
 	PQUEUE_ENTRY pQEntry;
-
+#ifdef CUSTOMER_DCC_FEATURE
+	MAC_TABLE_ENTRY *pMacEntry = NULL;
+#endif 
 	ASSERT(pTxBlk);
 	ASSERT((pTxBlk->TxPacketList.Number == 2));
 
@@ -2787,7 +2908,18 @@ VOID AP_ARalink_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 			BSS_STRUCT *pMbss = pTxBlk->pMbss;
 
 			if (pMbss != NULL)
+			{
 				pMbss->TxDropCount++;
+#ifdef CUSTOMER_DCC_FEATURE
+#ifdef MBSS_802_11_STATISTICS
+				pMacEntry = pTxBlk->pMacEntry;	
+				if (IS_ENTRY_CLIENT(pMacEntry))
+				{
+					pMacEntry->TxDropCount++;
+				}
+#endif
+#endif
+			}
 #endif /* STATS_COUNT_SUPPORT */
 
 			RELEASE_NDIS_PACKET(pAd, pTxBlk->pPacket, NDIS_STATUS_FAILURE);
@@ -2899,7 +3031,22 @@ VOID AP_ARalink_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 			{
 				pMbss->TransmittedByteCount.QuadPart += totalMPDUSize;
 				pMbss->TxCount++;
-
+#ifdef CUSTOMER_DCC_FEATURE
+				pAd->RadioStatsCounter.TxDataCount++;
+#ifdef MBSS_802_11_STATISTICS
+				if (IS_ENTRY_CLIENT(pTxBlk->pMacEntry))
+				{
+					pTxBlk->pMacEntry->TransmittedByteCount += pTxBlk->SrcBufLen;
+					pTxBlk->pMacEntry->TxCount++;
+				}	
+#endif
+				{
+					UINT32 Index, Length;
+					Length = pTxBlk->MpduHeaderLen + pTxBlk->SrcBufLen;
+					GetMultShiftFactorIndex(*(pTxBlk->pTransmit), &Index);
+					RTMPCalculateAPTxRxActivityTime(pAd, Index, Length, pMbss, pMacEntry);
+				}
+#endif
 #ifdef STATS_COUNT_SUPPORT
 				if(IS_MULTICAST_MAC_ADDR(pTxBlk->pSrcBufHeader))
 					pMbss->mcPktsTx++;
@@ -2914,7 +3061,9 @@ VOID AP_ARalink_Frame_Tx(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 			{
 				INC_COUNTER64(pMacEntry->TxPackets);
 				pMacEntry->TxBytes+=pTxBlk->SrcBufLen;
+                pAd->TxTotalByteCnt += pTxBlk->SrcBufLen;
 			}
+
 		}
 
 #ifdef WDS_SUPPORT
@@ -3038,7 +3187,7 @@ NDIS_STATUS APHardTransmit(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	PQUEUE_ENTRY pQEntry;
 	PNDIS_PACKET pPacket = NULL;
 
-	DBGPRINT(RT_DEBUG_INFO, ("%s(%d)-->\n", __FUNCTION__, __LINE__));
+    DBGPRINT(RT_DEBUG_INFO, ("%s(%d)-->\n", __FUNCTION__, __LINE__));
 
 	if ((pAd->Dot11_H.RDMode != RD_NORMAL_MODE)
 #ifdef CARRIER_DETECTION_SUPPORT
@@ -3065,6 +3214,20 @@ NDIS_STATUS APHardTransmit(RTMP_ADAPTER *pAd, TX_BLK *pTxBlk)
 	/*add hook point when dequeue*/
 	RTMP_OS_TXRXHOOK_CALL(WLAN_TX_DEQUEUE,pPacket,pTxBlk->QueIdx,pAd);
 
+#ifdef DOT11K_RRM_SUPPORT
+#ifdef QUIET_SUPPORT
+{
+	struct wifi_dev *wdev = pAd->wdev_list[pTxBlk->wdev_idx];
+	
+	if ((wdev->func_idx < pAd->ApCfg.BssidNum)
+		&& IS_RRM_QUIET(pAd, wdev->func_idx))
+	{
+		RELEASE_NDIS_PACKET(pAd, pTxBlk->pPacket, NDIS_STATUS_FAILURE);
+		return NDIS_STATUS_FAILURE;
+	}
+}
+#endif /* QUIET_SUPPORT */
+#endif /* DOT11K_RRM_SUPPORT */
 
 #ifdef HDR_TRANS_TX_SUPPORT
 #ifdef SOFT_ENCRYPT
@@ -3333,7 +3496,7 @@ VOID APRxErrorHandle(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 					&& (pRxInfo->CipherErr == 2))
 				{
 #ifdef HOSTAPD_SUPPORT
-					if(pAd->ApCfg.MBSSID[pEntry->func_tb_idx].Hostapd == TRUE)
+					if(pAd->ApCfg.MBSSID[pEntry->func_tb_idx].Hostapd == Hostapd_EXT)
 						ieee80211_notify_michael_failure(pAd, pRxBlk->pHeader, (UINT32)pRxBlk->key_idx, 0);
 			      		else
 #endif/*HOSTAPD_SUPPORT*/
@@ -3356,7 +3519,7 @@ VOID APRxErrorHandle(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 
 #ifdef RLT_MAC_DBG
 static int dump_next_valid = 0;
-#endif /* RLT_MAC_DBG */
+#endif
 BOOLEAN APCheckVaildDataFrame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 {
 	HEADER_802_11 *pHeader = pRxBlk->pHeader;
@@ -3415,7 +3578,9 @@ INT ap_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 {
 	RXINFO_STRUC *pRxInfo = pRxBlk->pRxInfo;
 	HEADER_802_11 *pHeader = pRxBlk->pHeader;
+#if defined(WDS_SUPPORT) || defined(CLIENT_WDS) || defined(IDS_SUPPORT)
 	FRAME_CONTROL *pFmeCtrl = &pHeader->FC;
+#endif
 	MAC_TABLE_ENTRY *pEntry = NULL;
 	INT hdr_len = 0;
 
@@ -3453,7 +3618,7 @@ INT ap_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 
 			/* have no valid wds entry exist, then discard the incoming packet.*/
 			if (!(pEntry && WDS_IF_UP_CHECK(pAd, pEntry->func_tb_idx)))
-				goto err;
+				return FALSE;
 
 			/*receive corresponding WDS packet, disable TX lock state (fix WDS jam issue) */
 			if(pEntry && (pEntry->LockEntryTx == TRUE)) 
@@ -3545,16 +3710,38 @@ INT ap_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	if (pHeader->FC.FrDs == 0 && pRxInfo->U2M)
 	{
 		BSS_STRUCT *pMbss = pEntry->pMbss;
+#ifdef CUSTOMER_DCC_FEATURE		
+		UCHAR *pDA = pRxBlk->pHeader->Addr3;
+		UINT32 Length, Index;
+		Length = pRxBlk->MPDUtotalByteCnt;
+#endif
 		if (pMbss != NULL)
 		{
 			pMbss->ReceivedByteCount.QuadPart += pRxBlk->MPDUtotalByteCnt;
 			pMbss->RxCount++;
+#ifdef CUSTOMER_DCC_FEATURE	
+			pAd->RadioStatsCounter.TotalRxCount ++;
+			pAd->RadioStatsCounter.RxDataCount ++;
+			if (((*pDA) & 0x1) == 0x01) {
+				if(IS_BROADCAST_MAC_ADDR(pDA))
+					pMbss->bcPktsRx++;
+				else
+					pMbss->mcPktsRx++;
+			} else
+				pMbss->ucPktsRx++;
+							
+			pEntry->ReceivedByteCount += pRxBlk->MPDUtotalByteCnt;
+			pEntry->RxCount++;
+											
+			GetMultShiftFactorIndex(pRxBlk->rx_rate, &Index);
+			RTMPCalculateAPTxRxActivityTime(pAd, Index, Length, pMbss, pEntry);
+#endif
 		}
 	}
 
 	/* update multicast counter */
-	if (IS_MULTICAST_MAC_ADDR(pHeader->Addr3))
-		INC_COUNTER64(pAd->WlanCounters.MulticastReceivedFrameCount);
+        if (IS_MULTICAST_MAC_ADDR(pHeader->Addr3))
+                INC_COUNTER64(pAd->WlanCounters.MulticastReceivedFrameCount);
 #endif /* STATS_COUNT_SUPPORT */
 
 	hdr_len = LENGTH_802_11;
@@ -3563,24 +3750,29 @@ INT ap_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	ASSERT(pEntry->Aid == pRxBlk->wcid);
 
 	return hdr_len;
-#if defined(WDS_SUPPORT) || defined(CLIENT_WDS)
-err:
-#endif /* defined((WDS_SUPPORT) || defined(CLIENT_WDS)  */
 
-	return FALSE;
 }
 
 
 INT ap_rx_ps_handle(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 {
+
 	MAC_TABLE_ENTRY *pEntry = &pAd->MacTab.Content[pRxBlk->wcid];
 	HEADER_802_11 *pHeader = pRxBlk->pHeader;
 	UCHAR OldPwrMgmt = PWR_ACTIVE; /* 1: PWR_SAVE, 0: PWR_ACTIVE */
-	UCHAR *pData = pRxBlk->pData;
 	
-   	/* 1: PWR_SAVE, 0: PWR_ACTIVE */
-   	OldPwrMgmt = RtmpPsIndicate(pAd, pHeader->Addr2, pEntry->wcid, pHeader->FC.PwrMgmt);
 #ifdef UAPSD_SUPPORT
+	UCHAR *pData = pRxBlk->pData;
+#endif /* UAPSD_SUPPORT */
+   	/* 1: PWR_SAVE, 0: PWR_ACTIVE */
+
+   	OldPwrMgmt = RtmpPsIndicate(pAd, pHeader->Addr2, pEntry->wcid, pHeader->FC.PwrMgmt);
+
+	if(OldPwrMgmt > 2)
+		DBGPRINT(RT_DEBUG_TRACE, ("OldPwrMgmt is %d\n", OldPwrMgmt));
+	
+#ifdef UAPSD_SUPPORT
+
 	if ((pHeader->FC.PwrMgmt == PWR_SAVE) && 
 		(OldPwrMgmt == PWR_SAVE) &&
 		(CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_APSD_CAPABLE)) &&
@@ -3611,9 +3803,9 @@ INT ap_rx_ps_handle(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 				OldUP = (*(pData+LENGTH_802_11) & 0x07);
 #ifdef MT_PS
 		if (pEntry->i_psm == I_PSM_DISABLE)
-                {
-			MtSetIgnorePsm(pAd, pEntry, I_PSM_ENABLE);
-                }
+        {
+			MT_SET_IGNORE_PSM(pAd, pEntry, I_PSM_ENABLE);
+        }
 #endif /* MT_PS */
 		UAPSD_TriggerFrameHandle(pAd, pEntry, OldUP);
     }
@@ -3698,6 +3890,26 @@ INT ap_rx_foward_handle(RTMP_ADAPTER *pAd, struct wifi_dev *wdev, PNDIS_PACKET p
 			}
 		}
 	}
+
+#ifdef PREVENT_ARP_SPOOFING
+	if (pAd->ApCfg.ARPSpoofChk)
+	{
+		/* 
+		    This is on AP Rx data Path :
+		    sofar both direction will be checked, maybe we can check to_air case only
+		*/
+		if (to_os || to_air) 
+		{
+			if (check_arp_spoofing(wdev->if_dev, pPacket))
+			{
+				DBGPRINT(RT_DEBUG_ERROR, ("%s(): DROP: Detected ARP spoofing (func_idx=%d,wdev_type=%d)!\n",
+							__FUNCTION__, wdev->func_idx, wdev->wdev_type));
+				to_os = FALSE;
+				return to_os; //Free pPacket out side
+			}
+		}
+	}
+#endif /* PREVENT_ARP_SPOOFING */
 
 	if (to_air)
 	{

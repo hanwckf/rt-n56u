@@ -44,6 +44,7 @@
 #define SPE_DIS_TH_MASK         (0x0F << 24)
 #define SPE_DIS_TH(p)           (((p) & 0xF) << 24)
 
+
 #define AGG_ARUCR		(WF_AGG_BASE + 0x014)	/* 0x21214 */
 #define RATE1_UP_MPDU_LIMIT_MASK (0x7)
 #define RATE1_UP_MPDU_LINIT(p) (((p) & 0x7))

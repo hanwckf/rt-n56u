@@ -51,8 +51,13 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 	UCHAR i, j, index=0, num=0;
 	PCH_DESC pChDesc = NULL;
 	BOOLEAN bRegionFound = FALSE;
-	PUCHAR pChannelList;
-	PUCHAR pChannelListFlag;
+	PUCHAR pChannelList = NULL;
+	PUCHAR pChannelListFlag = NULL;
+#ifdef CFG80211_BUILD_CHANNEL_LIST
+        PCH_DESC pChDesc2G = NULL, pChDesc5G = NULL;
+#endif /* CFG80211_BUILD_CHANNEL_LIST */
+
+
 
 	NdisZeroMemory(pAd->ChannelList, MAX_NUM_OF_CHANNELS * sizeof(CHANNEL_TX_POWER));
 
@@ -67,6 +72,10 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 				pChDesc = Country_Region_ChDesc_2GHZ[i].pChDesc;
 				num = TotalChNum(pChDesc);
 				bRegionFound = TRUE;
+#ifdef CFG80211_BUILD_CHANNEL_LIST
+                                pChDesc2G = pChDesc;
+#endif /* CFG80211_BUILD_CHANNEL_LIST */
+
 				break;
 			}
 		}
@@ -144,6 +153,10 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 				pChDesc = Country_Region_ChDesc_5GHZ[i].pChDesc;
 				num = TotalChNum(pChDesc);
 				bRegionFound = TRUE;
+#ifdef CFG80211_BUILD_CHANNEL_LIST
+                                pChDesc5G = pChDesc;
+#endif /* CFG80211_BUILD_CHANNEL_LIST */
+
 				break;
 			}
 		}
@@ -269,6 +282,18 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 					WMODE_CAP_N(pAd->CommonCfg.PhyMode),
 					(pAd->CommonCfg.RegTransmitSetting.field.BW == BW_20));
 	}
+
+#ifdef CFG80211_BUILD_CHANNEL_LIST
+
+   if (CFG80211OS_UpdateRegRuleByRegionIdx(
+                    pAd->pCfg80211_CB,
+                    pChDesc2G,
+                    pChDesc5G
+                    ) != 0)
+    {
+        DBGPRINT(RT_DEBUG_ERROR,("Update RegRule failed!\n"));
+    }
+#endif /* CFG80211_BUILD_CHANNEL_LIST */
 #endif /* RT_CFG80211_SUPPORT */
 
 #ifdef DBG
@@ -283,6 +308,91 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 	}
 #endif
 }
+
+
+#ifdef P2P_CHANNEL_LIST_SEPARATE
+VOID P2PBuildChannelList(
+	IN PRTMP_ADAPTER pAd)
+{
+	UCHAR i, index=0, num=0;
+	PCH_DESC pChDesc = NULL;
+	BOOLEAN bRegionFound = FALSE;
+	PCFG80211_CTRL pCfg80211_Ctrl = &pAd->cfg80211_ctrl;
+
+	NdisZeroMemory(pCfg80211_Ctrl->ChannelList, MAX_NUM_OF_CHANNELS * sizeof(CHANNEL_TX_POWER));
+
+	/* if not 11a-only mode, channel list starts from 2.4Ghz band*/
+	if (WMODE_CAP_2G(pAd->CommonCfg.PhyMode))
+	{
+		for (i = 0; i < Country_Region_GroupNum_2GHZ; i++)
+		{
+			if ((pCfg80211_Ctrl->CountryRegion & 0x7f) ==
+				Country_Region_ChDesc_2GHZ[i].RegionIndex)
+			{
+				pChDesc = Country_Region_ChDesc_2GHZ[i].pChDesc;
+				num = TotalChNum(pChDesc);
+				bRegionFound = TRUE;
+				break;
+			}
+		}
+
+		if (!bRegionFound)
+		{
+			DBGPRINT(RT_DEBUG_ERROR,("%s::P2PCountryRegion=%d not support", __FUNCTION__, pCfg80211_Ctrl->CountryRegion));
+			return;		
+		}
+
+		if (num > 0)
+		{
+			for (i = 0; i < num; i++)
+			{
+				pCfg80211_Ctrl->ChannelList[i].Channel = GetChannel_2GHZ(pChDesc, i);
+				pCfg80211_Ctrl->ChannelList[i].Flags = GetChannelFlag(pChDesc, i);
+			}
+
+			index += num;
+		}
+		num = 0;
+	}
+
+	if (WMODE_CAP_5G(pAd->CommonCfg.PhyMode))
+	{
+		for (i = 0; i < Country_Region_GroupNum_5GHZ; i++)
+		{
+			if ((pCfg80211_Ctrl->CountryRegionForABand & 0x7f) ==
+				Country_Region_ChDesc_5GHZ[i].RegionIndex)
+			{
+				pChDesc = Country_Region_ChDesc_5GHZ[i].pChDesc;
+				num = TotalChNum(pChDesc);
+				bRegionFound = TRUE;
+				break;
+			}
+		}
+
+		if (!bRegionFound)
+		{
+			DBGPRINT(RT_DEBUG_ERROR,("%s::P2PCountryRegionForABand=%d not support", __FUNCTION__, pCfg80211_Ctrl->CountryRegionForABand));
+			return;		
+		}
+
+		if (num > 0)
+		{
+			for (i = 0; i < num; i++)
+			{
+				pCfg80211_Ctrl->ChannelList[index + i].Channel = GetChannel_5GHZ(pChDesc, i);
+				pCfg80211_Ctrl->ChannelList[index + i].Flags = GetChannelFlag(pChDesc, i);
+			}
+
+			index += num;
+		}
+	}
+
+	pCfg80211_Ctrl->ChannelListNum = index;	
+
+	DBGPRINT(RT_DEBUG_TRACE, ("%s::Channel list nubmer = %d\n", __FUNCTION__, pCfg80211_Ctrl->ChannelListNum));
+}
+#endif /* P2P_CHANNEL_LIST_SEPARATE */
+
 
 
 /*
@@ -319,6 +429,27 @@ UCHAR NextChannel(RTMP_ADAPTER *pAd, UCHAR channel)
 {
 	int i;
 	UCHAR next_channel = 0;
+
+#ifdef P2P_CHANNEL_LIST_SEPARATE
+	PCFG80211_CTRL pCfg80211_Ctrl = &pAd->cfg80211_ctrl;
+#endif /* P2P_CHANNEL_LIST_SEPARATE */
+
+#ifdef P2P_CHANNEL_LIST_SEPARATE
+	if ((pAd->ScanCtrl.ScanType == SCAN_P2P))
+	{
+		for (i = 0; i < (pCfg80211_Ctrl->ChannelListNum - 1); i++)
+		{
+			if (channel == pCfg80211_Ctrl->ChannelList[i].Channel)
+			{
+				next_channel = pCfg80211_Ctrl->ChannelList[i+1].Channel;
+				return next_channel;
+			}
+		}
+	}
+#endif /* P2P_CHANNEL_LIST_SEPARATE */
+
+
+
 
 	for (i = 0; i < (pAd->ChannelListNum - 1); i++)
 	{

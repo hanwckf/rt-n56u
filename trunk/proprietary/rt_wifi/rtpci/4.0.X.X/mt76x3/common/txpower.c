@@ -1589,7 +1589,6 @@ VOID RTMPReadTxPwrPerRate(RTMP_ADAPTER *pAd)
 }
 
 
-#ifdef RTMP_MAC
 /*
 	========================================================================
 	
@@ -1793,7 +1792,6 @@ VOID RTMPReadChannelPwr(RTMP_ADAPTER *pAd)
 	
 
 }
-#endif /* RTMP_MAC */
 
 
 VOID LoadTssiInfoFromEEPROM(RTMP_ADAPTER *pAd)

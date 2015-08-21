@@ -324,7 +324,6 @@ CHAR RTMP_GetTxPwr(RTMP_ADAPTER *pAd, HTTRANSMIT_SETTING HTTxMode)
 }
 
 
-#ifdef VOE_SUPPORT
 NDIS_STATUS	MeasureReqTabInit(RTMP_ADAPTER *pAd)
 {
 	NDIS_STATUS     Status = NDIS_STATUS_SUCCESS;
@@ -362,7 +361,7 @@ PMEASURE_REQ_ENTRY MeasureReqLookUp(RTMP_ADAPTER *pAd, UINT8 DialogToken)
 	UINT HashIdx;
 	PMEASURE_REQ_TAB pTab = pAd->CommonCfg.pMeasureReqTab;
 	PMEASURE_REQ_ENTRY pEntry = NULL;
-	PMEASURE_REQ_ENTRY pPrevEntry = NULL;
+	//PMEASURE_REQ_ENTRY pPrevEntry = NULL;
 
 	if (pTab == NULL)
 	{
@@ -381,7 +380,7 @@ PMEASURE_REQ_ENTRY MeasureReqLookUp(RTMP_ADAPTER *pAd, UINT8 DialogToken)
 			break;
 		else
 		{
-			pPrevEntry = pEntry;
+			//pPrevEntry = pEntry;
 			pEntry = pEntry->pNext;
 		}
 	}
@@ -584,7 +583,7 @@ static PTPC_REQ_ENTRY TpcReqLookUp(RTMP_ADAPTER *pAd, UINT8 DialogToken)
 	UINT HashIdx;
 	PTPC_REQ_TAB pTab = pAd->CommonCfg.pTpcReqTab;
 	PTPC_REQ_ENTRY pEntry = NULL;
-	PTPC_REQ_ENTRY pPrevEntry = NULL;
+	//PTPC_REQ_ENTRY pPrevEntry = NULL;
 
 	if (pTab == NULL)
 	{
@@ -603,7 +602,7 @@ static PTPC_REQ_ENTRY TpcReqLookUp(RTMP_ADAPTER *pAd, UINT8 DialogToken)
 			break;
 		else
 		{
-			pPrevEntry = pEntry;
+			//pPrevEntry = pEntry;
 			pEntry = pEntry->pNext;
 		}
 	}
@@ -766,7 +765,6 @@ static VOID TpcReqDelete(RTMP_ADAPTER *pAd, UINT8 DialogToken)
 
 	return;
 }
-#endif /* VOE_SUPPORT */
 
 
 /*
@@ -779,7 +777,6 @@ static VOID TpcReqDelete(RTMP_ADAPTER *pAd, UINT8 DialogToken)
 	Return	: Current Time Stamp.
 	==========================================================================
  */
-#ifdef VOE_SUPPORT
 static UINT64 GetCurrentTimeStamp(RTMP_ADAPTER *pAd)
 {
 	/* get current time stamp.*/
@@ -801,7 +798,6 @@ static UINT8 GetCurTxPwr(RTMP_ADAPTER *pAd, UINT8 Wcid)
 {
 	return 16; /* 16 dBm */
 }
-#endif
 
 
 /*
@@ -912,7 +908,6 @@ VOID InsertDialogToken(
 }
 
 
-#ifdef VOE_SUPPORT
 /*
 	==========================================================================
 	Description:
@@ -1296,6 +1291,246 @@ VOID EnqueueTPCRep(
 }
 
 
+#ifdef WDS_SUPPORT
+/*
+	==========================================================================
+	Description:
+		Insert Channel Switch Announcement IE into frame.
+		
+	Parametrs:
+		1. frame buffer pointer.
+		2. frame length.
+		3. channel switch announcement mode.
+		4. new selected channel.
+		5. channel switch announcement count.
+	
+	Return	: None.
+	==========================================================================
+ */
+static VOID InsertChSwAnnIE(
+	IN RTMP_ADAPTER *pAd,
+	OUT PUCHAR pFrameBuf,
+	OUT PULONG pFrameLen,
+	IN UINT8 ChSwMode,
+	IN UINT8 NewChannel,
+	IN UINT8 ChSwCnt)
+{
+	ULONG TempLen;
+	ULONG Len = sizeof(CH_SW_ANN_INFO);
+	UINT8 ElementID = IE_CHANNEL_SWITCH_ANNOUNCEMENT;
+	CH_SW_ANN_INFO ChSwAnnIE;
+
+	ChSwAnnIE.ChSwMode = ChSwMode;
+	ChSwAnnIE.Channel = NewChannel;
+	ChSwAnnIE.ChSwCnt = ChSwCnt;
+
+	MakeOutgoingFrame(pFrameBuf,				&TempLen,
+						1,						&ElementID,
+						1,						&Len,
+						Len,					&ChSwAnnIE,
+						END_OF_ARGS);
+
+	*pFrameLen = *pFrameLen + TempLen;
+
+
+	return;
+}
+
+
+/*
+	==========================================================================
+	Description:
+		Prepare Channel Switch Announcement action frame and enqueue it into
+		management queue waiting for transmition.
+		
+	Parametrs:
+		1. the destination mac address of the frame.
+		2. Channel switch announcement mode.
+		2. a New selected channel.
+	
+	Return	: None.
+	==========================================================================
+ */
+VOID EnqueueChSwAnn(
+	IN RTMP_ADAPTER *pAd,
+	IN PUCHAR pDA, 
+	IN UINT8 ChSwMode,
+	IN UINT8 NewCh)
+{
+	PUCHAR pOutBuffer = NULL;
+	NDIS_STATUS NStatus;
+	ULONG FrameLen;
+
+	HEADER_802_11 ActHdr;
+
+	/* build action frame header.*/
+	MgtMacHeaderInit(pAd, &ActHdr, SUBTYPE_ACTION, 0, pDA,
+						pAd->CurrentAddress,
+						pAd->CurrentAddress);
+
+	NStatus = MlmeAllocateMemory(pAd, (PVOID)&pOutBuffer);  /*Get an unused nonpaged memory*/
+	if(NStatus != NDIS_STATUS_SUCCESS)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("%s() allocate memory failed \n", __FUNCTION__));
+		return;
+	}
+	NdisMoveMemory(pOutBuffer, (PCHAR)&ActHdr, sizeof(HEADER_802_11));
+	FrameLen = sizeof(HEADER_802_11);
+
+	InsertActField(pAd, (pOutBuffer + FrameLen), &FrameLen, CATEGORY_SPECTRUM, SPEC_CHANNEL_SWITCH);
+
+	InsertChSwAnnIE(pAd, (pOutBuffer + FrameLen), &FrameLen, ChSwMode, NewCh, 0);
+
+	MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
+	MlmeFreeMemory(pAd, pOutBuffer);
+
+	return;
+}
+#endif /* WDS_SUPPORT */
+
+
+static BOOLEAN DfsRequirementCheck(RTMP_ADAPTER *pAd, UINT8 Channel)
+{
+	BOOLEAN Result = FALSE;
+	INT i;
+
+	do
+	{
+		/* check DFS procedure is running.*/
+		/* make sure DFS procedure won't start twice.*/
+		if (pAd->Dot11_H.RDMode != RD_NORMAL_MODE)
+		{
+			Result = FALSE;
+			break;
+		}
+
+		/* check the new channel carried from Channel Switch Announcemnet is valid.*/
+		for (i=0; i<pAd->ChannelListNum; i++)
+		{
+			if ((Channel == pAd->ChannelList[i].Channel)
+				&&(pAd->ChannelList[i].RemainingTimeForUse == 0))
+			{
+				/* found radar signal in the channel. the channel can't use at least for 30 minutes.*/
+				pAd->ChannelList[i].RemainingTimeForUse = 1800;/*30 min = 1800 sec*/
+				Result = TRUE;
+				break;
+			}
+		}
+	} while(FALSE);
+
+	return Result;
+}
+
+
+VOID NotifyChSwAnnToPeerAPs(
+	IN RTMP_ADAPTER *pAd,
+	IN PUCHAR pRA,
+	IN PUCHAR pTA,
+	IN UINT8 ChSwMode,
+	IN UINT8 Channel)
+{
+#ifdef WDS_SUPPORT
+	if (!((pRA[0] & 0xff) == 0xff)) /* is pRA a broadcase address.*/
+	{
+		INT i;
+		/* info neighbor APs that Radar signal found throgh WDS link.*/
+		for (i = 0; i < MAX_WDS_ENTRY; i++)
+		{
+			if (ValidWdsEntry(pAd, i))
+			{
+				PUCHAR pDA = pAd->WdsTab.WdsEntry[i].PeerWdsAddr;
+
+				/* DA equal to SA. have no necessary orignal AP which found Radar signal.*/
+				if (MAC_ADDR_EQUAL(pTA, pDA))
+					continue;
+
+				/* send Channel Switch Action frame to info Neighbro APs.*/
+				EnqueueChSwAnn(pAd, pDA, ChSwMode, Channel);
+			}
+		}
+	}
+#endif /* WDS_SUPPORT */
+}
+
+
+static VOID StartDFSProcedure(RTMP_ADAPTER *pAd, UCHAR Channel, UINT8 ChSwMode)
+{
+	/* start DFS procedure*/
+	pAd->CommonCfg.Channel = Channel;
+#ifdef DOT11_N_SUPPORT
+	N_ChannelCheck(pAd);
+#endif /* DOT11_N_SUPPORT */
+	pAd->Dot11_H.RDMode = RD_SWITCHING_MODE;
+	pAd->Dot11_H.CSCount = 0;
+}
+
+
+/*
+	==========================================================================
+	Description:
+		Channel Switch Announcement action frame sanity check.
+		
+	Parametrs:
+		1. MLME message containing the received frame
+		2. message length.
+		3. Channel switch announcement infomation buffer.
+		
+	
+	Return	: None.
+	==========================================================================
+ */
+
+/*
+  Channel Switch Announcement IE.
+  +----+-----+-----------+------------+-----------+
+  | ID | Len |Ch Sw Mode | New Ch Num | Ch Sw Cnt |
+  +----+-----+-----------+------------+-----------+
+    1    1        1           1            1      
+*/
+static BOOLEAN PeerChSwAnnSanity(
+	IN RTMP_ADAPTER *pAd,
+	IN VOID *pMsg,
+	IN ULONG MsgLen,
+	OUT PCH_SW_ANN_INFO pChSwAnnInfo)
+{
+	PFRAME_802_11 Fr = (PFRAME_802_11)pMsg;
+	PUCHAR pFramePtr = Fr->Octet;
+	BOOLEAN result = FALSE;
+	PEID_STRUCT eid_ptr;
+
+	/* skip 802.11 header.*/
+	MsgLen -= sizeof(HEADER_802_11);
+
+	/* skip category and action code.*/
+	pFramePtr += 2;
+	MsgLen -= 2;
+
+	if (pChSwAnnInfo == NULL)
+		return result;
+
+	eid_ptr = (PEID_STRUCT)pFramePtr;
+	while (((UCHAR*)eid_ptr + eid_ptr->Len + 1) < ((PUCHAR)pFramePtr + MsgLen))
+	{
+		switch(eid_ptr->Eid)
+		{
+			case IE_CHANNEL_SWITCH_ANNOUNCEMENT:
+				NdisMoveMemory(&pChSwAnnInfo->ChSwMode, eid_ptr->Octet, 1);
+				NdisMoveMemory(&pChSwAnnInfo->Channel, eid_ptr->Octet + 1, 1);
+				NdisMoveMemory(&pChSwAnnInfo->ChSwCnt, eid_ptr->Octet + 2, 1);
+				
+				result = TRUE;
+                break;
+            
+			default:
+				break;
+		}
+		eid_ptr = (PEID_STRUCT)((UCHAR*)eid_ptr + 2 + eid_ptr->Len);        
+	}
+
+	return result;
+}
+
+
 /*
 	==========================================================================
 	Description:
@@ -1600,6 +1835,44 @@ static BOOLEAN PeerTpcRepSanity(
 /*
 	==========================================================================
 	Description:
+		Channel Switch Announcement action frame handler.
+		
+	Parametrs:
+		Elme - MLME message containing the received frame
+	
+	Return	: None.
+	==========================================================================
+ */
+static VOID PeerChSwAnnAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem) 
+{
+	CH_SW_ANN_INFO ChSwAnnInfo;
+	PFRAME_802_11 pFr = (PFRAME_802_11)Elem->Msg;
+
+	NdisZeroMemory(&ChSwAnnInfo, sizeof(CH_SW_ANN_INFO));
+	if (! PeerChSwAnnSanity(pAd, Elem->Msg, Elem->MsgLen, &ChSwAnnInfo))
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("Invalid Channel Switch Action Frame.\n"));
+		return;
+	}
+
+#ifdef CONFIG_AP_SUPPORT
+	/* ChSwAnn need check.*/
+	if ((pAd->OpMode == OPMODE_AP) &&
+		(DfsRequirementCheck(pAd, ChSwAnnInfo.Channel) == TRUE))
+	{
+		NotifyChSwAnnToPeerAPs(pAd, pFr->Hdr.Addr1, pFr->Hdr.Addr2, ChSwAnnInfo.ChSwMode, ChSwAnnInfo.Channel);
+		StartDFSProcedure(pAd, ChSwAnnInfo.Channel, ChSwAnnInfo.ChSwMode);
+	}
+#endif /* CONFIG_AP_SUPPORT */
+
+
+	return;
+}
+
+
+/*
+	==========================================================================
+	Description:
 		Measurement Request action frame handler.
 		
 	Parametrs:
@@ -1766,6 +2039,80 @@ static VOID PeerTpcRepAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 /*
 	==========================================================================
 	Description:
+		Spectrun action frames Handler such as channel switch annoucement,
+		measurement report, measurement request actions frames.
+		
+	Parametrs:
+		Elme - MLME message containing the received frame
+	
+	Return	: None.
+	==========================================================================
+ */
+VOID PeerSpectrumAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem) 
+{
+
+	UCHAR	Action = Elem->Msg[LENGTH_802_11+1];
+
+	if (pAd->CommonCfg.bIEEE80211H != TRUE)
+		return;
+
+	switch(Action)
+	{
+		case SPEC_MRQ:
+			/* current rt2860 unable do such measure specified in Measurement Request.*/
+			/* reject all measurement request.*/
+			PeerMeasureReqAction(pAd, Elem);
+			break;
+
+		case SPEC_MRP:
+			PeerMeasureReportAction(pAd, Elem);
+			break;
+
+		case SPEC_TPCRQ:
+			PeerTpcReqAction(pAd, Elem);
+			break;
+
+		case SPEC_TPCRP:
+			PeerTpcRepAction(pAd, Elem);
+			break;
+
+		case SPEC_CHANNEL_SWITCH:
+
+#ifdef DOT11N_DRAFT3
+			{
+				SEC_CHA_OFFSET_IE	Secondary;
+				CHA_SWITCH_ANNOUNCE_IE	ChannelSwitch;
+
+				/* 802.11h only has Channel Switch Announcement IE. */
+				RTMPMoveMemory(&ChannelSwitch, &Elem->Msg[LENGTH_802_11+4], sizeof (CHA_SWITCH_ANNOUNCE_IE));
+					
+				/* 802.11n D3.03 adds secondary channel offset element in the end.*/
+				if (Elem->MsgLen ==  (LENGTH_802_11 + 2 + sizeof (CHA_SWITCH_ANNOUNCE_IE) + sizeof (SEC_CHA_OFFSET_IE)))
+				{
+					RTMPMoveMemory(&Secondary, &Elem->Msg[LENGTH_802_11+9], sizeof (SEC_CHA_OFFSET_IE));
+				}
+				else
+				{
+					Secondary.SecondaryChannelOffset = 0;
+				}
+
+				if ((Elem->Msg[LENGTH_802_11+2] == IE_CHANNEL_SWITCH_ANNOUNCEMENT) && (Elem->Msg[LENGTH_802_11+3] == 3))
+				{
+					ChannelSwitchAction(pAd, Elem->Wcid, ChannelSwitch.NewChannel, Secondary.SecondaryChannelOffset);
+				}
+			}
+#endif /* DOT11N_DRAFT3 */
+
+			PeerChSwAnnAction(pAd, Elem);
+			break;
+	}
+
+	return;
+}
+
+/*
+	==========================================================================
+	Description:
 		
 	Parametrs:
 	
@@ -1784,7 +2131,7 @@ INT Set_MeasureReq_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	UINT8 MeasureCh = 1;
 	UINT64 MeasureStartTime = GetCurrentTimeStamp(pAd);
 	MEASURE_REQ MeasureReq;
-	UINT8 TotalLen;
+	//UINT8 TotalLen;
 
 	HEADER_802_11 ActHdr;
 	PUCHAR pOutBuffer = NULL;
@@ -1844,7 +2191,7 @@ INT Set_MeasureReq_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	NdisMoveMemory(pOutBuffer, (PCHAR)&ActHdr, sizeof(HEADER_802_11));
 	FrameLen = sizeof(HEADER_802_11);
 
-	TotalLen = sizeof(MEASURE_REQ_INFO) + sizeof(MEASURE_REQ);
+	//TotalLen = sizeof(MEASURE_REQ_INFO) + sizeof(MEASURE_REQ);
 
 	MakeMeasurementReqFrame(pAd, pOutBuffer, &FrameLen,
 		sizeof(MEASURE_REQ_INFO), CATEGORY_RM, RM_BASIC,
@@ -1892,26 +2239,37 @@ INT Set_TpcReq_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 	return TRUE;
 }
-#endif /* VOE_SUPPORT */
+#ifdef CUSTOMER_DCC_FEATURE
+#ifdef DOT11_N_SUPPORT
+static VOID InsertSecondaryChOffsetIE(
+        IN PRTMP_ADAPTER pAd,
+        OUT PUCHAR pFrameBuf,
+        OUT PULONG pFrameLen,
+        IN UINT8 Offset)
+{
+        ULONG TempLen;
+        ULONG Len = sizeof(SEC_CHA_OFFSET_IE);
+        UINT8 ElementID = IE_SECONDARY_CH_OFFSET;
+        SEC_CHA_OFFSET_IE SChOffIE;
 
-#ifdef WDS_SUPPORT
-/*
-	==========================================================================
-	Description:
-		Insert Channel Switch Announcement IE into frame.
-		
-	Parametrs:
-		1. frame buffer pointer.
-		2. frame length.
-		3. channel switch announcement mode.
-		4. new selected channel.
-		5. channel switch announcement count.
-	
-	Return	: None.
-	==========================================================================
- */
-static VOID InsertChSwAnnIE(
-	IN RTMP_ADAPTER *pAd,
+        SChOffIE.SecondaryChannelOffset = Offset;
+
+        MakeOutgoingFrame(pFrameBuf,      &TempLen,
+                        		  1,      &ElementID,
+                                  1,      &Len,
+                                  Len,    &SChOffIE,
+                                          END_OF_ARGS);
+
+        *pFrameLen = *pFrameLen + TempLen;
+
+
+        return;
+}
+
+#endif
+
+VOID InsertChSwAnnIENew(
+	IN PRTMP_ADAPTER pAd,
 	OUT PUCHAR pFrameBuf,
 	OUT PULONG pFrameLen,
 	IN UINT8 ChSwMode,
@@ -1927,38 +2285,49 @@ static VOID InsertChSwAnnIE(
 	ChSwAnnIE.Channel = NewChannel;
 	ChSwAnnIE.ChSwCnt = ChSwCnt;
 
-	MakeOutgoingFrame(pFrameBuf,				&TempLen,
-						1,						&ElementID,
-						1,						&Len,
-						Len,					&ChSwAnnIE,
-						END_OF_ARGS);
+	MakeOutgoingFrame(pFrameBuf,	&TempLen,
+			  	1,	&ElementID,
+				1,	&Len,
+				Len,	&ChSwAnnIE,
+				END_OF_ARGS);
 
 	*pFrameLen = *pFrameLen + TempLen;
 
-
+	printk("%s \n",__func__);
 	return;
 }
 
 
-/*
-	==========================================================================
-	Description:
-		Prepare Channel Switch Announcement action frame and enqueue it into
-		management queue waiting for transmition.
-		
-	Parametrs:
-		1. the destination mac address of the frame.
-		2. Channel switch announcement mode.
-		2. a New selected channel.
+VOID NotifyChSwAnnToConnectedSTAs(
+	IN PRTMP_ADAPTER pAd,
+	IN UINT8 		ChSwMode,
+	IN UINT8 		Channel)
+{
+	UINT32 i;
+	MAC_TABLE_ENTRY *pEntry;
+
+	pAd->CommonCfg.channelSwitch.CHSWMode = ChSwMode;
+	pAd->CommonCfg.channelSwitch.CHSWCount = 0;
+//	pAd->CommonCfg.channelSwitch.CHSWPeriod = 5;
 	
-	Return	: None.
-	==========================================================================
- */
-VOID EnqueueChSwAnn(
-	IN RTMP_ADAPTER *pAd,
+	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
+	{
+		pEntry = &pAd->MacTab.Content[i];
+		if (pEntry && IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
+		{
+					
+			EnqueueChSwAnnNew(pAd, pEntry->Addr, ChSwMode, Channel, pEntry->bssid);
+		
+		}
+	}
+}
+
+VOID EnqueueChSwAnnNew(
+	IN PRTMP_ADAPTER pAd,
 	IN PUCHAR pDA, 
 	IN UINT8 ChSwMode,
-	IN UINT8 NewCh)
+	IN UINT8 NewCh,
+	IN PUCHAR pSA)
 {
 	PUCHAR pOutBuffer = NULL;
 	NDIS_STATUS NStatus;
@@ -1967,9 +2336,7 @@ VOID EnqueueChSwAnn(
 	HEADER_802_11 ActHdr;
 
 	/* build action frame header.*/
-	MgtMacHeaderInit(pAd, &ActHdr, SUBTYPE_ACTION, 0, pDA,
-						pAd->CurrentAddress,
-						pAd->CurrentAddress);
+	MgtMacHeaderInit(pAd, &ActHdr, SUBTYPE_ACTION, 0, pDA, pAd->CurrentAddress, pSA);
 
 	NStatus = MlmeAllocateMemory(pAd, (PVOID)&pOutBuffer);  /*Get an unused nonpaged memory*/
 	if(NStatus != NDIS_STATUS_SUCCESS)
@@ -1982,269 +2349,19 @@ VOID EnqueueChSwAnn(
 
 	InsertActField(pAd, (pOutBuffer + FrameLen), &FrameLen, CATEGORY_SPECTRUM, SPEC_CHANNEL_SWITCH);
 
-	InsertChSwAnnIE(pAd, (pOutBuffer + FrameLen), &FrameLen, ChSwMode, NewCh, 0);
+	InsertChSwAnnIENew(pAd, (pOutBuffer + FrameLen), &FrameLen, ChSwMode, NewCh, pAd->CommonCfg.channelSwitch.CHSWPeriod);
+
+#ifdef DOT11_N_SUPPORT
+	InsertSecondaryChOffsetIE(pAd, (pOutBuffer + FrameLen), &FrameLen, pAd->CommonCfg.RegTransmitSetting.field.EXTCHA);
+#endif
 
 	MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
 	MlmeFreeMemory(pAd, pOutBuffer);
-
-	return;
-}
-#endif /* WDS_SUPPORT */
-
-
-static BOOLEAN DfsRequirementCheck(RTMP_ADAPTER *pAd, UINT8 Channel)
-{
-	BOOLEAN Result = FALSE;
-	INT i;
-
-	do
-	{
-		/* check DFS procedure is running.*/
-		/* make sure DFS procedure won't start twice.*/
-		if (pAd->Dot11_H.RDMode != RD_NORMAL_MODE)
-		{
-			Result = FALSE;
-			break;
-		}
-
-		/* check the new channel carried from Channel Switch Announcemnet is valid.*/
-		for (i=0; i<pAd->ChannelListNum; i++)
-		{
-			if ((Channel == pAd->ChannelList[i].Channel)
-				&&(pAd->ChannelList[i].RemainingTimeForUse == 0))
-			{
-				/* found radar signal in the channel. the channel can't use at least for 30 minutes.*/
-				pAd->ChannelList[i].RemainingTimeForUse = 1800;/*30 min = 1800 sec*/
-				Result = TRUE;
-				break;
-			}
-		}
-	} while(FALSE);
-
-	return Result;
-}
-
-
-VOID NotifyChSwAnnToPeerAPs(
-	IN RTMP_ADAPTER *pAd,
-	IN PUCHAR pRA,
-	IN PUCHAR pTA,
-	IN UINT8 ChSwMode,
-	IN UINT8 Channel)
-{
-#ifdef WDS_SUPPORT
-	if (!((pRA[0] & 0xff) == 0xff)) /* is pRA a broadcase address.*/
-	{
-		INT i;
-		/* info neighbor APs that Radar signal found throgh WDS link.*/
-		for (i = 0; i < MAX_WDS_ENTRY; i++)
-		{
-			if (ValidWdsEntry(pAd, i))
-			{
-				PUCHAR pDA = pAd->WdsTab.WdsEntry[i].PeerWdsAddr;
-
-				/* DA equal to SA. have no necessary orignal AP which found Radar signal.*/
-				if (MAC_ADDR_EQUAL(pTA, pDA))
-					continue;
-
-				/* send Channel Switch Action frame to info Neighbro APs.*/
-				EnqueueChSwAnn(pAd, pDA, ChSwMode, Channel);
-			}
-		}
-	}
-#endif /* WDS_SUPPORT */
-}
-
-
-static VOID StartDFSProcedure(RTMP_ADAPTER *pAd, UCHAR Channel, UINT8 ChSwMode)
-{
-	/* start DFS procedure*/
-	pAd->CommonCfg.Channel = Channel;
-#ifdef DOT11_N_SUPPORT
-	N_ChannelCheck(pAd);
-#endif /* DOT11_N_SUPPORT */
-	pAd->Dot11_H.RDMode = RD_SWITCHING_MODE;
-	pAd->Dot11_H.CSCount = 0;
-}
-
-
-/*
-	==========================================================================
-	Description:
-		Channel Switch Announcement action frame sanity check.
 		
-	Parametrs:
-		1. MLME message containing the received frame
-		2. message length.
-		3. Channel switch announcement infomation buffer.
-		
-	
-	Return	: None.
-	==========================================================================
- */
-
-/*
-  Channel Switch Announcement IE.
-  +----+-----+-----------+------------+-----------+
-  | ID | Len |Ch Sw Mode | New Ch Num | Ch Sw Cnt |
-  +----+-----+-----------+------------+-----------+
-    1    1        1           1            1      
-*/
-static BOOLEAN PeerChSwAnnSanity(
-	IN RTMP_ADAPTER *pAd,
-	IN VOID *pMsg,
-	IN ULONG MsgLen,
-	OUT PCH_SW_ANN_INFO pChSwAnnInfo)
-{
-	PFRAME_802_11 Fr = (PFRAME_802_11)pMsg;
-	PUCHAR pFramePtr = Fr->Octet;
-	BOOLEAN result = FALSE;
-	PEID_STRUCT eid_ptr;
-
-	/* skip 802.11 header.*/
-	MsgLen -= sizeof(HEADER_802_11);
-
-	/* skip category and action code.*/
-	pFramePtr += 2;
-	MsgLen -= 2;
-
-	if (pChSwAnnInfo == NULL)
-		return result;
-
-	eid_ptr = (PEID_STRUCT)pFramePtr;
-	while (((UCHAR*)eid_ptr + eid_ptr->Len + 1) < ((PUCHAR)pFramePtr + MsgLen))
-	{
-		switch(eid_ptr->Eid)
-		{
-			case IE_CHANNEL_SWITCH_ANNOUNCEMENT:
-				NdisMoveMemory(&pChSwAnnInfo->ChSwMode, eid_ptr->Octet, 1);
-				NdisMoveMemory(&pChSwAnnInfo->Channel, eid_ptr->Octet + 1, 1);
-				NdisMoveMemory(&pChSwAnnInfo->ChSwCnt, eid_ptr->Octet + 2, 1);
-				
-				result = TRUE;
-                break;
-            
-			default:
-				break;
-		}
-		eid_ptr = (PEID_STRUCT)((UCHAR*)eid_ptr + 2 + eid_ptr->Len);        
-	}
-
-	return result;
-}
-/*
-	==========================================================================
-	Description:
-		Channel Switch Announcement action frame handler.
-		
-	Parametrs:
-		Elme - MLME message containing the received frame
-	
-	Return	: None.
-	==========================================================================
- */
-static VOID PeerChSwAnnAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem) 
-{
-	CH_SW_ANN_INFO ChSwAnnInfo;
-	PFRAME_802_11 pFr = (PFRAME_802_11)Elem->Msg;
-
-	NdisZeroMemory(&ChSwAnnInfo, sizeof(CH_SW_ANN_INFO));
-	if (! PeerChSwAnnSanity(pAd, Elem->Msg, Elem->MsgLen, &ChSwAnnInfo))
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("Invalid Channel Switch Action Frame.\n"));
-		return;
-	}
-
-#ifdef CONFIG_AP_SUPPORT
-	/* ChSwAnn need check.*/
-	if ((pAd->OpMode == OPMODE_AP) &&
-		(DfsRequirementCheck(pAd, ChSwAnnInfo.Channel) == TRUE))
-	{
-		NotifyChSwAnnToPeerAPs(pAd, pFr->Hdr.Addr1, pFr->Hdr.Addr2, ChSwAnnInfo.ChSwMode, ChSwAnnInfo.Channel);
-		StartDFSProcedure(pAd, ChSwAnnInfo.Channel, ChSwAnnInfo.ChSwMode);
-	}
-#endif /* CONFIG_AP_SUPPORT */
-
-
 	return;
 }
 
-
-/*
-	==========================================================================
-	Description:
-		Spectrun action frames Handler such as channel switch annoucement,
-		measurement report, measurement request actions frames.
-		
-	Parametrs:
-		Elme - MLME message containing the received frame
-	
-	Return	: None.
-	==========================================================================
- */
-VOID PeerSpectrumAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem) 
-{
-
-	UCHAR	Action = Elem->Msg[LENGTH_802_11+1];
-
-	if (pAd->CommonCfg.bIEEE80211H != TRUE)
-		return;
-
-	switch(Action)
-	{
-#ifdef VOE_SUPPORT
-		case SPEC_MRQ:
-			/* current rt2860 unable do such measure specified in Measurement Request.*/
-			/* reject all measurement request.*/
-			PeerMeasureReqAction(pAd, Elem);
-			break;
-
-		case SPEC_MRP:
-			PeerMeasureReportAction(pAd, Elem);
-			break;
-
-		case SPEC_TPCRQ:
-			PeerTpcReqAction(pAd, Elem);
-			break;
-
-		case SPEC_TPCRP:
-			PeerTpcRepAction(pAd, Elem);
-			break;
-#endif /* VOE_SUPPORT */
-		case SPEC_CHANNEL_SWITCH:
-
-#ifdef DOT11N_DRAFT3
-			{
-				SEC_CHA_OFFSET_IE	Secondary;
-				CHA_SWITCH_ANNOUNCE_IE	ChannelSwitch;
-
-				/* 802.11h only has Channel Switch Announcement IE. */
-				RTMPMoveMemory(&ChannelSwitch, &Elem->Msg[LENGTH_802_11+4], sizeof (CHA_SWITCH_ANNOUNCE_IE));
-					
-				/* 802.11n D3.03 adds secondary channel offset element in the end.*/
-				if (Elem->MsgLen ==  (LENGTH_802_11 + 2 + sizeof (CHA_SWITCH_ANNOUNCE_IE) + sizeof (SEC_CHA_OFFSET_IE)))
-				{
-					RTMPMoveMemory(&Secondary, &Elem->Msg[LENGTH_802_11+9], sizeof (SEC_CHA_OFFSET_IE));
-				}
-				else
-				{
-					Secondary.SecondaryChannelOffset = 0;
-				}
-
-				if ((Elem->Msg[LENGTH_802_11+2] == IE_CHANNEL_SWITCH_ANNOUNCEMENT) && (Elem->Msg[LENGTH_802_11+3] == 3))
-				{
-					ChannelSwitchAction(pAd, Elem->Wcid, ChannelSwitch.NewChannel, Secondary.SecondaryChannelOffset);
-				}
-			}
-#endif /* DOT11N_DRAFT3 */
-
-			PeerChSwAnnAction(pAd, Elem);
-			break;
-	}
-
-	return;
-}
-
+#endif
 
 #ifdef CONFIG_AP_SUPPORT
 INT Set_PwrConstraint(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
@@ -2317,6 +2434,8 @@ typedef struct __PWR_CONSTRAIN_CFG
 	return TRUE;
 }
 
+#ifdef DOT11K_RRM_SUPPORT
+#endif /* DOT11K_RRM_SUPPORT */
 
 
 static DOT11_REGULATORY_INFO *GetRugClassRegion(RTMP_STRING *pCountryCode, UINT8 RugClass)

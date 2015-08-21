@@ -15,12 +15,8 @@
 */
 
 #include "rt_config.h"
-#ifdef MT7603_E1
 #include "mcu/mt7603_firmware.h"
-#endif /* MT7603_E1 */
-#ifdef MT7603_E2
 #include "mcu/mt7603_e2_firmware.h"
-#endif /* MT7603_E2 */
 #include "eeprom/mt7603_e2p.h"
 #include "phy/wf_phy_back.h"
 
@@ -54,23 +50,26 @@ static VOID mt7603_bbp_adjust(RTMP_ADAPTER *pAd)
 
 static void mt7603_switch_channel(RTMP_ADAPTER *pAd, UCHAR channel, BOOLEAN scan)
 {
+
+
 	if (pAd->CommonCfg.BBPCurrentBW == BW_20)
 	{
 		CmdChannelSwitch(pAd, channel, channel, BW_20,
 								pAd->CommonCfg.TxStream, pAd->CommonCfg.RxStream);
 		
-		CmdSetTxPowerCtrl(pAd, channel);
+		CmdSetTxPowerCtrl(pAd, channel); 			
 	}
 	else
 	{
 		CmdChannelSwitch(pAd, pAd->CommonCfg.Channel, channel, pAd->CommonCfg.BBPCurrentBW,
 								pAd->CommonCfg.TxStream, pAd->CommonCfg.RxStream);
 		
-		CmdSetTxPowerCtrl(pAd, channel);
+		CmdSetTxPowerCtrl(pAd, channel); 			
 	}
-
+							
 	/* Channel latch */
 	pAd->LatchRfRegs.Channel = channel;
+
 
 	DBGPRINT(RT_DEBUG_TRACE,
 			("%s(): Switch to Ch#%d(%dT%dR), BBP_BW=%d\n",
@@ -109,7 +108,11 @@ static INT asic_set_tmac_info_template(RTMP_ADAPTER *pAd)
 		dw5->tx_status_fmt = 0;
 		dw5->tx_status_2_host = 0; // Disable TxS
 		dw5->bar_sn_ctrl = 0; //HW
-		dw5->pwr_mgmt = TMI_PM_BIT_CFG_BY_HW; // HW
+#if defined(CONFIG_STA_SUPPORT) && defined(CONFIG_PM_BIT_HW_MODE)
+		dw5->pwr_mgmt= TMI_PM_BIT_CFG_BY_HW; // HW
+#else
+		dw5->pwr_mgmt= TMI_PM_BIT_CFG_BY_SW;
+#endif /* CONFIG_STA_SUPPORT && CONFIG_PM_BIT_HW_MODE */
 
 #ifdef RTMP_PCI_SUPPORT
 // TODO: shaing, for MT7628, may need to change this as RTMP_MAC_PCI
@@ -144,7 +147,7 @@ static VOID mt7603_init_mac_cr(RTMP_ADAPTER *pAd)
 
 	/* Preparation of TxD DW2~DW6 when we need run 3DW format */
 	asic_set_tmac_info_template(pAd);
-
+	
 	/* A-MPDU BA WinSize control */
 	RTMP_IO_READ32(pAd, AGG_AWSCR, &mac_val);
 	mac_val &= ~WINSIZE0_MASK;
@@ -209,8 +212,9 @@ static VOID mt7603_init_mac_cr(RTMP_ADAPTER *pAd)
 	/* Configure all rx packets to HIF, except WOL2M packet */
 	RTMP_IO_READ32(pAd, DMA_RCFR0, &mac_val);
 	mac_val = 0x00010000; // drop duplicate
-	// TODO: shiang-MT7603, remove me after FPGA verification done
 	mac_val |= 0xc0200000; // receive BA/CF_End/Ack/RTS/CTS/CTRL_RSVED
+	if (pAd->rx_pspoll_filter)
+		mac_val |= 0x00000008; //Non-BAR Control frame to MCU
 	RTMP_IO_WRITE32(pAd, DMA_RCFR0, mac_val);
 
 	/* Configure Rx Vectors report to HIF */
@@ -219,14 +223,21 @@ static VOID mt7603_init_mac_cr(RTMP_ADAPTER *pAd)
 	mac_val |= 0x2000; // RxRing 1
 	RTMP_IO_WRITE32(pAd, DMA_VCFR0, mac_val);
 
-    	/* RMAC dropping criteria for max/min recv. packet length */
-	RTMP_IO_READ32(pAd, RMAC_RMACDR, &mac_val);
-	mac_val |= SELECT_RXMAXLEN_20BIT;
-	RTMP_IO_WRITE32(pAd, RMAC_RMACDR, mac_val);
+    /* RMAC dropping criteria for max/min recv. packet length */
+    RTMP_IO_READ32(pAd, RMAC_RMACDR, &mac_val);
+    mac_val |= SELECT_RXMAXLEN_20BIT;
+    RTMP_IO_WRITE32(pAd, RMAC_RMACDR, mac_val);
 	RTMP_IO_READ32(pAd, RMAC_MAXMINLEN, &mac_val);
-	mac_val &= ~RMAC_DROP_MAX_LEN_MASK;
-	mac_val |= RMAC_DROP_MAX_LEN;
+    mac_val &= ~RMAC_DROP_MAX_LEN_MASK;
+    mac_val |= RMAC_DROP_MAX_LEN;
 	RTMP_IO_WRITE32(pAd, RMAC_MAXMINLEN, mac_val);
+
+#ifdef MSTAR_SUPPORT
+	RTMP_IO_READ32(pAd, AGG_TEMP, &mac_val);
+	mac_val |= (1<<1);
+	RTMP_IO_WRITE32(pAd, AGG_TEMP, mac_val);
+#endif /* MSTAR_SUPPORT */
+
 
 	/* Enable RX Group to HIF */
 	AsicSetRxGroup(pAd, HIF_PORT, RXS_GROUP1|RXS_GROUP2|RXS_GROUP3, TRUE);
@@ -313,9 +324,8 @@ static VOID mt7603_init_mac_cr(RTMP_ADAPTER *pAd)
 	mac_val |= BSSID00_RESP_SPE_EN;
 	RTMP_IO_WRITE32(pAd, TMAC_B0BRR0, mac_val);
 
-	/* TxS Setting */
-	InitTxSTypeTable(pAd);
-	AsicSetTxSClassifyFilter(pAd, TXS2HOST, TXS2H_QID1, TXS2HOST_AGGNUMS, 0x00);
+
+	AsicSetTxSClassifyFilter(pAd, TXS2HOST, TXS2H_QID1, TXS2HOST_AGGNUMS, 0x00); 
 	AsicSetTxSClassifyFilter(pAd, TXS2MCU, TXS2M_QID0, TXS2MCU_AGGNUMS, 0x00);
 }
 
@@ -340,7 +350,7 @@ int mt7603_read_chl_pwr(RTMP_ADAPTER *pAd)
 	UINT32 i, choffset;
 	struct MT_TX_PWR_CAP *cap = &pAd->chipCap.MTTxPwrCap;
 	USHORT Value;
-
+	
 	mt7603_get_tx_pwr_info(pAd);
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s()--->\n", __FUNCTION__));
@@ -943,6 +953,8 @@ static VOID mt7603_cal_free_data_get(RTMP_ADAPTER *ad)
 	eFuseReadRegisters(ad, XTAL_TRIM_3_COMP, 2, &value);
 
 	ad->EEPROMImage[XTAL_TRIM_3_COMP+1] = (value >> 8) & 0xFF;
+
+
 }
 
 
@@ -1008,11 +1020,9 @@ static const RTMP_CHIP_CAP MT7603_ChipCap = {
 #ifdef RTMP_PCI_SUPPORT
 	.cmd_padding_len = 0,
 #endif
-#ifdef MT7603_E1
-	.fw_header_image = MT7603_FirmwareImage,
-	.fw_len = sizeof(MT7603_FirmwareImage),
-#endif /* MT7603_E1 */
-	.fw_bin_file_name = "mtk/MT7603.bin",
+	.fw_header_image = MT7603_e2_FirmwareImage,
+	.fw_bin_file_name = "mtk/MT7603_e2.bin",
+	.fw_len = sizeof(MT7603_e2_FirmwareImage),
 #ifdef CARRIER_DETECTION_SUPPORT
 	.carrier_func = TONE_RADAR_V2,
 #endif
@@ -1033,7 +1043,13 @@ static const RTMP_CHIP_CAP MT7603_ChipCap = {
 	.hif_type = HIF_MT,
 	.rf_type = RF_MT,
 	.RxBAWinSize = 64,
+#ifdef MSTAR_SUPPORT
+	.AMPDUFactor = 2,
+#else
 	.AMPDUFactor = 3,
+#endif /* MSTAR_SUPPORT */
+
+    .BiTxOpOn = 1,
 };
 
 
@@ -1069,6 +1085,13 @@ static const RTMP_CHIP_OP MT7603_ChipOp = {
 	.EnableAPMIMOPS = EnableAPMIMOPSv2,
 	.DisableAPMIMOPS = DisableAPMIMOPSv2,
 #endif /* GREENAP_SUPPORT */
+
+#ifdef MT_WOW_SUPPORT
+	.AsicWOWEnable = MT76xxAndesWOWEnable,
+	.AsicWOWDisable = MT76xxAndesWOWDisable,
+	.AsicWOWInit = MT76xxAndesWOWInit,
+#endif /* MT_WOW_SUPPORT */
+	.ChipSetEDCCA = mt7603_set_ed_cca,
 };
 
 
@@ -1085,23 +1108,22 @@ VOID mt7603_init(RTMP_ADAPTER *pAd)
 	pAd->chipCap.mac_type = MAC_MT;
 	
 	mt_phy_probe(pAd);
-#ifdef MT7603_E1
+
+#if 0
+	/* drop support E1 ASIC, E2 is default */
 	if (MTK_REV_GTE(pAd, MT7603, MT7603E1) && MTK_REV_LT(pAd, MT7603, MT7603E2)) {
 		pChipCap->fw_header_image = MT7603_FirmwareImage;
 		pChipCap->fw_bin_file_name = "mtk/MT7603.bin";
 		pChipCap->fw_len = sizeof(MT7603_FirmwareImage);
 
 	}
-	else 
-#endif /* MT7603_E1 */
-#ifdef MT7603_E2
-	if(MTK_REV_GTE(pAd, MT7603, MT7603E2))
+	else if(MTK_REV_GTE(pAd, MT7603, MT7603E2))
 	{
 		pChipCap->fw_header_image = MT7603_e2_FirmwareImage;
 		pChipCap->fw_bin_file_name = "mtk/MT7603_e2.bin";
 		pChipCap->fw_len = sizeof(MT7603_e2_FirmwareImage);
 	}
-#endif /* MT7603_E2 */
+#endif
 
 #ifdef RTMP_MAC_PCI
 	if (IS_PCI_INF(pAd)) {
@@ -1120,6 +1142,14 @@ VOID mt7603_init(RTMP_ADAPTER *pAd)
 			FlgIsSupSpecBcnBuf / BcnMaxHwNum / 
 			WcidHwRsvNum / BcnMaxHwSize / BcnBase[]
 	*/
+#ifdef CUSTOMER_DCC_FEATURE
+	pAd->EnableChannelStatsCheck = FALSE;
+	pAd->ApEnableBeaconTable = FALSE;
+	pAd->CommonCfg.channelSwitch.CHSWMode = NORMAL_MODE;
+	pAd->CommonCfg.channelSwitch.CHSWCount = 0;
+	pAd->CommonCfg.channelSwitch.CHSWPeriod = 5;
+	NdisZeroMemory(&pAd->RadioStatsCounter, sizeof(RADIO_STATS_COUNTER)); 
+#endif
 	mt_bcn_buf_init(pAd);
 
 #ifdef DOT11W_PMF_SUPPORT
@@ -1129,7 +1159,7 @@ VOID mt7603_init(RTMP_ADAPTER *pAd)
 	DBGPRINT(RT_DEBUG_OFF, ("<--%s()\n", __FUNCTION__));
 }
 
-
+#ifdef LED_CONTROL_SUPPORT
 INT Set_MT7603LED_Proc(
 	IN RTMP_ADAPTER		*pAd,
 	IN RTMP_STRING		*arg)
@@ -1148,5 +1178,194 @@ INT Set_MT7603LED_Proc(
 			DBGPRINT(RT_DEBUG_TRACE, ("%s:cmd:0x%x\n", __FUNCTION__, cmd)); 
 	}
 	return TRUE;
+}
+
+INT Set_MT7603LED_Enhance_Proc(
+	IN RTMP_ADAPTER		*pAd,
+	IN RTMP_STRING		*arg)
+{
+	UINT8 time = (UINT8)simple_strtol(arg, 0, 10);
+	/*
+		0x2300[5] Default Antenna:
+		0 for WIFI main antenna
+		1  for WIFI aux  antenna
+
+	*/
+	
+	//if (cmd < 33)
+	{
+			AndesLedEnhanceOP(pAd, 0, time, time, 31);
+			DBGPRINT(RT_DEBUG_TRACE, ("%s:time:%d\n", __FUNCTION__, time)); 
+	}
+	return TRUE;
+}
+
+#define LED_BEHAVIOR_SOLID_ON           0
+#define LED_BEHAVIOR_SOLID_OFF          1
+#define LED_BEHAVIOR_GENERIC_FIX_BLINK 31
+
+INT Set_MT7603LED_Behavor_Proc(
+	IN RTMP_ADAPTER		*pAd,
+	IN RTMP_STRING		*arg)
+{
+	UINT8 behavior = (UINT8)simple_strtol(arg, 0, 10);
+	DBGPRINT(RT_DEBUG_TRACE, ("-->Set_MT7603LED_Behavor_Proc (%d)\n",behavior)); 
+			switch (behavior)
+			{
+				case 0:
+					AndesLedEnhanceOP(pAd, 0, 0, 0, LED_BEHAVIOR_SOLID_OFF);
+				break;
+				
+				case 1:
+					AndesLedEnhanceOP(pAd, 0, 0, 0, LED_BEHAVIOR_SOLID_ON);
+					break;
+				
+				case 2:
+					AndesLedEnhanceOP(pAd, 0, 27, 27, LED_BEHAVIOR_GENERIC_FIX_BLINK);
+					break;
+				
+				case 3:
+					AndesLedEnhanceOP(pAd, 0, 200, 200, LED_BEHAVIOR_GENERIC_FIX_BLINK);
+					break;
+				
+				default:
+				{
+					DBGPRINT_RAW(RT_DEBUG_ERROR,
+						("%s: Unknow LED behavior(%d)\n",
+						__FUNCTION__, behavior));
+				}
+				break;
+			}		
+	return TRUE;
+}
+#endif /*LED_CONTROL_SUPPORT*/
+
+#ifdef USB_IOT_WORKAROUND2
+void usb_iot_add_padding(struct urb *urb, UINT8 *buf, ra_dma_addr_t dma)
+{
+	UCHAR pkt2drop[512] = {	0x00, 0x02, 0x00, 0x08, 0x00, 0xcd, 0x02, 0x00, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x88, 0x01, 0x00, 0x00, 0x48, 0x02, 0x2a, 0x65, 0x44, 0x30, 0x00, 0x0c, 0x43, 0x26, 0x60, 0x40, 
+							0x01, 0x00, 0x5e, 0x00, 0x00, 0xfb, 0x60, 0x01, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa, 0x03, 0x00, 
+							0x00, 0x00, 0x08, 0x00, 0x45, 0x00, 0x00, 0x43, 0x51, 0x0e, 0x40, 0x00, 0xff, 0x11, 0xc0, 0x7b, 
+							0xc0, 0xa8, 0xc8, 0x7b, 0xe0, 0x00, 0x00, 0xfb, 0x14, 0xe9, 0x14, 0xe9, 0x00, 0x2f, 0xc8, 0x6f, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x5f, 0x73, 0x61, 
+							0x6e, 0x65, 0x2d, 0x70, 0x6f, 0x72, 0x74, 0x04, 0x5f, 0x74, 0x63, 0x70, 0x05, 0x6c, 0x6f, 0x63, 
+							0x61, 0x6c, 0x00, 0x00, 0x0c, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+							0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+						};
+
+	int padding = 0;
+	int sendlen = 0;
+
+	if (!urb || !buf){
+		DBGPRINT(RT_DEBUG_ERROR, ("usb_iot_add_padding %x %x\n", urb, buf));
+		DBGPRINT(RT_DEBUG_ERROR, ("\ntransfer_buffer_length=%d\n", urb->transfer_buffer_length));
+		return;
+	}
+
+	padding = 512 - ((urb->transfer_buffer_length)%512);
+
+	// copy data to new place
+	NdisCopyMemory(buf,	urb->transfer_buffer, urb->transfer_buffer_length);
+	sendlen = urb->transfer_buffer_length;
+
+	// add padding to 512 boundary
+	NdisZeroMemory(buf+sendlen, padding);
+	sendlen += padding;
+	
+	NdisCopyMemory(buf+sendlen,	pkt2drop, 512);
+	sendlen += 512;
+
+	// add final 4 bytes padding
+	NdisZeroMemory(buf+sendlen, 4);
+	sendlen += 4;
+
+	// update URB
+	urb->transfer_buffer = buf;
+	if (dma)
+		urb->transfer_dma = dma;
+
+	urb->transfer_buffer_length = sendlen;
+
+}
+#endif
+
+void mt7603_set_ed_cca(RTMP_ADAPTER *pAd, BOOLEAN enable)
+{
+	
+	UINT32 macVal = 0, macVal2 = 0; 
+	UINT32 NBIDmacVal = 0;
+
+	RTMP_IO_READ32(pAd, WF_PHY_BASE + 0x0634, &macVal2);
+	
+	if (enable)
+	{
+		macVal = 0xD7C87D0F;  //EDCCA ON , TH - L, USER case  //D7C87D0F
+		RTMP_IO_WRITE32(pAd, WF_PHY_BASE + 0x0618, macVal);
+		
+		macVal2 |= 0x1;
+		RTMP_IO_WRITE32(pAd, WF_PHY_BASE + 0x0634, macVal2);
+
+	}
+	else
+	{
+#ifdef CUSTOMER_DCC_FEATURE
+		if(pAd->EnableChannelStatsCheck)
+		{
+			DBGPRINT(RT_DEBUG_ERROR, ("%s: DO NOT  Turn OFF EDCCA mac 0x10618 = 0x%x WHEN EnableChannelStatsCheck IS ENABLED\n", __FUNCTION__, macVal));
+			return;
+		}
+#endif
+		macVal = 0xD7083F0F;  //EDCCA OFF //d7083f0f		
+		RTMP_IO_WRITE32(pAd, WF_PHY_BASE + 0x0618, macVal);
+		
+		macVal2 &= 0xFFFFFFFE;
+		RTMP_IO_WRITE32(pAd, WF_PHY_BASE + 0x0634, macVal2);
+		
+		DBGPRINT(RT_DEBUG_ERROR, ("%s: TURN OFF EDCCA  mac 0x10618 = 0x%x\n", __FUNCTION__, macVal));
+	}
+
+	if (strncmp(pAd->CommonCfg.CountryCode, "JP", 2) == 0)
+	{
+		/* disable NBID for JAPAN carrier sense test mac, 0610[24]=0 [31]=0 */		
+		RTMP_IO_READ32(pAd, WF_PHY_BASE + 0x0610, &NBIDmacVal);
+		
+		DBGPRINT(RT_DEBUG_ERROR, ("%s: pAd->CommonCfg.CountryCode = %s \n", __FUNCTION__, pAd->CommonCfg.CountryCode));
+		NBIDmacVal &= ~(1<<24); 
+		NBIDmacVal &= ~(1<<31); 
+		RTMP_IO_WRITE32(pAd, WF_PHY_BASE + 0x0610, NBIDmacVal);
+		DBGPRINT(RT_DEBUG_ERROR, ("%s: TURN OFF NBID mac 0x10610 = 0x%x\n", __FUNCTION__, NBIDmacVal));
+	}
+	else
+	{
+		RTMP_IO_READ32(pAd, WF_PHY_BASE + 0x0610, &NBIDmacVal);		
+		NBIDmacVal |= (1<<24); 
+		NBIDmacVal |= (1<<31); 
+		RTMP_IO_WRITE32(pAd, WF_PHY_BASE + 0x0610, NBIDmacVal);		
+	}
+			
 }
 

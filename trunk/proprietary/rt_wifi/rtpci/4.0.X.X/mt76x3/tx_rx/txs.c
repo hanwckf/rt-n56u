@@ -16,15 +16,77 @@
 
 #include	"rt_config.h"
 
-/**** TxS Call Back Functions ****/
+#ifdef CFG_TDLS_SUPPORT
+INT32 TdlsTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
+{
+	MAC_TABLE_ENTRY *pEntry = NULL;
+	
+	TXS_STRUC *txs_entry = (TXS_STRUC *)Data;
+	TXS_D_0 *txs_d0 = &txs_entry->txs_d0;
+	TXS_D_3 *txs_d3 = &txs_entry->txs_d3;
+	pEntry = &pAd->MacTab.Content[txs_d3->wlan_idx];
+	DBGPRINT(RT_DEBUG_ERROR, ("%s():txs d0 me : %d\n", __FUNCTION__, txs_d0->ME));
+	if(txs_d0->ME == 0)
+	{
+		pEntry->TdlsTxFailCount=0;
+	}
+	else
+	{	
+		pEntry->TdlsTxFailCount++;
+	}
+
+	if(pEntry->TdlsTxFailCount > 15)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("%s(): TdlsTxFailCount > 15!!  teardown link with (%02X:%02X:%02X:%02X:%02X:%02X)!!\n"
+			, __FUNCTION__,PRINT_MAC(pEntry->Addr)));
+		pEntry->TdlsTxFailCount=0;
+		cfg_tdls_auto_teardown(pAd,pEntry->Addr);
+	}
+
+	return 0;
+}
+#endif /*CFG_TDLS_SUPPORT*/
+#ifdef UAPSD_SUPPORT
+INT32 UAPSDTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
+{
+	MAC_TABLE_ENTRY *pEntry = NULL;
+	
+	TXS_STRUC *txs_entry = (TXS_STRUC *)Data;
+	//TXS_D_0 *txs_d0 = &txs_entry->txs_d0;
+	//TXS_D_1 *txs_d1 = &txs_entry->txs_d1;
+	//TXS_D_2 *txs_d2 = &txs_entry->txs_d2;
+	TXS_D_3 *txs_d3 = &txs_entry->txs_d3;
+	//TXS_D_4 *txs_d4 = &txs_entry->txs_d4;
+	pEntry = &pAd->MacTab.Content[txs_d3->wlan_idx];
+
+	if(pEntry->UAPSDTxNum > 0)
+		pEntry->UAPSDTxNum--;
+	else if(pEntry->UAPSDTxNum == 0)
+	{
+		//this is the txs of eosp
+		pEntry->bAPSDFlagEOSPOK = 0;
+		UAPSD_SP_END(pAd, pEntry);
+
+		DBGPRINT(RT_DEBUG_TRACE, ("uapsd> [new] TxS close SP ()!\n"));
+
+	}
+
+	return 0;
+}
+#endif
+
 INT32 BcnTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
 {	
 	TXS_STRUC *txs_entry = (TXS_STRUC *)Data;
 	//TXS_D_0 *txs_d0 = &txs_entry->txs_d0;
+#if defined(CONFIG_AP_SUPPORT) && defined(DBG)
 	TXS_D_1 *txs_d1 = &txs_entry->txs_d1;
+#endif /* defined(CONFIG_AP_SUPPORT) && defined(DBG) */
 	//TXS_D_2 *txs_d2 = &txs_entry->txs_d2;
 	//TXS_D_3 *txs_d3 = &txs_entry->txs_d3;
+#if defined(CONFIG_AP_SUPPORT) && defined(DBG)
 	TXS_D_4 *txs_d4 = &txs_entry->txs_d4;
+#endif /* defined(CONFIG_AP_SUPPORT) && defined(DBG) */
 
 #ifdef CONFIG_AP_SUPPORT
 	if ((pAd->OpMode == OPMODE_AP) 
@@ -48,23 +110,35 @@ INT32 BcnTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
 			pMbss->timer_loop++;
 			if (pMbss->timer_loop >= MAX_TIME_RECORD)
 				pMbss->timer_loop = 0;
-
+			return 0;
 		}
 #endif /* CONFIG_AP_SUPPORT */
+
 	return 0;
 }
 
+INT32 NullFramePM1TxSHandler(RTMP_ADAPTER *pAd, CHAR *Data)
+{	
+
+	return 0;
+}
+
+INT32 NullFramePM0TxSHandler(RTMP_ADAPTER *pAd, CHAR *Data)
+{
+
+	return 0;
+}
 
 INT32 PsDataTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
 {
 	TXS_STRUC *txs_entry = (TXS_STRUC *)Data;
 	TXS_D_3 *txs_d3 = &txs_entry->txs_d3;
+ 
+        if ((txs_d3 == NULL) || (txs_d3->wlan_idx >= MAX_LEN_OF_TR_TABLE))
+        {      	
+                return 0;
+        }
 
-	if ((txs_d3 == NULL) || (txs_d3->wlan_idx >= MAX_LEN_OF_TR_TABLE))
-	{
-		DBGPRINT(RT_DEBUG_ERROR, ("---->%s INVALID_TR_WCID(WlanIndex)\n", __FUNCTION__));
-		return 0;
-	}
 
 	if (pAd->MacTab.tr_entry[txs_d3->wlan_idx].PsDeQWaitCnt) {
 		/* After a successfull Tx of dequeued PS data, we clear PsDeQWaitCnt */
@@ -95,7 +169,59 @@ static INT32 DataTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
 	return 0;
 }
 
-/**** End of TxS Call Back Functions ****/
+#if defined(MT_MAC) && defined(WSC_INCLUDED) && defined(CONFIG_AP_SUPPORT)
+INT32 EapReqIdTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
+{
+	TXS_STRUC *txs_entry = (TXS_STRUC *)Data;
+	TXS_D_0 *txs_d0 = &txs_entry->txs_d0;
+	TXS_D_3 *txs_d3 = &txs_entry->txs_d3;
+	MAC_TABLE_ENTRY *pEntry;
+ 
+	if ((txs_d3 == NULL) || (txs_d3->wlan_idx >= MAX_LEN_OF_TR_TABLE))
+	{      	
+		return 0;
+	}
+
+	DBGPRINT(RT_DEBUG_TRACE,("%s: (RE=%d, LE=%d, ME=%d), wlan_idx = %d\n",__FUNCTION__, txs_d0->RE, txs_d0->LE, txs_d0->ME, txs_d3->wlan_idx));  
+
+	if ((txs_d0->RE == 0) && (txs_d0->LE == 0) && (txs_d0->ME == 0))
+	{
+		pEntry = &pAd->MacTab.Content[txs_d3->wlan_idx];
+		if (pEntry->bEapReqIdRetryTimerRunning)
+		{
+			pEntry->bEapReqIdRetryTimerRunning = FALSE;
+		}
+	}
+
+	return 0;
+}
+#endif /* defined(MT_MAC) && defined(WSC_INCLUDED) && defined(CONFIG_AP_SUPPORT) */
+
+#if defined(MT_MAC) && defined(CONFIG_AP_SUPPORT)
+INT32 APQoSNullTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
+{
+	TXS_STRUC *txs_entry = (TXS_STRUC *)Data;
+	TXS_D_0 *txs_d0 = &txs_entry->txs_d0;
+	TXS_D_3 *txs_d3 = &txs_entry->txs_d3;
+	MAC_TABLE_ENTRY *pEntry;
+ 
+	if ((txs_d3 == NULL) || (txs_d3->wlan_idx >= MAX_LEN_OF_TR_TABLE))
+	{      	
+		return 0;
+	}
+
+	DBGPRINT(RT_DEBUG_TRACE,("%s: (RE=%d, LE=%d, ME=%d), wlan_idx = %d\n",__FUNCTION__, txs_d0->RE, txs_d0->LE, txs_d0->ME, txs_d3->wlan_idx));  
+
+	if ((txs_d0->RE == 0) && (txs_d0->LE == 0) && (txs_d0->ME == 0))
+	{
+		pEntry = &pAd->MacTab.Content[txs_d3->wlan_idx];
+		DBGPRINT(RT_DEBUG_TRACE,("%s: wlan_idx = %d,  pEntry->NoDataIdleCount=%lu go to clear!!\n",__FUNCTION__, txs_d3->wlan_idx, pEntry->NoDataIdleCount));
+		pEntry->NoDataIdleCount	= 0 ;
+	}
+
+	return 0;
+}
+#endif /* defined(MT_MAC) && defined(CONFIG_AP_SUPPORT) */
 
 
 INT32 InitTxSTypeTable(RTMP_ADAPTER *pAd)
@@ -131,12 +257,6 @@ INT32 InitTxSTypeTable(RTMP_ADAPTER *pAd)
 		NdisZeroMemory(&TxSCtl->TxSStatus[Index], sizeof(TXS_STATUS));
 	}
 
-	return 0;
-}
-
-
-INT32 InitTxSCommonCallBack(RTMP_ADAPTER *pAd)
-{
 	AddTxSTypePerPktType(pAd, FC_TYPE_MGMT, SUBTYPE_BEACON, TXS_FORMAT0, BcnTxSHandler);
 	TxSTypeCtlPerPktType(pAd, FC_TYPE_MGMT, SUBTYPE_BEACON, TXS_WLAN_IDX_ALL, 
 							TXS_FORMAT0, FALSE, TRUE, FALSE, 0);
@@ -147,6 +267,28 @@ INT32 InitTxSCommonCallBack(RTMP_ADAPTER *pAd)
 	/* PsDataTxSHandler */
 	AddTxSTypePerPkt(pAd, PID_PS_DATA, TXS_FORMAT0, PsDataTxSHandler); 
 	TxSTypeCtlPerPkt(pAd, PID_PS_DATA, TXS_FORMAT0, FALSE, TRUE, FALSE, 0);
+#ifdef UAPSD_SUPPORT
+#ifdef MT_MAC //ADD UAPSD TxsType
+	if (pAd->chipCap.hif_type == HIF_MT) {
+		//printk("ggggggggggggggggggggggggggggggggggg\n");
+		AddTxSTypePerPkt(pAd, PID_UAPSD, TXS_FORMAT0, UAPSDTxSHandler);
+		TxSTypeCtlPerPkt(pAd, PID_UAPSD, TXS_FORMAT0, FALSE, TRUE, FALSE, 0); 
+	}
+#endif //MT_MAC
+#endif
+
+#if defined(MT_MAC) && defined(WSC_INCLUDED) && defined(CONFIG_AP_SUPPORT)	
+	AddTxSTypePerPkt(pAd, PID_WSC_EAP, TXS_FORMAT0, EapReqIdTxSHandler); 
+	TxSTypeCtlPerPkt(pAd, PID_WSC_EAP, TXS_FORMAT0, FALSE, TRUE, FALSE, 0);
+#endif /* defined(MT_MAC) && defined(WSC_INCLUDED) && defined(CONFIG_AP_SUPPORT)	 */
+
+#if defined(MT_MAC) && defined(CONFIG_AP_SUPPORT)	
+	AddTxSTypePerPkt(pAd, PID_QOS_NULL_FRAME, TXS_FORMAT0, APQoSNullTxSHandler); 
+	TxSTypeCtlPerPkt(pAd, PID_QOS_NULL_FRAME, TXS_FORMAT0, FALSE, TRUE, FALSE, 0);
+#endif /* defined(MT_MAC) && defined(CONFIG_AP_SUPPORT)	 */
+
+
+	TxSCtl->TxSValid = TRUE;
 
 	return 0;
 }
@@ -159,6 +301,7 @@ INT32 ExitTxSTypeTable(RTMP_ADAPTER *pAd)
 	TXS_TYPE *TxSType = NULL, *TmpTxSType = NULL;
 	//TXS_STATUS *TxSStatus = NULL, *TmpTxSStatus = NULL;
 
+	TxSCtl->TxSValid = FALSE;
 	for (Index = 0; Index < TOTAL_PID_HASH_NUMS; Index++)
 	{
 		RTMP_SPIN_LOCK_IRQSAVE(&TxSCtl->TxSTypePerPktLock[Index], &Flags);
@@ -357,7 +500,7 @@ INT32 RemoveTxSTypePerPktType(RTMP_ADAPTER *pAd, UINT8 PktType, UINT8 PktSubType
 		{
 			DlListDel(&TxSType->List);
 			os_free_mem(NULL, TxSType);
-			RTMP_SPIN_UNLOCK_IRQRESTORE(&TxSCtl->TxSTypePerPktTypeLock[PktType][PktSubType % TOTAL_PID_HASH_NUMS], &Flags);
+			RTMP_SPIN_UNLOCK_IRQRESTORE(&TxSCtl->TxSTypePerPktTypeLock[PktType][PktSubType % TOTAL_PID_HASH_NUMS_PER_PKT_TYPE], &Flags);
 			return 0;
 		}
 	}
@@ -476,11 +619,26 @@ INT32 ParseTxSPacket(RTMP_ADAPTER *pAd, UINT32 Pid, UINT8 Format, CHAR *Data)
 	UINT16 TxRate;
 	UINT32 Priv;
 
+	if (TxSCtl->TxSValid == FALSE)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("%s ==> Ignore this TxValid\n", __FUNCTION__));
+		DumpTxSFormat(pAd, Format, Data);
+		return -1;
+	}
+
 	RemoveTxSStatus(pAd, Pid, &Type, &PktPid, &PktType, &PktSubType, &TxRate, &Priv);
 	
 	if (Type == TXS_TYPE0)
 	{ 
 		RTMP_SPIN_LOCK_IRQSAVE(&TxSCtl->TxSTypePerPktLock[PktPid % TOTAL_PID_HASH_NUMS], &Flags);
+
+                TxSType = DlListFirst(&TxSCtl->TxSTypePerPkt[PktPid % TOTAL_PID_HASH_NUMS], TXS_TYPE, List);
+                if (TxSType == NULL)
+                {
+                        RTMP_SPIN_UNLOCK_IRQRESTORE(&TxSCtl->TxSTypePerPktLock[PktPid % TOTAL_PID_HASH_NUMS], &Flags);
+                        return -1;
+                }
+			
 		DlListForEach(TxSType, &TxSCtl->TxSTypePerPkt[PktPid % TOTAL_PID_HASH_NUMS], TXS_TYPE, List) 
 		{
 			if (TxSType->PktPid == PktPid && TxSType->Format == Format)
@@ -499,7 +657,7 @@ INT32 ParseTxSPacket(RTMP_ADAPTER *pAd, UINT32 Pid, UINT8 Format, CHAR *Data)
 					}
 				}
 
-				TxSType->TxSHandler(pAd, Data, Priv);	
+				TxSType->TxSHandler(pAd, Data, Priv);
 				RTMP_SPIN_UNLOCK_IRQRESTORE(&TxSCtl->TxSTypePerPktLock[PktPid % TOTAL_PID_HASH_NUMS], 
 														&Flags);
 				return 0;
@@ -510,6 +668,16 @@ INT32 ParseTxSPacket(RTMP_ADAPTER *pAd, UINT32 Pid, UINT8 Format, CHAR *Data)
 	else if (Type == TXS_TYPE1)
 	{
 		RTMP_SPIN_LOCK_IRQSAVE(&TxSCtl->TxSTypePerPktTypeLock[PktType][PktSubType % TOTAL_PID_HASH_NUMS_PER_PKT_TYPE], &Flags);
+		
+                TxSType = DlListFirst (&TxSCtl->TxSTypePerPktType[PktType][PktSubType % TOTAL_PID_HASH_NUMS_PER_PKT_TYPE], TXS_TYPE, List);
+                if (TxSType == NULL)
+                {
+                        printk("QQ 2\n");
+                        RTMP_SPIN_UNLOCK_IRQRESTORE(&TxSCtl->TxSTypePerPktTypeLock[PktType][PktSubType % TOTAL_PID_HASH_NUMS_PER_PKT_TYPE], &Flags);
+                        return -1;
+                }
+
+		
 		DlListForEach(TxSType,
 			&TxSCtl->TxSTypePerPktType[PktType][PktSubType % TOTAL_PID_HASH_NUMS_PER_PKT_TYPE], TXS_TYPE, List) 
 		{
@@ -530,7 +698,7 @@ INT32 ParseTxSPacket(RTMP_ADAPTER *pAd, UINT32 Pid, UINT8 Format, CHAR *Data)
 				}
 
 				RTMP_SPIN_UNLOCK_IRQRESTORE(&TxSCtl->TxSTypePerPktTypeLock[PktType][PktSubType % TOTAL_PID_HASH_NUMS_PER_PKT_TYPE], &Flags);
-				TxSType->TxSHandler(pAd, Data, Priv);	
+				TxSType->TxSHandler(pAd, Data, Priv);
 				return 0;
 			}
 		}

@@ -31,7 +31,6 @@
 #ifdef RLT_MAC
 #include "mac/mac_ral/nmac/ral_nmac_pci.h"
 #endif /* RLT_MAC */
-
 #ifdef RTMP_MAC
 #include "mac/mac_ral/omac/ral_omac_pci.h"
 #include "mac/mac_ral/rtmp_mac.h"

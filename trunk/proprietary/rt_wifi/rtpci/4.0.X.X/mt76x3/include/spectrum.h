@@ -134,8 +134,6 @@ VOID PeerSpectrumAction(
     IN PRTMP_ADAPTER pAd, 
     IN MLME_QUEUE_ELEM *Elem);
 
-
-#ifdef VOE_SUPPORT
 /*
 	==========================================================================
 	Description:
@@ -148,6 +146,11 @@ VOID PeerSpectrumAction(
 INT Set_MeasureReq_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
 INT Set_TpcReq_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+
+INT Set_PwrConstraint(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+
+#ifdef DOT11K_RRM_SUPPORT
+#endif /* DOT11K_RRM_SUPPORT */
 
 NDIS_STATUS	MeasureReqTabInit(
 	IN PRTMP_ADAPTER pAd);
@@ -166,9 +169,6 @@ PMEASURE_REQ_ENTRY MeasureReqInsert(
 VOID MeasureReqDelete(
 	IN PRTMP_ADAPTER	pAd,
 	IN UINT8			DialogToken);
-
-#endif /* VOE_SUPPORT */
-INT Set_PwrConstraint(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
 VOID InsertChannelRepIE(
 	IN PRTMP_ADAPTER pAd,
@@ -192,10 +192,9 @@ VOID InsertDialogToken(
 
 NDIS_STATUS	TpcReqTabInit(
 	IN PRTMP_ADAPTER pAd);
-#ifdef VOE_SUPPORT
+
 VOID TpcReqTabExit(
 	IN PRTMP_ADAPTER pAd);
-#endif /* VOE_SUPPORT */
 
 VOID NotifyChSwAnnToPeerAPs(
 	IN PRTMP_ADAPTER pAd,
@@ -208,5 +207,18 @@ VOID RguClass_BuildBcnChList(
 	IN PRTMP_ADAPTER pAd,
 	OUT PUCHAR pBuf,
 	OUT	PULONG pBufLen);
+#ifdef CUSTOMER_DCC_FEATURE
+VOID NotifyChSwAnnToConnectedSTAs(
+	IN PRTMP_ADAPTER pAd,
+	IN UINT8 		ChSwMode,
+	IN UINT8 		Channel);
+
+VOID EnqueueChSwAnnNew(
+	IN PRTMP_ADAPTER pAd,
+	IN PUCHAR pDA, 
+	IN UINT8 ChSwMode,
+	IN UINT8 NewCh,
+	IN PUCHAR pSA);
+#endif
 #endif /* __SPECTRUM_H__ */
 

@@ -6,9 +6,30 @@
 //this use the MAC Repeater's  function : MT7603's MAX is 16
 #define MAX_NUM_OF_SNIFFER_MAC	16
 
+#ifdef CONFIG_SNIFFER_SUPPORT
+#ifdef ALL_NET_EVENT
+#define SNIFFER_MAC_MAX_RX_PACKET_COUNT 20
+#define SNIFFER_MAC_TIMEOUT 10000 //ms
+
+typedef struct _SNIFFER_MAC_NOTIFY {
+	UINT32 				u4Channel;
+	INT32 				i4RxPacketConut;
+	INT32				i4RssiAccum;
+	PNET_DEV 			pNetDev;
+} SNIFFER_MAC_NOTIFY_T, *PSNIFFER_MAC_NOTIFY_T;
+#endif /* ALL_NET_EVENT */
+#endif /* CONFIG_SNIFFER_SUPPORT */
+
+
 typedef struct _SNIFFER_MAC_CTRL {
 	DL_LIST List;
 	UCHAR MACAddr[MAC_ADDR_LEN];
+#ifdef CONFIG_SNIFFER_SUPPORT
+#ifdef ALL_NET_EVENT
+	SNIFFER_MAC_NOTIFY_T rNotify;
+	RALINK_TIMER_STRUCT rNotifyTimer;
+#endif /* ALL_NET_EVENT */
+#endif /* CONFIG_SNIFFER_SUPPORT */
 } SNIFFER_MAC_CTRL, *PSNIFFER_MAC_CTRL;
 
 typedef enum _SNIFFER_SCAN_SCOPE {

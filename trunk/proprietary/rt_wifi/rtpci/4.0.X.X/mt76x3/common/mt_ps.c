@@ -40,12 +40,32 @@ static VOID MtReadPseRdTabAccessReg(
 			__FUNCTION__, *p_rPseRdTabAccessReg));
 }
 
+
+static VOID MtClearPseRdTab(
+	RTMP_ADAPTER *pAd, 
+	UCHAR wcid )
+{
+	UINT32 rPseRdTabAccessReg = 0;
+	rPseRdTabAccessReg = PSE_RTA_RD_RW | PSE_RTA_RD_KICK_BUSY | PSE_RTA_TAG(wcid);
+	RTMP_IO_WRITE32(pAd, PSE_RTA, rPseRdTabAccessReg);
+	do
+	{
+		RTMP_IO_READ32(pAd,PSE_RTA, &rPseRdTabAccessReg);
+	}
+	while ( GET_PSE_RTA_RD_KICK_BUSY(rPseRdTabAccessReg) == 1 );
+
+	DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("%s: rPseRdTabAccessReg = 0x%x wcid=%d\n",
+			__FUNCTION__, rPseRdTabAccessReg, wcid));
+}
+
 VOID MtSetIgnorePsm(
 	RTMP_ADAPTER *pAd,
 	MAC_TABLE_ENTRY *pEntry,
 	UCHAR value)
 {
-	unsigned long IrqFlags;
+#ifdef RTMP_PCI_SUPPORT
+	ULONG IrqFlags = 0;
+#endif /* RTMP_PCI_SUPPORT */
 	struct wtbl_entry tb_entry;
 	union WTBL_1_DW3 *dw3 = (union WTBL_1_DW3 *)&tb_entry.wtbl_1.wtbl_1_d3.word;
 
@@ -56,7 +76,10 @@ VOID MtSetIgnorePsm(
 		DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("%s():Cannot found WTBL2/3/4\n",__FUNCTION__));
 		return;
 	}
+
+#ifdef RTMP_PCI_SUPPORT
 	RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
+#endif /* RTMP_PCI_SUPPORT */
 
 	pEntry->i_psm = value;
 	RTMP_IO_READ32(pAd, tb_entry.wtbl_addr[0]+12, &dw3->word);
@@ -64,7 +87,9 @@ VOID MtSetIgnorePsm(
 	dw3->field.i_psm = value; /* follow PSM value. */
 	RTMP_IO_WRITE32(pAd, tb_entry.wtbl_addr[0] + 12, dw3->word);
 	
+#ifdef RTMP_PCI_SUPPORT	
 	RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);  
+#endif /* RTMP_PCI_SUPPORT */
 }
 
 VOID CheckSkipTX(
@@ -95,16 +120,17 @@ VOID CheckSkipTX(
 	{
 		dw3->field.du_i_psm = 0;
 		dw3->field.i_psm = 0;
+		/* also sync pEntry flag*/
+		pEntry->i_psm = 0 ;
 		isChange = TRUE;
 	}
-	
+
 	if (isChange == TRUE) {
-		pAd->SkipTxRCount++;
+		pAd->SkipTxRCount++;		
 		RTMP_IO_WRITE32(pAd, tb_entry.wtbl_addr[0]+12, dw3->word);
 	}
 	return;
 }
-
 
 #endif /* MT_PS */
 
@@ -138,9 +164,9 @@ BOOLEAN  MtStartPSRetrieve(RTMP_ADAPTER *pAd, USHORT wcid)
 	if (MtPSDummyCR(pAd) != 0) {
 		return FALSE;
 	}
-	
+
 	RTMP_IO_WRITE32(pAd, 0x817c, wcid);
-		
+
 #ifdef RTMP_MAC_PCI
 //	MtTriggerMCUINT(pAd);
 #endif /* RTMP_MAC_PCI */		
@@ -160,33 +186,33 @@ BOOLEAN  MtStartPSRetrieve(RTMP_ADAPTER *pAd, USHORT wcid)
 VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isActive)
 {
 #ifdef CONFIG_AP_SUPPORT
+#if defined(MT_PS) || defined(UAPSD_SUPPORT)
 	MAC_TABLE_ENTRY *pMacEntry;
+#endif
 	STA_TR_ENTRY *tr_entry;
 	BOOLEAN       IsDequeu= FALSE;
 	INT           DequeuAC = QID_AC_BE;
 	INT           DequeuCOUNT;
+#ifdef MT_PS
 	INT i, Total_Packet_Number = 0;
+#endif /* MT_PS */
 	//struct tx_swq_fifo *fifo_swq;
 
 	ASSERT(wcid < MAX_LEN_OF_MAC_TABLE);
-
+#if defined(MT_PS) || defined(UAPSD_SUPPORT)
 	pMacEntry = &pAd->MacTab.Content[wcid];
+#endif
 	tr_entry = &pAd->MacTab.tr_entry[wcid];
 	
-
-#ifdef CONFIG_TRACE_SUPPORT
-	TRACE_PS_HANDLE_RX_PS_POLL(0, wcid, isActive, tr_entry->ps_state);
-#endif
-
 	if (isActive == FALSE) /* ps poll */
 	{
 #ifdef MT_PS
 		if (tr_entry->ps_state == APPS_RETRIEVE_DONE) /*state is finish(sleep)*/
 		{				
-#ifdef CONFIG_TRACE_SUPPORT
-			TRACE_PS_HANDLE_RX_PS_POLL(1, wcid, isActive, tr_entry->ps_state);
-#endif
-			MtSetIgnorePsm(pAd, pMacEntry, I_PSM_ENABLE);
+			if (pMacEntry->i_psm == I_PSM_DISABLE)
+			{
+				MT_SET_IGNORE_PSM(pAd, pMacEntry, I_PSM_ENABLE);
+			}
 		}
 
 		if(tr_entry->ps_state == APPS_RETRIEVE_DONE || tr_entry->ps_state == APPS_RETRIEVE_IDLE)
@@ -197,13 +223,10 @@ VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isAc
 			if (Total_Packet_Number > 0)
 			{
 				{
-#ifdef CONFIG_TRACE_SUPPORT
-					TRACE_PS_HANDLE_RX_PS_POLL(2, wcid, isActive, tr_entry->ps_state);
-#endif
 					DBGPRINT(RT_DEBUG_TRACE | DBG_FUNC_PS, ("RtmpHandleRxPsPoll fetch tx queue tr_entry->ps_queue.Number= %x tr_entry->tx_queue[0].Number=%x Total_Packet_Number=%x\n",
 						tr_entry->ps_queue.Number, tr_entry->tx_queue[QID_AC_BE].Number, Total_Packet_Number));
 
-					for (i = WMM_QUE_NUM-1 ; i >=0; i--)
+					for (i = (WMM_QUE_NUM - 1); i >=0; i--)
 					{
 						if (tr_entry->tx_queue[i].Head)
 						{
@@ -233,10 +256,6 @@ VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isAc
 				RtmpEnqueueNullFrame(pAd, pMacEntry->Addr, tr_entry->CurrTxRate,
 				pMacEntry->Aid, pMacEntry->func_tb_idx,
 				bQosNull, TRUE, 0);
-
-#ifdef CONFIG_TRACE_SUPPORT
-			TRACE_PS_HANDLE_RX_PS_POLL(3, wcid, isActive, tr_entry->ps_state);
-#endif
 			} 
 			if (Total_Packet_Number >1)
 			{
@@ -265,12 +284,12 @@ VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isAc
 	{
 		WLAN_MR_TIM_BIT_CLEAR(pAd, tr_entry->func_tb_idx, tr_entry->wcid);
 #ifdef MT_PS
-		MtSetIgnorePsm(pAd, pMacEntry, I_PSM_DISABLE);
+		if (pMacEntry->i_psm == I_PSM_ENABLE)
+		{
+			MT_SET_IGNORE_PSM(pAd, pMacEntry, I_PSM_DISABLE);
+		}
 #endif /*Power bit is 1 and ifndef MT_PS */
 
-#ifdef CONFIG_TRACE_SUPPORT
-		TRACE_PS_HANDLE_RX_PS_POLL(4, wcid, isActive, tr_entry->ps_state);
-#endif
 		DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("RtmpHandleRxPsPoll null0/1 wcid = %x mt_ps_queue.Number = %d\n",
 			tr_entry->wcid,
 			tr_entry->ps_queue.Number));
@@ -302,9 +321,10 @@ VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isAc
 		{
 			IsDequeu = TRUE;
 			DequeuAC = NUM_OF_TX_RING;
-			if (tr_entry->enqCount > 8 /* MAX_TX_PROCESS */)
+			if (tr_entry->enqCount > MAX_TX_PROCESS)
 			{
-				DequeuCOUNT = 8 /*MAX_TX_PROCESS*/;
+				DequeuCOUNT = MAX_TX_PROCESS;
+				rtmp_ps_enq(pAd,tr_entry);
 			}
 			else
 			{
@@ -316,10 +336,6 @@ VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isAc
 	if (IsDequeu == TRUE)
 	{
 		RTMPDeQueuePacket(pAd, FALSE, DequeuAC, tr_entry->wcid, DequeuCOUNT);
-
-#ifdef CONFIG_TRACE_SUPPORT
-			TRACE_PS_HANDLE_RX_PS_POLL(5, wcid, isActive, tr_entry->ps_state);
-#endif
 		DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("RtmpHandleRxPsPoll IsDequeu == TRUE tr_entry->wcid=%x DequeuCOUNT=%d, ps_state=%d\n",tr_entry->wcid, DequeuCOUNT, tr_entry->ps_state));
 	}    
 	return;
@@ -349,7 +365,7 @@ BOOLEAN MtPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm)
 
 	pEntry = &pAd->MacTab.Content[wcid];
 	tr_entry = &pAd->MacTab.tr_entry[wcid];
-	
+
 	/*
 		Change power save mode first because we will call
 		RTMPDeQueuePacket() in RtmpHandleRxPsPoll().
@@ -371,19 +387,11 @@ BOOLEAN MtPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm)
 		{
 			tr_entry->ps_state = APPS_RETRIEVE_IDLE;
 			DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("%s(%d): STA wakes up!\n", __FUNCTION__, __LINE__));
-#ifdef CONFIG_TRACE_SUPPORT
-			TRACE_PS_INDICATE(1, wcid, old_psmode, Psm, tr_entry->ps_state);
-#endif
 			MtHandleRxPsPoll(pAd, pAddr, wcid, TRUE);
 		}
 		else
-		{
-#ifdef CONFIG_TRACE_SUPPORT
-			TRACE_PS_INDICATE(2, wcid, old_psmode, Psm, tr_entry->ps_state);
-#endif
 			DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("%s(%d):wcid=%d, old_psmode=%d, now_psmode=%d, wrong ps_state=%d ???\n",
 					__FUNCTION__, __LINE__, wcid, old_psmode, Psm, tr_entry->ps_state));
-		}
 	}
 	else if ((old_psmode == PWR_ACTIVE) && (Psm == PWR_SAVE))
 	{
@@ -397,16 +405,9 @@ BOOLEAN MtPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm)
 			DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("%s(%d):wcid=%d, old_psmode=%d, now_psmode=%d, ps_state=%d start retrieving!!\n",
 					__FUNCTION__, __LINE__, wcid, old_psmode, Psm, tr_entry->ps_state));
 
-#ifdef CONFIG_TRACE_SUPPORT
-			TRACE_PS_INDICATE(3, wcid, old_psmode, Psm, tr_entry->ps_state);
-#endif
-
-#ifdef MT7603   //Use write CRs replace PS cmd
+#if defined(MT7603) && defined(RTMP_PCI_SUPPORT)
 			if (MtStartPSRetrieve(pAd, wcid) == TRUE) {
-				tr_entry->ps_state = APPS_RETRIEVE_START_PS;
-#ifdef CONFIG_TRACE_SUPPORT
-				TRACE_PS_INDICATE(4, wcid, old_psmode, Psm, tr_entry->ps_state);
-#endif
+			tr_entry->ps_state = APPS_RETRIEVE_START_PS;
 			} else {
 				struct tx_swq_fifo *ps_fifo_swq;
 				INT enq_idx;
@@ -418,10 +419,6 @@ BOOLEAN MtPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm)
 					ps_fifo_swq->swq[enq_idx] = wcid;
 					INC_RING_INDEX(ps_fifo_swq->enqIdx, TX_SWQ_FIFO_LEN);
 					tr_entry->ps_state = APPS_RETRIEVE_CR_PADDING;
-
-#ifdef CONFIG_TRACE_SUPPORT
-					TRACE_PS_INDICATE(5, wcid, old_psmode, Psm, tr_entry->ps_state);
-#endif
 				} else {
 					INT idx;
 					tr_entry->ps_state = APPS_RETRIEVE_DONE;
@@ -432,34 +429,25 @@ BOOLEAN MtPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm)
 							DBGPRINT(RT_DEBUG_ERROR, ("\n"));
 					}
 					DBGPRINT(RT_DEBUG_ERROR, ("\n"));
-#ifdef CONFIG_TRACE_SUPPORT
-					TRACE_PS_INDICATE(6, wcid, old_psmode, Psm, tr_entry->ps_state);
-#endif
 				}				
 			}
-#else /* !MT7603 */
+#else /* !MT7603 && RTMP_PCI_SUPPORT */
 			RTEnqueueInternalCmd(pAd, CMDTHREAD_PS_RETRIEVE_START, pEntry, sizeof(MAC_TABLE_ENTRY));
-#endif
+#endif /* MT7603 && RTMP_PCI_SUPPORT */
 #else /* MT_PS */
 			tr_entry->ps_state = APPS_RETRIEVE_DONE;
 #endif /* !MT_PS */
 		}
 		else
-		{
 			DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("%s(%d):wcid=%d, old_psmode=%d, now_psmode=%d, wrong ps_state=%d ???\n",
 					__FUNCTION__, __LINE__, wcid, old_psmode, Psm, tr_entry->ps_state));
-
-#ifdef CONFIG_TRACE_SUPPORT
-			TRACE_PS_INDICATE(7, wcid, old_psmode, Psm, tr_entry->ps_state);
-#endif
-		}
 	}
 	else
 	{
 		DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("%s(%d): ps state is not changed, do nothing here.\n",
 			__FUNCTION__, __LINE__));
 	}
-	
+   
 	return old_psmode;
 }
 
@@ -485,8 +473,11 @@ VOID MtPsRedirectDisableCheck(
 		wlan_idx = (UINT32)wcid;
 		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("%s(%d): [wlan_idx=0x%x] PS Redirect mode(pfgForce = %d) is enabled. Send PC Clear command to FW.\n", 
 			__FUNCTION__, __LINE__, wlan_idx, pfgForce));
-		RTEnqueueInternalCmd(pAd, CMDTHREAD_PS_CLEAR, (VOID *)&wlan_idx, sizeof(UINT32));
+		//RTEnqueueInternalCmd(pAd, CMDTHREAD_PS_CLEAR, (VOID *)&wlan_idx, sizeof(UINT32));
+		/* clear CR directly instead of inband cmd, PSE Reset may lead cmd is not success */
+		MtClearPseRdTab(pAd, wlan_idx);
 	}
+
 }
 
 VOID MtPsSendToken(
@@ -539,7 +530,7 @@ VOID MtPsSendToken(
 	tr_entry->ps_state = APPS_RETRIEVE_GOING;
 
 	tr_entry->ps_qbitmap = 0;
-
+	  
 	for (q_idx = 0; q_idx < NUM_OF_TX_RING; q_idx++)
 	{
 		token_status = RtmpEnqueueTokenFrame(pAd, &(pEntry->Addr[0]), 0, WlanIdx, 0, q_idx);
@@ -557,19 +548,57 @@ VOID MtPsSendToken(
 	}
 }
 
+VOID MtPsRecovery(
+	RTMP_ADAPTER *pAd)
+{
+	MAC_TABLE_ENTRY *pMacEntry;
+	STA_TR_ENTRY *tr_entry;
+	UINT32 i;
+
+	for (i=1; i < MAX_LEN_OF_MAC_TABLE; i++)
+	{
+		pMacEntry = &pAd->MacTab.Content[i];
+		tr_entry = &pAd->MacTab.tr_entry[i];
+		if (IS_ENTRY_CLIENT(pMacEntry))
+		{
+			if (tr_entry->ps_state == APPS_RETRIEVE_CR_PADDING) {
+				tr_entry->ps_state = APPS_RETRIEVE_IDLE;
+			} else if ((tr_entry->ps_state == APPS_RETRIEVE_START_PS) 
+				|| (tr_entry->ps_state == APPS_RETRIEVE_GOING))
+			{
+				if (tr_entry->ps_queue.Number) {
+					MtEnqTxSwqFromPsQueue(pAd, i, tr_entry);
+				}
+
+
+				 if (pAd->MacTab.tr_entry[i].PsMode == PWR_ACTIVE) {
+					tr_entry->ps_state = APPS_RETRIEVE_IDLE;
+					 MtHandleRxPsPoll(pAd, &pMacEntry->Addr[0], i, TRUE);
+				 } else
+					tr_entry->ps_state = APPS_RETRIEVE_DONE;
+			} else if(tr_entry->ps_state == APPS_RETRIEVE_WAIT_EVENT)
+			{
+				RTEnqueueInternalCmd(pAd, CMDTHREAD_PS_CLEAR, (VOID *)&i, sizeof(UINT32));
+			}
+		}
+	}
+}
+
+
 VOID MtEnqTxSwqFromPsQueue(RTMP_ADAPTER *pAd, UCHAR qidx, STA_TR_ENTRY *tr_entry)
 {
-	unsigned long IrqFlags;
-	struct tx_swq_fifo *fifo_swq;
+	ULONG IrqFlags = 0;
+	//struct tx_swq_fifo *fifo_swq;
 	QUEUE_ENTRY *pQEntry;
 	QUEUE_HEADER *pAcPsQue;
 	QUEUE_HEADER *pAcTxQue;
-	MAC_TABLE_ENTRY *pEntry = NULL;
+#ifdef UAPSD_SUPPORT
+	MAC_TABLE_ENTRY *pEntry = &pAd->MacTab.Content[tr_entry->wcid];
+#endif /* UAPSD_SUPPORT */ 
 
-	fifo_swq = &pAd->tx_swq[qidx];
+	//fifo_swq = &pAd->tx_swq[qidx];
 	pAcPsQue = &tr_entry->ps_queue;
 	pAcTxQue = &tr_entry->tx_queue[qidx];
-	pEntry = &pAd->MacTab.Content[tr_entry->wcid];
 	
 	RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
 #ifdef UAPSD_SUPPORT
@@ -584,43 +613,27 @@ VOID MtEnqTxSwqFromPsQueue(RTMP_ADAPTER *pAd, UCHAR qidx, STA_TR_ENTRY *tr_entry
 	else
 #endif /* UAPSD_SUPPORT */
 	{
+		/*check and insert PS Token queue*/
+		if(pAcPsQue->Number > 0  && tr_entry->wcid > 0 && tr_entry->wcid < MAX_LEN_OF_TR_TABLE)
+		{
+			rtmp_ps_enq(pAd,tr_entry);
+			DBGPRINT(RT_DEBUG_TRACE | DBG_FUNC_PS, ("pAcPsQue->Number=%d,PS:%d\n",pAcPsQue->Number,tr_entry->PsTokenFlag));			
+		}
+
 		while(pAcPsQue->Head)
 		{
 			pQEntry = RemoveTailQueue(pAcPsQue);
 			if(tr_entry->enqCount > SQ_ENQ_NORMAL_MAX) {
-				RELEASE_NDIS_PACKET(pAd, QUEUE_ENTRY_TO_PACKET(pQEntry), NDIS_STATUS_FAILURE);
-				continue;
-            }
-			InsertHeadQueue(pAcTxQue, pQEntry); 			
-			TR_ENQ_COUNT_INC(tr_entry);
+			RELEASE_NDIS_PACKET(pAd, QUEUE_ENTRY_TO_PACKET(pQEntry), NDIS_STATUS_FAILURE);
+			continue;
+                        }
+		InsertHeadQueue(pAcTxQue, pQEntry); 			
+		TR_ENQ_COUNT_INC(tr_entry);
 		}
 	}
 	RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
 
 	return;
 }
-
-VOID MtPsClearErrorHandle(RTMP_ADAPTER *pAd, UINT wcid)
-{
-	MAC_TABLE_ENTRY *pEntry = NULL;
-	STA_TR_ENTRY *tr_entry;
-	pEntry = &pAd->MacTab.Content[wcid];
-	tr_entry = &pAd->MacTab.tr_entry[wcid];
-
-	if (tr_entry->PsMode == PWR_ACTIVE)
-	{
-		tr_entry->ps_state = APPS_RETRIEVE_IDLE;
-	}
-	else
-	{
-		tr_entry->ps_state = APPS_RETRIEVE_DONE;
-	}
-
-	if (tr_entry->ps_state == APPS_RETRIEVE_IDLE)
-	{
-		MtHandleRxPsPoll(pAd, &pEntry->Addr[0], wcid, TRUE);
-	}
-}
-
 #endif /* MT_PS */
 

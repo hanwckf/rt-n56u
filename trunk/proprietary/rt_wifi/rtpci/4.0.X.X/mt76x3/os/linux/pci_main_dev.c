@@ -33,7 +33,7 @@
 #include "rt_os_net.h"
 #include <linux/pci.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)
 #define DEVEXIT
 #define DEVEXIT_P
 #define DEVINIT
@@ -50,10 +50,12 @@
 */
 static struct pci_device_id rt_pci_tbl[] DEVINITDATA =
 {
+
 #ifdef MT7603
 	{PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7603_PCIe_DEVICE_ID)},
 	{PCI_DEVICE(0x1400, NIC7603_PCIe_DEVICE_ID)},
 #endif /* MT7603*/
+
 	{} /* terminate list */
 };
 
@@ -442,6 +444,7 @@ static struct pci_driver rt_pci_driver =
 #else
 	remove: __devexit(rt_pci_remove),
 #endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,0)
 #ifdef CONFIG_PM
 	suspend:	rt_pci_suspend,
@@ -477,5 +480,7 @@ void __exit rt_pci_cleanup_module(void)
 #ifndef MULTI_INF_SUPPORT
 module_init(rt_pci_init_module);
 module_exit(rt_pci_cleanup_module);
+
+
 #endif /* MULTI_INF_SUPPORT */
 

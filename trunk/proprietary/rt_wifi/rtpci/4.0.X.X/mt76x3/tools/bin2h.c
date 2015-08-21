@@ -105,6 +105,7 @@ int main(int argc ,char *argv[])
 		printf("Environment value \"CHIPSET\" not export \n");
 		return -1;
     }
+    memset(chipsets, 0, 1024);
 	memcpy(chipsets, chipset, strlen(chipset));
 
 	if (strlen(rt28xxdir) > (sizeof(infname)-100)) {
@@ -145,7 +146,7 @@ int main(int argc ,char *argv[])
 			strcat(fw_name, "RT2860_FirmwareImage");
 			is_bin2h_fw = 1;
 		} else if (strncmp(chipset, "2870",4) == 0) {
-			if ((strncmp(wow, "y", 1) == 0) && (strncmp(rt28xx_mode, "STA", 3) == 0)) {
+			if ((wow != NULL) && (strncmp(wow, "y", 1) == 0) && (strncmp(rt28xx_mode, "STA", 3) == 0)) {
 	    		strcat(infname,"/mcu/bin/rt2870_wow.bin");
     			strcat(outfname,"/include/mcu/rt2870_wow_firmware.h");
 				strcat(fw_name, "RT2870_WOW_FirmwareImage");
@@ -162,7 +163,7 @@ int main(int argc ,char *argv[])
 			strcat(fw_name, "RT2860_FirmwareImage");
 			is_bin2h_fw = 1;
 		} else if (strncmp(chipset, "2070",4) == 0) {
-			if ((strncmp(wow, "y", 1) == 0) && (strncmp(rt28xx_mode, "STA", 3) == 0)) {
+			if ((wow != NULL) && (strncmp(wow, "y", 1) == 0) && (strncmp(rt28xx_mode, "STA", 3) == 0)) {
 	    		strcat(infname,"/mcu/bin/rt2870_wow.bin");
     			strcat(outfname,"/include/mcu/rt2870_wow_firmware.h");
 				strcat(fw_name, "RT2870_WOW_FirmwareImage");
@@ -174,7 +175,7 @@ int main(int argc ,char *argv[])
 				is_bin2h_fw = 1;
 			}
 		} else if (strncmp(chipset, "3070",4) == 0) {
-			if ((strncmp(wow, "y", 1) == 0) && (strncmp(rt28xx_mode, "STA", 3) == 0)) {
+			if ((wow != NULL) && (strncmp(wow, "y", 1) == 0) && (strncmp(rt28xx_mode, "STA", 3) == 0)) {
 	    		strcat(infname,"/mcu/bin/rt2870_wow.bin");
     			strcat(outfname,"/include/mcu/rt2870_wow_firmware.h");
 				strcat(fw_name, "RT2870_WOW_FirmwareImage");
@@ -186,7 +187,7 @@ int main(int argc ,char *argv[])
 				is_bin2h_fw = 1;
 			}
 		} else if (strncmp(chipset, "3572",4) == 0) {
-			if ((strncmp(wow, "y", 1) == 0) && (strncmp(rt28xx_mode, "STA", 3) == 0)) {
+			if ((wow != NULL) && (strncmp(wow, "y", 1) == 0) && (strncmp(rt28xx_mode, "STA", 3) == 0)) {
 	    		strcat(infname,"/mcu/bin/rt2870_wow.bin");
     			strcat(outfname,"/include/mcu/rt2870_wow_firmware.h");
 				strcat(fw_name, "RT2870_WOW_FirmwareImage");
@@ -198,7 +199,7 @@ int main(int argc ,char *argv[])
 				is_bin2h_fw = 1;
 			}
 		} else if (strncmp(chipset, "3573",4) == 0) {
-			if ((strncmp(wow, "y", 1) == 0) && (strncmp(rt28xx_mode, "STA", 3) == 0)) {
+			if ((wow != NULL) && (strncmp(wow, "y", 1) == 0) && (strncmp(rt28xx_mode, "STA", 3) == 0)) {
 	    		strcat(infname,"/mcu/bin/rt2870_wow.bin");
     			strcat(outfname,"/include/mcu/rt2870_wow_firmware.h");
 				strcat(fw_name, "RT2870_WOW_FirmwareImage");
@@ -210,7 +211,7 @@ int main(int argc ,char *argv[])
 				is_bin2h_fw = 1;
 			}
 		} else if (strncmp(chipset, "3370",4) == 0) {
-			if ((strncmp(wow, "y", 1) == 0) && (strncmp(rt28xx_mode, "STA", 3) == 0)) {
+			if ((wow != NULL) && (strncmp(wow, "y", 1) == 0) && (strncmp(rt28xx_mode, "STA", 3) == 0)) {
 	    		strcat(infname,"/mcu/bin/rt2870_wow.bin");
     			strcat(outfname,"/include/mcu/rt2870_wow_firmware.h");
 				strcat(fw_name, "RT2870_WOW_FirmwareImage");
@@ -222,7 +223,7 @@ int main(int argc ,char *argv[])
 				is_bin2h_fw = 1;
 			}
 		} else if (strncmp(chipset, "5370",4) == 0) {
-			if ((strncmp(wow, "y", 1) == 0) && (strncmp(rt28xx_mode, "STA", 3) == 0)) {
+			if ((wow != NULL) && (strncmp(wow, "y", 1) == 0) && (strncmp(rt28xx_mode, "STA", 3) == 0)) {
 	    		strcat(infname,"/mcu/bin/rt2870_wow.bin");
     			strcat(outfname,"/include/mcu/rt2870_wow_firmware.h");
 				strcat(fw_name, "RT2870_WOW_FirmwareImage");
@@ -316,7 +317,7 @@ int main(int argc ,char *argv[])
 			strcat(fw_name1, "MT7603_e2_FirmwareImage");
 
 			strcat(e2p_name, "MT7603_E2PImage");
-			strcat(ine2pname, "/eeprom/MT7603E1E2_EEPROM_layout_2014011.bin");
+			strcat(ine2pname, "/eeprom/MT7603E_EEPROM.bin");
 			strcat(oute2pname, "/include/eeprom/mt7603_e2p.h");
 			is_bin2h_fw = 1;
 			is_bin2h_e2p = 1;

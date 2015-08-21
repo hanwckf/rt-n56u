@@ -70,6 +70,10 @@
 #include <linux/pid.h>
 #endif
 
+#ifdef CONFIG_TRACE_SUPPORT
+#include "os/trace_linux.h"
+#endif
+
 #include "link_list.h"
 
 #ifdef RT_CFG80211_SUPPORT
@@ -81,11 +85,21 @@
 #endif /* LINUX_VERSION_CODE */
 #endif /* RT_CFG80211_SUPPORT */
 
-#ifdef MAT_SUPPORT
+#if defined(MAT_SUPPORT) || defined (PREVENT_ARP_SPOOFING)
 #include <linux/if_ether.h>
 #include <linux/if_arp.h>
 #include <linux/ip.h>
-#endif /* MAT_SUPPORT */
+#endif /* MAT_SUPPORT || PREVENT_ARP_SPOOFING */
+
+#ifdef PREVENT_ARP_SPOOFING
+#include <linux/inetdevice.h>
+#include <../net/bridge/br_private.h>
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,35)
+#define GET_BR_PORT(netdev)	(netdev)->br_port
+#else
+#define GET_BR_PORT(netdev)	br_port_get_rcu(netdev)
+#endif
+#endif /* PREVENT_ARP_SPOOFING */
 
 /* must put the definition before include "os/rt_linux_cmm.h" */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,29)
@@ -138,6 +152,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
  ***********************************************************************************/
 #ifdef CONFIG_AP_SUPPORT
 #ifdef RTMP_MAC_PCI
+
 #if (CONFIG_RT_FIRST_CARD == 7603)
  #define AP_RTMP_FIRMWARE_FILE_NAME	"/etc_ro/Wireless/RT2860AP.bin"
  #define AP_PROFILE_PATH		"/etc/Wireless/RT2860/RT2860AP.dat"
@@ -149,9 +164,12 @@ typedef struct usb_ctrlrequest devctrlrequest;
  #define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/iNIC/SingleSKU.dat"
  #define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860APCard.dat"
 #endif
-#define AP_DRIVER_VERSION		"4.0.0.9"
+
+#define AP_DRIVER_VERSION		"4.0.1.0_rev1"
+
 #endif /* RTMP_MAC_PCI */
 #endif /* CONFIG_AP_SUPPORT */
+
 
 
 #ifdef CONFIG_APSTA_MIXED_SUPPORT
@@ -325,6 +343,7 @@ typedef spinlock_t			OS_NDIS_SPIN_LOCK;
 #define OS_NdisFreeSpinLock(lock)				\
 	do{}while(0)
 
+
 #define OS_SEM_LOCK(__lock)						\
 {												\
 	spin_lock_bh((spinlock_t *)(__lock));		\
@@ -335,11 +354,13 @@ typedef spinlock_t			OS_NDIS_SPIN_LOCK;
 	spin_unlock_bh((spinlock_t *)(__lock));		\
 }
 
+
 /* sample, use semaphore lock to replace IRQ lock, 2007/11/15 */
 #ifdef MULTI_CORE_SUPPORT
 
 #define OS_IRQ_LOCK(__lock, __irqflags)			\
 {													\
+    if (__irqflags);                            \
 	__irqflags = 0;									\
 	spin_lock_irqsave((spinlock_t *)(__lock), __irqflags);			\
 }
@@ -351,6 +372,7 @@ typedef spinlock_t			OS_NDIS_SPIN_LOCK;
 #else
 #define OS_IRQ_LOCK(__lock, __irqflags)			\
 {												\
+    if (__irqflags);                            \
 	__irqflags = 0;								\
 	spin_lock_bh((spinlock_t *)(__lock));		\
 }
@@ -637,6 +659,7 @@ struct os_cookie {
 	RTMP_NET_TASK_STRUCT	mt_mac_int_3_task;
 	RTMP_NET_TASK_STRUCT	mt_mac_int_4_task;
     RTMP_NET_TASK_STRUCT	bcn_dma_done_task;
+    RTMP_NET_TASK_STRUCT    bmc_dma_done_task;
 #endif /*MT_MAC */
 
 #ifdef RTMP_MAC_PCI
@@ -644,9 +667,6 @@ struct os_cookie {
 #ifdef CONFIG_ANDES_SUPPORT
 	RTMP_NET_TASK_STRUCT rx1_done_task;
 #endif /* CONFIG_ANDES_SUPPORT */
-#ifdef MT_MAC
-	RTMP_NET_TASK_STRUCT    bmc_dma_done_task;
-#endif /* MT_MAC */
 #endif /* RTMP_MAC_PCI */
 
 #ifdef UAPSD_SUPPORT
@@ -1152,20 +1172,18 @@ do {	\
 #define PACKET_CB(_p, _offset)		((RTPKT_TO_OSPKT(_p)->cb[CB_OFF + (_offset)]))
 
 
+
+
 /***********************************************************************************
  *	Other function prototypes definitions
  ***********************************************************************************/
 
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 #if !defined(CONFIG_RA_NAT_NONE)
 extern int (*ra_sw_nat_hook_rx)(VOID *skb);
 extern int (*ra_sw_nat_hook_tx)(VOID *skb, int gmac_no);
 #endif
-
-#if defined (CONFIG_WIFI_PKT_FWD)
-extern int (*wf_fwd_rx_hook) (struct sk_buff *skb);
-extern unsigned char (*wf_fwd_entry_insert_hook) (struct net_device *src, struct net_device *dest);
-extern unsigned char (*wf_fwd_entry_delete_hook) (struct net_device *src, struct net_device *dest);
-#endif /* CONFIG_WIFI_PKT_FWD */
+#endif
 
 void RTMP_GetCurrentSystemTime(LARGE_INTEGER *time);
 int rt28xx_packet_xmit(VOID *skb);
@@ -1232,6 +1250,9 @@ typedef struct usb_device_id USB_DEVICE_ID;
 
 #ifndef OS_ABL_SUPPORT
 #define RTUSB_ALLOC_URB(iso)		usb_alloc_urb(iso, GFP_ATOMIC)
+#ifdef USB_IOT_WORKAROUND2
+void usb_iot_add_padding(struct urb *urb, UINT8 *buf, ra_dma_addr_t dma);
+#endif
 #define RTUSB_SUBMIT_URB(pUrb)		usb_submit_urb(pUrb, GFP_ATOMIC)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
 #define RTUSB_URB_ALLOC_BUFFER(_dev, _size, _dma)	usb_alloc_coherent(_dev, _size, GFP_ATOMIC, _dma)
@@ -1362,7 +1383,21 @@ USBHST_STATUS RTUSBBulkOutBCNPacketComplete(URBCompleteStatus Status, purbb_t pU
 						pUrb->transfer_dma	= TransferDma;	\
 			       		pUrb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;	\
 				}while(0)
-
+#ifdef CONFIG_PRE_ALLOC
+#define RTUSB_FILL_HTTX_BULK_URB(pUrb,	\
+				pUsb_Dev,	\
+				uEndpointAddress,		\
+				pTransferBuf,			\
+				BufSize,				\
+				Complete,	\
+				pContext,				\
+				TransferDma)				\
+  				do{	\
+					usb_fill_bulk_urb(pUrb, pUsb_Dev, usb_sndbulkpipe(pUsb_Dev, uEndpointAddress),	\
+								pTransferBuf, BufSize, Complete, pContext);	\
+					pUrb->transfer_dma	= TransferDma; \
+				}while(0)
+#else
 #define RTUSB_FILL_HTTX_BULK_URB(pUrb,	\
 				pUsb_Dev,	\
 				uEndpointAddress,		\
@@ -1377,7 +1412,23 @@ USBHST_STATUS RTUSBBulkOutBCNPacketComplete(URBCompleteStatus Status, purbb_t pU
 					pUrb->transfer_dma	= TransferDma; \
 					pUrb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;	\
 				}while(0)
+#endif
 
+#ifdef CONFIG_PRE_ALLOC
+#define RTUSB_FILL_RX_BULK_URB(pUrb,	\
+				pUsb_Dev,				\
+				uEndpointAddress,		\
+				pTransferBuf,			\
+				BufSize,				\
+				Complete,				\
+				pContext,				\
+				TransferDma)			\
+  				do{	\
+					usb_fill_bulk_urb(pUrb, pUsb_Dev, usb_rcvbulkpipe(pUsb_Dev, uEndpointAddress),	\
+								pTransferBuf, BufSize, Complete, pContext);	\
+					pUrb->transfer_dma	= TransferDma;	\
+				}while(0)
+#else
 #define RTUSB_FILL_RX_BULK_URB(pUrb,	\
 				pUsb_Dev,				\
 				uEndpointAddress,		\
@@ -1393,7 +1444,7 @@ USBHST_STATUS RTUSBBulkOutBCNPacketComplete(URBCompleteStatus Status, purbb_t pU
 					pUrb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;	\
 				}while(0)
 /* pRxContext->data_dma + pAd->NextRxBulkInPosition; */
-
+#endif
 #define RTUSB_URB_DMA_MAPPING(pUrb)	\
 	{	\
 		pUrb->transfer_dma	= 0;	\

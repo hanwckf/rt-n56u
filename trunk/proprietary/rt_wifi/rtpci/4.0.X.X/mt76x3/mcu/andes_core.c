@@ -29,18 +29,15 @@ struct cmd_msg *AndesAllocCmdMsg(RTMP_ADAPTER *ad, unsigned int length)
 #endif
 
 	net_pkt = RTMP_AllocateFragPacketBuffer(ad, AllocateSize);
-
 	if (!net_pkt) {
 		DBGPRINT(RT_DEBUG_ERROR, ("can not allocate net_pkt\n"));
 		goto error0;
 	}
 
-	if ((ctl->Stage == FW_NO_INIT) || (ctl->Stage == FW_DOWNLOAD) || (ctl->Stage == ROM_PATCH_DOWNLOAD))
-		OS_PKT_RESERVE(net_pkt, cap->cmd_header_len);
-	else if (ctl->Stage == FW_RUN_TIME)
-		OS_PKT_RESERVE(net_pkt, sizeof(FW_TXD *));
+	OS_PKT_RESERVE(net_pkt, cap->cmd_header_len);
 
 	os_alloc_mem(NULL, (PUCHAR *)&msg, sizeof(*msg));
+
 	if (!msg) {
 		DBGPRINT(RT_DEBUG_ERROR, ("can not allocate cmd msg\n"));
 		goto error1;
@@ -49,7 +46,6 @@ struct cmd_msg *AndesAllocCmdMsg(RTMP_ADAPTER *ad, unsigned int length)
 	CMD_MSG_CB(net_pkt)->msg = msg;
 
 	memset(msg, 0x00, sizeof(*msg));
-
 
 	msg->priv = (void *)ad;
 	msg->net_pkt = net_pkt;
@@ -127,9 +123,11 @@ VOID AndesFreeCmdMsg(struct cmd_msg *msg)
 	if (net_pkt)
 		RTMPFreeNdisPacket(ad, net_pkt);
 #endif
-		
+
 	ctl->free_cmd_msg++;
 }
+
+
 
 VOID AndesForceFreeCmdMsg(struct cmd_msg *msg)
 {
@@ -423,12 +421,12 @@ VOID PciKickOutCmdMsgComplete(PNDIS_PACKET net_pkt)
 
 VOID AndesRxProcessCmdMsg(RTMP_ADAPTER *ad, struct cmd_msg *rx_msg)
 {
-#ifdef MT_MAC
-	RX_BLK RxBlk;
+    RX_BLK RxBlk;
 
+#ifdef MT_MAC
 	if (ad->chipCap.hif_type == HIF_MT)
 	{
-		parse_rx_packet_type(ad, &RxBlk, rx_msg->net_pkt);
+		/*rx_hw_hdr_len = */parse_rx_packet_type(ad, &RxBlk, rx_msg->net_pkt);
 	}
 #endif /* MT_MAC */
 
@@ -526,9 +524,7 @@ VOID AndesCleanupCmdMsg(RTMP_ADAPTER *ad, DL_LIST *list)
 static VOID AndesCtrlPciInit(RTMP_ADAPTER *ad)
 {
 	struct MCU_CTRL *ctl = &ad->MCUCtrl;
-	INT32 Ret;
-
-	RTMP_SEM_EVENT_WAIT(&(ad->mcu_atomic), Ret);
+	
 	RTMP_CLEAR_FLAG(ad, fRTMP_ADAPTER_MCU_SEND_IN_BAND_CMD);
 	ctl->cmd_seq = 0;
 #ifndef WORKQUEUE_BH
@@ -555,7 +551,6 @@ static VOID AndesCtrlPciInit(RTMP_ADAPTER *ad)
 	ctl->free_cmd_msg = 0;
 	OS_SET_BIT(MCU_INIT, &ctl->flags);
 	ctl->ad = ad;
-	RTMP_SEM_EVENT_UP(&(ad->mcu_atomic));
 }
 #endif
 
@@ -567,7 +562,6 @@ static VOID AndesCtrlSdioInit(RTMP_ADAPTER *pAd)
 {
 	struct MCU_CTRL *ctl = &pAd->MCUCtrl;
 	int ret = 0;
-	RTMP_SEM_EVENT_WAIT(&(pAd->mcu_atomic), ret);
 
 	RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_MCU_SEND_IN_BAND_CMD);
 	ctl->cmd_seq = 0;
@@ -593,7 +587,6 @@ static VOID AndesCtrlSdioInit(RTMP_ADAPTER *pAd)
 	ctl->free_cmd_msg = 0;
 	ctl->ad = pAd;
 	OS_SET_BIT(MCU_INIT, &ctl->flags);
-	RTMP_SEM_EVENT_UP(&(pAd->mcu_atomic));
 }
 #endif
 
@@ -626,9 +619,7 @@ VOID AndesCtrlInit(RTMP_ADAPTER *pAd)
 static VOID AndesCtrlPciExit(RTMP_ADAPTER *ad)
 {
 	struct MCU_CTRL *ctl = &ad->MCUCtrl;
-	INT32 Ret;
-
-	RTMP_SEM_EVENT_WAIT(&(ad->mcu_atomic), Ret);
+	
 	RTMP_CLEAR_FLAG(ad, fRTMP_ADAPTER_MCU_SEND_IN_BAND_CMD);
 	OS_CLEAR_BIT(MCU_INIT, &ctl->flags);
 	RTMP_OS_TASKLET_KILL(&ctl->cmd_msg_task);
@@ -649,7 +640,6 @@ static VOID AndesCtrlPciExit(RTMP_ADAPTER *ad)
 	DBGPRINT(RT_DEBUG_OFF, ("rx_receive_fail_count = %ld\n", ctl->rx_receive_fail_count));
 	DBGPRINT(RT_DEBUG_OFF, ("alloc_cmd_msg = %ld\n", ctl->alloc_cmd_msg));
 	DBGPRINT(RT_DEBUG_OFF, ("free_cmd_msg = %ld\n", ctl->free_cmd_msg));
-	RTMP_SEM_EVENT_UP(&(ad->mcu_atomic));
 }
 #endif
 
@@ -661,7 +651,6 @@ static VOID AndesCtrlSdioExit(RTMP_ADAPTER *pAd)
 	unsigned long flags;
 	INT32 Ret;
 
-	RTMP_SEM_EVENT_WAIT(&(pAd->mcu_atomic), Ret);
 	RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_MCU_SEND_IN_BAND_CMD);
 	OS_CLEAR_BIT(MCU_INIT, &ctl->flags);
 	RTMP_OS_TASKLET_KILL(&ctl->cmd_msg_task);
@@ -684,7 +673,6 @@ static VOID AndesCtrlSdioExit(RTMP_ADAPTER *pAd)
 	DBGPRINT(RT_DEBUG_OFF, ("rx_receive_fail_count = %ld\n", ctl->rx_receive_fail_count));
 	DBGPRINT(RT_DEBUG_OFF, ("alloc_cmd_msg = %ld\n", ctl->alloc_cmd_msg));
 	DBGPRINT(RT_DEBUG_OFF, ("free_cmd_msg = %ld\n", ctl->free_cmd_msg));
-	RTMP_SEM_EVENT_UP(&(pAd->mcu_atomic));
 }
 #endif
 
@@ -703,6 +691,7 @@ VOID AndesCtrlExit(RTMP_ADAPTER *pAd)
 #endif
 	}
 
+	ctl->Stage = FW_NO_INIT;
 	ctl->power_on = FALSE;
 	ctl->dpd_on = FALSE;
 }
@@ -724,12 +713,10 @@ static INT32 AndesDequeueAndKickOutCmdMsgs(RTMP_ADAPTER *ad)
 			continue;
 		}
 
-		// jeffrey : Do not put the msg back to txq, this may cause busy loop, and should not happend
-		// we free this msg instead and return error
 		if (AndesQueueLen(ctl, &ctl->ackq) > 0) {
-			AndesFreeCmdMsg(msg);
+			AndesQueueHeadCmdMsg(&ctl->txq, msg, msg->state);
 			ret = NDIS_STATUS_FAILURE;
-			break;
+			continue;
 		}
 
 		net_pkt = msg->net_pkt;
@@ -740,8 +727,8 @@ static INT32 AndesDequeueAndKickOutCmdMsgs(RTMP_ADAPTER *ad)
 			else
 				msg->seq = 0;
 
-			if (ad->chipOps.andes_fill_cmd_header != NULL)
-				ad->chipOps.andes_fill_cmd_header(msg, net_pkt);
+            if (ad->chipOps.andes_fill_cmd_header != NULL)
+                ad->chipOps.andes_fill_cmd_header(msg, net_pkt);
 		}
 
 
@@ -798,22 +785,18 @@ INT32 AndesSendCmdMsg(PRTMP_ADAPTER ad, struct cmd_msg *msg)
 
 	if(in_interrupt() && need_wait)
 	{
-		if(msg != NULL) {
-			DBGPRINT(RT_DEBUG_ERROR, ("%s: Command type = %x, Extension command type = %x\n", __FUNCTION__, msg->cmd_type, msg->ext_cmd_type));
-		}
-		AndesForceFreeCmdMsg(msg);
 		DBGPRINT(RT_DEBUG_ERROR, ("BUG: %s is called from invalid context\n", __FUNCTION__));
+		DBGPRINT(RT_DEBUG_ERROR, ("%s: Command type = %x, Extension command type = %x\n", __FUNCTION__, msg->cmd_type, msg->ext_cmd_type));
+		AndesForceFreeCmdMsg(msg);
 		return NDIS_STATUS_FAILURE;
 	}
-
-	RTMP_SEM_EVENT_WAIT(&(ad->mcu_atomic), ret);
 
 	if (!RTMP_TEST_FLAG(ad, fRTMP_ADAPTER_MCU_SEND_IN_BAND_CMD)
 				|| RTMP_TEST_FLAG(ad, fRTMP_ADAPTER_NIC_NOT_EXIST)
 				|| RTMP_TEST_FLAG(ad, fRTMP_ADAPTER_SUSPEND)) {
 
 		if (!RTMP_TEST_FLAG(ad, fRTMP_ADAPTER_MCU_SEND_IN_BAND_CMD))
-			DBGPRINT(RT_DEBUG_ERROR, ("%s: Could not send in band command due to disable fRTMP_ADAPTER_MCU_SEND_IN_BAND_CMD\n", __FUNCTION__));
+			DBGPRINT(RT_DEBUG_ERROR, ("%s: Could not send in band command due to diable fRTMP_ADAPTER_MCU_SEND_IN_BAND_CMD\n", __FUNCTION__));
 		else if (RTMP_TEST_FLAG(ad, fRTMP_ADAPTER_NIC_NOT_EXIST))
 			DBGPRINT(RT_DEBUG_ERROR, ("%s: Could not send in band command due to fRTMP_ADAPTER_NIC_NOT_EXIST\n", __FUNCTION__));
 		else if (RTMP_TEST_FLAG(ad, fRTMP_ADAPTER_SUSPEND))
@@ -821,17 +804,13 @@ INT32 AndesSendCmdMsg(PRTMP_ADAPTER ad, struct cmd_msg *msg)
 
 		AndesForceFreeCmdMsg(msg);
 
-		RTMP_SEM_EVENT_UP(&(ad->mcu_atomic));
-
 		return NDIS_STATUS_FAILURE;
 	}
 
 	AndesQueueTailCmdMsg(&ctl->txq, msg, tx_start);
 
 retransmit:
-	if (AndesDequeueAndKickOutCmdMsgs(ad) != NDIS_STATUS_SUCCESS) {
-		goto bailout;
-	}
+	AndesDequeueAndKickOutCmdMsgs(ad);
 
 	/* Wait for response */
 	if (need_wait) {
@@ -867,11 +846,6 @@ retransmit:
 				{
 					MtPsSendToken(ad, msg->wcid);
 				}
-				if ((msg->cmd_type == EXT_CID) &&
-					(msg->ext_cmd_type == EXT_CMD_PWR_SAVING))
-				{
-					CmdPsClearReq(ad, msg->wcid, TRUE);
-				}
 			}
 #endif /* MT_PS */
 			DBGPRINT(RT_DEBUG_ERROR, ("msg->retransmit_times = %d\n", msg->retransmit_times));
@@ -880,6 +854,14 @@ retransmit:
 				state = tx_kickout_fail;
 				msg->retransmit_times--;
 			} else {
+
+
+				if (msg->state == wait_cmd_out_and_ack) {
+					AndesUnlinkCmdMsg(msg, &ctl->ackq);
+				} else if (msg->state == wait_ack) {
+					AndesUnlinkCmdMsg(msg, &ctl->ackq);
+				}
+			
 				state = tx_done;
 				msg->retransmit_times = 0;
 			}
@@ -900,10 +882,6 @@ retransmit:
 			AndesFreeCmdMsg(msg);
 		}
 	}
-
-bailout:
-
-	RTMP_SEM_EVENT_UP(&(ad->mcu_atomic));
 
 	return ret;
 }

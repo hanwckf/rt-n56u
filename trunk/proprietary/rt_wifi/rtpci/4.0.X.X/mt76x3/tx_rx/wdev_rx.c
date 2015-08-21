@@ -31,6 +31,50 @@
 extern BOOLEAN hotspot_rx_handler(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, RX_BLK *pRxBlk);
 #endif /* CONFIG_HOTSPOT */
 
+
+#ifdef PREVENT_ARP_SPOOFING
+INT check_arp_spoofing( PNET_DEV dev, PNDIS_PACKET pskb)
+{
+	struct net_bridge_port *br_port=NULL;
+	struct in_device *in_dev;
+	struct in_ifaddr *if_info;
+	struct arphdr *arp;
+	UCHAR *br_ip, *arp_ptr;
+	UCHAR *pPkt;
+	USHORT protocol;
+
+	br_port = GET_BR_PORT(dev);	
+	
+	if (!br_port)
+		return 0;
+
+	//DBGPRINT(RT_DEBUG_TRACE, ("%s(): ==> \n", __FUNCTION__));
+	
+	in_dev = (struct in_device *)(br_port->br->dev->ip_ptr);
+	if_info = (in_dev->ifa_list);
+	br_ip = (UCHAR *)&if_info->ifa_local;
+
+	pPkt = (GET_OS_PKT_DATAPTR(pskb) + (2 * ETH_ALEN));
+	protocol = *(USHORT *)pPkt;
+
+	if(protocol == OS_HTONS(ETH_P_ARP)) {
+		pPkt = (GET_OS_PKT_DATAPTR(pskb) + ETH_HLEN);  // ETH_HLEN is 14
+		arp = (struct arphdr *)pPkt;	
+		
+		arp_ptr = (UCHAR *)(arp + 1);
+
+		if(arp->ar_pro == OS_HTONS(ETH_P_IP)) {
+			arp_ptr += arp->ar_hln;
+			if (!NdisCmpMemory(br_ip, arp_ptr, arp->ar_pln))
+				return -1;
+		}
+	}
+
+	return 0;
+}
+#endif /* PREVENT_ARP_SPOOFING */
+
+
 // TODO: shiang-usw, temporary put this function here, should remove to other place or re-write!
 VOID Update_Rssi_Sample(
 	IN RTMP_ADAPTER *pAd,
@@ -140,7 +184,11 @@ UINT deaggregate_AMSDU_announce(
 
 
 #ifdef CONFIG_AP_SUPPORT
+#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
+		if (OpMode == OPMODE_AP)
+#else
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT */
 		{
 			if (pRemovedLLCSNAP)
 			{
@@ -167,6 +215,9 @@ UINT deaggregate_AMSDU_announce(
 		{
 			UCHAR opmode = pAd->OpMode;
 
+#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
+			opmode = OpMode;
+#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT */
 			Announce_or_Forward_802_3_Packet(pAd, pClonePacket, RTMP_GET_PACKET_WDEV(pPacket), opmode);
 		}
 
@@ -200,7 +251,7 @@ UINT deaggregate_AMSDU_announce(
 
 VOID Indicate_AMSDU_Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR wdev_idx)
 {
-	UINT nMSDU;
+	//UINT nMSDU;
 
 	RTMP_UPDATE_OS_PACKET_INFO(pAd, pRxBlk, wdev_idx);
 	RTMP_SET_PACKET_WDEV(pRxBlk->pRxPacket, wdev_idx);
@@ -216,7 +267,7 @@ VOID Indicate_AMSDU_Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR wdev_idx)
 		}
 	}
 #endif	
-	nMSDU = deaggregate_AMSDU_announce(pAd, pRxBlk->pRxPacket, pRxBlk->pData, pRxBlk->DataSize, pRxBlk->OpMode);
+	/*nMSDU =*/ deaggregate_AMSDU_announce(pAd, pRxBlk->pRxPacket, pRxBlk->pData, pRxBlk->DataSize, pRxBlk->OpMode);
 }
 #endif /* DOT11_N_SUPPORT */
 
@@ -369,11 +420,11 @@ if (0) {
 
 				if (srcPort==67 && dstPort==68) /*It's a DHCP packet */
 				{
-					PUCHAR bootpHdr, dhcpHdr, pCliHwAddr;
+					PUCHAR bootpHdr/*, dhcpHdr*/, pCliHwAddr;
 					REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
 
 					bootpHdr = pUdpHdr + 8;
-					dhcpHdr = bootpHdr + 236;
+					//dhcpHdr = bootpHdr + 236;
 					pCliHwAddr = (bootpHdr+28);
 					pReptEntry = RTMPLookupRepeaterCliEntry(pAd, FALSE, pCliHwAddr);
 					if (pReptEntry)
@@ -612,9 +663,10 @@ VOID rx_eapol_frm_handle(
 	UCHAR *pTmpBuf;
 	BOOLEAN to_mlme = TRUE, to_daemon = FALSE;
 	struct wifi_dev *wdev;
+
 #if defined(WPA_SUPPLICANT_SUPPORT) && defined(CONFIG_AP_SUPPORT)
 	STA_TR_ENTRY *tr_entry;
-#endif/*defined(WPA_SUPPLICANT_SUPPORT) && defined(CONFIG_AP_SUPPORT)*/
+#endif
 
 	ASSERT(wdev_idx < WDEV_NUM_MAX);
 	if (wdev_idx >= WDEV_NUM_MAX)
@@ -648,7 +700,7 @@ VOID rx_eapol_frm_handle(
 	{
 
 #ifdef HOSTAPD_SUPPORT
-		if (pAd->ApCfg.MBSSID[pEntry->func_tb_idx].Hostapd == TRUE)
+		if (pAd->ApCfg.MBSSID[pEntry->func_tb_idx].Hostapd == Hostapd_EXT)
 		{
 			DBGPRINT(RT_DEBUG_TRACE, ("Indicate_Legacy_Packet\n"));
 			Indicate_Legacy_Packet(pAd, pRxBlk, wdev_idx);
@@ -666,7 +718,7 @@ VOID rx_eapol_frm_handle(
 		Indicate_Legacy_Packet(pAd, pRxBlk, wdev_idx);
 		return;
 	}
-#endif/*RT_CFG80211_SUPPORT*/
+#endif /*RT_CFG80211_SUPPORT*/
 
 	if (IS_ENTRY_AP(pEntry))
 	{
@@ -744,6 +796,10 @@ VOID rx_eapol_frm_handle(
 							pRxBlk->rx_signal.raw_rssi[0],
 							pRxBlk->rx_signal.raw_rssi[1],
 							pRxBlk->rx_signal.raw_rssi[2],
+#ifdef CUSTOMER_DCC_FEATURE
+							pRxBlk->rx_signal.raw_snr[0],
+							pRxBlk->rx_signal.raw_snr[1],
+#endif
 							0,
 							pRxBlk->OpMode);
 
@@ -751,7 +807,6 @@ VOID rx_eapol_frm_handle(
 			     ("!!! report EAPOL DATA to MLME (len=%d) !!!\n",
 			      pRxBlk->DataSize));
 	}
-
 
 	if (to_daemon == TRUE)
 	{
@@ -792,6 +847,35 @@ VOID Indicate_EAPOL_Packet(
 }
 
 
+bool check_duplicated_mgmt_frame(HEADER_802_11 *pHeader)
+{
+	static DUPLICATED_FRAME duplicated_frame[15]={
+		{-1,{0}},{-1,{0}},{-1,{0}},{-1,{0}},{-1,{0}},
+		{-1,{0}},{-1,{0}},{-1,{0}},{-1,{0}},{-1,{0}},
+		{-1,{0}},{-1,{0}},{-1,{0}},{-1,{0}},{-1,{0}}};
+	INT current_sn = pHeader->Sequence;
+	UINT16 retry = pHeader->FC.Retry;
+	UINT16 mgmt_type = pHeader->FC.SubType;
+	
+ 	if (mgmt_type >= 15) {
+		DBGPRINT(RT_DEBUG_INFO, ("%s:: check duplicated mgmt frame fail(invilide mgmt subtype(%d)) \n",__FUNCTION__, mgmt_type));
+		return FALSE;
+	}
+	
+	if (MAC_ADDR_EQUAL(duplicated_frame[mgmt_type].prev_mgmt_src_addr, pHeader->Addr2) && retry == 1 
+		&& duplicated_frame[mgmt_type].prev_mgmt_frame_sn == current_sn) {
+		DBGPRINT(RT_DEBUG_INFO, ("%s:: Drop duplicated mgmt frame(subtype=%d, current_sn=%d, prev_sn=%d, retry=%d) \n",__FUNCTION__, 
+			mgmt_type, current_sn, duplicated_frame[mgmt_type].prev_mgmt_frame_sn, retry));
+		return TRUE;
+	} else {
+		duplicated_frame[mgmt_type].prev_mgmt_frame_sn = current_sn;
+		COPY_MAC_ADDR(duplicated_frame[mgmt_type].prev_mgmt_src_addr, pHeader->Addr2);
+		return FALSE;
+	}
+}
+
+
+
 // TODO: shiang-usw, modify the op_mode assignment for this function!!!
 VOID dev_rx_mgmt_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 {
@@ -809,7 +893,7 @@ DBGPRINT(RT_DEBUG_FPGA, ("-->%s()\n", __FUNCTION__));
 
 #ifdef RT_CFG80211_SUPPORT
 	if (CFG80211_HandleP2pMgmtFrame(pAd, pRxBlk, op_mode))
-		return;
+		goto done;
 #endif /* RT_CFG80211_SUPPORT */
 
 
@@ -924,13 +1008,50 @@ DBGPRINT(RT_DEBUG_FPGA, ("-->%s()\n", __FUNCTION__));
 	}
 #endif /* defined(CONFIG_AP_SUPPORT) || defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT) */
 
+#ifdef CUSTOMER_DCC_FEATURE
+#ifdef MBSS_802_11_STATISTICS
+	// management frame RX counter per BSS
+	if(!(ApScanRunning(pAd)))
+	{					
+		pAd->RadioStatsCounter.TotalRxCount++;
+		if (pHeader->FC.FrDs == 0 && pRxBlk->pRxInfo->U2M && pRxBlk->bss_idx < pAd->ApCfg.BssidNum)
+		{
+			BSS_STRUCT *pMbss = &pAd->ApCfg.MBSSID[pRxBlk->bss_idx];
+			if ((pEntry != NULL) && (pEntry->Sst == SST_ASSOC))
+			{
+				pMbss->MGMTReceivedByteCount += pRxBlk->MPDUtotalByteCnt;
+				pMbss->MGMTRxCount++;
+				{
+					UINT32 Length, Index;															
+					Length = pRxBlk->MPDUtotalByteCnt; 
+					GetMultShiftFactorIndex(pRxBlk->rx_rate, &Index);
+					RTMPCalculateAPTxRxActivityTime(pAd, Index, Length, pMbss, pEntry);
+				}
+			}
+		}					
+	}
+#endif
+#endif
 	/* Signal in MLME_QUEUE isn't used, therefore take this item to save min SNR. */
+	//if(pHeader->FC.SubType == SUBTYPE_BEACON)
+		//printk("%02x:%02x:%02x:%02x:%02x:%02x=================================> pRxBlk->wcid: %d\n", PRINT_MAC(pHeader->Addr2), pRxBlk->wcid);
+	
+	/* check duplicated mgmt frame */
+	if(check_duplicated_mgmt_frame(pHeader) == TRUE)
+	{
+		goto done;
+	}
+
 	REPORT_MGMT_FRAME_TO_MLME(pAd, pRxBlk->wcid,
 						pHeader,
 						pRxBlk->DataSize,
 						pRxBlk->rx_signal.raw_rssi[0],
 						pRxBlk->rx_signal.raw_rssi[1],
 						pRxBlk->rx_signal.raw_rssi[2],
+#ifdef CUSTOMER_DCC_FEATURE
+						pRxBlk->rx_signal.raw_snr[0],
+						pRxBlk->rx_signal.raw_snr[1],
+#endif
 						min(pRxBlk->rx_signal.raw_snr[0], pRxBlk->rx_signal.raw_snr[1]),
 						op_mode);
 
@@ -948,6 +1069,31 @@ VOID dev_rx_ctrl_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	HEADER_802_11 *pHeader = pRxBlk->pHeader;
 	PNDIS_PACKET pRxPacket = pRxBlk->pRxPacket;
 
+#ifdef CUSTOMER_DCC_FEATURE
+	if(!(ApScanRunning(pAd)))
+	{
+		MAC_TABLE_ENTRY *pEntry = NULL;
+		
+		pEntry = PACInquiry(pAd,pRxBlk->wcid);
+		pAd->RadioStatsCounter.TotalRxCount++;
+				
+		if (pEntry != NULL)
+		{
+			if (pHeader->FC.FrDs == 0 && (pEntry->pMbss->mbss_idx < pAd->ApCfg.BssidNum))
+			{
+				BSS_STRUCT *pMbss = &pAd->ApCfg.MBSSID[pEntry->pMbss->mbss_idx];
+				if (pMbss != NULL)
+				{						
+					UINT32 Length, Index;
+					Length = pRxBlk->MPDUtotalByteCnt; 
+					GetMultShiftFactorIndex(pRxBlk->rx_rate, &Index);
+					RTMPCalculateAPTxRxActivityTime(pAd, Index, Length, pMbss, pEntry);
+				}
+			}
+		}
+	}
+	
+#endif
 	switch (pHeader->FC.SubType)
 	{
 #ifdef DOT11_N_SUPPORT
@@ -983,7 +1129,7 @@ VOID dev_rx_ctrl_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 #ifdef CONFIG_AP_SUPPORT
 		case SUBTYPE_PS_POLL:
 			/*CFG_TODO*/
-			IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+			//IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 			{
 				USHORT Aid = pHeader->Duration & 0x3fff;
 				PUCHAR pAddr = pHeader->Addr2;
@@ -1045,11 +1191,11 @@ VOID dev_rx_ctrl_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 //+++Add by shiang for debug
 // TODO: shiang-MT7603, remove this!
 			{
-				UCHAR *ptr, *ra, *ta/*, *bainfo*/;
+				UCHAR *ptr, *ra, *ta;
 				BA_CONTROL *ba_ctrl;
 				DBGPRINT(RT_DEBUG_OFF, ("%s():BlockAck From WCID:%d\n", __FUNCTION__, pRxBlk->wcid));
 
-				ptr = (UCHAR *)pRxBlk->pHeader;
+				ptr = (PUCHAR)pRxBlk->pHeader;
 				ptr += 4;
 				ra = ptr;
 				ptr += 6;
@@ -1090,8 +1236,12 @@ VOID dev_rx_ctrl_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 */
 static INT rtmp_chk_rx_err(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, HEADER_802_11 *pHdr)
 {
-	RXINFO_STRUC *pRxInfo = pRxBlk->pRxInfo;
+	RXINFO_STRUC *pRxInfo;
+	if((pRxBlk == NULL) || (pRxBlk->pRxInfo == NULL))
+		return NDIS_STATUS_FAILURE;
 
+	pRxInfo = pRxBlk->pRxInfo;
+	
 #ifdef MT_MAC
 	// TODO: shiang-MT7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
@@ -1120,8 +1270,7 @@ static INT rtmp_chk_rx_err(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, HEADER_802_11 *pHd
 	}
 #endif /* MT_MAC */
 
-	if((pRxBlk == NULL) || (pRxBlk->pRxInfo == NULL))
-		return NDIS_STATUS_FAILURE;
+	
 
 	/* Phy errors & CRC errors*/
 	if (pRxInfo->Crc) {
@@ -1151,6 +1300,7 @@ static INT rtmp_chk_rx_err(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, HEADER_802_11 *pHd
 			APRxErrorHandle(pAd, pRxBlk);
 
 			/* Increase received error packet counter per BSS */
+#ifndef CUSTOMER_DCC_FEATURE			
 			if (pHdr->FC.FrDs == 0 &&
 				pRxInfo->U2M &&
 				pRxBlk->bss_idx < pAd->ApCfg.BssidNum)
@@ -1159,6 +1309,7 @@ static INT rtmp_chk_rx_err(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, HEADER_802_11 *pHd
 				pMbss->RxDropCount ++;
 				pMbss->RxErrorCount ++;
 			}
+#endif
 
 #ifdef WDS_SUPPORT
 #ifdef STATS_COUNT_SUPPORT
@@ -1207,13 +1358,18 @@ BOOLEAN dev_rx_no_foward(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 #ifdef CONFIG_ATE
 INT ate_rx_done_handle(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 {
-	RXWI_STRUC *pRxWI = pRxBlk->pRxWI;
+
+#if defined(CONFIG_QA) || defined(HUAWEI_ATE)
 	HEADER_802_11 *pHeader = pRxBlk->pHeader;
+#endif
+#ifdef CONFIG_QA
+	RXWI_STRUC *pRxWI = pRxBlk->pRxWI;
 	RXINFO_STRUC *pRxInfo = pRxBlk->pRxInfo;
+#endif /* CONFIG_QA */
 	ATE_CTRL *ATECtrl = &pAd->ATECtrl;
 	ATE_OPERATION *ATEOp = ATECtrl->ATEOp;
 
-	INC_COUNTER64(pAd->WlanCounters.ReceivedFragmentCount);
+		INC_COUNTER64(pAd->WlanCounters.ReceivedFragmentCount);
 
 	ATECtrl->RxTotalCnt++;
 	ATEOp->SampleRssi(pAd, pRxBlk);
@@ -1253,10 +1409,13 @@ INT sta_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	INT hdr_len = FALSE;
 	struct wifi_dev *wdev;
 
-	DBGPRINT(RT_DEBUG_INFO, ("-->%s():pRxBlk->wcid=%d\n", __FUNCTION__, pRxBlk->wcid));
+DBGPRINT(RT_DEBUG_INFO, ("-->%s():pRxBlk->wcid=%d\n", __FUNCTION__, pRxBlk->wcid));
 
 	pEntry = &pAd->MacTab.Content[pRxBlk->wcid];
 	wdev = pEntry->wdev;
+
+	if (wdev == NULL)
+		DBGPRINT(RT_DEBUG_TRACE, ("wdev is NULL.\n"));
 
 #ifdef CLIENT_WDS
 	if ((pFmeCtrl->FrDs == 1) && (pFmeCtrl->ToDs == 1))
@@ -1271,10 +1430,12 @@ INT sta_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	}
 #endif /* CLIENT_WDS */
 
+
 	ASSERT((pEntry != NULL));
 
 	/* Drop not my BSS frames */
 	if (pRxInfo->MyBss == 0) {
+/* CFG_TODO: NEED CHECK for MT_MAC */	
 #if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
 		/* When the p2p-IF up, the STA own address would be set as my_bssid address.
 		   If receiving an "encrypted" broadcast packet(its WEP bit as 1) and doesn't match my BSSID,
@@ -1302,12 +1463,13 @@ INT sta_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 			pRxInfo->MyBss = 1;
 		}
 		else
-#endif /* P2P_SUPPORT */
+#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT */
 		{
-			DBGPRINT(RT_DEBUG_OFF, ("%s():  Not my bss! pRxInfo->MyBss=%d\n", __FUNCTION__, pRxInfo->MyBss));
+DBGPRINT(RT_DEBUG_OFF, ("%s():  Not my bss! pRxInfo->MyBss=%d\n", __FUNCTION__, pRxInfo->MyBss));
 			return FALSE;
 		}
 	}
+
 
 	pAd->RalinkCounters.RxCountSinceLastNULL++;
 #ifdef UAPSD_SUPPORT
@@ -1322,10 +1484,25 @@ INT sta_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 		pData = (PUCHAR) pHeader + LENGTH_802_11;
 		if ((*pData >> 4) & 0x01)
 		{
+#if defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT)
+
+			/* ccv EOSP frame so the peer can sleep */
+			if (pEntry != NULL)
 			{
+				RTMP_PS_VIRTUAL_SLEEP(pEntry);
+			}
+
+			if (pAd->StaCfg.FlgPsmCanNotSleep == TRUE)
+			{
+				DBGPRINT(RT_DEBUG_TRACE, ("tdls uapsd> Rcv EOSP frame but we can not sleep!\n"));
+			}
+			else
+#endif /* defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT) */
+				{
 				DBGPRINT(RT_DEBUG_INFO,
 					("RxDone- Rcv EOSP frame, driver may fall into sleep\n"));
 				pAd->CommonCfg.bInServicePeriod = FALSE;
+
 			}
 		}
 
@@ -1335,6 +1512,54 @@ INT sta_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	}
 #endif /* UAPSD_SUPPORT */
 
+#if defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT)
+	/* 1: PWR_SAVE, 0: PWR_ACTIVE */
+	if (pEntry != NULL)
+	{
+		UCHAR OldPwrMgmt;
+
+		OldPwrMgmt = RtmpPsIndicate(pAd, pHeader->Addr2, pEntry->wcid, pFmeCtrl->PwrMgmt);
+#ifdef UAPSD_SUPPORT
+		RTMP_PS_VIRTUAL_TIMEOUT_RESET(pEntry);
+
+		if (pFmeCtrl->PwrMgmt)
+		{
+			if ((CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_APSD_CAPABLE)) &&
+				(pFmeCtrl->SubType & 0x08))
+			{
+				/*
+					In IEEE802.11e, 11.2.1.4 Power management with APSD,
+					If there is no unscheduled SP in progress, the unscheduled SP begins
+					when the QAP receives a trigger frame from a non-AP QSTA, which is a
+					QoS data or QoS Null frame associated with an AC the STA has
+					configured to be trigger-enabled.
+
+					In WMM v1.1, A QoS Data or QoS Null frame that indicates transition
+					to/from Power Save Mode is not considered to be a Trigger Frame and
+					the AP shall not respond with a QoS Null frame.
+				*/
+				/* Trigger frame must be QoS data or QoS Null frame */
+				UCHAR  OldUP;
+
+				if ((*(pRxBlk->pData+LENGTH_802_11) & 0x10) == 0)
+				{
+					/* this is not a EOSP frame */
+					OldUP = (*(pRxBlk->pData+LENGTH_802_11) & 0x07);
+					if (OldPwrMgmt == PWR_SAVE)
+					{
+						//hex_dump("trigger frame", pRxBlk->pData, 26);
+						UAPSD_TriggerFrameHandle(pAd, pEntry, OldUP);
+					}
+				}
+				else
+				{
+					DBGPRINT(RT_DEBUG_TRACE, ("This is a EOSP frame, not a trigger frame!\n"));
+				}
+			}
+		}
+#endif /* UAPSD_SUPPORT */
+	}
+#endif /* defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT) */
 
 	/* Drop NULL, CF-ACK(no data), CF-POLL(no data), and CF-ACK+CF-POLL(no data) data frame */
 	if ((pFmeCtrl->SubType & 0x04)) /* bit 2 : no DATA */ {
@@ -1342,8 +1567,9 @@ INT sta_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 		return FALSE;
 	}
 
-#if defined(APCLI_SUPPORT)
-	if (IS_ENTRY_APCLI(pEntry)) {
+#ifdef CONFIG_AP_SUPPORT
+#ifdef APCLI_SUPPORT
+	if (pEntry && IS_ENTRY_APCLI(pEntry)) {
 		if (pEntry->func_tb_idx < MAX_APCLI_NUM) {
 			APCLI_STRUCT *pApCli = &pAd->ApCfg.ApCliTab[pEntry->func_tb_idx];
 			
@@ -1358,14 +1584,15 @@ INT sta_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 				pApCli->ApCliCounter.MulticastReceivedFrameCount++;
 #endif /* STATS_COUNT_SUPPORT */
 		}
-		
 		RX_BLK_SET_FLAG(pRxBlk, fRX_AP);
 		goto ret;
 	}
-	else
 #endif /* APCLI_SUPPORT */
-	{
+#endif /* CONFIG_AP_SUPPORT */
+
+	if (pEntry) {
 	}
+
 
 #ifndef WFA_VHT_PF
 	// TODO: shiang@PF#2, is this atheros protection still necessary here???
@@ -1424,7 +1651,8 @@ VOID rx_data_frm_announce(
 
 #ifdef CONFIG_AP_SUPPORT
 		/* drop all non-EAP DATA frame before peer's Port-Access-Control is secured */
-		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->PrivacyFilter == Ndis802_11PrivFilter8021xWEP))
+		if ((pEntry->wdev->wdev_type == WDEV_TYPE_AP) &&
+		    IS_ENTRY_CLIENT(pEntry) && (pEntry->PrivacyFilter == Ndis802_11PrivFilter8021xWEP))
 		{
 			/*
 				If	1) no any EAP frame is received within 5 sec and
@@ -1470,6 +1698,7 @@ VOID rx_data_frm_announce(
 		}
 #endif /* CONFIG_HOTSPOT */
 
+#ifndef CUSTOMER_DCC_FEATURE
 #ifdef CONFIG_AP_SUPPORT
 #ifdef STATS_COUNT_SUPPORT
 		if ((IS_ENTRY_CLIENT(pEntry)) && (pEntry->pMbss))
@@ -1486,7 +1715,7 @@ VOID rx_data_frm_announce(
 		}
 #endif /* STATS_COUNT_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
-
+#endif
 #ifdef DOT11_N_SUPPORT
 		if (RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU) /*&& (pAd->CommonCfg.bDisableReordering == 0)*/)
 			Indicate_AMPDU_Packet(pAd, pRxBlk, wdev_idx);
@@ -1520,13 +1749,38 @@ VOID rx_data_frm_announce(
 		else
 #endif /* DOT11_N_SUPPORT */
 		{
+#ifdef CONFIG_HOTSPOT_R2
+			UCHAR *pData = (UCHAR *)pRxBlk->pData;
+
+			if (pEntry)
+			{
+				BSS_STRUCT *pMbss = pEntry->pMbss;
+				if (NdisEqualMemory(SNAP_802_1H, pData, 6) ||
+			        /* Cisco 1200 AP may send packet with SNAP_BRIDGE_TUNNEL*/
+        			NdisEqualMemory(SNAP_BRIDGE_TUNNEL, pData, 6))
+			    {
+			        pData += 6;
+			    }
+
+				if (NdisEqualMemory(EAPOL, pData, 2))
+    	    		pData += 2;
+
+			    if ((*(pData+1) == EAPOLStart) && (pMbss->HotSpotCtrl.HotSpotEnable == 1) && (pMbss->wdev.AuthMode == Ndis802_11AuthModeWPA2) && (pEntry->hs_info.ppsmo_exist == 1))
+				{
+					UCHAR HS2_Header[4] = {0x50,0x6f,0x9a,0x12};
+					memcpy(&pRxBlk->pData[pRxBlk->DataSize], HS2_Header, 4);
+					memcpy(&pRxBlk->pData[pRxBlk->DataSize+4], &pEntry->hs_info, sizeof(struct _sta_hs_info));
+					printk("rcv eapol start, %x:%x:%x:%x\n",pRxBlk->pData[pRxBlk->DataSize+4], pRxBlk->pData[pRxBlk->DataSize+5],pRxBlk->pData[pRxBlk->DataSize+6], pRxBlk->pData[pRxBlk->DataSize+7]);
+					pRxBlk->DataSize += 8;
+				}
+			}
+#endif
 			/* Determin the destination of the EAP frame */
 			/*  to WPA state machine or upper layer */
 			rx_eapol_frm_handle(pAd, pEntry, pRxBlk, wdev_idx);
 		}
 	}
 }
-
 
 
 #define SN_NQOS_INDEX 8
@@ -1571,11 +1825,6 @@ static INT rx_chk_duplicate_frame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 		return NDIS_STATUS_SUCCESS;
 	}
 
-	if(pFmeCtrl->Retry)
-	{
-		return NDIS_STATUS_SUCCESS;
-	}
-
 	/* Middle/End of fragment */
 	if (pHeader->Frag && pHeader->Frag != pAd->FragFrame.LastFrag)
 	{
@@ -1585,6 +1834,7 @@ static INT rx_chk_duplicate_frame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	/*is duplicate frame, should return failed*/
 	return NDIS_STATUS_FAILURE;
 }
+
 
 
 /*
@@ -1780,14 +2030,12 @@ VOID dev_rx_data_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	}
 	pRxBlk->UserPriority = UserPriority;
 
-	
 	/*check if duplicate frame, ignore it and then drop*/
 	if(rx_chk_duplicate_frame(pAd,pRxBlk) == NDIS_STATUS_FAILURE)
 	{
-	        DBGPRINT(RT_DEBUG_ERROR, ("%s(): duplicate frame drop it!\n", __FUNCTION__));
+		DBGPRINT(RT_DEBUG_INFO, ("%s(): duplication frame, drop it!\n", __FUNCTION__));
 		goto drop;
 	}
-
 
 
 	/* 3. Order bit: A-Ralink or HTC+ */
@@ -1901,7 +2149,7 @@ VOID dev_rx_data_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 
 #ifdef CONFIG_AP_SUPPORT
 #endif /* CONFIG_AP_SUPPORT */
-
+   	DBGPRINT(RT_DEBUG_INFO, ("Rcv packet to IF(ra%d)\n", wdev_idx));
 
 	/* update rssi sample */
 	Update_Rssi_Sample(pAd, &pEntry->RssiSample, &pRxBlk->rx_signal, pRxBlk->rx_rate.field.MODE, pRxBlk->rx_rate.field.BW);
@@ -1980,6 +2228,7 @@ VOID dev_rx_data_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 		pEntry->RxBytes += pRxBlk->MPDUtotalByteCnt;
 		INC_COUNTER64(pEntry->RxPackets);
 #endif /* CONFIG_AP_SUPPORT */
+        pAd->RxTotalByteCnt += pRxBlk->MPDUtotalByteCnt;
 
 #ifdef IKANOS_VX_1X0
 		RTMP_SET_PACKET_WDEV(pRxPacket, wdev_idx);
@@ -2014,6 +2263,16 @@ drop:
 		pAd->ApCfg.MBSSID[pRxBlk->bss_idx].RxDropCount ++;
 		if (drop_err == TRUE)
 			pAd->ApCfg.MBSSID[pRxBlk->bss_idx].RxErrorCount ++;
+#ifdef CUSTOMER_DCC_FEATURE
+#ifdef MBSS_802_11_STATISTICS
+	if (pEntry != NULL && IS_ENTRY_CLIENT(pEntry) && pEntry->Sst == SST_ASSOC)
+	{
+		pEntry->RxDropCount++;
+		if (drop_err == TRUE)
+			pEntry->RxErrorCount++;
+	}
+#endif
+#endif
 	}
 #endif /* CONFIG_AP_SUPPORT */
 	//DBGPRINT(RT_DEBUG_OFF, ("%s():release packet!\n", __FUNCTION__));
@@ -2046,7 +2305,10 @@ drop:
 
 BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 {
-	UINT32 RxProcessed, RxPending;
+#ifdef RTMP_MAC_PCI
+	UINT32 RxProcessed = 0; 
+#endif
+    UINT32 RxPending = 0;
 	BOOLEAN bReschedule = FALSE;
 	PNDIS_PACKET pRxPacket;
 	HEADER_802_11 *pHeader;
@@ -2056,8 +2318,6 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 
 #ifdef LINUX
 #endif /* LINUX */
-
-	RxProcessed = RxPending = 0;
 
 	/* process whole rx ring */
 	while (1)
@@ -2115,12 +2375,21 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 				b. be released if it is discarded
 		*/
 
+		NdisZeroMemory(&rxblk,sizeof(RX_BLK));
+
 		pRxBlk = &rxblk;
 		pRxPacket = GetPacketFromRxRing(pAd, pRxBlk, &bReschedule, &RxPending, 0);
-                if (RX_BLK_TEST_FLAG(pRxBlk, fRX_RETRIEVE)) {
-                   RX_BLK_CLEAR_FLAG(pRxBlk, fRX_RETRIEVE);
-                   continue;
-                }
+
+		if (RX_BLK_TEST_FLAG(pRxBlk, fRX_CMD_RSP)) {
+			RX_BLK_CLEAR_FLAG(pRxBlk, fRX_CMD_RSP);
+			continue;
+		}
+
+      	if (RX_BLK_TEST_FLAG(pRxBlk, fRX_RETRIEVE)) {
+         	RX_BLK_CLEAR_FLAG(pRxBlk, fRX_RETRIEVE);
+         	continue;
+      	}
+		
 		if (pRxPacket == NULL)
 			break;
 
@@ -2230,33 +2499,56 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 #endif /* INCLUDE_DEBUG_QUEUE */
 #endif /* DBG_CTRL_SUPPORT */
 
+#ifdef RT_CFG80211_SUPPORT
 #ifdef RT_CFG80211_P2P_SUPPORT
-#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
 	if (RTMP_CFG80211_VIF_P2P_GO_ON(pAd) &&
 		(NdisEqualMemory(pAd->cfg80211_ctrl.P2PCurrentAddress, pHeader->Addr1, MAC_ADDR_LEN) ||
 		(pHeader->FC.SubType == SUBTYPE_PROBE_REQ)))
 	{
 		SET_PKT_OPMODE_AP(&rxblk);
 	}
-    else if (RTMP_CFG80211_VIF_P2P_CLI_ON(pAd) &&
-                    (((pHeader->FC.SubType == SUBTYPE_BEACON || pHeader->FC.SubType == SUBTYPE_PROBE_RSP) &&
-                    NdisEqualMemory(pAd->ApCfg.ApCliTab[MAIN_MBSSID].CfgApCliBssid, pHeader->Addr2, MAC_ADDR_LEN)) ||
-                    (pHeader->FC.SubType == SUBTYPE_PROBE_REQ) ||
-                    NdisEqualMemory(pAd->ApCfg.ApCliTab[MAIN_MBSSID].MlmeAux.Bssid, pHeader->Addr2, MAC_ADDR_LEN)))
+    	else if (RTMP_CFG80211_VIF_P2P_CLI_ON(pAd) &&
+        	(((pHeader->FC.SubType == SUBTYPE_BEACON || pHeader->FC.SubType == SUBTYPE_PROBE_RSP) &&
+        	   NdisEqualMemory(pAd->ApCfg.ApCliTab[MAIN_MBSSID].CfgApCliBssid, pHeader->Addr2, MAC_ADDR_LEN)) ||
+        	(pHeader->FC.SubType == SUBTYPE_PROBE_REQ) ||
+        	 NdisEqualMemory(pAd->ApCfg.ApCliTab[MAIN_MBSSID].MlmeAux.Bssid, pHeader->Addr2, MAC_ADDR_LEN)))
 	{
+		/* 
+		   1. Beacon & ProbeRsp for Connecting & Tracking 
+                   2. ProbeReq for P2P Search
+                   3. Any Packet's Addr2 Equals MlmeAux.Bssid when connected   
+                 */
 		SET_PKT_OPMODE_AP(&rxblk);
-	}
+	}	
 	else
-	{
-		SET_PKT_OPMODE_STA(&rxblk);
-	}
-#else
-	if (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP)
-		SET_PKT_OPMODE_AP(&rxblk);
-	else
-		SET_PKT_OPMODE_STA(&rxblk);
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
 #endif /* RT_CFG80211_P2P_SUPPORT */
+	{
+		//YF
+		//todo: Bind to pAd->net_dev
+		if (RTMP_CFG80211_HOSTAPD_ON(pAd))
+			SET_PKT_OPMODE_AP(&rxblk);
+		else
+			SET_PKT_OPMODE_STA(&rxblk);
+		
+	}
+#endif /* RT_CFG80211_SUPPORT */
+
+
+#ifdef CFG80211_MULTI_STA
+		if (RTMP_CFG80211_MULTI_STA_ON(pAd, pAd->cfg80211_ctrl.multi_sta_net_dev) &&
+	        (((pHeader->FC.SubType == SUBTYPE_BEACON || pHeader->FC.SubType == SUBTYPE_PROBE_RSP) &&
+	        NdisEqualMemory(pAd->ApCfg.ApCliTab[MAIN_MBSSID].CfgApCliBssid, pHeader->Addr2, MAC_ADDR_LEN)) ||
+	        (pHeader->FC.SubType == SUBTYPE_PROBE_REQ) ||
+	        NdisEqualMemory(pAd->ApCfg.ApCliTab[MAIN_MBSSID].MlmeAux.Bssid, pHeader->Addr2, MAC_ADDR_LEN)))
+        {
+                SET_PKT_OPMODE_AP(&rxblk);
+        }
+        else
+        {
+                SET_PKT_OPMODE_STA(&rxblk);
+        }
+
+#endif /* CFG80211_MULTI_STA */
 
 		/* Increase Total receive byte counter after real data received no mater any error or not */
 		pAd->RalinkCounters.ReceivedByteCount += rxblk.DataSize;
@@ -2273,31 +2565,121 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 		}
 #endif /* CONFIG_ATE */
 
-#if  defined(CONFIG_STA_SUPPORT) || defined(CONFIG_AP_SUPPORT)
 #ifdef CONFIG_SNIFFER_SUPPORT
-		if(MONITOR_ON(pAd))
-		{			
+		if (MONITOR_ON(pAd) && pAd->monitor_ctrl.current_monitor_mode != MONITOR_MODE_OFF)
+		{
+			PNDIS_PACKET	pClonePacket;
+			PNDIS_PACKET    pTmpRxPacket;
+			struct wifi_dev *wdev;
+			
+			UCHAR wdev_idx = RTMP_GET_PACKET_WDEV(rxblk.pRxPacket);
+			
+			ASSERT(wdev_idx < WDEV_NUM_MAX);
+			if (wdev_idx >= WDEV_NUM_MAX) {
+				DBGPRINT(RT_DEBUG_ERROR, ("%s():invalid wdev_idx(%d)!\n", __FUNCTION__, wdev_idx));
+				RELEASE_NDIS_PACKET(pAd, rxblk.pRxPacket, NDIS_STATUS_FAILURE);
+				return 0;
+			}
+			
+			wdev = pAd->wdev_list[wdev_idx];
 
+			if(pAd->monitor_ctrl.current_monitor_mode == MONITOR_MODE_REGULAR_RX)
+			{	
 
-			STA_MonPktSend(pAd, &rxblk);
-			continue;
-		}
+				/* only report Probe_Req */
+				if((pHeader->FC.Type == FC_TYPE_MGMT) && (pHeader->FC.SubType == SUBTYPE_PROBE_REQ))	
+		    	{					
+					pTmpRxPacket = rxblk.pRxPacket;
+					pClonePacket = ClonePacket(wdev->if_dev, rxblk.pRxPacket, rxblk.pData, rxblk.DataSize);
+					rxblk.pRxPacket = pClonePacket;
+					STA_MonPktSend(pAd, &rxblk);
+					
+					rxblk.pRxPacket = pTmpRxPacket;	
+				}
+			}
+			else if(pAd->monitor_ctrl.current_monitor_mode == MONITOR_MODE_FULL)
+			{
+					pTmpRxPacket = rxblk.pRxPacket;
+					pClonePacket = ClonePacket(wdev->if_dev, rxblk.pRxPacket, rxblk.pData, rxblk.DataSize);
+					rxblk.pRxPacket = pClonePacket;
+					STA_MonPktSend(pAd, &rxblk);
+					//RELEASE_NDIS_PACKET(pAd, rxblk.pRxPacket , NDIS_STATUS_SUCCESS);
+					rxblk.pRxPacket = pTmpRxPacket;	
+			}
+
+		}		
 #endif /* CONFIG_SNIFFER_SUPPORT */
-#endif /* CONFIG_STA_SUPPORT */
+
 
 #ifdef STATS_COUNT_SUPPORT
 		INC_COUNTER64(pAd->WlanCounters.ReceivedFragmentCount);
 #endif /* STATS_COUNT_SUPPORT */
 
+#ifdef MSTAR_SUPPORT
+
+		BSS_STRUCT *pMbss = &pAd->ApCfg.MBSSID[CFG_GO_BSSID_IDX];
+		struct wifi_dev *wdev = &pMbss->wdev;
+
+		if ((pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP && (wdev->Hostapd != Hostapd_CFG))
+#ifdef RT_CFG80211_P2P_SUPPORT
+			&& (!RTMP_CFG80211_VIF_P2P_GO_ON(pAd))
+#endif //RT_CFG80211_P2P_SUPPORT
+			)
+		{
+			/*Drop receive request since hardware is in reset state*/
+			RELEASE_NDIS_PACKET(pAd,pRxPacket,NDIS_STATUS_FAILURE);
+			continue;
+		}
+
+
+
+#endif /* MSTAR_SUPPORT */
+
+
 		/* Check for all RxD errors */
 		if (rtmp_chk_rx_err(pAd, pRxBlk, pHeader) != NDIS_STATUS_SUCCESS)
 		{
 			pAd->Counters8023.RxErrors++;
-
+#ifdef CUSTOMER_DCC_FEATURE
+			if (pHeader->FC.FrDs == 0 &&
+							pRxBlk->pRxInfo->U2M &&
+							pRxBlk->bss_idx < pAd->ApCfg.BssidNum)
+			{
+				BSS_STRUCT *pMbss = &pAd->ApCfg.MBSSID[pRxBlk->bss_idx];
+				MAC_TABLE_ENTRY *pEntry = MacTableLookup(pAd, pHeader->Addr2);
+#ifdef MBSS_802_11_STATISTICS
+				if ( pEntry )
+				{
+					if (pHeader->FC.Type == FC_TYPE_DATA)
+					{				
+						pMbss->RxDropCount ++;
+						pMbss->RxErrorCount ++;
+						pEntry->RxDropCount ++;
+						pEntry->RxErrorCount ++;		
+					}	
+					else if (pHeader->FC.Type == FC_TYPE_MGMT)
+					{
+						pMbss->MGMTRxDropCount++;
+						pMbss->MGMTRxErrorCount++;
+					}
+				}
+			}
+#endif
+#endif
+#ifdef APCLI_SUPPORT
+			/* When root AP is Open WEP, it will cause a fake connection state if user keys in wrong password. */
+			if(pHeader->FC.Wep == 1)
+				ApCliRxOpenWEPCheck(pAd,pRxBlk,FALSE);
+#endif /* APCLI_SUPPORT */
 			RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_FAILURE);
 			DBGPRINT(RT_DEBUG_TRACE, ("%s(): CheckRxError!\n", __FUNCTION__));
 			continue;
 		}
+#ifdef APCLI_SUPPORT
+		/* When root AP is Open WEP, it will cause a fake connection state if user keys in wrong password. */
+		if(pHeader->FC.Wep == 1)
+			ApCliRxOpenWEPCheck(pAd,pRxBlk,TRUE);
+#endif /* APCLI_SUPPORT */
 
 
 		// TODO: shiang-usw, for P2P, we original has following code, need to check it and merge to correct place!!!
@@ -2324,8 +2706,12 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 
 #ifdef UAPSD_SUPPORT
 #ifdef CONFIG_AP_SUPPORT
-	/* CFG_TODO */
+
+#ifdef RT_CFG80211_P2P_SUPPORT
+        if (IS_PKT_OPMODE_AP(pRxBlk))
+#else	
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+#endif /* RT_CFG80211_P2P_SUPPORT */ 
 	{
 		/* dont remove the function or UAPSD will fail */
 		UAPSD_MR_SP_RESUME(pAd);

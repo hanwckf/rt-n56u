@@ -95,6 +95,7 @@ VOID dump_tmac_info(RTMP_ADAPTER *pAd, UCHAR *tmac_info)
 
 VOID dump_rmac_info(RTMP_ADAPTER *pAd, UCHAR *rmac_info)
 {
+#ifdef DBG
 	RXWI_STRUC *pRxWI = (RXWI_STRUC *)rmac_info;
 
 	hex_dump("RxWI Raw Data", (UCHAR *)pRxWI, pAd->chipCap.RXWISize);
@@ -109,6 +110,7 @@ VOID dump_rmac_info(RTMP_ADAPTER *pAd, UCHAR *rmac_info)
 	if (pAd->chipCap.hif_type == HIF_RTMP)
 		dump_rtmp_rxwi(pAd, pRxWI);
 #endif /* RTMP_MAC */
+#endif
 }
 
 
@@ -823,6 +825,18 @@ VOID write_tmac_info(
 	}
 #endif /* DOT11_N_SUPPORT */
 
+#ifdef DOT11K_RRM_SUPPORT
+	if (pAd->CommonCfg.VoPwrConstraintTest == TRUE)
+	{
+		info->AMPDU = 0;
+		mcs = 0;
+		ldpc = 0;
+		bw = 0;
+		sgi = 0;
+		stbc = 0;
+		phy_mode = MODE_OFDM;
+	}
+#endif /* DOT11K_RRM_SUPPORT */
 
 
 #ifdef RLT_MAC
@@ -1017,6 +1031,18 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 	}	
 #endif /* INF_AMAZON_SE */
 
+#ifdef DOT11K_RRM_SUPPORT
+	if (pAd->CommonCfg.VoPwrConstraintTest == TRUE)
+	{
+		ampdu = 0;
+		mcs = 0;
+		ldpc = 0;
+		bw = 0;
+		sgi = 0;
+		stbc = 0;
+		phy_mode = MODE_OFDM;
+	}
+#endif /* DOT11K_RRM_SUPPORT */
 
 #ifdef CONFIG_FPGA_MODE
 	if (pAd->fpga_ctl.fpga_on & 0x6)
@@ -1226,6 +1252,18 @@ VOID write_tmac_info_Cache(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 #endif /* DBG_DIAGNOSE */
 
 
+#ifdef DOT11K_RRM_SUPPORT
+	if (pAd->CommonCfg.VoPwrConstraintTest == TRUE)
+	{
+		ampdu = 0;
+		mcs = 0;
+		ldpc = 0;
+		bw = 0;
+		sgi = 0;
+		stbc = 0;
+		phy_mode = MODE_OFDM;
+	}
+#endif /* DOT11K_RRM_SUPPORT */
 
 #ifdef CONFIG_FPGA_MODE
 	if (pAd->fpga_ctl.fpga_on & 0x6)

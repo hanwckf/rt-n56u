@@ -64,8 +64,8 @@ INT wdev_tx_pkts(NDIS_HANDLE dev_hnd, PPNDIS_PACKET pkt_list, UINT pkt_cnt, stru
 
    		if (RTMP_TEST_FLAG(pAd, (fRTMP_ADAPTER_RESET_IN_PROGRESS |
 								fRTMP_ADAPTER_HALT_IN_PROGRESS |
-								fRTMP_ADAPTER_RADIO_OFF |
-								fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS)))
+								fRTMP_ADAPTER_RADIO_OFF /*|
+								fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS*/)))
 		{
 			/* Drop send request since hardware is in reset state */
 			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
@@ -83,6 +83,21 @@ INT wdev_tx_pkts(NDIS_HANDLE dev_hnd, PPNDIS_PACKET pkt_list, UINT pkt_cnt, stru
 			}
 		}
 #endif /* CONFIG_FPGA_MODE */
+
+#ifdef MSTAR_SUPPORT
+	if ((pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP && (wdev->Hostapd != Hostapd_CFG))
+#ifdef RT_CFG80211_P2P_SUPPORT
+		&& (!RTMP_CFG80211_VIF_P2P_GO_ON(pAd))
+#endif //RT_CFG80211_P2P_SUPPORT
+		)
+	{
+		/*Drop send request since hardware is in reset state*/
+		RELEASE_NDIS_PACKET(pAd,pPacket,NDIS_STATUS_FAILURE);
+		//printk("%s: RELEASE_NDIS_PACKET packet, lk added\n", __FUNCTION__);
+		continue;
+	}
+#endif /* MSTAR_SUPPORT */
+
 
 		if (((wdev->allow_data_tx == TRUE) 
 #ifdef CONFIG_FPGA_MODE
@@ -113,6 +128,34 @@ INT wdev_tx_pkts(NDIS_HANDLE dev_hnd, PPNDIS_PACKET pkt_list, UINT pkt_cnt, stru
 			RTMP_SET_PACKET_WDEV(pPacket, wdev->wdev_idx);
 			NDIS_SET_PACKET_STATUS(pPacket, NDIS_STATUS_PENDING);
 			pAd->RalinkCounters.PendingNdisPacketCount++;
+			
+			/*
+				WIFI HNAT need to learn packets going to which interface from skb cb setting.
+				@20150325
+			*/
+#if defined(BB_SOC) && defined(BB_RA_HWNAT_WIFI)
+			if (ra_sw_nat_hook_tx != NULL) 
+			{
+#ifdef TCSUPPORT_MT7510_FE
+				if (ra_sw_nat_hook_tx(pPacket, NULL, FOE_MAGIC_WLAN) == 0)
+#else
+				if (ra_sw_nat_hook_tx(pPacket, 1) == 0)
+#endif
+				{
+					RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
+					return 0;
+				}
+			}
+#endif
+
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+#if !defined (CONFIG_RA_NAT_NONE)
+			if (ra_sw_nat_hook_tx != NULL)
+			{
+				ra_sw_nat_hook_tx(pPacket, 0);
+			}
+#endif
+#endif
 
 			if (wdev->tx_pkt_handle)
 				wdev->tx_pkt_handle(pAd, pPacket);

@@ -64,9 +64,6 @@ VOID ActionStateMachineInit(
 	StateMachineSetAction(S, ACT_IDLE, MT2_PEER_QOS_CATE, (STATE_MACHINE_FUNC)PeerQOSAction);
 
 	StateMachineSetAction(S, ACT_IDLE, MT2_PEER_DLS_CATE, (STATE_MACHINE_FUNC)ReservedAction);
-#ifdef QOS_DLS_SUPPORT
-		StateMachineSetAction(S, ACT_IDLE, MT2_PEER_DLS_CATE, (STATE_MACHINE_FUNC)PeerDLSAction);
-#endif /* QOS_DLS_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
 	StateMachineSetAction(S, ACT_IDLE, MT2_PEER_BA_CATE, (STATE_MACHINE_FUNC)PeerBAAction);
@@ -88,12 +85,18 @@ VOID ActionStateMachineInit(
 
 
 #ifdef CONFIG_AP_SUPPORT
+#ifdef DOT11R_FT_SUPPORT
+	StateMachineSetAction(S, ACT_IDLE, FT_CATEGORY_BSS_TRANSITION, (STATE_MACHINE_FUNC)FT_FtAction);
+#endif /* DOT11R_FT_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
 #ifdef DOT11W_PMF_SUPPORT
 	StateMachineSetAction(S, ACT_IDLE, MT2_PEER_PMF_CATE, (STATE_MACHINE_FUNC)PMF_PeerAction);
 #endif /* DOT11W_PMF_SUPPORT */
 
+#ifdef DOT11V_WNM_SUPPORT	
+	StateMachineSetAction(S, ACT_IDLE, WNM_CATEGORY_BSS_TRANSITION, (STATE_MACHINE_FUNC)WNM_Action);
+#endif /* DOT11V_WNM_SUPPORT */
 
 #ifdef CONFIG_DOT11V_WNM
 	StateMachineSetAction(S, ACT_IDLE, CATEGORY_WNM, (STATE_MACHINE_FUNC)PeerWNMAction); 
@@ -111,9 +114,9 @@ VOID MlmeADDBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	ULONG Idx;
 	FRAME_ADDBA_REQ Frame;
 	ULONG FrameLen;
-	BA_ORI_ENTRY *pBAEntry = NULL;
+	//BA_ORI_ENTRY *pBAEntry = NULL;
 	MAC_TABLE_ENTRY *pEntry = NULL;
-	STA_TR_ENTRY *tr_entry;
+	//STA_TR_ENTRY *tr_entry;
 	struct wifi_dev *wdev;
 
 	pInfo = (MLME_ADDBA_REQ_STRUCT *)Elem->Msg;
@@ -130,7 +133,7 @@ VOID MlmeADDBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		}
 		/* 1. find entry */
 		pEntry = &pAd->MacTab.Content[pInfo->Wcid];
-		tr_entry = &pAd->MacTab.tr_entry[pInfo->Wcid];
+		//tr_entry = &pAd->MacTab.tr_entry[pInfo->Wcid];
 		ASSERT((pEntry->wdev != NULL));
 		wdev = pEntry->wdev;
 		
@@ -143,7 +146,7 @@ VOID MlmeADDBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		} 
 		else
 		{
-			pBAEntry =&pAd->BATable.BAOriEntry[Idx];
+			//pBAEntry =&pAd->BATable.BAOriEntry[Idx];
 		}
 
 #ifdef APCLI_SUPPORT
@@ -172,7 +175,7 @@ VOID MlmeADDBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		Frame.Token = pInfo->Token;
 		Frame.TimeOutValue = pInfo->TimeOutValue;
 		Frame.BaStartSeq.field.FragNum = 0;
-		Frame.BaStartSeq.field.StartSeq = tr_entry->TxSeq[pInfo->TID];
+		Frame.BaStartSeq.field.StartSeq = AsicGetTidSn(pAd, pInfo->Wcid, pInfo->TID);
 
 #ifdef UNALIGNMENT_SUPPORT
 		{
@@ -197,7 +200,7 @@ VOID MlmeADDBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 
 		MlmeFreeMemory(pAd, pOutBuffer);
 		
-		DBGPRINT(RT_DEBUG_TRACE,
+		DBGPRINT(RT_DEBUG_OFF,
 					("BA - Send ADDBA request. StartSeq = %x,  FrameLen = %ld. BufSize = %d\n",
 					Frame.BaStartSeq.field.StartSeq, FrameLen, Frame.BaParm.BufSize));
     }
@@ -219,12 +222,12 @@ VOID MlmeDELBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 {
 	MLME_DELBA_REQ_STRUCT *pInfo;
 	PUCHAR pOutBuffer = NULL, pOutBuffer2 = NULL;
-	ULONG Idx;
+	//ULONG Idx;
 	FRAME_DELBA_REQ Frame;
 	ULONG FrameLen;
 #if	defined(RTMP_MAC) || defined(RTL_MAC)
 	FRAME_BAR FrameBar;
-#endif /* defined(RTMP_MAC) || defined(RTL_MAC) */
+#endif
 	MAC_TABLE_ENTRY *pEntry = NULL;
 	struct wifi_dev *wdev;
 	UCHAR *src_addr = NULL;
@@ -261,7 +264,7 @@ VOID MlmeDELBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		}
 
 		wdev = pEntry->wdev;
-		Idx = pEntry->BAOriWcidArray[pInfo->TID];
+		//Idx = pEntry->BAOriWcidArray[pInfo->TID];
 #ifdef APCLI_SUPPORT
 #ifdef MAC_REPEATER_SUPPORT
 		if (IS_ENTRY_APCLI(pEntry) && pEntry->bReptCli)
@@ -382,36 +385,6 @@ VOID PeerQOSAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 }
 
 
-#ifdef QOS_DLS_SUPPORT
-VOID PeerDLSAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem) 
-{
-	UCHAR Action = Elem->Msg[LENGTH_802_11+1];
-
-	switch(Action)
-	{
-		case ACTION_DLS_REQUEST:
-#ifdef CONFIG_AP_SUPPORT
-			IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-				APPeerDlsReqAction(pAd, Elem);
-#endif /* CONFIG_AP_SUPPORT */
-			break;
-
-		case ACTION_DLS_RESPONSE:
-#ifdef CONFIG_AP_SUPPORT
-			IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-				APPeerDlsRspAction(pAd, Elem);
-#endif /* CONFIG_AP_SUPPORT */
-			break;
-
-		case ACTION_DLS_TEARDOWN:
-#ifdef CONFIG_AP_SUPPORT
-			IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-				APPeerDlsTearDownAction(pAd, Elem);
-#endif /* CONFIG_AP_SUPPORT */
-			break;
-	}
-}
-#endif /* QOS_DLS_SUPPORT */
 
 
 
@@ -443,12 +416,12 @@ extern UCHAR get_regulatory_class(IN PRTMP_ADAPTER pAd);
 VOID ApPublicAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem) 
 {
 	UCHAR	Action = Elem->Msg[LENGTH_802_11+1];
-	BSS_2040_COEXIST_IE	 BssCoexist;
+	//BSS_2040_COEXIST_IE	 BssCoexist;
 	
 	/* Format as in IEEE 7.4.7.2*/
 	if (Action == ACTION_BSS_2040_COEXIST)
 	{
-		BssCoexist.word = Elem->Msg[LENGTH_802_11+2];
+		//BssCoexist.word = Elem->Msg[LENGTH_802_11+2];
 	}
 }
 
@@ -741,7 +714,7 @@ VOID PeerPublicAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 							RTMPModTimer(&pAd->CommonCfg.Bss2040CoexistTimer, (pAd->CommonCfg.Dot11BssWidthChanTranDelay + 5) * 1000);
 						}
 
-						apidx = pAd->MacTab.Content[Elem->Wcid].apidx;
+						apidx = pAd->MacTab.Content[Elem->Wcid].func_tb_idx;
 						for (apidx = 0; apidx < pAd->ApCfg.BssidNum; apidx++)
 							SendBSS2040CoexistMgmtAction(pAd, MCAST_WCID, apidx, 0);
 					}
@@ -795,6 +768,33 @@ static VOID ReservedAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 VOID PeerRMAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem) 
 {
 #ifdef CONFIG_AP_SUPPORT
+#ifdef DOT11K_RRM_SUPPORT
+	UCHAR Action = Elem->Msg[LENGTH_802_11+1];
+	MAC_TABLE_ENTRY *pEntry = NULL;
+
+	if (VALID_WCID(Elem->Wcid))
+		pEntry = &pAd->MacTab.Content[Elem->Wcid];
+	else
+		return;
+
+	if ((pEntry->func_tb_idx < pAd->ApCfg.BssidNum) &&
+		!IS_RRM_ENABLE(pAd, pEntry->func_tb_idx))
+		return;
+
+	switch(Action)
+	{
+		case RRM_MEASURE_REP:
+			DBGPRINT(RT_DEBUG_TRACE, ("%s: Get RRM Measure report.\n",
+				__FUNCTION__));
+
+			RRM_PeerMeasureRepAction(pAd, Elem);
+			break;
+
+		case RRM_NEIGHTBOR_REQ:
+			RRM_PeerNeighborReqAction(pAd, Elem);
+			break;
+	}
+#endif /* DOT11K_RRM_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 	return;
 }
@@ -880,13 +880,22 @@ VOID PeerHTAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 
 			if (oldMmpsMode != pEntry->MmpsMode)
 			{
-				if ((oldMmpsMode == MMPS_DYNAMIC) || (pEntry->MmpsMode == MMPS_DYNAMIC)) {
+				if ( /* (oldMmpsMode == MMPS_DYNAMIC) || */(pEntry->MmpsMode == MMPS_DYNAMIC)) {
                     AsicSetSMPS(pAd, pEntry->wcid, 1);
 				} else {
 #ifdef CONFIG_AP_SUPPORT
                     AsicSetSMPS(pAd, pEntry->wcid, 0);
 					IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 						APMlmeDynamicTxRateSwitching(pAd);
+
+#ifdef RT_CFG80211_SUPPORT
+#ifdef RT_CFG80211_P2P_SUPPORT
+				if((pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP) && 
+				    (!OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_DOZE)))
+                                        MlmeDynamicTxRateSwitching(pAd);
+#endif /*RT_CFG80211_P2P_SUPPORT*/				
+#endif /* RT_CFG80211_SUPPORT */
+					
 #endif /* CONFIG_AP_SUPPORT */
 
 				}
@@ -966,9 +975,9 @@ VOID PeerVHTAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
  */
 VOID ORIBATimerTimeout(RTMP_ADAPTER *pAd) 
 {
-	MAC_TABLE_ENTRY *pEntry;
+	//MAC_TABLE_ENTRY *pEntry;
 	INT i, total;
-	UCHAR TID;
+	//UCHAR TID;
 
 #ifdef CONFIG_ATE
 	if (ATE_ON(pAd))
@@ -981,8 +990,8 @@ VOID ORIBATimerTimeout(RTMP_ADAPTER *pAd)
 	{
 		if  (pAd->BATable.BAOriEntry[i].ORI_BA_Status == Originator_Done)
 		{
-			pEntry = &pAd->MacTab.Content[pAd->BATable.BAOriEntry[i].Wcid];
-			TID = pAd->BATable.BAOriEntry[i].TID;
+			//pEntry = &pAd->MacTab.Content[pAd->BATable.BAOriEntry[i].Wcid];
+			//TID = pAd->BATable.BAOriEntry[i].TID;
 
 			ASSERT(pAd->BATable.BAOriEntry[i].Wcid < MAX_LEN_OF_MAC_TABLE);
 		}
@@ -1039,7 +1048,8 @@ VOID SendRefreshBAR(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 			MakeOutgoingFrame(pOutBuffer,		&FrameLen,
 							  sizeof(FRAME_BAR),	&FrameBar,
 							  END_OF_ARGS);
-			MiniportMMRequest(pAd, (MGMT_USE_QUEUE_FLAG | WMM_UP2AC_MAP[TID]), pOutBuffer, FrameLen);
+
+			MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
 
 			MlmeFreeMemory(pAd, pOutBuffer);
 		}

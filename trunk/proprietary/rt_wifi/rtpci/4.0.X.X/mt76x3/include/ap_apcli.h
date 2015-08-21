@@ -38,6 +38,7 @@
 #define ASSOC_TIMEOUT	300         /* unit: msec */
 /*#define JOIN_TIMEOUT	2000        // unit: msec // not used in Ap-client mode, remove it */
 #define PROBE_TIMEOUT	1000        /* unit: msec */
+#define OPENWEP_ERRPKT_MAX_COUNT  	  3
   
 #define APCLI_ROOT_BSSID_GET(pAd, wcid) ((pAd)->MacTab.Content[(wcid)].Addr)
 
@@ -268,8 +269,10 @@ BOOLEAN ApcliCompareAuthEncryp(
 VOID ApCliSwitchCandidateAP(
 	IN PRTMP_ADAPTER pAd);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
-
+VOID ApCliRxOpenWEPCheck(
+	IN RTMP_ADAPTER *pAd,
+	IN RX_BLK *pRxBlk,
+	IN BOOLEAN bSuccessPkt);
 #endif /* APCLI_SUPPORT */
-
 #endif /* _AP_APCLI_H_ */
 

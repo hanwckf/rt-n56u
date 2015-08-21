@@ -89,6 +89,18 @@
 #define RT_SET_APD_PID						0x0405
 #define RT_SET_DEL_MAC_ENTRY				0x0406
 #define RT_QUERY_EVENT_TABLE            	0x0407
+#ifdef DOT11R_FT_SUPPORT
+#define RT_SET_FT_STATION_NOTIFY			0x0408
+#define RT_SET_FT_KEY_REQ					0x0409
+#define RT_SET_FT_KEY_RSP					0x040a
+#define RT_FT_KEY_SET						0x040b
+#define RT_FT_DATA_ENCRYPT					0x040c
+#define RT_FT_DATA_DECRYPT					0x040d
+#define RT_FT_NEIGHBOR_REPORT				0x040e
+#define RT_FT_NEIGHBOR_REQUEST				0x040f
+#define RT_FT_NEIGHBOR_RESPONSE				0x0410
+#define RT_FT_ACTION_FORWARD				0x0411
+#endif /* DOT11R_FT_SUPPORT */
 /* */
 /* IEEE 802.11 OIDs */
 /* */
@@ -219,6 +231,7 @@
 #define RT_OID_802_11_QUERY_MAP_REAL_RX_RATE                          0x0679
 #define	RT_OID_802_11_SNR_2							0x067A
 #define RT_OID_802_11_PER_BSS_STATISTICS			0x067D
+#define OID_802_11_MBSS_GET_STA_COUNT					0x067E
 
 
 
@@ -363,6 +376,10 @@ struct hostapd_wpa_psk {
 #define RT_OID_802_11_SET_TDLS_PARAM			(OID_GET_SET_TOGGLE | RT_OID_802_11_QUERY_TDLS_PARAM)
 #define RT_OID_802_11_SET_TDLS				(OID_GET_SET_TOGGLE | RT_OID_802_11_QUERY_TDLS)
 
+#ifdef SUPPORT_ACS_ALL_CHANNEL_RANK
+#define OID_GET_ACS_RANK_LIST           0x06B7 /* Get AutoChannelSelection Rank list */
+#endif
+
 #ifdef WAPI_SUPPORT
 #define OID_802_11_WAPI_PID					0x06A0
 #define OID_802_11_PORT_SECURE_STATE		0x06A1
@@ -380,6 +397,124 @@ struct hostapd_wpa_psk {
 #define RT_OID_802_11_WAPI_CONFIGURATION	(OID_GET_SET_TOGGLE | OID_802_11_WAPI_CONFIGURATION)
 #define RT_OID_802_11_WAPI_IE				(OID_GET_SET_TOGGLE | OID_802_11_WAPI_IE)
 #endif /* WAPI_SUPPORT */
+
+#ifdef CUSTOMER_DCC_FEATURE
+#define OID_802_11_GET_CURRENT_CHANNEL_FALSE_CCA_AVG	0x0690	
+#define OID_802_11_GET_CURRENT_CHANNEL_CST_TIME_AVG		0x0691
+#define	OID_802_11_GET_CURRENT_CHANNEL_BUSY_TIME_AVG	0x0692
+#define OID_802_11_GET_CURRENT_CHANNEL_STATS 			0x0693
+#define OID_802_11_GET_CURRENT_CHANNEL_AP_ACTIVITY_AVG  0x0694
+#define OID_802_11_STA_STATISTICS						0x0695
+#define OID_802_11_GET_CURRENT_CHANNEL_AP_TABLE			0x0696
+#define OID_802_11_GET_ACCESS_CATEGORY_TRAFFIC_STATUS	0x0697
+#define OID_802_11_GET_SCAN_RESULTS						0x0698
+#define	OID_802_11_GET_RADIO_STATS_COUNT				0x0699
+#define OID_802_11_MBSS_STATISTICS						0x069a
+
+#ifdef MEMORY_OPTIMIZATION
+#define MAX_LEN_OF_BSS_TABLE             1
+#define MAX_REORDERING_MPDU_NUM			 256
+#else
+#define MAX_LEN_OF_BSS_TABLE             64 /* 64 */
+#define MAX_REORDERING_MPDU_NUM			 512
+#endif
+
+typedef struct _CURRENT_CHANNEL_STATS{
+ UINT32		SamplePeriod;                 
+ UINT32		FalseCCACount;                               
+ UINT32  	ChannelApActivity;       
+ UINT32  	EdCcaBusyTime;                              
+ UINT32   	ChannelBusyTime;                           
+} CURRENT_CHANNEL_STATISTICS , *PCURRENT_CHANNEL_STATISTICS; 
+
+#ifdef MBSS_802_11_STATISTICS
+typedef struct __RT_MBSS_STAT_ENTRY{
+	// DATA counter
+	UINT32 RxCount;
+	UINT32 TxCount;
+	UINT32 ReceivedByteCount;
+	UINT32 TransmittedByteCount;
+	UINT32 RxErrorCount;
+	UINT32 RxDropCount;
+	UINT32 TxErrorCount;
+	UINT32 TxDropCount;
+	UINT32 UnicastPktsRx;
+	UINT32 UnicastPktsTx;
+	UINT32 MulticastPktsRx;
+	UINT32 MulticastPktsTx;
+	UINT32 BroadcastPktsRx;
+	UINT32 BroadcastPktsTx;
+	UINT32 TxRetriedPktCount;
+	UINT32 ChannelUseTime;
+	// MGMT counter
+	UINT32 MGMTRxCount;
+	UINT32 MGMTTxCount;
+	UINT32 MGMTReceivedByteCount;
+	UINT32 MGMTTransmittedByteCount;
+	UINT32 MGMTRxErrorCount;
+	UINT32 MGMTRxDropCount;
+	UINT32 MGMTTxErrorCount;
+	UINT32 MGMTTxDropCount;
+} RT_MBSS_STAT_ENTRY;
+
+typedef struct  __RT_MBSS_STATISTICS_TABLE{
+	UINT32				Num;
+	RT_MBSS_STAT_ENTRY	MbssEntry[8];
+} RT_MBSS_STATISTICS_TABLE;
+
+typedef struct  __RT_STA_STAT_ENTRY
+{
+	UCHAR  ApIdx;
+    UCHAR  Addr[MAC_ADDR_LEN];
+	UINT32 RxCount;
+	UINT32 TxCount;
+	UINT32 ReceivedByteCount;
+	UINT32 TransmittedByteCount;
+	UINT32 RxErrorCount;
+	UINT32 RxDropCount;
+	UINT32 TxErrorCount;
+	UINT32 TxDropCount;
+	UINT32 TxRetriedPktCount;
+	UINT32 ChannelUseTime;
+} RT_STA_STAT_ENTRY;
+
+typedef struct  __RT_STA_STATISTICS_TABLE
+{
+	int Num;
+	RT_STA_STAT_ENTRY	STAEntry[MAX_NUMBER_OF_MAC];
+} RT_STA_STATISTICS_TABLE;
+
+#endif
+
+typedef struct _BSS_ENTRY_TABLE
+{
+	UINT8   Bssid[MAC_ADDR_LEN];
+	UINT16  SsidLen;
+	UINT8	Ssid[33];
+	UINT8 	Channel;
+	UINT8	ChannelWidth;
+	UINT8	ExtChannel;
+	CHAR	RSSI;
+	UINT8	SNR;
+	UINT8	PhyMode;
+	UINT8	NumSpatialStream;
+}BSS_ENTRY_TABLE, *PBSS_ENTRY_TABLE;
+
+typedef struct _BEACON_TABLE
+{
+	UINT8 Num;
+	BSS_ENTRY_TABLE BssTable[MAX_LEN_OF_BSS_TABLE];
+} BEACON_TABLE, *PBEACON_TABLE;
+
+typedef struct _SCAN_RESULTS
+{
+	UINT32	ch_busy_time;
+	UINT32	cca_err_cnt;
+	UINT32	num_ap;
+	BSS_ENTRY_TABLE BssTable[MAX_LEN_OF_BSS_TABLE];
+}SCAN_RESULTS, *PSCAN_RESULTS;
+
+#endif
 
 typedef enum _NDIS_802_11_STATUS_TYPE {
 	Ndis802_11StatusType_Authentication,
@@ -907,6 +1042,21 @@ typedef struct _NDIS_802_11_CAPABILITY {
 #endif /* LLTD_SUPPORT */
 
 
+#ifdef DOT11R_FT_SUPPORT
+#define OID_802_11R_SUPPORT							0x0780
+#define OID_802_11R_MDID							0x0781
+#define OID_802_11R_R0KHID							0x0782
+#define OID_802_11R_RIC								0x0783
+#define OID_802_11R_OTD								0x0784
+#define OID_802_11R_INFO							0x0785
+
+#define	RT_OID_802_11R_SUPPORT					  	(OID_GET_SET_TOGGLE | OID_802_11R_SUPPORT)
+#define RT_OID_802_11R_MDID							(OID_GET_SET_TOGGLE | OID_802_11R_MDID)
+#define RT_OID_802_11R_R0KHID						(OID_GET_SET_TOGGLE | OID_802_11R_R0KHID)
+#define	RT_OID_802_11R_RIC					  		(OID_GET_SET_TOGGLE | OID_802_11R_RIC)
+#define RT_OID_802_11R_OTD							(OID_GET_SET_TOGGLE | OID_802_11R_OTD)
+#define RT_OID_802_11R_INFO							(OID_GET_SET_TOGGLE | OID_802_11R_INFO)
+#endif /* DOT11R_FT_SUPPORT */
 
 
 #ifdef WSC_NFC_SUPPORT
@@ -1253,6 +1403,16 @@ typedef struct _WAPI_WIE_STRUCT {
 
 #endif /* WAPI_SUPPORT */
 
+#ifdef DOT11R_FT_SUPPORT
+typedef struct _FT_CONFIG_INFO {
+	UCHAR MdId[2];
+	UCHAR R0KHId[49];
+	UCHAR R0KHIdLen;
+	BOOLEAN FtSupport;
+	BOOLEAN FtRicSupport;
+	BOOLEAN FtOtdSupport;
+} FT_CONFIG_INFO, *PFT_CONFIG_INFO;
+#endif /* DOT11R_FT_SUPPORT */
 
 
 #ifdef APCLI_SUPPORT
@@ -1262,6 +1422,11 @@ typedef struct _WAPI_WIE_STRUCT {
 
 
 
+
+#ifdef AIRPLAY_SUPPORT
+#define OID_AIRPLAY_IE_INSERT                   (0x0872)
+#define OID_AIRPLAY_ENABLE                      (0x0873)
+#endif/* AIRPLAY_SUPPORT*/
 
 enum {
 	OID_WIFI_TEST_BBP = 0x1000,

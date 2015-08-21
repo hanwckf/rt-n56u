@@ -20,5 +20,7 @@
 VOID MTPciPollTxRxEmpty(struct _RTMP_ADAPTER *pAd);
 VOID MTPciMlmeRadioOff(struct _RTMP_ADAPTER *pAd);
 VOID MTPciMlmeRadioOn(struct _RTMP_ADAPTER *pAd);
-
+VOID MTUsbPollTxRxEmpty(struct _RTMP_ADAPTER *pAd);
+VOID MTUsbMlmeRadioOff(struct _RTMP_ADAPTER *pAd);
+VOID MTUsbMlmeRadioOn(struct _RTMP_ADAPTER *pAd);
 #endif

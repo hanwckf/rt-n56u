@@ -213,6 +213,31 @@ struct mcu_skb_data {
 	enum mcu_skb_state state;
 };
 
+#ifdef LED_CONTROL_SUPPORT
+#ifdef RT_BIG_ENDIAN
+typedef union _LED_ENHANCE {
+	struct {
+		UINT32 rsv:8;
+		UINT32 on_time:8;
+		UINT32 off_time:8;
+		UINT32 idx:8;
+	} field;
+	UINT32 word;
+} LED_ENHANCE;
+#else
+typedef union _LED_ENHANCE {
+	struct {
+		UINT32 idx:8;
+		UINT32 off_time:8;
+		UINT32 on_time:8;
+		UINT32 rsv:8;
+	} field;
+	UINT32 word;
+} LED_ENHANCE;
+#endif /* RT_BIG_ENDIAN */
+#endif /*LED_CONTROL_SUPPORT*/
+
+
 VOID AndesCtrlInit(struct _RTMP_ADAPTER *pAd);
 VOID AndesCtrlExit(struct _RTMP_ADAPTER *pAd);
 INT32 AndesSendCmdMsg(struct _RTMP_ADAPTER *pAd, struct cmd_msg *msg);

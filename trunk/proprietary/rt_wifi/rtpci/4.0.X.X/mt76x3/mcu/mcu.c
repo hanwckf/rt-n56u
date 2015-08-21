@@ -75,7 +75,6 @@ INT32 MCUSysInit(RTMP_ADAPTER *pAd)
 #if defined(RTMP_PCI_SUPPORT) || defined(RTMP_USB_SUPPORT)
 		AsicDMASchedulerInit(pAd, DMA_SCH_LMAC);
 #endif
-
 	}
 #endif /* MT_MAC */
 

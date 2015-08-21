@@ -49,19 +49,25 @@ config  MT76X3_AP_MBSS
 	depends on MT76X3_AP
 	default y
 
-#config  MT76X3_AP_MBSS_NEW_MBSSID_MODE
-#	bool "New MBSSID mode support"
-#	depends on MT76X3_AP
-#	depends on MT76X3_AP_MBSS
-#	default n
-
 config  MT76X3_AP_APCLI
 	bool "AP-Client Support"
 	depends on MT76X3_AP
 	default y
 
+config  MT76X3_AP_MULTI_APCLI_SUPPORT
+	bool "Multi AP-Client Support"
+	depends on MT76X3_AP
+	depends on MT76X3_AP_APCLI
+	default n
+
 config  MT76X3_AP_MAC_REPEATER
 	bool "MAC Repeater Mode Support"
+	depends on MT76X3_AP
+	depends on MT76X3_AP_APCLI
+	default n
+
+config  MT76X3_AP_AIRPLAY_SUPPORT
+	bool "AirPlay Support"
 	depends on MT76X3_AP
 	depends on MT76X3_AP_APCLI
 	default n
@@ -88,9 +94,15 @@ config  MT76X3_AP_BAND_STEERING
 	depends on MT76X3_AP
 	default n
 
-#config  MT76X3_AP_EXT_CHANNEL_LIST
-#	bool "Extension Channel List"
-#	depends on MT76X3_AP
+config  MT76X3_AP_DOT11R_FT_SUPPORT
+	bool "802.11r Fast BSS Transition"
+	depends on MT76X3_AP
+	default n
+
+config  MT76X3_AP_DOT11K_RRM_SUPPORT
+	bool "802.11k Radio Resource Management"
+	depends on MT76X3_AP
+	default n
 
 #config  MT76X3_AP_VIDEO_TURBINE
 #	bool "Video Turbine support"
@@ -115,16 +127,6 @@ config  MT76X3_AP_80211N_DRAFT3
 	bool "802.11n Draft3"
 	depends on MT76X3_AP
 	default n
-
-#config  MT76X3_AP_80211AC_VHT
-#	bool "802.11ac Support"
-#	depends on MT76X3_AP
-#	default y
-
-#config  MT76X3_AP_TXBF_SUPPORT
-#	bool "Tx Beam Forming Support"
-#	depends on MT76X3_AP
-#	default n
 
 config  MT76X3_AP_80211W_PMF
 	bool "802.11w Protected Management Frames (PMF) Support"

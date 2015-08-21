@@ -91,8 +91,12 @@
 	System Cotnrol Registers
 **********************************************************/
 #define ARB_SCR		(WF_ARB_BASE + 0x080)  /* 0x21480 */
-#define MT_ARB_SCR_TXDIS	(1 << 8)
-#define MT_ARB_SCR_RXDIS	(1 << 9)
+#define MT_ARB_SCR_TXDIS        BIT8
+#define MT_ARB_SCR_RXDIS        BIT9
+#define ARB_SCR_BCNQ_EMPTY_CTRL BIT28
+#define ARB_SCR_TBTT_BTIM_CTRL  BIT29
+#define ARB_SCR_TBTT_BCN_CTRL   BIT30
+#define ARB_SCR_TBTT_BM_CTRL    BIT31
 
 //ARB_SCR_BCNQ_OP_MODE
 #define BCNQ_OP_MODE_STA	0x0

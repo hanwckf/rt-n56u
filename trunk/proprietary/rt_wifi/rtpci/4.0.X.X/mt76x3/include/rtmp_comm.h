@@ -414,5 +414,11 @@ typedef struct  _PACKET_INFO    {
 
 #define RLT_MAC_BASE 0x01
 
+#ifdef USB_IOT_WORKAROUND2
+#define W2_IOT_MAX_PADDING_SIZE 1028 //512+512+4
+#define W2_MAX_TX_SIZE 3000
+#define W2_MAX_HTTX_SIZE 32768
+#endif
+
 #endif /* __RT_COMM_H__ */
 

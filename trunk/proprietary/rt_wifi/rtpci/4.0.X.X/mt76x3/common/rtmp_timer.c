@@ -32,7 +32,7 @@
 #include "rt_config.h"
 
 
-BUILD_TIMER_FUNCTION(MlmePeriodicExec);
+BUILD_TIMER_FUNCTION(MlmePeriodicExecTimer);
 /*BUILD_TIMER_FUNCTION(MlmeRssiReportExec);*/
 BUILD_TIMER_FUNCTION(AsicRxAntEvalTimeout);
 BUILD_TIMER_FUNCTION(APSDPeriodicExec);
@@ -68,6 +68,9 @@ BUILD_TIMER_FUNCTION(APQuickResponeForRateUpExec);
 BUILD_TIMER_FUNCTION(RTMPIdsPeriodicExec);
 #endif /* IDS_SUPPORT */
 
+#ifdef DOT11R_FT_SUPPORT
+BUILD_TIMER_FUNCTION(FT_KDP_InfoBroadcast);
+#endif /* DOT11R_FT_SUPPORT */
 
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -88,9 +91,10 @@ BUILD_TIMER_FUNCTION(WscSkipTurnOffLEDTimer);
 
 #ifdef CONFIG_AP_SUPPORT
 BUILD_TIMER_FUNCTION(WscUpdatePortCfgTimeout);
-#ifdef WSC_V2_SUPPORT
 BUILD_TIMER_FUNCTION(WscSetupLockTimeout);
-#endif /* WSC_V2_SUPPORT */
+#ifdef MT_MAC
+BUILD_TIMER_FUNCTION(WscEapReqIdRetryTimeout);
+#endif /* MT_MAC */
 #endif /* CONFIG_AP_SUPPORT */
 
 

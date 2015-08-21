@@ -136,6 +136,19 @@ typedef enum {
 	RAL_QUICK_DRS
 }RA_LOG_TYPE;
 
+#define HIGH_TRAFFIC_THRESHOLD 15
+#define RATE_ADAPT_HOLD_TIME 30
+
+enum RATE_ADAPT_TRAFFIC_LOADING {
+	RA_INIT_STATE,
+	ZERO_TRAFFIC,
+	LOW_TRAFFIC,
+	HIGH_TRAFFIC,
+};
+
+#define RATE_ADAPT_HOLD_TX_RATE(_traffic_loading_old, _traffic_loading_new, _buffer_time) \
+	((_traffic_loading_old == HIGH_TRAFFIC || _traffic_loading_old == LOW_TRAFFIC) && (_traffic_loading_new == ZERO_TRAFFIC)) || \
+	((_traffic_loading_new == ZERO_TRAFFIC) && (_buffer_time > 0))
 
 extern UCHAR RateSwitchTable11B[];
 extern UCHAR RateSwitchTable11G[];
@@ -218,7 +231,7 @@ VOID MlmeSetTxQuality(
 	IN USHORT txQuality);
 
 
-#ifndef NEW_RATE_ADAPT_SUPPORT
+
 VOID MlmeOldRateAdapt(
 	IN struct _RTMP_ADAPTER *pAd,
 	IN struct _MAC_TABLE_ENTRY *pEntry,
@@ -228,7 +241,6 @@ VOID MlmeOldRateAdapt(
 	IN ULONG			TrainUp,
 	IN ULONG			TrainDown,
 	IN ULONG			TxErrorRatio);
-#endif /* !=NEW_RATE_ADAPT_SUPPORT */
 
 VOID MlmeRestoreLastRate(
 	IN struct _MAC_TABLE_ENTRY *pEntry);
@@ -305,7 +317,7 @@ VOID NewRateAdaptMT(
 	IN UCHAR			Rate1ErrorRatio,
 	IN UCHAR			HwAggRateIndex);
 #endif /* MT_MAC */
-#ifdef DBG
+
 INT	Set_PerThrdAdj_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
 INT	Set_LowTrafficThrd_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
@@ -319,7 +331,7 @@ INT	Set_TrainUpLowThrd_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT	Set_TrainUpHighThrd_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
 INT Set_RateTable_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
-#endif /* DBG */
+
 #ifdef AGS_SUPPORT
 INT Show_AGS_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
@@ -341,9 +353,7 @@ VOID QuickResponeForRateUpExecAdaptMT(struct _RTMP_ADAPTER *pAd, UINT idx);
 #endif /* MT_MAC */
 
 #ifdef CONFIG_AP_SUPPORT
-#if defined(RTMP_MAC) || defined(RLT_MAC)
 VOID APMlmeDynamicTxRateSwitchingAdapt(struct _RTMP_ADAPTER *pAd, UINT idx);
-#endif /* RTMP_MAC || RLT_MAC */
 VOID APQuickResponeForRateUpExecAdapt(struct _RTMP_ADAPTER *pAd, UINT idx);
 #endif /* CONFIG_AP_SUPPORT */
 

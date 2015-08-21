@@ -33,8 +33,8 @@
 
 /* [CB_OFF + 1]  */
 /* Fragment # */
-#define RTMP_SET_PACKET_FRAGMENTS(_p, _num)		(PACKET_CB(_p, 1) = _num)
-#define RTMP_GET_PACKET_FRAGMENTS(_p)			(PACKET_CB(_p, 1))
+#define RTMP_SET_PACKET_FRAGMENTS(_p, _num)	(PACKET_CB(_p, 1) = _num)
+#define RTMP_GET_PACKET_FRAGMENTS(_p)		(PACKET_CB(_p, 1))
 
 /* [CB_OFF + 2]  */
 /*
@@ -43,155 +43,151 @@
 				for Rx, get from ASIC(RxWI)/search by wlan_hdr.addr2
 */
 #define RTMP_SET_PACKET_WCID(_p, _wdsidx)		(PACKET_CB(_p, 2) = _wdsidx)
-#define RTMP_GET_PACKET_WCID(_p)			(PACKET_CB(_p, 2))
+#define RTMP_GET_PACKET_WCID(_p)				(PACKET_CB(_p, 2))
 
 
 /* [CB_OFF + 3]  */
-/*
-	Sepcific Pakcet Type definition
-*/
-#define RTMP_PACKET_SPECIFIC_CB_OFFSET	3
+/* From which Interface, wdev index */
+#define RTMP_SET_PACKET_WDEV(_p, _wdev_idx)		(PACKET_CB(_p, 3) = _wdev_idx)
+#define RTMP_GET_PACKET_WDEV(_p)					(PACKET_CB(_p, 3))
 
-#define RTMP_PACKET_SPECIFIC_DHCP	0x01
-#define RTMP_PACKET_SPECIFIC_EAPOL	0x02
-#define RTMP_PACKET_SPECIFIC_IPV4	0x04
-#define RTMP_PACKET_SPECIFIC_WAI	0x08
-#define RTMP_PACKET_SPECIFIC_VLAN	0x10
-#define RTMP_PACKET_SPECIFIC_LLCSNAP	0x20
-#define RTMP_PACKET_SPECIFIC_TDLS	0x40
-#define RTMP_PACKET_SPECIFIC_DISASSOC	0x80
-
-/* Specific */
-#define RTMP_SET_PACKET_SPECIFIC(_p, _flg)		(PACKET_CB(_p, 3) = _flg)
-
-/* DHCP */
-#define RTMP_SET_PACKET_DHCP(_p, _flg)								\
-			do{									\
-				if (_flg)							\
-					PACKET_CB(_p, 3) |= (RTMP_PACKET_SPECIFIC_DHCP);	\
-				else								\
-					PACKET_CB(_p, 3) &= (~RTMP_PACKET_SPECIFIC_DHCP);	\
-			}while(0)
-			
-#define RTMP_GET_PACKET_DHCP(_p)\
-			(PACKET_CB(_p, 3) & RTMP_PACKET_SPECIFIC_DHCP)
-
-/* EAPOL */
-#define RTMP_SET_PACKET_EAPOL(_p, _flg)								\
-			do{									\
-				if (_flg)							\
-					PACKET_CB(_p, 3) |= (RTMP_PACKET_SPECIFIC_EAPOL);	\
-				else								\
-					PACKET_CB(_p, 3) &= (~RTMP_PACKET_SPECIFIC_EAPOL);	\
-			}while(0)
-			
-#define RTMP_GET_PACKET_EAPOL(_p)\
-			(PACKET_CB(_p, 3) & RTMP_PACKET_SPECIFIC_EAPOL)
-
-/* WAI */
-#define RTMP_SET_PACKET_WAI(_p, _flg)   							\
-			do{									\
-				if (_flg)							\
-					PACKET_CB(_p, 3) |= (RTMP_PACKET_SPECIFIC_WAI);		\
-				else								\
-					PACKET_CB(_p, 3) &= (~RTMP_PACKET_SPECIFIC_WAI);	\
-			}while(0)
-			
-#define RTMP_GET_PACKET_WAI(_p) \
-			(PACKET_CB(_p, 3) & RTMP_PACKET_SPECIFIC_WAI)
-
-#define RTMP_GET_PACKET_FORCE_TX(_p)\
-			(PACKET_CB(_p, 3) & (RTMP_PACKET_SPECIFIC_EAPOL | \
-							RTMP_PACKET_SPECIFIC_WAI))
-
-#define RTMP_GET_PACKET_LOWRATE(_p) \
-			(PACKET_CB(_p, 3) & (RTMP_PACKET_SPECIFIC_EAPOL | \
-								RTMP_PACKET_SPECIFIC_DHCP | \
-								RTMP_PACKET_SPECIFIC_WAI))
-
-/* VLAN */
-#define RTMP_SET_PACKET_VLAN(_p, _flg)   							\
-			do{									\
-				if (_flg)							\
-					PACKET_CB(_p, 3) |= (RTMP_PACKET_SPECIFIC_VLAN);	\
-				else								\
-					PACKET_CB(_p, 3) &= (~RTMP_PACKET_SPECIFIC_VLAN);	\
-			}while(0)
-			
-#define RTMP_GET_PACKET_VLAN(_p) \
-			(PACKET_CB(_p, 3) & RTMP_PACKET_SPECIFIC_VLAN)
-
-/* LLC/SNAP */
-#define RTMP_SET_PACKET_LLCSNAP(_p, _flg)   							\
-			do{									\
-				if (_flg)							\
-					PACKET_CB(_p, 3) |= (RTMP_PACKET_SPECIFIC_LLCSNAP);	\
-				else								\
-					PACKET_CB(_p, 3) &= (~RTMP_PACKET_SPECIFIC_LLCSNAP);	\
-			}while(0)
-			
-#define RTMP_GET_PACKET_LLCSNAP(_p) \
-			(PACKET_CB(_p, 3) & RTMP_PACKET_SPECIFIC_LLCSNAP)
-
-/* IP */
-#define RTMP_SET_PACKET_IPV4(_p, _flg)								\
-			do{									\
-				if (_flg)							\
-					PACKET_CB(_p, 3) |= (RTMP_PACKET_SPECIFIC_IPV4);	\
-				else								\
-					PACKET_CB(_p, 3) &= (~RTMP_PACKET_SPECIFIC_IPV4);	\
-			}while(0)
-			
-#define RTMP_GET_PACKET_IPV4(_p) \
-			(PACKET_CB(_p, 3) & RTMP_PACKET_SPECIFIC_IPV4)
-
-/* TDLS */
-#define RTMP_SET_PACKET_TDLS_MMPDU(_p, _flg)							\
-			do{									\
-				if (_flg)							\
-					PACKET_CB(_p, 3) |= (RTMP_PACKET_SPECIFIC_TDLS);	\
-				else								\
-					PACKET_CB(_p, 3) &= (~RTMP_PACKET_SPECIFIC_TDLS);	\
-			}while(0)
-			
-#define RTMP_GET_PACKET_TDLS_MMPDU(_p) \
-			(PACKET_CB(_p, 3) & RTMP_PACKET_SPECIFIC_TDLS)
-
-/* DISASSOC */
-#define RTMP_SET_PACKET_DISASSOC(_p, _flg)							\
-			do{									\
-				if (_flg)							\
-					PACKET_CB(_p, 3) |= (RTMP_PACKET_SPECIFIC_DISASSOC);	\
-				else								\
-					PACKET_CB(_p, 3) &= (~RTMP_PACKET_SPECIFIC_DISASSOC);	\
-			}while(0)
-			
-#define RTMP_GET_PACKET_DISASSOC(_p) \
-			(PACKET_CB(_p, 3) & RTMP_PACKET_SPECIFIC_DISASSOC)
 
 
 /* [CB_OFF + 4]  */
 /* If this flag is set, it indicates that this EAPoL frame MUST be clear. */
-#define RTMP_SET_PACKET_CLEAR_EAP_FRAME(_p, _flg)	(PACKET_CB(_p, 4) = _flg)
-#define RTMP_GET_PACKET_CLEAR_EAP_FRAME(_p)		(PACKET_CB(_p, 4))
+#define RTMP_SET_PACKET_CLEAR_EAP_FRAME(_p, _flg)   (PACKET_CB(_p, 4) = _flg)
+#define RTMP_GET_PACKET_CLEAR_EAP_FRAME(_p)         (PACKET_CB(_p, 4))
 
 
 /* [CB_OFF + 5]  */
 #define RTMP_SET_PACKET_MOREDATA(_p, _morebit)		(PACKET_CB(_p, 5) = _morebit)
-#define RTMP_GET_PACKET_MOREDATA(_p)			(PACKET_CB(_p, 5))
+#define RTMP_GET_PACKET_MOREDATA(_p)					(PACKET_CB(_p, 5))
 
 
 /* [CB_OFF + 6]  */
-/* From which Interface, wdev index */
-#define RTMP_SET_PACKET_WDEV(_p, _wdev_idx)		(PACKET_CB(_p, 6) = _wdev_idx)
-#define RTMP_GET_PACKET_WDEV(_p)			(PACKET_CB(_p, 6))
+/*
+	Sepcific Pakcet Type definition
+*/
+#define RTMP_PACKET_SPECIFIC_CB_OFFSET	6
+
+#define RTMP_PACKET_SPECIFIC_DHCP		0x01
+#define RTMP_PACKET_SPECIFIC_EAPOL	0x02
+#define RTMP_PACKET_SPECIFIC_IPV4		0x04
+#define RTMP_PACKET_SPECIFIC_WAI		0x08
+#define RTMP_PACKET_SPECIFIC_VLAN		0x10
+#define RTMP_PACKET_SPECIFIC_LLCSNAP	0x20
+#define RTMP_PACKET_SPECIFIC_TDLS		0x40
+#define RTMP_PACKET_SPECIFIC_DISASSOC	0x80
+
+/* Specific */
+#define RTMP_SET_PACKET_SPECIFIC(_p, _flg)	   	(PACKET_CB(_p, 6) = _flg)
+
+/* DHCP */
+#define RTMP_SET_PACKET_DHCP(_p, _flg)   								\
+			do{															\
+				if (_flg)												\
+					PACKET_CB(_p, 6) |= (RTMP_PACKET_SPECIFIC_DHCP);	\
+				else													\
+					PACKET_CB(_p, 6) &= (~RTMP_PACKET_SPECIFIC_DHCP);	\
+			}while(0)
+#define RTMP_GET_PACKET_DHCP(_p)\
+			(PACKET_CB(_p, 6) & RTMP_PACKET_SPECIFIC_DHCP)
+
+/* EAPOL */
+#define RTMP_SET_PACKET_EAPOL(_p, _flg)   								\
+			do{															\
+				if (_flg)												\
+					PACKET_CB(_p, 6) |= (RTMP_PACKET_SPECIFIC_EAPOL);	\
+				else													\
+					PACKET_CB(_p, 6) &= (~RTMP_PACKET_SPECIFIC_EAPOL);	\
+			}while(0)
+#define RTMP_GET_PACKET_EAPOL(_p)\
+			(PACKET_CB(_p, 6) & RTMP_PACKET_SPECIFIC_EAPOL)
+
+/* WAI */
+#define RTMP_SET_PACKET_WAI(_p, _flg)   								\
+			do{															\
+				if (_flg)												\
+					PACKET_CB(_p, 6) |= (RTMP_PACKET_SPECIFIC_WAI);	\
+				else													\
+					PACKET_CB(_p, 6) &= (~RTMP_PACKET_SPECIFIC_WAI);	\
+			}while(0)
+#define RTMP_GET_PACKET_WAI(_p) \
+			(PACKET_CB(_p, 6) & RTMP_PACKET_SPECIFIC_WAI)
+
+#define RTMP_GET_PACKET_FORCE_TX(_p)\
+		(PACKET_CB(_p, 6) & (RTMP_PACKET_SPECIFIC_EAPOL | \
+							RTMP_PACKET_SPECIFIC_WAI))
+
+#define RTMP_GET_PACKET_LOWRATE(_p) \
+			(PACKET_CB(_p, 6) & (RTMP_PACKET_SPECIFIC_EAPOL |\
+								RTMP_PACKET_SPECIFIC_DHCP |\
+								RTMP_PACKET_SPECIFIC_WAI))
+
+/* VLAN */
+#define RTMP_SET_PACKET_VLAN(_p, _flg)   								\
+			do{															\
+				if (_flg)												\
+					PACKET_CB(_p, 6) |= (RTMP_PACKET_SPECIFIC_VLAN);	\
+				else													\
+					PACKET_CB(_p, 6) &= (~RTMP_PACKET_SPECIFIC_VLAN);	\
+			}while(0)
+#define RTMP_GET_PACKET_VLAN(_p) \
+			(PACKET_CB(_p, 6) & RTMP_PACKET_SPECIFIC_VLAN)
+
+/* LLC/SNAP */
+#define RTMP_SET_PACKET_LLCSNAP(_p, _flg)   								\
+			do{																\
+				if (_flg)													\
+					PACKET_CB(_p, 6) |= (RTMP_PACKET_SPECIFIC_LLCSNAP);	\
+				else														\
+					PACKET_CB(_p, 6) &= (~RTMP_PACKET_SPECIFIC_LLCSNAP);	\
+			}while(0)
+			
+#define RTMP_GET_PACKET_LLCSNAP(_p) \
+			(PACKET_CB(_p, 6) & RTMP_PACKET_SPECIFIC_LLCSNAP)
+
+/* IP */
+#define RTMP_SET_PACKET_IPV4(_p, _flg)									\
+			do{															\
+				if (_flg)												\
+					PACKET_CB(_p, 6) |= (RTMP_PACKET_SPECIFIC_IPV4);	\
+				else													\
+					PACKET_CB(_p, 6) &= (~RTMP_PACKET_SPECIFIC_IPV4);	\
+			}while(0)
+			
+#define RTMP_GET_PACKET_IPV4(_p) \
+			(PACKET_CB(_p, 6) & RTMP_PACKET_SPECIFIC_IPV4)
+
+/* TDLS */
+#define RTMP_SET_PACKET_TDLS_MMPDU(_p, _flg)									\
+			do{															\
+				if (_flg)												\
+					PACKET_CB(_p, 6) |= (RTMP_PACKET_SPECIFIC_TDLS);	\
+				else														\
+					PACKET_CB(_p, 6) &= (~RTMP_PACKET_SPECIFIC_TDLS);	\
+			}while(0)
+			
+#define RTMP_GET_PACKET_TDLS_MMPDU(_p) \
+			(PACKET_CB(_p, 6) & RTMP_PACKET_SPECIFIC_TDLS)
+
+/* DISASSOC */
+#define RTMP_SET_PACKET_DISASSOC(_p, _flg)                                                      \
+            do{                                                                             \
+                if (_flg)                                                                   \
+                    (RTPKT_TO_OSPKT(_p)->cb[CB_OFF+11]) |= (RTMP_PACKET_SPECIFIC_DISASSOC);     \
+                else                                                                        \
+                    (RTPKT_TO_OSPKT(_p)->cb[CB_OFF+11]) &= (~RTMP_PACKET_SPECIFIC_DISASSOC);    \
+            }while(0)
+#define RTMP_GET_PACKET_DISASSOC(_p)   \
+			(RTPKT_TO_OSPKT(_p)->cb[CB_OFF+11] & RTMP_PACKET_SPECIFIC_DISASSOC)
 
 
 /* [CB_OFF + 7]  */
-#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_CONCURRENT_DEVICE)
-#define RTMP_SET_PACKET_OPMODE(_p, _flg)		(PACKET_CB(_p, 7) = _flg)
-#define RTMP_GET_PACKET_OPMODE(_p)			(PACKET_CB(_p, 7))
-#endif /* P2P_SUPPORT  || RT_CFG80211_P2P_CONCURRENT_DEVICE */
+#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)
+#define RTMP_SET_PACKET_OPMODE(_p, _flg)   (PACKET_CB(_p, 7) = _flg)
+#define RTMP_GET_PACKET_OPMODE(_p)         (PACKET_CB(_p, 7))
+#endif /* P2P_SUPPORT  || RT_CFG80211_P2P_CONCURRENT_DEVICE || CFG80211_MULTI_STA */
 
 
 /* [CB_OFF + 8 ~ 9]  */
@@ -204,11 +200,11 @@
 #define RTMP_SET_PACKET_QOS_NULL(_p)			(PACKET_CB(_p, 8) = 0xff)
 #define RTMP_GET_PACKET_QOS_NULL(_p)			(PACKET_CB(_p, 8))
 #define RTMP_SET_PACKET_NON_QOS_NULL(_p)		(PACKET_CB(_p, 8) = 0x00)
-#define RTMP_GET_PACKET_UAPSD_Flag(_p)			((PACKET_CB(_p, 8) & 0x80) >> 7)
+#define RTMP_GET_PACKET_UAPSD_Flag(_p)		((PACKET_CB(_p, 8) & 0x80) >> 7)
 #define RTMP_GET_PACKET_UAPSD_QUE_ID(_p)		(PACKET_CB(_p, 8) & 0x7f)
 
 #define RTMP_SET_PACKET_EOSP(_p, _flg)			(PACKET_CB(_p, 9) = _flg)
-#define RTMP_GET_PACKET_EOSP(_p)			(PACKET_CB(_p, 9))
+#define RTMP_GET_PACKET_EOSP(_p)				(PACKET_CB(_p, 9))
 #endif /* UAPSD_SUPPORT */
 
 
@@ -322,4 +318,8 @@
 #endif /* CONFIG_5VT_ENHANCE */
 
 /* [CB_OFF + 34]  */
+#ifdef DOT11V_WNM_SUPPORT
+#define RTMP_SET_WNM_DMS(_p, _flg)   (RTPKT_TO_OSPKT(_p)->cb[CB_OFF+34] = _flg)
+#define RTMP_GET_WNM_DMS(_p)         (RTPKT_TO_OSPKT(_p)->cb[CB_OFF+34])
+#endif /* DOT11V_WNM_SUPPORT */
 

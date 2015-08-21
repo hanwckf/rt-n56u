@@ -133,6 +133,11 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 	pIoctlConfig->name = net_dev->name;
 	pIoctlConfig->apidx = 0;
 
+#ifdef E2P_WITHOUT_FW_SUPPORT
+        if (cmd == RTPRIV_IOCTL_E2P)
+                goto skip_check;
+#endif /* E2P_WITHOUT_FW_SUPPORT */
+
 	if ((cmd != SIOCGIWPRIV) &&
 		RTMP_AP_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_PREPARE, 0,
 							pIoctlConfig, 0) != NDIS_STATUS_SUCCESS)
@@ -152,6 +157,10 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 	    return Status;
     }/*- patch for SnapGear */
 
+
+#ifdef E2P_WITHOUT_FW_SUPPORT
+skip_check:
+#endif /* E2P_WITHOUT_FW_SUPPORT */ 
 
 	switch(cmd)
 	{
@@ -270,7 +279,7 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 		    {
 /*				struct iw_range range; */
 				struct iw_range *prange = NULL;
-				UINT32 len;
+				//UINT32 len;
 
 				/* allocate memory */
 				os_alloc_mem(NULL, (UCHAR **)&prange, sizeof(struct iw_range));
@@ -292,7 +301,7 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 				prange->max_qual.qual = 100;
 				prange->max_qual.level = 0; /* dB */
 				prange->max_qual.noise = 0; /* dB */
-				len = copy_to_user(wrq->u.data.pointer, prange, sizeof(struct iw_range));
+				/*len =*/ copy_to_user(wrq->u.data.pointer, prange, sizeof(struct iw_range));
 				os_free_mem(NULL, prange);
 		    }
 		    break;

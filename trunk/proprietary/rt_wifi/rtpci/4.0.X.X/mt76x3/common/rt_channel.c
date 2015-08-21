@@ -364,6 +364,22 @@ UINT16 TotalChNum(PCH_DESC pChDesc)
 	
 	return TotalChNum;
 }
+#ifdef CFG80211_BUILD_CHANNEL_LIST
+
+INT32 TotalRuleNum(PCH_DESC pChDesc)
+{
+	INT32 TotalRuleNum = 0;
+	
+	while(pChDesc->FirstChannel)
+	{
+		TotalRuleNum ++;
+		pChDesc++;
+	}
+	
+	return TotalRuleNum;
+}
+#endif /* CFG80211_BUILD_CHANNEL_LIST */
+
 
 UCHAR GetChannel_5GHZ(PCH_DESC pChDesc, UCHAR index)
 {
@@ -1447,127 +1463,127 @@ CH_DESP Country_WO_ChDesp[] =
 
 CH_REGION ChRegion[] =
 {
-	{"AL", CE, Country_AL_ChDesp}, /* Albania */
-	{"DZ", CE, Country_DZ_ChDesp}, /* Algeria */
-	{"AR", CE, Country_AR_ChDesp}, /* Argentina */
-	{"AM", CE, Country_AM_ChDesp}, /* Armenia */
-	{"AW", CE, Country_AW_ChDesp}, /* Aruba */
-	{"AU", CE, Country_AU_ChDesp}, /* Australia */
-	{"AT", CE, Country_AT_ChDesp}, /* Austria */
-	{"AZ", CE, Country_AZ_ChDesp}, /* Azerbaijan */
-	{"BH", CE, Country_BH_ChDesp}, /* Bahrain */
-	{"BD", CE, Country_BD_ChDesp}, /* Bangladesh */
-	{"BB", CE, Country_BB_ChDesp}, /* Barbados */
-	{"BY", CE, Country_BY_ChDesp}, /* Belarus */
-	{"BE", CE, Country_BE_ChDesp}, /* Belgium */
-	{"BZ", CE, Country_BZ_ChDesp}, /* Belize */
-	{"BO", CE, Country_BO_ChDesp}, /* Bolivia */
-	{"BA", CE, Country_BA_ChDesp}, /* Bosnia and Herzegovina */
-	{"BR", CE, Country_BR_ChDesp}, /* Brazil */
-	{"BN", CE, Country_BN_ChDesp}, /* Brunei Darussalam */
-	{"BG", CE, Country_BG_ChDesp}, /* Bulgaria */
-	{"KH", CE, Country_KH_ChDesp}, /* Cambodia */
-	{"CA", FCC,Country_CA_ChDesp}, /* Canada */
-	{"CL", CE, Country_CL_ChDesp}, /* Chile */
-	{"CN", CE, Country_CN_ChDesp}, /* China */
-	{"CO", CE, Country_CO_ChDesp}, /* Colombia */
-	{"CR", CE, Country_CR_ChDesp}, /* Costa Rica */
-	{"HR", CE, Country_HR_ChDesp}, /* Croatia */
-	{"CY", CE, Country_CY_ChDesp}, /* Cyprus */
-	{"CZ", CE, Country_CZ_ChDesp}, /* Czech Republic */
-	{"DK", CE, Country_DK_ChDesp}, /* Denmark */
-	{"DO", CE, Country_DO_ChDesp}, /* Dominican Republic */
-	{"EC", CE, Country_EC_ChDesp}, /* Ecuador */
-	{"EG", CE, Country_EG_ChDesp}, /* Egypt */
-	{"SV", CE, Country_SV_ChDesp}, /* El Salvador */
-	{"EE", CE, Country_EE_ChDesp}, /* Estonia */
-	{"FI", CE, Country_FI_ChDesp}, /* Finland */
-	{"FR", CE, Country_FR_ChDesp}, /* France */
-	{"GE", CE, Country_GE_ChDesp}, /* Georgia */
-	{"DE", CE, Country_DE_ChDesp}, /* Germany */
-	{"GR", CE, Country_GR_ChDesp}, /* Greece */
-	{"GL", CE, Country_GL_ChDesp}, /* Greenland */
-	{"GD", CE, Country_GD_ChDesp}, /* Grenada */
-	{"GU", CE, Country_GU_ChDesp}, /* Guam */
-	{"GT", CE, Country_GT_ChDesp}, /* Guatemala */
-	{"HT", CE, Country_HT_ChDesp}, /* Haiti */
-	{"HN", CE, Country_HN_ChDesp}, /* Honduras */
-	{"HK", CE, Country_HK_ChDesp}, /* Hong Kong */
-	{"HU", CE, Country_HU_ChDesp}, /* Hungary */
-	{"IS", CE, Country_IS_ChDesp}, /* Iceland */
-	{"IN", CE, Country_IN_ChDesp}, /* India */
-	{"ID", CE, Country_ID_ChDesp}, /* Indonesia */
-	{"IR", CE, Country_IR_ChDesp}, /* Iran, Islamic Republic of */
-	{"IE", CE, Country_IE_ChDesp}, /* Ireland */
-	{"IL", CE, Country_IL_ChDesp}, /* Israel */
-	{"IT", CE, Country_IT_ChDesp}, /* Italy */
-	{"JM", CE, Country_JM_ChDesp}, /* Jamaica */
-	{"JP", JAP,Country_JP_ChDesp}, /* Japan */		
-	{"JO", CE, Country_JO_ChDesp}, /* Jordan */	
-	{"KZ", CE, Country_KZ_ChDesp}, /* Kazakhstan */			
-	{"KE", CE, Country_KE_ChDesp}, /* Kenya */	
-	{"KP", CE, Country_KP_ChDesp}, /* Korea, Democratic People's Republic of */
-	{"KR", CE, Country_KR_ChDesp}, /* Korea, Republic of */			
-	{"KW", CE, Country_KW_ChDesp}, /* Kuwait */			
-	{"LV", CE, Country_LV_ChDesp}, /* Latvia */			
-	{"LB", CE, Country_LB_ChDesp}, /* Lebanon */			
-	{"LI", CE, Country_LI_ChDesp}, /* Liechtenstein */			
-	{"LT", CE, Country_LT_ChDesp}, /* Lithuania */			
-	{"LU", CE, Country_LU_ChDesp}, /* Luxembourg */			
-	{"MO", CE, Country_MO_ChDesp}, /* Macao */			
-	{"MK", CE, Country_MK_ChDesp}, /* Macedonia, Republic of */			
-	{"MY", CE, Country_MY_ChDesp}, /* Malaysia */			
-	{"MT", CE, Country_MT_ChDesp}, /* Malta */			
-	{"MX", CE, Country_MX_ChDesp}, /* Mexico */			
-	{"MC", CE, Country_MC_ChDesp}, /* Monaco */			
-	{"MA", CE, Country_MA_ChDesp}, /* Morocco */			
-	{"NP", CE, Country_NP_ChDesp}, /* Nepal */			
-	{"NL", CE, Country_NL_ChDesp}, /* Netherlands */			
-	{"AN", CE, Country_AN_ChDesp}, /* Netherlands Antilles */			
-	{"NZ", CE, Country_NZ_ChDesp}, /* New Zealand */			
-	{"NO", CE, Country_NO_ChDesp}, /* Norway */			
-	{"OM", CE, Country_OM_ChDesp}, /* Oman */		
-	{"PK", CE, Country_PK_ChDesp}, /* Pakistan */		
-	{"PA", CE, Country_PA_ChDesp}, /* Panama */	
-	{"PG", CE, Country_PG_ChDesp}, /* Papua New Guinea */	
-	{"PE", CE, Country_PE_ChDesp}, /* Peru */			
-	{"PH", CE, Country_PH_ChDesp}, /* Philippines */		
-	{"PL", CE, Country_PL_ChDesp}, /* Poland */			
-	{"PT", CE, Country_PT_ChDesp}, /* Portuga l*/			
-	{"PR", CE, Country_PR_ChDesp}, /* Puerto Rico */			
-	{"QA", CE, Country_QA_ChDesp}, /* Qatar */			
-	{"RO", CE, Country_RO_ChDesp}, /* Romania */			
-	{"RU", CE, Country_RU_ChDesp}, /* Russian Federation */			
-	{"BL", CE, Country_BL_ChDesp}, /* Saint Barth'elemy */			
-	{"SA", CE, Country_SA_ChDesp}, /* Saudi Arabia */			
-	{"SG", CE, Country_SG_ChDesp}, /* Singapore */			
-	{"SK", CE, Country_SK_ChDesp}, /* Slovakia */			
-	{"SI", CE, Country_SI_ChDesp}, /* Slovenia */					
-	{"ZA", CE, Country_ZA_ChDesp}, /* South Africa */					
-	{"ES", CE, Country_ES_ChDesp}, /* Spain */				
-	{"LK", CE, Country_LK_ChDesp}, /* Sri Lanka */				
-	{"SE", CE, Country_SE_ChDesp}, /* Sweden */					
-	{"CH", CE, Country_CH_ChDesp}, /* Switzerland */					
-	{"SY", CE, Country_SY_ChDesp}, /* Syrian Arab Republic */					
-	{"TW", FCC,Country_TW_ChDesp}, /* Taiwan */			
-	{"TH", CE, Country_TH_ChDesp}, /* Thailand */					
-	{"TT", CE, Country_TT_ChDesp}, /* Trinidad and Tobago */			
-	{"TN", CE, Country_TN_ChDesp}, /* Tunisia */				
-	{"TR", CE, Country_TR_ChDesp}, /* Turkey */					
-	{"UA", CE, Country_UA_ChDesp}, /* Ukraine */					
-	{"AE", CE, Country_AE_ChDesp}, /* United Arab Emirates */					
-	{"GB", CE, Country_GB_ChDesp}, /* United Kingdom */			
-	{"US", FCC,Country_US_ChDesp}, /* United States */			
-	{"UY", CE, Country_UY_ChDesp}, /* Uruguay */					
-	{"UZ", CE, Country_UZ_ChDesp}, /* Uzbekistan */				
-	{"VE", CE, Country_VE_ChDesp}, /* Venezuela */				
-	{"VN", CE, Country_VN_ChDesp}, /* Viet Nam */					
-	{"YE", CE, Country_YE_ChDesp}, /* Yemen */					
-	{"ZW", CE, Country_ZW_ChDesp}, /* Zimbabwe */	
-	{"EU", CE, Country_EU_ChDesp}, /* Europe */
-	{"NA", FCC,Country_NA_ChDesp}, /* North America */
-	{"WO", CE, Country_WO_ChDesp}, /* World Wide */
-	{""  , 0,  NULL}	     , /* End */	
+	{"AL", CE, Country_AL_ChDesp, TRUE}, /* Albania */
+	{"DZ", CE, Country_DZ_ChDesp, TRUE}, /* Algeria */
+	{"AR", CE, Country_AR_ChDesp, TRUE}, /* Argentina */
+	{"AM", CE, Country_AM_ChDesp, TRUE}, /* Armenia */
+	{"AW", CE, Country_AW_ChDesp, TRUE}, /* Aruba */
+	{"AU", CE, Country_AU_ChDesp, TRUE}, /* Australia */
+	{"AT", CE, Country_AT_ChDesp, TRUE}, /* Austria */
+	{"AZ", CE, Country_AZ_ChDesp, TRUE}, /* Azerbaijan */
+	{"BH", CE, Country_BH_ChDesp, TRUE}, /* Bahrain */
+	{"BD", CE, Country_BD_ChDesp, TRUE}, /* Bangladesh */
+	{"BB", CE, Country_BB_ChDesp, TRUE}, /* Barbados */
+	{"BY", CE, Country_BY_ChDesp, TRUE}, /* Belarus */
+	{"BE", CE, Country_BE_ChDesp, TRUE}, /* Belgium */
+	{"BZ", CE, Country_BZ_ChDesp, TRUE}, /* Belize */
+	{"BO", CE, Country_BO_ChDesp, TRUE}, /* Bolivia */
+	{"BA", CE, Country_BA_ChDesp, TRUE}, /* Bosnia and Herzegovina */
+	{"BR", CE, Country_BR_ChDesp, TRUE}, /* Brazil */
+	{"BN", CE, Country_BN_ChDesp, TRUE}, /* Brunei Darussalam */
+	{"BG", CE, Country_BG_ChDesp, TRUE}, /* Bulgaria */
+	{"KH", CE, Country_KH_ChDesp, TRUE}, /* Cambodia */
+	{"CA", FCC,Country_CA_ChDesp, FALSE}, /* Canada */
+	{"CL", CE, Country_CL_ChDesp, TRUE}, /* Chile */
+	{"CN", CE, Country_CN_ChDesp, FALSE}, /* China */
+	{"CO", CE, Country_CO_ChDesp, TRUE}, /* Colombia */
+	{"CR", CE, Country_CR_ChDesp, TRUE}, /* Costa Rica */
+	{"HR", CE, Country_HR_ChDesp, TRUE}, /* Croatia */
+	{"CY", CE, Country_CY_ChDesp, TRUE}, /* Cyprus */
+	{"CZ", CE, Country_CZ_ChDesp, TRUE}, /* Czech Republic */
+	{"DK", CE, Country_DK_ChDesp, TRUE}, /* Denmark */
+	{"DO", CE, Country_DO_ChDesp, TRUE}, /* Dominican Republic */
+	{"EC", CE, Country_EC_ChDesp, TRUE}, /* Ecuador */
+	{"EG", CE, Country_EG_ChDesp, TRUE}, /* Egypt */
+	{"SV", CE, Country_SV_ChDesp, TRUE}, /* El Salvador */
+	{"EE", CE, Country_EE_ChDesp, TRUE}, /* Estonia */
+	{"FI", CE, Country_FI_ChDesp, TRUE}, /* Finland */
+	{"FR", CE, Country_FR_ChDesp, TRUE}, /* France */
+	{"GE", CE, Country_GE_ChDesp, TRUE}, /* Georgia */
+	{"DE", CE, Country_DE_ChDesp, TRUE}, /* Germany */
+	{"GR", CE, Country_GR_ChDesp, TRUE}, /* Greece */
+	{"GL", CE, Country_GL_ChDesp, TRUE}, /* Greenland */
+	{"GD", CE, Country_GD_ChDesp, TRUE}, /* Grenada */
+	{"GU", CE, Country_GU_ChDesp, TRUE}, /* Guam */
+	{"GT", CE, Country_GT_ChDesp, TRUE}, /* Guatemala */
+	{"HT", CE, Country_HT_ChDesp, TRUE}, /* Haiti */
+	{"HN", CE, Country_HN_ChDesp, TRUE}, /* Honduras */
+	{"HK", CE, Country_HK_ChDesp, TRUE}, /* Hong Kong */
+	{"HU", CE, Country_HU_ChDesp, TRUE}, /* Hungary */
+	{"IS", CE, Country_IS_ChDesp, TRUE}, /* Iceland */
+	{"IN", CE, Country_IN_ChDesp, TRUE}, /* India */
+	{"ID", CE, Country_ID_ChDesp, TRUE}, /* Indonesia */
+	{"IR", CE, Country_IR_ChDesp, TRUE}, /* Iran, Islamic Republic of */
+	{"IE", CE, Country_IE_ChDesp, TRUE}, /* Ireland */
+	{"IL", CE, Country_IL_ChDesp, TRUE}, /* Israel */
+	{"IT", CE, Country_IT_ChDesp, TRUE}, /* Italy */
+	{"JM", CE, Country_JM_ChDesp, TRUE}, /* Jamaica */
+	{"JP", JAP,Country_JP_ChDesp, FALSE}, /* Japan */		
+	{"JO", CE, Country_JO_ChDesp, TRUE}, /* Jordan */	
+	{"KZ", CE, Country_KZ_ChDesp, TRUE}, /* Kazakhstan */			
+	{"KE", CE, Country_KE_ChDesp, TRUE}, /* Kenya */	
+	{"KP", CE, Country_KP_ChDesp, TRUE}, /* Korea, Democratic People's Republic of */
+	{"KR", CE, Country_KR_ChDesp, TRUE}, /* Korea, Republic of */			
+	{"KW", CE, Country_KW_ChDesp, TRUE}, /* Kuwait */			
+	{"LV", CE, Country_LV_ChDesp, TRUE}, /* Latvia */			
+	{"LB", CE, Country_LB_ChDesp, TRUE}, /* Lebanon */			
+	{"LI", CE, Country_LI_ChDesp, TRUE}, /* Liechtenstein */			
+	{"LT", CE, Country_LT_ChDesp, TRUE}, /* Lithuania */			
+	{"LU", CE, Country_LU_ChDesp, TRUE}, /* Luxembourg */			
+	{"MO", CE, Country_MO_ChDesp, TRUE}, /* Macao */			
+	{"MK", CE, Country_MK_ChDesp, TRUE}, /* Macedonia, Republic of */			
+	{"MY", CE, Country_MY_ChDesp, TRUE}, /* Malaysia */			
+	{"MT", CE, Country_MT_ChDesp, TRUE}, /* Malta */			
+	{"MX", CE, Country_MX_ChDesp, TRUE}, /* Mexico */			
+	{"MC", CE, Country_MC_ChDesp, TRUE}, /* Monaco */			
+	{"MA", CE, Country_MA_ChDesp, TRUE}, /* Morocco */			
+	{"NP", CE, Country_NP_ChDesp, TRUE}, /* Nepal */			
+	{"NL", CE, Country_NL_ChDesp, TRUE}, /* Netherlands */			
+	{"AN", CE, Country_AN_ChDesp, TRUE}, /* Netherlands Antilles */			
+	{"NZ", CE, Country_NZ_ChDesp, TRUE}, /* New Zealand */			
+	{"NO", CE, Country_NO_ChDesp, TRUE}, /* Norway */			
+	{"OM", CE, Country_OM_ChDesp, TRUE}, /* Oman */		
+	{"PK", CE, Country_PK_ChDesp, TRUE}, /* Pakistan */		
+	{"PA", CE, Country_PA_ChDesp, TRUE}, /* Panama */	
+	{"PG", CE, Country_PG_ChDesp, TRUE}, /* Papua New Guinea */	
+	{"PE", CE, Country_PE_ChDesp, TRUE}, /* Peru */			
+	{"PH", CE, Country_PH_ChDesp, TRUE}, /* Philippines */		
+	{"PL", CE, Country_PL_ChDesp, TRUE}, /* Poland */			
+	{"PT", CE, Country_PT_ChDesp, TRUE}, /* Portuga l*/			
+	{"PR", CE, Country_PR_ChDesp, TRUE}, /* Puerto Rico */			
+	{"QA", CE, Country_QA_ChDesp, TRUE}, /* Qatar */			
+	{"RO", CE, Country_RO_ChDesp, TRUE}, /* Romania */			
+	{"RU", CE, Country_RU_ChDesp, TRUE}, /* Russian Federation */			
+	{"BL", CE, Country_BL_ChDesp, TRUE}, /* Saint Barth'elemy */			
+	{"SA", CE, Country_SA_ChDesp, TRUE}, /* Saudi Arabia */			
+	{"SG", CE, Country_SG_ChDesp, TRUE}, /* Singapore */			
+	{"SK", CE, Country_SK_ChDesp, TRUE}, /* Slovakia */			
+	{"SI", CE, Country_SI_ChDesp, TRUE}, /* Slovenia */					
+	{"ZA", CE, Country_ZA_ChDesp, TRUE}, /* South Africa */					
+	{"ES", CE, Country_ES_ChDesp, TRUE}, /* Spain */				
+	{"LK", CE, Country_LK_ChDesp, TRUE}, /* Sri Lanka */				
+	{"SE", CE, Country_SE_ChDesp, TRUE}, /* Sweden */					
+	{"CH", CE, Country_CH_ChDesp, TRUE}, /* Switzerland */					
+	{"SY", CE, Country_SY_ChDesp, TRUE}, /* Syrian Arab Republic */					
+	{"TW", FCC,Country_TW_ChDesp, FALSE}, /* Taiwan */			
+	{"TH", CE, Country_TH_ChDesp, TRUE}, /* Thailand */					
+	{"TT", CE, Country_TT_ChDesp, TRUE}, /* Trinidad and Tobago */			
+	{"TN", CE, Country_TN_ChDesp, TRUE}, /* Tunisia */				
+	{"TR", CE, Country_TR_ChDesp, TRUE}, /* Turkey */					
+	{"UA", CE, Country_UA_ChDesp, TRUE}, /* Ukraine */					
+	{"AE", CE, Country_AE_ChDesp, TRUE}, /* United Arab Emirates */					
+	{"GB", CE, Country_GB_ChDesp, TRUE}, /* United Kingdom */			
+	{"US", FCC,Country_US_ChDesp, FALSE}, /* United States */			
+	{"UY", CE, Country_UY_ChDesp, TRUE}, /* Uruguay */					
+	{"UZ", CE, Country_UZ_ChDesp, TRUE}, /* Uzbekistan */				
+	{"VE", CE, Country_VE_ChDesp, TRUE}, /* Venezuela */				
+	{"VN", CE, Country_VN_ChDesp, TRUE}, /* Viet Nam */					
+	{"YE", CE, Country_YE_ChDesp, TRUE}, /* Yemen */					
+	{"ZW", CE, Country_ZW_ChDesp, TRUE}, /* Zimbabwe */	
+	{"EU", CE, Country_EU_ChDesp, TRUE}, /* Europe */
+	{"NA", FCC,Country_NA_ChDesp, FALSE}, /* North America */
+	{"WO", FCC, Country_WO_ChDesp, FALSE}, /* World Wide */
+	{""  , 0,  NULL, FALSE}	     , /* End */	
 };
 
 static PCH_REGION GetChRegion(
@@ -1814,6 +1830,186 @@ VOID BuildBeaconChList(
 }
 #endif /* EXT_BUILD_CHANNEL_LIST */
 
+
+COUNTRY_PROP CountryProp[]=
+{
+	{"AL", CE, TRUE}, /* Albania */
+	{"DZ", CE, TRUE }, /* Algeria */
+	{"AR", CE, TRUE }, /* Argentina */
+	{"AM", CE, TRUE }, /* Armenia */
+	{"AW", CE, TRUE }, /* Aruba */
+	{"AU", CE, TRUE }, /* Australia */
+	{"AT", CE, TRUE }, /* Austria */
+	{"AZ", CE, TRUE }, /* Azerbaijan */
+	{"BH", CE, TRUE }, /* Bahrain */
+	{"BD", CE, TRUE }, /* Bangladesh */
+	{"BB", CE, TRUE }, /* Barbados */
+	{"BY", CE, TRUE }, /* Belarus */
+	{"BE", CE, TRUE }, /* Belgium */
+	{"BZ", CE, TRUE }, /* Belize */
+	{"BO", CE, TRUE }, /* Bolivia */
+	{"BA", CE, TRUE }, /* Bosnia and Herzegovina */
+	{"BR", CE, TRUE }, /* Brazil */
+	{"BN", CE, TRUE }, /* Brunei Darussalam */
+	{"BG", CE, TRUE }, /* Bulgaria */
+	{"KH", CE, TRUE }, /* Cambodia */
+	{"CA", FCC, FALSE}, /* Canada */
+	{"CL", CE, TRUE }, /* Chile */
+	{"CN", CE, FALSE }, /* China */
+	{"CO", CE, TRUE }, /* Colombia */
+	{"CR", CE, TRUE }, /* Costa Rica */
+	{"HR", CE, TRUE }, /* Croatia */
+	{"CY", CE, TRUE }, /* Cyprus */
+	{"CZ", CE, TRUE }, /* Czech Republic */
+	{"DK", CE, TRUE }, /* Denmark */
+	{"DO", CE, TRUE }, /* Dominican Republic */
+	{"EC", CE, TRUE }, /* Ecuador */
+	{"EG", CE, TRUE }, /* Egypt */
+	{"SV", CE, TRUE }, /* El Salvador */
+	{"EE", CE, TRUE }, /* Estonia */
+	{"FI", CE, TRUE }, /* Finland */
+	{"FR", CE, TRUE }, /* France */
+	{"GE", CE, TRUE }, /* Georgia */
+	{"DE", CE, TRUE }, /* Germany */
+	{"GR", CE, TRUE }, /* Greece */
+	{"GL", CE, TRUE }, /* Greenland */
+	{"GD", CE, TRUE }, /* Grenada */
+	{"GU", CE, TRUE }, /* Guam */
+	{"GT", CE, TRUE }, /* Guatemala */
+	{"HT", CE, TRUE }, /* Haiti */
+	{"HN", CE, TRUE }, /* Honduras */
+	{"HK", CE, TRUE }, /* Hong Kong */
+	{"HU", CE, TRUE }, /* Hungary */
+	{"IS", CE, TRUE }, /* Iceland */
+	{"IN", CE, TRUE }, /* India */
+	{"ID", CE, TRUE }, /* Indonesia */
+	{"IR", CE, TRUE }, /* Iran, Islamic Republic of */
+	{"IE", CE, TRUE }, /* Ireland */
+	{"IL", CE, TRUE }, /* Israel */
+	{"IT", CE, TRUE }, /* Italy */
+	{"JM", CE, TRUE }, /* Jamaica */
+	{"JP", JAP, FALSE}, /* Japan */		
+	{"JO", CE, TRUE }, /* Jordan */	
+	{"KZ", CE, TRUE }, /* Kazakhstan */			
+	{"KE", CE, TRUE }, /* Kenya */	
+	{"KP", CE, TRUE }, /* Korea, Democratic People's Republic of */
+	{"KR", CE, TRUE }, /* Korea, Republic of */			
+	{"KW", CE, TRUE }, /* Kuwait */			
+	{"LV", CE, TRUE }, /* Latvia */			
+	{"LB", CE, TRUE }, /* Lebanon */			
+	{"LI", CE, TRUE }, /* Liechtenstein */			
+	{"LT", CE, TRUE }, /* Lithuania */			
+	{"LU", CE, TRUE }, /* Luxembourg */			
+	{"MO", CE, TRUE }, /* Macao */			
+	{"MK", CE, TRUE }, /* Macedonia, Republic of */			
+	{"MY", CE, TRUE }, /* Malaysia */			
+	{"MT", CE, TRUE }, /* Malta */			
+	{"MX", CE, TRUE }, /* Mexico */			
+	{"MC", CE, TRUE }, /* Monaco */			
+	{"MA", CE, TRUE }, /* Morocco */			
+	{"NP", CE, TRUE }, /* Nepal */			
+	{"NL", CE, TRUE }, /* Netherlands */			
+	{"AN", CE, TRUE }, /* Netherlands Antilles */			
+	{"NZ", CE, TRUE }, /* New Zealand */			
+	{"NO", CE, TRUE }, /* Norway */			
+	{"OM", CE, TRUE }, /* Oman */		
+	{"PK", CE, TRUE }, /* Pakistan */		
+	{"PA", CE, TRUE }, /* Panama */	
+	{"PG", CE, TRUE }, /* Papua New Guinea */	
+	{"PE", CE, TRUE }, /* Peru */			
+	{"PH", CE, TRUE }, /* Philippines */		
+	{"PL", CE, TRUE }, /* Poland */			
+	{"PT", CE, TRUE }, /* Portuga l*/			
+	{"PR", CE, TRUE }, /* Puerto Rico */			
+	{"QA", CE, TRUE }, /* Qatar */			
+	{"RO", CE, TRUE }, /* Romania */			
+	{"RU", CE, TRUE }, /* Russian Federation */			
+	{"BL", CE, TRUE }, /* Saint Barth'elemy */			
+	{"SA", CE, TRUE }, /* Saudi Arabia */			
+	{"SG", CE, TRUE }, /* Singapore */			
+	{"SK", CE, TRUE }, /* Slovakia */			
+	{"SI", CE, TRUE }, /* Slovenia */					
+	{"ZA", CE, TRUE }, /* South Africa */					
+	{"ES", CE, TRUE }, /* Spain */				
+	{"LK", CE, TRUE }, /* Sri Lanka */				
+	{"SE", CE, TRUE }, /* Sweden */					
+	{"CH", CE, TRUE }, /* Switzerland */					
+	{"SY", CE, TRUE }, /* Syrian Arab Republic */					
+	{"TW", FCC, FALSE}, /* Taiwan */			
+	{"TH", CE, TRUE }, /* Thailand */					
+	{"TT", CE, TRUE }, /* Trinidad and Tobago */			
+	{"TN", CE, TRUE }, /* Tunisia */				
+	{"TR", CE, TRUE }, /* Turkey */					
+	{"UA", CE, TRUE }, /* Ukraine */					
+	{"AE", CE, TRUE }, /* United Arab Emirates */					
+	{"GB", CE, TRUE }, /* United Kingdom */			
+	{"US", FCC, FALSE}, /* United States */			
+	{"UY", CE, TRUE }, /* Uruguay */					
+	{"UZ", CE, TRUE }, /* Uzbekistan */				
+	{"VE", CE, TRUE }, /* Venezuela */				
+	{"VN", CE, TRUE }, /* Viet Nam */					
+	{"YE", CE, TRUE }, /* Yemen */					
+	{"ZW", CE, TRUE }, /* Zimbabwe */	
+	{"EU", CE, TRUE }, /* Europe */
+	{"NA", FCC, FALSE}, /* North America */
+	{"WO", FCC, FALSE}, /* World Wide */
+	{""  , 0, FALSE}	     , /* End */	
+};
+
+#ifndef EXT_BUILD_CHANNEL_LIST
+static PCOUNTRY_PROP GetCountryProp(
+	IN PUCHAR CntryCode)
+{
+	INT loop = 0;
+	PCOUNTRY_PROP pCountryProp = NULL;
+
+	while (strcmp((RTMP_STRING *) CountryProp[loop].CountReg, "") != 0)
+	{
+		if (strncmp((RTMP_STRING *) CountryProp[loop].CountReg, (RTMP_STRING *) CntryCode, 2) == 0)
+		{
+			pCountryProp = &CountryProp[loop];
+			break;
+		}
+		loop++;
+	}
+
+	/* Default: use WO*/
+	if (pCountryProp == NULL)
+		pCountryProp = GetCountryProp("WO");
+
+	return pCountryProp;
+}
+#endif /* !EXT_BUILD_CHANNEL_LIST */
+BOOLEAN GetEDCCASupport(
+	IN PRTMP_ADAPTER pAd)
+{
+	BOOLEAN ret = FALSE;
+
+#ifdef EXT_BUILD_CHANNEL_LIST
+	PCH_REGION pChReg;
+	
+	pChReg = GetChRegion(pAd->CommonCfg.CountryCode);
+
+	if ((pChReg->DfsType == CE) && (pChReg->edcca_on == TRUE) )
+	{
+		// actually need to check PM's table in CE country
+		ret = TRUE;
+	}
+#else
+	PCOUNTRY_PROP pCountryProp;
+	
+	pCountryProp = GetCountryProp(pAd->CommonCfg.CountryCode);
+
+	if ((pCountryProp->DfsType == CE) && (pCountryProp->edcca_on == TRUE))
+	{
+		// actually need to check PM's table in CE country
+		ret = TRUE;
+	}
+#endif
+
+	return ret;
+	
+}
 #ifdef DOT11_N_SUPPORT
 static BOOLEAN IsValidChannel(
 	IN PRTMP_ADAPTER pAd,
@@ -2063,5 +2259,41 @@ VOID RTMP_MapKHZ2ChannelID(
 	}
 	if (chIdx == CH_HZ_ID_MAP_NUM)
 		(*pCh) = 1;
+}
+
+UCHAR RTMP_GetPrimaryCh(RTMP_ADAPTER *pAd, UCHAR ch)
+{
+	UCHAR primCh = 0;
+	
+	if ((ch != pAd->CommonCfg.Channel) 
+		&& (ch != pAd->CommonCfg.CentralChannel) 
+#ifdef DOT11_VHT_AC
+		&& (ch != pAd->CommonCfg.vht_cent_ch)
+#endif /* DOT11_VHT_AC */		
+	)
+	{
+		if ((ch > 2) && 
+			(pAd->CommonCfg.BBPCurrentBW == BW_40) && 
+			(pAd->CommonCfg.CentralChannel == EXTCHA_ABOVE)
+		)
+		{
+			primCh = (ch - 2);
+		}
+		else if ((pAd->CommonCfg.BBPCurrentBW == BW_40) && 
+				(pAd->CommonCfg.AddHTInfo.AddHtInfo.ExtChanOffset == EXTCHA_BELOW))
+		{
+			if (ch == 14)
+				primCh = (ch + 1);
+			else
+				primCh = (ch + 2);
+		}
+		else
+			primCh = ch;
+	}
+	else
+		primCh = pAd->CommonCfg.Channel;
+	
+
+	return primCh;
 }
 

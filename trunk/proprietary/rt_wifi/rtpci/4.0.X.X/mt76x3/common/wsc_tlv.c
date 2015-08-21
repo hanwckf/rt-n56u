@@ -200,7 +200,7 @@ static VOID	WscParseEncrSettings(
 {
 	USHORT	WscType, WscLen, HmacLen;
 	PUCHAR	pData;
-	UCHAR	Hmac[8], Temp[32];
+	UCHAR	Hmac[8]={0}, Temp[32];
     PWSC_REG_DATA		pReg = (PWSC_REG_DATA) &pWscControl->RegData;
 
 	HmacLen = (USHORT)(PlainLength - 12);
@@ -437,7 +437,7 @@ int WscDeriveKey (
     unsigned char *key, unsigned int keyBits )
 {
     unsigned int i = 0, iterations = 0;
-    unsigned char input[64], output[128];
+    unsigned char input[64], output[128]={0};
     unsigned char hmac[32];
     unsigned int temp;
 
@@ -706,10 +706,10 @@ int BuildMessageM1(
 		/*
 			AP MUST NOT support using PBC to add an external Registrar 
 		*/
-		if (CurOpMode == AP_MODE)
+		/*if (CurOpMode == AP_MODE)
 		{
 			ConfigMethods = (pWscControl->WscConfigMethods & 0x210F);
-		}
+		}*/
 
 
 		if ((CurOpMode == AP_MODE) && ((pWscControl->WscConfMode & WSC_ENROLLEE) != 0)
@@ -717,6 +717,8 @@ int BuildMessageM1(
 		{
 		        ConfigMethods |= WSC_CONFMET_PBC;
 		        DBGPRINT(RT_DEBUG_TRACE, ("[NOTICE] BuildMessageM1 - Add PBC in ConfigMethods for AP_MODE & WSC_ENROLLEE & PBC\n"));
+		}else if( CurOpMode == AP_MODE ){
+			ConfigMethods = (pWscControl->WscConfigMethods & 0x210F);
 		}
 		}
 		else
@@ -2554,11 +2556,11 @@ int ProcessMessageM1(
 	int					ret = WSC_ERROR_NO_ERROR, DH_Len = 0, idx;
 	PUCHAR				pData = NULL;
 	USHORT				WscType, WscLen, FieldCheck[7]={0,0,0,0,0,0,0};
-	UCHAR				CurOpMode = 0xFF;
+
 
 #ifdef CONFIG_AP_SUPPORT
     IF_DEV_CONFIG_OPMODE_ON_AP(pAdapter)
-		CurOpMode = AP_MODE;
+		//CurOpMode = AP_MODE;
 #endif /* CONFIG_AP_SUPPORT */
 
 
@@ -2849,8 +2851,8 @@ int ProcessMessageM2(
 	INT					DH_Len;
 	PUCHAR				pData = NULL;
 	USHORT				WscType, WscLen, FieldCheck[7]={0,0,0,0,0,0,0};
-	MAC_TABLE_ENTRY		*pEntry = NULL;
-	UCHAR				CurOpMode = 0xFF;
+	//MAC_TABLE_ENTRY		*pEntry = NULL;
+	//UCHAR				CurOpMode = 0xFF;
 #ifdef WSC_NFC_SUPPORT	
 	INT					EncrLen;
 	UCHAR				*IV_DecrData=NULL;//IV len 16 ,DecrData len 
@@ -2861,7 +2863,7 @@ int ProcessMessageM2(
 
 #ifdef CONFIG_AP_SUPPORT
     IF_DEV_CONFIG_OPMODE_ON_AP(pAdapter)
-		CurOpMode = AP_MODE;
+		//CurOpMode = AP_MODE;
 #endif /* CONFIG_AP_SUPPORT */
 
 	
@@ -2896,7 +2898,7 @@ int ProcessMessageM2(
 	NdisMoveMemory(pReg->LastRx.Data, precv, Length);
 	pData = pReg->LastRx.Data;
 	
-		pEntry = MacTableLookup(pAdapter, pReg->PeerInfo.MacAddr);
+		/*pEntry =*/ MacTableLookup(pAdapter, pReg->PeerInfo.MacAddr);
 
 	NdisZeroMemory(&pWscControl->WscPeerInfo, sizeof(WSC_PEER_DEV_INFO));
 

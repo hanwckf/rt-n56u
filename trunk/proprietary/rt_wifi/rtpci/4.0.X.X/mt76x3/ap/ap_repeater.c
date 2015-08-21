@@ -95,8 +95,25 @@ VOID RTMPInsertRepeaterEntry(
 								{0x02, 0x14, 0x6C}, {0x02, 0x18, 0x4D},
 								{0x02, 0x1B, 0x2F}, {0x02, 0x1E, 0x2A}};
 
+ 	MAC_TABLE_ENTRY *pMacEntry = NULL; 	
+	STA_TR_ENTRY *tr_entry = NULL;
+
 	DBGPRINT(RT_DEBUG_TRACE, (" %s.\n", __FUNCTION__));
 
+
+	pMacEntry = MacTableLookup(pAd, pAddr);
+
+ 	if (pMacEntry && IS_ENTRY_CLIENT(pMacEntry)) 	
+	{
+
+		tr_entry = &pAd->MacTab.tr_entry[pMacEntry->wcid];
+		if (tr_entry && tr_entry->PortSecured == WPA_802_1X_PORT_NOT_SECURED)
+		{
+			DBGPRINT(RT_DEBUG_ERROR, (" wireless client is not ready !!!\n"));
+			return ;
+		} 	
+	}
+	
 	NdisAcquireSpinLock(&pAd->ApCfg.ReptCliEntryLock);
 
 	if (pAd->ApCfg.RepeaterCliSize >= MAX_EXT_MAC_ADDR_SIZE)
@@ -457,7 +474,7 @@ MAC_TABLE_ENTRY *RTMPInsertRepeaterMacEntry(
 		pEntry->func_tb_idx = (apIdx - MIN_NET_DEVICE_FOR_APCLI);
 
 		if (IS_ENTRY_APCLI(pEntry))
-			pEntry->apidx = (apIdx - MIN_NET_DEVICE_FOR_APCLI);
+			pEntry->func_tb_idx = (apIdx - MIN_NET_DEVICE_FOR_APCLI);
 
 		pEntry->pMbss = NULL;
 
@@ -502,6 +519,7 @@ MAC_TABLE_ENTRY *RTMPInsertRepeaterMacEntry(
 		pEntry->CapabilityInfo = 0;
 		pEntry->PsMode = PWR_ACTIVE;
 		pAd->MacTab.tr_entry[i].PsQIdleCount = 0;
+		pAd->MacTab.tr_entry[i].PsTokenFlag = 0;
 		//pEntry->PsQIdleCount = 0;
 		pEntry->NoDataIdleCount = 0;
 		pEntry->AssocDeadLine = MAC_TABLE_ASSOC_TIMEOUT;
@@ -552,7 +570,9 @@ MAC_TABLE_ENTRY *RTMPInsertRepeaterMacEntry(
 	}
 
 	NdisReleaseSpinLock(&pAd->MacTabLock);
-
+	/*update tx burst, must after unlock pAd->MacTabLock*/
+	rtmp_tx_burst_set(pAd);
+	
 	return pEntry;
 }
 
@@ -763,7 +783,7 @@ BOOLEAN RTMPRepeaterRemoveInvaildMacEntry(
 INT Show_Repeater_Cli_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	INT i;
-    UINT32 RegValue;
+    //UINT32 RegValue;
 	ULONG DataRate=0;
 
 	if (!pAd->ApCfg.bMACRepeaterEn)
@@ -793,7 +813,7 @@ INT Show_Repeater_Cli_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 					pEntry->ReptCliAddr[3], pEntry->ReptCliAddr[4], pEntry->ReptCliAddr[5]);
 
 			printk("%-4d", (int)pEntry->Aid);
-			printk("%-4d-%d", (int)pEntry->apidx, pEntry->func_tb_idx);
+			printk("%-4d", (int)pEntry->func_tb_idx);
 			printk("%-4d", (int)pEntry->PsMode);
 			printk("%-4d", (int)CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE));
 #ifdef DOT11_N_SUPPORT

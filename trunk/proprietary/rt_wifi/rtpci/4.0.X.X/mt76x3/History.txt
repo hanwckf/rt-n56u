@@ -50,12 +50,12 @@ F/W:
 6. Lower WF0/WF1 TSSI ON TH to 0dBm
 
 
-[V4.0.0.6]
+[V4.0.0.6 ]
 Host Driver:
 1.Add tx power percentage function for iPA
 2. Modify AP PS, use CR replace AP PS CMD
 3.fix apcli vs DIR655 IOT can't set ba size to 21
-4.Set MSSID *7, iPhone5 connect then ping overnight, still ping fail (偶爾PSE Redirection bit被舉起, STA ping fail)
+4.Set MSSID *7, iPhone5 connect then ping overnight, still ping fail (?�爾PSE Redirection bit被�?�? STA ping fail)
 for ps retrieve function, rename "token_enq_fail" to "token_enq_all_fail" to let it more clear.
 5. MT7603 auto rate update
 6. Fix [AP][TGn]:4.2.47 Power Save, fail on step 8,each PS poll the station sends to the APUT, the APUT is expected to send only one directed data packet in response.

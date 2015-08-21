@@ -275,6 +275,7 @@ typedef struct _CMD_CONTEXT
 */
 typedef struct _RX_CONTEXT
 {
+	DL_LIST list;
 	PUCHAR				TransferBuffer;
 	PVOID				pAd;
 	PIRP				pIrp;/*used to cancel pending bulk in. */

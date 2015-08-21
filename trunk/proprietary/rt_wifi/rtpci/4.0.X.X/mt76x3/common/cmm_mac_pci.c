@@ -293,7 +293,7 @@ VOID RTMPFreeTxRxRingMemory(RTMP_ADAPTER *pAd)
 NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 {
 	INT num, index;
-	ULONG RingBasePaHigh, RingBasePaLow;
+	ULONG /*RingBasePaHigh,*/ RingBasePaLow;
 	VOID *RingBaseVa;
 	RTMP_TX_RING *pTxRing;
 	RTMP_RX_RING *pRxRing;
@@ -302,7 +302,7 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 	PNDIS_PACKET pPacket;
 	TXD_STRUC *pTxD;
 	RXD_STRUC *pRxD;
-	ULONG ErrorValue = 0;
+	//ULONG ErrorValue = 0;
 	NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
 
 
@@ -316,21 +316,21 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 	/* (5 TX rings = 4 ACs + 1 HCCA)*/
 	for (num = 0; num < NUM_OF_TX_RING; num++)
 	{
-		ULONG BufBasePaHigh, BufBasePaLow;
+		ULONG /*BufBasePaHigh,*/ BufBasePaLow;
 		VOID *BufBaseVa;
 		
 		/* memory zero the  Tx ring descriptor's memory */
 		pDescRing = &pAd->TxDescRing[num];
 		NdisZeroMemory(pDescRing->AllocVa, pDescRing->AllocSize);
 		/* Save PA & VA for further operation*/
-		RingBasePaHigh = RTMP_GetPhysicalAddressHigh(pDescRing->AllocPa);
+		//RingBasePaHigh = RTMP_GetPhysicalAddressHigh(pDescRing->AllocPa);
 		RingBasePaLow = RTMP_GetPhysicalAddressLow (pDescRing->AllocPa);
 		RingBaseVa = pDescRing->AllocVa;
 
 		/* Zero init all 1st TXBuf's memory for this TxRing*/
 		NdisZeroMemory(pAd->TxBufSpace[num].AllocVa, pAd->TxBufSpace[num].AllocSize);
 		/* Save PA & VA for further operation */
-		BufBasePaHigh = RTMP_GetPhysicalAddressHigh(pAd->TxBufSpace[num].AllocPa);
+		//BufBasePaHigh = RTMP_GetPhysicalAddressHigh(pAd->TxBufSpace[num].AllocPa);
 		BufBasePaLow = RTMP_GetPhysicalAddressLow (pAd->TxBufSpace[num].AllocPa);
 		BufBaseVa = pAd->TxBufSpace[num].AllocVa;
 
@@ -344,14 +344,14 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 			/* Init Tx Ring Size, Va, Pa variables*/
 			dma_cb->AllocSize = TXD_SIZE;
 			dma_cb->AllocVa = RingBaseVa;
-			RTMP_SetPhysicalAddressHigh(dma_cb->AllocPa, RingBasePaHigh);
+			RTMP_SetPhysicalAddressHigh(dma_cb->AllocPa, 0/*RingBasePaHigh*/);
 			RTMP_SetPhysicalAddressLow (dma_cb->AllocPa, RingBasePaLow);
 
 			/* Setup Tx Buffer size & address. only 802.11 header will store in this space */
 			pDmaBuf = &dma_cb->DmaBuf;
 			pDmaBuf->AllocSize = TX_DMA_1ST_BUFFER_SIZE;
 			pDmaBuf->AllocVa = BufBaseVa;
-			RTMP_SetPhysicalAddressHigh(pDmaBuf->AllocPa, BufBasePaHigh);
+			RTMP_SetPhysicalAddressHigh(pDmaBuf->AllocPa,0 /*BufBasePaHigh*/);
 			RTMP_SetPhysicalAddressLow(pDmaBuf->AllocPa, BufBasePaLow);
 
 			/* link the pre-allocated TxBuf to TXD */
@@ -378,7 +378,7 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 
 	/* Initialize MGMT Ring and associated buffer memory */
 	pDescRing = &pAd->MgmtDescRing;
-	RingBasePaHigh = RTMP_GetPhysicalAddressHigh(pDescRing->AllocPa);
+	//RingBasePaHigh = RTMP_GetPhysicalAddressHigh(pDescRing->AllocPa);
 	RingBasePaLow = RTMP_GetPhysicalAddressLow (pDescRing->AllocPa);
 	RingBaseVa = pDescRing->AllocVa;
 	NdisZeroMemory(pDescRing->AllocVa, pDescRing->AllocSize);
@@ -390,7 +390,7 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 		/* Init MGMT Ring Size, Va, Pa variables */
 		dma_cb->AllocSize = TXD_SIZE;
 		dma_cb->AllocVa = RingBaseVa;
-		RTMP_SetPhysicalAddressHigh(dma_cb->AllocPa, RingBasePaHigh);
+		RTMP_SetPhysicalAddressHigh(dma_cb->AllocPa, 0/*RingBasePaHigh*/);
 		RTMP_SetPhysicalAddressLow (dma_cb->AllocPa, RingBasePaLow);
 
 		/* Offset to next ring descriptor address */
@@ -413,7 +413,7 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 #ifdef CONFIG_ANDES_SUPPORT
 	/* Initialize CTRL Ring and associated buffer memory */
 	pDescRing = &pAd->CtrlDescRing;
-	RingBasePaHigh = RTMP_GetPhysicalAddressHigh(pDescRing->AllocPa);
+	//RingBasePaHigh = RTMP_GetPhysicalAddressHigh(pDescRing->AllocPa);
 	RingBasePaLow = RTMP_GetPhysicalAddressLow (pDescRing->AllocPa);
 	RingBaseVa = pDescRing->AllocVa;
 	NdisZeroMemory(pDescRing->AllocVa, pDescRing->AllocSize);
@@ -425,7 +425,7 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 		/* Init Ctrl Ring Size, Va, Pa variables */
 		dma_cb->AllocSize = TXD_SIZE;
 		dma_cb->AllocVa = RingBaseVa;
-		RTMP_SetPhysicalAddressHigh(dma_cb->AllocPa, RingBasePaHigh);
+		RTMP_SetPhysicalAddressHigh(dma_cb->AllocPa, 0/*RingBasePaHigh*/);
 		RTMP_SetPhysicalAddressLow (dma_cb->AllocPa, RingBasePaLow);
 
 		/* Offset to next ring descriptor address */
@@ -451,11 +451,11 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 #ifdef MT_MAC
 	if (1 /*pAd->chipCap.hif_type == HIF_MT*/) {
 		/* Initialize CTRL Ring and associated buffer memory */
-		ULONG BufBasePaHigh, BufBasePaLow;
+		ULONG /*BufBasePaHigh,*/ BufBasePaLow;
 		VOID *BufBaseVa;
 
 		pDescRing = &pAd->BcnDescRing;
-		RingBasePaHigh = RTMP_GetPhysicalAddressHigh(pDescRing->AllocPa);
+		//RingBasePaHigh = RTMP_GetPhysicalAddressHigh(pDescRing->AllocPa);
 		RingBasePaLow = RTMP_GetPhysicalAddressLow (pDescRing->AllocPa);
 		RingBaseVa = pDescRing->AllocVa;
 		NdisZeroMemory(pDescRing->AllocVa, pDescRing->AllocSize);
@@ -469,7 +469,7 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 			/* Init Ctrl Ring Size, Va, Pa variables */
 			dma_cb->AllocSize = TXD_SIZE;
 			dma_cb->AllocVa = RingBaseVa;
-			RTMP_SetPhysicalAddressHigh(dma_cb->AllocPa, RingBasePaHigh);
+			RTMP_SetPhysicalAddressHigh(dma_cb->AllocPa, 0/*RingBasePaHigh*/);
 			RTMP_SetPhysicalAddressLow (dma_cb->AllocPa, RingBasePaLow);
 
 			/* Offset to next ring descriptor address */
@@ -494,14 +494,14 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 		pDescRing = &pAd->TxBmcDescRing;
 		NdisZeroMemory(pDescRing->AllocVa, pDescRing->AllocSize);
 		/* Save PA & VA for further operation*/
-		RingBasePaHigh = RTMP_GetPhysicalAddressHigh(pDescRing->AllocPa);
+		//RingBasePaHigh = RTMP_GetPhysicalAddressHigh(pDescRing->AllocPa);
 		RingBasePaLow = RTMP_GetPhysicalAddressLow (pDescRing->AllocPa);
 		RingBaseVa = pDescRing->AllocVa;
 
 		/* Zero init all 1st TXBuf's memory for this TxRing*/
 		NdisZeroMemory(pAd->TxBmcBufSpace.AllocVa, pAd->TxBmcBufSpace.AllocSize);
 		/* Save PA & VA for further operation */
-		BufBasePaHigh = RTMP_GetPhysicalAddressHigh(pAd->TxBmcBufSpace.AllocPa);
+		//BufBasePaHigh = RTMP_GetPhysicalAddressHigh(pAd->TxBmcBufSpace.AllocPa);
 		BufBasePaLow = RTMP_GetPhysicalAddressLow (pAd->TxBmcBufSpace.AllocPa);
 		BufBaseVa = pAd->TxBmcBufSpace.AllocVa;
 
@@ -515,14 +515,14 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 			/* Init Tx Ring Size, Va, Pa variables*/
 			dma_cb->AllocSize = TXD_SIZE;
 			dma_cb->AllocVa = RingBaseVa;
-			RTMP_SetPhysicalAddressHigh(dma_cb->AllocPa, RingBasePaHigh);
+			RTMP_SetPhysicalAddressHigh(dma_cb->AllocPa, 0/*RingBasePaHigh*/);
 			RTMP_SetPhysicalAddressLow (dma_cb->AllocPa, RingBasePaLow);
 
 			/* Setup Tx Buffer size & address. only 802.11 header will store in this space */
 			pDmaBuf = &dma_cb->DmaBuf;
 			pDmaBuf->AllocSize = TX_DMA_1ST_BUFFER_SIZE;
 			pDmaBuf->AllocVa = BufBaseVa;
-			RTMP_SetPhysicalAddressHigh(pDmaBuf->AllocPa, BufBasePaHigh);
+			RTMP_SetPhysicalAddressHigh(pDmaBuf->AllocPa,0 /*BufBasePaHigh*/);
 			RTMP_SetPhysicalAddressLow(pDmaBuf->AllocPa, BufBasePaLow);
 
 			/* link the pre-allocated TxBuf to TXD */
@@ -558,7 +558,7 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 					num, pDescRing->AllocVa, pDescRing->AllocSize));
 
 		/* Save PA & VA for further operation */
-		RingBasePaHigh = RTMP_GetPhysicalAddressHigh(pDescRing->AllocPa);
+		//RingBasePaHigh = RTMP_GetPhysicalAddressHigh(pDescRing->AllocPa);
 		RingBasePaLow = RTMP_GetPhysicalAddressLow (pDescRing->AllocPa);
 		RingBaseVa = pDescRing->AllocVa;
 	
@@ -569,7 +569,7 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 			/* Init RX Ring Size, Va, Pa variables*/
 			dma_cb->AllocSize = RXD_SIZE;
 			dma_cb->AllocVa = RingBaseVa;
-			RTMP_SetPhysicalAddressHigh(dma_cb->AllocPa, RingBasePaHigh);
+			RTMP_SetPhysicalAddressHigh(dma_cb->AllocPa, 0/*RingBasePaHigh*/);
 			RTMP_SetPhysicalAddressLow (dma_cb->AllocPa, RingBasePaLow);;
 
 			/* Offset to next ring descriptor address */
@@ -593,7 +593,7 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 			/* Error handling*/
 			if (pDmaBuf->AllocVa == NULL)
 			{
-				ErrorValue = ERRLOG_OUT_OF_SHARED_MEMORY;
+				//ErrorValue = ERRLOG_OUT_OF_SHARED_MEMORY;
 				DBGPRINT_ERR(("Failed to allocate RxRing's 1st buffer\n"));
 				Status = NDIS_STATUS_RESOURCES;
 				break;
@@ -809,7 +809,7 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 			ErrorValue);
 	}
 
-	DBGPRINT_S(("<-- RTMPAllocTxRxRingMemory, Status=%x\n", Status));
+	DBGPRINT_S(("<-- RTMPAllocTxRxRingMemory, Status=%x, ErrorValue=%lux\n", Status,ErrorValue));
 
 	return Status;
 }
@@ -1701,7 +1701,7 @@ VOID RTMPRingCleanUp(RTMP_ADAPTER *pAd, UCHAR RingType)
 	//QUEUE_ENTRY *pEntry;
 	PNDIS_PACKET pPacket;
 	RTMP_TX_RING *pTxRing;
-	ULONG IrqFlags;
+	ULONG IrqFlags = 0;
 	int i, ring_id;
 
 
@@ -1985,7 +1985,7 @@ VOID PDMAResetAndRecovery(RTMP_ADAPTER *pAd)
 	UINT32 Value;
 	UINT32 RestoreValue;
 	UINT32 Loop = 0;
-	ULONG IrqFlags;
+	ULONG IrqFlags = 0;
 
 	/* Stop SW Dequeue */
 	RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_DISABLE_DEQUEUEPACKET);
@@ -2045,7 +2045,7 @@ VOID PDMAResetAndRecovery(RTMP_ADAPTER *pAd)
 	{
 		RTMP_IO_READ32(pAd, 0x80000 + RemapOffset, &Value);
 		
-		if((Value & TX_R_E_2_S) == TX_R_E_2_S)
+		if((Value & TX_R_E_2_S) == TX_R_E_2_S)	
 			break;
 		RtmpOsMsDelay(1);
 		Loop++;
@@ -2067,11 +2067,13 @@ VOID PDMAResetAndRecovery(RTMP_ADAPTER *pAd)
 	AsicDisableSync(pAd);
 
 	RTMP_IRQ_LOCK(&pAd->BcnRingLock, IrqFlags);
+
+#ifdef CONFIG_AP_SUPPORT
 	if (pAd->OpMode == OPMODE_AP)
 	{
-		BSS_STRUCT *pMbss;
+        BSS_STRUCT *pMbss;
 		pMbss = &pAd->ApCfg.MBSSID[MAIN_MBSSID];
-		ASSERT(pMbss);
+        ASSERT(pMbss);
 		if (pMbss) 
 		{
 			pMbss->bcn_buf.bcn_state = BCN_TX_IDLE;
@@ -2080,9 +2082,12 @@ VOID PDMAResetAndRecovery(RTMP_ADAPTER *pAd)
 		{
 			DBGPRINT(RT_DEBUG_ERROR, ("%s():func_dev is NULL!\n", __FUNCTION__));
 			RTMP_IRQ_UNLOCK(&pAd->BcnRingLock, IrqFlags);
-			return;
+			return ;
 		}
 	}
+#endif
+
+
 	RTMP_IRQ_UNLOCK(&pAd->BcnRingLock, IrqFlags);
 	
 	RTMPRingCleanUp(pAd, QID_AC_BE);
@@ -2137,7 +2142,6 @@ reset:
 
 	PDMAResetAndRecovery(pAd);
 }
-
 
 VOID DumpPseInfo(RTMP_ADAPTER *pAd)
 {
@@ -2236,8 +2240,123 @@ VOID PSEResetAndRecovery(RTMP_ADAPTER *pAd)
 	if (Loop > 500) 
 	{		
 		DBGPRINT(RT_DEBUG_ERROR, ("%s: PSE Reset Fail(%x)\n", __FUNCTION__, Value));
+
+#ifdef RTMP_PCI_SUPPORT
+		/*Dump the PSE CRs*/
+		{
+			UINT32 RemapBase, RemapOffset;
+			UINT32 Value;
+			UINT32 RestoreValue;
+
+			{
+				DBGPRINT(RT_DEBUG_ERROR, ("%s: START ============== PSE CR dump ===================\n", __FUNCTION__));
+
+				RTMP_IO_READ32(pAd, 0x816c, &Value);
+				DBGPRINT(RT_DEBUG_ERROR, ("mac [0x816c] = 0x%08x\n", Value));
+				RTMP_IO_READ32(pAd, 0x8170, &Value);				
+				DBGPRINT(RT_DEBUG_ERROR, ("mac [0x8170] = 0x%08x\n", Value));				
+
+				RTMP_IO_READ32(pAd, MCU_PCIE_REMAP_2, &RestoreValue);
+				RemapBase = GET_REMAP_2_BASE(0x800c0070) << 19;
+				RemapOffset = GET_REMAP_2_OFFSET(0x800c0070);
+				RTMP_IO_READ32(pAd, 0x80000 + RemapOffset, &Value);
+				DBGPRINT(RT_DEBUG_ERROR, ("rw 3 : mac [0x800c0070] = 0x%08x\n", Value));
+
+				//RTMP_IO_READ32(pAd, MCU_PCIE_REMAP_2, &RestoreValue);
+				RemapBase = GET_REMAP_2_BASE(0x800c006c) << 19;
+				RemapOffset = GET_REMAP_2_OFFSET(0x800c006c);
+				RTMP_IO_WRITE32(pAd, MCU_PCIE_REMAP_2, RemapBase);
+
+				// write 3
+				RTMP_IO_WRITE32(pAd, 0x80000 + RemapOffset, 3);
+				RTMP_IO_READ32(pAd, 0x80000 + RemapOffset, &Value);
+				DBGPRINT(RT_DEBUG_ERROR, ("rw 3 : mac [0x800c006c] = 0x%08x\n", Value));
+				
+				// write 4
+				RTMP_IO_WRITE32(pAd, 0x80000 + RemapOffset, 4);
+				RTMP_IO_READ32(pAd, 0x80000 + RemapOffset, &Value);
+				DBGPRINT(RT_DEBUG_ERROR, ("rw 4 : mac [0x800c006c] = 0x%08x\n", Value));
+
+				// write 5
+				RTMP_IO_WRITE32(pAd, 0x80000 + RemapOffset, 5);
+				RTMP_IO_READ32(pAd, 0x80000 + RemapOffset, &Value);
+				DBGPRINT(RT_DEBUG_ERROR, ("rw 5 : mac [0x800c006c] = 0x%08x\n", Value));
+
+				// write 6
+				RTMP_IO_WRITE32(pAd, 0x80000 + RemapOffset, 6);
+				RTMP_IO_READ32(pAd, 0x80000 + RemapOffset, &Value);
+				DBGPRINT(RT_DEBUG_ERROR, ("rw 6 :mac [0x800c006c] = 0x%08x\n", Value));
+
+				// write 7
+				RTMP_IO_WRITE32(pAd, 0x80000 + RemapOffset, 7);
+				RTMP_IO_READ32(pAd, 0x80000 + RemapOffset, &Value);
+				DBGPRINT(RT_DEBUG_ERROR, ("rw 7 :mac [0x800c006c] = 0x%08x\n", Value));
+
+				// write 8
+				RTMP_IO_WRITE32(pAd, 0x80000 + RemapOffset, 8);
+				RTMP_IO_READ32(pAd, 0x80000 + RemapOffset, &Value);
+				DBGPRINT(RT_DEBUG_ERROR, ("rw 8 :mac [0x800c006c] = 0x%08x\n", Value));
+
+				// write 9
+				RTMP_IO_WRITE32(pAd, 0x80000 + RemapOffset, 9);
+				RTMP_IO_READ32(pAd, 0x80000 + RemapOffset, &Value);
+				DBGPRINT(RT_DEBUG_ERROR, ("rw 9 :mac [0x800c006c] = 0x%08x\n", Value));
+
+				// write a
+				RTMP_IO_WRITE32(pAd, 0x80000 + RemapOffset, 0xa);
+				RTMP_IO_READ32(pAd, 0x80000 + RemapOffset, &Value);
+				DBGPRINT(RT_DEBUG_ERROR, ("rw a :mac [0x800c006c] = 0x%08x\n", Value));
+
+				// write b
+				RTMP_IO_WRITE32(pAd, 0x80000 + RemapOffset, 0xb);
+				RTMP_IO_READ32(pAd, 0x80000 + RemapOffset, &Value);
+				DBGPRINT(RT_DEBUG_ERROR, ("rw b :mac [0x800c006c] = 0x%08x\n", Value));
+
+				// write c
+				RTMP_IO_WRITE32(pAd, 0x80000 + RemapOffset, 0xc);
+				RTMP_IO_READ32(pAd, 0x80000 + RemapOffset, &Value);
+				DBGPRINT(RT_DEBUG_ERROR, ("rw c :mac [0x800c006c] = 0x%08x\n", Value));
+
+				RTMP_IO_WRITE32(pAd, MCU_PCIE_REMAP_2, RestoreValue);
+				DBGPRINT(RT_DEBUG_ERROR, ("%s: END ============== PSE CR dump ===================\n", __FUNCTION__));
+				
+			}
+		}
+#endif /* RTMP_PCI_SUPPORT */
+
+#ifdef DMA_RESET_SUPPORT
+		if (pAd->PSEResetFailRecover == FALSE)
+		{
+			pAd->PSEResetFailRecover = TRUE;
+			pAd->PSEResetFailRetryQuota = 3; // start to count down
+		}
+		else
+		{
+			if (pAd->PSEResetFailRetryQuota)
+				pAd->PSEResetFailRetryQuota --;
+
+			if (pAd->PSEResetFailRetryQuota == 0) // reach the quota
+			{
+				pAd->PSEResetFailRecover = FALSE;
+				DBGPRINT(RT_DEBUG_ERROR, ("%s: PSE Reset Retry Reach Quota!!\n", __FUNCTION__));
+			}
+		}
+#endif /* DMA_RESET_SUPPORT */
+
 		pAd->PSEResetFailCount++;
 	}
+#ifdef DMA_RESET_SUPPORT	
+	else //Reset Success
+	{
+		if (pAd->PSEResetFailRecover)
+		{
+			DBGPRINT(RT_DEBUG_ERROR, ("%s: PSE Reset Recover Back!!\n", __FUNCTION__));
+		}
+		
+		pAd->PSEResetFailRecover = FALSE;
+		pAd->PSEResetFailRetryQuota = 0;
+	}
+#endif /* DMA_RESET_SUPPORT */
 
 
 #ifdef RTMP_PCI_SUPPORT
@@ -2248,23 +2367,41 @@ VOID PSEResetAndRecovery(RTMP_ADAPTER *pAd)
 }
 
 
+
 VOID PSEWatchDog(RTMP_ADAPTER *pAd)
 {
 	BOOLEAN NoDataIn = FALSE;
 
 	NoDataIn = MonitorRxPse(pAd);
 			
-	if (NoDataIn)
+	if (((NoDataIn)
+#ifdef DMA_RESET_SUPPORT		
+		|| ((pAd->bcn_reset_en) && (pAd->pse_reset_flag))
+		|| ((pAd->PSEResetFailRecover) && (pAd->PSEResetFailRetryQuota))
+#endif		
+		)
+		&& (pAd->pse_reset_exclude_flag == FALSE))
 	{
-		DBGPRINT(RT_DEBUG_OFF, ("PSE Reset\n"));
+		DBGPRINT(RT_DEBUG_OFF, ("PSE Reset: MonitorRxPse\n"));
 		pAd->PSEResetCount++;
 		goto reset;
 	}
 
+/*MT7628's case may not apply to MT7603 */
+
 	return;
 
 reset:
+#ifdef DMA_RESET_SUPPORT	
+	pAd->pse_reset_flag=TRUE;
+#endif	
+	pAd->pse_reset_exclude_flag = TRUE;
 	PSEResetAndRecovery(pAd);
+	pAd->pse_reset_exclude_flag = FALSE;
+
+#ifdef DMA_RESET_SUPPORT	
+	pAd->pse_reset_flag=FALSE;
+#endif
 }
 
 
@@ -2346,7 +2483,7 @@ VOID RT28xx_UpdateBeaconToAsic(
 	IN ULONG UpdatePos)
 {
 	BCN_BUF_STRUC *bcn_buf = NULL;
-	UCHAR *buf	/*, *hdr*/;
+	UCHAR *buf/*, *hdr*/;
 	INT len;
 	PNDIS_PACKET *pkt = NULL;
 
@@ -2683,7 +2820,16 @@ BOOLEAN RT28xxPciAsicRadioOff(
 
 
 VOID PciMlmeRadioOn(RTMP_ADAPTER *pAd)
-{    
+{
+#ifdef LOAD_FW_ONE_TIME
+        {
+                UINT32 value;
+                RTMP_IO_READ32(pAd, AGG_TEMP, &value);
+                value &= 0x0000ffff;
+                RTMP_IO_WRITE32(pAd, AGG_TEMP, value);
+        }
+#endif /* LOAD_FW_ONE_TIME */
+    
 	if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RADIO_OFF))
 		return;
 
@@ -2731,7 +2877,9 @@ VOID PciMlmeRadioOn(RTMP_ADAPTER *pAd)
 		/* The LEN_RADIO_ON indicates "Radio on but link down", 
 		so AP shall set LED LINK_UP status */
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+		{
 			RTMPSetLED(pAd, LED_LINK_UP);
+		}
 #endif /* CONFIG_AP_SUPPORT */
 #endif /* LED_CONTROL_SUPPORT */
 	}
@@ -2830,7 +2978,7 @@ ra_dma_addr_t RtmpDrvPciMapSingle(
 		}
 		else
 		{
-			return (UINT)NULL;
+			return 0;
 		}
 
 	}
@@ -2846,7 +2994,7 @@ ra_dma_addr_t RtmpDrvPciMapSingle(
 		DBGPRINT(RT_DEBUG_OFF, ("%s: dma mapping error\n", __FUNCTION__));
 		return 0;
 	}
-	else
+	 else
 	{
 		return SrcBufPA;
 	}
@@ -2919,36 +3067,6 @@ INT rtmp_irq_init(RTMP_ADAPTER *pAd)
 	pAd->int_disable_mask = 0;
 	pAd->int_pending = 0;
 	RTMP_INT_UNLOCK(&pAd->irq_lock, irqFlags);
-
-#ifdef INT_STATISTIC
-
-	pAd->INTCNT = 0;
-#ifdef MT_MAC
-	pAd->INTWFMACINT0CNT = 0;
-	pAd->INTWFMACINT1CNT = 0;
-	pAd->INTWFMACINT2CNT = 0;
-	pAd->INTWFMACINT3CNT = 0;
-	pAd->INTWFMACINT4CNT = 0;
-	pAd->INTBCNDLY = 0;
-	pAd->INTBMCDLY = 0;
-#endif
-	pAd->INTTxCoherentCNT = 0;
-	pAd->INTRxCoherentCNT = 0;
-	pAd->INTFifoStaFullIntCNT = 0;
-	pAd->INTMGMTDLYCNT =0;
-	pAd->INTRXDATACNT =0;
-	pAd->INTRXCMDCNT =0;
-	pAd->INTHCCACNT =0;
-	pAd->INTAC3CNT =0;
-	pAd->INTAC2CNT =0;
-	pAd->INTAC1CNT =0;
-	pAd->INTAC0CNT =0;
-
-	pAd->INTPreTBTTCNT =0;
-	pAd->INTTBTTIntCNT =0;
-	pAd->INTGPTimeOutCNT =0;
-	pAd->INTAutoWakeupIntCNT =0;
-#endif
 
 	return 0;
 }

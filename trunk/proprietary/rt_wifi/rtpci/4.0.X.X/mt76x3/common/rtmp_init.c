@@ -132,8 +132,6 @@ NDIS_STATUS RTMPAllocAdapterBlock(VOID *handle, VOID **ppAdapter)
 		NdisAllocateSpinLock(pAd, &pAd->BcnRingLock);
 #endif /* MT_MAC */
 
-		NdisAllocateSpinLock(pAd, &pAd->AutoRateLock);
-
 		NdisAllocateSpinLock(pAd, &pAd->tssi_lock);
 #endif /* RTMP_MAC_PCI */
 
@@ -186,12 +184,12 @@ NDIS_STATUS RTMPAllocAdapterBlock(VOID *handle, VOID **ppAdapter)
 				pAd->iw_stats = NULL;
 			}
 
-			os_free_mem(NULL, pAd);
+			RtmpOsVfree(pAd); 
+
 		}
 
 		return Status;
 	}
-
 
 	/* Init ProbeRespIE Table */
 	for (index = 0; index < MAX_LEN_OF_BSS_TABLE; index++)
@@ -653,6 +651,73 @@ NDIS_STATUS NICInitializeAsic(RTMP_ADAPTER *pAd, BOOLEAN bHardReset)
 
 
 
+/*
+	========================================================================
+
+	Routine Description:
+		Reset NIC from error
+
+	Arguments:
+		Adapter						Pointer to our adapter
+
+	Return Value:
+		None
+
+	IRQL = PASSIVE_LEVEL
+
+	Note:
+		Reset NIC from error state
+
+	========================================================================
+*/
+VOID NICResetFromError(RTMP_ADAPTER *pAd)
+{
+	UCHAR rf_channel;
+
+	/* Reset BBP (according to alex, reset ASIC will force reset BBP*/
+	/* Therefore, skip the reset BBP*/
+	/* RTMP_IO_WRITE32(pAd, MAC_CSR1, 0x2);*/
+	// TODO: shaing-7603
+	if (IS_MT7603(pAd) || IS_MT7628(pAd)) {
+		DBGPRINT(RT_DEBUG_OFF, ("%s(): for MT7603\n", __FUNCTION__));
+		
+		NICInitializeAdapter(pAd, FALSE);
+		
+		NICInitAsicFromEEPROM(pAd);
+		
+		RTMPEnableRxTx(pAd);
+		
+		return;
+	}
+
+#ifndef MT_MAC
+	RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, 0x1);
+	/* Remove ASIC from reset state*/
+	RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, 0x0);
+#endif /*ndef MT_MAC */
+
+	NICInitializeAdapter(pAd, FALSE);
+	NICInitAsicFromEEPROM(pAd);
+
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+	{
+		AsicBBPAdjust(pAd);
+	}
+
+
+#ifdef CONFIG_AP_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+	{
+		rf_channel = pAd->CommonCfg.CentralChannel;
+	}
+#endif /* CONFIG_AP_SUPPORT */
+
+#if defined(CONFIG_AP_SUPPORT) || defined(CONFIG_STA_SUPPORT)
+	AsicSwitchChannel(pAd, rf_channel, FALSE);
+	AsicLockChannel(pAd, rf_channel);
+#endif /* defined(CONFIG_AP_SUPPORT) || defined(CONFIG_STA_SUPPORT) */
+}
+
 
 VOID NICUpdateFifoStaCounters(RTMP_ADAPTER *pAd)
 {
@@ -939,6 +1004,11 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 #endif /* RTMP_TEMPERATURE_COMPENSATION */
 #endif /* RTMP_INTERNAL_TX_ALC || RTMP_TEMPERATURE_COMPENSATION */
 
+#ifdef THERMAL_PROTECT_SUPPORT
+	pAd->force_one_tx_stream = FALSE;
+	pAd->last_thermal_pro_temp = 0;
+#endif /* THERMAL_PROTECT_SUPPORT */
+
 	pAd->RfIcType = RFIC_2820;
 
 	/* Init timer for reset complete event*/
@@ -1154,7 +1224,7 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 		part III. AP configurations
 	*/
 #ifdef CONFIG_AP_SUPPORT
-#if defined(P2P_APCLI_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
+#if defined(P2P_APCLI_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT) || defined(CFG80211_MULTI_STA)
 #else
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 #endif /* P2P_APCLI_SUPPORT || RT_CFG80211_P2P_SUPPORT */
@@ -1172,6 +1242,9 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 			wdev->DefaultKeyId = 0;
 			wdev->WpaMixPairCipher = MIX_CIPHER_NOTUSE;
 			mbss->RekeyCountDown = 0;	/* it's used for WPA rekey */
+
+			/* init the default 60 seconds*/
+			mbss->StationKeepAliveTime = 60;
 
 #ifdef SPECIFIC_TX_POWER_SUPPORT
 			if (IS_RT6352(pAd))
@@ -1276,6 +1349,8 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 				NdisAllocateSpinLock(pAd, &pWscControl->WscPeerListSemLock);
 				pWscControl->PinAttackCount = 0;
 				pWscControl->bSetupLock = FALSE;
+				pWscControl->SetupLockTime = WSC_WPS_AP_SETUP_LOCK_TIME;
+				pWscControl->MaxPinAttack = WSC_WPS_AP_MAX_PIN_ATTACK;
 #ifdef WSC_V2_SUPPORT
 				pWscV2Info = &pWscControl->WscV2Info;
 				pWscV2Info->bWpsEnable = TRUE;
@@ -1284,8 +1359,6 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 				pWscV2Info->ExtraTlv.pTlvData = NULL;
 				pWscV2Info->ExtraTlv.TlvType = TLV_ASCII;
 				pWscV2Info->bEnableWpsV2 = TRUE;
-				pWscControl->SetupLockTime = WSC_WPS_AP_SETUP_LOCK_TIME;
-				pWscControl->MaxPinAttack = WSC_WPS_AP_MAX_PIN_ATTACK;
 #ifdef WSC_NFC_SUPPORT
 				pWscControl->NfcPasswdCaculate = 2;
 #endif /* WSC_NFC_SUPPORT */
@@ -1398,6 +1471,9 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 #ifdef CONFIG_AP_SUPPORT
 	pAd->ApCfg.EntryLifeCheck = MAC_ENTRY_LIFE_CHECK_CNT;
 
+#ifdef DOT11R_FT_SUPPORT
+	FT_CfgInitial(pAd);
+#endif /* DOT11R_FT_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
 
@@ -1445,15 +1521,17 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 
 
 
-#if (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT)
+#if (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT) || defined(MT_WOW_SUPPORT)
 	pAd->WOW_Cfg.bEnable = FALSE;
 	pAd->WOW_Cfg.bWOWFirmware = FALSE;	/* load normal firmware */
 	pAd->WOW_Cfg.bInBand = TRUE;		/* use in-band signal */
-	pAd->WOW_Cfg.nSelectedGPIO = 1;
+	pAd->WOW_Cfg.nSelectedGPIO = 2;
 	pAd->WOW_Cfg.nDelay = 3; /* (3+1)*3 = 12 sec */
-	pAd->WOW_Cfg.nHoldTime = 1; /* 1*10 = 10 ms */
-	DBGPRINT(RT_DEBUG_OFF, ("WOW Enable %d, WOWFirmware %d\n", pAd->WOW_Cfg.bEnable, pAd->WOW_Cfg.bWOWFirmware));
-#endif /* (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT) */
+	pAd->WOW_Cfg.nHoldTime = 1000;	// unit is us 
+	pAd->WOW_Cfg.nWakeupInterface = WOW_WAKEUP_BY_USB; /* USB as default */
+	pAd->WOW_Cfg.bGPIOHighLow = WOW_GPIO_LOW_TO_HIGH;
+	//DBGPRINT(RT_DEBUG_OFF, ("WOW Enable %d, WOWFirmware %d\n", pAd->WOW_Cfg.bEnable, pAd->WOW_Cfg.bWOWFirmware));
+#endif /* (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT) || defined(MT_WOW_SUPPORT) */
 
 	/* 802.11H and DFS related params*/
 	pAd->Dot11_H.CSCount = 0;
@@ -1567,7 +1645,22 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 	pAd->PSETriggerType1Count = 0;
 	pAd->PSETriggerType1Count = 0;
 	pAd->PSEResetFailCount = 0;
-#endif
+	pAd->pse_reset_exclude_flag = FALSE;	
+#ifdef DMA_RESET_SUPPORT	
+	pAd->PSEResetFailRecover = FALSE;
+	pAd->PSEResetFailRetryQuota = 0;
+
+	pAd->bcn_didx_val = 255;
+	pAd-> bcn_not_idle_tx_dma_busy = 0;
+	pAd->dma_force_reset_count = 0;
+	pAd-> pse_reset_flag = FALSE;
+	pAd->bcn_reset_en = FALSE;
+#endif  /* DMA_RESET_SUPPORT */
+#endif /* MT_MAC */
+
+#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
+	pAd->Mlme.bStartScc = FALSE;
+#endif /*RT_CFG80211_P2P_CONCURRENT_DEVICE */
 
 #ifdef RTMP_MAC_PCI
 	pAd->PDMAWatchDogEn = 0;
@@ -1585,12 +1678,40 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 #ifdef LOAD_FW_ONE_TIME
 	pAd->FWLoad = 0;
 #endif /* LOAD_FW_ONE_TIME */
+#ifdef CONFIG_AP_SUPPORT
+#ifdef PREVENT_ARP_SPOOFING
+	pAd->ApCfg.ARPSpoofChk = FALSE;
+#endif /* PREVENT_ARP_SPOOFING */
+#endif /* CONFIG_AP_SUPPORT */
 
     pAd->bPS_Retrieve =1;
 
 	pAd->CommonCfg.bTXRX_RXV_ON = 0;
 
     pAd->CommonCfg.ManualTxop = 0;
+
+    pAd->CommonCfg.ManualTxopThreshold = 10; // Mbps
+
+    pAd->CommonCfg.ManualTxopUpBound = 20; // Ratio
+
+    pAd->CommonCfg.ManualTxopLowBound = 5; // Ratio
+#ifdef MSTAR_SUPPORT
+	pAd->bDisableBGProtect = TRUE;
+#endif /* MSTAR_SUPPORT */
+#ifdef CONFIG_SNIFFER_SUPPORT
+	pAd->monitor_ctrl.current_monitor_mode = 0;
+#endif /* CONFIG_SNIFFER_SUPPORT */
+
+
+	pAd->ed_chk = FALSE; //let country region to turn on
+	pAd->ed_debug = FALSE;
+	
+	pAd->ed_chk_period = 100;
+	pAd->ed_threshold = 90;
+	pAd->ed_false_cca_threshold = 150;		
+	pAd->ed_block_tx_threshold = 10;
+	pAd->ed_big_rssi_count = 0;
+		
 
 	DBGPRINT(RT_DEBUG_TRACE, ("<-- UserCfgInit\n"));
 }
@@ -2044,6 +2165,23 @@ VOID RTMPEnableRxTx(RTMP_ADAPTER *pAd)
 	DBGPRINT(RT_DEBUG_TRACE, ("<== RTMPEnableRxTx\n"));
 }
 
+VOID RTMPDisableRxTx(RTMP_ADAPTER *pAd)
+{
+	DBGPRINT(RT_DEBUG_TRACE, ("==> RTMPDisableRxTx\n"));
+
+	RT28XXDMADisable(pAd);
+
+	AsicClearRxFilter(pAd);
+
+	{
+		if (pAd->CommonCfg.bTXRX_RXV_ON)
+			AsicSetMacTxRx(pAd, ASIC_MAC_TXRX_RXV, FALSE);
+		else
+			AsicSetMacTxRx(pAd, ASIC_MAC_TXRX, FALSE);
+	}
+
+	DBGPRINT(RT_DEBUG_TRACE, ("<== RTMPDisableRxTx\n"));
+}
 
 void CfgInitHook(RTMP_ADAPTER *pAd)
 {
@@ -2104,11 +2242,12 @@ INT RtmpRaDevCtrlInit(VOID *pAdSrc, RTMP_INF_TYPE infType)
 
 	DBGPRINT(RT_DEBUG_TRACE, ("pAd->infType=%d\n", pAd->infType));
 
-#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
+#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT) || defined(CFG80211_MULTI_STA)
 	pAd->OpMode = OPMODE_STA;
-#endif /* P2P_SUPPORT */
+#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT || CFG80211_MULTI_STA */
 
-    RTMP_SEM_EVENT_INIT(&(pAd->mcu_atomic), &pAd->RscSemMemList);
+    RTMP_SEM_EVENT_INIT(&(pAd->AutoRateLock), &pAd->RscSemMemList);
+	RTMP_SEM_EVENT_INIT(&(pAd->e2p_read_lock), &pAd->RscSemMemList);
 
 #ifdef MULTIPLE_CARD_SUPPORT
 #ifdef RTMP_FLASH_SUPPORT
@@ -2168,7 +2307,11 @@ INT RtmpRaDevCtrlInit(VOID *pAdSrc, RTMP_INF_TYPE infType)
 			return FALSE;
 		}
 	}
-	
+
+#ifdef E2P_WITHOUT_FW_SUPPORT
+	/* hook e2p operation */
+    	RtmpChipOpsEepromHook(pAd, pAd->infType, E2P_NONE);
+#endif /* E2P_WITHOUT_FW_SUPPORT */	
 	return 0;
 }
 
@@ -2193,7 +2336,8 @@ extern UINT8  MC_CardUsed[MAX_NUM_OF_MULTIPLE_CARD];
 	}
 #endif /* RLT_MAC */
 
-    RTMP_SEM_EVENT_DESTORY(&(pAd->mcu_atomic));
+    RTMP_SEM_EVENT_DESTORY(&(pAd->AutoRateLock));
+	RTMP_SEM_EVENT_DESTORY(&(pAd->e2p_read_lock));
 
 
 	/*
@@ -2243,11 +2387,11 @@ VOID CMDHandler(RTMP_ADAPTER *pAd)
 {
 	PCmdQElmt cmdqelmt;
 	UCHAR *pData;
-	NDIS_STATUS NdisStatus = NDIS_STATUS_SUCCESS;
+	//NDIS_STATUS NdisStatus = NDIS_STATUS_SUCCESS;
 
 	while (pAd && pAd->CmdQ.size > 0)
 	{
-		NdisStatus = NDIS_STATUS_SUCCESS;
+		//NdisStatus = NDIS_STATUS_SUCCESS;
 
 		NdisAcquireSpinLock(&pAd->CmdQLock);
 		RTThreadDequeueCmd(&pAd->CmdQ, &cmdqelmt);
@@ -2306,23 +2450,9 @@ VOID CMDHandler(RTMP_ADAPTER *pAd)
 					break;
 
 				case CMDTHREAD_SCAN_END:
-#ifdef LINUX
-#ifdef RT_CFG80211_SUPPORT
-					RT_CFG80211_SCAN_END(pAd, FALSE);
-#endif /* RT_CFG80211_SUPPORT */
-#endif /* LINUX */
 					break;
 
 				case CMDTHREAD_CONNECT_RESULT_INFORM:
-#ifdef LINUX
-#ifdef RT_CFG80211_SUPPORT
-					RT_CFG80211_CONN_RESULT_INFORM(pAd,
-												pAd->MlmeAux.Bssid,
-												pData, cmdqelmt->bufferlength,
-												pData, cmdqelmt->bufferlength,
-												1);
-#endif /* RT_CFG80211_SUPPORT */
-#endif /* LINUX */
 					break;
 #ifdef MT_MAC
 #ifdef MT_PS
@@ -2357,6 +2487,47 @@ VOID CMDHandler(RTMP_ADAPTER *pAd)
 					}
 					break;
 #endif /* MT_MAC */
+                case HWCMD_ID_BMC_CNT_UPDATE:
+                    {
+						CHAR idx = 0;
+                        //printk("cmd HWCMD_ID_BMC_CNT_UPDATE \n");
+                        NdisMoveMemory(&idx , pData, sizeof(CHAR));
+
+                        /* BMC start */
+                        AsicSetBmcQCR(pAd, BMC_CNT_UPDATE, CR_WRITE, idx, NULL);
+                    }
+                    break;
+					case CMDTHREAD_PERODIC_CR_ACCESS_ASIC_UPDATE_PROTECT:
+					{
+						MtCmdAsicUpdateProtect(pAd, cmdqelmt);
+					}
+					break;
+
+					case CMDTHREAD_PERODIC_CR_ACCESS_NIC_UPDATE_RAW_COUNTERS:
+					{
+						MtCmdNICUpdateRawCounters(pAd, cmdqelmt);
+					}
+					break;
+
+					case CMDTHREAD_PERODIC_CR_ACCESS_WTBL_RATE_TABLE_UPDATE:
+					{
+						MtCmdWtbl2RateTableUpdate(pAd, cmdqelmt);
+					}
+					break;
+
+
+					case CMDTHREAD_MLME_PERIOIDC_EXEC:
+					{
+						MlmePeriodicExec(pAd, cmdqelmt);
+					}
+					break;
+
+					case CMDTHREAD_PWR_MGT_BIT:
+					{
+						MtCmdWtblTxpsUpdate(pAd, cmdqelmt);
+					}
+					break;
+
 				default:
 					DBGPRINT(RT_DEBUG_ERROR, ("--> Control Thread !! ERROR !! Unknown(cmdqelmt->command=0x%x) !! \n", cmdqelmt->command));
 					break;

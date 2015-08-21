@@ -54,7 +54,7 @@ VOID RT28xx_UpdateTimToAsic(
 	IN ULONG FrameLen)
 {
 	TIM_BUF_STRUC *tim_buf = NULL;
-	UCHAR *buf/*, *hdr*/;
+	UCHAR *buf;
 	INT len;
 	PNDIS_PACKET *pkt = NULL;
 
@@ -271,10 +271,10 @@ static UCHAR GetTimNum(RTMP_ADAPTER *pAd)
 VOID APMakeAllTimFrame(RTMP_ADAPTER *pAd)
 {
 	INT i;
-	UCHAR NumOfTims;
+	//UCHAR NumOfTims;
 
 	/* choose the Beacon number */
-	NumOfTims = GetTimNum(pAd);
+	/*NumOfTims =*/ GetTimNum(pAd);
 
 	for(i=0; i<pAd->ApCfg.BssidNum; i++) {
 		APMakeBssTimFrame(pAd, i);

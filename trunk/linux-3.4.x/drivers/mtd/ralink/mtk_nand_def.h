@@ -21,7 +21,7 @@
 #define OOB_AVAIL_PER_SECTOR		(8)
 #define OOB_BAD_BLOCK_OFFSET		(0)
 
-#define NFI_DEFAULT_ACCESS_TIMING	(0x30C77fff)
+#define NFI_DEFAULT_ACCESS_TIMING	(0x00844333)
 
 // ---------------------------------------------------------------------------
 //  Devices table

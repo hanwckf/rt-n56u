@@ -138,6 +138,11 @@ void set_wdg_timer_ebl(unsigned int timer, unsigned int ebl)
 	result |= 0x64;
 	sysRegWrite(RSTSTAT, result);
 #endif
+#else /* !CONFIG_RALINK_TIMER_WDG_RESET_OUTPUT */
+#if defined (CONFIG_RALINK_MT7620)
+	// disable wdt_output
+	sysRegWrite(RSTSTAT, 0x80000000);
+#endif
 #endif
 }
 

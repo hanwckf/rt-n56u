@@ -42,7 +42,7 @@
 #include <asm/bootinfo.h>
 
 #if defined (CONFIG_CMDLINE_BOOL)
-char rt2880_cmdline[]=CONFIG_CMDLINE;
+char rt2880_cmdline[] = CONFIG_CMDLINE;
 #else
 #if defined (CONFIG_RT2880_UART_115200)
 #define TTY_BAUDRATE	"115200n8"
@@ -93,19 +93,23 @@ void  __init prom_init_cmdline(void)
 
 	cp = &(arcs_cmdline[0]);
 #ifdef CONFIG_UBOOT_CMDLINE
-	while(actr < prom_argc) {
-	    strcpy(cp, prom_argv(actr));
-	    cp += strlen(prom_argv(actr));
-	    *cp++ = ' ';
-	    actr++;
-	}
-#else
-	strcpy(cp, rt2880_cmdline);
-	cp += strlen(rt2880_cmdline);
-	*cp++ = ' ';
+	if (prom_argc > 1) {
+		while(actr < prom_argc) {
+			strcpy(cp, prom_argv(actr));
+			cp += strlen(prom_argv(actr));
+			*cp++ = ' ';
+			actr++;
+		}
+	} else
 #endif
+	{
+		strcpy(cp, rt2880_cmdline);
+		cp += strlen(rt2880_cmdline);
+		*cp++ = ' ';
+	}
+
 	if (cp != &(arcs_cmdline[0])) /* get rid of trailing space */
-	    --cp;
+		--cp;
 	*cp = '\0';
 }
 

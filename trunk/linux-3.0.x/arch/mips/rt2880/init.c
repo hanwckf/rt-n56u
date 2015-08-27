@@ -350,7 +350,7 @@ static void prom_init_sysclk(void)
 #elif defined (CONFIG_MT7628_ASIC)
 	clk_sel = 0;		/* clock from CPU PLL (600MHz) */
 	clk_sel2 = (reg>>4) & 0x01;
-	if (!(reg & (1UL<<7)))
+	if (!(reg & (1UL<<6)))
 		xtal = 25;
 #else
 #error Please Choice System Type

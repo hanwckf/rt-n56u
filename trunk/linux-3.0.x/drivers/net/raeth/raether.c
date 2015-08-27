@@ -275,7 +275,7 @@ fe_reset(void)
 #endif
 
 #if defined (CONFIG_RALINK_MT7621)
-	val &= ~(RALINK_ETH_RST | RALINK_HSDMA_RST);
+	val &= ~(RALINK_ETH_RST | RALINK_MCM_RST);
 #endif
 
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)

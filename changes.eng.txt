@@ -2,10 +2,10 @@
 
 
 Project sources:
-git clone https://code.google.com/p/rt-n56u/
+git clone https://bitbucket.org/padavan/rt-n56u.git
 
 Git HTTP frontend:
-http://code.google.com/p/rt-n56u/source/list
+https://bitbucket.org/padavan/rt-n56u/commits/all
 
 ATTENTION:
 1) After the first upgrade from official firmware, all settings will be erased. Do not load

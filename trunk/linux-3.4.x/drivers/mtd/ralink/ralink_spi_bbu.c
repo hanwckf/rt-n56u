@@ -154,36 +154,33 @@ static int bbu_spic_busy_wait(void)
 
 void spic_init(void)
 {
-	u32 clk_sys, clk_div, clk_reg, reg;
+	u32 clk_sys, clk_div, reg;
 
 #if defined (CONFIG_RALINK_MT7621)
-	clk_sys = 50;	/* bclk = 50MHz */
+	clk_sys = 125;	/* bclk = 125MHz */
 #if defined (CONFIG_MTD_SPI_FAST_CLOCK)
-	clk_div = 1;	/* bclk/1 -> 50 MHz */
-	clk_reg = 1;
+	clk_div = 4;	/* bclk/4 -> 31.25 MHz */
 #else
-	clk_div = 2;	/* bclk/2 -> 25 MHz */
-	clk_reg = 3;
+	clk_div = 5;	/* bclk/5 -> 25 MHz */
 #endif
 #elif defined (CONFIG_RALINK_MT7628)
 	clk_sys = get_surfboard_sysclk() / 1000000;
 #if defined (CONFIG_MTD_SPI_FAST_CLOCK)
-	clk_div = 4;	/* hclk/4 -> 50 MHz */
-	clk_reg = 2;
+	clk_div = 5;	/* hclk/5 -> 40 MHz */
 #else
-	clk_div = 6;	/* hclk/6 -> 33 MHz */
-	clk_reg = 4;
+	clk_div = 8;	/* hclk/8 -> 25 MHz */
 #endif
 #endif
-
 	reg = ra_inl(SPI_REG_MASTER);
 	reg &= ~(0x7);
 	reg &= ~(0x0fff << 16);
-	reg |= (clk_reg << 16);
+	reg |= ((clk_div - 2) << 16);
 	ra_outl(SPI_REG_MASTER, reg);
 
 #ifdef TEST_CS1_FLASH
-	ra_and(RALINK_REG_GPIOMODE, ~(1 << 12));
+#if defined (CONFIG_RALINK_MT7628)
+	ra_and(RALINK_REG_GPIOMODE, ~(3 << 4));
+#endif
 	ra_or(SPI_REG_MASTER, (1 << 29));
 #endif
 
@@ -464,6 +461,20 @@ static int bbu_spic_trans(const u8 code, const u32 addr, u8 *buf, const size_t n
 	return 0;
 }
 
+/*
+ * Set write enable latch with Write Enable command.
+ * Returns negative if error occurred.
+ */
+static inline int raspi_write_enable(void)
+{
+	return bbu_spic_trans(OPCODE_WREN, 0, NULL, 1, 0, 0);
+}
+
+static inline int raspi_write_disable(void)
+{
+	return bbu_spic_trans(OPCODE_WRDI, 0, NULL, 1, 0, 0);
+}
+
 #if defined(RD_MODE_QIOR) || defined(RD_MODE_QOR)
 static int raspi_write_rg16(u8 code, u8 *val)
 {
@@ -602,6 +613,15 @@ static int raspi_4byte_mode(int enable)
 		
 		code = (enable)? 0xB7 : 0xE9; /* B7: enter 4B, E9: exit 4B */
 		retval = bbu_spic_trans(code, 0, NULL, 1, 0, 0);
+		
+		// for Winbond's W25Q256FV, need to clear extend address register
+		if ((!enable) && (flash->chip->id == 0xef))
+		{
+			code = 0x0;
+			raspi_write_enable();
+			raspi_write_rg(0xc5, &code);
+		}
+		
 		if (retval != 0) {
 			printk("%s: ret: %x\n", __func__, retval);
 			return -1;
@@ -609,20 +629,6 @@ static int raspi_4byte_mode(int enable)
 	}
 
 	return 0;
-}
-
-/*
- * Set write enable latch with Write Enable command.
- * Returns negative if error occurred.
- */
-static inline int raspi_write_enable(void)
-{
-	return bbu_spic_trans(OPCODE_WREN, 0, NULL, 1, 0, 0);
-}
-
-static inline int raspi_write_disable(void)
-{
-	return bbu_spic_trans(OPCODE_WRDI, 0, NULL, 1, 0, 0);
 }
 
 /*

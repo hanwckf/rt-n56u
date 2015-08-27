@@ -672,6 +672,9 @@ void FoeDumpEntry(uint32_t Index);
 int FoeGetAllEntries(struct hwnat_args *opt);
 int FoeBindEntry(struct hwnat_args *opt);
 int FoeUnBindEntry(struct hwnat_args *opt);
+#if defined (CONFIG_HNAT_V2)
+int FoeDropEntry(struct hwnat_args *opt);
+#endif
 int FoeDelEntry(struct hwnat_args *opt);
 int FoeDumpCacheEntry(void);
 

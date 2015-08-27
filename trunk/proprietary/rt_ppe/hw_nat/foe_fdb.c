@@ -564,6 +564,7 @@ int FoeUnBindEntry(struct hwnat_args *opt)
 	spin_lock_bh(&ppe_foe_lock);
 	entry->udib1.state = UNBIND;
 	entry->udib1.time_stamp = RegRead(FOE_TS) & 0xFF;
+
 #if defined (CONFIG_HNAT_V2)
 	/* clear HWNAT cache */
 	RegModifyBits(CAH_CTRL, 1, 9, 1);
@@ -573,6 +574,32 @@ int FoeUnBindEntry(struct hwnat_args *opt)
 
 	return HWNAT_SUCCESS;
 }
+
+#if defined (CONFIG_HNAT_V2)
+int FoeDropEntry(struct hwnat_args *opt)
+{
+#if defined (CONFIG_RALINK_MT7621)
+	struct FoeEntry *entry;
+
+	if (opt->entry_num >= FOE_4TB_SIZ)
+		return HWNAT_ENTRY_NOT_FOUND;
+
+	entry = &PpeFoeBase[opt->entry_num];
+
+	spin_lock_bh(&ppe_foe_lock);
+	entry->ipv4_hnapt.iblk2.dp = 7;
+
+	/* clear HWNAT cache */
+	RegModifyBits(CAH_CTRL, 1, 9, 1);
+	RegModifyBits(CAH_CTRL, 0, 9, 1);
+	spin_unlock_bh(&ppe_foe_lock);
+
+	return HWNAT_SUCCESS;
+#else
+	return HWNAT_FAIL;
+#endif
+}
+#endif
 
 int FoeDelEntry(struct hwnat_args *opt)
 {

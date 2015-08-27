@@ -309,6 +309,16 @@ config  RA_HW_NAT_PREBIND
 	bool "Pre-bind support"
 	depends on RA_HW_NAT && RALINK_MT7621
 
+config  RA_HW_NAT_PBND_RD_PRD
+	int "Check interval in pause state (us) Max:65535"
+	depends on RA_HW_NAT && RA_HW_NAT_PREBIND
+	default 1000
+
+config  RA_HW_NAT_PBND_RD_LMT
+	int "Max retry count"
+	depends on RA_HW_NAT && RA_HW_NAT_PREBIND
+	default 10
+
 config  RA_HW_NAT_IPV6
 	bool "IPv6 Acceleration"
 	depends on RA_HW_NAT && IPV6 && !(RALINK_RT3052)

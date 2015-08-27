@@ -28,6 +28,7 @@
 #define HW_NAT_MCAST_INS		(0x20)
 #define HW_NAT_MCAST_DEL		(0x21)
 #define HW_NAT_MCAST_DUMP		(0x22)
+#define HW_NAT_DROP_ENTRY		(0x36)
 #else
 #define HW_NAT_DSCP_REMARK		(0x09)
 #define HW_NAT_VPRI_REMARK		(0x0a)

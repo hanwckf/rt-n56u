@@ -76,15 +76,16 @@ int HwNatIoctl(struct inode *inode, struct file *filp,
 	case HW_NAT_DUMP_ENTRY:
 		FoeDumpEntry(opt->entry_num);
 		break;
-#if defined (CONFIG_HNAT_V2)
-	case HW_NAT_DUMP_CACHE_ENTRY:
-		FoeDumpCacheEntry();
-		break;
-#endif
 	case HW_NAT_DEBUG:	/* For Debug */
 		DebugLevel = opt->debug;
 		break;
 #if defined (CONFIG_HNAT_V2)
+	case HW_NAT_DROP_ENTRY:
+		opt->result = FoeDropEntry(opt);
+		break;
+	case HW_NAT_DUMP_CACHE_ENTRY:
+		FoeDumpCacheEntry();
+		break;
 	case HW_NAT_GET_AC_CNT:
 		opt3->result = PpeGetAGCnt(opt3);
 		break;

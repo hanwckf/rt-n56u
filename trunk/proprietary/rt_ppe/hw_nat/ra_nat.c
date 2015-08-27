@@ -655,6 +655,7 @@ static int PpeHitBindForceToCpuHandler(struct sk_buff *skb, uint32_t foe_entry_n
 #if defined (CONFIG_HNAT_V2)
 int PpeHitBindForceMcastToWiFiHandler(struct sk_buff *skb)
 {
+#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 	int i;
 	struct sk_buff *skb2;
 	struct net_device *dev;
@@ -678,6 +679,7 @@ int PpeHitBindForceMcastToWiFiHandler(struct sk_buff *skb)
 	skb_reset_network_header(skb);
 	skb_push(skb, ETH_HLEN);
 
+#if defined (CONFIG_RA_HW_NAT_WIFI)
 	for (i = DP_RA0; i < MAX_WIFI_IF_NUM; i++) {
 		dev = DstPort[i];
 		if (dev && netif_running(dev)) {
@@ -688,6 +690,19 @@ int PpeHitBindForceMcastToWiFiHandler(struct sk_buff *skb)
 			}
 		}
 	}
+#elif defined (CONFIG_RA_HW_NAT_PCI)
+	for (i= DP_NIC0; i <= DP_NIC0; i++) {
+		dev = DstPort[i];
+		if (dev && netif_running(dev)) {
+			skb2 = skb_clone(skb, GFP_ATOMIC);
+			if (skb2) {
+				skb2->dev = dev;
+				dev_queue_xmit(skb2);
+			}
+		}
+	}
+#endif
+#endif
 
 	dev_kfree_skb(skb);
 
@@ -1334,7 +1349,11 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 	/* CPU need to handle traffic between WLAN/PCI and GMAC port */
 	if (gmac_no == 0) {
 #if defined (CONFIG_RALINK_MT7621)
-		uint32_t fpidx = 0;	/* 0: to CPU */
+#if defined (CONFIG_RAETH_QDMATX_QDMARX)
+		uint32_t fpidx = 5;	/* 5: to CPU (QDMA) */
+#else
+		uint32_t fpidx = 0;	/* 0: to CPU (PDMA) */
+#endif
 		if (is_mcast)
 			fpidx |= 0x80;
 #endif
@@ -1758,11 +1777,16 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 #if defined (CONFIG_RA_HW_NAT_PREBIND)
 	} else if (foe_ai == HIT_PRE_BIND) {
 		spin_lock_bh(&ppe_foe_lock);
-		if (foe_entry->udib1.preb) {
+		if (foe_entry->udib1.preb && foe_entry->bfib1.state != BIND) {
 			foe_entry->bfib1.state = BIND;
 			foe_entry->udib1.preb = 0;
+			spin_unlock_bh(&ppe_foe_lock);
+		} else {
+			/* drop duplicate prebind notify packet */
+			DO_FAST_CLEAR_FOE(skb);
+			spin_unlock_bh(&ppe_foe_lock);
+			return 0;
 		}
-		spin_unlock_bh(&ppe_foe_lock);
 #if defined (CONFIG_RA_HW_NAT_DEBUG)
 		/* Dump Binding Entry */
 		if (DebugLevel >= 3) {
@@ -2014,6 +2038,10 @@ static void PpeSetFoeKa(void)
 #if defined (CONFIG_HNAT_V2)
 	/* Keep alive timer for bind Non-TCP/UDP entry */
 	RegModifyBits(PPE_BIND_LMT_1, DFL_FOE_NTU_KA, 16, 8);
+
+#if defined (CONFIG_RA_HW_NAT_PREBIND)
+	RegModifyBits(PPE_BIND_LMT_1, DFL_PBND_RD_LMT, 24, 8);
+#endif
 #endif
 }
 
@@ -2031,7 +2059,11 @@ static void PpeSetFoeBindRate(uint32_t FoeBindRate)
 	RegModifyBits(PPE_FOE_LMT2, DFL_FOE_FULL_LMT, 0, 14);
 
 	/* Set reach bind rate for unbind state */
-	RegWrite(PPE_FOE_BNDR, FoeBindRate);
+	RegModifyBits(PPE_FOE_BNDR, FoeBindRate, 0, 16);
+
+#if defined (CONFIG_RA_HW_NAT_PREBIND)
+	RegModifyBits(PPE_FOE_BNDR, DFL_PBND_RD_PRD, 16, 16);
+#endif
 }
 
 static void PpeSetFoeGloCfgEbl(uint32_t Ebl)
@@ -2087,17 +2119,22 @@ static void PpeSetFoeGloCfgEbl(uint32_t Ebl)
 #if defined (CONFIG_RA_HW_NAT_MCAST)
 		/* Enable multicast table lookup */
 		RegModifyBits(PPE_GLO_CFG, 1, 7, 1);
+		RegModifyBits(PPE_GLO_CFG, 1, 12, 2);    // Reserve 16 entry for multicast packet
 		RegModifyBits(PPE_MCAST_PPSE, 0, 0, 4);  // multicast port0 map to PDMA
 		RegModifyBits(PPE_MCAST_PPSE, 1, 4, 4);  // multicast port1 map to GMAC1
 		RegModifyBits(PPE_MCAST_PPSE, 2, 8, 4);  // multicast port2 map to GMAC2
-#if defined (CONFIG_RA_HW_NAT_QDMA)
-		/* raeth must support handle P5 RX ring (else use PDMA P0) */
-//		RegModifyBits(PPE_MCAST_PPSE, 5, 12, 4); // multicast port3 map to QDMA
+#if defined (CONFIG_RAETH_QDMATX_QDMARX)
+		RegModifyBits(PPE_MCAST_PPSE, 5, 12, 4); // multicast port3 map to QDMA
 #endif
-#endif
+#endif /* CONFIG_RA_HW_NAT_MCAST */
+#if defined (CONFIG_RAETH_QDMATX_QDMARX)
+		/* default CPU port is port5 (QDMA) */
+		RegWrite(PPE_DFT_CPORT, 0x55555555);
+#else
 		/* default CPU port is port0 (PDMA) */
 		RegWrite(PPE_DFT_CPORT, 0);
-#else
+#endif
+#else /* !CONFIG_RALINK_MT7621 */
 		/* PPE Engine Enable */
 		RegModifyBits(PPE_GLO_CFG, 1, 0, 1);
 
@@ -2717,6 +2754,6 @@ module_init(PpeInitMod);
 module_exit(PpeCleanupMod);
 
 MODULE_AUTHOR("Steven Liu/Kurtis Ke");
-MODULE_LICENSE("Proprietary");
+MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Ralink Hardware NAT");
 

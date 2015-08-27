@@ -9,17 +9,23 @@
 
 extern spinlock_t ppe_foe_lock;
 
-static int32_t mcast_entry_get(uint16_t vlan_id, uint8_t *dst_mac) 
+static int32_t mcast_entry_get(uint16_t vlan_id, uint8_t *dst_mac)
 {
 	int i;
 
-	for(i=0;i<MAX_MCAST_ENTRY;i++) {
+	for(i=0; i<MAX_MCAST_ENTRY; i++) {
 		if ((GET_PPE_MCAST_H(i)->mc_vid == vlan_id) &&
-			GET_PPE_MCAST_L(i)->mc_mac_addr[3] == dst_mac[2] &&
-			GET_PPE_MCAST_L(i)->mc_mac_addr[2] == dst_mac[3] &&
-			GET_PPE_MCAST_L(i)->mc_mac_addr[1] == dst_mac[4] &&
-			GET_PPE_MCAST_L(i)->mc_mac_addr[0] == dst_mac[5]) {
-			return i;
+		     GET_PPE_MCAST_L(i)->mc_mac_addr[3] == dst_mac[2] &&
+		     GET_PPE_MCAST_L(i)->mc_mac_addr[2] == dst_mac[3] &&
+		     GET_PPE_MCAST_L(i)->mc_mac_addr[1] == dst_mac[4] &&
+		     GET_PPE_MCAST_L(i)->mc_mac_addr[0] == dst_mac[5]) {
+			if (GET_PPE_MCAST_H(i)->mc_mpre_sel == 0) {
+				if (dst_mac[0] == 0x1 && dst_mac[1] == 0x00)
+					return i;
+			} else if (GET_PPE_MCAST_H(i)->mc_mpre_sel == 1) {
+				if (dst_mac[0] == 0x33 && dst_mac[1] == 0x33)
+					return i;
+			}
 		}
 	}
 
@@ -63,6 +69,7 @@ int foe_mcast_entry_ins(uint16_t vlan_id, uint8_t *dst_mac, uint8_t mc_px_en, ui
 {
 	int i = 0;
 	int entry_num, ret;
+	uint32_t mc_mpre_sel;
 	ppe_mcast_h *mcast_h;
 	ppe_mcast_l *mcast_l;
 
@@ -72,12 +79,20 @@ int foe_mcast_entry_ins(uint16_t vlan_id, uint8_t *dst_mac, uint8_t mc_px_en, ui
 
 	ret = 1;
 
+	if (dst_mac[0] == 0x1 && dst_mac[1] == 0x00)
+		mc_mpre_sel = 0;
+	else if (dst_mac[0] == 0x33 && dst_mac[1] == 0x33)
+		mc_mpre_sel = 1;
+	else
+		return ret;
+
 	spin_lock_bh(&ppe_foe_lock);
 
 	/* update exist entry */
 	if ((entry_num = mcast_entry_get(vlan_id, dst_mac)) >= 0) {
 		mcast_h = GET_PPE_MCAST_H(entry_num);
 		mcast_l = GET_PPE_MCAST_L(entry_num);
+		mcast_h->mc_mpre_sel = mc_mpre_sel;
 		mcast_h->mc_px_en |= mc_px_en;
 #if defined (CONFIG_RA_HW_NAT_QDMA)
 		/* raeth must alloc FQ pool to handle PPE -> FQ */
@@ -92,6 +107,7 @@ int foe_mcast_entry_ins(uint16_t vlan_id, uint8_t *dst_mac, uint8_t mc_px_en, ui
 			mcast_l = GET_PPE_MCAST_L(i);
 			if (mcast_h->valid == 0) {
 				mcast_h->mc_vid = vlan_id;
+				mcast_h->mc_mpre_sel = mc_mpre_sel;
 				mcast_h->mc_px_en = mc_px_en;
 #if defined (CONFIG_RA_HW_NAT_QDMA)
 				/* raeth must alloc FQ pool to handle PPE -> FQ */
@@ -160,12 +176,12 @@ void foe_mcast_entry_dump(void)
 	ppe_mcast_h *mcast_h;
 	ppe_mcast_l *mcast_l;
 
-	printk("MAC               |  VID | Ports | QPorts | QID\n");
-//	       "xx:xx:00:00:00:00   4094    ----     ----     0"
+	printk("MAC               |  VID | Ports | QPorts | QID | IPv6\n");
+//	       "xx:xx:00:00:00:00   4094    ----     ----     0      0"
 	for(i=0;i<MAX_MCAST_ENTRY;i++) {
 		mcast_h = GET_PPE_MCAST_H(i);
 		mcast_l = GET_PPE_MCAST_L(i);
-		printk("xx:xx:%02x:%02x:%02x:%02x   %4d    %c%c%c%c     %c%c%c%c    %2d\n",
+		printk("xx:xx:%02x:%02x:%02x:%02x   %4d    %c%c%c%c     %c%c%c%c    %2d      %d\n",
 			mcast_l->mc_mac_addr[3], mcast_l->mc_mac_addr[2],
 			mcast_l->mc_mac_addr[1], mcast_l->mc_mac_addr[0],
 			mcast_h->mc_vid,
@@ -177,7 +193,8 @@ void foe_mcast_entry_dump(void)
 			(mcast_h->mc_px_qos_en & 0x04)?'1':'-',
 			(mcast_h->mc_px_qos_en & 0x02)?'1':'-',
 			(mcast_h->mc_px_qos_en & 0x01)?'1':'-',
-			 mcast_h->mc_qos_qid);
+			mcast_h->mc_qos_qid,
+			mcast_h->mc_mpre_sel);
 	}
 }
 
@@ -195,6 +212,7 @@ void foe_mcast_entry_del_all(void)
 		mcast_h->valid = 0;
 		mcast_h->mc_vid = 0;
 		mcast_h->mc_qos_qid = 0;
+		mcast_h->mc_mpre_sel = 0;
 		memset(&mcast_l->mc_mac_addr, 0, 4);
 	}
 }

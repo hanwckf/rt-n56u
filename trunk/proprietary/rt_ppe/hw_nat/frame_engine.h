@@ -238,24 +238,36 @@
 #define PPE_MCAST_H_F		RALINK_PPE_BASE + 0x304
 
 /* GDMA1 My MAC unicast frame destination port */
+#if defined (CONFIG_RAETH_QDMATX_QDMARX)
+#define GDM1_UFRC_P_CPU		(5 << 12)
+#else
 #define GDM1_UFRC_P_CPU		(0 << 12)
+#endif
 #define GDM1_UFRC_P_PPE		(4 << 12)
-#define GDM1_UFRC_P_QDMA	(5 << 12)
 
 /* GDMA1 broadcast frame MAC address destination port */
+#if defined (CONFIG_RAETH_QDMATX_QDMARX)
+#define GDM1_BFRC_P_CPU		(5 << 8)
+#else
 #define GDM1_BFRC_P_CPU		(0 << 8)
+#endif
 #define GDM1_BFRC_P_PPE		(4 << 8)
-#define GDM1_BFRC_P_QDMA	(5 << 8)
 
 /* GDMA1 multicast frame MAC address destination port */
+#if defined (CONFIG_RAETH_QDMATX_QDMARX)
+#define GDM1_MFRC_P_CPU		(5 << 4)
+#else
 #define GDM1_MFRC_P_CPU		(0 << 4)
+#endif
 #define GDM1_MFRC_P_PPE		(4 << 4)
-#define GDM1_MFRC_P_QDMA	(5 << 4)
 
 /* GDMA1 other MAC address frame destination port */
+#if defined (CONFIG_RAETH_QDMATX_QDMARX)
+#define GDM1_OFRC_P_CPU		(5 << 0)
+#else
 #define GDM1_OFRC_P_CPU		(0 << 0)
+#endif
 #define GDM1_OFRC_P_PPE		(4 << 0)
-#define GDM1_OFRC_P_QDMA	(5 << 0)
 
 #endif /* CONFIG_RALINK_MT7621 */
 
@@ -587,6 +599,8 @@ enum FoeCpuReason {
  */
 /* packet in a time stamp unit */
 #define DFL_FOE_BNDR		CONFIG_RA_HW_NAT_BINDING_THRESHOLD
+#define DFL_PBND_RD_LMT		CONFIG_RA_HW_NAT_PBND_RD_LMT
+#define DFL_PBND_RD_PRD		CONFIG_RA_HW_NAT_PBND_RD_PRD
 
 /*
  * PPE_FOE_LMT

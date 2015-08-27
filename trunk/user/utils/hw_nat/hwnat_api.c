@@ -71,6 +71,13 @@ int HwNatSetQoS(struct hwnat_qos_args *opt, int ioctl_id)
     return opt->result;
 }
 #else
+int HwNatDropEntry(unsigned int entry_num)
+{
+    struct hwnat_args opt;
+
+    opt.entry_num = entry_num;
+    return HwNatIoCtlArgs(HW_NAT_DROP_ENTRY, &opt);
+}
 
 int HwNatCacheDumpEntry(void)
 {

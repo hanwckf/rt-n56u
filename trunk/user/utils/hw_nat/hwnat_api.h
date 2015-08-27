@@ -17,6 +17,7 @@ int HwNatInvalidEntry(unsigned int entry_num);
 #if !defined (CONFIG_HNAT_V2)
 int HwNatSetQoS(struct hwnat_qos_args *opt, int ioctl_id);
 #else
+int HwNatDropEntry(unsigned int entry_num);
 int HwNatCacheDumpEntry(void);
 int HwNatGetAGCnt(struct hwnat_ac_args *opt);
 #if defined (CONFIG_PPE_MCAST)

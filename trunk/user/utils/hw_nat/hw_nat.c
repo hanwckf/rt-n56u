@@ -88,6 +88,13 @@ void show_usage(void)
     printf("hw_nat -M Q3(1/2/4/8) Q2(1/2/4/8) Q1(1/2/4/8) Q0(1/2/4/8)\n\n");
     printf("hw_nat -M 8 4 2 1\n\n");
 #else
+
+#if defined (CONFIG_RALINK_MT7621)
+    printf("Drop packets on Foe Entry\n");
+    printf("hw_nat -k [entry_num]\n");
+    printf("Ex: hw_nat -k 1234\n\n");
+#endif
+
     printf("Get ByteCNT and PktCnt of AG_IDX\n");
     printf("Ex: hw_nat -A [AG index]\n\n");
 
@@ -135,7 +142,7 @@ int main(int argc, char *argv[])
 #if !defined (CONFIG_HNAT_V2)
     char options[] = "efg?c:x:d:A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:T:U:V:Z:6:";
 #else
-    char options[] = "aefg?c:x:d:A:B:C:DN:O:P:Q:T:U:V:Z:6:";
+    char options[] = "aefg?c:x:k:d:A:B:C:DN:O:P:Q:T:U:V:Z:6:";
 #endif
     int method = -1;
     unsigned int entry_state = 0;
@@ -247,6 +254,10 @@ int main(int argc, char *argv[])
 		args3.weight0 = strtoll(argv[5], NULL, 10);
 		break;
 #else
+	case 'k':
+		method = HW_NAT_DROP_ENTRY;
+		entry_num = strtoll(optarg, NULL, 10);
+		break;
 	case 'a':
 		method = HW_NAT_DUMP_CACHE_ENTRY;
 		break;
@@ -383,6 +394,9 @@ int main(int argc, char *argv[])
 	    result = HwNatSetQoS(&args3, method);
 	    break;
 #else
+    case HW_NAT_DROP_ENTRY:
+	    result = HwNatDropEntry(entry_num);
+	    break;
     case HW_NAT_DUMP_CACHE_ENTRY:
 	    result = HwNatCacheDumpEntry();
 	    break;

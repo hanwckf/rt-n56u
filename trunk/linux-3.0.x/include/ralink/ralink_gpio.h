@@ -390,13 +390,7 @@
 #elif defined (RALINK_GPIO_HAS_9524)
 #define RALINK_GPIO_NUMBER		96
 #elif defined (RALINK_GPIO_HAS_9532)
-#if defined (CONFIG_RALINK_MT7621)
-#define RALINK_GPIO_NUMBER		64	/* MT7621A/S=49 pins, MT7621N=61 pins */
-#elif defined (CONFIG_RALINK_MT7628)
-#define RALINK_GPIO_NUMBER		73	/* todo */
-#else
-#define RALINK_GPIO_NUMBER		96
-#endif
+#define RALINK_GPIO_NUMBER		64	/* MT7621=62 pins, MT7628=47 pins (use 2 full units) */
 #else
 #define RALINK_GPIO_NUMBER		24
 #endif

@@ -112,7 +112,8 @@ ralink_gpio_set_pin_irq_rise(u32 pin, u32 is_enabled)
 		else
 			tmp &= ~(1u << (pin-32));
 		*(volatile u32 *)(RALINK_REG_PIO6332RENA) = cpu_to_le32(tmp);
-#if !defined (CONFIG_RALINK_MT7621)
+#if 0
+	/* not used on MT7621/MT7628 */
 	} else if (pin <= 95) {
 		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9564RENA));
 		if (is_enabled)
@@ -230,7 +231,8 @@ ralink_gpio_set_pin_irq_fall(u32 pin, u32 is_enabled)
 		else
 			tmp &= ~(1u << (pin-32));
 		*(volatile u32 *)(RALINK_REG_PIO6332FENA) = cpu_to_le32(tmp);
-#if !defined (CONFIG_RALINK_MT7621)
+#if 0
+	/* not used on MT7621/MT7628 */
 	} else if (pin <= 95) {
 		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9564FENA));
 		if (is_enabled)
@@ -351,7 +353,8 @@ ralink_gpio_set_pin_direction(u32 pin, u32 is_output)
 		else
 			tmp &= ~(1u << (pin-32));
 		*(volatile u32 *)(RALINK_REG_PIO6332DIR) = cpu_to_le32(tmp);
-#if !defined (CONFIG_RALINK_MT7621)
+#if 0
+	/* not used on MT7621/MT7628 */
 	} else if (pin <= 95) {
 		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9564DIR));
 		if (is_output)
@@ -468,7 +471,8 @@ ralink_gpio_set_pin_value(u32 pin, u32 value)
 			*(volatile u32 *)(RALINK_REG_PIO6332SET) = cpu_to_le32(tmp);
 		else
 			*(volatile u32 *)(RALINK_REG_PIO6332RESET) = cpu_to_le32(tmp);
-#if !defined (CONFIG_RALINK_MT7621)
+#if 0
+	/* not used on MT7621/MT7628 */
 	} else if (pin <= 95) {
 		tmp = (1u << (pin-64));
 		if (value)
@@ -565,7 +569,8 @@ ralink_gpio_get_pin_value(u32 pin)
 	} else if (pin <= 63) {
 		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO6332DATA));
 		tmp = (tmp >> (pin-32)) & 1u;
-#if !defined (CONFIG_RALINK_MT7621)
+#if 0
+	/* not used on MT7621/MT7628 */
 	} else if (pin <= 95) {
 		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9564DATA));
 		tmp = (tmp >> (pin-64)) & 1u;
@@ -844,7 +849,8 @@ ralink_gpio_led_do_timer(unsigned long unused)
 #elif defined (RALINK_GPIO_HAS_9532)
 	u32 ra_gpio6332_led_set = 0;
 	u32 ra_gpio6332_led_clr = 0;
-#if !defined (CONFIG_RALINK_MT7621)
+#if 0
+	/* not used on MT7621/MT7628 */
 	u32 ra_gpio9564_led_set = 0;
 	u32 ra_gpio9564_led_clr = 0;
 #endif
@@ -872,7 +878,8 @@ ralink_gpio_led_do_timer(unsigned long unused)
 			continue;
 		control_gpio_led(i, i-32, &ra_gpio6332_led_set, &ra_gpio6332_led_clr);
 	}
-#if !defined (CONFIG_RALINK_MT7621)
+#if 0
+	/* not used on MT7621/MT7628 */
 	for (i = 64; i < RALINK_GPIO_NUMBER; i++) {
 		if (!ralink_gpio_led_stat[i].enabled)
 			continue;
@@ -982,7 +989,8 @@ ralink_gpio_led_do_timer(unsigned long unused)
 		*(volatile u32 *)(RALINK_REG_PIO6332RESET) = ra_gpio6332_led_clr;
 	if (ra_gpio6332_led_set)
 		*(volatile u32 *)(RALINK_REG_PIO6332SET) = ra_gpio6332_led_set;
-#if !defined (CONFIG_RALINK_MT7621)
+#if 0
+	/* not used on MT7621/MT7628 */
 	if (ra_gpio9564_led_clr)
 		*(volatile u32 *)(RALINK_REG_PIO9564RESET) = ra_gpio9564_led_clr;
 	if (ra_gpio9564_led_set)
@@ -1193,7 +1201,8 @@ irqreturn_t ralink_gpio_irq_handler(int irq, void *dev_id)
 #elif defined (RALINK_GPIO_HAS_9532)
 	u32 ralink_gpio6332_intp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO6332INT));
 	u32 ralink_gpio6332_edge = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO6332EDGE));
-#if !defined (CONFIG_RALINK_MT7621)
+#if 0
+	/* not used on MT7621/MT7628 */
 	u32 ralink_gpio9564_intp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9564INT));
 	u32 ralink_gpio9564_edge = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9564EDGE));
 #endif
@@ -1231,7 +1240,8 @@ irqreturn_t ralink_gpio_irq_handler(int irq, void *dev_id)
 		if (ralink_gpio_notify_user(i, rise_edge))
 			break;
 	}
-#if !defined (CONFIG_RALINK_MT7621)
+#if 0
+	/* not used on MT7621/MT7628 */
 	for (i = 64; i < RALINK_GPIO_NUMBER; i++) {
 		if ( !(ralink_gpio9564_intp & RALINK_GPIO((i-64))) )
 			continue;

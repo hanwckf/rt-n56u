@@ -691,7 +691,7 @@ int PpeHitBindForceMcastToWiFiHandler(struct sk_buff *skb)
 		}
 	}
 #elif defined (CONFIG_RA_HW_NAT_PCI)
-	for (i= DP_NIC0; i <= DP_NIC0; i++) {
+	for (i= DP_NIC0; i <= DP_NIC1; i++) {
 		dev = DstPort[i];
 		if (dev && netif_running(dev)) {
 			skb2 = skb_clone(skb, GFP_ATOMIC);

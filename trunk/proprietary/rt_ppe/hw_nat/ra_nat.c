@@ -42,6 +42,7 @@
 #include <linux/ppp_defs.h>
 #include <linux/pci.h>
 
+#include "ra_nat_compat.h"
 #include "ra_nat.h"
 #include "foe_fdb.h"
 #include "frame_engine.h"
@@ -58,23 +59,6 @@
 #include "acl_policy.h"
 #include "mtr_policy.h"
 #include "ac_policy.h"
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
-#define skb_vlan_tag_present(x)			vlan_tx_tag_present(x)
-#define skb_vlan_tag_get(x)			vlan_tx_tag_get(x)
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
-#define vlan_insert_tag_set_proto(x,y,z)	__vlan_put_tag(x,z)
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
-#define vlan_insert_tag_set_proto(x,y,z)	__vlan_put_tag(x,y,z)
-#endif
-
-#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
-#define DEFAULT_UDP_OFFLOAD	1
-#else
-#define DEFAULT_UDP_OFFLOAD	0
 #endif
 
 #define MAX_IF_HASH_NUM		256	/* must be 2^X */
@@ -338,7 +322,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 {
 	uint16_t VirIfIdx;
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (RAETH_HW_VLAN4K)
 	int hwaccel_tx = 1;	// support full range VLAN 1..4095
 #else
 	int hwaccel_tx = 0;
@@ -369,7 +353,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 		return 1;
 	}
 
-#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
 	switch (VirIfIdx) {
 	case DP_RA0:
 	case DP_RA1:
@@ -395,11 +379,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	    so HNAT module can know the actual incoming interface from vlan id. */
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
 	if (hwaccel_tx) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-		__vlan_hwaccel_put_tag(skb, __constant_htons(ETH_P_8021Q), VirIfIdx);
-#else
-		__vlan_hwaccel_put_tag(skb, VirIfIdx);
-#endif
+		vlan_insert_tag_hwaccel(skb, __constant_htons(ETH_P_8021Q), VirIfIdx);
 	} else
 #endif
 	{
@@ -965,11 +945,11 @@ static void PpeSetInfoBlk2(struct _info_blk2 *iblk2, uint32_t fpidx, uint32_t po
 {
 #if defined (CONFIG_RALINK_MT7621)
 #if defined (CONFIG_RA_HW_NAT_QDMA)
-	/* QDMA mode should goes to QoS */
+	/* QDMA HW mode should goes to QoS */
 	iblk2->qid = ((fpidx >> 8) & 0xf);
 	iblk2->fqos = (fpidx & 0x8000) ? 1 : 0;
 #else
-	/* PDMA mode should not goes to QoS */
+	/* PDMA/QDMA SW mode should not goes to QoS */
 	iblk2->fqos = 0;
 #endif
 
@@ -988,28 +968,35 @@ static void PpeSetInfoBlk2(struct _info_blk2 *iblk2, uint32_t fpidx, uint32_t po
 }
 
 #if defined (CONFIG_RA_HW_NAT_QDMA)
-extern u8 M2Q_table[64];
+extern u8  M2Q_table[64];
+extern int M2Q_wan_lan;
 
-static inline u32 get_qid_ipv4(struct sk_buff *skb)
+static u32 get_qid_ipv4(struct sk_buff *skb, int is_wan)
 {
+	u32 QID;
 #if defined (CONFIG_IMQ) || defined (CONFIG_IMQ_MODULE)
-	return M2Q_table[(skb->mark & 0x3f)];
+	QID = M2Q_table[(skb->mark & 0x3f)];
+	if (is_wan && M2Q_wan_lan)
+		QID += 8;
 #else
 	const struct iphdr *iph = ip_hdr(skb);
-	return ((iph->tos & 0xff) >> 4); // 0xf0 -> 0x0f
+	QID = (iph->tos & 0xff) >> 4; // 0xf0 -> 0x0f
 #endif
+	return QID;
 }
 
-static inline u32 get_qid_ipv6(struct sk_buff *skb)
+static u32 get_qid_ipv6(struct sk_buff *skb, int is_wan)
 {
+	u32 QID;
 #if defined (CONFIG_IMQ) || defined (CONFIG_IMQ_MODULE)
-	return M2Q_table[(skb->mark & 0x3f)];
+	QID = M2Q_table[(skb->mark & 0x3f)];
+	if (is_wan && M2Q_wan_lan)
+		QID += 8;
 #else
 	const struct ipv6hdr *ip6h = ipv6_hdr(skb);
-	u8 tc = (ip6h->priority << 4) | (ip6h->flow_lbl[0] >> 4);
-
-	return (tc >> 4); // 0xf0 -> 0x0f
+	QID = ((ip6h->priority << 4) | (ip6h->flow_lbl[0] >> 4)) >> 4; // 0xf0 -> 0x0f
 #endif
+	return QID;
 }
 #endif
 
@@ -1364,6 +1351,8 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 #endif
 		if (IS_IPV4_GRP(foe_entry)) {
 #if defined (CONFIG_RA_HW_NAT_QDMA)
+			u32 QID = get_qid_ipv4(skb, 0);
+			
 			if (vlan_layer < 3) {
 				foe_entry->bfib1.vpm = 0; /* etype remark (0x5678) */
 				foe_entry->bfib1.vlan_layer = vlan_layer + 1;
@@ -1373,13 +1362,15 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 				foe_entry->ipv4_hnapt.vlan1 = FOE_ENTRY_NUM(skb);
 			}
 			fpidx |= 0x8000;
-			fpidx |= (get_qid_ipv4(skb) << 8);
+			fpidx |= (QID << 8);
 #endif
 			PpeSetInfoBlk2(&foe_entry->ipv4_hnapt.iblk2, fpidx, 0x3f, 0x3f);
 		}
 #if defined (CONFIG_RA_HW_NAT_IPV6)
 		else if (IS_IPV6_GRP(foe_entry)) {
 #if defined (CONFIG_RA_HW_NAT_QDMA)
+			u32 QID = get_qid_ipv6(skb, 0);
+			
 			if (vlan_layer < 3) {
 				foe_entry->bfib1.vpm = 0; /* etype remark (0x5678) */
 				foe_entry->bfib1.vlan_layer = vlan_layer + 1;
@@ -1389,7 +1380,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 				foe_entry->ipv6_5t_route.vlan1 = FOE_ENTRY_NUM(skb);
 			}
 			fpidx |= 0x8000;
-			fpidx |= (get_qid_ipv6(skb) << 8);
+			fpidx |= (QID << 8);
 #endif
 			PpeSetInfoBlk2(&foe_entry->ipv6_5t_route.iblk2, fpidx, 0x3f, 0x3f);
 		}
@@ -1406,7 +1397,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 #if defined (CONFIG_RAETH_GMAC2)
 		if (gmac_no == 2) {
 			fpidx = 2;	/* 2: to GE2 */
-			port_ag = 2;	/* account group #2 */
+			port_ag = 2;	/* account group #2 (WAN) */
 		}
 #endif
 		if (is_mcast)
@@ -1423,13 +1414,14 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 #endif
 #if !defined (CONFIG_RAETH_GMAC2)
 		if ((vlan1_id & VLAN_VID_MASK) != lan_vid)
-			port_ag = 2;	/* account group #2 */
+			port_ag = 2;	/* account group #2 (WAN) */
 #endif
 		if (IS_IPV4_GRP(foe_entry)) {
 #if defined (CONFIG_RA_HW_NAT_QDMA)
 			if (FOE_SP(skb) != 5) {
+				u32 QID = get_qid_ipv4(skb, (port_ag == 2));
 				fpidx |= 0x8000;
-				fpidx |= (get_qid_ipv4(skb) << 8);
+				fpidx |= (QID << 8);
 			}
 #endif
 			PpeSetInfoBlk2(&foe_entry->ipv4_hnapt.iblk2, fpidx, 0x3f, port_ag);
@@ -1439,8 +1431,9 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 		else if (IS_IPV6_GRP(foe_entry)) {
 #if defined (CONFIG_RA_HW_NAT_QDMA)
 			if (FOE_SP(skb) != 5) {
+				u32 QID = get_qid_ipv6(skb, (port_ag == 2));
 				fpidx |= 0x8000;
-				fpidx |= (get_qid_ipv6(skb) << 8);
+				fpidx |= (QID << 8);
 			}
 #endif
 			PpeSetInfoBlk2(&foe_entry->ipv6_5t_route.iblk2, fpidx, 0x3f, port_ag);
@@ -2120,11 +2113,12 @@ static void PpeSetFoeGloCfgEbl(uint32_t Ebl)
 		/* Enable multicast table lookup */
 		RegModifyBits(PPE_GLO_CFG, 1, 7, 1);
 		RegModifyBits(PPE_GLO_CFG, 1, 12, 2);    // Reserve 16 entry for multicast packet
-		RegModifyBits(PPE_MCAST_PPSE, 0, 0, 4);  // multicast port0 map to PDMA
 		RegModifyBits(PPE_MCAST_PPSE, 1, 4, 4);  // multicast port1 map to GMAC1
 		RegModifyBits(PPE_MCAST_PPSE, 2, 8, 4);  // multicast port2 map to GMAC2
 #if defined (CONFIG_RAETH_QDMATX_QDMARX)
 		RegModifyBits(PPE_MCAST_PPSE, 5, 12, 4); // multicast port3 map to QDMA
+#else
+		RegModifyBits(PPE_MCAST_PPSE, 0, 0, 4);  // multicast port0 map to PDMA
 #endif
 #endif /* CONFIG_RA_HW_NAT_MCAST */
 #if defined (CONFIG_RAETH_QDMATX_QDMARX)
@@ -2335,15 +2329,6 @@ static int32_t PpeEngStop(void)
 	return 0;
 }
 
-struct net_device *ra_dev_get_by_name(const char *name)
-{
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-	return dev_get_by_name(&init_net, name);
-#else
-	return dev_get_by_name(name);
-#endif
-}
-
 int PpeRsHandler(struct net_device *dev, int hold)
 {
 #if defined (CONFIG_RA_HW_NAT_PCI)
@@ -2484,9 +2469,14 @@ uint32_t SetGdmaFwd(uint32_t Ebl)
 	if (Ebl) {
 		/* Uni-cast frames forward to PPE */
 		data |= GDM1_UFRC_P_PPE;
+		/* Broad-cast MAC address frames forward to CPU */
+		data |= GDM1_BFRC_P_CPU;
 #if defined (CONFIG_RA_HW_NAT_MCAST) && defined (CONFIG_HNAT_V2)
 		/* Multi-cast MAC address frames forward to PPE */
 		data |= GDM1_MFRC_P_PPE;
+#else
+		/* Multi-cast MAC address frames forward to CPU */
+		data |= GDM1_MFRC_P_CPU;
 #endif
 		/* Other MAC address frames forward to PPE */
 		data |= GDM1_OFRC_P_PPE;
@@ -2508,9 +2498,14 @@ uint32_t SetGdmaFwd(uint32_t Ebl)
 	if (Ebl) {
 		/* Uni-cast frames forward to PPE */
 		data |= GDM1_UFRC_P_PPE;
+		/* Broad-cast MAC address frames forward to CPU */
+		data |= GDM1_BFRC_P_CPU;
 #if defined (CONFIG_RA_HW_NAT_MCAST) && defined (CONFIG_HNAT_V2)
 		/* Multi-cast MAC address frames forward to PPE */
 		data |= GDM1_MFRC_P_PPE;
+#else
+		/* Multi-cast MAC address frames forward to CPU */
+		data |= GDM1_MFRC_P_CPU;
 #endif
 		/* Other MAC address frames forward to PPE */
 		data |= GDM1_OFRC_P_PPE;

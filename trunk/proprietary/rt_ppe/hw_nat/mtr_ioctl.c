@@ -151,9 +151,9 @@ int MtrIoctl(struct inode *inode, struct file *filp,
 
 struct file_operations mtr_fops = {
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-      unlocked_ioctl:MtrIoctl,
+	unlocked_ioctl: MtrIoctl,
 #else
-      ioctl:MtrIoctl,
+	ioctl: MtrIoctl,
 #endif
 };
 

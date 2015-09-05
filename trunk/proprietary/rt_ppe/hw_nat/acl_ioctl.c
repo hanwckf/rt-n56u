@@ -172,9 +172,9 @@ AclIoctl(struct inode *inode, struct file *filp,
 
 struct file_operations acl_fops = {
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-	unlocked_ioctl:AclIoctl,
+	unlocked_ioctl: AclIoctl,
 #else
-	ioctl:AclIoctl,
+	ioctl: AclIoctl,
 #endif
 };
 

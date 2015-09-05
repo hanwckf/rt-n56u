@@ -8,76 +8,18 @@
 #include <asm/rt2880/surfboard.h>
 #include <asm/rt2880/surfboardint.h>
 
-#include "ra_ethreg.h"
+#include "ra_compat.h"
+#include "ra_eth_reg.h"
 
-#define RAETH_VERSION		"v3.2.1"
+///////////////////////////////////////////////////////////////
+
+#define RAETH_VERSION		"v3.2.2"
 #define RAETH_DEV_NAME		"raeth"
 
 #define DEV_NAME		"eth2"
 #define DEV2_NAME		"eth3"
 
-#if defined (CONFIG_RALINK_RT3052) || defined (MEMORY_OPTIMIZATION)
-#define NUM_RX_DESC		128
-#define NUM_TX_DESC		256
-#else
-#define NUM_RX_DESC		256
-#define NUM_TX_DESC		512
-#endif
-
-#if defined (CONFIG_RAETH_QDMA)
-#define NUM_QRX_DESC		16	/* fake, for FQ only */
-#define NUM_QDMA_PAGE		NUM_TX_DESC
-#define QDMA_PAGE_SIZE		2048
-#endif
-
-#if (NUM_RX_DESC < 256)
-#define NUM_RX_MAX_PROCESS	32
-#else
-#define NUM_RX_MAX_PROCESS	16
-#endif
-
-#if defined (CONFIG_RAETH_NAPI_GRO) && defined (CONFIG_RALINK_MT7621)
-#define NAPI_WEIGHT		64
-#else
-#define NAPI_WEIGHT		32
-#endif
-
-#if defined (CONFIG_RALINK_MT7621)
-#define GMAC0_OFFSET		0xE000
-#define GMAC2_OFFSET		0xE006
-#else
-#define GMAC0_OFFSET		0x28
-#define GMAC2_OFFSET		0x22
-#endif
-
-#define PSE_PORT_CPU		0
-#define PSE_PORT_GMAC1		1
-#define PSE_PORT_GMAC2		2
-#if defined (CONFIG_RALINK_MT7621)
-#define PSE_PORT_PPE		4
-#else
-#define PSE_PORT_PPE		6
-#endif
-
-#if defined (CONFIG_RAETH_JUMBOFRAME)
-#define MAX_RX_LENGTH		4096
-#else
-#define MAX_RX_LENGTH		1536
-#endif
-
-#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
-#define RAETH_PDMA_V2
-#endif
-
-#if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
-#define RAETH_SDMA
-#endif
-
-#if defined (CONFIG_RAETH_DEBUG)
-#define RAETH_PRINT(fmt, args...) printk(KERN_INFO fmt, ## args)
-#else
-#define RAETH_PRINT(fmt, args...) { }
-#endif
+///////////////////////////////////////////////////////////////
 
 typedef struct _END_DEVICE
 {
@@ -98,35 +40,36 @@ typedef struct _END_DEVICE
 
 	struct PDMA_rxdesc		*rxd_ring;
 #if defined (CONFIG_RAETH_QDMA)
-	struct QDMA_txdesc		*txd_cpu_ptr;
 	struct QDMA_txdesc		*txd_pool;
+	dma_addr_t			txd_last_cpu;
 	unsigned int			txd_pool_free_num;
 	unsigned int			txd_pool_free_head;
 	unsigned int			txd_pool_free_tail;
+	unsigned int			txd_pool_info[NUM_TX_DESC];
 #else
 	struct PDMA_txdesc		*txd_ring;
-	unsigned int			txd_free_idx;
+	unsigned int			 txd_free_idx;
 #endif
 
 	struct sk_buff			*rxd_buff[NUM_RX_DESC];
 	struct sk_buff			*txd_buff[NUM_TX_DESC];
 #if defined (CONFIG_RAETH_QDMA)
-	unsigned int			txd_pool_info[NUM_TX_DESC];
+	struct QDMA_txdesc		*fq_head;
+	void				*fq_head_page;
+#if !defined (CONFIG_RAETH_QDMATX_QDMARX)
+	struct PDMA_rxdesc		*qrx_ring;
 
-#if defined (CONFIG_RA_HW_NAT_QDMA)
-	struct QDMA_txdesc		*free_head;
-	void				*free_head_page;
-
-	dma_addr_t			free_head_phy;
-	dma_addr_t			free_head_page_phy;
+	dma_addr_t			qrx_ring_phy;
 #endif
+	dma_addr_t			fq_head_phy;
+	dma_addr_t			fq_head_page_phy;
 	dma_addr_t			txd_pool_phy;
 #else
 	dma_addr_t			txd_ring_phy;
 #endif
 	dma_addr_t			rxd_ring_phy;
 
-	struct work_struct		stat_work;
+	struct work_struct		stat_wq;
 	struct timer_list		stat_timer;
 	struct rtnl_link_stats64	stat;
 #if defined (CONFIG_ETHTOOL)
@@ -145,20 +88,26 @@ typedef struct _PSEUDO_ADAPTER
 } PSEUDO_ADAPTER, *PPSEUDO_ADAPTER;
 #endif
 
-#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
+///////////////////////////////////////////////////////////////
+
+#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
 u32  get_map_hw_vlan_tx(u32 idx);
 void set_map_hw_vlan_tx(u32 idx, u32 vid);
 #endif
 
-int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd);
-#if defined (CONFIG_PSEUDO_SUPPORT)
-int VirtualIF_ioctl(struct net_device * net_dev, struct ifreq * ifr, int cmd);
-#endif
-
+int  raeth_ioctl(struct ifreq *ifr, int cmd);
 #if defined (CONFIG_RAETH_ESW_CONTROL)
 int  esw_ioctl_init(void);
 int  esw_control_post_init(void);
 void esw_ioctl_uninit(void);
+#endif
+
+///////////////////////////////////////////////////////////////
+
+#if defined (CONFIG_RAETH_DEBUG)
+#define RAETH_PRINT(fmt, args...) printk(KERN_INFO fmt, ## args)
+#else
+#define RAETH_PRINT(fmt, args...)
 #endif
 
 #endif

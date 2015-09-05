@@ -12,45 +12,25 @@
 
 #include "raether.h"
 #include "ra_mac.h"
+#include "ra_eth.h"
 #include "ra_phy.h"
-#include "ra_rfrw.h"
 #include "ra_ioctl.h"
+#if defined (CONFIG_RAETH_ESW_CONTROL)
+#include "ra_esw_ioctl.h"
+#endif
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
 #include "ra_esw_base.h"
 #endif
-#if defined (CONFIG_RAETH_DHCP_TOUCH)
-#include "ra_esw_dhcpc.h"
+#if defined (CONFIG_ETHTOOL)
+#include "ra_ethtool.h"
 #endif
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
-#include "ra_esw_mt7621.h"
-#endif
-#if defined (CONFIG_RAETH_ESW_CONTROL)
-#include "ra_esw_ioctl.h"
+#if defined (CONFIG_RALINK_MT7621)
+#include "ra_eth_mt7621.h"
 #endif
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 #include "../../../net/nat/hw_nat/ra_nat.h"
 #include "../../../net/nat/hw_nat/foe_fdb.h"
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
-#define NETIF_F_HW_VLAN_CTAG_TX		NETIF_F_HW_VLAN_TX
-#define NETIF_F_HW_VLAN_CTAG_RX		NETIF_F_HW_VLAN_RX
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
-#define skb_vlan_tag_present(x)		vlan_tx_tag_present(x)
-#define skb_vlan_tag_get(x)		vlan_tx_tag_get(x)
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,14,0)
-#define prandom_seed(x)			net_srandom(x)
-#define prandom_u32()			net_random()
-#endif
-
-#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
-static u8  vlan_4k_map[VLAN_N_VID];
-static u16 vlan_id_map[16];
 #endif
 
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD) && !defined (RAETH_SDMA)
@@ -61,6 +41,11 @@ static int hw_offload_gso = 1;
 static int hw_offload_tso = 1;
 #endif
 #endif
+#endif
+
+#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
+static u8 vlan_4k_map[VLAN_N_VID];
+      u16 vlan_id_map[16];
 #endif
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
@@ -82,14 +67,6 @@ extern int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf);
 
 #if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
 extern int vlan_double_tag;
-#endif
-
-#if defined (CONFIG_ETHTOOL)
-#include "ra_ethtool.h"
-extern struct ethtool_ops ra_ethtool_ops;
-#if defined (CONFIG_PSEUDO_SUPPORT)
-extern struct ethtool_ops ra_virt_ethtool_ops;
-#endif
 #endif
 
 extern u32 ralink_asic_rev_id;
@@ -139,9 +116,9 @@ foe_dma_table_alloc(void)
 }
 #endif
 
-#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
 static void
-fill_hw_vlan_tx(void)
+fill_hw_vlan_tx_map(void)
 {
 	u32 i;
 
@@ -179,29 +156,12 @@ fill_hw_vlan_tx(void)
 #endif
 }
 
-static void
-update_hw_vlan_tx(void)
-{
-	u32 i, reg_vlan;
-
-	for (i = 0; i < 8; i++) {
-		reg_vlan = ((u32)vlan_id_map[(i*2)+1] << 16) | (u32)vlan_id_map[i*2];
-#if defined (CONFIG_RALINK_MT7620)
-		sysRegWrite(RALINK_FRAME_ENGINE_BASE + 0x430 + i*4, reg_vlan);
-#else
-		sysRegWrite(RALINK_FRAME_ENGINE_BASE + 0x0a8 + i*4, reg_vlan);
-#endif
-	}
-}
-
-u32
-get_map_hw_vlan_tx(u32 idx)
+u32 get_map_hw_vlan_tx(u32 idx)
 {
 	return (u32)vlan_id_map[(idx & 0xF)];
 }
 
-void
-set_map_hw_vlan_tx(u32 idx, u32 vid)
+void set_map_hw_vlan_tx(u32 idx, u32 vid)
 {
 	u32 i, vid_old;
 
@@ -225,217 +185,106 @@ set_map_hw_vlan_tx(u32 idx, u32 vid)
 			vlan_4k_map[vid_old] = 0xF;
 	}
 
-	update_hw_vlan_tx();
+	fe_cdm_upadte_vlan_tx();
 }
 #endif
 
 static void
-fe_reset(void)
-{
-	u32 val;
-
-	val = sysRegRead(REG_RSTCTRL);
-
-	/* RT5350/MT7628 (SDMA) need to reset ESW and FE at the same to avoid PDMA panic */
-#if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
-	val |= RALINK_ESW_RST;
-#endif
-
-	/* Reset PPE at this point */
-#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
-	val |= RALINK_PPE_RST;
-#endif
-
-	/* MT7621 + TRGMII need to reset GMAC */
-#if defined (CONFIG_RALINK_MT7621) && defined (CONFIG_GE1_TRGMII_FORCE_1200)
-	val |= RALINK_ETH_RST;
-#endif
-
-	val |= RALINK_FE_RST;
-	sysRegWrite(REG_RSTCTRL, val);
-	udelay(10);
-
-	/* set TRGMII clock */
-#if defined (CONFIG_RALINK_MT7621) && defined (CONFIG_GE1_TRGMII_FORCE_1200)
-	{
-		u32 val_clk = sysRegRead(REG_CLK_CFG_0);
-		val_clk &= 0xffffff9f;
-		val_clk |= (0x1 << 5);
-		sysRegWrite(REG_CLK_CFG_0, val_clk);
-		udelay(1000);
-	}
-#endif
-
-#if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628) || defined (CONFIG_RALINK_MT7620)
-	val &= ~(RALINK_ESW_RST);
-#endif
-
-#if defined (CONFIG_RALINK_MT7620)
-	val &= ~(RALINK_EPHY_RST);
-#endif
-
-#if defined (CONFIG_RALINK_MT7621)
-	val &= ~(RALINK_ETH_RST | RALINK_MCM_RST);
-#endif
-
-#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
-	val &= ~(RALINK_PPE_RST);
-#endif
-
-	val &= ~(RALINK_FE_RST);
-	sysRegWrite(REG_RSTCTRL, val);
-	udelay(1000);
-}
-
-static void
-fe_mac1_addr_set(unsigned char p[6])
-{
-	u32 regValue;
-
-	regValue = (p[0] << 8) | (p[1]);
-#if defined (RAETH_SDMA)
-	sysRegWrite(SDM_MAC_ADRH, regValue);
-#elif defined (CONFIG_RALINK_MT7620)
-	sysRegWrite(SMACCR1, regValue);
-#else
-	sysRegWrite(GDMA1_MAC_ADRH, regValue);
-#endif
-
-	regValue = (p[2] << 24) | (p[3] << 16) | (p[4] << 8) | p[5];
-#if defined (RAETH_SDMA)
-	sysRegWrite(SDM_MAC_ADRL, regValue);
-#elif defined (CONFIG_RALINK_MT7620)
-	sysRegWrite(SMACCR0, regValue);
-#else
-	sysRegWrite(GDMA1_MAC_ADRL, regValue);
-#endif
-}
-
-#if defined (CONFIG_PSEUDO_SUPPORT)
-static void
-fe_mac2_addr_set(unsigned char p[6])
-{
-	u32 regValue;
-
-	regValue = (p[0] << 8) | (p[1]);
-	sysRegWrite(GDMA2_MAC_ADRH, regValue);
-
-	regValue = (p[2] << 24) | (p[3] << 16) | (p[4] << 8) | p[5];
-	sysRegWrite(GDMA2_MAC_ADRL, regValue);
-}
-#endif
-
-static void
-fe_forward_config(struct net_device *dev, END_DEVICE *ei_local)
+fill_dev_features(struct net_device *dev)
 {
 #if defined (RAETH_SDMA)
-	/* RT5350/MT7628 SDMA: No GDMA, PSE, CDMA, PPE */
-	u32 sdmVal;
 
-	sdmVal = sysRegRead(SDM_CON);
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
-	sdmVal |= (SDM_IPCS | SDM_TCPCS | SDM_UDPCS);
-
-	dev->features |= NETIF_F_RXCSUM; /* Can RX checksum */
-	printk("%s: HW IP/TCP/UDP checksum %s offload enabled\n", RAETH_DEV_NAME, "RX");
-#else
-	sdmVal &= ~(SDM_IPCS | SDM_TCPCS | SDM_UDPCS);
+	/* Can handle RX checksum */
+	dev->hw_features |= NETIF_F_RXCSUM;
 #endif
-#if defined (CONFIG_RAETH_SPECIAL_TAG)
-	sdmVal |= SDM_TCI_81XX;
-#endif
-	sysRegWrite(SDM_CON, sdmVal);
 
 #else /* !RAETH_SDMA */
-	u32 regVal, regCsg;
 
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	/* pad to 60 bytes (no VLAN tag) */
-	ei_local->min_pkt_len = ETH_ZLEN;
-#else
-	/* pad to 64 bytes (with VLAN tag) */
-	ei_local->min_pkt_len = VLAN_ETH_ZLEN;
+#if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
+	/* Can handle RX checksum */
+	dev->hw_features |= NETIF_F_RXCSUM;
+	if (hw_offload_csg) {
+		/* Can generate TX checksum TCP/UDP over IPv4 */
+		dev->hw_features |= NETIF_F_IP_CSUM;
+	}
+#if defined (CONFIG_RAETH_SG_DMA_TX)
+	if (hw_offload_gso && hw_offload_csg) {
+		dev->hw_features |= NETIF_F_SG;
+#if defined (CONFIG_RAETH_TSO)
+		if (hw_offload_tso) {
+			/* Can TSOv4 */
+			dev->hw_features |= NETIF_F_TSO;
+#if defined (CONFIG_RAETH_TSOV6)
+			/* Can TSOv6 + generate TX checksum TCP/UDP over IPv6 */
+			dev->hw_features |= NETIF_F_TSO6;
+			dev->hw_features |= NETIF_F_IPV6_CSUM; 
 #endif
+		}
+#endif /* CONFIG_RAETH_TSO */
+	}
+#endif /* CONFIG_RAETH_SG_DMA_TX */
+#endif /* CONFIG_RAETH_CHECKSUM_OFFLOAD */
 
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
-#if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
-	if (vlan_double_tag) {
-		/* disable HW VLAN RX */
-		sysRegWrite(CDMP_EG_CTRL, 0);
-		dev->features &= ~(NETIF_F_HW_VLAN_CTAG_RX);
-	} else
-#endif
-	{
-		/* enable HW VLAN RX */
-		sysRegWrite(CDMP_EG_CTRL, 1);
-		dev->features |= NETIF_F_HW_VLAN_CTAG_RX;
-		printk("%s: HW VLAN %s offload enabled\n", RAETH_DEV_NAME, "RX");
-	}
+	dev->hw_features |= NETIF_F_HW_VLAN_CTAG_RX;
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
-#if !defined (CONFIG_RALINK_MT7621)
-	update_hw_vlan_tx();
-#endif
-#if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
-	if (vlan_double_tag) {
-		/* disable HW VLAN TX */
-		dev->features &= ~(NETIF_F_HW_VLAN_CTAG_TX);
-	} else
-#endif
-	{
-		/* enable HW VLAN TX */
-		ei_local->min_pkt_len = ETH_ZLEN; // pad to 60 bytes
-		dev->features |= NETIF_F_HW_VLAN_CTAG_TX;
-		printk("%s: HW VLAN %s offload enabled\n", RAETH_DEV_NAME, "TX");
-	}
+	dev->hw_features |= NETIF_F_HW_VLAN_CTAG_TX;
 #endif
 
-	regCsg = sysRegRead(CDMA_CSG_CFG);
-	regVal = sysRegRead(GDMA1_FWD_CFG);
+#endif /* RAETH_SDMA */
 
-#if defined (CONFIG_RALINK_MT7620)
-	/* GDMA1 frames destination port is port0 CPU */
-	regVal &= ~0x7;
-#else
-	/* set unicast/multicast/broadcast/other frames forward to CPU (PDMA) */
-	regVal &= ~0x7777;
-	regVal |= (GDM1_UFRC_P_CPU | GDM1_BFRC_P_CPU | GDM1_MFRC_P_CPU | GDM1_OFRC_P_CPU);
-#endif
+	dev->features = dev->hw_features;
+	dev->vlan_features = dev->features & ~(NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX);
+}
 
-	regCsg &= ~0x7;
+static void
+calc_dev_features(struct net_device *dev)
+{
+#if defined (RAETH_SDMA)
 
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
-	regVal |= GDM1_ICS_EN;
-	regVal |= GDM1_TCS_EN;
-	regVal |= GDM1_UCS_EN;
+	dev->features |= NETIF_F_RXCSUM;
+#endif
 
-	dev->features |= NETIF_F_RXCSUM; /* Can handle RX checksum */
+#else /* !RAETH_SDMA */
 
-	if (hw_offload_csg) {
-		regCsg |= ICS_GEN_EN;
-		regCsg |= TCS_GEN_EN;
-		regCsg |= UCS_GEN_EN;
-		
-		dev->features |= NETIF_F_IP_CSUM; /* Can generate TX checksum TCP/UDP over IPv4 */
-		printk("%s: HW IP/TCP/UDP checksum %s offload enabled\n", RAETH_DEV_NAME, "RX/TX");
-	} else {
+#if defined (CONFIG_RAETH_HW_VLAN_RX)
+#if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
+	if (vlan_double_tag)
+		dev->features &= ~(NETIF_F_HW_VLAN_CTAG_RX);
+	else
+#endif
+		dev->features |= NETIF_F_HW_VLAN_CTAG_RX;
+#endif
+
+#if defined (CONFIG_RAETH_HW_VLAN_TX)
+#if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
+	if (vlan_double_tag)
+		dev->features &= ~(NETIF_F_HW_VLAN_CTAG_TX);
+	else
+#endif
+		dev->features |= NETIF_F_HW_VLAN_CTAG_TX;
+#endif
+
+#if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
+	dev->features |= NETIF_F_RXCSUM;
+	if (hw_offload_csg)
+		dev->features |= NETIF_F_IP_CSUM;
+	else
 		dev->features &= ~NETIF_F_IP_CSUM;
-		printk("%s: HW IP/TCP/UDP checksum %s offload enabled\n", RAETH_DEV_NAME, "RX");
-	}
-
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	if (hw_offload_gso && hw_offload_csg) {
 		dev->features |= NETIF_F_SG;
-		printk("%s: HW Scatter/Gather TX offload enabled\n", RAETH_DEV_NAME);
 #if defined (CONFIG_RAETH_TSO)
 		if (hw_offload_tso) {
 			dev->features |= NETIF_F_TSO;
 #if defined (CONFIG_RAETH_TSOV6)
 			dev->features |= NETIF_F_TSO6;
-			dev->features |= NETIF_F_IPV6_CSUM; /* Can TX checksum TCP/UDP over IPv6 */
+			dev->features |= NETIF_F_IPV6_CSUM;
 #endif
-			printk("%s: HW TCP segmentation offload (TSO) enabled\n", RAETH_DEV_NAME);
 		} else {
 			dev->features &= ~(NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
 		}
@@ -446,202 +295,89 @@ fe_forward_config(struct net_device *dev, END_DEVICE *ei_local)
 #endif /* CONFIG_RAETH_SG_DMA_TX */
 
 #else /* !CONFIG_RAETH_CHECKSUM_OFFLOAD */
-
-	regCsg &= ~ICS_GEN_EN;
-	regCsg &= ~TCS_GEN_EN;
-	regCsg &= ~UCS_GEN_EN;
-
-	regVal &= ~GDM1_ICS_EN;
-	regVal &= ~GDM1_TCS_EN;
-	regVal &= ~GDM1_UCS_EN;
-
-	dev->features &= ~(NETIF_F_IP_CSUM | NETIF_F_RXCSUM); /* disable checksum TCP/UDP over IPv4 */
-#endif
-
-#if defined (CONFIG_RAETH_SPECIAL_TAG)
-	regVal |= GDM1_TCI_81XX;
-#endif
-
-#if defined (CONFIG_RAETH_JUMBOFRAME)
-	regVal |= GDM1_JMB_EN;
-	regVal &= ~0xf0000000; /* clear bit28-bit31 */
-	regVal |= (((MAX_RX_LENGTH/1024)&0xf) << 28);
-#endif
-
-	sysRegWrite(CDMA_CSG_CFG, regCsg);
-	sysRegWrite(GDMA1_FWD_CFG, regVal);
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	sysRegWrite(GDMA2_FWD_CFG, regVal);
-#endif
-
-/*
- * 	PSE_FQ_CFG register definition -
- *
- * 	Define max free queue page count in PSE. (31:24)
- *	RT3883 - 0xff908000 (255 pages)
- *	RT3052 - 0x80504000 (128 pages)
- *
- * 	In each page, there are 128 bytes in each page.
- *
- *	23:16 - free queue flow control release threshold
- *	15:8  - free queue flow control assertion threshold
- *	7:0   - free queue empty threshold
- *
- *	The register affects QOS correctness in frame engine!
- */
-
-#if defined (CONFIG_RALINK_RT3883)
-	sysRegWrite(PSE_FQ_CFG, cpu_to_le32(INIT_VALUE_OF_RT3883_PSE_FQ_CFG));
-#elif defined (CONFIG_RALINK_RT3052)
-	sysRegWrite(PSE_FQ_CFG, cpu_to_le32(INIT_VALUE_OF_PSE_FQFC_CFG));
-#endif
-	/*
-	 * Reset PSE after re-programming PSE_FQ_CFG.
-	 */
-	sysRegWrite(FE_RST_GLO, 1);
-	sysRegWrite(FE_RST_GLO, 0);	// update for RSTCTL issue
-
-	regCsg = sysRegRead(CDMA_CSG_CFG);
-	regVal = sysRegRead(GDMA1_FWD_CFG);
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	regVal = sysRegRead(GDMA2_FWD_CFG);
+	dev->features &= ~(NETIF_F_IP_CSUM | NETIF_F_RXCSUM);
 #endif
 
 #endif /* RAETH_SDMA */
 }
 
 static void
-fe_dma_start(void)
+show_dev_features(struct net_device *dev)
 {
-	u32 dma_glo_cfg = (TX_WB_DDONE | RX_DMA_EN | TX_DMA_EN);
+	if (dev->features & NETIF_F_IP_CSUM)
+		printk("%s: HW IP/TCP/UDP checksum %s offload enabled\n", RAETH_DEV_NAME, "RX/TX");
+	else if (dev->features & NETIF_F_RXCSUM)
+		printk("%s: HW IP/TCP/UDP checksum %s offload enabled\n", RAETH_DEV_NAME, "RX");
 
-#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
-	dma_glo_cfg |= PDMA_BT_SIZE_16DWORDS;
-#else
-	dma_glo_cfg |= PDMA_BT_SIZE_8DWORDS;
-#endif
-#if defined (RAETH_PDMA_V2)
-	dma_glo_cfg |= RX_2B_OFFSET;
-#endif
+	if (dev->features & NETIF_F_HW_VLAN_CTAG_RX)
+		printk("%s: HW VLAN %s offload enabled\n", RAETH_DEV_NAME, "RX");
 
-	sysRegWrite(PDMA_GLO_CFG, dma_glo_cfg);
-#if defined (CONFIG_RAETH_QDMA)
-	sysRegWrite(QDMA_GLO_CFG, dma_glo_cfg);
-#endif
+	if (dev->features & NETIF_F_HW_VLAN_CTAG_TX)
+		printk("%s: HW VLAN %s offload enabled\n", RAETH_DEV_NAME, "TX");
+
+	if (dev->features & NETIF_F_SG)
+		printk("%s: HW Scatter/Gather TX offload enabled\n", RAETH_DEV_NAME);
+
+	if (dev->features & NETIF_F_TSO)
+		printk("%s: HW TCP segmentation offload (TSO) enabled\n", RAETH_DEV_NAME);
 }
 
 static void
-fe_dma_stop(void)
+calc_dev_min_pkt_len(struct net_device *dev, END_DEVICE *ei_local)
 {
-	u32 regValue;
-
-	regValue = sysRegRead(PDMA_GLO_CFG);
-	regValue &= ~(TX_WB_DDONE | RX_DMA_EN | TX_DMA_EN);
-	sysRegWrite(PDMA_GLO_CFG, regValue);
-
-#if defined (CONFIG_RAETH_QDMA)
-	regValue = sysRegRead(QDMA_GLO_CFG);
-	regValue &= ~(TX_WB_DDONE | RX_DMA_EN | TX_DMA_EN);
-	sysRegWrite(QDMA_GLO_CFG, regValue);
-#endif
-}
-
-static void
-read_counters_gdma1(END_DEVICE *ei_local)
-{
-	u32 rx_fcs_bad;
-#if !defined (RAETH_SDMA)
-	u32 rx_too_sho;
-	u32 rx_too_lon;
-	u32 tx_skipped;
-
-	ei_local->stat.tx_bytes         += sysRegRead(GDMA1_TX_GBCNT);
-	ei_local->stat.tx_packets       += sysRegRead(GDMA1_TX_GPCNT);
-	tx_skipped                       = sysRegRead(GDMA1_TX_SKIPCNT);
-	ei_local->stat.collisions       += sysRegRead(GDMA1_TX_COLCNT);
-
-	ei_local->stat.rx_bytes         += sysRegRead(GDMA1_RX_GBCNT);
-	ei_local->stat.rx_packets       += sysRegRead(GDMA1_RX_GPCNT);
-	ei_local->stat.rx_over_errors   += sysRegRead(GDMA1_RX_OERCNT);
-	rx_fcs_bad                       = sysRegRead(GDMA1_RX_FERCNT);
-	rx_too_sho                       = sysRegRead(GDMA1_RX_SERCNT);
-	rx_too_lon                       = sysRegRead(GDMA1_RX_LERCNT);
-
-	if (tx_skipped)
-		ei_local->stat.tx_dropped += tx_skipped;
-
-	if (rx_too_sho)
-		ei_local->stat.rx_length_errors += rx_too_sho;
-
-	if (rx_too_lon)
-		ei_local->stat.rx_length_errors += rx_too_lon;
+#if defined (RAETH_SDMA)
+	/* pad to 64 bytes (with VLAN tag) */
+	ei_local->min_pkt_len = VLAN_ETH_ZLEN;
 #else
-	ei_local->stat.tx_bytes         += sysRegRead(SDM_TBCNT);
-	ei_local->stat.tx_packets       += sysRegRead(SDM_TPCNT);
-
-	ei_local->stat.rx_bytes         += sysRegRead(SDM_RBCNT);
-	ei_local->stat.rx_packets       += sysRegRead(SDM_RPCNT);
-	rx_fcs_bad                       = sysRegRead(SDM_CS_ERR);
-#endif
-
-	if (rx_fcs_bad) {
-		ei_local->stat.rx_errors += rx_fcs_bad;
-		ei_local->stat.rx_crc_errors += rx_fcs_bad;
-	}
-}
-
 #if defined (CONFIG_PSEUDO_SUPPORT)
-static void
-read_counters_gdma2(PSEUDO_ADAPTER *pPseudoAd)
-{
-	u32 tx_skipped;
-	u32 rx_fcs_bad;
-	u32 rx_too_sho;
-	u32 rx_too_lon;
-
-	pPseudoAd->stat.tx_bytes        += sysRegRead(GDMA2_TX_GBCNT);
-	pPseudoAd->stat.tx_packets      += sysRegRead(GDMA2_TX_GPCNT);
-	tx_skipped                       = sysRegRead(GDMA2_TX_SKIPCNT);
-	pPseudoAd->stat.collisions      += sysRegRead(GDMA2_TX_COLCNT);
-
-	pPseudoAd->stat.rx_bytes        += sysRegRead(GDMA2_RX_GBCNT);
-	pPseudoAd->stat.rx_packets      += sysRegRead(GDMA2_RX_GPCNT);
-	pPseudoAd->stat.rx_over_errors  += sysRegRead(GDMA2_RX_OERCNT);
-	rx_fcs_bad                       = sysRegRead(GDMA2_RX_FERCNT);
-	rx_too_sho                       = sysRegRead(GDMA2_RX_SERCNT);
-	rx_too_lon                       = sysRegRead(GDMA2_RX_LERCNT);
-
-	if (tx_skipped)
-		pPseudoAd->stat.tx_dropped += tx_skipped;
-
-	if (rx_too_sho)
-		pPseudoAd->stat.rx_length_errors += rx_too_sho;
-
-	if (rx_too_lon)
-		pPseudoAd->stat.rx_length_errors += rx_too_lon;
-
-	if (rx_fcs_bad) {
-		pPseudoAd->stat.rx_errors += rx_fcs_bad;
-		pPseudoAd->stat.rx_crc_errors += rx_fcs_bad;
+	/* pad to 60 bytes (no or stripped VLAN tag) */
+	ei_local->min_pkt_len = ETH_ZLEN;
+#else
+	if (dev->features & NETIF_F_HW_VLAN_CTAG_TX) {
+		/* pad to 60 bytes (stripped VLAN tag) */
+		ei_local->min_pkt_len = ETH_ZLEN;
+	} else {
+		/* pad to 64 bytes (with VLAN tag) */
+		ei_local->min_pkt_len = VLAN_ETH_ZLEN;
 	}
+#endif
+#endif
 }
-#endif
 
 static void
-wait_dma_stop(int cycles_10ms)
+fetch_stat_counters(END_DEVICE *ei_local)
 {
-	int i;
-	u32 regVal;
-
-	for (i = 0; i < cycles_10ms; i++) {
-		regVal  = sysRegRead(PDMA_GLO_CFG);
-#if defined (CONFIG_RAETH_QDMA)
-		regVal |= sysRegRead(QDMA_GLO_CFG);
+#if defined (CONFIG_PSEUDO_SUPPORT)
+	PSEUDO_ADAPTER *pPseudoAd = netdev_priv(ei_local->PseudoDev);
 #endif
-		if (!(regVal & (RX_DMA_BUSY | TX_DMA_BUSY)))
-			break;
-		msleep(10);
-	}
+
+	spin_lock(&ei_local->stat_lock);
+	fe_gdm1_fetch_mib(&ei_local->stat);
+#if defined (CONFIG_PSEUDO_SUPPORT)
+	fe_gdm2_fetch_mib(&pPseudoAd->stat);
+#endif
+	spin_unlock(&ei_local->stat_lock);
+}
+
+static void
+stat_wq_handler(struct work_struct *work)
+{
+	END_DEVICE *ei_local = container_of(work, END_DEVICE, stat_wq);
+
+	fetch_stat_counters(ei_local);
+
+	if (ei_local->active)
+		mod_timer(&ei_local->stat_timer, jiffies + (25 * HZ));
+}
+
+static void
+stat_timer_handler(unsigned long ptr)
+{
+	struct net_device *dev = (struct net_device *)ptr;
+	END_DEVICE *ei_local = netdev_priv(dev);
+
+	if (ei_local->active)
+		schedule_work(&ei_local->stat_wq);
 }
 
 static void
@@ -660,7 +396,7 @@ inc_rx_drop(END_DEVICE *ei_local, int gmac_no)
 }
 
 static inline int
-pdma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
+dma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 {
 	struct PDMA_rxdesc *rxd_ring;
 	struct sk_buff *new_skb, *rx_skb;
@@ -675,7 +411,7 @@ pdma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 	struct vlan_ethhdr *veth;
 #endif
 
-	rxd_dma_owner_idx = le32_to_cpu(sysRegRead(RX_CALC_IDX0));
+	rxd_dma_owner_idx = le32_to_cpu(sysRegRead(DMA_RX_CALC_IDX0));
 
 	while (work_done < work_todo) {
 		rxd_dma_owner_idx = (rxd_dma_owner_idx + 1) % NUM_RX_DESC;
@@ -707,7 +443,7 @@ pdma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 			rxd_ring->rxd_info2 = RX2_DMA_LS0;
 #endif
 			/* move CPU pointer to next RXD */
-			sysRegWrite(RX_CALC_IDX0, cpu_to_le32(rxd_dma_owner_idx));
+			sysRegWrite(DMA_RX_CALC_IDX0, cpu_to_le32(rxd_dma_owner_idx));
 			
 			inc_rx_drop(ei_local, gmac_no);
 #if !defined (CONFIG_RAETH_NAPI)
@@ -736,7 +472,7 @@ pdma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 		wmb();
 		
 		/* move CPU pointer to next RXD */
-		sysRegWrite(RX_CALC_IDX0, cpu_to_le32(rxd_dma_owner_idx));
+		sysRegWrite(DMA_RX_CALC_IDX0, cpu_to_le32(rxd_dma_owner_idx));
 		
 		/* skb processing */
 		rx_skb->len = RX2_DMA_SDL0_GET(rxd_info2);
@@ -757,11 +493,7 @@ pdma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
 		if ((rxd_info2 & RX2_DMA_TAG) && rxd_info3) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-			__vlan_hwaccel_put_tag(rx_skb, __constant_htons(ETH_P_8021Q), RX3_DMA_VID(rxd_info3));
-#else
-			__vlan_hwaccel_put_tag(rx_skb, RX3_DMA_VID(rxd_info3));
-#endif
+			vlan_insert_tag_hwaccel(rx_skb, __constant_htons(ETH_P_8021Q), RX3_DMA_VID(rxd_info3));
 		}
 #endif
 
@@ -824,10 +556,10 @@ pdma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 	return work_done;
 }
 
-static inline void
+#if defined (FE_INT_ENABLE2) && (FE_INT_INIT2_VALUE != 0)
+static void
 dispatch_int_status2(END_DEVICE *ei_local)
 {
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 	u32 reg_int_val;
 
 	reg_int_val = sysRegRead(FE_INT_STATUS2);
@@ -839,22 +571,16 @@ dispatch_int_status2(END_DEVICE *ei_local)
 	if (!ei_local->active)
 		return;
 
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 	if (reg_int_val & GE2_LINK_INT) {
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P0)
-		u32 port_id = 0;
-#else
-		u32 port_id = 4;
-#endif
-		u32 link_state = sysRegRead(RALINK_ETH_SW_BASE+0x0208);
-		if (link_state & 0x1) {
-			u32 link_speed = (link_state >> 2) & 0x3;
-			mt7621_esw_fc_delay_set((link_speed == 1) ? 1 : 0);
-		}
-		
-		esw_link_status_changed(port_id, link_state & 0x1);
+		/* do not touch MDIO registers in hardirq/softirq context */
+		ge2_int2_schedule_wq();
 	}
 #endif
 }
+#else
+#define dispatch_int_status2(x)
+#endif
 
 #if defined (CONFIG_RAETH_NAPI)
 static int
@@ -865,7 +591,7 @@ ei_napi_poll(struct napi_struct *napi, int budget)
 	int work_done;
 
 	/* process RX queue */
-	work_done = pdma_recv(napi->dev, ei_local, budget);
+	work_done = dma_recv(napi->dev, ei_local, budget);
 
 	/* cleanup TX queue */
 	dma_xmit_clean(napi->dev, ei_local);
@@ -883,18 +609,22 @@ ei_napi_poll(struct napi_struct *napi, int budget)
 		/* exit from NAPI poll mode, ack and enable TX/RX interrupts */
 		local_irq_save(flags);
 		__napi_complete(napi);
+#if (FE_INT_INIT_VALUE != 0)
 		sysRegWrite(FE_INT_STATUS, FE_INT_INIT_VALUE);
+#endif
 #if defined (CONFIG_RAETH_QDMA)
 		sysRegWrite(QFE_INT_STATUS, QFE_INT_INIT_VALUE);
 #endif
 		if (ei_local->active) {
-#if (defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)) && FE_INT_INIT2_VALUE
+#if defined (FE_INT_ENABLE2) && (FE_INT_INIT2_VALUE != 0)
 			sysRegWrite(FE_INT_ENABLE2, FE_INT_INIT2_VALUE);
+#endif
+#if (FE_INT_INIT_VALUE != 0)
+			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
 #endif
 #if defined (CONFIG_RAETH_QDMA)
 			sysRegWrite(QFE_INT_ENABLE, QFE_INT_INIT_VALUE);
 #endif
-			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
 		}
 		local_irq_restore(flags);
 	}
@@ -912,16 +642,24 @@ ei_receive(unsigned long ptr)
 	int work_done;
 
 	/* process RX queue */
-	work_done = pdma_recv(dev, ei_local, NUM_RX_MAX_PROCESS);
+	work_done = dma_recv(dev, ei_local, NUM_RX_MAX_PROCESS);
 
 	if (work_done < NUM_RX_MAX_PROCESS) {
 		unsigned long flags;
 		
 		/* ack and enable RX interrupts */
 		local_irq_save(flags);
+#if defined (CONFIG_RAETH_QDMA) && (QFE_INT_MASK_RX != 0)
+		sysRegWrite(QFE_INT_STATUS, QFE_INT_MASK_RX);
+#else
 		sysRegWrite(FE_INT_STATUS, FE_INT_MASK_RX);
+#endif
 		if (ei_local->active)
+#if defined (CONFIG_RAETH_QDMA) && (QFE_INT_MASK_RX != 0)
+			sysRegWrite(QFE_INT_ENABLE, QFE_INT_INIT_VALUE);
+#else
 			sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
+#endif
 		local_irq_restore(flags);
 	} else {
 		/* reschedule again */
@@ -938,20 +676,19 @@ ei_xmit_clean(unsigned long ptr)
 
 	dma_xmit_clean(dev, ei_local);
 }
-#endif
+#endif /* CONFIG_RAETH_NAPI */
 
 /**
- * ei_interrupt - handle controler interrupt
- *
- * This routine is called at interrupt level in response to an interrupt from
- * the controller.
+ * ei_interrupt - handle Frame Engine interrupt
  */
 static irqreturn_t
 ei_interrupt(int irq, void *dev_id)
 {
 	struct net_device *dev = (struct net_device *) dev_id;
 	END_DEVICE *ei_local;
-	u32 __maybe_unused reg_int_val;
+#if !defined (CONFIG_RAETH_NAPI)
+	u32 __maybe_unused reg_int_pdma, reg_int_qdma;
+#endif
 
 	if (!dev)
 		return IRQ_NONE;
@@ -961,8 +698,10 @@ ei_interrupt(int irq, void *dev_id)
 #if defined (CONFIG_RAETH_NAPI)
 	if (napi_schedule_prep(&ei_local->napi)) {
 		/* disable all interrupts */
+#if (FE_INT_INIT_VALUE != 0)
 		sysRegWrite(FE_INT_ENABLE, 0);
-#if (defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)) && FE_INT_INIT2_VALUE
+#endif
+#if defined (FE_INT_ENABLE2) && (FE_INT_INIT2_VALUE != 0)
 		sysRegWrite(FE_INT_ENABLE2, 0);
 #endif
 #if defined (CONFIG_RAETH_QDMA)
@@ -971,36 +710,60 @@ ei_interrupt(int irq, void *dev_id)
 		/* enter to NAPI poll mode */
 		__napi_schedule(&ei_local->napi);
 	}
-#else
-	reg_int_val  = sysRegRead(FE_INT_STATUS);
-#if defined (CONFIG_RAETH_QDMA)
-	reg_int_val |= sysRegRead(QFE_INT_STATUS);
-	if (reg_int_val)
-		sysRegWrite(QFE_INT_STATUS, reg_int_val);
 
-	if (reg_int_val & QFE_INT_MASK_TX)
-		tasklet_schedule(&ei_local->tx_tasklet);
-#else
-	if (reg_int_val & FE_INT_MASK_TX)
+#else /* !CONFIG_RAETH_NAPI */
+
+#if (FE_INT_INIT_VALUE != 0)
+	reg_int_pdma = sysRegRead(FE_INT_STATUS);
+	if (reg_int_pdma)
+		sysRegWrite(FE_INT_STATUS, reg_int_pdma);
+
+#if !defined (CONFIG_RAETH_QDMA)
+	if (reg_int_pdma & FE_INT_MASK_TX)
 		tasklet_schedule(&ei_local->tx_tasklet);
 #endif
-
-	if (reg_int_val & FE_INT_MASK_RX) {
+#if (FE_INT_MASK_RX != 0)
+	if (reg_int_pdma & FE_INT_MASK_RX) {
 		u32 reg_int_mask = sysRegRead(FE_INT_ENABLE);
 		if (reg_int_mask & FE_INT_MASK_RX) {
-			/* disable RX interrupt */
+			/* disable PDMA RX interrupt */
 			sysRegWrite(FE_INT_ENABLE, reg_int_mask & ~(FE_INT_MASK_RX));
 			tasklet_hi_schedule(&ei_local->rx_tasklet);
 		}
 	}
+#endif
+#endif
 
-	if (reg_int_val)
-		sysRegWrite(FE_INT_STATUS, reg_int_val);
+#if defined (CONFIG_RAETH_QDMA)
+	reg_int_qdma = sysRegRead(QFE_INT_STATUS);
+	if (reg_int_qdma)
+		sysRegWrite(QFE_INT_STATUS, reg_int_qdma);
+
+	if (reg_int_qdma & QFE_INT_MASK_TX)
+		tasklet_schedule(&ei_local->tx_tasklet);
+
+#if (QFE_INT_MASK_RX != 0)
+	if (reg_int_qdma & QFE_INT_MASK_RX) {
+		u32 reg_int_mask = sysRegRead(QFE_INT_ENABLE);
+		if (reg_int_mask & QFE_INT_MASK_RX) {
+			/* disable QDMA RX interrupt */
+			sysRegWrite(QFE_INT_ENABLE, reg_int_mask & ~(QFE_INT_MASK_RX));
+			tasklet_hi_schedule(&ei_local->rx_tasklet);
+		}
+	}
+#endif
+#endif
 
 	dispatch_int_status2(ei_local);
 #endif /* CONFIG_RAETH_NAPI */
 
 	return IRQ_HANDLED;
+}
+
+static int
+ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+{
+	return raeth_ioctl(ifr, cmd);
 }
 
 static int
@@ -1019,51 +782,6 @@ ei_change_mtu(struct net_device *dev, int new_mtu)
 	return 0;
 }
 
-static void
-fill_dev_features(struct net_device *dev)
-{
-#if defined (RAETH_SDMA)
-
-#if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
-	dev->hw_features |= NETIF_F_RXCSUM; /* Can handle RX checksum */
-#endif
-
-#else /* !RAETH_SDMA */
-
-#if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
-	dev->hw_features |= NETIF_F_RXCSUM; /* Can handle RX checksum */
-	if (hw_offload_csg)
-		dev->hw_features |= NETIF_F_IP_CSUM; /* Can generate TX checksum TCP/UDP over IPv4 */
-#if defined (CONFIG_RAETH_SG_DMA_TX)
-	if (hw_offload_gso && hw_offload_csg) {
-		dev->hw_features |= NETIF_F_SG;
-#if defined (CONFIG_RAETH_TSO)
-		if (hw_offload_tso) {
-			dev->hw_features |= NETIF_F_TSO;
-#if defined (CONFIG_RAETH_TSOV6)
-			dev->hw_features |= NETIF_F_TSO6;
-			dev->hw_features |= NETIF_F_IPV6_CSUM; /* Can generate TX checksum TCP/UDP over IPv6 */
-#endif
-		}
-#endif /* CONFIG_RAETH_TSO */
-	}
-#endif /* CONFIG_RAETH_SG_DMA_TX */
-#endif /* CONFIG_RAETH_CHECKSUM_OFFLOAD */
-
-#if defined (CONFIG_RAETH_HW_VLAN_RX)
-	dev->hw_features |= NETIF_F_HW_VLAN_CTAG_RX;
-#endif
-
-#if defined (CONFIG_RAETH_HW_VLAN_TX)
-	dev->hw_features |= NETIF_F_HW_VLAN_CTAG_TX;
-#endif
-
-#endif /* RAETH_SDMA */
-
-	dev->features = dev->hw_features;
-	dev->vlan_features = dev->features & ~(NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX);
-}
-
 #if defined (CONFIG_PSEUDO_SUPPORT)
 static struct rtnl_link_stats64 *
 VirtualIF_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
@@ -1072,66 +790,47 @@ VirtualIF_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
 	END_DEVICE *ei_local = netdev_priv(pPseudoAd->RaethDev);
 
 	spin_lock(&ei_local->stat_lock);
-	read_counters_gdma2(pPseudoAd);
+	fe_gdm2_fetch_mib(&pPseudoAd->stat);
 	memcpy(stats, &pPseudoAd->stat, sizeof(struct rtnl_link_stats64));
 	spin_unlock(&ei_local->stat_lock);
 
 	return stats;
 }
 
+#if defined (CONFIG_RAETH_ESW_CONTROL)
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P0)
+int
+VirtualIF_get_bytes(port_bytes_t *pb)
+{
+	struct net_device *dev = dev_raether;
+	END_DEVICE *ei_local;
+	PSEUDO_ADAPTER *pPseudoAd;
+	struct rtnl_link_stats64 *stat;
+
+	if (!dev)
+		return -1;
+
+	ei_local = netdev_priv(dev);
+	pPseudoAd = netdev_priv(ei_local->PseudoDev);
+	stat = &pPseudoAd->stat;
+
+	spin_lock(&ei_local->stat_lock);
+	fe_gdm2_fetch_mib(stat);
+	pb->RX = stat->rx_bytes;
+	pb->TX = stat->tx_bytes;
+	spin_unlock(&ei_local->stat_lock);
+
+	return 0;
+}
+#endif
+#endif
+
 static int
 VirtualIF_open(struct net_device *dev)
 {
-#if defined (CONFIG_RAETH_HW_VLAN_RX)
-#if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
-	if (vlan_double_tag)
-		dev->features &= ~(NETIF_F_HW_VLAN_CTAG_TX);
-	else
-#endif
-		dev->features |= NETIF_F_HW_VLAN_CTAG_RX;
-#endif
+	calc_dev_features(dev);
 
-#if defined (CONFIG_RAETH_HW_VLAN_TX)
-#if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
-	if (vlan_double_tag)
-		dev->features &= ~(NETIF_F_HW_VLAN_CTAG_TX);
-	else
-#endif
-		dev->features |= NETIF_F_HW_VLAN_CTAG_TX;
-#endif
-
-#if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
-	dev->features |= NETIF_F_RXCSUM;
-
-	if (hw_offload_csg)
-		dev->features |= NETIF_F_IP_CSUM;
-	else
-		dev->features &= ~NETIF_F_IP_CSUM;
-
-#if defined (CONFIG_RAETH_SG_DMA_TX)
-	if (hw_offload_gso && hw_offload_csg) {
-		dev->features |= NETIF_F_SG;
-#if defined (CONFIG_RAETH_TSO)
-		if (hw_offload_tso) {
-			dev->features |= NETIF_F_TSO;
-#if defined (CONFIG_RAETH_TSOV6)
-			dev->features |= NETIF_F_TSO6;
-			dev->features |= NETIF_F_IPV6_CSUM; /* Can checksum TCP/UDP over IPv6 */
-#endif
-		} else {
-			dev->features &= ~(NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
-		}
-#endif /* CONFIG_RAETH_TSO */
-	} else {
-		dev->features &= ~(NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
-	}
-#endif /* CONFIG_RAETH_SG_DMA_TX */
-
-#else /* !CONFIG_RAETH_CHECKSUM_OFFLOAD */
-
-	dev->features &= ~(NETIF_F_IP_CSUM | NETIF_F_RXCSUM); /* disable checksum TCP/UDP over IPv4 */
-
-#endif /* CONFIG_RAETH_CHECKSUM_OFFLOAD */
+	fe_gdm2_set_mac(dev->dev_addr);
 
 #if defined (CONFIG_RAETH_BQL)
 	netdev_reset_queue(dev);
@@ -1172,7 +871,7 @@ static const struct net_device_ops VirtualIF_netdev_ops = {
 	.ndo_stop		= VirtualIF_close,
 	.ndo_start_xmit		= VirtualIF_start_xmit,
 	.ndo_get_stats64	= VirtualIF_get_stats64,
-	.ndo_do_ioctl		= VirtualIF_ioctl,
+	.ndo_do_ioctl		= ei_ioctl,
 	.ndo_change_mtu		= ei_change_mtu,
 	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_validate_addr	= eth_validate_addr,
@@ -1203,7 +902,7 @@ VirtualIF_init(struct net_device *dev_parent)
 
 	/* Get mac2 address from flash */
 #if defined (CONFIG_RAETH_READ_MAC_FROM_MTD)
-	i = ra_mtd_read_nm("Factory", GMAC2_OFFSET, 6, addr.sa_data);
+	i = ra_mtd_read_nm("Factory", MTD_GMAC2_OFFSET, 6, addr.sa_data);
 
 	/* If reading mtd failed or mac0 is empty, generate a mac address */
 	if (i < 0 || ((memcmp(addr.sa_data, zero1, 6) == 0) || (addr.sa_data[0] & 0x1)) ||
@@ -1243,15 +942,7 @@ VirtualIF_init(struct net_device *dev_parent)
 
 	return 0;
 }
-#endif
-
-static int
-ei_start_xmit(struct sk_buff* skb, struct net_device *dev)
-{
-	END_DEVICE *ei_local = netdev_priv(dev);
-
-	return dma_xmit(skb, dev, ei_local, PSE_PORT_GMAC1);
-}
+#endif /* CONFIG_PSEUDO_SUPPORT */
 
 static struct rtnl_link_stats64 *
 ei_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
@@ -1259,40 +950,11 @@ ei_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
 	END_DEVICE *ei_local = netdev_priv(dev);
 
 	spin_lock(&ei_local->stat_lock);
-	read_counters_gdma1(ei_local);
+	fe_gdm1_fetch_mib(&ei_local->stat);
 	memcpy(stats, &ei_local->stat, sizeof(struct rtnl_link_stats64));
 	spin_unlock(&ei_local->stat_lock);
 
 	return stats;
-}
-
-static void
-stat_counters_update(struct work_struct *work)
-{
-	END_DEVICE *ei_local = container_of(work, END_DEVICE, stat_work);
-
-	if (!ei_local->active)
-		return;
-
-	spin_lock(&ei_local->stat_lock);
-	read_counters_gdma1(ei_local);
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	read_counters_gdma2(netdev_priv(ei_local->PseudoDev));
-#endif
-	spin_unlock(&ei_local->stat_lock);
-
-	if (ei_local->active)
-		mod_timer(&ei_local->stat_timer, jiffies + (20 * HZ));
-}
-
-static void
-stat_timer_handler(unsigned long ptr)
-{
-	struct net_device *dev = (struct net_device *)ptr;
-	END_DEVICE *ei_local = netdev_priv(dev);
-
-	if (ei_local->active)
-		schedule_work(&ei_local->stat_work);
 }
 
 /**
@@ -1318,7 +980,7 @@ ei_init(struct net_device *dev)
 	spin_lock_init(&ei_local->stat_lock);
 	spin_lock_init(&ei_local->page_lock);
 
-	INIT_WORK(&ei_local->stat_work, stat_counters_update);
+	INIT_WORK(&ei_local->stat_wq, stat_wq_handler);
 
 	setup_timer(&ei_local->stat_timer, stat_timer_handler, (unsigned long)dev);
 
@@ -1331,7 +993,7 @@ ei_init(struct net_device *dev)
 
 	/* Get MAC0 address from flash */
 #if defined (CONFIG_RAETH_READ_MAC_FROM_MTD)
-	i = ra_mtd_read_nm("Factory", GMAC0_OFFSET, 6, addr.sa_data);
+	i = ra_mtd_read_nm("Factory", MTD_GMAC0_OFFSET, 6, addr.sa_data);
 
 	/* If reading mtd failed or mac0 is empty, generate a mac address */
 	if (i < 0 || ((memcmp(addr.sa_data, zero1, 6) == 0) || (addr.sa_data[0] & 0x1)) ||
@@ -1387,6 +1049,7 @@ ei_uninit(struct net_device *dev)
 	foe_dma_table_free();
 #endif
 
+	fe_dma_clear_addr();
 	fe_dma_ring_free(ei_local);
 }
 
@@ -1410,6 +1073,10 @@ ei_open(struct net_device *dev)
 
 	ei_local = netdev_priv(dev);
 
+	calc_dev_features(dev);
+	show_dev_features(dev);
+	calc_dev_min_pkt_len(dev, ei_local);
+
 	spin_lock_bh(&ei_local->page_lock);
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
@@ -1418,13 +1085,16 @@ ei_open(struct net_device *dev)
 		ra_sw_nat_hook_ec(0);
 #endif
 
-	fe_reset();
+	fe_eth_reset();
 	fe_dma_init(ei_local);
-	fe_phy_init();
-	fe_forward_config(dev, ei_local);
-	fe_mac1_addr_set(dev->dev_addr);
+	fe_esw_init();
+	fe_cdm_init(dev);
+	fe_gdm_init(dev);
+	fe_pse_init();
+
+	fe_gdm1_set_mac(dev->dev_addr);
 #if defined (CONFIG_PSEUDO_SUPPORT)
-	fe_mac2_addr_set(ei_local->PseudoDev->dev_addr);
+	fe_gdm2_set_mac(ei_local->PseudoDev->dev_addr);
 #endif
 
 #if defined (CONFIG_RAETH_ESW_CONTROL)
@@ -1450,24 +1120,9 @@ ei_open(struct net_device *dev)
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_RALINK_MT7621)
 	/* request interrupt line for MT7620 ESW or MT7621 GSW */
 	err = request_irq(SURFBOARDINT_ESW, esw_interrupt, IRQF_DISABLED, "ralink_esw", dev);
-	
-	/* enable ESW interrupts */
-	sysRegWrite(RALINK_INTENA, RALINK_INTCTL_ESW);
 #elif defined (CONFIG_MT7530_INT_GPIO)
 	// todo, needed capture GPIO interrupt for external MT7530
 #endif
-#endif
-
-	/* clear pending INT and enable INT */
-	sysRegWrite(FE_INT_STATUS, 0xffffffff);
-	sysRegWrite(FE_INT_ENABLE, FE_INT_INIT_VALUE);
-#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
-	sysRegWrite(FE_INT_STATUS2, 0xffffffff);
-	sysRegWrite(FE_INT_ENABLE2, FE_INT_INIT2_VALUE);
-#endif
-#if defined (CONFIG_RAETH_QDMA)
-	sysRegWrite(QFE_INT_STATUS, 0xffffffff);
-	sysRegWrite(QFE_INT_ENABLE, QFE_INT_INIT_VALUE);
 #endif
 
 #if defined (CONFIG_RAETH_BQL)
@@ -1481,12 +1136,16 @@ ei_open(struct net_device *dev)
 	/* allow processing */
 	ei_local->active = 1;
 
+#if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
+	esw_irq_enable();
+#endif
+	fe_irq_enable();
 	fe_dma_start();
 
 	netif_start_queue(dev);
 
-	/* counters overflow after ~34s for 1Gbps speed, use 20s period for safe */
-	mod_timer(&ei_local->stat_timer, jiffies + (20 * HZ));
+	/* counters overflow after ~34s for 1Gbps speed, use 25s period for safe */
+	mod_timer(&ei_local->stat_timer, jiffies + (25 * HZ));
 
 	return 0;
 }
@@ -1511,16 +1170,7 @@ ei_close(struct net_device *dev)
 	netif_tx_disable(dev);
 
 	fe_dma_stop();
-	msleep(10);
-	wait_dma_stop(50);
-
-	sysRegWrite(FE_INT_ENABLE, 0);
-#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
-	sysRegWrite(FE_INT_ENABLE2, 0);
-#endif
-#if defined (CONFIG_RAETH_QDMA)
-	sysRegWrite(QFE_INT_ENABLE, 0);
-#endif
+	fe_irq_disable();
 
 #if defined (CONFIG_RAETH_NAPI)
 	napi_disable(&ei_local->napi);
@@ -1530,9 +1180,12 @@ ei_close(struct net_device *dev)
 #endif
 
 	del_timer_sync(&ei_local->stat_timer);
-	cancel_work_sync(&ei_local->stat_work);
-#if defined (CONFIG_RAETH_DHCP_TOUCH)
-	esw_dhcpc_cancel();
+	cancel_work_sync(&ei_local->stat_wq);
+#if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
+	esw_irq_cancel_wq();
+#endif
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+	ge2_int2_cancel_wq();
 #endif
 
 	free_irq(dev->irq, dev);
@@ -1542,19 +1195,20 @@ ei_close(struct net_device *dev)
 	// todo, needed capture GPIO interrupt for external MT7530
 #endif
 
-	spin_lock_bh(&ei_local->page_lock);
 	fe_dma_uninit(ei_local);
-	spin_unlock_bh(&ei_local->page_lock);
 
 	/* fetch pending FE counters */
-	spin_lock(&ei_local->stat_lock);
-	read_counters_gdma1(ei_local);
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	read_counters_gdma2(netdev_priv(ei_local->PseudoDev));
-#endif
-	spin_unlock(&ei_local->stat_lock);
+	fetch_stat_counters(ei_local);
 
 	return 0;
+}
+
+static int
+ei_start_xmit(struct sk_buff* skb, struct net_device *dev)
+{
+	END_DEVICE *ei_local = netdev_priv(dev);
+
+	return dma_xmit(skb, dev, ei_local, PSE_PORT_GMAC1);
 }
 
 static const struct net_device_ops ei_netdev_ops = {
@@ -1594,6 +1248,7 @@ __init raeth_init(void)
 #endif
 #endif
 	}
+
 	/* ECO_ID < 5: TSO stuck */
 	if ((ralink_asic_rev_id & 0xf) < 5) {
 #if defined (CONFIG_RAETH_TSO)
@@ -1627,8 +1282,8 @@ __init raeth_init(void)
 	dev->ethtool_ops = &ra_ethtool_ops;
 #endif
 
-#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
-	fill_hw_vlan_tx();
+#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
+	fill_hw_vlan_tx_map();
 #endif
 	fill_dev_features(dev);
 
@@ -1644,7 +1299,7 @@ __init raeth_init(void)
 
 	debug_proc_init();
 
-	fe_phy_init_early();
+	early_phy_init();
 
 #if defined (CONFIG_RAETH_ESW_CONTROL)
 	esw_ioctl_init();
@@ -1652,7 +1307,11 @@ __init raeth_init(void)
 
 	printk("Ralink APSoC Ethernet Driver %s (%s)\n", RAETH_VERSION, RAETH_DEV_NAME);
 #if defined (CONFIG_RAETH_QDMA)
+#if defined (CONFIG_RAETH_QDMATX_QDMARX)
+	printk("%s: QDMA RX ring %d, QDMA TX pool %d. Max packet size %d\n", RAETH_DEV_NAME, NUM_RX_DESC, NUM_TX_DESC, MAX_RX_LENGTH);
+#else
 	printk("%s: PDMA RX ring %d, QDMA TX pool %d. Max packet size %d\n", RAETH_DEV_NAME, NUM_RX_DESC, NUM_TX_DESC, MAX_RX_LENGTH);
+#endif
 #else
 	printk("%s: PDMA RX ring %d, PDMA TX ring %d. Max packet size %d\n", RAETH_DEV_NAME, NUM_RX_DESC, NUM_TX_DESC, MAX_RX_LENGTH);
 #endif

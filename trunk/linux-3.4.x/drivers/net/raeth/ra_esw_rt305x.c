@@ -4,12 +4,14 @@
 #include <linux/types.h>
 #include <linux/delay.h>
 #include <linux/string.h>
+#include <linux/netdevice.h>
 
-#include "ra_ethreg.h"
-#include "mii_mgr.h"
-#include "ra_phy.h"
+#include "ra_eth_reg.h"
 #include "ra_esw_reg.h"
-#include "ra_esw_rt305x.h"
+#include "ra_rfrw.h"
+#include "mii_mgr.h"
+#include "ra_eth.h"
+#include "ra_phy.h"
 
 #if defined (CONFIG_RAETH_ESW)
 static void esw_ephy_reset(void)
@@ -203,20 +205,26 @@ static void rt5350_ephy_init(void)
 static void mt7628_ephy_init(void)
 {
 	int i;
-	u32 val;
+	u32 phy_val;
 
-	val = sysRegRead(REG_AGPIOCFG);
-	val &= ~(MT7628_P0_EPHY_AIO_EN | MT7628_P1_EPHY_AIO_EN | MT7628_P2_EPHY_AIO_EN | MT7628_P3_EPHY_AIO_EN | MT7628_P4_EPHY_AIO_EN);
-	sysRegWrite(REG_AGPIOCFG, val);
+	phy_val = sysRegRead(REG_AGPIOCFG);
+	phy_val &= ~(MT7628_P0_EPHY_AIO_EN | MT7628_P1_EPHY_AIO_EN | MT7628_P2_EPHY_AIO_EN | MT7628_P3_EPHY_AIO_EN | MT7628_P4_EPHY_AIO_EN);
+#if defined (CONFIG_RAETH_ESW_ONE_PORT)
+	phy_val |=  (MT7628_P1_EPHY_AIO_EN | MT7628_P2_EPHY_AIO_EN | MT7628_P3_EPHY_AIO_EN | MT7628_P4_EPHY_AIO_EN);
+#endif
+	sysRegWrite(REG_AGPIOCFG, phy_val);
 
 	// reset EPHY
 	esw_ephy_reset();
-	udelay(5000);
 
-	/* set P0~P4 EPHY LED mode */
-	val = sysRegRead(RALINK_SYSCTL_BASE + 0x64);
-	val &= 0xf003f003;
-	sysRegWrite(RALINK_SYSCTL_BASE + 0x64, val);
+	phy_val = sysRegRead(RALINK_REG_GPIOMODE2);
+	phy_val &= 0xf003f003;
+#if defined (CONFIG_RAETH_ESW_ONE_PORT)
+	phy_val |= 0x05540554; // set P0 EPHY LED mode
+#endif
+	sysRegWrite(RALINK_REG_GPIOMODE2, phy_val);
+
+	udelay(5000);
 
 	mii_mgr_write(0, 31, 0x2000);		// change G2 page
 	mii_mgr_write(0, 26, 0x0000);
@@ -230,10 +238,7 @@ static void mt7628_ephy_init(void)
 		mii_mgr_write(i, 26, phy_val);
 #else
 		/* disable EEE */
-		mii_mgr_write(i, 13, 0x7);
-		mii_mgr_write(i, 14, 0x3C);
-		mii_mgr_write(i, 13, 0x4007);
-		mii_mgr_write(i, 14, 0x0);
+		mii_mgr_write_cl45(i, 0x07, 0x3c, 0x0000);
 #endif
 		mii_mgr_write(i, 30, 0xa000);
 		mii_mgr_write(i, 31, 0xa000);	// change L2 page
@@ -269,7 +274,7 @@ static void mt7628_ephy_init(void)
 	mii_mgr_write(0, 30, 0x0500);
 }
 #endif
-#endif
+#endif /* CONFIG_RAETH_ESW */
 
 void rt305x_esw_init(void)
 {
@@ -300,9 +305,11 @@ void rt305x_esw_init(void)
 	sysRegWrite(RALINK_ETH_SW_BASE+0x009C, 0x6008a241);
 #endif
 	sysRegWrite(RALINK_ETH_SW_BASE+0x008C, 0x02404040);
+#if defined (CONFIG_RT3052_ASIC) || defined (CONFIG_RT3352_ASIC) || defined (CONFIG_RT5350_ASIC) || defined (CONFIG_MT7628_ASIC)
 	sysRegWrite(RALINK_ETH_SW_BASE+0x00C8, 0x3f502b28); //Change polling Ext PHY Addr=0x1F
 	sysRegWrite(RALINK_ETH_SW_BASE+0x0084, 0x00000000);
 	sysRegWrite(RALINK_ETH_SW_BASE+0x0110, 0x7d000000); //1us cycle number=125 (FE's clock=125Mhz)
+#endif
 
 	/*
 	 * set port 5 force to 1000M/Full when connecting to switch or iNIC

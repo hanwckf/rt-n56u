@@ -7,17 +7,14 @@
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/interrupt.h>
+#include <linux/sched.h>
+#include <linux/atomic.h>
 
-#include "ra_ethreg.h"
-#include "mii_mgr.h"
+#include "ra_eth_reg.h"
 #include "ra_esw_reg.h"
+#include "mii_mgr.h"
 #include "ra_esw_base.h"
 #include "ra_esw_mt7620.h"
-
-#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
-static u32 ports_link_state;
-#endif
 
 #if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
 typedef struct
@@ -37,13 +34,22 @@ typedef struct
 static mib_threshold_t mib_threholds[ESW_PORT_ID_MAX+1];
 #endif
 
+#if !defined (CONFIG_MT7530_GSW)
+static atomic_t esw_isr_state = ATOMIC_INIT(0);
+#endif
+
+#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
+    defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
+static atomic_t esw_ports_link_state = ATOMIC_INIT(0);
+#endif
+
 u32 esw_reg_get(u32 addr)
 {
 #if defined (CONFIG_MT7530_GSW)
 	u32 data = 0;
 	if (mii_mgr_read(MT7530_MDIO_ADDR, addr, &data))
 		return data;
-	printk("mt7530_get: FAILED at read from 0x%08X!\n", addr);
+	printk("%s: FAILED at read from 0x%08X!\n", __FUNCTION__, addr);
 	return 0;
 #else
 	return sysRegRead(RALINK_ETH_SW_BASE + addr);
@@ -54,7 +60,7 @@ void esw_reg_set(u32 addr, u32 data)
 {
 #if defined (CONFIG_MT7530_GSW)
 	if (!mii_mgr_write(MT7530_MDIO_ADDR, addr, data))
-		printk("mt7530_set: FAILED at write to 0x%08X!\n", addr);
+		printk("%s: FAILED at write to 0x%08X!\n", __FUNCTION__, addr);
 #else
 	sysRegWrite(RALINK_ETH_SW_BASE + addr, data);
 #endif
@@ -97,7 +103,7 @@ u32 esw_get_port_mib_tgpc(u32 port_id)
 	mib_val  = esw_reg_get(REG_ESW_MIB_TGPC_P0 + 0x100*port_id) & 0xffff;
 	mib_val |= (u32)mib_threholds[port_id].tx_good << 16;
 #elif defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
-	mib_val  = esw_reg_get(RALINK_ETH_SW_BASE + 0x150 + 4*port_id) & 0xFFFF;
+	mib_val  = esw_reg_get(0x150 + 4*port_id) & 0xFFFF;
 #endif
 	return mib_val;
 }
@@ -114,7 +120,7 @@ u32 esw_get_port_mib_rgpc(u32 port_id)
 	mib_val |= (u32)mib_threholds[port_id].rx_good << 16;
 #elif defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628) || \
       defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352)
-	mib_val  = esw_reg_get(RALINK_ETH_SW_BASE + 0xE8 + 4*port_id) & 0xFFFF;
+	mib_val  = esw_reg_get(0xE8 + 4*port_id) & 0xFFFF;
 #endif
 	return mib_val;
 }
@@ -123,7 +129,7 @@ u32 esw_get_port_mib_tboc(u32 port_id)
 {
 	u32 mib_val = 0;
 #if defined (CONFIG_MT7530_GSW)
-	// todo (MT7530 documentation needed)
+	// nothing
 #elif defined (CONFIG_RALINK_MT7620)
 	mib_val = esw_reg_get(REG_ESW_MIB_TBOC_P0 + 0x100*port_id);
 #endif
@@ -134,7 +140,7 @@ u32 esw_get_port_mib_rboc(u32 port_id)
 {
 	u32 mib_val = 0;
 #if defined (CONFIG_MT7530_GSW)
-	// todo (MT7530 documentation needed)
+	// nothing
 #elif defined (CONFIG_RALINK_MT7620)
 	mib_val = esw_reg_get(REG_ESW_MIB_RBOC_P0 + 0x100*port_id);
 #endif
@@ -150,7 +156,7 @@ u32 esw_get_port_mib_tbpc(u32 port_id)
 	mib_val  = esw_reg_get(REG_ESW_MIB_TGPC_P0 + 0x100*port_id) >> 16;
 	mib_val |= (u32)mib_threholds[port_id].tx_bad << 16;
 #elif defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
-	mib_val  = esw_reg_get(RALINK_ETH_SW_BASE + 0x150 + 4*port_id) >> 16;
+	mib_val  = esw_reg_get(0x150 + 4*port_id) >> 16;
 #endif
 	return mib_val;
 }
@@ -165,7 +171,7 @@ u32 esw_get_port_mib_rbpc(u32 port_id)
 	mib_val |= (u32)mib_threholds[port_id].rx_bad << 16;
 #elif defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628) || \
       defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352)
-	mib_val  = esw_reg_get(RALINK_ETH_SW_BASE + 0xE8 + 4*port_id) >> 16;
+	mib_val  = esw_reg_get(0xE8 + 4*port_id) >> 16;
 #endif
 	return mib_val;
 }
@@ -208,6 +214,19 @@ u32 esw_get_port_mib_rfpc(u32 port_id)
 
 void esw_irq_init(void)
 {
+#if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628) || \
+    defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352)
+	u32 reg_val = (esw_reg_get(REG_ESW_POA) >> 25) & 0x1f;
+	atomic_set(&esw_ports_link_state, reg_val);
+#endif
+
+#if !defined (CONFIG_MT7530_GSW)
+	atomic_set(&esw_isr_state, 0);
+#endif
+}
+
+void esw_irq_enable(void)
+{
 	u32 reg_val;
 #if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
 	u32 i;
@@ -231,11 +250,6 @@ void esw_irq_init(void)
 	}
 #endif
 
-#if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628) || \
-    defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352)
-	ports_link_state = esw_reg_get(RALINK_ETH_SW_BASE+0x80) >> 25;
-#endif
-
 	/* clear pending int bits */
 	reg_val = esw_reg_get(REG_ESW_ISR);
 	if (reg_val)
@@ -249,9 +263,14 @@ void esw_irq_init(void)
 	reg_val &= ~(ESW_INT_ALL);
 #endif
 	esw_reg_set(REG_ESW_IMR, reg_val);
+
+#if defined (CONFIG_RAETH_ESW) && !defined (CONFIG_RALINK_MT7621)
+	/* enable global ESW interrupts */
+	sysRegWrite(RALINK_INTENA, RALINK_INTCTL_ESW);
+#endif
 }
 
-void esw_irq_uninit(void)
+void esw_irq_disable(void)
 {
 	u32 reg_val;
 
@@ -275,10 +294,10 @@ void esw_mib_init(void)
 #if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
 static void gsw_event_acl(void)
 {
-	u32 val_aisr;
+	u32 val_aisr = esw_reg_get(REG_ESW_AISR);
 
-	val_aisr = esw_reg_get(REG_ESW_AISR);
-	esw_reg_set(REG_ESW_AISR, val_aisr);
+	if (val_aisr)
+		esw_reg_set(REG_ESW_AISR, val_aisr);
 }
 
 static void gsw_event_mib(void)
@@ -319,13 +338,7 @@ static void gsw_event_mib(void)
 /* stub for esw link dispatcher */
 void esw_link_status_changed(u32 port_id, int port_link)
 {
-	char *port_state_desc;
-
-	if (port_link) {
-		port_state_desc = "Up";
-	} else {
-		port_state_desc = "Down";
-	}
+	const char *port_state_desc = (port_link) ? "Up" : "Down";
 
 	printk("ESW: Link Status Changed - Port%d Link %s\n", port_id, port_state_desc);
 }
@@ -334,9 +347,7 @@ void esw_link_status_changed(u32 port_id, int port_link)
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_MT7530_GSW)
 static void gsw_event_link(u32 port_id)
 {
-	u32 reg_val;
-
-	reg_val = esw_reg_get(REG_ESW_MAC_PMSR_P0 + (port_id*0x100));
+	u32 reg_val = esw_reg_get(REG_ESW_MAC_PMSR_P0 + (port_id*0x100));
 
 #if !defined (CONFIG_RAETH_ESW_CONTROL)
 #if !defined (CONFIG_MT7530_GSW)
@@ -351,37 +362,36 @@ static void gsw_event_link(u32 port_id)
       defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
 static void esw_event_link(void)
 {
-	u32 i, reg_poa;
+	u32 i, reg_poa[2], phy_link[2];
 
-	reg_poa = esw_reg_get(RALINK_ETH_SW_BASE+0x80) >> 25;
-	if (reg_poa == ports_link_state)
+	reg_poa[0] = (esw_reg_get(REG_ESW_POA) >> 25) & 0x1f;
+	reg_poa[1] = atomic_read(&esw_ports_link_state);
+
+	if (reg_poa[0] == reg_poa[1])
 		return;
 
-	for (i = 0; i < 5; i++) {
-		if ((reg_poa & (1UL<<i)) != (ports_link_state & (1UL<<i)))
-			esw_link_status_changed(0, (reg_poa & (1UL<<i)) ? 1 : 0);
-	}
+	atomic_set(&esw_ports_link_state, reg_poa[0]);
 
-	ports_link_state = reg_poa;
+	for (i = 0; i < 5; i++) {
+		phy_link[0] = reg_poa[0] & (1UL<<i);
+		phy_link[1] = reg_poa[1] & (1UL<<i);
+		if (phy_link[0] != phy_link[1])
+			esw_link_status_changed(i, (phy_link[0]) ? 1 : 0);
+	}
 }
 #endif
 
-irqreturn_t esw_interrupt(int irq, void *dev_id)
+static void esw_isr_wq_handler(struct work_struct *work)
 {
 	u32 val_isr;
-
+#if defined (CONFIG_MT7530_GSW)
 	val_isr = esw_reg_get(REG_ESW_ISR);
-	if (!val_isr)
-		return IRQ_NONE;
-
-	esw_reg_set(REG_ESW_ISR, val_isr);
-
-#if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
-	if (val_isr & ACL_INT)
-		gsw_event_acl();
-
-	if (val_isr & MIB_INT)
-		gsw_event_mib();
+	if (val_isr)
+		esw_reg_set(REG_ESW_ISR, val_isr);
+#else
+	val_isr = atomic_read(&esw_isr_state);
+	atomic_set(&esw_isr_state, 0);
+	val_isr |= esw_reg_get(REG_ESW_ISR);
 #endif
 
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_MT7530_GSW)
@@ -400,6 +410,48 @@ irqreturn_t esw_interrupt(int irq, void *dev_id)
 	if (val_isr & PORT_ST_CHG)
 		esw_event_link();
 #endif
+}
+
+static DECLARE_WORK(esw_isr_wq, esw_isr_wq_handler);
+
+/**
+ * handle ESW interrupt
+ */
+irqreturn_t esw_interrupt(int irq, void *dev_id)
+{
+#if !defined (CONFIG_MT7530_GSW)
+	u32 val_isr = sysRegRead(RALINK_ETH_SW_BASE + REG_ESW_ISR);
+
+	if (!val_isr)
+		return IRQ_NONE;
+
+	sysRegWrite(RALINK_ETH_SW_BASE + REG_ESW_ISR, val_isr);
+
+#if defined (CONFIG_RALINK_MT7620)
+	if (val_isr & ACL_INT)
+		gsw_event_acl();
+
+	if (val_isr & MIB_INT)
+		gsw_event_mib();
+
+	if (!(val_isr & (P0_LINK_CHG|P1_LINK_CHG|P2_LINK_CHG|P3_LINK_CHG|P4_LINK_CHG)))
+		return IRQ_HANDLED;
+#else
+	if (!(val_isr & PORT_ST_CHG))
+		return IRQ_HANDLED;
+#endif
+	val_isr |= atomic_read(&esw_isr_state);
+	atomic_set(&esw_isr_state, val_isr);
+#endif
+
+	/* do not touch MDIO registers in hardirq context */
+	schedule_work(&esw_isr_wq);
 
 	return IRQ_HANDLED;
 }
+
+void esw_irq_cancel_wq(void)
+{
+	cancel_work_sync(&esw_isr_wq);
+}
+

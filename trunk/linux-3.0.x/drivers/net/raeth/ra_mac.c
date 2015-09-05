@@ -50,9 +50,7 @@
 #endif
 #define PROCREG_TXRING			"tx_ring"
 #define PROCREG_RXRING			"rx_ring"
-#define PROCREG_NUM_OF_TXD		"num_of_txd"
 #define PROCREG_GMAC			"gmac"
-#define PROCREG_CP0			"cp0"
 #define PROCREG_ESW_CNT			"esw_cnt"
 #define PROCREG_SNMP			"snmp"
 #define PROCREG_VLAN_TX			"vlan_tx"
@@ -63,7 +61,7 @@ extern struct net_device *dev_raether;
 struct proc_dir_entry *procRegDir = NULL;
 static struct proc_dir_entry *procGmac;
 #if defined (CONFIG_RAETH_DEBUG)
-static struct proc_dir_entry *procSysCP0, *procTxRing, *procRxRing, *procEswCnt;
+static struct proc_dir_entry *procTxRing, *procRxRing, *procEswCnt;
 #endif
 #if defined (CONFIG_RAETH_QDMA)
 static struct proc_dir_entry *procQdma;
@@ -71,7 +69,7 @@ static struct proc_dir_entry *procQdma;
 #if defined (CONFIG_RAETH_SNMPD)
 static struct proc_dir_entry *procSnmp;
 #endif
-#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
 static struct proc_dir_entry *procVlanTx;
 
 static int ra_vlan_tx_seq_show(struct seq_file *m, void *v)
@@ -180,24 +178,36 @@ static const struct file_operations ra_snmp_seq_fops = {
 
 static int ra_regs_seq_show(struct seq_file *m, void *v)
 {
+#if defined (CONFIG_RAETH_DEBUG)
 #if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
 	seq_printf(m, "SDM_CON		: 0x%08x\n", sysRegRead(SDM_CON));
 #else
 	seq_printf(m, "FE_GLO_CFG	: 0x%08x\n", sysRegRead(FE_GLO_CFG));
 #if defined (CONFIG_RALINK_MT7621)
 	seq_printf(m, "CDMP_IG_CTRL	: 0x%08x\n", sysRegRead(CDMP_IG_CTRL));
-	seq_printf(m, "CDMP_EG_CTRL	: 0x%08x\n\n", sysRegRead(CDMP_EG_CTRL));
+	seq_printf(m, "CDMP_EG_CTRL	: 0x%08x\n", sysRegRead(CDMP_EG_CTRL));
+	seq_printf(m, "CDMQ_IG_CTRL	: 0x%08x\n", sysRegRead(CDMQ_IG_CTRL));
+	seq_printf(m, "CDMQ_EG_CTRL	: 0x%08x\n", sysRegRead(CDMQ_EG_CTRL));
 #else
-	seq_printf(m, "CDMA_CSG_CFG	: 0x%08x\n\n", sysRegRead(CDMA_CSG_CFG));
+	seq_printf(m, "CDMA_CSG_CFG	: 0x%08x\n", sysRegRead(CDMA_CSG_CFG));
 #endif
 
+	seq_printf(m, "\n");
 	seq_printf(m, "GDMA1_FWD_CFG	: 0x%08x\n", sysRegRead(GDMA1_FWD_CFG));
-	seq_printf(m, "GDMA1_SHPR_CFG	: 0x%08x\n\n", sysRegRead(GDMA1_SHPR_CFG));
+	seq_printf(m, "GDMA1_SHPR_CFG	: 0x%08x\n", sysRegRead(GDMA1_SHPR_CFG));
+#if defined (CONFIG_RALINK_MT7621)
+	seq_printf(m, "GDMA1_VLAN_GEN	: 0x%08x\n", sysRegRead(GDMA1_VLAN_GEN));
+#endif
 #if defined (CONFIG_PSEUDO_SUPPORT)
+	seq_printf(m, "\n");
 	seq_printf(m, "GDMA2_FWD_CFG	: 0x%08x\n", sysRegRead(GDMA2_FWD_CFG));
-	seq_printf(m, "GDMA2_SHPR_CFG	: 0x%08x\n\n", sysRegRead(GDMA2_SHPR_CFG));
+	seq_printf(m, "GDMA2_SHPR_CFG	: 0x%08x\n", sysRegRead(GDMA2_SHPR_CFG));
+#if defined (CONFIG_RALINK_MT7621)
+	seq_printf(m, "GDMA2_VLAN_GEN	: 0x%08x\n", sysRegRead(GDMA2_VLAN_GEN));
 #endif
 #endif
+#endif
+	seq_printf(m, "\n");
 	seq_printf(m, "PDMA_GLO_CFG	: 0x%08x\n", sysRegRead(PDMA_GLO_CFG));
 	seq_printf(m, "DLY_INT_CFG	: 0x%08x\n", sysRegRead(DLY_INT_CFG));
 #if defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628) || \
@@ -207,8 +217,7 @@ static int ra_regs_seq_show(struct seq_file *m, void *v)
 	seq_printf(m, "SCH_Q01_CFG	: 0x%08x\n", sysRegRead(SCH_Q01_CFG));
 	seq_printf(m, "SCH_Q23_CFG	: 0x%08x\n", sysRegRead(SCH_Q23_CFG));
 #endif
-#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883) || \
-    defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883)
 	seq_printf(m, "PDMA_FC_CFG	: 0x%08x\n", sysRegRead(PDMA_FC_CFG));
 #endif
 
@@ -221,7 +230,7 @@ static int ra_regs_seq_show(struct seq_file *m, void *v)
 	seq_printf(m, "\n");
 	seq_printf(m, "FE_INT_ENABLE	: 0x%08x\n", sysRegRead(FE_INT_ENABLE));
 	seq_printf(m, "FE_INT_STATUS	: 0x%08x\n", sysRegRead(FE_INT_STATUS));
-#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#if defined (FE_INT_ENABLE2)
 	seq_printf(m, "FE_INT_ENABLE2	: 0x%08x\n", sysRegRead(FE_INT_ENABLE2));
 	seq_printf(m, "FE_INT_STATUS2	: 0x%08x\n", sysRegRead(FE_INT_STATUS2));
 #endif
@@ -231,21 +240,10 @@ static int ra_regs_seq_show(struct seq_file *m, void *v)
 #endif
 
 	seq_printf(m, "\n");
+#if !defined (CONFIG_RAETH_QDMATX_QDMARX)
 	seq_printf(m, "TX_BASE_PTR0	: 0x%08x\n", sysRegRead(TX_BASE_PTR0));
 	seq_printf(m, "TX_CTX_IDX0	: 0x%08x\n", sysRegRead(TX_CTX_IDX0));
 	seq_printf(m, "TX_DTX_IDX0	: 0x%08x\n\n", sysRegRead(TX_DTX_IDX0));
-
-	seq_printf(m, "TX_BASE_PTR1	: 0x%08x\n", sysRegRead(TX_BASE_PTR1));
-	seq_printf(m, "TX_CTX_IDX1	: 0x%08x\n", sysRegRead(TX_CTX_IDX1));
-	seq_printf(m, "TX_DTX_IDX1	: 0x%08x\n\n", sysRegRead(TX_DTX_IDX1));
-
-	seq_printf(m, "TX_BASE_PTR2	: 0x%08x\n", sysRegRead(TX_BASE_PTR2));
-	seq_printf(m, "TX_CTX_IDX2	: 0x%08x\n", sysRegRead(TX_CTX_IDX2));
-	seq_printf(m, "TX_DTX_IDX2	: 0x%08x\n\n", sysRegRead(TX_DTX_IDX2));
-
-	seq_printf(m, "TX_BASE_PTR3	: 0x%08x\n", sysRegRead(TX_BASE_PTR3));
-	seq_printf(m, "TX_CTX_IDX3	: 0x%08x\n", sysRegRead(TX_CTX_IDX3));
-	seq_printf(m, "TX_DTX_IDX3	: 0x%08x\n\n", sysRegRead(TX_DTX_IDX3));
 
 	seq_printf(m, "RX_BASE_PTR0	: 0x%08x\n", sysRegRead(RX_BASE_PTR0));
 	seq_printf(m, "RX_CALC_IDX0	: 0x%08x\n", sysRegRead(RX_CALC_IDX0));
@@ -256,6 +254,7 @@ static int ra_regs_seq_show(struct seq_file *m, void *v)
 	seq_printf(m, "RX_BASE_PTR1	: 0x%08x\n", sysRegRead(RX_BASE_PTR1));
 	seq_printf(m, "RX_CALC_IDX1	: 0x%08x\n", sysRegRead(RX_CALC_IDX1));
 	seq_printf(m, "RX_DRX_IDX1	: 0x%08x\n\n", sysRegRead(RX_DRX_IDX1));
+#endif
 #endif
 
 #if defined (CONFIG_RAETH_QDMA)
@@ -277,6 +276,7 @@ static int ra_regs_seq_show(struct seq_file *m, void *v)
 	seq_printf(m, "QDMA_FQ_CNT	: 0x%08x\n", sysRegRead(QDMA_FQ_CNT));
 	seq_printf(m, "QDMA_FQ_BLEN	: 0x%08x\n\n", sysRegRead(QDMA_FQ_BLEN));
 #endif
+#endif /* CONFIG_RAETH_DEBUG */
 
 #if defined (CONFIG_ETHTOOL)
 	seq_printf(m, "\nThe current PHY address selected by ethtool is 0x%2X\n", get_current_phy_address());
@@ -352,10 +352,35 @@ extern u8 M2Q_table[64];
 
 static int ra_qdma_seq_show(struct seq_file *m, void *v)
 {
-	u32 i, queue, tx_des_cnt, hw_resv, sw_resv, sch, min_en, max_en;
-	u32 min_rate, max_rate, weight, temp, queue_head, queue_tail;
+	u32 i, temp, sw_fq, hw_fq;
+	u32 min_en, min_rate, max_en, max_rate, sch, weight;
+	u32 queue, tx_des_cnt, hw_resv, sw_resv, queue_head, queue_tail;
+	END_DEVICE *ei_local = netdev_priv(dev_raether);
 
-	for (queue = 0; queue < 16; queue++) {
+	seq_printf(m, "==== General Information ====\n");
+	temp = sysRegRead(QDMA_FQ_CNT);
+	sw_fq = (temp&0xFFFF0000)>>16;
+	hw_fq = (temp&0x0000FFFF);
+	seq_printf(m, "SW TXD: %d/%d\n", sw_fq, NUM_TX_DESC);
+	seq_printf(m, "SW TXD virtual/physical start address: 0x%p/%08x\n", ei_local->txd_pool, ei_local->txd_pool_phy);
+	seq_printf(m, "HW TXD: %d/%d\n", hw_fq, NUM_QDMA_PAGE);
+	seq_printf(m, "HW TXD virtual/physical start address: 0x%p/%08x\n\n", ei_local->fq_head, ei_local->fq_head_phy);
+
+	seq_printf(m, "==== Scheduler Information ====\n");
+	temp = sysRegRead(QDMA_TX_SCH);
+	max_en = (temp&0x00000800)>>11;
+	max_rate = (temp&0x000007F0)>>4;
+	for(i=0;i<(temp&0x0000000F);i++)
+		max_rate *= 10;
+	seq_printf(m, "SCH1 rate control:%d. Rate is %dKbps.\n", max_en, max_rate);
+	max_en = (temp&0x08000000)>>27;
+	max_rate = (temp&0x07F00000)>>20;
+	for(i=0;i<(temp&0x000F0000);i++)
+		max_rate *= 10;
+	seq_printf(m, "SCH2 rate control:%d. Rate is %dKbps.\n\n", max_en, max_rate);
+
+	seq_printf(m, "==== Physical Queue Information ====\n");
+	for (queue = 0; queue < 16; queue++){
 		temp = sysRegRead(QTX_CFG_0 + 0x10 * queue);
 		tx_des_cnt = (temp & 0xffff0000) >> 16;
 		hw_resv = (temp & 0xff00) >> 8;
@@ -373,6 +398,7 @@ static int ra_qdma_seq_show(struct seq_file *m, void *v)
 		weight = (temp & 0xf000) >> 12;
 		queue_head = sysRegRead(QTX_HEAD_0 + 0x10 * queue);
 		queue_tail = sysRegRead(QTX_TAIL_0 + 0x10 * queue);
+		
 		seq_printf(m, "Queue#%d Information:\n", queue);
 		seq_printf(m, "%d packets in the queue; head address is 0x%08x, tail address is 0x%08x.\n",
 			tx_des_cnt, queue_head, queue_tail);
@@ -382,26 +408,20 @@ static int ra_qdma_seq_show(struct seq_file *m, void *v)
 			min_en, min_rate, max_en, max_rate);
 	}
 
-	/* Scheduler Info */
-	temp = sysRegRead(QDMA_TX_SCH);
-	max_en = (temp & 0x00000800) >> 11;
-	max_rate = (temp & 0x000007f0) >> 4;
-	for (i = 0; i< (temp & 0xf); i++)
-		max_rate *= 10;
-	seq_printf(m, "SCH1 Information:\n");
-	seq_printf(m, "RATE_EN is %d; RATE is %dKbps.\n", max_en, max_rate);
-	max_en = (temp & 0x08000000) >> 27;
-	max_rate = (temp & 0x07f00000) >> 20;
-	for (i = 0; i< (temp & 0xf0000) >> 16; i++)
-		max_rate *= 10;
-	seq_printf(m, "SCH2 Information:\n");
-	seq_printf(m, "RATE_EN is %d; RATE is %dKbps.\n\n", max_en, max_rate);
+	seq_printf(m, "==== Flow Control Information ====\n");
+	temp = sysRegRead(QDMA_FC_THRES);
+	seq_printf(m, "SW_DROP_EN:%x; SW_DROP_FFA:%d; SW_DROP_MODE:%d\n",
+			(temp&0x1000000)>>24, (temp&0x200000)>>25, (temp&0x30000000)>>28);
+	seq_printf(m, "WH_DROP_EN:%x; HW_DROP_FFA:%d; HW_DROP_MODE:%d\n",
+			(temp&0x10000)>>16, (temp&0x2000)>>17, (temp&0x300000)>>20);
 
-	/* General TXD Info */
-	temp = sysRegRead(QDMA_FQ_CNT);
-	seq_printf(m, "SW TXD: %d/%d; HW TXD: %d/%d\n\n ", temp >> 16, NUM_TX_DESC, temp & 0xffff, NUM_QDMA_PAGE);
+	seq_printf(m, "\n==== FSM Information ====\n");
+	temp = sysRegRead(QDMA_DMA);
+	seq_printf(m, "FQ_FSM:0x%01x\n", (temp&0x000F0000)>>16);
+	seq_printf(m, "TX_FSM:0x%01x\n", (temp&0x00000F00)>>12);
+	seq_printf(m, "RX_FSM:0x%01x\n\n", (temp&0x0000000f));
 
-	seq_printf(m, "skb->mark to queue mapping(skb->mark, queue):\n");
+	seq_printf(m, "==== M2Q Information ====\n");
 	for (i = 0; i < 64; i += 8) {
 		seq_printf(m, " (%2d,%2d)(%2d,%2d)(%2d,%2d)(%2d,%2d)(%2d,%2d)(%2d,%2d)(%2d,%2d)(%2d,%2d)\n",
 			i+0, M2Q_table[i+0], i+1, M2Q_table[i+1], i+2, M2Q_table[i+2], i+3, M2Q_table[i+3],
@@ -431,7 +451,7 @@ static int ra_txring_seq_show(struct seq_file *m, void *v)
 	END_DEVICE *ei_local = netdev_priv(dev_raether);
 
 #if defined (CONFIG_RAETH_QDMA)
-	seq_printf(m, "- QDMA TX pool -\n");
+	seq_printf(m, "- QDMA SW TX pool -\n");
 	for (i = 0; i < NUM_TX_DESC; i++) {
 		seq_printf(m, "%d: %08x %08x %08x %08x\n", i,
 			ei_local->txd_pool[i].txd_info1,
@@ -440,16 +460,14 @@ static int ra_txring_seq_show(struct seq_file *m, void *v)
 			ei_local->txd_pool[i].txd_info4);
 	}
 
-#if defined (CONFIG_RA_HW_NAT_QDMA)
-	seq_printf(m, "- QDMA FQ pool -\n");
+	seq_printf(m, "- QDMA HW TX pool -\n");
 	for (i = 0; i < NUM_QDMA_PAGE; i++) {
 		seq_printf(m, "%d: %08x %08x %08x %08x\n", i,
-			ei_local->free_head[i].txd_info1,
-			ei_local->free_head[i].txd_info2,
-			ei_local->free_head[i].txd_info3,
-			ei_local->free_head[i].txd_info4);
+			ei_local->fq_head[i].txd_info1,
+			ei_local->fq_head[i].txd_info2,
+			ei_local->fq_head[i].txd_info3,
+			ei_local->fq_head[i].txd_info4);
 	}
-#endif
 #else
 	seq_printf(m, "- PDMA TX ring[%d] -\n", 0);
 	for (i = 0; i < NUM_TX_DESC; i++) {
@@ -469,7 +487,11 @@ static int ra_rxring_seq_show(struct seq_file *m, void *v)
 	int i;
 	END_DEVICE *ei_local = netdev_priv(dev_raether);
 
+#if defined (CONFIG_RAETH_QDMATX_QDMARX)
+	seq_printf(m, "- QDMA RX ring[%d] -\n", 0);
+#else
 	seq_printf(m, "- PDMA RX ring[%d] -\n", 0);
+#endif
 	for (i = 0; i < NUM_RX_DESC; i++) {
 		seq_printf(m, "%d: %08x %08x %08x %08x\n", i,
 				ei_local->rxd_ring[i].rxd_info1,
@@ -477,48 +499,6 @@ static int ra_rxring_seq_show(struct seq_file *m, void *v)
 				ei_local->rxd_ring[i].rxd_info3,
 				ei_local->rxd_ring[i].rxd_info4);
 	}
-
-	return 0;
-}
-
-static int ra_cp0_seq_show(struct seq_file *m, void *v)
-{
-#if defined (CONFIG_MIPS)
-	seq_printf(m, "CP0 Register dump --\n");
-	seq_printf(m, "CP0_INDEX\t: 0x%08x\n", read_32bit_cp0_register(CP0_INDEX));
-	seq_printf(m, "CP0_RANDOM\t: 0x%08x\n", read_32bit_cp0_register(CP0_RANDOM));
-	seq_printf(m, "CP0_ENTRYLO0\t: 0x%08x\n", read_32bit_cp0_register(CP0_ENTRYLO0));
-	seq_printf(m, "CP0_ENTRYLO1\t: 0x%08x\n", read_32bit_cp0_register(CP0_ENTRYLO1));
-	seq_printf(m, "CP0_CONF\t: 0x%08x\n", read_32bit_cp0_register(CP0_CONF));
-	seq_printf(m, "CP0_CONTEXT\t: 0x%08x\n", read_32bit_cp0_register(CP0_CONTEXT));
-	seq_printf(m, "CP0_PAGEMASK\t: 0x%08x\n", read_32bit_cp0_register(CP0_PAGEMASK));
-	seq_printf(m, "CP0_WIRED\t: 0x%08x\n", read_32bit_cp0_register(CP0_WIRED));
-	seq_printf(m, "CP0_INFO\t: 0x%08x\n", read_32bit_cp0_register(CP0_INFO));
-	seq_printf(m, "CP0_BADVADDR\t: 0x%08x\n", read_32bit_cp0_register(CP0_BADVADDR));
-	seq_printf(m, "CP0_COUNT\t: 0x%08x\n", read_32bit_cp0_register(CP0_COUNT));
-	seq_printf(m, "CP0_ENTRYHI\t: 0x%08x\n", read_32bit_cp0_register(CP0_ENTRYHI));
-	seq_printf(m, "CP0_COMPARE\t: 0x%08x\n", read_32bit_cp0_register(CP0_COMPARE));
-	seq_printf(m, "CP0_STATUS\t: 0x%08x\n", read_32bit_cp0_register(CP0_STATUS));
-	seq_printf(m, "CP0_CAUSE\t: 0x%08x\n", read_32bit_cp0_register(CP0_CAUSE));
-	seq_printf(m, "CP0_EPC\t: 0x%08x\n", read_32bit_cp0_register(CP0_EPC));
-	seq_printf(m, "CP0_PRID\t: 0x%08x\n", read_32bit_cp0_register(CP0_PRID));
-	seq_printf(m, "CP0_CONFIG\t: 0x%08x\n", read_32bit_cp0_register(CP0_CONFIG));
-	seq_printf(m, "CP0_LLADDR\t: 0x%08x\n", read_32bit_cp0_register(CP0_LLADDR));
-	seq_printf(m, "CP0_WATCHLO\t: 0x%08x\n", read_32bit_cp0_register(CP0_WATCHLO));
-	seq_printf(m, "CP0_WATCHHI\t: 0x%08x\n", read_32bit_cp0_register(CP0_WATCHHI));
-	seq_printf(m, "CP0_XCONTEXT\t: 0x%08x\n", read_32bit_cp0_register(CP0_XCONTEXT));
-	seq_printf(m, "CP0_FRAMEMASK\t: 0x%08x\n", read_32bit_cp0_register(CP0_FRAMEMASK));
-	seq_printf(m, "CP0_DIAGNOSTIC\t: 0x%08x\n", read_32bit_cp0_register(CP0_DIAGNOSTIC));
-	seq_printf(m, "CP0_DEBUG\t: 0x%08x\n", read_32bit_cp0_register(CP0_DEBUG));
-	seq_printf(m, "CP0_DEPC\t: 0x%08x\n", read_32bit_cp0_register(CP0_DEPC));
-	seq_printf(m, "CP0_PERFORMANCE\t: 0x%08x\n", read_32bit_cp0_register(CP0_PERFORMANCE));
-	seq_printf(m, "CP0_ECC\t: 0x%08x\n", read_32bit_cp0_register(CP0_ECC));
-	seq_printf(m, "CP0_CACHEERR\t: 0x%08x\n", read_32bit_cp0_register(CP0_CACHEERR));
-	seq_printf(m, "CP0_TAGLO\t: 0x%08x\n", read_32bit_cp0_register(CP0_TAGLO));
-	seq_printf(m, "CP0_TAGHI\t: 0x%08x\n", read_32bit_cp0_register(CP0_TAGHI));
-	seq_printf(m, "CP0_ERROREPC\t: 0x%08x\n", read_32bit_cp0_register(CP0_ERROREPC));
-	seq_printf(m, "CP0_DESAVE\t: 0x%08x\n\n", read_32bit_cp0_register(CP0_DESAVE));
-#endif
 
 	return 0;
 }
@@ -609,11 +589,6 @@ static int ra_rxring_seq_open(struct inode *inode, struct file *file)
 	return single_open(file, ra_rxring_seq_show, NULL);
 }
 
-static int ra_cp0_seq_open(struct inode *inode, struct file *file)
-{
-	return single_open(file, ra_cp0_seq_show, NULL);
-}
-
 static int ra_esw_seq_open(struct inode *inode, struct file *file)
 {
 	return single_open(file, ra_esw_seq_show, NULL);
@@ -633,13 +608,6 @@ static const struct file_operations ra_rxring_seq_fops = {
 	.release	= single_release,
 };
 
-static const struct file_operations ra_cp0_seq_fops = {
-	.open		= ra_cp0_seq_open,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= single_release,
-};
-
 static const struct file_operations ra_esw_seq_fops = {
 	.open		= ra_esw_seq_open,
 	.read		= seq_read,
@@ -647,6 +615,7 @@ static const struct file_operations ra_esw_seq_fops = {
 	.release	= single_release,
 };
 #endif
+
 
 int debug_proc_init(void)
 {
@@ -660,7 +629,7 @@ int debug_proc_init(void)
 		procGmac->proc_fops = &ra_regs_seq_fops;
 #endif
 
-#if defined(CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	procVlanTx = proc_create(PROCREG_VLAN_TX, S_IRUGO | S_IWUSR, procRegDir, &ra_vlan_tx_seq_fops);
 #else
@@ -703,13 +672,6 @@ int debug_proc_init(void)
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-	procSysCP0 = proc_create(PROCREG_CP0, S_IRUGO, procRegDir, &ra_cp0_seq_fops);
-#else
-	if ((procSysCP0 = create_proc_entry(PROCREG_CP0, S_IRUGO, procRegDir)))
-		procSysCP0->proc_fops = &ra_cp0_seq_fops;
-#endif
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	procEswCnt = proc_create(PROCREG_ESW_CNT, S_IRUGO, procRegDir, &ra_esw_seq_fops);
 #else
 	if ((procEswCnt = create_proc_entry(PROCREG_ESW_CNT, S_IRUGO, procRegDir)))
@@ -725,9 +687,6 @@ void debug_proc_exit(void)
 #if defined (CONFIG_RAETH_DEBUG)
 	if (procEswCnt)
 		remove_proc_entry(PROCREG_ESW_CNT, procRegDir);
-
-	if (procSysCP0)
-		remove_proc_entry(PROCREG_CP0, procRegDir);
 
 	if (procRxRing)
 		remove_proc_entry(PROCREG_RXRING, procRegDir);
@@ -746,7 +705,7 @@ void debug_proc_exit(void)
 		remove_proc_entry(PROCREG_SNMP, procRegDir);
 #endif
 
-#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
 	if (procVlanTx)
 		remove_proc_entry(PROCREG_VLAN_TX, procRegDir);
 #endif

@@ -4,7 +4,7 @@
 #include <linux/types.h>
 #include <linux/sched.h>
 
-#include "ra_ethreg.h"
+#include "ra_eth_reg.h"
 
 #define RF_CSR_CFG		0xb0180500
 #define RF_CSR_KICK		(1<<17)

@@ -87,11 +87,9 @@
 #define REG_ESW_IMR			0x7008
 #define REG_ESW_ISR			0x700C
 
-#define REG_ESW_MAX			0x7FFFF
+#define REG_ESW_MAX			0x7FFF
 
 /* ESW interrupt mask */
-#define MIB_INT				BIT(25)
-#define ACL_INT				BIT(24)
 #define P6_LINK_CHG			BIT(6)
 #define P5_LINK_CHG			BIT(5)
 #define P4_LINK_CHG			BIT(4)
@@ -99,12 +97,16 @@
 #define P2_LINK_CHG			BIT(2)
 #define P1_LINK_CHG			BIT(1)
 #define P0_LINK_CHG			BIT(0)
+
 #if defined (CONFIG_MT7530_GSW)
+#define ACL_INT				BIT(31)
+#define MIB_INT				BIT(18)
 #define ESW_INT_ALL			(P0_LINK_CHG | P1_LINK_CHG | P2_LINK_CHG | P3_LINK_CHG | P4_LINK_CHG)
 #else
+#define MIB_INT				BIT(25)
+#define ACL_INT				BIT(24)
 #define ESW_INT_ALL			(P0_LINK_CHG | P1_LINK_CHG | P2_LINK_CHG | P3_LINK_CHG | P4_LINK_CHG | \
 					 ACL_INT | MIB_INT)
-#endif
 
 #define MSK_RX_FILTER_CNT		BIT(0)
 #define MSK_RX_ARL_DROP_CNT		BIT(1)
@@ -121,6 +123,7 @@
 					 MSK_RX_GOCT_CNT | MSK_RX_GOOD_CNT | MSK_RX_BAD_CNT | \
 					 MSK_TX_GOCT_CNT | MSK_TX_GOOD_CNT | MSK_TX_BAD_CNT | \
 					 MSK_TX_DROP_CNT)
+#endif
 
 #elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
       defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)

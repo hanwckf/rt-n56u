@@ -9,6 +9,8 @@
 
 #include "raether.h"
 #include "mii_mgr.h"
+#include "ra_esw_reg.h"
+#include "ra_esw_base.h"
 
 #define RA_NUM_STATS		4
 
@@ -95,10 +97,9 @@ static int et_set_rx_csum(struct net_device *dev, u32 data)
 }
 #endif
 
-
 static void et_get_pauseparam(struct net_device *dev, struct ethtool_pauseparam *epause)
 {
-	u32 mii_an_reg = 0, mdio_cfg_reg;
+	u32 __maybe_unused mii_an_reg = 0, mdio_cfg_reg = 0;
 	END_DEVICE *ei_local = netdev_priv(dev);
 
 	// get mii auto-negotiation register
@@ -106,21 +107,37 @@ static void et_get_pauseparam(struct net_device *dev, struct ethtool_pauseparam 
 	epause->autoneg = (mii_an_reg & PHY_Cap_Pause) ? 1 : 0; //get autonet_enable flag bit
 
 #if defined (CONFIG_RALINK_MT7621)
-	// todo
+#if defined (CONFIG_MT7530_GSW)
+	if (ei_local->mii_info.phy_id < 5)
+		mdio_cfg_reg = esw_reg_get(REG_ESW_MAC_PMSR_P0 + 0x100 * ei_local->mii_info.phy_id);
+#else
+	mdio_cfg_reg = sysRegRead(REG_ETH_GE1_MAC_STATUS);
+#endif
+	epause->tx_pause = (mdio_cfg_reg & BIT(4)) ? 1 : 0;
+	epause->rx_pause = (mdio_cfg_reg & BIT(5)) ? 1 : 0;
 #elif defined (CONFIG_RALINK_MT7620)
-	// todo (ESW regs 0x3X00)
-#elif defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
-	// todo
+#if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
+	if (ei_local->mii_info.phy_id < 5)
+		mdio_cfg_reg = esw_reg_get(REG_ESW_MAC_PMSR_P0 + 0x100 * ei_local->mii_info.phy_id);
+#endif
+	epause->tx_pause = (mdio_cfg_reg & BIT(4)) ? 1 : 0;
+	epause->rx_pause = (mdio_cfg_reg & BIT(5)) ? 1 : 0;
+#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
+      defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
+	if (ei_local->mii_info.phy_id < 5)
+		mdio_cfg_reg = ((esw_reg_get(REG_ESW_POA) >> 16) >> ei_local->mii_info.phy_id);
+	epause->tx_pause = (mdio_cfg_reg & BIT(0)) ? 1 : 0;
+	epause->rx_pause = (mdio_cfg_reg & BIT(0)) ? 1 : 0;
 #else
 	mdio_cfg_reg = sysRegRead(MDIO_CFG);
-	epause->tx_pause = (mdio_cfg_reg & MDIO_CFG_GP1_FC_TX) ? 1 : 0;
-	epause->rx_pause = (mdio_cfg_reg & MDIO_CFG_GP1_FC_RX) ? 1 : 0;
+	epause->tx_pause = (mdio_cfg_reg & BIT(11)) ? 1 : 0;
+	epause->rx_pause = (mdio_cfg_reg & BIT(10)) ? 1 : 0;
 #endif
 }
 
 static int et_set_pauseparam(struct net_device *dev, struct ethtool_pauseparam *epause)
 {
-	u32 mii_an_reg = 0, mdio_cfg_reg;
+	u32 __maybe_unused mii_an_reg = 0, mdio_cfg_reg = 0;
 	END_DEVICE *ei_local = netdev_priv(dev);
 
 	// auto-neg pause
@@ -131,23 +148,35 @@ static int et_set_pauseparam(struct net_device *dev, struct ethtool_pauseparam *
 		mii_an_reg &= ~PHY_Cap_Pause;
 	mii_mgr_write(ei_local->mii_info.phy_id, PHY_AUTO_NEGO_REG, mii_an_reg);
 
+	// tx/rx pause
 #if defined (CONFIG_RALINK_MT7621)
-	// todo
+#if !defined (CONFIG_MT7530_GSW)
+	mdio_cfg_reg = sysRegRead(REG_ETH_GE1_MAC_CONTROL);
+	if (epause->tx_pause)
+		mdio_cfg_reg |= BIT(4);
+	else
+		mdio_cfg_reg &= ~BIT(4);
+	if (epause->rx_pause)
+		mdio_cfg_reg |= BIT(5);
+	else
+		mdio_cfg_reg &= ~BIT(5);
+	sysRegWrite(REG_ETH_GE1_MAC_CONTROL, mdio_cfg_reg);
+#endif
 #elif defined (CONFIG_RALINK_MT7620)
-	// todo (ESW regs 0x3X00)
-#elif defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
+	// todo
+#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
+      defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
 	// todo
 #else
-	// tx/rx pause
 	mdio_cfg_reg = sysRegRead(MDIO_CFG);
 	if (epause->tx_pause)
-		mdio_cfg_reg |= MDIO_CFG_GP1_FC_TX;
+		mdio_cfg_reg |= BIT(11);
 	else
-		mdio_cfg_reg &= ~MDIO_CFG_GP1_FC_TX;
+		mdio_cfg_reg &= ~BIT(11);
 	if (epause->rx_pause)
-		mdio_cfg_reg |= MDIO_CFG_GP1_FC_RX;
+		mdio_cfg_reg |= BIT(10);
 	else
-		mdio_cfg_reg &= ~MDIO_CFG_GP1_FC_RX;
+		mdio_cfg_reg &= ~BIT(10);
 	sysRegWrite(MDIO_CFG, mdio_cfg_reg);
 #endif
 
@@ -288,7 +317,7 @@ static void et_virt_get_drvinfo(struct net_device *dev, struct ethtool_drvinfo *
 
 static void et_virt_get_pauseparam(struct net_device *dev, struct ethtool_pauseparam *epause)
 {
-	u32 mii_an_reg = 0, mdio_cfg_reg;
+	u32 __maybe_unused mii_an_reg = 0, mdio_cfg_reg = 0;
 	PSEUDO_ADAPTER *pseudo = netdev_priv(dev);
 
 	// get mii auto-negotiation register
@@ -296,17 +325,19 @@ static void et_virt_get_pauseparam(struct net_device *dev, struct ethtool_pausep
 	epause->autoneg = (mii_an_reg & PHY_Cap_Pause) ? 1 : 0; //get autonet_enable flag bit
 
 #if defined (CONFIG_RALINK_MT7621)
-	// todo
-#else
-	mdio_cfg_reg = sysRegRead(MDIO_CFG);
-	epause->tx_pause = (mdio_cfg_reg & MDIO_CFG_GP1_FC_TX) ? 1 : 0;
-	epause->rx_pause = (mdio_cfg_reg & MDIO_CFG_GP1_FC_RX) ? 1 : 0;
+	mdio_cfg_reg = sysRegRead(REG_ETH_GE2_MAC_STATUS);
+	epause->tx_pause = (mdio_cfg_reg & BIT(4)) ? 1 : 0;
+	epause->rx_pause = (mdio_cfg_reg & BIT(5)) ? 1 : 0;
+#elif defined (CONFIG_RALINK_RT3883)
+	mdio_cfg_reg = sysRegRead(MDIO_CFG2);
+	epause->tx_pause = (mdio_cfg_reg & BIT(11)) ? 1 : 0;
+	epause->rx_pause = (mdio_cfg_reg & BIT(10)) ? 1 : 0;
 #endif
 }
 
 static int et_virt_set_pauseparam(struct net_device *dev, struct ethtool_pauseparam *epause)
 {
-	u32 mii_an_reg = 0, mdio_cfg_reg;
+	u32 __maybe_unused mii_an_reg = 0, mdio_cfg_reg = 0;
 	PSEUDO_ADAPTER *pseudo = netdev_priv(dev);
 
 	// auto-neg pause
@@ -319,18 +350,29 @@ static int et_virt_set_pauseparam(struct net_device *dev, struct ethtool_pausepa
 
 	// tx/rx pause
 #if defined (CONFIG_RALINK_MT7621)
-	// todo
-#else
-	mdio_cfg_reg = sysRegRead(MDIO_CFG);
+#if !defined (CONFIG_GE2_INTERNAL_GMAC_P5)
+	mdio_cfg_reg = sysRegRead(REG_ETH_GE2_MAC_CONTROL);
 	if (epause->tx_pause)
-		mdio_cfg_reg |= MDIO_CFG_GP1_FC_TX;
+		mdio_cfg_reg |= BIT(4);
 	else
-		mdio_cfg_reg &= ~MDIO_CFG_GP1_FC_TX;
+		mdio_cfg_reg &= ~BIT(4);
 	if (epause->rx_pause)
-		mdio_cfg_reg |= MDIO_CFG_GP1_FC_RX;
+		mdio_cfg_reg |= BIT(5);
 	else
-		mdio_cfg_reg &= ~MDIO_CFG_GP1_FC_RX;
-	sysRegWrite(MDIO_CFG, mdio_cfg_reg);
+		mdio_cfg_reg &= ~BIT(5);
+	sysRegWrite(REG_ETH_GE2_MAC_CONTROL, mdio_cfg_reg);
+#endif
+#elif defined (CONFIG_RALINK_RT3883)
+	mdio_cfg_reg = sysRegRead(MDIO_CFG2);
+	if (epause->tx_pause)
+		mdio_cfg_reg |= BIT(11);
+	else
+		mdio_cfg_reg &= ~BIT(11);
+	if (epause->rx_pause)
+		mdio_cfg_reg |= BIT(10);
+	else
+		mdio_cfg_reg &= ~BIT(10);
+	sysRegWrite(MDIO_CFG2, mdio_cfg_reg);
 #endif
 
 	return 0;

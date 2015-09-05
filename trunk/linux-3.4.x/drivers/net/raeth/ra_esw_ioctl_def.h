@@ -196,46 +196,5 @@ typedef struct esw_mib_counters_s
 } esw_mib_counters_t;
 #endif
 
-/*
-	MT7530 MIB (docs needed)
-
-	"Tx Drop Packet      :" 0x4000
-	"Tx CRC Error        :" 0x4004
-	"Tx Unicast Packet   :" 0x4008
-	"Tx Multicast Packet :" 0x400C
-	"Tx Broadcast Packet :" 0x4010
-	"Tx Collision Event  :" 0x4014
-	"Tx Pause Packet     :" 0x402C
-	"Tx ???              :" 0x4030
-	"Tx ???              :" 0x4034
-	"Tx ???              :" 0x4038
-	"Tx ???              :" 0x403C
-	"Tx ???              :" 0x4040
-	"Tx ???              :" 0x4044
-	"Tx Good Octets Lo   :" 0x4048
-	"Tx Good Octets Hi   :" 0x404C
-
-	"Rx Drop Packet      :" 0x4060
-	"Rx Filtering Packet :" 0x4064
-	"Rx Unicast Packet   :" 0x4068
-	"Rx Multicast Packet :" 0x406C
-	"Rx Broadcast Packet :" 0x4070
-	"Rx Alignment Error  :" 0x4074
-	"Rx CRC Error        :" 0x4078
-	"Rx Undersize Error  :" 0x407C
-	"Rx Fragment Error   :" 0x4080
-	"Rx Oversize Error   :" 0x4084
-	"Rx Jabber Error     :" 0x4088
-	"Rx Pause Packet     :" 0x408C
-	"Rx ???              :" 0x4090
-	"Rx ???              :" 0x4094
-	"Rx ???              :" 0x4098
-	"Rx ???              :" 0x409C
-	"Rx ???              :" 0x40A0
-	"Rx ???              :" 0x40A4
-	"Rx Good Octets Lo   :" 0x40A8
-	"Rx Good Octets Hi   :" 0x40AC
-*/
-
 #endif
 

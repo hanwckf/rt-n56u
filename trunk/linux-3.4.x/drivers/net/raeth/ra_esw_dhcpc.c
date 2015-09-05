@@ -13,7 +13,7 @@
 
 extern int send_sigusr_dhcpc;
 
-static void on_kill_sig_workq(struct work_struct *work)
+static void send_kill_sig(void)
 {
 	struct file *fp;
 	char pid[8];
@@ -35,8 +35,6 @@ static void on_kill_sig_workq(struct work_struct *work)
 	filp_close(fp, NULL);
 }
 
-static DECLARE_WORK(dhcpc_kill_sig_wq, on_kill_sig_workq);
-
 void esw_link_status_changed(u32 port_id, int port_link)
 {
 	u32 port_no_r;
@@ -57,7 +55,7 @@ void esw_link_status_changed(u32 port_id, int port_link)
 	if (port_link) {
 		port_state_desc = "Up";
 		if (port_no_r == (u32)send_sigusr_dhcpc)
-			schedule_work(&dhcpc_kill_sig_wq);
+			send_kill_sig();
 	} else {
 		port_state_desc = "Down";
 	}
@@ -65,7 +63,3 @@ void esw_link_status_changed(u32 port_id, int port_link)
 	printk("ESW: %sLink Status Changed - Port%d Link %s\n", port_desc, port_no_r, port_state_desc);
 }
 
-void esw_dhcpc_cancel(void)
-{
-	cancel_work_sync(&dhcpc_kill_sig_wq);
-}

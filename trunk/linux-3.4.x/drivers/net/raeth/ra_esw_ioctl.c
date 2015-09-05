@@ -28,13 +28,12 @@
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
 
-#include "ra_ethreg.h"
+#include "ra_eth_reg.h"
+#include "ra_esw_reg.h"
 #include "mii_mgr.h"
 
-#include "ra_esw_reg.h"
 #include "ra_esw_base.h"
 #include "ra_esw_mt7620.h"
-#include "ra_esw_mt7621.h"
 #include "ra_gsw_mt7530.h"
 #include "ra_esw_ioctl.h"
 #include "ra_esw_ioctl_def.h"
@@ -1070,7 +1069,7 @@ static void esw_soft_reset(void)
 	esw_reg_set(REG_ESW_AGC, (reg_agc | 0x1));
 #else
 	/* disable switch interrupts */
-	esw_irq_uninit();
+	esw_irq_disable();
 
 	/* disable CPU ports P5/P6 link */
 	esw_reg_set(0x3500, 0x8000);
@@ -1081,13 +1080,11 @@ static void esw_soft_reset(void)
 	udelay(100);
 
 	/* base init MT7530 */
-#if defined (CONFIG_RALINK_MT7621)
-	mt7621_esw_init();
-#else
 	mt7530_gsw_init();
-#endif
+
 	/* enable switch interrupts */
 	esw_irq_init();
+	esw_irq_enable();
 #endif
 
 	atomic_set(&g_switch_inited, 0);
@@ -1225,14 +1222,10 @@ static void esw_eee_control(u32 is_eee_enabled)
 	/* disable PHY ports link */
 	power_down_all_phy();
 
-#if !defined (CONFIG_MT7530_GSW)
-	mt7620_esw_eee_enable(is_eee_enabled);
-#else
-#if defined (CONFIG_RALINK_MT7621)
-	mt7621_esw_eee_enable(is_eee_enabled);
-#else
+#if defined (CONFIG_MT7530_GSW)
 	mt7530_gsw_eee_enable(is_eee_enabled);
-#endif
+#else
+	mt7620_esw_eee_enable(is_eee_enabled);
 #endif
 	/* allow PHY changes */
 	atomic_set(&g_switch_allow_irq, 1);
@@ -1272,7 +1265,7 @@ static u32 esw_status_link_port(u32 port_id)
 
 #if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 	if (port_id == WAN_PORT_PHY)
-		reg_pmsr = sysRegRead(RALINK_ETH_SW_BASE+0x0208);	// read state from GE2
+		reg_pmsr = sysRegRead(REG_ETH_GE2_MAC_STATUS);	// read state from GE2
 	else
 #elif defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4)
 	if (port_id == WAN_PORT_PHY)
@@ -1292,7 +1285,7 @@ static u32 esw_status_speed_port(u32 port_id)
 
 #if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 	if (port_id == WAN_PORT_PHY)
-		reg_pmsr = sysRegRead(RALINK_ETH_SW_BASE+0x0208);	// read state from GE2
+		reg_pmsr = sysRegRead(REG_ETH_GE2_MAC_STATUS);	// read state from GE2
 	else
 #elif defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4)
 	if (port_id == WAN_PORT_PHY)
@@ -1342,9 +1335,29 @@ static u32 esw_status_link_changed(void)
 	return atomic_cmpxchg(&g_port_link_changed, 1, 0);
 }
 
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P0)
+extern int VirtualIF_get_bytes(port_bytes_t *pb);
+#endif
+
 static void esw_status_mib_port(u32 port_id, esw_mib_counters_t *mibc)
 {
 	ULARGE_INTEGER rx_goct, tx_goct;
+
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P0)
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+	if (port_id == 4) {
+#else
+	if (port_id == 0) {
+#endif
+		port_bytes_t pb;
+		memset(mibc, 0, sizeof(esw_mib_counters_t));
+		if (VirtualIF_get_bytes(&pb) == 0) {
+			mibc->TxGoodOctets = pb.TX;
+			mibc->RxGoodOctets = pb.RX;
+		}
+		return;
+	}
+#endif
 
 	rx_goct.u.LowPart = esw_get_port_mib_rgoc(port_id, &rx_goct.u.HighPart);
 	tx_goct.u.LowPart = esw_get_port_mib_tgoc(port_id, &tx_goct.u.HighPart);
@@ -1394,6 +1407,14 @@ static int esw_status_port_bytes(u32 port_mask, port_bytes_t *pb)
 
 	if (port_id > ESW_MAC_ID_MAX)
 		return -EINVAL;
+
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+	if (port_id == 4)
+		return VirtualIF_get_bytes(pb);
+#elif defined (CONFIG_GE2_INTERNAL_GPHY_P0)
+	if (port_id == 0)
+		return VirtualIF_get_bytes(pb);
+#endif
 
 	rx_goct.u.LowPart = esw_get_port_mib_rgoc(port_id, &rx_goct.u.HighPart);
 	tx_goct.u.LowPart = esw_get_port_mib_tgoc(port_id, &tx_goct.u.HighPart);
@@ -1871,14 +1892,10 @@ void esw_link_status_changed(u32 port_id, int port_link)
 	const char *port_state;
 
 	if (atomic_read(&g_switch_allow_irq) == 1) {
-#if !defined (CONFIG_MT7530_GSW)
-		mt7620_esw_eee_on_link(port_id, port_link, g_green_ethernet_enabled);
-#else
-#if defined (CONFIG_RALINK_MT7621)
-		mt7621_esw_eee_on_link(port_id, port_link, g_green_ethernet_enabled);
-#else
+#if defined (CONFIG_MT7530_GSW)
 		mt7530_gsw_eee_on_link(port_id, port_link, g_green_ethernet_enabled);
-#endif
+#else
+		mt7620_esw_eee_on_link(port_id, port_link, g_green_ethernet_enabled);
 #endif
 	}
 
@@ -1886,8 +1903,12 @@ void esw_link_status_changed(u32 port_id, int port_link)
 		atomic_set(&g_port_link_changed, 1);
 
 #if !ESW_PRINT_LINK_ALL
-	if (port_id != WAN_PORT_PHY)
-		return;
+	{
+		u32 wan_ports_mask = get_ports_mask_wan(0, 1);
+		
+		if (!(wan_ports_mask & (1u << port_id)))
+			return;
+	}
 #endif
 
 	port_state = (port_link) ? "Up" : "Down";
@@ -1920,14 +1941,10 @@ int esw_control_post_init(void)
 
 	/* disable 802.3az EEE by default */
 	if (!g_green_ethernet_enabled) {
-#if !defined (CONFIG_MT7530_GSW)
-		mt7620_esw_eee_enable(0);
-#else
-#if defined (CONFIG_RALINK_MT7621)
-		mt7621_esw_eee_enable(0);
-#else
+#if defined (CONFIG_MT7530_GSW)
 		mt7530_gsw_eee_enable(0);
-#endif
+#else
+		mt7620_esw_eee_enable(0);
 #endif
 	}
 

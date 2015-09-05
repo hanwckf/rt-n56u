@@ -20,12 +20,12 @@
 
 #define REG_HQOS_MAX			0x3FFF
 
-typedef struct rt3052_esw_reg {
+typedef struct {
 	unsigned int off;
 	unsigned int val;
 } esw_reg;
 
-typedef struct ralink_mii_ioctl_data {
+typedef struct {
 	unsigned int phy_id;
 	unsigned int reg_num;
 	unsigned int val_in;
@@ -35,11 +35,10 @@ typedef struct ralink_mii_ioctl_data {
 	unsigned int reg_addr;
 } ra_mii_ioctl_data;
 
-typedef struct rt335x_esw_reg {
+typedef struct {
 	unsigned int on_off;
 	unsigned int port;
 	unsigned int bw;/*Mbps*/
 } esw_rate;
-
 
 #endif

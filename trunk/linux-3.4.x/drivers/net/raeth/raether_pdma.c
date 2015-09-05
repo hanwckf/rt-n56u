@@ -61,6 +61,7 @@ err_cleanup:
 	return -ENOMEM;
 }
 
+/* must be spinlock protected */
 static void
 fe_dma_init(END_DEVICE *ei_local)
 {
@@ -102,19 +103,19 @@ fe_dma_init(END_DEVICE *ei_local)
 
 	/* GDMA1/2 <- TX Ring #0 */
 	sysRegWrite(TX_BASE_PTR0, phys_to_bus((u32)ei_local->txd_ring_phy));
-	sysRegWrite(TX_MAX_CNT0, cpu_to_le32((u32)NUM_TX_DESC));
+	sysRegWrite(TX_MAX_CNT0, cpu_to_le32(NUM_TX_DESC));
 	sysRegWrite(TX_CTX_IDX0, 0);
 	sysRegWrite(PDMA_RST_CFG, PST_DTX_IDX0);
 
 	/* GDMA1/2 -> RX Ring #0 */
 	sysRegWrite(RX_BASE_PTR0, phys_to_bus((u32)ei_local->rxd_ring_phy));
-	sysRegWrite(RX_MAX_CNT0, cpu_to_le32((u32)NUM_RX_DESC));
-	sysRegWrite(RX_CALC_IDX0, cpu_to_le32((u32)(NUM_RX_DESC - 1)));
+	sysRegWrite(RX_MAX_CNT0, cpu_to_le32(NUM_RX_DESC));
+	sysRegWrite(RX_CALC_IDX0, cpu_to_le32(NUM_RX_DESC - 1));
 	sysRegWrite(PDMA_RST_CFG, PST_DRX_IDX0);
 
 	/* only the following chipset need to set it */
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883)
-	//set 1us timer count in unit of clock cycle
+	// set 1us timer count in unit of clock cycle
 	regVal = sysRegRead(FE_GLO_CFG);
 	regVal &= ~(0xff << 8); //clear bit8-bit15
 	regVal |= (((get_surfboard_sysclk()/1000000)) << 8);
@@ -130,6 +131,8 @@ fe_dma_uninit(END_DEVICE *ei_local)
 {
 	int i;
 
+	spin_lock_bh(&ei_local->page_lock);
+
 	/* free uncompleted PDMA TX buffers */
 	for (i = 0; i < NUM_TX_DESC; i++) {
 		if (ei_local->txd_buff[i]) {
@@ -143,22 +146,13 @@ fe_dma_uninit(END_DEVICE *ei_local)
 			ei_local->txd_buff[i] = NULL;
 		}
 	}
-	ei_local->txd_free_idx = 0;
 
-	/* uninit PDMA RX ring */
-	for (i = 0; i < NUM_RX_DESC; i++) {
-		if (ei_local->rxd_ring[i].rxd_info1) {
-			ei_local->rxd_ring[i].rxd_info1 = 0;
-#if defined (RAETH_PDMA_V2)
-			ei_local->rxd_ring[i].rxd_info2 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
-#else
-			ei_local->rxd_ring[i].rxd_info2 = RX2_DMA_LS0;
-#endif
-		}
-	}
+	spin_unlock_bh(&ei_local->page_lock);
+}
 
-	wmb();
-
+static void
+fe_dma_clear_addr(void)
+{
 	/* clear adapter PDMA TX ring */
 	sysRegWrite(TX_BASE_PTR0, 0);
 	sysRegWrite(TX_MAX_CNT0, 0);
@@ -202,7 +196,7 @@ dma_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE *ei_local, int 
 	}
 #endif
 
-#if !defined (CONFIG_RALINK_MT7621)
+#if !defined (RAETH_HW_PADPKT)
 	if (skb->len < ei_local->min_pkt_len) {
 		if (skb_padto(skb, ei_local->min_pkt_len)) {
 #if defined (CONFIG_RAETH_DEBUG)
@@ -239,7 +233,7 @@ dma_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE *ei_local, int 
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
 	if (skb_vlan_tag_present(skb)) {
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (RAETH_HW_VLAN4K)
 		txd_info4 |= (0x10000 | skb_vlan_tag_get(skb));
 #else
 		u32 vlan_tci = skb_vlan_tag_get(skb);
@@ -318,11 +312,7 @@ dma_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE *ei_local, int 
 				ei_local->txd_buff[tx_cpu_owner_idx] = (struct sk_buff *)0xFFFFFFFF; //MAGIC ID
 				txd_ring = &ei_local->txd_ring[tx_cpu_owner_idx];
 				
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
 				txd_ring->txd_info1 = (u32)skb_frag_dma_map(NULL, tx_frag, 0, skb_frag_size(tx_frag), DMA_TO_DEVICE);
-#else
-				txd_ring->txd_info1 = (u32)dma_map_page(NULL, tx_frag->page, tx_frag->page_offset, tx_frag->size, DMA_TO_DEVICE);
-#endif
 				txd_ring->txd_info4 = txd_info4;
 				if ((i + 1) == nr_frags) { // last segment
 					txd_ring->txd_info3 = 0;
@@ -330,11 +320,7 @@ dma_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE *ei_local, int 
 				} else
 					txd_info2 = TX2_DMA_SDL0(tx_frag->size);
 			} else {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
 				txd_ring->txd_info3 = (u32)skb_frag_dma_map(NULL, tx_frag, 0, skb_frag_size(tx_frag), DMA_TO_DEVICE);
-#else
-				txd_ring->txd_info3 = (u32)dma_map_page(NULL, tx_frag->page, tx_frag->page_offset, tx_frag->size, DMA_TO_DEVICE);
-#endif
 				if ((i + 1) == nr_frags) // last segment
 					txd_info2 |= (TX2_DMA_SDL1(tx_frag->size) | TX2_DMA_LS1);
 				else

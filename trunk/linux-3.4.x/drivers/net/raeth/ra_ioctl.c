@@ -6,14 +6,14 @@
 #include <linux/fcntl.h>
 #include <linux/netdevice.h>
 
-#include "ra_ethreg.h"
+#include "ra_eth_reg.h"
 #include "ra_esw_reg.h"
 #include "mii_mgr.h"
 #include "ra_ioctl.h"
 
 #if defined (CONFIG_RAETH_QDMA)
-#include <asm/rt2880/surfboard.h>
-extern u8 M2Q_table[64];
+extern u8  M2Q_table[64];
+extern int M2Q_wan_lan;
 #endif
 
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
@@ -250,11 +250,13 @@ static void set_rate_limit(esw_rate *ratelimit, int is_egress)
 }
 #endif
 
-int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+int raeth_ioctl(struct ifreq *ifr, int cmd)
 {
 	ra_mii_ioctl_data mii;
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
 	esw_rate ratelimit;
+#endif
+#if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW) || defined (CONFIG_RAETH_QDMA)
 	esw_reg reg;
 #endif
 
@@ -268,7 +270,7 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			copy_from_user(&mii, ifr->ifr_data, sizeof(mii));
 			mii_mgr_write(mii.phy_id, mii.reg_num, mii.val_in);
 			break;
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
 		case RAETH_MII_READ_CL45:
 			copy_from_user(&mii, ifr->ifr_data, sizeof(mii));
 			mii_mgr_read_cl45(mii.port_num, mii.dev_addr, mii.reg_addr, &mii.val_out);
@@ -324,47 +326,14 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			break;
 		case RAETH_QDMA_QUEUE_MAPPING:
 			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
-			if (reg.off > 63 || reg.val > 0x0f)
+			if (reg.val > 0x0f)
 				return -EINVAL;
-			M2Q_table[reg.off] = reg.val;
-			break;
-		case RAETH_QDMA_READ_CPU_CLK:
-			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
-			reg.val = get_surfboard_sysclk();
-			copy_to_user(ifr->ifr_data, &reg, sizeof(reg));
-			break;
-#endif
-		default:
-			return -EOPNOTSUPP;
-	}
-
-	return 0;
-}
-
-#if defined (CONFIG_PSEUDO_SUPPORT)
-int VirtualIF_ioctl(struct net_device * net_dev, struct ifreq * ifr, int cmd)
-{
-	ra_mii_ioctl_data mii;
-
-	switch (cmd) {
-		case RAETH_MII_READ:
-			copy_from_user(&mii, ifr->ifr_data, sizeof(mii));
-			mii_mgr_read(mii.phy_id, mii.reg_num, &mii.val_out);
-			copy_to_user(ifr->ifr_data, &mii, sizeof(mii));
-			break;
-		case RAETH_MII_WRITE:
-			copy_from_user(&mii, ifr->ifr_data, sizeof(mii));
-			mii_mgr_write(mii.phy_id, mii.reg_num, mii.val_in);
-			break;
-#if defined (CONFIG_RALINK_MT7621)
-		case RAETH_MII_READ_CL45:
-			copy_from_user(&mii, ifr->ifr_data, sizeof(mii));
-			mii_mgr_read_cl45(mii.port_num, mii.dev_addr, mii.reg_addr, &mii.val_out);
-			copy_to_user(ifr->ifr_data, &mii, sizeof(mii));
-			break;
-		case RAETH_MII_WRITE_CL45:
-			copy_from_user(&mii, ifr->ifr_data, sizeof(mii));
-			mii_mgr_write_cl45(mii.port_num, mii.dev_addr, mii.reg_addr, mii.val_in);
+			if (reg.off & 0x100)
+				M2Q_wan_lan = 1;
+			else
+				M2Q_wan_lan = 0;
+			reg.off &= 0x3f;
+			M2Q_table[reg.off] = (u8)reg.val;
 			break;
 #endif
 		default:
@@ -373,5 +342,4 @@ int VirtualIF_ioctl(struct net_device * net_dev, struct ifreq * ifr, int cmd)
 
 	return 0;
 }
-#endif
 

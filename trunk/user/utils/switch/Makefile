@@ -1,6 +1,12 @@
 EXEC = switch mii_mgr mii_mgr_cl45
 CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)/drivers/net/raeth
 
+ifdef CONFIG_RALINK_MT7628
+SRC = switch.c
+else
+SRC = switch_gsw.c
+endif
+
 ifdef CONFIG_RALINK_MT7620
 CFLAGS += -DCONFIG_RALINK_MT7620
 else
@@ -19,7 +25,7 @@ endif
 
 all: $(EXEC)
 
-switch: switch_gsw.c
+switch: $(SRC)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 mii_mgr: mii_mgr.c
@@ -31,9 +37,7 @@ mii_mgr_cl45: mii_mgr_cl45.c
 romfs:
 	$(ROMFSINST) /sbin/switch
 	$(ROMFSINST) /sbin/mii_mgr
-ifdef CONFIG_RALINK_MT7621
 	$(ROMFSINST) /sbin/mii_mgr_cl45
-endif
 
 clean:
 	-rm -f $(EXEC) *.elf *.gdb *.o

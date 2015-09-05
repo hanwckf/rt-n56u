@@ -35,7 +35,7 @@
 #define REG_ESW_VLAN_ID_BASE	0x100
 #endif
 
-int esw_fd = -1;
+static int esw_fd = -1;
 
 void switch_init(void)
 {
@@ -88,6 +88,7 @@ void usage(char *cmd)
 	printf(" %s phy                                  - dump all phy registers\n", cmd);
 	printf(" %s reg r [offset]                       - register read from offset\n", cmd);
 	printf(" %s reg w [offset] [value]               - register write value to offset\n", cmd);
+	printf(" %s reg d [offset]                       - register dump\n", cmd);
 	printf(" %s sip add [sip] [dip] [portmap]        - add a sip entry to switch table\n", cmd);
 	printf(" %s sip del [sip] [dip]                  - del a sip entry to switch table\n", cmd);
 	printf(" %s sip dump                             - dump switch sip table\n", cmd);
@@ -2057,7 +2058,7 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 	}
 	else if (!strncmp(argv[1], "reg", 4)) {
-		int off, val=0;
+		int i, j, off, val=0;
 		if (argc < 4)
 			usage(argv[0]);
 		if (argv[2][0] == 'r') {
@@ -2072,6 +2073,17 @@ int main(int argc, char *argv[])
 			val = strtoul(argv[4], NULL, 16);
 			printf("switch reg write offset=%x, value=%x\n", off, val);
 			reg_write(off, val);
+		}
+		else if (argv[2][0] == 'd') {
+			off = strtoul(argv[3], NULL, 16);
+			for(i=0; i<16; i++) {
+				printf("0x%08x: ", off+0x10*i);
+				for(j=0; j<4; j++){
+					reg_read(off+i*0x10+j*0x4, &val);
+					printf(" 0x%08x", val);
+				}
+				printf("\n");
+			}
 		}
 		else
 			usage(argv[0]);

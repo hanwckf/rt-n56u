@@ -36,7 +36,7 @@ void usage(char *cmd)
 	printf(" %s sch_rate [sch] [sch_en][sch_rate]                      - set SCH rate control\n", cmd);
 	printf(" %s weight [queue] [weighting]                             - set max rate weighting for queue#\n", cmd);
 	printf(" %s rate [queue] [min_en] [min_rate] [max_en] [max_rate]   - set rate control for queue#\n", cmd);
-	printf(" %s m2q [mark] [queue]                                     - set set skb->mark to queue mapping table\n", cmd);
+	printf(" %s m2q [mark] [queue] {is_wan_lan_separate}               - set set skb->mark to queue mapping table\n", cmd);
 	printf(" queue: 0 ~ 15.\n");
 	printf(" hw_resv and sw_resv in decimal.\n");
 	printf(" sch: 0 for SCH1. 1 for SCH2.\n");
@@ -70,28 +70,6 @@ int reg_read(int offset, int *value)
 	*value = reg.val;
 	return 0;
 }
-
-#if defined (CONFIG_RALINK_MT7621)
-int read_cpu_clk(int offset, int *value)
-{
-	struct ifreq ifr;
-	esw_reg reg;
-
-	if (value == NULL)
-		return -1;
-
-	reg.off = offset;
-	strncpy(ifr.ifr_name, "eth2", 5);
-	ifr.ifr_data = &reg;
-	if (-1 == ioctl(qdma_fd,RAETH_QDMA_READ_CPU_CLK , &ifr)) {
-		perror("ioctl");
-		close(qdma_fd);
-		exit(0);
-	}
-	*value = reg.val / 1000000 ;
-	return 0;
-}
-#endif
 
 int reg_write(int offset, int value)
 {
@@ -141,7 +119,7 @@ unsigned int rate_convert(unsigned int rate)
 
 int main(int argc, char *argv[])
 {
-	unsigned int off, val, hw_resv, sw_resv, cpu_clk;
+	unsigned int off, val, hw_resv, sw_resv;
 	unsigned int sch, sch_en, sch_rate, weight;
 	unsigned int min_en, min_rate, max_en, max_rate, exp, man;
 
@@ -193,10 +171,6 @@ int main(int argc, char *argv[])
 	}
 	else if (!strncmp(argv[1], "rate", 5)) {
 		printf("rate\n");
-#if defined (CONFIG_RALINK_MT7621)
-		read_cpu_clk(off, &val);
-		cpu_clk = val;
-#endif
 		if (argc < 7)
 			usage(argv[0]);
 		off = strtoul(argv[2], NULL, 10)* 0x10 + 0x04;
@@ -204,30 +178,8 @@ int main(int argc, char *argv[])
 		min_rate = strtoul(argv[4], NULL, 10);
 		max_rate = strtoul(argv[6], NULL, 10);
 		max_en = strtoul(argv[5], NULL, 10);
-		if (off > 0xf4 || (min_en > 1) || (max_en > 1)|| min_rate > 1000000 || max_rate > 1000000 )
+		if (off > 0xf4 || (min_en > 1) || (max_en > 1)|| min_rate > 1000000 || max_rate > 1000000)
 			usage(argv[0]);
-/* only for MT7621 E1 and E2, not needed in E3 and after */
-#if 0
-#if defined (CONFIG_RALINK_MT7621)
-		min_rate = min_rate * 125 / cpu_clk;
-		max_rate = max_rate * 125 / cpu_clk;
-#endif
-		if (min_rate > 127){
-			if ( min_rate % 10)
-				min_rate = (min_rate / 10 + 1) << 4 | 0x04;
-			else
-				min_rate = (min_rate / 10) << 4 | 0x04;
-		}else
-			min_rate = min_rate << 4 | 0x03;
-		
-		if (max_rate > 127){
-			if ( max_rate % 10)
-				max_rate = (max_rate / 10 + 1) << 4 | 0x04;
-			else
-				max_rate = (max_rate / 10) << 4 | 0x04;
-		}else
-			max_rate = max_rate << 4 | 0x03;
-#endif
 		if (min_rate > 127000){
 			exp = 0x04;
 			man = rate_convert(min_rate / 1000 );
@@ -244,7 +196,7 @@ int main(int argc, char *argv[])
 			exp = 0x00;
 			man = min_rate;
 		}
-		min_rate = man << 4 | exp;
+		min_rate = (man << 4) | exp;
 		
 		if (max_rate > 127000){
 			exp = 0x04;
@@ -262,7 +214,7 @@ int main(int argc, char *argv[])
 			exp = 0x00;
 			man = max_rate;
 		}
-		max_rate = man << 4 | exp;
+		max_rate = (man << 4) | exp;
 		
 		reg_read(off, &val);
 		val = (val&0xf000f000) | (min_en <<27) | (min_rate<<16) | (max_en<<11) | (max_rate);
@@ -270,31 +222,14 @@ int main(int argc, char *argv[])
 		printf("set offset %x as %x for rate control.\n", off, val);
 	}
 	else if (!strncmp(argv[1], "sch_rate", 9)) {
-#if defined (CONFIG_RALINK_MT7621)
-		read_cpu_clk(off, &val);
-		cpu_clk = val;
-#endif
 		if (argc < 5)
 			usage(argv[0]);
 		off = 0x214;
 		sch = strtoul(argv[2], NULL, 10);
 		sch_en = strtoul(argv[3], NULL, 10);
 		sch_rate = strtoul(argv[4], NULL, 10);
-		if ( (sch > 1 ) || (sch_en > 1) || (sch_rate > 1000000))
+		if ((sch > 1 ) || (sch_en > 1) || (sch_rate > 1000000))
 			usage(argv[0]);
-/* only for MT7621 E1 and E2, not needed in E3 and after */
-#if 0
-#if defined (CONFIG_RALINK_MT7621)
-		sch_rate =  sch_rate * 125 / cpu_clk;
-#endif
-		if (sch_rate > 127){
-			if ( sch_rate % 10)
-				sch_rate = (sch_rate / 10 + 1) << 4 | 0x04;
-			else
-				sch_rate = (sch_rate / 10) << 4 | 0x04;
-		}else
-			sch_rate = sch_rate << 4 | 0x03;
-#endif
 		if (sch_rate > 127000){
 			exp = 0x04;
 			man = rate_convert(sch_rate / 1000 );
@@ -311,7 +246,7 @@ int main(int argc, char *argv[])
 			exp = 0x00;
 			man = sch_rate;
 		}
-		sch_rate = man << 4 | exp;
+		sch_rate = (man << 4) | exp;
 		
 		reg_read(off, &val);
 		if (sch == 1)
@@ -327,6 +262,9 @@ int main(int argc, char *argv[])
 		queue = strtoul(argv[3], NULL, 10);
 		if (mark > 63 || queue > 15)
 			usage(argv[0]);
+		/* Separate LAN/WAN packet with the same mark value */
+		if (argc > 4)
+			mark |= 0x100;
 		queue_mapping(mark, queue);
 		printf("set queue mapping: skb with mark %x to queue %d.\n",mark, queue);
 	}

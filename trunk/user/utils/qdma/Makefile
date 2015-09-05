@@ -1,10 +1,6 @@
 EXEC = qdma
 CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)/drivers/net/raeth
 
-ifdef CONFIG_RALINK_MT7621
-CFLAGS += -DCONFIG_RALINK_MT7621
-endif
-
 SRC = qdma.c
 
 all: $(EXEC)

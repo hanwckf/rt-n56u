@@ -185,7 +185,7 @@ void set_map_hw_vlan_tx(u32 idx, u32 vid)
 			vlan_4k_map[vid_old] = 0xF;
 	}
 
-	fe_cdm_upadte_vlan_tx();
+	fe_cdm_update_vlan_tx();
 }
 #endif
 

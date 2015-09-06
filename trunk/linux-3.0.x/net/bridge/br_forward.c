@@ -221,8 +221,13 @@ static struct net_bridge_port *maybe_deliver_addr(
 			      struct sk_buff *skb))
 {
 	struct net_device *dev = BR_INPUT_SKB_CB(skb)->brdev;
+	const unsigned char *src = eth_hdr(skb)->h_source;
 
 	if (!should_deliver(p, skb))
+		return prev;
+
+	/* Even with hairpin, no soliloquies - prevent breaking IPv6 DAD */
+	if (skb->dev == p->dev && ether_addr_equal(src, addr))
 		return prev;
 
 	skb = skb_copy(skb, GFP_ATOMIC);

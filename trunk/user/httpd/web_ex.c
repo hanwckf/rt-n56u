@@ -426,6 +426,7 @@ static int
 ej_nvram_get_x(int eid, webs_t wp, int argc, char **argv)
 {
 	char *sid, *name, *cn, *c;
+	int ret = 0;
 
 	if (ejArgs(argc, argv, "%s %s", &sid, &name) < 2) {
 		websError(wp, 400, "Insufficient args\n");
@@ -434,16 +435,15 @@ ej_nvram_get_x(int eid, webs_t wp, int argc, char **argv)
 
 	cn = nvram_safe_get(name);
 	for (c = cn; *c; c++) {
-		if (*c == 0x26 || // &
-		    *c == 0x3C || // <
-		    *c == 0x3E)   // >
-			*c = '_';
+		if (*c < 0 || (*c >= 0x20 && *c != '"' && *c != '&' && *c != '<' && *c != '>'))
+			ret += fprintf(wp, "%c", *c);
 		else
-		if (*c == 0x22)   // "
-			*c = ' ';
+			ret += fprintf(wp, "&#%d;", *c);
 	}
 
-	return websWrite(wp, "%s", cn);
+	fflush(wp);
+
+	return ret;
 }
 
 static int

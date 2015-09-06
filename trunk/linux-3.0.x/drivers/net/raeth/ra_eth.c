@@ -187,7 +187,7 @@ void fe_cdm_init(struct net_device *dev)
 	if (dev->features & NETIF_F_IP_CSUM)
 		regCSG |=  (ICS_GEN_EN | TCS_GEN_EN | UCS_GEN_EN);
 	else
-		regCSG |= ~(ICS_GEN_EN | TCS_GEN_EN | UCS_GEN_EN);
+		regCSG &= ~(ICS_GEN_EN | TCS_GEN_EN | UCS_GEN_EN);
 
 	sysRegWrite(CDMA_CSG_CFG, regCSG);
 #endif

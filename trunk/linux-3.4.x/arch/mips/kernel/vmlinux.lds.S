@@ -125,8 +125,9 @@ SECTIONS
 	.exit.data : {
 		EXIT_DATA
 	}
-
+#ifdef CONFIG_SMP
 	PERCPU_SECTION(1 << CONFIG_MIPS_L1_CACHE_SHIFT)
+#endif
 	/*
 	 * Align to 64K in attempt to eliminate holes before the
 	 * .bss..swapper_pg_dir section at the start of .bss.  This

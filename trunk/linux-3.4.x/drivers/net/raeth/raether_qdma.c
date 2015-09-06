@@ -269,12 +269,12 @@ fe_dma_uninit(END_DEVICE *ei_local)
 static void
 fe_dma_clear_addr(void)
 {
-	/* clear adapter QDMA PPE pool */
+	/* clear adapter QDMA HW TX pool */
 	sysRegWrite(QDMA_FQ_HEAD, 0);
 	sysRegWrite(QDMA_FQ_TAIL, 0);
 	sysRegWrite(QDMA_FQ_CNT, 0);
 
-	/* clear adapter QDMA TX pool */
+	/* clear adapter QDMA SW TX pool */
 	sysRegWrite(QTX_CTX_PTR, 0);
 	sysRegWrite(QTX_CRX_PTR, 0);
 
@@ -449,7 +449,10 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 	netdev_tx_sent_queue(txq, skb->len);
 #endif
 
+#if !defined (CONFIG_RAETH_BQL) || !defined (CONFIG_SMP)
+	/* smp_mb() already inlined in netdev_tx_sent_queue */
 	wmb();
+#endif
 
 	/* kick the QDMA TX */
 	sysRegWrite(QTX_CTX_PTR, (u32)ei_local->txd_last_cpu);

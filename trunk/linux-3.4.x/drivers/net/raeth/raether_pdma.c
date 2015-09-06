@@ -343,7 +343,10 @@ dma_xmit(struct sk_buff* skb, struct net_device *dev, END_DEVICE *ei_local, int 
 	netdev_tx_sent_queue(txq, skb->len);
 #endif
 
+#if !defined (CONFIG_RAETH_BQL) || !defined (CONFIG_SMP)
+	/* smp_mb() already inlined in netdev_tx_sent_queue */
 	wmb();
+#endif
 
 	/* kick the DMA TX */
 	sysRegWrite(TX_CTX_IDX0, cpu_to_le32(tx_cpu_owner_idx_next));

@@ -1502,7 +1502,7 @@ static int br_multicast_ipv4_rcv(struct net_bridge *br,
 	case IGMP_HOST_MEMBERSHIP_REPORT:
 	case IGMPV2_HOST_MEMBERSHIP_REPORT:
 		BR_INPUT_SKB_CB(skb)->mrouters_only = 1;
-		err = br_ip4_multicast_add_group(br, port, skb2, ih->group);
+		err = br_ip4_multicast_add_group(br, port, skb, ih->group);
 		break;
 	case IGMPV3_HOST_MEMBERSHIP_REPORT:
 		err = br_ip4_multicast_igmp3_report(br, port, skb2);
@@ -1511,7 +1511,7 @@ static int br_multicast_ipv4_rcv(struct net_bridge *br,
 		err = br_ip4_multicast_query(br, port, skb2);
 		break;
 	case IGMP_HOST_LEAVE_MESSAGE:
-		br_ip4_multicast_leave_group(br, port, skb2, ih->group);
+		br_ip4_multicast_leave_group(br, port, skb, ih->group);
 		break;
 	}
 
@@ -1637,7 +1637,7 @@ static int br_multicast_ipv6_rcv(struct net_bridge *br,
 		}
 		mld = (struct mld_msg *)skb_transport_header(skb2);
 		BR_INPUT_SKB_CB(skb)->mrouters_only = 1;
-		err = br_ip6_multicast_add_group(br, port, skb2, &mld->mld_mca);
+		err = br_ip6_multicast_add_group(br, port, skb, &mld->mld_mca);
 		break;
 	    }
 	case ICMPV6_MLD2_REPORT:
@@ -1654,7 +1654,7 @@ static int br_multicast_ipv6_rcv(struct net_bridge *br,
 			goto out;
 		}
 		mld = (struct mld_msg *)skb_transport_header(skb2);
-		br_ip6_multicast_leave_group(br, port, skb2, &mld->mld_mca);
+		br_ip6_multicast_leave_group(br, port, skb, &mld->mld_mca);
 	    }
 	}
 

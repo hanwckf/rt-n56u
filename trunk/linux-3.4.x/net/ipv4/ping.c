@@ -666,12 +666,15 @@ static int ping_recvmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 	if (msg->msg_name) {
 		struct sockaddr_in *sin = (struct sockaddr_in *)msg->msg_name;
 
-		sin->sin_family = AF_INET;
-		sin->sin_port = 0 /* skb->h.uh->source */;
-		sin->sin_addr.s_addr = ip_hdr(skb)->saddr;
-		memset(sin->sin_zero, 0, sizeof(sin->sin_zero));
-		*addr_len = sizeof(*sin);
+		if (sin) {
+		    sin->sin_family = AF_INET;
+		    sin->sin_port = 0 /* skb->h.uh->source */;
+		    sin->sin_addr.s_addr = ip_hdr(skb)->saddr;
+		    memset(sin->sin_zero, 0, sizeof(sin->sin_zero));
+		    *addr_len = sizeof(*sin);
+		}
 	}
+
 	if (isk->cmsg_flags)
 		ip_cmsg_recv(msg, skb);
 	err = copied;

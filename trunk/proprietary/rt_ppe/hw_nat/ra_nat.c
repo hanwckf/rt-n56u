@@ -974,9 +974,10 @@ extern int M2Q_wan_lan;
 static u32 get_qid_ipv4(struct sk_buff *skb, int is_wan)
 {
 	u32 QID;
-#if defined (CONFIG_IMQ) || defined (CONFIG_IMQ_MODULE)
+//#if defined (CONFIG_IMQ) || defined (CONFIG_IMQ_MODULE)
+#if 1
 	QID = M2Q_table[(skb->mark & 0x3f)];
-	if (is_wan && M2Q_wan_lan)
+	if (is_wan && M2Q_wan_lan && QID < 8)
 		QID += 8;
 #else
 	const struct iphdr *iph = ip_hdr(skb);
@@ -988,9 +989,10 @@ static u32 get_qid_ipv4(struct sk_buff *skb, int is_wan)
 static u32 get_qid_ipv6(struct sk_buff *skb, int is_wan)
 {
 	u32 QID;
-#if defined (CONFIG_IMQ) || defined (CONFIG_IMQ_MODULE)
+//#if defined (CONFIG_IMQ) || defined (CONFIG_IMQ_MODULE)
+#if 1
 	QID = M2Q_table[(skb->mark & 0x3f)];
-	if (is_wan && M2Q_wan_lan)
+	if (is_wan && M2Q_wan_lan && QID < 8)
 		QID += 8;
 #else
 	const struct ipv6hdr *ip6h = ipv6_hdr(skb);

@@ -43,11 +43,6 @@ static int hw_offload_tso = 1;
 #endif
 #endif
 
-#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
-static u8 vlan_4k_map[VLAN_N_VID];
-      u16 vlan_id_map[16];
-#endif
-
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 struct FoeEntry *PpeFoeBase = NULL;
 dma_addr_t PpeFoeBasePhy = 0;
@@ -118,74 +113,42 @@ foe_dma_table_alloc(void)
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
 static void
-fill_hw_vlan_tx_map(void)
+fill_hw_vlan_tx_map(END_DEVICE *ei_local)
 {
 	u32 i;
 
 	/* init vlan_4k map table by index 15 */
-	memset(vlan_4k_map, 0x0F, sizeof(vlan_4k_map));
+	memset(ei_local->vlan_4k_map, 0x0F, sizeof(ei_local->vlan_4k_map));
 
 	for (i = 0; i < 16; i++) {
-		vlan_id_map[i] = (u16)i;
-		vlan_4k_map[i] = (u8)i;
+		ei_local->vlan_id_map[i] = (u16)i;
+		ei_local->vlan_4k_map[i] = (u8)i;
 	}
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 	/* map VLAN TX for external offload (use slots 11..15) */
 	i = 11;
 #if defined (CONFIG_RA_HW_NAT_WIFI)
-	vlan_id_map[i] = (u16)DP_RA0;	// IDX: 11
-	vlan_4k_map[DP_RA0] = (u8)i;
+	ei_local->vlan_id_map[i] = (u16)DP_RA0;		// IDX: 11
+	ei_local->vlan_4k_map[DP_RA0] = (u8)i;
 	i++;
-	vlan_id_map[i] = (u16)DP_RA1;	// IDX: 12
-	vlan_4k_map[DP_RA1] = (u8)i;
+	ei_local->vlan_id_map[i] = (u16)DP_RA1;		// IDX: 12
+	ei_local->vlan_4k_map[DP_RA1] = (u8)i;
 	i++;
 #if defined (HWNAT_DP_RAI_AP)
-	vlan_id_map[i] = (u16)DP_RAI0;	// IDX: 13
-	vlan_4k_map[DP_RAI0] = (u8)i;
+	ei_local->vlan_id_map[i] = (u16)DP_RAI0;	// IDX: 13
+	ei_local->vlan_4k_map[DP_RAI0] = (u8)i;
 	i++;
-	vlan_id_map[i] = (u16)DP_RAI1;	// IDX: 14
-	vlan_4k_map[DP_RAI1] = (u8)i;
+	ei_local->vlan_id_map[i] = (u16)DP_RAI1;	// IDX: 14
+	ei_local->vlan_4k_map[DP_RAI1] = (u8)i;
 	i++;
 #endif
 #endif
 #if defined (CONFIG_RA_HW_NAT_PCI)
-	vlan_id_map[i] = (u16)DP_NIC0;	// IDX: 15
-	vlan_4k_map[DP_NIC0] = (u8)i;
+	ei_local->vlan_id_map[i] = (u16)DP_NIC0;	// IDX: 15
+	ei_local->vlan_4k_map[DP_NIC0] = (u8)i;
 #endif
 #endif
-}
-
-u32 get_map_hw_vlan_tx(u32 idx)
-{
-	return (u32)vlan_id_map[(idx & 0xF)];
-}
-
-void set_map_hw_vlan_tx(u32 idx, u32 vid)
-{
-	u32 i, vid_old;
-
-	idx &= 0xF;
-	vid &= VLAN_VID_MASK;
-
-	vid_old = (u32)vlan_id_map[idx] & VLAN_VID_MASK;
-
-	vlan_id_map[idx] = (u16)vid;
-	vlan_4k_map[vid] = (u8)idx;
-
-	/* remap old VID pointer */
-	if (vid != vid_old) {
-		for (i = 0; i < 16; i++) {
-			if ((u32)vlan_id_map[i] == vid_old) {
-				vlan_4k_map[vid_old] = (u8)i;
-				break;
-			}
-		}
-		if (i > 15)
-			vlan_4k_map[vid_old] = 0xF;
-	}
-
-	fe_cdm_update_vlan_tx();
 }
 #endif
 
@@ -322,6 +285,7 @@ show_dev_features(struct net_device *dev)
 		printk("%s: HW TCP segmentation offload (TSO) enabled\n", RAETH_DEV_NAME);
 }
 
+#if !defined (RAETH_HW_PADPKT)
 static void
 calc_dev_min_pkt_len(struct net_device *dev, END_DEVICE *ei_local)
 {
@@ -343,6 +307,7 @@ calc_dev_min_pkt_len(struct net_device *dev, END_DEVICE *ei_local)
 #endif
 #endif
 }
+#endif
 
 static void
 fetch_stat_counters(END_DEVICE *ei_local)
@@ -975,7 +940,9 @@ ei_init(struct net_device *dev)
 #endif
 
 	ei_local->active = 0;
+#if !defined (RAETH_HW_PADPKT)
 	ei_local->min_pkt_len = ETH_ZLEN;
+#endif
 
 	spin_lock_init(&ei_local->stat_lock);
 	spin_lock_init(&ei_local->page_lock);
@@ -1075,7 +1042,9 @@ ei_open(struct net_device *dev)
 
 	calc_dev_features(dev);
 	show_dev_features(dev);
+#if !defined (RAETH_HW_PADPKT)
 	calc_dev_min_pkt_len(dev, ei_local);
+#endif
 
 	spin_lock_bh(&ei_local->page_lock);
 
@@ -1091,6 +1060,10 @@ ei_open(struct net_device *dev)
 	fe_cdm_init(dev);
 	fe_gdm_init(dev);
 	fe_pse_init();
+
+#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
+	fe_cdm_update_vlan_tx(ei_local->vlan_id_map);
+#endif
 
 	fe_gdm1_set_mac(dev->dev_addr);
 #if defined (CONFIG_PSEUDO_SUPPORT)
@@ -1283,7 +1256,7 @@ __init raeth_init(void)
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
-	fill_hw_vlan_tx_map();
+	fill_hw_vlan_tx_map(ei_local);
 #endif
 	fill_dev_features(dev);
 

@@ -146,8 +146,7 @@ void fe_gdm_init(struct net_device *dev)
 }
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
-extern u16 vlan_id_map[16];
-void fe_cdm_update_vlan_tx(void)
+void fe_cdm_update_vlan_tx(const u16 *vlan_id_map)
 {
 	u32 i, reg_vlan;
 
@@ -175,10 +174,6 @@ void fe_cdm_init(struct net_device *dev)
 	}
 	sysRegWrite(CDMP_EG_CTRL, regCDMP_EG);
 	sysRegWrite(CDMQ_EG_CTRL, regCDMQ_EG);
-#endif
-
-#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
-	fe_cdm_update_vlan_tx();
 #endif
 
 	regCSG = sysRegRead(CDMA_CSG_CFG);

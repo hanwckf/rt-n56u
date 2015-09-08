@@ -103,22 +103,30 @@ err_cleanup:
 static inline u32
 get_txd_offset(END_DEVICE *ei_local, dma_addr_t txd_ptr_phy)
 {
-	return ((txd_ptr_phy & 0x00ffffff) - (ei_local->txd_pool_phy & 0x00ffffff)) / sizeof(struct QDMA_txdesc);
+	return (txd_ptr_phy - ei_local->txd_pool_phy) / sizeof(struct QDMA_txdesc);
+}
+
+static inline dma_addr_t
+get_txd_ptr_phys(END_DEVICE *ei_local, u32 txd_offset)
+{
+	return (ei_local->txd_pool_phy + (txd_offset * sizeof(struct QDMA_txdesc)));
+}
+
+static inline struct QDMA_txdesc *
+get_txd_ptr_virt(END_DEVICE *ei_local, u32 txd_offset)
+{
+	return (ei_local->txd_pool + txd_offset);
 }
 
 /* must be spinlock protected */
 static u32
 get_free_txd(END_DEVICE *ei_local, dma_addr_t *free_txd)
 {
-	u32 txd_idx;
+	u32 txd_idx = ei_local->txd_pool_free_head;
 
-	if (!ei_local->txd_pool_free_num)
-		return NUM_TX_DESC;
-
-	txd_idx = ei_local->txd_pool_free_head;
 	ei_local->txd_pool_free_head = ei_local->txd_pool_info[txd_idx];
 	ei_local->txd_pool_free_num -= 1;
-	*free_txd = ei_local->txd_pool_phy + (txd_idx * sizeof(struct QDMA_txdesc));
+	*free_txd = get_txd_ptr_phys(ei_local, txd_idx);
 
 	return txd_idx;
 }
@@ -129,7 +137,6 @@ put_free_txd(END_DEVICE *ei_local, u32 free_txd_idx)
 {
 	ei_local->txd_pool_info[ei_local->txd_pool_free_tail] = free_txd_idx;
 	ei_local->txd_pool_free_tail = free_txd_idx;
-	ei_local->txd_pool_info[free_txd_idx] = NUM_TX_DESC;
 	ei_local->txd_pool_free_num += 1;
 }
 
@@ -171,18 +178,18 @@ fe_dma_init(END_DEVICE *ei_local)
 	/* init PDMA (or QDMA) RX ring */
 	for (i = 0; i < NUM_RX_DESC; i++) {
 		ei_local->rxd_ring[i].rxd_info1 = (u32)dma_map_single(NULL, ei_local->rxd_buff[i]->data, MAX_RX_LENGTH, DMA_FROM_DEVICE);
+		ei_local->rxd_ring[i].rxd_info2 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
 		ei_local->rxd_ring[i].rxd_info3 = 0;
 		ei_local->rxd_ring[i].rxd_info4 = 0;
-		ei_local->rxd_ring[i].rxd_info2 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
 	}
 
 #if !defined (CONFIG_RAETH_QDMATX_QDMARX)
-	/* init QDMA RX stub ring */
+	/* init QDMA RX stub ring (map PDMA buffers, this is not safe on real RX) */
 	for (i = 0; i < NUM_QRX_DESC; i++) {
-		ei_local->qrx_ring[i].rxd_info1 = 0xdeadbeef;	/* no mapped buffers */
+		ei_local->qrx_ring[i].rxd_info1 = ei_local->rxd_ring[i].rxd_info1;
+		ei_local->qrx_ring[i].rxd_info2 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
 		ei_local->qrx_ring[i].rxd_info3 = 0;
 		ei_local->qrx_ring[i].rxd_info4 = 0;
-		ei_local->qrx_ring[i].rxd_info2 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
 	}
 #endif
 
@@ -190,12 +197,12 @@ fe_dma_init(END_DEVICE *ei_local)
 
 	/* clear QDMA */
 	regVal = sysRegRead(QDMA_GLO_CFG);
-	regVal &= ~(0x000000FF);
+	regVal &= ~(CSR_CLKGATE | RX_DMA_EN | TX_DMA_EN);
 	sysRegWrite(QDMA_GLO_CFG, regVal);
 
 	/* clear PDMA */
 	regVal = sysRegRead(PDMA_GLO_CFG);
-	regVal &= ~(0x000000FF);
+	regVal &= ~(CSR_CLKGATE | RX_DMA_EN | TX_DMA_EN);
 	sysRegWrite(PDMA_GLO_CFG, regVal);
 
 	/* PPE QoS -> QDMA HW TX pool */
@@ -230,7 +237,7 @@ fe_dma_init(END_DEVICE *ei_local)
 
 	/* get free txd from pool for FWD (forward) */
 	get_free_txd(ei_local, &txd_free_phy);
-	ei_local->txd_last_cpu = txd_free_phy;
+	ei_local->txd_last_ctx = txd_free_phy;
 	sysRegWrite(QTX_CTX_PTR, (u32)txd_free_phy);
 	sysRegWrite(QTX_DTX_PTR, (u32)txd_free_phy);
 
@@ -304,11 +311,6 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 #define nr_frags 0
 #endif
 
-	if (!ei_local->active) {
-		dev_kfree_skb(skb);
-		return NETDEV_TX_OK;
-	}
-
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 	if (ra_sw_nat_hook_tx != NULL) {
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
@@ -326,7 +328,7 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 	txd_info3 = TX3_QDMA_SWC;
 	if (gmac_no != PSE_PORT_PPE) {
 		u32 QID = M2Q_table[(skb->mark & 0x3f)];
-		if (M2Q_wan_lan) {
+		if (QID < 8 && M2Q_wan_lan) {
 #if defined (CONFIG_PSEUDO_SUPPORT)
 			if (gmac_no == PSE_PORT_GMAC2)
 				QID += 8;
@@ -361,7 +363,8 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 	/* protect TX ring access (from eth2/eth3 queues) */
 	spin_lock(&ei_local->page_lock);
 
-	if (ei_local->txd_pool_free_num < (nr_slots+3)) {
+	/* check nr_slots+2 free descriptors */
+	if (ei_local->txd_pool_free_num < (nr_slots+2)) {
 		spin_unlock(&ei_local->page_lock);
 		netif_tx_stop_queue(txq);
 #if defined (CONFIG_RAETH_DEBUG)
@@ -395,16 +398,13 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 	}
 #endif
 
-	ctx_offset = get_txd_offset(ei_local, ei_local->txd_last_cpu);
-	cpu_ptr = ei_local->txd_pool + ctx_offset;
+	ctx_offset = get_txd_offset(ei_local, ei_local->txd_last_ctx);
+	cpu_ptr = get_txd_ptr_virt(ei_local, ctx_offset);
 
 	ei_local->txd_buff[ctx_offset] = skb;
 
 	ctx_offset = get_free_txd(ei_local, &txd_free_phy);
-#if defined (CONFIG_RAETH_DEBUG)
-	BUG_ON(ctx_offset == NUM_TX_DESC);
-#endif
-	ei_local->txd_last_cpu = txd_free_phy;
+	ei_local->txd_last_ctx = txd_free_phy;
 
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	if (nr_frags)
@@ -425,15 +425,12 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	for (i = 0; i < nr_frags; i++) {
 		tx_frag = &shinfo->frags[i];
-		cpu_ptr = ei_local->txd_pool + ctx_offset;
+		cpu_ptr = get_txd_ptr_virt(ei_local, ctx_offset);
 		
 		ei_local->txd_buff[ctx_offset] = (struct sk_buff *)0xFFFFFFFF; //MAGIC ID
 		
 		ctx_offset = get_free_txd(ei_local, &txd_free_phy);
-#if defined (CONFIG_RAETH_DEBUG)
-		BUG_ON(ctx_offset == NUM_TX_DESC);
-#endif
-		ei_local->txd_last_cpu = txd_free_phy;
+		ei_local->txd_last_ctx = txd_free_phy;
 		
 		if ((i + 1) == nr_frags) // last segment
 			txd_info3 |= TX3_QDMA_LS;
@@ -455,7 +452,12 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 #endif
 
 	/* kick the QDMA TX */
-	sysRegWrite(QTX_CTX_PTR, (u32)ei_local->txd_last_cpu);
+	sysRegWrite(QTX_CTX_PTR, (u32)ei_local->txd_last_ctx);
+
+	/* check 1+2 free descriptors */
+	if (ei_local->txd_pool_free_num < 3) {
+		netif_tx_stop_queue(txq);
+	}
 
 	spin_unlock(&ei_local->page_lock);
 
@@ -480,10 +482,10 @@ dma_xmit_clean(struct net_device *dev, END_DEVICE *ei_local)
 	spin_lock(&ei_local->page_lock);
 
 	crx_offset = get_txd_offset(ei_local, sysRegRead(QTX_CRX_PTR));
-	cpu_ptr = ei_local->txd_pool + crx_offset;
-
 	drx_offset = get_txd_offset(ei_local, sysRegRead(QTX_DRX_PTR));
-	dma_ptr = ei_local->txd_pool + drx_offset;
+
+	cpu_ptr = get_txd_ptr_virt(ei_local, crx_offset);
+	dma_ptr = get_txd_ptr_virt(ei_local, drx_offset);
 
 	while (cpu_ptr != dma_ptr && (cpu_ptr->txd_info3 & TX3_QDMA_OWN)) {
 		/* hold cpu next TXD */
@@ -518,17 +520,15 @@ dma_xmit_clean(struct net_device *dev, END_DEVICE *ei_local)
 		
 		ei_local->txd_buff[crx_offset] = NULL;
 		
-		if (++clean_done > (NUM_TX_DESC-2))
+		if (++clean_done > (NUM_TX_DESC-4))
 			break;
 		
 		/* update cpu_ptr */
-		cpu_ptr = ei_local->txd_pool + crx_offset;
+		cpu_ptr = get_txd_ptr_virt(ei_local, crx_offset);
 	}
 
-	if (clean_done) {
-		hrx_ptr = (u32)(ei_local->txd_pool_phy + (crx_offset * sizeof(struct QDMA_txdesc)));
-		sysRegWrite(QTX_CRX_PTR, hrx_ptr);
-	}
+	if (clean_done)
+		sysRegWrite(QTX_CRX_PTR, get_txd_ptr_phys(ei_local, crx_offset));
 
 	spin_unlock(&ei_local->page_lock);
 

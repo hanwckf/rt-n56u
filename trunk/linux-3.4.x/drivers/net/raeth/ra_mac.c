@@ -27,6 +27,7 @@
 #include <linux/seq_file.h>
 
 #include "raether.h"
+#include "ra_eth.h"
 #include "ra_ethtool.h"
 #include "ra_esw_reg.h"
 #include "ra_esw_base.h"
@@ -71,6 +72,41 @@ static struct proc_dir_entry *procSnmp;
 #endif
 #if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
 static struct proc_dir_entry *procVlanTx;
+
+static u32 get_map_hw_vlan_tx(u32 idx)
+{
+	END_DEVICE *ei_local = netdev_priv(dev_raether);
+
+	return (u32)ei_local->vlan_id_map[(idx & 0xF)];
+}
+
+static void set_map_hw_vlan_tx(u32 idx, u32 vid)
+{
+	u32 i, vid_old;
+	END_DEVICE *ei_local = netdev_priv(dev_raether);
+
+	idx &= 0xF;
+	vid &= VLAN_VID_MASK;
+
+	vid_old = (u32)ei_local->vlan_id_map[idx] & VLAN_VID_MASK;
+
+	ei_local->vlan_id_map[idx] = (u16)vid;
+	ei_local->vlan_4k_map[vid] = (u8)idx;
+
+	/* remap old VID pointer */
+	if (vid != vid_old) {
+		for (i = 0; i < 16; i++) {
+			if ((u32)ei_local->vlan_id_map[i] == vid_old) {
+				ei_local->vlan_4k_map[vid_old] = (u8)i;
+				break;
+			}
+		}
+		if (i > 15)
+			ei_local->vlan_4k_map[vid_old] = 0xF;
+	}
+
+	fe_cdm_update_vlan_tx(ei_local->vlan_id_map);
+}
 
 static int ra_vlan_tx_seq_show(struct seq_file *m, void *v)
 {

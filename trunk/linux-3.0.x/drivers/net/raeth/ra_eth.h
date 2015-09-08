@@ -6,7 +6,7 @@ void fe_esw_init(void);
 void fe_pse_init(void);
 void fe_gdm_init(struct net_device *dev);
 void fe_cdm_init(struct net_device *dev);
-void fe_cdm_update_vlan_tx(void);
+void fe_cdm_update_vlan_tx(const u16 *vlan_id_map);
 
 void fe_dma_start(void);
 void fe_dma_stop(void);

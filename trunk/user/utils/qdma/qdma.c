@@ -8,6 +8,8 @@
 
 #include <ra_ioctl.h>
 
+#define RT_QDMA_HELP		1
+
 int qdma_fd = -1;
 
 void qdma_init(void)
@@ -29,23 +31,24 @@ void qdma_fini(void)
 
 void usage(char *cmd)
 {
-#if 1
+#if RT_QDMA_HELP
 	printf("Usage:\n");
 	printf(" %s resv [queue] [hw_resv] [sw_resv]                       - set reservation for queue#\n", cmd);
 	printf(" %s sch [queue] [sch]                                      - set scheduler for queue#\n", cmd);
-	printf(" %s sch_rate [sch] [sch_en][sch_rate]                      - set SCH rate control\n", cmd);
+	printf(" %s sch_rate [sch] [sch_en] [sch_rate]                     - set SCH rate control\n", cmd);
 	printf(" %s weight [queue] [weighting]                             - set max rate weighting for queue#\n", cmd);
 	printf(" %s rate [queue] [min_en] [min_rate] [max_en] [max_rate]   - set rate control for queue#\n", cmd);
-	printf(" %s m2q [mark] [queue] {is_wan_lan_separate}               - set set skb->mark to queue mapping table\n", cmd);
-	printf(" queue: 0 ~ 15.\n");
-	printf(" hw_resv and sw_resv in decimal.\n");
-	printf(" sch: 0 for SCH1. 1 for SCH2.\n");
-	printf(" weighting: 0 ~ 15.\n");
-	printf(" sch_en: 1 for enable, o for disable. sch rate: 0 ~ 1000000 in Kbps.\n");
-	printf(" min_en: 1 for enable, 0 for disable. min rate: 0 ~ 1000000 in Kbps.\n");
-	printf(" max_en: 1 for enable, 0 for disable. max rate: 0 ~ 1000000 in Kbps.\n");
-	printf(" mark: 0 ~ 63.\n");
-
+	printf(" %s m2q [mark] [queue] {wan_lan_separate}                  - set skb->mark to queue mapping table\n", cmd);
+	printf(" Where is:\n");
+	printf("  queue: 0 ~ 15.\n");
+	printf("  hw_resv and sw_resv in decimal.\n");
+	printf("  sch: 0 for SCH1. 1 for SCH2.\n");
+	printf("  weighting: 0 ~ 15.\n");
+	printf("  sch_en: 1 for enable, 0 for disable. sch rate: 0 ~ 1000000 in Kbps.\n");
+	printf("  min_en: 1 for enable, 0 for disable. min rate: 0 ~ 1000000 in Kbps.\n");
+	printf("  max_en: 1 for enable, 0 for disable. max rate: 0 ~ 1000000 in Kbps.\n");
+	printf("  mark: 0 ~ 63.\n");
+	printf("  wan_lan_separate: 1 for split queues to 0 ~ 7 as LAN, 8 ~ 15 as WAN (with the same mark value).\n");
 #endif
 	qdma_fini();
 	exit(0);
@@ -263,7 +266,7 @@ int main(int argc, char *argv[])
 		if (mark > 63 || queue > 15)
 			usage(argv[0]);
 		/* Separate LAN/WAN packet with the same mark value */
-		if (argc > 4)
+		if (argc > 4 && strtoul(argv[4], NULL, 10) != 0)
 			mark |= 0x100;
 		queue_mapping(mark, queue);
 		printf("set queue mapping: skb with mark %x to queue %d.\n",mark, queue);

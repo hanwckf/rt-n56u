@@ -57,10 +57,12 @@ config RAETH_SG_DMA_TX
 config RAETH_TSO
 	bool "TSOv4 (TCP Segmentaton Offload)"
 	depends on RAETH_SG_DMA_TX && (RALINK_MT7620 || RALINK_MT7621)
+	default n
 
 config RAETH_TSOV6
 	bool "TSOv6 (TCP Segmentaton Offload for IPv6)"
 	depends on RAETH_TSO && IPV6
+	default n
 
 choice
 	prompt "GMAC is connected to"
@@ -258,6 +260,7 @@ config  RAETH_SPECIAL_TAG
 config  RAETH_ESW_CONTROL
 	bool "Embedded (or MT7530) Switch Control Module (VLAN/Isolation/Status)"
 	depends on RAETH && (RAETH_ESW || MT7530_GSW) && (RALINK_MT7620 || RALINK_MT7621)
+	default y
 
 config  RAETH_ESW_PORT_WAN
 	int "ESW WAN Port ID (0..5)"

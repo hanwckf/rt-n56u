@@ -5,7 +5,6 @@
 #include <linux/delay.h>
 #include <linux/string.h>
 #include <linux/sched.h>
-#include <linux/netdevice.h>
 
 #include "ra_eth_reg.h"
 #include "ra_eth.h"

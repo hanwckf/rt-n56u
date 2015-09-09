@@ -1,10 +1,8 @@
 #include <linux/module.h>
 #include <linux/version.h>
 #include <linux/kernel.h>
+#include <linux/types.h>
 #include <linux/sched.h>
-#include <linux/netdevice.h>
-#include <linux/etherdevice.h>
-#include <linux/if_ether.h>
 #include <linux/ethtool.h>
 
 #include "raether.h"

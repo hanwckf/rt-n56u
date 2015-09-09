@@ -4,7 +4,6 @@
 #include <linux/types.h>
 #include <linux/delay.h>
 #include <linux/string.h>
-#include <linux/netdevice.h>
 
 #include "ra_eth_reg.h"
 #include "ra_esw_reg.h"
@@ -12,6 +11,7 @@
 #include "ra_eth.h"
 #include "ra_phy.h"
 #include "ra_gsw_mt7530.h"
+#include "ra_esw_mt7620.h"
 
 extern u32 ralink_asic_rev_id;
 

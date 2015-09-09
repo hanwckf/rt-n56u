@@ -3,12 +3,11 @@
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/init.h>
-#include <linux/skbuff.h>
-#include <linux/if_vlan.h>
-#include <linux/if_ether.h>
-#include <linux/tcp.h>
 #include <linux/delay.h>
 #include <linux/sched.h>
+#include <linux/interrupt.h>
+#include <linux/if_ether.h>
+#include <linux/tcp.h>
 
 #include "raether.h"
 #include "ra_mac.h"

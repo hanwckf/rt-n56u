@@ -1,6 +1,8 @@
 #ifndef __RA_ESW_BASE_H__
 #define __RA_ESW_BASE_H__
 
+#include <linux/irqreturn.h>
+
 u32 esw_reg_get(u32 addr);
 void esw_reg_set(u32 addr, u32 data);
 

@@ -1,6 +1,9 @@
 #ifndef __RA_ETH_H__
 #define __RA_ETH_H__
 
+struct net_device;
+struct rtnl_link_stats64;
+
 void fe_eth_reset(void);
 void fe_esw_init(void);
 void fe_pse_init(void);

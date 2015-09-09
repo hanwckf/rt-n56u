@@ -4,7 +4,6 @@
 #include <linux/types.h>
 #include <linux/delay.h>
 #include <linux/string.h>
-#include <linux/netdevice.h>
 
 #include "ra_eth_reg.h"
 #include "ra_esw_reg.h"

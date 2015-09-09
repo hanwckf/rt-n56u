@@ -4,26 +4,11 @@
 #include <linux/sched.h>
 #include <linux/types.h>
 #include <linux/fcntl.h>
-#include <linux/ptrace.h>
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/ctype.h>
-
-#include <asm/io.h>
-#include <asm/bitops.h>
-
 #include <linux/errno.h>
-#include <linux/init.h>
-
-#include <linux/netdevice.h>
-#include <linux/etherdevice.h>
-#include <linux/if_vlan.h>
-#include <linux/skbuff.h>
-
-#include <linux/init.h>
 #include <linux/proc_fs.h>
-#include <asm/uaccess.h>
-
 #include <linux/seq_file.h>
 
 #include "raether.h"
@@ -315,7 +300,7 @@ static int ra_regs_seq_show(struct seq_file *m, void *v)
 #endif /* CONFIG_RAETH_DEBUG */
 
 #if defined (CONFIG_ETHTOOL)
-	seq_printf(m, "\nThe current PHY address selected by ethtool is 0x%2X\n", get_current_phy_address());
+	seq_printf(m, "\nThe current PHY address selected by ethtool is 0x%02X\n", get_current_phy_address());
 #endif
 
 	return 0;
@@ -658,61 +643,24 @@ int debug_proc_init(void)
 	if (procRegDir == NULL)
 		procRegDir = proc_mkdir(PROCREG_DIR, NULL);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	procGmac = proc_create(PROCREG_GMAC, S_IRUGO | S_IWUSR, procRegDir, &ra_regs_seq_fops);
-#else
-	if ((procGmac = create_proc_entry(PROCREG_GMAC, S_IRUGO | S_IWUSR, procRegDir)))
-		procGmac->proc_fops = &ra_regs_seq_fops;
-#endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	procVlanTx = proc_create(PROCREG_VLAN_TX, S_IRUGO | S_IWUSR, procRegDir, &ra_vlan_tx_seq_fops);
-#else
-	if ((procVlanTx = create_proc_entry(PROCREG_VLAN_TX, S_IRUGO | S_IWUSR, procRegDir)))
-		procVlanTx->proc_fops = &ra_vlan_tx_seq_fops;
-#endif
 #endif
 
 #if defined (CONFIG_RAETH_SNMPD)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	procSnmp = proc_create(PROCREG_SNMP, S_IRUGO, procRegDir, &ra_snmp_seq_fops);
-#else
-	if ((procSnmp = create_proc_entry(PROCREG_SNMP, S_IRUGO, procRegDir)))
-		procSnmp->proc_fops = &ra_snmp_seq_fops;
-#endif
 #endif
 
 #if defined (CONFIG_RAETH_QDMA)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	procQdma = proc_create(PROCREG_QDMA, S_IRUGO, procRegDir, &ra_qdma_seq_fops);
-#else
-	if ((procQdma = create_proc_entry(PROCREG_QDMA, S_IRUGO, procRegDir)))
-		procQdma->proc_fops = &ra_qdma_seq_fops;
-#endif
 #endif
 
 #if defined (CONFIG_RAETH_DEBUG)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	procTxRing = proc_create(PROCREG_TXRING, S_IRUGO, procRegDir, &ra_txring_seq_fops);
-#else
-	if ((procTxRing = create_proc_entry(PROCREG_TXRING, S_IRUGO, procRegDir)))
-		procTxRing->proc_fops = &ra_txring_seq_fops;
-#endif
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	procRxRing = proc_create(PROCREG_RXRING, S_IRUGO, procRegDir, &ra_rxring_seq_fops);
-#else
-	if ((procRxRing = create_proc_entry(PROCREG_RXRING, S_IRUGO, procRegDir)))
-		procRxRing->proc_fops = &ra_rxring_seq_fops;
-#endif
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	procEswCnt = proc_create(PROCREG_ESW_CNT, S_IRUGO, procRegDir, &ra_esw_seq_fops);
-#else
-	if ((procEswCnt = create_proc_entry(PROCREG_ESW_CNT, S_IRUGO, procRegDir)))
-		procEswCnt->proc_fops = &ra_esw_seq_fops;
-#endif
 #endif
 
 	return 0;

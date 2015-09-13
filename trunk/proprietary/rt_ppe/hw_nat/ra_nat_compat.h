@@ -41,4 +41,50 @@
 
 ///////////////////////////////////////////////////////////////
 
+#if defined (CONFIG_RT3090_AP_MBSS) || defined (CONFIG_RT5392_AP_MBSS) || \
+    defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS) || \
+    defined (CONFIG_MT7610_AP_MBSS) || defined (CONFIG_MT76X2_AP_MBSS) || \
+    defined (CONFIG_MT76X3_AP_MBSS) || defined (CONFIG_MT7615_AP_MBSS) || \
+    defined (CONFIG_RT2860V2_AP_MBSS)
+#define HWNAT_USE_IF_MBSS
+#endif
+
+#if defined (CONFIG_RT3090_AP_WDS) || defined (CONFIG_RT5392_AP_WDS) || \
+    defined (CONFIG_RT5592_AP_WDS) || defined (CONFIG_RT3593_AP_WDS) || \
+    defined (CONFIG_MT7610_AP_WDS) || defined (CONFIG_MT76X2_AP_WDS) || \
+    defined (CONFIG_MT76X3_AP_WDS) || defined (CONFIG_MT7615_AP_WDS) || \
+    defined (CONFIG_RT2860V2_AP_WDS)
+#define HWNAT_USE_IF_WDS
+#endif
+
+#if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
+    defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI) || \
+    defined (CONFIG_MT7610_AP_APCLI) || defined (CONFIG_MT76X2_AP_APCLI) || \
+    defined (CONFIG_MT76X3_AP_APCLI) || defined (CONFIG_MT7615_AP_APCLI) || \
+    defined (CONFIG_RT2860V2_AP_APCLI)
+#define HWNAT_USE_IF_APCLI
+#endif
+
+#if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
+    defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH) || \
+    defined (CONFIG_MT7610_AP_MESH) || defined (CONFIG_MT76X2_AP_MESH) || \
+    defined (CONFIG_MT76X3_AP_MESH) || defined (CONFIG_MT7615_AP_MESH) || \
+    defined (CONFIG_RT2860V2_AP_MESH)
+#define HWNAT_USE_IF_MESH
+#endif
+
+/* old drivers send skb via ra0/rai0 and use skb->cb[CB_OFF+6] for store type */
+#if defined (CONFIG_RT_FIRST_IF_RT3090) || defined (CONFIG_RT_FIRST_IF_RT5392) || \
+    defined (CONFIG_RT_FIRST_IF_RT5592) || defined (CONFIG_RT_FIRST_IF_RT3593) || \
+    defined (CONFIG_RT_FIRST_IF_MT7610E) || defined (CONFIG_RT_FIRST_IF_RT2860)
+#define HWNAT_USE_FIRST_IF_CBOFF
+#endif
+
+#if defined (CONFIG_RT_SECOND_IF_RT3090) || defined (CONFIG_RT_SECOND_IF_RT5392) || \
+    defined (CONFIG_RT_SECOND_IF_RT5592) || defined (CONFIG_RT_SECOND_IF_RT3593) || \
+    defined (CONFIG_RT_SECOND_IF_MT7610E)
+#define HWNAT_USE_SECOND_IF_CBOFF
+#endif
+
+
 #endif

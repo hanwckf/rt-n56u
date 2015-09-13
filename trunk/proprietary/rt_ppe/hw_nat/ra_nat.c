@@ -357,7 +357,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	switch (VirIfIdx) {
 	case DP_RA0:
 	case DP_RA1:
-#if defined (HWNAT_DP_RAI_AP)
+#if !defined (CONFIG_RT_SECOND_IF_NONE)
 	case DP_RAI0:
 	case DP_RAI1:
 #endif
@@ -875,41 +875,45 @@ uint32_t PpeSetExtIfNum(struct sk_buff *skb, struct FoeEntry* foe_entry)
 #define MIN_NET_DEVICE_FOR_APCLI	0x20
 #define MIN_NET_DEVICE_FOR_MESH		0x30
 
-#if defined (HWNAT_DP_RAI_AP)
+#if !defined (CONFIG_RT_SECOND_IF_NONE)
 	if (offset == DP_RAI0) {
-#if defined (HWNAT_DP_RAI_MESH)
+#if defined (HWNAT_USE_SECOND_IF_CBOFF)
+#if defined (HWNAT_USE_IF_MESH)
 		if (RTMP_GET_PACKET_IF(skb) >= MIN_NET_DEVICE_FOR_MESH)
 			offset = (RTMP_GET_PACKET_IF(skb) - MIN_NET_DEVICE_FOR_MESH + DP_MESHI0);
 		else
 #endif
-#if defined (HWNAT_DP_RAI_APCLI)
+#if defined (HWNAT_USE_IF_APCLI)
 		if (RTMP_GET_PACKET_IF(skb) >= MIN_NET_DEVICE_FOR_APCLI)
 			offset = (RTMP_GET_PACKET_IF(skb) - MIN_NET_DEVICE_FOR_APCLI + DP_APCLII0);
 		else
 #endif
-#if defined (HWNAT_DP_RAI_WDS)
+#if defined (HWNAT_USE_IF_WDS)
 		if (RTMP_GET_PACKET_IF(skb) >= MIN_NET_DEVICE_FOR_WDS)
 			offset = (RTMP_GET_PACKET_IF(skb) - MIN_NET_DEVICE_FOR_WDS + DP_WDSI0);
 		else
+#endif
 #endif
 			;
 	} else
 #endif
 	if (offset == DP_RA0) {
-#if defined (HWNAT_DP_RA_MESH)
+#if defined (HWNAT_USE_FIRST_IF_CBOFF)
+#if defined (HWNAT_USE_IF_MESH)
 		if (RTMP_GET_PACKET_IF(skb) >= MIN_NET_DEVICE_FOR_MESH)
 			offset = (RTMP_GET_PACKET_IF(skb) - MIN_NET_DEVICE_FOR_MESH + DP_MESH0);
 		else
 #endif
-#if defined (HWNAT_DP_RA_APCLI)
+#if defined (HWNAT_USE_IF_APCLI)
 		if (RTMP_GET_PACKET_IF(skb) >= MIN_NET_DEVICE_FOR_APCLI)
 			offset = (RTMP_GET_PACKET_IF(skb) - MIN_NET_DEVICE_FOR_APCLI + DP_APCLI0);
 		else
 #endif
-#if defined (HWNAT_DP_RA_WDS)
+#if defined (HWNAT_USE_IF_WDS)
 		if (RTMP_GET_PACKET_IF(skb) >= MIN_NET_DEVICE_FOR_WDS)
 			offset = (RTMP_GET_PACKET_IF(skb) - MIN_NET_DEVICE_FOR_WDS + DP_WDS0);
 		else
+#endif
 #endif
 			;
 	}
@@ -2376,8 +2380,9 @@ void PpeSetDstPort(uint32_t Ebl)
 	int i;
 
 	if (Ebl) {
+#if !defined (CONFIG_RT_FIRST_IF_NONE)
 		DstPort[DP_RA0] = ra_dev_get_by_name("ra0");
-#if defined (HWNAT_DP_RA_MBSS) || defined (CONFIG_MT76X2_AP_MBSS) || defined (CONFIG_MT76X3_AP_MBSS)
+#if defined (HWNAT_USE_IF_MBSS)
 		DstPort[DP_RA1] = ra_dev_get_by_name("ra1");
 		DstPort[DP_RA2] = ra_dev_get_by_name("ra2");
 		DstPort[DP_RA3] = ra_dev_get_by_name("ra3");
@@ -2386,21 +2391,23 @@ void PpeSetDstPort(uint32_t Ebl)
 		DstPort[DP_RA6] = ra_dev_get_by_name("ra6");
 		DstPort[DP_RA7] = ra_dev_get_by_name("ra7");
 #endif
-#if defined (HWNAT_DP_RA_WDS) || defined (CONFIG_MT76X2_AP_WDS) || defined (CONFIG_MT76X3_AP_WDS)
+#if defined (HWNAT_USE_IF_WDS)
 		DstPort[DP_WDS0] = ra_dev_get_by_name("wds0");
 		DstPort[DP_WDS1] = ra_dev_get_by_name("wds1");
 		DstPort[DP_WDS2] = ra_dev_get_by_name("wds2");
 		DstPort[DP_WDS3] = ra_dev_get_by_name("wds3");
 #endif
-#if defined (HWNAT_DP_RA_APCLI) || defined (CONFIG_MT76X2_AP_APCLI) || defined (CONFIG_MT76X3_AP_APCLI)
+#if defined (HWNAT_USE_IF_APCLI)
 		DstPort[DP_APCLI0] = ra_dev_get_by_name("apcli0");
 #endif
-#if defined (HWNAT_DP_RA_MESH) || defined (CONFIG_MT76X2_AP_MESH) || defined (CONFIG_MT76X3_AP_MESH)
+#if defined (HWNAT_USE_IF_MESH)
 		DstPort[DP_MESH0] = ra_dev_get_by_name("mesh0");
 #endif
-#if defined (HWNAT_DP_RAI_AP)
+#endif
+
+#if !defined (CONFIG_RT_SECOND_IF_NONE)
 		DstPort[DP_RAI0] = ra_dev_get_by_name("rai0");
-#if defined (HWNAT_DP_RAI_MBSS) || defined (CONFIG_MT76X2_AP_MBSS)
+#if defined (HWNAT_USE_IF_MBSS)
 		DstPort[DP_RAI1] = ra_dev_get_by_name("rai1");
 		DstPort[DP_RAI2] = ra_dev_get_by_name("rai2");
 		DstPort[DP_RAI3] = ra_dev_get_by_name("rai3");
@@ -2409,19 +2416,20 @@ void PpeSetDstPort(uint32_t Ebl)
 		DstPort[DP_RAI6] = ra_dev_get_by_name("rai6");
 		DstPort[DP_RAI7] = ra_dev_get_by_name("rai7");
 #endif
-#if defined (HWNAT_DP_RAI_WDS) || defined (CONFIG_MT76X2_AP_WDS)
+#if defined (HWNAT_USE_IF_WDS)
 		DstPort[DP_WDSI0] = ra_dev_get_by_name("wdsi0");
 		DstPort[DP_WDSI1] = ra_dev_get_by_name("wdsi1");
 		DstPort[DP_WDSI2] = ra_dev_get_by_name("wdsi2");
 		DstPort[DP_WDSI3] = ra_dev_get_by_name("wdsi3");
 #endif
-#if defined (HWNAT_DP_RAI_APCLI) || defined (CONFIG_MT76X2_AP_APCLI)
+#if defined (HWNAT_USE_IF_APCLI)
 		DstPort[DP_APCLII0] = ra_dev_get_by_name("apclii0");
 #endif
-#if defined (HWNAT_DP_RAI_MESH) || defined (CONFIG_MT76X2_AP_MESH)
+#if defined (HWNAT_USE_IF_MESH)
 		DstPort[DP_MESHI0] = ra_dev_get_by_name("meshi0");
 #endif
-#endif /* HWNAT_DP_RAI_AP */
+#endif
+
 		DstPort[DP_GMAC1] = ra_dev_get_by_name("eth2");
 #if defined (CONFIG_RAETH_GMAC2)
 		DstPort[DP_GMAC2] = ra_dev_get_by_name("eth3");

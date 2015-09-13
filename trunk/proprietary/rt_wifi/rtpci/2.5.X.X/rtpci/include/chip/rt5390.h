@@ -47,6 +47,7 @@ extern UCHAR NUM_RF_5390_REG_PARMS;
 #define BBP_REG_BF			BBP_R163 // TxBf control
 
 #ifdef RTMP_FLASH_SUPPORT
+#undef EEPROM_DEFAULT_FILE_PATH
 #define EEPROM_DEFAULT_FILE_PATH			"/etc_ro/Wireless/RT5392_PCIe_2T2R_ALC_V1_3.bin"
 
 #if defined (RT_IFNAME_1ST)

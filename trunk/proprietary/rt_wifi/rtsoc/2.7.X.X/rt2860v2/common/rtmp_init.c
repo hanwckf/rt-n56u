@@ -4070,7 +4070,12 @@ VOID	UserCfgInit(
 #endif /* PEER_DELBA_TX_ADAPT */
 
 #if defined(MICROWAVE_OVEN_SUPPORT) || defined(DYNAMIC_VGA_SUPPORT)
-	pAd->CommonCfg.MO_Cfg.bEnable = FALSE;
+#ifdef MICROWAVE_OVEN_SUPPORT
+	if (pAd->OpMode == OPMODE_AP)
+		pAd->CommonCfg.MO_Cfg.bEnable = TRUE;
+	else
+		pAd->CommonCfg.MO_Cfg.bEnable = FALSE;
+#endif /* MICROWAVE_OVEN_SUPPORT */
 #ifdef DYNAMIC_VGA_SUPPORT
 	pAd->CommonCfg.MO_Cfg.bDyncVGAEnable = TRUE;
 #endif /* DYNAMIC_VGA_SUPPORT */
@@ -4749,6 +4754,7 @@ VOID RTMP_IO_WRITE32(
 {
 	_RTMP_IO_WRITE32(pAd, Offset, Value);
 }
+#endif /* VENDOR_FEATURE3_SUPPORT */
 
 VOID RTMP_BBP_IO_READ8_BY_REG_ID(
 	PRTMP_ADAPTER pAd,
@@ -4783,7 +4789,6 @@ VOID RTMP_BBP_IO_WRITE8(
 {
 	_RTMP_BBP_IO_WRITE8(pAd, Offset, Value, FlgValidMCR);
 }
-#endif /* VENDOR_FEATURE3_SUPPORT */
 
 
 #ifdef RTMP_MAC_PCI

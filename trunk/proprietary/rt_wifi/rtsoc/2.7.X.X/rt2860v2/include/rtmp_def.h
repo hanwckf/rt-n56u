@@ -1911,7 +1911,7 @@ enum IEEE80211_BAND {
 
 #ifdef MICROWAVE_OVEN_SUPPORT
 /* definition for mitigating microwave interference */
-#define MO_FALSE_CCA_TH	25
+#define MO_FALSE_CCA_TH	600
 #define MO_MEAS_PERIOD	0	/* 0 ~ 100 ms */
 #define MO_IDLE_PERIOD	1	/* 100 ~ 1000 ms */
 #endif /* MICROWAVE_OVEN_SUPPORT */

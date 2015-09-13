@@ -863,7 +863,7 @@ static VOID NICInitRT6352RFRegisters(
 
 	if (pAd->CommonCfg.Chip_VerID > 1)
 	{
-		DBGPRINT(RT_DEBUG_ERROR, ("Initialize RF Central Registers for E2 !!!\n"));
+		DBGPRINT(RT_DEBUG_TRACE, ("Initialize RF Central Registers for E2 !!!\n"));
 		RTMP_SYS_IO_READ32(0xb0000010, &SysCfgReg);
 		SysCfgReg &= (1 << 6); /* XTAL_FREQ_SEL */
 		RT635xWriteRFRegister(pAd, RF_BANK0, RF_R11, 0x21);
@@ -888,7 +888,7 @@ static VOID NICInitRT6352RFRegisters(
 
 	if ((pAd->CommonCfg.Chip_VerID > 1) && (pAd->CommonCfg.Chip_E_Number >= 2))
 	{
-		DBGPRINT(RT_DEBUG_ERROR, ("Initialize RF Central Registers for E3 !!!\n"));
+		DBGPRINT(RT_DEBUG_TRACE, ("Initialize RF Central Registers for E3 !!!\n"));
 		RT635xWriteRFRegister(pAd, RF_BANK0, RF_R28, 0x62);
 		RT635xWriteRFRegister(pAd, RF_BANK0, RF_R29, 0xAD);
 		RT635xWriteRFRegister(pAd, RF_BANK0, RF_R39, 0x80);
@@ -913,7 +913,7 @@ static VOID NICInitRT6352RFRegisters(
 
 	if (pAd->CommonCfg.Chip_VerID > 1)
 	{
-		DBGPRINT(RT_DEBUG_ERROR, ("Initialize RF Channel Registers for E2 !!!\n"));
+		DBGPRINT(RT_DEBUG_TRACE, ("Initialize RF Channel Registers for E2 !!!\n"));
 		RT635xWriteRFRegister(pAd, RF_BANK4, RF_R09, 0x47);
 		RT635xWriteRFRegister(pAd, RF_BANK6, RF_R09, 0x47);
 		RT635xWriteRFRegister(pAd, RF_BANK4, RF_R10, 0x71);
@@ -974,7 +974,7 @@ static VOID NICInitRT6352RFRegisters(
 
 	if ((pAd->CommonCfg.Chip_VerID > 1) && (pAd->CommonCfg.Chip_E_Number >= 2))
 	{
-		DBGPRINT(RT_DEBUG_ERROR, ("Initialize RF Channel Registers for E3 !!!\n"));
+		DBGPRINT(RT_DEBUG_TRACE, ("Initialize RF Channel Registers for E3 !!!\n"));
 		RT635xWriteRFRegister(pAd, RF_BANK4, RF_R10, 0x51);
 		RT635xWriteRFRegister(pAd, RF_BANK6, RF_R10, 0x51);
 		RT635xWriteRFRegister(pAd, RF_BANK4, RF_R14, 0x06);
@@ -1016,7 +1016,7 @@ static VOID NICInitRT6352RFRegisters(
 
 	if ((pAd->CommonCfg.PKG_ID == 0) && (pAd->CommonCfg.Chip_VerID == 1))
 	{
-		DBGPRINT(RT_DEBUG_ERROR, ("Initialize RF Channel Registers for DRQFN !!!\n"));
+		DBGPRINT(RT_DEBUG_TRACE, ("Initialize RF Channel Registers for DRQFN !!!\n"));
 
 		// Initialize RF channel register for DRQFN
 		for (i = 0; i < RT6352_NUM_RF_CHANNEL_REG_DRQFN_PARMS; i++)
@@ -1028,7 +1028,7 @@ static VOID NICInitRT6352RFRegisters(
 
 #ifdef ADJUST_POWER_CONSUMPTION_SUPPORT
 	{
-		DBGPRINT(RT_DEBUG_ERROR, ("Reduce Power Consumption Support !!!\n"));
+		DBGPRINT(RT_DEBUG_TRACE, ("Reduce Power Consumption Support !!!\n"));
 
 		RT635xWriteRFRegister(pAd, RF_BANK4, RF_R43, 0x53);
 		RT635xWriteRFRegister(pAd, RF_BANK6, RF_R43, 0x53);
@@ -1068,7 +1068,7 @@ static VOID NICInitRT6352RFRegisters(
 
 	if (pAd->CommonCfg.Chip_VerID > 1)
 	{
-		DBGPRINT(RT_DEBUG_ERROR, ("Initialize RF DCCal Registers for E2 !!!\n"));
+		DBGPRINT(RT_DEBUG_TRACE, ("Initialize RF DCCal Registers for E2 !!!\n"));
 		RT635xWriteRFRegister(pAd, RF_BANK5, RF_R03, 0x08);
 		RT635xWriteRFRegister(pAd, RF_BANK7, RF_R03, 0x08);
 		RT635xWriteRFRegister(pAd, RF_BANK5, RF_R04, 0x04);
@@ -1079,7 +1079,7 @@ static VOID NICInitRT6352RFRegisters(
 
 	if ((pAd->CommonCfg.Chip_VerID > 1) && (pAd->CommonCfg.Chip_E_Number >= 2))
 	{
-		DBGPRINT(RT_DEBUG_ERROR, ("Initialize RF DCCal Registers for E3 !!!\n"));
+		DBGPRINT(RT_DEBUG_TRACE, ("Initialize RF DCCal Registers for E3 !!!\n"));
 		RT635xWriteRFRegister(pAd, RF_BANK5, RF_R05, 0x00);
 		RT635xWriteRFRegister(pAd, RF_BANK7, RF_R05, 0x00);
 		RT635xWriteRFRegister(pAd, RF_BANK5, RF_R17, 0x7C);
@@ -4784,7 +4784,7 @@ VOID RT6352_AsicAdjustTxPower(
 					RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R49, &BBPR49);
 					pAd->CurrTemperature = (INT32) BBPR49;
 					
-					DBGPRINT(RT_DEBUG_INFO, ("Current Temperature from BBP_R49=0x%x\n", pAd->CurrTemperature));
+					DBGPRINT(RT_DEBUG_TRACE, ("Current Temperature from BBP_R49=0x%x\n", pAd->CurrTemperature));
 					RT6352_TemperatureCalibration(pAd);
 					pAd->CommonCfg.bEnTemperatureTrack = FALSE;
 

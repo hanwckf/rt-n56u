@@ -885,7 +885,7 @@ VOID EnableAPMIMOPSv1(
 VOID DisableAPMIMOPSv1(
 	IN PRTMP_ADAPTER		pAd)
 {
-	UCHAR	BBPR3=0,BBPR1=0;
+	UCHAR	BBPR3=0,BBPR1=0,BBPVal=0;
 	ULONG	TxPinCfg;
 	UCHAR	CentralChannel;
 	UINT32	Value=0;
@@ -1011,9 +1011,9 @@ VOID DisableAPMIMOPSv1(
 			RTMP_IO_WRITE32(pAd, TX_BAND_CFG, Value);
 			
 			/*  RX : control channel at lower */
-			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R3, &Value);
-			Value &= (~0x20);
-			RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, Value);
+			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R3, &BBPVal);
+			BBPVal &= (~0x20);
+			RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, BBPVal);
 		}
 		else if ((pAd->CommonCfg.Channel > 2) && (pAd->CommonCfg.RegTransmitSetting.field.EXTCHA == EXTCHA_BELOW)) 
 		{
@@ -1025,18 +1025,18 @@ VOID DisableAPMIMOPSv1(
 			RTMP_IO_WRITE32(pAd, TX_BAND_CFG, Value);
 			
 			/*  RX : control channel at upper */
-			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R3, &Value);
-			Value |= (0x20);
-			RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, Value);
+			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R3, &BBPVal);
+			BBPVal |= (0x20);
+			RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, BBPVal);
 		}
 		
 		CentralChannel = pAd->CommonCfg.CentralChannel;
 		
 		/* Set BBP registers to BW40 */
-		RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R4, &Value);
-		Value &= (~0x18);
-		Value |= 0x10;
-		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R4, Value);
+		RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R4, &BBPVal);
+		BBPVal &= (~0x18);
+		BBPVal |= 0x10;
+		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R4, BBPVal);
 		
 		/* RF Bandwidth related registers would be set in AsicSwitchChannel() */
 		pAd->CommonCfg.BBPCurrentBW = BW_40;

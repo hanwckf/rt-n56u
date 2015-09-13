@@ -837,12 +837,14 @@ typedef union _BBP_R182_STRUC {
 	}while(0)
 #endif /* !TXBF_SUPPORT */
 
+#if 0
 #ifndef VENDOR_FEATURE3_SUPPORT
 #define RTMP_BBP_IO_READ8				_RTMP_BBP_IO_READ8
 #define RTMP_BBP_IO_READ8_BY_REG_ID		_RTMP_BBP_IO_READ8_BY_REG_ID
 #define RTMP_BBP_IO_WRITE8				_RTMP_BBP_IO_WRITE8
 #define RTMP_BBP_IO_WRITE8_BY_REG_ID	_RTMP_BBP_IO_WRITE8_BY_REG_ID
 #endif /* VENDOR_FEATURE3_SUPPORT */
+#endif
 
 /* 
 	Hardware Periodic Timer interrupt setting.

@@ -2107,7 +2107,7 @@ static CHAR lp_Tx_Filter_BW_Cal(
 	IN PRTMP_ADAPTER pAd)
 {
 	INT cnt;
-	UINT32 bbp_val = 0;
+	UCHAR bbp_val = 0;
 	CHAR cal_val;
 	
 	RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R158, 0x0);

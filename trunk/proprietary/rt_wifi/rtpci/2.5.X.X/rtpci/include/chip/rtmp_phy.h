@@ -745,13 +745,15 @@ typedef union _BBP_R182_STRUC {
 		}													\
 	}while(0)
 
+#if 0
 #ifndef VENDOR_FEATURE3_SUPPORT
 #define RTMP_BBP_IO_READ8				_RTMP_BBP_IO_READ8
 #define RTMP_BBP_IO_READ8_BY_REG_ID		_RTMP_BBP_IO_READ8_BY_REG_ID
 #define RTMP_BBP_IO_WRITE8				_RTMP_BBP_IO_WRITE8
 #define RTMP_BBP_IO_WRITE8_BY_REG_ID	_RTMP_BBP_IO_WRITE8_BY_REG_ID
 #endif // VENDOR_FEATURE3_SUPPORT //
-	
+#endif
+
 #if defined(RT2883) || defined(RT3883) || defined (RT35xx)|| defined(DFS_HARDWARE_SUPPORT)
 
 #define RTMP_DFS_IO_READ8(_A, _I, _V)                   \

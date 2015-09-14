@@ -205,6 +205,9 @@ typedef struct _CIPHER_KEY {
 	UCHAR RxTsc[16];	/* TSC value. Change it from 48bit to 128bit */
 	UCHAR CipherAlg;	/* 0:none, 1:WEP64, 2:WEP128, 3:TKIP, 4:AES, 5:CKIP64, 6:CKIP128 */
 	UCHAR KeyLen;		/* Key length for each key, 0: entry is invalid */
+#ifdef CONFIG_STA_SUPPORT
+	UCHAR BssId[6];
+#endif				/* CONFIG_STA_SUPPORT */
 	UCHAR Type;		/* Indicate Pairwise/Group when reporting MIC error */
 } CIPHER_KEY, *PCIPHER_KEY;
 

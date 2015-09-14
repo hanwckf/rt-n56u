@@ -375,9 +375,11 @@ struct _RXINFO_STRUC;
 union _RXWI_STRUC;
 union _TXWI_STRUC;
 
+#ifdef DBG
 VOID dump_rtmp_rxwi(struct _RTMP_ADAPTER *pAd, union _RXWI_STRUC *pRxWI);
 VOID dump_rtmp_txwi(struct _RTMP_ADAPTER *pAd, union _TXWI_STRUC *pTxWI);
 VOID dump_rtmp_rxinfo(struct _RTMP_ADAPTER *pAd, struct _RXINFO_STRUC *pRxInfo);
+#endif
 
 INT rtmp_get_rxwi_phymode(union _RXWI_STRUC *rxwi);
 INT rtmp_get_rxwi_rssi(union _RXWI_STRUC *rxwi, INT size, CHAR *rssi);

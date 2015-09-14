@@ -99,6 +99,11 @@
 #endif /* WSC_AP_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef WSC_STA_SUPPORT
+#define STA_WSC_INCLUDED
+#endif /* WSC_STA_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 
 #if defined(WSC_AP_SUPPORT) || defined(WSC_STA_SUPPORT)
 #define WSC_INCLUDED
@@ -122,21 +127,40 @@ typedef struct usb_ctrlrequest devctrlrequest;
 #ifdef CONFIG_AP_SUPPORT
 
 #ifdef RTMP_MAC_PCI
-#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612)
- #define AP_RTMP_FIRMWARE_FILE_NAME	"/etc_ro/Wireless/RT2860AP.bin"
+ #define AP_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860AP.dat"
+#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612 || CONFIG_RT_FIRST_CARD == 7620)
  #define AP_PROFILE_PATH		"/etc/Wireless/RT2860/RT2860AP.dat"
  #define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/RT2860/SingleSKU.dat"
  #define CARD_INFO_PATH			"/etc/Wireless/RT2860/RT2860APCard.dat"
 #else
- #define AP_RTMP_FIRMWARE_FILE_NAME	"/etc_ro/Wireless/iNIC_ap.bin"
  #define AP_PROFILE_PATH		"/etc/Wireless/iNIC/iNIC_ap.dat"
  #define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/iNIC/SingleSKU.dat"
  #define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860APCard.dat"
 #endif
-#define AP_DRIVER_VERSION		"3.0.3.2_rev2"
+#define AP_DRIVER_VERSION		"3.0.4.0"
 #endif /* RTMP_MAC_PCI */
 
 #endif /* CONFIG_AP_SUPPORT */
+
+#ifdef CONFIG_STA_SUPPORT
+
+#ifdef RTMP_MAC_PCI
+ #define STA_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860STA.dat"
+#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612 || CONFIG_RT_FIRST_CARD == 7620)
+ #define STA_PROFILE_PATH		"/etc/Wireless/RT2860/RT2860STA.dat"
+ #define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/RT2860/SingleSKU.dat"
+ #define CARD_INFO_PATH			"/etc/Wireless/RT2860/RT2860STACard.dat"
+#else
+ #define STA_PROFILE_PATH		"/etc/Wireless/iNIC/iNIC_sta.dat"
+ #define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/iNIC/SingleSKU.dat"
+ #define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860STACard.dat"
+#endif
+#define STA_DRIVER_VERSION		"3.0.0.2"
+#endif /* RTMP_MAC_PCI */
+
+extern const struct iw_handler_def rt28xx_iw_handler_def;
+
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef CONFIG_APSTA_MIXED_SUPPORT
 extern	const struct iw_handler_def rt28xx_ap_iw_handler_def;
@@ -152,13 +176,6 @@ extern	const struct iw_handler_def rt28xx_ap_iw_handler_def;
 #define INOUT
 #define NDIS_STATUS		INT
 
-#ifdef RTMP_RBUS_SUPPORT
-/* This used for rbus-based chip, maybe we can integrate it together. */
-#define RTMP_FIRMWARE_FILE_NAME		"/etc_ro/Wireless/RT2860AP/RT2860AP.bin"
-#define PROFILE_PATH			"/etc/Wireless/RT2860i.dat"
-#define AP_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860.dat"
-#define RT2880_AP_DRIVER_VERSION	"1.0.0.0"
-#endif /* RTMP_RBUS_SUPPORT */
 
 /***********************************************************************************
  *	OS Specific definitions and data structures
@@ -257,6 +274,13 @@ struct iw_statistics *rt28xx_get_wireless_stats(
 /***********************************************************************************
  *	Ralink Specific network related constant definitions
  ***********************************************************************************/
+#ifdef CONFIG_STA_SUPPORT
+#define NDIS_PACKET_TYPE_DIRECTED		0
+#define NDIS_PACKET_TYPE_MULTICAST		1
+#define NDIS_PACKET_TYPE_BROADCAST		2
+#define NDIS_PACKET_TYPE_ALL_MULTICAST	3
+#define NDIS_PACKET_TYPE_PROMISCUOUS	4
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef DOT11_VHT_AC
 #ifdef NOISE_TEST_ADJUST
@@ -1099,9 +1123,11 @@ do{ \
  *	Other function prototypes definitions
  ***********************************************************************************/
 
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 #if !defined(CONFIG_RA_NAT_NONE)
 extern int (*ra_sw_nat_hook_rx)(VOID *skb);
 extern int (*ra_sw_nat_hook_tx)(VOID *skb, int gmac_no);
+#endif
 #endif
 
 #if defined (CONFIG_WIFI_PKT_FWD)
@@ -1478,8 +1504,13 @@ extern int rausb_control_msg(VOID *dev,
 #define ATEDBGPRINT DBGPRINT
 #ifdef RTMP_MAC_PCI
 #ifdef CONFIG_AP_SUPPORT
+#ifndef CONFIG_STA_SUPPORT /* avoid wrong usage when enabling P2P_SUPPORT */
 #define EEPROM_BIN_FILE_NAME  "/etc/Wireless/RT2860AP/e2p.bin"
+#endif /* CONFIG_STA_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+#define EEPROM_BIN_FILE_NAME  "/etc/Wireless/RT2860STA/e2p.bin"
+#endif /* CONFIG_STA_SUPPORT */
 #endif /* RTMP_MAC_PCI */
 
 
@@ -1498,6 +1529,27 @@ INT RtmpOSNetDevOpsAlloc(
 #define RTMP_OS_MAX_SCAN_DATA_GET()		IW_SCAN_MAX_DATA
 
 #include "os/rt_os.h"
+
+
+#ifdef MULTI_INF_SUPPORT
+
+#ifdef RTMP_PCI_SUPPORT
+int __init rt_pci_init_module(void);
+void __exit rt_pci_cleanup_module(void);
+#endif /* RTMP_PCI_SUPPORT */
+
+
+#ifdef RTMP_RBUS_SUPPORT
+int __init rt2880_module_init(void);
+VOID __exit rt2880_module_exit(void);
+#endif /* RTMP_RBUS_SUPPORT */
+
+#endif /* MULTI_INF_SUPPORT */
+
+
+#define RA_WEXT 	0
+#define RA_NETLINK  	1
+
 
 #endif /* __RT_LINUX_H__ */
 

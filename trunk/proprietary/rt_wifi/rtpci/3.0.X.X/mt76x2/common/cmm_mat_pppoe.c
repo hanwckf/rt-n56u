@@ -415,6 +415,10 @@ static PUidMacMappingEntry UidMacTableUpdate(
 		}
 	}
 
+#ifdef ETH_CONVERT_SUPPORT
+	if (pMatCfg->nodeCount >= ETH_CONVERT_NODE_MAX)
+		return FALSE;
+#endif /* ETH_CONVERT_SUPPORT */
 
 	/* Allocate a new UidMacMapping entry and insert into the double-hash */
 	pNewEntry = (UidMacMappingEntry *)MATDBEntryAlloc(pMatCfg, sizeof(UidMacMappingEntry));
@@ -607,6 +611,10 @@ static NDIS_STATUS SesMacTableUpdate(
         }
 	}
 	
+#ifdef ETH_CONVERT_SUPPORT
+	if (pMatCfg->nodeCount >= ETH_CONVERT_NODE_MAX)
+		return FALSE;
+#endif /* ETH_CONVERT_SUPPORT */
 
 	/* Allocate a new IPMacMapping entry and insert into the hash */
 	pNewEntry = (SesMacMappingEntry *)MATDBEntryAlloc(pMatCfg, sizeof(SesMacMappingEntry));

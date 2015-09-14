@@ -535,6 +535,22 @@ VOID	RTMPCalculateMICValue(
 	else
 #endif /* IGMP_SNOOP_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+#ifdef ETH_CONVERT_SUPPORT
+	/* If the packet is need to do MATConvert in station mode, the "apidx" used for indicate "pkt->bDonglePkt"; */
+	if ((apidx > 0) && (pAd->OpMode == OPMODE_STA))
+	{	/* For packets which need to do MATConvert, we need to use the pAd->CurrentAddress to calculate the MIC.*/
+		RTMPInitMICEngine(
+			pAd,
+			pKey->Key,
+			pSrc,
+			pAd->CurrentAddress,
+			UserPriority,
+			pKey->TxMic);
+	}
+	else
+#endif /* ETH_CONVERT_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 	{
 		RTMPInitMICEngine(
 			pAd,
@@ -850,6 +866,18 @@ NDIS_STATUS RTMPSoftDecryptTKIP(
 	if (!NdisEqualMemory(MIC, TrailMIC, LEN_TKIP_MIC))
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("! TKIP MIC Error !\n"));	 /*MIC error.*/
+#ifdef CONFIG_STA_SUPPORT
+		/*RTMPReportMicError(pAd, &pWpaKey[KeyID]);	 marked by AlbertY @ 20060630 */
+#ifdef WPA_SUPPLICANT_SUPPORT
+        if (pAd->StaCfg.wpa_supplicant_info.WpaSupplicantUP) {
+                WpaSendMicFailureToWpaSupplicant(pAd->net_dev, pFrame->Addr2,
+                                                (pKey->Type == PAIRWISEKEY) ? TRUE : FALSE,
+                                                0 /*key id need be retrived by IV, actually supplicant didn't need it!*/, 
+                                                NULL);
+        } else
+#endif /* WPA_SUPPLICANT_SUPPORT */
+        RTMPReportMicError(pAd, pKey);
+#endif /* CONFIG_STA_SUPPORT */
 		return NDIS_STATUS_MICERROR;		
 	}
 

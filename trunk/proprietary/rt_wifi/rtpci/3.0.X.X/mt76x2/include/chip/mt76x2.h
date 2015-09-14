@@ -45,6 +45,8 @@ void mt76x2_make_up_rate_pwr_table(struct _RTMP_ADAPTER *ad);
 UCHAR mt76x2_get_sku_channel_base_pwr(struct _RTMP_ADAPTER *ad, u8 channel);
 void mt76x2_update_per_rate_pwr(struct _RTMP_ADAPTER *ad);
 UCHAR mt76x2_update_sku_pwr(struct _RTMP_ADAPTER *ad, u8 channel);
+INT32 mt76x2_sku_calculate_TxPwrAdj(struct _RTMP_ADAPTER *ad,struct _TXWI_NMAC *txwi_n);
+
 #endif /* SINGLE_SKU_V2 */
 
 #ifdef ED_MONITOR
@@ -66,12 +68,15 @@ struct mt76x2_frequency_item {
 
 typedef struct _MT76x2_RATE_PWR_ITEM {
 	CHAR mcs_pwr;
+	INT32 sku_pwr;
 } MT76x2_RATE_PWR_ITEM, *PMT76x2_RATE_PWR_ITEM;
 
 typedef struct _MT76x2_RATE_PWR_TABLE {
 	MT76x2_RATE_PWR_ITEM CCK[4];
 	MT76x2_RATE_PWR_ITEM OFDM[8];
 	MT76x2_RATE_PWR_ITEM HT[16];
+	MT76x2_RATE_PWR_ITEM HT20[16]; // only for storing HT20 sku_pwr in BBPcurrentBW==80/40 case
+	MT76x2_RATE_PWR_ITEM HT40[16]; // only for storing HT40 sku_pwr in BBPcurrentBW==80/40 case
 	MT76x2_RATE_PWR_ITEM VHT1SS[10];
 	MT76x2_RATE_PWR_ITEM VHT2SS[10];
 	MT76x2_RATE_PWR_ITEM STBC[10];
@@ -151,4 +156,10 @@ void record_calibration_info(struct _RTMP_ADAPTER *ad, u32 cal_id);
 void dump_calibration_info(struct _RTMP_ADAPTER *ad, u32 cal_id);
 #endif
 
+
+#ifdef DMA_BUSY_RESET
+#ifdef RTMP_PCI_SUPPORT
+VOID WlanResetB(struct _RTMP_ADAPTER *pAd);
+#endif /* RTMP_PCI_SUPPORT */
+#endif /* DMA_BUSY_RESET */
 #endif

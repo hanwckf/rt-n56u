@@ -161,6 +161,16 @@ INT RTMP_AP_IoctlHandle(
 	IN	ULONG					Data);
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+INT RTMP_STA_IoctlHandle(
+	IN	VOID					*pAd, 
+	IN	RTMP_IOCTL_INPUT_STRUCT	*wrq,
+	IN	INT						cmd,
+	IN	USHORT					subcmd,
+	IN	VOID					*pData,
+	IN	ULONG					Data,
+	IN  USHORT                  priv_flags );
+#endif /* CONFIG_STA_SUPPORT */
 
 VOID RTMPDrvOpen(VOID *pAd);
 VOID RTMPDrvClose(VOID *pAd, VOID *net_dev);
@@ -204,6 +214,12 @@ INT rt28xx_ap_ioctl(
 	IN	INT			cmd);
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+INT rt28xx_sta_ioctl(
+	IN	PNET_DEV		net_dev, 
+	IN	OUT	struct ifreq	*rq, 
+	IN	INT			cmd);
+#endif /* CONFIG_STA_SUPPORT */
 
 PNET_DEV RtmpPhyNetDevInit(
 	IN VOID						*pAd,
@@ -316,6 +332,48 @@ INT rt_android_private_command_entry(
 #define RTMP_DRIVER_MCU_SLEEP_CLEAR(__pAd)	\
 	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_MCU_SLEEP_CLEAR, 0, NULL, 0)
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef CONFIG_PM
+#ifdef USB_SUPPORT_SELECTIVE_SUSPEND
+
+#define RTMP_DRIVER_USB_DEV_GET(__pAd, __pUsbDev)                                                       \
+        RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_USB_DEV_GET, 0, __pUsbDev, 0)
+
+#define RTMP_DRIVER_USB_INTF_GET(__pAd, __pUsbIntf)                                                     \
+        RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_USB_INTF_GET, 0, __pUsbIntf, 0)
+
+#define RTMP_DRIVER_ADAPTER_SUSPEND_SET(__pAd)								\
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_ADAPTER_SUSPEND_SET, 0, NULL, 0)
+
+#define RTMP_DRIVER_ADAPTER_SUSPEND_CLEAR(__pAd)								\
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_ADAPTER_SUSPEND_CLEAR, 0, NULL, 0)
+
+#define RTMP_DRIVER_ADAPTER_END_DISSASSOCIATE(__pAd)								\
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_ADAPTER_SEND_DISSASSOCIATE, 0, NULL, 0)
+
+#define RTMP_DRIVER_ADAPTER_SUSPEND_TEST(__pAd, __flag)							\
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_ADAPTER_SUSPEND_TEST, 0,  __flag, 0)
+
+#define RTMP_DRIVER_ADAPTER_IDLE_RADIO_OFF_TEST(__pAd, __flag)								\
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_ADAPTER_IDLE_RADIO_OFF_TEST, 0,  __flag, 0)
+#endif /* USB_SUPPORT_SELECTIVE_SUSPEND */
+
+#if (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT)
+#define RTMP_DRIVER_ADAPTER_RT28XX_WOW_STATUS(__pAd, __flag)								\
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_ADAPTER_RT28XX_WOW_STATUS, 0, __flag, 0)
+
+#define RTMP_DRIVER_ADAPTER_RT28XX_WOW_ENABLE(__pAd)								\
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_ADAPTER_RT28XX_WOW_ENABLE, 0, NULL, 0)
+
+#define RTMP_DRIVER_ADAPTER_RT28XX_WOW_DISABLE(__pAd)								\
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_ADAPTER_RT28XX_WOW_DISABLE, 0, NULL, 0)
+#endif /* (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT) */
+
+#endif /* CONFIG_PM */
+
+#define RTMP_DRIVER_AP_SSID_GET(__pAd, pData)								\
+	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_AP_BSSID_GET, 0, pData, 0)
+#endif /* CONFIG_STA_SUPPORT */
 
 #define RTMP_DRIVER_ADAPTER_RT28XX_USB_ASICRADIO_OFF(__pAd)								\
 	RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_ADAPTER_RT28XX_USB_ASICRADIO_OFF, 0, NULL, 0)

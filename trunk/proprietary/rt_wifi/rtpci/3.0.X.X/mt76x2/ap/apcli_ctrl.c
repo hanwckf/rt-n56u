@@ -371,8 +371,8 @@ static VOID ApCliTrialConnectRetryTimeout(
 
 		AsicSwitchChannel(pAd, pAd->CommonCfg.CentralChannel, TRUE);
 		AsicEnableBssSync(pAd);//jump back to origin channel, regenerate beacon.
-	return;
-}
+		return;
+	}
 
 	if ((pMacEntry->PortSecured == WPA_802_1X_PORT_SECURED) && (*pCurrState == APCLI_CTRL_CONNECTED))
 	{
@@ -1131,6 +1131,16 @@ static VOID ApCliCtrlAssocRspAction(
 	{
 		DBGPRINT(RT_DEBUG_TRACE, ("(%s) apCliIf = %d, Receive Assoc Rsp Success.\n", __FUNCTION__, ifIndex));
 
+#ifdef WPA_SUPPLICANT_SUPPORT
+			    if (pAd->ApCfg.ApCliTab[ifIndex].wpa_supplicant_info.WpaSupplicantUP)
+			    {
+			        ApcliSendAssocIEsToWpaSupplicant(pAd,ifIndex);
+				RtmpOSWrielessEventSend(pAd->net_dev,
+								RT_WLAN_EVENT_CUSTOM,
+								RT_ASSOC_EVENT_FLAG,
+								NULL, NULL, 0);
+			    }
+#endif /* WPA_SUPPLICANT_SUPPORT */                    
 
 #ifdef MAC_REPEATER_SUPPORT
 		ifIndex = (USHORT)(Elem->Priv);
@@ -1774,7 +1784,7 @@ VOID ApCliWpaMicFailureReportFrame(
 	pMacEntry = &pAd->MacTab.Content[apcli_entry->MacTabWCID];
 	if (!IS_ENTRY_APCLI(pMacEntry))
 	{
-		DBGPRINT(RT_DEBUG_ERROR, ("!!!%s : !IS_ENTRY_APCLI(pMacEntry)\n", __FUNCTION__));
+		DBGPRINT(RT_DEBUG_ERROR, ("%s : !IS_ENTRY_APCLI(pMacEntry)\n", __FUNCTION__));
 		return;
 	}
 	

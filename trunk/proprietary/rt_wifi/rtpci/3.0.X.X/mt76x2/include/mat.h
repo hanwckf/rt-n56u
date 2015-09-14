@@ -92,7 +92,7 @@ typedef struct _NET_PRO_IP_HDR{
 /*#endif  //endif of __LINUX__ */
 
 #ifndef MAT_SUPPORT
-#error "You should define MAT_SUPPORT if you want to compile MAT related functions!"
+//#error "You should define MAT_SUPPORT if you want to compile MAT related functions!"
 #endif
 
 

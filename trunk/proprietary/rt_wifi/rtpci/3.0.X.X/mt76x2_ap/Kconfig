@@ -72,6 +72,13 @@ config  MT76X2_AP_MAC_REPEATER
 	depends on MT76X2_AP_APCLI
 	default n
 
+config  MT76X2_AP_CON_WPS
+	bool "Concurrent WPS support"
+	depends on MT76X2_AP
+	depends on MT76X2_AP_APCLI
+	depends on MT76X2_AP_WSC_V2
+	default n
+
 config  MT76X2_AP_NETIF_BLOCK
 	bool "NETIF Block"
 	depends on MT76X2_AP

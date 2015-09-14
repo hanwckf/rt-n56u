@@ -56,6 +56,9 @@ VOID APPeerProbeReqAction(
 	MULTISSID_STRUCT *mbss;
 	struct wifi_dev *wdev;
 	CHAR rssi = 0, idx = 0;
+#ifdef BAND_STEERING
+	BOOLEAN bBndStrgCheck = TRUE;
+#endif /* BAND_STEERING */
 
 #ifdef WSC_AP_SUPPORT
 	UCHAR Addr3[MAC_ADDR_LEN];
@@ -124,7 +127,9 @@ VOID APPeerProbeReqAction(
 										Elem->Rssi0,
 										Elem->Rssi1,
 										Elem->Rssi2,
-										NULL);
+										&bBndStrgCheck);
+		if (bBndStrgCheck == FALSE)
+			return;
 #endif /* BAND_STEERING */
 
 		/* allocate and send out ProbeRsp frame */
@@ -178,6 +183,79 @@ VOID APPeerProbeReqAction(
 							  END_OF_ARGS);
 			FrameLen += TmpLen;
 		}
+
+#ifdef A_BAND_SUPPORT
+		/* add Channel switch announcement IE */
+		if (((pAd->CommonCfg.Channel > 14)
+			&& (pAd->CommonCfg.bIEEE80211H == 1)
+			&& (pAd->Dot11_H.RDMode == RD_SWITCHING_MODE))
+#ifdef CUSTOMER_DCC_FEATURE
+			|| (pAd->CommonCfg.channelSwitch.CHSWMode == CHANNEL_SWITCHING_MODE)
+#endif
+		)
+		{
+			UCHAR CSAIe = IE_CHANNEL_SWITCH_ANNOUNCEMENT;
+			UCHAR CSALen = 3;
+			UCHAR CSAMode = 1;
+			UCHAR Period;
+#ifdef CUSTOMER_DCC_FEATURE
+			if(pAd->CommonCfg.channelSwitch.CHSWMode == CHANNEL_SWITCHING_MODE)
+			{
+				Period = (pAd->CommonCfg.channelSwitch.CHSWPeriod - pAd->CommonCfg.channelSwitch.CHSWCount);
+			}
+			else
+#endif
+			Period = pAd->Dot11_H.CSCount;
+			MakeOutgoingFrame(pOutBuffer+FrameLen,	&TmpLen,
+				1,	&CSAIe,
+				1,	&CSALen,
+				1,	&CSAMode,
+				1,	&pAd->CommonCfg.Channel,
+				1,	&Period,
+				END_OF_ARGS);
+			FrameLen += TmpLen;
+#if defined (DOT11_N_SUPPORT) && defined (CUSTOMER_DCC_FEATURE)
+			if (pAd->CommonCfg.bExtChannelSwitchAnnouncement)
+			{
+				HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE	HtExtChannelSwitchIe;
+
+				build_ext_channel_switch_ie(pAd, &HtExtChannelSwitchIe);
+				MakeOutgoingFrame(pOutBuffer + FrameLen, &TmpLen,
+					sizeof(HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE),	&HtExtChannelSwitchIe,
+					END_OF_ARGS);
+				FrameLen += TmpLen;
+			}
+#endif /* DOT11_N_SUPPORT */
+#ifdef DOT11_VHT_AC
+			if (WMODE_CAP_AC(PhyMode) && (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40)) {
+				WIDE_BW_CH_SWITCH_ELEMENT wb_info;
+				UCHAR CSWIe = IE_CH_SWITCH_WRAPPER;
+				UCHAR ch_sw_wrapper = 5;
+				UCHAR WBCSIe = IE_WIDE_BW_CH_SWITCH;
+				UCHAR WBCSLen = 3;
+
+				NdisZeroMemory(&wb_info, sizeof(WIDE_BW_CH_SWITCH_ELEMENT));
+				if (pAd->CommonCfg.vht_bw == VHT_BW_2040)
+					wb_info.new_ch_width = 0;
+				else
+					wb_info.new_ch_width = 1;
+
+				if (pAd->CommonCfg.vht_bw == VHT_BW_80) {
+					wb_info.center_freq_1 = vht_cent_ch_freq(pAd, pAd->CommonCfg.Channel);
+					wb_info.center_freq_2 = 0;
+				}
+				MakeOutgoingFrame(pOutBuffer+FrameLen,	&TmpLen,
+					1,	&CSWIe,
+					1,	&ch_sw_wrapper,
+					1,	&WBCSIe,
+					1,	&WBCSLen,
+					3,	&wb_info,
+					END_OF_ARGS);
+				FrameLen += TmpLen;
+			}
+#endif /* DOT11_VHT_AC */
+		}
+#endif /* A_BAND_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
 		if (WMODE_CAP_N(PhyMode) &&
@@ -256,11 +334,31 @@ VOID APPeerProbeReqAction(
 		}
 		else
 		{
+			
+#ifdef CONFIG_HOTSPOT_R2
+			PHOTSPOT_CTRL pHSCtrl =  &mbss->HotSpotCtrl;
+			extern UCHAR		OSEN_IE[];
+			extern UCHAR		OSEN_IELEN;
+
+			if ((pHSCtrl->HotSpotEnable == 0) && (pHSCtrl->bASANEnable == 1) && (wdev->AuthMode == Ndis802_11AuthModeWPA2))
+			{
+				RSNIe = IE_WPA;
+				MakeOutgoingFrame(pOutBuffer+FrameLen,		  &TmpLen,
+						  1,							&RSNIe,
+						  1,							&OSEN_IELEN,
+						  OSEN_IELEN,					OSEN_IE,
+						  END_OF_ARGS);
+			}
+			else
+#endif
+			{						
 			MakeOutgoingFrame(pOutBuffer+FrameLen,      &TmpLen,
 							  1,                        &RSNIe,
 							  1,                        &mbss->RSNIE_Len[0],
 							  mbss->RSNIE_Len[0],  mbss->RSN_IE[0],
 							  END_OF_ARGS);
+			}
+			
 			FrameLen += TmpLen;
 		}
 
@@ -329,6 +427,12 @@ VOID APPeerProbeReqAction(
 #ifdef CONFIG_DOT11V_WNM
 			if (pAd->ApCfg.MBSSID[apidx].WNMCtrl.ProxyARPEnable)
 				extCapInfo.proxy_arp = 1;
+#ifdef CONFIG_HOTSPOT_R2		
+			if (pAd->ApCfg.MBSSID[apidx].WNMCtrl.WNMNotifyEnable)
+				extCapInfo.wnm_notification= 1;
+			if (pAd->ApCfg.MBSSID[apidx].HotSpotCtrl.QosMapEnable)
+				extCapInfo.qosmap= 1;
+#endif		
 #endif
 
 #ifdef CONFIG_HOTSPOT
@@ -348,6 +452,11 @@ VOID APPeerProbeReqAction(
 #ifdef AP_QLOAD_SUPPORT
 		if (pAd->phy_ctrl.FlgQloadEnable != 0)
 		{
+#ifdef CONFIG_HOTSPOT_R2		
+			if (pAd->ApCfg.MBSSID[apidx].HotSpotCtrl.QLoadTestEnable == 1)
+				FrameLen += QBSS_LoadElementAppend_HSTEST(pAd, pOutBuffer+FrameLen, apidx);
+			else if (pAd->ApCfg.MBSSID[apidx].HotSpotCtrl.QLoadTestEnable == 0) 
+#endif		
 			FrameLen += QBSS_LoadElementAppend(pAd, pOutBuffer+FrameLen);
 		}
 #endif /* AP_QLOAD_SUPPORT */
@@ -404,6 +513,15 @@ VOID APPeerProbeReqAction(
 				}
 #endif /* EXT_BUILD_CHANNEL_LIST */
 
+#ifdef DOT11K_RRM_SUPPORT
+				if (IS_RRM_ENABLE(pAd, apidx)
+					&& (pAd->CommonCfg.RegulatoryClass[0] != 0))
+				{
+					TmpLen2 = 0;
+					NdisZeroMemory(TmpFrame, sizeof(TmpFrame));
+					RguClass_BuildBcnChList(pAd, TmpFrame, &TmpLen2);
+				}		
+#endif /* DOT11K_RRM_SUPPORT */
 
 				os_free_mem(NULL, TmpFrame);
 			}
@@ -411,6 +529,36 @@ VOID APPeerProbeReqAction(
 				DBGPRINT(RT_DEBUG_ERROR, ("%s: Allocate memory fail!!!\n", __FUNCTION__));
 		}
 			
+#ifdef DOT11K_RRM_SUPPORT
+		if (IS_RRM_ENABLE(pAd, apidx))
+		{
+			InsertTpcReportIE(pAd, pOutBuffer+FrameLen, &FrameLen,
+			RTMP_GetTxPwr(pAd, pAd->CommonCfg.MlmeTransmit), 0);
+			RRM_InsertRRMEnCapIE(pAd, pOutBuffer+FrameLen, &FrameLen, apidx);
+		}
+
+
+		{
+			INT loop;
+			for (loop=0; loop<MAX_NUM_OF_REGULATORY_CLASS; loop++)
+			{
+				if (pAd->CommonCfg.RegulatoryClass[loop] == 0)
+					break;
+				InsertChannelRepIE(pAd, pOutBuffer+FrameLen, &FrameLen,
+									(PSTRING)pAd->CommonCfg.CountryCode,
+									pAd->CommonCfg.RegulatoryClass[loop]);
+			}
+		}
+
+#ifndef APPLE_11K_IOT
+		/* Insert BSS AC Access Delay IE. */
+		RRM_InsertBssACDelayIE(pAd, pOutBuffer+FrameLen, &FrameLen);
+
+		/* Insert BSS Available Access Capacity IE. */
+		RRM_InsertBssAvailableACIE(pAd, pOutBuffer+FrameLen, &FrameLen);
+#endif /* !APPLE_11K_IOT */
+
+#endif /* DOT11K_RRM_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
 #ifdef DOT11N_DRAFT3
@@ -705,6 +853,19 @@ VOID APPeerProbeReqAction(
 #endif /* WSC_AP_SUPPORT */
 
 
+#ifdef DOT11R_FT_SUPPORT
+		/* The Mobility Domain information element (MDIE) is present in Probe-
+		** Request frame when dot11FastBssTransitionEnable is set to true. */
+		if (pAd->ApCfg.MBSSID[apidx].FtCfg.FtCapFlag.Dot11rFtEnable)
+		{
+			PFT_CFG pFtCfg = &pAd->ApCfg.MBSSID[apidx].FtCfg;
+			FT_CAP_AND_POLICY FtCap;
+			FtCap.field.FtOverDs = pFtCfg->FtCapFlag.FtOverDs;
+			FtCap.field.RsrReqCap = pFtCfg->FtCapFlag.RsrReqCap;
+			FT_InsertMdIE(pAd, pOutBuffer + FrameLen, &FrameLen,
+							pFtCfg->FtMdId, FtCap);
+		}
+#endif /* DOT11R_FT_SUPPORT */
 
 
 	/* 
@@ -754,6 +915,22 @@ VOID APPeerProbeReqAction(
 		FrameLen += TmpLen;
 
 	}
+
+	/* add Mediatek-specific IE here */
+	{
+		ULONG TmpLen = 0;
+		UCHAR MediatekSpecificIe[9] = {IE_VENDOR_SPECIFIC, 7, 0x00, 0x0c, 0xe7, 0x00, 0x00, 0x00, 0x00};
+
+#ifdef DOT11_VHT_AC
+		if (pAd->CommonCfg.b256QAM_2G && WMODE_2G_ONLY(pAd->CommonCfg.PhyMode))
+		MediatekSpecificIe[5] |= 0x8;
+#endif /* DOT11_VHT_AC */
+
+		MakeOutgoingFrame(pOutBuffer+FrameLen, &TmpLen,
+		9, MediatekSpecificIe,
+		END_OF_ARGS);
+		FrameLen += TmpLen;
+	}	
 
 	/* 802.11n 11.1.3.2.2 active scanning. sending probe response with MCS rate is */
 	for (idx = 0; idx < mbss->ProbeRspTimes; idx++)
@@ -858,7 +1035,54 @@ VOID APPeerBeaconAction(
 		RTMPConflictSsidDetection(pAd, (PUCHAR)ie_list->Ssid, ie_list->SsidLen, 
 					(CHAR)Elem->Rssi0, (CHAR)Elem->Rssi1, (CHAR)Elem->Rssi2);
 #endif /* IDS_SUPPORT */
+#ifdef CUSTOMER_DCC_FEATURE
+		if(ie_list->Channel == pAd->CommonCfg.Channel && pAd->ApEnableBeaconTable == TRUE)
+		{
+			ULONG	Idx;
+			CHAR 	Rssi = -127;
+			UCHAR	Snr0 = 0;
+			UCHAR	Snr1 = 0;
+			UCHAR	SNR0 = 0;
+			UCHAR	SNR1 = 0;
+			SNR0 = ConvertToSnr(pAd,Elem->Snr0);
+			SNR1 = ConvertToSnr(pAd,Elem->Snr1);
+			Idx = BssTableSearch(&pAd->AvailableBSS, ie_list->Bssid, ie_list->Channel);
+			if (Idx != BSS_NOT_FOUND)
+			{
+				Rssi = pAd->AvailableBSS.BssEntry[Idx].Rssi;
+				Snr0 = pAd->AvailableBSS.BssEntry[Idx].Snr0;
+				Snr1 = pAd->AvailableBSS.BssEntry[Idx].Snr1;
+			}
+			// TODO: 2005-03-04 dirty patch. we should change all RSSI related variables to SIGNED SHORT for easy/efficient reading and calaulation
+			RealRssi = RTMPMaxRssi(pAd, ConvertToRssi(pAd, Elem->Rssi0, RSSI_0), ConvertToRssi(pAd, Elem->Rssi1, RSSI_1), ConvertToRssi(pAd, Elem->Rssi2, RSSI_2));
+			RealRssi = RealRssi + pAd->BbpRssiToDbmDelta;
+			if(Rssi == -127)
+				Rssi = RealRssi;
+			else
+				Rssi = (((Rssi * (MOV_AVG_CONST - 1)) + RealRssi) >> MOV_AVG_CONST_SHIFT);
 
+			if(Snr0 == 0)
+				Snr0 = SNR0;
+			else
+				Snr0 = (((Snr0 * (MOV_AVG_CONST - 1)) + SNR0) >> MOV_AVG_CONST_SHIFT);
+
+			if(Snr1 == 0)
+				Snr1 = SNR1;
+			else
+				Snr1 = (((Snr1 * (MOV_AVG_CONST - 1)) + SNR1) >> MOV_AVG_CONST_SHIFT);
+
+
+			Idx = BssTableSetEntry(pAd, &pAd->AvailableBSS, ie_list, Rssi, LenVIE, pVIE, Snr0, Snr1);
+
+			if (Idx != BSS_NOT_FOUND)
+			{
+				NdisMoveMemory(pAd->AvailableBSS.BssEntry[Idx].PTSF, &Elem->Msg[24], 4);
+				NdisMoveMemory(&pAd->AvailableBSS.BssEntry[Idx].TTSF[0], &Elem->TimeStamp.u.LowPart, 4);
+				NdisMoveMemory(&pAd->AvailableBSS.BssEntry[Idx].TTSF[4], &Elem->TimeStamp.u.LowPart, 4);
+			}
+		}
+#endif
+			
 #ifdef DOT11_N_SUPPORT
 #ifdef DOT11N_DRAFT3
 		/* 40Mhz BSS Width Trigger events Intolerant devices */
@@ -1040,14 +1264,13 @@ VOID APPeerBeaconAction(
 							pAd->CommonCfg.Dot11BssWidthTriggerScanInt = 900;
 						}
 					}
-
+#ifdef DOT11_VHT_AC
 					if (ie_list->operating_mode.rx_nss_type == 0) {
 						pEntry->force_op_mode = TRUE;
 						NdisMoveMemory(&pEntry->operating_mode, &ie_list->operating_mode, 1);
-
 						//printk("recv notify\n");
 					}
-					
+#endif /* DOT11_VHT_AC */
 				}
 #endif /* APCLI_CERT_SUPPORT */
 				if (/*(ApCliWaitProbRsp(pAd, ifIndex) == TRUE) &&*/ 
@@ -1154,42 +1377,6 @@ VOID APPeerBeaconAction(
 #endif /* DOT11N_DRAFT3 */
 #endif /* DOT11_N_SUPPORT */
 
-#ifdef ED_MONITOR
-		if (pAd->ed_chk) // only updat scan table when AP turn on edcca
-		{
-			ULONG Idx, ap_count;
-			CHAR    Rssi = 0;
-			
-		       Idx = BssTableSearch(&pAd->ScanTab, ie_list->Bssid, ie_list->Channel);
-
-			if (Idx != BSS_NOT_FOUND)
-		            Rssi = pAd->ScanTab.BssEntry[Idx].Rssi;
-
-		        /* TODO: 2005-03-04 dirty patch. we should change all RSSI related variables to SIGNED SHORT for easy/efficient reading and calaulation */
-				RealRssi = RTMPMaxRssi(pAd, ConvertToRssi(pAd, Elem->Rssi0, RSSI_0), ConvertToRssi(pAd, Elem->Rssi1, RSSI_1), ConvertToRssi(pAd, Elem->Rssi2, RSSI_2));
-		        if ((RealRssi + pAd->BbpRssiToDbmDelta) > Rssi)
-		            Rssi = RealRssi + pAd->BbpRssiToDbmDelta;
-
-				Idx = BssTableSetEntry(pAd, &pAd->ScanTab, ie_list, Rssi, LenVIE, pVIE);
-
-				
-				if (Idx != BSS_NOT_FOUND)
-				{
-					NdisMoveMemory(pAd->ScanTab.BssEntry[Idx].PTSF, &Elem->Msg[24], 4);
-					NdisMoveMemory(&pAd->ScanTab.BssEntry[Idx].TTSF[0], &Elem->TimeStamp.u.LowPart, 4);
-					NdisMoveMemory(&pAd->ScanTab.BssEntry[Idx].TTSF[4], &Elem->TimeStamp.u.LowPart, 4);
-				}
-
-				if ((ap_count = BssChannelAPCount(&pAd->ScanTab, pAd->CommonCfg.Channel)) > pAd->ed_ap_threshold)
-				{
-					if (pAd->ed_chk)
-					{
-						DBGPRINT(RT_DEBUG_ERROR, ("@@@ %s : BssChannelAPCount=%lu, ed_ap_threshold=%u,  go to ed_monitor_exit()!!\n", __FUNCTION__, ap_count, pAd->ed_ap_threshold));
-						ed_monitor_exit(pAd);
-					}
-				}
-		}
-#endif /* ED_MONITOR */
 	}
 	/* sanity check fail, ignore this frame */
 
@@ -1253,6 +1440,16 @@ VOID APScanTimeout(
  */
 VOID APScanTimeoutAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 {
+#ifdef CONFIG_AP_SUPPORT
+#ifdef CUSTOMER_DCC_FEATURE
+	if(pAd->MlmeAux.ScanGivenChannel == TRUE)
+	{
+		pAd->MlmeAux.Channel = 0;
+		pAd->MlmeAux.ScanGivenChannel = FALSE;
+	}
+	else
+#endif
+#endif
 #ifdef AP_PARTIAL_SCAN_SUPPORT
 	pAd->MlmeAux.Channel = RTMPFindScanChannel(pAd, pAd->MlmeAux.Channel);
 #else
@@ -1265,7 +1462,9 @@ VOID APScanTimeoutAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 			iwpriv set auto channel selection
 			update the current index of the channel
 		*/
+#ifndef CUSTOMER_DCC_FEATURE
 		if (pAd->ApCfg.bAutoChannelAtBootup == TRUE)
+#endif
 		{
 			/* update current channel info */
 			UpdateChannelInfo(pAd, pAd->ApCfg.current_channel_index, pAd->ApCfg.AutoChannelAlg);
@@ -1330,13 +1529,22 @@ VOID APMlmeScanReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 {
 	BOOLEAN Cancelled;
 	UCHAR Ssid[MAX_LEN_OF_SSID], SsidLen, ScanType, BssType;
-
+#ifdef CONFIG_AP_SUPPORT
+#ifdef CUSTOMER_DCC_FEATURE
+	UINT Channel = 0;
+	UINT Timeout = 0;
+#endif
+#endif
 
 	/* Suspend MSDU transmission here */
 	RTMPSuspendMsduTransmission(pAd);
 
 	/* first check the parameter sanity */
+#ifdef CUSTOMER_DCC_FEATURE
+	if (MlmeScanReqSanity(pAd, Elem->Msg, Elem->MsgLen, &BssType, (PCHAR)Ssid, &SsidLen, &ScanType, &Channel, &Timeout))
+#else
 	if (MlmeScanReqSanity(pAd, Elem->Msg, Elem->MsgLen, &BssType, (PCHAR)Ssid, &SsidLen, &ScanType))
+#endif
 	{
 		DBGPRINT(RT_DEBUG_TRACE, ("AP SYNC - MlmeScanReqAction\n"));
 		NdisGetSystemUpTime(&pAd->ApCfg.LastScanTime);
@@ -1348,14 +1556,24 @@ VOID APMlmeScanReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		pAd->MlmeAux.ScanType = ScanType;
 		pAd->MlmeAux.SsidLen = SsidLen;
 		NdisMoveMemory(pAd->MlmeAux.Ssid, Ssid, SsidLen);
-
-		/* start from the first channel */
+#ifdef CUSTOMER_DCC_FEATURE
+		pAd->MlmeAux.ScanGivenChannel = FALSE;
+		pAd->MlmeAux.ScanTime = Timeout;
+		if( Channel != 0)
+		{
+			pAd->MlmeAux.Channel = Channel;
+			pAd->MlmeAux.ScanGivenChannel = TRUE;
+		}
+		else
+#endif
+		{
+			/* start from the first channel */
 #ifdef AP_PARTIAL_SCAN_SUPPORT
-		pAd->MlmeAux.Channel = RTMPFindScanChannel(pAd, 0);
+			pAd->MlmeAux.Channel = RTMPFindScanChannel(pAd, 0);
 #else
-		pAd->MlmeAux.Channel = FirstChannel(pAd);
+			pAd->MlmeAux.Channel = FirstChannel(pAd);
 #endif /* AP_PARTIAL_SCAN_SUPPORT */
-
+		}
 		/* Let BBP register at 20MHz to do scan */
 		bbp_set_bw(pAd, BW_20);
 		DBGPRINT(RT_DEBUG_TRACE, ("SYNC - BBP R4 to 20MHz.l\n"));
@@ -1370,6 +1588,13 @@ VOID APMlmeScanReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 			}
 		}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CUSTOMER_DCC_FEATURE
+		{
+			UINT32 mac_val;
+			RTMP_IO_READ32(pAd, CH_BUSY_STA, &mac_val);
+			RTMP_IO_READ32(pAd, RX_STA_CNT1, &mac_val);
+		}
+#endif
 		ScanNextChannel(pAd, OPMODE_AP);
 	}
 	else
@@ -1395,7 +1620,13 @@ VOID APPeerBeaconAtScanAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	CHAR RealRssi = -127;
 
 	BCN_IE_LIST *ie_list = NULL;
+#ifdef CUSTOMER_DCC_FEATURE
+	UCHAR		Snr0 = Elem->Snr0;
+	UCHAR		Snr1 = Elem->Snr1;
 
+	Snr0 = ConvertToSnr(pAd, Snr0);
+	Snr1 = ConvertToSnr(pAd, Snr1);
+#endif
 
 	os_alloc_mem(pAd, (UCHAR **)&ie_list, sizeof(BCN_IE_LIST));
 	if (!ie_list) {
@@ -1446,7 +1677,7 @@ VOID APPeerBeaconAtScanAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 
 #ifdef DOT11_N_SUPPORT
 #ifdef DOT11N_DRAFT3
-		if ((RealRssi > OBSS_BEACON_RSSI_THRESHOLD) && (ie_list->HtCapability.HtCapInfo.Forty_Mhz_Intolerant)) /* || (HtCapabilityLen == 0))) */
+   		if ((RealRssi > OBSS_BEACON_RSSI_THRESHOLD) && (ie_list->HtCapability.HtCapInfo.Forty_Mhz_Intolerant)) /* || (HtCapabilityLen == 0))) */
 		{
 			Handle_BSS_Width_Trigger_Events(pAd);
 		}
@@ -1478,7 +1709,13 @@ VOID APPeerBeaconAtScanAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
         if ((RealRssi + pAd->BbpRssiToDbmDelta) > Rssi)
             Rssi = RealRssi + pAd->BbpRssiToDbmDelta;
 
-		Idx = BssTableSetEntry(pAd, &pAd->ScanTab, ie_list, Rssi, LenVIE, pVIE);
+		Idx = BssTableSetEntry(pAd, &pAd->ScanTab, ie_list, Rssi, LenVIE, pVIE
+#ifdef CUSTOMER_DCC_FEATURE
+			,
+			Snr0,
+			Snr1
+#endif
+			);
 #ifdef APCLI_SUPPORT
 #ifdef APCLI_CERT_SUPPORT
 #ifdef DOT11_N_SUPPORT
@@ -1595,7 +1832,7 @@ VOID ApSiteSurvey(
 	IN	UCHAR				ScanType,
 	IN	BOOLEAN				ChannelSel)
 {
-    MLME_SCAN_REQ_STRUCT    ScanReq;
+	MLME_SCAN_REQ_STRUCT    ScanReq;
 
 	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))
 	{
@@ -1606,16 +1843,20 @@ VOID ApSiteSurvey(
 		return;
 	}
 
-    AsicDisableSync(pAd);
+	AsicDisableSync(pAd);
 
 #ifdef AP_PARTIAL_SCAN_SUPPORT
 	if (((pAd->ApCfg.bPartialScanning == TRUE) && (pAd->ApCfg.LastPartialScanChannel == 0)) ||
 		(pAd->ApCfg.bPartialScanning == FALSE))
 #endif /* AP_PARTIAL_SCAN_SUPPORT */
 	{
-    BssTableInit(&pAd->ScanTab);
+		BssTableInit(&pAd->ScanTab);
 	}
-    pAd->Mlme.ApSyncMachine.CurrState = AP_SYNC_IDLE;
+#ifdef CUSTOMER_DCC_FEATURE
+	ChannelInfoResetNew(pAd);
+	RTMPZeroMemory(&ScanReq, sizeof(ScanReq));
+#endif
+	pAd->Mlme.ApSyncMachine.CurrState = AP_SYNC_IDLE;
 
 	RTMPZeroMemory(ScanReq.Ssid, MAX_LEN_OF_SSID);
 	ScanReq.SsidLen = 0;
@@ -1632,6 +1873,206 @@ VOID ApSiteSurvey(
     RTMP_MLME_HANDLER(pAd);
 }
 
+#ifdef CUSTOMER_DCC_FEATURE
+UCHAR Channel2Index(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR channel)
+{
+	UCHAR i;
+
+	for (i = 0; i < pAd->ChannelListNum; i++)
+	{
+		if (channel == pAd->ChannelList[i].Channel)
+			return i;
+	}
+	return -1;
+}
+
+VOID ApSiteSurveyNew(
+	IN	PRTMP_ADAPTER			pAd,
+	IN	UINT				channel,
+	IN	UINT				timeout,
+	IN	UCHAR				ScanType,
+	IN	BOOLEAN				ChannelSel)
+{
+	MLME_SCAN_REQ_STRUCT	ScanReq;
+	NdisZeroMemory(&ScanReq, sizeof(MLME_SCAN_REQ_STRUCT));
+	AsicDisableSync(pAd);
+	//printk("%s , %u, %u, %u",__func__,channel,timeout,ScanType); 
+	BssTableInit(&pAd->ScanTab);
+	ChannelInfoResetNew(pAd);
+	pAd->Mlme.ApSyncMachine.CurrState = AP_SYNC_IDLE;
+	ScanReq.BssType = BSS_ANY;
+	ScanReq.ScanType = ScanType;
+	ScanReq.Channel = channel;
+	ScanReq.Timeout = timeout;
+	pAd->ApCfg.bAutoChannelAtBootup = ChannelSel;
+	pAd->ApCfg.current_channel_index = Channel2Index (pAd, channel);
+	pAd->ChannelInfo.ChannelNo = channel; 
+	MlmeEnqueue(pAd, AP_SYNC_STATE_MACHINE, APMT2_MLME_SCAN_REQ, sizeof(MLME_SCAN_REQ_STRUCT), &ScanReq, 0);
+	RTMP_MLME_HANDLER(pAd);
+}
+
+VOID RemoveOldBssEntry(
+	IN PRTMP_ADAPTER		pAd)
+{
+	INT32 i;
+
+	if(pAd->AvailableBSS.BssNr > 0)
+	{
+		for(i = 0; i < pAd->AvailableBSS.BssNr; i++)
+		{
+			if((jiffies_to_msecs(jiffies) - pAd->AvailableBSS.BssEntry[i].LastBeaconRxTime) >= 300000)
+			{
+				NdisZeroMemory(&pAd->AvailableBSS.BssEntry[i],sizeof(BSS_ENTRY));
+				if(i != (pAd->AvailableBSS.BssNr - 1))
+				{
+					NdisCopyMemory(&pAd->AvailableBSS.BssEntry[i], &pAd->AvailableBSS.BssEntry[pAd->AvailableBSS.BssNr - 1], sizeof(BSS_ENTRY));
+					NdisZeroMemory( &pAd->AvailableBSS.BssEntry[pAd->AvailableBSS.BssNr - 1],sizeof(BSS_ENTRY));
+				}
+				pAd->AvailableBSS.BssNr--;
+			}
+		}
+	}
+}
+
+VOID APResetStreamingStatus(
+	IN PRTMP_ADAPTER	pAd)
+{
+	UINT64 Time = jiffies_to_msecs(jiffies);
+
+	if((Time - pAd->StreamingTypeStatus.BE_Time) > 1000)
+		pAd->StreamingTypeStatus.BE = FALSE;
+
+	if((Time - pAd->StreamingTypeStatus.BK_Time) > 1000)
+		pAd->StreamingTypeStatus.BK = FALSE;
+
+	if((Time - pAd->StreamingTypeStatus.VI_Time) > 1000)
+		pAd->StreamingTypeStatus.VI = FALSE;
+
+	if((Time - pAd->StreamingTypeStatus.VO_Time) > 1000)
+		pAd->StreamingTypeStatus.VO= FALSE;
+}
+
+VOID RemoveOldStaList(
+	IN PRTMP_ADAPTER	pAd)
+{
+
+	INT32 i;
+	
+	if(pAd->AllowedStaList.StaCount > 0)
+	{
+		for(i = 0; i < pAd->AllowedStaList.StaCount; i++)
+		{
+			if((jiffies_to_msecs(jiffies) - pAd->AllowedStaList.AllowedSta[i].DissocTime) >= 30000)
+			{
+				NdisZeroMemory(&pAd->AllowedStaList.AllowedSta[i],sizeof(ALLOWED_STA));
+				if(i != (pAd->AllowedStaList.StaCount - 1))
+				{
+					NdisCopyMemory(&pAd->AllowedStaList.AllowedSta[i], &pAd->AllowedStaList.AllowedSta[pAd->AllowedStaList.StaCount - 1], sizeof(ALLOWED_STA));
+					NdisZeroMemory( &pAd->AllowedStaList.AllowedSta[pAd->AllowedStaList.StaCount - 1], sizeof(ALLOWED_STA));
+				}
+				pAd->AllowedStaList.StaCount--;
+			}
+		}
+	}
+}
+
+VOID ReadChannelStats(
+	IN UINT32			Ch_Busy_Time,
+	IN PRTMP_ADAPTER	pAd)
+{
+	UINT32	mac_val;
+	UINT64	Time;
+	UINT32	TimeDiff;
+	UINT64	temp;
+	RX_STA_CNT1_STRUC RxStaCnt1;
+
+	TIMESTAMP_GET(pAd, Time);
+
+	TimeDiff = Time - pAd->ChannelStats.LastReadTime;
+	pAd->ChannelStats.TotalDuration += TimeDiff;
+	pAd->ChannelStats.LastReadTime = Time;
+	pAd->ChannelStats.msec100counts ++;
+
+	pAd->ChannelStats.ChBusytime += Ch_Busy_Time;
+	pAd->ChannelStats.ChBusyTime1secValue += Ch_Busy_Time;
+
+	RTMP_IO_READ32(pAd, CCA_BUSY_TIME, &mac_val);
+	pAd->ChannelStats.CCABusytime += mac_val;
+	pAd->ChannelStats.CCABusyTime1secValue += mac_val;
+
+
+	RTMP_IO_READ32(pAd, RX_STA_CNT1, &RxStaCnt1.word);
+	pAd->ChannelStats.FalseCCACount += RxStaCnt1.field.FalseCca;
+	pAd->ChannelStats.FalseCCACount1secValue += RxStaCnt1.field.FalseCca;
+
+	/* Update RX PLCP error counter*/
+	pAd->PrivateInfo.PhyRxErrCnt += RxStaCnt1.field.PlcpErr;
+	/* Update False CCA counter for Ralink counter*/
+	pAd->RalinkCounters.OneSecFalseCCACnt += RxStaCnt1.field.FalseCca;
+
+	if((pAd->ChannelStats.msec100counts % 10) == 0)
+	{
+		if(pAd->ChannelStats.ChBusyTimeAvg == 0)
+			pAd->ChannelStats.ChBusyTimeAvg = pAd->ChannelStats.ChBusyTime1secValue;
+		else
+			pAd->ChannelStats.ChBusyTimeAvg = (((pAd->ChannelStats.ChBusyTimeAvg * (MOV_AVG_CONST - 1)) + pAd->ChannelStats.ChBusyTime1secValue) >> MOV_AVG_CONST_SHIFT);
+
+		if(pAd->ChannelStats.CCABusyTimeAvg == 0)
+			pAd->ChannelStats.CCABusyTimeAvg = pAd->ChannelStats.CCABusyTime1secValue;
+		else
+			pAd->ChannelStats.CCABusyTimeAvg = (((pAd->ChannelStats.CCABusyTimeAvg * (MOV_AVG_CONST - 1)) + pAd->ChannelStats.CCABusyTime1secValue) >> MOV_AVG_CONST_SHIFT);
+
+		if(pAd->ChannelStats.FalseCCACountAvg == 0)
+			pAd->ChannelStats.FalseCCACountAvg = pAd->ChannelStats.FalseCCACount1secValue;
+		else
+			pAd->ChannelStats.FalseCCACountAvg = (((pAd->ChannelStats.FalseCCACountAvg * (MOV_AVG_CONST - 1)) + pAd->ChannelStats.FalseCCACount1secValue) >> MOV_AVG_CONST_SHIFT);
+
+		if(pAd->ChannelStats.ChannelApActivityAvg == 0)
+			pAd->ChannelStats.ChannelApActivityAvg = pAd->ChannelStats.ChannelApActivity1secValue;
+		else
+		{
+			temp = (UINT64)((pAd->ChannelStats.ChannelApActivityAvg * (MOV_AVG_CONST - 1)) + pAd->ChannelStats.ChannelApActivity1secValue);
+			do_div(temp , MOV_AVG_CONST);
+			pAd->ChannelStats.ChannelApActivityAvg = temp;
+		}
+		pAd->ChannelStats.ChBusyTime1secValue = 0;
+		pAd->ChannelStats.CCABusyTime1secValue = 0;
+		pAd->ChannelStats.FalseCCACount1secValue = 0;
+		pAd->ChannelStats.ChannelApActivity1secValue = 0;
+		pAd->ChannelStats.msec100counts = 10;	/* restart  1 sec counter for AVG value */
+	}
+}
+
+VOID ClearChannelStats(
+	IN PRTMP_ADAPTER	pAd)
+{
+	UINT32	mac_val;
+	UINT32	Time;
+
+	TIMESTAMP_GET(pAd, Time);
+
+	pAd->ChannelStats.LastReadTime = Time;
+
+	//RTMP_IO_READ32(pAd, CH_BUSY_STA, &mac_val);
+
+	RTMP_IO_READ32(pAd, CCA_BUSY_TIME, &mac_val);
+
+	RTMP_IO_READ32(pAd, RX_STA_CNT1, &mac_val);
+}
+
+VOID ResetChannelStatus(
+	IN PRTMP_ADAPTER	pAd)
+{
+	pAd->ChannelStats.LastReadTime = 0;
+	pAd->ChannelStats.TotalDuration = 0;
+	pAd->ChannelStats.CCABusytime = 0;
+	pAd->ChannelStats.ChBusytime = 0;
+	pAd->ChannelStats.FalseCCACount = 0;
+	pAd->ChannelStats.ChannelApActivity = 0;
+}
+#endif
 
 BOOLEAN ApScanRunning(RTMP_ADAPTER *pAd)
 {
@@ -1827,7 +2268,11 @@ UCHAR get_regulatory_class(RTMP_ADAPTER *pAd)
 
 	do
 	{
+#ifdef CUSTOMER_DCC_FEATURE
+		if (reg_class[i].spacing == pAd->CommonCfg.RegTransmitSetting.field.BW)
+#else
 		if (reg_class[i].spacing == pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth)
+#endif
 		{
 			int j=0;
 
@@ -1860,7 +2305,26 @@ void build_ext_channel_switch_ie(
 	pIE->ChannelSwitchMode = 1;	/*no further frames */
 	pIE->NewRegClass = get_regulatory_class(pAd);
 	pIE->NewChannelNum = pAd->CommonCfg.Channel;
-    pIE->ChannelSwitchCount = (pAd->Dot11_H.CSPeriod - pAd->Dot11_H.CSCount - 1);
+#ifdef CUSTOMER_DCC_FEATURE
+	if (pAd->CommonCfg.channelSwitch.CHSWMode == CHANNEL_SWITCHING_MODE)
+		pIE->ChannelSwitchCount = pAd->CommonCfg.channelSwitch.CHSWPeriod - pAd->CommonCfg.channelSwitch.CHSWCount;
+	else
+#endif
+	pIE->ChannelSwitchCount = (pAd->Dot11_H.CSPeriod - pAd->Dot11_H.CSCount - 1);
 }
+
+#ifdef CUSTOMER_DCC_FEATURE
+void build_ext_channel_switch_ie_New(
+	IN PRTMP_ADAPTER	pAd,
+	IN HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE*pIE)
+{
+	pIE->ID = IE_EXT_CHANNEL_SWITCH_ANNOUNCEMENT;
+	pIE->Length = 4;
+	pIE->ChannelSwitchMode = 1;	/*no further frames */
+	pIE->NewRegClass = get_regulatory_class(pAd);
+	pIE->NewChannelNum = pAd->CommonCfg.Channel;
+	pIE->ChannelSwitchCount = pAd->CommonCfg.channelSwitch.CHSWPeriod - pAd->CommonCfg.channelSwitch.CHSWCount;
+}
+#endif
 #endif /* DOT11_N_SUPPORT */
 

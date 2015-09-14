@@ -43,6 +43,11 @@ VOID mgmt_tb_set_mcast_entry(RTMP_ADAPTER *pAd)
 		pEntry->wdev = &pAd->ApCfg.MBSSID[MAIN_MBSSID].wdev;
 	}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd){
+		pEntry->wdev = &pAd->StaCfg.wdev;
+	}
+#endif /* CONFIG_AP_SUPPORT */
 }
 
 
@@ -98,6 +103,278 @@ MAC_TABLE_ENTRY *MacTableLookup(RTMP_ADAPTER *pAd, UCHAR *pAddr)
 }
 
 
+#ifdef CONFIG_STA_SUPPORT
+BOOLEAN StaUpdateMacTableEntry(
+	IN RTMP_ADAPTER *pAd,
+	IN MAC_TABLE_ENTRY *pEntry,
+	IN UCHAR MaxSupportedRateIn500Kbps,
+	IN HT_CAPABILITY_IE *ht_cap,
+	IN UCHAR htcap_len,
+	IN ADD_HT_INFO_IE *pAddHtInfo,
+	IN UCHAR AddHtInfoLen,
+	IN IE_LISTS *ie_list,
+	IN USHORT cap_info)
+{
+	UCHAR MaxSupportedRate = RATE_11;
+	BOOLEAN bSupportN = FALSE;
+#ifdef TXBF_SUPPORT
+	BOOLEAN supportsETxBf = FALSE;
+#endif
+	struct wifi_dev *wdev;
+
+	if (!pEntry)
+		return FALSE;
+
+	if (ADHOC_ON(pAd))
+		CLIENT_STATUS_CLEAR_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE);
+
+	MaxSupportedRate = dot11_2_ra_rate(MaxSupportedRateIn500Kbps);
+
+	if (WMODE_EQUAL(pAd->CommonCfg.PhyMode, WMODE_G)
+	    && (MaxSupportedRate < RATE_FIRST_OFDM_RATE))
+		return FALSE;
+
+#ifdef DOT11_N_SUPPORT
+	/* 11n only */
+	if (WMODE_HT_ONLY(pAd->CommonCfg.PhyMode)
+	    && (htcap_len == 0))
+		return FALSE;
+#endif /* DOT11_N_SUPPORT */
+
+	NdisAcquireSpinLock(&pAd->MacTabLock);
+	if (pEntry) {
+		NdisZeroMemory(pEntry->R_Counter, sizeof(pEntry->R_Counter));
+		pEntry->PortSecured = WPA_802_1X_PORT_SECURED;
+		if ((MaxSupportedRate < RATE_FIRST_OFDM_RATE) ||
+		    WMODE_EQUAL(pAd->CommonCfg.PhyMode, WMODE_B)) {
+			pEntry->RateLen = 4;
+			if (MaxSupportedRate >= RATE_FIRST_OFDM_RATE)
+				MaxSupportedRate = RATE_11;
+		} else
+			pEntry->RateLen = 12;
+
+		pEntry->MaxHTPhyMode.word = 0;
+		pEntry->MinHTPhyMode.word = 0;
+		pEntry->HTPhyMode.word = 0;
+		pEntry->MaxSupportedRate = MaxSupportedRate;
+
+		set_entry_phy_cfg(pAd, pEntry);
+
+		pEntry->CapabilityInfo = cap_info;
+		pEntry->isCached = FALSE;
+		CLIENT_STATUS_CLEAR_FLAG(pEntry, fCLIENT_STATUS_AGGREGATION_CAPABLE);
+		CLIENT_STATUS_CLEAR_FLAG(pEntry, fCLIENT_STATUS_PIGGYBACK_CAPABLE);
+	}
+
+	wdev = &pAd->StaCfg.wdev;
+#ifdef DOT11_N_SUPPORT
+	NdisZeroMemory(&pEntry->HTCapability, sizeof (pEntry->HTCapability));
+	/* If this Entry supports 802.11n, upgrade to HT rate. */
+	if (((wdev->WepStatus != Ndis802_11WEPEnabled)
+	     && (wdev->WepStatus != Ndis802_11TKIPEnable))
+	    || (pAd->CommonCfg.HT_DisallowTKIP == FALSE)) {
+		if ((pAd->StaCfg.BssType == BSS_INFRA) &&
+		    (htcap_len != 0) &&
+		    WMODE_CAP_N(pAd->CommonCfg.PhyMode))
+			bSupportN = TRUE;
+		if ((pAd->StaCfg.BssType == BSS_ADHOC) &&
+		    (pAd->StaCfg.bAdhocN == TRUE) &&
+		    (htcap_len != 0) &&
+		    WMODE_CAP_N(pAd->CommonCfg.PhyMode))
+			bSupportN = TRUE;
+	}
+
+	if (bSupportN) {
+		if (ADHOC_ON(pAd))
+			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE);
+
+		ht_mode_adjust(pAd, pEntry, ht_cap, &pAd->CommonCfg.DesiredHtPhy);
+
+#ifdef TXBF_SUPPORT
+#ifdef VHT_TXBF_SUPPORT
+		if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode) &&
+				(pAd->CommonCfg.Channel > 14) &&
+				(ie_list->vht_cap_len))
+		{
+			supportsETxBf = clientSupportsVHTETxBF(pAd, &ie_list->vht_cap.vht_cap);
+			DBGPRINT(RT_DEBUG_TRACE, ("%s : VHT mode!\n", __FUNCTION__));
+			DBGPRINT(RT_DEBUG_TRACE, ("AP Bfee Cap =%d, AP Bfer Cap =%d!\n",
+							ie_list->vht_cap.vht_cap.bfee_cap_su , ie_list->vht_cap.vht_cap.bfer_cap_su));
+		}
+		else		
+#endif /* VHT_TXBF_SUPPORT */			
+			supportsETxBf = clientSupportsETxBF(pAd, &ht_cap->TxBFCap);
+#endif /* TXBF_SUPPORT */
+
+		/* find max fixed rate */
+		pEntry->MaxHTPhyMode.field.MCS = get_ht_max_mcs(pAd, &wdev->DesiredHtPhyInfo.MCSSet[0], &ht_cap->MCSSet[0]);
+
+		if (wdev->DesiredTransmitSetting.field.MCS != MCS_AUTO)
+			set_ht_fixed_mcs(pAd, pEntry, wdev->DesiredTransmitSetting.field.MCS, wdev->HTPhyMode.field.MCS);
+
+		pEntry->MaxHTPhyMode.field.STBC = (ht_cap->HtCapInfo.RxSTBC & (pAd->CommonCfg.DesiredHtPhy.TxSTBC));
+		pEntry->MpduDensity = ht_cap->HtCapParm.MpduDensity;
+		pEntry->MaxRAmpduFactor = ht_cap->HtCapParm.MaxRAmpduFactor;
+		pEntry->MmpsMode = (UCHAR) ht_cap->HtCapInfo.MimoPs;
+		pEntry->AMsduSize = (UCHAR) ht_cap->HtCapInfo.AMsduSize;
+		pEntry->HTPhyMode.word = pEntry->MaxHTPhyMode.word;
+
+		if (pAd->CommonCfg.DesiredHtPhy.AmsduEnable
+		    && (pAd->CommonCfg.REGBACapability.field.AutoBA == FALSE))
+			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_AMSDU_INUSED);
+		if (ht_cap->HtCapInfo.ShortGIfor20)
+			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_SGI20_CAPABLE);
+		if (ht_cap->HtCapInfo.ShortGIfor40)
+			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_SGI40_CAPABLE);
+		if (ht_cap->HtCapInfo.TxSTBC)
+			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_TxSTBC_CAPABLE);
+		if (ht_cap->HtCapInfo.RxSTBC)
+			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_RxSTBC_CAPABLE);
+		if (ht_cap->ExtHtCapInfo.PlusHTC)
+			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_HTC_CAPABLE);
+		if (pAd->CommonCfg.bRdg
+		    && ht_cap->ExtHtCapInfo.RDGSupport)
+			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_RDG_CAPABLE);
+		if (ht_cap->ExtHtCapInfo.MCSFeedback == 0x03)
+			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_MCSFEEDBACK_CAPABLE);
+		NdisMoveMemory(&pEntry->HTCapability, ht_cap, htcap_len);
+
+		assoc_ht_info_debugshow(pAd, pEntry, htcap_len, ht_cap);
+#ifdef DOT11_VHT_AC
+		if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode) &&
+			(ie_list != NULL) && (ie_list->vht_cap_len) && (ie_list->vht_op_len))
+		{
+			vht_mode_adjust(pAd, pEntry, &ie_list->vht_cap, &ie_list->vht_op);
+			assoc_vht_info_debugshow(pAd, pEntry, &ie_list->vht_cap, &ie_list->vht_op);
+			NdisMoveMemory(&pEntry->vht_cap_ie, &ie_list->vht_cap, sizeof(VHT_CAP_IE));
+		}
+#endif /* DOT11_VHT_AC */
+	} else {
+		pAd->MacTab.fAnyStationIsLegacy = TRUE;
+	}
+#endif /* DOT11_N_SUPPORT */
+
+	pEntry->HTPhyMode.word = pEntry->MaxHTPhyMode.word;
+	pEntry->CurrTxRate = pEntry->MaxSupportedRate;
+
+#ifdef MFB_SUPPORT
+	pEntry->lastLegalMfb = 0;
+	pEntry->isMfbChanged = FALSE;
+	pEntry->fLastChangeAccordingMfb = FALSE;
+
+	pEntry->toTxMrq = TRUE;
+	pEntry->msiToTx = 0; /* has to increment whenever a mrq is sent */
+	pEntry->mrqCnt = 0;
+
+	pEntry->pendingMfsi = 0;
+
+	pEntry->toTxMfb = FALSE;
+	pEntry->mfbToTx = 0;
+	pEntry->mfb0 = 0;
+	pEntry->mfb1 = 0;
+#endif /* MFB_SUPPORT */
+
+	pEntry->freqOffsetValid = FALSE;
+
+#ifdef TXBF_SUPPORT
+	TxBFInit(pAd, pEntry, supportsETxBf);
+
+	RTMPInitTimer(pAd, &pEntry->eTxBfProbeTimer, GET_TIMER_FUNCTION(eTxBfProbeTimerExec), pEntry, FALSE);
+	NdisAllocateSpinLock(pAd, &pEntry->TxSndgLock);
+#endif /* TXBF_SUPPORT */
+
+	MlmeRAInit(pAd, pEntry);
+
+	/* Set asic auto fall back */
+	if (wdev->bAutoTxRateSwitch == TRUE) {
+		UCHAR TableSize = 0;
+
+		MlmeSelectTxRateTable(pAd, pEntry, &pEntry->pTable, &TableSize, &pEntry->CurrTxRateIndex);
+		pEntry->bAutoTxRateSwitch = TRUE;
+	} else {
+		pEntry->HTPhyMode.field.MODE = wdev->HTPhyMode.field.MODE;
+		pEntry->HTPhyMode.field.MCS = wdev->HTPhyMode.field.MCS;
+		pEntry->bAutoTxRateSwitch = FALSE;
+
+		/* If the legacy mode is set, overwrite the transmit setting of this entry. */
+		RTMPUpdateLegacyTxSetting((UCHAR)wdev->DesiredTransmitSetting.field.FixedTxMode, pEntry);
+	}
+
+
+	pEntry->PortSecured = WPA_802_1X_PORT_SECURED;
+	pEntry->Sst = SST_ASSOC;
+	pEntry->AuthState = AS_AUTH_OPEN;
+	pEntry->AuthMode = wdev->AuthMode;
+	pEntry->WepStatus = wdev->WepStatus;
+	pEntry->wdev = wdev;
+	if (pEntry->AuthMode < Ndis802_11AuthModeWPA) {
+		pEntry->WpaState = AS_NOTUSE;
+		pEntry->PrivacyFilter = Ndis802_11PrivFilterAcceptAll;
+	} else {
+		pEntry->WpaState = AS_INITPSK;
+		pEntry->PrivacyFilter = Ndis802_11PrivFilter8021xWEP;
+	}
+
+	if (pAd->StaCfg.BssType == BSS_INFRA) {
+		UCHAR HashIdx = 0;
+		MAC_TABLE_ENTRY *pCurrEntry = NULL;
+		HashIdx = MAC_ADDR_HASH_INDEX(pAd->MlmeAux.Bssid);
+		if (pAd->MacTab.Hash[HashIdx] == NULL) {
+			pAd->MacTab.Hash[HashIdx] = pEntry;
+		} else {
+			pCurrEntry = pAd->MacTab.Hash[HashIdx];
+			while (pCurrEntry->pNext != NULL) {
+				pCurrEntry = pCurrEntry->pNext;
+			}
+			pCurrEntry->pNext = pEntry;
+		}
+		RTMPMoveMemory(pEntry->Addr, pAd->MlmeAux.Bssid, MAC_ADDR_LEN);
+		pEntry->Aid = BSSID_WCID;
+		pEntry->wcid = BSSID_WCID;
+
+#ifdef RT_CFG80211_P2P_SUPPORT
+		{
+			pAd->cfg80211_ctrl.MyGOwcid = BSSID_WCID;
+		}
+#endif /* RT_CFG80211_P2P_SUPPORT */
+		
+		pEntry->pAd = pAd;
+		SET_ENTRY_CLIENT(pEntry);
+		pAd->MacTab.Size ++;
+	}
+
+#ifdef DOT11W_PMF_SUPPORT
+        RTMPInitTimer(pAd, &pEntry->SAQueryTimer, GET_TIMER_FUNCTION(PMF_SAQueryTimeOut), pEntry, FALSE);
+        RTMPInitTimer(pAd, &pEntry->SAQueryConfirmTimer, GET_TIMER_FUNCTION(PMF_SAQueryConfirmTimeOut), pEntry, FALSE);
+#endif /* DOT11W_PMF_SUPPORT */
+	NdisReleaseSpinLock(&pAd->MacTabLock);
+
+#ifdef WPA_SUPPLICANT_SUPPORT
+#ifndef NATIVE_WPA_SUPPLICANT_SUPPORT
+	if (pAd->StaCfg.wpa_supplicant_info.WpaSupplicantUP) {
+		SendAssocIEsToWpaSupplicant(pAd->net_dev, pAd->StaCfg.ReqVarIEs,
+					    pAd->StaCfg.ReqVarIELen);
+
+		RtmpOSWrielessEventSend(pAd->net_dev, RT_WLAN_EVENT_CUSTOM,
+					RT_ASSOC_EVENT_FLAG, NULL, NULL, 0);
+	}
+#endif /* NATIVE_WPA_SUPPLICANT_SUPPORT */
+#endif /* WPA_SUPPLICANT_SUPPORT */
+
+#ifdef NATIVE_WPA_SUPPLICANT_SUPPORT
+	{
+		wext_notify_event_assoc(pAd->net_dev, pAd->StaCfg.ReqVarIEs,
+					pAd->StaCfg.ReqVarIELen);
+
+		RtmpOSWrielessEventSend(pAd->net_dev, RT_WLAN_EVENT_CGIWAP, -1,
+					pAd->MlmeAux.Bssid, NULL, 0);
+	}
+#endif /* NATIVE_WPA_SUPPLICANT_SUPPORT */
+
+
+	return TRUE;
+}
+#endif /* CONFIG_STA_SUPPORT */
 
 
 MAC_TABLE_ENTRY *MacTableInsertEntry(
@@ -118,6 +395,11 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 
 		FirstWcid = 1;
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	if (pAd->StaCfg.BssType == BSS_INFRA)
+		FirstWcid = 2;
+#endif /* CONFIG_STA_SUPPORT */
 
 	/* allocate one MAC entry*/
 	NdisAcquireSpinLock(&pAd->MacTabLock);
@@ -136,19 +418,54 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 			RTMPCancelTimer(&pEntry->SAQueryConfirmTimer, &Cancelled);
 #endif /* DOT11W_PMF_SUPPORT */
 
+#ifdef FIFO_EXT_SUPPORT
+			UCHAR hwFifoExtIdx = 0;
+			BOOLEAN bUseHwFifoExt = FALSE;
+
+			hwFifoExtIdx = pEntry->hwFifoExtIdx;
+			bUseHwFifoExt = pEntry->bUseHwFifoExt;
+#endif /* FIFO_EXT_SUPPORT */
+
 			NdisZeroMemory(pEntry, sizeof(MAC_TABLE_ENTRY));
+
+#ifdef FIFO_EXT_SUPPORT
+			pEntry->hwFifoExtIdx = hwFifoExtIdx;
+			pEntry->bUseHwFifoExt = bUseHwFifoExt;
+#endif /* FIFO_EXT_SUPPORT */
 
 			if (CleanAll == TRUE)
 			{
 				pEntry->MaxSupportedRate = RATE_11;
 				pEntry->CurrTxRate = RATE_11;
 				NdisZeroMemory(pEntry, sizeof(MAC_TABLE_ENTRY));
+#ifdef FIFO_EXT_SUPPORT
+				pEntry->hwFifoExtIdx = hwFifoExtIdx;
+				pEntry->bUseHwFifoExt = bUseHwFifoExt;
+#endif /* FIFO_EXT_SUPPORT */
 				pEntry->PairwiseKey.KeyLen = 0;
 				pEntry->PairwiseKey.CipherAlg = CIPHER_NONE;
 			}
 
 			do
 			{
+#ifdef CONFIG_STA_SUPPORT
+#if defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT)
+			if (apidx >= MIN_NET_DEVICE_FOR_TDLS)
+			{
+				SET_ENTRY_TDLS(pEntry);
+				break;
+			}
+			else
+#endif /* defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT) */
+#ifdef QOS_DLS_SUPPORT
+			if (apidx >= MIN_NET_DEVICE_FOR_DLS)
+			{
+				SET_ENTRY_DLS(pEntry);
+				break;
+			}
+			else
+#endif /* QOS_DLS_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 
 
 #ifdef CONFIG_AP_SUPPORT
@@ -189,6 +506,15 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 #endif /* CONFIG_AP_SUPPORT */
 					SET_ENTRY_CLIENT(pEntry);
 
+#ifdef IWSC_SUPPORT
+#ifdef CONFIG_STA_SUPPORT
+				IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+				{
+					pEntry->bIWscSmpbcAccept = FALSE;
+					pEntry->bUpdateInfoFromPeerBeacon = FALSE;
+				}
+#endif /* CONFIG_STA_SUPPORT */
+#endif // IWSC_SUPPORT //
 		} while (FALSE);
 
 			pEntry->wdev = wdev;
@@ -198,6 +524,14 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 
 			RTMPInitTimer(pAd, &pEntry->EnqueueStartForPSKTimer, GET_TIMER_FUNCTION(EnqueueStartForPSKExec), pEntry, FALSE);
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef ADHOC_WPA2PSK_SUPPORT
+	    		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+			{
+				RTMPInitTimer(pAd, &pEntry->WPA_Authenticator.MsgRetryTimer, GET_TIMER_FUNCTION(Adhoc_WpaRetryExec), pEntry, FALSE);
+			}
+#endif /* ADHOC_WPA2PSK_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
 			IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -239,6 +573,16 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 			else if (IS_ENTRY_WDS(pEntry))
 				pEntry->apidx = (apidx - MIN_NET_DEVICE_FOR_WDS);
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+#ifdef QOS_DLS_SUPPORT
+			else if (IS_ENTRY_DLS(pEntry))
+				pEntry->apidx = (apidx - MIN_NET_DEVICE_FOR_DLS);
+#endif /* QOS_DLS_SUPPORT */
+#if defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT)
+			else if (IS_ENTRY_TDLS(pEntry))
+				pEntry->apidx = (apidx - MIN_NET_DEVICE_FOR_TDLS);
+#endif /* defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT) */
+#endif /* CONFIG_STA_SUPPORT */
 			else
 				pEntry->apidx = apidx;
 
@@ -313,11 +657,30 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 					}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
+					if (OpMode == OPMODE_STA)
+#else
+				IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT */
+				{
+					pEntry->AuthMode = pAd->StaCfg.wdev.AuthMode;
+					pEntry->WepStatus = pAd->StaCfg.wdev.WepStatus;
+					pEntry->PrivacyFilter = Ndis802_11PrivFilterAcceptAll;
+				}
+#endif /* CONFIG_STA_SUPPORT */
 			} while (FALSE);
 
 			pEntry->GTKState = REKEY_NEGOTIATING;
 			pEntry->PairwiseKey.KeyLen = 0;
 			pEntry->PairwiseKey.CipherAlg = CIPHER_NONE;
+#ifdef CONFIG_STA_SUPPORT
+#ifdef QOS_DLS_SUPPORT
+			if (IS_ENTRY_DLS(pEntry))
+				pEntry->PortSecured = WPA_802_1X_PORT_SECURED;
+			else
+#endif /* QOS_DLS_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 				pEntry->PortSecured = WPA_802_1X_PORT_NOT_SECURED;
 
 			pEntry->PMKID_CacheIdx = ENTRY_NOT_FOUND;
@@ -353,6 +716,13 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 					break;
 				}
 #endif // CONFIG_AP_SUPPORT //
+#ifdef CONFIG_STA_SUPPORT
+				if (OpMode == OPMODE_STA)
+				{
+					COPY_MAC_ADDR(pEntry->bssid, pAddr);
+					break;
+				}
+#endif // CONFIG_STA_SUPPORT //
 			} while (FALSE);
 
 			pEntry->Sst = SST_NOT_AUTH;
@@ -365,7 +735,7 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 			pEntry->AssocDeadLine = MAC_TABLE_ASSOC_TIMEOUT;
 			pEntry->ContinueTxFailCnt = 0;
 			pEntry->StatTxRetryOkCount = 0;
-			pEntry->StatTxFailCount = 0;
+			pEntry->StatTxFailCount = 0;			
             {
 				int tid;
 			 	for (tid=0; tid<NUM_OF_TID; tid++)
@@ -386,6 +756,12 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 
 #endif /* STREAM_MODE_SUPPORT */
 
+#if defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT)
+#ifdef UAPSD_SUPPORT
+			/* init U-APSD enhancement related parameters */
+			UAPSD_MR_ENTRY_INIT(pEntry);
+#endif /* UAPSD_SUPPORT */
+#else
 #ifdef CONFIG_AP_SUPPORT
 #if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
 			if (OpMode == OPMODE_AP)
@@ -402,6 +778,7 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 #endif /* UAPSD_SUPPORT */
 			}
 #endif /* CONFIG_AP_SUPPORT */
+#endif /* defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT) */
 
 			pAd->MacTab.Size ++;
 
@@ -443,6 +820,9 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 	/* add this MAC entry into HASH table */
 	if (pEntry)
 	{
+#ifdef IWSC_SUPPORT
+		PWSC_PEER_ENTRY pWscPeerEntry = NULL;
+#endif /* IWSC_SUPPORT */
 
 		HashIdx = MAC_ADDR_HASH_INDEX(pAddr);
 		if (pAd->MacTab.Hash[HashIdx] == NULL)
@@ -457,6 +837,11 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{
+#ifdef DOT11V_WNM_SUPPORT
+			pEntry->Beclone = FALSE;
+			pEntry->bBSSMantSTASupport = FALSE;
+			pEntry->bDMSSTASupport = FALSE;
+#endif /* DOT11V_WNM_SUPPORT */
 
 #ifdef WSC_AP_SUPPORT
 			if (IS_ENTRY_CLIENT(pEntry) &&
@@ -470,6 +855,14 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef IWSC_SUPPORT
+		if (pAd->StaCfg.BssType == BSS_ADHOC)
+		{
+			pWscPeerEntry = WscFindPeerEntry(&pAd->StaCfg.WscControl.WscPeerList, pEntry->Addr);
+			if (pWscPeerEntry && pWscPeerEntry->bIWscSmpbcAccept)
+				IWSC_AddSmpbcEnrollee(pAd, pEntry->Addr);
+			}
+#endif /* IWSC_SUPPORT */
 
 	}
 
@@ -535,7 +928,16 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 				RemoveIPv6ProxyARPEntry(pAd, &pAd->ApCfg.MBSSID[pEntry->apidx], pEntry->Addr);
 			}
 #endif
+#ifdef CONFIG_HOTSPOT_R2
+			pEntry->IsKeep = 0;
+#endif /* CONFIG_HOTSPOT_R2 */
 
+
+#ifdef DOT11V_WNM_SUPPORT
+#ifdef CONFIG_AP_SUPPORT
+			DeleteDMSEntry(pAd, pEntry);
+#endif /* CONFIG_AP_SUPPORT */
+#endif /* DOT11V_WNM_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
 			/* free resources of BA*/
@@ -561,6 +963,14 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 			RTMPReleaseTimer(&pEntry->SAQueryConfirmTimer, &Cancelled);
 #endif /* DOT11W_PMF_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef ADHOC_WPA2PSK_SUPPORT
+			IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+			{
+				RTMPReleaseTimer(&pEntry->WPA_Authenticator.MsgRetryTimer, &Cancelled);
+			}
+#endif /* ADHOC_WPA2PSK_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
 			if (IS_ENTRY_CLIENT(pEntry)
@@ -569,7 +979,30 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 #ifdef DOT1X_SUPPORT 
 				INT PmkCacheIdx = -1;
 #endif /* DOT1X_SUPPORT */
-			
+#ifdef CUSTOMER_DCC_FEATURE
+				if(pEntry->Sst == SST_ASSOC)
+				{
+					INT32	i;
+					INT32	count = pAd->AllowedStaList.StaCount;
+					BOOLEAN Flag = FALSE;
+
+					for(i = 0; i < count; i++)
+					{
+						if(NdisEqualMemory(&pAd->AllowedStaList.AllowedSta[i].MacAddr[0], pAddr , MAC_ADDR_LEN))
+						{
+							pAd->AllowedStaList.AllowedSta[count].DissocTime = jiffies_to_msecs(jiffies);
+							Flag = TRUE;
+						}
+					}
+					if((!Flag) && (pAd->AllowedStaList.StaCount++ < MAX_LEN_OF_MAC_TABLE))
+					{
+						NdisCopyMemory(&(pAd->AllowedStaList.AllowedSta[count].MacAddr[0]), pEntry->Addr,MAC_ADDR_LEN);
+						pAd->AllowedStaList.AllowedSta[count].DissocTime = jiffies_to_msecs(jiffies);
+						pAd->AllowedStaList.StaCount++;
+					}
+				}
+#endif
+
 				RTMPReleaseTimer(&pEntry->RetryTimer, &Cancelled);
 
 #ifdef DELAYED_TCP_ACK
@@ -622,6 +1055,10 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 			else if (IS_ENTRY_APCLI(pEntry))
 			{
 				RTMPReleaseTimer(&pEntry->RetryTimer, &Cancelled);
+#ifdef FIFO_EXT_SUPPORT
+				if (pAd->chipCap.FlgHwFifoExtCap && pEntry->bUseHwFifoExt)
+					FifoExtTblRmReptEntry(pAd, wcid);
+#endif
 			}
 #endif /* APCLI_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
@@ -657,9 +1094,14 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 			/*RTMP_REMOVE_PAIRWISE_KEY_ENTRY(pAd, wcid);*/
 
 #ifdef UAPSD_SUPPORT
+#if defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT)
+			hex_dump("mac=", pEntry->Addr, 6);
+			UAPSD_MR_ENTRY_RESET(pAd, pEntry);
+#else
 #ifdef CONFIG_AP_SUPPORT
             UAPSD_MR_ENTRY_RESET(pAd, pEntry);
 #endif /* CONFIG_AP_SUPPORT */
+#endif /* defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT) */
 #endif /* UAPSD_SUPPORT */
 
 		if (pEntry->EnqueueEapolStartTimerRunning != EAPOL_START_DISABLE)
@@ -701,6 +1143,27 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 			drop_mask_release_per_client(pAd, pEntry);
 #endif /* DROP_MASK_SUPPORT */
 
+
+#ifdef PEER_DELBA_TX_ADAPT
+			RTMPCancelTimer(&pEntry->DelBA_tx_AdaptTimer, &Cancelled);
+#ifdef RT6352
+			if (IS_RT6352(pAd))
+			{
+				UINT32 MacReg = 0;
+				
+				if (pEntry->bPeerDelBaTxAdaptEn)
+				{
+					/* Disable Tx Mac look up table (Ressume original setting) */
+					RTMP_IO_READ32(pAd, TX_FBK_LIMIT, &MacReg);
+					MacReg &= ~(1 << 18);
+					RTMP_IO_WRITE32(pAd, TX_FBK_LIMIT, MacReg);
+					DBGPRINT(RT_DEBUG_TRACE, ("%s():TX_FBK_LIMIT = 0x%08x\n", __FUNCTION__, MacReg));
+				}
+			}
+#endif /* RT6352 */
+			pEntry->bPeerDelBaTxAdaptEn = 0;
+			RTMPReleaseTimer(&pEntry->DelBA_tx_AdaptTimer, &Cancelled);
+#endif /* PEER_DELBA_TX_ADAPT */
 
 //   			NdisZeroMemory(pEntry, sizeof(MAC_TABLE_ENTRY));
 			NdisZeroMemory(pEntry->Addr, MAC_ADDR_LEN);
@@ -791,6 +1254,14 @@ VOID MacTableReset(RTMP_ADAPTER *pAd)
 		if (IS_ENTRY_CLIENT(pMacEntry))
 		{
 			RTMPReleaseTimer(&pMacEntry->EnqueueStartForPSKTimer, &Cancelled);
+#ifdef CONFIG_STA_SUPPORT
+#ifdef ADHOC_WPA2PSK_SUPPORT
+			IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+			{
+				RTMPReleaseTimer(&pMacEntry->WPA_Authenticator.MsgRetryTimer, &Cancelled);
+			}
+#endif /* ADHOC_WPA2PSK_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 			pMacEntry->EnqueueEapolStartTimerRunning = EAPOL_START_DISABLE;
 
 #ifdef CONFIG_AP_SUPPORT

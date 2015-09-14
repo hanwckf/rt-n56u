@@ -46,7 +46,9 @@
 #endif /* OS_ABL_OS_AP_SUPPORT */
 
 #ifdef OS_ABL_OS_STA_SUPPORT
+#ifndef CONFIG_STA_SUPPORT
 #define CONFIG_STA_SUPPORT
+#endif /* CONFIG_STA_SUPPORT */
 #endif /* OS_ABL_OS_STA_SUPPORT */
 
 /* AP & STA con-current */

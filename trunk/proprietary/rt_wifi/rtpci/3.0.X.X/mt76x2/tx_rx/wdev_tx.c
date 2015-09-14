@@ -267,16 +267,40 @@ VOID wdev_tx_pkts(NDIS_HANDLE dev_hnd, PPNDIS_PACKET pkt_list, UINT pkt_cnt, str
 			NDIS_SET_PACKET_STATUS(pPacket, NDIS_STATUS_PENDING);
 			pAd->RalinkCounters.PendingNdisPacketCount++;
 
+			/*
+				WIFI HNAT need to learn packets going to which interface from skb cb setting.
+				@20150325
+			*/
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+#if !defined(CONFIG_RA_NAT_NONE)
+			if (ra_sw_nat_hook_tx != NULL)
+			{
+				ra_sw_nat_hook_tx(pPacket, 0);
+			}
+#endif
+#endif
+
 #ifdef CONFIG_AP_SUPPORT
-		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-		{
+			IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+			{
 #ifdef DELAYED_TCP_ACK
-			if(!delay_tcp_ack(pAd, wcid, pPacket))
+				if(!delay_tcp_ack(pAd, wcid, pPacket))
 #endif /* DELAYED_TCP_ACK */
-				APSendPacket(pAd, pPacket);
-		}		
+					APSendPacket(pAd, pPacket);
+			}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+			IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+			{
+#ifdef RT_CFG80211_P2P_SUPPORT
+				if (RTMP_GET_PACKET_OPMODE(pPacket))
+					APSendPacket(pAd, pPacket);
+				else
+#endif /* RT_CFG80211_P2P_SUPPORT */
+				STASendPacket(pAd, pPacket);
+			}
+#endif /* CONFIG_STA_SUPPORT */
 		} else {
 			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
 		}

@@ -1057,7 +1057,7 @@ NDIS_STATUS IgmpPktClone(
 	PMEMBER_ENTRY pMemberEntry = NULL;
 	MAC_TABLE_ENTRY *pMacEntry = NULL;
 	USHORT Aid;
-	SST Sst = SST_ASSOC;
+	SST	Sst = SST_ASSOC;
 	UCHAR PsMode = PWR_ACTIVE;
 	UCHAR Rate;
 	unsigned long IrqFlags;
@@ -1085,7 +1085,7 @@ NDIS_STATUS IgmpPktClone(
 	{
 		pNetDev = GET_OS_PKT_NETDEV(pPacket);
 		pSrcMAC = pSrcBufVA + 6;
-		
+
 		for(MacEntryIdx=1; MacEntryIdx<MAX_NUMBER_OF_MAC; MacEntryIdx++)
 		{
 			pMemberAddr = pAd->MacTab.Content[MacEntryIdx].Addr;
@@ -1113,9 +1113,9 @@ NDIS_STATUS IgmpPktClone(
 			OS_PKT_CLONE(pAd, pPacket, pSkbClone, MEM_ALLOC_FLAG);
 			if (!pSkbClone)
 				return NDIS_STATUS_FAILURE;
-			
+
 			RTMP_SET_PACKET_WCID(pSkbClone, (UCHAR)pMacEntry->Aid);
-			
+
 			if (PsMode == PWR_SAVE)
 			{
 				APInsertPsQueue(pAd, pSkbClone, pMacEntry, QueIdx);
@@ -1273,13 +1273,13 @@ BOOLEAN IPv6MulticastFilterExcluded(
 	pIpHeader = pDstMacAddr + 14;
 	pIpv6Hdr = (PRT_IPV6_HDR)(pIpHeader);
 	offset = IPV6_HDR_LEN;
-	nextProtocol = pIpv6Hdr->nextHdr;
-	while(nextProtocol == IPV6_NEXT_HEADER_HOP_BY_HOP)
-	{
-		if(IPv6ExtHdrHandle((RT_IPV6_EXT_HDR *)(pIpHeader + offset), &nextProtocol, &offset) == FALSE)
-			break;
-	}
-	
+		nextProtocol = pIpv6Hdr->nextHdr;
+		while(nextProtocol == IPV6_NEXT_HEADER_HOP_BY_HOP)
+		{
+			if(IPv6ExtHdrHandle((RT_IPV6_EXT_HDR *)(pIpHeader + offset), &nextProtocol, &offset) == FALSE)
+				break;
+		}
+
 	for (idx = 0; idx < IPV6_MULTICAST_FILTER_EXCLUED_SIZE; idx++)
 	{
 		if (nextProtocol == IPv6MulticastFilterExclued[idx])

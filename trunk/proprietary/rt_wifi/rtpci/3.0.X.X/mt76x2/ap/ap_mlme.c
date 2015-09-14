@@ -129,6 +129,15 @@ VOID APMlmePeriodicExec(
 		take care all of the client's situation
 		ToDo: need to verify compatibility issue with WiFi product.
 	*/
+
+#ifdef CUSTOMER_DCC_FEATURE
+	if(pAd->AllowedStaList.StaCount > 0)
+		RemoveOldStaList(pAd);
+	if(pAd->ApEnableBeaconTable == TRUE)
+		RemoveOldBssEntry(pAd);
+	APResetStreamingStatus(pAd);
+#endif
+
 #ifdef CARRIER_DETECTION_SUPPORT
 	if (isCarrierDetectExist(pAd) == TRUE)
 	{
@@ -256,7 +265,6 @@ VOID APMlmePeriodicExec(
 		}
 #endif /* MAC_REPEATER_SUPPORT */
 
-
 		NdisGetSystemUpTime(&Now32);
 		for (loop = 0; loop < MAX_APCLI_NUM; loop++)
 		{
@@ -363,6 +371,9 @@ VOID APMlmePeriodicExec(
 		}
 #endif /* A_BAND_SUPPORT */
 
+#ifdef DOT11R_FT_SUPPORT
+	FT_R1KHInfoMaintenance(pAd);
+#endif /* DOT11R_FT_SUPPORT */
 
 #ifdef APCLI_SUPPORT
 #ifdef DOT11_N_SUPPORT

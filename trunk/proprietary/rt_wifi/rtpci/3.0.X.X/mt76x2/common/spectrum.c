@@ -1457,6 +1457,163 @@ VOID NotifyChSwAnnToPeerAPs(
 #endif /* WDS_SUPPORT */
 }
 
+#ifdef CUSTOMER_DCC_FEATURE
+#ifdef DOT11_N_SUPPORT
+static VOID InsertSecondaryChOffsetIE(
+	IN PRTMP_ADAPTER pAd,
+	OUT PUCHAR pFrameBuf,
+	OUT PULONG pFrameLen,
+	IN UINT8 Offset)
+{
+	ULONG TempLen;
+	ULONG Len = sizeof(SEC_CHA_OFFSET_IE);
+	UINT8 ElementID = IE_SECONDARY_CH_OFFSET;
+	SEC_CHA_OFFSET_IE SChOffIE;
+
+	SChOffIE.SecondaryChannelOffset = Offset;
+
+	MakeOutgoingFrame(pFrameBuf, &TempLen,
+		1, &ElementID,
+		1, &Len,
+		Len, &SChOffIE,
+		END_OF_ARGS);
+
+	*pFrameLen = *pFrameLen + TempLen;
+	return;
+}
+#endif
+
+#ifdef DOT11_VHT_AC
+static VOID InsertWideBandwidthChannelSwitchIE(
+	IN PRTMP_ADAPTER pAd,
+	OUT PUCHAR pFrameBuf,
+	OUT PULONG pFrameLen)
+{
+	ULONG TempLen;
+	ULONG Len = sizeof(WIDE_BW_CH_SWITCH_ELEMENT);
+	UINT8 ElementID = IE_WIDE_BW_CH_SWITCH;
+	WIDE_BW_CH_SWITCH_ELEMENT wb_info;
+
+	if (pAd->CommonCfg.vht_bw == VHT_BW_2040)
+		wb_info.new_ch_width = 0;
+	else
+		wb_info.new_ch_width = 1;
+
+	if (pAd->CommonCfg.vht_bw == VHT_BW_80) {
+		wb_info.center_freq_1 = vht_cent_ch_freq(pAd, pAd->CommonCfg.Channel);
+		wb_info.center_freq_2 = 0;
+	}
+
+	MakeOutgoingFrame(pFrameBuf, &TempLen,
+		1, &ElementID,
+		1, &Len,
+		Len, &wb_info,
+		END_OF_ARGS);
+
+	*pFrameLen = *pFrameLen + TempLen;
+	return;
+}
+#endif
+
+VOID InsertChSwAnnIENew(
+	IN PRTMP_ADAPTER pAd,
+	OUT PUCHAR pFrameBuf,
+	OUT PULONG pFrameLen,
+	IN UINT8 ChSwMode,
+	IN UINT8 NewChannel,
+	IN UINT8 ChSwCnt)
+{
+	ULONG TempLen;
+	ULONG Len = sizeof(CH_SW_ANN_INFO);
+	UINT8 ElementID = IE_CHANNEL_SWITCH_ANNOUNCEMENT;
+	CH_SW_ANN_INFO ChSwAnnIE;
+
+	ChSwAnnIE.ChSwMode = ChSwMode;
+	ChSwAnnIE.Channel = NewChannel;
+	ChSwAnnIE.ChSwCnt = ChSwCnt;
+
+	MakeOutgoingFrame(pFrameBuf,	&TempLen,
+			  	1,	&ElementID,
+				1,	&Len,
+				Len,	&ChSwAnnIE,
+				END_OF_ARGS);
+
+	*pFrameLen = *pFrameLen + TempLen;
+
+	printk("%s \n",__func__);
+	return;
+}
+
+
+VOID NotifyChSwAnnToConnectedSTAs(
+	IN PRTMP_ADAPTER pAd,
+	IN UINT8 		ChSwMode,
+	IN UINT8 		Channel)
+{
+	UINT32 i;
+	MAC_TABLE_ENTRY *pEntry;
+
+	pAd->CommonCfg.channelSwitch.CHSWMode = ChSwMode;
+	pAd->CommonCfg.channelSwitch.CHSWCount = 0;
+//	pAd->CommonCfg.channelSwitch.CHSWPeriod = 5;
+	
+	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
+	{
+		pEntry = &pAd->MacTab.Content[i];
+		if (pEntry && IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
+		{
+
+			EnqueueChSwAnnNew(pAd, pEntry->Addr, ChSwMode, Channel);
+		
+		}
+	}
+}
+
+VOID EnqueueChSwAnnNew(
+	IN PRTMP_ADAPTER pAd,
+	IN PUCHAR pDA, 
+	IN UINT8 ChSwMode,
+	IN UINT8 NewCh)
+{
+	PUCHAR pOutBuffer = NULL;
+	NDIS_STATUS NStatus;
+	ULONG FrameLen;
+
+	HEADER_802_11 ActHdr;
+
+	/* build action frame header.*/
+	MgtMacHeaderInit(pAd, &ActHdr, SUBTYPE_ACTION, 0, pDA, pAd->CurrentAddress, pAd->CurrentAddress);
+
+	NStatus = MlmeAllocateMemory(pAd, (PVOID)&pOutBuffer);  /*Get an unused nonpaged memory*/
+	if(NStatus != NDIS_STATUS_SUCCESS)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("%s() allocate memory failed \n", __FUNCTION__));
+		return;
+	}
+	NdisMoveMemory(pOutBuffer, (PCHAR)&ActHdr, sizeof(HEADER_802_11));
+	FrameLen = sizeof(HEADER_802_11);
+
+	InsertActField(pAd, (pOutBuffer + FrameLen), &FrameLen, CATEGORY_SPECTRUM, SPEC_CHANNEL_SWITCH);
+
+	InsertChSwAnnIENew(pAd, (pOutBuffer + FrameLen), &FrameLen, ChSwMode, NewCh, pAd->CommonCfg.channelSwitch.CHSWPeriod);
+
+#ifdef DOT11_N_SUPPORT
+	InsertSecondaryChOffsetIE(pAd, (pOutBuffer + FrameLen), &FrameLen, pAd->CommonCfg.RegTransmitSetting.field.EXTCHA);
+#endif
+#ifdef DOT11_VHT_AC
+	if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode) && (pAd->CommonCfg.vht_bw == VHT_BW_80))
+	{
+		InsertWideBandwidthChannelSwitchIE(pAd, (pOutBuffer + FrameLen), &FrameLen);
+	}
+#endif
+	MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
+	MlmeFreeMemory(pAd, pOutBuffer);
+		
+	return;
+}
+
+#endif
+
 static VOID StartDFSProcedure(
 	IN PRTMP_ADAPTER pAd,
 	IN UCHAR Channel,
@@ -1850,6 +2007,10 @@ static VOID PeerChSwAnnAction(
 {
 	CH_SW_ANN_INFO ChSwAnnInfo;
 	PFRAME_802_11 pFr = (PFRAME_802_11)Elem->Msg;
+#ifdef CONFIG_STA_SUPPORT
+	UCHAR index = 0, Channel = 0, NewChannel = 0;
+	ULONG Bssidx = 0;
+#endif /* CONFIG_STA_SUPPORT */
 
 	NdisZeroMemory(&ChSwAnnInfo, sizeof(CH_SW_ANN_INFO));
 	if (! PeerChSwAnnSanity(pAd, Elem->Msg, Elem->MsgLen, &ChSwAnnInfo))
@@ -1868,6 +2029,53 @@ static VOID PeerChSwAnnAction(
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	if (pAd->OpMode == OPMODE_STA)
+	{
+		Bssidx = BssTableSearch(&pAd->ScanTab, pFr->Hdr.Addr3, pAd->CommonCfg.Channel);
+		if (Bssidx == BSS_NOT_FOUND)
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("PeerChSwAnnAction - Bssidx is not found\n"));
+			return;  
+		}
+
+		DBGPRINT(RT_DEBUG_TRACE, ("\n****Bssidx is %d, Channel = %d\n", index, pAd->ScanTab.BssEntry[Bssidx].Channel));
+		hex_dump("SSID",pAd->ScanTab.BssEntry[Bssidx].Bssid ,6);
+
+		Channel = pAd->CommonCfg.Channel;
+		NewChannel = ChSwAnnInfo.Channel;
+
+		if ((pAd->CommonCfg.bIEEE80211H == 1) && (NewChannel != 0) && (Channel != NewChannel))
+		{
+			/* Switching to channel 1 can prevent from rescanning the current channel immediately (by auto reconnection).*/
+			/* In addition, clear the MLME queue and the scan table to discard the RX packets and previous scanning results.*/
+			AsicSwitchChannel(pAd, 1, FALSE);
+			AsicLockChannel(pAd, 1);
+			LinkDown(pAd, FALSE);
+			MlmeQueueInit(pAd, &pAd->Mlme.Queue);
+		    RtmpusecDelay(1000000);		/* use delay to prevent STA do reassoc*/
+					
+			/* channel sanity check*/
+			for (index = 0 ; index < pAd->ChannelListNum; index++)
+			{
+				if (pAd->ChannelList[index].Channel == NewChannel)
+				{
+					pAd->ScanTab.BssEntry[Bssidx].Channel = NewChannel;
+					pAd->CommonCfg.Channel = NewChannel;
+					AsicSwitchChannel(pAd, pAd->CommonCfg.Channel, FALSE);
+					AsicLockChannel(pAd, pAd->CommonCfg.Channel);
+					DBGPRINT(RT_DEBUG_TRACE, ("&&&&&&&&&&&&&&&&PeerChSwAnnAction - STA receive channel switch announcement IE (New Channel =%d)\n", NewChannel));
+					break;
+				}
+			}
+
+			if (index >= pAd->ChannelListNum)
+			{
+				DBGPRINT_ERR(("&&&&&&&&&&&&&&&&&&&&&&&&&&PeerChSwAnnAction(can not find New Channel=%d in ChannelList[%d]\n", pAd->CommonCfg.Channel, pAd->ChannelListNum));
+			}
+		}
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	return;
 }
@@ -2331,6 +2539,66 @@ typedef struct __PWR_CONSTRAIN_CFG
 	return TRUE;
 }
 
+#ifdef DOT11K_RRM_SUPPORT
+INT Set_VoPwrConsTest(
+	IN	PRTMP_ADAPTER	pAd,
+	IN	PSTRING			arg)
+{
+	POS_COOKIE	pObj= (POS_COOKIE)pAd->OS_Cookie;
+
+	/* 
+		Set AP Supported Rate Set to signle rate 54Mbps.
+	*/
+	pAd->CommonCfg.SupRate[0]  = 0x8c;	  /* 54 mbps, in units of 0.5 Mbps*/
+	pAd->CommonCfg.SupRateLen  = 1;
+	pAd->CommonCfg.ExtRateLen = 0;
+
+	/* 
+		1. disable AP Dynamic rate switch 
+		2. and fix it as 54Mbps
+		3. set G only mode.
+	*/
+	pAd->CommonCfg.VoPwrConstraintTest = TRUE;
+	APStop(pAd);
+	APStartUp(pAd);
+
+#ifdef DOT11_N_SUPPORT
+	if (pAd->CommonCfg.Channel > 14)
+		pAd->CommonCfg.PhyMode = (WMODE_A | WMODE_AN);
+	else
+		pAd->CommonCfg.PhyMode = (WMODE_B | WMODE_G |WMODE_GN);
+#endif /* DOT11_N_SUPPORT */
+
+	pAd->ApCfg.MBSSID[pObj->ioctl_if].wdev.DesiredTransmitSetting.field.FixedTxMode = FIXED_TXMODE_OFDM;
+	pAd->ApCfg.MBSSID[pObj->ioctl_if].wdev.DesiredTransmitSetting.field.MCS = 0;
+
+#ifdef DOT11_N_SUPPORT
+	SetCommonHT(pAd);
+#endif /* DOT11_N_SUPPORT */
+
+	pAd->MacTab.Content[0].HTPhyMode.field.MODE = MODE_OFDM;
+	pAd->MacTab.Content[0].HTPhyMode.field.iTxBF = 0;
+	pAd->MacTab.Content[0].HTPhyMode.field.eTxBF = 0;
+	pAd->MacTab.Content[0].HTPhyMode.field.STBC = 0;
+	pAd->MacTab.Content[0].HTPhyMode.field.ShortGI = 0;
+	pAd->MacTab.Content[0].HTPhyMode.field.BW = 0;
+	pAd->MacTab.Content[0].HTPhyMode.field.MCS = 0;
+
+	pAd->CommonCfg.BasicMlmeRate = RATE_6;
+	pAd->CommonCfg.MlmeRate = RATE_6;
+
+	pAd->CommonCfg.MlmeRate = RATE_6;
+	pAd->CommonCfg.RtsRate = RATE_6;
+	pAd->CommonCfg.MlmeTransmit.field.MODE = MODE_OFDM;
+	pAd->CommonCfg.MlmeTransmit.field.MCS = OfdmRateToRxwiMCS[pAd->CommonCfg.MlmeRate];
+
+	/* Stop all auto fall back. */
+	RTMP_IO_WRITE32(pAd, LG_FBK_CFG0, 0x08080808);
+	RTMP_IO_WRITE32(pAd, LG_FBK_CFG1, 0x08080808);
+
+	return TRUE;
+}
+#endif /* DOT11K_RRM_SUPPORT */
 
 static PDOT11_REGULATORY_INFORMATION GetRugClassRegion(
 	IN PSTRING pCountryCode,

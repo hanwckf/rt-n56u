@@ -223,6 +223,12 @@ BOOLEAN RTMPIsWapiCipher(
 			cipher_mode = pAd->ApCfg.MBSSID[apidx].wdev.WepStatus;
 	}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		cipher_mode = pAd->StaCfg.wdev.WepStatus;
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	if (cipher_mode == Ndis802_11EncryptionSMS4Enabled)
 		return TRUE;
@@ -530,6 +536,33 @@ void rtmp_read_wapi_parms_from_file(
 #endif /* CONFIG_AP_SUPPORT */
 
 	
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		/* WapiPsk */
+		if (RTMPGetKeyParameter("WapiPsk", tmpbuf, 512, buffer, FALSE))
+		{											                 										
+		    NdisZeroMemory(pAd->StaCfg.WAPIPassPhrase, 64);
+		    pAd->StaCfg.WAPIPassPhraseLen = 0;
+		    if (strlen(tmpbuf) >= 8 && strlen(tmpbuf) <= 64)
+		    {                                    
+		        NdisMoveMemory(pAd->StaCfg.WAPIPassPhrase, tmpbuf, strlen(tmpbuf));
+		        pAd->StaCfg.WAPIPassPhraseLen = strlen(tmpbuf);
+
+				DBGPRINT(RT_DEBUG_TRACE, ("WapiPsk=(%s), len=%d\n", tmpbuf, strlen(tmpbuf)));						
+		    }
+			else
+			{
+				if (pAd->StaCfg.AuthMode == Ndis802_11AuthModeWAIPSK)
+				{
+					pAd->StaCfg.AuthMode = Ndis802_11AuthModeOpen;
+					pAd->StaCfg.WepStatus = Ndis802_11EncryptionDisabled;
+				}
+				DBGPRINT(RT_DEBUG_ERROR, ("The length of WAPI PSKPassPhrase is invalid(len=%d). \n", strlen(tmpbuf)));
+			}			      						 
+		}
+	}
+#endif /* CONFIG_STA_SUPPORT */													
 
 	/* WapiPskType */
 	if (RTMPGetKeyParameter("WapiPskType", tmpbuf, 32, buffer, TRUE))
@@ -576,6 +609,37 @@ void rtmp_read_wapi_parms_from_file(
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			err = 0;
+		
+			/* HEX */
+			if(simple_strtol(tmpbuf, 0, 10) == 0)  
+			{
+				pAd->StaCfg.WapiPskType = HEX_MODE;
+	
+				if (pAd->StaCfg.WAPIPassPhraseLen % 2 != 0)
+				{
+					err = 1;
+					DBGPRINT(RT_DEBUG_ERROR, ("The WAPI-PSK key length MUST be even in Hex mode\n"));						
+				}
+			}
+			/* ASCII */
+			else 
+			{
+				pAd->StaCfg.WapiPskType = ASCII_MODE;
+			}
+
+			if (err)
+			{
+				pAd->StaCfg.AuthMode = Ndis802_11AuthModeOpen;
+				pAd->StaCfg.WepStatus = Ndis802_11EncryptionDisabled;
+			}
+			else
+				DBGPRINT(RT_DEBUG_TRACE, ("WapiPskType=%s\n", (pAd->StaCfg.WapiPskType == HEX_MODE) ? "HEX" : "ASCII"));
+		}
+#endif /* CONFIG_STA_SUPPORT */
 				
 	}
 
@@ -667,6 +731,47 @@ static VOID RTMPQueryWapiConfPerBss(
 		}
 	}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		NdisMoveMemory(pConf->ifname, pAd->StaCfg.dev_name, strlen((PSTRING) pAd->StaCfg.dev_name));
+		pConf->ifname_len = strlen((PSTRING) pAd->StaCfg.dev_name);
+
+		/* Decide the authentication mode */
+		if (pAd->StaCfg.AuthMode == Ndis802_11AuthModeWAICERT)
+			pConf->auth_mode = WAPI_AUTH_CERT;
+		else if (pAd->StaCfg.AuthMode == Ndis802_11AuthModeWAIPSK)
+			pConf->auth_mode = WAPI_AUTH_PSK;
+		else
+			pConf->auth_mode = WAPI_AUTH_DISABLE;
+
+		/* Fill in WAI pre-shared key */
+		if (pAd->StaCfg.WAPIPassPhraseLen > 0)
+		{
+			if (pAd->StaCfg.WapiPskType == HEX_MODE)
+			{
+				pConf->psk_len = pAd->StaCfg.WAPIPassPhraseLen / 2;
+				AtoH((PSTRING) pAd->StaCfg.WAPIPassPhrase, (PUCHAR) pConf->psk, pConf->psk_len);
+			}
+			else
+			{
+				pConf->psk_len = pAd->StaCfg.WAPIPassPhraseLen; 
+				NdisMoveMemory(pConf->psk, pAd->StaCfg.WAPIPassPhrase, pConf->psk_len);
+			}
+		}
+
+		RTMPMakeRSNIE(pAd, pAd->StaCfg.AuthMode, pAd->StaCfg.WepStatus, BSS0);
+		/* Fill in WIE */
+		if (pAd->StaCfg.RSNIE_Len > 0)
+		{
+			pConf->wie_len = pAd->StaCfg.RSNIE_Len + 2; 
+			
+			pConf->wie[0] = IE_WAPI;
+			pConf->wie[1] = pAd->StaCfg.RSNIE_Len;
+			NdisMoveMemory(&pConf->wie[2], pAd->StaCfg.RSN_IE, pAd->StaCfg.RSNIE_Len);
+		}
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 
 }
@@ -712,6 +817,12 @@ VOID RTMPIoctlQueryWapiConf(
 		pConf->mbss_num = pAd->ApCfg.BssidNum;		
 	}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		pConf->mbss_num = 1;	
+	}
+#endif /* CONFIG_STA_SUPPORT */
 	
 	/* Set common configuration */
 	NdisMoveMemory(&pConf->comm_wapi_info, &pAd->CommonCfg.comm_wapi_info, sizeof(COMMON_WAPI_INFO));
@@ -843,6 +954,12 @@ VOID RTMPWapiMskRekeyPeriodicExec(
 			}					
 		}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{			
+			/* Todo for Adhoc mode */
+		}
+#endif /* CONFIG_STA_SUPPORT */	
 		
 		for (i = 0; i < MAX_LEN_OF_MAC_TABLE; i++)
 		{
@@ -990,6 +1107,12 @@ BOOLEAN WAPI_InternalCmdAction(
 			MAKE_802_3_HEADER(FrameBuf, pAd->ApCfg.MBSSID[apidx].wdev.bssid, pAddr, WAPI_IE); 
 		}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{			
+			MAKE_802_3_HEADER(FrameBuf, pAd->CurrentAddress, pAddr, WAPI_IE); 
+		}
+#endif /* CONFIG_STA_SUPPORT */				
 		offset += LENGTH_802_3;
 
 		/* Prepare the specific WAPI header */

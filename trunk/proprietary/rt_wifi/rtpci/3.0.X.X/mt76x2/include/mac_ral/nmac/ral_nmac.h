@@ -551,7 +551,7 @@ typedef	struct GNU_PACKED _RXWI_NMAC{
 
 	/* Word 3~6 */
 	UINT8 bbp_rxinfo[16];
-} RXWI_NMAC;
+}	RXWI_NMAC;
 #else
 typedef	struct GNU_PACKED _RXWI_NMAC {
 	/* Word 0 */
@@ -580,7 +580,7 @@ typedef	struct GNU_PACKED _RXWI_NMAC {
 
 	/* Word 3~6 */
 	UINT8 bbp_rxinfo[16];
-} RXWI_NMAC;
+}	RXWI_NMAC;
 #endif /* RT_BIG_ENDIAN */
 
 typedef struct GNU_PACKED _NMAC_HW_RATE_CTRL_STRUCT{

@@ -307,7 +307,7 @@ VOID eTxBFProbing(
 	{
 		pEntry->bfState = READY_FOR_SNDG0;
 	}
-	else if (pEntry->bfState==READY_FOR_SNDG0 && pEntry->noSndgCnt>=pEntry->noSndgCntThrd)
+	else if (pEntry->noSndgCnt>=pEntry->noSndgCntThrd)
 	{
 		/* Select NDP sounding, maximum streams */
 		pEntry->sndgMcs = (pEntry->ndpSndgStreams==3) ? 16 : 8;

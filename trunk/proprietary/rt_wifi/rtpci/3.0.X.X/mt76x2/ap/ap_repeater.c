@@ -526,6 +526,15 @@ MAC_TABLE_ENTRY *RTMPInsertRepeaterMacEntry(
 		drop_mask_init_per_client(pAd, pEntry);
 #endif /* DROP_MASK_SUPPORT */
 
+#ifdef FIFO_EXT_SUPPORT
+		if (pAd->chipCap.FlgHwFifoExtCap)
+		{
+			UCHAR tblIdx;
+
+			if ((cliIdx != 0xFF) && IsFifoExtTblAvailable(pAd, &tblIdx))
+				FifoExtTblUpdateEntry(pAd, tblIdx, i);
+		}
+#endif
 		DBGPRINT(RT_DEBUG_TRACE, ("%s - allocate entry #%d, Aid = %d, Total= %d\n",__FUNCTION__, i, pEntry->Aid, pAd->MacTab.Size));
 	}
 	else
@@ -853,7 +862,7 @@ INT	Show_Repeater_Cli_Proc(
 	IN PSTRING arg)
 {
 	INT i;
-	UINT32 RegValue;
+    UINT32 RegValue;
 	UINT32 DataRate=0;
 
 	if (!pAd->ApCfg.bMACRepeaterEn)

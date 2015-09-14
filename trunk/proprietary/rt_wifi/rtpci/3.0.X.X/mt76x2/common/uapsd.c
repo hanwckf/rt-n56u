@@ -162,6 +162,21 @@ Note:
 */
 VOID RtmpAsicSleepHandle(RTMP_ADAPTER *pAd)
 {
+#ifdef CONFIG_STA_SUPPORT
+	BOOLEAN FlgCanAsicSleep = TRUE;
+
+#ifdef DOT11Z_TDLS_SUPPORT
+	/* check TDLS condition */
+	FlgCanAsicSleep = TDLS_UAPSDP_AsicCanSleep(pAd);
+#endif /* DOT11Z_TDLS_SUPPORT */
+
+	/* finally, check if we can sleep */
+	if (FlgCanAsicSleep == TRUE)
+	{
+		/* just mark the flag to FALSE and wait PeerBeacon() to sleep */
+		ASIC_PS_CAN_SLEEP(pAd);
+	}
+#endif // CONFIG_STA_SUPPORT //
 }
 
 

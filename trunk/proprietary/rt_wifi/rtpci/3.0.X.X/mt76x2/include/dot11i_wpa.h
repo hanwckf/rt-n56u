@@ -54,8 +54,11 @@
 /* EAPOL-KEY Descriptor Type */
 #define	WPA1_KEY_DESC				0xfe
 #define WPA2_KEY_DESC               0x02
+#define OSEN_KEY_DESC               0x00
+
 
 /* Key Descriptor Version of Key Information */
+#define KEY_DESC_OSEN			0
 #define	KEY_DESC_TKIP			1
 #define	KEY_DESC_AES			2
 #define KEY_DESC_EXT			3

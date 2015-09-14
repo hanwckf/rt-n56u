@@ -40,6 +40,10 @@ VOID UpdateChannelInfo(
 	IN int ch,
 	IN ChannelSel_Alg Alg);
 
+#ifdef CUSTOMER_DCC_FEATURE
+VOID ChannelInfoResetNew(
+	IN PRTMP_ADAPTER pAd);
+#endif
 ULONG AutoChBssInsertEntry(
 	IN PRTMP_ADAPTER pAd,
 	IN PUCHAR pBssid,

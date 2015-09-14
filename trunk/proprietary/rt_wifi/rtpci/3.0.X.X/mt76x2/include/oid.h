@@ -78,11 +78,34 @@
 #define MAX_LENGTH_OF_SUPPORT_RATES		12	/* 1, 2, 5.5, 11, 6, 9, 12, 18, 24, 36, 48, 54 */
 #define MAX_NUMBER_OF_DLS_ENTRY			4
 
+
+#ifdef CUSTOMER_DCC_FEATURE
+#ifdef MEMORY_OPTIMIZATION
+#define MAX_LEN_OF_BSS_TABLE			1
+#define MAX_REORDERING_MPDU_NUM			256
+#else
+#define MAX_LEN_OF_BSS_TABLE			64
+#define MAX_REORDERING_MPDU_NUM			512
+#endif
+#endif
+
 #define RT_QUERY_SIGNAL_CONTEXT				0x0402
 #define RT_SET_IAPP_PID                 	0x0404
 #define RT_SET_APD_PID						0x0405
 #define RT_SET_DEL_MAC_ENTRY				0x0406
 #define RT_QUERY_EVENT_TABLE            	0x0407
+#ifdef DOT11R_FT_SUPPORT
+#define RT_SET_FT_STATION_NOTIFY			0x0408
+#define RT_SET_FT_KEY_REQ					0x0409
+#define RT_SET_FT_KEY_RSP					0x040a
+#define RT_FT_KEY_SET						0x040b
+#define RT_FT_DATA_ENCRYPT					0x040c
+#define RT_FT_DATA_DECRYPT					0x040d
+#define RT_FT_NEIGHBOR_REPORT				0x040e
+#define RT_FT_NEIGHBOR_REQUEST				0x040f
+#define RT_FT_NEIGHBOR_RESPONSE				0x0410
+#define RT_FT_ACTION_FORWARD				0x0411
+#endif /* DOT11R_FT_SUPPORT */
 /* */
 /* IEEE 802.11 OIDs */
 /* */
@@ -392,6 +415,115 @@ struct hostapd_wpa_psk {
 #define RT_OID_802_11_WAPI_IE				(OID_GET_SET_TOGGLE | OID_802_11_WAPI_IE)
 #endif /* WAPI_SUPPORT */
 
+#ifdef CUSTOMER_DCC_FEATURE
+#define OID_802_11_GET_CURRENT_CHANNEL_FALSE_CCA_AVG	0x0690
+#define OID_802_11_GET_CURRENT_CHANNEL_CST_TIME_AVG		0x0691
+#define OID_802_11_GET_CURRENT_CHANNEL_BUSY_TIME_AVG	0x0692
+#define OID_802_11_GET_CURRENT_CHANNEL_STATS			0x0693
+#define OID_802_11_GET_CURRENT_CHANNEL_AP_ACTIVITY_AVG	0x0694
+#define OID_802_11_STA_STATISTICS						0x0695
+#define OID_802_11_GET_CURRENT_CHANNEL_AP_TABLE			0x0696
+#define OID_802_11_GET_ACCESS_CATEGORY_TRAFFIC_STATUS	0x0697
+#define OID_802_11_GET_SCAN_RESULTS						0x0698
+#define OID_802_11_GET_RADIO_STATS_COUNT				0x0699
+#define OID_802_11_MBSS_STATISTICS						0x069a
+
+
+typedef struct _CURRENT_CHANNEL_STATS{
+ UINT32		SamplePeriod;
+ UINT32		FalseCCACount;
+ UINT32		ChannelApActivity;
+ UINT32		EdCcaBusyTime;
+ UINT32		ChannelBusyTime;
+} CURRENT_CHANNEL_STATISTICS, *PCURRENT_CHANNEL_STATISTICS;
+
+#ifdef MBSS_802_11_STATISTICS
+typedef struct __RT_MBSS_STAT_ENTRY{
+	// DATA counter
+	UINT32 RxCount;
+	UINT32 TxCount;
+	UINT32 ReceivedByteCount;
+	UINT32 TransmittedByteCount;
+	UINT32 RxErrorCount;
+	UINT32 RxDropCount;
+	UINT32 TxErrorCount;
+	UINT32 TxDropCount;
+	UINT32 UnicastPktsRx;
+	UINT32 UnicastPktsTx;
+	UINT32 MulticastPktsRx;
+	UINT32 MulticastPktsTx;
+	UINT32 BroadcastPktsRx;
+	UINT32 BroadcastPktsTx;
+	UINT32 TxRetriedPktCount;
+	UINT32 ChannelUseTime;
+	// MGMT counter
+	UINT32 MGMTRxCount;
+	UINT32 MGMTTxCount;
+	UINT32 MGMTReceivedByteCount;
+	UINT32 MGMTTransmittedByteCount;
+	UINT32 MGMTRxErrorCount;
+	UINT32 MGMTRxDropCount;
+	UINT32 MGMTTxErrorCount;
+	UINT32 MGMTTxDropCount;
+} RT_MBSS_STAT_ENTRY;
+
+typedef struct __RT_MBSS_STATISTICS_TABLE{
+	UINT32				Num;
+	RT_MBSS_STAT_ENTRY	MbssEntry[8];
+} RT_MBSS_STATISTICS_TABLE;
+
+typedef struct __RT_STA_STAT_ENTRY
+{
+	UCHAR ApIdx;
+	UCHAR Addr[MAC_ADDR_LEN];
+	UINT32 RxCount;
+	UINT32 TxCount;
+	UINT32 ReceivedByteCount;
+	UINT32 TransmittedByteCount;
+	UINT32 RxErrorCount;
+	UINT32 RxDropCount;
+	UINT32 TxErrorCount;
+	UINT32 TxDropCount;
+	UINT32 TxRetriedPktCount;
+	UINT32 ChannelUseTime;
+} RT_STA_STAT_ENTRY;
+
+typedef struct __RT_STA_STATISTICS_TABLE
+{
+	int					Num;
+	RT_STA_STAT_ENTRY	STAEntry[MAX_NUMBER_OF_MAC];
+} RT_STA_STATISTICS_TABLE;
+#endif
+
+typedef struct _BSS_ENTRY_TABLE
+{
+	UINT8	Bssid[MAC_ADDR_LEN];
+	UINT16	SsidLen;
+	UINT8	Ssid[33];
+	UINT8	Channel;
+	UINT8	ChannelWidth;
+	UINT8	ExtChannel;
+	CHAR	RSSI;
+	UINT8	SNR;
+	UINT8	PhyMode;
+	UINT8	NumSpatialStream;
+}BSS_ENTRY_TABLE, *PBSS_ENTRY_TABLE;
+
+typedef struct _BEACON_TABLE
+{
+	UINT8 Num;
+	BSS_ENTRY_TABLE BssTable[MAX_LEN_OF_BSS_TABLE];
+} BEACON_TABLE, *PBEACON_TABLE;
+
+typedef struct _SCAN_RESULTS
+{
+	UINT32	ch_busy_time;
+	UINT32	cca_err_cnt;
+	UINT32	num_ap;
+	BSS_ENTRY_TABLE BssTable[MAX_LEN_OF_BSS_TABLE];
+}SCAN_RESULTS, *PSCAN_RESULTS;
+#endif
+
 typedef enum _NDIS_802_11_STATUS_TYPE {
 	Ndis802_11StatusType_Authentication,
 	Ndis802_11StatusType_MediaStreamMode,
@@ -588,8 +720,36 @@ typedef struct _NDIS_AP_802_11_KEY {
 #endif /* CONFIG_AP_SUPPORT */
 
 #ifdef APCLI_SUPPORT
+#ifdef WPA_SUPPLICANT_SUPPORT
+typedef struct _NDIS_APCLI_802_11_KEY
+{
+    UINT           Length;             
+    UINT           KeyIndex;           
+    UINT           KeyLength;         
+    NDIS_802_11_MAC_ADDRESS BSSID;
+    NDIS_802_11_KEY_RSC KeyRSC;
+    UCHAR           KeyMaterial[1];     
+} NDIS_APCLI_802_11_KEY, *PNDIS_APCLI_802_11_KEY;
+#endif/* WPA_SUPPLICANT_SUPPORT */
 #endif /* APCLI_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+/* Key mapping keys require a BSSID */
+typedef struct _NDIS_802_11_KEY {
+	UINT Length;		/* Length of this structure */
+	UINT KeyIndex;
+	UINT KeyLength;		/* length of key in bytes */
+	NDIS_802_11_MAC_ADDRESS BSSID;
+	NDIS_802_11_KEY_RSC KeyRSC;
+	UCHAR KeyMaterial[1];	/* variable length depending on above field */
+} NDIS_802_11_KEY, *PNDIS_802_11_KEY;
+
+typedef struct _NDIS_802_11_PASSPHRASE {
+	UINT KeyLength;		/* length of key in bytes */
+	NDIS_802_11_MAC_ADDRESS BSSID;
+	UCHAR KeyMaterial[1];	/* variable length depending on above field */
+} NDIS_802_11_PASSPHRASE, *PNDIS_802_11_PASSPHRASE;
+#endif /* CONFIG_STA_SUPPORT */
 
 typedef struct _NDIS_802_11_REMOVE_KEY {
 	UINT Length;		/* Length of this structure */
@@ -802,9 +962,29 @@ typedef enum _NDIS_802_11_MEDIA_STREAM_MODE {
 /* PMKID Structures */
 typedef UCHAR NDIS_802_11_PMKID_VALUE[16];
 
+#if defined(CONFIG_STA_SUPPORT) || defined(WPA_SUPPLICANT_SUPPORT)
+typedef struct _BSSID_INFO {
+	NDIS_802_11_MAC_ADDRESS BSSID;
+	NDIS_802_11_PMKID_VALUE PMKID;
+} BSSID_INFO, *PBSSID_INFO;
+
+typedef struct _NDIS_802_11_PMKID {
+	UINT Length;
+	UINT BSSIDInfoCount;
+	BSSID_INFO BSSIDInfo[1];
+} NDIS_802_11_PMKID, *PNDIS_802_11_PMKID;
+#endif /* defined(CONFIG_STA_SUPPORT) || defined(WPA_SUPPLICANT_SUPPORT) */
 
 #ifdef CONFIG_AP_SUPPORT
 #ifdef APCLI_SUPPORT
+#ifdef WPA_SUPPLICANT_SUPPORT
+typedef struct _NDIS_APCLI_802_11_PMKID
+{
+    UINT    Length;
+    UINT    BSSIDInfoCount;
+    BSSID_INFO BSSIDInfo[1];
+} NDIS_APCLI_802_11_PMKID, *PNDIS_APCLI_802_11_PMKID;
+#endif/*WPA_SUPPLICANT_SUPPORT*/
 #endif /* APCLI_SUPPORT */
 
 typedef struct _AP_BSSID_INFO {
@@ -890,6 +1070,18 @@ typedef struct _NDIS_802_11_CAPABILITY {
 #define RT_OID_LED_WPS_MODE10						0x0739
 #endif /* WSC_LED_SUPPORT */
 #endif /* WSC_INCLUDED */
+#ifdef CONFIG_STA_SUPPORT
+#define RT_OID_WSC_SET_PASSPHRASE                   0x0740	/* passphrase for wpa(2)-psk */
+#define RT_OID_WSC_DRIVER_AUTO_CONNECT              0x0741
+#define RT_OID_WSC_QUERY_DEFAULT_PROFILE            0x0742
+#define RT_OID_WSC_SET_CONN_BY_PROFILE_INDEX        0x0743
+#define RT_OID_WSC_SET_ACTION                       0x0744
+#define RT_OID_WSC_SET_SSID                         0x0745
+#define RT_OID_WSC_SET_PIN_CODE                     0x0746
+#define RT_OID_WSC_SET_MODE                         0x0747	/* PIN or PBC */
+#define RT_OID_WSC_SET_CONF_MODE                    0x0748	/* Enrollee or Registrar */
+#define RT_OID_WSC_SET_PROFILE                      0x0749
+#endif /* CONFIG_STA_SUPPORT */
 #ifdef CONFIG_AP_SUPPORT
 #ifdef APCLI_SUPPORT
 #define RT_OID_APCLI_WSC_PIN_CODE					0x074A
@@ -934,6 +1126,21 @@ typedef struct _NDIS_802_11_CAPABILITY {
 #endif /* CON_WPS */
 
 
+#ifdef DOT11R_FT_SUPPORT
+#define OID_802_11R_SUPPORT							0x0780
+#define OID_802_11R_MDID							0x0781
+#define OID_802_11R_R0KHID							0x0782
+#define OID_802_11R_RIC								0x0783
+#define OID_802_11R_OTD								0x0784
+#define OID_802_11R_INFO							0x0785
+
+#define	RT_OID_802_11R_SUPPORT					  	(OID_GET_SET_TOGGLE | OID_802_11R_SUPPORT)
+#define RT_OID_802_11R_MDID							(OID_GET_SET_TOGGLE | OID_802_11R_MDID)
+#define RT_OID_802_11R_R0KHID						(OID_GET_SET_TOGGLE | OID_802_11R_R0KHID)
+#define	RT_OID_802_11R_RIC					  		(OID_GET_SET_TOGGLE | OID_802_11R_RIC)
+#define RT_OID_802_11R_OTD							(OID_GET_SET_TOGGLE | OID_802_11R_OTD)
+#define RT_OID_802_11R_INFO							(OID_GET_SET_TOGGLE | OID_802_11R_INFO)
+#endif /* DOT11R_FT_SUPPORT */
 
 
 /* New for MeetingHouse Api support */
@@ -1047,6 +1254,18 @@ typedef struct _RT_802_11_EVENT_TABLE {
 
 /* MIMO Tx parameter, ShortGI, MCS, STBC, etc.  these are fields in TXWI. Don't change this definition!!! */
 typedef union _MACHTTRANSMIT_SETTING {
+#ifdef RT_BIG_ENDIAN
+	struct {
+		USHORT MODE:3;	/* Use definition MODE_xxx. */
+		USHORT iTxBF:1;
+		USHORT eTxBF:1;
+		USHORT STBC:1;	/* only support in HT/VHT mode with MCS0~7 */
+		USHORT ShortGI:1;
+		USHORT BW:2;	/* channel bandwidth 20MHz/40/80 MHz */
+		USHORT ldpc:1;
+		USHORT MCS:6;	/* MCS */
+	} field;
+#else
 	struct {
 		USHORT MCS:6;
 		USHORT ldpc:1;
@@ -1057,6 +1276,7 @@ typedef union _MACHTTRANSMIT_SETTING {
 		USHORT iTxBF:1;
 		USHORT MODE:3;
 	} field;
+#endif
 	USHORT word;
 } MACHTTRANSMIT_SETTING, *PMACHTTRANSMIT_SETTING;
 
@@ -1215,6 +1435,41 @@ typedef struct _RT_LLTD_ASSOICATION_TABLE {
 } RT_LLTD_ASSOICATION_TABLE, *PRT_LLTD_ASSOICATION_TABLE;
 #endif /* LLTD_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef QOS_DLS_SUPPORT
+/*rt2860, 2007-0118 */
+/* structure for DLS */
+typedef struct _RT_802_11_DLS_UI {
+	USHORT TimeOut;		/* unit: second , set by UI */
+	USHORT CountDownTimer;	/* unit: second , used by driver only */
+	NDIS_802_11_MAC_ADDRESS MacAddr;	/* set by UI */
+	UCHAR Status;		/* 0: none , 1: wait STAkey, 2: finish DLS setup , set by driver only */
+	BOOLEAN Valid;		/* 1: valid , 0: invalid , set by UI, use to setup or tear down DLS link */
+} RT_802_11_DLS_UI, *PRT_802_11_DLS_UI;
+
+typedef struct _RT_802_11_DLS_INFO {
+	RT_802_11_DLS_UI Entry[MAX_NUMBER_OF_DLS_ENTRY];
+	UCHAR num;
+} RT_802_11_DLS_INFO, *PRT_802_11_DLS_INFO;
+
+typedef enum _RT_802_11_DLS_MODE {
+	DLS_NONE,
+	DLS_WAIT_KEY,
+	DLS_FINISH
+} RT_802_11_DLS_MODE;
+#endif /* QOS_DLS_SUPPORT */
+
+#ifdef DOT11Z_TDLS_SUPPORT
+typedef struct _RT_802_11_TDLS_UI {
+	USHORT TimeOut;		/* unit: second , set by UI */
+	USHORT CountDownTimer;	/* unit: second , used by driver only */
+	NDIS_802_11_MAC_ADDRESS MacAddr;	/* set by UI */
+	UCHAR Status;		/* 0: none , 1: wait STAkey, 2: finish DLS setup , set by driver only */
+	BOOLEAN Valid;		/* 1: valid , 0: invalid , set by UI, use to setup or tear down DLS link */
+} RT_802_11_TDLS_UI, *PRT_802_11_TDLS_UI;
+#endif /* DOT11Z_TDLS_SUPPORT */
+
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef WSC_INCLUDED
 #define RT_WSC_UPNP_EVENT_FLAG		0x109
@@ -1224,12 +1479,22 @@ typedef struct _RT_LLTD_ASSOICATION_TABLE {
 
 /*#define MAX_CUSTOM_LEN 128 */
 
+#ifdef CONFIG_STA_SUPPORT
+typedef enum _RT_802_11_D_CLIENT_MODE {
+	Rt802_11_D_None,
+	Rt802_11_D_Flexible,
+	Rt802_11_D_Strict,
+} RT_802_11_D_CLIENT_MODE, *PRT_802_11_D_CLIENT_MODE;
+#endif /* CONFIG_STA_SUPPORT */
 
 typedef struct _RT_CHANNEL_LIST_INFO {
 	UCHAR ChannelList[MAX_NUM_OF_CHS];	/* list all supported channels for site survey */
 	UCHAR ChannelListNum;	/* number of channel in ChannelList[] */
 } RT_CHANNEL_LIST_INFO, *PRT_CHANNEL_LIST_INFO;
 
+#ifdef IWSC_SUPPORT
+#define IWSC_MAX_SUB_MASK_LIST_COUNT	3
+#endif /* IWSC_SUPPORT */
 
 /* WSC configured credential */
 typedef struct _WSC_CREDENTIAL {
@@ -1242,6 +1507,13 @@ typedef struct _WSC_CREDENTIAL {
 	UCHAR KeyIndex;		/* optional, default is 1 */
 	UCHAR bFromUPnP;	/* TRUE: This credential is from external UPnP registrar */
 	UCHAR Rsvd[2];		/* Make alignment */
+#ifdef IWSC_SUPPORT
+	USHORT				IpConfigMethod;
+	UINT32				RegIpv4Addr;
+	UINT32				Ipv4SubMask;
+	UINT32				EnrIpv4Addr;
+	UINT32				AvaIpv4SubmaskList[IWSC_MAX_SUB_MASK_LIST_COUNT];
+#endif /* IWSC_SUPPORT */
 } WSC_CREDENTIAL, *PWSC_CREDENTIAL;
 
 /* WSC configured profiles */
@@ -1283,15 +1555,40 @@ typedef struct _WAPI_WIE_STRUCT {
 
 #endif /* WAPI_SUPPORT */
 
+#ifdef DOT11R_FT_SUPPORT
+typedef struct _FT_CONFIG_INFO {
+	UCHAR MdId[2];
+	UCHAR R0KHId[49];
+	UCHAR R0KHIdLen;
+	BOOLEAN FtSupport;
+	BOOLEAN FtRicSupport;
+	BOOLEAN FtOtdSupport;
+} FT_CONFIG_INFO, *PFT_CONFIG_INFO;
+#endif /* DOT11R_FT_SUPPORT */
 
 
 #ifdef APCLI_SUPPORT
+#ifdef WPA_SUPPLICANT_SUPPORT
+#define	RT_ASSOC_EVENT_FLAG                         0x0101
+#define	RT_DISASSOC_EVENT_FLAG                      0x0102
+#define	RT_REQIE_EVENT_FLAG                         0x0103
+#define	RT_RESPIE_EVENT_FLAG                        0x0104
+#define	RT_ASSOCINFO_EVENT_FLAG                     0x0105
+#define RT_PMKIDCAND_FLAG                           0x0106
+#define RT_INTERFACE_DOWN                           0x0107
+#define RT_INTERFACE_UP                             0x0108
+#endif /* WPA_SUPPLICANT_SUPPORT */
 #endif /* APCLI_SUPPORT */
 
 
 
 
 
+#ifdef IWSC_SUPPORT
+#define RT_OID_IWSC_SELF_IPV4				0x0900
+#define RT_OID_IWSC_REGISTRAR_IPV4			0x0901
+#define RT_OID_IWSC_SMPBC_ENROLLEE_COUNT	0x0902
+#endif // IWSC_SUPPORT //
 
 enum {
 	OID_WIFI_TEST_BBP = 0x1000,
@@ -1425,11 +1722,26 @@ struct proxy_arp_entry {
 	UINT32 ifindex;
 	UCHAR ip_type;
 	UCHAR from_ds;
+	UCHAR IsDAD;
 	UCHAR source_mac_addr[6];
 	UCHAR target_mac_addr[6];
 	UCHAR ip_addr[0];
 };
 
+struct wnm_req_data {
+	UINT32 ifindex;
+	UCHAR peer_mac_addr[6];
+	UINT32 type;
+	UINT32 wnm_req_len;
+	UCHAR wnm_req[0];
+};
+
+struct qosmap_data {
+	UINT32 ifindex;
+	UCHAR peer_mac_addr[6];
+	UINT32 qosmap_len;
+	UCHAR qosmap[0];
+};
 
 struct security_type {
 	u32 ifindex;
@@ -1454,4 +1766,12 @@ struct security_type {
 #define OID_802_11_HS_RESET_RESOURCE            0x093f
 #define OID_802_11_HS_AP_RELOAD                 0x0940
 #define OID_802_11_HS_BSSID                     0x0941
+#define OID_802_11_HS_OSU_SSID                  0x0942
+//#define OID_802_11_HS_OSU_NONTX               0x0944
+#define OID_802_11_HS_SASN_ENABLE               0x0943
+#define OID_802_11_WNM_NOTIFY_REQ               0x0944
+#define OID_802_11_QOSMAP_CONFIGURE             0x0945
+#define OID_802_11_GET_STA_HSINFO             	0x0946
+#define OID_802_11_BSS_LOAD			           	0x0947
+
 #endif /* _OID_H_ */

@@ -512,8 +512,9 @@ enum RXWI_FRQ_OFFSET_FIELD {
 typedef union _EEPROM_ANTENNA_STRUC {
 	struct {
 		USHORT RssiIndicationMode:1; 	/* RSSI indication mode */
+		USHORT Rsv:1;
 		USHORT BoardType:2; 		/* 0: mini card; 1: USB pen */
-		USHORT RfIcType:5;			/* see E2PROM document */
+		USHORT RfIcType:4;			/* see E2PROM document */
 		USHORT TxPath:4;			/* 1: 1T, 2: 2T, 3: 3T */
 		USHORT RxPath:4;			/* 1: 1R, 2: 2R, 3: 3R */
 	} field;
@@ -524,8 +525,9 @@ typedef union _EEPROM_ANTENNA_STRUC {
 	struct {
 		USHORT RxPath:4;			/* 1: 1R, 2: 2R, 3: 3R */
 		USHORT TxPath:4;			/* 1: 1T, 2: 2T, 3: 3T */
-		USHORT RfIcType:5;			/* see E2PROM document */
+		USHORT RfIcType:4;			/* see E2PROM document */
 		USHORT BoardType:2; 		/* 0: mini card; 1: USB pen */
+		USHORT Rsv:1;
 		USHORT RssiIndicationMode:1; 	/* RSSI indication mode */	
 	} field;
 	USHORT word;
@@ -649,6 +651,10 @@ struct _RTMP_CHIP_CAP_ {
 	UCHAR ba_max_cnt;
 
 #ifdef RTMP_MAC_PCI
+#ifdef CONFIG_STA_SUPPORT
+	BOOLEAN HW_PCIE_PS_SUPPORT;
+	BOOLEAN HW_PCIE_PS_L3_ENABLE;
+#endif /* CONFIG_STA_SUPPORT */
 #endif /* RTMP_MAC_PCI */
 
 	enum ASIC_CAP asic_caps;
@@ -780,6 +786,8 @@ struct _RTMP_CHIP_CAP_ {
 	UINT8	FlgPMFEncrtptMode;
 #endif /* DOT11W_PMF_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef RT5592EP_SUPPORT
 	UINT32 Priv; /* Flag for RT5592 EP */
@@ -1058,6 +1066,15 @@ struct _RTMP_CHIP_OP_ {
 	/* EDCCA */
 	VOID (*ChipSetEDCCA)(struct _RTMP_ADAPTER *pAd, BOOLEAN bOn);
 
+#ifdef RLT_MAC
+	/* SkuTxPwrAdj */
+	INT32 (*SkuTxPwrAdj)(struct _RTMP_ADAPTER *pAd,struct _TXWI_NMAC *txwi_n);
+#endif /*RLT_MAC*/
+
+#ifdef RLT_MAC
+	INT32 (*TxPwrBoost)(struct _RTMP_ADAPTER *pAd,struct _TXWI_NMAC *txwi_n);
+#endif /*RLT_MAC*/
+
 	/* IQ Calibration */
 	VOID (*ChipIQCalibration)(struct _RTMP_ADAPTER *pAd, UCHAR Channel);
 
@@ -1149,6 +1166,7 @@ struct _RTMP_CHIP_OP_ {
 
 #ifdef DYNAMIC_VGA_SUPPORT
 	VOID (*AsicDynamicVgaGainControl)(IN struct _RTMP_ADAPTER *pAd);
+	VOID (*UpdateRssiForDynamicVga)(IN struct _RTMP_ADAPTER *pAd);
 #endif /* DYNAMIC_VGA_SUPPORT */
 
 #if (defined(WOW_SUPPORT) && defined(RTMP_MAC_USB)) || defined(NEW_WOW_SUPPORT)
@@ -1335,6 +1353,19 @@ do {	\
 			__pAd->chipOps.ChipSetEDCCA(__pAd, __bOn);	\
 } while (0)
 
+#define RTMP_CHIP_ASIC_SKU_TX_POWER_ADJUST(__pAd, __pTxWI)			\
+do {	\
+		if (__pAd->chipOps.SkuTxPwrAdj != NULL)						\
+			__pTxWI->TxPwrAdj += __pAd->chipOps.SkuTxPwrAdj(__pAd, __pTxWI);	\
+} while (0)
+
+#define RTMP_CHIP_ASIC_TX_POWER_BOOST(__pAd, __pTxWI)			\
+do {	\
+		if (__pAd->chipOps.TxPwrBoost != NULL) 					\
+			__pTxWI->TxPwrAdj += __pAd->chipOps.TxPwrBoost(__pAd, __pTxWI); \
+} while (0)
+
+		
 #define RTMP_CHIP_ASIC_TEMPERATURE_COMPENSATION(__pAd)						\
 do {	\
 		if (__pAd->chipOps.TemperCompensation != NULL)					\
@@ -1535,6 +1566,13 @@ do {	\
 			if (_pAd->chipOps.AsicDynamicVgaGainControl != NULL)	\
 				_pAd->chipOps.AsicDynamicVgaGainControl(_pAd);	\
 		} while (0)
+		
+#define RTMP_UPDATE_RSSI_FOR_DYNAMIC_VGA(_pAd)	\
+		do {	\
+			if (_pAd->chipOps.UpdateRssiForDynamicVga != NULL)	\
+				_pAd->chipOps.UpdateRssiForDynamicVga(_pAd);	\
+		} while (0)
+
 #endif /* DYNAMIC_VGA_SUPPORT */
 
 int RtmpChipOpsHook(VOID *pCB);

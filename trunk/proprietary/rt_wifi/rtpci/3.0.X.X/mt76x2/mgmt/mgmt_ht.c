@@ -434,6 +434,23 @@ VOID RTMPSetHT(
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+
+#ifdef RT_CFG80211_P2P_SUPPORT
+		for (apidx = 0; apidx < pAd->ApCfg.BssidNum; apidx++)
+			RTMPSetIndividualHT(pAd, apidx + MIN_NET_DEVICE_FOR_CFG80211_VIF_P2P_GO);
+
+#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
+                for (apidx = 0; apidx < MAX_APCLI_NUM; apidx++)
+                        RTMPSetIndividualHT(pAd, apidx + MIN_NET_DEVICE_FOR_APCLI);
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */		
+#endif /* RT_CFG80211_P2P_SUPPORT */
+
+		RTMPSetIndividualHT(pAd, 0);
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 }
 
@@ -546,6 +563,17 @@ VOID RTMPSetIndividualHT(RTMP_ADAPTER *pAd, UCHAR apidx)
 		}			
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			wdev = &pAd->StaCfg.wdev;
+			
+			pDesired_ht_phy = &wdev->DesiredHtPhyInfo;					
+			DesiredMcs = wdev->DesiredTransmitSetting.field.MCS;
+			encrypt_mode = wdev->WepStatus;
+			break;
+		}	
+#endif /* CONFIG_STA_SUPPORT */
 	} while (FALSE);
 
 	if (pDesired_ht_phy == NULL)
@@ -569,12 +597,20 @@ VOID RTMPSetIndividualHT(RTMP_ADAPTER *pAd, UCHAR apidx)
 		DesiredMcs = MCS_0;		
 	}
 	   		
+#ifdef CONFIG_STA_SUPPORT
+	if ((pAd->OpMode == OPMODE_STA) && (pAd->StaCfg.BssType == BSS_INFRA) && (apidx == MIN_NET_DEVICE_FOR_MBSSID))
+		;
+	else
+#endif /* CONFIG_STA_SUPPORT */
 	/*
 		WFA recommend to restrict the encryption type in 11n-HT mode.
 	 	So, the WEP and TKIP are not allowed in HT rate. 
 	*/
 	if (pAd->CommonCfg.HT_DisallowTKIP && IS_INVALID_HT_SECURITY(encrypt_mode))
 	{
+#ifdef CONFIG_STA_SUPPORT
+		pAd->StaCfg.bAdhocN = FALSE;
+#endif /* CONFIG_STA_SUPPORT */
 		DBGPRINT(RT_DEBUG_WARN, ("%s : Use legacy rate in WEP/TKIP encryption mode (apidx=%d)\n", 
 									__FUNCTION__, apidx));
 		return;
@@ -582,6 +618,9 @@ VOID RTMPSetIndividualHT(RTMP_ADAPTER *pAd, UCHAR apidx)
 
 	if (pAd->CommonCfg.HT_Disable)
 	{
+#ifdef CONFIG_STA_SUPPORT
+		pAd->StaCfg.bAdhocN = FALSE;
+#endif /* CONFIG_STA_SUPPORT */
 		DBGPRINT(RT_DEBUG_TRACE, ("%s : HT is disabled\n", __FUNCTION__));
 		return;
 	}
@@ -693,6 +732,12 @@ VOID RTMPDisableDesiredHtInfo(RTMP_ADAPTER *pAd)
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		RTMPZeroMemory(&pAd->StaCfg.wdev.DesiredHtPhyInfo, sizeof(RT_PHY_INFO));
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 }
 

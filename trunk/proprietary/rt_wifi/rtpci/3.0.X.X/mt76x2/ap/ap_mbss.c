@@ -81,9 +81,9 @@ VOID MBSS_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 	/* sanity check to avoid redundant virtual interfaces are created */
 	if (!pAd->FlgMbssInit)
 	{
-		/* first IdBss must not be 0 (BSS0), must be 1 (BSS1) */
-		for(IdBss=FIRST_MBSSID; IdBss<MAX_MBSSID_NUM(pAd); IdBss++)
-			pAd->ApCfg.MBSSID[IdBss].wdev.if_dev = NULL;
+	/* first IdBss must not be 0 (BSS0), must be 1 (BSS1) */
+	for(IdBss=FIRST_MBSSID; IdBss<MAX_MBSSID_NUM(pAd); IdBss++)
+		pAd->ApCfg.MBSSID[IdBss].wdev.if_dev = NULL;
 	}
 
 	/* create virtual network interface */

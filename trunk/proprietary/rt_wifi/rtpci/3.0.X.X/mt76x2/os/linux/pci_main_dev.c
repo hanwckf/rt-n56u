@@ -335,6 +335,16 @@ static int DEVINIT rt_pci_probe(struct pci_dev *pdev, const struct pci_device_id
 	net_dev->base_addr = csr_addr;		/* Save CSR virtual address and irq to device structure */
 	pci_set_drvdata(pdev, net_dev);	/* Set driver data */
 	
+#ifdef NATIVE_WPA_SUPPLICANT_SUPPORT
+/* for supporting Network Manager */
+	/*
+		Set the sysfs physical device reference for the network logical device
+		if set prior to registration will cause a symlink during initialization.
+	*/
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0))
+	SET_NETDEV_DEV(net_dev, &(pdev->dev));
+#endif
+#endif /* NATIVE_WPA_SUPPLICANT_SUPPORT */
 
 /*All done, it's time to register the net device to linux kernel. */
 	/* Register this device */
@@ -359,6 +369,10 @@ static int DEVINIT rt_pci_probe(struct pci_dev *pdev, const struct pci_device_id
 	if (rv)
 		goto err_out_free_netdev;
 
+#ifdef CONFIG_STA_SUPPORT
+/*	pAd->StaCfg.OriDevType = net_dev->type; */
+	RTMP_DRIVER_STA_DEV_TYPE_SET(pAd, net_dev->type);
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef PRE_ASSIGN_MAC_ADDR
 {
@@ -454,18 +468,18 @@ static VOID DEVEXIT rt_pci_remove(struct pci_dev *pci_dev)
 */
 static struct pci_driver rt_pci_driver =
 {
-	name:		RTMP_DRV_NAME,
-	id_table:	rt_pci_tbl,
-	probe:		rt_pci_probe,
+	name: RTMP_DRV_NAME,
+	id_table: rt_pci_tbl,
+	probe: rt_pci_probe,
 #if LINUX_VERSION_CODE >= 0x20412
-	remove:		DEVEXIT_P(rt_pci_remove),
+	remove: DEVEXIT_P(rt_pci_remove),
 #else
-	remove:		__devexit(rt_pci_remove),
+	remove: __devexit(rt_pci_remove),
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,0)
 #ifdef CONFIG_PM
 	suspend:	rt_pci_suspend,
-	resume:		rt_pci_resume,
+	resume: rt_pci_resume,
 #endif
 #endif
 };
@@ -485,11 +499,20 @@ int __init rt_pci_init_module(void)
 #endif
 }
 
+
 void __exit rt_pci_cleanup_module(void)
 {
 	pci_unregister_driver(&rt_pci_driver);
 }
 
+#ifndef MULTI_INF_SUPPORT
 module_init(rt_pci_init_module);
 module_exit(rt_pci_cleanup_module);
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef MODULE_VERSION
+MODULE_VERSION(STA_DRIVER_VERSION);
+#endif
+#endif /* CONFIG_STA_SUPPORT */
+
+#endif /* MULTI_INF_SUPPORT */

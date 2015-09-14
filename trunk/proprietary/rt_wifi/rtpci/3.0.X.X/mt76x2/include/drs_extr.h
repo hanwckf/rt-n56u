@@ -316,6 +316,23 @@ INT Show_AGS_Proc(
     IN  PRTMP_ADAPTER	pAd, 
     IN  PSTRING			arg);
 
+#ifdef CONFIG_STA_SUPPORT
+VOID MlmeDynamicTxRateSwitchingAGS(
+	IN PRTMP_ADAPTER pAd, 
+	IN PMAC_TABLE_ENTRY pEntry, 
+	IN PUCHAR pTable, 
+	IN UCHAR TableSize, 
+	IN PAGS_STATISTICS_INFO pAGSStatisticsInfo,
+	IN UCHAR InitTxRateIdx);
+
+VOID StaQuickResponeForRateUpExecAGS(
+	IN PRTMP_ADAPTER pAd, 
+	IN PMAC_TABLE_ENTRY pEntry, 
+	IN PUCHAR pTable, 
+	IN UCHAR TableSize, 
+	IN PAGS_STATISTICS_INFO pAGSStatisticsInfo,
+	IN UCHAR InitTxRateIdx);
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
 VOID ApMlmeDynamicTxRateSwitchingAGS(
@@ -333,6 +350,19 @@ VOID APMlmeDynamicTxRateSwitchingAdapt(struct _RTMP_ADAPTER *pAd, UINT idx);
 VOID APQuickResponeForRateUpExecAdapt(struct _RTMP_ADAPTER *pAd, UINT idx);
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+VOID StaQuickResponeForRateUpExecAdapt(
+	IN struct _RTMP_ADAPTER *pAd,
+	IN ULONG i,
+	IN CHAR Rssi);
+
+VOID MlmeDynamicTxRateSwitchingAdapt(
+	IN struct _RTMP_ADAPTER *pAd,
+	IN ULONG i,
+	IN ULONG TxSuccess,
+	IN ULONG TxRetransmit,
+	IN ULONG TxFailCount);
+#endif /* CONFIG_STA_SUPPORT */
 #endif /* NEW_RATE_ADAPT_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
@@ -351,6 +381,21 @@ VOID APMlmeSetTxRate(
 	IN RTMP_RA_LEGACY_TB *pTxRate);
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+VOID MlmeDynamicTxRateSwitching(
+	IN struct _RTMP_ADAPTER *pAd);
+
+VOID StaQuickResponeForRateUpExec(
+	IN PVOID SystemSpecific1, 
+	IN PVOID FunctionContext, 
+	IN PVOID SystemSpecific2, 
+	IN PVOID SystemSpecific3);
+
+VOID MlmeSetTxRate(
+	IN struct _RTMP_ADAPTER *pAd,
+	IN struct _MAC_TABLE_ENTRY *pEntry,
+	IN RTMP_RA_LEGACY_TB *pTxRate);
+#endif /* CONFIG_STA_SUPPORT */
 
 VOID MlmeRAInit(struct _RTMP_ADAPTER *pAd, struct _MAC_TABLE_ENTRY *pEntry);
 VOID MlmeNewTxRate(struct _RTMP_ADAPTER *pAd, struct _MAC_TABLE_ENTRY *pEntry);

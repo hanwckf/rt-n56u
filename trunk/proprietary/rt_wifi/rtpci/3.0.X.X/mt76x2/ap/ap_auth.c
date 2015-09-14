@@ -26,6 +26,9 @@
  */
 
 #include "rt_config.h"
+#ifdef DOT11R_FT_SUPPORT
+#include "ft.h"
+#endif /* DOT11R_FT_SUPPORT */
 
 static VOID APMlmeDeauthReqAction(
     IN PRTMP_ADAPTER pAd, 
@@ -171,6 +174,25 @@ static VOID APPeerDeauthReqAction(
 	if (Elem->Wcid < MAX_LEN_OF_MAC_TABLE)
     {
 		pEntry = &pAd->MacTab.Content[Elem->Wcid];
+		//JERRY
+		{
+			MULTISSID_STRUCT *pMbss = &pAd->ApCfg.MBSSID[pEntry->apidx];
+			PFRAME_802_11 Fr = (PFRAME_802_11)Elem->Msg;
+			unsigned char *tmp = (unsigned char *)pMbss->wdev.bssid;
+			unsigned char *tmp2 = (unsigned char *)&Fr->Hdr.Addr1;
+			if (memcmp(&Fr->Hdr.Addr1, pMbss->wdev.bssid, 6) != 0)
+			{
+				DBGPRINT(RT_DEBUG_TRACE, ("da not match bssid,bssid:0x%02x%02x%02x%02x%02x%02x, addr1:0x%02x%02x%02x%02x%02x%02x\n",
+					*tmp, *(tmp+1), *(tmp+2), *(tmp+3), *(tmp+4), *(tmp+5),
+					*tmp2, *(tmp2+1), *(tmp2+2), *(tmp2+3), *(tmp2+4), *(tmp2+5)));
+				return;
+			}
+			else
+			{
+				DBGPRINT(RT_DEBUG_TRACE, ("da match,0x%02x%02x%02x%02x%02x%02x\n",
+					*tmp, *(tmp+1), *(tmp+2), *(tmp+3), *(tmp+4), *(tmp+5)));
+			}
+		}
 
 #ifdef DOT1X_SUPPORT    
 		/* Notify 802.1x daemon to clear this sta info */
@@ -224,7 +246,7 @@ static VOID APPeerDeauthReqAction(
 				BASessionTearDownALL(pAd, pReptEntry->MacTabWCID);
 #endif /* DOT11_N_SUPPORT */
 				RTMPRemoveRepeaterDisconnectEntry(pAd, apCliIdx, CliIdx);
-						RTMPRemoveRepeaterEntry(pAd, apCliIdx, CliIdx);
+				RTMPRemoveRepeaterEntry(pAd, apCliIdx, CliIdx);
 			}
 		}
 #endif /* MAC_REPEATER_SUPPORT */
@@ -250,16 +272,24 @@ static VOID APPeerAuthReqAtIdleAction(
 	ULONG FrameLen = 0;
 	MAC_TABLE_ENTRY *pEntry;
 	UCHAR ChTxtIe = 16, ChTxtLen = CIPHER_TEXT_LEN;
+#ifdef DOT11R_FT_SUPPORT
+	PFT_CFG pFtCfg;
+	FT_INFO FtInfo;
+	PFT_INFO pFtInfoBuf;
+#endif /* DOT11R_FT_SUPPORT */
 	MULTISSID_STRUCT *pMbss;
 	struct wifi_dev *wdev;
 	CHAR rssi;
 #ifdef BAND_STEERING
-	BOOLEAN bAuthCheck = TRUE;
+	BOOLEAN bBndStrgCheck = TRUE;
 #endif /* BAND_STEERING */
 
 
 	if (! APPeerAuthSanity(pAd, Elem->Msg, Elem->MsgLen, Addr1,
 							Addr2, &Alg, &Seq, &Status, Chtxt
+#ifdef DOT11R_FT_SUPPORT
+							,&FtInfo
+#endif /* DOT11R_FT_SUPPORT */
 		))
 		return;
     
@@ -375,6 +405,42 @@ SendAuth:
 		return;
     }
 
+#ifdef DOT11R_FT_SUPPORT
+	pFtCfg = &pMbss->FtCfg;
+	if ((pFtCfg->FtCapFlag.Dot11rFtEnable)
+		&& (Alg == AUTH_MODE_FT))
+	{
+		USHORT result;
+
+		if (!pEntry)
+			pEntry = MacTableInsertEntry(pAd, Addr2, wdev, apidx, OPMODE_AP, TRUE);
+		
+		if (pEntry != NULL)
+		{
+		    os_alloc_mem(pAd, (UCHAR **)&pFtInfoBuf, sizeof(FT_INFO));
+
+            if (pFtInfoBuf)
+            {
+    			result = FT_AuthReqHandler(pAd, pEntry, &FtInfo, pFtInfoBuf);
+    			if (result == MLME_SUCCESS)
+    			{
+    				NdisMoveMemory(&pEntry->MdIeInfo, &FtInfo.MdIeInfo, sizeof(FT_MDIE_INFO));
+
+    				pEntry->AuthState = AS_AUTH_OPEN;
+    				pEntry->Sst = SST_AUTH;
+    			}
+
+    			FT_EnqueueAuthReply(pAd, pRcvHdr, Alg, 2, result,
+    						&pFtInfoBuf->MdIeInfo, &pFtInfoBuf->FtIeInfo, NULL,
+    						pFtInfoBuf->RSN_IE, pFtInfoBuf->RSNIE_Len);
+
+                os_free_mem(NULL, pFtInfoBuf);
+            }
+		}
+		return;
+	}
+	else
+#endif /* DOT11R_FT_SUPPORT */
 #ifdef BAND_STEERING
 	BND_STRG_CHECK_CONNECTION_REQ(	pAd,
 										NULL, 
@@ -383,8 +449,8 @@ SendAuth:
 										Elem->Rssi0,
 										Elem->Rssi1,
 										Elem->Rssi2,
-										&bAuthCheck);
-	if (bAuthCheck == FALSE)
+										&bBndStrgCheck);
+	if (bBndStrgCheck == FALSE)
 		return;
 #endif /* BAND_STEERING */
 
@@ -482,11 +548,19 @@ static VOID APPeerAuthConfirmAction(
 	UCHAR			Addr1[MAC_ADDR_LEN];
 	UINT32			apidx;
 
+#ifdef DOT11R_FT_SUPPORT
+	PFT_CFG pFtCfg;
+	FT_INFO FtInfo;
+	PFT_INFO pFtInfoBuf;
+#endif /* DOT11R_FT_SUPPORT */
 
 
 
 	if (! APPeerAuthSanity(pAd, Elem->Msg, Elem->MsgLen, Addr1,
 							Addr2, &Alg, &Seq, &Status, Chtxt
+#ifdef DOT11R_FT_SUPPORT
+							,&FtInfo
+#endif /* DOT11R_FT_SUPPORT */
 		)) 
 		return;
 
@@ -545,6 +619,34 @@ static VOID APPeerAuthConfirmAction(
 
 	if (pEntry && MAC_ADDR_EQUAL(Addr2, pAd->ApMlmeAux.Addr)) 
 	{
+#ifdef DOT11R_FT_SUPPORT
+		pFtCfg = &pAd->ApCfg.MBSSID[apidx].FtCfg;
+		if ((pFtCfg->FtCapFlag.Dot11rFtEnable) && (Alg == AUTH_MODE_FT))
+		{
+			USHORT result;
+
+            os_alloc_mem(pAd, (UCHAR **)&pFtInfoBuf, sizeof(FT_INFO));
+            if (pFtInfoBuf)
+            {
+                NdisZeroMemory(pFtInfoBuf, sizeof(FT_INFO));
+                os_alloc_mem(pAd, (UCHAR **)&(pFtInfoBuf->RicInfo.pRicInfo), 512);
+                if (pFtInfoBuf->RicInfo.pRicInfo != NULL)
+                {
+                    result = FT_AuthConfirmHandler(pAd, pEntry, &FtInfo,	pFtInfoBuf);
+    				FT_EnqueueAuthReply(pAd, pRcvHdr, Alg, 4, result,
+    					&pFtInfoBuf->MdIeInfo, &pFtInfoBuf->FtIeInfo,
+    					&pFtInfoBuf->RicInfo, pFtInfoBuf->RSN_IE, pFtInfoBuf->RSNIE_Len);
+    				os_free_mem(NULL, pFtInfoBuf->RicInfo.pRicInfo);
+                }
+                os_free_mem(NULL, pFtInfoBuf);
+			}
+			else
+			{
+				return;
+			}
+		}
+		else
+#endif /* DOT11R_FT_SUPPORT */
 		if ((pRcvHdr->FC.Wep == 1) &&
 			NdisEqualMemory(Chtxt, pAd->ApMlmeAux.Challenge, CIPHER_TEXT_LEN)) 
 		{
@@ -616,12 +718,13 @@ VOID APCls2errAction(
 	}
 	else
 	{
-		apidx = get_apidx_by_addr(pAd, pHeader->Addr1);
+
+		apidx = get_apidx_by_addr(pAd, pHeader->Addr1);		
 		if (apidx >= pAd->ApCfg.BssidNum)
 		{
 			DBGPRINT(RT_DEBUG_TRACE,("AUTH - Class 2 error but not my bssid %02x:%02x:%02x:%02x:%02x:%02x\n", PRINT_MAC(pHeader->Addr1))); 
 			return;
-		}
+		}	
 	}
 
 	/* send out DEAUTH frame */

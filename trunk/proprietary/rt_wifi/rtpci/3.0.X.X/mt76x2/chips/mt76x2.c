@@ -11,7 +11,7 @@ static RTMP_REG_PAIR mt76x2_mac_cr_table[] = {
 	{RLT_PBF_CFG, 0x1efebcff},
 	{FCE_PSE_CTRL, 0x1},
 	{MAC_SYS_CTRL, 0x0C},
-	{MAX_LEN_CFG, 0x003E3FFF},
+	{MAX_LEN_CFG, MAX_AGGREGATION_SIZE | 0x003E3000},
 	{AMPDU_MAX_LEN_20M1S_MCS0_7, 0xAAA99887},
 	{AMPDU_MAX_LEN_20M1S_MCS8_9, 0xAA},
 	{XIFS_TIME_CFG, 0x33A40D0A},
@@ -22,7 +22,7 @@ static RTMP_REG_PAIR mt76x2_mac_cr_table[] = {
 	{TX_SW_CFG0, 0x00101001},
 	{TX_SW_CFG1, 0x00010000},
 	{TX_SW_CFG2, 0x0},
-	{TXOP_CTRL_CFG, 0x0000583F},
+	{TXOP_CTRL_CFG, 0x0400583F},
 	{TX_RTS_CFG, 0x00092B20},
 	{TX_TIMEOUT_CFG, 0x000A2290},
 	{TX_RTY_CFG, 0x47D01F0F},
@@ -994,20 +994,21 @@ static void mt76x2_switch_channel(RTMP_ADAPTER *ad, u8 channel, BOOLEAN scan)
 	/* Change MAC OFDM SIFS according to BW */
 	RTMP_IO_READ32(ad, XIFS_TIME_CFG, &RegValue);
 	RegValue = RegValue & (~XIFS_TIME_OFDM_SIFS_MASK);
-	if (bw == 0)
-		RegValue |= XIFS_TIME_OFDM_SIFS(0x0D);
-	else /* 40/80Mhz */
-		RegValue |= XIFS_TIME_OFDM_SIFS(0x0E);
-
+	if ((WMODE_CAP_AC(ad->CommonCfg.PhyMode) && (ad->CommonCfg.vht_ldpc == TRUE)) ||
+		(WMODE_CAP_N(ad->CommonCfg.PhyMode) && (ad->CommonCfg.ht_ldpc == TRUE)))
+	{
+		if (bw == 0)
+			RegValue |= XIFS_TIME_OFDM_SIFS(0x0D);
+		else /* 40/80Mhz */
+			RegValue |= XIFS_TIME_OFDM_SIFS(0x0E);
+	}
+	else
+		RegValue |= XIFS_TIME_OFDM_SIFS(0x0C);
 	RTMP_IO_WRITE32(ad, XIFS_TIME_CFG, RegValue);
 	
 
 	if ((ad->CommonCfg.TxStream == 1) && (ad->CommonCfg.RxStream == 1))
 		tx_rx_setting = 0x101;
-	else if ((ad->CommonCfg.TxStream == 2) && (ad->CommonCfg.RxStream == 1))
-		tx_rx_setting = 0x201;
-	else if ((ad->CommonCfg.TxStream == 1) && (ad->CommonCfg.RxStream == 2))
-		tx_rx_setting = 0x102;
 	else if ((ad->CommonCfg.TxStream == 2) && (ad->CommonCfg.RxStream == 2))
 		tx_rx_setting = 0x202;
 	else 
@@ -1067,7 +1068,7 @@ static void mt76x2_switch_channel(RTMP_ADAPTER *ad, u8 channel, BOOLEAN scan)
        else
             RTMP_IO_WRITE32(ad, TX_SW_CFG0, 0x000B0C01);		
 
-		RTMP_IO_WRITE32(ad, TX_SW_CFG1, 0x00010200);
+		RTMP_IO_WRITE32(ad, TX_SW_CFG1, 0x00011414);
 	}
 	else
 	{
@@ -1076,7 +1077,7 @@ static void mt76x2_switch_channel(RTMP_ADAPTER *ad, u8 channel, BOOLEAN scan)
 		else
 			RTMP_IO_WRITE32(ad, TX_SW_CFG0, 0x000B0B01);
 
-		RTMP_IO_WRITE32(ad, TX_SW_CFG1, 0x00020000);
+		RTMP_IO_WRITE32(ad, TX_SW_CFG1, 0x00021414);
 	}
 
 	/* tx pwr gain setting */
@@ -1182,7 +1183,8 @@ static void mt76x2_switch_channel(RTMP_ADAPTER *ad, u8 channel, BOOLEAN scan)
 #endif
 
 	/* TSSI Clibration */
-	if (!IS_DOT11_H_RADAR_STATE(ad, RD_SILENCE_MODE) && !ad->chipCap.temp_tx_alc_enable)
+	if (!IS_DOT11_H_RADAR_STATE(ad, RD_SILENCE_MODE) && !ad->chipCap.temp_tx_alc_enable &&
+		!(ScanRunning(ad) == TRUE))
 		mt76x2_tssi_calibration(ad, channel);
 
 	/* enable TX/RX */
@@ -1238,9 +1240,7 @@ static void mt76x2_switch_channel(RTMP_ADAPTER *ad, u8 channel, BOOLEAN scan)
 
 	RTMP_BBP_IO_WRITE32(ad, AGC1_R61, 0xFF64A4E2); /* microwave's function initial gain */
 	RTMP_BBP_IO_WRITE32(ad, AGC1_R7, 0x08081010); /* microwave's ED CCA threshold */
-	RTMP_BBP_IO_WRITE32(ad, AGC1_R11, 0x00000404); /* microwave's ED CCA threshold */
-	RTMP_BBP_IO_WRITE32(ad, AGC1_R2, 0x00007070); /* initial ED CCA threshold */
-	RTMP_IO_WRITE32(ad, TXOP_CTRL_CFG, 0x04101B3F);
+	RTMP_BBP_IO_WRITE32(ad, AGC1_R11, 0x00000404); /* microwave's ED CCA threshold */	
 #endif /* DYNAMIC_VGA_SUPPORT */
 
 	DBGPRINT(RT_DEBUG_TRACE,
@@ -1383,6 +1383,9 @@ void mt76x2_tssi_compensation(RTMP_ADAPTER *ad, u8 channel)
 #ifdef ED_MONITOR
 			&& (ad->ed_tx_stoped == FALSE)
 #endif /* ED_MONITOR */
+#ifdef DFS_SUPPORT
+			&& (!IS_DOT11_H_RADAR_STATE(ad, RD_SILENCE_MODE))
+#endif /* DFS_SUPPORT */
 		) {
 #ifdef RTMP_PCI_SUPPORT
 			RtmpOsMsDelay(10);
@@ -1483,42 +1486,6 @@ void mt76x2_calibration(RTMP_ADAPTER *ad, u8 channel)
 	/* Trigger TX-Shaping */
 	CHIP_CALIBRATION(ad, TX_SHAPING_CALIBRATION_7662, 0x00);
 
-#ifdef TXBF_SUPPORT 
-	/* Do a Divider Calibration and update BBP registers */
-	//if (ad->CommonCfg.RegTransmitSetting.field.ITxBfEn)
-	{
-		ULONG stTimeChk0, stTimeChk1;
-		UCHAR i;
-			
-		NdisGetSystemUpTime(&stTimeChk0);
-			
-		/* Disable TX Phase Compensation */
-		RTMP_IO_READ32(ad, TXBE_R12, &value);
-		RTMP_IO_WRITE32(ad, TXBE_R12, value & (~0x28));
-	
-		/* Clear Tx/Rx Phase compensated values */
-		RTMP_IO_READ32(ad, CAL_R0, &value);
-		value &= ~0x60;
-	
-		// Clear Tx phase
-		RTMP_IO_WRITE32(ad, CAL_R0, value);
-		RTMP_IO_WRITE32(ad, TXBE_R13, 0);
-	
-		// Clear Rx phase
-		for (i=0; i<3; i++)
-		{
-			RTMP_IO_WRITE32(ad, CAL_R0, value | (i << 5));
-			RTMP_IO_WRITE32(ad, RXFE_R3,  0);
-		}		
-	
-		/* Start to do the divider calibration */
-		ad->chipOps.fITxBfDividerCalibration(ad, 3, 0, NULL);
-	
-		NdisGetSystemUpTime(&stTimeChk1);
-	
-		DBGPRINT(RT_DEBUG_INFO,("%s : Divider calibration duration = %d ms\n", __FUNCTION__, (stTimeChk1 - stTimeChk0)*1000/OS_HZ));
-	}
-#endif /* TXBF_SUPPORT */	
 
 
 	/* enable TX/RX */
@@ -2825,7 +2792,7 @@ static void mt76x2_get_tx_pwr_info(RTMP_ADAPTER *ad)
 static u8 mt76x2_txpwr_chlist[] = {
 	1, 2,3,4,5,6,7,8,9,10,11,12,13,14,
 	36,38,40,44,46,48,52,54,56,60,62,64,
-	100,102,104,108,110,112,116,118,120,124,126,128,132,134,136,140,
+	100,102,104,108,110,112,116,118,120,124,126,128,132,134,136,140,144,
 	149,151,153,157,159,161,165,167,169,171,173,
 	42, 58, 106, 122, 155,
 };
@@ -2860,12 +2827,12 @@ int mt76x2_read_chl_pwr(RTMP_ADAPTER *ad)
 	choffset = 14;
 	ASSERT((ad->TxPower[choffset].Channel == 36));
 
-	for (i = 0; i < 39; i++) {
+	for (i = 0; i < 40; i++) {
 		ad->TxPower[i + choffset].Power = cap->tx_0_target_pwr_a_band[get_chl_grp(ad->TxPower[i+choffset].Channel)];
 		ad->TxPower[i + choffset].Power2 = cap->tx_1_target_pwr_a_band[get_chl_grp(ad->TxPower[i+choffset].Channel)];
 	}
 
-	choffset = 14 + 12 + 16 + 11;
+	choffset = 14 + 12 + 17 + 11;
 
 #ifdef DOT11_VHT_AC
 	ASSERT((ad->TxPower[choffset].Channel == 42));
@@ -2874,11 +2841,11 @@ int mt76x2_read_chl_pwr(RTMP_ADAPTER *ad)
 	/* For VHT80MHz, we need assign tx power for central channel 42, 58, 106, 122, and 155 */
 		DBGPRINT(RT_DEBUG_TRACE, ("%s: Update Tx power control of the central channel (42, 58, 106, 122 and 155) for VHT BW80\n", __FUNCTION__));
 		
-	NdisMoveMemory(&ad->TxPower[53], &ad->TxPower[16], sizeof(CHANNEL_TX_POWER)); // channel 42 = channel 40
-	NdisMoveMemory(&ad->TxPower[54], &ad->TxPower[22], sizeof(CHANNEL_TX_POWER)); // channel 58 = channel 56
-	NdisMoveMemory(&ad->TxPower[55], &ad->TxPower[28], sizeof(CHANNEL_TX_POWER)); // channel 106 = channel 104
-	NdisMoveMemory(&ad->TxPower[56], &ad->TxPower[34], sizeof(CHANNEL_TX_POWER)); // channel 122 = channel 120
-	NdisMoveMemory(&ad->TxPower[57], &ad->TxPower[44], sizeof(CHANNEL_TX_POWER)); // channel 155 = channel 153
+	NdisMoveMemory(&ad->TxPower[choffset], &ad->TxPower[16], sizeof(CHANNEL_TX_POWER)); // channel 42 = channel 40
+	NdisMoveMemory(&ad->TxPower[choffset+1], &ad->TxPower[22], sizeof(CHANNEL_TX_POWER)); // channel 58 = channel 56
+	NdisMoveMemory(&ad->TxPower[choffset+2], &ad->TxPower[28], sizeof(CHANNEL_TX_POWER)); // channel 106 = channel 104
+	NdisMoveMemory(&ad->TxPower[choffset+3], &ad->TxPower[34], sizeof(CHANNEL_TX_POWER)); // channel 122 = channel 120
+	NdisMoveMemory(&ad->TxPower[choffset+4], &ad->TxPower[45], sizeof(CHANNEL_TX_POWER)); // channel 155 = channel 153
 
 	ad->TxPower[choffset].Channel = 42;
 	ad->TxPower[choffset+1].Channel = 58;
@@ -2886,8 +2853,7 @@ int mt76x2_read_chl_pwr(RTMP_ADAPTER *ad)
 	ad->TxPower[choffset+3].Channel = 122;
 	ad->TxPower[choffset+4].Channel = 155;
 
-	choffset += 5;		/* the central channel of VHT80 */
-	choffset = (MAX_NUM_OF_CHANNELS - 1);
+	choffset = MAX_NUM_OF_CHANNELS;
 #endif /* DOT11_VHT_AC */
 
 	/* 4. Print and Debug*/
@@ -3442,7 +3408,8 @@ static void mt76x2_antenna_default_reset(struct _RTMP_ADAPTER	*pAd,
 										 EEPROM_ANTENNA_STRUC *pAntenna)
 {
 	pAntenna->word = 0;
-	pAntenna->field.RfIcType = RFIC_7662;
+	/* EEPROM field RfIcType is 4 bits, pAd->RfIcType forced for 76x2 later */
+//	pAntenna->field.RfIcType = RFIC_7662;
 	pAntenna->field.TxPath = 2;
 	pAntenna->field.RxPath = 2;
 }
@@ -3518,7 +3485,7 @@ void mt76x2_get_current_temp(RTMP_ADAPTER *ad)
 	else
 	        pChipCap->current_temp = 25;
 
-	DBGPRINT(RT_DEBUG_TRACE, ("%s::read_temp=%d (0x%x), current_temp=%d (0x%x)\n", 
+	DBGPRINT(RT_DEBUG_INFO, ("%s::read_temp=%d (0x%x), current_temp=%d (0x%x)\n", 
 		__FUNCTION__, temp_val, temp_val, pChipCap->current_temp, pChipCap->current_temp));
 }
 
@@ -3720,24 +3687,11 @@ void mt76x2_single_sku(RTMP_ADAPTER *ad, u8 channel)
 		DBGPRINT(RT_DEBUG_ERROR, ("%s::failed to get the target power, and turn to use default = %d\n", 
 				__FUNCTION__, ad->DefaultTargetPwr));
 	} else {
-		DBGPRINT(RT_DEBUG_ERROR, ("%s::DefaultTargetPwr = %d\n", 
+		DBGPRINT(RT_DEBUG_TRACE, ("%s::DefaultTargetPwr = %d\n", 
 				__FUNCTION__, ad->DefaultTargetPwr));
 	}
 
-	/*
-		EEPROM 0x50 - Power delta for 2G 20/40 BW
-		EEPROM 0x51 - Power delta for 5G 20/40 BW
-		EEPROM 0x52 - Power delta for 5G 20/80 BW
-		Bit<7>: Enable/disable power delta of this BW
-		Bit<6>: 0: decrease power, 1: increase power
-		Bit<5:0>: Each step represents 0.5dB, range from 0 to 4
-
-		Increase or decrease 0x13b0<5:0> when bandwidth is changed
-	*/
-	if (ad->CommonCfg.BBPCurrentBW != BW_20)
-		ad->DefaultTargetPwr = (CHAR)ad->DefaultTargetPwr + delta_power;
-
-	DBGPRINT(RT_DEBUG_ERROR, ("%s::DefaultTargetPwr = 0x%x, delta_power = 0x%x\n", 
+	DBGPRINT(RT_DEBUG_TRACE, ("%s::DefaultTargetPwr = 0x%x, delta_power = 0x%x\n", 
 		__FUNCTION__, ad->DefaultTargetPwr, delta_power));
 	
 	if ((ad->chipCap.temp_tx_alc_enable == TRUE) && (ad->chipCap.tssi_enable == FALSE)) {
@@ -4369,6 +4323,7 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 									rate_pwr_before_adjust : ch->PwrCCK[i];
 						pwr_delta = sku_pwr - rate_pwr;
 						ad->chipCap.rate_pwr_table.CCK[i].mcs_pwr += pwr_delta;
+						ad->chipCap.rate_pwr_table.CCK[i].sku_pwr = sku_pwr;
 
 						DBGPRINT(RT_DEBUG_TRACE, ("%s ==> sku_pwr (%d) - rate_pwr (%d) = rate_delta (%d)\n", 
 							__FUNCTION__, sku_pwr, rate_pwr, pwr_delta));
@@ -4389,6 +4344,7 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 									rate_pwr_before_adjust : ch->PwrOFDM[i];
 						pwr_delta = sku_pwr - rate_pwr;
 						ad->chipCap.rate_pwr_table.OFDM[i].mcs_pwr += pwr_delta;
+						ad->chipCap.rate_pwr_table.OFDM[i].sku_pwr = sku_pwr;
 
 						DBGPRINT(RT_DEBUG_TRACE, ("%s ==> sku_pwr (%d) - rate_pwr (%d) = rate_delta (%d)\n", 
 							__FUNCTION__, sku_pwr, rate_pwr, pwr_delta));
@@ -4406,18 +4362,30 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 
 							rate_pwr_before_adjust = ad->chipCap.rate_pwr_table.HT[i].mcs_pwr + DefaultTargetPwr;
 							rate_pwr =  rate_pwr_before_adjust + ch_delta_pwr;
+
+							if (ad->CommonCfg.BBPCurrentBW == BW_40)
+							{
+								//store HT20 sku_pwr for TXWI
+								ad->chipCap.rate_pwr_table.HT20[i].sku_pwr = (ch->PwrHT20[i] > rate_pwr_before_adjust)? \
+								rate_pwr_before_adjust : ch->PwrHT20[i];
+								//store HT40 sku_pwr for TXWI
+								ad->chipCap.rate_pwr_table.HT40[i].sku_pwr = (ch->PwrHT40[i] > rate_pwr_before_adjust) ? \
+								rate_pwr_before_adjust : ch->PwrHT40[i];
+							}
 							
-							if (ad->CommonCfg.BBPCurrentBW == BW_20) {									
+							if (ad->CommonCfg.BBPCurrentBW == BW_20)
+							{									
 								sku_pwr = (ch->PwrHT20[i] > rate_pwr_before_adjust) ? \
 											rate_pwr_before_adjust : ch->PwrHT20[i];
-							} else if (ad->CommonCfg.BBPCurrentBW == BW_40) {					
+							} else if (ad->CommonCfg.BBPCurrentBW == BW_40)
+							{		
 								sku_pwr = (ch->PwrHT40[i] > rate_pwr_before_adjust) ? \
 											rate_pwr_before_adjust : ch->PwrHT40[i];
 							}
 
 							pwr_delta = sku_pwr - rate_pwr;
-							ad->chipCap.rate_pwr_table.HT[i].mcs_pwr += pwr_delta;
-							
+							ad->chipCap.rate_pwr_table.HT[i].mcs_pwr += pwr_delta;							
+
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> sku_pwr (%d) - rate_pwr (%d) = rate_delta (%d)\n", 
 								__FUNCTION__, sku_pwr, rate_pwr, pwr_delta));							
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> new HT[%d].MCS_Power = %d\n\n", 
@@ -4440,6 +4408,7 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 										rate_pwr_before_adjust : ch->PwrVHT80[i];
 							pwr_delta = sku_pwr - rate_pwr;
 							ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr += pwr_delta;
+							ad->chipCap.rate_pwr_table.VHT1SS[i].sku_pwr = sku_pwr;
 
 							rate_pwr_before_adjust = ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr + DefaultTargetPwr;
 							rate_pwr =  rate_pwr_before_adjust + ch_delta_pwr;
@@ -4447,7 +4416,8 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 										rate_pwr_before_adjust : ch->PwrVHT80[i];
 							pwr_delta = sku_pwr - rate_pwr;
 							ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr += pwr_delta;
-							
+							ad->chipCap.rate_pwr_table.VHT2SS[i].sku_pwr = sku_pwr;
+
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> sku_pwr (%d) - rate_pwr (%d) = rate_delta (%d)\n", 
 								__FUNCTION__, sku_pwr, rate_pwr, pwr_delta));
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> new VHT1SS[%d].MCS_Power = %d\n", 
@@ -4455,7 +4425,38 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> new VHT2SS[%d].MCS_Power = %d\n\n", 
 								__FUNCTION__, i, ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr));
 						}
-					} else if (ad->CommonCfg.BBPCurrentBW == BW_80) {
+					} 
+					else if (ad->CommonCfg.BBPCurrentBW == BW_80) {
+						for (i = 0; i < SINGLE_SKU_TABLE_HT_LENGTH; i++)
+						{
+							pwr_delta = 0;
+							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> HT[%d].MCS_Power = %d, DefaultTargetPwr = %d, ch_delta_pwr = %d\n", 
+								__FUNCTION__, i, ad->chipCap.rate_pwr_table.HT[i].mcs_pwr, DefaultTargetPwr, ch_delta_pwr));		
+
+							rate_pwr_before_adjust = ad->chipCap.rate_pwr_table.HT[i].mcs_pwr + DefaultTargetPwr;
+							rate_pwr =  rate_pwr_before_adjust + ch_delta_pwr;							
+
+							//store HT20 sku_pwr for TXWI
+							sku_pwr = (ch->PwrHT20[i] > rate_pwr_before_adjust) ? \
+										rate_pwr_before_adjust : ch->PwrHT20[i];
+						
+							DBGPRINT(RT_DEBUG_TRACE, ("%s ############  rate_pwr_before_adjust = %d, ch->PwrHT20[i] = %d\n", 
+								__FUNCTION__, rate_pwr_before_adjust, ch->PwrHT20[i]));
+							pwr_delta = sku_pwr - rate_pwr;
+							ad->chipCap.rate_pwr_table.HT[i].mcs_pwr += pwr_delta;
+							ad->chipCap.rate_pwr_table.HT20[i].sku_pwr = sku_pwr;
+
+							//store HT40 sku_pwr for TXWI
+							sku_pwr = (ch->PwrHT40[i] > rate_pwr_before_adjust) ? \
+										rate_pwr_before_adjust : ch->PwrHT40[i];
+							ad->chipCap.rate_pwr_table.HT40[i].sku_pwr = sku_pwr;
+
+							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> sku_pwr (%d) - rate_pwr (%d) = rate_delta (%d)\n", 
+								__FUNCTION__, sku_pwr, rate_pwr, pwr_delta));							
+							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> new HT[%d].MCS_Power = %d\n\n", 
+								__FUNCTION__, i, ad->chipCap.rate_pwr_table.HT[i].mcs_pwr));
+						}
+						
 						for (i = 0; i < SINGLE_SKU_TABLE_VHT_LENGTH; i++)
 						{
 							pwr_delta = 0;		
@@ -4470,6 +4471,7 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 										rate_pwr_before_adjust : ch->PwrVHT80[i];
 							pwr_delta = sku_pwr - rate_pwr;
 							ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr += pwr_delta;
+							ad->chipCap.rate_pwr_table.VHT1SS[i].sku_pwr = sku_pwr;
 
 							rate_pwr_before_adjust = ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr + DefaultTargetPwr;
 							rate_pwr =  rate_pwr_before_adjust + ch_delta_pwr;
@@ -4477,12 +4479,13 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 										rate_pwr_before_adjust : ch->PwrVHT80[i];
 							pwr_delta = sku_pwr - rate_pwr;
 							ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr += pwr_delta;
+							ad->chipCap.rate_pwr_table.VHT2SS[i].sku_pwr = sku_pwr;
+						
+							if (i < 8) {
+								ad->chipCap.rate_pwr_table.HT[i].mcs_pwr = ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr;
+								ad->chipCap.rate_pwr_table.HT[i + 8].mcs_pwr = ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr;
+							}
 
-								if (i < 8) {
-									ad->chipCap.rate_pwr_table.HT[i].mcs_pwr = ad->chipCap.rate_pwr_table.VHT1SS[i].mcs_pwr;
-									ad->chipCap.rate_pwr_table.HT[i + 8].mcs_pwr = ad->chipCap.rate_pwr_table.VHT2SS[i].mcs_pwr;
-								}
-							
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> sku_pwr (%d) - rate_pwr (%d) = rate_delta (%d)\n", 
 								__FUNCTION__, sku_pwr, rate_pwr, pwr_delta));
 							DBGPRINT(RT_DEBUG_TRACE, ("%s ==> new VHT1SS[%d].MCS_Power = %d\n", 
@@ -4506,8 +4509,226 @@ UCHAR mt76x2_update_sku_pwr(RTMP_ADAPTER *ad, u8 channel)
 	else
 		return FALSE;
 }
+
+INT32 mt76x2_sku_calculate_TxPwrAdj(RTMP_ADAPTER *ad,struct _TXWI_NMAC *txwi_n)
+{
+	INT32 bw_delta = 0, sku_table_delta = 0;
+	INT32 result = 0, PwrAdj = 0;	
+	if(txwi_n->PHYMODE == MODE_HTMIX || txwi_n->PHYMODE == MODE_HTGREENFIELD || txwi_n->PHYMODE == MODE_VHT)
+	{
+		if(ad->CommonCfg.BBPCurrentBW == BW_40 && txwi_n->BW == BW_20)
+		{
+			INT32 sku_pwr_HT20 = ad->chipCap.rate_pwr_table.HT20[txwi_n->MCS].sku_pwr;
+			INT32 sku_pwr_HT40 = ad->chipCap.rate_pwr_table.HT40[txwi_n->MCS].sku_pwr;
+			//get efuse BW delta
+			if(ad->CommonCfg.Channel < 14)
+				bw_delta = -ad->chipCap.delta_tx_pwr_bw40_g_band;
+			else
+				bw_delta = -ad->chipCap.delta_tx_pwr_bw40_a_band;
+			//get sku table delta
+			sku_table_delta = sku_pwr_HT20 - sku_pwr_HT40;	
+		}
+		else if(ad->CommonCfg.BBPCurrentBW == BW_80)
+		{
+			INT32 sku_pwr_HT20 = ad->chipCap.rate_pwr_table.HT20[txwi_n->MCS].sku_pwr;
+			INT32 sku_pwr_HT40 = ad->chipCap.rate_pwr_table.HT40[txwi_n->MCS].sku_pwr;
+			//get efuse BW delta
+			if (txwi_n->BW == BW_20)
+				bw_delta = -ad->chipCap.delta_tx_pwr_bw80;
+			else if (txwi_n->BW == BW_40)
+				bw_delta = -(ad->chipCap.delta_tx_pwr_bw80 - ad->chipCap.delta_tx_pwr_bw40_a_band);
+			//get sku table delta
+			if(txwi_n->MCS <= 9)
+			{			
+				if (txwi_n->BW == BW_40)
+					sku_table_delta = sku_pwr_HT40 - ad->chipCap.rate_pwr_table.VHT1SS[txwi_n->MCS].sku_pwr;
+				else if (txwi_n->BW == BW_20)
+					sku_table_delta = sku_pwr_HT20 - ad->chipCap.rate_pwr_table.VHT1SS[txwi_n->MCS].sku_pwr;		
+			}
+			else
+			{
+				if (txwi_n->BW == BW_40)
+					sku_table_delta = sku_pwr_HT40 - ad->chipCap.rate_pwr_table.VHT2SS[txwi_n->MCS-16].sku_pwr;
+				else if (txwi_n->BW == BW_20)
+					sku_table_delta = sku_pwr_HT20 - ad->chipCap.rate_pwr_table.VHT2SS[txwi_n->MCS-16].sku_pwr;
+			}
+			if(ad->bSingleSkuDebug)
+			{
+				DBGPRINT(RT_DEBUG_ERROR, ("%s HT%s[%d] SKU PWR: %d VHT[%d] SKU PWR: %d\n"
+				, __FUNCTION__,(txwi_n->BW == BW_40)?"40":"20",txwi_n->MCS
+				,(txwi_n->BW == BW_40)?sku_pwr_HT40:sku_pwr_HT20
+				,(txwi_n->MCS <= 9)?txwi_n->MCS:txwi_n->MCS-16
+				,(txwi_n->MCS <= 9)?ad->chipCap.rate_pwr_table.VHT1SS[txwi_n->MCS].sku_pwr:ad->chipCap.rate_pwr_table.VHT2SS[txwi_n->MCS-16].sku_pwr));
+			}
+		}
+		//result = min(bw_delta,sku_table_delta)/2;
+		result = sku_table_delta/2;
+		if(result > 7){PwrAdj=7;}
+		else if(result >= 0){PwrAdj=result;}
+		else
+		{
+			switch(result)
+			{
+				case -1:
+				case -2:				
+					PwrAdj = 15;
+				break;
+				
+				case -3:
+				case -4:
+					PwrAdj = 14;
+				break;
+				
+				case -5:
+				case -6:
+					PwrAdj = 13;
+				break;
+				case -7:
+				case -8:
+					PwrAdj = 12;
+				break;
+				
+				case -9:
+				case -10:
+					PwrAdj = 11;
+				break;
+				
+				case -11:
+				case -12:
+					PwrAdj = 10;
+				break;
+				
+				case -13:
+				case -14:
+					PwrAdj = 9;
+				break;
+				
+				case -15:
+				case -16:
+					PwrAdj = 8;
+				break;
+			}
+		}
+		if(ad->bSingleSkuDebug) //&&PwrAdj != 0
+		{
+			DBGPRINT(RT_DEBUG_ERROR, ("%s txwi_n->BW:%d mcs: %d phymode:%d bw_delta:%d sku_table_delta:%d result:%d PwrAdj:%d\n"
+			, __FUNCTION__,txwi_n->BW,txwi_n->MCS,txwi_n->PHYMODE,bw_delta,sku_table_delta,result,PwrAdj));
+		}
+	}
+	return PwrAdj;
+}
+
 #endif /* SINGLE_SKU_V2 */
 
+/*char *obtw_delta_str[]=
+{    
+    "ofdm6m_", "ofdm9m_", "ofdm12m_", "ofdm18m_",
+    "ht20mcs0_", "ht20mcs1_", "ht20mcs2_",     
+    "ht40mcs0_", "ht40mcs1_", "ht40mcs2_", "ht40mcs32_",
+    "vht80mcs0_", "vht80mcs1_", "vht80mcs2_"
+};*/
+
+extern char *obtw_delta_str[];
+
+INT32 mt76x2_tx_pwr_boost(RTMP_ADAPTER *ad,struct _TXWI_NMAC *txwi_n)
+{
+	INT32 result=0;
+	UCHAR i=0;
+	if(ad->obtw_anyEnable == FALSE)
+		return 0;
+	
+	switch(txwi_n->BW)
+	{
+		case BW_20:
+			switch(txwi_n->MCS)
+			{
+				case MCS_0: /*OFDM 6M | HT MCS0*/
+				case MCS_8:					
+					result = (txwi_n->PHYMODE == MODE_OFDM)?\
+					ad->obtw_delta_array[0]:ad->obtw_delta_array[4];
+					break;
+				case MCS_1: /*OFDM 9M | HT MCS1*/
+				case MCS_9:
+					result = (txwi_n->PHYMODE == MODE_OFDM)?\
+					ad->obtw_delta_array[1]:ad->obtw_delta_array[5];
+					break;
+				case MCS_2: /*OFDM 12M | HT MCS2*/
+				case MCS_10:
+					result = (txwi_n->PHYMODE == MODE_OFDM)?\
+					ad->obtw_delta_array[2]:ad->obtw_delta_array[6];
+					break;
+				case MCS_3: /*OFDM 18M | HT MCS3*/
+					result = (txwi_n->PHYMODE == MODE_OFDM)?\
+					ad->obtw_delta_array[3]:0;
+					break;
+			}
+			break;
+		case BW_40:
+			switch(txwi_n->MCS)
+			{
+				case MCS_0: 
+				case MCS_8:					
+					result = ad->obtw_delta_array[7];
+					break;
+				case MCS_1: 
+				case MCS_9:
+					result = ad->obtw_delta_array[8];
+					break;
+				case MCS_2: 
+				case MCS_10:
+					result = ad->obtw_delta_array[9];
+					break;
+				case MCS_32: 
+					result = ad->obtw_delta_array[10];
+					break;
+			}
+			break;
+		case BW_80:
+			switch(txwi_n->MCS)
+			{
+				case MCS_0:
+				case 0x10: /*2SS MCS0*/
+					result = ad->obtw_delta_array[11];
+					break;
+				case MCS_1:
+				case 0x11: /*2SS MCS1*/
+					result = ad->obtw_delta_array[12];
+					break;
+				case MCS_2: 
+				case 0x12: /*2SS MCS2*/
+					result = ad->obtw_delta_array[13];
+					break;				
+			}
+			break;
+		default:
+			if(ad->obtw_debug_on)
+			{
+				DBGPRINT(RT_DEBUG_ERROR, ("%s UNKNOWN case!!! txwi_n->BW:%d mcs: %d phymode:%d obtw_delta:%d\n"
+				, __FUNCTION__,txwi_n->BW,txwi_n->MCS,txwi_n->PHYMODE,result/2));
+			}
+	}
+
+	if(ad->obtw_debug_on)
+		DBGPRINT(RT_DEBUG_ERROR, ("%s txwi_n->BW:%d mcs: %d phymode:%d obtw_delta:%d\n"
+			, __FUNCTION__,txwi_n->BW,txwi_n->MCS,txwi_n->PHYMODE,result/2));
+			
+	return result/2;
+}
+
+#ifdef CONFIG_STA_SUPPORT
+static VOID mt76x2_init_dev_nick_name(RTMP_ADAPTER *ad)
+{
+#ifdef RTMP_MAC_PCI
+	if (IS_MT7662E(ad))
+		snprintf((PSTRING) ad->nickname, sizeof(ad->nickname), "mt7662e_sta");
+	else if (IS_MT7632E(ad))
+		snprintf((PSTRING) ad->nickname, sizeof(ad->nickname), "mt7632e_sta");
+	else if (IS_MT7612E(ad))	
+		snprintf((PSTRING) ad->nickname, sizeof(ad->nickname), "mt7612e_sta");
+#endif
+
+}
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef CAL_FREE_IC_SUPPORT
 static BOOLEAN mt76x2_is_cal_free_ic(RTMP_ADAPTER *ad)
@@ -4644,6 +4865,9 @@ static VOID mt76x2_cal_free_data_get(RTMP_ADAPTER *ad)
 void mt7612_set_ed_cca(RTMP_ADAPTER *ad, BOOLEAN enable)
 {
 	UINT32 mac_val = 0;
+	UINT32 bbp_val;
+    UCHAR ED_TH = (ad->CommonCfg.Channel > 14)?0x0e:0x20;
+    /* A band 0x0e , G band 0x20 , 20150331 */
 
 	if (enable) {
 		RTMP_IO_READ32(ad, CH_TIME_CFG, &mac_val);
@@ -4653,6 +4877,14 @@ void mt7612_set_ed_cca(RTMP_ADAPTER *ad, BOOLEAN enable)
 		RTMP_IO_READ32(ad, TXOP_CTRL_CFG, &mac_val);
 		mac_val |= (1 << 20);
 		RTMP_IO_WRITE32(ad, TXOP_CTRL_CFG, mac_val);		
+
+		RTMP_IO_READ32(ad, CH_TIME_CFG, &mac_val);
+		mac_val |= 0x05; // enable channel status check
+		RTMP_IO_WRITE32(ad, CH_TIME_CFG, mac_val);
+
+		RTMP_BBP_IO_READ32(ad, AGC1_R2, &bbp_val);
+		bbp_val = (bbp_val & 0xFFFF0000) | (ED_TH << 8) | ED_TH;
+		RTMP_BBP_IO_WRITE32(ad, AGC1_R2, bbp_val);
 	} else {
 		RTMP_IO_READ32(ad, TXOP_CTRL_CFG, &mac_val);
 		mac_val &= ~(1 << 20);
@@ -4662,6 +4894,498 @@ void mt7612_set_ed_cca(RTMP_ADAPTER *ad, BOOLEAN enable)
 	DBGPRINT(RT_DEBUG_TRACE, ("%s::0x%x: 0x%08X\n", __FUNCTION__, TXOP_CTRL_CFG, mac_val));
 }
 #endif /* ED_MONITOR */
+#ifdef DYNAMIC_VGA_SUPPORT
+void dynamic_ed_cca_threshold_adjust(RTMP_ADAPTER * pAd)
+{
+	UINT32 reg_val = 0;
+	CHAR high_gain = 0, mid_gain = 0, low_gain = 0, ulow_gain = 0, lna_gain_mode = 0;
+	UCHAR lna_gain = 0, vga_gain = 0, y = 0, z = 0;
+	
+	RTMP_BBP_IO_READ32(pAd, AGC1_R4, &reg_val);
+	high_gain = ((reg_val & (0x3F0000)) >> 16) & 0x3F;
+	mid_gain = ((reg_val & (0x3F00)) >> 8) & 0x3F;
+	low_gain = reg_val & 0x3F;
+	
+	RTMP_BBP_IO_READ32(pAd, AGC1_R6, &reg_val);
+	ulow_gain = reg_val & 0x3F;
+
+	RTMP_BBP_IO_READ32(pAd, AGC1_R8, &reg_val);
+	lna_gain_mode = ((reg_val & 0xC0) >> 6) & 0x3;
+	vga_gain = ((reg_val & 0x7E00) >> 9) & 0x3F;
+
+	if (lna_gain_mode == 0)
+		lna_gain = ulow_gain;
+	else if (lna_gain_mode == 1)
+		lna_gain = low_gain;
+	else if (lna_gain_mode == 2)
+		lna_gain = mid_gain;	
+	else if (lna_gain_mode == 3)
+		lna_gain = high_gain;
+
+	if ((vga_gain + lna_gain) > 64)
+		y = ((vga_gain + lna_gain) - 64) / 3;
+	else
+		y = 0;
+
+	if (y > 1)
+		z = min((1 << (y - 2)), 14);
+	else 
+		z = 1;
+
+	RTMP_BBP_IO_READ32(pAd, AGC1_R2, &reg_val);
+	reg_val = (reg_val & 0xFFFF0000) | (z << 8) | z;
+	RTMP_BBP_IO_WRITE32(pAd, AGC1_R2, reg_val);
+
+	DBGPRINT(RT_DEBUG_INFO, ("%s:: lna_gain(%d), vga_gain(%d), lna_gain_mode(%d), y=%d, z=%d, 0x2308=0x%08x\n", 
+		__FUNCTION__, lna_gain, vga_gain, lna_gain_mode, y, z, reg_val));
+}
+
+void MT76x2_UpdateRssiForChannelModel(RTMP_ADAPTER * pAd)
+{
+	INT32 rx0_rssi, rx1_rssi;
+	UINT32 bbp_valuse = 0;
+	
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		rx0_rssi = (CHAR)(pAd->StaCfg.RssiSample.LastRssi0);
+		rx1_rssi = (CHAR)(pAd->StaCfg.RssiSample.LastRssi1);
+	}
+#endif /* CONFIG_STA_SUPPORT */
+#ifdef CONFIG_AP_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+	{
+		rx0_rssi = (CHAR)(pAd->ApCfg.RssiSample.LastRssi0);
+		rx1_rssi = (CHAR)(pAd->ApCfg.RssiSample.LastRssi1);
+	}
+#endif /* CONFIG_AP_SUPPORT */
+
+	DBGPRINT(RT_DEBUG_INFO, ("%s:: rx0_rssi(%d), rx1_rssi(%d)\n", 
+		__FUNCTION__, rx0_rssi, rx1_rssi));	
+
+	/*
+		RSSI_DUT(n) = RSSI_DUT(n-1)*15/16 + RSSI_R2320_100ms_sample*1/16
+	*/
+	pAd->chipCap.avg_rssi_0 = ((pAd->chipCap.avg_rssi_0) * 15)/16 + (rx0_rssi << 8)/16;
+	pAd->chipCap.avg_rssi_1 = ((pAd->chipCap.avg_rssi_1) * 15)/16 + (rx1_rssi << 8)/16;
+
+	if (pAd->MacTab.Size == 0)
+		pAd->chipCap.avg_rssi_all = -75;
+	else
+		pAd->chipCap.avg_rssi_all = (pAd->chipCap.avg_rssi_0 + pAd->chipCap.avg_rssi_1)/512;
+
+	DBGPRINT(RT_DEBUG_INFO, ("%s:: update rssi all(%d)\n", 
+		__FUNCTION__, pAd->chipCap.avg_rssi_all));
+}
+
+void dynamic_cck_mrc(RTMP_ADAPTER * pAd)
+{
+	UINT32 bbp_val = 0;
+	
+	/* CCK MRC PER bump at larger power ~-30dBm */
+	if (pAd->CommonCfg.RxStream >= 2) {
+		if (pAd->chipCap.avg_rssi_all > -70) {
+			RTMP_BBP_IO_READ32(pAd, AGC1_R30, &bbp_val);
+			bbp_val &= 0xfffffffb; /* disable CCK MRC */
+			RTMP_BBP_IO_WRITE32(pAd, AGC1_R30, bbp_val);
+		} else if (pAd->chipCap.avg_rssi_all < -80) {
+			RTMP_BBP_IO_READ32(pAd, AGC1_R30, &bbp_val);
+			bbp_val = (bbp_val & 0xfffffffb) | (1 << 2); /* enable CCK MRC */
+			RTMP_BBP_IO_WRITE32(pAd, AGC1_R30, bbp_val);
+		}
+	}
+}
+
+#define shift_left16(x)			((x) << 16)
+#define shift_left8(x)			((x) << 8)
+
+static BOOLEAN dynamic_channel_model_adjust(RTMP_ADAPTER *pAd)
+{
+	UCHAR mode = 0, default_init_vga = 0, eLNA_lower_init_vga = 0, iLNA_lower_init_vga = 0;
+	UINT32 value = 0;
+	BOOLEAN no_dynamic_vga = FALSE;
+
+	/* dynamic_chE_mode: 
+		bit7		0:average RSSI <= threshold	1:average RSSI > threshold
+		bit4:6	0:BW_20		1:BW_40		2:BW_80		3~7:Reserved
+		bit1:3	Reserved	
+		bit0		0: eLNA		1: iLNA
+	*/
+
+	/* search if long STA has traffic , disable dyncVGA */
+	if(pAd->OpMode == OPMODE_AP && pAd->MacTab.Size > 0)
+	{
+		INT k = 0;
+		UINT64 one_sec_total_traffic = pAd->RalinkCounters.OneSecRxOkCnt+pAd->RalinkCounters.OneSecTxFailCount+pAd->RalinkCounters.OneSecTxNoRetryOkCount+pAd->RalinkCounters.OneSecTxRetryOkCount;
+
+		if(one_sec_total_traffic < 20)
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("%s: total traffic : %lld < 20 , no dync vga \n", __FUNCTION__, one_sec_total_traffic));
+			no_dynamic_vga = TRUE;
+		}
+		else
+		{
+
+			for(k=0;k<MAX_LEN_OF_MAC_TABLE;k++)
+			{
+				PMAC_TABLE_ENTRY pEntry = &pAd->MacTab.Content[k];
+				if (IS_ENTRY_CLIENT(pEntry) || (IS_ENTRY_APCLI(pEntry)))
+				{
+					CHAR avg_rssi = 0;
+					//UINT32 one_sec_total_trafficA = 0,one_sec_total_trafficB = 0,one_sec_total_trafficC = 0;
+					UINT32 one_sec_total_trafficB = 0;
+					
+					avg_rssi = (pEntry->RssiSample.AvgRssi0 + pEntry->RssiSample.AvgRssi1)/2;
+					//one_sec_total_trafficA = pEntry->DyncVgaOneSecTxCount;
+					one_sec_total_trafficB = pEntry->DyncVgaOneSecRxCount;
+					//one_sec_total_trafficC = pEntry->DyncVgaOneSecTxCount + pEntry->DyncVgaOneSecRxCount;
+
+					pEntry->DyncVgaOneSecTxCount = 0;
+					pEntry->DyncVgaOneSecRxCount = 0;
+
+					if(avg_rssi <= -76 && one_sec_total_trafficB > 20)
+					{
+						DBGPRINT(RT_DEBUG_TRACE, 
+						("%s: long range sta %02X:%02X:%02X:%02X:%02X:%02X  rssi (%d) & one_sec_RX_traffic %d >20 change AVG RSSI to (%d)\n"
+						,__FUNCTION__,PRINT_MAC(pEntry->Addr), avg_rssi,one_sec_total_trafficB,avg_rssi));
+
+						//no_dynamic_vga = TRUE;
+						pAd->chipCap.avg_rssi_all = avg_rssi;
+					}
+
+				}			
+			}			
+		}
+	}
+
+	if (((pAd->chipCap.avg_rssi_all > -62) && (pAd->CommonCfg.BBPCurrentBW == BW_80))
+		|| ((pAd->chipCap.avg_rssi_all > -65) && (pAd->CommonCfg.BBPCurrentBW == BW_40))
+		|| ((pAd->chipCap.avg_rssi_all > -68) && (pAd->CommonCfg.BBPCurrentBW == BW_20))) 
+	{
+		RTMP_BBP_IO_WRITE32(pAd, RXO_R18, 0xF000A990);
+		if (pAd->CommonCfg.BBPCurrentBW == BW_80) {
+			if (is_external_lna_mode(pAd, pAd->CommonCfg.Channel))
+				mode = 0xA0; /* BW80::eLNA lower VGA/PD */
+			else
+				mode = 0xA1; /* BW80::iLNA lower VGA/PD */
+				
+			RTMP_BBP_IO_READ32(pAd, AGC1_R26, &value);
+			value = (value & ~0xF) | 0x3;
+			RTMP_BBP_IO_WRITE32(pAd, AGC1_R26, value);	
+		} else if (pAd->CommonCfg.BBPCurrentBW == BW_40) {
+			if (is_external_lna_mode(pAd, pAd->CommonCfg.Channel))
+				mode = 0x90; /* BW40::eLNA lower VGA/PD */
+			else
+				mode = 0x91; /* BW40::iLNA lower VGA/PD */
+		} else if (pAd->CommonCfg.BBPCurrentBW == BW_20) {
+			if (is_external_lna_mode(pAd, pAd->CommonCfg.Channel))
+				mode = 0x80; /* BW20::eLNA lower VGA/PD */
+			else
+				mode = 0x81; /* BW20::iLNA lower VGA/PD */
+		}
+	} else {
+		RTMP_BBP_IO_WRITE32(pAd, RXO_R18, 0xF000A991);	
+		if (pAd->CommonCfg.BBPCurrentBW == BW_80) {
+			if (is_external_lna_mode(pAd, pAd->CommonCfg.Channel))
+				mode = 0x20; /* BW80::eLNA default */
+			else
+				mode = 0x21; /* BW80::iLNA default */				
+
+			RTMP_BBP_IO_READ32(pAd, AGC1_R26, &value);
+			value = (value & ~0xF) | 0x5;
+			RTMP_BBP_IO_WRITE32(pAd, AGC1_R26, value);	
+		} else if (pAd->CommonCfg.BBPCurrentBW == BW_40) {
+			if (is_external_lna_mode(pAd, pAd->CommonCfg.Channel))
+				mode = 0x10; /* BW40::eLNA default */
+			else
+				mode = 0x11; /* BW40::iLNA default */	
+		} else if (pAd->CommonCfg.BBPCurrentBW == BW_20) {
+			if (is_external_lna_mode(pAd, pAd->CommonCfg.Channel))
+				mode = 0x00; /* BW20::eLNA default */
+			else
+				mode = 0x01; /* BW20::iLNA default */
+		}
+	}	
+
+	DBGPRINT(RT_DEBUG_INFO, ("%s:: dynamic ChE mode(0x%x)\n", 
+		__FUNCTION__, mode));
+
+	if (((pAd->chipCap.avg_rssi_all <= -76) && (pAd->CommonCfg.BBPCurrentBW == BW_80))
+		|| ((pAd->chipCap.avg_rssi_all <= -79) && (pAd->CommonCfg.BBPCurrentBW == BW_40))
+		|| ((pAd->chipCap.avg_rssi_all <= -82) && (pAd->CommonCfg.BBPCurrentBW == BW_20)))
+		no_dynamic_vga = TRUE;
+	
+	if (((mode & 0xFF) != pAd->chipCap.dynamic_chE_mode) || no_dynamic_vga) {
+		pAd->chipCap.dynamic_chE_trigger = TRUE;
+		default_init_vga = pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_0;
+		eLNA_lower_init_vga = pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_0 - 10;
+		iLNA_lower_init_vga = pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_0 - 14;
+
+		/* the following has to be done by firmware,thus it is a temporary way to support this */
+		if (pAd->CommonCfg.BBPCurrentBW == BW_80)
+			RTMP_BBP_IO_WRITE32(pAd, RXO_R14, 0x00560411);
+		else
+			RTMP_BBP_IO_WRITE32(pAd, RXO_R14, 0x00560423);
+
+		/* VGA settings : MT7612e_RSSI_dynamic_VGA_CSD20141203 */
+		switch (mode & 0xFF)
+		{
+			case 0xA0: /* BW80::eLNA lower VGA/PD */
+				pAd->chipCap.dynamic_chE_mode = 0xA0;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
+				value = shift_left16(0x1836) | shift_left8(eLNA_lower_init_vga) | 0xF8;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */
+				break;
+		
+			case 0xA1: /* BW80::iLNA lower VGA/PD */
+				pAd->chipCap.dynamic_chE_mode = 0xA1;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
+				value = shift_left16(0x1E42) | shift_left8(iLNA_lower_init_vga) | 0xF8;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */
+				break;
+		
+			case 0x90: /* BW40::eLNA lower VGA/PD */
+				pAd->chipCap.dynamic_chE_mode = 0x90;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
+				value = shift_left16(0x1836) | shift_left8(eLNA_lower_init_vga) | 0xF8;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
+				break;
+		
+			case 0x91: /* BW40::iLNA lower VGA/PD */
+				pAd->chipCap.dynamic_chE_mode = 0x91;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
+				value = shift_left16(0x1E42) | shift_left8(iLNA_lower_init_vga) | 0xF8;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
+				break;
+		
+			case 0x80: /* BW20::eLNA lower VGA/PD */
+				pAd->chipCap.dynamic_chE_mode = 0x80;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
+				if (pAd->CommonCfg.Channel > 14){
+					value = shift_left16(0x1836) | shift_left8(eLNA_lower_init_vga) | 0xF8;
+				}
+				else{
+					value = shift_left16(0x0F36) | shift_left8(eLNA_lower_init_vga) | 0xF8;
+				}
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
+				
+				break;
+		
+			case 0x81: /* BW20::iLNA lower VGA/PD */
+				pAd->chipCap.dynamic_chE_mode = 0x81;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
+				value = shift_left16(0x1836) | shift_left8(iLNA_lower_init_vga) | 0xF8;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
+				break;
+		
+			case 0x20: /* BW80::eLNA default */
+				pAd->chipCap.dynamic_chE_mode = 0x20;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x10101014); /* BBP 0x238C */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x2121262C); /* BBP 0x2394 */
+				value = shift_left16(0x1836) | shift_left8(default_init_vga) | 0xF8;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
+				break;
+		
+			case 0x21: /* BW80::iLNA default */
+				pAd->chipCap.dynamic_chE_mode = 0x21;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x10101014); /* BBP 0x238C */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x2121262C); /* BBP 0x2394 */
+				value = shift_left16(0x1E42) | shift_left8(default_init_vga) | 0xF8;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
+				break;
+		
+			case 0x10: /* BW40::eLNA default */
+				pAd->chipCap.dynamic_chE_mode = 0x10;
+				if (pAd->CommonCfg.Channel > 14){
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x11111116); /* BBP 0x238C */
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x2121262C); /* BBP 0x2394 */
+				}
+				else{
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x11111516); /* BBP 0x238C */
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x2121262C); /* BBP 0x2394 */
+				}
+				value = shift_left16(0x1836) | shift_left8(default_init_vga) | 0xF8;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
+				break;		
+		
+			case 0x11: /* BW40::iLNA default */
+				pAd->chipCap.dynamic_chE_mode = 0x11;
+				if (pAd->CommonCfg.Channel > 14){
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x11111116); /* BBP 0x238C */
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x2121262C); /* BBP 0x2394 */
+				}
+				else{
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x11111516); /* BBP 0x238C */
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x2121262C); /* BBP 0x2394 */
+				}
+				value = shift_left16(0x1E42) | shift_left8(default_init_vga) | 0xF8;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */
+				break;
+		
+			case 0x00: /* BW20::eLNA default */
+				pAd->chipCap.dynamic_chE_mode = 0x00;
+				if (pAd->CommonCfg.Channel > 14){
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x11111116); /* BBP 0x238C */
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x2121262C); /* BBP 0x2394 */
+				}
+				else{
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x11111516); /* BBP 0x238C */
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x2121262C); /* BBP 0x2394 */
+				}
+				if (pAd->CommonCfg.Channel > 14){
+					value = shift_left16(0x1836) | shift_left8(default_init_vga) | 0xF8;
+				}
+				else{
+					value = shift_left16(0x0F36) | shift_left8(default_init_vga) | 0xF8;
+				}
+
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */
+				break;
+		
+			case 0x01: /* BW20::iLNA default */
+				pAd->chipCap.dynamic_chE_mode = 0x01;
+				if (pAd->CommonCfg.Channel > 14){
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x11111116); /* BBP 0x238C */
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x2121262C); /* BBP 0x2394 */
+				}
+				else{
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x11111516); /* BBP 0x238C */
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x2121262C); /* BBP 0x2394 */
+				}
+				value = shift_left16(0x1836) | shift_left8(default_init_vga) | 0xF8;
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */
+				break;
+			default:
+				DBGPRINT(RT_DEBUG_ERROR, ("%s:: no such dynamic ChE mode(0x%x)\n", 
+					__FUNCTION__, mode));
+				break;
+		}
+
+		DBGPRINT(RT_DEBUG_INFO, ("%s:: updated dynamic_chE_mode(0x%x), dynamic_chE_trigger(%d)\n", 
+			__FUNCTION__, pAd->chipCap.dynamic_chE_mode, pAd->chipCap.dynamic_chE_trigger));
+	} else
+		pAd->chipCap.dynamic_chE_trigger = FALSE;
+
+	return no_dynamic_vga;
+}
+
+void MT76x2_AsicDynamicVgaGainControl(RTMP_ADAPTER *pAd)
+{
+	if ((pAd->CommonCfg.lna_vga_ctl.bDyncVgaEnable) &&
+		//(pAd->MacTab.Size > 0) &&  
+		/* needs to do dync VGA even without any STA  - MT7662_SW_based_solution_20150206_EnDyncVGAWhenNoLink */
+		(pAd->chipCap.dynamic_vga_support) &&
+		OPSTATUS_TEST_FLAG(pAd, fOP_AP_STATUS_MEDIA_STATE_CONNECTED)) {
+		
+		UCHAR val1, val2;
+		UINT32 bbp_val1, bbp_val2;
+		BOOLEAN no_dynamic_vga = FALSE;
+		UCHAR VgaGainLowerBound = 0x10;
+
+		if (dynamic_channel_model_adjust(pAd) == TRUE) {
+			DBGPRINT(RT_DEBUG_INFO, ("%s:: no need to do dynamic vga\n", __FUNCTION__));			
+			return;
+		}
+
+		if (pAd->chipCap.dynamic_chE_trigger == TRUE) {
+			mt76x2_get_agc_gain(pAd, FALSE); /* real time update init values */
+			bbp_val1 = pAd->CommonCfg.lna_vga_ctl.agc1_r8_backup;
+			val1 = ((((bbp_val1 & (0x00007f00)) >> 8) & 0x7f) - pAd->chipCap.compensate_level);
+			bbp_val1 = (bbp_val1 & 0xffff80ff) | (val1 << 8);
+			RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, bbp_val1);
+
+			bbp_val2 = pAd->CommonCfg.lna_vga_ctl.agc1_r9_backup;
+			val2 = ((((bbp_val2 & (0x00007f00)) >> 8) & 0x7f) - pAd->chipCap.compensate_level);
+			bbp_val2 = (bbp_val2 & 0xffff80ff) | (val2 << 8);
+			RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, bbp_val2);			
+		} else {
+			RTMP_BBP_IO_READ32(pAd, AGC1_R8, &bbp_val1);
+			val1 = ((bbp_val1 & (0x00007f00)) >> 8) & 0x7f;
+			RTMP_BBP_IO_READ32(pAd, AGC1_R9, &bbp_val2);
+			val2 = ((bbp_val2 & (0x00007f00)) >> 8) & 0x7f;
+		}
+
+		DBGPRINT(RT_DEBUG_INFO, ("vga_init_0 = %x, vga_init_1 = %x\n",  pAd->CommonCfg.lna_vga_ctl.agc_vga_init_0, pAd->CommonCfg.lna_vga_ctl.agc_vga_init_1));
+		DBGPRINT(RT_DEBUG_INFO, ("ori AGC1_R8 = %x, ori AGC1_R9 = %x\n",  pAd->CommonCfg.lna_vga_ctl.agc1_r8_backup, pAd->CommonCfg.lna_vga_ctl.agc1_r9_backup));
+		DBGPRINT(RT_DEBUG_TRACE,
+			("MT76x2 one second False CCA=%d, fixed agc_vga_0:0%x, fixed agc_vga_1:0%x\n", pAd->RalinkCounters.OneSecFalseCCACnt, val1, val2));
+		DBGPRINT(RT_DEBUG_INFO, ("compensate level = %x\n", pAd->chipCap.compensate_level));
+
+		//dynamic_ed_cca_threshold_adjust(pAd);
+
+		if (pAd->RalinkCounters.OneSecFalseCCACnt > pAd->CommonCfg.lna_vga_ctl.nFalseCCATh) {
+			if (val1 > (pAd->CommonCfg.lna_vga_ctl.agc_vga_init_0 - VgaGainLowerBound)) {
+				val1 -= 0x02;
+				pAd->chipCap.compensate_level += 0x02;
+				if (pAd->chipCap.compensate_level >= VgaGainLowerBound)
+					pAd->chipCap.compensate_level = VgaGainLowerBound;
+				bbp_val1 = (bbp_val1 & 0xffff80ff) | (val1 << 8);
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, bbp_val1);
+#ifdef DFS_SUPPORT
+       		pAd->CommonCfg.RadarDetect.bAdjustDfsAgc = TRUE;
+#endif
+			}
+
+			if (pAd->CommonCfg.RxStream >= 2) {
+				if (val2 > (pAd->CommonCfg.lna_vga_ctl.agc_vga_init_1 - VgaGainLowerBound)) {
+					val2 -= 0x02;
+					bbp_val2 = (bbp_val2 & 0xffff80ff) | (val2 << 8);
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, bbp_val2);
+				}
+			}
+		} else if (pAd->RalinkCounters.OneSecFalseCCACnt < 
+					pAd->CommonCfg.lna_vga_ctl.nLowFalseCCATh) {
+			if (val1 < pAd->CommonCfg.lna_vga_ctl.agc_vga_init_0) {
+				val1 += 0x02;
+				pAd->chipCap.compensate_level -= 0x02;
+				if (pAd->chipCap.compensate_level < 0)
+					pAd->chipCap.compensate_level = 0;
+				bbp_val1 = (bbp_val1 & 0xffff80ff) | (val1 << 8);
+				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, bbp_val1);
+#ifdef DFS_SUPPORT
+				pAd->CommonCfg.RadarDetect.bAdjustDfsAgc = TRUE;
+#endif
+			}
+
+			if (pAd->CommonCfg.RxStream >= 2) {
+				if (val2 < pAd->CommonCfg.lna_vga_ctl.agc_vga_init_1) {
+					val2 += 0x02;
+					bbp_val2 = (bbp_val2 & 0xffff80ff) | (val2 << 8);
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, bbp_val2);
+				}
+			}
+		}
+
+#ifdef ED_MONITOR
+		//dynamic_ed_cca_threshold_adjust(pAd);
+		if (val1 == (pAd->CommonCfg.lna_vga_ctl.agc_vga_init_0 - VgaGainLowerBound))
+			pAd->ed_vga_at_lowest_gain = TRUE;
+		else
+			pAd->ed_vga_at_lowest_gain = FALSE;
+#endif
+
+	}
+}
+
+#endif /* DYNAMIC_VGA_SUPPORT */
 
 VOID mt76x2_antenna_sel_ctl(
 	IN RTMP_ADAPTER *ad)
@@ -4789,6 +5513,8 @@ static const RTMP_CHIP_CAP MT76x2_ChipCap = {
 #ifdef DOT11W_PMF_SUPPORT
 	.FlgPMFEncrtptMode = PMF_ENCRYPT_MODE_1, 
 #endif /* DOT11W_PMF_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+#endif /* CONFIG_STA_SUPPORT */
 #ifdef THERMAL_PROTECT_SUPPORT
 	.ThermalProtectSup = TRUE,
 #endif /* THERMAL_PROTECT_SUPPORT */
@@ -4810,6 +5536,9 @@ static const RTMP_CHIP_OP MT76x2_ChipOp = {
 #endif
 	
 	.ChipAGCInit = NULL,
+#ifdef CONFIG_STA_SUPPORT
+	.ChipAGCAdjust = NULL,
+#endif
 	.AsicRfTurnOn = NULL,
 	.AsicHaltAction = NULL,
 	.AsicRfTurnOff = NULL,
@@ -4821,6 +5550,9 @@ static const RTMP_CHIP_OP MT76x2_ChipOp = {
 	.AsicTxAlcGetAutoAgcOffset = NULL,
 	.ATEReadExternalTSSI = NULL,
 	.TSSIRatio = NULL,
+#ifdef CONFIG_STA_SUPPORT
+	.NetDevNickNameInit = mt76x2_init_dev_nick_name,
+#endif
 #ifdef CARRIER_DETECTION_SUPPORT
 	.ToneRadarProgram = ToneRadarProgram_v3,
 #endif 
@@ -4844,6 +5576,19 @@ static const RTMP_CHIP_OP MT76x2_ChipOp = {
 #else
 	.ChipSetEDCCA = NULL,
 #endif /* ED_MONITOR */
+
+#ifdef DYNAMIC_VGA_SUPPORT
+	.AsicDynamicVgaGainControl = MT76x2_AsicDynamicVgaGainControl,
+	.UpdateRssiForDynamicVga = MT76x2_UpdateRssiForChannelModel,
+#endif /* DYNAMIC_VGA_SUPPORT */
+
+#ifdef SINGLE_SKU_V2
+	.SkuTxPwrAdj = mt76x2_sku_calculate_TxPwrAdj,
+#else
+	.SkuTxPwrAdj = NULL,
+#endif
+	.TxPwrBoost = mt76x2_tx_pwr_boost,
+
 };
 
 VOID mt76x2_init(RTMP_ADAPTER *pAd)
@@ -4877,6 +5622,14 @@ VOID mt76x2_init(RTMP_ADAPTER *pAd)
 	pChipCap->asic_caps |= (fASIC_CAP_MCS_LUT);
 
 	RTMP_DRS_ALG_INIT(pAd, RATE_ALG_GRP);
+#ifdef CUSTOMER_DCC_FEATURE
+	pAd->EnableChannelStatsCheck = FALSE;
+	pAd->ApEnableBeaconTable = FALSE;
+	pAd->CommonCfg.channelSwitch.CHSWMode = NORMAL_MODE;
+	pAd->CommonCfg.channelSwitch.CHSWCount = 0;
+	pAd->CommonCfg.channelSwitch.CHSWPeriod = 5;
+	NdisZeroMemory(&pAd->RadioStatsCounter, sizeof(RADIO_STATS_COUNTER)); 
+#endif
 		
 	rlt_bcn_buf_init(pAd);
 
@@ -5072,50 +5825,179 @@ void mt76x2_pwrOn(RTMP_ADAPTER *pAd)
 }
 
 
-int mt76x2_set_ed_cca(RTMP_ADAPTER *ad, u8 enable)
+#ifdef DMA_BUSY_RESET
+#ifdef RTMP_PCI_SUPPORT
+VOID WlanResetB(RTMP_ADAPTER *pAd)
 {
-        UINT32 mac_val;
-        UINT32 bbp_val;
+	UINT32 MacValue, Value, loop, WMMCtrlBackup;
+	WPDMA_GLO_CFG_STRUC	DMACfg;
+	ULONG	WLANResetCounter = 0;
 
-        if (enable) {
-                RTMP_IO_READ32(ad, CH_TIME_CFG, &mac_val);
-                mac_val |= 0x05; // enable channel status check
-                RTMP_IO_WRITE32(ad, CH_TIME_CFG, mac_val);
+	
+	DBGPRINT(RT_DEBUG_TRACE, ("%s  ==> \n", __FUNCTION__));
 
-                // BBP: latched ED_CCA and high/low threshold
-                RTMP_BBP_IO_READ32(ad, AGC1_R2, &bbp_val);
-                //bbp_val &= 0xFFFF;
-                bbp_val = 0x80000808;
-                RTMP_BBP_IO_WRITE32(ad, AGC1_R2, bbp_val);
+	RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_RESET_IN_PROGRESS);
 
-                // MAC: enable ED_CCA/ED_2nd_CCA
-                RTMP_IO_READ32(ad, TXOP_CTRL_CFG, &mac_val);
-                mac_val |= ((1<<20) | (1<<7));
-                RTMP_IO_WRITE32(ad, TXOP_CTRL_CFG, mac_val);
+	//step 0.
 
-                RTMP_IO_READ32(ad, TXOP_HLDR_ET, &mac_val);
-                mac_val |= 2;
-                RTMP_IO_WRITE32(ad, TXOP_HLDR_ET, mac_val);
-        }
-        else
-        {
-                // MAC: disable ED_CCA/ED_2nd_CCA
-                RTMP_IO_READ32(ad, TXOP_CTRL_CFG, &mac_val);
-                mac_val &= (~((1<<20) | (1<<7)));
-                RTMP_IO_WRITE32(ad, TXOP_CTRL_CFG, mac_val);
+	RTMP_OS_NETDEV_STOP_QUEUE(pAd->net_dev);
+	
 
-                RTMP_IO_READ32(ad, TXOP_HLDR_ET, &mac_val);
-                mac_val &= ~2;
-                RTMP_IO_WRITE32(ad, TXOP_HLDR_ET, mac_val);
-        }
+	//step1.
+	//Disable MAC Tx/Rx
+	RTMP_IO_READ32(pAd, MAC_SYS_CTRL, &MacValue);
 
-        /* Clear previous status */
-        RTMP_IO_READ32(ad, CH_IDLE_STA, &mac_val);
-        RTMP_IO_READ32(ad, CH_BUSY_STA, &mac_val);
-        RTMP_IO_READ32(ad, CH_BUSY_STA_SEC, &mac_val);
-        RTMP_IO_READ32(ad, 0x1140, &mac_val);
+	DBGPRINT(RT_DEBUG_TRACE, ("%s 111 MAC_SYS_CTRL =%08x \n", __FUNCTION__,MacValue));
 
-        return TRUE;
+	
+	RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, 0x0);
+
+	//step2.
+	//Clear PDMA_INT_MASK
+	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_ACTIVE))
+	{
+		RTMP_ASIC_INTERRUPT_DISABLE(pAd);
+	}
+	
+	//step3.
+	// Disable PDMA Tx/Rx
+	RTMP_IO_FORCE_READ32(pAd, WPDMA_GLO_CFG, &MacValue);
+	MacValue = MacValue & 0xfffffffa;
+	RTMP_IO_FORCE_WRITE32(pAd, WPDMA_GLO_CFG, MacValue);
+
+
+	//step4.
+	//poll MAC Tx to idle
+	/* wait mac 0x1200 idle */
+	do {
+		RTMP_IO_READ32(pAd, 0x1200, &Value);
+		Value &= 0x1;
+		DBGPRINT(RT_DEBUG_TRACE,("%s:: Wait until MAC 0x1200 bit0 become 0\n", __FUNCTION__));
+		RtmpusecDelay(1);
+		loop++;
+	} while ((Value != 0) && (loop < 5000));
+
+	if (loop >= 5000) {
+		DBGPRINT(RT_DEBUG_OFF, ("%s:: Wait until MAC 0x1200 bit0 become 0 > 5000 times\n", __FUNCTION__));
+	}
+
+
+	RTMP_IO_WRITE32(pAd, INT_SOURCE_CSR, 0xffffffff);  // clear garbage interrupts
+
+
+	//let f/w to reset DMA
+	RTMP_IO_READ32(pAd, 0x734, &MacValue);
+	MacValue |= 0x03;
+	RTMP_IO_WRITE32(pAd, 0x734, MacValue);
+
+	//step5. 
+	//set MCU to standby mode
+	RTMP_IO_WRITE32(pAd, INT_LEVEL, 0x01);
+	
+
+
+
+
+
+
+	//step8. load f/w
+		andes_pci_erasefw(pAd);
+	andes_pci_loadfw(pAd);
+
+	RTMP_IO_WRITE32(pAd, FCE_PSE_CTRL, 0x01);
+
+
+	
+	
+	
+#if 0
+	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RADIO_OFF))
+		printk("k1\n");
+	// step5. re-init DMA/FCE/PBF/MAC/BBP
+	//NICReadEEPROMParameters(pAd, NULL);
+	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RADIO_OFF))
+		printk("k2\n");
+	//NICInitializeAdapter(pAd, TRUE);
+	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RADIO_OFF))
+		printk("k3\n");	
+	//NICInitAsicFromEEPROM(pAd);
+	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RADIO_OFF))
+		printk("k4\n");
+	
+	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RADIO_OFF))
+		printk("k5\n");
+#endif
+
+	//step 9. restart all PDMA ring & enable PDMA_INT_MASK 
+	rlt_asic_init_txrx_ring(pAd);
+
+	{
+		//also clean RX done bit in follow functions
+		WPDMA_GLO_CFG_STRUC GloCfg;
+
+		if (pAd == NULL)
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("====> pAd is NULL, return.\n"));
+			return;
+		}
+		
+		DBGPRINT(RT_DEBUG_TRACE, ("==> RTMPHandleRxCoherentInterrupt \n"));
+		
+		RTMP_IO_READ32(pAd, WPDMA_GLO_CFG , &GloCfg.word);
+		GloCfg.field.EnTXWriteBackDDONE = 0;
+		GloCfg.field.EnableRxDMA = 0;
+		GloCfg.field.EnableTxDMA = 0;
+		RTMP_IO_WRITE32(pAd, WPDMA_GLO_CFG, GloCfg.word);
+
+		RTMPRingCleanUp(pAd, QID_AC_BK);
+	   	RTMPRingCleanUp(pAd, QID_AC_BE);
+	   	RTMPRingCleanUp(pAd, QID_AC_VI);
+	   	RTMPRingCleanUp(pAd, QID_AC_VO);
+	   	RTMPRingCleanUp(pAd, QID_HCCA);
+	   	RTMPRingCleanUp(pAd, QID_MGMT);
+	   	RTMPRingCleanUp(pAd, QID_RX);	
+	}
+
+	RTMPEnableRxTx(pAd);
+
+
+	//RTMP_IO_WRITE32(pAd, INT_SOURCE_CSR, 0xffffffff);  // clear garbage interrupts
+	RTMP_ASIC_INTERRUPT_ENABLE(pAd);
+
+
+       //step 14, Enable MAC Tx/Rx
+
+
+	RTMP_IO_READ32(pAd, MAC_SYS_CTRL, &MacValue);
+	
+	DBGPRINT(RT_DEBUG_TRACE, ("%s  444 MAC_SYS_CTRL =%08x \n", __FUNCTION__,MacValue));	
+
+
+
+{
+	//struct MCU_CTRL *ctl = &pAd->MCUCtrl;
+	//ctl->power_on= FALSE;
+	//ctl->dpd_on= FALSE;
+
+	mt76x2_switch_channel(pAd, pAd->hw_cfg.cent_ch, FALSE);
+	//AsicSwitchChannel(pAd, pAd->hw_cfg.cent_ch, FALSE);
+	//AsicLockChannel(pAd, pAd->hw_cfg.cent_ch);
 }
+
+
+	RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RESET_IN_PROGRESS);
+	RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_IDLE_RADIO_OFF);
+	RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RADIO_OFF);
+	RTMP_OS_NETDEV_START_QUEUE((pAd->net_dev));
+
+
+
+
+	DBGPRINT(RT_DEBUG_TRACE, ("<== %s, \n",__FUNCTION__));
+
+
+}
+#endif /* RTMP_PCI_SUPPORT */
+#endif /*DMA_BUSY_RESET*/
 
 

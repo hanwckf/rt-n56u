@@ -17,6 +17,10 @@
 #endif /* DOT11_VHT_AC */
 #endif /* DOT11_N_SUPPORT */
 
+#ifdef DOT11K_RRM_SUPPORT
+#include "dot11k_rrm.h"
+#endif /* DOT11K_RRM_SUPPORT */
+
 #ifdef TXBF_SUPPORT
 /* CSI/Steering values */
 #define DOT11N_BF_FB_NONE		0

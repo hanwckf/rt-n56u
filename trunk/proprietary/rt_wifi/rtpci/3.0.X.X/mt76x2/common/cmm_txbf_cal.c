@@ -459,10 +459,10 @@ static VOID CalcDividerPhase(
 		mt_rf_write(pAd, RF_Path1, RG_WF0_RXG_TOP, 0x00492016); // TRSWITCH
 		mt_rf_write(pAd, RF_Path0, RFDIGI_TOP1,    0x0004012C); // tx block mode. 0x0 should behind 0x10
 		mt_rf_write(pAd, RF_Path1, RFDIGI_TOP1,    0x0004012C); // tx block mode. 0x0 should behind 0x10
-		mt_rf_write(pAd, RF_Path0, RFDIGI_TOP2,    0x10470000); // tx block mode, should 0x0 should behind 0x10
-		mt_rf_write(pAd, RF_Path1, RFDIGI_TOP2,    0x10470000); // tx block mode, should 0x0 should behind 0x10
-		mt_rf_write(pAd, RF_Path0, RFDIGI_TOP4,    0x11C73047); // tx block mode, should 0x0 should behind 0x10
-		mt_rf_write(pAd, RF_Path1, RFDIGI_TOP4,    0x11C73047); // tx block mode, should 0x0 should behind 0x10
+//		mt_rf_write(pAd, RF_Path0, RFDIGI_TOP2,    0x10470000); // tx block mode, should 0x0 should behind 0x10
+//		mt_rf_write(pAd, RF_Path1, RFDIGI_TOP2,    0x10470000); // tx block mode, should 0x0 should behind 0x10
+//		mt_rf_write(pAd, RF_Path0, RFDIGI_TOP4,    0x11C73047); // tx block mode, should 0x0 should behind 0x10
+//		mt_rf_write(pAd, RF_Path1, RFDIGI_TOP4,    0x11C73047); // tx block mode, should 0x0 should behind 0x10
 		VGAGainIdx[0] = 2;
 		VGAGainIdx[1] = 2;
 	}
@@ -593,7 +593,7 @@ static VOID CalcDividerPhase(
 			DBGPRINT(RT_DEBUG_TRACE,(
 				    "Divider phase cal : CAL_R11=0x%x\n" 
 					"Peak I value=0x%x\n"
-					"I value=0x%x, Q value=0x%x\n", 
+					"I value=0x%lx, Q value=0x%lx\n", 
 					phaseCaliResult, 
 					peakI[i],
 					avgIData, avgQData));
@@ -768,10 +768,10 @@ static UCHAR InterpParam_check(int ch, int chBeg, int chEnd, UCHAR yBeg, UCHAR y
 
 	DBGPRINT(RT_DEBUG_TRACE,
 		  ("%s : \n"
-		   "x    = mapChannelKHz(%d) = %d\n"
-		   "xBeg = mapChannelKHz(%d) = %d\n"
-		   "xEnd = mapChannelKHz(%d) = %d\n"
-		   "yDelta = %d\n"
+		   "x    = mapChannelKHz(%d) = %ld\n"
+		   "xBeg = mapChannelKHz(%d) = %ld\n"
+		   "xEnd = mapChannelKHz(%d) = %ld\n"
+		   "yDelta = %ld\n"
 		   "output = %d\n",
 		   __FUNCTION__,
 		   ch, x,
@@ -1330,14 +1330,14 @@ INT ITxBFLoPhaseCalibrationStartUp(
 	
 
 	NdisGetSystemUpTime(&stTimeChk1);
-	DBGPRINT(RT_DEBUG_INFO, ("%s : Lo Phase calibration duration1 = %d ms\n", 
+	DBGPRINT(RT_DEBUG_INFO, ("%s : Lo Phase calibration duration1 = %ld ms\n", 
 		     __FUNCTION__, (stTimeChk1 - stTimeChk0)*1000/OS_HZ));
 	
 	// Do the divider calibration
 	NdisGetSystemUpTime(&stTimeChk0);
 	calStatusReport = mt76x2_ITxBFLoPhaseCalibration(pAd, eepromUpdateFlg, LoPhase);
 	NdisGetSystemUpTime(&stTimeChk1);
-	DBGPRINT(RT_DEBUG_INFO, ("%s : Lo Phase calibration duration2 = %d ms\n", 
+	DBGPRINT(RT_DEBUG_INFO, ("%s : Lo Phase calibration duration2 = %ld ms\n", 
 		     __FUNCTION__, (stTimeChk1 - stTimeChk0)*1000/OS_HZ));
 	
 	mt_rf_write(pAd, RF_Path0, RFDIGI_TRX17, CR_BK[0]);
@@ -1581,9 +1581,11 @@ INT ITxBFDividerCalibrationStartUp(
 	mt_rf_read(pAd, RF_Path1, RFDIGI_TRX0,	&CR_BK[13]);
 	mt_rf_read(pAd, RF_Path0, RFDIGI_TRX4,	&CR_BK[14]);
 	mt_rf_read(pAd, RF_Path1, RFDIGI_TRX4,	&CR_BK[15]);
-	mt_rf_read(pAd, RF_Path0, RFDIGI_TOP0,	&CR_BK[16]);
-	mt_rf_read(pAd, RF_Path0, RFDIGI_TOP4,  &CR_BK[17]);
-	mt_rf_read(pAd, RF_Path1, RFDIGI_TOP4,  &CR_BK[18]);
+    mt_rf_read(pAd, RF_Path0, RFDIGI_TOP1,  &CR_BK[16]);
+    mt_rf_read(pAd, RF_Path1, RFDIGI_TOP1,  &CR_BK[17]);
+//	mt_rf_read(pAd, RF_Path0, RFDIGI_TOP0,	&CR_BK[16]);
+//	mt_rf_read(pAd, RF_Path0, RFDIGI_TOP4,  &CR_BK[17]);
+//	mt_rf_read(pAd, RF_Path1, RFDIGI_TOP4,  &CR_BK[18]);
 	mt_rf_read(pAd, RF_Path0, RFDIGI_ABB_TO_AFE5,&CR_BK[19]);
 	mt_rf_read(pAd, RF_Path1, RFDIGI_ABB_TO_AFE5,&CR_BK[20]);
 	
@@ -1601,7 +1603,7 @@ INT ITxBFDividerCalibrationStartUp(
 	RTMP_IO_READ32(pAd,TXBE_R5,   &CR_BK[33]);
 	RTMP_IO_READ32(pAd,PWR_PIN_CFG,&CR_BK[34]);
 	NdisGetSystemUpTime(&stTimeChk1);
-	DBGPRINT(RT_DEBUG_INFO, ("%s : Divider calibration duration1 = %d ms\n", 
+	DBGPRINT(RT_DEBUG_INFO, ("%s : Divider calibration duration1 = %ld ms\n", 
 		     __FUNCTION__, (stTimeChk1 - stTimeChk0)*1000/OS_HZ));
 	
 	// Do the divider calibration
@@ -1609,7 +1611,7 @@ INT ITxBFDividerCalibrationStartUp(
 	RTMP_IO_WRITE32(pAd, AGC1_R0, 0x7408);
 	calStatusReport = mt76x2_ITxBFDividerCalibration(pAd, calFunction, calMethod, divPhase);
 	NdisGetSystemUpTime(&stTimeChk1);
-	DBGPRINT(RT_DEBUG_INFO, ("%s : Divider calibration duration2 = %d ms\n", 
+	DBGPRINT(RT_DEBUG_INFO, ("%s : Divider calibration duration2 = %ld ms\n", 
 		     __FUNCTION__, (stTimeChk1 - stTimeChk0)*1000/OS_HZ));
 	
 	mt_rf_write(pAd, RF_Path0, RFDIGI_TRX17, CR_BK[0]);
@@ -1628,6 +1630,10 @@ INT ITxBFDividerCalibrationStartUp(
 	mt_rf_write(pAd, RF_Path1, RFDIGI_TRX0,  CR_BK[13]);
 	mt_rf_write(pAd, RF_Path0, RFDIGI_TRX4,  CR_BK[14]);
 	mt_rf_write(pAd, RF_Path1, RFDIGI_TRX4,  CR_BK[15]);
+
+    mt_rf_write(pAd, RF_Path0, RFDIGI_TOP1,	CR_BK[16]);
+    mt_rf_write(pAd, RF_Path1, RFDIGI_TOP1, CR_BK[17]);
+
 //	mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0,	CR_BK[16]);
 //	mt_rf_write(pAd, RF_Path0, RFDIGI_TOP4, CR_BK[17]);
 //	mt_rf_write(pAd, RF_Path1, RFDIGI_TOP4,  CR_BK[18]);
@@ -2409,7 +2415,7 @@ INT mt76x2_ITxBFLNACalibration(
 		}
 		else {
 			DBGPRINT(RT_DEBUG_OFF,
-					("Invalid channel: %d\nMust calibrate channel 1, 14, 36, 64, 100, 128, 132 or 165", channel) );
+					("Invalid channel: %d\nMust calibrate channel 1, 14, 36, 64, 100, 120, 140 ,149 or 173", channel) );
 			result = FALSE;
 			goto exitLnaCal;
 		}
@@ -2553,8 +2559,8 @@ INT mt76x2_ITxBFPhaseCalibration(
     INT    mCalPhase0;
 	LONG   avgIData, avgQData;
 	UCHAR  i;
-	INT    divPhase[2] = {0};
-	INT    phaseValues[2] = {0};
+	UCHAR   divPhase[2] = {0};
+	UCHAR   phaseValues[2] = {0};
 	BOOLEAN gBandFlg = FALSE;
 	CHAR    rf_Path[2] = {RF_Path0, RF_Path1};
 	CHAR    rf_RevPath[2] = {RF_Path1, RF_Path0};
@@ -2709,7 +2715,7 @@ INT mt76x2_ITxBFPhaseCalibration(
 			    		"Tx phase cal : CAL_R11=0x%x\n"                                                                           
 			    		"Phase=0x%x\n"                                                                                     
 				"Peak I value=0x%x\n"
-				"I value=0x%x, Q value=0x%x\n"
+				"I value=0x%lx, Q value=0x%lx\n"
 				"MidVGA[0] = 0x%x\n",
 					rf_Path[i],
 				phaseCaliResult, 
@@ -3280,7 +3286,7 @@ UCHAR Read_PFMUTxBfProfile(
 {
 	INT carrierIndex, scIndex;
 	INT	profileNum;
-	SC_TABLE_ENTRY *pTab;
+	SC_TABLE_ENTRY *pTab = NULL;
 	INT j, c;
 	UCHAR  r163Value = 0;
 	UINT32 value32;

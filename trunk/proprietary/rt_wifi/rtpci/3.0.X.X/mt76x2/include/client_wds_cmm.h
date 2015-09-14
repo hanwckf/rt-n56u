@@ -28,6 +28,10 @@
 
 #ifdef CLIENT_WDS
 
+#ifdef ETH_CONVERT_SUPPORT
+#error: "ETH_CONVERT function are conflict with CLIENT_WDS function.\
+ And Can't support both of them at same time."
+#endif /* ETH_CONVERT_SUPPORT */
 
 #define CLI_WDS_ENTRY_AGEOUT 5000  /* seconds */
 

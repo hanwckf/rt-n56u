@@ -181,7 +181,7 @@ static VOID ApCliMlmeProbeReqAction(
 		else
 			pApCliEntry->MlmeAux.Channel = pApCliEntry->TrialCh;
 #else
-	pApCliEntry->MlmeAux.Channel = pAd->CommonCfg.Channel;
+		pApCliEntry->MlmeAux.Channel = pAd->CommonCfg.Channel;
 #endif /* APCLI_CONNECTION_TRIAL */
 	}
 	else
@@ -199,7 +199,7 @@ static VOID ApCliMlmeProbeReqAction(
 		pApCliEntry->MlmeAux.Channel = pAd->ScanTab.BssEntry[bss_idx].Channel;
 #endif /* APCLI_CONNECTION_TRIAL */
 	}
-	
+
 #ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
 	pApCliEntry->MlmeAux.SupRateLen = pAd->cfg80211_ctrl.P2pSupRateLen;
 	NdisMoveMemory(pApCliEntry->MlmeAux.SupRate, pAd->cfg80211_ctrl.P2pSupRate, pAd->cfg80211_ctrl.P2pSupRateLen);
@@ -313,8 +313,11 @@ static VOID ApCliPeerProbeRspAtJoinAction(
 		if (Bssidx == BSS_NOT_FOUND)
 		{
 			/* discover new AP of this network, create BSS entry */
+#ifdef CUSTOMER_DCC_FEATURE
+			Bssidx = BssTableSetEntry(pAd, &pAd->ScanTab, ie_list, -127, LenVIE, pVIE, Elem->Snr0, Elem->Snr1);
+#else
 			Bssidx = BssTableSetEntry(pAd, &pAd->ScanTab, ie_list, -127, LenVIE, pVIE);
-			
+#endif
 			if (Bssidx == BSS_NOT_FOUND) /* return if BSS table full */
 			{
 				DBGPRINT(RT_DEBUG_ERROR, ("ERROR: Driver ScanTable Full In Apcli ProbeRsp Join\n"));
@@ -728,10 +731,31 @@ static VOID ApCliEnqueueProbeRequest(
 		if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode) &&
 			(pAd->CommonCfg.Channel > 14))
 		{
+			BOOLEAN fgBfeeCapSu;
+			    
 			build_vht_cap_ie(pAd, (UCHAR *)&pApCliEntry->MlmeAux.vht_cap);
 			pApCliEntry->MlmeAux.vht_cap_len = sizeof(VHT_CAP_IE);
-			FrameLen += build_vht_ies(pAd, (UCHAR *)(pOutBuffer + FrameLen), SUBTYPE_PROBE_REQ);
-			pApCliEntry->MlmeAux.vht_cap_len = sizeof(VHT_CAP_IE);
+
+#ifdef VHT_TXBF_SUPPORT
+            fgBfeeCapSu = pAd->CommonCfg.vht_cap_ie.vht_cap.bfee_cap_su;
+
+            //Disable beamform capability in Associate Request with 3x3 AP to avoid throughput drop issue
+            // MT76x2 only supports up to 2x2 sounding feedback 
+            pAd->BeaconSndDimensionFlag = 0;
+            if (pApCliEntry->MlmeAux.vht_cap.vht_cap.num_snd_dimension >=2 )
+            {
+                pAd->BeaconSndDimensionFlag = 1;
+            }
+            else
+            {
+                pAd->CommonCfg.vht_cap_ie.vht_cap.bfee_cap_su = TRUE;
+            }
+
+            FrameLen += build_vht_ies(pAd, (UCHAR *)(pOutBuffer + FrameLen), SUBTYPE_PROBE_REQ);
+            pAd->CommonCfg.vht_cap_ie.vht_cap.bfee_cap_su = fgBfeeCapSu;
+#else
+            FrameLen += build_vht_ies(pAd, (UCHAR *)(pOutBuffer + FrameLen), SUBTYPE_PROBE_REQ);
+#endif /* VHT_TXBF_SUPPORT */			
 		}
 #endif /* DOT11_VHT_AC */
 #ifdef WSC_AP_SUPPORT

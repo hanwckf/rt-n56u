@@ -25,7 +25,7 @@
  
 #include "rt_config.h"
 
-#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
+#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 #include "../../../../../../net/nat/hw_nat/ra_nat.h"
 #include "../../../../../../net/nat/hw_nat/frame_engine.h"
 #endif
@@ -49,11 +49,13 @@ struct dev_type_name_map{
 #define def_to_str(s)			#s
 
 #define FIRST_AP_PROFILE_PATH		"/etc/Wireless/RT2860/RT2860AP.dat"
-#define FIRST_AP_SINGLE_SKU_PATH	"/etc/Wireless/RT2860/SingleSKU.dat"
+#define FIRST_STA_PROFILE_PATH		"/etc/Wireless/RT2860/RT2860STA.dat"
+#define FIRST_IF_SINGLE_SKU_PATH	"/etc/Wireless/RT2860/SingleSKU.dat"
 #define FIRST_CHIP_ID			xdef_to_str(CONFIG_RT_FIRST_CARD)
 
 #define SECOND_AP_PROFILE_PATH		"/etc/Wireless/iNIC/iNIC_ap.dat"
-#define SECOND_AP_SINGLE_SKU_PATH	"/etc/Wireless/iNIC/SingleSKU.dat"
+#define SECOND_STA_PROFILE_PATH		"/etc/Wireless/iNIC/iNIC_sta.dat"
+#define SECOND_IF_SINGLE_SKU_PATH	"/etc/Wireless/iNIC/SingleSKU.dat"
 #define SECOND_CHIP_ID			xdef_to_str(CONFIG_RT_SECOND_CARD)
 
 static struct dev_type_name_map prefix_map[] =
@@ -64,10 +66,10 @@ static struct dev_type_name_map prefix_map[] =
 	{INT_MBSSID,		{INF_MBSSID_DEV_NAME, SECOND_INF_MBSSID_DEV_NAME}},
 #endif /* MBSS_SUPPORT */
 #ifdef APCLI_SUPPORT
-	{INT_APCLI, 		{INF_APCLI_DEV_NAME, SECOND_INF_APCLI_DEV_NAME}},
+	{INT_APCLI,		{INF_APCLI_DEV_NAME, SECOND_INF_APCLI_DEV_NAME}},
 #endif /* APCLI_SUPPORT */
 #ifdef WDS_SUPPORT
-	{INT_WDS, 		{INF_WDS_DEV_NAME, SECOND_INF_WDS_DEV_NAME}},
+	{INT_WDS,		{INF_WDS_DEV_NAME, SECOND_INF_WDS_DEV_NAME}},
 #endif /* WDS_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 #ifdef CONFIG_SNIFFER_SUPPORT
@@ -86,7 +88,7 @@ VOID get_dev_config_idx(RTMP_ADAPTER *pAd)
 {
 	INT idx = 0;
 
-#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612) && \
+#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612 || CONFIG_RT_FIRST_CARD == 7620) && \
     (CONFIG_RT_SECOND_CARD == 7602 || CONFIG_RT_SECOND_CARD == 7612)
 	INT first_card = 0, second_card = 0;
 	static int probe_cnt = 1;
@@ -102,6 +104,11 @@ VOID get_dev_config_idx(RTMP_ADAPTER *pAd)
 		if (chip_id == second_card)
 			idx = 1;
 	} else {
+#ifdef RT6352
+		if (IS_RT6352(pAd))
+			idx = 0;
+		else
+#endif
 		if (IS_RT8592(pAd))
 			idx = 0;
 		else if (IS_RT5392(pAd) || IS_MT76x0(pAd))
@@ -148,14 +155,20 @@ static UCHAR *get_dev_profile(RTMP_ADAPTER *pAd)
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			src = STA_PROFILE_PATH_RBUS;
+		}
+#endif /* CONFIG_STA_SUPPORT */
 	}
 	else
 #endif /* RTMP_RBUS_SUPPORT */
-	{
+	{	
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{
-#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612) && \
+#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612 || CONFIG_RT_FIRST_CARD == 7620) && \
     (CONFIG_RT_SECOND_CARD == 7602 || CONFIG_RT_SECOND_CARD == 7612)
 			INT card_idx = pAd->dev_idx;
 
@@ -169,6 +182,22 @@ static UCHAR *get_dev_profile(RTMP_ADAPTER *pAd)
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612 || CONFIG_RT_FIRST_CARD == 7620) && \
+    (CONFIG_RT_SECOND_CARD == 7602 || CONFIG_RT_SECOND_CARD == 7612)
+			INT card_idx = pAd->dev_idx;
+
+			if (card_idx == 0)
+				src = FIRST_STA_PROFILE_PATH;
+			else if (card_idx == 1)
+				src = SECOND_STA_PROFILE_PATH;
+			else
+#endif
+				src = STA_PROFILE_PATH;
+		}
+#endif /* CONFIG_STA_SUPPORT */
 	}
 #ifdef MULTIPLE_CARD_SUPPORT
 	src = (PSTRING)pAd->MC_FileName;
@@ -182,14 +211,14 @@ static CHAR *get_sku_profile(RTMP_ADAPTER *pAd)
 {
 	CHAR *src = SINGLE_SKU_TABLE_FILE_NAME;
 
-#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612) && \
+#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612 || CONFIG_RT_FIRST_CARD == 7620) && \
     (CONFIG_RT_SECOND_CARD == 7602 || CONFIG_RT_SECOND_CARD == 7612)
 	INT card_idx = pAd->dev_idx;
 
 	if (card_idx == 0)
-		src = FIRST_AP_SINGLE_SKU_PATH;
+		src = FIRST_IF_SINGLE_SKU_PATH;
 	else if (card_idx == 1)
-		src = SECOND_AP_SINGLE_SKU_PATH;
+		src = SECOND_IF_SINGLE_SKU_PATH;
 #endif
 
 	return src;
@@ -225,7 +254,7 @@ NDIS_STATUS	RTMPReadParametersHook(RTMP_ADAPTER *pAd)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,19,0)
 				fsize = (ULONG)file_inode(srcf)->i_size;
 #else
-				fsize = (ULONG)srcf->f_dentry->d_inode->i_size;
+				 fsize = (ULONG)srcf->f_dentry->d_inode->i_size;
 #endif
 				if (buf_size < (fsize + 1))
 					buf_size = fsize + 1;
@@ -310,6 +339,9 @@ void tbtt_tasklet(unsigned long data)
 		QBSS_LoadUpdate(pAd, 0);
 #endif /* AP_QLOAD_SUPPORT */
 
+#ifdef DOT11K_RRM_SUPPORT
+		RRM_QuietUpdata(pAd);
+#endif /* DOT11K_RRM_SUPPORT */
 	}
 #endif /* RTMP_MAC_PCI */
 
@@ -452,6 +484,18 @@ void announce_802_3_packet(
 #endif /* APCLI_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef ETH_CONVERT_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+#ifdef MAT_SUPPORT
+			if (RTMP_MATPktRxNeedConvert(pAd, pRxPkt->dev) &&
+				(pAd->EthConvert.ECMode & ETH_CONVERT_MODE_DONGLE))
+				RTMP_MATEngineRxHandle(pAd, pNetPkt, 0);
+#endif /* MAT_SUPPORT */
+		}
+#endif /* ETH_CONVERT_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 
     /* Push up the protocol stack */
 #ifdef CONFIG_AP_SUPPORT
@@ -486,7 +530,6 @@ void announce_802_3_packet(
 				ret = ppa_hook_directpath_send_fn(pAd->g_if_id, pNetPkt, pNetPkt->len, ppa_flags);
 				if (ret == 0)
 				{
-					pNetPkt = NULL;
 					return;
 				}
 				netif_rx(pRxPkt);
@@ -516,25 +559,35 @@ void announce_802_3_packet(
 	PACKET_CB_ASSIGN(pNetPkt, 22) = 0xa8;
 #endif
 
-#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-#if !defined (CONFIG_RA_NAT_NONE)
-	/*
-	 * ra_sw_nat_hook_rx return 1 --> continue
-	 * ra_sw_nat_hook_rx return 0 --> FWD & without netif_rx
+#if defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE)
+	if(ra_classifier_hook_rx!= NULL)
+	{
+		unsigned long flags;
+		
+		RTMP_IRQ_LOCK(&pAd->page_lock, flags);
+		ra_classifier_hook_rx(pNetPkt, classifier_cur_cycle);
+		RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
+	}
+#endif /* CONFIG_RA_CLASSIFIER */
+
+#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
+#if !defined(CONFIG_RA_NAT_NONE)
+	/* bruce+
+		ra_sw_nat_hook_rx return 1 --> continue
+		ra_sw_nat_hook_rx return 0 --> FWD & without netif_rx
 	*/
 	if (ra_sw_nat_hook_rx != NULL)
 	{
 		pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
 		FOE_MAGIC_TAG(pRxPkt) = FOE_MAGIC_EXTIF;
-		if(ra_sw_nat_hook_rx(pRxPkt))
+		if (ra_sw_nat_hook_rx(pRxPkt))
 		{
 			FOE_MAGIC_TAG(pRxPkt) = 0;
 			netif_rx(pRxPkt);
 		}
-		
 		return;
 	}
-#endif
+#endif /* CONFIG_RA_NAT_NONE */
 #endif
 
 #ifdef CONFIG_AP_SUPPORT
@@ -545,8 +598,34 @@ void announce_802_3_packet(
 #endif /* CONFIG_AP_SUPPORT */
 
 	pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
+
+#if defined (CONFIG_WIFI_PKT_FWD)
+	if (wf_fwd_rx_hook!= NULL)
+	{
+		unsigned int flags;
+		int ret = 0;
+		RTMP_IRQ_LOCK(&pAd->page_lock, flags);
+
+		ret = wf_fwd_rx_hook(pNetPkt);
+		if (ret == 0)
+		{
+			RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
+			return;
+		}
+		else if (ret == 2)
+		{
+			RELEASE_NDIS_PACKET(pAd, pNetPkt, NDIS_STATUS_FAILURE);
+			RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
+			return;
+		}
+
+		RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
+	}
+#endif /* CONFIG_WIFI_PKT_FWD */
+
 	netif_rx(pRxPkt);
 }
+
 
 #ifdef CONFIG_SNIFFER_SUPPORT
 
@@ -782,7 +861,7 @@ VOID RTMPFreeAdapter(VOID *pAdSrc)
 	NdisFreeSpinLock(&pAd->LockInterrupt);
 #ifdef CONFIG_ANDES_SUPPORT
 	NdisFreeSpinLock(&pAd->CtrlRingLock);
-	NdisFreeSpinLock(&pAd->mcu_atomic);
+	//NdisFreeSpinLock(&pAd->mcu_atomic);
 #endif /* CONFIG_ANDES_SUPPORT */
 	NdisFreeSpinLock(&pAd->tssi_lock);
 #endif /* RTMP_MAC_PCI */
@@ -823,6 +902,39 @@ VOID RTMPFreeAdapter(VOID *pAdSrc)
 }
 
 
+#ifdef ETH_CONVERT_SUPPORT
+static inline BOOLEAN rtmp_clone_mac(
+	RTMP_ADAPTER *pAd,
+	UCHAR *pkt,
+	RTMP_NET_ETH_CONVERT_DEV_SEARCH Func)
+{
+	ETH_CONVERT_STRUCT *eth_convert;
+	UCHAR *pData = GET_OS_PKT_DATAPTR(pkt);
+	BOOLEAN valid = TRUE;
+	
+	eth_convert = &pAd->EthConvert;
+	/* Don't move this checking into wdev_tx_pkts(), becasue the net_device is OS-depeneded. */
+	if ((eth_convert->ECMode & ETH_CONVERT_MODE_CLONE) 
+		 && (!eth_convert->CloneMacVaild)
+	 	&& (eth_convert->macAutoLearn)
+	 	&& (!(pData[6] & 0x1)))
+	{
+		VOID *pNetDev = Func(pAd->net_dev, pData);
+
+		if (!pNetDev) {
+			NdisMoveMemory(&eth_convert->EthCloneMac[0], &pData[6], MAC_ADDR_LEN);
+			eth_convert->CloneMacVaild = TRUE;
+		}
+	}
+
+	/* Drop pkt since we are in pure clone mode and the src is not the cloned mac address. */
+	if ((eth_convert->ECMode == ETH_CONVERT_MODE_CLONE)
+		&& (NdisEqualMemory(pAd->CurrentAddress, &pData[6], MAC_ADDR_LEN) == FALSE))
+		valid = FALSE;
+
+	return valid;
+}
+#endif /* ETH_CONVERT_SUPPORT */
 
 
 int RTMPSendPackets(
@@ -872,14 +984,17 @@ int RTMPSendPackets(
 	}
 #endif /* RALINK_ATE */
 
-#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-#if !defined (CONFIG_RA_NAT_NONE)
-	if (ra_sw_nat_hook_tx != NULL)
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
 	{
-		ra_sw_nat_hook_tx(pPacket, 0);
+		/* Drop send request since we are in monitor mode */
+		if (MONITOR_ON(pAd))
+		{
+			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_SUCCESS);
+			return 0;
+		}
 	}
-#endif
-#endif
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef CONFIG_5VT_ENHANCE
 	RTMP_SET_PACKET_5VT(pPacket, 0);
@@ -887,6 +1002,20 @@ int RTMPSendPackets(
 		RTMP_SET_PACKET_5VT(pPacket, 1);
 	}
 #endif /* CONFIG_5VT_ENHANCE */
+
+#ifdef CONFIG_STA_SUPPORT
+#ifdef ETH_CONVERT_SUPPORT
+	if (wdev->wdev_type == WDEV_TYPE_STA)
+	{
+		if (rtmp_clone_mac(pAd, pPacket, Func) == FALSE)
+		{
+			/* Drop pkt since we are in pure clone mode and the src is not the cloned mac address. */
+			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
+			goto done;
+		}
+	}
+#endif /* ETH_CONVERT_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 
 #if defined (CONFIG_WIFI_PKT_FWD)
 	if (wf_fwd_tx_hook != NULL)
@@ -901,8 +1030,14 @@ int RTMPSendPackets(
 
 	wdev_tx_pkts((NDIS_HANDLE)pAd, (PPNDIS_PACKET) &pPacket, 1, wdev);
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef ETH_CONVERT_SUPPORT
+done:
+#endif /* ETH_CONVERT_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 	return 0;
 }
+
 
 PNET_DEV get_netdev_from_bssid(RTMP_ADAPTER *pAd, UCHAR FromWhichBSSID)
 {
@@ -913,6 +1048,20 @@ PNET_DEV get_netdev_from_bssid(RTMP_ADAPTER *pAd, UCHAR FromWhichBSSID)
 
 	do
 	{
+#ifdef CONFIG_STA_SUPPORT
+#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
+		if(FromWhichBSSID >= MIN_NET_DEVICE_FOR_CFG80211_VIF_P2P_GO)
+		{
+			dev_p = pAd->ApCfg.MBSSID[BSS0].wdev.if_dev;
+			break;		
+		}
+		else if(FromWhichBSSID >= MIN_NET_DEVICE_FOR_CFG80211_VIF_P2P_CLI)
+		{
+			//CFG_TODO
+			break;
+		}
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
+#endif /* CONFIG_STA_SUPPORT */
 #ifdef CONFIG_AP_SUPPORT
 		infRealIdx = FromWhichBSSID & (NET_DEVICE_REAL_IDX_MASK);
 #ifdef APCLI_SUPPORT
@@ -1115,3 +1264,4 @@ VOID AP_WDS_KeyNameMakeUp(
 	snprintf(pKey, KeyMaxSize, "Wds%dKey", KeyId);
 }
 #endif /* WDS_SUPPORT */
+

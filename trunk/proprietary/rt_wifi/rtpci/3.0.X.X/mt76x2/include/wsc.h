@@ -107,6 +107,28 @@ static inline BOOLEAN WscCheckWSCHeader(UCHAR *pData)
 
 #ifdef WSC_INCLUDED
 
+#ifdef IWSC_SUPPORT
+/*
+	IP Address Configuration Methods
+*/
+#define IWSC_IPV4_ASSIGNMENT					0x0001
+#define IWSC_DHCP_IPV4							0x0002
+#define IWSC_STATIC_IPV4						0x0004
+#define IWSC_LINK_LOCAL_IPV4					0x0008
+#define IWSC_NFC_IPV4_ASSIGNMENT				0x0010
+#define IWSC_NFC_LINK_LOCAL_IPV4				0x0020
+#define IWSC_IPV6_DEVICE_UNIQUE					0x0040
+
+#define IWSC_DEFAULT_REG_IPV4_ADDR				0x0a000001
+#define IWSC_DEFAULT_IPV4_SUBMASK				0xFF000000
+#define IWSC_DEFAULT_IPV4_RANGE					0xFFFFFFC0
+#define IWSC_IPV4_RANGE0						0xFFFFFFC0
+#define IWSC_IPV4_RANGE1						0xFFFFF03F
+#define IWSC_IPV4_RANGE2						0xFFFC0FFF
+#define IWSC_IPV4_RANGE3						0xFF03FFFF
+
+#define IWSC_MAX_IP_DEV_COUNT					62
+#endif /* IWSC_SUPPORT */
 
 /* WSC HDR PSH BTN FUNC */
 /* WSC hardware push button function 0811 */
@@ -328,6 +350,9 @@ static inline BOOLEAN WscCheckWSCHeader(UCHAR *pData)
 #define WSC_MSGTYPE_ENROLLEE_OPEN_8021X		0x01
 #define WSC_MSGTYPE_REGISTRAR				0x02
 #define WSC_MSGTYPE_AP_WLAN_MGR				0x03
+#ifdef IWSC_SUPPORT
+#define WSC_MSGTYPE_IWSC_NOTIFIER			0x04
+#endif /* IWSC_SUPPORT */
 
 /* RF Band */
 #define WSC_RFBAND_24GHZ    0x01
@@ -343,6 +368,11 @@ static inline BOOLEAN WscCheckWSCHeader(UCHAR *pData)
 #define	AP_WSC_MODEL_NAME		"Ralink Wireless Access Point"
 #define	AP_WSC_DEVICE_NAME		"RalinkAPS"
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+#define	STA_WSC_MODEL_NAME		"Ralink Wireless Linux Client"
+#define	STA_WSC_DEVICE_NAME		"RalinkLinuxClient"
+#define	WSC_DEVICE_NAME_R	"Ralink EX-Registrar"
+#endif /* CONFIG_STA_SUPPORT */
 #define	WSC_MODEL_NUMBER	"RT2860"
 #define	WSC_MODEL_SERIAL	"12345678"
 
@@ -363,11 +393,9 @@ static inline BOOLEAN WscCheckWSCHeader(UCHAR *pData)
 #define WSC_WPS_TURN_OFF_LED_TIMEOUT			1000			/* 1 second. */
 #endif /* WSC_LED_SUPPORT */
 
-#ifdef WSC_V2_SUPPORT
 #define WSC_WPS_AP_SETUP_LOCK_TIME				60		/* 60 mins */
 #define WSC_WPS_AP_MAX_PIN_ATTACK				3
 #define WSC_LOCK_FOREVER_PIN_ATTACK				10
-#endif /* WSC_V2_SUPPORT */
 
 #define WSC_INIT_ENTRY_APIDX        0xFF
 #define WSC_MAX_DATA_LEN            1024
@@ -375,6 +403,7 @@ static inline BOOLEAN WscCheckWSCHeader(UCHAR *pData)
 #define WSC_ENTRY_GET_EAPOL_START   0x1
 #define WSC_ENTRY_GET_EAP_RSP_ID    0x2
 
+#define WSC_WR_FILE_MAX_BUF 		1500
 /* Pack struct to align at byte */
 /*#pragma pack(1) */
 
@@ -548,7 +577,55 @@ typedef struct _WSC_STA_PBC_PROBE_INFO {
 	UCHAR				Valid[MAX_PBC_STA_TABLE_SIZE];
 } WSC_STA_PBC_PROBE_INFO, *PWSC_STA_PBC_PROBE_INFO;
 
+#ifdef IWSC_SUPPORT
+typedef	struct	_IWSC_INFO
+{
+	RALINK_TIMER_STRUCT	IWscT1Timer;
+	RALINK_TIMER_STRUCT	IWscT2Timer;
+	RALINK_TIMER_STRUCT	IWscEntryTimer;
+	RALINK_TIMER_STRUCT	IWscDevQueryTimer;
+	UCHAR				DialogToken;
+	UCHAR				PeerDialogToken;
+	BOOLEAN				bSelRegStart;
+	BOOLEAN				bReStart;
+	BOOLEAN				bIWscT1TimerRunning;
+	BOOLEAN				bIWscT2TimerRunning;
+	BOOLEAN				bIWscEntryTimerRunning;
+	BOOLEAN				bIWscDevQueryReqTimerRunning;
+	BOOLEAN				bIWscDevQueryRspTimerRunning;
+	BOOLEAN				bLimitedUI;				// own device is limited UI device
+	BOOLEAN				bSinglePIN; // use Physical PIN
+	BOOLEAN				bDoNotChangeBSSID;
+	BOOLEAN				bSendEapolStart;
+	UCHAR				RegMacAddr[MAC_ADDR_LEN];
+	UINT8				IWscSmpbcAcceptCount;
+	USHORT				IpConfMethod;		// Bitwise OR values
+	USHORT				IpMethod;			// Single Method in WSC Credential
+	UINT32				SelfIpv4Addr;		// Device own IPv4 Address
+	UINT32				PeerIpv4Addr;		// IPv4 Address for peer in credtential
+	UINT32				RegIpv4Addr;		// Registrar's IPv4 Address
+	UINT32				Ipv4SubMask;		// 255.0.0.0
+	UINT32				CurrentIpRange;		
+	UINT32				AvaSubMaskList[IWSC_MAX_SUB_MASK_LIST_COUNT];
+	UINT8				IpDevCount;			// Maximal value is 62
+	UINT8				RegDepth;			// 0: Root Regitrar
+	UINT8				AvaSubMaskListCount;// Available Submask List Count for peer. Maximal value is 3
+	BOOLEAN				bAssignWscIPv4;		// TRUE: Can be registrar and assign WSC IPv4 to peer, FALSE: Cannot assign WSC IPv4 to peer anymore
+	BOOLEAN				bDoNotStop;
+	UCHAR				IWscDevQueryReqMacAddr[MAC_ADDR_LEN];
+	UINT8				SmpbcEnrolleeCount;
+#ifdef IWSC_TEST_SUPPORT
+	UINT8				IWscConfMode;			// 1: Enrollee, 2: Registrar
+	UINT8				IWscDefaultSecurity;	// 1: OPEN-NONE, 2: OPEN-WEP, 3: WPA2PSK-AES
+	BOOLEAN				bIwscSmpbcScanningOnly;	
+	BOOLEAN				bEmptySubmaskList;
+	BOOLEAN				bBlockConnection;		// TRUE: block connection with peers (i.e. Not to do security handshaking with peers)
+#endif // IWSC_TEST_SUPPORT //
+} IWSC_INFO, *PIWSC_INFO;
+#endif // IWSC_SUPPORT //
 
+#ifdef CONFIG_STA_SUPPORT
+#endif /* CONFIG_STA_SUPPORT */
 
 typedef struct GNU_PACKED _WSC_PEER_DEV_INFO {
 	UCHAR	WscPeerDeviceName[32];
@@ -605,6 +682,9 @@ typedef	struct	_WSC_V2_INFO {
 	WSC_TLV			ExtraTlv;
 	BOOLEAN			bWpsEnable;		/* FALSE: disable WSC , TRUE: enable WSC */
 	BOOLEAN			bEnableWpsV2;	/* FALSE: not support WSC 2.0, TRUE: support WSC 2.0 */
+#ifdef CONFIG_STA_SUPPORT
+	BOOLEAN			bForceSetAP; /* FALSE: do not change AP's setting when AP is configured, TRUE: force to change AP's setting when AP is configured */
+#endif /* CONFIG_STA_SUPPORT */
 } WSC_V2_INFO, *PWSC_V2_INFO;
 #endif /* WSC_V2_SUPPORT */
 
@@ -627,6 +707,11 @@ typedef	struct	_WSC_CTRL
 	NDIS_802_11_SSID	    WscSsid;		        /* select a desired ssid to connect for PIN mode */
 	UCHAR					WscPBCBssCount;			/* Count of PBC activated APs. */
 	UCHAR				    WscBssid[MAC_ADDR_LEN];	/* select a desired bssid to connect */
+#ifdef CONFIG_STA_SUPPORT
+	BOOLEAN				    WscEnAssociateIE;	    /* Add WSC IE on Associate frame. */
+	BOOLEAN				    WscEnProbeReqIE;	    /* Add WSC IE on Probe-Req frame. */
+	UCHAR				    WscPeerMAC[MAC_ADDR_LEN];	/* peer Mac Address */
+#endif /* CONFIG_STA_SUPPORT */
 	WSC_REG_DATA	RegData;		/* Registrar pair data */
 	UCHAR           lastId;
 	UCHAR           WscUseUPnP;
@@ -637,6 +722,10 @@ typedef	struct	_WSC_CTRL
 	BOOLEAN         Wsc2MinsTimerRunning;
 	RALINK_TIMER_STRUCT   Wsc2MinsTimer;
 	WSC_PROFILE			WscProfile;		/* Saved WSC profile after M8 */
+#ifdef CONFIG_STA_SUPPORT
+	WSC_PROFILE		        WscM7Profile;	/* Saved WSC profile from AP Settings in M7 */
+	BOOLEAN			        bConfiguredAP;	/* True: AP is in the configured state. FALSE: others */
+#endif /* CONFIG_STA_SUPPORT */
 	WSC_UPNP_NODE_INFO	WscUPnPNodeInfo;	/*Use to save UPnP node related info. */
 
     BOOLEAN             EapolTimerRunning; 
@@ -649,6 +738,10 @@ typedef	struct	_WSC_CTRL
     RALINK_TIMER_STRUCT     WscScanTimer;
 	BOOLEAN                 WscProfileRetryTimerRunning;
 	RALINK_TIMER_STRUCT		WscProfileRetryTimer;
+#ifdef CONFIG_STA_SUPPORT
+    /* 0x00: disable, 0x01: Auto Connect first credential only, 0x02: Auto Connect and rotate all crentials */
+    UCHAR                 	WscDriverAutoConnect;		
+#endif /* CONFIG_STA_SUPPORT */
 #ifdef WSC_LED_SUPPORT
 	ULONG					WscLEDMode; /* WPS LED mode: LED_WPS_XXX definitions. */
 	ULONG					WscLastWarningLEDMode; /* LED_WPS_ERROR or LED_WPS_SESSION_OVERLAP_DETECTED */
@@ -713,6 +806,10 @@ typedef	struct	_WSC_CTRL
 	RALINK_TIMER_STRUCT M2DTimer;
 	BOOLEAN				bM2DTimerRunning;
 	INT					M2DACKBalance;
+#ifdef IWSC_SUPPORT
+	NDIS_SPIN_LOCK		WscConfiguredPeerListSemLock;
+	LIST_HEADER			WscConfiguredPeerList;
+#endif /* IWSC_SUPPORT */
 #ifdef WSC_NFC_SUPPORT
 	BOOLEAN				bTriggerByNFC;
 	UCHAR				NfcPasswdLen;
@@ -736,11 +833,11 @@ typedef	struct	_WSC_CTRL
 typedef struct GNU_PACKED _WSC_CONFIGURED_VALUE {
 	USHORT WscConfigured; /* 1 un-configured; 2 configured */
 	UCHAR	WscSsid[32+1];
-	UCHAR	WscSsidLen;
 	USHORT WscAuthMode;	/* mandatory, 0x01: open, 0x02: wpa-psk, 0x04: shared, 0x08:wpa, 0x10: wpa2, 0x20: wpa2-psk */
 	USHORT	WscEncrypType;	/* 0x01: none, 0x02: wep, 0x04: tkip, 0x08: aes */
 	UCHAR	DefaultKeyIdx;
 	UCHAR	WscWPAKey[64+1];
+	UCHAR	WscSsidLen;
 	UCHAR	WscWPAKeyLen;
 } WSC_CONFIGURED_VALUE;
 
@@ -837,6 +934,9 @@ typedef struct _UUID_BSSID_CH_INFO {
 	UCHAR	Ssid[MAX_LEN_OF_SSID];
 	UCHAR	SsidLen;
 	UCHAR   MacAddr[MAC_ADDR_LEN];
+#ifdef IWSC_SUPPORT
+	UINT8	RspType;
+#endif /* IWSC_SUPPORT */
 } UUID_BSSID_CH_INFO, *PUUID_BSSID_CH_INFO;
 
 /*
@@ -868,6 +968,9 @@ typedef struct _WSC_PEER_ENTRY {
 	struct _WSC_PEER_ENTRY *pNext;
 	ULONG	receive_time;
 	UCHAR	mac_addr[MAC_ADDR_LEN];
+#ifdef IWSC_SUPPORT
+	BOOLEAN bIWscSmpbcAccept;
+#endif /* IWSC_SUPPORT */
 } WSC_PEER_ENTRY, *PWSC_PEER_ENTRY;
 
 

@@ -125,11 +125,11 @@ UCHAR eFuseReadRegisters(
 	USHORT	efuseDataOffset;
 	UINT32	data;
 	UINT32 efuse_ctrl_reg = EFUSE_CTRL;
-	
-#if defined(RT3290) || defined(RT65xx) || defined(MT7601)
-	if (IS_RT3290(pAd) || IS_RT65XX(pAd) || IS_MT7601(pAd))
+
+#if defined(RT3290) || defined(RT65xx) || defined(MT7601) || defined(MT76x2)
+	if (IS_RT3290(pAd) || IS_RT65XX(pAd) || IS_MT7601(pAd) || IS_MT76x2(pAd))
 		efuse_ctrl_reg = EFUSE_CTRL_3290;
-#endif /* defined(RT3290) || defined(RT65xx) || defined(MT7601) */
+#endif /* defined(RT3290) || defined(RT65xx) || defined(MT7601)  || defined(MT76x2) */
 	
 	RTMP_IO_READ32(pAd, efuse_ctrl_reg, &eFuseCtrlStruc.word);
 
@@ -143,24 +143,19 @@ UCHAR eFuseReadRegisters(
 	/*Step2. Write EFSROM_KICK (0x580, bit30) to 1 to kick-off physical read procedure.*/
 	eFuseCtrlStruc.field.EFSROM_KICK = 1;
 	
-	NdisMoveMemory(&data, &eFuseCtrlStruc, 4);
+	NdisCopyMemory(&data, &eFuseCtrlStruc, 4);
 	RTMP_IO_WRITE32(pAd, efuse_ctrl_reg, data);
 
 	/*Step3. Polling EFSROM_KICK(0x580, bit30) until it become 0 again.*/
 	i = 0;
 	while(i < 500)
 	{	
-		if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST))
-			return 0;
-	
 		/*rtmp.HwMemoryReadDword(EFUSE_CTRL, (DWORD *) &eFuseCtrlStruc, 4);*/
 		RTMP_IO_READ32(pAd, efuse_ctrl_reg, &eFuseCtrlStruc.word);
 		if(eFuseCtrlStruc.field.EFSROM_KICK == 0)
-		{
-			RtmpusecDelay(2);
 			break;
-		}	
-		RtmpusecDelay(2);
+		
+		RtmpusecDelay(200);
 		i++;	
 	}
 
@@ -173,12 +168,12 @@ UCHAR eFuseReadRegisters(
 	else
 	{
 		/*Step4. Read 16-byte of data from EFUSE_DATA0-3 (0x590-0x59C)*/
-#if defined(RT3290) || defined(RT65xx) || defined(MT7601)
-		if (IS_RT3290(pAd) || IS_RT65XX(pAd) || IS_MT7601(pAd))
+#if defined(RT3290) || defined(RT65xx) || defined(MT7601) || defined(MT76x2)
+		if (IS_RT3290(pAd) || IS_RT65XX(pAd) || IS_MT7601(pAd) || IS_MT76x2(pAd))
 			efuseDataOffset =  EFUSE_DATA0_3290 + (Offset & 0xC);
 		else
-#endif /* defined(RT3290) || defined(RT65xx) || defined(MT7601) */
-		efuseDataOffset =  EFUSE_DATA3 - (Offset & 0xC);
+#endif /* defined(RT3290) || defined(RT65xx) || defined(MT7601)  || defined(MT76x2) */
+			efuseDataOffset =  EFUSE_DATA3 - (Offset & 0xC);
 		/*data hold 4 bytes data.*/
 		/*In RTMP_IO_READ32 will automatically execute 32-bytes swapping*/
 		RTMP_IO_READ32(pAd, efuseDataOffset, &data);
@@ -197,7 +192,7 @@ UCHAR eFuseReadRegisters(
 		data = data >> (8*(Offset & 0x3));		
 #endif /* RT_BIG_ENDIAN */
 		
-		NdisMoveMemory(pData, &data, Length);
+		NdisCopyMemory(pData, &data, Length);
 	}
 
 	return (UCHAR) eFuseCtrlStruc.field.EFSROM_AOUT;
@@ -229,10 +224,10 @@ VOID eFusePhysicalReadRegisters(
 	UINT32	data;
 	UINT32 efuse_ctrl_reg = EFUSE_CTRL;
 
-#if defined(RT3290) || defined(RT65xx) || defined(MT7601)
-	if (IS_RT3290(pAd) || IS_RT65XX(pAd) || IS_MT7601(pAd))
+#if defined(RT3290) || defined(RT65xx) || defined(MT7601) || defined(MT76x2)
+	if (IS_RT3290(pAd) || IS_RT65XX(pAd) || IS_MT7601(pAd) || IS_MT76x2(pAd))
 		efuse_ctrl_reg = EFUSE_CTRL_3290;
-#endif /* defined(RT3290) || defined(RT65xx) || defined(MT7601) */
+#endif /* defined(RT3290) || defined(RT65xx) || defined(MT7601)  || defined(MT76x2) */
 
 	RTMP_IO_READ32(pAd, efuse_ctrl_reg, &eFuseCtrlStruc.word);
 
@@ -246,24 +241,18 @@ VOID eFusePhysicalReadRegisters(
 	/*Step2. Write EFSROM_KICK (0x580, bit30) to 1 to kick-off physical read procedure.*/
 	eFuseCtrlStruc.field.EFSROM_KICK = 1;
 
-	NdisMoveMemory(&data, &eFuseCtrlStruc, 4);	
+	NdisCopyMemory(&data, &eFuseCtrlStruc, 4);	
 	RTMP_IO_WRITE32(pAd, efuse_ctrl_reg, data);	
 
 	/*Step3. Polling EFSROM_KICK(0x580, bit30) until it become 0 again.*/
 	i = 0;
 	while(i < 500)
-	{	
-		if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST))
-			return;
-		
-		RTMP_IO_READ32(pAd, EFUSE_CTRL, &eFuseCtrlStruc.word);	
+	{		
+		RTMP_IO_READ32(pAd, efuse_ctrl_reg, &eFuseCtrlStruc.word);	
 		if(eFuseCtrlStruc.field.EFSROM_KICK == 0)
-		{
-			RtmpusecDelay(2);
 			break;
-		}
 		
-		RtmpusecDelay(2);
+		RtmpusecDelay(200);
 		i++;	
 	}
 
@@ -275,22 +264,22 @@ VOID eFusePhysicalReadRegisters(
 	/*594:B A 9 8 */
 	/*598:7 6 5 4*/
 	/*59C:3 2 1 0*/
-#if defined(RT3290) || defined(RT65xx) || defined(MT7601)
-	if (IS_RT3290(pAd) || IS_RT65XX(pAd) || IS_MT7601(pAd))
+#if defined(RT3290) || defined(RT65xx) || defined(MT7601) || defined(MT76x2)
+	if (IS_RT3290(pAd) || IS_RT65XX(pAd) || IS_MT7601(pAd) || IS_MT76x2(pAd))
 		efuseDataOffset =  EFUSE_DATA0_3290 + (Offset & 0xC)  ;
 	else
-#endif /* defined(RT3290) || defined(RT65xx) || defined(MT7601) */
-	efuseDataOffset =  EFUSE_DATA3 - (Offset & 0xC)  ;	
+#endif /* defined(RT3290) || defined(RT65xx) || defined(MT7601)  || defined(MT76x2) */
+		efuseDataOffset =  EFUSE_DATA3 - (Offset & 0xC)  ;	
 
 	RTMP_IO_READ32(pAd, efuseDataOffset, &data);
 
 #ifdef RT_BIG_ENDIAN
-		data = data << (8*((Offset & 0x3)^0x2));	
+	data = data << (8*((Offset & 0x3)^0x2));	
 #else
 	data = data >> (8*(Offset & 0x3));
 #endif /* RT_BIG_ENDIAN */
 
-	NdisMoveMemory(pData, &data, Length);	
+	NdisCopyMemory(pData, &data, Length);	
 	
 }
 
@@ -383,12 +372,12 @@ static VOID eFusePhysicalWriteRegisters(
 	UINT32	data, eFuseDataBuffer[4];
 	UINT32 efuse_ctrl_reg = EFUSE_CTRL;
 
-#if defined(RT3290) || defined(RT65xx) || defined(MT7601)
-	if (IS_RT3290(pAd) || IS_RT65XX(pAd) || IS_MT7601(pAd)) {
+#if defined(RT3290) || defined(RT65xx) || defined(MT7601) || defined(MT76x2)
+	if (IS_RT3290(pAd) || IS_RT65XX(pAd) || IS_MT7601(pAd) || IS_MT76x2(pAd)) {
 		efuse_ctrl_reg = EFUSE_CTRL_3290;
 		efuse_data = EFUSE_DATA0_3290;
 	}
-#endif /* defined(RT3290) || defined(RT65xx) || defined(MT7601) */
+#endif /* defined(RT3290) || defined(RT65xx) || defined(MT7601)  || defined(MT76x2) */
 
 	/*Step0. Write 16-byte of data to EFUSE_DATA0-3 (0x590-0x59C), where EFUSE_DATA0 is the LSB DW, EFUSE_DATA3 is the MSB DW.*/
 
@@ -414,11 +403,9 @@ static VOID eFusePhysicalWriteRegisters(
 		RTMP_IO_READ32(pAd, efuse_ctrl_reg, &eFuseCtrlStruc.word);
 
 		if(eFuseCtrlStruc.field.EFSROM_KICK == 0)
-		{
-			RtmpusecDelay(2);
 			break;
-		}
-		RtmpusecDelay(2);
+		
+		RtmpusecDelay(200);
 		i++;	
 	}
 
@@ -427,11 +414,11 @@ static VOID eFusePhysicalWriteRegisters(
 	for(i=0; i< 4; i++)
 	{
 		RTMP_IO_READ32(pAd, efuseDataOffset, (PUINT32) &eFuseDataBuffer[i]);
-#if defined(RT3290) || defined(RT65xx) || defined(MT7601)
-		if (IS_RT3290(pAd) || IS_RT65XX(pAd) || IS_MT7601(pAd))
+#if defined(RT3290) || defined(RT65xx) || defined(MT7601) || defined(MT76x2)
+		if (IS_RT3290(pAd) || IS_RT65XX(pAd) || IS_MT7601(pAd) || IS_MT76x2(pAd))
 			efuseDataOffset += 4;
 		else
-#endif /* defined(RT3290) || defined(RT65xx) || defined(MT7601) */
+#endif /* defined(RT3290) || defined(RT65xx) || defined(MT7601)  || defined(MT76x2)*/
 			efuseDataOffset -= 4;
 	}
 
@@ -452,11 +439,11 @@ static VOID eFusePhysicalWriteRegisters(
 	for(i=0; i< 4; i++)
 	{
 		RTMP_IO_WRITE32(pAd, efuseDataOffset, eFuseDataBuffer[i]);
-#if defined(RT3290) || defined(RT65xx) || defined(MT7601)
-		if (IS_RT3290(pAd) || IS_RT65XX(pAd) || IS_MT7601(pAd))
+#if defined(RT3290) || defined(RT65xx) || defined(MT7601) || defined(MT76x2)
+		if (IS_RT3290(pAd) || IS_RT65XX(pAd) || IS_MT7601(pAd) || IS_MT76x2(pAd))
 			efuseDataOffset += 4;
 		else
-#endif /* defined(RT3290) || defined(RT65xx) || defined(MT7601) */
+#endif /* defined(RT3290) || defined(RT65xx) || defined(MT7601)  || defined(MT76x2)*/
 			efuseDataOffset -= 4;		
 	}
 
@@ -483,12 +470,9 @@ static VOID eFusePhysicalWriteRegisters(
 		RTMP_IO_READ32(pAd, efuse_ctrl_reg, &eFuseCtrlStruc.word);
 
 		if(eFuseCtrlStruc.field.EFSROM_KICK == 0)
-		{
-			RtmpusecDelay(2);
 			break;
-		}
 		
-		RtmpusecDelay(2);	
+		RtmpusecDelay(2);
 		i++;	
 	}
 }
@@ -512,24 +496,25 @@ static NTSTATUS eFuseWriteRegisters(
 	IN	USHORT Length, 
 	IN	USHORT* pData)
 {
-	USHORT	i,Loop=0, StartBlock=0, EndBlock=0;
+	USHORT	i,RetryCount=0, StartBlock=0, EndBlock=0;
 	USHORT	eFuseData;
 	USHORT	LogicalAddress, BlkNum = 0xffff;
 	UCHAR	EFSROM_AOUT;
 
-	USHORT addr,tmpaddr, InBuf[3], tmpOffset;
+	USHORT addr,tmpaddr, InBuf[10], tmpOffset;
 	USHORT buffer[8];
-	BOOLEAN		bWriteSuccess = TRUE;
+	BOOLEAN	bWriteSuccess = TRUE;
+	UINT NrFreeBlk = 0;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("eFuseWriteRegisters Offset=%x, pData=%x\n", Offset, *pData));
 	/*set start block and end block number, start from tail of mapping table*/
 	if( (pAd->chipCap.EFUSE_USAGE_MAP_END % 2) != 0)
 	{
-		StartBlock = pAd->chipCap.EFUSE_USAGE_MAP_END-1; 
+		StartBlock = pAd->chipCap.EFUSE_USAGE_MAP_END-1;
 	}
 	else
 	{
-		StartBlock = pAd->chipCap.EFUSE_USAGE_MAP_END; 
+		StartBlock = pAd->chipCap.EFUSE_USAGE_MAP_END;
 	}
 
 	if( (pAd->chipCap.EFUSE_USAGE_MAP_START % 2) != 0)
@@ -543,6 +528,7 @@ static NTSTATUS eFuseWriteRegisters(
 	/*Step 0. find the entry in the mapping table*/
 	/*The address of EEPROM is 2-bytes alignment.*/
 	/*The last bit is used for alignment, so it must be 0.*/
+
 	tmpOffset = Offset & 0xfffe;
 	EFSROM_AOUT = eFuseReadRegisters(pAd, tmpOffset, 2, &eFuseData);
 	if( EFSROM_AOUT == 0x3f)
@@ -566,8 +552,7 @@ static NTSTATUS eFuseWriteRegisters(
 				{		
 					BlkNum = i-pAd->chipCap.EFUSE_USAGE_MAP_START+1;	
 					break;
-				}				
-				
+				}
 			}
 			
 			if( (LogicalAddress & 0xff) == 0)
@@ -584,7 +569,42 @@ static NTSTATUS eFuseWriteRegisters(
 	else
 	{
 		BlkNum = EFSROM_AOUT;
-	}	
+
+		//We found the block, check if it is the free block number is 0. If free block number is 0 , we compare the data writen and read back from the block is equal or not. 
+		//We will write to Efuse only the values are equal, otherwise return and not update the value.
+		eFuseGetFreeBlockCount(pAd,&NrFreeBlk);
+		if(NrFreeBlk == 0)
+		{
+			addr = BlkNum * 0x10 ;
+
+			if( ((Offset % 16) == 0) && (Length == 16) )
+			{
+				//Efuse write by block case
+				for(i = 0; i < 16; i+=2)
+				{
+					InBuf[0] = addr+( (Offset+i) % 16);
+					InBuf[1] = 2;
+					InBuf[2] = 0;
+
+					eFuseReadPhysical(pAd, &InBuf[0], 4, &InBuf[2], 2);
+
+					if( (pData[i/2] | InBuf[2]) != pData[i/2])
+						return FALSE;
+				}
+			}
+			else
+			{
+			
+				InBuf[0] = addr+(Offset % 16);
+				InBuf[1] = 2;
+				InBuf[2] = 0;
+
+				eFuseReadPhysical(pAd, &InBuf[0], 4, &InBuf[2], 2);
+				if( (pData[0] | InBuf[2]) != pData[0])
+					return FALSE;
+			}
+		}
+	}
 
 	DBGPRINT(RT_DEBUG_TRACE, ("eFuseWriteRegisters BlkNum = %d \n", BlkNum));
 
@@ -592,56 +612,77 @@ static NTSTATUS eFuseWriteRegisters(
 	{
 		DBGPRINT(RT_DEBUG_TRACE, ("eFuseWriteRegisters: out of free E-fuse space!!!\n"));
 		return FALSE;
-	}	
-
-	/*Step 1. Save data of this block	which is pointed by the avaible logical address pointer*/
-	/* read and save the original block data*/
-	for(i =0; i<8; i++)
-	{
-		addr = BlkNum * 0x10 ;
-		
-		InBuf[0] = addr+2*i;
-		InBuf[1] = 2;
-		InBuf[2] = 0x0;	
-		
-		eFuseReadPhysical(pAd, &InBuf[0], 4, &InBuf[2], 2);
-
-		buffer[i] = InBuf[2];
 	}
 
-	/*Step 2. Update the data in buffer, and write the data to Efuse*/
-	buffer[ (Offset >> 1) % 8] = pData[0];
-
-	do
-	{	Loop++;
-		/*Step 3. Write the data to Efuse*/
-		if(!bWriteSuccess)
+	if( ((Offset % 16) == 0) && (Length == 16) )
+	{
+		//Efuse write by block case
+		NdisCopyMemory((PVOID) buffer, (PVOID) pData, 16);
+	}
+	else
+	{
+		/*Step 1. Save data of this block	which is pointed by the avaible logical address pointer*/
+		/* read and save the original block data*/
+		for(i =0; i<8; i++)
 		{
-			for(i =0; i<8; i++)
-			{
-				addr = BlkNum * 0x10 ;
-				
-				InBuf[0] = addr+2*i;
-				InBuf[1] = 2;
-				InBuf[2] = buffer[i];	
-				
-				eFuseWritePhysical(pAd, &InBuf[0], 6, NULL, 2);		
-			}
+			addr = BlkNum * 0x10 ;
+			
+			InBuf[0] = addr+2*i;
+			InBuf[1] = 2;
+			InBuf[2] = 0x0; 
+			
+			eFuseReadPhysical(pAd, &InBuf[0], 4, &InBuf[2], 2);
+	
+			buffer[i] = InBuf[2];
+		}
+		
+		/*Step 2. Update the data in buffer, and write the data to Efuse*/
+		buffer[ (Offset >> 1) % 8] = pData[0];
+	}
+	
+	RetryCount = 0;
+	do
+	{
+		/*Step 3. Write the data to Efuse*/
+		if( ((Offset % 16) == 0) && (Length == 16) )
+		{
+			//Efuse write by block case
+			addr = BlkNum * 0x10 ;
+
+			InBuf[0] = addr;
+			InBuf[1] = Length;
+			NdisCopyMemory((PVOID) &InBuf[2], (PVOID) buffer, 16);
+			eFuseWritePhysical(pAd,&InBuf[0], 4+16, NULL, 2);
 		}
 		else
 		{
-				addr = BlkNum * 0x10 ;
-				
-				InBuf[0] = addr+(Offset % 16);
-				InBuf[1] = 2;
-				InBuf[2] = pData[0];	
-				
-				eFuseWritePhysical(pAd, &InBuf[0], 6, NULL, 2);	
+			if(!bWriteSuccess)
+			{
+				for(i =0; i<8; i++)
+				{
+					addr = BlkNum * 0x10 ;
+					
+					InBuf[0] = addr+2*i;
+					InBuf[1] = 2;
+					InBuf[2] = buffer[i];	
+					
+					eFuseWritePhysical(pAd, &InBuf[0], 6, NULL, 2);		
+				}
+			}
+			else
+			{
+					addr = BlkNum * 0x10 ;
+					
+					InBuf[0] = addr+(Offset % 16);
+					InBuf[1] = 2;
+					InBuf[2] = pData[0];	
+					
+					eFuseWritePhysical(pAd, &InBuf[0], 6, NULL, 2);	
+			}
 		}
-	
+		
 		/*Step 4. Write mapping table*/
 		addr = pAd->chipCap.EFUSE_USAGE_MAP_START+BlkNum;
-
 		tmpaddr = addr;
 
 		if(addr % 2 != 0)
@@ -662,7 +703,7 @@ static NTSTATUS eFuseWriteRegisters(
 			InBuf[2] = tmpOffset;
 
 		eFuseWritePhysical(pAd,&InBuf[0], 6, NULL, 0);
-
+	
 		/*Step 5. Compare data if not the same, invalidate the mapping entry, then re-write the data until E-fuse is exhausted*/
 		bWriteSuccess = TRUE;
 		for(i =0; i<8; i++)
@@ -672,9 +713,8 @@ static NTSTATUS eFuseWriteRegisters(
 			InBuf[0] = addr+2*i;
 			InBuf[1] = 2;
 			InBuf[2] = 0x0;	
-			
-			eFuseReadPhysical(pAd, &InBuf[0], 4, &InBuf[2], 2);
 
+			eFuseReadPhysical(pAd, &InBuf[0], 4, &InBuf[2], 2);
 			if(buffer[i] != InBuf[2])
 			{
 				bWriteSuccess = FALSE;
@@ -756,11 +796,12 @@ static NTSTATUS eFuseWriteRegisters(
 				}					
 			}
 			eFuseWritePhysical(pAd, &InBuf[0], 6, NULL, 0);	
-		}	
+		}
+		RetryCount++;
 	}	
-	while (!bWriteSuccess&&Loop<2);	
+	while (!bWriteSuccess && (RetryCount < 5));	
 	if(!bWriteSuccess)
-		DBGPRINT(RT_DEBUG_ERROR,("Efsue Write Failed!!\n"));
+		DBGPRINT(RT_DEBUG_TRACE,("Efsue Write Failed!!\n"));
 	return TRUE;
 }
 
@@ -793,32 +834,9 @@ static VOID eFuseWritePhysical(
 	USHORT Length = pInBuf[1];					/* length*/
 	USHORT* pValueX = &pInBuf[2];				/* value ...		*/
 
-#ifdef MT76x2
-	UINT32	MacReg0x14c = 0, MacReg0x24 = 0;
-#endif /* MT76x2 */
-
 	DBGPRINT(RT_DEBUG_TRACE, ("eFuseWritePhysical Offset=0x%x, length=%d\n", Offset, Length));
 
 	{
-
-#ifdef MT76x2
-	if ( IS_MT76x2(pAd) )
-	{
-		UINT32 MacValue;
-
-		RTMP_IO_READ32(pAd, CLK_ENABLE,  &MacValue);
-		MacReg0x14c = MacValue;
-		MacValue |= 0x2000000;
-		RTMP_IO_WRITE32(pAd, CLK_ENABLE, MacValue);
-
-		RTMP_IO_READ32(pAd, 0x24,  &MacValue);
-		MacReg0x24 = MacValue;
-		MacValue |= 0xC000;
-		MacValue &= ~0x3F00;
-		MacValue |= 0x800;
-		RTMP_IO_WRITE32(pAd, 0x24, MacValue);
-	}
-#endif /* MT76x2 */
 
 		/* Little-endian		S	|	S	Big-endian*/
 		/* addr	3	2	1	0	|	0	1	2	3*/
@@ -831,15 +849,6 @@ static VOID eFuseWritePhysical(
 		{
 			eFusePhysicalWriteRegisters(pAd, Offset+i, 2, &pValueX[i/2]);
 		}
-
-#ifdef MT76x2
-		if ( IS_MT76x2(pAd) )
-		{
-			RTMP_IO_WRITE32(pAd, CLK_ENABLE, MacReg0x14c);
-			RTMP_IO_WRITE32(pAd, 0x24, MacReg0x24);
-		}
-#endif /* MT76x2 */
-
 	}
 }
 
@@ -865,40 +874,48 @@ NTSTATUS eFuseWrite(
 {
 	int i;
 	USHORT* pValueX = (PUSHORT) pData;				/*value ...		*/
-	PUSHORT OddWriteByteBuf;
+#ifdef MT76x2
+	UINT32	MAC_Value=0, MAC_14C=0, MAC_24=0;
+#endif /* MT76x2 */
 
-/*	OddWriteByteBuf=(PUSHORT)kmalloc(sizeof(USHORT)*2, MEM_ALLOC_FLAG);*/
-	os_alloc_mem(NULL, (UCHAR **)&OddWriteByteBuf, sizeof(USHORT)*2);
-	/* The input value=3070 will be stored as following*/
-	/* Little-endian		S	|	S	Big-endian*/
-	/* addr			1	0	|	0	1	*/
-	/* Ori-V			30	70	|	30	70	*/
-	/* After swapping*/
-	/*				30	70	|	70	30*/
-	/* Casting*/
-	/*				3070	|	7030 (x)*/
-	/* The swapping should be removed for big-endian*/
-	if (OddWriteByteBuf == NULL)
-		return FALSE;
-	if((Offset%2)!=0)
+	/*****************************************/
+	// Patch for E2 - LDO on time and LO clock
+	/*****************************************/
+#ifdef MT76x2
+	if ( IS_MT76x2(pAd) )
 	{
-		length+=2;
-		Offset-=1;
-		eFuseRead(pAd,Offset,OddWriteByteBuf,2);
-		eFuseRead(pAd,Offset+2,(OddWriteByteBuf+1),2);
-		*OddWriteByteBuf&=0x00ff;
-		*OddWriteByteBuf|=((*pData)&0xff)<<8;
-		*(OddWriteByteBuf+1)&=0xff00;
-		*(OddWriteByteBuf+1)|=(*pData&0xff00)>>8;
-		pValueX=OddWriteByteBuf;
-		
+		RTMP_IO_READ32(pAd, CLK_ENABLE,  &MAC_Value);
+		MAC_14C = MAC_Value;
+		MAC_Value |= 0x2000000;
+		RTMP_IO_WRITE32(pAd, CLK_ENABLE, MAC_Value);
+
+		RTMP_IO_READ32(pAd, 0x24,  &MAC_Value);
+		MAC_24 = MAC_Value;
+		MAC_Value |= 0xC000;
+		RTMP_IO_WRITE32(pAd, 0x24, MAC_Value);
+	}
+#endif /* MT76x2 */
+
+	if( ((Offset % 16) == 0) && (length == 16) )
+	{
+		//Efuse write by block case
+		eFuseWriteRegisters(pAd, Offset, length, pValueX);
+	}
+	else
+	{
+		for(i=0; i<length; i+=2)
+		{
+			eFuseWriteRegisters(pAd, Offset+i, 2, &pValueX[i/2]);	
+		}
 	}
 	
-	for(i=0; i<length; i+=2)
+#ifdef MT76x2
+	if ( IS_MT76x2(pAd) )
 	{
-		eFuseWriteRegisters(pAd, Offset+i, 2, &pValueX[i/2]);	
+		RTMP_IO_WRITE32(pAd, CLK_ENABLE, MAC_14C);
+		RTMP_IO_WRITE32(pAd, 0x24, MAC_24);
 	}
-	os_free_mem(NULL, OddWriteByteBuf);
+#endif /* MT76x2 */
 	return TRUE;
 }
 
@@ -968,11 +985,10 @@ INT	set_eFuseLoadFromBin_Proc(
 	PSTRING					buffer, memPtr;
 	INT						TotalByte= 0;
 	USHORT					*PDATA;
-	UCHAR					all_ff[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+	UCHAR					SkipData[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 	UCHAR					*ptr;
 	UCHAR					index;
 	USHORT					offset = 0;
-	USHORT 					value;
 	
 	memSize = 128 + MAX_EEPROM_BIN_FILE_SIZE + sizeof(USHORT) * 8;
 /*	memPtr = kmalloc(memSize, MEM_ALLOC_FLAG);*/
@@ -989,7 +1005,7 @@ INT	set_eFuseLoadFromBin_Proc(
  	if(strlen(arg)>0)
 		NdisMoveMemory(src, arg, strlen(arg));
 	else
-		NdisMoveMemory(src, EEPROM_DEFULT_BIN_FILE, strlen(EEPROM_DEFULT_BIN_FILE));
+		NdisMoveMemory(src, BIN_FILE_PATH, strlen(BIN_FILE_PATH));
 	DBGPRINT(RT_DEBUG_OFF, ("FileName=%s\n",src));
 
 	RtmpOSFSInfoChange(&osfsInfo, TRUE);
@@ -1014,33 +1030,15 @@ INT	set_eFuseLoadFromBin_Proc(
 				goto closeFile;
 			}
 		}
-
-		retval = RtmpOSFileClose(srcf);
-		if (retval)
-			DBGPRINT(RT_DEBUG_TRACE, ("--> Error closing file %s\n", src));
   	}
-
-	
-	RtmpOSFSInfoChange(&osfsInfo, FALSE);
 
 	for ( offset = 0 ; offset < TotalByte ; offset += 16 )
 	{
-		if ( memcmp( ptr, all_ff, 16 ) )
-		{
-			DBGPRINT(RT_DEBUG_TRACE, ("offset 0x%04x: ", offset));	
-			for ( index = 0 ; index < 16 ; index += 2 )
-			{
-				value = *(USHORT *)(ptr + index);
-				//eFuseWrite(pAd, offset + index ,&value, 2);
-				DBGPRINT(RT_DEBUG_TRACE, ("0x%04x ", value));	
-			}
-			DBGPRINT(RT_DEBUG_TRACE, ("\n"));	
-		}
-		
+		if (memcmp( ptr, SkipData, 16 ))
+			eFuseWrite(pAd, offset ,(USHORT *)(ptr), 16);
 		ptr += 16;
 	}
-
-	return TRUE;
+	retval = TRUE;
 
 closeFile:
 	if (srcf)
@@ -1050,9 +1048,7 @@ closeFile:
 recoverFS:
 	RtmpOSFSInfoChange(&osfsInfo, FALSE);
 	
-
 	if (memPtr)
-/*		kfree(memPtr);*/
 		os_free_mem(NULL, memPtr);
 	
 	return retval;
@@ -1098,24 +1094,13 @@ INT rtmp_ee_write_to_efuse(
 	USHORT	length = pAd->chipCap.EEPROM_DEFAULT_BIN_SIZE;
 	UCHAR	*ptr = pAd->EEPROMImage;
 	UCHAR	index;
-	UCHAR	all_ff[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 	USHORT offset = 0;
-	USHORT value;
+	UCHAR SkipData[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 	for ( offset = 0 ; offset < length ; offset += 16 )
 	{
-		if ( memcmp( ptr, all_ff, 16 ) )
-		{
-			DBGPRINT(RT_DEBUG_TRACE, ("offset 0x%04x: ", offset));
-			for ( index = 0 ; index < 16 ; index += 2 )
-			{
-				value = *(USHORT *)(ptr + index);
-				eFuseWrite(pAd, offset + index ,&value, 2);
-				DBGPRINT(RT_DEBUG_TRACE, ("0x%04x ", value));	
-			}
-			DBGPRINT(RT_DEBUG_TRACE, ("\n"));	
-		}
-		
+		if (memcmp( ptr, SkipData, 16 ))
+			eFuseWrite(pAd, offset ,(USHORT *)(ptr), 16);
 		ptr += 16;
 	}
 
@@ -1250,8 +1235,7 @@ INT eFuse_init(RTMP_ADAPTER *pAd)
 	/* of this efuse is empty and change to the buffer mode in odrder to */
 	/*bring up interfaces successfully.*/
 	
-	
-	if ( EfuseFreeBlock >= pAd->chipCap.EFUSE_RESERVED_SIZE )
+	if (EfuseFreeBlock >= pAd->chipCap.EFUSE_RESERVED_SIZE)
 	{
 		DBGPRINT(RT_DEBUG_OFF, ("NVM is efuse and the information is too less to bring up the interface\n"));
 		DBGPRINT(RT_DEBUG_OFF, ("Load EEPROM buffer from BIN, and force to use BIN buffer mode\n"));
@@ -1381,8 +1365,7 @@ INT set_BinModeWriteBack_Proc(
 		return FALSE;
 	else
 	{
-		
-		if (pAd->chipCap.FlgITxBfBinWrite)
+	  if (pAd->chipCap.FlgITxBfBinWrite)
 	  {
 		DBGPRINT(RT_DEBUG_TRACE, ("%s::Write EEPROM buffer back to BIN\n", __FUNCTION__));	
 		Set_EepromBufferWriteBack_Proc(pAd, "4");
@@ -1392,7 +1375,7 @@ INT set_BinModeWriteBack_Proc(
 	  	DBGPRINT(RT_DEBUG_TRACE, ("%s::Write EEPROM buffer back to flash\n", __FUNCTION__));	
 		  Set_EepromBufferWriteBack_Proc(pAd, "2");
 	  }	
-		return TRUE;
+	  return TRUE;
 	}
 }
 #endif /* TXBF SUPPORT */

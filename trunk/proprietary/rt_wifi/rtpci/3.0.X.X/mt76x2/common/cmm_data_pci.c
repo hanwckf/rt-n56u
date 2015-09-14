@@ -106,6 +106,75 @@ VOID dumpRxRing(RTMP_ADAPTER *pAd, INT ring_idx)
 }
 #endif /* DBG */
 
+#ifdef DMA_BUSY_RESET
+BOOLEAN MonitorTxRing(RTMP_ADAPTER *pAd)
+{
+	UINT32 Value;
+	WPDMA_GLO_CFG_STRUC GloCfg;
+
+	if (pAd->TxDMACheckTimes < 10)
+	{
+		/* Check if TX DMA busy */
+		RTMP_IO_READ32(pAd, WPDMA_GLO_CFG, &GloCfg.word);
+
+		if (GloCfg.field.TxDMABusy)
+		{
+			if (pAd->PDMAWatchDogDbg)
+			{
+				DBGPRINT(RT_DEBUG_OFF, ("%s: check point 0: value = %x\n", __FUNCTION__, GloCfg.word));
+			}
+
+			pAd->TxDMACheckTimes++; // the counter will be clean by any of Tx INT
+			return FALSE;
+		}
+		else
+		{
+			pAd->TxDMACheckTimes = 0;
+			return FALSE;
+		}
+	}
+	else // reach the trigger threshold
+	{
+		pAd->TxDMACheckTimes = 0;
+		return TRUE;
+	}
+}
+
+
+BOOLEAN MonitorRxRing(RTMP_ADAPTER *pAd)
+{
+	UINT32 Value;
+	WPDMA_GLO_CFG_STRUC GloCfg;
+
+	if (pAd->RxDMACheckTimes < 10)
+	{
+		/* Check if RX DMA busy */
+		RTMP_IO_READ32(pAd, WPDMA_GLO_CFG, &GloCfg.word);
+
+		if (GloCfg.field.RxDMABusy)
+		{
+			if (pAd->PDMAWatchDogDbg)
+			{
+				DBGPRINT(RT_DEBUG_OFF, ("%s: check point 0, Value = %x\n", __FUNCTION__, GloCfg.word));
+			}
+
+			pAd->RxDMACheckTimes++;  // the counter will be clean by any of Rx INT
+			return FALSE;
+		}
+		else
+		{
+			pAd->RxDMACheckTimes = 0;
+			return FALSE;
+		}
+	}
+	else
+	{
+		pAd->RxDMACheckTimes = 0;
+		return TRUE;
+	}
+}
+#endif /* DMA_BUSY_RESET */
+
 static VOID ral_write_txinfo(
 	IN RTMP_ADAPTER *pAd,
 	IN TXINFO_STRUC *pTxInfo,
@@ -183,7 +252,7 @@ VOID ral_write_txd(
 	/* Always use Long preamble before verifiation short preamble functionality works well.*/
 	/* Todo: remove the following line if short preamble functionality works*/
 	
-	OPSTATUS_CLEAR_FLAG(pAd, fOP_STATUS_SHORT_PREAMBLE_INUSED);
+	//OPSTATUS_CLEAR_FLAG(pAd, fOP_STATUS_SHORT_PREAMBLE_INUSED);
 
 	ral_write_txinfo(pAd, pTxInfo, bWIV, QueueSEL);
 	
@@ -200,6 +269,18 @@ static VOID rlt_update_txinfo(
 #endif /* RLT_MAC */
 
 
+#ifdef CONFIG_STA_SUPPORT
+VOID ComposePsPoll(
+	IN PRTMP_ADAPTER pAd)
+{
+	NdisZeroMemory(&pAd->PsPollFrame, sizeof (PSPOLL_FRAME));
+	pAd->PsPollFrame.FC.Type = FC_TYPE_CNTL;
+	pAd->PsPollFrame.FC.SubType = SUBTYPE_PS_POLL;
+	pAd->PsPollFrame.Aid = pAd->StaActive.Aid | 0xC000;
+	COPY_MAC_ADDR(pAd->PsPollFrame.Bssid, pAd->CommonCfg.Bssid);
+	COPY_MAC_ADDR(pAd->PsPollFrame.Ta, pAd->CurrentAddress);
+}
+#endif /* CONFIG_STA_SUPPORT */
 
 
 /* IRQL = DISPATCH_LEVEL */
@@ -606,6 +687,9 @@ BOOLEAN RTMPFreeTXDUponTxDmaDone(
 	IN UCHAR QueIdx)
 {
 	RTMP_TX_RING *pTxRing;
+#ifdef RALINK_ATE
+        PATE_INFO pATEInfo = &(pAd->ate);
+#endif
 	TXD_STRUC *pTxD;
 #ifdef RT_BIG_ENDIAN
 	TXD_STRUC *pDestTxD;
@@ -616,12 +700,8 @@ BOOLEAN RTMPFreeTXDUponTxDmaDone(
 	TXD_STRUC TxD, *pOriTxD;
 	BOOLEAN bReschedule = FALSE;
 	UINT8 TXWISize = pAd->chipCap.TXWISize;
-#ifdef RALINK_ATE
-#ifdef TXBF_SUPPORT
-        PATE_INFO pATEInfo = &(pAd->ate);
 	ULONG stTimeChk;
-#endif
-#endif
+
 	ASSERT(QueIdx < NUM_OF_TX_RING);
 	if (QueIdx >= NUM_OF_TX_RING)
 		return FALSE;
@@ -701,7 +781,7 @@ BOOLEAN RTMPFreeTXDUponTxDmaDone(
 
 
 	}
-#endif	
+#endif
 #endif
 	while (pTxRing->TxSwFreeIdx != pTxRing->TxDmaIdx)
 	{
@@ -829,6 +909,14 @@ BOOLEAN RTMPFreeTXDUponTxDmaDone(
 #endif
 /*		pTxD->DMADONE = 0; */
 
+#if defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT)
+#ifdef UAPSD_SUPPORT
+		UAPSD_SP_PacketCheck(pAd,
+				pTxRing->Cell[pTxRing->TxSwFreeIdx].pNdisPacket,
+				((UCHAR *)pTxRing->Cell[\
+				pTxRing->TxSwFreeIdx].DmaBuf.AllocVa) + TXWISize);
+#endif /* UAPSD_SUPPORT */
+#else
 #ifdef CONFIG_AP_SUPPORT
 #ifdef UAPSD_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -839,6 +927,7 @@ BOOLEAN RTMPFreeTXDUponTxDmaDone(
 		}
 #endif /* UAPSD_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
+#endif /* defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT) */
 
 #ifdef RALINK_ATE
 		/* Execution of this block is not allowed when ATE is running. */
@@ -1056,6 +1145,11 @@ VOID RTMPHandleMgmtRingDmaDoneInterrupt(RTMP_ADAPTER *pAd)
 #define LMR_FRAME_GET()	(GET_OS_PKT_DATAPTR(pPacket) + TXWISize)
 
 #ifdef UAPSD_SUPPORT
+#if defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT)
+		UAPSD_QoSNullTxMgmtTxDoneHandle(pAd,
+					pPacket,
+					LMR_FRAME_GET());
+#else
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{
@@ -1063,6 +1157,7 @@ VOID RTMPHandleMgmtRingDmaDoneInterrupt(RTMP_ADAPTER *pAd)
 					pPacket, LMR_FRAME_GET());
 		}
 #endif /* CONFIG_AP_SUPPORT */
+#endif /* defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT) */
 #endif /* UAPSD_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
@@ -1129,6 +1224,19 @@ VOID RTMPHandleTBTTInterrupt(RTMP_ADAPTER *pAd)
 		ReSyncBeaconTime(pAd);
 
 		RTMP_OS_TASKLET_SCHE(&pObj->tbtt_task);
+#ifdef CUSTOMER_DCC_FEATURE
+		if(pAd->CommonCfg.channelSwitch.CHSWMode == CHANNEL_SWITCHING_MODE)
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("RTMPHandlePreTBTTInterrupt::Channel Switching...(%d/%d)\n", pAd->CommonCfg.channelSwitch.CHSWCount, pAd->CommonCfg.channelSwitch.CHSWPeriod));
+
+			pAd->CommonCfg.channelSwitch.CHSWCount++;
+			if(pAd->CommonCfg.channelSwitch.CHSWCount >= pAd->CommonCfg.channelSwitch.CHSWPeriod)
+			{
+				APStop(pAd);
+				APStartUp(pAd);
+			}
+		}
+#endif
 
 		if ((pAd->CommonCfg.Channel > 14)
 			&& (pAd->CommonCfg.bIEEE80211H == 1)
@@ -1173,7 +1281,7 @@ wdev = &pAd->ApCfg.MBSSID[0].wdev;
 #ifdef RT_CFG80211_SUPPORT
 			RT_CFG80211_BEACON_TIM_UPDATE(pAd);
 #else
-		APUpdateAllBeaconFrame(pAd);
+			APUpdateAllBeaconFrame(pAd);
 #endif /* RT_CFG80211_SUPPORT  */
 
 	}
@@ -1362,7 +1470,7 @@ PNDIS_PACKET RxRingDeQueue(
 
 		pRxPacket = pRxCell->pNdisPacket;
 #ifdef RTMP_MAC
-		pRxBlk->pRxInfo = &pRxBlk->hw_rx_info[RXINFO_OFFSET];
+		pRxBlk->pRxInfo = (RXINFO_STRUC *)&pRxBlk->hw_rx_info[RXINFO_OFFSET];
 #endif /* RTMP_MAC */
 #ifdef RLT_MAC
 		pRxBlk->pRxFceInfo = (RXFCE_INFO *)&pRxBlk->hw_rx_info[RXINFO_OFFSET];
@@ -1885,6 +1993,15 @@ NDIS_STATUS MlmeHardTransmitTxRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACKET
 	}
 
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		/* outgoing frame always wakeup PHY to prevent frame lost*/
+		/* if (pAd->StaCfg.Psm == PWR_SAVE)*/
+		if (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_DOZE))
+			AsicForceWakeup(pAd, TRUE);
+	}
+#endif /* CONFIG_STA_SUPPORT */
 	
 	pFirstTxWI =(TXWI_STRUC *)(pSrcBufVA + TXINFO_SIZE);
 	pHeader_802_11 = (HEADER_802_11 *)(pSrcBufVA + TXINFO_SIZE + TXWISize + TSO_SIZE);
@@ -1910,6 +2027,17 @@ NDIS_STATUS MlmeHardTransmitTxRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACKET
 	*/
 	
 	/* In WMM-UAPSD, mlme frame should be set psm as power saving but probe request frame */
+#ifdef CONFIG_STA_SUPPORT
+	/* Data-Null packets alse pass through MMRequest in RT2860, however, we hope control the psm bit to pass APSD*/
+	if (pHeader_802_11->FC.Type != FC_TYPE_DATA)
+	{
+		if ((pHeader_802_11->FC.SubType == SUBTYPE_PROBE_REQ) ||
+			!(pAd->StaCfg.UapsdInfo.bAPSDCapable && pAd->CommonCfg.APEdcaParm.bAPSDCapable))
+			pHeader_802_11->FC.PwrMgmt = PWR_ACTIVE;
+		else
+			pHeader_802_11->FC.PwrMgmt = pAd->CommonCfg.bAPSDForcePowerSave;
+	}
+#endif /* CONFIG_STA_SUPPORT */
 	
 	bInsertTimestamp = FALSE;
 	if (pHeader_802_11->FC.Type == FC_TYPE_CNTL) /* must be PS-POLL */
@@ -2022,6 +2150,43 @@ NDIS_STATUS MlmeHardTransmitTxRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACKET
 	RTMPWIEndianChange(pAd, (PUCHAR)pFirstTxWI, TYPE_TXWI);
 #endif
 	SrcBufPA = PCI_MAP_SINGLE(pAd, (pSrcBufVA + TXINFO_SIZE), (SrcBufLen - TXINFO_SIZE), 0, RTMP_PCI_DMA_TODEVICE);
+#ifdef CUSTOMER_DCC_FEATURE
+	if(!(ApScanRunning(pAd)))
+	{
+		UINT32 Index, Length;
+		HTTRANSMIT_SETTING HTSetting;
+		MULTISSID_STRUCT *pMbss = NULL;
+
+		NdisZeroMemory(&HTSetting, sizeof(HTTRANSMIT_SETTING));
+		HTSetting.field.MODE = transmit->field.MODE;
+		HTSetting.field.BW = transmit->field.BW;
+		HTSetting.field.ShortGI = transmit->field.ShortGI;
+		HTSetting.field.MCS = transmit->field.MCS;
+		Length = SrcBufLen - TXWISize;
+		if (pMacEntry != NULL && (pMacEntry->apidx < pAd->ApCfg.BssidNum))
+			pMbss = &pAd->ApCfg.MBSSID[pMacEntry->apidx];
+		else
+		{
+			
+			UCHAR apidx;
+			for(apidx=0; apidx<pAd->ApCfg.BssidNum; apidx++)
+			{
+				if ((pAd->ApCfg.MBSSID[apidx].wdev.if_dev == NULL) || ((pAd->ApCfg.MBSSID[apidx].wdev.if_dev != NULL) &&
+					!(RTMP_OS_NETDEV_STATE_RUNNING(pAd->ApCfg.MBSSID[apidx].wdev.if_dev))))
+				{
+					/* the interface is down */
+					continue;
+				}
+				if(RTMPEqualMemory(pAd->ApCfg.MBSSID[apidx].wdev.bssid, pHeader_802_11->Addr2,MAC_ADDR_LEN))
+				{
+					pMbss = &pAd->ApCfg.MBSSID[apidx];
+				}
+			}
+		}
+		GetMultShiftFactorIndex(HTSetting, &Index);
+		RTMPCalculateAPTxRxActivityTime(pAd, Index, Length, pMbss, pMacEntry);
+	}
+#endif
 
 	pTxD->LastSec0 = 1;
 	pTxD->LastSec1 = 1;

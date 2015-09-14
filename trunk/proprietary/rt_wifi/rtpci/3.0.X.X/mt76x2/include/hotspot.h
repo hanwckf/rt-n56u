@@ -68,6 +68,8 @@ typedef struct _HOTSPOT_CTRL {
 	PUCHAR InterWorkingIE;
 	PUCHAR AdvertisementProtoIE;
 	PUCHAR QosMapSetIE;
+	USHORT DscpRange[8];
+	USHORT DscpException[21];	
 	PUCHAR RoamingConsortiumIE;
 	PUCHAR HSIndicationIE;
 	PUCHAR P2PIE;
@@ -81,6 +83,12 @@ typedef struct _HOTSPOT_CTRL {
 	UINT8 L2Filter;
 	BOOLEAN ICMPv4Deny;
 	UINT32 MMPDUSize;
+	BOOLEAN QosMapEnable;
+//	BOOLEAN bNonTX; /* 0:enable TX, 1:disable TX*/
+	BOOLEAN bASANEnable;		/* 1:enable ASAN IE, 1:disable ASAN IE*/
+	UCHAR	QLoadTestEnable;	/* for BSS Load IE Test */
+	UCHAR	QLoadCU;			/* for BSS Load IE Test */
+	USHORT	QLoadStaCnt;		/* for BSS Load IE Test */
 } HOTSPOT_CTRL, *PHOTSPOT_CTRL;
 
 enum {
@@ -96,6 +104,9 @@ enum {
 	PARAM_ICMPV4_DENY,
 	PARAM_MMPDU_SIZE,
 	PARAM_EXTERNAL_ANQP_SERVER_TEST,
+	PARAM_GAS_COME_BACK_DELAY,
+	PARAM_WNM_NOTIFICATION,
+	PARAM_QOSMAP,
 };
 
 BOOLEAN L2FilterInspection(
@@ -163,10 +174,19 @@ enum {
 #ifdef CONFIG_AP_SUPPORT
 BOOLEAN HSIPv4Check(
 			IN PRTMP_ADAPTER pAd,
-			PUCHAR pWcid,
+			PUSHORT pWcid,			
 			PNDIS_PACKET pPacket,
 			PUCHAR pSrcBUf,
 			UINT16 srcPort,
 			UINT16 dscPort);
 #endif
+#ifdef CONFIG_HOTSPOT_R2	
+struct _sta_hs_info {
+	//UCHAR	addr[6];
+	UCHAR	version;
+	UCHAR	ppsmo_exist;
+	USHORT	ppsmo_id;
+};
+#endif
+
 #endif /* __HOTSPOT_H__ */

@@ -785,6 +785,28 @@ VOID AsicAdjustTxPower(RTMP_ADAPTER *pAd)
 #endif /* SINGLE_SKU */
 
 
+#ifdef CONFIG_STA_SUPPORT
+	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_IDLE_RADIO_OFF))
+		return;
+
+	if (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_DOZE) || 
+#ifdef RTMP_MAC_PCI
+		(pAd->bPCIclkOff == TRUE) || RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_IDLE_RADIO_OFF) ||
+#endif /* RTMP_MAC_PCI */
+		RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))
+		return;
+
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		if(INFRA_ON(pAd))
+		{
+			Rssi = RTMPMaxRssi(pAd, 
+						   pAd->StaCfg.RssiSample.AvgRssi0, 
+						   pAd->StaCfg.RssiSample.AvgRssi1, 
+						   pAd->StaCfg.RssiSample.AvgRssi2);
+		}
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	/* Get Tx rate offset table which from EEPROM 0xDEh ~ 0xEFh */
 	RTMP_CHIP_ASIC_TX_POWER_OFFSET_GET(pAd, (PULONG)&CfgOfTxPwrCtrlOverMAC);
@@ -1160,6 +1182,23 @@ VOID AsicPercentageDeltaPower(
 	
 	if (pAd->CommonCfg.TxPowerPercentage >= 100) /* AUTO TX POWER control */
 	{
+#ifdef CONFIG_STA_SUPPORT
+		if ((pAd->OpMode == OPMODE_STA)
+		)
+		{
+			/* To patch high power issue with some APs, like Belkin N1.*/
+			if (Rssi > -35)
+			{
+				*pDeltaPwr -= 12;
+			}
+			else if (Rssi > -40)
+			{
+				*pDeltaPwr -= 6;
+			}
+			else
+				;
+		}
+#endif /* CONFIG_STA_SUPPORT */
 	}
 	else if (pAd->CommonCfg.TxPowerPercentage > 90) /* 91 ~ 100% & AUTO, treat as 100% in terms of mW */
 		;

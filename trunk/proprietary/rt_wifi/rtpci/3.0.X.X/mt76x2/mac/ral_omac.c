@@ -70,7 +70,7 @@ INT rtmp_get_rxwi_snr(RXWI_STRUC *rxwi, INT size, UCHAR *snr)
 }
 
 
-
+#ifdef DBG
 static UCHAR *txwi_txop_str[]={"HT_TXOP", "PIFS", "SIFS", "BACKOFF", "Invalid"};
 #define TXWI_TXOP_STR(_x)	((_x) <= 3 ? txwi_txop_str[(_x)]: txwi_txop_str[4])
 VOID dump_rtmp_txwi(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI)
@@ -137,6 +137,7 @@ VOID dump_rtmp_rxwi(RTMP_ADAPTER *pAd, RXWI_STRUC *pRxWI)
 	DBGPRINT(RT_DEBUG_OFF, ("\tSNR=%d:%d:%d\n", rxwi_o->SNR0, rxwi_o->SNR1, rxwi_o->SNR2));
 	DBGPRINT(RT_DEBUG_OFF, ("\tFreqOffset=%d\n", rxwi_o->FOFFSET));
 }
+#endif
 
 
 VOID rtmp_asic_init_txrx_ring(RTMP_ADAPTER *pAd)

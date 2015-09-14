@@ -38,15 +38,17 @@ static struct vht_ch_layout vht_ch_80M[]={
 	{36, 48, 42},
 	{52, 64, 58},
 	{100,112, 106},
-	{116, 128, 122},
+	{116, 128, 122},	
+	{132, 144, 138},
 	{149, 161, 155},
 	{0, 0 ,0},
 };
 
 
+
+#ifdef DBG
 VOID dump_vht_cap(RTMP_ADAPTER *pAd, VHT_CAP_IE *vht_ie)
 {
-#ifdef DBG
 	VHT_CAP_INFO *vht_cap = &vht_ie->vht_cap;
 	VHT_MCS_SET *vht_mcs = &vht_ie->mcs_set;
 
@@ -79,12 +81,11 @@ VOID dump_vht_cap(RTMP_ADAPTER *pAd, VHT_CAP_IE *vht_ie)
 	DBGPRINT(RT_DEBUG_OFF, ("\tTx Highest SupDataRate=%d\n", vht_mcs->tx_high_rate));
 	DBGPRINT(RT_DEBUG_OFF, ("\tTxMCS Map_1SS=%d\n", vht_mcs->tx_mcs_map.mcs_ss1));
 	DBGPRINT(RT_DEBUG_OFF, ("\tTxMCS Map_2SS=%d\n", vht_mcs->tx_mcs_map.mcs_ss2));
-#endif
 }
+
 
 VOID dump_vht_op(RTMP_ADAPTER *pAd, VHT_OP_IE *vht_ie)
 {
-#ifdef DBG
 	VHT_OP_INFO *vht_op = &vht_ie->vht_op_info;
 	VHT_MCS_MAP *vht_mcs = &vht_ie->basic_mcs_set;
 	
@@ -99,9 +100,8 @@ VOID dump_vht_op(RTMP_ADAPTER *pAd, VHT_OP_IE *vht_ie)
 	DBGPRINT(RT_DEBUG_OFF, ("VHT Basic MCS Set Field\n"));
 	DBGPRINT(RT_DEBUG_OFF, ("\tRxMCS Map_1SS=%d\n", vht_mcs->mcs_ss1));
 	DBGPRINT(RT_DEBUG_OFF, ("\tRxMCS Map_2SS=%d\n", vht_mcs->mcs_ss2));
-#endif
 }
-
+#endif
 
 #ifdef VHT_TXBF_SUPPORT
 VOID trigger_vht_ndpa(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *entry)
@@ -230,8 +230,8 @@ done:
 */
 UCHAR vht_cent_ch_freq(RTMP_ADAPTER *pAd, UCHAR prim_ch)
 {
-	INT idx = 0;
-
+	INT idx = 0, ch_idx = 0;
+	BOOLEAN ch_support_bw_80 = FALSE;
 
 	if (pAd->CommonCfg.vht_bw < VHT_BW_80 || prim_ch < 36)
 	{
@@ -240,6 +240,29 @@ UCHAR vht_cent_ch_freq(RTMP_ADAPTER *pAd, UCHAR prim_ch)
 		return prim_ch;
 	}
 
+#ifdef RT_CFG80211_SUPPORT
+#else
+	/* 
+	sanity check , if this channel has no BW80 capability, use first channel in channel list 
+	ex: when CH144 is not availble , group CH 132~140 won't have BW80 cap , shouldn't be used.
+	*/
+	for ( ch_idx = 0; ch_idx <  pAd->ChannelListNum; ch_idx++)
+	{
+		if ((pAd->ChannelList[ch_idx].Channel == prim_ch) && (pAd->ChannelList[ch_idx].Flags & CHANNEL_80M_CAP))
+			ch_support_bw_80 = TRUE;
+	}
+			
+	if(ch_support_bw_80 == FALSE)
+	{
+		pAd->CommonCfg.Channel = FirstChannel(pAd);
+		DBGPRINT(RT_DEBUG_OFF, ("vht_cent_ch_freq: channel(%d) don't have BW80 capability, use first channel in channel list=%d \n"
+		, prim_ch, pAd->CommonCfg.Channel));
+		prim_ch = FirstChannel(pAd);
+	}
+#endif /* RT_CFG80211_SUPPORT */
+
+	/* choose cent_freq by prim_ch */
+	
 	while (vht_ch_80M[idx].ch_up_bnd != 0)
 	{
 		if (prim_ch >= vht_ch_80M[idx].ch_low_bnd &&
@@ -485,6 +508,18 @@ INT build_vht_cap_ie(RTMP_ADAPTER *pAd, UCHAR *buf)
 			vht_cap_ie.vht_cap.rx_stbc = 0;
 	}
 
+#ifdef VHT_TXBF_SUPPORT
+
+	if ((pAd->chipCap.FlgHwTxBfCap) && (pAd->BeaconSndDimensionFlag ==0))
+	{
+		vht_cap_ie.vht_cap.num_snd_dimension = pAd->CommonCfg.vht_cap_ie.vht_cap.num_snd_dimension;
+   		vht_cap_ie.vht_cap.cmp_st_num_bfer= pAd->CommonCfg.vht_cap_ie.vht_cap.cmp_st_num_bfer;
+		vht_cap_ie.vht_cap.bfee_cap_su=pAd->CommonCfg.vht_cap_ie.vht_cap.bfee_cap_su;
+		vht_cap_ie.vht_cap.bfer_cap_su=pAd->CommonCfg.vht_cap_ie.vht_cap.bfer_cap_su;
+	} 
+    pAd->BeaconSndDimensionFlag =0; 
+#endif
+
 	vht_cap_ie.vht_cap.tx_ant_consistency = 1;
 	vht_cap_ie.vht_cap.rx_ant_consistency = 1;
 
@@ -576,16 +611,6 @@ INT build_vht_cap_ie(RTMP_ADAPTER *pAd, UCHAR *buf)
 	//SWAP32((UINT32)vht_cap_ie.vht_cap);
 	//SWAP32((UINT32)vht_cap_ie.mcs_set);
 #endif /* RT_BIG_ENDIAN */
-
-#ifdef VHT_TXBF_SUPPORT
-	if ((pAd->chipCap.FlgHwTxBfCap))
-	{
-		vht_cap_ie.vht_cap.num_snd_dimension = pAd->CommonCfg.vht_cap_ie.vht_cap.num_snd_dimension;
-		vht_cap_ie.vht_cap.cmp_st_num_bfer= pAd->CommonCfg.vht_cap_ie.vht_cap.cmp_st_num_bfer;
-		vht_cap_ie.vht_cap.bfee_cap_su=pAd->CommonCfg.vht_cap_ie.vht_cap.bfee_cap_su;
-		vht_cap_ie.vht_cap.bfer_cap_su=pAd->CommonCfg.vht_cap_ie.vht_cap.bfer_cap_su;
-	}
-#endif
 
 	NdisMoveMemory(buf, (UCHAR *)&vht_cap_ie, sizeof(VHT_CAP_IE));
 

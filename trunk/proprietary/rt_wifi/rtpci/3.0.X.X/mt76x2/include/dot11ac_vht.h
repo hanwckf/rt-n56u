@@ -634,7 +634,7 @@ typedef struct GNU_PACKED _VHT_NDPA_FRAME {
 	UCHAR ra[MAC_ADDR_LEN];
 	UCHAR ta[MAC_ADDR_LEN];
 	SNDING_DIALOG_TOKEN token;
-	SNDING_STA_INFO sta_info[0];
+	SNDING_STA_INFO sta_info[1];
 } VHT_NDPA_FRAME;
 
 typedef struct GNU_PACKED _NDPA_PKT{

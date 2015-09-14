@@ -85,7 +85,7 @@ VOID RTMPWriteTxWI(
 		Always use Long preamble before verifiation short preamble functionality works well.
 		Todo: remove the following line if short preamble functionality works
 	*/
-	OPSTATUS_CLEAR_FLAG(pAd, fOP_STATUS_SHORT_PREAMBLE_INUSED);
+	//OPSTATUS_CLEAR_FLAG(pAd, fOP_STATUS_SHORT_PREAMBLE_INUSED);
 	NdisZeroMemory(&TxWI, TXWISize);
 	pTxWI = &TxWI;
 
@@ -94,8 +94,18 @@ VOID RTMPWriteTxWI(
 	stbc = pTransmit->field.STBC;
 #endif /* DOT11_N_SUPPORT */
 	
+#ifdef VHT_TXBF_SUPPORT	
 	/* If CCK or OFDM, BW must be 20*/
-	bw = (pTransmit->field.MODE <= MODE_OFDM) ? (BW_20) : (pTransmit->field.BW);
+        if (TxRate == SNDG_TYPE_NDP)
+        {
+	    bw = pTransmit->field.BW;
+        }
+        else
+#endif		
+        {
+	    bw = (pTransmit->field.MODE <= MODE_OFDM) ? (BW_20) : (pTransmit->field.BW);
+        }
+
 #ifdef DOT11_N_SUPPORT
 #ifdef DOT11N_DRAFT3
 	if (bw)
@@ -127,7 +137,23 @@ VOID RTMPWriteTxWI(
 	{
 		if (pAd->CommonCfg.bMIMOPSEnable)
 		{
-			if ((pMac->MmpsMode == MMPS_DYNAMIC) && (pTransmit->field.MCS > 7))
+			UCHAR MaxMcs_1ss;
+	
+			/* 10.2.4 SM power save, IEEE 802.11/2012, p.1010
+			A STA in static SM power save mode maintains only a single receive chain active.
+	
+			An HT STA may use the SM Power Save frame to communicate its SM Power Save state. A non-AP HT
+			STA may also use SM Power Save bits in the HT Capabilities element of its Association Request to achieve
+			the same purpose. The latter allows the STA to use only a single receive chain immediately after association.
+			*/
+#ifdef DOT11_VHT_AC
+			if (IS_VHT_STA(pMac))
+				MaxMcs_1ss = 9;
+			else
+#endif /* DOT11_VHT_AC */
+				MaxMcs_1ss = 7; 
+
+			if ((pMac->MmpsMode == MMPS_DYNAMIC) && (pTransmit->field.MCS > MaxMcs_1ss))
 			{
 				/* Dynamic MIMO Power Save Mode*/
 				mimops = 1;
@@ -135,9 +161,9 @@ VOID RTMPWriteTxWI(
 			else if (pMac->MmpsMode == MMPS_STATIC)
 			{
 				/* Static MIMO Power Save Mode*/
-				if (pTransmit->field.MODE >= MODE_HTMIX && pTransmit->field.MCS > 7)
+				if (pTransmit->field.MODE >= MODE_HTMIX && pTransmit->field.MCS > MaxMcs_1ss)
 				{
-					mcs = 7;
+					mcs = MaxMcs_1ss;
 					mimops = 0;
 				}
 			}
@@ -147,6 +173,18 @@ VOID RTMPWriteTxWI(
 	}
 #endif /* DOT11_N_SUPPORT */
 
+#ifdef DOT11K_RRM_SUPPORT
+	if (pAd->CommonCfg.VoPwrConstraintTest == TRUE)
+	{
+		AMPDU = 0;
+		mcs = 0;
+		ldpc = 0;
+		bw = 0;
+		sgi = 0;
+		stbc = 0;
+		phy_mode = MODE_OFDM;
+	}
+#endif /* DOT11K_RRM_SUPPORT */
 
 #ifdef TXBF_SUPPORT
 	eTxBf = pTransmit->field.eTxBF;
@@ -192,7 +230,22 @@ VOID RTMPWriteTxWI(
 		txwi_n->ShortGI = sgi;
 		txwi_n->STBC = stbc;
 		txwi_n->LDPC = ldpc;
-		txwi_n->MCS= mcs;
+#ifdef CONFIG_AP_SUPPORT
+		if((phy_mode == MODE_CCK) && 
+			(OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_SHORT_PREAMBLE_INUSED)) 
+		   )
+		{
+			if (mcs == MCS_LONGP_RATE_2)
+				txwi_n->MCS = MCS_SHORTP_RATE_2;
+			else if (mcs == MCS_LONGP_RATE_5_5)
+				txwi_n->MCS = MCS_SHORTP_RATE_5_5;
+			else if (mcs == MCS_LONGP_RATE_11)
+				txwi_n->MCS = MCS_SHORTP_RATE_11;
+		}
+		else 
+#endif /* CONFIG_AP_SUPPORT */
+		txwi_n->MCS = mcs;
+
 		txwi_n->BW = bw;
 		txwi_n->PHYMODE= phy_mode;
 		txwi_n->MpduDensity = mpdu_density;
@@ -206,6 +259,10 @@ VOID RTMPWriteTxWI(
 		txwi_n->TxEAPId = TxEAPId_Cal;
 #endif /*CONFIG_AP_SUPPORT*/		
 
+#ifdef CONFIG_STA_SUPPORT
+		txwi_n->GroupID = FALSE;
+		txwi_n->TxEAPId = pAd->CommonCfg.Bssid[5];
+#endif /*CONFIG_STA_SUPPORT*/				
 
 		txwi_n->TxStreamMode = tx_stream_mode;
 #ifdef TXBF_SUPPORT
@@ -216,7 +273,15 @@ VOID RTMPWriteTxWI(
 		txwi_n->NDPSndBW = bw;
 		txwi_n->TXBF_PT_SCA = (eTxBf | iTxBf) ? TRUE : FALSE;
 #endif /* TXBF_SUPPORT */
-		
+
+		/* Calculate TxPwrAdj */
+		txwi_n->TxPwrAdj = 0; 
+#ifdef SINGLE_SKU_V2	
+		RTMP_CHIP_ASIC_SKU_TX_POWER_ADJUST(pAd,txwi_n);	
+#endif /* SINGLE_SKU_V2 */
+
+		/* increase low rate Tx Power by TXWI */
+		RTMP_CHIP_ASIC_TX_POWER_BOOST(pAd,txwi_n);
 	}
 #endif /* RLT_MAC */
 
@@ -233,6 +298,20 @@ VOID RTMPWriteTxWI(
 		txwi_o->BAWinSize = BASize;
 		txwi_o->ShortGI = sgi;
 		txwi_o->STBC = stbc;
+#ifdef CONFIG_AP_SUPPORT
+		if((phy_mode == MODE_CCK) && 
+			(OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_SHORT_PREAMBLE_INUSED)) 
+		   )
+		{
+			if (mcs == MCS_LONGP_RATE_2)
+				txwi_o->MCS = MCS_SHORTP_RATE_2;
+			else if (mcs == MCS_LONGP_RATE_5_5)
+				txwi_o->MCS = MCS_SHORTP_RATE_5_5;
+			else if (mcs == MCS_LONGP_RATE_11)
+				txwi_o->MCS = MCS_SHORTP_RATE_11;
+		}
+		else 
+#endif /* CONFIG_AP_SUPPORT */
 		txwi_o->MCS = mcs;
 		txwi_o->BW = bw;
 		txwi_o->PHYMODE = phy_mode;
@@ -285,9 +364,17 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 		Always use Long preamble before verifiation short preamble functionality works well.
 		Todo: remove the following line if short preamble functionality works
 	*/
-	OPSTATUS_CLEAR_FLAG(pAd, fOP_STATUS_SHORT_PREAMBLE_INUSED);
+	//OPSTATUS_CLEAR_FLAG(pAd, fOP_STATUS_SHORT_PREAMBLE_INUSED);
 	NdisZeroMemory(pTxWI, TXWISize);
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef QOS_DLS_SUPPORT
+	if (pMacEntry && IS_ENTRY_DLS(pMacEntry) &&
+		(pAd->StaCfg.BssType == BSS_INFRA))
+		wcid = BSSID_WCID;
+	else
+#endif /* QOS_DLS_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 		wcid = pTxBlk->Wcid;
 
 	sgi = pTransmit->field.ShortGI;
@@ -350,6 +437,7 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 		iTxBf = FALSE;
 		eTxBf = FALSE;
 		stbc = FALSE;
+        
 		DBGPRINT(RT_DEBUG_TRACE, ("ETxBF in %s(): sending normal sounding, eTxBF=%d\n",
 					__FUNCTION__, pTransmit->field.eTxBF));
 		iTxBf = 0;
@@ -399,14 +487,30 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 #ifdef DOT11_N_SUPPORT
 	if (pMacEntry)
 	{
-		if ((pMacEntry->MmpsMode == MMPS_DYNAMIC) && (mcs > 7))
+		UCHAR MaxMcs_1ss;
+
+		/* 10.2.4 SM power save, IEEE 802.11/2012, p.1010
+		A STA in static SM power save mode maintains only a single receive chain active.
+
+		An HT STA may use the SM Power Save frame to communicate its SM Power Save state. A non-AP HT
+		STA may also use SM Power Save bits in the HT Capabilities element of its Association Request to achieve
+		the same purpose. The latter allows the STA to use only a single receive chain immediately after association.
+		*/
+#ifdef DOT11_VHT_AC
+		if (IS_VHT_STA(pMacEntry))
+			MaxMcs_1ss = 9;
+		else
+#endif /* DOT11_VHT_AC */
+			MaxMcs_1ss = 7; 
+
+		if ((pMacEntry->MmpsMode == MMPS_DYNAMIC) && (mcs > MaxMcs_1ss))
 			mimops = 1;
 		else if (pMacEntry->MmpsMode == MMPS_STATIC)
 		{
 			if ((pTransmit->field.MODE == MODE_HTMIX || pTransmit->field.MODE == MODE_HTGREENFIELD) && 
-				(mcs > 7))
+				(mcs > MaxMcs_1ss))
 			{
-				mcs = 7;
+				mcs = MaxMcs_1ss;
 				mimops = 0;
 			}
 		}
@@ -440,6 +544,18 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 	}	
 #endif /* INF_AMAZON_SE */
 
+#ifdef DOT11K_RRM_SUPPORT
+	if (pAd->CommonCfg.VoPwrConstraintTest == TRUE)
+	{
+		ampdu = 0;
+		mcs = 0;
+		ldpc = 0;
+		bw = 0;
+		sgi = 0;
+		stbc = 0;
+		phy_mode = MODE_OFDM;
+	}
+#endif /* DOT11K_RRM_SUPPORT */
 
 #ifdef CONFIG_FPGA_MODE
 	if (pAd->fpga_ctl.fpga_on & 0x6)
@@ -528,6 +644,21 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 		txwi_n->STBC = stbc;
 		txwi_n->LDPC = ldpc;
 		txwi_n->TxStreamMode = tx_stream_mode;
+		
+#ifdef CONFIG_AP_SUPPORT
+		if((phy_mode == MODE_CCK) && 
+			(OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_SHORT_PREAMBLE_INUSED)) 
+		   )
+		{
+			if (mcs == MCS_LONGP_RATE_2)
+				txwi_n->MCS = MCS_SHORTP_RATE_2;
+			else if (mcs == MCS_LONGP_RATE_5_5)
+				txwi_n->MCS = MCS_SHORTP_RATE_5_5;
+			else if (mcs == MCS_LONGP_RATE_11)
+				txwi_n->MCS = MCS_SHORTP_RATE_11;
+		}
+		else 
+#endif /* CONFIG_AP_SUPPORT */
 		txwi_n->MCS = mcs;
 		txwi_n->PHYMODE = phy_mode;
 		txwi_n->BW = bw;
@@ -553,6 +684,16 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 		txwi_n->lut_en = lut_enable;
 #endif /* MCS_LUT_SUPPORT */
 
+
+		/* Calculate TxPwrAdj */
+		txwi_n->TxPwrAdj = 0; 
+#ifdef SINGLE_SKU_V2	
+		RTMP_CHIP_ASIC_SKU_TX_POWER_ADJUST(pAd,txwi_n);	
+#endif /* SINGLE_SKU_V2 */
+
+		/* increase low rate Tx Power by TXWI */
+		RTMP_CHIP_ASIC_TX_POWER_BOOST(pAd,txwi_n);
+
 	}
 #endif /* RLT_MAC */
 
@@ -572,6 +713,20 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 		txwi_o->CFACK = TX_BLK_TEST_FLAG(pTxBlk, fTX_bPiggyBack);
 		txwi_o->ShortGI = sgi;
 		txwi_o->STBC = stbc;
+#ifdef CONFIG_AP_SUPPORT
+		if((phy_mode == MODE_CCK) && 
+			(OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_SHORT_PREAMBLE_INUSED)) 
+		   )
+		{
+			if (mcs == MCS_LONGP_RATE_2)
+				txwi_o->MCS = MCS_SHORTP_RATE_2;
+			else if (mcs == MCS_LONGP_RATE_5_5)
+				txwi_o->MCS = MCS_SHORTP_RATE_5_5;
+			else if (mcs == MCS_LONGP_RATE_11)
+				txwi_o->MCS = MCS_SHORTP_RATE_11;
+		}
+		else 
+#endif /* CONFIG_AP_SUPPORT */
 		txwi_o->MCS = mcs;
 		txwi_o->PHYMODE = phy_mode;
 		txwi_o->BW = bw;
@@ -656,14 +811,30 @@ VOID RTMPWriteTxWI_Cache(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 	mimops = 0;
 	if (pAd->CommonCfg.bMIMOPSEnable)
 	{
+		UCHAR MaxMcs_1ss;
+
+		/* 10.2.4 SM power save, IEEE 802.11/2012, p.1010
+		A STA in static SM power save mode maintains only a single receive chain active.
+
+		An HT STA may use the SM Power Save frame to communicate its SM Power Save state. A non-AP HT
+		STA may also use SM Power Save bits in the HT Capabilities element of its Association Request to achieve
+		the same purpose. The latter allows the STA to use only a single receive chain immediately after association.
+		*/
+#ifdef DOT11_VHT_AC
+		if (IS_VHT_STA(pMacEntry))
+			MaxMcs_1ss = 9;
+		else
+#endif /* DOT11_VHT_AC */
+			MaxMcs_1ss = 7;			
+			
 		/* MIMO Power Save Mode*/
-		if ((pMacEntry->MmpsMode == MMPS_DYNAMIC) && (pTransmit->field.MCS > 7))
+		if ((pMacEntry->MmpsMode == MMPS_DYNAMIC) && (pTransmit->field.MCS > MaxMcs_1ss))
 			mimops = 1;
 		else if (pMacEntry->MmpsMode == MMPS_STATIC)
 		{
-			if ((pTransmit->field.MODE >= MODE_HTMIX) && (pTransmit->field.MCS > 7))
+			if ((pTransmit->field.MODE >= MODE_HTMIX) && (pTransmit->field.MCS > MaxMcs_1ss))
 			{
-				mcs = 7;
+				mcs = MaxMcs_1ss;
 				mimops = 0;
 			}
 		}
@@ -746,6 +917,18 @@ VOID RTMPWriteTxWI_Cache(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 	}
 #endif /* TXBF_SUPPORT */
 
+#ifdef DOT11K_RRM_SUPPORT
+	if (pAd->CommonCfg.VoPwrConstraintTest == TRUE)
+	{
+		ampdu = 0;
+		mcs = 0;
+		ldpc = 0;
+		bw = 0;
+		sgi = 0;
+		stbc = 0;
+		phy_mode = MODE_OFDM;
+	}
+#endif /* DOT11K_RRM_SUPPORT */
 
 #ifdef CONFIG_FPGA_MODE
 	if (pAd->fpga_ctl.fpga_on & 0x6)
@@ -839,6 +1022,15 @@ VOID RTMPWriteTxWI_Cache(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 		txwi_n->TXBF_PT_SCA = (eTxBf | iTxBf) ? TRUE : FALSE;
 #endif /* TXBF_SUPPORT */
 
+		/* Calculate TxPwrAdj */
+		txwi_n->TxPwrAdj = 0; 
+#ifdef SINGLE_SKU_V2	
+		RTMP_CHIP_ASIC_SKU_TX_POWER_ADJUST(pAd,txwi_n);	
+#endif /* SINGLE_SKU_V2 */
+
+		/* increase low rate Tx Power by TXWI */
+		RTMP_CHIP_ASIC_TX_POWER_BOOST(pAd,txwi_n);
+		
 #ifdef MCS_LUT_SUPPORT
 		txwi_n->lut_en = lut_enable;
 #endif /* MCS_LUT_SUPPORT */
@@ -1288,12 +1480,22 @@ RTMP_REG_PAIR APMACRegTable[] = {
 };
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+RTMP_REG_PAIR STAMACRegTable[] = {
+	{WMM_AIFSN_CFG,	0x00002273},
+	{WMM_CWMIN_CFG,	0x00002344},
+	{WMM_CWMAX_CFG,	0x000034aa},
+};
+#endif /* CONFIG_STA_SUPPORT */
 
 
 #define NUM_MAC_REG_PARMS			(sizeof(MACRegTable) / sizeof(RTMP_REG_PAIR))
 #ifdef CONFIG_AP_SUPPORT
 #define NUM_AP_MAC_REG_PARMS		(sizeof(APMACRegTable) / sizeof(RTMP_REG_PAIR))
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+#define NUM_STA_MAC_REG_PARMS	(sizeof(STAMACRegTable) / sizeof(RTMP_REG_PAIR))
+#endif /* CONFIG_STA_SUPPORT */
 #ifdef RTMP_MAC
 #define NUM_RTMP_MAC_REG_PARAMS	(sizeof(MACRegTable_RTMP)/ sizeof(RTMP_REG_PAIR))
 #endif /* RTMP_MAC */
@@ -1332,6 +1534,17 @@ INT rtmp_mac_init(RTMP_ADAPTER *pAd)
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		for (idx = 0; idx < NUM_STA_MAC_REG_PARMS; idx++)
+		{
+			RTMP_IO_WRITE32(pAd,
+				STAMACRegTable[idx].Register,
+				STAMACRegTable[idx].Value);
+		}
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	rtmp_mac_pbf_init(pAd);
 

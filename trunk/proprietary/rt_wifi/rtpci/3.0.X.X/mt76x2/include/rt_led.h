@@ -124,6 +124,32 @@
 #endif /* WSC_LED_SUPPORT */
 #endif /* WSC_INCLUDED */
 
+#ifdef CONFIG_SWMCU_SUPPORT
+/* SWMCU Led Status */
+/* LED G*/
+#define MCU_LED_G_OFF			0
+#define MCU_LED_G_SOLID_ON		1
+#define MCU_LED_G_SLOW_BLINK	2
+#define MCU_LED_G_FAST_BLINK	3
+/* LED A */
+#define MCU_LED_A_OFF			0
+#define MCU_LED_A_SOLID_ON		1
+#define MCU_LED_A_SLOW_BLINK	2
+#define MCU_LED_A_FAST_BLINK	3
+/* LED ACT */
+#define MCU_LED_ACT_OFF											0
+#define MCU_LED_ACT_SOLID_ON									1
+#define MCU_LED_ACT_BLINK_UPON_TX_DATA_MNG						2
+#define MCU_LED_ACT_BLINK_UPON_TX_DATA_MNG_BEN					3
+#define MCU_LED_ACT_WPS_IN_PROCESS								6
+#define MCU_LED_ACT_WPS_ERROR									7
+#define MCU_LED_ACT_WPS_SESSION_OVERLAP_DETECTED				8
+#define MCU_LED_ACT_WPS_SUCCESS_WITH_SECURITY					9
+#define MCU_LED_ACT_WPS_SUCCESS_WITHOUT_SECURITY				10
+#define MCU_LED_ACT_WPS_TURN_LED_OFF							11
+#define MCU_LED_ACT_WPS_NORMAL_CONNECTION_WITHOUT_SECURITY		12
+#define	MCU_LED_ACT_WPS_NORMAL_CONNECTION_WITH_SECURITY			13
+#endif /* CONFIG_SWMCU_SUPPORT */
 
 #define ACTIVE_LOW 	0
 #define ACTIVE_HIGH 1
@@ -176,6 +202,298 @@ VOID LEDConnectionCompletion(
 #endif /* WSC_LED_SUPPORT */
 #endif /* WSC_STA_SUPPORT */
 
+#ifdef CONFIG_SWMCU_SUPPORT
+/*************************************************************************
+  *
+  *	LED related data type and MARCO definitions.
+  *
+  ************************************************************************/
+#define GetBitX(x, y)			(	((x) & (1 << (y)))>>y		)
+#define GetBit(x, y)			(	((x) & (1 << (y)))		)
+#define GetBitX(x, y)			(	((x) & (1 << (y)))>>y		)
+#define SetBit(x, y)			(	(x) = (x) | (1 << (y))	)
+#define ClearBit(x, y)			{	(x) &= (~(1 << (y)));	}
+#define DSetBit(x, y)			(	(x) = (1 << (y))		)
+#define MakeWord(HI, LO)		(	((WORD)(LO)) | (((WORD)(HI))<<8) )	/* Note! LO must be read first */
+#define HiByte(W)				(	(BYTE)(((WORD)W) >> 8)	)
+#define LoByte(W)				(	(BYTE)(W)				)
+#define FireInterruptToHost()	{	IntToHost = 0xff;		}
+
+#define LED_CHECK_INTERVAL 	50 /* 50ms */
+
+#define LED_G			0
+#define LED_A			1
+#define LED_ACT			2
+
+#define MCU_INT_STATUS	0x0414
+#define GPIO_DAT		0x0228
+#define GPIO_DIR		0x0229
+#define MAC_LED_CFG		0x102c
+
+typedef unsigned char	BYTE;
+
+#ifndef TRUE
+#define TRUE		1
+#endif
+#ifndef FALSE
+#define FALSE	0
+#endif
+
+/* SWMCU LED Current Operation Mode */
+typedef union _LED_OPERATION_MODE
+{
+	struct {
+		UINT32 :20;
+		UINT32 LedGMode:2;		/* 
+								 * 0: MCU_LED_G_OFF
+								 * 1: MCU_LED_G_SOLID_ON, 
+								 * 2: MCU_LED_G_SLOW_BLINK 
+								 * 3: MCU_LED_G_FAST_BLINK 
+								 */
+								 
+		UINT32 LedAMode:2;		/* 
+								 * 0: MCU_LED_A_OFF
+								 * 1: MCU_LED_A_SOLID_ON, 
+								 * 2: MCU_LED_A_SLOW_BLINK 
+								 * 3: MCU_LED_A_FAST_BLINK. 
+								 */
+								 
+		UINT32 LedActMode:4;	/*
+								 * 0: MCU_LED_ACT_OFF
+								 * 1: MCU_LED_ACT_SOLID_ON
+								 * 2: MCU_LED_ACT_BLINK_UPON_TX_DATA_MNG
+								 * 3: MCU_LED_ACT_BLINK_UPON_TX_DATA_MNG_BEN 
+								 * 6: MCU_LED_ACT_WPS_IN_PROCESS,
+								 * 7: MCU_LED_ACT_WPS_ERROR
+								 * 8: MCU_LED_ACT_WPS_SESSION_OVERLAP_DETECTED
+								 * 9: MCU_LED_ACT_WPS_SUCCESS_WITH_SECURITY
+								 * 10:MCU_LED_ACT_WPS_SUCCESS_WITHOUT_SECURITY
+								 * 11:MCU_LED_ACT_WPS_TURN_LED_OFF
+								 * 12:MCU_LED_ACT_NORMAL_CONNECTION_WITHOUT_SECURITY
+								 * 13:MCU_LED_ACT_NORMAL_CONNECTION_WITH_SECURITY
+								 * 14:MCU_LED_ACT_WPS_PRE_STAGE
+								 * 15:MCU_LED_ACT_WPS_POST_STAGE
+								 */
+		UINT32 LedActModeNoTx:1;
+		UINT32 LedGPolarity:1;
+		UINT32 LedAPolarity:1;
+		UINT32 LedActPolarity:1;
+	} field;
+	UINT word;
+} LED_OPERATION_MODE, *PLED_OPERATION_MODE;
+
+/* MCU_LEDCS: MCU LED A/G Configure Setting */
+typedef union _LED_AG_CFG
+{
+	struct {
+#ifdef RT_BIG_ENDIAN
+		UINT16 LedAMode_RadioOnLinkA:2;
+		UINT16 LedGMode_RadioOnLinkA:2;
+		UINT16 LedAMode_RadioOnLinkG:2;
+		UINT16 LedGMode_RadioOnLinkG:2;
+		UINT16 LedAMode_RadioOnLinkDown:2;
+		UINT16 LedGMode_RadioOnLinkDown:2;
+		UINT16 LedAMode_RadioOff:2;
+		UINT16 LedGMode_RadioOff:2;
+#else
+		UINT16 LedGMode_RadioOff:2;
+		UINT16 LedAMode_RadioOff:2;
+		UINT16 LedGMode_RadioOnLinkDown:2;
+		UINT16 LedAMode_RadioOnLinkDown:2;
+		UINT16 LedGMode_RadioOnLinkG:2;
+		UINT16 LedAMode_RadioOnLinkG:2;
+		UINT16 LedGMode_RadioOnLinkA:2;
+		UINT16 LedAMode_RadioOnLinkA:2;
+#endif
+	} field;
+	UINT16 word;
+} LED_AG_CFG, *PLED_AG_CFG;
+
+/* MCU_LEDCS: MCU LED ACT Configure Setting */
+typedef union _LED_ACT_CFG
+{
+	struct {
+#ifdef RT_BIG_ENDIAN
+		UINT16 :1;
+		UINT16 LedActModeNoTx_RadioOnLinkA:1;
+		UINT16 LedActMode_RadioOnLinkA:2;
+		UINT16 :1;
+		UINT16 LedActModeNoTx_RadioOnLinkG:1;
+		UINT16 LedActMode_RadioOnLinkG:2;
+		UINT16 :1;
+		UINT16 LedActModeNoTx_RadioOnLinkDown:1;
+		UINT16 LedActMode_RadioOnLinkDown:2;
+		UINT16 :1;
+		UINT16 LedActModeNoTx_RadioOff:1;
+		UINT16 LedActMode_RadioOff:2;
+#else
+		UINT16 LedActMode_RadioOff:2;
+		UINT16 LedActModeNoTx_RadioOff:1;
+		UINT16 :1;
+		UINT16 LedActMode_RadioOnLinkDown:2;
+		UINT16 LedActModeNoTx_RadioOnLinkDown:1;
+		UINT16 :1;
+		UINT16 LedActMode_RadioOnLinkG:2;
+		UINT16 LedActModeNoTx_RadioOnLinkG:1;
+		UINT16 :1;
+		UINT16 LedActMode_RadioOnLinkA:2;
+		UINT16 LedActModeNoTx_RadioOnLinkA:1;
+		UINT16 :1;
+#endif
+	} field;
+	UINT16 word;
+} LED_ACT_CFG, *PLED_ACT_CFG;
+
+/* MCU_LEDCS: MCU LED POLARITY Configure Setting. */
+typedef union _LED_POLARITY
+{
+	struct {
+#ifdef RT_BIG_ENDIAN
+		UINT16 :1;
+		UINT16 LedActPolarity_RadioOnLinkA:1;
+		UINT16 LedAPolarity_RadioOnLinkA:1;
+		UINT16 LedGPolarity_RadioOnLinkA:1;
+		UINT16 :1;
+		UINT16 LedActPolarity_RadioOnLinkG:1;
+		UINT16 LedAPolarity_RadioOnLinkG:1;
+		UINT16 LedGPolarity_RadioOnLinkG:1;
+		UINT16 :1;
+		UINT16 LedActPolarity_RadioOnLinkDown:1;
+		UINT16 LedAPolarity_RadioOnLinkDown:1;
+		UINT16 LedGPolarity_RadioOnLinkDown:1;
+		UINT16 :1;
+		UINT16 LedActPolarity_RadioOff:1;
+		UINT16 LedAPolarity_RadioOff:1;
+		UINT16 LedGPolarity_RadioOff:1;
+#else
+		UINT16 LedGPolarity_RadioOff:1;
+		UINT16 LedAPolarity_RadioOff:1;
+		UINT16 LedActPolarity_RadioOff:1;
+		UINT16 :1;
+		UINT16 LedGPolarity_RadioOnLinkDown:1;
+		UINT16 LedAPolarity_RadioOnLinkDown:1;
+		UINT16 LedActPolarity_RadioOnLinkDown:1;
+		UINT16 :1;
+		UINT16 LedGPolarity_RadioOnLinkG:1;
+		UINT16 LedAPolarity_RadioOnLinkG:1;
+		UINT16 LedActPolarity_RadioOnLinkG:1;
+		UINT16 :1;
+		UINT16 LedGPolarity_RadioOnLinkA:1;
+		UINT16 LedAPolarity_RadioOnLinkA:1;
+		UINT16 LedActPolarity_RadioOnLinkA:1;
+		UINT16 :1;
+#endif
+	} field;
+	UINT16 word;
+} LED_POLARITY, *PLED_POLARITY;
+
+/* SWMCU LED Current Parameters */
+typedef struct _ULED_PARAMETER
+{
+	LED_AG_CFG LedAgCfg;
+	LED_ACT_CFG LedActCfg;
+	LED_POLARITY LedPolarityCfg;
+	UINT8 LedMode;
+}ULED_PARAMETER, *PULED_PARAMETER;
+
+/* Mac LED_CFG macro and definition */
+#define MAC_LED_OFF				0
+#define MAC_LED_BLINK_UPON_TX	1
+#define MAC_LED_SLOW_BLINK		2
+#define MAC_LED_ON				3
+
+typedef union _LED_CFG_T
+{
+	struct{
+#ifdef RT_BIG_ENDIAN
+		UINT32 :1;
+		UINT32 LED_POL:1;		/* 0: active low, 1:active high. */
+		UINT32 Y_LED_MODE:2;	/* 0: off, 1: blinking upon Tx,
+									2:Periodic slow blinking, 3:sloid on. */
+		UINT32 G_LED_MODE:2;	/* same as Y_LED_MODE. */
+		UINT32 R_LED_MODE:2;	/* same as Y_LED_MODE. */
+		UINT32 :2;
+		UINT32 SLOW_BLK_TIME:6;	/* slow blinking period (uint: 1sec). */
+		UINT32 LED_OFF_TIIME:8;	/* Tx blinking off period (unit: 1ms). */
+		UINT32 LED_ON_TIME:8; 	/* Tx blinking on period (uint: 1ms). */
+#else
+		UINT32 LED_ON_TIME:8; 	/* Tx blinking on period (uint: 1ms). */
+		UINT32 LED_OFF_TIME:8;	/* Tx blinking off period (unit: 1ms). */
+		UINT32 SLOW_BLK_TIME:6;	/* slow blinking period (uint: 1sec). */
+		UINT32 :2;
+		UINT32 R_LED_MODE:2;	/* same as Y_LED_MODE. */
+		UINT32 G_LED_MODE:2;	/* same as Y_LED_MODE. */
+		UINT32 Y_LED_MODE:2;	/* 0: off, 1: blinking upon Tx,
+									2:Periodic slow blinking, 3:sloid on. */
+		UINT32 LED_POL:1;		/* 0: active low, 1:active high. */
+		UINT32 :1;
+#endif
+	} field;
+	UINT32 word;
+} LED_CFG_T, *PLED_CFG_T;
+
+#define INFINITE_PERIOD (-1)
+/* 
+ * WPS User Feedback Time Unit
+ * Time unit is LED_CHECK_INTERVAL
+ */
+typedef struct _WPS_LED_TIME_UNIT {
+	INT32 OnPeriod, LeftOnPeriod;
+	INT32 OffPeriod, LeftOffPeriod;
+	INT32 BlinkPeriod, LeftBlinkPeriod;
+	INT32 RestPeriod, LeftRestPeriod;
+}WPS_LED_TIME_UNIT, *PWPS_LED_TIME_UNIT;
+
+typedef struct _SWMCU_LED_CONTROL {
+	RALINK_TIMER_STRUCT LedCheckTimer;
+	ULED_PARAMETER LedParameter;
+	LED_OPERATION_MODE CurrentLedCfg;
+	unsigned char LinkStatus;
+	unsigned char GPIOPolarity;
+	unsigned char SignalStrength;
+	unsigned char LedBlinkTimer;
+	unsigned long BlinkFor8sTimer;
+	BOOLEAN bWlanLed;
+	WPS_LED_TIME_UNIT WPSLedTimeUnit;
+}SWMCU_LED_CONTROL, *PSWMCU_LED_CONTROL;
+
+INT Show_LedCfg_Proc(
+	IN PRTMP_ADAPTER pAd,
+	IN PSTRING arg);
+
+INT Set_LedCfg_Proc(
+	IN PRTMP_ADAPTER pAd,
+	IN PSTRING arg);
+
+INT Set_LedCheck_Proc(
+	IN PRTMP_ADAPTER pAd,
+	IN PSTRING arg);
+
+VOID SetLedCfg(
+	IN PRTMP_ADAPTER pAd,
+	IN INT ledPolarity,
+	IN INT ledOnTime,
+	IN INT ledOffTime,
+	IN INT slowBlkTime);
+
+VOID SetLedMode(
+	IN PRTMP_ADAPTER pAd,
+	IN INT LedSel,
+	IN INT LedMode);
+
+void SWMCULedCtrlMain(
+	IN PVOID SystemSpecific1, 
+	IN PVOID FunctionContext, 
+	IN PVOID SystemSpecific2, 
+	IN PVOID SystemSpecific3);
+
+DECLARE_TIMER_FUNCTION(SWMCULedCtrlMain);
+
+void SetLedLinkStatus(
+	IN PRTMP_ADAPTER pAd);
+
+
+#endif /* CONFIG_SWMCU_SUPPORT */
 
 typedef struct _LED_CONTROL
 {
@@ -187,6 +505,9 @@ typedef struct _LED_CONTROL
 	UCHAR				RssiSingalstrengthOffet;
 	BOOLEAN				bLedOnScanning;
 	UCHAR				LedStatus;
+#ifdef CONFIG_SWMCU_SUPPORT
+	SWMCU_LED_CONTROL SWMCULedCntl;
+#endif /* CONFIG_SWMCU_SUPPORT */
 }LED_CONTROL, *PLED_CONTROL;
 
 void RTMPStartLEDMode(IN RTMP_ADAPTER *pAd);

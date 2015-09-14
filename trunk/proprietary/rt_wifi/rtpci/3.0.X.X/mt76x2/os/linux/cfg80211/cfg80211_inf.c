@@ -78,12 +78,85 @@ BOOLEAN CFG80211DRV_OpsChgVirtualInf(RTMP_ADAPTER *pAd, VOID *pData)
 	}
 #endif /* RT_CFG80211_P2P_SINGLE_DEVICE */
 
+#ifdef CONFIG_STA_SUPPORT	
+	/* Change Device Type */
+	if (newType == RT_CMD_80211_IFTYPE_ADHOC)
+	{
+		Set_NetworkType_Proc(pAd, "Adhoc");
+	}	
+	else if ((newType == RT_CMD_80211_IFTYPE_STATION) ||
+		     (newType == RT_CMD_80211_IFTYPE_P2P_CLIENT))
+	{
+		CFG80211DBG(RT_DEBUG_TRACE, ("80211> Change the Interface to STA Mode\n"));
+
+#ifdef CONFIG_AP_SUPPORT
+		if (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP && RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_START_UP))
+			CFG80211DRV_DisableApInterface(pAd);
+#endif /* CONFIG_AP_SUPPORT */
+			
+		pAd->cfg80211_ctrl.isCfgInApMode = RT_CMD_80211_IFTYPE_STATION;
+	}
+	else
+#endif /*CONFIG_STA_SUPPORT*/		
 		if ((newType == RT_CMD_80211_IFTYPE_AP) ||
 		     (newType == RT_CMD_80211_IFTYPE_P2P_GO))
 	{
 		CFG80211DBG(RT_DEBUG_TRACE, ("80211> Change the Interface to AP Mode\n"));		
 		pAd->cfg80211_ctrl.isCfgInApMode = RT_CMD_80211_IFTYPE_AP;
 	}	
+#ifdef CONFIG_STA_SUPPORT			
+	else if (newType == RT_CMD_80211_IFTYPE_MONITOR)
+	{
+		/* set packet filter */
+		Set_NetworkType_Proc(pAd, "Monitor");
+
+		if (pVifParm->MonFilterFlag != 0)
+		{
+			UINT32 Filter;
+
+			RTMP_IO_READ32(pAd, RX_FILTR_CFG, &Filter);
+
+			if ((pVifParm->MonFilterFlag & RT_CMD_80211_FILTER_FCSFAIL) == RT_CMD_80211_FILTER_FCSFAIL)
+			{
+				Filter = Filter & (~0x01);
+			}
+			else
+			{
+				Filter = Filter | 0x01;
+			}
+	
+			if ((pVifParm->MonFilterFlag & RT_CMD_80211_FILTER_PLCPFAIL) == RT_CMD_80211_FILTER_PLCPFAIL)
+			{
+				Filter = Filter & (~0x02);
+			}
+			else
+			{
+				Filter = Filter | 0x02;
+			}	
+	
+			if ((pVifParm->MonFilterFlag & RT_CMD_80211_FILTER_CONTROL) == RT_CMD_80211_FILTER_CONTROL)
+			{
+				Filter = Filter & (~0xFF00);
+			}
+			else
+			{
+				Filter = Filter | 0xFF00;
+			}	
+	
+			if ((pVifParm->MonFilterFlag & RT_CMD_80211_FILTER_OTHER_BSS) == RT_CMD_80211_FILTER_OTHER_BSS)
+			{
+				Filter = Filter & (~0x08);
+			}
+			else
+			{
+				Filter = Filter | 0x08;
+			}
+
+			RTMP_IO_WRITE32(pAd, RX_FILTR_CFG, Filter);
+			pVifParm->MonFilterFlag = Filter;
+		} 
+	} 
+#endif /*CONFIG_STA_SUPPORT*/
 
 	if ((newType == RT_CMD_80211_IFTYPE_P2P_CLIENT) ||
 	   (newType == RT_CMD_80211_IFTYPE_P2P_GO))
@@ -401,8 +474,16 @@ static INT CFG80211_VirtualIF_Close(PNET_DEV dev_p)
 	
 	if (netif_carrier_ok(dev_p))
 		netif_carrier_off(dev_p);
+#ifdef CONFIG_STA_SUPPORT
+	if (INFRA_ON(pAd))
+		AsicEnableBssSync(pAd);
+
+	else if (ADHOC_ON(pAd))
+		AsicEnableIbssSync(pAd);
+#else
 	else
 		AsicDisableSync(pAd);
+#endif
 
 	//VIRTUAL_IF_DOWN(pAd);
 

@@ -202,7 +202,7 @@ VOID CarrierDetectionPeriodicStateCtrl(
 			}
 			else if (*pCD_State == CD_SILENCE)
 			{
-			*pOneSecIntCount  = pCarrierDetect->CarrierGoneThreshold;
+				*pOneSecIntCount  = pCarrierDetect->CarrierGoneThreshold;
 			}
 			CarrierDetectionResetStatus(pAd);
 		}
@@ -211,7 +211,6 @@ VOID CarrierDetectionPeriodicStateCtrl(
 			pCarrierDetect->recheck = pCarrierDetect->recheck1;
 			*pOneSecIntCount  = 0;
 		}
-
 		/*CarrierDetectionResetStatus(pAd);*/
 	}
 
@@ -390,7 +389,7 @@ VOID RTMPHandleRadarInterrupt(PRTMP_ADAPTER  pAd)
 	else if(pAd->chipCap.carrier_func == TONE_RADAR_V1 &&
 		pCarrierDetect->Enable)
 	{
-			ToneRadarProgram(pAd);
+		ToneRadarProgram(pAd);
 	}
 }
 
@@ -911,35 +910,11 @@ VOID ToneRadarProgram_v3(PRTMP_ADAPTER pAd, ULONG threshold)
 	RTMP_BBP_IO_WRITE32(pAd, TR_R3, 0x0003002d);
 	RTMP_BBP_IO_WRITE32(pAd, TR_R5, 0x80000000);
 	RTMP_BBP_IO_WRITE32(pAd, TR_R6, 0x80100000);
-	CarrierDetectionEnable(pAd, 1);	
+	CarrierDetectionEnable(pAd, 1);
 	RTMP_IO_WRITE32(pAd, 0x212C, 0x0c350001);
 
-
-#else
-	UCHAR bbp;
-
-	/* programe delta delay & division bit*/
-	DBGPRINT(RT_DEBUG_TRACE, ("ToneRadarProgram v3\n"));
-	bbp = pAd->CommonCfg.CarrierDetect.delta |							\
-			((pAd->CommonCfg.CarrierDetect.SymRund & 0x3) << 4)	 |		\
-			((pAd->CommonCfg.CarrierDetect.div_flag & 0x1) << 6) |		\
-			0x80;	/* Full 40MHz Detection Mode */
-	RTMP_CARRIER_IO_WRITE8(pAd, 5, bbp);
-	
-	/* program *_mask*/
-	RTMP_CARRIER_IO_WRITE8(pAd, 2, pAd->CommonCfg.CarrierDetect.VGA_Mask);
-	RTMP_CARRIER_IO_WRITE8(pAd, 3, pAd->CommonCfg.CarrierDetect.Packet_End_Mask);
-	RTMP_CARRIER_IO_WRITE8(pAd, 4, pAd->CommonCfg.CarrierDetect.Rx_PE_Mask);
-
-	/* program threshold*/
-	RTMP_CARRIER_IO_WRITE8(pAd, 6, threshold & 0xff);
-	RTMP_CARRIER_IO_WRITE8(pAd, 7, (threshold & 0xff00) >> 8);
-	RTMP_CARRIER_IO_WRITE8(pAd, 8, (threshold & 0xff0000) >> 16);
-	RTMP_CARRIER_IO_WRITE8(pAd, 9, (threshold & 0xff000000) >> 24);
-
-	/* ToneRadarEnable v2 */
-	RTMP_CARRIER_IO_WRITE8(pAd, 0, 1);
-#endif
 }
 
+
+#endif /* CARRIER_DETECTION_SUPPORT */
 

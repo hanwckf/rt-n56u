@@ -566,6 +566,15 @@ INT RTMPGetKeyParameterWithOffset(
 }
 
 
+#ifdef CONFIG_STA_SUPPORT
+inline void RTMPSetSTADefKeyId(RTMP_ADAPTER *pAd, ULONG KeyIdx)
+{
+	if((KeyIdx >= 1 ) && (KeyIdx <= 4))
+		pAd->StaCfg.wdev.DefaultKeyId = (UCHAR) (KeyIdx - 1);
+	else
+		pAd->StaCfg.wdev.DefaultKeyId = 0;
+}
+#endif /* CONFIG_STA_SUPPORT */
 
 
 static int rtmp_parse_key_buffer_from_file(IN  PRTMP_ADAPTER pAd,IN  PSTRING buffer,IN  ULONG KeyType,IN  INT BSSIdx,IN  INT KeyIdx)
@@ -628,6 +637,15 @@ static void rtmp_read_key_parms_from_file(IN  PRTMP_ADAPTER pAd, PSTRING tmpbuf,
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			KeyIdx = simple_strtol(tmpbuf, 0, 10);
+			RTMPSetSTADefKeyId(pAd, KeyIdx);
+
+			DBGPRINT(RT_DEBUG_TRACE, ("DefaultKeyID(0~3)=%d\n", pAd->StaCfg.wdev.DefaultKeyId));
+		}
+#endif /* CONFIG_STA_SUPPORT */		
 	}	   
 
 
@@ -693,6 +711,16 @@ static void rtmp_read_key_parms_from_file(IN  PRTMP_ADAPTER pAd, PSTRING tmpbuf,
 			}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+			IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+			{
+				snprintf(tok_str, sizeof(tok_str), "Key%dStr", idx + 1);
+				if (RTMPGetKeyParameter(tok_str, tmpbuf, 128, buffer, FALSE))
+				{
+					rtmp_parse_key_buffer_from_file(pAd, tmpbuf, KeyType[BSS0], BSS0, idx);
+				}
+			}
+#endif /* CONFIG_STA_SUPPORT */
 		}
 	}
 }
@@ -787,6 +815,8 @@ static void rtmp_read_ap_client_from_file(
 		{
 			pApCliEntry = &pAd->ApCfg.ApCliTab[i];
 
+			NdisZeroMemory(&(pApCliEntry->CfgApCliBssid), MAC_ADDR_LEN);
+
 			if(strlen(macptr) != 17)  /*Mac address acceptable format 01:02:03:04:05:06 length 17*/
 				continue; 
 			if(strcmp(macptr,"00:00:00:00:00:00") == 0)
@@ -813,10 +843,16 @@ static void rtmp_read_ap_client_from_file(
 				wdev->AuthMode = Ndis802_11AuthModeAutoSwitch;
 			else if ((strncmp(macptr, "SHARED", 6) == 0) || (strncmp(macptr, "shared", 6) == 0))
 				wdev->AuthMode = Ndis802_11AuthModeShared;
+			else if ((strncmp(macptr, "WPAPSKWPA2PSK", 13) == 0) || (strncmp(macptr, "wpapskwpa2psk", 13) == 0))
+            {
+                wdev->AuthMode = Ndis802_11AuthModeWPA1PSKWPA2PSK;
+                wdev->bWpaAutoMode = TRUE;
+            }	
 			else if ((strncmp(macptr, "WPAPSK", 6) == 0) || (strncmp(macptr, "wpapsk", 6) == 0))
 				wdev->AuthMode = Ndis802_11AuthModeWPAPSK;
 			else if ((strncmp(macptr, "WPA2PSK", 7) == 0) || (strncmp(macptr, "wpa2psk", 7) == 0))
 				wdev->AuthMode = Ndis802_11AuthModeWPA2PSK;
+	
 			else
 				wdev->AuthMode = Ndis802_11AuthModeOpen;
 
@@ -1615,6 +1651,125 @@ static int rtmp_parse_wpapsk_buffer_from_file(IN  PRTMP_ADAPTER pAd,IN  PSTRING 
 #endif /* CONFIG_AP_SUPPORT */
 
 
+#ifdef CONFIG_STA_SUPPORT
+static void rtmp_read_sta_wmm_parms_from_file(IN  PRTMP_ADAPTER pAd, char *tmpbuf, char *buffer)
+{
+	PSTRING					macptr;						
+	INT						i=0;
+	BOOLEAN					bWmmEnable = FALSE;
+	
+	/*WmmCapable*/
+	if(RTMPGetKeyParameter("WmmCapable", tmpbuf, 32, buffer, TRUE))
+	{
+		if(simple_strtol(tmpbuf, 0, 10) != 0) /*Enable*/
+		{
+			pAd->CommonCfg.bWmmCapable = TRUE;
+			bWmmEnable = TRUE;
+		}
+		else /*Disable*/
+		{
+			pAd->CommonCfg.bWmmCapable = FALSE;
+		}
+		
+		pAd->StaCfg.wdev.bWmmCapable = pAd->CommonCfg.bWmmCapable;
+		
+		DBGPRINT(RT_DEBUG_TRACE, ("WmmCapable=%d\n", pAd->CommonCfg.bWmmCapable));
+	}
+
+#ifdef QOS_DLS_SUPPORT
+	/*DLSCapable*/
+	if(RTMPGetKeyParameter("DLSCapable", tmpbuf, 32, buffer, TRUE))
+	{
+		if(simple_strtol(tmpbuf, 0, 10) != 0)  /*Enable*/
+		{
+			pAd->CommonCfg.bDLSCapable = TRUE;
+		}
+		else /*Disable*/
+		{
+			pAd->CommonCfg.bDLSCapable = FALSE;
+		}
+
+		DBGPRINT(RT_DEBUG_TRACE, ("bDLSCapable=%d\n", pAd->CommonCfg.bDLSCapable));
+	}
+#endif /* QOS_DLS_SUPPORT */
+
+	/*AckPolicy for AC_BK, AC_BE, AC_VI, AC_VO*/
+	if(RTMPGetKeyParameter("AckPolicy", tmpbuf, 32, buffer, TRUE))
+	{			
+		for (i = 0, macptr = rstrtok(tmpbuf,";"); macptr; macptr = rstrtok(NULL,";"), i++)
+		{
+			pAd->CommonCfg.AckPolicy[i] = (UCHAR)simple_strtol(macptr, 0, 10);
+
+			DBGPRINT(RT_DEBUG_TRACE, ("AckPolicy[%d]=%d\n", i, pAd->CommonCfg.AckPolicy[i]));
+		}
+	}
+
+#ifdef UAPSD_SUPPORT
+	if (bWmmEnable)
+	{
+		/*APSDCapable*/
+		if(RTMPGetKeyParameter("APSDCapable", tmpbuf, 10, buffer, TRUE))
+		{
+			if(simple_strtol(tmpbuf, 0, 10) != 0)  /*Enable*/
+				pAd->StaCfg.UapsdInfo.bAPSDCapable = TRUE;
+			else
+				pAd->StaCfg.UapsdInfo.bAPSDCapable = FALSE;
+
+			DBGPRINT(RT_DEBUG_TRACE, ("APSDCapable=%d\n", pAd->StaCfg.UapsdInfo.bAPSDCapable));
+		}
+
+		/*MaxSPLength*/
+		if(RTMPGetKeyParameter("MaxSPLength", tmpbuf, 10, buffer, TRUE))
+		{
+			pAd->CommonCfg.MaxSPLength = simple_strtol(tmpbuf, 0, 10);
+
+			DBGPRINT(RT_DEBUG_TRACE, ("MaxSPLength=%d\n", pAd->CommonCfg.MaxSPLength));
+		}
+
+		/*APSDAC for AC_BE, AC_BK, AC_VI, AC_VO*/
+		if(RTMPGetKeyParameter("APSDAC", tmpbuf, 32, buffer, TRUE))
+		{
+			BOOLEAN apsd_ac[4];
+						
+			for (i = 0, macptr = rstrtok(tmpbuf,";"); macptr; macptr = rstrtok(NULL,";"), i++)
+			{
+				apsd_ac[i] = (BOOLEAN)simple_strtol(macptr, 0, 10);
+
+				DBGPRINT(RT_DEBUG_TRACE, ("APSDAC%d  %d\n", i,  apsd_ac[i]));
+			}
+					
+			pAd->CommonCfg.bAPSDAC_BE = apsd_ac[0];
+			pAd->CommonCfg.bAPSDAC_BK = apsd_ac[1];
+			pAd->CommonCfg.bAPSDAC_VI = apsd_ac[2];
+			pAd->CommonCfg.bAPSDAC_VO = apsd_ac[3];
+
+			pAd->CommonCfg.bACMAPSDTr[0] = apsd_ac[0];
+			pAd->CommonCfg.bACMAPSDTr[1] = apsd_ac[1];
+			pAd->CommonCfg.bACMAPSDTr[2] = apsd_ac[2];
+			pAd->CommonCfg.bACMAPSDTr[3] = apsd_ac[3];
+		}
+	}
+#endif /* UAPSD_SUPPORT */
+}
+
+#ifdef XLINK_SUPPORT
+static void rtmp_get_psp_xlink_mode_from_file(IN  PRTMP_ADAPTER pAd, char *tmpbuf, char *buffer)
+{
+	/* Xlink Mode*/
+	if (RTMPGetKeyParameter("PSP_XLINK_MODE", tmpbuf, 32, buffer, TRUE))
+	{
+		if(simple_strtol(tmpbuf, 0, 10) != 0) /* enable*/
+			pAd->StaCfg.PSPXlink = TRUE;
+		else /* disable*/
+			pAd->StaCfg.PSPXlink = FALSE;
+
+		AsicSetRxFilter(pAd);
+
+		DBGPRINT(RT_DEBUG_TRACE, ("PSP_XLINK_MODE=%d\n", pAd->StaCfg.PSPXlink));
+	}
+}
+#endif /* XLINK_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 
 
 #ifdef DOT11_VHT_AC
@@ -1968,6 +2123,15 @@ static void HTParametersHook(
 			}
 		}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			pAd->StaCfg.wdev.DesiredTransmitSetting.field.FixedTxMode = 
+										RT_CfgSetFixedTxPhyMode(pValueStr);
+			DBGPRINT(RT_DEBUG_TRACE, ("Fixed Tx Mode = %d\n", 
+											pAd->StaCfg.wdev.DesiredTransmitSetting.field.FixedTxMode));			
+		}
+#endif /* CONFIG_STA_SUPPORT */
 	}
 
 
@@ -2020,6 +2184,25 @@ static void HTParametersHook(
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT 	
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			struct wifi_dev *wdev = &pAd->StaCfg.wdev;
+			Value = simple_strtol(pValueStr, 0, 10);
+			if ((Value >= 0 && Value <= 23) || (Value == 32))
+			{
+				wdev->DesiredTransmitSetting.field.MCS  = Value;
+				wdev->bAutoTxRateSwitch = FALSE;
+				DBGPRINT(RT_DEBUG_TRACE, ("HT: MCS = %d\n", wdev->DesiredTransmitSetting.field.MCS));
+			}
+			else
+			{
+				wdev->DesiredTransmitSetting.field.MCS  = MCS_AUTO;
+				wdev->bAutoTxRateSwitch = TRUE;
+				DBGPRINT(RT_DEBUG_TRACE, ("HT: MCS = AUTO\n"));
+			}
+	}
+#endif /* CONFIG_STA_SUPPORT */		
 	}
 
 	/* STBC */
@@ -2245,12 +2428,195 @@ static void HTParametersHook(
 #endif /* DOT11_N_SUPPORT */
 
 
+#ifdef CONFIG_STA_SUPPORT
+void RTMPSetSTASSID(RTMP_ADAPTER *pAd, PSTRING SSID)
+{
+	pAd->CommonCfg.SsidLen = (UCHAR) strlen(SSID);
+	NdisZeroMemory(pAd->CommonCfg.Ssid, NDIS_802_11_LENGTH_SSID);
+	NdisMoveMemory(pAd->CommonCfg.Ssid, SSID, pAd->CommonCfg.SsidLen);
+	pAd->CommonCfg.LastSsidLen= pAd->CommonCfg.SsidLen;
+	NdisZeroMemory(pAd->CommonCfg.LastSsid, NDIS_802_11_LENGTH_SSID);
+	NdisMoveMemory(pAd->CommonCfg.LastSsid, SSID, pAd->CommonCfg.LastSsidLen);
+	pAd->MlmeAux.AutoReconnectSsidLen = pAd->CommonCfg.SsidLen;
+	NdisZeroMemory(pAd->MlmeAux.AutoReconnectSsid, NDIS_802_11_LENGTH_SSID);
+	NdisMoveMemory(pAd->MlmeAux.AutoReconnectSsid, SSID, pAd->MlmeAux.AutoReconnectSsidLen);
+	pAd->MlmeAux.SsidLen = pAd->CommonCfg.SsidLen;
+	NdisZeroMemory(pAd->MlmeAux.Ssid, NDIS_802_11_LENGTH_SSID);
+	NdisMoveMemory(pAd->MlmeAux.Ssid, SSID, pAd->MlmeAux.SsidLen);
+}
+
+
+void RTMPSetSTAPassPhrase(RTMP_ADAPTER *pAd, PSTRING PassPh)
+{
+	struct wifi_dev *wdev = &pAd->StaCfg.wdev;
+	int ret = TRUE;
+
+	PassPh[strlen(PassPh)] = '\0'; /* make STA can process .$^& for WPAPSK input */
+
+	if ((wdev->AuthMode != Ndis802_11AuthModeWPAPSK) &&
+		(wdev->AuthMode != Ndis802_11AuthModeWPA2PSK) &&
+		(wdev->AuthMode != Ndis802_11AuthModeWPANone) 
+#ifdef WAPI_SUPPORT
+		&& (wdev->AuthMode != Ndis802_11AuthModeWAICERT)
+		&& (wdev->AuthMode != Ndis802_11AuthModeWAIPSK)
+#endif /* WAPI_SUPPORT */
+		)
+	{
+		ret = FALSE;
+	}
+	else
+	{
+		ret = RT_CfgSetWPAPSKKey(pAd, PassPh, strlen(PassPh), (PUCHAR)pAd->CommonCfg.Ssid, pAd->CommonCfg.SsidLen, pAd->StaCfg.PMK);
+	}
+				
+	if (ret == TRUE)
+	{
+		RTMPZeroMemory(pAd->StaCfg.WpaPassPhrase, 64);
+		RTMPMoveMemory(pAd->StaCfg.WpaPassPhrase, PassPh, strlen(PassPh));
+		pAd->StaCfg.WpaPassPhraseLen= strlen(PassPh);
+					
+	    if ((wdev->AuthMode == Ndis802_11AuthModeWPAPSK) ||
+			(wdev->AuthMode == Ndis802_11AuthModeWPA2PSK))
+		{
+			/* Start STA supplicant state machine*/
+			pAd->StaCfg.WpaState = SS_START;
+		}
+		else if (wdev->AuthMode == Ndis802_11AuthModeWPANone)
+		{
+			pAd->StaCfg.WpaState = SS_NOTUSE;
+		}
+#ifdef WSC_STA_SUPPORT
+		NdisZeroMemory(pAd->StaCfg.WscControl.WpaPsk, 64);
+		pAd->StaCfg.WscControl.WpaPskLen = 0;
+		if ((strlen(PassPh) >= 8) && (strlen(PassPh) <= 64))
+		{
+			NdisMoveMemory(pAd->StaCfg.WscControl.WpaPsk, PassPh, strlen(PassPh));
+			pAd->StaCfg.WscControl.WpaPskLen = strlen(PassPh);
+		}
+#endif /* WSC_STA_SUPPORT */ 
+		DBGPRINT(RT_DEBUG_TRACE, ("%s::(WPAPSK=%s)\n", __FUNCTION__, PassPh));
+	}
+}
+
+
+inline void RTMPSetSTACipherSuites(RTMP_ADAPTER *pAd, NDIS_802_11_ENCRYPTION_STATUS WepStatus)
+{
+	/* Update all wepstatus related*/
+	pAd->StaCfg.PairCipher		= WepStatus;
+	pAd->StaCfg.GroupCipher 	= WepStatus;
+	pAd->StaCfg.bMixCipher 		= FALSE;
+}
+
+#ifdef  CREDENTIAL_STORE
+
+/*RECOVER THE OLD CONNECT INFO */
+NDIS_STATUS RecoverConnectInfo(
+	IN  RTMP_ADAPTER *pAd)
+{
+	INT idx;
+	char ssidStr[NDIS_802_11_LENGTH_SSID + 1];
+
+	NdisZeroMemory(&ssidStr[0], sizeof(ssidStr));
+	
+	RTMP_SEM_LOCK(&pAd->StaCtIf.Lock);
+	if ((pAd->StaCtIf.Changeable== FALSE) || (pAd->StaCtIf.SsidLen > NDIS_802_11_LENGTH_SSID))
+	{
+		DBGPRINT(RT_DEBUG_TRACE, (" DRIVER INIT  not need to RecoverConnectInfo() \n"));
+		RTMP_SEM_UNLOCK(&pAd->StaCtIf.Lock);
+		return 0;
+	}
+	DBGPRINT(RT_DEBUG_TRACE, ("-->RecoverConnectInfo()\n"));
+
+	NdisMoveMemory(ssidStr, pAd->StaCtIf.Ssid, pAd->StaCtIf.SsidLen);
+	RTMPSetSTASSID(pAd, &ssidStr[0]);
+
+	pAd->StaCfg.AuthMode = pAd->StaCtIf.AuthMode;
+	pAd->StaCfg.WepStatus = pAd->StaCtIf.WepStatus;
+#ifdef WPA_SUPPLICANT_SUPPORT
+	pAd->StaCfg.wdev.IEEE8021X = pAd->StaCtIf.IEEE8021X;
+	pAd->StaCfg.wpa_supplicant_info.DesireSharedKeyId = pAd->StaCtIf.DefaultKeyId; 
+#endif // WPA_SUPPLICANT_SUPPORT //
+	pAd->StaCfg.DefaultKeyId = pAd->StaCtIf.DefaultKeyId; 
+	NdisMoveMemory( pAd->StaCfg.PMK, pAd->StaCtIf.PMK, 32);
+	RTMPMoveMemory(pAd->StaCfg.WpaPassPhrase, pAd->StaCtIf.WpaPassPhrase, pAd->StaCfg.WpaPassPhraseLen);
+	pAd->StaCfg.WpaPassPhraseLen = pAd->StaCtIf.WpaPassPhraseLen;
+	for (idx = 0; idx < 4; idx++)
+	{
+		NdisMoveMemory(&pAd->SharedKey[BSS0][idx], &pAd->StaCtIf.SharedKey[BSS0][idx], sizeof(CIPHER_KEY));
+#ifdef WPA_SUPPLICANT_SUPPORT
+		NdisMoveMemory(&pAd->StaCfg.wpa_supplicant_info.DesireSharedKey[idx], &pAd->StaCtIf.SharedKey[BSS0][idx], sizeof(CIPHER_KEY));
+#endif // WPA_SUPPLICANT_SUPPORT //
+
+	}
+
+	 if ((pAd->StaCfg.AuthMode == Ndis802_11AuthModeWPAPSK) ||
+			(pAd->StaCfg.AuthMode == Ndis802_11AuthModeWPA2PSK))
+	{
+			// Start STA supplicant state machine
+			pAd->StaCfg.WpaState = SS_START;
+	}
+	else if (pAd->StaCfg.AuthMode == Ndis802_11AuthModeWPANone)
+	{
+			pAd->StaCfg.WpaState = SS_NOTUSE;
+	}
+	RTMP_SEM_UNLOCK(&pAd->StaCtIf.Lock);
+
+	DBGPRINT(RT_DEBUG_TRACE, ("<--RecoverConnectInfo()\n"));
+
+	return 0;
+}
+
+
+/*STORE THE CONNECT INFO*/
+NDIS_STATUS StoreConnectInfo(
+	IN  RTMP_ADAPTER *pAd)
+{
+	INT idx;
+	DBGPRINT(RT_DEBUG_TRACE, ("-->StoreConnectInfo()\n"));
+
+	RTMP_SEM_LOCK(&pAd->StaCtIf.Lock);
+	pAd->StaCtIf.Changeable = TRUE;
+ 	pAd->StaCtIf.SsidLen = pAd->CommonCfg.SsidLen;
+	NdisMoveMemory(pAd->StaCtIf.Ssid, pAd->CommonCfg.Ssid, pAd->CommonCfg.SsidLen);
+	pAd->StaCtIf.AuthMode = pAd->StaCfg.AuthMode;
+	pAd->StaCtIf.WepStatus = pAd->StaCfg.WepStatus;
+
+	pAd->StaCtIf.DefaultKeyId = pAd->StaCfg.DefaultKeyId; 
+#ifdef WPA_SUPPLICANT_SUPPORT
+	pAd->StaCtIf.wpa_supplicant_info.DefaultKeyId = pAd->StaCfg.DesireSharedKeyId; 
+	pAd->StaCtIf.IEEE8021X = pAd->StaCfg.wdev.IEEE8021X;
+#endif // WPA_SUPPLICANT_SUPPORT //
+	NdisMoveMemory(pAd->StaCtIf.PMK, pAd->StaCfg.PMK, 32);
+	RTMPMoveMemory(pAd->StaCtIf.WpaPassPhrase, pAd->StaCfg.WpaPassPhrase, pAd->StaCfg.WpaPassPhraseLen);
+	pAd->StaCtIf.WpaPassPhraseLen = pAd->StaCfg.WpaPassPhraseLen;
+
+	for (idx = 0; idx < 4; idx++)
+	{
+		NdisMoveMemory(&pAd->StaCtIf.SharedKey[BSS0][idx], &pAd->SharedKey[BSS0][idx], sizeof(CIPHER_KEY));
+	}
+
+	RTMP_SEM_UNLOCK(&pAd->StaCtIf.Lock);
+
+	DBGPRINT(RT_DEBUG_TRACE, ("<--StoreConnectInfo()\n"));
+
+	return 0;
+}
+
+#endif /* CREDENTIAL_STORE */
+
+#endif /* CONFIG_STA_SUPPORT */ 
 
 
 void RTMPSetCountryCode(RTMP_ADAPTER *pAd, PSTRING CountryCode)
 {
 	NdisMoveMemory(pAd->CommonCfg.CountryCode, CountryCode , 2);
 	pAd->CommonCfg.CountryCode[2] = ' ';
+#ifdef CONFIG_STA_SUPPORT
+#ifdef EXT_BUILD_CHANNEL_LIST
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		NdisMoveMemory(pAd->StaCfg.StaOriCountryCode, CountryCode , 2);
+#endif /* EXT_BUILD_CHANNEL_LIST */
+#endif /* CONFIG_STA_SUPPORT */
 	if (strlen((PSTRING) pAd->CommonCfg.CountryCode) != 0)
 		pAd->CommonCfg.bCountryFlag = TRUE;
 	else
@@ -2321,6 +2687,12 @@ NDIS_STATUS	RTMPSetProfileParameters(
 				pAd->CommonCfg.Geography = Geography;
 				pAd->CommonCfg.CountryCode[2] =
 					(pAd->CommonCfg.Geography == BOTH) ? ' ' : ((pAd->CommonCfg.Geography == IDOR) ? 'I' : 'O');
+#ifdef CONFIG_STA_SUPPORT
+#ifdef EXT_BUILD_CHANNEL_LIST
+				IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+					pAd->StaCfg.StaOriGeography = pAd->CommonCfg.Geography;
+#endif /* EXT_BUILD_CHANNEL_LIST */
+#endif /* CONFIG_STA_SUPPORT */							
 				DBGPRINT(RT_DEBUG_TRACE, ("ChannelGeography=%d\n", pAd->CommonCfg.Geography));
 			}
 		}
@@ -2433,7 +2805,38 @@ NDIS_STATUS	RTMPSetProfileParameters(
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			/*SSID*/
+			if (RTMPGetKeyParameter("SSID", tmpbuf, 256, pBuffer, FALSE))
+			{
+				if (strlen(tmpbuf) <= 32)
+				{
+					RTMPSetSTASSID(pAd, tmpbuf);
+					DBGPRINT(RT_DEBUG_TRACE, ("%s::(SSID=%s)\n", __FUNCTION__, tmpbuf));
+				}
+			}
+		}
+#endif /* CONFIG_STA_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			/*NetworkType*/
+			if (RTMPGetKeyParameter("NetworkType", tmpbuf, 25, pBuffer, TRUE))
+			{
+				pAd->bConfigChanged = TRUE;
+				if (strcmp(tmpbuf, "Adhoc") == 0)
+					pAd->StaCfg.BssType = BSS_ADHOC;
+				else /*Default Infrastructure mode*/
+					pAd->StaCfg.BssType = BSS_INFRA;
+				/* Reset Ralink supplicant to not use, it will be set to start when UI set PMK key*/
+				pAd->StaCfg.WpaState = SS_NOTUSE;
+				DBGPRINT(RT_DEBUG_TRACE, ("%s::(NetworkType=%d)\n", __FUNCTION__, pAd->StaCfg.BssType));
+			}
+		}
+#endif /* CONFIG_STA_SUPPORT */				
 		/*Channel*/
 		if(RTMPGetKeyParameter("Channel", tmpbuf, 10, pBuffer, TRUE))
 		{
@@ -2535,6 +2938,9 @@ NDIS_STATUS	RTMPSetProfileParameters(
 		}
 #endif /* RTMP_RBUS_SUPPORT */
 
+#ifdef DOT11V_WNM_SUPPORT
+		WNM_ReadParametersFromFile(pAd, tmpbuf, pBuffer);
+#endif /* DOT11V_WNM_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
 #ifdef DFS_SUPPORT
@@ -2683,6 +3089,10 @@ NDIS_STATUS	RTMPSetProfileParameters(
 		if(RTMPGetKeyParameter("TxPower", tmpbuf, 10, pBuffer, TRUE))
 		{
 			pAd->CommonCfg.TxPowerPercentage = (ULONG) simple_strtol(tmpbuf, 0, 10);
+#ifdef CONFIG_STA_SUPPORT
+			IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+				pAd->CommonCfg.TxPowerDefault = pAd->CommonCfg.TxPowerPercentage;
+#endif /* CONFIG_STA_SUPPORT */
 			DBGPRINT(RT_DEBUG_TRACE, ("TxPower=%ld\n", pAd->CommonCfg.TxPowerPercentage));
 		}
 		/*BGProtection*/
@@ -2815,6 +3225,15 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			rtmp_read_ap_wmm_parms_from_file(pAd, tmpbuf, pBuffer);
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			rtmp_read_sta_wmm_parms_from_file(pAd, tmpbuf, pBuffer);
+#ifdef XLINK_SUPPORT
+			rtmp_get_psp_xlink_mode_from_file(pAd, tmpbuf, pBuffer);
+#endif /* XLINK_SUPPORT */
+		}
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -3002,22 +3421,69 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			pAd->ed_ap_threshold = count;
 			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_ap_threshold = %u\n", count));
 		}
+		
+		/*For APs RSSI found in working channel*/
+		if (RTMPGetKeyParameter("EDCCA_AP_RSSI_TH", tmpbuf, 32, pBuffer, TRUE))
+		{
+			CHAR count = simple_strtol(tmpbuf, 0, 10);
+			pAd->ed_rssi_threshold = count;
+			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_rssi_threshold = %u\n", count));
+		}		
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+		/*For STA site survey AP counts*/
+		if (RTMPGetKeyParameter("EDCCA_STA_SCANED_AP_TH", tmpbuf, 32, pBuffer, TRUE))
+		{
+			UINT8 count = simple_strtol(tmpbuf, 0, 10);
+			pAd->ed_ap_scaned = count;
+			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_ap_scaned = %u\n", count));
+		}
+
+		/*For STA found APs in working channel*/
+		if (RTMPGetKeyParameter("EDCCA_STA_CURRENT_CH_APS_TH", tmpbuf, 32, pBuffer, TRUE))
+		{
+			UINT8 count = simple_strtol(tmpbuf, 0, 10);
+			pAd->ed_current_ch_aps = count;
+			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_current_ch_aps = %u\n", count));
+		}
+
+		/*For STA RSSI threhold when linkup*/
+		if (RTMPGetKeyParameter("EDCCA_STA_RSSI_TH", tmpbuf, 32, pBuffer, TRUE))
+		{
+			CHAR count = simple_strtol(tmpbuf, 0, 10);
+			pAd->ed_rssi_threshold = count;
+			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_rssi_threshold = %u\n", count));
+		}
+#endif /* CONFIG_STA_SUPPORT */
 
 		/* common part for EDCCA config */
 		if (RTMPGetKeyParameter("EDCCA_ED_TH", tmpbuf, 32, pBuffer, TRUE))
 		{
 			UINT8 count = simple_strtol(tmpbuf, 0, 10);
 			pAd->ed_threshold = count;
-			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_threshold = %u\n", count));
+			DBGPRINT(RT_DEBUG_ERROR, ("pAd->ed_threshold = %u\n", count));
+		}
+		if (RTMPGetKeyParameter("ED_MODE", tmpbuf, 32, pBuffer, TRUE))
+		{
+			 UINT8 mode = simple_strtol(tmpbuf, 0, 10);
+			 pAd->ed_chk = mode;
+			 DBGPRINT(RT_DEBUG_OFF, ("pAd->ed_chk = %u\n", mode));
 		}
 
 		if (RTMPGetKeyParameter("EDCCA_FALSE_CCA_TH", tmpbuf, 32, pBuffer, TRUE))
 		{
-			UINT8 count = simple_strtol(tmpbuf, 0, 10);
-			pAd->false_cca_threshold = count;
-			DBGPRINT(RT_DEBUG_TRACE, ("pAd->false_cca_threshold = %u\n", count));
+			INT count = simple_strtol(tmpbuf, 0, 10);
+			pAd->ed_false_cca_threshold = count;
+			DBGPRINT(RT_DEBUG_ERROR, ("pAd->ed_false_cca_threshold = %u\n", count));
+		}
+
+		
+		if (RTMPGetKeyParameter("ED_LEARN_TH", tmpbuf, 32, pBuffer, TRUE))
+		{
+			INT count = simple_strtol(tmpbuf, 0, 10);			
+			pAd->ed_learning_time_threshold = count;
+			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_learning_time_threshold = %u\n", count));
 		}
 
 		if (RTMPGetKeyParameter("EDCCA_BLOCK_CHECK_TH", tmpbuf, 32, pBuffer, TRUE))
@@ -3077,7 +3543,7 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			if(RTMPGetKeyParameter("ETxBfeeEn", tmpbuf, 32, pBuffer, TRUE))
 			{
 				pAd->CommonCfg.ETxBfeeEn = simple_strtol(tmpbuf, 0, 10);
-				DBGPRINT(RT_DEBUG_TRACE, ("ETxBfeeEn = %ld\n", pAd->CommonCfg.ETxBfeeEn));
+				DBGPRINT(RT_DEBUG_TRACE, ("ETxBfeeEn = %d\n", pAd->CommonCfg.ETxBfeeEn));
 			}
 
 			/* ETxBfTimeout*/
@@ -3265,6 +3731,42 @@ NDIS_STATUS	RTMPSetProfileParameters(
 				}
 			}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+			IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+			{
+				struct wifi_dev *wdev = &pAd->StaCfg.wdev;
+
+				if (rtstrcasecmp(tmpbuf, "WEPAUTO") == TRUE)
+					wdev->AuthMode = Ndis802_11AuthModeAutoSwitch;
+				else if (rtstrcasecmp(tmpbuf, "SHARED") == TRUE)
+					wdev->AuthMode = Ndis802_11AuthModeShared;
+				else if (rtstrcasecmp(tmpbuf, "WPAPSK") == TRUE)
+					wdev->AuthMode = Ndis802_11AuthModeWPAPSK;
+				else if (rtstrcasecmp(tmpbuf, "WPANONE") == TRUE)
+					wdev->AuthMode = Ndis802_11AuthModeWPANone;
+				else if (rtstrcasecmp(tmpbuf, "WPA2PSK") == TRUE)
+					wdev->AuthMode = Ndis802_11AuthModeWPA2PSK;
+#ifdef WPA_SUPPLICANT_SUPPORT							
+				else if (rtstrcasecmp(tmpbuf, "WPA") == TRUE)
+					wdev->AuthMode = Ndis802_11AuthModeWPA;
+				else if (rtstrcasecmp(tmpbuf, "WPA2") == TRUE)
+					wdev->AuthMode = Ndis802_11AuthModeWPA2;  
+#endif /* WPA_SUPPLICANT_SUPPORT */
+#ifdef WAPI_SUPPORT
+				else if (rtstrcasecmp(tmpbuf, "WAICERT") == TRUE)
+					wdev->AuthMode = Ndis802_11AuthModeWAICERT;  
+				else if (rtstrcasecmp(tmpbuf, "WAIPSK") == TRUE)
+					wdev->AuthMode = Ndis802_11AuthModeWAIPSK;  
+#endif /* WAPI_SUPPORT */
+				else
+					wdev->AuthMode = Ndis802_11AuthModeOpen;
+
+				wdev->PortSecured = WPA_802_1X_PORT_NOT_SECURED;
+
+				DBGPRINT(RT_DEBUG_TRACE, ("%s::(AuthMode=%d)\n",
+							__FUNCTION__, wdev->AuthMode));
+			}
+#endif /* CONFIG_STA_SUPPORT */
 		}
 		/*EncrypType*/
 		if(RTMPGetKeyParameter("EncrypType", tmpbuf, 128, pBuffer, TRUE))
@@ -3319,6 +3821,27 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT 
+			IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+			{
+				struct wifi_dev *wdev = &pAd->StaCfg.wdev;
+				if (rtstrcasecmp(tmpbuf, "WEP") == TRUE)
+					wdev->WepStatus = Ndis802_11WEPEnabled;
+				else if (rtstrcasecmp(tmpbuf, "TKIP") == TRUE)
+					wdev->WepStatus = Ndis802_11TKIPEnable;													
+				else if (rtstrcasecmp(tmpbuf, "AES") == TRUE)
+					wdev->WepStatus = Ndis802_11AESEnable;														 
+#ifdef WAPI_SUPPORT
+				else if (rtstrcasecmp(tmpbuf, "SMS4") == TRUE)
+					wdev->WepStatus	= Ndis802_11EncryptionSMS4Enabled;									
+#endif /* WAPI_SUPPORT */
+				else
+					wdev->WepStatus = Ndis802_11WEPDisabled;													
+				RTMPSetSTACipherSuites(pAd, wdev->WepStatus);
+				/*RTMPMakeRSNIE(pAd, wdev->AuthMode, wdev->WepStatus, 0);*/
+				DBGPRINT(RT_DEBUG_TRACE, ("%s::(EncrypType=%d)\n", __FUNCTION__, wdev->WepStatus));
+			}
+		#endif /* CONFIG_STA_SUPPORT */
 		}
 
 #ifdef CONFIG_AP_SUPPORT
@@ -3522,6 +4045,13 @@ NDIS_STATUS	RTMPSetProfileParameters(
 				}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+				IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+				{
+					if(RTMPGetKeyParameter("WPAPSK", tmpbuf, 512, pBuffer, FALSE))
+						RTMPSetSTAPassPhrase(pAd, tmpbuf);
+				}
+#endif /* CONFIG_STA_SUPPORT */													
 
 				/*DefaultKeyID, KeyType, KeyStr*/
 				rtmp_read_key_parms_from_file(pAd, tmpbuf, pBuffer);
@@ -3808,6 +4338,242 @@ NDIS_STATUS	RTMPSetProfileParameters(
 						pAd->CommonCfg.CarrierDetect.Enable = FALSE;
 #endif /* CARRIER_DETECTION_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+				IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+				{
+					/*PSMode*/
+					if (RTMPGetKeyParameter("PSMode", tmpbuf, 10, pBuffer, TRUE))
+					{
+						if (pAd->StaCfg.BssType == BSS_INFRA)
+						{
+							if ((strcmp(tmpbuf, "MAX_PSP") == 0) || (strcmp(tmpbuf, "max_psp") == 0))
+							{
+								/*
+									do NOT turn on PSM bit here, wait until MlmeCheckForPsmChange()
+									to exclude certain situations
+								*/
+								/*	MlmeSetPsm(pAd, PWR_SAVE);*/
+								OPSTATUS_SET_FLAG(pAd, fOP_STATUS_RECEIVE_DTIM);
+								if (pAd->StaCfg.bWindowsACCAMEnable == FALSE)
+									pAd->StaCfg.WindowsPowerMode = Ndis802_11PowerModeMAX_PSP;
+								pAd->StaCfg.WindowsBatteryPowerMode = Ndis802_11PowerModeMAX_PSP;
+								pAd->StaCfg.DefaultListenCount = 5;
+							}							
+							else if ((strcmp(tmpbuf, "Fast_PSP") == 0) || (strcmp(tmpbuf, "fast_psp") == 0) 
+								|| (strcmp(tmpbuf, "FAST_PSP") == 0))
+							{
+								/* do NOT turn on PSM bit here, wait until MlmeCheckForPsmChange()*/
+								/* to exclude certain situations.*/
+								OPSTATUS_SET_FLAG(pAd, fOP_STATUS_RECEIVE_DTIM);
+								if (pAd->StaCfg.bWindowsACCAMEnable == FALSE)
+									pAd->StaCfg.WindowsPowerMode = Ndis802_11PowerModeFast_PSP;
+								pAd->StaCfg.WindowsBatteryPowerMode = Ndis802_11PowerModeFast_PSP;
+								pAd->StaCfg.DefaultListenCount = 3;
+							}
+							else if ((strcmp(tmpbuf, "Legacy_PSP") == 0) || (strcmp(tmpbuf, "legacy_psp") == 0) 
+								|| (strcmp(tmpbuf, "LEGACY_PSP") == 0))
+							{
+								/* do NOT turn on PSM bit here, wait until MlmeCheckForPsmChange()*/
+								/* to exclude certain situations.*/
+								OPSTATUS_SET_FLAG(pAd, fOP_STATUS_RECEIVE_DTIM);
+								if (pAd->StaCfg.bWindowsACCAMEnable == FALSE)
+									pAd->StaCfg.WindowsPowerMode = Ndis802_11PowerModeLegacy_PSP;
+								pAd->StaCfg.WindowsBatteryPowerMode = Ndis802_11PowerModeLegacy_PSP;
+								pAd->StaCfg.DefaultListenCount = 3;
+#if defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT)
+								pAd->StaCfg.DefaultListenCount = 1;
+#endif /* defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT) */
+							}
+							else
+							{ /*Default Ndis802_11PowerModeCAM*/
+								/* clear PSM bit immediately*/
+								RTMP_SET_PSM_BIT(pAd, PWR_ACTIVE);
+								OPSTATUS_SET_FLAG(pAd, fOP_STATUS_RECEIVE_DTIM);
+								if (pAd->StaCfg.bWindowsACCAMEnable == FALSE)
+									pAd->StaCfg.WindowsPowerMode = Ndis802_11PowerModeCAM;
+								pAd->StaCfg.WindowsBatteryPowerMode = Ndis802_11PowerModeCAM;
+							}
+							DBGPRINT(RT_DEBUG_TRACE, ("PSMode=%ld\n", pAd->StaCfg.WindowsPowerMode));
+						}
+					}
+					/* AutoRoaming by RSSI*/
+					if (RTMPGetKeyParameter("AutoRoaming", tmpbuf, 32, pBuffer, TRUE))
+					{
+						if (simple_strtol(tmpbuf, 0, 10) == 0)
+							pAd->StaCfg.bAutoRoaming = FALSE;
+						else
+							pAd->StaCfg.bAutoRoaming = TRUE;
+
+						DBGPRINT(RT_DEBUG_TRACE, ("AutoRoaming=%d\n", pAd->StaCfg.bAutoRoaming));
+					}
+					/* RoamThreshold*/
+					if (RTMPGetKeyParameter("RoamThreshold", tmpbuf, 32, pBuffer, TRUE))
+					{
+						long lInfo = simple_strtol(tmpbuf, 0, 10);
+
+						if (lInfo > 90 || lInfo < 60)
+							pAd->StaCfg.dBmToRoam = -70;
+						else    
+							pAd->StaCfg.dBmToRoam = (CHAR)(-1)*lInfo;
+
+						DBGPRINT(RT_DEBUG_TRACE, ("RoamThreshold=%d  dBm\n", pAd->StaCfg.dBmToRoam));
+					}
+
+		
+						 
+
+					if(RTMPGetKeyParameter("TGnWifiTest", tmpbuf, 10, pBuffer, TRUE))
+					{				
+						if(simple_strtol(tmpbuf, 0, 10) == 0)
+							pAd->StaCfg.bTGnWifiTest = FALSE;
+						else
+							pAd->StaCfg.bTGnWifiTest = TRUE;
+							DBGPRINT(RT_DEBUG_TRACE, ("TGnWifiTest=%d\n", pAd->StaCfg.bTGnWifiTest));
+					}
+#ifdef ETH_CONVERT_SUPPORT
+					/* Ethernet Converter Operation Mode.*/
+					if (RTMPGetKeyParameter("EthConvertMode", tmpbuf, 32, pBuffer, TRUE))
+					{	
+						Set_EthConvertMode_Proc(pAd, tmpbuf);
+						DBGPRINT(RT_DEBUG_TRACE, ("EthConvertMode=%d\n", pAd->EthConvert.ECMode));
+					}
+
+					/* Ethernet Converter Operation Mode.*/
+					if (RTMPGetKeyParameter("EthCloneMac", tmpbuf, 32, pBuffer, TRUE))
+					{
+						Set_EthCloneMac_Proc(pAd, tmpbuf);
+						DBGPRINT(RT_DEBUG_TRACE, ("EthCloneMac=%02x:%02x:%02x:%02x:%02x:%02x\n", 
+								pAd->EthConvert.EthCloneMac[0], pAd->EthConvert.EthCloneMac[1], pAd->EthConvert.EthCloneMac[2],
+								pAd->EthConvert.EthCloneMac[3], pAd->EthConvert.EthCloneMac[4], pAd->EthConvert.EthCloneMac[5]));
+					}
+#endif /* ETH_CONVERT_SUPPORT */
+
+					/* Beacon Lost Time*/
+					if (RTMPGetKeyParameter("BeaconLostTime", tmpbuf, 32, pBuffer, TRUE))
+					{
+						ULONG lInfo = (ULONG)simple_strtol(tmpbuf, 0, 10);
+
+						if ((lInfo != 0) && (lInfo <= 60))
+							pAd->StaCfg.BeaconLostTime = (lInfo * OS_HZ);
+						DBGPRINT(RT_DEBUG_TRACE, ("BeaconLostTime=%ld \n", pAd->StaCfg.BeaconLostTime));
+					}
+
+					/* Auto Connet Setting if no SSID			*/
+					if (RTMPGetKeyParameter("AutoConnect", tmpbuf, 32, pBuffer, TRUE))
+					{
+						if (simple_strtol(tmpbuf, 0, 10) == 0)
+							pAd->StaCfg.bAutoConnectIfNoSSID = FALSE;
+						else
+							pAd->StaCfg.bAutoConnectIfNoSSID = TRUE;
+					}
+
+#ifdef DOT11R_FT_SUPPORT
+					/* FtSupport*/
+					if (RTMPGetKeyParameter("FtSupport", tmpbuf, 32, pBuffer, TRUE))
+					{
+						if (simple_strtol(tmpbuf, 0, 10) == 0)
+							pAd->StaCfg.Dot11RCommInfo.bFtSupport = FALSE;
+						else
+							pAd->StaCfg.Dot11RCommInfo.bFtSupport = TRUE;
+		;
+						DBGPRINT(RT_DEBUG_TRACE, ("bFtSupport=%d \n", pAd->StaCfg.Dot11RCommInfo.bFtSupport));
+					}
+#endif /* DOT11R_FT_SUPPORT */
+#ifdef DOT11Z_TDLS_SUPPORT
+					if(RTMPGetKeyParameter("TDLSCapable", tmpbuf, 32, pBuffer, TRUE))
+					{
+						if(simple_strtol(tmpbuf, 0, 10) != 0)  /*Enable*/
+						{
+							pAd->StaCfg.TdlsInfo.bTDLSCapable = TRUE;
+						}
+						else /*Disable*/
+						{
+							pAd->StaCfg.TdlsInfo.bTDLSCapable = FALSE;
+						}
+
+						DBGPRINT(RT_DEBUG_TRACE, ("bTDLSCapable=%d\n", pAd->StaCfg.TdlsInfo.bTDLSCapable));
+					}
+
+#ifdef TDLS_AUTOLINK_SUPPORT
+					if (RTMPGetKeyParameter("TDLS_AutoLink", tmpbuf, 32, pBuffer, TRUE))
+					{
+						if (simple_strtol(tmpbuf, 0, 10) != 0)  //Enable
+							pAd->StaCfg.TdlsInfo.TdlsAutoLink = TRUE;
+						else //Disable
+							pAd->StaCfg.TdlsInfo.TdlsAutoLink = FALSE;
+
+						DBGPRINT(RT_DEBUG_TRACE, ("TdlsAutoLink=%d\n", pAd->StaCfg.TdlsInfo.TdlsAutoLink));
+					}
+#endif /* TDLS_AUTOLINK_SUPPORT */
+
+					if (RTMPGetKeyParameter("TDLS_SwitchChSupp", tmpbuf, 32, pBuffer, TRUE))
+					{
+						if (simple_strtol(tmpbuf, 0, 10) != 0)  //Enable
+						{
+							pAd->StaCfg.TdlsInfo.TdlsChSwitchSupp = TRUE;
+						}
+						else //Disable
+						{
+							pAd->StaCfg.TdlsInfo.TdlsChSwitchSupp = FALSE;
+						}
+
+						DBGPRINT(RT_DEBUG_TRACE, ("TdlsSwitchChSupp=%d\n", pAd->StaCfg.TdlsInfo.TdlsChSwitchSupp));
+					}
+
+					if (RTMPGetKeyParameter("TDLS_PsmSupp", tmpbuf, 32, pBuffer, TRUE))
+					{
+						if (simple_strtol(tmpbuf, 0, 10) != 0)  //Enable
+						{
+							pAd->StaCfg.TdlsInfo.TdlsPsmSupp = TRUE;
+						}
+						else //Disable
+						{
+							pAd->StaCfg.TdlsInfo.TdlsPsmSupp = FALSE;
+						}
+
+						DBGPRINT(RT_DEBUG_TRACE, ("TdlsPsmSupp=%d\n", pAd->StaCfg.TdlsInfo.TdlsPsmSupp));
+					}
+
+					//APSDAC for AC_BE, AC_BK, AC_VI, AC_VO
+					if (RTMPGetKeyParameter("TDLS_APSDAC", tmpbuf, 32, pBuffer, TRUE))
+					{
+						BOOLEAN FlgIsAcUapsdEnabled[4];
+
+						for (i = 0, macptr = rstrtok(tmpbuf,";"); macptr; macptr = rstrtok(NULL,";"), i++)
+						{
+							FlgIsAcUapsdEnabled[i] = (BOOLEAN)simple_strtol(macptr, 0, 10);
+
+							DBGPRINT(RT_DEBUG_TRACE, ("TDLS APSDAC%d  %d\n", i, FlgIsAcUapsdEnabled[i]));
+						}
+
+						pAd->CommonCfg.TDLS_bAPSDAC_BE = FlgIsAcUapsdEnabled[0];
+						pAd->CommonCfg.TDLS_bAPSDAC_BK = FlgIsAcUapsdEnabled[1];
+						pAd->CommonCfg.TDLS_bAPSDAC_VI = FlgIsAcUapsdEnabled[2];
+						pAd->CommonCfg.TDLS_bAPSDAC_VO = FlgIsAcUapsdEnabled[3];
+					}
+
+					//MaxSPLength
+					if (RTMPGetKeyParameter("TDLS_MaxSPLength", tmpbuf, 10, pBuffer, TRUE))
+					{
+						pAd->CommonCfg.TDLS_MaxSPLength = simple_strtol(tmpbuf, 0, 10);
+
+						DBGPRINT(RT_DEBUG_TRACE, ("TDLS MaxSPLength=%d\n", pAd->CommonCfg.TDLS_MaxSPLength));
+					}
+#endif /* DOT11Z_TDLS_SUPPORT */
+					
+
+					/* FastConnect*/
+					if(RTMPGetKeyParameter("FastConnect", tmpbuf, 32, pBuffer, TRUE))
+					{
+						if (simple_strtol(tmpbuf, 0, 10) == 0)
+							pAd->StaCfg.bFastConnect = FALSE;
+						else
+							pAd->StaCfg.bFastConnect = TRUE;
+				
+						DBGPRINT(RT_DEBUG_TRACE, ("FastConnect=%d\n", pAd->StaCfg.bFastConnect));
+					}
+				}
+#endif /* CONFIG_STA_SUPPORT */
 #ifdef CONFIG_AP_SUPPORT
 				IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 				{
@@ -3819,25 +4585,25 @@ NDIS_STATUS	RTMPSetProfileParameters(
 						//pAd->CommonCfg.MCastPhyMode.field.BW = pAd->CommonCfg.RegTransmitSetting.field.BW;
 						switch (PhyMode)
 						{
-										case MCAST_DISABLE: /* disable*/
-											NdisMoveMemory(&pAd->CommonCfg.MCastPhyMode,
-												&pAd->MacTab.Content[MCAST_WCID].HTPhyMode, sizeof(HTTRANSMIT_SETTING));
-											break;
-
-										case MCAST_CCK:	/* CCK*/
-											pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_CCK;
-											pAd->CommonCfg.MCastPhyMode.field.BW =  BW_20;
+							case MCAST_DISABLE: /* disable */
+								NdisMoveMemory(&pAd->CommonCfg.MCastPhyMode,
+									&pAd->MacTab.Content[MCAST_WCID].HTPhyMode, sizeof(HTTRANSMIT_SETTING));
 								break;
 
-										case MCAST_OFDM:	/* OFDM*/
-											pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_OFDM;
+							case MCAST_CCK:	/* CCK*/
+								pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_CCK;
+								pAd->CommonCfg.MCastPhyMode.field.BW =  BW_20;
+								break;
+
+							case MCAST_OFDM: /* OFDM*/
+								pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_OFDM;
 								pAd->CommonCfg.MCastPhyMode.field.BW =  BW_20;
 								break;
 #ifdef DOT11_N_SUPPORT
-										case MCAST_HTMIX:	/* HTMIX*/
-											pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_HTMIX;
+							case MCAST_HTMIX: /* HTMIX*/
+								pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_HTMIX;
 								break;
-#endif /* DOT11_N_SUPPORT */									
+#endif /* DOT11_N_SUPPORT */	
 #ifdef DOT11_VHT_AC
 							case MCAST_VHT:	/* VHT */
 								pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_VHT;
@@ -3851,8 +4617,8 @@ NDIS_STATUS	RTMPSetProfileParameters(
 						}
 					}
 					else
-									NdisMoveMemory(&pAd->CommonCfg.MCastPhyMode,
-										&pAd->MacTab.Content[MCAST_WCID].HTPhyMode, sizeof(HTTRANSMIT_SETTING));
+						NdisMoveMemory(&pAd->CommonCfg.MCastPhyMode,
+							&pAd->MacTab.Content[MCAST_WCID].HTPhyMode, sizeof(HTTRANSMIT_SETTING));
 
 					/* McastMcs*/
 					if (RTMPGetKeyParameter("McastMcs", tmpbuf, 32, pBuffer, TRUE))
@@ -3911,6 +4677,17 @@ NDIS_STATUS	RTMPSetProfileParameters(
 
 					}
 #endif // CONFIG_AP_SUPPORT //
+#ifdef CONFIG_STA_SUPPORT
+					IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+					{
+						if (simple_strtol(tmpbuf, 0, 10) != 0)	//Enable
+							pAd->StaCfg.WscControl.WscEnrollee4digitPinCode = TRUE;
+						else //Disable
+							pAd->StaCfg.WscControl.WscEnrollee4digitPinCode = FALSE;
+
+						DBGPRINT(RT_DEBUG_TRACE, ("Wsc4digitPinCode=%d\n", pAd->StaCfg.WscControl.WscEnrollee4digitPinCode));
+					}
+#endif // CONFIG_STA_SUPPORT //
 				}
 		
 				if (RTMPGetKeyParameter("WscVendorPinCode", tmpbuf, 256, pBuffer, TRUE))
@@ -3923,6 +4700,12 @@ NDIS_STATUS	RTMPSetProfileParameters(
 						pWscContrl = &pAd->ApCfg.MBSSID[BSS0].WscControl;
 					}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+					IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+					{
+						pWscContrl = &pAd->StaCfg.WscControl;
+					}
+#endif /* CONFIG_STA_SUPPORT */
 					bSetOk = RT_CfgSetWscPinCode(pAd, tmpbuf, pWscContrl);
 					if (bSetOk)
 						DBGPRINT(RT_DEBUG_TRACE, ("%s - WscVendorPinCode= (%d)\n", __FUNCTION__, bSetOk));
@@ -3946,6 +4729,15 @@ NDIS_STATUS	RTMPSetProfileParameters(
 						}
 					}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+					IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+					{						
+						bEnable = (UCHAR)simple_strtol(tmpbuf, 0, 10);
+						
+						pAd->StaCfg.WscControl.WscV2Info.bEnableWpsV2 = bEnable;
+						DBGPRINT(RT_DEBUG_TRACE, ("%s - WscV2Support= (%d)\n", __FUNCTION__, bEnable));
+					}
+#endif /* CONFIG_STA_SUPPORT */										
 				}
 #endif /* WSC_V2_SUPPORT */
 
@@ -3953,6 +4745,9 @@ NDIS_STATUS	RTMPSetProfileParameters(
 #endif /* WSC_INCLUDED */
 
 #ifdef CONFIG_AP_SUPPORT
+#ifdef DOT11R_FT_SUPPORT
+				FT_rtmp_read_parameters_from_file(pAd, tmpbuf, pBuffer);
+#endif /* DOT11R_FT_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
 #ifdef DOT11W_PMF_SUPPORT
@@ -3973,6 +4768,9 @@ NDIS_STATUS	RTMPSetProfileParameters(
 					DBGPRINT(RT_DEBUG_ERROR, ("EntryLifeCheck=%ld\n", pAd->ApCfg.EntryLifeCheck));
 				}
 
+#ifdef DOT11K_RRM_SUPPORT
+				RRM_ReadParametersFromFile(pAd, tmpbuf, pBuffer);
+#endif /* DOT11K_RRM_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
 #ifdef RTMP_RBUS_SUPPORT
@@ -4080,6 +4878,10 @@ NDIS_STATUS	RTMPSetProfileParameters(
 #ifdef CONFIG_SNIFFER_SUPPORT
 		if (RTMPGetKeyParameter("SnifferType", tmpbuf, 10, pBuffer, TRUE)) {
 			pAd->sniffer_ctl.sniffer_type = simple_strtol(tmpbuf, 0, 10);
+#ifdef CONFIG_STA_SUPPORT
+			if(pAd->StaCfg.wdev.if_dev)
+				set_sniffer_mode(pAd->StaCfg.wdev.if_dev, pAd->sniffer_ctl.sniffer_type);
+#endif /* CONFIG_STA_SUPPORT */
 			DBGPRINT(RT_DEBUG_OFF, ("SnifferType = %d\n", pAd->sniffer_ctl.sniffer_type));
 		}
 #endif /* CONFIG_SNIFFER_SUPPORT */
@@ -4603,6 +5405,7 @@ NDIS_STATUS	RTMPSetSingleSKUParameters(
 	RtmpOSFSInfoChange(&osFSInfo, TRUE);
 
 	pAd->bOpenFileSuccess = FALSE;
+	pAd->bSingleSkuDebug = FALSE;
 
 	/* open card information file */
 	srcf = RtmpOSFileOpen(sku_path, O_RDONLY, 0);

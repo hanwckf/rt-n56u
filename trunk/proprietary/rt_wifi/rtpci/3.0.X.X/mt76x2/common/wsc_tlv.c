@@ -149,6 +149,25 @@ static WSC_TLV_0B wsc_tlv_0b[]=
 	/*Initialization Vector*/			{/*0x1060,*/ 32},				/* WSC_ID_INIT_VECTOR */
 	/*Key Provided Automatically*/		{/*0x1061,*/ 1},				/* WSC_ID_KEY_PROVIDED_AUTO */
 	/*802.1X Enabled*/					{/*0x1062,*/ 1},				/* WSC_ID_8021X_ENABLED */
+#ifdef IWSC_SUPPORT
+	{/*0,*/0},
+	{/*0,*/0},
+	{/*0,*/0},
+	{/*0,*/0},
+	{/*0,*/0},
+	{/*0,*/0},
+	{/*0,*/0},
+	{/*0,*/0}, //A
+	{/*0,*/0}, //B
+	{/*0,*/0}, //C
+	/*Entry Acceptable (only for IBSS)*/  {/*0x106D,*/ 1},				//WSC_ID_ENTRY_ACCEPTABLE
+	/*Registration Ready (only for IBSS)*/{/*0x106E,*/ 1},				//WSC_ID_REGISTRATON_READY
+	/*Registrar IPv4 Address (only for IBSS)*/{/*0x106F,*/ 4},			//WSC_ID_REGISTRAR_IPV4
+	/*IPv4 Subnet Mask (only for IBSS)*/{/*0x1070,*/ 4},				//WSC_ID_IPV4_SUBMASK
+	/*Enrollee IPv4 Address (only for IBSS)*/{/*0x1071,*/ 4},			//WSC_ID_ENROLLEE_IPV4
+	/*Available IPv4 Submask List (only for IBSS)*/{/*0x1072,*/ 0},	//WSC_ID_IPV4_SUBMASK_LIST	(N*4B)
+	/*IP Address Configuration Methods (only for IBSS)*/{/*0x1073,*/ 2},//WSC_ID_IP_ADDR_CONF_METHOD
+#endif // IWSC_SUPPORT //
 	/*<Reserved for WFA> 0x106F ¡V 0x1FFF*/
 	/*<Unavailable> 0x000 ¡V 0x0FFF,0x2000 ¡V 0xFFFF*/
 };
@@ -198,6 +217,12 @@ static VOID	WscParseEncrSettings(
 	IN	INT					PlainLength,
 	IN  PWSC_CTRL           pWscControl)
 {
+#ifdef CONFIG_STA_SUPPORT
+    /* Point to  M7 Profile */
+	PWSC_PROFILE        pProfile = (PWSC_PROFILE) &pAdapter->StaCfg.WscControl.WscM7Profile;
+    UCHAR               *pTmp;
+    USHORT              Idx = 0, tmpVal = 0;
+#endif /* CONFIG_STA_SUPPORT */
 	USHORT	WscType, WscLen, HmacLen;
 	PUCHAR	pData;
 	UCHAR	Hmac[8], Temp[32];
@@ -243,6 +268,52 @@ static VOID	WscParseEncrSettings(
 				NdisMoveMemory(Hmac, pData, WscLen);
 				break;
 
+#ifdef CONFIG_STA_SUPPORT
+            /* */
+			/* Parse AP Settings in M7 if the peer is configured AP. */
+			/* */
+			case WSC_ID_SSID:
+				/* Find the exact length of SSID without null terminator */
+				pTmp = pData;
+				for (Idx = 0; Idx < WscLen; Idx++)
+				{
+					if (*(pTmp++) == 0x0)
+						break;
+				}
+				pProfile->Profile[0].SSID.SsidLength = Idx;
+				RTMPMoveMemory(pProfile->Profile[0].SSID.Ssid, pData, pProfile->Profile[0].SSID.SsidLength);
+				/* Svae the total number, always get the first profile */
+				pProfile->ProfileCnt = 1;
+				break;
+
+			case WSC_ID_MAC_ADDR:
+				if (!MAC_ADDR_EQUAL(pData, pAdapter->StaCfg.WscControl.RegData.SelfInfo.MacAddr))
+					DBGPRINT(RT_DEBUG_TRACE, ("WscParseEncrSettings --> Enrollee macAddr not match\n"));
+				RTMPMoveMemory(pProfile->Profile[0].MacAddr, pData, 6);				
+				break;
+						
+			case WSC_ID_AUTH_TYPE:
+				tmpVal = get_unaligned((PUSHORT) pData);
+				pProfile->Profile[0].AuthType = cpu2be16(tmpVal);/*cpu2be16(*((PUSHORT) pData)); */
+				break;
+								
+			case WSC_ID_ENCR_TYPE:
+				tmpVal = get_unaligned((PUSHORT) pData);
+				pProfile->Profile[0].EncrType = cpu2be16(tmpVal);/*cpu2be16(*((PUSHORT) pData)); */
+				break;
+
+			case WSC_ID_NW_KEY_INDEX:
+                /* Netork Key Index: 1 ~ 4 */
+				pProfile->Profile[0].KeyIndex = (*pData);
+				break;
+			
+			case WSC_ID_NW_KEY:
+				if (WscLen == 0)
+					break;
+				pProfile->Profile[0].KeyLength = WscLen;
+				RTMPMoveMemory(pProfile->Profile[0].Key, pData, pProfile->Profile[0].KeyLength);
+				break;
+#endif /* CONFIG_STA_SUPPORT */
 
 			default:
 				DBGPRINT(RT_DEBUG_TRACE, ("WscParseEncrSettings --> Unknown IE 0x%04x\n", WscType));
@@ -299,6 +370,10 @@ static BOOLEAN	WscProcessCredential(
 #ifdef WSC_V2_SUPPORT
 	BOOLEAN			bReject = FALSE;
 #endif /* WSC_V2_SUPPORT */
+#ifdef IWSC_SUPPORT
+	UINT32			IPv4Addr = 0, IPv4SubMask = 0;
+	PIWSC_INFO		pIWscInfo = &pAdapter->StaCfg.IWscInfo;
+#endif /* IWSC_SUPPORT */
 
 	pData  = pPlainData;
 
@@ -393,6 +468,66 @@ static BOOLEAN	WscProcessCredential(
 				WscLen = 0;
 				break;
 
+#ifdef IWSC_SUPPORT
+			case WSC_ID_IP_ADDR_CONF_METHOD:
+				tmpVal = get_unaligned((PUSHORT) pData);
+				pProfile->Profile[CurrentIdx].IpConfigMethod = be2cpu16(tmpVal);
+				break;
+			case WSC_ID_REGISTRAR_IPV4:
+				IPv4Addr = get_unaligned((PUINT32) pData);
+				pProfile->Profile[CurrentIdx].RegIpv4Addr = be2cpu32(IPv4Addr);
+				if (CurrentIdx == 0)
+					pIWscInfo->RegIpv4Addr = pProfile->Profile[CurrentIdx].RegIpv4Addr;
+				pIWscInfo->RegDepth = 1;
+				pIWscInfo->IpDevCount = 0;
+				break;
+			case WSC_ID_IPV4_SUBMASK:
+				IPv4SubMask = get_unaligned((PUINT32) pData);
+				pProfile->Profile[CurrentIdx].Ipv4SubMask = be2cpu32(IPv4SubMask);
+				if (pProfile->Profile[CurrentIdx].Ipv4SubMask!= IWSC_DEFAULT_IPV4_SUBMASK)
+					DBGPRINT(RT_DEBUG_TRACE, ("WscProcessCredential --> different IPv4 subnet mask (=0x%08x)\n", 
+								pProfile->Profile[CurrentIdx].Ipv4SubMask));
+				break;
+			case WSC_ID_ENROLLEE_IPV4:
+				IPv4Addr = get_unaligned((PUINT32) pData);
+				pProfile->Profile[CurrentIdx].EnrIpv4Addr = be2cpu32(IPv4Addr);
+				if (CurrentIdx == 0)
+					pIWscInfo->SelfIpv4Addr = pProfile->Profile[CurrentIdx].EnrIpv4Addr;
+				break;
+			case WSC_ID_IPV4_SUBMASK_LIST:
+				NdisZeroMemory(&pProfile->Profile[CurrentIdx].AvaIpv4SubmaskList[0], sizeof(pProfile->Profile[CurrentIdx].AvaIpv4SubmaskList));
+				if ((WscLen == 0) || 					
+					(WscLen == 4) ||
+					((WscLen%4) != 0))
+				{
+					pIWscInfo->AvaSubMaskListCount = 0;
+					pIWscInfo->bAssignWscIPv4 = FALSE;
+					DBGPRINT(RT_DEBUG_TRACE, ("WscProcessCredential --> WscLen = %d, set AvaSubMaskListCount to be 0\n", WscLen));
+				}
+				else
+				{
+					UINT8 i = 0, AvaSubMaskListCount;
+
+					AvaSubMaskListCount = (UINT8)((WscLen/4) - 1);
+					for (i = 0; i < AvaSubMaskListCount; i++)
+					{
+						pProfile->Profile[CurrentIdx].AvaIpv4SubmaskList[i] = be2cpu32(get_unaligned((PUINT32) (pData + i + 1)));
+					}
+
+					pIWscInfo->bAssignWscIPv4 = TRUE;
+					if (CurrentIdx == 0)
+					{
+						pIWscInfo->CurrentIpRange = be2cpu32(get_unaligned((PUINT32) pData));
+						pIWscInfo->AvaSubMaskListCount = (UINT8)AvaSubMaskListCount;
+						NdisZeroMemory(pIWscInfo->AvaSubMaskList, sizeof(pIWscInfo->AvaSubMaskList));
+						NdisMoveMemory( &pIWscInfo->AvaSubMaskList[0], 
+										&pProfile->Profile[CurrentIdx].AvaIpv4SubmaskList[0], 
+										sizeof(pIWscInfo->AvaSubMaskList));
+					}
+					pProfile->Profile[CurrentIdx].AvaIpv4SubmaskList[AvaSubMaskListCount] = pIWscInfo->CurrentIpRange;
+				}
+				break;
+#endif /* IWSC_SUPPORT */
 
 			default:
 				DBGPRINT(RT_DEBUG_TRACE, ("WscProcessCredential --> Unknown IE 0x%04x\n", WscType));
@@ -634,6 +769,10 @@ int BuildMessageM1(
 		CurOpMode = AP_MODE;
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAdapter)
+		CurOpMode = STA_MODE;
+#endif /* CONFIG_STA_SUPPORT */
     
 	// Enrollee 16 byte E-S1 generation
     for (idx = 0; idx < 16; idx++)
@@ -709,6 +848,20 @@ int BuildMessageM1(
 	if (pWscControl->WscV2Info.bEnableWpsV2)
 	{
 
+#ifdef IWSC_SUPPORT
+		if ((pWscControl->WscMode == WSC_PIN_MODE) &&
+			(pAdapter->StaCfg.BssType == BSS_ADHOC))
+			{
+				if (pAdapter->StaCfg.IWscInfo.bLimitedUI)
+				{
+					ConfigMethods &= (~WSC_CONFMET_KEYPAD);
+				}
+				else
+				{
+					ConfigMethods |= WSC_CONFMET_KEYPAD;
+				}
+			}
+#endif /* IWSC_SUPPORT */
 		}
 		else
 #endif /* WSC_V2_SUPPORT */
@@ -983,6 +1136,19 @@ int BuildMessageM2(
 			WSC IE must reflect the correct configuration methods that the Internal Registrar
 			supports.
 		*/
+#ifdef IWSC_SUPPORT
+			if (pAdapter->StaCfg.BssType == BSS_ADHOC)
+			{
+				if (pAdapter->StaCfg.IWscInfo.bLimitedUI)
+				{
+					ConfigMethods &= (~WSC_CONFMET_KEYPAD);
+				}
+				else
+				{
+					ConfigMethods |= WSC_CONFMET_KEYPAD;
+				}
+			}
+#endif /* IWSC_SUPPORT */
 		}
 		else
 		{
@@ -2005,6 +2171,10 @@ int BuildMessageM7(
 		CurOpMode = AP_MODE;
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+    IF_DEV_CONFIG_OPMODE_ON_STA(pAdapter)
+		CurOpMode = STA_MODE;
+#endif /* CONFIG_AP_SUPPORT */
 
 	/* 1. Version */
 	templen = AppendWSCTLV(WSC_ID_VERSION, pData, &pReg->SelfInfo.Version, 0);
@@ -2197,6 +2367,10 @@ int BuildMessageM8(
 		CurOpMode = AP_MODE;
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+    IF_DEV_CONFIG_OPMODE_ON_STA(pAdapter)
+		CurOpMode = STA_MODE;
+#endif /* CONFIG_AP_SUPPORT */
 
 	/* 1. Version */
 	templen = AppendWSCTLV(WSC_ID_VERSION, pData, &pReg->SelfInfo.Version, 0);
@@ -2222,6 +2396,26 @@ int BuildMessageM8(
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	if (CurOpMode == STA_MODE)
+	 {
+		if (pAdapter->StaCfg.WscControl.WscProfile.ProfileCnt == 0 || 
+			(pAdapter->StaCfg.WscControl.bConfiguredAP 
+#ifdef WSC_V2_SUPPORT
+			/* 
+				Check AP is v2 or v1, Check WscV2 Enabled or not
+			*/
+			&& !(pWscControl->WscV2Info.bForceSetAP 
+				&& pWscControl->WscV2Info.bEnableWpsV2 
+				&& (pWscControl->RegData.PeerInfo.Version2!= 0))
+#endif /* WSC_V2_SUPPORT */
+			 ))
+			WscCreateProfileFromCfg(pAdapter, STA_MODE, pWscControl, &pWscControl->WscProfile);
+
+		pCredential = &pAdapter->StaCfg.WscControl.WscProfile.Profile[0];
+		NdisMoveMemory(pCredential->MacAddr, pAdapter->MlmeAux.Bssid, 6);
+	}	
+#endif /* CONFIG_STA_SUPPORT */
 
 	/* 4a. Encrypted R-S1 */
 	CerLen += AppendWSCTLV(WSC_ID_NW_INDEX, &TB[0], (PUCHAR)"1", 0);
@@ -2257,11 +2451,93 @@ int BuildMessageM8(
 	CerLen += AppendWSCTLV(WSC_ID_MAC_ADDR, &TB[CerLen], pCredential->MacAddr, 0);
 
 	/*    Prepare plain text */
+#ifdef CONFIG_STA_SUPPORT
+	if ((CurOpMode == STA_MODE) && (pAdapter->StaCfg.BssType == BSS_INFRA))
+	 {
+		/* If Enrollee is AP, CREDENTIAL isn't needed in M8. */
+		PlainLen = CerLen;
+		NdisMoveMemory(Plain, TB, CerLen);
+	 }
+	else
+#endif /* CONFIG_STA_SUPPORT */
 	 if ((CurOpMode == AP_MODE)
+#ifdef CONFIG_STA_SUPPORT
+	 	 || ((CurOpMode == STA_MODE) && (pAdapter->StaCfg.BssType == BSS_ADHOC))
+#endif /* CONFIG_STA_SUPPORT */
 	 	)
 	 {
+#ifdef IWSC_SUPPORT
+		USHORT tmpVal = 0;
+		UINT32 tmpUint32 = 0;
+#endif /* IWSC_SUPPORT */
 	 	/* Reguired attribute item in M8 if Enrollee is STA. */
 		PlainLen += AppendWSCTLV(WSC_ID_CREDENTIAL, &Plain[0], TB, CerLen);
+#ifdef IWSC_SUPPORT
+		// TODO: Need to check the total length, we need to alarm if total length exceeds the size of Plain. snowpin 2011/05/16
+
+		if (IWSC_IpContentForCredential(pAdapter))
+		{
+			PIWSC_INFO	pIWscInfo = &pAdapter->StaCfg.IWscInfo;
+			UINT32 *pIpv4SubMaskList = NULL;
+			USHORT Ipv4SubMaskListSize = 0;
+
+			if (pIWscInfo->AvaSubMaskListCount != 0)
+			{
+				Ipv4SubMaskListSize = sizeof(UINT32)*pIWscInfo->AvaSubMaskListCount;
+				os_alloc_mem(NULL, (UCHAR **) &pIpv4SubMaskList, Ipv4SubMaskListSize);
+				if (pIWscInfo->AvaSubMaskListCount == 3)
+				{
+					*pIpv4SubMaskList = cpu2be32(pIWscInfo->AvaSubMaskList[0]);
+					*(pIpv4SubMaskList+1) = cpu2be32(pIWscInfo->AvaSubMaskList[1]);
+					*(pIpv4SubMaskList+2) = cpu2be32(pIWscInfo->AvaSubMaskList[2]);
+				}
+				else if (pIWscInfo->AvaSubMaskListCount == 2)
+				{
+					*pIpv4SubMaskList = cpu2be32(pIWscInfo->AvaSubMaskList[0]);
+					*(pIpv4SubMaskList+1) = cpu2be32(pIWscInfo->AvaSubMaskList[1]);
+				}
+				else if (pIWscInfo->AvaSubMaskListCount == 1)
+					*pIpv4SubMaskList = cpu2be32(pIWscInfo->AvaSubMaskList[0]);
+				pIWscInfo->AvaSubMaskListCount--;
+			}
+			
+			tmpVal = cpu2be16(pIWscInfo->IpMethod);
+			PlainLen += AppendWSCTLV(WSC_ID_IP_ADDR_CONF_METHOD, 
+									&Plain[PlainLen], 
+									&tmpVal, 0);
+
+			pCredential->RegIpv4Addr = pIWscInfo->SelfIpv4Addr;
+			tmpUint32 = cpu2be32(pIWscInfo->SelfIpv4Addr);
+			PlainLen += AppendWSCTLV(WSC_ID_REGISTRAR_IPV4, 
+									&Plain[PlainLen], 
+									(UCHAR *)&tmpUint32, 0);
+
+			tmpUint32 = cpu2be32(pIWscInfo->Ipv4SubMask);
+			PlainLen += AppendWSCTLV(WSC_ID_IPV4_SUBMASK, 
+									&Plain[PlainLen], 
+									(UCHAR *)&tmpUint32, 0);
+
+			pCredential->EnrIpv4Addr = pIWscInfo->PeerIpv4Addr;
+			tmpUint32 = cpu2be32(pIWscInfo->PeerIpv4Addr);
+			PlainLen += AppendWSCTLV(WSC_ID_ENROLLEE_IPV4, 
+									&Plain[PlainLen], 
+									(UCHAR *)&tmpUint32, 0);
+
+			if (pIpv4SubMaskList 
+#ifdef IWSC_TEST_SUPPORT
+				&& (pIWscInfo->bEmptySubmaskList == FALSE)
+#endif /* IWSC_TEST_SUPPORT */
+				)
+			{
+				PlainLen += AppendWSCTLV(WSC_ID_IPV4_SUBMASK_LIST, 
+										&Plain[PlainLen], 
+										(UCHAR *)pIpv4SubMaskList, Ipv4SubMaskListSize);
+			}
+			
+			if (pIpv4SubMaskList)
+				os_free_mem(NULL, pIpv4SubMaskList);
+		}
+#endif // IWSC_SUPPORT //
 	 }
 
 	/* Generate HMAC */
@@ -2561,6 +2837,10 @@ int ProcessMessageM1(
 		CurOpMode = AP_MODE;
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+    IF_DEV_CONFIG_OPMODE_ON_STA(pAdapter)
+		CurOpMode = STA_MODE;
+#endif /* CONFIG_STA_SUPPORT */
 
 	pReg->PeerInfo.Version2 = 0;
 #ifdef WSC_NFC_SUPPORT
@@ -2706,6 +2986,13 @@ int ProcessMessageM1(
 				
 			case WSC_ID_SC_STATE:
 				pReg->PeerInfo.ScState = get_unaligned((PUSHORT) pData);/**((PUSHORT) pData); */
+#ifdef CONFIG_STA_SUPPORT
+				if (CurOpMode == STA_MODE)
+				{
+					/* Don't overwrite the credential of M7 received from AP when this flag is TRUE in registrar mode! */
+					pWscControl->bConfiguredAP = (pReg->PeerInfo.ScState == WSC_SCSTATE_CONFIGURED) ? TRUE:FALSE;
+				}
+#endif /* CONFIG_STA_SUPPORT */
 				FieldCheck[(WSC_TLV_BYTE2(WSC_ID_SC_STATE))] ^= (1 << WSC_TLV_BYTE1(WSC_ID_SC_STATE));
 				break;
 				
@@ -2864,6 +3151,10 @@ int ProcessMessageM2(
 		CurOpMode = AP_MODE;
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+    IF_DEV_CONFIG_OPMODE_ON_STA(pAdapter)
+		CurOpMode = STA_MODE;
+#endif /* CONFIG_STA_SUPPORT */
 	
 	pReg->PeerInfo.Version2 = 0;
 	
@@ -4103,6 +4394,13 @@ int ProcessMessageM7(
                 AES_CBC_Decrypt(IV_DecrData + 16, (WscLen - 16),pReg->KeyWrapKey,sizeof(pReg->KeyWrapKey),IV_DecrData, 16, (UINT8 *) pReg->ApEncrSettings, (UINT *) &EncrLen);                 
 				DBGPRINT(RT_DEBUG_TRACE, ("M7 ApEncrSettings len = %d\n ", EncrLen));
 
+#ifdef CONFIG_STA_SUPPORT
+				IF_DEV_CONFIG_OPMODE_ON_STA(pAdapter)
+				{
+					/* Cleanup Old M7 Profile contents */
+					RTMPZeroMemory(&pAdapter->StaCfg.WscControl.WscM7Profile, sizeof(WSC_PROFILE));
+				}
+#endif /* CONFIG_STA_SUPPORT */
 
 				/* Parse encryption settings */
 				WscParseEncrSettings(pAdapter, pReg->ApEncrSettings, EncrLen, pWscControl);

@@ -23,6 +23,30 @@
 #ifndef __WNM_CONFIG_H__
 #define __WNM_CONFIG_H__
 
+#ifdef DOT11V_WNM_SUPPORT
+#include "rtmp_type.h"
+#include "dot11v_wnm.h"
+
+
+#define WNM_DEFAULT_QUIET_PERIOD	200
+
+
+typedef struct _WNM_CONFIG
+{
+	BOOLEAN bDot11vWNM_BSSEnable;
+	BOOLEAN bDot11vWNM_DMSEnable;
+	BOOLEAN bDot11vWNM_FMSEnable;
+	BOOLEAN bDot11vWNM_SleepModeEnable;
+	BOOLEAN bDot11vWNM_TFSEnable;
+#ifdef CONFIG_AP_SUPPORT
+	VOID *DMSEntry[10];
+#endif /* CONFIG_AP_SUPPORT */
+
+} WNM_CONFIG;
+
+
+
+#endif /* DOT11V_WNM_SUPPORT */
 
 #endif /* __WNM_CONFIG_H__ */
 

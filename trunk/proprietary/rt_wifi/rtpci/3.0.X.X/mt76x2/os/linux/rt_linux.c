@@ -284,29 +284,15 @@ NDIS_STATUS os_free_mem(
 
 #if defined(RTMP_RBUS_SUPPORT) || defined(RTMP_FLASH_SUPPORT)
 
-#ifdef RA_MTD_RW_BY_NUM
-#if defined(CONFIG_RT2880_FLASH_32M)
-#define MTD_NUM_FACTORY 5
-#else
-#define MTD_NUM_FACTORY 2
-#endif
-extern int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf);
-extern int ra_mtd_read(int num, loff_t from, size_t len, u_char *buf);
-#else
 extern int ra_mtd_write_nm(char *name, loff_t to, size_t len, const u_char *buf);
 extern int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf);
-#endif
 
 void RtmpFlashRead(
 	UCHAR *p,
 	ULONG a,
 	ULONG b)
 {
-#ifdef RA_MTD_RW_BY_NUM
-	ra_mtd_read(MTD_NUM_FACTORY, 0, (size_t) b, p);
-#else
 	ra_mtd_read_nm("Factory", a&0xFFFF, (size_t) b, p);
-#endif
 }
 
 void RtmpFlashWrite(
@@ -314,11 +300,7 @@ void RtmpFlashWrite(
 	ULONG a,
 	ULONG b)
 {
-#ifdef RA_MTD_RW_BY_NUM
-	ra_mtd_write(MTD_NUM_FACTORY, 0, (size_t) b, p);
-#else
 	ra_mtd_write_nm("Factory", a&0xFFFF, (size_t) b, p);
-#endif
 }
 #endif /* defined(RTMP_RBUS_SUPPORT) || defined(RTMP_FLASH_SUPPORT) */
 
@@ -455,11 +437,11 @@ PNDIS_PACKET DuplicatePacket(
 {
 	struct sk_buff *skb;
 	PNDIS_PACKET pRetPacket = NULL;
-	USHORT DataSize;
-	UCHAR *pData;
+	//USHORT DataSize;
+	//UCHAR *pData;
 
-	DataSize = (USHORT) GET_OS_PKT_LEN(pPacket);
-	pData = (PUCHAR) GET_OS_PKT_DATAPTR(pPacket);
+	//DataSize = (USHORT) GET_OS_PKT_LEN(pPacket);
+	//pData = (PUCHAR) GET_OS_PKT_DATAPTR(pPacket);
 
 	skb = skb_clone(RTPKT_TO_OSPKT(pPacket), MEM_ALLOC_FLAG);
 	if (skb) {
@@ -679,7 +661,10 @@ PNDIS_PACKET ClonePacket(
 		pClonedPkt->data = pData;
 		pClonedPkt->len = DataSize;
 		pClonedPkt->tail = pClonedPkt->data + pClonedPkt->len;
-		ASSERT(DataSize < 1530);
+		//ASSERT(DataSize < 1530);
+        if(DataSize > 1530)
+                DBGPRINT(RT_DEBUG_TRACE,
+		        ("%s %d : DataSize > 1530 !\n",__FUNCTION__,__LINE__));
 	}
 	return pClonedPkt;
 }
@@ -711,7 +696,8 @@ void wlan_802_11_to_802_3_packet(
 	IN ULONG DataSize,
 	IN PUCHAR pHeader802_3,
 	IN UCHAR FromWhichBSSID,
-	IN UCHAR *TPID)
+	IN UCHAR *TPID
+	)
 {
 	struct sk_buff *pOSPkt;
 
@@ -719,10 +705,13 @@ void wlan_802_11_to_802_3_packet(
 
 	pOSPkt = RTPKT_TO_OSPKT(pRxPacket);
 
-	pOSPkt->dev = pNetDev;
-	pOSPkt->data = pData;
-	pOSPkt->len = DataSize;
-	pOSPkt->tail = pOSPkt->data + pOSPkt->len;
+        pOSPkt->dev = pNetDev;
+
+	{
+		pOSPkt->data = pData;
+		pOSPkt->len = DataSize;
+		pOSPkt->tail = pOSPkt->data + pOSPkt->len;
+	}
 
 	/* copy 802.3 header */
 #ifdef CONFIG_AP_SUPPORT
@@ -743,6 +732,12 @@ void wlan_802_11_to_802_3_packet(
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	RT_CONFIG_IF_OPMODE_ON_STA(OpMode)
+	{
+	    NdisMoveMemory(skb_push(pOSPkt, LENGTH_802_3), pHeader802_3, LENGTH_802_3);
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 }
 
@@ -1411,6 +1406,15 @@ int RtmpOSNetDevAddrSet(
 {
 	struct net_device *net_dev = (struct net_device *)pNetDev;
 
+#ifdef CONFIG_STA_SUPPORT
+	/* work-around for the SuSE due to it has it's own interface name management system. */
+	RT_CONFIG_IF_OPMODE_ON_STA(OpMode) {
+		if (dev_name != NULL) {
+			NdisZeroMemory(dev_name, 16);
+			NdisMoveMemory(dev_name, net_dev->name, strlen(net_dev->name));
+		}
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	NdisMoveMemory(net_dev->dev_addr, pMacAddr, 6);
 
@@ -1693,6 +1697,14 @@ int RtmpOSNetDevAttach(
 		pNetDev->get_wireless_stats = pDevOpHook->get_wstats;
 #endif
 
+#ifdef CONFIG_STA_SUPPORT
+#if WIRELESS_EXT >= 12
+		if (OpMode == OPMODE_STA) {
+/*			pNetDev->wireless_handlers = &rt28xx_iw_handler_def; */
+			pNetDev->wireless_handlers = pDevOpHook->iw_handler;
+		}
+#endif /*WIRELESS_EXT >= 12 */
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef CONFIG_APSTA_MIXED_SUPPORT
 #if WIRELESS_EXT >= 12
@@ -2324,6 +2336,45 @@ VOID RtmpOsDCacheFlush(
 }
 
 
+#ifdef CONFIG_STA_SUPPORT
+INT RtmpOSNotifyRawData(
+	IN PNET_DEV pNetDev, 
+	IN PUCHAR buff,
+	IN INT len, 
+	IN ULONG type,
+	IN USHORT protocol)
+{
+	struct sk_buff *skb = NULL;
+	
+	skb = dev_alloc_skb(len + 2);
+	
+	if (!skb) 
+	{
+		DBGPRINT(RT_DEBUG_ERROR,( "%s: failed to allocate sk_buff for notification\n", pNetDev->name));		
+		return -ENOMEM;		
+	} 
+	else 
+	{		
+		skb_reserve(skb, 2);		
+		memcpy(skb_put(skb, len), buff, len);		
+		skb->len = len;
+		skb->dev = pNetDev;
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,21))
+		skb->mac.raw = skb->data;
+#else
+		skb_set_mac_header(skb, 0);
+#endif
+		skb->ip_summed = CHECKSUM_UNNECESSARY;
+		skb->pkt_type = PACKET_OTHERHOST;
+		skb->protocol = htons(protocol);
+		memset(skb->cb, 0, sizeof(skb->cb));
+
+		netif_rx(skb);
+	}
+	return 0;
+}
+
+#endif /* CONFIG_STA_SUPPORT */
 
 
 void OS_SPIN_LOCK_IRQSAVE(NDIS_SPIN_LOCK *lock, unsigned long *flags)
@@ -2374,7 +2425,7 @@ void OS_CLEAR_BIT(int bit, unsigned long *flags)
 #ifndef BB_SOC
 void OS_LOAD_CODE_FROM_BIN(unsigned char **image, char *bin_name, void *inf_dev, UINT32 *code_len)
 {
-	struct device *dev;
+	struct device *dev = NULL;
 	const struct firmware *fw_entry;
 
 #ifdef RTMP_PCI_SUPPORT

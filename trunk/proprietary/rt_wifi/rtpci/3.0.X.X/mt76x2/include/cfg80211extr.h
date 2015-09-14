@@ -66,6 +66,10 @@
 
 #define RT_CFG80211_SCAN_END(__pAd, __FlgIsAborted)							\
 	CFG80211_ScanEnd((VOID *)__pAd, __FlgIsAborted);
+#ifdef CONFIG_STA_SUPPORT
+#define RT_CFG80211_LOST_AP_INFORM(__pAd) 									\
+	CFG80211_LostApInform((VOID *)__pAd);	
+#endif /*CONFIG_STA_SUPPORT*/
 #ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
 #define RT_CFG80211_LOST_GO_INFORM(__pAd) 									\
 	CFG80211_LostP2pGoInform((VOID *)__pAd);	
@@ -124,6 +128,9 @@
 #endif /* SINGLE_SKU */
 
 /* Scan Releated */
+#ifdef CONFIG_STA_SUPPORT
+BOOLEAN CFG80211DRV_OpsScanRunning(VOID *pAdOrg);
+#endif /*CONFIG_STA_SUPPORT*/
 BOOLEAN CFG80211DRV_OpsScanSetSpecifyChannel(
 	VOID *pAdOrg, VOID *pData, UINT8 dataLen);
 
@@ -230,6 +237,18 @@ INT CFG80211_setPowerMgmt(
 	VOID                     *pAdCB,
 	UINT 			Enable);
 		
+#ifdef CONFIG_STA_SUPPORT
+INT CFG80211_setStaDefaultKey(
+    VOID                        *pAdCB,
+    UINT                         Data);
+
+#ifdef DOT11W_PMF_SUPPORT
+INT CFG80211_setStaMgmtDefaultKey(
+    VOID                        *pAdCB,
+    UINT                         Data);
+#endif /* DOT11W_PMF_SUPPORT */
+
+#endif /*CONFIG_STA_SUPPORT*/
 /* General Releated */
 BOOLEAN CFG80211DRV_OpsSetChannel(RTMP_ADAPTER *pAd, VOID *pData);
 

@@ -178,7 +178,8 @@ static USHORT update_associated_mac_entry(
 	}
 #endif /* PIGGYBACK_SUPPORT */
 #ifdef DOT11_VHT_AC
-	if ((pAd->CommonCfg.b256QAM_2G) && (ie_list->RalinkIe & 0x00000008))
+	if ((pAd->CommonCfg.b256QAM_2G) 
+		&& ((ie_list->RalinkIe & 0x00000008) || (ie_list->MediatekIe & 0x00000008)))
 	{
 		CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_2G_256QAM_CAPABLE);
 		DBGPRINT(RT_DEBUG_TRACE, ("ASSOC -2.4G_256QAM= 1\n"));
@@ -245,6 +246,22 @@ static USHORT update_associated_mac_entry(
 		if (ie_list->ExtCapInfo.BssCoexistMgmtSupport)
 			pEntry->BSS2040CoexistenceMgmtSupport = 1;
 #endif /* DOT11N_DRAFT3 */
+#ifdef CONFIG_HOTSPOT_R2
+		if (ie_list->ExtCapInfo.qosmap)
+			pEntry->QosMapSupport = 1;
+#endif
+#ifdef DOT11V_WNM_SUPPORT
+		if(IS_BSS_TRANSIT_MANMT_SUPPORT(pAd, pEntry->apidx))
+		{
+			if(ie_list->ExtCapInfo.BssTransitionManmt)
+				pEntry->BssTransitionManmtSupport = 1;
+		}
+		if(IS_WNMDMS_SUPPORT(pAd, pEntry->apidx))
+		{
+			if(ie_list->ExtCapInfo.DMSSupport)
+				pEntry->DMSSupport = 1;
+		}
+#endif /* DOT11V_WNM_SUPPORT */
 
 #ifdef DOT11N_DRAFT3
 		/* 40Mhz BSS Width Trigger events */
@@ -268,7 +285,7 @@ static USHORT update_associated_mac_entry(
 			Handle_BSS_Width_Trigger_Events(pAd);
 		}
 #endif /* DOT11N_DRAFT3 */
-
+		
 #ifdef TXBF_SUPPORT
 #ifdef VHT_TXBF_SUPPORT
 		if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode) &&
@@ -339,7 +356,7 @@ static USHORT update_associated_mac_entry(
 			pEntry->MaxHTPhyMode.field.MODE = MODE_VHT;
 			if ((pEntry->MaxHTPhyMode.field.BW== BW_40) && (wdev->DesiredHtPhyInfo.vht_bw == VHT_BW_80))
 				pEntry->MaxHTPhyMode.field.BW = BW_80;
-
+			
 			pEntry->VhtMaxRAmpduFactor = ie_list->vht_cap.vht_cap.max_ampdu_exp;
 
 			DBGPRINT(RT_DEBUG_TRACE, ("Orig HT MaxRAmpduFactor %d , VHT MaxRAmpduFactor %d \n"
@@ -353,7 +370,7 @@ static USHORT update_associated_mac_entry(
 					pEntry->MaxHTPhyMode.field.MCS = 9;
 			} else if (ie_list->vht_cap.mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_8) {
 				pEntry->MaxHTPhyMode.field.MCS = 8;
-			} else if (ie_list->vht_cap.mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_8) {
+			} else if (ie_list->vht_cap.mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_7) {
 				pEntry->MaxHTPhyMode.field.MCS = 7;
 			}
 			
@@ -411,6 +428,11 @@ static USHORT update_associated_mac_entry(
 	}
 	else
 	{
+#ifdef CONFIG_HOTSPOT_R2
+		if (ie_list->ExtCapInfo.qosmap)
+			pEntry->QosMapSupport = 1;
+#endif
+
 		pAd->MacTab.fAnyStationIsLegacy = TRUE;
 		NdisZeroMemory(&pEntry->HTCapability, sizeof(HT_CAPABILITY_IE));
 #ifdef DOT11_VHT_AC
@@ -475,7 +497,7 @@ static USHORT update_associated_mac_entry(
 	if (wdev->bAutoTxRateSwitch == TRUE)
 	{
 		UCHAR TableSize = 0;
-
+		
 		pEntry->bAutoTxRateSwitch = TRUE;
 		
 		MlmeSelectTxRateTable(pAd, pEntry, &pEntry->pTable, &TableSize, &pEntry->CurrTxRateIndex);
@@ -595,7 +617,10 @@ static USHORT APBuildAssociation(
 		*pAid = pEntry->Aid;
 		pEntry->NoDataIdleCount = 0;
 		pEntry->StaConnectTime = 0;
-        
+#ifdef CONFIG_HOTSPOT_R2
+		if (!CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_OSEN_CAPABLE))
+#endif       
+		{ 
 #ifdef WSC_AP_SUPPORT
 		if (pEntry->bWscCapable == FALSE)
 #endif /* WSC_AP_SUPPORT */
@@ -604,6 +629,8 @@ static USHORT APBuildAssociation(
 			if ((StatusCode = APValidateRSNIE(pAd, pEntry, &ie_list->RSN_IE[0], ie_list->RSNIE_Len)) != MLME_SUCCESS)
 				return StatusCode;
 		}
+		}
+
 
 		NdisMoveMemory(pEntry->RSN_IE, &ie_list->RSN_IE[0], ie_list->RSNIE_Len);
 		pEntry->RSNIE_Len = ie_list->RSNIE_Len;
@@ -781,6 +808,10 @@ VOID ap_cmm_peer_assoc_req_action(
 	PUINT8 pPmkid = NULL;
 	UINT8 pmkid_count = 0;
 #endif /* DOT1X_SUPPORT */	
+#ifdef DOT11R_FT_SUPPORT
+	PFT_CFG pFtCfg = NULL;
+	FT_INFO FtInfoBuf;
+#endif /* DOT11R_FT_SUPPORT */
 	struct wifi_dev *wdev;
 	MULTISSID_STRUCT *pMbss;
 #ifdef WSC_AP_SUPPORT
@@ -978,7 +1009,28 @@ VOID ap_cmm_peer_assoc_req_action(
 	/* 2. qualify this STA's auth_asoc status in the MAC table, decide StatusCode */
 	StatusCode = APBuildAssociation(pAd, pEntry, ie_list, MaxSupportedRate, &Aid);
 
+#ifdef DOT11R_FT_SUPPORT
+	if (pEntry->apidx < pAd->ApCfg.BssidNum)
+	{
+		pFtCfg = &(pAd->ApCfg.MBSSID[pEntry->apidx].FtCfg);
+		if ((pFtCfg->FtCapFlag.Dot11rFtEnable)
+			&& (StatusCode == MLME_SUCCESS))
+			StatusCode = FT_AssocReqHandler(pAd, isReassoc, pFtCfg, pEntry,
+							&ie_list->FtInfo, &FtInfoBuf);
 
+		/* just silencely discard this frame */
+		if (StatusCode == 0xFFFF)
+			goto LabelOK;
+	}
+#endif /* DOT11R_FT_SUPPORT */
+
+#ifdef DOT11K_RRM_SUPPORT
+	if ((pEntry->apidx < pAd->ApCfg.BssidNum)
+		&& IS_RRM_ENABLE(pAd, pEntry->apidx))
+	{
+		pEntry->RrmEnCap.word = ie_list->RrmEnCap.word;
+	}
+#endif /* DOT11K_RRM_SUPPORT */
 
 #ifdef DOT11_VHT_AC
 	if (ie_list->vht_cap_len)
@@ -1117,7 +1169,125 @@ SendAssocResponse:
 		FrameLen += TmpLen;
 	}
 
+#ifdef DOT11R_FT_SUPPORT
+	if ((pFtCfg != NULL) && (pFtCfg->FtCapFlag.Dot11rFtEnable))
+	{
+		PUINT8	mdie_ptr;
+		UINT8	mdie_len;
+		PUINT8	ftie_ptr = NULL;
+		UINT8	ftie_len = 0;
+		PUINT8  ricie_ptr = NULL;
+		UINT8   ricie_len = 0;
+				
+		/* Insert RSNIE if necessary */
+		if (FtInfoBuf.RSNIE_Len != 0)
+		{ 
+	        ULONG TmpLen;
+	        MakeOutgoingFrame(pOutBuffer+FrameLen,      &TmpLen, 
+							  FtInfoBuf.RSNIE_Len,		FtInfoBuf.RSN_IE,
+	                          END_OF_ARGS);
+	        FrameLen += TmpLen;
+	    }	
 
+		/* Insert MDIE. */
+		mdie_ptr = pOutBuffer+FrameLen;
+		mdie_len = 5;
+		FT_InsertMdIE(pAd, pOutBuffer+FrameLen, &FrameLen,
+				FtInfoBuf.MdIeInfo.MdId, FtInfoBuf.MdIeInfo.FtCapPlc);
+
+		/* Insert FTIE. */
+		if (FtInfoBuf.FtIeInfo.Len != 0)
+		{
+			ftie_ptr = pOutBuffer+FrameLen;
+			ftie_len = (2 + FtInfoBuf.FtIeInfo.Len);
+			FT_InsertFTIE(pAd, pOutBuffer+FrameLen, &FrameLen,
+				FtInfoBuf.FtIeInfo.Len, FtInfoBuf.FtIeInfo.MICCtr,
+				FtInfoBuf.FtIeInfo.MIC, FtInfoBuf.FtIeInfo.ANonce,
+				FtInfoBuf.FtIeInfo.SNonce);
+		}
+		/* Insert R1KH IE into FTIE. */
+		if (FtInfoBuf.FtIeInfo.R1khIdLen!= 0)
+			FT_FTIE_InsertKhIdSubIE(pAd, pOutBuffer+FrameLen, &FrameLen,
+					FT_R1KH_ID, FtInfoBuf.FtIeInfo.R1khId,
+					FtInfoBuf.FtIeInfo.R1khIdLen);
+
+		/* Insert GTK Key info into FTIE. */
+		if (FtInfoBuf.FtIeInfo.GtkLen!= 0)
+	 		FT_FTIE_InsertGTKSubIE(pAd, pOutBuffer+FrameLen, &FrameLen,
+	 			FtInfoBuf.FtIeInfo.GtkSubIE, FtInfoBuf.FtIeInfo.GtkLen);
+
+		/* Insert R0KH IE into FTIE. */
+		if (FtInfoBuf.FtIeInfo.R0khIdLen!= 0)
+			FT_FTIE_InsertKhIdSubIE(pAd, pOutBuffer+FrameLen, &FrameLen,
+					FT_R0KH_ID, FtInfoBuf.FtIeInfo.R0khId,
+					FtInfoBuf.FtIeInfo.R0khIdLen);
+
+		/* Insert RIC. */
+		if (ie_list->FtInfo.RicInfo.Len)
+		{
+			ULONG TempLen;
+
+			FT_RIC_ResourceRequestHandle(pAd, pEntry,
+						(PUCHAR)ie_list->FtInfo.RicInfo.pRicInfo,
+						ie_list->FtInfo.RicInfo.Len,
+						(PUCHAR)pOutBuffer+FrameLen,
+						(PUINT32)&TempLen);
+			ricie_ptr = (PUCHAR)(pOutBuffer+FrameLen);
+			ricie_len = TempLen;
+			FrameLen += TempLen;
+		}
+
+		/* Calculate the FT MIC for FT procedure */
+		if (FtInfoBuf.FtIeInfo.MICCtr.field.IECnt)
+		{
+			UINT8	ft_mic[FT_MIC_LEN];
+			PFT_FTIE	pFtIe;
+		
+			FT_CalculateMIC(pEntry->Addr, 
+							wdev->bssid, 
+							pEntry->PTK, 
+							6, 
+							FtInfoBuf.RSN_IE, 
+							FtInfoBuf.RSNIE_Len, 
+							mdie_ptr, 
+							mdie_len, 
+							ftie_ptr, 
+							ftie_len,
+							ricie_ptr,
+							ricie_len,
+							ft_mic);
+
+			/* Update the MIC field of FTIE */
+			pFtIe = (PFT_FTIE)(ftie_ptr + 2);
+			NdisMoveMemory(pFtIe->MIC, ft_mic, FT_MIC_LEN);
+
+			/* Install pairwise key */
+			WPAInstallPairwiseKey(pAd, pEntry->apidx, pEntry, TRUE);
+
+			/* Update status and set Port as Secured */
+			pEntry->WpaState = AS_PTKINITDONE;
+			pEntry->PrivacyFilter = Ndis802_11PrivFilterAcceptAll;
+		    pEntry->PortSecured = WPA_802_1X_PORT_SECURED;
+		}
+
+		/* 	Record the MDIE & FTIE of (re)association response of
+			Initial Mobility Domain Association. It's used in 
+			FT 4-Way handshaking */
+		if (pEntry->AuthMode >= Ndis802_11AuthModeWPA2 &&
+			ie_list->FtInfo.FtIeInfo.Len == 0)
+		{
+			NdisMoveMemory(&pEntry->InitialMDIE, mdie_ptr, mdie_len);
+
+			pEntry->InitialFTIE_Len = ftie_len;
+			NdisMoveMemory(pEntry->InitialFTIE, ftie_ptr, ftie_len);					
+		}
+	}
+#endif /* DOT11R_FT_SUPPORT */
+
+#ifdef DOT11K_RRM_SUPPORT
+	if (IS_RRM_ENABLE(pAd, pEntry->apidx))
+		RRM_InsertRRMEnCapIE(pAd, pOutBuffer+FrameLen, &FrameLen, pEntry->apidx);
+#endif /* DOT11K_RRM_SUPPORT */
 
 	/* add WMM IE here */
 	if (wdev->bWmmCapable && CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE))
@@ -1301,6 +1471,45 @@ SendAssocResponse:
 	}
 #endif /* DOT11_N_SUPPORT */
 
+#ifdef CONFIG_HOTSPOT_R2
+		/* qosmap IE */
+		printk("entry=%d\n", pEntry->QosMapSupport);
+		if (pEntry->QosMapSupport)
+		{
+			ULONG	TmpLen;
+			UCHAR	QosMapIE, ielen = 0, i = 0, explen = 0;
+			PHOTSPOT_CTRL pHSCtrl =  &pAd->ApCfg.MBSSID[pEntry->apidx].HotSpotCtrl;
+
+			if (pHSCtrl->QosMapEnable)
+			{
+				QosMapIE = IE_QOS_MAP_SET;
+			
+				for (i=0;i<21;i++)
+				{
+					if (pHSCtrl->DscpException[i] == 0xffff)
+						break;
+					else
+						explen += 2;
+				}
+
+				pEntry->DscpExceptionCount = explen;
+				memcpy((UCHAR *)pEntry->DscpRange, (UCHAR *)pHSCtrl->DscpRange, 16);
+				memcpy((UCHAR *)pEntry->DscpException, (UCHAR *)pHSCtrl->DscpException, 42);
+			
+				ielen = explen+16;
+			
+				MakeOutgoingFrame(pOutBuffer+ FrameLen, &TmpLen,
+						1,			&QosMapIE,
+						1,			&ielen,
+						explen, 	pEntry->DscpException,
+						16, 		pEntry->DscpRange,
+						END_OF_ARGS);
+						
+				FrameLen += TmpLen; 		
+			}
+		}
+#endif /* CONFIG_HOTSPOT_R2 */
+
 
 		/* 7.3.2.27 Extended Capabilities IE */
 		{
@@ -1327,6 +1536,24 @@ SendAssocResponse:
 #endif /* DOT11N_DRAFT3 */
 #endif /* DOT11_N_SUPPORT */
 
+#ifdef DOT11V_WNM_SUPPORT
+		if (IS_BSS_TRANSIT_MANMT_SUPPORT(pAd, pEntry->apidx))
+		{
+			if( ie_list->ExtCapInfo.BssTransitionManmt == 1)
+			{
+				extCapInfo.BssTransitionManmt = 1;
+				pEntry->bBSSMantSTASupport = TRUE;
+			}			
+		}
+		if (IS_WNMDMS_SUPPORT(pAd, pEntry->apidx))
+		{
+			if ( ie_list->ExtCapInfo.DMSSupport == 1)
+			{
+				extCapInfo.DMSSupport = 1;
+				pEntry->bDMSSTASupport = TRUE;
+			}
+		}
+#endif /* DOT11V_WNM_SUPPORT */
 
 #ifdef DOT11_VHT_AC
 		if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode) &&
@@ -1381,6 +1608,22 @@ SendAssocResponse:
 
 }
   
+	/* add Mediatek-specific IE here */
+	{
+		ULONG TmpLen = 0;
+		UCHAR MediatekSpecificIe[9] = {IE_VENDOR_SPECIFIC, 7, 0x00, 0x0c, 0xe7, 0x00, 0x00, 0x00, 0x00};
+
+#ifdef DOT11_VHT_AC
+		if (pAd->CommonCfg.b256QAM_2G && WMODE_2G_ONLY(pAd->CommonCfg.PhyMode))
+		MediatekSpecificIe[5] |= 0x8;
+#endif /* DOT11_VHT_AC */
+
+		MakeOutgoingFrame(pOutBuffer+FrameLen, &TmpLen,
+		9, MediatekSpecificIe,
+		END_OF_ARGS);
+		FrameLen += TmpLen;
+	}	
+  
 #ifdef WSC_AP_SUPPORT
 	if (pEntry->bWscCapable)
 	{
@@ -1430,6 +1673,25 @@ SendAssocResponse:
 
 /*		SendSingalToDaemon(SIGUSR2, pObj->IappPid); */
 
+#ifdef DOT11R_FT_SUPPORT		
+		/*
+			Do not do any check here.
+			We need to send MOVE-Req frame to AP1 even open mode.
+		*/
+/*		if (IS_FT_RSN_STA(pEntry) && (FtInfo.FtIeInfo.Len != 0)) */
+		if (isReassoc == 1)
+		{					
+			/* only for reassociation frame */
+			FT_KDP_EVT_REASSOC EvtReAssoc;
+
+			EvtReAssoc.SeqNum = 0;
+			NdisMoveMemory(EvtReAssoc.MacAddr, pEntry->Addr, MAC_ADDR_LEN);
+			NdisMoveMemory(EvtReAssoc.OldApMacAddr, ie_list->ApAddr, MAC_ADDR_LEN);
+
+			FT_KDP_EVENT_INFORM(pAd, pEntry->apidx, FT_KDP_SIG_FT_REASSOCIATION,
+								&EvtReAssoc, sizeof(EvtReAssoc), NULL);
+		}
+#endif /* DOT11R_FT_SUPPORT */
 		
 #endif /* IAPP_SUPPORT */
 
@@ -1458,6 +1720,15 @@ SendAssocResponse:
 #endif /* DOT11_N_SUPPORT */
 
 
+#ifdef DOT11R_FT_SUPPORT
+		/* 	If the length of FTIE field of the (re)association-request frame
+			is larger than zero, it shall indicate the Fast-BSS transition is in progress. */
+		if (ie_list->FtInfo.FtIeInfo.Len > 0)
+		{
+			;
+		}
+		else
+#endif /* DOT11R_FT_SUPPORT */	
 #ifdef RT_CFG80211_SUPPORT
 		if (TRUE) /*CFG_TODO*/
         {
@@ -1769,7 +2040,7 @@ VOID APPeerDisassocReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 				BASessionTearDownALL(pAd, pReptEntry->MacTabWCID);
 #endif /* DOT11_N_SUPPORT */
 				RTMPRemoveRepeaterDisconnectEntry(pAd, apCliIdx, CliIdx);
-						RTMPRemoveRepeaterEntry(pAd, apCliIdx, CliIdx);
+				RTMPRemoveRepeaterEntry(pAd, apCliIdx, CliIdx);
 			}
 		}
 #endif /* MAC_REPEATER_SUPPORT */
@@ -2007,6 +2278,10 @@ VOID APAssocStateMachineInit(
     IN STATE_MACHINE *S,
     OUT STATE_MACHINE_FUNC Trans[])
 {
+#ifdef CUSTOMER_DCC_FEATURE
+	pAd->ApDisableSTAConnectFlag = FALSE;
+	pAd->AllowedStaList.StaCount = 0;
+#endif
     StateMachineInit(S, (STATE_MACHINE_FUNC*)Trans, AP_MAX_ASSOC_STATE, AP_MAX_ASSOC_MSG, (STATE_MACHINE_FUNC)Drop, AP_ASSOC_IDLE, AP_ASSOC_MACHINE_BASE);
 
     StateMachineSetAction(S, AP_ASSOC_IDLE, APMT2_MLME_DISASSOC_REQ, (STATE_MACHINE_FUNC)APMlmeDisassocReqAction);

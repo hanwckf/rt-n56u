@@ -27,10 +27,17 @@
 
 #include "rt_config.h"
 #include <stdarg.h>
+#ifdef DOT11R_FT_SUPPORT
+#include "ft.h"
+#endif /* DOT11R_FT_SUPPORT */
 
+#ifdef DOT11V_WNM_SUPPORT
+#include "wnm.h"
+#endif /* DOT11V_WNM_SUPPORT */
 
 UCHAR CISCO_OUI[] = {0x00, 0x40, 0x96};
 UCHAR RALINK_OUI[]  = {0x00, 0x0c, 0x43};
+UCHAR MTK_OUI[]  = {0x00, 0x0c, 0xe7};
 UCHAR WPA_OUI[] = {0x00, 0x50, 0xf2, 0x01};
 UCHAR RSN_OUI[] = {0x00, 0x0f, 0xac};
 UCHAR WAPI_OUI[] = {0x00, 0x14, 0x72};
@@ -38,6 +45,12 @@ UCHAR WME_INFO_ELEM[]  = {0x00, 0x50, 0xf2, 0x02, 0x00, 0x01};
 UCHAR WME_PARM_ELEM[] = {0x00, 0x50, 0xf2, 0x02, 0x01, 0x01};
 UCHAR BROADCOM_OUI[]  = {0x00, 0x90, 0x4c};
 UCHAR WPS_OUI[] = {0x00, 0x50, 0xf2, 0x04};
+#ifdef CONFIG_STA_SUPPORT
+#ifdef IWSC_SUPPORT
+UCHAR IWSC_OUI[] = {0x00, 0x50, 0xf2, 0x10};
+UCHAR IWSC_ACTION_OUI[] = {0x50, 0x6F, 0x9A, 0x10};
+#endif /* IWSC_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 
 
 UCHAR OfdmRateToRxwiMCS[12] = {
@@ -101,398 +114,70 @@ UCHAR ZeroSsid[32] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 
 
+
 #ifdef MT76x2
+#ifdef CONFIG_STA_SUPPORT
 #ifdef DYNAMIC_VGA_SUPPORT
-void dynamic_ed_cca_threshold_adjust(RTMP_ADAPTER * pAd)
+void periodic_monitor_rssi_adjust_vga(RTMP_ADAPTER *pAd)
 {
-	UINT32 reg_val = 0;
-	CHAR high_gain = 0, mid_gain = 0, low_gain = 0, ulow_gain = 0, lna_gain_mode = 0;
-	UCHAR lna_gain = 0, vga_gain = 0, y = 0, z = 0;
-	
-	RTMP_BBP_IO_READ32(pAd, AGC1_R4, &reg_val);
-	high_gain = ((reg_val & (0x3F0000)) >> 16) & 0x3F;
-	mid_gain = ((reg_val & (0x3F00)) >> 8) & 0x3F;
-	low_gain = reg_val & 0x3F;
-	
-	RTMP_BBP_IO_READ32(pAd, AGC1_R6, &reg_val);
-	ulow_gain = reg_val & 0x3F;
+	if ((pAd->CommonCfg.lna_vga_ctl.bDyncVgaEnable) && 
+		(pAd->chipCap.dynamic_vga_support) && INFRA_ON(pAd)) {
+		UINT32 bbp_val1 = 0, bbp_val2 = 0;
 
-	RTMP_BBP_IO_READ32(pAd, AGC1_R8, &reg_val);
-	lna_gain_mode = ((reg_val & 0xC0) >> 6) & 0x3;
-	vga_gain = ((reg_val & 0x7E00) >> 9) & 0x3F;
-
-	if (lna_gain_mode == 0)
-		lna_gain = ulow_gain;
-	else if (lna_gain_mode == 1)
-		lna_gain = low_gain;
-	else if (lna_gain_mode == 2)
-		lna_gain = mid_gain;	
-	else if (lna_gain_mode == 3)
-		lna_gain = high_gain;
-
-	if ((vga_gain + lna_gain) > 64)
-		y = ((vga_gain + lna_gain) - 64) / 3;
-	else
-		y = 0;
-
-	if (y > 1)
-		z = min((1 << (y - 2)), 14);
-	else 
-		z = 1;
-
-	RTMP_BBP_IO_READ32(pAd, AGC1_R2, &reg_val);
-	reg_val = (reg_val & 0xFFFF0000) | (z << 8) | z;
-	RTMP_BBP_IO_WRITE32(pAd, AGC1_R2, reg_val);
-
-	DBGPRINT(RT_DEBUG_INFO, ("%s:: lna_gain(%d), vga_gain(%d), lna_gain_mode(%d), y=%d, z=%d, 0x2308=0x%08x\n", 
-		__FUNCTION__, lna_gain, vga_gain, lna_gain_mode, y, z, reg_val));
-}
-
-void update_rssi_for_channel_model(RTMP_ADAPTER * pAd)
-{
-	INT32 rx0_rssi, rx1_rssi;
-	UINT32 bbp_valuse = 0;
-	
-#ifdef CONFIG_AP_SUPPORT
-	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-	{
-		rx0_rssi = (CHAR)(pAd->ApCfg.RssiSample.LastRssi0);
-		rx1_rssi = (CHAR)(pAd->ApCfg.RssiSample.LastRssi1);
-	}
-#endif /* CONFIG_AP_SUPPORT */
-
-	DBGPRINT(RT_DEBUG_INFO, ("%s:: rx0_rssi(%d), rx1_rssi(%d)\n", 
-		__FUNCTION__, rx0_rssi, rx1_rssi));	
-
-	/*
-		RSSI_DUT(n) = RSSI_DUT(n-1)*15/16 + RSSI_R2320_100ms_sample*1/16
-	*/
-	pAd->chipCap.avg_rssi_0 = ((pAd->chipCap.avg_rssi_0) * 15)/16 + (rx0_rssi << 8)/16;
-	pAd->chipCap.avg_rssi_1 = ((pAd->chipCap.avg_rssi_1) * 15)/16 + (rx1_rssi << 8)/16;
-	pAd->chipCap.avg_rssi_all = (pAd->chipCap.avg_rssi_0 + pAd->chipCap.avg_rssi_1)/512;
-
-	DBGPRINT(RT_DEBUG_INFO, ("%s:: update rssi all(%d)\n", 
-		__FUNCTION__, pAd->chipCap.avg_rssi_all));
-}
-
-void dynamic_cck_mrc(RTMP_ADAPTER * pAd)
-{
-	UINT32 bbp_val = 0;
-	
-	/* CCK MRC PER bump at larger power ~-30dBm */
-	if (pAd->CommonCfg.RxStream >= 2) {
-		if (pAd->chipCap.avg_rssi_all > -70) {
-			RTMP_BBP_IO_READ32(pAd, AGC1_R30, &bbp_val);
-			bbp_val &= 0xfffffffb; /* disable CCK MRC */
-			RTMP_BBP_IO_WRITE32(pAd, AGC1_R30, bbp_val);
-		} else if (pAd->chipCap.avg_rssi_all < -80) {
-			RTMP_BBP_IO_READ32(pAd, AGC1_R30, &bbp_val);
-			bbp_val = (bbp_val & 0xfffffffb) | (1 << 2); /* enable CCK MRC */
-			RTMP_BBP_IO_WRITE32(pAd, AGC1_R30, bbp_val);
+		if(pAd->ed_chk!=FALSE && pAd->chipCap.avg_rssi_all >= -45)
+		{
+			andes_dynamic_vga(pAd, pAd->CommonCfg.Channel, FALSE, FALSE, 
+				-46, pAd->RalinkCounters.OneSecFalseCCACnt);
 		}
+		else
+		{
+			andes_dynamic_vga(pAd, pAd->CommonCfg.Channel, FALSE, FALSE, 
+				pAd->chipCap.avg_rssi_all, pAd->RalinkCounters.OneSecFalseCCACnt);
+		}
+
+		RTMP_BBP_IO_READ32(pAd, AGC1_R8, &bbp_val1);
+		RTMP_BBP_IO_READ32(pAd, AGC1_R9, &bbp_val2);
+
+		DBGPRINT(RT_DEBUG_INFO, ("%s::0x2320=0x%08x, 0x2324=0x%08x\n", 
+			__FUNCTION__, bbp_val1, bbp_val2));
 	}
 }
+#endif /* DYNAMIC_VGA_SUPPORT */
 
-#define shift_left16(x)			((x) << 16)
-#define shift_left8(x)			((x) << 8)
-
-BOOLEAN dynamic_channel_model_adjust(RTMP_ADAPTER *pAd)
+void periodic_check_channel_smoothing(RTMP_ADAPTER *ad)
 {
-	UCHAR mode = 0, default_init_vga = 0, eLNA_init_vga = 0, iLNA_init_vga = 0;
-	UINT32 value = 0;
-	BOOLEAN no_dynamic_vga = FALSE;
+	UINT32 bbp_value;
+	CHAR Rssi = RTMPAvgRssi(ad, &ad->StaCfg.RssiSample);
 
-	/* dynamic_chE_mode: 
-		bit7		0:average RSSI <= threshold	1:average RSSI > threshold
-		bit4:6	0:BW_20		1:BW_40		2:BW_80		3~7:Reserved
-		bit1:3	Reserved	
-		bit0		0: eLNA		1: iLNA
-	*/
+	if (Rssi < -50) {
+		if (!ad->chipCap.chl_smth_enable) {
+			RTMP_BBP_IO_READ32(ad, 0x2948, &bbp_value);
+			bbp_value &= ~(0x1);
+			bbp_value |= (0x1);
+			RTMP_BBP_IO_WRITE32(ad, 0x2948, bbp_value);
 
-	if (((pAd->chipCap.avg_rssi_all > -62) && (pAd->CommonCfg.BBPCurrentBW == BW_80))
-		|| ((pAd->chipCap.avg_rssi_all > -65) && (pAd->CommonCfg.BBPCurrentBW == BW_40))
-		|| ((pAd->chipCap.avg_rssi_all > -68) && (pAd->CommonCfg.BBPCurrentBW == BW_20))) 
-	{
-		RTMP_BBP_IO_WRITE32(pAd, RXO_R18, 0xF000A990);
-		if (pAd->CommonCfg.BBPCurrentBW == BW_80) {
-			if (is_external_lna_mode(pAd, pAd->CommonCfg.Channel))
-				mode = 0xA0; /* BW80::eLNA lower VGA/PD */
-			else
-				mode = 0xA1; /* BW80::iLNA lower VGA/PD */
-				
-			RTMP_BBP_IO_READ32(pAd, AGC1_R26, &value);
-			value = (value & ~0xF) | 0x3;
-			RTMP_BBP_IO_WRITE32(pAd, AGC1_R26, value);	
-		} else if (pAd->CommonCfg.BBPCurrentBW == BW_40) {
-			if (is_external_lna_mode(pAd, pAd->CommonCfg.Channel))
-				mode = 0x90; /* BW40::eLNA lower VGA/PD */
-			else
-				mode = 0x91; /* BW40::iLNA lower VGA/PD */
-		} else if (pAd->CommonCfg.BBPCurrentBW == BW_20) {
-			if (is_external_lna_mode(pAd, pAd->CommonCfg.Channel))
-				mode = 0x80; /* BW20::eLNA lower VGA/PD */
-			else
-				mode = 0x81; /* BW20::iLNA lower VGA/PD */
+			RTMP_BBP_IO_READ32(ad, 0x2944, &bbp_value);
+			bbp_value &= ~(0x1);
+			RTMP_BBP_IO_WRITE32(ad, 0x2944, bbp_value);
+
+			ad->chipCap.chl_smth_enable = TRUE;
 		}
 	} else {
-		RTMP_BBP_IO_WRITE32(pAd, RXO_R18, 0xF000A991);	
-		if (pAd->CommonCfg.BBPCurrentBW == BW_80) {
-			if (is_external_lna_mode(pAd, pAd->CommonCfg.Channel))
-				mode = 0x20; /* BW80::eLNA default */
-			else
-				mode = 0x21; /* BW80::iLNA default */				
+		if (ad->chipCap.chl_smth_enable) {
+			RTMP_BBP_IO_READ32(ad, 0x2948, &bbp_value);
+			bbp_value &= ~(0x1);
+			RTMP_BBP_IO_WRITE32(ad, 0x2948, bbp_value);
 
-			RTMP_BBP_IO_READ32(pAd, AGC1_R26, &value);
-			value = (value & ~0xF) | 0x5;
-			RTMP_BBP_IO_WRITE32(pAd, AGC1_R26, value);	
-		} else if (pAd->CommonCfg.BBPCurrentBW == BW_40) {
-			if (is_external_lna_mode(pAd, pAd->CommonCfg.Channel))
-				mode = 0x10; /* BW40::eLNA default */
-			else
-				mode = 0x11; /* BW40::iLNA default */	
-		} else if (pAd->CommonCfg.BBPCurrentBW == BW_20) {
-			if (is_external_lna_mode(pAd, pAd->CommonCfg.Channel))
-				mode = 0x00; /* BW20::eLNA default */
-			else
-				mode = 0x01; /* BW20::iLNA default */
+			RTMP_BBP_IO_READ32(ad, 0x2944, &bbp_value);
+			bbp_value &= ~(0x1);
+			bbp_value |= (0x1);
+			RTMP_BBP_IO_WRITE32(ad, 0x2944, bbp_value);
+
+			ad->chipCap.chl_smth_enable = FALSE;
 		}
-	}	
-
-	DBGPRINT(RT_DEBUG_INFO, ("%s:: dynamic ChE mode(0x%x)\n", 
-		__FUNCTION__, mode));
-
-	if (((pAd->chipCap.avg_rssi_all <= -76) && (pAd->CommonCfg.BBPCurrentBW == BW_80))
-		|| ((pAd->chipCap.avg_rssi_all <= -79) && (pAd->CommonCfg.BBPCurrentBW == BW_40))
-		|| ((pAd->chipCap.avg_rssi_all <= -82) && (pAd->CommonCfg.BBPCurrentBW == BW_20)))
-		no_dynamic_vga = TRUE;
-	
-	if (((mode & 0xFF) != pAd->chipCap.dynamic_chE_mode) || no_dynamic_vga) {
-		pAd->chipCap.dynamic_chE_trigger = TRUE;
-		default_init_vga = pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_0;
-		eLNA_init_vga = pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_0 - 10;
-		iLNA_init_vga = pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_0 - 14;
-
-		/* the following has to be done by firmware,thus it is a temporary way to support this */
-		if (pAd->CommonCfg.BBPCurrentBW == BW_80)
-			RTMP_BBP_IO_WRITE32(pAd, RXO_R14, 0x00560411);
-		else
-			RTMP_BBP_IO_WRITE32(pAd, RXO_R14, 0x00560423);
-		
-		switch (mode & 0xFF)
-		{
-			case 0xA0: /* BW80::eLNA lower VGA/PD */
-				pAd->chipCap.dynamic_chE_mode = 0xA0;
-
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
-				value = shift_left16(0x1E42) | shift_left8(eLNA_init_vga) | 0xF8;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */
-				break;
-
-			case 0xA1: /* BW80::iLNA lower VGA/PD */
-				pAd->chipCap.dynamic_chE_mode = 0xA1;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
-				value = shift_left16(0x1E42) | shift_left8(iLNA_init_vga) | 0xF8;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */
-				break;
-
-			case 0x90: /* BW40::eLNA lower VGA/PD */
-				pAd->chipCap.dynamic_chE_mode = 0x90;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
-				value = shift_left16(0x1E42) | shift_left8(eLNA_init_vga) | 0xF8;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
-				break;
-
-			case 0x91: /* BW40::iLNA lower VGA/PD */
-				pAd->chipCap.dynamic_chE_mode = 0x91;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
-				value = shift_left16(0x1E42) | shift_left8(iLNA_init_vga) | 0xF8;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
-				break;
-
-			case 0x80: /* BW20::eLNA lower VGA/PD */
-				pAd->chipCap.dynamic_chE_mode = 0x80;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
-				value = shift_left16(0x1836) | shift_left8(eLNA_init_vga) | 0xF8;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
-				break;
-
-			case 0x81: /* BW20::iLNA lower VGA/PD */
-				pAd->chipCap.dynamic_chE_mode = 0x81;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
-				value = shift_left16(0x1836) | shift_left8(iLNA_init_vga) | 0xF8;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
-				break;
-
-			case 0x20: /* BW80::eLNA default */
-				pAd->chipCap.dynamic_chE_mode = 0x20;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x11111116); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x1010161c); /* BBP 0x2394 */
-				value = shift_left16(0x1E42) | shift_left8(default_init_vga) | 0xF8;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
-				break;
-
-			case 0x21: /* BW80::iLNA default */
-				pAd->chipCap.dynamic_chE_mode = 0x21;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x11111116); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x1010161c); /* BBP 0x2394 */
-				value = shift_left16(0x1E42) | shift_left8(default_init_vga) | 0xF8;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
-				break;
-
-			case 0x10: /* BW40::eLNA default */
-				pAd->chipCap.dynamic_chE_mode = 0x10;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x11111116); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x1010161c); /* BBP 0x2394 */
-				value = shift_left16(0x1E42) | shift_left8(default_init_vga) | 0xF8;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
-				break;		
-
-			case 0x11: /* BW40::iLNA default */
-				pAd->chipCap.dynamic_chE_mode = 0x11;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x11111116); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x1010161c); /* BBP 0x2394 */
-				value = shift_left16(0x1E42) | shift_left8(default_init_vga) | 0xF8;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */
-				break;
-
-			case 0x00: /* BW20::eLNA default */
-				pAd->chipCap.dynamic_chE_mode = 0x00;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x11111116); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x1010161C); /* BBP 0x2394 */
-				value = shift_left16(0x1836) | shift_left8(default_init_vga) | 0xF8;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */
-				break;
-
-			case 0x01: /* BW20::iLNA default */
-				pAd->chipCap.dynamic_chE_mode = 0x01;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x11111116); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x1010161C); /* BBP 0x2394 */
-				value = shift_left16(0x1836) | shift_left8(default_init_vga) | 0xF8;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */
-				break;
-			default:
-				DBGPRINT(RT_DEBUG_ERROR, ("%s:: no such dynamic ChE mode(0x%x)\n", 
-					__FUNCTION__, mode));
-				break;
-		}
-
-		DBGPRINT(RT_DEBUG_INFO, ("%s:: updated dynamic_chE_mode(0x%x), dynamic_chE_trigger(%d)\n", 
-			__FUNCTION__, pAd->chipCap.dynamic_chE_mode, pAd->chipCap.dynamic_chE_trigger));
-	} else
-		pAd->chipCap.dynamic_chE_trigger = FALSE;
-
-	return no_dynamic_vga;
-}
-
-void periodic_monitor_false_cca_adjust_vga(RTMP_ADAPTER *pAd)
-{
-	if ((pAd->CommonCfg.lna_vga_ctl.bDyncVgaEnable) &&
-		(pAd->MacTab.Size > 0) &&
-		(pAd->chipCap.dynamic_vga_support) &&
-		OPSTATUS_TEST_FLAG(pAd, fOP_AP_STATUS_MEDIA_STATE_CONNECTED)) {
-		UCHAR val1, val2;
-		UINT32 bbp_val1, bbp_val2;
-		BOOLEAN no_dynamic_vga = FALSE;
-
-		if (dynamic_channel_model_adjust(pAd) == TRUE) {
-			DBGPRINT(RT_DEBUG_INFO, ("%s:: no need to do dynamic vga\n", __FUNCTION__));			
-			return;
-		}
-
-		if (pAd->chipCap.dynamic_chE_trigger == TRUE) {
-			mt76x2_get_agc_gain(pAd, FALSE); /* real time update init values */
-			bbp_val1 = pAd->CommonCfg.lna_vga_ctl.agc1_r8_backup;
-			val1 = ((((bbp_val1 & (0x00007f00)) >> 8) & 0x7f) - pAd->chipCap.compensate_level);
-			bbp_val1 = (bbp_val1 & 0xffff80ff) | (val1 << 8);
-			RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, bbp_val1);
-
-			bbp_val2 = pAd->CommonCfg.lna_vga_ctl.agc1_r9_backup;
-			val2 = ((((bbp_val2 & (0x00007f00)) >> 8) & 0x7f) - pAd->chipCap.compensate_level);
-			bbp_val2 = (bbp_val2 & 0xffff80ff) | (val2 << 8);
-			RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, bbp_val2);			
-		} else {
-			RTMP_BBP_IO_READ32(pAd, AGC1_R8, &bbp_val1);
-			val1 = ((bbp_val1 & (0x00007f00)) >> 8) & 0x7f;
-			RTMP_BBP_IO_READ32(pAd, AGC1_R9, &bbp_val2);
-			val2 = ((bbp_val2 & (0x00007f00)) >> 8) & 0x7f;
-		}
-
-		DBGPRINT(RT_DEBUG_INFO, ("vga_init_0 = %x, vga_init_1 = %x\n",  pAd->CommonCfg.lna_vga_ctl.agc_vga_init_0, pAd->CommonCfg.lna_vga_ctl.agc_vga_init_1));
-		DBGPRINT(RT_DEBUG_INFO, ("ori AGC1_R8 = %x, ori AGC1_R9 = %x\n",  pAd->CommonCfg.lna_vga_ctl.agc1_r8_backup, pAd->CommonCfg.lna_vga_ctl.agc1_r9_backup));
-		DBGPRINT(RT_DEBUG_INFO,
-			("one second False CCA=%d, fixed agc_vga_0:0%x, fixed agc_vga_1:0%x\n", pAd->RalinkCounters.OneSecFalseCCACnt, val1, val2));
-		DBGPRINT(RT_DEBUG_INFO, ("compensate level = %x\n", pAd->chipCap.compensate_level));
-
-		dynamic_ed_cca_threshold_adjust(pAd);
-
-		if (pAd->RalinkCounters.OneSecFalseCCACnt > pAd->CommonCfg.lna_vga_ctl.nFalseCCATh) {
-			if (val1 > (pAd->CommonCfg.lna_vga_ctl.agc_vga_init_0 - 0x10)) {
-				val1 -= 0x02;
-				pAd->chipCap.compensate_level += 0x02;
-				if (pAd->chipCap.compensate_level >= 0x10)
-					pAd->chipCap.compensate_level = 0x10;
-				bbp_val1 = (bbp_val1 & 0xffff80ff) | (val1 << 8);
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, bbp_val1);
-#ifdef DFS_SUPPORT
-				pAd->CommonCfg.RadarDetect.bAdjustDfsAgc = TRUE;
-#endif
-			}
-
-			if (pAd->CommonCfg.RxStream >= 2) {
-				if (val2 > (pAd->CommonCfg.lna_vga_ctl.agc_vga_init_1 - 0x10)) {
-					val2 -= 0x02;
-					bbp_val2 = (bbp_val2 & 0xffff80ff) | (val2 << 8);
-					RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, bbp_val2);
-				}
-			}
-		} else if (pAd->RalinkCounters.OneSecFalseCCACnt < 
-					pAd->CommonCfg.lna_vga_ctl.nLowFalseCCATh) {
-			if (val1 < pAd->CommonCfg.lna_vga_ctl.agc_vga_init_0) {
-				val1 += 0x02;
-				pAd->chipCap.compensate_level -= 0x02;
-				if (pAd->chipCap.compensate_level < 0)
-					pAd->chipCap.compensate_level = 0;
-				bbp_val1 = (bbp_val1 & 0xffff80ff) | (val1 << 8);
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, bbp_val1);
-#ifdef DFS_SUPPORT
-				pAd->CommonCfg.RadarDetect.bAdjustDfsAgc = TRUE;
-#endif
-			}
-
-			if (pAd->CommonCfg.RxStream >= 2) {
-				if (val2 < pAd->CommonCfg.lna_vga_ctl.agc_vga_init_1) {
-					val2 += 0x02;
-					bbp_val2 = (bbp_val2 & 0xffff80ff) | (val2 << 8);
-					RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, bbp_val2);
-				}
-			}
-		}
-
 	}
 }
-
-#endif /* DYNAMIC_VGA_SUPPORT */
-#endif /* MT76x2 */
-
-#ifdef MT76x2
+#endif
 #endif
 
 VOID set_default_ap_edca_param(RTMP_ADAPTER *pAd)
@@ -659,6 +344,64 @@ VOID MlmeHandler(RTMP_ADAPTER *pAd)
 			switch (Elem->Machine) 
 			{
 				/* STA state machines*/
+#ifdef CONFIG_STA_SUPPORT
+				case ASSOC_STATE_MACHINE:
+					StateMachinePerformAction(pAd, &pAd->Mlme.AssocMachine,
+										Elem, pAd->Mlme.AssocMachine.CurrState);
+					break;
+
+				case AUTH_STATE_MACHINE:
+					StateMachinePerformAction(pAd, &pAd->Mlme.AuthMachine,
+										Elem, pAd->Mlme.AuthMachine.CurrState);
+					break;
+
+				case AUTH_RSP_STATE_MACHINE:
+					StateMachinePerformAction(pAd, &pAd->Mlme.AuthRspMachine,
+										Elem, pAd->Mlme.AuthRspMachine.CurrState);
+					break;
+
+				case SYNC_STATE_MACHINE:
+					StateMachinePerformAction(pAd, &pAd->Mlme.SyncMachine,
+										Elem, pAd->Mlme.SyncMachine.CurrState);
+					break;
+
+				case MLME_CNTL_STATE_MACHINE:
+					MlmeCntlMachinePerformAction(pAd, &pAd->Mlme.CntlMachine, Elem);
+					break;
+
+				case WPA_PSK_STATE_MACHINE:
+					StateMachinePerformAction(pAd, &pAd->Mlme.WpaPskMachine,
+										Elem, pAd->Mlme.WpaPskMachine.CurrState);
+					break;	
+
+#ifdef QOS_DLS_SUPPORT
+				case DLS_STATE_MACHINE:
+					StateMachinePerformAction(pAd, &pAd->Mlme.DlsMachine,
+										Elem, pAd->Mlme.DlsMachine.CurrState);
+					break;
+#endif /* QOS_DLS_SUPPORT */
+
+#ifdef DOT11R_FT_SUPPORT
+				case FT_OTA_AUTH_STATE_MACHINE:
+					StateMachinePerformAction(pAd, &pAd->Mlme.FtOtaAuthMachine,
+										Elem, pAd->Mlme.FtOtaAuthMachine.CurrState);
+					break;
+
+				case FT_OTD_ACT_STATE_MACHINE:
+					StateMachinePerformAction(pAd, &pAd->Mlme.FtOtdActMachine,
+										Elem, pAd->Mlme.FtOtdActMachine.CurrState);
+					break;
+#endif /* DOT11R_FT_SUPPORT */
+
+#ifdef DOT11Z_TDLS_SUPPORT
+				case TDLS_STATE_MACHINE:
+					StateMachinePerformAction(pAd, &pAd->Mlme.TdlsMachine,
+										Elem, pAd->Mlme.TdlsMachine.CurrState);
+					break;
+#endif /* DOT11Z_TDLS_SUPPORT */
+
+
+#endif /* CONFIG_STA_SUPPORT */						
 
 				case ACTION_STATE_MACHINE:
 					StateMachinePerformAction(pAd, &pAd->Mlme.ActMachine,
@@ -790,6 +533,11 @@ VOID MlmeHandler(RTMP_ADAPTER *pAd)
 						RtmpOsTaskWakeUp(&(pAd->wscTask));
 					}
                     break;
+#ifdef IWSC_SUPPORT
+				case IWSC_STATE_MACHINE:
+					StateMachinePerformAction(pAd, &pAd->Mlme.IWscMachine, Elem, pAd->Mlme.IWscMachine.CurrState);
+                    break;
+#endif /* IWSC_SUPPORT */
 #endif /* WSC_INCLUDED */
 
 
@@ -807,6 +555,19 @@ VOID MlmeHandler(RTMP_ADAPTER *pAd)
 										GASPeerCurrentState(pAd, Elem));
 					break;
 #endif
+#ifdef CONFIG_DOT11V_WNM
+				case BTM_STATE_MACHINE:
+					StateMachinePerformAction(pAd, &pAd->Mlme.BTMMachine, Elem,
+										BTMPeerCurrentState(pAd, Elem));
+					break;
+#ifdef CONFIG_HOTSPOT_R2
+				case WNM_NOTIFY_STATE_MACHINE:
+					StateMachinePerformAction(pAd, &pAd->Mlme.WNMNotifyMachine, Elem,
+										WNMNotifyPeerCurrentState(pAd, Elem));
+					break;	
+#endif
+#endif
+
 				default:
 					DBGPRINT(RT_DEBUG_TRACE, ("%s(): Illegal SM %ld\n",
 								__FUNCTION__, Elem->Machine));
@@ -949,6 +710,62 @@ NDIS_STATUS MlmeInit(RTMP_ADAPTER *pAd)
 		pAd->Mlme.bRunning = FALSE;
 		NdisAllocateSpinLock(pAd, &pAd->Mlme.TaskLock);
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			BssTableInit(&pAd->ScanTab);
+
+			/* init STA state machines*/
+			AssocStateMachineInit(pAd, &pAd->Mlme.AssocMachine, pAd->Mlme.AssocFunc);
+			AuthStateMachineInit(pAd, &pAd->Mlme.AuthMachine, pAd->Mlme.AuthFunc);
+			AuthRspStateMachineInit(pAd, &pAd->Mlme.AuthRspMachine, pAd->Mlme.AuthRspFunc);
+			SyncStateMachineInit(pAd, &pAd->Mlme.SyncMachine, pAd->Mlme.SyncFunc);
+
+#ifdef QOS_DLS_SUPPORT
+			DlsStateMachineInit(pAd, &pAd->Mlme.DlsMachine, pAd->Mlme.DlsFunc);
+#endif /* QOS_DLS_SUPPORT */
+
+#ifdef DOT11Z_TDLS_SUPPORT
+			TDLS_StateMachineInit(pAd, &pAd->Mlme.TdlsMachine, pAd->Mlme.TdlsFunc);
+#endif /* DOT11Z_TDLS_SUPPORT */
+
+#ifdef WSC_STA_SUPPORT
+#ifdef IWSC_SUPPORT
+			IWSC_StateMachineInit(pAd, &pAd->Mlme.IWscMachine, pAd->Mlme.IWscFunc);
+#endif /* IWSC_SUPPORT */
+#endif /* WSC_STA_SUPPORT */
+
+#ifdef DOT11R_FT_SUPPORT
+			FT_OTA_AuthStateMachineInit(pAd, &pAd->Mlme.FtOtaAuthMachine, pAd->Mlme.FtOtaAuthFunc);
+			FT_OTD_StateMachineInit(pAd, &pAd->Mlme.FtOtdActMachine, pAd->Mlme.FtOtdActFunc);
+#endif /* DOT11R_FT_SUPPORT */
+
+
+			/* Since we are using switch/case to implement it, the init is different from the above */
+			/* state machine init*/
+			MlmeCntlInit(pAd, &pAd->Mlme.CntlMachine, NULL);
+
+#ifdef RTMP_MAC_PCI
+			RTMPInitTimer(pAd, &pAd->Mlme.PsPollTimer, GET_TIMER_FUNCTION(PsPollWakeExec), pAd, FALSE);
+			pAd->Mlme.bPsPollTimerRunning = FALSE;
+#ifdef PCIE_PS_SUPPORT
+			if (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_ADVANCE_POWER_SAVE_PCIE_DEVICE))
+			{
+			    /* only PCIe cards need these timers*/
+				RTMPInitTimer(pAd, &pAd->Mlme.RadioOnOffTimer, GET_TIMER_FUNCTION(RadioOnExec), pAd, FALSE);
+			}
+#endif /* PCIE_PS_SUPPORT */
+#endif /* RTMP_MAC_PCI */
+
+			RTMPInitTimer(pAd, &pAd->Mlme.LinkDownTimer, GET_TIMER_FUNCTION(LinkDownExec), pAd, FALSE);
+			RTMPInitTimer(pAd, &pAd->StaCfg.StaQuickResponeForRateUpTimer, GET_TIMER_FUNCTION(StaQuickResponeForRateUpExec), pAd, FALSE);
+			pAd->StaCfg.StaQuickResponeForRateUpTimerRunning = FALSE;
+			RTMPInitTimer(pAd, &pAd->StaCfg.WpaDisassocAndBlockAssocTimer, GET_TIMER_FUNCTION(WpaDisassocApAndBlockAssoc), pAd, FALSE);
+
+
+
+		}
+#endif /* CONFIG_STA_SUPPORT */
 		
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -976,6 +793,10 @@ NDIS_STATUS MlmeInit(RTMP_ADAPTER *pAd)
 
 #ifdef CONFIG_DOT11V_WNM
 		WNMCtrlInit(pAd);
+		BTMStateMachineInit(pAd, &pAd->Mlme.BTMMachine, pAd->Mlme.BTMFunc);
+#ifdef CONFIG_HOTSPOT_R2
+		WNMNotifyStateMachineInit(pAd, &pAd->Mlme.WNMNotifyMachine, pAd->Mlme.WNMNotifyFunc);
+#endif
 #endif
 
 
@@ -1002,6 +823,11 @@ NDIS_STATUS MlmeInit(RTMP_ADAPTER *pAd)
 			pAd->ApCfg.ApQuickResponeForRateUpTimerRunning = FALSE;
 		}
 #endif /* CONFIG_AP_SUPPORT */
+
+#ifdef TXBF_SUPPORT
+                RTMPInitTimer(pAd, &pAd->Mlme.SoundingTimer, GET_TIMER_FUNCTION(APTxSounding), pAd, TRUE);
+                RTMPSetTimer(&pAd->Mlme.SoundingTimer, SOUND_PERIOD_TIME);		
+#endif /* TXBF_SUPPORT*/ 		
 
 
 #ifdef RT_CFG80211_P2P_SUPPORT
@@ -1069,6 +895,64 @@ VOID MlmeHalt(RTMP_ADAPTER *pAd)
 	}
 	RTMPCancelTimer(&pAd->Mlme.PeriodicTimer, &Cancelled);
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+#ifdef QOS_DLS_SUPPORT
+		UCHAR		i;
+#endif /* QOS_DLS_SUPPORT */
+		/* Cancel pending timers*/
+		RTMPCancelTimer(&pAd->MlmeAux.AssocTimer, &Cancelled);
+		RTMPCancelTimer(&pAd->MlmeAux.ReassocTimer, &Cancelled);
+		RTMPCancelTimer(&pAd->MlmeAux.DisassocTimer, &Cancelled);
+		RTMPCancelTimer(&pAd->MlmeAux.AuthTimer, &Cancelled);
+		RTMPCancelTimer(&pAd->MlmeAux.BeaconTimer, &Cancelled);
+		RTMPCancelTimer(&pAd->MlmeAux.ScanTimer, &Cancelled);
+
+#ifdef DOT11R_FT_SUPPORT
+		RTMPCancelTimer(&pAd->MlmeAux.FtOtaAuthTimer, &Cancelled);
+		RTMPCancelTimer(&pAd->MlmeAux.FtOtdActTimer, &Cancelled);
+#endif /* DOT11R_FT_SUPPORT */
+
+#ifdef PCIE_PS_SUPPORT
+	    if (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_ADVANCE_POWER_SAVE_PCIE_DEVICE)
+			&&(pAd->StaCfg.PSControl.field.EnableNewPS == TRUE))
+	    {
+	   	    RTMPCancelTimer(&pAd->Mlme.PsPollTimer, &Cancelled);
+		    RTMPCancelTimer(&pAd->Mlme.RadioOnOffTimer, &Cancelled);
+		}
+#endif /* PCIE_PS_SUPPORT */
+
+#ifdef QOS_DLS_SUPPORT
+		for (i=0; i<MAX_NUM_OF_DLS_ENTRY; i++)
+		{
+			RTMPCancelTimer(&pAd->StaCfg.DLSEntry[i].Timer, &Cancelled);
+		}
+#endif /* QOS_DLS_SUPPORT */
+		RTMPCancelTimer(&pAd->Mlme.LinkDownTimer, &Cancelled);
+
+
+#ifdef WSC_STA_SUPPORT
+		if (pAd->StaCfg.WscControl.WscProfileRetryTimerRunning)
+		{
+			pAd->StaCfg.WscControl.WscProfileRetryTimerRunning = FALSE;
+			RTMPCancelTimer(&pAd->StaCfg.WscControl.WscProfileRetryTimer, &Cancelled);
+		}
+#endif /* WSC_STA_SUPPORT */
+
+
+		if (pAd->StaCfg.StaQuickResponeForRateUpTimerRunning)
+		{
+			RTMPCancelTimer(&pAd->StaCfg.StaQuickResponeForRateUpTimer, &Cancelled);
+			pAd->StaCfg.StaQuickResponeForRateUpTimerRunning = FALSE;
+		}
+		RTMPCancelTimer(&pAd->StaCfg.WpaDisassocAndBlockAssocTimer, &Cancelled);
+#ifdef IWSC_SUPPORT
+		RTMPCancelTimer(&pAd->StaCfg.IWscInfo.IWscT1Timer, &Cancelled);
+		RTMPCancelTimer(&pAd->StaCfg.IWscInfo.IWscT2Timer, &Cancelled);
+#endif /* IWSC_SUPPORT */
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	RTMPCancelTimer(&pAd->Mlme.RxAntEvalTimer, &Cancelled);
 
@@ -1105,6 +989,10 @@ VOID MlmeHalt(RTMP_ADAPTER *pAd)
 	}
 
 #endif /* CONFIG_AP_SUPPORT */
+
+#ifdef TXBF_SUPPORT
+        RTMPCancelTimer(&pAd->Mlme.SoundingTimer, &Cancelled);
+#endif /* TXBF_SUPPORT */	
 
 
 #ifdef CONFIG_HOTSPOT
@@ -1193,17 +1081,16 @@ VOID MlmePeriodicExec(
 	pApCliEntry = &pAd->ApCfg.ApCliTab[0];
 #endif
 
-#ifdef MICROWAVE_OVEN_SUPPORT
-	/* update False CCA count to an array */
-	NICUpdateRxStatusCnt1(pAd, pAd->Mlme.PeriodicRound%10);
-#endif /* MICROWAVE_OVEN_SUPPORT */
+#ifdef CUSTOMER_DCC_FEATURE
+	UINT32 ChBusyTime = 0;
+#endif
 
 	/* No More 0x84 MCU CMD from v.30 FW*/
 
 #ifdef MICROWAVE_OVEN_SUPPORT
 	if (pAd->CommonCfg.MO_Cfg.bEnable)
 	{
-		UINT8 stage = pAd->Mlme.PeriodicRound%10;
+		UINT8 stage = pAd->CommonCfg.MO_Cfg.nPeriod_Cnt%10;
 
 		if (stage == MO_MEAS_PERIOD)
 		{
@@ -1212,22 +1099,117 @@ VOID MlmePeriodicExec(
 		}
 		else if (stage == MO_IDLE_PERIOD)
 		{
-			UINT16 Idx;
+			RX_STA_CNT1_STRUC   RxStaCnt1;
 
-			for (Idx = MO_MEAS_PERIOD + 1; Idx < MO_IDLE_PERIOD + 1; Idx++)
-				pAd->CommonCfg.MO_Cfg.nFalseCCACnt += pAd->RalinkCounters.FalseCCACnt_100MS[Idx];
+			RTMP_IO_READ32(pAd, RX_STA_CNT1, &RxStaCnt1.word);
+			pAd->CommonCfg.MO_Cfg.nFalseCCACnt += RxStaCnt1.field.FalseCca;
 
 			//printk("%s: fales cca1 %d\n", __FUNCTION__, pAd->CommonCfg.MO_Cfg.nFalseCCACnt);
 			if (pAd->CommonCfg.MO_Cfg.nFalseCCACnt > pAd->CommonCfg.MO_Cfg.nFalseCCATh)
 				ASIC_MITIGATE_MICROWAVE(pAd);
-
 		}
+		
+		pAd->CommonCfg.MO_Cfg.nPeriod_Cnt++;
 	}
 #endif /* MICROWAVE_OVEN_SUPPORT */
 
 #ifdef INF_AMAZON_SE
 #endif /* INF_AMAZON_SE */
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef RTMP_MAC_PCI
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+	    /* If Hardware controlled Radio enabled, we have to check GPIO pin2 every 2 second.*/
+		/* Move code to here, because following code will return when radio is off*/
+		if ((pAd->Mlme.PeriodicRound % (MLME_TASK_EXEC_MULTIPLE * 2) == 0) &&
+/*			(pAd->StaCfg.bHardwareRadio == TRUE) &&*/
+			((IDLE_ON(pAd)) || (pAd->StaCfg.Psm == PWR_ACTIVE)) &&
+			(!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST)) &&
+			(!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS)) &&
+			((pAd->StaCfg.bHardwareRadio == TRUE))
+/*			|| (pAd->StaCfg.WscControl.CheckHWPBCState == HWPBCState_GUI)))*/
+			/*&&(pAd->bPCIclkOff == FALSE)*/)
+		{
+			UINT32 data = 0;
+
+
+			/* Read GPIO pin2 as Hardware controlled radio state*/
+/*#ifndef RT3090*/
+			/*RTMP_IO_READ32(pAd, GPIO_CTRL_CFG, &data);*/
+/*#endif  RT3090 */
+/*KH(PCIE PS):Added based on Jane<--*/
+#ifdef PCIE_PS_SUPPORT
+			/* Read GPIO pin2 as Hardware controlled radio state*/
+			/* We need to Read GPIO if HW said so no mater what advance power saving*/
+			if ((pAd->OpMode == OPMODE_STA) && (IDLE_ON(pAd))
+				&& (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_IDLE_RADIO_OFF))
+				&& (pAd->StaCfg.PSControl.field.EnablePSinIdle == TRUE))
+			{
+				/* Want to make sure device goes to L0 state before reading register.*/
+				RTMPPCIeLinkCtrlValueRestore(pAd, 0);
+				RTMP_IO_FORCE_READ32(pAd, GPIO_CTRL_CFG, &data);
+				RTMPPCIeLinkCtrlSetting(pAd, 3);
+			}
+			else
+				RTMP_IO_FORCE_READ32(pAd, GPIO_CTRL_CFG, &data);
+#else
+				RTMP_IO_READ32(pAd, GPIO_CTRL_CFG, &data);
+#endif /* defined(RT3090) || defined(RT3592) || defined(RT3390) */
+/*KH(PCIE PS):Added based on Jane-->*/
+
+			/* Update Radio state from GPIO*/
+			if (pAd->StaCfg.bHardwareRadio == TRUE)
+			{
+				{
+					if (data & 0x04)
+						pAd->StaCfg.bHwRadio = TRUE;
+					else
+						pAd->StaCfg.bHwRadio = FALSE;
+				}
+#ifdef RT_CFG80211_SUPPORT
+#ifdef RFKILL_HW_SUPPORT
+				RT_CFG80211_RFKILL_STATUS_UPDATE(pAd, pAd->StaCfg.bHwRadio); 
+#endif // RFKILL_HW_SUPPORT //
+#endif /* RT_CFG80211_SUPPORT */
+			}
+
+			/* Always read HW radio configuration.*/
+			if (pAd->StaCfg.bHardwareRadio == TRUE)
+			{
+				if (pAd->StaCfg.bRadio != (pAd->StaCfg.bHwRadio && pAd->StaCfg.bSwRadio))
+				{
+					pAd->StaCfg.bRadio = (pAd->StaCfg.bHwRadio && pAd->StaCfg.bSwRadio);
+					if (pAd->StaCfg.bRadio == TRUE)
+					{
+						MlmeRadioOn(pAd);
+						pAd->ExtraInfo = EXTRA_INFO_CLEAR;
+					}
+					else
+					{			    
+						MlmeRadioOff(pAd);
+						pAd->ExtraInfo = HW_RADIO_OFF;
+					}
+				}
+			}
+		}
+	}
+#endif /* RTMP_MAC_PCI */
+
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		RTMP_MLME_PRE_SANITY_CHECK(pAd);
+	}
+
+	/*
+		We go to sleep mode only when count down to zero.
+		Count down counter is set after link up. So within 10 seconds after link up, we never go to sleep.
+		10 seconds period, we can get IP, finish 802.1x authenticaion. and some critical , timing protocol.
+	*/
+	if (pAd->CountDowntoPsm > 0)
+		pAd->CountDowntoPsm--;
+
+#endif /* CONFIG_STA_SUPPORT */
 
 	/* Do nothing if the driver is starting halt state.*/
 	/* This might happen when timer already been fired before cancel timer with mlmehalt*/
@@ -1251,6 +1233,39 @@ VOID MlmePeriodicExec(
 #endif /* CONFIG_FPGA_MODE */
 
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		/* Do nothing if monitor mode is on*/
+		if (MONITOR_ON(pAd))
+			return;
+
+#ifdef RT8592
+		if (IS_RT8592(pAd))
+			;
+		else
+#endif /* RT8592 */
+		if ((pAd->Mlme.PeriodicRound & 0x1) &&
+			(STA_TGN_WIFI_ON(pAd)) &&
+			((pAd->MACVersion & 0xffff) == 0x0101))
+		{
+			UINT32 txop_cfg;
+
+			/* This is the fix for wifi 11n extension channel overlapping test case.  for 2860D*/
+			if (pAd->CommonCfg.IOTestParm.bToggle == FALSE)
+			{
+				txop_cfg = 0x24BF;
+				pAd->CommonCfg.IOTestParm.bToggle = TRUE;
+			}
+			else
+			{
+				txop_cfg = 0x243f;
+				pAd->CommonCfg.IOTestParm.bToggle = FALSE;
+			}
+			RTMP_IO_WRITE32(pAd, TXOP_CTRL_CFG, txop_cfg);
+		}
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	pAd->bUpdateBcnCntDone = FALSE;
 	
@@ -1266,13 +1281,10 @@ VOID MlmePeriodicExec(
 #endif /* WFA_VHT_PF */
 
 #ifdef DYNAMIC_VGA_SUPPORT
-#ifdef MT76x2
-	if (IS_MT76x2(pAd)) {
-		update_rssi_for_channel_model(pAd);
+	RTMP_UPDATE_RSSI_FOR_DYNAMIC_VGA(pAd);
 		/* dynamic_cck_mrc(pAd); */
-	}
-#endif /* MT76x2 */
 #endif /* DYNAMIC_VGA_SUPPORT */
+
 
 #ifdef CONFIG_AP_SUPPORT
 #ifdef CARRIER_DETECTION_SUPPORT
@@ -1291,6 +1303,20 @@ VOID MlmePeriodicExec(
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 			APMlmeDynamicTxRateSwitching(pAd);
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+		/* perform dynamic tx rate switching based on past TX history*/
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			if ((OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_MEDIA_STATE_CONNECTED)
+#ifdef RT_CFG80211_SUPPORT 
+					|| (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP)
+					//CFG_TODO: FOR GC
+#endif /* RT_CFG80211_SUPPORT */
+				)
+				&& (!OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_DOZE)))
+				MlmeDynamicTxRateSwitching(pAd);
+		}
+#endif /* CONFIG_STA_SUPPORT */
 	}
 
 #ifdef CONFIG_AP_SUPPORT
@@ -1307,11 +1333,41 @@ VOID MlmePeriodicExec(
 
 
 
+#ifdef CUSTOMER_DCC_FEATURE
+	{
+		if(!(ApScanRunning(pAd))) {
+			RTMP_IO_READ32(pAd, CH_BUSY_STA, &ChBusyTime);
+			pAd->ChannelStats.ChBusyTime100msecValue = ChBusyTime;
+		}
+		if(pAd->EnableChannelStatsCheck && !(ApScanRunning(pAd)) && (pAd->ChannelStats.LastReadTime != 0) )
+		{
+			ReadChannelStats(ChBusyTime, pAd);
+		}
+		else if(pAd->EnableChannelStatsCheck && !(ApScanRunning(pAd)) && (pAd->ChannelStats.LastReadTime == 0))
+		{
+			ClearChannelStats(pAd);
+		}
+	}
+#endif
 
 	/* Normal 1 second Mlme PeriodicExec.*/
 	if (pAd->Mlme.PeriodicRound %MLME_TASK_EXEC_MULTIPLE == 0)
 	{
 		pAd->Mlme.OneSecPeriodicRound ++;
+
+#ifdef DMA_BUSY_RESET
+#ifdef RTMP_PCI_SUPPORT
+#ifdef MT76x2
+		if ((pAd->Mlme.OneSecPeriodicRound % 1 == 0) && IS_MT76x2(pAd))
+		{
+			if (pAd->PDMAWatchDogEn)
+			{
+				PDMAWatchDog(pAd);
+			}
+		}
+#endif /* MT76x2 */
+#endif /* RTMP_PCI_SUPPORT */
+#endif /* DMA_BUSY_RESET */
 
 #ifdef MT76x2
 		if ((pAd->Mlme.OneSecPeriodicRound % 1 == 0) && IS_MT76x2(pAd))
@@ -1353,24 +1409,26 @@ VOID MlmePeriodicExec(
 
 #ifdef DYNAMIC_VGA_SUPPORT
 #ifdef CONFIG_AP_SUPPORT
-#ifdef MT76x2
-		if (IS_MT76x2(pAd)) {
-			IF_DEV_CONFIG_OPMODE_ON_AP(pAd) {
-				if (pAd->Mlme.OneSecPeriodicRound % 1 == 0)
-					periodic_monitor_false_cca_adjust_vga(pAd);
-			}
-		}
-#endif /* MT76x2 */
-#endif /* CONFIG_AP_SUPPORT */
-
-
-#ifdef RT6352
-		if (IS_RT6352(pAd)) {
+		if (IS_RT6352(pAd) || (IS_MT76x2(pAd) && pAd->OpMode == OPMODE_AP)) 
+		{
 			if (pAd->Mlme.OneSecPeriodicRound % 1 == 0) {
 				RTMP_ASIC_DYNAMIC_VGA_GAIN_CONTROL(pAd);
 			}
 		}
-#endif /* RT6352 */
+#endif /* CONFIG_AP_SUPPORT */
+
+#ifdef CONFIG_STA_SUPPORT
+#ifdef MT76x2
+		if (IS_MT76x2(pAd)) {
+			if (pAd->Mlme.OneSecPeriodicRound % 1 == 0)
+				periodic_monitor_rssi_adjust_vga(pAd);
+		
+			/* only g band need to check if disable channel smoothing */
+			//if (pAd->CommonCfg.Channel <= 14)
+				//periodic_check_channel_smoothing(pAd);
+		}
+#endif /* MT76x2 */
+#endif /* CONFIG_STA_SUPPORT */
 #endif /* DYNAMIC_VGA_SUPPORT */
 
 	/*
@@ -1432,6 +1490,10 @@ VOID MlmePeriodicExec(
 					mt76x2_tssi_compensation(pAd, pAd->hw_cfg.cent_ch);
 #endif
 
+#ifdef CONFIG_STA_SUPPORT
+				if (INFRA_ON(pAd))
+					mt76x2_tssi_compensation(pAd, pAd->hw_cfg.cent_ch);
+#endif
 			}
 		}
 #endif /* MT76x2 */
@@ -1441,12 +1503,19 @@ VOID MlmePeriodicExec(
 			if ((pAd->Mlme.OneSecPeriodicRound % 10) == 0)
 			{
 				{
+
+#ifdef ED_MONITOR   //Don't do VCORECAL while ed is holding tx
+					if(!pAd->ed_tx_stoped)
+#endif
+					{
 #ifdef VCORECAL_SUPPORT
-					AsicVCORecalibration(pAd);
+						AsicVCORecalibration(pAd);
 #endif /* VCORECAL_SUPPORT */
+					}
 				}
 			}
 		}
+
 
 
 #ifdef CONFIG_AP_SUPPORT
@@ -1519,11 +1588,60 @@ VOID MlmePeriodicExec(
 			}
 		}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+#if defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT)
+			RtmpPsActiveExtendCheck(pAd);
+#ifdef TDLS_AUTOLINK_SUPPORT
+   			 /* TDLS discovery link maintenance */
+    			if (IS_TDLS_SUPPORT(pAd) && (pAd->StaCfg.TdlsInfo.TdlsAutoLink))
+    			{
+				TDLS_MaintainDiscoveryEntryList(pAd);
+    			}
+#endif /* TDLS_AUTOLINK_SUPPORT */
+#endif /* defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT) */
+			STAMlmePeriodicExec(pAd);
+		}
+#endif /* CONFIG_STA_SUPPORT */
 
 		RTMP_SECOND_CCA_DETECTION(pAd);
 
 		MlmeResetRalinkCounters(pAd);
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+#ifdef RTMP_MAC_PCI		
+			if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST) && (pAd->bPCIclkOff == FALSE))
+#endif /* RTMP_MAC_PCI */
+#ifdef RTMP_MAC_PCI
+			if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST) && 
+				!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_IDLE_RADIO_OFF))
+#endif /* RTMP_MAC_PCI */
+			{
+
+
+			UINT32	MacReg = 0;
+			
+			RTMP_IO_READ32(pAd, 0x10F4, &MacReg);
+			if (((MacReg & 0x20000000) && (MacReg & 0x80)) || ((MacReg & 0x20000000) && (MacReg & 0x20)))
+			{
+				RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, 0x1);
+				RtmpusecDelay(1);
+				MacReg = 0;
+				{
+					MacReg = 0xc;
+				}
+
+				if (MacReg)
+					RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, MacReg);
+
+				DBGPRINT(RT_DEBUG_WARN,("Warning, MAC specific condition occurs \n"));
+			}
+		}
+		}
+#endif /* CONFIG_STA_SUPPORT */
 
 		RTMP_MLME_HANDLER(pAd);
 	}
@@ -1600,11 +1718,14 @@ VOID MlmePeriodicExec(
 
 
 #ifdef ED_MONITOR
-	if (pAd->ed_chk)
-	{
+	if(pAd->ed_chk != EDCCA_OFF)
 		ed_status_read(pAd);
-	}
+#ifdef ED_SMART
+	if(pAd->ed_chk == EDCCA_SMART)
+		ed_state_judge(pAd);
+#endif /* ED_SMART */
 #endif /* ED_MONITOR */
+
 
 	pAd->bUpdateBcnCntDone = FALSE;
 }
@@ -1637,6 +1758,824 @@ BOOLEAN MlmeValidateSSID(UCHAR *pSsid, UCHAR SsidLen)
 }
 
 
+#ifdef CONFIG_STA_SUPPORT
+VOID STAMlmePeriodicExec(RTMP_ADAPTER *pAd)
+{
+	ULONG TxTotalCnt;
+	int i;
+	BOOLEAN bCheckBeaconLost = TRUE;
+#ifdef CONFIG_PM
+#ifdef USB_SUPPORT_SELECTIVE_SUSPEND	
+	POS_COOKIE  pObj = (POS_COOKIE) pAd->OS_Cookie;
+#endif /* USB_SUPPORT_SELECTIVE_SUSPEND */
+#endif /* CONFIG_PM */
+
+	RTMP_CHIP_HIGH_POWER_TUNING(pAd, &pAd->StaCfg.RssiSample);
+
+#ifdef WPA_SUPPLICANT_SUPPORT
+    if (pAd->StaCfg.wpa_supplicant_info.WpaSupplicantUP == WPA_SUPPLICANT_DISABLE)    
+#endif /* WPA_SUPPLICANT_SUPPORT */        
+    {
+    	/* WPA MIC error should block association attempt for 60 seconds*/
+		if (pAd->StaCfg.bBlockAssoc && 
+			RTMP_TIME_AFTER(pAd->Mlme.Now32, pAd->StaCfg.LastMicErrorTime + (60*OS_HZ)))
+    		pAd->StaCfg.bBlockAssoc = FALSE;
+    }
+
+
+#ifdef ETH_CONVERT_SUPPORT
+	if ((pAd->EthConvert.ECMode & ETH_CONVERT_MODE_CLONE)
+		 && (pAd->EthConvert.CloneMacVaild == TRUE)
+		 && (NdisEqualMemory(pAd->CurrentAddress, pAd->EthConvert.EthCloneMac, MAC_ADDR_LEN) == FALSE))
+	{
+		
+		MAC_DW0_STRUC csr2;
+		MAC_DW1_STRUC csr3;
+		
+		/* Link down first	*/
+		if (INFRA_ON(pAd))
+		{
+
+			if (pAd->MlmeAux.SsidLen){
+				NdisZeroMemory(pAd->EthConvert.SSIDStr, MAX_LEN_OF_SSID);
+				NdisMoveMemory(pAd->EthConvert.SSIDStr, pAd->MlmeAux.Ssid, pAd->MlmeAux.SsidLen);
+				pAd->EthConvert.SSIDStrLen = pAd->MlmeAux.SsidLen;
+			}
+			
+			pAd->MlmeAux.CurrReqIsFromNdis = TRUE;
+			if (pAd->Mlme.CntlMachine.CurrState != CNTL_IDLE)
+			{
+				RTMP_MLME_RESET_STATE_MACHINE(pAd);
+				DBGPRINT(RT_DEBUG_TRACE, ("!!! MLME busy, reset MLME state machine !!!\n"));
+			}
+
+			MlmeEnqueue(pAd, 
+				MLME_CNTL_STATE_MACHINE, 
+				OID_802_11_DISASSOCIATE, 
+				0, 
+				NULL, 0);
+			/* RTMP_MLME_HANDLER(pAd); */
+		}
+		else if (ADHOC_ON(pAd))
+		{
+			MakeIbssBeacon(pAd);		/* re-build BEACON frame*/
+			AsicEnableIbssSync(pAd);	/* copy to on-chip memory*/
+			LinkDown(pAd, FALSE);
+		}
+		else
+		{
+			/* Copy the new Mac address to ASIC and start to re-connect to AP.*/
+			NdisMoveMemory(&pAd->CurrentAddress[0], &pAd->EthConvert.EthCloneMac[0], MAC_ADDR_LEN);
+			
+			AsicSetDevMac(pAd, pAd->CurrentAddress);
+			
+			DBGPRINT_RAW(RT_DEBUG_TRACE,("Write EthCloneMac to ASIC: =%02x:%02x:%02x:%02x:%02x:%02x\n",
+					PRINT_MAC(pAd->CurrentAddress)));
+
+			if(pAd->EthConvert.SSIDStrLen != 0)
+			{
+				/*DBGPRINT_RAW(RT_DEBUG_TRACE, ("copy MlmeAux.Ssid to AutoReconnect!\n"));*/
+				NdisMoveMemory(pAd->MlmeAux.AutoReconnectSsid, pAd->EthConvert.SSIDStr, pAd->EthConvert.SSIDStrLen);
+				pAd->MlmeAux.AutoReconnectSsidLen = pAd->EthConvert.SSIDStrLen;
+				NdisMoveMemory(pAd->MlmeAux.Ssid, pAd->EthConvert.SSIDStr, pAd->EthConvert.SSIDStrLen);
+				pAd->MlmeAux.SsidLen= pAd->EthConvert.SSIDStrLen;
+			}
+		}
+	}
+#endif /* ETH_CONVERT_SUPPORT */
+
+	
+
+	if (ADHOC_ON(pAd))
+	{
+	}
+	else
+	{
+    		AsicStaBbpTuning(pAd);
+	}
+	
+	TxTotalCnt = pAd->RalinkCounters.OneSecTxNoRetryOkCount + 
+					 pAd->RalinkCounters.OneSecTxRetryOkCount + 
+					 pAd->RalinkCounters.OneSecTxFailCount;
+
+	if (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_MEDIA_STATE_CONNECTED) && 
+		(!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS)))
+	{
+		/* update channel quality for Roaming/Fast-Roaming and UI LinkQuality display*/
+		/* bImprovedScan True means scan is not completed */
+		if (pAd->StaCfg.bImprovedScan)
+			bCheckBeaconLost = FALSE;
+		
+
+#ifdef CONFIG_WIFI_TEST
+		if (pAd->chipCap.pbf_loopback)
+			bCheckBeaconLost = FALSE;
+#endif /* CONFIG_WIFI_TEST */
+
+		if (bCheckBeaconLost)
+		{
+			/* The NIC may lost beacons during scaning operation.*/
+			MAC_TABLE_ENTRY *pEntry = &pAd->MacTab.Content[BSSID_WCID];
+			MlmeCalculateChannelQuality(pAd, pEntry, pAd->Mlme.Now32);
+		}
+	}
+
+
+	/* must be AFTER MlmeDynamicTxRateSwitching() because it needs to know if*/
+	/* Radio is currently in noisy environment*/
+	if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))
+	{
+#ifdef RT6352
+		if (IS_RT6352(pAd))
+			RT6352_AsicAdjustTxPower(pAd);
+		else
+#endif /* RT6352 */
+		AsicAdjustTxPower(pAd);
+		RTMP_CHIP_ASIC_TEMPERATURE_COMPENSATION(pAd);
+	}
+
+
+	/*
+		Driver needs to up date value of LastOneSecTotalTxCount here;
+		otherwise UI couldn't do scanning sometimes when STA doesn't connect to AP or peer Ad-Hoc.
+	*/
+	pAd->RalinkCounters.LastOneSecTotalTxCount = TxTotalCnt;
+	
+
+#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
+    /* MAC table maintenance */
+	if ((pAd->Mlme.PeriodicRound % MLME_TASK_EXEC_MULTIPLE == 0) &&
+#ifdef RT_CFG80211_P2P_SUPPORT
+	    (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP)	
+#else
+	    P2P_GO_ON(pAd)
+#endif /* RT_CFG80211_P2P_SUPPORT */
+	   )
+	{
+		/* one second timer */
+#ifdef RT_CFG80211_P2P_SUPPORT
+			MacTableMaintenance(pAd);
+#else
+	    	P2PMacTableMaintenance(pAd);
+#endif /* RT_CFG80211_P2P_SUPPORT */
+
+#ifdef DOT11_N_SUPPORT
+		if (pAd->CommonCfg.bHTProtect)
+		{
+			APUpdateOperationMode(pAd);
+			if (pAd->CommonCfg.IOTestParm.bRTSLongProtOn == FALSE)
+			{
+				AsicUpdateProtect(pAd, (USHORT)pAd->CommonCfg.AddHTInfo.AddHtInfo2.OperaionMode, ALLN_SETPROTECT, FALSE, pAd->MacTab.fAnyStationNonGF);
+			}
+		}
+#endif /* DOT11_N_SUPPORT */
+	}
+#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT */
+
+		/* resume Improved Scanning*/
+		if ((pAd->StaCfg.bImprovedScan) &&
+			(!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS)) &&
+			(pAd->Mlme.SyncMachine.CurrState == SCAN_PENDING))
+		{
+			MLME_SCAN_REQ_STRUCT       ScanReq;
+
+			pAd->StaCfg.LastScanTime = pAd->Mlme.Now32;
+			
+			ScanParmFill(pAd, &ScanReq, pAd->MlmeAux.Ssid, pAd->MlmeAux.SsidLen, BSS_ANY, SCAN_ACTIVE);
+			MlmeEnqueue(pAd, SYNC_STATE_MACHINE, MT2_MLME_SCAN_REQ, sizeof(MLME_SCAN_REQ_STRUCT), &ScanReq, 0);
+			DBGPRINT(RT_DEBUG_WARN, ("bImprovedScan ............. Resume for bImprovedScan, SCAN_PENDING .............. \n"));
+		}
+
+	if (INFRA_ON(pAd))
+	{		
+#ifdef QOS_DLS_SUPPORT
+		/* Check DLS time out, then tear down those session*/
+		RTMPCheckDLSTimeOut(pAd);
+#endif /* QOS_DLS_SUPPORT */
+
+#ifdef DOT11Z_TDLS_SUPPORT 
+	    	/* TDLS link maintenance*/
+	    	if (IS_TDLS_SUPPORT(pAd))
+	    	{
+			if (pAd->Mlme.PeriodicRound % MLME_TASK_EXEC_MULTIPLE == 0)
+				TDLS_LinkMaintenance(pAd);
+	    	}
+#endif /* DOT11Z_TDLS_SUPPORT */
+
+
+		/* Is PSM bit consistent with user power management policy?*/
+		/* This is the only place that will set PSM bit ON.*/
+		if (!OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_DOZE))
+			MlmeCheckPsmChange(pAd, pAd->Mlme.Now32);
+
+		/*
+			When we are connected and do the scan progress, it's very possible we cannot receive
+			the beacon of the AP. So, here we simulate that we received the beacon.
+		*/
+		if ((bCheckBeaconLost == FALSE) && 
+			RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS) && 
+			(RTMP_TIME_AFTER(pAd->Mlme.Now32, pAd->StaCfg.LastBeaconRxTime + (1*OS_HZ))))
+		{
+			ULONG BPtoJiffies;
+			LONG timeDiff;
+
+			BPtoJiffies = (((pAd->CommonCfg.BeaconPeriod * 1024 / 1000) * OS_HZ) / 1000);
+			timeDiff = (pAd->Mlme.Now32 - pAd->StaCfg.LastBeaconRxTime) / BPtoJiffies;
+			if (timeDiff > 0) 
+				pAd->StaCfg.LastBeaconRxTime += (timeDiff * BPtoJiffies);
+
+			if (RTMP_TIME_AFTER(pAd->StaCfg.LastBeaconRxTime, pAd->Mlme.Now32))
+			{
+				DBGPRINT(RT_DEBUG_TRACE, ("MMCHK - BeaconRxTime adjust wrong(BeaconRx=0x%lx, Now=0x%lx)\n", 
+								pAd->StaCfg.LastBeaconRxTime, pAd->Mlme.Now32));
+			}
+		}
+		
+		if ((RTMP_TIME_AFTER(pAd->Mlme.Now32, pAd->StaCfg.LastBeaconRxTime + (1*OS_HZ))) &&
+			(!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS)) &&
+			(pAd->StaCfg.bImprovedScan == FALSE) &&
+			((TxTotalCnt + pAd->RalinkCounters.OneSecRxOkCnt) < 600))
+		{
+			RTMPSetAGCInitValue(pAd, BW_20);
+			DBGPRINT(RT_DEBUG_TRACE, ("MMCHK - No BEACON. restore R66 to the low bound(%d) \n", (0x2E + GET_LNA_GAIN(pAd))));
+		}
+
+
+				
+
+        /*if ((pAd->RalinkCounters.OneSecTxNoRetryOkCount == 0) &&*/
+        /*    (pAd->RalinkCounters.OneSecTxRetryOkCount == 0))*/
+       if ((!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS)))
+        {
+    		if (pAd->StaCfg.UapsdInfo.bAPSDCapable && pAd->CommonCfg.APEdcaParm.bAPSDCapable)
+    		{
+    		    /* When APSD is enabled, the period changes as 20 sec*/
+    			if ((pAd->Mlme.OneSecPeriodicRound % 20) == 8)
+    			{
+    				RTMPSendNullFrame(pAd, pAd->CommonCfg.TxRate, TRUE, pAd->CommonCfg.bAPSDForcePowerSave ? PWR_SAVE : pAd->StaCfg.Psm);
+    			}
+    		}
+    		else
+    		{
+    		    /* Send out a NULL frame every 10 sec to inform AP that STA is still alive (Avoid being age out)*/
+    			if ((pAd->Mlme.OneSecPeriodicRound % 10) == 8)
+			{
+				RTMPSendNullFrame(pAd, 
+								  pAd->CommonCfg.TxRate, 
+								  (pAd->CommonCfg.bWmmCapable & pAd->CommonCfg.APEdcaParm.bValid),
+								  pAd->CommonCfg.bAPSDForcePowerSave ? PWR_SAVE : pAd->StaCfg.Psm);
+			}
+    		}
+        }
+
+		if(!OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_DOZE))
+		{
+			if (CQI_IS_DEAD(pAd->Mlme.ChannelQuality))
+			{
+				DBGPRINT(RT_DEBUG_TRACE, ("MMCHK - No BEACON. Dead CQI. Auto Recovery attempt #%ld\n", pAd->RalinkCounters.BadCQIAutoRecoveryCount));
+
+				if (pAd->StaCfg.bAutoConnectByBssid)
+					pAd->StaCfg.bAutoConnectByBssid = FALSE;
+				
+#ifdef WPA_SUPPLICANT_SUPPORT
+				if ((pAd->StaCfg.wpa_supplicant_info.WpaSupplicantUP != WPA_SUPPLICANT_DISABLE) &&
+					(pAd->StaCfg.wdev.AuthMode == Ndis802_11AuthModeWPA2))
+					pAd->StaCfg.wpa_supplicant_info.bLostAp = TRUE;
+#endif /* WPA_SUPPLICANT_SUPPORT */
+
+				pAd->MlmeAux.CurrReqIsFromNdis = FALSE;
+				/* Lost AP, send disconnect & link down event*/
+				LinkDown(pAd, FALSE);
+				
+	/* should mark this two function, because link down alse will call this function */
+		
+				/* RTMPPatchMacBbpBug(pAd);*/
+#ifdef WPA_SUPPLICANT_SUPPORT
+			if (pAd->StaCfg.wpa_supplicant_info.WpaSupplicantUP == WPA_SUPPLICANT_DISABLE)
+#endif /* WPA_SUPPLICANT_SUPPORT */
+				MlmeAutoReconnectLastSSID(pAd);
+			}
+			else if (CQI_IS_BAD(pAd->Mlme.ChannelQuality))
+			{
+				pAd->RalinkCounters.BadCQIAutoRecoveryCount ++;
+				DBGPRINT(RT_DEBUG_TRACE, ("MMCHK - Bad CQI. Auto Recovery attempt #%ld\n", pAd->RalinkCounters.BadCQIAutoRecoveryCount));
+				MlmeAutoReconnectLastSSID(pAd);
+			}
+		}
+		
+		if (pAd->StaCfg.bAutoRoaming)
+		{
+			BOOLEAN	rv = FALSE;
+			CHAR	dBmToRoam = pAd->StaCfg.dBmToRoam;
+			CHAR 	MaxRssi = RTMPMaxRssi(pAd, 
+										  pAd->StaCfg.RssiSample.LastRssi0, 
+										  pAd->StaCfg.RssiSample.LastRssi1, 
+										  pAd->StaCfg.RssiSample.LastRssi2);			
+			
+			if (pAd->StaCfg.bAutoConnectByBssid)
+				pAd->StaCfg.bAutoConnectByBssid = FALSE;
+			
+			/* Scanning, ignore Roaming*/
+			if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS) &&
+				(pAd->Mlme.SyncMachine.CurrState == SYNC_IDLE) &&
+				(MaxRssi <= dBmToRoam))
+			{
+				DBGPRINT(RT_DEBUG_TRACE, ("Rssi=%d, dBmToRoam=%d\n", MaxRssi, (CHAR)dBmToRoam));
+
+#ifdef DOT11R_FT_SUPPORT
+				if (pAd->StaCfg.Dot11RCommInfo.bFtSupport &&
+					pAd->StaCfg.Dot11RCommInfo.bInMobilityDomain)
+					rv = FT_CheckForRoaming(pAd);
+#endif /* DOT11R_FT_SUPPORT */
+
+				/* Add auto seamless roaming*/
+				if (rv == FALSE)
+					rv = MlmeCheckForFastRoaming(pAd);
+				
+				if (rv == FALSE)
+				{
+					if ((pAd->StaCfg.LastScanTime + 10 * OS_HZ) < pAd->Mlme.Now32)
+					{
+						DBGPRINT(RT_DEBUG_TRACE, ("MMCHK - Roaming, No eligable entry, try new scan!\n"));
+						pAd->StaCfg.LastScanTime = pAd->Mlme.Now32;
+						MlmeAutoScan(pAd);
+					}
+				}
+			}
+		}
+	}
+	else if (ADHOC_ON(pAd))
+	{
+
+		/* If all peers leave, and this STA becomes the last one in this IBSS, then change MediaState*/
+		/* to DISCONNECTED. But still holding this IBSS (i.e. sending BEACON) so that other STAs can*/
+		/* join later.*/
+		if (/*(RTMP_TIME_AFTER(pAd->Mlme.Now32, pAd->StaCfg.LastBeaconRxTime + ADHOC_BEACON_LOST_TIME)
+			|| (pAd->StaCfg.AuthMode == Ndis802_11AuthModeWPA2PSK))
+			&& */OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_MEDIA_STATE_CONNECTED))
+		{
+
+			for (i = 1; i < MAX_LEN_OF_MAC_TABLE; i++) 
+			{
+				MAC_TABLE_ENTRY *pEntry = &pAd->MacTab.Content[i];
+
+				if (!IS_ENTRY_CLIENT(pEntry))
+					continue;
+
+				if (RTMP_TIME_AFTER(pAd->Mlme.Now32, pEntry->LastBeaconRxTime + ADHOC_BEACON_LOST_TIME)
+#ifdef IWSC_SUPPORT
+					/*
+						2011/09/05:
+						Broadcom test bed doesn't broadcast beacon when Broadcom is Enrollee.
+					*/
+					&& (pAd->StaCfg.WscControl.bWscTrigger == FALSE)
+#endif /* IWSC_SUPPORT */
+				)
+					MlmeDeAuthAction(pAd, pEntry, REASON_DISASSOC_STA_LEAVING, FALSE);
+			}
+
+            if (pAd->MacTab.Size == 0)
+            {			                
+    			OPSTATUS_CLEAR_FLAG(pAd, fOP_STATUS_MEDIA_STATE_CONNECTED);
+    			RTMP_IndicateMediaState(pAd, NdisMediaStateDisconnected);
+            }            
+		}
+			
+	}
+	else /* no INFRA nor ADHOC connection*/
+	{
+
+
+#ifdef WPA_SUPPLICANT_SUPPORT
+		if (pAd->StaCfg.wpa_supplicant_info.WpaSupplicantUP & WPA_SUPPLICANT_ENABLE_WPS)
+			goto SKIP_AUTO_SCAN_CONN;
+#endif /* WPA_SUPPLICANT_SUPPORT */
+
+		if (pAd->StaCfg.bSkipAutoScanConn &&
+			RTMP_TIME_BEFORE(pAd->Mlme.Now32, pAd->StaCfg.LastScanTime + (30 * OS_HZ)))
+			goto SKIP_AUTO_SCAN_CONN;
+		else
+			pAd->StaCfg.bSkipAutoScanConn = FALSE;
+        
+		if ((pAd->StaCfg.bAutoReconnect == TRUE)
+			&& RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_START_UP)
+			&& (MlmeValidateSSID(pAd->MlmeAux.AutoReconnectSsid, pAd->MlmeAux.AutoReconnectSsidLen) == TRUE))
+		{
+			if ((pAd->ScanTab.BssNr==0) && (pAd->Mlme.CntlMachine.CurrState == CNTL_IDLE)
+				)
+			{
+				MLME_SCAN_REQ_STRUCT	   ScanReq;
+
+				if (RTMP_TIME_AFTER(pAd->Mlme.Now32, pAd->StaCfg.LastScanTime + (10 * OS_HZ))
+					||(pAd->StaCfg.bNotFirstScan == FALSE))
+				{
+					DBGPRINT(RT_DEBUG_TRACE, ("STAMlmePeriodicExec():CNTL - ScanTab.BssNr==0, start a new ACTIVE scan SSID[%s]\n", pAd->MlmeAux.AutoReconnectSsid));
+					if (pAd->StaCfg.BssType == BSS_ADHOC)	
+						pAd->StaCfg.bNotFirstScan = TRUE;
+					ScanParmFill(pAd, &ScanReq, (PSTRING) pAd->MlmeAux.AutoReconnectSsid, pAd->MlmeAux.AutoReconnectSsidLen, BSS_ANY, SCAN_ACTIVE);
+					MlmeEnqueue(pAd, SYNC_STATE_MACHINE, MT2_MLME_SCAN_REQ, sizeof(MLME_SCAN_REQ_STRUCT), &ScanReq, 0);
+					pAd->Mlme.CntlMachine.CurrState = CNTL_WAIT_OID_LIST_SCAN;
+					/* Reset Missed scan number*/
+					pAd->StaCfg.LastScanTime = pAd->Mlme.Now32;
+				}
+				else
+					MlmeAutoReconnectLastSSID(pAd);
+			}
+			else if (pAd->Mlme.CntlMachine.CurrState == CNTL_IDLE
+			)
+			{
+#ifdef CARRIER_DETECTION_SUPPORT /* Roger sync Carrier*/
+				if (pAd->CommonCfg.CarrierDetect.Enable == TRUE)
+				{
+					if ((pAd->Mlme.OneSecPeriodicRound % 5) == 1)
+						MlmeAutoReconnectLastSSID(pAd);
+				}
+				else
+#endif /* CARRIER_DETECTION_SUPPORT */ 
+				{
+#ifdef WPA_SUPPLICANT_SUPPORT
+					if(pAd->StaCfg.wpa_supplicant_info.WpaSupplicantUP != WPA_SUPPLICANT_ENABLE)
+#endif // WPA_SUPPLICANT_SUPPORT //
+					MlmeAutoReconnectLastSSID(pAd);
+				}
+			}
+		}
+	}
+
+SKIP_AUTO_SCAN_CONN:
+
+#ifdef DOT11_N_SUPPORT
+    if ((pAd->MacTab.Content[BSSID_WCID].TXBAbitmap !=0) && (pAd->MacTab.fAnyBASession == FALSE)
+		&& (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_IDLE_RADIO_OFF)))
+	{
+		pAd->MacTab.fAnyBASession = TRUE;
+		AsicUpdateProtect(pAd, HT_FORCERTSCTS,  ALLN_SETPROTECT, FALSE, FALSE);
+	}
+	else if ((pAd->MacTab.Content[BSSID_WCID].TXBAbitmap ==0) && (pAd->MacTab.fAnyBASession == TRUE)
+		&& (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_IDLE_RADIO_OFF)))
+	{
+		pAd->MacTab.fAnyBASession = FALSE;
+		AsicUpdateProtect(pAd, pAd->MlmeAux.AddHtInfo.AddHtInfo2.OperaionMode,  ALLN_SETPROTECT, FALSE, FALSE);
+	}
+#endif /* DOT11_N_SUPPORT */
+
+
+//YF_TODO
+#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_CONCURRENT_DEVICE)
+	if (RTMP_CFG80211_VIF_P2P_CLI_ON(pAd))
+	{
+		if (pAd->Mlme.OneSecPeriodicRound % 2 == 0)
+			ApCliIfMonitor(pAd);
+
+		if (pAd->Mlme.OneSecPeriodicRound % 2 == 1)
+			ApCliIfUp(pAd);
+
+		ApCliSimulateRecvBeacon(pAd);
+	}
+#endif /* P2P_SUPPORT || RT_CFG80211_P2P_CONCURRENT_DEVICE */
+
+#ifdef DOT11_N_SUPPORT
+#ifdef DOT11N_DRAFT3
+	/* Perform 20/40 BSS COEX scan every Dot11BssWidthTriggerScanInt	*/
+	if ((OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_SCAN_2040)) && 
+		(pAd->CommonCfg.Dot11BssWidthTriggerScanInt != 0) && 
+		((pAd->Mlme.OneSecPeriodicRound % pAd->CommonCfg.Dot11BssWidthTriggerScanInt) == (pAd->CommonCfg.Dot11BssWidthTriggerScanInt-1)))
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("MMCHK - LastOneSecTotalTxCount/LastOneSecRxOkDataCnt  = %d/%d \n", 
+								pAd->RalinkCounters.LastOneSecTotalTxCount,
+								pAd->RalinkCounters.LastOneSecRxOkDataCnt));
+		
+		/* Check last scan time at least 30 seconds from now. 		*/
+		/* Check traffic is less than about 1.5~2Mbps.*/
+		/* it might cause data lost if we enqueue scanning.*/
+		/* This criteria needs to be considered*/
+		if ((pAd->RalinkCounters.LastOneSecTotalTxCount < 70) && (pAd->RalinkCounters.LastOneSecRxOkDataCnt < 70))
+		{
+			MLME_SCAN_REQ_STRUCT            ScanReq;
+			/* Fill out stuff for scan request and kick to scan*/
+			ScanParmFill(pAd, &ScanReq, ZeroSsid, 0, BSS_ANY, SCAN_2040_BSS_COEXIST);
+			MlmeEnqueue(pAd, SYNC_STATE_MACHINE, MT2_MLME_SCAN_REQ, sizeof(MLME_SCAN_REQ_STRUCT), &ScanReq, 0);
+			pAd->Mlme.CntlMachine.CurrState = CNTL_WAIT_OID_LIST_SCAN;
+			/* Set InfoReq = 1, So after scan , alwats sebd 20/40 Coexistence frame to AP*/
+			pAd->CommonCfg.BSSCoexist2040.field.InfoReq = 1;
+			RTMP_MLME_HANDLER(pAd);
+		}
+
+		DBGPRINT(RT_DEBUG_TRACE, (" LastOneSecTotalTxCount/LastOneSecRxOkDataCnt  = %d/%d \n", 
+							pAd->RalinkCounters.LastOneSecTotalTxCount, 
+							pAd->RalinkCounters.LastOneSecRxOkDataCnt));	
+	}
+#endif /* DOT11N_DRAFT3 */
+#endif /* DOT11_N_SUPPORT */
+
+	return;
+}
+
+/* Link down report*/
+VOID LinkDownExec(
+	IN PVOID SystemSpecific1, 
+	IN PVOID FunctionContext, 
+	IN PVOID SystemSpecific2, 
+	IN PVOID SystemSpecific3) 
+{
+	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)FunctionContext;
+
+	if (pAd != NULL)
+	{
+		MLME_DISASSOC_REQ_STRUCT   DisassocReq;
+		
+		if ((pAd->StaCfg.wdev.PortSecured == WPA_802_1X_PORT_NOT_SECURED) &&
+			(INFRA_ON(pAd)))
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("LinkDownExec(): disassociate with current AP...\n"));
+			DisassocParmFill(pAd, &DisassocReq, pAd->CommonCfg.Bssid, REASON_DISASSOC_STA_LEAVING);
+			MlmeEnqueue(pAd, ASSOC_STATE_MACHINE, MT2_MLME_DISASSOC_REQ, 
+						sizeof(MLME_DISASSOC_REQ_STRUCT), &DisassocReq, 0);
+			pAd->Mlme.CntlMachine.CurrState = CNTL_WAIT_DISASSOC;
+
+			RTMP_IndicateMediaState(pAd, NdisMediaStateDisconnected);
+		    pAd->ExtraInfo = GENERAL_LINK_DOWN;
+		}	
+	}
+}
+
+
+VOID MlmeAutoScan(RTMP_ADAPTER *pAd)
+{
+	/* check CntlMachine.CurrState to avoid collision with NDIS SetOID request*/
+	if (pAd->Mlme.CntlMachine.CurrState == CNTL_IDLE)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("MMCHK - Driver auto scan\n"));
+		MlmeEnqueue(pAd, 
+					MLME_CNTL_STATE_MACHINE, 
+					OID_802_11_BSSID_LIST_SCAN, 
+					pAd->MlmeAux.AutoReconnectSsidLen, 
+					pAd->MlmeAux.AutoReconnectSsid, 0);
+		RTMP_MLME_HANDLER(pAd);
+	}
+}
+
+
+VOID MlmeAutoReconnectLastSSID(RTMP_ADAPTER *pAd)
+{
+#ifdef WSC_STA_SUPPORT
+	PWSC_CTRL           pWscControl = &pAd->StaCfg.WscControl;
+
+	if ((pWscControl->WscConfMode != WSC_DISABLE) && 
+		(pWscControl->bWscTrigger) &&
+		(pWscControl->WscMode == WSC_PBC_MODE) &&
+		(pWscControl->WscPBCBssCount != 1))
+		return;
+
+	if ((pWscControl->WscConfMode != WSC_DISABLE) &&
+		(pWscControl->WscState >= WSC_STATE_START))
+	{		
+		ULONG ApIdx = 0;
+
+		ApIdx = WscSearchWpsApBySSID(pAd,
+									 pWscControl->WscSsid.Ssid, 
+									 pWscControl->WscSsid.SsidLength,
+									 pWscControl->WscMode);
+
+		if ((ApIdx != BSS_NOT_FOUND) &&
+			(pAd->StaCfg.BssType == BSS_INFRA))
+		{
+			NdisMoveMemory(pWscControl->WscBssid, pAd->ScanTab.BssEntry[ApIdx].Bssid, MAC_ADDR_LEN);
+			pAd->MlmeAux.Channel = pAd->ScanTab.BssEntry[ApIdx].Channel;
+		}
+
+		CntlWscIterate(pAd);
+	}
+	else
+#endif /* WSC_STA_SUPPORT */
+	if (pAd->StaCfg.bAutoConnectByBssid)
+	{	
+		DBGPRINT(RT_DEBUG_TRACE, ("Driver auto reconnect to last OID_802_11_BSSID setting - %02X:%02X:%02X:%02X:%02X:%02X\n",
+									PRINT_MAC(pAd->MlmeAux.Bssid)));
+
+		pAd->MlmeAux.Channel = pAd->CommonCfg.Channel;
+		MlmeEnqueue(pAd,
+			 MLME_CNTL_STATE_MACHINE,
+			 OID_802_11_BSSID,
+			 MAC_ADDR_LEN,
+			 pAd->MlmeAux.Bssid, 0);
+
+		pAd->Mlme.CntlMachine.CurrState = CNTL_IDLE;
+
+		RTMP_MLME_HANDLER(pAd);
+	}
+	/* check CntlMachine.CurrState to avoid collision with NDIS SetOID request*/
+	else if ((pAd->Mlme.CntlMachine.CurrState == CNTL_IDLE) && 
+		(MlmeValidateSSID(pAd->MlmeAux.AutoReconnectSsid, pAd->MlmeAux.AutoReconnectSsidLen) == TRUE))
+	{
+		NDIS_802_11_SSID OidSsid;
+		OidSsid.SsidLength = pAd->MlmeAux.AutoReconnectSsidLen;
+		NdisMoveMemory(OidSsid.Ssid, pAd->MlmeAux.AutoReconnectSsid, pAd->MlmeAux.AutoReconnectSsidLen);
+
+		DBGPRINT(RT_DEBUG_TRACE, ("Driver auto reconnect to last OID_802_11_SSID setting - %s, len - %d\n", pAd->MlmeAux.AutoReconnectSsid, pAd->MlmeAux.AutoReconnectSsidLen));
+		MlmeEnqueue(pAd, 
+					MLME_CNTL_STATE_MACHINE, 
+					OID_802_11_SSID, 
+					sizeof(NDIS_802_11_SSID), 
+					&OidSsid, 0);
+		RTMP_MLME_HANDLER(pAd);
+	}
+}
+
+
+/*
+	==========================================================================
+	Description:
+		This routine checks if there're other APs out there capable for
+		roaming. Caller should call this routine only when Link up in INFRA mode
+		and channel quality is below CQI_GOOD_THRESHOLD.
+
+	IRQL = DISPATCH_LEVEL
+
+	Output:
+	==========================================================================
+ */
+VOID MlmeCheckForRoaming(RTMP_ADAPTER *pAd, ULONG Now32)
+{
+	USHORT	   i;
+	BSS_TABLE  *pRoamTab = &pAd->MlmeAux.RoamTab;
+	BSS_ENTRY  *pBss;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("==> MlmeCheckForRoaming\n"));
+	/* put all roaming candidates into RoamTab, and sort in RSSI order*/
+	BssTableInit(pRoamTab);
+	for (i = 0; i < pAd->ScanTab.BssNr; i++)
+	{
+		pBss = &pAd->ScanTab.BssEntry[i];
+
+		if (RTMP_TIME_AFTER(Now32, pBss->LastBeaconRxTime + pAd->StaCfg.BeaconLostTime))
+			continue;	 /* AP disappear*/
+		if (pBss->Rssi <= RSSI_THRESHOLD_FOR_ROAMING)
+			continue;	 /* RSSI too weak. forget it.*/
+		if (MAC_ADDR_EQUAL(pBss->Bssid, pAd->CommonCfg.Bssid))
+			continue;	 /* skip current AP*/
+		if (pBss->Rssi < (pAd->StaCfg.RssiSample.LastRssi0 + RSSI_DELTA))
+			continue;	 /* only AP with stronger RSSI is eligible for roaming*/
+
+		/* AP passing all above rules is put into roaming candidate table		 */
+		NdisMoveMemory(&pRoamTab->BssEntry[pRoamTab->BssNr], pBss, sizeof(BSS_ENTRY));
+		pRoamTab->BssNr += 1;
+	}
+
+	if (pRoamTab->BssNr > 0)
+	{
+		/* check CntlMachine.CurrState to avoid collision with NDIS SetOID request*/
+		if (pAd->Mlme.CntlMachine.CurrState == CNTL_IDLE)
+		{
+			pAd->RalinkCounters.PoorCQIRoamingCount ++;
+			DBGPRINT(RT_DEBUG_TRACE, ("MMCHK - Roaming attempt #%ld\n", pAd->RalinkCounters.PoorCQIRoamingCount));
+			MlmeEnqueue(pAd, MLME_CNTL_STATE_MACHINE, MT2_MLME_ROAMING_REQ, 0, NULL, 0);
+			RTMP_MLME_HANDLER(pAd);
+		}
+	}
+	DBGPRINT(RT_DEBUG_TRACE, ("<== MlmeCheckForRoaming(# of candidate= %d)\n",pRoamTab->BssNr));   
+}
+
+
+/*
+	==========================================================================
+	Description:
+		This routine checks if there're other APs out there capable for
+		roaming. Caller should call this routine only when link up in INFRA mode
+		and channel quality is below CQI_GOOD_THRESHOLD.
+
+	IRQL = DISPATCH_LEVEL
+
+	Output:
+	==========================================================================
+ */
+BOOLEAN MlmeCheckForFastRoaming(RTMP_ADAPTER *pAd)
+{
+	USHORT		i;
+	BSS_TABLE	*pRoamTab = &pAd->MlmeAux.RoamTab;
+	BSS_ENTRY	*pBss;
+	CHAR max_rssi;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("==> MlmeCheckForFastRoaming\n"));
+	/* put all roaming candidates into RoamTab, and sort in RSSI order*/
+	BssTableInit(pRoamTab);
+	for (i = 0; i < pAd->ScanTab.BssNr; i++)
+	{
+		pBss = &pAd->ScanTab.BssEntry[i];
+
+        if ((pBss->Rssi <= -50) && (pBss->Channel == pAd->CommonCfg.Channel))
+			continue;	 /* RSSI too weak. forget it.*/
+		if (MAC_ADDR_EQUAL(pBss->Bssid, pAd->CommonCfg.Bssid))
+			continue;	 /* skip current AP*/
+		if (!SSID_EQUAL(pBss->Ssid, pBss->SsidLen, pAd->CommonCfg.Ssid, pAd->CommonCfg.SsidLen))
+			continue;	 /* skip different SSID*/
+		max_rssi = RTMPMaxRssi(pAd, pAd->StaCfg.RssiSample.LastRssi0, pAd->StaCfg.RssiSample.LastRssi1, pAd->StaCfg.RssiSample.LastRssi2);
+        if (pBss->Rssi < (max_rssi + RSSI_DELTA)) 
+			continue;	 /* skip AP without better RSSI*/
+		
+        DBGPRINT(RT_DEBUG_TRACE, ("max_rssi = %d, pBss->Rssi = %d\n", max_rssi, pBss->Rssi));
+		/* AP passing all above rules is put into roaming candidate table		 */
+		NdisMoveMemory(&pRoamTab->BssEntry[pRoamTab->BssNr], pBss, sizeof(BSS_ENTRY));
+		pRoamTab->BssNr += 1;
+	}
+
+	DBGPRINT(RT_DEBUG_TRACE, ("<== MlmeCheckForFastRoaming (BssNr=%d)\n", pRoamTab->BssNr));
+	if (pRoamTab->BssNr > 0)
+	{
+		/* check CntlMachine.CurrState to avoid collision with NDIS SetOID request*/
+		if (pAd->Mlme.CntlMachine.CurrState == CNTL_IDLE)
+		{
+			pAd->RalinkCounters.PoorCQIRoamingCount ++;
+			DBGPRINT(RT_DEBUG_TRACE, ("MMCHK - Roaming attempt #%ld\n", pAd->RalinkCounters.PoorCQIRoamingCount));
+			MlmeEnqueue(pAd, MLME_CNTL_STATE_MACHINE, MT2_MLME_ROAMING_REQ, 0, NULL, 0);
+			RTMP_MLME_HANDLER(pAd);
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+
+/*
+	==========================================================================
+	Description:
+		This routine is executed periodically inside MlmePeriodicExec() after 
+		association with an AP.
+		It checks if StaCfg.Psm is consistent with user policy (recorded in
+		StaCfg.WindowsPowerMode). If not, enforce user policy. However, 
+		there're some conditions to consider:
+		1. we don't support power-saving in ADHOC mode, so Psm=PWR_ACTIVE all
+		   the time when Mibss==TRUE
+		2. When link up in INFRA mode, Psm should not be switch to PWR_SAVE
+		   if outgoing traffic available in TxRing or MgmtRing.
+	Output:
+		1. change pAd->StaCfg.Psm to PWR_SAVE or leave it untouched
+
+	IRQL = DISPATCH_LEVEL
+
+	==========================================================================
+ */
+VOID MlmeCheckPsmChange(RTMP_ADAPTER *pAd, ULONG Now32)
+{
+	ULONG	PowerMode;
+
+	/*
+		condition -
+		1. Psm maybe ON only happen in INFRASTRUCTURE mode
+		2. user wants either MAX_PSP or FAST_PSP
+		3. but current psm is not in PWR_SAVE
+		4. CNTL state machine is not doing SCANning
+		5. no TX SUCCESS event for the past 1-sec period
+	*/
+	PowerMode = pAd->StaCfg.WindowsPowerMode;
+
+	if (INFRA_ON(pAd) &&
+		(PowerMode != Ndis802_11PowerModeCAM) &&
+		(pAd->StaCfg.Psm == PWR_ACTIVE) &&
+/*		(! RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))*/
+		(pAd->Mlme.CntlMachine.CurrState == CNTL_IDLE)
+#ifdef PCIE_PS_SUPPORT
+		&& RTMP_TEST_PSFLAG(pAd, fRTMP_PS_CAN_GO_SLEEP)
+#endif /* PCIE_PS_SUPPORT */
+		&& (pAd->CountDowntoPsm <= 0)
+		 /*&&
+		(pAd->RalinkCounters.OneSecTxNoRetryOkCount == 0) &&
+		(pAd->RalinkCounters.OneSecTxRetryOkCount == 0)*/)
+	{
+		NdisGetSystemUpTime(&pAd->Mlme.LastSendNULLpsmTime);
+		pAd->RalinkCounters.RxCountSinceLastNULL = 0;
+		RTMP_SET_PSM_BIT(pAd, PWR_SAVE);
+
+		if (!(pAd->StaCfg.UapsdInfo.bAPSDCapable && pAd->CommonCfg.APEdcaParm.bAPSDCapable))
+		{
+			RTMPSendNullFrame(pAd, pAd->CommonCfg.TxRate, (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_WMM_INUSED) ? TRUE:FALSE), pAd->CommonCfg.bAPSDForcePowerSave ? PWR_SAVE : pAd->StaCfg.Psm);
+		}
+		else
+		{
+			RTMPSendNullFrame(pAd, pAd->CommonCfg.TxRate, TRUE, pAd->CommonCfg.bAPSDForcePowerSave ? PWR_SAVE : pAd->StaCfg.Psm);
+		}
+
+	}
+}
+
+
+VOID MlmeSetPsmBit(RTMP_ADAPTER *pAd, USHORT psm)
+{
+#if defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT)
+	USHORT PsmOld = pAd->StaCfg.Psm;
+#endif /* defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT) */
+
+	pAd->StaCfg.Psm = psm;	  
+
+#ifdef DOT11Z_TDLS_SUPPORT
+	/* pAd->StaCfg.Psm must be updated before calling the function */
+	TDLS_UAPSDP_PsmModeChange(pAd, PsmOld, psm);
+#endif /* DOT11Z_TDLS_SUPPORT */
+
+	DBGPRINT(RT_DEBUG_TRACE, ("MlmeSetPsmBit = %d\n", psm));
+}
+#endif /* CONFIG_STA_SUPPORT */
 
 
 /*
@@ -1674,7 +2613,27 @@ VOID MlmeCalculateChannelQuality(
 	UINT32 OneSecRxOkCnt = 0;
 	UINT32 OneSecRxFcsErrCnt = 0;
 	ULONG ChannelQuality = 0;  /* 0..100, Channel Quality Indication for Roaming*/
+#ifdef CONFIG_STA_SUPPORT
+	ULONG LastBeaconRxTime = 0;
+	ULONG BeaconLostTime = pAd->StaCfg.BeaconLostTime;
+#endif /* CONFIG_STA_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef CARRIER_DETECTION_SUPPORT /* Roger sync Carrier*/
+	/* longer beacon lost time when carrier detection enabled*/
+	if (pAd->CommonCfg.CarrierDetect.Enable == TRUE)
+	{
+		BeaconLostTime = pAd->StaCfg.BeaconLostTime + (pAd->StaCfg.BeaconLostTime/2);
+	}
+#endif /* CARRIER_DETECTION_SUPPORT */
+
+#ifdef APCLI_SUPPORT
+		if (pMacEntry && IS_ENTRY_APCLI(pMacEntry) && (pMacEntry->wdev_idx < MAX_APCLI_NUM))
+			LastBeaconRxTime = pAd->ApCfg.ApCliTab[pMacEntry->wdev_idx].ApCliRcvBeaconTime; 
+		else
+#endif /*APCLI_SUPPORT*/
+			LastBeaconRxTime = pAd->StaCfg.LastBeaconRxTime;
+#endif /* CONFIG_STA_SUPPORT */
 
 
 		if (pMacEntry != NULL)
@@ -1730,6 +2689,17 @@ VOID MlmeCalculateChannelQuality(
 
 	
 	/* decide ChannelQuality based on: 1)last BEACON received time, 2)last RSSI, 3)TxPER, and 4)RxPER*/
+#ifdef CONFIG_STA_SUPPORT
+	if ((pAd->OpMode == OPMODE_STA) &&
+		INFRA_ON(pAd) && 
+		(OneSecTxNoRetryOkCount < 2) && /* no heavy traffic*/
+		RTMP_TIME_AFTER(Now32, LastBeaconRxTime + BeaconLostTime))
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("BEACON lost > %ld msec with TxOkCnt=%ld -> CQI=0\n", BeaconLostTime * (1000 / OS_HZ) , TxOkCnt)); 
+		ChannelQuality = 0;
+	}
+	else
+#endif /* CONFIG_STA_SUPPORT */
 	{
 		/* Normalize Rssi*/
 		if (MaxRssi > -40)
@@ -1746,6 +2716,10 @@ VOID MlmeCalculateChannelQuality(
 	}
 
 
+#ifdef CONFIG_STA_SUPPORT
+	if (pAd->OpMode == OPMODE_STA)
+		pAd->Mlme.ChannelQuality = (ChannelQuality > 100) ? 100 : ChannelQuality;
+#endif /* CONFIG_STA_SUPPORT */
 #ifdef CONFIG_AP_SUPPORT
 	if (pAd->OpMode == OPMODE_AP)
 	{
@@ -1955,6 +2929,19 @@ VOID MlmeUpdateTxRates(RTMP_ADAPTER *pAd, BOOLEAN bLinkUp, UCHAR apidx)
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			wdev = &pAd->StaCfg.wdev;
+			if ((pAd->StaCfg.BssType == BSS_ADHOC) &&
+				WMODE_EQUAL(pAd->CommonCfg.PhyMode, WMODE_B) &&
+				(MaxDesire > RATE_11))
+			{
+				MaxDesire = RATE_11;
+			}
+			break;
+		}
+#endif /* CONFIG_STA_SUPPORT */
 	} while(FALSE);
 
 	if (wdev)
@@ -1989,6 +2976,17 @@ VOID MlmeUpdateTxRates(RTMP_ADAPTER *pAd, BOOLEAN bLinkUp, UCHAR apidx)
 	else
 		*auto_rate_cur_p = TRUE;
 
+#ifdef CONFIG_STA_SUPPORT
+	if ((ADHOC_ON(pAd) || INFRA_ON(pAd)) && (pAd->OpMode == OPMODE_STA)
+		)
+	{
+		pSupRate = &pAd->StaActive.SupRate[0];
+		pExtRate = &pAd->StaActive.ExtRate[0];
+		SupRateLen = pAd->StaActive.SupRateLen;
+		ExtRateLen = pAd->StaActive.ExtRateLen;
+	}
+	else
+#endif /* CONFIG_STA_SUPPORT */	
 	{
 		pSupRate = &pAd->CommonCfg.SupRate[0];
 		pExtRate = &pAd->CommonCfg.ExtRate[0];
@@ -2078,6 +3076,10 @@ VOID MlmeUpdateTxRates(RTMP_ADAPTER *pAd, BOOLEAN bLinkUp, UCHAR apidx)
 	if (*auto_rate_cur_p)
 	{
 		short dbm = 0;
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+			dbm = pAd->StaCfg.RssiSample.AvgRssi0 - pAd->BbpRssiToDbmDelta;
+#endif /* CONFIG_STA_SUPPORT */
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 			dbm =0;
@@ -2130,6 +3132,13 @@ VOID MlmeUpdateTxRates(RTMP_ADAPTER *pAd, BOOLEAN bLinkUp, UCHAR apidx)
 	{
 		pMaxHtPhy->field.MODE = MODE_CCK;
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			pMaxHtPhy->field.MCS = pAd->CommonCfg.TxRate;
+			pMinHtPhy->field.MCS = pAd->CommonCfg.MinTxRate;
+		}
+#endif /* CONFIG_STA_SUPPORT */
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{
@@ -2142,6 +3151,16 @@ VOID MlmeUpdateTxRates(RTMP_ADAPTER *pAd, BOOLEAN bLinkUp, UCHAR apidx)
 	{
 		pMaxHtPhy->field.MODE = MODE_OFDM;
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			pMaxHtPhy->field.MCS = OfdmRateToRxwiMCS[pAd->CommonCfg.TxRate];
+			if (pAd->CommonCfg.MinTxRate >= RATE_6 && (pAd->CommonCfg.MinTxRate <= RATE_54))
+				pMinHtPhy->field.MCS = OfdmRateToRxwiMCS[pAd->CommonCfg.MinTxRate];
+			else
+				pMinHtPhy->field.MCS = pAd->CommonCfg.MinTxRate;
+		}
+#endif /* CONFIG_STA_SUPPORT */
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{
@@ -2300,6 +3319,13 @@ VOID MlmeUpdateHtTxRates(RTMP_ADAPTER *pAd, UCHAR apidx)
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			wdev = &pAd->StaCfg.wdev;
+			break;
+		}		
+#endif /* CONFIG_STA_SUPPORT */
 	} while (FALSE);
 
 	if (wdev)
@@ -2313,6 +3339,24 @@ VOID MlmeUpdateHtTxRates(RTMP_ADAPTER *pAd, UCHAR apidx)
 		auto_rate_cur_p = &wdev->bAutoTxRateSwitch;
 	}
 
+#ifdef CONFIG_STA_SUPPORT	
+	if ((ADHOC_ON(pAd) || INFRA_ON(pAd)) && (pAd->OpMode == OPMODE_STA)
+		)
+	{
+		if (pAd->StaActive.SupportedPhyInfo.bHtEnable == FALSE)
+			return;
+
+		pRtHtCap = &pAd->StaActive.SupportedHtPhy;
+		pActiveHtPhy = &pAd->StaActive.SupportedPhyInfo;
+		StbcMcs = (UCHAR)pAd->MlmeAux.AddHtInfo.AddHtInfo3.StbcMcs;
+		BasicMCS =pAd->MlmeAux.AddHtInfo.MCSSet[0]+(pAd->MlmeAux.AddHtInfo.MCSSet[1]<<8)+(StbcMcs<<16);
+		if ((pAd->CommonCfg.DesiredHtPhy.TxSTBC) && (pRtHtCap->RxSTBC) && (pAd->Antenna.field.TxPath == 2))
+			pMaxHtPhy->field.STBC = STBC_USE;
+		else
+			pMaxHtPhy->field.STBC = STBC_NONE;
+	}
+	else
+#endif /* CONFIG_STA_SUPPORT */
 	{
 		if ((!pDesireHtPhy) || pDesireHtPhy->bHtEnable == FALSE)
 			return;
@@ -2356,6 +3400,35 @@ VOID MlmeUpdateHtTxRates(RTMP_ADAPTER *pAd, UCHAR apidx)
 	pMinHtPhy->field.STBC = 0;
 	pMinHtPhy->field.ShortGI = 0;
 	/*If STA assigns fixed rate. update to fixed here.*/
+#ifdef CONFIG_STA_SUPPORT
+	if ( (pAd->OpMode == OPMODE_STA) && (pDesireHtPhy->MCSSet[0] != 0xff)
+		)
+	{
+		CHAR i;
+		UCHAR j, bitmask;
+		
+		if (pDesireHtPhy->MCSSet[4] != 0)
+		{
+			pMaxHtPhy->field.MCS = 32;
+			pMinHtPhy->field.MCS = 32;
+			DBGPRINT(RT_DEBUG_TRACE,("%s():<=== Use Fixed MCS = %d\n",__FUNCTION__, pMinHtPhy->field.MCS));
+		}
+
+		for (i=23; (CHAR)i >= 0; i--)
+		{	
+			j = i/8;	
+			bitmask = (1<<(i-(j*8)));
+			if ( (pDesireHtPhy->MCSSet[j] & bitmask) && (pActiveHtPhy->MCSSet[j] & bitmask))
+			{
+				pMaxHtPhy->field.MCS = i;
+				pMinHtPhy->field.MCS = i;
+				break;
+			}
+			if (i==0)
+				break;
+		}
+	}
+#endif /* CONFIG_STA_SUPPORT */
 	
 	
 	/* Decide ht rate*/
@@ -2492,6 +3565,7 @@ ULONG BssTableSearch(BSS_TABLE *Tab, UCHAR *pBssid, UCHAR Channel)
 /* get ap counts from some channel*/
 #ifdef ED_MONITOR
 ULONG BssChannelAPCount(
+	IN PRTMP_ADAPTER pAd,
 	IN BSS_TABLE *Tab, 
 	IN UCHAR	 Channel) 
 {
@@ -2500,7 +3574,9 @@ ULONG BssChannelAPCount(
 	
 	for (i = 0; i < Tab->BssNr; i++) 
 	{
-		if (Tab->BssEntry[i].Channel == Channel)
+		//change to also check rssi threshold
+		if ((Tab->BssEntry[i].Channel == Channel) && 
+		(Tab->BssEntry[i].Rssi > pAd->ed_rssi_threshold))				
 		{
 			ap_count ++; 
 		}
@@ -2628,7 +3704,13 @@ VOID BssEntrySet(
 	IN BCN_IE_LIST *ie_list,
 	IN CHAR Rssi,
 	IN USHORT LengthVIE,	
-	IN PNDIS_802_11_VARIABLE_IEs pVIE) 
+	IN PNDIS_802_11_VARIABLE_IEs pVIE
+#ifdef CUSTOMER_DCC_FEATURE
+	,
+	IN UCHAR	Snr0,
+	IN UCHAR	Snr1
+#endif
+	) 
 {
 	COPY_MAC_ADDR(pBss->Bssid, ie_list->Bssid);
 	/* Default Hidden SSID to be TRUE, it will be turned to FALSE after coping SSID*/
@@ -2694,6 +3776,10 @@ VOID BssEntrySet(
 	pBss->Channel = ie_list->Channel;
 	pBss->CentralChannel = ie_list->Channel;
 	pBss->Rssi = Rssi;
+#ifdef CUSTOMER_DCC_FEATURE
+	pBss->Snr0 = Snr0;
+	pBss->Snr1 = Snr1;
+#endif
 	/* Update CkipFlag. if not exists, the value is 0x0*/
 	pBss->CkipFlag = ie_list->CkipFlag;
 
@@ -2701,7 +3787,9 @@ VOID BssEntrySet(
 	NdisMoveMemory(pBss->FixIEs.Timestamp, &ie_list->TimeStamp, 8);
 	pBss->FixIEs.BeaconInterval = ie_list->BeaconPeriod;
 	pBss->FixIEs.Capabilities = ie_list->CapabilityInfo;
-
+#ifdef CUSTOMER_DCC_FEATURE
+	pBss->LastBeaconRxTime = jiffies_to_msecs(jiffies);
+#endif
 	/* New for microsoft Variable IEs*/
 	if (LengthVIE != 0)
 	{
@@ -2783,6 +3871,26 @@ VOID BssEntrySet(
 		pBss->WscDPIDFromWpsAP = 0xFFFF;
 #endif /* WSC_INCLUDED */
 
+#ifdef CONFIG_STA_SUPPORT
+		NdisZeroMemory(&pBss->WpaIE.IE[0], MAX_CUSTOM_LEN);
+		NdisZeroMemory(&pBss->RsnIE.IE[0], MAX_CUSTOM_LEN);
+		NdisZeroMemory(&pBss->WpsIE.IE[0], MAX_CUSTOM_LEN);
+		pBss->WpaIE.IELen = 0;
+		pBss->RsnIE.IELen = 0;
+		pBss->WpsIE.IELen = 0;
+#ifdef WAPI_SUPPORT
+		NdisZeroMemory(&pBss->WapiIE.IE[0], MAX_CUSTOM_LEN);
+		pBss->WapiIE.IELen = 0;
+#endif /* WAPI_SUPPORT */
+#ifdef EXT_BUILD_CHANNEL_LIST
+		NdisZeroMemory(&pBss->CountryString[0], 3);
+		pBss->bHasCountryIE = FALSE;
+#endif /* EXT_BUILD_CHANNEL_LIST */
+#ifdef DOT11R_FT_SUPPORT
+		pBss->bHasMDIE = FALSE;
+		NdisZeroMemory(&pBss->FT_MDIE, sizeof(FT_MDIE));
+#endif /* DOT11R_FT_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 		pEid = (PEID_STRUCT) pVIE;
 		while ((Length + 2 + (USHORT)pEid->Len) <= LengthVIE)    
 		{
@@ -2791,6 +3899,9 @@ VOID BssEntrySet(
 			{
 				case IE_WPA:
 					if (NdisEqualMemory(pEid->Octet, WPS_OUI, 4)
+#ifdef IWSC_SUPPORT
+						|| NdisEqualMemory(pEid->Octet, IWSC_OUI, 4)
+#endif /* IWSC_SUPPORT */
 						)
 					{
 #ifdef WSC_INCLUDED
@@ -2799,10 +3910,74 @@ VOID BssEntrySet(
 													pEid, 
 													&pBss->WscDPIDFromWpsAP);
 #endif /* WSC_INCLUDED */
+#ifdef CONFIG_STA_SUPPORT
+						if ((pEid->Len + 2) > MAX_CUSTOM_LEN)
+						{
+							pBss->WpsIE.IELen = 0;
+							break;
+						}
+						pBss->WpsIE.IELen = pEid->Len + 2;
+						NdisMoveMemory(pBss->WpsIE.IE, pEid, pBss->WpsIE.IELen);
+#endif /* CONFIG_STA_SUPPORT */
 						break;
 					}
+#ifdef CONFIG_STA_SUPPORT
+					if (NdisEqualMemory(pEid->Octet, WPA_OUI, 4))
+					{
+						if ((pEid->Len + 2) > MAX_CUSTOM_LEN)
+						{
+							pBss->WpaIE.IELen = 0;
+							break;
+						}
+						pBss->WpaIE.IELen = pEid->Len + 2;
+						NdisMoveMemory(pBss->WpaIE.IE, pEid, pBss->WpaIE.IELen);
+					}
+#endif /* CONFIG_STA_SUPPORT */
 					break;
 
+#ifdef CONFIG_STA_SUPPORT
+				case IE_RSN:
+					if (NdisEqualMemory(pEid->Octet + 2, RSN_OUI, 3))
+					{
+						if ((pEid->Len + 2) > MAX_CUSTOM_LEN)
+						{
+							pBss->RsnIE.IELen = 0;
+							break;
+						}
+						pBss->RsnIE.IELen = pEid->Len + 2;
+						NdisMoveMemory(pBss->RsnIE.IE, pEid, pBss->RsnIE.IELen);
+					}
+					break;
+#ifdef WAPI_SUPPORT
+				case IE_WAPI:
+					if (NdisEqualMemory(pEid->Octet + 4, WAPI_OUI, 3))
+					{
+						UCHAR           idx;
+						snprintf((PSTRING) pBss->WapiIE.IE, sizeof(pBss->WapiIE.IE), "wapi_ie=%02x%02x", pEid->Eid, pEid->Len);
+						for (idx = 0; idx < pEid->Len; idx++)
+						{
+							snprintf((PSTRING) pBss->WapiIE.IE, sizeof(pBss->WapiIE.IE), "%s%02x", pBss->WapiIE.IE, (unsigned char)pEid->Octet[idx]);
+						}
+						pBss->WapiIE.IELen = (pEid->Len*2) + 8; /* 2: ID(1 byte), LEN (1 byte), 8: len of "wapi_ie="*/
+					}
+					break;
+#endif /* WAPI_SUPPORT */
+#ifdef EXT_BUILD_CHANNEL_LIST					
+				case IE_COUNTRY:					
+					NdisMoveMemory(&pBss->CountryString[0], pEid->Octet, 3);
+					pBss->bHasCountryIE = TRUE;
+					break;
+#endif /* EXT_BUILD_CHANNEL_LIST */
+#ifdef DOT11R_FT_SUPPORT
+				case IE_FT_MDIE:
+					if (pEid->Len == sizeof(FT_MDIE))
+					{
+						pBss->bHasMDIE = TRUE;
+						NdisMoveMemory(&pBss->FT_MDIE, pEid->Octet, pEid->Len);
+					}
+					break;
+#endif /* DOT11R_FT_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 			}
 			Length = Length + 2 + (USHORT)pEid->Len;  /* Eid[1] + Len[1]+ content[Len]*/
 			pEid = (PEID_STRUCT)((UCHAR*)pEid + 2 + pEid->Len);        
@@ -2841,7 +4016,13 @@ ULONG BssTableSetEntry(
 	IN BCN_IE_LIST *ie_list,
 	IN CHAR Rssi,
 	IN USHORT LengthVIE,	
-	IN PNDIS_802_11_VARIABLE_IEs pVIE)
+	IN PNDIS_802_11_VARIABLE_IEs pVIE
+#ifdef CUSTOMER_DCC_FEATURE
+	,
+	IN UCHAR	Snr0,
+	IN UCHAR	Snr1
+#endif
+	)
 {
 	ULONG	Idx;
 #ifdef APCLI_SUPPORT
@@ -2889,7 +4070,13 @@ ULONG BssTableSetEntry(
 				{
 					Idx = Tab->BssOverlapNr;
 					NdisZeroMemory(&(Tab->BssEntry[Idx]), sizeof(BSS_ENTRY));
-					BssEntrySet(pAd, &Tab->BssEntry[Idx], ie_list, Rssi, LengthVIE, pVIE);
+					BssEntrySet(pAd, &Tab->BssEntry[Idx], ie_list, Rssi, LengthVIE, pVIE
+#ifdef CUSTOMER_DCC_FEATURE
+					,
+					Snr0,
+					Snr1
+#endif
+						);
 					Tab->BssOverlapNr += 1;
 					Tab->BssOverlapNr = Tab->BssOverlapNr % MAX_LEN_OF_BSS_TABLE;
 #ifdef RT_CFG80211_SUPPORT
@@ -2905,12 +4092,24 @@ ULONG BssTableSetEntry(
 			}
 		}
 		Idx = Tab->BssNr;
-		BssEntrySet(pAd, &Tab->BssEntry[Idx], ie_list, Rssi, LengthVIE, pVIE);
+		BssEntrySet(pAd, &Tab->BssEntry[Idx], ie_list, Rssi, LengthVIE, pVIE
+#ifdef CUSTOMER_DCC_FEATURE
+					,
+					Snr0,
+					Snr1
+#endif
+			);
 		Tab->BssNr++;
 	} 
 	else
 	{
-		BssEntrySet(pAd, &Tab->BssEntry[Idx], ie_list, Rssi, LengthVIE, pVIE);
+		BssEntrySet(pAd, &Tab->BssEntry[Idx], ie_list, Rssi, LengthVIE, pVIE
+#ifdef CUSTOMER_DCC_FEATURE
+					,
+					Snr0,
+					Snr1
+#endif
+			);
 	}
 
 	return Idx;
@@ -2983,11 +4182,15 @@ INT TriEventTableSetEntry(
 			Tab->EventANo ++;
 		}
 	}
+#ifdef DOT11V_WNM_SUPPORT
+	/* Not complete yet. Ignore for compliing successfully.*/
+#else
 	else if (pHtCapability->HtCapInfo.Forty_Mhz_Intolerant)
 	{
 		/* Event B.   My BSS beacon has Intolerant40 bit set*/
 		Tab->EventBCountDown = pAd->CommonCfg.Dot11BssWidthChanTranDelay;
 	}
+#endif /* DOT11V_WNM_SUPPORT */
 
 	return 0;
 }
@@ -2995,6 +4198,348 @@ INT TriEventTableSetEntry(
 #endif /* DOT11_N_SUPPORT */
 #endif /* defined(CONFIG_STA_SUPPORT) || defined(APCLI_SUPPORT) */
 
+#ifdef CONFIG_STA_SUPPORT
+VOID BssTableSsidSort(
+	IN RTMP_ADAPTER *pAd, 
+	OUT BSS_TABLE *OutTab, 
+	IN CHAR Ssid[], 
+	IN UCHAR SsidLen) 
+{
+	INT i;
+#ifdef WSC_STA_SUPPORT
+	PWSC_CTRL	pWpsCtrl = &pAd->StaCfg.WscControl;
+#endif /* WSC_STA_SUPPORT */
+	struct wifi_dev *wdev = &pAd->StaCfg.wdev;
+
+	BssTableInit(OutTab);
+
+	if ((SsidLen == 0) && 
+		(pAd->StaCfg.bAutoConnectIfNoSSID == FALSE))
+		return;
+
+	for (i = 0; i < pAd->ScanTab.BssNr; i++) 
+	{
+		BSS_ENTRY *pInBss = &pAd->ScanTab.BssEntry[i];
+		BOOLEAN	bIsHiddenApIncluded = FALSE;
+		
+		if ( ((pAd->CommonCfg.bIEEE80211H == 1) && 
+				(pAd->MlmeAux.Channel > 14) && 
+				 RadarChannelCheck(pAd, pInBss->Channel))
+#ifdef CARRIER_DETECTION_SUPPORT /* Roger sync Carrier             */
+             || (pAd->CommonCfg.CarrierDetect.Enable == TRUE)
+#endif /* CARRIER_DETECTION_SUPPORT */
+            )
+		{
+			if (pInBss->Hidden)
+				bIsHiddenApIncluded = TRUE;
+		}            
+
+
+		if ((pInBss->BssType == pAd->StaCfg.BssType) && 
+			(SSID_EQUAL(Ssid, SsidLen, pInBss->Ssid, pInBss->SsidLen) || bIsHiddenApIncluded))
+		{
+			BSS_ENTRY *pOutBss = &OutTab->BssEntry[OutTab->BssNr];
+
+#ifdef WPA_SUPPLICANT_SUPPORT
+			if (pAd->StaCfg.wpa_supplicant_info.WpaSupplicantUP & 0x80)
+			{
+				/* copy matching BSS from InTab to OutTab*/
+				NdisMoveMemory(pOutBss, pInBss, sizeof(BSS_ENTRY));
+				OutTab->BssNr++;
+				continue;
+			}
+#endif /* WPA_SUPPLICANT_SUPPORT */
+
+#ifdef WSC_STA_SUPPORT
+			if ((pWpsCtrl->WscConfMode != WSC_DISABLE) && pWpsCtrl->bWscTrigger)
+			{
+				/* copy matching BSS from InTab to OutTab*/
+				NdisMoveMemory(pOutBss, pInBss, sizeof(BSS_ENTRY));
+				OutTab->BssNr++;
+				continue;
+			}
+#endif /* WSC_STA_SUPPORT */
+
+#ifdef EXT_BUILD_CHANNEL_LIST
+			/* If no Country IE exists no Connection will be established when IEEE80211dClientMode is strict.*/
+			if ((pAd->StaCfg.IEEE80211dClientMode == Rt802_11_D_Strict) &&
+				(pInBss->bHasCountryIE == FALSE))
+			{
+				DBGPRINT(RT_DEBUG_TRACE,("StaCfg.IEEE80211dClientMode == Rt802_11_D_Strict, but this AP doesn't have country IE.\n"));
+				continue;
+			}
+#endif /* EXT_BUILD_CHANNEL_LIST */
+
+#ifdef DOT11_N_SUPPORT
+			/* 2.4G/5G N only mode*/
+			if ((pInBss->HtCapabilityLen == 0) &&
+				(WMODE_HT_ONLY(pAd->CommonCfg.PhyMode)))
+			{
+				DBGPRINT(RT_DEBUG_TRACE,("STA is in N-only Mode, this AP don't have Ht capability in Beacon.\n"));
+				continue;
+			}
+
+			if ((pAd->CommonCfg.PhyMode == (WMODE_G | WMODE_GN)) &&
+				((pInBss->SupRateLen + pInBss->ExtRateLen) < 12))
+			{
+				DBGPRINT(RT_DEBUG_TRACE,("STA is in GN-only Mode, this AP is in B mode.\n"));
+				continue;
+			}
+#endif /* DOT11_N_SUPPORT */
+
+
+#ifdef DOT11W_PMF_SUPPORT
+                        if (((wdev->AuthMode == Ndis802_11AuthModeWPA2) || (wdev->AuthMode == Ndis802_11AuthModeWPA2PSK))
+                                && (pInBss))
+                        {
+                                CLIENT_STATUS_CLEAR_FLAG(pInBss, fCLIENT_STATUS_PMF_CAPABLE);
+                                CLIENT_STATUS_CLEAR_FLAG(pInBss, fCLIENT_STATUS_USE_SHA256);
+                                
+                                RSN_CAPABILITIES RsnCap;
+                		NdisMoveMemory(&RsnCap, &pInBss->WPA2.RsnCapability, sizeof(RSN_CAPABILITIES));
+                		RsnCap.word = cpu2le16(RsnCap.word);                                
+                                if ((pAd->StaCfg.PmfCfg.MFPR) && (RsnCap.field.MFPC == FALSE))
+                                        continue;
+
+                                if (((pAd->StaCfg.PmfCfg.MFPC == FALSE) && (RsnCap.field.MFPC == FALSE))
+                                        || (pAd->StaCfg.PmfCfg.MFPC && RsnCap.field.MFPC && (pAd->StaCfg.PmfCfg.MFPR == FALSE) && (RsnCap.field.MFPR == FALSE)))
+                                {
+                                        if ((pAd->StaCfg.PmfCfg.PMFSHA256) && (pInBss->IsSupportSHA256KeyDerivation == FALSE))
+                                                continue;
+                                }        
+
+                                if ((pAd->StaCfg.PmfCfg.MFPC) && (RsnCap.field.MFPC))
+				        CLIENT_STATUS_SET_FLAG(pInBss, fCLIENT_STATUS_PMF_CAPABLE);
+
+                                if ((pAd->StaCfg.PmfCfg.PMFSHA256 && pInBss->IsSupportSHA256KeyDerivation)
+                                        || (pAd->StaCfg.PmfCfg.MFPC && RsnCap.field.MFPR)
+                                        || (pAd->StaCfg.PmfCfg.MFPC && pInBss->IsSupportSHA256KeyDerivation))
+				        CLIENT_STATUS_SET_FLAG(pInBss, fCLIENT_STATUS_USE_SHA256);
+
+                        }                        
+#endif /* DOT11W_PMF_SUPPORT */
+
+			/* New for WPA2*/
+			/* Check the Authmode first*/
+			if (wdev->AuthMode >= Ndis802_11AuthModeWPA)
+			{
+				/* Check AuthMode and AuthModeAux for matching, in case AP support dual-mode*/
+				if ((wdev->AuthMode != pInBss->AuthMode) && (wdev->AuthMode != pInBss->AuthModeAux))
+					/* None matched*/
+					continue;
+				
+				/* Check cipher suite, AP must have more secured cipher than station setting*/
+				if ((wdev->AuthMode == Ndis802_11AuthModeWPA) || (wdev->AuthMode == Ndis802_11AuthModeWPAPSK))
+				{
+					/* If it's not mixed mode, we should only let BSS pass with the same encryption*/
+					if (pInBss->WPA.bMixMode == FALSE)
+						if (wdev->WepStatus != pInBss->WPA.GroupCipher)
+							continue;
+						
+					/* check group cipher*/
+					if ((wdev->WepStatus < pInBss->WPA.GroupCipher) &&
+						(pInBss->WPA.GroupCipher != Ndis802_11GroupWEP40Enabled) && 
+						(pInBss->WPA.GroupCipher != Ndis802_11GroupWEP104Enabled))
+						continue;
+
+					/* check pairwise cipher, skip if none matched*/
+					/* If profile set to AES, let it pass without question.*/
+					/* If profile set to TKIP, we must find one mateched*/
+					if ((wdev->WepStatus == Ndis802_11TKIPEnable) && 
+						(wdev->WepStatus != pInBss->WPA.PairCipher) && 
+						(wdev->WepStatus != pInBss->WPA.PairCipherAux))
+						continue;						
+				}
+				else if ((wdev->AuthMode == Ndis802_11AuthModeWPA2) || (wdev->AuthMode == Ndis802_11AuthModeWPA2PSK))
+				{
+					/* If it's not mixed mode, we should only let BSS pass with the same encryption*/
+					if (pInBss->WPA2.bMixMode == FALSE)
+						if (wdev->WepStatus != pInBss->WPA2.GroupCipher)
+							continue;
+						
+					/* check group cipher*/
+					if ((wdev->WepStatus < pInBss->WPA.GroupCipher) &&
+						(pInBss->WPA2.GroupCipher != Ndis802_11GroupWEP40Enabled) && 
+						(pInBss->WPA2.GroupCipher != Ndis802_11GroupWEP104Enabled))
+						continue;
+
+					/* check pairwise cipher, skip if none matched*/
+					/* If profile set to AES, let it pass without question.*/
+					/* If profile set to TKIP, we must find one mateched*/
+					if ((wdev->WepStatus == Ndis802_11TKIPEnable) && 
+						(wdev->WepStatus != pInBss->WPA2.PairCipher) && 
+						(wdev->WepStatus != pInBss->WPA2.PairCipherAux))
+						continue;						
+				}
+#ifdef WAPI_SUPPORT
+				else if ((wdev->AuthMode == Ndis802_11AuthModeWAICERT) || (wdev->AuthMode == Ndis802_11AuthModeWAIPSK))
+				{					
+					/* check cipher algorithm*/
+					if ((wdev->WepStatus != pInBss->WAPI.GroupCipher) || 
+						(wdev->WepStatus != pInBss->WAPI.PairCipher))
+						continue;											
+				}
+#endif /* WAPI_SUPPORT */
+			}			
+			/* Bss Type matched, SSID matched. */
+			/* We will check wepstatus for qualification Bss*/
+			else if (wdev->WepStatus != pInBss->WepStatus)
+			{
+				DBGPRINT(RT_DEBUG_TRACE,("StaCfg.WepStatus=%d, while pInBss->WepStatus=%d\n", wdev->WepStatus, pInBss->WepStatus));
+				
+				/* For the SESv2 case, we will not qualify WepStatus.*/
+				
+				if (!pInBss->bSES)
+					continue;
+			}
+
+			/* Since the AP is using hidden SSID, and we are trying to connect to ANY*/
+			/* It definitely will fail. So, skip it.*/
+			/* CCX also require not even try to connect it!!*/
+			if (SsidLen == 0)
+				continue;
+			
+			/* copy matching BSS from InTab to OutTab*/
+			NdisMoveMemory(pOutBss, pInBss, sizeof(BSS_ENTRY));
+
+			OutTab->BssNr++;
+		}
+		else if ((pInBss->BssType == pAd->StaCfg.BssType) && (SsidLen == 0))
+		{
+			BSS_ENTRY *pOutBss = &OutTab->BssEntry[OutTab->BssNr];
+
+#ifdef WSC_STA_SUPPORT
+			if ((pWpsCtrl->WscConfMode != WSC_DISABLE) && pWpsCtrl->bWscTrigger)
+			{
+				/* copy matching BSS from InTab to OutTab*/
+				NdisMoveMemory(pOutBss, pInBss, sizeof(BSS_ENTRY));
+				OutTab->BssNr++;
+				continue;
+			}
+#endif /* WSC_STA_SUPPORT */
+
+#ifdef DOT11_N_SUPPORT
+			/* 2.4G/5G N only mode*/
+			if ((pInBss->HtCapabilityLen == 0) &&
+				WMODE_HT_ONLY(pAd->CommonCfg.PhyMode))
+			{
+				DBGPRINT(RT_DEBUG_TRACE,("STA is in N-only Mode, this AP don't have Ht capability in Beacon.\n"));
+				continue;
+			}
+
+			if ((pAd->CommonCfg.PhyMode == (WMODE_G | WMODE_GN)) &&
+				((pInBss->SupRateLen + pInBss->ExtRateLen) < 12))
+			{
+				DBGPRINT(RT_DEBUG_TRACE,("STA is in GN-only Mode, this AP is in B mode.\n"));
+				continue;
+			}
+#endif /* DOT11_N_SUPPORT */
+
+			/* New for WPA2*/
+			/* Check the Authmode first*/
+			if (wdev->AuthMode >= Ndis802_11AuthModeWPA)
+			{
+				/* Check AuthMode and AuthModeAux for matching, in case AP support dual-mode*/
+				if ((wdev->AuthMode != pInBss->AuthMode) && (wdev->AuthMode != pInBss->AuthModeAux))
+					/* None matched*/
+					continue;
+				
+				/* Check cipher suite, AP must have more secured cipher than station setting*/
+				if ((wdev->AuthMode == Ndis802_11AuthModeWPA) || (wdev->AuthMode == Ndis802_11AuthModeWPAPSK))
+				{
+					/* If it's not mixed mode, we should only let BSS pass with the same encryption*/
+					if (pInBss->WPA.bMixMode == FALSE)
+						if (wdev->WepStatus != pInBss->WPA.GroupCipher)
+							continue;
+						
+					/* check group cipher*/
+					if (wdev->WepStatus < pInBss->WPA.GroupCipher)
+						continue;
+
+					/* check pairwise cipher, skip if none matched*/
+					/* If profile set to AES, let it pass without question.*/
+					/* If profile set to TKIP, we must find one mateched*/
+					if ((wdev->WepStatus == Ndis802_11TKIPEnable) && 
+						(wdev->WepStatus != pInBss->WPA.PairCipher) && 
+						(wdev->WepStatus != pInBss->WPA.PairCipherAux))
+						continue;						
+				}
+				else if ((wdev->AuthMode == Ndis802_11AuthModeWPA2) || (wdev->AuthMode == Ndis802_11AuthModeWPA2PSK))
+				{
+					/* If it's not mixed mode, we should only let BSS pass with the same encryption*/
+					if (pInBss->WPA2.bMixMode == FALSE)
+						if (wdev->WepStatus != pInBss->WPA2.GroupCipher)
+							continue;
+						
+					/* check group cipher*/
+					if (wdev->WepStatus < pInBss->WPA2.GroupCipher)
+						continue;
+
+					/* check pairwise cipher, skip if none matched*/
+					/* If profile set to AES, let it pass without question.*/
+					/* If profile set to TKIP, we must find one mateched*/
+					if ((wdev->WepStatus == Ndis802_11TKIPEnable) && 
+						(wdev->WepStatus != pInBss->WPA2.PairCipher) && 
+						(wdev->WepStatus != pInBss->WPA2.PairCipherAux))
+						continue;						
+				}
+#ifdef WAPI_SUPPORT
+				else if ((wdev->AuthMode == Ndis802_11AuthModeWAICERT) || (wdev->AuthMode == Ndis802_11AuthModeWAIPSK))
+				{					
+					/* check cipher algorithm*/
+					if ((wdev->WepStatus != pInBss->WAPI.GroupCipher) || 
+						(wdev->WepStatus != pInBss->WAPI.PairCipher))
+						continue;											
+				}
+#endif /* WAPI_SUPPORT */				
+			}
+			/* Bss Type matched, SSID matched. */
+			/* We will check wepstatus for qualification Bss*/
+			else if (wdev->WepStatus != pInBss->WepStatus)
+					continue;
+			
+			/* copy matching BSS from InTab to OutTab*/
+			NdisMoveMemory(pOutBss, pInBss, sizeof(BSS_ENTRY));
+
+			OutTab->BssNr++;
+		}
+#ifdef WSC_STA_SUPPORT		
+		else if ((pWpsCtrl->WscConfMode != WSC_DISABLE) && 
+				 (pWpsCtrl->bWscTrigger) &&
+				 MAC_ADDR_EQUAL(pWpsCtrl->WscBssid, pInBss->Bssid))
+		{
+			BSS_ENTRY *pOutBss = &OutTab->BssEntry[OutTab->BssNr];
+			
+			/* copy matching BSS from InTab to OutTab*/
+			NdisMoveMemory(pOutBss, pInBss, sizeof(BSS_ENTRY));
+
+			/*
+				Linksys WRT610N WPS AP will change the SSID from linksys to linksys_WPS_<four random characters> 
+				when the Linksys WRT610N is in the state 'WPS Unconfigured' after set to factory default.
+			*/
+			NdisZeroMemory(pAd->MlmeAux.Ssid, MAX_LEN_OF_SSID);
+			NdisMoveMemory(pAd->MlmeAux.Ssid, pInBss->Ssid, pInBss->SsidLen);
+			pAd->MlmeAux.SsidLen = pInBss->SsidLen;
+
+			
+			/* Update Reconnect Ssid, that user desired to connect.*/
+			
+			NdisZeroMemory(pAd->MlmeAux.AutoReconnectSsid, MAX_LEN_OF_SSID);
+			NdisMoveMemory(pAd->MlmeAux.AutoReconnectSsid, pAd->MlmeAux.Ssid, pAd->MlmeAux.SsidLen);
+			pAd->MlmeAux.AutoReconnectSsidLen = pAd->MlmeAux.SsidLen;
+
+			OutTab->BssNr++;
+			continue;
+		}
+#endif /* WSC_STA_SUPPORT */
+
+		if (OutTab->BssNr >= MAX_LEN_OF_BSS_TABLE)
+			break;
+	}
+
+	BssTableSortByRssi(OutTab, FALSE);
+}
+#endif /* CONFIG_STA_SUPPORT */
 
 VOID BssTableSortByRssi(
         IN OUT BSS_TABLE *OutTab,
@@ -3326,6 +4871,9 @@ VOID BssCipherParse(BSS_ENTRY *pBss)
 								pBss->AuthModeAux = Ndis802_11AuthModeWPANone;
 							break;                                                        
 						case 1:
+#ifdef DOT11R_FT_SUPPORT
+						case 3:
+#endif /* DOT11R_FT_SUPPORT */
 							/* Set AP support WPA-enterprise mode*/
 							if (pBss->AuthMode == Ndis802_11AuthModeOpen)
 								pBss->AuthMode = Ndis802_11AuthModeWPA2;
@@ -3333,6 +4881,9 @@ VOID BssCipherParse(BSS_ENTRY *pBss)
 								pBss->AuthModeAux = Ndis802_11AuthModeWPA2;
 							break;
 						case 2:
+#ifdef DOT11R_FT_SUPPORT
+						case 4:
+#endif /* DOT11R_FT_SUPPORT */
 #ifdef DOT11W_PMF_SUPPORT
 						case 6:
 #endif /* DOT11W_PMF_SUPPORT */                                                        
@@ -3539,6 +5090,10 @@ VOID MgtMacHeaderInit(
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		COPY_MAC_ADDR(pHdr80211->Addr2, pBssid);
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		COPY_MAC_ADDR(pHdr80211->Addr2, pAd->CurrentAddress);
+#endif /* CONFIG_STA_SUPPORT */
 #endif /* P2P_SUPPORT */
 	COPY_MAC_ADDR(pHdr80211->Addr3, pBssid);
 }
@@ -3682,7 +5237,9 @@ BOOLEAN MlmeEnqueue(
 
 	NdisAcquireSpinLock(&(Queue->Lock));
 	Tail = Queue->Tail;
-	/* Double check for safety multi-thread system. */
+	/*
+		Double check for safety in multi-thread system.
+	*/
 	if (Queue->Entry[Tail].Occupied)
 	{
 		NdisReleaseSpinLock(&(Queue->Lock));
@@ -3729,6 +5286,10 @@ BOOLEAN MlmeEnqueueForRecv(
 	IN UCHAR Rssi0, 
 	IN UCHAR Rssi1, 
 	IN UCHAR Rssi2, 
+#ifdef CUSTOMER_DCC_FEATURE
+	IN UCHAR Snr0,
+	IN UCHAR Snr1,
+#endif
 	IN ULONG MsgLen, 
 	IN VOID *Msg,
 	IN UCHAR Signal,
@@ -3840,11 +5401,28 @@ BOOLEAN MlmeEnqueueForRecv(
 #endif /* APCLI_SUPPORT */
 	}
 #endif /* CONFIG_AP_SUPPORT */	
+#ifdef CONFIG_STA_SUPPORT
+#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
+	if (OpMode == OPMODE_STA)
+#else
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+#endif /* P2P_SUPPORT */
+	{
+		if (!MsgTypeSubst(pAd, pFrame, &Machine, &MsgType)) 
+		{
+			DBGPRINT_ERR(("%s(): un-recongnized mgmt->subtype=%d\n",
+							__FUNCTION__, pFrame->Hdr.FC.SubType));
+			return FALSE;
+		}
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	/* OK, we got all the informations, it is time to put things into queue*/
 	NdisAcquireSpinLock(&(Queue->Lock));
 	Tail = Queue->Tail;
-	/* Double check for safety multi-thread system. */
+	/*
+		Double check for safety in multi-thread system.
+	*/
 	if (Queue->Entry[Tail].Occupied)
 	{
 		NdisReleaseSpinLock(&(Queue->Lock));
@@ -3864,6 +5442,10 @@ BOOLEAN MlmeEnqueueForRecv(
 	Queue->Entry[Tail].Rssi0 = Rssi0;
 	Queue->Entry[Tail].Rssi1 = Rssi1;
 	Queue->Entry[Tail].Rssi2 = Rssi2;
+#ifdef CUSTOMER_DCC_FEATURE
+	Queue->Entry[Tail].Snr0= Snr0;
+	Queue->Entry[Tail].Snr1= Snr1;
+#endif
 	Queue->Entry[Tail].Signal = Signal;
 	Queue->Entry[Tail].Wcid = (UCHAR)Wcid;
 	Queue->Entry[Tail].OpMode = (ULONG)OpMode;
@@ -3945,12 +5527,14 @@ BOOLEAN MlmeEnqueueForWsc(
     /* OK, we got all the informations, it is time to put things into queue*/
 	NdisAcquireSpinLock(&(Queue->Lock));
     Tail = Queue->Tail;
-    /* Double check for safety multi-thread system. */
-    if (Queue->Entry[Tail].Occupied)
-    {
-        NdisReleaseSpinLock(&(Queue->Lock));
-        return FALSE;
-    }
+	/*
+		Double check for safety in multi-thread system.
+	*/
+	if (Queue->Entry[Tail].Occupied)
+	{
+		NdisReleaseSpinLock(&(Queue->Lock));
+		return FALSE;
+	}
     Queue->Tail++;
     Queue->Num++;
     if (Queue->Tail == MAX_LEN_OF_MLME_QUEUE) 
@@ -4003,6 +5587,9 @@ VOID MlmeRestartStateMachine(RTMP_ADAPTER *pAd)
 #ifdef RTMP_MAC_PCI
 	MLME_QUEUE_ELEM *Elem = NULL;
 #endif /* RTMP_MAC_PCI */
+#ifdef CONFIG_STA_SUPPORT
+	BOOLEAN Cancelled;
+#endif /* CONFIG_STA_SUPPORT */
 
 	DBGPRINT(RT_DEBUG_TRACE, ("MlmeRestartStateMachine \n"));
 
@@ -4036,6 +5623,29 @@ VOID MlmeRestartStateMachine(RTMP_ADAPTER *pAd)
 	}
 #endif /* RTMP_MAC_PCI */
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+#ifdef QOS_DLS_SUPPORT
+		UCHAR i;
+#endif /* QOS_DLS_SUPPORT */
+		/* Cancel all timer events*/
+		/* Be careful to cancel new added timer*/
+		RTMPCancelTimer(&pAd->MlmeAux.AssocTimer,	  &Cancelled);
+		RTMPCancelTimer(&pAd->MlmeAux.ReassocTimer,   &Cancelled);
+		RTMPCancelTimer(&pAd->MlmeAux.DisassocTimer,  &Cancelled);
+		RTMPCancelTimer(&pAd->MlmeAux.AuthTimer,	   &Cancelled);
+		RTMPCancelTimer(&pAd->MlmeAux.BeaconTimer,	   &Cancelled);
+		RTMPCancelTimer(&pAd->MlmeAux.ScanTimer,	   &Cancelled);
+
+#ifdef QOS_DLS_SUPPORT
+		for (i=0; i<MAX_NUM_OF_DLS_ENTRY; i++)
+		{
+			RTMPCancelTimer(&pAd->StaCfg.DLSEntry[i].Timer, &Cancelled);
+		}
+#endif /* QOS_DLS_SUPPORT */
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	/* Change back to original channel in case of doing scan*/
 	{
@@ -4046,6 +5656,25 @@ VOID MlmeRestartStateMachine(RTMP_ADAPTER *pAd)
 	/* Resume MSDU which is turned off durning scan*/
 	RTMPResumeMsduTransmission(pAd);
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		/* Set all state machines back IDLE*/
+		pAd->Mlme.CntlMachine.CurrState    = CNTL_IDLE;
+		pAd->Mlme.AssocMachine.CurrState   = ASSOC_IDLE;
+		pAd->Mlme.AuthMachine.CurrState    = AUTH_REQ_IDLE;
+		pAd->Mlme.AuthRspMachine.CurrState = AUTH_RSP_IDLE;
+		pAd->Mlme.SyncMachine.CurrState    = SYNC_IDLE;
+		pAd->Mlme.ActMachine.CurrState    = ACT_IDLE;
+#ifdef QOS_DLS_SUPPORT
+		pAd->Mlme.DlsMachine.CurrState    = DLS_IDLE;
+#endif /* QOS_DLS_SUPPORT */
+#ifdef DOT11Z_TDLS_SUPPORT
+		pAd->Mlme.TdlsMachine.CurrState    = TDLS_IDLE;
+#endif /* DOT11Z_TDLS_SUPPORT */
+
+	}
+#endif /* CONFIG_STA_SUPPORT */
 	
 #ifdef RTMP_MAC_PCI	
 	/* Remove running state*/
@@ -4094,7 +5723,7 @@ BOOLEAN MlmeQueueFull(MLME_QUEUE *Queue, UCHAR SendId)
 	if (SendId == 0)
 		Ans = ((Queue->Num >= (MAX_LEN_OF_MLME_QUEUE / 2)) || Queue->Entry[Queue->Tail].Occupied);
 	else
-		Ans = (Queue->Num == MAX_LEN_OF_MLME_QUEUE)  || Queue->Entry[Queue->Tail].Occupied;
+		Ans = ((Queue->Num == MAX_LEN_OF_MLME_QUEUE) || Queue->Entry[Queue->Tail].Occupied);
 	NdisReleaseSpinLock(&(Queue->Lock));
 
 	return Ans;
@@ -4133,6 +5762,157 @@ VOID MlmeQueueDestroy(MLME_QUEUE *pQueue)
  IRQL = DISPATCH_LEVEL
 
  */
+#ifdef CONFIG_STA_SUPPORT
+BOOLEAN MsgTypeSubst(RTMP_ADAPTER *pAd, FRAME_802_11 *pFrame, INT *Machine, INT *MsgType)
+{
+	USHORT	Seq, Alg;
+	UCHAR	EAPType;
+	PUCHAR	pData;
+	BOOLEAN bRV = FALSE;
+#ifdef WSC_STA_SUPPORT
+	UCHAR EAPCode;
+#endif /* WSC_STA_SUPPORT */    
+
+	/* Pointer to start of data frames including SNAP header*/
+	pData = (PUCHAR) pFrame + LENGTH_802_11;
+
+	/* The only data type will pass to this function is EAPOL frame*/
+	if (pFrame->Hdr.FC.Type == FC_TYPE_DATA) 
+	{
+#ifdef DOT11Z_TDLS_SUPPORT
+		if (NdisEqualMemory(TDLS_LLC_SNAP_WITH_CATEGORY, pData, LENGTH_802_1_H + 2))
+		{
+			UCHAR	TDLSType;
+
+			/* ieee802.11z TDLS SNAP header*/
+			*Machine = TDLS_STATE_MACHINE;
+			TDLSType = *((UCHAR*)pFrame + LENGTH_802_11 + LENGTH_802_1_H + 2);
+			return (TDLS_MsgTypeSubst(TDLSType, (INT *)MsgType));
+		}
+		else
+#endif /* DOT11Z_TDLS_SUPPORT */
+#ifdef WSC_STA_SUPPORT
+        /* check for WSC state machine first*/
+		if (pAd->StaCfg.WscControl.WscState >= WSC_STATE_LINK_UP)
+        {
+            *Machine = WSC_STATE_MACHINE;
+            EAPType = *((UCHAR*)pFrame + LENGTH_802_11 + LENGTH_802_1_H + 1);
+            EAPCode = *((UCHAR*)pFrame + LENGTH_802_11 + LENGTH_802_1_H + 4);
+            
+            bRV = WscMsgTypeSubst(EAPType, EAPCode, MsgType);
+ 			if (bRV)
+				return bRV;
+        }
+#endif /* WSC_STA_SUPPORT */
+		if (bRV == FALSE)
+		{
+	        *Machine = WPA_STATE_MACHINE;
+			EAPType = *((UCHAR*)pFrame + LENGTH_802_11 + LENGTH_802_1_H + 1);
+	        return (WpaMsgTypeSubst(EAPType, (INT *) MsgType));		
+		}
+	}
+
+	switch (pFrame->Hdr.FC.SubType) 
+	{
+		case SUBTYPE_ASSOC_REQ:
+			*Machine = ASSOC_STATE_MACHINE;
+			*MsgType = MT2_PEER_ASSOC_REQ;
+			break;
+		case SUBTYPE_ASSOC_RSP:
+			*Machine = ASSOC_STATE_MACHINE;
+			*MsgType = MT2_PEER_ASSOC_RSP;
+			break;
+		case SUBTYPE_REASSOC_REQ:
+			*Machine = ASSOC_STATE_MACHINE;
+			*MsgType = MT2_PEER_REASSOC_REQ;
+			break;
+		case SUBTYPE_REASSOC_RSP:
+			*Machine = ASSOC_STATE_MACHINE;
+			*MsgType = MT2_PEER_REASSOC_RSP;
+			break;
+		case SUBTYPE_PROBE_REQ:
+			*Machine = SYNC_STATE_MACHINE;
+			*MsgType = MT2_PEER_PROBE_REQ;
+			break;
+		case SUBTYPE_PROBE_RSP:
+			*Machine = SYNC_STATE_MACHINE;
+			*MsgType = MT2_PEER_PROBE_RSP;
+			break;
+		case SUBTYPE_BEACON:
+			*Machine = SYNC_STATE_MACHINE;
+			*MsgType = MT2_PEER_BEACON;
+			break;
+		case SUBTYPE_ATIM:
+			*Machine = SYNC_STATE_MACHINE;
+			*MsgType = MT2_PEER_ATIM;
+			break;
+		case SUBTYPE_DISASSOC:
+			*Machine = ASSOC_STATE_MACHINE;
+			*MsgType = MT2_PEER_DISASSOC_REQ;
+			break;
+		case SUBTYPE_AUTH:
+			/* get the sequence number from payload 24 Mac Header + 2 bytes algorithm*/
+			NdisMoveMemory(&Seq, &pFrame->Octet[2], sizeof(USHORT));
+			NdisMoveMemory(&Alg, &pFrame->Octet[0], sizeof(USHORT));
+			if (Seq == 1 || Seq == 3) 
+			{
+				*Machine = AUTH_RSP_STATE_MACHINE;
+				*MsgType = MT2_PEER_AUTH_ODD;
+			} 
+			else if (Seq == 2 || Seq == 4) 
+			{
+#ifdef DOT11R_FT_SUPPORT
+				if (Alg == AUTH_MODE_FT)
+				{
+					*Machine = FT_OTA_AUTH_STATE_MACHINE;
+					*MsgType = FT_OTA_MT2_PEER_AUTH_EVEN;
+				}
+				else
+#endif /* DOT11R_FT_SUPPORT */
+				if (Alg == AUTH_MODE_OPEN || Alg == AUTH_MODE_KEY)
+				{
+					*Machine = AUTH_STATE_MACHINE;
+					*MsgType = MT2_PEER_AUTH_EVEN;
+				} 
+			} 
+			else 
+			{
+				return FALSE;
+			}
+			break;
+		case SUBTYPE_DEAUTH:
+			*Machine = AUTH_RSP_STATE_MACHINE;
+			*MsgType = MT2_PEER_DEAUTH;
+			break;
+		case SUBTYPE_ACTION:
+		case SUBTYPE_ACTION_NO_ACK:
+			*Machine = ACTION_STATE_MACHINE;
+#ifdef DOT11R_FT_SUPPORT
+			if ((pFrame->Octet[0]&0x7F) == FT_CATEGORY_BSS_TRANSITION) 
+			{
+				*Machine = FT_OTD_ACT_STATE_MACHINE;
+				*MsgType = FT_OTD_MT2_PEER_EVEN;
+			}
+			else
+#endif /* DOT11R_FT_SUPPORT */
+			/*  Sometimes Sta will return with category bytes with MSB = 1, if they receive catogory out of their support*/
+			if ((pFrame->Octet[0]&0x7F) > MAX_PEER_CATE_MSG) 
+			{
+				*MsgType = MT2_ACT_INVALID;
+			} 
+			else
+			{
+				*MsgType = (pFrame->Octet[0]&0x7F);
+			} 
+			break;
+		default:
+			return FALSE;
+			break;
+	}
+
+	return TRUE;
+}
+#endif /* CONFIG_STA_SUPPORT */
 
 
 /*! \brief Initialize the state machine.
@@ -4331,6 +6111,411 @@ VOID RTMPCheckRates(RTMP_ADAPTER *pAd, UCHAR SupRate[], UCHAR *SupRateLen)
 	NdisMoveMemory(SupRate, NewRate, NewRateLen);
 }
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef DOT11_N_SUPPORT
+BOOLEAN RTMPCheckChannel(RTMP_ADAPTER *pAd, UCHAR CentralCh, UCHAR ch)
+{
+	UCHAR		k;
+	UCHAR		UpperChannel = 0, LowerChannel = 0;
+	UCHAR		NoEffectChannelinList = 0;
+	
+	/* Find upper and lower channel according to 40MHz current operation. */
+	if (CentralCh < ch)
+	{
+		UpperChannel = ch;
+		if (CentralCh > 2)
+			LowerChannel = CentralCh - 2;
+		else
+			return FALSE;
+	}
+	else if (CentralCh > ch)
+	{
+		UpperChannel = CentralCh + 2;
+		LowerChannel = ch;
+	}
+
+	for (k = 0;k < pAd->ChannelListNum;k++)
+	{
+		if (pAd->ChannelList[k].Channel == UpperChannel)
+		{
+			NoEffectChannelinList ++;
+		}
+		if (pAd->ChannelList[k].Channel == LowerChannel)
+		{
+			NoEffectChannelinList ++;
+		}
+	}
+
+	DBGPRINT(RT_DEBUG_TRACE,("Total Channel in Channel List = [%d]\n", NoEffectChannelinList));
+	if (NoEffectChannelinList == 2)
+		return TRUE;
+	else
+		return FALSE;
+}
+
+
+/*
+	========================================================================
+
+	Routine Description:
+		Verify the support rate for HT phy type
+
+	Arguments:
+		pAd 				Pointer to our adapter
+
+	Return Value:
+		FALSE if pAd->CommonCfg.SupportedHtPhy doesn't accept the pHtCapability.  (AP Mode)
+
+	IRQL = PASSIVE_LEVEL
+
+	========================================================================
+*/
+BOOLEAN RTMPCheckHt(
+	IN RTMP_ADAPTER *pAd,
+	IN UCHAR Wcid,
+	IN HT_CAPABILITY_IE *pHtCap,
+	IN ADD_HT_INFO_IE *pAddHtInfo)
+{
+	MAC_TABLE_ENTRY *sta;
+
+	if (Wcid >= MAX_LEN_OF_MAC_TABLE)
+		return FALSE;
+
+	sta = &pAd->MacTab.Content[Wcid];
+	/* If use AMSDU, set flag.*/
+	if (pAd->CommonCfg.DesiredHtPhy.AmsduEnable)
+		CLIENT_STATUS_SET_FLAG(sta, fCLIENT_STATUS_AMSDU_INUSED);
+	/* Save Peer Capability*/
+	if (pAd->CommonCfg.ht_ldpc && (pAd->chipCap.phy_caps & fPHY_CAP_LDPC)) {
+		if (pHtCap->HtCapInfo.ht_rx_ldpc)
+			CLIENT_STATUS_SET_FLAG(sta, fCLIENT_STATUS_HT_RX_LDPC_CAPABLE);
+	}
+	
+	if (pHtCap->HtCapInfo.ShortGIfor20)
+		CLIENT_STATUS_SET_FLAG(sta, fCLIENT_STATUS_SGI20_CAPABLE);
+	if (pHtCap->HtCapInfo.ShortGIfor40)
+		CLIENT_STATUS_SET_FLAG(sta, fCLIENT_STATUS_SGI40_CAPABLE);
+	if (pHtCap->HtCapInfo.TxSTBC)
+		CLIENT_STATUS_SET_FLAG(sta, fCLIENT_STATUS_TxSTBC_CAPABLE);
+	if (pHtCap->HtCapInfo.RxSTBC)
+		CLIENT_STATUS_SET_FLAG(sta, fCLIENT_STATUS_RxSTBC_CAPABLE);
+	if (pAd->CommonCfg.bRdg && pHtCap->ExtHtCapInfo.RDGSupport)
+	{
+		CLIENT_STATUS_SET_FLAG(sta, fCLIENT_STATUS_RDG_CAPABLE);
+	}
+	
+	if (Wcid < MAX_LEN_OF_MAC_TABLE)
+	{
+		sta->MpduDensity = pHtCap->HtCapParm.MpduDensity;
+	}
+
+	/* Will check ChannelWidth for MCSSet[4] below*/
+	NdisZeroMemory(&pAd->MlmeAux.HtCapability.MCSSet[0], 16);
+	pAd->MlmeAux.HtCapability.MCSSet[4] = 0x1;
+	switch (pAd->CommonCfg.RxStream)
+	{
+		case 3:
+			pAd->MlmeAux.HtCapability.MCSSet[2] = 0xff;
+		case 2:
+			pAd->MlmeAux.HtCapability.MCSSet[1] = 0xff;
+		case 1:
+		default:
+			pAd->MlmeAux.HtCapability.MCSSet[0] = 0xff;
+			break;
+	}	
+
+	pAd->MlmeAux.HtCapability.HtCapInfo.ChannelWidth = pAddHtInfo->AddHtInfo.RecomWidth & pAd->CommonCfg.DesiredHtPhy.ChannelWidth;
+		
+	/*
+		If both station and AP use 40MHz, still need to check if the 40MHZ band's legality in my country region
+		If this 40MHz wideband is not allowed in my country list, use bandwidth 20MHZ instead,
+	*/
+	if (pAd->MlmeAux.HtCapability.HtCapInfo.ChannelWidth == BW_40)
+	{
+		if (RTMPCheckChannel(pAd, pAd->MlmeAux.CentralChannel, pAd->MlmeAux.Channel) == FALSE)
+		{
+			pAd->MlmeAux.HtCapability.HtCapInfo.ChannelWidth = BW_20;
+		}
+	}
+		
+    DBGPRINT(RT_DEBUG_TRACE, ("RTMPCheckHt:: HtCapInfo.ChannelWidth=%d, RecomWidth=%d, DesiredHtPhy.ChannelWidth=%d, BW40MAvailForA/G=%d/%d, PhyMode=%d \n",
+		pAd->MlmeAux.HtCapability.HtCapInfo.ChannelWidth, pAddHtInfo->AddHtInfo.RecomWidth, pAd->CommonCfg.DesiredHtPhy.ChannelWidth,
+		pAd->NicConfig2.field.BW40MAvailForA, pAd->NicConfig2.field.BW40MAvailForG, pAd->CommonCfg.PhyMode));
+    
+	pAd->MlmeAux.HtCapability.HtCapInfo.GF =  pHtCap->HtCapInfo.GF &pAd->CommonCfg.DesiredHtPhy.GF;
+
+	/* Send Assoc Req with my HT capability.*/
+	pAd->MlmeAux.HtCapability.HtCapInfo.AMsduSize =  pAd->CommonCfg.DesiredHtPhy.AmsduSize;
+	pAd->MlmeAux.HtCapability.HtCapInfo.MimoPs =  pAd->CommonCfg.DesiredHtPhy.MimoPs;
+	pAd->MlmeAux.HtCapability.HtCapInfo.ShortGIfor20 =  (pAd->CommonCfg.DesiredHtPhy.ShortGIfor20) & (pHtCap->HtCapInfo.ShortGIfor20);
+	pAd->MlmeAux.HtCapability.HtCapInfo.ShortGIfor40 =  (pAd->CommonCfg.DesiredHtPhy.ShortGIfor40) & (pHtCap->HtCapInfo.ShortGIfor40);
+	pAd->MlmeAux.HtCapability.HtCapInfo.TxSTBC =  (pAd->CommonCfg.DesiredHtPhy.TxSTBC)&(pHtCap->HtCapInfo.RxSTBC);
+	pAd->MlmeAux.HtCapability.HtCapInfo.RxSTBC =  (pAd->CommonCfg.DesiredHtPhy.RxSTBC)&(pHtCap->HtCapInfo.TxSTBC);
+	
+	if (CLIENT_STATUS_TEST_FLAG(sta, fCLIENT_STATUS_HT_RX_LDPC_CAPABLE))
+		pAd->MlmeAux.HtCapability.HtCapInfo.ht_rx_ldpc = 1;
+	else
+		pAd->MlmeAux.HtCapability.HtCapInfo.ht_rx_ldpc = 0;
+
+	pAd->MlmeAux.HtCapability.HtCapParm.MaxRAmpduFactor = pAd->CommonCfg.DesiredHtPhy.MaxRAmpduFactor;
+	pAd->MlmeAux.HtCapability.HtCapParm.MpduDensity = pAd->CommonCfg.HtCapability.HtCapParm.MpduDensity;
+	pAd->MlmeAux.HtCapability.ExtHtCapInfo.PlusHTC = pHtCap->ExtHtCapInfo.PlusHTC;
+	sta->HTCapability.ExtHtCapInfo.PlusHTC = pHtCap->ExtHtCapInfo.PlusHTC;
+	if (pAd->CommonCfg.bRdg)
+	{
+		pAd->MlmeAux.HtCapability.ExtHtCapInfo.RDGSupport = pHtCap->ExtHtCapInfo.RDGSupport;
+		pAd->MlmeAux.HtCapability.ExtHtCapInfo.PlusHTC = 1;
+	}
+	
+    if (pAd->MlmeAux.HtCapability.HtCapInfo.ChannelWidth == BW_20)
+        pAd->MlmeAux.HtCapability.MCSSet[4] = 0x0;  /* BW20 can't transmit MCS32*/
+
+	COPY_AP_HTSETTINGS_FROM_BEACON(pAd, pHtCap);
+	return TRUE;
+}
+
+
+#ifdef DOT11_VHT_AC
+/*
+	========================================================================
+
+	Routine Description:
+		Verify the support rate for HT phy type
+
+	Arguments:
+		pAd 				Pointer to our adapter
+
+	Return Value:
+		FALSE if pAd->CommonCfg.SupportedHtPhy doesn't accept the pHtCapability.  (AP Mode)
+
+	IRQL = PASSIVE_LEVEL
+
+	========================================================================
+*/
+BOOLEAN RTMPCheckVht(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR Wcid,
+	IN VHT_CAP_IE *vht_cap,
+	IN VHT_OP_IE *vht_op)
+{
+	VHT_CAP_INFO *vht_cap_info = &vht_cap->vht_cap;
+	MAC_TABLE_ENTRY *pEntry;
+
+	// TODO: shiang-6590, not finish yet!!!!
+
+	if (Wcid >= MAX_LEN_OF_MAC_TABLE)
+		return FALSE;
+
+	pEntry = &pAd->MacTab.Content[Wcid];
+	/* Save Peer Capability*/
+	if (vht_cap_info->sgi_80M)
+		CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_SGI80_CAPABLE);
+	if (vht_cap_info->sgi_160M)
+		CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_SGI160_CAPABLE);
+	if (vht_cap_info->tx_stbc)
+		CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_VHT_TXSTBC_CAPABLE);
+	if (vht_cap_info->rx_stbc)
+		CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_VHT_RXSTBC_CAPABLE);
+
+	if (pAd->CommonCfg.vht_ldpc && (pAd->chipCap.phy_caps & fPHY_CAP_LDPC)) {
+		if (vht_cap_info->rx_ldpc)
+			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_VHT_RX_LDPC_CAPABLE);
+	}
+
+	/* Will check ChannelWidth for MCSSet[4] below */
+	NdisZeroMemory(&pAd->MlmeAux.vht_cap.mcs_set, sizeof(VHT_MCS_SET));
+	pAd->MlmeAux.vht_cap.mcs_set.rx_high_rate = pAd->CommonCfg.RxStream * 325;
+	pAd->MlmeAux.vht_cap.mcs_set.tx_high_rate = pAd->CommonCfg.TxStream * 325;
+
+	//pAd->MlmeAux.vht_cap.vht_cap.ch_width = vht_cap_info->ch_width;
+#ifdef VHT_TXBF_SUPPORT	       
+       //Disable beamformee capability in Associate Request with 3x3 AP to avoid throughput drop issue
+       // MT76x2 only supports up to 2x2 sounding feedback 
+       if(IS_MT76x2(pAd))
+       {           
+           if(vht_cap_info->num_snd_dimension >=2 )
+           {
+             pAd->MlmeAux.vht_cap.vht_cap.bfee_cap_su = FALSE;
+             pAd->MlmeAux.vht_cap.vht_cap.bfee_cap_mu = FALSE;
+             
+          }
+         }
+#endif /* TXBF_SUPPORT */
+
+	return TRUE;
+}
+#endif /* DOT11_VHT_AC */
+#endif /* DOT11_N_SUPPORT */
+
+
+/*
+	========================================================================
+
+	Routine Description:
+		Verify the support rate for different PHY type
+
+	Arguments:
+		pAd 				Pointer to our adapter
+
+	Return Value:
+		None
+
+	IRQL = PASSIVE_LEVEL
+
+	========================================================================
+*/
+VOID RTMPUpdateMlmeRate(RTMP_ADAPTER *pAd)
+{
+	UCHAR MinimumRate;
+	UCHAR ProperMlmeRate; /*= RATE_54; */
+	UCHAR i, j, RateIdx = 12; /* 1, 2, 5.5, 11, 6, 9, 12, 18, 24, 36, 48, 54 */
+	BOOLEAN	bMatch = FALSE;
+
+
+	switch (pAd->CommonCfg.PhyMode) 
+	{
+		case (WMODE_B):
+			ProperMlmeRate = RATE_11;
+			MinimumRate = RATE_1;
+			break;
+		case (WMODE_B | WMODE_G):
+#ifdef DOT11_N_SUPPORT
+		case (WMODE_B | WMODE_G | WMODE_GN | WMODE_A |WMODE_AN):
+		case (WMODE_B | WMODE_G | WMODE_GN):
+#ifdef DOT11_VHT_AC
+		case (WMODE_B | WMODE_G | WMODE_GN | WMODE_A |WMODE_AN | WMODE_AC):
+#endif /* DOT11_VHT_AC */
+#endif /* DOT11_N_SUPPORT */
+			if ((pAd->MlmeAux.SupRateLen == 4) &&
+				(pAd->MlmeAux.ExtRateLen == 0))
+				ProperMlmeRate = RATE_11; /* B only AP */
+			else
+				ProperMlmeRate = RATE_24;
+			
+			if (pAd->MlmeAux.Channel <= 14)
+				MinimumRate = RATE_1;
+			else
+				MinimumRate = RATE_6;
+			break;
+		case (WMODE_A):
+#ifdef DOT11_N_SUPPORT
+		case (WMODE_GN):
+		case (WMODE_G | WMODE_GN):
+		case (WMODE_A | WMODE_G | WMODE_GN | WMODE_AN):
+		case (WMODE_A |WMODE_AN):
+		case (WMODE_AN):	
+#ifdef DOT11_VHT_AC
+		case (WMODE_A | WMODE_G | WMODE_GN | WMODE_AN | WMODE_AC):
+#endif /* DOT11_VHT_AC */
+#endif /* DOT11_N_SUPPORT */
+			ProperMlmeRate = RATE_24;
+			MinimumRate = RATE_6;
+			break;
+		case (WMODE_A |WMODE_B | WMODE_G):
+			ProperMlmeRate = RATE_24;
+			if (pAd->MlmeAux.Channel <= 14)
+			   MinimumRate = RATE_1;
+			else
+				MinimumRate = RATE_6;
+			break;
+		default:
+			ProperMlmeRate = RATE_1;
+			MinimumRate = RATE_1;
+			break;
+	}
+
+
+#ifdef DOT11_VHT_AC
+	if (WMODE_EQUAL(pAd->CommonCfg.PhyMode, WMODE_B))
+	{
+		ProperMlmeRate = RATE_11;
+		MinimumRate = RATE_1;
+	}
+	else
+	{
+		if (WMODE_CAP(pAd->CommonCfg.PhyMode, WMODE_B))
+		{
+			if ((pAd->MlmeAux.SupRateLen == 4) && (pAd->MlmeAux.ExtRateLen == 0))
+				ProperMlmeRate = RATE_11; /* B only AP */
+			else
+				ProperMlmeRate = RATE_24;
+
+			if (pAd->MlmeAux.Channel <= 14)
+				MinimumRate = RATE_1;
+			else
+				MinimumRate = RATE_6;
+		}
+		else
+		{
+			ProperMlmeRate = RATE_24;
+			MinimumRate = RATE_6;
+		}
+	}
+#endif /* DOT11_VHT_AC */
+
+	for (i = 0; i < pAd->MlmeAux.SupRateLen; i++)
+	{
+		for (j = 0; j < RateIdx; j++)
+		{
+			if ((pAd->MlmeAux.SupRate[i] & 0x7f) == RateIdTo500Kbps[j])
+			{
+				if (j == ProperMlmeRate)
+				{
+					bMatch = TRUE;
+					break;
+				}
+			}			
+		}
+
+		if (bMatch)
+			break;
+	}
+
+	if (bMatch == FALSE)
+	{
+		for (i = 0; i < pAd->MlmeAux.ExtRateLen; i++)
+		{
+			for (j = 0; j < RateIdx; j++)
+			{
+				if ((pAd->MlmeAux.ExtRate[i] & 0x7f) == RateIdTo500Kbps[j])
+				{
+						if (j == ProperMlmeRate)
+						{
+							bMatch = TRUE;
+							break;
+						}
+				}
+			}
+			
+				if (bMatch)
+					break;
+		}
+	}
+
+	if (bMatch == FALSE)
+		ProperMlmeRate = MinimumRate;
+
+	pAd->CommonCfg.MlmeRate = MinimumRate;
+	pAd->CommonCfg.RtsRate = ProperMlmeRate;
+	if (pAd->CommonCfg.MlmeRate >= RATE_6)
+	{
+		pAd->CommonCfg.MlmeTransmit.field.MODE = MODE_OFDM;
+		pAd->CommonCfg.MlmeTransmit.field.MCS = OfdmRateToRxwiMCS[pAd->CommonCfg.MlmeRate];
+		pAd->MacTab.Content[BSS0Mcast_WCID].HTPhyMode.field.MODE = MODE_OFDM;
+		pAd->MacTab.Content[BSS0Mcast_WCID].HTPhyMode.field.MCS = OfdmRateToRxwiMCS[pAd->CommonCfg.MlmeRate];
+	}
+	else
+	{
+		pAd->CommonCfg.MlmeTransmit.field.MODE = MODE_CCK;
+		pAd->CommonCfg.MlmeTransmit.field.MCS = pAd->CommonCfg.MlmeRate;
+		pAd->MacTab.Content[BSS0Mcast_WCID].HTPhyMode.field.MODE = MODE_CCK;
+		pAd->MacTab.Content[BSS0Mcast_WCID].HTPhyMode.field.MCS = pAd->CommonCfg.MlmeRate;
+	}
+
+	DBGPRINT(RT_DEBUG_TRACE, ("%s():=>MlmeTransmit=0x%x\n",
+				__FUNCTION__, pAd->CommonCfg.MlmeTransmit.word));
+}
+#endif /* CONFIG_STA_SUPPORT */
 
 
 CHAR RTMPAvgRssi(RTMP_ADAPTER *pAd, RSSI_SAMPLE *pRssi)
@@ -4440,6 +6625,35 @@ VOID AsicEvaluateRxAnt(RTMP_ADAPTER *pAd)
 			return;
 		}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+
+			if (pAd->StaCfg.Psm == PWR_SAVE)
+				return;
+
+			bbp_set_rxpath(pAd, pAd->Antenna.field.RxPath);
+			if (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_MEDIA_STATE_CONNECTED)
+			)
+			{
+				ULONG TxTotalCnt = pAd->RalinkCounters.OneSecTxNoRetryOkCount + 
+									pAd->RalinkCounters.OneSecTxRetryOkCount + 
+									pAd->RalinkCounters.OneSecTxFailCount;
+
+				/* dynamic adjust antenna evaluation period according to the traffic*/
+				if (TxTotalCnt > 50)
+				{
+					RTMPSetTimer(&pAd->Mlme.RxAntEvalTimer, 20);
+					pAd->Mlme.bLowThroughput = FALSE;
+				}
+				else
+				{
+					RTMPSetTimer(&pAd->Mlme.RxAntEvalTimer, 300);
+					pAd->Mlme.bLowThroughput = TRUE;
+				}
+			}
+		}
+#endif /* CONFIG_STA_SUPPORT */
 	}
 }
 
@@ -4464,6 +6678,9 @@ VOID AsicRxAntEvalTimeout(
 	IN PVOID SystemSpecific3) 
 {
 	RTMP_ADAPTER	*pAd = (RTMP_ADAPTER *)FunctionContext;
+#ifdef CONFIG_STA_SUPPORT
+	CHAR			larger = -127, rssi0, rssi1, rssi2;
+#endif /* CONFIG_STA_SUPPORT */
 
 
 
@@ -4489,6 +6706,53 @@ VOID AsicRxAntEvalTimeout(
 			return;
 		}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			if (pAd->StaCfg.Psm == PWR_SAVE)
+				return;
+
+
+			/* if the traffic is low, use average rssi as the criteria*/
+			if (pAd->Mlme.bLowThroughput == TRUE)
+			{
+				rssi0 = pAd->StaCfg.RssiSample.LastRssi0;
+				rssi1 = pAd->StaCfg.RssiSample.LastRssi1;
+				rssi2 = pAd->StaCfg.RssiSample.LastRssi2;
+			}
+			else
+			{
+				rssi0 = pAd->StaCfg.RssiSample.AvgRssi0;
+				rssi1 = pAd->StaCfg.RssiSample.AvgRssi1;
+				rssi2 = pAd->StaCfg.RssiSample.AvgRssi2;
+			}
+
+			if(pAd->Antenna.field.RxPath == 3)
+			{
+				larger = max(rssi0, rssi1);
+#ifdef DOT11N_SS3_SUPPORT
+				if (pAd->CommonCfg.TxStream >= 3)
+				{
+					pAd->Mlme.RealRxPath = 3;
+				}
+				else
+#endif /* DOT11N_SS3_SUPPORT */
+				if (larger > (rssi2 + 20))
+					pAd->Mlme.RealRxPath = 2;
+				else
+					pAd->Mlme.RealRxPath = 3;
+			}
+			else if(pAd->Antenna.field.RxPath == 2)
+			{
+				if (rssi0 > (rssi1 + 20))
+					pAd->Mlme.RealRxPath = 1;
+				else
+					pAd->Mlme.RealRxPath = 2;
+			}
+
+			bbp_set_rxpath(pAd, pAd->Mlme.RealRxPath);
+		}
+#endif /* CONFIG_STA_SUPPORT */
 	}
 }
 
@@ -4521,7 +6785,80 @@ VOID APSDPeriodicExec(
 	}*/
 }
 
+#ifdef TXBF_SUPPORT
+/*
+    ========================================================================
+    Routine Description:
+    the timer interrupt routine for TXBF sounding 
 
+    Arguments:
+
+    Return Value:
+
+    ========================================================================
+*/                                                      
+VOID APTxSounding(
+        IN PVOID SystemSpecific1,
+	IN PVOID FunctionContext,
+	IN PVOID SystemSpecific2,
+	IN PVOID SystemSpecific3)
+{
+    USHORT i;
+    MAC_TABLE_ENTRY *pEntry;
+    RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)FunctionContext;
+    UCHAR mlmeMCS, mlmeBW, mlmeMode;
+
+    if (pAd == NULL)
+    {
+        DBGPRINT(RT_DEBUG_ERROR, ("%s(): pAd is NULL!!\n", __FUNCTION__));
+        return;
+    }
+
+    for (i = 0; i < MAX_LEN_OF_MAC_TABLE; i++)
+    {
+        pEntry = &pAd->MacTab.Content[i];
+
+        if (IS_ENTRY_NONE(pEntry))
+	    continue;
+
+	if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst != SST_ASSOC))
+	    continue;
+
+#ifdef APCLI_SUPPORT
+        if (IS_ENTRY_APCLI(pEntry) && (pEntry->Sst != SST_ASSOC))
+	    continue;	
+#endif /*CONFIG_AP_SUPPORT*/        
+
+        if ((pAd->chipCap.FlgHwTxBfCap) && (pEntry->eTxBfEnCond == 1))
+	{
+            eTxBFProbing(pAd, pEntry);
+	    	
+            if (IS_VHT_RATE(pEntry))
+            {
+                mlmeMCS  = pAd->CommonCfg.MlmeTransmit.field.MCS;
+                mlmeBW   = pAd->CommonCfg.MlmeTransmit.field.BW;
+                mlmeMode = pAd->CommonCfg.MlmeTransmit.field.MODE;
+
+#ifdef CONFIG_AP_SUPPORT        
+                AP_NDPA_Frame_Tx(pAd, pEntry);
+#endif
+
+#ifdef CONFIG_STA_SUPPORT
+                STA_NDPA_Frame_Tx(pAd, pEntry);
+#endif
+                //Update TxSndg state by TxSndgType
+                NdisAcquireSpinLock(&pEntry->TxSndgLock); 
+                pEntry->TxSndgType = SNDG_TYPE_DISABLE;
+                NdisReleaseSpinLock(&pEntry->TxSndgLock);
+        
+                pAd->CommonCfg.MlmeTransmit.field.MCS  = mlmeMCS;
+                pAd->CommonCfg.MlmeTransmit.field.BW   = mlmeBW;
+                pAd->CommonCfg.MlmeTransmit.field.MODE = mlmeMode;
+            }
+	}	
+    }    
+}
+#endif /* TXBF_SUPPORT */
 /*
     ========================================================================
     Routine Description:
@@ -4532,7 +6869,7 @@ VOID APSDPeriodicExec(
         pEntry 	 	
 
     Return Value:
-        TURE
+    TRUE    
         FALSE
         
     ========================================================================
@@ -4555,19 +6892,26 @@ BOOLEAN RTMPCheckEntryEnableAutoRateSwitch(
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
-
-
-
-#ifdef TXBF_SUPPORT
-		if (result == FALSE)
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		/* only associated STA counts*/
+		if ((pEntry && IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
+#ifdef QOS_DLS_SUPPORT
+			|| (pEntry && IS_ENTRY_DLS(pEntry))
+#endif /* QOS_DLS_SUPPORT */
+#if defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT)
+			|| (pEntry && IS_ENTRY_TDLS(pEntry))
+#endif /* defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT) */
+			)
 		{
-			//Force MCS will be fixed
-			if (pAd->chipCap.FlgHwTxBfCap)
-			{
-				eTxBFProbing(pAd, pEntry);			
-			}
+			result = pAd->StaCfg.wdev.bAutoTxRateSwitch;
 		}
-#endif /* TXBF_SUPPORT */
+		else
+			result = FALSE;
+	}
+#endif /* CONFIG_STA_SUPPORT */
+
 
 
 	return result;
@@ -4603,6 +6947,13 @@ BOOLEAN RTMPAutoRateSwitchCheck(RTMP_ADAPTER *pAd)
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		if (pAd->StaCfg.wdev.bAutoTxRateSwitch)
+			return TRUE;
+	}
+#endif /* CONFIG_STA_SUPPORT */
 	return FALSE;
 }
 
@@ -4643,6 +6994,12 @@ UCHAR RTMPStaFixedTxMode(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		tx_mode = (UCHAR)pAd->StaCfg.wdev.DesiredTransmitSetting.field.FixedTxMode;
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	return tx_mode;
 }
@@ -4718,6 +7075,55 @@ VOID RTMPUpdateLegacyTxSetting(UCHAR fixed_tx_mode, MAC_TABLE_ENTRY *pEntry)
 	}
 }
 
+#ifdef CONFIG_STA_SUPPORT
+/*
+	==========================================================================
+	Description:
+		dynamic tune BBP R66 to find a balance between sensibility and 
+		noise isolation
+
+	IRQL = DISPATCH_LEVEL
+
+	==========================================================================
+ */
+VOID AsicStaBbpTuning(RTMP_ADAPTER *pAd)
+{
+	UCHAR OrigR66Value = 0, R66;/*, R66UpperBound = 0x30, R66LowerBound = 0x30;*/
+	CHAR Rssi;
+
+	/* 2860C did not support Fase CCA, therefore can't tune*/
+	if (pAd->MACVersion == 0x28600100)
+		return;
+
+	
+	/* work as a STA*/
+	if (pAd->Mlme.CntlMachine.CurrState != CNTL_IDLE)  /* no R66 tuning when SCANNING*/
+		return;
+
+	if ((pAd->OpMode == OPMODE_STA) 
+		&& (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_MEDIA_STATE_CONNECTED)
+			)
+		&& !(OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_DOZE))
+#ifdef RTMP_MAC_PCI		
+		&& (pAd->bPCIclkOff == FALSE)
+#endif /* RTMP_MAC_PCI */
+		)
+	{
+		bbp_get_agc(pAd, &OrigR66Value, RX_CHAIN_0);
+		R66 = OrigR66Value;
+		
+		if (pAd->Antenna.field.RxPath > 1)
+			Rssi = (pAd->StaCfg.RssiSample.AvgRssi0 + pAd->StaCfg.RssiSample.AvgRssi1) >> 1;
+		else
+			Rssi = pAd->StaCfg.RssiSample.AvgRssi0;
+
+		RTMP_CHIP_ASIC_AGC_ADJUST(pAd, Rssi, R66);
+
+		// TODO: shiang,I didn't find AsicAGCAdjust for RT30xx, so I move following code from upper #if case.
+
+	}
+}
+#endif /* CONFIG_STA_SUPPORT */
 
 
 VOID RTMPSetAGCInitValue(RTMP_ADAPTER *pAd, UCHAR BandWidth)

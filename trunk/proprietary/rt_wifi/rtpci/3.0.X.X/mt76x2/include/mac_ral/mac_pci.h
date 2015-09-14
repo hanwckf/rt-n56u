@@ -351,6 +351,16 @@ typedef enum _RTMP_TX_DONE_MASK{
 #define CID3MASK		0xff000000
 
 
+#ifdef CONFIG_STA_SUPPORT
+#define RTMP_STA_FORCE_WAKEUP(pAd, bFromTx) \
+    RT28xxPciStaAsicForceWakeup(pAd, bFromTx);
+
+#define RTMP_STA_SLEEP_THEN_AUTO_WAKEUP(pAd, TbttNumToNextWakeUp) \
+    RT28xxPciStaAsicSleepThenAutoWakeup(pAd, TbttNumToNextWakeUp);
+
+#define RTMP_SET_PSM_BIT(_pAd, _val) \
+	MlmeSetPsmBit(_pAd, _val);
+#endif /* CONFIG_STA_SUPPORT */
 
 #define RTMP_MLME_RADIO_ON(pAd) \
     RT28xxPciMlmeRadioOn(pAd);
@@ -380,6 +390,11 @@ typedef enum _RTMP_TX_DONE_MASK{
 #define RTMP_ASIC_SHARED_KEY_TABLE(_pAd, _BssIndex, _KeyIdx, _pCipherKey) \
 	AsicAddSharedKeyEntry(_pAd, _BssIndex, _KeyIdx, _pCipherKey)
 
+#ifdef CONFIG_STA_SUPPORT
+/* Set Port Secured */
+#define RTMP_SET_PORT_SECURED(_pAd) 										\
+	STA_PORT_SECURED(_pAd);
+#endif /* CONFIG_STA_SUPPORT */
 
 /* Remove Pairwise Key table */
 #define RTMP_REMOVE_PAIRWISE_KEY_ENTRY(_pAd, _Wcid)\

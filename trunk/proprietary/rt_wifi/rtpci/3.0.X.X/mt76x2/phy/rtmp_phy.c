@@ -441,6 +441,14 @@ static INT rtmp_bbp_set_rxpath(struct _RTMP_ADAPTER *pAd, INT rxpath)
 		val |= (0x0);
 	RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, val);
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef RTMP_MAC_PCI
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		pAd->StaCfg.BBPR3 = val;
+	}
+#endif /* RTMP_MAC_PCI */
+#endif /* CONFIG_STA_SUPPORT */
 	return TRUE;
 }
 
@@ -465,6 +473,14 @@ static INT rtmp_bbp_set_ctrlch(struct _RTMP_ADAPTER *pAd, UINT8 ext_ch)
 	if (val != old_val)
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, val);
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef RTMP_MAC_PCI
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		pAd->StaCfg.BBPR3 = val;
+	}
+#endif /* RTMP_MAC_PCI */
+#endif /* CONFIG_STA_SUPPORT */
 
 	return TRUE;
 }

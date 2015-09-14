@@ -875,7 +875,9 @@ typedef union _BCN_TIME_CFG_STRUC {
 #define CH_IDLE_STA			0x1130	/* channel idle time */
 #define CH_BUSY_STA			0x1134	/* channle busy time */
 #define CH_BUSY_STA_SEC	0x1138	/* channel busy time for secondary channel */
-
+#ifdef CUSTOMER_DCC_FEATURE	
+#define CCA_BUSY_TIME		0x1140
+#endif
 
 /*  4.2 MAC POWER  configuration registers (offset:0x1200) */
 #define MAC_STATUS_CFG		0x1200

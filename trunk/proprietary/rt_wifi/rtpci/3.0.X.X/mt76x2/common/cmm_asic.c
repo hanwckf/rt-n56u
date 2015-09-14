@@ -29,6 +29,261 @@
 #include "rt_config.h"
 
 
+#ifdef CONFIG_STA_SUPPORT
+VOID AsicUpdateAutoFallBackTable(
+	IN	PRTMP_ADAPTER	pAd,
+	IN	PUCHAR			pRateTable)
+{
+	UCHAR					i;
+	HT_FBK_CFG0_STRUC		HtCfg0;
+	HT_FBK_CFG1_STRUC		HtCfg1;
+	LG_FBK_CFG0_STRUC		LgCfg0;
+	LG_FBK_CFG1_STRUC		LgCfg1;
+#ifdef DOT11N_SS3_SUPPORT
+	TX_FBK_CFG_3S_0_STRUC	Ht3SSCfg0;
+	TX_FBK_CFG_3S_1_STRUC	Ht3SSCfg1;
+#endif /* DOT11N_SS3_SUPPORT */
+	RTMP_RA_LEGACY_TB *pCurrTxRate, *pNextTxRate;
+
+#ifdef AGS_SUPPORT
+	RTMP_RA_AGS_TB *pCurrTxRate_AGS, *pNextTxRate_AGS;	
+	BOOLEAN					bUseAGS = FALSE;
+
+	if (AGS_IS_USING(pAd, pRateTable))
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("%s: Use AGS\n", __FUNCTION__));
+		
+		bUseAGS = TRUE;
+
+		Ht3SSCfg0.word = 0x1211100f;
+		Ht3SSCfg1.word = 0x16151413;	
+	}
+#endif /* AGS_SUPPORT */
+
+#ifdef DOT11N_SS3_SUPPORT
+	if (IS_RT3883(pAd))
+	{
+		Ht3SSCfg0.word = 0x12111008;
+		Ht3SSCfg1.word = 0x16151413;
+	}
+#endif /* DOT11N_SS3_SUPPORT */
+
+	/* set to initial value*/
+	HtCfg0.word = 0x65432100;
+	HtCfg1.word = 0xedcba980;
+	LgCfg0.word = 0xedcba988;
+	LgCfg1.word = 0x00002100;
+
+
+#ifdef MT76x2
+	if (IS_MT76x2(pAd))
+		LgCfg1.word = 0x87872100;
+#endif
+
+#ifdef NEW_RATE_ADAPT_SUPPORT
+	/* Use standard fallback if using new rate table */
+	if (ADAPT_RATE_TABLE(pRateTable))
+		goto skipUpdate;
+#endif /* NEW_RATE_ADAPT_SUPPORT */
+
+#ifdef AGS_SUPPORT
+	if (bUseAGS)
+	{
+		pNextTxRate_AGS = (RTMP_RA_AGS_TB *)pRateTable+1;
+		pNextTxRate = (RTMP_RA_LEGACY_TB *)pNextTxRate_AGS;
+	}
+	else
+#endif /* AGS_SUPPORT */
+		pNextTxRate = (RTMP_RA_LEGACY_TB *)pRateTable+1;
+
+	for (i = 1; i < *((PUCHAR) pRateTable); i++)
+	{
+#ifdef AGS_SUPPORT
+		if (bUseAGS)
+		{
+			pCurrTxRate_AGS = (RTMP_RA_AGS_TB *)pRateTable+1+i;
+			pCurrTxRate = (RTMP_RA_LEGACY_TB *)pCurrTxRate_AGS;
+		}
+		else
+#endif /* AGS_SUPPORT */
+			pCurrTxRate = (RTMP_RA_LEGACY_TB *)pRateTable+1+i;
+
+		switch (pCurrTxRate->Mode)
+		{
+			case 0:		/* CCK */
+				break;
+			case 1:		/* OFDM */
+				{
+					switch(pCurrTxRate->CurrMCS)
+					{
+						case 0:
+							LgCfg0.field.OFDMMCS0FBK = (pNextTxRate->Mode == MODE_OFDM) ? (pNextTxRate->CurrMCS+8): pNextTxRate->CurrMCS;
+							break;
+						case 1:
+							LgCfg0.field.OFDMMCS1FBK = (pNextTxRate->Mode == MODE_OFDM) ? (pNextTxRate->CurrMCS+8): pNextTxRate->CurrMCS;
+							break;
+						case 2:
+							LgCfg0.field.OFDMMCS2FBK = (pNextTxRate->Mode == MODE_OFDM) ? (pNextTxRate->CurrMCS+8): pNextTxRate->CurrMCS;
+							break;
+						case 3:
+							LgCfg0.field.OFDMMCS3FBK = (pNextTxRate->Mode == MODE_OFDM) ? (pNextTxRate->CurrMCS+8): pNextTxRate->CurrMCS;
+							break;
+						case 4:
+							LgCfg0.field.OFDMMCS4FBK = (pNextTxRate->Mode == MODE_OFDM) ? (pNextTxRate->CurrMCS+8): pNextTxRate->CurrMCS;
+							break;
+						case 5:
+							LgCfg0.field.OFDMMCS5FBK = (pNextTxRate->Mode == MODE_OFDM) ? (pNextTxRate->CurrMCS+8): pNextTxRate->CurrMCS;
+							break;
+						case 6:
+							LgCfg0.field.OFDMMCS6FBK = (pNextTxRate->Mode == MODE_OFDM) ? (pNextTxRate->CurrMCS+8): pNextTxRate->CurrMCS;
+							break;
+						case 7:
+							LgCfg0.field.OFDMMCS7FBK = (pNextTxRate->Mode == MODE_OFDM) ? (pNextTxRate->CurrMCS+8): pNextTxRate->CurrMCS;
+							break;
+					}
+				}
+				break;
+#ifdef DOT11_N_SUPPORT
+			case 2:		/* HT-MIX */
+			case 3:		/* HT-GF */
+				{
+					if ((pNextTxRate->Mode >= MODE_HTMIX) && (pCurrTxRate->CurrMCS != pNextTxRate->CurrMCS))
+					{
+						if (pCurrTxRate->CurrMCS <= 15)
+						{
+							switch(pCurrTxRate->CurrMCS)
+							{
+								case 0:
+									HtCfg0.field.HTMCS0FBK = pNextTxRate->CurrMCS;
+									break;
+								case 1:
+									HtCfg0.field.HTMCS1FBK = pNextTxRate->CurrMCS;
+									break;
+								case 2:
+									HtCfg0.field.HTMCS2FBK = pNextTxRate->CurrMCS;
+									break;
+								case 3:
+									HtCfg0.field.HTMCS3FBK = pNextTxRate->CurrMCS;
+									break;
+								case 4:
+									HtCfg0.field.HTMCS4FBK = pNextTxRate->CurrMCS;
+									break;
+								case 5:
+									HtCfg0.field.HTMCS5FBK = pNextTxRate->CurrMCS;
+									break;
+								case 6:
+									HtCfg0.field.HTMCS6FBK = pNextTxRate->CurrMCS;
+									break;
+								case 7:
+									HtCfg0.field.HTMCS7FBK = pNextTxRate->CurrMCS;
+									break;
+								case 8:
+									HtCfg1.field.HTMCS8FBK = 0;//pNextTxRate->CurrMCS;
+									break;
+								case 9:
+									HtCfg1.field.HTMCS9FBK = pNextTxRate->CurrMCS;
+									break;
+								case 10:
+									HtCfg1.field.HTMCS10FBK = pNextTxRate->CurrMCS;
+									break;
+								case 11:
+									HtCfg1.field.HTMCS11FBK = pNextTxRate->CurrMCS;
+									break;
+								case 12:
+									HtCfg1.field.HTMCS12FBK = pNextTxRate->CurrMCS;
+									break;
+								case 13:
+									HtCfg1.field.HTMCS13FBK = pNextTxRate->CurrMCS;
+									break;
+								case 14:
+									HtCfg1.field.HTMCS14FBK = pNextTxRate->CurrMCS;
+									break;
+								case 15:
+									HtCfg1.field.HTMCS15FBK = pNextTxRate->CurrMCS;
+									break;
+							}
+						}
+						else 
+#ifdef AGS_SUPPORT
+						if ((bUseAGS == TRUE) && 
+							(pCurrTxRate->CurrMCS >= 16) && (pCurrTxRate->CurrMCS <= 23))
+						{
+							switch(pCurrTxRate->CurrMCS)
+							{
+								case 16:
+									Ht3SSCfg0.field.HTMCS16FBK = pNextTxRate->CurrMCS;
+									break;
+								case 17:
+									Ht3SSCfg0.field.HTMCS17FBK = pNextTxRate->CurrMCS;
+									break;
+								case 18:
+									Ht3SSCfg0.field.HTMCS18FBK = pNextTxRate->CurrMCS;
+									break;
+								case 19:
+									Ht3SSCfg0.field.HTMCS19FBK = pNextTxRate->CurrMCS;
+									break;
+								case 20:
+									Ht3SSCfg1.field.HTMCS20FBK = pNextTxRate->CurrMCS;
+									break;
+								case 21:
+									Ht3SSCfg1.field.HTMCS21FBK = pNextTxRate->CurrMCS;
+									break;
+								case 22:
+									Ht3SSCfg1.field.HTMCS22FBK = pNextTxRate->CurrMCS;
+									break;
+								case 23:
+									Ht3SSCfg1.field.HTMCS23FBK = pNextTxRate->CurrMCS;
+									break;
+							}
+						}
+						else
+#endif /* AGS_SUPPORT */
+							DBGPRINT(RT_DEBUG_ERROR, ("AsicUpdateAutoFallBackTable: not support CurrMCS=%d\n", pCurrTxRate->CurrMCS));
+					}
+				}
+				break;
+#endif /* DOT11_N_SUPPORT */
+		}
+
+		pNextTxRate = pCurrTxRate;
+	}
+
+#ifdef AGS_SUPPORT
+	if (bUseAGS == TRUE)
+	{
+		Ht3SSCfg0.field.HTMCS16FBK = 0x8; // MCS 16 -> MCS 8
+		HtCfg1.field.HTMCS8FBK = 0x0; // MCS 8 -> MCS 0
+
+		LgCfg0.field.OFDMMCS2FBK = 0x3; // OFDM 12 -> CCK 11
+		LgCfg0.field.OFDMMCS1FBK = 0x2; // OFDM 9 -> CCK 5.5
+		LgCfg0.field.OFDMMCS0FBK = 0x2; // OFDM 6 -> CCK 5.5
+	}
+#endif /* AGS_SUPPORT */
+
+#ifdef NEW_RATE_ADAPT_SUPPORT
+skipUpdate:
+#endif /* NEW_RATE_ADAPT_SUPPORT */
+
+	RTMP_IO_WRITE32(pAd, HT_FBK_CFG0, HtCfg0.word);
+	RTMP_IO_WRITE32(pAd, HT_FBK_CFG1, HtCfg1.word);
+	RTMP_IO_WRITE32(pAd, LG_FBK_CFG0, LgCfg0.word);
+	RTMP_IO_WRITE32(pAd, LG_FBK_CFG1, LgCfg1.word);
+
+#ifdef DOT11N_SS3_SUPPORT
+	if (IS_RT2883(pAd) || IS_RT3883(pAd)
+#ifdef AGS_SUPPORT
+		|| (bUseAGS == TRUE)
+#endif /* AGS_SUPPORT */ 
+	)
+	{
+		RTMP_IO_WRITE32(pAd, TX_FBK_CFG_3S_0, Ht3SSCfg0.word);
+		RTMP_IO_WRITE32(pAd, TX_FBK_CFG_3S_1, Ht3SSCfg1.word);
+		DBGPRINT(RT_DEBUG_TRACE, ("AsicUpdateAutoFallBackTable: Ht3SSCfg0=0x%x, Ht3SSCfg1=0x%x\n", Ht3SSCfg0.word, Ht3SSCfg1.word));
+	}
+#endif /* DOT11N_SS3_SUPPORT */
+
+}
+#endif /* CONFIG_STA_SUPPORT */
 
 
 INT AsicSetAutoFallBack(RTMP_ADAPTER *pAd, BOOLEAN enable)
@@ -569,13 +824,45 @@ VOID AsicSwitchChannel(RTMP_ADAPTER *pAd, UCHAR Channel, BOOLEAN bScan)
 {
 	UCHAR bw;
 	UINT32 value32;
+#ifdef CONFIG_STA_SUPPORT
+#ifdef CONFIG_PM
+#ifdef USB_SUPPORT_SELECTIVE_SUSPEND
+	POS_COOKIE  pObj = (POS_COOKIE) pAd->OS_Cookie;
+#endif /* USB_SUPPORT_SELECTIVE_SUSPEND */
+#endif /* CONFIG_PM */
+#endif /* CONFIG_STA_SUPPORT */
 
 	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RADIO_OFF))
 		return; 
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef CONFIG_PM
+#ifdef USB_SUPPORT_SELECTIVE_SUSPEND
+
+			if( (RTMP_Usb_AutoPM_Get_Interface(pObj->pUsb_Dev,pObj->intf)) == 1)
+			{
+				DBGPRINT(RT_DEBUG_TRACE, ("%s(): autopm_resume success\n", __FUNCTION__));
+				RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_SUSPEND);
+			}
+			else if ((RTMP_Usb_AutoPM_Get_Interface(pObj->pUsb_Dev,pObj->intf)) == (-1))
+			{
+				DBGPRINT(RT_DEBUG_ERROR, ("%s(): autopm_resume fail\n", __FUNCTION__));
+				RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_SUSPEND);
+				return;
+			}
+			else
+				DBGPRINT(RT_DEBUG_TRACE, ("%s(): autopm_resume do nothing\n", __FUNCTION__));
+
+#endif /* USB_SUPPORT_SELECTIVE_SUSPEND */
+#endif /* CONFIG_PM */
+#endif /* CONFIG_STA_SUPPORT */
 
 
 #ifdef CONFIG_AP_SUPPORT
+#ifdef CUSTOMER_DCC_FEATURE
+	/* later need to move this BssTableInit to other place */
+	BssTableInit(&pAd->AvailableBSS);
+#endif
 #ifdef AP_QLOAD_SUPPORT
 	/* clear all statistics count for QBSS Load */
 	QBSS_LoadStatusClear(pAd);
@@ -601,16 +888,16 @@ VOID AsicSwitchChannel(RTMP_ADAPTER *pAd, UCHAR Channel, BOOLEAN bScan)
 #ifdef MT76x2
 	if (IS_MT76x2(pAd))
 	{
-	// Disable BF HW to apply profile to packets when nSS == 2.
-	// Maybe it can be initialized at chip init but removing the same CR initialization from FW will be better
-	RTMP_IO_READ32(pAd, TXO_R4, &value32);
-	value32 |= 0x2000000;
-	RTMP_IO_WRITE32(pAd, TXO_R4, value32);
-	
-	// Enable SIG-B CRC check
-	RTMP_IO_READ32(pAd, RXO_R13, &value32);
-	value32 |= 0x100;
-	RTMP_IO_WRITE32(pAd, RXO_R13, value32);
+		// Disable BF HW to apply profile to packets when nSS == 2.
+		// Maybe it can be initialized at chip init but removing the same CR initialization from FW will be better
+		RTMP_IO_READ32(pAd, TXO_R4, &value32);
+		value32 |= 0x2000000;
+		RTMP_IO_WRITE32(pAd, TXO_R4, value32);
+
+		// Enable SIG-B CRC check
+		RTMP_IO_READ32(pAd, RXO_R13, &value32);
+		value32 |= 0x100;
+		RTMP_IO_WRITE32(pAd, RXO_R13, value32);
 	}
 #endif /* MT76x2 */
 #endif /* TXBF_SUPPORT */	
@@ -665,6 +952,58 @@ VOID AsicResetBBPAgent(RTMP_ADAPTER *pAd)
 }
 
 
+#ifdef CONFIG_STA_SUPPORT
+/*
+	==========================================================================
+	Description:
+		put PHY to sleep here, and set next wakeup timer. PHY doesn't not wakeup 
+		automatically. Instead, MCU will issue a TwakeUpInterrupt to host after
+		the wakeup timer timeout. Driver has to issue a separate command to wake
+		PHY up.
+
+	IRQL = DISPATCH_LEVEL
+
+	==========================================================================
+ */
+VOID AsicSleepThenAutoWakeup(
+	IN PRTMP_ADAPTER pAd, 
+	IN USHORT TbttNumToNextWakeUp) 
+{
+	RTMP_STA_SLEEP_THEN_AUTO_WAKEUP(pAd, TbttNumToNextWakeUp);
+}
+
+/*
+	==========================================================================
+	Description:
+		AsicForceWakeup() is used whenever manual wakeup is required
+		AsicForceSleep() should only be used when not in INFRA BSS. When
+		in INFRA BSS, we should use AsicSleepThenAutoWakeup() instead.
+	==========================================================================
+ */
+VOID AsicForceSleep(
+	IN PRTMP_ADAPTER pAd)
+{
+
+}
+
+/*
+	==========================================================================
+	Description:
+		AsicForceWakeup() is used whenever Twakeup timer (set via AsicSleepThenAutoWakeup)
+		expired.
+
+	IRQL = PASSIVE_LEVEL
+	IRQL = DISPATCH_LEVEL
+	==========================================================================
+ */
+VOID AsicForceWakeup(
+	IN PRTMP_ADAPTER pAd,
+	IN BOOLEAN    bFromTx)
+{
+    DBGPRINT(RT_DEBUG_INFO, ("--> AsicForceWakeup \n"));
+    RTMP_STA_FORCE_WAKEUP(pAd, bFromTx);	
+}
+#endif /* CONFIG_STA_SUPPORT */
 
 
 /*
@@ -900,7 +1239,7 @@ VOID AsicSetMbssMode(RTMP_ADAPTER *pAd, UCHAR NumOfBcns)
 
 INT AsicSetRxFilter(RTMP_ADAPTER *pAd)
 {
-	UINT32 rx_filter_flag;
+	UINT32 rx_filter_flag = APNORMAL;
 		
 	/* enable RX of MAC block*/
 	if ((pAd->OpMode == OPMODE_AP)
@@ -918,8 +1257,21 @@ INT AsicSetRxFilter(RTMP_ADAPTER *pAd)
 #endif /* IDS_SUPPORT */			
 #endif /* CONFIG_AP_SUPPORT */
 	}
+#ifdef CONFIG_STA_SUPPORT
+	else
+	{		
+#ifdef XLINK_SUPPORT
+		if (pAd->StaCfg.PSPXlink)
+			rx_filter_flag = PSPXLINK;
+		else
+#endif /* XLINK_SUPPORT */
+			rx_filter_flag = STANORMAL;     /* Staion not drop control frame will fail WiFi Certification.*/
+	}
+#endif /* CONFIG_STA_SUPPORT */
 #ifdef CONFIG_SNIFFER_SUPPORT
-	if ((MONITOR_ON(pAd)) && pAd->monitor_ctrl.current_monitor_mode == MONITOR_MODE_FULL) /* Enable Rx with promiscuous reception */
+	/* Enable Rx with promiscuous reception */
+	if ((MONITOR_ON(pAd)) && 
+	(pAd->monitor_ctrl.current_monitor_mode == MONITOR_MODE_FULL || pAd->monitor_ctrl.current_monitor_mode == MONITOR_MODE_FULL_NO_CLONE)) 
 			rx_filter_flag = 0x3;
 #endif
 	RTMP_IO_WRITE32(pAd, RX_FILTR_CFG, rx_filter_flag);
@@ -1102,6 +1454,16 @@ VOID AsicEnableBssSync(
 		csr.field.bTBTTEnable = 1;
 	}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT	
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		csr.field.BeaconInterval = pAd->CommonCfg.BeaconPeriod << 4; /* ASIC register in units of 1/16 TU*/
+		csr.field.bTsfTicking = 1;
+		csr.field.TsfSyncMode = 1; /* sync TSF in INFRASTRUCTURE mode*/
+		csr.field.bBeaconGen  = 0; /* do NOT generate BEACON*/
+		csr.field.bTBTTEnable = 1;
+	}
+#endif /* CONFIG_STA_SUPPORT */	
 	RTMP_IO_WRITE32(pAd, BCN_TIME_CFG, csr.word);
 }
 
@@ -1125,6 +1487,120 @@ VOID AsicEnableApBssSync(
 }
 
 
+#ifdef CONFIG_STA_SUPPORT
+/*
+	==========================================================================
+	Description:
+	Note: 
+		BEACON frame in shared memory should be built ok before this routine
+		can be called. Otherwise, a garbage frame maybe transmitted out every
+		Beacon period.
+
+	IRQL = DISPATCH_LEVEL
+	
+	==========================================================================
+ */
+VOID AsicEnableIbssSync(RTMP_ADAPTER *pAd)
+{
+	BCN_TIME_CFG_STRUC csr9;
+	UCHAR *ptr;
+	UINT i;
+	ULONG beaconBaseLocation = 0;
+	USHORT beaconLen = 0;
+	UINT8 TXWISize = pAd->chipCap.TXWISize;
+	UINT32 longptr;
+
+#ifdef RLT_MAC
+	if (pAd->chipCap.hif_type == HIF_RLT)
+	{
+			beaconLen = pAd->BeaconTxWI.TXWI_N.MPDUtotalByteCnt;
+	}
+#endif /* RLT_MAC */
+
+#ifdef RTMP_MAC
+	if (pAd->chipCap.hif_type == HIF_RTMP)
+		beaconLen = pAd->BeaconTxWI.TXWI_O.MPDUtotalByteCnt;
+#endif /* RTMP_MAC */
+
+#ifdef RT_BIG_ENDIAN
+	{
+		TXWI_STRUC localTxWI;
+	
+		NdisMoveMemory((PUCHAR)&localTxWI, (PUCHAR)&pAd->BeaconTxWI, TXWISize);
+		RTMPWIEndianChange(pAd, (PUCHAR)&localTxWI, TYPE_TXWI);
+#ifdef RLT_MAC
+		if (pAd->chipCap.hif_type == HIF_RLT)
+		{
+				beaconLen = localTxWI.TXWI_N.MPDUtotalByteCnt;
+		}
+#endif /* RLT_MAC */
+
+#ifdef RTMP_MAC
+		if (pAd->chipCap.hif_type == HIF_RTMP)
+			beaconLen = localTxWI.TXWI_O.MPDUtotalByteCnt;
+#endif /* RTMP_MAC */
+	}
+#endif /* RT_BIG_ENDIAN */
+
+	DBGPRINT(RT_DEBUG_TRACE, ("--->AsicEnableIbssSync(ADHOC mode, beaconLen=%d)\n",
+				beaconLen));
+
+	RTMP_IO_READ32(pAd, BCN_TIME_CFG, &csr9.word);
+	csr9.field.bBeaconGen = 0;
+	csr9.field.bTBTTEnable = 0;
+	csr9.field.bTsfTicking = 0;
+	RTMP_IO_WRITE32(pAd, BCN_TIME_CFG, csr9.word);
+	beaconBaseLocation = HW_BEACON_BASE0(pAd);
+
+#ifdef RTMP_MAC_PCI
+	/* move BEACON TXD and frame content to on-chip memory*/
+	ptr = (PUCHAR)&pAd->BeaconTxWI;
+	for (i=0; i < TXWISize; i+=4)
+	{
+		longptr =  *ptr + (*(ptr+1)<<8) + (*(ptr+2)<<16) + (*(ptr+3)<<24);
+		RTMP_CHIP_UPDATE_BEACON(pAd, HW_BEACON_BASE0(pAd) + i, longptr, 4);
+		ptr += 4;
+	}
+
+	/* start right after the 16-byte TXWI field*/
+	ptr = pAd->BeaconBuf;
+	for (i=0; i< beaconLen; i+=4)
+	{
+		longptr =  *ptr + (*(ptr+1)<<8) + (*(ptr+2)<<16) + (*(ptr+3)<<24);
+		RTMP_CHIP_UPDATE_BEACON(pAd, HW_BEACON_BASE0(pAd) + TXWISize + i, longptr, 4);
+		ptr +=4;
+	}
+#endif /* RTMP_MAC_PCI */
+
+	
+	/*
+		For Wi-Fi faily generated beacons between participating stations.
+		Set TBTT phase adaptive adjustment step to 8us (default 16us)
+	*/
+	/* don't change settings 2006-5- by Jerry*/
+	/*RTMP_IO_WRITE32(pAd, TBTT_SYNC_CFG, 0x00001010);*/
+	
+	/* start sending BEACON*/
+	csr9.field.BeaconInterval = pAd->CommonCfg.BeaconPeriod << 4; /* ASIC register in units of 1/16 TU*/
+	csr9.field.bTsfTicking = 1;
+#ifdef IWSC_SUPPORT
+	/*
+		 SYNC with nobody
+		 If Canon loses our Beacon over 5 seconds, Canon will delete us silently.
+	*/
+	csr9.field.TsfSyncMode = 3; // sync TSF in IBSS mode
+#else /* IWSC_SUPPORT */
+	/*
+		(STA ad-hoc mode) Upon the reception of BEACON frame from associated BSS, 
+		local TSF is updated with remote TSF only if the remote TSF is greater than local TSF
+	*/
+	csr9.field.TsfSyncMode = 2; /* sync TSF in IBSS mode*/
+#endif /* !IWSC_SUPPORT */
+	csr9.field.bTBTTEnable = 1;
+	csr9.field.bBeaconGen = 1;
+	RTMP_IO_WRITE32(pAd, BCN_TIME_CFG, csr9.word);
+}
+#endif /* CONFIG_STA_SUPPORT */
 
 
 /*
@@ -1284,6 +1760,25 @@ VOID AsicSetEdcaParm(RTMP_ADAPTER *pAd, PEDCA_PARM pEdcaParm)
 #endif /* CONFIG_AP_SUPPORT */
 #endif /* INF_AMAZON_SE */
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			/* Tuning for Wi-Fi WMM S06*/
+			if (pAd->CommonCfg.bWiFiTest && 
+				pEdcaParm->Aifsn[QID_AC_VI] == 10)
+				Ac2Cfg.field.Aifsn -= 1; 
+
+			/* Tuning for TGn Wi-Fi 5.2.32*/
+			/* STA TestBed changes in this item: conexant legacy sta ==> broadcom 11n sta*/
+			if (STA_TGN_WIFI_ON(pAd) && 
+				pEdcaParm->Aifsn[QID_AC_VI] == 10)
+			{
+				Ac0Cfg.field.Aifsn = 3;
+				Ac2Cfg.field.AcTxop = 5;
+			}
+			
+		}
+#endif /* CONFIG_STA_SUPPORT */
 
 		Ac3Cfg.field.AcTxop = pEdcaParm->Txop[QID_AC_VO];
 		Ac3Cfg.field.Cwmin = pEdcaParm->Cwmin[QID_AC_VO];
@@ -1302,6 +1797,16 @@ VOID AsicSetEdcaParm(RTMP_ADAPTER *pAd, PEDCA_PARM pEdcaParm)
 			}
 		}
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef RTMP_MAC_PCI
+		/* STA TestBed changes in this item: for sta wifitest 5.2.32, 2011/04/11 */
+		/* just for 5390 5392 pci, 5370 5372 not need this patch */
+		if((IS_RT5390(pAd) || IS_RT5392(pAd)) && pEdcaParm->Aifsn[QID_AC_VI] == 10)
+		{                   
+			Ac0Cfg.field.AcTxop = 38;
+		}
+#endif /* RTMP_MAC_PCI */
+#endif /* CONFIG_STA_SUPPORT */
 
 
 		RTMP_IO_WRITE32(pAd, EDCA_AC0_CFG, Ac0Cfg.word);
@@ -1329,6 +1834,10 @@ VOID AsicSetEdcaParm(RTMP_ADAPTER *pAd, PEDCA_PARM pEdcaParm)
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 			CwminCsr.field.Cwmin3 = pEdcaParm->Cwmin[QID_AC_VO];
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+			CwminCsr.field.Cwmin3 = pEdcaParm->Cwmin[QID_AC_VO] - 1; /*for TGn wifi test*/
+#endif /* CONFIG_STA_SUPPORT */
 		RTMP_IO_WRITE32(pAd, WMM_CWMIN_CFG, CwminCsr.word);
 
 		CwmaxCsr.word = 0;
@@ -1341,6 +1850,8 @@ VOID AsicSetEdcaParm(RTMP_ADAPTER *pAd, PEDCA_PARM pEdcaParm)
 		AifsnCsr.word = 0;
 		AifsnCsr.field.Aifsn0 = Ac0Cfg.field.Aifsn; /*pEdcaParm->Aifsn[QID_AC_BE];*/
 		AifsnCsr.field.Aifsn1 = Ac1Cfg.field.Aifsn; /*pEdcaParm->Aifsn[QID_AC_BK];*/
+#ifdef CONFIG_STA_SUPPORT
+#endif /* CONFIG_STA_SUPPORT */
 		AifsnCsr.field.Aifsn2 = Ac2Cfg.field.Aifsn; /*pEdcaParm->Aifsn[QID_AC_VI];*/
 #ifdef INF_AMAZON_SE
 #ifdef CONFIG_AP_SUPPORT
@@ -1352,11 +1863,45 @@ VOID AsicSetEdcaParm(RTMP_ADAPTER *pAd, PEDCA_PARM pEdcaParm)
 #endif /* CONFIG_AP_SUPPORT */
 #endif /* INF_AMAZON_SE */
 
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			/* Tuning for Wi-Fi WMM S06*/
+			if (pAd->CommonCfg.bWiFiTest &&
+				pEdcaParm->Aifsn[QID_AC_VI] == 10)
+				AifsnCsr.field.Aifsn2 = Ac2Cfg.field.Aifsn - 4;
+
+			/* Tuning for TGn Wi-Fi 5.2.32*/
+			/* STA TestBed changes in this item: connexant legacy sta ==> broadcom 11n sta*/
+			if (STA_TGN_WIFI_ON(pAd) && 
+				pEdcaParm->Aifsn[QID_AC_VI] == 10)
+			{
+				AifsnCsr.field.Aifsn0 = 3;
+				AifsnCsr.field.Aifsn2 = 7;
+			}
+
+			if (INFRA_ON(pAd))
+				CLIENT_STATUS_SET_FLAG(&pAd->MacTab.Content[BSSID_WCID], fCLIENT_STATUS_WMM_CAPABLE);
+		}
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 			AifsnCsr.field.Aifsn3 = Ac3Cfg.field.Aifsn; /*pEdcaParm->Aifsn[QID_AC_VO]*/
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			AifsnCsr.field.Aifsn3 = Ac3Cfg.field.Aifsn - 1; /*pEdcaParm->Aifsn[QID_AC_VO]; for TGn wifi test*/
+
+			/* TODO: Is this modification also suitable for RT3052/RT3050 ???*/
+			if (0 
+			)
+			{
+				AifsnCsr.field.Aifsn2 = 0x2; /*pEdcaParm->Aifsn[QID_AC_VI]; for WiFi WMM S4-T04.*/
+			}
+		}
+#endif /* CONFIG_STA_SUPPORT */
 		RTMP_IO_WRITE32(pAd, WMM_AIFSN_CFG, AifsnCsr.word);
 
 		NdisMoveMemory(&pAd->CommonCfg.APEdcaParm, pEdcaParm, sizeof(EDCA_PARM));
@@ -1441,6 +1986,10 @@ VOID AsicSetSlotTime(
 	ULONG	SlotTime;
 	UINT32	RegValue = 0;
 
+#ifdef CONFIG_STA_SUPPORT
+	if (pAd->CommonCfg.Channel > 14)
+		bUseShortSlotTime = TRUE;
+#endif /* CONFIG_STA_SUPPORT */
 
 	if (bUseShortSlotTime && OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_SHORT_SLOT_INUSED))
 		return;
@@ -1454,10 +2003,40 @@ VOID AsicSetSlotTime(
 
 	SlotTime = (bUseShortSlotTime)? 9 : 20;
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		/* force using short SLOT time for FAE to demo performance when TxBurst is ON*/
+		if (((pAd->StaActive.SupportedPhyInfo.bHtEnable == FALSE) && (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_WMM_INUSED)))
+#ifdef DOT11_N_SUPPORT
+			|| ((pAd->StaActive.SupportedPhyInfo.bHtEnable == TRUE) && (pAd->CommonCfg.BACapability.field.Policy == BA_NOTUSE))
+#endif /* DOT11_N_SUPPORT */
+			)
+		{
+			/* In this case, we will think it is doing Wi-Fi test*/
+			/* And we will not set to short slot when bEnableTxBurst is TRUE.*/
+		}
+		else if (pAd->CommonCfg.bEnableTxBurst)
+		{
+			OPSTATUS_SET_FLAG(pAd, fOP_STATUS_SHORT_SLOT_INUSED);
+			SlotTime = 9;
+		}
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	
 	/* For some reasons, always set it to short slot time.*/
 	/* ToDo: Should consider capability with 11B*/
+#ifdef CONFIG_STA_SUPPORT 
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		if (pAd->StaCfg.BssType == BSS_ADHOC)	
+		{
+			OPSTATUS_CLEAR_FLAG(pAd, fOP_STATUS_SHORT_SLOT_INUSED);
+			SlotTime = 20;
+		}
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	RTMP_IO_READ32(pAd, BKOFF_SLOT_CFG, &RegValue);
 	RegValue = RegValue & 0xFFFFFF00;
@@ -2626,6 +3205,25 @@ INT rtmp_asic_top_init(RTMP_ADAPTER *pAd)
 #endif /* RLT_MAC */
 
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef PCIE_PS_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+	    	/* If dirver doesn't wake up firmware here,*/
+	    	/* NICLoadFirmware will hang forever when interface is up again.*/
+	    	if (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_DOZE) &&
+	        	OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_ADVANCE_POWER_SAVE_PCIE_DEVICE))
+	    	{
+	        	AUTO_WAKEUP_STRUC AutoWakeupCfg;
+
+			AsicForceWakeup(pAd, TRUE);
+	        	AutoWakeupCfg.word = 0;
+		    	RTMP_IO_WRITE32(pAd, AUTO_WAKEUP_CFG, AutoWakeupCfg.word);
+	        	OPSTATUS_CLEAR_FLAG(pAd, fOP_STATUS_DOZE);
+	    	}
+	}
+#endif /* PCIE_PS_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 
 	/* Make sure MAC gets ready.*/
 	if (WaitForAsicReady(pAd) != TRUE)
@@ -3347,6 +3945,7 @@ VOID pkt_aggr_num_change(
 	IN PRTMP_ADAPTER pAd, 
 	IN USHORT num)
 {
+#ifdef RT6352
 	if (IS_RT6352(pAd))
 	{
 		if (num < 5)
@@ -3366,7 +3965,7 @@ VOID pkt_aggr_num_change(
 			RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M2S, 0x77765544);
 		}
 	}
-
+#endif
 }
 
 VOID asic_tune_be_wmm(

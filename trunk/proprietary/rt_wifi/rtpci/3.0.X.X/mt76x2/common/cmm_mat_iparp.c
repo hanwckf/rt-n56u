@@ -225,6 +225,10 @@ static NDIS_STATUS IPMacTableUpdate(
 		}
 	}
 
+#ifdef ETH_CONVERT_SUPPORT
+	if (pMatCfg->nodeCount >= ETH_CONVERT_NODE_MAX)
+		return FALSE;
+#endif /* ETH_CONVERT_SUPPORT */
 
 	/* Allocate a new IPMacMapping entry and insert into the hash */
 	pNewEntry = (IPMacMappingEntry *)MATDBEntryAlloc(pMatCfg, sizeof(IPMacMappingEntry));
@@ -719,34 +723,34 @@ static PUCHAR MATProto_IP_Tx(
 			{
 				if (RTMPLookupRepeaterCliEntry(pMatCfg->pPriv, FALSE, pDevMacAdr) != NULL)
 				{
-				NdisMoveMemory((bootpHdr+28), pDevMacAdr, MAC_ADDR_LEN);
+					NdisMoveMemory((bootpHdr+28), pDevMacAdr, MAC_ADDR_LEN);
 
-				if (NdisEqualMemory(dhcpHdr, DHCP_MAGIC, 4))
-				{
-					PUCHAR pOptCode, pOptLen;
-					UINT16 udpLen;
-					
-					udpLen = OS_NTOHS(get_unaligned((PUINT16)(udpHdr+4)));
-					pOptCode = (dhcpHdr + 4);
-					do
+					if (NdisEqualMemory(dhcpHdr, DHCP_MAGIC, 4))
 					{
-						pOptLen = pOptCode + 1;
-						if (*pOptCode == 61)	/* Client Identifier */
+						PUCHAR pOptCode, pOptLen;
+						UINT16 udpLen;
+
+						udpLen = OS_NTOHS(get_unaligned((PUINT16)(udpHdr+4)));
+						pOptCode = (dhcpHdr + 4);
+						do
 						{
-							DBGPRINT(RT_DEBUG_TRACE,
-									("Client Identifier found, change Hardware Address to "
-									 "%02x:%02x:%02x:%02x:%02x:%02x\n", 
-									 pDevMacAdr[0], pDevMacAdr[1], pDevMacAdr[2],
-									 pDevMacAdr[3], pDevMacAdr[4], pDevMacAdr[5]));						
-							/* Change Hardware Address */
-							NdisMoveMemory((pOptCode+3), pDevMacAdr, MAC_ADDR_LEN);
-							break;
-						}
-						pOptCode += (2+*pOptLen);
-					}while ((*pOptCode != 0xFF) && ((pOptCode - udpHdr) <= udpLen));
+							pOptLen = pOptCode + 1;
+							if (*pOptCode == 61)	/* Client Identifier */
+							{
+								DBGPRINT(RT_DEBUG_TRACE,
+										("Client Identifier found, change Hardware Address to "
+										 "%02x:%02x:%02x:%02x:%02x:%02x\n", 
+										 pDevMacAdr[0], pDevMacAdr[1], pDevMacAdr[2],
+										 pDevMacAdr[3], pDevMacAdr[4], pDevMacAdr[5]));						
+								/* Change Hardware Address */
+								NdisMoveMemory((pOptCode+3), pDevMacAdr, MAC_ADDR_LEN);
+								break;
+							}
+							pOptCode += (2+*pOptLen);
+						}while ((*pOptCode != 0xFF) && ((pOptCode - udpHdr) <= udpLen));
+					}
+					bHdrChanged = TRUE;
 				}
-				bHdrChanged = TRUE;
-		}
 			}
 #endif /* MAC_REPEATER_SUPPORT */	
 		}

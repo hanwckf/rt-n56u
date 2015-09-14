@@ -42,6 +42,9 @@ VOID CFG80211_Convert802_3Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR *pHead
 	else
 #endif /* CONFIG_AP_SUPPORT */		
 	{
+#ifdef CONFIG_STA_SUPPORT
+		RTMP_802_11_REMOVE_LLC_AND_CONVERT_TO_802_3(pRxBlk, pHeader802_3);
+#endif /*CONFIG_STA_SUPPORT*/
 	}
 }
 
@@ -55,6 +58,9 @@ VOID CFG80211_Announce802_3Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR FromW
 	else
 #endif /* CONFIG_AP_SUPPORT */		
 	{
+#ifdef CONFIG_STA_SUPPORT
+		ANNOUNCE_OR_FORWARD_802_3_PACKET(pAd, pRxBlk->pRxPacket, FromWhichBSSID);
+#endif /*CONFIG_STA_SUPPORT*/
 	}
 
 }

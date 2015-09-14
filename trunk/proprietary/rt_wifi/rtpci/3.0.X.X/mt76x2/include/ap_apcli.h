@@ -41,6 +41,8 @@
 #ifdef APCLI_CONNECTION_TRIAL
 #define TRIAL_TIMEOUT	400	/* unit: msec */
 #endif /* APCLI_CONNECTION_TRIAL */
+#define OPENWEP_ERRPKT_MAX_COUNT  	  3
+
   
 #define APCLI_ROOT_BSSID_GET(pAd, wcid) ((pAd)->MacTab.Content[(wcid)].Addr)
 
@@ -284,8 +286,10 @@ VOID RTMPApCliReconnectionCheck(
 	IN PRTMP_ADAPTER pAd);
 
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
-
+VOID ApCliRxOpenWEPCheck(
+	IN RTMP_ADAPTER *pAd,
+	IN RX_BLK *pRxBlk,
+	IN BOOLEAN bSuccessPkt);
 #endif /* APCLI_SUPPORT */
-
 #endif /* _AP_APCLI_H_ */
 

@@ -95,118 +95,6 @@ VOID	WscAddEntryToAclList(
 		pACL->Num++;
 	}
 }
-
-VOID WscSetupLockTimeout(
-	IN PVOID SystemSpecific1,
-	IN PVOID FunctionContext,
-	IN PVOID SystemSpecific2,
-	IN PVOID SystemSpecific3)
-{
-	PWSC_CTRL 		pWscControl = (PWSC_CTRL)FunctionContext;
-	PRTMP_ADAPTER 	pAd = NULL;
-
-	if (pWscControl == NULL)
-		return;
-
-	pAd = (PRTMP_ADAPTER)pWscControl->pAd;
-
-	if (pAd == NULL)
-		return;
-
-	pWscControl->bSetupLock = FALSE;
-	pWscControl->WscSetupLockTimerRunning = FALSE;
-
-		WscBuildBeaconIE(pAd,
-						 pWscControl->WscConfStatus,
-						 FALSE,
-						 0,
-						 0,
-						 (pWscControl->EntryIfIdx & 0xF),
-						 NULL,
-						 0,
-						 AP_MODE);
-		WscBuildProbeRespIE(pAd,
-							WSC_MSGTYPE_AP_WLAN_MGR,
-							pWscControl->WscConfStatus,
-							FALSE,
-							0,
-							0,
-							pWscControl->EntryIfIdx,
-							NULL,
-							0,
-							AP_MODE);
-
-	APUpdateBeaconFrame(pAd, pWscControl->EntryIfIdx & 0x0F);
-	DBGPRINT(RT_DEBUG_TRACE, ("WscSetupLockTimeout!\n"));
-
-	return;
-}
-
-
-VOID	WscCheckPinAttackCount(
-	IN  PRTMP_ADAPTER	pAd,
-	IN  PWSC_CTRL		pWscControl)
-{
-	BOOLEAN	bCancelled;
-
-	if ((pWscControl->EntryIfIdx & MIN_NET_DEVICE_FOR_APCLI)
-		)
-		{
-		/*
-			APCLI and P2P CLI don't need to do PIN attack checking.
-		*/
-		return;
-	}
-	
-	/*
-		If a static PIN is used, 
-		the AP must track multiple failed attempts to authenticate an external Registrar and then enter a lock-down state 
-		(This state is signified by setting the attribute AP Setup Locked to TRUE).  
-		After at most 10 failed, consecutive attempts, with no time limitation, from any number of external Registrars, 
-		the AP shall revert to a locked down state, and the AP shall remain in the locked down state indefinitely 
-		(i.e., until the user intervenes to unlock AP's  PIN for use by external Registrars)
-	*/
-	pWscControl->PinAttackCount++;
-	if (pWscControl->PinAttackCount >= pWscControl->MaxPinAttack)
-	{		
-		pWscControl->bSetupLock = TRUE;
-		if (pWscControl->WscSetupLockTimerRunning)
-		{
-			RTMPCancelTimer(&pWscControl->WscSetupLockTimer, &bCancelled);
-			pWscControl->WscSetupLockTimerRunning = FALSE;
-		}
-
-		if (pWscControl->PinAttackCount < WSC_LOCK_FOREVER_PIN_ATTACK)
-		{
-			pWscControl->WscSetupLockTimerRunning = TRUE;
-			RTMPSetTimer(&pWscControl->WscSetupLockTimer, pWscControl->SetupLockTime*60*1000);
-		}
-		pWscControl->PinAttackCount = 0;
-
-			WscBuildBeaconIE(pAd, 
-							 pWscControl->WscConfStatus, 
-							 FALSE,
-							 0,
-							 0,
-							 (pWscControl->EntryIfIdx & 0xF),
-							 NULL,
-							 0,
-							 AP_MODE);
-			WscBuildProbeRespIE(pAd,
-								WSC_MSGTYPE_AP_WLAN_MGR,
-								pWscControl->WscConfStatus,
-								FALSE,
-								0,
-								0,
-								pWscControl->EntryIfIdx,
-								NULL,
-								0,
-								AP_MODE);
-		
-		APUpdateBeaconFrame(pAd, pWscControl->EntryIfIdx & 0x0F);
-	}
-}
-
 #endif /* CONFIG_AP_SUPPORT */
 
 /*
@@ -402,6 +290,10 @@ VOID	WscSendEapFragData(
 	}
 #endif // CONFIG_AP_SUPPORT //
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAdapter)
+		WscSendMessage(pAdapter, WSC_OPCODE_MSG, pData, DataLen, pWscControl, STA_MODE, EAP_CODE_RSP);
+#endif // CONFIG_STA_SUPPORT //
 }
 
 #endif /* WSC_V2_SUPPORT */

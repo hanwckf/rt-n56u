@@ -92,6 +92,12 @@ VOID PMF_MlmeSAQueryReq(
                 pPmfCfg = &pAd->ApCfg.MBSSID[pEntry->apidx].PmfCfg;
         }
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{									
+                pPmfCfg = &pAd->StaCfg.PmfCfg;
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
         if (pPmfCfg)
         {
@@ -107,6 +113,14 @@ VOID PMF_MlmeSAQueryReq(
                                 pAd->ApCfg.MBSSID[pEntry->apidx].wdev.bssid);
 		}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{	
+		MgtMacHeaderInit(pAd, &SAQReqHdr, SUBTYPE_ACTION, 0, pEntry->Addr,
+							pAd->CurrentAddress,
+							pEntry->Addr);
+		}
+#endif /* CONFIG_STA_SUPPORT */
 
                 pEntry->TransactionID++;
 
@@ -186,6 +200,14 @@ VOID PMF_PeerSAQueryReqAction(
 						pAd->ApCfg.MBSSID[pEntry->apidx].wdev.bssid);
 		}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{		
+			MgtMacHeaderInit(pAd, &SAQRspHdr, SUBTYPE_ACTION, 0, pHeader->Hdr.Addr2,				
+						pAd->CurrentAddress,
+						pHeader->Hdr.Addr2);
+		}
+#endif /* CONFIG_STA_SUPPORT */
 
 		SACategoryType = CATEGORY_SA;
 		SAActionType = ACTION_SAQ_RESPONSE;
@@ -272,6 +294,23 @@ VOID PMF_SAQueryTimeOut(
 			MacTableDeleteEntry(pAd, pEntry->wcid, pEntry->Addr);
 		}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		{
+			BOOLEAN Cancelled;
+			MLME_DISASSOC_REQ_STRUCT DisassocReq;
+
+			RTMPCancelTimer(&pEntry->SAQueryTimer, &Cancelled);
+			RTMPCancelTimer(&pEntry->SAQueryConfirmTimer, &Cancelled);
+			DisassocParmFill(pAd, &DisassocReq,
+			pAd->CommonCfg.Bssid, REASON_DISASSOC_STA_LEAVING);
+			MlmeEnqueue(pAd, ASSOC_STATE_MACHINE,
+						MT2_MLME_DISASSOC_REQ,
+						sizeof (MLME_DISASSOC_REQ_STRUCT),
+						&DisassocReq, 0);
+			pAd->Mlme.CntlMachine.CurrState = CNTL_WAIT_DISASSOC;
+		}
+#endif /* CONFIG_STA_SUPPORT */
 	}
 }
 
@@ -534,6 +573,10 @@ BOOLEAN PMF_ExtractIGTKKDE(
 	UINT8 offset = 0;
 	PPMF_CFG pPmfCfg = NULL;
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		pPmfCfg = &pAd->StaCfg.PmfCfg;
+#endif /* CONFIG_STA_SUPPORT */
 
 	if (pPmfCfg == NULL)
 		return FALSE;
@@ -609,6 +652,12 @@ VOID PMF_MakeRsnIeGMgmtCipher(
 		}
 	}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{		
+		MFP_Enabled = pAd->StaCfg.PmfCfg.MFPC;
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	/* default group management cipher suite in an RSNA with 
 	   Management Frame Protection enabled. */
@@ -804,7 +853,7 @@ INT PMF_RobustFrameClassify(
         else if (((IsRx == TRUE) && (pHdr->FC.Wep == 1)) || (IsRx == FALSE))
 		return UNICAST_ROBUST_FRAME;
 
-	return ERROR_FRAME;
+        return ERROR_FRAME;
 }
 
 
@@ -912,7 +961,13 @@ INT PMF_DecryptUniRobustFrameAction(
 	{
 		DBGPRINT(RT_DEBUG_ERROR,("%s : the entry no PMF capable !\n", __FUNCTION__));
 		return PMF_UNICAST_DECRYPT_FAILURE;
-	}		
+	}
+
+#ifdef RT_BIG_ENDIAN
+      	if ((pHeader->FC.SubType == SUBTYPE_DISASSOC) || (pHeader->FC.SubType == SUBTYPE_DEAUTH)) {
+		*(USHORT *)pDate = SWAP16(*(USHORT *)pDate); /* swap reason code */
+   	}
+#endif /* RT_BIG_ENDIAN */		
 	
 	if (RTMPSoftDecryptCCMP(pAd, 
 				pMgmtFrame, 
@@ -931,7 +986,7 @@ INT PMF_EncapBIPAction(
 	IN PRTMP_ADAPTER pAd,
 	IN PUCHAR pMgmtFrame,
 	IN UINT	mgmt_len)
-{
+{	
 	PHEADER_802_11 pHdr = (PHEADER_802_11)pMgmtFrame;
 	PPMF_CFG pPmfCfg = NULL;
 	PPMF_MMIE pMMIE;
@@ -941,7 +996,10 @@ INT PMF_EncapBIPAction(
 	UCHAR BIP_MIC[LEN_PMF_BIP_MIC];
 	PUCHAR pFrameBody = &pHdr->Octet[0];
 	UINT32 body_len = mgmt_len - LENGTH_802_11;				
-
+#ifdef RT_BIG_ENDIAN
+	PUCHAR pMacHdr = NULL;
+	BOOLEAN bSwaped = FALSE;
+#endif
 	/* Sanity check the total frame body length */
 	if (body_len <= (2 + LEN_PMF_MMIE))
 	{
@@ -994,6 +1052,16 @@ INT PMF_EncapBIPAction(
 	INC_TX_TSC(pPmfCfg->IPN[idx], LEN_WPA_TSC);	
 
 	/* Compute AAD  */
+#ifdef RT_BIG_ENDIAN
+	if (pHdr->FC.SubType ==SUBTYPE_DISASSOC || pHdr->FC.SubType == SUBTYPE_DEAUTH)
+	{
+		pMacHdr = (PUCHAR) pHdr;
+		*(USHORT *)pMacHdr = SWAP16(*(USHORT *)pMacHdr); //swap frame-control
+		pMacHdr += sizeof(HEADER_802_11);
+		*(USHORT *)pMacHdr = SWAP16(*(USHORT *)pMacHdr);	//swap reason code
+		bSwaped= TRUE;
+	}
+#endif
 	PMF_ConstructBIPAad((PUCHAR)pHdr, aad_hdr);
 
 	/* Calculate BIP MIC */
@@ -1002,6 +1070,16 @@ INT PMF_EncapBIPAction(
 	/* Fill into the MMIE MIC field */
 	NdisMoveMemory(pMMIE->MIC, BIP_MIC, LEN_PMF_BIP_MIC);
 
+#ifdef RT_BIG_ENDIAN
+	if (bSwaped)
+	{
+		pMacHdr = (PUCHAR) pHdr;
+		*(USHORT *)pMacHdr = SWAP16(*(USHORT *)pMacHdr);
+		pMacHdr += sizeof(HEADER_802_11);
+		*(USHORT *)pMacHdr = SWAP16(*(USHORT *)pMacHdr);	
+		bSwaped= TRUE;
+	}
+#endif
 	/* BIP doesn't need encrypt frame */
 	pHdr->FC.Wep = 0;
 
@@ -1056,6 +1134,12 @@ INT PMF_ExtractBIPAction(
 	}
 #endif // CONFIG_AP_SUPPORT //
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{		
+        	pPmfCfg = &pAd->StaCfg.PmfCfg;	
+        }                
+#endif // CONFIG_STA_SUPPORT //
 
 	/* Pointer to the position of MMIE */
 	pMMIE = (PPMF_MMIE)(pMgmtFrame + (mgmt_len - LEN_PMF_MMIE));
@@ -1098,7 +1182,7 @@ BOOLEAN	PMF_PerformTxFrameAction(
 	PACKET_INFO PacketInfo;
 	PUCHAR pSrcBufVA;
 	UINT SrcBufLen;
-	UINT8 TXWISize = pAd->chipCap.TXWISize;
+        UINT8 TXWISize = pAd->chipCap.TXWISize;
 	INT FrameType;
 	INT ret = FALSE;
 	PMAC_TABLE_ENTRY pEntry = NULL;
@@ -1106,7 +1190,7 @@ BOOLEAN	PMF_PerformTxFrameAction(
 	RTMP_QueryPacketInfo(pPacket, &PacketInfo, &pSrcBufVA, &SrcBufLen);
 	if (pSrcBufVA == NULL)
 		return NORMAL_FRAME;
-
+        
 	pHeader_802_11 = (PHEADER_802_11) (pSrcBufVA + TXINFO_SIZE + TXWISize);
 
 	pEntry = MacTableLookup(pAd, pHeader_802_11->Addr1);
@@ -1250,6 +1334,93 @@ BOOLEAN	PMF_PerformRxFrameAction(
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		switch (FrameType)
+		{
+			case ERROR_FRAME:
+	                        DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s: ERROR FRAME\n", __FUNCTION__));
+				return FALSE;
+		case NORMAL_FRAME:
+			break;
+                case NOT_ROBUST_UNICAST_FRAME:
+                        if (((pHeader->FC.SubType == SUBTYPE_DISASSOC) || (pHeader->FC.SubType == SUBTYPE_DEAUTH))
+                                && CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_PMF_CAPABLE))
+                        {
+                                PMF_MlmeSAQueryReq(pAd, pEntry);
+                                return FALSE;
+                        }
+                        DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s: ERROR FRAME\n", __FUNCTION__));
+			return FALSE;
+                case NOT_ROBUST_GROUP_FRAME:   
+                        if ((pEntry) && CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_PMF_CAPABLE))
+                                return FALSE;
+                        else
+                                break;
+		case UNICAST_ROBUST_FRAME:
+		{
+			if (PMF_DecryptUniRobustFrameAction(pAd, 
+							pMgmtFrame, 
+							mgmt_len) != PMF_STATUS_SUCCESS)
+        			return FALSE;
+
+			/* update the total length */
+#ifdef RLT_MAC
+			if (pAd->chipCap.hif_type == HIF_RLT)
+			{
+
+#ifdef MT76x2
+				if (IS_MT76x2(pAd))
+				{		
+					pRxWI->RXWI_N.MPDUtotalByteCnt -= (LEN_CCMP_HDR + LEN_CCMP_MIC);
+				}
+#endif
+
+
+			}
+#endif /* RLT_MAC */
+
+#ifdef RTMP_MAC
+			if (pAd->chipCap.hif_type == HIF_RTMP) {
+					pRxWI->MPDUtotalByteCount -= (LEN_CCMP_HDR + LEN_CCMP_MIC);
+			}
+#endif /* RTMP_MAC */			
+	        	break;
+		}
+		case GROUP_ROBUST_FRAME:
+		{
+			if (PMF_ExtractBIPAction(pAd, 
+						pMgmtFrame, 
+						mgmt_len) != PMF_STATUS_SUCCESS)
+				return FALSE;
+
+			/* update the total length */
+#ifdef RLT_MAC
+			if (pAd->chipCap.hif_type == HIF_RLT)
+			{
+
+#ifdef MT76x2
+				if (IS_MT76x2(pAd))
+				{		
+					pRxWI->RXWI_N.MPDUtotalByteCnt -= (2 + LEN_PMF_MMIE);
+				}
+#endif
+
+
+			}
+#endif /* RLT_MAC */
+
+#ifdef RTMP_MAC
+			if (pAd->chipCap.hif_type == HIF_RTMP) {
+					pRxWI->MPDUtotalByteCount -= (2 + LEN_PMF_MMIE);
+			}
+#endif /* RTMP_MAC */
+		        break;
+	        }
+	}
+	}	
+#endif /* CONFIG_STA_SUPPORT */												
 	return TRUE;
 }
 
@@ -1322,6 +1493,25 @@ void rtmp_read_pmf_parameters_from_file(
         }
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+        IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+        {
+                pAd->StaCfg.PmfCfg.Desired_MFPC = FALSE; 
+                pAd->StaCfg.PmfCfg.Desired_MFPR = FALSE; 
+                pAd->StaCfg.PmfCfg.Desired_PMFSHA256 = FALSE; 
+                
+                /* Protection Management Frame Capable */
+                if (RTMPGetKeyParameter("PMFMFPC", tmpbuf, 32, pBuffer, TRUE))
+                        Set_PMFMFPC_Proc(pAd, tmpbuf);
+
+        	/* Protection Management Frame Required */
+	        if (RTMPGetKeyParameter("PMFMFPR", tmpbuf, 32, pBuffer, TRUE))
+	                Set_PMFMFPR_Proc(pAd, tmpbuf);
+
+        	if (RTMPGetKeyParameter("PMFSHA256", tmpbuf, 32, pBuffer, TRUE))
+        	        Set_PMFSHA256_Proc(pAd, tmpbuf);
+        }
+#endif /* CONFIG_STA_SUPPORT */
 }
 
 
@@ -1362,6 +1552,48 @@ INT Set_PMFMFPC_Proc (
         }
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{									
+		if (simple_strtol(arg, 0, 10))			
+			pAd->StaCfg.PmfCfg.Desired_MFPC = TRUE; 
+		else
+		{
+			pAd->StaCfg.PmfCfg.Desired_MFPC = FALSE; 
+			pAd->StaCfg.PmfCfg.MFPC = FALSE;
+			pAd->StaCfg.PmfCfg.MFPR = FALSE;
+			//dont need to clear the SHA256
+		}
+
+        	DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s:: Desired MFPC=%d\n", __FUNCTION__
+                , pAd->StaCfg.PmfCfg.Desired_MFPC));
+
+
+		{
+			if ((pAd->StaCfg.wdev.AuthMode == Ndis802_11AuthModeWPA2 || pAd->StaCfg.wdev.AuthMode == Ndis802_11AuthModeWPA2PSK)
+				&& (pAd->StaCfg.wdev.WepStatus == Ndis802_11AESEnable))
+			{
+				pAd->StaCfg.PmfCfg.PMFSHA256 = pAd->StaCfg.PmfCfg.Desired_PMFSHA256;
+				if (pAd->StaCfg.PmfCfg.Desired_MFPC)
+				{
+					pAd->StaCfg.PmfCfg.MFPC = TRUE;
+					pAd->StaCfg.PmfCfg.MFPR = pAd->StaCfg.PmfCfg.Desired_MFPR;
+
+					if (pAd->StaCfg.PmfCfg.MFPR)
+						pAd->StaCfg.PmfCfg.PMFSHA256 = TRUE;
+				}
+			} else if (pAd->StaCfg.PmfCfg.Desired_MFPC) {
+				DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s:: Security is not WPA2/WPA2PSK AES\n", __FUNCTION__));
+			}
+
+			DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s:: MFPC=%d, MFPR=%d, SHA256=%d\n",
+						__FUNCTION__, pAd->StaCfg.PmfCfg.MFPC, pAd->StaCfg.PmfCfg.MFPR,
+						pAd->StaCfg.PmfCfg.PMFSHA256));
+		}
+
+
+	}
+#endif /* CONFIG_STA_SUPPORT */
     	return TRUE;
 }
 
@@ -1403,6 +1635,46 @@ INT Set_PMFMFPR_Proc (
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+        IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{									
+                if (simple_strtol(arg, 0, 10))			
+                        pAd->StaCfg.PmfCfg.Desired_MFPR = TRUE; 
+                else
+                {
+                        pAd->StaCfg.PmfCfg.Desired_MFPR = FALSE;
+                        //only close the MFPR
+                        pAd->StaCfg.PmfCfg.MFPR = FALSE;
+                }
+
+                DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s:: Desired MFPR=%d\n", __FUNCTION__
+                , pAd->StaCfg.PmfCfg.Desired_MFPR));
+
+		{
+			if ((pAd->StaCfg.wdev.AuthMode == Ndis802_11AuthModeWPA2 || pAd->StaCfg.wdev.AuthMode == Ndis802_11AuthModeWPA2PSK)
+				&& (pAd->StaCfg.wdev.WepStatus == Ndis802_11AESEnable))
+			{
+				pAd->StaCfg.PmfCfg.PMFSHA256 = pAd->StaCfg.PmfCfg.Desired_PMFSHA256;
+				if (pAd->StaCfg.PmfCfg.Desired_MFPC)
+				{
+					pAd->StaCfg.PmfCfg.MFPC = TRUE;
+					pAd->StaCfg.PmfCfg.MFPR = pAd->StaCfg.PmfCfg.Desired_MFPR;
+
+					if (pAd->StaCfg.PmfCfg.MFPR)
+						pAd->StaCfg.PmfCfg.PMFSHA256 = TRUE;
+				}
+			} else if (pAd->StaCfg.PmfCfg.Desired_MFPC) {
+				DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s:: Security is not WPA2/WPA2PSK AES\n", __FUNCTION__));
+			}
+
+			DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s:: MFPC=%d, MFPR=%d, SHA256=%d\n",
+						__FUNCTION__, pAd->StaCfg.PmfCfg.MFPC, pAd->StaCfg.PmfCfg.MFPR,
+						pAd->StaCfg.PmfCfg.PMFSHA256));
+		}
+
+				
+        }
+#endif /* CONFIG_STA_SUPPORT */
     	return TRUE;
 }
 
@@ -1430,6 +1702,18 @@ INT Set_PMFSHA256_Proc (
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+        IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{									
+                if (simple_strtol(arg, 0, 10))			
+                        pAd->StaCfg.PmfCfg.Desired_PMFSHA256 = TRUE; 
+                else
+                        pAd->StaCfg.PmfCfg.Desired_PMFSHA256 = FALSE; 
+
+                DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s:: Desired PMFSHA256=%d\n", __FUNCTION__
+                , pAd->StaCfg.PmfCfg.Desired_PMFSHA256));
+        }
+#endif /* CONFIG_STA_SUPPORT */
     	return TRUE;
 }
 

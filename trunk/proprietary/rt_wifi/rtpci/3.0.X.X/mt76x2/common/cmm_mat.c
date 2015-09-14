@@ -91,6 +91,7 @@ NDIS_STATUS MATDBEntryFree(
 	}
 #else
 	os_free_mem(NULL, NodeEntry);
+	NodeEntry = NULL;
 #endif
 
 	return TRUE;
@@ -232,6 +233,12 @@ PUCHAR MATEngineTxHandle(
 #endif /* APCLI_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef ETH_CONVERT_SUPPORT
+			IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+				pMacAddr = &pAd->CurrentAddress[0];
+#endif /* ETH_CONVERT_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 
 			if (pHandle->tx!=NULL)
 				retSkb = pHandle->tx((PVOID)&pAd->MatCfg, RTPKT_TO_OSPKT(pPkt), pLayerHdr, pMacAddr);
@@ -337,6 +344,16 @@ BOOLEAN MATPktRxNeedConvert(
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef ETH_CONVERT_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+
+		if (pAd->EthConvert.ECMode & ETH_CONVERT_MODE_DONGLE)
+			return TRUE;
+	}
+#endif /* ETH_CONVERT_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 
 	return FALSE;
 	

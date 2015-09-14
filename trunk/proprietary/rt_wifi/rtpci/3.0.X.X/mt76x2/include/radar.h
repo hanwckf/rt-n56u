@@ -32,8 +32,8 @@
 #define DEFAULT_CAL_BUF_TIME_MAX	0x10000
 
 /* RESTRICTION_BAND_1: 5600MHz ~ 5650MHz */
-#define RESTRICTION_BAND_1(_pAd)												\
-	(_pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40 ? 						\
+#define RESTRICTION_BAND_1(_pAd)											\
+	((_pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40 || _pAd->CommonCfg.RegTransmitSetting.field.BW == BW_80) ? 	\
 	((_pAd->CommonCfg.Channel >= 116) && (_pAd->CommonCfg.Channel <= 128)) :	\
 	((_pAd->CommonCfg.Channel >= 120) && (_pAd->CommonCfg.Channel <= 128)))
 

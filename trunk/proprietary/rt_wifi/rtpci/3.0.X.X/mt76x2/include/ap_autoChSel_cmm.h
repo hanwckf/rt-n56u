@@ -29,9 +29,17 @@ typedef struct {
 	ULONG dirtyness[MAX_NUM_OF_CHANNELS+1];
 	ULONG ApCnt[MAX_NUM_OF_CHANNELS+1];
 	UINT32 FalseCCA[MAX_NUM_OF_CHANNELS+1];
-	BOOLEAN SkipList[MAX_NUM_OF_CHANNELS+1];
+    BOOLEAN SkipList[MAX_NUM_OF_CHANNELS+1];
+#ifdef CUSTOMER_DCC_FEATURE
+	UINT32 chanbusytime[MAX_NUM_OF_CHANNELS+1];
+	UINT32 ChannelNo;
+	BOOLEAN GetChannelInfo;
+#else
+#ifdef AP_QLOAD_SUPPORT
 	UINT32 chanbusytime[MAX_NUM_OF_CHANNELS+1]; /* QLOAD ALARM */
-	BOOLEAN IsABand;
+#endif /* AP_QLOAD_SUPPORT */
+#endif /* CUSTOMER_DCC_FEATURE */
+        BOOLEAN IsABand;
 } CHANNELINFO, *PCHANNELINFO;
 
 typedef struct {

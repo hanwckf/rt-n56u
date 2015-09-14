@@ -416,10 +416,99 @@ VOID CalculateMIC(
 
 BOOLEAN rtmp_chk_tkip_mic(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, RX_BLK *pRxBlk);
 
+#ifdef WPA_SUPPLICANT_SUPPORT
+INT WpaCheckEapCode(
+	IN  RTMP_ADAPTER *pAd,
+	IN  UCHAR *pFrame,
+	IN  USHORT FrameLen,
+	IN  USHORT OffSet);
+#endif /* WPA_SUPPLICANT_SUPPORT */
 
 
 PSTRING GetEapolMsgType(CHAR msg);
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef ADHOC_WPA2PSK_SUPPORT
+/* 
+ =====================================	
+ 	function prototype in cmm_wpa_adhoc.c
+ =====================================	
+*/
+VOID Adhoc_WpaEAPOLStartAction(
+	IN PRTMP_ADAPTER pAd,
+	IN MLME_QUEUE_ELEM *Elem);
+
+VOID Adhoc_WpaEAPOLKeyAction(
+	IN PRTMP_ADAPTER pAd,
+	IN MLME_QUEUE_ELEM *Elem);
+
+VOID Adhoc_WpaStart4WayHS(
+	IN PRTMP_ADAPTER pAd,
+	IN MAC_TABLE_ENTRY *pEntry,
+	IN ULONG TimeInterval);
+
+VOID Adhoc_PeerPairMsg1Action(
+	IN PRTMP_ADAPTER pAd,
+	IN MAC_TABLE_ENTRY *pEntry,
+	IN MLME_QUEUE_ELEM *Elem);
+
+VOID Adhoc_PeerPairMsg2Action(
+	IN PRTMP_ADAPTER pAd,
+	IN MAC_TABLE_ENTRY *pEntry,
+	IN MLME_QUEUE_ELEM *Elem);
+
+VOID Adhoc_PeerPairMsg3Action(
+	IN PRTMP_ADAPTER pAd,
+	IN MAC_TABLE_ENTRY *pEntry,
+	IN MLME_QUEUE_ELEM *Elem);
+
+VOID Adhoc_PeerPairMsg4Action(
+	IN PRTMP_ADAPTER pAd,
+	IN MAC_TABLE_ENTRY *pEntry,
+	IN MLME_QUEUE_ELEM *Elem);
+
+VOID Adhoc_PeerGroupMsg1Action(
+	IN PRTMP_ADAPTER pAd,
+	IN MAC_TABLE_ENTRY *pEntry,
+	IN MLME_QUEUE_ELEM *Elem);
+
+VOID Adhoc_Wpa4WayComplete(
+	IN PRTMP_ADAPTER pAd,
+	IN MAC_TABLE_ENTRY *pEntry);
+
+VOID Adhoc_WpaRetryExec(
+	IN PVOID SystemSpecific1,
+	IN PVOID FunctionContext,
+	IN PVOID SystemSpecific2,
+	IN PVOID SystemSpecific3);
+
+VOID Adhoc_ConstructEapolMsg(
+	IN PMAC_TABLE_ENTRY pEntry,
+	IN UCHAR GroupKeyWepStatus,
+	IN UCHAR MsgType,
+	IN UCHAR DefaultKeyIdx,
+	IN UCHAR *KeyNonce,
+	IN UCHAR *TxRSC,
+	IN UCHAR *GTK,
+	IN UCHAR *RSNIE,
+	IN UCHAR RSNIE_Len,
+	IN PFOUR_WAY_HANDSHAKE_PROFILE p4WayProfile,
+	OUT PEAPOL_PACKET pMsg);
+
+VOID Adhoc_ConstructEapolKeyData(
+	IN PMAC_TABLE_ENTRY pEntry,
+	IN UCHAR GroupKeyWepStatus,
+	IN UCHAR keyDescVer,
+	IN UCHAR MsgType,
+	IN UCHAR DefaultKeyIdx,
+	IN UCHAR *GTK,
+	IN UCHAR *RSNIE,
+	IN UCHAR RSNIE_LEN,
+	IN PFOUR_WAY_HANDSHAKE_PROFILE p4WayProfile,
+	OUT PEAPOL_PACKET pMsg);
+
+#endif /* ADHOC_WPA2PSK_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 
 /* 
  =====================================	

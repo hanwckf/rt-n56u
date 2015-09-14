@@ -34,7 +34,7 @@
   *
   ************************************************************************/
 
-#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612)
+#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612 || CONFIG_RT_FIRST_CARD == 7620)
 #if defined (CONFIG_RT_FIRST_IF_RF_OFFSET)
 #define DEFAULT_RF_OFFSET		CONFIG_RT_FIRST_IF_RF_OFFSET
 #else
@@ -52,6 +52,8 @@
 #define EEPROM_DEFAULT_FILE_PATH	"/etc_ro/Wireless/MT7612E_EEPROM.bin"
 #elif (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_SECOND_CARD == 7602)
 #define EEPROM_DEFAULT_FILE_PATH	"/etc_ro/Wireless/MT7602E_EEPROM.bin"
+#elif (CONFIG_RT_FIRST_CARD == 7620)
+#define EEPROM_DEFAULT_FILE_PATH	"/etc_ro/Wireless/MT7620_AP_2T2R-4L_V15.BIN"
 #endif
 
 #ifdef RTMP_FLASH_SUPPORT
@@ -75,11 +77,11 @@ static USHORT EE_FLASH_ID_LIST[] __maybe_unused = {
 /* For ioctl check usage */
 #define EEPROM_IS_PROGRAMMED		0x80
 
-#define E2P_NONE			0x00
-#define E2P_EFUSE_MODE			0x01
-#define E2P_FLASH_MODE			0x02
+#define E2P_NONE					0x00
+#define E2P_EFUSE_MODE				0x01
+#define E2P_FLASH_MODE				0x02
 #define E2P_EEPROM_MODE			0x03
-#define E2P_BIN_MODE			0x04
+#define E2P_BIN_MODE				0x04
 #define NUM_OF_E2P_MODE			0x05
 
 #ifdef RTMP_MAC_PCI
@@ -88,18 +90,18 @@ static USHORT EE_FLASH_ID_LIST[] __maybe_unused = {
 #define MAX_EEPROM_BIN_FILE_SIZE	1024
 #endif /* !RTMP_MAC_PCI */
 
-#define EEPROM_SIZE			0x200
+#define EEPROM_SIZE					0x200
 
-#define EEPROM_DEFULT_BIN_FILE		"RT30xxEEPROM.bin"
+#define EEPROM_DEFULT_BIN_FILE	"RT30xxEEPROM.bin"
 #ifdef BB_SOC
-#define BIN_FILE_PATH			"/etc/RT30xxEEPROM.bin"
+#define BIN_FILE_PATH				"/etc/RT30xxEEPROM.bin"
 #else
-#define BIN_FILE_PATH			"/tmp/RT30xxEEPROM.bin"
+#define BIN_FILE_PATH				"/tmp/RT30xxEEPROM.bin"
 #endif /* BB_SOC */
 
 #define EEPROM_FILE_DIR			"/etc_ro/Wireless/"
-#define EEPROM_1ST_FILE_DIR		"/etc_ro/Wireless/iNIC/"
-#define EEPROM_2ND_FILE_DIR		"/etc_ro/Wireless/iNIC/"
+#define EEPROM_1ST_FILE_DIR        "/etc_ro/Wireless/iNIC/"
+#define EEPROM_2ND_FILE_DIR        "/etc_ro/Wireless/iNIC/"
 
 #ifdef RT_BIG_ENDIAN
 typedef	union _EEPROM_WORD_STRUC {

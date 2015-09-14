@@ -28,6 +28,34 @@
 
 #include "rt_config.h"
 
+#ifdef CONFIG_STA_SUPPORT
+VOID CFG80211DRV_OpsScanInLinkDownAction(
+	VOID						*pAdOrg)
+{
+	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pAdOrg;
+	BOOLEAN Cancelled;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("---> CFG80211_MLME Disconnect in Scaning, ORI ==> %d\n", 
+	  								pAd->Mlme.CntlMachine.CurrState)); 	
+	   	
+	RTMPCancelTimer(&pAd->MlmeAux.ScanTimer, &Cancelled);
+	pAd->MlmeAux.Channel = 0;
+	   
+	pAd->cfg80211_ctrl.FlgCfg80211Scanning = FALSE;	
+	CFG80211OS_ScanEnd(pAd->pCfg80211_CB, TRUE);
+  
+	ScanNextChannel(pAd, OPMODE_STA);
+	DBGPRINT(RT_DEBUG_TRACE, ("<--- CFG80211_MLME Disconnect in Scan END, ORI ==> %d\n", 
+									pAd->Mlme.CntlMachine.CurrState)); 
+}
+
+BOOLEAN CFG80211DRV_OpsScanRunning(
+	VOID						*pAdOrg)
+{
+	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pAdOrg;
+	return pAd->cfg80211_ctrl.FlgCfg80211Scanning;
+}
+#endif /*CONFIG_STA_SUPPORT*/
 
 
 /* Refine on 2013/04/30 for two functin into one */
@@ -92,6 +120,51 @@ BOOLEAN CFG80211DRV_OpsScanCheckStatus(
 	VOID						*pAdOrg,
 	UINT8						 IfType)
 {
+#ifdef CONFIG_STA_SUPPORT
+	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pAdOrg;
+
+ 	/* CFG_TODO */
+	if (CFG80211DRV_OpsScanRunning(pAd))
+	{
+		CFG80211DBG(RT_DEBUG_ERROR, ("SCAN_FAIL: CFG80211 Internal SCAN Flag On\n")); 	
+		return FALSE; 
+	}
+
+	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))
+	{
+		CFG80211DBG(RT_DEBUG_ERROR, ("SCAN_FAIL: BSS_SCAN_IN_PROGRESS\n"));
+		return FALSE; 
+	}
+
+	/* To avoid the scan cmd come-in during driver init */
+	if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_START_UP))
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("SCAN_FAIL: Scan cmd before Startup finish\n"));
+		return FALSE;
+	}
+
+#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE	
+	if (RTMP_CFG80211_VIF_P2P_CLI_ON(pAd) &&
+	    (pAd->cfg80211_ctrl.FlgCfg80211Connecting == TRUE) &&
+        (IfType == RT_CMD_80211_IFTYPE_STATION))
+	{
+		DBGPRINT(RT_DEBUG_ERROR,("SCAN_FAIL: P2P_CLIENT In Connecting & Canncel Scan with Infra Side\n"));
+		return FALSE;
+	}	
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
+
+#ifdef RT_CFG80211_SUPPORT	
+	if (pAd->cfg80211_ctrl.FlgCfg8021Disable2040Scan == TRUE &&
+        (IfType == RT_CMD_80211_IFTYPE_AP))
+	{
+		DBGPRINT(RT_DEBUG_ERROR,("Disable 20/40 scan!!\n"));
+		return FALSE;
+	}	
+#endif /* RT_CFG80211_SUPPORT */
+
+	/* do scan */
+	pAd->cfg80211_ctrl.FlgCfg80211Scanning = TRUE;
+#endif /*CONFIG_STA_SUPPORT*/
 	return TRUE;
 }
 
@@ -107,6 +180,10 @@ BOOLEAN CFG80211DRV_OpsScanExtraIesSet(
 		ie_len = pCfg80211_CB->pCfg80211_ScanReq->ie_len;
 
     CFG80211DBG(RT_DEBUG_INFO, ("80211> CFG80211DRV_OpsExtraIesSet ==> %d\n", ie_len)); 
+#ifdef CONFIG_STA_SUPPORT
+	CFG80211DBG(RT_DEBUG_INFO, ("80211> is_wpa_supplicant_up ==> %d\n", 
+									pAd->StaCfg.wpa_supplicant_info.WpaSupplicantUP)); 
+#endif /*CONFIG_STA_SUPPORT*/	
 	if (ie_len == 0)
 		return FALSE;
 
@@ -228,6 +305,49 @@ VOID CFG80211_Scaning(
 	IN UINT32						FrameLen,
 	IN INT32						RSSI)
 {
+#ifdef CONFIG_STA_SUPPORT
+	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pAdCB;
+	VOID *pCfg80211_CB = pAd->pCfg80211_CB;
+	BOOLEAN FlgIsNMode;
+	UINT8 BW;
+
+	if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_IN_USE))
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("80211> Network is down!\n"));
+		return;
+	} 
+
+	/*
+		In connect function, we also need to report BSS information to cfg80211;
+		Not only scan function.
+	*/
+	if ((!CFG80211DRV_OpsScanRunning(pAd)) &&
+		(pAd->cfg80211_ctrl.FlgCfg80211Connecting == FALSE))
+	{
+		return; /* no scan is running from wpa_supplicant */
+	} 
+
+
+	/* init */
+	/* Note: Can not use local variable to do pChan */
+	if (WMODE_CAP_N(pAd->CommonCfg.PhyMode))
+		FlgIsNMode = TRUE;
+	else
+		FlgIsNMode = FALSE;
+
+	if (pAd->CommonCfg.RegTransmitSetting.field.BW == BW_20)
+		BW = 0;
+	else
+		BW = 1;
+
+	CFG80211OS_Scaning(pCfg80211_CB,
+						ChanId,
+						pFrame,
+						FrameLen,
+						RSSI,
+						FlgIsNMode,
+						BW);
+#endif /* CONFIG_STA_SUPPORT */
 }
 
 
@@ -250,6 +370,34 @@ VOID CFG80211_ScanEnd(
 	IN VOID						*pAdCB,
 	IN BOOLEAN					FlgIsAborted)
 {
+#ifdef CONFIG_STA_SUPPORT
+	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pAdCB;
+
+	if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_IN_USE))
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("80211> Network is down!\n"));
+		return;
+	} 
+
+	if (!CFG80211DRV_OpsScanRunning(pAd))
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("80211> No scan is running!\n"));
+		return; /* no scan is running */
+	} 
+
+	if (FlgIsAborted == TRUE)
+		FlgIsAborted = 1;
+	else
+	{
+		FlgIsAborted = 0;
+#ifdef CFG80211_SCAN_SIGNAL_AVG			
+		CFG80211_UpdateBssTableRssi(pAd);
+#endif /* CFG80211_SCAN_SIGNAL_AVG */	
+	}
+	
+	CFG80211OS_ScanEnd(CFG80211CB, FlgIsAborted);	
+	pAd->cfg80211_ctrl.FlgCfg80211Scanning = FALSE;
+#endif /* CONFIG_STA_SUPPORT */
 } 
 
 VOID CFG80211_ScanStatusLockInit(

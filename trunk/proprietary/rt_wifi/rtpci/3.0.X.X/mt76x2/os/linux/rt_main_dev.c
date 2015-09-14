@@ -214,7 +214,7 @@ Note:
 int rt28xx_close(VOID *dev)
 {
 	struct net_device * net_dev = (struct net_device *)dev;
-	VOID	*pAd = NULL;
+    VOID	*pAd = NULL;
 
 	GET_PAD_FROM_NET_DEV(pAd, net_dev);	
 
@@ -253,6 +253,15 @@ int rt28xx_open(VOID *dev)
 	int retval = 0;
 	ULONG OpMode;
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef CONFIG_PM
+#ifdef USB_SUPPORT_SELECTIVE_SUSPEND
+	struct usb_interface *intf;
+	struct usb_device *pUsb_Dev;
+	INT pm_usage_cnt;
+#endif /* USB_SUPPORT_SELECTIVE_SUSPEND */
+#endif /* CONFIG_PM */
+#endif /* CONFIG_STA_SUPPORT */
 
 
 	if (sizeof(ra_dma_addr_t) < sizeof(dma_addr_t))
@@ -270,6 +279,32 @@ int rt28xx_open(VOID *dev)
 
 	RTMP_DRIVER_OP_MODE_GET(pAd, &OpMode);
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef CONFIG_PM
+#ifdef USB_SUPPORT_SELECTIVE_SUSPEND
+
+	RTMP_DRIVER_USB_DEV_GET(pAd, &pUsb_Dev);
+	RTMP_DRIVER_USB_INTF_GET(pAd, &intf);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
+	pm_usage_cnt = atomic_read(&intf->pm_usage_cnt);	
+#else
+	pm_usage_cnt = intf->pm_usage_cnt;
+#endif
+	if (pm_usage_cnt == 0)
+	{
+		int res=1;
+
+		res = usb_autopm_get_interface(intf);
+		if (res)
+		{
+			DBGPRINT(RT_DEBUG_ERROR, ("rt28xx_open autopm_resume fail!\n"));
+			return (-1);;
+		}			
+	}
+#endif /* USB_SUPPORT_SELECTIVE_SUSPEND */
+#endif /* CONFIG_PM */
+#endif /* CONFIG_STA_SUPPORT */
 
 
 #if WIRELESS_EXT >= 12
@@ -280,6 +315,10 @@ int rt28xx_open(VOID *dev)
 		if (OpMode == OPMODE_AP)
 			net_dev->wireless_handlers = (struct iw_handler_def *) &rt28xx_ap_iw_handler_def;
 #endif /* CONFIG_APSTA_MIXED_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+		if (OpMode == OPMODE_STA)
+			net_dev->wireless_handlers = (struct iw_handler_def *) &rt28xx_iw_handler_def;
+#endif /* CONFIG_STA_SUPPORT */
 	}
 #endif /* WIRELESS_EXT >= 12 */
 
@@ -403,6 +442,14 @@ PNET_DEV RtmpPhyNetDevInit(VOID *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevHook)
 	/* put private data structure */
 	RTMP_OS_NETDEV_SET_PRIV(net_dev, pAd);
 
+#ifdef CONFIG_STA_SUPPORT
+#if WIRELESS_EXT >= 12
+	if (OpMode == OPMODE_STA)
+	{
+		pNetDevHook->iw_handler = (void *)&rt28xx_iw_handler_def;
+	}
+#endif /*WIRELESS_EXT >= 12 */
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef CONFIG_APSTA_MIXED_SUPPORT
 #if WIRELESS_EXT >= 12
@@ -600,6 +647,13 @@ INT rt28xx_ioctl(PNET_DEV net_dev, struct ifreq *rq, INT cmd)
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+/*	IF_DEV_CONFIG_OPMODE_ON_STA(pAd) */
+	RT_CONFIG_IF_OPMODE_ON_STA(OpMode)
+	{
+		ret = rt28xx_sta_ioctl(net_dev, rq, cmd);
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	return ret;
 }
@@ -625,10 +679,10 @@ struct rtnl_link_stats64 *
 RT28xx_get_ether_stats64(PNET_DEV net_dev, struct rtnl_link_stats64 *stats)
 {
 	RT_CMD_STATS64 WifStats;
-	VOID *pAd = NULL;
+    VOID *pAd = NULL;
 
 	if (net_dev)
-		GET_PAD_FROM_NET_DEV(pAd, net_dev);
+		GET_PAD_FROM_NET_DEV(pAd, net_dev);	
 
 	if (!pAd)
 		return NULL;
@@ -662,7 +716,7 @@ RT28xx_get_ether_stats64(PNET_DEV net_dev, struct rtnl_link_stats64 *stats)
 
 	stats->rx_compressed		= 0;
 	stats->tx_compressed		= 0;
-
+		
 	return stats;
 }
 
@@ -747,8 +801,11 @@ int RtmpOSIRQRequest(IN PNET_DEV pNetDev)
 	{
 		struct pci_dev *pci_dev;
 		RTMP_DRIVER_PCI_MSI_ENABLE(pAd, &pci_dev);
-
+#ifdef CONFIG_ARCH_MT7623
+		retval = request_irq(pci_dev->irq,  rt2860_interrupt, SA_SHIRQ|IRQF_TRIGGER_LOW, (net_dev)->name, (net_dev));
+#else
 		retval = request_irq(pci_dev->irq,  rt2860_interrupt, SA_SHIRQ, (net_dev)->name, (net_dev));
+#endif
 		if (retval != 0) 
 			printk("RT2860: request_irq  ERROR(%d)\n", retval);
 	}
@@ -792,7 +849,7 @@ struct rtnl_link_stats64 *
 RT28xx_get_wds_ether_stats64(PNET_DEV net_dev, struct rtnl_link_stats64 *stats)
 {
 	RT_CMD_STATS64 WdsStats;
-	VOID *pAd = NULL;
+    VOID *pAd = NULL;
 
 	if (net_dev)
 		GET_PAD_FROM_NET_DEV(pAd, net_dev);
@@ -802,9 +859,9 @@ RT28xx_get_wds_ether_stats64(PNET_DEV net_dev, struct rtnl_link_stats64 *stats)
 
 	WdsStats.pNetDev = net_dev;
 
-	if (RTMP_COM_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_WDS_STATS_GET,
+			if (RTMP_COM_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_WDS_STATS_GET,
 			0, &WdsStats, RT_DEV_PRIV_FLAGS_GET(net_dev)) != NDIS_STATUS_SUCCESS)
-		return NULL;
+				return NULL;
 
 	stats->rx_packets		= WdsStats.rx_packets;
 	stats->tx_packets		= WdsStats.tx_packets;
@@ -864,7 +921,7 @@ RT28xx_get_apcli_ether_stats64(PNET_DEV net_dev, struct rtnl_link_stats64 *stats
 		GET_PAD_FROM_NET_DEV(pAd, net_dev);
 
 	if (!pAd)
-		return NULL;
+			return NULL;
 
 	ApCliStats.pNetDev = net_dev;
 	if (RTMP_COM_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_APCLI_STATS_GET,

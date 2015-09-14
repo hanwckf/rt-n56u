@@ -86,7 +86,7 @@ void HotspotAPReload(PNET_DEV net_dev)
 #ifdef CONFIG_AP_SUPPORT
 BOOLEAN HSIPv4Check(
 			IN PRTMP_ADAPTER pAd,
-			PUCHAR pWcid,
+			PUSHORT pWcid,
 			PNDIS_PACKET pPacket,
 			PUCHAR pSrcBuf,
 			UINT16 srcPort,
@@ -95,14 +95,18 @@ BOOLEAN HSIPv4Check(
 	UCHAR apidx = RTMP_GET_PACKET_NET_DEVICE(pPacket);
 	MULTISSID_STRUCT *pMbss = &pAd->ApCfg.MBSSID[apidx];
 
-	if (pMbss->HotSpotCtrl.HotSpotEnable)
+
+	if ((pMbss->HotSpotCtrl.HotSpotEnable) 
+#ifdef CONFIG_HOTSPOT_R2
+	|| (pMbss->HotSpotCtrl.bASANEnable)
+#endif
+	)	
 	{
 		if (srcPort  == 0x43 && dstPort == 0x44)
 		{
 			//UCHAR *pTargetIPAddr = pSrcBuf + 24;
 			/* Client hardware address */
 			UCHAR *pTargetMACAddr = pSrcBuf + 36;
-						
 			/* Convert group-address DHCP packets to individually-addressed 802.11 frames */
 			if (*pWcid == MCAST_WCID && pMbss->HotSpotCtrl.DGAFDisable)
 			{
@@ -116,10 +120,9 @@ BOOLEAN HSIPv4Check(
 					}
 					
 					DBGPRINT(RT_DEBUG_OFF, ("Convert broadcast dhcp to unicat frame when dgaf disable\n"));
-						
-					if (!ApAllowToSendPacket(pAd, &pAd->ApCfg.MBSSID[apidx].wdev, pPacket, pWcid))
+					DBGPRINT(RT_DEBUG_OFF, ("pSrcBufOriginal:(%02x:%02x:%02x:%02x:%02x:%02x)\n", PRINT_MAC(pSrcBufOriginal)));
+					if (!ApAllowToSendPacket(pAd, &pAd->ApCfg.MBSSID[apidx].wdev, pPacket, (UCHAR *)pWcid))
 						return FALSE;
-							
 					RTMP_SET_PACKET_WCID(pPacket, *pWcid);
 			}
 		}
@@ -258,8 +261,20 @@ INT Set_HotSpot_Param(
 		case PARAM_EXTERNAL_ANQP_SERVER_TEST:
 			pGASCtrl->ExternalANQPServerTest = Value;
 			break;
+		case PARAM_GAS_COME_BACK_DELAY:
+			pGASCtrl->cb_delay = Value;
+			break;
+#ifdef CONFIG_HOTSPOT_R2			
+		case PARAM_WNM_NOTIFICATION:
+			pWNMCtrl->WNMNotifyEnable = Value;
+			break;
+		case PARAM_QOSMAP:
+			pHSCtrl->QosMapEnable = Value;
+			break;	
+#endif			
 		default:
-			DBGPRINT(RT_DEBUG_ERROR, ("Unknow Parameter\n"));
+			DBGPRINT(RT_DEBUG_ERROR, ("Unknow Parameter:%d\n", Param));
+
 			break;
 	}
 
@@ -348,6 +363,9 @@ INT Set_HotSpot_OnOff(
 	NdisZeroMemory(Buf, sizeof(*Event));
 		
 	Event = (HSCTRL_EVENT_DATA *)Buf;
+#ifdef CONFIG_STA_SUPPORT
+	Event->ControlIndex = 0;
+#endif /*CONFIG_STA_SUPPORT */
 #ifdef CONFIG_AP_SUPPORT
 	Event->ControlIndex = APIndex;
 #endif /* CONFIG_STA_SUPPORT */
@@ -383,6 +401,9 @@ enum HSCTRL_STATE HSCtrlCurrentState(
 	pHSCtrl = &pAd->ApCfg.MBSSID[Event->ControlIndex].HotSpotCtrl;
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	pHSCtrl = &pAd->StaCfg.HotSpotCtrl;
+#endif /* CONFIG_STA_SUPPORT */
 
 	return pHSCtrl->HSCtrlState;
 }
@@ -403,6 +424,9 @@ VOID HSCtrlSetCurrentState(
 	pHSCtrl = &pAd->ApCfg.MBSSID[Event->ControlIndex].HotSpotCtrl;
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	pHSCtrl = &pAd->StaCfg.HotSpotCtrl;
+#endif /* CONFIG_STA_SUPPORT */	
 
 	pHSCtrl->HSCtrlState = State;
 }
@@ -419,6 +443,11 @@ static VOID HSCtrlOn(
 
 	printk("%s\n", __FUNCTION__);
 
+#ifdef CONFIG_STA_SUPPORT
+	NetDev = pAd->net_dev;
+	pHSCtrl = &pAd->StaCfg.HotSpotCtrl;
+	pGASCtrl = &pAd->StaCfg.GASCtrl;
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
 	NetDev = pAd->ApCfg.MBSSID[Event->ControlIndex].wdev.if_dev;
@@ -464,6 +493,12 @@ static VOID HSCtrlInit(
 	UCHAR APIndex;
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	pHSCtrl = &pAd->StaCfg.HotSpotCtrl;
+	NdisZeroMemory(pHSCtrl, sizeof(*pHSCtrl));
+	pHSCtrl->HotSpotEnable = 0;
+	pHSCtrl->HSCtrlState = HSCTRL_IDLE;
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
 	for (APIndex = 0; APIndex < MAX_MBSSID_NUM(pAd); APIndex++)
@@ -485,6 +520,12 @@ VOID HSCtrlExit(
 	UCHAR APIndex;
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	pHSCtrl = &pAd->StaCfg.HotSpotCtrl;
+	
+	/* Remove all IE */
+	HSCtrlRemoveAllIE(pHSCtrl);
+#endif /* CONFIG_STA_SUPPORT */
 	
 #ifdef CONFIG_AP_SUPPORT
 	for (APIndex = 0; APIndex < MAX_MBSSID_NUM(pAd); APIndex++)
@@ -507,6 +548,10 @@ VOID HSCtrlHalt(
 	UCHAR APIndex;
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	pHSCtrl = &pAd->StaCfg.HotSpotCtrl;
+	pHSCtrl->HotSpotEnable = 0;
+#endif /* CONFIG_STA_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
 	for (APIndex = 0; APIndex < MAX_MBSSID_NUM(pAd); APIndex++)
@@ -523,20 +568,48 @@ static VOID HSCtrlOff(
     IN MLME_QUEUE_ELEM  *Elem)
 {
 	PHOTSPOT_CTRL pHSCtrl;
-	PGAS_CTRL pGASCtrl;
 	PNET_DEV NetDev;
 	HSCTRL_EVENT_DATA *Event = (HSCTRL_EVENT_DATA *)Elem->Msg;
+#ifdef CONFIG_DOT11V_WNM		
+	PWNM_CTRL pWNMCtrl = &pAd->ApCfg.MBSSID[Event->ControlIndex].WNMCtrl;
+#endif
+	UCHAR tmp;
 
 	printk("%s\n", __FUNCTION__);
+
 
 #ifdef CONFIG_AP_SUPPORT
 	NetDev = pAd->ApCfg.MBSSID[Event->ControlIndex].wdev.if_dev;
 	pHSCtrl = &pAd->ApCfg.MBSSID[Event->ControlIndex].HotSpotCtrl;
-	pGASCtrl = &pAd->ApCfg.MBSSID[Event->ControlIndex].GASCtrl;
+#ifdef CONFIG_HOTSPOT_R2	
+	pHSCtrl->bASANEnable = 0;
+	pHSCtrl->QLoadTestEnable = 0;
+#endif			
 #endif /* CONFIG_AP_SUPPORT */
 
  	pHSCtrl->HotSpotEnable = 0;
 	pHSCtrl->HSDaemonReady = 0;
+	pHSCtrl->DGAFDisable = 0;
+	pHSCtrl->L2Filter = 0;
+	pHSCtrl->ICMPv4Deny = 0;
+	
+#ifdef CONFIG_DOT11V_WNM	
+	pWNMCtrl->ProxyARPEnable = 0;
+#ifdef CONFIG_HOTSPOT_R2			
+	pWNMCtrl->WNMNotifyEnable = 0;
+	pHSCtrl->QosMapEnable = 0;
+	for(tmp = 0;tmp<21;tmp++)
+	{
+		pHSCtrl->DscpException[tmp] = 0xff;
+		pHSCtrl->DscpException[tmp] |= (0xff << 8);
+	}
+	for(tmp = 0;tmp<8;tmp++)
+	{
+		pHSCtrl->DscpRange[tmp] = 0xff;
+		pHSCtrl->DscpRange[tmp] |= (0xff << 8);
+	}
+#endif	
+#endif	
 	
 #ifdef CONFIG_AP_SUPPORT
 	APMakeAllBssBeacon(pAd);
@@ -600,6 +673,9 @@ BOOLEAN HotSpotEnable(
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	pHSCtrl = &pAd->StaCfg.HotSpotCtrl;
+#endif /* CONFIG_STA_SUPPORT */
 
 	return pHSCtrl->HotSpotEnable;
 }
@@ -620,3 +696,155 @@ VOID HSCtrlStateMachineInit(
 	StateMachineSetAction(S, HSCTRL_IDLE, HSCTRL_ON, (STATE_MACHINE_FUNC)HSCtrlOn);
 	StateMachineSetAction(S, HSCTRL_IDLE, HSCTRL_OFF, (STATE_MACHINE_FUNC)HSCtrlOff);
 }
+
+BOOLEAN hotspot_rx_snoop(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, RX_BLK *pRxBlk)
+{
+	BOOLEAN drop = FALSE;
+	BOOLEAN FoundProxyARPEntry;
+	MULTISSID_STRUCT *pMbss = pEntry->pMbss;
+	PUCHAR pData = NdisEqualMemory(SNAP_802_1H, pRxBlk->pData, 6) ? (pRxBlk->pData + 6) : pRxBlk->pData;
+	UCHAR Offset = 0;
+
+	/* Check if Proxy ARP Candidate for IPv4 */
+	if (IsIPv4ProxyARPCandidate(pAd, pData))
+	{
+		FoundProxyARPEntry = IPv4ProxyARP(pAd, pMbss, pData, FALSE);
+		if (FoundProxyARPEntry) {
+			DBGPRINT(RT_DEBUG_TRACE, ("Find proxy entry for IPv4\n"));
+			drop = TRUE;
+			goto done;
+		}
+	}
+
+	/* Check if Neighbor solicitation during duplicate address detection procedure */
+	if (IsIpv6DuplicateAddrDetect(pAd, pData, &Offset))
+	{
+		/* Proxy MAC address/IPv6 mapping */
+		//AddIPv6ProxyARPEntry(pAd, pMbss, pEntry->Addr, (pData + 50));
+		DBGPRINT(RT_DEBUG_OFF, ("AddIPv6ProxyARPEntry:offset=%d\n", Offset));
+		AddIPv6ProxyARPEntry(pAd, pMbss, pEntry->Addr, (pData + Offset));
+		DBGPRINT(RT_DEBUG_ERROR, ("Drop IPv6 DAD\n"));
+		drop = TRUE;
+		goto done;
+	}
+
+	/* Check if Router solicitation */
+	if (IsIPv6RouterSolicitation(pAd, pData))
+	{
+		/* Proxy MAC address/IPv6 mapping for link local address */
+		AddIPv6ProxyARPEntry(pAd, pMbss, pEntry->Addr,  (pData + 10));	
+	}
+
+//JERRY: add to parse DHCPv6 solicit to check proxy arp entry
+	if (IsIPv6DHCPv6Solicitation(pAd, pData))
+	{
+		AddIPv6ProxyARPEntry(pAd, pMbss, pEntry->Addr,  (pData + 10));
+	}
+
+	/* Check if Proxy ARP Candidate for IPv6 */
+	if (IsIPv6ProxyARPCandidate(pAd, pData))
+	{
+		FoundProxyARPEntry = IPv6ProxyARP(pAd, pMbss, pData, FALSE);
+		if (FoundProxyARPEntry) {
+			DBGPRINT(RT_DEBUG_TRACE, ("Find proxy entry for IPv6\n"));
+			drop = TRUE;
+			goto done;
+		} else {
+			/* Proxy MAC address/IPv6 mapping */
+			AddIPv6ProxyARPEntry(pAd, pMbss, pEntry->Addr, (pData + 10));			
+		}
+	}
+
+	if (!pEntry->pMbss->HotSpotCtrl.DGAFDisable)
+	{
+		if (IsGratuitousARP(pAd, pData, pRxBlk->pHeader->Addr3, pMbss))
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("Drop Gratutious ARP\n"));
+			drop = TRUE;
+			goto done;
+		}
+
+		if (IsUnsolicitedNeighborAdver(pAd, pData))
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("Drop unsoclicited neighbor advertisement packet\n"));
+			drop = TRUE;
+			goto done;
+		}
+	}
+
+done:
+	return drop;
+}
+
+BOOLEAN hotspot_rx_l2_filter(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, RX_BLK *pRxBlk)
+{
+	MULTISSID_STRUCT *pMbss = pEntry->pMbss;
+	BOOLEAN drop = FALSE;
+	PUCHAR pData = NdisEqualMemory(SNAP_802_1H, pRxBlk->pData, 6) ? (pRxBlk->pData + 6) : pRxBlk->pData;
+
+	if (pEntry->pMbss->HotSpotCtrl.L2Filter == L2FilterBuiltIn)
+	{
+		BOOLEAN NeedDrop = FALSE;
+		NeedDrop = L2FilterInspection(pAd, &pMbss->HotSpotCtrl, pData);
+		
+		if (NeedDrop)
+		{
+			DBGPRINT(RT_DEBUG_OFF, ("Drop Filter BuiltIn packet\n"));
+			drop = TRUE;
+			goto done;
+		}
+	} 
+	else if (pMbss->HotSpotCtrl.L2Filter == L2FilterExternal)
+	{
+		UINT16 Index;
+		BOOLEAN NeedSendToExternal;
+		MULTISSID_STRUCT *pMbss = pEntry->pMbss;
+		PUCHAR pData = NdisEqualMemory(SNAP_802_1H, pRxBlk->pData, 6) ? (pRxBlk->pData + 6) : pRxBlk->pData;
+	
+		NeedSendToExternal = L2FilterInspection(pAd, &pMbss->HotSpotCtrl, pData);
+
+		if (NeedSendToExternal)
+		{
+			/* Change to broadcast DS */
+			DBGPRINT(RT_DEBUG_OFF, ("Change to broadcast under L2FilterExternal\n"));
+			for (Index = 0; Index < MAC_ADDR_LEN; Index++)
+				DBGPRINT(RT_DEBUG_OFF, ("DA[%d] = %x\n", Index, pRxBlk->pHeader->Addr3[Index]));
+			
+			pRxBlk->pHeader->Addr3[0] = 0xf0;
+			pRxBlk->pHeader->Addr3[1] = 0xde;
+			pRxBlk->pHeader->Addr3[2] = 0xf1;
+			pRxBlk->pHeader->Addr3[3] = 0x70;
+			pRxBlk->pHeader->Addr3[4] = 0x86;
+			pRxBlk->pHeader->Addr3[5] = 0x52;
+		}
+	}
+
+	/* Check if TDLS/DLS frame */
+	if (IsTDLSPacket(pAd, pData))
+	{
+		DBGPRINT(RT_DEBUG_OFF, ("Drop TDLS Packet\n"));
+		drop = TRUE;
+	}
+
+done:
+	return drop;
+}
+
+
+BOOLEAN hotspot_rx_handler(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, RX_BLK *pRxBlk)
+{
+	BOOLEAN drop = FALSE;
+	if (pEntry->pMbss->WNMCtrl.ProxyARPEnable)
+		drop = hotspot_rx_snoop(pAd, pEntry, pRxBlk);
+
+	if ((drop == FALSE) && (pEntry->pMbss->HotSpotCtrl.L2Filter != L2FilterDisable))
+		drop = hotspot_rx_l2_filter(pAd, pEntry, pRxBlk);
+
+	if (drop == TRUE) {
+		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
+	}
+
+	return drop;
+}
+
+

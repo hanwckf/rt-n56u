@@ -28,6 +28,9 @@
 #ifndef __AP_H__
 #define __AP_H__
 
+#ifdef DOT11R_FT_SUPPORT
+#include "ft_cmm.h"
+#endif /* DOT11R_FT_SUPPORT */
 
 
 
@@ -46,6 +49,17 @@
 	}																	\
 }
 
+#ifdef CUSTOMER_DCC_FEATURE
+#define TIMESTAMP_GET(__pAd, __TimeStamp)				\
+	{													\
+		UINT32 __CSR=0;	UINT64 __Value64;				\
+		RTMP_IO_READ32((__pAd), TSF_TIMER_DW0, &__CSR);	\
+		__TimeStamp = (UINT64)__CSR;					\
+		RTMP_IO_READ32((__pAd), TSF_TIMER_DW1, &__CSR);	\
+		__Value64 = (UINT64)__CSR;						\
+		__TimeStamp |= (__Value64 << 32);				\
+	}
+#endif
 /* ============================================================= */
 /*      Function Prototypes */
 /* ============================================================= */
@@ -158,6 +172,37 @@ VOID ApSiteSurvey(
 	IN	UCHAR				ScanType,
 	IN	BOOLEAN				ChannelSel);
 
+#ifdef CUSTOMER_DCC_FEATURE
+UCHAR Channel2Index(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR channel);
+
+VOID ApSiteSurveyNew(
+	IN	PRTMP_ADAPTER		pAd,
+	IN	UINT				Channel,
+	IN	UINT				Timeout,
+	IN	UCHAR				ScanType,
+	IN	BOOLEAN				ChannelSel);
+
+VOID RemoveOldBssEntry(
+	IN PRTMP_ADAPTER		pAd);
+
+VOID RemoveOldStaList(
+	IN PRTMP_ADAPTER		pAd);
+
+VOID ReadChannelStats(
+	IN UINT32				Ch_Busy_time,
+	IN PRTMP_ADAPTER		pAd);
+
+VOID ClearChannelStats(
+	IN PRTMP_ADAPTER		pAd);
+
+VOID ResetChannelStatus(
+	IN PRTMP_ADAPTER		pAd);
+
+VOID APResetStreamingStatus(
+	IN PRTMP_ADAPTER		pAd);
+#endif
 VOID SupportRate(
 	IN PUCHAR SupRate,
 	IN UCHAR SupRateLen,
@@ -278,6 +323,9 @@ BOOLEAN APPeerAuthSanity(
     OUT USHORT *Seq, 
     OUT USHORT *Status, 
     OUT CHAR *ChlgText
+#ifdef DOT11R_FT_SUPPORT
+	,OUT PFT_INFO pFtInfo
+#endif /* DOT11R_FT_SUPPORT */
 	);
 
 #ifdef DOT1X_SUPPORT

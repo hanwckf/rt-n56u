@@ -150,7 +150,8 @@ VOID CFG80211_ParseBeaconIE(RTMP_ADAPTER *pAd, MULTISSID_STRUCT *pMbss, struct w
 				/*Count = *(PUSHORT) pTmp;				*/
 				Count = (pTmp[1]<<8) + pTmp[0];
 				pTmp   += sizeof(USHORT);
-				/* Parsing all unicast cipher suite*/
+
+				/* Parsing all unicast cipher suite*/
 				while (Count > 0)
 				{
 					/* Skip OUI*/

@@ -259,6 +259,9 @@ static VOID ApCliMlmeAssocReqAction(
 	APCLI_CTRL_MSG_STRUCT ApCliCtrlMsg;
 	USHORT ifIndex = (USHORT)(Elem->Priv);
 	PULONG pCurrState = NULL;
+#ifdef WPA_SUPPLICANT_SUPPORT
+	USHORT			VarIesOffset = 0;
+#endif /* WPA_SUPPLICANT_SUPPORT */
 	UCHAR RSNIe = IE_WPA;
 	APCLI_STRUCT *apcli_entry;
 	struct wifi_dev *wdev;
@@ -382,7 +385,33 @@ static VOID ApCliMlmeAssocReqAction(
 				(pAd->CommonCfg.Channel > 14) &&
 				(apcli_entry->MlmeAux.vht_cap_len))
 			{
-				FrameLen += build_vht_ies(pAd, (UCHAR *)(pOutBuffer + FrameLen), SUBTYPE_ASSOC_REQ);
+			    ULONG Idx;
+			    BOOLEAN fgBfeeCapSu;
+			    
+#ifdef VHT_TXBF_SUPPORT
+                fgBfeeCapSu = pAd->CommonCfg.vht_cap_ie.vht_cap.bfee_cap_su;
+
+                //Disable beamform capability in Associate Request with 3x3 AP to avoid throughput drop issue
+                // MT76x2 only supports up to 2x2 sounding feedback 
+                Idx = BssTableSearch(&pAd->ScanTab, apcli_entry->MlmeAux.Bssid, apcli_entry->MlmeAux.Channel);
+                if (Idx != BSS_NOT_FOUND)
+                {                         
+                    pAd->BeaconSndDimensionFlag = 0;
+                    if (pAd->ScanTab.BssEntry[Idx].vht_cap_ie.vht_cap.num_snd_dimension >=2 )
+                    {
+                        pAd->BeaconSndDimensionFlag = 1;
+                    }
+                    else
+                    {
+                        pAd->CommonCfg.vht_cap_ie.vht_cap.bfee_cap_su = TRUE;
+                    }
+                }
+
+                FrameLen += build_vht_ies(pAd, (UCHAR *)(pOutBuffer + FrameLen), SUBTYPE_ASSOC_REQ);
+                pAd->CommonCfg.vht_cap_ie.vht_cap.bfee_cap_su = fgBfeeCapSu;
+#else
+                FrameLen += build_vht_ies(pAd, (UCHAR *)(pOutBuffer + FrameLen), SUBTYPE_ASSOC_REQ);
+#endif /* VHT_TXBF_SUPPORT */		       
 			}
 #endif /* DOT11_VHT_AC */
 		}
@@ -523,6 +552,9 @@ static VOID ApCliMlmeAssocReqAction(
 		/* Append RSN_IE when WPAPSK OR WPA2PSK, */
 		if (((wdev->AuthMode == Ndis802_11AuthModeWPAPSK) || 
             		(wdev->AuthMode == Ndis802_11AuthModeWPA2PSK))
+#ifdef WPA_SUPPLICANT_SUPPORT
+            		|| (wdev->AuthMode >= Ndis802_11AuthModeWPA)
+#endif /* WPA_SUPPLICANT_SUPPORT */
 #ifdef WSC_AP_SUPPORT
 			&& ((apcli_entry->WscControl.WscConfMode == WSC_DISABLE) 
             || ((apcli_entry->WscControl.WscConfMode != WSC_DISABLE)
@@ -533,10 +565,57 @@ static VOID ApCliMlmeAssocReqAction(
 			RSNIe = IE_WPA;
 			
 			if ((wdev->AuthMode == Ndis802_11AuthModeWPA2PSK)
+#ifdef WPA_SUPPLICANT_SUPPORT
+				||(wdev->AuthMode == Ndis802_11AuthModeWPA2)
+#endif /* WPA_SUPPLICANT_SUPPORT */
 				)
 				RSNIe = IE_WPA2;
 
 
+#ifdef WPA_SUPPLICANT_SUPPORT
+			if (wdev->AuthMode == Ndis802_11AuthModeWPA2)
+			{
+			INT idx;
+                BOOLEAN FoundPMK = FALSE;
+			/* Search chched PMKID, append it if existed */
+				for (idx = 0; idx < PMKID_NO; idx++)
+				{
+					if (NdisEqualMemory(ApAddr, &apcli_entry->SavedPMK[idx].BSSID, 6))
+					{
+						FoundPMK = TRUE;
+						break;
+					}
+				}
+
+				/*
+					When AuthMode is WPA2-Enterprise and AP reboot or STA lost AP,
+					AP would not do PMK cache with STA after STA re-connect to AP again.
+					In this case, driver doesn't need to send PMKID to AP and WpaSupplicant.
+				*/
+				if ((wdev->AuthMode == Ndis802_11AuthModeWPA2) &&
+					(NdisEqualMemory(pAd->MlmeAux.Bssid, pAd->CommonCfg.LastBssid, MAC_ADDR_LEN)))
+				{
+					FoundPMK = FALSE;
+				}
+
+				if (FoundPMK)
+				{
+					// Set PMK number
+					*(PUSHORT) &apcli_entry->RSN_IE[apcli_entry->RSNIE_Len] = 1;
+					NdisMoveMemory(&apcli_entry->RSN_IE[apcli_entry->RSNIE_Len + 2], &apcli_entry->SavedPMK[idx].PMKID, 16);
+                    			apcli_entry->RSNIE_Len += 18;
+				}
+			}
+
+#ifdef SIOCSIWGENIE
+			if ((apcli_entry->wpa_supplicant_info.WpaSupplicantUP & WPA_SUPPLICANT_ENABLE) &&
+				(apcli_entry->wpa_supplicant_info.bRSN_IE_FromWpaSupplicant == TRUE))			
+			{
+				;
+			}
+			else
+#endif
+#endif /* WPA_SUPPLICANT_SUPPORT */
 
 			MakeOutgoingFrame(pOutBuffer + FrameLen,    				&tmp,
 			              	1,                                      	&RSNIe,
@@ -690,6 +769,15 @@ static VOID ApCliMlmeDisassocReqAction(
 	MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DEASSOC_RSP,
 		sizeof(APCLI_CTRL_MSG_STRUCT), &ApCliCtrlMsg, ifIndex);
 
+#ifdef WPA_SUPPLICANT_SUPPORT
+	if (pAd->ApCfg.ApCliTab[ifIndex].wpa_supplicant_info.WpaSupplicantUP != WPA_SUPPLICANT_DISABLE) 
+	{
+		/*send disassociate event to wpa_supplicant*/
+		RtmpOSWrielessEventSend(pAd->net_dev, RT_WLAN_EVENT_CUSTOM, RT_DISASSOC_EVENT_FLAG, NULL, NULL, 0);
+	}
+	        RtmpOSWrielessEventSend(pAd->net_dev, SIOCGIWAP, -1, NULL, NULL, 0);     
+		RTMPSendWirelessEvent(pAd, IW_DISASSOC_EVENT_FLAG, NULL, BSS0, 0); 
+#endif /* WPA_SUPPLICANT_SUPPORT */
 
 #ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
 	RT_CFG80211_LOST_GO_INFORM(pAd);
@@ -1103,5 +1191,26 @@ static VOID ApCliAssocPostProc(
 
 }
 
+#ifdef WPA_SUPPLICANT_SUPPORT
+VOID ApcliSendAssocIEsToWpaSupplicant( 
+    IN RTMP_ADAPTER *pAd,
+    IN UINT ifIndex)
+{
+	STRING custom[IW_CUSTOM_MAX] = {0};
+
+	if ((pAd->ApCfg.ApCliTab[ifIndex].ReqVarIELen + 17) <= IW_CUSTOM_MAX)
+	{
+		sprintf(custom, "ASSOCINFO_ReqIEs=");
+		NdisMoveMemory(custom+17, pAd->ApCfg.ApCliTab[ifIndex].ReqVarIEs, pAd->ApCfg.ApCliTab[ifIndex].ReqVarIELen);
+		RtmpOSWrielessEventSend(pAd->net_dev, RT_WLAN_EVENT_CUSTOM, RT_REQIE_EVENT_FLAG, NULL, (PUCHAR)custom, pAd->ApCfg.ApCliTab[ifIndex].ReqVarIELen + 17);
+		
+		RtmpOSWrielessEventSend(pAd->net_dev, RT_WLAN_EVENT_CUSTOM, RT_ASSOCINFO_EVENT_FLAG, NULL, NULL, 0);
+	}
+	else
+		DBGPRINT(RT_DEBUG_TRACE, ("pAd->ApCfg.ApCliTab[%d].ReqVarIELen + 17 > MAX_CUSTOM_LEN\n",ifIndex));
+
+	return;
+}
+#endif /*WPA_SUPPLICANT_SUPPORT */
 #endif /* APCLI_SUPPORT */
 

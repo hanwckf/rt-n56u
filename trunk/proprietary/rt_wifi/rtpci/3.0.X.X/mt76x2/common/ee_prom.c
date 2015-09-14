@@ -272,7 +272,8 @@ INT rtmp_ee_write_to_prom(
 		for (offset = 0; offset < (EEPROM_SIZE >> 1);)
 		{
 			value = ((PUSHORT)pAd->EEPROMImage)[offset];
-			RT28xx_EEPROM_WRITE16(pAd, (offset << 1), value);
+			//RT28xx_EEPROM_WRITE16(pAd, (offset << 1), value);
+			rtmp_ee_prom_write16(pAd,(offset << 1), value);
 			offset++;
 		}
 	}

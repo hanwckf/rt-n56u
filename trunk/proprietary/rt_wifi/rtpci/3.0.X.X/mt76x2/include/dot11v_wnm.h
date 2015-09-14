@@ -79,6 +79,20 @@ typedef struct GNU_PACKED _WNM_FRAME
 			UCHAR DialogToken;
 			UCHAR Variable[0];
 		} GNU_PACKED BTM_RSP;
+
+		struct {
+			UCHAR Action;
+			UCHAR DialogToken;
+			UCHAR Type;
+			UCHAR Variable[0];
+		} GNU_PACKED WNM_NOTIFY_REQ;
+		
+		struct {
+			UCHAR Action;
+			UCHAR DialogToken;
+			UCHAR RespStatus;
+			UCHAR Variable[0];
+		} GNU_PACKED WNM_NOTIFY_RSP;
 	}u;
 } WNM_FRAME, *PWNM_FRAME;
 

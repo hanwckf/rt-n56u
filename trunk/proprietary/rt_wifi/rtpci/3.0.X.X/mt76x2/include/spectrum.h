@@ -155,6 +155,11 @@ INT Set_PwrConstraint(
 	IN	PRTMP_ADAPTER	pAd, 
 	IN	PSTRING			arg);
 
+#ifdef DOT11K_RRM_SUPPORT
+INT Set_VoPwrConsTest(
+	IN	PRTMP_ADAPTER	pAd,
+	IN	PSTRING			arg);
+#endif /* DOT11K_RRM_SUPPORT */
 
 NDIS_STATUS	MeasureReqTabInit(
 	IN PRTMP_ADAPTER pAd);
@@ -211,5 +216,18 @@ VOID RguClass_BuildBcnChList(
 	IN PRTMP_ADAPTER pAd,
 	OUT PUCHAR pBuf,
 	OUT	PULONG pBufLen);
+
+#ifdef CUSTOMER_DCC_FEATURE
+VOID NotifyChSwAnnToConnectedSTAs(
+	IN PRTMP_ADAPTER pAd,
+	IN UINT8		ChSwMode,
+	IN UINT8		Channel);
+
+VOID EnqueueChSwAnnNew(
+	IN PRTMP_ADAPTER pAd,
+	IN PUCHAR pDA, 
+	IN UINT8 ChSwMode,
+	IN UINT8 NewCh);
+#endif
 #endif /* __SPECTRUM_H__ */
 

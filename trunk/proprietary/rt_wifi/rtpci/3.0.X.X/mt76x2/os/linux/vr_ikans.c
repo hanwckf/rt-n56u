@@ -230,6 +230,12 @@ static INT32 GetSpecInfoIdxFromBssid(PRTMP_ADAPTER pAd, INT32 FromWhichBSSID)
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		IfIdx = MAIN_MBSSID;
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	return IfIdx; /* return one of MBSS */
 }

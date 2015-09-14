@@ -23,6 +23,9 @@
     
 /*#define MONITOR_FLAG_11N_SNIFFER_SUPPORT */
     
+#ifdef CONFIG_STA_SUPPORT
+/*#define AGS_SUPPORT */
+#endif	/* CONFIG_STA_SUPPORT */
     
 #ifdef VENDOR_FEATURE3_SUPPORT 
 #ifndef BB_SOC
@@ -47,6 +50,17 @@
 #else
 #define FIFO_STAT_READ_PERIOD		0
 #endif /* VENDOR_FEATURE1_SUPPORT */
+
+#ifdef CONFIG_AP_SUPPORT
+    
+#ifndef VENDOR_FEATURE3_SUPPORT
+#ifdef CONFIG_HOTSPOT_R2
+#define AP_QLOAD_SUPPORT
+#endif /*CONFIG_HOTSPOT_R2*/
+#endif /* VENDOR_FEATURE3_SUPPORT */
+    
+#endif	/* CONFIG_AP_SUPPORT */
+    
 
 /* ======================== Before include files ============================ */ 
 /*

@@ -86,7 +86,7 @@ VOID RtmpDrvRateGet(
 	IN	UINT8					ShortGI,
 	IN	UINT8					BW,
 	IN	UINT8					MCS,
-	IN	UINT8					Antena,
+	IN  UINT8                   Antena,
 	OUT	UINT32					*pRate);
 
 #ifdef WSC_AP_SUPPORT

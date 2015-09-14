@@ -331,6 +331,13 @@ void MT76xx_PciMlmeRadioOn(RTMP_ADAPTER *pAd)
     	RTMPSetLED(pAd, LED_LINK_UP);
 	}
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+	    /* Set LED*/
+	    RTMPSetLED(pAd, LED_RADIO_ON);
+	}
+#endif /* CONFIG_STA_SUPPORT */
 #endif /* LED_CONTROL_SUPPORT */
 
 	RTMP_OS_NETDEV_START_QUEUE(pAd->net_dev);
@@ -346,19 +353,18 @@ void MT76xx_PciMlmeRadioOn(RTMP_ADAPTER *pAd)
 			if (pAd->ApCfg.MBSSID[IdBss].MSSIDDev)
 				RTMP_OS_NETDEV_START_QUEUE(pAd->ApCfg.MBSSID[IdBss].MSSIDDev);
 		}
+#ifdef A_BAND_SUPPORT
+		if ( (pAd->CommonCfg.Channel > 14)
+			&& (pAd->CommonCfg.bIEEE80211H == 1)
+			&& RadarChannelCheck(pAd, pAd->CommonCfg.Channel))
+		{
+#ifdef DFS_SUPPORT		
+			NewRadarDetectionStart(pAd);
+#endif /* DFS_SUPPORT */		
+		}
+#endif /* A_BAND_SUPPORT */	
 	}
 #endif /* CONFIG_AP_SUPPORT */
-
-#ifdef A_BAND_SUPPORT
-	if ( (pAd->CommonCfg.Channel > 14)
-		&& (pAd->CommonCfg.bIEEE80211H == 1)
-		&& RadarChannelCheck(pAd, pAd->CommonCfg.Channel))
-	{
-#ifdef DFS_SUPPORT		
-		NewRadarDetectionStart(pAd);
-#endif /* DFS_SUPPORT */		
-	}
-#endif /* A_BAND_SUPPORT */	
 
 	RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_DISABLE_DEQUEUEPACKET);
 }

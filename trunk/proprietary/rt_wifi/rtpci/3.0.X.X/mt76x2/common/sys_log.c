@@ -105,6 +105,18 @@ char const *pWirelessWscEventText[IW_WSC_EVENT_TYPE_NUM] = {
 	};
 #endif /* WSC_INCLUDED */
 
+#ifdef CONFIG_STA_SUPPORT
+#ifdef IWSC_SUPPORT
+// for IWSC wireless event messagechar 
+const char *pWirelessIWscEventText[IW_IWSC_EVENT_TYPE_NUM] = {
+	"IWSC - T1 mins time out!",									/* IW_IWSC_T1_TIMER_TIMEOUT */
+	"IWSC - T2 mins time out!",									/* IW_IWSC_T2_TIMER_TIMEOUT */
+	"IWSC - Become Registrar",									/* IW_IWSC_BECOME_REGISTRAR */
+	"IWSC - Become Enrollee",									/* IW_IWSC_BECOME_ENROLLEE */
+	"IWSC - Entry time out",									/* IW_IWSC_ENTRY_TIMER_TIMEOUT */
+	};
+#endif /* IWSC_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 
 
 /*
@@ -164,6 +176,13 @@ VOID RtmpDrvSendWirelessEvent(
 			event_table_len = IW_WSC_EVENT_TYPE_NUM;
 			break;
 #endif /* WSC_INCLUDED */
+#ifdef CONFIG_STA_SUPPORT
+#ifdef IWSC_SUPPORT
+		case IW_IWSC_EVENT_FLAG_START:
+			event_table_len = IW_IWSC_EVENT_TYPE_NUM;
+			break;
+#endif /* IWSC_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 	}
 	
 	if (event_table_len == 0)
@@ -214,6 +233,12 @@ VOID RtmpDrvSendWirelessEvent(
 		else if (type == IW_WSC_EVENT_FLAG_START)
 			pBufPtr += sprintf(pBufPtr, "%s", pWirelessWscEventText[event]);
 #endif /* WSC_INCLUDED */
+#ifdef CONFIG_STA_SUPPORT
+#ifdef IWSC_SUPPORT
+		else if (type == IW_IWSC_EVENT_FLAG_START)
+			pBufPtr += sprintf(pBufPtr, "%s", pWirelessIWscEventText[event]);
+#endif /* IWSC_SUPPORT */
+#endif /* CONFIG_STA_SUPPORT */
 		else
 			pBufPtr += sprintf(pBufPtr, "%s", "unknown event");
 		

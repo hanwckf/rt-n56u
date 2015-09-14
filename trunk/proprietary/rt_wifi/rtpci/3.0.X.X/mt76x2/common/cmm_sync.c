@@ -154,7 +154,7 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 
 		if (num > 0)
 		{
-			UCHAR RadarCh[15]={52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140};
+			UCHAR RadarCh[16]={52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144};
 #ifdef CONFIG_AP_SUPPORT
 			UCHAR q=0;
 #endif /* CONFIG_AP_SUPPORT */
@@ -236,7 +236,7 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 #endif /* DOT11_VHT_AC */	
 #endif /* DOT11_N_SUPPORT */	
 
-				for (j=0; j<15; j++)
+				for (j=0; j<16; j++)
 				{
 					if (pChannelList[i] == RadarCh[j])
 						pAd->ChannelList[index+i].DfsReq = TRUE;
@@ -452,25 +452,31 @@ CHAR ConvertToRssi(RTMP_ADAPTER *pAd, CHAR Rssi, UCHAR rssi_idx)
 		Recommended by CSD team about MT76x0:
 		SW/QA owners should read the "external-LNA gain" and "RSSI OFFSET" content in EEPROM as "SIGNED".
 		2.4G : RSSI_report = RSSI_bpp + EEPROM_0x46[15:8 or 7:0] - EEPROM_0x44[7:0]
-		5G   : RSSI_report = RSSI_bbp + EEPROM_0x4A[15:8 or 7:0] - EEPROM_0x44 or 0x48 or 0x4c[15:8]
+		5G : RSSI_report = RSSI_bbp + EEPROM_0x4A[15:8 or 7:0] - EEPROM_0x44 or 0x48 or 0x4c[15:8]
 	*/
 	if (IS_MT76x0(pAd))
 		return (Rssi + (CHAR)RssiOffset - (CHAR)LNAGain);
 
 	if (IS_MT76x2(pAd)) {
-		CHAR sLNAGain = (CHAR)(LNAGain & 0x7f);
+		CHAR extra_gain = 0;
 		
-		/* bit7 on MT7612 mean sign (1: [+], 0: [-]) */
-		if (!(LNAGain & 0x80))
-			sLNAGain = -sLNAGain;
-		
+		if (LNAGain & 0x80) {
+			if (LNAGain == 0xFF)
+				LNAGain = 0;
+			else
+				LNAGain &= 0x7F;
+
+			extra_gain = LNAGain;
+		} else
+			extra_gain = 0 - (CHAR)LNAGain;
+
 		if (is_external_lna_mode(pAd, pAd->CommonCfg.Channel) == TRUE)
-			sLNAGain = 0;
+			extra_gain = LNAGain = 0;
 		
 		if (pAd->LatchRfRegs.Channel > 14)
-			return (Rssi + pAd->ARssiOffset[rssi_idx] - sLNAGain);
+			return (Rssi + pAd->ARssiOffset[rssi_idx] - extra_gain);
 		else
-			return (Rssi + pAd->BGRssiOffset[rssi_idx] - sLNAGain);
+			return (Rssi + pAd->BGRssiOffset[rssi_idx] - extra_gain);
 	}
 
 	if (IS_RT8592(pAd))

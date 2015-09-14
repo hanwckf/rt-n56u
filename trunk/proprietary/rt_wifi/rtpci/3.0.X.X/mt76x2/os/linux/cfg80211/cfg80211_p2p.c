@@ -71,6 +71,15 @@ VOID CFG80211RemainOnChannelTimeout(
 
 		DBGPRINT(RT_DEBUG_TRACE, ("CFG80211_NULL: P2P_CLI PWR_ACTIVE ROC_END\n"));
 		CFG80211_P2pClientSendNullFrame(pAd, PWR_ACTIVE);
+#ifdef CONFIG_STA_SUPPORT
+		if (INFRA_ON(pAd))
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("CFG80211_NULL: CONCURRENT STA PWR_ACTIVE ROC_END\n"));
+			RTMPSendNullFrame(pAd, pAd->CommonCfg.TxRate, 
+					  (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_WMM_INUSED) ? TRUE:FALSE),
+					  pAd->CommonCfg.bAPSDForcePowerSave ? PWR_SAVE : pAd->StaCfg.Psm);			
+		}
+#endif /*CONFIG_STA_SUPPORT*/
 		RTMPSetTimer(&pCfg80211_ctrl->Cfg80211RocTimer, RESTORE_COM_CH_TIME);
 	}
 	else if (INFRA_ON(pAd) &&
@@ -81,6 +90,12 @@ VOID CFG80211RemainOnChannelTimeout(
 
         	AsicSwitchChannel(pAd, pAd->CommonCfg.Channel, FALSE);
         	AsicLockChannel(pAd, pAd->CommonCfg.Channel);
+#ifdef CONFIG_STA_SUPPORT
+		DBGPRINT(RT_DEBUG_TRACE, ("CFG80211_NULL: INFRA_ON PWR_ACTIVE ROC_END\n"));
+		RTMPSendNullFrame(pAd, pAd->CommonCfg.TxRate, 
+				  (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_WMM_INUSED) ? TRUE:FALSE),
+				  pAd->CommonCfg.bAPSDForcePowerSave ? PWR_SAVE : pAd->StaCfg.Psm);
+#endif /*CONFIG_STA_SUPPORT*/		
 		RTMPSetTimer(&pCfg80211_ctrl->Cfg80211RocTimer, RESTORE_COM_CH_TIME);		    	 
 	}
 	else
@@ -93,9 +108,9 @@ VOID CFG80211RemainOnChannelTimeout(
         		,GFP_KERNEL);
 #else
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,34))
-        	cfg80211_remain_on_channel_expired( CFG80211_GetEventDevice(pAd),	
-        		pCfg80211_ctrl->Cfg80211ChanInfo.cookie, pCfg80211_ctrl->Cfg80211ChanInfo.chan, 
-        		pCfg80211_ctrl->Cfg80211ChanInfo.ChanType, GFP_KERNEL);
+		cfg80211_remain_on_channel_expired( CFG80211_GetEventDevice(pAd),	
+			pCfg80211_ctrl->Cfg80211ChanInfo.cookie, pCfg80211_ctrl->Cfg80211ChanInfo.chan, 
+			pCfg80211_ctrl->Cfg80211ChanInfo.ChanType, GFP_KERNEL);
 #endif /* LINUX_VERSION_CODE 2.6.34 */
 #endif /* LINUX_VERSION_CODE 3.8.0 */
 

@@ -90,11 +90,46 @@
 #define UAPSD_SP_START(__pAd, __pEntry)					\
 	__pEntry->bAPSDFlagSPStart = 1;
 
+#ifdef CONFIG_STA_SUPPORT
+#define UAPSD_SP_END(__pAd, __pEntry)					\
+	__pEntry->bAPSDFlagSPStart = 0;						\
+	RtmpAsicSleepHandle(__pAd);
+#else
 /* for AP, we maybe sleep until all SPs are closed */
 #define UAPSD_SP_END(__pAd, __pEntry)					\
 	__pEntry->bAPSDFlagSPStart = 0;
+#endif /* CONFIG_STA_SUPPORT */
 
 
+#ifdef CONFIG_STA_SUPPORT
+
+/* ASIC power save behavior */
+/* TODO: maybe need to do protection */
+#define ASIC_PS_CAN_SLEEP(__pAd)											\
+	__pAd->StaCfg.FlgPsmCanNotSleep = FALSE;
+
+#define ASIC_PS_CAN_NOT_SLEEP(__pAd)										\
+	__pAd->StaCfg.FlgPsmCanNotSleep = TRUE;
+
+/* we will recover ps mode after 5 second if no packet is received. */
+#define RTMP_PS_VIRTUAL_MAX_TIME_OUT		5
+
+/* reset virtual ps mode timeout when we receive any packet from the peer */
+#define RTMP_PS_VIRTUAL_TIMEOUT_RESET(__pMacEntry)							\
+	if (__pMacEntry->VirtualTimeout > 0)									\
+		__pMacEntry->VirtualTimeout = RTMP_PS_VIRTUAL_MAX_TIME_OUT;
+
+/* wake up the peer virtually */
+#define RTMP_PS_VIRTUAL_WAKEUP_PEER(__pMacEntry)							\
+{																			\
+	__pMacEntry->FlgPsModeIsWakeForAWhile = TRUE;							\
+	__pMacEntry->VirtualTimeout = RTMP_PS_VIRTUAL_MAX_TIME_OUT;				\
+	DBGPRINT(RT_DEBUG_TRACE,												\
+		("%02x:%02x:%02x:%02x:%02x:%02x will not sleep for a while!\n",		\
+		__pMacEntry->Addr[0], __pMacEntry->Addr[1], __pMacEntry->Addr[2],	\
+		__pMacEntry->Addr[3], __pMacEntry->Addr[4], __pMacEntry->Addr[5]));											\
+}
+#endif /* CONFIG_STA_SUPPORT */
 
 /* recover the peer power save mode virtually */
 #define RTMP_PS_VIRTUAL_SLEEP(__pMacEntry)									\

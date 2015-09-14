@@ -35,6 +35,7 @@ extern UCHAR	RSN_OUI[];
 extern UCHAR	WME_INFO_ELEM[];
 extern UCHAR	WME_PARM_ELEM[];
 extern UCHAR	RALINK_OUI[];
+extern UCHAR	MTK_OUI[];
 
 extern UCHAR 	BROADCOM_OUI[]; 
 extern UCHAR    WPS_OUI[];
@@ -61,7 +62,18 @@ BOOLEAN PeerAssocReqCmmSanity(
     UCHAR Sanity = 0;
     UCHAR WPA1_OUI[4] = { 0x00, 0x50, 0xF2, 0x01 };
     UCHAR WPA2_OUI[3] = { 0x00, 0x0F, 0xAC };
+#ifdef CONFIG_HOTSPOT_R2
+	UCHAR HS2_OSEN_OUI[4] = { 0x50, 0x6f, 0x9a, 0x12 };
+	UCHAR HS2OUIBYTE[4] = {0x50, 0x6f, 0x9a, 0x10};
+#endif    
+
     MAC_TABLE_ENTRY *pEntry = (MAC_TABLE_ENTRY *)NULL;
+#ifdef DOT11R_FT_SUPPORT
+	PFT_INFO pFtInfo = &ie_lists->FtInfo;
+#endif /* DOT11R_FT_SUPPORT */
+#ifdef DOT11K_RRM_SUPPORT
+	RRM_EN_CAP_IE *pRrmEnCap = &ie_lists->RrmEnCap;
+#endif /* DOT11K_RRM_SUPPORT */
 	HT_CAPABILITY_IE *pHtCapability = &ie_lists->HTCapability;
 
 
@@ -204,6 +216,29 @@ BOOLEAN PeerAssocReqCmmSanity(
 
             case IE_WPA:    /* same as IE_VENDOR_SPECIFIC */
             case IE_WPA2:
+#ifdef CONFIG_HOTSPOT_R2
+				if (NdisEqualMemory(eid_ptr->Octet, HS2OUIBYTE, sizeof(HS2OUIBYTE)) && (eid_ptr->Len >= 5))
+				{
+					//UCHAR tmp2 = 0x12;
+					UCHAR *hs2_config = (UCHAR *)&eid_ptr->Octet[4];
+					UCHAR ppomo_exist = ((*hs2_config) >> 1) & 0x01;
+					UCHAR hs2_version = ((*hs2_config) >> 4) & 0x0f;
+					//UCHAR *tmp3 = (UCHAR *)&pEntry->hs_info.ppsmo_id;
+					//UCHAR tmp[2] = {0x12,0x34};
+
+					pEntry->hs_info.version = hs2_version;
+					pEntry->hs_info.ppsmo_exist = ppomo_exist;	
+					if (pEntry->hs_info.ppsmo_exist)
+					{
+						NdisMoveMemory(&pEntry->hs_info.ppsmo_id, &eid_ptr->Octet[5], 2);
+						//NdisMoveMemory(tmp3, tmp, 2);
+					}				
+					printk("Assoc HS2 STA:version:%d,ppomo exist:%d, value:0x%x\n", pEntry->hs_info.version, pEntry->hs_info.ppsmo_exist, pEntry->hs_info.ppsmo_id);
+					break;
+				}
+#endif /* CONFIG_HOTSPOT_R2 */
+#ifdef DOT11R_FT_SUPPORT
+#endif /* DOT11R_FT_SUPPORT */
 
 
 				if (NdisEqualMemory(eid_ptr->Octet, WPS_OUI, 4))
@@ -260,6 +295,13 @@ BOOLEAN PeerAssocReqCmmSanity(
                     break;
                 }
                 
+                if (NdisEqualMemory(eid_ptr->Octet, MTK_OUI, 3) && (eid_ptr->Len == 7))
+                {
+			if (eid_ptr->Octet[3] != 0)
+		       	ie_lists->MediatekIe= eid_ptr->Octet[3];
+                    break;
+                }
+                
                 /* WMM_IE */
                 if (NdisEqualMemory(eid_ptr->Octet, WME_INFO_ELEM, 6) && (eid_ptr->Len == 7))
                 {
@@ -286,7 +328,24 @@ BOOLEAN PeerAssocReqCmmSanity(
                     && !NdisEqualMemory(&eid_ptr->Octet[2], WPA2_OUI, sizeof(WPA2_OUI)))
                 {
                     DBGPRINT(RT_DEBUG_TRACE, ("Not RSN IE, maybe WMM IE!!!\n"));
+#ifdef CONFIG_HOTSPOT_R2
+					if (!NdisEqualMemory(eid_ptr->Octet, HS2_OSEN_OUI, sizeof(HS2_OSEN_OUI)))
+					{
+						unsigned char *tmp = (unsigned char *)eid_ptr->Octet;
+		
+						DBGPRINT(RT_DEBUG_OFF, ("!!!!!!not found OSEN IE,%x:%x:%x:%x\n", *tmp, *(tmp+1), *(tmp+2), *(tmp+3)));
+						CLIENT_STATUS_CLEAR_FLAG(pEntry, fCLIENT_STATUS_OSEN_CAPABLE);
                     break;                          
+                }
+					else
+					{
+						CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_OSEN_CAPABLE);
+						DBGPRINT(RT_DEBUG_OFF, ("!!!!!!found OSEN IE\n"));
+					}
+#else
+					break;							
+#endif          
+                                             
                 }
                 
                 if (/*(eid_ptr->Len <= MAX_LEN_OF_RSNIE) &&*/ (eid_ptr->Len >= MIN_LEN_OF_RSNIE))
@@ -297,6 +356,10 @@ BOOLEAN PeerAssocReqCmmSanity(
                     NdisMoveMemory(&ie_lists->RSN_IE[0], eid_ptr, eid_ptr->Len + 2);
 					ie_lists->RSNIE_Len =eid_ptr->Len + 2;
 
+#ifdef DOT11R_FT_SUPPORT
+					NdisMoveMemory(pFtInfo->RSN_IE, eid_ptr, eid_ptr->Len + 2);
+					pFtInfo->RSNIE_Len = eid_ptr->Len + 2;
+#endif /* DOT11R_FT_SUPPORT */					
                 }
                 else
                 {
@@ -322,7 +385,41 @@ BOOLEAN PeerAssocReqCmmSanity(
 				break;
 #endif /* WAPI_SUPPORT */				
 
+#ifdef DOT11R_FT_SUPPORT
+			case IE_FT_MDIE:
+				FT_FillMdIeInfo(eid_ptr, &pFtInfo->MdIeInfo);
+				break;
 
+			case IE_FT_FTIE:
+				FT_FillFtIeInfo(eid_ptr, &pFtInfo->FtIeInfo);
+				break;
+
+			case IE_FT_RIC_DATA:
+				/* record the pointer of first RDIE. */
+				if (pFtInfo->RicInfo.pRicInfo == NULL)
+				{
+					pFtInfo->RicInfo.pRicInfo = &eid_ptr->Eid;
+					pFtInfo->RicInfo.Len = ((UCHAR*)Fr + MsgLen) - (UCHAR*)eid_ptr + 1;
+				}
+			case IE_FT_RIC_DESCRIPTOR:
+				if ((pFtInfo->RicInfo.RicIEsLen + eid_ptr->Len + 2) < MAX_RICIES_LEN)
+				{
+					NdisMoveMemory(&pFtInfo->RicInfo.RicIEs[pFtInfo->RicInfo.RicIEsLen],
+									&eid_ptr->Eid, eid_ptr->Len + 2);
+					pFtInfo->RicInfo.RicIEsLen += eid_ptr->Len + 2;
+				}
+				break;
+#endif /* DOT11R_FT_SUPPORT */
+
+#ifdef DOT11K_RRM_SUPPORT
+			case IE_RRM_EN_CAP:
+				{
+					UINT64 value;
+					NdisMoveMemory(&value, eid_ptr->Octet, sizeof(UINT64));
+					pRrmEnCap->word = le2cpu64(value);
+				}
+				break;
+#endif /* DOT11K_RRM_SUPPORT */
 
 #ifdef DOT11_VHT_AC
 		case IE_VHT_CAP:
@@ -447,6 +544,9 @@ BOOLEAN APPeerAuthSanity(
     OUT USHORT *Seq, 
     OUT USHORT *Status, 
     CHAR *ChlgText
+#ifdef DOT11R_FT_SUPPORT
+	,PFT_INFO pFtInfo
+#endif /* DOT11R_FT_SUPPORT */
     ) 
 {
     PFRAME_802_11 Fr = (PFRAME_802_11)Msg;
@@ -486,6 +586,73 @@ BOOLEAN APPeerAuthSanity(
             return FALSE;
         }
     } 
+#ifdef DOT11R_FT_SUPPORT
+	else if (*Alg == AUTH_MODE_FT)
+	{
+		PEID_STRUCT eid_ptr;
+		UCHAR *Ptr;
+		UCHAR WPA2_OUI[3]={0x00,0x0F,0xAC};
+
+		NdisZeroMemory(pFtInfo, sizeof(FT_INFO));
+
+		Ptr = &Fr->Octet[6];
+		eid_ptr = (PEID_STRUCT) Ptr;
+
+	    /* get variable fields from payload and advance the pointer */
+		while(((UCHAR*)eid_ptr + eid_ptr->Len + 1) < ((UCHAR*)Fr + MsgLen))
+		{
+			switch(eid_ptr->Eid)
+			{
+				case IE_FT_MDIE:
+					FT_FillMdIeInfo(eid_ptr, &pFtInfo->MdIeInfo);
+					break;
+
+				case IE_FT_FTIE:
+					FT_FillFtIeInfo(eid_ptr, &pFtInfo->FtIeInfo);
+					break;
+
+				case IE_FT_RIC_DATA:
+					/* record the pointer of first RDIE. */
+					if (pFtInfo->RicInfo.pRicInfo == NULL)
+					{
+						pFtInfo->RicInfo.pRicInfo = &eid_ptr->Eid;
+						pFtInfo->RicInfo.Len = ((UCHAR*)Fr + MsgLen)
+												- (UCHAR*)eid_ptr + 1;
+					}
+
+					if ((pFtInfo->RicInfo.RicIEsLen + eid_ptr->Len + 2) < MAX_RICIES_LEN)
+					{
+						NdisMoveMemory(&pFtInfo->RicInfo.RicIEs[pFtInfo->RicInfo.RicIEsLen],
+										&eid_ptr->Eid, eid_ptr->Len + 2);
+						pFtInfo->RicInfo.RicIEsLen += eid_ptr->Len + 2;
+					}
+					break;
+
+					
+				case IE_FT_RIC_DESCRIPTOR:
+					if ((pFtInfo->RicInfo.RicIEsLen + eid_ptr->Len + 2) < MAX_RICIES_LEN)
+					{
+						NdisMoveMemory(&pFtInfo->RicInfo.RicIEs[pFtInfo->RicInfo.RicIEsLen],
+										&eid_ptr->Eid, eid_ptr->Len + 2);
+						pFtInfo->RicInfo.RicIEsLen += eid_ptr->Len + 2;
+					}
+					break;
+
+				case IE_RSN:
+					if (NdisEqualMemory(&eid_ptr->Octet[2], WPA2_OUI, sizeof(WPA2_OUI)))
+					{
+	                    NdisMoveMemory(pFtInfo->RSN_IE, eid_ptr, eid_ptr->Len + 2);
+						pFtInfo->RSNIE_Len = eid_ptr->Len + 2;
+					}
+					break;
+
+				default:
+					break;
+			}
+	        eid_ptr = (PEID_STRUCT)((UCHAR*)eid_ptr + 2 + eid_ptr->Len);        
+		}
+	}
+#endif /* DOT11R_FT_SUPPORT */
     else 
     {
         DBGPRINT(RT_DEBUG_TRACE, ("APPeerAuthSanity fail - wrong algorithm (=%d)\n", *Alg));

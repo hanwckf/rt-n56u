@@ -1032,7 +1032,7 @@ INT Show_WdsTable_Proc(RTMP_ADAPTER *pAd, PSTRING arg)
 				DBGPRINT(RT_DEBUG_OFF, ("%dS-M%-2d", ((pEntry->HTPhyMode.field.MCS>>4) + 1), (pEntry->HTPhyMode.field.MCS & 0xf)));
 			else
 #endif /* DOT11_VHT_AC */			
-			DBGPRINT(RT_DEBUG_OFF, ("%-6d", pEntry->HTPhyMode.field.MCS));
+				DBGPRINT(RT_DEBUG_OFF, ("%-6d", pEntry->HTPhyMode.field.MCS));
 			DBGPRINT(RT_DEBUG_OFF, ("%-6d", pEntry->HTPhyMode.field.ShortGI));
 			DBGPRINT(RT_DEBUG_OFF, ("%-6d\n", pEntry->HTPhyMode.field.STBC));
 
@@ -1521,7 +1521,7 @@ VOID WDS_Remove(RTMP_ADAPTER *pAd)
 	{
 		wdev = &pAd->WdsTab.WdsEntry[index].wdev;
 		if (wdev->if_dev)
-		{
+	    {
 			RtmpOSNetDevProtect(1);
 			RtmpOSNetDevDetach(wdev->if_dev);
 			RtmpOSNetDevProtect(0);
@@ -1536,7 +1536,7 @@ VOID WDS_Remove(RTMP_ADAPTER *pAd)
 
 BOOLEAN WDS_StatsGet(RTMP_ADAPTER *pAd, RT_CMD_STATS64 *pStats)
 {
-	INT WDS_apidx = 0, index;
+	INT WDS_apidx = 0,index;
 	RT_802_11_WDS_ENTRY *pWdsEntry;
 
 	for(index = 0; index < MAX_WDS_ENTRY; index++)
@@ -1547,7 +1547,7 @@ BOOLEAN WDS_StatsGet(RTMP_ADAPTER *pAd, RT_CMD_STATS64 *pStats)
 			break;
 		}
 	}
-
+		
 	if(index >= MAX_WDS_ENTRY)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("%s(): can not find wds I/F\n", __FUNCTION__));

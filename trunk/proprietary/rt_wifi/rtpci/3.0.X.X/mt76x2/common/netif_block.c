@@ -118,6 +118,12 @@ VOID StopNetIfQueue(
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		valid = (pAd->ApCfg.MBSSID[IfIdx].wdev.bWmmCapable == TRUE) ? FALSE : TRUE;
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef CONFIG_STA_SUPPORT
+	{
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+		valid = (pAd->CommonCfg.bWmmCapable == TRUE) ? FALSE : TRUE;
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	if (valid)
 		blockNetIf(&pAd->blockQueueTab[QueIdx], NetDev);

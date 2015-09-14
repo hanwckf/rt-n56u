@@ -110,6 +110,18 @@ INT CFG80211DRV_IoctlHandle(
 			CFG80211_setPowerMgmt(pAd, Data);
 			break;
 			
+#ifdef CONFIG_STA_SUPPORT			
+		case CMD_RTPRIV_IOCTL_80211_STA_KEY_DEFAULT_SET:
+			CFG80211_setStaDefaultKey(pAd, Data);
+			break;
+
+#ifdef DOT11W_PMF_SUPPORT
+		case CMD_RTPRIV_IOCTL_80211_STA_MGMT_KEY_DEFAULT_SET:
+			CFG80211_setStaMgmtDefaultKey(pAd, Data);
+			break;
+#endif /* DOT11W_PMF_SUPPORT*/
+
+#endif /*CONFIG_STA_SUPPORT*/
 		case CMD_RTPRIV_IOCTL_80211_CONNECT_TO:
 #ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE		
 			if (Data == RT_CMD_80211_IFTYPE_P2P_CLIENT)
@@ -580,6 +592,36 @@ BOOLEAN CFG80211DRV_OpsSetChannel(RTMP_ADAPTER *pAd, VOID *pData)
 		CFG80211DBG(RT_DEBUG_ERROR, ("80211> Set the channel in AP Mode\n"));
 		return TRUE;
 	}
+#ifdef CONFIG_STA_SUPPORT
+	if ((IfType == RT_CMD_80211_IFTYPE_STATION) && (FlgIsChanged == TRUE))
+	{
+		/*
+			1. Station mode;
+			2. New BW settings is 20MHz but current BW is not 20MHz;
+			3. New BW settings is 40MHz but current BW is 20MHz;
+
+			Re-connect to the AP due to BW 20/40 or HT/non-HT change.
+		*/
+		CFG80211DBG(RT_DEBUG_ERROR, ("80211> Set the channel in STA Mode\n"));
+	} 
+
+	if (IfType == RT_CMD_80211_IFTYPE_ADHOC)
+	{
+		/* update IBSS beacon */
+		MlmeUpdateTxRates(pAd, FALSE, 0);
+		MakeIbssBeacon(pAd);
+		AsicEnableIbssSync(pAd);
+
+		Set_SSID_Proc(pAd, (PSTRING)pAd->CommonCfg.Ssid);
+	} 
+
+	if (IfType == RT_CMD_80211_IFTYPE_MONITOR)
+	{
+		/* reset monitor mode in the new channel */
+		Set_NetworkType_Proc(pAd, "Monitor");
+		RTMP_IO_WRITE32(pAd, RX_FILTR_CFG, pChan->MonFilterFlag);
+	} 
+#endif /*CONFIG_STA_SUPPORT*/
 	return TRUE;
 }
 
@@ -587,6 +629,17 @@ BOOLEAN CFG80211DRV_OpsJoinIbss(
 	VOID						*pAdOrg,
 	VOID						*pData)
 {
+#ifdef CONFIG_STA_SUPPORT
+	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pAdOrg;
+	CMD_RTPRIV_IOCTL_80211_IBSS *pIbssInfo;
+
+
+	pIbssInfo = (CMD_RTPRIV_IOCTL_80211_IBSS *)pData;
+	pAd->StaCfg.bAutoReconnect = TRUE;
+
+	pAd->CommonCfg.BeaconPeriod = pIbssInfo->BeaconInterval;
+	Set_SSID_Proc(pAd, (PSTRING)pIbssInfo->pSsid);
+#endif /* CONFIG_STA_SUPPORT */
 	return TRUE;
 }
 
@@ -594,6 +647,42 @@ BOOLEAN CFG80211DRV_OpsLeave(
 	VOID						*pAdOrg,
 	UINT8						IfType)
 {
+#ifdef CONFIG_STA_SUPPORT
+	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pAdOrg;
+
+    MLME_DEAUTH_REQ_STRUCT   DeAuthReq;
+    MLME_QUEUE_ELEM *pMsgElem = NULL;
+
+	pAd->StaCfg.bAutoReconnect = FALSE;
+	pAd->cfg80211_ctrl.FlgCfg80211Connecting = FALSE;
+
+    pAd->MlmeAux.AutoReconnectSsidLen= 32;
+    NdisZeroMemory(pAd->MlmeAux.AutoReconnectSsid, pAd->MlmeAux.AutoReconnectSsidLen);
+
+    os_alloc_mem(pAd, (UCHAR **)&pMsgElem, sizeof(MLME_QUEUE_ELEM));
+
+#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE	
+	if (IfType == RT_CMD_80211_IFTYPE_P2P_CLIENT)
+		COPY_MAC_ADDR(DeAuthReq.Addr, pAd->ApCfg.ApCliTab[MAIN_MBSSID].MlmeAux.Bssid);
+	else
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */		
+		COPY_MAC_ADDR(DeAuthReq.Addr, pAd->CommonCfg.Bssid);
+		
+    DeAuthReq.Reason = REASON_DEAUTH_STA_LEAVING;
+    pMsgElem->MsgLen = sizeof(MLME_DEAUTH_REQ_STRUCT);
+    NdisMoveMemory(pMsgElem->Msg, &DeAuthReq, sizeof(MLME_DEAUTH_REQ_STRUCT));
+    MlmeDeauthReqAction(pAd, pMsgElem);
+    os_free_mem(NULL, pMsgElem);
+	pMsgElem = NULL;
+
+#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE	 
+	if (IfType == RT_CMD_80211_IFTYPE_P2P_CLIENT)
+		ApCliLinkDown(pAd, MAIN_MBSSID /*ifIndex*/);
+	else
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */		
+		LinkDown(pAd, FALSE);
+
+#endif /* CONFIG_STA_SUPPORT */
 	return TRUE;
 }
 
@@ -658,6 +747,50 @@ BOOLEAN CFG80211DRV_StaGet(
 }
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_STA_SUPPORT
+{
+	HTTRANSMIT_SETTING PhyInfo;
+	ULONG DataRate = 0;
+	UINT32 RSSI;
+
+
+	/* fill tx rate */
+    if ((!WMODE_CAP_N(pAd->CommonCfg.PhyMode)) ||
+	 (pAd->MacTab.Content[BSSID_WCID].HTPhyMode.field.MODE <= MODE_OFDM))
+	{
+		PhyInfo.word = pAd->StaCfg.wdev.HTPhyMode.word;
+	}
+    else
+		PhyInfo.word = pAd->MacTab.Content[BSSID_WCID].HTPhyMode.word;
+
+	RtmpDrvRateGet(pAd, PhyInfo.field.MODE, PhyInfo.field.ShortGI,
+				 PhyInfo.field.BW,PhyInfo.field.MCS,
+				 newRateGetAntenna(PhyInfo.field.MCS),&DataRate);
+	DataRate /= 500000;
+	DataRate /= 2;
+
+	if ((PhyInfo.field.MODE == MODE_HTMIX) ||
+		(PhyInfo.field.MODE == MODE_HTGREENFIELD))
+	{
+		if (PhyInfo.field.BW)
+			pIbssInfo->TxRateFlags |= RT_CMD_80211_TXRATE_BW_40;
+
+		if (PhyInfo.field.ShortGI)
+			pIbssInfo->TxRateFlags |= RT_CMD_80211_TXRATE_SHORT_GI;
+
+		pIbssInfo->TxRateMCS = PhyInfo.field.MCS;
+	}
+	else
+	{
+		pIbssInfo->TxRateFlags = RT_CMD_80211_TXRATE_LEGACY;
+		pIbssInfo->TxRateMCS = DataRate*10; /* unit: 100kbps */
+	}
+
+	/* fill signal */
+	RSSI = RTMPAvgRssi(pAd, &pAd->StaCfg.RssiSample);
+	pIbssInfo->Signal = RSSI;
+}
+#endif /* CONFIG_STA_SUPPORT */
 
 	return TRUE;
 }
@@ -666,6 +799,85 @@ BOOLEAN CFG80211DRV_StaKeyAdd(
 	VOID						*pAdOrg,
 	VOID						*pData)
 {
+#ifdef CONFIG_STA_SUPPORT
+	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pAdOrg;
+	CMD_RTPRIV_IOCTL_80211_KEY *pKeyInfo;
+
+
+	pKeyInfo = (CMD_RTPRIV_IOCTL_80211_KEY *)pData;
+#ifdef DOT11W_PMF_SUPPORT
+	if (pKeyInfo->KeyType == RT_CMD_80211_KEY_AES_CMAC)
+	{
+		PPMF_CFG pPmfCfg = pPmfCfg = &pAd->StaCfg.PmfCfg;
+		hex_dump("PMF IGTK pKeyInfo->KeyBuf=", (UINT8 *)pKeyInfo->KeyBuf, pKeyInfo->KeyLen);
+		DBGPRINT(RT_DEBUG_ERROR, ("PMF IGTK pKeyInfo->KeyId=%d\n",pKeyInfo->KeyId));
+
+		//only 4 or 5, no other case!		
+		if (pKeyInfo->KeyId == 4 || pKeyInfo->KeyId == 5)
+		{
+			// no PN is passed, PN is useless in PMF_CalculateBIPMIC()
+			NdisZeroMemory(&pPmfCfg->IPN[pKeyInfo->KeyId -4][0], LEN_WPA_TSC);	
+			NdisMoveMemory(&pPmfCfg->IGTK[pKeyInfo->KeyId -4][0], pKeyInfo->KeyBuf, pKeyInfo->KeyLen);
+		}
+		else
+		{
+			DBGPRINT(RT_DEBUG_ERROR, ("ERROR !! pKeyInfo->KeyId=%d \n",pKeyInfo->KeyId));	
+
+		}
+		
+	}
+	else
+#endif /* DOT11W_PMF_SUPPORT */
+	if (pKeyInfo->KeyType == RT_CMD_80211_KEY_WEP40 || pKeyInfo->KeyType == RT_CMD_80211_KEY_WEP104)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("RT_CMD_80211_KEY_WEP\n"));
+	}
+	else
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("Set_WPAPSK_Proc ==> %d, %d, %d...\n", pKeyInfo->KeyId, pKeyInfo->KeyType, strlen(pKeyInfo->KeyBuf)));
+		
+		RT_CMD_STA_IOCTL_SECURITY IoctlSec;
+		
+		IoctlSec.KeyIdx = pKeyInfo->KeyId;
+		IoctlSec.pData = pKeyInfo->KeyBuf;
+		IoctlSec.length = pKeyInfo->KeyLen;
+		
+		/* YF@20120327: Due to WepStatus will be set in the cfg connect function.*/
+		if (pAd->StaCfg.wdev.WepStatus == Ndis802_11Encryption2Enabled)
+			IoctlSec.Alg = RT_CMD_STA_IOCTL_SECURITY_ALG_TKIP;
+		else if (pAd->StaCfg.wdev.WepStatus == Ndis802_11Encryption3Enabled)
+			IoctlSec.Alg = RT_CMD_STA_IOCTL_SECURITY_ALG_CCMP;
+		IoctlSec.flags = RT_CMD_STA_IOCTL_SECURITY_ENABLED;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
+		if (pKeyInfo->bPairwise == FALSE )
+#else
+		if (pKeyInfo->KeyId > 0)
+#endif	
+		{
+			if (pAd->StaCfg.GroupCipher == Ndis802_11Encryption2Enabled)
+				IoctlSec.Alg = RT_CMD_STA_IOCTL_SECURITY_ALG_TKIP;
+			else if (pAd->StaCfg.GroupCipher == Ndis802_11Encryption3Enabled)
+				IoctlSec.Alg = RT_CMD_STA_IOCTL_SECURITY_ALG_CCMP;
+				
+			DBGPRINT(RT_DEBUG_TRACE, ("Install GTK: %d\n", IoctlSec.Alg));
+			IoctlSec.ext_flags = RT_CMD_STA_IOCTL_SECURTIY_EXT_GROUP_KEY;
+		}	
+		else
+		{
+			if (pAd->StaCfg.PairCipher == Ndis802_11Encryption2Enabled)
+				IoctlSec.Alg = RT_CMD_STA_IOCTL_SECURITY_ALG_TKIP;
+			else if (pAd->StaCfg.PairCipher == Ndis802_11Encryption3Enabled)
+				IoctlSec.Alg = RT_CMD_STA_IOCTL_SECURITY_ALG_CCMP;
+				
+			DBGPRINT(RT_DEBUG_TRACE, ("Install PTK: %d\n", IoctlSec.Alg));
+			IoctlSec.ext_flags = RT_CMD_STA_IOCTL_SECURTIY_EXT_SET_TX_KEY;
+		}
+		
+		/*Set_GroupKey_Proc(pAd, &IoctlSec) */
+		RTMP_STA_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_STA_SIOCSIWENCODEEXT, 0,
+							  &IoctlSec, 0, INT_MAIN);
+	}
+#endif /* CONFIG_STA_SUPPORT */
 
 	return TRUE;
 }
@@ -674,6 +886,176 @@ BOOLEAN CFG80211DRV_Connect(
 	VOID						*pAdOrg,
 	VOID						*pData)
 {
+#ifdef CONFIG_STA_SUPPORT
+	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pAdOrg;
+	CMD_RTPRIV_IOCTL_80211_CONNECT *pConnInfo;
+	UCHAR SSID[NDIS_802_11_LENGTH_SSID + 1]; /* Add One for SSID_Len == 32 */
+	UINT32 SSIDLen;
+	RT_CMD_STA_IOCTL_SECURITY_ADV IoctlWpa;
+
+	if (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_INFRA_ON) && 
+            OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_MEDIA_STATE_CONNECTED))
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("CFG80211: Connected, disconnect first !\n"));
+	}
+	else
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("CFG80211: No Connection\n"));
+	}
+
+	pConnInfo = (CMD_RTPRIV_IOCTL_80211_CONNECT *)pData;
+
+	/* change to infrastructure mode if we are in ADHOC mode */
+	Set_NetworkType_Proc(pAd, "Infra");
+
+	SSIDLen = pConnInfo->SsidLen;
+	if (SSIDLen > NDIS_802_11_LENGTH_SSID)
+	{
+		SSIDLen = NDIS_802_11_LENGTH_SSID;
+	}
+	
+	memset(&SSID, 0, sizeof(SSID));
+	memcpy(SSID, pConnInfo->pSsid, SSIDLen);
+
+	if (pConnInfo->bWpsConnection) 
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("WPS Connection onGoing.....\n"));
+		/* YF@20120327: Trigger Driver to Enable WPS function. */	
+		pAd->StaCfg.wpa_supplicant_info.WpaSupplicantUP |= WPA_SUPPLICANT_ENABLE_WPS;  /* Set_Wpa_Support(pAd, "3") */
+		Set_AuthMode_Proc(pAd, "OPEN");
+		Set_EncrypType_Proc(pAd, "NONE");
+		Set_SSID_Proc(pAd, (PSTRING)SSID);
+		
+		return TRUE;
+	}
+	else
+	{
+		pAd->StaCfg.wpa_supplicant_info.WpaSupplicantUP = WPA_SUPPLICANT_ENABLE; /* Set_Wpa_Support(pAd, "1")*/
+	}	
+	
+	/* set authentication mode */
+	if (pConnInfo->WpaVer == 2)
+	{
+		if (pConnInfo->FlgIs8021x == TRUE) {
+			DBGPRINT(RT_DEBUG_TRACE, ("WPA2\n"));
+			Set_AuthMode_Proc(pAd, "WPA2");
+		}
+		else 
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("WPA2PSK\n"));
+			Set_AuthMode_Proc(pAd, "WPA2PSK");
+		}
+	}
+	else if (pConnInfo->WpaVer == 1)
+	{
+		if (pConnInfo->FlgIs8021x == TRUE) {
+			DBGPRINT(RT_DEBUG_TRACE, ("WPA\n"));
+			Set_AuthMode_Proc(pAd, "WPA");
+		}
+		else 
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("WPAPSK\n"));
+			Set_AuthMode_Proc(pAd, "WPAPSK");
+		}
+	}
+	else if (pConnInfo->AuthType == Ndis802_11AuthModeAutoSwitch)
+		Set_AuthMode_Proc(pAd, "WEPAUTO");
+    else if (pConnInfo->AuthType == Ndis802_11AuthModeShared)
+		Set_AuthMode_Proc(pAd, "SHARED");
+	else
+		Set_AuthMode_Proc(pAd, "OPEN");
+
+	CFG80211DBG(RT_DEBUG_TRACE,
+				("80211> AuthMode = %d\n", pAd->StaCfg.wdev.AuthMode));
+
+	/* set encryption mode */
+	if (pConnInfo->PairwiseEncrypType & RT_CMD_80211_CONN_ENCRYPT_CCMP) 
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("AES\n"));
+		Set_EncrypType_Proc(pAd, "AES");
+	}
+	else if (pConnInfo->PairwiseEncrypType & RT_CMD_80211_CONN_ENCRYPT_TKIP) 
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("TKIP\n"));
+		Set_EncrypType_Proc(pAd, "TKIP");
+	}
+	else if (pConnInfo->PairwiseEncrypType & RT_CMD_80211_CONN_ENCRYPT_WEP)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("WEP\n"));
+		Set_EncrypType_Proc(pAd, "WEP");
+	}
+	else
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("NONE\n"));
+		Set_EncrypType_Proc(pAd, "NONE");		
+	}
+	
+	/* Groupwise Key Information Setting */
+	IoctlWpa.flags = RT_CMD_STA_IOCTL_WPA_GROUP;    
+	if (pConnInfo->GroupwiseEncrypType & RT_CMD_80211_CONN_ENCRYPT_CCMP)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("GTK AES\n"));
+		IoctlWpa.value = RT_CMD_STA_IOCTL_WPA_GROUP_CCMP;
+		RtmpIoctl_rt_ioctl_siwauth(pAd, &IoctlWpa, 0);
+	}
+	else if (pConnInfo->GroupwiseEncrypType & RT_CMD_80211_CONN_ENCRYPT_TKIP)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("GTK TKIP\n"));
+		IoctlWpa.value = RT_CMD_STA_IOCTL_WPA_GROUP_TKIP;
+		RtmpIoctl_rt_ioctl_siwauth(pAd, &IoctlWpa, 0);
+	} 
+
+	CFG80211DBG(RT_DEBUG_TRACE,
+				("80211> EncrypType = %d\n", pAd->StaCfg.wdev.WepStatus));
+
+	CFG80211DBG(RT_DEBUG_TRACE, ("80211> Key = %s\n", pConnInfo->pKey));
+
+	/* set channel: STATION will auto-scan */
+
+	/* set WEP key */
+	if (pConnInfo->pKey &&
+		((pConnInfo->GroupwiseEncrypType | pConnInfo->PairwiseEncrypType) &
+												RT_CMD_80211_CONN_ENCRYPT_WEP))
+	{
+		UCHAR KeyBuf[50];
+
+		/* reset AuthMode and EncrypType */
+		Set_EncrypType_Proc(pAd, "WEP");
+
+		/* reset key */
+#ifdef RT_CFG80211_DEBUG
+		hex_dump("KeyBuf=", (UINT8 *)pConnInfo->pKey, pConnInfo->KeyLen);
+#endif /* RT_CFG80211_DEBUG */
+
+		pAd->StaCfg.wdev.DefaultKeyId = pConnInfo->KeyIdx; /* base 0 */
+		if (pConnInfo->KeyLen >= sizeof(KeyBuf))
+			return FALSE;
+
+		memcpy(KeyBuf, pConnInfo->pKey, pConnInfo->KeyLen);
+		KeyBuf[pConnInfo->KeyLen] = 0x00;
+
+		CFG80211DBG(RT_DEBUG_ERROR,
+					("80211> pAd->StaCfg.DefaultKeyId = %d\n",
+					pAd->StaCfg.wdev.DefaultKeyId));
+
+		Set_Wep_Key_Proc(pAd, (PSTRING)KeyBuf, (INT)pConnInfo->KeyLen, (INT)pConnInfo->KeyIdx);
+
+	} /* End of if */
+
+	/* TODO: We need to provide a command to set BSSID to associate a AP */
+	pAd->cfg80211_ctrl.FlgCfg80211Connecting = TRUE;
+
+#ifdef DOT11W_PMF_SUPPORT
+	if (pConnInfo->mfp)
+	{
+			//Set_PMFSHA256_Proc(pAd,"1");
+		Set_PMFMFPC_Proc(pAd,"1");
+	}
+#endif /* DOT11W_PMF_SUPPORT */
+
+	Set_SSID_Proc(pAd, (PSTRING)SSID);
+	CFG80211DBG(RT_DEBUG_TRACE, ("80211> Connecting SSID = %s\n", SSID));
+#endif /* CONFIG_STA_SUPPORT */
 
 	return TRUE;
 }
@@ -863,6 +1245,35 @@ Note:
 	CFG80211_SupBandInit() is called in xx_probe().
 ========================================================================
 */
+#ifdef CONFIG_STA_SUPPORT
+VOID CFG80211_LostApInform(
+    IN VOID 					*pAdCB)
+{
+
+	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pAdCB;
+	CFG80211_CB *p80211CB = pAd->pCfg80211_CB;
+	
+	
+	pAd->StaCfg.bAutoReconnect = FALSE;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0))
+	DBGPRINT(RT_DEBUG_TRACE, ("80211> CFG80211_LostApInform \n"));
+	cfg80211_disconnected(pAd->net_dev, 0, NULL, 0, GFP_KERNEL);
+#else
+	DBGPRINT(RT_DEBUG_TRACE, ("80211> CFG80211_LostApInform ==> %d\n", 
+					p80211CB->pCfg80211_Wdev->sme_state));
+	if (p80211CB->pCfg80211_Wdev->sme_state == CFG80211_SME_CONNECTING)
+	{
+		   cfg80211_connect_result(pAd->net_dev, NULL, NULL, 0, NULL, 0,
+								   WLAN_STATUS_UNSPECIFIED_FAILURE, GFP_KERNEL);
+	}
+	else if (p80211CB->pCfg80211_Wdev->sme_state == CFG80211_SME_CONNECTED)
+	{
+		   cfg80211_disconnected(pAd->net_dev, 0, NULL, 0, GFP_KERNEL);
+	}
+#endif /* LINUX_VERSION_CODE: 3,11,0 */
+
+}
+#endif /*CONFIG_STA_SUPPORT*/
 
 
 
@@ -1194,12 +1605,45 @@ BOOLEAN CFG80211_SupBandReInit(
 	return CFG80211OS_SupBandReInit(CFG80211CB, &BandInfo);
 } /* End of CFG80211_SupBandReInit */
 
+#ifdef CONFIG_STA_SUPPORT
+//CMD_RTPRIV_IOCTL_80211_KEY_DEFAULT_SET:
+INT CFG80211_setStaDefaultKey(
+	IN VOID                     *pAdCB,
+	IN UINT 					Data
+)
+{
+	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pAdCB;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("Set Sta Default Key: %d\n", Data));
+    pAd->StaCfg.wdev.DefaultKeyId = Data; /* base 0 */
+	return 0;	
+}
+
+#ifdef DOT11W_PMF_SUPPORT
+INT CFG80211_setStaMgmtDefaultKey(
+	IN VOID                     *pAdCB,
+	IN UINT 					Data
+)
+{
+	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pAdCB;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("Set Sta MgmtDefault Key: %d\n", Data));
+    	//pAd->StaCfg.wdev.MgmtDefaultKeyId = Data; /* base 0 */
+	return 0;	
+}
+#endif /* DOT11W_PMF_SUPPORT */
+
+#endif /*CONFIG_STA_SUPPORT*/
 INT CFG80211_reSetToDefault(
 	IN VOID                                         *pAdCB)
 {
 	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pAdCB;
 	PCFG80211_CTRL pCfg80211_ctrl = &pAd->cfg80211_ctrl;
 	DBGPRINT(RT_DEBUG_TRACE, (" %s\n", __FUNCTION__));
+#ifdef CONFIG_STA_SUPPORT
+	/* Driver Internal Parm */
+	pAd->StaCfg.bAutoConnectByBssid = FALSE;
+#endif /*CONFIG_STA_SUPPORT*/		
 	pCfg80211_ctrl->cfg80211MainDev.Cfg80211RegisterProbeReqFrame = FALSE;
 	pCfg80211_ctrl->cfg80211MainDev.Cfg80211RegisterActionFrame = FALSE;
 	pCfg80211_ctrl->cfg80211MainDev.Cfg80211ProbeReqCount = 0;

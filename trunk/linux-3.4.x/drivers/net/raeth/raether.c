@@ -134,7 +134,7 @@ fill_hw_vlan_tx_map(END_DEVICE *ei_local)
 	ei_local->vlan_id_map[i] = (u16)DP_RA1;		// IDX: 12
 	ei_local->vlan_4k_map[DP_RA1] = (u8)i;
 	i++;
-#if defined (HWNAT_DP_RAI_AP)
+#if !defined (CONFIG_RT_SECOND_IF_NONE)
 	ei_local->vlan_id_map[i] = (u16)DP_RAI0;	// IDX: 13
 	ei_local->vlan_4k_map[DP_RAI0] = (u8)i;
 	i++;

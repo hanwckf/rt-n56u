@@ -734,7 +734,6 @@ static struct {
 
 #ifdef DOT11_VHT_AC
 	{"VhtBw",					Set_VhtBw_Proc},
-	{"VhtGi",						Set_VhtGi_Proc},
 	{"VhtStbc",					Set_VhtStbc_Proc},
 	{"VhtBwSignal",				Set_VhtBwSignal_Proc},
 	{"VhtDisallowNonVHT",		Set_VhtDisallowNonVHT_Proc},

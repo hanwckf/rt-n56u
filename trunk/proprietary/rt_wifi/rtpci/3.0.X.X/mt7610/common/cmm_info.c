@@ -3454,24 +3454,6 @@ direct_done:
 }
 
 
-INT	Set_VhtGi_Proc(
-	IN RTMP_ADAPTER *pAd, 
-	IN PSTRING arg)
-{
-
-	if (!WMODE_CAP_AC(pAd->CommonCfg.PhyMode))
-		goto direct_done;
-	
-	pAd->CommonCfg.vht_sgi_80= simple_strtol(arg, 0, 10);
-
-direct_done:
-
-	DBGPRINT(RT_DEBUG_TRACE, ("Set_VhtGi_Proc::(VHT_SGI=%d)\n", pAd->CommonCfg.vht_sgi_80));
-
-	return TRUE;
-}
-
-
 INT Set_VhtBwSignal_Proc(RTMP_ADAPTER *pAd, PSTRING arg)
 {
 	ULONG bw_signal = simple_strtol(arg, 0, 10);

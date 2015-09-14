@@ -790,15 +790,17 @@ static void rtmp_read_ap_client_from_file(
 		{
 			pApCliEntry = &pAd->ApCfg.ApCliTab[i];
 
+			NdisZeroMemory(&(pApCliEntry->CfgApCliBssid), MAC_ADDR_LEN);
+
 			if(strlen(macptr) != 17)  /*Mac address acceptable format 01:02:03:04:05:06 length 17*/
-				continue; 
+				continue;
 			if(strcmp(macptr,"00:00:00:00:00:00") == 0)
-				continue; 
+				continue;
 			for (j=0; j<ETH_LENGTH_OF_ADDRESS; j++)
 			{
 				AtoH(macptr, &macAddress[j], 1);
 				macptr=macptr+3;
-			}	
+			}
 			memcpy(pApCliEntry->CfgApCliBssid, &macAddress, ETH_LENGTH_OF_ADDRESS);
 			pApCliEntry->Valid = FALSE;/* it should be set when successfuley association*/
 		}
@@ -4499,37 +4501,37 @@ NDIS_STATUS	RTMPSetSingleSKUParameters(
 		DlListForEachSafe(ch, ch_temp, &pAd->SingleSkuPwrList, CH_POWER, List)
 		{
 			int i;
-			printk("start ch = %d, ch->num = %d\n", ch->channel, ch->num);
+			DBGPRINT(RT_DEBUG_TRACE, ("start ch = %d, ch->num = %d\n", ch->channel, ch->num));
 
 			for ( i= 0 ; i < SINGLE_SKU_TABLE_CCK_LENGTH ; i++ )
 			{
-				printk("%d ", ch->PwrCCK[i]);
+				DBGPRINT(RT_DEBUG_TRACE, ("%d ", ch->PwrCCK[i]));
 			}
-			printk("\n");
+			DBGPRINT(RT_DEBUG_TRACE, ("\n"));
 
 			for ( i= 0 ; i < SINGLE_SKU_TABLE_OFDM_LENGTH ; i++ )
 			{
-				printk("%d ", ch->PwrOFDM[i]);
+				DBGPRINT(RT_DEBUG_TRACE, ("%d ", ch->PwrOFDM[i]));
 			}
-			printk("\n");		
+			DBGPRINT(RT_DEBUG_TRACE, ("\n"));
 
 			for ( i= 0 ; i < SINGLE_SKU_TABLE_HT_LENGTH ; i++ )
 			{
-				printk("%d ", ch->PwrHT20[i]);
+				DBGPRINT(RT_DEBUG_TRACE, ("%d ", ch->PwrHT20[i]));
 			}
-			printk("\n");
+			DBGPRINT(RT_DEBUG_TRACE, ("\n"));
 
 			for ( i= 0 ; i < SINGLE_SKU_TABLE_HT_LENGTH ; i++ )
 			{
-				printk("%d ", ch->PwrHT40[i]);
+				DBGPRINT(RT_DEBUG_TRACE, ("%d ", ch->PwrHT40[i]));
 			}
-			printk("\n");
+			DBGPRINT(RT_DEBUG_TRACE, ("\n"));
 
 			for ( i= 0 ; i < SINGLE_SKU_TABLE_VHT_LENGTH ; i++ )
 			{
-				printk("%d ", ch->PwrVHT80[i]);
+				DBGPRINT(RT_DEBUG_TRACE, ("%d ", ch->PwrVHT80[i]));
 			}
-			printk("\n");
+			DBGPRINT(RT_DEBUG_TRACE, ("\n"));
 		}
 	}
 

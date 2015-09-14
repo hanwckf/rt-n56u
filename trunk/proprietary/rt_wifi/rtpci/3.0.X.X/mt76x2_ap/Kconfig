@@ -176,6 +176,38 @@ config  MT76X2_AP_SINGLE_SKU
 	bool "Single SKU"
 	depends on MT76X2_AP
 
+choice
+	prompt "MT7620 Power Design"
+	depends on MT76X2_AP
+	depends on RT_FIRST_IF_MT7620
+	default MT76X2_AP_INTERNAL_PA_INTERNAL_LNA
+config MT76X2_AP_INTERNAL_PA_INTERNAL_LNA
+	bool "Internal PA & Internal LNA"
+config MT76X2_AP_INTERNAL_PA_EXTERNAL_LNA
+	bool "Internal PA & External LNA"
+config MT76X2_AP_EXTERNAL_PA_EXTERNAL_LNA
+	bool "External PA & External LNA"
+endchoice
+
+config  MT76X2_AP_RTMP_INTERNAL_TX_ALC
+	bool "MT7620 TSSI Compensation (Internal TX ALC)"
+	depends on MT76X2_AP
+	depends on RT_FIRST_IF_MT7620
+	depends on !MT76X2_AP_EXTERNAL_PA_EXTERNAL_LNA
+	default n
+
+config  MT76X2_AP_RTMP_TEMPERATURE_COMPENSATION
+	bool "MT7620 Temperature Compensation (External TX ALC)"
+	depends on MT76X2_AP
+	depends on RT_FIRST_IF_MT7620
+	default n
+
+config  MT76X2_AP_ADJ_PWR_CONSUMPTION
+	bool "MT7620 Reduce Power Consumption"
+	depends on MT76X2_AP
+	depends on RT_FIRST_IF_MT7620
+	default n
+
 config  MT76X2_AP_READ_MAC_FROM_MTD
 	bool "Read and set MAC from MTD/EEPROM"
 	depends on MT76X2_AP

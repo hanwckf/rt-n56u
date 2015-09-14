@@ -34,8 +34,12 @@ choice
 	bool "None"
 
 	config RT_FIRST_IF_RT2860
-	bool "RT2860v2 APSoC"
-	depends on !(RALINK_MT7621 || RALINK_MT7628)
+	bool "RT2860v2 APSoC (RTMP driver 2.7.x.x)"
+	depends on (RALINK_RT3052 || RALINK_RT3352 || RALINK_RT5350 || RALINK_RT3883 || RALINK_MT7620)
+
+	config RT_FIRST_IF_MT7620
+	bool "MT7620 APSoC (RLT driver 3.0.x.x)"
+	depends on RALINK_MT7620
 
 	config RT_FIRST_IF_RT3090
 	bool "RT3092 PCIe"
@@ -112,6 +116,7 @@ config  RT_FIRST_CARD
 	default 5392 if RT_FIRST_IF_RT5392
 	default 5592 if RT_FIRST_IF_RT5592
 	default 3593 if RT_FIRST_IF_RT3593
+	default 7620 if RT_FIRST_IF_MT7620
 	default 7610 if RT_FIRST_IF_MT7610E
 	default 7612 if RT_FIRST_IF_MT7612E
 	default 7602 if RT_FIRST_IF_MT7602E
@@ -299,8 +304,8 @@ source "drivers/net/wireless/mt7610_ap/Kconfig"
 endmenu
 endif
 
-if (RT_FIRST_IF_MT7612E || RT_FIRST_IF_MT7602E || RT_SECOND_IF_MT7612E || RT_SECOND_IF_MT7602E)
-menu "AP MODE MediaTek MT7602E/MT7612E PCIe Wireless Driver"
+if (RT_FIRST_IF_MT7620 || RT_FIRST_IF_MT7612E || RT_FIRST_IF_MT7602E || RT_SECOND_IF_MT7612E || RT_SECOND_IF_MT7602E)
+menu "AP MODE MediaTek MT7620/MT7602E/MT7612E RBUS/PCIe Wireless driver"
 source "drivers/net/wireless/mt76x2_ap/Kconfig"
 endmenu
 endif

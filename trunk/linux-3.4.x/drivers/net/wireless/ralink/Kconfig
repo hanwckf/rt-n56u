@@ -4,7 +4,6 @@ config RT_SINGLE_SKU
 
 config RT_MAX_CLIENTS
 	int "Maximum Wireless clients (16/32/48/64/128). More clients - more MEM and CPU usage"
-	depends on !(RT_SECOND_IF_NONE && RT_FIRST_IF_NONE)
 	default 32
 
 config RT_BAND_STEERING

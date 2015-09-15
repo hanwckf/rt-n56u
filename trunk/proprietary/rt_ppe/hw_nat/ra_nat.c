@@ -357,7 +357,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	switch (VirIfIdx) {
 	case DP_RA0:
 	case DP_RA1:
-#if !defined (CONFIG_RT_SECOND_IF_NONE)
+#if defined (HWNAT_USE_SECOND_IF)
 	case DP_RAI0:
 	case DP_RAI1:
 #endif
@@ -875,7 +875,7 @@ uint32_t PpeSetExtIfNum(struct sk_buff *skb, struct FoeEntry* foe_entry)
 #define MIN_NET_DEVICE_FOR_APCLI	0x20
 #define MIN_NET_DEVICE_FOR_MESH		0x30
 
-#if !defined (CONFIG_RT_SECOND_IF_NONE)
+#if defined (HWNAT_USE_SECOND_IF)
 	if (offset == DP_RAI0) {
 #if defined (HWNAT_USE_SECOND_IF_CBOFF)
 #if defined (HWNAT_USE_IF_MESH)
@@ -2380,7 +2380,6 @@ void PpeSetDstPort(uint32_t Ebl)
 	int i;
 
 	if (Ebl) {
-#if !defined (CONFIG_RT_FIRST_IF_NONE)
 		DstPort[DP_RA0] = ra_dev_get_by_name("ra0");
 #if defined (HWNAT_USE_IF_MBSS)
 		DstPort[DP_RA1] = ra_dev_get_by_name("ra1");
@@ -2403,9 +2402,8 @@ void PpeSetDstPort(uint32_t Ebl)
 #if defined (HWNAT_USE_IF_MESH)
 		DstPort[DP_MESH0] = ra_dev_get_by_name("mesh0");
 #endif
-#endif
 
-#if !defined (CONFIG_RT_SECOND_IF_NONE)
+#if defined (HWNAT_USE_SECOND_IF)
 		DstPort[DP_RAI0] = ra_dev_get_by_name("rai0");
 #if defined (HWNAT_USE_IF_MBSS)
 		DstPort[DP_RAI1] = ra_dev_get_by_name("rai1");

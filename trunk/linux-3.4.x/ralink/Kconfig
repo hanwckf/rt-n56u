@@ -376,6 +376,11 @@ config MTK_XHCI
 	bool "MediaTek USB3/USB2/USB1.1 xHCI controller support"
 	depends on (RALINK_MT7621)
 	select USB_ARCH_HAS_XHCI
+
+# used only for iNIC_mii binary blob (need align Linux kernel structures to original environment)
+config RTDEV_MII
+	bool
+	default y if RT3352_INIC_MII
 endmenu
 
 endmenu

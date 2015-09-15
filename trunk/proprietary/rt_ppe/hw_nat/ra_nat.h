@@ -20,6 +20,10 @@
 
 #define HW_NAT_MODULE_VER "v2.51.9"
 
+#if !defined (CONFIG_RT_SECOND_IF_NONE) && !defined (CONFIG_RT_SECOND_IF_RT3352_INIC)
+#define HWNAT_USE_SECOND_IF
+#endif
+
 /*
  * TYPEDEFS AND STRUCTURES
  */
@@ -46,7 +50,7 @@ enum DstPort {
 	DP_WDS3 = 30,
 	DP_APCLI0 = 31,
 	DP_MESH0 = 32,
-#if !defined (CONFIG_RT_SECOND_IF_NONE)
+#if defined (HWNAT_USE_SECOND_IF)
 	DP_RAI0 = 33,
 	DP_RAI1 = 34,
 	DP_RAI2 = 35,

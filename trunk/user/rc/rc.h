@@ -612,10 +612,8 @@ int gen_ralink_config_5g(int disable_autoscan);
 int getPIN(void);
 int setPIN(const char *pin);
 int getBootVer(void);
-int getCountryRegion(const char *str);
-int getCountryRegionABand(const char *str);
 int get_apcli_connected(const char *ifname);
-
+int check_regspec_code(const char *spec);
 
 /* watchdog.c */
 #if defined (BOARD_GPIO_BTN_WPS) || defined (BOARD_GPIO_BTN_WLTOG)

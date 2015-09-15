@@ -241,11 +241,8 @@ get_eeprom_params(void)
 			if ((unsigned char)regspec_code[i] > 0x7f)
 				regspec_code[i] = 0;
 		}
-		if (strcasecmp(regspec_code, "CE") &&
-		    strcasecmp(regspec_code, "SG") &&
-		    strcasecmp(regspec_code, "AU") &&
-		    strcasecmp(regspec_code, "FCC") &&
-		    strcasecmp(regspec_code, "NCC"))
+		
+		if (!check_regspec_code(regspec_code))
 			strcpy(regspec_code, "CE");
 	}
 #else

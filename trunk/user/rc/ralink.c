@@ -33,6 +33,132 @@
 
 #define MAX_FRW 64
 
+static const struct regspec_t {
+	const char *regspec;
+	unsigned char cc_2g;
+	unsigned char cc_5g;
+} asus_regspec_table[] = {
+	{ "CE",   1,  1 }, // 0
+	{ "AU",   1,  0 }, // 1
+	{ "SG",   1,  0 }, // 2
+	{ "CN",   1,  4 }, // 3
+	{ "JP",   1,  9 }, // 4
+	{ "FCC",  0,  0 }, // 5
+	{ "NCC",  0,  3 }, // 6
+	{ "NCC2", 0,  3 }, // 7
+};
+
+static const struct cc_t {
+	const char *cc;
+	unsigned char cc_2g;
+	unsigned char cc_5g;
+	unsigned char regspec_idx;
+} ralink_cc_table[] = {
+	{ "AE",  1,  0,  0 },
+	{ "AL",  1,  0,  0 },
+	{ "AR",  1,  3,  0 },
+	{ "AT",  1,  1,  0 },
+	{ "AM",  1,  2,  0 },
+	{ "AU",  1,  0,  1 }, // AU
+	{ "AZ",  1,  2,  0 },
+	{ "BE",  1,  1,  0 },
+	{ "BH",  1,  0,  0 },
+	{ "BY",  1,  0,  0 },
+	{ "BO",  1,  4,  0 },
+	{ "BR",  1,  1,  0 },
+	{ "BN",  1,  4,  0 },
+	{ "BG",  1,  1,  0 },
+	{ "BZ",  1,  4,  0 },
+	{ "CA",  0,  0,  5 }, // FCC
+	{ "CH",  1,  1,  0 },
+	{ "CL",  1,  0,  0 },
+	{ "CN",  1,  4,  3 }, // CN
+	{ "CO",  0,  0,  0 },
+	{ "CR",  1,  0,  0 },
+	{ "CY",  1,  1,  0 },
+	{ "CZ",  1,  2,  0 },
+	{ "DE",  1,  1,  0 },
+	{ "DK",  1,  1,  0 },
+	{ "DO",  0,  0,  0 },
+	{ "DZ",  1,  0,  0 },
+	{ "EC",  1,  0,  0 },
+	{ "EG",  1,  2,  0 },
+	{ "EE",  1,  1,  0 },
+	{ "ES",  1,  1,  0 },
+	{ "FI",  1,  1,  0 },
+	{ "FR",  1,  2,  0 },
+	{ "GE",  1,  2,  0 },
+	{ "GB",  1,  1,  0 },
+	{ "GR",  1,  1,  0 },
+	{ "GT",  0,  0,  0 },
+	{ "HN",  1,  0,  0 },
+	{ "HK",  1,  0,  0 },
+	{ "HU",  1,  1,  0 },
+	{ "HR",  1,  2,  0 },
+	{ "IS",  1,  1,  0 },
+	{ "IN",  1,  0,  0 },
+	{ "ID",  1,  4,  0 },
+	{ "IR",  1,  4,  0 },
+	{ "IE",  1,  1,  0 },
+	{ "IL",  1,  0,  0 },
+	{ "IT",  1,  1,  0 },
+	{ "JP",  1,  9,  4 }, // JP
+	{ "JO",  1,  0,  0 },
+	{ "KP",  1,  5,  0 },
+	{ "KR",  1,  5,  0 },
+	{ "KW",  1,  0,  0 },
+	{ "KZ",  1,  0,  0 },
+	{ "LB",  1,  0,  0 },
+	{ "LI",  1,  1,  0 },
+	{ "LT",  1,  1,  0 },
+	{ "LU",  1,  1,  0 },
+	{ "LV",  1,  1,  0 },
+	{ "MA",  1,  0,  0 },
+	{ "MC",  1,  2,  0 },
+	{ "MO",  1,  0,  0 },
+	{ "MK",  1,  0,  0 },
+	{ "MX",  0,  0,  0 },
+	{ "MY",  1,  0,  0 },
+	{ "NL",  1,  1,  0 },
+	{ "NO",  0,  0,  0 },
+	{ "NZ",  1,  0,  0 },
+	{ "OM",  1,  0,  0 },
+	{ "PA",  0,  0,  0 },
+	{ "PE",  1,  4,  0 },
+	{ "PH",  1,  4,  0 },
+	{ "PL",  1,  1,  0 },
+	{ "PK",  1,  0,  0 },
+	{ "PT",  1,  1,  0 },
+	{ "PR",  0,  0,  0 },
+	{ "QA",  1,  0,  0 },
+	{ "RO",  1,  0,  0 },
+	{ "RU",  1,  0,  0 },
+	{ "SA",  1,  0,  0 },
+	{ "SG",  1,  0,  2 }, // SG
+	{ "SK",  1,  1,  0 },
+	{ "SI",  1,  1,  0 },
+	{ "SV",  1,  0,  0 },
+	{ "SE",  1,  1,  0 },
+	{ "SY",  1,  0,  0 },
+	{ "TH",  1,  0,  0 },
+	{ "TN",  1,  2,  0 },
+	{ "TR",  1,  2,  0 },
+	{ "TT",  1,  2,  0 },
+	{ "TW",  0,  3,  6 }, // NCC
+	{ "UA",  1,  0,  0 },
+	{ "US",  0,  0,  5 }, // FCC
+	{ "UY",  1,  5,  0 },
+	{ "UZ",  0,  1,  0 },
+	{ "VE",  1,  5,  0 },
+	{ "VN",  1,  0,  0 },
+	{ "YE",  1,  0,  0 },
+	{ "ZA",  1,  1,  0 },
+	{ "ZW",  1,  0,  0 },
+
+	/* debug code */
+	{ "DB",  5,  7,  0 }
+};
+
 inline int
 get_wired_mac_is_single(void)
 {
@@ -185,115 +311,18 @@ get_wireless_cc(void)
 int
 set_wireless_cc(const char *cc)
 {
+	int i, cc_valid;
 	unsigned char CC[4];
 
-	/* Please refer to ISO3166 code list for other countries and can be found at
-	 * http://www.iso.org/iso/en/prods-services/iso3166ma/02iso-3166-code-lists/list-en1.html#sz
-	 */
+	cc_valid = 0;
+	for (i = 0; i < ARRAY_SIZE(ralink_cc_table); i++) {
+		if (strcasecmp(ralink_cc_table[i].cc, cc) == 0) {
+			cc_valid = 1;
+			break;
+		}
+	}
 
-	     if (!strcasecmp(cc, "DB")) ;
-	else if (!strcasecmp(cc, "AL")) ;
-	else if (!strcasecmp(cc, "DZ")) ;
-	else if (!strcasecmp(cc, "AR")) ;
-	else if (!strcasecmp(cc, "AM")) ;
-	else if (!strcasecmp(cc, "AU")) ;
-	else if (!strcasecmp(cc, "AT")) ;
-	else if (!strcasecmp(cc, "AZ")) ;
-	else if (!strcasecmp(cc, "BH")) ;
-	else if (!strcasecmp(cc, "BY")) ;
-	else if (!strcasecmp(cc, "BE")) ;
-	else if (!strcasecmp(cc, "BZ")) ;
-	else if (!strcasecmp(cc, "BO")) ;
-	else if (!strcasecmp(cc, "BR")) ;
-	else if (!strcasecmp(cc, "BN")) ;
-	else if (!strcasecmp(cc, "BG")) ;
-	else if (!strcasecmp(cc, "CA")) ;
-	else if (!strcasecmp(cc, "CL")) ;
-	else if (!strcasecmp(cc, "CN")) ;
-	else if (!strcasecmp(cc, "CO")) ;
-	else if (!strcasecmp(cc, "CR")) ;
-	else if (!strcasecmp(cc, "HR")) ;
-	else if (!strcasecmp(cc, "CY")) ;
-	else if (!strcasecmp(cc, "CZ")) ;
-	else if (!strcasecmp(cc, "DK")) ;
-	else if (!strcasecmp(cc, "DO")) ;
-	else if (!strcasecmp(cc, "EC")) ;
-	else if (!strcasecmp(cc, "EG")) ;
-	else if (!strcasecmp(cc, "SV")) ;
-	else if (!strcasecmp(cc, "EE")) ;
-	else if (!strcasecmp(cc, "FI")) ;
-	else if (!strcasecmp(cc, "FR")) ;
-	else if (!strcasecmp(cc, "GE")) ;
-	else if (!strcasecmp(cc, "DE")) ;
-	else if (!strcasecmp(cc, "GR")) ;
-	else if (!strcasecmp(cc, "GT")) ;
-	else if (!strcasecmp(cc, "HN")) ;
-	else if (!strcasecmp(cc, "HK")) ;
-	else if (!strcasecmp(cc, "HU")) ;
-	else if (!strcasecmp(cc, "IS")) ;
-	else if (!strcasecmp(cc, "IN")) ;
-	else if (!strcasecmp(cc, "ID")) ;
-	else if (!strcasecmp(cc, "IR")) ;
-	else if (!strcasecmp(cc, "IE")) ;
-	else if (!strcasecmp(cc, "IL")) ;
-	else if (!strcasecmp(cc, "IT")) ;
-	else if (!strcasecmp(cc, "JP")) ;
-	else if (!strcasecmp(cc, "JO")) ;
-	else if (!strcasecmp(cc, "KZ")) ;
-	else if (!strcasecmp(cc, "KP")) ;
-	else if (!strcasecmp(cc, "KR")) ;
-	else if (!strcasecmp(cc, "KW")) ;
-	else if (!strcasecmp(cc, "LV")) ;
-	else if (!strcasecmp(cc, "LB")) ;
-	else if (!strcasecmp(cc, "LI")) ;
-	else if (!strcasecmp(cc, "LT")) ;
-	else if (!strcasecmp(cc, "LU")) ;
-	else if (!strcasecmp(cc, "MO")) ;
-	else if (!strcasecmp(cc, "MK")) ;
-	else if (!strcasecmp(cc, "MY")) ;
-	else if (!strcasecmp(cc, "MX")) ;
-	else if (!strcasecmp(cc, "MC")) ;
-	else if (!strcasecmp(cc, "MA")) ;
-	else if (!strcasecmp(cc, "NL")) ;
-	else if (!strcasecmp(cc, "NZ")) ;
-	else if (!strcasecmp(cc, "NO")) ;
-	else if (!strcasecmp(cc, "OM")) ;
-	else if (!strcasecmp(cc, "PK")) ;
-	else if (!strcasecmp(cc, "PA")) ;
-	else if (!strcasecmp(cc, "PE")) ;
-	else if (!strcasecmp(cc, "PH")) ;
-	else if (!strcasecmp(cc, "PL")) ;
-	else if (!strcasecmp(cc, "PT")) ;
-	else if (!strcasecmp(cc, "PR")) ;
-	else if (!strcasecmp(cc, "QA")) ;
-	else if (!strcasecmp(cc, "RO")) ;
-	else if (!strcasecmp(cc, "RU")) ;
-	else if (!strcasecmp(cc, "SA")) ;
-	else if (!strcasecmp(cc, "SG")) ;
-	else if (!strcasecmp(cc, "SK")) ;
-	else if (!strcasecmp(cc, "SI")) ;
-	else if (!strcasecmp(cc, "ZA")) ;
-	else if (!strcasecmp(cc, "ES")) ;
-	else if (!strcasecmp(cc, "SE")) ;
-	else if (!strcasecmp(cc, "CH")) ;
-	else if (!strcasecmp(cc, "SY")) ;
-	else if (!strcasecmp(cc, "TW")) ;
-	else if (!strcasecmp(cc, "TH")) ;
-	else if (!strcasecmp(cc, "TT")) ;
-	else if (!strcasecmp(cc, "TN")) ;
-	else if (!strcasecmp(cc, "TR")) ;
-	else if (!strcasecmp(cc, "UA")) ;
-	else if (!strcasecmp(cc, "AE")) ;
-	else if (!strcasecmp(cc, "GB")) ;
-	else if (!strcasecmp(cc, "US")) ;
-	else if (!strcasecmp(cc, "UY")) ;
-	else if (!strcasecmp(cc, "UZ")) ;
-	else if (!strcasecmp(cc, "VE")) ;
-	else if (!strcasecmp(cc, "VN")) ;
-	else if (!strcasecmp(cc, "YE")) ;
-	else if (!strcasecmp(cc, "ZW")) ;
-	else
-	{
+	if (!cc_valid) {
 		puts("Invalid input Country Code!");
 		return EINVAL;
 	}
@@ -423,158 +452,49 @@ getPIN(void)
 }
 
 int
-getCountryRegion(const char *str)
+check_regspec_code(const char *spec)
 {
-	int i_code;
+	int i;
 
-	if (    (strcasecmp(str, "CA") == 0) || (strcasecmp(str, "CO") == 0) ||
-		(strcasecmp(str, "DO") == 0) || (strcasecmp(str, "GT") == 0) ||
-		(strcasecmp(str, "MX") == 0) || (strcasecmp(str, "NO") == 0) ||
-		(strcasecmp(str, "PA") == 0) || (strcasecmp(str, "PR") == 0) ||
-		(strcasecmp(str, "TW") == 0) || (strcasecmp(str, "US") == 0) ||
-		(strcasecmp(str, "UZ") == 0))
-		i_code = 0;   // channel 1-11
-	else if (strcasecmp(str, "DB") == 0)
-		i_code = 5;   // channel 1-14
-	else
-		i_code = 1;   // channel 1-13
+	for (i = 0; i < ARRAY_SIZE(asus_regspec_table); i++) {
+		if (strcasecmp(asus_regspec_table[i].regspec, spec) == 0)
+			return 1;
+	}
 
-	return i_code;
+	return 0;
 }
 
-int
-getCountryRegionABand(const char *str)
+static const char *
+get_country_regspec(const char *cc)
 {
-	int i_code;
+	int i, idx;
 
-	if ( (!strcasecmp(str, "AL")) ||
-				(!strcasecmp(str, "DZ")) ||
-				(!strcasecmp(str, "AU")) ||
-				(!strcasecmp(str, "BH")) ||
-				(!strcasecmp(str, "BY")) ||
-				(!strcasecmp(str, "CA")) ||
-				(!strcasecmp(str, "CL")) ||
-				(!strcasecmp(str, "CO")) ||
-				(!strcasecmp(str, "CR")) ||
-				(!strcasecmp(str, "DO")) ||
-				(!strcasecmp(str, "EC")) ||
-				(!strcasecmp(str, "SV")) ||
-				(!strcasecmp(str, "GT")) ||
-				(!strcasecmp(str, "HN")) ||
-				(!strcasecmp(str, "HK")) ||
-				(!strcasecmp(str, "IN")) ||
-				(!strcasecmp(str, "IL")) ||
-				(!strcasecmp(str, "JO")) ||
-				(!strcasecmp(str, "KZ")) ||
-				(!strcasecmp(str, "KW")) ||
-				(!strcasecmp(str, "LB")) ||
-				(!strcasecmp(str, "MO")) ||
-				(!strcasecmp(str, "MK")) ||
-				(!strcasecmp(str, "MY")) ||
-				(!strcasecmp(str, "MX")) ||
-				(!strcasecmp(str, "MA")) ||
-				(!strcasecmp(str, "NZ")) ||
-				(!strcasecmp(str, "NO")) ||
-				(!strcasecmp(str, "OM")) ||
-				(!strcasecmp(str, "PK")) ||
-				(!strcasecmp(str, "PA")) ||
-				(!strcasecmp(str, "PR")) ||
-				(!strcasecmp(str, "QA")) ||
-				(!strcasecmp(str, "RO")) ||
-				(!strcasecmp(str, "RU")) ||
-				(!strcasecmp(str, "SA")) ||
-				(!strcasecmp(str, "SG")) ||
-				(!strcasecmp(str, "SY")) ||
-				(!strcasecmp(str, "TH")) ||
-				(!strcasecmp(str, "UA")) ||
-				(!strcasecmp(str, "AE")) ||
-				(!strcasecmp(str, "US")) ||
-				(!strcasecmp(str, "VN")) ||
-				(!strcasecmp(str, "YE")) ||
-				(!strcasecmp(str, "ZW")) )
-	{
-		i_code = 0;
+	for (i = 0; i < ARRAY_SIZE(ralink_cc_table); i++) {
+		if (strcasecmp(ralink_cc_table[i].cc, cc) == 0) {
+			idx = (int)ralink_cc_table[i].regspec_idx;
+			if (idx >= ARRAY_SIZE(asus_regspec_table))
+				idx = 0;
+			return asus_regspec_table[idx].regspec;
+		}
 	}
-	else if ( (!strcasecmp(str, "AT")) ||
-				(!strcasecmp(str, "BE")) ||
-				(!strcasecmp(str, "BR")) ||
-				(!strcasecmp(str, "BG")) ||
-				(!strcasecmp(str, "CY")) ||
-				(!strcasecmp(str, "DK")) ||
-				(!strcasecmp(str, "EE")) ||
-				(!strcasecmp(str, "FI")) ||
-				(!strcasecmp(str, "DE")) ||
-				(!strcasecmp(str, "GR")) ||
-				(!strcasecmp(str, "HU")) ||
-				(!strcasecmp(str, "IS")) ||
-				(!strcasecmp(str, "IE")) ||
-				(!strcasecmp(str, "IT")) ||
-				(!strcasecmp(str, "LV")) ||
-				(!strcasecmp(str, "LI")) ||
-				(!strcasecmp(str, "LT")) ||
-				(!strcasecmp(str, "LU")) ||
-				(!strcasecmp(str, "NL")) ||
-				(!strcasecmp(str, "PL")) ||
-				(!strcasecmp(str, "PT")) ||
-				(!strcasecmp(str, "SK")) ||
-				(!strcasecmp(str, "SI")) ||
-				(!strcasecmp(str, "ZA")) ||
-				(!strcasecmp(str, "ES")) ||
-				(!strcasecmp(str, "SE")) ||
-				(!strcasecmp(str, "CH")) ||
-				(!strcasecmp(str, "GB")) ||
-				(!strcasecmp(str, "UZ")) )
-	{
-		i_code = 1;
-	}
-	else if ( (!strcasecmp(str, "AM")) ||
-				(!strcasecmp(str, "AZ")) ||
-				(!strcasecmp(str, "HR")) ||
-				(!strcasecmp(str, "CZ")) ||
-				(!strcasecmp(str, "EG")) ||
-				(!strcasecmp(str, "FR")) ||
-				(!strcasecmp(str, "GE")) ||
-				(!strcasecmp(str, "MC")) ||
-				(!strcasecmp(str, "TT")) ||
-				(!strcasecmp(str, "TN")) ||
-				(!strcasecmp(str, "TR")) )
-	{
-		i_code = 2;
-	}
-	else if ( (!strcasecmp(str, "AR")) ||
-			(!strcasecmp(str, "TW")) )
-	{
-		i_code = 3;
-	}
-	else if ( (!strcasecmp(str, "BZ")) ||
-				(!strcasecmp(str, "BO")) ||
-				(!strcasecmp(str, "BN")) ||
-				(!strcasecmp(str, "CN")) ||
-				(!strcasecmp(str, "ID")) ||
-				(!strcasecmp(str, "IR")) ||
-				(!strcasecmp(str, "PE")) ||
-				(!strcasecmp(str, "PH")) )
-	{
-		i_code = 4;
-	}
-	else if (	(!strcasecmp(str, "KP")) ||
-				(!strcasecmp(str, "KR")) ||
-				(!strcasecmp(str, "UY")) ||
-				(!strcasecmp(str, "VE")) )
-	{
-		i_code = 5;
-	}
-	else if (!strcasecmp(str, "DB"))
-	{
-		i_code = 7;
-	}
-	else if (!strcasecmp(str, "JP"))
-	{
-		i_code = 9;
-	}
-	else
-	{
-		i_code = 1;
+
+	/* use CE as fallback */
+	return asus_regspec_table[0].regspec;
+}
+
+static int
+get_country_region(const char *cc, int is_aband)
+{
+	int i, i_code = 1;
+
+	for (i = 0; i < ARRAY_SIZE(ralink_cc_table); i++) {
+		if (strcasecmp(ralink_cc_table[i].cc, cc) == 0) {
+			if (is_aband)
+				i_code = (int)ralink_cc_table[i].cc_5g;
+			else
+				i_code = (int)ralink_cc_table[i].cc_2g;
+			break;
+		}
 	}
 
 	return i_code;
@@ -587,17 +507,65 @@ check_sku_file_exist(const char *prefix, const char *spec, char *out_buff, size_
 	return check_if_file_exist(out_buff);
 }
 
+static void
+symlink_sku_file(const char *sku_file, const char *prefix, const char *cc, int region, int is_aband)
+{
+	int i, sku_exist = 0;
+	char sku_link[64];
+
+	unlink(sku_file);
+
+	/* first, try custom SKU file from storage */
+	snprintf(sku_link, sizeof(sku_link), "%s/SingleSKU%s.dat", "/etc/storage/wlan", prefix);
+	if (!check_if_file_exist(sku_link)) {
+		const char *cc_regspec = get_country_regspec(cc);
+		
+		/* use table regspec code */
+		sku_exist = check_sku_file_exist(prefix, cc_regspec, sku_link, sizeof(sku_link));
+		
+		if (!sku_exist) {
+			char *regspec = nvram_safe_get("regspec_code");
+			
+			/* use own regspec code */
+			sku_exist = check_sku_file_exist(prefix, regspec, sku_link, sizeof(sku_link));
+		}
+		
+		if (!sku_exist) {
+			int region_regspec;
+			
+			/* use any matched regspec code */
+			for (i = 0; i < ARRAY_SIZE(asus_regspec_table); i++) {
+				if (is_aband)
+					region_regspec = (int)asus_regspec_table[i].cc_5g;
+				else
+					region_regspec = (int)asus_regspec_table[i].cc_2g;
+				
+				if (region_regspec == region) {
+					sku_exist = check_sku_file_exist(prefix, asus_regspec_table[i].regspec, sku_link, sizeof(sku_link));
+					if (sku_exist)
+						break;
+				}
+			}
+		}
+		
+		if (!sku_exist)
+			check_sku_file_exist(prefix, asus_regspec_table[0].regspec, sku_link, sizeof(sku_link));
+	}
+
+	if (check_if_file_exist(sku_link))
+		symlink(sku_link, sku_file);
+}
+
 static int
 gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 {
 	FILE *fp;
-	char *p_str, *dat_file, *sku_file, *regspec, *c_val_mbss[2];
-	char list[2048], sku_link[64];
+	char list[2048], *p_str, *c_val_mbss[2];
 	int i, i_num,  i_val, i_wmm, i_ldpc;
 	int i_mode_x, i_phy_mode, i_gfe, i_auth, i_encr, i_wep, i_wds;
 	int i_ssid_num, i_channel, i_channel_max, i_HTBW_MAX;
 	int i_stream_tx, i_stream_rx, i_mphy, i_mmcs, i_fphy[2], i_val_mbss[2];
-	const char *prefix = (is_aband) ? "wl" : "rt";
+	const char *dat_file, *sku_file, *prefix = (is_aband) ? "wl" : "rt";
 
 	i_ssid_num = 2; // AP+GuestAP
 	i_channel_max = 13;
@@ -639,8 +607,6 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	i_mode_x = nvram_wlan_get_int(is_aband, "mode_x");
 	i_phy_mode = calc_phy_mode(nvram_wlan_get_int(is_aband, "gmode"), is_aband);
 
-	regspec = nvram_safe_get("regspec_code");
-
 	if (!(fp=fopen(dat_file, "w+")))
 		return -1;
 
@@ -648,79 +614,29 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 
 	//CountryRegion
 	p_str = nvram_wlan_get(0, "country_code");
-	i_val = getCountryRegion(p_str);
+	i_val = get_country_region(p_str, 0);
 	fprintf(fp, "CountryRegion=%d\n", i_val);
 
 	if (!is_aband) {
-		if (i_val == 0) // USA
+		switch (i_val) {
+		case 0:		// FCC/NCC
 			i_channel_max = 11;
-		else if (i_val == 5) // Debug
+			break;
+		case 5:		// Debug
 			i_channel_max = 14;
-		
-		unlink(sku_file);
-		
-		snprintf(sku_link, sizeof(sku_link), "%s/SingleSKU%s.dat", "/etc/storage/wlan", "");
-		if (!check_if_file_exist(sku_link)) {
-			int sku_exist = 0;
-			char *spec_fallback = "CE";
-			
-			if (strcasecmp(p_str, "US") == 0 ||
-			    strcasecmp(p_str, "TW") == 0 ||
-			    strcasecmp(p_str, "JP") == 0) { // Use FCC fallback rule yet
-				if (strcasecmp(regspec, "NCC") == 0)
-					sku_exist = check_sku_file_exist("", "NCC", sku_link, sizeof(sku_link));
-				if (!sku_exist)
-					sku_exist = check_sku_file_exist("", "FCC", sku_link, sizeof(sku_link));
-			} else {
-				if (strcasecmp(regspec, "AU") == 0)
-					sku_exist = check_sku_file_exist("", "AU", sku_link, sizeof(sku_link));
-				else if (strcasecmp(regspec, "SG") == 0)
-					sku_exist = check_sku_file_exist("", "SG", sku_link, sizeof(sku_link));
-			}
-			
-			if (!sku_exist)
-				check_sku_file_exist("", spec_fallback, sku_link, sizeof(sku_link));
+			break;
 		}
 		
-		if (check_if_file_exist(sku_link))
-			symlink(sku_link, sku_file);
+		symlink_sku_file(sku_file, "", p_str, i_val, 0);
 	}
 
 	//CountryRegion for A band
 	p_str = nvram_wlan_get(1, "country_code");
-	i_val = getCountryRegionABand(p_str);
+	i_val = get_country_region(p_str, 1);
 	fprintf(fp, "CountryRegionABand=%d\n", i_val);
 
-	if (is_aband) {
-		unlink(sku_file);
-		
-		snprintf(sku_link, sizeof(sku_link), "%s/SingleSKU%s.dat", "/etc/storage/wlan", "_5G");
-		if (!check_if_file_exist(sku_link)) {
-			int sku_exist = 0;
-			char *spec_fallback = "CE";
-			
-			if (strcasecmp(p_str, "US") == 0 ||
-			    strcasecmp(p_str, "TW") == 0 ||
-			    strcasecmp(p_str, "JP") == 0 || // Use FCC fallback rule yet
-			    strcasecmp(p_str, "DB") == 0) {
-				if (strcasecmp(regspec, "NCC") == 0)
-					sku_exist = check_sku_file_exist("_5G", "NCC", sku_link, sizeof(sku_link));
-				else if (strcasecmp(regspec, "SG") == 0)
-					sku_exist = check_sku_file_exist("_5G", "SG", sku_link, sizeof(sku_link));
-				else if (strcasecmp(regspec, "AU") == 0)
-					sku_exist = check_sku_file_exist("_5G", "AU", sku_link, sizeof(sku_link));
-				
-				if (!sku_exist)
-					sku_exist = check_sku_file_exist("_5G", "FCC", sku_link, sizeof(sku_link));
-			}
-			
-			if (!sku_exist)
-				check_sku_file_exist("_5G", spec_fallback, sku_link, sizeof(sku_link));
-		}
-		
-		if (check_if_file_exist(sku_link))
-			symlink(sku_link, sku_file);
-	}
+	if (is_aband)
+		symlink_sku_file(sku_file, "_5G", p_str, i_val, 1);
 
 	//CountryCode
 	p_str = nvram_wlan_get(is_aband, "country_code");

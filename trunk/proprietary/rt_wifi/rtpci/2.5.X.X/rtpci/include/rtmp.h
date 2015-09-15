@@ -3448,10 +3448,8 @@ struct _RTMP_ADAPTER
 	BOOLEAN					flg_apcli_init;
 #endif // APCLI_SUPPORT //
 
-//#ifdef AUTO_CH_SELECT_ENHANCE
 	PBSSINFO				pBssInfoTab;
 	PCHANNELINFO			pChannelInfo;
-//#endif // AUTO_CH_SELECT_ENHANCE //
 
 
 #endif // CONFIG_AP_SUPPORT //

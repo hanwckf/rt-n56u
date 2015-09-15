@@ -52,10 +52,8 @@ int rt28xx_init(
 #ifdef CONFIG_AP_SUPPORT	
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	{
-//#ifdef AUTO_CH_SELECT_ENHANCE
 		AutoChBssTableInit(pAd);
 		ChannelInfoInit(pAd);
-//#endif // AUTO_CH_SELECT_ENHANCE //
 	}
 #endif // CONFIG_AP_SUPPORT //
 

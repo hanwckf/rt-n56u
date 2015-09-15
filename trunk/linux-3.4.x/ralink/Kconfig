@@ -8,7 +8,7 @@ source "drivers/net/rt_rdm/Kconfig"
 #############
 # Switch
 #############
-if !(RALINK_RT5350)
+if !(RALINK_RT5350 || RALINK_MT7628)
 menu "External Ethernet Giga-Switch"
 source "drivers/net/rtl8367/Kconfig"
 endmenu
@@ -41,6 +41,10 @@ choice
 	bool "MT7620 APSoC (RLT driver 3.0.x.x)"
 	depends on RALINK_MT7620
 
+	config RT_FIRST_IF_MT7628
+	bool "MT7628 APSoC (MT driver 4.0.x.x)"
+	depends on RALINK_MT7628
+
 	config RT_FIRST_IF_RT3090
 	bool "RT3092 PCIe"
 	depends on RALINK_MT7621
@@ -61,16 +65,20 @@ choice
 	bool "MT7610E PCIe"
 	depends on RALINK_MT7621
 
-	config RT_FIRST_IF_MT7612E
-	bool "MT7612E PCIe"
-	depends on RALINK_MT7621
-
 	config RT_FIRST_IF_MT7602E
 	bool "MT7602E PCIe"
 	depends on RALINK_MT7621
 
+	config RT_FIRST_IF_MT7612E
+	bool "MT7612E PCIe"
+	depends on RALINK_MT7621
+
 	config RT_FIRST_IF_MT7603E
 	bool "MT7603E PCIe"
+	depends on RALINK_MT7621
+
+	config RT_FIRST_IF_MT7615E
+	bool "MT7615E PCIe"
 	depends on RALINK_MT7621
 endchoice
 
@@ -80,11 +88,10 @@ choice
 
 	config RT_FIRST_IF_RANGE_2GHZ
 	bool "2.4 GHz"
-	depends on !(RT_FIRST_IF_MT7610E)
 
 	config RT_FIRST_IF_RANGE_5GHZ
 	bool "5GHz"
-	depends on !(RT_FIRST_IF_RT3090 || RT_FIRST_IF_RT5392 || RT_FIRST_IF_MT7602E || RT_FIRST_IF_MT7603E)
+	depends on (RT_FIRST_IF_RT2860 || RT_FIRST_IF_RT5592 || RT_FIRST_IF_RT3593 || RT_FIRST_IF_MT7610E || RT_FIRST_IF_MT7612E || RT_FIRST_IF_MT7615E)
 endchoice
 
 choice
@@ -96,11 +103,11 @@ choice
 
 	config RT_FIRST_IF_EEPROM_EFUSE
 	bool "eFUSE on-die"
-	depends on !(RT_FIRST_IF_RT2860)
+	depends on !(RT_FIRST_IF_RT2860 || RT_FIRST_IF_MT7620 || RT_FIRST_IF_MT7628)
 
 	config RT_FIRST_IF_EEPROM_PROM
 	bool "EEPROM chip"
-	depends on !(RT_FIRST_IF_RT2860)
+	depends on !(RT_FIRST_IF_RT2860 || RT_FIRST_IF_MT7620 || RT_FIRST_IF_MT7628)
 endchoice
 
 config  RT_FIRST_IF_RF_OFFSET
@@ -117,10 +124,12 @@ config  RT_FIRST_CARD
 	default 5592 if RT_FIRST_IF_RT5592
 	default 3593 if RT_FIRST_IF_RT3593
 	default 7620 if RT_FIRST_IF_MT7620
+	default 7628 if RT_FIRST_IF_MT7628
 	default 7610 if RT_FIRST_IF_MT7610E
-	default 7612 if RT_FIRST_IF_MT7612E
 	default 7602 if RT_FIRST_IF_MT7602E
+	default 7612 if RT_FIRST_IF_MT7612E
 	default 7603 if RT_FIRST_IF_MT7603E
+	default 7615 if RT_FIRST_IF_MT7615E
 
 config RT_FIRST_CARD_EEPROM
 	string
@@ -154,14 +163,17 @@ choice
 	config RT_SECOND_IF_MT7610E
 	bool "MT7610E PCIe"
 
-	config RT_SECOND_IF_MT7612E
-	bool "MT7612E PCIe"
-
 	config RT_SECOND_IF_MT7602E
 	bool "MT7602E PCIe"
 
+	config RT_SECOND_IF_MT7612E
+	bool "MT7612E PCIe"
+
 	config RT_SECOND_IF_MT7603E
 	bool "MT7603E PCIe"
+
+	config RT_SECOND_IF_MT7615E
+	bool "MT7615E PCIe"
 endchoice
 
 choice
@@ -170,11 +182,10 @@ choice
 
 	config RT_SECOND_IF_RANGE_2GHZ
 	bool "2.4 GHz"
-	depends on !(RT_SECOND_IF_MT7610E)
 
 	config RT_SECOND_IF_RANGE_5GHZ
 	bool "5GHz"
-	depends on !(RT_SECOND_IF_RT3090 || RT_SECOND_IF_RT5392 || RT_SECOND_IF_MT7602E || RT_SECOND_IF_MT7603E)
+	depends on (RT_SECOND_IF_RT5592 || RT_SECOND_IF_RT3593 || RT_SECOND_IF_MT7610E || RT_SECOND_IF_MT7612E || RT_SECOND_IF_MT7615E)
 endchoice
 
 choice
@@ -205,9 +216,10 @@ config  RT_SECOND_CARD
 	default 5592 if RT_SECOND_IF_RT5592
 	default 3593 if RT_SECOND_IF_RT3593
 	default 7610 if RT_SECOND_IF_MT7610E
-	default 7612 if RT_SECOND_IF_MT7612E
 	default 7602 if RT_SECOND_IF_MT7602E
+	default 7612 if RT_SECOND_IF_MT7612E
 	default 7603 if RT_SECOND_IF_MT7603E
+	default 7615 if RT_SECOND_IF_MT7615E
 
 config RT_SECOND_CARD_EEPROM
 	string
@@ -263,58 +275,71 @@ choice
 	bool "3T3R (RT3883)"
 endchoice
 
-menu "AP MODE Ralink RT3xxx/RT5xxx/MT7620 APSoC Wireless Driver"
-source "drivers/net/wireless/rt2860v2_ap/Kconfig"
+menu "AP MODE Ralink RT3xxx/RT5xxx/MT7620 APSoC Wireless driver"
+source "drivers/net/wireless/ralink/rt2860v2_ap/Kconfig"
 endmenu
 endif
 
 if (RT_SECOND_IF_RT3352_INIC)
-menu "AP MODE Ralink RT3352 iNIC MII Wireless Driver"
-source "drivers/net/wireless/rt3352_mii/Kconfig"
+menu "AP MODE Ralink RT3352 iNIC MII Wireless driver"
+source "drivers/net/wireless/ralink/rt3352_mii/Kconfig"
 endmenu
 endif
 
 if (RT_FIRST_IF_RT3090 || RT_SECOND_IF_RT3090)
-menu "AP MODE Ralink RT309x PCIe Wireless Driver"
-source "drivers/net/wireless/rt3090_ap/Kconfig"
+menu "AP MODE Ralink RT309x PCIe Wireless driver"
+source "drivers/net/wireless/ralink/rt3090_ap/Kconfig"
 endmenu
 endif
 
 if (RT_FIRST_IF_RT5392 || RT_SECOND_IF_RT5392)
-menu "AP MODE Ralink RT5392 PCIe Wireless Driver"
-source "drivers/net/wireless/rt5392_ap/Kconfig"
+menu "AP MODE Ralink RT5392 PCIe Wireless driver"
+source "drivers/net/wireless/ralink/rt5392_ap/Kconfig"
 endmenu
 endif
 
 if (RT_FIRST_IF_RT5592 || RT_SECOND_IF_RT5592)
-menu "AP MODE Ralink RT5592 PCIe Wireless Driver"
-source "drivers/net/wireless/rt5592_ap/Kconfig"
+menu "AP MODE Ralink RT5592 PCIe Wireless driver"
+source "drivers/net/wireless/ralink/rt5592_ap/Kconfig"
 endmenu
 endif
 
 if (RT_FIRST_IF_RT3593 || RT_SECOND_IF_RT3593)
-menu "AP MODE Ralink RT3593 PCIe Wireless Driver"
-source "drivers/net/wireless/rt3593_ap/Kconfig"
+menu "AP MODE Ralink RT3593 PCIe Wireless driver"
+source "drivers/net/wireless/ralink/rt3593_ap/Kconfig"
 endmenu
 endif
 
 if (RT_FIRST_IF_MT7610E || RT_SECOND_IF_MT7610E)
-menu "AP MODE MediaTek MT7610E PCIe Wireless Driver"
-source "drivers/net/wireless/mt7610_ap/Kconfig"
+menu "AP MODE MediaTek MT7610E PCIe Wireless driver"
+source "drivers/net/wireless/ralink/mt7610_ap/Kconfig"
 endmenu
 endif
 
 if (RT_FIRST_IF_MT7620 || RT_FIRST_IF_MT7612E || RT_FIRST_IF_MT7602E || RT_SECOND_IF_MT7612E || RT_SECOND_IF_MT7602E)
 menu "AP MODE MediaTek MT7620/MT7602E/MT7612E RBUS/PCIe Wireless driver"
-source "drivers/net/wireless/mt76x2_ap/Kconfig"
+source "drivers/net/wireless/ralink/mt76x2_ap/Kconfig"
+endmenu
+endif
+
+if (RT_FIRST_IF_MT7628)
+menu "AP MODE MediaTek MT7628/MT7688 RBUS Wireless driver"
+#source "drivers/net/wireless/ralink/mt7628_ap/Kconfig"
 endmenu
 endif
 
 if (RT_FIRST_IF_MT7603E || RT_SECOND_IF_MT7603E)
-menu "AP MODE MediaTek MT7603E PCIe Wireless Driver"
-source "drivers/net/wireless/mt76x3_ap/Kconfig"
+menu "AP MODE MediaTek MT7603E PCIe Wireless driver"
+source "drivers/net/wireless/ralink/mt76x3_ap/Kconfig"
 endmenu
 endif
+
+if (!RT_FIRST_IF_NONE || !RT_SECOND_IF_NONE)
+menu "Wireless drivers common configs"
+source "drivers/net/wireless/ralink/Kconfig"
+endmenu
+endif
+
 endmenu
 
 #######

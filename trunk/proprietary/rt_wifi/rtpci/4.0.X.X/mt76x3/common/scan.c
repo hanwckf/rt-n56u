@@ -118,8 +118,8 @@ static INT scan_ch_restore(RTMP_ADAPTER *pAd, UCHAR OpMode)
        AsicSwitchChannel(pAd, ch, FALSE); 
        AsicLockChannel(pAd, ch);
 
-	printk("SYNC - End of SCAN, restore to %dMHz channel %d, Total BSS[%02d]\n",
-				bw, ch, pAd->ScanTab.BssNr);
+	DBGPRINT(RT_DEBUG_TRACE, ("SYNC - End of SCAN, restore to %dMHz channel %d, Total BSS[%02d]\n",
+				bw, ch, pAd->ScanTab.BssNr));
 		
 
 		

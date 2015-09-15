@@ -22,8 +22,8 @@
 #define ETHER_ADDR_LEN		6
 #endif
 
-#if (BOARD_RAM_SIZE > 32)
-#define MAX_NUMBER_OF_MAC	64
+#if defined (CONFIG_RT_MAX_CLIENTS)
+#define MAX_NUMBER_OF_MAC	CONFIG_RT_MAX_CLIENTS
 #else
 #define MAX_NUMBER_OF_MAC	32
 #endif

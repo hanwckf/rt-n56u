@@ -1,5 +1,5 @@
 EXTRA_CFLAGS = -Idrivers/net/wireless/rt2860v2/include
-ifeq ($(CONFIG_RT2860V2_STA_ATE),y)
+ifeq ($(CONFIG_RT_ATE),y)
 EXTRA_CFLAGS += -Idrivers/net/wireless/rt2860v2/ate/include
 endif
 
@@ -63,7 +63,7 @@ rt2860v2_sta-objs += ../rt2860v2/os/linux/rt_pci_rbus.o
 rt2860v2_sta-objs += ../rt2860v2/os/linux/rt_rbus_pci_util.o
 rt2860v2_sta-objs += ../rt2860v2/os/linux/rt_rbus_pci_drv.o
 
-ifeq ($(CONFIG_RT2860V2_STA_ATE),y)
+ifeq ($(CONFIG_RT_ATE),y)
 rt2860v2_sta-objs += ../rt2860v2/ate/common/rt_ate.o
 rt2860v2_sta-objs += ../rt2860v2/ate/common/rt_qa.o
 rt2860v2_sta-objs += ../rt2860v2/ate/common/ate_pci.o
@@ -79,14 +79,14 @@ ifeq ($(CONFIG_RT2860V2_STA_TXBF),y)
 rt2860v2_sta-objs += ../rt2860v2/common/cmm_txbf.o
 rt2860v2_sta-objs += ../rt2860v2/common/cmm_txbf_cal.o
 endif
-ifeq ($(CONFIG_RT2860V2_STA_ATE),y)
+ifeq ($(CONFIG_RT_ATE),y)
 rt2860v2_sta-objs += ../rt2860v2/ate/chips/rt3883_ate.o
 endif
 endif
 
 ifeq ($(CONFIG_RALINK_RT3052),y)
 rt2860v2_sta-objs += ../rt2860v2/chips/rt305x.o
-ifeq ($(CONFIG_RT2860V2_STA_ATE),y)
+ifeq ($(CONFIG_RT_ATE),y)
 rt2860v2_sta-objs += ../rt2860v2/ate/chips/rt305x_ate.o
 endif
 endif
@@ -94,7 +94,7 @@ endif
 ifeq ($(CONFIG_RALINK_RT3352),y)
 rt2860v2_sta-objs += ../rt2860v2/chips/rt305x.o
 rt2860v2_sta-objs += ../rt2860v2/chips/rt3352.o
-ifeq ($(CONFIG_RT2860V2_STA_ATE),y)
+ifeq ($(CONFIG_RT_ATE),y)
 rt2860v2_sta-objs += ../rt2860v2/ate/chips/rt305x_ate.o
 rt2860v2_sta-objs += ../rt2860v2/ate/chips/rt3352_ate.o
 endif
@@ -103,7 +103,7 @@ endif
 ifeq ($(CONFIG_RALINK_RT5350),y)
 rt2860v2_sta-objs += ../rt2860v2/chips/rt305x.o
 rt2860v2_sta-objs += ../rt2860v2/chips/rt5350.o
-ifeq ($(CONFIG_RT2860V2_STA_ATE),y)
+ifeq ($(CONFIG_RT_ATE),y)
 rt2860v2_sta-objs += ../rt2860v2/ate/chips/rt305x_ate.o
 rt2860v2_sta-objs += ../rt2860v2/ate/chips/rt5350_ate.o
 endif
@@ -113,7 +113,7 @@ ifeq ($(CONFIG_RALINK_MT7620),y)
 rt2860v2_sta-objs += ../rt2860v2/chips/rt6352.o
 rt2860v2_sta-objs += ../rt2860v2/common/cmm_rf_cal.o
 rt2860v2_sta-objs += ../rt2860v2/common/cmm_loft_cal.o
-ifeq ($(CONFIG_RT2860V2_STA_ATE),y)
+ifeq ($(CONFIG_RT_ATE),y)
 rt2860v2_sta-objs += ../rt2860v2/ate/chips/rt6352_ate.o
 endif
 endif
@@ -122,7 +122,7 @@ ifeq ($(CONFIG_RT2860V2_STA_LED),y)
 rt2860v2_sta-objs += ../rt2860v2/common/rt_led.o
 endif
 
-ifeq ($(CONFIG_RT2860V2_STA_WAPI),y)
+ifeq ($(CONFIG_RT_WAPI),y)
 rt2860v2_sta-objs += ../rt2860v2/common/wapi.o
 rt2860v2_sta-objs += ../rt2860v2/common/wapi_sms4.obj
 rt2860v2_sta-objs += ../rt2860v2/common/wapi_crypt.obj
@@ -132,17 +132,17 @@ ifeq ($(CONFIG_RT2860V2_STA_DLS),y)
 rt2860v2_sta-objs += ../rt2860v2/sta/dls.o
 endif
 
-ifeq ($(CONFIG_RT2860V2_STA_WSC),y)
+ifeq ($(CONFIG_RT_WSC),y)
 rt2860v2_sta-objs += ../rt2860v2/common/wsc.o
 rt2860v2_sta-objs += ../rt2860v2/common/wsc_tlv.o
 rt2860v2_sta-objs += ../rt2860v2/common/crypt_biginteger.o
 rt2860v2_sta-objs += ../rt2860v2/common/crypt_dh.o
-ifeq ($(CONFIG_RT2860V2_STA_WSC_V2),y)
+ifeq ($(CONFIG_RT_WSC_V2),y)
 rt2860v2_sta-objs += ../rt2860v2/common/wsc_v2.o
 endif
 endif
 
-ifeq ($(CONFIG_RT2860V2_STA_VIDEO_TURBINE),y)
+ifeq ($(CONFIG_RT_VIDEO_TURBINE),y)
 rt2860v2_sta-objs += ../rt2860v2/common/cmm_video.o
 endif
 
@@ -267,16 +267,16 @@ EXTRA_CFLAGS += -DRT6352_EP_SUPPORT -DRT6352_EL_SUPPORT
 endif
 endif
 
-ifeq ($(CONFIG_RT2860V2_STA_DBG),y)
+ifeq ($(CONFIG_RT_DEBUG),y)
 EXTRA_CFLAGS += -DDBG -DRELEASE_EXCLUDE
 EXTRA_CFLAGS += -DSYSTEM_LOG_SUPPORT
 endif
 
-ifeq ($(CONFIG_RT2860V2_STA_ATE),y)
+ifeq ($(CONFIG_RT_ATE),y)
 EXTRA_CFLAGS += -DRALINK_ATE -DRALINK_QA -DCONFIG_RT2880_ATE_CMD_NEW
 endif
 
-ifeq ($(CONFIG_RT2860V2_STA_READ_MAC_FROM_MTD),y)
+ifeq ($(CONFIG_RT_READ_MAC_FROM_MTD),y)
 EXTRA_CFLAGS += -DREAD_MAC_FROM_EEPROM
 endif
 
@@ -286,7 +286,7 @@ endif
 
 ifeq ($(CONFIG_RT2860V2_STA_LED),y)
 EXTRA_CFLAGS += -DLED_CONTROL_SUPPORT
-ifeq ($(CONFIG_RT2860V2_STA_WSC),y)
+ifeq ($(CONFIG_RT_WSC),y)
 EXTRA_CFLAGS += -DWSC_LED_SUPPORT
 endif
 endif
@@ -307,7 +307,7 @@ ifeq ($(CONFIG_RT2860V2_STA_DLS),y)
 EXTRA_CFLAGS += -DQOS_DLS_SUPPORT
 endif
 
-ifeq ($(CONFIG_RT2860V2_STA_WAPI),y)
+ifeq ($(CONFIG_RT_WAPI),y)
 EXTRA_CFLAGS += -DWAPI_SUPPORT
 ifeq ($(CONFIG_RALINK_RT3052),y)
 EXTRA_CFLAGS += -DSOFT_ENCRYPT
@@ -318,14 +318,14 @@ ifeq ($(CONFIG_RT2860V2_STA_ANTENNA_DIVERSITY),y)
 EXTRA_CFLAGS += -DHW_ANTENNA_DIVERSITY_SUPPORT
 endif
 
-ifeq ($(CONFIG_RT2860V2_STA_WSC),y)
+ifeq ($(CONFIG_RT_WSC),y)
 EXTRA_CFLAGS += -DWSC_STA_SUPPORT
-ifeq ($(CONFIG_RT2860V2_STA_WSC_V2),y)
+ifeq ($(CONFIG_RT_WSC_V2),y)
 EXTRA_CFLAGS += -DWSC_V2_SUPPORT
 endif
 endif
 
-ifeq ($(CONFIG_RT2860V2_STA_VIDEO_TURBINE),y)
+ifeq ($(CONFIG_RT_VIDEO_TURBINE),y)
 EXTRA_CFLAGS += -DVIDEO_TURBINE_SUPPORT
 endif
 
@@ -333,11 +333,11 @@ ifeq ($(CONFIG_RT2860V2_STA_RTMP_INTERNAL_TX_ALC),y)
 EXTRA_CFLAGS += -DRTMP_INTERNAL_TX_ALC
 endif
 
-ifeq ($(CONFIG_RT2860V2_STA_80211N_DRAFT3),y)
+ifeq ($(CONFIG_RT_80211N_DRAFT3),y)
 EXTRA_CFLAGS += -DDOT11N_DRAFT3
 endif
 
-ifeq ($(CONFIG_RT2860V2_STA_SNMP),y)
+ifeq ($(CONFIG_RT_SNMP),y)
 EXTRA_CFLAGS += -DSNMP_SUPPORT
 endif
 

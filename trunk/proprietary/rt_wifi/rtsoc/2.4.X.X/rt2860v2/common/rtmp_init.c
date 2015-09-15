@@ -5285,7 +5285,6 @@ EXPORT_SYMBOL(MlmeEnqueueForWsc);
 #endif // WSC_STA_SUPPORT //
 #endif // WSC_INCLUDED //
 
-//#ifdef AUTO_CH_SELECT_ENHANCE
 #ifdef CONFIG_AP_SUPPORT
 EXPORT_SYMBOL(AutoChBssTableDestroy);
 EXPORT_SYMBOL(ChannelInfoDestroy);
@@ -5293,7 +5292,6 @@ EXPORT_SYMBOL(AutoChBssTableInit);
 EXPORT_SYMBOL(ChannelInfoInit);
 #endif // CONFIG_AP_SUPPORT //
 //EXPORT_SYMBOL(New_APAutoSelectChannel);
-//#endif // AUTO_CH_SELECT_ENHANCE //
 
 #ifdef DOT11_N_SUPPORT
 #ifdef CONFIG_AP_SUPPORT

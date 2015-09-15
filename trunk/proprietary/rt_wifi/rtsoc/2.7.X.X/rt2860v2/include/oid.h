@@ -66,11 +66,13 @@
 /*#define MAX_NUM_OF_CHS					49 */ /* 14 channels @2.4G +  12@UNII + 4 @MMAC + 11 @HiperLAN2 + 7 @Japan + 1 as NULL terminationc */
 /*#define MAX_NUM_OF_CHS             		54 */ /* 14 channels @2.4G +  12@UNII(lower/middle) + 16@HiperLAN2 + 11@UNII(upper) + 0 @Japan + 1 as NULL termination */
 #define MAX_NUMBER_OF_EVENT				10	/* entry # in EVENT table */
-#if (CONFIG_RALINK_RAM_SIZE > 32)
-#define MAX_NUMBER_OF_MAC				64	/* if MAX_MBSSID_NUM is 8, this value can't be larger than 211 */
+
+#ifdef CONFIG_RT_MAX_CLIENTS
+#define MAX_NUMBER_OF_MAC			CONFIG_RT_MAX_CLIENTS
 #else
-#define MAX_NUMBER_OF_MAC				32
+#define MAX_NUMBER_OF_MAC			32
 #endif
+
 #define MAX_NUMBER_OF_ACL				64
 #define MAX_LENGTH_OF_SUPPORT_RATES		12	/* 1, 2, 5.5, 11, 6, 9, 12, 18, 24, 36, 48, 54 */
 #define MAX_NUMBER_OF_DLS_ENTRY			4

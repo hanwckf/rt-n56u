@@ -5,8 +5,8 @@ ULONG	RTDebugFunc = 0;
 
 #ifdef RTMP_RBUS_SUPPORT
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-#include "../../../../../../net/nat/hw_nat/ra_nat.h"
-#include "../../../../../../net/nat/hw_nat/frame_engine.h"
+#include "../../../../../../../net/nat/hw_nat/ra_nat.h"
+#include "../../../../../../../net/nat/hw_nat/frame_engine.h"
 #endif
 #endif // RTMP_RBUS_SUPPORT //
 

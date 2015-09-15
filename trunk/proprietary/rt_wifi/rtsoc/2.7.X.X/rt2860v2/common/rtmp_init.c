@@ -4074,8 +4074,8 @@ VOID	UserCfgInit(
 	if (pAd->OpMode == OPMODE_AP)
 		pAd->CommonCfg.MO_Cfg.bEnable = TRUE;
 	else
-		pAd->CommonCfg.MO_Cfg.bEnable = FALSE;
 #endif /* MICROWAVE_OVEN_SUPPORT */
+		pAd->CommonCfg.MO_Cfg.bEnable = FALSE;
 #ifdef DYNAMIC_VGA_SUPPORT
 	pAd->CommonCfg.MO_Cfg.bDyncVGAEnable = TRUE;
 #endif /* DYNAMIC_VGA_SUPPORT */

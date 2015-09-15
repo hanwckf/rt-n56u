@@ -5359,12 +5359,10 @@ EXPORT_SYMBOL(MlmeEnqueueForWsc);
 #endif // WSC_INCLUDED //
 
 #ifdef CONFIG_AP_SUPPORT
-//#ifdef AUTO_CH_SELECT_ENHANCE
 EXPORT_SYMBOL(AutoChBssTableDestroy);
 EXPORT_SYMBOL(ChannelInfoDestroy);
 EXPORT_SYMBOL(AutoChBssTableInit);
 EXPORT_SYMBOL(ChannelInfoInit);
-//#endif // AUTO_CH_SELECT_ENHANCE //
 #endif // CONFIG_AP_SUPPORT //
 
 #ifdef DOT11_N_SUPPORT

@@ -1009,14 +1009,12 @@ VOID APPeerBeaconAction(
 	// sanity check fail, ignore this frame
 
 __End_Of_APPeerBeaconAction:
-//#ifdef AUTO_CH_SELECT_ENHANCE
 	if (Channel == pAd->ApCfg.AutoChannel_Channel)
 	{
 		if (AutoChBssSearchWithSSID(pAd, Bssid, (PUCHAR)Ssid, SsidLen, Channel) == BSS_NOT_FOUND)
 			pAd->pChannelInfo->ApCnt[pAd->ApCfg.current_channel_index]++;
 		AutoChBssInsertEntry(pAd, Bssid, Ssid, SsidLen, Channel, NewExtChannelOffset, RealRssi);
 	}
-//#endif // AUTO_CH_SELECT_ENHANCE //
 	return;
 }
 

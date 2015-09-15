@@ -33,6 +33,12 @@
 #include "rc.h"
 #include "switch.h"
 
+#if BOARD_RAM_SIZE < 32
+#define SHRINK_TX_QUEUE_LEN	(300)
+#elif BOARD_RAM_SIZE < 64
+#define SHRINK_TX_QUEUE_LEN	(600)
+#endif
+
 static char udhcpc_lan_state[16] = {0};
 
 in_addr_t get_lan_ip4(void)
@@ -104,6 +110,9 @@ init_bridge(int is_ap_mode)
 		phy_bridge_mode(SWAPI_WAN_BRIDGE_DISABLE_WAN, SWAPI_WAN_BWAN_ISOLATION_NONE);
 	}
 
+#if BOARD_RAM_SIZE < 64
+	doSystem("ifconfig %s txqueuelen %d", IFNAME_MAC, SHRINK_TX_QUEUE_LEN);
+#endif
 	doSystem("ifconfig %s hw ether %s", IFNAME_MAC, lan_hwaddr);
 	ifconfig(IFNAME_MAC, IFUP, NULL, NULL);
 
@@ -201,6 +210,7 @@ init_bridge(int is_ap_mode)
 	doSystem("modprobe iNIC_mii miimaster=%s mode=%s syncmiimac=%d bridge=%d max_fw_upload=%d", IFNAME_MAC, "ap", 0, 1, 10);
 #endif
 
+
 #if BOARD_2G_IN_SOC
 	start_wifi_ap_rt(rt_radio_on);
 	start_wifi_wds_rt(rt_radio_on);
@@ -231,6 +241,16 @@ init_bridge(int is_ap_mode)
 #endif
 
 	sleep(1);
+
+#if BOARD_RAM_SIZE < 64
+	doSystem("ifconfig %s txqueuelen %d", IFNAME_2G_MAIN, SHRINK_TX_QUEUE_LEN);
+	doSystem("ifconfig %s txqueuelen %d", IFNAME_2G_GUEST, SHRINK_TX_QUEUE_LEN);
+	doSystem("ifconfig %s txqueuelen %d", IFNAME_2G_APCLI, SHRINK_TX_QUEUE_LEN);
+	doSystem("ifconfig %s txqueuelen %d", IFNAME_2G_WDS0, SHRINK_TX_QUEUE_LEN);
+	doSystem("ifconfig %s txqueuelen %d", IFNAME_2G_WDS1, SHRINK_TX_QUEUE_LEN);
+	doSystem("ifconfig %s txqueuelen %d", IFNAME_2G_WDS2, SHRINK_TX_QUEUE_LEN);
+	doSystem("ifconfig %s txqueuelen %d", IFNAME_2G_WDS3, SHRINK_TX_QUEUE_LEN);
+#endif
 
 	ifconfig(IFNAME_BR, IFUP, NULL, NULL);
 

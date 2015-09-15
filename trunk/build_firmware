@@ -146,11 +146,24 @@ rm -rf "$dir_wifi_dst/mt76x2"
 rm -rf "$dir_wifi_dst/mt76x3"
 if [ -n "$CONFIG_RT2860V2_AP" ] ; then
 	dir_wifi_ver="2.7.X.X"
-	if [ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "2.4" ] && [ "$CONFIG_RALINK_RT3883" = "y" ] ; then
+	if [ "$CONFIG_RALINK_RT3883" = "y" ] && [ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "2.4" ] ; then
 		dir_wifi_ver="2.4.X.X"
 	fi
-	cp -rfL "$dir_wifi_src/rtsoc/$dir_wifi_ver/rt2860v2" "$dir_wifi_dst/"
-	cp -rfL "$dir_wifi_src/rtsoc/$dir_wifi_ver/rt2860v2_ap" "$dir_wifi_dst/"
+	if [ "$CONFIG_RALINK_MT7620" = "y" ] ; then
+		if [ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "3.0" ] && [ -n "$CONFIG_MT76X2_AP" ] ; then
+			func_disable_kernel_param "CONFIG_RT_FIRST_IF_RT2860"
+			func_enable_kernel_param "CONFIG_RT_FIRST_IF_MT7620"
+			CONFIG_RT_FIRST_IF_RT2860=""
+		else
+			func_enable_kernel_param "CONFIG_RT_FIRST_IF_RT2860"
+			func_disable_kernel_param "CONFIG_RT_FIRST_IF_MT7620"
+			CONFIG_RT_FIRST_IF_RT2860=y
+		fi
+	fi
+	if [ "$CONFIG_RT_FIRST_IF_RT2860" = "y" ] ; then
+		cp -rfL "$dir_wifi_src/rtsoc/$dir_wifi_ver/rt2860v2" "$dir_wifi_dst/"
+		cp -rfL "$dir_wifi_src/rtsoc/$dir_wifi_ver/rt2860v2_ap" "$dir_wifi_dst/"
+	fi
 fi
 if [ -n "$CONFIG_RT3090_AP" ] ; then
 	dir_wifi_ver="2.7.X.X"

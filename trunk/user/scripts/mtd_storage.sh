@@ -31,6 +31,17 @@ func_mdir()
 	[ ! -d "$dir_storage" ] && mkdir -p -m 755 $dir_storage
 }
 
+func_stop_apps()
+{
+	killall -q rstats
+	[ $? -eq 0 ] && sleep 1
+}
+
+func_start_apps()
+{
+	/sbin/rstats
+}
+
 func_load()
 {
 	local fsz
@@ -139,12 +150,16 @@ func_restore()
 		return 1
 	fi
 
+	func_stop_apps
+
 	rm -f $slk
 	rm -f $tbz
 	rm -rf $dir_storage
 	mkdir -p -m 755 $dir_storage
 	cp -rf $tmp_storage /etc
 	rm -rf $tmp_storage
+
+	func_start_apps
 }
 
 func_erase()
@@ -562,8 +577,10 @@ erase)
 	func_erase
 	;;
 reset)
+	func_stop_apps
 	func_reset
 	func_fill
+	func_start_apps
 	;;
 fill)
 	func_mdir

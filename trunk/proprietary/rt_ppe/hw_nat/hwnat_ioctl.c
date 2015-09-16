@@ -569,7 +569,7 @@ PpeSetRuleSize(uint16_t pre_acl, uint16_t pre_meter, uint16_t pre_ac,
 int PpeSetBindThreshold(uint32_t threshold)
 {
 	/* Set reach bind rate for unbind state */
-	RegWrite(PPE_FOE_BNDR, threshold);
+	RegModifyBits(PPE_FOE_BNDR, threshold, 0, 16);
 
 	return HWNAT_SUCCESS;
 }

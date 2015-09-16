@@ -994,7 +994,10 @@ static void mt76x2_switch_channel(RTMP_ADAPTER *ad, u8 channel, BOOLEAN scan)
 	/* Change MAC OFDM SIFS according to BW */
 	RTMP_IO_READ32(ad, XIFS_TIME_CFG, &RegValue);
 	RegValue = RegValue & (~XIFS_TIME_OFDM_SIFS_MASK);
-	if ((WMODE_CAP_AC(ad->CommonCfg.PhyMode) && (ad->CommonCfg.vht_ldpc == TRUE)) ||
+	if (
+#ifdef DOT11_VHT_AC
+		(WMODE_CAP_AC(ad->CommonCfg.PhyMode) && (ad->CommonCfg.vht_ldpc == TRUE)) ||
+#endif
 		(WMODE_CAP_N(ad->CommonCfg.PhyMode) && (ad->CommonCfg.ht_ldpc == TRUE)))
 	{
 		if (bw == 0)

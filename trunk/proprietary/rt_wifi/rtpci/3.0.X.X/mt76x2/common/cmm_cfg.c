@@ -341,10 +341,12 @@ INT RT_CfgSetWirelessMode(RTMP_ADAPTER *pAd, PSTRING arg)
 	}
 
 #ifdef MT76x2
+#ifdef DOT11_VHT_AC
 	if (pChipCap->ac_off_mode && WMODE_CAP_AC(wmode)) {
 		DBGPRINT(RT_DEBUG_ERROR, ("it doesn't support VHT AC!\n"));
 		wmode &= ~(WMODE_AC);
 	}
+#endif /* DOT11_VHT_AC */
 #endif /* MT76x2 */
 
 	if (wmode_band_equal(pAd->CommonCfg.PhyMode, wmode) == TRUE)
@@ -432,10 +434,12 @@ INT RT_CfgSetMbssWirelessMode(RTMP_ADAPTER *pAd, PSTRING arg)
 
 
 #ifdef MT76x2
+#ifdef DOT11_VHT_AC
 	if (pChipCap->ac_off_mode && WMODE_CAP_AC(wmode)) {
 		DBGPRINT(RT_DEBUG_ERROR, ("it doesn't support VHT AC!\n"));
 		wmode &= ~(WMODE_AC);
 	}
+#endif /* DOT11_VHT_AC */
 #endif /* MT76x2 */
 
 	if (pAd->ApCfg.BssidNum > 1)

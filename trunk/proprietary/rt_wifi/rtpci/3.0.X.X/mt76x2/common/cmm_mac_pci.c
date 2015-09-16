@@ -358,6 +358,16 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 		pRxRing = &pAd->RxRing[num];
 
 		NdisZeroMemory(pDescRing->AllocVa, pDescRing->AllocSize);
+
+#ifdef RTMP_MAC
+		if (pAd->chipCap.hif_type == HIF_RTMP && num > 0)
+		{
+			/* RTMP has one RX ring, skip skb allocation for second ring (save RAM) */
+			NdisZeroMemory(pRxRing->Cell, RX_RING_SIZE * sizeof(RTMP_DMACB));
+			continue;
+		}
+#endif /* RTMP_MAC */
+
 		DBGPRINT(RT_DEBUG_OFF,  ("RX[%d] DESC %p size = %ld\n", 
 					num, pDescRing->AllocVa, pDescRing->AllocSize));
 
@@ -835,6 +845,14 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 				Status = NDIS_STATUS_RESOURCES;
 				break;
 			}
+#ifdef RTMP_MAC
+			if (pAd->chipCap.hif_type == HIF_RTMP && num > 0)
+			{
+				/* RTMP has one RX ring, skip skb allocation for second ring (save RAM) */
+				NdisZeroMemory(pAd->RxRing[num].Cell, RX_RING_SIZE * sizeof(RTMP_DMACB));
+				continue;
+			}
+#endif /* RTMP_MAC */
 			DBGPRINT(RT_DEBUG_OFF, ("RxDescRing[%p]: total %d bytes allocated\n",
 						pAd->RxDescRing[num].AllocVa, (INT)pAd->RxDescRing[num].AllocSize));
 		

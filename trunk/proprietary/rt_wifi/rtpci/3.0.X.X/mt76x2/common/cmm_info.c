@@ -6643,14 +6643,14 @@ INT show_trinfo_proc(RTMP_ADAPTER *pAd, PSTRING arg)
 									0, pAd->MgmtRing.hw_desc_base, mbase[0], mcnt[0], mcidx[0], mdidx[0]));
 
 #ifdef RLT_MAC
+		if (pAd->chipCap.hif_type == HIF_RLT) {
 #ifdef CONFIG_ANDES_SUPPORT
-		DBGPRINT(RT_DEBUG_OFF, ("\nCtrlRing Configuration\n"));
-		DBGPRINT(RT_DEBUG_OFF, ("\tRingIdx Reg \tBase \tCnt \tCIDX \tDIDX\n"));
-		DBGPRINT(RT_DEBUG_OFF, ("\t%d \t0x%04x \t0x%08x \t0x%x \t0x%x \t0x%x\n",
+			DBGPRINT(RT_DEBUG_OFF, ("\nCtrlRing Configuration\n"));
+			DBGPRINT(RT_DEBUG_OFF, ("\tRingIdx Reg \tBase \tCnt \tCIDX \tDIDX\n"));
+			DBGPRINT(RT_DEBUG_OFF, ("\t%d \t0x%04x \t0x%08x \t0x%x \t0x%x \t0x%x\n",
 									1, pAd->CtrlRing.hw_desc_base, mbase[1], mcnt[1], mcidx[1], mdidx[1]));
 #endif /* CONFIG_ANDES_SUPPORT */
 
-		if (pAd->chipCap.hif_type == HIF_RLT) {
 			DBGPRINT(RT_DEBUG_OFF, ("\nPBF Configuration\n"
 									"\tRLT_PBF_CFG: 0x%08x\n", pbf_val));
 			DBGPRINT(RT_DEBUG_OFF, ("\tPCNT_CFG:\n"

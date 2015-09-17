@@ -211,7 +211,25 @@ dir_ppe_src="$ROOTDIR/proprietary/rt_ppe"
 dir_ppe_dst="$ROOTDIR/$CONFIG_LINUXDIR/net/nat"
 rm -rf "$dir_ppe_dst/hw_nat"
 cp -rf "$dir_ppe_src/hw_nat" "$dir_ppe_dst/"
-###########################@# SMP ##@##################################
+############################# CPU #####################################
+if [ "$CONFIG_FIRMWARE_CPU_SLEEP" = "y" ] ; then
+	func_enable_kernel_param "CONFIG_RALINK_SYSTICK_COUNTER"
+	func_enable_kernel_param "CONFIG_RALINK_CPUSLEEP"
+fi
+if [ "$CONFIG_RALINK_MT7620" = "y" ] ; then
+	if [ "$CONFIG_FIRMWARE_CPU_600MHZ" = "y" ] ; then
+		func_enable_kernel_param "CONFIG_RALINK_MT7620_PLL600"
+	fi
+fi
+if [ "$CONFIG_RALINK_MT7621" = "y" ] ; then
+	if [ "$CONFIG_FIRMWARE_CPU_900MHZ" = "y" ] ; then
+		func_enable_kernel_param "CONFIG_RALINK_MT7621_PLL900"
+	fi
+	if [ "$CONFIG_FIRMWARE_CPU_SLEEP" = "y" ] ; then
+		func_disable_kernel_param "CONFIG_HIGH_RES_TIMERS"
+	fi
+fi
+############################# SMP #####################################
 if [ -n "$CONFIG_SMP" ] ; then
 	func_enable_busybox_param "CONFIG_FEATURE_TOP_SMP_CPU"
 	func_enable_busybox_param "CONFIG_FEATURE_TOP_SMP_PROCESS"

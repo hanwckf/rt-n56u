@@ -1107,7 +1107,11 @@ void RTMPInitLEDMode(IN RTMP_ADAPTER *pAd)
 		pLedCntl->LedPolarity = 0xA9F8;
 #endif /* RTMP_MAC_PCI */
 	}
-	
+
+	/* override disabled LED control */
+	if (pLedCntl->MCULedCntl.word == 0)
+		pLedCntl->MCULedCntl.word = 0x01;
+
 	AsicSendCommandToMcu(pAd, MCU_SET_LED_AG_CFG, 0xff, (UCHAR)pLedCntl->LedAGCfg, (UCHAR)(pLedCntl->LedAGCfg >> 8), FALSE);
 	AsicSendCommandToMcu(pAd, MCU_SET_LED_ACT_CFG, 0xff, (UCHAR)pLedCntl->LedACTCfg, (UCHAR)(pLedCntl->LedACTCfg >> 8), FALSE);
 	AsicSendCommandToMcu(pAd, MCU_SET_LED_POLARITY, 0xff, (UCHAR)pLedCntl->LedPolarity, (UCHAR)(pLedCntl->LedPolarity >> 8), FALSE);

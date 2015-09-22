@@ -1446,7 +1446,6 @@ static unsigned int sd_completed_bytes(struct scsi_cmnd *scmd)
 		return 0;
 
 	/* be careful ... don't want any overflows */
-	factor = scmd->device->sector_size / 512;
 	do_div(start_lba, factor);
 	do_div(end_lba, factor);
 

@@ -842,13 +842,13 @@ static unsigned int br_nf_forward_arp(unsigned int hook, struct sk_buff *skb,
 }
 #endif
 
-#if IS_ENABLED(CONFIG_NF_CONNTRACK_IPV4)
+#if IS_ENABLED(CONFIG_NF_DEFRAG_IPV4)
 static int br_nf_dev_queue_xmit(struct sk_buff *skb)
 {
 	int ret;
 
 	if (!skb_is_gso(skb) &&
-	    skb->nfct != NULL && skb->protocol == htons(ETH_P_IP) &&
+	    skb->protocol == htons(ETH_P_IP) &&
 	    skb->len + nf_bridge_mtu_reduction(skb) > skb->dev->mtu) {
 		if (br_parse_ip_options(skb))
 			/* Drop invalid packet */

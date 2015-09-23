@@ -2210,25 +2210,6 @@ static NDIS_STATUS AndesMTLoadFwMethod1(RTMP_ADAPTER *ad)
 
 	Ctl->Stage = FW_DOWNLOAD;
 
-	DBGPRINT(RT_DEBUG_OFF, ("FW Version:"));
-	for (loop = 0; loop < 10; loop++)
-		DBGPRINT(RT_DEBUG_OFF, ("%c", *(cap->FWImageName + cap->fw_len - 29 + loop)));
-	DBGPRINT(RT_DEBUG_OFF, ("\n"));
-
-	DBGPRINT(RT_DEBUG_OFF, ("FW Build Date:"));
-	for (loop = 0; loop < 15; loop++)
-		DBGPRINT(RT_DEBUG_OFF, ("%c", *(cap->FWImageName + cap->fw_len - 19 + loop)));
-	DBGPRINT(RT_DEBUG_OFF, ("\n"));
-
-	dl_len = (*(cap->FWImageName + cap->fw_len - 1) << 24) |
-				(*(cap->FWImageName + cap->fw_len - 2) << 16) |
-				(*(cap->FWImageName + cap->fw_len -3) << 8) |
-				*(cap->FWImageName + cap->fw_len - 4);
-
-	dl_len += 4; /* including crc value */
-
-	DBGPRINT(RT_DEBUG_INFO, ("\ndownload len = %d\n", dl_len));
-
 #ifdef RTMP_PCI_SUPPORT
 	if (IS_MT7603(ad))
 	{
@@ -2296,6 +2277,25 @@ static NDIS_STATUS AndesMTLoadFwMethod1(RTMP_ADAPTER *ad)
 		goto done;
 	}
 
+	printk("%s Andes FW Version: ", "MT7603");
+	for (loop = 0; loop < 10; loop++)
+		printk("%c", *(cap->FWImageName + cap->fw_len - 29 + loop));
+	printk("\n");
+
+	printk("%s Andes FW Build Date: ", "MT7603");
+	for (loop = 0; loop < 15; loop++)
+		printk("%c", *(cap->FWImageName + cap->fw_len - 19 + loop));
+	printk("\n");
+
+	dl_len = (*(cap->FWImageName + cap->fw_len - 1) << 24) |
+		 (*(cap->FWImageName + cap->fw_len - 2) << 16) |
+		 (*(cap->FWImageName + cap->fw_len - 3) << 8) |
+		  *(cap->FWImageName + cap->fw_len - 4);
+
+	dl_len += 4; /* including crc value */
+
+	DBGPRINT(RT_DEBUG_INFO, ("\ndownload len = %d\n", dl_len));
+
 	/* standard CMD procedure */
 	/* 1. Config PDA phase */
 	ret = CmdAddressLenReq(ad, FW_CODE_START_ADDRESS1, dl_len, TARGET_ADDR_LEN_NEED_RSP);
@@ -2326,7 +2326,7 @@ static NDIS_STATUS AndesMTLoadFwMethod1(RTMP_ADAPTER *ad)
 	if (loop == 500)
 	{
 		ret = NDIS_STATUS_FAILURE;
-		DBGPRINT(RT_DEBUG_OFF, ("firmware loading failure\n"));
+		printk("%s Andes FW loading failure!\n", "MT7603");
 		Ctl->Stage = FW_NO_INIT;
 	}
 	else

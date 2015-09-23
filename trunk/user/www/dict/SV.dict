@@ -660,7 +660,7 @@ OP_desc1=ZVMODELVZ stöder tre driftlägen för att möta olika krav. Välj det 
 PASS_new=Nytt lösenord:
 PASS_retype=Ange lösenordet igen:
 FW_desc1=Följ nedanstående instruktioner:
-FW_desc2=Kontrollera om det finns en ny version av den fasta programvaran på <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS webbplats</a>.
+FW_desc2=Kontrollera om det finns en ny version av den fasta programvaran på <a href="ZVDWURLVZ" target="blank">ASUS webbplats</a>.
 FW_desc3=Ladda ner lämplig version till din lokala maskin.
 FW_desc4=Ange sökväg och namn för den nedladdade filen i [Ny fast programvarufil]. 
 FW_desc5=Klicka på [Ladda upp] för att ladda upp filen till ZVMODELVZ. Uppladdningsprocessen tar ungefär 2-3 minuter.

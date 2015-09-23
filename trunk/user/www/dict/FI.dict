@@ -660,7 +660,7 @@ OP_desc1=ZVMODELVZ tukee kolmea käyttötilaa voidakseen vastata erilaisiin vaat
 PASS_new=Uusi salasana:
 PASS_retype=Kirjoita uusi salasana uudelleen:
 FW_desc1=Noudata seuraavia ohjeita:
-FW_desc2=Tarkista onko <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS-web-sivustolta</a> saatavana uusia laiteohjelmistoja.
+FW_desc2=Tarkista onko <a href="ZVDWURLVZ" target="blank">ASUS-web-sivustolta</a> saatavana uusia laiteohjelmistoja.
 FW_desc3=Lataa oikea versio paikalliselle koneellesi.
 FW_desc4=Määritä ladatun tiedoston polku ja nimi kohdassa [New Firmware File] (Uusi laiteohjelmistotiedosto). 
 FW_desc5=Napsauta [Upload] (Lähetä) ladataksesi tiedoston ZVMODELVZ-reitittimeen. Lataus kestää noin kolme minuuttia.

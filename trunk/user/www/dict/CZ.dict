@@ -662,7 +662,7 @@ OP_desc1=ZVMODELVZ podporuje 3 režimy provozu pro různé požadavky. Prosím v
 PASS_new=Nové heslo:
 PASS_retype=Zadejte nové heslo znovu:
 FW_desc1=Postupujte podle pokynů uvedených dále:
-FW_desc2=Zkontrolujte, zda není dostupná novější verze firmwaru na <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS Support site</a>
+FW_desc2=Zkontrolujte, zda není dostupná novější verze firmwaru na <a href="ZVDWURLVZ" target="blank">ASUS Support site</a>
 FW_desc3=Stáhněte správnou verzi do svého počítače.
 FW_desc4=Určete cestu a jméno staženého souboru v [Nový soubor Firmware].
 FW_desc5=Klikněte na [Nahrát], abyste nahráli soubor do ZVMODELVZ. Tento proces trvá asi 2-3 minuty.

@@ -660,7 +660,7 @@ OP_desc1=ZVMODELVZ\'en understøtter 3 handlingstilstande til opfyldelse af fors
 PASS_new=Ny adgangskode:
 PASS_retype=Indtast den nye adgangskode igen:
 FW_desc1=Følg nedenstående anvisninger:
-FW_desc2=Kontroller, om der findes en ny firmwareversion på <a "href=http://code.google.com/p/rt-n56u/" target="blank">ASUS' netsted</a>.blank>ASUS netsted</a>.
+FW_desc2=Kontroller, om der findes en ny firmwareversion på <a href="ZVDWURLVZ" target="blank">ASUS' netsted</a>.blank>ASUS netsted</a>.
 FW_desc3=Hent den rette version til din lokale computer.
 FW_desc4=Angiv stien og navnet på den hentede fil i [Ny firmwarefil].
 FW_desc5=Klik på [Overfør] for at overføre filen til ZVMODELVZ'en. Det tager ca. 2-3 minutter at overføre den.

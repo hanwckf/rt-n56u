@@ -659,7 +659,7 @@ OP_desc1=Su ZVMODELVZ admite tres modos de funcionamiento para satisfacer distin
 PASS_new=Nueva contraseña:
 PASS_retype=Volver a escribir la nueva contraseña:
 FW_desc1=Siga las instrucciones mostradas a continuación:
-FW_desc2=Compruebe si hay disponible alguna nueva versión de firmware en el <a href="http://code.google.com/p/rt-n56u/" target="blank">sitio Web de ASUS</a>.
+FW_desc2=Compruebe si hay disponible alguna nueva versión de firmware en el <a href="ZVDWURLVZ" target="blank">sitio Web de ASUS</a>.
 FW_desc3=Descargue una versión adecuada en la máquina local.
 FW_desc4=Especifique la ruta de acceso y el nombre del archivo descargado en [Nuevo archivo de firmware]. 
 FW_desc5=Haga clic en [Cargar] para cargar el archivo a su ZVMODELVZ. El proceso de carga dura 2-3 minutos aproximadamente.

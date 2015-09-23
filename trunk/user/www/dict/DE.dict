@@ -659,7 +659,7 @@ OP_desc1=Der ZVMODELVZ unterstützt drei Betriebsmodi für unterschiedliche Eins
 PASS_new=Neues Kennwort:
 PASS_retype=Neues Kennwort erneut eingeben:
 FW_desc1=Fuhren Sie die nachstehenden Schritte aus:
-FW_desc2=Prüfen, ob eine neue Version der Firmware verfügbar ist auf: <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS Website</a>.
+FW_desc2=Prüfen, ob eine neue Version der Firmware verfügbar ist auf: <a href="ZVDWURLVZ" target="blank">ASUS Website</a>.
 FW_desc3=Laden Sie eine passende Version auf Ihren lokalen Computer herunter.
 FW_desc4=Geben Sie den Pfad und den Namen der heruntergeladenen Datei unter [Neue Firmware-Datei] an. 
 FW_desc5=Klicken Sie zum Übertragen der Datei in den ZVMODELVZ auf [Hochladen]. Das Hochladen dauert etwa 2-3 Minuten.

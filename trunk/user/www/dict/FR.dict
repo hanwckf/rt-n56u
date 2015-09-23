@@ -662,7 +662,7 @@ OP_desc1=Le ZVMODELVZ supporte trois modes de fonctionnement pour répondre à d
 PASS_new=Nouveau mot de passe:
 PASS_retype=Saisissez à nouveau le mot de passe:
 FW_desc1=Suivez les instructions suivantes:
-FW_desc2=Vérifiez si une version récente du firmware est disponible sur <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS site Web</a>.
+FW_desc2=Vérifiez si une version récente du firmware est disponible sur <a href="ZVDWURLVZ" target="blank">ASUS site Web</a>.
 FW_desc3=Téléchargez une version appropriée à votre appareil.
 FW_desc4=Spécifiez l'emplacement et le nom du fichier téléchargé dans [New Firmware File] (Nouveau fichier firmware). 
 FW_desc5=Cliquez sur [Upload] pour charger le fichier sur le ZVMODELVZ. Le processus de mise en jour prend environ 2-3 minutes.

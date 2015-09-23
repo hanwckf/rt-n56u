@@ -553,7 +553,7 @@ start_wifi_apcli_wl(int radio_on)
 	if (radio_on && (i_mode_x == 3 || i_mode_x == 4) && (strlen(nvram_wlan_get(1, "sta_ssid")) > 0))
 	{
 		wif_control(ifname_apcli, 1);
-		wif_bridge(ifname_apcli, !is_apcli_wisp_wl());
+		wif_bridge(ifname_apcli, !is_apcli_wisp_wl() || get_ap_mode());
 		if (i_mode_x == 3 && nvram_wlan_get_int(1, "sta_auto"))
 			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 	}
@@ -574,7 +574,7 @@ start_wifi_apcli_rt(int radio_on)
 	{
 		wif_control(ifname_apcli, 1);
 #if !defined(USE_RT3352_MII)
-		wif_bridge(ifname_apcli, !is_apcli_wisp_rt());
+		wif_bridge(ifname_apcli, !is_apcli_wisp_rt() || get_ap_mode());
 		if (i_mode_x == 3 && nvram_wlan_get_int(0, "sta_auto"))
 			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 #endif

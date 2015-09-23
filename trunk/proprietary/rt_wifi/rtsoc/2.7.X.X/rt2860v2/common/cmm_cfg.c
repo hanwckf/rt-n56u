@@ -370,6 +370,12 @@ UCHAR RT_CfgMbssWirelessModeMaxGet(
 			IsAnyG = TRUE;
 			IsAny24N = TRUE;
 		}
+
+		if (pMbss->PhyMode == PHY_11GN_MIXED)
+		{
+			IsAnyG = TRUE;
+			IsAny24N = TRUE;
+		}
 #endif /* DOT11_N_SUPPORT */
 	}
 

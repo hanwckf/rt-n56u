@@ -1,4 +1,4 @@
-VERSION       = 1.99.14
+VERSION       = 1.99.15
 NAME          = inadyn
 EXEC          = src/$(NAME)
 RM           ?= rm -f

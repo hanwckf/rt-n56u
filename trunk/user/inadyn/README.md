@@ -166,7 +166,10 @@ A DDNS provider like <http://twoDNS.de> can be setup like this:
         server-url /update?hostname=
         alias myalias.dd-dns.de
 
-For <https://www.namecheap.com> DDNS:
+For <https://www.namecheap.com> DDNS it can look as follows.  Please
+notice how the alias syntax differs between these two DDNS providers.
+You need to investigate details like this yourself when using the
+generic/custom DDNS plugin:
 
     system custom@http_srv_basic_auth
         username myuser
@@ -174,9 +177,9 @@ For <https://www.namecheap.com> DDNS:
         ssl
         server-name dynamicdns.park-your-domain.com
         server-url /update?domain=YOURDOMAIN.TLD&password=mypass&host=
-        alias alpha.YOURDOMAIN.TLD
-        alias beta.YOURDOMAIN.TLD
-        alias gamma.YOURDOMAIN.TLD
+        alias alpha
+        alias beta
+        alias gamma
 
 Here three subdomains are updated, one `server-url` GET update request
 per alias.  The alias is appended to `...host=` and sent to the server.

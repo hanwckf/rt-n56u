@@ -100,7 +100,7 @@ static void read_one(ddns_alias_t *alias, int nonslookup, int verbose)
 
 		if (fgets(address, sizeof(address), fp)) {
 			if (verbose > 0)
-				logit(LOG_INFO, "Cached IP# %s from previous invocation.", address);
+				logit(LOG_INFO, "Cached IP# %s for %s from previous invocation.", address, alias->name);
 			strncpy(alias->address, address, sizeof(alias->address));
 		}
 

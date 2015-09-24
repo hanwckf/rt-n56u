@@ -2,6 +2,7 @@
 function gen_country_list(){
 	countrylist = new Array();
 	countrylist.push(["Australia", "AU"]);
+	countrylist.push(["Belarus", "BY"]);
 	countrylist.push(["Bosnia and Herzegovina", "BH"]);
 	countrylist.push(["Brazil", "BZ"]);
 	countrylist.push(["Bulgaria", "BUL"]);
@@ -393,6 +394,14 @@ function gen_isp_list(){
 		diallist = new Array("#777");
 		userlist = new Array("t3net");
 		passlist = new Array("t3net");
+	}
+	else if(country == "BY"){
+		protolist = new Array("0", "0", "0");
+		isplist = new Array("MTS", "Velcom", "Life");
+		apnlist = new Array("mts", "vmi.velcom.by", "internet.life.com.by");
+		diallist = new Array("*99#", "*99#", "*99#");
+		userlist = new Array("mts", "", "");
+		passlist = new Array("mts", "", "");
 	}
 	else
 		gen_isp_list_empty();

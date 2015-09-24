@@ -70,6 +70,10 @@ struct call
      */
     struct tunnel *container;   /* Tunnel we belong to */
     int fd;                     /* File descriptor for pty */
+    unsigned char rbuf[MAX_RECV_SIZE];  /* pty read buffer */
+    int rbuf_pos;               /* Read buffer position */
+    int rbuf_max;               /* Read buffer data length */
+    struct buffer *ppp_buf;     /* Packet readed from pty */
     int die;
     int nego;                   /* Show negotiation? */
     int pppd;                   /* PID of pppd */

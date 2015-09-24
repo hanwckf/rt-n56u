@@ -88,33 +88,30 @@ void add_payload_hdr (struct tunnel *t, struct call *c, struct buffer *buf)
 /*	c->rbit=0; */
 }
 
-int read_packet (struct buffer *buf, int fd, int convert)
+int read_packet (struct call *c)
 {
-    unsigned char c;
+    struct buffer *buf = c->ppp_buf;
+    unsigned char ch;
     unsigned char escape = 0;
     unsigned char *p;
-    static unsigned char rbuf[MAX_RECV_SIZE];
-    static int pos = 0;
-    static int max = 0;
     int res;
     int errors = 0;
 
-    /* Read a packet, doing async->sync conversion if necessary */
-    p = buf->start;
+    p = buf->start + buf->len;
     while (1)
     {
-        if (pos >= max)
+        if (c->rbuf_pos >= c->rbuf_max)
         {
-            max = read(fd, rbuf, sizeof (rbuf));
-            res = max;
-            pos = 0;
+            c->rbuf_max = read(c->fd, c->rbuf, sizeof (c->rbuf));
+            res = c->rbuf_max;
+            c->rbuf_pos = 0;
         }
         else
         {
             res = 1;
         }
 
-        c = rbuf[pos++];
+        ch = c->rbuf[c->rbuf_pos++];
 
 	/* if there was a short read, then see what is about */
         if (res < 1)
@@ -145,50 +142,37 @@ int read_packet (struct buffer *buf, int fd, int convert)
                 l2tp_log (LOG_DEBUG,
                      "%s: Too many errors.  Declaring call dead.\n",
                      __FUNCTION__);
-		pos=0;
-		max=0;
+                c->rbuf_pos = 0;
+                c->rbuf_max = 0;
                 return -errno;
             }
             continue;
         }
 
-        switch (c)
+        switch (ch)
         {
         case PPP_FLAG:
             if (escape)
             {
                 l2tp_log (LOG_DEBUG, "%s: got an escaped PPP_FLAG\n",
                      __FUNCTION__);
-		pos=0;
-		max=0;
+                c->rbuf_pos = 0;
+                c->rbuf_max = 0;
                 return -EINVAL;
             }
 
-            if (convert)
-            {
-	      if (buf->len >= 2) {
-		/* must be the end, drop the FCS */
-		buf->len -= 2;
-	      }
-	      else if (buf->len == 1) {
-		/* Do nothing, just return the single character*/
-	      }
-	      else {
-		/* if the buffer is empty, then we have the beginning
-		 * of a packet, not the end
-		 */
-		break;
-	      }
-	    }
-            else
-            {
-		/* if there is space, then insert the byte */
-                if (buf->len < buf->maxlen)
-                {
-                    *p = c;
-                    p++;
-                    buf->len++;
-                }
+            if (buf->len >= 2) {
+              /* must be the end, drop the FCS */
+              buf->len -= 2;
+            }
+            else if (buf->len == 1) {
+              /* Do nothing, just return the single character*/
+            }
+            else {
+              /* if the buffer is empty, then we have the beginning
+               * of a packet, not the end
+               */
+              break;
             }
 
 	    /* return what we have now */
@@ -196,24 +180,21 @@ int read_packet (struct buffer *buf, int fd, int convert)
 
         case PPP_ESCAPE:
             escape = PPP_TRANS;
-            if (convert)
-                break;
+            break;
 
-	    /* fall through */
         default:
-            if (convert)
-                c ^= escape;
+            ch ^= escape;
             escape = 0;
             if (buf->len < buf->maxlen)
             {
-                *p = c;
+                *p = ch;
                 p++;
                 buf->len++;
                 break;
             }
             l2tp_log (LOG_WARNING, "%s: read overrun\n", __FUNCTION__);
-	    pos=0;
-	    max=0;
+            c->rbuf_pos = 0;
+            c->rbuf_max = 0;
             return -EINVAL;
         }
     }
@@ -412,6 +393,7 @@ void destroy_call (struct call *c)
 /*	if (c->dethrottle) deschedule(c->dethrottle); */
     if (c->zlb_xmit)
         deschedule (c->zlb_xmit);
+    toss(c->ppp_buf);
 
 #ifdef IP_ALLOCATION
     if (c->addr)
@@ -521,6 +503,7 @@ struct call *new_call (struct tunnel *parent)
     tmp->error = -1;
     tmp->result = -1;
     tmp->container = parent;
+    tmp->ppp_buf = new_payload (parent->peer);
 
     /* Inherit LAC and LNS from parent */
     tmp->lns = parent->lns;

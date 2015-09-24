@@ -731,15 +731,13 @@ void network_thread ()
                 {
                     /* Got some payload to send */
                     int result;
-                    recycle_payload (buf, sc->container->peer);
 
-                    while ((result =
-                            read_packet (buf, sc->fd, SYNC_FRAMING)) > 0)
+                    while ((result = read_packet (sc)) > 0)
                     {
-                        add_payload_hdr (sc->container, sc, buf);
+                        add_payload_hdr (sc->container, sc, sc->ppp_buf);
                         if (gconfig.packet_dump)
                         {
-                            do_packet_dump (buf);
+                            do_packet_dump (sc->ppp_buf);
                         }
 
 
@@ -749,10 +747,10 @@ void network_thread ()
                             deschedule (sc->zlb_xmit);
                             sc->zlb_xmit = NULL;
                         }
-                        sc->tx_bytes += buf->len;
+                        sc->tx_bytes += sc->ppp_buf->len;
                         sc->tx_pkts++;
-                        udp_xmit (buf, st);
-                        recycle_payload (buf, sc->container->peer);
+                        udp_xmit (sc->ppp_buf, st);
+                        recycle_payload (sc->ppp_buf, sc->container->peer);
                     }
                     if (result != 0)
                     {

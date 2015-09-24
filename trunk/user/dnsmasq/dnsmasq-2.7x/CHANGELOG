@@ -7,8 +7,13 @@ version 2.75+
 
 	    Enhance --add-subnet to allow arbitrary subnet addresses.
             Thanks to Ed Barsley for the patch.
+
+	    Respect the --no-resolv flag in inotify code. Fixes bug
+	    which caused dnsmasq to fail to start if a resolv-file 
+	    was a dangling symbolic link, even of --no-resolv set.
+	    Thanks to Alexander Kurtz for spotting the problem.
+
 	
-	    
 version 2.75
             Fix reversion on 2.74 which caused 100% CPU use when a 
 	    dhcp-script is configured. Thanks to Adrian Davey for

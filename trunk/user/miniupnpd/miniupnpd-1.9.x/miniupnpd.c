@@ -1,4 +1,4 @@
-/* $Id: miniupnpd.c,v 1.208 2015/06/09 15:34:26 nanard Exp $ */
+/* $Id: miniupnpd.c,v 1.211 2015/08/26 08:04:46 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2015 Thomas Bernard
@@ -369,6 +369,19 @@ OpenAndConfHTTPSocket(unsigned short * port)
 	listenname.sin_addr.s_addr = htonl(INADDR_ANY);
 	listenname_len =  sizeof(struct sockaddr_in);
 #endif
+
+#if defined(SO_BINDTODEVICE) && !defined(MULTIPLE_EXTERNAL_IP)
+	/* One and only one LAN interface */
+	if(lan_addrs.lh_first != NULL && lan_addrs.lh_first->list.le_next == NULL
+	   && strlen(lan_addrs.lh_first->ifname) > 0)
+	{
+		if(setsockopt(s, SOL_SOCKET, SO_BINDTODEVICE,
+		              lan_addrs.lh_first->ifname,
+		              strlen(lan_addrs.lh_first->ifname)) < 0)
+			syslog(LOG_WARNING, "setsockopt(http, SO_BINDTODEVICE, %s): %m",
+			       lan_addrs.lh_first->ifname);
+	}
+#endif /* defined(SO_BINDTODEVICE) && !defined(MULTIPLE_EXTERNAL_IP) */
 
 #ifdef ENABLE_IPV6
 	if(bind(s,

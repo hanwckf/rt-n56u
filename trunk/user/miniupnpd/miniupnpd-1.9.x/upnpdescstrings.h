@@ -1,4 +1,4 @@
-/* $Id: upnpdescstrings.h,v 1.9 2013/12/13 12:50:54 nanard Exp $ */
+/* $Id: upnpdescstrings.h,v 1.10 2015/09/22 10:07:13 nanard Exp $ */
 /* miniupnp project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2013 Thomas Bernard
@@ -22,7 +22,7 @@
 #define WANDEV_MANUFACTURERURL		"http://miniupnp.free.fr/"
 #define WANDEV_MODELNAME			"WAN Device"
 #define WANDEV_MODELDESCRIPTION		"WAN Device"
-#define WANDEV_MODELNUMBER			UPNP_VERSION
+#define WANDEV_MODELNUMBER			MINIUPNPD_DATE
 #define WANDEV_MODELURL				"http://miniupnp.free.fr/"
 #define WANDEV_UPC					"000000000000"
 /* UPC is 12 digit (barcode) */
@@ -32,7 +32,7 @@
 #define WANCDEV_MANUFACTURERURL		WANDEV_MANUFACTURERURL
 #define WANCDEV_MODELNAME			"MiniUPnPd"
 #define WANCDEV_MODELDESCRIPTION	"MiniUPnP daemon"
-#define WANCDEV_MODELNUMBER			UPNP_VERSION
+#define WANCDEV_MODELNUMBER			MINIUPNPD_DATE
 #define WANCDEV_MODELURL			"http://miniupnp.free.fr/"
 #define WANCDEV_UPC					"000000000000"
 /* UPC is 12 digit (barcode) */

@@ -1,7 +1,7 @@
-/* $Id: upnpdescgen.c,v 1.78 2014/10/21 14:08:35 nanard Exp $ */
+/* $Id: upnpdescgen.c,v 1.79 2015/09/22 10:07:13 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2014 Thomas Bernard
+ * (c) 2006-2015 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -140,8 +140,8 @@ static const struct XMLElt rootDesc[] =
 #else
 	{"device", INITHELPER(5,12)},
 #endif
-	{"/major", "1"},
-	{"/minor", "0"},
+	{"/major", UPNP_VERSION_MAJOR_STR},
+	{"/minor", UPNP_VERSION_MINOR_STR},
 /* 5 */
 	{"/deviceType", DEVICE_TYPE_IGD},
 		/* urn:schemas-upnp-org:device:InternetGatewayDevice:1 or 2 */
@@ -976,7 +976,8 @@ genServiceDesc(int * len, const struct serviceDesc * s)
 	str = strcat_char(str, len, &tmplen, '>');
 
 	str = strcat_str(str, len, &tmplen,
-		"<specVersion><major>1</major><minor>0</minor></specVersion>");
+		"<specVersion><major>" UPNP_VERSION_MAJOR_STR "</major>"
+		"<minor>" UPNP_VERSION_MINOR_STR "</minor></specVersion>");
 
 	i = 0;
 	str = strcat_str(str, len, &tmplen, "<actionList>");

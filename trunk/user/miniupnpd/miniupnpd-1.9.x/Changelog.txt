@@ -1,4 +1,15 @@
-$Id: Changelog.txt,v 1.399 2015/04/30 09:05:07 nanard Exp $
+$Id: Changelog.txt,v 1.403 2015/09/22 10:10:52 nanard Exp $
+
+2015/09/22:
+  cleanup UPNP_VERSION macro / add UPNP_VERSION_MAJOR, UPNP_VERSION_MINOR
+  Dont use packed structs anymore to read/write PCP messages
+
+2015/09/15:
+  use name server from query in SOAP responses
+
+2015/08/25:
+  better bind socket to right interface(s),
+    using struct ip_mreqn, SO_BINDTODEVICE
 
 2015/04/30:
   Adding linux/nftables support

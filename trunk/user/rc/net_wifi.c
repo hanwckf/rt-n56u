@@ -308,11 +308,8 @@ check_inic_mii_rebooted(void)
 	rt_mode_x = get_mode_radio_rt();
 	if (rt_mode_x != 1 && rt_mode_x != 3) {
 		/* check guest AP */
-		if (!is_interface_up(IFNAME_INIC_GUEST) && is_guest_allowed_rt()) {
+		if (!is_interface_up(IFNAME_INIC_GUEST) && is_guest_allowed_rt())
 			wif_control(IFNAME_INIC_GUEST, 1);
-			if (is_interface_up(IFNAME_INIC_GUEST))
-				restart_guest_lan_isolation();
-		}
 	}
 }
 #endif
@@ -406,13 +403,16 @@ start_wifi_ap_rt(int radio_on)
 	int i_mode_x = get_mode_radio_rt();
 #if !defined(USE_RT3352_MII)
 	int i_m2u = nvram_wlan_get_int(0, "IgmpSnEnable");
+#else
+	int is_ap_mode = get_ap_mode();
 #endif
 
 	// check WDS only, ApCli only or Radio disabled
 	if (i_mode_x == 1 || i_mode_x == 3 || !radio_on)
 	{
 #if defined(USE_RT3352_MII)
-		wif_bridge(IFNAME_INIC_GUEST_VLAN, 0);
+		if (!is_ap_mode)
+			wif_bridge(IFNAME_INIC_GUEST_VLAN, 0);
 #else
 		wif_bridge(IFNAME_2G_GUEST, 0);
 		wif_bridge(IFNAME_2G_MAIN, 0);
@@ -429,7 +429,8 @@ start_wifi_ap_rt(int radio_on)
 	if (radio_on && i_mode_x != 1 && i_mode_x != 3 && is_guest_allowed_rt())
 	{
 		wif_control(IFNAME_INIC_GUEST, 1);
-		wif_bridge(IFNAME_INIC_GUEST_VLAN, 1);
+		if (!is_ap_mode)
+			wif_bridge(IFNAME_INIC_GUEST_VLAN, 1);
 	}
 
 	// start iNIC_mii checking daemon
@@ -924,6 +925,8 @@ control_guest_rt(int guest_on, int manual)
 	int i_mode_x = get_mode_radio_rt();
 #if !defined(USE_RT3352_MII)
 	int i_m2u = nvram_wlan_get_int(0, "IgmpSnEnable");
+#else
+	int is_ap_mode = get_ap_mode();
 #endif
 
 	// check WDS only, ApCli only or Radio disabled (force or by schedule)
@@ -939,7 +942,8 @@ control_guest_rt(int guest_on, int manual)
 			is_ap_changed = 1;
 		}
 #if defined(USE_RT3352_MII)
-		wif_bridge(IFNAME_INIC_GUEST_VLAN, 1);
+		if (!is_ap_mode)
+			wif_bridge(IFNAME_INIC_GUEST_VLAN, 1);
 #else
 		wif_bridge(ifname_ap, 1);
 		brport_set_m2u(ifname_ap, i_m2u);
@@ -952,7 +956,8 @@ control_guest_rt(int guest_on, int manual)
 			is_ap_changed = 1;
 		}
 #if defined(USE_RT3352_MII)
-		wif_bridge(IFNAME_INIC_GUEST_VLAN, 0);
+		if (!is_ap_mode)
+			wif_bridge(IFNAME_INIC_GUEST_VLAN, 0);
 #else
 		wif_bridge(ifname_ap, 0);
 #endif
@@ -1026,6 +1031,8 @@ restart_guest_lan_isolation(void)
 
 #if defined(USE_RT3352_MII)
 	rt_ifname_guest = IFNAME_INIC_GUEST_VLAN;
+	if (is_ap_mode)
+		is_need_ebtables &= ~0x01;
 #endif
 
 	brport_set_param_int(rt_ifname_guest, "isolate_mode", bp_isolate);

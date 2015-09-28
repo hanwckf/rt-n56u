@@ -317,6 +317,7 @@ get_eeprom_params(void)
 	nvram_set_temp("firmver", trim_r(fwver));
 	nvram_set_temp("firmver_sub", trim_r(fwver_sub));
 
+#if 0
 #if defined (VENDOR_ASUS)
 	memset(buffer, 0, 4);
 	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, OFFSET_BOOT_VER, buffer, 4);
@@ -325,6 +326,7 @@ get_eeprom_params(void)
 		snprintf(blver, sizeof(blver), "%s-0%c-0%c-0%c-0%c", trim_r(productid), buffer[0], buffer[1], buffer[2], buffer[3]);
 		nvram_set_temp("blver", trim_r(blver));
 	}
+#endif
 #endif
 
 #if 0

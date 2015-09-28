@@ -329,8 +329,10 @@ start_logger(int showinfo)
 		// wait for logger daemon started
 		usleep(300000);
 		
+#if 0
 #if defined (VENDOR_ASUS)
 		logmessage(LOGNAME, "bootloader version: %s", nvram_safe_get("blver"));
+#endif
 #endif
 		logmessage(LOGNAME, "firmware version: %s", nvram_safe_get("firmver_sub"));
 	}

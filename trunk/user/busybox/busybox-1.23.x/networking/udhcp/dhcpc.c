@@ -161,10 +161,6 @@ static const char *valid_domain_label(const char *label)
 	for (;;) {
 		ch = *label;
 		if ((ch|0x20) < 'a' || (ch|0x20) > 'z') {
-			if (pos == 0) {
-				/* label must begin with letter */
-				return NULL;
-			}
 			if (ch < '0' || ch > '9') {
 				if (ch == '\0' || ch == '.')
 					return label;

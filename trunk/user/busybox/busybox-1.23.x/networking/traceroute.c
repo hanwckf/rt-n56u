@@ -211,59 +211,61 @@
  */
 
 //usage:#define traceroute_trivial_usage
-//usage:       "[-"IF_TRACEROUTE6("46")"FIldnrv] [-f 1ST_TTL] [-m MAXTTL] [-p PORT] [-q PROBES]\n"
-//usage:       "	[-s SRC_IP] [-t TOS] [-w WAIT_SEC] [-g GATEWAY] [-i IFACE]\n"
+//usage:       "[-"IF_TRACEROUTE6("46")"FIlnrv] [-f 1ST_TTL] [-m MAXTTL] [-q PROBES] [-p PORT]\n"
+//usage:       "	[-t TOS] [-w WAIT_SEC]"
+//usage:       IF_FEATURE_TRACEROUTE_SOURCE_ROUTE(" [-g GATEWAY]")" [-s SRC_IP] [-i IFACE]\n"
 //usage:       "	[-z PAUSE_MSEC] HOST [BYTES]"
 //usage:#define traceroute_full_usage "\n\n"
 //usage:       "Trace the route to HOST\n"
 //usage:	IF_TRACEROUTE6(
 //usage:     "\n	-4,-6	Force IP or IPv6 name resolution"
 //usage:	)
-//usage:     "\n	-F	Set the don't fragment bit"
+//usage:     "\n	-F	Set don't fragment bit"
+//usage:	IF_FEATURE_TRACEROUTE_USE_ICMP(
 //usage:     "\n	-I	Use ICMP ECHO instead of UDP datagrams"
-//usage:     "\n	-l	Display the TTL value of the returned packet"
-//usage:     "\n	-d	Set SO_DEBUG options to socket"
+//usage:	)
+//usage:     "\n	-l	Display TTL value of the returned packet"
+//Currently disabled (TRACEROUTE_SO_DEBUG==0)
+////usage:     "\n	-d	Set SO_DEBUG options to socket"
 //usage:     "\n	-n	Print numeric addresses"
 //usage:     "\n	-r	Bypass routing tables, send directly to HOST"
+//usage:	IF_FEATURE_TRACEROUTE_VERBOSE(
 //usage:     "\n	-v	Verbose"
-//usage:     "\n	-m	Max time-to-live (max number of hops)"
-//usage:     "\n	-p	Base UDP port number used in probes"
+//usage:	)
+//usage:     "\n	-f N	First number of hops (default 1)"
+//usage:     "\n	-m N	Max number of hops"
+//usage:     "\n	-q N	Number of probes per hop (default 3)"
+//usage:     "\n	-p N	Base UDP port number used in probes"
 //usage:     "\n		(default 33434)"
-//usage:     "\n	-q	Number of probes per TTL (default 3)"
-//usage:     "\n	-s	IP address to use as the source address"
-//usage:     "\n	-t	Type-of-service in probe packets (default 0)"
-//usage:     "\n	-w	Time in seconds to wait for a response (default 3)"
-//usage:     "\n	-g	Loose source route gateway (8 max)"
+//usage:     "\n	-s IP	Source address"
+//usage:     "\n	-i IFACE Source interface"
+//usage:     "\n	-t N	Type-of-service in probe packets (default 0)"
+//usage:     "\n	-w SEC	Time to wait for a response (default 3)"
+//usage:     "\n	-g IP	Loose source route gateway (8 max)"
 //usage:
 //usage:#define traceroute6_trivial_usage
-//usage:       "[-dnrv] [-m MAXTTL] [-p PORT] [-q PROBES]\n"
-//usage:       "	[-s SRC_IP] [-t TOS] [-w WAIT_SEC] [-i IFACE]\n"
+//usage:       "[-nrv] [-m MAXTTL] [-q PROBES] [-p PORT]\n"
+//usage:       "	[-t TOS] [-w WAIT_SEC] [-s SRC_IP] [-i IFACE]\n"
 //usage:       "	HOST [BYTES]"
 //usage:#define traceroute6_full_usage "\n\n"
 //usage:       "Trace the route to HOST\n"
-//usage:     "\n	-d	Set SO_DEBUG options to socket"
+//Currently disabled (TRACEROUTE_SO_DEBUG==0)
+////usage:     "\n	-d	Set SO_DEBUG options to socket"
 //usage:     "\n	-n	Print numeric addresses"
 //usage:     "\n	-r	Bypass routing tables, send directly to HOST"
+//usage:	IF_FEATURE_TRACEROUTE_VERBOSE(
 //usage:     "\n	-v	Verbose"
-//usage:     "\n	-m	Max time-to-live (max number of hops)"
-//usage:     "\n	-p	Base UDP port number used in probes"
-//usage:     "\n		(default is 33434)"
-//usage:     "\n	-q	Number of probes per TTL (default 3)"
-//usage:     "\n	-s	IP address to use as the source address"
-//usage:     "\n	-t	Type-of-service in probe packets (default 0)"
-//usage:     "\n	-w	Time in seconds to wait for a response (default 3)"
+//usage:	)
+//usage:     "\n	-m N	Max number of hops"
+//usage:     "\n	-q N	Number of probes per hop (default 3)"
+//usage:     "\n	-p N	Base UDP port number used in probes"
+//usage:     "\n		(default 33434)"
+//usage:     "\n	-s IP	Source address"
+//usage:     "\n	-i IFACE Source interface"
+//usage:     "\n	-t N	Type-of-service in probe packets (default 0)"
+//usage:     "\n	-w SEC	Time wait for a response (default 3)"
 
 #define TRACEROUTE_SO_DEBUG 0
-
-/* TODO: undefs were uncommented - ??! we have config system for that! */
-/* probably ok to remove altogether */
-//#undef CONFIG_FEATURE_TRACEROUTE_VERBOSE
-//#define CONFIG_FEATURE_TRACEROUTE_VERBOSE
-//#undef CONFIG_FEATURE_TRACEROUTE_SOURCE_ROUTE
-//#define CONFIG_FEATURE_TRACEROUTE_SOURCE_ROUTE
-//#undef CONFIG_FEATURE_TRACEROUTE_USE_ICMP
-//#define CONFIG_FEATURE_TRACEROUTE_USE_ICMP
-
 
 #include <net/if.h>
 #include <arpa/inet.h>

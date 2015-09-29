@@ -1526,6 +1526,7 @@ update_local_clock(peer_t *p)
 				/* We were only asked to set time once.
 				 * The clock is precise enough, no need to step.
 				 */
+				run_script("step", offset);
 				exit(0);
 			}
 #if USING_INITIAL_FREQ_ESTIMATION

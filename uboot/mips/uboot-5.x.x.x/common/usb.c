@@ -106,7 +106,7 @@ int usb_init(void)
 	int i, start_index = 0;
         struct usb_device *dev;
 
-	gpio_init_usb();
+	gpio_init_usb(1);
 
 	running=0;
 	dev_index=0;

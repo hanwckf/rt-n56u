@@ -448,7 +448,7 @@ static int usb_hub_configure(struct usb_device *dev)
 
 	for (i = 0; i < dev->maxchild; i++) {
 		ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts, 1);
-		unsigned short portstatus, portchange;
+		unsigned short portstatus = 0, portchange = 0;
 		int ret;
 		ulong start = get_timer(0);
 		//struct usb_port_status *portsts;

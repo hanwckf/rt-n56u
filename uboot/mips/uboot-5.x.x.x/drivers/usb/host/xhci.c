@@ -1015,8 +1015,8 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 	val |= (val2 & ~HCS_SLOTS_MASK);
 	xhci_writel(&hcor->or_config, val);
 
+	mtk_xhci_scheduler_init();
 
-        mtk_xhci_scheduler_init();
 	/* initializing xhci data structures */
 	if (xhci_mem_init(ctrl, hccr, hcor) < 0)
 		return -ENOMEM;
@@ -1047,11 +1047,9 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 	xhci_writel(&ctrl->ir_set->irq_control, 0);
 	xhci_writel(&ctrl->ir_set->irq_pending, 0);
 
-
 	reg = HC_VERSION(xhci_readl(&hccr->cr_capbase));
 
 	*controller = &xhcic[index];
-
 
 	return 0;
 }

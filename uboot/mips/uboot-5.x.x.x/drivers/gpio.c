@@ -604,12 +604,6 @@ void gpio_init(void)
 	mtk_set_gpio_dir(GPIO_BTN_ROUTER, GPIO_DIR_INPUT);
 #endif
 
-	/* enable 5V USB power */
-#if (GPIO_USB_POWER >= 0)
-	mtk_set_gpio_dir(GPIO_USB_POWER, GPIO_DIR_OUTPUT);
-	mtk_set_gpio_pin(GPIO_USB_POWER, GPIO_VAL_USB_5V_ON);
-#endif
-
 	/* raise reset iNIC (or other peripheral) */
 #if (GPIO_RST_INIC >= 0)
 	mtk_set_gpio_dir(GPIO_RST_INIC, GPIO_DIR_OUTPUT);
@@ -625,16 +619,15 @@ void gpio_init_mdio(void)
 #endif
 }
 
-#if defined (RALINK_USB) || defined (MTK_USB)
-void gpio_init_usb(void)
+void gpio_init_usb(int do_wait)
 {
 #if (GPIO_USB_POWER >= 0)
 	mtk_set_gpio_dir(GPIO_USB_POWER, GPIO_DIR_OUTPUT);
 	mtk_set_gpio_pin(GPIO_USB_POWER, GPIO_VAL_USB_5V_ON);
-	udelay(10000);
+	if (do_wait)
+		udelay(50000);
 #endif
 }
-#endif
 
 int DETECT_BTN_RESET(void)
 {

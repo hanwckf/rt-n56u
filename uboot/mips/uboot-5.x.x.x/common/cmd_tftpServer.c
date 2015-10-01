@@ -197,6 +197,7 @@ int do_tftpd(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		}
 		
 		LED_POWER_ON();
+		gpio_init_usb(0);
 		do_bootm(cmdtp, 0, argc, argv);
 	}
 

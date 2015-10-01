@@ -1456,7 +1456,9 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 #if defined(RT3052_ASIC_BOARD) || defined(RT2883_ASIC_BOARD)
 	void config_usbotg(void);
 	config_usbotg();
-#elif defined(RT3883_ASIC_BOARD) || defined(RT3352_ASIC_BOARD) || defined(RT5350_ASIC_BOARD) || defined(RT6855_ASIC_BOARD) || defined (MT7620_ASIC_BOARD) || defined(MT7628_ASIC_BOARD)
+#elif defined(RT3883_ASIC_BOARD) || defined(RT3352_ASIC_BOARD) || \
+      defined(RT5350_ASIC_BOARD) || defined(RT6855_ASIC_BOARD) || \
+      defined(MT7620_ASIC_BOARD) || defined(MT7628_ASIC_BOARD)
 	void config_usb_ehciohci(void);
 	config_usb_ehciohci();
 #elif defined(MT7621_ASIC_BOARD)
@@ -2628,7 +2630,9 @@ void adjust_rf_r17(void)
 }
 #endif
 
-#if defined(RT3883_ASIC_BOARD) || defined(RT3352_ASIC_BOARD) || defined(RT5350_ASIC_BOARD) || defined(RT6855_ASIC_BOARD) || defined (MT7620_ASIC_BOARD) || defined (MT7628_ASIC_BOARD)
+#if defined(RT3883_ASIC_BOARD) || defined(RT3352_ASIC_BOARD) || \
+    defined(RT5350_ASIC_BOARD) || defined(RT6855_ASIC_BOARD) || \
+    defined(MT7620_ASIC_BOARD) || defined(MT7628_ASIC_BOARD)
 /*
  * enter power saving mode
  */
@@ -2637,14 +2641,14 @@ void config_usb_ehciohci(void)
 	u32 val;
 	
 	val = RALINK_REG(RT2880_RSTCTRL_REG);    // toggle host & device RST bit
-	val = val | RALINK_UHST_RST | RALINK_UDEV_RST;
+	val |= RALINK_UHST_RST | RALINK_UDEV_RST;
 	RALINK_REG(RT2880_RSTCTRL_REG) = val;
 
 	val = RALINK_REG(RT2880_CLKCFG1_REG);
 #if defined(RT5350_ASIC_BOARD) || defined(RT6855_ASIC_BOARD)
-	val = val & ~(RALINK_UPHY0_CLK_EN) ;  // disable USB port0 PHY. 
+	val &= ~(RALINK_UPHY0_CLK_EN) ;  // disable USB port0 PHY. 
 #else
-	val = val & ~(RALINK_UPHY0_CLK_EN | RALINK_UPHY1_CLK_EN) ;  // disable USB port0 & port1 PHY. 
+	val &= ~(RALINK_UPHY0_CLK_EN | RALINK_UPHY1_CLK_EN);  // disable USB port0 & port1 PHY. 
 #endif
 	RALINK_REG(RT2880_CLKCFG1_REG) = val;
 }
@@ -2730,14 +2734,14 @@ retry_suspend:
 	val = le32_to_cpu(*(volatile u_long *)(0xB01C0400));
 	//printf("2.b01c0400 = 0x%08x\n", val);
 
-    val = le32_to_cpu(*(volatile u_long *)(0xB01C0440));
-    //printf("3.b01c0440 = 0x%08x\n", val);
+	val = le32_to_cpu(*(volatile u_long *)(0xB01C0440));
+	//printf("3.b01c0440 = 0x%08x\n", val);
 
 	//printf("port power on\n");
-    val = val | (1 << 12);
+	val = val | (1 << 12);
 	*(volatile u_long *)(0xB01C0440) = cpu_to_le32(val);
-    val = le32_to_cpu(*(volatile u_long *)(0xB01C0440));
-    //printf("4.b01c0440 = 0x%08x\n", val);
+	val = le32_to_cpu(*(volatile u_long *)(0xB01C0440));
+	//printf("4.b01c0440 = 0x%08x\n", val);
 
 	udelay(3000);	// 3ms
 

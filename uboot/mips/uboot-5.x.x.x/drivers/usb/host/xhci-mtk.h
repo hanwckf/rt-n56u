@@ -92,12 +92,6 @@ void setInitialReg(void);
 void dbg_prb_out(void);
 int call_function(char *buf);
 
-long xhci_mtk_test_unlock_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
-int xhci_mtk_test_open(struct inode *inode, struct file *file);
-int xhci_mtk_test_release(struct inode *inode, struct file *file);
-ssize_t xhci_mtk_test_read(struct file *file, char *buf, size_t count, loff_t *ptr);
-ssize_t xhci_mtk_test_write(struct file *file, const char *buf, size_t count, loff_t * ppos);
-
 /*
   mediatek probe out
 */

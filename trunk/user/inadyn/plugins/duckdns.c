@@ -22,11 +22,15 @@
 
 #include "plugin.h"
 
+/*
+ * For API documentation we currently only have this
+ *     https://www.duckdns.org/install.jsp#linux-cron
+ */
 #define DUCKDNS_UPDATE_IP_HTTP_REQUEST					\
 	"GET %s?"							\
 	"domains=%s&"							\
 	"token=%s&"							\
-	"ip=%s& "							\
+	"ip=%s "   							\
 	"HTTP/1.0\r\n"							\
 	"Host: %s\r\n"							\
 	"User-Agent: " AGENT_NAME " " SUPPORT_ADDR "\r\n\r\n"
@@ -77,7 +81,7 @@ static int response(http_trans_t *trans, ddns_info_t *UNUSED(info), ddns_alias_t
 
 	DO(http_status_valid(trans->status));
 
-	if (strstr(resp, "KO") || strstr(resp, "OK") || strstr(resp, "good"))
+	if (strstr(resp, "OK") || strstr(resp, "good"))
 		return RC_OK;
 
 	return RC_DYNDNS_RSP_NOTOK;

@@ -4,6 +4,16 @@
 
                           LIST OF CHANGES
 
+5.0.0.2:
+----------------------------------------------------------
+- Added support Recovery from USB2 storage (see FEATURES).
+- Added feature of blinking alert LED on erasing and flashing.
+- Added FW image integrity check on Recovery from USB/TFTP.
+- Fixed MT7620 GPIO init (disable JTAG/EPHY_LED GPIO by default).
+- Fixed TFTPD server issue.
+- Improved usability for UART console menu.
+
+
 5.0.0.1:
 ----------------------------------------------------------
 - Original MTK SDK 5.0.0.0 codebase.
@@ -75,19 +85,22 @@ mtd_write write /tmp/uboot.bin Bootloader
 
                              FEATURES
 
-1. Press and hold RESET button on PowerUp: switch to recovery mode. Use TFTP
-   client or ASUS Firmware Restoration (device IP-address is 192.168.1.1).
-2. Press and hold WPS button on PowerUp: erase 'Config' partition (U-Boot Env and NVRAM)
-   and self-reboot.
+1. Press and hold the RESET button on Power-On: switch to Recovery mode. Use TFTP
+   client or ASUS Firmware Restoration (device IP-address is 192.168.1.1). Also support
+   Recovery from USB storage (not for all devices).
+2. Press and hold the WPS button on Power-On: perform erase 'Config' partition (U-Boot
+   Env & NVRAM) and self-reboot.
+
 
 NOTE:
-- U-Boot perform auto-switch to recovery mode when flash image integrity fail.
-- Alert LED(s) is blinked in recovery mode and on TFTP operations.
-
-
+- U-Boot will perform switch to Recovery mode on flash content integrity fail.
+- Alert LED(s) is blinking in Recovery mode and on erasing/flashing.
+- To Recovery from USB storage, place FW image with a filename 'root_uImage' to first
+  FAT16/FAT32 partition, plug-in USB2 pen and switch to Recovery mode (see item 1).
+- Recovery from USB storage is not supported for ASUS RT-N65U (external USB chip).
 
 
 
 -
 Padavan
-09/29/2015
+10/01/2015

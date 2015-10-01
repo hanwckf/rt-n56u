@@ -71,7 +71,6 @@ extern void setup_internal_gsw(void);
 extern int incaip_set_cpuclk(void);
 extern int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 extern int do_tftpb (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
-extern int do_mem_cp ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 extern int flash_sect_protect (int p, ulong addr_first, ulong addr_last);
 int flash_sect_erase (ulong addr_first, ulong addr_last);
 int get_addr_boundary (ulong *addr);
@@ -105,7 +104,8 @@ const char version_string[] =
 	U_BOOT_VERSION" (" __DATE__ " - " __TIME__ ")";
 
 extern ulong load_addr; /* Default Load Address */
-
+extern image_header_t header;
+extern int verify_kernel_image(ulong, ulong *, ulong *, ulong *);
 
 unsigned long mips_cpu_feq;
 unsigned long mips_bus_feq;
@@ -904,6 +904,7 @@ __attribute__((nomips16)) void board_init_f(ulong bootflag)
 #define SEL_LOAD_LINUX_WRITE_FLASH      2
 #define SEL_BOOT_FLASH                  3
 #define SEL_ENTER_CLI                   4
+#define SEL_LOAD_LINUX_WRITE_FLASH_BY_USB 5
 #define SEL_LOAD_BOOT_WRITE_FLASH_BY_SERIAL 7
 #define SEL_LOAD_BOOT_SDRAM             8
 #define SEL_LOAD_BOOT_WRITE_FLASH       9
@@ -912,16 +913,22 @@ __attribute__((nomips16)) void board_init_f(ulong bootflag)
 void OperationSelect(void)
 {
 	printf("\nPlease choose the operation: \n");
-	printf("   %d: Load system code to SDRAM via TFTP. \n", SEL_LOAD_LINUX_SDRAM);
-	printf("   %d: Load system code then write to Flash via TFTP. \n", SEL_LOAD_LINUX_WRITE_FLASH);
+#ifdef RALINK_UPGRADE_BY_SERIAL
+	printf("   %d: Load %s code then write to Flash via %s.\n", SEL_LOAD_LINUX_WRITE_FLASH_BY_SERIAL, "system", "Serial");
+#endif
+	printf("   %d: Load system code to SDRAM via TFTP.\n", SEL_LOAD_LINUX_SDRAM);
+	printf("   %d: Load %s code then write to Flash via %s.\n", SEL_LOAD_LINUX_WRITE_FLASH, "system", "TFTP");
 	printf("   %d: Boot system code via Flash (default).\n", SEL_BOOT_FLASH);
 #ifdef RALINK_CMDLINE
-	printf("   %d: Entr boot command line interface.\n", SEL_ENTER_CLI);
-#endif // RALINK_CMDLINE //
+	printf("   %d: Enter boot command line interface.\n", SEL_ENTER_CLI);
+#endif
+#if defined (RALINK_USB) || defined (MTK_USB)
+	printf("   %d: Load %s code then write to Flash via %s.\n", SEL_LOAD_LINUX_WRITE_FLASH_BY_USB, "system", "USB Storage");
+#endif
 #ifdef RALINK_UPGRADE_BY_SERIAL
-	printf("   %d: Load Boot Loader code then write to Flash via Serial. \n", SEL_LOAD_BOOT_WRITE_FLASH_BY_SERIAL);
-#endif // RALINK_UPGRADE_BY_SERIAL //
-	printf("   %d: Load Boot Loader code then write to Flash via TFTP. \n", SEL_LOAD_BOOT_WRITE_FLASH);
+	printf("   %d: Load %s code then write to Flash via %s.\n", SEL_LOAD_BOOT_WRITE_FLASH_BY_SERIAL, "U-Boot", "Serial");
+#endif
+	printf("   %d: Load %s code then write to Flash via %s.\n", SEL_LOAD_BOOT_WRITE_FLASH, "U-Boot", "TFTP");
 }
 
 int tftp_config(int type, char *argv[])
@@ -970,13 +977,13 @@ int tftp_config(int type, char *argv[])
 #if defined (RT2880_ASIC_BOARD) || defined (RT2880_FPGA_BOARD)
 			argv[1] = "0x8a200000";
 #else
-		argv[1] = "0x80200000";
+			argv[1] = "0x80200000";
 #endif
 		else
 #if defined (RT2880_ASIC_BOARD) || defined (RT2880_FPGA_BOARD)
 			argv[1] = "0x8a100000";
 #else
-		argv[1] = "0x80100000";
+			argv[1] = "0x80100000";
 #endif
 		printf("\tInput Uboot filename ");
 		//argv[2] = "uboot.bin";
@@ -1283,7 +1290,7 @@ int check_image_validation(void)
 			printf("\nImage1 is broken, but Image2 size(0x%X) is too big(limit=0x%X)!!\
 				\nGive up copying image.\n", len, CFG_KERN_SIZE);
 		else {
-			printf("Image1 is borken. Copy Image2 to Image1\n");
+			printf("Image1 is broken. Copy Image2 to Image1\n");
 			copy_image(2, len);
 		}
 	}
@@ -1293,7 +1300,7 @@ int check_image_validation(void)
 			printf("\nImage2 is broken, but Image1 size(0x%X) is too big(limit=0x%X)!!\
 				\nGive up copying image.\n", len, CFG_KERN2_SIZE);
 		else {
-			printf("\nImage2 is borken. Copy Image1 to Image2.\n");
+			printf("\nImage2 is broken. Copy Image1 to Image2.\n");
 			copy_image(1, len);
 		}
 	}
@@ -1308,17 +1315,17 @@ int check_image_validation(void)
 }
 #endif
 
-static int check_uboot_image_validation(ulong image_ptr, ulong image_size)
+static int check_uboot_image(ulong image_ptr, ulong image_size)
 {
 	image_header_t *hdr = (image_header_t*)image_ptr;
 
 	if (image_size > UBOOT_FILE_SIZE_MAX) {
-		printf("U-Boot image size %d too big!\n", image_size);
+		printf("%s image size %d too big!\n", "U-Boot", image_size);
 		return -1;
 	}
 
 	if (image_size < UBOOT_FILE_SIZE_MIN) {
-		printf("U-Boot image size %d too small!\n", image_size);
+		printf("%s image size %d too small!\n", "U-Boot", image_size);
 		return -1;
 	}
 
@@ -1339,6 +1346,138 @@ static int check_uboot_image_validation(ulong image_ptr, ulong image_size)
 	return 0;
 }
 
+static int flash_uboot_image(ulong image_ptr, ulong image_size)
+{
+	int rrc = 0;
+
+#if defined (CFG_ENV_IS_IN_NAND)
+	printf("\n Copy %d bytes to Flash... \n", image_size);
+	rrc = ranand_erase_write((char *)image_ptr, 0, image_size);
+#elif defined (CFG_ENV_IS_IN_SPI)
+	printf("\n Copy %d bytes to Flash... \n", image_size);
+	rrc = raspi_erase_write((char *)image_ptr, 0, image_size);
+#else
+	ulong e_end = CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE-1;
+
+	flash_sect_protect(0, CFG_FLASH_BASE, e_end);
+	printf("\n Erase %s block from 0x%X to 0x%X\n", "U-Boot", CFG_FLASH_BASE, e_end);
+	flash_sect_erase(CFG_FLASH_BASE, e_end);
+	printf("\n Copy %d bytes to Flash... \n", image_size);
+	rrc = flash_write((uchar *)image_ptr, CFG_FLASH_BASE, image_size);
+	flash_sect_protect(1, CFG_FLASH_BASE, e_end);
+#endif
+
+	if (rrc) {
+#if defined (CFG_ENV_IS_IN_NAND) || defined (CFG_ENV_IS_IN_SPI)
+		printf("Error code: %d\n", rrc);
+#else
+		flash_perror(rrc);
+#endif
+		return -1;
+	}
+
+	printf("%d bytes flashed\n", image_size);
+
+	return 0;
+}
+
+int flash_kernel_image(ulong image_ptr, ulong image_size)
+{
+	int rrc = 0;
+	ulong e_end;
+
+	if (image_size < LINUX_FILE_SIZE_MIN) {
+		printf("%s image size %d too small!\n", "Linux", image_size);
+		return -1;
+	}
+
+	memset(&header, 0, sizeof(header));
+	if (verify_kernel_image(image_ptr, NULL, NULL, NULL) <= 0) {
+		printf("Check image error!\n");
+		return -1;
+	}
+
+#if defined (CFG_ENV_IS_IN_NAND)
+	printf("\n Copy %d bytes to Flash... \n", image_size);
+	rrc = ranand_erase_write((char *)image_ptr, CFG_KERN_ADDR-CFG_FLASH_BASE, image_size);
+#elif defined (CFG_ENV_IS_IN_SPI)
+	printf("\n Copy %d bytes to Flash... \n", image_size);
+	rrc = raspi_erase_write((char *)image_ptr, CFG_KERN_ADDR-CFG_FLASH_BASE, image_size);
+#else
+	if (image_size > (gd->bd->bi_flashsize - (CFG_BOOTLOADER_SIZE + CFG_CONFIG_SIZE + CFG_FACTORY_SIZE))) {
+		printf("%s image size %d too big!\n", "Linux", image_size);
+		return -1;
+	}
+
+	e_end = CFG_KERN_ADDR + image_size - 1;
+	if (get_addr_boundary(&e_end) == 0) {
+		printf("\n Erase %s block from 0x%X to 0x%X\n", "Linux", CFG_KERN_ADDR, e_end);
+		flash_sect_erase(CFG_KERN_ADDR, e_end);
+		printf("\n Copy %d bytes to Flash... \n", image_size);
+		rrc = flash_write((uchar *)image_ptr, CFG_KERN_ADDR, image_size);
+	} else {
+		rrc = ERR_ALIGN;
+	}
+#endif
+
+	if (rrc) {
+#if defined (CFG_ENV_IS_IN_NAND) || defined (CFG_ENV_IS_IN_SPI)
+		printf("Error code: %d\n", rrc);
+#else
+		flash_perror(rrc);
+#endif
+		return -1;
+	}
+
+	printf("%d bytes flashed\n", image_size);
+
+	return 0;
+}
+
+#if defined (RALINK_USB) || defined (MTK_USB)
+int flash_kernel_image_from_usb(cmd_tbl_t *cmdtp)
+{
+	char *argv[5];
+	char addr_str[16];
+	int argc;
+
+	argc = 2;
+	argv[1] = "start";
+
+	do_usb(cmdtp, 0, argc, argv);
+	if (usb_stor_curr_dev < 0) {
+		printf("\n No USB Storage found. Upgrade FW failed!\n");
+		return -1;
+	}
+
+	sprintf(addr_str, "0x%X", CFG_LOAD_ADDR);
+
+	argc = 5;
+	argv[1] = "usb";
+	argv[2] = "0";
+	argv[3] = &addr_str[0];
+	argv[4] = "root_uImage";
+
+	if (do_fat_fsload(cmdtp, 0, argc, argv)) {
+		printf("\n Upgrade FW from USB storage failed!\n");
+		return -1;
+	}
+
+	NetBootFileXferSize = simple_strtoul(getenv("filesize"), NULL, 16);
+	if (flash_kernel_image(CFG_LOAD_ADDR, NetBootFileXferSize) != 0)
+		return 1;
+
+	return 0;
+}
+#endif
+
+void perform_system_reset(void)
+{
+	printf("\nSYSTEM RESET!!!\n\n");
+	udelay(500);
+	do_reset(NULL, 0, 0, NULL);
+}
+
 /************************************************************************
  *
  * This is the next part if the initialization sequence: we are now
@@ -1350,7 +1489,7 @@ static int check_uboot_image_validation(ulong image_ptr, ulong image_size)
  */
 
 gd_t gd_data;
- 
+
 __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 {
 	cmd_tbl_t *cmdtp;
@@ -1365,7 +1504,7 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 	int timer1= CONFIG_BOOTDELAY;
 	unsigned char confirm=0;
 	int my_tmp;
-	char addr_str[11];
+	char addr_str[16];
 #if defined (CFG_ENV_IS_IN_FLASH)
 	ulong e_end;
 #endif
@@ -1423,11 +1562,6 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 #endif
 #endif
 
-
-	//debug("\n  New gd=%08X\n",gd);
-	//for(kk=0;kk <0x000fffff;kk++);
-
-	//gd = id;
 	gd->flags |= GD_FLG_RELOC;	/* tell others: relocation done */
 
 	Init_System_Mode(); /*  Get CPU rate */
@@ -1671,7 +1805,7 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 		reg = RALINK_REG(RT2880_SYSCFG_REG);
 		/* Uboot Version and Configuration*/
 		printf("============================================ \n");
-		printf("Ralink UBoot Version: %s\n", RALINK_LOCAL_VERSION);
+		printf("%s U-Boot Version: %s\n", RLT_MTK_VENDOR_NAME, RALINK_LOCAL_VERSION);
 		printf("-------------------------------------------- \n");
 		printf("%s %s %s\n",CHIP_TYPE, CHIP_VERSION, GMAC_MODE);
 		boot_from_eeprom = ((reg>>18) & 0x01);
@@ -1839,7 +1973,7 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 		}
 #endif
 		printf("============================================ \n");
-		printf("Ralink UBoot Version: %s\n", RALINK_LOCAL_VERSION);
+		printf("%s U-Boot Version: %s\n", RLT_MTK_VENDOR_NAME, RALINK_LOCAL_VERSION);
 		printf("-------------------------------------------- \n");
 		printf("%s %s %s\n",CHIP_TYPE, CHIP_VERSION, GMAC_MODE);
 #if defined (RT6855A_ASIC_BOARD) || defined (RT6855A_FPGA_BOARD)
@@ -1879,7 +2013,7 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 #elif (defined (MT7621_ASIC_BOARD) || defined (MT7621_FPGA_BOARD))
 	{
 	printf("============================================ \n");
-	printf("Ralink UBoot Version: %s\n", RALINK_LOCAL_VERSION);
+	printf("%s U-Boot Version: %s\n", RLT_MTK_VENDOR_NAME, RALINK_LOCAL_VERSION);
 	printf("-------------------------------------------- \n");
 #ifdef RALINK_DUAL_CORE_FUN	
 	printf("%s %s %s %s\n", CHIP_TYPE, RALINK_REG(RT2880_CHIP_REV_ID_REG)>>16&0x1 ? "MT7621A" : "MT7621N", "DualCore", GMAC_MODE);
@@ -1969,18 +2103,7 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 
 #endif
 
-	debug("\n ##### The CPU freq = %d MHZ #### \n",mips_cpu_feq/1000/1000);
-
-/*
-	if(*(volatile u_long *)(RALINK_SYSCTL_BASE + 0x0304) & (1<< 24))
-	{
-		debug("\n SDRAM bus set to 32 bit \n");
-	}
-	else
-	{
-		debug("\nSDRAM bus set to 16 bit \n");
-	}
-*/
+	debug("\n #### The CPU freq = %d MHZ #### \n",mips_cpu_feq/1000/1000);
 	debug(" estimate memory size = %d Mbytes\n",gd->ram_size /1024/1024 );
 
 #if defined (RT3052_ASIC_BOARD) || defined (RT3052_FPGA_BOARD)  || \
@@ -2045,124 +2168,72 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 		}
 		printf ("\b\b\b%2d ", timer1);
 	}
+
+#if (CONFIG_COMMANDS & CFG_CMD_NET)
+	eth_initialize(gd->bd);
+#endif
+
 	putc ('\n');
 	if(BootType == '3') {
 		char *argv[2];
+
+		printf("   \n%d: System Boot system code via Flash.\n", 3);
 		sprintf(addr_str, "0x%X", CFG_KERN_ADDR);
 		argv[1] = &addr_str[0];
-		printf("   \n3: System Boot system code via Flash.\n");
-#if 0
-		do_bootm(cmdtp, 0, 2, argv);
-#else
-		/* prepare tftpd and boot */
-		eth_initialize(gd->bd);
+		
+		/* prepare tftpd, check buttons, image integrity and boot */
 		do_tftpd(cmdtp, 0, 2, argv);
-#endif
 	}
 	else {
 		char *argv[4];
-		int argc= 3;
+		int argc = 3;
 
 		argv[2] = &file_name_space[0];
 		memset(file_name_space,0,ARGV_LEN);
 
-#if (CONFIG_COMMANDS & CFG_CMD_NET)
-		eth_initialize(gd->bd);
-#endif
-
 		switch(BootType) {
 		case '1':
 			printf("   \n%d: System Load Linux to SDRAM via TFTP. \n", SEL_LOAD_LINUX_SDRAM);
-			tftp_config(SEL_LOAD_LINUX_SDRAM, argv);           
-			argc= 3;
+			tftp_config(SEL_LOAD_LINUX_SDRAM, argv);
+
 			setenv("autostart", "yes");
+
+			argc = 3;
 			do_tftpb(cmdtp, 0, argc, argv);
 			break;
 
 		case '2':
-			printf("   \n%d: System Load Linux Kernel then write to Flash via TFTP. \n", SEL_LOAD_LINUX_WRITE_FLASH);
-			printf(" Warning!! Erase Linux in Flash then burn new one. Are you sure?(Y/N)\n");
+retry_kernel_tftp:
+			printf("   \n%d: System Load %s then write to Flash via %s. \n", SEL_LOAD_LINUX_WRITE_FLASH, "Linux", "TFTP");
+			printf(" Warning!! Erase %s in Flash then burn new one. Are you sure? (Y/N)\n", "Linux");
 			confirm = getc();
 			if (confirm != 'y' && confirm != 'Y') {
 				printf(" Operation terminated\n");
 				break;
 			}
 			tftp_config(SEL_LOAD_LINUX_WRITE_FLASH, argv);
-			argc= 3;
+
 			setenv("autostart", "no");
+
+			argc = 3;
 			do_tftpb(cmdtp, 0, argc, argv);
 
-#if defined (CFG_ENV_IS_IN_NAND)
-			if (1) {
-				load_address = simple_strtoul(argv[1], NULL, 16);
-				ranand_erase_write((u8 *)load_address, CFG_KERN_ADDR-CFG_FLASH_BASE, NetBootFileXferSize);
-			}
-#elif defined (CFG_ENV_IS_IN_SPI)
-			if (1) {
-				load_address = simple_strtoul(argv[1], NULL, 16);
-				raspi_erase_write((u8 *)load_address, CFG_KERN_ADDR-CFG_FLASH_BASE, NetBootFileXferSize);
-			}
-#else //CFG_ENV_IS_IN_FLASH
-#if (defined (ON_BOARD_8M_FLASH_COMPONENT) || defined (ON_BOARD_16M_FLASH_COMPONENT)) && (defined (RT2880_ASIC_BOARD) || defined (RT2880_FPGA_BOARD) || defined (RT3052_MP1))
-			//erase linux
-			if (NetBootFileXferSize <= (0x400000 - (CFG_BOOTLOADER_SIZE + CFG_CONFIG_SIZE + CFG_FACTORY_SIZE))) {
-				e_end = CFG_KERN_ADDR + NetBootFileXferSize;
-				if (0 != get_addr_boundary(&e_end))
-					break;
-				printf("Erase linux kernel block !!\n");
-				printf("From 0x%X To 0x%X\n", CFG_KERN_ADDR, e_end);
-				flash_sect_erase(CFG_KERN_ADDR, e_end);
-			}
-			else if (NetBootFileXferSize <= CFG_KERN_SIZE) {
-				e_end = PHYS_FLASH_2 + NetBootFileXferSize - (0x400000 - (CFG_BOOTLOADER_SIZE + CFG_CONFIG_SIZE + CFG_FACTORY_SIZE));
-				if (0 != get_addr_boundary(&e_end))
-					break;
-				printf("Erase linux kernel block !!\n");
-				printf("From 0x%X To 0x%X\n", CFG_KERN_ADDR, CFG_FLASH_BASE+0x3FFFFF);
-				flash_sect_erase(CFG_KERN_ADDR, CFG_FLASH_BASE+0x3FFFFF);
-				printf("Erase linux file system block !!\n");
-				printf("From 0x%X To 0x%X\n", PHYS_FLASH_2, e_end);
-				flash_sect_erase(PHYS_FLASH_2, e_end);
-			}
-#else
-			if (NetBootFileXferSize <= (bd->bi_flashsize - (CFG_BOOTLOADER_SIZE + CFG_CONFIG_SIZE + CFG_FACTORY_SIZE))) {
-				e_end = CFG_KERN_ADDR + NetBootFileXferSize;
-				if (0 != get_addr_boundary(&e_end))
-					break;
-				printf("Erase linux kernel block !!\n");
-				printf("From 0x%X To 0x%X\n", CFG_KERN_ADDR, e_end);
-				flash_sect_erase(CFG_KERN_ADDR, e_end);
-			}
-#endif
-			else {
-				printf("***********************************\n");
-				printf("The Linux Image size is too big !! \n");
-				printf("***********************************\n");
-				break;
-			}
+			load_address = simple_strtoul(argv[1], NULL, 16);
+			if (flash_kernel_image(load_address, NetBootFileXferSize) != 0)
+				goto retry_kernel_tftp;
 
 #ifdef DUAL_IMAGE_SUPPORT
 			/* Don't do anything to the firmware upgraded in Uboot, since it may be used for testing */
 			setenv("Image1Stable", "1");
 			saveenv();
-#endif
-
-			//cp.linux
-			argc = 4;
-			argv[0]= "cp.linux";
-			do_mem_cp(cmdtp, 0, argc, argv);
-#endif //CFG_ENV_IS_IN_FLASH
-
-#ifdef DUAL_IMAGE_SUPPORT
-			//reset
-			do_reset(cmdtp, 0, argc, argv);
+			perform_system_reset();
 #endif
 
 			//bootm bc050000
-			argc= 2;
+			argc = 2;
 			sprintf(addr_str, "0x%X", CFG_KERN_ADDR);
 			argv[1] = &addr_str[0];
-			do_bootm(cmdtp, 0, argc, argv);            
+			do_bootm(cmdtp, 0, argc, argv);
 			break;
 
 #ifdef RALINK_CMDLINE
@@ -2170,67 +2241,77 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 			printf("   \n%d: System Enter Boot Command Line Interface.\n", SEL_ENTER_CLI);
 			printf ("\n%s\n", version_string);
 			/* main_loop() can return to retry autoboot, if so just run it again. */
-			for (;;) {					
+			for (;;) {
 				main_loop ();
 			}
 			break;
 #endif // RALINK_CMDLINE //
+
 #ifdef RALINK_UPGRADE_BY_SERIAL
 		case '7':
-			printf("\n%d: System Load Boot Loader then write to Flash via Serial. \n", SEL_LOAD_BOOT_WRITE_FLASH_BY_SERIAL);
-			argc= 1;
+retry_uboot_serial:
+			printf("   \n%d: System Load %s then write to Flash via %s. \n", SEL_LOAD_BOOT_WRITE_FLASH_BY_SERIAL, "Boot Loader", "Serial");
+			printf(" Warning!! Erase %s in Flash then burn new one. Are you sure? (Y/N)\n", "Boot Loader");
+			confirm = getc();
+			if (confirm != 'y' && confirm != 'Y') {
+				printf(" Operation terminated\n");
+				break;
+			}
+
 			setenv("autostart", "no");
-			my_tmp = do_load_serial_bin(cmdtp, 0, argc, argv);
-			NetBootFileXferSize=simple_strtoul(getenv("filesize"), NULL, 16);
-			if (my_tmp == 1) {
+
+			argc = 1;
+			if (do_load_serial_bin(cmdtp, 0, argc, argv) == 1) {
 				printf("\n Download aborted!\n");
+				break;
 			}
-			else if (check_uboot_image_validation(CFG_LOAD_ADDR, NetBootFileXferSize) != 0) {
-				printf("\n Abort: Invalid U-Boot image!\n");
-			}
-#if defined (CFG_ENV_IS_IN_NAND)
-			else {
-				ranand_erase_write((char *)CFG_LOAD_ADDR, 0, NetBootFileXferSize);
-			}
-#elif defined (CFG_ENV_IS_IN_SPI)
-			else {
-				raspi_erase_write((char *)CFG_LOAD_ADDR, 0, NetBootFileXferSize);
-			}
-#else
-			else {
-				//protect off uboot
-				flash_sect_protect(0, CFG_FLASH_BASE, CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE-1);
 
-				//erase uboot
-				printf("\n Erase U-Boot block !!\n");
-				printf("From 0x%X To 0x%X\n", CFG_FLASH_BASE, CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE-1);
-				flash_sect_erase(CFG_FLASH_BASE, CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE-1);
+			NetBootFileXferSize = simple_strtoul(getenv("filesize"), NULL, 16);
+			if (check_uboot_image(CFG_LOAD_ADDR, NetBootFileXferSize) != 0)
+				goto retry_uboot_serial;
 
-				//cp.uboot            
-				argc = 4;
-				argv[0]= "cp.uboot";
-				do_mem_cp(cmdtp, 0, argc, argv);                       
+			if (flash_uboot_image(CFG_LOAD_ADDR, NetBootFileXferSize) != 0)
+				goto retry_uboot_serial;
 
-				//protect on uboot
-				flash_sect_protect(1, CFG_FLASH_BASE, CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE-1);
+			break;
+
+		case '0':
+retry_kernel_serial:
+			printf("   \n%d: System Load %s then write to Flash via %s. \n", SEL_LOAD_LINUX_WRITE_FLASH_BY_SERIAL, "Linux", "Serial");
+			printf(" Warning!! Erase %s in Flash then burn new one. Are you sure? (Y/N)\n", "Linux");
+			confirm = getc();
+			if (confirm != 'y' && confirm != 'Y') {
+				printf(" Operation terminated\n");
+				break;
 			}
-#endif // CFG_ENV_IS_IN_FLASH
 
-			//reset            
-			do_reset(cmdtp, 0, argc, argv);
+			setenv("autostart", "no");
+
+			argc = 1;
+			if (do_load_serial_bin(cmdtp, 0, argc, argv) == 1) {
+				printf("\n Download aborted!\n");
+				break;
+			}
+
+			NetBootFileXferSize = simple_strtoul(getenv("filesize"), NULL, 16);
+			if (flash_kernel_image(CFG_LOAD_ADDR, NetBootFileXferSize) != 0)
+				goto retry_kernel_serial;
+
 			break;
 #endif /* RALINK_UPGRADE_BY_SERIAL */
+
 		case '8':
 			printf("   \n%d: System Load UBoot to SDRAM via TFTP. \n", SEL_LOAD_BOOT_SDRAM);
 			tftp_config(SEL_LOAD_BOOT_SDRAM, argv);
-			argc= 3;
 			setenv("autostart", "yes");
+			argc = 3;
 			do_tftpb(cmdtp, 0, argc, argv);
 			break;
 
 		case '9':
-			printf("   \n%d: System Load Boot Loader then write to Flash via TFTP. \n", SEL_LOAD_BOOT_WRITE_FLASH);
-			printf(" Warning!! Erase Boot Loader in Flash then burn new one. Are you sure?(Y/N)\n");
+retry_uboot_tftp:
+			printf("   \n%d: System Load %s then write to Flash via %s. \n", SEL_LOAD_BOOT_WRITE_FLASH, "Boot Loader", "TFTP");
+			printf(" Warning!! Erase %s in Flash then burn new one. Are you sure? (Y/N)\n", "Boot Loader");
 			confirm = getc();
 			if (confirm != 'y' && confirm != 'Y') {
 				printf(" Operation terminated\n");
@@ -2238,101 +2319,35 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 			}
 			setenv("bootfile", uboot_file);
 			tftp_config(SEL_LOAD_BOOT_WRITE_FLASH, argv);
+			setenv("autostart", "no");
+
 			argc = 3;
-			setenv("autostart", "no");
 			do_tftpb(cmdtp, 0, argc, argv);
+
 			load_address = simple_strtoul(argv[1], NULL, 16);
-			if (check_uboot_image_validation(load_address, NetBootFileXferSize) != 0) {
-				printf("\n Abort: Invalid U-Boot image!\n");
-			}
-#if defined (CFG_ENV_IS_IN_NAND)
-			else {
-				ranand_erase_write((char *)load_address, 0, NetBootFileXferSize);
-			}
-#elif defined (CFG_ENV_IS_IN_SPI)
-			else {
-				raspi_erase_write((char *)load_address, 0, NetBootFileXferSize);
-			}
-#else
-			else {
-				//protect off uboot
-				flash_sect_protect(0, CFG_FLASH_BASE, CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE-1);
+			if (check_uboot_image(load_address, NetBootFileXferSize) != 0)
+				goto retry_uboot_tftp;
 
-				//erase uboot
-				printf("\n Erase U-Boot block !!\n");
-				printf("From 0x%X To 0x%X\n", CFG_FLASH_BASE, CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE-1);
-				flash_sect_erase(CFG_FLASH_BASE, CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE-1);
+			if (flash_uboot_image(load_address, NetBootFileXferSize) != 0)
+				goto retry_uboot_tftp;
 
-				//cp.uboot            
-				argc = 4;
-				argv[0]= "cp.uboot";
-				do_mem_cp(cmdtp, 0, argc, argv);                       
-
-				//protect on uboot
-				flash_sect_protect(1, CFG_FLASH_BASE, CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE-1);
-			}
-#endif //CFG_ENV_IS_IN_FLASH
-
-			//reset            
-			do_reset(cmdtp, 0, argc, argv);
 			break;
-#ifdef RALINK_UPGRADE_BY_SERIAL
-#if defined (CFG_ENV_IS_IN_NAND) || defined (CFG_ENV_IS_IN_SPI)
-		case '0':
-			printf("\n%d: System Load Linux then write to Flash via Serial. \n", SEL_LOAD_LINUX_WRITE_FLASH_BY_SERIAL);
-			argc= 1;
-			setenv("autostart", "no");
-			my_tmp = do_load_serial_bin(cmdtp, 0, argc, argv);
-			NetBootFileXferSize=simple_strtoul(getenv("filesize"), NULL, 16);
-#if defined (CFG_ENV_IS_IN_NAND)
-			ranand_erase_write((char *)CFG_LOAD_ADDR, CFG_KERN_ADDR-CFG_FLASH_BASE, NetBootFileXferSize);
-#elif defined (CFG_ENV_IS_IN_SPI)
-			raspi_erase_write((char *)CFG_LOAD_ADDR, CFG_KERN_ADDR-CFG_FLASH_BASE, NetBootFileXferSize);
-#endif //CFG_ENV_IS_IN_FLASH
-
-			//reset            
-			do_reset(cmdtp, 0, argc, argv);
-			break;
-#endif
-#endif // RALINK_UPGRADE_BY_SERIAL //
-
 
 #if defined (RALINK_USB) || defined (MTK_USB)
-#if defined (CFG_ENV_IS_IN_NAND) || defined (CFG_ENV_IS_IN_SPI)
 		case '5':
-			printf("\n%d: System Load Linux then write to Flash via USB Storage. \n", 5);
-
-			argc = 2;
-			argv[1] = "start";
-			do_usb(cmdtp, 0, argc, argv);
-			if( usb_stor_curr_dev < 0){
-				printf("No USB Storage found. Upgrade F/W failed.\n");
+			printf("   \n%d: System Load %s then write to Flash via %s. \n", SEL_LOAD_LINUX_WRITE_FLASH_BY_USB, "Linux", "USB Storage");
+			printf(" Warning!! Erase %s in Flash then burn new one. Are you sure? (Y/N)\n", "Linux");
+			confirm = getc();
+			if (confirm != 'y' && confirm != 'Y') {
+				printf(" Operation terminated\n");
 				break;
 			}
 
-			argc= 5;
-			argv[1] = "usb";
-			argv[2] = "0";
-			sprintf(addr_str, "0x%X", CFG_LOAD_ADDR);
-			argv[3] = &addr_str[0];
-			argv[4] = "root_uImage";
 			setenv("autostart", "no");
-			if(do_fat_fsload(cmdtp, 0, argc, argv)){
-				printf("Upgrade F/W from USB storage failed.\n");
-				break;
-			}
 
-			NetBootFileXferSize=simple_strtoul(getenv("filesize"), NULL, 16);
-#if defined (CFG_ENV_IS_IN_NAND)
-			ranand_erase_write((char *)CFG_LOAD_ADDR, CFG_KERN_ADDR-CFG_FLASH_BASE, NetBootFileXferSize);
-#elif defined (CFG_ENV_IS_IN_SPI)
-			raspi_erase_write((char *)CFG_LOAD_ADDR, CFG_KERN_ADDR-CFG_FLASH_BASE, NetBootFileXferSize);
-#endif //CFG_ENV_IS_IN_FLASH
+			flash_kernel_image_from_usb(cmdtp);
 
-			//reset            
-			do_reset(cmdtp, 0, argc, argv);
 			break;
-#endif
 #endif // RALINK_UPGRADE_BY_USB //
 
 		default:
@@ -2341,7 +2356,7 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 			break;            
 		} /* end of switch */   
 
-		do_reset(cmdtp, 0, argc, argv);
+		perform_system_reset();
 
 	} /* end of else */
 

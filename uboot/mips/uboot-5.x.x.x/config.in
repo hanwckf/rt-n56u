@@ -96,7 +96,7 @@ choice 'Ram/Rom version' "RAM UBOOT_RAM \
 			  ROM UBOOT_ROM 
 			 " ROM
 
-bool "Dual Image" DUAL_IMAGE_SUPPORT
+#bool "Dual Image" DUAL_IMAGE_SUPPORT
 
 bool "Partition LAN/WAN" LAN_WAN_PARTITION
 if [ "$LAN_WAN_PARTITION" = "y" ]; then
@@ -182,7 +182,7 @@ else
 define_bool UBOOT_RAM y
 fi
 
-bool "Dual Image" DUAL_IMAGE_SUPPORT
+#bool "Dual Image" DUAL_IMAGE_SUPPORT
 
 bool "Partition LAN/WAN" LAN_WAN_PARTITION
 if [ "$LAN_WAN_PARTITION" = "y" ]; then
@@ -252,7 +252,7 @@ else
 define_bool UBOOT_RAM y
 fi
 
-bool "Dual Image" DUAL_IMAGE_SUPPORT
+#bool "Dual Image" DUAL_IMAGE_SUPPORT
 
 bool "Partition LAN/WAN" LAN_WAN_PARTITION
 if [ "$LAN_WAN_PARTITION" = "y" ]; then
@@ -410,7 +410,9 @@ else
 define_bool UBOOT_RAM y
 fi
 
-bool "Dual Image" DUAL_IMAGE_SUPPORT
+#bool "Dual Image" DUAL_IMAGE_SUPPORT
+
+bool "USB Recovery" USB_RECOVERY_SUPPORT
 
 bool "Partition LAN/WAN" LAN_WAN_PARTITION
 if [ "$LAN_WAN_PARTITION" = "y" ]; then
@@ -513,7 +515,9 @@ fi
 # RT3352 Option
 #-----------------------
 comment ""
-bool "Dual Image" DUAL_IMAGE_SUPPORT
+#bool "Dual Image" DUAL_IMAGE_SUPPORT
+
+bool "USB Recovery" USB_RECOVERY_SUPPORT
 
 bool "Partition LAN/WAN" LAN_WAN_PARTITION
 if [ "$LAN_WAN_PARTITION" = "y" ]; then
@@ -579,7 +583,10 @@ define_bool ON_BOARD_16BIT_DRAM_BUS y
 # RT5350 Option
 #-----------------------
 comment ""
-bool "Dual Image" DUAL_IMAGE_SUPPORT
+#bool "Dual Image" DUAL_IMAGE_SUPPORT
+
+bool "USB Recovery" USB_RECOVERY_SUPPORT
+
 bool "Partition LAN/WAN" LAN_WAN_PARTITION
 if [ "$LAN_WAN_PARTITION" = "y" ]; then
  choice 'LAN/WAN Board Layout' "W/LLLL RALINK_DEMO_BOARD_PVLAN \
@@ -680,14 +687,13 @@ if [ "$ON_BOARD_SPI_FLASH_COMPONENT" = "y" ]; then
 choice 'Ram/Rom version' "RAM UBOOT_RAM \
 			  ROM UBOOT_ROM 
 			 " ROM
-#choice 'Small Uboot/Config partition' "Normal_Partition_5_sectors NORMAL_UBOOT_PARTITION \
-#				       Small_Partition_3_sectors SMALL_UBOOT_PARTITION
-#				      " Normal_Partition_5_sectors
 else
 define_bool UBOOT_RAM y
 fi
 
-bool "Dual Image" DUAL_IMAGE_SUPPORT
+#bool "Dual Image" DUAL_IMAGE_SUPPORT
+
+bool "USB Recovery" USB_RECOVERY_SUPPORT
 
 bool "Partition LAN/WAN" LAN_WAN_PARTITION
 if [ "$LAN_WAN_PARTITION" = "y" ]; then
@@ -795,9 +801,6 @@ if [ "$ON_BOARD_SPI_FLASH_COMPONENT" = "y" ]; then
 #choice 'Ram/Rom version' "RAM UBOOT_RAM \
 #			  ROM UBOOT_ROM 
 #			 " ROM
-#choice 'Small Uboot/Config partition' "Normal_Partition_5_sectors NORMAL_UBOOT_PARTITION \
-#				       Small_Partition_3_sectors SMALL_UBOOT_PARTITION
-#				      " Normal_Partition_5_sectors
 define_bool UBOOT_ROM y
 define_bool UBOOT_RAM n
 else
@@ -812,7 +815,9 @@ if [ "$LAN_WAN_PARTITION" = "y" ]; then
 			       "
 fi
 
-bool "Dual Image" DUAL_IMAGE_SUPPORT
+#bool "Dual Image" DUAL_IMAGE_SUPPORT
+
+bool "USB Recovery" USB_RECOVERY_SUPPORT
 
 if [ "$ON_BOARD_NAND_FLASH_COMPONENT" = "y" ]; then
 bool "Static DRAM Parameter" DRAM_PARAMETERS
@@ -959,9 +964,6 @@ if [ "$ON_BOARD_SPI_FLASH_COMPONENT" = "y" ]; then
 choice 'Ram/Rom version' "RAM UBOOT_RAM \
 			  ROM UBOOT_ROM 
 			 " ROM
-#choice 'Small Uboot/Config partition' "Normal_Partition_5_sectors NORMAL_UBOOT_PARTITION \
-#				       Small_Partition_3_sectors SMALL_UBOOT_PARTITION
-#				      " Normal_Partition_5_sectors
 else
 define_bool UBOOT_RAM y
 fi
@@ -1053,8 +1055,9 @@ else
 	fi
 fi
 
+#bool "Dual Image" DUAL_IMAGE_SUPPORT
 
-bool "Dual Image" DUAL_IMAGE_SUPPORT
+bool "USB Recovery" USB_RECOVERY_SUPPORT
 
 bool "Partition LAN/WAN" LAN_WAN_PARTITION
 if [ "$LAN_WAN_PARTITION" = "y" ]; then
@@ -1435,7 +1438,10 @@ define_bool UBOOT_RAM y
 fi
 
 #bool "Tiny Uboot" CONFIG_TINY_UBOOT
+
 #bool "Dual Image" DUAL_IMAGE_SUPPORT
+
+bool "USB Recovery" USB_RECOVERY_SUPPORT
 
 bool "Partition LAN/WAN" LAN_WAN_PARTITION
 if [ "$LAN_WAN_PARTITION" = "y" ]; then
@@ -1523,22 +1529,11 @@ define_bool ON_BOARD_16BIT_DRAM_BUS y
 #-----------------------
 comment ""
 
-#define_bool PDMA_NEW y
-#define_bool RX_SCATTER_GATTER_DMA y
-
 bool "Tiny Uboot" CONFIG_TINY_UBOOT
 
-#if [ "$ON_BOARD_SPI_FLASH_COMPONENT" = "y" ]; then
 choice 'Ram/Rom version' "RAM UBOOT_RAM \
                           ROM UBOOT_ROM
                          " ROM
-#choice 'Small Uboot/Config partition' "Normal_Partition_5_sectors NORMAL_UBOOT_PARTITION \
-#                                      Small_Partition_3_sectors SMALL_UBOOT_PARTITION
-#                                     " Normal_Partition_5_sectors
-#else
-#define_bool UBOOT_RAM y
-#fi
-
 #
 # Enable(uncomment) following line to enable the adjustment for CPU PLL settings in menuconfig,
 # and then input:  make mrproper;make menuconfig
@@ -1550,13 +1545,16 @@ if [ "$MT7628_CPU_PLL_PARAMETERS" = "y" ]; then
                                    XTAL CPUCLK_FROM_XTAL
                                  " CPLL
 
-    hex "Fractional divider for clock source (0x1~0xA)" CPU_FRAC_DIV 0x1
-        else
-	define_bool     CPUCLK_FROM_CPLL               y
-    define_hex		CPU_FRAC_DIV					0x1
+ hex "Fractional divider for clock source (0x1~0xA)" CPU_FRAC_DIV 0x1
+else
+ define_bool	CPUCLK_FROM_CPLL y
+ define_hex	CPU_FRAC_DIV 0x1
 fi
 
-bool "Dual Image" DUAL_IMAGE_SUPPORT
+#bool "Dual Image" DUAL_IMAGE_SUPPORT
+
+bool "USB Recovery" USB_RECOVERY_SUPPORT
+
 bool "ETH One Port Only" ETH_ONE_PORT_ONLY
 
 if [ "$ETH_ONE_PORT_ONLY" = "n" ]; then

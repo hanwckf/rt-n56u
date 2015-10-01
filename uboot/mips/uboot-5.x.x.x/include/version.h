@@ -200,11 +200,21 @@
   #endif
 #endif
 
+#if defined(RT2880_FPGA_BOARD) || defined (RT2880_ASIC_BOARD) || \
+    defined(RT3052_FPGA_BOARD) || defined (RT3052_ASIC_BOARD) || \
+    defined(RT3352_FPGA_BOARD) || defined (RT3352_ASIC_BOARD) || \
+    defined(RT3883_FPGA_BOARD) || defined (RT3883_ASIC_BOARD) || \
+    defined(RT5350_FPGA_BOARD) || defined (RT5350_ASIC_BOARD) || \
+    defined(RT6855A_FPGA_BOARD) || defined (RT6855A_ASIC_BOARD)
+#define RLT_MTK_VENDOR_NAME	"Ralink"
+#else
+#define RLT_MTK_VENDOR_NAME	"MediaTek"
+#endif
 
 #define SHOW_VER_STR()	\
 	do {	\
 		printf("============================================ \n"); \
-		printf("Ralink UBoot Version: %s\n", RALINK_LOCAL_VERSION); \
+		printf("%s U-Boot Version: %s\n", RLT_MTK_VENDOR_NAME, RALINK_LOCAL_VERSION); \
 		printf("-------------------------------------------- \n"); \
 		printf("%s %s %s\n",CHIP_TYPE, CHIP_VERSION, GMAC_MODE); \
 		printf("DRAM component: %d Mbits %s\n", DRAM_COMPONENT, DDR_INFO); \

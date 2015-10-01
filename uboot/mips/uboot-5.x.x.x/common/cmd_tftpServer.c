@@ -21,34 +21,98 @@ static ulong	TftpLastBlock;		/* last packet sequence number received */
 static ulong	TftpBlockWrapOffset;	/* memory offset due to wrapping	*/
 static int	TftpState;
 
-uchar asuslink[] = "ASUSSPACELINK";
-uchar maclink[] = "snxxxxxxxxxxx";
+static uchar asuslink[] = "ASUSSPACELINK";
+static uchar maclink[] = "snxxxxxxxxxxx";
 
-unsigned char *ptr;
-uint16_t RescueAckFlag = 0;
-uint32_t copysize = 0;
-uint32_t offset = 0;
-int rc = 0;
-int MAC_FLAG = 0;
-int env_loc = 0;
+static unsigned char *image_ptr;
+static uint32_t image_len;
+static uint16_t RescueAckFlag;
 
-static void _tftpd_open(void);
-static void TftpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len);
-static void SolveImage(void);
+extern IPaddr_t TempServerIP;
 extern image_header_t header;
 extern int do_bootm(cmd_tbl_t *, int, int, char *[]);
 extern int do_reset(cmd_tbl_t *, int, int, char *[]);
-extern int verify_kernel_image(int, char *[], ulong *, ulong *, ulong *);
+extern int verify_kernel_image(ulong, ulong *, ulong *, ulong *);
+extern int flash_kernel_image(ulong image_ptr, ulong image_size);
+extern int flash_kernel_image_from_usb(cmd_tbl_t *cmdtp);
 extern int reset_to_default(void);
-
-extern IPaddr_t TempServerIP;
+extern void perform_system_reset(void);
 
 #if (CONFIG_COMMANDS & CFG_CMD_TFTPSERVER)
-int check_image(int argc, char *argv[])
+
+int do_tftpd(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
-	memset(&header, 0, sizeof(header));
-	return verify_kernel_image(argc, argv, NULL, NULL, NULL);
+	const int press_times = 1;
+	int i = 0;
+
+	if (DETECT_BTN_RESET())		/* RESET button */
+	{
+		printf(" \n## Enter to Rescue Mode (%s) ##\n", "manual");
+		setenv("autostart", "no");
+		
+		LED_ALERT_ON();
+		
+#if defined (RALINK_USB) || defined (MTK_USB)
+		if (flash_kernel_image_from_usb(cmdtp) == 0) {
+			perform_system_reset();
+			return 0;
+		}
+#endif
+		/* Wait forever for an image */
+		NetLoop(TFTPD);
+		perform_system_reset();
+	}
+	else if (DETECT_BTN_WPS())	/* WPS button */
+	{
+		/* Make sure WPS button is pressed at least press_times * 0.01s. */
+		while (DETECT_BTN_WPS() && i++ < press_times) {
+			udelay(10000);
+		}
+		
+		if (i >= press_times) {
+			while (DETECT_BTN_WPS()) {
+				LED_ALERT_BLINK();
+				udelay(90000);
+			}
+			LED_ALERT_OFF();
+			reset_to_default();
+			perform_system_reset();
+		}
+	}
+	else
+	{
+		ulong addr_src;
+		
+		if (argc < 2) {
+			addr_src = load_addr;
+		} else {
+			addr_src = simple_strtoul(argv[1], NULL, 16);
+		}
+		
+		memset(&header, 0, sizeof(header));
+		if (verify_kernel_image(addr_src, NULL, NULL, NULL) <= 0) {
+			printf(" \n## Enter to Rescue Mode (%s) ##\n", "image error");
+			
+			LED_ALERT_ON();
+			
+			/* Wait forever for an image */
+			NetLoop(TFTPD);
+			perform_system_reset();
+		}
+		
+		LED_POWER_ON();
+		gpio_init_usb(0);
+		do_bootm(cmdtp, 0, argc, argv);
+	}
+
+	return 0;
 }
+
+U_BOOT_CMD(
+	tftpd, 1, 1, do_tftpd,
+	"tftpd\t -load the data by tftp protocol\n",
+	NULL
+);
 
 static void TftpdSend(void)
 {
@@ -56,6 +120,8 @@ static void TftpdSend(void)
 	volatile uchar *xp;
 	volatile ushort *s;
 	int	len = 0;
+	uint32_t offset = 0;
+
 	/*
 	*	We will always be sending some sort of packet, so
 	*	cobble together the packet headers now.
@@ -146,111 +212,18 @@ static void TftpdTimeout(void)
 	NetSetTimeout(TIMEOUT * CFG_HZ, TftpdTimeout);
 }
 
-U_BOOT_CMD(
-	tftpd, 1, 1, do_tftpd,
-	"tftpd\t -load the data by tftp protocol\n",
-	NULL
-);
-
-int do_tftpd(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+static void TftpdFinish(void)
 {
-	const int press_times = 1;
-	int i = 0;
+	int i;
 
-	if (DETECT_BTN_RESET())		/* Reset to default button */
-	{
-		printf(" \n## Enter Rescue Mode ##\n");
-		setenv("autostart", "no");
-		
-		LED_ALERT_ON();
-		
-		/* Wait forever for an image */
-		if (NetLoop(TFTPD) < 0) 
-			return 1;
-	}
-	else if (DETECT_BTN_WPS())	/* WPS button */
-	{
-		/* Make sure WPS button is pressed at least press_times * 0.01s. */
-		while (DETECT_BTN_WPS() && i++ < press_times)
-		{
-			udelay(10000);
-		}
-		
-		if (i >= press_times) {
-			while (DETECT_BTN_WPS())
-			{
-				LED_ALERT_BLINK();
-				udelay(90000);
-			}
-			LED_ALERT_OFF();
-			reset_to_default();
-			do_reset (NULL, 0, 0, NULL);
-		}
-	}
-	else
-	{
-		if (check_image(argc, argv) <= 0)
-		{
-			printf(" \n## Enter Recuse Mode (image error) ##\n");
-			if (NetLoop(TFTPD) < 0)
-				return 1;
-		}
-		
-		LED_POWER_ON();
-		gpio_init_usb(0);
-		do_bootm(cmdtp, 0, argc, argv);
-	}
-
-	return 0;
-}
-
-void TftpdStart(void)
-{
-	DECLARE_GLOBAL_DATA_PTR;
-
-	ulong addr = CFG_LOAD_ADDR;
-	ptr = (unsigned char*)addr;
-
-#if defined(CONFIG_NET_MULTI)
-	printf("Using %s device\n", eth_get_name());
-#endif
-	puts("\nOur IP address is:(");	
-	print_IPaddr(NetOurIP);
-	puts(")\nWait for TFTP request...\n");
-	/* Check if we need to send across this subnet */
-	if (NetOurGatewayIP && NetOurSubnetMask) 
-	{
-		IPaddr_t OurNet 	= NetOurIP    & NetOurSubnetMask;
-		IPaddr_t ServerNet 	= NetServerIP & NetOurSubnetMask;
-		
-		if (OurNet != ServerNet)
-		{
-			puts("; sending through gateway ");
-			print_IPaddr(NetOurGatewayIP) ;
-		}
-	}
-
-	memset(ptr,0,sizeof(ptr));
-	_tftpd_open();
-}
-
-static void _tftpd_open()
-{
-	NetSetTimeout(TIMEOUT * CFG_HZ * 2, TftpdTimeout);
-	NetSetHandler(TftpHandler);
-	
-	TftpOurPort = PORT_TFTP;
-	TftpTimeoutCount = 0;
-	TftpState = STATE_RRQ;
-	TftpBlock = 0;
-	
-	/* zero out server ether in case the server ip has changed */
-	memset(NetServerEther, 0, 6);
+	for (i=0; i<6; i++)
+		TftpdSend();
 }
 
 static void TftpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 {
 	ushort proto;
+	uint32_t offset;
 	volatile ushort *s;
 	int i;
 
@@ -258,18 +231,18 @@ static void TftpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 	{
 		return;
 	}
+
 	/* don't care the packets that donot send to TFTP port */
-	
 	if (TftpState != STATE_RRQ && src != TftpServerPort)
 	{
 		return;
 	}
-	
+
 	if (len < 2)
 	{
 		return;
 	}
-	
+
 	len -= 2;
 	/* warning: don't use increment (++) in ntohs() macros!! */
 	s = (ushort*)pkt;
@@ -391,9 +364,9 @@ static void TftpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 		NetSetTimeout(TIMEOUT * CFG_HZ, TftpTimeout);
 		
 		offset = (TftpBlock - 1) * TFTP_BLOCK_SIZE;
-		copysize = offset + len;/* the total length of the data */
+		image_len = offset + len;/* the total length of the data */
 
-		(void)memcpy((void *)(ptr+ offset), pkt+2, len);/* store the data part to RAM */
+		(void)memcpy((void *)(image_ptr + offset), pkt+2, len);/* store the data part to RAM */
 		
 		/*
 		*	Acknowledge the block just received, which will prompt
@@ -403,13 +376,17 @@ static void TftpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 		
 		if (len < TFTP_BLOCK_SIZE)
 		{
+			int rrc_code;
 		/*
 		*	We received the whole thing.  Try to run it.
 		*/
 			puts("\ndone\n");
+			flush_cache((ulong)image_ptr, image_len);
+			rrc_code = flash_kernel_image((ulong)image_ptr, image_len);
+			RescueAckFlag = (rrc_code) ? 0x0000 : 0x0001;
 			TftpState = STATE_FINISHACK;
+			TftpdFinish();
 			NetState = NETLOOP_SUCCESS;
-			SolveImage();
 		}
 		break;
 		
@@ -422,86 +399,51 @@ static void TftpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 		
 	default:
 		break;
-		
 	}
 }
 
-static void SolveImage(void)
+void TftpdStart(void)
 {
-	int  i = 0;
-	int rrc = 0;
-	ulong count = 0;
-	ulong e_end = 0;
+	DECLARE_GLOBAL_DATA_PTR;
 
-	printf("Check image from 0x%x and write it to FLASH \n", ptr);
+	ulong addr = CFG_LOAD_ADDR;
+	image_ptr = (unsigned char*)addr;
+	image_len = 0;
 
-	load_addr = (unsigned long)ptr;
-	if (check_image(0, NULL) <= 0)
-	{
-		printf("Check image error! SYSTEM RESET!!!\n\n");
-		udelay(500);
-		do_reset (NULL, 0, 0, NULL);
-	}
-	else
-	{
-		count = copysize;
+	RescueAckFlag = 0x0000;
 
-		if (count == 0)
-		{
-			puts ("Zero length ???\n");
-			return;
-		}
+	/* clear image magic */
+	memset(image_ptr, 0, sizeof(image_header_t));
 
-		e_end = CFG_KERN_ADDR + count - 1;
-
-#if defined (CFG_ENV_IS_IN_NAND)
-		printf ("\n Copy %d bytes to Flash... \n", count);
-		rrc = ranand_erase_write((uchar *)ptr, CFG_KERN_ADDR-CFG_FLASH_BASE, count);
-#elif defined (CFG_ENV_IS_IN_SPI)
-		printf ("\n Copy %d bytes to Flash... \n", count);
-		rrc = raspi_erase_write((uchar *)ptr,  CFG_KERN_ADDR-CFG_FLASH_BASE, count);
-#else /* NOR */
-		puts ("Copy to Flash... ");
-		if (get_addr_boundary(&e_end) == 0) {
-			printf("\n Erase block from 0x%X to 0x%X\n", CFG_KERN_ADDR, e_end);
-			flash_sect_protect(0, CFG_KERN_ADDR, e_end);
-			flash_sect_erase(CFG_KERN_ADDR, e_end);
-			printf ("\n Copy %d bytes to Flash... \n", count);
-			rrc = flash_write((uchar *)ptr, CFG_KERN_ADDR, count);
-			flash_sect_protect(1, CFG_KERN_ADDR, e_end);
-		} else {
-			rrc = ERR_ALIGN;
-		}
+#if defined(CONFIG_NET_MULTI)
+	printf("Using %s device\n", eth_get_name());
 #endif
-
-		if (rrc)
+	puts("\nOur IP address is:(");	
+	print_IPaddr(NetOurIP);
+	puts(")\nWait for TFTP request...\n");
+	/* Check if we need to send across this subnet */
+	if (NetOurGatewayIP && NetOurSubnetMask) 
+	{
+		IPaddr_t OurNet 	= NetOurIP    & NetOurSubnetMask;
+		IPaddr_t ServerNet 	= NetServerIP & NetOurSubnetMask;
+		
+		if (OurNet != ServerNet)
 		{
-			printf("rescue FAILED!\n");
-#if defined (CFG_ENV_IS_IN_NAND) || defined (CFG_ENV_IS_IN_SPI)
-			printf("\n Error code: %d\n", rrc);
-#else
-			flash_perror(rrc);
-#endif
-			NetState = NETLOOP_FAIL;
-			TftpState = STATE_FINISHACK;
-			RescueAckFlag = 0x0000;
-			for (i=0; i<6; i++)
-				TftpdSend();
-			return;
-		}
-		else
-		{
-			printf("done. %d bytes written\n", count);
-			TftpState = STATE_FINISHACK;
-			RescueAckFlag = 0x0001;
-			for (i=0; i<6; i++)
-				TftpdSend();
-			printf("\nSYSTEM RESET!!!\n\n");
-			udelay(500);
-			do_reset(NULL, 0, 0, NULL);
-			return;
+			puts("; sending through gateway ");
+			print_IPaddr(NetOurGatewayIP) ;
 		}
 	}
+
+	NetSetTimeout(TIMEOUT * CFG_HZ * 2, TftpdTimeout);
+	NetSetHandler(TftpHandler);
+
+	TftpOurPort = PORT_TFTP;
+	TftpTimeoutCount = 0;
+	TftpState = STATE_RRQ;
+	TftpBlock = 0;
+
+	/* zero out server ether in case the server ip has changed */
+	memset(NetServerEther, 0, 6);
 }
 
 #endif

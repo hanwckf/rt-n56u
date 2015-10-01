@@ -190,6 +190,8 @@ flash_write (uchar *src, ulong addr, ulong cnt)
 		addr += len;
 		src  += len;
 	}
+
+	printf("Done!\n");
 	return (ERR_OK);
 #endif /* CONFIG_SPD823TS */
 }

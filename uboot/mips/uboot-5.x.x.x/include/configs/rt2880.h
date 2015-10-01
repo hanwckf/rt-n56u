@@ -376,6 +376,7 @@ extern unsigned int  CFG_BLOCKSIZE;
 #endif
 
 
+#define LINUX_FILE_SIZE_MIN	0x80000
 #define UBOOT_FILE_SIZE_MIN	0x8000	/* for prevent flash damaged Uboot */
 #if defined(SMALL_UBOOT_PARTITION)
 #define UBOOT_FILE_SIZE_MAX	CFG_UBOOT_SIZE

@@ -23,6 +23,7 @@
 
 #include <common.h>
 #include <command.h>
+#include <version.h>
 #include <asm/addrspace.h>
 //#include "LzmaDecode.h"
 
@@ -157,7 +158,7 @@ long int initdram(int board_type)
 
 int checkboard (void)
 {
-	puts ("Board: Ralink APSoC ");
+	printf("Board: %s APSoC ", RLT_MTK_VENDOR_NAME);
 	return 0;
 }
 

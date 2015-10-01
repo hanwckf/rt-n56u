@@ -1,5 +1,6 @@
 #include <common.h>
 #include <command.h>
+#include <version.h>
 #include <rt_mmap.h>
 #include <configs/rt2880.h>
 #include <malloc.h>
@@ -253,7 +254,7 @@ int spic_init(void)
 	ra_outl(RT2880_SPI0_CTL_REG, SPICTL_HIZSDO | SPICTL_SPIENA_HIGH);
 
 	spi_wait_nsec = (8 * 1000 / (128 / (CFG_CLK_DIV+1)) ) >> 1 ;
-	printf("Ralink SPI flash driver, SPI clock: %dMHz\n", (mips_bus_feq / 1000000) >> (CFG_CLK_DIV+1));
+	printf("%s SPI flash driver, SPI clock: %dMHz\n", RLT_MTK_VENDOR_NAME, (mips_bus_feq / 1000000) >> (CFG_CLK_DIV+1));
 
 	return 0;
 }

@@ -1,5 +1,6 @@
 #include <common.h>
 #include <command.h>
+#include <version.h>
 #include <rt_mmap.h>
 #include <configs/rt2880.h>
 #include <malloc.h>
@@ -252,7 +253,7 @@ void spic_init(void)
 	reg |= ((clk_div - 2) << 16);
 	ra_outl(SPI_REG_MASTER, reg);
 
-	printf("MediaTek SPI flash driver, SPI clock: %dMHz\n", clk_sys / clk_div);
+	printf("%s SPI flash driver, SPI clock: %dMHz\n", RLT_MTK_VENDOR_NAME, clk_sys / clk_div);
 
 #elif defined (RT6855_ASIC_BOARD) || defined (RT6855_FPGA_BOARD)
 	// enable SMC bank 0 alias addressing

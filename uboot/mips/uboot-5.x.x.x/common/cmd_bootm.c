@@ -159,62 +159,40 @@ extern void lynxkdi_boot( image_header_t * );
 
 image_header_t header;
 ulong load_addr = 0x80200000;	/* Default Load Address */
-ulong lastAddr = 0;
-ulong lastData = 0;
-ulong lastLen = 0;
+static ulong lastAddr = 0;
+static ulong lastData = 0;
+static ulong lastLen = 0;
 
 static inline void mips_cache_set(u32 v)
 {
 	asm volatile ("mtc0 %0, $16" : : "r" (v));
 }
 
-/* Check firmware image at load_addr or argv[1].
+/* Check firmware image at addr
  * @return:
  * 	> 0:	firmware good. length of firmware.
  * 	= 0:	not defined.
  * 	< 0:	invalid firmware.
  */
-int verify_kernel_image (int argc, char *argv[], ulong *pAddr, ulong *pData, ulong *pLen)
+int verify_kernel_image (ulong addr, ulong *pAddr, ulong *pData, ulong *pLen)
 {
-	ulong	addr;
 	ulong	data, len = 0, checksum;
 	int	verify;
 	char	*s;
 	image_header_t *hdr = &header;
-
-	s = getenv ("verify");
-	verify = (s && (*s == 'n')) ? 0 : 1;
-
-	if (argc < 2) {
-		addr = load_addr;
-	} else {
-		addr = simple_strtoul(argv[1], NULL, 16);
-	}
 
 	if (addr == lastAddr && ntohl(hdr->ih_magic) == IH_MAGIC) {
 		len = ntohl(hdr->ih_size);
 		goto skip;
 	}
 
+	s = getenv ("verify");
+	verify = (s && (*s == 'n')) ? 0 : 1;
+
 	SHOW_BOOT_PROGRESS (1);
 	printf ("## Checking image at %08lx ...\n", addr);
 
-#ifdef DUAL_IMAGE_SUPPORT
-	if (strcmp(getenv("Image1Stable"), "1") != 0) {
-		s = getenv("Image1Try");
-		if (s == NULL)
-			setenv("Image1Try", "1");
-		else {
-			char buf[32];
-	
-			i = (int)simple_strtoul(s, NULL, 10);
-			sprintf(buf, "%d", ++i);
-			setenv("Image1Try", buf);
-		}
-		saveenv();
-	}
-#endif
-
+#if 0
 	/* YJ, 5/16/2006 */
 	if (addr == 0x8A200000)
 	   ((void(*) (void)) (0x8A200000U))();
@@ -226,6 +204,7 @@ int verify_kernel_image (int argc, char *argv[], ulong *pAddr, ulong *pData, ulo
 	   ((void(*) (void)) (0x88001000U))();
 	else if(addr == 0x8B800000)
 	   ((void(*) (void)) (0x8B800000U))();
+#endif
 
 	/* Copy header so we can blank CRC field for re-calculation */
 #ifdef CONFIG_HAS_DATAFLASH
@@ -237,11 +216,11 @@ int verify_kernel_image (int argc, char *argv[], ulong *pAddr, ulong *pData, ulo
 	do {
 #if defined (CFG_ENV_IS_IN_NAND)
 		if (addr >= CFG_FLASH_BASE)
-			ranand_read(&header, (char *)(addr - CFG_FLASH_BASE), sizeof(image_header_t));
+			ranand_read((char *)&header, (addr - CFG_FLASH_BASE), sizeof(image_header_t));
 		else
 #elif defined (CFG_ENV_IS_IN_SPI)
 		if (addr >= CFG_FLASH_BASE)
-			raspi_read(&header, (char *)(addr - CFG_FLASH_BASE), sizeof(image_header_t));
+			raspi_read((char *)&header, (addr - CFG_FLASH_BASE), sizeof(image_header_t));
 		else
 #endif
 			memmove (&header, (char *)addr, sizeof(image_header_t));
@@ -307,15 +286,15 @@ int verify_kernel_image (int argc, char *argv[], ulong *pAddr, ulong *pData, ulo
 
 #if defined (CFG_ENV_IS_IN_NAND)
 	if (addr >= CFG_FLASH_BASE) {
-		unsigned int load_addr = CFG_SPINAND_LOAD_ADDR;
-		ranand_read(load_addr, data - CFG_FLASH_BASE, len);
-		data = load_addr;
+		ulong nand_load_addr = CFG_SPINAND_LOAD_ADDR;
+		ranand_read((char *)nand_load_addr, data - CFG_FLASH_BASE, len);
+		data = nand_load_addr;
 	}
 #elif defined (CFG_ENV_IS_IN_SPI)
 	if (addr >= CFG_FLASH_BASE) {
-		unsigned int load_addr = CFG_SPINAND_LOAD_ADDR;
-		raspi_read(load_addr, data - CFG_FLASH_BASE, len);
-		data = load_addr;
+		ulong spi_load_addr = CFG_SPINAND_LOAD_ADDR;
+		raspi_read((char *)spi_load_addr, data - CFG_FLASH_BASE, len);
+		data = spi_load_addr;
 	}
 #endif
 
@@ -344,8 +323,8 @@ skip:
 
 int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
-	ulong	addr;
-	ulong	data, len;
+	ulong	addr_src;
+	ulong	addr, data, len;
 	ulong	*len_ptr;
 	uint	unc_len = 0x800000;
 	int	i, verify;
@@ -355,7 +334,29 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 	//mips_cache_set(3);
 
-	i = verify_kernel_image(argc, argv, &addr, &data, &len);
+	if (argc < 2) {
+		addr_src = load_addr;
+	} else {
+		addr_src = simple_strtoul(argv[1], NULL, 16);
+	}
+
+#ifdef DUAL_IMAGE_SUPPORT
+	if (strcmp(getenv("Image1Stable"), "1") != 0) {
+		s = getenv("Image1Try");
+		if (s == NULL)
+			setenv("Image1Try", "1");
+		else {
+			char buf[32];
+			
+			i = (int)simple_strtoul(s, NULL, 10);
+			sprintf(buf, "%d", ++i);
+			setenv("Image1Try", buf);
+		}
+		saveenv();
+	}
+#endif
+
+	i = verify_kernel_image(addr_src, &addr, &data, &len);
 	if (i <= 0)
 		return 1;
 

@@ -18,6 +18,7 @@
  * MA 02111-1307 USA
  */
 #include <common.h>
+#include <version.h>
 #include <usb.h>
 
 #include <rt_mmap.h>
@@ -95,7 +96,8 @@ int ehci_hcd_init(void)
 	hccr = (struct ehci_hccr *)(0xb01c0000);
 	hcor = (struct ehci_hcor *)((uint32_t) hccr + HC_LENGTH(ehci_readl(&hccr->cr_capbase)));
 
-	printf("Mediatek/Ralink USB EHCI host init hccr %x and hcor %x hc_length %d\n", (uint32_t)hccr, (uint32_t)hcor, (uint32_t)HC_LENGTH(ehci_readl(&hccr->cr_capbase)));
+	printf("%s USB EHCI host init, hccr %x, hcor %x, hc_length %d\n", 
+		RLT_MTK_VENDOR_NAME, (uint32_t)hccr, (uint32_t)hcor, (uint32_t)HC_LENGTH(ehci_readl(&hccr->cr_capbase)));
 	return 0;
 #else
 	

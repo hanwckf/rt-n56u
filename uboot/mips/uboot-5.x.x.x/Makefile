@@ -297,7 +297,7 @@ ifneq ($(MT7621_MP), y)
 uboot.img:	uboot.bin
 ifeq ($(CFG_ENV_IS), IN_SPI)
 		./tools/mkimage -A $(ARCH) -T standalone -C none \
-		-a $(TEXT_BASE) -e $(shell readelf -h u-boot | grep "Entry" | awk '{print $$4}') \
+		-a $(TEXT_BASE) -e $(shell LANG=C LC_ALL=C readelf -h u-boot | grep "Entry" | awk '{print $$4}') \
 		-n "$(shell echo $(CFG_ENV_IS) | sed -e 's/IN_//') Flash Image" \
 		-r $(DRAM_TYPE) -s $(DRAM_TOTAL_WIDTH) -t $(DRAM_SIZE) -u $(DRAM_WIDTH) \
 		-y $(DRAM_SYSCFG0) -z $(DRAM_SYSCFG1) -w $(CPU_PLL_CFG) -d $< $@
@@ -311,13 +311,13 @@ endif
 ifeq ($(CFG_ENV_IS), IN_NAND)
 ifneq ($(MT7621_MP), y)
 		./tools/mkimage -A $(ARCH) -T standalone -C none \
-		-a $(TEXT_BASE) -e $(shell readelf -h u-boot | grep "Entry" | awk '{print $$4}') \
+		-a $(TEXT_BASE) -e $(shell LANG=C LC_ALL=C readelf -h u-boot | grep "Entry" | awk '{print $$4}') \
 		-n "$(shell echo $(CFG_ENV_IS) | sed -e 's/IN_//') Flash Image" \
 		-r $(DRAM_TYPE) -s $(DRAM_TOTAL_WIDTH) -t $(DRAM_SIZE) -u $(DRAM_WIDTH) \
 		-y $(DRAM_SYSCFG0) -z $(DRAM_SYSCFG1) -d $< $@
 else
 		./tools/mkimage -A $(ARCH) -T standalone -C none \
-		-a $(TEXT_BASE) -e $(shell readelf -h u-boot | grep "Entry" | awk '{print $$4}') \
+		-a $(TEXT_BASE) -e $(shell LANG=C LC_ALL=C readelf -h u-boot | grep "Entry" | awk '{print $$4}') \
 		-n "$(shell echo $(CFG_ENV_IS) | sed -e 's/IN_//') Flash Image" \
 		-r $(DRAM_TYPE) -s $(DRAM_TOTAL_WIDTH) -t $(DRAM_SIZE) -u $(DRAM_WIDTH) \
 		-y $(shell echo "40") \

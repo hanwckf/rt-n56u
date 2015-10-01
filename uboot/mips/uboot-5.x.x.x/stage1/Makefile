@@ -28,7 +28,7 @@ all: uboot.img
 
 stage2.bin:
 	../tools/mkimage -A $(ARCH) -T standalone -C none -a $(TEXT_BASE) \
-	-e $(shell readelf -h ../u-boot | grep "Entry" | awk '{print $$4}') \
+	-e $(shell LANG=C LC_ALL=C readelf -h ../u-boot | grep "Entry" | awk '{print $$4}') \
 	-n "$(shell echo $(CFG_ENV_IS) | sed -e 's/IN_//') Flash Image" -d \
 	../uboot.bin $@
 

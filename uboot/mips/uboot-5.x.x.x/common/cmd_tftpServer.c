@@ -179,12 +179,8 @@ int do_tftpd(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		if (i >= press_times) {
 			while (DETECT_BTN_WPS())
 			{
+				LED_ALERT_BLINK();
 				udelay(90000);
-				i++;
-				if (i & 1)
-					LED_ALERT_ON();
-				else
-					LED_ALERT_OFF();
 			}
 			LED_ALERT_OFF();
 			reset_to_default();

@@ -198,7 +198,7 @@ extern VALID_BUFFER_STRUCT  rt2880_free_buf_list;
 extern BUFFER_ELEM *rt2880_free_buf_entry_dequeue(VALID_BUFFER_STRUCT *hdr);
 
 extern void TftpdStart(void);
-extern void LED_ALERT_ON(void);
+extern void LED_ALERT_BLINK(void);
 extern void LED_ALERT_OFF(void);
 IPaddr_t TempServerIP=0;
 
@@ -301,7 +301,6 @@ NetLoop(proto_t protocol)
 #endif   
 //
 	if (!NetTxPacket) {
-		int	i;
 		BUFFER_ELEM *buf;
 		/*
 		 *	Setup packet buffers, aligned correctly.
@@ -506,7 +505,6 @@ restart:
 	 *	someone sets `NetQuit'.
 	 */
 
-	i = 1;
 	timeDelta = 266000000;
 
 	for (;;) {
@@ -541,15 +539,7 @@ restart:
 		if (timeHandler && ((get_timer(0) - timeStart) > timeDelta)) {
 			thand_f *x;
 
-			if (i%2 == 0){
-				LED_ALERT_ON();
-			} else{
-				LED_ALERT_OFF();
-			}
-			++i;
-			if (i==0xffffff)
-				i = 0;
-
+			LED_ALERT_BLINK();
 
 #if defined(CONFIG_MII) || (CONFIG_COMMANDS & CFG_CMD_MII)
 #if defined(CFG_FAULT_ECHO_LINK_DOWN) && defined(CONFIG_STATUS_LED) && defined(STATUS_LED_RED)

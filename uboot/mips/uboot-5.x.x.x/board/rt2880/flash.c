@@ -29,6 +29,8 @@ flash_info_t	flash_info[CFG_MAX_FLASH_BANKS]; /* info for FLASH chips	*/
 
 extern ulong rt2880_flash_start_t;
 
+extern void LED_ALERT_BLINK(void);
+
 /* NOTE - CONFIG_FLASH_16BIT means the CPU interface is 16-bit, it
  *        has nothing to do with the flash chip being 8-bit or 16-bit.
  */
@@ -804,12 +806,12 @@ int erase_all_chip(flash_info_t *info, int s_first, int s_last)
 
 
 
-int	flash_erase(flash_info_t *info, int s_first, int s_last)
+int flash_erase(flash_info_t *info, int s_first, int s_last)
 {
 	FPWV *addr;
 	int prot, sect;
 	int intel = (info->flash_id & FLASH_VENDMASK) == FLASH_MAN_INTEL;
-	ulong start, now, last;
+	ulong start, now, led_time;
 	int rcode = 0;
 	int poll,kk,s_kk = 8;
 	u32 s_sector_size = 0x00001000 ;
@@ -872,7 +874,7 @@ int	flash_erase(flash_info_t *info, int s_first, int s_last)
 		printf("\n");
 	}
 
-	last  = get_timer(0);
+	led_time = get_timer(0);
 
 	/* Start erase on unprotected sectors */
 
@@ -940,27 +942,17 @@ int	flash_erase(flash_info_t *info, int s_first, int s_last)
 						rcode = 1;		/* failed */
 						break;
 					}
-
+					
 					poll++;
-					/* show that we're waiting */
-					if ((get_timer(last)) > CFG_HZ) 
-					{/* every second */
-						putc('*');
-						last = get_timer(0);
+					
+					if ((get_timer(led_time)) > (CFG_HZ/5)) {
+						LED_ALERT_BLINK();
+						led_time = get_timer(0);
 					}
 				}
-			//	printf("sect = %d,s_last = %d,erase poll = %d\n",sect,s_last,poll);
-
-				/* show that we're waiting */
-				if ((get_timer(last)) > CFG_HZ) {	/* every second */
-					putc('.');
-					last = get_timer(0);
-				}
-
+				
+//				printf("sect = %d,s_last = %d,erase poll = %d\n",sect,s_last,poll);
 				flash_reset(info);	/* reset to read mode	*/
-
-			//	printf("\n Pre addr = %08X \n",addr);
-	
 				addr = addr + s_sector_size;
 			}
 			
@@ -996,7 +988,6 @@ int	flash_erase(flash_info_t *info, int s_first, int s_last)
 			*/
 
 		start = get_timer(0);
-		last = start;
 
 		/* wait at least 50us for AMD, 80us for Intel.
 		 * Let's wait 1 ms.
@@ -1019,10 +1010,10 @@ int	flash_erase(flash_info_t *info, int s_first, int s_last)
 			}
 
 			poll++;
-			/* show that we're waiting */
-			if ((get_timer(last)) > CFG_HZ) {/* every second */
-				putc('.');
-				last = get_timer(0);
+
+			if ((get_timer(led_time)) > (CFG_HZ/5)) {
+				LED_ALERT_BLINK();
+				led_time = get_timer(0);
 			}
 		}
 //		printf("sect = %d,s_last = %d,erase poll = %d\n",sect,s_last,poll);
@@ -1046,6 +1037,7 @@ int write_buff(flash_info_t *info, uchar *src, ulong addr, ulong cnt)
 	int bytes;	  /* number of bytes to program in current word		*/
 	int left;	  /* number of bytes left to program			*/
 	int i, res;
+	ulong led_time = rt2880_flash_start_t;
 
 	for (left = cnt, res = 0;
 		left > 0 && res == 0;
@@ -1061,10 +1053,15 @@ int write_buff(flash_info_t *info, uchar *src, ulong addr, ulong cnt)
 			if (i < bytes || i - bytes >= left )
 				*((uchar *)&data + i) = *((uchar *)addr + i);
 			else	 
-				*((uchar *)&data + i)= *src++;						
-		}	
-		if(get_timer(rt2880_flash_start_t) > CFG_FLASH_STATE_DISPLAY_TOUT)
-		{
+				*((uchar *)&data + i)= *src++;
+		}
+
+		if ((get_timer(led_time)) > (CFG_HZ/8)) {
+			LED_ALERT_BLINK();
+			led_time = get_timer(0);
+		}
+
+		if (get_timer(rt2880_flash_start_t) > CFG_FLASH_STATE_DISPLAY_TOUT) {
 			printf(" addr = 0x%08X, cnt=%d\n", addr, left);
 			rt2880_flash_start_t = get_timer(0);
 		}

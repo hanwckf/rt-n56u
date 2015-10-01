@@ -22,8 +22,8 @@
 
 #define GPIO_VAL_LED_SHOW	0
 #define GPIO_VAL_LED_HIDE	1
-
 #define GPIO_VAL_USB_5V_ON	1
+#define GPIO_VAL_BTN_PRESSED	0
 
 #if defined(RT3052_MP)
 
@@ -47,7 +47,7 @@
 #define RALINK_GPIOMODE_JTAG		(1U << 6)
 #define RALINK_GPIOMODE_MDIO		(1U << 7)
 #define RALINK_GPIOMODE_GE1		(1U << 9)
-#define RALINK_GPIOMODE_EPHY		(1U << 14)
+#define RALINK_GPIOMODE_EPHY_BT		(1U << 14)
 #define RALINK_GPIOMODE_LNA_G		(1U << 18)
 #define RALINK_GPIOMODE_PA_G		(1U << 20)
 #define RALINK_GPIOMODE_SPI_CS1		(1U << 22)
@@ -60,7 +60,7 @@
 #define RALINK_GPIOMODE_UARTF		(7U << 2)
 #define RALINK_GPIOMODE_UARTL		(1U << 5)
 #define RALINK_GPIOMODE_JTAG		(1U << 6)
-#define RALINK_GPIOMODE_EPHY		(1U << 14)
+#define RALINK_GPIOMODE_EPHY_BT		(1U << 14)
 #define RALINK_GPIOMODE_SPI_CS1		(1U << 22)
 
 #elif defined(RT3883_MP)
@@ -640,7 +640,7 @@ int DETECT_BTN_RESET(void)
 {
 	int key = 0;
 #if (GPIO_BTN_RESET >= 0)
-	if (mtk_get_gpio_pin(GPIO_BTN_RESET) == 0) {
+	if (mtk_get_gpio_pin(GPIO_BTN_RESET) == GPIO_VAL_BTN_PRESSED) {
 		key = 1;
 		printf("RESET button pressed!\n");
 	}
@@ -652,7 +652,7 @@ int DETECT_BTN_WPS(void)
 {
 	int key = 0;
 #if (GPIO_BTN_WPS >= 0)
-	if (mtk_get_gpio_pin(GPIO_BTN_WPS) == 0) {
+	if (mtk_get_gpio_pin(GPIO_BTN_WPS) == GPIO_VAL_BTN_PRESSED) {
 		key = 1;
 		printf("WPS button pressed!\n");
 	}
@@ -769,5 +769,17 @@ void LED_ALERT_OFF(void)
 #elif (GPIO_LED_POWER >= 0)
 	mtk_set_gpio_pin(GPIO_LED_POWER, GPIO_VAL_LED_HIDE);
 #endif
+}
+
+void LED_ALERT_BLINK(void)
+{
+	static u32 alert_cnt = 0;
+
+	if (alert_cnt % 2)
+		LED_ALERT_ON();
+	else
+		LED_ALERT_OFF();
+
+	alert_cnt++;
 }
 

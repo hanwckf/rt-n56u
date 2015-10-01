@@ -50,11 +50,6 @@ void TftpdStart(void);// Begin TFTP get
 
 /**********************************************************************/
 
-extern void LED_POWER_ON(void);
-extern void LED_ALERT_ON(void);
-extern void LED_ALERT_OFF(void);
-
-
 /*
 Error message defined in RFC1350. 
 char *tftp_errmsg[9] = {

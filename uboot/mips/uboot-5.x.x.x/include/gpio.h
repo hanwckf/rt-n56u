@@ -13,5 +13,6 @@ extern void LED_HIDE_ALL(void);
 extern void LED_POWER_ON(void);
 extern void LED_ALERT_ON(void);
 extern void LED_ALERT_OFF(void);
+extern void LED_ALERT_BLINK(void);
 
 #endif

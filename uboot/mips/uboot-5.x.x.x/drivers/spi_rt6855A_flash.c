@@ -83,6 +83,7 @@
 #define SPIC_USER_MODE (1<<2)
 #define SPIC_4B_ADDR (1<<3)
 
+extern void LED_ALERT_BLINK(void);
 
 static int raspi_wait_ready(int sleep_ms);
 #if defined USER_MODE || defined COMMAND_MODE
@@ -1070,6 +1071,7 @@ int raspi_erase(unsigned int offs, int len)
 
 		offs += spi_chip_info->sector_size;
 		len -= spi_chip_info->sector_size;
+		LED_ALERT_BLINK();
 		printf(".");
 	}
 	printf("\n");
@@ -1333,7 +1335,10 @@ int raspi_write(char *buf, unsigned int to, int len)
 
 		//printf("%s:: to:%x page_size:%x ret:%x\n", __func__, to, page_size, rc);
 		if ((retlen & 0xffff) == 0)
+		{
+			LED_ALERT_BLINK();
 			printf(".");
+		}
 
 		if (rc > 0) {
 			retlen += rc;

@@ -151,13 +151,13 @@ init_gpio_leds_buttons(void)
 #if defined (BOARD_GPIO_LED_SW2G)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_SW2G, 1);
 	cpu_gpio_set_pin(BOARD_GPIO_LED_SW2G, LED_OFF);
-	cpu_gpio_led_set(BOARD_GPIO_LED_SW2G, 1);
+	cpu_gpio_led_set(BOARD_GPIO_LED_SW2G, LED_BLINK_STAY_SHOW);
 #endif
 	/* hide WiFi 5G soft-led  */
 #if defined (BOARD_GPIO_LED_SW5G) && (!defined (BOARD_GPIO_LED_SW2G) || (BOARD_GPIO_LED_SW5G != BOARD_GPIO_LED_SW2G))
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_SW5G, 1);
 	cpu_gpio_set_pin(BOARD_GPIO_LED_SW5G, LED_OFF);
-	cpu_gpio_led_set(BOARD_GPIO_LED_SW5G, 1);
+	cpu_gpio_led_set(BOARD_GPIO_LED_SW5G, LED_BLINK_STAY_SHOW);
 #endif
 	/* hide WAN soft-led  */
 #if defined (BOARD_GPIO_LED_WAN)
@@ -173,7 +173,7 @@ init_gpio_leds_buttons(void)
 #if defined (BOARD_GPIO_LED_USB)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_USB, 1);
 	cpu_gpio_set_pin(BOARD_GPIO_LED_USB, LED_OFF);
-	cpu_gpio_led_set(BOARD_GPIO_LED_USB, 0);
+	cpu_gpio_led_set(BOARD_GPIO_LED_USB, LED_BLINK_STAY_HIDE);
 #endif
 	/* hide ROUTER soft-led  */
 #if defined (BOARD_GPIO_LED_ROUTER)
@@ -199,6 +199,10 @@ init_gpio_leds_buttons(void)
 #if defined (BOARD_GPIO_PWR_USB)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_PWR_USB, 1);
 	cpu_gpio_set_pin(BOARD_GPIO_PWR_USB, BOARD_GPIO_PWR_USB_ON);
+#endif
+#if defined (BOARD_GPIO_PWR_USB2)
+	cpu_gpio_set_pin_direction(BOARD_GPIO_PWR_USB2, 1);
+	cpu_gpio_set_pin(BOARD_GPIO_PWR_USB2, BOARD_GPIO_PWR_USB_ON);
 #endif
 
 	/* init BTN Reset  */

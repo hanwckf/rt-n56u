@@ -48,8 +48,7 @@ UCHAR RtmpEepromGetDefault(
 {
 	UCHAR e2p_default = E2P_FLASH_MODE;
 
-#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612 || CONFIG_RT_FIRST_CARD == 7620) && \
-    (CONFIG_RT_SECOND_CARD == 7602 || CONFIG_RT_SECOND_CARD == 7612)
+#if defined (DRIVER_HAS_MULTI_DEV)
 	if ( pAd->dev_idx == 0 )
 	{
 		if ( RTMPEqualMemory("efuse", CONFIG_RT_FIRST_CARD_EEPROM, 5) )
@@ -181,8 +180,7 @@ INT RtmpChipOpsEepromHook(
 			pChipOps->eeread = rtmp_ee_flash_read;
 			pChipOps->eewrite = rtmp_ee_flash_write;
 			pAd->flash_offset = DEFAULT_RF_OFFSET;
-#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612 || CONFIG_RT_FIRST_CARD == 7620) && \
-    (CONFIG_RT_SECOND_CARD == 7602 || CONFIG_RT_SECOND_CARD == 7612)
+#if defined (DRIVER_HAS_MULTI_DEV)
 			if ( pAd->dev_idx == 0 )
 				pAd->flash_offset = CONFIG_RT_FIRST_IF_RF_OFFSET;
 			if ( pAd->dev_idx == 1 )

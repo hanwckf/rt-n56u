@@ -88,8 +88,7 @@ VOID get_dev_config_idx(RTMP_ADAPTER *pAd)
 {
 	INT idx = 0;
 
-#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612 || CONFIG_RT_FIRST_CARD == 7620) && \
-    (CONFIG_RT_SECOND_CARD == 7602 || CONFIG_RT_SECOND_CARD == 7612)
+#if defined (DRIVER_HAS_MULTI_DEV)
 	INT first_card = 0, second_card = 0;
 	static int probe_cnt = 1;
 
@@ -168,8 +167,7 @@ static UCHAR *get_dev_profile(RTMP_ADAPTER *pAd)
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{
-#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612 || CONFIG_RT_FIRST_CARD == 7620) && \
-    (CONFIG_RT_SECOND_CARD == 7602 || CONFIG_RT_SECOND_CARD == 7612)
+#if defined (DRIVER_HAS_MULTI_DEV)
 			INT card_idx = pAd->dev_idx;
 
 			if (card_idx == 0)
@@ -185,8 +183,7 @@ static UCHAR *get_dev_profile(RTMP_ADAPTER *pAd)
 #ifdef CONFIG_STA_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
 		{
-#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612 || CONFIG_RT_FIRST_CARD == 7620) && \
-    (CONFIG_RT_SECOND_CARD == 7602 || CONFIG_RT_SECOND_CARD == 7612)
+#if defined (DRIVER_HAS_MULTI_DEV)
 			INT card_idx = pAd->dev_idx;
 
 			if (card_idx == 0)
@@ -211,8 +208,7 @@ static CHAR *get_sku_profile(RTMP_ADAPTER *pAd)
 {
 	CHAR *src = SINGLE_SKU_TABLE_FILE_NAME;
 
-#if (CONFIG_RT_FIRST_CARD == 7602 || CONFIG_RT_FIRST_CARD == 7612 || CONFIG_RT_FIRST_CARD == 7620) && \
-    (CONFIG_RT_SECOND_CARD == 7602 || CONFIG_RT_SECOND_CARD == 7612)
+#if defined (DRIVER_HAS_MULTI_DEV)
 	INT card_idx = pAd->dev_idx;
 
 	if (card_idx == 0)

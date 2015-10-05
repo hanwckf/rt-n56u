@@ -20,8 +20,14 @@
 #define GPIO_DIR_INPUT		0
 #define GPIO_DIR_OUTPUT		1
 
+#if defined (GPIO_LED_INVERTED)
+#define GPIO_VAL_LED_SHOW	1
+#define GPIO_VAL_LED_HIDE	0
+#else
 #define GPIO_VAL_LED_SHOW	0
 #define GPIO_VAL_LED_HIDE	1
+#endif
+
 #define GPIO_VAL_USB_5V_ON	1
 #define GPIO_VAL_BTN_PRESSED	0
 
@@ -624,6 +630,12 @@ void gpio_init_usb(int do_wait)
 #if (GPIO_USB_POWER >= 0)
 	mtk_set_gpio_dir(GPIO_USB_POWER, GPIO_DIR_OUTPUT);
 	mtk_set_gpio_pin(GPIO_USB_POWER, GPIO_VAL_USB_5V_ON);
+#endif
+#if (GPIO_USB_POWER2 >= 0)
+	mtk_set_gpio_dir(GPIO_USB_POWER2, GPIO_DIR_OUTPUT);
+	mtk_set_gpio_pin(GPIO_USB_POWER2, GPIO_VAL_USB_5V_ON);
+#endif
+#if (GPIO_USB_POWER >= 0 || GPIO_USB_POWER2 >= 0)
 	if (do_wait)
 		udelay(50000);
 #endif

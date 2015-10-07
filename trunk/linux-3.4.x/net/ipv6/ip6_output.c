@@ -1083,6 +1083,8 @@ struct dst_entry *ip6_dst_lookup_flow(struct sock *sk, struct flowi6 *fl6,
 		return ERR_PTR(err);
 	if (final_dst)
 		fl6->daddr = *final_dst;
+	if (!fl6->flowi6_oif)
+		fl6->flowi6_oif = dst->dev->ifindex;
 	if (can_sleep)
 		fl6->flowi6_flags |= FLOWI_FLAG_CAN_SLEEP;
 

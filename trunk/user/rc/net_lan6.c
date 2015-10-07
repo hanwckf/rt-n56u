@@ -40,7 +40,7 @@ void reset_lan6_vars(void)
 	char addr6s[INET6_ADDRSTRLEN] = {0};
 	char *lan_addr6;
 	int lan_size6;
-	
+
 	if (is_lan_addr6_static() == 1)
 	{
 		lan_addr6 = nvram_safe_get("ip6_lan_addr");
@@ -49,7 +49,7 @@ void reset_lan6_vars(void)
 			memset(&addr6, 0, sizeof(addr6));
 			ipv6_from_string(lan_addr6, &addr6);
 			inet_ntop(AF_INET6, &addr6, addr6s, INET6_ADDRSTRLEN);
-			if (lan_size6 < 48 || lan_size6 > 80)
+			if (lan_size6 < 48 || lan_size6 > 64)
 				lan_size6 = 64;
 			sprintf(addr6s, "%s/%d", addr6s, lan_size6);
 		}
@@ -112,8 +112,11 @@ int get_lan_dhcp6s_prefix_size(void)
 {
 	int lan_size6 = 64;
 
+#if 0
+	/* dnsmasq support only prefix len 64 for construct case */
 	if (is_lan_addr6_static() == 1)
-		lan_size6 = nvram_safe_get_int("ip6_lan_size", 64, 64, 80);
+		lan_size6 = nvram_safe_get_int("ip6_lan_size", 64, 48, 64);
+#endif
 
 	return lan_size6;
 }
@@ -121,13 +124,13 @@ int get_lan_dhcp6s_prefix_size(void)
 int store_lan_addr6(char *lan_addr6_new)
 {
 	char *lan_addr6_old;
-	
+
 	if (!lan_addr6_new)
 		return 0;
-	
+
 	if (!(*lan_addr6_new))
 		return 0;
-	
+
 	lan_addr6_old = nvram_safe_get("lan_addr6");
 	if (strcmp(lan_addr6_new, lan_addr6_old) != 0) {
 		nvram_set_temp("lan_addr6", lan_addr6_new);
@@ -140,7 +143,7 @@ int store_lan_addr6(char *lan_addr6_new)
 void reload_lan_addr6(void)
 {
 	char *lan_addr6;
-	
+
 	clear_if_addr6(IFNAME_BR);
 	lan_addr6 = nvram_safe_get("lan_addr6");
 	if (*lan_addr6)
@@ -156,6 +159,7 @@ char *get_lan_addr6_host(char *p_addr6s)
 {
 	char *tmp = p_addr6s;
 	char *lan_addr6 = nvram_safe_get("lan_addr6");
+
 	if (*lan_addr6) {
 		snprintf(p_addr6s, INET6_ADDRSTRLEN, "%s", lan_addr6);
 		strsep(&tmp, "/");
@@ -169,8 +173,8 @@ char *get_lan_addr6_prefix(char *p_addr6s)
 {
 	/* force prefix len to 64 for SLAAC */
 	struct in6_addr addr6;
-
 	char *lan_addr6 = nvram_safe_get("lan_addr6");
+
 	if (*lan_addr6) {
 		if (ipv6_from_string(lan_addr6, &addr6) >= 0) {
 			ipv6_to_net(&addr6, 64);

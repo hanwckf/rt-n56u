@@ -621,7 +621,7 @@ function change_ip6_lan_dhcp(){
                                         <tr id="row_ip6_lan_size">
                                             <th width="50%"><#IP6_LAN_Pref#></th>
                                             <td>
-                                                <input type="text" maxlength="3" style="width: 30px;" class="input" size="4" name="ip6_lan_size" value="<% nvram_get_x("", "ip6_lan_size"); %>" onkeypress="return is_number(this,event);" onblur="return validate_range(this, 48, 80);" />
+                                                <input type="text" maxlength="3" style="width: 30px;" class="input" size="4" name="ip6_lan_size" value="<% nvram_get_x("", "ip6_lan_size"); %>" onkeypress="return is_number(this,event);" onblur="return validate_range(this, 48, 64);" />
                                             </td>
                                         </tr>
                                         <tr>

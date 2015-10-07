@@ -428,13 +428,12 @@ start_dns_dhcpd(int is_ap_mode)
 				int i_sflt = nvram_safe_get_int("ip6_lan_sflt", 1800, 120, 604800);
 				int i_sfps = nvram_safe_get_int("ip6_lan_sfps", 4096, 2, 65534);
 				int i_sfpe = nvram_safe_get_int("ip6_lan_sfpe", 4352, 2, 65534);
-				int i_pfsz = get_lan_dhcp6s_prefix_size();
 				
 				if (i_sfpe < i_sfps)
 					i_sfpe = i_sfps;
 				
 				/* Enable Stateful, Disable SLAAC */
-				fprintf(fp, "dhcp-range=::%x,::%x,constructor:%s,%d,%d\n", i_sfps, i_sfpe, IFNAME_BR, i_pfsz, i_sflt);
+				fprintf(fp, "dhcp-range=::%x,::%x,constructor:%s,%d\n", i_sfps, i_sfpe, IFNAME_BR, i_sflt);
 			}
 			
 			/* DNS server */

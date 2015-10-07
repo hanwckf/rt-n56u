@@ -195,7 +195,7 @@ timematch_conv(char *mstr, const char *nv_date, const char *nv_time)
 {
 	const char *datestr[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 	char time_s[8], time_e[8], *time, *date;
-	int i, comma = 0;
+	int i, i_time_s, i_time_e, i_full_time, comma = 0;
 
 	date = nvram_get(nv_date);
 	if (!date)
@@ -213,27 +213,32 @@ timematch_conv(char *mstr, const char *nv_date, const char *nv_time)
 	if (!strcmp(date, "0000000"))
 		return;
 
-	/* check anytime */
-	if (!strcmp(date, "1111111") && !strcmp(time, "00002359"))
-		return;
-
 	strncpy(time_s, time+0, 4);
 	strncpy(time_e, time+4, 4);
 
 	time_s[4] = 0;
 	time_e[4] = 0;
 
+	i_time_s = atoi(time_s);
+	i_time_e = atoi(time_e);
+
+	i_full_time = ((i_time_s == i_time_e) || (i_time_s == 0 && i_time_e == 2359)) ? 1 : 0;
+
+	/* check anytime */
+	if (!strcmp(date, "1111111") && i_full_time)
+		return;
+
 	/* check whole day */
-	if (!strcmp(time_s, "0000") && !strcmp(time_e, "2359")) {
+	if (i_full_time) {
 		sprintf(mstr, " -m time %s", "--kerneltz");
 	} else {
 		const char *contiguous = "";
 		
 		/* check cross-night */
-		if (atoi(time_s) >= atoi(time_e))
+		if (i_time_s > i_time_e)
 			contiguous = " --contiguous";
 		
-		sprintf(mstr, " -m time --timestart %c%c:%c%c:00 --timestop %c%c:%c%c:59%s %s",
+		sprintf(mstr, " -m time --timestart %c%c:%c%c:00 --timestop %c%c:%c%c:00%s %s",
 			time[0], time[1], time[2], time[3], time[4], time[5], time[6], time[7],
 			contiguous, "--kerneltz");
 	}

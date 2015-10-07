@@ -1296,6 +1296,11 @@ umount_ejected(void)
 		
 		fclose(procpt);
 	}
+
+	if (!check_if_dir_exist("/home/admin")) {
+		unlink("/home/admin");
+		symlink("/home/root", "/home/admin");
+	}
 }
 
 void

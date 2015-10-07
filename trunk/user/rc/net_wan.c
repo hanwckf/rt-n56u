@@ -1020,8 +1020,8 @@ man_up(char *man_ifname, int unit, int is_static)
 	add_static_man_routes(man_ifname);
 
 	if (!is_static) {
-		/* and routes supplied via DHCP */
-		add_dhcp_routes_by_prefix("wanx_", man_ifname, 0);
+		/* and routes supplied via DHCP (metric 2) */
+		add_dhcp_routes_by_prefix("wanx_", man_ifname, 2);
 	}
 
 	/* and default route (metric 2) */
@@ -1114,7 +1114,7 @@ wan_up(char *wan_ifname, int unit, int is_static)
 	if ((modem_unit_id == 2) || (!modem_unit_id && wan_proto == IPV4_WAN_PROTO_IPOE_DHCP)) {
 		char prefix[16];
 		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-		add_dhcp_routes_by_prefix(prefix, wan_ifname, 0);
+		add_dhcp_routes_by_prefix(prefix, wan_ifname, 1);
 	}
 
 #if defined (USE_IPV6)
@@ -2102,9 +2102,9 @@ udhcpc_viptv_bound(char *man_ifname, int is_renew_mode)
 			"%s (%s), IP: %s, GW: %s, lease time: %d", 
 			udhcpc_state, man_ifname, ip, gw, lease_dur);
 		
-		/* and routes supplied via DHCP */
+		/* and routes supplied via DHCP (metric 10) */
 		if (*rt || *rt_rfc || *rt_ms)
-			add_dhcp_routes(rt, rt_rfc, rt_ms, man_ifname, 0);
+			add_dhcp_routes(rt, rt_rfc, rt_ms, man_ifname, 10);
 		
 		/* default route via default gateway (metric 10) */
 		if (is_valid_ipv4(gw))

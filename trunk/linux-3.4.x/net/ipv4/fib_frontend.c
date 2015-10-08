@@ -206,6 +206,7 @@ int fib_validate_source(struct sk_buff *skb, __be32 src, __be32 dst, u8 tos,
 	fl4.saddr = dst;
 	fl4.flowi4_tos = tos;
 	fl4.flowi4_scope = RT_SCOPE_UNIVERSE;
+	fl4.flowi4_flags = 0;
 
 	no_addr = rpf = accept_local = 0;
 	in_dev = __in_dev_get_rcu(dev);

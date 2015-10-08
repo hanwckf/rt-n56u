@@ -66,6 +66,8 @@
 static int ipip6_tunnel_init(struct net_device *dev);
 static void ipip6_tunnel_setup(struct net_device *dev);
 static void ipip6_dev_free(struct net_device *dev);
+static bool check_6rd(struct ip_tunnel *tunnel, const struct in6_addr *v6dst,
+		      __be32 *v4dst);
 
 static int sit_net_id __read_mostly;
 struct sit_net {
@@ -586,6 +588,79 @@ static inline void ipip6_ecn_decapsulate(const struct iphdr *iph, struct sk_buff
 		IP6_ECN_set_ce(ipv6_hdr(skb));
 }
 
+static inline bool is_spoofed_6rd(struct ip_tunnel *tunnel, const __be32 v4addr,
+				  const struct in6_addr *v6addr)
+{
+	__be32 v4embed = 0;
+	if (check_6rd(tunnel, v6addr, &v4embed) && v4addr != v4embed)
+		return true;
+	return false;
+}
+
+/* Checks if an address matches an address on the tunnel interface.
+ * Used to detect the NAT of proto 41 packets and let them pass spoofing test.
+ * Long story:
+ * This function is called after we considered the packet as spoofed
+ * in is_spoofed_6rd.
+ * We may have a router that is doing NAT for proto 41 packets
+ * for an internal station. Destination a.a.a.a/PREFIX:bbbb:bbbb
+ * will be translated to n.n.n.n/PREFIX:bbbb:bbbb. And is_spoofed_6rd
+ * function will return true, dropping the packet.
+ * But, we can still check if is spoofed against the IP
+ * addresses associated with the interface.
+ */
+static bool only_dnatted(const struct ip_tunnel *tunnel,
+	const struct in6_addr *v6dst)
+{
+	int prefix_len;
+
+#ifdef CONFIG_IPV6_SIT_6RD
+	prefix_len = tunnel->ip6rd.prefixlen + 32
+		- tunnel->ip6rd.relay_prefixlen;
+#else
+	prefix_len = 48;
+#endif
+	return ipv6_chk_custom_prefix(v6dst, prefix_len, tunnel->dev);
+}
+
+/* Returns true if a packet is spoofed */
+static bool packet_is_spoofed(struct sk_buff *skb,
+			      const struct iphdr *iph,
+			      struct ip_tunnel *tunnel)
+{
+	const struct ipv6hdr *ipv6h;
+
+	if (tunnel->dev->priv_flags & IFF_ISATAP) {
+		if (!isatap_chksrc(skb, iph, tunnel))
+			return true;
+
+		return false;
+	}
+
+	if (tunnel->dev->flags & IFF_POINTOPOINT)
+		return false;
+
+	ipv6h = ipv6_hdr(skb);
+
+	if (unlikely(is_spoofed_6rd(tunnel, iph->saddr, &ipv6h->saddr))) {
+		net_warn_ratelimited("Src spoofed %pI4/%pI6c -> %pI4/%pI6c\n",
+				     &iph->saddr, &ipv6h->saddr,
+				     &iph->daddr, &ipv6h->daddr);
+		return true;
+	}
+
+	if (likely(!is_spoofed_6rd(tunnel, iph->daddr, &ipv6h->daddr)))
+		return false;
+
+	if (only_dnatted(tunnel, &ipv6h->daddr))
+		return false;
+
+	net_warn_ratelimited("Dst spoofed %pI4/%pI6c -> %pI4/%pI6c\n",
+			     &iph->saddr, &ipv6h->saddr,
+			     &iph->daddr, &ipv6h->daddr);
+	return true;
+}
+
 static int ipip6_rcv(struct sk_buff *skb)
 {
 	const struct iphdr *iph;
@@ -608,11 +683,9 @@ static int ipip6_rcv(struct sk_buff *skb)
 		skb->protocol = htons(ETH_P_IPV6);
 		skb->pkt_type = PACKET_HOST;
 
-		if ((tunnel->dev->priv_flags & IFF_ISATAP) &&
-		    !isatap_chksrc(skb, iph, tunnel)) {
+		if (packet_is_spoofed(skb, iph, tunnel)) {
 			tunnel->dev->stats.rx_errors++;
-			kfree_skb(skb);
-			return 0;
+			goto out;
 		}
 
 		tstats = this_cpu_ptr(tunnel->dev->tstats);
@@ -636,14 +709,12 @@ out:
 }
 
 /*
- * Returns the embedded IPv4 address if the IPv6 address
- * comes from 6rd / 6to4 (RFC 3056) addr space.
+ * If the IPv6 address comes from 6rd / 6to4 (RFC 3056) addr space this function
+ * stores the embedded IPv4 address in v4dst and returns true.
  */
-static inline
-__be32 try_6rd(const struct in6_addr *v6dst, struct ip_tunnel *tunnel)
+static bool check_6rd(struct ip_tunnel *tunnel, const struct in6_addr *v6dst,
+		      __be32 *v4dst)
 {
-	__be32 dst = 0;
-
 #ifdef CONFIG_IPV6_SIT_6RD
 	if (ipv6_prefix_equal(v6dst, &tunnel->ip6rd.prefix,
 			      tunnel->ip6rd.prefixlen)) {
@@ -662,14 +733,24 @@ __be32 try_6rd(const struct in6_addr *v6dst, struct ip_tunnel *tunnel)
 			d |= ntohl(v6dst->s6_addr32[pbw0 + 1]) >>
 			     (32 - pbi1);
 
-		dst = tunnel->ip6rd.relay_prefix | htonl(d);
+		*v4dst = tunnel->ip6rd.relay_prefix | htonl(d);
+		return true;
 	}
 #else
 	if (v6dst->s6_addr16[0] == htons(0x2002)) {
 		/* 6to4 v6 addr has 16 bits prefix, 32 v4addr, 16 SLA, ... */
-		memcpy(&dst, &v6dst->s6_addr16[1], 4);
+		memcpy(v4dst, &v6dst->s6_addr16[1], 4);
+		return true;
 	}
 #endif
+	return false;
+}
+
+static inline __be32 try_6rd(struct ip_tunnel *tunnel,
+			     const struct in6_addr *v6dst)
+{
+	__be32 dst = 0;
+	check_6rd(tunnel, v6dst, &dst);
 	return dst;
 }
 
@@ -712,7 +793,7 @@ static netdev_tx_t ipip6_tunnel_xmit(struct sk_buff *skb,
 			neigh = dst_neigh_lookup(skb_dst(skb), &iph6->daddr);
 
 		if (neigh == NULL) {
-			net_dbg_ratelimited("sit: nexthop == NULL\n");
+			net_dbg_ratelimited("nexthop == NULL\n");
 			goto tx_error;
 		}
 
@@ -731,7 +812,7 @@ static netdev_tx_t ipip6_tunnel_xmit(struct sk_buff *skb,
 	}
 
 	if (!dst)
-		dst = try_6rd(&iph6->daddr, tunnel);
+		dst = try_6rd(tunnel, &iph6->daddr);
 
 	if (!dst) {
 		struct neighbour *neigh = NULL;
@@ -741,7 +822,7 @@ static netdev_tx_t ipip6_tunnel_xmit(struct sk_buff *skb,
 			neigh = dst_neigh_lookup(skb_dst(skb), &iph6->daddr);
 
 		if (neigh == NULL) {
-			net_dbg_ratelimited("sit: nexthop == NULL\n");
+			net_dbg_ratelimited("nexthop == NULL\n");
 			goto tx_error;
 		}
 

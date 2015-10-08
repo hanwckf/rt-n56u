@@ -1367,7 +1367,7 @@ static void rtmp_read_ap_wmm_parms_from_file(IN  PRTMP_ADAPTER pAd, PSTRING tmpb
 #ifdef MULTI_CLIENT_SUPPORT
 			/* record profile cwmax */
 			if (i == 0)
-				pAd->CommonCfg.APCwmax= pAd->CommonCfg.APEdcaParm.Cwmax[0];
+				pAd->CommonCfg.APCwmax = pAd->CommonCfg.APEdcaParm.Cwmax[0];
 #endif /* MULTI_CLIENT_SUPPORT */
 
 			DBGPRINT(RT_DEBUG_TRACE, ("APCwmax[%d]=%d\n", i, pAd->CommonCfg.APEdcaParm.Cwmax[i]));

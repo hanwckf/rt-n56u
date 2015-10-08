@@ -2597,49 +2597,48 @@ MAC_TABLE_ENTRY *MacTableLookup(
 
 #ifdef MULTI_CLIENT_SUPPORT
 /* for Multi-Clients */
-VOID changeTxRetry(
-    IN PRTMP_ADAPTER pAd,
-    IN USHORT num)
+static VOID asic_change_tx_retry(
+	IN PRTMP_ADAPTER pAd,
+	IN USHORT num)
 {
-    UINT32  TxRtyCfg, MacReg = 0;
+	UINT32  TxRtyCfg, MacReg = 0;
 
-        if (pAd->CommonCfg.txRetryCfg == 0) {
-                /* txRetryCfg is invalid, should not be 0 */
-		 DBGPRINT(RT_DEBUG_TRACE, ("txRetryCfg=%x\n", pAd->CommonCfg.txRetryCfg));
-                return ;
-        }
+	if (pAd->CommonCfg.txRetryCfg == 0) {
+		/* txRetryCfg is invalid, should not be 0 */
+		DBGPRINT(RT_DEBUG_TRACE, ("txRetryCfg=%x\n", pAd->CommonCfg.txRetryCfg));
+		return;
+	}
 
-    if (num < 3)
-    {
-        /* Tx date retry default 15 */
-        RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
-        TxRtyCfg = ((TxRtyCfg & 0xffff0000) | (pAd->CommonCfg.txRetryCfg & 0x0000ffff));
-        RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
+	if (num < 3)
+	{
+		/* Tx date retry default 15 */
+		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
+		TxRtyCfg = ((TxRtyCfg & 0xffff0000) | (pAd->CommonCfg.txRetryCfg & 0x0000ffff));
+		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
 
-        /* Tx RTS retry default 32 */
-        RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
-        MacReg &= 0xFFFFFF00;
-        MacReg |= 0x20;
-        RTMP_IO_WRITE32(pAd, TX_RTS_CFG, MacReg);
-    }
-    else
-    {
+		/* Tx RTS retry default 32 */
+		RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
+		MacReg &= 0xFFFFFF00;
+		MacReg |= 0x20;
+		RTMP_IO_WRITE32(pAd, TX_RTS_CFG, MacReg);
+	}
+	else
+	{
+		/* Tx date retry 8 */
+		TxRtyCfg = 0x4100080A;
+		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
 
-        /* Tx date retry 8 */
-        TxRtyCfg = 0x4100080A;
-        RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
-
-        /* Tx RTS retry 3 */
-        RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
-        MacReg &= 0xFFFFFF00;
-        MacReg |= 0x03;
-        RTMP_IO_WRITE32(pAd, TX_RTS_CFG, MacReg);
-    }
+		/* Tx RTS retry 3 */
+		RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
+		MacReg &= 0xFFFFFF00;
+		MacReg |= 0x03;
+		RTMP_IO_WRITE32(pAd, TX_RTS_CFG, MacReg);
+	}
 }
 
-VOID pktAggrNumChange(
-    IN PRTMP_ADAPTER pAd,
-    IN USHORT num)
+static VOID pkt_aggr_num_change(
+	IN PRTMP_ADAPTER pAd,
+	IN USHORT num)
 {
 	if (num < 5)
 	{
@@ -2655,56 +2654,56 @@ VOID pktAggrNumChange(
 		RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_20M1S, 0x77754433);
 		RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_20M2S, 0x77765543);
 		RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M1S, 0x77765544);
-        RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M2S, 0x77765544);
+		RTMP_IO_WRITE32(pAd, AMPDU_MAX_LEN_40M2S, 0x77765544);
 	}
 }
 
-VOID tuneBEWMM(
-    IN PRTMP_ADAPTER pAd,
-    IN USHORT num)
+static VOID asic_tune_be_wmm(
+	IN PRTMP_ADAPTER pAd,
+	IN USHORT num)
 {
-    UCHAR  bssCwmin = 4, apCwmin = 4, apCwmax = 6;
+	UCHAR  bssCwmin = 4, apCwmin = 4, apCwmax = 6;
 
-    if (num <= 4)
-    {
-        /* use profile cwmin */
-        if (pAd->CommonCfg.APCwmin > 0 && pAd->CommonCfg.BSSCwmin > 0 && pAd->CommonCfg.APCwmax > 0)
-        {
-            apCwmin = pAd->CommonCfg.APCwmin;
-            apCwmax = pAd->CommonCfg.APCwmax;
-            bssCwmin = pAd->CommonCfg.BSSCwmin;
-        }
-    }
-    else if (num > 4 && num <= 8)
-    {
-        apCwmin = 4;
-        apCwmax = 6;
-        bssCwmin = 5;
-    }
-    else if (num > 8 && num <= 16)
-    {
-        apCwmin = 4;
-        apCwmax = 6;
-        bssCwmin = 6;
-    }
-    else if (num > 16 && num <= 64)
-    {
-        apCwmin = 4;
-        apCwmax = 6;
-        bssCwmin = 7;
-    }
-    else if (num > 64 && num <= 128)
-    {
-        apCwmin = 4;
-        apCwmax = 6;
-        bssCwmin = 8;
-    }
+	if (num <= 4)
+	{
+		/* use profile cwmin */
+		if (pAd->CommonCfg.APCwmin > 0 && pAd->CommonCfg.BSSCwmin > 0 && pAd->CommonCfg.APCwmax > 0)
+		{
+			apCwmin = pAd->CommonCfg.APCwmin;
+			apCwmax = pAd->CommonCfg.APCwmax;
+			bssCwmin = pAd->CommonCfg.BSSCwmin;
+		}
+	}
+	else if (num > 4 && num <= 8)
+	{
+		apCwmin = 4;
+		apCwmax = 6;
+		bssCwmin = 5;
+	}
+	else if (num > 8 && num <= 16)
+	{
+		apCwmin = 4;
+		apCwmax = 6;
+		bssCwmin = 6;
+	}
+	else if (num > 16 && num <= 64)
+	{
+		apCwmin = 4;
+		apCwmax = 6;
+		bssCwmin = 7;
+	}
+	else if (num > 64 && num <= 128)
+	{
+		apCwmin = 4;
+		apCwmax = 6;
+		bssCwmin = 8;
+	}
 
-    pAd->CommonCfg.APEdcaParm.Cwmin[0] = apCwmin;
-    pAd->CommonCfg.APEdcaParm.Cwmax[0] = apCwmax;
-    pAd->ApCfg.BssEdcaParm.Cwmin[0] = bssCwmin;
+	pAd->CommonCfg.APEdcaParm.Cwmin[0] = apCwmin;
+	pAd->CommonCfg.APEdcaParm.Cwmax[0] = apCwmax;
+	pAd->ApCfg.BssEdcaParm.Cwmin[0] = bssCwmin;
 
-    AsicSetEdcaParm(pAd, &pAd->CommonCfg.APEdcaParm);
+	AsicSetEdcaParm(pAd, &pAd->CommonCfg.APEdcaParm);
 }
 #endif /* MULTI_CLIENT_SUPPORT */
 
@@ -3232,18 +3231,18 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 
 #ifdef CONFIG_AP_SUPPORT
 #ifdef MULTI_CLIENT_SUPPORT
-    /* for Multi-Clients */
-    if (pAd->MacTab.Size < MAX_LEN_OF_MAC_TABLE)
-    {
-        USHORT size;
+	/* for Multi-Clients */
+	if (pAd->MacTab.Size < MAX_LEN_OF_MAC_TABLE)
+	{
+		USHORT size;
 
 		size = pAd->ApCfg.EntryClientCount;
-        changeTxRetry(pAd, size);
-        pktAggrNumChange(pAd, size);
+		asic_change_tx_retry(pAd, size);
+		pkt_aggr_num_change(pAd, size);
 
-        if (pAd->CommonCfg.bWmm)
-            tuneBEWMM(pAd, size);
-    }
+		if (pAd->CommonCfg.bWmm)
+			asic_tune_be_wmm(pAd, size);
+	}
 #endif /* MULTI_CLIENT_SUPPORT */
 #endif // CONFIG_AP_SUPPORT //
 
@@ -3544,11 +3543,11 @@ BOOLEAN MacTableDeleteEntry(
 		USHORT size;
 
 		size = pAd->ApCfg.EntryClientCount;
-		changeTxRetry(pAd, size);
-		pktAggrNumChange(pAd, size);
+		asic_change_tx_retry(pAd, size);
+		pkt_aggr_num_change(pAd, size);
 
 		if (pAd->CommonCfg.bWmm)
-			tuneBEWMM(pAd, size);
+			asic_tune_be_wmm(pAd, size);
 	}
 #endif /* MULTI_CLIENT_SUPPORT */
 
@@ -5043,13 +5042,13 @@ VOID drop_mask_init_per_client(
 	PMAC_TABLE_ENTRY entry)
 {
 	BOOLEAN cancelled = 0;
-	
+
 	if (entry->tx_dropmask_timer.Valid)
-			RTMPCancelTimer(&entry->tx_dropmask_timer, &cancelled);
+		RTMPCancelTimer(&entry->tx_dropmask_timer, &cancelled);
 	RTMPInitTimer(ad, &entry->tx_dropmask_timer, GET_TIMER_FUNCTION(tx_drop_mask_timer_action), entry, FALSE);
-	
+
 	NdisAllocateSpinLock(ad, &entry->drop_mask_lock);
-	
+
 	entry->tx_fail_drop_mask_enabled = 0;
 	entry->ps_drop_mask_enabled = 0;
 	asic_set_drop_mask(ad, entry->Aid, 0);
@@ -5061,14 +5060,21 @@ VOID drop_mask_release_per_client(
 	PMAC_TABLE_ENTRY entry)
 {
 	BOOLEAN cancelled = 0;
-	
+
 	RTMPCancelTimer(&entry->tx_dropmask_timer, &cancelled);
 	RTMPReleaseTimer(&entry->tx_dropmask_timer, &cancelled);
-	NdisFreeSpinLock(&entry->drop_mask_lock);
 
 	entry->tx_fail_drop_mask_enabled = 0;
 	entry->ps_drop_mask_enabled = 0;
 	asic_set_drop_mask(ad, entry->Aid, 0);
+
+	if (ad->ApCfg.EntryClientCount == 2)
+	{
+		/* clear drop mask before client number fall below to threshold */
+		drop_mask_per_client_reset(ad);
+	}
+
+	NdisFreeSpinLock(&entry->drop_mask_lock);
 }
 
 
@@ -5077,11 +5083,11 @@ VOID drop_mask_per_client_reset(
 {
 	INT i;
 	UINT32 max_wcid_num = MAX_LEN_OF_MAC_TABLE;
-	
+
 	for ( i = 0; i < max_wcid_num; i++)
 	{
 		PMAC_TABLE_ENTRY entry = &ad->MacTab.Content[i];
-		if (IS_ENTRY_CLIENT(entry))
+		if (!IS_ENTRY_NONE(entry))
 		{
 			NdisAcquireSpinLock(&entry->drop_mask_lock);
 			entry->tx_fail_drop_mask_enabled = 0;
@@ -5091,7 +5097,6 @@ VOID drop_mask_per_client_reset(
 	}
 
 	asic_drop_mask_reset(ad);
-	
 }
 
 
@@ -5103,52 +5108,46 @@ VOID set_drop_mask_per_client(
 {
 	BOOLEAN cancelled = 0;
 	BOOLEAN write_to_mac = 0;
-	UINT32 timeout = 0;
+	BOOLEAN mask_is_enabled = 0;
+	UINT32 timeout = 10;
 
+	RTMPCancelTimer(&entry->tx_dropmask_timer, &cancelled);
 
+	NdisAcquireSpinLock(&entry->drop_mask_lock);
 	switch (type)
 	{
+		case 0: /* set drop mask due to tx_fail too high or client is in power saving */
+		{
+			write_to_mac |= (enable ^ entry->tx_fail_drop_mask_enabled);
+			write_to_mac |= (enable ^ entry->ps_drop_mask_enabled);
+			entry->tx_fail_drop_mask_enabled = (enable ? 1:0);
+			entry->ps_drop_mask_enabled = (enable ? 1:0);
+			break;
+		}
 		case 1: /* set drop mask due to tx_fail too high */
 		{
 			write_to_mac = (enable ^ entry->tx_fail_drop_mask_enabled);
-			NdisAcquireSpinLock(&entry->drop_mask_lock);
 			entry->tx_fail_drop_mask_enabled = (enable ? 1:0);
-			NdisReleaseSpinLock(&entry->drop_mask_lock);
-			timeout = 10;
 			break;
 		}
 		case 2: /* set drop mask due to client is in power saving */
 		{
 			write_to_mac = (enable ^ entry->ps_drop_mask_enabled);
-			NdisAcquireSpinLock(&entry->drop_mask_lock);
 			entry->ps_drop_mask_enabled = (enable ? 1:0);
-			NdisReleaseSpinLock(&entry->drop_mask_lock);
 			timeout = 1000;
 			break;
 		}
-		default:
-			break;
 	}
+	mask_is_enabled = (entry->tx_fail_drop_mask_enabled || entry->ps_drop_mask_enabled) ? 1 : 0;
+	NdisReleaseSpinLock(&entry->drop_mask_lock);
 
-	RTMPCancelTimer(&entry->tx_dropmask_timer, &cancelled);
-
-	if (enable)
-	{		
-		RTMPSetTimer(&entry->tx_dropmask_timer, timeout /* ms */);
+	if (write_to_mac) {
+		if (!(enable ^ mask_is_enabled))
+			asic_set_drop_mask(ad, entry->Aid, enable);
 	}
-
-	/* if we don't need to change mac reg, just return */
-	if (!write_to_mac)
-		return;
 
 	if (enable) {
-		asic_set_drop_mask(ad, entry->Aid, enable);
-	} else {
-		if (!entry->tx_fail_drop_mask_enabled &&
-			!entry->ps_drop_mask_enabled)
-		{
-			asic_set_drop_mask(ad, entry->Aid, enable);
-		}
+		RTMPSetTimer(&entry->tx_dropmask_timer, timeout /* ms */);
 	}
 }
 
@@ -5159,15 +5158,12 @@ VOID  tx_drop_mask_timer_action(
 	IN PVOID SystemSpecific2, 
 	IN PVOID SystemSpecific3)
 {
-	PMAC_TABLE_ENTRY     entry = (MAC_TABLE_ENTRY *)FunctionContext;
+	PMAC_TABLE_ENTRY entry = (MAC_TABLE_ENTRY *)FunctionContext;
 	PRTMP_ADAPTER ad = (PRTMP_ADAPTER)entry->pAd;
 
 	/* Disable drop mask */
-	if (entry->tx_fail_drop_mask_enabled)
-		set_drop_mask_per_client(ad, entry, 1, 0);
-
-	if (entry->ps_drop_mask_enabled)
-		set_drop_mask_per_client(ad, entry, 2, 0);
+	if (entry->tx_fail_drop_mask_enabled || entry->ps_drop_mask_enabled)
+		set_drop_mask_per_client(ad, entry, 0, 0);
 }
 #endif /* DROP_MASK_SUPPORT */
 

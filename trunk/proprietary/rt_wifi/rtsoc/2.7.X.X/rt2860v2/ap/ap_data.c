@@ -4501,9 +4501,9 @@ VOID APHandleRxDataFrame(
 #ifdef UAPSD_SUPPORT
 	if (pFmeCtrl->PwrMgmt)
 	{
-	   	if ((CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_APSD_CAPABLE)) &&
+		if ((CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_APSD_CAPABLE)) &&
 			(pFmeCtrl->SubType & 0x08))
-	   	{
+		{
 			/*
 				In IEEE802.11e, 11.2.1.4 Power management with APSD,
 				If there is no unscheduled SP in progress, the unscheduled SP begins
@@ -4517,20 +4517,20 @@ VOID APHandleRxDataFrame(
 				the AP shall not respond with a QoS Null frame.
 			*/
 			/* Trigger frame must be QoS data or QoS Null frame */
-	   		UCHAR  OldUP;
+			UCHAR  OldUP;
 
 			OldUP = (*(pRxBlk->pData+LENGTH_802_11) & 0x07);
-	    	if (OldPwrMgmt == PWR_SAVE)
+			if (OldPwrMgmt == PWR_SAVE)
 			{
 #ifdef DROP_MASK_SUPPORT
 				/* Disable Drop Mask */
 				set_drop_mask_per_client(pAd, pEntry, 2, 0);
 #endif /* DROP_MASK_SUPPORT */
-	    		UAPSD_TriggerFrameHandle(pAd, pEntry, OldUP);
+				UAPSD_TriggerFrameHandle(pAd, pEntry, OldUP);
 			}
-	    	/* End of if */
+			/* End of if */
 		}
-    } /* End of if */
+	} /* End of if */
 #endif /* UAPSD_SUPPORT */
 
 	/* Drop NULL, CF-ACK(no data), CF-POLL(no data), and CF-ACK+CF-POLL(no data) data frame */

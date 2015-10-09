@@ -3630,6 +3630,7 @@ VOID set_drop_mask_per_client(
 {
 	BOOLEAN cancelled = 0;
 	BOOLEAN write_to_mac = 0;
+	BOOLEAN mask_is_enabled = 0;
 	UINT32 timeout = 10;
 
 #ifdef NOISE_TEST_ADJUST

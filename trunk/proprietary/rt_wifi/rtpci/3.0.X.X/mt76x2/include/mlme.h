@@ -187,7 +187,7 @@ enum SCAN_MODE{
 #define ERP_IS_USE_PROTECTION(x)         (((x) & 0x02) != 0)    /* 802.11g */
 #define ERP_IS_USE_BARKER_PREAMBLE(x)    (((x) & 0x04) != 0)    /* 802.11g */
 
-#define DRS_TX_QUALITY_WORST_BOUND       4
+#define DRS_TX_QUALITY_WORST_BOUND       8/* 3  // just test by gary */
 #define DRS_PENALTY                      8
 
 #define BA_NOTUSE 	2

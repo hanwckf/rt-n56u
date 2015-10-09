@@ -2232,12 +2232,11 @@ VOID asic_set_drop_mask(
 	/* each group has 32 entries */
 	group_index = (wcid - (wcid % 32)) >> 5 /* divided by 32 */;
 	reg_id = TX_WCID_DROP_MASK0 + 4*group_index;
-	
-	RTMP_IO_READ32(ad, reg_id, &mac_reg);
 
-	mac_reg = (enable ? \
-				(mac_reg | drop_mask):(mac_reg & ~drop_mask));
+	RTMP_IO_READ32(ad, reg_id, &mac_reg);
+	mac_reg = (enable ? (mac_reg | drop_mask) : (mac_reg & ~drop_mask));
 	RTMP_IO_WRITE32(ad, reg_id, mac_reg);
+
 	DBGPRINT(RT_DEBUG_TRACE,
 			("%s(%u):, wcid = %u, reg_id = 0x%08x, mac_reg = 0x%08x, group_index = %u, drop_mask = 0x%08x\n",
 			__FUNCTION__, enable, wcid, reg_id, mac_reg, group_index, drop_mask));

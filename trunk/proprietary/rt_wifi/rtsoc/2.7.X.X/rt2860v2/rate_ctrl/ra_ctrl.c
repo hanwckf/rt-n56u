@@ -1827,7 +1827,12 @@ VOID MlmeNewTxRate(
 	IN PMAC_TABLE_ENTRY		pEntry)
 {
 	PRTMP_TX_RATE_SWITCH pNextTxRate;
-	UCHAR *pTable = pEntry->pTable;
+	UCHAR *pTable;
+
+	if ((pEntry == NULL) || (pEntry->pTable == NULL))
+		return;
+	else
+		pTable = pEntry->pTable;
 
 	/*  Get pointer to CurrTxRate entry */
 #ifdef NEW_RATE_ADAPT_SUPPORT

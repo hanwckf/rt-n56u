@@ -853,8 +853,7 @@ VOID GREKEYPeriodicExec(
 						
 #ifdef DROP_MASK_SUPPORT
 					/* Disable Drop Mask */
-					set_drop_mask_per_client(pAd, pEntry, 1, 0);
-					set_drop_mask_per_client(pAd, pEntry, 2, 0);
+					set_drop_mask_per_client(pAd, pEntry, 0, 0);
 #endif /* DROP_MASK_SUPPORT */
 
                 	WPAStart2WayGroupHS(pAd, pEntry);

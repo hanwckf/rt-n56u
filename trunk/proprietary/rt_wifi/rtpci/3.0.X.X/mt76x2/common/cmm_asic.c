@@ -3868,12 +3868,11 @@ VOID asic_set_drop_mask(
 	/* each group has 32 entries */
 	group_index = (wcid - (wcid % 32)) >> 5 /* divided by 32 */;
 	reg_id = (TX_WCID_DROP_MASK0 + 4*group_index);
-	
-	RTMP_IO_READ32(ad, reg_id, &mac_reg);
 
-	mac_reg = (enable ? \
-				(mac_reg | drop_mask):(mac_reg & ~drop_mask));
+	RTMP_IO_READ32(ad, reg_id, &mac_reg);
+	mac_reg = (enable ? (mac_reg | drop_mask) : (mac_reg & ~drop_mask));
 	RTMP_IO_WRITE32(ad, reg_id, mac_reg);
+
 	DBGPRINT(RT_DEBUG_TRACE,
 			("%s(%u):, wcid = %u, reg_id = 0x%08x, mac_reg = 0x%08x, group_index = %u, drop_mask = 0x%08x\n",
 			__FUNCTION__, enable, wcid, reg_id, mac_reg, group_index, drop_mask));
@@ -3899,9 +3898,9 @@ VOID asic_drop_mask_reset(
 VOID asic_change_tx_retry(
 	IN PRTMP_ADAPTER pAd, 
 	IN USHORT num)
-{		
+{
 	UINT32	TxRtyCfg, MacReg = 0;
-	
+
 	if (pAd->CommonCfg.txRetryCfg == 0) {
 		/* txRetryCfg is invalid, should not be 0 */
 		DBGPRINT(RT_DEBUG_TRACE, ("txRetryCfg=%x\n", pAd->CommonCfg.txRetryCfg));
@@ -3973,7 +3972,7 @@ VOID asic_tune_be_wmm(
 	IN USHORT num)
 {
 	UCHAR  bssCwmin = 4, apCwmin = 4, apCwmax = 6;
-			
+
 	if (num <= 4)
 	{
 		/* use profile cwmin */
@@ -4008,11 +4007,11 @@ VOID asic_tune_be_wmm(
 		apCwmax = 6;
 		bssCwmin = 8;
 	}
-	
+
 	pAd->CommonCfg.APEdcaParm.Cwmin[0] = apCwmin;
 	pAd->CommonCfg.APEdcaParm.Cwmax[0] = apCwmax;
 	pAd->ApCfg.BssEdcaParm.Cwmin[0] = bssCwmin;
-			
+
 	AsicSetEdcaParm(pAd, &pAd->CommonCfg.APEdcaParm);
 }
 #endif /* MULTI_CLIENT_SUPPORT */

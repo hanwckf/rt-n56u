@@ -318,7 +318,7 @@ static inline int RemoveVlanTag(struct sk_buff * skb)
 
 #if defined  (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 /* push different VID for WiFi pseudo interface or USB external NIC */
-uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
+static uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 {
 	uint16_t VirIfIdx;
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
@@ -398,7 +398,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	return 0;
 }
 
-uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
+static uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 {
 	struct net_device *dev;
 	uint16_t VirIfIdx;
@@ -633,8 +633,9 @@ static int PpeHitBindForceToCpuHandler(struct sk_buff *skb, uint32_t foe_entry_n
 }
 
 #if defined (CONFIG_HNAT_V2)
-int PpeHitBindForceMcastToWiFiHandler(struct sk_buff *skb)
+static int PpeHitBindForceMcastToWiFiHandler(struct sk_buff *skb)
 {
+#if defined (CONFIG_RA_HW_NAT_MCAST)
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 	int i;
 	struct sk_buff *skb2;
@@ -683,6 +684,7 @@ int PpeHitBindForceMcastToWiFiHandler(struct sk_buff *skb)
 	}
 #endif
 #endif
+#endif /* CONFIG_RA_HW_NAT_MCAST */
 
 	dev_kfree_skb(skb);
 
@@ -691,7 +693,7 @@ int PpeHitBindForceMcastToWiFiHandler(struct sk_buff *skb)
 #endif
 
 #if defined (CONFIG_RA_HW_NAT_ACL2UP_HELPER)
-void PpeGetUpFromACLRule(struct sk_buff *skb)
+static void PpeGetUpFromACLRule(struct sk_buff *skb)
 {
 	struct ethhdr *eth = NULL;
 	uint16_t eth_type = ntohs(skb->protocol);
@@ -805,58 +807,48 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 
 	if (foe_ai == HIT_BIND_FORCE_TO_CPU) {
 		/* It means the flow is already in binding state, just transfer to output interface */
-		if (!FOE_ENTRY_VALID(skb))
-			return 1;
-		return PpeHitBindForceToCpuHandler(skb, FOE_ENTRY_NUM(skb));
+		if (FOE_ENTRY_VALID(skb))
+			return PpeHitBindForceToCpuHandler(skb, FOE_ENTRY_NUM(skb));
 #if defined (CONFIG_HNAT_V2)
-#if defined (CONFIG_RALINK_MT7621)
-	} else if ((foe_sp == 0 || foe_sp == 5) &&
-#else
-	} else if ((foe_sp == 6) &&
-#endif
-				(foe_ai != HIT_BIND_KEEPALIVE_UC_OLD_HDR) &&
-				(foe_ai != HIT_BIND_KEEPALIVE_MC_NEW_HDR) &&
-				(foe_ai != HIT_BIND_KEEPALIVE_DUP_OLD_HDR)) {
-		/* handle the incoming packet which came back from PPE */
-#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-		if (wifi_offload)
-			return PpeExtIfPingPongHandler(skb);
-		else
-#endif
-			return 1;
 #if defined (CONFIG_RALINK_MT7621)
 	} else if (foe_ai == HIT_BIND_MULTICAST_TO_CPU || foe_ai == HIT_BIND_MULTICAST_TO_GMAC_CPU) {
 #else
 	} else if (foe_ai == HIT_BIND_MULTICAST_TO_CPU) {
 #endif
-		return PpeHitBindForceMcastToWiFiHandler(skb);
-	} else if (foe_ai == HIT_BIND_KEEPALIVE_UC_OLD_HDR) {
-		return 1;
-	} else if (foe_ai == HIT_BIND_KEEPALIVE_MC_NEW_HDR) {
-		PpeKeepAliveHandler(skb, 1);
-		return 1;
+		if (FOE_ENTRY_VALID(skb))
+			return PpeHitBindForceMcastToWiFiHandler(skb);
 	} else if (foe_ai == HIT_BIND_KEEPALIVE_DUP_OLD_HDR) {
 		PpeKeepAliveHandler(skb, 0);
-		return 1;
-#else /* !CONFIG_HNAT_V2 */
-	} else if (foe_sp == 0 && foe_ai != HIT_BIND_KEEPALIVE) {
+	} else if (foe_ai == HIT_BIND_KEEPALIVE_MC_NEW_HDR) {
+		PpeKeepAliveHandler(skb, 1);
+	} else if (foe_ai == HIT_BIND_KEEPALIVE_UC_OLD_HDR) {
+		;
+#if defined (CONFIG_RALINK_MT7621)
+	} else if (foe_sp == 0 || foe_sp == 5) {
+#else
+	} else if (foe_sp == 6) {
+#endif
 		/* handle the incoming packet which came back from PPE */
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 		if (wifi_offload)
 			return PpeExtIfPingPongHandler(skb);
-		else
 #endif
-			return 1;
-	} else if (foe_ai == HIT_BIND_KEEPALIVE && DFL_FOE_KA == 0) {
-		PpeKeepAliveHandler(skb, 1);
-		return 1;
+#else /* !CONFIG_HNAT_V2 */
+	} else if (foe_ai == HIT_BIND_KEEPALIVE) {
+		if (DFL_FOE_KA == 0)
+			PpeKeepAliveHandler(skb, 1);
+	} else if (foe_sp == 0) {
+		/* handle the incoming packet which came back from PPE */
+#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
+		if (wifi_offload)
+			return PpeExtIfPingPongHandler(skb);
+#endif
+#if defined (CONFIG_RA_HW_NAT_ACL2UP_HELPER)
+	} else if (foe_ai == HIT_UNBIND_RATE_REACH) {
+		PpeGetUpFromACLRule(skb);
+#endif
 #endif /* CONFIG_HNAT_V2 */
 	}
-#if defined (CONFIG_RA_HW_NAT_ACL2UP_HELPER)
-	else if (foe_ai == HIT_UNBIND_RATE_REACH) {
-		PpeGetUpFromACLRule(skb);
-	}
-#endif
 
 	return 1;
 }

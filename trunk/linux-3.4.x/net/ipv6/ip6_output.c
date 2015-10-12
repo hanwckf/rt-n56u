@@ -416,6 +416,9 @@ int ip6_forward(struct sk_buff *skb)
 	if (skb->pkt_type != PACKET_HOST)
 		goto drop;
 
+	if (unlikely(skb->sk))
+		goto drop;
+
 #ifdef CONFIG_INET_LRO
 	if (skb_warn_if_lro(skb))
 		goto drop;

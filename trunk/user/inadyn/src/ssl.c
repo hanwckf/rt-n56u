@@ -1,6 +1,6 @@
 /* Interface for optional HTTPS functions
  *
- * Copyright (C) 2014  Joachim Nilsson <troglobit@gmail.com>
+ * Copyright (C) 2014-2015  Joachim Nilsson <troglobit@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -59,7 +59,7 @@ int ssl_init(http_t *client, char *msg)
 
 #if defined(CONFIG_OPENSSL)
 		/* POODLE, only allow TLSv1.x or later */
-		SSL_CTX_set_options(client->ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+		SSL_CTX_set_options(client->ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION);
 #endif
 
 		client->ssl = SSL_new(client->ssl_ctx);
@@ -67,10 +67,6 @@ int ssl_init(http_t *client, char *msg)
 			rc = RC_HTTPS_OUT_OF_MEMORY;
 			break;
 		}
-
-#ifdef SSL_MODE_SEND_FALLBACK_SCSV
-		SSL_set_mode(client->ssl, SSL_MODE_SEND_FALLBACK_SCSV);
-#endif
 
 		http_get_remote_name(client, &sn);
 		if (set_server_name(client->ssl, sn)) {

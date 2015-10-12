@@ -305,3 +305,24 @@ html, body {
 .icon-ignore{
 	background:url('images/ignore.png') no-repeat;
 }
+.icon-rename{
+	background:url('images/rename.png') no-repeat;
+}
+
+.drop-over-before{
+    border-left: 1px #ff0000 solid;
+    color: #ff0000;
+}
+.drop-over-after{
+    border-right: 1px #ff0000 solid;
+    color: #ff0000;
+}
+.drag-begin{
+    filter:alpha(opacity=60);
+    opacity:0.60;
+    background-color: #cccccc;
+    padding:2px;
+    margin-top:7px;
+    cursor:move;
+    width:95%;
+}

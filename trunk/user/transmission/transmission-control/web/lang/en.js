@@ -1,5 +1,5 @@
 // lang file
-system.lang = {
+system.defaultLang = {
 	"name":"en"
 	,"system":{
 		"title":"Transmission WEB Control"
@@ -7,16 +7,17 @@ system.lang = {
 			"connect":"Connecting..."
 			,"connected":"Connected"
 			,"queue":"Queue:"
-			,"queuefinish":"The queue(s) is finish."
-			,"notfinal":"Not final"
+			,"queuefinish":"The queue(s) has finished."
+			,"notfinal":"Not finalized"
 		}
 	}
 	,"error":{
-		"data-error":"Data error."
-		,"data-post-error":"Data post error."
+		"data-error":"Error recieving data!"
+		,"data-post-error":"Error posting data!"
+		,"rename-error":"Error renaming file/folder!"
 	}
 	,"config":{
-		"save-path":"Download dir"
+		"save-path":"Download directory"
 	}
 	,"toolbar":{
 		"start":"Start"
@@ -44,11 +45,12 @@ system.lang = {
 		,"ui-original":"Original UI"
 		,"ui-computer":"Desktop UI"
 		,"plugin":"Extensions/plugins"
+		,"rename":"Rename"
 		,"tip":{
 			"start":"Start the checked torrents"
 			,"pause":"Pause the checked torrents"
 			,"recheck":"Recheck the checked torrents"
-			,"recheck-confirm":"You sure you want to re-check the selected torrents? This may take some time!"
+			,"recheck-confirm":"Are you sure you want to re-check the selected torrents? This may take some time!"
 			,"start-all":"Start all"
 			,"pause-all":"Pause all"
 			,"remove":"Remove"
@@ -60,13 +62,14 @@ system.lang = {
 			,"system-config":"Config"
 			,"system-reload":"Reload"
 			,"about":"About this app"
-			,"autoreload-disabled":"Disabled auto reload"
-			,"autoreload-enabled":"Enabled auto reload"
+			,"autoreload-disabled":"Auto reload is disabled"
+			,"autoreload-enabled":"Auto reload is enabled"
 			,"tracker-replace":"Replace trackers"
-			,"change-download-dir":"Set location"
+			,"change-download-dir":"Change download location"
 			,"ui-mobile":"Mobile UI"
 			,"ui-original":"Original UI"
 			,"more-peers":"Ask tracker for more peers"
+			,"rename":"Renaming a Torrent's Path"
 		}
 	}
 	,"menus":{
@@ -91,7 +94,7 @@ system.lang = {
 		,"active":"Active"
 		,"paused":"Paused"
 		,"downloading":"Downloading"
-		,"sending":"Sending"
+		,"sending":"Seeding"
 		,"error":"Error"
 		,"warning":"Warning"
 		,"actively":"Actively"
@@ -129,13 +132,13 @@ system.lang = {
 		"torrent-add":{
 			"download-dir":"Download Dir:"
 			,"torrent-url":"Torrent URL:"
-			,"tip-torrent-url":"Tip：Please multiple content with 'Enter' to separate"
+			,"tip-torrent-url":"Tip: Please add multiple content with an 'Enter' key press to separate"
 			,"autostart":"Auto Start:"
 			,"tip-autostart":""
-			,"set-default-download-dir":"Set as default dir"
+			,"set-default-download-dir":"Set as default directory"
 			,"upload-file":"Torrent file(s):"
 			,"nosource":"No torrent file or URL."
-			,"tip-title":"Upload the torrent file takes precedence over the torrent URL"
+			,"tip-title":"Uploading the torrent file takes precedence over the torrent URL"
 		}
 		,"system-config":{
 			"title":"Server Config"
@@ -148,8 +151,8 @@ system.lang = {
 			}
 			,"config-dir":"Location of transmission's configuration directory:"
 			,"download-dir":"Default path to download torrents:"
-			,"download-dir-free-space":"Free space: "
-			,"incomplete-dir-enabled":"Use incomplete dir"
+			,"download-dir-free-space":"Free space:"
+			,"incomplete-dir-enabled":"Use incomplete directory"
 			,"cache-size-mb":"Disk cache size:"
 			,"rename-partial-files":"Append '.part' to incomplete files"
 			,"start-added-torrents":"Auto start added torrents"
@@ -221,7 +224,7 @@ system.lang = {
 			"title":"Set new dir"
 			,"old-download-dir":"Old dir:"
 			,"new-download-dir":"New dir:"
-			,"move-data":"If checked, move from previous location. otherwise, search 'New dir' for files."
+			,"move-data":"Move from previous location (otherwise, search 'New dir')."
 			,"set-error":"set error!"
 			,"recheck-data":"Recheck data."
 		}
@@ -241,13 +244,18 @@ system.lang = {
 			,"time-now":"Now:"
 			,"status":"Status:"
 			,"ignore":"Ignore"
-			,"working-close-confirm":"Is working, make sure to close it?"
+			,"working-close-confirm":"Torrents are currently downloading, are sure you want to close Transmission?"
 			,"time-interval":"Time interval (seconds):"
 			,"work-mode-title":"Mode:"
 			,"work-mode":{
 				"1":"Individually matched by torrent"
 				,"2":"Individually matched by folder"
 			}
+		}
+		,"torrent-rename": {
+			"title":"Renaming a Torrent's Path",
+			"oldname": "Old",
+			"newname": "New"
 		}
 	}
 	,"torrent":{
@@ -260,14 +268,15 @@ system.lang = {
 			,"status":"Status"
 			,"percentDone":"Percent done"
 			,"remainingTime":"Remaining time"
-			,"addedDate":"Added date"
+			,"addedDate":"Date added"
 			,"completeSize":"Complete size"
-			,"rateDownload":"Rate download"
-			,"rateUpload":"Rate upload"
+			,"rateDownload":"Dowload Rate"
+			,"rateUpload":"Upload rate"
 			,"leecherCount":"Leecher"
 			,"seederCount":"Seeder"
-			,"uploadedEver":"Uploaded ever"
+			,"uploadedEver":"Uploaded till date"
 			,"uploadRatio":"Ratio"
+			,"queuePosition":"Queue"
 		}
 		,"status-text":{
 			"0":"Paused"
@@ -342,7 +351,7 @@ system.lang = {
 				,"errorString":"Error string:"
 				,"downloadLimited":"Max global download speed: "
 				,"uploadLimited":"Max global upload speed: "
-				,"peer-limit":"Maximum peers number of torrent: "
+				,"peer-limit":"Maximum peers for this torrent: "
 				,"seedRatioMode":"Seed ratio for torrents to use: "
 				,"seedIdleMode":"Torrents we're seeding will be stopped if they're idle for this long: "
 			}
@@ -352,7 +361,7 @@ system.lang = {
 				,"button-priority":"Set priority"
 			}
 			,"other":{
-				"tracker-remove-confim":"Are you sure want to remove this Tracker?"
+				"tracker-remove-confim":"Are you sure you want to remove this Tracker?"
 			}
 		}
 	}
@@ -363,7 +372,7 @@ system.lang = {
 	}
 	,"public":{
 		"text-unknown":"Unknown"
-		,"text-drop-title":"Drag and drop the file in the region to add to the Transmission."
+		,"text-drop-title":"Drag and drop the file in your browser to add to Transmission."
 		,"text-saved":"Saved"
 		,"text-nochange":"No change"
 		,"text-info":"Infos"

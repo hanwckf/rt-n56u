@@ -1,8 +1,7 @@
-﻿if ($.fn.pagination){
+if ($.fn.pagination){
 	$.fn.pagination.defaults.beforePageText = 'Strona';
 	$.fn.pagination.defaults.afterPageText = 'z {pages}';
-	
-	$.fn.pagination.defaults.displayMsg = 'Wyświetlanie {from} do {to} z {total} elementów';
+	$.fn.pagination.defaults.displayMsg = 'Wyświetlono elementy od {from} do {to} z {total}';
 }
 if ($.fn.datagrid){
 	$.fn.datagrid.defaults.loadMsg = 'Przetwarzanie, proszę czekać ...';
@@ -12,13 +11,13 @@ if ($.fn.treegrid && $.fn.datagrid){
 }
 if ($.messager){
 	$.messager.defaults.ok = 'Ok';
-	$.messager.defaults.cancel = 'Anuluj';
+	$.messager.defaults.cancel = 'Cancel';
 }
 if ($.fn.validatebox){
 	$.fn.validatebox.defaults.missingMessage = 'To pole jest wymagane.';
-	$.fn.validatebox.defaults.rules.email.message = 'Proszę podać poprawny adres e-mail.';
-	$.fn.validatebox.defaults.rules.url.message = 'Proszę podać poprawny link.';
-	$.fn.validatebox.defaults.rules.length.message = 'Proszę podać wartość pomiędzy {0} a {1}.';
+	$.fn.validatebox.defaults.rules.email.message = 'Wprowadź poprawny adres email.';
+	$.fn.validatebox.defaults.rules.url.message = 'Wprowadź poprawny adres URL.';
+	$.fn.validatebox.defaults.rules.length.message = 'Wprowadź wartość z zakresu od {0} do {1}.';
 	$.fn.validatebox.defaults.rules.remote.message = 'Proszę poprawić to pole.';
 }
 if ($.fn.numberbox){
@@ -34,12 +33,12 @@ if ($.fn.combogrid){
 	$.fn.combogrid.defaults.missingMessage = 'To pole jest wymagane.';
 }
 if ($.fn.calendar){
-	$.fn.calendar.defaults.weeks = ['S','M','T','W','T','F','S'];
-	$.fn.calendar.defaults.months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+	$.fn.calendar.defaults.weeks = ['N','P','W','Ś','C','P','S'];
+	$.fn.calendar.defaults.months = ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru'];
 }
 if ($.fn.datebox){
 	$.fn.datebox.defaults.currentText = 'Dzisiaj';
-	$.fn.datebox.defaults.closeText = 'Anuluj';
+	$.fn.datebox.defaults.closeText = 'Zamknij';
 	$.fn.datebox.defaults.okText = 'Ok';
 	$.fn.datebox.defaults.missingMessage = 'To pole jest wymagane.';
 }

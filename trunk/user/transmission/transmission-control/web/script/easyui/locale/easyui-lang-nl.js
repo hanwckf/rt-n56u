@@ -1,7 +1,7 @@
 if ($.fn.pagination){
 	$.fn.pagination.defaults.beforePageText = 'Pagina';
 	$.fn.pagination.defaults.afterPageText = 'van {pages}';
-	$.fn.pagination.defaults.displayMsg = 'Tonen van {from} tot {to} van de {totale} items';
+	$.fn.pagination.defaults.displayMsg = 'Tonen van {from} tot {to} van de {total} items';
 }
 if ($.fn.datagrid){
 	$.fn.datagrid.defaults.loadMsg = 'Verwerking, even geduld ...';
@@ -10,7 +10,7 @@ if ($.fn.treegrid && $.fn.datagrid){
 	$.fn.treegrid.defaults.loadMsg = $.fn.datagrid.defaults.loadMsg;
 }
 if ($.messager){
-	$.messager.defaults.ok = 'Okee';
+	$.messager.defaults.ok = 'Ok';
 	$.messager.defaults.cancel = 'Annuleren';
 }
 if ($.fn.validatebox){
@@ -38,7 +38,7 @@ if ($.fn.calendar){
 if ($.fn.datebox){
 	$.fn.datebox.defaults.currentText = 'Vandaag';
 	$.fn.datebox.defaults.closeText = 'Dicht';
-	$.fn.datebox.defaults.okText = 'Okee';
+	$.fn.datebox.defaults.okText = 'Ok';
 	$.fn.datebox.defaults.missingMessage = 'Dit veld is verplicht.';
 }
 if ($.fn.datetimebox && $.fn.datebox){

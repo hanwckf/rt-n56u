@@ -14,6 +14,7 @@ system.lang = {
 	,"error":{
 		"data-error":"Ошибка данных."
 		,"data-post-error":"Ошибка отправки данных."
+		,"rename-error":"Ошибка переименования файла/директории!"
 	}
 	,"config":{
 		"save-path":"Директория для загрузки"
@@ -44,6 +45,7 @@ system.lang = {
 		,"ui-original":"Оригинальный UI"
 		,"ui-computer":"Стандартный UI"
 		,"plugin":"Плагины"
+		,"rename":"Переименовать"
 		,"tip":{
 			"start":"Запустить выбранные торренты"
 			,"pause":"Приостановить выбранные торренты"
@@ -67,6 +69,7 @@ system.lang = {
 			,"ui-mobile":"Мобильный UI"
 			,"ui-original":"Оригинальный UI"
 			,"more-peers":"Запросить у трекера больше пиров"
+			,"rename":"Переименовать торрент"
 		}
 	}
 	,"menus":{
@@ -249,6 +252,11 @@ system.lang = {
 				,"2":"Совпадение по директории"
 			}
 		}
+		,"torrent-rename":{
+			"title":"Переименовать торрент",
+			"oldname":"Старый",
+			"newname":"Новый"
+		}
 	}
 	,"torrent":{
 		"fields":{
@@ -268,6 +276,7 @@ system.lang = {
 			,"seederCount":"Сиды"
 			,"uploadedEver":"Отдано"
 			,"uploadRatio":"Рейтинг"
+			,"queuePosition":"Очередь"
 		}
 		,"status-text":{
 			"0":"Пауза"
@@ -358,7 +367,7 @@ system.lang = {
 	}
 	,"torrent-head":{
 		"buttons":{
-			"autoExpandAttribute":"Отображать атрибуты"
+			"autoExpandAttribute":"Автопоказ атрибутов"
 		}
 	}
 	,"public":{

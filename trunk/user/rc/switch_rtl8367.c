@@ -551,7 +551,7 @@ static int show_usage(char *cmd)
 	"   51 [0|1]         Toggle iNIC isolation from LAN ports\n"
 	"   52 [0|1]         Toggle iNIC disable RGMII port link\n"
 #endif
-	"   55 [MASK] [PORT] Set port forward mask\n"
+	"   55 [MASK] [PORT] Override port forward mask\n"
 	"\n"
 	"   60               Reset VLAN table and init VLAN1\n"
 	"   61               Show untagged WAN PVID\n"

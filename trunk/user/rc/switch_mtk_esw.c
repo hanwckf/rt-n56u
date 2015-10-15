@@ -477,6 +477,10 @@ static int show_usage(char *cmd)
 	"   43               Clear switch L2 MAC table\n"
 	"\n"
 	"   50 [0..8] [0..3] Config WAN bridge mode and isolation\n"
+#if defined (USE_MTK_GSW)
+	"   55 [MASK] [PORT] Override port forward mask\n"
+#endif
+	"\n"
 	"   60               Reset VLAN table and init VLAN1\n"
 	"   61               Show untagged WAN PVID\n"
 	"   62 [MASK] [0..2] Set VLAN accept mode for ports mask\n"

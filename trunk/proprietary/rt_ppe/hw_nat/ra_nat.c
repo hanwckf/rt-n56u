@@ -835,8 +835,9 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 #endif
 #else /* !CONFIG_HNAT_V2 */
 	} else if (foe_ai == HIT_BIND_KEEPALIVE) {
-		if (DFL_FOE_KA == 0)
-			PpeKeepAliveHandler(skb, 1);
+#if (DFL_FOE_KA == 0)
+		PpeKeepAliveHandler(skb, 1);
+#endif
 	} else if (foe_sp == 0) {
 		/* handle the incoming packet which came back from PPE */
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)

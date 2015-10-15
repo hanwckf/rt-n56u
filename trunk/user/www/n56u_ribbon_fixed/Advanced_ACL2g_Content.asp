@@ -212,10 +212,7 @@ function showACLList(){
 
 
 function changeBgColor(obj, num){
-	if(obj.checked)
-		$("row" + num).style.background='#D9EDF7';
-	else
-		$("row" + num).style.background='whiteSmoke';
+	$("row" + num).style.background=(obj.checked)?'#D9EDF7':'whiteSmoke';
 }
 
 function done_validating(action){
@@ -317,12 +314,12 @@ function done_validating(action){
                                             <td width="35%">
                                                 <div id="ClientList_Block" class="alert alert-info ddown-list" style="width: 400px;"></div>
                                                 <div class="input-append">
-                                                    <input type="text" maxlength="12" class="span12" size="12" name="rt_maclist_x_0" onKeyPress="return is_hwaddr(event);" style="float:left; width: 175px"/>
+                                                    <input type="text" maxlength="12" class="span12" size="12" name="rt_maclist_x_0" value="<% nvram_get_x("", "rt_maclist_x_0"); %>" onKeyPress="return is_hwaddr(event);" style="float:left; width: 175px"/>
                                                     <button class="btn btn-chevron" id="chevron" type="button" onclick="pullLANIPList(this);" title="Select the MAC of WiFi clients"><i class="icon icon-chevron-down"></i></button>
                                                 </div>
                                             </td>
                                             <td width="60%">
-                                                <input type="text" maxlength="32" class="span12" size="32" name="rt_macdesc_x_0" onKeyPress="return is_string(this,event);" />
+                                                <input type="text" maxlength="32" class="span12" size="32" name="rt_macdesc_x_0" value="<% nvram_get_x("", "rt_macdesc_x_0"); %>" onKeyPress="return is_string(this,event);" />
                                             </td>
                                             <td width="5%">
                                                 <button class="btn" style="max-width: 219px" type="submit" onclick="return markGroupACL(this, 32, ' Add ');" name="rt_ACLList2" value="<#CTL_add#>" size="12"><i class="icon icon-plus"></i></button>

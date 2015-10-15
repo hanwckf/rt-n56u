@@ -21,6 +21,7 @@
 
 #include <nvram_linux.h>
 
+#include "common.h"
 #include "nvram_x.h"
 
 
@@ -38,64 +39,54 @@ int nvram_match_list_x(const char *name, char *match, int index)
 	return (!strcmp(value, match));
 }
 
-void nvram_add_list_x(const char *name, const char *value, int index)
-{
-	char nv_name[64];
-
-	if (*name)
-	{
-		snprintf(nv_name, sizeof(nv_name), "%s%d", name, index);
-		nvram_set(nv_name, value);
-	}
-}
-
-void nvram_del_list_x(const char *name, int index)
-{
-	char nv_name[64];
-
-	if (*name)
-	{
-		snprintf(nv_name, sizeof(nv_name), "%s%d", name, index);
-		nvram_unset(nv_name);
-	}
-}
-
 void nvram_del_list_map_x(const char *name, int group_count, int *delMap)
 {
-	char oname[64], nname[64], *oval;
-	int i, ni, di, group_count_new;
+	char oname[64], nname[64], tmp[256], *oval;
+	int i, i_len, ni, di, group_count_new;
 
 	if (!(*name) || group_count < 1)
 		return;
 
-	ni=0;
-	di=0;
+	ni = 0;
+	di = 0;
+	tmp[0] = 0;
 
-	for (i=0; i < group_count; i++)
-	{
+	for (i=0; i < group_count; i++) {
 		snprintf(oname, sizeof(oname), "%s%d", name, i);
 		snprintf(nname, sizeof(nname), "%s%d", name, ni);
 		
-		oval = nvram_safe_get(oname);
-		
-		if (delMap[di]==i)
-		{
+		if (delMap[di] == i) {
+			/* store first deleted value */
+			if (di == 0) {
+				oval = nvram_safe_get(oname);
+				i_len = MIN(strlen(oval), sizeof(tmp)-1);
+				strncpy(tmp, oval, i_len);
+				tmp[i_len] = 0;
+			}
+			
 			di++;
-		}
-		else
-		{
+			if (di > MAX_GROUP_COUNT)
+				break;
+		} else {
+			oval = nvram_safe_get(oname);
 			nvram_set(nname, oval);
 			ni++;
 		}
 	}
 
+	/* store single deleted value */
+	snprintf(oname, sizeof(oname), "%s_0", name);
+	if (di == 1)
+		nvram_set_temp(oname, tmp);
+	else
+		nvram_unset(oname);
+
 	group_count_new = group_count - di;
 	if (group_count_new < 0)
 		group_count_new = 0;
 
-	/* clear old array data (try +16 items for clear old trash) */
-	for (i = (group_count+15); i >= group_count_new; i--)
-	{
+	/* clear old array data (try +8 items for clear old trash) */
+	for (i = (group_count+7); i >= group_count_new; i--) {
 		snprintf(oname, sizeof(oname), "%s%d", name, i);
 		nvram_unset(oname);
 	}

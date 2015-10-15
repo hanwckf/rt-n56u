@@ -18,10 +18,10 @@
 #ifndef _nvram_x_h_
 #define _nvram_x_h_
 
+#define MAX_GROUP_COUNT		128
+
 extern char *nvram_get_list_x(const char *name, int index);
 extern int  nvram_match_list_x(const char *name, char *match, int index);
-extern void nvram_add_list_x(const char *name, const char *value, int index);
-extern void nvram_del_list_x(const char *name, int index);
 extern void nvram_del_list_map_x(const char *name, int group_count, int *delMap);
 
 

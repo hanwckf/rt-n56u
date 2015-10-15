@@ -56,13 +56,13 @@
 #include "nvram_x.h"
 #include "httpd.h"
 
-#define MAX_GROUP_COUNT		64
 #define GROUP_FLAG_REFRESH 	0
 #define GROUP_FLAG_DELETE 	1
 #define GROUP_FLAG_ADD 		2
 #define GROUP_FLAG_REMOVE 	3
 
 static int apply_cgi_group(webs_t wp, int sid, struct variable *var, const char *groupName, int flag);
+static void nvram_clr_group_temp(struct variable *v);
 static int nvram_generate_table(webs_t wp, char *serviceId, char *groupName);
 
 static int nvram_modified = 0;
@@ -75,7 +75,7 @@ static u64 restart_needed_bits = 0;
 static char post_buf[32768] = {0};
 static char next_host[128] = {0};
 static char SystemCmd[128] = {0};
-static int delMap[MAX_GROUP_COUNT+2];
+static int  group_del_map[MAX_GROUP_COUNT+2];
 
 extern struct evDesc events_desc[];
 extern int auth_nvram_changed;
@@ -394,10 +394,12 @@ websScan(const char *query)
 		
 		if (v2 != NULL && ((sp = strchr(v1+1, ' ')) == NULL || (sp > v2))) {
 			if (flag && strncmp(v1+1, groupid, strlen(groupid))==0) {
-				delMap[i] = atoi(value);
-				if (delMap[i]==-1)
-					break;
-				i++;
+				if (i < MAX_GROUP_COUNT) {
+					group_del_map[i] = atoi(value);
+					if (group_del_map[i]==-1)
+						break;
+					i++;
+				}
 			} else if (strncmp(v1+1, "group_id", 8)==0) {
 				snprintf(groupid, sizeof(groupid), "%s_s", value);
 				flag = 1;
@@ -406,7 +408,7 @@ websScan(const char *query)
 		v1 = strchr(v1+1, '&');
 	}
 
-	delMap[i] = -1;
+	group_del_map[i] = -1;
 }
 
 static void
@@ -1215,7 +1217,7 @@ update_variables_ex(int eid, webs_t wp, int argc, char **argv)
 					
 					validate_asp_apply(wp, sid);	// for some nvram with this group
 					
-					if (nvram_get_int(group_id) > 0) {
+					if (v->name && nvram_get_int(group_id) > 0) {
 						restart_needed_bits |= (v->event_mask & ~(EVM_BLOCK_UNSAFE));
 						dbG("group restart_needed_bits: 0x%llx\n", restart_needed_bits);
 #if BOARD_HAS_5G_RADIO
@@ -1227,6 +1229,7 @@ update_variables_ex(int eid, webs_t wp, int argc, char **argv)
 						
 						nvram_modified = 1;
 						nvram_set_int_temp(group_id, 0);
+						nvram_clr_group_temp(v);
 					}
 					
 					if (nvram_modified)
@@ -2978,71 +2981,83 @@ apply_cgi(const char *url, webs_t wp)
 	return 1;
 }
 
-void nvram_add_group_item(webs_t wp, struct variable *v, int sid)
+static void
+nvram_clr_group_temp(struct variable *v)
 {
-    struct variable *gv;
-    char *value;
-    char name[64];
-    int count;
+	char name[64];
+	struct variable *gv;
 
-    if (v->argv[0]==NULL) 
-    {
-       return;
-    }
+	if (v->argv[0]==NULL)
+		return;
 
-    count = nvram_get_int(v->argv[3]);
-
-    for (gv = (struct variable *)v->argv[0]; gv->name!=NULL; gv++)
-    {
-	snprintf(name, sizeof(name), "%s_0", gv->name);
-	if ((value=websGetVar(wp, name, NULL)))
-	{
-	    nvram_add_list_x(gv->name, value, count);
+	for (gv = (struct variable *)v->argv[0]; gv->name!=NULL; gv++) {
+		snprintf(name, sizeof(name), "%s_0", gv->name);
+		
+		/* clear last deleted value */
+		nvram_unset(name);
 	}
-	else
-	{
-	    nvram_add_list_x(gv->name, "", count);
-	}
-    }
-
-    count++;
-    nvram_set_int(v->argv[3], count);
 }
 
-
-void nvram_remove_group_item(webs_t wp, struct variable *v, int sid, int *delMap)
+static void
+nvram_add_group_item(webs_t wp, struct variable *v)
 {
-    struct variable *gv;
-    int i, deleted, gcount;
+	char name[64], *value;
+	struct variable *gv;
+	int gcount;
 
-    if (v->argv[0]==NULL) 
-    {
-       return;
-    }
+	if (v->argv[0]==NULL)
+		return;
 
-    gcount = nvram_get_int(v->argv[3]);
-    if (gcount < 1)
-    {
-       return;
-    }
+	gcount = nvram_get_int(v->argv[3]);
+	if (gcount < 0)
+		gcount = 0;
 
-    for (gv = (struct variable *)v->argv[0]; gv->name!=NULL; gv++)
-    {
-        nvram_del_list_map_x(gv->name, gcount, delMap);
-    }
+	for (gv = (struct variable *)v->argv[0]; gv->name!=NULL; gv++) {
+		snprintf(name, sizeof(name), "%s_0", gv->name);
+		
+		/* clear last deleted value */
+		nvram_unset(name);
+		
+		value = websGetVar(wp, name, "");
+		snprintf(name, sizeof(name), "%s%d", gv->name, gcount);
+		nvram_set(name, value);
+	}
 
-    deleted = 0;
-    for (i=0; i < gcount; i++)
-    {
-        if (delMap[deleted]==i)
-            deleted++;
-    }
+	gcount++;
+	nvram_set_int(v->argv[3], gcount);
+}
 
-    if (deleted > 0)
-    {
-        gcount -= deleted;
-        nvram_set_int(v->argv[3], gcount);
-    }
+static void
+nvram_remove_group_item(struct variable *v, int *delMap)
+{
+	struct variable *gv;
+	int i, di, gcount;
+
+	if (v->argv[0]==NULL)
+		return;
+
+	gcount = nvram_get_int(v->argv[3]);
+	if (gcount < 1)
+		return;
+
+	for (gv = (struct variable *)v->argv[0]; gv->name!=NULL; gv++)
+		nvram_del_list_map_x(gv->name, gcount, delMap);
+
+	di = 0;
+	for (i=0; i < gcount; i++) {
+		if (delMap[di]==i) {
+			di++;
+			if (di > MAX_GROUP_COUNT)
+				break;
+		}
+	}
+
+	if (di > 0) {
+		gcount -= di;
+		if (gcount < 0)
+			gcount = 0;
+		nvram_set_int(v->argv[3], gcount);
+	}
 }
 
 /* Rule for table: 
@@ -3146,73 +3161,67 @@ ToHTML:
 static int
 apply_cgi_group(webs_t wp, int sid, struct variable *var, const char *groupName, int flag)
 {
-   struct variable *v;
-   int groupCount;
+	struct variable *v;
 
-   if (var!=NULL)
-     v = var;
-   else
-   {
-       /* Validate and set vairables in table order */
-       for (v = GetVariables(sid); v->name != NULL; v++)
-       {
-       	   if (!strcmp(groupName, v->name)) 
-       		break;
-       }
-   }
+	if (var != NULL) {
+		v = var;
+	} else {
+		/* Validate and set vairables in table order */
+		for (v = GetVariables(sid); v->name != NULL; v++) {
+			if (!strcmp(groupName, v->name))
+				break;
+		}
+	}
 
-   if (v->name == NULL) return 0;
+	if (v->name == NULL)
+		return 0;
 
-   groupCount = atoi(v->argv[1]);
+	if (flag == GROUP_FLAG_ADD) {
+		nvram_add_group_item(wp, v);
+		return 1;
+	} else if (flag == GROUP_FLAG_REMOVE) {
+		nvram_remove_group_item(v, group_del_map);
+		return 1;
+	}
 
-   if (flag == GROUP_FLAG_ADD)/* if (!strcmp(value, " Refresh ")) || Save condition */
-   {
-	nvram_add_group_item(wp, v, sid);
-	return 1;	// 2008.08 magic
-   }
-   else if (flag == GROUP_FLAG_REMOVE)/* if (!strcmp(value, " Refresh ")) || Save condition */
-   {
-   	nvram_remove_group_item(wp, v, sid, delMap);  
-	return 1; 	// 2008.08 magic
-   }
-  	return 0; // 2008.08 magic
+	return 0;
 }
 
 static int
 nvram_generate_table(webs_t wp, char *serviceId, char *groupName)
 {
-   struct variable *v;
-   int i, groupCount, ret, r, sid;
+	struct variable *v;
+	int i, groupCount, ret, r, sid;
 
-   sid = LookupServiceId(serviceId);
+	sid = LookupServiceId(serviceId);
+	if (sid == -1)
+		return 0;
 
-   if (sid==-1) return 0;
+	/* Validate and set vairables in table order */
+	for (v = GetVariables(sid); v->name != NULL; v++) {
+		if (!strcmp(groupName, v->name))
+			break;
+	}
 
-   /* Validate and set vairables in table order */
-   for (v = GetVariables(sid); v->name != NULL; v++) 
-   {
-      if (!strcmp(groupName, v->name)) break;
-   }
+	if (v->name == NULL)
+		return 0;
 
-   if (v->name == NULL) return 0;    
+	groupCount = nvram_get_int(v->argv[3]);
 
-   groupCount = nvram_get_int(v->argv[3]);
+	if (groupCount == 0) {
+		ret = nvram_add_group_table(wp, serviceId, v, -1);
+	} else {
+		ret = 0;
+		for (i=0; i<groupCount; i++) {
+			r = nvram_add_group_table(wp, serviceId, v, i);
+			if (r != 0)
+				ret += r;
+			else
+				break;
+		}
+	}
 
-   if (groupCount==0)
-       ret = nvram_add_group_table(wp, serviceId, v, -1);
-   else
-   {
-      ret = 0;
-      for (i=0; i<groupCount; i++)
-      {
-	r = nvram_add_group_table(wp, serviceId, v, i);
-	if (r!=0)
-	   ret += r;
-	else break;
-      }
-   }
-
-   return (ret);
+	return (ret);
 }
 
 void
@@ -3242,6 +3251,8 @@ static void
 do_html_apply_post(const char *url, FILE *stream, int clen, char *boundary)
 {
 	init_cgi(NULL);
+
+	group_del_map[0] = -1;
 
 	post_buf[0] = 0;
 	if (!fgets(post_buf, MIN(clen+1, sizeof(post_buf)), stream))

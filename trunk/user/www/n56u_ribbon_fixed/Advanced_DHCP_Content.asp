@@ -323,10 +323,7 @@ function showMDHCPList(){
 }
 
 function changeBgColor(obj, num){
-	if(obj.checked)
-		$("row" + num).style.background='#D9EDF7';
-	else
-		$("row" + num).style.background='whiteSmoke';
+	$("row" + num).style.background=(obj.checked)?'#D9EDF7':'whiteSmoke';
 }
 
 </script>
@@ -584,15 +581,15 @@ function changeBgColor(obj, num){
                                             <td width="25%">
                                                 <div id="ClientList_Block" class="alert alert-info ddown-list" style="width: 400px;"></div>
                                                 <div class="input-append">
-                                                    <input type="text" maxlength="12" class="span12" size="12" name="dhcp_staticmac_x_0" onkeypress="return is_hwaddr(event);" style="float:left; width: 110px"/>
+                                                    <input type="text" maxlength="12" class="span12" size="12" name="dhcp_staticmac_x_0" value="<% nvram_get_x("", "dhcp_staticmac_x_0"); %>" onkeypress="return is_hwaddr(event);" style="float:left; width: 110px"/>
                                                     <button class="btn btn-chevron" id="chevron" type="button" onclick="pullLANIPList(this);" title="Select the MAC of LAN clients."><i class="icon icon-chevron-down"></i></button>
                                                 </div>
                                             </td>
                                             <td width="25%">
-                                                <input type="text" maxlength="15" class="span12" size="15" name="dhcp_staticip_x_0" onkeypress="return is_ipaddr(this,event);"/>
+                                                <input type="text" maxlength="15" class="span12" size="15" name="dhcp_staticip_x_0" value="<% nvram_get_x("", "dhcp_staticip_x_0"); %>" onkeypress="return is_ipaddr(this,event);"/>
                                             </td>
                                             <td width="45%">
-                                                <input type="text" maxlength="24" class="span12" size="20" name="dhcp_staticname_x_0" onKeyPress="return is_string(this,event);"/>
+                                                <input type="text" maxlength="24" class="span12" size="20" name="dhcp_staticname_x_0" value="<% nvram_get_x("", "dhcp_staticname_x_0"); %>" onKeyPress="return is_string(this,event);"/>
                                             </td>
                                             <td width="5%">
                                                 <button class="btn" style="max-width: 219px" type="submit" onclick="return markGroupMDHCP(this, 64, ' Add ');" name="ManualDHCPList2" value="<#CTL_add#>" size="12"><i class="icon icon-plus"></i></button>

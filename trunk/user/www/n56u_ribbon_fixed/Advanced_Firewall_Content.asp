@@ -310,14 +310,14 @@ function showLWFilterList(){
 	    for(i = 0; i < LWFilterList.length; i++){
 		srcaddr = "*";
 		dstaddr = "*";
-		srcport = "";
-		dstport = "";
 		protono = LWFilterList[i][4];
 		if (LWFilterList[i][0] != null && LWFilterList[i][0] != "")
 			srcaddr = LWFilterList[i][0];
 		if (LWFilterList[i][2] != null && LWFilterList[i][2] != "")
 			dstaddr = LWFilterList[i][2];
 		if(protono == "OTHER"){
+			srcport = "-";
+			dstport = "-";
 			protono = LWFilterList[i][5];
 		}else{
 			srcport = "*";
@@ -345,10 +345,7 @@ function showLWFilterList(){
 }
 
 function changeBgColor(obj, num){
-	if(obj.checked)
-		$("row" + num).style.background='#D9EDF7';
-	else
-		$("row" + num).style.background='whiteSmoke';
+	$("row" + num).style.background=(obj.checked)?'#D9EDF7':'whiteSmoke';
 }
 
 </script>
@@ -515,30 +512,30 @@ function changeBgColor(obj, num){
                                         </tr>
                                         <tr>
                                             <td>
-                                                <input type="text" maxlength="15" class="span12" size="14" name="filter_lw_srcip_x_0" onKeyPress="return is_iprange(this,event);"/>
+                                                <input type="text" maxlength="15" class="span12" size="14" name="filter_lw_srcip_x_0" value="<% nvram_get_x("", "filter_lw_srcip_x_0"); %>" onKeyPress="return is_iprange(this,event);"/>
                                             </td>
                                             <td>
-                                                <input type="text" maxlength="11" class="span12" size="10" name="filter_lw_srcport_x_0" value="" onKeyPress="return is_portrange(this,event);"/>
+                                                <input type="text" maxlength="11" class="span12" size="10" name="filter_lw_srcport_x_0" value="<% nvram_get_x("", "filter_lw_srcport_x_0"); %>" onKeyPress="return is_portrange(this,event);"/>
                                             </td>
                                             <td>
-                                                <input type="text" maxlength="15" class="span12" size="14" name="filter_lw_dstip_x_0" onKeyPress="return is_iprange(this,event);"/>
+                                                <input type="text" maxlength="15" class="span12" size="14" name="filter_lw_dstip_x_0" value="<% nvram_get_x("", "filter_lw_dstip_x_0"); %>" onKeyPress="return is_iprange(this,event);"/>
                                             </td>
                                             <td>
-                                                <input type="text" maxlength="11" class="span12" size="10" name="filter_lw_dstport_x_0" value="" onKeyPress="return is_portrange(this,event);"/>
-                                                <input style="display:none" type="text" class="span12" maxlength="3" size="3" name="filter_lw_protono_x_0" onkeypress="return is_number(this,event);"/>
+                                                <input type="text" maxlength="11" class="span12" size="10" name="filter_lw_dstport_x_0" value="<% nvram_get_x("", "filter_lw_dstport_x_0"); %>" onKeyPress="return is_portrange(this,event);"/>
+                                                <input style="display:none" type="text" class="span12" maxlength="3" size="3" name="filter_lw_protono_x_0" value="<% nvram_get_x("", "filter_lw_protono_x_0"); %>" onkeypress="return is_number(this,event);"/>
                                             </td>
                                             <td>
                                                 <select name="filter_lw_proto_x_0" class="span12" onchange="change_proto()">
-                                                    <option value="TCP"     <% nvram_match_x("","filter_lw_proto_x","TCP","selected"); %>>TCP</option>
-                                                    <option value="TCP ALL" <% nvram_match_x("","filter_lw_proto_x","TCP ALL","selected"); %>>TCP ALL</option>
-                                                    <option value="TCP SYN" <% nvram_match_x("","filter_lw_proto_x","TCP SYN","selected"); %>>TCP SYN</option>
-                                                    <option value="TCP ACK" <% nvram_match_x("","filter_lw_proto_x","TCP ACK","selected"); %>>TCP ACK</option>
-                                                    <option value="TCP FIN" <% nvram_match_x("","filter_lw_proto_x","TCP FIN","selected"); %>>TCP FIN</option>
-                                                    <option value="TCP RST" <% nvram_match_x("","filter_lw_proto_x","TCP RST","selected"); %>>TCP RST</option>
-                                                    <option value="TCP URG" <% nvram_match_x("","filter_lw_proto_x","TCP URG","selected"); %>>TCP URG</option>
-                                                    <option value="TCP PSH" <% nvram_match_x("","filter_lw_proto_x","TCP PSH","selected"); %>>TCP PSH</option>
-                                                    <option value="UDP"     <% nvram_match_x("","filter_lw_proto_x","UDP","selected"); %>>UDP</option>
-                                                    <option value="OTHER"   <% nvram_match_x("","filter_lw_proto_x","OTHER","selected"); %>>Other</option>
+                                                    <option value="TCP"     <% nvram_match_x("","filter_lw_proto_x_0","TCP","selected"); %>>TCP</option>
+                                                    <option value="TCP ALL" <% nvram_match_x("","filter_lw_proto_x_0","TCP ALL","selected"); %>>TCP ALL</option>
+                                                    <option value="TCP SYN" <% nvram_match_x("","filter_lw_proto_x_0","TCP SYN","selected"); %>>TCP SYN</option>
+                                                    <option value="TCP ACK" <% nvram_match_x("","filter_lw_proto_x_0","TCP ACK","selected"); %>>TCP ACK</option>
+                                                    <option value="TCP FIN" <% nvram_match_x("","filter_lw_proto_x_0","TCP FIN","selected"); %>>TCP FIN</option>
+                                                    <option value="TCP RST" <% nvram_match_x("","filter_lw_proto_x_0","TCP RST","selected"); %>>TCP RST</option>
+                                                    <option value="TCP URG" <% nvram_match_x("","filter_lw_proto_x_0","TCP URG","selected"); %>>TCP URG</option>
+                                                    <option value="TCP PSH" <% nvram_match_x("","filter_lw_proto_x_0","TCP PSH","selected"); %>>TCP PSH</option>
+                                                    <option value="UDP"     <% nvram_match_x("","filter_lw_proto_x_0","UDP","selected"); %>>UDP</option>
+                                                    <option value="OTHER"   <% nvram_match_x("","filter_lw_proto_x_0","OTHER","selected"); %>>Other</option>
                                                 </select>
                                             </td>
                                             <td>

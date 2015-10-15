@@ -447,10 +447,7 @@ function showVSList(){
 }
 
 function changeBgColor(obj, num){
-	if(obj.checked)
-		$("row" + num).style.background='#D9EDF7';
-	else
-		$("row" + num).style.background='whiteSmoke';
+	$("row" + num).style.background=(obj.checked)?'#D9EDF7':'whiteSmoke';
 }
 
 function valid_IP_subnet(obj){
@@ -660,31 +657,31 @@ function valid_IP_subnet(obj){
                                         </tr>
                                         <tr>
                                             <td>
-                                                <input type="text" size="10" class="span12" maxlength="30" name="vts_desc_x_0" onkeypress="return is_string(this,event);" />
+                                                <input type="text" size="10" class="span12" maxlength="30" name="vts_desc_x_0" value="<% nvram_get_x("", "vts_desc_x_0"); %>" onkeypress="return is_string(this,event);" />
                                             </td>
                                             <td>
-                                                <input type="text" size="12" class="span12" maxlength="15" name="vts_srcip_x_0" onKeyPress="return is_iprange(this,event);"/>
+                                                <input type="text" size="12" class="span12" maxlength="15" name="vts_srcip_x_0" value="<% nvram_get_x("", "vts_srcip_x_0"); %>" onKeyPress="return is_iprange(this,event);"/>
                                             </td>
                                             <td>
-                                                <input type="text" size="10" class="span12" name="vts_port_x_0" onkeypress="return is_portrange(this,event);" />
-                                                <input style="display:none" type="text" class="span12" maxlength="3" size="3" name="vts_protono_x_0" onkeypress="return is_number(this,event);" />
+                                                <input type="text" size="10" class="span12" name="vts_port_x_0" value="<% nvram_get_x("", "vts_port_x_0"); %>" onkeypress="return is_portrange(this,event);" />
+                                                <input style="display:none" type="text" class="span12" maxlength="3" size="3" name="vts_protono_x_0" value="<% nvram_get_x("", "vts_protono_x_0"); %>" onkeypress="return is_number(this,event);" />
                                             </td>
                                             <td>
                                                 <div id="ClientList_Block" class="alert alert-info ddown-list"></div>
                                                 <div class="input-append">
-                                                    <input type="text" size="12" maxlength="15" name="vts_ipaddr_x_0" onkeypress="return is_ipaddr(this,event);" style="float:left; width: 94px"/>
+                                                    <input type="text" size="12" maxlength="15" name="vts_ipaddr_x_0" value="<% nvram_get_x("", "vts_ipaddr_x_0"); %>" onkeypress="return is_ipaddr(this,event);" style="float:left; width: 94px"/>
                                                     <button class="btn btn-chevron" id="chevron" type="button" onclick="pullLANIPList(this);" title="Select the IP of LAN clients."><i class="icon icon-chevron-down"></i></button>
                                                 </div>
                                             </td>
                                             <td>
-                                                <input type="text" size="5" class="span12" maxlength="5" name="vts_lport_x_0" onkeypress="return is_number(this,event);" />
+                                                <input type="text" size="5" class="span12" maxlength="5" name="vts_lport_x_0" value="<% nvram_get_x("", "vts_lport_x_0"); %>" onkeypress="return is_number(this,event);" />
                                             </td>
                                             <td>
                                                 <select name="vts_proto_x_0" class="span12" onchange="change_proto()">
-                                                    <option value="TCP">TCP</option>
-                                                    <option value="UDP">UDP</option>
-                                                    <option value="BOTH">Both</option>
-                                                    <option value="OTHER">Other</option>
+                                                    <option value="TCP" <% nvram_match_x("","vts_proto_x_0","TCP","selected"); %>>TCP</option>
+                                                    <option value="UDP" <% nvram_match_x("","vts_proto_x_0","UDP","selected"); %>>UDP</option>
+                                                    <option value="BOTH" <% nvram_match_x("","vts_proto_x_0","BOTH","selected"); %>>Both</option>
+                                                    <option value="OTHER" <% nvram_match_x("","vts_proto_x_0","OTHER","selected"); %>>Other</option>
                                                 </select>
                                             </td>
                                             <td>

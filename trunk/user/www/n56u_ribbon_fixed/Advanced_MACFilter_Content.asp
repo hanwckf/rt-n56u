@@ -259,13 +259,15 @@ function format_date(nvdate) {
 }
 
 function showMFList(){
-	var code = "";
+	var code = '';
+	var temp_time = '<% nvram_get_x("", "macfilter_time_x_0"); %>';
+	var temp_date = '<% nvram_get_x("", "macfilter_date_x_0"); %>';
 
 	if(MACList.length == 0) {
 		code +='<tr><td colspan="4" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 		
-		document.form.macfilter_time_x_0.value = "00002359";
-		document.form.macfilter_date_x_0.value = "1111111";
+		document.form.macfilter_time_x_0.value = (temp_time == '') ? "00002359" : temp_time;
+		document.form.macfilter_date_x_0.value = (temp_date == '') ? "1111111" : temp_date;
 	}
 	else{
 	    for(var i = 0; i < MACList.length; i++){
@@ -282,8 +284,8 @@ function showMFList(){
 		code += '</tr>'
 		
 		var last_row = MACList.length - 1;
-		document.form.macfilter_time_x_0.value = MACList[last_row][1];
-		document.form.macfilter_date_x_0.value = MACList[last_row][2];
+		document.form.macfilter_time_x_0.value = (temp_time == '') ? MACList[last_row][1] : temp_time;
+		document.form.macfilter_date_x_0.value = (temp_date == '') ? MACList[last_row][2] : temp_date;
 	}
 
 	document.form.macfilter_date_x_Sun.checked = getDateCheck(document.form.macfilter_date_x_0.value, 0);
@@ -302,12 +304,8 @@ function showMFList(){
 	$j('#MFList_Block').append(code);
 }
 
-
 function changeBgColor(obj, num){
-	if(obj.checked)
-		$("row" + num).style.background='#D9EDF7';
-	else
-		$("row" + num).style.background='whiteSmoke';
+	$("row" + num).style.background=(obj.checked)?'#D9EDF7':'whiteSmoke';
 }
 
 function done_validating(action){
@@ -431,7 +429,7 @@ function done_validating(action){
                                             <td width="25%">
                                                 <div id="ClientList_Block" class="alert alert-info ddown-list" style="width: 400px;"></div>
                                                 <div class="input-append">
-                                                    <input type="text" maxlength="12" class="span12" size="12" name="macfilter_list_x_0" onKeyPress="return is_hwaddr(event);" style="float:left; width: 110px">
+                                                    <input type="text" maxlength="12" class="span12" size="12" name="macfilter_list_x_0" value="<% nvram_get_x("", "macfilter_list_x_0"); %>" onKeyPress="return is_hwaddr(event);" style="float:left; width: 110px">
                                                     <button class="btn btn-chevron" id="chevron" type="button" onclick="pullLANIPList(this);" title="Select the MAC of LAN clients."><i class="icon icon-chevron-down"></i></button>
                                                 </div>
                                             </td>

@@ -312,7 +312,7 @@ function done_validating(action){
                                         <tr>
                                             <th><#FirewallConfig_UrlList_groupitemdesc#></th>
                                             <td style="padding-right: 0px;">
-                                                <input type="text" class="span12" maxlength="64" size="36" name="url_keyword_x_0" onKeyPress="return is_string(this,event);">
+                                                <input type="text" class="span12" maxlength="96" size="36" name="url_keyword_x_0" value="<% nvram_get_x("", "url_keyword_x_0"); %>" onKeyPress="return is_string(this,event);">
                                             </td>
                                             <td align="left">
                                                 <button class="btn" type="submit" onClick="if(validForm()){return markGroup(this, 'UrlList', 128, ' Add ');}" name="UrlList"><i class="icon icon-plus"></i></button>

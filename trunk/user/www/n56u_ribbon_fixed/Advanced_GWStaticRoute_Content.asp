@@ -145,10 +145,7 @@ function showGWStaticList(){
 }
 
 function changeBgColor(obj, num){
-	if(obj.checked)
-		$("row" + num).style.background='#D9EDF7';
-	else
-		$("row" + num).style.background='whiteSmoke';
+	$("row" + num).style.background=(obj.checked)?'#D9EDF7':'whiteSmoke';
 }
 
 </script>
@@ -264,15 +261,15 @@ function changeBgColor(obj, num){
                                             <th width="5%">&nbsp;</th>
                                         </tr>
                                         <tr>
-                                            <td><input type="text" maxlength="15" class="span12" size="12" name="sr_ipaddr_x_0" onKeyPress="return is_ipaddr(this,event);" /></td>
-                                            <td><input type="text" maxlength="15" class="span12" size="12" name="sr_netmask_x_0" onKeyPress="return is_ipaddr(this,event);" /></td>
-                                            <td><input type="text" maxlength="15" class="span12" size="12" name="sr_gateway_x_0" onKeyPress="return is_ipaddr(this,event);" /></td>
-                                            <td><input type="text" maxlength="3"  class="span12" size="1" name="sr_matric_x_0"  onkeypress="return is_number(this,event);" /></td>
+                                            <td><input type="text" maxlength="15" class="span12" size="12" name="sr_ipaddr_x_0" value="<% nvram_get_x("", "sr_ipaddr_x_0"); %>" onKeyPress="return is_ipaddr(this,event);" /></td>
+                                            <td><input type="text" maxlength="15" class="span12" size="12" name="sr_netmask_x_0" value="<% nvram_get_x("", "sr_netmask_x_0"); %>" onKeyPress="return is_ipaddr(this,event);" /></td>
+                                            <td><input type="text" maxlength="15" class="span12" size="12" name="sr_gateway_x_0" value="<% nvram_get_x("", "sr_gateway_x_0"); %>" onKeyPress="return is_ipaddr(this,event);" /></td>
+                                            <td><input type="text" maxlength="3"  class="span12" size="1" name="sr_matric_x_0" value="<% nvram_get_x("", "sr_matric_x_0"); %>" onkeypress="return is_number(this,event);" /></td>
                                             <td>
                                                 <select name="sr_if_x_0" class="span12">
-                                                    <option value="LAN" <% nvram_match_list_x("RouterConfig","sr_if_x", "LAN","selected", 0); %>>LAN</option>
-                                                    <option value="MAN" <% nvram_match_list_x("RouterConfig","sr_if_x", "MAN","selected", 0); %>>MAN</option>
-                                                    <option value="WAN" <% nvram_match_list_x("RouterConfig","sr_if_x", "WAN","selected", 0); %>>WAN</option>
+                                                    <option value="LAN" <% nvram_match_x("","sr_if_x_0","LAN","selected"); %>>LAN</option>
+                                                    <option value="MAN" <% nvram_match_x("","sr_if_x_0","MAN","selected"); %>>MAN</option>
+                                                    <option value="WAN" <% nvram_match_x("","sr_if_x_0","WAN","selected"); %>>WAN</option>
                                                 </select>
                                             </td>
                                             <td>

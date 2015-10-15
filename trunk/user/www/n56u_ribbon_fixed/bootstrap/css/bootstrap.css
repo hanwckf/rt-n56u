@@ -1600,9 +1600,9 @@ table {
   background-color: #f9f9f9;
 }
 
-.table tbody tr:hover td,
-.table tbody tr:hover th {
-  background-color: #f5f5f5;
+.table-hover tbody tr:hover td,
+.table-hover tbody tr:hover th {
+  background-color: inherit;
 }
 
 table .span1 {

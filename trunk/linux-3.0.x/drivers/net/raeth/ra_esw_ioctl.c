@@ -1253,7 +1253,15 @@ static void esw_led_mode(u32 led_mode)
 
 	esw_reg_set(REG_ESW_GPC1, reg_gpc1);
 #else
-	// todo (mt7530 documentation needed)
+	u32 reg_ledc;
+
+	reg_ledc = esw_reg_get(0x7d00);
+	reg_ledc |= 0x77777;
+
+	if (led_mode == SWAPI_LED_OFF)
+		reg_ledc &= ~(0x77777);
+
+	esw_reg_set(0x7d00, reg_ledc);
 #endif
 }
 

@@ -874,6 +874,7 @@ NTSTATUS eFuseWrite(
 {
 	int i;
 	USHORT* pValueX = (PUSHORT) pData;				/*value ...		*/
+	PUSHORT OddWriteByteBuf;
 #ifdef MT76x2
 	UINT32	MAC_Value=0, MAC_14C=0, MAC_24=0;
 #endif /* MT76x2 */
@@ -895,10 +896,42 @@ NTSTATUS eFuseWrite(
 		RTMP_IO_WRITE32(pAd, 0x24, MAC_Value);
 	}
 #endif /* MT76x2 */
+/*	OddWriteByteBuf=(PUSHORT)kmalloc(sizeof(USHORT)*2, MEM_ALLOC_FLAG);*/
+	os_alloc_mem(NULL, (UCHAR **)&OddWriteByteBuf, sizeof(USHORT)*2);
+	/* The input value=3070 will be stored as following*/
+	/* Little-endian		S	|	S	Big-endian*/
+	/* addr			1	0	|	0	1	*/
+	/* Ori-V			30	70	|	30	70	*/
+	/* After swapping*/
+	/*				30	70	|	70	30*/
+	/* Casting*/
+	/*				3070	|	7030 (x)*/
+	/* The swapping should be removed for big-endian*/
+	if (OddWriteByteBuf == NULL)
+		return FALSE;
+	if((Offset%2)!=0)
+	{
+		length+=2;
+		Offset-=1;
+		eFuseRead(pAd,Offset,OddWriteByteBuf,2);
+		eFuseRead(pAd,Offset+2,(OddWriteByteBuf+1),2);
+		*OddWriteByteBuf&=0x00ff;
+		*OddWriteByteBuf|=((*pData)&0xff)<<8;
+		*(OddWriteByteBuf+1)&=0xff00;
+		*(OddWriteByteBuf+1)|=(*pData&0xff00)>>8;
+		pValueX=OddWriteByteBuf;
+		
+	}
 
 	if( ((Offset % 16) == 0) && (length == 16) )
 	{
+#ifdef RT_BIG_ENDIAN
 		//Efuse write by block case
+		for(i=0; i<length; i+=2)
+		{
+			pValueX[i/2] = le2cpu16(pValueX[i/2]);	
+		}
+#endif
 		eFuseWriteRegisters(pAd, Offset, length, pValueX);
 	}
 	else
@@ -908,6 +941,7 @@ NTSTATUS eFuseWrite(
 			eFuseWriteRegisters(pAd, Offset+i, 2, &pValueX[i/2]);	
 		}
 	}
+	os_free_mem(NULL, OddWriteByteBuf);
 	
 #ifdef MT76x2
 	if ( IS_MT76x2(pAd) )
@@ -1382,4 +1416,3 @@ INT set_BinModeWriteBack_Proc(
 
 #endif /* RALINK_ATE */
 #endif /* RTMP_EFUSE_SUPPORT */
-

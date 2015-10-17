@@ -710,76 +710,69 @@ BOOLEAN RTMPFreeTXDUponTxDmaDone(
 	RTMP_IO_READ32(pAd, pTxRing->hw_didx_addr, &pTxRing->TxDmaIdx);
 #ifdef RALINK_ATE
 #ifdef TXBF_SUPPORT
-	pATEInfo->TxDoneCount = 0;
+    if (pAd->ceBfCertificationFlg == TRUE)
+    {
+	    pATEInfo->TxDoneCount = 0;
 	
-	/* ATE special mode: Every 500ms, insert one sounding packet into TX ring. 
-	After the packet is sent out, revert the packet back to normal packet */
+	    /* ATE special mode: Every 500ms, insert one sounding packet into TX ring. 
+	    After the packet is sent out, revert the packet back to normal packet */
 
-	NdisGetSystemUpTime(&stTimeChk);   // get system time
+	    NdisGetSystemUpTime(&stTimeChk);   // get system time
 
         //if TxDmaIdx overflow happens, reset sounding packet 
         if ((pTxRing->TxDmaIdx < pAd->txDmaIdx_backup) &&
             (pAd->timeout_flg == FALSE) && (pAd->ceBfCertificationFlg == TRUE))   
         {
 	
-	       if ( pTxRing->TxDmaIdx > 30)
-       	       {			
-			pAd->timeout_flg = TRUE;
-
-			pATEInfo->TxLength = pAd->txLengthBackup;////2050;
-
-            		pATEInfo->txSoundingMode =0; 
-       	       }
+	        if ( pTxRing->TxDmaIdx > 30)
+       	    {			
+	            pAd->timeout_flg = TRUE;
+			    pATEInfo->TxLength = pAd->txLengthBackup;////2050;
+                pATEInfo->txSoundingMode =0; 
+       	    }
         }
 		
-	if ((((stTimeChk - pAd->sounding_periodic_count)*1000/OS_HZ) >= 500) &&   //500ms period  
-             (pTxRing->TxDmaIdx >= (TX_RING_SIZE - 10)) && 
-             (pAd->ceBfCertificationFlg == TRUE))
-	{
-		pAd->timeout_flg = FALSE;
-		NdisGetSystemUpTime(&pAd->sounding_periodic_count);    //get and save system time
+	    if ((((stTimeChk - pAd->sounding_periodic_count)*1000/OS_HZ) >= 500) &&   //500ms period  
+              (pTxRing->TxDmaIdx >= (TX_RING_SIZE - 10)))
+	    {
+		    pAd->timeout_flg = FALSE;
+		    NdisGetSystemUpTime(&pAd->sounding_periodic_count);    //get and save system time
 		
-  
-		pATEInfo->TxLength = 258;
-		pATEInfo->txSoundingMode = pAd->soundingMode;
+		    pATEInfo->TxLength = 258;
+		    pATEInfo->txSoundingMode = pAd->soundingMode;
 
-
-            	//if ( pAd->soundingPacketDone == 0)
-                {
-
+            //if ( pAd->soundingPacketDone == 0)
+            {
                 pAd->soundingPacketDone = 1;
                 /* Abort Tx, Rx DMA. */
-		RtmpSoundingDmaEnable(pAd, 0);
-
+		        RtmpSoundingDmaEnable(pAd, 0);
                 
-        if (pATEInfo->TxWI.TXWI_N.PHYMODE == MODE_VHT && pATEInfo->bTxBF == TRUE && pATEInfo->txSoundingMode != 0)
-		{
-             
-			if (ATESetUpNDPAFrame(pAd, TX_RING_SIZE-1) != 0)
-				return NDIS_STATUS_FAILURE;
+                if (pATEInfo->TxWI.TXWI_N.PHYMODE == MODE_VHT && pATEInfo->bTxBF == TRUE && pATEInfo->txSoundingMode != 0)
+		        {           
+			        if (ATESetUpNDPAFrame(pAd, TX_RING_SIZE-1) != 0)
+				        return NDIS_STATUS_FAILURE;
 
-                        if (ATESetUpNDPAFrame(pAd, 100) != 0)
-				return NDIS_STATUS_FAILURE;
-		}
-		else
-		{
-			if (ATESetUpFrame(pAd, TX_RING_SIZE-1) != 0)
-				return NDIS_STATUS_FAILURE;
+                    if (ATESetUpNDPAFrame(pAd, 100) != 0)
+				        return NDIS_STATUS_FAILURE;
+		        }
+		        else
+		        {
+			        if (ATESetUpFrame(pAd, TX_RING_SIZE-1) != 0)
+				        return NDIS_STATUS_FAILURE;
 
-                        if (ATESetUpFrame(pAd, 100) != 0)
-				return NDIS_STATUS_FAILURE;
-		} 
+                    if (ATESetUpFrame(pAd, 100) != 0)
+				        return NDIS_STATUS_FAILURE;
+		        } 
                
-		/* Start Tx, Rx DMA. */
-		RtmpSoundingDmaEnable(pAd, 1);
-                }                
+		        /* Start Tx, Rx DMA. */
+		        RtmpSoundingDmaEnable(pAd, 1);
+            }                
 
-            	pAd->txDmaIdx_backup = pTxRing->TxDmaIdx;
+            pAd->txDmaIdx_backup = pTxRing->TxDmaIdx;
 
-                RTMP_IO_READ32(pAd, pTxRing->hw_didx_addr, &pTxRing->TxDmaIdx);
-		//DBGPRINT(RT_DEBUG_OFF, ("****[7]TxDmaIdx =%d,TxCpuIdx =%d, Put Sounding Packet[%d]\n", pTxRing->TxDmaIdx, pTxRing->TxCpuIdx,TX_RING_SIZE-1));
-
-
+            RTMP_IO_READ32(pAd, pTxRing->hw_didx_addr, &pTxRing->TxDmaIdx);
+		    //DBGPRINT(RT_DEBUG_OFF, ("****[7]TxDmaIdx =%d,TxCpuIdx =%d, Put Sounding Packet[%d]\n", pTxRing->TxDmaIdx, pTxRing->TxCpuIdx,TX_RING_SIZE-1));
+	    }
 	}
 #endif
 #endif

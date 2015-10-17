@@ -4182,14 +4182,14 @@ BOOLEAN APCheckVaildDataFrame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 			if (pRxBlk->wcid >= MAX_LEN_OF_MAC_TABLE) {
 				MAC_TABLE_ENTRY *pEntry = NULL;
 
-				DBGPRINT(RT_DEBUG_WARN, ("ErrWcidPkt: seq=%d, ts=0x%02x%02x%02x%02x\n",
+				DBGPRINT(RT_DEBUG_INFO, ("ErrWcidPkt: seq=%d, ts=0x%02x%02x%02x%02x\n",
 									pHeader->Sequence,
 									pRxBlk->pRxWI->RXWI_N.rssi[0],
 									pRxBlk->pRxWI->RXWI_N.rssi[1],
 									pRxBlk->pRxWI->RXWI_N.rssi[2],
 									pRxBlk->pRxWI->RXWI_N.rssi[3]));
 				pEntry = MacTableLookup(pAd, pHeader->Addr2);
-				if (pEntry && (pEntry->Sst == SST_ASSOC) && IS_ENTRY_CLIENT(pEntry))
+				if (pEntry && (pEntry->Sst == SST_ASSOC) && (IS_ENTRY_CLIENT(pEntry) || IS_ENTRY_APCLI(pEntry)))
 					pRxBlk->wcid = pEntry->wcid;
 
 				dump_next_valid = 1;
@@ -5065,6 +5065,9 @@ VOID APHandleRxDataFrame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 		else
 			pEntry->OneSecRxLGICount++;
 #endif // TXBF_SUPPORT //
+#ifdef DYNAMIC_VGA_SUPPORT
+		pEntry->DyncVgaOneSecRxCount++;
+#endif /*DYNAMIC_VGA_SUPPORT*/
 	}
 
 	pAd->ApCfg.LastSNR0 = (UCHAR)(pRxBlk->snr[0]);
@@ -5573,9 +5576,6 @@ if (0 /*!(pRxInfo->Mcast || pRxInfo->Bcast)*/){
 		else
 			pEntry->OneSecRxLGICount++;
 #endif // TXBF_SUPPORT //
-#ifdef DYNAMIC_VGA_SUPPORT
-		pEntry->DyncVgaOneSecRxCount++;
-#endif /*DYNAMIC_VGA_SUPPORT*/
 	}
 
 	pAd->ApCfg.LastSNR0 = (UCHAR)(pRxBlk->snr[0]);

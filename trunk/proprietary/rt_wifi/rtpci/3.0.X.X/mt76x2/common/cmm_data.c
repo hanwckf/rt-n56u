@@ -1886,6 +1886,31 @@ BOOLEAN CanDoAggregateTransmit(
 }
 
 
+#ifdef RTMP_MAC_PCI
+VOID TxDoneCleanupExec(
+	IN PVOID SystemSpecific1,
+	IN PVOID FunctionContext,
+	IN PVOID SystemSpecific2,
+	IN PVOID SystemSpecific3)
+{
+	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)FunctionContext;
+	unsigned long	IrqFlags = 0;
+	UCHAR QueIdx;
+
+	DEQUEUE_LOCK(&pAd->irq_lock, FALSE, IrqFlags);
+	for( QueIdx=0; QueIdx<NUM_OF_TX_RING; QueIdx++ ) {
+		ULONG FreeNum;
+		FreeNum = GET_TXRING_FREENO(pAd, QueIdx);
+		if( FreeNum != (TX_RING_SIZE-1) ) {
+			RTMPFreeTXDUponTxDmaDone(pAd, QueIdx);
+			RTMPModTimer(&pAd->TxDoneCleanupTimer, 50);
+		}
+	}
+	DEQUEUE_UNLOCK(&pAd->irq_lock, FALSE, IrqFlags);
+}
+#endif /* RTMP_MAC_PCI */
+
+
 /*
 	========================================================================
 
@@ -2016,8 +2041,15 @@ VOID RTMPDeQueuePacket(
 #endif /* DBG_TX_RING_DEPTH */
 #endif /* DBG_DIAGNOSE */
 
-			if (FreeNumber[QueIdx] <= 5 ||
-				(pAd->RalinkCounters.OneSecTxRetryOkCount + pAd->RalinkCounters.OneSecTxNoRetryOkCount) <= (TX_RING_SIZE >> 1))
+			/* We should never let more than 64kBytes of tx data not be
+			 * cleaned up, or the TCP TX throughput will suffer as the
+			 * window will not fill and so expand. 64kBytes ~ 44 full
+			 * size ethernet packets. Use 32 as a nice constant. There
+			 * is also a timer function which prevents packets getting
+			 * "stuck" when data stops flowing
+			 */
+
+			if ((TX_RING_SIZE - FreeNumber[QueIdx]) > 32)
 			{
 				/* free Tx(QueIdx) resources*/
 				RTMPFreeTXDUponTxDmaDone(pAd, QueIdx);
@@ -3291,11 +3323,8 @@ VOID Update_Rssi_Sample(
 
 #ifdef RLT_MAC
 		if (IS_MT76x2(pAd)) {
-			if ((Phymode == MODE_CCK)) {
+			if (Phymode == MODE_CCK) {
 				pRssi->LastRssi0 -= 2;
-			} else if ((pRxWI->RXWI_N.bw  == BW_80) && (pRssi->LastRssi0 < -75) 
-						&& (is_external_lna_mode(pAd, pAd->CommonCfg.Channel) == FALSE)) {
-				pRssi->LastRssi0 = (-92 + pRssi->LastSnr0);
 			}
 		} 
 #endif /* RLT_MAC */
@@ -3331,12 +3360,8 @@ VOID Update_Rssi_Sample(
 		
 #ifdef RLT_MAC
 		if (IS_MT76x2(pAd)) {
-			if ((Phymode == MODE_CCK)) {
+			if (Phymode == MODE_CCK) {
 				pRssi->LastRssi1 -= 2;
-			}
-				else if ((pRxWI->RXWI_N.bw == BW_80) && (pRssi->LastRssi1 < -75) 
-						&& (is_external_lna_mode(pAd, pAd->CommonCfg.Channel) == FALSE)) {
-				pRssi->LastRssi1 = (-92 + pRssi->LastSnr1);
 			}
 		}
 #endif /* RLT_MAC */

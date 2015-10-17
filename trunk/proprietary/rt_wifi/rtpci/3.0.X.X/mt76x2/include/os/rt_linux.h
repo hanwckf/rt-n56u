@@ -137,7 +137,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
  #define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/iNIC/SingleSKU.dat"
  #define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860APCard.dat"
 #endif
-#define AP_DRIVER_VERSION		"3.0.4.0"
+#define AP_DRIVER_VERSION		"3.0.4.0.P1"
 #endif /* RTMP_MAC_PCI */
 
 #endif /* CONFIG_AP_SUPPORT */

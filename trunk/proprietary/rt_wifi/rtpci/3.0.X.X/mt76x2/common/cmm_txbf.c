@@ -303,25 +303,18 @@ VOID eTxBFProbing(
  	IN PRTMP_ADAPTER pAd,
 	IN MAC_TABLE_ENTRY	*pEntry)
 {
-	if (pEntry->eTxBfEnCond == 0)
-	{
+	if (pEntry->eTxBfEnCond == 0)	{
 		pEntry->bfState = READY_FOR_SNDG0;
-	}
-	else if (pEntry->noSndgCnt>=pEntry->noSndgCntThrd)
-	{
+	}	else if (pEntry->noSndgCnt>=pEntry->noSndgCntThrd)	{
 		/* Select NDP sounding, maximum streams */
 		pEntry->sndgMcs = (pEntry->ndpSndgStreams==3) ? 16 : 8;
 		Trigger_Sounding_Packet(pAd, SNDG_TYPE_NDP, 0, pEntry->sndgMcs, pEntry);
 
 		pEntry->bfState = WAIT_SNDG_FB0;
 		pEntry->noSndgCnt = 0;
-	}
-	else if (pEntry->bfState == READY_FOR_SNDG0)
-	{
+	}	else if (pEntry->bfState == READY_FOR_SNDG0)	{
 		pEntry->noSndgCnt++;
-	}
-	else
-		pEntry->noSndgCnt = 0;
+	}	else		pEntry->noSndgCnt = 0;
 }
 
 

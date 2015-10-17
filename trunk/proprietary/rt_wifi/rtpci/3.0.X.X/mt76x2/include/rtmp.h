@@ -4687,11 +4687,14 @@ struct _RTMP_ADAPTER {
 #ifdef CONFIG_ANDES_SUPPORT
 	RTMP_DMABUF CtrlDescRing;	/* Shared memory for CTRL descriptors */
 	RTMP_CTRL_RING CtrlRing;
-	//NDIS_SPIN_LOCK mcu_atomic;
+	NDIS_SPIN_LOCK mcu_atomic;
 	NDIS_SPIN_LOCK CtrlRingLock;	/* Ctrl Ring spinlock */
 #endif /* CONFIG_ANDES_SUPPORT */
 #endif /* RTMP_PCI_SUPPORT */
 
+#ifdef RTMP_MAC_PCI
+	RALINK_TIMER_STRUCT TxDoneCleanupTimer;
+#endif
 	UCHAR LastMCUCmd;
 
 /*********************************************************/
@@ -10190,6 +10193,12 @@ ra_dma_addr_t RtmpDrvPciMapSingle(
 	IN INT direction);
 
 INT rtmp_irq_init(RTMP_ADAPTER *pAd);
+VOID TxDoneCleanupExec(
+	IN PVOID SystemSpecific1, 
+	IN PVOID FunctionContext, 
+	IN PVOID SystemSpecific2, 
+	IN PVOID SystemSpecific3);
+
 #endif /* RTMP_MAC_PCI */
 
 #ifdef CONFIG_STA_SUPPORT

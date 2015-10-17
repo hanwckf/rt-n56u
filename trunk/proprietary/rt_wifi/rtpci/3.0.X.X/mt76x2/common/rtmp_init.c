@@ -139,7 +139,7 @@ NDIS_STATUS RTMPAllocAdapterBlock(VOID *handle, VOID **ppAdapter)
 			NdisAllocateSpinLock(pAd, &pAd->RxRingLock[index]);
 #ifdef CONFIG_ANDES_SUPPORT
 		NdisAllocateSpinLock(pAd, &pAd->CtrlRingLock);
-		//NdisAllocateSpinLock(pAd, &pAd->mcu_atomic);
+		NdisAllocateSpinLock(pAd, &pAd->mcu_atomic);
 #endif /* CONFIG_ANDES_SUPPORT */
 		NdisAllocateSpinLock(pAd, &pAd->tssi_lock);
 #endif /* RTMP_MAC_PCI */

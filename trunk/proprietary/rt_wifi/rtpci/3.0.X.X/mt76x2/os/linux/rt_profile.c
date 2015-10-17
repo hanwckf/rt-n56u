@@ -857,7 +857,7 @@ VOID RTMPFreeAdapter(VOID *pAdSrc)
 	NdisFreeSpinLock(&pAd->LockInterrupt);
 #ifdef CONFIG_ANDES_SUPPORT
 	NdisFreeSpinLock(&pAd->CtrlRingLock);
-	//NdisFreeSpinLock(&pAd->mcu_atomic);
+	NdisFreeSpinLock(&pAd->mcu_atomic);
 #endif /* CONFIG_ANDES_SUPPORT */
 	NdisFreeSpinLock(&pAd->tssi_lock);
 #endif /* RTMP_MAC_PCI */
@@ -947,6 +947,10 @@ int RTMPSendPackets(
 	ASSERT(wdev->sys_handle);
 	pAd = (RTMP_ADAPTER *)wdev->sys_handle;
 	INC_COUNTER64(pAd->WlanCounters.TransmitCountFrmOs);
+#ifdef RTMP_MAC_PCI
+	/* Update timer to flush tx ring buffer */
+	RTMPModTimer(&pAd->TxDoneCleanupTimer, 50);
+#endif /* RTMP_MAC_PCI */
 
 	if (!pPacket)
 		return 0;

@@ -333,7 +333,8 @@ int main(int argc ,char *argv[])
 			//strcat(infname, "/mcu/bin/WIFI_RAM_CODE_ALL_tssi_average.bin");
 			//strcat(infname, "/mcu/bin/WIFI_RAM_CODE_ALL_tssi_0618.bin");
 			//strcat(infname, "/mcu/bin/mt7662_firmware_e3_v1.4.bin");
-			strcat(infname, "/mcu/bin/mt7662_firmware_e3_v1.8.bin");
+			//strcat(infname, "/mcu/bin/mt7662_firmware_e3_v1.8.bin");
+			strcat(infname, "/mcu/bin/MT7662_E3_v1.9.bin");
 			//strcat(infname, "/mcu/bin/mt7662_firmware_e3_v1.7.bin");
 			//strcat(infname, "/mcu/bin/mt7662_firmware_e3_v1.6_20140905.bin");
 			//strcat(infname, "/mcu/bin/mt7662_firmware_e3_v1.6.bin");

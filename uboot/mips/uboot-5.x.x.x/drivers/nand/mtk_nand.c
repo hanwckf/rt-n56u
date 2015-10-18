@@ -238,6 +238,8 @@ static u8 local_buffer[4096 + 512];
 extern void nand_release_device(struct mtd_info *mtd);
 extern int nand_get_device(struct nand_chip *chip, struct mtd_info *mtd, int new_state);
 
+extern void LED_ALERT_BLINK(void);
+
 static bmt_struct *g_bmt;
 struct mtk_nand_host *host;
 static u8 g_running_dma = 0;
@@ -4941,13 +4943,13 @@ int ranand_erase(unsigned int offs, u32 len)
 	struct mtd_info *mtd;
 	struct nand_chip *nand_chip;
 	int lowlevel_erase = 0;
-	
+
 	ra_dbg("%s: start:%x, len:%x \n", __func__, offs, len);
-	
+
 	mtd = &host->mtd;
 	nand_chip  = &host->nand_chip;
 
-  	len = max(len, mtd->erasesize);
+	len = max(len, mtd->erasesize);
 
 #define BLOCK_ALIGNED(a) ((a) & (mtd->erasesize - 1))
 
@@ -4988,7 +4990,6 @@ int ranand_erase(unsigned int offs, u32 len)
 			//return -1;
 			ret = -1;
 		}
-		printf(".");
 		/* Increment page address and decrement length */
 		len -= mtd->erasesize;
 		offs += mtd->erasesize;
@@ -5062,10 +5063,12 @@ int ranand_write(char *buf, unsigned int to, int datalen)
 	char* buffers, *buffers_orig;
 	struct mtd_info *mtd;
 	struct nand_chip *nand_chip;
-  
+
+	ra_dbg("%s: start:%x, len:%x \n", __func__, to, datalen);
+
 	mtd = &host->mtd;
 	nand_chip  = &host->nand_chip;
-  
+
 	if (buf == 0)
 		datalen = 0;
 
@@ -5073,8 +5076,8 @@ int ranand_write(char *buf, unsigned int to, int datalen)
 	memset(buffers_orig, 0x0ff, mtd->writesize + mtd->oobsize + 32);
 	if (buffers_orig == NULL)
 		return -1;
-	
-    buffers = (((u32)buffers_orig + 15)/16)*16;	
+
+	buffers = (((u32)buffers_orig + 15)/16)*16;
 	// page write
 	while (datalen) {
 		int len;
@@ -5132,19 +5135,22 @@ int ranand_erase_write(char *buf, unsigned int offs, int count)
 	int blocksize; 
 	int blockmask;
 	int rc;
+	ulong led_time;
 	struct mtd_info *mtd;
 	struct nand_chip *nand_chip;
-  	
+
 	mtd = &host->mtd;
 	nand_chip  = &host->nand_chip;
 	blocksize = mtd->erasesize;
- 	blockmask = blocksize - 1; 
+	blockmask = blocksize - 1;
 
 	if ((uint64_t)count > (nand_chip->chipsize - (uint64_t)(CFG_BOOTLOADER_SIZE + CFG_CONFIG_SIZE + CFG_FACTORY_SIZE))) 	{
 		printf("Abort: image size larger than %lld!\n\n", nand_chip->chipsize  -
 					(uint64_t)(CFG_BOOTLOADER_SIZE + CFG_CONFIG_SIZE + CFG_FACTORY_SIZE));
 		return -1;
 	}
+
+	led_time = get_timer(0);
 
 	while (count > 0) {
 #define BLOCK_ALIGNED(a) ((a) & (blocksize - 1))
@@ -5176,7 +5182,7 @@ try_next_0:
 			memcpy(block + piece, buf, piece_size);
 
 			rc = ranand_erase(blockaddr, blocksize);
-			ra_dbg("(%d)offs=%d piece=%d piece_size=%d rc=%d\n",__LINE__,offs,piece,piece_size,rc);
+//			ra_dbg("(%d)offs=%d piece=%d piece_size=%d rc=%d\n",__LINE__,offs,piece,piece_size,rc);
 
 #ifdef CONFIG_BADBLOCK_CHECK
 			if (rc >= 1) {
@@ -5226,12 +5232,14 @@ try_next_1:
 				return -1;
 			}
 
-			
-			printf(".");
-
 			buf += aligned_size;
 			offs += aligned_size;
 			count -= aligned_size;
+		}
+
+		if ((get_timer(led_time)) > (CFG_HZ/8)) {
+			LED_ALERT_BLINK();
+			led_time = get_timer(0);
 		}
 	}
 

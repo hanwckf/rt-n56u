@@ -1206,6 +1206,10 @@ comment "NAND partitions size (in 0x20000 blocks count)"
 int 'Bootloader' NAND_BLK_BOOTLOADER	4
 int 'Config'     NAND_BLK_CONFIG	10
 int 'Factory'    NAND_BLK_FACTORY	2
+int 'NVRAM'      NAND_BLK_NVRAM		10
+
+comment "NAND partitions offset (in 0x20000 blocks count)"
+int 'NVRAM'      NAND_OFS_NVRAM		4
 
 #choice 'NAND parameters' "BootStrap ON_BOARD_NAND_BOOTSTRAP	\
 #			  Header    ON_BOARD_NAND_HEADER

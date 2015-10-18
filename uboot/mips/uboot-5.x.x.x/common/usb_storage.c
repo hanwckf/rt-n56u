@@ -1122,16 +1122,12 @@ int usb_storage_probe(struct usb_device *dev, unsigned int ifnum,struct us_data 
 	USB_STOR_PRINTF("Endpoints In %d Out %d Int %d\n",
 		  ss->ep_in, ss->ep_out, ss->ep_int);
 
+#ifdef CONFIG_USB_XHCI
+	usb_set_interface(dev, iface->desc.bInterfaceNumber, 0);
+#endif
+
 	/* Do some basic sanity checks, and bail if we find a problem */
 	if (
-/*
- *	Ralink:
- *
- *	Some USB storages return STALL if setting interface. Skip it.
- */
-#ifdef CONFIG_USB_XHCI
-	usb_set_interface(dev, iface->desc.bInterfaceNumber, 0) ||
-#endif
 	    !ss->ep_in || !ss->ep_out ||
 	    (ss->protocol == US_PR_CBI && ss->ep_int == 0)) {
 		USB_STOR_PRINTF("Problems with device\n");

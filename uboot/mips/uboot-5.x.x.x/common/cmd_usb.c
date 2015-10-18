@@ -236,14 +236,15 @@ void usb_display_config(struct usb_device *dev)
 
 static inline char *portspeed(int speed)
 {
-    if (speed == USB_SPEED_HIGH)
-        return "480 Mb/s";
-    else if (speed == USB_SPEED_LOW)
-        return "1.5 Mb/s";
-    else
-        return "12 Mb/s";
+	if (speed == USB_SPEED_SUPER)
+		return "5 Gb/s";
+	else if (speed == USB_SPEED_HIGH)
+		return "480 Mb/s";
+	else if (speed == USB_SPEED_LOW)
+		return "1.5 Mb/s";
+	else
+		return "12 Mb/s";
 }
-
 
 /* shows the device tree recursively */
 void usb_show_tree_graph(struct usb_device *dev,char *pre)

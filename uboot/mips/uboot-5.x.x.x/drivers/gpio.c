@@ -637,7 +637,7 @@ void gpio_init_usb(int do_wait)
 #endif
 #if (GPIO_USB_POWER >= 0 || GPIO_USB_POWER2 >= 0)
 	if (do_wait)
-		udelay(50000);
+		udelay(150000);
 #endif
 }
 

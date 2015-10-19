@@ -1,6 +1,8 @@
 #ifndef __USB_INFO__
 #define __USB_INFO__
 
+#include <ralink_boards.h>
+
 #define RTCONFIG_USB
 
 //#define DEBUG_USB

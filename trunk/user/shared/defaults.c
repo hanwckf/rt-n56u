@@ -585,11 +585,13 @@ struct nvram_pair router_defaults[] = {
 #else
 	{ "ez_action_long", "0" },
 #endif
-	{ "wlt_action_short", "1" },
-#if BOARD_HAS_5G_RADIO
-	{ "wlt_action_long", "3" },
-#else
-	{ "wlt_action_long", "1" },
+#if defined (BOARD_GPIO_BTN_FN1)
+	{ "fn1_action_short", "0" },
+	{ "fn1_action_long", "0" },
+#endif
+#if defined (BOARD_GPIO_BTN_FN2)
+	{ "fn2_action_short", "0" },
+	{ "fn2_action_long", "0" },
 #endif
 	{ "watchdog_cpu", "0" },
 	{ "front_led_all", "1" },

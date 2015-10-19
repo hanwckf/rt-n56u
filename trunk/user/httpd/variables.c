@@ -164,9 +164,13 @@
 			{"di_port5", "", NULL, EVM_RESTART_DI},
 			{"ez_action_short", "", NULL, FALSE},
 			{"ez_action_long", "", NULL, FALSE},
-#if defined (BOARD_GPIO_BTN_WLTOG)
-			{"wlt_action_short", "", NULL, FALSE},
-			{"wlt_action_long", "", NULL, FALSE},
+#if defined (BOARD_GPIO_BTN_FN1)
+			{"fn1_action_short", "", NULL, FALSE},
+			{"fn1_action_long", "", NULL, FALSE},
+#endif
+#if defined (BOARD_GPIO_BTN_FN2)
+			{"fn2_action_short", "", NULL, FALSE},
+			{"fn2_action_long", "", NULL, FALSE},
 #endif
 			{"front_led_all", "", NULL, EVM_RESTART_TWEAKS},
 			{"front_led_wan", "", NULL, EVM_RESTART_TWEAKS},

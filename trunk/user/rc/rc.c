@@ -213,9 +213,13 @@ init_gpio_leds_buttons(void)
 #if defined (BOARD_GPIO_BTN_WPS)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_WPS, 0);
 #endif
-	/* init BTN WLTOG  */
-#if defined (BOARD_GPIO_BTN_WLTOG)
-	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_WLTOG, 0);
+	/* init BTN FN1  */
+#if defined (BOARD_GPIO_BTN_FN1)
+	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_FN1, 0);
+#endif
+	/* init BTN FN2  */
+#if defined (BOARD_GPIO_BTN_FN2)
+	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_FN2, 0);
 #endif
 	/* init BTN ROUTER  */
 #if defined (BOARD_GPIO_BTN_ROUTER)

@@ -2167,6 +2167,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_btn_mode() { return %d;}\n"
 		"function support_usb() { return %d;}\n"
 		"function support_usb3() { return %d;}\n"
+		"function support_num_usb() { return %d;}\n"
 		"function support_switch_type() { return %d;}\n"
 		"function support_num_ephy() { return %d;}\n"
 		"function support_ephy_w1000() { return %d;}\n"
@@ -2190,6 +2191,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		has_btn_mode,
 		has_usb,
 		has_usb3,
+		BOARD_NUM_USB_PORTS,
 		has_switch_type,
 		BOARD_NUM_ETH_EPHY,
 		BOARD_HAS_EPHY_W1000,
@@ -2215,10 +2217,15 @@ ej_hardware_pins_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_but_wps = 0;
 #endif
-#if defined (BOARD_GPIO_BTN_WLTOG)
-	int has_but_wlt = 1;
+#if defined (BOARD_GPIO_BTN_FN1)
+	int has_but_fn1 = 1;
 #else
-	int has_but_wlt = 0;
+	int has_but_fn1 = 0;
+#endif
+#if defined (BOARD_GPIO_BTN_FN2)
+	int has_but_fn2 = 1;
+#else
+	int has_but_fn2 = 0;
 #endif
 #if defined (BOARD_GPIO_LED_ALL)
 	int has_led_all = 1;
@@ -2253,7 +2260,8 @@ ej_hardware_pins_hook(int eid, webs_t wp, int argc, char **argv)
 
 	websWrite(wp,
 		"function support_but_wps() { return %d;}\n"
-		"function support_but_wlt() { return %d;}\n"
+		"function support_but_fn1() { return %d;}\n"
+		"function support_but_fn2() { return %d;}\n"
 		"function support_led_all() { return %d;}\n"
 		"function support_led_wan() { return %d;}\n"
 		"function support_led_lan() { return %d;}\n"
@@ -2262,7 +2270,8 @@ ej_hardware_pins_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_led_pwr() { return %d;}\n"
 		"function support_led_phy() { return %d;}\n",
 		has_but_wps,
-		has_but_wlt,
+		has_but_fn1,
+		has_but_fn2,
 		has_led_all,
 		has_led_wan,
 		has_led_lan,

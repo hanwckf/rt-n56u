@@ -37,12 +37,24 @@ function initial(){
 	show_menu(5,8,1);
 	show_footer();
 
+	var num_usb = support_num_usb();
+
 	if (!support_but_wps()){
 		showhide_div('tbl_wps_actions', 0);
 	}else{
+		var o1 = document.form.ez_action_short;
+		var o2 = document.form.ez_action_long;
+		if (num_usb < 2){
+			o1.remove(9);
+			o1.remove(9);
+			o2.remove(8);
+			o2.remove(8);
+		}
+		if (num_usb < 1){
+			o1.remove(8);
+			o2.remove(7);
+		}
 		if (!support_5g_radio()){
-			var o1 = document.form.ez_action_short;
-			var o2 = document.form.ez_action_long;
 			o1.options[2].text = "<#TweaksWPSItem02#>";
 			o1.options[5].text = "<#TweaksWPSItem03#>";
 			o2.options[1].text = o1.options[2].text;
@@ -56,12 +68,24 @@ function initial(){
 			o2.remove(2);
 			o2.remove(2);
 		}
+		o1.value = '<% nvram_get_x("","ez_action_short"); %>';
+		o2.value = '<% nvram_get_x("","ez_action_long"); %>';
 	}
 
-	if (support_but_wlt()){
+	if (support_but_fn1()){
+		var o1 = document.form.fn1_action_short;
+		var o2 = document.form.fn1_action_long;
+		if (num_usb < 2){
+			o1.remove(9);
+			o1.remove(9);
+			o2.remove(8);
+			o2.remove(8);
+		}
+		if (num_usb < 1){
+			o1.remove(8);
+			o2.remove(7);
+		}
 		if (!support_5g_radio()){
-			var o1 = document.form.wlt_action_short;
-			var o2 = document.form.wlt_action_long;
 			o1.options[2].text = "<#TweaksWPSItem02#>";
 			o1.options[5].text = "<#TweaksWPSItem03#>";
 			o2.options[1].text = o1.options[2].text;
@@ -75,7 +99,41 @@ function initial(){
 			o2.remove(2);
 			o2.remove(2);
 		}
-		showhide_div('tbl_wlt_actions', 1);
+		o1.value = '<% nvram_get_x("","fn1_action_short"); %>';
+		o2.value = '<% nvram_get_x("","fn1_action_long"); %>';
+		showhide_div('tbl_fn1_actions', 1);
+	}
+
+	if (support_but_fn2()){
+		var o1 = document.form.fn2_action_short;
+		var o2 = document.form.fn2_action_long;
+		if (num_usb < 2){
+			o1.remove(9);
+			o1.remove(9);
+			o2.remove(8);
+			o2.remove(8);
+		}
+		if (num_usb < 1){
+			o1.remove(8);
+			o2.remove(7);
+		}
+		if (!support_5g_radio()){
+			o1.options[2].text = "<#TweaksWPSItem02#>";
+			o1.options[5].text = "<#TweaksWPSItem03#>";
+			o2.options[1].text = o1.options[2].text;
+			o2.options[4].text = o1.options[5].text;
+			o1.remove(6);
+			o1.remove(6);
+			o1.remove(3);
+			o1.remove(3);
+			o2.remove(5);
+			o2.remove(5);
+			o2.remove(2);
+			o2.remove(2);
+		}
+		o1.value = '<% nvram_get_x("","fn2_action_short"); %>';
+		o2.value = '<% nvram_get_x("","fn2_action_long"); %>';
+		showhide_div('tbl_fn2_actions', 1);
 	}
 
 	var switch_type = support_switch_type();
@@ -196,96 +254,158 @@ function change_led_all(){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#TweaksWPSAction#></th>
                                         </tr>
                                         <tr>
-                                            <th width="50%"><#TweaksWPSEventShort#></th>
+                                            <th width="50%"><#TweaksEventShort#></th>
                                             <td>
                                                 <select name="ez_action_short" class="input" style="width: 320px;">
-                                                    <option value="0"  <% nvram_match_x("", "ez_action_short", "0", "selected"); %>><#TweaksWPSItem00#></option>
-                                                    <option value="1"  <% nvram_match_x("", "ez_action_short", "1", "selected"); %>><#TweaksWPSItem01#></option>
-                                                    <option value="2"  <% nvram_match_x("", "ez_action_short", "2", "selected"); %>><#TweaksWPSItem02#> 2.4</option>
-                                                    <option value="3"  <% nvram_match_x("", "ez_action_short", "3", "selected"); %>><#TweaksWPSItem02#> 5</option>
-                                                    <option value="4"  <% nvram_match_x("", "ez_action_short", "4", "selected"); %>><#TweaksWPSItem02#> 2.4 & 5</option>
-                                                    <option value="11" <% nvram_match_x("", "ez_action_short", "11","selected"); %>><#TweaksWPSItem03#> 2.4</option>
-                                                    <option value="12" <% nvram_match_x("", "ez_action_short", "12","selected"); %>><#TweaksWPSItem03#> 5</option>
-                                                    <option value="13" <% nvram_match_x("", "ez_action_short", "13","selected"); %>><#TweaksWPSItem03#> 2.4 & 5</option>
-                                                    <option value="5"  <% nvram_match_x("", "ez_action_short", "5", "selected"); %>><#TweaksWPSItem10#></option>
-                                                    <option value="10" <% nvram_match_x("", "ez_action_short", "10","selected"); %>><#TweaksWPSItem11#></option>
-                                                    <option value="6"  <% nvram_match_x("", "ez_action_short", "6", "selected"); %>><#TweaksWPSItem20#></option>
-                                                    <option value="7"  <% nvram_match_x("", "ez_action_short", "7", "selected"); %>><#TweaksWPSItem21#></option>
-                                                    <option value="8"  <% nvram_match_x("", "ez_action_short", "8", "selected"); %>><#TweaksWPSItem22#></option>
-                                                    <option value="9"  <% nvram_match_x("", "ez_action_short", "9", "selected"); %>><#TweaksWPSItem32#> (arg: 1)</option>
+                                                    <option value="0" ><#TweaksWPSItem00#></option>
+                                                    <option value="1" ><#TweaksWPSItem01#></option>
+                                                    <option value="2" ><#TweaksWPSItem02#> 2.4</option>
+                                                    <option value="3" ><#TweaksWPSItem02#> 5</option>
+                                                    <option value="4" ><#TweaksWPSItem02#> 2.4 & 5</option>
+                                                    <option value="11"><#TweaksWPSItem03#> 2.4</option>
+                                                    <option value="12"><#TweaksWPSItem03#> 5</option>
+                                                    <option value="13"><#TweaksWPSItem03#> 2.4 & 5</option>
+                                                    <option value="5" ><#TweaksWPSItem10#></option>
+                                                    <option value="21"><#TweaksWPSItem11#></option>
+                                                    <option value="22"><#TweaksWPSItem12#></option>
+                                                    <option value="10"><#TweaksWPSItem14#></option>
+                                                    <option value="6" ><#TweaksWPSItem20#></option>
+                                                    <option value="7" ><#TweaksWPSItem21#></option>
+                                                    <option value="8" ><#TweaksWPSItem22#></option>
+                                                    <option value="9" ><#TweaksWPSItem32#> (arg: 1)</option>
                                                 </select>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#TweaksWPSEventLong#></th>
+                                            <th><#TweaksEventLong#></th>
                                             <td>
                                                 <select name="ez_action_long" class="input" style="width: 320px;">
-                                                    <option value="0"  <% nvram_match_x("", "ez_action_long", "0", "selected"); %>><#TweaksWPSItem00#></option>
-                                                    <option value="1"  <% nvram_match_x("", "ez_action_long", "1", "selected"); %>><#TweaksWPSItem02#> 2.4</option>
-                                                    <option value="2"  <% nvram_match_x("", "ez_action_long", "2", "selected"); %>><#TweaksWPSItem02#> 5</option>
-                                                    <option value="3"  <% nvram_match_x("", "ez_action_long", "3", "selected"); %>><#TweaksWPSItem02#> 2.4 & 5</option>
-                                                    <option value="12" <% nvram_match_x("", "ez_action_long", "12","selected"); %>><#TweaksWPSItem03#> 2.4</option>
-                                                    <option value="13" <% nvram_match_x("", "ez_action_long", "13","selected"); %>><#TweaksWPSItem03#> 5</option>
-                                                    <option value="14" <% nvram_match_x("", "ez_action_long", "14","selected"); %>><#TweaksWPSItem03#> 2.4 & 5</option>
-                                                    <option value="4"  <% nvram_match_x("", "ez_action_long", "4", "selected"); %>><#TweaksWPSItem10#></option>
-                                                    <option value="11" <% nvram_match_x("", "ez_action_long", "11","selected"); %>><#TweaksWPSItem11#></option>
-                                                    <option value="5"  <% nvram_match_x("", "ez_action_long", "5", "selected"); %>><#TweaksWPSItem20#></option>
-                                                    <option value="6"  <% nvram_match_x("", "ez_action_long", "6", "selected"); %>><#TweaksWPSItem21#></option>
-                                                    <option value="9"  <% nvram_match_x("", "ez_action_long", "9", "selected"); %>><#TweaksWPSItem22#></option>
-                                                    <option value="7"  <% nvram_match_x("", "ez_action_long", "7", "selected"); %>><#TweaksWPSItem30#></option>
-                                                    <option value="8"  <% nvram_match_x("", "ez_action_long", "8", "selected"); %>><#TweaksWPSItem31#></option>
-                                                    <option value="10" <% nvram_match_x("", "ez_action_long", "10","selected"); %>><#TweaksWPSItem32#> (arg: 2)</option>
-                                                    <option value="15" <% nvram_match_x("", "ez_action_long", "15","selected"); %>><#TweaksWPSItem33#></option>
+                                                    <option value="0" ><#TweaksWPSItem00#></option>
+                                                    <option value="1" ><#TweaksWPSItem02#> 2.4</option>
+                                                    <option value="2" ><#TweaksWPSItem02#> 5</option>
+                                                    <option value="3" ><#TweaksWPSItem02#> 2.4 & 5</option>
+                                                    <option value="12"><#TweaksWPSItem03#> 2.4</option>
+                                                    <option value="13"><#TweaksWPSItem03#> 5</option>
+                                                    <option value="14"><#TweaksWPSItem03#> 2.4 & 5</option>
+                                                    <option value="4" ><#TweaksWPSItem10#></option>
+                                                    <option value="21"><#TweaksWPSItem11#></option>
+                                                    <option value="22"><#TweaksWPSItem12#></option>
+                                                    <option value="11"><#TweaksWPSItem14#></option>
+                                                    <option value="5" ><#TweaksWPSItem20#></option>
+                                                    <option value="6" ><#TweaksWPSItem21#></option>
+                                                    <option value="9" ><#TweaksWPSItem22#></option>
+                                                    <option value="7" ><#TweaksWPSItem30#></option>
+                                                    <option value="8" ><#TweaksWPSItem31#></option>
+                                                    <option value="10"><#TweaksWPSItem32#> (arg: 2)</option>
+                                                    <option value="15"><#TweaksWPSItem33#></option>
                                                 </select>
                                             </td>
                                         </tr>
                                     </table>
 
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_wlt_actions" style="display:none;">
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_fn1_actions" style="display:none;">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#TweaksWLTAction#></th>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#TweaksFN1Action#></th>
                                         </tr>
                                         <tr>
-                                            <th width="50%"><#TweaksWLTEventShort#></th>
+                                            <th width="50%"><#TweaksEventShort#></th>
                                             <td>
-                                                <select name="wlt_action_short" class="input" style="width: 320px;">
-                                                    <option value="0"  <% nvram_match_x("", "wlt_action_short", "0", "selected"); %>><#TweaksWPSItem00#></option>
-                                                    <option value="1"  <% nvram_match_x("", "wlt_action_short", "1", "selected"); %>><#TweaksWPSItem01#></option>
-                                                    <option value="2"  <% nvram_match_x("", "wlt_action_short", "2", "selected"); %>><#TweaksWPSItem02#> 2.4</option>
-                                                    <option value="3"  <% nvram_match_x("", "wlt_action_short", "3", "selected"); %>><#TweaksWPSItem02#> 5</option>
-                                                    <option value="4"  <% nvram_match_x("", "wlt_action_short", "4", "selected"); %>><#TweaksWPSItem02#> 2.4 & 5</option>
-                                                    <option value="11" <% nvram_match_x("", "wlt_action_short", "11","selected"); %>><#TweaksWPSItem03#> 2.4</option>
-                                                    <option value="12" <% nvram_match_x("", "wlt_action_short", "12","selected"); %>><#TweaksWPSItem03#> 5</option>
-                                                    <option value="13" <% nvram_match_x("", "wlt_action_short", "13","selected"); %>><#TweaksWPSItem03#> 2.4 & 5</option>
-                                                    <option value="5"  <% nvram_match_x("", "wlt_action_short", "5", "selected"); %>><#TweaksWPSItem10#></option>
-                                                    <option value="10" <% nvram_match_x("", "wlt_action_short", "10","selected"); %>><#TweaksWPSItem11#></option>
-                                                    <option value="6"  <% nvram_match_x("", "wlt_action_short", "6", "selected"); %>><#TweaksWPSItem20#></option>
-                                                    <option value="7"  <% nvram_match_x("", "wlt_action_short", "7", "selected"); %>><#TweaksWPSItem21#></option>
-                                                    <option value="8"  <% nvram_match_x("", "wlt_action_short", "8", "selected"); %>><#TweaksWPSItem22#></option>
-                                                    <option value="9"  <% nvram_match_x("", "wlt_action_short", "9", "selected"); %>><#TweaksWPSItem32#> (arg: 3)</option>
+                                                <select name="fn1_action_short" class="input" style="width: 320px;">
+                                                    <option value="0" ><#TweaksWPSItem00#></option>
+                                                    <option value="1" ><#TweaksWPSItem01#></option>
+                                                    <option value="2" ><#TweaksWPSItem02#> 2.4</option>
+                                                    <option value="3" ><#TweaksWPSItem02#> 5</option>
+                                                    <option value="4" ><#TweaksWPSItem02#> 2.4 & 5</option>
+                                                    <option value="11"><#TweaksWPSItem03#> 2.4</option>
+                                                    <option value="12"><#TweaksWPSItem03#> 5</option>
+                                                    <option value="13"><#TweaksWPSItem03#> 2.4 & 5</option>
+                                                    <option value="5" ><#TweaksWPSItem10#></option>
+                                                    <option value="21"><#TweaksWPSItem11#></option>
+                                                    <option value="22"><#TweaksWPSItem12#></option>
+                                                    <option value="10"><#TweaksWPSItem14#></option>
+                                                    <option value="6" ><#TweaksWPSItem20#></option>
+                                                    <option value="7" ><#TweaksWPSItem21#></option>
+                                                    <option value="8" ><#TweaksWPSItem22#></option>
+                                                    <option value="9" ><#TweaksWPSItem32#> (arg: 5)</option>
                                                 </select>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#TweaksWLTEventLong#></th>
+                                            <th><#TweaksEventLong#></th>
                                             <td>
-                                                <select name="wlt_action_long" class="input" style="width: 320px;">
-                                                    <option value="0"  <% nvram_match_x("", "wlt_action_long", "0", "selected"); %>><#TweaksWPSItem00#></option>
-                                                    <option value="1"  <% nvram_match_x("", "wlt_action_long", "1", "selected"); %>><#TweaksWPSItem02#> 2.4</option>
-                                                    <option value="2"  <% nvram_match_x("", "wlt_action_long", "2", "selected"); %>><#TweaksWPSItem02#> 5</option>
-                                                    <option value="3"  <% nvram_match_x("", "wlt_action_long", "3", "selected"); %>><#TweaksWPSItem02#> 2.4 & 5</option>
-                                                    <option value="12" <% nvram_match_x("", "wlt_action_long", "12","selected"); %>><#TweaksWPSItem03#> 2.4</option>
-                                                    <option value="13" <% nvram_match_x("", "wlt_action_long", "13","selected"); %>><#TweaksWPSItem03#> 5</option>
-                                                    <option value="14" <% nvram_match_x("", "wlt_action_long", "14","selected"); %>><#TweaksWPSItem03#> 2.4 & 5</option>
-                                                    <option value="4"  <% nvram_match_x("", "wlt_action_long", "4", "selected"); %>><#TweaksWPSItem10#></option>
-                                                    <option value="11" <% nvram_match_x("", "wlt_action_long", "11","selected"); %>><#TweaksWPSItem11#></option>
-                                                    <option value="5"  <% nvram_match_x("", "wlt_action_long", "5", "selected"); %>><#TweaksWPSItem20#></option>
-                                                    <option value="6"  <% nvram_match_x("", "wlt_action_long", "6", "selected"); %>><#TweaksWPSItem21#></option>
-                                                    <option value="9"  <% nvram_match_x("", "wlt_action_long", "9", "selected"); %>><#TweaksWPSItem22#></option>
-                                                    <option value="7"  <% nvram_match_x("", "wlt_action_long", "7", "selected"); %>><#TweaksWPSItem30#></option>
-                                                    <option value="8"  <% nvram_match_x("", "wlt_action_long", "8", "selected"); %>><#TweaksWPSItem31#></option>
-                                                    <option value="10" <% nvram_match_x("", "wlt_action_long", "10","selected"); %>><#TweaksWPSItem32#> (arg: 4)</option>
-                                                    <option value="15" <% nvram_match_x("", "wlt_action_long", "15","selected"); %>><#TweaksWPSItem33#></option>
+                                                <select name="fn1_action_long" class="input" style="width: 320px;">
+                                                    <option value="0" ><#TweaksWPSItem00#></option>
+                                                    <option value="1" ><#TweaksWPSItem02#> 2.4</option>
+                                                    <option value="2" ><#TweaksWPSItem02#> 5</option>
+                                                    <option value="3" ><#TweaksWPSItem02#> 2.4 & 5</option>
+                                                    <option value="12"><#TweaksWPSItem03#> 2.4</option>
+                                                    <option value="13"><#TweaksWPSItem03#> 5</option>
+                                                    <option value="14"><#TweaksWPSItem03#> 2.4 & 5</option>
+                                                    <option value="4" ><#TweaksWPSItem10#></option>
+                                                    <option value="21"><#TweaksWPSItem11#></option>
+                                                    <option value="22"><#TweaksWPSItem12#></option>
+                                                    <option value="11"><#TweaksWPSItem14#></option>
+                                                    <option value="5" ><#TweaksWPSItem20#></option>
+                                                    <option value="6" ><#TweaksWPSItem21#></option>
+                                                    <option value="9" ><#TweaksWPSItem22#></option>
+                                                    <option value="7" ><#TweaksWPSItem30#></option>
+                                                    <option value="8" ><#TweaksWPSItem31#></option>
+                                                    <option value="10"><#TweaksWPSItem32#> (arg: 6)</option>
+                                                    <option value="15"><#TweaksWPSItem33#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_fn2_actions" style="display:none;">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#TweaksFN2Action#></th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%"><#TweaksEventShort#></th>
+                                            <td>
+                                                <select name="fn2_action_short" class="input" style="width: 320px;">
+                                                    <option value="0" ><#TweaksWPSItem00#></option>
+                                                    <option value="1" ><#TweaksWPSItem01#></option>
+                                                    <option value="2" ><#TweaksWPSItem02#> 2.4</option>
+                                                    <option value="3" ><#TweaksWPSItem02#> 5</option>
+                                                    <option value="4" ><#TweaksWPSItem02#> 2.4 & 5</option>
+                                                    <option value="11"><#TweaksWPSItem03#> 2.4</option>
+                                                    <option value="12"><#TweaksWPSItem03#> 5</option>
+                                                    <option value="13"><#TweaksWPSItem03#> 2.4 & 5</option>
+                                                    <option value="5" ><#TweaksWPSItem10#></option>
+                                                    <option value="21"><#TweaksWPSItem11#></option>
+                                                    <option value="22"><#TweaksWPSItem12#></option>
+                                                    <option value="10"><#TweaksWPSItem14#></option>
+                                                    <option value="6" ><#TweaksWPSItem20#></option>
+                                                    <option value="7" ><#TweaksWPSItem21#></option>
+                                                    <option value="8" ><#TweaksWPSItem22#></option>
+                                                    <option value="9" ><#TweaksWPSItem32#> (arg: 7)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#TweaksEventLong#></th>
+                                            <td>
+                                                <select name="fn2_action_long" class="input" style="width: 320px;">
+                                                    <option value="0" ><#TweaksWPSItem00#></option>
+                                                    <option value="1" ><#TweaksWPSItem02#> 2.4</option>
+                                                    <option value="2" ><#TweaksWPSItem02#> 5</option>
+                                                    <option value="3" ><#TweaksWPSItem02#> 2.4 & 5</option>
+                                                    <option value="12"><#TweaksWPSItem03#> 2.4</option>
+                                                    <option value="13"><#TweaksWPSItem03#> 5</option>
+                                                    <option value="14"><#TweaksWPSItem03#> 2.4 & 5</option>
+                                                    <option value="4" ><#TweaksWPSItem10#></option>
+                                                    <option value="21"><#TweaksWPSItem11#></option>
+                                                    <option value="22"><#TweaksWPSItem12#></option>
+                                                    <option value="11"><#TweaksWPSItem14#></option>
+                                                    <option value="5" ><#TweaksWPSItem20#></option>
+                                                    <option value="6" ><#TweaksWPSItem21#></option>
+                                                    <option value="9" ><#TweaksWPSItem22#></option>
+                                                    <option value="7" ><#TweaksWPSItem30#></option>
+                                                    <option value="8" ><#TweaksWPSItem31#></option>
+                                                    <option value="10"><#TweaksWPSItem32#> (arg: 8)</option>
+                                                    <option value="15"><#TweaksWPSItem33#></option>
                                                 </select>
                                             </td>
                                         </tr>

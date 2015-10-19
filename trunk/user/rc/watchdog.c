@@ -79,8 +79,11 @@ static int btn_count_reset = 0;
 #if defined (BOARD_GPIO_BTN_WPS)
 static int btn_count_wps = 0;
 #endif
-#if defined (BOARD_GPIO_BTN_WLTOG)
-static int btn_count_wlt = 0;
+#if defined (BOARD_GPIO_BTN_FN1)
+static int btn_count_fn1 = 0;
+#endif
+#if defined (BOARD_GPIO_BTN_FN2)
+static int btn_count_fn2 = 0;
 #endif
 
 
@@ -212,9 +215,14 @@ btn_check_reset(void)
 	if (btn_count_wps > 0)
 		return 0;
 #endif
-#if defined (BOARD_GPIO_BTN_WLTOG)
-	/* check WLTOG pressed */
-	if (btn_count_wlt > 0)
+#if defined (BOARD_GPIO_BTN_FN1)
+	/* check FN1 pressed */
+	if (btn_count_fn1 > 0)
+		return 0;
+#endif
+#if defined (BOARD_GPIO_BTN_FN2)
+	/* check FN2 pressed */
+	if (btn_count_fn2 > 0)
 		return 0;
 #endif
 	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_RESET, &i_button_value) < 0)
@@ -259,9 +267,10 @@ btn_check_reset(void)
 }
 #endif
 
-#if defined (BOARD_GPIO_BTN_WPS)
+
+#if defined (BOARD_GPIO_BTN_WPS) || defined (BOARD_GPIO_BTN_FN1) || defined (BOARD_GPIO_BTN_FN2)
 static int
-btn_check_wps(void)
+btn_check_ez(int btn_pin, int btn_id, int *p_btn_state)
 {
 	unsigned int i_button_value = !BTN_PRESSED;
 
@@ -270,88 +279,34 @@ btn_check_wps(void)
 	if (btn_count_reset > 0)
 		return 0;
 #endif
-#if defined (BOARD_GPIO_BTN_WLTOG)
-	/* check WLTOG pressed */
-	if (btn_count_wlt > 0)
-		return 0;
-#endif
-	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_WPS, &i_button_value) < 0)
+
+	if (cpu_gpio_get_pin(btn_pin, &i_button_value) < 0)
 		return 0;
 
 	if (i_button_value == BTN_PRESSED) {
-		/* WPS pressed */
-		btn_count_wps++;
+		/* BTN pressed */
+		(*p_btn_state)++;
 		
 #if defined (BOARD_GPIO_LED_POWER)
-		/* flash power LED */
-		if (btn_count_wps > BTN_EZ_WAIT_COUNT) {
+		/* flash alert LED */
+		if (*p_btn_state > BTN_EZ_WAIT_COUNT) {
 			int i_led = get_state_led_pwr();
-			cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, (btn_count_wps % 2) ? i_led : !i_led);
+			cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, ((*p_btn_state) % 2) ? i_led : !i_led);
 		}
 #endif
 	} else {
-		/* WPS released */
-		int press_count = btn_count_wps;
-		btn_count_wps = 0;
+		/* BTN released */
+		int press_count = *p_btn_state;
+		*p_btn_state = 0;
 		
 		if (press_count > BTN_EZ_WAIT_COUNT) {
 			/* pressed >= 3sec */
 			wd_alarmtimer(0, 0);
-			ez_event_long(0);
+			ez_event_long(btn_id);
 		} else if (press_count > 0 && press_count < BTN_EZ_CANCEL_COUNT) {
 			/* pressed < 500ms */
 			wd_alarmtimer(0, 0);
-			ez_event_short(0);
-		}
-	}
-
-	return (i_button_value != BTN_PRESSED) ? 0 : 1;
-}
-#endif
-
-#if defined (BOARD_GPIO_BTN_WLTOG)
-static int
-btn_check_wlt(void)
-{
-	unsigned int i_button_value = !BTN_PRESSED;
-
-#if defined (BOARD_GPIO_BTN_RESET)
-	/* check RESET pressed */
-	if (btn_count_reset > 0)
-		return 0;
-#endif
-#if defined (BOARD_GPIO_BTN_WPS)
-	/* check WPS pressed */
-	if (btn_count_wps > 0)
-		return 0;
-#endif
-	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_WLTOG, &i_button_value) < 0)
-		return 0;
-
-	if (i_button_value == BTN_PRESSED) {
-		/* WLTOG pressed */
-		btn_count_wlt++;
-		
-#if defined (BOARD_GPIO_LED_POWER)
-		/* flash power LED */
-		if (btn_count_wlt > BTN_EZ_WAIT_COUNT) {
-			int i_led = get_state_led_pwr();
-			cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, (btn_count_wlt % 2) ? i_led : !i_led);
-		}
-#endif
-	} else {
-		/* WLTOG released */
-		int press_count = btn_count_wlt;
-		btn_count_wlt = 0;
-		
-		if (press_count > BTN_EZ_WAIT_COUNT) {
-			/* pressed >= 3sec */
-			wd_alarmtimer(0, 0);
-			ez_event_long(1);
-		} else if (press_count > 0 && press_count < BTN_EZ_CANCEL_COUNT) {
-			/* pressed < 500ms */
-			wd_alarmtimer(0, 0);
-			ez_event_short(1);
+			ez_event_short(btn_id);
 		}
 	}
 
@@ -571,7 +526,7 @@ update_svc_status_wifi5()
 #endif
 }
 
-#if defined (BOARD_GPIO_BTN_WPS) || defined (BOARD_GPIO_BTN_WLTOG)
+#if defined (BOARD_GPIO_BTN_WPS) || defined (BOARD_GPIO_BTN_FN1) || defined (BOARD_GPIO_BTN_FN2)
 static void
 ez_action_toggle_wifi2(void)
 {
@@ -703,12 +658,23 @@ ez_action_change_guest_wifi5(void)
 }
 
 static void
-ez_action_usb_saferemoval(void)
+ez_action_usb_saferemoval(int port)
 {
 #if (BOARD_NUM_USB_PORTS > 0)
-	logmessage("watchdog", "Perform ez-button %s...", "safe-removal USB");
+	char ez_name[24];
 
-	safe_remove_usb_device(0, NULL, 1);
+	strcpy(ez_name, "safe-removal USB");
+#if (BOARD_NUM_USB_PORTS > 1)
+	if (port == 1)
+		strcat(ez_name, " #1");
+	else if (port == 2)
+		strcat(ez_name, " #2");
+#else
+	port = 0;
+#endif
+	logmessage("watchdog", "Perform ez-button %s...", ez_name);
+
+	safe_remove_usb_device(port, NULL, 1);
 #endif
 }
 
@@ -791,10 +757,16 @@ ez_event_short(int btn_id)
 {
 	int ez_action, ez_param = 1;
 
-#if defined (BOARD_GPIO_BTN_WLTOG)
-	if (btn_id == 1) {
-		ez_action = nvram_get_int("wlt_action_short");
+#if defined (BOARD_GPIO_BTN_FN1)
+	if (btn_id == 2) {
+		ez_action = nvram_get_int("fn1_action_short");
 		ez_param = 3;
+	} else
+#endif
+#if defined (BOARD_GPIO_BTN_FN2)
+	if (btn_id == 3) {
+		ez_action = nvram_get_int("fn2_action_short");
+		ez_param = 5;
 	} else
 #endif
 		ez_action = nvram_get_int("ez_action_short");
@@ -802,7 +774,7 @@ ez_event_short(int btn_id)
 #if defined (BOARD_GPIO_LED_POWER)
 	cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, get_state_led_pwr());
 	if (ez_action != 10) {
-		usleep(80000);
+		usleep(90000);
 		LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
 	}
 #endif
@@ -824,7 +796,7 @@ ez_event_short(int btn_id)
 		ez_action_change_wifi5();
 		break;
 	case 5: // Safe removal all USB
-		ez_action_usb_saferemoval();
+		ez_action_usb_saferemoval(0);
 		break;
 	case 6: // WAN down
 		ez_action_wan_down();
@@ -851,6 +823,14 @@ ez_event_short(int btn_id)
 		ez_action_change_guest_wifi2();
 		ez_action_change_guest_wifi5();
 		break;
+#if (BOARD_NUM_USB_PORTS > 1)
+	case 21: // Safe removal USB #1
+		ez_action_usb_saferemoval(1);
+		break;
+	case 22: // Safe removal USB #2
+		ez_action_usb_saferemoval(2);
+		break;
+#endif
 	}
 }
 
@@ -859,10 +839,16 @@ ez_event_long(int btn_id)
 {
 	int ez_action, ez_param = 2;
 
-#if defined (BOARD_GPIO_BTN_WLTOG)
-	if (btn_id == 1) {
-		ez_action = nvram_get_int("wlt_action_long");
+#if defined (BOARD_GPIO_BTN_FN1)
+	if (btn_id == 2) {
+		ez_action = nvram_get_int("fn1_action_long");
 		ez_param = 4;
+	} else
+#endif
+#if defined (BOARD_GPIO_BTN_FN2)
+	if (btn_id == 3) {
+		ez_action = nvram_get_int("fn2_action_long");
+		ez_param = 6;
 	} else
 #endif
 		ez_action = nvram_get_int("ez_action_long");
@@ -898,7 +884,7 @@ ez_event_long(int btn_id)
 		ez_action_change_wifi5();
 		break;
 	case 4: // Safe removal all USB
-		ez_action_usb_saferemoval();
+		ez_action_usb_saferemoval(0);
 		break;
 	case 5: // WAN down
 		ez_action_wan_down();
@@ -936,6 +922,14 @@ ez_event_long(int btn_id)
 		erase_storage();
 		sys_exit();
 		break;
+#if (BOARD_NUM_USB_PORTS > 1)
+	case 21: // Safe removal USB #1
+		ez_action_usb_saferemoval(1);
+		break;
+	case 22: // Safe removal USB #2
+		ez_action_usb_saferemoval(2);
+		break;
+#endif
 	}
 }
 #endif
@@ -1051,10 +1045,13 @@ watchdog_on_timer(void)
 		i_ret |= btn_check_reset();
 #endif
 #if defined (BOARD_GPIO_BTN_WPS)
-		i_ret |= btn_check_wps();
+		i_ret |= btn_check_ez(BOARD_GPIO_BTN_WPS, 0, &btn_count_wps);
 #endif
-#if defined (BOARD_GPIO_BTN_WLTOG)
-		i_ret |= btn_check_wlt();
+#if defined (BOARD_GPIO_BTN_FN1)
+		i_ret |= btn_check_ez(BOARD_GPIO_BTN_FN1, 2, &btn_count_fn1);
+#endif
+#if defined (BOARD_GPIO_BTN_FN2)
+		i_ret |= btn_check_ez(BOARD_GPIO_BTN_FN2, 3, &btn_count_fn2);
 #endif
 		if (i_ret) {
 			if (wd_itv.it_value.tv_usec != WD_URGENT_PERIOD)
@@ -1108,8 +1105,11 @@ catch_sig_watchdog(int sig)
 #if defined (BOARD_GPIO_BTN_WPS)
 		cpu_gpio_irq_set(BOARD_GPIO_BTN_WPS, 0, 0, 0);
 #endif
-#if defined (BOARD_GPIO_BTN_WLTOG)
-		cpu_gpio_irq_set(BOARD_GPIO_BTN_WLTOG, 0, 0, 0);
+#if defined (BOARD_GPIO_BTN_FN1)
+		cpu_gpio_irq_set(BOARD_GPIO_BTN_FN1, 0, 0, 0);
+#endif
+#if defined (BOARD_GPIO_BTN_FN2)
+		cpu_gpio_irq_set(BOARD_GPIO_BTN_FN2, 0, 0, 0);
 #endif
 #if defined (BOARD_GPIO_BTN_RESET)
 		cpu_gpio_irq_set(BOARD_GPIO_BTN_RESET, 0, 0, 0);
@@ -1193,8 +1193,11 @@ watchdog_main(int argc, char *argv[])
 #if defined (BOARD_GPIO_BTN_WPS)
 	cpu_gpio_irq_set(BOARD_GPIO_BTN_WPS, 0, 1, pid);
 #endif
-#if defined (BOARD_GPIO_BTN_WLTOG)
-	cpu_gpio_irq_set(BOARD_GPIO_BTN_WLTOG, 0, 1, pid);
+#if defined (BOARD_GPIO_BTN_FN1)
+	cpu_gpio_irq_set(BOARD_GPIO_BTN_FN1, 0, 1, pid);
+#endif
+#if defined (BOARD_GPIO_BTN_FN2)
+	cpu_gpio_irq_set(BOARD_GPIO_BTN_FN2, 0, 1, pid);
 #endif
 #if defined (BOARD_GPIO_BTN_RESET)
 	cpu_gpio_irq_set(BOARD_GPIO_BTN_RESET, 0, 1, pid);

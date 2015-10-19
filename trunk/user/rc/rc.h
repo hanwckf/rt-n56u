@@ -616,7 +616,7 @@ int get_apcli_connected(const char *ifname);
 int check_regspec_code(const char *spec);
 
 /* watchdog.c */
-#if defined (BOARD_GPIO_BTN_WPS) || defined (BOARD_GPIO_BTN_WLTOG)
+#if defined (BOARD_GPIO_BTN_WPS) || defined (BOARD_GPIO_BTN_FN1) || defined (BOARD_GPIO_BTN_FN2)
 void ez_event_short(int btn_id);
 void ez_event_long(int btn_id);
 #endif

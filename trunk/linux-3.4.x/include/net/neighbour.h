@@ -63,6 +63,7 @@ struct neigh_parms {
 	int	ucast_probes;
 	int	app_probes;
 	int	mcast_probes;
+	int	mcast_reprobes;
 	int	anycast_delay;
 	int	proxy_delay;
 	int	proxy_qlen;

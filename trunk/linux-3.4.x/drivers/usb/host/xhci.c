@@ -52,7 +52,7 @@ MODULE_PARM_DESC(usb3_disable, "Disable USB3 interface");
 
 /* TODO: copied from ehci-hcd.c - can this be refactored? */
 /*
- * handshake - spin reading hc until handshake completes or fails
+ * xhci_handshake - spin reading hc until handshake completes or fails
  * @ptr: address of hc register to be read
  * @mask: bits to look at in result of read
  * @done: value of those bits when handshake succeeds
@@ -64,7 +64,7 @@ MODULE_PARM_DESC(usb3_disable, "Disable USB3 interface");
  * handshake done).  There are two failure modes:  "usec" have passed (major
  * hardware flakeout), or the register reads as all-ones (hardware removed).
  */
-int handshake(struct xhci_hcd *xhci, void __iomem *ptr,
+int xhci_handshake(struct xhci_hcd *xhci, void __iomem *ptr,
 		      u32 mask, u32 done, int usec)
 {
 	u32	result;
@@ -115,7 +115,7 @@ int xhci_halt(struct xhci_hcd *xhci)
 	xhci_dbg(xhci, "// Halt the HC\n");
 	xhci_quiesce(xhci);
 
-	ret = handshake(xhci, &xhci->op_regs->status,
+	ret = xhci_handshake(xhci, &xhci->op_regs->status,
 			STS_HALT, STS_HALT, XHCI_MAX_HALT_USEC);
 	if (!ret) {
 		xhci->xhc_state |= XHCI_STATE_HALTED;
@@ -144,7 +144,7 @@ static int xhci_start(struct xhci_hcd *xhci)
 	 * Wait for the HCHalted Status bit to be 0 to indicate the host is
 	 * running.
 	 */
-	ret = handshake(xhci, &xhci->op_regs->status,
+	ret = xhci_handshake(xhci, &xhci->op_regs->status,
 			STS_HALT, 0, XHCI_MAX_HALT_USEC);
 	if (ret == -ETIMEDOUT)
 		xhci_err(xhci, "Host took too long to start, "
@@ -180,7 +180,7 @@ int xhci_reset(struct xhci_hcd *xhci)
 	command |= CMD_RESET;
 	xhci_writel(xhci, command, &xhci->op_regs->command);
 
-	ret = handshake(xhci, &xhci->op_regs->command,
+	ret = xhci_handshake(xhci, &xhci->op_regs->command,
 			CMD_RESET, 0, 10 * 1000 * 1000);
 	if (ret)
 		return ret;
@@ -190,7 +190,7 @@ int xhci_reset(struct xhci_hcd *xhci)
 	 * xHCI cannot write to any doorbells or operational registers other
 	 * than status until the "Controller Not Ready" flag is cleared.
 	 */
-	ret = handshake(xhci, &xhci->op_regs->status,
+	ret = xhci_handshake(xhci, &xhci->op_regs->status,
 			STS_CNR, 0, 10 * 1000 * 1000);
 
 	for (i = 0; i < 2; ++i) {
@@ -440,9 +440,9 @@ static void compliance_mode_recovery(unsigned long arg)
 			 * Compliance Mode Detected. Letting USB Core
 			 * handle the Warm Reset
 			 */
-			xhci_dbg(xhci, "Compliance Mode Detected->Port %d!\n",
+			xhci_dbg(xhci, "Compliance mode detected->port %d\n",
 					i + 1);
-			xhci_dbg(xhci, "Attempting Recovery routine!\n");
+			xhci_dbg(xhci, "Attempting compliance mode recovery\n");
 			hcd = xhci->shared_hcd;
 
 #if defined (CONFIG_MTK_XHCI)
@@ -485,7 +485,7 @@ static void compliance_mode_recovery_timer_init(struct xhci_hcd *xhci)
 	set_timer_slack(&xhci->comp_mode_recovery_timer,
 			msecs_to_jiffies(COMP_MODE_RCVRY_MSECS));
 	add_timer(&xhci->comp_mode_recovery_timer);
-	xhci_dbg(xhci, "Compliance Mode Recovery Timer Initialized.\n");
+	xhci_dbg(xhci, "Compliance mode recovery timer initialized\n");
 }
 
 /*
@@ -778,8 +778,11 @@ void xhci_stop(struct usb_hcd *hcd)
 
 	/* Deleting Compliance Mode Recovery Timer */
 	if ((xhci->quirks & XHCI_COMP_MODE_QUIRK) &&
-			(!(xhci_all_ports_seen_u0(xhci))))
+			(!(xhci_all_ports_seen_u0(xhci)))) {
 		del_timer_sync(&xhci->comp_mode_recovery_timer);
+		xhci_dbg(xhci, "%s: compliance mode recovery timer deleted\n",
+				__func__);
+	}
 
 	if (xhci->quirks & XHCI_AMD_PLL_FIX)
 		usb_amd_dev_put();
@@ -991,7 +994,7 @@ int xhci_suspend(struct xhci_hcd *xhci, bool do_wakeup)
 	/* Some chips from Fresco Logic need an extraordinary delay */
 	delay *= (xhci->quirks & XHCI_SLOW_SUSPEND) ? 10 : 1;
 
-	if (handshake(xhci, &xhci->op_regs->status,
+	if (xhci_handshake(xhci, &xhci->op_regs->status,
 		      STS_HALT, STS_HALT, delay)) {
 		xhci_warn(xhci, "WARN: xHC CMD_RUN timeout\n");
 		spin_unlock_irq(&xhci->lock);
@@ -1006,7 +1009,8 @@ int xhci_suspend(struct xhci_hcd *xhci, bool do_wakeup)
 	command = xhci_readl(xhci, &xhci->op_regs->command);
 	command |= CMD_CSS;
 	xhci_writel(xhci, command, &xhci->op_regs->command);
-	if (handshake(xhci, &xhci->op_regs->status, STS_SAVE, 0, 10 * 1000)) {
+	if (xhci_handshake(xhci, &xhci->op_regs->status,
+				STS_SAVE, 0, 10 * 1000)) {
 		xhci_warn(xhci, "WARN: xHC save state timeout\n");
 		spin_unlock_irq(&xhci->lock);
 		return -ETIMEDOUT;
@@ -1020,7 +1024,8 @@ int xhci_suspend(struct xhci_hcd *xhci, bool do_wakeup)
 	if ((xhci->quirks & XHCI_COMP_MODE_QUIRK) &&
 			(!(xhci_all_ports_seen_u0(xhci)))) {
 		del_timer_sync(&xhci->comp_mode_recovery_timer);
-		xhci_dbg(xhci, "Compliance Mode Recovery Timer Deleted!\n");
+		xhci_dbg(xhci, "%s: compliance mode recovery timer deleted\n",
+				__func__);
 	}
 
 	/* step 5: remove core well power */
@@ -1069,7 +1074,7 @@ int xhci_resume(struct xhci_hcd *xhci, bool hibernated)
 		command = xhci_readl(xhci, &xhci->op_regs->command);
 		command |= CMD_CRS;
 		xhci_writel(xhci, command, &xhci->op_regs->command);
-		if (handshake(xhci, &xhci->op_regs->status,
+		if (xhci_handshake(xhci, &xhci->op_regs->status,
 			      STS_RESTORE, 0, 10 * 1000)) {
 			xhci_warn(xhci, "WARN: xHC restore state timeout\n");
 			spin_unlock_irq(&xhci->lock);
@@ -1146,7 +1151,7 @@ int xhci_resume(struct xhci_hcd *xhci, bool hibernated)
 	command = xhci_readl(xhci, &xhci->op_regs->command);
 	command |= CMD_RUN;
 	xhci_writel(xhci, command, &xhci->op_regs->command);
-	handshake(xhci, &xhci->op_regs->status, STS_HALT,
+	xhci_handshake(xhci, &xhci->op_regs->status, STS_HALT,
 		  0, 250 * 1000);
 
 	/* step 5: walk topology and initialize portsc,
@@ -1775,7 +1780,6 @@ int xhci_add_endpoint(struct usb_hcd *hcd, struct usb_device *udev,
 	struct xhci_hcd *xhci;
 	struct xhci_container_ctx *in_ctx, *out_ctx;
 	unsigned int ep_index;
-	struct xhci_ep_ctx *ep_ctx;
 	struct xhci_slot_ctx *slot_ctx;
 	struct xhci_input_control_ctx *ctrl_ctx;
 	u32 added_ctxs;
@@ -1821,7 +1825,6 @@ int xhci_add_endpoint(struct usb_hcd *hcd, struct usb_device *udev,
 	out_ctx = virt_dev->out_ctx;
 	ctrl_ctx = xhci_get_input_control_ctx(xhci, in_ctx);
 	ep_index = xhci_get_endpoint_index(&ep->desc);
-	ep_ctx = xhci_get_ep_ctx(xhci, out_ctx, ep_index);
 
 	/* If this endpoint is already in use, and the upper layers are trying
 	 * to add it again without dropping it, reject the addition.
@@ -2009,6 +2012,8 @@ static int xhci_evaluate_context_result(struct xhci_hcd *xhci,
 	case COMP_EBADSLT:
 		dev_warn(&udev->dev, "WARN: slot not enabled for"
 				"evaluate context command.\n");
+		ret = -EINVAL;
+		break;
 	case COMP_CTX_STATE:
 		dev_warn(&udev->dev, "WARN: invalid context state for "
 				"evaluate context command.\n");
@@ -2145,7 +2150,7 @@ static void xhci_finish_resource_reservation(struct xhci_hcd *xhci,
 				xhci->num_active_eps);
 }
 
-unsigned int xhci_get_block_size(struct usb_device *udev)
+static unsigned int xhci_get_block_size(struct usb_device *udev)
 {
 	switch (udev->speed) {
 	case USB_SPEED_LOW:
@@ -2163,7 +2168,8 @@ unsigned int xhci_get_block_size(struct usb_device *udev)
 	}
 }
 
-unsigned int xhci_get_largest_overhead(struct xhci_interval_bw *interval_bw)
+static unsigned int
+xhci_get_largest_overhead(struct xhci_interval_bw *interval_bw)
 {
 	if (interval_bw->overhead[LS_OVERHEAD_TYPE])
 		return LS_OVERHEAD;
@@ -3485,6 +3491,9 @@ int xhci_discover_or_reset_device(struct usb_hcd *hcd, struct usb_device *udev)
 			return -EINVAL;
 	}
 
+	if (virt_dev->tt_info)
+		old_active_eps = virt_dev->tt_info->active_eps;
+
 	if (virt_dev->udev != udev) {
 		/* If the virt_dev and the udev does not match, this virt_dev
 		 * may belong to another udev.
@@ -3941,6 +3950,28 @@ int xhci_address_device(struct usb_hcd *hcd, struct usb_device *udev)
 	return 0;
 }
 
+/*
+ * Transfer the port index into real index in the HW port status
+ * registers. Caculate offset between the port's PORTSC register
+ * and port status base. Divide the number of per port register
+ * to get the real index. The raw port number bases 1.
+ */
+int xhci_find_raw_port_number(struct usb_hcd *hcd, int port1)
+{
+	struct xhci_hcd *xhci = hcd_to_xhci(hcd);
+	__le32 __iomem *base_addr = &xhci->op_regs->port_status_base;
+	__le32 __iomem *addr;
+	int raw_port;
+
+	if (hcd->speed != HCD_USB3)
+		addr = xhci->usb2_ports[port1 - 1];
+	else
+		addr = xhci->usb3_ports[port1 - 1];
+
+	raw_port = (addr - base_addr)/NUM_PORT_REGS + 1;
+	return raw_port;
+}
+
 #ifdef CONFIG_USB_SUSPEND
 
 /* BESL to HIRD Encoding array for USB2 LPM */
@@ -4052,7 +4083,8 @@ static int xhci_usb2_software_lpm_test(struct usb_hcd *hcd,
 	spin_lock_irqsave(&xhci->lock, flags);
 
 	/* Check L1 Status */
-	ret = handshake(xhci, pm_addr, PORT_L1S_MASK, PORT_L1S_SUCCESS, 125);
+	ret = xhci_handshake(xhci, pm_addr,
+			PORT_L1S_MASK, PORT_L1S_SUCCESS, 125);
 	if (ret != -ETIMEDOUT) {
 		/* enter L1 successfully */
 		temp = xhci_readl(xhci, addr);
@@ -4430,7 +4462,6 @@ static int __init xhci_hcd_init(void)
 	BUILD_BUG_ON(sizeof(struct xhci_intr_reg) != 8*32/8);
 	/* xhci_run_regs has eight fields and embeds 128 xhci_intr_regs */
 	BUILD_BUG_ON(sizeof(struct xhci_run_regs) != (8+8*128)*32/8);
-	BUILD_BUG_ON(sizeof(struct xhci_doorbell_array) != 256*32/8);
 	return 0;
 unreg_pci:
 	xhci_unregister_pci();

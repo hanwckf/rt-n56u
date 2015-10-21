@@ -1086,6 +1086,8 @@ static int hub_configure(struct usb_hub *hub,
 	unsigned int pipe;
 	int maxp, ret;
 	char *message = "out of memory";
+	unsigned unit_load;
+	unsigned full_load;
 
 	hub->buffer = kmalloc(sizeof(*hub->buffer), GFP_KERNEL);
 	if (!hub->buffer) {
@@ -1133,6 +1135,13 @@ static int hub_configure(struct usb_hub *hub,
 	}
 
 	wHubCharacteristics = le16_to_cpu(hub->descriptor->wHubCharacteristics);
+	if (hub_is_superspeed(hdev)) {
+		unit_load = 150;
+		full_load = 900;
+	} else {
+		unit_load = 100;
+		full_load = 500;
+	}
 
 	/* FIXME for USB 3.0, skip for now */
 	if ((wHubCharacteristics & HUB_CHAR_COMPOUND) &&
@@ -1252,40 +1261,44 @@ static int hub_configure(struct usb_hub *hub,
 		goto fail;
 	}
 	le16_to_cpus(&hubstatus);
+	hcd = bus_to_hcd(hdev->bus);
 	if (hdev == hdev->bus->root_hub) {
-		if (hdev->bus_mA == 0 || hdev->bus_mA >= 500)
-			hub->mA_per_port = 500;
+		if (hcd->power_budget > 0)
+			hdev->bus_mA = hcd->power_budget;
+		else
+			hdev->bus_mA = full_load * hdev->maxchild;
+		if (hdev->bus_mA >= full_load)
+			hub->mA_per_port = full_load;
 		else {
 			hub->mA_per_port = hdev->bus_mA;
 			hub->limited_power = 1;
 		}
 	} else if ((hubstatus & (1 << USB_DEVICE_SELF_POWERED)) == 0) {
+		int remaining = hdev->bus_mA -
+			hub->descriptor->bHubContrCurrent;
+
 		dev_dbg(hub_dev, "hub controller current requirement: %dmA\n",
 			hub->descriptor->bHubContrCurrent);
 		hub->limited_power = 1;
-		if (hdev->maxchild > 0) {
-			int remaining = hdev->bus_mA -
-					hub->descriptor->bHubContrCurrent;
 
-			if (remaining < hdev->maxchild * 100)
-				dev_warn(hub_dev,
+		if (remaining < hdev->maxchild * unit_load)
+			dev_warn(hub_dev,
 					"insufficient power available "
 					"to use all downstream ports\n");
-			hub->mA_per_port = 100;		/* 7.2.1.1 */
-		}
+		hub->mA_per_port = unit_load;	/* 7.2.1 */
+
 	} else {	/* Self-powered external hub */
 		/* FIXME: What about battery-powered external hubs that
 		 * provide less current per port? */
-		hub->mA_per_port = 500;
+		hub->mA_per_port = full_load;
 	}
-	if (hub->mA_per_port < 500)
+	if (hub->mA_per_port < full_load)
 		dev_dbg(hub_dev, "%umA bus power budget for each child\n",
 				hub->mA_per_port);
 
 	/* Update the HCD's internal representation of this hub before khubd
 	 * starts getting port status changes for devices under the hub.
 	 */
-	hcd = bus_to_hcd(hdev->bus);
 	if (hcd->driver->update_hub_device) {
 		ret = hcd->driver->update_hub_device(hcd, hdev,
 				&hub->tt, GFP_KERNEL);
@@ -2585,9 +2598,7 @@ int usb_port_suspend(struct usb_device *udev, pm_message_t msg)
 
 	/* see 7.1.7.6 */
 	if (hub_is_superspeed(hub->hdev))
-		status = set_port_feature(hub->hdev,
-				port1 | (USB_SS_PORT_LS_U3 << 3),
-				USB_PORT_FEAT_LINK_STATE);
+		status = hub_set_port_link_state(hub, port1, USB_SS_PORT_LS_U3);
 	else
 		status = set_port_feature(hub->hdev, port1,
 						USB_PORT_FEAT_SUSPEND);
@@ -2775,9 +2786,7 @@ int usb_port_resume(struct usb_device *udev, pm_message_t msg)
 
 	/* see 7.1.7.7; affects power usage, but not budgeting */
 	if (hub_is_superspeed(hub->hdev))
-		status = set_port_feature(hub->hdev,
-				port1 | (USB_SS_PORT_LS_U0 << 3),
-				USB_PORT_FEAT_LINK_STATE);
+		status = hub_set_port_link_state(hub, port1, USB_SS_PORT_LS_U0);
 	else
 		status = clear_port_feature(hub->hdev,
 				port1, USB_PORT_FEAT_SUSPEND);
@@ -3398,16 +3407,23 @@ hub_power_remaining (struct usb_hub *hub)
 	for (port1 = 1; port1 <= hdev->maxchild; ++port1) {
 		struct usb_device	*udev = hdev->children[port1 - 1];
 		int			delta;
+		unsigned		unit_load;
 
 		if (!udev)
 			continue;
+		if (hub_is_superspeed(udev))
+			unit_load = 150;
+		else
+			unit_load = 100;
 
-		/* Unconfigured devices may not use more than 100mA,
-		 * or 8mA for OTG ports */
+		/*
+		 * Unconfigured devices may not use more than one unit load,
+		 * or 8mA for OTG ports
+		 */
 		if (udev->actconfig)
-			delta = udev->actconfig->desc.bMaxPower * 2;
+			delta = usb_get_max_power(udev, udev->actconfig);
 		else if (port1 != udev->bus->otg_port || hdev->parent)
-			delta = 100;
+			delta = unit_load;
 		else
 			delta = 8;
 		if (delta > hub->mA_per_port)
@@ -3442,6 +3458,7 @@ static void hub_port_connect_change(struct usb_hub *hub, int port1,
 			le16_to_cpu(hub->descriptor->wHubCharacteristics);
 	struct usb_device *udev;
 	int status, i;
+	unsigned unit_load;
 
 	dev_dbg (hub_dev,
 		"port %d, status %04x, change %04x, %s\n",
@@ -3527,6 +3544,10 @@ static void hub_port_connect_change(struct usb_hub *hub, int port1,
   			goto done;
 		return;
 	}
+	if (hub_is_superspeed(hub->hdev))
+		unit_load = 150;
+	else
+		unit_load = 100;
 
 	for (i = 0; i < SET_CONFIG_TRIES; i++) {
 
@@ -3574,7 +3595,7 @@ static void hub_port_connect_change(struct usb_hub *hub, int port1,
 		 * on the parent.
 		 */
 		if (udev->descriptor.bDeviceClass == USB_CLASS_HUB
-				&& udev->bus_mA <= 100) {
+				&& udev->bus_mA <= unit_load) {
 			u16	devstat;
 
 			status = usb_get_status(udev, USB_RECIP_DEVICE, 0,

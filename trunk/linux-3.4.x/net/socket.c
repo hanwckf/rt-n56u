@@ -2578,12 +2578,6 @@ static int __init sock_init(void)
 	int err;
 
 	/*
-	 *      Initialize sock SLAB cache.
-	 */
-
-	sk_init();
-
-	/*
 	 *      Initialize skbuff SLAB cache
 	 */
 	skb_init();

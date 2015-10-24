@@ -2149,8 +2149,6 @@ extern int net_msg_warn;
 extern __u32 sysctl_wmem_max;
 extern __u32 sysctl_rmem_max;
 
-extern void sk_init(void);
-
 extern int sysctl_optmem_max;
 
 extern __u32 sysctl_wmem_default;

@@ -278,6 +278,7 @@ if [ "$CONFIG_FIRMWARE_ENABLE_USB" != "y" ] || [ -z "$CONFIG_USB_SUPPORT" ] ; th
 	func_disable_kernel_param "CONFIG_HID_SUPPORT"
 	func_disable_kernel_param "CONFIG_MEDIA_SUPPORT"
 	func_disable_kernel_param "CONFIG_CRC16"
+	func_disable_kernel_param "CONFIG_NETFILTER_FP_SMB"
 	func_disable_kernel_param "CONFIG_RT3XXX_EHCI_OHCI"
 	func_disable_busybox_param "CONFIG_FDISK"
 	func_disable_busybox_param "CONFIG_FEATURE_FDISK_WRITABLE"
@@ -399,6 +400,9 @@ fi
 if [ "$CONFIG_FIRMWARE_INCLUDE_CIFS" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_CIFS"
 	func_disable_busybox_param "CONFIG_FEATURE_MOUNT_CIFS"
+fi
+if [ "$CONFIG_FIRMWARE_INCLUDE_SMBD" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_NETFILTER_FP_SMB"
 fi
 if [ "$CONFIG_FIRMWARE_INCLUDE_NFSD" != "y" -a "$CONFIG_FIRMWARE_INCLUDE_NFSC" != "y" -a "$CONFIG_FIRMWARE_INCLUDE_CIFS" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_NETWORK_FILESYSTEMS"

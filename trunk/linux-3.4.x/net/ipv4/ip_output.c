@@ -85,6 +85,10 @@
 #include "../../net/nat/hw_nat/frame_engine.h"
 #endif
 
+#if defined(CONFIG_NETFILTER_FP_SMB)
+#include <net/netfilter/nf_fp_smb.h>
+#endif
+
 int sysctl_ip_default_ttl __read_mostly = IPDEFTTL;
 EXPORT_SYMBOL(sysctl_ip_default_ttl);
 
@@ -95,8 +99,15 @@ int __ip_local_out(struct sk_buff *skb)
 #if IS_ENABLED(CONFIG_RA_HW_NAT)
 	FOE_AI_UNHIT(skb);
 #endif
+
 	iph->tot_len = htons(skb->len);
 	ip_send_check(iph);
+
+#if defined(CONFIG_NETFILTER_FP_SMB)
+	if ((skb->nf_fp_cache & NF_FP_CACHE_SMB) || nf_fp_smb_hook_out(skb))
+		return dst_output(skb);
+#endif
+
 	return nf_hook(NFPROTO_IPV4, NF_INET_LOCAL_OUT, skb, NULL,
 		       skb_dst(skb)->dev, dst_output);
 }
@@ -312,6 +323,11 @@ int ip_output(struct sk_buff *skb)
 
 	skb->dev = dev;
 	skb->protocol = htons(ETH_P_IP);
+
+#if defined(CONFIG_NETFILTER_FP_SMB)
+	if ((skb->nf_fp_cache & NF_FP_CACHE_SMB) || nf_fp_smb_hook_out(skb))
+		return ip_finish_output(skb);
+#endif
 
 	return NF_HOOK_COND(NFPROTO_IPV4, NF_INET_POST_ROUTING, skb, NULL, dev,
 			    ip_finish_output,

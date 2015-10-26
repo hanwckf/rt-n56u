@@ -25,6 +25,10 @@
 
 #include "nf_internals.h"
 
+#if defined(CONFIG_NETFILTER_FP_SMB)
+#include <net/netfilter/nf_fp_smb.h>
+#endif
+
 static DEFINE_MUTEX(afinfo_mutex);
 
 const struct nf_afinfo __rcu *nf_afinfo[NFPROTO_NUMPROTO] __read_mostly;
@@ -297,6 +301,10 @@ void __init netfilter_init(void)
 		panic("cannot initialize nf_queue");
 	if (netfilter_log_init() < 0)
 		panic("cannot initialize nf_log");
+
+#if defined(CONFIG_NETFILTER_FP_SMB)
+	netfilter_fp_smb_init();
+#endif
 }
 
 #ifdef CONFIG_SYSCTL

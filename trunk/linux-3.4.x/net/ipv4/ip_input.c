@@ -150,6 +150,10 @@
 #include "../nat/hw_nat/ra_nat.h"
 #endif
 
+#if defined(CONFIG_NETFILTER_FP_SMB)
+#include <net/netfilter/nf_fp_smb.h>
+#endif
+
 /*
  *	Process Router Attention IP option (RFC 2113)
  */
@@ -284,6 +288,12 @@ int ip_local_deliver(struct sk_buff *skb)
 #endif
 	FOE_ALG_MARK(skb);
 #endif
+
+#if defined(CONFIG_NETFILTER_FP_SMB)
+	if ((skb->nf_fp_cache & NF_FP_CACHE_SMB) || nf_fp_smb_hook_in(skb))
+		return ip_local_deliver_finish(skb);
+#endif
+
 	return NF_HOOK(NFPROTO_IPV4, NF_INET_LOCAL_IN, skb, skb->dev, NULL,
 		       ip_local_deliver_finish);
 }
@@ -456,6 +466,11 @@ int ip_rcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, 
 
 	/* Must drop socket now because of tproxy. */
 	skb_orphan(skb);
+
+#if defined(CONFIG_NETFILTER_FP_SMB)
+	if ((skb->nf_fp_cache & NF_FP_CACHE_SMB) || nf_fp_smb_hook_in(skb))
+		return ip_rcv_finish(skb);
+#endif
 
 	return NF_HOOK(NFPROTO_IPV4, NF_INET_PRE_ROUTING, skb, dev, NULL,
 		       ip_rcv_finish);

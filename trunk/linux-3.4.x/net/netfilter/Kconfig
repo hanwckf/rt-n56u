@@ -24,6 +24,10 @@ config NETFILTER_RALINK_SWQOS_SUPPORT
 	 To support Ralink SW QoS, please enable it.
 	 If unsure, say N.
 
+config NETFILTER_FP_SMB
+	bool "Netfilter fastpath to speedup SMB traffic (skip NF handlers)"
+	default n
+
 config NETFILTER_NETLINK
 	tristate "Netfilter NFNETLINK interface"
 

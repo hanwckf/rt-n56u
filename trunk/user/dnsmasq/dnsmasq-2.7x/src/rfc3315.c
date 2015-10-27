@@ -1324,8 +1324,7 @@ static struct dhcp_netid *add_options(struct state *state, int do_refresh)
       if (opt_cfg->opt == OPTION6_DNS_SERVER)
 	done_dns = 1;
       
-      /* Empty DNS_SERVER option will not set DHOPT_ADDR6 */
-      if ((opt_cfg->flags & DHOPT_ADDR6) || opt_cfg->opt == OPTION6_DNS_SERVER)
+      if (opt_cfg->flags & DHOPT_ADDR6)
 	{
 	  int len, j;
 	  struct in6_addr *a;

@@ -35,14 +35,6 @@
 #define SL_SSDP_MCAST_ADDR "FF05::C"
 #define GL_SSDP_MCAST_ADDR "FF0E::C"
 
-/* maximum lenght of SSDP packets we are generating
- * (reception is done in a 1500byte buffer) */
-#ifdef ENABLE_HTTPS
-#define SSDP_PACKET_MAX_LEN 768
-#else
-#define SSDP_PACKET_MAX_LEN 512
-#endif
-
 /* AddMulticastMembership()
  * param s			socket
  * param lan_addr	lan address

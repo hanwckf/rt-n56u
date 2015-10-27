@@ -743,6 +743,7 @@ INT set_dynamic_lna_trigger_timer_proc(
 	IN RTMP_ADAPTER		*pAd, 
 	IN PSTRING			arg);
 
+INT set_agc_vga_clamp_proc(RTMP_ADAPTER *pAd, PSTRING arg);
 INT set_false_cca_hi_th(RTMP_ADAPTER *pAd, PSTRING arg);
 INT set_false_cca_low_th(RTMP_ADAPTER *pAd, PSTRING arg);
 #endif /* DYNAMIC_VGA_SUPPORT */
@@ -1442,6 +1443,7 @@ static struct {
 
 #ifdef DYNAMIC_VGA_SUPPORT
 	{"DyncVgaEnable", Set_AP_DyncVgaEnable_Proc},
+	{"VgaClamp", set_agc_vga_clamp_proc},
 	{"lna_timer", set_dynamic_lna_trigger_timer_proc},
 	{"fc_hth", set_false_cca_hi_th},
 	{"fc_lth", set_false_cca_low_th},
@@ -14813,6 +14815,42 @@ INT set_dynamic_lna_trigger_timer_proc(
 	DBGPRINT(RT_DEBUG_OFF, ("%s::(lna trigger timer = %d)\n", 
 		__FUNCTION__, pAd->chipCap.dynamic_lna_trigger_timer));
 	
+	return TRUE;
+}
+
+INT set_agc_vga_clamp_proc(RTMP_ADAPTER *pAd, PSTRING arg)
+{
+	INT32 val = simple_strtol(arg, 0, 10);
+
+	if (pAd->CommonCfg.Channel > 14)
+		return FALSE;
+
+#ifdef MT76x2
+	if (IS_MT76x2(pAd)) {
+		UCHAR agc_vga_ori = 0x48;	// default value for most fw
+		
+		switch (val)
+		{
+		case 1:
+			agc_vga_ori = 0x3e;
+			break;
+		case 2:
+			agc_vga_ori = 0x34;
+			break;
+		case 3:
+			agc_vga_ori = 0x2a;
+			break;
+		case 4:
+			agc_vga_ori = 0x20;
+			break;
+		}
+		pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_0 = agc_vga_ori;
+		pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_1 = agc_vga_ori;
+		pAd->chipCap.dynamic_chE_mode = 0xEE;	// force update VGA
+		RTMP_ASIC_DYNAMIC_VGA_GAIN_CONTROL(pAd);
+	}
+#endif /* MT76x2 */
+
 	return TRUE;
 }
 

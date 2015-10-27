@@ -800,10 +800,6 @@ init_options (struct options *o, const bool init_gc)
 #ifdef ENABLE_FEATURE_TUN_PERSIST
   o->persist_mode = 1;
 #endif
-#ifndef WIN32
-  o->rcvbuf = 65536;
-  o->sndbuf = 65536;
-#endif
 #ifdef TARGET_LINUX
   o->tuntap_options.txqueuelen = 100;
 #endif
@@ -2616,7 +2612,7 @@ check_file_access(const int type, const char *file, const int mode, const char *
   /* Is the directory path leading to the given file accessible? */
   if (type & CHKACC_DIRPATH)
     {
-      char *fullpath = strdup(file);  /* POSIX dirname() implementaion may modify its arguments */
+      char *fullpath = string_alloc (file, NULL);  /* POSIX dirname() implementaion may modify its arguments */
       char *dirpath = dirname(fullpath);
 
       if (platform_access (dirpath, mode|X_OK) != 0)
@@ -3761,7 +3757,10 @@ read_inline_file (struct in_src *is, const char *close_tag, struct gc_arena *gc)
 
   while (in_src_get (is, line, sizeof (line)))
     {
-      if (!strncmp (line, close_tag, strlen (close_tag)))
+      char *line_ptr = line;
+      /* Remove leading spaces */
+      while (isspace(*line_ptr)) line_ptr++;
+      if (!strncmp (line_ptr, close_tag, strlen (close_tag)))
 	{
 	  endtagfound = true;
 	  break;

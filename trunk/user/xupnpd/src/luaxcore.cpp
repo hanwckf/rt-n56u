@@ -1721,7 +1721,7 @@ static int lua_http_sendurl(lua_State* L)
                     {
                         *p2=0;
                         status=atoi(p);
-                    }  
+                    }
                 }
             }
         }else
@@ -1768,7 +1768,7 @@ static int lua_http_sendurl(lua_State* L)
         return 2;
     }else
         rc=1;
-    
+
     size_t n;
 
     if(extra_headers>0)
@@ -1801,7 +1801,7 @@ static int lua_http_sendurl(lua_State* L)
 
     if(tmp)
         free(tmp);
-    
+
     return 1;
 }
 
@@ -1915,7 +1915,7 @@ static int lua_http_notify(lua_State* L)
 
     fprintf(fp,
         "NOTIFY %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: %s\r\nConnection: close\r\nContent-Type: text/xml\r\nContent-Length: %i\r\n"
-        "NT: upnp:event\r\nNTS: upnp:propchange\r\nSID: uuid:%s\r\nSEQ: %i\r\nCache-Control: no-cache\r\n\r\n",url.urn,url.vhost,core::user_agent,len,sid,seq);
+        "NT: upnp:event\r\nNTS: upnp:propchange\r\nSID: uuid:%s\r\nSEQ: %i\r\nCache-Control: no-cache\r\n\r\n",url.urn,url.vhost,core::user_agent,(int)len,sid,seq);
     fwrite(data,len,1,fp);
     fflush(fp);
 
@@ -1974,7 +1974,7 @@ static int lua_http_download(lua_State* L)
                         url.urn,url.vhost,core::user_agent);
 
                 if(*post_data)
-                    fprintf(fp,"Content-Length: %d\r\n",post_data_size);
+                    fprintf(fp,"Content-Length: %d\r\n",(int)post_data_size);
 
 //                fprintf(fp,"Accept-Charset: utf-8\r\n");
 

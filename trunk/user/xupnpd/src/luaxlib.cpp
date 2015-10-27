@@ -63,7 +63,7 @@ namespace util
 
         for(int i=0;i<n;i++)
             dst[i]=t[p[i]];
-        
+
         dst[n]=0;
 
         return n;
@@ -113,7 +113,7 @@ namespace util
                 s+=2;
             }else if((unsigned char*)s!=d)
                 *d=*s;
-            
+
             s++;
             d++;
         }
@@ -123,7 +123,6 @@ namespace util
     }
 }
 
-                    
 
 static void lua_push_soap_node(lua_State* L,soap::node* node)
 {
@@ -589,7 +588,7 @@ static int lua_m3u_parse(lua_State* L)
                     while(*p && *p==' ')
                         p++;
                     lua_m3u_parse_track_ext(L,p,-5);
-                }                
+                }
             }else
             {
                 int n=snprintf(track_url,sizeof(track_url),"%s",p);
@@ -1410,6 +1409,15 @@ static int lua_util_win1251toUTF8(lua_State* L)
     return 1;
 }
 
+static int lua_util_sleep(lua_State* L)
+{
+    double n=luaL_checknumber(L,1);
+
+    sleep((int)n);
+
+    return 0;
+}
+
 int luaopen_luaxlib(lua_State* L)
 {
     static const luaL_Reg lib_soap[]=
@@ -1453,6 +1461,7 @@ int luaopen_luaxlib(lua_State* L)
         {"unlink",lua_util_unlink},
         {"win1251toUTF8",lua_util_win1251toUTF8},
         {"parse_postdata",lua_util_parse_post_data},
+        {"sleep",lua_util_sleep},
         {0,0}
     };
 

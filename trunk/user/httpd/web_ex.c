@@ -2059,7 +2059,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #elif (BOARD_RAM_SIZE < 256)
 	int max_conn = 262144;
 #else
-	int max_conn = 524288;
+	int max_conn = 327680;
 #endif
 #if defined (USE_NAND_FLASH)
 	int has_mtd_rwfs = 1;

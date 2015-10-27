@@ -11,10 +11,6 @@ cat > "$script_start" <<EOF
 ########################################################
 ### tune linux kernel
 ########################################################
-# core
-echo 524288   > /proc/sys/net/core/rmem_max
-echo 524288   > /proc/sys/net/core/wmem_max
-
 # backlog for UNIX sockets
 echo 64       > /proc/sys/net/unix/max_dgram_qlen
 

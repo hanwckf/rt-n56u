@@ -45,7 +45,7 @@ function initial(){
 
 	var o = document.form.nf_max_conn;
 	var maxc = support_max_conn();
-	if (maxc < 524288)
+	if (maxc < 327680)
 		o.remove(6);
 	if (maxc < 262144)
 		o.remove(5);
@@ -182,7 +182,7 @@ function done_validating(action){
                                                     <option value="65536" <% nvram_match_x("","nf_max_conn", "65536","selected"); %>>65536</option>
                                                     <option value="131072" <% nvram_match_x("","nf_max_conn", "131072", "selected"); %>>131072 (Slow)</option>
                                                     <option value="262144" <% nvram_match_x("","nf_max_conn", "262144", "selected"); %>>262144 (Slow)</option>
-                                                    <option value="524288" <% nvram_match_x("","nf_max_conn", "524288", "selected"); %>>524288 (Slow)</option>
+                                                    <option value="327680" <% nvram_match_x("","nf_max_conn", "327680", "selected"); %>>327680 (Slow)</option>
                                                 </select>
                                                 &nbsp;&nbsp;<span class="label label-info" style="padding: 6px 7px 8px 7px;" id="nf_count"></span>
                                             </td>

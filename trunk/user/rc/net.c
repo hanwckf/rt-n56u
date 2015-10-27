@@ -749,7 +749,7 @@ set_nf_conntrack(void)
 #elif (BOARD_RAM_SIZE < 256)
 	int i_nf_lim = 262144;
 #else
-	int i_nf_lim = 524288;
+	int i_nf_lim = 327680;
 #endif
 
 	i_nf_val = nvram_get_int("nf_nat_type");

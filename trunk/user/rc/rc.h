@@ -423,6 +423,7 @@ char* get_apcli_wisp_ifname(void);
 #if defined(USE_RT3352_MII)
 void check_inic_mii_rebooted(void);
 #endif
+void update_vga_clamp_rt(int first_call);
 void start_wifi_ap_wl(int radio_on);
 void start_wifi_ap_rt(int radio_on);
 void start_wifi_wds_wl(int radio_on);

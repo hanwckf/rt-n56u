@@ -268,6 +268,9 @@ init_bridge(int is_ap_mode)
 		doSystem("ifconfig %s %s", IFNAME_2G_MAIN, "down");
 		gen_ralink_config_2g(0);
 	}
+
+	if (rt_radio_on)
+		update_vga_clamp_rt(1);
 #endif
 
 	restart_guest_lan_isolation();

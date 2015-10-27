@@ -18,6 +18,8 @@
 #ifndef _rtutils_h_
 #define _rtutils_h_
 
+extern const char* find_wlan_if_up(int is_aband);
+
 extern int calc_phy_mode(int i_val, int is_aband);
 extern int calc_fixed_tx_mode(int i_val, int is_aband, int i_phy_mode, int *p_mcs);
 extern int calc_mcast_tx_mode(int i_val, int is_aband, int *p_mmcs);

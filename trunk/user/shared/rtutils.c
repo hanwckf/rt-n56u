@@ -35,7 +35,34 @@
 #include <ralink_priv.h>
 
 #include "nvram_linux.h"
+#include "netutils.h"
 #include "rtutils.h"
+
+static const char *wifn_list[][4] = {
+	{IFNAME_2G_MAIN, IFNAME_2G_GUEST, IFNAME_2G_APCLI, IFNAME_2G_WDS0},
+#if BOARD_HAS_5G_RADIO
+	{IFNAME_5G_MAIN, IFNAME_5G_GUEST, IFNAME_5G_APCLI, IFNAME_5G_WDS0}
+#endif
+};
+
+const char *
+find_wlan_if_up(int is_aband)
+{
+	int i, idx = 0;
+
+#if BOARD_HAS_5G_RADIO
+	if (is_aband)
+		idx = 1;
+#endif
+
+	for (i = 0; i < 4; i++) {
+		const char *wifn = wifn_list[idx][i];
+		if (is_interface_up(wifn))
+			return wifn;
+	}
+
+	return NULL;
+}
 
 #if BOARD_HAS_5G_11AC
 static int

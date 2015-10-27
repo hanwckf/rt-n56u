@@ -781,6 +781,9 @@
 			{"rt_HT_MpduDensity", "", NULL, EVM_RESTART_WIFI2 },
 			{"rt_HT_BAWinSize", "", NULL, EVM_RESTART_WIFI2 },
 			{"rt_HT_AutoBA", "", NULL, EVM_RESTART_WIFI2},
+#if (BOARD_NUM_UPHY_USB3 > 0)
+			{"rt_VgaClamp", "", NULL, EVM_RESTART_WIFI2},
+#endif
 			{"rt_country_code", "", NULL, EVM_RESTART_WIFI2},
 			{"rt_stream_tx", "", NULL, EVM_RESTART_WIFI2},
 			{"rt_stream_rx", "", NULL, EVM_RESTART_WIFI2},

@@ -31,6 +31,7 @@ $j(document).ready(function() {
 
 </script>
 <script>
+var usb3_disable = '<% nvram_get_x("", "usb3_disable"); %>';
 
 function initial(){
 	show_banner(1);
@@ -43,6 +44,9 @@ function initial(){
 		document.form.goto5.style.display = "none";
 		$("col_goto5").width = "33%";
 	}
+
+	if (support_usb3() && !support_2g_inic_mii() && usb3_disable != '1')
+		showhide_div("row_vga_clamp", 1);
 
 	if (support_2g_ldpc())
 		showhide_div("row_ldpc", 1);
@@ -171,6 +175,18 @@ function done_validating(action){
                                                 <select name="rt_stream_rx" class="input">
                                                     <option value="1" <% nvram_match_x("", "rt_stream_rx", "1", "selected"); %>>1R (150Mbps)</option>
                                                     <option value="2" <% nvram_match_x("", "rt_stream_rx", "2", "selected"); %>>2R (300Mbps)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_vga_clamp" style="display:none">
+                                            <th><#WIFIVgaClamp#></th>
+                                            <td>
+                                                <select name="rt_VgaClamp" class="input">
+                                                    <option value="0" <% nvram_match_x("","rt_VgaClamp", "0","selected"); %>><#checkbox_No#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("","rt_VgaClamp", "1","selected"); %>>-4 dB</option>
+                                                    <option value="2" <% nvram_match_x("","rt_VgaClamp", "2","selected"); %>>-8 dB</option>
+                                                    <option value="3" <% nvram_match_x("","rt_VgaClamp", "3","selected"); %>>-12 dB</option>
+                                                    <option value="4" <% nvram_match_x("","rt_VgaClamp", "4","selected"); %>>-16 dB</option>
                                                 </select>
                                             </td>
                                         </tr>

@@ -312,6 +312,7 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_HT_MpduDensity", "5" },
 	{ "rt_HT_BAWinSize", "64" },
 	{ "rt_HT_AutoBA", "1" },
+	{ "rt_VgaClamp", "0" },
 
 	// guest AP 2.4Ghz
 	{ "rt_guest_enable", "0" },

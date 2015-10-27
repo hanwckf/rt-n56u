@@ -59,12 +59,15 @@ mlme_radio_wl(int is_on)
 {
 #if BOARD_HAS_5G_RADIO
 	int i_val;
-	const char *ifname_ap = IFNAME_5G_MAIN;
+	const char *wifname = find_wlan_if_up(1);
 
-	doSystem("iwpriv %s set %s=%d", ifname_ap, "RadioOn", (is_on) ? 1 : 0);
+	if (!wifname)
+		return;
+
+	doSystem("iwpriv %s set %s=%d", wifname, "RadioOn", (is_on) ? 1 : 0);
 	if (is_on) {
 		i_val = nvram_wlan_get_int(1, "TxPower");
-		doSystem("iwpriv %s set %s=%d", ifname_ap, "TxPower", i_val);
+		doSystem("iwpriv %s set %s=%d", wifname, "TxPower", i_val);
 	}
 
 #endif
@@ -79,12 +82,15 @@ void
 mlme_radio_rt(int is_on)
 {
 	int i_val;
-	const char *ifname_ap = IFNAME_2G_MAIN;
+	const char *wifname = find_wlan_if_up(0);
 
-	doSystem("iwpriv %s set %s=%d", ifname_ap, "RadioOn", (is_on) ? 1 : 0);
+	if (!wifname)
+		return;
+
+	doSystem("iwpriv %s set %s=%d", wifname, "RadioOn", (is_on) ? 1 : 0);
 	if (is_on) {
 		i_val = nvram_wlan_get_int(0, "TxPower");
-		doSystem("iwpriv %s set %s=%d", ifname_ap, "TxPower", i_val);
+		doSystem("iwpriv %s set %s=%d", wifname, "TxPower", i_val);
 	}
 
 	mlme_state_rt(is_on);
@@ -313,6 +319,30 @@ check_inic_mii_rebooted(void)
 	}
 }
 #endif
+
+void
+update_vga_clamp_rt(int first_call)
+{
+#if (BOARD_NUM_UPHY_USB3 > 0)
+#if !defined(USE_RT3352_MII)
+	int i_val;
+	const char *wifname;
+
+	if (nvram_get_int("usb3_disable"))
+		return;
+
+	wifname = find_wlan_if_up(0);
+	if (!wifname)
+		return;
+
+	i_val = nvram_wlan_get_int(0, "VgaClamp");
+	if (i_val == 0 && first_call)
+		return;
+
+	doSystem("iwpriv %s set %s=%d", wifname, "VgaClamp", i_val);
+#endif
+#endif
+}
 
 void 
 stop_wifi_all_wl(void)
@@ -675,6 +705,9 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 	restart_guest_lan_isolation();
 
 	check_apcli_wan(0, radio_on);
+
+	if (radio_on)
+		update_vga_clamp_rt(0);
 
 #if defined (BOARD_GPIO_LED_SW2G)
 	if (radio_on)

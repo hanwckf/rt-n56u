@@ -769,28 +769,6 @@ svc_pop_list(char *value, char key)
 #define WIFI_GUEST_CONTROL_BIT	(1<<3)
 #define WIFI_SCHED_CONTROL_BIT	(1<<4)
 
-static const char* wifn_list[][3] = {
-	{IFNAME_2G_MAIN, IFNAME_2G_APCLI, IFNAME_2G_WDS0},
-#if BOARD_HAS_5G_RADIO
-	{IFNAME_5G_MAIN, IFNAME_5G_APCLI, IFNAME_5G_WDS0}
-#endif
-};
-
-static char*
-get_wifi_ifname(int is_5g)
-{
-	int i;
-
-	is_5g &= 1;
-	for (i = 0; i < ARRAY_SIZE(wifn_list[is_5g]); i++) {
-		char *wifn = (char *)wifn_list[is_5g][i];
-		if (is_interface_up(wifn))
-			return wifn;
-	}
-
-	return NULL;
-}
-
 static void
 set_wifi_param_int(const char* ifname, char* param, char* value, int val_min, int val_max)
 {
@@ -980,7 +958,7 @@ validate_asp_apply(webs_t wp, int sid)
 			
 			if (!strcmp(v->name, "wl_TxPower"))
 			{
-				char *wifn = get_wifi_ifname(1);
+				const char *wifn = find_wlan_if_up(1);
 				if (wifn)
 					set_wifi_param_int(wifn, "TxPower", value, 0, 100);
 				
@@ -1043,7 +1021,7 @@ validate_asp_apply(webs_t wp, int sid)
 			
 			if (!strcmp(v->name, "rt_TxPower"))
 			{
-				char *wifn = get_wifi_ifname(0);
+				const char *wifn = find_wlan_if_up(0);
 				if (wifn)
 					set_wifi_param_int(wifn, "TxPower", value, 0, 100);
 				
@@ -1055,6 +1033,16 @@ validate_asp_apply(webs_t wp, int sid)
 				
 				rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 			}
+#if (BOARD_NUM_UPHY_USB3 > 0)
+			else if (!strcmp(v->name, "rt_VgaClamp"))
+			{
+				const char *wifn = find_wlan_if_up(0);
+				if (wifn)
+					set_wifi_param_int(wifn, "VgaClamp", value, 0, 4);
+				
+				rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
+			}
+#endif
 #if defined(USE_RT3352_MII)
 			else if (!strcmp(v->name, "rt_IgmpSnEnable"))
 			{

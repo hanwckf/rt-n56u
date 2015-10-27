@@ -124,6 +124,7 @@ WIFIGreenAP=Увімкнути енергозбереження Green AP?
 WIFILDPC=Увімкнути підтримку LDPC кодування?
 WIFIRDG=Увімкнути Reverse Direction Grant (RDG)?
 WIFIAutoBA=Увімкнути Auto Block Acknowledgment (AutoBA)?
+WIFIVgaClamp=Ослаблення входу для захисту від впливу USB3:
 WIFIGuestEnable=Увімкнути гостьову точку доступу?
 WIFIGuestDate=Дні роботи гостьової точки (будні):
 WIFIGuestTime=Час роботи гостьової точки (будні):

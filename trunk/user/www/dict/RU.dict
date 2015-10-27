@@ -395,6 +395,7 @@ StorageRescanItem1=Добавить в базу новые файлы
 StorageRescanItem2=Перестроить всю базу заново
 StorageLMB=Выступать в роли Master Browser:
 StorageLog=Вывод событий в системный лог?
+StorageSMBFP=Быстрый путь SMB трафика в обход Netfilter:
 StorageSMBD=SMB-сервер (Сетевое окружение Windows)
 StorageFTPD=FTP-сервер
 StorageNFSD=NFS-сервер

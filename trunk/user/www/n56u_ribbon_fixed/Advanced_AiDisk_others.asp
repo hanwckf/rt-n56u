@@ -232,6 +232,7 @@ function change_smb_enabled(){
 	showhide_div('row_smb_wgrp', v);
 	showhide_div('row_smb_mode', v);
 	showhide_div('row_smb_lmb', v);
+	showhide_div('row_smb_fp', v);
 }
 
 function change_ftp_enabled(){
@@ -476,6 +477,17 @@ function done_validating(action){
                                                     <option value="0" <% nvram_match_x("", "st_samba_lmb", "0", "selected"); %>><#checkbox_No#></option>
                                                     <option value="1" <% nvram_match_x("", "st_samba_lmb", "1", "selected"); %>>Local Master Browser (*)</option>
                                                     <option value="2" <% nvram_match_x("", "st_samba_lmb", "2", "selected"); %>>Local & Domain Master Browser</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_smb_fp">
+                                            <th>
+                                                <#StorageSMBFP#>
+                                            </th>
+                                            <td>
+                                                <select name="st_samba_fp" class="input">
+                                                    <option value="0" <% nvram_match_x("", "st_samba_fp", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "st_samba_fp", "1", "selected"); %>>TCP ports 445, 139 (*)</option>
                                                 </select>
                                             </td>
                                         </tr>

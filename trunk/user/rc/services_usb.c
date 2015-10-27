@@ -606,6 +606,22 @@ clean_smbd_trash(void)
 }
 
 void
+config_smb_fastpath(int check_pid)
+{
+	in_addr_t lan_ip = 0;
+
+	if (nvram_match("st_samba_fp", "1")) {
+		if (!check_pid || pids("smbd")) {
+			lan_ip = get_lan_ip4();
+			if (lan_ip == INADDR_ANY)
+				lan_ip = 0;
+		}
+	}
+
+	fput_int("/proc/net/netfilter/nf_fp_smb", ntohl(lan_ip));
+}
+
+void
 stop_samba(int force_stop)
 {
 	char* svcs[] = { "smbd", "nmbd", NULL };
@@ -614,6 +630,8 @@ stop_samba(int force_stop)
 		svcs[1] = NULL;
 
 	kill_services(svcs, 5, 1);
+
+	fput_int("/proc/net/netfilter/nf_fp_smb", 0);
 
 	if (!svcs[1])
 		return;
@@ -649,6 +667,8 @@ void run_samba(void)
 		snprintf(cmd, sizeof(cmd), "smbpasswd %s %s", nvram_safe_get(tmpuser), nvram_safe_get(tmp2));
 		system(cmd);
 	}
+
+	config_smb_fastpath(0);
 
 	if (has_nmbd)
 		doSystem("killall %s %s", "-SIGHUP", "nmbd");

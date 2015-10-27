@@ -381,6 +381,7 @@ StorageRescanItem1=Append new media files
 StorageRescanItem2=Force rebuild database
 StorageLMB=Enable Master Browser:
 StorageLog=Enable Output Events to Syslog?
+StorageSMBFP=SMB Traffic Fastpath by skip Netfilter:
 StorageSMBD=SMB Server (Windows Network Neighborhood)
 StorageFTPD=FTP Server
 StorageNFSD=NFS Server

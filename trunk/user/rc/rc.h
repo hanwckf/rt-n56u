@@ -531,6 +531,7 @@ void start_p910nd(char *devlp);
 void stop_p910nd(void);
 #if defined(APP_SMBD)
 int write_smb_conf(void);
+void config_smb_fastpath(int check_pid);
 void stop_samba(int force_stop);
 void run_samba(void);
 void restart_smbd(void);

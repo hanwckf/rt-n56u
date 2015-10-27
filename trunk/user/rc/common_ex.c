@@ -24,6 +24,7 @@
 #include <sys/time.h>
 #include <sys/sysinfo.h>
 #include <sys/stat.h>
+#include <sys/mount.h>
 #include <syslog.h>
 #include <stdarg.h>
 #include <unistd.h>
@@ -385,6 +386,10 @@ restart_all_sysctl(void)
 		set_igmp_mld_version();
 		set_passthrough_pppoe(1);
 	}
+
+#if defined(APP_SMBD)
+	config_smb_fastpath(1);
+#endif
 }
 
 void

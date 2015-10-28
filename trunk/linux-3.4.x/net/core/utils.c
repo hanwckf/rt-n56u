@@ -339,6 +339,7 @@ void inet_proto_csum_replace16(__sum16 *sum, struct sk_buff *skb,
 }
 EXPORT_SYMBOL(inet_proto_csum_replace16);
 
+#if defined(CONFIG_JUMP_LABEL)
 struct __net_random_once_work {
 	struct work_struct work;
 	struct static_key *key;
@@ -365,6 +366,7 @@ static void __net_random_once_disable_jump(struct static_key *key)
 	w->key = key;
 	schedule_work(&w->work);
 }
+#endif
 
 bool __net_get_random_once(void *buf, int nbytes, bool *done,
 			   struct static_key *once_key)
@@ -382,7 +384,13 @@ bool __net_get_random_once(void *buf, int nbytes, bool *done,
 	*done = true;
 	spin_unlock_irqrestore(&lock, flags);
 
+#if defined(CONFIG_JUMP_LABEL)
+	/* used mutex, need workqueue */
 	__net_random_once_disable_jump(once_key);
+#else
+	/* used atomic_xxx */
+	static_key_slow_dec(once_key);
+#endif
 
 	return true;
 }

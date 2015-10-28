@@ -88,16 +88,13 @@ VOID dumpTxRing(RTMP_ADAPTER *pAd, INT ring_idx)
 
 VOID dumpRxRing(RTMP_ADAPTER *pAd, INT ring_idx)
 {
-	RTMP_DMABUF *pDescRing;
 	RTMP_RX_RING *pRxRing;
 	RXD_STRUC *pRxD;
 	int index;
+	int RxRingSize = (ring_idx == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
 
-
-	pDescRing = (RTMP_DMABUF *)pAd->RxDescRing[0].AllocVa;
-	
-	pRxRing = &pAd->RxRing[0];
-	for (index = 0; index < RX_RING_SIZE; index++)
+	pRxRing = &pAd->RxRing[ring_idx];
+	for (index = 0; index < RxRingSize; index++)
 	{
 		pRxD = (RXD_STRUC *)pRxRing->Cell[index].AllocVa;
 		hex_dump("Dump RxDesc", (UCHAR *)pRxD, sizeof(TXD_STRUC));
@@ -1364,6 +1361,7 @@ PNDIS_PACKET RxRingDeQueue(
 	RTMP_DMACB *pRxCell;
 	NDIS_SPIN_LOCK *pRxRingLock = NULL;
 	RTMP_RX_RING *pRxRing = NULL;
+	UINT16 RxRingSize = (RxRingNo == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
 
 	ASSERT((RxRingNo <= 1));
 	pRxRingLock = &pAd->RxRingLock[RxRingNo];
@@ -1397,7 +1395,7 @@ PNDIS_PACKET RxRingDeQueue(
 		if (pRxRing->RxDmaIdx > pRxRing->RxSwReadIdx)
 			*pRxPending = pRxRing->RxDmaIdx - pRxRing->RxSwReadIdx;
 		else
-			*pRxPending	= pRxRing->RxDmaIdx + RX_RING_SIZE - pRxRing->RxSwReadIdx;
+			*pRxPending = pRxRing->RxDmaIdx + RxRingSize - pRxRing->RxSwReadIdx;
 	}
 
 	pRxCell = &pRxRing->Cell[pRxRing->RxSwReadIdx];
@@ -1507,9 +1505,9 @@ PNDIS_PACKET RxRingDeQueue(
 	WriteBackToDescriptor((PUCHAR)pDestRxD, (PUCHAR)pRxD, FALSE, TYPE_RXD);
 #endif
 
-	INC_RING_INDEX(pRxRing->RxSwReadIdx, RX_RING_SIZE);
+	INC_RING_INDEX(pRxRing->RxSwReadIdx, RxRingSize);
 
-	pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RX_RING_SIZE-1) : (pRxRing->RxSwReadIdx-1);
+	pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RxRingSize-1) : (pRxRing->RxSwReadIdx-1);
 #ifdef RLT_MAC
 	if (RxRingNo == 1)
 	{
@@ -1568,8 +1566,8 @@ PNDIS_PACKET RxRingDeQueue(
 		RTMP_DCACHE_FLUSH(pRxCellLast->AllocPa, 32); /* use RXD_SIZE should be OK */
 
 		/* update SW read and CPU index */
-		INC_RING_INDEX(pRxRing->RxSwReadIdx, RX_RING_SIZE);
-		pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RX_RING_SIZE-1) : (pRxRing->RxSwReadIdx-1);
+		INC_RING_INDEX(pRxRing->RxSwReadIdx, RxRingSize);
+		pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RxRingSize-1) : (pRxRing->RxSwReadIdx-1);
 #ifdef RLT_MAC
 		if (RxRingNo == 1)
 		{
@@ -1588,7 +1586,7 @@ PNDIS_PACKET RxRingDeQueue(
 	{
 		/* 32B-align */
 		/* do not set DDONE bit and backup it */
-		if (pRxRing->RxSwReadIdx >= (RX_RING_SIZE-1))
+		if (pRxRing->RxSwReadIdx >= (RxRingSize-1))
 		{
 			DBGPRINT(RT_DEBUG_TRACE,
 					("Please change RX_RING_SIZE to mutiple of 2!\n"));
@@ -1597,8 +1595,8 @@ PNDIS_PACKET RxRingDeQueue(
 			RTMP_DCACHE_FLUSH(pRxCell->AllocPa, RXD_SIZE);
 
 			/* update SW read and CPU index */
-			INC_RING_INDEX(pRxRing->RxSwReadIdx, RX_RING_SIZE);
-			pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RX_RING_SIZE-1) : (pRxRing->RxSwReadIdx-1);
+			INC_RING_INDEX(pRxRing->RxSwReadIdx, RxRingSize);
+			pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RxRingSize-1) : (pRxRing->RxSwReadIdx-1);
 #ifdef RLT_MAC
 			if (RxRingNo == 1)
 			{
@@ -1620,7 +1618,7 @@ PNDIS_PACKET RxRingDeQueue(
 			pRxCell->LastBDInfo = *pRxD;
 
 			/* update CPU index */
-			INC_RING_INDEX(pRxRing->RxSwReadIdx, RX_RING_SIZE);
+			INC_RING_INDEX(pRxRing->RxSwReadIdx, RxRingSize);
 		}
 	}
 #endif /* CACHE_LINE_32B */
@@ -1655,6 +1653,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 	BOOLEAN bReschedule = FALSE;
 	RTMP_DMACB *pRxCell;
 	UINT8 RXWISize = pAd->chipCap.RXWISize;
+	UINT16 RxRingSize = (RxRingNo == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
 
 	pRxRing = &pAd->RxRing[RxRingNo];
 	pRxRingLock = &pAd->RxRingLock[RxRingNo];
@@ -1675,7 +1674,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 		if (pRxRing->RxDmaIdx > pRxRing->RxSwReadIdx)
 			*pRxPending = pRxRing->RxDmaIdx - pRxRing->RxSwReadIdx;
 		else
-			*pRxPending = pRxRing->RxDmaIdx + RX_RING_SIZE - pRxRing->RxSwReadIdx;
+			*pRxPending = pRxRing->RxDmaIdx + RxRingSize - pRxRing->RxSwReadIdx;
 	}
 
 	pRxCell = &pRxRing->Cell[pRxRing->RxSwReadIdx];
@@ -1842,9 +1841,9 @@ PNDIS_PACKET GetPacketFromRxRing(
 	WriteBackToDescriptor((PUCHAR)pDestRxD, (PUCHAR)pRxD, FALSE, TYPE_RXD);
 #endif
 
-	INC_RING_INDEX(pRxRing->RxSwReadIdx, RX_RING_SIZE);
+	INC_RING_INDEX(pRxRing->RxSwReadIdx, RxRingSize);
 
-	pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RX_RING_SIZE-1) : (pRxRing->RxSwReadIdx-1);
+	pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RxRingSize-1) : (pRxRing->RxSwReadIdx-1);
 	
 	RTMP_IO_WRITE32(pAd, pRxRing->hw_cidx_addr, pRxRing->RxCpuIdx);
 
@@ -1893,15 +1892,15 @@ PNDIS_PACKET GetPacketFromRxRing(
 		RTMP_DCACHE_FLUSH(pRxCellLast->AllocPa, 32); /* use RXD_SIZE should be OK */
 
 		/* update SW read and CPU index */
-		INC_RING_INDEX(pRxRing->RxSwReadIdx, RX_RING_SIZE);
-		pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RX_RING_SIZE-1) : (pRxRing->RxSwReadIdx-1);
+		INC_RING_INDEX(pRxRing->RxSwReadIdx, RxRingSize);
+		pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RxRingSize-1) : (pRxRing->RxSwReadIdx-1);
 		RTMP_IO_WRITE32(pAd, pRxRing->hw_cidx_addr, pRxRing->RxCpuIdx);
 	}
 	else
 	{
 		/* 32B-align */
 		/* do not set DDONE bit and backup it */
-		if (pRxRing->RxSwReadIdx >= (RX_RING_SIZE-1))
+		if (pRxRing->RxSwReadIdx >= (RxRingSize-1))
 		{
 			DBGPRINT(RT_DEBUG_TRACE,
 					("Please change RX_RING_SIZE to mutiple of 2!\n"));
@@ -1910,8 +1909,8 @@ PNDIS_PACKET GetPacketFromRxRing(
 			RTMP_DCACHE_FLUSH(pRxCell->AllocPa, RXD_SIZE);
 
 			/* update SW read and CPU index */
-			INC_RING_INDEX(pRxRing->RxSwReadIdx, RX_RING_SIZE);
-			pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RX_RING_SIZE-1) : (pRxRing->RxSwReadIdx-1);
+			INC_RING_INDEX(pRxRing->RxSwReadIdx, RxRingSize);
+			pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RxRingSize-1) : (pRxRing->RxSwReadIdx-1);
 			RTMP_IO_WRITE32(pAd, pRxRing->hw_cidx_addr, pRxRing->RxCpuIdx);
 		}
 		else
@@ -1921,7 +1920,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 			pRxCell->LastBDInfo = *pRxD;
 
 			/* update CPU index */
-			INC_RING_INDEX(pRxRing->RxSwReadIdx, RX_RING_SIZE);
+			INC_RING_INDEX(pRxRing->RxSwReadIdx, RxRingSize);
 		}
 	}
 #endif /* CACHE_LINE_32B */
@@ -2267,7 +2266,6 @@ BOOLEAN RxRing1DoneInterruptHandle(RTMP_ADAPTER *pAd)
 		}
 
 #ifdef RTMP_MAC_PCI
-		//if (RxProcessed++ > MAX_RX_PROCESS_CNT)
 		if (RxProcessed++ > 32)
 		{
 			bReschedule = TRUE;

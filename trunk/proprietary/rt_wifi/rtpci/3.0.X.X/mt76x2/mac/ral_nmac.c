@@ -260,19 +260,23 @@ VOID rlt_asic_init_txrx_ring(RTMP_ADAPTER *pAd)
 
 	/* Init RX Ring0 Base/Size/Index pointer CSR */
 	for (i = 0; i < NUM_OF_RX_RING; i++) {
+		RTMP_RX_RING *rx_ring;
+		UINT16 RxRingSize = (i == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+
+		rx_ring = &pAd->RxRing[i];
 		offset = i * 0x10;
-		phy_addr = RTMP_GetPhysicalAddressLow(pAd->RxRing[i].Cell[0].AllocPa);
-		pAd->RxRing[i].RxSwReadIdx = 0;
-		pAd->RxRing[i].RxCpuIdx = RX_RING_SIZE - 1;
-		pAd->RxRing[i].hw_desc_base = RX_RING_BASE + offset;
-		pAd->RxRing[i].hw_cidx_addr = RX_RING_CIDX + offset;
-		pAd->RxRing[i].hw_didx_addr = RX_RING_DIDX + offset;
-		pAd->RxRing[i].hw_cnt_addr = RX_RING_CNT + offset;
-		RTMP_IO_WRITE32(pAd, pAd->RxRing[i].hw_desc_base, phy_addr);
-		RTMP_IO_WRITE32(pAd, pAd->RxRing[i].hw_cidx_addr, pAd->RxRing[i].RxCpuIdx);
-		RTMP_IO_WRITE32(pAd, pAd->RxRing[i].hw_cnt_addr, RX_RING_SIZE);
+		phy_addr = RTMP_GetPhysicalAddressLow(rx_ring->Cell[0].AllocPa);
+		rx_ring->RxSwReadIdx = 0;
+		rx_ring->RxCpuIdx = RxRingSize - 1;
+		rx_ring->hw_desc_base = RX_RING_BASE + offset;
+		rx_ring->hw_cidx_addr = RX_RING_CIDX + offset;
+		rx_ring->hw_didx_addr = RX_RING_DIDX + offset;
+		rx_ring->hw_cnt_addr = RX_RING_CNT + offset;
+		RTMP_IO_WRITE32(pAd, rx_ring->hw_desc_base, phy_addr);
+		RTMP_IO_WRITE32(pAd, rx_ring->hw_cidx_addr, rx_ring->RxCpuIdx);
+		RTMP_IO_WRITE32(pAd, rx_ring->hw_cnt_addr, RxRingSize);
 		DBGPRINT(RT_DEBUG_TRACE, ("-->RX_RING%d[0x%x]: Base=0x%x, Cnt=%d\n",
-					i, pAd->RxRing[i].hw_desc_base, phy_addr, RX_RING_SIZE));
+					i, rx_ring->hw_desc_base, phy_addr, RxRingSize));
 	}
 
 	/* Set DMA global configuration except TX_DMA_EN and RX_DMA_EN bits */

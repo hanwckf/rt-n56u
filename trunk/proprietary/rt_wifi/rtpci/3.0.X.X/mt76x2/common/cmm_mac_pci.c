@@ -136,7 +136,9 @@ VOID RTMPResetTxRxRingMemory(RTMP_ADAPTER *pAd)
 
 	for (index=0;index< NUM_OF_RX_RING;index++)
 	{
-		for (j = RX_RING_SIZE - 1 ; j >= 0; j--)
+		UINT16 RxRingSize = (index == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+		
+		for (j = RxRingSize - 1 ; j >= 0; j--)
 		{
 			dma_cb = &pAd->RxRing[index].Cell[j];
 			if ((dma_cb->DmaBuf.AllocVa) && (dma_cb->pNdisPacket))
@@ -354,6 +356,8 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 	/* Initialize Rx Ring and associated buffer memory */
 	for (num = 0; num < NUM_OF_RX_RING; num++)
 	{
+		UINT16 RxRingSize = (num == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+		
 		pDescRing = &pAd->RxDescRing[num];
 		pRxRing = &pAd->RxRing[num];
 
@@ -377,7 +381,7 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 		RingBaseVa = pDescRing->AllocVa;
 	
 		/* Linking Rx Ring and associated buffer memory */
-		for (index = 0; index < RX_RING_SIZE; index++)
+		for (index = 0; index < RxRingSize; index++)
 		{
 			dma_cb = &pRxRing->Cell[index];
 			/* Init RX Ring Size, Va, Pa variables*/
@@ -447,8 +451,10 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 
 	/* Init RX Ring index pointer */
 	for (index = 0; index < NUM_OF_RX_RING; index++) {
+		UINT16 RxRingSize = (index == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+		
 		pAd->RxRing[index].RxSwReadIdx = 0;
-		pAd->RxRing[index].RxCpuIdx = RX_RING_SIZE - 1;
+		pAd->RxRing[index].RxCpuIdx = RxRingSize - 1;
 	}
 	
 	/* init MGMT ring index pointer */
@@ -564,8 +570,9 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 
 		/* Alloc RX ring desc memory except Tx ring allocated eariler */
 		for (num = 0; num < NUM_OF_RX_RING; num++) {
-			desc_ring_alloc(pAd, &pAd->RxDescRing[num],
-								RX_RING_SIZE * RXD_SIZE);
+			UINT16 RxRingSize = (num == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+			
+			desc_ring_alloc(pAd, &pAd->RxDescRing[num], RxRingSize * RXD_SIZE);
 			if (pAd->RxDescRing[num].AllocVa == NULL) {
 				Status = NDIS_STATUS_RESOURCES;
 				break;
@@ -842,8 +849,10 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 
 		for (num = 0; num < NUM_OF_RX_RING; num++)
 		{
+			UINT16 RxRingSize = (num == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+			
 			/* Alloc RxRingDesc memory except Tx ring allocated eariler */
-			desc_ring_alloc(pAd, &pAd->RxDescRing[num], RX_RING_SIZE * RXD_SIZE);
+			desc_ring_alloc(pAd, &pAd->RxDescRing[num], RxRingSize * RXD_SIZE);
 			if (pAd->RxDescRing[num].AllocVa == NULL) {
 				Status = NDIS_STATUS_RESOURCES;
 				break;
@@ -863,7 +872,7 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 			RingBasePaHigh = RTMP_GetPhysicalAddressHigh(pAd->RxDescRing[num].AllocPa);
 			RingBasePaLow = RTMP_GetPhysicalAddressLow (pAd->RxDescRing[num].AllocPa);
 			RingBaseVa = pAd->RxDescRing[num].AllocVa;
-			for (index = 0; index < RX_RING_SIZE; index++)
+			for (index = 0; index < RxRingSize; index++)
 			{
 				dma_cb = &pAd->RxRing[num].Cell[index];
 				/* Init RX Ring Size, Va, Pa variables*/
@@ -955,8 +964,10 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 
 	/* Init RX Ring index pointer*/
 	for(index = 0; index < NUM_OF_RX_RING; index++) {
+		UINT16 RxRingSize = (index == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+		
 		pAd->RxRing[index].RxSwReadIdx = 0;
-		pAd->RxRing[index].RxCpuIdx = RX_RING_SIZE - 1;
+		pAd->RxRing[index].RxCpuIdx = RxRingSize - 1;
 	}
 
 	pAd->PrivateInfo.TxRingFullCnt = 0;
@@ -1137,7 +1148,9 @@ VOID RTMPFreeTxRxRingMemory(RTMP_ADAPTER *pAd)
 
 	for (j = 0; j < NUM_OF_RX_RING; j++)
 	{
-		for (index = RX_RING_SIZE - 1 ; index >= 0; index--)
+		UINT16 RxRingSize = (j == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+		
+		for (index = RxRingSize - 1 ; index >= 0; index--)
 		{
 			dma_cb = &pAd->RxRing[j].Cell[index];
 			if ((dma_cb->DmaBuf.AllocVa) && (dma_cb->pNdisPacket))
@@ -1378,6 +1391,8 @@ VOID RTMPRingCleanUp(RTMP_ADAPTER *pAd, UCHAR RingType)
 		case QID_RX:
 			for (ring_id =0; ring_id < NUM_OF_RX_RING; ring_id++)
 			{
+				UINT16 RxRingSize = (ring_id == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+				
 				RTMP_RX_RING *pRxRing;
 				NDIS_SPIN_LOCK *lock;
 
@@ -1385,7 +1400,7 @@ VOID RTMPRingCleanUp(RTMP_ADAPTER *pAd, UCHAR RingType)
 				lock = &pAd->RxRingLock[ring_id];
 				
 				RTMP_IRQ_LOCK(lock, IrqFlags);
-				for (i=0; i<RX_RING_SIZE; i++)
+				for (i=0; i<RxRingSize; i++)
 				{
 #ifdef RT_BIG_ENDIAN
 					pDestRxD = (PRXD_STRUC)pRxRing->Cell[i].AllocVa;
@@ -1407,7 +1422,7 @@ VOID RTMPRingCleanUp(RTMP_ADAPTER *pAd, UCHAR RingType)
 
 				RTMP_IO_READ32(pAd, pRxRing->hw_didx_addr, &pRxRing->RxDmaIdx);
 				pRxRing->RxSwReadIdx = pRxRing->RxDmaIdx;
-				pRxRing->RxCpuIdx = ((pRxRing->RxDmaIdx == 0) ? (RX_RING_SIZE-1) : (pRxRing->RxDmaIdx-1));
+				pRxRing->RxCpuIdx = ((pRxRing->RxDmaIdx == 0) ? (RxRingSize-1) : (pRxRing->RxDmaIdx-1));
 				RTMP_IO_WRITE32(pAd, pRxRing->hw_cidx_addr, pRxRing->RxCpuIdx);
 
 				RTMP_IRQ_UNLOCK(lock, IrqFlags);

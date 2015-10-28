@@ -450,6 +450,8 @@ extern RTMP_USB_CONFIG *pRtmpUsbConfig;
 #define MAX_DMA_DONE_PROCESS    TX_RING_SIZE
 #define MAX_TX_DONE_PROCESS     TX_RING_SIZE
 #define LOCAL_TXBUF_SIZE        2
+
+#define RX1_RING_SIZE		32
 #endif /* RTMP_MAC_PCI */
 
 #define RTMP_OS_NETDEV_SET_PRIV		RtmpOsSetNetDevPriv

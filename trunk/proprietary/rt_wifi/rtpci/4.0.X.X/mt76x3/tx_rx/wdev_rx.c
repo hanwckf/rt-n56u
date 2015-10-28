@@ -2450,6 +2450,7 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 #endif /* HDR_TRANS_SUPPORT */
 			if ((pFceInfo->info_type != 0) || (pFceInfo->pkt_80211 != 1))
 			{
+#ifdef DBG
 				RXD_STRUC *pRxD = (RXD_STRUC *)&pRxBlk->hw_rx_info[0];
 
 				DBGPRINT(RT_DEBUG_OFF, ("==>%s(): GetFrameFromOtherPorts!\n", __FUNCTION__));
@@ -2463,6 +2464,7 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 				dump_rxinfo(pAd, pRxInfo);
 				hex_dump("RxFrame", (UCHAR *)GET_OS_PKT_DATAPTR(pRxPacket), (pFceInfo->pkt_len));
 				DBGPRINT(RT_DEBUG_OFF, ("<==\n"));
+#endif
 				RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_SUCCESS);
 				continue;
 			}

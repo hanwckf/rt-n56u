@@ -31,6 +31,7 @@
 #include	"rt_config.h"
 
 
+#ifdef DBG
 VOID dump_txd(RTMP_ADAPTER *pAd, TXD_STRUC *pTxD)
 {
 	DBGPRINT(RT_DEBUG_OFF, ("TxD:\n"));
@@ -85,6 +86,24 @@ VOID dumpTxRing(RTMP_ADAPTER *pAd, INT ring_idx)
 #endif /* defined(RTMP_MAC) || defined(RLT_MAC) */
 	}
 }
+
+
+VOID dumpRxRing(RTMP_ADAPTER *pAd, INT ring_idx)
+{
+	RTMP_RX_RING *pRxRing;
+	RXD_STRUC *pRxD;
+	int index;
+	int RxRingSize = (ring_idx == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+
+	pRxRing = &pAd->RxRing[ring_idx];
+	for (index = 0; index < RxRingSize; index++)
+	{
+		pRxD = (RXD_STRUC *)pRxRing->Cell[index].AllocVa;
+		hex_dump("Dump RxDesc", (UCHAR *)pRxD, sizeof(RXD_STRUC));
+		dump_rxd(pAd, pRxD);
+	}
+}
+#endif
 
 
 BOOLEAN MonitorTxRing(RTMP_ADAPTER *pAd)
@@ -211,26 +230,6 @@ BOOLEAN MonitorRxPse(RTMP_ADAPTER *pAd)
 	{
 		pAd->RxPseCheckTimes = 0;
 		return TRUE;
-	}
-}
-
-
-VOID dumpRxRing(RTMP_ADAPTER *pAd, INT ring_idx)
-{
-	//RTMP_DMABUF *pDescRing;
-	RTMP_RX_RING *pRxRing;
-	RXD_STRUC *pRxD;
-	int index;
-	int RxRingSize = (ring_idx == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
-
-	//pDescRing = (RTMP_DMABUF *)pAd->RxDescRing[0].AllocVa;
-
-	pRxRing = &pAd->RxRing[0];
-	for (index = 0; index < RxRingSize; index++)
-	{
-		pRxD = (RXD_STRUC *)pRxRing->Cell[index].AllocVa;
-		hex_dump("Dump RxDesc", (UCHAR *)pRxD, sizeof(RXD_STRUC));
-		dump_rxd(pAd, pRxD);
 	}
 }
 

@@ -1958,9 +1958,11 @@ INT	Show_DescInfo_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 #else
 			pRxD = (RXD_STRUC *)pRxRing->Cell[i].AllocVa;
 #endif /* RT_BIG_ENDIAN */
+#ifdef DBG
 			DBGPRINT(RT_DEBUG_OFF, ("Desc #%d\n",i));
 			dump_rxd(pAd, pRxD);
 			DBGPRINT(RT_DEBUG_OFF, ("pRxD->DDONE = %x\n", pRxD->DDONE));
+#endif
 		}
 	}
 #endif /* RTMP_MAC_PCI */

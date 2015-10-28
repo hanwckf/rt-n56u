@@ -756,7 +756,7 @@ UINT32 parse_rx_packet_type(RTMP_ADAPTER *ad, RX_BLK *rx_blk, VOID *rx_packet)
                 hex_dump("TMR", (UCHAR *)tmr, 20);
 				
 				return 0;
-
+#ifdef DBG
                 hex_dump("TMR", (UCHAR *)tmr, ptmr_d0->rx_byte_cnt);
                 DBGPRINT(RT_DEBUG_OFF, ("TMR Report: ir = %d\n", ptmr_d0->ir));
                 DBGPRINT(RT_DEBUG_OFF, ("DWORD_0: ByteCnt=%d, NC=%d, TMF=%d, "
@@ -780,6 +780,7 @@ UINT32 parse_rx_packet_type(RTMP_ADAPTER *ad, RX_BLK *rx_blk, VOID *rx_packet)
 
                 DBGPRINT(RT_DEBUG_OFF, ("DWORD_5: TOA[0:31]=0x%x\n", *ptoa_0));
                 DBGPRINT(RT_DEBUG_OFF, ("DWORD_6: TOA[32:47]=0x%x\n", tmr_d6->field.toa_32));
+#endif
             }
             break;
 

@@ -464,6 +464,11 @@ extern RTMP_USB_CONFIG *pRtmpUsbConfig;
 #endif
 
 #ifdef MT_MAC
+#ifdef MEMORY_OPTIMIZATION
+#define RX1_RING_SIZE		32
+#else
+#define RX1_RING_SIZE		64
+#endif /* MEMORY_OPTIMIZATION */
 #define BCN_RING_SIZE		20
 #endif /* MT_MAC */
 

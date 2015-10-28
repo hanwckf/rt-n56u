@@ -104,6 +104,7 @@
 #define MGMT_DMA_BUFFER_SIZE    1600	/*2048 */
 
 #define RX_BUFFER_AGGRESIZE     3840	/*3904 //3968 //4096 //2048 //4096 */
+#define RX1_BUFFER_SIZE         1700    /* 1700 //512 */
 #define RX_BUFFER_NORMSIZE      3840	/*3904 //3968 //4096 //2048 //4096 */
 #define TX_BUFFER_NORMSIZE		RX_BUFFER_NORMSIZE
 #define MAX_FRAME_SIZE          2346	/* Maximum 802.11 frame size */

@@ -221,12 +221,12 @@ VOID dumpRxRing(RTMP_ADAPTER *pAd, INT ring_idx)
 	RTMP_RX_RING *pRxRing;
 	RXD_STRUC *pRxD;
 	int index;
-
+	int RxRingSize = (ring_idx == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
 
 	//pDescRing = (RTMP_DMABUF *)pAd->RxDescRing[0].AllocVa;
 
 	pRxRing = &pAd->RxRing[0];
-	for (index = 0; index < RX_RING_SIZE; index++)
+	for (index = 0; index < RxRingSize; index++)
 	{
 		pRxD = (RXD_STRUC *)pRxRing->Cell[index].AllocVa;
 		hex_dump("Dump RxDesc", (UCHAR *)pRxD, sizeof(RXD_STRUC));
@@ -1738,6 +1738,14 @@ PNDIS_PACKET GetPacketFromRxRing(
 	RTMP_DMACB *pRxCell;
 	//UINT8 RXWISize = pAd->chipCap.RXWISize;
 	UINT8 rx_hw_hdr_len = pAd->chipCap.RXWISize;
+	UINT16 RxRingSize = RX_RING_SIZE;
+	UINT16 RxBufferSize = RX_BUFFER_AGGRESIZE;
+
+	if (RxRingNo != 0)
+	{
+		RxRingSize = RX1_RING_SIZE;
+		RxBufferSize = RX1_BUFFER_SIZE;
+	}
 
 	pRxRing = &pAd->RxRing[RxRingNo];
 	pRxRingLock = &pAd->RxRingLock[RxRingNo];
@@ -1757,7 +1765,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 		if (pRxRing->RxDmaIdx > pRxRing->RxSwReadIdx)
 			*pRxPending = pRxRing->RxDmaIdx - pRxRing->RxSwReadIdx;
 		else
-			*pRxPending = pRxRing->RxDmaIdx + RX_RING_SIZE - pRxRing->RxSwReadIdx;
+			*pRxPending = pRxRing->RxDmaIdx + RxRingSize - pRxRing->RxSwReadIdx;
 	}
 
 	pRxCell = &pRxRing->Cell[pRxRing->RxSwReadIdx];
@@ -1806,7 +1814,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 			hex_dump("Invalid Pkt content", GET_OS_PKT_DATAPTR(pRxPacket), 32);
 		}
 
-		pRxD->SDL0 = RX_BUFFER_AGGRESIZE;
+		pRxD->SDL0 = RxBufferSize;
 		pRxD->LS0 = 0;
 		pRxD->DDONE = 0;
 		bReschedule = TRUE;
@@ -1819,9 +1827,9 @@ PNDIS_PACKET GetPacketFromRxRing(
 		WriteBackToDescriptor((PUCHAR)pDestRxD, (PUCHAR)pRxD, FALSE, TYPE_RXD);
 #endif
 
-		INC_RING_INDEX(pRxRing->RxSwReadIdx, RX_RING_SIZE);
+		INC_RING_INDEX(pRxRing->RxSwReadIdx, RxRingSize);
 
-		pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RX_RING_SIZE-1) : (pRxRing->RxSwReadIdx-1);
+		pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RxRingSize-1) : (pRxRing->RxSwReadIdx-1);
 		RTMP_IO_WRITE32(pAd, pRxRing->hw_cidx_addr, pRxRing->RxCpuIdx);
 
 		goto done;
@@ -1837,16 +1845,16 @@ PNDIS_PACKET GetPacketFromRxRing(
 		struct sk_buff *skb = __skb_dequeue_tail(&pAd->rx0_recycle);
 
 		if (unlikely(skb==NULL))
-			pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RX_BUFFER_AGGRESIZE, FALSE, &AllocVa, &AllocPa);
+			pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RxBufferSize, FALSE, &AllocVa, &AllocPa);
 		else
 		{
 			pNewPacket = OSPKT_TO_RTPKT(skb);
 			AllocVa = GET_OS_PKT_DATAPTR(pNewPacket);
-			AllocPa = PCI_MAP_SINGLE_DEV(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, AllocVa, RX_BUFFER_AGGRESIZE,  -1, RTMP_PCI_DMA_FROMDEVICE);
+			AllocPa = PCI_MAP_SINGLE_DEV(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, AllocVa, RxBufferSize,  -1, RTMP_PCI_DMA_FROMDEVICE);
 		}
 	}
 #else
-	pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RX_BUFFER_AGGRESIZE, FALSE, &AllocVa, &AllocPa);
+	pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RxBufferSize, FALSE, &AllocVa, &AllocPa);
 #endif /* WLAN_SKB_RECYCLE */
 
 	if (pNewPacket && !pAd->RxReset)
@@ -1887,7 +1895,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 			pRxBlk->pHeader = (HEADER_802_11 *)(pRxBlk->pData);
 		}
 
-		pRxCell->DmaBuf.AllocSize = RX_BUFFER_AGGRESIZE;
+		pRxCell->DmaBuf.AllocSize = RxBufferSize;
 		pRxCell->pNdisPacket = (PNDIS_PACKET)pNewPacket;
 		pRxCell->DmaBuf.AllocVa = AllocVa;
 		pRxCell->DmaBuf.AllocPa = AllocPa;
@@ -1897,7 +1905,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 
 		/* update SDP0 to new buffer of rx packet */
 		pRxD->SDP0 = AllocPa;
-		pRxD->SDL0 = RX_BUFFER_AGGRESIZE;
+		pRxD->SDL0 = RxBufferSize;
 	}
 	else
 	{
@@ -1917,7 +1925,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 #endif /* MT_PS */
 		}
 
-		pRxD->SDL0 = RX_BUFFER_AGGRESIZE;
+		pRxD->SDL0 = RxBufferSize;
 		pRxPacket = NULL;
 		bReschedule = TRUE;
 	}
@@ -1933,9 +1941,9 @@ PNDIS_PACKET GetPacketFromRxRing(
 	WriteBackToDescriptor((PUCHAR)pDestRxD, (PUCHAR)pRxD, FALSE, TYPE_RXD);
 #endif
 
-	INC_RING_INDEX(pRxRing->RxSwReadIdx, RX_RING_SIZE);
+	INC_RING_INDEX(pRxRing->RxSwReadIdx, RxRingSize);
 
-	pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RX_RING_SIZE-1) : (pRxRing->RxSwReadIdx-1);
+	pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RxRingSize-1) : (pRxRing->RxSwReadIdx-1);
 	RTMP_IO_WRITE32(pAd, pRxRing->hw_cidx_addr, pRxRing->RxCpuIdx);
 
 #else /* CACHE_LINE_32B */
@@ -1982,15 +1990,15 @@ PNDIS_PACKET GetPacketFromRxRing(
 		RTMP_DCACHE_FLUSH(pRxCellLast->AllocPa, 32); /* use RXD_SIZE should be OK */
 
 		/* update SW read and CPU index */
-		INC_RING_INDEX(pRxRing->RxSwReadIdx, RX_RING_SIZE);
-		pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RX_RING_SIZE-1) : (pRxRing->RxSwReadIdx-1);
+		INC_RING_INDEX(pRxRing->RxSwReadIdx, RxRingSize);
+		pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RxRingSize-1) : (pRxRing->RxSwReadIdx-1);
 		RTMP_IO_WRITE32(pAd, pRxRing->hw_cidx_addr, pRxRing->RxCpuIdx);
 	}
 	else
 	{
 		/* 32B-align */
 		/* do not set DDONE bit and backup it */
-		if (pRxRing->RxSwReadIdx >= (RX_RING_SIZE-1))
+		if (pRxRing->RxSwReadIdx >= (RxRingSize-1))
 		{
 			DBGPRINT(RT_DEBUG_ERROR,
 					("Please change RX_RING_SIZE to mutiple of 2!\n"));
@@ -1999,8 +2007,8 @@ PNDIS_PACKET GetPacketFromRxRing(
 			RTMP_DCACHE_FLUSH(pRxCell->AllocPa, RXD_SIZE);
 
 			/* update SW read and CPU index */
-			INC_RING_INDEX(pRxRing->RxSwReadIdx, RX_RING_SIZE);
-			pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RX_RING_SIZE-1) : (pRxRing->RxSwReadIdx-1);
+			INC_RING_INDEX(pRxRing->RxSwReadIdx, RxRingSize);
+			pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RxRingSize-1) : (pRxRing->RxSwReadIdx-1);
 			RTMP_IO_WRITE32(pAd, pRxRing->hw_cidx_addr, pRxRing->RxCpuIdx);
 		}
 		else
@@ -2010,7 +2018,7 @@ PNDIS_PACKET GetPacketFromRxRing(
 			pRxCell->LastBDInfo = *pRxD;
 
 			/* update CPU index */
-			INC_RING_INDEX(pRxRing->RxSwReadIdx, RX_RING_SIZE);
+			INC_RING_INDEX(pRxRing->RxSwReadIdx, RxRingSize);
 		}
 	}
 #endif /* CACHE_LINE_32B */

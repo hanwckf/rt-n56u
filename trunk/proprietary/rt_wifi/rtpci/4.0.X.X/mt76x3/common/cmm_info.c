@@ -1944,10 +1944,11 @@ INT	Show_DescInfo_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 	for (QueIdx = 0; QueIdx < NUM_OF_RX_RING; QueIdx++) 
 	{
+		UINT16 RxRingSize = (QueIdx == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
 		pRxRing = &pAd->RxRing[QueIdx];
 		
 		DBGPRINT(RT_DEBUG_OFF, ("Rx Ring %d ---------------------------------\n", QueIdx));
-		for(i = 0;i < RX_RING_SIZE; i++)
+		for(i = 0; i < RxRingSize; i++)
 		{
 #ifdef RT_BIG_ENDIAN
 			pDestRxD = (RXD_STRUC *)pRxRing->Cell[i].AllocVa;
@@ -1955,11 +1956,11 @@ INT	Show_DescInfo_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 			pRxD = &RxD;
 			RTMPDescriptorEndianChange((PUCHAR)pRxD, TYPE_RXD);
 #else
-	    	pRxD = (RXD_STRUC *)pRxRing->Cell[i].AllocVa;
+			pRxD = (RXD_STRUC *)pRxRing->Cell[i].AllocVa;
 #endif /* RT_BIG_ENDIAN */
 			DBGPRINT(RT_DEBUG_OFF, ("Desc #%d\n",i));
 			dump_rxd(pAd, pRxD);
-	    	DBGPRINT(RT_DEBUG_OFF, ("pRxD->DDONE = %x\n", pRxD->DDONE));
+			DBGPRINT(RT_DEBUG_OFF, ("pRxD->DDONE = %x\n", pRxD->DDONE));
 		}
 	}
 #endif /* RTMP_MAC_PCI */

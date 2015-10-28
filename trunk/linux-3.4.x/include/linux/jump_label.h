@@ -154,14 +154,14 @@ struct static_key_deferred {
 
 static __always_inline bool static_key_false(struct static_key *key)
 {
-	if (unlikely(atomic_read(&key->enabled)) > 0)
+	if (unlikely(atomic_read(&key->enabled) > 0))
 		return true;
 	return false;
 }
 
 static __always_inline bool static_key_true(struct static_key *key)
 {
-	if (likely(atomic_read(&key->enabled)) > 0)
+	if (likely(atomic_read(&key->enabled) > 0))
 		return true;
 	return false;
 }

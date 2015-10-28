@@ -19,10 +19,17 @@
 <script>
 var $j = jQuery.noConflict();
 
+<% login_state_hook(); %>
+
 function initial(){
 	show_banner(1);
 	show_menu(5,7,4);
 	show_footer();
+
+	if (!login_safe()){
+		inputCtrl(document.form.file, 0);
+		inputCtrl(document.form.button, 0);
+	}
 }
 
 function fwUpload(){

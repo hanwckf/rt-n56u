@@ -3297,10 +3297,11 @@ do_apply_cgi(const char *url, FILE *stream)
 static void
 do_upgrade_fw_cgi(const char *url, FILE *stream)
 {
-	if (f_exists(FW_IMG_NAME)) {
+	if (f_exists(FW_IMG_NAME) && get_login_safe()) {
 		notify_rc("flash_firmware");
 		websApply(stream, "Updating.asp");
 	} else {
+		unlink(FW_IMG_NAME);
 		websApply(stream, "UpdateError.asp");
 	}
 }
@@ -3311,7 +3312,7 @@ do_restore_nv_cgi(const char *url, FILE *stream)
 	char *upload_file = PROFILE_FIFO_UPLOAD;
 	int ret = -1;
 
-	if (f_exists(upload_file)) {
+	if (f_exists(upload_file) && get_login_safe()) {
 		doSystem("killall %s %s", "-q", "watchdog");
 		sleep(1);
 		ret = eval("/usr/sbin/nvram", "restore", upload_file);
@@ -3320,8 +3321,9 @@ do_restore_nv_cgi(const char *url, FILE *stream)
 			eval("/sbin/watchdog");
 		} else
 			nvram_commit();
-		unlink(upload_file);
 	}
+
+	unlink(upload_file);
 
 	/* Reboot if successful */
 	if (ret == 0) {
@@ -3338,10 +3340,11 @@ do_restore_st_cgi(const char *url, FILE *stream)
 	const char *upload_file = STORAGE_FIFO_FILENAME;
 	int ret = -1;
 
-	if (f_exists(upload_file)) {
+	if (f_exists(upload_file) && get_login_safe()) {
 		ret = eval("/sbin/mtd_storage.sh", "restore");
-		unlink(upload_file);
 	}
+
+	unlink(upload_file);
 
 	if (ret == 0) {
 		websApply(stream, "UploadDone.asp");

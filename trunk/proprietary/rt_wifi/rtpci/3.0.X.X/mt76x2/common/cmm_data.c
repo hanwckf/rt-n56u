@@ -1894,19 +1894,23 @@ VOID TxDoneCleanupExec(
 	IN PVOID SystemSpecific3)
 {
 	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)FunctionContext;
-	unsigned long	IrqFlags = 0;
+	unsigned long IrqFlags = 0;
+	ULONG FreeNum;
 	UCHAR QueIdx;
+	int NeedCleanupTimer = 0;
 
 	DEQUEUE_LOCK(&pAd->irq_lock, FALSE, IrqFlags);
-	for( QueIdx=0; QueIdx<NUM_OF_TX_RING; QueIdx++ ) {
-		ULONG FreeNum;
+	for (QueIdx=0; QueIdx<NUM_OF_TX_RING; QueIdx++) {
 		FreeNum = GET_TXRING_FREENO(pAd, QueIdx);
-		if( FreeNum != (TX_RING_SIZE-1) ) {
+		if (FreeNum < (TX_RING_SIZE-1)) {
 			RTMPFreeTXDUponTxDmaDone(pAd, QueIdx);
-			RTMPModTimer(&pAd->TxDoneCleanupTimer, 50);
+			NeedCleanupTimer = 1;
 		}
 	}
 	DEQUEUE_UNLOCK(&pAd->irq_lock, FALSE, IrqFlags);
+
+	if (NeedCleanupTimer)
+		RTMPModTimer(&pAd->TxDoneCleanupTimer, 50);
 }
 #endif /* RTMP_MAC_PCI */
 

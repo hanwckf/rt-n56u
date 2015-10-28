@@ -915,11 +915,11 @@ typedef struct _LNA_VGA_CTL_STRUCT {
 	UINT16 		nFalseCCACnt;	
 	UINT16		nFalseCCATh;	/* default is 100 */
 	UINT16		nLowFalseCCATh;
-		UINT32		agc1_r8_backup;
+	UINT32		agc1_r8_backup;
 	UCHAR		agc_vga_init_0;
 	UCHAR 		agc_vga_ori_0; /* the original vga gain initialized by firmware at start up */
 	UINT16		agc_0_vga_set1_2;
-		UINT32		agc1_r9_backup;
+	UINT32		agc1_r9_backup;
 	UCHAR 		agc_vga_init_1;
 	UCHAR 		agc_vga_ori_1; /* the original vga gain initialized by firmware at start up */
 	UINT16		agc_1_vga_set1_2;	

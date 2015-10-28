@@ -48,6 +48,9 @@ if [ "$HOSTGCCVER" != "4.3" ] && [ "$HOSTGCCVER" != "4.4" ]; then
         HOSTCFLAGS="$HOSTCFLAGS -Wno-unused-but-set-variable -Wno-sizeof-pointer-memaccess"
         HOSTCFLAGS="$HOSTCFLAGS -fno-delete-null-pointer-checks"
     fi
+    if [ "$HOSTGCCVER" \> "5.0" ]; then
+        HOSTCFLAGS="$HOSTCFLAGS -fgnu89-inline"
+    fi
 fi
 export CFLAGS="$HOSTCFLAGS"
 

@@ -1,8 +1,11 @@
-    ASUS RT-N11P/N14U/N56U/N65U/AC51U/AC54U/AC1200HP custom firmware 3.X.3.9-095 by Padavan
+    ASUS RT-N11P/N14U/N56U/N65U/AC51U/AC54U/AC1200HP custom firmware 3.X.3.9-097 by Padavan
 
 
 Project sources:
 git clone https://bitbucket.org/padavan/rt-n56u.git
+
+Mirror Git:
+git clone https://github.com/andy-padavan/rt-n56u.git
 
 Git HTTP frontend:
 https://bitbucket.org/padavan/rt-n56u/commits/all
@@ -33,6 +36,11 @@ After manual NVRAM reset:
 
 
                               LIST OF CHANGES
+
+3.X.3.9-097:
+----------------------------------------------------------
+- To be completed
+
 
 3.X.3.9-095:
 ----------------------------------------------------------
@@ -1166,5 +1174,5 @@ After manual NVRAM reset:
 
 
 -
-06/01/2015
+10/29/2015
 Padavan

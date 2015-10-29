@@ -1180,7 +1180,15 @@ VOID RTMPDeQueuePacket(
 			}
 #endif /* DBG_DIAGNOSE */
 
-			if (FreeNumber[QueIdx] <= 5)
+			/* We should never let more than 64kBytes of tx data not be
+			 * cleaned up, or the TCP TX throughput will suffer as the
+			 * window will not fill and so expand. 64kBytes ~ 44 full
+			 * size ethernet packets. Use 32 as a nice constant. There
+			 * is also a timer function which prevents packets getting
+			 * "stuck" when data stops flowing
+			 */
+
+			if ((TX_RING_SIZE - FreeNumber[QueIdx]) > 32)
 			{
 				/* free Tx(QueIdx) resources*/
 				RTMPFreeTXDUponTxDmaDone(pAd, QueIdx);

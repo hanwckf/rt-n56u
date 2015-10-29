@@ -268,6 +268,9 @@
 /* Define to 1 if you have the `strtoul' function. */
 #undef HAVE_STRTOUL
 
+/* Define to 1 if `d_type' is a member of `struct dirent'. */
+#undef HAVE_STRUCT_DIRENT_D_TYPE
+
 /* Support for struct ip_mreq */
 #undef HAVE_STRUCT_IP_MREQ
 

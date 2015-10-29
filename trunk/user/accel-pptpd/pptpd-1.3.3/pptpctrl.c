@@ -59,7 +59,7 @@
 // placing net/if.h here fixes build on Solaris
 #include <net/if.h>
 #include <net/ethernet.h>
-#include "if_pppox.h"
+#include <linux/if_pppox.h>
 
 static char *ppp_binary = PPP_BINARY;
 static int pptp_logwtmp;

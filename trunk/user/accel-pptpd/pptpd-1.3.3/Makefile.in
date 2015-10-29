@@ -799,7 +799,7 @@ compat.o: compat.c config.h compat.h inststr.h
 configfile.o: configfile.c config.h defaults.h configfile.h our_syslog.h
 
 ctrlpacket.o: ctrlpacket.c config.h our_syslog.h pptpdefs.h pptpctrl.h \
- ctrlpacket.h if_pppox.h compat.h
+ ctrlpacket.h compat.h
 
 getopt.o: getopt.c config.h our_getopt.h
 
@@ -808,7 +808,7 @@ getopt1.o: getopt1.c config.h our_getopt.h
 inststr.o: inststr.c config.h inststr.h compat.h
 
 pptpctrl.o: pptpctrl.c config.h our_syslog.h compat.h pptpctrl.h \
- pptpdefs.h ctrlpacket.h defaults.h if_pppox.h
+ pptpdefs.h ctrlpacket.h defaults.h
 
 pptpd.o: pptpd.c config.h our_syslog.h our_getopt.h configfile.h \
  defaults.h compat.h pptpmanager.h

@@ -33,7 +33,7 @@
 
 #include <net/if.h>
 #include <net/ethernet.h>
-#include "if_pppox.h"
+#include <linux/if_pppox.h>
 
 #ifndef HAVE_STRERROR
 #include "compat.h"

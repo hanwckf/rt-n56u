@@ -14,7 +14,6 @@ config_test:
 	( if [ -f ./config_done ]; then \
 		echo "the same configuration"; \
 	else \
-		ln -sf "../../../$(CONFIG_LINUXDIR)/include/linux/if_pppox.h" $(SRC_NAME)/if_pppox.h; \
 		make configure && touch config_done; \
 	fi )
 

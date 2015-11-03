@@ -22,8 +22,12 @@
 #ifdef CONFIG_32BIT
 
 #define CAC_BASE		_AC(0x80000000, UL)
+#ifndef IO_BASE
 #define IO_BASE			_AC(0xa0000000, UL)
+#endif
+#ifndef UNCAC_BASE
 #define UNCAC_BASE		_AC(0xa0000000, UL)
+#endif
 
 #ifndef MAP_BASE
 #define MAP_BASE		_AC(0xc0000000, UL)

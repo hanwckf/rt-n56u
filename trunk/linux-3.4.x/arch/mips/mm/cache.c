@@ -141,6 +141,10 @@ void __update_cache(struct vm_area_struct *vma, unsigned long address,
 	if (unlikely(!pfn_valid(pfn)))
 		return;
 	page = pfn_to_page(pfn);
+
+	if (PageHighMem(page))
+		return;
+
 	if (page_mapping(page) && Page_dcache_dirty(page)) {
 		addr = (unsigned long) page_address(page);
 		if (exec || pages_do_alias(addr, address & PAGE_MASK))

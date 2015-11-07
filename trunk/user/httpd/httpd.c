@@ -458,7 +458,11 @@ http_login(const uaddr *ip_now)
 	else
 		login_mac[0] = 0;
 
-	login_safe = is_safe_ipaddr(ip_now);
+	if (!get_ap_mode())
+		login_safe = is_safe_ipaddr(ip_now);
+	else
+		login_safe = 1;
+
 	login_timestamp = uptime();
 
 	sprintf(s_lts, "%lu", login_timestamp);

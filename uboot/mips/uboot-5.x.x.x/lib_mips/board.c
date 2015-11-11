@@ -329,10 +329,8 @@ static void Init_System_Mode(void)
 		reg = RALINK_REG(RALINK_SYSCTL_BASE + 0x44);
 		mips_cpu_feq = (500 * (reg & 0x1F) / ((reg >> 8) & 0x1F)) * 1000 * 1000;
 	}
-	if (clk_sel)
-		mips_bus_feq = mips_cpu_feq/4;
-	else
-		mips_bus_feq = mips_cpu_feq/3;
+	/* SYS_CLK always CPU/4 (not depend from OCP) */
+	mips_bus_feq = mips_cpu_feq/4;
 #elif defined (RT3883_ASIC_BOARD) 
 	clk_sel = (reg>>8) & 0x03;
 	switch(clk_sel) {

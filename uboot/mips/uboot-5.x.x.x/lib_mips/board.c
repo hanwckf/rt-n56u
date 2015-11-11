@@ -1572,7 +1572,6 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 
 #if defined(MT7628_ASIC_BOARD)	/* Enable WLED share pin */
 	RALINK_REG(RALINK_SYSCTL_BASE+0x3C)|= (1<<8);	
-	RALINK_REG(RALINK_SYSCTL_BASE+0x64)&= ~((0x3<<16)|(0x3));
 #endif	
 #if defined(RT3052_ASIC_BOARD) || defined(RT3352_ASIC_BOARD) || defined(RT5350_ASIC_BOARD)
 	//turn on all Ethernet LEDs around 0.5sec.

@@ -133,7 +133,6 @@
 #define RALINK_GPIOMODE_PERST		(1U << 16)	/* GPIO #36 */
 #define RALINK_GPIOMODE_REFCLK		(1U << 18)	/* GPIO #37 */
 #define RALINK_GPIOMODE_I2C		(1U << 20)	/* GPIO #4~#5 */
-#define RALINK_GPIOMODE_WLED		(1U << 22)	/* GPIO #44 */
 #define RALINK_GPIOMODE_UART2		(1U << 24)	/* GPIO #45~#46 */
 #define RALINK_GPIOMODE_UART3		(1U << 26)	/* GPIO #20~#21 */
 #define RALINK_GPIOMODE_PWM0		(1U << 28)	/* GPIO #18 */
@@ -452,8 +451,11 @@ int mtk_set_gpio_dir(unsigned short gpio_nr, unsigned short gpio_dir_out)
 		/* WDT */
 		shift = 14;
 	} else if (gpio_nr == 44) {
-		/* WLED */
-		shift = 22;
+		/* WLED (GPIO2 Mode) */
+		reg = ra_inl(RT2880_GPIOMODE2_REG);
+		reg &= ~((msk << 16)|(msk << 0));
+		reg |=   (val << 16)|(val << 0);	// WLED_KN | WLED_AN
+		ra_outl(RT2880_GPIOMODE2_REG, reg);
 	} else if (gpio_nr >= 45 && gpio_nr <= 46) {
 		/* UART2 */
 		shift = 24;

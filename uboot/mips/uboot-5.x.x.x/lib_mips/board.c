@@ -297,14 +297,17 @@ static void Init_System_Mode(void)
 		mips_bus_feq = mips_cpu_feq/5;
 	}
 #elif defined (MT7628_ASIC_BOARD)
+	clk_sel = (reg>>6) & 0x1; // XTAL 25/40
 	reg = RALINK_REG(RALINK_CLKCFG0_REG);
 	if (reg & (0x1<<1)) {
+		/* BBP PLL */
 		mips_cpu_feq = (480*1000*1000)/CPU_FRAC_DIV;
 	}else if (reg & 0x1) {
-		mips_cpu_feq = ((RALINK_REG(RALINK_SYSCTL_BASE+0x10)>>6)&0x1) ? (40*1000*1000)/CPU_FRAC_DIV \
-					   : (25*1000*1000)/CPU_FRAC_DIV;
+		/* XTAL */
+		mips_cpu_feq = (clk_sel) ? (40*1000*1000)/CPU_FRAC_DIV : (25*1000*1000)/CPU_FRAC_DIV;
 	}else {
-		mips_cpu_feq = (575*1000*1000)/CPU_FRAC_DIV;
+		/* CPU PLL */
+		mips_cpu_feq = (clk_sel) ? (580*1000*1000)/CPU_FRAC_DIV : (575*1000*1000)/CPU_FRAC_DIV;
 	}
 	mips_bus_feq = mips_cpu_feq/3;
 #elif defined(MT7621_ASIC_BOARD)
@@ -660,7 +663,7 @@ __attribute__((nomips16)) void board_init_f(ulong bootflag)
 	value = RALINK_REG(RALINK_DYN_CFG0_REG);
 	fdiv = (unsigned long)((value>>8)&0x0F);
 	if ((CPU_FRAC_DIV < 1) || (CPU_FRAC_DIV > 10))
-	frac = (unsigned long)(value&0x0F);
+		frac = (unsigned long)(value&0x0F);
 	else
 		frac = CPU_FRAC_DIV;
 	i = 0;
@@ -3055,7 +3058,7 @@ __attribute__((nomips16)) void dram_cali(void)
 	value = RALINK_REG(RALINK_DYN_CFG0_REG);
 	fdiv = (unsigned long)((value>>8)&0x0F);
 	if ((CPU_FRAC_DIV < 1) || (CPU_FRAC_DIV > 10))
-	frac = (unsigned long)(value&0x0F);
+		frac = (unsigned long)(value&0x0F);
 	else
 		frac = CPU_FRAC_DIV;
 	i = 0;

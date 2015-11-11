@@ -185,15 +185,20 @@ void do_bootm_linux (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[],
 
 	linux_params_init (UNCACHED_SDRAM (gd->bd->bi_boot_params), commandline);
 
+	len = gd->ram_size;
+#if defined (ON_BOARD_4096M_DRAM_COMPONENT)
+	len += 64*1024*1024;
+#endif
+
 #ifdef CONFIG_MEMSIZE_IN_BYTES
-	sprintf (env_buf, "%lu", gd->ram_size);
+	sprintf (env_buf, "%lu", len);
 #ifdef DEBUG
-	printf ("## Giving linux memsize in bytes, %lu\n", gd->ram_size);
+	printf ("## Giving linux memsize in bytes, %lu\n", len);
 #endif
 #else
-	sprintf (env_buf, "%lu", gd->ram_size >> 20);
+	sprintf (env_buf, "%lu", len >> 20);
 #ifdef DEBUG
-	printf ("## Giving linux memsize in MB, %lu\n", gd->ram_size >> 20);
+	printf ("## Giving linux memsize in MB, %lu\n", len >> 20);
 #endif
 #endif /* CONFIG_MEMSIZE_IN_BYTES */
 

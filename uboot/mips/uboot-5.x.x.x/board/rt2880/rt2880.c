@@ -103,39 +103,21 @@ long get_ram_size(volatile long *base, long maxsize)
 
 long int initdram(int board_type)
 {
-	ulong size, max_size       = MAX_SDRAM_SIZE;
+	ulong size;
 	ulong our_address;
 #ifndef CONFIG_MIPS16
 	asm volatile ("move %0, $25" : "=r" (our_address) :);
 #endif
-	/* Can't probe for RAM size unless we are running from Flash.
-	 */
-#if 0	 
-	#if defined(CFG_RUN_CODE_IN_RAM)
 
-	printf("\n In RAM run \n"); 
-    return MIN_SDRAM_SIZE;
-	#else
-
-	printf("\n In FLASH run \n"); 
-    return MIN_RT2880_SDRAM_SIZE;
-	#endif
-#endif 
-    
 #if defined (RT2880_FPGA_BOARD) || defined (RT2880_ASIC_BOARD)
 	if (PHYSADDR(our_address) < PHYSADDR(PHYS_FLASH_1))
 	{
-	    
-		//return MIN_SDRAM_SIZE;
 		//fixed to 32MB
 		printf("\n In RAM run \n");
 		return MIN_SDRAM_SIZE;
 	}
 #endif
 
-#if defined (ON_BOARD_4096M_DRAM_COMPONENT) 
-	size = 448 * 1024 * 1024;
-#else
 	size = get_ram_size((ulong *)CFG_SDRAM_BASE, MAX_SDRAM_SIZE);
 	if (size <= MIN_SDRAM_SIZE)
 	{
@@ -144,15 +126,11 @@ long int initdram(int board_type)
 		do_reset (NULL, 0, 0, NULL);
 	}
 
-	if (size > max_size)
-	{
-		max_size = size;
-	//	printf("\n Return MAX size!! \n");
-		return max_size;
-	}
+#if defined (ON_BOARD_4096M_DRAM_COMPONENT) 
+	/* Do not use highmem in U-Boot! */
+	size = DRAM_SIZE * 0x100000;
 #endif
 
-//	printf("\n Return Real size =%d !! \n",size);
 	return size;
 }
 

@@ -531,8 +531,12 @@ static int init_func_ram (void)
 #endif
 
 	if ((gd->ram_size = initdram (board_type)) > 0) {
-		print_size (gd->ram_size, "\n");
-		return (0);  
+		ulong ram_size = gd->ram_size;
+#if defined (ON_BOARD_4096M_DRAM_COMPONENT)
+		ram_size += 64*1024*1024;
+#endif
+		print_size (ram_size, "\n");
+		return (0);
 	}
 	puts ("*** failed ***\n");
 
@@ -2103,8 +2107,13 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 
 #endif
 
-	debug("\n #### The CPU freq = %d MHZ #### \n",mips_cpu_feq/1000/1000);
-	debug(" estimate memory size = %d Mbytes\n",gd->ram_size /1024/1024 );
+	debug("\n #### The CPU freq = %d MHZ #### \n", mips_cpu_feq/1000/1000);
+
+#if defined (ON_BOARD_4096M_DRAM_COMPONENT) 
+	debug(" estimate memory size = %d Mbytes\n", gd->ram_size/1024/1024 + 64);
+#else
+	debug(" estimate memory size = %d Mbytes\n", gd->ram_size/1024/1024 );
+#endif
 
 #if defined (RT3052_ASIC_BOARD) || defined (RT3052_FPGA_BOARD)  || \
     defined (RT3352_ASIC_BOARD) || defined (RT3352_FPGA_BOARD)  || \

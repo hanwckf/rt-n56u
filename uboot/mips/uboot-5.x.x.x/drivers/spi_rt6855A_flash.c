@@ -883,6 +883,26 @@ static inline int raspi_write_disable(void)
 #endif
 }
 
+#ifdef SPI_FAST_CLOCK
+static void raspi_drive_strength(void)
+{
+	u8 code = 0;
+
+	if (spi_chip_info->id == 0xef) {
+		/* set Winbond DVP[1:0] as 10 (driving strength 50%) */
+		if (raspi_read_rg(0x15, &code) == 0) {
+			/* Winbond DVP[1:0] is 11 by default (driving strength 25%) */
+			if ((code & 0x60) == 0x60) {
+				code &= ~0x60;
+				code |= 0x40;
+				raspi_write_enable();
+				raspi_write_rg(0x11, &code);
+			}
+		}
+	}
+}
+#endif
+
 /*
  * Set all sectors (global) unprotected if they are protected.
  * Returns negative if error occurred.
@@ -1054,6 +1074,11 @@ unsigned long raspi_init(void)
 {
 	spic_init();
 	spi_chip_info = chip_prob();
+
+#ifdef SPI_FAST_CLOCK
+	raspi_drive_strength();
+#endif
+
 	return spi_chip_info->sector_size * spi_chip_info->n_sectors;
 }
 

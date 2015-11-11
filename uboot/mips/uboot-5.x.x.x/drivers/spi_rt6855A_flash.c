@@ -232,19 +232,20 @@ void spic_init(void)
 #if defined (MT7621_ASIC_BOARD) || defined (MT7628_ASIC_BOARD)
 	u32 clk_sys, clk_div, reg;
 
+	clk_sys = mips_bus_feq / 1000000;
 #if defined (MT7621_ASIC_BOARD)
-	clk_sys = 125;	/* bclk = 125 MHz */
+	// hclk = 220 MHz
 #ifdef SPI_FAST_CLOCK
-	clk_div = 4;	/* bclk/4 -> 31.25 MHz */
+	clk_div = 5;	/* hclk/5 -> 44.0 MHz */
 #else
-	clk_div = 5;	/* bclk/5 -> 25 MHz */
+	clk_div = 7;	/* hclk/7 -> 31.4 MHz */
 #endif
 #else
-	clk_sys = mips_bus_feq / 1000000;
+	// hclk = 193/191 MHz
 #ifdef SPI_FAST_CLOCK
-	clk_div = 5;	/* hclk/5 -> 40 MHz */
+	clk_div = 4;	/* hclk/4 -> 48.3 MHz */
 #else
-	clk_div = 8;	/* hclk/8 -> 25 MHz */
+	clk_div = 6;	/* hclk/6 -> 32.2 MHz */
 #endif
 #endif
 	reg = ra_inl(SPI_REG_MASTER);

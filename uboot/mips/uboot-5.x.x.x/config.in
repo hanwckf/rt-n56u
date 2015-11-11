@@ -1312,7 +1312,7 @@ hex "NAND Access timing (Hex)"	NAND_ACCTIME	0x44433
 fi
 
 if [ "$ON_BOARD_SPI_FLASH_COMPONENT" = "y" ]; then
-	bool "Use 30MHz SPI clock" SPI_FAST_CLOCK
+	bool "Use 50MHz SPI clock" SPI_FAST_CLOCK
 fi
 
 if [ "$DUAL_IMAGE_SUPPORT" = "y" ]; then
@@ -1481,7 +1481,7 @@ define_bool P4_MAC_TO_NONE_MODE y
 #-----------------------
 define_bool ON_BOARD_SPI_FLASH_COMPONENT y
 
-bool "Use 40MHz SPI clock" SPI_FAST_CLOCK
+bool "Use 50MHz SPI clock" SPI_FAST_CLOCK
 
 if [ "$DUAL_IMAGE_SUPPORT" = "y" ]; then
 choice 'Flash Size' "4M ON_BOARD_4M_FLASH_COMPONENT \

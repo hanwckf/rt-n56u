@@ -287,30 +287,33 @@ static void prom_init_sysclk(void)
 	reg = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x04));
 	memcpy(asic_id+4, &reg, 4);
 	asic_id[6] = '\0';
+	asic_id[7] = '\0';
 
 	ralink_asic_rev_id = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x0c));
 
 #if defined (CONFIG_RALINK_MT7620)
-	/* PKG_ID [16:16], 0: DRQFN-148 (N/H), 1: TFBGA-269 (A)  */
+	/* PKG_ID [16:16], 0: DRQFN-148 (N/H), 1: TFBGA-269 (A) */
 	if (ralink_asic_rev_id & (1UL<<16))
 		asic_id[6] = 'A';
 	else
 		asic_id[6] = 'N';
-	asic_id[7] = '\0';
 #elif defined (CONFIG_RALINK_MT7621)
-	/* CORE_NUM [17:17], 0: Single Core (S), 1: Dual Core (A)  */
+	/* CORE_NUM [17:17], 0: Single Core (S), 1: Dual Core (A) */
 	if (ralink_asic_rev_id & (1UL<<17))
 		asic_id[6] = 'A';
 	else
 		asic_id[6] = 'S';
-	asic_id[7] = '\0';
 #elif defined (CONFIG_RALINK_MT7628)
-	/* PKG_ID [16:16], 0: DRQFN-120 (KN), 1: DRQFN-156 (AN)  */
+	/* Detect MT7688 via FUSE EE_CFG bit 20 */
+	reg = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x08));
+	if (reg & (1UL<<20))
+		asic_id[4] = '8';
+
+	/* PKG_ID [16:16], 0: DRQFN-120 (KN), 1: DRQFN-156 (AN) */
 	if (ralink_asic_rev_id & (1UL<<16))
 		asic_id[6] = 'A';
 	else
 		asic_id[6] = 'K';
-	asic_id[7] = '\0';
 #endif
 
 	reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x10)));
@@ -349,10 +352,13 @@ static void prom_init_sysclk(void)
 	if (reg & (0x1UL << 30))
 		clk_sel = 1;	/* CPU PLL */
 #elif defined (CONFIG_MT7628_ASIC)
-	clk_sel = 0;		/* clock from CPU PLL (600MHz) */
-	clk_sel2 = (reg>>4) & 0x01;
+	clk_sel = 0;		/* CPU PLL (580/575MHz) */
+	clk_sel2 = reg & 0x01;
 	if (!(reg & (1UL<<6)))
 		xtal = 25;
+	reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x2C)));
+	if (reg & (0x1UL << 1))
+		clk_sel = 1;	/* BBP PLL (480MHz) */
 #else
 #error Please Choice System Type
 #endif
@@ -482,6 +488,9 @@ static void prom_init_sysclk(void)
 			mips_cpu_feq = 575 * 1000 * 1000;	/* 25MHZ Xtal */
 		else
 			mips_cpu_feq = 580 * 1000 * 1000;	/* 40MHz Xtal */
+		break;
+	case 1:
+		mips_cpu_feq = (480*1000*1000);
 		break;
 #else
 #error Please Choice Chip Type

@@ -139,7 +139,7 @@ int rtl8367_gsw_init_pre(void)
 	printf("\n Init RTL8367 GSW...");
 
 	/* wait after power-on-reset */
-	mdelay(100);
+	mdelay(200);
 	test_asic_ready_and_wait();
 
 	/* main switch init */

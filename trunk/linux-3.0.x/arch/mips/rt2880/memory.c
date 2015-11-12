@@ -94,9 +94,13 @@ void __init prom_meminit(void)
 		ramsize = RAM_SIZE;
 
 #if defined(CONFIG_RALINK_MT7621)
-	if (ramsize >= (448*1024*1024))
-		add_memory_region(RAM_BASE, ramsize + 64*1024*1024, BOOT_MEM_RAM);
-	else
+	if (ramsize > 0x1c000000) {
+		/* 1. Normal 0..448MB */
+		add_memory_region(RAM_BASE, 0x1c000000, BOOT_MEM_RAM);
+		
+		/* 2. Highmem (reserved yet, need highmem patch from MTI) */
+//		add_memory_region(0x20000000, (ramsize - 0x1c000000), BOOT_MEM_RAM);
+	} else
 #endif
 	add_memory_region(RAM_BASE, ramsize, BOOT_MEM_RAM);
 }

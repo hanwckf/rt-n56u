@@ -176,7 +176,7 @@ config RT2880_DRAM_256M
 	depends on !(RALINK_RT3052 || RALINK_RT5350)
 
 config RT2880_DRAM_512M
-	bool "512M"
+	bool "512M (448M + 64M Highmem)"
 	depends on RALINK_MT7621
 	select HIGHMEM
 

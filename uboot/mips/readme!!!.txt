@@ -4,6 +4,18 @@
 
                           LIST OF CHANGES
 
+5.0.0.3:
+----------------------------------------------------------
+- Fixed MT7628 CPU clock calculation.
+- Fixed MT7628 EPHY inits and WLED GPIO control.
+- Fixed MT7621 SYS_CLK and SPI clock calculation.
+- Fixed MT7621 xHCI KSEG0 memory deallocation.
+- Fixed "memsize" Linux env value for MT7621 with 512MB RAM.
+- Improved performance for 32MB/64MB SPI flash chips (4b mode).
+- Improved stability for Winbond SPI flash chips (up to SPI clock 75MHz).
+- Enabled SPI fast clock (50MHz) for all profiles.
+
+
 5.0.0.2:
 ----------------------------------------------------------
 - Added support Recovery from USB2 storage (see FEATURES).
@@ -103,4 +115,4 @@ NOTE:
 
 -
 Padavan
-10/01/2015
+11/12/2015

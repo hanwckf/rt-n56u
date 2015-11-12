@@ -156,19 +156,20 @@ void spic_init(void)
 {
 	u32 clk_sys, clk_div, reg;
 
+	clk_sys = get_surfboard_sysclk() / 1000000;
 #if defined (CONFIG_RALINK_MT7621)
-	clk_sys = 125;	/* bclk = 125MHz */
+	/* MT7621 sys_clk 220 MHz */
 #if defined (CONFIG_MTD_SPI_FAST_CLOCK)
-	clk_div = 4;	/* bclk/4 -> 31.25 MHz */
+	clk_div = 5;	/* hclk/5 -> 44.0 MHz */
 #else
-	clk_div = 5;	/* bclk/5 -> 25 MHz */
+	clk_div = 7;	/* hclk/7 -> 31.4 MHz */
 #endif
 #elif defined (CONFIG_RALINK_MT7628)
-	clk_sys = get_surfboard_sysclk() / 1000000;
+	/* MT7628 sys_clk 193/191 MHz */
 #if defined (CONFIG_MTD_SPI_FAST_CLOCK)
-	clk_div = 5;	/* hclk/5 -> 40 MHz */
+	clk_div = 4;	/* hclk/4 -> 48.3 MHz */
 #else
-	clk_div = 8;	/* hclk/8 -> 25 MHz */
+	clk_div = 6;	/* hclk/6 -> 32.2 MHz */
 #endif
 #endif
 	reg = ra_inl(SPI_REG_MASTER);
@@ -184,7 +185,7 @@ void spic_init(void)
 	ra_or(SPI_REG_MASTER, (1 << 29));
 #endif
 
-	printk("Ralink SPI flash driver, SPI clock: %dMHz\n", clk_sys / clk_div);
+	printk("MediaTek SPI flash driver, SPI clock: %dMHz\n", clk_sys / clk_div);
 }
 
 struct chip_info {
@@ -1151,4 +1152,4 @@ module_exit(raspi_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Steven Liu");
-MODULE_DESCRIPTION("Ralink MTD SPI driver for flash chips");
+MODULE_DESCRIPTION("MediaTek MTD SPI driver for flash chips");

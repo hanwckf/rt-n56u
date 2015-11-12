@@ -715,6 +715,26 @@ static int raspi_4byte_mode(int enable)
 	return 0;
 }
 
+#if defined (CONFIG_MTD_SPI_FAST_CLOCK)
+static void raspi_drive_strength(void)
+{
+	u8 code = 0;
+
+	if (flash->chip->id == 0xef) {
+		/* set Winbond DVP[1:0] as 10 (driving strength 50%) */
+		if (raspi_read_rg(&code, 0x15) == 0) {
+			/* Winbond DVP[1:0] is 11 by default (driving strength 25%) */
+			if ((code & 0x60) == 0x60) {
+				code &= ~0x60;
+				code |= 0x40;
+				raspi_write_enable();
+				raspi_write_rg(&code, 0x11);
+			}
+		}
+	}
+}
+#endif
+
 /*
  * Set write enable latch with Write Enable command.
  * Returns negative if error occurred.
@@ -1195,6 +1215,11 @@ static int __init raspi_init(void)
 	flash->mtd.write = ramtd_write;
 	flash->mtd.lock = ramtd_lock;
 	flash->mtd.unlock = ramtd_unlock;
+#endif
+
+#if defined (CONFIG_MTD_SPI_FAST_CLOCK)
+	/* tune flash chip output driving strength */
+	raspi_drive_strength();
 #endif
 
 	printk("SPI flash chip: %s (%02x %04x) (%u Kbytes)\n",

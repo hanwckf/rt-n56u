@@ -10,61 +10,60 @@ fi
 
 export PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
+
+dl () {
+	# $1 - URL to download
+	# $2 - place to store
+	# $3 - 'x' if should be executable
+	logger -t "${self_name}" "Downloading $2..."
+	wget -q $1 -O $2
+	if [ $? -eq 0 ] ; then
+		logger -t "${self_name}" "SUCCESS!"
+	else
+		logger -t "${self_name}" "FAILED!"
+		exit 1
+	fi
+	[ -z "$3" ] || chmod +x $2
+}
+
 # check opkg installed
 if [ ! -f /opt/bin/opkg ] ; then
 	logger -t "${self_name}" "Installing entware opkg...."
 
-	logger -t "${self_name}" "Checking for prerequisites and creating folders..."
-	for folder in include share tmp usr ; do
+	logger -t "${self_name}" "Creating folders..."
+	for folder in bin etc/init.d lib/opkg sbin share tmp usr var/log var/lock var/run ; do
 		if [ -d "/opt/$folder" ] ; then
-			logger -t "${self_name}" "Warning: Folder /opt/$folder exists!"
-			logger -t "${self_name}" "Warning: If something goes wrong please clean /opt folder and try again."
+			logger -t "${self_name}" "Warning: Folder /opt/$folder exists! If something goes wrong please clean /opt folder and try again."
 		else
-			mkdir /opt/$folder
+			mkdir -p /opt/$folder
 		fi
 	done
-	[ -d "/opt/lib/opkg" ] || mkdir -p /opt/lib/opkg
-	[ -d "/opt/var/lock" ] || mkdir -p /opt/var/lock
-	[ -d "/opt/var/run" ] || mkdir -p /opt/var/run
 
-	logger -t "${self_name}" "Opkg package manager deployment..."
-	cd /opt/bin
-	logger -t "${self_name}" "Downloading opkg..."
-	wget http://entware.wl500g.info/binaries/entware/installer/opkg
-	if [ $? -eq 0 ] ; then
-		logger -t "${self_name}" "SUCCESS!"
-	else
-		logger -t "${self_name}" "FAILED!"
-		exit 1
-	fi
-	chmod +x /opt/bin/opkg
-	cd /opt/etc
-	logger -t "${self_name}" "Downloading opkg.conf..."
-	wget http://entware.wl500g.info/binaries/entware/installer/opkg.conf
-	if [ $? -eq 0 ] ; then
-		logger -t "${self_name}" "SUCCESS!"
-	else
-		logger -t "${self_name}" "FAILED!"
-		exit 1
-	fi
-	logger -t "${self_name}" "Basic packages installation..."
+	URL=http://entware.zyxmon.org/binaries/mipsel/installer
+	dl $URL/opkg /opt/bin/opkg x
+	dl $URL/opkg.conf /opt/etc/opkg.conf
+	dl $URL/profile /opt/etc/profile x
+	dl $URL/rc.func /opt/etc/init.d/rc.func
+	dl $URL/rc.unslung /opt/etc/init.d/rc.unslung x
+
 	logger -t "${self_name}" "Updating opkg packages list..."
-	/opt/bin/opkg update
+	opkg update
 	if [ $? -eq 0 ] ; then
 		logger -t "${self_name}" "SUCCESS!"
 	else
 		logger -t "${self_name}" "FAILED!"
 		exit 1
 	fi
-	logger -t "${self_name}" "Installing uclibc-opt..."
-	/opt/bin/opkg install uclibc-opt
+	logger -t "${self_name}" "Installing ldconfig findutils..."
+	opkg install ldconfig findutils
 	if [ $? -eq 0 ] ; then
 		logger -t "${self_name}" "SUCCESS!"
 	else
 		logger -t "${self_name}" "FAILED!"
 		exit 1
 	fi
+	ldconfig > /dev/null 2>&1
 	logger -t "${self_name}" "Congratulations!"
 	logger -t "${self_name}" "If there are no errors above then Entware successfully initialized."
-	logger -t "${self_name}" "Found a Bug? Please report at https://github.com/Entware/entware/issues"
+	logger -t "${self_name}" "Found a Bug? Please report at https://github.com/Entware-ng/Entware-ng/issues"
 fi

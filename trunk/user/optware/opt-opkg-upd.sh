@@ -31,8 +31,7 @@ if [ ! -f /opt/bin/opkg ] ; then
 	logger -t "${self_name}" "Installing entware opkg...."
 
 	logger -t "${self_name}" "Creating folders..."
-	for folder in bin etc/init.d lib/opkg sbin share tmp usr var/log var/lock var/run
-	do
+	for folder in bin etc/init.d lib/opkg sbin share tmp usr var/log var/lock var/run ; do
 		if [ -d "/opt/$folder" ] ; then
 			logger -t "${self_name}" "Warning: Folder /opt/$folder exists! If something goes wrong please clean /opt folder and try again."
 		else

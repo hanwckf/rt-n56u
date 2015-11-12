@@ -80,6 +80,7 @@
 #define SR_BP0			0x04	/* Block protect 0 */
 #define SR_BP1			0x08	/* Block protect 1 */
 #define SR_BP2			0x10	/* Block protect 2 */
+#define SR_BP3			0x20	/* Block protect 3 */
 #define SR_EPE			0x20	/* Erase/Program error */
 #define SR_SRWD			0x80	/* SR write protect */
 
@@ -232,7 +233,6 @@ static int spic_transfer(const u8 *cmd, int n_cmd, u8 *buf, int n_buf, int flag)
 				goto end_trans;
 			buf[retval] = (u8) ra_inl(RT2880_SPIDATA_REG);
 		}
-
 	}
 	else if (flag & SPIC_WRITE_BYTES) {
 		for (retval = 0; retval < n_buf; retval++) {
@@ -341,9 +341,9 @@ static struct chip_info chips_data [] = {
 
 	{ "MX25L1605D",		0xc2, 0x2015c220, 64 * 1024, 32,  0 },
 	{ "MX25L3205D",		0xc2, 0x2016c220, 64 * 1024, 64,  0 },
-	{ "MX25L6405D",		0xc2, 0x2017c220, 64 * 1024, 128, 0 },
-	{ "MX25L12805D",	0xc2, 0x2018c220, 64 * 1024, 256, 0 },
-	{ "MX25L25635E",	0xc2, 0x2019c220, 64 * 1024, 512, 1 },
+	{ "MX25L6406E",		0xc2, 0x2017c220, 64 * 1024, 128, 0 },
+	{ "MX25L12835F",	0xc2, 0x2018c220, 64 * 1024, 256, 0 },
+	{ "MX25L25635F",	0xc2, 0x2019c220, 64 * 1024, 512, 1 },
 	{ "MX25L51245G",	0xc2, 0x201ac220, 64 * 1024, 1024, 1 },
 
 	{ "GD25Q32B",		0xc8, 0x40160000, 64 * 1024, 64,  0 },
@@ -353,7 +353,7 @@ static struct chip_info chips_data [] = {
 	{ "W25X32VS",		0xef, 0x30160000, 64 * 1024, 64,  0 },
 	{ "W25Q32BV",		0xef, 0x40160000, 64 * 1024, 64,  0 },
 	{ "W25Q64BV",		0xef, 0x40170000, 64 * 1024, 128, 0 }, // S25FL064K
-	{ "W25Q128BV",		0xef, 0x40180000, 64 * 1024, 256, 0 },
+	{ "W25Q128FV",		0xef, 0x40180000, 64 * 1024, 256, 0 },
 	{ "W25Q256FV",		0xef, 0x40190000, 64 * 1024, 512, 1 },
 
 #if defined (CONFIG_RT2880_FLASH_32M)
@@ -605,21 +605,6 @@ static int raspi_write_sr(u8 *val)
 	return 0;
 }
 
-#if 0
-// not used
-static int raspi_clear_sr(void)
-{
-	u8 code = OPCODE_CLSR;
-
-#if defined (COMMAND_MODE)
-	raspi_cmd(code, 0, 0, 0, 0, 0, 0);
-#else
-	spic_read(&code, 1, 0, 0);
-#endif
-	return 0;
-}
-#endif
-
 /*
  * Service routine to read status register until ready, or timeout occurs.
  * Returns non-zero if error.
@@ -689,7 +674,7 @@ static int raspi_4byte_mode(int enable)
 			return -1;
 		}
 	}
-	else // if (flash->chip->id == 0xc2) // MXIC
+	else
 	{
 		ssize_t retval;
 		u8 code = (enable) ? 0xB7 : 0xE9;
@@ -697,15 +682,15 @@ static int raspi_4byte_mode(int enable)
 		u32 user = SPIUSR_SINGLE | (SPIUSR_SINGLE << 3) | (SPIUSR_SINGLE << 6) | (SPIUSR_SINGLE << 9) | (SPIUSR_NO_DATA << 12) | (SPIUSR_NO_DUMMY << 14) | (SPIUSR_NO_MODE << 16) | (SPIUSR_NO_ADDR << 17) | (SPIUSR_ONE_INSTRU << 20) | (1 << 21);
 		retval = raspi_cmd(code, 0, 0, 0, 0, user, SPIC_USER_MODE);
 #else
-		retval = spic_read(&code, 1, 0, 0);
+		retval = spic_write(&code, 1, 0, 0);
 #endif
 		// for Winbond's W25Q256FV, need to clear extend address register
-		if ((!enable) && (flash->chip->id == 0xef))
-		{
+		if ((!enable) && (flash->chip->id == 0xef)) {
 			code = 0x0;
 			raspi_write_enable();
 			raspi_write_rg(&code, 0xc5);
 		}
+		
 		if (retval != 0) {
 			printk("%s: 4B mode set failed!\n", __func__);
 			return -1;
@@ -767,14 +752,18 @@ static inline int raspi_write_disable(void)
  */
 static void raspi_unprotect(void)
 {
-	u8 sr = 0;
+	u8 sr_bp, sr = 0;
 
 	if (raspi_read_sr(&sr) < 0) {
 		printk("%s: read_sr fail: %x\n", __func__, sr);
 		return;
 	}
 
-	if ((sr & (SR_BP0 | SR_BP1 | SR_BP2)) != 0) {
+	sr_bp = SR_BP0 | SR_BP1 | SR_BP2;
+	if (flash->chip->addr4b)
+		sr_bp |= SR_BP3;
+
+	if ((sr & sr_bp) != 0) {
 		sr = 0;
 		raspi_write_enable();
 		raspi_write_sr(&sr);
@@ -799,14 +788,10 @@ static int raspi_erase_sector(u32 offset)
 	if (raspi_wait_ready(10))
 		return -EIO;
 
-	raspi_unprotect();
-
-	if (flash->chip->addr4b) {
 #if defined (COMMAND_MODE)
+	if (flash->chip->addr4b)
 		cmd_flag |= SPIC_4B_ADDR;
 #endif
-		raspi_4byte_mode(1);
-	}
 
 	/* Send write enable, then erase commands. */
 	raspi_write_enable();
@@ -829,9 +814,6 @@ static int raspi_erase_sector(u32 offset)
 	}
 #endif
 	raspi_wait_sleep_ready(950);
-
-	if (flash->chip->addr4b)
-		raspi_4byte_mode(0);
 
 	return 0;
 }
@@ -870,7 +852,6 @@ int raspi_set_lock (struct mtd_info *mtd, loff_t to, size_t len, int set)
 	return 0;
 }
 
-
 /****************************************************************************/
 
 /*
@@ -883,7 +864,8 @@ int raspi_set_lock (struct mtd_info *mtd, loff_t to, size_t len, int set)
  */
 static int ramtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
-	u32 addr,len;
+	u32 addr, len;
+	int exit_code = 0;
 
 	/* sanity checks */
 	if (instr->addr + instr->len > flash->mtd.size)
@@ -894,24 +876,39 @@ static int ramtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 
 	mutex_lock(&flash->lock);
 
+	/* wait until finished previous command. */
+	if (raspi_wait_ready(10)) {
+		instr->state = MTD_ERASE_FAILED;
+		mutex_unlock(&flash->lock);
+		return -EIO;
+	}
+
+	raspi_unprotect();
+
+	if (flash->chip->addr4b)
+		raspi_4byte_mode(1);
+
 	/* now erase those sectors */
 	while (len > 0) {
 		if (raspi_erase_sector(addr)) {
-			instr->state = MTD_ERASE_FAILED;
-			mutex_unlock(&flash->lock);
-			return -EIO;
+			exit_code = -EIO;
+			break;
 		}
-
 		addr += mtd->erasesize;
 		len -= mtd->erasesize;
 	}
 
+	if (flash->chip->addr4b)
+		raspi_4byte_mode(0);
+
+	instr->state = (exit_code == 0) ? MTD_ERASE_DONE : MTD_ERASE_FAILED;
+
 	mutex_unlock(&flash->lock);
 
-	instr->state = MTD_ERASE_DONE;
-	mtd_erase_callback(instr);
+	if (exit_code == 0)
+		mtd_erase_callback(instr);
 
-	return 0;
+	return exit_code;
 }
 
 /*
@@ -1057,7 +1054,7 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 	/* Wait until finished previous write command. */
 	if (raspi_wait_ready(2)) {
 		mutex_unlock(&flash->lock);
-		return -1;
+		return -EIO;
 	}
 
 	raspi_unprotect();

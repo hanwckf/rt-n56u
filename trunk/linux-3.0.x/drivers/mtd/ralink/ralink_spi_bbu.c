@@ -91,6 +91,7 @@
 #define SR_BP0			0x04	/* Block protect 0 */
 #define SR_BP1			0x08	/* Block protect 1 */
 #define SR_BP2			0x10	/* Block protect 2 */
+#define SR_BP3			0x20	/* Block protect 3 */
 #define SR_EPE			0x20	/* Erase/Program error */
 #define SR_SRWD			0x80	/* SR write protect */
 
@@ -232,9 +233,9 @@ static struct chip_info chips_data [] = {
 
 	{ "MX25L1605D",		0xc2, 0x2015c220, 64 * 1024, 32,  0 },
 	{ "MX25L3205D",		0xc2, 0x2016c220, 64 * 1024, 64,  0 },
-	{ "MX25L6405D",		0xc2, 0x2017c220, 64 * 1024, 128, 0 },
-	{ "MX25L12805D",	0xc2, 0x2018c220, 64 * 1024, 256, 0 },
-	{ "MX25L25635E",	0xc2, 0x2019c220, 64 * 1024, 512, 1 },
+	{ "MX25L6406E",		0xc2, 0x2017c220, 64 * 1024, 128, 0 },
+	{ "MX25L12835F",	0xc2, 0x2018c220, 64 * 1024, 256, 0 },
+	{ "MX25L25635F",	0xc2, 0x2019c220, 64 * 1024, 512, 1 },
 	{ "MX25L51245G",	0xc2, 0x201ac220, 64 * 1024, 1024, 1 },
 
 	{ "GD25Q32B",		0xc8, 0x40160000, 64 * 1024, 64,  0 },
@@ -244,7 +245,7 @@ static struct chip_info chips_data [] = {
 	{ "W25X32VS",		0xef, 0x30160000, 64 * 1024, 64,  0 },
 	{ "W25Q32BV",		0xef, 0x40160000, 64 * 1024, 64,  0 },
 	{ "W25Q64BV",		0xef, 0x40170000, 64 * 1024, 128, 0 }, // S25FL064K
-	{ "W25Q128BV",		0xef, 0x40180000, 64 * 1024, 256, 0 },
+	{ "W25Q128FV",		0xef, 0x40180000, 64 * 1024, 256, 0 },
 	{ "W25Q256FV",		0xef, 0x40190000, 64 * 1024, 512, 1 },
 
 #if defined (CONFIG_RT2880_FLASH_32M)
@@ -269,7 +270,7 @@ static struct flash_info *flash = NULL;
 #ifdef MORE_BUF_MODE
 static int bbu_mb_spic_trans(const u8 code, const u32 addr, u8 *buf, const size_t n_tx, const size_t n_rx, int flag)
 {
-	u32 reg, reg_ctl, reg_data;
+	u32 reg_mb, reg_ctl, reg_opcode, reg_data;
 	int i, q, r;
 
 	if (flag != SPIC_READ_BYTES && flag != SPIC_WRITE_BYTES)
@@ -287,27 +288,28 @@ static int bbu_mb_spic_trans(const u8 code, const u32 addr, u8 *buf, const size_
 	/* step 1. set opcode & address */
 	if (flash->chip->addr4b) {
 		reg_ctl |= ((code << 24) & SPI_CTL_ADDREXT_MASK);
-		ra_outl(SPI_REG_OPCODE, addr);
+		reg_opcode = addr;
 	} else {
-		reg = (code << 24) | (addr & 0xffffff);
-		ra_outl(SPI_REG_OPCODE, reg);
+		reg_opcode = (code << 24) | (addr & 0xffffff);
 	}
 
-	reg = ra_inl(SPI_REG_MOREBUF);
-	reg &= ~SPI_MBCTL_TXRXCNT_MASK;
-	reg &= ~SPI_MBCTL_CMD_MASK;
+	ra_outl(SPI_REG_OPCODE, reg_opcode);
+
+	reg_mb = ra_inl(SPI_REG_MOREBUF);
+	reg_mb &= ~SPI_MBCTL_TXRXCNT_MASK;
+	reg_mb &= ~SPI_MBCTL_CMD_MASK;
 
 	/* step 2. set cmd bit count to 32 (or 40) */
 	if (flash->chip->addr4b)
-		reg |= ((5 << 3) << 24);
+		reg_mb |= ((5 << 3) << 24);
 	else
-		reg |= ((4 << 3) << 24);
+		reg_mb |= ((4 << 3) << 24);
 
 	/* step 3. set rx (miso_bit_cnt) and tx (mosi_bit_cnt) bit count */
-	reg |= ((n_rx << 3) << 12);
-	reg |=  (n_tx << 3);
+	reg_mb |= ((n_rx << 3) << 12);
+	reg_mb |=  (n_tx << 3);
 
-	ra_outl(SPI_REG_MOREBUF, reg);
+	ra_outl(SPI_REG_MOREBUF, reg_mb);
 
 #if defined(RD_MODE_FAST)
 	/* clear data bit for dummy bits in Fast IO Read */
@@ -359,6 +361,7 @@ static int bbu_mb_spic_trans(const u8 code, const u32 addr, u8 *buf, const size_
 
 static int bbu_spic_trans(const u8 code, const u32 addr, u8 *buf, const size_t n_tx, const size_t n_rx, int flag)
 {
+	int addr4b = 0;
 	u32 reg_ctl, reg_opcode, reg_data;
 
 	bbu_spic_busy_wait();
@@ -367,8 +370,11 @@ static int bbu_spic_trans(const u8 code, const u32 addr, u8 *buf, const size_t n
 	reg_ctl &= ~SPI_CTL_TXRXCNT_MASK;
 	reg_ctl &= ~SPI_CTL_ADDREXT_MASK;
 
+	if ((reg_ctl & SPI_CTL_SIZE_MASK) == SPI_CTL_SIZE_MASK)
+		addr4b = 1;
+
 	/* step 1. set opcode & address */
-	if (flash && flash->chip->addr4b)
+	if (flash && flash->chip->addr4b && addr4b)
 		reg_ctl |= (addr & SPI_CTL_ADDREXT_MASK);
 
 	reg_opcode = ((addr & 0xffffff) << 8) | code;
@@ -394,25 +400,27 @@ static int bbu_spic_trans(const u8 code, const u32 addr, u8 *buf, const size_t n
 		case 5:
 			reg_data |= *buf;
 			break;
+#if defined(RD_MODE_QIOR) || defined(RD_MODE_QOR)
 		case 3:
 			reg_opcode &= 0xff;
-			if (flash->chip->addr4b && ((reg_ctl & SPI_CTL_SIZE_MASK) == SPI_CTL_SIZE_MASK)) {
+			if (flash->chip->addr4b && addr4b) {
 				reg_ctl &= ~SPI_CTL_ADDREXT_MASK;
-				reg_ctl |= ((*buf << 24) & SPI_CTL_ADDREXT_MASK);
+				reg_ctl |= (*buf << 24);
 				
-				reg_opcode |= ((*(buf+1) & 0xff) << 24);
+				reg_opcode |= (*(buf+1) << 24);
 			} else {
-				reg_opcode |= ((*buf & 0xff) << 24);
-				reg_opcode |= ((*(buf+1) & 0xff) << 16);
+				reg_opcode |= (*buf << 24);
+				reg_opcode |= (*(buf+1) << 16);
 			}
 			break;
+#endif
 		case 2:
 			reg_opcode &= 0xff;
-			if (flash->chip->addr4b && ((reg_ctl & SPI_CTL_SIZE_MASK) == SPI_CTL_SIZE_MASK)) {
+			if (flash->chip->addr4b && addr4b) {
 				reg_ctl &= ~SPI_CTL_ADDREXT_MASK;
-				reg_ctl |= ((*buf << 24) & SPI_CTL_ADDREXT_MASK);
+				reg_ctl |= (*buf << 24);
 			} else {
-				reg_opcode |= ((*buf & 0xff) << 24);
+				reg_opcode |= (*buf << 24);
 			}
 			break;
 		default:
@@ -427,7 +435,7 @@ static int bbu_spic_trans(const u8 code, const u32 addr, u8 *buf, const size_t n
 
 	/* step 3. set mosi_byte_cnt */
 	reg_ctl |= (n_rx << 4);
-	if (flash && flash->chip->addr4b && n_tx >= 4)
+	if (flash && flash->chip->addr4b && addr4b && n_tx >= 4)
 		reg_ctl |= (n_tx + 1);
 	else
 		reg_ctl |= n_tx;
@@ -475,6 +483,51 @@ static inline int raspi_write_disable(void)
 {
 	return bbu_spic_trans(OPCODE_WRDI, 0, NULL, 1, 0, 0);
 }
+
+/*
+ * Read the status register, returning its value in the location
+ */
+static inline int raspi_read_rg(u8 code, u8 *val)
+{
+	return bbu_spic_trans(code, 0, val, 1, 1, SPIC_READ_BYTES);
+}
+
+/*
+ * write status register
+ */
+static int raspi_write_rg(u8 code, u8 *val)
+{
+	u32 address = (*val) << 24;
+
+	// put the value to be written in address register, so it will be transfered
+	return bbu_spic_trans(code, address, val, 2, 0, SPIC_WRITE_BYTES);
+}
+
+/*
+ * read SPI flash device ID
+ */
+static int raspi_read_devid(u8 *rxbuf, int n_rx)
+{
+	int retval;
+
+	retval = bbu_spic_trans(OPCODE_RDID, 0, rxbuf, 1, 4, SPIC_READ_BYTES);
+	if (retval)
+		printk("%s: ret: %x\n", __func__, retval);
+
+	return retval;
+}
+
+static inline int raspi_read_sr(u8 *val)
+{
+	return raspi_read_rg(OPCODE_RDSR, val);
+}
+
+static inline int raspi_write_sr(u8 *val)
+{
+	return raspi_write_rg(OPCODE_WRSR, val);
+}
+
+static int raspi_wait_ready(int sleep_ms);
 
 #if defined(RD_MODE_QIOR) || defined(RD_MODE_QOR)
 static int raspi_write_rg16(u8 code, u8 *val)
@@ -526,69 +579,24 @@ static int raspi_set_quad(void)
 }
 #endif
 
-static int raspi_wait_ready(int sleep_ms);
-
-/*
- * Read the status register, returning its value in the location
- */
-static int raspi_read_rg(u8 code, u8 *val)
-{
-	return bbu_spic_trans(code, 0, val, 1, 1, SPIC_READ_BYTES);
-}
-
-/*
- * write status register
- */
-static int raspi_write_rg(u8 code, u8 *val)
-{
-	u32 address = (*val) << 24;
-
-	// put the value to be written in address register, so it will be transfered
-	return bbu_spic_trans(code, address, val, 2, 0, SPIC_WRITE_BYTES);
-}
-
-/*
- * read SPI flash device ID
- */
-static int raspi_read_devid(u8 *rxbuf, int n_rx)
-{
-	int retval;
-
-	retval = bbu_spic_trans(OPCODE_RDID, 0, rxbuf, 1, 4, SPIC_READ_BYTES);
-	if (retval)
-		printk("%s: ret: %x\n", __func__, retval);
-
-	return retval;
-}
-
-static inline int raspi_read_sr(u8 *val)
-{
-	return raspi_read_rg(OPCODE_RDSR, val);
-}
-
-static inline int raspi_write_sr(u8 *val)
-{
-	return raspi_write_rg(OPCODE_WRSR, val);
-}
-
 static int raspi_4byte_mode(int enable)
 {
+	int retval;
 	u32 reg_ctl, reg_qctl;
-	ssize_t retval;
 
 	raspi_wait_ready(1);
 
-	reg_ctl  = ra_inl(SPI_REG_CTL);
+	reg_ctl = ra_inl(SPI_REG_CTL);
 	reg_qctl = ra_inl(SPI_REG_Q_CTL);
 
 	if (enable) {
-		reg_ctl  |= SPI_CTL_SIZE_MASK;
-		reg_qctl |= (0x3 << 8);
+		reg_ctl |= SPI_CTL_SIZE_MASK;
+		reg_qctl |= SPI_QCTL_FSADSZ_MASK;
 	} else {
-		reg_ctl  &= ~SPI_CTL_SIZE_MASK;
-		reg_ctl  |=  (0x2 << 19);
-		reg_qctl &= ~(0x3 << 8);
-		reg_qctl |=  (0x2 << 8);
+		reg_ctl &= ~SPI_CTL_SIZE_MASK;
+		reg_ctl |= (0x2 << 19);
+		reg_qctl &= ~SPI_QCTL_FSADSZ_MASK;
+		reg_qctl |= (0x2 << 8);
 	}
 
 	ra_outl(SPI_REG_CTL, reg_ctl);
@@ -602,9 +610,8 @@ static int raspi_4byte_mode(int enable)
 		raspi_write_rg(OPCODE_BRWR, &br);
 		raspi_wait_ready(1);
 		raspi_read_rg(OPCODE_BRRD, &br_cfn);
-		if (br_cfn != br)
-		{
-			printk("4B mode switch failed %d, %x, %x\n", enable, br_cfn, br);
+		if (br_cfn != br) {
+			printk("%s: 4B mode set failed!\n", __func__);
 			return -1;
 		}
 	}
@@ -616,15 +623,14 @@ static int raspi_4byte_mode(int enable)
 		retval = bbu_spic_trans(code, 0, NULL, 1, 0, 0);
 		
 		// for Winbond's W25Q256FV, need to clear extend address register
-		if ((!enable) && (flash->chip->id == 0xef))
-		{
+		if ((!enable) && (flash->chip->id == 0xef)) {
 			code = 0x0;
 			raspi_write_enable();
 			raspi_write_rg(0xc5, &code);
 		}
 		
 		if (retval != 0) {
-			printk("%s: ret: %x\n", __func__, retval);
+			printk("%s: 4B mode set failed!\n", __func__);
 			return -1;
 		}
 	}
@@ -658,14 +664,18 @@ static void raspi_drive_strength(void)
  */
 static int raspi_unprotect(void)
 {
-	u8 sr = 0;
+	u8 sr_bp, sr = 0;
 
 	if (raspi_read_sr(&sr) < 0) {
 		printk("%s: read_sr fail: %x\n", __func__, sr);
 		return -1;
 	}
 
-	if ((sr & (SR_BP0 | SR_BP1 | SR_BP2)) != 0) {
+	sr_bp = SR_BP0 | SR_BP1 | SR_BP2;
+	if (flash->chip->addr4b)
+		sr_bp |= SR_BP3;
+
+	if ((sr & sr_bp) != 0) {
 		sr = 0;
 		raspi_write_enable();
 		raspi_write_sr(&sr);
@@ -729,18 +739,10 @@ static int raspi_erase_sector(u32 offset)
 	if (raspi_wait_ready(10))
 		return -EIO;
 
-	raspi_unprotect();
-
-	if (flash->chip->addr4b)
-		raspi_4byte_mode(1);
-
 	/* Send write enable, then erase commands. */
 	raspi_write_enable();
 	bbu_spic_trans(OPCODE_SE, offset, NULL, 4, 0, 0);
 	raspi_wait_sleep_ready(950);
-
-	if (flash->chip->addr4b)
-		raspi_4byte_mode(0);
 
 	return 0;
 }
@@ -791,7 +793,8 @@ struct chip_info *chip_prob(void)
  */
 static int ramtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
-	u32 addr,len;
+	u32 addr, len;
+	int exit_code = 0;
 
 	/* sanity checks */
 	if (instr->addr + instr->len > flash->mtd.size)
@@ -802,23 +805,39 @@ static int ramtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 
 	mutex_lock(&flash->lock);
 
+	/* wait until finished previous command. */
+	if (raspi_wait_ready(10)) {
+		instr->state = MTD_ERASE_FAILED;
+		mutex_unlock(&flash->lock);
+		return -EIO;
+	}
+
+	raspi_unprotect();
+
+	if (flash->chip->addr4b)
+		raspi_4byte_mode(1);
+
 	/* now erase those sectors */
 	while (len > 0) {
 		if (raspi_erase_sector(addr)) {
-			instr->state = MTD_ERASE_FAILED;
-			mutex_unlock(&flash->lock);
-			return -EIO;
+			exit_code = -EIO;
+			break;
 		}
 		addr += mtd->erasesize;
 		len -= mtd->erasesize;
 	}
 
+	if (flash->chip->addr4b)
+		raspi_4byte_mode(0);
+
+	instr->state = (exit_code == 0) ? MTD_ERASE_DONE : MTD_ERASE_FAILED;
+
 	mutex_unlock(&flash->lock);
 
-	instr->state = MTD_ERASE_DONE;
-	mtd_erase_callback(instr);
+	if (exit_code == 0)
+		mtd_erase_callback(instr);
 
-	return 0;
+	return exit_code;
 }
 
 /*
@@ -830,6 +849,7 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 {
 	int rc;
 	size_t rdlen = 0;
+	u32 reg_master;
 #ifdef MORE_BUF_MODE
 #if defined(RD_MODE_FAST)
 	u8 code = OPCODE_FAST_READ;
@@ -875,7 +895,6 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 
 	/* Wait till previous write/erase is done. */
 	if (raspi_wait_ready(1)) {
-		/* REVISIT status return?? */
 		mutex_unlock(&flash->lock);
 		return -EIO;
 	}
@@ -883,17 +902,20 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 	if (flash->chip->addr4b)
 		raspi_4byte_mode(1);
 
+	reg_master = ra_inl(SPI_REG_MASTER);
+	reg_master &= ~(0x7);
+
 #ifdef MORE_BUF_MODE
 	/* SPI mode = more byte mode */
-	ra_or(SPI_REG_MASTER, 0x4);
+	ra_outl(SPI_REG_MASTER, (reg_master | 0x4));
 #else
 #if defined(RD_MODE_DIOR) || defined(RD_MODE_DOR)
 	/* SPI mode = dual mode */
-	ra_or(SPI_REG_MASTER, 0x1);
+	ra_outl(SPI_REG_MASTER, (reg_master | 0x1));
 #elif defined(RD_MODE_QIOR) || defined(RD_MODE_QOR)
 	/* SPI mode = quad mode */
 	raspi_set_quad();
-	ra_or(SPI_REG_MASTER, 0x2);
+	ra_outl(SPI_REG_MASTER, (reg_master | 0x2));
 #endif
 #endif
 
@@ -915,7 +937,7 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 	}
 
 	/* SPI mode = normal */
-	ra_and(SPI_REG_MASTER, ~(0x7));
+	ra_outl(SPI_REG_MASTER, reg_master);
 
 	if (flash->chip->addr4b)
 		raspi_4byte_mode(0);
@@ -949,7 +971,7 @@ inline int ramtd_unlock (struct mtd_info *mtd, loff_t to, uint64_t len)
 static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 	size_t *retlen, const u_char *buf)
 {
-	u32 page_offset, page_size;
+	u32 page_offset, page_size, reg_master;
 	int rc = 0, exit_code = 0;
 	int wrto, wrlen;
 	char *wrbuf;
@@ -970,13 +992,16 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 	/* wait until finished previous write command. */
 	if (raspi_wait_ready(2)) {
 		mutex_unlock(&flash->lock);
-		return -1;
+		return -EIO;
 	}
 
 	raspi_unprotect();
 
 	if (flash->chip->addr4b)
 		raspi_4byte_mode(1);
+
+	reg_master = ra_inl(SPI_REG_MASTER);
+	reg_master &= ~(0x7);
 
 	/* what page do we start with? */
 	page_offset = to % FLASH_PAGESIZE;
@@ -997,9 +1022,9 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 			raspi_wait_ready(100);
 			raspi_write_enable();
 #ifdef MORE_BUF_MODE
-			ra_or(SPI_REG_MASTER, 0x4);
+			ra_outl(SPI_REG_MASTER, (reg_master | 0x4));
 			rc = bbu_mb_spic_trans(OPCODE_PP, wrto, wrbuf, w_part, 0, SPIC_WRITE_BYTES);
-			ra_and(SPI_REG_MASTER, ~(0x7));
+			ra_outl(SPI_REG_MASTER, reg_master);
 #else
 			rc = bbu_spic_trans(OPCODE_PP, wrto, wrbuf, w_part+4, 0, SPIC_WRITE_BYTES);
 #endif

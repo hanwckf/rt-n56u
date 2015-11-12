@@ -14,17 +14,12 @@ DECLARE_GLOBAL_DATA_PTR;
  * for the usb controller.
  */
 
-void reinitIP(void)
-{
-	enableAllClockPower();
-}
-
 int xhci_hcd_init(int index, struct xhci_hccr **hccr, struct xhci_hcor **hcor)
 {
 	u3phy_init();
 	mt7621_phy_init(u3phy);
 
-	reinitIP();
+	enableAllClockPower();
 
 	u2_slew_rate_calibration(u3phy);
 	u2_slew_rate_calibration(u3phy_p1);
@@ -43,4 +38,5 @@ int xhci_hcd_init(int index, struct xhci_hccr **hccr, struct xhci_hcor **hcor)
 void xhci_hcd_stop(int index)
 {
 	disablePortClockPower();
+	u3phy_uninit();
 }

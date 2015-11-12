@@ -23,9 +23,6 @@ PHY_INT32 u3phy_init(){
 #ifndef CONFIG_PROJECT_PHY
 	PHY_INT32 u3phy_version;
 #endif
-	
-	//if (u3phy != NULL)
-	//	return PHY_TRUE;
 
 	u3phy = malloc(sizeof(struct u3phy_info));
 	if (u3phy == NULL)
@@ -63,6 +60,22 @@ PHY_INT32 u3phy_init(){
 	u3phy_p1->sifslv_fm_regs = (struct sifslv_fm_feg *)SIFSLV_FM_FEG_BASE;
 #endif
 
+#endif
+
+	return PHY_TRUE;
+}
+
+PHY_INT32 u3phy_uninit(){
+	if (u3phy != NULL) {
+		free(u3phy);
+		u3phy = NULL;
+	}
+
+#if defined (CONFIG_RALINK_MT7621)
+	if (u3phy_p1 != NULL) {
+		free(u3phy_p1);
+		u3phy_p1 = NULL;
+	}
 #endif
 
 	return PHY_TRUE;

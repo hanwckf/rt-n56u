@@ -79,10 +79,10 @@ static void xhci_segment_free(struct xhci_segment *seg)
 {
 	if (seg) {
 		if (seg->trbs) {
-			free(seg->trbs);
+			free(KSEG0ADDR(seg->trbs));
 			seg->trbs = NULL;
 		}
-		free(seg);
+		free(KSEG0ADDR(seg));
 	}
 }
 
@@ -108,7 +108,7 @@ static void xhci_ring_free(struct xhci_ring *ring)
 	}
 	xhci_segment_free(first_seg);
 
-	free(ring);
+	free(KSEG0ADDR(ring));
 }
 
 /**
@@ -121,8 +121,7 @@ static void xhci_free_container_ctx(struct xhci_container_ctx *ctx)
 {
 	if (ctx) {
 		if (ctx->bytes) {
-
-			free(ctx->bytes);
+			free(KSEG0ADDR(ctx->bytes));
 		}
 		free(KSEG0ADDR(ctx));
 	}
@@ -160,7 +159,7 @@ static void xhci_free_virt_devices(struct xhci_ctrl *ctrl)
 		if (virt_dev->out_ctx)
 			xhci_free_container_ctx(virt_dev->out_ctx);
 
-		free(virt_dev);
+		free(KSEG0ADDR(virt_dev));
 		/* make sure we are pointing to NULL */
 		ctrl->devs[slot_id] = NULL;
 	}
@@ -181,9 +180,9 @@ void xhci_cleanup(struct xhci_ctrl *ctrl)
 	if (ctrl)
 		xhci_free_virt_devices(ctrl);
 	if (ctrl->erst.entries)
-		free(ctrl->erst.entries);
+		free(KSEG0ADDR(ctrl->erst.entries));
 	if (ctrl->dcbaa)
-		free(ctrl->dcbaa);
+		free(KSEG0ADDR(ctrl->dcbaa));
 	memset(ctrl, '\0', sizeof(struct xhci_ctrl));
 }
 

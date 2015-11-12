@@ -87,7 +87,6 @@
 #define IOCTL_READ			_IOR(CLI_MAGIC, 0, int)
 #define IOCTL_WRITE			_IOW(CLI_MAGIC, 1, int)
 
-void reinitIP(void);
 void setInitialReg(void);
 void dbg_prb_out(void);
 int call_function(char *buf);

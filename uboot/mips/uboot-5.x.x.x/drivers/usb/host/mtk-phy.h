@@ -158,6 +158,7 @@ struct strucTestCycle
 #define MIN_Y                 0
 
 PHY_INT32 u3phy_init(void);
+PHY_INT32 u3phy_uninit(void);
 PHY_INT32 mt7628_phy_init(void);
 PHY_INT32 mt7628_phy_down(void);
 

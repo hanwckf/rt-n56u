@@ -6,7 +6,6 @@
 #include "xhci-mtk.h"
 
 void enableXhciAllPortPower(struct xhci_hcor *hcor);
-//void enableXhciAllPortPower(struct xhci_hcd *xhci);
 void enableAllClockPower(void);
 void disablePortClockPower(void);
 void enablePortClockPower(int port_index, int port_rev);

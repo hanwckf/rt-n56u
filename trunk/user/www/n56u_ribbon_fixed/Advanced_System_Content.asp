@@ -320,7 +320,7 @@ function openLink(s) {
                                                     <option value="CST-9.30CDT" <% nvram_match_x("","time_zone", "CST-9.30CDT","selected"); %>		>(GMT+09:30) <#TZ73#></option>
                                                     <option value="UCT-9.30" <% nvram_match_x("","time_zone", "UCT-9.30","selected"); %>		>(GMT+09:30) <#TZ74#></option>
                                                     <option value="UTC-10" <% nvram_match_x("","time_zone", "UTC-10","selected"); %>			>(GMT+10:00) <#TZ78#></option>
-                                                    <option value="UCT-10_1" <% nvram_match_x("","time_zone", "UCT-10_1","selected"); %>		>(GMT+10:00) <#TZ75#></option>
+                                                    <option value="EST-10EDT" <% nvram_match_x("","time_zone", "EST-10EDT","selected"); %>		>(GMT+10:00) <#TZ75#></option>
                                                     <option value="UCT-10_2" <% nvram_match_x("","time_zone", "UCT-10_2","selected"); %>		>(GMT+10:00) <#TZ76#></option>
                                                     <option value="TST-10TDT" <% nvram_match_x("","time_zone", "TST-10TDT","selected"); %>		>(GMT+10:00) <#TZ77#></option>
                                                     <option value="UCT-10_5" <% nvram_match_x("","time_zone", "UCT-10_5","selected"); %>		>(GMT+10:00) <#TZ79#></option>

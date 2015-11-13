@@ -446,22 +446,44 @@ int isStorageInterface(const char *interface_class){
 int has_usb_devices(void)
 {
 	FILE *fp;
-	int dev_found = 0;
+	int id_parent, id_port, dev_found;
 	char line[128];
 
 	fp = fopen(USB_BUS_PATH, "r");
 	if (!fp)
 		return 0;
 
+	dev_found = 0;
 	while (fgets(line, sizeof(line), fp))
 	{
 		if (line[0] != 'T')
 			continue;
 		
-		if (get_param_int(line, "Prnt=", 10, -1) > 0) {
+		id_parent = get_param_int(line, "Prnt=", 10, -1);
+#if defined (BOARD_GPIO_LED_USB2)
+		if (id_parent == 1) {
+			id_port = get_param_int(line, "Port=", 10, 0);
+#if BOARD_USB_PORT_SWAP
+			id_port = (id_port) ? 0 : 1;
+#endif
+			switch (id_port)
+			{
+			case 0:
+				dev_found |= 0x1;
+				break;
+			case 1:
+				dev_found |= 0x2;
+				break;
+			}
+			if ((dev_found & 0x3) == 0x3)
+				break;
+		}
+#else
+		if (id_parent > 0) {
 			dev_found = 1;
 			break;
 		}
+#endif
 	}
 
 	fclose(fp);

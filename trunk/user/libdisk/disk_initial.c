@@ -788,8 +788,32 @@ int is_storage_mounted(void)
 	ret = 0;
 	while (fgets(line, sizeof(line), fp)) {
 		if (strncmp(line, "/dev/sd", 7) == 0) {
+#if defined BOARD_GPIO_LED_USB2
+			char sysblock_n[] = "/sys/block/sda/device";
+			
+			sysblock_n[13] = line[7];
+			if (readlink(sysblock_n, line, sizeof(line)) > 0) {
+				char port_id[8] = {0};
+				
+				if (get_usb_root_port_by_string(line, port_id, sizeof(port_id))) {
+					int port_num = get_usb_root_port_number(port_id);
+					switch (port_num)
+					{
+					case 1:
+						ret |= 0x1;
+						break;
+					case 2:
+						ret |= 0x2;
+						break;
+					}
+					if ((ret & 0x3) == 0x3)
+						break;
+				}
+			}
+#else
 			ret = 1;
 			break;
+#endif
 		}
 	}
 

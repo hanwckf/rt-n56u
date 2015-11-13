@@ -191,7 +191,7 @@ dl_handle_link_wisp(void)
 
 #if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
 static void
-dl_handle_link_usb(void)
+dl_handle_link_usb(int force_update)
 {
 	int front_led_usb = nvram_get_int("front_led_usb");
 
@@ -210,10 +210,13 @@ dl_handle_link_usb(void)
 		return;
 	}
 
-	if (dl_status_usb_old != dl_status_usb) {
+	if (dl_status_usb_old != dl_status_usb || force_update) {
 		dl_status_usb_old = dl_status_usb;
 		
-		LED_CONTROL(BOARD_GPIO_LED_USB, (dl_status_usb) ? LED_ON : LED_OFF);
+#if defined (BOARD_GPIO_LED_USB2)
+		LED_CONTROL(BOARD_GPIO_LED_USB2, (dl_status_usb & 0x2) ? LED_ON : LED_OFF);
+#endif
+		LED_CONTROL(BOARD_GPIO_LED_USB, (dl_status_usb & 0x1) ? LED_ON : LED_OFF);
 	}
 }
 #endif
@@ -256,7 +259,7 @@ dl_on_timer(void)
 
 	dl_handle_link_lan();
 #if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
-	dl_handle_link_usb();
+	dl_handle_link_usb(0);
 #endif
 }
 
@@ -308,13 +311,28 @@ dl_update_leds(void)
 	if (nvram_get_int("front_led_all") == 0)
 		front_led_x = 0;
 	if (front_led_x == 3) {
+		int usb_led_gpio = BOARD_GPIO_LED_USB;
+#if defined (BOARD_GPIO_LED_USB2)
+		int usb2_led_gpio = BOARD_GPIO_LED_USB2;
+#if BOARD_USB_PORT_SWAP
+		usb_led_gpio = BOARD_GPIO_LED_USB2;
+		usb2_led_gpio = BOARD_GPIO_LED_USB;
+#endif
+		LED_CONTROL(BOARD_GPIO_LED_USB2, LED_OFF);
+		cpu_gpio_led_enabled(BOARD_GPIO_LED_USB2, 1);
+		module_param_set_int("usbcore", "usb2_led_gpio", usb2_led_gpio);
+#endif
 		LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
 		cpu_gpio_led_enabled(BOARD_GPIO_LED_USB, 1);
-		module_param_set_int("usbcore", "usb_led_gpio", BOARD_GPIO_LED_USB);
+		module_param_set_int("usbcore", "usb_led_gpio", usb_led_gpio);
 	} else {
 		module_param_set_int("usbcore", "usb_led_gpio", -1);
 		cpu_gpio_led_enabled(BOARD_GPIO_LED_USB, 0);
-		LED_CONTROL(BOARD_GPIO_LED_USB, (dl_status_usb) ? LED_ON : LED_OFF);
+#if defined (BOARD_GPIO_LED_USB2)
+		module_param_set_int("usbcore", "usb2_led_gpio", -1);
+		cpu_gpio_led_enabled(BOARD_GPIO_LED_USB2, 0);
+#endif
+		dl_handle_link_usb(1);
 	}
 #endif
 #if defined (BOARD_GPIO_LED_WIFI)

@@ -76,6 +76,11 @@ config RALINK_GPIO_LED_USB
 	depends on RALINK_GPIO_LED && USB
 	default n
 
+config RALINK_GPIO_LED_USB2
+	bool "Ralink GPIO USB #2 LED Support"
+	depends on RALINK_GPIO_LED_USB
+	default n
+
 config RALINK_HSDMA
 	tristate "Ralink SoC HSDMA Support"
 	depends on RALINK_MT7621

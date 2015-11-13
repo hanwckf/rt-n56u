@@ -85,7 +85,13 @@
 
 static int usb_led_gpio = -1;
 module_param(usb_led_gpio, int, S_IRUGO|S_IWUSR);
-MODULE_PARM_DESC(usb_led_gpio, "gpio for led blinks");
+MODULE_PARM_DESC(usb_led_gpio, "gpio for usb led blinks");
+
+#ifdef CONFIG_RALINK_GPIO_LED_USB2
+static int usb2_led_gpio = -1;
+module_param(usb2_led_gpio, int, S_IRUGO|S_IWUSR);
+MODULE_PARM_DESC(usb2_led_gpio, "gpio for usb2 led blinks");
+#endif
 #endif
 
 /* Keep track of which host controller drivers are loaded */
@@ -1501,11 +1507,18 @@ int usb_hcd_submit_urb (struct urb *urb, gfp_t mem_flags)
 			wake_up(&usb_kill_urb_queue);
 		usb_put_urb(urb);
 	}
-
 #ifdef CONFIG_RALINK_GPIO_LED_USB
-	/* blink led */
-	if (usb_led_gpio >= 0)
-		ralink_gpio_led_blink(usb_led_gpio);
+	else {
+		/* blink led */
+#ifdef CONFIG_RALINK_GPIO_LED_USB2
+		if (urb->dev->devpath[0] == '2') {
+			if (usb2_led_gpio >= 0)
+				ralink_gpio_led_blink(usb2_led_gpio);
+		} else if (urb->dev->devpath[0] == '1')
+#endif
+		if (usb_led_gpio >= 0)
+			ralink_gpio_led_blink(usb_led_gpio);
+	}
 #endif
 
 	return status;

@@ -174,6 +174,11 @@ init_gpio_leds_buttons(void)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_USB, 1);
 	cpu_gpio_set_pin(BOARD_GPIO_LED_USB, LED_OFF);
 	cpu_gpio_led_set(BOARD_GPIO_LED_USB, LED_BLINK_STAY_HIDE);
+#if defined (BOARD_GPIO_LED_USB2)
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_USB2, 1);
+	cpu_gpio_set_pin(BOARD_GPIO_LED_USB2, LED_OFF);
+	cpu_gpio_led_set(BOARD_GPIO_LED_USB2, LED_BLINK_STAY_HIDE);
+#endif
 #endif
 	/* hide ROUTER soft-led  */
 #if defined (BOARD_GPIO_LED_ROUTER)
@@ -635,6 +640,9 @@ LED_CONTROL(int gpio_led, int flag)
 #endif
 #if defined (BOARD_GPIO_LED_USB)
 	case BOARD_GPIO_LED_USB:
+#if defined (BOARD_GPIO_LED_USB2)
+	case BOARD_GPIO_LED_USB2:
+#endif
 #if (BOARD_NUM_USB_PORTS > 0)
 		front_led_x = nvram_get_int("front_led_usb");
 #else
@@ -779,6 +787,9 @@ shutdown_router(int use_reboot)
 #endif
 #if defined (BOARD_GPIO_LED_USB)
 	LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
+#endif
+#if defined (BOARD_GPIO_LED_USB2)
+	LED_CONTROL(BOARD_GPIO_LED_USB2, LED_OFF);
 #endif
 
 	stop_wan();

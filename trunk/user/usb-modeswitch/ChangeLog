@@ -2,6 +2,11 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.2.6, 2015/11/01
+    Renamed function abort(), avoiding possible conflicts in static builds
+    with libjim (thanks, Gustavo Zacharias); removed storage class check of
+    interface 0 from dispatcher, enabling new multi-config devices in data
+    package 20151101
 Version 2.2.5, 2015/07/16
     Fixed bug in configuration check, possibly leading to segfault (thanks,
     Leonid Lisovskiy); fixed Pantech commandline parameter evaluation (was

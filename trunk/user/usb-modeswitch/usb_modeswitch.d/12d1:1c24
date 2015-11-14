@@ -1,4 +1,4 @@
-# Huawei E173 (Moviestar)
+# Huawei E173 (Moviestar), E173s (Variant)
 TargetVendor=0x12d1
-TargetProduct=0x1c12
+TargetProductList="1c12,1c23"
 HuaweiNewMode=1

@@ -1,4 +1,4 @@
-# T-Mobile NL (Huawei E352)
+# Huawei E352 (T-Mobile NL), E173s (Variant)
 TargetVendor=0x12d1
-TargetProductList="1506,150f,151d"
+TargetProductList="1506,150f,151d,1c1e"
 HuaweiNewMode=1

@@ -1,6 +1,6 @@
 /*
   Mode switching tool for controlling mode of 'multi-state' USB devices
-  Version 2.2.5, 2015/07/16
+  Version 2.2.6, 2015/11/01
 
   Copyright (C) 2007 - 2015 Josua Dietze (mail to "digidietze" at the domain
   of the home page; or write a personal message through the forum to "Josh".
@@ -544,7 +544,7 @@ int main(int argc, char **argv)
 		libusb_open(dev, &devh);
 		if (devh == NULL) {
 			SHOW_PROGRESS(output,"Error opening the device. Abort\n\n");
-			abort();
+			abortExit();
 		}
 	}
 
@@ -574,18 +574,18 @@ int main(int argc, char **argv)
 			ResponseEndpoint = find_first_bulk_endpoint(LIBUSB_ENDPOINT_IN);
 		if (!MessageEndpoint) {
 			fprintf(stderr,"Error: message endpoint not given or found. Abort\n\n");
-			abort();
+			abortExit();
 		}
 		if (!ResponseEndpoint) {
 			fprintf(stderr,"Error: response endpoint not given or found. Abort\n\n");
-			abort();
+			abortExit();
 		}
 		SHOW_PROGRESS(output,"Use endpoints 0x%02x (out) and 0x%02x (in)\n", MessageEndpoint, ResponseEndpoint);
 	}
 
 	if (interfaceClass == -1) {
 		fprintf(stderr, "Error: Could not get class of interface %d. Does it exist? Abort\n\n",Interface);
-		abort();
+		abortExit();
 	}
 
 	if (defaultClass == 0)
@@ -601,7 +601,7 @@ int main(int argc, char **argv)
 		if (defaultClass != 8) {
 			fprintf(stderr, "Error: can't use storage command in MessageContent with interface %d;\n"
 				"       interface class is %d, expected 8. Abort\n\n", Interface, defaultClass);
-			abort();
+			abortExit();
 		}
 
 	if (InquireDevice && show_progress) {
@@ -629,7 +629,7 @@ int main(int argc, char **argv)
 	 */
 	if ( ModeMap & (ModeMap-1) ) {
 		fprintf(output,"Multiple special modes selected; check configuration. Abort\n\n");
-		abort();
+		abortExit();
 	}
 
 	if ((strlen(MessageContent) || StandardEject) && ModeMap ) {
@@ -1339,7 +1339,7 @@ void switchCiscoMode() {
 	ret = libusb_claim_interface(devh, Interface);
 	if (ret < 0) {
 		SHOW_PROGRESS(output," Could not claim interface (error %d). Abort\n", ret);
-		abort();
+		abortExit();
 	}
 //	libusb_clear_halt(devh, MessageEndpoint);
 	if (show_progress)
@@ -1832,7 +1832,7 @@ int get_current_configuration()
 	int ret = libusb_get_active_config_descriptor(dev, &active_config);
 	if (ret < 0) {
 		SHOW_PROGRESS(output," Determining the active configuration failed (error %d). Abort\n", ret);
-		abort();
+		abortExit();
 	}
 	return active_config->bConfigurationValue;
 }
@@ -1878,7 +1878,7 @@ char* ReadParseParam(const char* FileName, char *VariableName)
 			}
 			if (file==NULL) {
 				fprintf(stderr, "Error: Could not find file %s. Abort\n\n", FileName);
-				abort();
+				abortExit();
 			} else {
 				token = fgets(Str, LINE_DIM-1, file);
 			}
@@ -2014,7 +2014,7 @@ void close_all()
 		closelog();
 }
 
-void abort()
+void abortExit()
 {
 	close_all();
 	exit(1);

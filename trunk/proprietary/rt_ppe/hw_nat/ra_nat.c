@@ -71,11 +71,9 @@ static int udp_offload __read_mostly = DEFAULT_UDP_OFFLOAD;
 module_param(udp_offload, int, S_IRUGO);
 MODULE_PARM_DESC(udp_offload, "PPE IPv4 NAT offload for UDP proto");
 
-#if defined (CONFIG_RA_HW_NAT_IPV6)
 int ipv6_offload __read_mostly = 0;
 module_param(ipv6_offload, int, S_IRUGO);
 MODULE_PARM_DESC(ipv6_offload, "PPE IPv6 routes offload");
-#endif
 
 static int ttl_regen __read_mostly = DFL_FOE_TTL_REGEN;
 module_param(ttl_regen, int, S_IRUGO|S_IWUSR);
@@ -99,15 +97,27 @@ extern int (*ra_sw_nat_hook_rs) (struct net_device *dev, int hold);
 extern int (*ra_sw_nat_hook_ec) (int engine_init);
 
 #if !defined (CONFIG_RALINK_MT7621)
-static int		ppe_udp_bug = 0;
+static int			ppe_udp_bug = 0;
 #endif
 
-struct FoeEntry		*PpeFoeBase = NULL;
-dma_addr_t		PpeFoeBasePhy = 0;
-uint32_t		PpeFoeTblSize = FOE_4TB_SIZ;
-struct net_device	*DstPort[MAX_IF_NUM];
-uint8_t			DstPortHash[MAX_IF_HASH_NUM];
+static struct FoeEntry		*PpeFoeBase = NULL;
+static dma_addr_t		PpeFoeBasePhy = 0;
+uint32_t			PpeFoeTblSize = FOE_4TB_SIZ;
+static struct net_device	*DstPort[MAX_IF_NUM];
+static uint8_t			DstPortHash[MAX_IF_HASH_NUM];
 DEFINE_SPINLOCK(ppe_foe_lock);
+
+struct FoeEntry *get_foe_entry(uint32_t foe_entry_num)
+{
+#if defined (CONFIG_HNAT_V2) && defined (CONFIG_RA_HW_NAT_IPV6)
+	if (!ipv6_offload) {
+		uint8_t *pEntry = (uint8_t *)PpeFoeBase + foe_entry_num * sizeof(struct FoeEntry64);
+		return (struct FoeEntry *)pEntry;
+	}
+#endif
+
+	return &PpeFoeBase[foe_entry_num];
+}
 
 #if defined (CONFIG_RA_HW_NAT_DEBUG)
 static uint8_t *ShowCpuReason(struct sk_buff *skb)
@@ -227,7 +237,7 @@ static uint32_t FoeDumpPkt(struct sk_buff *skb)
 	if (foe_entry_num >= FOE_4TB_SIZ)
 		return 1;
 
-	foe_entry = &PpeFoeBase[foe_entry_num];
+	foe_entry = get_foe_entry(foe_entry_num);
 
 	NAT_PRINT("\nRx===<FOE_Entry=%d>=====\n", foe_entry_num);
 	NAT_PRINT("RcvIF=%s\n", skb->dev->name);
@@ -477,7 +487,7 @@ static void PpeKeepAliveHandler(struct sk_buff *skb, int recover_header)
 	eth = (struct ethhdr *)(skb->data - ETH_HLEN);
 	eth_type = ntohs(skb->protocol);
 
-	foe_entry = &PpeFoeBase[foe_entry_num];
+	foe_entry = get_foe_entry(foe_entry_num);
 
 	/*
 	 * try to recover to original SMAC/DMAC, but we don't have such information.
@@ -584,7 +594,7 @@ static int PpeHitBindForceToCpuHandler(struct sk_buff *skb, uint32_t foe_entry_n
 		return 1;
 	}
 
-	foe_entry = &PpeFoeBase[foe_entry_num];
+	foe_entry = get_foe_entry(foe_entry_num);
 
 #if !defined (CONFIG_HNAT_V2)
 	act_dp = foe_entry->ipv4_hnapt.act_dp;			// act_dp: offset 13 dword for IPv4/IPv6
@@ -595,7 +605,7 @@ static int PpeHitBindForceToCpuHandler(struct sk_buff *skb, uint32_t foe_entry_n
 		dev = DstPort[act_dp];
 	}
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-	else if (IS_IPV6_GRP(foe_entry)) {
+	else if (ipv6_offload && IS_IPV6_GRP(foe_entry)) {
 		act_dp = foe_entry->ipv6_5t_route.act_dp;	// act_dp: offset 14 dword for IPv6
 		dev = DstPort[act_dp];
 	}
@@ -924,7 +934,7 @@ uint32_t PpeSetExtIfNum(struct sk_buff *skb, struct FoeEntry* foe_entry)
 		foe_entry->ipv4_hnapt.act_dp = offset;		// act_dp: offset 11 dword for IPv4
 	}
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-	else if (IS_IPV6_GRP(foe_entry)) {
+	else if (ipv6_offload && IS_IPV6_GRP(foe_entry)) {
 		foe_entry->ipv6_5t_route.act_dp = offset;	// act_dp: offset 14 dword for IPv6
 	}
 #endif
@@ -1366,7 +1376,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 			PpeSetInfoBlk2(&foe_entry->ipv4_hnapt.iblk2, fpidx, 0x3f, 0x3f);
 		}
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-		else if (IS_IPV6_GRP(foe_entry)) {
+		else if (ipv6_offload && IS_IPV6_GRP(foe_entry)) {
 #if defined (CONFIG_RA_HW_NAT_QDMA)
 			u32 QID = get_qid_ipv6(skb, 0);
 			
@@ -1427,7 +1437,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 			foe_entry->ipv4_hnapt.act_dp = 0;	/* clear destination port for CPU */
 		}
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-		else if (IS_IPV6_GRP(foe_entry)) {
+		else if (ipv6_offload && IS_IPV6_GRP(foe_entry)) {
 #if defined (CONFIG_RA_HW_NAT_QDMA)
 			if (FOE_SP(skb) != 5) {
 				u32 QID = get_qid_ipv6(skb, (port_ag == 2));
@@ -1733,7 +1743,7 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 	if (foe_entry_num >= FOE_4TB_SIZ || !FOE_ENTRY_VALID(skb))
 		return 1;
 
-	foe_entry = &PpeFoeBase[foe_entry_num];
+	foe_entry = get_foe_entry(foe_entry_num);
 
 	/*
 	 * Packet is interested by ALG?
@@ -1904,22 +1914,22 @@ void PpeSetFoeEbl(uint32_t FoeEbl)
 
 static void PpeSetFoeHashMode(uint32_t HashMode)
 {
-#if defined (CONFIG_RA_HW_NAT_IPV6) && defined (CONFIG_HNAT_V2)
-	/* these entries are bad every 128 entries */
-	int boundary_entry_offset[7] = {12, 25, 38, 51, 76, 89, 102};
-	int entry_base = 0, bad_entry, i, j;
-#endif
-
 	memset(PpeFoeBase, 0, PpeFoeTblSize * sizeof(struct FoeEntry));
 
 #if defined (CONFIG_RA_HW_NAT_IPV6) && defined (CONFIG_HNAT_V2)
-	for (i = 0; entry_base < FOE_4TB_SIZ; i++) {
-		/* set bad entries as static */
-		for (j = 0; j < 7; j++) {
-			bad_entry = entry_base + boundary_entry_offset[j];
-			PpeFoeBase[bad_entry].udib1.sta = 1;
+	if (ipv6_offload) {
+		/* these entries are bad every 128 entries */
+		int boundary_entry_offset[7] = {12, 25, 38, 51, 76, 89, 102};
+		int entry_base = 0, bad_entry, i, j;
+		
+		for (i = 0; entry_base < FOE_4TB_SIZ; i++) {
+			/* set bad entries as static */
+			for (j = 0; j < 7; j++) {
+				bad_entry = entry_base + boundary_entry_offset[j];
+				PpeFoeBase[bad_entry].udib1.sta = 1;
+			}
+			entry_base = (i+1)*128;
 		}
-		entry_base = (i+1)*128;
 	}
 #endif
 
@@ -1950,10 +1960,12 @@ static void PpeSetFoeHashMode(uint32_t HashMode)
 	RegModifyBits(PPE_FOE_CFG, HashMode, 14, 2);
 	RegWrite(PPE_HASH_SEED, HASH_SEED);
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-	RegModifyBits(PPE_FOE_CFG, 1, 3, 1);	// entry size = 80bytes
-#else
-	RegModifyBits(PPE_FOE_CFG, 0, 3, 1);	// entry size = 64bytes
+	if (ipv6_offload)
+		RegModifyBits(PPE_FOE_CFG, 1, 3, 1);	// entry size = 80bytes
+	else
 #endif
+		RegModifyBits(PPE_FOE_CFG, 0, 3, 1);	// entry size = 64bytes
+
 #if defined (CONFIG_RA_HW_NAT_PREBIND)
 	RegModifyBits(PPE_FOE_CFG, 1, 6, 1);	// pre-bind age enable
 #endif
@@ -2076,12 +2088,14 @@ static void PpeSetFoeGloCfgEbl(uint32_t Ebl)
 		/* TO_PPE Forwarding Register (exclude broadcast) */
 		tpf = IPV4_PPE_MYUC | IPV4_PPE_UC | IPV4_PPE_UN;
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-		tpf |= (IPV6_PPE_MYUC | IPV6_PPE_UC | IPV6_PPE_UN);
+		if (ipv6_offload)
+			tpf |= (IPV6_PPE_MYUC | IPV6_PPE_UC | IPV6_PPE_UN);
 #endif
 #if defined (CONFIG_RA_HW_NAT_MCAST)
 		tpf |= (IPV4_PPE_MC | IPV4_PPE_IPM);
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-		tpf |= (IPV6_PPE_MC | IPV6_PPE_IPM);
+		if (ipv6_offload)
+			tpf |= (IPV6_PPE_MC | IPV6_PPE_IPM);
 #endif
 #endif
 

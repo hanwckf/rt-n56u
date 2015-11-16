@@ -129,9 +129,6 @@ void show_usage(void)
     printf("Set LAN/WAN port VLAN ID\n");
     printf("Ex: hw_nat -V [LAN_VID] [WAN_VID]\n\n");
 
-    printf("Set HNAT IPv6 routes offload (d=0)\n");
-    printf("Ex: hw_nat -6 [0/1]\n\n");
-
     printf("Only Speed UP (0=Upstream, 1=Downstream, 2=Bi-Direction) flow \n");
     printf("Ex: hw_nat -Z 1\n\n");
 }
@@ -140,9 +137,9 @@ int main(int argc, char *argv[])
 {
     int opt;
 #if !defined (CONFIG_HNAT_V2)
-    char options[] = "efg?c:x:d:A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:T:U:V:Z:6:";
+    char options[] = "efg?c:x:d:A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:T:U:V:Z:";
 #else
-    char options[] = "aefg?c:x:k:d:A:B:C:DN:O:P:Q:T:U:V:Z:6:";
+    char options[] = "aefg?c:x:k:d:A:B:C:DN:O:P:Q:T:U:V:Z:";
 #endif
     int method = -1;
     unsigned int entry_state = 0;
@@ -331,10 +328,6 @@ int main(int argc, char *argv[])
 		method = HW_NAT_BIND_DIRECTION;
 		args4.bind_dir = strtoll(optarg, NULL, 10);
 		break;
-	case '6':
-		method = HW_NAT_ALLOW_IPV6;
-		args4.foe_allow_ipv6 = strtoll(optarg, NULL, 10);
-		break;
 	case '?':
 		show_usage();
 	}
@@ -426,9 +419,6 @@ int main(int argc, char *argv[])
 	    result = HwNatSetConfig(&args4, method);
 	    break;
     case HW_NAT_BIND_DIRECTION:
-	    result = HwNatSetConfig(&args4, method);
-	    break;
-    case HW_NAT_ALLOW_IPV6:
 	    result = HwNatSetConfig(&args4, method);
 	    break;
 #if defined (CONFIG_PPE_MCAST)

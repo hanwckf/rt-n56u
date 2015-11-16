@@ -52,7 +52,6 @@
 #define HW_NAT_BIND_LIFETIME		(0x1B)
 #define HW_NAT_BIND_DIRECTION		(0x1C)
 #define HW_NAT_VLAN_ID			(0x1D)
-#define HW_NAT_ALLOW_IPV6		(0x1E)
 
 #define HW_NAT_DEVNAME			"hwnat0"
 #define HW_NAT_MAJOR			(220)
@@ -161,7 +160,6 @@ struct hwnat_config_args {
 	unsigned int foe_tcp_dlta:16;	/*unit 1 sec */
 	unsigned int foe_udp_dlta:16;	/*unit 1 sec */
 	unsigned int foe_fin_dlta:16;	/*unit 1 sec */
-	unsigned int foe_allow_ipv6:1;
 	unsigned int wan_vid:16;
 	unsigned int lan_vid:16;
 	unsigned int bind_dir:2;	/* 0=upstream, 1=downstream, 2=bi-direction */

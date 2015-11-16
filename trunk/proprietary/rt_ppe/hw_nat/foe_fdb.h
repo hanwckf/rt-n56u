@@ -439,6 +439,14 @@ struct FoeEntry {
 	};
 };
 
+struct FoeEntry64 {
+	union {
+		struct ud_info_blk1 udib1;
+		struct bf_info_blk1 bfib1;	// common header
+		struct _ipv4_hnapt ipv4_hnapt;	// nat & napt share same data structure
+	};
+};
+
 struct FoePriKey {
 	/* TODO: add new primary key to support dslite, 6rd */
 

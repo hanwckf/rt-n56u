@@ -25,6 +25,10 @@
 #include "mtr_policy.h"
 #include "frame_engine.h"
 
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+extern int ipv6_offload;
+#endif
+
 MtrPlcyNode MtrPlcyList = {.List = LIST_HEAD_INIT(MtrPlcyList.List) };
 
 static char MtrFreeList[8];
@@ -227,7 +231,8 @@ void PpeSetPreMtrEbl(uint32_t PreMtrEbl)
 	if (PreMtrEbl == 1) {
 		PpeFlowSet |= (BIT_FUC_PREM);
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-		PpeFlowSet |= (BIT_IPV6_PE_EN);
+		if (ipv6_offload)
+			PpeFlowSet |= (BIT_IPV6_PE_EN);
 #endif
 	} else {
 		PpeFlowSet &= ~(BIT_FUC_PREM | BIT_FMC_PREM | BIT_FBC_PREM);
@@ -291,7 +296,8 @@ void PpeSetPostMtrEbl(uint32_t PostMtrEbl)
 	if (PostMtrEbl == 1) {
 		PpeFlowSet |= (BIT_FUC_POSM);
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-		PpeFlowSet |= (BIT_IPV6_PE_EN);
+		if (ipv6_offload)
+			PpeFlowSet |= (BIT_IPV6_PE_EN);
 #endif
 	} else {
 		PpeFlowSet &= ~(BIT_FUC_POSM | BIT_FMC_POSM | BIT_FBC_POSM);

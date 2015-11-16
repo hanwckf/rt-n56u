@@ -18,7 +18,7 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
-#define HW_NAT_MODULE_VER "v2.51.9"
+#define HW_NAT_MODULE_VER "v2.52.0"
 
 #if !defined (CONFIG_RT_SECOND_IF_NONE) && !defined (CONFIG_RT_SECOND_IF_RT3352_INIC)
 #define HWNAT_USE_SECOND_IF
@@ -215,7 +215,8 @@ int PpeSetRuleSize(uint16_t pre_acl, uint16_t pre_meter, uint16_t pre_ac,
 int PpeSetKaInterval(uint8_t tcp_ka, uint8_t udp_ka);
 int PpeSetUnbindLifeTime(uint8_t lifetime);
 int PpeSetBindLifetime(uint16_t tcp_fin, uint16_t udp_life, uint16_t fin_life);
-int PpeSetAllowIPv6(uint8_t allow_ipv6);
+
+struct FoeEntry *get_foe_entry(uint32_t foe_entry_num);
 
 extern struct FoeEntry *get_foe_table(dma_addr_t *dma_handle, uint32_t *FoeTblSize);
 

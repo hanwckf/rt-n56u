@@ -26,6 +26,10 @@
 #include "acl_policy.h"
 #include "frame_engine.h"
 
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+extern int ipv6_offload;
+#endif
+
 static AclPlcyNode AclPlcyList = {.List = LIST_HEAD_INIT(AclPlcyList.List) };
 extern uint32_t DebugLevel;
 
@@ -444,7 +448,8 @@ void PpeSetPreAclEbl(uint32_t AclEbl)
 	if (AclEbl == 1) {
 		PpeFlowSet |= (BIT_FUC_ACL);
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-		PpeFlowSet |= (BIT_IPV6_PE_EN);
+		if (ipv6_offload)
+			PpeFlowSet |= (BIT_IPV6_PE_EN);
 #endif
 	} else {
 		/* Set Pre ACL Table */

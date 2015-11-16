@@ -166,9 +166,6 @@ int HwNatIoctl(struct inode *inode, struct file *filp,
 		lan_vid = opt4->lan_vid;
 		opt4->result = HWNAT_SUCCESS;
 		break;
-	case HW_NAT_ALLOW_IPV6:
-		opt4->result = PpeSetAllowIPv6(opt4->foe_allow_ipv6);
-		break;
 #if defined (CONFIG_PPE_MCAST)
 	case HW_NAT_MCAST_INS:
 		foe_mcast_entry_ins(opt5->mc_vid, opt5->dst_mac, opt5->mc_px_en, opt5->mc_px_qos_en, opt5->mc_qos_qid);
@@ -624,35 +621,3 @@ int PpeSetBindLifetime(uint16_t tcp_life, uint16_t udp_life, uint16_t fin_life)
 	return HWNAT_SUCCESS;
 }
 
-int PpeSetAllowIPv6(uint8_t allow_ipv6)
-{
-#if defined (CONFIG_RA_HW_NAT_IPV6)
-	uint32_t PpeFlowSet = RegRead(PPE_FLOW_SET);
-
-	if (allow_ipv6) {
-		ipv6_offload = 1;
-#if defined (CONFIG_HNAT_V2)
-		PpeFlowSet |= (BIT_IPV4_DSL_EN | BIT_IPV6_6RD_EN | BIT_IPV6_3T_ROUTE_EN | BIT_IPV6_5T_ROUTE_EN);
-//		PpeFlowSet |= (BIT_IPV6_HASH_FLAB); // flow label
-		PpeFlowSet |= (BIT_IPV6_HASH_GREK);
-#else
-		PpeFlowSet |= (BIT_IPV6_FOE_EN);
-#endif
-	} else {
-		ipv6_offload = 0;
-#if defined (CONFIG_HNAT_V2)
-		PpeFlowSet &= ~(BIT_IPV4_DSL_EN | BIT_IPV6_6RD_EN | BIT_IPV6_3T_ROUTE_EN | BIT_IPV6_5T_ROUTE_EN);
-		PpeFlowSet &= ~(BIT_IPV6_HASH_FLAB);
-		PpeFlowSet &= ~(BIT_IPV6_HASH_GREK);
-#else
-		PpeFlowSet &= ~(BIT_IPV6_FOE_EN);
-#endif
-	}
-
-	RegWrite(PPE_FLOW_SET, PpeFlowSet);
-
-	return HWNAT_SUCCESS;
-#else
-	return HWNAT_FAIL;
-#endif
-}

@@ -20,11 +20,14 @@
 #include <linux/netdevice.h>
 
 #include "frame_engine.h"
-#include "foe_fdb.h"
 #include "hwnat_ioctl.h"
 #include "util.h"
+#include "ra_nat.h"
 
-extern struct FoeEntry *PpeFoeBase;
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+extern int ipv6_offload;
+#endif
+
 extern uint32_t PpeFoeTblSize;
 extern spinlock_t ppe_foe_lock;
 
@@ -270,22 +273,24 @@ void FoeDumpEntry(uint32_t Index)
 {
 	struct FoeEntry *entry;
 	uint32_t *p;
-	uint32_t i = 0;
+	uint32_t i, max_bytes;
 
 	if (Index >= FOE_4TB_SIZ) {
 		NAT_PRINT("Entry number (%d) is invalid!\n", Index);
 		return;
 	}
 
-	entry = &PpeFoeBase[Index];
+	entry = get_foe_entry(Index);
 	p = (uint32_t *)entry;
 
-	NAT_PRINT("==========<Flow Table Entry=%d (%p)>===============\n", Index, entry);
+	max_bytes = 16; // 64 bytes per entry
 #if defined (CONFIG_HNAT_V2) && defined (CONFIG_RA_HW_NAT_IPV6)
-	for(i=0; i < 20; i++) { // 80 bytes per entry
-#else
-	for(i=0; i < 16; i++) { // 64 bytes per entry
+	if (ipv6_offload)
+		max_bytes = 20; // 80 bytes per entry
 #endif
+
+	NAT_PRINT("==========<Flow Table Entry=%d (%p)>===============\n", Index, entry);
+	for(i=0; i < max_bytes; i++) {
 		NAT_PRINT("%02d: %08X\n", i, *(p+i));
 	}
 	NAT_PRINT("-----------------<Flow Info>------------------\n");
@@ -395,7 +400,7 @@ void FoeDumpEntry(uint32_t Index)
 	    NAT_PRINT("=========================================\n\n");
 	} 
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-	else {
+	else if (ipv6_offload) {
 	    NAT_PRINT
 		("DMAC=%02X:%02X:%02X:%02X:%02X:%02X SMAC=%02X:%02X:%02X:%02X:%02X:%02X\n",
 		 entry->ipv6_5t_route.dmac_hi[3], entry->ipv6_5t_route.dmac_hi[2],
@@ -431,7 +436,7 @@ int FoeGetAllEntries(struct hwnat_args *opt)
 	int count = 0;		/* valid entry count */
 
 	for (hash_index = 0; hash_index < PpeFoeTblSize; hash_index++) {
-		entry = &PpeFoeBase[hash_index];
+		entry = get_foe_entry(hash_index);
 
 		if (entry->bfib1.state == opt->entry_state) {
 			opt->entries[count].hash_index = hash_index;
@@ -541,7 +546,7 @@ int FoeBindEntry(struct hwnat_args *opt)
 	if (opt->entry_num >= FOE_4TB_SIZ)
 		return HWNAT_ENTRY_NOT_FOUND;
 
-	entry = &PpeFoeBase[opt->entry_num];
+	entry = get_foe_entry(opt->entry_num);
 
 	//restore right information block1
 	spin_lock_bh(&ppe_foe_lock);
@@ -559,7 +564,7 @@ int FoeUnBindEntry(struct hwnat_args *opt)
 	if (opt->entry_num >= FOE_4TB_SIZ)
 		return HWNAT_ENTRY_NOT_FOUND;
 
-	entry = &PpeFoeBase[opt->entry_num];
+	entry = get_foe_entry(opt->entry_num);
 
 	spin_lock_bh(&ppe_foe_lock);
 	entry->udib1.state = UNBIND;
@@ -584,7 +589,7 @@ int FoeDropEntry(struct hwnat_args *opt)
 	if (opt->entry_num >= FOE_4TB_SIZ)
 		return HWNAT_ENTRY_NOT_FOUND;
 
-	entry = &PpeFoeBase[opt->entry_num];
+	entry = get_foe_entry(opt->entry_num);
 
 	spin_lock_bh(&ppe_foe_lock);
 	entry->ipv4_hnapt.iblk2.dp = 7;
@@ -608,7 +613,7 @@ int FoeDelEntry(struct hwnat_args *opt)
 	if (opt->entry_num >= FOE_4TB_SIZ)
 		return HWNAT_ENTRY_NOT_FOUND;
 
-	entry = &PpeFoeBase[opt->entry_num];
+	entry = get_foe_entry(opt->entry_num);
 
 	spin_lock_bh(&ppe_foe_lock);
 	memset(entry, 0, sizeof(struct FoeEntry));

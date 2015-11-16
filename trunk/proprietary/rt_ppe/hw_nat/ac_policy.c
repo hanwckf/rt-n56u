@@ -25,6 +25,10 @@
 #include "ac_policy.h"
 #include "frame_engine.h"
 
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+extern int ipv6_offload;
+#endif
+
 static AcPlcyNode AcPlcyList = {.List = LIST_HEAD_INIT(AcPlcyList.List) };
 static char AcFreeList[8];
 
@@ -192,7 +196,8 @@ void PpeSetPreAcEbl(uint32_t PreAcEbl)
 	if (PreAcEbl == 1) {
 		PpeFlowSet |= (BIT_FUC_PREA);
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-		PpeFlowSet |= (BIT_IPV6_PE_EN);
+		if (ipv6_offload)
+			PpeFlowSet |= (BIT_IPV6_PE_EN);
 #endif
 		RegModifyBits(PPE_POL_CFG, DFL_POL_AC_PRD, 16, 16);	//period
 		RegModifyBits(PPE_POL_CFG, 1, 13, 1);	//enable Pre-account
@@ -263,7 +268,8 @@ void PpeSetPostAcEbl(uint32_t PostAcEbl)
 	if (PostAcEbl == 1) {
 		PpeFlowSet |= (BIT_FUC_POSA);
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-		PpeFlowSet |= (BIT_IPV6_PE_EN);
+		if (ipv6_offload)
+			PpeFlowSet |= (BIT_IPV6_PE_EN);
 #endif
 		RegModifyBits(PPE_POL_CFG, DFL_POL_AC_PRD, 16, 16);	//period
 		RegModifyBits(PPE_POL_CFG, 1, 12, 1);	//enable Post-account

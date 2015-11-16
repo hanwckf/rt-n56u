@@ -4006,8 +4006,6 @@ VOID dynamic_tune_be_tx_op(RTMP_ADAPTER *pAd, ULONG nonBEpackets)
 				}
 #endif /* RTMP_RBUS_SUPPORT */
 #endif /* LINUX */
-
-				RTMP_IO_READ32(pAd, EDCA_AC0_CFG, &RegValue);
 				
 				if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE))
 					txop_value = 0x80;				
@@ -4048,6 +4046,7 @@ VOID dynamic_tune_be_tx_op(RTMP_ADAPTER *pAd, ULONG nonBEpackets)
 					txop_value = 0;		
 #endif /* MULTI_CLIENT_SUPPORT */
 
+				RTMP_IO_READ32(pAd, EDCA_AC0_CFG, &RegValue);
 				RegValue  &= 0xFFFFFF00;
 				/*if ((RegValue & 0x0000FF00) == 0x00005400)
 					RegValue -= 0x00001100; */

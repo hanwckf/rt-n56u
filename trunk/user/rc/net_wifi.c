@@ -58,18 +58,12 @@ void
 mlme_radio_wl(int is_on)
 {
 #if BOARD_HAS_5G_RADIO
-	int i_val;
 	const char *wifname = find_wlan_if_up(1);
 
 	if (!wifname)
 		return;
 
 	doSystem("iwpriv %s set %s=%d", wifname, "RadioOn", (is_on) ? 1 : 0);
-	if (is_on) {
-		i_val = nvram_wlan_get_int(1, "TxPower");
-		doSystem("iwpriv %s set %s=%d", wifname, "TxPower", i_val);
-	}
-
 #endif
 	mlme_state_wl(is_on);
 
@@ -81,17 +75,12 @@ mlme_radio_wl(int is_on)
 void
 mlme_radio_rt(int is_on)
 {
-	int i_val;
 	const char *wifname = find_wlan_if_up(0);
 
 	if (!wifname)
 		return;
 
 	doSystem("iwpriv %s set %s=%d", wifname, "RadioOn", (is_on) ? 1 : 0);
-	if (is_on) {
-		i_val = nvram_wlan_get_int(0, "TxPower");
-		doSystem("iwpriv %s set %s=%d", wifname, "TxPower", i_val);
-	}
 
 	mlme_state_rt(is_on);
 
@@ -100,6 +89,11 @@ mlme_radio_rt(int is_on)
 #endif
 
 #if defined(USE_RT3352_MII)
+	if (is_on) {
+		int i_val = nvram_wlan_get_int(0, "TxPower");
+		doSystem("iwpriv %s set %s=%d", wifname, "TxPower", i_val);
+	}
+
 	// isolation iNIC port from all LAN ports
 	phy_isolate_inic((is_on) ? 0 : 1);
 #endif

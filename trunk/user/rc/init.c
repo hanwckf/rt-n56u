@@ -341,12 +341,13 @@ init_nodes(void)
 	mknod("/dev/nvram",  S_IFCHR | 0666, makedev(228, 0));
 	mknod("/dev/gpio",   S_IFCHR | 0666, makedev(252, 0));
 	mknod("/dev/rdm0",   S_IFCHR | 0666, makedev(253, 0));
-
+#if defined (USE_HW_NAT)
 	mknod("/dev/hwnat0", S_IFCHR | 0666, makedev(220, 0));
 #if !defined (USE_HW_NAT_V2)
 	mknod("/dev/acl0",   S_IFCHR | 0666, makedev(230, 0));
 	mknod("/dev/ac0",    S_IFCHR | 0666, makedev(240, 0));
 	mknod("/dev/mtr0",   S_IFCHR | 0666, makedev(250, 0));
+#endif
 #endif
 #if defined(APP_OPENVPN)
 	/* if kernel CONFIG_HOTPLUG is not set, mdev create /dev/tun instead of /dev/net/tun */

@@ -2031,6 +2031,9 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_ipv6 = 0;
 #endif
+
+#if defined(USE_HW_NAT)
+	int has_ipv4_ppe = 1;
 #if defined(USE_IPV6_HW_NAT)
 #if defined(USE_HW_NAT_V2)
 	int has_ipv6_ppe = 2;
@@ -2040,6 +2043,10 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_ipv6_ppe = 0;
 #endif
+#else
+	int has_ipv4_ppe = 0;
+#endif
+
 #if (BOARD_RAM_SIZE < 64)
 	int max_conn = 16384;
 #elif (BOARD_RAM_SIZE < 128)
@@ -2146,6 +2153,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 	websWrite(wp,
 		"function support_ipv6() { return %d;}\n"
 		"function support_ipv6_ppe() { return %d;}\n"
+		"function support_ipv4_ppe() { return %d;}\n"
 		"function support_peap_ssl() { return %d;}\n"
 		"function support_http_ssl() { return %d;}\n"
 		"function support_ddns_ssl() { return %d;}\n"
@@ -2170,6 +2178,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_2g_stream_rx() { return %d;}\n",
 		has_ipv6,
 		has_ipv6_ppe,
+		has_ipv4_ppe,
 		has_peap_ssl,
 		has_http_ssl,
 		has_ddns_ssl,

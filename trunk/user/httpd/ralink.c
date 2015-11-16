@@ -161,6 +161,7 @@ ej_vpns_leases(int eid, webs_t wp, int argc, char **argv)
 
 int is_hwnat_loaded()
 {
+#if defined (USE_HW_NAT)
 	DIR *dir_to_open = NULL;
 	FILE *fp;
 	char offload_val[32];
@@ -183,7 +184,7 @@ int is_hwnat_loaded()
 		
 		return 1;
 	}
-	
+#endif
 	return 0;
 }
 
@@ -200,6 +201,8 @@ ej_nat_table(int eid, webs_t wp, int argc, char **argv)
 
 	ret = 0;
 	sw_mode = nvram_get_int("sw_mode");
+
+#if defined (USE_HW_NAT)
 	if (sw_mode == 1 || sw_mode == 4) {
 		hwnat_status = "Disabled";
 		
@@ -215,6 +218,7 @@ ej_nat_table(int eid, webs_t wp, int argc, char **argv)
 		
 		ret += websWrite(wp, "Hardware NAT/Routing: %s\n", hwnat_status);
 	}
+#endif
 
 	if (sw_mode == 1) {
 //		ret += websWrite(wp, "Software QoS: %s\n", nvram_match("qos_enable", "1") ? "Enabled": "Disabled");

@@ -2,7 +2,9 @@ utils_dir_y =
 utils_dir_  =
 
 # ralink specific applications
+ifdef CONFIG_RA_HW_NAT
 utils_dir_y			+= hw_nat
+endif
 
 # other utils
 utils_dir_y			+= cpu_usage

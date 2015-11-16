@@ -47,6 +47,10 @@ function initial(){
 	show_menu(5,4,1);
 	show_footer();
 
+	if (!support_ipv4_ppe()){
+		showhide_div('row_hwnat', 0);
+	}
+
 	var o1 = document.form.wan_auth_mode;
 	if (!support_peap_ssl()){
 		o1.remove(3);
@@ -748,7 +752,7 @@ function simplyMAC(fullMAC){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_hwnat">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,23);"><#HardwareNAT#></a></th>
                                             <td>
                                                 <select name="hw_nat_mode" class="input">

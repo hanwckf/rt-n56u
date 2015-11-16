@@ -3468,6 +3468,15 @@ void percentage_delta_pwr(RTMP_ADAPTER *ad)
 		__FUNCTION__, mac_val));
 }
 
+void mt76x2_update_tx_power_percentage(RTMP_ADAPTER *ad)
+{
+	if (RTMP_TEST_FLAG(ad, fRTMP_ADAPTER_RADIO_OFF))
+		return;
+
+	mt76x2_tx_pwr_gain(ad, ad->CommonCfg.Channel, ad->CommonCfg.BBPCurrentBW);
+	percentage_delta_pwr(ad);
+}
+
 void mt76x2_get_current_temp(RTMP_ADAPTER *ad)
 {
 	RTMP_CHIP_CAP *pChipCap = &ad->chipCap;

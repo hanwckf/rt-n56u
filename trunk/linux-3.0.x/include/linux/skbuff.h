@@ -272,6 +272,11 @@ typedef unsigned int sk_buff_data_t;
 typedef unsigned char *sk_buff_data_t;
 #endif
 
+#if defined(CONFIG_NF_DEFRAG_IPV4) || defined(CONFIG_NF_DEFRAG_IPV4_MODULE) || \
+    defined(CONFIG_NF_DEFRAG_IPV6) || defined(CONFIG_NF_DEFRAG_IPV6_MODULE)
+#define NET_SKBUFF_NF_DEFRAG_NEEDED 1
+#endif
+
 /** 
  *	struct sk_buff - socket buffer
  *	@next: Next buffer in list
@@ -314,6 +319,7 @@ typedef unsigned char *sk_buff_data_t;
  *		done for it, don't do them again
  *	@nf_trace: netfilter packet trace flag
  *	@nfctinfo: Relationship of this skb to the connection
+ *	@nfct_reasm: netfilter conntrack re-assembly pointer
  *	@nf_bridge: Saved data about a bridged frame - see br_netfilter.c
  *	@skb_iif: ifindex of device we arrived on
  *	@rxhash: the packet hash computed on receive
@@ -390,9 +396,9 @@ struct sk_buff {
 	/* Needed ON for iNIC_mii.obj compatible */
 	struct nf_conntrack	*nfct;
 #endif
-#if defined(CONFIG_RTDEV_MII)
+#if defined(NET_SKBUFF_NF_DEFRAG_NEEDED) || defined(CONFIG_RTDEV_MII)
 	/* Needed ON for iNIC_mii.obj compatible */
-	struct sk_buff		*nfct_reasm_fake;
+	struct sk_buff		*nfct_reasm;
 #endif
 #if defined(CONFIG_NETFILTER_FP_SMB) || defined(CONFIG_RTDEV_MII)
 	/* Needed ON for iNIC_mii.obj compatible */
@@ -2193,6 +2199,18 @@ static inline void nf_conntrack_get(struct nf_conntrack *nfct)
 		atomic_inc(&nfct->use);
 }
 #endif
+#ifdef NET_SKBUFF_NF_DEFRAG_NEEDED
+static inline void nf_conntrack_get_reasm(struct sk_buff *skb)
+{
+	if (skb)
+		atomic_inc(&skb->users);
+}
+static inline void nf_conntrack_put_reasm(struct sk_buff *skb)
+{
+	if (skb)
+		kfree_skb(skb);
+}
+#endif
 #ifdef CONFIG_BRIDGE_NETFILTER
 static inline void nf_bridge_put(struct nf_bridge_info *nf_bridge)
 {
@@ -2211,6 +2229,10 @@ static inline void nf_reset(struct sk_buff *skb)
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
 	nf_conntrack_put(skb->nfct);
 	skb->nfct = NULL;
+#endif
+#ifdef NET_SKBUFF_NF_DEFRAG_NEEDED
+	nf_conntrack_put_reasm(skb->nfct_reasm);
+	skb->nfct_reasm = NULL;
 #endif
 #ifdef CONFIG_BRIDGE_NETFILTER
 	nf_bridge_put(skb->nf_bridge);
@@ -2234,6 +2256,10 @@ static inline void __nf_copy(struct sk_buff *dst, const struct sk_buff *src)
 	nf_conntrack_get(src->nfct);
 	dst->nfctinfo = src->nfctinfo;
 #endif
+#ifdef NET_SKBUFF_NF_DEFRAG_NEEDED
+	dst->nfct_reasm = src->nfct_reasm;
+	nf_conntrack_get_reasm(src->nfct_reasm);
+#endif
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	dst->imq_flags = src->imq_flags;
 	dst->nf_queue_entry = src->nf_queue_entry;
@@ -2251,6 +2277,9 @@ static inline void nf_copy(struct sk_buff *dst, const struct sk_buff *src)
 {
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
 	nf_conntrack_put(dst->nfct);
+#endif
+#ifdef NET_SKBUFF_NF_DEFRAG_NEEDED
+	nf_conntrack_put_reasm(dst->nfct_reasm);
 #endif
 #ifdef CONFIG_BRIDGE_NETFILTER
 	nf_bridge_put(dst->nf_bridge);

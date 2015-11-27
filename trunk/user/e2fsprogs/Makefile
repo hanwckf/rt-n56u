@@ -48,6 +48,8 @@ clean:
 
 romfs:
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/e2fsck/e2fsck /sbin/e2fsck
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/misc/badblocks /sbin/badblocks
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/misc/e2undo /sbin/e2undo
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/misc/mke2fs /sbin/mke2fs
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/misc/tune2fs /sbin/tune2fs
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/lib/e2p/libe2p.so.2.3 /lib/libe2p.so.2.3

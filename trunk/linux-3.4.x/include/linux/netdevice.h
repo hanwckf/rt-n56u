@@ -1608,6 +1608,7 @@ extern int		dev_open(struct net_device *dev);
 extern int		dev_close(struct net_device *dev);
 extern int		dev_close_many(struct list_head *head, bool unlink);
 extern void		dev_disable_lro(struct net_device *dev);
+extern int		dev_loopback_xmit(struct sk_buff *newskb);
 extern int		dev_queue_xmit(struct sk_buff *skb);
 extern int		register_netdevice(struct net_device *dev);
 extern void		unregister_netdevice_queue(struct net_device *dev,

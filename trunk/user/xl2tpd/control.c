@@ -1201,12 +1201,17 @@ static inline int check_control (const struct buffer *buf, struct tunnel *t,
                 l2tp_log (LOG_DEBUG, "%s: Sending an updated ZLB in reponse\n",
                      __FUNCTION__);
 #endif
-            zlb = new_outgoing (t);
-            control_zlb (zlb, t, c);
+
+            if (buf->len != sizeof (struct control_hdr))
+            {
+                /* don't send a ZLB in response to a ZLB. it leads to a loop */
+                zlb = new_outgoing (t);
+                control_zlb (zlb, t, c);
 #ifndef FIX_ZLB
-            udp_xmit (zlb, t);
+                udp_xmit (zlb, t);
 #endif
-            toss (zlb);
+                toss (zlb);
+            }
         }
         else if (!t->control_rec_seq_num && (t->tid == -1))
         {

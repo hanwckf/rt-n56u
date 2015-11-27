@@ -1,6 +1,6 @@
 repo: d7da3b1e15401eb234ec866d5eac992fc4cd5878
-node: 809feaa9408f036734129c77f2b3c7e779d4f099
+node: 79a6ef02307d05cb9dda10465cb5b807baa8f62e
 branch: default
-latesttag: DROPBEAR_2015.67
-latesttagdistance: 105
-changessincelatesttag: 125
+latesttag: DROPBEAR_2015.69
+latesttagdistance: 8
+changessincelatesttag: 8

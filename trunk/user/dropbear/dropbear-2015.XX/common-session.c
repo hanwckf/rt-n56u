@@ -162,6 +162,7 @@ void session_loop(void(*loophandler)()) {
 		/* We get woken up when signal handlers write to this pipe.
 		   SIGCHLD in svr-chansession is the only one currently. */
 		FD_SET(ses.signal_pipe[0], &readfd);
+		ses.channel_signal_pending = 0;
 
 		/* set up for channels which can be read/written */
 		setchannelfds(&readfd, &writefd, writequeue_has_space);
@@ -211,7 +212,9 @@ void session_loop(void(*loophandler)()) {
 		wake up the select() above. */
 		if (FD_ISSET(ses.signal_pipe[0], &readfd)) {
 			char x;
+			TRACE(("signal pipe set"))
 			while (read(ses.signal_pipe[0], &x, 1) > 0) {}
+			ses.channel_signal_pending = 1;
 		}
 
 		/* check for auth timeout, rekeying required etc */

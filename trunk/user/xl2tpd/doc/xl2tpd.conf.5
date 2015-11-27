@@ -6,7 +6,7 @@ The xl2tpd.conf file contains configuration information for xl2tpd, the implemen
 
 The configuration file is composed of sections and parameters. Each section
 has a given name which will be used when using the configuration FIFO 
-(normaly /var/run/l2tp\-control). See xl2tpd.8  for more details.
+(normaly /var/run/xl2tpd/l2tp\-control). See xl2tpd.8  for more details.
 
 The specific given name 
 .B default
@@ -15,7 +15,7 @@ will specify parameters applicables for all the following sections.
 .TP 
 .B auth file
 Specify where to find the authentication file used to authenticate
-l2tp tunnels. The default is /etc/l2tpd/l2tp\-secrets.
+l2tp tunnels. The default is /etc/xl2tpd/l2tp\-secrets.
 
 .TP 
 .B ipsec saref
@@ -200,6 +200,10 @@ authentication / ppp related ones).
 .TP 
 .B lns
 Set the dns name or ip address of the LNS to connect to.
+
+.TP
+.B autodial
+If set to yes, xl2tpd will automatically dial the LAC during startup.
 
 .TP 
 .B redial

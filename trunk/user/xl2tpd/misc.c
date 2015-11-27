@@ -186,7 +186,7 @@ void do_packet_dump (struct buffer *buf)
     printf ("}\n");
 }
 
-inline void swaps (void *buf_v, int len)
+void swaps (void *buf_v, int len)
 {
 #ifdef __alpha
     /* Reverse byte order alpha is little endian so lest save a step.

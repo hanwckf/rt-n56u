@@ -31,6 +31,8 @@
 #include "ipsecmast.h"
 #include "misc.h"    /* for IPADDY macro */
 
+#include <math.h>
+
 char hostname[256];
 int server_socket = -1;         /* Server socket */
 #ifdef USE_KERNEL
@@ -183,7 +185,7 @@ int init_network (void)
     return 0;
 }
 
-inline void extract (void *buf, int *tunnel, int *call)
+static inline void extract (void *buf, int *tunnel, int *call)
 {
     /*
      * Extract the tunnel and call #'s, and fix the order of the 
@@ -203,7 +205,7 @@ inline void extract (void *buf, int *tunnel, int *call)
     }
 }
 
-inline void fix_hdr (void *buf)
+static inline void fix_hdr (void *buf)
 {
     /*
      * Fix the byte order of the header
@@ -322,11 +324,7 @@ void control_xmit (void *b)
         tv.tv_usec = 0;
 
         if (buf->retries > 1)
-        {
-            tv.tv_sec = (time_t)((buf->retries-1) * 2);
-            if (tv.tv_sec > 8)
-                tv.tv_sec = 8;
-        }
+            tv.tv_sec = 1*pow(2, buf->retries-1);
 
         schedule (tv, control_xmit, buf);
 #ifdef DEBUG_CONTROL_XMIT

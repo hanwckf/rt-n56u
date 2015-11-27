@@ -65,7 +65,7 @@ extern void l2tp_log (int level, const char *fmt, ...);
 extern struct buffer *new_buf (int);
 extern void udppush_handler (int);
 extern int addfcs (struct buffer *buf);
-extern inline void swaps (void *, int);
+extern void swaps (void *, int);
 extern void do_packet_dump (struct buffer *);
 extern void status (const char *fmt, ...);
 extern void status_handler (int signal);

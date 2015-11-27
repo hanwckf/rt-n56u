@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: genconfig.sh,v 1.83 2015/09/22 10:07:12 nanard Exp $
+# $Id: genconfig.sh,v 1.84 2015/10/26 16:51:31 nanard Exp $
 # miniupnp daemon
 # http://miniupnp.free.fr or http://miniupnp.tuxfamily.org/
 # (c) 2006-2015 Thomas Bernard

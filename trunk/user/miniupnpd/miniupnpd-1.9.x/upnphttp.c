@@ -1,4 +1,4 @@
-/* $Id: upnphttp.c,v 1.100 2015/06/09 15:34:46 nanard Exp $ */
+/* $Id: upnphttp.c,v 1.101 2015/11/05 10:58:53 nanard Exp $ */
 /* Project :  miniupnp
  * Website :  http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * Author :   Thomas Bernard
@@ -61,7 +61,7 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 
 int init_ssl(void)
 {
-	SSL_METHOD *method;
+	const SSL_METHOD *method;
 	SSL_library_init();
 	SSL_load_error_strings();
 	method = TLSv1_server_method();

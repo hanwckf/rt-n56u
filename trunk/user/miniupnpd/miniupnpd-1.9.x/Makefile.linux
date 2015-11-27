@@ -1,4 +1,4 @@
-# $Id: Makefile.linux,v 1.90 2015/04/26 14:43:28 nanard Exp $
+# $Id: Makefile.linux,v 1.91 2015/10/26 16:53:25 nanard Exp $
 # MiniUPnP project
 # (c) 2006-2015 Thomas Bernard
 # http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
@@ -88,6 +88,7 @@ clean:
 	$(RM) testgetroute.o testasyncsendto.o
 	$(RM) testportinuse.o
 	$(RM) miniupnpdctl.o
+	$(RM) validateupnppermissions validategetifaddr validatessdppktgen
 
 install:	miniupnpd miniupnpd.8 miniupnpd.conf genuuid \
 	netfilter/iptables_init.sh netfilter/iptables_removeall.sh \
@@ -118,6 +119,20 @@ else
 	sed -i -e "s/^uuid=[-0-9a-f]*/uuid=`($(STAGING_DIR_HOST)/bin/genuuid||$(STAGING_DIR_HOST)/bin/uuidgen||$(STAGING_DIR_HOST)/bin/uuid) 2>/dev/null`/" miniupnpd.conf
 endif
 
+check:	validateupnppermissions validategetifaddr validatessdppktgen
+
+validateupnppermissions:	testupnppermissions testupnppermissions.sh
+	./testupnppermissions.sh
+	touch $@
+
+validategetifaddr:	testgetifaddr testgetifaddr.sh
+	./testgetifaddr.sh
+	touch $@
+
+validatessdppktgen:	testssdppktgen
+	./testssdppktgen
+	touch $@
+
 miniupnpd:	$(BASEOBJS) $(LNXOBJS) $(NETFILTEROBJS)
 
 testupnpdescgen:	$(TESTUPNPDESCGENOBJS)
@@ -129,6 +144,8 @@ testupnppermissions:	testupnppermissions.o upnppermissions.o
 testgetifaddr:	testgetifaddr.o getifaddr.o
 
 testgetroute:	testgetroute.o linux/getroute.o upnputils.o
+
+testssdppktgen:	testssdppktgen.o
 
 testasyncsendto:	testasyncsendto.o asyncsendto.o upnputils.o \
 	linux/getroute.o
@@ -146,7 +163,7 @@ depend:	config.h
 	$(ALLOBJS:.o=.c) $(TESTUPNPDESCGENOBJS:.o=.c) \
 	testgetifstats.c testupnppermissions.c testgetifaddr.c \
 	testgetroute.c testasyncsendto.c testportinuse.c \
-	miniupnpdctl.c 2>/dev/null
+	miniupnpdctl.c testssdppktgen.c 2>/dev/null
 
 # DO NOT DELETE
 
@@ -223,3 +240,4 @@ testgetroute.o: config.h miniupnpdtypes.h
 testasyncsendto.o: miniupnpdtypes.h config.h upnputils.h asyncsendto.h
 testportinuse.o: macros.h config.h portinuse.h
 miniupnpdctl.o: macros.h
+testssdppktgen.o: macros.h config.h miniupnpdpath.h upnphttp.h

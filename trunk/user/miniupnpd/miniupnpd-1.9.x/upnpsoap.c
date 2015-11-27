@@ -1,4 +1,4 @@
-/* $Id: upnpsoap.c,v 1.138 2015/09/22 09:58:30 nanard Exp $ */
+/* $Id: upnpsoap.c,v 1.139 2015/11/05 10:57:40 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2015 Thomas Bernard
@@ -1485,7 +1485,7 @@ PinholeVerification(struct upnphttp * h, char * int_ip, unsigned short int_port)
 }
 
 static void
-AddPinhole(struct upnphttp * h, const char * action)
+AddPinhole(struct upnphttp * h, const char * action, const char * ns)
 {
 	int r;
 	static const char resp[] =
@@ -1623,7 +1623,7 @@ AddPinhole(struct upnphttp * h, const char * action)
 		case 1:	        /* success */
 			bodylen = snprintf(body, sizeof(body),
 			                   resp, action,
-			                   "urn:schemas-upnp-org:service:WANIPv6FirewallControl:1",
+			                   ns/*"urn:schemas-upnp-org:service:WANIPv6FirewallControl:1"*/,
 			                   uid, action);
 			BuildSendAndCloseSoapResp(h, body, bodylen);
 			break;
@@ -1647,12 +1647,20 @@ clear_and_exit:
 }
 
 static void
-UpdatePinhole(struct upnphttp * h, const char * action)
+UpdatePinhole(struct upnphttp * h, const char * action, const char * ns)
 {
+#if 0
 	static const char resp[] =
 		"<u:UpdatePinholeResponse "
 		"xmlns:u=\"urn:schemas-upnp-org:service:WANIPv6FirewallControl:1\">"
 		"</u:UpdatePinholeResponse>";
+#endif
+	static const char resp[] =
+		"<u:%sResponse "
+		"xmlns:u=\"%s\">"
+		"</u:%sResponse>";
+	char body[512];
+	int bodylen;
 	struct NameValueParserData data;
 	const char * uid_str, * leaseTime;
 	char iaddr[INET6_ADDRSTRLEN];
@@ -1708,12 +1716,15 @@ UpdatePinhole(struct upnphttp * h, const char * action)
 		SoapError(h, 704, "NoSuchEntry");
 	else if(n < 0)
 		SoapError(h, 501, "ActionFailed");
-	else
-		BuildSendAndCloseSoapResp(h, resp, sizeof(resp)-1);
+	else {
+		bodylen = snprintf(body, sizeof(body), resp,
+		                   action, ns, action);
+		BuildSendAndCloseSoapResp(h, body, bodylen);
+	}
 }
 
 static void
-GetOutboundPinholeTimeout(struct upnphttp * h, const char * action)
+GetOutboundPinholeTimeout(struct upnphttp * h, const char * action, const char * ns)
 {
 	int r;
 
@@ -1727,7 +1738,8 @@ GetOutboundPinholeTimeout(struct upnphttp * h, const char * action)
 	int bodylen;
 	struct NameValueParserData data;
 	char * int_ip, * int_port, * rem_host, * rem_port, * protocol;
-	int opt=0, proto=0;
+	int opt=0;
+	/*int proto=0;*/
 	unsigned short iport, rport;
 
 	if (GETFLAG(IPV6FCFWDISABLEDMASK))
@@ -1745,7 +1757,7 @@ GetOutboundPinholeTimeout(struct upnphttp * h, const char * action)
 
 	rport = (unsigned short)atoi(rem_port);
 	iport = (unsigned short)atoi(int_port);
-	proto = atoi(protocol);
+	/*proto = atoi(protocol);*/
 
 	syslog(LOG_INFO, "%s: retrieving timeout for outbound pinhole from [%s]:%hu to [%s]:%hu protocol %s", action, int_ip, iport,rem_host, rport, protocol);
 
@@ -1756,7 +1768,7 @@ GetOutboundPinholeTimeout(struct upnphttp * h, const char * action)
 	{
 		case 1:	/* success */
 			bodylen = snprintf(body, sizeof(body), resp,
-			                   action, "urn:schemas-upnp-org:service:WANIPv6FirewallControl:1",
+			                   action, ns/*"urn:schemas-upnp-org:service:WANIPv6FirewallControl:1"*/,
 			                   opt, action);
 			BuildSendAndCloseSoapResp(h, body, bodylen);
 			break;
@@ -1770,14 +1782,21 @@ GetOutboundPinholeTimeout(struct upnphttp * h, const char * action)
 }
 
 static void
-DeletePinhole(struct upnphttp * h, const char * action)
+DeletePinhole(struct upnphttp * h, const char * action, const char * ns)
 {
 	int n;
-
+#if 0
 	static const char resp[] =
 		"<u:DeletePinholeResponse "
 		"xmlns:u=\"urn:schemas-upnp-org:service:WANIPv6FirewallControl:1\">"
 		"</u:DeletePinholeResponse>";
+#endif
+	static const char resp[] =
+		"<u:%sResponse "
+		"xmlns:u=\"%s\">"
+		"</u:%sResponse>";
+	char body[512];
+	int bodylen;
 
 	struct NameValueParserData data;
 	const char * uid_str;
@@ -1834,11 +1853,13 @@ DeletePinhole(struct upnphttp * h, const char * action)
 	}
 	syslog(LOG_INFO, "%s: (inbound) pinhole with ID %d successfully removed",
 	       action, uid);
-	BuildSendAndCloseSoapResp(h, resp, sizeof(resp)-1);
+	bodylen = snprintf(body, sizeof(body), resp,
+	                   action, ns, action);
+	BuildSendAndCloseSoapResp(h, body, bodylen);
 }
 
 static void
-CheckPinholeWorking(struct upnphttp * h, const char * action)
+CheckPinholeWorking(struct upnphttp * h, const char * action, const char * ns)
 {
 	static const char resp[] =
 		"<u:%sResponse "
@@ -1887,7 +1908,7 @@ CheckPinholeWorking(struct upnphttp * h, const char * action)
 			return;
 		}
 		bodylen = snprintf(body, sizeof(body), resp,
-						action, "urn:schemas-upnp-org:service:WANIPv6FirewallControl:1",
+						action, ns/*"urn:schemas-upnp-org:service:WANIPv6FirewallControl:1"*/,
 						1, action);
 		BuildSendAndCloseSoapResp(h, body, bodylen);
 	}
@@ -1898,7 +1919,7 @@ CheckPinholeWorking(struct upnphttp * h, const char * action)
 }
 
 static void
-GetPinholePackets(struct upnphttp * h, const char * action)
+GetPinholePackets(struct upnphttp * h, const char * action, const char * ns)
 {
 	static const char resp[] =
 		"<u:%sResponse "
@@ -1951,7 +1972,7 @@ GetPinholePackets(struct upnphttp * h, const char * action)
 #endif
 
 	bodylen = snprintf(body, sizeof(body), resp,
-			action, "urn:schemas-upnp-org:service:WANIPv6FirewallControl:1",
+			action, ns/*"urn:schemas-upnp-org:service:WANIPv6FirewallControl:1"*/,
 			packets, action);
 	BuildSendAndCloseSoapResp(h, body, bodylen);
 }
@@ -1959,7 +1980,7 @@ GetPinholePackets(struct upnphttp * h, const char * action)
 
 #ifdef ENABLE_DP_SERVICE
 static void
-SendSetupMessage(struct upnphttp * h, const char * action)
+SendSetupMessage(struct upnphttp * h, const char * action, const char * ns)
 {
 	static const char resp[] =
 		"<u:%sResponse "
@@ -1993,14 +2014,14 @@ SendSetupMessage(struct upnphttp * h, const char * action)
 	/* TODO : put here code for WPS */
 
 	bodylen = snprintf(body, sizeof(body), resp,
-	                   action, "urn:schemas-upnp-org:service:DeviceProtection:1",
+	                   action, ns/*"urn:schemas-upnp-org:service:DeviceProtection:1"*/,
 	                   OutMessage, action);
 	BuildSendAndCloseSoapResp(h, body, bodylen);
 	ClearNameValueList(&data);
 }
 
 static void
-GetSupportedProtocols(struct upnphttp * h, const char * action)
+GetSupportedProtocols(struct upnphttp * h, const char * action, const char * ns)
 {
 	static const char resp[] =
 		"<u:%sResponse "
@@ -2020,13 +2041,13 @@ GetSupportedProtocols(struct upnphttp * h, const char * action)
 		"</SupportedProtocols>";
 
 	bodylen = snprintf(body, sizeof(body), resp,
-	                   action, "urn:schemas-upnp-org:service:DeviceProtection:1",
+	                   action, ns/*"urn:schemas-upnp-org:service:DeviceProtection:1"*/,
 	                   ProtocolList, action);
 	BuildSendAndCloseSoapResp(h, body, bodylen);
 }
 
 static void
-GetAssignedRoles(struct upnphttp * h, const char * action)
+GetAssignedRoles(struct upnphttp * h, const char * action, const char * ns)
 {
 	static const char resp[] =
 		"<u:%sResponse "
@@ -2050,7 +2071,7 @@ GetAssignedRoles(struct upnphttp * h, const char * action)
 #endif
 
 	bodylen = snprintf(body, sizeof(body), resp,
-	                   action, "urn:schemas-upnp-org:service:DeviceProtection:1",
+	                   action, ns/*"urn:schemas-upnp-org:service:DeviceProtection:1"*/,
 	                   RoleList, action);
 	BuildSendAndCloseSoapResp(h, body, bodylen);
 }

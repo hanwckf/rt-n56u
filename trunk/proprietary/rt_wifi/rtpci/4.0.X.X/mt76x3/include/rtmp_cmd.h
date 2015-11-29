@@ -337,13 +337,13 @@ typedef struct __RT_CMD_INF_UP_DOWN {
 	IN	int (*rt28xx_close)(VOID *net_dev);
 } RT_CMD_INF_UP_DOWN;
 
-typedef struct __RT_CMD_STATS {
+typedef struct __RT_CMD_STATS64 {
 	IN VOID *pNetDev;
 
+	OUT UINT64        rx_bytes;	/* total bytes received         */
+	OUT UINT64        tx_bytes;	/* total bytes transmitted      */
 	OUT unsigned long rx_packets;	/* total packets received       */
 	OUT unsigned long tx_packets;	/* total packets transmitted */
-	OUT unsigned long rx_bytes;	/* total bytes received         */
-	OUT unsigned long tx_bytes;	/* total bytes transmitted      */
 	OUT unsigned long rx_errors;	/* bad packets received         */
 	OUT unsigned long tx_errors;	/* packet transmit problems     */
 	OUT unsigned long multicast;	/* multicast packets received */

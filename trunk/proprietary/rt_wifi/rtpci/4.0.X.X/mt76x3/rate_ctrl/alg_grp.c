@@ -1245,12 +1245,6 @@ VOID QuickResponeForRateUpExecAdaptMT(/* actually for both up and down */
 	AsicTxCntUpdate(pAd, pEntry, &TxInfo);
 
 
-#ifdef MSTAR_SUPPORT
-	if (!IS_VALID_ENTRY(pEntry))
-	{
-		return;
-	}
-#endif /* MSTAR_SUPPORT */
 
 
 	TxTotalCnt = TxInfo.TxCount;
@@ -1668,12 +1662,6 @@ VOID DynamicTxRateSwitchingAdaptMT(RTMP_ADAPTER *pAd, UINT i)
 
 	AsicTxCntUpdate(pAd, pEntry, &TxInfo);
 
-#ifdef MSTAR_SUPPORT
-	if (!IS_VALID_ENTRY(pEntry))
-	{
-		return;
-	}
-#endif /* MSTAR_SUPPORT */
 
 
 	TxTotalCnt = TxInfo.TxCount;
@@ -2445,6 +2433,7 @@ INT Set_RateTable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 }
 
 
+#ifdef DBG
 INT	Set_PerThrdAdj_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
 	IN	RTMP_STRING *arg)
@@ -2505,6 +2494,6 @@ INT	Set_TrainUpHighThrd_Proc(
 
 	return TRUE;
 }
-
+#endif /* DBG */
 #endif /* NEW_RATE_ADAPT_SUPPORT */
 

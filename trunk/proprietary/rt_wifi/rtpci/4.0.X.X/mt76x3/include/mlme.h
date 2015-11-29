@@ -118,6 +118,12 @@
 
 #define BSS_NOT_FOUND                    0xFFFFFFFF
 
+
+#ifdef EAPOL_QUEUE_SUPPORT
+#define MAX_LEN_OF_EAP_QUEUE            (40)
+#endif /* EAPOL_QUEUE_SUPPORT */
+
+
 #ifdef CONFIG_AP_SUPPORT
 #define MAX_LEN_OF_MLME_QUEUE            64 /*20*/ /*10 */
 #endif /* CONFIG_AP_SUPPORT */
@@ -134,10 +140,6 @@ enum SCAN_MODE{
 #ifdef DOT11N_DRAFT3
 	SCAN_2040_BSS_COEXIST = 0x4,
 #endif /* DOT11N_DRAFT3 */
-#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
-	SCAN_P2P = 0x5,
-	SCAN_P2P_SEARCH = 0x6,
-#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT */
 	SCAN_ACTIVE_MAX,
 	
 	/* Passive scan, no probe request, only wait beacon and probe response */
@@ -918,14 +920,6 @@ typedef struct _BSS_ENTRY{
 	EXT_CAP_INFO_ELEMENT ExtCapInfo;	/* this is the extened capibility IE appreed in MGMT frames. Doesn't need to update once set in Init. */
 	UCHAR NewExtChanOffset;
 	CHAR Rssi;
-#ifdef CUSTOMER_DCC_FEATURE
-	UCHAR  Snr0;
-	UCHAR  Snr1;
-#endif
-#ifdef CFG80211_SCAN_SIGNAL_AVG
-	SHORT	AvgRssiX8;
-	CHAR	AvgRssi;
-#endif /* CFG80211_SCAN_SIGNAL_AVG */	
 
 #ifdef DOT11_VHT_AC
 	UCHAR vht_cap_len;
@@ -1020,10 +1014,6 @@ typedef struct _MLME_QUEUE_ELEM {
 	ULONG MsgLen;
 	LARGE_INTEGER TimeStamp;
 	struct raw_rssi_info rssi_info;
-#ifdef CUSTOMER_DCC_FEATURE
-	UCHAR Snr0;
-	UCHAR Snr1;
-#endif
 	UCHAR Signal;
 	UCHAR Channel;
 	UCHAR Wcid;
@@ -1031,6 +1021,17 @@ typedef struct _MLME_QUEUE_ELEM {
 	UCHAR OpMode;
 	ULONG Priv;
 } MLME_QUEUE_ELEM, *PMLME_QUEUE_ELEM;
+
+
+#ifdef EAPOL_QUEUE_SUPPORT
+typedef struct _EAP_MLME_QUEUE {
+    ULONG             Num;
+    ULONG             Head;
+    ULONG             Tail;
+    NDIS_SPIN_LOCK   Lock;
+    MLME_QUEUE_ELEM  Entry[MAX_LEN_OF_EAP_QUEUE];
+} EAP_MLME_QUEUE, *PEAP_MLME_QUEUE;
+#endif /* EAPOL_QUEUE_SUPPORT */
 
 typedef struct _MLME_QUEUE {
 	ULONG Num;
@@ -1232,10 +1233,6 @@ typedef struct _MLME_SCAN_REQ_STRUCT {
     UCHAR      SsidLen;
     CHAR       Ssid[MAX_LEN_OF_SSID];
 #ifdef CONFIG_AP_SUPPORT
-#ifdef CUSTOMER_DCC_FEATURE
-	UINT	   Channel;
-	UINT	   Timeout;
-#endif
 #endif
 } MLME_SCAN_REQ_STRUCT, *PMLME_SCAN_REQ_STRUCT;
 

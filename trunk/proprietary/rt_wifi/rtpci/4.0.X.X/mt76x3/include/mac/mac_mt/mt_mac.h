@@ -1704,16 +1704,15 @@ typedef struct __TX_CNT_INFO {
 #define HW_BEACON_MAX_SIZE(__pAd)      ((__pAd)->chipCap.BcnMaxHwSize)
 
 struct _RTMP_ADAPTER;
+#ifdef DBG
 VOID dump_mt_mac_cr(struct _RTMP_ADAPTER *pAd);
-
-INT mt_mac_init(struct _RTMP_ADAPTER *pAd);
-INT mt_hw_tb_init(struct _RTMP_ADAPTER *pAd, BOOLEAN bHardReset);
-
-INT mt_wtbl_get_entry234(struct _RTMP_ADAPTER *pAd, UCHAR idx, struct wtbl_entry *ent);
 VOID dump_wtbl_entry(struct _RTMP_ADAPTER *pAd, struct wtbl_entry *ent);
 VOID dump_wtbl_info(struct _RTMP_ADAPTER *pAd, UINT wtbl_idx);
 VOID dump_wtbl_base_info(struct _RTMP_ADAPTER *pAd);
-
+#endif /* DBG */
+INT mt_mac_init(struct _RTMP_ADAPTER *pAd);
+INT mt_hw_tb_init(struct _RTMP_ADAPTER *pAd, BOOLEAN bHardReset);
+INT mt_wtbl_get_entry234(struct _RTMP_ADAPTER *pAd, UCHAR idx, struct wtbl_entry *ent);
 INT mt_mac_set_ctrlch(struct _RTMP_ADAPTER *pAd, UINT8 extch);
 
 USHORT tx_rate_to_tmi_rate(UCHAR mode, UCHAR mcs, UCHAR nss, BOOLEAN stbc, UCHAR preamble);

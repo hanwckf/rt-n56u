@@ -983,6 +983,10 @@ INT rtmp_ee_write_to_bin(
 	INT ret_val;
 	RTMP_OS_FD srcf;
 	RTMP_OS_FS_INFO osFSInfo;
+	const INT PCI_EFUSE_SIZE = 10;
+	UCHAR pci_pm[PCI_EFUSE_SIZE];
+	UCHAR pci_efuse[PCI_EFUSE_SIZE];
+	INT i = 0;
 
 #ifdef RT_SOC_SUPPORT
 #ifdef MULTIPLE_CARD_SUPPORT
@@ -1032,6 +1036,39 @@ INT rtmp_ee_write_to_bin(
 		DBGPRINT(RT_DEBUG_ERROR, ("%s::Error %d closing %s\n", __FUNCTION__, -ret_val, src));
 
 	RtmpOSFSInfoChange(&osFSInfo, FALSE);
+#ifdef RTMP_MAC_PCI
+#ifdef MT7603
+	NdisZeroMemory(pci_pm, PCI_EFUSE_SIZE);
+	NdisZeroMemory(pci_efuse, PCI_EFUSE_SIZE);
+	/* 0x26 ~ 0x2F */
+	for(i=0;i<PCI_EFUSE_SIZE;i+=2){
+		UINT16 buf_reg = 0;
+		buf_reg |= pAd->EEPROMImage[0x26+i+1];
+		buf_reg <<= 8;
+		buf_reg |= pAd->EEPROMImage[0x26+i];
+		buf_reg = le2cpu16 (buf_reg);
+		NdisMoveMemory(&pci_pm[i], &buf_reg, 2);
+	}
+	eFuseRead(pAd, 0x26, (USHORT *)pci_efuse, PCI_EFUSE_SIZE);
+
+	DBGPRINT(RT_DEBUG_TRACE, ("PCIE_PM: "));
+	for(i=0;i<PCI_EFUSE_SIZE;i++){
+		DBGPRINT(RT_DEBUG_TRACE, ("%x ",pci_pm[i]));
+	}
+	DBGPRINT(RT_DEBUG_TRACE, ("\n"));
+	DBGPRINT(RT_DEBUG_TRACE, ("PCIE_EFUSE: "));
+	for(i=0;i<PCI_EFUSE_SIZE;i++){
+		DBGPRINT(RT_DEBUG_TRACE, ("%x ",pci_efuse[i]));
+	}
+	DBGPRINT(RT_DEBUG_TRACE, ("\n"));
+	if (!NdisEqualMemory(pci_pm, pci_efuse, PCI_EFUSE_SIZE)){
+		eFuseWrite(pAd, 0x26, (USHORT *)pci_pm, PCI_EFUSE_SIZE);
+		DBGPRINT(RT_DEBUG_TRACE, ("%s, write pci efuse val  to efuse\n", __FUNCTION__));
+	}else{
+		DBGPRINT(RT_DEBUG_TRACE, ("%s, 0x26~0x2F efuse and bin file has same val\n", __FUNCTION__));
+	}
+#endif	/* MT7603 */
+#endif /* RTMP_MAC_PCI */
 	return TRUE;
 }
 

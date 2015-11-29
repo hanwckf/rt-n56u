@@ -25,9 +25,6 @@
  
 #include	"rt_config.h"
 
-#ifdef CUSTOMER_DCC_FEATURE
-MultiplicationShiftFactor RateMultiplicationShiftFactor[108];
-#endif
 
 #ifdef MT_MAC
 INT SetManualTxOP(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
@@ -82,6 +79,7 @@ INT Set_DriverVersion_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 #endif /* CONFIG_AP_SUPPORT */
 
 
+#ifdef DBG
 #ifdef CONFIG_ANDES_SUPPORT
 	if (pAd->chipCap.MCUType == ANDES) { 
 		UINT32 loop = 0;
@@ -119,8 +117,8 @@ INT Set_DriverVersion_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 			DBGPRINT(RT_DEBUG_OFF, ("\n"));
 		}
 	}
-#endif
-
+#endif /* CONFIG_ANDES_SUPPORT */
+#endif /* DBG */
     return TRUE;
 }
 
@@ -296,14 +294,6 @@ INT Set_WirelessMode_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	return Set_Cmm_WirelessMode_Proc(pAd, arg, 0);
 }
-#ifdef RT_CFG80211_SUPPORT
-INT Set_DisableCfg2040Scan_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
-{
-	pAd->cfg80211_ctrl.FlgCfg8021Disable2040Scan = (UCHAR) simple_strtol(arg, 0, 10);	
-	DBGPRINT(RT_DEBUG_TRACE, ("pAd->cfg80211_ctrl.FlgCfg8021Disable2040Scan  %d \n",pAd->cfg80211_ctrl.FlgCfg8021Disable2040Scan ));
-	return TRUE;
-}
-#endif
 
 
 /* 
@@ -444,154 +434,6 @@ INT	Set_Channel_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	return Success;
 }
 
-#ifdef CUSTOMER_DCC_FEATURE
-
-INT	Set_ApChannelSwitch_Proc(
-	IN	PRTMP_ADAPTER	pAd, 
-	IN	PSTRING		arg)
-{
- 	UCHAR	Channel = 0;
-	UCHAR 	offset = 0;
-	INT32 i,j,count;
-	CHAR temp[5];
-
-
-	i = 0;
-	j = 0;
-	count = 0;
-	while(arg[j] != '\0')
-	{
-		temp[i] = arg[j];
-		j++;
-		if(temp[i] == ':' || arg[j] == '\0' )
-		{
-		    if(temp[i] == ':')
-			{	
-                temp[i] = '\0';
-				if((strlen(temp) != 0) && (strlen(temp) <= 3))
-				{
-				   	Channel=simple_strtol(temp, 0, 10);
-					if(!ChannelSanity(pAd, Channel)) 
-					{
-					   	DBGPRINT(RT_DEBUG_ERROR,("wrong channel number \n"));
-						return FALSE;	
-					}
-				}
-				else if(strlen(temp) > 3)
-				{
-					DBGPRINT(RT_DEBUG_ERROR,("wrong channel number \n"));
-					return FALSE;
-				}
-				
-				count++;
-				i = -1;
-			}
-			else if(arg[j] == '\0')
-			{
-				temp[i+1] = '\0';
-			    if((strlen(temp) != 0) && (strlen(temp) <= 1))
-				{
-					offset = simple_strtol(temp, 0, 10);
-					if(offset != 0 && offset != 1 && offset != 2)
-						return FALSE;
-					if(offset == 2)
-						offset = EXTCHA_BELOW;
-						
-				}
-				else if(strlen(temp))
-				{
-					DBGPRINT(RT_DEBUG_ERROR,("wrong offset value \n"));
-					return FALSE;
-				} 
-				count ++;
-			}
-		}
-		i++;
-		if(count > 2)
-			return FALSE;
-
-	}
-	
-
-	pAd->CommonCfg.Channel = Channel;
-
-#ifdef DOT11_N_SUPPORT	
-	if(offset == 0 && (pAd->CommonCfg.PhyMode >= PHY_11ABGN_MIXED))
-	{
-		pAd->CommonCfg.RegTransmitSetting.field.BW  = BW_20;
-		pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = EXTCHA_NONE;
-		pAd->CommonCfg.bExtChannelSwitchAnnouncement = 0;
-	}
-	else if(pAd->CommonCfg.PhyMode >= PHY_11ABGN_MIXED)
-	{
-		do{
-			UCHAR ExtCh;
-			UCHAR Dir = offset;
-			pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = Dir;
-
-			if (Dir == EXTCHA_ABOVE)
-				ExtCh = Channel + 4;
-			else
-				ExtCh = (Channel - 4) > 0 ? (Channel - 4) : 0;
-
-			for (i = 0; i < pAd->ChannelListNum; i++)
-			{
-				if (pAd->ChannelList[i].Channel == ExtCh)
-					break;
-			}
-
-			if (i != pAd->ChannelListNum)
-			{
-				pAd->CommonCfg.RegTransmitSetting.field.BW  = BW_40;
-				pAd->CommonCfg.bExtChannelSwitchAnnouncement = 1;
-				break;
-			}
-
-			Dir = (Dir == EXTCHA_ABOVE) ? EXTCHA_BELOW : EXTCHA_ABOVE;
-
-			if (Dir == EXTCHA_ABOVE)
-				ExtCh = Channel + 4;
-			else
-				ExtCh = (Channel - 4) > 0 ? (Channel - 4) : 0;
-				
-			for (i = 0; i < pAd->ChannelListNum; i++)
-			{
-				if (pAd->ChannelList[i].Channel == ExtCh)
-					break;
-			}
-
-			if (i != pAd->ChannelListNum)
-			{
-				pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = Dir;
-				pAd->CommonCfg.RegTransmitSetting.field.BW  = BW_40;
-				pAd->CommonCfg.bExtChannelSwitchAnnouncement = 1;
-				break;
-			}
-								
-			pAd->CommonCfg.RegTransmitSetting.field.BW  = BW_20;
-			pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = EXTCHA_NONE;
-			pAd->CommonCfg.bExtChannelSwitchAnnouncement = 0;
-	  	} while(FALSE);
-
-		if (Channel == 14)
-		{
-			pAd->CommonCfg.RegTransmitSetting.field.BW  = BW_20;
-			pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = EXTCHA_NONE;
-			pAd->CommonCfg.bExtChannelSwitchAnnouncement = 0;
-				
-		}
-
-	}
-#endif /* DOT11_N_SUPPORT */	
-    pAd->CommonCfg.NewExtChanOffset.NewExtChanOffset = pAd->CommonCfg.RegTransmitSetting.field.EXTCHA;	
-	NotifyChSwAnnToConnectedSTAs(pAd, CHANNEL_SWITCHING_MODE , pAd->CommonCfg.Channel);
-			
-	DBGPRINT(RT_DEBUG_TRACE, ("Set_Channel_Proc::(Channel=%d)\n", pAd->CommonCfg.Channel));
-
-	return TRUE;
-}
-
-#endif
 
 /* 
     ==========================================================================
@@ -1397,8 +1239,6 @@ INT	Set_WscGenPinCode_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	else
 	{
 		pWscControl->WscEnrolleePinCodeLen = 8;
-#ifdef P2P_SSUPPORT
-#endif /* P2P_SUPPORT */
 		pWscControl->WscEnrolleePinCode = WscRandomGeneratePinCode(pAd, apidx);
 	}
 
@@ -1790,8 +1630,6 @@ print_all:
 		DBGPRINT(RT_DEBUG_INFO, ("<==%s()\n", __FUNCTION__));
 }
 
-#endif /* DBG */
-
 
 INT	Show_DescInfo_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
@@ -1969,6 +1807,8 @@ INT	Show_DescInfo_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 	return TRUE;
 }
+#endif /* DBG */
+
 
 /* 
     ==========================================================================
@@ -2234,30 +2074,6 @@ VOID RTMPSetPhyMode(RTMP_ADAPTER *pAd, ULONG phymode)
 
 
 //CFG_TODO
-#ifdef RT_CFG80211_P2P_SUPPORT
-	NdisZeroMemory(pAd->cfg80211_ctrl.P2pSupRate, MAX_LEN_OF_SUPPORTED_RATES);
-	NdisZeroMemory(pAd->cfg80211_ctrl.P2pExtRate, MAX_LEN_OF_SUPPORTED_RATES);
-	
-	pAd->cfg80211_ctrl.P2pSupRate[0]  = 0x8C;        /* 6 mbps, in units of 0.5 Mbps, basic rate*/
-	pAd->cfg80211_ctrl.P2pSupRate[1]  = 0x12;        /* 9 mbps, in units of 0.5 Mbps*/
-	pAd->cfg80211_ctrl.P2pSupRate[2]  = 0x98;        /* 12 mbps, in units of 0.5 Mbps, basic rate*/
-	pAd->cfg80211_ctrl.P2pSupRate[3]  = 0x24;        /* 18 mbps, in units of 0.5 Mbps*/
-	pAd->cfg80211_ctrl.P2pSupRate[4]  = 0xb0;        /* 24 mbps, in units of 0.5 Mbps, basic rate*/
-	pAd->cfg80211_ctrl.P2pSupRate[5]  = 0x48;        /* 36 mbps, in units of 0.5 Mbps*/
-	pAd->cfg80211_ctrl.P2pSupRate[6]  = 0x60;        /* 48 mbps, in units of 0.5 Mbps*/
-	pAd->cfg80211_ctrl.P2pSupRate[7]  = 0x6c;        /* 54 mbps, in units of 0.5 Mbps*/
-	pAd->cfg80211_ctrl.P2pSupRateLen  = 8;
-	
-	pAd->cfg80211_ctrl.P2pExtRateLen  = 0;
-	
-#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
-    printk("%s: Update for AP\n", __FUNCTION__);		
-    MlmeUpdateTxRates(pAd, FALSE, MAIN_MBSSID + MIN_NET_DEVICE_FOR_CFG80211_VIF_P2P_GO);
-
-    printk("%s: Update for APCLI\n", __FUNCTION__);
-    MlmeUpdateTxRates(pAd, FALSE, MAIN_MBSSID + MIN_NET_DEVICE_FOR_APCLI);
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
-#endif /* RT_CFG80211_P2P_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
 	SetCommonHT(pAd);
@@ -2521,6 +2337,9 @@ RTMP_STRING *GetAuthMode(CHAR auth)
     ==========================================================================
 */
 #define	LINE_LEN	(4+33+20+23+9+7+7+3)	/* Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType*/
+#ifdef AIRPLAY_SUPPORT
+#define IS_UNICODE_SSID_LEN  (4)
+#endif /* AIRPLAY_SUPPORT */
 
 VOID RTMPCommSiteSurveyData(
 	IN  RTMP_STRING *msg,
@@ -2534,6 +2353,9 @@ VOID RTMPCommSiteSurveyData(
 	RTMP_STRING SecurityStr[32] = {0};
 	NDIS_802_11_ENCRYPTION_STATUS	ap_cipher = Ndis802_11EncryptionDisabled;
 	NDIS_802_11_AUTHENTICATION_MODE	ap_auth_mode = Ndis802_11AuthModeOpen;
+#ifdef AIRPLAY_SUPPORT	
+	BOOLEAN isUniCodeSsid = FALSE;
+#endif /* AIRPLAY_SUPPORT */
 
 		/*Channel*/
 		sprintf(msg+strlen(msg),"%-4d", pBss->Channel);
@@ -2546,11 +2368,25 @@ VOID RTMPCommSiteSurveyData(
 	else
 	{
 		INT idx = 0;
+		
+#ifdef AIRPLAY_SUPPORT		
+		isUniCodeSsid = TRUE;
+#endif /* AIRPLAY_SUPPORT */	
+
 		sprintf(Ssid, "0x");
-		for (idx = 0; (idx < 14) && (idx < pBss->SsidLen); idx++)
+		for (idx = 0; (idx < MAX_LEN_OF_SSID) && (idx < pBss->SsidLen); idx++)
 			sprintf(Ssid + 2 + (idx*2), "%02X", (UCHAR)pBss->Ssid[idx]);
 	}
-		sprintf(msg+strlen(msg),"%-33s", Ssid);      
+	sprintf(msg+strlen(msg),"%-33s", Ssid); 	 
+
+
+#ifdef AIRPLAY_SUPPORT
+	/* IsUniCode SSID */
+    if (isUniCodeSsid == TRUE)
+    	sprintf(msg+strlen(msg),"%-4s", "Y");
+    else
+    	sprintf(msg+strlen(msg),"%-4s", "N");
+#endif /* AIRPLAY_SUPPORT */		
 		
 		/*BSSID*/
 		sprintf(msg+strlen(msg),"%02x:%02x:%02x:%02x:%02x:%02x   ", 
@@ -2708,259 +2544,6 @@ VOID RTMPCommSiteSurveyData(
 	return;
 }
 
-#ifdef CUSTOMER_DCC_FEATURE
-#define BSS_LOAD_LEN  (11 + 10)
-#define SNR_LEN		  (6 + 7)
-#define CHANNEL_STATS_LEN (8 + 11 + 16)
-#define N_SS_Len		3
-VOID RTMPIoctlGetApTable(
-	IN	PRTMP_ADAPTER	pAdapter, 
-	IN	RTMP_IOCTL_INPUT_STRUCT	*wrq)
-{
-	UINT32 i;
-		
-	BEACON_TABLE *beaconTable = NULL;
-	
-	os_alloc_mem(NULL, (UCHAR **)&beaconTable, sizeof(BEACON_TABLE));
-	if (beaconTable == NULL)
-	{   
-		DBGPRINT(RT_DEBUG_ERROR, ("%s: Allocate memory fail!!!\n", __FUNCTION__));
-		return;
-	}
-	NdisZeroMemory(beaconTable, sizeof(BEACON_TABLE));
-
-	beaconTable->Num = pAdapter->AvailableBSS.BssNr;
-	for(i = 0; i < beaconTable->Num; i++)
-	{
-		COPY_MAC_ADDR(beaconTable->BssTable[i].Bssid, pAdapter->AvailableBSS.BssEntry[i].Bssid);
-		beaconTable->BssTable[i].SsidLen = pAdapter->AvailableBSS.BssEntry[i].SsidLen;
-		
-		if(beaconTable->BssTable[i].SsidLen)
-			strcpy(beaconTable->BssTable[i].Ssid, pAdapter->AvailableBSS.BssEntry[i].Ssid);
-
-		beaconTable->BssTable[i].Channel = pAdapter->AvailableBSS.BssEntry[i].Channel;
-		
-		if(pAdapter->AvailableBSS.BssEntry[i].HtCapabilityLen)
-			beaconTable->BssTable[i].ChannelWidth = pAdapter->AvailableBSS.BssEntry[i].HtCapability.HtCapInfo.ChannelWidth + 1;
-		else
-			beaconTable->BssTable[i].ChannelWidth = 1;
-		
-		if (pAdapter->AvailableBSS.BssEntry[i].AddHtInfoLen > 0)
-		{
-			beaconTable->BssTable[i].ExtChannel = pAdapter->AvailableBSS.BssEntry[i].AddHtInfo.AddHtInfo.ExtChanOffset;
-			
-		}
-		else
-		{
-			beaconTable->BssTable[i].ExtChannel = 0;
-		}
-
-		beaconTable->BssTable[i].RSSI = pAdapter->AvailableBSS.BssEntry[i].Rssi;
-		beaconTable->BssTable[i].SNR = (pAdapter->AvailableBSS.BssEntry[i].Snr0 + pAdapter->AvailableBSS.BssEntry[i].Snr1) / 2;
-		beaconTable->BssTable[i].PhyMode = NetworkTypeInUseSanity(&pAdapter->AvailableBSS.BssEntry[i]);
-		
-		if(pAdapter->AvailableBSS.BssEntry[i].HtCapabilityLen)
-			beaconTable->BssTable[i].NumSpatialStream = GetNumberofSpatialStreams(pAdapter->AvailableBSS.BssEntry[i].HtCapability);
-		else
-			beaconTable->BssTable[i].NumSpatialStream = 1;
-	}
-
-	wrq->u.data.length = sizeof(BEACON_TABLE);
-	if (copy_to_user(wrq->u.data.pointer, beaconTable, wrq->u.data.length))
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("%s: copy_to_user() fail\n", __FUNCTION__));
-	}
-
-	BssTableInit(&pAdapter->AvailableBSS);
-	if (beaconTable != NULL)
-		os_free_mem(NULL, beaconTable);
-}
-
-
-VOID RTMPIoctlGetStreamType(
-	IN	PRTMP_ADAPTER	pAdapter, 
-	IN	RTMP_IOCTL_INPUT_STRUCT	*wrq)
-{
-	
-	INT 		Status;
-
-	NdisZeroMemory(&Status, sizeof(INT));
-
-	if(pAdapter->StreamingTypeStatus.VO && pAdapter->StreamingTypeStatus.VI)
-		Status = 4;
-	else if(pAdapter->StreamingTypeStatus.VO)
-		Status = 3;
-	else if (pAdapter->StreamingTypeStatus.VI)
-		Status = 2;
-	else 
-		Status = 1;
-
-	
-	wrq->u.data.length = sizeof(INT);
-	if (copy_to_user(wrq->u.data.pointer, &Status, wrq->u.data.length))
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("%s: copy_to_user() fail\n", __FUNCTION__));
-	}
-	
-
-}
-
-UINT32 GetNumberofSpatialStreams(HT_CAPABILITY_IE htCapabilityIE)
-{
-
-	UCHAR	mcsset[77] = {0};
-	UCHAR	nss;
-	UINT32	i, j, k;
-	UCHAR	c;
-	UCHAR	Tx_mcs_set_defined;
-	UCHAR	Tx_mcs_set_not_equal;
-//	printk("%s: Debug Start \n",__func__);
-
-#ifdef RT_BIG_ENDIAN
-	nss = (0x03 & (4 >> htCapabilityIE.MCSSet[3]));
-	Tx_mcs_set_defined = (0x01 & (7 >> htCapabilityIE.MCSSet[3]));
-	Tx_mcs_set_not_equal = (0x01 & (6 >> htCapabilityIE.MCSSet[3]));
-	
-   	for(i = 52; i <= 128; i++)
-   	{
-        	j = (i / 8);
-       		k = (i % 8);
-        	c = htCapabilityIE.MCSSet[j];
-        	c = (c & (1 << k)); 
-        	if(c !=0 )
-	        mcsset[i - 52] = 1;
-    	}
-
-#else
-	//printk(" %s: Little %x \n",__func__,htCapabilityIE.MCSSet[12]); 
-    	nss = (0x03 & (2 >> htCapabilityIE.MCSSet[12]));
-	Tx_mcs_set_defined = (0x01 & htCapabilityIE.MCSSet[12]);
-	Tx_mcs_set_not_equal = (0x01 & (1 >> htCapabilityIE.MCSSet[12]));
-	
-    	for(i = 0; i < 77; i++)
-    	{
-        	j = (i / 8);
-        	k = (i % 8);
-
-        	c = htCapabilityIE.MCSSet[j];
-	      	c = (c & (1 << k)); 
-//		printk("%s: MCS %x i= %u j=%u k=%u c=%x \n",__func__,htCapabilityIE.MCSSet[j],i,j,k,c);
-        	if(c !=0 )
-	        mcsset[i] = 1;
-    	}
-#endif	
-	if((Tx_mcs_set_defined == 1) && (Tx_mcs_set_not_equal == 1))
-        {
-                nss = nss + 1;
-        }
-	else /*if((Tx_mcs_set_defined == 1) && (Tx_mcs_set_not_equal == 0)) */
-	{
-		for(i = 31; i >= 0; i--)
-		{
-			if(mcsset[i] == 1)
-				break;
-		}
-		nss = ((i/8) + 1);
-	}
-
-	return nss;
-}
-
-VOID RTMPIoctlGetScanResults(
-	IN	PRTMP_ADAPTER	pAdapter, 
-	IN	RTMP_IOCTL_INPUT_STRUCT	*wrq)
-{
-	UINT32 i;
-	INT32 channel_idx;
-	SCAN_RESULTS *scanResult = NULL;
-	PCHANNELINFO pChannelInfo = &pAdapter->ChannelInfo;
-
-	os_alloc_mem(NULL, (UCHAR **)&scanResult, sizeof(SCAN_RESULTS));  
-	if (scanResult == NULL)  
-	{
-		DBGPRINT(RT_DEBUG_ERROR, ("%s: Allocate memory fail!!!\n", __FUNCTION__));
-		return; 
-	}
-	NdisZeroMemory(scanResult, sizeof(SCAN_RESULTS));
-		
-	if(pChannelInfo->ChannelNo != 0 && pChannelInfo->GetChannelInfo)
-	{
-		channel_idx = Channel2Index(pAdapter, pChannelInfo->ChannelNo);
-		scanResult->cca_err_cnt =  pChannelInfo->FalseCCA[channel_idx];
-		scanResult->ch_busy_time = pChannelInfo->chanbusytime[channel_idx];
-		scanResult->num_ap = pAdapter->ScanTab.BssNr;
-
-		for(i = 0; i < scanResult->num_ap; i++)
-		{
-			COPY_MAC_ADDR(scanResult->BssTable[i].Bssid, pAdapter->ScanTab.BssEntry[i].Bssid);
-			scanResult->BssTable[i].SsidLen = pAdapter->ScanTab.BssEntry[i].SsidLen;
-			
-			if(scanResult->BssTable[i].SsidLen)
-				strcpy(scanResult->BssTable[i].Ssid, pAdapter->ScanTab.BssEntry[i].Ssid);
-
-			scanResult->BssTable[i].Channel = pAdapter->ScanTab.BssEntry[i].Channel;
-			
-			if(pAdapter->ScanTab.BssEntry[i].HtCapabilityLen)
-				scanResult->BssTable[i].ChannelWidth = pAdapter->ScanTab.BssEntry[i].HtCapability.HtCapInfo.ChannelWidth + 1;
-			else
-				scanResult->BssTable[i].ChannelWidth = 1;
-		
-			if (pAdapter->ScanTab.BssEntry[i].AddHtInfoLen > 0)
-			{
-				scanResult->BssTable[i].ExtChannel = pAdapter->ScanTab.BssEntry[i].AddHtInfo.AddHtInfo.ExtChanOffset;
-			
-			}
-			else
-			{
-				scanResult->BssTable[i].ExtChannel = 0;
-			}
-
-			scanResult->BssTable[i].RSSI = pAdapter->ScanTab.BssEntry[i].Rssi;
-			scanResult->BssTable[i].SNR = (pAdapter->ScanTab.BssEntry[i].Snr0 + pAdapter->ScanTab.BssEntry[i].Snr1) / 2;
-			scanResult->BssTable[i].PhyMode = NetworkTypeInUseSanity(&pAdapter->ScanTab.BssEntry[i]);
-			
-			if(pAdapter->ScanTab.BssEntry[i].HtCapabilityLen)
-				scanResult->BssTable[i].NumSpatialStream = GetNumberofSpatialStreams(pAdapter->ScanTab.BssEntry[i].HtCapability);
-			else
-				scanResult->BssTable[i].NumSpatialStream = 1;
-		}
-
-			pChannelInfo->GetChannelInfo = 0;
-	}	
-
-	BssTableInit(&pAdapter->ScanTab);
-	wrq->u.data.length = sizeof(SCAN_RESULTS);
-	
-	if (copy_to_user(wrq->u.data.pointer, scanResult, wrq->u.data.length))
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("%s: copy_to_user() fail\n", __FUNCTION__));
-	}
-	if (scanResult != NULL)   
-		os_free_mem(NULL, scanResult);
-	
-}
-
-VOID RTMPIoctlGetRadioStatsCount(
-	IN	PRTMP_ADAPTER	pAdapter, 
-	IN	RTMP_IOCTL_INPUT_STRUCT	*wrq)
-{
-	RADIO_STATS_COUNTER radioStatsCounter;
-
-	NdisZeroMemory(&radioStatsCounter, sizeof(RADIO_STATS_COUNTER));
-
-	NdisCopyMemory(&radioStatsCounter, &pAdapter->RadioStatsCounter, sizeof(RADIO_STATS_COUNTER));
-	
-	NdisZeroMemory(&pAdapter->RadioStatsCounter, sizeof(RADIO_STATS_COUNTER));
-	
-	wrq->u.data.length = sizeof(RADIO_STATS_COUNTER);
-	if (copy_to_user(wrq->u.data.pointer, &radioStatsCounter, wrq->u.data.length))
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("%s: copy_to_user() fail\n", __FUNCTION__));
-	}
-}
-
-
-#endif
 #if defined (AP_SCAN_SUPPORT) || defined (CONFIG_STA_SUPPORT)
 VOID RTMPIoctlGetSiteSurvey(
 	IN	PRTMP_ADAPTER	pAdapter, 
@@ -2973,20 +2556,39 @@ VOID RTMPIoctlGetSiteSurvey(
     INT         max_len = LINE_LEN;		
 	BSS_ENTRY *pBss;
 	UINT32 TotalLen, BufLen = IW_SCAN_MAX_DATA;
+#ifdef AIRPLAY_SUPPORT
+	UCHAR TargetSsid[MAX_LEN_OF_SSID+1];
+	UCHAR TargetSsidLen = 0;
+#endif /* AIRPLAY_SUPPORT */	
 
-#ifdef CUSTOMER_DCC_FEATURE
-	max_len += BSS_LOAD_LEN + SNR_LEN + N_SS_Len;
-#endif
+
+#ifdef AIRPLAY_SUPPORT
+		max_len += IS_UNICODE_SSID_LEN;
+#endif /* AIRPLAY_SUPPORT */
 
 	TotalLen = sizeof(CHAR)*((MAX_LEN_OF_BSS_TABLE)*max_len) + 100;
-#ifdef CUSTOMER_DCC_FEATURE
-	TotalLen += sizeof(CHAR)*((pAdapter->ChannelListNum)* CHANNEL_STATS_LEN) + 50;
-#endif
 
+#ifdef AIRPLAY_SUPPORT
+		if (wrq->u.data.length > MAX_LEN_OF_SSID)
+		{
+					DBGPRINT(RT_DEBUG_ERROR, ("RTMPIoctlGetSiteSurvey - INPUT SSID LEN NOT CORRECT\n"));
+					return;
+		}
+	
+		if (wrq->u.data.length > 0)
+		{
+			NdisZeroMemory(TargetSsid, sizeof(TargetSsid));
+			copy_from_user(TargetSsid, wrq->u.data.pointer, wrq->u.data.length);
+			TargetSsidLen = strlen(TargetSsid);
+			DBGPRINT(RT_DEBUG_TRACE, ("Filter the ScanRes by SSID --> %s (%d)\n", TargetSsid, TargetSsidLen));
+		}
+	
+#else
 	if (wrq->u.data.length == 0)
 		BufLen = IW_SCAN_MAX_DATA;	
 	else
 		BufLen = wrq->u.data.length;
+#endif /* AIRPLAY_SUPPORT */
 
 	os_alloc_mem(NULL, (PUCHAR *)&msg, TotalLen);
 
@@ -2998,13 +2600,14 @@ VOID RTMPIoctlGetSiteSurvey(
 
 	memset(msg, 0 , TotalLen);
 	sprintf(msg,"%s","\n");
-
+#ifdef AIRPLAY_SUPPORT
+		sprintf(msg+strlen(msg),"%-4s%-33s%-4s%-20s%-23s%-9s%-7s%-7s%-3s\n",
+			"Ch", "SSID", "UN", "BSSID", "Security", "Siganl(%)", "W-Mode", " ExtCH"," NT");
+#else
 	sprintf(msg+strlen(msg),"%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n",
 	    "Ch", "SSID", "BSSID", "Security", "Siganl(%)", "W-Mode", " ExtCH"," NT");	
-#ifdef CUSTOMER_DCC_FEATURE
-    sprintf(msg+strlen(msg)-1,"%-11s%-10s%-6s%-7s\n", " STA_COUNT", " MED_UTIL", " SNR0", " SNR1");
-	sprintf(msg+strlen(msg)-1,"%-4s\n"," Nss");
-#endif
+#endif /* AIRPLAY_SUPPORT */
+
 
 #ifdef WSC_INCLUDED
 	sprintf(msg+strlen(msg)-1,"%-4s%-5s\n", " WPS", " DPID");
@@ -3025,30 +2628,17 @@ VOID RTMPIoctlGetSiteSurvey(
 
 		if((strlen(msg)+100 ) >= BufLen)
 			break;
-
+		
+#ifdef AIRPLAY_SUPPORT
+				if (TargetSsidLen > 0) 
+				{
+					if (strcmp(pBss->Ssid, TargetSsid) != 0)
+						continue;
+				}
+#endif /* AIRPLAY_SUPPORT */
 
 		RTMPCommSiteSurveyData(msg, pBss, TotalLen);
 		
-#ifdef CUSTOMER_DCC_FEATURE
-		if(pBss->QbssLoad.bValid )
-		{
-			sprintf(msg+strlen(msg)-1," %-10u",pBss->QbssLoad.StaNum);
-			sprintf(msg+strlen(msg)," %-9u\n",pBss->QbssLoad.ChannelUtilization);
-		}
-		else
-		{
-			sprintf(msg+strlen(msg)-1,"%-11s"," NA ");
-			sprintf(msg+strlen(msg),"%-10s\n"," NA ");
-		}	
-		sprintf(msg+strlen(msg)-1," %-6u%-6u\n", pBss->Snr0, pBss->Snr1);
-		if(pBss->HtCapabilityLen)
-		{
-			if(GetNumberofSpatialStreams(pBss->HtCapability))
-			sprintf(msg+strlen(msg)-1," %-3u\n",GetNumberofSpatialStreams(pBss->HtCapability));
-		}
-		else
-			sprintf(msg+strlen(msg)-1," %-3s\n","1");		
-#endif 
 #ifdef WSC_INCLUDED
         /*WPS*/
         if (pBss->WpsAP & 0x01)
@@ -3065,28 +2655,6 @@ VOID RTMPIoctlGetSiteSurvey(
 #endif /* WSC_INCLUDED */
 
 	}
-#ifdef CUSTOMER_DCC_FEATURE
-	{
-		INT32 channel_idx;
-		PCHANNELINFO pChannelInfo = &pAdapter->ChannelInfo;
-		sprintf(msg+strlen(msg),"\n%s\n\n", "Channel Statics:");
-		sprintf(msg+strlen(msg),"%-8s%-11s%-16s\n","Channel", "FALSE_CCA", "ChannelBusyTime");
-		if(pChannelInfo->ChannelNo == 0 && pChannelInfo->GetChannelInfo)
-		{
-			for (channel_idx = 0; channel_idx < pAdapter->ChannelListNum; channel_idx++)
-			{
-				sprintf(msg+strlen(msg),"%-8u%-11u%-16u\n", pAdapter->ChannelList[channel_idx].Channel, pChannelInfo->FalseCCA[channel_idx], pChannelInfo->chanbusytime[channel_idx]);
-			}
-		}
-		else if(pChannelInfo->GetChannelInfo)
-		{
-			channel_idx = pChannelInfo->ChannelNo - 1;
-			sprintf(msg+strlen(msg),"%-8u%-11u%-16u\n", pAdapter->ChannelList[channel_idx].Channel, pChannelInfo->FalseCCA[channel_idx], pChannelInfo->chanbusytime[channel_idx]);
-
-		}
-		pChannelInfo->GetChannelInfo = 0;
-	}	
-#endif
 
 	wrq->u.data.length = strlen(msg);
 	/*Status =*/ copy_to_user(wrq->u.data.pointer, msg, wrq->u.data.length);
@@ -5029,7 +4597,7 @@ RTMP_STRING *RTMPGetRalinkEncryModeStr(
 	}
 }
 
-
+#ifdef DBG
 INT	Show_SSID_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
 	OUT	RTMP_STRING *pBuf,
@@ -5590,6 +5158,7 @@ INT	Show_PMK_Proc(
 
 	return 0;
 }
+#endif /* DBG */
 
 
 INT	Show_STA_RAInfo_Proc(
@@ -5624,6 +5193,7 @@ INT	Show_STA_RAInfo_Proc(
 }
 
 
+#ifdef DBG
 static INT dump_mac_table(RTMP_ADAPTER *pAd, UINT32 ent_type, BOOLEAN bReptCli)
 {
 	INT i;
@@ -5786,9 +5356,18 @@ static INT dump_ps_table(RTMP_ADAPTER *pAd, UINT32 ent_type, BOOLEAN bReptCli)
 	printk("HT Operating Mode : %d\n", pAd->CommonCfg.AddHTInfo.AddHtInfo2.OperaionMode);
 	printk("\n");
 #endif /* DOT11_N_SUPPORT */
+
+
+#ifdef LIMIT_GLOBAL_SW_QUEUE
+          for (i = 0; i < WMM_QUE_NUM; i++)
+          {
+                printk("AC[%d] Length : %d\n", i, pAd->TxSwQueue[i].Number);
+          }
+        printk("\n\n\n");
+#endif /* LIMIT_GLOBAL_SW_QUEUE */
 	
-	printk("\n%-19s\t%-10s\t%-5s\t%-5s\t%-5s\t%-5s\t%-5s\t%-5s\t%-5s\t%-5s\t%-5s\t%-5s\t%-6s\t%-6s",
-	         "MAC", "EntryType", "AID", "BSS", "PSM", "psm", "ipsm", "iips", "sktx", "redt", "port", "queu", "pktnum","psnum");
+	printk("\n%-19s\t%-10s\t%-5s\t%-5s\t%-5s\t%-5s\t%-5s\t%-5s\t%-5s\t%-5s\t%-5s\t%-5s\t%-6s\t%-6s\t%-6s",
+	         "MAC", "EntryType", "AID", "BSS", "PSM", "psm", "ipsm", "iips", "sktx", "redt", "port", "queu", "pktnum","psnum","TXOK/PER");
 #ifdef UAPSD_SUPPORT
 	printk("\t%-7s", "APSD");
 #endif /* UAPSD_SUPPORT */
@@ -5871,6 +5450,7 @@ static INT dump_ps_table(RTMP_ADAPTER *pAd, UINT32 ent_type, BOOLEAN bReptCli)
 			printk("\t%-5d", (int)pucQueue);
 			printk("\t%-6d", (int)Total_Packet_Number);
 			printk("\t%-6d", (int)tr_entry->ps_queue.Number);
+			printk("\t%-6d/%d", (int)pEntry->LastTxOkCount,(int)pEntry->LastTxPER);
 #ifdef UAPSD_SUPPORT
 			printk("\t%d,%d,%d,%d", 
 				(int)pEntry->bAPSDCapablePerAC[QID_AC_BE], pEntry->bAPSDCapablePerAC[QID_AC_BK], pEntry->bAPSDCapablePerAC[QID_AC_VI], pEntry->bAPSDCapablePerAC[QID_AC_VO]);
@@ -6085,16 +5665,8 @@ INT show_mib_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	RTMP_IO_READ32(pAd, MIB_MSDR9, &msdr9);
 	RTMP_IO_READ32(pAd, MIB_MSDR10, &msdr10);
 	RTMP_IO_READ32(pAd, MIB_MSDR16, &msdr16);
-#ifdef CUSTOMER_DCC_FEATURE
-	pAd->ChannelStats.ChBusytime += (msdr9 & 0xffffff);
-	pAd->ChannelStats.ChBusyTime1secValue += (msdr9 & 0xffffff);
-#endif
 	RTMP_IO_READ32(pAd, MIB_MSDR17, &msdr17);
 	RTMP_IO_READ32(pAd, MIB_MSDR18, &msdr18);
-#ifdef CUSTOMER_DCC_FEATURE
-	pAd->ChannelStats.CCABusytime += (msdr18 & 0xffffff);
-	pAd->ChannelStats.CCABusyTime1secValue += (msdr18 & 0xffffff);
-#endif
 	DBGPRINT(RT_DEBUG_OFF, ("===Phy/Timing Related Counters===\n"));
 	DBGPRINT(RT_DEBUG_OFF, ("\tChannelIdleCnt=0x%x\n", msdr6 & 0xffff));
 	DBGPRINT(RT_DEBUG_OFF, ("\tCCA_NAV_Tx_Time=0x%x\n", msdr9 & 0xffffff));
@@ -6106,9 +5678,6 @@ INT show_mib_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	DBGPRINT(RT_DEBUG_OFF, ("===Tx Related Counters(Generic)===\n"));
 	RTMP_IO_READ32(pAd, MIB_MSDR0, &mac_val);
 	DBGPRINT(RT_DEBUG_OFF, ("\tBeaconTxCnt=0x%x\n", mac_val));
-#ifdef CUSTOMER_DCC_FEATURE
-	pAd->RadioStatsCounter.TotalBeaconSentCount += (mac_val & 0xffff);
-#endif
 	RTMP_IO_READ32(pAd, MIB_MDR0, &mac_val);
 	DBGPRINT(RT_DEBUG_OFF, ("\tTx 40MHz Cnt=0x%x\n", (mac_val >> 16) & 0xffff));
 	RTMP_IO_READ32(pAd, MIB_MDR1, &mac_val);
@@ -7351,7 +6920,7 @@ INT show_txqinfo_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	
 	return TRUE;
 }
-
+#endif /* DBG */
 
 #ifdef WSC_STA_SUPPORT
 INT	Show_WpsManufacturer_Proc(
@@ -7462,113 +7031,6 @@ INT	Show_ModuleTxpower_Proc(
 }
 #endif/*APCLI_SUPPORT*/
 
-#ifdef CUSTOMER_DCC_FEATURE
-VOID GetMultShiftFactorIndex(
-	IN	HTTRANSMIT_SETTING HTSetting, 
-	IN	INT32 *Index )
-{
-	INT32 index = 0;  
-	//INT32 value = 0;
-	INT32 rate_count = 108;
-
-/* refer the MCSMappingRateTable[] in the function InitRateMultiplicationAndShiftFactor for the below index calculation */
-	HTSetting.field.BW = (HTSetting.field.MODE <= MODE_OFDM) ? (BW_20) : (HTSetting.field.BW);
-
-#ifdef DOT11_N_SUPPORT
-    if (HTSetting.field.MODE >= MODE_HTMIX)
-    {
-		
-    	index = 12 + ((UCHAR)HTSetting.field.BW *24) + ((UCHAR)HTSetting.field.ShortGI *48) + ((UCHAR)HTSetting.field.MCS);
-    }
-    else 
-#endif /* DOT11_N_SUPPORT */
-    if (HTSetting.field.MODE == MODE_OFDM)
-    {
-		if(HTSetting.field.MCS & 0x8) //handle Rx case
-		{
-			if(HTSetting.field.MCS & 0x4)
-				index = (UCHAR)(4 + (7 - ((HTSetting.field.MCS & 0x2) * 2)));
-			else
-				index = (UCHAR)(4 + (6 - ((HTSetting.field.MCS & 0x2) * 2)));
-		
-		}
-		else
-			index = HTSetting.field.MCS;
-		
-    }
-    else if (HTSetting.field.MODE == MODE_CCK)
-    {
-		index = (UCHAR)(HTSetting.field.MCS & 0x3);
-    }
-
-    if (index < 0)
-    {
-        index = 0;
-		DBGPRINT(RT_DEBUG_ERROR, ("ERROR::Wrong Value of Index!\n"));
-    }
-    
-    if (index >= rate_count)
-    {
-        index = rate_count-1;
-		DBGPRINT(RT_DEBUG_ERROR, ("ERROR::Wrong Value of Index!\n"));
-    }
-
-    
-	*Index = index;
-	return;
-}
-VOID  InitRateMultiplicationAndShiftFactor(
-	IN	PRTMP_ADAPTER	pAd)
-{
-	 INT MCSMappingRateTable[] =
-		{2,  4,   11,  22, /* CCK*/
-		12, 18,   24,  36, 48, 72, 96, 108, /* OFDM*/
-		13, 26,   39,  52,	78, 104, 117, 130, 26,	52,  78, 104, 156, 208, 234, 260, /* 20MHz, 800ns GI, MCS: 0 ~ 15*/
-		39, 78,  117, 156, 234, 312, 351, 390,										  /* 20MHz, 800ns GI, MCS: 16 ~ 23*/
-		27, 54,   81, 108, 162, 216, 243, 270, 54, 108, 162, 216, 324, 432, 486, 540, /* 40MHz, 800ns GI, MCS: 0 ~ 15*/
-		81, 162, 243, 324, 486, 648, 729, 810,										  /* 40MHz, 800ns GI, MCS: 16 ~ 23*/
-		14, 29,   43,  57,	87, 115, 130, 144, 29, 59,	 87, 115, 173, 230, 260, 288, /* 20MHz, 400ns GI, MCS: 0 ~ 15*/
-		43, 87,  130, 173, 260, 317, 390, 433,										  /* 20MHz, 400ns GI, MCS: 16 ~ 23*/
-		30, 60,   90, 120, 180, 240, 270, 300, 60, 120, 180, 240, 360, 480, 540, 600, /* 40MHz, 400ns GI, MCS: 0 ~ 15*/
-		90, 180, 270, 360, 540, 720, 810, 900};
-	
-		UINT32 rate_count = sizeof(MCSMappingRateTable)/sizeof(int);
-		UINT32 rate_index = 0;  
-		UINT32 multemp, mul, rem;
-		UINT32 j, div,shift;
-		UINT32 remtemp = 0;
-		
-		for(rate_index = 0;	rate_index < rate_count; rate_index++)
-		{
-			
-			mul = 0;
-			shift = 0;
-			/*insted of 125000  used 1250 to convert in bytes so below use 10000000 insted of 1000000000 to convert in microseconds*/
-			div = (MCSMappingRateTable[rate_index] * 5 * 1250)/10;
-			rem = div;
-			for(j = 30; j > 0; j--)
-			{
-				multemp = (1 << j);
-			    remtemp = (multemp % div);
-				
-				if((remtemp < rem) && (multemp >= div))
-				{
-					rem = remtemp;
-					mul = multemp / div;
-					shift = j;
-				}
-			}
-
-			RateMultiplicationShiftFactor[rate_index].Multiplication = (UINT64)mul * 10000000;
-			RateMultiplicationShiftFactor[rate_index].Shift = shift;
-
-		//	printk("%s: rate_index: %u mul: %llu shift: %llu \n",__func__,rate_index, RateMultiplicationShiftFactor[rate_index].Multiplication, RateMultiplicationShiftFactor[rate_index].Shift);
-			
-		}
-		return;
-
-}
-#endif
 void  getRate(HTTRANSMIT_SETTING HTSetting, ULONG* fLastTxRxRate)
 
 {
@@ -7707,8 +7169,9 @@ INT Set_VhtNDPA_Sounding_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 #endif /* VHT_TXBF_SUPPORT */
 
 
-
 #ifdef DOT11_N_SUPPORT
+
+#ifdef DBG
 void assoc_ht_info_debugshow(
 	IN PRTMP_ADAPTER pAd,
 	IN MAC_TABLE_ENTRY *pEntry,
@@ -7764,7 +7227,7 @@ void assoc_ht_info_debugshow(
 #endif /* DOT11N_DRAFT3 */
 	}
 }
-
+#endif /* DBG */
 
 INT	Set_BurstMode_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
@@ -8717,6 +8180,8 @@ INT RTMPShowCfgValue(
 }
 
 
+	
+#ifdef DBG
 INT show_pwr_info(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	if (pAd->chipOps.show_pwr_info) {
@@ -8726,8 +8191,6 @@ INT show_pwr_info(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	return 0;
 }
 
-
-	
 
 INT32 ShowBBPInfo(RTMP_ADAPTER *pAd, RTMP_STRING *Arg)
 {
@@ -8744,4 +8207,5 @@ INT32 ShowRFInfo(RTMP_ADAPTER *pAd, RTMP_STRING *Arg)
 
 	return 0;
 }
+#endif /* DBG */
 	

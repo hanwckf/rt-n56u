@@ -162,11 +162,6 @@ static UCHAR *get_dev_profile(RTMP_ADAPTER *pAd)
 void RTMPPreReadParametersHook(RTMP_ADAPTER *pAd)
 {
 
-#if defined(RT_CFG80211_P2P_SUPPORT) && defined(SUPPORT_ACS_ALL_CHANNEL_RANK)
-    pAd->ApCfg.AutoChannelAlg = ChannelAlgCombined;
-    pAd->ApCfg.bAutoChannelAtBootup = TRUE;
-    pAd->ApCfg.bAutoChannelScaned = FALSE;
-#endif
 
     return;
 }
@@ -291,11 +286,7 @@ void tbtt_tasklet(unsigned long data)
 	}
 #endif /* RTMP_MAC_PCI */
 
-#ifdef RT_CFG80211_P2P_SUPPORT
-		if (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP)	
-#else
 	if (pAd->OpMode == OPMODE_AP)
-#endif /* RT_CFG80211_P2P_SUPPORT */
 	{
 		/* step 7 - if DTIM, then move backlogged bcast/mcast frames from PSQ to TXQ whenever DtimCount==0 */
 #ifdef RTMP_MAC_PCI
@@ -1067,6 +1058,25 @@ int RTMPSendPackets(
 	if (!pPacket)
 		return 0;
 
+#ifdef WSC_NFC_SUPPORT
+        {
+                struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pPacket);
+                USHORT protocol = 0;
+                protocol = ntohs(pRxPkt->protocol);
+                if (protocol == 0x6605)
+                {
+                        NfcParseRspCommand(pAd, pRxPkt->data, pRxPkt->len);
+                        RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_SUCCESS);
+                        return 0;
+                }
+                else
+                {
+                        printk("%04x\n", protocol);
+                }
+        }
+#endif /* WSC_NFC_SUPPORT */
+
+
 	if (pkt_total_len < 14)
 	{
 		hex_dump("bad packet", GET_OS_PKT_DATAPTR(pPacket), pkt_total_len);
@@ -1083,19 +1093,6 @@ int RTMPSendPackets(
 	}
 #endif /* CONFIG_ATE */
 
-#ifdef WSC_NFC_SUPPORT
-	{
-		struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pPacket);
-		USHORT protocol = 0;
-		protocol = ntohs(pRxPkt->protocol);
-		if (protocol == 0x6605)
-		{
-			NfcParseRspCommand(pAd, pRxPkt->data, pRxPkt->len);
-			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_SUCCESS);
-			return 0;
-		}
-	}
-#endif /* WSC_NFC_SUPPORT */
 
 #ifdef CONFIG_5VT_ENHANCE
 	RTMP_SET_PACKET_5VT(pPacket, 0);

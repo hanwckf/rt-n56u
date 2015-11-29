@@ -476,9 +476,6 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 						return NULL;
 					}
 					
-#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
-					SET_P2P_GO_ENTRY(pEntry);
-#endif /* defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT) */
 
 					ASSERT((wdev == &pAd->ApCfg.MBSSID[pEntry->func_tb_idx].wdev));
 
@@ -760,34 +757,6 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 #ifdef DOT1X_SUPPORT 
 				INT PmkCacheIdx = -1;
 #endif /* DOT1X_SUPPORT */
-#ifdef CUSTOMER_DCC_FEATURE
-				if(pEntry->Sst == SST_ASSOC)
-				{
-					UINT64	time;
-					INT32	i;
-					INT32	count = pAd->AllowedStaList.StaCount;
-					BOOLEAN Flag = FALSE;
-								
-					time = jiffies_to_msecs(jiffies);
-						
-					for(i = 0; i < count; i++)
-					{
-						if(NdisEqualMemory(&pAd->AllowedStaList.AllowedSta[i].MacAddr[0], pAddr , MAC_ADDR_LEN))
-						{
-							pAd->AllowedStaList.AllowedSta[count].DissocTime = jiffies_to_msecs(jiffies);
-							Flag = TRUE;
-						}
-					}
-					if((!Flag) && (pAd->AllowedStaList.StaCount++ < MAX_LEN_OF_MAC_TABLE))
-					{
-						NdisCopyMemory(&(pAd->AllowedStaList.AllowedSta[count].MacAddr[0]), pEntry->Addr,MAC_ADDR_LEN);
-						pAd->AllowedStaList.AllowedSta[count].DissocTime = jiffies_to_msecs(jiffies);
-						pAd->AllowedStaList.StaCount++;
-					}
-								
-				}
-									
-#endif
 
 				RTMPReleaseTimer(&pEntry->RetryTimer, &Cancelled);
 
@@ -822,14 +791,6 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 												NULL, 0,pEntry->func_tb_idx);
 				}
 #endif /* HOSTAPD_SUPPORT */
-#ifdef RT_CFG80211_P2P_SUPPORT 
-				if (RTMP_CFG80211_VIF_P2P_GO_ON(pAd) || (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP))
-					CFG80211_ApStaDelSendEvent(pAd, pEntry->Addr);
-#else 
-#ifdef RT_CFG80211_SUPPORT 
-				CFG80211_ApStaDelSendEvent(pAd, pEntry->Addr);	
-#endif
-#endif /* RT_CFG80211_P2P_SUPPORT */
 
 			}
 #ifdef APCLI_SUPPORT

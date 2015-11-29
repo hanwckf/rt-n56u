@@ -142,14 +142,15 @@ INT NfcBuildWscProfileTLV(
 	INT					CerLen = 0;
 	USHORT              AuthType = 0;
     USHORT              EncrType = 0;
-	PWSC_REG_DATA		pReg = (PWSC_REG_DATA) &pWscCtrl->RegData;
+	//PWSC_REG_DATA		pReg = (PWSC_REG_DATA) &pWscCtrl->RegData;
 	INT					Len = 0, templen = 0;
 	struct wifi_dev *wdev;
 	BSS_STRUCT *pMbss;
 #ifdef WSC_V2_SUPPORT
 	PWSC_TLV			pWscTLV = &pWscCtrl->WscV2Info.ExtraTlv;
 #endif /* WSC_V2_SUPPORT */
-	
+	UCHAR RF_Band;
+	USHORT Channel = 0;
 
 	os_alloc_mem(pAd, (UCHAR **)&pData, (NFC_WSC_TLV_SIZE*sizeof(UCHAR)));
 	if (pData == NULL)
@@ -190,7 +191,6 @@ INT NfcBuildWscProfileTLV(
 	Len   += templen;
 	
 	/* Optional items. RF_Band, AP_Channel, MAC_Address */
-	UCHAR RF_Band;
 	if (pAd->CommonCfg.Channel > 14)
 		RF_Band = 0x02; /* 5.0GHz */
 	else
@@ -200,7 +200,6 @@ INT NfcBuildWscProfileTLV(
 	pData += templen;
 	Len   += templen;
 
-	USHORT Channel = 0;
 	Channel = pAd->CommonCfg.Channel;
 #ifdef RT_BIG_ENDIAN
 	Channel = SWAP16(Channel);
@@ -259,11 +258,11 @@ INT NfcBuildOOBDevPasswdTLV(
 	OUT	UCHAR *pbuf,
 	OUT USHORT *pBufLen)
 {
-	INT Status = NDIS_STATUS_SUCCESS;
 	UCHAR *TB = NULL;;
-	PUCHAR pData = NULL, pSrcData = NULL;
+	PUCHAR pData = NULL;
+	PUCHAR pSrcData = NULL;
 	USHORT PasswdID = 0, len;
-	PWSC_REG_DATA pReg = (PWSC_REG_DATA) &pWscCtrl->RegData;
+	//PWSC_REG_DATA pReg = (PWSC_REG_DATA) &pWscCtrl->RegData;
 	INT Len = 0, templen = 0;
 	INT DH_Len = 0, idx;
 	UCHAR HashData[SHA256_DIGEST_SIZE];
@@ -271,6 +270,9 @@ INT NfcBuildOOBDevPasswdTLV(
 #ifdef WSC_V2_SUPPORT
 	PWSC_TLV			pWscTLV = &pWscCtrl->WscV2Info.ExtraTlv;
 #endif /* WSC_V2_SUPPORT */
+	UCHAR RF_Band;
+	USHORT Channel = 0;
+	INT Status = NDIS_STATUS_SUCCESS;
 	
 	
 	os_alloc_mem(pAd, (UCHAR **)&pData, (NFC_WSC_TLV_SIZE*sizeof(UCHAR)));
@@ -361,7 +363,6 @@ INT NfcBuildOOBDevPasswdTLV(
 		pData += templen;
 		Len   += templen;
 		/* Optional items. RF_Band, AP_Channel and MAC_Address */
-		UCHAR RF_Band;
 		if (pAd->CommonCfg.Channel > 14)
 			RF_Band = 0x02; /* 5.0GHz */
 		else
@@ -371,7 +372,6 @@ INT NfcBuildOOBDevPasswdTLV(
 		pData += templen;
 		Len   += templen;
 
-		USHORT Channel = 0;
 		Channel = pAd->CommonCfg.Channel;
 #ifdef RT_BIG_ENDIAN
 		Channel = SWAP16(Channel);
@@ -682,8 +682,9 @@ VOID	NfcParseRspCommand(
 				}
 				break;
 			case TYPE_NFC_STATUS:
-				DBGPRINT(RT_DEBUG_TRACE, ("TYPE_NFC_STATUS(=%d): NFC Status = %d\n", pNfcCmdInfo->type, pNfcCmdInfo->data[0]));
+				DBGPRINT(RT_DEBUG_OFF, ("TYPE_NFC_STATUS(=%d): NFC Status = %d\n", pNfcCmdInfo->type, pNfcCmdInfo->data[0]));
 				pWscCtrl->NfcStatus = pNfcCmdInfo->data[0];
+				//complete(&pWscCtrl->NfcComplete);
 				break;
 			case TYPE_WIFI_RADIO_STATUS:
 				DBGPRINT(RT_DEBUG_TRACE, ("TYPE_WIFI_RADIO_STATUS(=%d)\n", pNfcCmdInfo->type));
@@ -770,7 +771,9 @@ INT Set_NfcPasswdToken_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 		return FALSE;
 	}
 
-	DBGPRINT(RT_DEBUG_TRACE, ("%s: NfcBuildOOBDevPasswdTLV value(=%d) type(=%d)\n", __FUNCTION__,val,  type));
+	DBGPRINT(RT_DEBUG_TRACE, ("%s: NfcBuildOOBDevPasswdTLV value(=%d) type(=%d) HandOver(%d)\n", 
+		__FUNCTION__,val, type, bHandover));
+
 	NfcBuildOOBDevPasswdTLV(pAd, pWscCtrl, type, pBuf, &BufLen);
 	if (pBuf && (BufLen != 0))
 	{
@@ -835,7 +838,8 @@ INT Set_NfcConfigurationToken_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 INT Get_NfcStatus_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
- 	UCHAR data = 0;
+	POS_COOKIE      pObj = (POS_COOKIE) pAd->OS_Cookie;
+	PWSC_CTRL       pWscCtrl = &pAd->ApCfg.MBSSID[pObj->ioctl_if].WscControl;
 	/*
 		Action: b¡¦<7:6>: 0x0 ¡V To NFC, 0x1 ¡V From NFC
         		b¡¦<5:0>: 0x0 ¡V Get, 0x01 - Set
@@ -843,6 +847,8 @@ INT Get_NfcStatus_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	UCHAR action = 0, type = TYPE_NFC_STATUS; /* 5 - NFC Status */
 	
 	NfcCommand(pAd, action, type, 0, NULL);
+	//wait_for_completion_interruptible_timeout(&pWscCtrl->NfcComplete, 10); /* Use timeout to prevent nfchod not exist */
+	DBGPRINT(RT_DEBUG_TRACE, ("NfcStatus=%d \n", pWscCtrl->NfcStatus));
 	
     return TRUE;
 }
@@ -855,8 +861,7 @@ INT Get_NfcStatus_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 INT	Set_DoWpsByNFC_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	POS_COOKIE  pObj = (POS_COOKIE) pAd->OS_Cookie;
-    UCHAR	    apidx = pObj->ioctl_if, mac_addr[MAC_ADDR_LEN];
-    BOOLEAN     bFromApCli = FALSE;
+    UCHAR	    apidx = pObj->ioctl_if;
     PWSC_CTRL   pWscCtrl;
 	UINT32		val = 0;
 
@@ -880,8 +885,7 @@ INT	Set_DoWpsByNFC_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 INT Set_NfcRegenPK_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	POS_COOKIE  pObj = (POS_COOKIE) pAd->OS_Cookie;
-	UCHAR	    apidx = pObj->ioctl_if, mac_addr[MAC_ADDR_LEN];
-	BOOLEAN     bFromApCli = FALSE;
+	UCHAR	    apidx = pObj->ioctl_if;
 	PWSC_CTRL   pWscCtrl;
 	UINT32		val = 0;
 
@@ -895,6 +899,8 @@ INT Set_NfcRegenPK_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s : bRegenPublicKey=%d, \n", 
 	__FUNCTION__, pWscCtrl->bRegenPublicKey));
+
+	return TRUE;
 }	
 #endif /* WSC_NFC_SUPPORT */
 

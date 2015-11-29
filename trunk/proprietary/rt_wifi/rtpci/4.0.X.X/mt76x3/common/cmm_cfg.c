@@ -177,8 +177,9 @@ static UCHAR CFG_WMODE_MAP[]={
 	PHY_MODE_MAX, WMODE_INVALID /* default phy mode if not match */
 };
 
-
+#ifdef DBG
 static RTMP_STRING *BAND_STR[] = {"Invalid", "2.4G", "5G", "2.4G/5G"};
+#endif /* DBG */
 static RTMP_STRING *WMODE_STR[]= {"", "A", "B", "G", "gN", "aN", "AC"};
 
 UCHAR *wmode_2_str(UCHAR wmode)
@@ -520,7 +521,9 @@ INT	RT_CfgSetWepKey(
 	INT				KeyLen;
 	INT				i;
 	/*UCHAR			CipherAlg = CIPHER_NONE;*/
+#ifdef DBG
 	BOOLEAN			bKeyIsHex = FALSE;
+#endif /* DBG */
 
 	/* TODO: Shall we do memset for the original key info??*/
 	memset(pSharedKey, 0, sizeof(CIPHER_KEY));
@@ -531,8 +534,10 @@ INT	RT_CfgSetWepKey(
 		case 13: /*wep 104 Ascii type*/
 #ifdef MT_MAC
 		case 16: /*wep 128 Ascii type*/
-#endif			
+#endif
+#ifdef DBG
 			bKeyIsHex = FALSE;
+#endif /* DBG */
 			pSharedKey->KeyLen = KeyLen;
 			NdisMoveMemory(pSharedKey->Key, keyString, KeyLen);
 			break;
@@ -547,7 +552,9 @@ INT	RT_CfgSetWepKey(
 				if( !isxdigit(*(keyString+i)) )
 					return FALSE;  /*Not Hex value;*/
 			}
+#ifdef DBG
 			bKeyIsHex = TRUE;
+#endif /* DBG */
 			pSharedKey->KeyLen = KeyLen/2 ;
 			AtoH(keyString, pSharedKey->Key, pSharedKey->KeyLen);
 			break;
@@ -1006,12 +1013,6 @@ INT RTMP_COM_IoctlHandle(
          InitSDIODevice(pAd);
          break;
 #endif
-#ifdef RT_CFG80211_SUPPORT
-		case CMD_RTPRIV_IOCTL_CFG80211_CFG_START:
-			RT_CFG80211_REINIT(pAd);
-			RT_CFG80211_CRDA_REG_RULE_APPLY(pAd);
-			break;
-#endif /* RT_CFG80211_SUPPORT */
 
 #ifdef INF_PPA_SUPPORT
 		case CMD_RTPRIV_IOCTL_INF_PPA_INIT:
@@ -1036,10 +1037,11 @@ INT RTMP_COM_IoctlHandle(
 			// TODO: Shiang-usw, this function looks have some problem, need to revise!
 			if (VIRTUAL_IF_NUM(pAd) == 0)
 			{
+#ifdef DBG
 				ULONG start, end, diff_ms;
 				/* Get the current time for calculating startup time */
 				NdisGetSystemUpTime(&start);
-				
+#endif /* DBG */
 				VIRTUAL_IF_INC(pAd);
 				if (pInfConf->rt28xx_open(pAd->net_dev) != 0)
 				{
@@ -1047,11 +1049,13 @@ INT RTMP_COM_IoctlHandle(
 					DBGPRINT(RT_DEBUG_TRACE, ("rt28xx_open return fail!\n"));
 					return NDIS_STATUS_FAILURE;
 				}
-				
+
+#ifdef DBG
 				/* Get the current time for calculating startup time */
 				NdisGetSystemUpTime(&end); diff_ms = (end-start)*1000/OS_HZ;
 				DBGPRINT(RT_DEBUG_ERROR, ("WiFi Startup Cost (%s): %lu.%03lus\n",
 						RTMP_OS_NETDEV_GET_DEVNAME(pAd->net_dev),diff_ms/1000,diff_ms%1000));
+#endif /* DBG */
 			}
 			else
 			{
@@ -1338,13 +1342,6 @@ INT RTMP_COM_IoctlHandle(
 
 	}
 
-#ifdef RT_CFG80211_SUPPORT
-	if ((CMD_RTPRIV_IOCTL_80211_START <= cmd) &&
-		(cmd <= CMD_RTPRIV_IOCTL_80211_END))
-	{
-		Status = CFG80211DRV_IoctlHandle(pAd, wrq, cmd, subcmd, pData, Data);
-	}
-#endif /* RT_CFG80211_SUPPORT */
 
 	if (cmd >= CMD_RTPRIV_IOCTL_80211_COM_LATEST_ONE)
 		return NDIS_STATUS_FAILURE;
@@ -1739,7 +1736,7 @@ INT SetPSEWatchDog_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	{
 		pAd->PSEWatchDogEn = 0;
 	}
-#ifdef CONFIG_PCIE_SUPPORT
+#ifdef RTMP_MAC_PCI
 
 	else if (Dbg == 2)
 	{
@@ -1750,7 +1747,7 @@ INT SetPSEWatchDog_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 		DumpPseInfo(pAd);
 
 	}
-#endif
+#endif /* RTMP_MAC_PCI */
 
 #ifdef DMA_RESET_SUPPORT	
 	else if (Dbg == 4)
@@ -2132,13 +2129,15 @@ INT Set_themal_sensor(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	/* 0: get temperature; 1: get adc */
 	UINT32 value;
-	UINT32 temperature=0; 
 	value = simple_strtol(arg, 0, 10);
 
 	if ((value == 0) || (value == 1)) {
 #if defined(MT7603) || defined(MT7628)
+#ifdef DBG
+		UINT32 temperature=0;
 		temperature = MtAsicGetThemalSensor(pAd, value);
 		DBGPRINT(RT_DEBUG_OFF, ("%s: ThemalSensor = 0x%x\n", __FUNCTION__, temperature));
+#endif /* DBG */
 #else
 		CmdGetThemalSensorResult(pAd, value);
 #endif /* MT7603 ||MT7628  */
@@ -2160,7 +2159,46 @@ INT Set_rx_pspoll_filter_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	DBGPRINT(RT_DEBUG_OFF, (":%s: rx_pspoll_filter=%d\n", __FUNCTION__, pAd->rx_pspoll_filter));
 	return TRUE;
 }
-#endif
+
+#ifdef SMART_CARRIER_SENSE_SUPPORT
+INT SetSCSEnable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	UINT32 value;
+	
+	value = simple_strtol(arg, 0, 10);
+	
+	if (value > 500)
+	{
+		pAd->SCSCtrl.SCSThreshold= value;
+		DBGPRINT(RT_DEBUG_OFF, ("==>%s (Traffic Threshold=%d)\n", __FUNCTION__, value));
+	}
+	else
+	{
+		if (value == 1)
+		{
+			pAd->SCSCtrl.SCSEnable= SCS_ENABLE;
+			DBGPRINT(RT_DEBUG_OFF, ("==>%s (ON)\n", __FUNCTION__));
+		}
+		else if (value == 0)
+		{
+			pAd->SCSCtrl.SCSEnable= SCS_DISABLE;
+			DBGPRINT(RT_DEBUG_OFF, ("==>%s (OFF)\n", __FUNCTION__));
+			/* Restore to default */
+			RTMP_IO_WRITE32(pAd, CR_AGC_0, pAd->SCSCtrl.CR_AGC_0_default);
+			RTMP_IO_WRITE32(pAd, CR_AGC_0_RX1, pAd->SCSCtrl.CR_AGC_0_default);
+			RTMP_IO_WRITE32(pAd, CR_AGC_3, pAd->SCSCtrl.CR_AGC_3_default);
+			RTMP_IO_WRITE32(pAd, CR_AGC_3_RX1, pAd->SCSCtrl.CR_AGC_3_default);
+			pAd->SCSCtrl.SCSStatus = SCS_STATUS_DEFAULT;
+		}
+		else
+			DBGPRINT(RT_DEBUG_OFF, ("==>%s (Unknow value = %d)\n", __FUNCTION__, value));
+	}
+	
+	return TRUE;
+}
+#endif /* SMART_CARRIER_SENSE_SUPPORT */
+
+#endif /* MT_MAC */
 
 #ifdef SINGLE_SKU_V2
 INT SetSKUEnable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
@@ -2193,7 +2231,7 @@ INT Set_ed_chk_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	
 	DBGPRINT(RT_DEBUG_OFF, ("%s()::ed_chk=%d\n", 
 		__FUNCTION__, ed_chk));
-
+	
 	pAd->ed_chk = ed_chk;
 	if (ed_chk != 0)
 		RTMP_CHIP_ASIC_SET_EDCCA(pAd, TRUE);
@@ -2392,6 +2430,7 @@ INT ed_monitor_init(RTMP_ADAPTER *pAd)
 	return TRUE;
 }
 
+#ifdef DBG
 INT show_ed_stat_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	unsigned long irqflags=0;
@@ -2421,8 +2460,6 @@ rssi_stat));
 	DBGPRINT(RT_DEBUG_OFF, ("Dump ChannelBusy Counts, ed_chk=%u, false_cca_threshold=%u, ChkPeriod=%dms, ED_Threshold=%d%%, HitCntForBlockTx=%d\n", 
 	pAd->ed_chk, pAd->ed_false_cca_threshold, pAd->ed_chk_period, pAd->ed_threshold, pAd->ed_block_tx_threshold));
 #endif
-
-
 	period_us = pAd->ed_chk_period * 1000;
 	DBGPRINT(RT_DEBUG_OFF, ("TimeSlot:"));
 	idx = start;
@@ -2530,7 +2567,7 @@ rssi_stat));
 
 	return TRUE;
 }
-
+#endif /* DBG */
 
 INT	Set_RadioOn_Proc(
 	IN	PRTMP_ADAPTER	pAd,
@@ -2561,396 +2598,3 @@ INT	Set_RadioOn_Proc(
 	return TRUE;
 }
 
-#ifdef CUSTOMER_DCC_FEATURE
-VOID EnableRadioChstats( 
-		IN	PRTMP_ADAPTER 	pAd)
-{
-	UINT32   mac_val;
-	
-	/* Clear previous status */
-	RTMP_IO_READ32(pAd, MIB_MSCR, &mac_val);
-	DBGPRINT(RT_DEBUG_OFF, ("MIB Status Control=0x%x\n", mac_val));
-	mt7603_set_ed_cca(pAd, 1);
-	RTMP_IO_READ32(pAd, MIB_MSDR9, &mac_val); //	Ch Busy Time
-	RTMP_IO_READ32(pAd, MIB_MSDR18, &mac_val); // 	p_ED Time
-	AsicGetRxStat(pAd, HQA_RX_RESET_PHY_COUNT);
-	
-}
-
-INT Set_ApEnableRadioChStats(
-		IN	PRTMP_ADAPTER	pAd, 
-		IN	PSTRING 	arg)
-{	
-	UINT32 enable;
-		
-	if(strlen(arg) > 1)
-	{
-		DBGPRINT(RT_DEBUG_ERROR,("wrong argument type   \n"));
-		return FALSE;	
-	}
-	enable = simple_strtol(arg, 0, 10);
-	if((enable != 1) && (enable != 0))
-	{
-		DBGPRINT(RT_DEBUG_ERROR,("wrong argument value   \n"));
-		return FALSE;
-	}
-	
-	if(enable)
-	{
-		/* set the EnableChannelStatsCheck value to true and initialize the values to zero */
-		pAd->EnableChannelStatsCheck = TRUE;
-		
-		pAd->ChannelStats.LastReadTime = 0;
-		pAd->ChannelStats.TotalDuration = 0;
-		pAd->ChannelStats.msec100counts = 0;
-		
-		pAd->ChannelStats.CCABusytime = 0;
-		pAd->ChannelStats.ChBusytime = 0;
-		pAd->ChannelStats.FalseCCACount = 0;
-		pAd->ChannelStats.ChannelApActivity = 0;
-		
-		pAd->ChannelStats.ChBusyTimeAvg = 0;
-		pAd->ChannelStats.CCABusyTimeAvg = 0;
-		pAd->ChannelStats.FalseCCACountAvg = 0;
-		pAd->ChannelStats.ChannelApActivityAvg = 0;
-		
-		pAd->ChannelStats.ChBusyTime1secValue = 0;
-		pAd->ChannelStats.CCABusyTime1secValue = 0;
-		pAd->ChannelStats.FalseCCACount1secValue = 0;
-		pAd->ChannelStats.ChannelApActivity1secValue = 0;
-						
-		EnableRadioChstats(pAd);		
-		
-		return TRUE;
-	}
-	else if(enable == 0)
-	{
-		if(pAd->EnableChannelStatsCheck)
-		{
-			/* Set the EnableChannelStatsCheck to FALSE*/
-			pAd->EnableChannelStatsCheck = FALSE;
-			mt7603_set_ed_cca(pAd, 0);
-		}
-		/* set all channel stats values to zero */
-		pAd->ChannelStats.TotalDuration = 0;
-		pAd->ChannelStats.msec100counts = 0;
-
-		pAd->ChannelStats.CCABusytime = 0;
-		pAd->ChannelStats.ChBusytime = 0;
-		pAd->ChannelStats.FalseCCACount = 0;
-		pAd->ChannelStats.ChannelApActivity = 0;
-		
-		pAd->ChannelStats.ChBusyTimeAvg = 0;
-		pAd->ChannelStats.CCABusyTimeAvg = 0;
-		pAd->ChannelStats.FalseCCACountAvg = 0;
-		pAd->ChannelStats.ChannelApActivityAvg = 0;
-		
-		return TRUE;
-	}
-	
-	return FALSE;
-}
-
-
-INT Set_ApDisableSTAConnect_Proc(
-	IN	PRTMP_ADAPTER	pAd, 
-	IN	PSTRING			arg)
-{
-	INT32 flag;
-	if(strlen(arg) > 1)
-	{
-		DBGPRINT(RT_DEBUG_ERROR,("wrong argument type   \n"));
-		return FALSE;	
-	}
-	flag = simple_strtol(arg, 0, 10);
-	if((flag == 0) || (flag == 1))
-	{
-		pAd->ApDisableSTAConnectFlag = flag;
-		return TRUE;
-	}
-	else
-	{
-		DBGPRINT(RT_DEBUG_ERROR,("wrong argument value   \n"));
-		return FALSE;
-	}
-}
-
-INT Set_ApEnableBeaconTable_Proc(
-	IN	PRTMP_ADAPTER	pAd, 
-	IN	PSTRING			arg)
-{
-	INT32 flag;
-	if(strlen(arg) > 1)
-	{
-		DBGPRINT(RT_DEBUG_ERROR,("wrong argument type   \n"));
-		return FALSE;	
-	}
-	flag = simple_strtol(arg, 0, 10);
-	if((flag == 0) || (flag == 1))
-	{
-		BssTableInit(&pAd->AvailableBSS);
-		pAd->ApEnableBeaconTable = flag;
-		return TRUE;
-	}
-	else
-	{
-		DBGPRINT(RT_DEBUG_ERROR,("wrong argument value   \n"));
-		return FALSE;
-	}
-}
-
-INT Set_ApScan_Proc(
-	IN	PRTMP_ADAPTER	pAd, 
-	IN	PSTRING			arg)
-{
-	POS_COOKIE pObj;
-	UINT channel =0;
-	UINT timeout =0;
-	INT32 i,j,count;
-	CHAR scantype[8];
-	CHAR temp[33];
-	pObj = (POS_COOKIE) pAd->OS_Cookie;
-
-	//check if the interface is down
-	if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_IN_USE))
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("INFO::Network is down!\n"));
-		return -ENETDOWN;   
-	}
-
-	i = 0;
-	j = 0;
-	count = 0;
-	while(arg[j] != '\0')
-	{
-		temp[i] = arg[j];
-		j++;
-		if(temp[i] == ':' || arg[j] == '\0' )
-		{
-		    if(temp[i] == ':')
-			{	
-                count++;
-				switch(count)
-				{
-					case 1:
-					    	temp[i]= '\0';
-					    	if ((strlen(temp) != 0) && (strlen(temp) <= 7))
-    				    	{
-        				    	strcpy(scantype,temp);
-						    	if(strcmp(scantype,"active") && strcmp(scantype,"passive"))
-						    	{
-							    	DBGPRINT(RT_DEBUG_ERROR,("wrong scan type argument \n"));
-							    	return FALSE;
-						    	}
-					    	}
-					    	else if(strlen(temp) > 7)
-					    	{
-						    	DBGPRINT(RT_DEBUG_ERROR,("wrong scan type argument \n"));
-						    	return FALSE;
-					    	}
-					    	i = -1;
-					    	break;
-					case 2:
-					    	temp[i] = '\0';
-					    	if((strlen(temp) != 0) && (strlen(temp) <= 3))
-					    	{
-						    	channel=simple_strtol(temp, 0, 10);
-						    	if(!ChannelSanity(pAd, channel)) 
-						    	{
-							    	DBGPRINT(RT_DEBUG_ERROR,("wrong channel number \n"));
-							    	return FALSE;	
-							    }
-						    }
-					    	else if(strlen(temp) > 3)
-					    	{
-						    	DBGPRINT(RT_DEBUG_ERROR,("wrong channel number \n"));
-						    	return FALSE;
-						    }
-					    	i = -1;
-					    	break;
-					default:
-					    	if(count > 2)
-					    	{
-						    	DBGPRINT(RT_DEBUG_ERROR,("wrong number of arguments \n"));
-						    	return FALSE;
-						    }
-						    break;
-				}
-			}
-			else if(arg[j] == '\0')
-			{
-				temp[i+1] = '\0';
-			    if((strlen(temp) != 0) && (strlen(temp) <= 10) && ( simple_strtol(temp, 0, 10) < 0xffffffff))
-				{
-					timeout = simple_strtol(temp, 0, 10);
-				}
-				else if(strlen(temp))
-				{
-					DBGPRINT(RT_DEBUG_ERROR,("wrong Timeout value \n"));
-					return FALSE;
-				} 
-			}
-		}
-		i++;
-
-	}
-	
-    //printk("%s %u %u \n", scantype, channel, timeout);
-	if (!strcmp(scantype, "passive"))
-			ApSiteSurveyNew(pAd,channel,timeout, SCAN_PASSIVE, FALSE);
-	else if(!strcmp(scantype, "active"))
-			ApSiteSurveyNew(pAd,channel, timeout, SCAN_ACTIVE, FALSE);
-	
-	DBGPRINT(RT_DEBUG_TRACE, ("Set_ApScan_Proc\n"));
-
-    return TRUE;
-}
-
-#ifdef MBSS_802_11_STATISTICS
-VOID RTMPIoctlQueryMbssStat(
-	IN	PRTMP_ADAPTER	pAd, 
-	IN	RTMP_IOCTL_INPUT_STRUCT	*wrq)
-{
-	int apidx;
-	UINT64 temp;
-	RT_MBSS_STATISTICS_TABLE *mbss_stat = NULL;
-
-	os_alloc_mem(NULL, (UCHAR **)&mbss_stat, sizeof(RT_MBSS_STATISTICS_TABLE)); 
-	if (mbss_stat == NULL)
-	{   
-		DBGPRINT(RT_DEBUG_ERROR, ("%s: Allocate memory fail!!!\n", __FUNCTION__));   
-		return; 
-	}
-	NdisZeroMemory(mbss_stat, sizeof(RT_MBSS_STATISTICS_TABLE));
-	mbss_stat->Num = pAd->ApCfg.BssidNum;
-	
-	for (apidx=0; apidx < pAd->ApCfg.BssidNum; apidx++)
-	{		
-		mbss_stat->MbssEntry[apidx].RxCount = pAd->ApCfg.MBSSID[apidx].RxCount;
-		mbss_stat->MbssEntry[apidx].TxCount = pAd->ApCfg.MBSSID[apidx].TxCount;
-		mbss_stat->MbssEntry[apidx].ReceivedByteCount = pAd->ApCfg.MBSSID[apidx].ReceivedByteCount;
-		mbss_stat->MbssEntry[apidx].TransmittedByteCount = pAd->ApCfg.MBSSID[apidx].TransmittedByteCount;
-		mbss_stat->MbssEntry[apidx].RxErrorCount = pAd->ApCfg.MBSSID[apidx].RxErrorCount;
-		mbss_stat->MbssEntry[apidx].RxDropCount = pAd->ApCfg.MBSSID[apidx].RxDropCount;
-		mbss_stat->MbssEntry[apidx].TxRetriedPktCount = pAd->ApCfg.MBSSID[apidx].TxRetriedPktCount;
-#ifdef STATS_COUNT_SUPPORT
-		mbss_stat->MbssEntry[apidx].TxErrorCount = pAd->ApCfg.MBSSID[apidx].TxErrorCount;
-		mbss_stat->MbssEntry[apidx].TxDropCount = pAd->ApCfg.MBSSID[apidx].TxDropCount;
-		mbss_stat->MbssEntry[apidx].UnicastPktsRx = pAd->ApCfg.MBSSID[apidx].ucPktsRx;
-		mbss_stat->MbssEntry[apidx].UnicastPktsTx = pAd->ApCfg.MBSSID[apidx].ucPktsTx;
-		mbss_stat->MbssEntry[apidx].MulticastPktsRx = pAd->ApCfg.MBSSID[apidx].mcPktsRx;
-		mbss_stat->MbssEntry[apidx].MulticastPktsTx = pAd->ApCfg.MBSSID[apidx].mcPktsTx;
-		mbss_stat->MbssEntry[apidx].BroadcastPktsRx = pAd->ApCfg.MBSSID[apidx].bcPktsRx;
-		mbss_stat->MbssEntry[apidx].BroadcastPktsTx = pAd->ApCfg.MBSSID[apidx].bcPktsTx;
-#endif // STATS_COUNT_SUPPORT //
-		mbss_stat->MbssEntry[apidx].MGMTRxCount = pAd->ApCfg.MBSSID[apidx].MGMTRxCount;
-		mbss_stat->MbssEntry[apidx].MGMTTxCount = pAd->ApCfg.MBSSID[apidx].MGMTTxCount;
-		mbss_stat->MbssEntry[apidx].MGMTReceivedByteCount = pAd->ApCfg.MBSSID[apidx].MGMTReceivedByteCount;
-		mbss_stat->MbssEntry[apidx].MGMTTransmittedByteCount = pAd->ApCfg.MBSSID[apidx].MGMTTransmittedByteCount;
-		mbss_stat->MbssEntry[apidx].MGMTRxErrorCount = pAd->ApCfg.MBSSID[apidx].MGMTRxErrorCount;
-		mbss_stat->MbssEntry[apidx].MGMTRxDropCount = pAd->ApCfg.MBSSID[apidx].MGMTRxDropCount;
-		mbss_stat->MbssEntry[apidx].MGMTTxErrorCount = pAd->ApCfg.MBSSID[apidx].MGMTTxErrorCount;
-		mbss_stat->MbssEntry[apidx].MGMTTxDropCount = pAd->ApCfg.MBSSID[apidx].MGMTTxDropCount;
-		
-		temp = pAd->ApCfg.MBSSID[apidx].ChannelUseTime;
-		do_div(temp, 1000);
-		mbss_stat->MbssEntry[apidx].ChannelUseTime = temp;
-		
-		pAd->ApCfg.MBSSID[apidx].RxCount = 0; 
-		pAd->ApCfg.MBSSID[apidx].TxCount = 0;
-		pAd->ApCfg.MBSSID[apidx].ReceivedByteCount = 0;
-		pAd->ApCfg.MBSSID[apidx].TransmittedByteCount = 0;
-		pAd->ApCfg.MBSSID[apidx].RxErrorCount = 0;
-		pAd->ApCfg.MBSSID[apidx].RxDropCount = 0;
-		pAd->ApCfg.MBSSID[apidx].TxRetriedPktCount = 0;
-		pAd->ApCfg.MBSSID[apidx].TxErrorCount = 0;
-		pAd->ApCfg.MBSSID[apidx].TxDropCount = 0;
-		pAd->ApCfg.MBSSID[apidx].ucPktsRx = 0;
-		pAd->ApCfg.MBSSID[apidx].ucPktsTx = 0;
-		pAd->ApCfg.MBSSID[apidx].mcPktsRx = 0;
-		pAd->ApCfg.MBSSID[apidx].mcPktsTx = 0;
-		pAd->ApCfg.MBSSID[apidx].bcPktsRx = 0;
-		pAd->ApCfg.MBSSID[apidx].bcPktsTx = 0;
-		pAd->ApCfg.MBSSID[apidx].MGMTRxCount = 0;
-		pAd->ApCfg.MBSSID[apidx].MGMTTxCount = 0;
-		pAd->ApCfg.MBSSID[apidx].MGMTReceivedByteCount = 0;
-		pAd->ApCfg.MBSSID[apidx].MGMTTransmittedByteCount = 0;
-		pAd->ApCfg.MBSSID[apidx].MGMTRxErrorCount = 0;
-		pAd->ApCfg.MBSSID[apidx].MGMTRxDropCount = 0;
-		pAd->ApCfg.MBSSID[apidx].MGMTTxErrorCount = 0;
-		pAd->ApCfg.MBSSID[apidx].MGMTTxDropCount = 0;
-		pAd->ApCfg.MBSSID[apidx].ChannelUseTime = 0;
-		
-	}
-
-	wrq->u.data.length = sizeof(RT_MBSS_STATISTICS_TABLE);
-	if (copy_to_user(wrq->u.data.pointer, mbss_stat, wrq->u.data.length))
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("%s: copy_to_user() fail\n", __FUNCTION__));
-	}
-	if (mbss_stat != NULL)  
-		os_free_mem(NULL, mbss_stat);
-}
-
-VOID RTMPIoctlQuerySTAStat(
-	IN	PRTMP_ADAPTER	pAd, 
-	IN	RTMP_IOCTL_INPUT_STRUCT	*wrq)
-{
-	int i;
-	UINT64 temp;
-	PMAC_TABLE_ENTRY pEntry = NULL;
-	RT_STA_STATISTICS_TABLE *sta_stat = NULL;
-
-	os_alloc_mem(NULL, (UCHAR **)&sta_stat, sizeof(RT_STA_STATISTICS_TABLE)); 
-	if (sta_stat == NULL) 
-	{   
-		DBGPRINT(RT_DEBUG_ERROR, ("%s: Allocate memory fail!!!\n", __FUNCTION__)); 
-		return; 
-	}
-	NdisZeroMemory(sta_stat, sizeof(RT_STA_STATISTICS_TABLE));	
-	for (i = 0; i < MAX_LEN_OF_MAC_TABLE; i++)
-	{
-		pEntry = &pAd->MacTab.Content[i];
-		if (pEntry && IS_ENTRY_CLIENT(pEntry) && pEntry->Sst == SST_ASSOC)
-		{
-			sta_stat->STAEntry[sta_stat->Num].ApIdx = pEntry->pMbss->mbss_idx;			
-			COPY_MAC_ADDR(sta_stat->STAEntry[sta_stat->Num].Addr, pEntry->Addr);
-			sta_stat->STAEntry[sta_stat->Num].RxCount = pEntry->RxCount;
-			sta_stat->STAEntry[sta_stat->Num].TxCount = pEntry->TxCount;
-			sta_stat->STAEntry[sta_stat->Num].ReceivedByteCount = pEntry->ReceivedByteCount;
-			sta_stat->STAEntry[sta_stat->Num].TransmittedByteCount = pEntry->TransmittedByteCount;
-			sta_stat->STAEntry[sta_stat->Num].RxErrorCount = pEntry->RxErrorCount;
-			sta_stat->STAEntry[sta_stat->Num].RxDropCount = pEntry->RxDropCount;
-			sta_stat->STAEntry[sta_stat->Num].TxErrorCount = pEntry->TxErrorCount;
-			sta_stat->STAEntry[sta_stat->Num].TxDropCount = pEntry->TxDropCount;
-			sta_stat->STAEntry[sta_stat->Num].TxRetriedPktCount = pEntry->TxRetriedPktCount;
-			temp = pEntry->ChannelUseTime;
-			do_div(temp, 1000);
-			sta_stat->STAEntry[sta_stat->Num].ChannelUseTime = temp;	
-			sta_stat->Num++;
-	
-			// clear STA Stats
-			pEntry->RxCount = 0;
-			pEntry->TxCount = 0;
-			pEntry->ReceivedByteCount = 0;
-			pEntry->TransmittedByteCount = 0;
-			pEntry->RxErrorCount = 0;
-			pEntry->RxDropCount = 0;
-			pEntry->TxErrorCount = 0;
-			pEntry->TxDropCount = 0;
-			pEntry->TxRetriedPktCount = 0;
-			pEntry->ChannelUseTime = 0;
-		}
-	} 
-
-	wrq->u.data.length = sizeof(RT_STA_STATISTICS_TABLE);
-	if (copy_to_user(wrq->u.data.pointer, sta_stat, wrq->u.data.length))
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("%s: copy_to_user() fail\n", __FUNCTION__));
-	}
-	if (sta_stat != NULL)
-		os_free_mem(NULL, sta_stat);
-}
-
-#endif
-#endif

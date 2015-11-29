@@ -1354,14 +1354,6 @@ VOID RTMPHandleMgmtRingDmaDoneInterrupt(RTMP_ADAPTER *pAd)
 #ifdef CONFIG_AP_SUPPORT
 #endif /* CONFIG_AP_SUPPORT */
 
-#ifdef RT_CFG80211_SUPPORT
-		if (pPacket)
-		{
-			HEADER_802_11  *pHeader;
-			pHeader = (HEADER_802_11 *)(GET_OS_PKT_DATAPTR(pPacket)+ TXINFO_SIZE + pAd->chipCap.TXWISize);
-			CFG80211_SendMgmtFrameDone(pAd, pHeader->Sequence);
-		}
-#endif
 
 		if (pPacket)
 		{
@@ -1489,22 +1481,11 @@ VOID RTMPHandleTTTTInterrupt(RTMP_ADAPTER *pAd)
 VOID RTMPHandlePreTBTTInterrupt(RTMP_ADAPTER *pAd)
 {
 #ifdef CONFIG_AP_SUPPORT
-#ifdef RT_CFG80211_SUPPORT
-	struct wifi_dev *wdev;
-	wdev = &pAd->ApCfg.MBSSID[0].wdev;
-#endif /*RT_CFG80211_SUPPORT*/
 	
 	if (pAd->OpMode == OPMODE_AP
-#ifdef RT_CFG80211_SUPPORT
-		&& (wdev->Hostapd == Hostapd_CFG)
-#endif /*RT_CFG80211_SUPPORT*/
 	)
 	{
-#ifdef RT_CFG80211_SUPPORT
-			RT_CFG80211_BEACON_TIM_UPDATE(pAd);
-#else
 			APUpdateAllBeaconFrame(pAd);
-#endif /* RT_CFG80211_SUPPORT  */
 	}
 	else
 #endif /* CONFIG_AP_SUPPORT */
@@ -1521,21 +1502,6 @@ VOID RTMPHandlePreTBTTInterrupt(RTMP_ADAPTER *pAd)
 	if (pAd->chipCap.hif_type == HIF_MT) {
 		POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
 		RTMP_OS_TASKLET_SCHE(&pObj->tbtt_task);
-#ifdef CUSTOMER_DCC_FEATURE
-	if(pAd->CommonCfg.channelSwitch.CHSWMode == CHANNEL_SWITCHING_MODE && (pAd->ApCfg.DtimCount == 0))
-	{
-		DBGPRINT(RT_DEBUG_OFF, ("RTMPHandlePreTBTTInterrupt::Channel Switching...(%d/%d)\n", pAd->CommonCfg.channelSwitch.CHSWCount, pAd->CommonCfg.channelSwitch.CHSWPeriod));
-					
-		pAd->CommonCfg.channelSwitch.CHSWCount++;
-		if(pAd->CommonCfg.channelSwitch.CHSWCount >= pAd->CommonCfg.channelSwitch.CHSWPeriod)
-		{
-			pAd->CommonCfg.channelSwitch.CHSWMode = NORMAL_MODE;
-			MlmeEnqueue(pAd, AP_SYNC_STATE_MACHINE, APMT2_CHANNEL_SWITCH, 0, NULL, 0);
-			RTMP_MLME_HANDLER(pAd);
-			
-		}
-	}
-#endif
 	}
 //#endif
 #endif /*MT_MAC */
@@ -1594,7 +1560,7 @@ VOID RTMPHandleMcuInterrupt(RTMP_ADAPTER *pAd)
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(): Not support for HIF_MT yet!\n",
 					__FUNCTION__));
 		return;
 	}
@@ -2110,6 +2076,21 @@ NDIS_STATUS MlmeHardTransmitTxRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACKET
 		(pHeader_802_11->FC.SubType == SUBTYPE_BLOCK_ACK_REQ)))
 	{
 		pMacEntry = MacTableLookup(pAd, pHeader_802_11->Addr1);
+#ifdef MAC_REPEATER_SUPPORT
+		if (pMacEntry != NULL &&  pAd->ApCfg.bMACRepeaterEn && IS_ENTRY_APCLI(pMacEntry)) 
+		{
+			REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
+			UCHAR MacTabWCID=0;
+
+			pReptEntry = RTMPLookupRepeaterCliEntry(pAd, FALSE, pHeader_802_11->Addr2);
+			if (pReptEntry && pReptEntry->CliValid)
+			{
+				MacTabWCID = pReptEntry->MacTabWCID;
+				pMacEntry = &pAd->MacTab.Content[MacTabWCID];
+			}
+
+		}
+#endif
 	}
 
 #ifdef DOT11W_PMF_SUPPORT
@@ -2119,6 +2100,20 @@ NDIS_STATUS MlmeHardTransmitTxRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACKET
 		MAC_TABLE_ENTRY *pEntry = NULL;
 
 		pEntry = MacTableLookup(pAd, pHeader_802_11->Addr1);
+#ifdef MAC_REPEATER_SUPPORT
+		if (pEntry != NULL &&  pAd->ApCfg.bMACRepeaterEn && IS_ENTRY_APCLI(pEntry)) 
+		{
+			REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
+			UCHAR MacTabWCID=0;
+
+			pReptEntry = RTMPLookupRepeaterCliEntry(pAd, FALSE, pHeader_802_11->Addr2);
+			if (pReptEntry && pReptEntry->CliValid)
+			{
+				MacTabWCID = pReptEntry->MacTabWCID;
+				pEntry = &pAd->MacTab.Content[MacTabWCID];
+			}
+		}
+#endif
 		ret = PMF_RobustFrameClassify(
 					(PHEADER_802_11)pHeader_802_11,
 					(PUCHAR)(((PUCHAR)pHeader_802_11)+LENGTH_802_11),
@@ -2247,6 +2242,21 @@ NDIS_STATUS MlmeHardTransmitTxRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACKET
 				MAC_TABLE_ENTRY *pEntry = NULL;
 				
 				pEntry = MacTableLookup(pAd, pHeader_802_11->Addr1);
+#ifdef MAC_REPEATER_SUPPORT
+				if (pEntry != NULL &&  pAd->ApCfg.bMACRepeaterEn && IS_ENTRY_APCLI(pEntry)) 
+				{
+					REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
+					UCHAR MacTabWCID=0;
+
+					pReptEntry = RTMPLookupRepeaterCliEntry(pAd, FALSE, pHeader_802_11->Addr2);
+					if (pReptEntry && pReptEntry->CliValid)
+					{
+						MacTabWCID = pReptEntry->MacTabWCID;
+						pEntry = &pAd->MacTab.Content[MacTabWCID];
+					}
+
+				}
+#endif
 
 				if (pEntry)
 					wcid = pEntry->Aid;
@@ -2422,37 +2432,6 @@ NDIS_STATUS MlmeHardTransmitTxRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACKET
 	WriteBackToDescriptor((PUCHAR)pDestTxD, (PUCHAR)pTxD, FALSE, TYPE_TXD);
 #endif
 
-#ifdef CUSTOMER_DCC_FEATURE
-	if(!(ApScanRunning(pAd)))
-	{
-		UINT32 Index, Length;
-		BSS_STRUCT *pMbss = NULL;
-						
-		Length = frm_len;
-		if (pMacEntry != NULL && (pMacEntry->pMbss->mbss_idx < pAd->ApCfg.BssidNum))
-			pMbss = &pAd->ApCfg.MBSSID[pMacEntry->pMbss->mbss_idx];
-		else
-		{
-			UCHAR apidx;
-			for(apidx=0; apidx<pAd->ApCfg.BssidNum; apidx++)
-			{
-				if ((pAd->ApCfg.MBSSID[apidx].wdev.if_dev != NULL) &&
-					!(RTMP_OS_NETDEV_STATE_RUNNING(pAd->ApCfg.MBSSID[apidx].wdev.if_dev)))
-				{
-					/* the interface is down */
-					continue;
-				}
-				if(RTMPEqualMemory(pAd->ApCfg.MBSSID[apidx].wdev.bssid, pHeader_802_11->Addr2,MAC_ADDR_LEN))
-				{
-					pMbss = &pAd->ApCfg.MBSSID[apidx];
-				}
-					
-			}
-		}
-		GetMultShiftFactorIndex(*transmit, &Index);
-		RTMPCalculateAPTxRxActivityTime(pAd, Index, Length, pMbss, pMacEntry);
-	}
-#endif	
 	pAd->RalinkCounters.KickTxCount++;
 	pAd->RalinkCounters.OneSecTxDoneCount++;
 

@@ -317,7 +317,7 @@ VOID NewRateAdaptMT(
 	IN UCHAR			Rate1ErrorRatio,
 	IN UCHAR			HwAggRateIndex);
 #endif /* MT_MAC */
-
+#ifdef DBG
 INT	Set_PerThrdAdj_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
 INT	Set_LowTrafficThrd_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
@@ -331,7 +331,7 @@ INT	Set_TrainUpLowThrd_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT	Set_TrainUpHighThrd_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
 INT Set_RateTable_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
-
+#endif /* DBG */
 #ifdef AGS_SUPPORT
 INT Show_AGS_Proc(struct _RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 

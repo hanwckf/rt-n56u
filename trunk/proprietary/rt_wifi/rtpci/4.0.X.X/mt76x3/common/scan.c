@@ -31,29 +31,6 @@ static INT scan_ch_restore(RTMP_ADAPTER *pAd, UCHAR OpMode)
 {
 	INT bw, ch;
 		
-#if defined(RT_CFG80211_SUPPORT) && defined(RT_CFG80211_P2P_CONCURRENT_DEVICE)
-	BSS_STRUCT *pMbss = &pAd->ApCfg.MBSSID[CFG_GO_BSSID_IDX];
-	PAPCLI_STRUCT pApCliEntry = pApCliEntry = &pAd->ApCfg.ApCliTab[MAIN_MBSSID];
-	struct wifi_dev *p2p_wdev = &pMbss->wdev;
-	struct wifi_dev *wdev;
-
-	if(RTMP_CFG80211_VIF_P2P_GO_ON(pAd) )
-	{
-		p2p_wdev = &pMbss->wdev;
-	}
-	else if(RTMP_CFG80211_VIF_P2P_CLI_ON(pAd) )
-	{
-		p2p_wdev = &pApCliEntry->wdev;
-	}
-
-	if(INFRA_ON(pAd) && (!RTMP_CFG80211_VIF_P2P_GO_ON(pAd)))
-	{
-		//this should be resotre to infra sta!!
-		wdev = &pAd->StaCfg.wdev;
-	       bbp_set_bw(pAd, pAd->StaCfg.wdev.bw);
-	}
-	else		
-#endif /* defined(RT_CFG80211_SUPPORT) && defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) */
 
         if (pAd->CommonCfg.BBPCurrentBW != pAd->hw_cfg.bbp_bw)
                 bbp_set_bw(pAd, pAd->hw_cfg.bbp_bw);
@@ -84,35 +61,7 @@ static INT scan_ch_restore(RTMP_ADAPTER *pAd, UCHAR OpMode)
 			bw =20;
 			break;
 	}
-	DBGPRINT(RT_DEBUG_TRACE, ("SYNC - End of SCAN, restore to %dMHz channel %d, Total BSS[%02d]\n",
-				bw, ch, pAd->ScanTab.BssNr));
 		
-#if defined(RT_CFG80211_SUPPORT) && defined(RT_CFG80211_P2P_CONCURRENT_DEVICE)
-        if (INFRA_ON(pAd))
-        {
-		bw = pAd->StaCfg.wdev.bw;
-		bbp_set_bw(pAd, bw);
-
-        }
- 	else if (RTMP_CFG80211_VIF_P2P_GO_ON(pAd) && (ch != p2p_wdev->channel) && (p2p_wdev->CentralChannel != 0))
-	{
-		bw = p2p_wdev->bw;
-		bbp_set_bw(pAd, bw);
-	}
-	else if (RTMP_CFG80211_VIF_P2P_CLI_ON(pAd) && (ch != p2p_wdev->channel) && (p2p_wdev->CentralChannel != 0))
-	{
-		bw = p2p_wdev->bw;
-		bbp_set_bw(pAd, bw);
-	}
-/*If GO start, we need to change to GO Channel*/
-        if (INFRA_ON(pAd))
-        {
-                ch = pAd->StaCfg.wdev.CentralChannel;
-        }
-	else if((ch != p2p_wdev->CentralChannel) && (p2p_wdev->CentralChannel != 0))
-		ch = p2p_wdev->CentralChannel;
-
-#endif /* defined(RT_CFG80211_SUPPORT) && defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) */
 
 	ASSERT((ch != 0));
        AsicSwitchChannel(pAd, ch, FALSE); 
@@ -120,8 +69,6 @@ static INT scan_ch_restore(RTMP_ADAPTER *pAd, UCHAR OpMode)
 
 	DBGPRINT(RT_DEBUG_TRACE, ("SYNC - End of SCAN, restore to %dMHz channel %d, Total BSS[%02d]\n",
 				bw, ch, pAd->ScanTab.BssNr));
-		
-
 		
 
 #ifdef CONFIG_AP_SUPPORT
@@ -199,35 +146,9 @@ static INT scan_active(RTMP_ADAPTER *pAd, UCHAR OpMode, UCHAR ScanType)
 #ifdef WSC_STA_SUPPORT
 		|| ((ScanType == SCAN_WSC_ACTIVE) && (OpMode == OPMODE_STA))
 #endif /* WSC_STA_SUPPORT */
-#ifdef RT_CFG80211_P2P_SUPPORT
-		|| (ScanType == SCAN_P2P)
-#endif /* RT_CFG80211_P2P_SUPPORT */
 		)
 		SsidLen = pAd->ScanCtrl.SsidLen;
 
-#ifdef RT_CFG80211_P2P_SUPPORT
-    if (ScanType == SCAN_P2P)
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("%s(): this is a p2p scan from cfg80211 layer\n", __FUNCTION__));
-#ifdef RT_CFG80211_P2P_STATIC_CONCURRENT_DEVICE
-		MgtMacHeaderInit(pAd, &Hdr80211, SUBTYPE_PROBE_REQ, 0, BROADCAST_ADDR,
-				      pAd->cfg80211_ctrl.P2PCurrentAddress, BROADCAST_ADDR);
-#else
-		MgtMacHeaderInit(pAd, &Hdr80211, SUBTYPE_PROBE_REQ, 0, BROADCAST_ADDR,
-                                      pAd->CurrentAddress, BROADCAST_ADDR);
-#endif /* RT_CFG80211_P2P_STATIC_CONCURRENT_DEVICE */
-                MakeOutgoingFrame(frm_buf,               &FrameLen,
-                                                  sizeof(HEADER_802_11),    &Hdr80211,
-                                                  1,                        &SsidIe,
-                                                  1,                        &SsidLen,
-                                                  SsidLen,                  pAd->ScanCtrl.Ssid,
-                                                  1,                        &SupRateIe,
-                                                  1,                        &pAd->cfg80211_ctrl.P2pSupRateLen,
-                                                  pAd->cfg80211_ctrl.P2pSupRateLen,  pAd->cfg80211_ctrl.P2pSupRate,
-                                                  END_OF_ARGS);
-	}
-	else
-#endif /* RT_CFG80211_P2P_SUPPORT */
 	{
 #ifdef CONFIG_AP_SUPPORT
 		/*IF_DEV_CONFIG_OPMODE_ON_AP(pAd) */
@@ -414,9 +335,6 @@ VOID ScanNextChannel(RTMP_ADAPTER *pAd, UCHAR OpMode)
 	if ((pAd->ScanCtrl.Channel == 0) || ScanPending) 
 	{
 		scan_ch_restore(pAd, OpMode);
-#ifdef CUSTOMER_DCC_FEATURE
-		pAd->ChannelStats.LastReadTime = 0;
-#endif		
 	} 
 	else 
 	{
@@ -486,12 +404,6 @@ VOID ScanNextChannel(RTMP_ADAPTER *pAd, UCHAR OpMode)
 			else
 				stay_time = MAX_CHANNEL_TIME;
 #ifdef CONFIG_AP_SUPPORT					
-#ifdef CUSTOMER_DCC_FEATURE
-			if(pAd->ScanCtrl.ScanTime != 0)
-			{
-				stay_time = pAd->ScanCtrl.ScanTime;
-			}
-#endif
 #endif			
 		}
 		RTMPSetTimer(sc_timer, stay_time);

@@ -158,10 +158,6 @@ UCHAR GetChannelFlag(
 
 UINT16 TotalChNum(
 	IN PCH_DESC pChDesc);
-#ifdef CFG80211_BUILD_CHANNEL_LIST	
-INT32 TotalRuleNum(
-    IN PCH_DESC pChDesc);
-#endif /* CFG80211_BUILD_CHANNEL_LIST */
 	
 #endif /* __CHLIST_H__ */
 

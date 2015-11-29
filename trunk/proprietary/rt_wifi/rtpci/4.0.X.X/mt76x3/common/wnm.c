@@ -238,6 +238,8 @@ BOOLEAN IsGratuitousARP(IN RTMP_ADAPTER *pAd,
 		if (ARPOperation == 0x0002)
 		{
 			RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPListLock, Ret);
+			if(Ret != 0)
+				DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 			DlListForEach(ProxyARPEntry, &pWNMCtrl->IPv4ProxyARPList, PROXY_ARP_IPV4_ENTRY, List)
 			{
 				if ((IPV4_ADDR_EQUAL(ProxyARPEntry->TargetIPAddr, SenderIP)) && (MAC_ADDR_EQUAL(ProxyARPEntry->TargetMACAddr, SourceMACAddr) == FALSE))
@@ -834,6 +836,8 @@ UINT32 IPv4ProxyARPTableLen(IN PRTMP_ADAPTER pAd,
 	DBGPRINT(RT_DEBUG_OFF, ("%s\n", __FUNCTION__));
 	
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(ProxyARPEntry, &pWNMCtrl->IPv4ProxyARPList, PROXY_ARP_IPV4_ENTRY, List)
 	{
 		TableLen += sizeof(PROXY_ARP_IPV4_UNIT);
@@ -852,6 +856,8 @@ UINT32 IPv6ProxyARPTableLen(IN PRTMP_ADAPTER pAd,
 	INT32 Ret;
 
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPIPv6ListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(ProxyARPEntry, &pWNMCtrl->IPv6ProxyARPList, PROXY_ARP_IPV6_ENTRY, List)
 	{
 		TableLen += sizeof(PROXY_ARP_IPV6_UNIT);
@@ -874,6 +880,8 @@ BOOLEAN GetIPv4ProxyARPTable(IN PRTMP_ADAPTER pAd,
 	DBGPRINT(RT_DEBUG_OFF, ("%s\n", __FUNCTION__));
 	
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(ProxyARPEntry, &pWNMCtrl->IPv4ProxyARPList, PROXY_ARP_IPV4_ENTRY, List)
 	{
 			NdisMoveMemory(ProxyARPUnit->TargetMACAddr, ProxyARPEntry->TargetMACAddr, MAC_ADDR_LEN);
@@ -898,6 +906,8 @@ BOOLEAN GetIPv6ProxyARPTable(IN PRTMP_ADAPTER pAd,
 	DBGPRINT(RT_DEBUG_OFF, ("%s\n", __FUNCTION__));
 	
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPIPv6ListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(ProxyARPEntry, &pWNMCtrl->IPv6ProxyARPList, PROXY_ARP_IPV6_ENTRY, List)
 	{
 			NdisMoveMemory(ProxyARPUnit->TargetMACAddr, ProxyARPEntry->TargetMACAddr, MAC_ADDR_LEN);
@@ -921,7 +931,7 @@ UINT32 AddIPv4ProxyARPEntry(IN PRTMP_ADAPTER pAd,
 	PROXY_ARP_IPV4_ENTRY *ProxyARPEntry;
 	INT32 Ret;
 
-	DBGPRINT(RT_DEBUG_OFF, ("%s\n", __FUNCTION__));
+	DBGPRINT(RT_DEBUG_OFF, ("%s ====>\n", __FUNCTION__));
 
 	if ((pTargetIPAddr[0] == 0) && (pTargetIPAddr[1] == 0)) {
 		DBGPRINT(RT_DEBUG_ERROR, ("Drop invalid IP Addr:%d.%d.%d.%d\n", pTargetIPAddr[0], pTargetIPAddr[1], pTargetIPAddr[2], pTargetIPAddr[3]));
@@ -929,6 +939,8 @@ UINT32 AddIPv4ProxyARPEntry(IN PRTMP_ADAPTER pAd,
 	}
 	
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(ProxyARPEntry, &pWNMCtrl->IPv4ProxyARPList, PROXY_ARP_IPV4_ENTRY, List)
 	{
 		if (MAC_ADDR_EQUAL(ProxyARPEntry->TargetMACAddr, pTargetMACAddr))
@@ -954,12 +966,14 @@ UINT32 AddIPv4ProxyARPEntry(IN PRTMP_ADAPTER pAd,
 	NdisMoveMemory(ProxyARPEntry->TargetIPAddr, pTargetIPAddr, 4);
 
 	for (i = 0; i < 4; i++)
-		printk("pTargetIPv4Addr[%i] = %x\n", i, pTargetIPAddr[i]);
+		DBGPRINT(RT_DEBUG_OFF,("pTargetIPv4Addr[%i] = %d\n", i, pTargetIPAddr[i]));
 	
 	/* Add ProxyARP Entry to list */
 	if (find_list == 0) 
 	{
 		RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPListLock, Ret);
+		if(Ret != 0)
+			DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 		DlListAddTail(&pWNMCtrl->IPv4ProxyARPList, &ProxyARPEntry->List);
 		RTMP_SEM_EVENT_UP(&pWNMCtrl->ProxyARPListLock);
 	}
@@ -975,9 +989,11 @@ VOID RemoveIPv4ProxyARPEntry(IN PRTMP_ADAPTER pAd,
 	PROXY_ARP_IPV4_ENTRY *ProxyARPEntry, *ProxyARPEntryTmp;
 	INT32 Ret;
 
-	DBGPRINT(RT_DEBUG_OFF, ("%s\n", __FUNCTION__));
+	DBGPRINT(RT_DEBUG_OFF, ("%s ====>\n", __FUNCTION__));
 	
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	
 	DlListForEachSafe(ProxyARPEntry, ProxyARPEntryTmp, &pWNMCtrl->IPv4ProxyARPList, PROXY_ARP_IPV4_ENTRY, List)
 	{
@@ -1007,9 +1023,11 @@ UINT32 AddIPv6ProxyARPEntry(IN PRTMP_ADAPTER pAd,
 	UINT8 i;
 	BOOLEAN IsDAD = FALSE;
 	PNET_DEV NetDev = pMbss->wdev.if_dev;
-	DBGPRINT(RT_DEBUG_OFF, ("%s\n", __FUNCTION__));
+	DBGPRINT(RT_DEBUG_OFF, ("%s ====>\n", __FUNCTION__));
 
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPIPv6ListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(ProxyARPEntry, &pWNMCtrl->IPv6ProxyARPList, PROXY_ARP_IPV6_ENTRY, List)
 	{
 		if (MAC_ADDR_EQUAL(ProxyARPEntry->TargetMACAddr, pTargetMACAddr) &&
@@ -1064,13 +1082,15 @@ UINT32 AddIPv6ProxyARPEntry(IN PRTMP_ADAPTER pAd,
 	NdisMoveMemory(ProxyARPEntry->TargetIPAddr, pTargetIPAddr, 16);
 
 	for (i = 0; i < 6; i++)
-		printk("pTargetMACAddr[%i] = %x\n", i, pTargetMACAddr[i]);
+		DBGPRINT(RT_DEBUG_OFF,("pTargetMACAddr[%i] = %x\n", i, pTargetMACAddr[i]));
 
 	for (i = 0; i < 16; i++)
-		printk("pTargetIPv6Addr[%i] = %x\n", i, pTargetIPAddr[i]);
+		DBGPRINT(RT_DEBUG_OFF,("pTargetIPv6Addr[%i] = %d\n", i, pTargetIPAddr[i]));
 	
 	/* Add ProxyARP Entry to list */
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPIPv6ListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListAddTail(&pWNMCtrl->IPv6ProxyARPList, &ProxyARPEntry->List);
 	RTMP_SEM_EVENT_UP(&pWNMCtrl->ProxyARPIPv6ListLock);
 
@@ -1088,6 +1108,8 @@ VOID RemoveIPv6ProxyARPEntry(IN PRTMP_ADAPTER pAd,
 	DBGPRINT(RT_DEBUG_OFF, ("%s\n", __FUNCTION__));
 	
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPIPv6ListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 
 	DlListForEachSafe(ProxyARPEntry, ProxyARPEntryTmp, &pWNMCtrl->IPv6ProxyARPList, PROXY_ARP_IPV6_ENTRY, List)
 	{
@@ -1122,6 +1144,8 @@ BOOLEAN IPv4ProxyARP(IN PRTMP_ADAPTER pAd,
 	DBGPRINT(RT_DEBUG_TRACE, ("%s\n", __FUNCTION__));
 
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(ProxyARPEntry, &pWNMCtrl->IPv4ProxyARPList, PROXY_ARP_IPV4_ENTRY, List)
 	{
 		if (IPV4_ADDR_EQUAL(ProxyARPEntry->TargetIPAddr, TargetIPAddr))
@@ -1164,6 +1188,8 @@ BOOLEAN IPv4ProxyARP(IN PRTMP_ADAPTER pAd,
 
 		if ((IsDAD == FALSE) && (FromDS == FALSE)) {
 			RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPListLock, Ret);
+			if(Ret != 0)
+				DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
             DlListForEach(ProxyARPEntry, &pWNMCtrl->IPv4ProxyARPList, PROXY_ARP_IPV4_ENTRY, List)
             {
                 if (IPV4_ADDR_EQUAL(ProxyARPEntry->TargetIPAddr, SourceIPAddr))
@@ -1196,6 +1222,8 @@ BOOLEAN IPv4ProxyARP(IN PRTMP_ADAPTER pAd,
 			}
 			else {
 				RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPListLock, Ret);
+				if(Ret != 0)
+					DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 				DlListForEach(ProxyARPEntry, &pWNMCtrl->IPv4ProxyARPList, PROXY_ARP_IPV4_ENTRY, List)
 			    {
         			if (IPV4_ADDR_EQUAL(ProxyARPEntry->TargetIPAddr, SourceIPAddr))
@@ -1235,6 +1263,8 @@ BOOLEAN IPv6ProxyARP(IN PRTMP_ADAPTER pAd,
 	//DBGPRINT(RT_DEBUG_OFF, ("%s\n", __FUNCTION__));
 
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(ProxyARPEntry, &pWNMCtrl->IPv6ProxyARPList, PROXY_ARP_IPV6_ENTRY, List)
 	{
 		if (IPV6_ADDR_EQUAL(ProxyARPEntry->TargetIPAddr, TargetIPAddr))
@@ -1361,6 +1391,8 @@ VOID WNMIPv6ProxyARPCheck(
 					NdisMoveMemory(TargetIPAddr, Prefix, 8);
 
 					RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPListLock, Ret);
+					if(Ret != 0)
+						DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 					DlListForEach(ProxyARPEntry, &pWNMCtrl->IPv6ProxyARPList, 
 										PROXY_ARP_IPV6_ENTRY, List)
 					{
@@ -1418,6 +1450,8 @@ static VOID ReceiveBTMQuery(IN PRTMP_ADAPTER pAd,
 	}
 	
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->BTMPeerListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(BTMPeerEntry, &pWNMCtrl->BTMPeerList, BTM_PEER_ENTRY, List)
 	{
 		if (MAC_ADDR_EQUAL(BTMPeerEntry->PeerMACAddr, WNMFrame->Hdr.Addr2))
@@ -1451,6 +1485,8 @@ static VOID ReceiveBTMQuery(IN PRTMP_ADAPTER pAd,
 				 GET_TIMER_FUNCTION(WaitPeerBTMRspTimeout), BTMPeerEntry, FALSE);
 
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->BTMPeerListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListAddTail(&pWNMCtrl->BTMPeerList, &BTMPeerEntry->List);
 	RTMP_SEM_EVENT_UP(&pWNMCtrl->BTMPeerListLock);
 
@@ -1533,6 +1569,8 @@ static VOID ReceiveBTMRsp(IN PRTMP_ADAPTER pAd,
 	}
 	
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->BTMPeerListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(BTMPeerEntry, &pWNMCtrl->BTMPeerList, BTM_PEER_ENTRY, List)
 	{
 		if (MAC_ADDR_EQUAL(BTMPeerEntry->PeerMACAddr, WNMFrame->Hdr.Addr2))
@@ -1614,6 +1652,8 @@ VOID BTMSetPeerCurrentState(
 #endif /* CONFIG_AP_SUPPORT */
 
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->BTMPeerListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(BTMPeerEntry, &pWNMCtrl->BTMPeerList,
 							BTM_PEER_ENTRY, List)
 	{
@@ -1674,6 +1714,8 @@ VOID WaitPeerBTMRspTimeout(
 
 	pWNMCtrl = &pAd->ApCfg.MBSSID[BTMPeerEntry->ControlIndex].WNMCtrl;
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->BTMPeerListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListDel(&BTMPeerEntry->List);
 	RTMP_SEM_EVENT_UP(&pWNMCtrl->BTMPeerListLock);
 	os_free_mem(NULL, BTMPeerEntry);
@@ -1694,6 +1736,8 @@ static VOID SendBTMReq(
 	INT32 Ret;
 
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->BTMPeerListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(BTMPeerEntry, &pWNMCtrl->BTMPeerList,
 						BTM_PEER_ENTRY, List)
 	{
@@ -1783,6 +1827,8 @@ static VOID SendBTMConfirm(
 
 	/* Delete BTM peer entry */
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->BTMPeerListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEachSafe(BTMPeerEntry, BTMPeerEntryTmp, &pWNMCtrl->BTMPeerList, BTM_PEER_ENTRY, List)
 	{
 		if (MAC_ADDR_EQUAL(BTMPeerEntry->PeerMACAddr, Event->PeerMACAddr))
@@ -1814,6 +1860,8 @@ enum BTM_STATE BTMPeerCurrentState(
 #endif /* CONFIG_AP_SUPPORT */
 
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->BTMPeerListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(BTMPeerEntry, &pWNMCtrl->BTMPeerList, BTM_PEER_ENTRY, List)
 	{
 		if (MAC_ADDR_EQUAL(BTMPeerEntry->PeerMACAddr, Event->PeerMACAddr))
@@ -1919,6 +1967,8 @@ VOID WNMCtrlExit(IN PRTMP_ADAPTER pAd)
 		pWNMCtrl = &pAd->ApCfg.MBSSID[APIndex].WNMCtrl;
 		
 		RTMP_SEM_EVENT_WAIT(&pWNMCtrl->BTMPeerListLock, Ret);
+		if(Ret != 0)
+			DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 
 		/* Remove all btm peer entry */
 		DlListForEachSafe(BTMPeerEntry, BTMPeerEntryTmp,
@@ -1933,6 +1983,8 @@ VOID WNMCtrlExit(IN PRTMP_ADAPTER pAd)
 		RTMP_SEM_EVENT_DESTORY(&pWNMCtrl->BTMPeerListLock);
 
 		RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPListLock, Ret);
+		if(Ret != 0)
+			DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 		/* Remove all proxy arp entry */
 		DlListForEachSafe(ProxyARPIPv4Entry, ProxyARPIPv4EntryTmp,
 							&pWNMCtrl->IPv4ProxyARPList, PROXY_ARP_IPV4_ENTRY, List)
@@ -1944,6 +1996,8 @@ VOID WNMCtrlExit(IN PRTMP_ADAPTER pAd)
 		RTMP_SEM_EVENT_UP(&pWNMCtrl->ProxyARPListLock);
 
 		RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPIPv6ListLock, Ret);
+		if(Ret != 0)
+			DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 		DlListForEachSafe(ProxyARPIPv6Entry, ProxyARPIPv6EntryTmp,
 							&pWNMCtrl->IPv6ProxyARPList, PROXY_ARP_IPV6_ENTRY, List)
 		{
@@ -1958,6 +2012,8 @@ VOID WNMCtrlExit(IN PRTMP_ADAPTER pAd)
 
 #ifdef CONFIG_HOTSPOT_R2
 		RTMP_SEM_EVENT_WAIT(&pWNMCtrl->WNMNotifyPeerListLock, Ret);
+		if(Ret != 0)
+			DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 		
 		/* Remove all wnm notify peer entry */
 		DlListForEachSafe(WNMNotifyPeerEntry, WNMNotifyPeerEntryTmp,
@@ -1992,6 +2048,8 @@ VOID Clear_All_PROXY_TABLE(IN PRTMP_ADAPTER pAd)
 	pWNMCtrl = &pAd->ApCfg.MBSSID[APIndex].WNMCtrl;
 
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	/* Remove all proxy arp entry */
 	DlListForEachSafe(ProxyARPIPv4Entry, ProxyARPIPv4EntryTmp,
 						&pWNMCtrl->IPv4ProxyARPList, PROXY_ARP_IPV4_ENTRY, List)
@@ -2003,6 +2061,8 @@ VOID Clear_All_PROXY_TABLE(IN PRTMP_ADAPTER pAd)
 	RTMP_SEM_EVENT_UP(&pWNMCtrl->ProxyARPListLock);
 
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->ProxyARPIPv6ListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEachSafe(ProxyARPIPv6Entry, ProxyARPIPv6EntryTmp,
 						&pWNMCtrl->IPv6ProxyARPList, PROXY_ARP_IPV6_ENTRY, List)
 	{
@@ -2050,6 +2110,9 @@ VOID WNMSetPeerCurrentState(
 #endif /* CONFIG_AP_SUPPORT */
 
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->WNMNotifyPeerListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
+
 	DlListForEach(WNMNotifyPeerEntry, &pWNMCtrl->WNMNotifyPeerList,
 							WNM_NOTIFY_PEER_ENTRY, List)
 	{
@@ -2076,6 +2139,9 @@ enum WNM_NOTIFY_STATE WNMNotifyPeerCurrentState(
 #endif /* CONFIG_AP_SUPPORT */
 
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->WNMNotifyPeerListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
+
 	DlListForEach(WNMNotifyPeerEntry, &pWNMCtrl->WNMNotifyPeerList, WNM_NOTIFY_PEER_ENTRY, List)
 	{
 		if (MAC_ADDR_EQUAL(WNMNotifyPeerEntry->PeerMACAddr, Event->PeerMACAddr))
@@ -2118,6 +2184,8 @@ VOID WaitPeerWNMNotifyRspTimeout(
 	pWNMCtrl = &pAd->ApCfg.MBSSID[WNMNotifyPeerEntry->ControlIndex].WNMCtrl;
 	
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->WNMNotifyPeerListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListDel(&WNMNotifyPeerEntry->List);
 	RTMP_SEM_EVENT_UP(&pWNMCtrl->WNMNotifyPeerListLock);
 	os_free_mem(NULL, WNMNotifyPeerEntry);
@@ -2156,6 +2224,8 @@ VOID ReceiveWNMNotifyRsp(IN PRTMP_ADAPTER pAd,
 	}
 	
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->WNMNotifyPeerListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(WNMNotifyPeerEntry, &pWNMCtrl->WNMNotifyPeerList, WNM_NOTIFY_PEER_ENTRY, List)
 	{
 		if (MAC_ADDR_EQUAL(WNMNotifyPeerEntry->PeerMACAddr, WNMFrame->Hdr.Addr2))
@@ -2239,6 +2309,8 @@ static VOID SendWNMNotifyReq(
 	INT32 Ret;
 	
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->WNMNotifyPeerListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEach(WNMNotifyPeerEntry, &pWNMCtrl->WNMNotifyPeerList,
 						WNM_NOTIFY_PEER_ENTRY, List)
 	{
@@ -2365,6 +2437,8 @@ VOID SendWNMNotifyConfirm(
 	printk("Receive WNM Notify Response Status:%d\n", Event->u.WNM_NOTIFY_RSP_DATA.WNMNotifyRsp[0]);
 	/* Delete BTM peer entry */
 	RTMP_SEM_EVENT_WAIT(&pWNMCtrl->WNMNotifyPeerListLock, Ret);
+	if(Ret != 0)
+		DBGPRINT(RT_DEBUG_OFF, ("%s:(%d) RTMP_SEM_EVENT_WAIT failed!\n",__FUNCTION__,Ret));
 	DlListForEachSafe(WNMNotifyPeerEntry, WNMNotifyPeerEntryTmp, &pWNMCtrl->WNMNotifyPeerList, WNM_NOTIFY_PEER_ENTRY, List)
 	{
 		if (MAC_ADDR_EQUAL(WNMNotifyPeerEntry->PeerMACAddr, Event->PeerMACAddr))

@@ -36,19 +36,17 @@ extern UCHAR	RALINK_OUI[];
 extern UCHAR BROADCOM_OUI[];
 extern UCHAR WPS_OUI[];
 
-
+#ifdef DBG
 static void ap_assoc_info_debugshow(
 	IN RTMP_ADAPTER *pAd,
 	IN BOOLEAN isReassoc,
 	IN MAC_TABLE_ENTRY *pEntry,
 	IN IE_LISTS *ie_list)
 {
-#ifdef DBG
 	PUCHAR	sAssoc = isReassoc ? (PUCHAR)"ReASSOC" : (PUCHAR)"ASSOC";
-#endif /* DBG */
 	struct wifi_dev *wdev;
-
 	wdev = &pAd->ApCfg.MBSSID[pEntry->func_tb_idx].wdev;
+
 	DBGPRINT(RT_DEBUG_TRACE, ("%s - \n\tAssign AID=%d to STA %02x:%02x:%02x:%02x:%02x:%02x\n",
 		sAssoc, pEntry->Aid, PRINT_MAC(pEntry->Addr)));
 
@@ -111,6 +109,7 @@ static void ap_assoc_info_debugshow(
 		pEntry->StaIdleTimeout));
 
 }
+#endif /* DBG */
 
 
 static USHORT update_associated_mac_entry(
@@ -590,9 +589,6 @@ static USHORT APBuildAssociation(
 #ifdef HOSTAPD_SUPPORT
 				&& (wdev->Hostapd == Hostapd_EXT)
 #endif /* HOSTAPD_SUPPORT */
-#ifdef RT_CFG80211_SUPPORT
-				&& (wdev->Hostapd == Hostapd_CFG)
-#endif /*RT_CFG80211_SUPPORT*/
 		)
 		{
 #ifdef WSC_AP_SUPPORT
@@ -607,9 +603,6 @@ static USHORT APBuildAssociation(
 #ifdef HOSTAPD_SUPPORT
 				|| wdev->Hostapd == Hostapd_EXT
 #endif /*HOSTAPD_SUPPORT*/
-#ifdef RT_CFG80211_SUPPORT
-				|| wdev->Hostapd == Hostapd_CFG
-#endif /*RT_CFG80211_SUPPORT*/
 			)
 			{
 				pEntry->Sst = SST_ASSOC;
@@ -652,13 +645,7 @@ static USHORT APBuildAssociation(
 				StatusCode = MLME_ASSOC_DENY_OUT_SCOPE;
 			}
 #else  /* WSC_AP_SUPPORT */
-#ifdef RT_CFG80211_SUPPORT
-			//CFG_TODO: due to WPS_AP flag
-			pEntry->Sst = SST_ASSOC;
-			StatusCode = MLME_SUCCESS;
-#else			
 			StatusCode = MLME_ASSOC_DENY_OUT_SCOPE;
-#endif /* RT_CFG80211_SUPPORT */			
 #endif /* WSC_AP_SUPPORT */
 
 #ifdef HOSTAPD_SUPPORT
@@ -1540,24 +1527,6 @@ SendAssocResponse:
 
 	MgtMacHeaderInit(pAd, &AssocRspHdr, SubType, 0, ie_list->Addr2, 
 						wdev->if_addr, wdev->bssid);
-#ifdef RT_CFG80211_P2P_SUPPORT
-        if (RTMP_CFG80211_VIF_P2P_GO_ON(pAd))
-        {
-
-	MakeOutgoingFrame(pOutBuffer, &FrameLen,
-	                  sizeof(HEADER_802_11), &AssocRspHdr,
-	                  2,                        &CapabilityInfoForAssocResp,
-	                  2,                        &StatusCode,
-	                  2,                        &Aid,
-	                  1,                        &SupRateIe,
-                          1,                        &pAd->cfg80211_ctrl.P2pSupRateLen,
-                          pAd->cfg80211_ctrl.P2pSupRateLen, pAd->cfg80211_ctrl.P2pSupRate,
-                          END_OF_ARGS);
-
-
-        }
-        else
-#endif /* RT_CFG80211_P2P_SUPPORT */
         {
 	MakeOutgoingFrame(pOutBuffer, &FrameLen,
 	                  sizeof(HEADER_802_11), &AssocRspHdr,
@@ -2012,28 +1981,6 @@ SendAssocResponse:
 	FrameLen += TmpLen;
 
 }
-#ifdef RT_CFG80211_SUPPORT
-    /* Append extra IEs provided by wpa_supplicant */
-    if (pAd->ApCfg.MBSSID[pEntry->func_tb_idx].AssocRespExtraIeLen)
-    {
-        ULONG TmpLen = 0;
-        INT32 IesLen = pAd->ApCfg.MBSSID[pEntry->func_tb_idx].AssocRespExtraIeLen;
-        UCHAR *Ies = pAd->ApCfg.MBSSID[pEntry->func_tb_idx].AssocRespExtraIe;
-
-        //if (RTMPIsValidIEs(Ies, IesLen))
-        {
-            DBGPRINT(RT_DEBUG_TRACE, ("AssocRespExtraIE Added (Len=%d)\n", IesLen));
-            MakeOutgoingFrame(pOutBuffer+FrameLen, 
-                              &TmpLen, 
-                              IesLen, 
-                              Ies, 
-                              END_OF_ARGS);
-            FrameLen += TmpLen;
-        }
-        //else
-        //    DBGPRINT(RT_DEBUG_ERROR, ("AssocRespExtraIE len incorrect!\n"));
-    }
-#endif /* RT_CFG80211_SUPPORT */
   
 #ifdef WSC_AP_SUPPORT
 	if (pEntry->bWscCapable)
@@ -2108,7 +2055,9 @@ SendAssocResponse:
 		
 #endif /* IAPP_SUPPORT */
 
+#ifdef DBG
 		ap_assoc_info_debugshow(pAd, isReassoc, pEntry, ie_list);
+#endif /* DBG */
 
 		/* send wireless event - for association */
 		RTMPSendWirelessEvent(pAd, IW_ASSOC_EVENT_FLAG, pEntry->Addr, 0, 0);
@@ -2151,52 +2100,6 @@ SendAssocResponse:
 		}
 		else
 #endif /* DOT11R_FT_SUPPORT */	
-#ifdef RT_CFG80211_SUPPORT
-		if (TRUE) /*CFG_TODO*/
-        {
-			hex_dump("ASSOC_REQ", Elem->Msg, Elem->MsgLen);
-
-#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
-			PNET_DEV pNetDev = NULL;
-			if ((pAd->cfg80211_ctrl.Cfg80211VifDevSet.vifDevList.size > 0) &&
-			    ((pNetDev = RTMP_CFG80211_FindVifEntry_ByType(pAd, RT_CMD_80211_IFTYPE_P2P_GO)) != NULL))
-			{
-				DBGPRINT(RT_DEBUG_TRACE, ("CONCURRENT_DEVICE CFG : GO NOTIFY THE CLIENT ASSOCIATED\n"));
-				CFG80211OS_NewSta(pNetDev, ie_list->Addr2, (PUCHAR)Elem->Msg, Elem->MsgLen);
-			}
-			else
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
-			{
-				DBGPRINT(RT_DEBUG_TRACE, ("SINGLE_DEVICE CFG : GO NOTIFY THE CLIENT ASSOCIATED\n"));
-				CFG80211OS_NewSta(pAd->net_dev, ie_list->Addr2, (PUCHAR)Elem->Msg, Elem->MsgLen);
-				if (pEntry->WepStatus == Ndis802_11WEPEnabled)
-				{
-					/* Set WEP key to ASIC */
-					UCHAR KeyIdx = 0;
-					UCHAR CipherAlg = 0;
-
-					KeyIdx = wdev->DefaultKeyId;					
-					CipherAlg = pAd->SharedKey[pEntry->func_tb_idx][KeyIdx].CipherAlg;
-
-					/*
-						If WEP is used, set pair-wise cipherAlg into WCID
-						attribute table for this entry.
-					*/
-					RTMP_SET_WCID_SEC_INFO(pAd, 
-											pEntry->func_tb_idx, 
-											KeyIdx, 
-											CipherAlg, 
-											pEntry->wcid, 
-											SHAREDKEYTABLE);
-#ifdef MT_MAC										
-					if (pAd->chipCap.hif_type == HIF_MT)
-						CmdProcAddRemoveKey(pAd, 0, pEntry->func_tb_idx, KeyIdx, pEntry->wcid, PAIRWISEKEYTABLE, &pAd->SharedKey[pEntry->func_tb_idx][KeyIdx], pEntry->Addr);
-#endif										
-				}						
-			}
-        }
-		else
-#endif	
 		/* enqueue a EAPOL_START message to trigger EAP state machine doing the authentication */
 	    if ((pEntry->AuthMode == Ndis802_11AuthModeWPAPSK) || 
 			(pEntry->AuthMode == Ndis802_11AuthModeWPA2PSK))
@@ -2346,10 +2249,6 @@ SendAssocResponse:
 	}
 
 LabelOK:
-#ifdef RT_CFG80211_P2P_SUPPORT 
-	if (StatusCode != MLME_SUCCESS)
-		CFG80211_ApStaDelSendEvent(pAd, pEntry->Addr);
-#endif /* RT_CFG80211_P2P_SUPPORT */
 	
 	if (ie_list != NULL)
 		os_free_mem(NULL, ie_list);
@@ -2747,10 +2646,6 @@ VOID APAssocStateMachineInit(
     IN STATE_MACHINE *S,
     OUT STATE_MACHINE_FUNC Trans[])
 {
-#ifdef CUSTOMER_DCC_FEATURE
-	pAd->ApDisableSTAConnectFlag = FALSE;
-	pAd->AllowedStaList.StaCount = 0;
-#endif
     StateMachineInit(S, (STATE_MACHINE_FUNC*)Trans, AP_MAX_ASSOC_STATE, AP_MAX_ASSOC_MSG, (STATE_MACHINE_FUNC)Drop, AP_ASSOC_IDLE, AP_ASSOC_MACHINE_BASE);
 
     StateMachineSetAction(S, AP_ASSOC_IDLE, APMT2_MLME_DISASSOC_REQ, (STATE_MACHINE_FUNC)APMlmeDisassocReqAction);

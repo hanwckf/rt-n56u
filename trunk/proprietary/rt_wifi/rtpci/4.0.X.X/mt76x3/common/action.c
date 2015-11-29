@@ -752,16 +752,19 @@ VOID PeerPublicAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 
 static VOID ReservedAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 {
+#ifdef DBG
 	UCHAR Category;
-
+#endif /* DBG */
 	if (Elem->MsgLen <= LENGTH_802_11)
 	{
 		return;
 	}
 
+#ifdef DBG
 	Category = Elem->Msg[LENGTH_802_11];
 	DBGPRINT(RT_DEBUG_TRACE,("Rcv reserved category(%d) Action Frame\n", Category));
 	hex_dump("Reserved Action Frame", &Elem->Msg[0], Elem->MsgLen);
+#endif /* DBG */
 }
 
 
@@ -888,13 +891,6 @@ VOID PeerHTAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 					IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 						APMlmeDynamicTxRateSwitching(pAd);
 
-#ifdef RT_CFG80211_SUPPORT
-#ifdef RT_CFG80211_P2P_SUPPORT
-				if((pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP) && 
-				    (!OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_DOZE)))
-                                        MlmeDynamicTxRateSwitching(pAd);
-#endif /*RT_CFG80211_P2P_SUPPORT*/				
-#endif /* RT_CFG80211_SUPPORT */
 					
 #endif /* CONFIG_AP_SUPPORT */
 

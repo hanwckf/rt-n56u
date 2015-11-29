@@ -585,9 +585,6 @@ VOID AsicResetBBPAgent(RTMP_ADAPTER *pAd)
 VOID AsicSetBssid(RTMP_ADAPTER *pAd, UCHAR *pBssid, UCHAR omac_idx)
 {
 	UINT32 Addr4;
-#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
-	UINT32 regValue;
-#endif /* P2P_SUPPORT */
 
 	DBGPRINT(RT_DEBUG_TRACE, ("===> AsicSetBssid %x:%x:%x:%x:%x:%x\n",
 				PRINT_MAC(pBssid)));
@@ -614,58 +611,6 @@ VOID AsicSetBssid(RTMP_ADAPTER *pAd, UCHAR *pBssid, UCHAR omac_idx)
 	RTMP_IO_WRITE32(pAd, HT_MAC_BSSID_DW1, Addr4);
 #endif /* HDR_TRANS_SUPPORT */
 
-#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_CONCURRENT_DEVICE)
-	{
-		PUCHAR pP2PBssid = &pAd->CurrentAddress[0];
-
-		Addr4 = (UINT32)(pP2PBssid[0]) | 
-				(UINT32)(pP2PBssid[1] << 8)  | 
-				(UINT32)(pP2PBssid[2] << 16) |
-				(UINT32)(pP2PBssid[3] << 24);
-		RTMP_IO_WRITE32(pAd, MAC_BSSID_DW0, Addr4);
-
-#ifdef HDR_TRANS_SUPPORT
-		RTMP_IO_WRITE32(pAd, HT_MAC_BSSID_DW0, Addr4);
-#endif /* HDR_TRANS_SUPPORT */
-
-		Addr4 = 0;
-
-		/* always one BSSID in STA mode */
-		Addr4 = (UINT32)(pP2PBssid[4]) | (ULONG)(pP2PBssid[5] << 8);
-
-		RTMP_IO_WRITE32(pAd, MAC_BSSID_DW1, Addr4);
-
-		RTMP_IO_READ32(pAd, MAC_BSSID_DW1, &regValue);
-		regValue &= 0x0000FFFF;
-		regValue |= (1 << 16);		
-
-		if (pAd->chipCap.MBSSIDMode == MBSSID_MODE0)
-		{
-			if ((pAd->CurrentAddress[5] % 2 != 0)
-			)
-			DBGPRINT(RT_DEBUG_ERROR, ("The 2-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 2\n"));
-		
-		}
-		else
-		{
-			/*set as 0/1 bit-21 of MAC_BSSID_DW1(offset: 0x1014) 
-			to disable/enable the new MAC address assignment.  */
-		    regValue |= (1 << 21);
-		}
-		
-		RTMP_IO_WRITE32(pAd, MAC_BSSID_DW1, regValue);
-#ifdef HDR_TRANS_SUPPORT
-		/*
-			point WCID MAC table to 0x1800
-			This is for debug.
-			But HDR_TRANS doesn't work if you remove it.
-			Check after IC formal release.
-		*/
-		regValue |= 0x18000000;
-		RTMP_IO_WRITE32(pAd, HT_MAC_BSSID_DW1, regValue);
-#endif /* HDR_TRANS_SUPPORT */
-	}
-#endif /* P2P_SUPPORT || RT_CFG80211_P2P_CONCURRENT_DEVICE */
 }
 
 

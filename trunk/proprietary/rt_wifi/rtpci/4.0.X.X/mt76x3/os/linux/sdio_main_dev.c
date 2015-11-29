@@ -126,21 +126,6 @@ static int DEVINIT rt_sdio_probe (struct sdio_func *func,const struct sdio_devic
 
 /*All done, it's time to register the net device to linux kernel. */
 	/* Register this device */
-#ifdef RT_CFG80211_SUPPORT
-{
-/*	pAd->pCfgDev = &(pdev->dev); */
-/*	pAd->CFG80211_Register = CFG80211_Register; */
-/*	RTMP_DRIVER_CFG80211_INIT(pAd, pdev); */
-
-	/*
-		In 2.6.32, cfg80211 register must be before register_netdevice();
-		We can not put the register in rt28xx_open();
-		Or you will suffer NULL pointer in list_add of
-		cfg80211_netdev_notifier_call().
-	*/
-	CFG80211_Register(pAd, &(func->dev), net_dev);
-}
-#endif /* RT_CFG80211_SUPPORT */
 
 	RTMP_DRIVER_OP_MODE_GET(pAd, &OpMode);
 	rv = RtmpOSNetDevAttach(OpMode, net_dev, &netDevHook);
@@ -200,9 +185,6 @@ static void rt_sdio_remove (struct sdio_func *func)
 		/* Unregister/Free all allocated net_device. */
 		RtmpPhyNetDevExit(pAd, net_dev);
 
-#ifdef RT_CFG80211_SUPPORT
-		RTMP_DRIVER_80211_UNREGISTER(pAd, net_dev);
-#endif /* RT_CFG80211_SUPPORT */
 
 		/* Free RTMP_ADAPTER related structures. */
 		RtmpRaDevCtrlExit(pAd);

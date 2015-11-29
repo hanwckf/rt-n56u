@@ -129,6 +129,8 @@ PUCHAR MATDBEntryAlloc(IN MAT_STRUCT *pMatStruct, IN UINT32 size)
 
 VOID dumpPkt(PUCHAR pHeader, int len)
 {
+
+#ifdef DBG
 	int i;
 	RTMP_STRING *tmp;
 
@@ -142,6 +144,7 @@ VOID dumpPkt(PUCHAR pHeader, int len)
 		DBGPRINT(RT_DEBUG_OFF, ("%02x ", tmp[i]& 0xff));
 	}
 	DBGPRINT(RT_DEBUG_OFF, ("\n--EndDump\n"));
+#endif /* DBG */
 
 	return;
 }

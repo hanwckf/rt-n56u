@@ -78,6 +78,85 @@ static INT mt_bbp_set_bw(struct _RTMP_ADAPTER *pAd, UINT8 bw)
 }
 
 
+#ifdef SMART_CARRIER_SENSE_SUPPORT
+INT MTSmartCarrierSense(RTMP_ADAPTER *pAd)
+{
+	UINT16 RxRatio=0;
+	UINT32 RxTxBytes = pAd->RalinkCounters.OneSecReceivedByteCount + pAd->RalinkCounters.OneSecTransmittedByteCount;
+
+	if (RxTxBytes != 0)
+		RxRatio = ((pAd->RalinkCounters.OneSecReceivedByteCount * 100) / RxTxBytes);
+
+	DBGPRINT(RT_DEBUG_TRACE, ("%s():Enter ---> BssNr=%d, miniRSSI=%d, TotalByteCount=%d RxByteCount=%d TxByteCount=%d EDCCA=%d RxRatio=%d\n", __FUNCTION__,
+		pAd->SCSCtrl.SCSBssTab.BssNr, pAd->SCSCtrl.SCSMinRssi, RxTxBytes, 
+		pAd->RalinkCounters.OneSecReceivedByteCount, pAd->RalinkCounters.OneSecTransmittedByteCount,
+		pAd->SCSCtrl.EDCCA_Status, RxRatio));
+
+	if (((pAd->SCSCtrl.SCSBssTab.BssNr > 5) || (pAd->SCSCtrl.SCSStatus != SCS_STATUS_DEFAULT)) &&
+		(RxTxBytes > pAd->SCSCtrl.SCSThreshold)
+		&& (pAd->MacTab.Size > 0))
+	{
+		/* Check Mini RSSI for dynamic adjust gain */
+		if ((pAd->SCSCtrl.SCSMinRssi < 0) && (pAd ->SCSCtrl.SCSMinRssi > -57) && (pAd->SCSCtrl.EDCCA_Status == 0) && 
+			(RxRatio < 90))
+		{
+			if (pAd->SCSCtrl.SCSStatus != SCS_STATUS_ULTRA_LOW)
+			{	
+				/* CR */
+				RTMP_IO_WRITE32(pAd, CR_AGC_0, 0x7FF6666F);
+				RTMP_IO_WRITE32(pAd, CR_AGC_0_RX1, 0x7FF6666F);
+				RTMP_IO_WRITE32(pAd, CR_AGC_3, 0x818181E3);
+				RTMP_IO_WRITE32(pAd, CR_AGC_3_RX1, 0x818181E3);
+				pAd->SCSCtrl.SCSStatus = SCS_STATUS_ULTRA_LOW;
+				DBGPRINT(RT_DEBUG_ERROR, ("%s(): CSC=UL\n", __FUNCTION__));
+			}			
+		}
+		else if ((pAd->SCSCtrl.SCSMinRssi > -74) && (RxRatio < 90)) 
+		{
+			if (pAd->SCSCtrl.SCSStatus != SCS_STATUS_LOW)
+			{
+				/* CR */
+				RTMP_IO_WRITE32(pAd, CR_AGC_0, 0x6AF7776F);
+				RTMP_IO_WRITE32(pAd, CR_AGC_0_RX1, 0x6AF7776F);
+				RTMP_IO_WRITE32(pAd, CR_AGC_3, 0x8181D5E3);
+				RTMP_IO_WRITE32(pAd, CR_AGC_3_RX1, 0x8181D5E3);
+				pAd->SCSCtrl.SCSStatus = SCS_STATUS_LOW;
+				DBGPRINT(RT_DEBUG_ERROR, ("%s(): CSC=L\n", __FUNCTION__));
+			}
+		}	
+		else
+		{
+			if (pAd->SCSCtrl.SCSStatus != SCS_STATUS_DEFAULT)
+			{
+				/* CR */
+				RTMP_IO_WRITE32(pAd, CR_AGC_0, pAd->SCSCtrl.CR_AGC_0_default);
+				RTMP_IO_WRITE32(pAd, CR_AGC_0_RX1, pAd->SCSCtrl.CR_AGC_0_default);
+				RTMP_IO_WRITE32(pAd, CR_AGC_3, pAd->SCSCtrl.CR_AGC_3_default);
+				RTMP_IO_WRITE32(pAd, CR_AGC_3_RX1, pAd->SCSCtrl.CR_AGC_3_default);
+				pAd->SCSCtrl.SCSStatus = SCS_STATUS_DEFAULT;
+				DBGPRINT(RT_DEBUG_ERROR, ("%s(): CSC=H (Default)\n", __FUNCTION__));
+			}
+		}
+	}
+	else
+	{
+		if (pAd->SCSCtrl.SCSStatus != SCS_STATUS_DEFAULT)
+		{
+			RTMP_IO_WRITE32(pAd, CR_AGC_0, pAd->SCSCtrl.CR_AGC_0_default);
+			RTMP_IO_WRITE32(pAd, CR_AGC_0_RX1, pAd->SCSCtrl.CR_AGC_0_default);
+			RTMP_IO_WRITE32(pAd, CR_AGC_3, pAd->SCSCtrl.CR_AGC_3_default);
+			RTMP_IO_WRITE32(pAd, CR_AGC_3_RX1, pAd->SCSCtrl.CR_AGC_3_default);
+			pAd->SCSCtrl.SCSStatus = SCS_STATUS_DEFAULT;
+			DBGPRINT(RT_DEBUG_ERROR, ("%s(): CSC=H (Default)\n", __FUNCTION__));
+		}
+	}
+	
+	
+	return TRUE;
+}
+#endif /* SMART_CARRIER_SENSE_SUPPORT */
+
+
 static struct phy_ops mt_phy_ops = {
 	.bbp_init = MTBbpInit,
 	.bbp_set_bw = mt_bbp_set_bw,
@@ -85,6 +164,9 @@ static struct phy_ops mt_phy_ops = {
 	.ShowAllBBP = MTShowAllBBP,
 	.ShowPartialRF = MTShowPartialRF,
 	.ShowAllRF = MTShowAllRF,
+#ifdef SMART_CARRIER_SENSE_SUPPORT
+	.Smart_Carrier_Sense = MTSmartCarrierSense,
+#endif /* SMART_CARRIER_SENSE_SUPPORT */
 };
 
 

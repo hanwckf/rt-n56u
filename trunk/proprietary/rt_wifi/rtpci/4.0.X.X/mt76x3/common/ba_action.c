@@ -1180,14 +1180,6 @@ VOID PeerAddBAReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 
 	NdisZeroMemory(&ADDframe, sizeof(FRAME_ADDBA_RSP));
 	/* 2-1. Prepare ADDBA Response frame.*/
-#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
-	if (pMacEntry)
-	{
-		{
-			ActHeaderInit(pAd, &ADDframe.Hdr, pAddr, pMacEntry->wdev->if_addr,  pMacEntry->wdev->bssid /*pMacEntry->bssid*/);
-		}
-	}
-#else
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	{
@@ -1218,7 +1210,6 @@ VOID PeerAddBAReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		}
 	}
 #endif /* CONFIG_AP_SUPPORT */
-#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT */
 	ADDframe.Category = CATEGORY_BA;
 	ADDframe.Action = ADDBA_RESP;
 	ADDframe.Token = pAddreqFrame->Token;
@@ -1704,6 +1695,44 @@ static VOID ba_enqueue_reordering_packet(
 }
 
 
+#ifdef MAC_REPEATER_SUPPORT
+VOID Rtmp_Chk_Reset_Ba_Sequence(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
+{
+	HEADER_802_11 *pHeader = pRxBlk->pHeader;
+	FRAME_CONTROL *pFmeCtrl = &pHeader->FC;
+	UCHAR wcid = pRxBlk->wcid;
+	MAC_TABLE_ENTRY *pEntry = NULL;
+
+	UINT32  value;
+
+	if (!pAd->ApCfg.bMACRepeaterEn)
+		return;
+
+	pEntry = &pAd->MacTab.Content[wcid];
+
+	if (!pEntry)
+		return;
+
+	if ((pFmeCtrl->FrDs == 1) && (pFmeCtrl->ToDs == 0))
+	{
+		if (IS_ENTRY_APCLI(pEntry) && (pEntry->bReptCli == TRUE))
+		{
+			value = (pEntry->Addr[0] | (pEntry->Addr[1] << 8) |
+				(pEntry->Addr[2] << 16) | (pEntry->Addr[3] << 24));
+			RTMP_IO_WRITE32(pAd, BSCR0, value);
+			
+			RTMP_IO_READ32(pAd, BSCR1, &value);
+			value &= ~(BA_MAC_ADDR_47_32_MASK | RST_BA_TID_MASK | RST_BA_SEL_MASK);
+			value |= BA_MAC_ADDR_47_32((pEntry->Addr[4] | (pEntry->Addr[5] << 8)));
+			value |= (RST_BA_SEL(RST_BA_MAC_TID_MATCH) | RST_BA_TID(pRxBlk->TID) | START_RST_BA_SB);
+			RTMP_IO_WRITE32(pAd, BSCR1, value);
+			pAd->RalinkCounters.BaSnResetCnt++;
+		}
+	}
+
+}
+#endif /* MAC_REPEATER_SUPPORT */
+
 /*
 	==========================================================================
 	Description:
@@ -1818,6 +1847,9 @@ VOID Indicate_AMPDU_Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR wdev_idx)
 	{
 		
 		pBAEntry->nDropPacket++;
+#ifdef MAC_REPEATER_SUPPORT
+		Rtmp_Chk_Reset_Ba_Sequence(pAd, pRxBlk);
+#endif /* MAC_REPEATER_SUPPORT */
 		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
 	}
 	/* III. Drop Old Received Packet*/
@@ -1825,6 +1857,9 @@ VOID Indicate_AMPDU_Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR wdev_idx)
 	{
 		
 		pBAEntry->nDropPacket++;
+#ifdef MAC_REPEATER_SUPPORT
+		Rtmp_Chk_Reset_Ba_Sequence(pAd, pRxBlk);
+#endif /* MAC_REPEATER_SUPPORT */
 		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
 	}
 	/* IV. Receive Sequence within Window Size*/
@@ -1986,5 +2021,123 @@ static VOID Peer_DelBA_Tx_Adapt_Disable(
 #endif /* MCS_LUT_SUPPORT */
 }
 #endif /* PEER_DELBA_TX_ADAPT */
+
+
+#ifdef MAC_REPEATER_SUPPORT
+VOID RxTrackingInit(struct wifi_dev *wdev)
+{
+	UCHAR j;
+	RX_TRACKING_T *pTracking = NULL;
+	RX_TA_TID_SEQ_MAPPING *pTaTidSeqMapEntry = NULL;
+
+	pTracking = &wdev->rx_tracking;
+	pTaTidSeqMapEntry = &pTracking->LastRxWlanIdx;
+
+	pTracking->TriggerNum = 0;
+
+	pTaTidSeqMapEntry->RxDWlanIdx = 0xff;
+	pTaTidSeqMapEntry->MuarIdx = 0xff;
+	for (j = 0; j < 8; j++)
+	{
+		pTaTidSeqMapEntry->TID_SEQ[j] = 0xffff;
+	}
+	pTaTidSeqMapEntry->LatestTID = 0xff;
+
+	return;
+}
+
+VOID TaTidRecAndCmp(struct _RTMP_ADAPTER *pAd, struct rxd_base_struc *rx_base, UINT16 SN)
+{
+	struct wifi_dev *wdev = NULL;
+	RX_TRACKING_T *pTracking = NULL;
+	RX_TA_TID_SEQ_MAPPING *pTaTidSeqMapEntry = NULL;
+	UCHAR Widx = rx_base->rxd_2.wlan_idx;
+	UCHAR Tid = rx_base->rxd_2.tid;
+	UCHAR MuarIdx = rx_base->rxd_1.bssid;
+	UINT32 value = 0;
+	MAC_TABLE_ENTRY *pEntry = NULL;
+	struct _STA_TR_ENTRY *tr_entry = NULL;
+
+
+	if ( pAd->ApCfg.bBaSnResetDis)
+		return;
+	if (!pAd->ApCfg.bMACRepeaterEn)
+		return;
+
+	if (Widx > MAX_LEN_OF_MAC_TABLE)
+		return;
+
+	tr_entry = &pAd->MacTab.tr_entry[Widx];
+
+	if (tr_entry) {
+		wdev = tr_entry->wdev;
+	}
+
+	if (wdev == NULL)
+		return;
+
+	if ((wdev->wdev_type != WDEV_TYPE_STA))
+	{
+		return;
+	}
+
+	pTracking = &wdev->rx_tracking;
+	pTaTidSeqMapEntry = &pTracking->LastRxWlanIdx;
+
+	if (pTaTidSeqMapEntry->RxDWlanIdx == 0xff)
+	{/*first Rx pkt, just record it.*/
+		 pTaTidSeqMapEntry->RxDWlanIdx = Widx;
+		pTaTidSeqMapEntry->MuarIdx = MuarIdx;
+		pTaTidSeqMapEntry->TID_SEQ[Tid] = SN;
+		pTaTidSeqMapEntry->LatestTID = Tid;
+	}
+	else
+	{
+		/* compare*/
+		if ((pTaTidSeqMapEntry->MuarIdx == MuarIdx) &&
+			(pTaTidSeqMapEntry->RxDWlanIdx != Widx) &&
+			pTaTidSeqMapEntry->LatestTID == Tid)
+		{
+			/*condition match, trigger scoreboard update*/
+
+			DBGPRINT(RT_DEBUG_INFO,
+					("last Widx = %d, muar_idx = %x, last TID = %d\n",
+					pTaTidSeqMapEntry->RxDWlanIdx,
+					pTaTidSeqMapEntry->MuarIdx,
+					pTaTidSeqMapEntry->LatestTID));
+
+			DBGPRINT(RT_DEBUG_INFO,
+					("new Widx = %d, muar_idx = %x, last TID = %d\n",
+					Widx,
+					MuarIdx,
+					Tid));
+
+			pEntry=&pAd->MacTab.Content[Widx];
+
+			if (!pEntry)
+				return;
+			else {
+				value = (pEntry->Addr[0] | (pEntry->Addr[1] << 8) |
+					(pEntry->Addr[2] << 16) | (pEntry->Addr[3] << 24));
+				RTMP_IO_WRITE32(pAd, BSCR0, value);
+					
+				RTMP_IO_READ32(pAd, BSCR1, &value);
+				value &= ~(BA_MAC_ADDR_47_32_MASK | RST_BA_TID_MASK | RST_BA_SEL_MASK);
+				value |= BA_MAC_ADDR_47_32((pEntry->Addr[4] | (pEntry->Addr[5] << 8)));
+				value |= (RST_BA_SEL(RST_BA_MAC_TID_MATCH) | RST_BA_TID(Tid) | START_RST_BA_SB);
+				RTMP_IO_WRITE32(pAd, BSCR1, value);
+				pAd->RalinkCounters.BaSnResetCnt++;
+				pTracking->TriggerNum++;
+			}
+		}
+
+		/*update lastest rx information.*/
+		pTaTidSeqMapEntry->RxDWlanIdx = Widx;
+		pTaTidSeqMapEntry->MuarIdx = MuarIdx;
+		pTaTidSeqMapEntry->TID_SEQ[Tid] = SN;
+		pTaTidSeqMapEntry->LatestTID = Tid;
+	}
+}
+#endif /* MAC_REPEATER_SUPPORT */
 #endif /* DOT11_N_SUPPORT */
 

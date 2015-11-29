@@ -1808,7 +1808,9 @@ VOID PeerPairMsg4Action(
     //PHEADER_802_11      pHeader;
     UINT            	MsgLen;
     BOOLEAN             Cancelled;
+#ifdef DBG
 	UCHAR				group_cipher = Ndis802_11WEPDisabled;
+#endif /* DBG */
 	STA_TR_ENTRY *tr_entry;
 
     DBGPRINT(RT_DEBUG_TRACE, ("===> PeerPairMsg4Action\n"));
@@ -1827,14 +1829,20 @@ VOID PeerPairMsg4Action(
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{
+#ifdef DBG
 			UCHAR apidx = 0;
-
+#endif /* DBG */
 			if (pEntry->func_tb_idx >= pAd->ApCfg.BssidNum)
 				break;
 		    else
+		    {
+#ifdef DBG
 				apidx = pEntry->func_tb_idx;
+				group_cipher = pAd->ApCfg.MBSSID[apidx].wdev.GroupKeyWepStatus;
+#endif /* DBG */
+		    }
 
-			group_cipher = pAd->ApCfg.MBSSID[apidx].wdev.GroupKeyWepStatus;
+
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -2319,7 +2327,12 @@ VOID EnqueueStartForPSKExec(
 			case EAPOL_START_PSK:
 				DBGPRINT(RT_DEBUG_TRACE, ("Enqueue EAPoL-Start-PSK for sta(%02x:%02x:%02x:%02x:%02x:%02x) \n", PRINT_MAC(pEntry->Addr)));
 
+#ifdef EAPOL_QUEUE_SUPPORT
+				EAPMlmeEnqueue(pAd, WPA_STATE_MACHINE, MT2_EAPOLStart, 6, &pEntry->Addr, 0);
+#else /* EAPOL_QUEUE_SUPPORT */
 				MlmeEnqueue(pAd, WPA_STATE_MACHINE, MT2_EAPOLStart, 6, &pEntry->Addr, 0);
+#endif /* !EAPOL_QUEUE_SUPPORT */
+				
 				RTMP_MLME_HANDLER(pAd);
 				break;
 #ifdef CONFIG_AP_SUPPORT
@@ -2375,9 +2388,6 @@ VOID MlmeDeAuthAction(
 				("Send DEAUTH frame with ReasonCode(%d) to %02x:%02x:%02x:%02x:%02x:%02x \n",
 				Reason, PRINT_MAC(pEntry->Addr)));
 
-#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
-	MgtMacHeaderInit(pAd, &DeAuthHdr, SUBTYPE_DEAUTH, 0, pEntry->Addr, pEntry->wdev->if_addr, pEntry->bssid);
-#else
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	{
@@ -2386,7 +2396,6 @@ VOID MlmeDeAuthAction(
 							pAd->ApCfg.MBSSID[pEntry->func_tb_idx].wdev.bssid);
 	}
 #endif /* CONFIG_AP_SUPPORT */
-#endif /* P2P_SUPPORT */
         MakeOutgoingFrame(pOutBuffer, &FrameLen,
                           sizeof(HEADER_802_11), &DeAuthHdr,
                           2,  &Reason,
@@ -2443,7 +2452,9 @@ VOID PeerGroupMsg2Action(
     PUCHAR          	pData;
     BOOLEAN         	Cancelled;
 	PEAPOL_PACKET       pMsg2;
+#ifdef DBG
 	UCHAR				group_cipher = Ndis802_11WEPDisabled;
+#endif /* DBG */
 
 	DBGPRINT(RT_DEBUG_TRACE, ("===> PeerGroupMsg2Action \n"));
 
@@ -2463,14 +2474,18 @@ VOID PeerGroupMsg2Action(
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{
+#ifdef DBG
 			UCHAR	apidx = 0;
-
+#endif /* DBG */
 			if (pEntry->func_tb_idx >= pAd->ApCfg.BssidNum)
 				return;
 		    else
+		    {
+#ifdef DBG
 				apidx = pEntry->func_tb_idx;
-
-			group_cipher = pAd->ApCfg.MBSSID[apidx].wdev.GroupKeyWepStatus;
+				group_cipher = pAd->ApCfg.MBSSID[apidx].wdev.GroupKeyWepStatus;
+#endif /* DBG */
+		    }
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -3756,7 +3771,11 @@ BOOLEAN RTMPCheckWPAframe(
 	IN UCHAR wdev_idx,
 	IN BOOLEAN eth_frame)
 {
-	ULONG Body_len, min_len = (LENGTH_802_1_H + LENGTH_EAPOL_H);
+	ULONG  min_len = (LENGTH_802_1_H + LENGTH_EAPOL_H);
+#ifdef DBG
+	ULONG Body_len;
+#endif /* DBG */
+	
 	BOOLEAN Cancelled;
 
 	ASSERT(wdev_idx <= WDEV_NUM_MAX);
@@ -3795,7 +3814,9 @@ BOOLEAN RTMPCheckWPAframe(
 	switch (*(pData+1))
 	{
 		case EAPPacket:
+#ifdef DBG
 			Body_len = (*(pData+2)<<8) | (*(pData+3));
+#endif /* DBG */
 #ifdef CONFIG_AP_SUPPORT
 			IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 			{
@@ -3820,8 +3841,10 @@ BOOLEAN RTMPCheckWPAframe(
 			DBGPRINT(RT_DEBUG_TRACE, ("Receive EAPOLLogoff frame, TYPE = 2 \n"));
 			break;
 		case EAPOLKey:
+#ifdef DBG
 			Body_len = (*(pData+2)<<8) | (*(pData+3));
 			DBGPRINT(RT_DEBUG_TRACE, ("Receive EAPOL-Key frame, TYPE = 3, Length = %ld\n", Body_len));
+#endif /* DBG */
 			break;
 		case EAPOLASFAlert:
 			DBGPRINT(RT_DEBUG_TRACE, ("Receive EAPOLASFAlert frame, TYPE = 4 \n"));
@@ -5694,51 +5717,3 @@ VOID RTMPSetWcidSecurityInfo(
 }
 
 
-#ifdef RT_CFG80211_SUPPORT
-BOOLEAN RTMPIsValidIEs(UCHAR *Ies, INT32 Len)
-{
-    /* Validate if the IE is in correct format. */
-    INT32 Pos = 0;
-    INT32 IeLen = 0;
-    while (Pos < Len)
-    {
-        if ((IeLen = (INT32)(Ies[Pos+1]) + 2) < 0)
-            return FALSE;
-        Pos += IeLen;
-    }
-    if (Pos == Len)
-        return TRUE;
-    else
-        return FALSE;
-}
-
-/* Find specific IE Id in a buffer containing multiple IEs */
-const UCHAR *RTMPFindIE(UCHAR Eid, const UCHAR *Ies, INT32 Len)
-{
-	while (Len > 2 && Ies[0] != Eid) {
-		Len -= Ies[1] + 2;
-		Ies += Ies[1] + 2;
-	}
-	if (Len < 2)
-		return NULL;
-	if (Len < 2 + Ies[1])
-		return NULL;
-	return Ies;
-}
-
-/* Find WPS IE Id in a buffer containing multiple IEs */
-const UCHAR *RTMPFindWPSIE(const UCHAR *Ies, INT32 Len)
-{
-    const UCHAR *Ptr = Ies;
-    UCHAR WPSOUI[]={0x00, 0x50, 0xf2, 0x04};
-    if (!Ies || ! Len)
-        return NULL;
-    while ((Ptr = RTMPFindIE(WLAN_EID_VENDOR_SPECIFIC, Ptr, Len-(Ptr-Ies))) != NULL)
-    {
-        if (!NdisCmpMemory(Ptr+2, WPSOUI, 4))
-            break;
-        Ptr += Ptr[1] + 2;
-    }
-    return Ptr;
-}
-#endif /* RT_CFG80211_SUPPORT */

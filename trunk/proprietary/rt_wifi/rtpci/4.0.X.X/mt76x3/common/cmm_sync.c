@@ -53,9 +53,6 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 	BOOLEAN bRegionFound = FALSE;
 	PUCHAR pChannelList = NULL;
 	PUCHAR pChannelListFlag = NULL;
-#ifdef CFG80211_BUILD_CHANNEL_LIST
-        PCH_DESC pChDesc2G = NULL, pChDesc5G = NULL;
-#endif /* CFG80211_BUILD_CHANNEL_LIST */
 
 
 
@@ -72,9 +69,6 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 				pChDesc = Country_Region_ChDesc_2GHZ[i].pChDesc;
 				num = TotalChNum(pChDesc);
 				bRegionFound = TRUE;
-#ifdef CFG80211_BUILD_CHANNEL_LIST
-                                pChDesc2G = pChDesc;
-#endif /* CFG80211_BUILD_CHANNEL_LIST */
 
 				break;
 			}
@@ -153,9 +147,6 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 				pChDesc = Country_Region_ChDesc_5GHZ[i].pChDesc;
 				num = TotalChNum(pChDesc);
 				bRegionFound = TRUE;
-#ifdef CFG80211_BUILD_CHANNEL_LIST
-                                pChDesc5G = pChDesc;
-#endif /* CFG80211_BUILD_CHANNEL_LIST */
 
 				break;
 			}
@@ -271,30 +262,6 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 	DBGPRINT(RT_DEBUG_TRACE,("CountryCode(2.4G/5G)=%d/%d, RFIC=%d, PHY mode=%d, support %d channels\n",
 		pAd->CommonCfg.CountryRegion, pAd->CommonCfg.CountryRegionForABand, pAd->RfIcType, pAd->CommonCfg.PhyMode, pAd->ChannelListNum));
 
-#ifdef RT_CFG80211_SUPPORT
-	for (i=0; i<pAd->ChannelListNum; i++)
-	{
-		CFG80211OS_ChanInfoInit(
-					pAd->pCfg80211_CB,
-					i,
-					pAd->ChannelList[i].Channel,
-					pAd->ChannelList[i].MaxTxPwr,
-					WMODE_CAP_N(pAd->CommonCfg.PhyMode),
-					(pAd->CommonCfg.RegTransmitSetting.field.BW == BW_20));
-	}
-
-#ifdef CFG80211_BUILD_CHANNEL_LIST
-
-   if (CFG80211OS_UpdateRegRuleByRegionIdx(
-                    pAd->pCfg80211_CB,
-                    pChDesc2G,
-                    pChDesc5G
-                    ) != 0)
-    {
-        DBGPRINT(RT_DEBUG_ERROR,("Update RegRule failed!\n"));
-    }
-#endif /* CFG80211_BUILD_CHANNEL_LIST */
-#endif /* RT_CFG80211_SUPPORT */
 
 #ifdef DBG
 	DBGPRINT(RT_DEBUG_TRACE, ("SupportedChannelList:\n"));

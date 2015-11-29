@@ -775,8 +775,10 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 		step 1 - update BEACON's Capability
 	*/
 	ptr = pBeaconFrame + pMbss->bcn_buf.cap_ie_pos;
-	*ptr = (UCHAR)(pMbss->CapabilityInfo & 0x00ff);
-	*(ptr+1) = (UCHAR)((pMbss->CapabilityInfo & 0xff00) >> 8);
+
+	//prevent little/big endian issue. and let asic_write_bcn_buf() handle it.
+	*(UINT16 *)ptr = pMbss->CapabilityInfo;
+	
 
 
     AsicSetBmcQCR(pAd, BMC_CNT_UPDATE, CR_READ, apidx, &mac_val);
@@ -1049,35 +1051,6 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 	}
 #endif /* A_BAND_SUPPORT */
 
-#ifdef CUSTOMER_DCC_FEATURE
-	if(pComCfg->channelSwitch.CHSWMode == CHANNEL_SWITCHING_MODE)
-	{
-		
-		ptr = pBeaconFrame + FrameLen;
-		*ptr = IE_CHANNEL_SWITCH_ANNOUNCEMENT;
-		*(ptr + 1) = 3;
-		*(ptr + 2) = 1;
-		*(ptr + 3) = pComCfg->Channel;
-		*(ptr + 4) = (pComCfg->channelSwitch.CHSWPeriod - pComCfg->channelSwitch.CHSWCount);
-		ptr      += 5;
-		FrameLen += 5;
-
-#ifdef DOT11_N_SUPPORT
-		/* Extended Channel Switch Announcement Element */
-		if (pComCfg->bExtChannelSwitchAnnouncement)
-		{
-			HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE	HtExtChannelSwitchIe;
-			build_ext_channel_switch_ie_New(pAd, &HtExtChannelSwitchIe);
-			NdisMoveMemory(ptr, &HtExtChannelSwitchIe, sizeof(HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE));
-			ptr += sizeof(HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE);
-			FrameLen += sizeof(HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE);
-		}
-
-#endif /* DOT11_N_SUPPORT */
-		
-	}
-
-#endif
 #ifdef DOT11_N_SUPPORT
 	/* step 5. Update HT. Since some fields might change in the same BSS. */
 	if (WMODE_CAP_N(PhyMode) && (wdev->DesiredHtPhyInfo.bHtEnable))
@@ -1591,30 +1564,12 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 #endif
 	RT28xx_UpdateBeaconToAsic(pAd, apidx, FrameLen, UpdatePos);
 
-#ifdef CUSTOMER_DCC_FEATURE
-	{
-		UINT32	Index;
-		BSS_STRUCT *pMbss = NULL;
-			
-		if ((pAd->ApCfg.MBSSID[apidx].wdev.if_dev != NULL) &&
-			(RTMP_OS_NETDEV_STATE_RUNNING(pAd->ApCfg.MBSSID[apidx].wdev.if_dev)))
-		{
-													
-			pMbss = &pAd->ApCfg.MBSSID[apidx];
-			GetMultShiftFactorIndex(BeaconTransmit, &Index);
-			RTMPCalculateAPTxRxActivityTime(pAd, Index, FrameLen, pMbss, NULL);
-		}
-	}
-#endif	
-
-#if defined(MT_MAC)
 	{
 	    UINT32   Lowpart, Highpart;
 
 	    AsicGetTsfTime(pAd, &Highpart, &Lowpart);
 	    pMbss->WriteBcnDoneTime[pMbss->timer_loop] = Lowpart;
 	}
-#endif
 }
 
 
@@ -1721,13 +1676,14 @@ VOID APUpdateAllBeaconFrame(RTMP_ADAPTER *pAd)
 		  (pAd->CommonCfg.bForty_Mhz_Intolerant == FALSE)) ||
 		(FlgQloadIsAlarmIssued == TRUE)))
 	{
+#ifdef DBG
 		UCHAR	prevBW, prevExtChOffset;
+		prevBW = pAd->CommonCfg.AddHTInfo.AddHtInfo.RecomWidth;
+		prevExtChOffset = pAd->CommonCfg.AddHTInfo.AddHtInfo.ExtChanOffset;
+#endif /* DBG */
 		DBGPRINT(RT_DEBUG_TRACE, ("DTIM Period reached, BSS20WidthReq=%d, Intolerant40=%d!\n",
 				pAd->CommonCfg.LastBSSCoexist2040.field.BSS20WidthReq, pAd->CommonCfg.LastBSSCoexist2040.field.Intolerant40));
 		pAd->CommonCfg.Bss2040CoexistFlag &= (~BSS_2040_COEXIST_INFO_SYNC);
-
-		prevBW = pAd->CommonCfg.AddHTInfo.AddHtInfo.RecomWidth;
-		prevExtChOffset = pAd->CommonCfg.AddHTInfo.AddHtInfo.ExtChanOffset;
 
 		if (pAd->CommonCfg.LastBSSCoexist2040.field.BSS20WidthReq ||
 			pAd->CommonCfg.LastBSSCoexist2040.field.Intolerant40 ||

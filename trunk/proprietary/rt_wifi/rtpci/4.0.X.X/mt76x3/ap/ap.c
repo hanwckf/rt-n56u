@@ -857,9 +857,6 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 
 	/* Set the RadarDetect Mode as Normal, bc the APUpdateAllBeaconFram() will refer this parameter. */
 	pAd->Dot11_H.RDMode = RD_NORMAL_MODE;
-#ifdef CUSTOMER_DCC_FEATURE
-	pAd->CommonCfg.channelSwitch.CHSWMode = NORMAL_MODE;
-#endif
 
 	/* Disable Protection first. */
 	AsicUpdateProtect(pAd, 0, (ALLN_SETPROTECT|CCKSETPROTECT|OFDMSETPROTECT), TRUE, FALSE);
@@ -961,9 +958,6 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 	DBGPRINT(RT_DEBUG_OFF, ("Main bssid = %02x:%02x:%02x:%02x:%02x:%02x\n",
 						PRINT_MAC(pAd->ApCfg.MBSSID[BSS0].wdev.bssid)));
 
-#ifdef CUSTOMER_DCC_FEATURE
-	pAd->CommonCfg.NewExtChanOffset.NewExtChanOffset = pAd->CommonCfg.RegTransmitSetting.field.EXTCHA;
-#endif
 	DBGPRINT(RT_DEBUG_TRACE, ("<=== APStartUp\n"));
 
 }
@@ -1106,6 +1100,47 @@ VOID APCleanupPsQueue(RTMP_ADAPTER *pAd, QUEUE_HEADER *pQueue)
 	}
 }
 
+#ifdef APCLI_SUPPORT
+#ifdef TRAFFIC_BASED_TXOP
+static VOID CheckApEntryInTraffic(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, STA_TR_ENTRY *tr_entry)
+{
+	UINT32 TxTotalByteCnt = 0;
+	UINT32 RxTotalByteCnt = 0;
+
+	if((IS_ENTRY_APCLI(pEntry) || IS_ENTRY_CLIENT(pEntry))
+		&& (tr_entry->PortSecured == WPA_802_1X_PORT_SECURED))
+	{
+		TxTotalByteCnt = pEntry->OneSecTxBytes;
+		RxTotalByteCnt = pEntry->OneSecRxBytes;
+		DBGPRINT(RT_DEBUG_INFO,("WICD%d, %dM, TxBytes:%d,  RxBytes:%d\n", pEntry->wcid, (((TxTotalByteCnt + RxTotalByteCnt) << 3) >> 20), 
+			TxTotalByteCnt, RxTotalByteCnt));
+
+		if ((TxTotalByteCnt == 0) || (RxTotalByteCnt == 0))
+		{
+		}
+		else if ((((TxTotalByteCnt + RxTotalByteCnt) << 3) >> 20) > pAd->CommonCfg.ManualTxopThreshold)
+		{
+			//printk("%dM, %d,  %d, %d\n", (((TxTotalByteCnt + RxTotalByteCnt) << 3) >> 20), TxTotalByteCnt, RxTotalByteCnt, (TxTotalByteCnt/RxTotalByteCnt));
+			if (TxTotalByteCnt > RxTotalByteCnt)
+			{
+				if ((TxTotalByteCnt/RxTotalByteCnt) >= pAd->CommonCfg.ManualTxopUpBound)
+				{
+					if (IS_ENTRY_CLIENT(pEntry))
+						pAd->StaTxopAbledCnt++;
+					else
+						pAd->ApClientTxopAbledCnt++;
+				}
+			}
+		}
+	}
+
+	pEntry->OneSecTxBytes = 0;
+	pEntry->OneSecRxBytes = 0;
+
+}
+#endif /* TRAFFIC_BASED_TXOP */
+#endif /* APCLI_SUPPORT */
+
 /*
 	==========================================================================
 	Description:
@@ -1181,10 +1216,17 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 
 	startWcid = 1;
 
-#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
-	/* Skip the Infra Side */
-	startWcid = 2;
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
+
+#ifdef SMART_CARRIER_SENSE_SUPPORT
+	pAd->SCSCtrl.SCSMinRssi = 0; /* (Reset)The minimum RSSI of STA */
+#endif /* SMART_CARRIER_SENSE_SUPPORT */
+
+#ifdef APCLI_SUPPORT
+#ifdef TRAFFIC_BASED_TXOP
+	pAd->StaTxopAbledCnt = 0;
+	pAd->ApClientTxopAbledCnt = 0;
+#endif /* TRAFFIC_BASED_TXOP */
+#endif /* APCLI_SUPPORT */
 
 	for (i = startWcid; i < MAX_LEN_OF_MAC_TABLE; i++)
 	{
@@ -1192,6 +1234,11 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 		STA_TR_ENTRY *tr_entry = &pMacTable->tr_entry[i];
 		BOOLEAN bDisconnectSta = FALSE;
 #ifdef APCLI_SUPPORT
+
+#ifdef TRAFFIC_BASED_TXOP
+		CheckApEntryInTraffic(pAd, pEntry, tr_entry);
+#endif /* TRAFFIC_BASED_TXOP */
+
 		if(IS_ENTRY_APCLI(pEntry) && (tr_entry->PortSecured == WPA_802_1X_PORT_SECURED))
 		{
 #ifdef MAC_REPEATER_SUPPORT
@@ -1449,6 +1496,15 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 					avgRssi));
 
 		}
+
+#ifdef SMART_CARRIER_SENSE_SUPPORT
+		if (pAd->SCSCtrl.SCSEnable == SCS_ENABLE)
+		{
+			CHAR tmpRssi = RTMPMinRssi(pAd, pEntry->RssiSample.AvgRssi[0], pEntry->RssiSample.AvgRssi[1], pEntry->RssiSample.AvgRssi[2]);
+			if (tmpRssi <	pAd->SCSCtrl.SCSMinRssi )
+				pAd->SCSCtrl.SCSMinRssi = tmpRssi;
+		}
+#endif /* SMART_CARRIER_SENSE_SUPPORT */
 
 
 #ifdef ALL_NET_EVENT
@@ -2174,31 +2230,6 @@ BOOLEAN ApCheckAccessControlList(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR Apidx)
 	}
 #endif /* ACL_V2_SUPPORT */
 
-#ifdef CUSTOMER_DCC_FEATURE
-	if(pAd->ApDisableSTAConnectFlag == TRUE)
-	{
-
-		INT		count, i;
-		UINT32	time;
-		
-		Result = FALSE;
-		time = jiffies_to_msecs(jiffies);
-		count = pAd->AllowedStaList.StaCount;
-		for(i = 0; i < count; i++)
-		{
-			if(NdisEqualMemory(&(pAd->AllowedStaList.AllowedSta[i].MacAddr[0]), pAddr, MAC_ADDR_LEN))
-			{
-				if((time - pAd->AllowedStaList.AllowedSta[i].DissocTime) < 30000)
-				{
-					Result = TRUE;
-				}
-			}
-		}
-		
-		if(!Result)
-			return Result;
-	}
-#endif
     if (pAd->ApCfg.MBSSID[Apidx].AccessControlList.Policy == 0)       /* ACL is disabled */
         Result = TRUE;
     else

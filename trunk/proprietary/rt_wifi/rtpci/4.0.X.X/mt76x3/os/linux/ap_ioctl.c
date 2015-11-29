@@ -41,7 +41,12 @@ struct iw_priv_args ap_privtab[] = {
   IW_PRIV_TYPE_CHAR | 1024, 0,
   "show"},
 { RTPRIV_IOCTL_GSITESURVEY,
-  0, IW_PRIV_TYPE_CHAR | 1024 ,
+#ifdef AIRPLAY_SUPPORT
+  IW_PRIV_TYPE_CHAR | 1024 ,
+#else
+  0 ,
+#endif /* AIRPLAY_SUPPORT */
+  IW_PRIV_TYPE_CHAR | 1024 ,
   "get_site_survey"}, 
 #ifdef INF_AR9
   { RTPRIV_IOCTL_GET_AR9_SHOW,
@@ -77,6 +82,11 @@ struct iw_priv_args ap_privtab[] = {
 { RTPRIV_IOCTL_WSC_PROFILE,
   IW_PRIV_TYPE_CHAR | 1024, IW_PRIV_TYPE_CHAR | 1024 ,
   "get_wsc_profile"},
+#ifdef WSC_NFC_SUPPORT
+  { RTPRIV_IOCTL_NFC_STATUS,
+  IW_PRIV_TYPE_CHAR | 1024, IW_PRIV_TYPE_CHAR | 1024 ,
+  "get_nfc_status"},
+#endif /* WSC_NFC_SUPPORT */
 #endif /* WSC_AP_SUPPORT */
 { RTPRIV_IOCTL_QUERY_BATABLE,
   IW_PRIV_TYPE_CHAR | 1024, IW_PRIV_TYPE_CHAR | 1024 ,
@@ -395,7 +405,12 @@ skip_check:
 		case RTPRIV_IOCTL_WSC_PROFILE:
 			RTMP_AP_IoctlHandle(pAd, wrq, CMD_RTPRIV_IOCTL_WSC_PROFILE, 0, NULL, 0);
 		    break;
-#endif /* WSC_AP_SUPPORT */
+#ifdef WSC_NFC_SUPPORT		
+		case RTPRIV_IOCTL_NFC_STATUS:
+			 RTMP_AP_IoctlHandle(pAd, wrq, CMD_RTPRIV_IOCTL_NFC_STATUS, 0, NULL, 0);
+		   break;   
+#endif /* WSC_NFC_SUPPORT */			
+#endif // WSC_AP_SUPPORT //
 #ifdef DOT11_N_SUPPORT
 		case RTPRIV_IOCTL_QUERY_BATABLE:
 			RTMP_AP_IoctlHandle(pAd, wrq, CMD_RTPRIV_IOCTL_QUERY_BATABLE, 0, NULL, 0);

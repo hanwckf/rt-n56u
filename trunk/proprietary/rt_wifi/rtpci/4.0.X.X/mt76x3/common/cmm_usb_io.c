@@ -872,30 +872,6 @@ static NTSTATUS ChannelRescanHdlr(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
 
 
 #ifdef LINUX
-#ifdef RT_CFG80211_SUPPORT
-static NTSTATUS RegHintHdlr (RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
-{
-	RT_CFG80211_CRDA_REG_HINT(pAd, CMDQelmt->buffer, CMDQelmt->bufferlength);
-	return NDIS_STATUS_SUCCESS;
-}
-
-static NTSTATUS RegHint11DHdlr(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
-{
-	RT_CFG80211_CRDA_REG_HINT11D(pAd, CMDQelmt->buffer, CMDQelmt->bufferlength);
-	return NDIS_STATUS_SUCCESS;
-}
-
-static NTSTATUS RT_Mac80211_ScanEnd(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
-{
-	RT_CFG80211_SCAN_END(pAd, FALSE);
-	return NDIS_STATUS_SUCCESS;
-}
-
-static NTSTATUS RT_Mac80211_ConnResultInfom(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
-{
-	return NDIS_STATUS_SUCCESS;
-}
-#endif /* RT_CFG80211_SUPPORT */
 #endif /* LINUX */
 
 
@@ -985,11 +961,7 @@ static NTSTATUS CFGTdlsAutoTeardownHdlr(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQe
 static NTSTATUS HwCtrlBcnUpdate(RTMP_ADAPTER *pAd, PCmdQElmt CMDQelmt)
 {
 #ifdef CONFIG_AP_SUPPORT
-#ifdef RT_CFG80211_P2P_SUPPORT
-    if (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP)
-#else
     IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-#endif /* RT_CFG80211_P2P_SUPPORT */
     {
         ULONG UpTime;
 
@@ -1004,11 +976,7 @@ static NTSTATUS HwCtrlBcnUpdate(RTMP_ADAPTER *pAd, PCmdQElmt CMDQelmt)
             RRM_QuietUpdata(pAd);
 #endif /* DOT11K_RRM_SUPPORT */
 
-#ifdef RT_CFG80211_P2P_SUPPORT
-        RT_CFG80211_BEACON_TIM_UPDATE(pAd);
-#else
         APUpdateAllBeaconFrame(pAd);
-#endif /* RT_CFG80211_P2P_SUPPORT */
     }
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -1101,17 +1069,10 @@ static CMDHdlr CMDHdlrTable[] = {
 
 
 #ifdef LINUX
-#ifdef RT_CFG80211_SUPPORT
-	RegHintHdlr,
-	RegHint11DHdlr,
-	RT_Mac80211_ScanEnd,
-	RT_Mac80211_ConnResultInfom,
-#else
 	NULL,
 	NULL,
 	NULL,
 	NULL,
-#endif /* RT_CFG80211_SUPPORT */
 
 #else
 	NULL,

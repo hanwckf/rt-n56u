@@ -628,7 +628,11 @@ VOID MtEnqTxSwqFromPsQueue(RTMP_ADAPTER *pAd, UCHAR qidx, STA_TR_ENTRY *tr_entry
 			continue;
                         }
 		InsertHeadQueue(pAcTxQue, pQEntry); 			
+#ifdef LIMIT_GLOBAL_SW_QUEUE
+			TR_ENQ_COUNT_INC(tr_entry, &pAd->TxSwQueue[qidx]);
+#else /* LIMIT_GLOBAL_SW_QUEUE */
 		TR_ENQ_COUNT_INC(tr_entry);
+#endif /* ! LIMIT_GLOBAL_SW_QUEUE */
 		}
 	}
 	RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);

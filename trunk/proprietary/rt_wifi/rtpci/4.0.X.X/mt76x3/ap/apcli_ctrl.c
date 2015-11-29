@@ -257,42 +257,6 @@ static VOID ApCliCtrlJoinReqAction(
 #endif /* WSC_AP_SUPPORT */
 	if (pApCliEntry->CfgSsidLen != 0)
 	{
-#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA) 
-		ULONG bss_idx = BSS_NOT_FOUND;
-		bss_idx = BssSsidTableSearchBySSID(&pAd->ScanTab, (PCHAR)pApCliEntry->CfgSsid, pApCliEntry->CfgSsidLen);
-		if (bss_idx == BSS_NOT_FOUND)
-		{
-			DBGPRINT(RT_DEBUG_TRACE, ("%s::  can't find SSID[%s] in ScanTab.\n", __FUNCTION__, pApCliEntry->CfgSsid));
-			*pCurrState = APCLI_CTRL_PROBE;
-                                     
-			CFG80211_checkScanTable(pAd);
-            RT_CFG80211_P2P_CLI_CONN_RESULT_INFORM(pAd, JoinReq.Bssid, NULL, 0, NULL, 0, 0);
-
-			return;
-		}
-
-		DBGPRINT(RT_DEBUG_TRACE, ("%s::  find SSID[%ld][%s] channel[%d-%d] in ScanTab.\n", __FUNCTION__, 
-						bss_idx, pApCliEntry->CfgSsid, pAd->ScanTab.BssEntry[bss_idx].Channel, 
-						pAd->ScanTab.BssEntry[bss_idx].CentralChannel));
-
-//TODO	
-		/* BssSearch Table has found the pEntry, send Prob Req. directly */
-//		if (pAd->CommonCfg.Channel != pAd->ScanTab.BssEntry[bss_idx].Channel)
-		{
-			pApCliEntry->MlmeAux.Channel = pAd->ScanTab.BssEntry[bss_idx].Channel;
-
-			pApCliEntry->wdev.CentralChannel = pApCliEntry->MlmeAux.Channel ;
-			//should be check and update in in asso to check ==> ApCliCheckHt()
-			pApCliEntry->wdev.channel = pApCliEntry->wdev.CentralChannel;
-			pApCliEntry->wdev.bw = HT_BW_20;
-			pApCliEntry->wdev.extcha = EXTCHA_NONE;				
-
-			pAd->CommonCfg.Channel = pApCliEntry->MlmeAux.Channel; //lk added
-			AsicSwitchChannel(pAd, pApCliEntry->MlmeAux.Channel, FALSE);
-			AsicLockChannel(pAd, pApCliEntry->MlmeAux.Channel);
-
-		}
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE || CFG80211_MULTI_STA */
 
 		JoinReq.SsidLen = pApCliEntry->CfgSsidLen;
 		NdisMoveMemory(&(JoinReq.Ssid), pApCliEntry->CfgSsid, JoinReq.SsidLen);
@@ -869,17 +833,6 @@ static VOID ApCliCtrlAssocRspAction(
 		{
 			*pCurrState = APCLI_CTRL_CONNECTED;
 
-#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)
-			CFG80211_checkScanTable(pAd);
-			RT_CFG80211_P2P_CLI_CONN_RESULT_INFORM(pAd, pApCliEntry->MlmeAux.Bssid,
-				pApCliEntry->ReqVarIEs, pApCliEntry->ReqVarIELen,	
-				pApCliEntry->ResVarIEs, pApCliEntry->ResVarIELen, TRUE);
-
-	        	if (pAd->cfg80211_ctrl.bP2pCliPmEnable == TRUE)
-        		{
-                		CmdP2pNoaOffloadCtrl(pAd, P2P_NOA_RX_ON);
-        		}
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE || CFG80211_MULTI_STA */
 			
 		}
 		else
@@ -906,11 +859,6 @@ static VOID ApCliCtrlAssocRspAction(
 				ApCliSwitchCandidateAP(pAd);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 
-#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)
-			CFG80211_checkScanTable(pAd);
-			RT_CFG80211_P2P_CLI_CONN_RESULT_INFORM(pAd, pApCliEntry->MlmeAux.Bssid,
-				NULL, 0, NULL, 0, 0);			
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE || CFG80211_MULTI_STA */
 
 		}
 	}
@@ -939,11 +887,6 @@ static VOID ApCliCtrlAssocRspAction(
 			ApCliSwitchCandidateAP(pAd);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 
-#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)
-		CFG80211_checkScanTable(pAd);					
-		RT_CFG80211_P2P_CLI_CONN_RESULT_INFORM(pAd, pApCliEntry->MlmeAux.Bssid,
-			NULL, 0, NULL, 0, 0);	
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE || CFG80211_MULTI_STA */
 
 	}
 

@@ -252,43 +252,6 @@ BOOLEAN ApCliCheckHt(
 	aux_ht_cap->HtCapInfo.ChannelWidth = pAddHtInfo->AddHtInfo.RecomWidth & rt_ht_cap->ChannelWidth;
 	aux_ht_cap->HtCapInfo.GF =  pHtCapability->HtCapInfo.GF & rt_ht_cap->GF;
 
-#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
-/* for SCC Case*/	
-	aux_ht_cap->HtCapInfo.ChannelWidth = pAddHtInfo->AddHtInfo.RecomWidth;
-	aux_ht_cap->HtCapInfo.GF =  pHtCapability->HtCapInfo.GF & rt_ht_cap->GF;
-
-	if (RTMP_CFG80211_VIF_P2P_CLI_ON(pAd))
-	{
-		pApCliEntry->wdev.bw = aux_ht_cap->HtCapInfo.ChannelWidth;
-		if (pApCliEntry->wdev.bw == HT_BW_20)
-		{
-			pApCliEntry->wdev.channel = pAddHtInfo->ControlChan;
-			pApCliEntry->wdev.CentralChannel = pApCliEntry->wdev.channel;
-			pApCliEntry->wdev.extcha = EXTCHA_NONE;
-		}
-		else if (pApCliEntry->wdev.bw == HT_BW_40)
-		{
-			pApCliEntry->wdev.channel = pAddHtInfo->ControlChan;
-		
-			if (pAddHtInfo->AddHtInfo.ExtChanOffset == EXTCHA_ABOVE )
-			{
-				pApCliEntry->wdev.extcha = EXTCHA_ABOVE;
-				pApCliEntry->wdev.CentralChannel = pApCliEntry->wdev.channel + 2;
-			}
-			else if (pAddHtInfo->AddHtInfo.ExtChanOffset == EXTCHA_BELOW)
-			{
-				pApCliEntry->wdev.extcha = EXTCHA_BELOW;
-				pApCliEntry->wdev.CentralChannel = pApCliEntry->wdev.channel - 2;
-			}
-			else /* EXTCHA_NONE , should not be here!*/
-			{
-				pApCliEntry->wdev.extcha = EXTCHA_NONE;
-				pApCliEntry->wdev.CentralChannel = pApCliEntry->wdev.channel; 
-			}
-		}
-
-	}				
-#endif /*RT_CFG80211_P2P_CONCURRENT_DEVICE */
 
 
 	/* Send Assoc Req with my HT capability. */
@@ -949,12 +912,6 @@ VOID ApCliLinkDown(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 	pApCliEntry->OpenWEPErrMCPktCnt = 0;
 
 
-#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)
-	RT_CFG80211_LOST_GO_INFORM(pAd);
-	
-	//NoA Stop
-	CmdP2pNoaOffloadCtrl(pAd, P2P_NOA_DISABLED);
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE || CFG80211_MULTI_STA */
 
 }
 

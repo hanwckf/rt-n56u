@@ -328,7 +328,8 @@ MAC_TABLE_ENTRY *MacTableInsertWDSEntry(
 			pEntry->func_tb_idx = WdsTabIdx;
 			pEntry->wdev = wdev;
 			COPY_MAC_ADDR(&wdev->bssid[0], &pEntry->Addr[0]);
-						
+
+			AsicUpdateRxWCIDTable(pAd, pEntry->wcid, pAddr);
 			AsicUpdateWdsEncryption(pAd, pEntry->wcid);
 			
 			DBGPRINT(RT_DEBUG_OFF, ("%s() - allocate entry #%d(link to WCID %d), Total= %d\n",
@@ -686,25 +687,29 @@ VOID WdsPeerBeaconProc(
 {
 	UCHAR MaxSupportedRate = RATE_11;
 
-	MaxSupportedRate = dot11_2_ra_rate(MaxSupportedRateIn500Kbps);
-
 	if (pEntry && IS_ENTRY_WDS(pEntry))
 	{
+		MaxSupportedRate = dot11_2_ra_rate(MaxSupportedRateIn500Kbps);
 		pEntry->MaxSupportedRate = min(pAd->CommonCfg.MaxTxRate, MaxSupportedRate);
 		pEntry->RateLen = MaxSupportedRateLen;
 
-		set_entry_phy_cfg(pAd, pEntry);
-
-		pEntry->MaxHTPhyMode.field.BW = BW_20;
-		pEntry->MinHTPhyMode.field.BW = BW_20;
-#ifdef DOT11_N_SUPPORT
-		pEntry->HTCapability.MCSSet[0] = 0;
-		pEntry->HTCapability.MCSSet[1] = 0;
-#endif /* DOT11_N_SUPPORT */
-		CLIENT_STATUS_CLEAR_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE);
 		pEntry->CapabilityInfo = CapabilityInfo;
-
 		set_sta_ra_cap(pAd, pEntry, ClientRalinkIe);
+
+		if (pEntry->MaxSupportedRate < RATE_FIRST_OFDM_RATE)
+		{
+			pEntry->MaxHTPhyMode.field.MODE = MODE_CCK;
+			pEntry->MaxHTPhyMode.field.MCS = pEntry->MaxSupportedRate;
+			pEntry->MinHTPhyMode.field.MODE = MODE_CCK;
+			pEntry->MinHTPhyMode.field.MCS = pEntry->MaxSupportedRate;
+		}
+		else
+		{
+			pEntry->MaxHTPhyMode.field.MODE = MODE_OFDM;
+			pEntry->MaxHTPhyMode.field.MCS = OfdmRateToRxwiMCS[pEntry->MaxSupportedRate];
+			pEntry->MinHTPhyMode.field.MODE = MODE_OFDM;
+			pEntry->MinHTPhyMode.field.MCS = OfdmRateToRxwiMCS[pEntry->MaxSupportedRate];
+		}
 
 #ifdef DOT11_N_SUPPORT
 		/* If this Entry supports 802.11n, upgrade to HT rate. */
@@ -732,11 +737,19 @@ VOID WdsPeerBeaconProc(
 			NdisMoveMemory(&pEntry->HTCapability, pHtCapability, sizeof(HT_CAPABILITY_IE));
 		}
 		else
+#endif /* DOT11_N_SUPPORT */
 		{
+			pEntry->MaxHTPhyMode.field.BW = BW_20;
+			pEntry->MinHTPhyMode.field.BW = BW_20;
+#ifdef DOT11_N_SUPPORT
+			pEntry->HTCapability.MCSSet[0] = 0;
+			pEntry->HTCapability.MCSSet[1] = 0;
 			NdisZeroMemory(&pEntry->HTCapability, sizeof(HT_CAPABILITY_IE));
 			pAd->MacTab.fAnyStationIsLegacy = TRUE;
-		}
 #endif /* DOT11_N_SUPPORT */
+		}
+
+		CLIENT_STATUS_CLEAR_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE);
 
 		if (bWmmCapable
 #ifdef DOT11_N_SUPPORT
@@ -807,6 +820,7 @@ VOID APWdsInitialize(RTMP_ADAPTER *pAd)
 }
 
 
+#ifdef DBG
 INT Show_WdsTable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	INT 	i;
@@ -848,7 +862,7 @@ INT Show_WdsTable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 	return TRUE;
 }
-
+#endif /* DBG */
 
 VOID rtmp_read_wds_from_file(RTMP_ADAPTER *pAd, RTMP_STRING *tmpbuf, RTMP_STRING *buffer)
 {

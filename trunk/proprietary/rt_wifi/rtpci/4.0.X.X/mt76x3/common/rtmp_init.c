@@ -527,7 +527,7 @@ INT rtmp_hif_cyc_init(RTMP_ADAPTER *pAd, UINT8 val)
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return FALSE;
 	}
@@ -575,7 +575,7 @@ NDIS_STATUS NICInitializeAsic(RTMP_ADAPTER *pAd, BOOLEAN bHardReset)
 
 		// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support rtmp_mac_sys_reset () for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support rtmp_mac_sys_reset () for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 	} else {
 #if defined(RTMP_MAC) || defined(RLT_MAC)
@@ -748,14 +748,24 @@ VOID NICUpdateFifoStaCounters(RTMP_ADAPTER *pAd)
 int load_patch(RTMP_ADAPTER *ad)
 {
 	int ret = NDIS_STATUS_SUCCESS;
+#ifdef DBG
 	ULONG Old, New, Diff;
-
+#endif /* DBG */
 	if (ad->chipOps.load_rom_patch) {
+
+#ifdef DBG
 		RTMP_GetCurrentSystemTick(&Old);
+#endif /* DBG */
 		ret = ad->chipOps.load_rom_patch(ad);
+
+#ifdef DBG
 		RTMP_GetCurrentSystemTick(&New);
+#endif /* DBG */
+
+#ifdef DBG
 		Diff = (New - Old) * 1000 / OS_HZ;
 		DBGPRINT(RT_DEBUG_TRACE, ("load rom patch spent %ldms\n", Diff));
+#endif /* DBG */
 	}
 
 	return ret;
@@ -904,10 +914,6 @@ VOID RTMPMoveMemory(VOID *pDest, VOID *pSrc, ULONG Length)
 
 VOID UserCfgExit(RTMP_ADAPTER *pAd)
 {
-#ifdef RT_CFG80211_SUPPORT
-	/* Reset the CFG80211 Internal Flag */
-	RTMP_DRIVER_80211_RESET(pAd);
-#endif /* RT_CFG80211_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
 	BATableExit(pAd);
@@ -1224,10 +1230,7 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 		part III. AP configurations
 	*/
 #ifdef CONFIG_AP_SUPPORT
-#if defined(P2P_APCLI_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT) || defined(CFG80211_MULTI_STA)
-#else
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-#endif /* P2P_APCLI_SUPPORT || RT_CFG80211_P2P_SUPPORT */
 	{
 		/* Set MBSS Default Configurations*/
 		pAd->ApCfg.BssidNum = MAX_MBSSID_NUM(pAd);
@@ -1658,9 +1661,6 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 #endif  /* DMA_RESET_SUPPORT */
 #endif /* MT_MAC */
 
-#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
-	pAd->Mlme.bStartScc = FALSE;
-#endif /*RT_CFG80211_P2P_CONCURRENT_DEVICE */
 
 #ifdef RTMP_MAC_PCI
 	pAd->PDMAWatchDogEn = 0;
@@ -1684,6 +1684,10 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 #endif /* PREVENT_ARP_SPOOFING */
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef MT_MAC
+	pAd->rx_pspoll_filter = 0;
+#endif /* MT_MAC */
+
     pAd->bPS_Retrieve =1;
 
 	pAd->CommonCfg.bTXRX_RXV_ON = 0;
@@ -1692,16 +1696,19 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 
     pAd->CommonCfg.ManualTxopThreshold = 10; // Mbps
 
-    pAd->CommonCfg.ManualTxopUpBound = 20; // Ratio
+    pAd->CommonCfg.ManualTxopUpBound = 15; // Ratio align with 7628
 
     pAd->CommonCfg.ManualTxopLowBound = 5; // Ratio
-#ifdef MSTAR_SUPPORT
-	pAd->bDisableBGProtect = TRUE;
-#endif /* MSTAR_SUPPORT */
 #ifdef CONFIG_SNIFFER_SUPPORT
 	pAd->monitor_ctrl.current_monitor_mode = 0;
 #endif /* CONFIG_SNIFFER_SUPPORT */
 
+#ifdef SMART_CARRIER_SENSE_SUPPORT
+	pAd->SCSCtrl.SCSEnable = SCS_ENABLE;
+	pAd->SCSCtrl.SCSMinRssi=0;
+	pAd->SCSCtrl.SCSStatus=SCS_STATUS_DEFAULT;
+	pAd->SCSCtrl.SCSThreshold = 250000; /* 2 Mbps */
+#endif
 
 	pAd->ed_chk = FALSE; //let country region to turn on
 	pAd->ed_debug = FALSE;
@@ -2183,6 +2190,7 @@ VOID RTMPDisableRxTx(RTMP_ADAPTER *pAd)
 	DBGPRINT(RT_DEBUG_TRACE, ("<== RTMPDisableRxTx\n"));
 }
 
+
 void CfgInitHook(RTMP_ADAPTER *pAd)
 {
 	/*pAd->bBroadComHT = TRUE;*/
@@ -2242,9 +2250,6 @@ INT RtmpRaDevCtrlInit(VOID *pAdSrc, RTMP_INF_TYPE infType)
 
 	DBGPRINT(RT_DEBUG_TRACE, ("pAd->infType=%d\n", pAd->infType));
 
-#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT) || defined(CFG80211_MULTI_STA)
-	pAd->OpMode = OPMODE_STA;
-#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT || CFG80211_MULTI_STA */
 
     RTMP_SEM_EVENT_INIT(&(pAd->AutoRateLock), &pAd->RscSemMemList);
 	RTMP_SEM_EVENT_INIT(&(pAd->e2p_read_lock), &pAd->RscSemMemList);
@@ -2435,17 +2440,11 @@ VOID CMDHandler(RTMP_ADAPTER *pAd)
 
 				case CMDTHREAD_REG_HINT:
 #ifdef LINUX
-#ifdef RT_CFG80211_SUPPORT
-					RT_CFG80211_CRDA_REG_HINT(pAd, pData, cmdqelmt->bufferlength);
-#endif /* RT_CFG80211_SUPPORT */
 #endif /* LINUX */
 					break;
 
 				case CMDTHREAD_REG_HINT_11D:
 #ifdef LINUX
-#ifdef RT_CFG80211_SUPPORT
-					RT_CFG80211_CRDA_REG_HINT11D(pAd, pData, cmdqelmt->bufferlength);
-#endif /* RT_CFG80211_SUPPORT */
 #endif /* LINUX */
 					break;
 
@@ -2555,7 +2554,7 @@ VOID AntCfgInit(RTMP_ADAPTER *pAd)
 {
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return;
 	}

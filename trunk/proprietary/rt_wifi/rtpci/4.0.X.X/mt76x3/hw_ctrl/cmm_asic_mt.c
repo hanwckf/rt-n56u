@@ -45,50 +45,16 @@ UINT32 AsicGetPhyErrCnt(RTMP_ADAPTER *pAd)
 
 UINT32 AsicGetCCACnt(RTMP_ADAPTER *pAd)
 {
-#ifdef CUSTOMER_DCC_FEATURE
-	UINT32 value, CCAcount = 0, OFDM_PD_CNT, CCK_PD_CNT,OFDM_MDRDY_CNT, CCK_MDRDY_CNT;;
-
-	RTMP_IO_READ32(pAd,RO_PHYCTRL_STS0,&value);
-	OFDM_PD_CNT = (value >> 16);
-	CCK_PD_CNT = (value & 0xFFFF);
-
-	RTMP_IO_READ32(pAd,RO_PHYCTRL_STS5,&value);
-	OFDM_MDRDY_CNT = (value >> 16);
-	CCK_MDRDY_CNT = (value & 0xFFFF);
-	CCAcount = ((OFDM_PD_CNT - OFDM_MDRDY_CNT) + (CCK_PD_CNT - CCK_MDRDY_CNT));
-
-	if((!pAd->EnableChannelStatsCheck) || (ApScanRunning(pAd)))
-		AsicGetRxStat(pAd, HQA_RX_RESET_PHY_COUNT);
-	
-	return CCAcount;
-	
-#endif
 	return 0;
 }
 
 
 UINT32 AsicGetChBusyCnt(RTMP_ADAPTER *pAd, UCHAR ch_idx)
 {
-#ifdef CUSTOMER_DCC_FEATURE
-	UINT32 msdr = 0, reg = 0;
-	if (ch_idx == 0)
-		reg = MIB_MSDR16;
-	else if (ch_idx == 1)
-		reg = MIB_MSDR17;
-	
-		if (reg)
-		{
-			RTMP_IO_READ32(pAd, reg, &msdr);
-			msdr &= 0x00ffffff;
-		}
-		
-		return msdr;
-#else
 	UINT32	msdr16;
 	RTMP_IO_READ32(pAd, MIB_MSDR16, &msdr16);
 	msdr16 &= 0x00ffffff;
 	return msdr16;
-#endif
 }
 
 
@@ -98,7 +64,7 @@ INT AsicSetAutoFallBack(RTMP_ADAPTER *pAd, BOOLEAN enable)
 {
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 	}
 	return FALSE;
@@ -215,9 +181,6 @@ NTSTATUS MtCmdAsicUpdateProtect(RTMP_ADAPTER *pAd, PCmdQElmt CMDQelmt)
 	UCHAR SetMask = pAsicUpdateProtect->SetMask;
 	BOOLEAN bDisableBGProtect = pAsicUpdateProtect->bDisableBGProtect;
 
-#ifdef MSTAR_SUPPORT
-    bDisableBGProtect = pAd->bDisableBGProtect;
-#endif /* MSTAR_SUPPORT */
 
 	BOOLEAN bNonGFExist = pAsicUpdateProtect->bNonGFExist;
 
@@ -266,9 +229,6 @@ NTSTATUS MtCmdAsicUpdateProtect(RTMP_ADAPTER *pAd, PCmdQElmt CMDQelmt)
             Value |= RTS_THRESHOLD(pAd->CommonCfg.RtsThreshold);
             Value |= RTS_PKT_NUM_THRESHOLD(1);
 
-#ifdef MSTAR_SUPPORT
-            Value |= RTS_PKT_NUM_THRESHOLD(1);
-#endif /* MSTAR_SUPPORT */
 
         }
 
@@ -284,15 +244,6 @@ NTSTATUS MtCmdAsicUpdateProtect(RTMP_ADAPTER *pAd, PCmdQElmt CMDQelmt)
 	    }
     	else
 	    {
-#ifdef MSTAR_SUPPORT
-			{
-				/* Enable ERP Protection */
-				RTMP_IO_READ32(pAd, AGG_PCR, &Value);
-				Value &= ~ERP_PROTECTION_MASK;
-				Value |= ERP_PROTECTION(0x1f);
-				RTMP_IO_WRITE32(pAd, AGG_PCR, Value);
-			}
-#endif /* MSTAR_SUPPORT */
 	        pAd->FlgCtsEnabled = 1; /* CTS-self is used */
     	}
 
@@ -422,11 +373,6 @@ VOID AsicSwitchChannel(RTMP_ADAPTER *pAd, UCHAR Channel, BOOLEAN bScan)
 #endif
 
 #ifdef CONFIG_AP_SUPPORT
-#ifdef CUSTOMER_DCC_FEATURE
-	/* later need to move this BssTableInit to other place */
-	if(!(ApScanRunning(pAd)))
-		BssTableInit(&pAd->AvailableBSS);
-#endif
 #ifdef AP_QLOAD_SUPPORT
 	/* clear all statistics count for QBSS Load */
 	QBSS_LoadStatusClear(pAd);
@@ -753,9 +699,6 @@ INT AsicSetRxFilter(RTMP_ADAPTER *pAd)
 
 	/* enable RX of MAC block*/
 	if ((pAd->OpMode == OPMODE_AP)
-#ifdef RT_CFG80211_P2P_SUPPORT
-		|| CFG_P2PGO_ON(pAd)
-#endif /* RT_CFG80211_P2P_SUPPORT */
 	)
 	{
 		//rx_filter_flag = APNORMAL;
@@ -919,7 +862,7 @@ VOID RTMPSetPiggyBack(RTMP_ADAPTER *pAd, BOOLEAN bPiggyBack)
 {
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 	}
 
@@ -997,7 +940,7 @@ INT AsicSetChBusyStat(RTMP_ADAPTER *pAd, BOOLEAN enable)
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 	}
 
@@ -1779,7 +1722,7 @@ INT AsicSetRetryLimit(RTMP_ADAPTER *pAd, UINT32 type, UINT32 limit)
 {
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 	}
 
@@ -1791,7 +1734,7 @@ UINT32 AsicGetRetryLimit(RTMP_ADAPTER *pAd, UINT32 type)
 {
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 	}
 
@@ -2026,7 +1969,7 @@ VOID AsicAddSharedKeyEntry(
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return;
 	}
@@ -2124,7 +2067,7 @@ VOID AsicRemoveSharedKeyEntry(
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return;
 	}
@@ -2376,12 +2319,6 @@ VOID AsicTxCntUpdate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, MT_TX_COUNTER *
 		pTxInfo->Rate5TxCnt = tx_cnt_info.wtbl_2_d6.field.rate_5_tx_cnt;
 
 		pTxInfo->RateIndex = tx_cnt_info.wtbl_2_d9.field.rate_idx;
-#ifdef CUSTOMER_DCC_FEATURE
-		pAd->ApCfg.MBSSID[pEntry->pMbss->mbss_idx].TxRetriedPktCount += tx_cnt_info.wtbl_2_d6.field.rate_2_tx_cnt;
-		pEntry->TxRetriedPktCount += tx_cnt_info.wtbl_2_d6.field.rate_2_tx_cnt;	
-		pAd->RadioStatsCounter.TxRetriedPktCount += tx_cnt_info.wtbl_2_d6.field.rate_2_tx_cnt;
-		pAd->RadioStatsCounter.TxRetryCount += tx_cnt_info.wtbl_2_d6.field.rate_2_tx_cnt + tx_cnt_info.wtbl_2_d6.field.rate_3_tx_cnt + tx_cnt_info.wtbl_2_d6.field.rate_4_tx_cnt + tx_cnt_info.wtbl_2_d6.field.rate_5_tx_cnt;
-#endif
 /*
 		if ( pTxInfo->TxFailCount == 0 )
 			pEntry->OneSecTxNoRetryOkCount += pTxInfo->TxSuccessCount;
@@ -2412,6 +2349,19 @@ VOID AsicTxCntUpdate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, MT_TX_COUNTER *
 		pAd->WlanCounters.TransmittedFragmentCount.u.LowPart += TxSuccess;
 		pAd->WlanCounters.FailedCount.u.LowPart += pTxInfo->TxFailCount;
 #endif /* STATS_COUNT_SUPPORT */
+
+		if ((TxSuccess == 0) && (pTxInfo->TxFailCount > 0))
+		{
+			/* No TxPkt ok in this period as continue tx fail */
+			pEntry->ContinueTxFailCnt += pTxInfo->TxFailCount;
+		}
+		else
+		{
+			pEntry->ContinueTxFailCnt = 0;
+		}
+		
+		DBGPRINT(RT_DEBUG_INFO, ("%s:(OK:%d, FAIL:%d, ConFail:%d) \n",__FUNCTION__,
+			TxSuccess, pTxInfo->TxFailCount, pEntry->ContinueTxFailCnt));	
 	}
 
 }
@@ -2961,11 +2911,6 @@ VOID AsicUpdateRxWCIDTable(RTMP_ADAPTER *pAd, USHORT WCID, UCHAR *pAddr)
 	UCHAR WaitCnt = 0;
 	INT apidx = MAIN_MBSSID;
 
-#ifdef RT_CFG80211_P2P_SUPPORT
-	/* HW BSSID  will be 1, if in softap or P2P GO mode. Need this value to stop TX queue AC0~AC3 when update WCID*/
-	if (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP)
-		apidx = CFG_GO_BSSID_IDX;
-#endif
 
 	if (wtbl_ctrl->wtbl_entry_cnt[0] > 0)
 		WCID = (WCID < wtbl_ctrl->wtbl_entry_cnt[0] ? WCID : MCAST_WCID);
@@ -3341,10 +3286,6 @@ VOID AsicDelWcidTab(RTMP_ADAPTER *pAd, UCHAR wcid_idx)
 
     if (wcid_idx == WCID_ALL) {
         cnt_s = 0;
-#ifdef RT_CFG80211_P2P_SUPPORT
-		//YF TODO: shall re-write the API parm
-		cnt_s = 2;
-#endif /* RT_CFG80211_P2P_SUPPORT */
         cnt_e = (WCID_ALL - 1);
     } else {
         cnt_s = cnt_e = wcid_idx;
@@ -3398,6 +3339,12 @@ VOID AsicDelWcidTab(RTMP_ADAPTER *pAd, UCHAR wcid_idx)
 
         /* Clear BA Information */
         RTMP_IO_WRITE32(pAd, tb_entry.wtbl_addr[1] + (15 * 4), tb_entry.wtbl_2.wtbl_2_d15.word);
+	/*Clear PN */
+	tb_entry.wtbl_2.wtbl_2_d0.pn_0=0;
+	tb_entry.wtbl_2.wtbl_2_d1.field.pn_32=0;
+	RTMP_IO_WRITE32(pAd, tb_entry.wtbl_addr[1] + (0 * 4), tb_entry.wtbl_2.wtbl_2_d0.word);
+	RTMP_IO_WRITE32(pAd, tb_entry.wtbl_addr[1] + (1 * 4), tb_entry.wtbl_2.wtbl_2_d1.word);
+
 
 #ifdef RTMP_PCI_SUPPORT
 		NdisAcquireSpinLock(&pAd->IndirectUpdateLock);
@@ -3571,7 +3518,7 @@ VOID CmdProcAddRemoveKey(
         default:
             if (CmdKey.ucAddRemove)
                 break;
-            DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support Cipher[%d] for HIF_MT yet!\n",
+            DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support Cipher[%d] for HIF_MT yet!\n",
                         __FUNCTION__, __LINE__, CipherAlg));
             return;
     }
@@ -3628,9 +3575,6 @@ VOID CmdProcAddRemoveKey(
 
 #ifdef CONFIG_AP_SUPPORT
 		if ((pAd->OpMode == OPMODE_AP)
-#ifdef RT_CFG80211_P2P_SUPPORT
-			 || (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP)
-#endif /* RT_CFG80211_P2P_SUPPORT */
 		    )
 		{
 			if (KeyTabFlag == SHAREDKEYTABLE) {
@@ -3646,18 +3590,6 @@ VOID CmdProcAddRemoveKey(
                 	dw0->field.rkv = 1;
             	}
 #endif /* APCLI_SUPPORT */
-#ifdef RT_CFG80211_P2P_SUPPORT
-            	if (Wcid == BSSID_WCID ||
-		    	    Wcid == MCAST_WCID)
-				{
-                	dw0->field.rv = 1;
-                	dw0->field.rkv = 1;
-					dw0->field.rc_id = 1;
-					dw0->field.rc_a1 = 1;
-					if (CipherAlg == CIPHER_SMS4)
-						dw2->field.wpi_even = 1;
-            	}
-#endif /* RT_CFG80211_P2P_SUPPORT */
 			}
 			else {
 				dw0->field.rv = 1;
@@ -3919,7 +3851,7 @@ BOOLEAN AsicSendCommandToMcuBBP(
 {
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return TRUE;
 	}
@@ -4026,7 +3958,7 @@ VOID AsicUpdateWAPIPN(
 {
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return;
 	}
@@ -4119,7 +4051,7 @@ VOID AsicSetStreamMode(
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return;
 	}
@@ -4171,7 +4103,7 @@ VOID AsicSetTxPreamble(RTMP_ADAPTER *pAd, USHORT TxPreamble)
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return;
 	}
@@ -4184,7 +4116,7 @@ INT AsicSetRalinkBurstMode(RTMP_ADAPTER *pAd, BOOLEAN enable)
 #ifdef MT_MAC
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return FALSE;
 	}
@@ -4503,7 +4435,7 @@ INT StopDmaRx(RTMP_ADAPTER *pAd, UCHAR Level)
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return 0;
 	}
@@ -4577,7 +4509,7 @@ INT StopDmaTx(RTMP_ADAPTER *pAd, UCHAR Level)
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return 0;
 	}
@@ -4629,7 +4561,7 @@ INT AsicReadAggCnt(RTMP_ADAPTER *pAd, ULONG *aggCnt, int cnt_len)
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return FALSE;
 	}
@@ -4941,30 +4873,6 @@ INT AsicSetDPD(RTMP_ADAPTER *pAd, UINT32 bOnOff, UCHAR WFSelect)
     return Ret;
 }
 #ifndef CONFIG_QA
-#ifdef CUSTOMER_DCC_FEATURE
-
-UINT32 AsicGetRxStat(RTMP_ADAPTER *pAd, UINT type)
-{
-    UINT32 value = 0;
-    DBGPRINT(RT_DEBUG_TRACE, ("%s, Type:%d\n", __FUNCTION__, type));
-    switch (type) {
-        case HQA_RX_RESET_PHY_COUNT:
-            RTMP_IO_READ32(pAd,CR_PHYCTRL_2,&value);
-            value |= (1<<6); /* BIT6: CR_STSCNT_RST */
-            RTMP_IO_WRITE32(pAd,CR_PHYCTRL_2,value);
-            value &= (~(1<<6));
-            RTMP_IO_WRITE32(pAd,CR_PHYCTRL_2,value);
-            value |= (1<<7); /* BIT7: CR_STSCNT_EN */
-            RTMP_IO_WRITE32(pAd,CR_PHYCTRL_2,value);
-            break;
-        default:
-            break;
-    }
-    DBGPRINT(RT_DEBUG_TRACE, ("%s, Type(%d):%x\n", __FUNCTION__, type, value));
-    return value;
-}
-
-#endif
 #endif
 #ifdef CONFIG_QA
 

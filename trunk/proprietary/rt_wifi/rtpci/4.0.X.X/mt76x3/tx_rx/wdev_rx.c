@@ -184,11 +184,7 @@ UINT deaggregate_AMSDU_announce(
 
 
 #ifdef CONFIG_AP_SUPPORT
-#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
-		if (OpMode == OPMODE_AP)
-#else
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT */
 		{
 			if (pRemovedLLCSNAP)
 			{
@@ -215,9 +211,6 @@ UINT deaggregate_AMSDU_announce(
 		{
 			UCHAR opmode = pAd->OpMode;
 
-#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
-			opmode = OpMode;
-#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT */
 			Announce_or_Forward_802_3_Packet(pAd, pClonePacket, RTMP_GET_PACKET_WDEV(pPacket), opmode);
 		}
 
@@ -711,14 +704,6 @@ VOID rx_eapol_frm_handle(
 #endif /* CONFIG_AP_SUPPORT */
 
 
-#ifdef RT_CFG80211_SUPPORT
-	if (pEntry)
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("CFG80211 EAPOL Indicate_Legacy_Packet\n"));
-		Indicate_Legacy_Packet(pAd, pRxBlk, wdev_idx);
-		return;
-	}
-#endif /*RT_CFG80211_SUPPORT*/
 
 	if (IS_ENTRY_AP(pEntry))
 	{
@@ -796,10 +781,6 @@ VOID rx_eapol_frm_handle(
 							pRxBlk->rx_signal.raw_rssi[0],
 							pRxBlk->rx_signal.raw_rssi[1],
 							pRxBlk->rx_signal.raw_rssi[2],
-#ifdef CUSTOMER_DCC_FEATURE
-							pRxBlk->rx_signal.raw_snr[0],
-							pRxBlk->rx_signal.raw_snr[1],
-#endif
 							0,
 							pRxBlk->OpMode);
 
@@ -858,7 +839,7 @@ bool check_duplicated_mgmt_frame(HEADER_802_11 *pHeader)
 	UINT16 mgmt_type = pHeader->FC.SubType;
 	
  	if (mgmt_type >= 15) {
-		DBGPRINT(RT_DEBUG_INFO, ("%s:: check duplicated mgmt frame fail(invilide mgmt subtype(%d)) \n",__FUNCTION__, mgmt_type));
+		DBGPRINT(RT_DEBUG_OFF, ("%s:: check duplicated mgmt frame fail(invalid mgmt subtype(%d)) \n",__FUNCTION__, mgmt_type));
 		return FALSE;
 	}
 	
@@ -891,10 +872,6 @@ DBGPRINT(RT_DEBUG_FPGA, ("-->%s()\n", __FUNCTION__));
 		goto done;
 #endif /* CFG_TDLS_SUPPORT */
 
-#ifdef RT_CFG80211_SUPPORT
-	if (CFG80211_HandleP2pMgmtFrame(pAd, pRxBlk, op_mode))
-		goto done;
-#endif /* RT_CFG80211_SUPPORT */
 
 
 #ifdef DOT11W_PMF_SUPPORT
@@ -1008,30 +985,6 @@ DBGPRINT(RT_DEBUG_FPGA, ("-->%s()\n", __FUNCTION__));
 	}
 #endif /* defined(CONFIG_AP_SUPPORT) || defined(DOT11Z_TDLS_SUPPORT) || defined(CFG_TDLS_SUPPORT) */
 
-#ifdef CUSTOMER_DCC_FEATURE
-#ifdef MBSS_802_11_STATISTICS
-	// management frame RX counter per BSS
-	if(!(ApScanRunning(pAd)))
-	{					
-		pAd->RadioStatsCounter.TotalRxCount++;
-		if (pHeader->FC.FrDs == 0 && pRxBlk->pRxInfo->U2M && pRxBlk->bss_idx < pAd->ApCfg.BssidNum)
-		{
-			BSS_STRUCT *pMbss = &pAd->ApCfg.MBSSID[pRxBlk->bss_idx];
-			if ((pEntry != NULL) && (pEntry->Sst == SST_ASSOC))
-			{
-				pMbss->MGMTReceivedByteCount += pRxBlk->MPDUtotalByteCnt;
-				pMbss->MGMTRxCount++;
-				{
-					UINT32 Length, Index;															
-					Length = pRxBlk->MPDUtotalByteCnt; 
-					GetMultShiftFactorIndex(pRxBlk->rx_rate, &Index);
-					RTMPCalculateAPTxRxActivityTime(pAd, Index, Length, pMbss, pEntry);
-				}
-			}
-		}					
-	}
-#endif
-#endif
 	/* Signal in MLME_QUEUE isn't used, therefore take this item to save min SNR. */
 	//if(pHeader->FC.SubType == SUBTYPE_BEACON)
 		//printk("%02x:%02x:%02x:%02x:%02x:%02x=================================> pRxBlk->wcid: %d\n", PRINT_MAC(pHeader->Addr2), pRxBlk->wcid);
@@ -1048,10 +1001,6 @@ DBGPRINT(RT_DEBUG_FPGA, ("-->%s()\n", __FUNCTION__));
 						pRxBlk->rx_signal.raw_rssi[0],
 						pRxBlk->rx_signal.raw_rssi[1],
 						pRxBlk->rx_signal.raw_rssi[2],
-#ifdef CUSTOMER_DCC_FEATURE
-						pRxBlk->rx_signal.raw_snr[0],
-						pRxBlk->rx_signal.raw_snr[1],
-#endif
 						min(pRxBlk->rx_signal.raw_snr[0], pRxBlk->rx_signal.raw_snr[1]),
 						op_mode);
 
@@ -1069,31 +1018,6 @@ VOID dev_rx_ctrl_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	HEADER_802_11 *pHeader = pRxBlk->pHeader;
 	PNDIS_PACKET pRxPacket = pRxBlk->pRxPacket;
 
-#ifdef CUSTOMER_DCC_FEATURE
-	if(!(ApScanRunning(pAd)))
-	{
-		MAC_TABLE_ENTRY *pEntry = NULL;
-		
-		pEntry = PACInquiry(pAd,pRxBlk->wcid);
-		pAd->RadioStatsCounter.TotalRxCount++;
-				
-		if (pEntry != NULL)
-		{
-			if (pHeader->FC.FrDs == 0 && (pEntry->pMbss->mbss_idx < pAd->ApCfg.BssidNum))
-			{
-				BSS_STRUCT *pMbss = &pAd->ApCfg.MBSSID[pEntry->pMbss->mbss_idx];
-				if (pMbss != NULL)
-				{						
-					UINT32 Length, Index;
-					Length = pRxBlk->MPDUtotalByteCnt; 
-					GetMultShiftFactorIndex(pRxBlk->rx_rate, &Index);
-					RTMPCalculateAPTxRxActivityTime(pAd, Index, Length, pMbss, pEntry);
-				}
-			}
-		}
-	}
-	
-#endif
 	switch (pHeader->FC.SubType)
 	{
 #ifdef DOT11_N_SUPPORT
@@ -1300,7 +1224,6 @@ static INT rtmp_chk_rx_err(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, HEADER_802_11 *pHd
 			APRxErrorHandle(pAd, pRxBlk);
 
 			/* Increase received error packet counter per BSS */
-#ifndef CUSTOMER_DCC_FEATURE			
 			if (pHdr->FC.FrDs == 0 &&
 				pRxInfo->U2M &&
 				pRxBlk->bss_idx < pAd->ApCfg.BssidNum)
@@ -1309,7 +1232,6 @@ static INT rtmp_chk_rx_err(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, HEADER_802_11 *pHd
 				pMbss->RxDropCount ++;
 				pMbss->RxErrorCount ++;
 			}
-#endif
 
 #ifdef WDS_SUPPORT
 #ifdef STATS_COUNT_SUPPORT
@@ -1436,34 +1358,6 @@ DBGPRINT(RT_DEBUG_INFO, ("-->%s():pRxBlk->wcid=%d\n", __FUNCTION__, pRxBlk->wcid
 	/* Drop not my BSS frames */
 	if (pRxInfo->MyBss == 0) {
 /* CFG_TODO: NEED CHECK for MT_MAC */	
-#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
-		/* When the p2p-IF up, the STA own address would be set as my_bssid address.
-		   If receiving an "encrypted" broadcast packet(its WEP bit as 1) and doesn't match my BSSID,
-		   Asic pass to driver with "Decrypted" marked as 0 in pRxInfo.
-		   The condition is below,
-		   1. p2p IF is ON,
-		   2. the addr2 of the received packet is STA's BSSID,
-		   3. broadcast packet,
-		   4. from DS packet,
-		   5. Asic pass this packet to driver with "pRxInfo->Decrypted=0"
-		 */
-		 if (
-#ifdef RT_CFG80211_P2P_SUPPORT
-             TRUE /* The dummy device always present for CFG80211 application*/
-#else
-             (P2P_INF_ON(pAd))
-#endif /* RT_CFG80211_P2P_SUPPORT */
-			&& (MAC_ADDR_EQUAL(pAd->CommonCfg.Bssid, pHeader->Addr2)) &&
-			(pRxInfo->Bcast || pRxInfo->Mcast) &&
-			(pFmeCtrl->FrDs == 1) &&
-			(pFmeCtrl->ToDs == 0) &&
-			(pRxInfo->Decrypted == 0))
-		{
-			/* set this m-cast frame is my-bss. */
-			pRxInfo->MyBss = 1;
-		}
-		else
-#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT */
 		{
 DBGPRINT(RT_DEBUG_OFF, ("%s():  Not my bss! pRxInfo->MyBss=%d\n", __FUNCTION__, pRxInfo->MyBss));
 			return FALSE;
@@ -1673,7 +1567,7 @@ VOID rx_data_frm_announce(
 #endif /* CONFIG_AP_SUPPORT */
 
 
-
+		
 #ifdef IGMP_SNOOP_SUPPORT
 		if ((IS_ENTRY_CLIENT(pEntry) || IS_ENTRY_WDS(pEntry))
 			&& (pAd->ApCfg.IgmpSnoopEnable)
@@ -1691,6 +1585,10 @@ VOID rx_data_frm_announce(
 		}
 #endif /* IGMP_SNOOP_SUPPORT */
 
+		if(pAd->bPingLog)
+		{
+			CheckICMPPacket(pAd, pRxBlk->pData, 1);
+		}
 #ifdef CONFIG_HOTSPOT
 		if (pEntry->pMbss->HotSpotCtrl.HotSpotEnable) {
 			if (hotspot_rx_handler(pAd, pEntry, pRxBlk) == TRUE)
@@ -1698,7 +1596,6 @@ VOID rx_data_frm_announce(
 		}
 #endif /* CONFIG_HOTSPOT */
 
-#ifndef CUSTOMER_DCC_FEATURE
 #ifdef CONFIG_AP_SUPPORT
 #ifdef STATS_COUNT_SUPPORT
 		if ((IS_ENTRY_CLIENT(pEntry)) && (pEntry->pMbss))
@@ -1715,7 +1612,6 @@ VOID rx_data_frm_announce(
 		}
 #endif /* STATS_COUNT_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
-#endif
 #ifdef DOT11_N_SUPPORT
 		if (RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU) /*&& (pAd->CommonCfg.bDisableReordering == 0)*/)
 			Indicate_AMPDU_Packet(pAd, pRxBlk, wdev_idx);
@@ -2226,6 +2122,7 @@ VOID dev_rx_data_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 
 #ifdef CONFIG_AP_SUPPORT
 		pEntry->RxBytes += pRxBlk->MPDUtotalByteCnt;
+		pEntry->OneSecRxBytes += pRxBlk->MPDUtotalByteCnt;
 		INC_COUNTER64(pEntry->RxPackets);
 #endif /* CONFIG_AP_SUPPORT */
         pAd->RxTotalByteCnt += pRxBlk->MPDUtotalByteCnt;
@@ -2263,16 +2160,6 @@ drop:
 		pAd->ApCfg.MBSSID[pRxBlk->bss_idx].RxDropCount ++;
 		if (drop_err == TRUE)
 			pAd->ApCfg.MBSSID[pRxBlk->bss_idx].RxErrorCount ++;
-#ifdef CUSTOMER_DCC_FEATURE
-#ifdef MBSS_802_11_STATISTICS
-	if (pEntry != NULL && IS_ENTRY_CLIENT(pEntry) && pEntry->Sst == SST_ASSOC)
-	{
-		pEntry->RxDropCount++;
-		if (drop_err == TRUE)
-			pEntry->RxErrorCount++;
-	}
-#endif
-#endif
 	}
 #endif /* CONFIG_AP_SUPPORT */
 	//DBGPRINT(RT_DEBUG_OFF, ("%s():release packet!\n", __FUNCTION__));
@@ -2380,10 +2267,16 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 		pRxBlk = &rxblk;
 		pRxPacket = GetPacketFromRxRing(pAd, pRxBlk, &bReschedule, &RxPending, 0);
 
+#ifdef RTMP_SDIO_SUPPORT
+		/* 
+			PCI case FIX Memory Leakage:
+			Actually almost F/W RAM code cmd Response is from Ring1, But cmd resp from F/W ROM code, it's From Ring0, so we need to free this packet here for PCI case.
+		*/
 		if (RX_BLK_TEST_FLAG(pRxBlk, fRX_CMD_RSP)) {
 			RX_BLK_CLEAR_FLAG(pRxBlk, fRX_CMD_RSP);
 			continue;
 		}
+#endif /* RTMP_SDIO_SUPPORT */
 
       	if (RX_BLK_TEST_FLAG(pRxBlk, fRX_RETRIEVE)) {
          	RX_BLK_CLEAR_FLAG(pRxBlk, fRX_RETRIEVE);
@@ -2501,56 +2394,8 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 #endif /* INCLUDE_DEBUG_QUEUE */
 #endif /* DBG_CTRL_SUPPORT */
 
-#ifdef RT_CFG80211_SUPPORT
-#ifdef RT_CFG80211_P2P_SUPPORT
-	if (RTMP_CFG80211_VIF_P2P_GO_ON(pAd) &&
-		(NdisEqualMemory(pAd->cfg80211_ctrl.P2PCurrentAddress, pHeader->Addr1, MAC_ADDR_LEN) ||
-		(pHeader->FC.SubType == SUBTYPE_PROBE_REQ)))
-	{
-		SET_PKT_OPMODE_AP(&rxblk);
-	}
-    	else if (RTMP_CFG80211_VIF_P2P_CLI_ON(pAd) &&
-        	(((pHeader->FC.SubType == SUBTYPE_BEACON || pHeader->FC.SubType == SUBTYPE_PROBE_RSP) &&
-        	   NdisEqualMemory(pAd->ApCfg.ApCliTab[MAIN_MBSSID].CfgApCliBssid, pHeader->Addr2, MAC_ADDR_LEN)) ||
-        	(pHeader->FC.SubType == SUBTYPE_PROBE_REQ) ||
-        	 NdisEqualMemory(pAd->ApCfg.ApCliTab[MAIN_MBSSID].MlmeAux.Bssid, pHeader->Addr2, MAC_ADDR_LEN)))
-	{
-		/* 
-		   1. Beacon & ProbeRsp for Connecting & Tracking 
-                   2. ProbeReq for P2P Search
-                   3. Any Packet's Addr2 Equals MlmeAux.Bssid when connected   
-                 */
-		SET_PKT_OPMODE_AP(&rxblk);
-	}	
-	else
-#endif /* RT_CFG80211_P2P_SUPPORT */
-	{
-		//YF
-		//todo: Bind to pAd->net_dev
-		if (RTMP_CFG80211_HOSTAPD_ON(pAd))
-			SET_PKT_OPMODE_AP(&rxblk);
-		else
-			SET_PKT_OPMODE_STA(&rxblk);
-		
-	}
-#endif /* RT_CFG80211_SUPPORT */
 
 
-#ifdef CFG80211_MULTI_STA
-		if (RTMP_CFG80211_MULTI_STA_ON(pAd, pAd->cfg80211_ctrl.multi_sta_net_dev) &&
-	        (((pHeader->FC.SubType == SUBTYPE_BEACON || pHeader->FC.SubType == SUBTYPE_PROBE_RSP) &&
-	        NdisEqualMemory(pAd->ApCfg.ApCliTab[MAIN_MBSSID].CfgApCliBssid, pHeader->Addr2, MAC_ADDR_LEN)) ||
-	        (pHeader->FC.SubType == SUBTYPE_PROBE_REQ) ||
-	        NdisEqualMemory(pAd->ApCfg.ApCliTab[MAIN_MBSSID].MlmeAux.Bssid, pHeader->Addr2, MAC_ADDR_LEN)))
-        {
-                SET_PKT_OPMODE_AP(&rxblk);
-        }
-        else
-        {
-                SET_PKT_OPMODE_STA(&rxblk);
-        }
-
-#endif /* CFG80211_MULTI_STA */
 
 		/* Increase Total receive byte counter after real data received no mater any error or not */
 		pAd->RalinkCounters.ReceivedByteCount += rxblk.DataSize;
@@ -2617,57 +2462,12 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 		INC_COUNTER64(pAd->WlanCounters.ReceivedFragmentCount);
 #endif /* STATS_COUNT_SUPPORT */
 
-#ifdef MSTAR_SUPPORT
-
-		BSS_STRUCT *pMbss = &pAd->ApCfg.MBSSID[CFG_GO_BSSID_IDX];
-		struct wifi_dev *wdev = &pMbss->wdev;
-
-		if ((pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP && (wdev->Hostapd != Hostapd_CFG))
-#ifdef RT_CFG80211_P2P_SUPPORT
-			&& (!RTMP_CFG80211_VIF_P2P_GO_ON(pAd))
-#endif //RT_CFG80211_P2P_SUPPORT
-			)
-		{
-			/*Drop receive request since hardware is in reset state*/
-			RELEASE_NDIS_PACKET(pAd,pRxPacket,NDIS_STATUS_FAILURE);
-			continue;
-		}
-
-
-
-#endif /* MSTAR_SUPPORT */
 
 
 		/* Check for all RxD errors */
 		if (rtmp_chk_rx_err(pAd, pRxBlk, pHeader) != NDIS_STATUS_SUCCESS)
 		{
 			pAd->Counters8023.RxErrors++;
-#ifdef CUSTOMER_DCC_FEATURE
-			if (pHeader->FC.FrDs == 0 &&
-							pRxBlk->pRxInfo->U2M &&
-							pRxBlk->bss_idx < pAd->ApCfg.BssidNum)
-			{
-				BSS_STRUCT *pMbss = &pAd->ApCfg.MBSSID[pRxBlk->bss_idx];
-				MAC_TABLE_ENTRY *pEntry = MacTableLookup(pAd, pHeader->Addr2);
-#ifdef MBSS_802_11_STATISTICS
-				if ( pEntry )
-				{
-					if (pHeader->FC.Type == FC_TYPE_DATA)
-					{				
-						pMbss->RxDropCount ++;
-						pMbss->RxErrorCount ++;
-						pEntry->RxDropCount ++;
-						pEntry->RxErrorCount ++;		
-					}	
-					else if (pHeader->FC.Type == FC_TYPE_MGMT)
-					{
-						pMbss->MGMTRxDropCount++;
-						pMbss->MGMTRxErrorCount++;
-					}
-				}
-			}
-#endif
-#endif
 #ifdef APCLI_SUPPORT
 			/* When root AP is Open WEP, it will cause a fake connection state if user keys in wrong password. */
 			if(pHeader->FC.Wep == 1)
@@ -2709,11 +2509,7 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 #ifdef UAPSD_SUPPORT
 #ifdef CONFIG_AP_SUPPORT
 
-#ifdef RT_CFG80211_P2P_SUPPORT
-        if (IS_PKT_OPMODE_AP(pRxBlk))
-#else	
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-#endif /* RT_CFG80211_P2P_SUPPORT */ 
 	{
 		/* dont remove the function or UAPSD will fail */
 		UAPSD_MR_SP_RESUME(pAd);

@@ -1478,11 +1478,6 @@ BOOLEAN MlmeScanReqSanity(
 	OUT UCHAR *pSsidLen, 
 	OUT UCHAR *pScanType
 #ifdef CONFIG_AP_SUPPORT
-#ifdef CUSTOMER_DCC_FEATURE
-	,
-	OUT UINT	*pChannel,
-	OUT UINT	*pTimeout 
-#endif
 #endif
 								) 
 {
@@ -1494,10 +1489,6 @@ BOOLEAN MlmeScanReqSanity(
 	NdisMoveMemory(Ssid, Info->Ssid, *pSsidLen);
 	*pScanType = Info->ScanType;
 #ifdef CONFIG_AP_SUPPORT
-#ifdef CUSTOMER_DCC_FEATURE
-	*pChannel = Info->Channel;
-	*pTimeout = Info->Timeout;
-#endif
 #endif
 
 	if ((*pBssType == BSS_INFRA || *pBssType == BSS_ADHOC || *pBssType == BSS_ANY)

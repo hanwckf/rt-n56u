@@ -295,11 +295,7 @@ int rt28xx_open(VOID *dev)
 		is changed as register_netdevice().
 		Or in some PC, kernel will panic (Fedora 4)
 	*/
-#if defined(P2P_APCLI_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT) || defined(CFG80211_MULTI_STA)
-
-#else
 	RT28xx_MBSS_Init(pAd, net_dev);
-#endif /* P2P_APCLI_SUPPORT */
 #endif /* MBSS_SUPPORT */
 
 #ifdef WDS_SUPPORT
@@ -307,10 +303,7 @@ int rt28xx_open(VOID *dev)
 #endif /* WDS_SUPPORT */
 
 #ifdef APCLI_SUPPORT
-#if defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) ||  defined(P2P_APCLI_SUPPORT) || defined(CFG80211_MULTI_STA)
-#else
 	RT28xx_ApCli_Init(pAd, net_dev);
-#endif /* P2P_APCLI_SUPPORT */
 #endif /* APCLI_SUPPORT */
 
 #ifdef CONFIG_SNIFFER_SUPPORT
@@ -319,20 +312,8 @@ int rt28xx_open(VOID *dev)
 
 
 
-#ifdef RT_CFG80211_SUPPORT
-#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
-	RTMP_CFG80211_DummyP2pIf_Init(pAd);
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
-#ifdef CFG80211_MULTI_STA
-	RTMP_CFG80211_MutliStaIf_Init(pAd);
-#endif /* CFG80211_MULTI_STA */
-#else
-#endif /* RT_CFG80211_SUPPORT */
 
 #ifdef LINUX
-#ifdef RT_CFG80211_SUPPORT
-	RTMP_DRIVER_CFG80211_START(pAd);
-#endif /* RT_CFG80211_SUPPORT */
 #endif /* LINUX */
 
 	RTMPDrvOpen(pAd);
@@ -658,11 +639,8 @@ BOOLEAN RtmpPhyNetDevExit(VOID *pAd, PNET_DEV net_dev)
 
 #ifdef CONFIG_AP_SUPPORT
 #ifdef APCLI_SUPPORT
-#if defined(P2P_APCLI_SUPPORT) || defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)
-#else
 	/* remove all AP-client virtual interfaces. */
 	RT28xx_ApCli_Remove(pAd);
-#endif /* P2P_APCLI_SUPPORT */
 #endif /* APCLI_SUPPORT */
 
 #ifdef WDS_SUPPORT
@@ -671,11 +649,7 @@ BOOLEAN RtmpPhyNetDevExit(VOID *pAd, PNET_DEV net_dev)
 #endif /* WDS_SUPPORT */
 
 #ifdef MBSS_SUPPORT
-#if defined(P2P_APCLI_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT) || defined(CFG80211_MULTI_STA)
-
-#else
 	RT28xx_MBSS_Remove(pAd);
-#endif /* P2P_APCLI_SUPPORT */
 #endif /* MBSS_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -683,18 +657,6 @@ BOOLEAN RtmpPhyNetDevExit(VOID *pAd, PNET_DEV net_dev)
 	RT28xx_Monitor_Remove(pAd);
 #endif	/* CONFIG_SNIFFER_SUPPORT */
 
-#ifdef RT_CFG80211_SUPPORT
-#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
-#ifndef RT_CFG80211_P2P_STATIC_CONCURRENT_DEVICE
-	RTMP_CFG80211_AllVirtualIF_Remove(pAd);
-#endif /* RT_CFG80211_P2P_STATIC_CONCURRENT_DEVICE */
-	RTMP_CFG80211_DummyP2pIf_Remove(pAd);
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
-#ifdef CFG80211_MULTI_STA
-	RTMP_CFG80211_MutliStaIf_Remove(pAd);
-#endif /* CFG80211_MULTI_STA */
-#else
-#endif /* RT_CFG80211_SUPPORT */
 
 #ifdef INF_PPA_SUPPORT
 	RTMP_DRIVER_INF_PPA_EXIT(pAd);

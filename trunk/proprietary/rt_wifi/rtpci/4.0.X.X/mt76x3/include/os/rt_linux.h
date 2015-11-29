@@ -76,14 +76,6 @@
 
 #include "link_list.h"
 
-#ifdef RT_CFG80211_SUPPORT
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28))
-#include <net/mac80211.h>
-//#define EXT_BUILD_CHANNEL_LIST		/* must define with CRDA */
-#else /* LINUX_VERSION_CODE */
-#undef RT_CFG80211_SUPPORT
-#endif /* LINUX_VERSION_CODE */
-#endif /* RT_CFG80211_SUPPORT */
 
 #if defined(MAT_SUPPORT) || defined (PREVENT_ARP_SPOOFING)
 #include <linux/if_ether.h>
@@ -114,9 +106,6 @@
 
 #include "os/rt_linux_cmm.h"
 
-#ifdef RT_CFG80211_SUPPORT
-#include "cfg80211.h"
-#endif /* RT_CFG80211_SUPPORT */
 
 #include <linux/firmware.h>
 
@@ -165,7 +154,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
  #define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860APCard.dat"
 #endif
 
-#define AP_DRIVER_VERSION		"4.0.1.0_rev1"
+#define AP_DRIVER_VERSION		"4.0.1.0_rev2"
 
 #endif /* RTMP_MAC_PCI */
 #endif /* CONFIG_AP_SUPPORT */
@@ -295,12 +284,15 @@ struct iw_statistics *rt28xx_get_wireless_stats(
  *	Ralink Specific network related constant definitions
  ***********************************************************************************/
 
+#ifdef LIMIT_GLOBAL_SW_QUEUE
+#define MAX_PACKETS_IN_QUEUE				1024
+#else /* LIMIT_GLOBAL_SW_QUEUE */
 #ifdef DOT11_VHT_AC
 #define MAX_PACKETS_IN_QUEUE				1024 /*(512)*/
 #else
 #define MAX_PACKETS_IN_QUEUE				(512)
 #endif /* DOT11_VHT_AC */
-
+#endif /* !LIMIT_GLOBAL_SW_QUEUE */
 
 /***********************************************************************************
  *	OS signaling related constant definitions

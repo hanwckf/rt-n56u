@@ -160,8 +160,10 @@ static VOID APPeerDeauthReqAction(
 			*/
 			BSS_STRUCT  *pMbss = &pAd->ApCfg.MBSSID[pEntry->func_tb_idx];
 			PFRAME_802_11 Fr = (PFRAME_802_11)Elem->Msg;
+#ifdef DBG
 			unsigned char *tmp = (unsigned char *)pMbss->wdev.bssid;
 			unsigned char *tmp2 = (unsigned char *)&Fr->Hdr.Addr1;
+#endif /* DBG */
 			if (memcmp(&Fr->Hdr.Addr1, pMbss->wdev.bssid, 6) != 0)
 			{
 				DBGPRINT(RT_DEBUG_INFO,

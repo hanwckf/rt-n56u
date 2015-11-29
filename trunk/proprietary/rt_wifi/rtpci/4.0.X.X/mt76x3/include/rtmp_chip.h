@@ -1005,6 +1005,12 @@ struct _RTMP_CHIP_OP {
 	void (*usb_cfg_write)(struct _RTMP_ADAPTER *ad, UINT32 value);
 	void (*show_pwr_info)(struct _RTMP_ADAPTER *ad);
 	void (*cal_test)(struct _RTMP_ADAPTER *ad, UINT32 type);
+
+#ifdef GREENAP_SUPPORT
+	void (*EnableAPMIMOPSv2)(struct _RTMP_ADAPTER *ad, BOOLEAN ReduceCorePower);
+	void (*DisableAPMIMOPSv2)(struct _RTMP_ADAPTER *ad);
+#endif /* GREENAP_SUPPORT */
+	
 };
 
 #define RTMP_CHIP_ENABLE_AP_MIMOPS(__pAd, __ReduceCorePower)	\

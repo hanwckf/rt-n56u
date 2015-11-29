@@ -90,9 +90,6 @@ INT32 BcnTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
 
 #ifdef CONFIG_AP_SUPPORT
 	if ((pAd->OpMode == OPMODE_AP) 
-#ifdef RT_CFG80211_P2P_SUPPORT							
-		|| (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP)
-#endif /* RT_CFG80211_P2P_SUPPORT */
 		)
 		{
 			UCHAR bss_idx = 0;
@@ -439,7 +436,7 @@ INT32 TxSTypeCtlPerPkt(RTMP_ADAPTER *pAd, UINT32 PktPid, UINT8 Format, BOOLEAN T
 	}
 	RTMP_SPIN_UNLOCK_IRQRESTORE(&TxSCtl->TxSTypePerPktLock[PktPid % TOTAL_PID_HASH_NUMS], &Flags);
 
-	DBGPRINT(RT_DEBUG_OFF, ("%s: can not find TxSType(PktPID = %d, Format = %d)\n", 
+	DBGPRINT(RT_DEBUG_TRACE, ("%s: can not find TxSType(PktPID = %d, Format = %d)\n", 
 								__FUNCTION__, PktPid, Format));
 	return -1;
 }
@@ -562,7 +559,7 @@ INT32 TxSTypeCtlPerPktType(RTMP_ADAPTER *pAd, UINT8 PktType, UINT8 PktSubType, U
 	}
 	RTMP_SPIN_UNLOCK_IRQRESTORE(&TxSCtl->TxSTypePerPktTypeLock[PktType][PktSubType % TOTAL_PID_HASH_NUMS_PER_PKT_TYPE], &Flags);
 
-	DBGPRINT(RT_DEBUG_OFF, ("%s: can not find TxSType(PktType = %d, PktSubType = %d, Format = %d)\n", 
+	DBGPRINT(RT_DEBUG_TRACE, ("%s: can not find TxSType(PktType = %d, PktSubType = %d, Format = %d)\n", 
 								__FUNCTION__, PktType, PktSubType, Format));
 	return -1;
 }

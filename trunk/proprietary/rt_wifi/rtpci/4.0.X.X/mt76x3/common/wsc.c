@@ -5574,11 +5574,6 @@ VOID WscStop(
 	RTMPCancelTimer(&pWscControl->EapolTimer, &Cancelled);
 	pWscControl->EapolTimerRunning = FALSE;
 #ifdef CONFIG_AP_SUPPORT
-	if (pWscControl->WscSetupLockTimerRunning)
-	{
-		pWscControl->WscSetupLockTimerRunning = FALSE;
-		RTMPCancelTimer(&pWscControl->WscSetupLockTimer, &Cancelled);
-	}
 	if ((pWscControl->EntryIfIdx & 0x0F)< pAd->ApCfg.BssidNum)
 	{
 	    pEntry = MacTableLookup(pAd, pWscControl->EntryAddr);
@@ -7732,6 +7727,19 @@ VOID   WpsSmProcess(
 }
 
 #ifdef CONFIG_AP_SUPPORT
+
+#define WSC_SINGLE_TRIGGER_APPNAME  "unknown"
+
+#ifdef SDK_GOAHEAD_HTTPD
+#undef WSC_SINGLE_TRIGGER_APPNAME
+#define WSC_SINGLE_TRIGGER_APPNAME  "goahead"
+#endif /* SDK_GOAHEAD_HTTPD */
+
+#ifdef SDK_USER_LIGHTY
+#undef WSC_SINGLE_TRIGGER_APPNAME
+#define WSC_SINGLE_TRIGGER_APPNAME  "nvram_daemon"
+#endif /* SDK_USER_LIGHTY */
+
 INT	WscGetConfWithoutTrigger(
 	IN	PRTMP_ADAPTER	pAd,
 	IN  PWSC_CTRL       pWscControl,
@@ -7747,13 +7755,16 @@ INT	WscGetConfWithoutTrigger(
 /* +++  added by YYHuang@Ralink, 08/03/12 */
 /*
  Notify user space application that WPS procedure will begin.
+ Signal
+    ra0: SIGXFSZ
+    rai0: SIGWINCH
 */
     {
-//for future, goahead will be removed, only leave the nvram_daemon
-#define WSC_SINGLE_TRIGGER_APPNAME  "goahead"
-#define WSC_SINGLE_TRIGGER_NVRAM_DAEMON_NAME  "nvram_daemon"
-
         struct task_struct *p;
+        
+        DBGPRINT(RT_DEBUG_TRACE, ("%s - WSC_SINGLE_TRIGGER_APPNAME: %s!\n", 
+        		__FUNCTION__, WSC_SINGLE_TRIGGER_APPNAME));
+        
         rcu_read_lock();
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,21)
 	for_each_process(p)
@@ -7762,11 +7773,12 @@ INT	WscGetConfWithoutTrigger(
 #endif
 	{
             if(!strcmp(p->comm, WSC_SINGLE_TRIGGER_APPNAME))
-                send_sig(SIGXFSZ, p, 0);
-
-			//for future, goahead will be removed, only leave the nvram_daemon			
-            if(!strcmp(p->comm, WSC_SINGLE_TRIGGER_NVRAM_DAEMON_NAME))
-                send_sig(SIGXFSZ, p, 0);			
+            {
+            	if (pAd->dev_idx == 0)
+                	send_sig(SIGXFSZ, p, 0);
+                else
+                	send_sig(SIGWINCH, p, 0);
+            }
         }
         rcu_read_unlock();
     }
@@ -8769,6 +8781,12 @@ BOOLEAN WscThreadExit(RTMP_ADAPTER *pAd)
 				pWpsCtrl->pWscTxBuf = NULL;
 			}
 #ifdef WSC_V2_SUPPORT
+			if (pWpsCtrl->WscSetupLockTimerRunning)
+			{
+				BOOLEAN Cancelled;
+				pWpsCtrl->WscSetupLockTimerRunning = FALSE;
+				RTMPCancelTimer(&pWpsCtrl->WscSetupLockTimer, &Cancelled);
+			}
 			if (pWpsCtrl->WscV2Info.ExtraTlv.pTlvData)
 			{
 				os_free_mem(NULL, pWpsCtrl->WscV2Info.ExtraTlv.pTlvData);
@@ -9179,7 +9197,7 @@ VOID WscUpdatePortCfgTimeout(
 	pMbss = &pAd->ApCfg.MBSSID[pWscControl->EntryIfIdx & 0x0F];
 	if (WscGetAuthMode(pCredential->AuthType) == pMbss->wdev.AuthMode &&
 		WscGetWepStatus(pCredential->EncrType) == pMbss->wdev.WepStatus &&
-		NdisEqualMemory(pMbss->Ssid, pCredential->SSID.Ssid, pMbss->SsidLen) &&
+		NdisEqualMemory(pMbss->Ssid, pCredential->SSID.Ssid, pCredential->SSID.SsidLength) &&
 		NdisEqualMemory(pWscControl->WpaPsk, pCredential->Key, pCredential->KeyLength))
 	{
 		return;

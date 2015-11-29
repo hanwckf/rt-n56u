@@ -811,11 +811,10 @@ INT Show_QoSLoad_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 #ifdef QLOAD_FUNC_BUSY_TIME_STATS
 	UINT32 BusyTimeId;
+#ifdef DBG
 	UINT32 Time;
-
-
 	Time = pAd->CommonCfg.BeaconPeriod / QLOAD_BUSY_INTERVALS;
-
+#endif /* DBG */
 	DBGPRINT(RT_DEBUG_OFF, ("\n\tPrimary Busy Time\tTimes\n"));
 
 	for(BusyTimeId=0; BusyTimeId<QLOAD_BUSY_INTERVALS; BusyTimeId++)

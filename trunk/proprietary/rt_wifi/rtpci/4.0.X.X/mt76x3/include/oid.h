@@ -380,9 +380,6 @@ struct hostapd_wpa_psk {
 #define RT_OID_802_11_SET_TDLS_PARAM			(OID_GET_SET_TOGGLE | RT_OID_802_11_QUERY_TDLS_PARAM)
 #define RT_OID_802_11_SET_TDLS				(OID_GET_SET_TOGGLE | RT_OID_802_11_QUERY_TDLS)
 
-#ifdef SUPPORT_ACS_ALL_CHANNEL_RANK
-#define OID_GET_ACS_RANK_LIST           0x06B7 /* Get AutoChannelSelection Rank list */
-#endif
 
 #ifdef WAPI_SUPPORT
 #define OID_802_11_WAPI_PID					0x06A0
@@ -402,123 +399,6 @@ struct hostapd_wpa_psk {
 #define RT_OID_802_11_WAPI_IE				(OID_GET_SET_TOGGLE | OID_802_11_WAPI_IE)
 #endif /* WAPI_SUPPORT */
 
-#ifdef CUSTOMER_DCC_FEATURE
-#define OID_802_11_GET_CURRENT_CHANNEL_FALSE_CCA_AVG	0x0690	
-#define OID_802_11_GET_CURRENT_CHANNEL_CST_TIME_AVG		0x0691
-#define	OID_802_11_GET_CURRENT_CHANNEL_BUSY_TIME_AVG	0x0692
-#define OID_802_11_GET_CURRENT_CHANNEL_STATS 			0x0693
-#define OID_802_11_GET_CURRENT_CHANNEL_AP_ACTIVITY_AVG  0x0694
-#define OID_802_11_STA_STATISTICS						0x0695
-#define OID_802_11_GET_CURRENT_CHANNEL_AP_TABLE			0x0696
-#define OID_802_11_GET_ACCESS_CATEGORY_TRAFFIC_STATUS	0x0697
-#define OID_802_11_GET_SCAN_RESULTS						0x0698
-#define	OID_802_11_GET_RADIO_STATS_COUNT				0x0699
-#define OID_802_11_MBSS_STATISTICS						0x069a
-
-#ifdef MEMORY_OPTIMIZATION
-#define MAX_LEN_OF_BSS_TABLE             1
-#define MAX_REORDERING_MPDU_NUM			 256
-#else
-#define MAX_LEN_OF_BSS_TABLE             64 /* 64 */
-#define MAX_REORDERING_MPDU_NUM			 512
-#endif
-
-typedef struct _CURRENT_CHANNEL_STATS{
- UINT32		SamplePeriod;                 
- UINT32		FalseCCACount;                               
- UINT32  	ChannelApActivity;       
- UINT32  	EdCcaBusyTime;                              
- UINT32   	ChannelBusyTime;                           
-} CURRENT_CHANNEL_STATISTICS , *PCURRENT_CHANNEL_STATISTICS; 
-
-#ifdef MBSS_802_11_STATISTICS
-typedef struct __RT_MBSS_STAT_ENTRY{
-	// DATA counter
-	UINT32 RxCount;
-	UINT32 TxCount;
-	UINT32 ReceivedByteCount;
-	UINT32 TransmittedByteCount;
-	UINT32 RxErrorCount;
-	UINT32 RxDropCount;
-	UINT32 TxErrorCount;
-	UINT32 TxDropCount;
-	UINT32 UnicastPktsRx;
-	UINT32 UnicastPktsTx;
-	UINT32 MulticastPktsRx;
-	UINT32 MulticastPktsTx;
-	UINT32 BroadcastPktsRx;
-	UINT32 BroadcastPktsTx;
-	UINT32 TxRetriedPktCount;
-	UINT32 ChannelUseTime;
-	// MGMT counter
-	UINT32 MGMTRxCount;
-	UINT32 MGMTTxCount;
-	UINT32 MGMTReceivedByteCount;
-	UINT32 MGMTTransmittedByteCount;
-	UINT32 MGMTRxErrorCount;
-	UINT32 MGMTRxDropCount;
-	UINT32 MGMTTxErrorCount;
-	UINT32 MGMTTxDropCount;
-} RT_MBSS_STAT_ENTRY;
-
-typedef struct  __RT_MBSS_STATISTICS_TABLE{
-	UINT32				Num;
-	RT_MBSS_STAT_ENTRY	MbssEntry[8];
-} RT_MBSS_STATISTICS_TABLE;
-
-typedef struct  __RT_STA_STAT_ENTRY
-{
-	UCHAR  ApIdx;
-    UCHAR  Addr[MAC_ADDR_LEN];
-	UINT32 RxCount;
-	UINT32 TxCount;
-	UINT32 ReceivedByteCount;
-	UINT32 TransmittedByteCount;
-	UINT32 RxErrorCount;
-	UINT32 RxDropCount;
-	UINT32 TxErrorCount;
-	UINT32 TxDropCount;
-	UINT32 TxRetriedPktCount;
-	UINT32 ChannelUseTime;
-} RT_STA_STAT_ENTRY;
-
-typedef struct  __RT_STA_STATISTICS_TABLE
-{
-	int Num;
-	RT_STA_STAT_ENTRY	STAEntry[MAX_NUMBER_OF_MAC];
-} RT_STA_STATISTICS_TABLE;
-
-#endif
-
-typedef struct _BSS_ENTRY_TABLE
-{
-	UINT8   Bssid[MAC_ADDR_LEN];
-	UINT16  SsidLen;
-	UINT8	Ssid[33];
-	UINT8 	Channel;
-	UINT8	ChannelWidth;
-	UINT8	ExtChannel;
-	CHAR	RSSI;
-	UINT8	SNR;
-	UINT8	PhyMode;
-	UINT8	NumSpatialStream;
-}BSS_ENTRY_TABLE, *PBSS_ENTRY_TABLE;
-
-typedef struct _BEACON_TABLE
-{
-	UINT8 Num;
-	BSS_ENTRY_TABLE BssTable[MAX_LEN_OF_BSS_TABLE];
-} BEACON_TABLE, *PBEACON_TABLE;
-
-typedef struct _SCAN_RESULTS
-{
-	UINT32	ch_busy_time;
-	UINT32	cca_err_cnt;
-	UINT32	num_ap;
-	BSS_ENTRY_TABLE BssTable[MAX_LEN_OF_BSS_TABLE];
-}SCAN_RESULTS, *PSCAN_RESULTS;
-
-#endif
 
 typedef enum _NDIS_802_11_STATUS_TYPE {
 	Ndis802_11StatusType_Authentication,

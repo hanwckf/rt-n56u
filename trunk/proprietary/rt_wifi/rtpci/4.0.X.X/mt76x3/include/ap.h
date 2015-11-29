@@ -57,16 +57,6 @@
 	}																	\
 }
 
-#ifdef CUSTOMER_DCC_FEATURE
-#define TIMESTAMP_GET(__pAd, __TimeStamp)				\
-	{													\
-		UINT32 tsf_l=0, tsf_h=0; UINT64 __Value64;		\
-		AsicGetTsfTime((__pAd), &tsf_h, &tsf_l);		\
-		__TimeStamp = (UINT64)tsf_l;					\
-		__Value64 = (UINT64)tsf_h;						\
-		__TimeStamp |= (__Value64 << 32);					\
-	}
-#endif
 
 typedef struct _AUTH_FRAME_INFO{
 	UCHAR addr1[MAC_ADDR_LEN];
@@ -193,37 +183,6 @@ VOID ApSiteSurvey(
 	IN	UCHAR				ScanType,
 	IN	BOOLEAN				ChannelSel);
 
-#ifdef CUSTOMER_DCC_FEATURE
-
-UCHAR Channel2Index(   
-	IN PRTMP_ADAPTER 	pAd,
-	IN UCHAR 			channel);
-
-VOID ApSiteSurveyNew(
-	IN	PRTMP_ADAPTER  		pAd,
-	IN 	UINT				Channel,
-	IN  UINT 				Timeout,
-	IN	UCHAR				ScanType,
-	IN	BOOLEAN				ChannelSel);
-
-VOID RemoveOldBssEntry(
-	IN PRTMP_ADAPTER 		pAd);
-
-VOID RemoveOldStaList(
-	IN PRTMP_ADAPTER 		pAd);
-
-VOID ReadChannelStats(
-	IN PRTMP_ADAPTER 		pAd);
-
-VOID ClearChannelStats(
-	IN PRTMP_ADAPTER  		pAd);
-
-VOID ResetChannelStatus(
-	IN PRTMP_ADAPTER 		 pAd);
-
-VOID APResetStreamingStatus(
-	IN PRTMP_ADAPTER  		pAd);
-#endif
 VOID SupportRate(
 	IN PUCHAR SupRate,
 	IN UCHAR SupRateLen,

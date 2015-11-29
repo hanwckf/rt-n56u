@@ -320,6 +320,13 @@ int rt28xx_init(VOID *pAdSrc, RTMP_STRING *pDefaultMac, RTMP_STRING *pHostName)
 
 	RTMP_NET_DEV_NICKNAME_INIT(pAd);
 
+#ifdef SMART_CARRIER_SENSE_SUPPORT
+	BssTableInit(&pAd->SCSCtrl.SCSBssTab);
+	/* Backup CR_AGC_0 & CR_AGC_3 value */
+	RTMP_IO_READ32(pAd, CR_AGC_0, &pAd->SCSCtrl.CR_AGC_0_default);
+	RTMP_IO_READ32(pAd, CR_AGC_3, &pAd->SCSCtrl.CR_AGC_3_default);
+#endif /* SMART_CARRIER_SENSE_SUPPORT */
+
 	/* After operation mode is finialized, init the AP or STA mode */
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -329,10 +336,6 @@ int rt28xx_init(VOID *pAdSrc, RTMP_STRING *pDefaultMac, RTMP_STRING *pHostName)
 		/* Init BssTab & ChannelInfo tabbles for auto channel select.*/
 		AutoChBssTableInit(pAd);
 		ChannelInfoInit(pAd);
-#ifdef CUSTOMER_DCC_FEATURE
-				/* init rate multiplication and shift factor table */
-		InitRateMultiplicationAndShiftFactor(pAd);		
-#endif
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -511,6 +514,16 @@ int rt28xx_init(VOID *pAdSrc, RTMP_STRING *pDefaultMac, RTMP_STRING *pHostName)
 			/* Now Enable RxTx*/
 #ifdef RTMP_MAC_PCI
 			RTMP_IRQ_ENABLE(pAd);
+
+#ifdef LOAD_FW_ONE_TIME
+	{
+		UINT32 value;
+		RTMP_IO_READ32(pAd, AGG_TEMP, &value);
+		value &= 0x0000ffff;
+		RTMP_IO_WRITE32(pAd, AGG_TEMP, value);
+	}
+#endif /* LOAD_FW_ONE_TIME */
+
 #endif /* RTMP_MAC_PCI */
 			RTMPEnableRxTx(pAd);
 			RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_START_UP);
@@ -559,9 +572,6 @@ int rt28xx_init(VOID *pAdSrc, RTMP_STRING *pDefaultMac, RTMP_STRING *pHostName)
 
 #ifdef USB_IOT_WORKAROUND2
 	pAd->bUSBIOTReady = TRUE;
-#endif
-#ifdef CUSTOMER_DCC_FEATURE
-	pAd->ChannelInfo.GetChannelInfo = FALSE;
 #endif
 
 	DBGPRINT_S(("<==== rt28xx_init, Status=%x\n", Status));
@@ -656,25 +666,6 @@ VOID RTMPDrvOpen(VOID *pAdSrc)
 
 
 
-#if defined(RT_CFG80211_P2P_SUPPORT) && defined(SUPPORT_ACS_ALL_CHANNEL_RANK)
-    if (pAd->ApCfg.bAutoChannelAtBootup && pAd->ApCfg.bAutoChannelScaned == 0)
-    {
-#ifdef RTMP_MAC_PCI
-        /* Enable Interrupt first due to we need to scan channel to receive beacons.*/
-        RTMP_IRQ_ENABLE(pAd);
-#endif /* RTMP_MAC_PCI */
-        /* Now Enable RxTx*/
-        RTMPEnableRxTx(pAd);
-        //RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_START_UP);
-        
-        RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_START_UP);
-        /* Let BBP register at 20MHz to do scan */
-        bbp_set_bw(pAd, BW_20);
-        DBGPRINT(RT_DEBUG_ERROR, ("SYNC - BBP R4 to 20MHz.l\n"));
-        AP_AUTO_CH_SEL(pAd, pAd->ApCfg.AutoChannelAlg);
-        pAd->ApCfg.bAutoChannelScaned = 1;
-    }
-#endif /* SUPPORT_ACS_ALL_CHANNEL_RANK */
 
 #ifdef WSC_INCLUDED
 #ifdef CONFIG_AP_SUPPORT
@@ -1021,10 +1012,8 @@ VOID RTMPInfClose(VOID *pAdSrc)
 	}
 
 	//CFG_TODO
-#ifndef RT_CFG80211_SUPPORT
 	APMakeAllBssBeacon(pAd);
 	APUpdateAllBeaconFrame(pAd);
-#endif /* RT_CFG80211_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
 

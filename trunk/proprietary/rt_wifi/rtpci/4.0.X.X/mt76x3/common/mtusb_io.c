@@ -499,30 +499,6 @@ static NTSTATUS ChannelRescanHdlr(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
 
 
 #ifdef LINUX
-#ifdef RT_CFG80211_SUPPORT
-static NTSTATUS RegHintHdlr (RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
-{
-	RT_CFG80211_CRDA_REG_HINT(pAd, CMDQelmt->buffer, CMDQelmt->bufferlength);
-	return NDIS_STATUS_SUCCESS;
-}
-
-static NTSTATUS RegHint11DHdlr(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
-{
-	RT_CFG80211_CRDA_REG_HINT11D(pAd, CMDQelmt->buffer, CMDQelmt->bufferlength);
-	return NDIS_STATUS_SUCCESS;
-}
-
-static NTSTATUS RT_Mac80211_ScanEnd(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
-{
-	RT_CFG80211_SCAN_END(pAd, FALSE);
-	return NDIS_STATUS_SUCCESS;
-}
-
-static NTSTATUS RT_Mac80211_ConnResultInfom(RTMP_ADAPTER *pAd, IN PCmdQElmt CMDQelmt)
-{
-	return NDIS_STATUS_SUCCESS;
-}
-#endif /* RT_CFG80211_SUPPORT */
 #endif /* LINUX */
 
 
@@ -616,17 +592,10 @@ CMDHdlr CMDHdlrTable[] = {
 
 
 #ifdef LINUX
-#ifdef RT_CFG80211_SUPPORT
-	RegHintHdlr,
-	RegHint11DHdlr,
-	RT_Mac80211_ScanEnd,
-	RT_Mac80211_ConnResultInfom,
-#else
 	NULL,
 	NULL,
 	NULL,
 	NULL,
-#endif /* RT_CFG80211_SUPPORT */
 
 #else
 	NULL,

@@ -26,50 +26,6 @@
 
 #include "rt_config.h"
 
-#ifdef RT_CFG80211_P2P_SUPPORT
-INT rtmp_wdev_idx_find_by_p2p_ifaddr(RTMP_ADAPTER *pAd, UCHAR *ifAddr)
-{
-        INT idx, type;
-        ULONG flags;
-	PNET_DEV if_dev = NULL;
-	struct wifi_dev *wdev = NULL;
-
-        if (!ifAddr)
-                return -1;
-
-        RTMP_INT_LOCK(&pAd->irq_lock, flags);
-        for (idx = 0; idx < WDEV_NUM_MAX; idx++) {
-		wdev = pAd->wdev_list[idx];
-		if (!wdev)
-                        continue;
-
-		if_dev = wdev->if_dev;
-		if (!if_dev)
-			continue;
-
-		if (!if_dev->ieee80211_ptr)
-			continue;
-
-		type = if_dev->ieee80211_ptr->iftype;
-
-		if ( RTMPEqualMemory(wdev->if_addr, ifAddr, MAC_ADDR_LEN) &&
-		    ( type == RT_CMD_80211_IFTYPE_P2P_CLIENT || 
-                      type == RT_CMD_80211_IFTYPE_P2P_GO ||
-                      type == RT_CMD_80211_IFTYPE_P2P_DEVICE
-		    ))	
-		{
-                        //MTWF_LOG(DBG_CAT_ALL, DBG_LVL_INFO,
-                        //                ("find the  wdev(type:%d, idx:%d) from wdev_list\n",
-                        //                pAd->wdev_list[idx]->wdev_type, pAd->wdev_list[idx]->wdev_idx));
-                        break;
-                }
-        }
-
-        RTMP_INT_UNLOCK(&pAd->irq_lock, flags);
-
-	return ((idx < WDEV_NUM_MAX) ? idx : -1);
-}
-#endif /* RT_CFG80211_P2P_SUPPORT */
 
 INT rtmp_wdev_idx_unreg(RTMP_ADAPTER *pAd, struct wifi_dev *wdev)
 {
@@ -135,7 +91,9 @@ INT rtmp_wdev_idx_reg(RTMP_ADAPTER *pAd, struct wifi_dev *wdev)
 		DBGPRINT(RT_DEBUG_TRACE, ("Assign wdev_idx=%d\n", idx));
 	}
 	RTMP_INT_UNLOCK(&pAd->irq_lock, flags);
-
+#ifdef MAC_REPEATER_SUPPORT
+	RxTrackingInit(wdev);
+#endif /* MAC_REPEATER_SUPPORT */
 	return ((idx < WDEV_NUM_MAX) ? idx : -1);
 }
 

@@ -7,10 +7,6 @@
 #define MIN_NET_DEVICE_FOR_APCLI		0x20
 #define MIN_NET_DEVICE_FOR_MESH			0x30
 
-#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
-#define MIN_NET_DEVICE_FOR_CFG80211_VIF_P2P_CLI      (MIN_NET_DEVICE_FOR_TDLS + 0x21)
-#define MIN_NET_DEVICE_FOR_CFG80211_VIF_P2P_GO       (MIN_NET_DEVICE_FOR_TDLS + 0x22)
-#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
 
 #define NET_DEVICE_REAL_IDX_MASK		0x0f		/* for each operation mode, we maximum support 15 entities. */
 
@@ -184,10 +180,6 @@
 
 
 /* [CB_OFF + 7]  */
-#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_CONCURRENT_DEVICE) || defined(CFG80211_MULTI_STA)
-#define RTMP_SET_PACKET_OPMODE(_p, _flg)   (PACKET_CB(_p, 7) = _flg)
-#define RTMP_GET_PACKET_OPMODE(_p)         (PACKET_CB(_p, 7))
-#endif /* P2P_SUPPORT  || RT_CFG80211_P2P_CONCURRENT_DEVICE || CFG80211_MULTI_STA */
 
 
 /* [CB_OFF + 8 ~ 9]  */

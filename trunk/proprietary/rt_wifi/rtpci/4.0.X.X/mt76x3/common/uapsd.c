@@ -1519,9 +1519,6 @@ VOID UAPSD_SP_CloseInRVDone(RTMP_ADAPTER *pAd)
 	if (pAd->MacTab.fAnyStationInPsm == FALSE)
 		return; /* no any station is in power save mode */
 
-#if defined(P2P_SUPPORT) || defined(RT_CFG80211_P2P_SUPPORT)
-	FirstWcid = 2;
-#endif /* P2P_SUPPORT || RT_CFG80211_P2P_SUPPORT */
 
 	/* check for all CLIENT's UAPSD Service Period */
 	for(IdEntry = FirstWcid; IdEntry < MAX_LEN_OF_MAC_TABLE; IdEntry++)

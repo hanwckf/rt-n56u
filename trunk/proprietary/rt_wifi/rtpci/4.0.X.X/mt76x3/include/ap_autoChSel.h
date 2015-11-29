@@ -40,14 +40,6 @@ VOID UpdateChannelInfo(
 	IN int ch,
 	IN ChannelSel_Alg Alg);
 
-#ifdef CUSTOMER_DCC_FEATURE
-VOID ChannelInfoResetNew(
-	IN PRTMP_ADAPTER pAd);
-#endif
-#if defined(SUPPORT_ACS_ALL_CHANNEL_RANK) && defined(SUPPORT_ACS_BY_SCAN)
-VOID AutoChBssTableUpdateByScanTab(
-	IN PRTMP_ADAPTER pAd);
-#endif
 
 ULONG AutoChBssInsertEntry(
 	IN PRTMP_ADAPTER pAd,
@@ -86,11 +78,6 @@ VOID AutoChannelSelCheck(
 	IN PRTMP_ADAPTER pAd);
 #endif /* AP_SCAN_SUPPORT */
 
-#ifdef SUPPORT_ACS_ALL_CHANNEL_RANK
-INT32 ACS_PerformAlgorithm(
-	RTMP_ADAPTER *pAd, 
-	ChannelSel_Alg Alg);
-#endif
 
 #endif /* __AUTOCHSELECT_H__ */
 

@@ -65,7 +65,7 @@ typedef VOID	pregs;
 #ifdef RTMP_MAC_PCI
 #define AP_PROFILE_PATH			"/etc/Wireless/RT2860AP/RT2860AP.dat"
 #define AP_RTMP_FIRMWARE_FILE_NAME "/etc/Wireless/RT2860AP/RT2860AP.bin"
-#define AP_DRIVER_VERSION			"3.0.0.0"
+#define AP_DRIVER_VERSION			"4.0.1.0_rev2"
 #ifdef MULTIPLE_CARD_SUPPORT
 #define CARD_INFO_PATH			"/etc/Wireless/RT2860AP/RT2860APCard.dat"
 #endif /* MULTIPLE_CARD_SUPPORT */
@@ -143,12 +143,15 @@ typedef char 				* PNDIS_BUFFER;
  *	Ralink Specific network related constant definitions
  ***********************************************************************************/
 
+#ifdef LIMIT_GLOBAL_SW_QUEUE
+#define MAX_PACKETS_IN_QUEUE				1024
+#else /* LIMIT_GLOBAL_SW_QUEUE */
 #ifdef DOT11_VHT_AC
 #define MAX_PACKETS_IN_QUEUE				1024 /*(512)*/
 #else
 #define MAX_PACKETS_IN_QUEUE				(512)
 #endif /* DOT11_VHT_AC */
-
+#endif /* !LIMIT_GLOBAL_SW_QUEUE */
 
 /***********************************************************************************
  *	OS signaling related constant definitions

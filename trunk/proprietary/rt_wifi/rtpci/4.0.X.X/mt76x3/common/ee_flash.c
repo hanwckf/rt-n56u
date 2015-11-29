@@ -311,6 +311,10 @@ static BOOLEAN  validFlashEepromID(RTMP_ADAPTER *pAd)
 
 static NDIS_STATUS rtmp_ee_flash_init(PRTMP_ADAPTER pAd, PUCHAR start)
 {
+#ifdef CAL_FREE_IC_SUPPORT
+	BOOLEAN bCalFree=0;
+#endif /* CAL_FREE_IC_SUPPORT */
+
 	pAd->chipCap.ee_inited = 1;
 
 	if (validFlashEepromID(pAd) == FALSE)
@@ -321,6 +325,22 @@ static NDIS_STATUS rtmp_ee_flash_init(PRTMP_ADAPTER pAd, PUCHAR start)
 			return NDIS_STATUS_FAILURE;
 		}
 
+#ifdef CAL_FREE_IC_SUPPORT
+		RTMP_CAL_FREE_IC_CHECK(pAd,bCalFree);
+		if (bCalFree)
+		{
+			//MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("Cal Free IC!!\n"));
+			DBGPRINT(RT_DEBUG_OFF, ("rtmp_ee_flash_init() Cal Free IC!!\n"));
+			RTMP_CAL_FREE_DATA_GET(pAd);
+		}
+		else
+		{
+			DBGPRINT(RT_DEBUG_OFF, ("rtmp_ee_flash_init() Non Cal Free IC!!\n"));
+		}
+		
+#endif /* CAL_FREE_IC_SUPPORT */
+
+	
 		/* Random number for the last bytes of MAC address*/
 		{
 			USHORT  Addr45;
@@ -328,10 +348,12 @@ static NDIS_STATUS rtmp_ee_flash_init(PRTMP_ADAPTER pAd, PUCHAR start)
 			rtmp_ee_flash_read(pAd, 0x08, &Addr45);
 			Addr45 = Addr45 & 0xff;
 			Addr45 = Addr45 | (RandomByte(pAd)&0xf8) << 8;
-
-			rtmp_ee_flash_write(pAd, 0x08, Addr45);
+			*(UINT16 *)(&pAd->EEPROMImage[0x08]) = le2cpu16(Addr45);
 			DBGPRINT(RT_DEBUG_ERROR, ("The EEPROM in Flash is wrong, use default\n"));
 		}
+
+		/*write back  all to flash*/
+		rtmp_ee_flash_write_all(pAd,(USHORT *)pAd->EEPROMImage);
 
 		if (validFlashEepromID(pAd) == FALSE)
 		{

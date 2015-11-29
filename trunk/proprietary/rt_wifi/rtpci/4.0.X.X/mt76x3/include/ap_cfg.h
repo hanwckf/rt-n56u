@@ -86,9 +86,12 @@ VOID RTMPIoctlWscProfile(
 	IN PRTMP_ADAPTER pAdapter, 
 	IN RTMP_IOCTL_INPUT_STRUCT *wrq);
 
-VOID RTMPIoctlWscProfile(
+#ifdef WSC_NFC_SUPPORT
+VOID RTMPIoctlNfcStatus(
 	IN PRTMP_ADAPTER pAdapter, 
 	IN RTMP_IOCTL_INPUT_STRUCT *wrq);
+#endif /* WSC_NFC_SUPPORT */
+
 /*add by woody */
 #if defined(INF_AR9) || defined(BB_SOC)
 #if defined(AR9_MAPI_SUPPORT) || defined(BB_SOC)

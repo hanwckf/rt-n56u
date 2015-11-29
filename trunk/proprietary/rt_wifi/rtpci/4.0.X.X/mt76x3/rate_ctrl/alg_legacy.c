@@ -111,11 +111,7 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 			{
 				if ( ((pTable == RateSwitchTableAdapt11N2S) && pEntry->HTPhyMode.field.MCS >= 14 ) ||
 					((pTable == RateSwitchTableAdapt11N1S) && pEntry->HTPhyMode.field.MCS >= 6 ) )
-#ifdef MSTAR_SUPPORT
-					pAd->bDisableRtsProtect = FALSE;
-#else
 					pAd->bDisableRtsProtect = TRUE;
-#endif /* MSTAR_SUPPORT */
 				else
 					pAd->bDisableRtsProtect = FALSE;
 			}
@@ -124,10 +120,6 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 				pAd->bDisableRtsProtect = FALSE;
 			}
 
-#ifdef MSTAR_SUPPORT
-            AsicUpdateProtect(pAd, pAd->MlmeAux.AddHtInfo.AddHtInfo2.OperaionMode,
-                        ALLN_SETPROTECT, pAd->bDisableBGProtect, pAd->bNonGFExist);
-#endif /* MSTAR_SUPPORT */
 
 
 			continue;
@@ -499,10 +491,6 @@ VOID APQuickResponeForRateUpExec(
 			continue;
 
 		MlmeSelectTxRateTable(pAd, pEntry, &pTable, &TableSize, &InitTxRateIdx);
-#ifdef MSTAR_SUPPORT
-		if (pTable == NULL)
-			continue;
-#endif /* MSTAR_SUPPORT */
 
 		pEntry->pTable = pTable;
 

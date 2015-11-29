@@ -67,6 +67,11 @@ config  MT76X3_AP_CARRIER
 	depends on MT76X3_AP
 	default n
 
+config  MT76X3_AP_SMART_CARRIER_SENSE
+	bool "Smart Carrier Sense support"
+	depends on MT76X3_AP
+	default y
+
 config  MT76X3_AP_GREENAP
 	bool "Green AP mode support"
 	depends on MT76X3_AP

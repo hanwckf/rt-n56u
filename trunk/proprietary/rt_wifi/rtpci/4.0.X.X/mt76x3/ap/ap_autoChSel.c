@@ -128,16 +128,6 @@ static VOID ChannelInfoReset(
 	return;
 }
 
-#ifdef CUSTOMER_DCC_FEATURE
-VOID ChannelInfoResetNew(
-	IN PRTMP_ADAPTER	pAd)
-{
-	
-	NdisZeroMemory(&pAd->ChannelInfo, sizeof(CHANNELINFO));
-	pAd->ApCfg.current_channel_index = 0;
-	return;
-}
-#endif
 
 VOID UpdateChannelInfo(
 	IN PRTMP_ADAPTER pAd,
@@ -147,19 +137,12 @@ VOID UpdateChannelInfo(
 	if(pAd->pChannelInfo != NULL)
 	{
 		UINT32 BusyTime;
-#ifndef CUSTOMER_DCC_FEATURE
 		if (Alg == ChannelAlgCCA || Alg == ChannelAlgCombined)
-#endif	
 		{
 			UINT32 cca_cnt = AsicGetCCACnt(pAd);
 
 			pAd->RalinkCounters.OneSecFalseCCACnt += cca_cnt;
 			pAd->pChannelInfo->FalseCCA[ch_index] = cca_cnt;
-#ifdef CUSTOMER_DCC_FEATURE
-			pAd->ChannelInfo.FalseCCA[ch_index] = cca_cnt;
-			if(pAd->ChannelInfo.GetChannelInfo == 0)
-				pAd->ChannelInfo.GetChannelInfo++;
-#endif
 		}
 
 		/*
@@ -169,9 +152,7 @@ VOID UpdateChannelInfo(
 		BusyTime = AsicGetChBusyCnt(pAd, 0);
 
 		pAd->pChannelInfo->chanbusytime[ch_index] = (BusyTime * 100) / AUTO_CHANNEL_SEL_TIMEOUT;
-#ifdef CUSTOMER_DCC_FEATURE
-		pAd->ChannelInfo.chanbusytime[ch_index] = BusyTime;
-#endif
+
 	}
 	else
 		DBGPRINT(RT_DEBUG_ERROR, ("pAd->pChannelInfo equal NULL.\n"));
@@ -351,12 +332,12 @@ static inline UCHAR SelectClearChannelCCA(
 			continue;
 
 
-		if (pBss->Rssi >= RSSI_TO_DBM_OFFSET-50)
+		if (pBss->Rssi >= -50)
 		{
 			/* high signal >= -50 dbm */
 			pChannelInfo->dirtyness[channel_idx] += 50;
 		}
-		else if (pBss->Rssi <= RSSI_TO_DBM_OFFSET-80)
+		else if (pBss->Rssi <= -80)
 		{
 			/* low signal <= -80 dbm */
 			pChannelInfo->dirtyness[channel_idx] += 30;
@@ -927,28 +908,6 @@ static inline UCHAR SelectClearChannelApCnt(
 	return final_channel;
 }
 
-#if defined(SUPPORT_ACS_ALL_CHANNEL_RANK) && defined(SUPPORT_ACS_BY_SCAN)
-VOID AutoChBssTableUpdateByScanTab(
-	IN PRTMP_ADAPTER pAd)
-{
-	INT32 i=0;
-	BSS_ENTRY *pBss;
-
-	/* Clear AutoChBssTable first */
-	if (pAd->pBssInfoTab)
-		NdisZeroMemory(pAd->pBssInfoTab, sizeof(BSSINFO));
-	else
-		DBGPRINT(RT_DEBUG_ERROR, ("pAd->pBssInfoTab equal NULL.\n"));
-
-	/* Copy entry in ScanTab to AutoChBssTable */
-	for(i=0; i<pAd->ScanTab.BssNr ;i++)
-	{
-		pBss = &pAd->ScanTab.BssEntry[i];
-		AutoChBssInsertEntry(pAd, pBss->Bssid, pBss->Ssid, pBss->SsidLen, pBss->Channel, pBss->NewExtChanOffset, pBss->Rssi);		
-	}
-	return;
-}
-#endif
 
 ULONG AutoChBssInsertEntry(
 	IN PRTMP_ADAPTER pAd,
@@ -1156,326 +1115,6 @@ VOID AutoChannelSelCheck(RTMP_ADAPTER *pAd)
 }
 #endif /* AP_SCAN_SUPPORT */
 
-#ifdef SUPPORT_ACS_ALL_CHANNEL_RANK
-VOID ACS_DumpSortList(ACS_SORT_ENTRY *list, INT32 list_len)
-{
-    INT32 jj = 0;
-    if (!list || !list_len)
-        return;
-    
-    DBGPRINT(RT_DEBUG_TRACE, ("---dump sort list---\n"));
-    for (jj=0; jj<list_len; jj++)
-    {
-        DBGPRINT(RT_DEBUG_TRACE, ("CH[%3d]: dirtyness=%5lu\n", list[jj].ch, list[jj].dirtyness));
-    }
-}
-
-INT32 ACS_is5gChannel(UCHAR chIdx)
-{
-    if (chIdx > 14)
-        return 1;
-    else
-        return 0;
-}
-
-INT32 ACS_UpdateDirtinessAll(RTMP_ADAPTER *pAd)
-{
-	PBSSINFO pBssInfoTab = pAd->pBssInfoTab;
-	BSSENTRY *pBss = NULL;
-	PCHANNELINFO pChannelInfo = pAd->pChannelInfo;
-	INT32 channel_idx, BssTab_idx;
-    UCHAR current_bss_ch = 0;
-    INT32 current_bss_ch_is_5g = 0;
-
-    if (!pBssInfoTab || !pChannelInfo)
-    {
-		DBGPRINT(RT_DEBUG_ERROR, ("Invalid pBssInfoTab or pChannelInfo!!\n"));
-        return -1;
-    }
-
-    for (BssTab_idx = 0; BssTab_idx < pBssInfoTab->BssNr; BssTab_idx++)
-    {
-		pBss = &(pBssInfoTab->BssEntry[BssTab_idx]);
-        current_bss_ch = pBss->Channel;
-        current_bss_ch_is_5g = ACS_is5gChannel(current_bss_ch);
-		channel_idx = GetChIdx(pAd, current_bss_ch);
-		if (channel_idx < 0 )
-			continue;
-        /* ======== Dirtiness index #1 ======== */
-		if (pBss->Rssi >= ACS_DIRTINESS_RSSI_STRONG)
-		{ /* high signal >= -50 dbm */
-			pChannelInfo->dirtyness[channel_idx] += 50;
-		}
-		else if (pBss->Rssi >= ACS_DIRTINESS_RSSI_WEAK)
-		{ /* mid signal -50 ~ -80 dbm */
-			pChannelInfo->dirtyness[channel_idx] += 40;
-		}
-		else
-		{ /* low signal < -80 dbm */
-			pChannelInfo->dirtyness[channel_idx] += 30;
-		}
-        /* ??? */
-        //pChannelInfo->dirtyness[channel_idx] += 40;
-
-        /* ======== Dirtiness index #2 ======== */
-        {
-            INT32 BelowBound = 0;
-            INT32 AboveBound = 0;
-            INT32 loop = 0;
-
-            switch(pBss->ExtChOffset)
-            {
-                case EXTCHA_ABOVE:
-                    AboveBound = (current_bss_ch_is_5g) ? (2) : (8);
-                    BelowBound = (current_bss_ch_is_5g) ? (1) : (4);
-                    break;
-
-                case EXTCHA_BELOW:
-                    AboveBound = (current_bss_ch_is_5g) ? (1) : (4);
-                    BelowBound = (current_bss_ch_is_5g) ? (2) : (8);
-                    break;
-
-                default:
-                    AboveBound = (current_bss_ch_is_5g) ? (1) : (4);
-                    BelowBound = (current_bss_ch_is_5g) ? (1) : (4);
-                    break;
-            }
-            /* check neighboring channel - ABOVE */
-            for (loop = (channel_idx+1); loop <= (channel_idx+AboveBound); loop++)
-            {
-                if (loop >= MAX_NUM_OF_CHANNELS)
-                    break;
-                /* if above-neighboring channel is too far, don't need to consider it */
-                if (pAd->ChannelList[loop].Channel - pAd->ChannelList[loop-1].Channel > 4)
-                    break;
-                pChannelInfo->dirtyness[loop] += ((9 - (loop - channel_idx)) * 4);
-            }
-            /* check neighboring channel - BELOW */
-            for (loop=(channel_idx-1); loop >= (channel_idx-BelowBound); loop--)
-            {
-                if (loop < 0)
-                    break;
-
-                if (pAd->ChannelList[loop+1].Channel - pAd->ChannelList[loop].Channel > 4)
-                    continue;
-
-                pChannelInfo->dirtyness[loop] += ((9 - (channel_idx - loop)) * 4);
-            }
-        }
-    }
-
-    return 0;
-}
-
-VOID ACS_Swap(ACS_SORT_ENTRY *list, INT32 idx1, INT32 idx2)
-{
-    ACS_SORT_ENTRY tmp;
-
-    if (!list)
-        return;
-    tmp.ch = list[idx1].ch;
-    tmp.dirtyness = list[idx1].dirtyness;
-    tmp.falseCCA = list[idx1].falseCCA;
-    list[idx1].ch = list[idx2].ch;
-    list[idx1].dirtyness = list[idx2].dirtyness;
-    list[idx1].falseCCA = list[idx2].falseCCA;
-    list[idx2].ch = tmp.ch;
-    list[idx2].dirtyness = tmp.dirtyness;
-    list[idx2].falseCCA = tmp.falseCCA;
-}
-
-/* Quick sort */
-VOID ACS_Sort(ACS_SORT_ENTRY *list, INT32 beg, INT32 end)
-{
-    if(beg < end)
-    {
-        int l=beg+1, r=end, p = list[beg].dirtyness;
-        while(l<r)
-        {
-            if(list[l].dirtyness <= p)
-                l++;
-            else if(list[r].dirtyness >= p)
-                r--;
-            else
-                ACS_Swap(list, l, r);
-        }
-        if(list[l].dirtyness < p)
-        {
-            ACS_Swap(list, l, beg);
-            l--;
-        }
-        else
-        {
-            l--;
-            ACS_Swap(list, l, beg);
-        }
-        ACS_Sort(list, beg, l);
-        ACS_Sort(list, r, end);
-    }
-
-}
-
-/* 
-	==========================================================================
-	Description:
-       sort the channels by dirtyness values
-	Return:
-		INT -  0:success, non-zero:fail
-	==========================================================================
-*/
-INT32 ACS_SortChannelByDirtiness(ACS_SORT_ENTRY *list, INT32 list_len)
-{
-    if (!list || !list_len)
-        return -1;
-    ACS_Sort(list, 0, list_len-1);
-    ACS_DumpSortList(list, list_len);
-    return 0;
-}
-
-INT32 ACS_UpdateRankList(RTMP_ADAPTER *pAd, ACS_SORT_ENTRY *list1, INT32 list1_len, ACS_SORT_ENTRY *list2, INT32 list2_len)
-{
-    INT32 idx = 0;
-    
-    if ((!list1 && !list2) || (!list1_len && !list2_len))
-        return -1;
-
-    if ((list1_len + list2_len) >  MAX_NUM_OF_CHANNELS)
-    {
-        DBGPRINT(RT_DEBUG_ERROR, ("ACS: Error ACS channel count incorrect!\n"));
-        return -1;
-    }
-    pAd->ApCfg.ACS_ChannelRankCount = 0;
-    if (list1 && list1_len)
-    {
-        for (idx = 0; idx < list1_len; idx ++)
-        {
-            pAd->ApCfg.ACS_ChannelRankList[idx] = list1[idx].ch;
-        }
-        pAd->ApCfg.ACS_ChannelRankCount += list1_len;
-    }
-    if (list2 && list2_len)
-    {
-        for (idx = 0; idx < list2_len; idx ++)
-        {
-            pAd->ApCfg.ACS_ChannelRankList[pAd->ApCfg.ACS_ChannelRankCount+idx] = list2[idx].ch;
-        }
-        pAd->ApCfg.ACS_ChannelRankCount += list2_len;
-    }
-
-    DBGPRINT(RT_DEBUG_TRACE, ("ACS: ch_rank_list=["));
-    for (idx = 0; idx < pAd->ApCfg.ACS_ChannelRankCount; idx ++)
-        DBGPRINT(RT_DEBUG_TRACE, (" %d ", pAd->ApCfg.ACS_ChannelRankList[idx]));
-    DBGPRINT(RT_DEBUG_TRACE, ("]\n"));
-    DBGPRINT(RT_DEBUG_TRACE, ("ACS: ChannelRankList updated (%d)\n", pAd->ApCfg.ACS_ChannelRankCount));
-    return (pAd->ApCfg.ACS_ChannelRankCount);
-
-}
-
-/* 
-	==========================================================================
-	Description:
-        Sort the result of ACS channels and come out a rank list
-	Return:
-		INT -  Total channel number of the ranking list (0 means fail)
-	==========================================================================
-*/
-INT32 ACS_DoChannelRanking(RTMP_ADAPTER *pAd)
-{
-    INT32 channel_idx = 0;
-    PCHANNELINFO pChannelInfo = pAd->pChannelInfo;
-    ACS_SORT_ENTRY *sort_list1 = NULL;
-    ACS_SORT_ENTRY *sort_list2 = NULL;
-    INT32 total_chidx_list1 = 0, total_chidx_list2 = 0;
-
-    if (!pChannelInfo)
-        return 0;
-
-    os_alloc_mem(NULL, (UCHAR **)&sort_list1, sizeof(ACS_SORT_ENTRY)*MAX_NUM_OF_CHANNELS);
-    if (!sort_list1)
-        return 0;
-    os_alloc_mem(NULL, (UCHAR **)&sort_list2, sizeof(ACS_SORT_ENTRY)*MAX_NUM_OF_CHANNELS);
-    if (!sort_list2)
-    {
-        if (sort_list1)
-            os_free_mem(NULL, sort_list1);
-        return 0;
-    }
-    NdisZeroMemory(sort_list1, sizeof(ACS_SORT_ENTRY)*MAX_NUM_OF_CHANNELS);
-    NdisZeroMemory(sort_list2, sizeof(ACS_SORT_ENTRY)*MAX_NUM_OF_CHANNELS);
-    
-    /* First compare those have FalseCCA <= 100 */
-    for (channel_idx = 0; channel_idx < pAd->ChannelListNum; channel_idx++)
-    {
-        if (pChannelInfo->FalseCCA[channel_idx] <= ACS_FALSECCA_THRESHOLD)
-        {
-            /* falseCCA <= 100 group */
-            sort_list1[total_chidx_list1].ch = pAd->ChannelList[channel_idx].Channel;
-            sort_list1[total_chidx_list1].falseCCA = pChannelInfo->FalseCCA[channel_idx];
-            sort_list1[total_chidx_list1].dirtyness = pChannelInfo->dirtyness[channel_idx];
-            total_chidx_list1 ++;
-        }
-        else
-        {
-            /* falseCCA > 100 group */
-            sort_list2[total_chidx_list2].ch = pAd->ChannelList[channel_idx].Channel;
-            sort_list2[total_chidx_list2].falseCCA = pChannelInfo->FalseCCA[channel_idx];
-            sort_list2[total_chidx_list2].dirtyness = pChannelInfo->dirtyness[channel_idx];
-            total_chidx_list2 ++;
-        }
-    }
-    if (total_chidx_list1 > 0)
-    {
-        /* Let's sort those channels of falseCCA <= 100 */
-        ACS_SortChannelByDirtiness(sort_list1, total_chidx_list1);
-    }
-    if (total_chidx_list2 > 0)
-    {
-        /* Let's sort those channels of falseCCA > 100 */
-        ACS_SortChannelByDirtiness(sort_list2, total_chidx_list2);
-    }
-    ACS_UpdateRankList(pAd, sort_list1, total_chidx_list1, sort_list2, total_chidx_list2);
-
-    if (sort_list1)
-        os_free_mem(NULL, sort_list1);
-    if (sort_list2)
-        os_free_mem(NULL, sort_list2);
-
-    return (total_chidx_list1+total_chidx_list2);
-}
-
-/* 
-	==========================================================================
-	Description:
-        Perform ACS algorithm to come out all channel rankings
-	Return:
-		INT -  Total channel number of the ranking list (0 means fail)
-	==========================================================================
-*/
-INT32 ACS_PerformAlgorithm(RTMP_ADAPTER *pAd, ChannelSel_Alg Alg)
-{
-    INT32 TotalNum = 0;
-    
-	/* init pAd->pChannelInfo->IsABand */
-	CheckPhyModeIsABand(pAd);
-    
-    if (Alg != ChannelAlgCombined)
-    {
-        /* Currently we only support AlgCombined */
-        DBGPRINT(RT_DEBUG_ERROR, ("ACS Algorithm %d is not supported!\n", Alg));
-        return TotalNum;
-    }
-    if (ACS_UpdateDirtinessAll(pAd))
-    {
-        DBGPRINT(RT_DEBUG_ERROR, ("ACS Update Dirtiness failed!\n"));
-        return TotalNum;
-    }
-    //ACS_DumpChannelInfo(pAd);
-    TotalNum = ACS_DoChannelRanking(pAd);
-    
-    return TotalNum;
-}
-
-#endif /* SUPPORT_ACS_ALL_CHANNEL_RANK */
 
 /* 
 	==========================================================================
@@ -1515,7 +1154,6 @@ UCHAR APAutoSelectChannel(RTMP_ADAPTER *pAd, ChannelSel_Alg Alg)
 	}
 	else
 	{
-#ifndef SUPPORT_ACS_BY_SCAN
 
 #ifdef MICROWAVE_OVEN_SUPPORT
 		pAd->CommonCfg.MO_Cfg.bEnable = FALSE;
@@ -1545,18 +1183,7 @@ UCHAR APAutoSelectChannel(RTMP_ADAPTER *pAd, ChannelSel_Alg Alg)
 			UpdateChannelInfo(pAd, i,Alg);
 		}
 
-#ifdef SUPPORT_ACS_ALL_CHANNEL_RANK
-        if ((ch = ACS_PerformAlgorithm(pAd, Alg)) <= 0)
-       {
-            /* return ch is the total number of channels in the rank list */
-            DBGPRINT(RT_DEBUG_ERROR, ("ACS: Error perform algorithm!\n"));
-       }
-       else
-            DBGPRINT(RT_DEBUG_ERROR, ("ACS: Perform algorithm OK (ch_count=%d)!\n", ch));
-#else
         ch = SelectBestChannel(pAd, Alg);
-#endif /* SUPPORT_ACS_ALL_CHANNEL_RANK */
-#endif /* SUPPORT_ACS_BY_SCAN */
    }
 
     return ch;

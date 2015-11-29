@@ -2190,7 +2190,13 @@ VOID PDMAWatchDog(RTMP_ADAPTER *pAd)
 
 reset:
 
+#ifdef DMA_RESET_SUPPORT
+	//replace with PSE reset instead of PMDA reset.
+	pAd->pse_reset_flag=TRUE;
+#else /* DMA_RESET_SUPPORT */
 	PDMAResetAndRecovery(pAd);
+#endif /* !DMA_RESET_SUPPORT */
+
 }
 
 VOID DumpPseInfo(RTMP_ADAPTER *pAd)
@@ -2513,7 +2519,7 @@ BOOLEAN AsicCheckCommanOk(RTMP_ADAPTER *pAd, UCHAR Command)
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return TRUE;
 	}
@@ -2763,7 +2769,7 @@ BOOLEAN RT28xxPciAsicRadioOff(
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(): Not support for HIF_MT yet!\n",
 					__FUNCTION__));
 		return FALSE;
 	}
@@ -3055,7 +3061,7 @@ int write_reg(RTMP_ADAPTER *ad, UINT32 base, UINT16 offset, UINT32 value)
 {
 	// TODO: shiang-7603
 	if (ad->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(): Not support for HIF_MT yet!\n",
 					__FUNCTION__));
 		return FALSE;
 	}
@@ -3075,7 +3081,7 @@ int read_reg(RTMP_ADAPTER *ad, UINT32 base, UINT16 offset, UINT32 *value)
 {
 	// TODO: shiang-7603
 	if (ad->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(): Not support for HIF_MT yet!\n",
 					__FUNCTION__));
 		return FALSE;
 	}

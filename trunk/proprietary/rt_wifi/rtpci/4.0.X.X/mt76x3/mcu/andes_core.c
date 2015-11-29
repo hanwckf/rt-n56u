@@ -713,12 +713,6 @@ static INT32 AndesDequeueAndKickOutCmdMsgs(RTMP_ADAPTER *ad)
 			continue;
 		}
 
-		if (AndesQueueLen(ctl, &ctl->ackq) > 0) {
-			AndesQueueHeadCmdMsg(&ctl->txq, msg, msg->state);
-			ret = NDIS_STATUS_FAILURE;
-			continue;
-		}
-
 		net_pkt = msg->net_pkt;
 
 		if (msg->state != tx_retransmit) {

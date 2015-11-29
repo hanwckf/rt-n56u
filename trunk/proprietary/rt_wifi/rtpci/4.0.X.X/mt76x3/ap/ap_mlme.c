@@ -129,13 +129,6 @@ VOID APMlmePeriodicExec(
 		take care all of the client's situation
 		ToDo: need to verify compatibility issue with WiFi product.
 	*/
-#ifdef CUSTOMER_DCC_FEATURE
-	if(pAd->AllowedStaList.StaCount > 0)
-		RemoveOldStaList(pAd);
-	if(pAd->ApEnableBeaconTable == TRUE)
-		RemoveOldBssEntry(pAd);
-	APResetStreamingStatus(pAd);
-#endif
 
 #ifdef BTCOEX_CONCURRENT
 	MT7662ReceCoexFromOtherCHip(pAd->CommonCfg.Channel,pAd->CommonCfg.CentralChannel,pAd->CommonCfg.BBPCurrentBW);

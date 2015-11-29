@@ -3463,7 +3463,6 @@ VOID CmdSetTxPowerCtrl(RTMP_ADAPTER *pAd, UINT8 central_chl)
 		NdisCopyMemory(&CmdTxPwrCtrl.aucTempCompPower[0], &(pAd->EEPROMImage[STEP_NUM_NEG_7]), sizeof(CmdTxPwrCtrl.aucTempCompPower));
 	}
 
-//	if (!(cap->pa_type & (1 << 1)))
 	if (1)
 	{
 
@@ -3498,16 +3497,6 @@ VOID CmdSetTxPowerCtrl(RTMP_ADAPTER *pAd, UINT8 central_chl)
 		DBGPRINT(RT_DEBUG_INFO, ("Percentage = 0x%x\n", PwrPercentageDelta));
 
 		CmdTxPwrCtrl.ucReserved = PwrPercentageDelta;
-	}
-	else
-	{
-#ifdef CONFIG_ATE
-		if (!ATE_ON(pAd))
-#endif
-		{
-			DBGPRINT(RT_DEBUG_TRACE, ("EPA, do not need to apply tx power percentage\n"));
-			goto error;
-		}
 	}
 
 	DBGPRINT(RT_DEBUG_INFO, ("CmdTxPwrCtrl.ucCenterChannel=%x\n", CmdTxPwrCtrl.ucCenterChannel));

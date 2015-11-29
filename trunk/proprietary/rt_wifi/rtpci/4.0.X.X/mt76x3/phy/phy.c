@@ -281,3 +281,14 @@ INT32 ShowPartialRF(RTMP_ADAPTER *pAd, UINT32 Start, UINT32 End)
 	else
 		return FALSE;
 }
+
+#ifdef SMART_CARRIER_SENSE_SUPPORT
+INT Smart_Carrier_Sense(RTMP_ADAPTER *pAd)
+{
+	if (pAd->phy_op && pAd->phy_op->Smart_Carrier_Sense)
+		return pAd->phy_op->Smart_Carrier_Sense(pAd);
+	else
+		return FALSE;
+}
+#endif /* SMART_CARRIER_SENSE_SUPPORT */
+

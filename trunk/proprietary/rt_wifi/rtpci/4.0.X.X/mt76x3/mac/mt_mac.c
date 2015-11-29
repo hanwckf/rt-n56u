@@ -361,7 +361,7 @@ VOID dump_mt_mac_cr(RTMP_ADAPTER *pAd)
 INT mt_mac_fifo_stat_update(RTMP_ADAPTER *pAd)
 {
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 	}
 
@@ -808,13 +808,6 @@ VOID write_tmac_info(
 
         //TODO:Carter, for Adhoc Beacon, use own_mac = 0 now,
         //but what if need to consider GO/client case, it shall be refined.
-#ifdef RT_CFG80211_P2P_SUPPORT
-		/* For Concurrent case, it should check by Entry */
-		if (pAd->cfg80211_ctrl.isCfgInApMode == RT_CMD_80211_IFTYPE_AP) 
-		{
-			txd_1->own_mac = 0x1;
-		}
-#endif /* RT_CFG80211_P2P_SUPPORT */
 	}
 
 	if (mac_entry && IS_ENTRY_APCLI(mac_entry))
@@ -887,6 +880,11 @@ VOID write_tmac_info(
 			txd_6->ITxBF = 0;
 			txd_6->ldpc = ldpc;
 			txd_6->gi = sgi;
+
+#ifdef GREENAP_SUPPORT
+			if (pAd->ApCfg.bGreenAPActive == TRUE)
+				txd_6->spe_en = 0;
+#endif /* GREENAP_SUPPORT */
 
 			if (txd_6->fix_rate_mode == TMI_FIX_RATE_BY_TXD)
 			{
@@ -1160,6 +1158,10 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 		} else
 			txd_l->txd_3.remain_tx_cnt = MT_TX_SHORT_RETRY;
 
+		if ((pTxBlk->TxFrameType == TX_LEGACY_FRAME) 
+			|| (pTxBlk->TxFrameType == TX_RALINK_FRAME))
+			txd_2->ba_disable = 1; 
+
 #ifdef MT7603
 		if (MTK_REV_GTE(pAd, MT7603, MT7603E1))
 		{
@@ -1261,11 +1263,7 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 		txd_5->bar_sn_ctrl = TMI_PM_BIT_CFG_BY_SW;
 
 		/* For  MT STA LP control, use H/W control mode for PM bit */
-#if defined(CONFIG_STA_SUPPORT) && defined(CONFIG_PM_BIT_HW_MODE)
- 		txd_5->pwr_mgmt = TMI_PM_BIT_CFG_BY_HW;
-#else
  		txd_5->pwr_mgmt = TMI_PM_BIT_CFG_BY_SW;
-#endif /* CONFIG_STA_SUPPORT && CONFIG_PM_BIT_HW_MODE */		
 	}
 
 	txd_0->tx_byte_cnt = txd_size +
@@ -1311,7 +1309,7 @@ INT rtmp_mac_set_band(RTMP_ADAPTER *pAd, int  band)
 {
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return FALSE;
 	}
@@ -1334,7 +1332,7 @@ INT rtmp_mac_set_mmps(RTMP_ADAPTER *pAd, INT ReduceCorePower)
 {
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return FALSE;
 	}
@@ -1347,7 +1345,7 @@ VOID ReSyncBeaconTime(RTMP_ADAPTER *pAd)
 {
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 	}
 }
@@ -1528,7 +1526,7 @@ VOID mt_mac_bcn_buf_init(IN RTMP_ADAPTER *pAd, BOOLEAN bHardReset)
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return;
 	}

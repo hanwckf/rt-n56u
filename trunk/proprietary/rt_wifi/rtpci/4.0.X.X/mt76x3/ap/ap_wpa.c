@@ -530,6 +530,7 @@ UINT	APValidateRSNIE(
 	}
 	else
 	{
+#ifdef DBG
         UCHAR CipherAlg = CIPHER_NONE;
 		
         if (pEntry->WepStatus == Ndis802_11WEPEnabled)
@@ -539,6 +540,7 @@ UINT	APValidateRSNIE(
         else if (pEntry->WepStatus == Ndis802_11AESEnable)
             CipherAlg = CIPHER_AES;
         DBGPRINT(RT_DEBUG_TRACE, ("%s : (AID#%d WepStatus=%s)\n", __FUNCTION__, pEntry->Aid, CipherName[CipherAlg]));
+#endif /* DBG */
 	}
 
 	

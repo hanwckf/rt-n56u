@@ -2759,25 +2759,6 @@ NDIS_STATUS	RTMPSetProfileParameters(
 
 #ifdef CONFIG_AP_SUPPORT
 
-#if defined(RT_CFG80211_P2P_SUPPORT) && defined(SUPPORT_ACS_ALL_CHANNEL_RANK)
-        /*AutoChannelSelectAlg*/
-        if(RTMPGetKeyParameter("AutoChannelSelectAlg", tmpbuf, 10, pBuffer, TRUE))
-        {
-            ChannelSel_Alg SelAlg=(ChannelSel_Alg)simple_strtol(tmpbuf, 0, 10);
-            if (SelAlg > 4 || SelAlg < 0)
-            {
-                /* force use default alg */
-                pAd->ApCfg.AutoChannelAlg = ChannelAlgCombined;
-            }
-            else
-            {
-                pAd->ApCfg.AutoChannelAlg = SelAlg;
-            }
-            pAd->ApCfg.bAutoChannelAtBootup = TRUE;
-            pAd->ApCfg.bAutoChannelScaned = FALSE;
-            DBGPRINT(RT_DEBUG_TRACE, ("AutoChannelSelectAlg=%d, AutoChannelAtBootup=%d\n",  pAd->ApCfg.AutoChannelAlg, pAd->ApCfg.bAutoChannelAtBootup));
-        }
-#endif /* SUPPORT_ACS_ALL_CHANNEL_RANK */
 
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{
@@ -3961,6 +3942,16 @@ NDIS_STATUS	RTMPSetProfileParameters(
          pAd->bPS_Retrieve = PS_RETRIEVE;
          DBGPRINT(RT_DEBUG_OFF, ("PS_RETRIEVE = %lx\n",PS_RETRIEVE));
       }
+      
+#ifdef SMART_CARRIER_SENSE_SUPPORT
+	if (RTMPGetKeyParameter("SCSEnable", tmpbuf, 10, pBuffer, TRUE))
+	{
+	   long SCSEnable;
+	   SCSEnable = simple_strtol(tmpbuf, 0, 10);
+	   pAd->SCSCtrl.SCSEnable = SCSEnable;
+	   DBGPRINT(RT_DEBUG_OFF, ("Smart Carrier Sense = %lx\n",SCSEnable));
+	}
+#endif /* SMART_CARRIER_SENSE_SUPPORT */
 
 	}while(0);
 

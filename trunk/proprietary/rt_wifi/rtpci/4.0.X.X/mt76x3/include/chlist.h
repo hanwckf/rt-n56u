@@ -112,8 +112,10 @@ extern int CH_HZ_ID_MAP_NUM;
 /* Check if it is Japan W53(ch52,56,60,64) channel. */
 #define JapanChannelCheck(_ch)  ((_ch == 52) || (_ch == 56) || (_ch == 60) || (_ch == 64))
 
+#ifdef ED_MONITOR
 BOOLEAN GetEDCCASupport(
 	IN PRTMP_ADAPTER pAd);
+#endif /* ED_MONITOR */
 
 #ifdef EXT_BUILD_CHANNEL_LIST
 VOID BuildChannelListEx(

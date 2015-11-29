@@ -1956,6 +1956,8 @@ static PCOUNTRY_PROP GetCountryProp(
 	return pCountryProp;
 }
 #endif /* !EXT_BUILD_CHANNEL_LIST */
+
+#ifdef ED_MONITOR
 BOOLEAN GetEDCCASupport(
 	IN PRTMP_ADAPTER pAd)
 {
@@ -1986,6 +1988,8 @@ BOOLEAN GetEDCCASupport(
 	return ret;
 	
 }
+#endif /* ED_MONITOR */
+
 #ifdef DOT11_N_SUPPORT
 static BOOLEAN IsValidChannel(
 	IN PRTMP_ADAPTER pAd,

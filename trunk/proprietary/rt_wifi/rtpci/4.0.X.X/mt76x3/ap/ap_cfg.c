@@ -1072,10 +1072,12 @@ static struct {
 	{"set_mib_scan_channel", set_mib_scan_channel_proc}, // set the channel to listen
 #endif /* SNIFFER_MIB_CMD */
 
+#ifdef ED_MONITOR
 	{"ed_chk", Set_ed_chk_proc},
 #ifdef DBG
 	{"ed_stat", show_ed_stat_proc},
 #endif /* DBG */
+#endif /* ED_MONITOR */
 #ifdef SMART_CARRIER_SENSE_SUPPORT
 	{"SCSEnable", SetSCSEnable_Proc},
 #endif /* SMART_CARRIER_SENSE_SUPPORT */

@@ -4709,6 +4709,7 @@ MONITOR_STRUCT monitor_ctrl;
 	SMART_CARRIER_SENSE_CTRL	SCSCtrl;
 #endif /* SMART_CARRIER_SENSE_SUPPORT */
 
+#ifdef ED_MONITOR
 	/* EDCCA related param */
 	BOOLEAN ed_chk;
 	BOOLEAN ed_debug;	
@@ -4737,7 +4738,7 @@ MONITOR_STRUCT monitor_ctrl;
 	INT32 rssi_stat[ED_STAT_CNT];	
 	ULONG chk_time[ED_STAT_CNT];
 	/* EDCCA related param  END */
-
+#endif
 	BOOLEAN bPingLog;
 };
 
@@ -8983,6 +8984,7 @@ INT SetSKUEnable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT SetSCSEnable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 #endif /* SMART_CARRIER_SENSE_SUPPORT */
 
+#ifdef ED_MONITOR
 INT Set_ed_chk_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 #ifdef DBG
 INT show_ed_stat_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
@@ -8990,7 +8992,7 @@ INT show_ed_stat_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT ed_status_read(RTMP_ADAPTER *pAd);
 INT ed_monitor_init(RTMP_ADAPTER *pAd);
 INT ed_monitor_exit(RTMP_ADAPTER *pAd);
-
+#endif /* ED_MONITOR */
 
 
 

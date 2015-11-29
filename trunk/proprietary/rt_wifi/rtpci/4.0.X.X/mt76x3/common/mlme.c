@@ -1713,9 +1713,11 @@ NTSTATUS MlmePeriodicExec(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
 	RTMP_OS_TXRXHOOK_CALL(WLAN_TX_MLME_PERIOD,NULL,1,pAd);
 
 	pAd->bUpdateBcnCntDone = FALSE;
-	
+
+#ifdef ED_MONITOR
 	if(pAd->ed_chk != FALSE)
 		ed_status_read(pAd);
+#endif
 
 	return NDIS_STATUS_SUCCESS;
 }

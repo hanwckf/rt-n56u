@@ -2224,6 +2224,7 @@ INT SetSKUEnable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 }
 #endif /* SINGLE_SKU_V2 */
 
+#ifdef ED_MONITOR
 /* run-time turn EDCCA on/off */
 INT Set_ed_chk_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
@@ -2240,6 +2241,7 @@ INT Set_ed_chk_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	
 	return TRUE;
 }
+
 INT ed_status_read(RTMP_ADAPTER *pAd)
 {
 	UINT32 period_us = pAd->ed_chk_period * 1000;
@@ -2568,6 +2570,7 @@ rssi_stat));
 	return TRUE;
 }
 #endif /* DBG */
+#endif /* ED_MONITOR */
 
 INT	Set_RadioOn_Proc(
 	IN	PRTMP_ADAPTER	pAd,

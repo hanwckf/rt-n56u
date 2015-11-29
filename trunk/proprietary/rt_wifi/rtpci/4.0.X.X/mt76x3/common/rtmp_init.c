@@ -1710,6 +1710,7 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 	pAd->SCSCtrl.SCSThreshold = 250000; /* 2 Mbps */
 #endif
 
+#ifdef ED_MONITOR
 	pAd->ed_chk = FALSE; //let country region to turn on
 	pAd->ed_debug = FALSE;
 	
@@ -1718,7 +1719,7 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 	pAd->ed_false_cca_threshold = 150;		
 	pAd->ed_block_tx_threshold = 10;
 	pAd->ed_big_rssi_count = 0;
-		
+#endif /* ED_MONITOR */
 
 	DBGPRINT(RT_DEBUG_TRACE, ("<-- UserCfgInit\n"));
 }

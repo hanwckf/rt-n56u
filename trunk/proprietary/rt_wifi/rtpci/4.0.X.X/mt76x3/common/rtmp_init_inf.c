@@ -733,6 +733,7 @@ VOID RTMPDrvOpen(VOID *pAdSrc)
 
 #endif
 
+#ifdef ED_MONITOR
 	/* Only turn EDCCA on in CE region */
 	{
 		BOOLEAN bEdcca = FALSE;
@@ -747,7 +748,9 @@ VOID RTMPDrvOpen(VOID *pAdSrc)
 			ed_monitor_exit(pAd);
 		}
 	}
-	
+#else
+	RTMP_CHIP_ASIC_SET_EDCCA(pAd, FALSE);
+#endif /* ED_MONITOR */
 }
 
 

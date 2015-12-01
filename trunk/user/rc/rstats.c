@@ -336,11 +336,10 @@ static void save_speed_json(long next_time)
 					tmax = tnow;
 				fprintf(fp, "%s%u", k ? "," : "", tnow);
 			}
-			total *= RSTATS_INTERVAL;
 			fprintf(fp, "],\n");
 			ch = j ? 't' : 'r';
 			fprintf(fp, " %cx_avg: %llu,\n %cx_max: %u,\n %cx_total: %llu\n",
-				ch, total / MAX_NSPEED, ch, tmax, ch, total);
+				ch, total / MAX_NSPEED, ch, tmax, ch, total * RSTATS_INTERVAL);
 		}
 	}
 	fprintf(fp, "%s\n};\n", (i > 0) ? " }" : "");

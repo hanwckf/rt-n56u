@@ -75,8 +75,8 @@ static int response(http_trans_t *trans, ddns_info_t *UNUSED(info), ddns_alias_t
 	switch (code) {
 	case 0:
 	case 1:
-		return RC_OK;
 	case 4:
+		return RC_OK;
 	case 11:
 		return RC_DYNDNS_RSP_RETRY_LATER;
 	default:

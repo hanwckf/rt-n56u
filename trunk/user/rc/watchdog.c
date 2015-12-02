@@ -997,8 +997,13 @@ ntpc_updated_main(int argc, char *argv[])
 	nvram_set_int_temp("ntpc_counter", ntpc_counter + 1);
 
 	offset = getenv("offset");
-	if (offset)
+	if (offset) {
+#if defined (USE_RTC_HCTOSYS)
+		/* update current system time to RTC chip */
+		system("hwclock -w");
+#endif
 		logmessage("NTP Client", "System time changed, offset: %ss", offset);
+	}
 
 	return 0;
 }

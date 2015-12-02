@@ -511,6 +511,7 @@ flash_firmware(void)
 static void
 storage_load_time(void)
 {
+#if !defined (USE_RTC_HCTOSYS)
 	FILE *fp;
 	char buf[32];
 	struct tm storage_tm;
@@ -531,11 +532,13 @@ storage_load_time(void)
 			stime(&storage_time);
 		}
 	}
+#endif
 }
 
 void
 storage_save_time(time_t delta)
 {
+#if !defined (USE_RTC_HCTOSYS)
 	FILE *fp;
 	time_t now_time;
 	struct tm now_tm;
@@ -552,6 +555,7 @@ storage_save_time(time_t delta)
 			fclose(fp);
 		}
 	}
+#endif
 }
 
 void 

@@ -328,6 +328,11 @@ init_time(void)
 
 	time(&st);
 	localtime_r(&st, &stm);
+#if defined (USE_RTC_HCTOSYS)
+	/* check RTC is valid */
+	if (stm.tm_year >= (SYS_START_YEAR - 1900))
+		return;
+#endif
 	stm.tm_year = (SYS_START_YEAR - 1900);
 	st = mktime(&stm);
 	stime(&st);

@@ -430,9 +430,11 @@ static int is_system_time_valid(struct tm *tms)
 	if (tms->tm_year <= (SYS_START_YEAR - 1900))
 		return 0;
 
+#if !defined (USE_RTC_HCTOSYS)
 	/* NTP client updated at least one time */
 	if (!is_ntpc_updated())
 		return 0;
+#endif
 
 	return 1;
 }

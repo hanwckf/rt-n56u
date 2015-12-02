@@ -239,6 +239,10 @@ if [ -n "$CONFIG_SMP" ] ; then
 	func_enable_busybox_param "CONFIG_FEATURE_TOP_SMP_CPU"
 	func_enable_busybox_param "CONFIG_FEATURE_TOP_SMP_PROCESS"
 fi
+############################# RTC #####################################
+if [ -n "$CONFIG_RTC_CLASS" ] ; then
+	func_enable_busybox_param "CONFIG_HWCLOCK"
+fi
 ############################# IPV6 ####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_INET_TUNNEL"

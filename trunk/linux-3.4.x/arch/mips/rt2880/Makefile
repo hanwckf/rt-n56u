@@ -20,10 +20,6 @@ else
 obj-y += irq.o
 endif
 
-ifdef CONFIG_MTK_MMC
-obj-y += dev-mmc.o
-endif
-
 obj-$(CONFIG_MIPS_CMP) += malta-amon.o
 
 obj-$(CONFIG_PCI) += pci.o
@@ -35,3 +31,11 @@ obj-$(CONFIG_RALINK_DMA) += dev-dma.o
 obj-$(CONFIG_RALINK_TIMER_DFS) += rt_timer_dfs.o
 obj-$(CONFIG_RALINK_TIMER_WDG) += rt_timer_wdg.o
 obj-$(CONFIG_DWC_OTG) += lm.o
+
+ifdef CONFIG_MTK_MMC
+obj-y += dev-mmc.o
+endif
+
+ifdef CONFIG_I2C_RALINK
+obj-y += dev-i2c.o
+endif

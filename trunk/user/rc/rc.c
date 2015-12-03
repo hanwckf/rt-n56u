@@ -835,15 +835,17 @@ shutdown_router(int level)
 
 	umount_rwfs_partition();
 
+	if (use_halt) {
+		module_smart_unload("hw_nat", 0);
+		module_smart_unload("rt_timer_wdg", 0);
+	}
+
 #if defined (BOARD_GPIO_LED_LAN)
 	LED_CONTROL(BOARD_GPIO_LED_LAN, LED_OFF);
 #endif
 #if defined (BOARD_GPIO_LED_POWER)
 	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_OFF);
 #endif
-
-	if (use_halt)
-		module_smart_unload("rt_timer_wdg", 0);
 }
 
 void 

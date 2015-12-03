@@ -1156,8 +1156,8 @@ ralink_gpio_notify_user(u32 irq_gpio, u32 rise_edge)
 	if (irq_gpio >= RALINK_GPIO_NUMBER)
 		return 0;
 
-	// don't send any signal if pid is 0 or 1
-	if (ralink_gpio_irq_data[irq_gpio].pid < 2)
+	// don't send any signal if pid < 1
+	if (ralink_gpio_irq_data[irq_gpio].pid < 1)
 		return 0;
 
 	if (!(ralink_gpio_irq_data[irq_gpio].rise && rise_edge) &&

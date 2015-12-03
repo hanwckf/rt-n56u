@@ -230,6 +230,16 @@ init_gpio_leds_buttons(void)
 #if defined (BOARD_GPIO_BTN_ROUTER)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_ROUTER, 0);
 #endif
+	/* init BTN POWER  */
+#if defined (BOARD_GPIO_BTN_PWR_CUT) && defined (BOARD_GPIO_BTN_PWR_INT)
+	/* Shortcut POWER button */
+	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_PWR_CUT, 1);
+	cpu_gpio_set_pin(BOARD_GPIO_BTN_PWR_CUT, 1);
+
+	/* IRQ on rising edge POWER, send SIGUSR2 to pid 1 */
+	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_PWR_INT, 0);
+	cpu_gpio_irq_set(BOARD_GPIO_BTN_PWR_INT, 1, 0, 1);
+#endif
 }
 
 static void
@@ -777,17 +787,23 @@ init_router(void)
 	start_rwfs_optware();
 }
 
+/*
+ * level {0: reboot, 1: halt, 2: power-off}
+ */
 void
-shutdown_router(int use_reboot)
+shutdown_router(int level)
 {
+	int use_halt = (level == 1) ? 1 : 0;
 	int is_ap_mode = get_ap_mode();
 
 	stop_misc();
-	stop_services(1);
+
+	if (level < 2)
+		stop_services(use_halt);
 
 #if (BOARD_NUM_USB_PORTS > 0)
 	stop_usb_printer_spoolers();
-	safe_remove_usb_device(0, NULL, !use_reboot);
+	safe_remove_usb_device(0, NULL, use_halt);
 #endif
 #if defined (BOARD_GPIO_LED_USB)
 	LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
@@ -797,8 +813,10 @@ shutdown_router(int use_reboot)
 #endif
 
 	stop_wan();
-	stop_services_lan_wan();
-	set_ipv4_forward(0);
+	if (level < 2) {
+		stop_services_lan_wan();
+		set_ipv4_forward(0);
+	}
 #if defined (BOARD_GPIO_LED_WAN)
 	LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
 #endif
@@ -809,8 +827,11 @@ shutdown_router(int use_reboot)
 	stop_8021x_all();
 	stop_wifi_all_wl();
 	stop_wifi_all_rt();
-	stop_logger();
-	stop_lan(is_ap_mode);
+
+	if (level < 2) {
+		stop_logger();
+		stop_lan(is_ap_mode);
+	}
 
 	umount_rwfs_partition();
 
@@ -821,7 +842,7 @@ shutdown_router(int use_reboot)
 	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_OFF);
 #endif
 
-	if (!use_reboot)
+	if (use_halt)
 		module_smart_unload("rt_timer_wdg", 0);
 }
 

@@ -77,6 +77,38 @@ static const char *const environment[] = {
 static void
 reset_signals(void);
 
+static void
+notify_shutdown(void)
+{
+#if defined (BOARD_GPIO_BTN_PWR_CUT) && defined (BOARD_GPIO_BTN_PWR_INT)
+	unsigned int i_button_value = BTN_PRESSED;
+
+	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_PWR_INT, &i_button_value) < 0)
+		return;
+
+	if (i_button_value == BTN_PRESSED)
+		return;
+
+	/* POWER button is released, shutdown now */
+	cpu_gpio_irq_set(BOARD_GPIO_BTN_PWR_INT, 0, 0, 0);
+
+	reset_signals();
+
+	printf("Button POWER is released, shutdown system...\n");
+
+	shutdown_router(2);
+
+	printf("\nShutdown!\n\n");
+
+	usleep(10000);
+
+	sync();
+
+	/* Power OFF */
+	cpu_gpio_set_pin(BOARD_GPIO_BTN_PWR_CUT, 0);
+#endif
+}
+
 /* signals handling */
 static void
 catch_sig_fatal(int sig)
@@ -86,13 +118,13 @@ catch_sig_fatal(int sig)
 	printf("%s signal: %s\n", "fatal", strsignal(sig));
 
 	if (sig == SIGQUIT) {
-		shutdown_router(0);
+		shutdown_router(1);
 		return;
 	}
 
 	reset_signals();
 
-	shutdown_router(1);
+	shutdown_router(0);
 
 	kill(-1, SIGTERM);
 	sleep(1);
@@ -121,6 +153,7 @@ catch_sig_event(int sig)
 		sig_usr1_received = 1;
 		break;
 	case SIGUSR2:
+		notify_shutdown();
 		break;
 	case SIGALRM:
 		sig_alrm_received = 1;
@@ -449,6 +482,9 @@ init_main_loop(void)
 
 	/* block SIGUSR1 during init_router() */
 	control_signal(SIGUSR1, SIG_BLOCK);
+
+	/* block SIGUSR2 during notify_shutdown() */
+	control_signal(SIGUSR2, SIG_BLOCK);
 
 	/* Router init and start */
 	init_router();

@@ -133,7 +133,7 @@
 void setenv_tz(void);
 void setkernel_tz(void);
 void init_router(void);
-void shutdown_router(int use_reboot);
+void shutdown_router(int level);
 void handle_notifications(void);
 void LED_CONTROL(int gpio_led, int flag);
 void storage_save_time(time_t delta);

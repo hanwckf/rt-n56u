@@ -446,7 +446,6 @@ stop_misc(void)
 {
 	char* svcs[] = {
 		"ntpd",
-		"tcpcheck",
 		"detect_wan",
 		"watchdog",
 		NULL

@@ -52,7 +52,7 @@ struct sch_ep
 
 int mtk_xhci_scheduler_init(void);
 int mtk_xhci_scheduler_add_ep(int dev_speed, int is_in, int isTT, int ep_type, int maxp, int interval,
-	int burst, int mult, void *ep, void *ep_ctx, struct sch_ep *sch_ep);
+	int burst, int mult, void *ep, void *ep_ctx);
 struct sch_ep * mtk_xhci_scheduler_remove_ep(int dev_speed, int is_in, int isTT, int ep_type, void *ep);
 
 

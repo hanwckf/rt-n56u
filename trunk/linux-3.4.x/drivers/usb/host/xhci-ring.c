@@ -242,9 +242,13 @@ static void inc_enq(struct xhci_hcd *xhci, struct xhci_ring *ring,
 			 * carry over the chain bit of the previous TRB
 			 * (which may mean the chain bit is cleared).
 			 */
+#if defined (CONFIG_MTK_XHCI)
+			if (!xhci_link_trb_quirk(xhci)) {
+#else
 			if (!(ring->type == TYPE_ISOC &&
 					(xhci->quirks & XHCI_AMD_0x96_HOST))
 						&& !xhci_link_trb_quirk(xhci)) {
+#endif
 				next->link.control &=
 					cpu_to_le32(~TRB_CHAIN);
 				next->link.control |=
@@ -758,10 +762,12 @@ static void xhci_giveback_urb_in_irq(struct xhci_hcd *xhci,
 	if (urb_priv->td_cnt == urb_priv->length) {
 		if (usb_pipetype(urb->pipe) == PIPE_ISOCHRONOUS) {
 			xhci_to_hcd(xhci)->self.bandwidth_isoc_reqs--;
+#if !defined (CONFIG_MTK_XHCI)
 			if (xhci_to_hcd(xhci)->self.bandwidth_isoc_reqs	== 0) {
 				if (xhci->quirks & XHCI_AMD_PLL_FIX)
 					usb_amd_quirk_pll_enable();
 			}
+#endif
 		}
 		usb_hcd_unlink_urb_from_ep(hcd, urb);
 
@@ -1945,7 +1951,8 @@ static int finish_td(struct xhci_hcd *xhci, struct xhci_td *td,
 		if (trb_comp_code == COMP_STALL ||
 		    xhci_requires_manual_halt_cleanup(xhci, ep_ctx,
 						      trb_comp_code)) {
-			/* Issue a reset endpoint command to clear the host side			 * halt, followed by a set dequeue command to move the
+			/* Issue a reset endpoint command to clear the host side
+			 * halt, followed by a set dequeue command to move the
 			 * dequeue pointer past the TD.
 			 * The class driver clears the device side halt later.
 			 */
@@ -1993,11 +2000,13 @@ td_cleanup:
 			ret = 1;
 			if (usb_pipetype(urb->pipe) == PIPE_ISOCHRONOUS) {
 				xhci_to_hcd(xhci)->self.bandwidth_isoc_reqs--;
+#if !defined (CONFIG_MTK_XHCI)
 				if (xhci_to_hcd(xhci)->self.bandwidth_isoc_reqs
 					== 0) {
 					if (xhci->quirks & XHCI_AMD_PLL_FIX)
 						usb_amd_quirk_pll_enable();
 				}
+#endif
 			}
 		}
 	}
@@ -3607,7 +3616,7 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
 #if !defined (CONFIG_MTK_XHCI)
 		xhci_td_remainder(urb->transfer_buffer_length) |
 #else
-		// MTK style, no scatter-gather for control transfer
+		/* MTK style, no scatter-gather for control transfer */
 		0 |
 #endif
 		TRB_INTR_TARGET(0);
@@ -3893,10 +3902,12 @@ static int xhci_queue_isoc_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
 		}
 	}
 
+#if !defined (CONFIG_MTK_XHCI)
 	if (xhci_to_hcd(xhci)->self.bandwidth_isoc_reqs == 0) {
 		if (xhci->quirks & XHCI_AMD_PLL_FIX)
 			usb_amd_quirk_pll_disable();
 	}
+#endif
 	xhci_to_hcd(xhci)->self.bandwidth_isoc_reqs++;
 
 	giveback_first_trb(xhci, slot_id, ep_index, urb->stream_id,

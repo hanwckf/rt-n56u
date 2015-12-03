@@ -784,8 +784,10 @@ void xhci_stop(struct usb_hcd *hcd)
 				__func__);
 	}
 
+#if !defined (CONFIG_MTK_XHCI)
 	if (xhci->quirks & XHCI_AMD_PLL_FIX)
 		usb_amd_dev_put();
+#endif
 
 	xhci_dbg(xhci, "// Disabling event ring interrupts\n");
 	temp = xhci_readl(xhci, &xhci->op_regs->status);
@@ -1745,11 +1747,8 @@ int xhci_drop_endpoint(struct usb_hcd *hcd, struct usb_device *udev,
 
 	sch_ep = mtk_xhci_scheduler_remove_ep(udev->speed, usb_endpoint_dir_in(&ep->desc),
 		isTT, ep_type, ep);
-	if (sch_ep) {
+	if (sch_ep)
 		kfree(sch_ep);
-	} else {
-		xhci_dbg(xhci, "[MTK] Doesn't find ep_sch instance when removing endpoint\n");
-	}
 #endif
 
 	xhci_dbg(xhci, "drop ep 0x%x, slot id %d, new drop flags = %#x, new add flags = %#x, new slot info = %#x\n",
@@ -1789,7 +1788,6 @@ int xhci_add_endpoint(struct usb_hcd *hcd, struct usb_device *udev,
 	int ret = 0;
 #if defined (CONFIG_MTK_XHCI)
 	struct xhci_ep_ctx *in_ep_ctx;
-	struct sch_ep *sch_ep;
 	int ep_type;
 	int isTT = 0;
 	int maxp = 0;
@@ -1884,11 +1882,11 @@ int xhci_add_endpoint(struct usb_hcd *hcd, struct usb_device *udev,
 		mult = ep->ss_ep_comp.bmAttributes & 0x3;
 	}
 	interval = (1 << ((in_ep_ctx->ep_info >> 16) & 0xff));
-	sch_ep = kmalloc(sizeof(struct sch_ep), GFP_KERNEL);
 
 	if (mtk_xhci_scheduler_add_ep(udev->speed, usb_endpoint_dir_in(&ep->desc), isTT, ep_type, maxp,
-		interval, burst, mult, ep, in_ep_ctx, sch_ep) != SCH_SUCCESS) {
+		interval, burst, mult, ep, in_ep_ctx) != SCH_SUCCESS) {
 		xhci_err(xhci, "[MTK] not enough bandwidth\n");
+		xhci_free_or_cache_endpoint_ring(xhci, virt_dev, ep_index);
 		return -ENOSPC;
 	}
 #endif

@@ -1,5 +1,6 @@
 
 #include <linux/kernel.h>       /* printk() */
+#include <linux/slab.h>
 
 #include "../xhci.h"
 #include "xhci-mtk-scheduler.h"
@@ -25,9 +26,10 @@ int mtk_xhci_scheduler_init(void)
 	return 0;
 }
 
-int add_sch_ep(int dev_speed, int is_in, int isTT, int ep_type, int maxp, int interval, int burst,
-               int mult, int offset, int repeat, int pkts, int cs_count, int burst_mode,
-               int bw_cost, void *ep, struct sch_ep *tmp_ep)
+static int
+add_sch_ep(int dev_speed, int is_in, int isTT, int ep_type, int maxp, int interval, int burst,
+           int mult, int offset, int repeat, int pkts, int cs_count, int burst_mode,
+           int bw_cost, void *ep)
 {
 	struct sch_ep **ep_array;
 	int i;
@@ -43,6 +45,9 @@ int add_sch_ep(int dev_speed, int is_in, int isTT, int ep_type, int maxp, int in
 
 	for (i=0; i<MAX_EP_NUM; i++) {
 		if(ep_array[i] == NULL) {
+			struct sch_ep *tmp_ep = kmalloc(sizeof(struct sch_ep), GFP_NOIO);
+			if (!tmp_ep)
+				return SCH_FAIL;
 			tmp_ep->dev_speed = dev_speed;
 			tmp_ep->isTT = isTT;
 			tmp_ep->is_in = is_in;
@@ -65,8 +70,9 @@ int add_sch_ep(int dev_speed, int is_in, int isTT, int ep_type, int maxp, int in
 	return SCH_FAIL;
 }
 
-int count_ss_bw(int is_in, int ep_type, int maxp, int interval, int burst, int mult, int offset,
-                int repeat, int td_size)
+static int
+count_ss_bw(int is_in, int ep_type, int maxp, int interval, int burst, int mult, int offset,
+            int repeat, int td_size)
 {
 	int i, j, k;
 	int bw_required[3];
@@ -183,7 +189,8 @@ int count_ss_bw(int is_in, int ep_type, int maxp, int interval, int burst, int m
 	return final_bw_required;
 }
 
-int count_hs_bw(int ep_type, int maxp, int interval, int offset, int td_size)
+static int
+count_hs_bw(int ep_type, int maxp, int interval, int offset, int td_size)
 {
 	int i;
 	int bw_required;
@@ -234,7 +241,8 @@ int count_hs_bw(int ep_type, int maxp, int interval, int offset, int td_size)
 	return bw_required;
 }
 
-int count_tt_isoc_bw(int is_in, int maxp, int interval, int offset, int td_size)
+static int
+count_tt_isoc_bw(int is_in, int maxp, int interval, int offset, int td_size)
 {
 	char is_cs = 0;
 	int cur_mframe;
@@ -316,7 +324,8 @@ int count_tt_isoc_bw(int is_in, int maxp, int interval, int offset, int td_size)
 	return max_bw;
 }
 
-int count_tt_intr_bw(int interval, int frame_offset)
+static int
+count_tt_intr_bw(int interval, int frame_offset)
 {
 	//check all eps in tt_intr_eps
 	int i;
@@ -372,7 +381,7 @@ struct sch_ep * mtk_xhci_scheduler_remove_ep(int dev_speed, int is_in, int isTT,
 }
 
 int mtk_xhci_scheduler_add_ep(int dev_speed, int is_in, int isTT, int ep_type, int maxp, int interval, int burst,
-                              int mult, void *ep, void *ep_ctx, struct sch_ep *sch_ep)
+                              int mult, void *ep, void *ep_ctx)
 {
 	u32 bPkts = 0;
 	u32 bCsCount = 0;
@@ -404,7 +413,7 @@ int mtk_xhci_scheduler_add_ep(int dev_speed, int is_in, int isTT, int ep_type, i
 				bw_cost = maxp;
 				bRepeat = 0;
 				if (add_sch_ep(dev_speed, is_in, isTT, ep_type, maxp, frame_interval, burst, mult,
-						bOffset, bRepeat, bPkts, bCsCount, bBm, maxp, ep, sch_ep) == SCH_FAIL)
+						bOffset, bRepeat, bPkts, bCsCount, bBm, maxp, ep) == SCH_FAIL)
 					return SCH_FAIL;
 				ret = SCH_SUCCESS;
 				break;
@@ -448,7 +457,7 @@ int mtk_xhci_scheduler_add_ep(int dev_speed, int is_in, int isTT, int ep_type, i
 		bw_cost = 188;
 		bRepeat = 0;
 		if (add_sch_ep(dev_speed, is_in, isTT, ep_type, maxp, interval, burst, mult,
-				bOffset, bRepeat, bPkts, bCsCount, bBm, bw_cost, ep, sch_ep) == SCH_FAIL)
+				bOffset, bRepeat, bPkts, bCsCount, bBm, bw_cost, ep) == SCH_FAIL)
 			return SCH_FAIL;
 		ret = SCH_SUCCESS;
 	} else if ((dev_speed == USB_SPEED_FULL || dev_speed == USB_SPEED_LOW) && ep_type == USB_EP_INT) {
@@ -481,7 +490,7 @@ int mtk_xhci_scheduler_add_ep(int dev_speed, int is_in, int isTT, int ep_type, i
 		bw_cost = td_size;
 		bRepeat = 0;
 		if (add_sch_ep(dev_speed, is_in, isTT, ep_type, maxp, interval, burst, mult,
-				bOffset, bRepeat, bPkts, bCsCount, bBm, bw_cost, ep, sch_ep) == SCH_FAIL)
+				bOffset, bRepeat, bPkts, bCsCount, bBm, bw_cost, ep) == SCH_FAIL)
 			return SCH_FAIL;
 		ret = SCH_SUCCESS;
 	} else if (dev_speed == USB_SPEED_SUPER && (ep_type == USB_EP_INT || ep_type == USB_EP_ISOC)) {
@@ -523,7 +532,7 @@ int mtk_xhci_scheduler_add_ep(int dev_speed, int is_in, int isTT, int ep_type, i
 			bPkts = (burst+1);
 		}
 		if(add_sch_ep(dev_speed, is_in, isTT, ep_type, maxp, interval, burst, mult,
-				bOffset, bRepeat, bPkts, bCsCount, bBm, bw_cost, ep, sch_ep) == SCH_FAIL)
+				bOffset, bRepeat, bPkts, bCsCount, bBm, bw_cost, ep) == SCH_FAIL)
 			return SCH_FAIL;
 		ret = SCH_SUCCESS;
 	} else {

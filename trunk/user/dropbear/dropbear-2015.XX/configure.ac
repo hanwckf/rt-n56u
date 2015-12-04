@@ -92,7 +92,7 @@ AC_CHECK_LIB(crypt, crypt,
 	found_crypt_func=here
 	])
 AC_SUBST(CRYPTLIB)	
-if test "t$found_crypt_func" == there; then
+if test "t$found_crypt_func" = there; then
 AC_DEFINE(HAVE_CRYPT, 1, [crypt() function])
 fi
 

@@ -33,7 +33,8 @@
 
 typedef struct runopts {
 
-#if defined(ENABLE_SVR_REMOTETCPFWD) || defined(ENABLE_CLI_LOCALTCPFWD)
+#if defined(ENABLE_SVR_REMOTETCPFWD) || defined(ENABLE_CLI_LOCALTCPFWD) \
+    || defined(ENABLE_CLI_REMOTETCPFWD)
 	int listen_fwd_all;
 #endif
 	unsigned int recv_window;
@@ -71,7 +72,8 @@ typedef struct svr_runopts {
 	int forkbg;
 	int usingsyslog;
 
-	/* ports is an array of the portcount listening ports */
+	/* ports and addresses are arrays of the portcount 
+	listening ports. strings are malloced. */
 	char *ports[DROPBEAR_MAX_PORTS];
 	unsigned int portcount;
 	char *addresses[DROPBEAR_MAX_PORTS];

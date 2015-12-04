@@ -1,3 +1,17 @@
+2015.71 - 3 December 2015
+
+- Fix "bad buf_incrpos" when data is transferred, broke in 2015.69
+
+- Fix crash on exit when -p address:port is used, broke in 2015.68
+
+- Fix building with only ENABLE_CLI_REMOTETCPFWD given, patch from Konstantin Tokarev
+
+- Fix bad configure script test which didn't work with dash shell, patch from Juergen Daubert,
+  broke in 2015.70
+
+- Fix server race condition that could cause sessions to hang on exit,
+  https://github.com/robotframework/SSHLibrary/issues/128
+
 2015.70 - 26 November 2015
 
 - Fix server password authentication on Linux, broke in 2015.69

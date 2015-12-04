@@ -4398,7 +4398,7 @@ if test "x$ac_cv_lib_crypt_crypt" = xyes; then :
 fi
 
 
-if test "t$found_crypt_func" == there; then
+if test "t$found_crypt_func" = there; then
 
 $as_echo "#define HAVE_CRYPT 1" >>confdefs.h
 

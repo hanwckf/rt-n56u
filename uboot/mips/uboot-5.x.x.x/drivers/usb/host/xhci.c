@@ -101,8 +101,8 @@ static struct descriptor {
 		5,		/* bDescriptorType: UDESC_ENDPOINT */
 		0x81,		/* bEndpointAddress: IN endpoint 1 */
 		3,		/* bmAttributes: UE_INTERRUPT */
-		8,		/* wMaxPacketSize */
-		255		/* bInterval */
+		cpu_to_le16(8),	/* wMaxPacketSize */
+		0x0c		/* bInterval (256ms -- usb 2.0 spec) */
 	},
 	{
 		0x06,		/* ss_bLength */
@@ -717,7 +717,7 @@ static int xhci_submit_root(struct usb_device *udev, unsigned long pipe,
 		case USB_DT_CONFIG:
 			USB_XHCI_PRINTF("USB_DT_CONFIG config\n");
 			srcptr = &descriptor.config;
-			srclen = 0x19;
+			srclen = 0x1f;
 			break;
 		case USB_DT_STRING:
 			USB_XHCI_PRINTF("USB_DT_STRING config\n");

@@ -39,7 +39,7 @@ if [ ! -f /opt/bin/opkg ] ; then
 		fi
 	done
 
-	URL=http://entware.zyxmon.org/binaries/mipsel/installer
+	URL=http://pkg.entware.net/binaries/mipsel/installer
 	dl $URL/opkg /opt/bin/opkg x
 	dl $URL/opkg.conf /opt/etc/opkg.conf
 	dl $URL/profile /opt/etc/profile x

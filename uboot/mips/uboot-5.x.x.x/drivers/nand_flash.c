@@ -1044,7 +1044,7 @@ int ranand_erase(unsigned int offs, int len)
 		return -1;
 	}
 
-	while (len) {
+	while (len > 0) {
 		page = (int)(offs >> CONFIG_PAGE_SIZE_BIT);
 
 		/* select device and check wp */
@@ -1058,6 +1058,7 @@ int ranand_erase(unsigned int offs, int len)
 		if (ranand_block_isbad(offs)) {
 			printf("%s: attempt to erase a bad block at 0x%08x\n", __func__, offs);
 			ret++;
+			len -= blocksize;
 			offs += blocksize;
 			continue;
 		}
@@ -1205,7 +1206,7 @@ int ranand_read(char *buf, unsigned int from, int datalen)
 		return 0;
 
 /*        while (datalen || ooblen) {*/
-	while (datalen) {
+	while (datalen > 0) {
 		int len;
 		int ret;
 		int offs;
@@ -1501,7 +1502,7 @@ int ranand_erase_raw(unsigned int offs, int len)
 		return -1;
 	}
 
-	while (len) {
+	while (len > 0) {
 		page = (int)(offs >> CONFIG_PAGE_SIZE_BIT);
 
 		/* select device and check wp */
@@ -1550,7 +1551,7 @@ int ranand_erase_bmt(unsigned int offs, int len)
 		return -1;
 	}
 
-	while (len) {
+	while (len > 0) {
 		page = (int)(offs >> CONFIG_PAGE_SIZE_BIT);
 
 		block = page >> CONFIG_NUMPAGE_PER_BLOCK_BIT;
@@ -1635,7 +1636,7 @@ int ranand_write_bmt(char *buf, unsigned int to, int datalen)
 		datalen = 0;
 
 	// page write
-	while (datalen) {
+	while (datalen > 0) {
 		int len;
 		int ret;
 		int offs;
@@ -1714,7 +1715,7 @@ int ranand_read_bmt(char *buf, unsigned int from, int datalen)
 	if (buf == 0)
 		return 0;
 
-	while (datalen) {
+	while (datalen > 0) {
 		int len;
 		int ret;
 		int offs;

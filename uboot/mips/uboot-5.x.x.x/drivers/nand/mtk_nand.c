@@ -4867,7 +4867,7 @@ int ranand_read(char *buf, unsigned int from, int datalen)
 	buffers = (((u32)buffers_orig + 15)/16)*16;
 
 /* while (datalen || ooblen) {*/
-	while (datalen) {
+	while (datalen > 0) {
 		int len;
 		int ret;
 		int offs;
@@ -4935,7 +4935,7 @@ int ranand_read(char *buf, unsigned int from, int datalen)
 }
 #endif
 #if defined(__UBOOT_NAND__)
-int ranand_erase(unsigned int offs, u32 len)
+int ranand_erase(unsigned int offs, int len)
 {
 	int page, status;
 	int ret = 0;
@@ -4949,7 +4949,7 @@ int ranand_erase(unsigned int offs, u32 len)
 	mtd = &host->mtd;
 	nand_chip  = &host->nand_chip;
 
-	len = max(len, mtd->erasesize);
+	len = max(len, (int)mtd->erasesize);
 
 #define BLOCK_ALIGNED(a) ((a) & (mtd->erasesize - 1))
 
@@ -4957,8 +4957,8 @@ int ranand_erase(unsigned int offs, u32 len)
 		ra_dbg("%s: erase block not aligned, addr:%x len:%x %x\n", __func__, offs, len, mtd->erasesize);
 		return -1;
 	}
-	
-	while (len) {
+
+	while (len > 0) {
 		page = (int)(offs >> nand_chip->page_shift); 
 #ifdef FACT_BBT
 		if (is_fact_bad(page)) {
@@ -4998,7 +4998,7 @@ int ranand_erase(unsigned int offs, u32 len)
 	return ret;
 }
 
-int ranand_erase_raw(unsigned int offs, u32 len, int earse_fact_bbt)
+int ranand_erase_raw(unsigned int offs, int len, int earse_fact_bbt)
 {
 	int page, status;
 	int ret = 0;
@@ -5012,7 +5012,7 @@ int ranand_erase_raw(unsigned int offs, u32 len, int earse_fact_bbt)
 	mtd = &host->mtd;
 	nand_chip  = &host->nand_chip;
 
-  	len = max(len, mtd->erasesize);
+	len = max(len, (int)mtd->erasesize);
 
 #define BLOCK_ALIGNED(a) ((a) & (mtd->erasesize - 1))
 
@@ -5020,8 +5020,8 @@ int ranand_erase_raw(unsigned int offs, u32 len, int earse_fact_bbt)
 		ra_dbg("%s: erase block not aligned, addr:%x len:%x %x\n", __func__, offs, len, mtd->erasesize);
 		return -1;
 	}
-	
-	while (len) {
+
+	while (len > 0) {
 		page = (int)(offs >> nand_chip->page_shift); 
 #ifdef FACT_BBT
 		if (!earse_fact_bbt)
@@ -5029,6 +5029,7 @@ int ranand_erase_raw(unsigned int offs, u32 len, int earse_fact_bbt)
 			if (is_fact_bad(page)) {
 				printf("%s: attempt to erase a fact bad block at 0x%08x\n", __func__, offs);
 				ret ++;
+				len -= mtd->erasesize;
 				offs += mtd->erasesize;
 				continue;
 			}
@@ -5079,7 +5080,7 @@ int ranand_write(char *buf, unsigned int to, int datalen)
 
 	buffers = (((u32)buffers_orig + 15)/16)*16;
 	// page write
-	while (datalen) {
+	while (datalen > 0) {
 		int len;
 		int ret;
 		int offs;
@@ -5210,7 +5211,7 @@ try_next_0:
 			count -= piece_size;
 		}
 		else {
-			unsigned int aligned_size = blocksize;
+			int aligned_size = blocksize;
 
 try_next_1:
 			rc = ranand_erase(offs, aligned_size);
@@ -5277,9 +5278,8 @@ int ralink_nand_command(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	else if (!strncmp(argv[1], "read", 5)) {
 		addr = (unsigned int)simple_strtoul(argv[2], NULL, 16);
 
-		printf("pagemask=%08X, chipize=%08X\n",nand_chip->pagemask,nand_chip->chipsize);
-        printf("(%d) chip->page_shift=%d\n",__LINE__,nand_chip->page_shift);
-
+//		printf("pagemask=%08X, chipize=%08X\n",nand_chip->pagemask,nand_chip->chipsize);
+//		printf("(%d) chip->page_shift=%d\n",__LINE__,nand_chip->page_shift);
 
 		len = (int)simple_strtoul(argv[3], NULL, 16);
 		p = (u8 *)malloc(len);

@@ -4,6 +4,13 @@
 
                           LIST OF CHANGES
 
+5.0.0.4:
+----------------------------------------------------------
+- Fixed potential infinity loop on NAND erase.
+- Fixed MT7621 xHCI issues, improve detect USB devices.
+- Allow USB recovery not only from first USB storage device.
+
+
 5.0.0.3:
 ----------------------------------------------------------
 - Fixed MT7628 CPU clock calculation.
@@ -115,4 +122,4 @@ NOTE:
 
 -
 Padavan
-11/12/2015
+12/16/2015

@@ -399,14 +399,13 @@ static int fq_codel_init(struct Qdisc *sch, struct nlattr *opt)
 	struct fq_codel_sched_data *q = qdisc_priv(sch);
 	int i;
 
+	sch->limit = 1024;
+	q->flows_cnt = 1024;
 #if 1
-	sch->limit = 10*1024;
 	q->quantum = psched_mtu(qdisc_dev(sch));
 #else
-	sch->limit = 1024;
 	q->quantum = 300;
 #endif
-	q->flows_cnt = 1024;
 	q->perturbation = random32();
 	INIT_LIST_HEAD(&q->new_flows);
 	INIT_LIST_HEAD(&q->old_flows);

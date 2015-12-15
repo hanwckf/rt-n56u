@@ -224,7 +224,6 @@ static int prepare_ring(struct xhci_ctrl *ctrl, struct xhci_ring *ep_ring,
 {
 	union xhci_trb *next = ep_ring->enqueue;
 
-
 	/* Make sure the endpoint has been added to xHC schedule */
 	switch (ep_state) {
 	case EP_STATE_DISABLED:
@@ -300,8 +299,7 @@ void xhci_queue_command(struct xhci_ctrl *ctrl, u8 *ptr, u32 slot_id,
 
 	/* Ring the command ring doorbell */
 	xhci_writel(&ctrl->dba->doorbell[0], DB_VALUE_HOST);
-        xhci_readl(&ctrl->dba->doorbell[0]);
-
+	xhci_readl(&ctrl->dba->doorbell[0]);
 }
 
 /**
@@ -490,11 +488,10 @@ try_again:
 
 		xhci_acknowledge_event(ctrl);
 	} while (get_timer(ts) < (XHCI_TIMEOUT * 50000));
-	//} while (1);
+
 	retry--;
 	if (retry > 0)
 		goto try_again;
-			
 
 	if (expected == TRB_TRANSFER)
 		return NULL;
@@ -547,7 +544,7 @@ static void record_transfer_result(struct usb_device *udev,
 				   union xhci_trb *event, int length)
 {
 	udev->act_len = min(length, length -
-		EVENT_TRB_LEN(le32_to_cpu(event->trans_event.transfer_len)));
+		(int)EVENT_TRB_LEN(le32_to_cpu(event->trans_event.transfer_len)));
 
 	switch (GET_COMP_CODE(le32_to_cpu(event->trans_event.transfer_len))) {
 	case COMP_SUCCESS:

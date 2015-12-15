@@ -1092,6 +1092,44 @@ struct xhci_virt_device {
 	struct xhci_virt_ep		eps[31];
 };
 
+/* TODO: copied from ehci.h - can be refactored? */
+/* xHCI spec says all registers are little endian */
+static inline unsigned int xhci_readl(uint32_t volatile *regs)
+{
+	return readl(regs);
+}
+
+static inline void xhci_writel(uint32_t volatile *regs, const unsigned int val)
+{
+	writel(val, regs);
+}
+
+/*
+ * Registers should always be accessed with double word or quad word accesses.
+ * Some xHCI implementations may support 64-bit address pointers.  Registers
+ * with 64-bit address pointers should be written to with dword accesses by
+ * writing the low dword first (ptr[0]), then the high dword (ptr[1]) second.
+ * xHCI implementations that do not support 64-bit address pointers will ignore
+ * the high dword, and write order is irrelevant.
+ */
+static inline u64 xhci_readq(__le64 volatile *regs)
+{
+	__u32 *ptr = (__u32 *)regs;
+	u64 val_lo = readl(ptr);
+	u64 val_hi = readl(ptr + 1);
+	return val_lo + (val_hi << 32);
+}
+
+static inline void xhci_writeq(__le64 volatile *regs, const u64 val)
+{
+	__u32 *ptr = (__u32 *)regs;
+	u32 val_lo = lower_32_bits(val);
+	/* FIXME */
+	u32 val_hi = 0;
+	writel(val_lo, ptr);
+	writel(val_hi, ptr + 1);
+}
+
 int xhci_hcd_init(int index, struct xhci_hccr **ret_hccr,
 					struct xhci_hcor **ret_hcor);
 void xhci_hcd_stop(int index);
@@ -1200,7 +1238,8 @@ void xhci_endpoint_copy(struct xhci_ctrl *ctrl,
 void xhci_slot_copy(struct xhci_ctrl *ctrl,
 		    struct xhci_container_ctx *in_ctx,
 		    struct xhci_container_ctx *out_ctx);
-void xhci_setup_addressable_virt_dev(struct usb_device *udev);
+void xhci_setup_addressable_virt_dev(struct xhci_ctrl *ctrl, int slot_id,
+				     int speed, int hop_portnr);
 void xhci_queue_command(struct xhci_ctrl *ctrl, u8 *ptr,
 			u32 slot_id, u32 ep_index, trb_type cmd);
 void xhci_acknowledge_event(struct xhci_ctrl *ctrl);
@@ -1214,7 +1253,7 @@ void xhci_flush_cache(uint32_t addr, u32 type_len);
 void xhci_inval_cache(uint32_t addr, u32 type_len);
 void xhci_cleanup(struct xhci_ctrl *ctrl);
 struct xhci_ring *xhci_ring_alloc(unsigned int num_segs, int link_trbs);
-int xhci_alloc_virt_device(struct usb_device *udev);
+int xhci_alloc_virt_device(struct xhci_ctrl *ctrl, unsigned int slot_id);
 int xhci_mem_init(struct xhci_ctrl *ctrl, struct xhci_hccr *hccr,
 		  struct xhci_hcor *hcor);
 

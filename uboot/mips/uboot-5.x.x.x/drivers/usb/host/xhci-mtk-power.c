@@ -1,6 +1,8 @@
+#include <usb.h>
+
+#include "xhci.h"
 #include "xhci-mtk.h"
 #include "xhci-mtk-power.h"
-#include "xhci.h"
 
 static int g_num_u3_port;
 static int g_num_u2_port;
@@ -17,21 +19,21 @@ void enableXhciAllPortPower(struct xhci_hcor *hcor)
 	
 	for (i = 1; i <= g_num_u3_port; i++) {
 		port_id = i;
-               	addr =  (__le32 __iomem)(&hcor->portregs);
-                addr += NUM_PORT_REGS * ((port_id - 1) & 0xff) * sizeof(__le32);
-		temp = xhci_readl((__le32 __iomem *)addr);
-		temp = xhci_port_state_to_neutral(temp);
-		temp |= PORT_POWER;
-		xhci_writel(temp, (__le32 __iomem *)addr);
-	}
-	for (i = 1; i <= g_num_u2_port; i++) {
-		port_id=i+g_num_u3_port;
-               	addr =  (__le32 __iomem)(&hcor->portregs);
+		addr =  (__le32 __iomem)(&hcor->portregs);
 		addr += NUM_PORT_REGS * ((port_id - 1) & 0xff) * sizeof(__le32);
 		temp = xhci_readl((__le32 __iomem *)addr);
 		temp = xhci_port_state_to_neutral(temp);
 		temp |= PORT_POWER;
-		xhci_writel(temp, (__le32 __iomem *)addr);
+		xhci_writel((__le32 __iomem *)addr, temp);
+	}
+	for (i = 1; i <= g_num_u2_port; i++) {
+		port_id=i+g_num_u3_port;
+		addr =  (__le32 __iomem)(&hcor->portregs);
+		addr += NUM_PORT_REGS * ((port_id - 1) & 0xff) * sizeof(__le32);
+		temp = xhci_readl((__le32 __iomem *)addr);
+		temp = xhci_port_state_to_neutral(temp);
+		temp |= PORT_POWER;
+		xhci_writel((__le32 __iomem *)addr, temp);
 	}
 }
 
@@ -90,27 +92,5 @@ void disablePortClockPower(void)
 		writel(temp, (volatile void __iomem *)SSUSB_U2_CTRL(i));
 	}
 	writel(readl((const volatile void __iomem *)SSUSB_IP_PW_CTRL_1) | (SSUSB_IP_PDN), (volatile void __iomem *)SSUSB_IP_PW_CTRL_1);
-}
-
-//if IP ctrl power is disabled, enable it
-//enable clock/power of a port
-//port_index: port number
-//port_rev: 0x2 - USB2.0, 0x3 - USB3.0 (SuperSpeed)
-void enablePortClockPower(int port_index, int port_rev)
-{
-	u32 temp;
-	
-	writel(readl((const volatile void __iomem *)SSUSB_IP_PW_CTRL_1) & (~SSUSB_IP_PDN), (volatile void __iomem *)SSUSB_IP_PW_CTRL_1);
-
-	if(port_rev == 0x3){
-		temp = readl((const volatile void __iomem *)SSUSB_U3_CTRL(port_index));
-		temp = temp & (~SSUSB_U3_PORT_PDN);
-		writel(temp, (volatile void __iomem *)SSUSB_U3_CTRL(port_index));
-	}
-	else if(port_rev == 0x2){
-		temp = readl((const volatile void __iomem *)SSUSB_U2_CTRL(port_index));
-		temp = temp & (~SSUSB_U2_PORT_PDN);
-		writel(temp, (volatile void __iomem *)SSUSB_U2_CTRL(port_index));
-	}
 }
 

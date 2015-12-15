@@ -1,8 +1,9 @@
 #include <common.h>
+#include <usb.h>
 
+#include "xhci.h"
 #include "xhci-mtk.h"
 #include "xhci-mtk-power.h"
-#include "xhci.h"
 #include "mtk-phy.h"
 
 

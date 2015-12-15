@@ -117,49 +117,6 @@ static struct descriptor {
 
 static struct xhci_ctrl xhcic[CONFIG_USB_MAX_CONTROLLER_COUNT];
 
-/* TODO: copied from ehci.h - can be refactored? */
-/* xHCI spec says all registers are little endian */
-unsigned int xhci_readl(uint32_t volatile *regs)
-{
-	return readl(regs);
-}
-
-void xhci_writel(uint32_t volatile *regs, const unsigned int val)
-{
-	writel(val, regs);
-}
-
-/*
- * Registers should always be accessed with double word or quad word accesses.
- * Some xHCI implementations may support 64-bit address pointers.  Registers
- * with 64-bit address pointers should be written to with dword accesses by
- * writing the low dword first (ptr[0]), then the high dword (ptr[1]) second.
- * xHCI implementations that do not support 64-bit address pointers will ignore
- * the high dword, and write order is irrelevant.
- */
-u64 xhci_readq(__le64 volatile *regs)
-{
-	volatile unsigned int *ptr = (unsigned int *)regs;
-	__u64 val_lo, val_hi;
-
-	val_lo = readl(ptr);
-	val_hi = readl(ptr + 1);
-
-	return val_lo + (val_hi << 32);
-}
-
-void xhci_writeq(__le64 volatile *regs, const u64 val)
-{
-	unsigned int volatile *ptr = (unsigned int *)regs;
-	u32 val_lo = lower_32_bits(val);
-	/* FIXME */
-	u32 val_hi = 0;
-	writel(val_lo, ptr);
-	writel(val_hi, ptr + 1);
-}
-
-
-
 /**
  * Waits for as per specified amount of time
  * for the "result" to match with "done"
@@ -170,7 +127,7 @@ void xhci_writeq(__le64 volatile *regs, const u64 val)
  * @param usec	time to wait till
  * @return 0 if handshake is success else < 0 on failure
  */
-int handshake(uint32_t volatile *ptr, uint32_t mask,
+static int handshake(uint32_t volatile *ptr, uint32_t mask,
 					uint32_t done, int usec)
 {
 	uint32_t result;
@@ -241,7 +198,7 @@ int xhci_reset(struct xhci_hcor *hcor)
 	ret = handshake(&hcor->or_usbsts,
 			STS_HALT, STS_HALT, XHCI_MAX_HALT_USEC);
 	if (ret) {
-		USB_XHCI_PRINTF("Host not halted after %u microseconds.\n",
+		printf("Host not halted after %u microseconds.\n",
 				XHCI_MAX_HALT_USEC);
 		return -EBUSY;
 	}
@@ -429,7 +386,7 @@ static int xhci_set_configuration(struct usb_device *udev)
  * @param udev pointer to the Device Data Structure
  * @return 0 if successful else error code on failure
  */
-static int xhci_address_device(struct usb_device *udev)
+static int xhci_address_device(struct usb_device *udev, int root_portnr)
 {
 	int ret = 0;
 	struct xhci_ctrl *ctrl = udev->controller;
@@ -445,8 +402,9 @@ static int xhci_address_device(struct usb_device *udev)
 	 * This is the first Set Address since device plug-in
 	 * so setting up the slot context.
 	 */
-	USB_XHCI_PRINTF("Setting up addressable devices\n");
-	xhci_setup_addressable_virt_dev(udev);
+	USB_XHCI_PRINTF("Setting up addressable devices %p\n", ctrl->dcbaa);
+	xhci_setup_addressable_virt_dev(ctrl, udev->slot_id, udev->speed,
+					root_portnr);
 
 	ctrl_ctx = xhci_get_input_control_ctx(virt_dev->in_ctx);
 	ctrl_ctx->add_flags = cpu_to_le32(SLOT_FLAG | EP0_FLAG);
@@ -536,7 +494,7 @@ int usb_alloc_device(struct usb_device *udev)
 
 	xhci_acknowledge_event(ctrl);
 
-	ret = xhci_alloc_virt_device(udev);
+	ret = xhci_alloc_virt_device(ctrl, udev->slot_id);
 	if (ret < 0) {
 		/*
 		 * TODO: Unsuccessful Address Device command shall leave
@@ -693,8 +651,8 @@ static int xhci_submit_root(struct usb_device *udev, unsigned long pipe,
 	struct xhci_ctrl *ctrl = udev->controller;
 	struct xhci_hcor *hcor = ctrl->hcor;
 
-	if (((req->requesttype & USB_RT_PORT) &&
-	     le16_to_cpu(req->index)) > CONFIG_SYS_USB_XHCI_MAX_ROOT_PORTS) {
+	if ((req->requesttype & USB_RT_PORT) &&
+	    le16_to_cpu(req->index) > CONFIG_SYS_USB_XHCI_MAX_ROOT_PORTS) {
 		printf("The request port(%d) is not configured\n",
 			le16_to_cpu(req->index) - 1);
 		return -EINVAL;
@@ -727,7 +685,7 @@ static int xhci_submit_root(struct usb_device *udev, unsigned long pipe,
 				srclen = 4;
 				break;
 			case 1:	/* Vendor String  */
-				srcptr = "\16\3u\0-\0b\0o\0o\0t\0";
+				srcptr = "\16\3U\0-\0B\0o\0o\0t\0";
 				srclen = 14;
 				break;
 			case 2:	/* Product Name */
@@ -879,7 +837,7 @@ static int xhci_submit_root(struct usb_device *udev, unsigned long pipe,
 	USB_XHCI_PRINTF("scrlen = %d\n req->length = %d\n",
 		srclen, le16_to_cpu(req->length));
 
-	len = min(srclen, le16_to_cpu(req->length));
+	len = min(srclen, (int)le16_to_cpu(req->length));
 
 	if (srcptr != NULL && len > 0)
 		memcpy(buffer, srcptr, len);
@@ -948,11 +906,12 @@ submit_bulk_msg(struct usb_device *udev, unsigned long pipe, void *buffer,
  * @param buffer	buffer to be read/written based on the request
  * @param length	length of the buffer
  * @param setup		Request type
+ * @param root_portnr	Root port number that this device is on
  * @return returns 0 if successful else -1 on failure
  */
-int
-submit_control_msg(struct usb_device *udev, unsigned long pipe, void *buffer,
-					int length, struct devrequest *setup)
+static int _xhci_submit_control_msg(struct usb_device *udev, unsigned long pipe,
+				    void *buffer, int length,
+				    struct devrequest *setup, int root_portnr)
 {
 	struct xhci_ctrl *ctrl = udev->controller;
 	int ret = 0;
@@ -966,7 +925,7 @@ submit_control_msg(struct usb_device *udev, unsigned long pipe, void *buffer,
 		return xhci_submit_root(udev, pipe, buffer, setup);
 
 	if (setup->request == USB_REQ_SET_ADDRESS)
-		return xhci_address_device(udev);
+		return xhci_address_device(udev, root_portnr);
 
 	if (setup->request == USB_REQ_SET_CONFIGURATION) {
 		ret = xhci_set_configuration(udev);
@@ -1019,18 +978,16 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 	val |= (val2 & ~HCS_SLOTS_MASK);
 	xhci_writel(&hcor->or_config, val);
 
-	mtk_xhci_scheduler_init();
-
 	/* initializing xhci data structures */
 	if (xhci_mem_init(ctrl, hccr, hcor) < 0)
 		return -ENOMEM;
+
+	enableXhciAllPortPower(hcor);
 
 	reg = xhci_readl(&hccr->cr_hcsparams1);
 	descriptor.hub.bNbrPorts = ((reg & HCS_MAX_PORTS_MASK) >>
 						HCS_MAX_PORTS_SHIFT);
 	printf("Register %x NbrPorts %d\n", reg, descriptor.hub.bNbrPorts);
-
-	enableXhciAllPortPower(hcor);
 
 	/* Port Indicators */
 	reg = xhci_readl(&hccr->cr_hccparams);
@@ -1052,10 +1009,24 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 	xhci_writel(&ctrl->ir_set->irq_pending, 0);
 
 	reg = HC_VERSION(xhci_readl(&hccr->cr_capbase));
+	printf("USB XHCI %x.%02x\n", reg >> 8, reg & 0xff);
 
 	*controller = &xhcic[index];
 
 	return 0;
+}
+
+int submit_control_msg(struct usb_device *udev, unsigned long pipe,
+		       void *buffer, int length, struct devrequest *setup)
+{
+	struct usb_device *hop = udev;
+
+	if (hop->parent)
+		while (hop->parent->parent)
+			hop = hop->parent;
+
+	return _xhci_submit_control_msg(udev, pipe, buffer, length, setup,
+					hop->portnr);
 }
 
 /**

@@ -3,7 +3,6 @@
 
 #include <linux/compiler.h>
 #include <linux/types.h>
-#include "xhci.h"
 
 #define XHC_IRQ 22
 #define XHC_IO_START 0xBE1C0000
@@ -14,8 +13,8 @@
 #define SSUSB_U3_MAC_BASE		0xBE1C2400
 #define SSUSB_U3_SYS_BASE		0xBE1C2600
 #define SSUSB_U2_SYS_BASE		0xBE1C3400
-#define SSUB_SIF_SLV_TOP		0xBE1D0000
-#define SIFSLV_IPPC			(SSUB_SIF_SLV_TOP + 0x700)
+#define SSUSB_SIF_SLV_TOP		0xBE1D0000
+#define SIFSLV_IPPC			(SSUSB_SIF_SLV_TOP + 0x700)
 
 #define U3_PIPE_LATCH_SEL_ADD 		SSUSB_U3_MAC_BASE + 0x130
 #define U3_PIPE_LATCH_TX		0

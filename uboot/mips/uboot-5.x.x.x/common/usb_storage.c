@@ -55,8 +55,6 @@
 #include <asm/addrspace.h>
 #include <asm/byteorder.h>
 
-
-#if (CONFIG_COMMANDS & CFG_CMD_USB)
 #include <usb.h>
 
 #ifdef CONFIG_USB_STORAGE
@@ -65,7 +63,7 @@
 #undef BBB_COMDAT_TRACE
 #undef BBB_XPORT_TRACE
 
-#ifdef	USB_STOR_DEBUG
+#ifdef USB_STOR_DEBUG
 #define USB_STOR_PRINTF(fmt,args...)	printf (fmt ,##args)
 #else
 #define USB_STOR_PRINTF(fmt,args...)
@@ -225,6 +223,7 @@ int usb_stor_scan(int mode)
 		usb_dev_desc[i].target=0xff;
 		usb_dev_desc[i].if_type=IF_TYPE_USB;
 		usb_dev_desc[i].dev=i;
+		usb_dev_desc[i].type=DEV_TYPE_UNKNOWN;
 		usb_dev_desc[i].part_type=PART_TYPE_UNKNOWN;
 		usb_dev_desc[i].block_read=usb_stor_read;
 	}
@@ -400,17 +399,17 @@ static int usb_stor_BBB_reset(struct us_data *us)
 	}
 
 	/* long wait for reset */
-	wait_ms(150);
+	mdelay(150);
 	USB_STOR_PRINTF("BBB_reset result %d: status %X reset\n",result,us->pusb_dev->status);
 	pipe = usb_rcvbulkpipe(us->pusb_dev, us->ep_in);
 	result = usb_clear_halt(us->pusb_dev, pipe);
 	/* long wait for reset */
-	wait_ms(150);
+	mdelay(150);
 	USB_STOR_PRINTF("BBB_reset result %d: status %X clearing IN endpoint\n",result,us->pusb_dev->status);
 	/* long wait for reset */
 	pipe = usb_sndbulkpipe(us->pusb_dev, us->ep_out);
 	result = usb_clear_halt(us->pusb_dev, pipe);
-	wait_ms(150);
+	mdelay(150);
 	USB_STOR_PRINTF("BBB_reset result %d: status %X clearing OUT endpoint\n",result,us->pusb_dev->status);
 	USB_STOR_PRINTF("BBB_reset done\n");
 	return 0;
@@ -434,7 +433,7 @@ static int usb_stor_CB_reset(struct us_data *us)
 				 0, us->ifnum, cmd, sizeof(cmd), USB_CNTL_TIMEOUT*5);
 
 	/* long wait for reset */
-	wait_ms(1500);
+	mdelay(1500);
 	USB_STOR_PRINTF("CB_reset result %d: status %X clearing endpoint halt\n",result,us->pusb_dev->status);
 	usb_clear_halt(us->pusb_dev, usb_rcvbulkpipe(us->pusb_dev, us->ep_in));
 	usb_clear_halt(us->pusb_dev, usb_rcvbulkpipe(us->pusb_dev, us->ep_out));
@@ -498,7 +497,7 @@ static int usb_stor_BBB_comdat(ccb *srb, struct us_data *us)
  */
 int usb_stor_CB_comdat(ccb *srb, struct us_data *us)
 {
-	int result;
+	int result = 0;
 	int dir_in,retry;
 	unsigned int pipe;
 	unsigned long status;
@@ -561,7 +560,7 @@ int usb_stor_CBI_get_status (ccb * srb, struct us_data *us)
 	while (timeout--) {
 		if ((volatile int *) us->ip_wanted == 0)
 			break;
-		wait_ms (10);
+		mdelay(10);
 	}
 	if (us->ip_wanted) {
 		printf ("	Did not get interrupt on CBI\n");
@@ -819,7 +818,7 @@ do_retry:
 				srb->cmd[0],srb->sense_buf[0],srb->sense_buf[2],srb->sense_buf[12],srb->sense_buf[13]);
 			return USB_STOR_TRANSPORT_FAILED;
 		} else {
-			wait_ms(100);
+			mdelay(100);
 			goto do_retry;
 		}
 		break;
@@ -894,7 +893,7 @@ static int usb_test_unit_ready(ccb *srb,struct us_data *ss)
 			return 0;
 		}
 		usb_request_sense (srb, ss);
-		wait_ms (100);
+		mdelay(100);
 	} while(retries--);
 
 	return -1;
@@ -1021,6 +1020,7 @@ int usb_storage_probe(struct usb_device *dev, unsigned int ifnum,struct us_data 
 {
 	struct usb_interface *iface;
 	int i;
+	struct usb_endpoint_descriptor *ep_desc;
 	unsigned int flags = 0;
 
 	int protocol = 0;
@@ -1100,31 +1100,31 @@ int usb_storage_probe(struct usb_device *dev, unsigned int ifnum,struct us_data 
 	 * We will ignore any others.
 	 */
 	for (i = 0; i < iface->desc.bNumEndpoints; i++) {
+		ep_desc = &iface->ep_desc[i];
 		/* is it an BULK endpoint? */
-		if ((iface->ep_desc[i].bmAttributes &  USB_ENDPOINT_XFERTYPE_MASK)
-		    == USB_ENDPOINT_XFER_BULK) {
-			if (iface->ep_desc[i].bEndpointAddress & USB_DIR_IN)
-				ss->ep_in = iface->ep_desc[i].bEndpointAddress &
+		if ((ep_desc->bmAttributes &
+		    USB_ENDPOINT_XFERTYPE_MASK) == USB_ENDPOINT_XFER_BULK) {
+			if (ep_desc->bEndpointAddress & USB_DIR_IN)
+				ss->ep_in = ep_desc->bEndpointAddress &
 					USB_ENDPOINT_NUMBER_MASK;
 			else
-				ss->ep_out = iface->ep_desc[i].bEndpointAddress &
+				ss->ep_out =
+					ep_desc->bEndpointAddress &
 					USB_ENDPOINT_NUMBER_MASK;
 		}
 
 		/* is it an interrupt endpoint? */
-		if ((iface->ep_desc[i].bmAttributes & USB_ENDPOINT_XFERTYPE_MASK)
-		    == USB_ENDPOINT_XFER_INT) {
-			ss->ep_int = iface->ep_desc[i].bEndpointAddress &
+		if ((ep_desc->bmAttributes &
+		    USB_ENDPOINT_XFERTYPE_MASK) == USB_ENDPOINT_XFER_INT) {
+			ss->ep_int = ep_desc->bEndpointAddress &
 				USB_ENDPOINT_NUMBER_MASK;
-			ss->irqinterval = iface->ep_desc[i].bInterval;
+			ss->irqinterval = ep_desc->bInterval;
 		}
 	}
 	USB_STOR_PRINTF("Endpoints In %d Out %d Int %d\n",
 		  ss->ep_in, ss->ep_out, ss->ep_int);
 
-#ifdef CONFIG_USB_XHCI
 	usb_set_interface(dev, iface->desc.bInterfaceNumber, 0);
-#endif
 
 	/* Do some basic sanity checks, and bail if we find a problem */
 	if (
@@ -1142,9 +1142,10 @@ int usb_storage_probe(struct usb_device *dev, unsigned int ifnum,struct us_data 
 	    ss->subclass != US_SC_8070) {
 		return 0;
 	}
-	if(ss->ep_int) { /* we had found an interrupt endpoint, prepare irq pipe */
-		/* set up the IRQ pipe and handler */
-
+	if (ss->ep_int) {
+		/* we had found an interrupt endpoint, prepare irq pipe
+		 * set up the IRQ pipe and handler
+		 */
 		ss->irqinterval = (ss->irqinterval > 0) ? ss->irqinterval : 255;
 		ss->irqpipe = usb_rcvintpipe(ss->pusb_dev, ss->ep_int);
 		ss->irqmaxp = usb_maxpacket(dev, ss->irqpipe);
@@ -1163,27 +1164,6 @@ int usb_stor_get_info(struct usb_device *dev,struct us_data *ss,block_dev_desc_t
 	unsigned char *usb_stor_buf_ptr = (unsigned char *)KSEG1ADDR(&usb_stor_buf[0]); 
 	unsigned long *cap = (unsigned long *)KSEG1ADDR(&cap_buf[0]);
 
-/*
-*	Ralink
-*   Some usb storages return STALL if resetting. Skip it.
-*/
-#if 0
-	/* for some reasons a couple of devices would not survive this reset */
-	if (
-	    /* Sony USM256E */
-	    (dev->descriptor.idVendor == 0x054c &&
-	     dev->descriptor.idProduct == 0x019e)
-
-	    ||
-	    /* USB007 Mini-USB2 Flash Drive */
-	    (dev->descriptor.idVendor == 0x066f &&
-	     dev->descriptor.idProduct == 0x2010)
-	    )
-		USB_STOR_PRINTF("usb_stor_get_info: skipping RESET..\n");
-	else
-		ss->transport_reset(ss);
-#endif
-
 	pccb->pdata = (unsigned char *)usb_stor_buf_ptr;
 	dev_desc->target = dev->devnum;
 	pccb->lun = dev_desc->lun;
@@ -1194,10 +1174,16 @@ int usb_stor_get_info(struct usb_device *dev,struct us_data *ss,block_dev_desc_t
 
 	perq = usb_stor_buf_ptr[0];
 	modi = usb_stor_buf_ptr[1];
-	if((perq & 0x1f) == 0x1f) {
-		return 0; /* skip unknown devices */
+
+	/*
+	 * Skip unknown devices (0x1f) and enclosure service devices (0x0d),
+	 * they would not respond to test_unit_ready .
+	 */
+	if (((perq & 0x1f) == 0x1f) || ((perq & 0x1f) == 0x0d)) {
+		return 0;
 	}
-	if((modi&0x80) == 0x80) {/* drive is removable */
+	if ((modi&0x80) == 0x80) {
+		/* drive is removable */
 		dev_desc->removable = 1;
 	}
 
@@ -1259,4 +1245,3 @@ int usb_stor_get_info(struct usb_device *dev,struct us_data *ss,block_dev_desc_t
 }
 
 #endif /* CONFIG_USB_STORAGE */
-#endif /* CFG_CMD_USB */

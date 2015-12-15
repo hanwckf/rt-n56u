@@ -73,13 +73,11 @@ __attribute__((nomips16)) void udelay (unsigned long usec)
 		/*NOP*/;
 }
 
-//#if defined (CONFIG_USB_XHCI)
 __attribute__((nomips16)) void mdelay(unsigned long msec)
 {
 	while (msec--)
 		udelay(1000);
 }
-//#endif
 
 #if 0
 /*

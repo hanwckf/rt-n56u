@@ -777,7 +777,7 @@ ehci_submit_root(struct usb_device *dev, unsigned long pipe, void *buffer,
 				srclen = 4;
 				break;
 			case 1:	/* Vendor */
-				srcptr = "\16\3u\0-\0b\0o\0o\0t\0";
+				srcptr = "\16\3U\0-\0B\0o\0o\0t\0";
 				srclen = 14;
 				break;
 			case 2:	/* Product */
@@ -861,7 +861,7 @@ ehci_submit_root(struct usb_device *dev, unsigned long pipe, void *buffer,
 /*
  * Ralink: update port status.
  */
-		wait_ms(300);
+		mdelay(300);
 		reg = ehci_readl(status_reg);
 
 		if (reg & EHCI_PS_CS)
@@ -940,7 +940,7 @@ ehci_submit_root(struct usb_device *dev, unsigned long pipe, void *buffer,
 				 * usb 2.0 specification say 50 ms resets on
 				 * root
 				 */
-				wait_ms(50);
+				mdelay(50);
 				portreset |= 1 << le16_to_cpu(req->index);
 			}
 			break;
@@ -985,7 +985,7 @@ ehci_submit_root(struct usb_device *dev, unsigned long pipe, void *buffer,
 		goto unknown;
 	}
 
-	wait_ms(1);
+	mdelay(1);
 	len = min3(srclen, le16_to_cpu(req->length), length);
 	if (srcptr != NULL && len > 0)
 		memcpy(buffer, srcptr, len);
@@ -1071,7 +1071,7 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 	ehci_writel(&hcor->or_configflag, cmd);
 	/* unblock posted write */
 	cmd = ehci_readl(&hcor->or_usbcmd);
-	wait_ms(5);
+	mdelay(5);
 	reg = HC_VERSION(ehci_readl(&hccr->cr_capbase));
 	printf("USB EHCI %x.%02x\n", reg >> 8, reg & 0xff);
 

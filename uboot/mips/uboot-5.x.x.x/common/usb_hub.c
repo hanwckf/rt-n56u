@@ -37,19 +37,15 @@
 
 //#define USB_HUB_DEBUG
 
-#ifdef	USB_HUB_DEBUG
-#define	USB_HUB_PRINTF(fmt,args...)	printf (fmt ,##args)
+#ifdef USB_HUB_DEBUG
+#define USB_HUB_PRINTF(fmt,args...)	printf (fmt ,##args)
 #else
 #define USB_HUB_PRINTF(fmt,args...)
 #endif
 
-#ifndef CONFIG_USB_HUB_MIN_POWER_ON_DELAY
-#define CONFIG_USB_HUB_MIN_POWER_ON_DELAY	100
-#endif
-
 #define USB_BUFSIZ	512
 
-#define CONFIG_SYS_HZ	250
+#define CONFIG_SYS_HZ	CFG_HZ
 
 static struct usb_hub_device hub_dev[USB_MAX_HUB];
 static int usb_hub_index;
@@ -94,62 +90,25 @@ static int usb_get_port_status(struct usb_device *dev, int port, void *data)
 			data, sizeof(struct usb_hub_status), USB_CNTL_TIMEOUT);
 }
 
-
 static void usb_hub_power_on(struct usb_hub_device *hub)
 {
 	int i;
 	struct usb_device *dev;
 	unsigned pgood_delay = hub->desc.bPwrOn2PwrGood * 2;
-	ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts, 1);
-	unsigned short portstatus;
-	int ret;
 
 	dev = hub->pusb_dev;
 
-	/*
-	 * Enable power to the ports:
-	 * Here we Power-cycle the ports: aka,
-	 * turning them off and turning on again.
-	 */
 	USB_HUB_PRINTF("enabling power on all ports\n");
-	for (i = 0; i < dev->maxchild; i++) {
-		usb_clear_port_feature(dev, i + 1, USB_PORT_FEAT_POWER);
-		USB_HUB_PRINTF("port %d returns %lX\n", i + 1, dev->status);
-	}
-
-	/* Wait at least 2*bPwrOn2PwrGood for PP to change */
-	mdelay(pgood_delay);
-
-	for (i = 0; i < dev->maxchild; i++) {
-		ret = usb_get_port_status(dev, i + 1, portsts);
-		if (ret < 0) {
-			USB_HUB_PRINTF("port %d: get_port_status failed\n", i + 1);
-			continue;
-		}
-
-		/*
-		 * Check to confirm the state of Port Power:
-		 * xHCI says "After modifying PP, s/w shall read
-		 * PP and confirm that it has reached the desired state
-		 * before modifying it again, undefined behavior may occur
-		 * if this procedure is not followed".
-		 * EHCI doesn't say anything like this, but no harm in keeping
-		 * this.
-		 */
-		portstatus = le16_to_cpu(portsts->wPortStatus);
-		if (portstatus & (USB_PORT_STAT_POWER << 1)) {
-			USB_HUB_PRINTF("port %d: Port power change failed\n", i + 1);
-			continue;
-		}
-	}
-
 	for (i = 0; i < dev->maxchild; i++) {
 		usb_set_port_feature(dev, i + 1, USB_PORT_FEAT_POWER);
 		USB_HUB_PRINTF("port %d returns %lX\n", i + 1, dev->status);
 	}
 
-	/* Wait for power to become stable */
-	mdelay(max(pgood_delay, CONFIG_USB_HUB_MIN_POWER_ON_DELAY));
+	/*
+	 * Wait for power to become stable,
+	 * plus spec-defined max time for device to connect
+	 */
+	mdelay(pgood_delay + 200);
 }
 
 void usb_hub_reset(void)
@@ -193,14 +152,17 @@ static inline char *portspeed(int portstatus)
 int hub_port_reset(struct usb_device *dev, int port,
 			unsigned short *portstat)
 {
-	int tries;
-	ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts, 1);
+	int err, tries;
+	ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts_buf, 1);
+	struct usb_port_status *portsts = KSEG1ADDR(portsts_buf);
 	unsigned short portstatus, portchange;
 
 	USB_HUB_PRINTF("hub_port_reset: resetting port %d...\n", port);
 	for (tries = 0; tries < MAX_TRIES; tries++) {
+		err = usb_set_port_feature(dev, port + 1, USB_PORT_FEAT_RESET);
+		if (err < 0)
+			return err;
 
-		usb_set_port_feature(dev, port + 1, USB_PORT_FEAT_RESET);
 		mdelay(200);
 
 		if (usb_get_port_status(dev, port + 1, portsts) < 0) {
@@ -220,9 +182,22 @@ int hub_port_reset(struct usb_device *dev, int port,
 		      (portstatus & USB_PORT_STAT_CONNECTION) ? 1 : 0,
 		      (portstatus & USB_PORT_STAT_ENABLE) ? 1 : 0);
 
-		if ((portchange & USB_PORT_STAT_C_CONNECTION) ||
-		    !(portstatus & USB_PORT_STAT_CONNECTION))
-			return -1;
+		/*
+		 * Perhaps we should check for the following here:
+		 * - C_CONNECTION hasn't been set.
+		 * - CONNECTION is still set.
+		 *
+		 * Doing so would ensure that the device is still connected
+		 * to the bus, and hasn't been unplugged or replaced while the
+		 * USB bus reset was going on.
+		 *
+		 * However, if we do that, then (at least) a San Disk Ultra
+		 * USB 3.0 16GB device fails to reset on (at least) an NVIDIA
+		 * Tegra Jetson TK1 board. For some reason, the device appears
+		 * to briefly drop off the bus when this second bus reset is
+		 * executed, yet if we retry this loop, it'll eventually come
+		 * back after another reset or two.
+		 */
 
 		if (portstatus & USB_PORT_STAT_ENABLE)
 			break;
@@ -246,7 +221,8 @@ int hub_port_reset(struct usb_device *dev, int port,
 void usb_hub_port_connect_change(struct usb_device *dev, int port)
 {
 	struct usb_device *usb;
-	ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts, 1);
+	ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts_buf, 1);
+	struct usb_port_status *portsts = KSEG1ADDR(portsts_buf);
 	unsigned short portstatus;
 
 	/* Check status */
@@ -317,15 +293,13 @@ void usb_hub_port_connect_change(struct usb_device *dev, int port)
 static int usb_hub_configure(struct usb_device *dev)
 {
 	int i, length;
-	ALLOC_CACHE_ALIGN_BUFFER(unsigned char, buffer, USB_BUFSIZ);
+	ALLOC_CACHE_ALIGN_BUFFER(unsigned char, buffer_buf, USB_BUFSIZ);
+	unsigned char *buffer = KSEG1ADDR(buffer_buf);
 	unsigned char *bitmap;
 	short hubCharacteristics;
 	struct usb_hub_descriptor *descriptor;
 	struct usb_hub_device *hub;
 	struct usb_hub_status *hubsts;
-	//unsigned char *buffer;
-
-	//buffer = (unsigned char *)KSEG1ADDR(&buffer[2]);
 
 	/* "allocate" Hub device */
 	hub = usb_hub_allocate();
@@ -368,6 +342,7 @@ static int usb_hub_configure(struct usb_device *dev)
 	dev->maxchild = descriptor->bNbrPorts;
 	USB_HUB_PRINTF("%d ports detected\n", dev->maxchild);
 
+#ifdef USB_HUB_DEBUG
 	hubCharacteristics = get_unaligned(&hub->desc.wHubCharacteristics);
 	switch (hubCharacteristics & HUB_CHAR_LPSM) {
 	case 0x00:
@@ -409,6 +384,7 @@ static int usb_hub_configure(struct usb_device *dev)
 		USB_HUB_PRINTF("port %d is%s removable\n", i + 1,
 		      hub->desc.DeviceRemovable[(i + 1) / 8] & \
 		      (1 << ((i + 1) % 8)) ? " not" : "");
+#endif
 
 	if (sizeof(struct usb_hub_status) > USB_BUFSIZ) {
 		USB_HUB_PRINTF("usb_hub_configure: failed to get Status - " \
@@ -422,10 +398,9 @@ static int usb_hub_configure(struct usb_device *dev)
 		return -1;
 	}
 
-//#ifdef DEBUG
-#if 0
+
+#ifdef USB_HUB_DEBUG
 	hubsts = (struct usb_hub_status *)buffer;
-#endif
 
 	USB_HUB_PRINTF("get_hub_status returned status %X, change %X\n",
 	      le16_to_cpu(hubsts->wHubStatus),
@@ -436,6 +411,8 @@ static int usb_hub_configure(struct usb_device *dev)
 	USB_HUB_PRINTF("%sover-current condition exists\n",
 	      (le16_to_cpu(hubsts->wHubStatus) & HUB_STATUS_OVERCURRENT) ? \
 	      "" : "no ");
+#endif
+
 	usb_hub_power_on(hub);
 
 	/*
@@ -447,14 +424,12 @@ static int usb_hub_configure(struct usb_device *dev)
 		usb_hub_reset_devices(i + 1);
 
 	for (i = 0; i < dev->maxchild; i++) {
-		ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts, 1);
-		unsigned short portstatus = 0, portchange = 0;
+		ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts_buf, 1);
+		struct usb_port_status *portsts = KSEG1ADDR(portsts_buf);
+		unsigned short portstatus, portchange;
 		int ret;
+		uint delay = CONFIG_SYS_HZ / 2;
 		ulong start = get_timer(0);
-		//struct usb_port_status *portsts;
-		
-
-		//portsts = (struct usb_port_status *)KSEG1ADDR(&portsts2[0]);
 
 		/*
 		 * Wait for (whichever finishes first)
@@ -474,18 +449,20 @@ static int usb_hub_configure(struct usb_device *dev)
 			portstatus = le16_to_cpu(portsts->wPortStatus);
 			portchange = le16_to_cpu(portsts->wPortChange);
 
-			if ((portchange & USB_PORT_STAT_C_CONNECTION) ==
-				(portstatus & USB_PORT_STAT_CONNECTION)) {
-				//printf(" @@ 33 !!\n");
+			/* No connection change happened, wait a bit more. */
+			if (!(portchange & USB_PORT_STAT_C_CONNECTION))
+				continue;
+
+			/* Test if the connection came up, and if so, exit. */
+			if (portstatus & USB_PORT_STAT_CONNECTION)
 				break;
-			}
 
-		} while (get_timer(start) < CONFIG_SYS_HZ * 10);
-
-		mdelay(50);
+		} while (get_timer(start) < delay);
 
 		if (ret < 0)
 			continue;
+
+		mdelay(1);
 
 		USB_HUB_PRINTF("Port %d Status %X Change %X\n",
 		      i + 1, portstatus, portchange);
@@ -570,3 +547,4 @@ int usb_hub_probe(struct usb_device *dev, int ifnum)
 	ret = usb_hub_configure(dev);
 	return ret;
 }
+

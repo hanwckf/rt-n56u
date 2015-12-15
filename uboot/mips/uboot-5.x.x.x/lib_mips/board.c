@@ -95,6 +95,7 @@ extern ulong uboot_end_data;
 extern ulong uboot_end;
 
 #if defined (RALINK_USB ) || defined (MTK_USB)
+#include <usb.h>
 extern int usb_stor_curr_dev;
 #endif
 
@@ -1443,13 +1444,12 @@ int flash_kernel_image(ulong image_ptr, ulong image_size)
 int flash_kernel_image_from_usb(cmd_tbl_t *cmdtp)
 {
 	char *argv[5];
-	char addr_str[16];
-	int argc;
+	char addr_str[16], dev_str[4];
+	int i, done;
 
-	argc = 2;
 	argv[1] = "start";
 
-	do_usb(cmdtp, 0, argc, argv);
+	do_usb(cmdtp, 0, 2, argv);
 	if (usb_stor_curr_dev < 0) {
 		printf("\n No USB Storage found. Upgrade FW failed!\n");
 		return -1;
@@ -1457,13 +1457,24 @@ int flash_kernel_image_from_usb(cmd_tbl_t *cmdtp)
 
 	sprintf(addr_str, "0x%X", CFG_LOAD_ADDR);
 
-	argc = 5;
 	argv[1] = "usb";
-	argv[2] = "0";
+	argv[2] = &dev_str[0];
 	argv[3] = &addr_str[0];
 	argv[4] = "root_uImage";
 
-	if (do_fat_fsload(cmdtp, 0, argc, argv)) {
+	done = 0;
+	for (i = 0; i < USB_MAX_STOR_DEV; ++i) {
+		block_dev_desc_t *stor_dev = usb_stor_get_dev(i);
+		if (stor_dev->type != DEV_TYPE_UNKNOWN) {
+			sprintf(dev_str, "%d", i);
+			if (do_fat_fsload(cmdtp, 0, 5, argv) == 0) {
+				done = 1;
+				break;
+			}
+		}
+	}
+
+	if (!done) {
 		printf("\n Upgrade FW from USB storage failed!\n");
 		return -1;
 	}

@@ -323,7 +323,7 @@ static ssize_t ndp_to_end_store(struct device *d,  struct device_attribute *attr
 
 	return len;
 }
-static DEVICE_ATTR_RW(ndp_to_end);
+static DEVICE_ATTR(ndp_to_end, S_IRUGO | S_IWUSR, ndp_to_end_show, ndp_to_end_store);
 
 #define NCM_PARM_ATTR(name, format, tocpu)				\
 static ssize_t cdc_ncm_show_##name(struct device *d, struct device_attribute *attr, char *buf) \

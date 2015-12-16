@@ -7,6 +7,16 @@
 #ifdef __KERNEL__
 #include <linux/ip.h>
 #include <linux/in6.h>
+#include <linux/u64_stats_sync.h>
+
+/* often modified stats are per cpu, other are shared (netdev->stats) */
+struct pcpu_tstats {
+	u64	rx_packets;
+	u64	rx_bytes;
+	u64	tx_packets;
+	u64	tx_bytes;
+	struct u64_stats_sync	syncp;
+};
 #endif
 
 #define SIOCGETTUNNEL   (SIOCDEVPRIVATE + 0)

@@ -94,7 +94,7 @@ ifdef CONFIG_64BIT
 KBUILD_AFLAGS_MODULE		+= -mlong-calls
 KBUILD_CFLAGS_MODULE		+= -mlong-calls
 else
-ifdef CONFIG_HIGHMEM
+ifdef CONFIG_LONG_CALLS
 KBUILD_AFLAGS_MODULE		+= -mlong-calls
 KBUILD_CFLAGS_MODULE		+= -mlong-calls
 else

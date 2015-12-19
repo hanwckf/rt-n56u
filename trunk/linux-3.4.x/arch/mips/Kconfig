@@ -2222,6 +2222,10 @@ config CPU_R4000_WORKAROUNDS
 config CPU_R4400_WORKAROUNDS
 	bool
 
+config LONG_CALLS
+	bool "gcc must use -mlong-calls (RAM > 256MB)"
+	depends on 32BIT && CPU_SUPPORTS_HIGHMEM && SYS_SUPPORTS_HIGHMEM
+
 #
 # - Highmem only makes sense for the 32-bit kernel.
 # - The current highmem code will only work properly on physically indexed
@@ -2238,6 +2242,7 @@ config CPU_R4400_WORKAROUNDS
 config HIGHMEM
 	bool "High Memory Support"
 	depends on 32BIT && CPU_SUPPORTS_HIGHMEM && SYS_SUPPORTS_HIGHMEM
+	select LONG_CALLS
 
 config CPU_SUPPORTS_HIGHMEM
 	bool

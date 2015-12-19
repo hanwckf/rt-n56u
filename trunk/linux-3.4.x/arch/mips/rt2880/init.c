@@ -190,7 +190,7 @@ static u32 pcie_phy(char rwmode, unsigned long addr, unsigned long val)
 }
 #endif
 
-static void prom_init_pcie(void)
+static inline void prom_init_pcie(void)
 {
 #if defined (CONFIG_RALINK_MT7620)
 	/* PCIe bypass DLL */
@@ -239,29 +239,88 @@ static void prom_init_pcie(void)
 #endif
 }
 
-static void prom_init_usb(void)
+static inline void prom_init_usb(void)
 {
 #if !defined (CONFIG_RALINK_RT3052) && !defined (CONFIG_RALINK_MT7621)
-	u32 reg = 0;
+	u32 reg;
 #endif
 #if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || \
     defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7620) || \
     defined (CONFIG_RALINK_MT7628)
+	/* raise USB reset */
 	reg = *(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x34));
 	reg |= (RALINK_UDEV_RST | RALINK_UHST_RST);
 	*(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x34))= reg;
 
+	/* disable PHY0/1 clock */
 	reg = *(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x30));
 #if defined (CONFIG_RALINK_RT5350)
-	reg = reg & ~(RALINK_UPHY0_CLK_EN);
+	reg &= ~(RALINK_UPHY0_CLK_EN);
 #else
-	reg = reg & ~(RALINK_UPHY0_CLK_EN | RALINK_UPHY1_CLK_EN);
+	reg &= ~(RALINK_UPHY0_CLK_EN | RALINK_UPHY1_CLK_EN);
 #endif
 	*(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x30)) = reg;
 #elif defined (CONFIG_RALINK_RT3052)
-	*(volatile u32 *)KSEG1ADDR((RALINK_USB_OTG_BASE + 0xE00)) = 0xF;	// power saving
+	/* OTG power saving */
+	*(volatile u32 *)KSEG1ADDR((RALINK_USB_OTG_BASE + 0xE00)) = 0xF;
 #elif defined (CONFIG_RALINK_MT7621)
 	/* TODO */
+#endif
+}
+
+static inline void prom_init_sdxc(void)
+{
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621) || \
+    defined (CONFIG_RALINK_MT7628)
+	u32 reg;
+
+	/* raise SDXC reset */
+	reg = *(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x34));
+	reg |= (RALINK_SDXC_RST);
+	*(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x34))= reg;
+
+	/* disable SDXC clock */
+	reg = *(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x30));
+	reg &= ~(RALINK_SDXC_CLK_EN);
+	*(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x30)) = reg;
+#endif
+}
+
+static inline void prom_init_nand(void)
+{
+#if !defined (CONFIG_MTD_NAND_RALINK) && !defined (CONFIG_MTD_NAND_MTK)
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+	u32 reg;
+
+	/* raise NAND reset */
+	reg = *(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x34));
+	reg |= (RALINK_NAND_RST);
+	*(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x34))= reg;
+
+	/* disable NAND clock */
+	reg = *(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x30));
+	reg &= ~(RALINK_NAND_CLK_EN);
+	*(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x30)) = reg;
+#endif
+#endif
+}
+
+static inline void prom_init_spdif(void)
+{
+#if !defined (CONFIG_RALINK_SPDIF)
+#if defined (CONFIG_RALINK_MT7621)
+	u32 reg;
+
+	/* raise SPDIF reset */
+	reg = *(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x34));
+	reg |= (RALINK_SPDIF_RST);
+	*(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x34))= reg;
+
+	/* disable SPDIF clock */
+	reg = *(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x30));
+	reg &= ~(RALINK_SPDIF_CLK_EN);
+	*(volatile u32 *)KSEG1ADDR((RALINK_SYSCTL_BASE + 0x30)) = reg;
+#endif
 #endif
 }
 
@@ -774,7 +833,10 @@ void __init prom_init(void)
 	prom_init_sysclk();
 	prom_init_serial_port();	/* Needed for Serial Console */
 	prom_init_usb();		/* USB power saving */
-	prom_init_pcie();		/* PCIe power saving*/
+	prom_init_pcie();		/* PCIe power saving */
+	prom_init_sdxc();		/* SDXC power saving */
+	prom_init_nand();		/* NAND power saving */
+	prom_init_spdif();		/* SPDIF power saving */
 	prom_meminit();
 	prom_init_irq();
 

@@ -615,6 +615,9 @@ static ssize_t tun_get_user(struct tun_struct *tun,
 	struct virtio_net_hdr gso = { 0 };
 	int offset = 0;
 
+	if (!(tun->dev->flags & IFF_UP))
+		return -EIO;
+
 	if (!(tun->flags & TUN_NO_PI)) {
 		if (len < sizeof(pi))
 			return -EINVAL;

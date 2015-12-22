@@ -642,7 +642,7 @@ char* GetPhyMode(int Mode)
 	case MODE_HTMIX:
 		return "HTMIX";
 	case MODE_HTGREENFIELD:
-		return "GREEN";
+		return "HT_GF";
 	case MODE_VHT:
 		return "VHT";
 	default:

@@ -280,6 +280,12 @@ source "drivers/net/wireless/ralink/rt2860v2_ap/Kconfig"
 endmenu
 endif
 
+if (RT_FIRST_IF_MT7628)
+menu "AP MODE MediaTek MT7628/MT7688 RBUS Wireless driver"
+source "drivers/net/wireless/ralink/mt7628_ap/Kconfig"
+endmenu
+endif
+
 if (RT_SECOND_IF_RT3352_INIC)
 menu "AP MODE Ralink RT3352 iNIC MII Wireless driver"
 source "drivers/net/wireless/ralink/rt3352_mii/Kconfig"
@@ -319,12 +325,6 @@ endif
 if (RT_FIRST_IF_MT7620 || RT_FIRST_IF_MT7612E || RT_FIRST_IF_MT7602E || RT_SECOND_IF_MT7612E || RT_SECOND_IF_MT7602E)
 menu "AP MODE MediaTek MT7620/MT7602E/MT7612E RBUS/PCIe Wireless driver"
 source "drivers/net/wireless/ralink/mt76x2_ap/Kconfig"
-endmenu
-endif
-
-if (RT_FIRST_IF_MT7628)
-menu "AP MODE MediaTek MT7628/MT7688 RBUS Wireless driver"
-#source "drivers/net/wireless/ralink/mt7628_ap/Kconfig"
 endmenu
 endif
 

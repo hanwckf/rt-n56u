@@ -70,5 +70,6 @@ obj-$(CONFIG_RT3593_AP)		+= ralink/rt3593_ap/
 obj-$(CONFIG_MT7610_AP)		+= ralink/mt7610_ap/
 obj-$(CONFIG_MT76X2_AP)		+= ralink/mt76x2_ap/
 obj-$(CONFIG_MT76X3_AP)		+= ralink/mt76x3_ap/
+obj-$(CONFIG_MT7628_AP)		+= ralink/mt7628_ap/
 obj-$(CONFIG_RT3352_INIC_MII)	+= ralink/rt3352_mii/
 

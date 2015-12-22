@@ -193,10 +193,9 @@ int
 ej_nat_table(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fp;
-	int ret, i_loaded, sw_mode;
+	int ret, sw_mode;
 	char line[256], tmp[256], target[16], proto[16], src[24], dst[24];
 	char *range, *host, *port, *ptr, *val;
-	char *hwnat_status;
 	char *nat_argv[] = {"iptables", "-t", "nat", "-nxL", NULL};
 
 	ret = 0;
@@ -204,9 +203,9 @@ ej_nat_table(int eid, webs_t wp, int argc, char **argv)
 
 #if defined (USE_HW_NAT)
 	if (sw_mode == 1 || sw_mode == 4) {
-		hwnat_status = "Disabled";
+		const char *hwnat_status = "Disabled";
+		int i_loaded = is_hwnat_loaded();
 		
-		i_loaded = is_hwnat_loaded();
 		if (i_loaded == 2)
 #if defined(USE_WWAN_HW_NAT)
 			hwnat_status = "Enabled, IPoE/PPPoE offload [WAN/WWAN]<->[LAN/WLAN]";

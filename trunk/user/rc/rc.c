@@ -91,6 +91,10 @@ load_wireless_modules(void)
 	doSystem("modprobe %s", "rt2860v2_ap");
 #endif
 
+#if defined (USE_MT7628_AP)
+	doSystem("modprobe %s", "mt7628_ap");
+#endif
+
 #if defined (USE_RT3090_AP)
 	doSystem("modprobe %s", "rt3090_ap");
 #elif defined (USE_RT5392_AP)
@@ -200,6 +204,7 @@ init_gpio_leds_buttons(void)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_POWER, 1);
 	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
 #endif
+
 	/* enable USB port 5V power */
 #if defined (BOARD_GPIO_PWR_USB)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_PWR_USB, 1);
@@ -690,11 +695,20 @@ LED_CONTROL(int gpio_led, int flag)
 		flag = LED_OFF;
 #endif
 
-#if defined (BOARD_GPIO_LED_WIFI) && defined (CONFIG_RALINK_MT7620) && (BOARD_GPIO_LED_WIFI == 72)
+#if defined (BOARD_GPIO_LED_WIFI)
+#if defined (CONFIG_RALINK_MT7620) && (BOARD_GPIO_LED_WIFI == 72)
 	if (gpio_led == BOARD_GPIO_LED_WIFI) {
 		cpu_gpio_mode_set_bit(13, (flag == LED_OFF) ? 1 : 0); // change GPIO Mode for WLED
 		cpu_gpio_set_pin(gpio_led, LED_OFF); // always set GPIO to high
 	} else
+#endif
+#if defined (CONFIG_RALINK_MT7628) && (BOARD_GPIO_LED_WIFI == 44)
+	if (gpio_led == BOARD_GPIO_LED_WIFI) {
+		cpu_gpio_mode_set_bit(32, (flag == LED_OFF) ? 1 : 0); // change GPIO Mode for WLED_AN
+		cpu_gpio_mode_set_bit(48, (flag == LED_OFF) ? 1 : 0); // change GPIO Mode for WLED_KN
+		cpu_gpio_set_pin(gpio_led, LED_OFF); // always set GPIO to high
+	} else
+#endif
 #endif
 	{
 		if (is_soft_blink)

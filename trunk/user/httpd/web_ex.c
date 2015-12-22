@@ -2045,6 +2045,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #endif
 #else
 	int has_ipv4_ppe = 0;
+	int has_ipv6_ppe = 0;
 #endif
 
 #if (BOARD_RAM_SIZE < 64)

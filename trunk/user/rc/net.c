@@ -470,11 +470,11 @@ is_ftp_conntrack_loaded(int ftp_port0, int ftp_port1)
 	return 1;
 }
 
+#if defined (USE_HW_NAT)
 static int
 is_hwnat_loaded(void)
 {
 	int result = 0;
-#if defined (USE_HW_NAT)
 	char offload_val[32] = {0};
 
 	if (!is_module_loaded("hw_nat"))
@@ -498,7 +498,7 @@ is_hwnat_loaded(void)
 			result |= 0x8;
 	}
 #endif
-#endif
+
 	return result;
 }
 
@@ -523,7 +523,6 @@ static int
 is_hwnat_allow(void)
 {
 	int result = 0;
-#if defined (USE_HW_NAT)
 	int sw_mode = nvram_get_int("sw_mode");
 
 	int hw_nat_mode = nvram_get_int("hw_nat_mode");
@@ -544,25 +543,13 @@ is_hwnat_allow(void)
 
 	if (is_hwnat_allow_ipv6())
 		result |= 0x8;	// ipv6_offload=1
-#endif
+
 	return result;
 }
-
-#if 0
-static int
-is_fastnat_allow(void)
-{
-	if ( nvram_match("sw_nat_mode", "1") && nvram_match("sw_mode", "1") )
-		return 1;
-
-	return 0;
-}
-#endif
 
 static void
 hwnat_load(int allow_mask)
 {
-#if defined (USE_HW_NAT)
 	char hnat_param[80];
 	int wifi_offload, udp_offload, wan_vid;
 
@@ -575,15 +562,12 @@ hwnat_load(int allow_mask)
 	if (allow_mask & 0x8)
 		strcat(hnat_param, " ipv6_offload=1");
 #endif
-
 	module_smart_load("hw_nat", hnat_param);
-#endif
 }
 
 static void
 hwnat_configure(int allow_mask)
 {
-#if defined (USE_HW_NAT)
 	const char *hwnat_status = "Disabled";
 
 	if (!is_module_loaded("hw_nat")) {
@@ -608,9 +592,19 @@ hwnat_configure(int allow_mask)
 #if defined(USE_IPV6_HW_NAT)
 	logmessage(LOGNAME, "%s: IPv6 routes offload - %s", "Hardware NAT/Routing", (allow_mask & 0x8) ? "ON" : "OFF");
 #endif
-
-#endif
 }
+#endif /* USE_HW_NAT */
+
+#if 0
+static int
+is_fastnat_allow(void)
+{
+	if ( nvram_match("sw_nat_mode", "1") && nvram_match("sw_mode", "1") )
+		return 1;
+
+	return 0;
+}
+#endif
 
 void
 hw_vlan_tx_map(int idx, int vid)

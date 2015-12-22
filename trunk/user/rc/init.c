@@ -440,6 +440,8 @@ init_sysctl(void)
 
 #if defined (USE_IPV6)
 	control_if_ipv6_all(0);
+#else
+	set_libc_gai(1);
 #endif
 }
 

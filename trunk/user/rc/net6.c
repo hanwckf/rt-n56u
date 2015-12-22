@@ -42,6 +42,7 @@ void init_ipv6(void)
 {
 	int ipv6_type = get_ipv6_type();
 	control_if_ipv6_all((ipv6_type == IPV6_DISABLED) ? 0 : 1);
+	set_libc_gai((ipv6_type == IPV6_DISABLED) ? 1 : 0);
 	reset_lan6_vars();
 }
 
@@ -192,11 +193,13 @@ void full_restart_ipv6(int ipv6_type_old)
 		reset_lan6_vars();
 		reset_wan6_vars();
 		control_if_ipv6_all(0);
+		set_libc_gai(1);
 		update_resolvconf(0, 1);
 		reload_nat_modules();
 		restart_firewall();
 		start_dns_dhcpd(0);
 	} else {
+		set_libc_gai(0);
 		control_if_ipv6_all(1);
 		clear_all_addr6();
 		reset_lan6_vars();

@@ -898,3 +898,17 @@ set_igmp_mld_version(void)
 #endif
 }
 
+void
+set_libc_gai(int ipv4_first)
+{
+	if (ipv4_first) {
+		FILE *fp = fopen("/etc/gai.conf", "w");
+		if (fp) {
+			fprintf(fp, "precedence %s\n", "ipv4");
+			fclose(fp);
+		}
+	} else {
+		unlink("/etc/gai.conf");
+	}
+}
+

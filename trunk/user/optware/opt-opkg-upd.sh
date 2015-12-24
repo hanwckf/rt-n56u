@@ -62,6 +62,7 @@ if [ ! -f /opt/bin/opkg ] ; then
 		logger -t "${self_name}" "FAILED!"
 		exit 1
 	fi
+	ln -sf /etc/TZ /opt/etc/TZ
 	ldconfig > /dev/null 2>&1
 	logger -t "${self_name}" "Congratulations!"
 	logger -t "${self_name}" "If there are no errors above then Entware successfully initialized."

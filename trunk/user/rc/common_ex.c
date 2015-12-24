@@ -312,7 +312,16 @@ get_eeprom_params(void)
 	}
 
 #if defined(FWBLDSTR)
-	snprintf(fwver_sub, sizeof(fwver_sub), "%s-%s", fwver_sub, FWBLDSTR);
+	if (strlen(FWBLDSTR) > 0 && strlen(FWBLDSTR) <= 4) {
+		strcat(fwver_sub, "-");
+		strcat(fwver_sub, FWBLDSTR);
+	}
+#endif
+#if defined(FWREVSTR)
+	if (strlen(FWREVSTR) > 0 && strlen(FWREVSTR) <= 8) {
+		strcat(fwver_sub, "_");
+		strcat(fwver_sub, FWREVSTR);
+	}
 #endif
 	nvram_set_temp("productid", trim_r(productid));
 	nvram_set_temp("firmver", trim_r(fwver));

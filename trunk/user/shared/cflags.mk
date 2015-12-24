@@ -80,6 +80,7 @@ endif
 ##################################################################
 
 CFLAGS += $(if $(FIRMWARE_BUILDS_VER),-DFWBLDSTR=\"$(FIRMWARE_BUILDS_VER)\",)
+CFLAGS += $(if $(FIRMWARE_BUILDS_REV),-DFWREVSTR=\"$(FIRMWARE_BUILDS_REV)\",)
 
 ifneq ($(BOARD_NUM_USB_PORTS),0)
 CFLAGS += -DUSE_USB_SUPPORT

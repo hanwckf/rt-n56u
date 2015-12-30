@@ -106,7 +106,7 @@ DIST_COMMON = $(top_srcdir)/build/ltrc.inc $(srcdir)/Makefile.in \
 @WIN32_TRUE@am__append_1 = -municode -UUNICODE
 sbin_PROGRAMS = openvpn$(EXEEXT)
 @WIN32_TRUE@am__append_2 = openvpn_win32_resources.rc
-@WIN32_TRUE@am__append_3 = -lgdi32 -lws2_32 -lwininet -lcrypt32 -liphlpapi -lwinmm
+@WIN32_TRUE@am__append_3 = -lgdi32 -lws2_32 -lwininet -lcrypt32 -liphlpapi -lrpcrt4 -lwinmm
 subdir = src/openvpn
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_emptyarray.m4 \
@@ -149,8 +149,8 @@ am__openvpn_SOURCES_DIST = base64.c base64.h basic.h buffer.c buffer.h \
 	ssl_verify.c ssl_verify.h ssl_verify_backend.h \
 	ssl_verify_openssl.c ssl_verify_openssl.h \
 	ssl_verify_polarssl.c ssl_verify_polarssl.h status.c status.h \
-	syshead.h tun.c tun.h win32.h win32.c cryptoapi.h cryptoapi.c \
-	openvpn_win32_resources.rc
+	syshead.h tun.c tun.h win32.h win32_wfp.h win32.c cryptoapi.h \
+	cryptoapi.c openvpn_win32_resources.rc
 @WIN32_TRUE@am__objects_1 = openvpn_win32_resources.$(OBJEXT)
 am_openvpn_OBJECTS = base64.$(OBJEXT) buffer.$(OBJEXT) \
 	clinat.$(OBJEXT) crypto.$(OBJEXT) crypto_openssl.$(OBJEXT) \
@@ -452,8 +452,8 @@ openvpn_SOURCES = base64.c base64.h basic.h buffer.c buffer.h \
 	ssl_verify.c ssl_verify.h ssl_verify_backend.h \
 	ssl_verify_openssl.c ssl_verify_openssl.h \
 	ssl_verify_polarssl.c ssl_verify_polarssl.h status.c status.h \
-	syshead.h tun.c tun.h win32.h win32.c cryptoapi.h cryptoapi.c \
-	$(am__append_2)
+	syshead.h tun.c tun.h win32.h win32_wfp.h win32.c cryptoapi.h \
+	cryptoapi.c $(am__append_2)
 openvpn_LDADD = $(top_builddir)/src/compat/libcompat.la \
 	$(SOCKETS_LIBS) $(OPTIONAL_LZO_LIBS) \
 	$(OPTIONAL_PKCS11_HELPER_LIBS) $(OPTIONAL_CRYPTO_LIBS) \

@@ -1,4 +1,4 @@
-/* $Id: miniupnpd.c,v 1.212 2015/11/05 10:56:23 nanard Exp $ */
+/* $Id: miniupnpd.c,v 1.213 2015/12/16 10:21:49 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2015 Thomas Bernard
@@ -454,7 +454,9 @@ ProcessIncomingHTTP(int shttpl, const char * protocol)
 		char addr_str[64];
 
 		sockaddr_to_string((struct sockaddr *)&clientname, addr_str, sizeof(addr_str));
-		syslog(LOG_INFO, "%s connection from %s", protocol, addr_str);
+#ifdef DEBUG
+		syslog(LOG_DEBUG, "%s connection from %s", protocol, addr_str);
+#endif /* DEBUG */
 		if(get_lan_for_peer((struct sockaddr *)&clientname) == NULL)
 		{
 			/* The peer is not a LAN ! */
@@ -495,6 +497,7 @@ ProcessIncomingHTTP(int shttpl, const char * protocol)
 #else
 				tmp->clientaddr = clientname.sin_addr;
 #endif
+				memcpy(tmp->clientaddr_str, addr_str, sizeof(tmp->clientaddr_str));
 				return tmp;
 			}
 			else

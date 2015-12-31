@@ -657,7 +657,7 @@ static bool packet_is_spoofed(struct sk_buff *skb,
 	ipv6h = ipv6_hdr(skb);
 
 	if (unlikely(is_spoofed_6rd(tunnel, iph->saddr, &ipv6h->saddr))) {
-		net_warn_ratelimited("Src spoofed %pI4/%pI6c -> %pI4/%pI6c\n",
+		net_dbg_ratelimited("Src spoofed %pI4/%pI6c -> %pI4/%pI6c\n",
 				     &iph->saddr, &ipv6h->saddr,
 				     &iph->daddr, &ipv6h->daddr);
 		return true;
@@ -669,7 +669,7 @@ static bool packet_is_spoofed(struct sk_buff *skb,
 	if (only_dnatted(tunnel, &ipv6h->daddr))
 		return false;
 
-	net_warn_ratelimited("Dst spoofed %pI4/%pI6c -> %pI4/%pI6c\n",
+	net_dbg_ratelimited("Dst spoofed %pI4/%pI6c -> %pI4/%pI6c\n",
 			     &iph->saddr, &ipv6h->saddr,
 			     &iph->daddr, &ipv6h->daddr);
 	return true;

@@ -1119,8 +1119,8 @@ When used with
 .B \-\-client
 or
 .B \-\-pull,
-accept options pushed by server EXCEPT for routes and dhcp options
-like DNS servers.
+accept options pushed by server EXCEPT for routes, block-outside-dns and dhcp
+options like DNS servers.
 
 When used on the client, this option effectively bars the
 server from adding routes to the client's routing table,
@@ -3683,10 +3683,8 @@ over the client's routing table.
 .B \-\-auth\-user\-pass [up]
 Authenticate with server using username/password.
 .B up
-is a file containing username/password on 2 lines (Note: OpenVPN
-will only read passwords from a file if it has been built
-with the \-\-enable\-password\-save configure option, or on Windows
-by defining ENABLE_PASSWORD_SAVE in win/settings.in).
+is a file containing username/password on 2 lines. If the
+password line is missing, OpenVPN will prompt for one.
 
 If
 .B up
@@ -4775,10 +4773,7 @@ is specified, read the password from the first line of
 .B file.
 Keep in mind that storing your password in a file
 to a certain extent invalidates the extra security provided by
-using an encrypted key (Note: OpenVPN
-will only read passwords from a file if it has been built
-with the \-\-enable\-password\-save configure option, or on Windows
-by defining ENABLE_PASSWORD_SAVE in win/settings.in).
+using an encrypted key.
 .\"*********************************************************
 .TP
 .B \-\-auth\-nocache
@@ -5453,6 +5448,14 @@ adapter list to the syslog or log file after the TUN/TAP adapter
 has been brought up and any routes have been added.
 .\"*********************************************************
 .TP
+.B \-\-block\-outside\-dns
+Block DNS servers on other network adapters to prevent
+DNS leaks. This option prevents any application from accessing
+TCP or UDP port 53 except one inside the tunnel. It uses
+Windows Filtering Platform (WFP) and works on Windows Vista or
+later.
+.\"*********************************************************
+.TP
 .B \-\-dhcp\-renew
 Ask Windows to renew the TAP adapter lease on startup.
 This option is normally unnecessary, as Windows automatically
@@ -5811,6 +5814,17 @@ Set on program initiation and reset on SIGHUP.
 .B dev
 The actual name of the TUN/TAP device, including
 a unit number if it exists.
+Set prior to
+.B \-\-up
+or
+.B \-\-down
+script execution.
+.\"*********************************************************
+.TP
+.B dev_idx
+On Windows, the device index of the TUN/TAP adapter (to
+be used in netsh.exe calls which sometimes just do not work
+right with interface names).
 Set prior to
 .B \-\-up
 or

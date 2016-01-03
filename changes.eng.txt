@@ -36,7 +36,26 @@ After manual NVRAM reset:
 
 3.X.3.9-098:
 ----------------------------------------------------------
-- tbc...
+[RT-N56U_B1]
+- Wireless drivers: updated MT7603E AP driver to 4.0.1.0_rev2.
+- Wireless drivers: disabled MT7603E ED-CCA by default.
+- Wireless drivers: fixed MT76x2E TxPower control via iwpriv.
+- Linux kernel: fixed MT7621 SPI clock calculation.
+- Linux kernel: fixed MT7621 xHCI memory leaks.
+[Common changes]
+- Updated OpenSSL to 1.0.1q.
+- Updated OpenVPN to 2.3.9.
+- Updated dropbear SSH to 2015.71.
+- Updated miniupnpd to 1.9.20151219.
+- Updated usb-modeswitch to 2.2.6, updated usb-modeswitch-data up to 2015-11-01.
+- Linux kernel: fixed IPv6 fragmentation issue introduced on the 086 build.
+- Linux kernel: fixed memory corruption in PPPoE driver introduced on the 095 build.
+- Linux kernel: more upstream updates.
+- HW_NAT: dynamic select FoE 64/80 on runtime, use FoE 80 only IPv6 offload enabled.
+- HW_NAT: removed FoE bind limits on HWNATv2 hardware (MT7620/MT7621).
+- Control: fixed L2TP client regression introduced on the 097 build.
+- Scripts: migrated to Entware-ng repository (thanks to Alexander Ryzhov).
+- WebUI: removed bogus safe login logic for AP mode.
 
 
 3.X.3.9-097:

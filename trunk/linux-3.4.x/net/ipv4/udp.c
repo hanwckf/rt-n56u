@@ -1193,6 +1193,7 @@ int udp_recvmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 #if defined (CONFIG_INET_UDPLITE)
 	int is_udplite = IS_UDPLITE(sk);
 #endif
+	bool checksum_valid = false;
 	bool slow;
 
 	if (flags & MSG_ERRQUEUE)
@@ -1222,17 +1223,18 @@ try_again:
 	    || UDP_SKB_CB(skb)->partial_cov
 #endif
 	 ) {
-		if (udp_lib_checksum_complete(skb))
+		checksum_valid = !udp_lib_checksum_complete(skb);
+		if (!checksum_valid)
 			goto csum_copy_err;
 	}
 
-	if (skb_csum_unnecessary(skb))
+	if (checksum_valid || skb_csum_unnecessary(skb))
 		err = skb_copy_datagram_iovec(skb, sizeof(struct udphdr),
 					      msg->msg_iov, copied);
 	else {
 		err = skb_copy_and_csum_datagram_iovec(skb,
 						       sizeof(struct udphdr),
-						       msg->msg_iov, copied);
+						       msg->msg_iov);
 
 		if (err == -EINVAL)
 			goto csum_copy_err;

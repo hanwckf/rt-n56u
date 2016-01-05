@@ -82,10 +82,13 @@ struct ipset_type {
 	const char *usage;			/* terse usage */
 	void (*usagefn)(void);			/* additional usage */
 	const char *description;		/* short revision description */
-
 	struct ipset_type *next;
 	const char *alias[];			/* name alias(es) */
 };
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern int ipset_cache_add(const char *name, const struct ipset_type *type,
 			   uint8_t family);
@@ -108,7 +111,9 @@ extern bool ipset_match_typename(const char *str,
 				 const struct ipset_type *t);
 extern void ipset_load_types(void);
 
-extern void ipset_types_init(void);
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef TYPE_INCLUSIVE
 #	ifdef _INIT

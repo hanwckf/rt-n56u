@@ -44,6 +44,14 @@
 0 diff -u -I 'Size in memory.*' .foo macipmap.t.list0
 # Range: Flush test set
 0 ipset -F test
+# Range: Catch invalid (too long) MAC
+1 ipset -A test 2.0.0.2,00:11:22:33:44:55:66
+# Range: Catch invalid (too short) MAC
+1 ipset -A test 2.0.0.2,00:11:22:33:44
+# Range: Add an element with MAC without leading zeros
+0 ipset -A test 2.0.0.2,0:1:2:3:4:5
+# Range: Check element with MAC without leading zeros
+0 ipset -T test 2.0.0.2,0:1:2:3:4:5
 # Range: Delete test set
 0 ipset -X test
 # Network: Try to create a set from an invalid network

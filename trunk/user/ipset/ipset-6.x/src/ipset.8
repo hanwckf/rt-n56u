@@ -13,42 +13,42 @@
 .\" You should have received a copy of the GNU General Public License
 .\" along with this program; if not, write to the Free Software
 .\" Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-.TH "IPSET" "8" "Apr 4, 2013" "Jozsef Kadlecsik" ""
+.TH "IPSET" "8" "Jun 25, 2015" "Jozsef Kadlecsik" ""
 .SH "NAME"
 ipset \(em administration tool for IP sets
 .SH "SYNOPSIS"
 \fBipset\fR [ \fIOPTIONS\fR ] \fICOMMAND\fR [ \fICOMMAND\-OPTIONS\fR ]
-.PP 
+.PP
 COMMANDS := { \fBcreate\fR | \fBadd\fR | \fBdel\fR | \fBtest\fR | \fBdestroy\fR | \fBlist\fR | \fBsave\fR | \fBrestore\fR | \fBflush\fR | \fBrename\fR | \fBswap\fR | \fBhelp\fR | \fBversion\fR | \fB\-\fR }
-.PP 
+.PP
 \fIOPTIONS\fR := { \fB\-exist\fR | \fB\-output\fR { \fBplain\fR | \fBsave\fR | \fBxml\fR } | \fB\-quiet\fR | \fB\-resolve\fR | \fB\-sorted\fR | \fB\-name\fR | \fB\-terse\fR | \fB\-file\fR \fIfilename\fR }
-.PP 
+.PP
 \fBipset\fR \fBcreate\fR \fISETNAME\fR \fITYPENAME\fR [ \fICREATE\-OPTIONS\fR ]
-.PP 
+.PP
 \fBipset\fR \fBadd\fR \fISETNAME\fR \fIADD\-ENTRY\fR [ \fIADD\-OPTIONS\fR ]
-.PP 
+.PP
 \fBipset\fR \fBdel\fR \fISETNAME\fR \fIDEL\-ENTRY\fR [ \fIDEL\-OPTIONS\fR ]
-.PP 
+.PP
 \fBipset\fR \fBtest\fR \fISETNAME\fR \fITEST\-ENTRY\fR [ \fITEST\-OPTIONS\fR ]
-.PP 
+.PP
 \fBipset\fR \fBdestroy\fR [ \fISETNAME\fR ]
-.PP 
+.PP
 \fBipset\fR \fBlist\fR [ \fISETNAME\fR ]
-.PP 
+.PP
 \fBipset\fR \fBsave\fR [ \fISETNAME\fR ]
-.PP 
+.PP
 \fBipset\fR \fBrestore\fR
-.PP 
+.PP
 \fBipset\fR \fBflush\fR [ \fISETNAME\fR ]
-.PP 
+.PP
 \fBipset\fR \fBrename\fR \fISETNAME\-FROM\fR \fISETNAME\-TO\fR
-.PP 
+.PP
 \fBipset\fR \fBswap\fR \fISETNAME\-FROM\fR \fISETNAME\-TO\fR
-.PP 
+.PP
 \fBipset\fR \fBhelp\fR [ \fITYPENAME\fR ]
-.PP 
+.PP
 \fBipset\fR \fBversion\fR
-.PP 
+.PP
 \fBipset\fR \fB\-\fR
 .SH "DESCRIPTION"
 \fBipset\fR
@@ -56,7 +56,7 @@ is used to set up, maintain and inspect so called IP sets in the Linux
 kernel. Depending on the type of the set, an IP set may store IP(v4/v6)
 addresses, (TCP/UDP) port numbers, IP and MAC address pairs, IP address
 and port number pairs, etc. See the set type definitions below.
-.PP 
+.PP
 \fBIptables\fR
 matches and targets referring to sets create references, which
 protect the given sets in the kernel. A set cannot be destroyed
@@ -95,12 +95,11 @@ ignores if the entry already added to the set.
 \fBdel\fP \fISETNAME\fP \fIDEL\-ENTRY\fP [ \fIDEL\-OPTIONS\fP ]
 Delete an entry from a set. If the
 \fB\-exist\fR
-option is specified,
-\fBipset\fR
-ignores if the entry does not added to (already expired from) the set.
+option is specified and the entry is not in the set (maybe already expired),
+then the command is ignored.
 .TP 
 \fBtest\fP \fISETNAME\fP \fITEST\-ENTRY\fP [ \fITEST\-OPTIONS\fP ]
-Test wether an entry is in a set or not. Exit status number is zero
+Test whether an entry is in a set or not. Exit status number is zero
 if the tested entry is in the set and nonzero if it is missing from
 the set.
 .TP 
@@ -163,7 +162,7 @@ must not exist.
 \fBw\fP, \fBswap\fP \fISETNAME\-FROM\fP \fISETNAME\-TO\fP
 Swap the content of two sets, or in another words, 
 exchange the name of two sets. The referred sets must exist and
-identical type of sets can be swapped only.
+compatible type of sets can be swapped only.
 .TP 
 \fBhelp\fP [ \fITYPENAME\fP ]
 Print help and set type specific help if
@@ -241,7 +240,7 @@ When adding, deleting or testing entries in a set, the same comma separated
 data syntax must be used for the entry parameter of the commands, i.e
 .IP 
 ipset add foo ipaddr,portnum,ipaddr
-.PP 
+.PP
 If host names or service names with dash in the name are used instead of IP
 addresses or service numbers, then the host name or service name must be enclosed
 in square brackets. Example:
@@ -271,15 +270,102 @@ parameter for the \fBcreate\fR command means the default timeout value (in secon
 for new entries. If a set is created with timeout support, then the same 
 \fBtimeout\fR option can be used to specify non\-default timeout values
 when adding entries. Zero timeout value means the entry is added permanent to the set.
-The timeout value of already added elements can be changed by readding the element
+The timeout value of already added elements can be changed by re-adding the element
 using the \fB\-exist\fR option. Example:
-.IP 
+.IP
 ipset create test hash:ip timeout 300
 .IP
 ipset add test 192.168.0.1 timeout 60
 .IP
-ipset -exist add test 192.168.0.1 timeout 600
-.PP 
+ipset \-exist add test 192.168.0.1 timeout 600
+.PP
+When listing the set, the number of entries printed in the header might be
+larger than the listed number of entries for sets with the timeout extensions:
+the number of entries in the set is updated when elements added/deleted to the
+set and periodically when the garbage collector evicts the timed out entries.
+.PP
+.SS "counters, packets, bytes"
+All set types support the optional \fBcounters\fR
+option when creating a set. If the option is specified then the set is created
+with packet and byte counters per element support. The packet and byte counters
+are initialized to zero when the elements are (re\-)added to the set,
+unless the packet and byte counter values are explicitly specified by the
+\fBpackets\fR and \fBbytes\fR options. An example when an element is added
+to a set with non\-zero counter values:
+.IP 
+ipset create foo hash:ip counters
+.IP 
+ipset add foo 192.168.1.1 packets 42 bytes 1024
+.PP
+.SS comment
+All set types support the optional \fBcomment\fR extension.
+Enabling this extension on an ipset enables you to annotate an ipset entry with
+an arbitrary string. This string is completely ignored by both the kernel and ipset
+itself and is purely for providing a convenient means to document the reason for an
+entry's existence. Comments must not contain any quotation marks and the usual escape
+character (\\) has no meaning. For example, the following shell command is illegal:
+.IP
+ipset add foo 1.1.1.1 comment "this comment is \\"bad\\""
+.PP
+In the above, your shell will of course escape the quotation marks and ipset will see
+the quote marks in the argument for the comment, which will result in a parse error.
+If you are writing your own system, you should avoid creating comments containing a
+quotation mark if you do not want to break "ipset save" and "ipset restore",
+nonetheless, the kernel will not stop you from doing so. The following is perfectly
+acceptable:
+.IP
+ipset create foo hash:ip comment
+.IP
+ipset add foo 192.168.1.1/24 comment "allow access to SMB share on \\\\\\\\fileserv\\\\"
+.IP
+the above would appear as: "allow access to SMB share on \\\\fileserv\\"
+.PP
+.SS "skbinfo, skbmark, skbprio, skbqueue"
+All set types support the optional \fBskbinfo\fR extension. This extension allows you to
+store the metainfo (firewall mark, tc class and hardware queue) with every entry and map it to
+packets by usage of SET netfilter target with \-\-map\-set option.
+\fBskbmark\fR option format: \fBMARK\fR or \fBMARK/MASK\fR, where \fBMARK\fR and \fBMASK\fR are 32bit hex
+numbers with 0x prefix. If only \fBmark\fR is specified mask 0xffffffff are used.
+\fBskbprio\fR option has tc class format: \fBMAJOR:MINOR\fR, where \fBmajor\fR and \fBminor\fR numbers
+are hex without 0x prefix.
+\fBskbqueue\fR option is just decimal number.
+.IP
+ipset create foo hash:ip skbinfo
+.IP
+ipset add foo skbmark 0x1111/0xff00ffff skbprio 1:10 skbqueue 10
+.PP
+.SS hashsize
+This parameter is valid for the \fBcreate\fR command of all \fBhash\fR type sets.
+It defines the initial hash size for the set, default is 1024. The hash size must be a power
+of two, the kernel automatically rounds up non power of two hash sizes to the first
+correct value.
+Example:
+.IP
+ipset create test hash:ip hashsize 1536
+.PP
+.SS maxelem
+This parameter is valid for the \fBcreate\fR command of all \fBhash\fR type sets.
+It does define the maximal number of elements which can be stored in the set, default 65536.
+Example:
+.IP
+ipset create test hash:ip maxelem 2048.
+.PP
+.SS family { inet | inet6 }
+This parameter is valid for the \fBcreate\fR command of all \fBhash\fR type sets
+except for hash:mac.
+It defines the protocol family of the IP addresses to be stored in the set. The default is
+\fBinet\fR, i.e IPv4.
+For the \fBinet\fR family one can add or delete multiple entries by specifying
+a range or a network of IPv4 addresses in the IP address part of the entry:
+.PP
+\fIipaddr\fR := { \fIip\fR | \fIfromaddr\fR\-\fItoaddr\fR | \fIip\fR/\fIcidr\fR }
+.PP
+\fInetaddr\fR := { \fIfromaddr\fR\-\fItoaddr\fR | \fIip\fR/\fIcidr\fR }
+.PP
+Example:
+.IP
+ipset create test hash:ip family inet6
+.PP
 .SS nomatch
 The \fBhash\fR set types which can store \fBnet\fR type of data (i.e. hash:*net*)
 support the optional \fBnomatch\fR
@@ -291,42 +377,36 @@ possible to build up sets with exceptions. See the example at hash type
 When elements are tested by \fBipset\fR, the \fBnomatch\fR
 flags are taken into account. If one wants to test the existence of an element
 marked with \fBnomatch\fR in a set, then the flag must be specified too.
-.SS "counters, packets, bytes"
-All set types support the optional \fBcounters\fR
-option when creating a set. If the option is specified then the set is created
-with packet and byte counters per element support. The packet and byte counters
-are initialized to zero when the elements are (re\-)added to the set,
-unless the packet and byte counter values are explicitly specified by the
-\fBpackets\fR and \fBbytes\fR options. An example when an element is added
-to a set with non\-zero counter values:
-.IP 
-ipset create foo hash:ip counters
+.SS forceadd
+All hash set types support the optional \fBforceadd\fR parameter when creating a set.
+When sets created with this option become full the next addition to the set may
+succeed and evict a random entry from the set.
 .IP
-ipset add foo 192.168.1.1 packets 42 bytes 1024
-.PP 
+ipset create foo hash:ip forceadd
+.PP
 .SH "SET TYPES"
 .SS bitmap:ip
 The \fBbitmap:ip\fR set type uses a memory range to store either IPv4 host
 (default) or IPv4 network addresses. A \fBbitmap:ip\fR type of set can store up
 to 65536 entries.
-.PP 
-\fICREATE\-OPTIONS\fR := \fBrange\fP \fIfromip\fP\-\fItoip\fR|\fIip\fR/\fIcidr\fR [ \fBnetmask\fP \fIcidr\fP ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ]
-.PP 
+.PP
+\fICREATE\-OPTIONS\fR := \fBrange\fP \fIfromip\fP\-\fItoip\fR|\fIip\fR/\fIcidr\fR [ \fBnetmask\fP \fIcidr\fP ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
 \fIADD\-ENTRY\fR := { \fIip\fR | \fIfromip\fR\-\fItoip\fR | \fIip\fR/\fIcidr\fR }
-.PP 
-\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ]
-.PP 
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
 \fIDEL\-ENTRY\fR := { \fIip\fR | \fIfromip\fR\-\fItoip\fR | \fIip\fR/\fIcidr\fR }
-.PP 
+.PP
 \fITEST\-ENTRY\fR := \fIip\fR
-.PP 
+.PP
 Mandatory \fBcreate\fR options:
 .TP 
 \fBrange\fP \fIfromip\fP\-\fItoip\fR|\fIip\fR/\fIcidr\fR
 Create the set from the specified inclusive address range expressed in an
 IPv4 address range or network. The size of the range (in entries) cannot exceed
 the limit of maximum 65536 elements.
-.PP 
+.PP
 Optional \fBcreate\fR options:
 .TP 
 \fBnetmask\fP \fIcidr\fP
@@ -335,10 +415,10 @@ stored in the set instead of IP host addresses. The \fIcidr\fR prefix value must
 between 1\-32.
 An IP address will be in the set if the network address, which is resulted by
 masking the address with the specified netmask, can be found in the set.
-.PP 
+.PP
 The \fBbitmap:ip\fR type supports adding or deleting multiple entries in one
 command.
-.PP 
+.PP
 Examples:
 .IP 
 ipset create foo bitmap:ip range 192.168.0.0/16
@@ -348,36 +428,36 @@ ipset add foo 192.168.1/24
 ipset test foo 192.168.1.1
 .SS bitmap:ip,mac
 The \fBbitmap:ip,mac\fR set type uses a memory range to store IPv4 and a MAC address pairs. A \fBbitmap:ip,mac\fR type of set can store up to 65536 entries.
-.PP 
-\fICREATE\-OPTIONS\fR := \fBrange\fP \fIfromip\fP\-\fItoip\fR|\fIip\fR/\fIcidr\fR [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ]
-.PP 
+.PP
+\fICREATE\-OPTIONS\fR := \fBrange\fP \fIfromip\fP\-\fItoip\fR|\fIip\fR/\fIcidr\fR [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
 \fIADD\-ENTRY\fR := \fIip\fR[,\fImacaddr\fR]
-.PP 
-\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ]
-.PP 
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
 \fIDEL\-ENTRY\fR := \fIip\fR[,\fImacaddr\fR]
-.PP 
+.PP
 \fITEST\-ENTRY\fR := \fIip\fR[,\fImacaddr\fR]
-.PP 
+.PP
 Mandatory options to use when creating a \fBbitmap:ip,mac\fR type of set:
 .TP 
 \fBrange\fP \fIfromip\fP\-\fItoip\fR|\fIip\fR/\fIcidr\fR
 Create the set from the specified inclusive address range expressed in an
 IPv4 address range or network. The size of the range cannot exceed the limit
 of maximum 65536 entries.
-.PP 
+.PP
 The \fBbitmap:ip,mac\fR type is exceptional in the sense that the MAC part can
 be left out when adding/deleting/testing entries in the set. If we add an entry
 without the MAC address specified, then when the first time the entry is
 matched by the kernel, it will automatically fill out the missing MAC address with the
 source MAC address from the packet. If the entry was specified with a timeout value,
 the timer starts off when the IP and MAC address pair is complete.
-.PP 
+.PP
 The \fBbitmap:ip,mac\fR type of sets require two \fBsrc/dst\fR parameters of
 the \fBset\fR match and \fBSET\fR target netfilter kernel modules and the second
 one must be \fBsrc\fR to match, add or delete entries, because the \fBset\fR
 match and \fBSET\fR target have access to the source MAC address only.
-.PP 
+.PP
 Examples:
 .IP 
 ipset create foo bitmap:ip,mac range 192.168.0.0/16
@@ -388,25 +468,28 @@ ipset test foo 192.168.1.1
 .SS bitmap:port
 The \fBbitmap:port\fR set type uses a memory range to store port numbers
 and such a set can store up to 65536 ports.
-.PP 
-\fICREATE\-OPTIONS\fR := \fBrange\fP \fIfromport\fP\-\fItoport [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ]
-.PP 
-\fIADD\-ENTRY\fR := { \fIport\fR | \fIfromport\fR\-\fItoport\fR }
-.PP 
-\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ]
-.PP 
-\fIDEL\-ENTRY\fR := { \fIport\fR | \fIfromport\fR\-\fItoport\fR }
-.PP 
-\fITEST\-ENTRY\fR := \fIport\fR
-.PP 
+.PP
+\fICREATE\-OPTIONS\fR := \fBrange\fP \fIfromport\fP\-\fItoport [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
+\fIADD\-ENTRY\fR := { \fI[proto:]port\fR | \fI[proto:]fromport\fR\-\fItoport\fR }
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
+\fIDEL\-ENTRY\fR := { \fI[proto:]port\fR | \fI[proto:]fromport\fR\-\fItoport\fR }
+.PP
+\fITEST\-ENTRY\fR := \fI[proto:]port\fR
+.PP
 Mandatory options to use when creating a \fBbitmap:port\fR type of set:
 .TP 
-\fBrange\fP \fIfromport\fP\-\fItoport\fR
+\fBrange\fP \fI[proto:]fromport\fP\-\fItoport\fR
 Create the set from the specified inclusive port range.
-.PP 
+.PP
 The \fBset\fR match and \fBSET\fR target netfilter kernel modules interpret
 the stored numbers as TCP or UDP port numbers.
-.PP 
+.PP
+\fBproto\fR only needs to be specified if a service name is used,
+and that name does not exist as a TCP service.
+.PP
 Examples:
 .IP 
 ipset create foo bitmap:port range 0\-1024
@@ -414,34 +497,24 @@ ipset create foo bitmap:port range 0\-1024
 ipset add foo 80
 .IP 
 ipset test foo 80
+.IP
+ipset del foo udp:[macon-udp]-[tn-tl-w2]
 .SS hash:ip
 The \fBhash:ip\fR set type uses a hash to store IP host addresses (default) or
 network addresses. Zero valued IP address cannot be stored in a \fBhash:ip\fR
 type of set.
-.PP 
-\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBnetmask\fP \fIcidr\fP ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ]
-.PP 
+.PP
+\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBnetmask\fP \fIcidr\fP ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
 \fIADD\-ENTRY\fR := \fIipaddr\fR
-.PP 
-\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ]
-.PP 
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
 \fIDEL\-ENTRY\fR := \fIipaddr\fR
-.PP 
+.PP
 \fITEST\-ENTRY\fR := \fIipaddr\fR
-.PP 
+.PP
 Optional \fBcreate\fR options:
-.TP 
-\fBfamily\fR { \fBinet\fR | \fBinet6\fR }
-The protocol family of the IP addresses to be stored in the set. The default is
-\fBinet\fR, i.e IPv4.
-.TP 
-\fBhashsize\fR \fIvalue\fR
-The initial hash size for the set, default is 1024. The hash size must be a power
-of two, the kernel automatically rounds up non power of two hash sizes to the first
-correct value.
-.TP 
-\fBmaxelem\fR \fIvalue\fR
-The maximal number of elements which can be stored in the set, default 65536.
 .TP 
 \fBnetmask\fP \fIcidr\fP
 When the optional \fBnetmask\fP parameter specified, network addresses will be 
@@ -449,12 +522,6 @@ stored in the set instead of IP host addresses. The \fIcidr\fP prefix value must
 between 1\-32 for IPv4 and between 1\-128 for IPv6. An IP address will be in the set
 if the network address, which is resulted by masking the address with the netmask,
 can be found in the set.
-.PP 
-For the \fBinet\fR family one can add or delete multiple entries by specifying
-a range or a network:
-.PP 
-\fIipaddr\fR := { \fIip\fR | \fIfromaddr\fR\-\fItoaddr\fR | \fIip\fR/\fIcidr\fR }
-.PP 
 Examples:
 .IP 
 ipset create foo hash:ip netmask 30
@@ -462,58 +529,61 @@ ipset create foo hash:ip netmask 30
 ipset add foo 192.168.1.0/24
 .IP 
 ipset test foo 192.168.1.2
+.SS hash:mac
+The \fBhash:mac\fR set type uses a hash to store MAC addresses. Zero valued MAC addresses cannot be stored in a \fBhash:mac\fR
+type of set.
+.PP
+\fICREATE\-OPTIONS\fR := [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
+\fIADD\-ENTRY\fR := \fImacaddr\fR
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
+\fIDEL\-ENTRY\fR := \fImacaddr\fR
+.PP
+\fITEST\-ENTRY\fR := \fImacaddr\fR
+.PP
+Examples:
+.IP
+ipset create foo hash:mac
+.IP
+ipset add foo 01:02:03:04:05:06
+.IP
+ipset test foo 01:02:03:04:05:06
+
 .SS hash:net
 The \fBhash:net\fR set type uses a hash to store different sized IP network addresses.
 Network address with zero prefix size cannot be stored in this type of sets.
-.PP 
-\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ]
-.PP 
+.PP
+\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
 \fIADD\-ENTRY\fR := \fInetaddr\fR
-.PP 
-\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBnomatch\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ]
-.PP 
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBnomatch\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
 \fIDEL\-ENTRY\fR := \fInetaddr\fR
-.PP 
+.PP
 \fITEST\-ENTRY\fR := \fInetaddr\fR
-.PP 
+.PP
 where
 \fInetaddr\fR := \fIip\fR[/\fIcidr\fR]
-.PP 
-Optional \fBcreate\fR options:
-.TP 
-\fBfamily\fR { \fBinet\fR | \fBinet6\fR }
-The protocol family of the IP addresses to be stored in the set. The default is
-\fBinet\fR, i.e IPv4.
-.TP 
-\fBhashsize\fR \fIvalue\fR
-The initial hash size for the set, default is 1024. The hash size must be a power
-of two, the kernel automatically rounds up non power of two hash sizes to the first
-correct value.
-.TP 
-\fBmaxelem\fR \fIvalue\fR
-The maximal number of elements which can be stored in the set, default 65536.
-.PP 
-For the \fBinet\fR family one can add or delete multiple entries by specifying
-a range, which is converted internally to network(s) equal to the range:
-.PP 
-\fInetaddr\fR := { \fIip\fR[/\fIcidr\fR] | \fIfromaddr\fR\-\fItoaddr\fR }
-.PP 
+.PP
 When adding/deleting/testing entries, if the cidr prefix parameter is not specified,
 then the host prefix value is assumed. When adding/deleting entries, the exact
 element is added/deleted and overlapping elements are not checked by the kernel.
 When testing entries, if a host address is tested, then the kernel tries to match
 the host address in the networks added to the set and reports the result accordingly.
-.PP 
+.PP
 From the \fBset\fR netfilter match point of view the searching for a match
 always  starts  from  the smallest  size  of netblock (most specific
 prefix) to the largest one (least specific prefix) added to the set.
 When  adding/deleting IP addresses  to the set by the \fBSET\fR netfilter target,
 it  will  be added/deleted by the most specific prefix which can be found in  the
 set, or by the host prefix value if the set is empty.
-.PP 
+.PP
 The lookup time grows linearly with the number of the different prefix
 values added to the set. 
-.PP 
+.PP
 Example:
 .IP 
 ipset create foo hash:net
@@ -525,44 +595,80 @@ ipset add foo 10.1.0.0/16
 ipset add foo 192.168.0/24
 .IP 
 ipset add foo 192.168.0/30 nomatch
-.PP 
+.PP
 When matching the elements in the set above, all IP addresses will match
 from the networks 192.168.0.0/24, 10.1.0.0/16 and 192.168.0/24 except
 the ones from 192.168.0/30.
+.SS hash:net,net
+The \fBhash:net,net\fR set type uses a hash to store pairs of different sized IP
+network addresses.  Bear  in  mind  that  the  first parameter has precedence
+over the second, so a nomatch entry could be potentially be ineffective if a more specific
+first parameter existed with a suitable second parameter.
+Network address with zero prefix size cannot be stored in this type of set.
+.PP
+\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
+\fIADD\-ENTRY\fR := \fInetaddr\fR,\fInetaddr\fR
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBnomatch\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
+\fIDEL\-ENTRY\fR := \fInetaddr\fR,\fInetaddr\fR
+.PP
+\fITEST\-ENTRY\fR := \fInetaddr\fR,\fInetaddr\fR
+.PP
+where
+\fInetaddr\fR := \fIip\fR[/\fIcidr\fR]
+.PP
+When adding/deleting/testing entries, if the cidr prefix parameter is not specified,
+then the host prefix value is assumed. When adding/deleting entries, the exact
+element is added/deleted and overlapping elements are not checked by the kernel.
+When testing entries, if a host address is tested, then the kernel tries to match
+the host address in the networks added to the set and reports the result accordingly.
+.PP
+From the \fBset\fR netfilter match point of view the searching for a match
+always  starts  from  the smallest  size  of netblock (most specific
+prefix) to the largest one (least specific prefix) with the first param
+having precedence.
+When  adding/deleting IP addresses  to the set by the \fBSET\fR netfilter target,
+it  will  be  added/deleted  by  the most specific prefix which can be found in
+the set, or by the host prefix value if the set is empty.
+.PP
+The lookup time grows linearly with the number of the different prefix
+values added to the first parameter of the set. The number of secondary prefixes
+further increases this as the list of secondary prefixes is traversed per primary
+prefix.
+.PP
+Example:
+.IP
+ipset create foo hash:net,net
+.IP
+ipset add foo 192.168.0.0/24,10.0.1.0/24
+.IP
+ipset add foo 10.1.0.0/16,10.255.0.0/24
+.IP
+ipset add foo 192.168.0/24,192.168.54.0-192.168.54.255
+.IP
+ipset add foo 192.168.0/30,192.168.64/30 nomatch
+.PP
+When matching the elements in the set above, all IP addresses will match
+from the networks 192.168.0.0/24<->10.0.1.0/24, 10.1.0.0/16<->10.255.0.0/24
+and 192.168.0/24<->192.168.54.0/24 except the ones from
+192.168.0/30<->192.168.64/30.
 .SS hash:ip,port
 The \fBhash:ip,port\fR set type uses a hash to store IP address and port number pairs.
 The port number is interpreted together with a protocol (default TCP) and zero
 protocol number cannot be used.
-.PP 
-\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ]
-.PP 
+.PP
+\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
 \fIADD\-ENTRY\fR := \fIipaddr\fR,[\fIproto\fR:]\fIport\fR
-.PP 
-\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ]
-.PP 
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
 \fIDEL\-ENTRY\fR := \fIipaddr\fR,[\fIproto\fR:]\fIport\fR
-.PP 
+.PP
 \fITEST\-ENTRY\fR := \fIipaddr\fR,[\fIproto\fR:]\fIport\fR
-.PP 
-Optional \fBcreate\fR options:
-.TP 
-\fBfamily\fR { \fBinet\fR | \fBinet6\fR }
-The protocol family of the IP addresses to be stored in the set. The default is
-\fBinet\fR, i.e IPv4.
-.TP 
-\fBhashsize\fR \fIvalue\fR
-The initial hash size for the set, default is 1024. The hash size must be a power
-of two, the kernel automatically rounds up non power of two hash sizes to the first
-correct value
-.TP 
-\fBmaxelem\fR \fIvalue\fR
-The maximal number of elements which can be stored in the set, default 65536.
-.PP 
-For the \fBinet\fR family one can add or delete multiple entries by specifying
-a range or a network of IPv4 addresses in the IP address part of the entry:
-.PP 
-\fIipaddr\fR := { \fIip\fR | \fIfromaddr\fR\-\fItoaddr\fR | \fIip\fR/\fIcidr\fR }
-.PP 
+.PP
 The
 [\fIproto\fR:]\fIport\fR
 part of the elements may be expressed in the following forms, where the range
@@ -588,11 +694,11 @@ be listed by the help command.
 \fIproto\fR:0
 All other protocols, as an identifier from /etc/protocols or number. The pseudo
 port number must be zero.
-.PP 
+.PP
 The \fBhash:ip,port\fR type of sets require
 two \fBsrc\fR/\fBdst\fR parameters of the \fBset\fR match and \fBSET\fR
 target kernel modules.
-.PP 
+.PP
 Examples:
 .IP 
 ipset create foo hash:ip,port
@@ -609,46 +715,32 @@ The \fBhash:net,port\fR set type uses a hash to store different sized IP network
 address and port pairs. The port number is interpreted together with a protocol
 (default TCP) and zero protocol number cannot be used. Network
 address with zero prefix size is not accepted either.
-.PP 
-\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ]
-.PP 
+.PP
+\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
 \fIADD\-ENTRY\fR := \fInetaddr\fR,[\fIproto\fR:]\fIport\fR
-.PP 
-\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ]  [ \fBnomatch\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ]
-.PP 
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ]  [ \fBnomatch\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
 \fIDEL\-ENTRY\fR := \fInetaddr\fR,[\fIproto\fR:]\fIport\fR
-.PP 
+.PP
 \fITEST\-ENTRY\fR := \fInetaddr\fR,[\fIproto\fR:]\fIport\fR
-.PP 
+.PP
 where
 \fInetaddr\fR := \fIip\fR[/\fIcidr\fR]
-.PP 
-Optional \fBcreate\fR options:
-.TP 
-\fBfamily\fR { \fBinet\fR | \fBinet6\fR }
-The protocol family of the IP addresses to be stored in the set. The default is
-\fBinet\fR, i.e IPv4.
-.TP 
-\fBhashsize\fR \fIvalue\fR
-The initial hash size for the set, default is 1024. The hash size must be a power
-of two, the kernel automatically rounds up non power of two hash sizes to the first
-correct value.
-.TP 
-\fBmaxelem\fR \fIvalue\fR
-The maximal number of elements which can be stored in the set, default 65536.
-.PP 
+.PP
 For the \fInetaddr\fR part of the elements
 see the description at the \fBhash:net\fR set type. For the
 [\fIproto\fR:]\fIport\fR
 part of the elements see the description at the
 \fBhash:ip,port\fR set type.
-.PP 
+.PP
 When adding/deleting/testing entries, if the cidr prefix parameter is not specified,
 then the host prefix value is assumed. When adding/deleting entries, the exact
 element is added/deleted and overlapping elements are not checked by the kernel.
 When testing entries, if a host address is tested, then the kernel tries to match
 the host address in the networks added to the set and reports the result accordingly.
-.PP 
+.PP
 From the \fBset\fR netfilter match point of view the searching for a  match
 always  starts  from  the smallest  size  of netblock (most specific
 prefix) to the largest one (least specific prefix) added to the set.
@@ -656,10 +748,10 @@ When  adding/deleting IP
 addresses  to the set by the \fBSET\fR netfilter target, it  will  be
 added/deleted by the most specific prefix which can be found in  the
 set, or by the host prefix value if the set is empty.
-.PP 
+.PP
 The lookup time grows linearly with the number of the different prefix
 values added to the set. 
-.PP 
+.PP
 Examples:
 .IP 
 ipset create foo hash:net,port
@@ -673,40 +765,26 @@ ipset test foo 192.168.0/24,25
 The \fBhash:ip,port,ip\fR set type uses a hash to store IP address, port number
 and a second IP address triples. The port number is interpreted together with a
 protocol (default TCP) and zero protocol number cannot be used.
-.PP 
-\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ]
-.PP 
+.PP
+\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
 \fIADD\-ENTRY\fR := \fIipaddr\fR,[\fIproto\fR:]\fIport\fR,\fIip\fR
-.PP 
-\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ]
-.PP 
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
 \fIDEL\-ENTRY\fR := \fIipaddr\fR,[\fIproto\fR:]\fIport\fR,\fIip\fR
-.PP 
+.PP
 \fITEST\-ENTRY\fR := \fIipaddr\fR,[\fIproto\fR:]\fIport\fR,\fIip\fR
-.PP 
+.PP
 For the first \fIipaddr\fR and
 [\fIproto\fR:]\fIport\fR
 parts of the elements see the descriptions at the
 \fBhash:ip,port\fR set type.
-.PP 
-Optional \fBcreate\fR options:
-.TP 
-\fBfamily\fR { \fBinet\fR | \fBinet6\fR }
-The protocol family of the IP addresses to be stored in the set. The default is
-\fBinet\fR, i.e IPv4.
-.TP 
-\fBhashsize\fR \fIvalue\fR
-The initial hash size for the set, default is 1024. The hash size must be a power
-of two, the kernel automatically rounds up non power of two hash sizes to the first
-correct value.
-.TP 
-\fBmaxelem\fR \fIvalue\fR
-The maximal number of elements which can be stored in the set, default 65536.
-.PP 
+.PP
 The \fBhash:ip,port,ip\fR type of sets require
 three \fBsrc\fR/\fBdst\fR parameters of the \fBset\fR match and \fBSET\fR
 target kernel modules.
-.PP 
+.PP
 Examples:
 .IP 
 ipset create foo hash:ip,port,ip
@@ -719,40 +797,26 @@ The \fBhash:ip,port,net\fR set type uses a hash to store IP address, port number
 and IP network address triples. The port number is interpreted together with a
 protocol (default TCP) and zero protocol number cannot be used. Network
 address with zero prefix size cannot be stored either.
-.PP 
-\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ]
-.PP 
+.PP
+\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
 \fIADD\-ENTRY\fR := \fIipaddr\fR,[\fIproto\fR:]\fIport\fR,\fInetaddr\fR
-.PP 
-\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ]  [ \fBnomatch\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ]
-.PP 
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ]  [ \fBnomatch\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
 \fIDEL\-ENTRY\fR := \fIipaddr\fR,[\fIproto\fR:]\fIport\fR,\fInetaddr\fR
-.PP 
+.PP
 \fITEST\-ENTRY\fR := \fIipaddr\fR,[\fIproto\fR:]\fIport\fR,\fInetaddr\fR
-.PP 
+.PP
 where
 \fInetaddr\fR := \fIip\fR[/\fIcidr\fR]
-.PP 
+.PP
 For the \fIipaddr\fR and
 [\fIproto\fR:]\fIport\fR
 parts of the elements see the descriptions at the
 \fBhash:ip,port\fR set type. For the \fInetaddr\fR part of the elements
 see the description at the \fBhash:net\fR set type.
-.PP 
-Optional \fBcreate\fR options:
-.TP 
-\fBfamily\fR { \fBinet\fR | \fBinet6\fR }
-The protocol family of the IP addresses to be stored in the set. The default is
-\fBinet\fR, i.e IPv4.
-.TP 
-\fBhashsize\fR \fIvalue\fR
-The initial hash size for the set, default is 1024. The hash size must be a power
-of two, the kernel automatically rounds up non power of two hash sizes to the first
-correct value.
-.TP 
-\fBmaxelem\fR \fIvalue\fR
-The maximal number of elements which can be stored in the set, default 65536.
-.PP 
+.PP
 From the \fBset\fR netfilter match point of view the searching for a match
 always  starts  from  the smallest  size  of netblock (most specific
 cidr) to the largest one (least specific cidr) added to the set.
@@ -760,13 +824,13 @@ When  adding/deleting triples
 to the set by the \fBSET\fR netfilter target, it  will  be
 added/deleted by the most specific cidr which can be found in  the
 set, or by the host cidr value if the set is empty.
-.PP 
+.PP
 The lookup time grows linearly with the number of the different \fIcidr\fR
 values added to the set. 
-.PP 
+.PP
 The \fBhash:ip,port,net\fR type of sets require three \fBsrc\fR/\fBdst\fR parameters of
 the \fBset\fR match and \fBSET\fR target kernel modules.
-.PP 
+.PP
 Examples:
 .IP 
 ipset create foo hash:ip,port,net
@@ -776,46 +840,116 @@ ipset add foo 192.168.1,80,10.0.0/24
 ipset add foo 192.168.2,25,10.1.0.0/16
 .IP 
 ipset test foo 192.168.1,80.10.0.0/24
+.SS hash:ip,mark
+The \fBhash:ip,mark\fR set type uses a hash to store IP address and packet mark pairs.
+.PP
+\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBmarkmask\fR \fIvalue\fR ] [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
+\fIADD\-ENTRY\fR := \fIipaddr\fR,\fImark\fR
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
+\fIDEL\-ENTRY\fR := \fIipaddr\fR,\fImark\fR
+.PP
+\fITEST\-ENTRY\fR := \fIipaddr\fR,\fImark\fR
+.PP
+Optional \fBcreate\fR options:
+.TP
+\fBmarkmask\fR \fIvalue\fR
+Allows you to set bits you are interested in the packet mark. This values is then used to perform bitwise AND operation for every mark added.
+markmask can be any value between 1 and 4294967295, by default all 32 bits are set.
+.PP
+The
+\fImark\fR
+can be any value between 0 and 4294967295.
+.PP
+The \fBhash:ip,mark\fR type of sets require
+two \fBsrc\fR/\fBdst\fR parameters of the \fBset\fR match and \fBSET\fR
+target kernel modules.
+.PP
+Examples:
+.IP
+ipset create foo hash:ip,mark
+.IP
+ipset add foo 192.168.1.0/24,555
+.IP
+ipset add foo 192.168.1.1,0x63
+.IP
+ipset add foo 192.168.1.1,111236
+.SS hash:net,port,net
+The \fBhash:net,port,net\fR set type behaves similarly to hash:ip,port,net but accepts a
+cidr value for both the first and last parameter. Either subnet is permitted to be a /0
+should you wish to match port between all destinations.
+.PP
+\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
+\fIADD\-ENTRY\fR := \fInetaddr\fR,[\fIproto\fR:]\fIport\fR,\fInetaddr\fR
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ]  [ \fBnomatch\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
+\fIDEL\-ENTRY\fR := \fInetaddr\fR,[\fIproto\fR:]\fIport\fR,\fInetaddr\fR
+.PP
+\fITEST\-ENTRY\fR := \fInetaddr\fR,[\fIproto\fR:]\fIport\fR,\fInetaddr\fR
+.PP
+where
+\fInetaddr\fR := \fIip\fR[/\fIcidr\fR]
+.PP
+For the [\fIproto\fR:]\fIport\fR
+part of the elements see the description at the
+\fBhash:ip,port\fR set type. For the \fInetaddr\fR part of the elements
+see the description at the \fBhash:net\fR set type.
+.PP
+From the \fBset\fR netfilter match point of view the searching for a match
+always  starts  from  the smallest  size  of netblock (most specific
+cidr) to the largest one (least specific cidr) added to the set.
+When  adding/deleting triples
+to the set by the \fBSET\fR netfilter target, it  will  be
+added/deleted by the most specific cidr which can be found in  the
+set, or by the host cidr value if the set is empty. The first subnet has
+precedence when performing the most-specific lookup, just as for hash:net,net
+.PP
+The lookup time grows linearly with the number of the different \fIcidr\fR
+values added to the set and by the number of secondary \fIcidr\fR values per
+primary.
+.PP
+The \fBhash:net,port,net\fR type of sets require three \fBsrc\fR/\fBdst\fR parameters of
+the \fBset\fR match and \fBSET\fR target kernel modules.
+.PP
+Examples:
+.IP 
+ipset create foo hash:net,port,net
+.IP 
+ipset add foo 192.168.1.0/24,0,10.0.0/24
+.IP 
+ipset add foo 192.168.2.0/24,25,10.1.0.0/16
+.IP 
+ipset test foo 192.168.1.1,80,10.0.0.1
 .SS hash:net,iface
 The \fBhash:net,iface\fR set type uses a hash to store different sized IP network
 address and interface name pairs.
-.PP 
-\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ]
-.PP 
+.PP
+\fICREATE\-OPTIONS\fR := [ \fBfamily\fR { \fBinet\fR | \fBinet6\fR } ] | [ \fBhashsize\fR \fIvalue\fR ] [ \fBmaxelem\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
 \fIADD\-ENTRY\fR := \fInetaddr\fR,[\fBphysdev\fR:]\fIiface\fR
-.PP 
-\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ]  [ \fBnomatch\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ]
-.PP 
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ]  [ \fBnomatch\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
 \fIDEL\-ENTRY\fR := \fInetaddr\fR,[\fBphysdev\fR:]\fIiface\fR
-.PP 
+.PP
 \fITEST\-ENTRY\fR := \fInetaddr\fR,[\fBphysdev\fR:]\fIiface\fR
-.PP 
+.PP
 where
 \fInetaddr\fR := \fIip\fR[/\fIcidr\fR]
-.PP 
-Optional \fBcreate\fR options:
-.TP 
-\fBfamily\fR { \fBinet\fR | \fBinet6\fR }
-The protocol family of the IP addresses to be stored in the set. The default is
-\fBinet\fR, i.e IPv4.
-.TP 
-\fBhashsize\fR \fIvalue\fR
-The initial hash size for the set, default is 1024. The hash size must be a power
-of two, the kernel automatically rounds up non power of two hash sizes to the first
-correct value.
-.TP 
-\fBmaxelem\fR \fIvalue\fR
-The maximal number of elements which can be stored in the set, default 65536.
-.PP 
+.PP
 For the \fInetaddr\fR part of the elements
 see the description at the \fBhash:net\fR set type.
-.PP 
+.PP
 When adding/deleting/testing entries, if the cidr prefix parameter is not specified,
 then the host prefix value is assumed. When adding/deleting entries, the exact
 element is added/deleted and overlapping elements are not checked by the kernel.
 When testing entries, if a host address is tested, then the kernel tries to match
 the host address in the networks added to the set and reports the result accordingly.
-.PP 
+.PP
 From the \fBset\fR netfilter match point of view the searching for a  match
 always  starts  from  the smallest  size  of netblock (most specific
 prefix) to the largest one (least specific prefix) added to the set.
@@ -823,21 +957,21 @@ When  adding/deleting IP
 addresses  to the set by the \fBSET\fR netfilter target, it  will  be
 added/deleted by the most specific prefix which can be found in  the
 set, or by the host prefix value if the set is empty.
-.PP 
+.PP
 The second direction parameter of the \fBset\fR match and
 \fBSET\fR target modules corresponds to the incoming/outgoing interface:
 \fBsrc\fR to the incoming one (similar to the \fB\-i\fR flag of iptables), while
 \fBdst\fR to the outgoing one (similar to the \fB\-o\fR flag of iptables). When
 the interface is flagged with \fBphysdev:\fR, the interface is interpreted
 as the incoming/outgoing bridge port.
-.PP 
+.PP
 The lookup time grows linearly with the number of the different prefix
 values added to the set.
-.PP 
+.PP
 The internal restriction of the \fBhash:net,iface\fR set type is that
 the same network prefix cannot be stored with more than 64 different interfaces
 in a single set.
-.PP 
+.PP
 Examples:
 .IP 
 ipset create foo hash:net,iface
@@ -850,25 +984,25 @@ ipset test foo 192.168.0/24,eth0
 .SS list:set
 The \fBlist:set\fR type uses a simple list in which you can store
 set names.
-.PP 
-\fICREATE\-OPTIONS\fR := [ \fBsize\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ]
-.PP 
+.PP
+\fICREATE\-OPTIONS\fR := [ \fBsize\fR \fIvalue\fR ] [ \fBtimeout\fR \fIvalue\fR ] [ \fBcounters\fP ] [ \fBcomment\fP ] [ \fBskbinfo\fP ]
+.PP
 \fIADD\-ENTRY\fR := \fIsetname\fR [ { \fBbefore\fR | \fBafter\fR } \fIsetname\fR ]
-.PP 
-\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ]
-.PP 
+.PP
+\fIADD\-OPTIONS\fR := [ \fBtimeout\fR \fIvalue\fR ] [ \fBpackets\fR \fIvalue\fR ] [ \fBbytes\fR \fIvalue\fR ] [ \fBcomment\fR \fIstring\fR ] [ \fBskbmark\fR \fIvalue\fR ] [ \fBskbprio\fR \fIvalue\fR ] [ \fBskbqueue\fR \fIvalue\fR ]
+.PP
 \fIDEL\-ENTRY\fR := \fIsetname\fR [ { \fBbefore\fR | \fBafter\fR } \fIsetname\fR ]
-.PP 
+.PP
 \fITEST\-ENTRY\fR := \fIsetname\fR [ { \fBbefore\fR | \fBafter\fR } \fIsetname\fR ]
-.PP 
+.PP
 Optional \fBcreate\fR options:
 .TP 
 \fBsize\fR \fIvalue\fR
 The size of the list, the default is 8.
-.PP 
+.PP
 By the \fBipset\fR command you  can add, delete and test set names in a
 \fBlist:set\fR type of set.
-.PP 
+.PP
 By the \fBset\fR match or \fBSET\fR target of netfilter
 you can test, add or delete entries in the sets added to the \fBlist:set\fR
 type of set. The match will try to find a matching entry in the sets and 
@@ -879,14 +1013,14 @@ or less parameters are checked, elements added/deleted. For example if \fIa\fR a
 \fIb\fR are \fBlist:set\fR type of sets then in the command
 .IP 
 iptables \-m set \-\-match\-set a src,dst \-j SET \-\-add\-set b src,dst
-.PP 
+.PP
 the match and target will skip any set in \fIa\fR and \fIb\fR
 which stores data triples, but will match all sets with single or double
 data storage in \fIa\fR set and stop matching at the first successful set,
 and add src to the first single or src,dst to the first double data storage set
 in \fIb\fR to which the entry can be added. You can imagine a \fBlist:set\fR
 type of set as an ordered union of the set elements. 
-.PP 
+.PP
 Please note: by the \fBipset\fR command you can add, delete and \fBtest\fR
 the setnames in a \fBlist:set\fR type of set, and \fBnot\fR the presence of
 a set's member (such as an IP address).
@@ -899,9 +1033,9 @@ If you want to store same size subnets from a given network
 If you want to store random same size networks (say random /24 blocks), 
 use the \fBhash:ip\fR set type. If you have got random size of netblocks, 
 use \fBhash:net\fR.
-.PP 
+.PP
 Backward compatibility is maintained and old \fBipset\fR syntax is still supported.
-.PP 
+.PP
 The \fBiptree\fR and \fBiptreemap\fR set types are removed: if you refer to them,
 they are automatically replaced by \fBhash:ip\fR type of sets.
 .SH "DIAGNOSTICS"
@@ -913,6 +1047,7 @@ OK, just kidding...
 .SH "SEE ALSO"
 \fBiptables\fR(8),
 \fBip6tables\fR(8)
+\fBiptables-extensions\fR(8)
 .SH "AUTHORS"
 Jozsef Kadlecsik wrote ipset, which is based on ippool by
 Joakim Axelsson, Patrick Schaaf and Martin Josefsson.

@@ -58,6 +58,10 @@
 0 ipset -W test resize-test
 # IP: Check listing, which requires multiple messages
 0 n=`ipset -S test | wc -l` && test $n -eq 8161
+# IP: Flush sets
+0 ipset -F
+# IP: Run resize and listing parallel
+0 ./resize-and-list.sh
 # IP: Destroy sets
 0 ipset -X
 # IP: Create set to add a range

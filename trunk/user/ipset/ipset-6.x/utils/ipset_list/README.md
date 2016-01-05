@@ -1,7 +1,8 @@
 ipset_list
 ==========
 
-ipset set listing wrapper script
+ipset set listing wrapper script written for the bash shell.
+It allows you to match and display sets, headers and elements in various ways.
 
 
 Features:
@@ -12,10 +13,13 @@ Features:
 - Choose a delimiter character for separating members.
 - Show only sets containing a specific (glob matching) header.
 - Arithmetic comparison on headers with an integer value.
+- Arithmetic comparison on flags of the headers 'Header' field.
+- Arithmetic comparison on member options with an integer value.
 - Match members using a globbing or regex pattern.
 - Suppress listing of (glob matching) sets.
 - Suppress listing of (glob matching) headers.
 - Suppress listing of members matching a glob or regex pattern.
+- Suppress listing of members options.
 - Calculate the total size in memory of all matching sets.
 - Calculate the amount of matching, excluded and traversed sets.
 - Colorize the output.
@@ -62,5 +66,11 @@ Examples:
 - `ipset_list -c -t -Cs -Ts -Xh "@(Size*|Re*|Header):*" -Ht "!(bitmap:*)"` - find all sets not of any bitmap type, count their members sum, display only the 'Type' header, count amount of matching and traversed sets.
 - `ipset_list -Co -c -Ts -Tm`  - show all set names, count their members, count total amount of sets, show total memory usage of all sets, colorize the output
 - `ipset_list -m -r -To 0`     - show members of all sets, try to resolve hosts, set the timeout to 0 (effectivly disabling it).
+- `ipset_list -m -Xo setA`     - show members of setA, but suppress displaying of the elements options.
+- `ipset_list -m -Oi packets:0`     - show members of all sets which have a packet count of 0.
+- `ipset_list -m -Oi "packets:>100" -Oi "bytes:>1024"`     - show members of all sets which have a packet count greater than 100 and a byte count greater than 1024.
+- `ipset_list -m -Oi "skbmark:>0x123/0XFF" -Oi skbprio:\>=2:<=3 -Oi skbqueue:\!1` - show members of all sets which have the following member options set: skbmark greater than 0x123/0xFF, skbprio major greater or equal to 2 and minor lower or equal to 3, skbqueue not of value 1.
+- `ipset_list -n -Ca "foo*"`    - show only set names matching the glob "foo*" and enable all counters.
+- `ipset_list -Hi "markmask:>=0x0000beef" -Hi timeout:\!10000`    - show only sets with the header 'Header' fields containing a markmask greater or equal to 0x0000beef and a timeout which is not 10000.
 
 

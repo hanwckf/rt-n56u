@@ -1,3 +1,140 @@
+6.27
+  - Handle uint64_t alignment issue in ipset tool
+
+6.26
+  - Out of bound access in hash:net* types fixed (reported by Dave Jones):
+    new tests added to the testsuite to verify the fix
+  - Warn about loaded in ip_set modules at module installation
+  - Use IPSET_BIN in resize-and-list.sh and suppress echoing of loop
+    variable
+  - Manpage typo corrections (David Wittman)
+  - Fix grammar error in manpage (Neutron Soutmun)
+
+6.25.1
+  - ipset manpage: refer to iptables-extensions
+  - Update userspace header file from the kernel tree
+  - Handle 'extern "C" {' in check_libmap.sh
+
+6.25
+  - Add element count to all set types header
+  - Add element count to hash headers (Eric B Munson)
+  - Support linking libipset to C++ programs (reported by Pavel Odintsov)
+  - ipset: propose rewording in manpage (Neutron Soutmun)
+  - More compatibility checking and simplifications to support the
+    2.6.32 kernel tree
+  - Compatibility: define RCU_INIT_POINTER when __rcu is not defined
+  - Compatibility: check kernel source for list_last_entry
+    (CentOS7, reported by Ricardo Klein)
+  - Make possible to pass extra flags to sparse
+
+6.24
+  - The "extra" subdirectory for kernel modules may have a full subtree
+    (reported by Jesper Dangaard Brouer)
+  - Add more compatibility checkings to support older kernel releases
+  - Make_global.am: Don't include host headers (Baruch Siach)
+  - Alignment problem between 64bit kernel 32bit userspace fixed
+    (reported by Sven-Haegar Koch)
+  - Add script to check libipset.map for missing symbols
+  - Update libipset.map with ipset_parse_tcp_udp_port (Thomas Backlund)
+  - libipset: Bump lib version and update map file (Neutron Soutmun)
+  - Bash utilities updated
+  - ipset: Fix hyphen used as minus sign in manpage (Neutron Soutmun)
+
+6.23
+  - The utils are updated from their sources
+  - Order create and add options in manpage so that generic ones
+    come first
+  - Centralise generic create options (family, hashsize, maxelem)
+    on top of man page in the generic options section. (Mart Frauenlob)
+  - Support glibc < 2.9 (fixes bugzilla id #891)
+  - Add description of hash:mac set type to man page. (Mart Frauenlob)
+  - Add missing space for skbinfo option synopsis. (Mart Frauenlob)
+  - The library/API versions were forgotten to bump (reported by
+    Sergei Zhirikov)
+  - Retry printing when sprintf fails (reported by Stig Thormodsrud)
+
+6.22
+  - hash:mac type added to ipset
+  - Add test to check mark mapping
+  - ipset: remove extran newline on debug output (Holger Eitzenberger)
+  - ipset: avoid duplicate command flags (Holger Eitzenberger)
+  - Remove a duplicate debug print (Holger Eitzenberger)
+  - ipset: man: Add the skbinfo extension documentation. (Anton Danilov)
+  - libipset: Add userspace support of the skbinfo extension of the list
+    set type. (Anton Danilov)
+  - libipset: Add userspace support of the skbinfo extension of the hash
+    set types. (Anton Danilov)
+  - libipset: Add userspace support of the skbinfo extension of the
+    bitmap set types. (Anton Danilov)
+  - libipset: Add userspace code for the skbinfo extension support.
+    (Anton Danilov)
+  - Make possible to compile ipset with IPSET_DEBUG from the dist.
+    (Clinton Roy)
+  - libipset: print third element in debugging (Sergey Popovich)
+  - ipset: Handle missing leading zeros in ethernet address parser
+    (Janeks Jaunups)
+  - ipset: Pass IPSET_BIN to test scripts to change binary location
+    (Neutron Soutmun)
+  - ipset: Fix grammar error in manpage (Neutron Soutmun)
+  - ipset: Fix printf format warning (Neutron Soutmun)
+
+6.21.1
+  - The bash utilities are updated
+  - Fix libipset library release versioning (reported by Mathieu Bridon)
+
+6.21
+  - ipset: add userspace support for forceadd (Josh Hunt)
+  - kernel: uapi: fix MARKMASK attr ABI breakage (Florian Westphal)
+  - lib: fix ifname 'physdev:' prefix parsing (Florian Westphal)
+  - Prepare the kernel for create option flags when no extension is needed
+  - print mark & mark mask in hex rather then decimal (Vytas Dauksa)
+  - add markmask for hash:ip,mark data type (Vytas Dauksa)
+  - add hash:ip,mark data type to ipset (Vytas Dauksa)
+  - ipset: manpage: correct add action synopsis for hash:net,port,net.
+    (Mart Frauenlob)
+  - ipset: manpage: remove spare comma for hash:net,net test action.
+    (Mart Frauenlob)
+  - Fix all set output from list/save when set with counters in use.
+    (Sergey Popovich)
+  - ipset: Fix malformed output from list/save for ICMP types in port field
+    (Sergey Popovich)
+  - ipset: fix timeout data type size (Nikolay Martynov)
+
+6.20.1
+  - build: fix incorrect library versioning (Jan Engelhardt)
+  - netfilter: ipset: Fix configure failure when --with-kmod=no
+    (Oliver Smith)
+  - Avoid clashing with configured kernel in [CONFIG_]IP_SET_MAX
+
+6.20
+  - Missing comment support added to hash:ip,port,ip and hash:net,iface
+    types
+  - Compatibility code is modified not to rely on kernel version numbers
+  - Add userspace code to support hash:net,port,net kernel module
+    (Oliver Smith)
+  - Tests added to check comment extension
+  - Add new userspace set revisions for comment support (Oliver Smith)
+  - Support comments in the userspace library (Oliver Smith)
+  - Rework the "fake" argument parsing for ipset restore (Oliver Smith)
+  - Add userspace code to support hash:net,net kernel module
+    (Oliver Smith)
+  - Add test to verify CIDR tracking
+  - configure: uclinux is also linux (Gustavo Zacarias)
+  - Add specifying protocol for bitmap:port (Quentin Armitage)
+  - Remove artifical restriction of netmask values for hash:ip type
+    (Reported by Quentin Armitage, netfilter bugzilla id #844)
+  - Make sure called test scripts can be executed (reported by Tomas Budai)
+  - Manpage fix: not just identical, but compatible type of sets can be
+    swapped (Reported by Quentin Armitage, netfilter bugzilla id #843)
+  - Fix error message typo (Reported by Quentin Armitage, netfilter bugzilla
+    id #843)
+  - Parse option "family" first, because other options may depend on it
+    (Bug reported by Quentin Armitage, closed netfilter bugzilla #841)
+  - Change 2nd parameter type of ipset_parse_elem (Quentin Armitage)
+  - Report broken netlink messages in debug mode
+  - Fix hyphen used as minus sign in manpage (Neutron Soutmun)
+  - libipset.pc must be installed via 'make install' (Eric Leblond)
+
 6.19
   - Check at modules_install whether depmod ignores the extra subdir
     (reported by Husnu Demir and tian fang)

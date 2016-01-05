@@ -131,9 +131,11 @@
 # Add clashing elements
 0 (set -e; for x in `seq 0 63`; do ipset add test 10.0.0.0/16,eth$x; done)
 # Check listing
-0 n=`ipset list test | grep -v Revision: | wc -l` && test $n -eq 70
+0 n=`ipset list test | grep -v Revision: | wc -l` && test $n -eq 71
 # Delete test set
 0 ipset destroy test
+# Check all possible CIDR values
+0 ./cidr.sh net,iface
 # Create test set with timeout support
 0 ipset create test hash:net,iface timeout 30
 # Add a non-matching IP address entry

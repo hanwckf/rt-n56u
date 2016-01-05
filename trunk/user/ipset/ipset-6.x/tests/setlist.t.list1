@@ -1,8 +1,9 @@
 Name: test
 Type: list:set
 Header: size 8
-Size in memory: 120
+Size in memory: 264
 References: 0
+Number of entries: 3
 Members:
 a
 b

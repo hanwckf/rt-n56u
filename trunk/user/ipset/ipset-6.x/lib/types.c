@@ -573,6 +573,8 @@ ipset_cache_fini(void)
 	}
 }
 
+extern void ipset_types_init(void);
+
 /**
  * ipset_load_types - load known set types
  *
@@ -607,7 +609,7 @@ ipset_load_types(void)
 		len = snprintf(path, sizeof(path), "%.*s",
 			       (unsigned int)(next - dir), dir);
 
-		if (len >= sizeof(path) || len < 0)
+		if (len >= (int)sizeof(path) || len < 0)
 			continue;
 
 		n = scandir(path, &list, NULL, alphasort);
@@ -620,7 +622,7 @@ ipset_load_types(void)
 
 			len = snprintf(file, sizeof(file), "%s/%s",
 				       path, list[n]->d_name);
-			if (len >= sizeof(file) || len < 0)
+			if (len >= (int)sizeof(file) || len < (int)0)
 				goto nextf;
 
 			if (dlopen(file, RTLD_NOW) == NULL)

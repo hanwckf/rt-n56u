@@ -1,8 +1,9 @@
 Name: test
 Type: hash:net,iface
 Header: family inet hashsize 1024 maxelem 65536
-Size in memory: 18512
+Size in memory: 3872
 References: 0
+Number of entries: 27
 Members:
 192.0.0.0/10,eth10
 192.0.0.0/11,eth11

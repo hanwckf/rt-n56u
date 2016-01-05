@@ -80,4 +80,28 @@
 0 ipset test test 10.255.255.64,icmp:host-prohibited
 # Destroy sets and rules
 0 ./iptables.sh inet stop
+# Create test set and iptables rules
+0 ./iptables.sh inet mangle
+# Send probe packet from 10.255.255.64,udp:1025
+0 sendip -p ipv4 -id 127.0.0.1 -is 10.255.255.64 -p udp -ud 80 -us 1025 127.0.0.1
+# Check that proper sets matched and target worked
+0 ./check_klog.sh 10.255.255.64 udp 1025 mark
+# Destroy sets and rules
+0 ./iptables.sh inet stop
+# Create test set and iptables rules
+0 ./iptables.sh inet add
+# Send probe packet from 10.255.255.64,udp:1025
+0 sendip -p ipv4 -id 127.0.0.1 -is 10.255.255.64 -p udp -ud 80 -us 1025 127.0.0.1
+# Check that 10.255.255.64 is added to the set
+0 ipset t test 10.255.255.64
+# Flush set
+0 ipset f test
+# Add a /24 network to the set
+0 ipset a test 1.1.1.0/24
+# Send probe packet from 10.255.255.64,udp:1025 again
+0 sendip -p ipv4 -id 127.0.0.1 -is 10.255.255.64 -p udp -ud 80 -us 1025 127.0.0.1
+# Check that 10.255.255.0/24 is added to the set
+0 ipset t test 10.255.255.0/24
+# Destroy sets and rules
+0 ./iptables.sh inet stop
 # eof

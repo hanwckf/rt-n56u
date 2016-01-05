@@ -1,3 +1,7 @@
+/*
+ * These are library version numbers in here - not to be confused
+ * with the API numbers used with libtool's -version-info string.
+ */
 LIBIPSET_1.0 {
 global:
   ipset_strlcpy;
@@ -127,3 +131,30 @@ LIBIPSET_4.0 {
 global:
   ipset_parse_uint64;
 } LIBIPSET_3.0;
+
+LIBIPSET_4.1 {
+global:
+  ipset_parse_comment;
+  ipset_print_comment;
+  ipset_strlcat;
+} LIBIPSET_4.0;
+
+LIBIPSET_4.2 {
+global:
+  ipset_parse_mark;
+  ipset_print_mark;
+} LIBIPSET_4.1;
+
+LIBIPSET_4.3 {
+global:
+  ipset_parse_skbmark;
+  ipset_parse_skbprio;
+  ipset_print_skbmark;
+  ipset_print_skbprio;
+} LIBIPSET_4.2;
+
+LIBIPSET_4.4 {
+global:
+  ipset_parse_tcp_udp_port;
+  ipset_parse_uint16;
+} LIBIPSET_4.3;

@@ -17,13 +17,13 @@ endif
 
 SUBDIRS		= include/libipset lib src
 
-sparse-check:
+sparse:
 	$(MAKE) -C lib sparse-check
 	$(MAKE) -C src sparse-check
 
 modules_sparse:
 if WITH_KMOD
-	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net/netfilter \
+	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net \
 			V=$V W=1 C=2 CF="-D__CHECK_ENDIAN__ -Wsparse-all" \
 			KCFLAGS="-DPACKAGE_VERSION=$(PACKAGE_VERSION) -DCHECK_KCONFIG -Wextra" \
 			IP_SET_MAX=$(IP_SET_MAX) KDIR=$$PWD/kernel modules
@@ -33,7 +33,7 @@ endif
 
 modules:
 if WITH_KMOD
-	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net/netfilter V=$V \
+	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net V=$V \
 			KCFLAGS="-DPACKAGE_VERSION=$(PACKAGE_VERSION)" \
 			IP_SET_MAX=$(IP_SET_MAX) KDIR=$$PWD/kernel modules
 else
@@ -57,18 +57,29 @@ otherwise the ipset kernel modules in the extra subdir will be ignored.
 endef
 export DEPMOD_WARNING
 
+define MODULE_WARNING
+
+!!! WARNING !!! WARNING !!! WARNING !!!
+
+Your running system has got ipset related kernel modules loaded in.
+You MUST rmmod the ip_set* kernel modules in order to make possible
+for the system to load in the newly installed ones.
+endef
+export MODULE_WARNING
+
 modules_install:
 if WITH_KMOD
-	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net/netfilter \
+	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net \
 			KDIR=$$PWD/kernel modules_install
-	@modinfo ip_set_hash_ip | ${GREP} extra/ipset/ip_set_hash_ip >/dev/null || echo "$$DEPMOD_WARNING"
+	@modinfo ip_set_hash_ip | ${GREP} /extra/ >/dev/null || echo "$$DEPMOD_WARNING"
+	@lsmod | ${GREP} '^ip_set' >/dev/null && echo "$$MODULE_WARNING"
 else
 	@echo Skipping kernel modules due to --with-kmod=no
 endif
 
 modules_clean:
 if WITH_KMOD
-	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net/netfilter \
+	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net \
 			KDIR=$$PWD/kernel clean
 else
 	@echo Skipping kernel modules due to --with-kmod=no
@@ -81,12 +92,15 @@ update_includes:
 	done
 
 update_utils:
-	wget -O /tmp/ipset-bash-completion.tar.gz http://sourceforge.net/projects/ipset-bashcompl/files/latest/download
+	wget -4 -O /tmp/ipset-bash-completion.tar.gz http://sourceforge.net/projects/ipset-bashcompl/files/latest/download
 	cd utils/ipset_bash_completion; tar xz --strip-components=1 -f /tmp/ipset-bash-completion.tar.gz
 	rm -f /tmp/ipset-bash-completion.tar.gz
-	wget -O /tmp/ipset-list.tar.gz http://sourceforge.net/projects/ipset-list/files/latest/download
+	wget -4 -O /tmp/ipset-list.tar.gz http://sourceforge.net/projects/ipset-list/files/latest/download
 	cd utils/ipset_list; tar xz --strip-components=1 -f /tmp/ipset-list.tar.gz
 	rm -f /tmp/ipset-list.tar.gz
+
+check_libmap:
+	@./check_libmap.sh
 
 tests:
 	cd tests; ./runtest.sh
@@ -108,6 +122,22 @@ tarball:
 	pushd /tmp/ipset-${PACKAGE_VERSION} && ./autogen.sh && popd;
 	tar -C /tmp -cjf ipset-${PACKAGE_VERSION}.tar.bz2 --owner=root --group=root ipset-${PACKAGE_VERSION}/;
 	rm -Rf /tmp/ipset-${PACKAGE_VERSION};
+
+help:
+	@echo '  <nothing>              - Compile userspace'
+	@echo '  modules                - Compile kernel modules'
+	@echo '  install                - Install userspace'
+	@echo '  modules_install        - Install kernel modules'
+	@echo '  clean                  - Remove generated userspace files'
+	@echo '  modules_clean          - Remove generated kernelspace files'
+	@echo '  tidy                   - Tidy up the whole source tree'
+	@echo '  tests                  - Run testsuite'
+	@echo '  sparse                 - Check userspace with sparse'
+	@echo '  modules_sparse         - Check kernelspace with sparse'
+	@echo '  update_includes        - Update userspace include files'
+	@echo '  update_utils           - Update bash utilities'
+	@echo '  check_libmap           - Check libipset.map for missing symbols'
+	@echo '  tarball                - Create a tarball for a new release'
 
 .PHONY: modules modules_instal modules_clean update_includes tests tarball
 

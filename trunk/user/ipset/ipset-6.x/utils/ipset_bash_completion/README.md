@@ -29,11 +29,12 @@ Providing some kind of interactive help.
 - Show and complete services (also named port ranges), protocols,
 icmp[6] types and interface names when adding, deleting or testing elements.
 - Show and complete hostnames, when adding, deleting or testing elements.
-- Show and complete mac addresses.
+- Show and complete ip and mac addresses (dynamically and from file).
 - Complete on filenames if the current option requires it.
-- Complete variable names, command substitution and globbing patterns.
+- Complete variable names and command substitution.
 - Do not complete if an invalid combination of options is used.
 - Do not complete if an invalid value of an option argument is detected.
+- Environment variables allow to modify completion behaviour.
 
 
 Installation
@@ -90,6 +91,9 @@ Taking the description from the bash man-page:
 	attempts to read /etc/hosts to obtain the list of possible hostname completions.
 	When HOSTFILE is unset, the hostname list is cleared.
 
+As it is impossible to distinguish between IPv4 and IPv6 hostnames without resolving
+them, it is considered best practice to seperate IPv4 hosts from IPv6 hosts
+in different files.
 
 If the *bash-completion* package is available hostname completion is extended
 the following way (description from bash-completion source):
@@ -103,10 +107,11 @@ the following way (description from bash-completion source):
 
 
 Also the environment variable **_IPSET_SSH_CONFIGS** controls which files are taken
-as ssh_config files, in order to retrieve the globl and user known_host files,
+as ssh_config files, in order to retrieve the global and user known_host files,
 which will be used for hostname completion.
 
-For all *net* type of sets, if hostname completion is attempted,
+For all *net* type of sets and the hash:ip,mark set type, if hostname completion is attempted,
+if the environment variable **_IPSET_COMP_NETWORKS** is set to a non-empty value,
 networks are retrieved from /etc/networks.
 
 Also a list of ip addresses can be supplied using the environment variable
@@ -116,8 +121,7 @@ is done automatically based on the set header.
 
 ---
 
-When deleting elements from one of the following set types:
-**hash:ip,port hash:ip,port,ip hash:ip,port,net hash:net,port hash:net,iface**
+When deleting elements from any but list:set set types:
 the environment variable **_IPSET_COMPL_DEL_MODE** is queried to decide how to complete.
 If it is set to 'members' it will list the members of the set.
 If it is set to 'spec' it will follow the format of a port specification ([proto:]port).
@@ -126,8 +130,7 @@ the list of possible completions (this is the default).
 
 ---
 
-When testing elements from one of the following set types:
-**hash:ip,port hash:ip,port,ip hash:ip,port,net hash:net,port hash:net,iface**
+When testing elements from any but list:set set types:
 the environment variable **_IPSET_COMPL_TEST_MODE** is queried to decide how to complete.
 If it is set to 'members' it will list the members of the set.
 If it is set to 'spec' it will follow the format of a port specification ([proto:]port).
@@ -147,7 +150,7 @@ If the variable is unset mac addresses are fetched from arp cache,
 ---
 
 When adding elements to one of the following set types:
-**hash:ip,port hash:ip,port,ip hash:ip,port,net hash:net,port**
+**hash:ip,port hash:ip,port,ip hash:ip,port,net hash:net,port hash:net,port,net**
 and completion is attempted on the port specification,
 the list of possible completions may become quite long.
 Especially if no characters are given to match on.
@@ -158,15 +161,31 @@ values such a port specification can possibly have.
 ---
 
 At any time completion on variable names (starting with '$' or '${'),
-command substitution (starting with '$(') and file name [ext] globbing
-patterns is available.
+or command substitution (starting with '$(') is available.
+Using this with values validated by input validation, will stop further completion.
+In that case it is recommended to disable input validation (see below).
+
+
+---
+
+If the environment variable **_IPSET_VALIDATE_INPUT** is set to a non empty value
+validation of users input is disabled.
+
+---
+
+If the environment variable **_DEBUG_NF_COMPLETION** is defined (any value)
+debugging information is displayed.
 
 
 
 Compatibility
 =============
 
-Tested with ipset v6.16.1.
+Compatible with ipset versions 6+.
+
+Tested with ipset v6.20.1.
+
+bash v4+ is required.
 
 Compatibility for future ipset versions cannot be promised, as new options may appear, 
 which of course are currently unpredictable.
@@ -180,9 +199,6 @@ Also the colon (if there) is removed from COMP_WORDBREAKS.
 This alteration is globally, which might affect other completions,
 if they do not take care of it themselves.
 
-If the bash-completion package is available bash v4+ is required.
-Otherwise bash v3.2 and upwards are supported.
-
 The iproute program (ip) is needed to display information about the local system.
 
 
@@ -193,3 +209,12 @@ Availability
 https://github.com/AllKind/ipset-bash-completion
 
 http://sourceforge.net/projects/ipset-bashcompl/
+
+
+
+Bugs
+============
+
+Please report bugs!
+
+

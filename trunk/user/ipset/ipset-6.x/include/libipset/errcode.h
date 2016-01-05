@@ -18,7 +18,15 @@ struct ipset_errcode_table {
 	const char *message;	/* error message the code translated to */
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int ipset_errcode(struct ipset_session *session, enum ipset_cmd cmd,
 			 int errcode);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBIPSET_ERRCODE_H */

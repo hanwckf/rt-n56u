@@ -6,11 +6,15 @@ IPSET_SETTYPE_LIST = \
 	ipset_bitmap_port.c \
 	ipset_hash_ip.c \
 	ipset_hash_ipport.c \
+	ipset_hash_ipmark.c \
 	ipset_hash_ipportip.c \
 	ipset_hash_ipportnet.c \
 	ipset_hash_net.c \
+	ipset_hash_netnet.c \
+	ipset_hash_netportnet.c \
 	ipset_hash_netport.c \
 	ipset_hash_netiface.c \
+	ipset_hash_mac.c \
 	ipset_list_set.c
 
 AM_CFLAGS += ${libmnl_CFLAGS}
@@ -34,7 +38,13 @@ libipset_la_SOURCES = \
 	ui.c \
 	types_init.c
 
+EXTRA_libipset_la_SOURCES = \
+	debug.c
+
 EXTRA_DIST = $(IPSET_SETTYPE_LIST) libipset.map
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = libipset.pc
 
 sparse-check: $(libipset_la_SOURCES:.c=.d)
 

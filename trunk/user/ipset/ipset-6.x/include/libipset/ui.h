@@ -20,6 +20,10 @@ struct ipset_commands {
 	const char *help;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern const struct ipset_commands ipset_commands[];
 
 struct ipset_session;
@@ -44,5 +48,9 @@ extern bool ipset_match_envopt(const char *arg, const char * const name[]);
 extern void ipset_shift_argv(int *argc, char *argv[], int from);
 extern void ipset_port_usage(void);
 extern int ipset_parse_file(struct ipset_session *s, int opt, const char *str);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBIPSET_UI_H */

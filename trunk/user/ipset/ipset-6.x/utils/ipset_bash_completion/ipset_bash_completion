@@ -7,7 +7,7 @@
 # https://sourceforge.net/projects/ipset-bashcompl
 # -----------------------------------------------------------------
 
-# Copyright (C) 2013 AllKind (AllKind@fastest.cc)
+# Copyright (C) 2013-2014 AllKind (AllKind@fastest.cc)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,10 +23,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # -----------------------------------------------------------------
+# Compatible with ipset versions: 6+
 # Tested with ipset versions:
-# 6.16.1
+# 6.22
 # -----------------------------------------------------------------
 # Requirements:
+#
+# bash v4 or greater.
 #
 # The bash completion package version 2.0 or greater is recommended.
 # http://bash-completion.alioth.debian.org/
@@ -43,40 +46,15 @@
 #
 # -----------------------------------------------------------------
 #
-# Version 2.0
+# Version 2.6
 #
 # -----------------------------------------------------------------
+
+shopt -s extglob
 
 # -----------------------------------------------------------------
 # Functions
 # -----------------------------------------------------------------
-
-_ipset_bash_default_compl() { # taken from examples - modified by me
-# call with the word to be completed as $1
-local t
-if [[ $1 == \$\(* ]]; then # command substitution
-    t=${1#??}
-    COMPREPLY=( $(compgen -c -P '$(' $t) )
-elif [[ $1 == \$\{* ]]; then # variables with a leading `${'
-    t=${1#??}
-    COMPREPLY=( $(compgen -v -P '${' -S '}' $t) )
-elif [[ $1 == \$* ]]; then # variables with a leading `$'
-    t=${1#?}
-    COMPREPLY=( $(compgen -v -P '$' $t ) )
-elif [[ $1 == *[*?[]* ]]; then # sh-style glob pattern
-    COMPREPLY=( $( compgen -G "$1" ) )
-    # ksh-style extended glob pattern - must be complete
-elif shopt -q extglob && [[ $1 == *[?*+\!@]\(*\)* ]]; then
-    COMPREPLY=( $( compgen -G "$1" ) )
-else # last fallback is filename completion
-    if ((got_bashcompl)); then
-        _filedir
-    else
-        compopt -o nospace
-        COMPREPLY=( $( compgen -f -- "$cur" ) )
-    fi
-fi
-}
 
 _ipset_colon_ltrim() {
 ((got_bashcompl)) || return 0
@@ -95,15 +73,16 @@ return 1
 }
 
 _ipset_get_set_type() {
+local n d
 while read n d; do
     [[ $n = Type: ]] && printf '%s\n' $d && break
 done < <(ipset -t list "$1" 2>/dev/null)
 }
 
-_ipset_set_has_timout() {
+_ipset_set_has_option() {
 while read -r; do
-    [[ $REPLY = Header:*timeout* ]] && return 0
-done < <(ipset -t list "$1")
+    [[ $REPLY = Header:*$1* ]] && return 0
+done < <(ipset -t list "$2")
 return 1
 }
 
@@ -144,18 +123,10 @@ while read -r; do
 done < <(ipset list "$1" 2>/dev/null)
 }
 
-_ipset_set_has_timeout() {
-while read -r; do
-    [[ $REPLY = Header:*timeout* ]] && return 0
-done < <(ipset -t list "$1")
-return 1
-}
-
 _ipset_get_set_family() {
 while read -r; do
     [[ $REPLY = Header:*"family inet6"* ]] && printf "v6\n" && return
     [[ $REPLY = Header:*"family inet "* ]] && printf "v4\n" && return
-    [[ $REPLY = Header:*"range "*:*:* ]] && printf "v6\n" && return
     [[ $REPLY = Header:*"range "*.*.*.* ]] && printf "v4\n" && return
 done < <(ipset -t list "$1")
 }
@@ -163,9 +134,15 @@ done < <(ipset -t list "$1")
 _ipset_dedupe_cmd_opts() {
 local str_opt
 local -i idx
-for str_opt in "${@}"; do
+for str_opt; do
     for idx in ${!arr_dupe_cmd_opts[@]}; do
-        [[ $str_opt = ${arr_dupe_cmd_opts[idx]} ]] && continue 2
+        if [[ $str_opt = ${arr_dupe_cmd_opts[idx]} ]]; then
+            if [[ $_DEBUG_NF_COMPLETION ]]; then
+                printf "removing dupe option str_opt: %s\n" \
+                    "${arr_dupe_cmd_opts[idx]}"
+            fi
+            continue 2
+        fi
     done
     printf "%s\n" "$str_opt"
 done
@@ -225,7 +202,7 @@ else
         str_list='- ${arr_opts[@]}'
     fi
 fi
-COMPREPLY=( $( compgen -W "- $str_list" -- "$cur" ) )
+COMPREPLY=( $( compgen -W "$str_list" -- "$cur" ) )
 ((${#COMPREPLY[@]})) || return 0
 
 # post process the reply
@@ -274,6 +251,7 @@ done
 _ipset_get_networks() {
 local foo str_net rest
 [[ -r /etc/networks ]] || return 0
+[[ ${_IPSET_COMP_NETWORKS-1} ]] || return 0
 while read -r foo str_net rest; do
     [[ $foo = @(""|*([[:blank:]])#*) ]] && continue
     [[ $str_net = *([[:blank:]])#* ]] && continue
@@ -291,13 +269,42 @@ while read -r str_name rest; do
 done < /etc/protocols
 }
 
+_ipset_get_svnum() {
+# find service num to set offset
+local str_name str_num str_p=all rest
+local _str_p _str_o=""
+while (($#)); do
+    if [[ $1 = -p ]]; then
+        _str_p="${2:-all}"
+        shift
+    elif [[ $1 = -o && ${2:-"-no"} != -* ]]; then
+        # second part of range will have offset = first_part_of_range+1
+        _str_o="$2"
+        shift
+    fi
+    shift
+done
+if [[ $_str_o && $_str_o != +([[:digit:]]) ]]; then
+    while read str_name str_num rest; do
+        if [[ $str_name = *([[:blank:]])#* ]]; then continue
+        elif [[ $_str_p != all && ${str_num#*/} != $_str_p ]]; then
+            continue
+        fi
+        [[ $str_name = $_str_o ]] && printf "%s\n" ${str_num%/*} && return
+
+    done < /etc/services
+else
+    printf "%s\n" "$_str_o"
+fi
+}
+
 _ipset_get_services() {
 local str_offset="" str_name str_num str_p=all rest
 while (($#)); do
     if [[ $1 = -p ]]; then
         str_p="${2:-all}"
         shift
-    elif [[ $1 = -o && $2 ]]; then
+    elif [[ $1 = -o && ${2:-"-no"} != -* ]]; then
         # second part of range will have offset = first_part_of_range+1
         str_offset="${2}"
         shift
@@ -306,15 +313,10 @@ while (($#)); do
 done
 # find service num to set offset
 if [[ $str_offset && $str_offset != +([[:digit:]]) ]]; then
-    while read str_name str_num rest; do
-        if [[ $str_name = *([[:blank:]])#* ]]; then continue
-        elif [[ $str_p != all && ${str_num#*/} != $str_p ]]; then
-            continue
-        fi
-        [[ $str_name = $str_offset ]] && str_offset=${str_num%/*} && break
-    done < /etc/services
-    [[ $str_offset = +([[:digit:]]) ]] || return 0
+    str_offset=$(_ipset_get_svnum -p "$str_p" -o "$str_offset")
+    [[ $str_offset = +([[:digit:]]) ]] || str_offset="" # we failed
 fi
+# identify and print the services
 while read -r str_name str_num rest; do
     if [[ $str_name = @(""|*([[:blank:]])#*) ]]; then continue
     elif [[ $str_p != all && ${str_num#*/} != $str_p ]]; then
@@ -335,186 +337,6 @@ while read -r; do
 done < <(PATH=${PATH}:/sbin command ip -o link show)
 }
 
-_ipset_complete_iface_spec() {
-if [[ $cur != *,* ]]; then
-    str_prefix=""
-    compopt -o nospace
-    if [[ $cur = *-* ]]; then # range spec
-        str_prefix="${cur%-*}-" cur="${cur#*-}"
-    fi
-    # ip-list from file
-    COMPREPLY=( $( compgen -W \
-        '$(_ipset_get_iplist "$(_ipset_get_set_family "$str_setname")")' \
-        -- "$cur" ) )
-    # networks
-    while read; do
-        [[ $REPLY = $cur* ]] && COMPREPLY+=( "$REPLY" )
-    done < <(_ipset_get_networks)
-    # hostnames
-    if ((got_bashcompl)); then
-        _known_hosts_real -F "$_IPSET_SSH_CONFIGS" -- "$cur"
-    else
-        if [[ ${COMP_KNOWN_HOSTS_WITH_HOSTFILE-1} ]]; then
-            COMPREPLY+=( $( compgen -A hostname "$cur" ) )
-        fi
-        _ipset_colon_ltrim "$cur"
-    fi
-    if [[ $str_prefix ]]; then # range spec
-        COMPREPLY=( $( compgen -P "$str_prefix" -W '${COMPREPLY[@]}' -- "$cur" ) )
-    fi
-    if ((${#COMPREPLY[@]} == 1)); then
-        if [[ ${COMPREPLY[*]} = @(*/*|*-*) ]]; then
-           COMPREPLY=( ${COMPREPLY[*]}, )
-        fi
-    fi
-elif [[ $cur = *,* ]]; then
-    str_prefix="${cur}" cur="${cur#*,}" str_var=""
-    str_prefix="${str_prefix%"$cur"}"
-    if [[ $cur = physdev:* ]]; then
-        cur="${cur#physdev:}"
-        str_prefix="${str_prefix}physdev:"
-    else
-        str_var="physdev:"
-    fi
-    COMPREPLY=( $( compgen -P "$str_prefix" -W \
-        '${str_var} $(_ipset_get_ifnames)' -- "$cur" ) )
-    [[ ${COMPREPLY[0]} = *physdev: ]] && compopt -o nospace
-    _ipset_colon_ltrim "$str_prefix"
-fi
-}
-
-_ipset_complete_hostport_spec() {
-# complete on host,proto:port[,host] spec
-local str_proto str_glob2
-if [[ $str_type = hash:ip,port,@(ip|net) ]]; then str_suffix=','
-else str_suffix=''
-fi
-str_regex='^[^,]+,([^,]+)?$'
-if [[ $cur != *,* ]]; then
-    str_prefix=""
-    compopt -o nospace
-    if [[ $str_type = hash:net,port && $str_action = @(add|del) && $cur = *-* ]]
-    then # range spec
-        str_prefix="${cur%-*}-" cur="${cur#*-}"
-    fi
-    # ip-list from file
-    COMPREPLY=( $( compgen -W \
-        '$(_ipset_get_iplist "$(_ipset_get_set_family "$str_setname")")' \
-        -- "$cur" ) )
-    if [[ $str_type = hash:net,port ]]; then
-        COMPREPLY+=( $( compgen -W '$(_ipset_get_networks)' -- "$cur" ) )
-        _ipset_colon_ltrim "$cur"
-    fi
-    if ((got_bashcompl)); then
-        _known_hosts_real -F "$_IPSET_SSH_CONFIGS" -- "$cur"
-    else
-        if [[ ${COMP_KNOWN_HOSTS_WITH_HOSTFILE-1} ]]; then
-            COMPREPLY+=( $( compgen -A hostname "$cur" ) )
-        fi
-        _ipset_colon_ltrim "$cur"
-    fi
-    if [[ $str_prefix ]]; then # range spec
-        COMPREPLY=( $( compgen -P "$str_prefix" -W '${COMPREPLY[@]}' -- "$cur" ) )
-    fi
-    if ((${#COMPREPLY[@]} == 1)); then
-        if [[ $str_type = hash:net,port ]]; then
-            if [[ ${COMPREPLY[*]} = @(*/*|*-*) ]]; then
-               COMPREPLY=( ${COMPREPLY[*]}, )
-            fi
-        else
-            COMPREPLY=( ${COMPREPLY[*]}, )
-        fi
-    fi
-elif [[ $cur =~ $str_regex ]]; then
-    (( $(IFS=,; set -- $str_type; printf "%d\n" $#) == 3 )) && compopt -o nospace
-    str_glob='[^\[]*-' # otherwise messes up my vim syntax highlightning
-    str_regex='.*,(icmp|icmp6|tcp|sctp|udp|udplite):.*' # for compat put regex in var
-    if [[ $cur != *icmp* && \
-        $cur = *,@(?(tcp:|sctp:|udp:|udplite:)@(+([[:word:]])-|\[*-*\]-)|\[*-*\]-)* ]]
-    then # range spec
-        str_prefix="$cur" str_glob='*[[]*' str_glob2='*-\[*' str_proto="tcp" str_var=""
-        [[ $cur =~ .*(tcp|sctp|udp|udplite):.* ]] && str_proto=${BASH_REMATCH[1]}
-        if [[ $cur = *\[*-*\]-* ]]; then
-            str_var="${cur#*,*[}" cur="${cur#*\]-}"
-            str_prefix=${str_prefix%"$cur"} str_var="${str_var%\]*}"
-        elif [[ $cur = $str_glob2 ]]; then
-            str_var="${cur#*,}" cur="${cur#*-}"
-            str_var="${str_var#${BASH_REMATCH[1]}:}"
-            str_prefix=${str_prefix%"$cur"} str_var="${str_var%%-*}"
-        elif [[ $cur != $str_glob ]]; then
-            str_var="${cur#*,}" cur="${cur##*-}"
-            str_var="${str_var#${BASH_REMATCH[1]}:}"
-            str_prefix=${str_prefix%"$cur"} str_var="${str_var%-*}"
-        fi
-        COMPREPLY=( $( compgen -P "$str_prefix" -S "$str_suffix" -W \
-            '$(_ipset_get_services -p "$str_proto" -o "$str_var")' -- "$cur") )
-        if [[ $str_prefix = *:* ]]; then
-            str_prefix="${str_prefix%:*}:"
-        fi
-        _ipset_colon_ltrim "${str_prefix}"
-    elif [[ $cur =~ $str_regex ]]; then
-        # icmp[6] and services with (tcp|udp|sctp|udplite): prefix
-        str_var=${BASH_REMATCH[1]}
-        str_prefix="${cur}" cur="${cur#*,}"
-        str_prefix="${str_prefix%"$cur"}"
-        cur="${cur#${BASH_REMATCH[1]}:}"
-        str_prefix="${str_prefix}${BASH_REMATCH[1]}:"
-        if [[ $str_var = icmp ]]; then
-            COMPREPLY=( $( compgen -P "$str_prefix" -S "$str_suffix" -W \
-                '${arr_icmp_types[@]}' -- "$cur" ) )
-        elif [[ $str_var = icmp6 ]]; then
-            COMPREPLY=( $( compgen -P "$str_prefix" -S "$str_suffix" -W \
-                '${arr_icmp6_types[@]}' -- "$cur" ) )
-        elif [[ $str_var = @(tcp|udp|sctp|udplite) ]]; then
-            COMPREPLY=( $( compgen -P "$str_prefix" -W \
-                '$(_ipset_get_services -p $str_var)' -- "$cur" ) )
-            compopt -o nospace
-        fi
-        _ipset_colon_ltrim "$str_prefix"
-    elif [[ $cur = *,* ]]; then # first attempt :/ long list
-        str_prefix="${cur%,*}," cur="${cur#*,}"
-        str_var="tcp: udp: sctp: udplite: icmp: icmp6:"
-        # add the services
-        COMPREPLY=( $( compgen -P "$str_prefix" -W \
-            '$str_var $(_ipset_get_services -p tcp)' -- "$cur" ) )
-        for str_var in $( compgen -P "$str_prefix" -S ":0$str_suffix" -W \
-            '$(_ipset_get_protocols)' -- "$cur" )
-        do
-            COMPREPLY+=( "$str_var" ) # add the protocols
-        done
-        _ipset_colon_ltrim "$str_prefix$cur"
-        compopt -o nospace
-    fi
-elif [[ $cur = *,*,* && $str_type = hash:ip,port,@(ip|net) ]]; then
-    str_prefix="${cur}" cur="${cur##*,}"
-    str_prefix="${str_prefix%"$cur"}"
-    # ip-list from file
-    COMPREPLY=( $( compgen -W \
-        '$(_ipset_get_iplist "$(_ipset_get_set_family "$str_setname")")' \
-        -- "$cur" ) )
-    if [[ $str_type = hash:ip,port,net ]]; then
-        while read; do
-            [[ $REPLY = $cur* ]] && COMPREPLY+=( "$str_prefix$REPLY" )
-        done < <(_ipset_get_networks)
-        _ipset_colon_ltrim "$str_prefix$cur"
-    fi
-    if ((got_bashcompl)); then
-        _known_hosts_real -p "$str_prefix" -F "$_IPSET_SSH_CONFIGS" -- "$cur"
-    else
-        if [[ ${COMP_KNOWN_HOSTS_WITH_HOSTFILE-1} ]]; then
-            COMPREPLY+=( $( compgen -P "$str_prefix" -A hostname "$cur" ) )
-        fi
-        _ipset_colon_ltrim "$str_prefix$cur"
-    fi
-    if ((${#COMPREPLY[@]} == 1)); then
-        if [[ $str_type = hash:ip,port,net && ${COMPREPLY[*]} != */* ]]; then
-            compopt -o nospace
-            COMPREPLY=( ${COMPREPLY[*]}/ )
-        fi
-    fi
-fi
-}
-
 _ipset_get_iplist() {
 # if a file with ip addresses is in env var, load em
 local str_ip rest
@@ -532,19 +354,473 @@ while read -r str_ip rest; do
 done < "${_IPSET_IPLIST_FILE}"
 }
 
+_ipset_complete_elements() {
+local lcur="$1" str_lprefix=""
+local -i no_range=0
+shift
+while (($#)); do
+    [[ $1 = --no-range ]] && no_range=1
+    shift
+done
+if [[ $lcur = *-[[]+([!]]) ]]; then # incomplete range - host/port with dash
+    str_lprefix="${lcur%\-[*}-"
+    lcur="${lcur#"$str_lprefix"}"
+elif [[ $lcur = \[*\]-* ]]; then # first part of host/portname range
+    str_lprefix="${lcur%\]-*}]-" lcur="${lcur##*\]-}"
+elif [[ $lcur = *-* ]]; then
+    str_lprefix="${lcur%-*}-" lcur="${lcur##*-}"
+elif [[ $lcur =~ (tcp|udp):.* ]]; then # proto:port (bitmap:port)
+    str_lprefix="${BASH_REMATCH[1]}:" lcur="${lcur#*:}"
+    no_range=0  # workaround
+fi
+if [[ $str_lprefix ]]; then
+    [[ $str_lprefix = */* ]] && return 1
+    ((no_range)) && return 1
+    _ipset_get_members --names-only "$str_setname"
+    COMPREPLY+=( $( compgen -P "$str_lprefix" -W '${arr_members[@]/*\/*/}' -- "$lcur" ) )
+else
+    _ipset_get_members --names-only "$str_setname"
+    COMPREPLY+=( $( compgen -W '${arr_members[@]}' -- "$lcur" ) )
+fi
+}
+
+_ipset_complete_portrange() {
+# complete port ranges
+local lcur="$1"
+local str_lprefix="$lcur" str_p=""
+str_var=0 str_glob='[^[]*-*'
+if [[ $lcur = *:* ]]; then # look for `proto:'
+    ((got_bp_proto)) || return 0 # supported since ipset v6.20
+    # only tcp/udp is valid as PROTO spec
+    [[ ${lcur%%:*} = @(tcp|udp) ]] || return 0
+    str_p=${lcur%%:*}
+    lcur="${lcur#$str_p:}"
+fi
+if [[ $lcur = \[*-*\]-* ]]; then # spec with bracket
+    str_var="${lcur#\[}"
+    str_var="${str_var%%\]*}"
+    lcur="${lcur#*\]-}"
+    str_lprefix=${str_lprefix%"$lcur"}
+elif [[ $lcur = $str_glob ]]; then # spec without bracket
+    str_var="${lcur%%-*}"
+    lcur="${lcur#*-}"
+    str_lprefix=${str_lprefix%"$lcur"}
+else # no prefix
+    str_lprefix=""
+    compopt -o nospace
+fi
+if [[ $str_p ]]; then # we have a proto spec
+    COMPREPLY=( $(compgen -P "$str_p:$str_lprefix" \
+        -W '$(_ipset_get_services -o $str_var -p $str_p)' -- "$lcur" ) )
+    _ipset_colon_ltrim "$str_p:$str_lprefix$lcur"
+else
+    if [[ $str_lprefix ]]; then
+        COMPREPLY=( $(compgen -P "$str_lprefix" \
+            -W '$(_ipset_get_services -o $str_var)' -- "$lcur" ) )
+    else
+        if ((got_bp_proto)); then # supported since ipset v6.20
+            COMPREPLY=( $(compgen \
+                -W 'tcp: udp: $(_ipset_get_services)' -- "$lcur" ) )
+        else # only tcp services prior to ipset v6.20
+            COMPREPLY=( $(compgen \
+                -W '$(_ipset_get_services -p tcp)' -- "$lcur" ) )
+        fi
+    fi
+fi
+}
+
+_ipset_complete_hostnames() {
+local -i idx got_bracket=0
+local lcur="${1//@(\[|\])}"
+[[ $lcur = $1 ]] || got_bracket=1
+if ((got_bashcompl)); then
+    _ipset_known_hosts -F "$_IPSET_SSH_CONFIGS" -- "$lcur"
+else
+    if [[ ${COMP_KNOWN_HOSTS_WITH_HOSTFILE-1} ]]; then
+        COMPREPLY+=( $( compgen -A hostname -- "$lcur" ) )
+    fi
+fi
+for idx in ${!COMPREPLY[@]}; do
+    if [[ ${COMPREPLY[idx]} = *-* ]]; then
+        COMPREPLY[idx]="[${COMPREPLY[idx]}]"
+    else
+        ((got_bracket)) && unset COMPREPLY[idx]
+    fi
+done
+#_ipset_colon_ltrim "$lcur"
+}
+
+_ipset_complete_iface_spec() {
+local lcur="$1" str_lprefix=""
+if [[ $lcur != *,* ]]; then
+    str_lprefix="" str_glob='+([![])-*'
+    compopt -o nospace
+    if [[ x$str_action != xtest ]]; then
+        if [[ $lcur = \[*-*\]-* ]]; then # hostrange spec
+            str_lprefix="${lcur%\]-*}]-" lcur="${lcur#*\]-}"
+        elif [[ $lcur = *-[[]+([!]]) ]]; then # incomplete range - host with dash
+            str_lprefix="${lcur%-\[*}-"
+            lcur="${lcur#"$str_lprefix"}"
+        elif [[ $lcur = $str_glob ]]; then # range spec
+            str_lprefix="${lcur%-*}-" lcur="${lcur#*-}"
+        fi
+    fi
+    # ip-list from file
+    COMPREPLY+=( $( compgen -W \
+        '$(_ipset_get_iplist "$(_ipset_get_set_family "$str_setname")")' \
+        -- "$lcur" ) )
+    # networks
+    COMPREPLY+=( $( compgen -W '$(_ipset_get_networks)' -- "$lcur" ) )
+    # hostnames
+    _ipset_complete_hostnames "$lcur"
+    if [[ $str_lprefix ]]; then # range spec
+        COMPREPLY=( $( compgen -P "$str_lprefix" -W '${COMPREPLY[@]//*\/*/}' \
+            -- "$lcur" ) )
+    else
+        COMPREPLY=( $( compgen -W '${COMPREPLY[@]}' -- "$lcur" ) )
+    fi
+    if ((${#COMPREPLY[@]} == 1)); then
+        if [[ $str_lprefix || x$str_action = xtest ]]; then
+           COMPREPLY=( ${COMPREPLY[*]}, )
+       else
+           COMPREPLY=( ${COMPREPLY[*]}, ${COMPREPLY[*]}- )
+       fi
+    fi
+    _ipset_colon_ltrim "$str_lprefix$lcur"
+elif [[ $lcur = *,* ]]; then
+    str_lprefix="${lcur}" lcur="${lcur#*,}" str_var=""
+    str_lprefix="${str_lprefix%"$lcur"}"
+    if [[ $lcur = physdev:* ]]; then
+        lcur="${lcur#physdev:}"
+        str_lprefix="${str_lprefix}physdev:"
+    else
+        str_var="physdev:"
+    fi
+    COMPREPLY+=( $( compgen -P "$str_lprefix" -W \
+        '${str_var} $(_ipset_get_ifnames)' -- "$lcur" ) )
+    [[ ${COMPREPLY[0]} = *physdev: ]] && compopt -o nospace
+    _ipset_colon_ltrim "$str_lprefix"
+fi
+}
+
+_ipset_complete_host_spec() {
+local lcur="$1" str_lprefix="" str_lsuffix=""
+local -i no_range=0 v4_only=0
+if [[ $lcur = *,* && $str_type = hash:ip,mark ]]; then
+    return 0
+fi
+shift
+compopt -o nospace
+while (($#)); do
+    [[ $1 = --no-range ]] && no_range=1
+    [[ $1 = --v4 ]] && v4_only=1
+    shift
+done
+# range spec
+if [[ $lcur = @(""|+([[:word:]])) ]]; then # empty or [:word:]
+    str_lsuffix="-"
+elif [[ $lcur = [[]*-*[]] ]]; then # host with hyphen
+    str_lsuffix="-"
+elif [[ $lcur = [[]*([!]]) ]]; then # incomplete host with dash
+    str_lsuffix="-"
+elif [[ $lcur = *-[[]+([!]]) ]]; then # incomplete range - host with dash
+    str_lprefix="${lcur%\-[*}-"
+    lcur="${lcur#"$str_lprefix"}"
+elif [[ $lcur = \[*\]-* ]]; then # first part of hostname range
+    str_lprefix="${lcur%\]-*}]-" lcur="${lcur##*\]-}"
+elif [[ $lcur != *-* ]]; then # no hypen
+    str_lsuffix="-"
+else # ip-range
+    str_lprefix="${lcur%-*}-" lcur="${lcur##*-}"
+fi
+if [[ $str_lprefix ]]; then
+    # range not valid
+       ((no_range)) && return 1
+    # range not valid if first part is ip/cidr
+    [[ $str_lprefix = */* ]] && return 1
+fi
+# ip-list from file
+if [[ $str_lprefix ]]; then
+    # only ipv4 range supported
+    COMPREPLY+=( $( compgen -W '$(_ipset_get_iplist v4)' -- "$lcur" ) )
+elif ((v4_only)); then
+    # this type only supports ipv4
+    COMPREPLY+=( $( compgen -W '$(_ipset_get_iplist v4)' -- "$lcur" ) )
+else
+    # we gather the family type
+    COMPREPLY+=( $( compgen -W \
+        '$(_ipset_get_iplist "$(_ipset_get_set_family "$str_setname")")' \
+        -- "$lcur" ) )
+    _ipset_colon_ltrim "$lcur"
+fi
+_ipset_complete_hostnames "$lcur"
+if [[ $str_lprefix ]]; then
+    # if the prefix is defined add it to compreply
+    COMPREPLY=( $( compgen -P "$str_lprefix" -W '${COMPREPLY[@]}' -- "$lcur" ) )
+else
+    # add networks for hash:net?(,net), hash:ip,mark, or bitmap:ip for add/del action
+    if [[ $str_type = hash:@(net?(,net)|ip,mark) ]] || \
+        [[ $str_type = bitmap:*  && $str_action = @(add|create|del) ]]
+    then
+        COMPREPLY+=( $( compgen -W '$(_ipset_get_networks)' -- "$lcur" ) )
+    fi
+fi
+if ((${#COMPREPLY[@]} == 1)); then
+    if [[ $str_lprefix ]]; then
+        # we can add a space, if it's a range (not with hash:net,net or hash:ip,mark)
+        if [[ $str_type != hash:@(net,net|ip,mark) ]]; then
+            compopt +o nospace
+        fi
+    fi
+fi
+}
+
+_ipset_complete_hostport_spec() {
+# complete on host,proto:port[,host] spec
+local str_proto str_glob2 str_lprefix lcur str_lprefix2 lcur2
+local lcur="$1"
+if [[ $str_type = hash:@(ip|net),port,@(ip|net) ]]; then str_suffix=','
+else str_suffix=''
+fi
+str_regex='^[^,]+,([^,]+)?$'
+if [[ $lcur != *,* ]]; then
+    str_lprefix="" str_suffix=""
+    compopt -o nospace
+    if [[ $str_type = hash:@(ip,port|net,port|ip,port,ip|ip,port,net|net,port,net) && \
+        $str_action = @(add|del|test) ]]
+    then
+        # range spec
+        if [[ $lcur = @(""|+([[:word:]])) ]]; then # empty or [:word:]
+            str_suffix="-"
+        elif [[ $lcur = [[]*-*[]] ]]; then # host with hyphen
+            str_suffix="-"
+        elif [[ $lcur = [[]*([!]]) ]]; then # incomplete host with dash
+            str_suffix="-"
+        elif [[ $lcur = *-[[]+([!]]) ]]; then # incomplete range - host with dash
+            str_lprefix="${lcur%\-[*}-"
+            lcur="${lcur#"$str_lprefix"}"
+        elif [[ $lcur = \[*\]-* ]]; then # first part of hostname range
+            str_lprefix="${lcur%\]-*}]-" lcur="${lcur##*\]-}"
+        elif [[ $lcur != *-* ]]; then # no hypen
+            str_suffix="-"
+        else # ip-range
+            str_lprefix="${lcur%-*}-" lcur="${lcur##*-}"
+        fi
+    fi
+    # ip-list from file
+    COMPREPLY+=( $( compgen -W \
+        '$(_ipset_get_iplist "$(_ipset_get_set_family "$str_setname")")' \
+        -- "$lcur" ) )
+    if [[ $str_type = hash:net,port?(,net) ]]; then
+        COMPREPLY+=( $( compgen -W '$(_ipset_get_networks)' -- "$lcur" ) )
+        _ipset_colon_ltrim "$lcur"
+    fi
+    _ipset_complete_hostnames "$lcur"
+    if [[ $str_lprefix ]]; then # range spec
+        COMPREPLY=( $( compgen -P "$str_lprefix" -W '${COMPREPLY[@]}' -- "$lcur" ) )
+    fi
+    if ((${#COMPREPLY[@]} == 1)); then
+        if [[ $str_suffix = - ]]; then
+            COMPREPLY=( $( compgen -W '${COMPREPLY[*]}, ${COMPREPLY[*]}-' -- "$lcur" ) )
+        else
+            COMPREPLY=( ${COMPREPLY[*]}, )
+        fi
+    fi
+    _ipset_colon_ltrim "$str_lprefix$lcur"
+elif [[ $lcur =~ $str_regex ]]; then
+    compopt -o nospace
+    str_glob='[^[]*-' # otherwise messes up my vim syntax highlightning
+    str_regex='.*,(icmp|icmp6|tcp|sctp|udp|udplite):.*' # for compat put regex in var
+    if [[ $lcur != *icmp* && \
+        $lcur = *,@(?(tcp:|sctp:|udp:|udplite:)@(+([[:word:]])-|\[*-*\]-)|\[*-*\]-)* ]]
+    then # range spec
+        str_lprefix="$lcur" str_glob='*[[]*' str_glob2='*,*-\[*' str_proto="tcp" str_var=""
+        [[ $lcur =~ .*(tcp|sctp|udp|udplite):.* ]] && str_proto=${BASH_REMATCH[1]}
+        if [[ $lcur = *,*\[*-*\]-* ]]; then
+            str_var="${lcur#*,*[}" lcur="${lcur##*\]-}"
+            str_lprefix=${str_lprefix%"$lcur"} str_var="${str_var%\]*}"
+        elif [[ $lcur = $str_glob2 ]]; then
+            str_var="${lcur#*,}" lcur="${lcur##*-}"
+            str_var="${str_var#${BASH_REMATCH[1]}:}"
+            str_lprefix=${str_lprefix%"$lcur"} str_var="${str_var%%-*}"
+        else
+            str_var="${lcur#*,}" lcur="${lcur##*-}"
+            str_var="${str_var#${BASH_REMATCH[1]}:}"
+            str_lprefix=${str_lprefix%"$lcur"} str_var="${str_var%-*}"
+        fi
+        COMPREPLY+=( $( compgen -P "$str_lprefix" -S "$str_suffix" -W \
+            '$(_ipset_get_services -p "$str_proto" -o "$str_var")' -- "$lcur") )
+        if [[ $str_lprefix = *:* ]]; then
+            str_lprefix="${str_lprefix%:*}:"
+        fi
+        _ipset_colon_ltrim "${str_lprefix}"
+        if ((${#COMPREPLY[@]} == 1)); then
+            if [[ $str_lprefix && $str_type != hash:@(ip|net),port,@(ip|net) ]]; then
+                compopt +o nospace
+            fi
+        fi
+    elif [[ $lcur =~ $str_regex ]]; then
+        # icmp[6] and services with (tcp|udp|sctp|udplite): prefix
+        str_var=${BASH_REMATCH[1]}
+        str_lprefix="${lcur}" lcur="${lcur#*,}"
+        str_lprefix="${str_lprefix%"$lcur"}"
+        lcur="${lcur#${BASH_REMATCH[1]}:}"
+        str_lprefix="${str_lprefix}${BASH_REMATCH[1]}:"
+        if [[ $str_var = icmp ]]; then
+            COMPREPLY+=( $( compgen -P "$str_lprefix" -S "$str_suffix" -W \
+                '${arr_icmp_types[@]}' -- "$lcur" ) )
+        elif [[ $str_var = icmp6 ]]; then
+            COMPREPLY+=( $( compgen -P "$str_lprefix" -S "$str_suffix" -W \
+                '${arr_icmp6_types[@]}' -- "$lcur" ) )
+        elif [[ $str_var = @(tcp|udp|sctp|udplite) ]]; then
+            COMPREPLY+=( $( compgen -P "$str_lprefix" -W \
+                '$(_ipset_get_services -p $str_var)' -- "$lcur" ) )
+        fi
+        _ipset_colon_ltrim "$str_lprefix"
+    elif [[ $lcur = *,* ]]; then # first attempt :/ long list
+        str_lprefix="${lcur%,*}," lcur="${lcur#*,}"
+        str_var="tcp: udp: sctp: udplite: icmp: icmp6:"
+        # add the services
+        COMPREPLY+=( $( compgen -P "$str_lprefix" -W \
+            '$str_var $(_ipset_get_services)' -- "$lcur" ) )
+        # add the protocols
+        COMPREPLY+=( $( compgen -P "$str_lprefix" -S ":0$str_suffix" -W \
+            '$(_ipset_get_protocols)' -- "$lcur" ) )
+        _ipset_colon_ltrim "$str_lprefix$lcur"
+        compopt -o nospace
+    fi
+elif [[ $lcur = *,*,* && $str_type = hash:@(ip,port,@(ip|net)|net,port,net) ]]; then
+    str_lprefix2="${lcur}" lcur2="${lcur##*,}"
+    str_lprefix2="${str_lprefix2%"$lcur2"}"
+    lcur="$lcur2"
+    # ip-list from file
+    COMPREPLY+=( $( compgen -W \
+        '$(_ipset_get_iplist "$(_ipset_get_set_family "$str_setname")")' \
+        -- "$lcur2" ) )
+    if [[ $str_type = hash:@(ip|net),port,net && x$str_action != xtest ]]; then
+        # range spec
+        if [[ $lcur = @(""|+([[:word:]])) ]]; then # empty or [:word:]
+            str_suffix="-"
+        elif [[ $lcur = [[]*-*[]] ]]; then # host with hyphen
+            str_suffix="-"
+        elif [[ $lcur = [[]+([!]]) ]]; then # incomplete host with dash
+            str_suffix="-"
+        elif [[ $lcur = *-[[]+([!]]) ]]; then # incomplete range - host with dash
+            str_lprefix="${lcur%\-[*}-"
+            lcur="${lcur#"$str_lprefix"}"
+        elif [[ $lcur = \[*\]-* ]]; then # first part of hostname range
+            str_lprefix="${lcur%\]-*}]-" lcur="${lcur##*\]-}"
+        elif [[ $lcur != *-* ]]; then # no hypen
+            str_suffix="-"
+        else # ip-range
+            str_lprefix="${lcur%-*}-" lcur="${lcur##*-}"
+        fi
+        # networks
+        COMPREPLY+=( $( compgen -W '$(_ipset_get_networks)' -- "$lcur" ) )
+    fi
+    _ipset_complete_hostnames "$lcur"
+    if [[ $str_lprefix ]]; then
+        COMPREPLY=( $( compgen -P "$str_lprefix" \
+            -W '${COMPREPLY[@]}' -- "$lcur" ) )
+    fi
+    if [[ $str_lprefix2 ]]; then
+        COMPREPLY=( $( compgen -P "$str_lprefix2" \
+            -W '${COMPREPLY[@]}' -- "$lcur2" ) )
+    fi
+    _ipset_colon_ltrim "$str_lprefix2$lcur2"
+    if ((${#COMPREPLY[@]} == 1)); then
+        if [[ $str_type = hash:@(ip|net),port,net && \
+            ${COMPREPLY[*]##*,} != */* ]]
+        then
+            compopt -o nospace
+        fi
+    fi
+fi
+}
+
+_ipset_complete_netnet_spec() {
+# complete hash:net,net sets
+local lcur="$1"
+if [[ $lcur = *,* ]]; then
+    str_lprefix="$lcur" lcur="${lcur#*,}"
+    str_lprefix="${str_lprefix%,*},"
+    _ipset_complete_host_spec "$lcur"
+    compopt -o nospace
+    COMPREPLY+=( $( compgen -P "$str_lprefix" -W '${COMPREPLY[@]}' -- "$lcur" ) )
+    if ((${#COMPREPLY[@]} == 1 )); then
+        str_glob='@(*/*|\[*\]-*|+([![])-*)'
+        [[ ${COMPREPLY[0]#*,} = $str_glob ]] && compopt +o nospace
+    fi
+else
+    _ipset_complete_host_spec "$lcur"
+    compopt -o nospace
+    if ((${#COMPREPLY[@]} == 1 )); then
+        str_glob='@(*/*|\[*\]-\[*\]|+([![])-+([![])|\[*\]-+([![])|+([![])-\[*\])'
+        if [[ ${COMPREPLY[0]} = $str_glob ]]; then
+            COMPREPLY=( ${COMPREPLY[*]}, )
+        else
+            COMPREPLY=( ${COMPREPLY[*]}- ${COMPREPLY[*]}, )
+        fi
+    fi
+fi
+}
+
+_ipset_complete_mac_spec() {
+local lcur="$1" mac rest a b addr str_tmp
+local str_regex='^([[:xdigit:]]{2})(:[[:xdigit:]]{2}){5}$'
+local -i x=y=0
+if [[ ${_IPSET_MAC_COMPL_MODE:=both} = both ]]; then
+    x=1 y=1
+elif [[ $_IPSET_MAC_COMPL_MODE = file ]]; then
+    x=1
+elif [[ $_IPSET_MAC_COMPL_MODE = system ]]; then
+    y=1
+fi
+if ((x)); then
+    if [[ $_IPSET_MACLIST_FILE && -r $_IPSET_MACLIST_FILE ]]; then
+        # if a file with mac addresses is in env var, load em
+        while read -r mac rest; do
+            [[ $mac = *([[:blank:]])\#* ]] && continue
+            mac="${mac//\#*/}"
+            [[ $mac =~ $str_regex ]] && printf "%s\n" "$mac"
+        done < "${_IPSET_MACLIST_FILE}"
+    fi
+fi
+if ((y)); then
+    # read arp cache, addresses of local interfaces and /etc/ethers
+    str_tmp=$(while read a b addr rest; do
+        [[ $addr =~ $str_regex ]] && printf "%s\n" "$addr"
+        done < <(PATH=$PATH:/sbin command arp -n 2>/dev/null))
+    str_tmp+=" $(while read -r; do
+        [[ $REPLY = *link/loopback* ]] && continue
+        REPLY=${REPLY#*link/*+([[:blank:]])}
+        REPLY=${REPLY%+([[:blank:]])brd*}
+        [[ $REPLY =~ $str_regex ]] && printf "%s\n" "$REPLY"
+        done < <(PATH=$PATH:/sbin command ip -o link show 2>/dev/null))"
+    if [[ -r /etc/ethers ]]; then
+        str_tmp+=" $(while read -r addr rest; do
+            [[ $addr =~ $str_regex ]] && printf "%s\n" "$addr"
+            done < /etc/ethers)"
+    fi
+    printf "%s\n" "$str_tmp" 
+fi
+}
+
 # -----------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------
 
 _ipset_complete() {
-shopt -s extglob
 local cur prev cword words ips_version
 local str_action str_setname str_type str_filename
 local str_glob str_regex str_prefix str_suffix
 local str_tmp="" str_var=""
-local str_timeout="timeout" str_order="before after" str_counters=""
+local str_timeout="timeout" str_order="before after" str_forceadd=""
+local str_counters="" str_bp_counters="" str_comment="" str_markmask=""
+local str_skbinfo="" str_skbflags=""
 local -i i=x=y=0
 local -i got_bashcompl=got_action=action_index=order_index=set_has_timeout=0
+local -i got_bp_proto=0
 local -i ignore_errors=use_file=names_only=headers_only=save_format=res_sort=0
 local arr_sets=() arr_types=() arr_members=() arr_unknown_opts=()
 local arr_dupe_cmd_opts=() arr_used_opts=() arr_tmp=()
@@ -618,6 +894,9 @@ neigbour-advertisement
 redirect
 )
 
+# at least bash 4 is required
+((${BASH_VERSINFO[0]} < 4)) && return 0
+
 COMPREPLY=()
 
 # ipset version check 6.x upwards (to v?) is supported
@@ -628,10 +907,38 @@ read -a ips_version <<< ${ips_version//./ }
 [[ ${ips_version[0]} = +([[:digit:]]) ]] || return 1
 ((ips_version[0] < 6)) && return 1
 
-# ipset -gt v6.17 has counters flag
-if ((ips_version[0] == 6 && ips_version[1] >= 17)) || ((ips_version[0] > 6))
-then
+# ipset -ge v6.19 has counters flag
+# ipset -ge v6.20 has comment flag
+# ipset -ge v6.21 has hash:ip,mark markmask flag
+# ipset -ge v6.22 has skbinfo flag
+if ((ips_version[0] > 6)); then
     str_counters="counters"
+    str_bp_counters="bytes packets"
+    str_comment="comment"
+    str_markmask="markmask"
+    str_skbinfo="skbinfo" str_skbflags="skbmark skbprio skbqueue"
+    got_bp_proto=1
+elif ((ips_version[0] == 6)); then
+    if ((ips_version[1] >= 22)); then
+        str_comment="comment"
+        str_markmask="markmask"
+        str_forceadd="forceadd"
+        str_skbinfo="skbinfo" str_skbflags="skbmark skbprio skbqueue"
+        got_bp_proto=1
+    elif ((ips_version[1] >= 21)); then
+        str_comment="comment"
+        str_markmask="markmask"
+        str_forceadd="forceadd"
+        got_bp_proto=1
+    elif ((ips_version[1] >= 20)); then
+        str_comment="comment"
+        got_bp_proto=1
+    elif ((ips_version[1] >= 19)); then
+        str_counters="counters"
+        str_bp_counters="bytes packets"
+    fi
+else
+    return 0
 fi
 
 # expecting _get_comp_words_by_ref() to exist from bash_completion
@@ -659,6 +966,14 @@ __ltrim_colon_completions() {
         done
     fi
 }
+
+# construct own known_hosts function from origin
+# just remove the __ltrim_colon_completions call
+# to avoid unwanted ltrim if we need to work with the list of hosts
+# ugly hack - gimme better ;p
+if ! declare -F _ipset_known_hosts &>/dev/null; then
+eval '_ipset_known_hosts() { '$(declare -f _known_hosts_real | grep -v __ltrim_colon_completions | grep -Ev "^_known_hosts_real.*$" | grep -Ev "^(\{|\})")'; }'
+fi
 fi
 
 #_DEBUG_NF_COMPLETION=Y
@@ -739,7 +1054,7 @@ case "${words[i]}" in
             order_index=$i str_order=""
         fi
     ;;
-    timeout|range|maxelem|family|hashsize|size|netmask|nomatch|counters)
+    timeout|range|maxelem|family|hashsize|size|netmask|nomatch|counters|bytes|packets|comment|markmask|forceadd|skbinfo|skbmark|skbprio|skbqueue)
         if ((got_action && i > action_index+2)); then
             str_tmp="$COMP_LINE"
             [[ $str_setname = ${words[i]} ]] && str_tmp="${str_tmp/${words[i]}/}"
@@ -786,6 +1101,18 @@ fi
 #        return 0
 #    ;;
 #esac
+# catch variables and command substitution
+if [[ $cur == \$\(* ]]; then # command substitution
+    COMPREPLY=( $(compgen -c -P '$(' ${cur#??}) )
+    return 0
+elif [[ $cur == \$\{* ]]; then # variables with a leading `${'
+    COMPREPLY=( $(compgen -v -P '${' -S '}' ${cur#??}) )
+    return 0
+elif [[ $cur == \$* ]]; then # variables with a leading `$'
+    COMPREPLY=( $(compgen -v -P '$' ${cur#?} ) )
+    return 0
+fi
+
 case "$prev" in # depend on previous option
     -o|-output)
         # make sure it's not a filename named -o or -output
@@ -879,113 +1206,47 @@ elif ((cword == action_index+2)) && [[ $str_setname = $prev ]]; then
         add)
             str_type=$(_ipset_get_set_type "$str_setname")
             case "$str_type" in
-                hash:ip|bitmap:ip|hash:net)
-                    # ip-list from file
-                    COMPREPLY=( $( compgen -W \
-                        '$(_ipset_get_iplist "$(_ipset_get_set_family "$str_setname")")' \
-                        -- "$cur" ) )
-                    if ((got_bashcompl)); then
-                        _known_hosts_real -F "$_IPSET_SSH_CONFIGS" -- "$cur"
-                    else
-                        if [[ ${COMP_KNOWN_HOSTS_WITH_HOSTFILE-1} ]]; then
-                            COMPREPLY=( $( compgen -A hostname "$cur" ) )
-                        fi
-                        _ipset_colon_ltrim "$cur"
-                    fi
-                    if [[ $str_type = bitmap:ip,mac ]]; then
-                        compopt -o nospace
-                        ((${#COMPREPLY[@]} == 1)) && COMPREPLY=( ${COMPREPLY[*]}, )
-                    elif [[ $str_type = hash:net ]]; then
-                        COMPREPLY+=( $( compgen -W '$(_ipset_get_networks)' -- "$cur" ) )
-                        if ((${#COMPREPLY[@]} == 1)); then
-                            if [[ ${COMPREPLY[*]} != */* ]]; then
-                                compopt -o nospace
-                                COMPREPLY=( ${COMPREPLY[*]}/ )
-                            fi
-                        fi
-                        _ipset_colon_ltrim "$cur"
-                    fi
+                bitmap:ip)
+                    _ipset_complete_host_spec "$cur" --v4
+                    _ipset_colon_ltrim "$cur"
+                ;;
+                hash:ip|hash:net|hash:ip,mark)
+                    _ipset_complete_host_spec "$cur"
+                    _ipset_colon_ltrim "$cur"
+                ;;
+                hash:net,iface)
+                    _ipset_complete_iface_spec "$cur"
+                ;;
+                hash:@(ip,port|ip,port,ip|ip,port,net|net,port|net,port,net))
+                    _ipset_complete_hostport_spec "$cur"
+                ;;
+                hash:net,net)
+                    _ipset_complete_netnet_spec "$cur"
+                    _ipset_colon_ltrim "$cur"
+                ;;
+                hash:mac)
+                    COMPREPLY=( $( compgen -W '$(_ipset_complete_mac_spec)' -- "$cur" ) )
+                    _ipset_colon_ltrim "$cur"
                 ;;
                 bitmap:ip,mac)
                     if [[ $cur = *,* ]]; then
                         str_prefix="$cur" cur="${cur#*,}"
                         str_prefix="${str_prefix%$cur}"
-                        str_regex='^([[:xdigit:]]{2})(:[[:xdigit:]]{2}){5}$'
-                        x=0 y=0
-                        if [[ ${_IPSET_MAC_COMPL_MODE:=both} = both ]]; then
-                            x=1 y=1
-                        elif [[ $_IPSET_MAC_COMPL_MODE = file ]]; then
-                            x=1
-                        elif [[ $_IPSET_MAC_COMPL_MODE = system ]]; then
-                            y=1
-                        fi
-                        if ((x)); then
-                            if [[ $_IPSET_MACLIST_FILE && -r $_IPSET_MACLIST_FILE ]]
-                            then
-                                # if a file with mac addresses is in env var, load em
-                                str_tmp=$(while read -r mac rest; do
-                                    [[ $mac = *([[:blank:]])\#* ]] && continue
-                                    mac="${mac//\#*/}"
-                                    [[ $mac =~ $str_regex ]] && printf "%s\n" "$mac"
-                                    done < "${_IPSET_MACLIST_FILE}")
-                                COMPREPLY=( $( compgen -P "$str_prefix" \
-                                    -W "$str_tmp" -- "$cur" ) )
-                                _ipset_colon_ltrim "$str_prefix$cur"
-                            fi
-                        fi
-                        if ((y)); then
-                            # read arp cache, addresses of local interfaces and /etc/ethers
-                            str_tmp=$(while read a b addr rest; do
-                                [[ $addr =~ $str_regex ]] && printf "%s\n" "$addr"
-                                done < <(PATH=$PATH:/sbin command arp -n 2>/dev/null))
-                            str_tmp+=" $(while read -r; do
-                                [[ $REPLY = *link/loopback* ]] && continue
-                                REPLY=${REPLY#*link/*+([[:blank:]])}
-                                REPLY=${REPLY%+([[:blank:]])brd*}
-                                [[ $REPLY =~ $str_regex ]] && printf "%s\n" "$REPLY"
-                                done < <(PATH=$PATH:/sbin command ip -o link show 2>/dev/null))"
-                            if [[ -r /etc/ethers ]]; then
-                                str_tmp+=" $(while read -r addr rest; do
-                                    [[ $addr =~ $str_regex ]] && printf "%s\n" "$addr"
-                                    done < /etc/ethers)"
-                            fi
-                            COMPREPLY+=( $( compgen -P "$str_prefix" -W "$str_tmp" \
-                                -- "$cur" ) )
-                            _ipset_colon_ltrim "$str_prefix$cur"
-                        fi
-                    else
-                        # ip-list from file
-                        COMPREPLY=( $( compgen -W \
-                            '$(_ipset_get_iplist "$(_ipset_get_set_family "$str_setname")")' \
+                        COMPREPLY+=( $( compgen -P "$str_prefix" -W '$(_ipset_complete_mac_spec)' \
                             -- "$cur" ) )
-                        if ((got_bashcompl)); then
-                            _known_hosts_real -F "$_IPSET_SSH_CONFIGS" -- "$cur"
-                        else
-                            if [[ ${COMP_KNOWN_HOSTS_WITH_HOSTFILE-1} ]]; then
-                                COMPREPLY=( $( compgen -A hostname "$cur" ) )
-                            fi
-                            _ipset_colon_ltrim "$cur"
-                        fi
+                        _ipset_colon_ltrim "$str_prefix$cur"
+                    else
                         compopt -o nospace
-                        ((${#COMPREPLY[@]} == 1)) && COMPREPLY=( ${COMPREPLY[*]}, )
+                        _ipset_complete_host_spec "$cur" --v4 --no-range
+                        _ipset_colon_ltrim "$cur"
+                        if ((${#COMPREPLY[@]} == 1)); then
+                            COMPREPLY=( ${COMPREPLY[*]}, )
+                        fi
                     fi
                 ;;
                 bitmap:port)
                     # complete port [range]
-                    str_tmp="$cur" str_var=""
-                    str_glob='[^\[]*-*'
-                    if [[ $cur = \[*-*\]-* ]]; then str_var="${cur#\[}"
-                        str_var="${str_var%%\]*}"
-                        cur="${cur#*\]-}"
-                        str_tmp=${str_tmp%"$cur"}
-                    elif [[ $cur = $str_glob ]]; then str_var="${cur%%-*}"
-                        cur="${cur#*-}"
-                        str_tmp=${str_tmp%"$cur"}
-                    else str_tmp=""
-                        compopt -o nospace
-                    fi
-                    COMPREPLY=( $( compgen -P "$str_tmp" \
-                        -W '$(_ipset_get_services -o $str_var)' -- "$cur" ) )
+                    _ipset_complete_portrange "$cur"
                 ;;
                 # show sets if the set to add is of type list:set
                 list:*) arr_tmp=() arr_sets=( $(ipset list -n) )
@@ -1000,89 +1261,220 @@ elif ((cword == action_index+2)) && [[ $str_setname = $prev ]]; then
                     COMPREPLY=( $( compgen -W '${arr_tmp[@]}' -- "$cur" ) )
                     _ipset_colon_ltrim "$cur"
                 ;;
-                hash:@(ip,port|ip,port,ip|ip,port,net|net,port))
-                    _ipset_complete_hostport_spec
-                ;;
-                hash:net,iface)
-                    _ipset_complete_iface_spec
-                ;;
             esac
         ;;
-        del|test)
+        del)
             str_type=$(_ipset_get_set_type "$str_setname")
-            if [[ $str_action = del && $str_type = bitmap:@(ip|port) ]]; then
-                # complete members
+            if [[ $str_type = bitmap:ip ]]; then
                 str_prefix=""
-                _ipset_get_members --names-only "$str_setname"
-                if [[ $cur = *-* ]]; then
-                    if [[ $str_type = bitmap:port ]]; then
-                        for i in ${!arr_members[@]}; do
-                            ((${arr_members[i]} <= ${cur%%-*})) && \
-                                unset arr_members[i] || break
-                        done
+                if [[ ${_IPSET_COMPL_DEL_MODE:=both} = members ]]; then
+                    _ipset_complete_elements "$cur"
+                elif [[ ${_IPSET_COMPL_DEL_MODE} = spec ]]; then
+                    _ipset_complete_host_spec "$cur" --v4
+                    _ipset_colon_ltrim "$cur"
+                else
+                    _ipset_complete_host_spec "$cur" --v4
+                    _ipset_complete_elements "$cur"
+                    _ipset_colon_ltrim "$cur"
+                fi
+            elif [[ $str_type = bitmap:port ]]; then
+                str_prefix=""
+                if [[ ${_IPSET_COMPL_DEL_MODE:=both} = members ]]; then
+                    _ipset_complete_elements "$cur"
+                elif [[ ${_IPSET_COMPL_DEL_MODE} = spec ]]; then
+                    _ipset_complete_portrange "$cur"
+                else
+                    _ipset_complete_portrange "$cur"
+                    _ipset_get_members --names-only "$str_setname"
+                    str_glob='?(tcp:|udp:)@([![]*-*|\[?*\]-*)'
+                    if [[ $cur = $str_glob ]]; then
+                        str_var="${cur#?(tcp:|udp:)}" # offset
+                        str_tmp="${cur%"$str_var"}" # proto
+                        # identify service number by name, to find the offset
+                        if [[ $str_var != +([[:digit:]]) ]]; then
+                            if [[ $str_var = \[+([![])\]-* ]]; then
+                                str_var="${str_var%%\]*}"
+                                str_var="${str_var#\[}"
+                            elif  [[ $str_var = *-* ]]; then
+                                str_var="${str_var%%-*}"
+                            fi
+                            str_var=$(_ipset_get_svnum -p "${str_tmp:-all}" -o "$str_var")
+                        fi
+                        if [[ $str_var = +([[:digit:]]) ]]; then
+                            for i in ${!arr_members[@]}; do
+                                ((${arr_members[i]} <= $str_var)) && \
+                                    unset arr_members[i] || break
+                            done
+                        fi
+                        str_prefix="${cur%-*}-" cur="${cur##*-}"
                     fi
-                    str_prefix="${cur%-*}-" cur="${cur#*-}"
-                else
-                    compopt -o nospace
+                    COMPREPLY+=( $( compgen -P "$str_prefix" -W '${arr_members[@]}' -- "$cur" ) )
                 fi
-                COMPREPLY=( $( compgen -P "$str_prefix" -W '${arr_members[@]}' -- "$cur" ) )
-            elif [[ $str_action = del && $str_type = hash:@(ip,port|ip,port,ip|ip,port,net|net,port) ]]
-            then
+            elif [[ $str_type = bitmap:ip,mac ]]; then
+                str_prefix=""
                 if [[ ${_IPSET_COMPL_DEL_MODE:=both} = members ]]; then
-                    _ipset_get_members --names-only "$str_setname"
-                    COMPREPLY=( $( compgen -W '${arr_members[@]}' -- "$cur" ) )
+                    _ipset_complete_elements "$cur" --no-range
                     _ipset_colon_ltrim "$cur"
                 elif [[ ${_IPSET_COMPL_DEL_MODE} = spec ]]; then
-                    _ipset_complete_hostport_spec
+                    _ipset_complete_host_spec "$cur" --v4 --no-range
+                    _ipset_colon_ltrim "$cur"
                 else
-                    _ipset_get_members --names-only "$str_setname"
-                    _ipset_complete_hostport_spec
-                    COMPREPLY+=( $( compgen -W '${arr_members[@]}' -- "$cur" ) )
+                    _ipset_complete_host_spec "$cur" --v4 --no-range
+                    _ipset_complete_elements "$cur" --no-range
                     _ipset_colon_ltrim "$cur"
                 fi
-            elif [[ $str_action = test && $str_type = hash:@(ip,port|ip,port,ip|ip,port,net|net,port) ]]
-            then
-                if [[ ${_IPSET_COMPL_TEST_MODE:=both} = members ]]; then
-                    _ipset_get_members --names-only "$str_setname"
-                    COMPREPLY=( $( compgen -W '${arr_members[@]}' -- "$cur" ) )
-                    _ipset_colon_ltrim "$cur"
-                elif [[ ${_IPSET_COMPL_TEST_MODE} = spec ]]; then
-                    _ipset_complete_hostport_spec
-                else
-                    _ipset_get_members --names-only "$str_setname"
-                    _ipset_complete_hostport_spec
-                    COMPREPLY+=( $( compgen -W '${arr_members[@]}' -- "$cur" ) )
-                    _ipset_colon_ltrim "$cur"
-                fi
-            elif [[ $str_action = del && $str_type = hash:net,iface ]]; then
+            elif [[ $str_type = hash:@(ip?(,mark)|net) ]]; then
+                str_prefix=""
                 if [[ ${_IPSET_COMPL_DEL_MODE:=both} = members ]]; then
-                    _ipset_get_members --names-only "$str_setname"
-                    COMPREPLY=( $( compgen -W '${arr_members[@]}' -- "$cur" ) )
+                    _ipset_complete_elements "$cur"
                     _ipset_colon_ltrim "$cur"
                 elif [[ ${_IPSET_COMPL_DEL_MODE} = spec ]]; then
-                    _ipset_complete_iface_spec
+                    _ipset_complete_host_spec "$cur"
+                    _ipset_colon_ltrim "$cur"
                 else
-                    _ipset_get_members --names-only "$str_setname"
-                    _ipset_complete_iface_spec
-                    COMPREPLY+=( $( compgen -W '${arr_members[@]}' -- "$cur" ) )
+                    _ipset_complete_host_spec "$cur"
+                    _ipset_complete_elements "$cur"
                     _ipset_colon_ltrim "$cur"
                 fi
-            elif [[ $str_action = test && $str_type = hash:net,iface ]]; then
+            elif [[ $str_type = hash:net,net ]]; then
+                if [[ ${_IPSET_COMPL_DEL_MODE:=both} = members ]]; then
+                    _ipset_complete_elements "$cur"
+                    _ipset_colon_ltrim "$cur"
+                elif [[ ${_IPSET_COMPL_DEL_MODE} = spec ]]; then
+                    _ipset_complete_netnet_spec "$cur"
+                    _ipset_colon_ltrim "$cur"
+                else
+                    _ipset_complete_netnet_spec "$cur"
+                    _ipset_complete_elements "$cur"
+                    _ipset_colon_ltrim "$cur"
+                fi
+            elif [[ $str_type = hash:@(ip,port|ip,port,ip|ip,port,net|net,port|net,port,net) ]]
+            then
+                if [[ ${_IPSET_COMPL_DEL_MODE:=both} = members ]]; then
+                    _ipset_complete_elements "$cur" --no-range
+                    _ipset_colon_ltrim "$cur"
+                elif [[ ${_IPSET_COMPL_DEL_MODE} = spec ]]; then
+                    _ipset_complete_hostport_spec "$cur"
+                else
+                    _ipset_complete_elements "$cur" --no-range
+                    _ipset_complete_hostport_spec "$cur"
+                    _ipset_colon_ltrim "$cur"
+                fi
+            elif [[  $str_type = hash:net,iface ]]; then
                 if [[ ${_IPSET_COMPL_TEST_MODE:=both} = members ]]; then
-                    _ipset_get_members --names-only "$str_setname"
-                    COMPREPLY=( $( compgen -W '${arr_members[@]}' -- "$cur" ) )
+                    _ipset_complete_elements "$cur" --no-range
                     _ipset_colon_ltrim "$cur"
                 elif [[ ${_IPSET_COMPL_TEST_MODE} = spec ]]; then
-                    _ipset_complete_iface_spec
+                    _ipset_complete_iface_spec "$cur"
                 else
-                    _ipset_get_members --names-only "$str_setname"
-                    _ipset_complete_iface_spec
-                    COMPREPLY+=( $( compgen -W '${arr_members[@]}' -- "$cur" ) )
+                    _ipset_complete_elements "$cur" --no-range
+                    _ipset_complete_iface_spec "$cur"
                     _ipset_colon_ltrim "$cur"
                 fi
             else
-                _ipset_get_members --names-only "$str_setname"
-                COMPREPLY=( $( compgen -W '${arr_members[@]}' -- "$cur" ) )
+                _ipset_complete_elements "$cur" --no-range
+                _ipset_colon_ltrim "$cur"
+            fi
+        ;;
+        test)
+            str_type=$(_ipset_get_set_type "$str_setname")
+            if [[ $str_type = bitmap:ip ]]; then
+                if [[ ${_IPSET_COMPL_TEST_MODE:=both} = members ]]; then
+                    _ipset_complete_elements "$cur" --no-range
+                elif [[ ${_IPSET_COMPL_TEST_MODE} = spec ]]; then
+                    _ipset_complete_host_spec "$cur" --no-range --v4
+                else
+                    _ipset_complete_elements "$cur" --no-range
+                    if ! _ipset_complete_host_spec "$cur" --no-range --v4; then
+                        COMPREPLY=()
+                    fi
+                fi
+            elif [[ $str_type = hash:ip?(,mark) ]]; then
+                if [[ ${_IPSET_COMPL_TEST_MODE:=both} = members ]]; then
+                    _ipset_complete_elements "$cur" --no-range
+                    _ipset_colon_ltrim "$cur"
+                elif [[ ${_IPSET_COMPL_TEST_MODE} = spec ]]; then
+                    _ipset_complete_host_spec "$cur" --no-range
+                    _ipset_colon_ltrim "$cur"
+                else
+                    _ipset_complete_elements "$cur" --no-range
+                    if ! _ipset_complete_host_spec "$cur" --no-range; then
+                        COMPREPLY=()
+                    fi
+                    _ipset_colon_ltrim "$cur"
+                fi
+            elif [[ $str_type = hash:net ]]; then
+                if [[ ${_IPSET_COMPL_TEST_MODE:=both} = members ]]; then
+                    _ipset_complete_elements "$cur" --no-range
+                    _ipset_colon_ltrim "$cur"
+                elif [[ ${_IPSET_COMPL_TEST_MODE} = spec ]]; then
+                    _ipset_complete_host_spec "$cur"
+                    _ipset_colon_ltrim "$cur"
+                else
+                    _ipset_complete_elements "$cur" --no-range
+                    if ! _ipset_complete_host_spec "$cur"; then
+                        COMPREPLY=()
+                    fi
+                    _ipset_colon_ltrim "$cur"
+                fi
+            elif [[ $str_type = hash:@(ip,port|ip,port,ip|ip,port,net|net,port|net,port,net) ]]
+            then
+                if [[ ${_IPSET_COMPL_TEST_MODE:=both} = members ]]; then
+                    _ipset_complete_elements "$cur" --no-range
+                    _ipset_colon_ltrim "$cur"
+                elif [[ ${_IPSET_COMPL_TEST_MODE} = spec ]]; then
+                    _ipset_complete_hostport_spec "$cur"
+                else
+                    _ipset_complete_elements "$cur" --no-range
+                    _ipset_complete_hostport_spec "$cur"
+                    _ipset_colon_ltrim "$cur"
+                fi
+            elif [[ $str_type = hash:net,iface ]]; then
+                if [[ ${_IPSET_COMPL_TEST_MODE:=both} = members ]]; then
+                    _ipset_complete_elements "$cur" --no-range
+                    _ipset_colon_ltrim "$cur"
+                elif [[ ${_IPSET_COMPL_TEST_MODE} = spec ]]; then
+                    _ipset_complete_iface_spec "$cur"
+                else
+                    _ipset_complete_elements "$cur" --no-range
+                    _ipset_complete_iface_spec "$cur"
+                    _ipset_colon_ltrim "$cur"
+                fi
+            elif [[ $str_type = bitmap:port ]]; then
+                str_prefix="" str_tmp="$cur"
+                if [[ $cur = @(tcp|udp):* ]]; then
+                    ((got_bp_proto)) || return 0 # supported since ipset v6.20
+                    str_prefix="${cur%:*}"
+                    str_tmp="${str_tmp#${str_prefix}:}"
+                fi
+                if [[ ${_IPSET_COMPL_TEST_MODE:=both} = members ]]; then
+                    _ipset_complete_elements "$cur" --no-range
+                    _ipset_colon_ltrim "$cur"
+                elif [[ ${_IPSET_COMPL_TEST_MODE} = spec ]]; then
+                    if ((got_bp_proto)); then # supported since ipset v6.20
+                        COMPREPLY=( $(compgen -W \
+                            'tcp: udp: $(_ipset_get_services -p "$str_prefix")' -- "$str_tmp" ) )
+                        [[ ${COMPREPLY[*]} = @(tcp|udp): ]] && compopt -o nospace
+                        _ipset_colon_ltrim "$cur"
+                    else # only tcp services prior to ipset v6.20
+                        COMPREPLY=( $(compgen \
+                            -W '$(_ipset_get_services -p tcp)' -- "$cur" ) )
+                    fi
+                else
+                    if ((got_bp_proto)); then # supported since ipset v6.20
+                        COMPREPLY=( $(compgen -W \
+                            'tcp: udp: $(_ipset_get_services -p "$str_prefix")' -- "$str_tmp" ) )
+                        [[ ${COMPREPLY[*]} = @(tcp|udp): ]] && compopt -o nospace
+                        _ipset_colon_ltrim "$cur"
+                    else # only tcp services prior to ipset v6.20
+                        COMPREPLY=( $(compgen \
+                            -W '$(_ipset_get_services -p tcp)' -- "$cur" ) )
+                    fi
+                    _ipset_complete_elements "$cur" --no-range
+                    _ipset_colon_ltrim "$cur"
+                fi
+            else
+                _ipset_complete_elements "$cur" --no-range
                 _ipset_colon_ltrim "$cur"
             fi
         ;;
@@ -1091,49 +1483,63 @@ elif ((cword == action_index+3)) && [[ $cur != -* ]]; then
     case "$str_action" in
         add)
             str_type=$(_ipset_get_set_type "$str_setname")
-            if _ipset_set_has_timout "$str_setname"; then
+            if _ipset_set_has_option timeout "$str_setname"; then
                 str_timeout=timeout
             else
                 str_timeout=""
             fi
+            if ! _ipset_set_has_option counters "$str_setname"; then
+                str_bp_counters=""
+            fi
+            if ! _ipset_set_has_option comment "$str_setname"; then
+                str_comment=""
+            fi
+            if ! _ipset_set_has_option skbinfo "$str_setname"; then
+                str_skbflags=""
+            fi
             case "$str_type" in
                 hash:*net*)
                     COMPREPLY=( $( compgen -W \
-                        '$(_ipset_dedupe_cmd_opts $str_timeout $str_counters nomatch)' \
+                        '$(_ipset_dedupe_cmd_opts $str_timeout $str_bp_counters $str_comment $str_skbflags nomatch)' \
                         -- "$cur" ) )
                 ;;
                 hash:*!(net)*|bitmap:*)
                     COMPREPLY=( $( compgen -W \
-                        '$(_ipset_dedupe_cmd_opts $str_timeout $str_counters)' \
+                        '$(_ipset_dedupe_cmd_opts $str_timeout $str_bp_counters $str_skbflags $str_comment)' \
                         -- "$cur" ) )
                 ;;
                 list:*)
                     COMPREPLY=( $( compgen -W \
-                        '$(_ipset_dedupe_cmd_opts $str_order $str_timeout $str_counters)' \
+                        '$(_ipset_dedupe_cmd_opts $str_order $str_timeout $str_bp_counters $str_skbflags $str_comment)' \
                         -- "$cur" ) )
                 ;;
             esac
         ;;
         create|n)
             case "$prev" in
+                hash:ip,mark)
+                    COMPREPLY=( $( compgen -W \
+                        '$(_ipset_dedupe_cmd_opts family hashsize timeout maxelem $str_counters $str_skbinfo $str_markmask $str_comment $str_forceadd)' \
+                        -- "$cur" ) )
+                ;;
                 hash:*)
                     COMPREPLY=( $( compgen -W \
-                        '$(_ipset_dedupe_cmd_opts family hashsize timeout maxelem $str_counters)' \
+                        '$(_ipset_dedupe_cmd_opts family hashsize timeout maxelem $str_counters $str_skbinfo $str_comment $str_forceadd)' \
                         -- "$cur" ) )
                 ;;
                 bitmap:ip)
                     COMPREPLY=( $( compgen -W \
-                        '$(_ipset_dedupe_cmd_opts range netmask timeout $str_counters)' \
+                        '$(_ipset_dedupe_cmd_opts range netmask timeout $str_counters $str_skbinfo $str_comment)' \
                     -- "$cur" ) )
                 ;;
                 bitmap:!(ip)?*)
                     COMPREPLY=( $( compgen -W \
-                        '$(_ipset_dedupe_cmd_opts range timeout $str_counters)' \
+                        '$(_ipset_dedupe_cmd_opts range timeout $str_counters $str_skbinfo $str_comment)' \
                         -- "$cur" ) )
                 ;;
                 list:*)
                     COMPREPLY=( $( compgen -W \
-                        '$(_ipset_dedupe_cmd_opts size timeout $str_counters)' \
+                        '$(_ipset_dedupe_cmd_opts size timeout $str_counters $str_skbinfo $str_comment)' \
                         -- "$cur" ) )
                 ;;
             esac
@@ -1142,126 +1548,180 @@ elif ((cword == action_index+3)) && [[ $cur != -* ]]; then
             str_type=$(_ipset_get_set_type "$str_setname")
             if [[ $str_type = list:* ]]; then
                 COMPREPLY=( $( compgen -W '$str_order' -- "$cur" ) )
+            elif [[ $str_action = test && $str_type = hash:*net* ]]; then
+                COMPREPLY=( $( compgen -W 'nomatch' -- "$cur" ) )
             fi
         ;;
     esac
 elif ((cword == action_index+3)) && [[ $cur = -* ]]; then
     _ipset_get_options
-elif ((cword >= action_index+4)); then # add options following
-    if [[ $cur = -* && \
-        $prev != @(timeout|hashsize|size|family|maxelem|range|netmask|before|after|counters) ]]
-    then _ipset_get_options
-        return 0
+elif ((cword >= action_index+4)) && [[ $cur = -* ]]; then # add all following hyphen options
+    if [[ $prev != @(timeout|hashsize|size|family|maxelem|range|netmask|before|after|bytes|packets|comment|markmask|skbmark|skbprio|skbqueue) ]]
+    then
+        _ipset_get_options
     fi
+elif ((cword >= action_index+4)); then # add all following non-hyphen options
     case "$str_action" in
         add)
             str_type=$(_ipset_get_set_type "$str_setname")
-            if _ipset_set_has_timout "$str_setname"; then
+            if _ipset_set_has_option timeout "$str_setname"; then
                 str_timeout=timeout
             else
                 str_timeout=""
             fi
+            if ! _ipset_set_has_option counters "$str_setname"; then
+                str_bp_counters=""
+            fi
+            if ! _ipset_set_has_option comment "$str_setname"; then
+                str_comment=""
+            fi
+            if ! _ipset_set_has_option skbinfo "$str_setname"; then
+                str_skbflags=""
+            fi
             # validate option argument values
-            for ((x=$action_index+3; x < ${#words[@]}; x++)); do
-                [[ ${words[x]} = timeout && \
-                    ${words[x+1]} != @(+([[:digit:]])|0x+([[:xdigit:]])) ]] && return 0
-            done
+            if [[ ${_IPSET_VALIDATE_INPUT-1} ]]; then
+                for ((x=$action_index+3; x < ${#words[@]}; x++)); do
+                    if [[ ${words[x]} = @(timeout|bytes|packets) ]]; then
+                        [[ ${words[x+1]} = @(+([[:digit:]])|0[xX]+([[:xdigit:]])) ]] || return 0
+                    elif [[ ${words[x]} = skbmark ]]; then
+                        if [[ ${words[x+1]} = 0[xX]+([[:xdigit:]])?(/0[xX]+([[:xdigit:]])) ]]; then
+                            (( ${words[x+1]%/*} >= 0 && ${words[x+1]%/*} <= 0xFFFFFFFF )) || return 0
+                            (( ${words[x+1]#*/} >= 0 && ${words[x+1]#*/} <= 0xFFFFFFFF )) || return 0
+                        else
+                            return 0
+                        fi
+                    elif [[ ${words[x]} = skbprio ]]; then
+                        [[ ${words[x+1]} = +([[:xdigit:]]):?(+([[:xdigit:]])) ]] || return 0
+                    elif [[ ${words[x]} = skbqueue ]]; then
+                        [[ ${words[x+1]} = +([[:digit:]]) ]] || return 0
+                    fi
+                done
+            fi
             case "$str_type" in
                 hash:*net*)
-                    if [[ $prev != timeout ]]; then
+                    if [[ $prev != @(timeout|bytes|packets|comment|skbmark|skbprio|skbqueue) ]]; then
                         COMPREPLY=( $( compgen -W \
-                            '$(_ipset_dedupe_cmd_opts $str_timeout $str_counters nomatch)' \
+                            '$(_ipset_dedupe_cmd_opts $str_timeout $str_bp_counters $str_comment $str_skbflags nomatch)' \
+                            -- "$cur" ) )
+                    fi
+                ;;
+                hash:*!(net)*|bitmap:*)
+                    if [[ $prev != @(timeout|bytes|packets|comment|skbmark|skbprio|skbqueue) ]]; then
+                        COMPREPLY=( $( compgen -W \
+                            '$(_ipset_dedupe_cmd_opts $str_timeout $str_bp_counters $str_comment $str_skbflags)' \
                             -- "$cur" ) )
                     fi
                 ;;
                 list:*)
                     if [[ $prev = @(before|after) ]] && ((cword-1 == order_index)); then
-                        _ipset_get_members --names-only "$str_setname"
-                        COMPREPLY=( $( compgen -W '${arr_members[@]}' -- "$cur" ) )
+                        _ipset_complete_elements "$cur"
                         _ipset_colon_ltrim "$cur"
-                    elif [[ $prev != timeout ]]; then
+                    elif [[ $prev != @(timeout|bytes|packets|skbmark|skbprio|skbqueue) ]]; then
                         COMPREPLY=( $( compgen -W \
-                            '$(_ipset_dedupe_cmd_opts $str_order $str_timeout $str_counters)' \
+                            '$(_ipset_dedupe_cmd_opts $str_order $str_timeout $str_bp_counters $str_comment $str_skbflags)' \
                             -- "$cur" ) )
                     fi
                 ;;
             esac
         ;;
         create|n)
-            for ((x=$action_index+3; x < ${#words[@]}; x++)); do
-                if [[ ${words[x+1]} && ${words[x+1]} != $cur ]]; then
-                    case "${words[x]}" in # validate option argument values
-                        @(hashsize|timeout|size|maxelem))
-                            [[ ${words[x+1]} != @(+([[:digit:]])|0x+([[:xdigit:]])) ]] && return 0
-                        ;;
-                        family)
-                            [[ ${words[x+1]} != inet?(6) ]] && return 0
-                        ;;
-                        range)
-                            case "$str_type" in
-                                bitmap:port)
-                                    [[ ${words[x+1]} != *-* ]] && return 0
-                                ;;
-                                *)
-                                    [[ ${words[x+1]} != @(*-*|*/+([[:digit:]])) ]] && return 0
-                                ;;
-                            esac
-                        ;;
-                    esac
-                fi
-            done
+            # validate option argument values
+            if [[ ${_IPSET_VALIDATE_INPUT-1} ]]; then
+                for ((x=$action_index+3; x < ${#words[@]}; x++)); do
+                    if [[ ${words[x+1]} && ${words[x+1]} != $cur ]]; then
+                        case "${words[x]}" in
+                            @(hashsize|timeout|size|maxelem|markmask))
+                                [[ ${words[x+1]} != @(+([[:digit:]])|0[xX]+([[:xdigit:]])) ]] && return 0
+                            ;;
+                            family)
+                                [[ ${words[x+1]} != inet?(6) ]] && return 0
+                            ;;
+                            range)
+                                case "$str_type" in
+                                    bitmap:port)
+                                        [[ ${words[x+1]} != *-* ]] && return 0
+                                    ;;
+                                    *)
+                                        [[ ${words[x+1]} != @(*-*|*/+([[:digit:]])) ]] && return 0
+                                    ;;
+                                esac
+                            ;;
+                        esac
+                    fi
+                done
+            fi
             case "${words[action_index+2]}" in # must be the set type
+                hash:ip,mark)
+                    if [[ $prev = family ]]; then
+                        COMPREPLY=( $( compgen -W \
+                            '$(_ipset_dedupe_cmd_opts inet inet6)' \
+                            -- "$cur" ) )
+                    elif [[ $prev != @(hashsize|timeout|maxelem|markmask) ]]; then
+                        COMPREPLY=( $( compgen -W \
+                            '$(_ipset_dedupe_cmd_opts family hashsize timeout maxelem $str_counters $str_markmask $str_comment $str_forceadd $str_skbinfo)' \
+                            -- "$cur" ) )
+                    fi
+                ;;
                 hash:*)
                     if [[ $prev = family ]]; then
                         COMPREPLY=( $( compgen -W \
                             '$(_ipset_dedupe_cmd_opts inet inet6)' \
                             -- "$cur" ) )
-                    elif [[ $prev != @(family|hashsize|timeout|maxelem) ]]; then
+                    elif [[ $prev != @(hashsize|timeout|maxelem) ]]; then
                         COMPREPLY=( $( compgen -W \
-                            '$(_ipset_dedupe_cmd_opts family hashsize timeout maxelem $str_counters)' \
+                            '$(_ipset_dedupe_cmd_opts family hashsize timeout maxelem $str_counters $str_comment $str_forceadd $str_skbinfo)' \
                             -- "$cur" ) )
                     fi
                 ;;
                 bitmap:ip)
                     if [[ $prev != @(range|netmask|timeout) ]]; then
                         COMPREPLY=( $( compgen -W \
-                            '$(_ipset_dedupe_cmd_opts range netmask timeout $str_counters)' \
+                            '$(_ipset_dedupe_cmd_opts range netmask timeout $str_counters $str_comment $str_skbinfo)' \
                             -- "$cur" ) )
                     fi
                 ;;
                 bitmap:!(ip)?*)
                     if [[ $prev != @(range|timeout) ]]; then
                         COMPREPLY=( $( compgen -W \
-                            '$(_ipset_dedupe_cmd_opts range timeout $str_counters)' \
+                            '$(_ipset_dedupe_cmd_opts range timeout $str_counters $str_comment $str_skbinfo)' \
                             -- "$cur" ) )
                     fi
                 ;;
                 list:*)
                     if [[ $prev != @(size|timeout) ]]; then
                         COMPREPLY=( $( compgen -W \
-                            '$(_ipset_dedupe_cmd_opts size timeout $str_counters)' \
+                            '$(_ipset_dedupe_cmd_opts size timeout $str_counters $str_comment $str_skbinfo)' \
                             -- "$cur" ) )
                     fi
                 ;;
             esac
             if [[ ${words[action_index+2]} = bitmap:port && $prev = range ]]; then
                 # complete port ranges
-                str_prefix="$cur" str_suffix="" str_var="" str_glob='[^\[]*-*'
-                if [[ $cur = \[*-*\]-* ]]; then
-                    str_var="${cur#\[}"
-                    str_var="${str_var%%\]*}"
-                    cur="${cur#*\]-}"
-                    str_prefix=${str_prefix%"$cur"}
-                elif [[ $cur = $str_glob ]]; then
-                    str_var="${cur%%-*}"
-                    cur="${cur#*-}"
-                    str_prefix=${str_prefix%"$cur"}
-                else
-                    str_prefix="" str_suffix=-
-                    compopt -o nospace
+                _ipset_complete_portrange "$cur"
+            elif [[ ${words[action_index+2]} = bitmap:* && $prev = range ]]; then
+                str_prefix=""
+                if [[ $cur = @(""|+([[:word:]])) ]]; then # empty or [:word:]
+                    :
+                elif [[ $cur = [\[]*-*[\]] ]]; then # host with hyphen
+                    :
+                elif [[ $cur = [[]*([!]]) ]]; then # incomplete host with dash
+                    :
+                elif [[ $cur = *-[[]+([!]]) ]]; then # incomplete range - host with dash
+                    str_prefix="${cur%\-[*}-"
+                elif [[ $cur = \[*\]-* ]]; then # first part of hostname range
+                    str_prefix="${cur%\]-*}]-"
+                elif [[ $cur != *-* ]]; then # no hypen
+                    :
+                else # ip-range
+                    str_prefix="${cur%-*}-"
                 fi
-                COMPREPLY=( $( compgen -P "$str_prefix" -S "$str_suffix" \
-                    -W '$(_ipset_get_services -o $str_var)' -- "$cur" ) )
+                _ipset_complete_host_spec "$cur" --v4
+                if ((${#COMPREPLY[@]} == 1)); then
+                    if [[ -z $str_prefix  && ${COMPREPLY[*]} != */* ]]; then
+                        compopt -o nospace
+                        COMPREPLY=( $( compgen -W '${COMPREPLY[*]}/ ${COMPREPLY[*]}-' -- "$cur" ) )
+                    fi
+                fi
             fi
         ;;
         del|test)
@@ -1326,9 +1786,6 @@ else
         restore flush rename e swap w help version' -- "$cur" ) )
     fi
 fi
-fi
-if ! ((${#COMPREPLY[@]})); then # last exit brooklyn
-    [[ $cur ]] && _ipset_bash_default_compl "$cur"
 fi
 if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "COMPREPLY:\n"

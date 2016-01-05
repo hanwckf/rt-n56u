@@ -1,3 +1,208 @@
+6.27
+  - Fix reported memory size for hash:* types
+  - Fix hash type expire: release empty hash bucket block
+  - Fix hash type expiration: incorrect index fixed
+  - Collapse same condition body to a single one
+  - Fix extension alignment
+  - Compatibility: include linux/export.h when needed
+  - Compatibility: make sure vmalloc.h is included for kvfree()
+  - Compatibility: Fix detecting 'struct net' in 'struct tcf_ematch'
+  - Compatibility: Protect definition of RCU_INIT_POINTER in compatibility
+    header file
+  - netfilter: ipset: Fix sleeping memory allocation in atomic context
+    (Nikolay Borisov)
+
+6.26
+  - Out of bound access in hash:net* types fixed (reported by Dave Jones)
+  - Make struct htype per ipset family (originally from Sergey Popovich)
+  - Optimize hash creation routine (originally from Sergey Popovich)
+  - Make sure element data size is a multiple of u32 (originally from Sergey
+    Popovich)
+  - Make NLEN compile time constant for hash types (originally from Sergey
+    Popovich)
+  - Simplify mtype_expire() for hash types (originally from Sergey Popovich)
+  - Count non-static extension memory into the set memory size for userspace
+  - net: sched: Simplify em_ipset_match (Eric W. Biederman)
+
+6.25.1
+  - net/netfilter/ipset: work around gcc-4.4.4 initializer bug
+    (Andrew Morton)
+
+6.25
+  - Add element count to all set types header
+  - Add element count to hash headers (Eric B Munson)
+  - implement nla_put_in_addr and nla_put_in6_addr (Jiri Benc)
+  - deinline ip_set_put_extensions() (Denys Vlasenko)
+  - Fix error path in mtype_resize() when new hash bucket cannot be
+    allocated
+  - There is no need to call synchronize_rcu() after list_add_rcu()
+  - Fix typo in function name get_phyoutdev_name()
+  - Separate memsize calculation code into dedicated functions (originally
+    from Sergey Popovich)
+  - Split extensions into separate files (originally from Sergey Popovich)
+  - Improve comment extension helpers (originally from Sergey Popovich)
+  - Improve skbinfo get/init helpers (originally from Sergey Popovich)
+  - Headers file cleanup (originally from Sergey Popovich)
+  - Correct rcu_dereference_bh_nfnl() usage (originally from Sergey
+    Popovich)
+  - add helpers for fetching physin/outdev (Florian Westphal)
+  - When a single set is destroyed, make sure it can't be grabbed by dump
+  - In comment extension ip_set_comment_free() is always called in a safe
+    path
+  - Add rcu_barrier() to module removal in the bitmap types too
+  - Fix coding styles reported by the most recent checkpatch.pl
+  - Make sure bitmap:ip,mac detects the proper MAC even when it's
+    overwritten
+  - RCU safe comment extension handling
+  - Make sure the proper is_destroyed value is checked at dumping
+  - Fix broken commit "Check extensions attributes before getting
+    extensions."
+  - Improve preprocessor macros checks (Sergey Popovich)
+  - Fix hashing for ipv6 sets (Sergey Popovich)
+  - Fix ext_*() macros so pointers returned by these macros could be
+    referenced directly (Sergey Popovich)
+  - Check for comment netlink attribute length (Sergey Popovich)
+  - Return bool values instead of int (Sergey Popovich)
+  - Check CIDR value only when attribute is given (Sergey Popovich)
+  - Make sure we always return line number on batch (Sergey Popovich)
+  - Permit CIDR equal to the host address CIDR in IPv6 (Sergey Popovich)
+  - Use HOST_MASK literal to represent host address CIDR len (Sergey
+    Popovich)
+  - Check IPSET_ATTR_PORT only once (Sergey Popovich)
+  - Check extensions attributes before getting extensions (Sergey Popovich)
+  - Use SET_WITH_*() helpers to test set extensions (Sergey Popovich)
+  - Return ipset error instead of bool (Sergey Popovich)
+  - Preprocessor directices cleanup (Sergey Popovich)
+  - No need to make nomatch bitfield (Sergey Popovich)
+  - Make sure bit operations are not reordered
+  - Properly calculate extensions offsets and total length (Sergey Popovich)
+  - Fix cidr handling for hash:*net* types, reported by Jonathan Johnson
+  - fix boolreturn.cocci warnings (Fengguang Wu)
+  - make ip_set_get_ip*_port to use skb_network_offset (Alexander Drozdov)
+  - Make sure listing doesn't grab a set which is just being destroyed.
+  - Missing rcu_read_lock() and _unlock() in mtype_list() fixed
+  - Fix coding styles reported by checkpatch.pl
+  - Use nlmsg_total_size instead of NLMSG_SPACE in ip_set_core.c
+  - There's no need to call synchronize_rcu() with kfree_rcu()
+  - Call rcu_barrier() in module removal path
+  - Call synchronize_rcu() in set type (un)register functions only when
+    needed
+  - Remove an unused macro
+  - Give a better name to a macro in ip_set_core.c
+  - Resolve the STREQ macro to make the code more readable, and use
+    nla_strlcpy where possible
+  - Use MSEC_PER_SEC consistently
+  - Remove unnecessary integer RCU handling and fix other sparse warnings
+  - Fix sparse warning "cast to restricted __be32"
+
+6.24
+  - netfilter: ipset: small potential read beyond the end of buffer
+    (Dan Carpenter)
+  - Fix parallel resizing and listing of the same set
+  - styles warned by checkpatch.pl fixed
+  - Introduce RCU in all set types instead of rwlock per set
+    (performance tested by Jesper Dangaard Brouer)
+  - Remove rbtree from hash:net,iface in order to run under RCU
+  - Explicitly add padding elements to hash:net,net and hash:net,port,net
+  - Allocate the proper size of memory when /0 networks are supported
+  - Simplify cidr handling for hash:*net* types
+  - Indicate when /0 networks are supported
+  - Kernel API changes in em_ipset.c, support both old and new ones
+  - netfilter: Convert uses of __constant_<foo> to <foo> (Joe Perches)
+  - net: use the new API kvfree() (WANG Cong)
+  - treewide: fix errors in print (Masanari Iida)
+  - netfilter: use IS_ENABLED(CONFIG_BRIDGE_NETFILTER) (Pablo Neira Ayuso)
+  - Use IS_ENABLED macro and define it if required
+  - Alignment problem between 64bit kernel 32bit userspace fixed
+    (reported by Sven-Haegar Koch)
+  - netfilter: ipset: off by one in ip_set_nfnl_get_byindex()
+    (Dan Carpenter)
+
+6.23
+  - Support updating extensions when the set is full
+    (fixes bugzilla id #880)
+
+6.22
+  - hash:mac type added to ipset
+  - skbinfo extension: send nonzero extension elements only to userspace
+  - netfilter: Convert pr_warning to pr_warn (Joe Perches)
+  - netfilter: ipset: Add skbinfo extension support to SET target.
+    (Anton Danilov)
+  - netfilter: ipset: Add skbinfo extension kernel support for the list
+    set type. (Anton Danilov)
+  - netfilter: ipset: Add skbinfo extension kernel support for the hash
+    set types. (Anton Danilov)
+  - netfilter: ipset: Add skbinfo extension kernel support for the
+    bitmap set types. (Anton Danilov)
+  - netfilter: ipset: Add skbinfo extension kernel support in the ipset
+    core. (Anton Danilov)
+  - Fix static checker warning in ip_set_core.c (reported by Dan Carpenter)
+  - Fix warn: integer overflows 'sizeof(*map) + size * set->dsize'
+    (reported by Dan Carpenter)
+  - net/netfilter/ipset: Resolve missing-field-initializer warnings
+    (Mark Rustad)
+  - netnet,netportnet: Fix value range support for IPv4 (Sergey Popovich)
+  - Removed invalid IPSET_ATTR_MARKMASK validation (Vytas Dauksa) 
+
+6.21.1
+  - netfilter: ip_set: rename nfnl_dereference()/nfnl_set()
+    (Patrick McHardy)
+
+6.21
+  - ipset: add forceadd kernel support for hash set types (Josh Hunt)
+  - netfilter: ipset: move registration message to init from net_init
+    (Ilia Mirkin)
+  - kernel: uapi: fix MARKMASK attr ABI breakage (Florian Westphal)
+  - Prepare the kernel for create option flags when no extension is needed
+  - add markmask for hash:ip,mark data type (Vytas Dauksa)
+  - add hash:ip,mark data type to ipset (Vytas Dauksa)
+  - ipset: remove unused code (Stephen Hemminger)
+  - netfilter: ipset: Add hash: fix coccinelle warnings (Fengguang Wu)
+  - Typo in ip_set_hash_netnet.c fixed (David Binderman)
+  - net ipset: use rbtree postorder iteration instead of opencoding
+    (Cody P Schafer)
+  - ipset: Follow manual page behavior for SET target on list:set
+    (Sergey Popovich)
+
+6.20.1
+  - netfilter: ipset: remove duplicate define (Michael Opdenacker)
+  - net->user_ns is available starting from 3.8, add compatibility
+    checking (reported by Jan Engelhardt)
+  - Fix memory allocation for bitmap:port (reported by Quentin Armitage)
+  - Avoid clashing with configured kernel in [CONFIG_]IP_SET_MAX
+  - The unnamed union initialization may lead to compilation error
+    (reported by Husnu Demir)
+  - Use dev_net() instead of the direct access to ->nd_net (reported by
+    the kbuild test robot)
+
+6.20
+  - Compatibility code is modified not to rely on kernel version numbers
+  - Use netlink callback dump args only
+  - Add hash:net,port,net module to kernel (Oliver Smith)
+  - Add net namespace for ipset (Vitaly Lavrov)
+  - Use a common function at listing the extensions of the elements
+  - For set:list types, replaced elements must be zeroed out
+  - Fix hash resizing with comments
+  - Support comments in the list-type ipset (Oliver Smith)
+  - Support comments in bitmap-type ipsets (Oliver Smith)
+  - Support comments in hash-type ipsets (Oliver Smith)
+  - Support comments for ipset entries in the core (Oliver Smith)
+  - Add hash:net,net module to kernel (Oliver Smith)
+  - Fix serious failure in CIDR tracking (Oliver Smith)
+  - list:set: make sure all elements are checked by the gc
+  - Support extensions which need a per data destroy function
+  - Generalize extensions support
+  - Move extension data to set structure
+  - Rename extension offset ids to extension ids
+  - Prepare ipset to support multiple networks for hash types
+  - Introduce new operation to get both setname and family
+  - Validate the set family and not the set type family at swapping
+    (Bug reported by Quentin Armitage, netfilter bugzilla id #843)
+  - Consistent userspace testing with nomatch flag
+  - Skip really non-first fragments for IPv6 when getting port/protocol
+  - ipset standalone package needs to ship em_ipset.c (reported by Jan
+    Engelhardt)
+
 6.19
   - Compatibility fixes to keep the support of kernels back to 2.6.32
   - Backport nla_put_net64

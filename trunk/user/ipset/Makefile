@@ -2,7 +2,7 @@ SRC_NAME=ipset-6.x
 
 THISDIR = $(shell pwd)
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 	$(MAKE) modules -C $(SRC_NAME)
 

@@ -69,10 +69,9 @@
 # interface. 
 
 #            curr:rev:age
-LIBVERSION = 4:0:1
+LIBVERSION = 9:0:6
 
-AM_CPPFLAGS = $(kinclude_CFLAGS) $(all_includes) -I$(top_srcdir)/include \
-	-I/usr/local/include
+AM_CPPFLAGS = $(kinclude_CFLAGS) $(all_includes) -I$(top_srcdir)/include
 
 AM_CFLAGS = -std=gnu99
 
@@ -83,7 +82,7 @@ AM_CFLAGS += -O2 -DNDEBUG
 endif
 
 SPARSE		= sparse
-SPARSE_FLAGS	= -Wsparse-all -I../include
+SPARSE_FLAGS	= -Wsparse-all -I../include $(SPARSE_EXT_FLAGS)
 IPSET_AM_V_CHECK = $(ipset_am__v_CHECK_$(V))
 ipset_am__v_CHECK_ = $(ipset_am__v_CHECK_$(AM_DEFAULT_VERBOSITY))
 ipset_am__v_CHECK_0 = @echo "  CHECK " $<;

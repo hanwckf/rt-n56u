@@ -1,9 +1,9 @@
 #!/bin/sh
 
-# set -x
+#set -x
 set -e
 
-ipset=../src/ipset
+ipset=${IPSET_BIN:-../src/ipset}
 
 case "$1" in
     -4)
@@ -26,6 +26,14 @@ case "$2" in
     	for x in `seq 0 16`; do
     	    for y in `seq 0 255`; do
     	    	$ipset a test $ip$x$sep$y
+    	    done
+    	done
+    	;;
+    ipmark)
+    	$ipset n test hash:ip,mark $1 hashsize 64 timeout 100
+    	for x in `seq 0 16`; do
+    	    for y in `seq 0 255`; do
+    	    	$ipset a test $ip$x$sep$y,1023
     	    done
     	done
     	;;
@@ -53,6 +61,14 @@ case "$2" in
     	    done
     	done
     	;;
+    netportnet)
+    	$ipset n test hash:net,port,net $1 hashsize 64 timeout 100
+    	for x in `seq 0 16`; do
+    	    for y in `seq 0 128`; do
+    	    	$ipset a test $ip$x$sep$y/$net,1023,$ip$y$sep$x/$net
+    	    done
+    	done
+    	;;
     net)
     	$ipset n test hash:net $1 hashsize 64 timeout 100
     	for x in `seq 0 16`; do
@@ -61,6 +77,14 @@ case "$2" in
     	    done
     	done
     	;;
+    netnet)
+	$ipset n test hash:net,net $1 hashsize 64 timeout 100
+	for x in `seq 0 16`; do
+	    for y in `seq 0 255`; do
+		$ipset a test $ip$x$sep$y/$net,$ip$y$sep$x/$net
+	    done
+	done
+	;;
     netport)
     	$ipset n test hash:net,port $1 hashsize 64 timeout 100
     	for x in `seq 0 16`; do
@@ -79,7 +103,7 @@ case "$2" in
     	;;
 esac
 $ipset l test | grep ^$ip | while read x y z; do
-    if [ $z -lt 10 -o $z -gt 99 ]; then
+    if [ $z -lt 10 -o $z -gt 100 ]; then
     	exit 1
     fi
 done

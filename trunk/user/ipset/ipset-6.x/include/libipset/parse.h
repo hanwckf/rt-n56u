@@ -24,11 +24,17 @@ struct ipset_arg;
 typedef int (*ipset_parsefn)(struct ipset_session *s,
 			     enum ipset_opt opt, const char *str);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int ipset_parse_ether(struct ipset_session *session,
 			     enum ipset_opt opt, const char *str);
 extern int ipset_parse_port(struct ipset_session *session,
 			    enum ipset_opt opt, const char *str,
 			    const char *proto);
+extern int ipset_parse_mark(struct ipset_session *session,
+			    enum ipset_opt opt, const char *str);
 extern int ipset_parse_tcpudp_port(struct ipset_session *session,
 				   enum ipset_opt opt, const char *str,
 				   const char *proto);
@@ -43,6 +49,8 @@ extern int ipset_parse_icmp(struct ipset_session *session,
 extern int ipset_parse_icmpv6(struct ipset_session *session,
 			      enum ipset_opt opt, const char *str);
 extern int ipset_parse_proto_port(struct ipset_session *session,
+				  enum ipset_opt opt, const char *str);
+extern int ipset_parse_tcp_udp_port(struct ipset_session *session,
 				  enum ipset_opt opt, const char *str);
 extern int ipset_parse_family(struct ipset_session *session,
 			      enum ipset_opt opt, const char *str);
@@ -78,6 +86,8 @@ extern int ipset_parse_uint64(struct ipset_session *session,
 			      enum ipset_opt opt, const char *str);
 extern int ipset_parse_uint32(struct ipset_session *session,
 			      enum ipset_opt opt, const char *str);
+extern int ipset_parse_uint16(struct ipset_session *session,
+			      enum ipset_opt opt, const char *str);
 extern int ipset_parse_uint8(struct ipset_session *session,
 			     enum ipset_opt opt, const char *str);
 extern int ipset_parse_netmask(struct ipset_session *session,
@@ -88,12 +98,18 @@ extern int ipset_parse_typename(struct ipset_session *session,
 				enum ipset_opt opt, const char *str);
 extern int ipset_parse_iface(struct ipset_session *session,
 			     enum ipset_opt opt, const char *str);
+extern int ipset_parse_comment(struct ipset_session *session,
+			     enum ipset_opt opt, const char *str);
+extern int ipset_parse_skbmark(struct ipset_session *session,
+			      enum ipset_opt opt, const char *str);
+extern int ipset_parse_skbprio(struct ipset_session *session,
+				enum ipset_opt opt, const char *str);
 extern int ipset_parse_output(struct ipset_session *session,
 			      int opt, const char *str);
 extern int ipset_parse_ignored(struct ipset_session *session,
 			       enum ipset_opt opt, const char *str);
 extern int ipset_parse_elem(struct ipset_session *session,
-			    enum ipset_opt opt, const char *str);
+			    bool optional, const char *str);
 extern int ipset_call_parser(struct ipset_session *session,
 			     const struct ipset_arg *arg,
 			     const char *str);
@@ -103,5 +119,9 @@ extern int ipset_parse_iptimeout(struct ipset_session *session,
 				 enum ipset_opt opt, const char *str);
 extern int ipset_parse_name_compat(struct ipset_session *session,
 				   enum ipset_opt opt, const char *str);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBIPSET_PARSE_H */

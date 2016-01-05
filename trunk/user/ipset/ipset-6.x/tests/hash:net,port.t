@@ -114,6 +114,8 @@
 0 ipset -T test 1.1.1.3,80
 # Delete test set
 0 ipset destroy test
+# Check all possible CIDR values
+0 ./cidr.sh net,port
 # Timeout: Check that resizing keeps timeout values
 0 ./resizet.sh -4 netport
 # Nomatch: Check that resizing keeps the nomatch flag

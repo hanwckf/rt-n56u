@@ -54,7 +54,7 @@
 0 ipset -X && rm setlist.t.r
 # Create sets a, b, c to check before/after in all combinations
 0 ipset restore < setlist.t.before
-# Add set a to test set
+# Add set b to test set
 0 ipset add test b
 # Add set c after b
 0 ipset add test c after b
@@ -92,8 +92,6 @@
 0 ipset -R < setlist.t.restore
 # Add set "before" last one
 0 ipset add test e before d
-# Check reference number of the pushed off set
-0 ref=`ipset list d | grep References | sed 's/References: //'` && test $ref -eq 0
 # Try to add already added set
 1 ipset add test a
 # Check reference number of added set

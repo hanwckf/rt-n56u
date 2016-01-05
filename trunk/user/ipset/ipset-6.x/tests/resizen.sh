@@ -3,7 +3,7 @@
 # set -x
 set -e
 
-ipset=../src/ipset
+ipset=${IPSET_BIN:-../src/ipset}
 
 case "$1" in
     -4)
@@ -34,6 +34,19 @@ case "$2" in
     	    done
     	done
     	;;
+    netportnet)
+    	$ipset n test hash:net,port,net $1 hashsize 64
+    	for x in `seq 0 16`; do
+    	    for y in `seq 0 255`; do
+    	    	$ipset a test $ip$x$sep$y,1023,$ip2/$net nomatch
+    	    done
+    	done
+    	for x in `seq 0 16`; do
+    	    for y in `seq 0 255`; do
+    	    	$ipset t test $ip$x$sep$y,1023,$ip2/$net nomatch 2>/dev/null
+    	    done
+    	done
+    	;;
     net)
     	$ipset n test hash:net $1 hashsize 64
     	for x in `seq 0 16`; do
@@ -47,6 +60,20 @@ case "$2" in
     	    done
     	done
     	;;
+    netnet)
+	$ipset n test hash:net,net $1 hashsize 64
+	for x in `seq 0 16`; do
+	    for y in `seq 0 255`; do
+		$ipset a test $ip$x$sep$y/$net,$ip$y$sep$x/$net nomatch
+	    done
+	done
+	for x in `seq 0 16`; do
+	    for y in `seq 0 255`; do
+		$ipset t test $ip$x$sep$y/$net,$ip$y$sep$x/$net nomatch \
+		2>/dev/null
+	    done
+	done
+	;;
     netport)
     	$ipset n test hash:net,port $1 hashsize 64
     	for x in `seq 0 16`; do

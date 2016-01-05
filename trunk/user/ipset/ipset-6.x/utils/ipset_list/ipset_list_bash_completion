@@ -7,7 +7,7 @@
 # https://sourceforge.net/projects/ipset-list/
 # -----------------------------------------------------------------
 
-# Copyright (C) 2013 AllKind (AllKind@fastest.cc)
+# Copyright (C) 2013-2014 AllKind (AllKind@fastest.cc)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,15 +75,16 @@ done
 
 _ipset_list_complete() {
 local -i i=x=got_bashcompl=0
-local -i show_all=isolate=show_members=resolve=headers_only=set_index=0
+local -i show_all=isolate=show_members=resolve=headers_only=names_only=0
+local -i header_operation=set_index=0
 local cur prev cword words str_tmp
-local sets=( $("$ipset_list" -n ) )
+local sets=( $("${ipset_list:-ipset_list}" -n) )
 local opts=(-- -? -a -c -d -h -i -m -n -r -s -t -v)
 local Copts=(-Ca -Cs -Co)
-local Fopts=(-Fh -Fi -Fg -Fr)
-local Hopts=(-Hr -Hs -Ht -Hv)
+local Fopts=(-Fh -Fi -Fg -Fr -Oi)
+local Hopts=(-Hi -Hr -Hs -Ht -Hv)
 local Topts=(-Tm -To -Ts)
-local Xopts=(-Xh -Xg -Xr -Xs)
+local Xopts=(-Xh -Xg -Xr -Xs -Xo)
 local arr_types=()
 
 : ${PATH:=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}
@@ -120,22 +121,23 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         -a) ((set_index)) && break || show_all=1 ;;
         -i) ((set_index)) && break || isolate=1 Copts=(-Co) ;;
         -m) ((set_index)) && break || show_members=1 ;;
+        -n) ((set_index)) && break || names_only=1 ;;
         -r) ((set_index)) && break || resolve=1 ;;
-        -t) ((set_index)) && break || headers_only=1 ;;
+        -t) ((set_index)) && break || headers_only=1 Xopts=(-Xh -Xs) Fopts=(${Fopts[*]/-Oi/}) ;;
         --) ((set_index)) && break || set_index=$((i+1)) ;;
-        -\?|-h|-n|-v)
+        -\?|-h|-v)
             ((set_index)) || return 0
         ;;
-        @(-Fh|-Fi|-Xh)) ((set_index)) && break || header_operation=1 ;;
+        @(-Fh|-Fi|-Hi|-Xh)) ((set_index)) && break || header_operation=1 ;;
         *)
         ((set_index)) && break
         # options expecting an opt arg
-        str_tmp="@(-@(d|Fg|Fh|Fi|Fr|Ht|Hr|Hs|Hv|Mc|To|Xg|Xh|Xr|Xs))"
+        str_tmp="@(-@(d|Fg|Fh|Fi|Fr|Hi|Ht|Hr|Hs|Hv|Mc|Oi|To|Xg|Xh|Xr|Xs))"
         if [[ ${words[i-1]} = $str_tmp ]]; then
             continue
         fi
         # if not an option, register set index
-        str_tmp="@(-@(-|?|a|c|d|h|i|m|n|r|s|t|v|Ca|Cs|Co|Fg|Fh|Fi|Fr|Ht|Hr|Hs|Hv|Mc|To|Tm|Ts|Xg|Xh|Xr))"
+        str_tmp="@(-@(-|?|a|c|d|h|i|m|n|r|s|t|v|Ca|Cs|Co|Fg|Fh|Fi|Fr|Hi|Ht|Hr|Hs|Hv|Mc|Oi|To|Tm|Ts|Xg|Xh|Xo|Xr))"
         if [[ ${words[i]} != $str_tmp ]]; then
             for x in ${!sets[@]}; do
                 if [[ ${sets[x]} = ${words[i]} ]]; then
@@ -148,7 +150,12 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
 done
 
 # invalid combinations of options
-if ((headers_only)); then
+if ((names_only)); then
+    if ((headers_only)); then
+        return 0
+    fi
+fi
+if ((headers_only||names_only)); then
     if ((show_all || show_members || isolate || resolve)); then
         return 0
     fi
@@ -169,7 +176,7 @@ if ((set_index)); then
     # and also handles those who have the name of ipset_list options
     _ipset_list_show_sets
 else
-if [[ $prev = @(-@(\?|d|h|n|v|Fg|Fi|Fr|Ht|To|Xg|Xr)) ]]; then
+if [[ $prev = @(-@(\?|d|h|v|Fg|Fi|Fr|Hi|Ht|Oi|To|Xg|Xr)) ]]; then
     return 0
 elif [[ $prev = -Xs ]]; then
     # list sets if user does not want to enter a glob
@@ -217,7 +224,7 @@ elif [[ $prev = @(-@(Hr|Hs|Hv|Mc)) ]]; then
 elif [[ $cur = -* ]]; then
     # any option is requested
     case "$prev" in
-        @(-@(\?|d|h|n|v|Fg|Fh|Fi|Fr|Ht|Hr|Hs|Hv|Mc|To|Xg|Xh|Xr)))
+        @(-@(\?|d|h|v|Fg|Fh|Fi|Fr|Hi|Ht|Hr|Hs|Hv|Mc|Oi|To|Xg|Xh|Xr)))
         # options that exclude any other option,
         # or need a value we can't predict
             return 0
@@ -225,18 +232,22 @@ elif [[ $cur = -* ]]; then
     esac
     # these options don't allow any other
     if ((${#words[@]} > 2)); then
-        opts=("${opts[@]/@(-n|-h|-\?)/}")
+        opts=("${opts[@]/@(-v|-h|-\?)/}")
     fi
     # some options allow only a subset of other options
     if ((isolate)); then
-        COMPREPLY=( $(compgen -W '-- -Co -d -r -s' -- $cur ) )
+        COMPREPLY=( $(compgen -W '-- -Co -d -r -s -Fg -Fr -Oi -To -Xg -Xo -Xr' -- $cur ) )
+    elif ((names_only)); then
+        COMPREPLY=( $(compgen -W \
+            '-- -c ${Copts[@]} ${Fopts[@]} ${Hopts[@]} -Mc ${Topts[@]} -Xs' \
+            -- $cur ) )
     elif ((headers_only)); then
         COMPREPLY=( $(compgen -W \
             '-- -c ${Copts[@]} ${Fopts[@]} ${Hopts[@]} -Mc ${Topts[@]} ${Xopts[@]}' \
             -- $cur ) )
     elif ((show_members)); then
         COMPREPLY=( $(compgen -W \
-            '-- -c -d -r -s ${Copts[@]} ${Fopts[@]} ${Hopts[@]} -Mc ${Topts[@]}' \
+            '-- -c -d -r -s ${Copts[@]} ${Fopts[@]} ${Hopts[@]} -Mc ${Topts[@]} -Xg -Xr -Xo' \
             -- $cur ) )
     elif ((show_all)); then
         COMPREPLY=( $(compgen -W \
@@ -261,13 +272,13 @@ elif [[ $cur = -* ]]; then
         # mutual exclusive options
         for ((i=1; i < x; i++)); do
             case "${words[i]}" in
-                -Fg) _ipset_list_remove_reply_entry "-Fr" "-Xg" "-Xr" ;;
-                -Fr) _ipset_list_remove_reply_entry "-Fg" "-Xg" "-Xr" ;;
-                -Xg) _ipset_list_remove_reply_entry "-Fg" "-Fr" "-Xr" ;;
-                -Xr) _ipset_list_remove_reply_entry "-Fg" "-Fr" "-Xg" ;;
+                -Fg) _ipset_list_remove_reply_entry "-Fr" ;;
+                -Fr) _ipset_list_remove_reply_entry "-Fg" ;;
+                -Xg) _ipset_list_remove_reply_entry "-Xr" ;;
+                -Xr) _ipset_list_remove_reply_entry "-Xg" ;;
             esac
             # options allowed multiple times
-            if [[ ${words[i]} = @(""|-|-@(Fh|Fi|Mc|Xh|Xs)) ]]; then
+            if [[ ${words[i]} = @(""|-|-@(Fh|Fi|Hi|Mc|Oi|Xh|Xs)) ]]; then
                 continue
             else # remove dupe
                 _ipset_list_remove_reply_entry "${words[i]}"

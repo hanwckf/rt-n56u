@@ -15,6 +15,7 @@ Makefile
 .tmp_versions
 Module.symvers
 modules.order
+kernel/include/linux/netfilter/ipset/ip_set_compat.h
 
 /autom4te.cache/
 /config.h

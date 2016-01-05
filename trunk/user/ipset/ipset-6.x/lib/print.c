@@ -13,6 +13,7 @@
 #include <arpa/inet.h>				/* inet_ntop */
 #include <net/ethernet.h>			/* ETH_ALEN */
 #include <net/if.h>				/* IFNAMSIZ */
+#include <inttypes.h>				/* PRIx macro */
 
 #include <libipset/debug.h>			/* D() */
 #include <libipset/data.h>			/* ipset_data_* */
@@ -491,6 +492,41 @@ ipset_print_port(char *buf, unsigned int len,
 }
 
 /**
+ * ipset_print_mark - print mark to string
+ * @buf: printing buffer
+ * @len: length of available buffer space
+ * @data: data blob
+ * @opt: the option kind
+ * @env: environment flags
+ *
+ * Print mark to output buffer.
+ *
+ * Return lenght of printed string or error size.
+ */
+int
+ipset_print_mark(char *buf, unsigned int len,
+		   const struct ipset_data *data,
+		   enum ipset_opt opt ASSERT_UNUSED,
+		   uint8_t env UNUSED)
+{
+	const uint32_t *mark;
+	int size, offset = 0;
+
+	assert(buf);
+	assert(len > 0);
+	assert(data);
+	assert(opt == IPSET_OPT_MARK || opt == IPSET_OPT_MARKMASK);
+
+	mark = ipset_data_get(data, opt);
+	assert(mark);
+
+	size = snprintf(buf, len, "0x%08"PRIx32, *mark);
+	SNPRINTF_FAILURE(size, len, offset);
+
+	return offset;
+}
+
+/**
  * ipset_print_iface - print interface element string
  * @buf: printing buffer
  * @len: length of available buffer space
@@ -528,6 +564,86 @@ ipset_print_iface(char *buf, unsigned int len,
 	SNPRINTF_FAILURE(size, len, offset);
 	return offset;
 }
+
+/**
+ * ipset_print_comment - print arbitrary parameter string
+ * @buf: printing buffer
+ * @len: length of available buffer space
+ * @data: data blob
+ * @opt: the option kind
+ * @env: environment flags
+ *
+ * Print arbitrary string to output buffer.
+ *
+ * Return length of printed string or error size.
+ */
+int ipset_print_comment(char *buf, unsigned int len,
+		       const struct ipset_data *data, enum ipset_opt opt,
+		       uint8_t env UNUSED)
+{
+	const char *comment;
+	int size, offset = 0;
+
+	assert(buf);
+	assert(len > 0);
+	assert(data);
+	assert(opt == IPSET_OPT_ADT_COMMENT);
+
+	comment = ipset_data_get(data, opt);
+	assert(comment);
+	size = snprintf(buf + offset, len, "\"%s\"", comment);
+	SNPRINTF_FAILURE(size, len, offset);
+	return offset;
+}
+
+int
+ipset_print_skbmark(char *buf, unsigned int len,
+		    const struct ipset_data *data, enum ipset_opt opt,
+		    uint8_t env UNUSED)
+{
+	int size, offset = 0;
+	const uint64_t *skbmark;
+	uint32_t mark, mask;
+
+	assert(buf);
+	assert(len > 0);
+	assert(data);
+	assert(opt == IPSET_OPT_SKBMARK);
+
+	skbmark = ipset_data_get(data, IPSET_OPT_SKBMARK);
+	assert(skbmark);
+	mark = *skbmark >> 32;
+	mask = *skbmark & 0xffffffff;
+	if (mask == 0xffffffff)
+		size = snprintf(buf + offset, len, "0x%"PRIx32, mark);
+	else
+		size = snprintf(buf + offset, len,
+				"0x%"PRIx32"/0x%"PRIx32, mark, mask);
+	SNPRINTF_FAILURE(size, len, offset);
+	return offset;
+}
+
+int
+ipset_print_skbprio(char *buf, unsigned int len,
+		    const struct ipset_data *data, enum ipset_opt opt,
+		    uint8_t env UNUSED)
+{
+	int size, offset = 0;
+	const uint32_t *skbprio;
+
+	assert(buf);
+	assert(len > 0);
+	assert(data);
+	assert(opt == IPSET_OPT_SKBPRIO);
+
+	skbprio = ipset_data_get(data, opt);
+	assert(skbprio);
+	size = snprintf(buf + offset, len, "%x:%x",
+			*skbprio >> 16, *skbprio & 0xffff);
+	SNPRINTF_FAILURE(size, len, offset);
+	return offset;
+}
+
 
 /**
  * ipset_print_proto - print protocol name
@@ -678,18 +794,20 @@ ipset_print_proto_port(char *buf, unsigned int len,
 		case IPPROTO_UDPLITE:
 			break;
 		case IPPROTO_ICMP:
-			return ipset_print_icmp(buf + offset, len, data,
+			size = ipset_print_icmp(buf + offset, len, data,
 						IPSET_OPT_PORT, env);
+			goto out;
 		case IPPROTO_ICMPV6:
-			return ipset_print_icmpv6(buf + offset, len, data,
+			size = ipset_print_icmpv6(buf + offset, len, data,
 						  IPSET_OPT_PORT, env);
+			goto out;
 		default:
 			break;
 		}
 	}
 	size = ipset_print_port(buf + offset, len, data, IPSET_OPT_PORT, env);
+out:
 	SNPRINTF_FAILURE(size, len, offset);
-
 	return offset;
 }
 
@@ -825,6 +943,7 @@ ipset_print_data(char *buf, unsigned int len,
 	case IPSET_OPT_GC:
 	case IPSET_OPT_HASHSIZE:
 	case IPSET_OPT_MAXELEM:
+	case IPSET_OPT_MARKMASK:
 	case IPSET_OPT_NETMASK:
 	case IPSET_OPT_PROBES:
 	case IPSET_OPT_RESIZE:

@@ -1,8 +1,9 @@
 Name: test
 Type: bitmap:port
-Header: range 0-65535 timeout 8
-Elements: 1
-Size in memory: 524288
+Header: range 0-65535 timeout x
+Size in memory: 532628
 References: 0
+Number of entries: 2
 Members:
-65535 timeout 0
+0 timeout x
+65535 timeout x

@@ -154,7 +154,7 @@ tomato_save(const char *fname)
 			fclose(f);
 			rename(tmp, fname);
 		}
-		else 
+		else
 		{
 			close(t);
 		}
@@ -261,7 +261,7 @@ static void
 tomato_helper(void)
 {
 	struct stat st;
-	
+
 	if (stat("/etc/upnp/delete", &st) == 0)
 	{
 		tomato_delete();
@@ -1503,7 +1503,7 @@ init(int argc, char * * argv, struct runtime_vars * v)
 #else	/* #ifndef MULTIPLE_EXTERNAL_IP */
 			if(i+2 < argc)
 			{
-				char *val=calloc((strlen(argv[i+1]) + strlen(argv[i+2]) + 1), sizeof(char));
+				char *val = calloc((strlen(argv[i+1]) + strlen(argv[i+2]) + 2), sizeof(char));
 				if (val == NULL)
 				{
 					fprintf(stderr, "memory allocation error for listen address storage\n");
@@ -1606,7 +1606,7 @@ init(int argc, char * * argv, struct runtime_vars * v)
 		syslog(LOG_ERR, "MiniUPnPd is already running. EXITING");
 		return 1;
 	}
-	
+
 #ifdef TOMATO
 	syslog(LOG_NOTICE, "version " MINIUPNPD_VERSION " started");
 #endif /* TOMATO */
@@ -1892,7 +1892,7 @@ main(int argc, char * * argv)
 			shttpl_v4 =  OpenAndConfHTTPSocket(&listen_port, 0);
 			if(shttpl_v4 < 0)
 			{
-				syslog(LOG_ERR, "Failed to open socket for HTTP on port %hu (IPv4). EXITING", v.port);
+				syslog(LOG_ERR, "Failed to open socket for HTTP on port %d (IPv4). EXITING", v.port);
 				return 1;
 			}
 		}
@@ -1916,7 +1916,7 @@ main(int argc, char * * argv)
 		shttpsl_v4 =  OpenAndConfHTTPSocket(&listen_port, 0);
 		if(shttpsl_v4 < 0)
 		{
-			syslog(LOG_ERR, "Failed to open socket for HTTPS on port %hu (IPv4). EXITING", v.https_port);
+			syslog(LOG_ERR, "Failed to open socket for HTTPS on port %d (IPv4). EXITING", v.https_port);
 			return 1;
 		}
 #endif /* V6SOCKETS_ARE_V6ONLY */

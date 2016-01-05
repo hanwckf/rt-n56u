@@ -297,7 +297,7 @@ delete_pinhole(unsigned short uid)
 			info = (const struct ip6t_tcp *)&match->data;
 			if((info->spts[0] == p->sport) && (info->dpts[0] == p->dport)) {
 				if(!ip6tc_delete_num_entry(miniupnpd_v6_filter_chain, index, h)) {
-					syslog(LOG_ERR, "ip6tc_delete_num_entry(%s,%d,...): %s",
+					syslog(LOG_ERR, "ip6tc_delete_num_entry(%s,%u,...): %s",
 					       miniupnpd_v6_filter_chain, index, ip6tc_strerror(errno));
 					goto error;
 				}

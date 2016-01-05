@@ -26,6 +26,7 @@
 #include <dirent.h>
 #include <libgen.h>
 #include <errno.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -643,7 +644,7 @@ inotify_remove_directory(int fd, const char * path)
 }
 
 void *
-start_inotify()
+start_inotify(void)
 {
 	struct pollfd pollfds[1];
 	int timeout = 1000;
@@ -652,6 +653,10 @@ start_inotify()
 	int length, i = 0;
 	char * esc_name = NULL;
 	struct stat st;
+	sigset_t set;
+
+	sigfillset(&set);
+	pthread_sigmask(SIG_BLOCK, &set, NULL);
         
 	pollfds[0].fd = inotify_init();
 	pollfds[0].events = POLLIN;

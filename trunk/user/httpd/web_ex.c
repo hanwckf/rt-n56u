@@ -329,7 +329,7 @@ write_textarea_to_file(const char* value, const char* dir_name, const char* file
 			doSystem("rm -f %s/%s", "/home/admin/.ssh", "authorized_keys");
 			return (ret == 0) ? 1 : 0;
 		}
-		if (!strstr(value, "ssh-dss") && !strstr(value, "ssh-rsa") && !strstr(value, "ecdsa"))
+		if (!strstr(value, "ssh-") && !strstr(value, "ecdsa-"))
 			return 0;
 	}
 

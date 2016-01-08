@@ -13,11 +13,7 @@
 #include <string.h>
 #include <xtables.h>
 #include <linux/netfilter/xt_conntrack.h>
-#include <linux/netfilter/xt_state.h>
 #include <linux/netfilter/nf_conntrack_common.h>
-#ifndef XT_STATE_UNTRACKED
-#define XT_STATE_UNTRACKED (1 << (IP_CT_NUMBER + 1))
-#endif
 
 struct ip_conntrack_old_tuple {
 	struct {
@@ -1007,144 +1003,6 @@ conntrack1_mt6_save(const void *ip, const struct xt_entry_match *match)
 	conntrack_dump(&up, "--", NFPROTO_IPV6, true, false);
 }
 
-static void
-state_help(void)
-{
-	printf(
-"state match options:\n"
-" [!] --state [INVALID|ESTABLISHED|NEW|RELATED|UNTRACKED][,...]\n"
-"				State(s) to match\n");
-}
-
-static const struct xt_option_entry state_opts[] = {
-	{.name = "state", .id = O_CTSTATE, .type = XTTYPE_STRING,
-	 .flags = XTOPT_MAND | XTOPT_INVERT},
-	XTOPT_TABLEEND,
-};
-
-static unsigned int
-state_parse_state(const char *state, size_t len)
-{
-	if (strncasecmp(state, "INVALID", len) == 0)
-		return XT_STATE_INVALID;
-	else if (strncasecmp(state, "NEW", len) == 0)
-		return XT_STATE_BIT(IP_CT_NEW);
-	else if (strncasecmp(state, "ESTABLISHED", len) == 0)
-		return XT_STATE_BIT(IP_CT_ESTABLISHED);
-	else if (strncasecmp(state, "RELATED", len) == 0)
-		return XT_STATE_BIT(IP_CT_RELATED);
-	else if (strncasecmp(state, "UNTRACKED", len) == 0)
-		return XT_STATE_UNTRACKED;
-	return 0;
-}
-
-static unsigned int
-state_parse_states(const char *arg)
-{
-	const char *comma;
-	unsigned int mask = 0, flag;
-
-	while ((comma = strchr(arg, ',')) != NULL) {
-		if (comma == arg)
-			goto badstate;
-		flag = state_parse_state(arg, comma-arg);
-		if (flag == 0)
-			goto badstate;
-		mask |= flag;
-		arg = comma+1;
-	}
-	if (!*arg)
-		xtables_error(PARAMETER_PROBLEM, "\"--state\" requires a list of "
-					      "states with no spaces, e.g. "
-					      "ESTABLISHED,RELATED");
-	if (strlen(arg) == 0)
-		goto badstate;
-	flag = state_parse_state(arg, strlen(arg));
-	if (flag == 0)
-		goto badstate;
-	mask |= flag;
-	return mask;
- badstate:
-	xtables_error(PARAMETER_PROBLEM, "Bad state \"%s\"", arg);
-}
-
-static void state_parse(struct xt_option_call *cb)
-{
-	struct xt_state_info *sinfo = cb->data;
-
-	xtables_option_parse(cb);
-	sinfo->statemask = state_parse_states(cb->arg);
-	if (cb->invert)
-		sinfo->statemask = ~sinfo->statemask;
-}
-
-static void state_ct1_parse(struct xt_option_call *cb)
-{
-	struct xt_conntrack_mtinfo1 *sinfo = cb->data;
-
-	xtables_option_parse(cb);
-	sinfo->match_flags = XT_CONNTRACK_STATE;
-	sinfo->state_mask = state_parse_states(cb->arg);
-	if (cb->invert)
-		sinfo->invert_flags |= XT_CONNTRACK_STATE;
-}
-
-static void state_ct23_parse(struct xt_option_call *cb)
-{
-	struct xt_conntrack_mtinfo3 *sinfo = cb->data;
-
-	xtables_option_parse(cb);
-	sinfo->match_flags = XT_CONNTRACK_STATE;
-	sinfo->state_mask = state_parse_states(cb->arg);
-	if (cb->invert)
-		sinfo->invert_flags |= XT_CONNTRACK_STATE;
-}
-
-static void state_print_state(unsigned int statemask)
-{
-	const char *sep = "";
-
-	if (statemask & XT_STATE_INVALID) {
-		printf("%sINVALID", sep);
-		sep = ",";
-	}
-	if (statemask & XT_STATE_BIT(IP_CT_NEW)) {
-		printf("%sNEW", sep);
-		sep = ",";
-	}
-	if (statemask & XT_STATE_BIT(IP_CT_RELATED)) {
-		printf("%sRELATED", sep);
-		sep = ",";
-	}
-	if (statemask & XT_STATE_BIT(IP_CT_ESTABLISHED)) {
-		printf("%sESTABLISHED", sep);
-		sep = ",";
-	}
-	if (statemask & XT_STATE_UNTRACKED) {
-		printf("%sUNTRACKED", sep);
-		sep = ",";
-	}
-}
-
-static void
-state_print(const void *ip,
-      const struct xt_entry_match *match,
-      int numeric)
-{
-	const struct xt_state_info *sinfo = (const void *)match->data;
-
-	printf(" state ");
-	state_print_state(sinfo->statemask);
-}
-
-static void state_save(const void *ip, const struct xt_entry_match *match)
-{
-	const struct xt_state_info *sinfo = (const void *)match->data;
-
-	printf(" --state ");
-	state_print_state(sinfo->statemask);
-}
-
 static struct xtables_match conntrack_mt_reg[] = {
 	{
 		.version       = XTABLES_VERSION,
@@ -1243,55 +1101,6 @@ static struct xtables_match conntrack_mt_reg[] = {
 		.print         = conntrack3_mt6_print,
 		.save          = conntrack3_mt6_save,
 		.x6_options    = conntrack3_mt_opts,
-	},
-	{
-		.family        = NFPROTO_UNSPEC,
-		.name          = "state",
-		.real_name     = "conntrack",
-		.revision      = 1,
-		.version       = XTABLES_VERSION,
-		.size          = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo1)),
-		.userspacesize = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo1)),
-		.help          = state_help,
-		.x6_parse      = state_ct1_parse,
-		.x6_options    = state_opts,
-	},
-	{
-		.family        = NFPROTO_UNSPEC,
-		.name          = "state",
-		.real_name     = "conntrack",
-		.revision      = 2,
-		.version       = XTABLES_VERSION,
-		.size          = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo2)),
-		.userspacesize = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo2)),
-		.help          = state_help,
-		.x6_parse      = state_ct23_parse,
-		.x6_options    = state_opts,
-	},
-	{
-		.family        = NFPROTO_UNSPEC,
-		.name          = "state",
-		.real_name     = "conntrack",
-		.revision      = 3,
-		.version       = XTABLES_VERSION,
-		.size          = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo3)),
-		.userspacesize = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo3)),
-		.help          = state_help,
-		.x6_parse      = state_ct23_parse,
-		.x6_options    = state_opts,
-	},
-	{
-		.family        = NFPROTO_UNSPEC,
-		.name          = "state",
-		.revision      = 0,
-		.version       = XTABLES_VERSION,
-		.size          = XT_ALIGN(sizeof(struct xt_state_info)),
-		.userspacesize = XT_ALIGN(sizeof(struct xt_state_info)),
-		.help          = state_help,
-		.print         = state_print,
-		.save          = state_save,
-		.x6_parse      = state_parse,
-		.x6_options    = state_opts,
 	},
 };
 

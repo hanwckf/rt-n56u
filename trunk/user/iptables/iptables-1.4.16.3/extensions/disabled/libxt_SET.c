@@ -5,7 +5,7 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.  
+ * published by the Free Software Foundation.
  */
 
 /* Shared library add-on to iptables to add IP set mangling target. */
@@ -80,7 +80,7 @@ parse_target_v0(char **argv, int invert, unsigned int *flags,
 	get_set_byname(optarg, (struct xt_set_info *)info);
 	parse_dirs_v0(argv[optind], info);
 	optind++;
-	
+
 	*flags = 1;
 }
 
@@ -116,7 +116,7 @@ print_target_v0(const char *prefix, const struct xt_set_info_v0 *info)
 	printf(" %s %s", prefix, setname);
 	for (i = 0; i < IPSET_DIM_MAX; i++) {
 		if (!info->u.flags[i])
-			break;		
+			break;
 		printf("%s%s",
 		       i == 0 ? " " : ",",
 		       info->u.flags[i] & IPSET_SRC ? "src" : "dst");
@@ -125,7 +125,7 @@ print_target_v0(const char *prefix, const struct xt_set_info_v0 *info)
 
 static void
 set_target_print_v0(const void *ip, const struct xt_entry_target *target,
-                    int numeric)
+		    int numeric)
 {
 	const struct xt_set_info_target_v0 *info = (const void *)target->data;
 
@@ -158,6 +158,10 @@ set_target_init_v1(struct xt_entry_target *target)
 #define SET_TARGET_DEL		0x2
 #define SET_TARGET_EXIST	0x4
 #define SET_TARGET_TIMEOUT	0x8
+#define SET_TARGET_MAP		0x10
+#define SET_TARGET_MAP_MARK	0x20
+#define SET_TARGET_MAP_PRIO	0x40
+#define SET_TARGET_MAP_QUEUE	0x80
 
 static void
 parse_target(char **argv, int invert, struct xt_set_info *info,
@@ -314,7 +318,7 @@ set_target_parse_v2(int c, char **argv, int invert, unsigned int *flags,
 				      "or out of range 0-%u", UINT32_MAX - 1);
 		myinfo->timeout = timeout;
 		*flags |= SET_TARGET_TIMEOUT;
-		break;	
+		break;
 	}
 	return 1;
 }
@@ -344,6 +348,170 @@ set_target_save_v2(const void *ip, const struct xt_entry_target *target)
 	if (info->timeout != UINT32_MAX)
 		printf(" --timeout %u", info->timeout);
 	print_target("--del-set", &info->del_set);
+}
+
+
+/* Revision 3 */
+
+static void
+set_target_help_v3(void)
+{
+	printf("SET target options:\n"
+	       " --add-set name flags [--exist] [--timeout n]\n"
+	       " --del-set name flags\n"
+	       " --map-set name flags"
+	       " [--map-mark] [--map-prio] [--map-queue]\n"
+	       "		add/del src/dst IP/port from/to named sets,\n"
+	       "		where flags are the comma separated list of\n"
+	       "		'src' and 'dst' specifications.\n");
+}
+
+static const struct option set_target_opts_v3[] = {
+	{.name = "add-set",	.has_arg = true,  .val = '1'},
+	{.name = "del-set",	.has_arg = true,  .val = '2'},
+	{.name = "exist",	.has_arg = false, .val = '3'},
+	{.name = "timeout",	.has_arg = true,  .val = '4'},
+	{.name = "map-set",	.has_arg = true,  .val = '5'},
+	{.name = "map-mark",	.has_arg = false, .val = '6'},
+	{.name = "map-prio",	.has_arg = false, .val = '7'},
+	{.name = "map-queue",	.has_arg = false, .val = '8'},
+	XT_GETOPT_TABLEEND,
+};
+
+static void
+set_target_check_v3(unsigned int flags)
+{
+	if (!(flags & (SET_TARGET_ADD|SET_TARGET_DEL|SET_TARGET_MAP)))
+		xtables_error(PARAMETER_PROBLEM,
+			      "You must specify either `--add-set' or "
+			      "`--del-set' or `--map-set'");
+	if (!(flags & SET_TARGET_ADD)) {
+		if (flags & SET_TARGET_EXIST)
+			xtables_error(PARAMETER_PROBLEM,
+				"Flag `--exist' can be used with `--add-set' only");
+		if (flags & SET_TARGET_TIMEOUT)
+			xtables_error(PARAMETER_PROBLEM,
+				"Option `--timeout' can be used with `--add-set' only");
+	}
+	if (!(flags & SET_TARGET_MAP)) {
+		if (flags & SET_TARGET_MAP_MARK)
+			xtables_error(PARAMETER_PROBLEM,
+				"Flag `--map-mark' can be used with `--map-set' only");
+		if (flags & SET_TARGET_MAP_PRIO)
+			xtables_error(PARAMETER_PROBLEM,
+				"Flag `--map-prio' can be used with `--map-set' only");
+		if (flags & SET_TARGET_MAP_QUEUE)
+			xtables_error(PARAMETER_PROBLEM,
+				"Flag `--map-queue' can be used with `--map-set' only");
+	}
+	if ((flags & SET_TARGET_MAP) && !(flags & (SET_TARGET_MAP_MARK |
+						   SET_TARGET_MAP_PRIO |
+						   SET_TARGET_MAP_QUEUE)))
+		xtables_error(PARAMETER_PROBLEM,
+			"You must specify flags `--map-mark' or "
+			"'--map-prio` or `--map-queue'");
+}
+
+static void
+set_target_init_v3(struct xt_entry_target *target)
+{
+	struct xt_set_info_target_v3 *info =
+		(struct xt_set_info_target_v3 *) target->data;
+
+	info->add_set.index =
+	info->del_set.index =
+	info->map_set.index = IPSET_INVALID_ID;
+	info->timeout = UINT32_MAX;
+}
+
+static int
+set_target_parse_v3(int c, char **argv, int invert, unsigned int *flags,
+		    const void *entry, struct xt_entry_target **target)
+{
+	struct xt_set_info_target_v3 *myinfo =
+		(struct xt_set_info_target_v3 *) (*target)->data;
+	unsigned int timeout;
+
+	switch (c) {
+	case '1':		/* --add-set <set> <flags> */
+		parse_target(argv, invert, &myinfo->add_set, "add-set");
+		*flags |= SET_TARGET_ADD;
+		break;
+	case '2':		/* --del-set <set>[:<flags>] <flags> */
+		parse_target(argv, invert, &myinfo->del_set, "del-set");
+		*flags |= SET_TARGET_DEL;
+		break;
+	case '3':
+		myinfo->flags |= IPSET_FLAG_EXIST;
+		*flags |= SET_TARGET_EXIST;
+		break;
+	case '4':
+		if (!xtables_strtoui(optarg, NULL, &timeout, 0, UINT32_MAX - 1))
+			xtables_error(PARAMETER_PROBLEM,
+				      "Invalid value for option --timeout "
+				      "or out of range 0-%u", UINT32_MAX - 1);
+		myinfo->timeout = timeout;
+		*flags |= SET_TARGET_TIMEOUT;
+		break;
+	case '5':		/* --map-set <set> <flags> */
+		parse_target(argv, invert, &myinfo->map_set, "map-set");
+		*flags |= SET_TARGET_MAP;
+		break;
+	case '6':
+		myinfo->flags |= IPSET_FLAG_MAP_SKBMARK;
+		*flags |= SET_TARGET_MAP_MARK;
+		break;
+	case '7':
+		myinfo->flags |= IPSET_FLAG_MAP_SKBPRIO;
+		*flags |= SET_TARGET_MAP_PRIO;
+		break;
+	case '8':
+		myinfo->flags |= IPSET_FLAG_MAP_SKBQUEUE;
+		*flags |= SET_TARGET_MAP_QUEUE;
+		break;
+	}
+	return 1;
+}
+
+static void
+set_target_print_v3(const void *ip, const struct xt_entry_target *target,
+		    int numeric)
+{
+	const struct xt_set_info_target_v3 *info = (const void *)target->data;
+
+	print_target("add-set", &info->add_set);
+	if (info->flags & IPSET_FLAG_EXIST)
+		printf(" exist");
+	if (info->timeout != UINT32_MAX)
+		printf(" timeout %u", info->timeout);
+	print_target("del-set", &info->del_set);
+	print_target("map-set", &info->map_set);
+	if (info->flags & IPSET_FLAG_MAP_SKBMARK)
+		printf(" map-mark");
+	if (info->flags & IPSET_FLAG_MAP_SKBPRIO)
+		printf(" map-prio");
+	if (info->flags & IPSET_FLAG_MAP_SKBQUEUE)
+		printf(" map-queue");
+}
+
+static void
+set_target_save_v3(const void *ip, const struct xt_entry_target *target)
+{
+	const struct xt_set_info_target_v3 *info = (const void *)target->data;
+
+	print_target("--add-set", &info->add_set);
+	if (info->flags & IPSET_FLAG_EXIST)
+		printf(" --exist");
+	if (info->timeout != UINT32_MAX)
+		printf(" --timeout %u", info->timeout);
+	print_target("--del-set", &info->del_set);
+	print_target("--map-set", &info->map_set);
+	if (info->flags & IPSET_FLAG_MAP_SKBMARK)
+		printf(" --map-mark");
+	if (info->flags & IPSET_FLAG_MAP_SKBPRIO)
+		printf(" --map-prio");
+	if (info->flags & IPSET_FLAG_MAP_SKBQUEUE)
+		printf(" --map-queue");
 }
 
 static struct xtables_target set_tg_reg[] = {
@@ -391,6 +559,21 @@ static struct xtables_target set_tg_reg[] = {
 		.print		= set_target_print_v2,
 		.save		= set_target_save_v2,
 		.extra_opts	= set_target_opts_v2,
+	},
+	{
+		.name		= "SET",
+		.revision	= 3,
+		.version	= XTABLES_VERSION,
+		.family		= NFPROTO_UNSPEC,
+		.size		= XT_ALIGN(sizeof(struct xt_set_info_target_v3)),
+		.userspacesize	= XT_ALIGN(sizeof(struct xt_set_info_target_v3)),
+		.help		= set_target_help_v3,
+		.init		= set_target_init_v3,
+		.parse		= set_target_parse_v3,
+		.final_check	= set_target_check_v3,
+		.print		= set_target_print_v3,
+		.save		= set_target_save_v3,
+		.extra_opts	= set_target_opts_v3,
 	},
 };
 

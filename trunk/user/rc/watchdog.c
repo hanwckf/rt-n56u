@@ -46,7 +46,7 @@
 
 #define BTN_EZ_WAIT		3		/* 3s */
 #define BTN_EZ_WAIT_COUNT	(BTN_EZ_WAIT * 10)
-#define BTN_EZ_CANCEL_COUNT	5		/* 500ms */
+#define BTN_EZ_CANCEL_COUNT	8		/* 800ms */
 
 #define WD_NOTIFY_ID_WIFI2	1
 #define WD_NOTIFY_ID_WIFI5	2

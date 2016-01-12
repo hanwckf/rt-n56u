@@ -133,6 +133,7 @@ enum {
 #define OFFSET_MSDC_DMA_CFG     (0x9c)
 #define OFFSET_MSDC_DBG_SEL     (0xa0)
 #define OFFSET_MSDC_DBG_OUT     (0xa4)
+#define OFFSET_MSDC_DMA_LENGTH  (0xa8)
 #define OFFSET_MSDC_PATCH_BIT   (0xb0)
 #define OFFSET_MSDC_PATCH_BIT1  (0xb4)
 #define OFFSET_MSDC_PAD_CTL0    (0xe0)
@@ -190,6 +191,7 @@ enum {
 #define MSDC_DMA_CA             REG_ADDR(MSDC_DMA_CA)
 #define MSDC_DMA_CTRL           REG_ADDR(MSDC_DMA_CTRL)
 #define MSDC_DMA_CFG            REG_ADDR(MSDC_DMA_CFG)
+#define MSDC_DMA_LENGTH         REG_ADDR(MSDC_DMA_LENGTH)
 
 /* pad ctrl register */
 #define MSDC_PAD_CTL0           REG_ADDR(MSDC_PAD_CTL0)
@@ -894,9 +896,8 @@ struct msdc_host
     int                         cmd_rsp_done;
     int                         cmd_r1b_done;
 
-    int                         error; 
+    int                         error;
     spinlock_t                  lock;           /* mutex */
-    struct semaphore            sem; 
 
     u32                         blksz;          /* host block size */
     u32                         base;           /* host base address */    

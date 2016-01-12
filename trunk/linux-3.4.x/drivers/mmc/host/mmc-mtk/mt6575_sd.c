@@ -111,8 +111,6 @@ static struct msdc_regs *msdc_reg[HOST_MAX_NUM];
 //#define PERI_MSDC2_PDN    (17)
 //#define PERI_MSDC3_PDN    (18)
 
-static struct msdc_host *msdc_6575_host[] = {NULL,NULL,NULL,NULL};
-
 static int msdc_rsp[] = {
     0,  /* RESP_NONE */
     1,  /* RESP_R1 */
@@ -448,11 +446,11 @@ static void msdc_set_mclk(struct msdc_host *host, int ddr, unsigned int hz)
     if (ddr) {
         mode = 0x2; /* ddr mode and use divisor */
         if (hz >= (hclk >> 2)) {
-        	div  = 1;         /* mean div = 1/4 */
-        	sclk = hclk >> 2; /* sclk = clk / 4 */
+            div  = 1;         /* mean div = 1/4 */
+            sclk = hclk >> 2; /* sclk = clk / 4 */
         } else {
-        	div  = (hclk + ((hz << 2) - 1)) / (hz << 2);
-        	sclk = (hclk >> 2) / div;
+            div  = (hclk + ((hz << 2) - 1)) / (hz << 2);
+            sclk = (hclk >> 2) / div;
         }
     } else if (hz >= hclk) { /* bug fix */
         mode = 0x1; /* no divisor and divisor is ignored */
@@ -461,11 +459,11 @@ static void msdc_set_mclk(struct msdc_host *host, int ddr, unsigned int hz)
     } else {
         mode = 0x0; /* use divisor */
         if (hz >= (hclk >> 1)) {
-        	div  = 0;         /* mean div = 1/2 */
-        	sclk = hclk >> 1; /* sclk = clk / 2 */
+            div  = 0;         /* mean div = 1/2 */
+            sclk = hclk >> 1; /* sclk = clk / 2 */
         } else {
-        	div  = (hclk + ((hz << 2) - 1)) / (hz << 2);
-        	sclk = (hclk >> 2) / div;
+            div  = (hclk + ((hz << 2) - 1)) / (hz << 2);
+            sclk = (hclk >> 2) / div;
         }
     }
 
@@ -522,9 +520,9 @@ static void msdc_pm(pm_message_t state, void *data)
     int evt = state.event;
 
     if (evt == PM_EVENT_USER_RESUME || evt == PM_EVENT_USER_SUSPEND) {
-        INIT_MSG("USR_%s: suspend<%d> power<%d>", 
+        INIT_MSG("USR_%s: suspend<%d> power<%d>",
                    evt == PM_EVENT_USER_RESUME ? "EVENT_USER_RESUME" : "EVENT_USER_SUSPEND", 
-                   host->suspend, host->power_mode);    	
+                   host->suspend, host->power_mode);
     }
 
     if (evt == PM_EVENT_SUSPEND || evt == PM_EVENT_USER_SUSPEND) {
@@ -538,8 +536,8 @@ static void msdc_pm(pm_message_t state, void *data)
         host->suspend = 1;
         host->pm_state = state;  /* default PMSG_RESUME */
 
-        INIT_MSG("%s Suspend", evt == PM_EVENT_SUSPEND ? "PM" : "USR");                  	
-        if(host->hw->flags & MSDC_SYS_SUSPEND) /* set for card */
+        INIT_MSG("%s Suspend", evt == PM_EVENT_SUSPEND ? "PM" : "USR");
+        if (host->hw->flags & MSDC_SYS_SUSPEND) /* set for card */
             (void)mmc_suspend_host(host->mmc);
         else { 
             // host->mmc->pm_flags |= MMC_PM_IGNORE_PM_NOTIFY;  /* just for double confirm */ /* --- by chhung */
@@ -547,7 +545,7 @@ static void msdc_pm(pm_message_t state, void *data)
         }
     } else if (evt == PM_EVENT_RESUME || evt == PM_EVENT_USER_RESUME) {
         if (!host->suspend){
-            //ERR_MSG("warning: already resume");   	
+            //ERR_MSG("warning: already resume");
             return;
         }
 
@@ -561,7 +559,7 @@ static void msdc_pm(pm_message_t state, void *data)
         host->pm_state = state;
 
         INIT_MSG("%s Resume", evt == PM_EVENT_RESUME ? "PM" : "USR");
-        if(host->hw->flags & MSDC_SYS_SUSPEND) { /* will not set for WIFI */
+        if (host->hw->flags & MSDC_SYS_SUSPEND) { /* will not set for WIFI */
             (void)mmc_resume_host(host->mmc);
         }
         else { 
@@ -714,18 +712,18 @@ static unsigned int msdc_command_resp(struct msdc_host   *host,
     u32 opcode = cmd->opcode;
     //u32 rawcmd;
     u32 resp;
-    u32 wints = MSDC_INT_CMDRDY  | MSDC_INT_RSPCRCERR  | MSDC_INT_CMDTMO  |  
-                MSDC_INT_ACMDRDY | MSDC_INT_ACMDCRCERR | MSDC_INT_ACMDTMO | 
-                MSDC_INT_ACMD19_DONE;     
+    u32 wints = MSDC_INT_CMDRDY  | MSDC_INT_RSPCRCERR  | MSDC_INT_CMDTMO  |
+                MSDC_INT_ACMDRDY | MSDC_INT_ACMDCRCERR | MSDC_INT_ACMDTMO |
+                MSDC_INT_ACMD19_DONE;
 
     resp = host->cmd_rsp;
 
-    BUG_ON(in_interrupt());
+    //BUG_ON(in_interrupt());
     //init_completion(&host->cmd_done);
     //sdr_set_bits(MSDC_INTEN, wints);
 
-    spin_unlock(&host->lock);   
-    if(!wait_for_completion_timeout(&host->cmd_done, 10*timeout)){       
+    spin_unlock(&host->lock);
+    if (!wait_for_completion_timeout(&host->cmd_done, 10*timeout)) {
         ERR_MSG("XXX CMD<%d> wait_for_completion timeout ARG<0x%.8x>", opcode, cmd->arg);
         cmd->error = (unsigned int)-ETIMEDOUT;
         msdc_reset();
@@ -735,7 +733,6 @@ static unsigned int msdc_command_resp(struct msdc_host   *host,
     sdr_clr_bits(MSDC_INTEN, wints);
     host->cmd = NULL;
 
-//end:
 #ifdef MT6575_SD_DEBUG
     switch (resp) {
     case RESP_NONE:
@@ -777,7 +774,7 @@ static unsigned int msdc_command_resp(struct msdc_host   *host,
     }
 
     /* memory card CRC */
-    if(host->hw->flags & MSDC_REMOVABLE && cmd->error == (unsigned int)(-EIO) ) {
+    if ((host->hw->flags & MSDC_REMOVABLE) && cmd->error == (unsigned int)(-EIO) ) {
         if (sdr_read32(SDC_CMD) & 0x1800) { /* check if has data phase */ 
             msdc_abort_data(host);
         } else {
@@ -811,7 +808,7 @@ static unsigned int msdc_do_command(struct msdc_host   *host,
 
 end:
 
-    N_MSG(CMD, "        return<%d> resp<0x%.8x>", cmd->error, cmd->resp[0]); 	
+    N_MSG(CMD, "        return<%d> resp<0x%.8x>", cmd->error, cmd->resp[0]);
     return cmd->error;
 }
 
@@ -833,7 +830,7 @@ static int msdc_pio_abort(struct msdc_host *host, struct mmc_data *data, unsigne
         ret = 1;
     }
 
-    if(ret) {
+    if (ret) {
         msdc_reset();
         msdc_clr_fifo();
         msdc_clr_int();
@@ -960,7 +957,6 @@ static void msdc_dma_start(struct msdc_host *host)
     u32 wints = MSDC_INTEN_XFER_COMPL | MSDC_INTEN_DATTMO | MSDC_INTEN_DATCRCERR ; 
 
     sdr_set_bits(MSDC_INTEN, wints);
-    //dsb(); /* --- by chhung */
     sdr_set_field(MSDC_DMA_CTRL, MSDC_DMA_CTRL_START, 1);
 
     N_MSG(DMA, "DMA start");
@@ -978,7 +974,6 @@ static void msdc_dma_stop(struct msdc_host *host)
     sdr_set_field(MSDC_DMA_CTRL, MSDC_DMA_CTRL_STOP, 1);
     while (sdr_read32(MSDC_DMA_CFG) & MSDC_DMA_CFG_STS);
 
-    //dsb(); /* --- by chhung */
     sdr_clr_bits(MSDC_INTEN, wints); /* Not just xfer_comp */
 
     N_MSG(DMA, "DMA stop");
@@ -1014,7 +1009,7 @@ static int msdc_dma_config(struct msdc_host *host, struct msdc_dma *dma)
 #if defined (CONFIG_RALINK_MT7620)
         sdr_set_field(MSDC_DMA_CTRL, MSDC_DMA_CTRL_XFERSZ, sg_dma_len(sg));
 #elif defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
-        sdr_write32((volatile u32*)(RALINK_MSDC_BASE+0xa8), sg_dma_len(sg));
+        sdr_write32(MSDC_DMA_LENGTH, sg_dma_len(sg));
 #endif
         sdr_set_field(MSDC_DMA_CTRL, MSDC_DMA_CTRL_BRUSTSZ, dma->burstsz);
         sdr_set_field(MSDC_DMA_CTRL, MSDC_DMA_CTRL_MODE, 0);
@@ -1107,7 +1102,7 @@ static void msdc_set_blknum(struct msdc_host *host, u32 blknum)
     sdr_write32(SDC_BLK_NUM, blknum);
 }
 
-static int msdc_do_request(struct mmc_host*mmc, struct mmc_request*mrq)
+static int msdc_do_request(struct mmc_host *mmc, struct mmc_request *mrq)
 {
     struct msdc_host *host = mmc_priv(mmc);
     struct mmc_command *cmd;
@@ -1138,7 +1133,7 @@ static int msdc_do_request(struct mmc_host*mmc, struct mmc_request*mrq)
         send_type=SND_DAT;
 
         data->error = 0;
-        read = data->flags & MMC_DATA_READ ? 1 : 0;
+        read = (data->flags & MMC_DATA_READ) ? 1 : 0;
         host->data = data;
         host->xfer_size = data->blocks * data->blksz;
         host->blksz = data->blksz;
@@ -1298,7 +1293,54 @@ static int msdc_app_cmd(struct mmc_host *mmc, struct msdc_host *host)
     return err;
 }
 
-static int msdc_tune_cmdrsp(struct msdc_host*host, struct mmc_command *cmd)
+static int msdc_get_card_status(struct mmc_host *mmc, struct msdc_host *host, u32 *status)
+{
+    struct mmc_command cmd;
+    struct mmc_request mrq;
+    u32 err;
+
+    memset(&cmd, 0, sizeof(struct mmc_command));
+    cmd.opcode = MMC_SEND_STATUS;
+    if (mmc->card) {
+        cmd.arg = mmc->card->rca << 16;
+    } else {
+        ERR_MSG("CMD<%d> mmc card is null", MMC_SEND_STATUS);
+        cmd.arg = host->app_cmd_arg;
+    }
+    cmd.flags = MMC_RSP_SPI_R2 | MMC_RSP_R1 | MMC_CMD_AC;
+
+    memset(&mrq, 0, sizeof(struct mmc_request));
+    mrq.cmd = &cmd; cmd.mrq = &mrq;
+    cmd.data = NULL;
+
+    err = msdc_do_command(host, &cmd, 1, CMD_TIMEOUT);
+
+    if (status) {
+        *status = cmd.resp[0];
+    }
+
+    return err;
+}
+
+static int msdc_check_busy(struct mmc_host *mmc, struct msdc_host *host)
+{
+    u32 err = 0; 
+    u32 status = 0;
+
+    do {
+        err = msdc_get_card_status(mmc, host, &status);
+        if (err) {
+            ERR_MSG("CMD<%d> failed", MMC_SEND_STATUS);
+            return err;
+        }
+        /* need cmd12? */
+        N_MSG(OPS, "CMD<%d> resp<0x%x>", MMC_SEND_STATUS, status);
+    } while (R1_CURRENT_STATE(status) == R1_STATE_PRG);
+
+    return err;
+}
+
+static int msdc_tune_cmdrsp(struct msdc_host *host, struct mmc_command *cmd)
 {
     int result = -1;
     u32 base = host->base;
@@ -1315,7 +1357,7 @@ static int msdc_tune_cmdrsp(struct msdc_host*host, struct mmc_command *cmd)
     sdr_get_field(MSDC_IOCON,    MSDC_IOCON_RSPL,        orig_rsmpl);
     sdr_get_field(MSDC_PAD_TUNE, MSDC_PAD_TUNE_CMDRRDLY, orig_rrdly);
 
-    rrdly = 0; 
+    rrdly = 0;
     do {
         for (rsmpl = 0; rsmpl < 2; rsmpl++) {
             /* Lv1: R_SMPL[1] */
@@ -1334,7 +1376,9 @@ static int msdc_tune_cmdrsp(struct msdc_host*host, struct mmc_command *cmd)
                     continue;
                 }
             }
+
             result = msdc_do_command(host, cmd, 0, CMD_TIMEOUT); // not tune.
+
             N_MSG(OPS, "TUNE_CMD<%d> %s PAD_CMD_RESP_RXDLY[26:22]<%d> R_SMPL[1]<%d>", cmd->opcode,
                        (result == 0) ? "PASS" : "FAIL", cur_rrdly, cur_rsmpl);
 
@@ -1375,6 +1419,16 @@ static int msdc_tune_bread(struct mmc_host *mmc, struct mmc_request *mrq)
     u32 orig_dat4, orig_dat5, orig_dat6, orig_dat7;
     int result = -1;
     u32 skip = 1;
+    u32 eco = 4;
+
+#if 0
+    /* [MT7620 rev 0204] MAIN_VER: 20110929, ECO_VER: 0
+       [MT7621 rev 0103] MAIN_VER: 20121010, ECO_VER: 0
+       [MT7628 rev 0102] MAIN_VER: 20130530, ECO_VER: 0
+       At least MT7621 and MT7628 has already swapped RDDLY bytes
+    */
+    eco = sdr_read32(MSDC_ECO_VER);
+#endif
 
     sdr_get_field(MSDC_IOCON, MSDC_IOCON_DSPL, orig_dsmpl);
 
@@ -1392,16 +1446,17 @@ static int msdc_tune_bread(struct mmc_host *mmc, struct mmc_request *mrq)
             sdr_set_field(MSDC_IOCON, MSDC_IOCON_DSPL, cur_dsmpl);
 
             if (host->app_cmd) {
-                result = msdc_app_cmd(host->mmc, host);	
+                result = msdc_app_cmd(mmc, host);
                 if (result) {
                     ERR_MSG("TUNE_BREAD app_cmd<%d> failed", host->mrq->cmd->opcode);	
                     continue;
                 }
             }
-            result = msdc_do_request(mmc,mrq);
+            result = msdc_do_request(mmc, mrq);
 
             sdr_get_field(SDC_DCRC_STS, SDC_DCRC_STS_POS|SDC_DCRC_STS_NEG, dcrc); /* RO */
             if (!ddr) dcrc &= ~SDC_DCRC_STS_NEG;
+
             N_MSG(OPS, "TUNE_BREAD<%s> dcrc<0x%x> DATRDDLY0/1<0x%x><0x%x> dsmpl<0x%x>",
                         (result == 0 && dcrc == 0) ? "PASS" : "FAIL", dcrc,
                         sdr_read32(MSDC_DAT_RDDLY0), sdr_read32(MSDC_DAT_RDDLY1), cur_dsmpl);
@@ -1423,7 +1478,7 @@ static int msdc_tune_bread(struct mmc_host *mmc, struct mmc_request *mrq)
         cur_rxdly1 = sdr_read32(MSDC_DAT_RDDLY1);
 
         /* E1 ECO. YD: Reverse */
-        if (sdr_read32(MSDC_ECO_VER) >= 4) {
+        if (eco >= 4) {
             orig_dat0 = (cur_rxdly0 >> 24) & 0x1F;
             orig_dat1 = (cur_rxdly0 >> 16) & 0x1F;
             orig_dat2 = (cur_rxdly0 >>  8) & 0x1F;
@@ -1459,19 +1514,24 @@ static int msdc_tune_bread(struct mmc_host *mmc, struct mmc_request *mrq)
         cur_dat6 = (dcrc & (1 << 6)) ? ((orig_dat6 + 1) % 32) : orig_dat6;
         cur_dat7 = (dcrc & (1 << 7)) ? ((orig_dat7 + 1) % 32) : orig_dat7;
 
-        cur_rxdly0 = (cur_dat0 << 24) | (cur_dat1 << 16) | (cur_dat2 << 8) | (cur_dat3 << 0);
-        cur_rxdly1 = (cur_dat4 << 24) | (cur_dat5 << 16) | (cur_dat6 << 8) | (cur_dat7 << 0);
+        if (eco >= 4) {
+           cur_rxdly0 = (cur_dat0 << 24) | (cur_dat1 << 16) | (cur_dat2 << 8) | (cur_dat3 << 0);
+           cur_rxdly1 = (cur_dat4 << 24) | (cur_dat5 << 16) | (cur_dat6 << 8) | (cur_dat7 << 0);
+        } else {
+           cur_rxdly0 = (cur_dat3 << 24) | (cur_dat2 << 16) | (cur_dat1 << 8) | (cur_dat0 << 0);
+           cur_rxdly1 = (cur_dat7 << 24) | (cur_dat6 << 16) | (cur_dat5 << 8) | (cur_dat4 << 0);
+        }
 
         sdr_write32(MSDC_DAT_RDDLY0, cur_rxdly0);
         sdr_write32(MSDC_DAT_RDDLY1, cur_rxdly1);
 
-    } while (++rxdly < 32);   
-          
+    } while (++rxdly < 32);
+
 done:
     return result;
 }
 
-static int msdc_tune_bwrite(struct mmc_host *mmc,struct mmc_request *mrq)
+static int msdc_tune_bwrite(struct mmc_host *mmc, struct mmc_request *mrq)
 {
     struct msdc_host *host = mmc_priv(mmc);
     u32 base = host->base;
@@ -1483,8 +1543,18 @@ static int msdc_tune_bwrite(struct mmc_host *mmc,struct mmc_request *mrq)
     u32 cur_dat0,  cur_dat1,  cur_dat2,  cur_dat3;
     int result = -1;
     u32 skip = 1;
+    u32 eco = 4;
 
     // MSDC_IOCON_DDR50CKD need to check. [Fix me] 
+
+#if 0
+    /* [MT7620 rev 0204] MAIN_VER: 20110929, ECO_VER: 0
+       [MT7621 rev 0103] MAIN_VER: 20121010, ECO_VER: 0
+       [MT7628 rev 0102] MAIN_VER: 20130530, ECO_VER: 0
+       At least MT7621 and MT7628 has already swapped RDDLY bytes
+    */
+    eco = sdr_read32(MSDC_ECO_VER);
+#endif
 
     sdr_get_field(MSDC_PAD_TUNE, MSDC_PAD_TUNE_DATWRDLY, orig_wrrdly);
     sdr_get_field(MSDC_IOCON,    MSDC_IOCON_DSPL,        orig_dsmpl );
@@ -1494,7 +1564,7 @@ static int msdc_tune_bwrite(struct mmc_host *mmc,struct mmc_request *mrq)
     cur_rxdly0 = sdr_read32(MSDC_DAT_RDDLY0);
 
     /* E1 ECO. YD: Reverse */
-    if (sdr_read32(MSDC_ECO_VER) >= 4) {
+    if (eco >= 4) {
         orig_dat0 = (cur_rxdly0 >> 24) & 0x1F;
         orig_dat1 = (cur_rxdly0 >> 16) & 0x1F;
         orig_dat2 = (cur_rxdly0 >>  8) & 0x1F;
@@ -1519,13 +1589,13 @@ static int msdc_tune_bwrite(struct mmc_host *mmc,struct mmc_request *mrq)
                 sdr_set_field(MSDC_IOCON, MSDC_IOCON_DSPL, cur_dsmpl);
 
                 if (host->app_cmd) {
-                    result = msdc_app_cmd(host->mmc, host);
+                    result = msdc_app_cmd(mmc, host);
                     if (result) {
                         ERR_MSG("TUNE_BWRITE app_cmd<%d> failed", host->mrq->cmd->opcode);
                         continue;
                     }
                 }
-                result = msdc_do_request(mmc,mrq);
+                result = msdc_do_request(mmc, mrq);
 
                 N_MSG(OPS, "TUNE_BWRITE<%s> DSPL<%d> DATWRDLY<%d> MSDC_DAT_RDDLY0<0x%x>", 
                           result == 0 ? "PASS" : "FAIL", 
@@ -1541,68 +1611,34 @@ static int msdc_tune_bwrite(struct mmc_host *mmc,struct mmc_request *mrq)
                                    result, mrq->cmd->error, mrq->data->error);
                         goto done;
                     }
+                    result = msdc_check_busy(mmc, host);
+                    if (result) {
+                        goto done;
+                    }
                 }
             }
             cur_wrrdly = (orig_wrrdly + wrrdly + 1) % 32;
             sdr_set_field(MSDC_PAD_TUNE, MSDC_PAD_TUNE_DATWRDLY, cur_wrrdly);
-        } while (++wrrdly < 32); 
+        } while (++wrrdly < 32);
 
         cur_dat0 = (orig_dat0 + rxdly) % 32; /* only adjust bit-1 for crc */
         cur_dat1 = orig_dat1;
         cur_dat2 = orig_dat2;
         cur_dat3 = orig_dat3;
 
-        cur_rxdly0 = (cur_dat0 << 24) | (cur_dat1 << 16) | (cur_dat2 << 8) | (cur_dat3 << 0);
+        if (eco >= 4) {
+           cur_rxdly0 = (cur_dat0 << 24) | (cur_dat1 << 16) | (cur_dat2 << 8) | (cur_dat3 << 0);
+        } else {
+           cur_rxdly0 = (cur_dat3 << 24) | (cur_dat2 << 16) | (cur_dat1 << 8) | (cur_dat0 << 0);
+        }
+
         sdr_write32(MSDC_DAT_RDDLY0, cur_rxdly0);
-    } while (++rxdly < 32); 
+    } while (++rxdly < 32);
 
 done:
     return result;
 }
 
-static int msdc_get_card_status(struct mmc_host *mmc, struct msdc_host *host, u32 *status)
-{
-    struct mmc_command cmd;
-    struct mmc_request mrq;
-    u32 err;
-
-    memset(&cmd, 0, sizeof(struct mmc_command));
-    cmd.opcode = MMC_SEND_STATUS;
-    if (mmc->card) {
-        cmd.arg = mmc->card->rca << 16;
-    } else {
-        ERR_MSG("cmd13 mmc card is null");
-        cmd.arg = host->app_cmd_arg;
-    }
-    cmd.flags = MMC_RSP_SPI_R2 | MMC_RSP_R1 | MMC_CMD_AC;
-
-    memset(&mrq, 0, sizeof(struct mmc_request));
-    mrq.cmd = &cmd; cmd.mrq = &mrq;
-    cmd.data = NULL;
-
-    err = msdc_do_command(host, &cmd, 1, CMD_TIMEOUT);
-
-    if (status) {
-        *status = cmd.resp[0];
-    }
-
-    return err;
-}
-
-static int msdc_check_busy(struct mmc_host *mmc, struct msdc_host *host)
-{
-    u32 err = 0; 
-    u32 status = 0;
-
-    do {
-        err = msdc_get_card_status(mmc, host, &status);
-        if (err) return err;
-        /* need cmd12? */
-        ERR_MSG("cmd<13> resp<0x%x>", status);
-    } while (R1_CURRENT_STATE(status) == 7);   
-
-    return err;
-}
 
 /* failed when msdc_do_request */
 static int msdc_tune_request(struct mmc_host *mmc, struct mmc_request *mrq)
@@ -1616,7 +1652,7 @@ static int msdc_tune_request(struct mmc_host *mmc, struct mmc_request *mrq)
     cmd  = mrq->cmd;
     data = mrq->cmd->data;
 
-    read = data->flags & MMC_DATA_READ ? 1 : 0;
+    read = (data->flags) & MMC_DATA_READ ? 1 : 0;
 
     if (read) {
         if (data->error == (unsigned int)(-EIO)) {
@@ -1624,13 +1660,11 @@ static int msdc_tune_request(struct mmc_host *mmc, struct mmc_request *mrq)
         }
     } else {
         ret = msdc_check_busy(mmc, host);
-        if (ret){
-            ERR_MSG("XXX cmd13 wait program done failed");
+        if (ret) {
             return ret;
         }
-        /* CRC and TO */   	
-        /* Fix me: don't care card status? */
-        ret = msdc_tune_bwrite(mmc,mrq);    	
+        /* CRC and TO */
+        ret = msdc_tune_bwrite(mmc,mrq);
     }
 
     return ret;
@@ -1641,20 +1675,11 @@ static void msdc_ops_request(struct mmc_host *mmc,struct mmc_request *mrq)
 {
     struct msdc_host *host = mmc_priv(mmc);
 
-    //=== for sdio profile ===
-#if 0 /* --- by chhung */
-    u32 old_H32, old_L32, new_H32, new_L32;
-    u32 ticks = 0, opcode = 0, sizes = 0, bRx = 0; 
-#endif /* end of --- */
-
-    if(host->mrq){
-        ERR_MSG("XXX host->mrq<0x%.8x>", (int)host->mrq);   
-        BUG();	
-    }
+    WARN_ON(host->mrq != NULL);
 
     if (!is_card_present(host) || host->power_mode == MMC_POWER_OFF) {
         N_MSG(WRN, "cmd<%d> card<%d> power<%d>", mrq->cmd->opcode, is_card_present(host), host->power_mode);
-        mrq->cmd->error = (unsigned int)-ENOMEDIUM; 
+        mrq->cmd->error = (unsigned int)-ENOMEDIUM;
 
 #if 1
         mrq->done(mrq);         // call done directly.
@@ -1665,23 +1690,16 @@ static void msdc_ops_request(struct mmc_host *mmc,struct mmc_request *mrq)
 
         return;
     }
-    
-    /* start to process */
-    spin_lock(&host->lock); 
-#if 0 /* --- by chhung */
-    if (sdio_pro_enable) {  //=== for sdio profile ===  
-        if (mrq->cmd->opcode == 52 || mrq->cmd->opcode == 53) {    
-            GPT_GetCounter64(&old_L32, &old_H32); 
-        }
-    }
-#endif /* end of --- */
-    
-    host->mrq = mrq;    
 
-    if (msdc_do_request(mmc,mrq)) {  	
-        if(host->hw->flags & MSDC_REMOVABLE && mrq->data && mrq->data->error) {
-            msdc_tune_request(mmc,mrq);                                    	
-        }        	
+    /* start to process */
+    spin_lock(&host->lock);
+
+    host->mrq = mrq;
+
+    if (msdc_do_request(mmc,mrq)) {
+        if ((host->hw->flags & MSDC_REMOVABLE) && mrq->data && mrq->data->error) {
+            msdc_tune_request(mmc,mrq);
+        }
     }
 
     /* ==== when request done, check if app_cmd ==== */
@@ -1695,30 +1713,9 @@ static void msdc_ops_request(struct mmc_host *mmc,struct mmc_request *mrq)
 
     host->mrq = NULL;
 
-#if 0 /* --- by chhung */
-    //=== for sdio profile ===
-    if (sdio_pro_enable) {
-        if (mrq->cmd->opcode == 52 || mrq->cmd->opcode == 53) {
-            GPT_GetCounter64(&new_L32, &new_H32);
-            ticks = msdc_time_calc(old_L32, old_H32, new_L32, new_H32);
-            opcode = mrq->cmd->opcode;
-            if (mrq->cmd->data) {
-                sizes = mrq->cmd->data->blocks * mrq->cmd->data->blksz;
-                bRx = mrq->cmd->data->flags & MMC_DATA_READ ? 1 : 0 ;
-            } else {
-                bRx = mrq->cmd->arg & 0x80000000 ? 1 : 0;
-            }
-            if (!mrq->cmd->error) {
-                msdc_performance(opcode, sizes, bRx, ticks);
-            }
-        }
-    }
-#endif /* end of --- */
     spin_unlock(&host->lock);
 
     mmc_request_done(mmc, mrq);
-
-   return;
 }
 
 /* called by ops.set_ios */
@@ -1797,16 +1794,18 @@ static void msdc_ops_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
     /* Clock control */
     if (host->mclk != ios->clock) {
         if(ios->clock > 25000000) {
-            //if (!(host->hw->flags & MSDC_REMOVABLE)) {
             INIT_MSG("SD data latch edge<%d>", hw->data_edge);
             sdr_set_field(MSDC_IOCON, MSDC_IOCON_RSPL, hw->cmd_edge);
             sdr_set_field(MSDC_IOCON, MSDC_IOCON_DSPL, hw->data_edge);
-            //} /* for tuning debug */
         } else { /* default value */
             sdr_write32(MSDC_IOCON,      0x00000000);
             sdr_write32(MSDC_DAT_RDDLY0, 0x10101010);		// for MT7620 E2 and afterward
             sdr_write32(MSDC_DAT_RDDLY1, 0x00000000);
+#if defined (CONFIG_RALINK_MT7621)
+            sdr_write32(MSDC_PAD_TUNE,   0xE0101010);		// fix MT7621 TX Delay issue
+#else
             sdr_write32(MSDC_PAD_TUNE,   0x84101010);		// for MT7620 E2 and afterward
+#endif
         }
         msdc_set_mclk(host, ddr, ios->clock);
     }
@@ -2117,25 +2116,26 @@ static void msdc_init_hw(struct msdc_host *host)
     sdr_clr_bits(MSDC_INTEN, sdr_read32(MSDC_INTEN));
     sdr_write32(MSDC_INT, sdr_read32(MSDC_INT));
 
-#if 1
-	/* reset tuning parameter */
+    /* reset tuning parameter */
     sdr_write32(MSDC_PAD_CTL0,   0x00090000);
     sdr_write32(MSDC_PAD_CTL1,   0x000A0000);
     sdr_write32(MSDC_PAD_CTL2,   0x000A0000);
+#if defined (CONFIG_RALINK_MT7621)
+    sdr_write32(MSDC_PAD_TUNE,   0xE0101010);		// fix MT7621 TX Delay issue
+#else
     sdr_write32(MSDC_PAD_TUNE,   0x84101010);		// for MT7620 E2 and afterward
+#endif
     sdr_write32(MSDC_DAT_RDDLY0, 0x10101010);		// for MT7620 E2 and afterward
     sdr_write32(MSDC_DAT_RDDLY1, 0x00000000);
     sdr_write32(MSDC_IOCON,      0x00000000);
-#if 0 // use MT7620 default value: 0x403c004f
-    sdr_write32(MSDC_PATCH_BIT0, 0x003C000F); /* bit0 modified: Rx Data Clock Source: 1 -> 2.0*/
-#endif
 
-    if (sdr_read32(MSDC_ECO_VER) >= 4) { 
-        if (host->id == 1) {	
-            sdr_set_field(MSDC_PATCH_BIT1, MSDC_PATCH_BIT1_WRDAT_CRCS, 1); 
+#if 0
+    if (sdr_read32(MSDC_ECO_VER) >= 4) {
+        if (host->id == 1) {
+            sdr_set_field(MSDC_PATCH_BIT1, MSDC_PATCH_BIT1_WRDAT_CRCS, 1);
             sdr_set_field(MSDC_PATCH_BIT1, MSDC_PATCH_BIT1_CMD_RSP,    1);
-            /* internal clock: latch read data */  
-            sdr_set_bits(MSDC_PATCH_BIT0, MSDC_PATCH_BIT_CKGEN_CK);  
+            /* internal clock: latch read data */
+            sdr_set_bits(MSDC_PATCH_BIT0, MSDC_PATCH_BIT_CKGEN_CK);
         }
     }
 #endif
@@ -2201,13 +2201,10 @@ static void msdc_init_gpd_bd(struct msdc_host *host, struct msdc_dma *dma)
 
     /* init the 2 gpd */
     memset(gpd, 0, sizeof(gpd_t) * 2);
-    //gpd->next = (void *)virt_to_phys(gpd + 1); /* pointer to a null gpd, bug! kmalloc <-> virt_to_phys */  
-    //gpd->next = (dma->gpd_addr + 1);    /* bug */
     gpd->next = (void *)((u32)dma->gpd_addr + sizeof(gpd_t));    
 
     //gpd->intr = 0;
     gpd->bdp  = 1;   /* hwo, cs, bd pointer */
-    //gpd->ptr  = (void*)virt_to_phys(bd); 
     gpd->ptr = (void *)dma->bd_addr; /* physical address */
 
     memset(bd, 0, sizeof(bd_t) * bdlen);
@@ -2242,7 +2239,7 @@ static int msdc_drv_probe(struct platform_device *pdev)
     base = mem->start;
 
     mem = request_mem_region(mem->start, mem->end - mem->start + 1, MMC_DRV_NAME);
-    if (mem == NULL) {
+    if (!mem) {
         mmc_free_host(mmc);
         return -EBUSY;
     }
@@ -2259,7 +2256,7 @@ static int msdc_drv_probe(struct platform_device *pdev)
     /* For sd card: MSDC_SYS_SUSPEND | MSDC_WP_PIN_EN | MSDC_CD_PIN_EN | MSDC_REMOVABLE | MSDC_HIGHSPEED, 
        For sdio   : MSDC_EXT_SDIO_IRQ | MSDC_HIGHSPEED */
     if (hw->flags & MSDC_HIGHSPEED) {
-        mmc->caps   = MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED;
+        mmc->caps = MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED;
     }
     if (hw->data_pins == 4) { /* current data_pins are all 4*/
         mmc->caps  |= MMC_CAP_4_BIT_DATA;
@@ -2306,26 +2303,27 @@ static int msdc_drv_probe(struct platform_device *pdev)
     host->timeout_clks = DEFAULT_DTOC * 65536;
 
     host->mrq = NULL;
-    //init_MUTEX(&host->sem); /* we don't need to support multiple threads access */
 
     host->dma.used_gpd = 0;
     host->dma.used_bd = 0;
 
+    spin_lock_init(&host->lock);
+    INIT_DELAYED_WORK(&host->card_delaywork, msdc_tasklet_card);
+
     /* using dma_alloc_coherent*/  /* todo: using 1, for all 4 slots */
     host->dma.gpd = dma_alloc_coherent(NULL, MAX_GPD_NUM * sizeof(gpd_t), &host->dma.gpd_addr, GFP_KERNEL);
-    host->dma.bd =  dma_alloc_coherent(NULL, MAX_BD_NUM  * sizeof(bd_t),  &host->dma.bd_addr,  GFP_KERNEL);
-    BUG_ON((!host->dma.gpd) || (!host->dma.bd));
-    msdc_init_gpd_bd(host, &host->dma);
-    /*for emmc*/
-    msdc_6575_host[pdev->id] = host;
+    host->dma.bd = dma_alloc_coherent(NULL, MAX_BD_NUM * sizeof(bd_t), &host->dma.bd_addr, GFP_KERNEL);
+    if (!host->dma.gpd || !host->dma.bd) {
+        ret = -ENOMEM;
+        goto release_mem;
+    }
 
-    INIT_DELAYED_WORK(&host->card_delaywork, msdc_tasklet_card);
-    spin_lock_init(&host->lock);
+    msdc_init_gpd_bd(host, &host->dma);
     msdc_init_hw(host);
 
     ret = request_irq((unsigned int)irq, msdc_irq, IRQF_TRIGGER_LOW, MMC_DRV_NAME, host);
     if (ret)
-        goto release;
+        goto release_hw;
 
     if (hw->flags & MSDC_CD_PIN_EN) { /* not set for sdio */
         if (hw->request_cd_eirq) { /* not set for MT6575 */
@@ -2349,7 +2347,8 @@ static int msdc_drv_probe(struct platform_device *pdev)
     platform_set_drvdata(pdev, mmc);
 
     ret = mmc_add_host(mmc);
-    if (ret) goto free_irq;
+    if (ret)
+        goto release_all;
 
     /* Config card detection pin and enable interrupts */
     if (hw->flags & MSDC_CD_PIN_EN) {  /* set for card */
@@ -2360,19 +2359,25 @@ static int msdc_drv_probe(struct platform_device *pdev)
 
     return 0;
 
-free_irq:
-    free_irq(irq, host);
-release:
+release_all:
     platform_set_drvdata(pdev, NULL);
-    msdc_deinit_hw(host);
+    free_irq(irq, host);
 
+release_hw:
+    msdc_deinit_hw(host);
     cancel_delayed_work_sync(&host->card_delaywork);
 
-    if (mem)
-        release_mem_region(mem->start, mem->end - mem->start + 1);
+release_mem:
+    if (host->dma.bd)
+        dma_free_coherent(NULL, MAX_BD_NUM * sizeof(bd_t), host->dma.bd, host->dma.bd_addr);
+
+    if (host->dma.gpd)
+        dma_free_coherent(NULL, MAX_GPD_NUM * sizeof(gpd_t), host->dma.gpd, host->dma.gpd_addr);
 
     if (hw->ext_power_off)
         hw->ext_power_off();
+
+    release_mem_region(mem->start, mem->end - mem->start + 1);
 
     mmc_free_host(mmc);
 
@@ -2405,15 +2410,18 @@ static int msdc_drv_remove(struct platform_device *pdev)
 
     free_irq(host->irq, host);
 
-    dma_free_coherent(NULL, MAX_GPD_NUM * sizeof(gpd_t), host->dma.gpd, host->dma.gpd_addr);
-    dma_free_coherent(NULL, MAX_BD_NUM  * sizeof(bd_t),  host->dma.bd,  host->dma.bd_addr);
+    if (host->dma.bd)
+        dma_free_coherent(NULL, MAX_BD_NUM  * sizeof(bd_t), host->dma.bd, host->dma.bd_addr);
+
+    if (host->dma.gpd)
+        dma_free_coherent(NULL, MAX_GPD_NUM * sizeof(gpd_t), host->dma.gpd, host->dma.gpd_addr);
+
+    if (hw->ext_power_off)
+        hw->ext_power_off();
 
     mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
     if (mem)
         release_mem_region(mem->start, mem->end - mem->start + 1);
-
-    if (hw->ext_power_off)
-        hw->ext_power_off();
 
     mmc_free_host(host->mmc);
 

@@ -40,6 +40,7 @@ typedef struct esw_mib_counters_s
 	uint32_t TxMcastFrames;
 	uint32_t TxBcastFrames;
 	uint32_t TxDropFrames;
+	uint32_t TxPauseFrames;
 	uint32_t TxCollisions;
 	uint32_t TxCRCError;
 	uint64_t RxGoodOctets;
@@ -47,6 +48,7 @@ typedef struct esw_mib_counters_s
 	uint32_t RxMcastFrames;
 	uint32_t RxBcastFrames;
 	uint32_t RxDropFrames;
+	uint32_t RxPauseFrames;
 	uint32_t RxFilterFrames;
 	uint32_t RxCRCError;
 	uint32_t RxAligmentError;
@@ -680,6 +682,7 @@ static int show_mib_counters(unsigned int cmd)
 			"  TxMcastFrames: %u\n"
 			"  TxBcastFrames: %u\n"
 			"  TxDropFrames: %u\n"
+			"  TxPauseFrames: %u\n"
 			"  TxCollisions: %u\n"
 			"  TxCRCError: %u\n"
 			"  RxGoodOctets: %llu\n"
@@ -687,6 +690,7 @@ static int show_mib_counters(unsigned int cmd)
 			"  RxMcastFrames: %u\n"
 			"  RxBcastFrames: %u\n"
 			"  RxDropFrames: %u\n"
+			"  RxPauseFrames: %u\n"
 			"  RxFilterFrames: %u\n"
 			"  RxCRCError: %u\n"
 			"  RxAligmentError: %u\n"
@@ -697,6 +701,7 @@ static int show_mib_counters(unsigned int cmd)
 			mibc.TxMcastFrames,
 			mibc.TxBcastFrames,
 			mibc.TxDropFrames,
+			mibc.TxPauseFrames,
 			mibc.TxCollisions,
 			mibc.TxCRCError,
 			mibc.RxGoodOctets,
@@ -704,6 +709,7 @@ static int show_mib_counters(unsigned int cmd)
 			mibc.RxMcastFrames,
 			mibc.RxBcastFrames,
 			mibc.RxDropFrames,
+			mibc.RxPauseFrames,
 			mibc.RxFilterFrames,
 			mibc.RxCRCError,
 			mibc.RxAligmentError

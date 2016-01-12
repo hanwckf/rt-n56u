@@ -1378,7 +1378,7 @@ static void esw_status_mib_port(u32 port_id, esw_mib_counters_t *mibc)
 	mibc->TxMcastFrames	= esw_reg_get(0x400c + 0x100*port_id);
 	mibc->TxBcastFrames	= esw_reg_get(0x4010 + 0x100*port_id);
 	mibc->TxCollision	= esw_reg_get(0x4014 + 0x100*port_id);
-//	mibc->TxPausedFrames	= esw_reg_get(0x402c + 0x100*port_id);
+	mibc->TxPauseFrames	= esw_reg_get(0x402c + 0x100*port_id);
 
 	mibc->RxDropFrames	= esw_reg_get(0x4060 + 0x100*port_id);
 	mibc->RxFilterFrames	= esw_reg_get(0x4064 + 0x100*port_id);
@@ -1391,7 +1391,7 @@ static void esw_status_mib_port(u32 port_id, esw_mib_counters_t *mibc)
 //	mibc->RxFragmentError	= esw_reg_get(0x4080 + 0x100*port_id);
 //	mibc->RxOversizeError	= esw_reg_get(0x4084 + 0x100*port_id);
 //	mibc->RxJabberError	= esw_reg_get(0x4088 + 0x100*port_id);
-//	mibc->RxPausedFrames	= esw_reg_get(0x408c + 0x100*port_id);
+	mibc->RxPauseFrames	= esw_reg_get(0x408c + 0x100*port_id);
 #else
 	mibc->TxBadOctets	= esw_get_port_mib_tboc(port_id);
 	mibc->TxGoodFrames	= esw_get_port_mib_tgpc(port_id);

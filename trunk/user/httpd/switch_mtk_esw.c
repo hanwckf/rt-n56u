@@ -40,6 +40,7 @@ typedef struct esw_mib_counters_s
 	uint32_t TxMcastFrames;
 	uint32_t TxBcastFrames;
 	uint32_t TxDropFrames;
+	uint32_t TxPauseFrames;
 	uint32_t TxCollisions;
 	uint32_t TxCRCError;
 	uint64_t RxGoodOctets;
@@ -47,6 +48,7 @@ typedef struct esw_mib_counters_s
 	uint32_t RxMcastFrames;
 	uint32_t RxBcastFrames;
 	uint32_t RxDropFrames;
+	uint32_t RxPauseFrames;
 	uint32_t RxFilterFrames;
 	uint32_t RxCRCError;
 	uint32_t RxAligmentError;
@@ -241,6 +243,7 @@ static int fill_eth_status(int port_id, webs_t wp)
 		ret += websWrite(wp, "TxMcastFrames			: %u\n", mibc.TxMcastFrames);
 		ret += websWrite(wp, "TxBcastFrames			: %u\n", mibc.TxBcastFrames);
 		ret += websWrite(wp, "TxDropFrames			: %u\n", mibc.TxDropFrames);
+		ret += websWrite(wp, "TxPauseFrames			: %u\n", mibc.TxPauseFrames);
 		ret += websWrite(wp, "TxCollisions			: %u\n", mibc.TxCollisions);
 		ret += websWrite(wp, "TxCRCError			: %u\n", mibc.TxCRCError);
 		ret += websWrite(wp, "RxGoodOctets			: %llu\n", mibc.RxGoodOctets);
@@ -248,6 +251,7 @@ static int fill_eth_status(int port_id, webs_t wp)
 		ret += websWrite(wp, "RxMcastFrames			: %u\n", mibc.RxMcastFrames);
 		ret += websWrite(wp, "RxBcastFrames			: %u\n", mibc.RxBcastFrames);
 		ret += websWrite(wp, "RxDropFrames			: %u\n", mibc.RxDropFrames);
+		ret += websWrite(wp, "RxPauseFrames			: %u\n", mibc.RxPauseFrames);
 		ret += websWrite(wp, "RxFilterFrames			: %u\n", mibc.RxFilterFrames);
 		ret += websWrite(wp, "RxCRCError			: %u\n", mibc.RxCRCError);
 		ret += websWrite(wp, "RxAligmentError			: %u", mibc.RxAligmentError);

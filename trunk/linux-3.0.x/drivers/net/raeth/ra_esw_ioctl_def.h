@@ -168,6 +168,7 @@ typedef struct esw_mib_counters_s
 	uint32_t TxMcastFrames;
 	uint32_t TxBcastFrames;
 	uint32_t TxDropFrames;
+	uint32_t TxPauseFrames;
 	uint32_t TxCollision;
 	uint32_t TxCRCError;
 	uint64_t RxGoodOctets;
@@ -175,6 +176,7 @@ typedef struct esw_mib_counters_s
 	uint32_t RxMcastFrames;
 	uint32_t RxBcastFrames;
 	uint32_t RxDropFrames;
+	uint32_t RxPauseFrames;
 	uint32_t RxFilterFrames;
 	uint32_t RxCRCError;
 	uint32_t RxAligmentError;

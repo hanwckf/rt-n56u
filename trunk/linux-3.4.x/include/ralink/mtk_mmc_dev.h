@@ -65,12 +65,12 @@ struct msdc_hw {
 	unsigned char clk_src;		/* host clock source */
 	unsigned char cmd_edge;		/* command latch edge */
 	unsigned char data_edge;	/* data latch edge */
+	unsigned char crc_edge;		/* sample crc latch edge */
 	unsigned char clk_drv;		/* clock pad driving */
 	unsigned char cmd_drv;		/* command pad driving */
 	unsigned char dat_drv;		/* data pad driving */
+	unsigned char data_pins;	/* data pins */
 	unsigned int  flags;		/* hardware capability flags */
-	unsigned int  data_pins;	/* data pins */
-	unsigned int  data_offset;	/* data address offset */
 
 	/* config gpio pull mode */
 	void (*config_gpio_pin)(int type, int pull);

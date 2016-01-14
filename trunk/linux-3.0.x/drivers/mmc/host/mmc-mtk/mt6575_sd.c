@@ -1422,9 +1422,9 @@ static int msdc_tune_bread(struct mmc_host *mmc, struct mmc_request *mrq)
     u32 eco = 4;
 
 #if 0
-    /* [MT7620 rev 0204] MAIN_VER: 20110929, ECO_VER: 0
-       [MT7621 rev 0103] MAIN_VER: 20121010, ECO_VER: 0
-       [MT7628 rev 0102] MAIN_VER: 20130530, ECO_VER: 0
+    /* [MT7620] MAIN_VER: 20110929, ECO_VER: 0
+       [MT7621] MAIN_VER: 20121010, ECO_VER: 0
+       [MT7628] MAIN_VER: 20130530, ECO_VER: 0
        At least MT7621 and MT7628 has already swapped RDDLY bytes
     */
     eco = sdr_read32(MSDC_ECO_VER);
@@ -1548,9 +1548,9 @@ static int msdc_tune_bwrite(struct mmc_host *mmc, struct mmc_request *mrq)
     // MSDC_IOCON_DDR50CKD need to check. [Fix me] 
 
 #if 0
-    /* [MT7620 rev 0204] MAIN_VER: 20110929, ECO_VER: 0
-       [MT7621 rev 0103] MAIN_VER: 20121010, ECO_VER: 0
-       [MT7628 rev 0102] MAIN_VER: 20130530, ECO_VER: 0
+    /* [MT7620] MAIN_VER: 20110929, ECO_VER: 0
+       [MT7621] MAIN_VER: 20121010, ECO_VER: 0
+       [MT7628] MAIN_VER: 20130530, ECO_VER: 0
        At least MT7621 and MT7628 has already swapped RDDLY bytes
     */
     eco = sdr_read32(MSDC_ECO_VER);
@@ -1797,15 +1797,14 @@ static void msdc_ops_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
             INIT_MSG("SD data latch edge<%d>", hw->data_edge);
             sdr_set_field(MSDC_IOCON, MSDC_IOCON_RSPL, hw->cmd_edge);
             sdr_set_field(MSDC_IOCON, MSDC_IOCON_DSPL, hw->data_edge);
+#if !defined (CONFIG_RALINK_MT7620)
+            sdr_set_field(MSDC_IOCON, MSDC_IOCON_WDSPL, hw->crc_edge);
+#endif
         } else { /* default value */
             sdr_write32(MSDC_IOCON,      0x00000000);
             sdr_write32(MSDC_DAT_RDDLY0, 0x10101010);		// for MT7620 E2 and afterward
             sdr_write32(MSDC_DAT_RDDLY1, 0x00000000);
-#if defined (CONFIG_RALINK_MT7621)
-            sdr_write32(MSDC_PAD_TUNE,   0xE0101010);		// fix MT7621 TX Delay issue
-#else
             sdr_write32(MSDC_PAD_TUNE,   0x84101010);		// for MT7620 E2 and afterward
-#endif
         }
         msdc_set_mclk(host, ddr, ios->clock);
     }
@@ -2120,25 +2119,10 @@ static void msdc_init_hw(struct msdc_host *host)
     sdr_write32(MSDC_PAD_CTL0,   0x00090000);
     sdr_write32(MSDC_PAD_CTL1,   0x000A0000);
     sdr_write32(MSDC_PAD_CTL2,   0x000A0000);
-#if defined (CONFIG_RALINK_MT7621)
-    sdr_write32(MSDC_PAD_TUNE,   0xE0101010);		// fix MT7621 TX Delay issue
-#else
     sdr_write32(MSDC_PAD_TUNE,   0x84101010);		// for MT7620 E2 and afterward
-#endif
     sdr_write32(MSDC_DAT_RDDLY0, 0x10101010);		// for MT7620 E2 and afterward
     sdr_write32(MSDC_DAT_RDDLY1, 0x00000000);
     sdr_write32(MSDC_IOCON,      0x00000000);
-
-#if 0
-    if (sdr_read32(MSDC_ECO_VER) >= 4) {
-        if (host->id == 1) {
-            sdr_set_field(MSDC_PATCH_BIT1, MSDC_PATCH_BIT1_WRDAT_CRCS, 1);
-            sdr_set_field(MSDC_PATCH_BIT1, MSDC_PATCH_BIT1_CMD_RSP,    1);
-            /* internal clock: latch read data */
-            sdr_set_bits(MSDC_PATCH_BIT0, MSDC_PATCH_BIT_CKGEN_CK);
-        }
-    }
-#endif
 
     /* for safety, should clear SDC_CFG.SDIO_INT_DET_EN & set SDC_CFG.SDIO in 
        pre-loader,uboot,kernel drivers. and SDC_CFG.SDIO_INT_DET_EN will be only

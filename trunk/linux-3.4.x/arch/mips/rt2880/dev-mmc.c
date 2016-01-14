@@ -68,6 +68,7 @@ static struct msdc_hw mtk_mmc_hw = {
 	.clk_src	= 0,
 	.cmd_edge	= MSDC_SMPL_FALLING,
 	.data_edge	= MSDC_SMPL_FALLING,
+	.crc_edge	= MSDC_SMPL_FALLING,
 	.clk_drv	= 4,
 	.cmd_drv	= 4,
 	.dat_drv	= 4,
@@ -76,7 +77,6 @@ static struct msdc_hw mtk_mmc_hw = {
 #else
 	.data_pins	= 4,
 #endif
-	.data_offset	= 0,
 	.flags		= MSDC_SYS_SUSPEND | MSDC_WP_PIN_EN | MSDC_CD_PIN_EN | MSDC_REMOVABLE | MSDC_HIGHSPEED,
 	.ext_power_on	= mtk_mmc_power_on,
 	.ext_power_off	= mtk_mmc_power_off,

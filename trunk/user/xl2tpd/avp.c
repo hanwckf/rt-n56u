@@ -104,6 +104,7 @@ char *cdn_result_codes[] = {
     "Call failed due to lack of appropriate facilities being available (permanent condition)",
     "Invalid destination",
     "Call failed due to no carrier detected",
+    "Call failed due to detection of a busy signal",
     "Call failed due to lack of a dial tone",
     "Call was no established within time allotted by LAC",
     "Call was connected but no appropriate framing was detect"
@@ -1638,6 +1639,7 @@ int handle_avps (struct buffer *buf, struct tunnel *t, struct call *c)
              __FUNCTION__, t->ourtid, c->ourcid);
     while (len > 0)
     {
+        hidlen = 0;
         /* Go ahead and byte-swap the header */
         swaps (avp, sizeof (struct avp_hdr));
         if (avp->attr > AVP_MAX)
@@ -1775,16 +1777,21 @@ int handle_avps (struct buffer *buf, struct tunnel *t, struct call *c)
             }
         }
       next:
-        if (hidlen)
+        if (hidlen && ALENGTH(hidlen))
         {
             /* Skip over the complete length of the hidden AVP */
             len -= ALENGTH (hidlen);
             data += ALENGTH (hidlen);
         }
-        else
+        else if (ALENGTH(avp->length))
         {
             len -= ALENGTH (avp->length);
             data += ALENGTH (avp->length);      /* Next AVP, please */
+        }
+        else
+        {
+            l2tp_log (LOG_WARNING, "%s: broken avp->length zero %d\n", __FUNCTION__,avp->length);
+            break;
         }
         avp = (struct avp_hdr *) data;
         firstavp = 0;

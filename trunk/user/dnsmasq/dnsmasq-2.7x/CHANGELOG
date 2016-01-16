@@ -18,6 +18,10 @@ version 2.75+
 	    that the same name is empty. Thanks to Edwin Török for
 	    the patch.
 
+	    Fix failure to correctly calculate cache-size when 
+	    reading a hosts-file fails. Thanks to André Glüpker 
+	    for the patch.
+
 	
 version 2.75
             Fix reversion on 2.74 which caused 100% CPU use when a 

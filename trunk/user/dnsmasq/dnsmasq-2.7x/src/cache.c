@@ -939,7 +939,7 @@ int read_hostsfile(char *filename, unsigned int index, int cache_size, struct cr
   if (!f)
     {
       my_syslog(LOG_ERR, _("failed to load names from %s: %s"), filename, strerror(errno));
-      return 0;
+      return cache_size;
     }
   
   eatspace(f);

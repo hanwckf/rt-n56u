@@ -67,7 +67,7 @@
 		/* Initial READ(10) (and others) must be retried */ \
 	US_FLAG(NEEDS_CAP16,	0x00400000)			\
 		/* cannot handle READ_CAPACITY_10 */		\
-	US_FLAG(BROKEN_FUA,	0x01000000)			\
+	US_FLAG(BROKEN_FUA,	0x00800000)			\
 		/* Cannot handle FUA in WRITE or READ CDBs */	\
 
 #define US_FLAG(name, value)	US_FL_##name = value ,

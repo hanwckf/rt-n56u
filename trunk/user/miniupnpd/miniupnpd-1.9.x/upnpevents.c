@@ -1,4 +1,4 @@
-/* $Id: upnpevents.c,v 1.31 2015/12/12 09:36:22 nanard Exp $ */
+/* $Id: upnpevents.c,v 1.32 2015/12/15 11:11:12 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2008-2015 Thomas Bernard
@@ -112,7 +112,7 @@ newSubscriber(const char * eventurl, const char * callback, int callbacklen)
 	/* TODO: improve that */
 	strncpy(tmp->uuid, uuidvalue_igd, sizeof(tmp->uuid));
 	tmp->uuid[sizeof(tmp->uuid)-1] = '\0';
-	snprintf(tmp->uuid+37, 5, "%04lx", random() & 0xffff);
+	snprintf(tmp->uuid+sizeof(tmp->uuid)-5, 5, "%04lx", random() & 0xffff);
 	return tmp;
 }
 

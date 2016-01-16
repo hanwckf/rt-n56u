@@ -1,4 +1,4 @@
-/* $Id: pcpserver.c,v 1.42 2015/11/05 10:59:34 nanard Exp $ */
+/* $Id: pcpserver.c,v 1.43 2016/01/13 15:48:13 nanard Exp $ */
 /* MiniUPnP project
  * Website : http://miniupnp.free.fr/
  * Author : Peter Tatrai
@@ -854,7 +854,7 @@ static void DeletePCPPeer(pcp_info_t *pcp_msg_info)
 					    rhost2, sizeof(rhost2), &rport2,
 					    iaddr2, sizeof(iaddr2), &iport2,
 					    &proto2, desc, sizeof(desc),
-					    &timestamp, NULL) > 0)
+					    &timestamp, NULL) >= 0)
 #endif /* 0 */
 		     ;
 	     index++)
@@ -1063,7 +1063,7 @@ static void DeletePCPMap(pcp_info_t *pcp_msg_info)
 	/* remove all the mappings for this client */
 	int index;
 	unsigned short eport2, iport2;
-	char iaddr2[16];
+	char iaddr2[INET6_ADDRSTRLEN];
 	int proto2;
 	char desc[64];
 	unsigned int timestamp;
@@ -1087,7 +1087,7 @@ static void DeletePCPMap(pcp_info_t *pcp_msg_info)
 				    NULL, 0, NULL,
 				    iaddr2, sizeof(iaddr2), &iport2,
 				    &proto2, desc, sizeof(desc),
-				    &timestamp, NULL) > 0)
+				    &timestamp, NULL) >= 0)
 #endif /* ENABLE_UPNPPINHOLE */
 		     ;
 	     index++)

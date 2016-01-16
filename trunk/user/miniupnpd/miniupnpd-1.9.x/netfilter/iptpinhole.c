@@ -1,4 +1,4 @@
-/* $Id: iptpinhole.c,v 1.14 2015/02/10 15:01:03 nanard Exp $ */
+/* $Id: iptpinhole.c,v 1.15 2016/01/13 15:54:42 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2012-2015 Thomas Bernard
@@ -315,6 +315,7 @@ delete_pinhole(unsigned short uid)
 	}
 	ip6tc_free(h);
 	syslog(LOG_WARNING, "delete_pinhole() rule with PID=%hu not found", uid);
+	LIST_REMOVE(p, entries);
 	return -2;	/* not found */
 error:
 	ip6tc_free(h);

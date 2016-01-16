@@ -1,4 +1,4 @@
-/* $Id: upnpdescgen.c,v 1.80 2015/12/12 09:10:29 nanard Exp $ */
+/* $Id: upnpdescgen.c,v 1.81 2015/12/15 11:09:56 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
@@ -48,6 +48,10 @@ static const char * const upnpdefaultvalues[] =
 	0,
 	"IP_Routed"/*"Unconfigured"*/, /* 1 default value for ConnectionType */
 	"3600", /* 2 default value for PortMappingLeaseDuration */
+	"Unconfigured",	/* 3 default value for ConnectionStatus */
+	"0", /* 4 default value for RSIPAvailable */
+	"1", /* 5 default value for NATEnabled */
+	"ERROR_NONE", /* 6 default value for LastConnectionError */
 };
 
 static const char * const upnpallowedvalues[] =
@@ -489,24 +493,30 @@ static const struct action WANIPCnActions[] =
 /* ignore "warning: missing initializer" */
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 
+/* struct stateVar :
+ * {name, itype(&event), idefault, iallowedlist, ieventvalue} */
 static const struct stateVar WANIPCnVars[] =
 {
 /* 0 */
 #if 0
 	{"ConnectionType", 0, 0/*1*/}, /* required */
 	{"PossibleConnectionTypes", 0|0x80, 0, 14, 15},
-#endif
+#elif 0
 	{"ConnectionType", 0, 1, 14, 15}, /* required */
 	{"PossibleConnectionTypes", 0|0x80, 0, 0, 15},
+#else
+	{"ConnectionType", 0, 1, 0, 15}, /* required */
+	{"PossibleConnectionTypes", 0|0x80, 0, 14, 15},
+#endif
 	 /* Required
 	  * Allowed values : Unconfigured / IP_Routed / IP_Bridged */
-	{"ConnectionStatus", 0|0x80, 0/*1*/, 18,
+	{"ConnectionStatus", 0|0x80, 3, 18,
 	 CONNECTIONSTATUS_MAGICALVALUE }, /* required */
 	 /* Allowed Values : Unconfigured / Connecting(opt) / Connected
 	  *                  PendingDisconnect(opt) / Disconnecting (opt)
 	  *                  Disconnected */
 	{"Uptime", 3, 0},	/* Required */
-	{"LastConnectionError", 0, 0, 25},	/* required : */
+	{"LastConnectionError", 0, 6, 25},	/* required : */
 	 /* Allowed Values : ERROR_NONE(req) / ERROR_COMMAND_ABORTED(opt)
 	  *                  ERROR_NOT_ENABLED_FOR_INTERNET(opt)
 	  *                  ERROR_USER_DISCONNECT(opt)
@@ -516,8 +526,8 @@ static const struct stateVar WANIPCnVars[] =
 	  *                  ERROR_NO_CARRIER(opt)
 	  *                  ERROR_IP_CONFIGURATION(opt)
 	  *                  ERROR_UNKNOWN(opt) */
-	{"RSIPAvailable", 1, 0}, /* required */
-	{"NATEnabled", 1, 0},    /* required */
+	{"RSIPAvailable", 1, 4}, /* required */
+	{"NATEnabled", 1, 5},    /* required */
 	{"ExternalIPAddress", 0|0x80, 0, 0,
 	 EXTERNALIPADDRESS_MAGICALVALUE}, /* required. Default : empty string */
 	{"PortMappingNumberOfEntries", 2|0x80, 0, 0,

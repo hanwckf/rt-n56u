@@ -298,7 +298,6 @@ if [ "$CONFIG_FIRMWARE_ENABLE_USB" != "y" ] || [ -z "$CONFIG_USB_SUPPORT" ] ; th
 	func_disable_busybox_param "CONFIG_FDISK"
 	func_disable_busybox_param "CONFIG_FEATURE_FDISK_WRITABLE"
 	func_disable_busybox_param "CONFIG_FEATURE_FDISK_ADVANCED"
-	func_disable_busybox_param "CONFIG_LSUSB"
 	func_disable_busybox_param "CONFIG_MICROCOM"
 	func_disable_busybox_param "CONFIG_EJECT"
 	func_disable_busybox_param "CONFIG_FEATURE_EJECT_SCSI"

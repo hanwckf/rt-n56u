@@ -65,6 +65,8 @@
 		/* cannot handle READ_CAPACITY_16 */		\
 	US_FLAG(INITIAL_READ10,	0x00100000)			\
 		/* Initial READ(10) (and others) must be retried */ \
+	US_FLAG(NEEDS_CAP16,	0x00400000)			\
+		/* cannot handle READ_CAPACITY_10 */		\
 	US_FLAG(BROKEN_FUA,	0x01000000)			\
 		/* Cannot handle FUA in WRITE or READ CDBs */	\
 

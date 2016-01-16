@@ -223,6 +223,7 @@ Adm_Svc_desc=Керування сервісами маршрутизатора.
 Adm_Svc_wins=Сервіс WINS?
 Adm_Svc_lltd=Сервіс LLTD (Link Layer Topology Discovery)?
 Adm_Svc_adsc=Сервіс ASUS Info Discovery?
+Adm_Svc_crond=Сервic Cron (планувальник)?
 Adm_System_webs=HTTP веб-сервер
 Adm_System_term=Термінальні сервіси
 Adm_System_misc=Інші сервіси

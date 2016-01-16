@@ -1125,6 +1125,10 @@ handle_notifications(void)
 		{
 			restart_infosvr();
 		}
+		else if (strcmp(entry->d_name, RCN_RESTART_CROND) == 0)
+		{
+			restart_crond();
+		}
 		else if (strcmp(entry->d_name, RCN_REAPPLY_VPNSVR) == 0)
 		{
 			reapply_vpn_server();

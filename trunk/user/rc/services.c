@@ -101,6 +101,29 @@ restart_infosvr(void)
 	start_infosvr();
 }
 
+void
+stop_crond(void)
+{
+	char* svcs[] = { "crond", NULL };
+	kill_services(svcs, 3, 1);
+}
+
+int
+start_crond(void)
+{
+	if (nvram_invmatch("crond_enable", "1"))
+		return 1;
+
+	return eval("/usr/sbin/crond");
+}
+
+void
+restart_crond(void)
+{
+	stop_crond();
+	start_crond();
+}
+
 int
 start_networkmap(int first_call)
 {
@@ -396,6 +419,7 @@ start_services_once(int is_ap_mode)
 
 	start_lltd();
 	start_watchdog_cpu();
+	start_crond();
 	start_networkmap(1);
 	start_rstats();
 
@@ -427,6 +451,7 @@ stop_services(int stopall)
 	stop_detect_internet();
 	stop_rstats();
 	stop_infosvr();
+	stop_crond();
 	stop_igmpproxy(NULL);
 }
 

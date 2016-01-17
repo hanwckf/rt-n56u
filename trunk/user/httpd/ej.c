@@ -24,8 +24,10 @@
 
 #include <httpd.h>
 
-static char * get_arg(char *args, char **next);
-static void call(char *func, FILE *stream);
+#define MAX_PATTERN_LENGTH	1024
+
+static const char *asp_mark1 = "<%", *asp_mark2 = "%>";
+static const char *kw_mark1 = "<#", *kw_mark2 = "#>";
 
 /* Look for unquoted character within a string */
 static char *
@@ -63,18 +65,19 @@ get_arg(char *args, char **next)
 	return arg;
 }
 
-static void
-call(char *func, FILE *stream)
+static int
+call_asp(char *func, FILE *stream)
 {
 	int argc;
 	char *args, *end, *next, *argv[16] = {NULL};
 	struct ej_handler *handler;
+	int success = 0;
 
 	/* Parse out ( args ) */
 	if (!(args = strchr(func, '(')))
-		return;
+		return 0;
 	if (!(end = unqstrstr(func, ")")))
-		return;
+		return 0;
 	*args++ = *end = '\0';
 
 	/* Set up argv list */
@@ -87,38 +90,51 @@ call(char *func, FILE *stream)
 	for (handler = &ej_handlers[0]; handler->pattern; handler++) {
 		if (strcmp(handler->pattern, func) == 0){
 			handler->output(0, stream, argc, argv);
+			success = 1;
 			break;
 		}
 	}
-}
 
-static const char *asp_mark1 = "<%", *asp_mark2 = "%>", *kw_mark1 = "<#", *kw_mark2 = "#>";
+	return success;
+}
 
 // Call this function if and only if we can read whole <%....%> pattern.
 static char *
-process_asp (char *s, char *e, FILE *f)
+process_asp(char *s, char *e, FILE *stream)
 {
-	char *func = NULL, *end = NULL;
+	char *func, *end;
+	int asp_res = 0;
 
-	if (s == NULL || e == NULL || f == NULL || s >= e)
+	if (!s || !e || s >= e)
 		return NULL;
 
-	for (func = s; func < e; func = end) {
-		/* Skip initial whitespace */
-		for (; isspace((int)*func); func++);
-		if (!(end = unqstrstr(func, ";")))
-			break;
-		*end++ = '\0';
+	func = s;
 
-		/* Call function */
-		call(func, f);
+	/* Skip initial whitespace */
+	while (func < e && isspace((int)*func))
+		func++;
 
-		// skip asp_mark2
-		end = e + strlen (asp_mark2);
-		break;
+	/* find end of function '<% f(); %>' */
+	end = unqstrstr(func, ";");
+	if (end && end < e && (end-func) > 2) {
+		int asp_flen = end-func + 1;
+		char asp_func[asp_flen];
+		
+		/* copy func */
+		memcpy(asp_func, func, asp_flen-1);
+		asp_func[asp_flen-1] = '\0';
+		
+		/* Call function (1: success, 0: pattern not found) */
+		asp_res = call_asp(asp_func, stream);
 	}
 
-	return end;
+	if (!asp_res) {
+		/* write pattern unchanged */
+		fwrite(s - strlen(asp_mark1), 1, e - s + strlen(asp_mark1) + strlen(asp_mark2), stream);
+	}
+
+	/* skip asp_mark2 */
+	return e + strlen(asp_mark2);
 }
 
 static char*
@@ -126,6 +142,9 @@ search_desc(pkw_t pkw, char *name)
 {
 	int i, len;
 	char *p, *ret = NULL;
+
+	if (!pkw)
+		return NULL;
 
 	len = strlen(name);
 
@@ -142,34 +161,46 @@ search_desc(pkw_t pkw, char *name)
 
 // Call this function if and only if we can read whole <#....#> pattern.
 static char *
-translate_lang(char *s, char *e, FILE *fp, kw_t *pkw)
+translate_lang(char *s, char *e, FILE *stream, kw_t *pkw)
 {
-	char *end = NULL, *name = NULL, *desc = NULL;
+	char *name, *end, *desc = NULL;
 
-	if (s == NULL || e == NULL || fp == NULL || pkw == NULL || s >= e)
+	if (!s || !e || s >= e)
 		return NULL;
 
-	for (name = s; name < e; name = end) {
-		/* Skip initial whitespace */
-		for (; isspace((int)*name); name++);
-		if (!(end = strstr(name, kw_mark2)))
-			break;
-		*end++ = '=';	   // '#' --> '=', search_desc() need '='
-		*end++ = '\0';	  // '>' --> '\0'
+	name = s;
 
+	/* Skip initial whitespace */
+	while (name < e && isspace((int)*name))
+		name++;
+
+	/* find end of name '<# NNN #>' */
+	end = strstr(name, kw_mark2);
+	if (end && end <= e && (end-name) > 0) {
+		*end++ = '=';	// '#' --> '=', search_desc() need '='
+		*end = '\0';	// '>' --> '\0'
+		
 		desc = search_desc(pkw, name);
 		if (!desc && pkw != &kw_EN)
 			desc = search_desc(&kw_EN, name);
-
-		if (desc)
-			fprintf (fp, "%s", desc);
-
-		// skip kw_mark2
-		end = e + strlen (kw_mark2);
-		break;
+		
+		if (desc) {
+			/* write translation from dictionary */
+			fputs(desc, stream);
+		} else {
+			/* restore pattern body */
+			*end-- = '>';
+			*end = '#';
+		}
 	}
 
-	return end;
+	if (!desc) {
+		/* write pattern unchanged */
+		fwrite(s - strlen(kw_mark1), 1, e - s + strlen(kw_mark1) + strlen(kw_mark2), stream);
+	}
+
+	/* skip kw_mark2 */
+	return e + strlen(kw_mark2);
 }
 
 char *
@@ -267,13 +298,12 @@ load_dictionary(char *lang, pkw_t pkw)
 void
 do_ej(const char *url, FILE *stream)
 {
-#define PATTERN_LENGTH	1024
 #define FRAG_SIZE	128
 #define RESERVE_SIZE	4
 	FILE *fp;
 	int frag_size = FRAG_SIZE;
-	int pattern_size = PATTERN_LENGTH - RESERVE_SIZE;
-	char pat_buf[PATTERN_LENGTH];
+	int pattern_size = MAX_PATTERN_LENGTH - RESERVE_SIZE;
+	char pat_buf[MAX_PATTERN_LENGTH];
 	char *pattern = pat_buf, *asp = NULL, *asp_end = NULL, *key = NULL, *key_end = NULL;
 	char *start_pat, *end_pat, *lang;
 	pkw_t pkw = &kw_EN;
@@ -390,7 +420,6 @@ do_ej(const char *url, FILE *stream)
 					special = 1;
 					e--;
 				}
-
 				postproc = 3;
 			}
 

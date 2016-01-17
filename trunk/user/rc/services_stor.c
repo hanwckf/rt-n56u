@@ -31,6 +31,7 @@
 #include <errno.h>
 #include <time.h>
 #include <sys/mount.h>
+#include <net/ethernet.h>
 
 #include <dev_info.h>
 #include <disk_initial.h>

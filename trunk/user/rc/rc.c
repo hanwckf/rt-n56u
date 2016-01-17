@@ -35,6 +35,9 @@
 #include <dirent.h>
 
 #include <rstats.h>
+#if defined (USE_STORAGE)
+#include <disk_initial.h>
+#endif
 
 #include "rc.h"
 #include "gpio_pins.h"
@@ -1742,12 +1745,17 @@ main(int argc, char **argv)
 #if defined (USE_ATA_SUPPORT)
 	else if (!strcmp(base, "ejata")) {
 		char *devn = (argc > 1) ? argv[1] : NULL;
-		safe_remove_ata_device(devn);
+		safe_remove_stor_device(ATA_VIRT_PORT_ID, ATA_VIRT_PORT_ID, devn, 1);
 	}
 #endif
 #if defined (USE_MMC_SUPPORT)
 	else if (!strcmp(base, "ejmmc")) {
-		safe_remove_mmc_device();
+		safe_remove_stor_device(MMC_VIRT_PORT_ID, MMC_VIRT_PORT_ID, NULL, 0);
+	}
+#endif
+#if defined (USE_STORAGE)
+	else if (!strcmp(base, "ejall")) {
+		safe_remove_all_stor_devices(1);
 	}
 #endif
 	else if (!strcmp(base, "pids")) {

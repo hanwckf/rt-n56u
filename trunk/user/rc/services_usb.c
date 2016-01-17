@@ -48,7 +48,7 @@
 void
 safe_remove_usb_device(int port, const char *dev_name)
 {
-	int i, modem_devnum = 0, start_apps = 0;
+	int modem_devnum = 0;
 
 	if (dev_name && strncmp(dev_name, "sd", 2) != 0) {
 		modem_devnum = atoi(dev_name);
@@ -56,7 +56,7 @@ safe_remove_usb_device(int port, const char *dev_name)
 			modem_devnum = 0;
 	}
 
-	if (port >= 1 && port < (1+BOARD_NUM_USB_PORTS)) {
+	if (port >= 1 && port <= BOARD_NUM_USB_PORTS) {
 		if (modem_devnum) {
 			usb_info_t *usb_info, *follow_usb;
 			int has_modem_port = 0;
@@ -78,21 +78,11 @@ safe_remove_usb_device(int port, const char *dev_name)
 				}
 			}
 		} else {
-#if defined (USE_MMC_SUPPORT) || defined (USE_ATA_SUPPORT) || (BOARD_NUM_USB_PORTS > 1)
-			start_apps = 1;
-#endif
-			if (dev_name)
-				start_apps = 1;
-			safe_remove_stor_device(port, dev_name, 1, start_apps);
+			safe_remove_stor_device(port, port, dev_name, 1);
 		}
 		
 	} else if (port == 0) {
-		for (i = 0; i < BOARD_NUM_USB_PORTS; i++) {
-#if defined (USE_MMC_SUPPORT) || defined (USE_ATA_SUPPORT)
-			start_apps = (i == (BOARD_NUM_USB_PORTS-1)) ? 1 : 0;
-#endif
-			safe_remove_stor_device(1+i, NULL, 1, start_apps);
-		}
+		safe_remove_stor_device(1, BOARD_NUM_USB_PORTS, NULL, 1);
 	}
 }
 

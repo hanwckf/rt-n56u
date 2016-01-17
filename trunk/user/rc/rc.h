@@ -587,14 +587,8 @@ void umount_ejected(void);
 void start_stor_apps(void);
 void stop_stor_apps(void);
 void on_deferred_hotplug_dev(void);
-void safe_remove_stor_device(int port, const char *dev_name, int do_spindown, int try_start_apps);
+void safe_remove_stor_device(int port_b, int port_e, const char *dev_name, int do_spindown);
 void safe_remove_all_stor_devices(int do_spindown);
-#if defined (USE_ATA_SUPPORT)
-void safe_remove_ata_device(const char *dev_name);
-#endif
-#if defined (USE_MMC_SUPPORT)
-void safe_remove_mmc_device(void);
-#endif
 #endif
 
 #if defined (USE_USB_SUPPORT)

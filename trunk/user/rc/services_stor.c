@@ -1419,9 +1419,9 @@ on_deferred_hotplug_dev(void)
 }
 
 void
-safe_remove_stor_device(int port, const char *dev_name, int do_spindown, int try_start_apps)
+safe_remove_stor_device(int port_b, int port_e, const char *dev_name, int do_spindown)
 {
-	int has_mounted_port = 0, has_swapon_port = 0;
+	int port, has_mounted_port = 0, has_swapon_port = 0;
 	disk_info_t *disks_info, *follow_disk;
 
 	disks_info = read_disk_data();
@@ -1429,7 +1429,8 @@ safe_remove_stor_device(int port, const char *dev_name, int do_spindown, int try
 		return;
 
 	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
-		if (follow_disk->port_root != (u16)port)
+		port = (int)follow_disk->port_root;
+		if (port < port_b || port > port_e)
 			continue;
 		if (follow_disk->mounted_number > 0)
 			has_mounted_port = 1;
@@ -1439,19 +1440,19 @@ safe_remove_stor_device(int port, const char *dev_name, int do_spindown, int try
 
 	if (has_mounted_port) {
 		stop_stor_apps();
-		umount_stor_path(disks_info, port, dev_name, do_spindown);
+		for (port = port_b; port <= port_e; port++)
+			umount_stor_path(disks_info, port, dev_name, do_spindown);
 		umount_ejected();
-		if (try_start_apps) {
-			if (count_stor_mountpoint())
-				start_stor_apps();
+		if (count_stor_mountpoint())
+			start_stor_apps();
 #if defined(APP_NFSD)
-			else
-				unload_nfsd();
+		else
+			unload_nfsd();
 #endif
-		}
 	
 	} else if (has_swapon_port) {
-		umount_stor_path(disks_info, port, dev_name, do_spindown);
+		for (port = port_b; port <= port_e; port++)
+			umount_stor_path(disks_info, port, dev_name, do_spindown);
 	}
 
 	free_disk_data(disks_info);
@@ -1472,25 +1473,4 @@ safe_remove_all_stor_devices(int do_spindown)
 	unload_nfsd();
 #endif
 }
-
-#if defined (USE_ATA_SUPPORT)
-void
-safe_remove_ata_device(const char *dev_name)
-{
-	safe_remove_stor_device(ATA_VIRT_PORT_ID, dev_name, 1, 1);
-}
-#endif
-
-#if defined (USE_MMC_SUPPORT)
-void
-safe_remove_mmc_device(void)
-{
-	int start_apps = 0;
-
-#if defined (USE_USB_SUPPORT) || defined (USE_ATA_SUPPORT)
-	start_apps = 1;
-#endif
-	safe_remove_stor_device(MMC_VIRT_PORT_ID, NULL, 0, start_apps);
-}
-#endif
 

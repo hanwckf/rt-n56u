@@ -172,6 +172,9 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_aria
 endif
 endif
+ifeq ($(STORAGE_ENABLED),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc ejall
+endif
 ifdef CONFIG_ATA
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejata
 endif
@@ -192,7 +195,7 @@ ifdef CONFIG_USB_SUPPORT
 	cd $(INSTALLDIR)/sbin && ln -sf rc zerocd
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb1
-ifeq ($(BOARD_NUM_USB_PORTS),2)
+ifneq ($(BOARD_NUM_USB_PORTS),1)
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb2
 endif
 endif

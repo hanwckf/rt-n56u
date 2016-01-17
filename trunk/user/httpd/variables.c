@@ -211,6 +211,9 @@
 			{"enable_ftp", "", NULL, EVM_RESTART_FTPD},
 			{"st_ftp_mode", "", NULL, EVM_RESTART_FTPD},
 			{"st_ftp_log", "", NULL, EVM_RESTART_FTPD},
+			{"st_ftp_pmin", "", NULL, EVM_RESTART_FTPD},
+			{"st_ftp_pmax", "", NULL, EVM_RESTART_FTPD},
+			{"st_ftp_anmr", "", NULL, EVM_RESTART_FTPD},
 #endif
 			{"achk_enable", "", NULL, FALSE},
 			{"optw_enable", "", NULL, FALSE},

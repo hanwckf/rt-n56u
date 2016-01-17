@@ -1210,13 +1210,11 @@ ej_set_share_mode(int eid, webs_t wp, int argc, char **argv)
 		if (!strcmp(protocol, "cifs")) {
 			if (samba_mode == 2 || samba_mode == 4)
 				goto SET_SHARE_MODE_SUCCESS;
-
 			nvram_set_int("st_samba_mode", 4);
 		}
 		else if (!strcmp(protocol, "ftp")) {
 			if (ftp_mode == 2)
 				goto SET_SHARE_MODE_SUCCESS;
-
 			nvram_set_int("st_ftp_mode", 2);
 		}
 		else {

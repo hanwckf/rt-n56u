@@ -100,8 +100,8 @@ write_vsftpd_conf(void)
 	fprintf(fp, "background=%s\n", "YES");
 	fprintf(fp, "connect_from_port_20=%s\n", "NO");
 	fprintf(fp, "pasv_enable=%s\n", "YES");
-	fprintf(fp, "pasv_min_port=%d\n", 50000);
-	fprintf(fp, "pasv_max_port=%d\n", 50100);
+	fprintf(fp, "pasv_min_port=%d\n", nvram_safe_get_int("st_ftp_pmin", 50000, 1, 65535));
+	fprintf(fp, "pasv_max_port=%d\n", nvram_safe_get_int("st_ftp_pmax", 50100, 1, 65535));
 	fprintf(fp, "use_sendfile=%s\n", "YES");
 #if defined (SUPPORT_FTPD_SSL)
 	fprintf(fp, "ssl_enable=%s\n", "NO");
@@ -122,6 +122,9 @@ write_vsftpd_conf(void)
 		fprintf(fp, "local_umask=%s\n", "000");
 		fprintf(fp, "anonymous_enable=%s\n", (i_ftp_mode == 2) ? "NO" : "YES");
 	}
+
+	if (i_ftp_mode == 3 || i_ftp_mode == 4)
+		fprintf(fp, "anon_max_rate=%u\n", nvram_safe_get_int("st_ftp_anmr", 0, 0, 1000*10) * 1024);
 
 	fprintf(fp, "nopriv_user=%s\n", "root");
 	fprintf(fp, "write_enable=%s\n", "YES");

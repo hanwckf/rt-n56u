@@ -235,10 +235,18 @@ function change_smb_enabled(){
 	showhide_div('row_smb_fp', v);
 }
 
+function on_change_ftp_mode(enable){
+	var mode = document.form.st_ftp_mode.value;
+	var v = (mode == "3" || mode == "4") ? 1 : 0;
+	showhide_div('row_ftp_anmr', v&&enable);
+}
+
 function change_ftp_enabled(){
 	var v = document.form.enable_ftp[0].checked;
 	showhide_div('row_ftp_mode', v);
 	showhide_div('row_ftp_log', v);
+	showhide_div('row_ftp_pasv', v);
+	on_change_ftp_mode(v);
 }
 
 function change_dms_enabled(){
@@ -282,6 +290,15 @@ function validForm(){
 
 	String.prototype.Trim = function(){return this.replace(/(^\s*)|(\s*$)/g,"");}
 	document.form.st_samba_workgroup.value = document.form.st_samba_workgroup.value.Trim();
+
+	if(found_app_ftpd()){
+		if(!validate_range(document.form.st_ftp_pmin, 1, 65535))
+			return false;
+		if(!validate_range(document.form.st_ftp_pmax, 1, 65535))
+			return false;
+		if(!validate_range(document.form.st_ftp_anmr, 0, 10000))
+			return false;
+	}
 
 	return true;
 }
@@ -519,7 +536,7 @@ function done_validating(action){
                                                 <#StorageShare#>
                                             </th>
                                             <td>
-                                                <select name="st_ftp_mode" class="input" style="width: 300px;">
+                                                <select name="st_ftp_mode" class="input" style="width: 300px;" onchange="on_change_ftp_mode(1);">
                                                     <option value="1" <% nvram_match_x("", "st_ftp_mode", "1", "selected"); %>><#StorageShare1#></option>
                                                     <option value="3" <% nvram_match_x("", "st_ftp_mode", "3", "selected"); %>><#StorageShare3#></option>
                                                     <option value="2" <% nvram_match_x("", "st_ftp_mode", "2", "selected"); %>><#StorageShare2#></option>
@@ -536,6 +553,21 @@ function done_validating(action){
                                                     <option value="0" <% nvram_match_x("", "st_ftp_log", "0", "selected"); %>><#checkbox_No#></option>
                                                     <option value="1" <% nvram_match_x("", "st_ftp_log", "1", "selected"); %>><#checkbox_Yes#></option>
                                                 </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_ftp_pasv">
+                                            <th><#StoragePasvPR#></th>
+                                            <td>
+                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="st_ftp_pmin" value="<% nvram_get_x("", "st_ftp_pmin"); %>" onkeypress="return is_number(this,event);"/>&nbsp;-
+                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="st_ftp_pmax" value="<% nvram_get_x("", "st_ftp_pmax"); %>" onkeypress="return is_number(this,event);"/>
+                                                &nbsp;<span style="color:#888;">[1..65535]</span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_ftp_anmr" style="display:none;">
+                                            <th><#StorageAnonMR#></th>
+                                            <td>
+                                                <input type="text" name="st_ftp_anmr" class="input" maxlength="32" size="32" value="<% nvram_get_x("", "st_ftp_anmr"); %>" onkeypress="return is_number(this,event);"/>
+                                                &nbsp;<span style="color:#888;">[0..10000]</span>
                                             </td>
                                         </tr>
                                     </table>

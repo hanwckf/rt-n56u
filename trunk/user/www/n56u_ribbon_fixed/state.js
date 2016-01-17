@@ -467,7 +467,7 @@ function show_menu(L1, L2, L3){
 		tablink[8].splice(2,1);
 	}
 
-	if(!support_usb()){
+	if(!support_storage()){
 		tabtitle[5].splice(1,5);
 		tablink[5].splice(1,5);
 		menuL1_link[2] = "";  //remove AiDisk
@@ -475,6 +475,10 @@ function show_menu(L1, L2, L3){
 		menuL2_link[6] = "";  //remove USB
 		menuL2_title[6] = "";
 	}else{
+		if(!support_usb()){
+			tabtitle[5].splice(4,2);
+			tablink[5].splice(4,2);
+		}
 		if(!found_app_smbd() && !found_app_ftpd()){
 			tabtitle[5].splice(2,2);
 			tablink[5].splice(2,2);

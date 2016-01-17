@@ -669,7 +669,7 @@ start_wan(void)
 		/* perform ApCli reconnect */
 		reconnect_apcli(wan_ifname, 0);
 		
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 		if (get_usb_modem_wan(unit))
 		{
 			if (nvram_get_int("modem_type") == 3)
@@ -914,7 +914,7 @@ stop_wan(void)
 	if (strcmp(man_ifname, IFNAME_WAN) != 0)
 		ifconfig(IFNAME_WAN, 0, "0.0.0.0", NULL);
 
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 	/* Bring down usbnet interface */
 	stop_wan_usbnet();
 #endif
@@ -1428,7 +1428,7 @@ notify_on_internet_state_changed(int has_internet, long elapsed)
 		case 2:
 			notify_rc("auto_wan_reconnect_pause");
 			break;
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 		case 3:
 			if (get_modem_devnum()) {
 				nvram_set_int("modem_prio", (get_usb_modem_wan(0)) ? 0 : 1);
@@ -1688,7 +1688,7 @@ select_usb_modem_to_wan(void)
 {
 	int modem_devnum = 0;
 
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 	/* check modem enabled and ready */
 	modem_devnum = get_modem_devnum();
 	if (modem_devnum) {

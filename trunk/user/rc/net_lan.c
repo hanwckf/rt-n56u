@@ -207,9 +207,13 @@ init_bridge(int is_ap_mode)
 	}
 
 #if defined(USE_RT3352_MII)
-	doSystem("modprobe iNIC_mii miimaster=%s mode=%s syncmiimac=%d bridge=%d max_fw_upload=%d", IFNAME_MAC, "ap", 0, 1, 10);
+	{
+		char inic_param[80];
+		snprintf(inic_param, sizeof(inic_param), "miimaster=%s mode=%s syncmiimac=%d bridge=%d max_fw_upload=%d",
+			IFNAME_MAC, "ap", 0, 1, 10);
+		module_smart_load("iNIC_mii", inic_param);
+	}
 #endif
-
 
 #if BOARD_2G_IN_SOC
 	start_wifi_ap_rt(rt_radio_on);

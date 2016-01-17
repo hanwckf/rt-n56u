@@ -387,7 +387,7 @@ init_nodes(void)
 	mknod("/dev/mtr0",   S_IFCHR | 0666, makedev(250, 0));
 #endif
 #endif
-#if defined(APP_OPENVPN)
+#if defined (APP_OPENVPN)
 	/* if kernel CONFIG_HOTPLUG is not set, mdev create /dev/tun instead of /dev/net/tun */
 	if (!check_if_dev_exist("/dev/net/tun")) {
 		mkdir("/dev/net", 0755);
@@ -404,10 +404,16 @@ init_mdev(void)
 	fp = fopen("/etc/mdev.conf", "w");
 	if (fp) {
 		fprintf(fp, "%s\n", "# <device regex> <uid>:<gid> <octal permissions> [<@|$|*> <command>]");
-#if (BOARD_NUM_USB_PORTS > 0)
-		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "usb/lp[0-9]",  "*", "mdev_lp");
+#if defined (USE_MMC_SUPPORT)
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "mmcblk[0-9]",  "*", "mdev_mmc");
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "mmcblk[0-9]p[0-9]", "*", "mdev_mmc");
+#endif
+#if defined (USE_BLK_DEV_SD)
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "sd[a-z]",      "*", "mdev_sd");
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "sd[a-z][0-9]", "*", "mdev_sd");
+#endif
+#if defined (USE_USB_SUPPORT)
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "usb/lp[0-9]",  "*", "mdev_lp");
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "sg[0-9]",      "@", "mdev_sg");
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "sr[0-9]",      "@", "mdev_sr");
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "weth[0-9]",    "*", "mdev_net");
@@ -517,8 +523,8 @@ init_main_loop(void)
 		/* Handle SIGALRM signal */
 		if (sig_alrm_received) {
 			sig_alrm_received = 0;
-#if (BOARD_NUM_USB_PORTS > 0)
-			on_deferred_hotplug_usb();
+#if defined (USE_USB_SUPPORT) || defined (USE_STORAGE)
+			on_deferred_hotplug_dev();
 #endif
 		}
 	}

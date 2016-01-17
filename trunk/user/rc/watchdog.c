@@ -185,6 +185,7 @@ httpd_check_v2()
 }
 #endif
 
+#if defined (BOARD_GPIO_LED_POWER)
 static int
 get_state_led_pwr(void)
 {
@@ -200,6 +201,7 @@ get_state_led_pwr(void)
 
 	return i_led;
 }
+#endif
 
 #if defined (BOARD_GPIO_BTN_RESET)
 static int
@@ -660,7 +662,7 @@ ez_action_change_guest_wifi5(void)
 static void
 ez_action_usb_saferemoval(int port)
 {
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 	char ez_name[24];
 
 	strcpy(ez_name, "safe-removal USB");
@@ -674,7 +676,7 @@ ez_action_usb_saferemoval(int port)
 #endif
 	logmessage("watchdog", "Perform ez-button %s...", ez_name);
 
-	safe_remove_usb_device(port, NULL, 1);
+	safe_remove_usb_device(port, NULL);
 #endif
 }
 

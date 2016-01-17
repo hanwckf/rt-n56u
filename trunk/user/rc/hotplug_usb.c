@@ -26,8 +26,8 @@
 #include <dirent.h>
 #include <errno.h>
 #include <signal.h>
-#include <sys/swap.h>
 
+#include <dev_info.h>
 #include <usb_info.h>
 
 #include "rc.h"
@@ -41,54 +41,15 @@ _basename(char *name)
 	return name;
 }
 
-static int
-check_root_partition(const char *devname)
-{
-	FILE *procpt;
-	char line[128], ptname[32], ptname_check[32];
-	int i, ma, mi, sz;
-
-	if (devname && (procpt = fopen("/proc/partitions", "r")))
-	{
-		while (fgets(line, sizeof(line), procpt))
-		{
-			if (sscanf(line, " %d %d %d %31[^\n ]", &ma, &mi, &sz, ptname) != 4)
-				continue;
-			
-			for (i=1;i<15;i++) {
-				sprintf(ptname_check, "%s%d", devname, i);
-				if (strcmp(ptname, ptname_check) == 0)
-				{
-					fclose(procpt);
-					return 1;
-				}
-			}
-		}
-		
-		fclose(procpt);
-	}
-
-	return 0;
-}
-
-// 1: add, 0: remove.
-static int
-check_hotplug_action(const char *action){
-	if(!strcmp(action, "remove"))
-		return 0;
-	else
-		return 1;
-}
-
 int
 usb_port_module_used(const char *mod_usb)
 {
 	DIR* dir;
 	int ret = 0;
 	char mod_path_usb[128];
-	
+
 	snprintf(mod_path_usb, sizeof(mod_path_usb), "/sys/module/%s/drivers/usb:%s", mod_usb, mod_usb);
-	
+
 	dir = opendir(mod_path_usb);
 	if (dir) {
 		struct dirent *de;
@@ -111,94 +72,6 @@ usb_port_module_used(const char *mod_usb)
 	}
 	
 	return ret;
-}
-
-void
-detach_swap_partition(char *part_name)
-{
-	int need_detach = 0;
-	char *swap_part = nvram_safe_get("swap_part_t");
-	char swap_dev[16];
-
-	if (strncmp(swap_part, "sd", 2))
-		return;
-
-	if (part_name && *part_name) {
-		if (strncmp(part_name, swap_part, 3) == 0)
-			need_detach = 1;
-	}
-	else
-		need_detach = 1;
-
-	// umount swap partition
-	if (need_detach) {
-		sprintf(swap_dev, "/dev/%s", swap_part);
-		if ( swapoff(swap_dev) == 0 )
-			nvram_set_temp("swap_part_t", "");
-	}
-}
-
-int mdev_sd_main(int argc, char **argv)
-{
-	int isLock;
-	char aidisk_cmd[64];
-	char *device_name, *action, *partno;
-
-	if (argc != 3){
-		printf("Usage: %s [device_name] [action]\n", argv[0]);
-		return 1;
-	}
-
-	device_name = argv[1];
-	action = argv[2];
-
-	usb_dbg("(%s): action=%s.\n", device_name, action);
-
-	if (get_device_type_by_device(device_name) != DEVICE_TYPE_DISK){
-		usb_dbg("(%s): The device is not a sd device.\n", device_name);
-		return 1;
-	}
-
-	// Check Lock.
-	if ((isLock = file_lock(device_name)) == -1){
-		usb_dbg("(%s): Can't set the file lock!\n", device_name);
-		return 1;
-	}
-
-	// If remove the device?
-	if (!check_hotplug_action(action)){
-		if (device_name[3] != '\0')
-			detach_swap_partition(device_name);
-		else
-			notify_rc("on_unplug_usb_storage");
-		
-		goto out_unlock;
-	}
-
-	if (device_name[3] == '\0') {
-		// sda, sdb, sdc...
-		system("/sbin/hddtune.sh $MDEV");
-		
-		if (check_root_partition(device_name))
-			goto out_unlock;
-		
-		partno = "1";
-	} else {
-		partno = device_name + 3;
-	}
-
-	snprintf(aidisk_cmd, sizeof(aidisk_cmd), "/sbin/automount.sh $MDEV AiDisk_%c%s", device_name[2], partno);
-
-	umask(0000);
-	if (system(aidisk_cmd) == 0)
-		notify_rc("on_hotplug_usb_storage");
-
-	usb_dbg("(%s): Success!\n", device_name);
-
-out_unlock:
-	file_unlock(isLock);
-
-	return 0;
 }
 
 int mdev_lp_main(int argc, char **argv)
@@ -228,7 +101,7 @@ int mdev_lp_main(int argc, char **argv)
 	}
 
 	// If remove the device?
-	if (!check_hotplug_action(action)){
+	if (!get_hotplug_action(action)){
 		notify_rc("on_unplug_usb_printer");
 		
 		goto out_unlock;
@@ -263,7 +136,7 @@ int mdev_sg_main(int argc, char **argv)
 		return 1;
 
 	// If remove the device?
-	if(!check_hotplug_action(action)){
+	if(!get_hotplug_action(action)){
 		usb_dbg("(%s): Remove sg device.\n", device_name);
 		return 1;
 	}
@@ -313,7 +186,7 @@ int mdev_sr_main(int argc, char **argv)
 	}
 
 	// If remove the device?
-	if (!check_hotplug_action(action)){
+	if (!get_hotplug_action(action)){
 		usb_dbg("(%s): Remove CD device.\n", device_name);
 		return 1;
 	}
@@ -363,7 +236,7 @@ int mdev_wdm_main(int argc, char **argv)
 	unlink(QMI_CLIENT_ID);
 
 	// If remove the device?
-	if (!check_hotplug_action(action)){
+	if (!get_hotplug_action(action)){
 		unlink(node_fname);
 		goto out_unlock;
 	}
@@ -412,7 +285,7 @@ int mdev_net_main(int argc, char **argv)
 		return 1;
 
 	// If remove the device?
-	if(!check_hotplug_action(action)){
+	if(!get_hotplug_action(action)){
 		unlink(node_fname);
 		
 		ifconfig(device_name, 0, "0.0.0.0", NULL);
@@ -476,7 +349,7 @@ int mdev_tty_main(int argc, char **argv)
 		return 1;
 
 	// If remove the device?
-	if(!check_hotplug_action(action)){
+	if(!get_hotplug_action(action)){
 		unlink(node_fname);
 		
 		if (get_usb_modem_wan(0))
@@ -491,8 +364,8 @@ int mdev_tty_main(int argc, char **argv)
 	devnum = 0;
 	has_int_pipe = 0;
 	usb_port_id[0] = 0;
-	if (get_interface_by_device(device_name, usb_interface_id, sizeof(usb_interface_id))) {
-		has_int_pipe = get_interface_Int_endpoint(usb_interface_id);
+	if (get_usb_interface_by_device(device_name, usb_interface_id, sizeof(usb_interface_id))) {
+		has_int_pipe = get_usb_interface_Int_endpoint(usb_interface_id);
 		if (get_usb_port_by_interface_string(usb_interface_id, usb_port_id, sizeof(usb_port_id)))
 			devnum = get_usb_devnum(usb_port_id);
 	}

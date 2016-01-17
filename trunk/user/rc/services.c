@@ -431,18 +431,18 @@ stop_services(int stopall)
 {
 	if (stopall) {
 		stop_telnetd();
-#if defined(APP_SSHD)
+#if defined (APP_SSHD)
 		stop_sshd();
 #endif
 		stop_httpd();
 		stop_vpn_server();
 	}
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 	stop_p910nd();
-#if defined(SRV_LPRD)
+#if defined (SRV_LPRD)
 	stop_lpd();
 #endif
-#if defined(SRV_U2EC)
+#if defined (SRV_U2EC)
 	stop_u2ec();
 #endif
 #endif
@@ -461,7 +461,7 @@ stop_services_lan_wan(void)
 	stop_dns_dhcpd();
 	stop_upnp();
 	stop_detect_link();
-#if defined(APP_SMBD) || defined(APP_NMBD)
+#if defined (APP_SMBD) || defined (APP_NMBD)
 	stop_nmbd();
 #endif
 }

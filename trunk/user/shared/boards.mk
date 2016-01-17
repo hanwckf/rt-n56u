@@ -45,4 +45,3 @@ export BOARD_2G_IN_SOC
 export BOARD_5G_IN_SOC
 export BOARD_HAS_5G_RADIO
 export BOARD_NUM_USB_PORTS
-

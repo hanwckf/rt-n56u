@@ -111,11 +111,13 @@ struct ej_handler {
 extern struct ej_handler ej_handlers[];
 
 // aidisk.c
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 extern int ej_get_usb_ports_info(int eid, webs_t wp, int argc, char **argv);
+#endif
+#if defined (USE_STORAGE)
 extern int ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char **argv);
 extern int ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char **argv);
-extern int ej_get_usb_share_list(int eid, webs_t wp, int argc, char **argv);
+extern int ej_get_storage_share_list(int eid, webs_t wp, int argc, char **argv);
 extern int ej_get_AiDisk_status(int eid, webs_t wp, int argc, char **argv);
 extern int ej_set_AiDisk_status(int eid, webs_t wp, int argc, char **argv);
 extern int ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv);

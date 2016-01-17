@@ -19,6 +19,7 @@ INSTALLDIR = $(ROOTDIR)/romfs
 FS_EXT_ENABLED=n
 FS_FAT_ENABLED=n
 FS_NTFS_ENABLED=n
+STORAGE_ENABLED=n
 OPENSSH_ENABLED=n
 DROPBEAR_ENABLED=n
 SAMBA_ENABLED=n
@@ -37,7 +38,14 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_WINS),y)
 SAMBA_ENABLED=y
 endif
 
-ifdef CONFIG_USB_SUPPORT
+ifdef CONFIG_MMC_BLOCK
+STORAGE_ENABLED=y
+endif
+ifdef CONFIG_BLK_DEV_SD
+STORAGE_ENABLED=y
+endif
+
+ifeq ($(STORAGE_ENABLED),y)
 ifeq ($(CONFIG_FIRMWARE_ENABLE_EXT2),y)
 FS_EXT_ENABLED=y
 endif
@@ -72,7 +80,7 @@ dir_y						+= ebtables
 dir_y						+= iproute2
 dir_y						+= wireless_tools
 dir_y						+= shared
-dir_$(CONFIG_USB_SUPPORT)			+= libdisk
+dir_$(STORAGE_ENABLED)				+= libdisk
 dir_y						+= nvram
 dir_y						+= mtd_write
 dir_y						+= networkmap
@@ -103,22 +111,28 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_XUPNPD)		+= xupnpd
 dir_$(CONFIG_FIRMWARE_INCLUDE_TCPDUMP)		+= tcpdump
 dir_$(SAMBA_ENABLED)				+= samba3
 
+ifdef CONFIG_BLK_DEV_SD
+dir_$(CONFIG_FIRMWARE_INCLUDE_HDPARM)		+= hdparm
+endif
+
 ifdef CONFIG_USB_SUPPORT
-dir_y						+= nfsd
-dir_y						+= util-linux
-dir_$(FS_EXT_ENABLED)				+= e2fsprogs
-dir_$(FS_FAT_ENABLED)				+= dosfstools
-dir_$(FS_NTFS_ENABLED)				+= ntfs-3g
 dir_y						+= p910nd
 dir_y						+= usb-modeswitch
 dir_y						+= comgt-0.32
 dir_y						+= uqmi
-dir_y						+= optware
 dir_$(CONFIG_FIRMWARE_INCLUDE_LPRD)		+= LPRng
 dir_$(CONFIG_FIRMWARE_INCLUDE_U2EC)		+= u2ec
-dir_$(CONFIG_FIRMWARE_INCLUDE_FTPD)		+= vsftpd
-dir_$(CONFIG_FIRMWARE_INCLUDE_HDPARM)		+= hdparm
+endif
+
+ifeq ($(STORAGE_ENABLED),y)
+dir_y						+= nfsd
+dir_y						+= util-linux
+dir_y						+= optware
+dir_$(FS_EXT_ENABLED)				+= e2fsprogs
+dir_$(FS_FAT_ENABLED)				+= dosfstools
+dir_$(FS_NTFS_ENABLED)				+= ntfs-3g
 dir_$(CONFIG_FIRMWARE_INCLUDE_PARTED)		+= parted
+dir_$(CONFIG_FIRMWARE_INCLUDE_FTPD)		+= vsftpd
 dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)		+= minidlna
 dir_$(CONFIG_FIRMWARE_INCLUDE_FIREFLY)		+= firefly
 dir_$(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION)	+= transmission
@@ -126,13 +140,12 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_ARIA)		+= aria2
 endif
 
 ifdef CONFIG_MTD_UBI
-ifndef CONFIG_USB_SUPPORT
+ifneq ($(STORAGE_ENABLED),y)
 dir_y						+= util-linux
 dir_y						+= optware
 endif
 dir_y						+= mtd-utils
 endif
-
 
 all:
 	for i in $(dir_y) ; do \

@@ -23,6 +23,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <sys/sysinfo.h>
+#include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
 #include <syslog.h>
@@ -132,7 +133,10 @@ valid_subver(char subfs)
 void
 get_eeprom_params(void)
 {
-	int i, i_offset, i_ret;
+#if defined (VENDOR_ASUS)
+	int i;
+#endif
+	int i_offset, i_ret;
 	unsigned char buffer[32];
 	unsigned char ea[ETHER_ADDR_LEN];
 	char macaddr_wl[]  = "00:11:22:33:44:55";
@@ -363,8 +367,7 @@ get_eeprom_params(void)
 void
 update_router_mode(void)
 {
-	if (nvram_get_int("sw_mode") != 3)
-	{
+	if (nvram_get_int("sw_mode") != 3) {
 		if (nvram_get_int("wan_nat_x") == 0)
 			nvram_set_int("sw_mode", 4);	// Gateway mode
 		else
@@ -410,21 +413,17 @@ char_to_ascii(char *output, char *input)
 
 	ptr = output;
 
-	for ( i=0; i<strlen(input); i++ )
-	{
+	for ( i=0; i<strlen(input); i++ ) {
 		if ((input[i]>='0' && input[i] <='9')
 		   ||(input[i]>='A' && input[i]<='Z')
 		   ||(input[i] >='a' && input[i]<='z')
 		   || input[i] == '!' || input[i] == '*'
 		   || input[i] == '(' || input[i] == ')'
 		   || input[i] == '_' || input[i] == '-'
-		   || input[i] == '\'' || input[i] == '.')
-		{
+		   || input[i] == '\'' || input[i] == '.') {
 			*ptr = input[i];
 			ptr ++;
-		}
-		else
-		{
+		} else {
 			sprintf(tmp, "%%%.02X", input[i]);
 			strcpy(ptr, tmp);
 			ptr += 3;
@@ -471,7 +470,7 @@ get_param_int_hex(const char *param)
 }
 
 static int
-is_param_forbidden(char *line, const char **forbid_list)
+is_param_forbidden(const char *line, const char **forbid_list)
 {
 	while (*forbid_list) {
 		if (strncmp(line, *forbid_list, strlen(*forbid_list)) == 0)
@@ -510,7 +509,7 @@ load_user_config(FILE *fp, const char *dir_name, const char *file_name, const ch
 }
 
 int
-is_module_loaded(char *module_name)
+is_module_loaded(const char *module_name)
 {
 	DIR *dir_to_open = NULL;
 	char mod_path[64];
@@ -526,7 +525,7 @@ is_module_loaded(char *module_name)
 }
 
 int
-get_module_refcount(char *module_name)
+get_module_refcount(const char *module_name)
 {
 	FILE *fp;
 	char mod_path[64], mod_refval[16];
@@ -548,7 +547,7 @@ get_module_refcount(char *module_name)
 }
 
 int
-module_smart_load(char *module_name, char *module_param)
+module_smart_load(const char *module_name, const char *module_param)
 {
 	int ret;
 
@@ -564,7 +563,7 @@ module_smart_load(char *module_name, char *module_param)
 }
 
 int
-module_smart_unload(char *module_name, int recurse_unload)
+module_smart_unload(const char *module_name, int recurse_unload)
 {
 	int ret;
 	int refcount = get_module_refcount(module_name);
@@ -586,7 +585,7 @@ module_smart_unload(char *module_name, int recurse_unload)
 }
 
 int
-module_param_get(char *module_name, char *module_param, char *param_value, size_t param_value_size)
+module_param_get(const char *module_name, const char *module_param, char *param_value, size_t param_value_size)
 {
 	FILE *fp;
 	char mod_path[256];
@@ -610,7 +609,7 @@ module_param_get(char *module_name, char *module_param, char *param_value, size_
 }
 
 int
-module_param_set_int(char *module_name, char *module_param, int param_value)
+module_param_set_int(const char *module_name, const char *module_param, int param_value)
 {
 	char mod_path[256];
 
@@ -821,13 +820,13 @@ void
 kill_services(char* svc_name[], int wtimeout, int forcekill)
 {
 	int i, k, i_waited, i_killed;
-	
+
 	if (wtimeout < 1)
 		wtimeout = 1;
-	
+
 	for (i=0;svc_name[i] && *svc_name[i];i++)
 		doSystem("killall %s %s", "-q", svc_name[i]);
-	
+
 	for (k=0;k<wtimeout;k++) {
 		i_waited = 0;
 		for (i=0;svc_name[i] && *svc_name[i];i++) {
@@ -842,7 +841,7 @@ kill_services(char* svc_name[], int wtimeout, int forcekill)
 		
 		sleep(1);
 	}
-	
+
 	if (forcekill) {
 		i_killed = 0;
 		for (i=0;svc_name[i] && *svc_name[i];i++) {
@@ -947,12 +946,9 @@ rename_if_dir_exist(const char *dir, const char *subdir)
 	if (!dir || !subdir)
 		return 0;
 
-	if ((dirp = opendir(dir)))
-	{
-		while (dirp && (direntp = readdir(dirp)))
-		{
-			if (!strcasecmp(direntp->d_name, subdir) && strcmp(direntp->d_name, subdir))
-			{
+	if ((dirp = opendir(dir))) {
+		while (dirp && (direntp = readdir(dirp))) {
+			if (!strcasecmp(direntp->d_name, subdir) && strcmp(direntp->d_name, subdir)) {
 				sprintf(oldpath, "%s/%s", dir, direntp->d_name);
 				sprintf(newpath, "%s/%s", dir, subdir);
 				rename(oldpath, newpath);
@@ -976,12 +972,9 @@ if_dircase_exist(const char *dir, const char *subdir)
 	if (!dir || !subdir)
 		return NULL;
 
-	if ((dirp = opendir(dir)))
-	{
-		while (dirp && (direntp = readdir(dirp)))
-		{
-			if (!strcasecmp(direntp->d_name, subdir) && strcmp(direntp->d_name, subdir))
-			{
+	if ((dirp = opendir(dir))) {
+		while (dirp && (direntp = readdir(dirp))) {
+			if (!strcasecmp(direntp->d_name, subdir) && strcmp(direntp->d_name, subdir)) {
 				sprintf(oldpath, "%s/%s", dir, direntp->d_name);
 				return strdup(oldpath);
 			}
@@ -999,7 +992,16 @@ file_size(const char *filepath)
 
 	if (!stat(filepath, &stat_buf) && S_ISREG(stat_buf.st_mode))
 		return ((unsigned long) stat_buf.st_size);
-	else
-		return 0;
+
+	return 0;
 }
 
+// 1: add, 0: remove.
+int
+get_hotplug_action(const char *action)
+{
+	if (!strcmp(action, "remove"))
+		return 0;
+
+	return 1;
+}

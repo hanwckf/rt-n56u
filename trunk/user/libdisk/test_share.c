@@ -18,13 +18,16 @@
 #include "disk_io_tools.h"
 #include "disk_share.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	if (argc != 2) {
 		fprintf(stderr, "usage: %s MOUNT_PATH\n", argv[0]);
 		return -1;
 	}
-	
-	test_of_var_files(argv[1]);
-	
+
+	create_if_no_var_files(argv[1]);	// According to the old folder_list, add the new folder.
+	initial_folder_list_in_mount_path(argv[1]);	// get the new folder_list.
+	create_if_no_var_files(argv[1]);	// According to the new folder_list, add the new var file.
+
 	return 0;
 }

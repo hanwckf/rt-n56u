@@ -4,18 +4,17 @@ all:
 clean:
 
 romfs:
+	./makedevlinks $(ROMFSDIR)
 	$(ROMFSINST) /sbin/dev_init.sh
 	$(ROMFSINST) /sbin/reset_ss.sh
 	$(ROMFSINST) /sbin/mtd_storage.sh
-ifdef CONFIG_USB_SUPPORT
+ifeq ($(STORAGE_ENABLED),y)
 	$(ROMFSINST) /sbin/automount.sh
+endif
+ifdef CONFIG_BLK_DEV_SD
 	$(ROMFSINST) /sbin/hddtune.sh
 	$(ROMFSINST) /sbin/spindown.sh
 endif
-ifdef CONFIG_RTL8367
-	$(ROMFSINST) /sbin/rtl8367mib
-endif
-	./makedevlinks $(ROMFSDIR)
 	$(ROMFSINST) /etc_ro/ld.so.conf
 	$(ROMFSINST) /etc_ro/protocols
 	$(ROMFSINST) /etc_ro/services

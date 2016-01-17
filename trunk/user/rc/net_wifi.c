@@ -318,7 +318,7 @@ void
 update_vga_clamp_rt(int first_call)
 {
 #if (BOARD_NUM_UPHY_USB3 > 0)
-#if !defined(USE_RT3352_MII)
+#if !defined (USE_RT3352_MII)
 	int i_val;
 	const char *wifname;
 

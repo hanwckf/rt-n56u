@@ -34,7 +34,7 @@
 #include <bin_sem_asus.h>
 
 /* do not set current year, it used for ntp done check! */
-#define SYS_START_YEAR			2014
+#define SYS_START_YEAR			2015
 
 #define DNS_RESOLV_CONF			"/etc/resolv.conf"
 #define DNS_SERVERS_FILE		"/tmp/dnsmasq.servers"
@@ -129,6 +129,10 @@
  #define LOG_ROTATE_SIZE_MAX		128
 #endif
 
+//////////////////////////////////////////////////////////
+
+struct disk_info_t;
+
 /* rc.c */
 void setenv_tz(void);
 void setkernel_tz(void);
@@ -165,12 +169,12 @@ void get_eeprom_params(void);
 void char_to_ascii(char *output, char *input);
 unsigned int get_param_int_hex(const char *param);
 void load_user_config(FILE *fp, const char *dir_name, const char *file_name, const char **forbid_list);
-int is_module_loaded(char *module_name);
-int get_module_refcount(char *module_name);
-int module_smart_load(char *module_name, char *module_param);
-int module_smart_unload(char *module_name, int recurse_unload);
-int module_param_get(char *module_name, char *module_param, char *param_value, size_t param_value_size);
-int module_param_set_int(char *module_name, char *module_param, int param_value);
+int is_module_loaded(const char *module_name);
+int get_module_refcount(const char *module_name);
+int module_smart_load(const char *module_name, const char *module_param);
+int module_smart_unload(const char *module_name, int recurse_unload);
+int module_param_get(const char *module_name, const char *module_param, char *param_value, size_t param_value_size);
+int module_param_set_int(const char *module_name, const char *module_param, int param_value);
 void oom_score_adjust(pid_t pid, int oom_score_adj);
 void set_cpu_affinity(int is_ap_mode);
 void set_vpn_balancing(const char *vpn_ifname);
@@ -184,6 +188,7 @@ int mkdir_if_none(const char *dirpath, const char *mode);
 int check_if_file_exist(const char *filepath);
 int check_if_dir_exist(const char *dirpath);
 int check_if_dev_exist(const char *devpath);
+int get_hotplug_action(const char *action);
 
 /* net.c */
 int  route_add(char *ifname, int metric, char *dst, char *gateway, char *genmask);
@@ -193,7 +198,7 @@ char* sanity_hostname(char *hname);
 char* get_our_hostname(void);
 int  is_same_subnet(const char *ip1, const char *ip2, const char *msk);
 int  is_same_subnet2(const char *ip1, const char *ip2, const char *msk1, const char *msk2);
-#if defined(APP_XUPNPD)
+#if defined (APP_XUPNPD)
 void stop_xupnpd(void);
 void start_xupnpd(char *wan_ifname);
 #endif
@@ -388,7 +393,7 @@ void restore_dns_from_vpnc(void);
 int ipup_vpnc_main(int argc, char **argv);
 int ipdown_vpnc_main(int argc, char **argv);
 
-#if defined(APP_OPENVPN)
+#if defined (APP_OPENVPN)
 /* openvpn.c */
 int start_openvpn_server(void);
 int start_openvpn_client(void);
@@ -416,7 +421,7 @@ int  get_mode_radio_rt(void);
 int  is_apcli_wisp_wl(void);
 int  is_apcli_wisp_rt(void);
 char* get_apcli_wisp_ifname(void);
-#if defined(USE_RT3352_MII)
+#if defined (USE_RT3352_MII)
 void check_inic_mii_rebooted(void);
 #endif
 void update_vga_clamp_rt(int first_call);
@@ -470,7 +475,7 @@ void restart_networkmap(void);
 void stop_telnetd(void);
 void run_telnetd(void);
 void start_telnetd(void);
-#if defined(APP_SSHD)
+#if defined (APP_SSHD)
 int is_sshd_run(void);
 void stop_sshd(void);
 void start_sshd(void);
@@ -503,7 +508,7 @@ int is_dns_dhcpd_run(void);
 int is_dhcpd_enabled(int is_ap_mode);
 int start_dns_dhcpd(int is_ap_mode);
 void stop_dns_dhcpd(void);
-#if defined(APP_SMBD) || defined(APP_NMBD)
+#if defined (APP_SMBD) || defined (APP_NMBD)
 FILE *write_smb_conf_header(void);
 void stop_nmbd(void);
 void start_wins(void);
@@ -525,78 +530,90 @@ void manual_ddns_hostname_check(void);
 int restart_dhcpd(void);
 int restart_dns(void);
 
-#if (BOARD_NUM_USB_PORTS > 0)
-/* services_usb.c */
-#if defined(SRV_U2EC)
-void start_u2ec(void);
-void stop_u2ec(void);
-#endif
-#if defined(SRV_LPRD)
-void start_lpd(void);
-void stop_lpd(void);
-#endif
-void start_p910nd(char *devlp);
-void stop_p910nd(void);
-#if defined(APP_SMBD)
-int write_smb_conf(void);
-void config_smb_fastpath(int check_pid);
-void stop_samba(int force_stop);
-void run_samba(void);
-void restart_smbd(void);
-#endif
-#if defined(APP_FTPD)
+#if defined (USE_STORAGE)
+/* services_stor.c */
+void spindown_hdd(char *sd_dev);
+#if defined (APP_FTPD)
 int is_ftp_run(void);
 void stop_ftp(void);
 void run_ftp(void);
 void control_ftp_fw(int is_run_before);
 void restart_ftpd(void);
 #endif
-#if defined(APP_NFSD)
+#if defined (APP_SMBD)
+int write_smb_conf(void);
+void config_smb_fastpath(int check_pid);
+void stop_samba(int force_stop);
+void run_samba(void);
+void restart_smbd(void);
+#endif
+#if defined (APP_NFSD)
 void unload_nfsd(void);
 void stop_nfsd(void);
 void run_nfsd(void);
 void reload_nfsd(void);
 void restart_nfsd(void);
 #endif
-#if defined(APP_MINIDLNA)
+#if defined (APP_MINIDLNA)
 int is_dms_run(void);
 void update_minidlna_conf(const char *link_path, const char *conf_path);
 void stop_dms(void);
 void run_dms(int force_rescan);
 void restart_dms(int force_rescan);
 #endif
-#if defined(APP_FIREFLY)
+#if defined (APP_FIREFLY)
 int is_itunes_run(void);
 void stop_itunes(void);
 void run_itunes(void);
 void restart_itunes(void);
 #endif
-#if defined(APP_TRMD)
+#if defined (APP_TRMD)
 int is_torrent_run(void);
 int is_torrent_support(void);
 void stop_torrent(void);
 void run_torrent(void);
 void restart_torrent(void);
 #endif
-#if defined(APP_ARIA)
+#if defined (APP_ARIA)
 int is_aria_run(void);
 int is_aria_support(void);
 void stop_aria(void);
 void run_aria(void);
 void restart_aria(void);
 #endif
-int safe_remove_usb_device(int port, const char *dev_name, int do_spindown);
+int count_stor_mountpoint(void);
+void umount_stor_path(struct disk_info_t *disks_info, int port, const char *dev_name, int do_spindown);
+void umount_ejected(void);
+void start_stor_apps(void);
+void stop_stor_apps(void);
+void on_deferred_hotplug_dev(void);
+void safe_remove_stor_device(int port, const char *dev_name, int do_spindown, int try_start_apps);
+void safe_remove_all_stor_devices(int do_spindown);
+#if defined (USE_ATA_SUPPORT)
+void safe_remove_ata_device(const char *dev_name);
+#endif
+#if defined (USE_MMC_SUPPORT)
+void safe_remove_mmc_device(void);
+#endif
+#endif
+
+#if defined (USE_USB_SUPPORT)
+/* services_usb.c */
+#if defined (SRV_U2EC)
+void start_u2ec(void);
+void stop_u2ec(void);
+#endif
+#if defined (SRV_LPRD)
+void start_lpd(void);
+void stop_lpd(void);
+#endif
+void start_p910nd(char *devlp);
+void stop_p910nd(void);
+void safe_remove_usb_device(int port, const char *dev_name);
 void restart_usb_printer_spoolers(void);
 void stop_usb_printer_spoolers(void);
-void on_deferred_hotplug_usb(void);
-void umount_ejected(void);
-int count_sddev_mountpoint(void);
-int count_sddev_partition(void);
-void start_usb_apps(void);
-void stop_usb_apps(void);
-void umount_dev(char *sd_dev);
-void umount_dev_all(char *sd_dev);
-void umount_sddev_all(void);
+void try_start_usb_printer_spoolers(void);
+void try_start_usb_modem_to_wan(void);
 #endif
 
 /* firewall_ex.c */
@@ -636,7 +653,7 @@ int  start_watchdog(void);
 void notify_watchdog_time(void);
 void notify_watchdog_wifi(int is_5ghz);
 
-#if defined(USE_RT3352_MII)
+#if defined (USE_RT3352_MII)
 /* inicd */
 int inicd_main(int argc, char *argv[]);
 int start_inicd(void);
@@ -664,7 +681,7 @@ void notify_pause_detect_internet(void);
 /* detect_wan.c */
 int detect_wan_main(int argc, char *argv[]);
 
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 /* usb_modem.c */
 int  get_modem_devnum(void);
 int  get_modem_ndis_ifname(char ndis_ifname[16], int *devnum_out);
@@ -677,16 +694,24 @@ int  launch_wan_usbnet(int unit);
 void stop_wan_usbnet(void);
 int  zerocd_main(int argc, char **argv);
 
-/* usb_devices.c */
-void detach_swap_partition(char *part_name);
+/* hotplug_usb.c */
 int  usb_port_module_used(const char *mod_usb);
 int  mdev_sg_main(int argc, char **argv);
-int  mdev_sd_main(int argc, char **argv);
 int  mdev_sr_main(int argc, char **argv);
 int  mdev_lp_main(int argc, char **argv);
 int  mdev_net_main(int argc, char **argv);
 int  mdev_tty_main(int argc, char **argv);
 int  mdev_wdm_main(int argc, char **argv);
+#endif
+
+#if defined (USE_STORAGE)
+/* hotplug_stor.c */
+#if defined (USE_BLK_DEV_SD)
+int  mdev_sd_main(int argc, char **argv);
+#endif
+#if defined (USE_MMC_SUPPORT)
+int  mdev_mmc_main(int argc, char **argv);
+#endif
 #endif
 
 #endif /* _rc_h_ */

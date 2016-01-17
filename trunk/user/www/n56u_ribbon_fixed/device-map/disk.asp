@@ -144,7 +144,7 @@ function remove_disk(){
 <style>
     .table {margin-bottom: 0px;}
     .table th, .table td{vertical-align: middle;}
-
+    .alert-link {margin: 8px 0px 0px 0px; padding: 8px 8px 8px 8px;}
     .progress {
         background-image: -moz-linear-gradient(top, #f3f3f3, #dddddd);
         background-image: -ms-linear-gradient(top, #f3f3f3, #dddddd);
@@ -201,22 +201,22 @@ function remove_disk(){
     </tr>
 </table>
 
-<div id="unmounted_refresh" class="alert alert-info" style="display:none;">
+<div id="unmounted_refresh" class="alert alert-info alert-link" style="display:none;">
     <#DiskStatus_refresh1#><a href="/" target="_parent"><#DiskStatus_refresh2#></a><#DiskStatus_refresh3#>
 </div>
 
 <div id="mounted_item2">
-    <div class="alert alert-info">
+    <div class="alert alert-info alert-link">
         <span id="ddnslink1" style="display:none;"><#Internet#>&nbsp;<#AiDisk_linktoFTP_fromInternet#>&nbsp;<a href="ftp://<% nvram_get_x("", "ddns_hostname_x"); %>" onclick="alert('<#AiDiskWelcome_desp1#>');" target="_blank">ftp://<% nvram_get_x("", "ddns_hostname_x"); %></a></span>
         <span id="ddnslink2" style="display:none;"><#Internet#>&nbsp;<#AiDisk_linktoFTP_fromInternet#>&nbsp;<a id="selected_account_link" href="" onclick="alert('<#AiDiskWelcome_desp1#>');" target="_blank"><span id="selected_account_str"></span></a></span>
         <span id="ddnslink3" style="display:none;"><#AiDisk_linktoFTP_fromInternet#>&nbsp;<a href="ftp://<% nvram_get_x("", "lan_ipaddr_t"); %>" target="_blank">ftp://<% nvram_get_x("", "lan_ipaddr_t"); %></a></span>
         <span id="noWAN_link" style="display:none;"></span>
     </div>
-    <div class="alert alert-info" id="desc_2" style="display:none;">
+    <div class="alert alert-info alert-link" id="desc_2" style="display:none;">
         <span id="ddnslink1_LAN" style="display:none;"><#linktodisk#><a href="ftp://<% nvram_get_x("", "lan_ipaddr_t"); %>" target="_blank">ftp://<% nvram_get_x("", "lan_ipaddr_t"); %></a></span>
         <span id="ddnslink2_LAN" style="display:none;"><#linktodisk#><a id="selected_account_link_LAN" href="" target="_blank"><span id="selected_account_str_LAN"></span></a></span>
     </div>
-    <div class="alert alert-info" id="desc_3" style="display:none;">
+    <div class="alert alert-info alert-link" id="desc_3" style="display:none;">
         <span id="ddnslink3_LAN"><#menu5_4_1#>: <a href="file://<% nvram_get_x("", "lan_ipaddr_t"); %>" target="_blank">\\<% nvram_get_x("", "lan_ipaddr_t"); %></a></span>
     </div>
 </div>

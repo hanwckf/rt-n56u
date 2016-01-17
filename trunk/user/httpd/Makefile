@@ -14,7 +14,7 @@ CFLAGS += -I$(USERDIR)/wireless_tools
 LDFLAGS += -L. -lm
 LDFLAGS += -L$(SHDIR) -lshared
 LDFLAGS += -L$(USERDIR)/wireless_tools -liw
-ifdef CONFIG_USB_SUPPORT
+ifeq ($(STORAGE_ENABLED),y)
 CFLAGS  += -I$(USERDIR)/libdisk
 LDFLAGS += -L$(USERDIR)/libdisk -ldisk
 endif
@@ -28,7 +28,7 @@ OBJS += tdate_parse.o upload.o
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_HTTPS),y)
 OBJS += https.o
 endif
-ifdef CONFIG_USB_SUPPORT
+ifeq ($(STORAGE_ENABLED),y)
 OBJS += aidisk.o
 endif
 ifdef CONFIG_RTL8367

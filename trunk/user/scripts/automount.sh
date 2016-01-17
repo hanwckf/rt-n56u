@@ -28,15 +28,14 @@ eval `/sbin/blkid -o udev $dev_full`
 
 if [ "$ID_FS_TYPE" == "swap" ] ; then
 	[ ! -x /sbin/swapon ] && exit 1
-	swap_used=`cat /proc/swaps | grep '^/dev/sd[a-z]' | grep 'partition' 2>/dev/null`
+	swap_used=`cat /proc/swaps | grep '^/dev/' | grep 'partition' 2>/dev/null`
 	if [ -z "$swap_used" ] ; then
 		swapon $dev_full
 		if [ $? -eq 0 ] ; then
-			nvram set swap_part_t=$1
 			logger -t "automount" "Activate swap partition $dev_full SUCCESS!"
 		fi
 	fi
-	
+
 	# always return !=0 for swap
 	exit 1
 fi

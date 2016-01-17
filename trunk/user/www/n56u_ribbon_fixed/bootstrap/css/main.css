@@ -344,6 +344,7 @@ li div.accordion a {
 .big-icons-modem{ background-position: 0 -684px; width: 48px; height: 48px; }
 .big-icons-hub{ background-position: 0 -798px; width: 48px; height: 48px; }
 .big-icons-mmc{ background-position: 0 -912px; width: 48px; height: 48px; }
+.big-icons-ata{ background-position: 0 -1026px; width: 48px; height: 48px; }
 
 .big-icons-globe-active{ background-position: 0 -57px; width: 48px; height: 48px; }
 .big-icons-laptop-active{ background-position: 0 -171px; width: 48px; height: 48px; }
@@ -354,6 +355,7 @@ li div.accordion a {
 .big-icons-modem-active{ background-position: 0 -741px; width: 48px; height: 48px; }
 .big-icons-hub-active{ background-position: 0 -855px; width: 48px; height: 48px; }
 .big-icons-mmc-active{ background-position: 0 -969px; width: 48px; height: 48px; }
+.big-icons-ata-active{ background-position: 0 -1083px; width: 48px; height: 48px; }
 
 .padding-top-20{ padding-top: 20px;}
 

@@ -1499,7 +1499,7 @@ wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 		wan_ifname = nvram_safe_get(strcat_r(prefix, "ifname_t", tmp));
 		man_ifname = get_man_ifname(unit);
 		
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined(USE_USB_SUPPORT)
 		if (get_usb_modem_wan(0)) {
 			if (nvram_get_int("modem_prio") == 2)
 				need_eth_link |= 1;
@@ -1842,7 +1842,7 @@ wan_action_hook(int eid, webs_t wp, int argc, char **argv)
 	else if (!strcmp(wan_action, "WispReassoc")) {
 		notify_rc("manual_wisp_reassoc");
 	}
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined(USE_USB_SUPPORT)
 	else if (!strcmp(wan_action, "ModemPrio")) {
 		int modem_prio = atoi(websGetVar(wp, "modem_prio", ""));
 		if (modem_prio >= 0 && modem_prio < 3 && nvram_get_int("modem_prio") != modem_prio) {
@@ -2062,59 +2062,65 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_mtd_rwfs = 0;
 #endif
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 	int has_usb = 1;
-#else
-	int has_usb = 0;
-#endif
 #if (BOARD_NUM_UPHY_USB3 > 0)
 	int has_usb3 = 1;
 #else
 	int has_usb3 = 0;
 #endif
-#if defined(SUPPORT_PEAP_SSL)
+#else
+	int has_usb = 0;
+	int has_usb3 = 0;
+#endif
+#if defined (USE_STORAGE)
+	int has_stor = 1;
+#else
+	int has_stor = 0;
+#endif
+#if defined (SUPPORT_PEAP_SSL)
 	int has_peap_ssl = 1;
 #else
 	int has_peap_ssl = 0;
 #endif
-#if defined(SUPPORT_HTTPS)
+#if defined (SUPPORT_HTTPS)
 	int has_http_ssl = 1;
 #else
 	int has_http_ssl = 0;
 #endif
-#if defined(SUPPORT_DDNS_SSL)
+#if defined (SUPPORT_DDNS_SSL)
 	int has_ddns_ssl = 1;
 #else
 	int has_ddns_ssl = 0;
 #endif
-#if defined(USE_RT3352_MII)
+#if defined (USE_RT3352_MII)
 	int has_inic_mii = 1;
 #else
 	int has_inic_mii = 0;
 #endif
-#if defined(USE_RTL8367)
+#if defined (USE_RTL8367)
 	int has_switch_type = 0; // Realtek RTL8367
-#elif defined(USE_MTK_ESW)
+#elif defined (USE_MTK_ESW)
 	int has_switch_type = 1; // Mediatek MT7620 Embedded ESW
-#elif defined(USE_MTK_GSW)
+#elif defined (USE_MTK_GSW)
 	int has_switch_type = 2; // Mediatek MT7621 Internal GSW (or MT7530)
 #endif
-#if defined(BOARD_GPIO_BTN_ROUTER) || defined(BOARD_GPIO_BTN_AP)
+#if defined (BOARD_GPIO_BTN_ROUTER) || defined (BOARD_GPIO_BTN_AP)
 	int has_btn_mode = 1;
 #else
 	int has_btn_mode = 0;
 #endif
-#if defined(USE_WID_2G) && (USE_WID_2G==7602 || USE_WID_2G==7612)
+#if defined (USE_WID_2G) && (USE_WID_2G==7602 || USE_WID_2G==7612)
 	int has_2g_ldpc = 1;
 #else
 	int has_2g_ldpc = 0;
 #endif
-#if defined(USE_WID_5G) && (USE_WID_5G==7612)
+#if defined (USE_WID_5G) && (USE_WID_5G==7612)
 	int has_5g_ldpc = 1;
 #else
 	int has_5g_ldpc = 0;
 #endif
-#if defined(USE_WID_5G) && (USE_WID_5G==7610 || USE_WID_5G==7612) && BOARD_HAS_5G_11AC
+#if defined (USE_WID_5G) && (USE_WID_5G==7610 || USE_WID_5G==7612) && BOARD_HAS_5G_11AC
 	int has_5g_vht = 1;
 #else
 	int has_5g_vht = 0;
@@ -2165,6 +2171,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_usb() { return %d;}\n"
 		"function support_usb3() { return %d;}\n"
 		"function support_num_usb() { return %d;}\n"
+		"function support_storage() { return %d;}\n"
 		"function support_switch_type() { return %d;}\n"
 		"function support_num_ephy() { return %d;}\n"
 		"function support_ephy_w1000() { return %d;}\n"
@@ -2190,6 +2197,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		has_usb,
 		has_usb3,
 		BOARD_NUM_USB_PORTS,
+		has_stor,
 		has_switch_type,
 		BOARD_NUM_ETH_EPHY,
 		BOARD_HAS_EPHY_W1000,
@@ -2240,7 +2248,7 @@ ej_hardware_pins_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_led_lan = 0;
 #endif
-#if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
+#if defined (BOARD_GPIO_LED_USB) && defined (USE_USB_SUPPORT)
 	int has_led_usb = 1;
 #else
 	int has_led_usb = 0;
@@ -3623,57 +3631,38 @@ ej_backup_nvram(int eid, webs_t wp, int argc, char **argv)
 	return 0;
 }
 
-#if (!BOARD_NUM_USB_PORTS)
+#if !defined (USE_USB_SUPPORT)
 static int
 ej_get_usb_ports_info(int eid, webs_t wp, int argc, char **argv)
 {
-	/* usb ports num */
-	websWrite(wp, "function get_usb_ports_num(){\n");
-	websWrite(wp, "    return %u;\n", 0);
-	websWrite(wp, "}\n\n");
+	websWrite(wp, "function get_usb_ports_num(){return %u;}\n", 0);
+	websWrite(wp, "function get_device_type_usb(port_num){return \"unknown\";}\n");
+	websWrite(wp, "function printer_ports(){return [];}\n");
+	websWrite(wp, "function modem_ports(){return [];}\n");
+	websWrite(wp, "function modem_devnum(){return [];}\n");
+	return 0;
+}
+#endif
 
-	/* usb device types */
-	websWrite(wp, "function get_device_type_usb(port_num){\n");
-	websWrite(wp, "    return \"%s\";\n", "unknown");
-	websWrite(wp, "}\n\n");
-
-	/* printers */
-	websWrite(wp, "function printer_ports() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function printer_manufacts() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function printer_models() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
-	/* modems */
-	websWrite(wp, "function modem_ports() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function modem_devnum() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function modem_types() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function modem_manufacts() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function modem_models() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
+static int
+ej_get_ext_ports_info(int eid, webs_t wp, int argc, char **argv)
+{
+#if defined (USE_ATA_SUPPORT)
+	int i_ata_support = 1;
+#else
+	int i_ata_support = 0;
+#endif
+#if defined (USE_MMC_SUPPORT)
+	int i_mmc_support = 1;
+#else
+	int i_mmc_support = 0;
+#endif
+	websWrite(wp, "function get_ata_support(){return %d;}\n", i_ata_support);
+	websWrite(wp, "function get_mmc_support(){return %d;}\n", i_mmc_support);
 	return 0;
 }
 
+#if !defined (USE_STORAGE)
 static int
 ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char **argv)
 {
@@ -3738,10 +3727,11 @@ struct ej_handler ej_handlers[] =
 	{ "detect_internet", ej_detect_internet_hook},
 	{ "dump_syslog", ej_dump_syslog_hook},
 	{ "get_usb_ports_info", ej_get_usb_ports_info},
+	{ "get_ext_ports_info", ej_get_ext_ports_info},
 	{ "disk_pool_mapping_info", ej_disk_pool_mapping_info},
 	{ "available_disk_names_and_sizes", ej_available_disk_names_and_sizes},
-#if (BOARD_NUM_USB_PORTS > 0)
-	{ "get_usb_share_list", ej_get_usb_share_list},
+#if defined (USE_STORAGE)
+	{ "get_usb_share_list", ej_get_storage_share_list},
 	{ "get_AiDisk_status", ej_get_AiDisk_status},
 	{ "set_AiDisk_status", ej_set_AiDisk_status},
 	{ "get_all_accounts", ej_get_all_accounts},

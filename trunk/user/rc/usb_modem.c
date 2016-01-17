@@ -26,7 +26,6 @@
 #include <dirent.h>
 #include <errno.h>
 #include <signal.h>
-#include <sys/swap.h>
 
 #include <usb_info.h>
 #include <disk_share.h>
@@ -775,40 +774,46 @@ stop_wan_usbnet(void)
 	}
 }
 
+static const struct ums_ma_addon_t {
+	int vid;
+	int pid;
+	const char *uMa[10];
+} ums_ma_addon[] = {
+	{ 0x05c6, 0x1000, {"AnyDATA", "CELOT", "Co.,Ltd", "DGT", "SAMSUNG", "SSE", "StrongRising", "Vertex", NULL} },
+	{ 0x0471, 0x1210, {"Philips", NULL} },
+	{ 0,      0,      {NULL} }
+};
+
 int
 launch_usb_modeswitch(int vid, int pid, int inquire)
 {
 	char eject_file[64], addon[32];
 	char *arg_inq = "";
+	const struct ums_ma_addon_t *ua;
+	int i;
 
 	addon[0] = 0;
-	if ((vid == 0x0471 && pid == 0x1210) ||
-	    (vid == 0x05c6 && pid == 0x1000))
-	{
-		usb_info_t *usb_info, *follow_usb;
-		const char *uMa[8] = {"AnyDATA", "CELOT", "DGT", "SAMSUNG", "SSE", "StrongRising", "Vertex", "Philips"};
-		
-		usb_info = get_usb_info();
-		for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
-			if (follow_usb->dev_vid == vid && follow_usb->dev_pid == pid) {
-				if (vid == 0x05c6 && pid == 0x1000) {
-					int i;
-					for (i = 0; i < 7; i++) {
-						if (strncmp(follow_usb->manuf, uMa[i], strlen(uMa[i])) == 0) {
-							sprintf(addon, ":uMa=%s", uMa[i]);
+
+	for (ua = &ums_ma_addon[0]; ua->pid; ua++) {
+		if (ua->vid == vid && ua->pid == pid) {
+			usb_info_t *usb_info, *follow_usb;
+			
+			usb_info = get_usb_info();
+			for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
+				if (follow_usb->dev_vid == vid && follow_usb->dev_pid == pid) {
+					for (i = 0; ua->uMa[i]; i++) {
+						if (strncmp(follow_usb->manuf, ua->uMa[i], strlen(ua->uMa[i])) == 0) {
+							snprintf(addon, sizeof(addon), ":uMa=%s", ua->uMa[i]);
 							break;
 						}
 					}
-				} else {
-					/* 0471:1210:uMa=Philips */
-					if (strncmp(follow_usb->manuf, uMa[7], strlen(uMa[7])) == 0)
-						sprintf(addon, ":uMa=%s", uMa[7]);
+					break;
 				}
-				
-				break;
 			}
+			free_usb_info(usb_info);
+			
+			break;
 		}
-		free_usb_info(usb_info);
 	}
 
 	/* first, check custom rule in /etc/storage */

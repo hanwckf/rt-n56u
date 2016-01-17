@@ -26,7 +26,7 @@
 #include <sys/time.h>
 #include <time.h>
 
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 #include <usb_info.h>
 #include <disk_initial.h>
 #endif
@@ -49,7 +49,7 @@ static int dl_status_lan = 0;
 static int dl_status_lan_old = 0;
 static int dl_status_wisp = 0;
 static int dl_status_wisp_old = 0;
-#if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
+#if defined (BOARD_GPIO_LED_USB) && defined (USE_USB_SUPPORT)
 static int dl_status_usb = 0;
 static int dl_status_usb_old = 0;
 #endif
@@ -140,7 +140,7 @@ dl_handle_link_wan(void)
 			notify_on_wan_ether_link_restored();
 	}
 
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 	if ((dl_counter_modem_check > 0) && (dl_counter_total >= dl_counter_modem_check)) {
 		dl_counter_modem_check = 0;
 		
@@ -189,7 +189,7 @@ dl_handle_link_wisp(void)
 	}
 }
 
-#if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
+#if defined (BOARD_GPIO_LED_USB) && defined (USE_USB_SUPPORT)
 static void
 dl_handle_link_usb(int force_update)
 {
@@ -201,7 +201,7 @@ dl_handle_link_usb(int force_update)
 		dl_status_usb = has_usb_devices();
 		break;
 	case 1:
-		dl_status_usb = is_storage_mounted();
+		dl_status_usb = is_usb_storage_mounted();
 		break;
 	case 0:
 		dl_status_usb = 0;
@@ -258,7 +258,7 @@ dl_on_timer(void)
 	}
 
 	dl_handle_link_lan();
-#if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
+#if defined (BOARD_GPIO_LED_USB) && defined (USE_USB_SUPPORT)
 	dl_handle_link_usb(0);
 #endif
 }
@@ -306,7 +306,7 @@ dl_update_leds(void)
 		dl_state = (dl_status_wan | dl_status_lan);
 	LED_CONTROL(BOARD_GPIO_LED_LAN, (dl_state) ? LED_ON : LED_OFF);
 #endif
-#if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
+#if defined (BOARD_GPIO_LED_USB) && defined (USE_USB_SUPPORT)
 	front_led_x = nvram_get_int("front_led_usb");
 	if (nvram_get_int("front_led_all") == 0)
 		front_led_x = 0;

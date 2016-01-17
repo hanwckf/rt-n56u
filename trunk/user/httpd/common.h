@@ -69,6 +69,7 @@ typedef u_int8_t u8;
 #define EVM_RESTART_LLTD		(1ULL << 24)
 #define EVM_RESTART_ADSC		(1ULL << 25)
 #define EVM_RESTART_IPTV		(1ULL << 26)
+#define EVM_RESTART_CROND		(1ULL << 27)
 #define EVM_RESTART_SYSCTL		(1ULL << 28)
 #define EVM_RESTART_TWEAKS		(1ULL << 29)
 #define EVM_RESTART_WDG			(1ULL << 30)
@@ -84,7 +85,6 @@ typedef u_int8_t u8;
 #define EVM_RESTART_ITUNES		(1ULL << 40)
 #define EVM_RESTART_TRMD		(1ULL << 41)
 #define EVM_RESTART_ARIA		(1ULL << 42)
-#define EVM_RESTART_CROND		(1ULL << 43)
 #define EVM_RESTART_REBOOT		(1ULL << 62)
 
 #define EVM_BLOCK_UNSAFE		(1ULL << 63) /* special case */

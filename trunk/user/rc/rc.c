@@ -88,43 +88,43 @@ static void
 load_wireless_modules(void)
 {
 #if defined (USE_RT2860V2_AP)
-	doSystem("modprobe %s", "rt2860v2_ap");
+	module_smart_load("rt2860v2_ap", NULL);
 #endif
 
 #if defined (USE_MT7628_AP)
-	doSystem("modprobe %s", "mt7628_ap");
-#endif
-
-#if defined (USE_RT3090_AP)
-	doSystem("modprobe %s", "rt3090_ap");
-#elif defined (USE_RT5392_AP)
-	doSystem("modprobe %s", "rt5392_ap");
-#elif defined (USE_MT76X3_AP)
-	doSystem("modprobe %s", "mt76x3_ap");
+	module_smart_load("mt7628_ap", NULL);
 #endif
 
 #if defined (USE_MT76X2_AP)
-	doSystem("modprobe %s", "mt76x2_ap");
+	module_smart_load("mt76x2_ap", NULL);
+#endif
+
+#if defined (USE_RT3090_AP)
+	module_smart_load("rt3090_ap", NULL);
+#elif defined (USE_RT5392_AP)
+	module_smart_load("rt5392_ap", NULL);
+#elif defined (USE_MT76X3_AP)
+	module_smart_load("mt76x3_ap", NULL);
 #endif
 
 #if defined (USE_RT5592_AP)
-	doSystem("modprobe %s", "rt5592_ap");
+	module_smart_load("rt5592_ap", NULL);
 #elif defined (USE_RT3593_AP)
-	doSystem("modprobe %s", "rt3593_ap");
+	module_smart_load("rt3593_ap", NULL);
 #elif defined (USE_MT7610_AP)
-	doSystem("modprobe %s", "mt7610_ap");
+	module_smart_load("mt7610_ap", NULL);
 #endif
 }
 
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 static void
 load_usb_modules(void)
 {
 	/* load usb printer module before storage */
-	doSystem("modprobe %s", "usblp");
+	module_smart_load("usblp", NULL);
 
 	/* load usb storage module */
-	doSystem("modprobe %s", "usb-storage");
+	module_smart_load("usb_storage", NULL);
 
 	/* load usb modem modules */
 	if (!get_ap_mode() && nvram_get_int("modem_rule") > 0)
@@ -132,10 +132,37 @@ load_usb_modules(void)
 
 	/* start usb host */
 #if defined (USE_USB_XHCI)
-	doSystem("modprobe %s %s=%d", "xhci-hcd", "usb3_disable", nvram_get_int("usb3_disable"));
+	{
+		char xhci_param[32];
+		snprintf(xhci_param, sizeof(xhci_param), "%s=%d", "usb3_disable", nvram_get_int("usb3_disable"));
+		module_smart_load("xhci_hcd", xhci_param);
+	}
 #else
-	doSystem("modprobe %s", "ehci-hcd");
-	doSystem("modprobe %s", "ohci-hcd");
+	module_smart_load("ehci_hcd", NULL);
+	module_smart_load("ohci_hcd", NULL);
+#endif
+}
+#endif
+
+#if defined (USE_ATA_SUPPORT)
+static void
+load_ata_modules(void)
+{
+	/* start ahci device */
+	module_smart_load("ahci", NULL);
+}
+#endif
+
+#if defined (USE_MMC_SUPPORT)
+static void
+load_mmc_modules(void)
+{
+	/* start mmc block device */
+	module_smart_load("mmc_block", NULL);
+
+	/* start mmc host */
+#if defined (USE_MTK_MMC)
+	module_smart_load("mtk_sd", NULL);
 #endif
 }
 #endif
@@ -503,9 +530,12 @@ flash_firmware(void)
 
 	stop_misc();
 	stop_services(0); // don't stop httpd/telnetd/sshd/vpn
-#if (BOARD_NUM_USB_PORTS > 0)
+
+#if defined (USE_STORAGE)
+	safe_remove_all_stor_devices(0);
+#endif
+#if defined (USE_USB_SUPPORT)
 	stop_usb_printer_spoolers();
-	safe_remove_usb_device(0, NULL, 0);
 #endif
 	stop_igmpproxy(NULL);
 
@@ -662,7 +692,7 @@ LED_CONTROL(int gpio_led, int flag)
 #if defined (BOARD_GPIO_LED_USB2)
 	case BOARD_GPIO_LED_USB2:
 #endif
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 		front_led_x = nvram_get_int("front_led_usb");
 #else
 		front_led_x = 0;
@@ -748,9 +778,16 @@ init_router(void)
 	gen_ralink_config_2g(0);
 	gen_ralink_config_5g(0);
 	load_wireless_modules();
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_MMC_SUPPORT)
+	load_mmc_modules();
+#endif
+#if defined (USE_USB_SUPPORT)
 	load_usb_modules();
 #endif
+#if defined (USE_ATA_SUPPORT)
+	load_ata_modules();
+#endif
+
 	recreate_passwd_unix(1);
 
 	set_timezone();
@@ -779,7 +816,7 @@ init_router(void)
 		start_logger(1);
 
 	start_dns_dhcpd(is_ap_mode);
-#if defined(APP_SMBD) || defined(APP_NMBD)
+#if defined (APP_SMBD) || defined (APP_NMBD)
 	start_wins();
 #endif
 
@@ -815,9 +852,12 @@ shutdown_router(int level)
 	if (level < 2)
 		stop_services(use_halt);
 
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_STORAGE)
+	safe_remove_all_stor_devices(use_halt);
+#endif
+
+#if defined (USE_USB_SUPPORT)
 	stop_usb_printer_spoolers();
-	safe_remove_usb_device(0, NULL, use_halt);
 #endif
 #if defined (BOARD_GPIO_LED_USB)
 	LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
@@ -964,7 +1004,7 @@ handle_notifications(void)
 		{
 			manual_ddns_hostname_check();
 		}
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 		else if (!strcmp(entry->d_name, RCN_RESTART_MODEM))
 		{
 			int wan_stopped = 0;
@@ -1003,6 +1043,42 @@ handle_notifications(void)
 		else if (strcmp(entry->d_name, RCN_RESTART_SPOOLER) == 0)
 		{
 			restart_usb_printer_spoolers();
+		}
+		else if (!strcmp(entry->d_name, "on_hotplug_usb_printer"))
+		{
+			// deferred run usb printer daemons
+			nvram_set_int_temp("usb_hotplug_lp", 1);
+			alarm(5);
+		}
+		else if (!strcmp(entry->d_name, "on_unplug_usb_printer"))
+		{
+			// deferred stop usb printer daemons
+			nvram_set_int_temp("usb_unplug_lp", 1);
+			alarm(5);
+		}
+		else if (!strcmp(entry->d_name, "on_hotplug_usb_modem"))
+		{
+			// deferred run usb modem to wan
+			nvram_set_int_temp("usb_hotplug_md", 1);
+			alarm(5);
+		}
+		else if (!strcmp(entry->d_name, "on_unplug_usb_modem"))
+		{
+			// deferred restart wan
+			nvram_set_int_temp("usb_unplug_md", 1);
+			alarm(5);
+		}
+#endif
+#if defined (USE_STORAGE)
+		else if (!strcmp(entry->d_name, "on_hotplug_mass_storage"))
+		{
+			// deferred run stor apps
+			nvram_set_int_temp("usb_hotplug_ms", 1);
+			alarm(5);
+		}
+		else if (!strcmp(entry->d_name, "on_unplug_mass_storage"))
+		{
+			umount_ejected();
 		}
 		else if (strcmp(entry->d_name, RCN_RESTART_HDDTUNE) == 0)
 		{
@@ -1055,40 +1131,6 @@ handle_notifications(void)
 			restart_aria();
 		}
 #endif
-		else if (!strcmp(entry->d_name, "on_hotplug_usb_storage"))
-		{
-			// deferred run usb apps
-			nvram_set_int_temp("usb_hotplug_ms", 1);
-			alarm(5);
-		}
-		else if (!strcmp(entry->d_name, "on_unplug_usb_storage"))
-		{
-			umount_ejected();
-		}
-		else if (!strcmp(entry->d_name, "on_hotplug_usb_printer"))
-		{
-			// deferred run usb printer daemons
-			nvram_set_int_temp("usb_hotplug_lp", 1);
-			alarm(5);
-		}
-		else if (!strcmp(entry->d_name, "on_unplug_usb_printer"))
-		{
-			// deferred stop usb printer daemons
-			nvram_set_int_temp("usb_unplug_lp", 1);
-			alarm(5);
-		}
-		else if (!strcmp(entry->d_name, "on_hotplug_usb_modem"))
-		{
-			// deferred run usb modem to wan
-			nvram_set_int_temp("usb_hotplug_md", 1);
-			alarm(5);
-		}
-		else if (!strcmp(entry->d_name, "on_unplug_usb_modem"))
-		{
-			// deferred restart wan
-			nvram_set_int_temp("usb_unplug_md", 1);
-			alarm(5);
-		}
 #endif
 		else if (strcmp(entry->d_name, RCN_RESTART_HTTPD) == 0)
 		{
@@ -1361,7 +1403,7 @@ static const applet_rc_t applets_rc[] = {
 	{ "wpacli.script",	wpacli_main		},
 	{ "ip-up",		ipup_main		},
 	{ "ip-down",		ipdown_main		},
-#if defined(USE_IPV6)
+#if defined (USE_IPV6)
 	{ "ipv6-up",		ipv6up_main		},
 	{ "ipv6-down",		ipv6down_main		},
 	{ "dhcp6c.script",	dhcp6c_main		},
@@ -1371,14 +1413,19 @@ static const applet_rc_t applets_rc[] = {
 	{ "ip-up.vpnc",		ipup_vpnc_main		},
 	{ "ip-down.vpnc",	ipdown_vpnc_main	},
 
-#if defined(APP_OPENVPN)
+#if defined (APP_OPENVPN)
 	{ SCRIPT_OVPN_SERVER,	ovpn_server_script_main	},
 	{ SCRIPT_OVPN_CLIENT,	ovpn_client_script_main	},
 	{ "ovpn_export_client",	ovpn_server_expcli_main	},
 #endif
-#if (BOARD_NUM_USB_PORTS > 0)
-	{ "mdev_sg",		mdev_sg_main		},
+#if defined (USE_MMC_SUPPORT)
+	{ "mdev_mmc",		mdev_mmc_main		},
+#endif
+#if defined (USE_BLK_DEV_SD)
 	{ "mdev_sd",		mdev_sd_main		},
+#endif
+#if defined (USE_USB_SUPPORT)
+	{ "mdev_sg",		mdev_sg_main		},
 	{ "mdev_sr",		mdev_sr_main		},
 	{ "mdev_lp",		mdev_lp_main		},
 	{ "mdev_tty",		mdev_tty_main		},
@@ -1395,13 +1442,13 @@ static const applet_rc_t applets_rc[] = {
 
 	{ "watchdog",		watchdog_main		},
 	{ "rstats",		rstats_main		},
-#if defined(USE_RTL8367)
+#if defined (USE_RTL8367)
 	{ "rtl8367",		rtl8367_main		},
 #endif
-#if defined(USE_MTK_ESW) || defined(USE_MTK_GSW)
+#if defined (USE_MTK_ESW) || defined (USE_MTK_GSW)
 	{ "mtk_esw",		mtk_esw_main		},
 #endif
-#if defined(USE_RT3352_MII)
+#if defined (USE_RT3352_MII)
 	{ "inicd",		inicd_main		},
 #endif
 	{ NULL, NULL }
@@ -1666,7 +1713,7 @@ main(int argc, char **argv)
 			ret = get_wired_mac(1);
 		}
 	}
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 	else if (!strcmp(base, "ejusb")) {
 		int port = 0;
 		char *devn = NULL;
@@ -1679,18 +1726,29 @@ main(int argc, char **argv)
 					devn = argv[2];
 			}
 		}
-		ret = safe_remove_usb_device(port, devn, 1);
+		safe_remove_usb_device(port, devn);
 	}
 	else if (!strcmp(base, "ejusb1")) {
 		char *devn = (argc > 1) ? argv[1] : NULL;
-		ret = safe_remove_usb_device(1, devn, 1);
+		safe_remove_usb_device(1, devn);
 	}
 #if (BOARD_NUM_USB_PORTS > 1)
 	else if (!strcmp(base, "ejusb2")) {
 		char *devn = (argc > 1) ? argv[1] : NULL;
-		ret = safe_remove_usb_device(2, devn, 1);
+		safe_remove_usb_device(2, devn);
 	}
 #endif
+#endif
+#if defined (USE_ATA_SUPPORT)
+	else if (!strcmp(base, "ejata")) {
+		char *devn = (argc > 1) ? argv[1] : NULL;
+		safe_remove_ata_device(devn);
+	}
+#endif
+#if defined (USE_MMC_SUPPORT)
+	else if (!strcmp(base, "ejmmc")) {
+		safe_remove_mmc_device();
+	}
 #endif
 	else if (!strcmp(base, "pids")) {
 		if (argc > 1)

@@ -33,12 +33,8 @@ var printer_models_array = parent.printer_models();
 var modem_active = '<% nvram_get_x("", "wan0_modem_dev"); %>';
 
 function initial(){
-	show_list_hub();
-}
-
-function show_list_hub(){
 	var i, total_mounted, total_devices;
-	var code = "";
+	var code = '';
 
 	total_devices = 0;
 	total_mounted = 0;
@@ -47,13 +43,11 @@ function show_list_hub(){
 			var model_name = parent.getDiskModelName(i);
 			var size_total = parent.getDiskTotalSize(i);
 			var mounted_num = parent.getDiskMountedNum(i);
+			code +='<div class="alert alert-info alert-header"><#USB_Storage#></div>\n';
 			code +='<table width="100%" cellpadding="4" cellspacing="0" class="table">\n';
 			code +='  <tr>\n';
-			code +='    <th colspan="2" style="background-color: #E3E3E3;"><#USB_Storage#></th>\n';
-			code +='  </tr>\n';
-			code +='  <tr>\n';
-			code +='    <th width="50%"><#Modelname#>:</th>\n';
-			code +='    <td>'+model_name+'</td>\n';
+			code +='    <th width="50%" style="border: 0 none;"><#Modelname#>:</th>\n';
+			code +='    <td style="border: 0 none;">'+model_name+'</td>\n';
 			code +='  </tr>\n';
 			code +='  <tr>\n';
 		    if (mounted_num > 0) {
@@ -69,11 +63,11 @@ function show_list_hub(){
 			code +='    <td>'+size_total+' GB / '+size_free+' GB</td>\n';
 			code +='  </tr>\n';
 			code +='  <tr>\n';
-			code +='    <th width="50%"><#DiskUsage#>:</th>\n';
+			code +='    <th><#DiskUsage#>:</th>\n';
 			code +='    <td><div style="margin-bottom: 2px; width:250px; float: left;" class="progress '+alertPercentbar+'"><div class="bar" style="width:'+percentbar+'%">'+percentstr+'</div></div></td>\n';
 			code +='  </tr>\n';
 			code +='  <tr>\n';
-			code +='    <th width="50%"><#Safelyremovedisk_title#>:</th>\n';
+			code +='    <th><#Safelyremovedisk_title#>:</th>\n';
 			code +='    <td><input type="button" class="btn btn-success span2" onclick="remove_disk('+i+');" value="<#btn_remove#>"></td>\n';
 			total_mounted++;
 		    } else {
@@ -81,7 +75,7 @@ function show_list_hub(){
 			code +='    <td>'+size_total+' GB</td>\n';
 			code +='  </tr>\n';
 			code +='  <tr>\n';
-			code +='    <th width="50%"><#Safelyremovedisk_title#>:</th>\n';
+			code +='    <th><#Safelyremovedisk_title#>:</th>\n';
 			code +='    <td><span class="label label-success"><#Safelyremovedisk#></span></td>\n';
 		    }
 			code +='  </tr>\n';
@@ -92,20 +86,18 @@ function show_list_hub(){
 
 	for(i = 0; i < modem_ports_array.length; i++){
 		if (parseInt(modem_ports_array[i]) == port_order+1) {
+			code +='<div class="alert alert-info alert-header"><#USB_Modem#></div>\n';
 			code +='<table width="100%" cellpadding="4" cellspacing="0" class="table">\n';
 			code +='  <tr>\n';
-			code +='    <th colspan="2" style="background-color: #E3E3E3;"><#USB_Modem#></th>\n';
+			code +='    <th width="50%" style="border: 0 none;"><#Modelname#>:</th>\n';
+			code +='    <td style="border: 0 none;">'+modem_models_array[i]+'</td>\n';
 			code +='  </tr>\n';
 			code +='  <tr>\n';
-			code +='    <th width="50%"><#Modelname#>:</th>\n';
-			code +='    <td>'+modem_models_array[i]+'</td>\n';
-			code +='  </tr>\n';
-			code +='  <tr>\n';
-			code +='    <th width="50%"><#ModemType#></th>\n';
+			code +='    <th><#ModemType#></th>\n';
 			code +='    <td>'+modem_types_array[i]+'</td>\n';
 			code +='  </tr>\n';
 			code +='  <tr>\n';
-			code +='    <th width="50%"><#HSDPAConfig_safely_remove#>:</th>\n';
+			code +='    <th><#HSDPAConfig_safely_remove#>:</th>\n';
 		    if (modem_active == modem_devnum_array[i]) {
 			code +='    <td><input type="button" class="btn btn-success span2" onclick="remove_modem('+i+');" value="<#btn_remove#>"></td>\n';
 			total_mounted++;
@@ -120,16 +112,14 @@ function show_list_hub(){
 
 	for(i = 0; i < printer_ports_array.length; i++){
 		if (parseInt(printer_ports_array[i]) == port_order+1) {
+			code +='<div class="alert alert-info alert-header"><#USB_Printer#></div>\n';
 			code +='<table width="100%" cellpadding="4" cellspacing="0" class="table">\n';
 			code +='  <tr>\n';
-			code +='    <th colspan="2" style="background-color: #E3E3E3;"><#USB_Printer#></th>\n';
+			code +='    <th width="50%" style="border: 0 none;"><#Modelname#>:</th>\n';
+			code +='    <td style="border: 0 none;">'+printer_models_array[i]+'</td>\n';
 			code +='  </tr>\n';
 			code +='  <tr>\n';
-			code +='    <th width="50%"><#Modelname#>:</th>\n';
-			code +='    <td>'+printer_models_array[i]+'</td>\n';
-			code +='  </tr>\n';
-			code +='  <tr>\n';
-			code +='    <th width="50%"><#Printing_button_item#></th>\n';
+			code +='    <th><#Printing_button_item#></th>\n';
 			code +='    <td><input type="button" class="btn btn-info span2" value="<#btn_Enable#>" onclick="u2ec_monopolize();"></td>\n';
 			code +='  </tr>\n';
 			code +='</table>\n';
@@ -148,11 +138,7 @@ function show_list_hub(){
 */
 
 	if (total_devices < 1) {
-		code +='<table width="100%" cellpadding="4" cellspacing="0" class="table">\n';
-		code +='  <tr>\n';
-		code +='    <td style="text-align: center;"><div class="alert alert-info"><#USB_Hub_Empty#></div></td>\n';
-		code +='  </tr>\n';
-		code +='</table>\n';
+		code +='<div class="alert alert-info alert-header" style="text-align: center;"><#USB_Hub_Empty#></div>\n';
 	}
 
 	$j('#hub_devices').append(code);
@@ -160,7 +146,7 @@ function show_list_hub(){
 
 function remove_disk(port_idx){
 	var str = "<#Safelyremovedisk_confirm#>";
-	
+
 	if(confirm(str)){
 		parent.showLoading();
 		
@@ -178,7 +164,7 @@ function remove_disk(port_idx){
 
 function remove_modem(port_idx){
 	var str = "<#USB_Modem_remove_confirm#>";
-	
+
 	if(confirm(str)){
 		parent.showLoading();
 		
@@ -198,13 +184,12 @@ function u2ec_monopolize(){
 	document.prnForm.next_page.value = "device-map/hub.asp";
 	document.prnForm.submit();
 }
-
-
 </script>
 
 <style>
     .table {margin-bottom: 0px;}
     .table th, .table td{vertical-align: middle;}
+    .alert-header {margin: 3px 0px 0px 0px; padding: 5px 5px 5px 8px;}
     .progress {
         background-image: -moz-linear-gradient(top, #f3f3f3, #dddddd);
         background-image: -ms-linear-gradient(top, #f3f3f3, #dddddd);

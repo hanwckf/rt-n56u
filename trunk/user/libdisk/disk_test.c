@@ -28,11 +28,12 @@
 #include "disk_initial.h"
 #include "usb_info.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	disk_info_t *follow_disk, *disks_info;
 	partition_info_t *follow_partition;
 	usb_info_t *follow_info, *usb_info;
-	
+
 	disks_info = read_disk_data();
 	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
 		csprintf("              port: %u.\n", follow_disk->port_root);
@@ -44,15 +45,17 @@ int main(int argc, char *argv[]) {
 		csprintf("             minor: %u.\n", follow_disk->minor);
 		csprintf("  partition_number: %u.\n", follow_disk->partition_number);
 		csprintf("    mounted_number: %u.\n", follow_disk->mounted_number);
+		csprintf("     swapon_number: %u.\n", follow_disk->swapon_number);
 		csprintf(" size_in_kilobytes: %llu.\n", follow_disk->size_in_kilobytes);
+		
 		if (follow_disk->partitions == NULL) {
 			csprintf("\n");
 			continue;
 		}
 		
 		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
-			csprintf("		  partition order: %u.\n", follow_partition->partition_order);
 			csprintf("		           device: %s.\n", follow_partition->device);
+			csprintf("		           swapon: %d.\n", follow_partition->swapon);
 			csprintf("		      mount_point: %s.\n", follow_partition->mount_point);
 			csprintf("		      file_system: %s.\n", follow_partition->file_system);
 			csprintf("		size_in_kilobytes: %llu.\n", follow_partition->size_in_kilobytes);
@@ -61,9 +64,9 @@ int main(int argc, char *argv[]) {
 		
 		csprintf("\n");
 	}
-	
+
 	free_disk_data(disks_info);
-	
+
 	usb_info = get_usb_info();
 	for (follow_info = usb_info; follow_info != NULL; follow_info = follow_info->next) {
 		csprintf("-----------------------------------------------\n");
@@ -81,7 +84,10 @@ int main(int argc, char *argv[]) {
 		csprintf("               pid: %04X\n", follow_info->dev_pid);
 	}
 	free_usb_info(usb_info);
-	
+
+	if (argc > 1 && strcmp(argv[1], "-u") == 0)
+		umount_all_storage();
+
 	return 0;
 }
 

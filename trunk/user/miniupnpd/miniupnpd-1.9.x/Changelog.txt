@@ -1,4 +1,7 @@
-$Id: Changelog.txt,v 1.415 2015/12/16 10:21:48 nanard Exp $
+$Id: Changelog.txt,v 1.416 2016/01/19 10:03:28 nanard Exp $
+
+2016/01/18:
+  fix pcpserver.c CreatePCPMap_FW() : check pinhole before adding
 
 2015/12/16:
   improve syslog message for incoming HTTP requests

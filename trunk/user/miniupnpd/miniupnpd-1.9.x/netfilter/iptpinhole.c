@@ -1,7 +1,7 @@
 /* $Id: iptpinhole.c,v 1.15 2016/01/13 15:54:42 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2012-2015 Thomas Bernard
+ * (c) 2012-2016 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -13,6 +13,7 @@
 #include <sys/queue.h>
 
 #include "../config.h"
+#include "../macros.h"
 #include "iptpinhole.h"
 #include "../upnpglobalvars.h"
 
@@ -50,7 +51,12 @@ void init_iptpinhole(void)
 
 void shutdown_iptpinhole(void)
 {
-	/* TODO empty list */
+	struct pinhole_t * p;
+	while(pinhole_list.lh_first != NULL) {
+		p = pinhole_list.lh_first;
+		LIST_REMOVE(p, entries);
+		free(p);
+	}
 }
 
 /* return uid */
@@ -260,6 +266,37 @@ int add_pinhole(const char * ifname,
 	                          proto, desc, timestamp);
 	free(e);
 	return uid;
+}
+
+int
+find_pinhole(const char * ifname,
+             const char * rem_host, unsigned short rem_port,
+             const char * int_client, unsigned short int_port,
+             int proto,
+             char *desc, int desc_len, unsigned int * timestamp)
+{
+	struct pinhole_t * p;
+	struct in6_addr saddr;
+	struct in6_addr daddr;
+	UNUSED(ifname);
+
+	if(rem_host && (rem_host[0] != '\0')) {
+		inet_pton(AF_INET6, rem_host, &saddr);
+	} else {
+		memset(&saddr, 0, sizeof(struct in6_addr));
+	}
+	inet_pton(AF_INET6, int_client, &daddr);
+	for(p = pinhole_list.lh_first; p != NULL; p = p->entries.le_next) {
+		if((proto == p->proto) && (rem_port == p->sport) &&
+		   (0 == memcmp(&saddr, &p->saddr, sizeof(struct in6_addr))) &&
+		   (int_port == p->dport) &&
+		   (0 == memcmp(&daddr, &p->daddr, sizeof(struct in6_addr)))) {
+			if(desc) strncpy(desc, p->desc, desc_len);
+			if(timestamp) *timestamp = p->timestamp;
+			return (int)p->uid;
+		}
+	}
+	return -2;	/* not found */
 }
 
 int

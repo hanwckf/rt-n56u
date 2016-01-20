@@ -492,22 +492,24 @@ stop_samba(int force_stop)
 
 void run_samba(void)
 {
-	int sh_num, has_nmbd, i;
+	int sh_num, has_nmbd, has_smbd, i;
 	char tmpuser[40], tmp2[40];
 	char cmd[256];
 
 	if (nvram_match("enable_samba", "0") || nvram_match("st_samba_mode", "0"))
 		return;
 
+	recreate_passwd_unix(0);
+
 	mkdir_if_none("/etc/samba", "777");
 
+	has_smbd = pids("smbd");
 	has_nmbd = pids("nmbd");
-	if (!has_nmbd) {
+
+	if (!has_nmbd && !has_smbd) {
 		doSystem("rm -f %s", "/etc/samba/*");
 		clean_smbd_trash();
 	}
-
-	recreate_passwd_unix(0);
 
 	write_smb_conf();
 
@@ -526,9 +528,12 @@ void run_samba(void)
 	else
 		eval("/sbin/nmbd", "-D", "-s", "/etc/smb.conf");
 
-	eval("/sbin/smbd", "-D", "-s", "/etc/smb.conf");
+	if (has_smbd)
+		doSystem("killall %s %s", "-SIGHUP", "smbd");
+	else
+		eval("/sbin/smbd", "-D", "-s", "/etc/smb.conf");
 
-	if (pids("smbd") && pids("nmbd"))
+	if (pids("nmbd") && pids("smbd"))
 		logmessage("Samba Server", "daemon is started");
 }
 

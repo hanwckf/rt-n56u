@@ -85,7 +85,7 @@
 // USER CONTROL
 /////////////////////////////////////////////////
 
-#define MTK_ESW_IOCTL_STORM_MULTICAST_UNK	71
+#define MTK_ESW_IOCTL_STORM_BROADCAST		73
 
 #define MTK_ESW_IOCTL_JUMBO_FRAMES		75
 #define MTK_ESW_IOCTL_GREEN_ETHERNET		76

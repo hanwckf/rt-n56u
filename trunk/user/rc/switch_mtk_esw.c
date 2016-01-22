@@ -244,9 +244,10 @@ inline int phy_storm_unicast_unknown(unsigned int storm_rate_mbps)
 	return 0;
 }
 
-int phy_storm_multicast_unknown(unsigned int storm_rate_mbps)
+inline int phy_storm_multicast_unknown(unsigned int storm_rate_mbps)
 {
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_STORM_MULTICAST_UNK, 0, &storm_rate_mbps);
+	// N.A.
+	return 0;
 }
 
 inline int phy_storm_multicast(unsigned int storm_rate_mbps)
@@ -255,10 +256,9 @@ inline int phy_storm_multicast(unsigned int storm_rate_mbps)
 	return 0;
 }
 
-inline int phy_storm_broadcast(unsigned int storm_rate_mbps)
+int phy_storm_broadcast(unsigned int storm_rate_mbps)
 {
-	// N.A. (brodcast storm also set by unknown multicast)
-	return 0;
+	return mtk_esw_ioctl(MTK_ESW_IOCTL_STORM_BROADCAST, 0, &storm_rate_mbps);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -458,7 +458,7 @@ static int show_usage(char *cmd)
 	"   63 [MASK] [DATA] Create port-based VLAN entry\n"
 	"   64 [MASK] [DATA] Create VLAN entry\n"
 	"\n"
-	"   71 [0..1000]     Set Unknown Multicast and Broadcast storm rate for all PHY ports\n"
+	"   73 [0..1000]     Set Broadcast storm rate limit for all PHY ports\n"
 	"   75 [1|0]         Set Jumbo Frames accept on/off\n"
 	"   76 [1|0]         Set 802.3az EEE on/off\n"
 	"   77 [MASK]        Set IGMP/MLD static ports mask\n"

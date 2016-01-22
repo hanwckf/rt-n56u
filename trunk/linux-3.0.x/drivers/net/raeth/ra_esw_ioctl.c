@@ -1165,8 +1165,8 @@ static void esw_storm_control(u32 port_id, int set_bcast, int set_mcast, int set
 			rate_mbps = (0xff * 4);
 		
 		rate_unit_1000 = rate_mbps;
-		rate_unit_100 = (rate_mbps < 80) ? rate_mbps : 80;
-		rate_unit_10 = (rate_mbps < 8) ? rate_mbps : 8;
+		rate_unit_100 = (rate_mbps < 90) ? rate_mbps : 90;
+		rate_unit_10 = (rate_mbps < 9) ? rate_mbps : 9;
 		
 		reg_bsr |= BIT(31);			// STRM_MODE = Rate-based
 		if (set_bcast)
@@ -1811,7 +1811,7 @@ static void change_port_link_mode(u32 phy_port_id, u32 port_link_mode)
 		MTK_ESW_DEVNAME, get_port_desc(phy_port_id), link_desc, flow_desc);
 }
 
-static void change_storm_control_multicast_unknown(u32 control_rate_mbps)
+static void change_storm_control_broadcast(u32 control_rate_mbps)
 {
 	u32 i;
 	char rate_desc[16];
@@ -1819,8 +1819,7 @@ static void change_storm_control_multicast_unknown(u32 control_rate_mbps)
 	if (control_rate_mbps >= 1024)
 		control_rate_mbps = 0;
 
-	if (g_storm_rate_limit != control_rate_mbps)
-	{
+	if (g_storm_rate_limit != control_rate_mbps) {
 		g_storm_rate_limit = control_rate_mbps;
 		
 		if (control_rate_mbps > 0)
@@ -1828,10 +1827,10 @@ static void change_storm_control_multicast_unknown(u32 control_rate_mbps)
 		else
 			strcpy(rate_desc, "off");
 		
-		printk("%s - set unknown multicast and broadcast storm control rate as: %s\n", MTK_ESW_DEVNAME, rate_desc);
+		printk("%s - set broadcast storm control rate as: %s\n", MTK_ESW_DEVNAME, rate_desc);
 		
 		for (i = 0; i <= ESW_MAC_ID_MAX; i++)
-			esw_storm_control(i, 1, 1, 0, control_rate_mbps);
+			esw_storm_control(i, 1, 0, 0, control_rate_mbps);
 	}
 }
 
@@ -2205,9 +2204,9 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 		ioctl_result = change_vlan_rule(uint_param, uint_value);
 		break;
 
-	case MTK_ESW_IOCTL_STORM_MULTICAST_UNK:
+	case MTK_ESW_IOCTL_STORM_BROADCAST:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		change_storm_control_multicast_unknown(uint_value);
+		change_storm_control_broadcast(uint_value);
 		break;
 
 	case MTK_ESW_IOCTL_JUMBO_FRAMES:

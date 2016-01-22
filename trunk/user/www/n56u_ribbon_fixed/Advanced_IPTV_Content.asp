@@ -62,14 +62,12 @@ function initial(){
 	var switch_type = support_switch_type();
 	if (switch_type != 0) {
 		showhide_div('row_storm_ucast', 0);
+		showhide_div('row_storm_mcast_unk', 0);
 		showhide_div('row_storm_mcast', 0);
-		showhide_div('row_storm_bcast', 0);
 	}
 
 	if (switch_type == 1)
-		$("lbl_umcast").innerHTML = "[0..100]";
-	else
-		$("lbl_umcast").innerHTML = "[0..1000]";
+		$("lbl_bcast").innerHTML = "[0..100]";
 
 	if(document.form.udpxy_enable_x.value == 0)
 		$("web_udpxy_link").style.display = "none";
@@ -123,17 +121,17 @@ function validForm(){
 		if(!validate_range(document.form.controlrate_unknown_unicast, 0, 1000))
 			return false;
 	}
-	if(document.form.controlrate_unknown_multicast.value != 0){
-		var max_rate = (switch_type == 1) ? 100 : 1000;
-		if(!validate_range(document.form.controlrate_unknown_multicast, 0, max_rate))
+	if(document.form.controlrate_unknown_multicast.value != 0 && switch_type == 0){
+		if(!validate_range(document.form.controlrate_unknown_multicast, 0, 1000))
 			return false;
 	}
 	if(document.form.controlrate_multicast.value != 0 && switch_type == 0){
 		if(!validate_range(document.form.controlrate_multicast, 0, 1000))
 			return false;
 	}
-	if(document.form.controlrate_broadcast.value != 0 && switch_type == 0){
-		if(!validate_range(document.form.controlrate_broadcast, 0, 1000))
+	if(document.form.controlrate_broadcast.value != 0){
+		var max_rate = (switch_type == 1) ? 100 : 1000;
+		if(!validate_range(document.form.controlrate_broadcast, 0, max_rate))
 			return false;
 	}
 
@@ -392,11 +390,11 @@ function on_xupnpd_link(){
                                                 &nbsp;<span style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_storm_mcast_unk">
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 8);"><#RouterConfig_GWMulticast_unknownMul_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_unknown_multicast" value="<% nvram_get_x("", "controlrate_unknown_multicast"); %>" onkeypress="return is_number(this,event);"/>
-                                                &nbsp;<span id="lbl_umcast" style="color:#888;"></span>
+                                                &nbsp;<span style="color:#888;"></span>
                                             </td>
                                         </tr>
                                         <tr id="row_storm_mcast">
@@ -406,11 +404,11 @@ function on_xupnpd_link(){
                                                 &nbsp;<span style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
-                                        <tr id="row_storm_bcast">
+                                        <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 10);"><#RouterConfig_GWMulticast_Broadcast_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_broadcast" value="<% nvram_get_x("", "controlrate_broadcast"); %>" onkeypress="return is_number(this,event);"/>
-                                                &nbsp;<span style="color:#888;">[0..1000]</span>
+                                                &nbsp;<span id="lbl_bcast" style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
                                     </table>

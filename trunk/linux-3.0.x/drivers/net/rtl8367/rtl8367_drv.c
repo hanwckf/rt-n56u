@@ -1363,6 +1363,9 @@ static int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 	if (isolated_mode > SWAPI_WAN_BWAN_ISOLATION_BETWEEN)
 		return -EINVAL;
 
+	if (wan_bridge_mode == SWAPI_WAN_BRIDGE_DISABLE)
+		isolated_mode = SWAPI_WAN_BWAN_ISOLATION_NONE;
+
 	bridge_changed = (g_wan_bridge_mode != wan_bridge_mode) ? 1 : 0;
 	br_iso_changed = (g_wan_bridge_isolated_mode != isolated_mode) ? 1 : 0;
 	vlan_rule_changed = 0;

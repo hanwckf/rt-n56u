@@ -747,6 +747,7 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 		if (vlan_idx <= VLAN_ENTRY_ID_MAX && vlan_entry[vlan_idx].valid)
 			vlan_entry[vlan_idx].port_untag |= (1u << WAN_PORT_CPU);
 		pvlan_member_cpu_wan.pvid = cvid;
+		pvlan_member_cpu_wan.prio = prio[SWAPI_VLAN_RULE_WAN_IPTV];
 	} else if (!tagg[SWAPI_VLAN_RULE_WAN_INET] && !tagg[SWAPI_VLAN_RULE_WAN_IPTV]) {
 		/* update VID #2 untag members */
 		vlan_entry[1].port_untag |= (1u << WAN_PORT_CPU);

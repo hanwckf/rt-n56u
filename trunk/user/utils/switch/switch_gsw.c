@@ -1663,98 +1663,118 @@ void set_mirror_from(int argc, char *argv[])
 #if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_MT7530_GSW)
 void vlan_dump(int max_vid)
 {
-	int i, j, vid, value, value2;
+	int i, j, vid, mask, mask2, value, value2;
 
-	if (max_vid <  1)
+	if (max_vid < 1)
 		max_vid = 1;
 	else
 	if (max_vid > 4095)
 		max_vid = 4095;
 
-	printf("  vid  portmap   s-tag  ivl  fid\n");
+	printf("  vid  portmap  eg-tag  s-tag  ivl  fid\n");
+//                  1  -------  -------     1    1    7
+
 	for (i = 1; i <= max_vid; i++) {
 		value = (0x80000000 + i);  //r_vid_cmd
 		reg_write(REG_ESW_VLAN_VTCR, value);
-		
 		wait_vtcr();
-		
 		reg_read(REG_ESW_VLAN_VAWD1, &value);
 		reg_read(REG_ESW_VLAN_VAWD2, &value2);
 		
-		if ((value & 0x01) != 0){
+		if (value & 0x01) {
 			printf(" %4d  ", i);
-			printf("%c", (value & 0x00010000)? '1':'-');
-			printf("%c", (value & 0x00020000)? '1':'-');
-			printf("%c", (value & 0x00040000)? '1':'-');
-			printf("%c", (value & 0x00080000)? '1':'-');
-			printf("%c", (value & 0x00100000)? '1':'-');
-			printf("%c", (value & 0x00200000)? '1':'-');
-			printf("%c", (value & 0x00400000)? '1':'-');
-			printf("%c", (value & 0x00800000)? '1':'-');
-			printf("  %5d", ((value & 0xfff0)>>4)) ;
-			printf("  %3d",  (value>>30));
-			printf("  %3d\n", ((value&0xe)>>1));
+			for (j = 0; j < 7; j++) {
+				mask = ((1u << j) << 16);
+				printf("%c", (value & mask)? '1':'-');
+			}
+			
+			if (value & (1u << 28)) {
+				printf("%s", "  ");
+				for (j = 0; j < 7; j++) {
+					mask = ((1u << j) << 16);
+					mask2 = (value2 >> (j*2)) & 0x3;
+					if (!(value & mask))
+						printf("%c", '-');
+					else if (mask2 == 0)
+						printf("%c", 'u');
+					else if (mask2 == 1)
+						printf("%c", 'w');
+					else if (mask2 == 2)
+						printf("%c", 't');
+					else
+						printf("%c", 's');
+				}
+			} else {
+				printf("%s", "  -------");
+			}
+			
+			printf("  %4d", ((value & 0xfff0)>>4)) ;
+			printf("  %3d",  (value>>30)&0x1);
+			if (value & (1u << 30))
+				printf("    %c\n", '-');
+			else
+				printf("  %3d\n", ((value & 0xe)>>1));
 		}
 	}
 }
 #else
 void vlan_dump(void)
 {
-	int i, vid, value, value2;
+	int i, j, k, vid, mask, mask2, value, value2;
 
-	printf("idx   vid  portmap    s-tag  ivl  fid\n");
+	printf("idx  vid  portmap   eg-tag   s-tag  ivl  fid\n");
+//                0    1  --------  --------     1    1    7
+
 	for (i = 0; i < 8; i++) {
 		reg_read(REG_ESW_VLAN_ID_BASE + 4*i, &vid);
-
-		value = (0x80000000 + 2*i);  //r_vid_cmd
-		reg_write(REG_ESW_VLAN_VTCR, value);
-
-		wait_vtcr();
-
-		reg_read(REG_ESW_VLAN_VAWD1, &value);
-		reg_read(REG_ESW_VLAN_VAWD2, &value2);
 		
-		printf(" %2d  %4d ", 2*i, vid & 0xfff);
-		
-		if((value & 0x01) != 0){
-			printf(" %c", (value & 0x00010000)? '1':'-');
-			printf("%c", (value & 0x00020000)? '1':'-');
-			printf("%c", (value & 0x00040000)? '1':'-');
-			printf("%c", (value & 0x00080000)? '1':'-');
-			printf("%c", (value & 0x00100000)? '1':'-');
-			printf("%c", (value & 0x00200000)? '1':'-');
-			printf("%c", (value & 0x00400000)? '1':'-');
-			printf("%c", (value & 0x00800000)? '1':'-');
-			printf("   %5d", ((value & 0xfff0)>>4));
-			printf("  %3d",  (value>>30));
-			printf("  %3d\n",((value & 0xe)>>1));
-		}else{
-			printf(" invalid\n");
-		}
-
-		value = (0x80000000 + 2*i +1);  //r_vid_cmd
-		reg_write(REG_ESW_VLAN_VTCR, value);
-		wait_vtcr();
-
-		reg_read(REG_ESW_VLAN_VAWD1, &value);
-		reg_read(REG_ESW_VLAN_VAWD2, &value2);
-
-		printf(" %2d  %4d ", 2*i+1, ((vid & 0xfff000) >> 12));
-
-		if((value & 0x01) != 0){
-			printf(" %c", (value & 0x00010000)? '1':'-');
-			printf("%c", (value & 0x00020000)? '1':'-');
-			printf("%c", (value & 0x00040000)? '1':'-');
-			printf("%c", (value & 0x00080000)? '1':'-');
-			printf("%c", (value & 0x00100000)? '1':'-');
-			printf("%c", (value & 0x00200000)? '1':'-');
-			printf("%c", (value & 0x00400000)? '1':'-');
-			printf("%c", (value & 0x00800000)? '1':'-');
-			printf("   %5d", ((value & 0xfff0)>>4));
-			printf("  %3d",  (value>>30));
-			printf("  %3d\n",((value & 0xe)>>1));
-		}else{
-			printf(" invalid\n");
+		for (k = 0; k < 2; k++) {
+			value = (0x80000000 + 2*i+k);  //r_vid_cmd
+			reg_write(REG_ESW_VLAN_VTCR, value);
+			wait_vtcr();
+			reg_read(REG_ESW_VLAN_VAWD1, &value);
+			reg_read(REG_ESW_VLAN_VAWD2, &value2);
+			
+			if (k == 1)
+				vid >>= 12;
+			
+			printf(" %2d %4d  ", 2*i+k, vid & 0xfff);
+			
+			if (value & 0x01) {
+				for (j = 0; j < 8; j++) {
+					mask = ((1u << j) << 16);
+					printf("%c", (value & mask)? '1':'-');
+				}
+				
+				if (value & (1u << 28)) {
+					printf("%s", "  ");
+					for (j = 0; j < 8; j++) {
+						mask = ((1u << j) << 16);
+						mask2 = (value2 >> (j*2)) & 0x3;
+						if (!(value & mask))
+							printf("%c", '-');
+						else if (mask2 == 0)
+							printf("%c", 'u');
+						else if (mask2 == 1)
+							printf("%c", 'w');
+						else if (mask2 == 2)
+							printf("%c", 't');
+						else
+							printf("%c", 's');
+					}
+				} else {
+					printf("%s", "  --------");
+				}
+				
+				printf("  %4d", ((value & 0xfff0)>>4));
+				printf("  %3d",  (value>>30)&0x1);
+				if (value & (1u << 30))
+					printf("    %c\n", '-');
+				else
+					printf("  %3d\n", ((value & 0xe)>>1));
+			} else {
+				printf(" invalid\n");
+			}
 		}
 	}
 }

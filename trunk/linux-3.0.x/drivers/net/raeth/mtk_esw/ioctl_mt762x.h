@@ -138,11 +138,9 @@ typedef struct
 
 typedef struct
 {
-	u32 pvid:12;
-	u32 prio:3;
-	u32 tagg:1;
-	u32 swap:1;
-	u32 unused:15;
+	u16 pvid:12;
+	u16 prio:3;
+	u16 tagg:1;
 } pvlan_member_t;
 
 typedef struct
@@ -153,7 +151,9 @@ typedef struct
 	u32 svid:12;
 	u32 unused1:4;
 	u32 port_member:8;
-	u32 unused2:24;
+	u32 port_untag:8;
+	u32 port_swap:8;
+	u32 unused2:8;
 } vlan_entry_t;
 
 ////////////////////////////////////////////////////////////////////////////////////

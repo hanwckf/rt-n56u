@@ -279,16 +279,6 @@ static void esw_port_ingress_mode_set(u32 port_id, u32 pvlan_ingress_mode)
 	esw_reg_set(REG_ESW_PORT_PCR_P0 + 0x100*port_id, reg_pcr);
 }
 
-static void esw_port_egress_mode_set(u32 port_id, u32 pvlan_egress_tag)
-{
-	u32 reg_pcr;
-
-	reg_pcr = esw_reg_get(REG_ESW_PORT_PCR_P0 + 0x100*port_id);
-	reg_pcr &= ~(0x03 << 28);
-	reg_pcr |= ((pvlan_egress_tag & 0x03) << 28);
-	esw_reg_set(REG_ESW_PORT_PCR_P0 + 0x100*port_id, reg_pcr);
-}
-
 static void esw_port_attrib_set(u32 port_id, u32 port_attribute)
 {
 	u32 reg_pvc;
@@ -433,14 +423,16 @@ static int esw_find_free_vlan_slot(u32 start_idx)
 	return -1;
 }
 
-static void esw_vlan_set_idx(u32 idx, u32 cvid, u32 svid, u32 port_member, u32 fid)
+static void esw_vlan_set_idx(u32 idx, u32 cvid, u32 svid, u32 mask_member, u32 mask_untag, u32 mask_swap, u32 fid)
 {
-	u32 reg_val;
+	u32 i, reg_val, reg_val2;
 
 	idx &= 0xf;
 	cvid &= 0xfff;
 	svid &= 0xfff;
-	port_member &= 0xff;
+	mask_member &= 0xff;
+	mask_untag &= 0xff;
+	mask_swap &= 0xff;
 	fid &= 0x7;
 
 	// set vlan identifier
@@ -454,7 +446,9 @@ static void esw_vlan_set_idx(u32 idx, u32 cvid, u32 svid, u32 port_member, u32 f
 	}
 	esw_reg_set(REG_ESW_VLAN_ID_BASE + 4*(idx/2), reg_val);
 
-	// set vlan member
+	reg_val2 = 0;
+
+	/* set vlan member */
 	reg_val = 1;				// VALID
 #if !ESW_USE_IVL_MODE
 	if (fid > 0)
@@ -463,11 +457,26 @@ static void esw_vlan_set_idx(u32 idx, u32 cvid, u32 svid, u32 port_member, u32 f
 #endif
 	reg_val |= (1u << 30);			// IVL=1
 	reg_val |= (svid << 4);			// S_TAG
-	reg_val |= (port_member << 16);		// PORT_MEM
+	reg_val |= (mask_member << 16);		// PORT_MEM
 	if (svid)
 		reg_val |= (1u << 27);		// COPY_PRI
+	reg_val |= (1u << 28);			// VTAG_EN=1
+
+	/* set vlan untag ports */
+	for (i = 0; i < 8; i++) {
+		if (!(mask_member & (1u << i)))
+			continue;
+		
+		if (!(mask_untag & (1u << i))) {
+			if (mask_swap & (1u << i))
+				reg_val2 |= (0x1u << (i*2));	// EG_TAG=Swap
+			else
+				reg_val2 |= (0x2u << (i*2));	// EG_TAG=Tagged
+		}
+	}
 
 	esw_reg_set(REG_ESW_VLAN_VAWD1, reg_val);
+	esw_reg_set(REG_ESW_VLAN_VAWD2, reg_val2);
 
 	esw_write_vtcr(1, idx);
 }
@@ -485,14 +494,18 @@ static void esw_vlan_reset_table(void)
 		esw_write_vtcr(2, i);
 }
 #else
-static void esw_vlan_set(u32 cvid, u32 svid, u32 port_member, u32 fid)
+static void esw_vlan_set(u32 cvid, u32 svid, u32 mask_member, u32 mask_untag, u32 mask_swap, u32 fid)
 {
-	u32 reg_val;
+	u32 i, reg_val, reg_val2;
 
 	cvid &= 0xfff;
 	svid &= 0xfff;
-	port_member &= 0xff;
+	mask_member &= 0x7f;
+	mask_untag &= 0x7f;
+	mask_swap &= 0x7f;
 	fid &= 0x7;
+
+	reg_val2 = 0;
 
 	// set vlan member
 	reg_val = 1;				// VALID
@@ -503,11 +516,26 @@ static void esw_vlan_set(u32 cvid, u32 svid, u32 port_member, u32 fid)
 #endif
 	reg_val |= (1u << 30);			// IVL=1
 	reg_val |= (svid << 4);			// S_TAG
-	reg_val |= (port_member << 16);		// PORT_MEM
+	reg_val |= (mask_member << 16);		// PORT_MEM
 	if (svid)
 		reg_val |= (1u << 27);		// COPY_PRI
+	reg_val |= (1u << 28);			// VTAG_EN=1
+
+	/* set vlan untag ports */
+	for (i = 0; i < 7; i++) {
+		if (!(mask_member & (1u << i)))
+			continue;
+		
+		if (!(mask_untag & (1u << i))) {
+			if (mask_swap & (1u << i))
+				reg_val2 |= (0x1u << (i*2));	// EG_TAG=Swap
+			else
+				reg_val2 |= (0x2u << (i*2));	// EG_TAG=Tagged
+		}
+	}
 
 	esw_reg_set(REG_ESW_VLAN_VAWD1, reg_val);
+	esw_reg_set(REG_ESW_VLAN_VAWD2, reg_val2);
 
 	esw_write_vtcr(1, cvid);
 	set_bit(cvid, g_vlan_pool);
@@ -566,7 +594,6 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	u32 prio[SWAPI_VLAN_RULE_NUM];
 	u32 tagg[SWAPI_VLAN_RULE_NUM];
 	u32 i, cvid, next_fid, next_vid, untg_vid, vlan_idx, vlan_filter_on;
-	u32 __maybe_unused cpu_lan_egress_swap = 0;
 #if defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
 	pvlan_member_t pvlan_member_cpu_wan;
 #endif
@@ -588,8 +615,10 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	}
 
 	/* find minimal unused VID, when VID=2 is used */
-	if (vlan_filter_on)
+	if (vlan_filter_on) {
 		untg_vid = find_free_min_pvid(pvid, 2);
+		next_vid = find_free_min_pvid(pvid, untg_vid+1);
+	}
 
 	g_vlan_pvid_wan_untagged = untg_vid;
 
@@ -624,34 +653,32 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	vlan_entry[0].fid = 1;
 	vlan_entry[0].cvid = 1;
 	vlan_entry[0].port_member |= (1u << LAN_PORT_CPU);
+#if defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
+	vlan_entry[0].port_untag  |= (1u << LAN_PORT_CPU);
+#endif
 
 	/* VID #2 */
 	vlan_entry[1].valid = 1;
 	vlan_entry[1].fid = 2;
 	vlan_entry[1].cvid = untg_vid;
-	vlan_entry[1].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_MAC));
+	vlan_entry[1].port_member |= ((1u << WAN_PORT_MAC) | (1u << WAN_PORT_CPU));
+	vlan_entry[1].port_untag  |=  (1u << WAN_PORT_MAC);
 
 #if !defined (CONFIG_MT7530_GSW)
 	/* MT7620 not support PORT_MATRIX in security mode */
 	if (!vlan_filter_on && wan_bwan_isolation == SWAPI_WAN_BWAN_ISOLATION_BETWEEN) {
 		pvlan_member[WAN_PORT_MAC].pvid = next_vid;
 		
-		/* VID #1 */
-		vlan_entry[0].svid = 1;		/* used under etag_ctrl=SWAP (CVID<->SVID) */
-		
-		/* VID #2 */
-		vlan_entry[1].svid = 2;		/* used under etag_ctrl=SWAP (CVID<->SVID) */
-		
 		/* VID #3 */
 		vlan_entry[2].valid = 1;
 		vlan_entry[2].fid = next_fid;
 		vlan_entry[2].cvid = next_vid;
 		vlan_entry[2].svid = 2;		/* used under etag_ctrl=SWAP (CVID<->SVID) */
-		vlan_entry[2].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_MAC));
+		vlan_entry[2].port_member |= ((1u << WAN_PORT_MAC) | (1u << WAN_PORT_CPU));
+		vlan_entry[2].port_untag  |=  (1u << WAN_PORT_MAC);
+		vlan_entry[2].port_swap   |=  (1u << WAN_PORT_CPU);
 		next_fid++;
 		next_vid++;
-		
-		cpu_lan_egress_swap = 1;
 	}
 #endif
 
@@ -677,7 +704,6 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 				vlan_entry[vlan_idx].valid = 1;
 				vlan_entry[vlan_idx].fid = next_fid++;
 				vlan_entry[vlan_idx].cvid = cvid;
-				vlan_entry[vlan_idx].svid = cvid;
 				
 #if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || \
     defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5)
@@ -687,7 +713,6 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 			}
 			vlan_entry[vlan_idx].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_MAC));
 			pvlan_member[WAN_PORT_MAC].tagg = 1;
-			pvlan_member[WAN_PORT_MAC].swap = 1;
 		}
 	}
 
@@ -700,7 +725,6 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 				vlan_entry[vlan_idx].valid = 1;
 				vlan_entry[vlan_idx].fid = next_fid++;
 				vlan_entry[vlan_idx].cvid = cvid;
-				vlan_entry[vlan_idx].svid = cvid;
 				
 #if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || \
     defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5)
@@ -710,7 +734,6 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 			}
 			vlan_entry[vlan_idx].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_MAC));
 			pvlan_member[WAN_PORT_MAC].tagg = 1;
-			pvlan_member[WAN_PORT_MAC].swap = 1;
 		}
 	}
 
@@ -719,8 +742,15 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	if (tagg[SWAPI_VLAN_RULE_WAN_INET] && pvid[SWAPI_VLAN_RULE_WAN_INET] == pvid[SWAPI_VLAN_RULE_WAN_IPTV]) {
 		/* update VID #2 members (do not forward untagged packets to WAN_CPU) */
 		vlan_entry[1].port_member &= ~(1u << WAN_PORT_CPU);
-		pvlan_member_cpu_wan.pvid = pvid[SWAPI_VLAN_RULE_WAN_INET];
-	} else if (tagg[SWAPI_VLAN_RULE_WAN_INET] || tagg[SWAPI_VLAN_RULE_WAN_IPTV]) {
+		cvid = pvid[SWAPI_VLAN_RULE_WAN_INET];
+		vlan_idx = find_vlan_slot(vlan_entry, 2, cvid);
+		if (vlan_idx <= VLAN_ENTRY_ID_MAX && vlan_entry[vlan_idx].valid)
+			vlan_entry[vlan_idx].port_untag |= (1u << WAN_PORT_CPU);
+		pvlan_member_cpu_wan.pvid = cvid;
+	} else if (!tagg[SWAPI_VLAN_RULE_WAN_INET] && !tagg[SWAPI_VLAN_RULE_WAN_IPTV]) {
+		/* update VID #2 untag members */
+		vlan_entry[1].port_untag |= (1u << WAN_PORT_CPU);
+	} else {
 		/* mark CPU WAN as tagged */
 		pvlan_member_cpu_wan.tagg = 1;
 	}
@@ -741,6 +771,7 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 			
 			/* VID #1 */
 			vlan_entry[0].port_member |= (1u << i);
+			vlan_entry[0].port_untag  |= (1u << i);
 			
 			continue;
 		}
@@ -751,23 +782,30 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 			
 			/* VID #2 */
 			vlan_entry[1].port_member |= (1u << i);
+			vlan_entry[1].port_untag  |= (1u << i);
 			
 #if !defined (CONFIG_MT7530_GSW)
 			/* MT7620 not support PORT_MATRIX in security mode */
-			if (!vlan_filter_on && wan_bwan_isolation != SWAPI_WAN_BWAN_ISOLATION_NONE) {
-				pvlan_member[i].pvid = next_vid;
-				
-				vlan_entry[next_vid-1].valid = 1;
-				vlan_entry[next_vid-1].fid = next_fid;
-				vlan_entry[next_vid-1].cvid = next_vid;
-				
-				if (wan_bwan_isolation == SWAPI_WAN_BWAN_ISOLATION_BETWEEN) {
-					vlan_entry[next_vid-1].svid = 2;	/* used under etag_ctrl=SWAP (CVID<->SVID) */
-					vlan_entry[next_vid-1].port_member |= ((1u << i) | (1u << WAN_PORT_CPU));
-					next_fid++;
-					next_vid++;
-				} else {
-					vlan_entry[next_vid-1].port_member |= ((1u << i) | (1u << WAN_PORT_MAC));
+			if (wan_bwan_isolation != SWAPI_WAN_BWAN_ISOLATION_NONE) {
+				vlan_idx = find_vlan_slot(vlan_entry, 2, next_vid);
+				if (vlan_idx <= VLAN_ENTRY_ID_MAX) {
+					pvlan_member[i].pvid = next_vid;
+					
+					vlan_entry[vlan_idx].valid = 1;
+					vlan_entry[vlan_idx].fid = next_fid;
+					vlan_entry[vlan_idx].cvid = next_vid;
+					
+					if (!vlan_filter_on && wan_bwan_isolation == SWAPI_WAN_BWAN_ISOLATION_BETWEEN) {
+						vlan_entry[vlan_idx].svid = 2;	/* used under etag_ctrl=SWAP (CVID<->SVID) */
+						vlan_entry[vlan_idx].port_member |= ((1u << i) | (1u << WAN_PORT_CPU));
+						vlan_entry[vlan_idx].port_untag  |=  (1u << i);
+						vlan_entry[vlan_idx].port_swap   |=  (1u << WAN_PORT_CPU);
+						next_fid++;
+						next_vid++;
+					} else {
+						vlan_entry[vlan_idx].port_member |= ((1u << i) | (1u << WAN_PORT_MAC));
+						vlan_entry[vlan_idx].port_untag  |= ((1u << i) | (1u << WAN_PORT_MAC));
+					}
 				}
 			}
 #endif
@@ -779,21 +817,22 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 					vlan_entry[vlan_idx].valid = 1;
 					vlan_entry[vlan_idx].fid = next_fid++;
 					vlan_entry[vlan_idx].cvid = cvid;
-					vlan_entry[vlan_idx].svid = cvid;
 				}
 				vlan_entry[vlan_idx].port_member |= ((1u << i) | (1u << WAN_PORT_MAC));
+				if (!tagg[rule_id])
+					vlan_entry[vlan_idx].port_untag |= (1u << i);
 				
 				pvlan_member[i].pvid = cvid;
 				pvlan_member[i].prio = prio[rule_id];
 				pvlan_member[i].tagg = tagg[rule_id];
 				
 				pvlan_member[WAN_PORT_MAC].tagg = 1;
-				pvlan_member[WAN_PORT_MAC].swap = 1;
 			} else {
 				pvlan_member[i].pvid = untg_vid;
 				
 				/* VID #2 */
 				vlan_entry[1].port_member |= (1u << i);
+				vlan_entry[1].port_untag  |= (1u << i);
 			}
 		}
 	}
@@ -805,6 +844,8 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 			continue;
 		if (vlan_entry[i].port_member & (1u << ESW_PORT_CPU))
 			vlan_entry[i].port_member |= (1u << ESW_PORT_PPE);
+		if (vlan_entry[i].port_swap & (1u << ESW_PORT_CPU))
+			vlan_entry[i].port_swap |= (1u << ESW_PORT_PPE);
 	}
 #endif
 
@@ -814,29 +855,23 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 		if (!pvlan_member[i].tagg) {
 			esw_port_attrib_set(i, PORT_ATTRIBUTE_TRANSPARENT);
 			esw_port_accept_set(i, PORT_ACCEPT_FRAMES_UNTAGGED);
-			esw_port_egress_mode_set(i, PVLAN_EGRESS_UNTAG);
 		} else {
 			esw_port_attrib_set(i, PORT_ATTRIBUTE_USER);
 			esw_port_accept_set(i, PORT_ACCEPT_FRAMES_ALL);
-			esw_port_egress_mode_set(i, (pvlan_member[i].swap) ? PVLAN_EGRESS_SWAP : PVLAN_EGRESS_TAG);
 		}
 	}
 
 	/* configure CPU LAN port */
+	esw_vlan_pvid_set(LAN_PORT_CPU, 1, 0);
 	esw_port_accept_set(LAN_PORT_CPU, PORT_ACCEPT_FRAMES_ALL);
 #if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P0) || \
     defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P4) || \
     defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
 	/* [MT7620 P5 -> MT7530 P6] or [MT7621 GE1 -> MT7530 P6] */
 	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_TRANSPARENT);
-	esw_port_egress_mode_set(LAN_PORT_CPU, PVLAN_EGRESS_UNTAG);
 #else
 	/* P6 always is trunk port */
 	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_USER);
-	esw_port_egress_mode_set(LAN_PORT_CPU, (cpu_lan_egress_swap) ? PVLAN_EGRESS_SWAP : PVLAN_EGRESS_TAG);
-#if defined (ESW_PORT_PPE)
-	esw_port_egress_mode_set(ESW_PORT_PPE, (cpu_lan_egress_swap) ? PVLAN_EGRESS_SWAP : PVLAN_EGRESS_TAG);
-#endif
 #endif
 
 #if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
@@ -854,19 +889,22 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	esw_vlan_pvid_set(WAN_PORT_CPU, pvlan_member_cpu_wan.pvid, pvlan_member_cpu_wan.prio);
 	esw_port_accept_set(WAN_PORT_CPU, PORT_ACCEPT_FRAMES_ALL);
 	esw_port_attrib_set(WAN_PORT_CPU, (pvlan_member_cpu_wan.pvid != 2 || pvlan_member_cpu_wan.tagg) ? PORT_ATTRIBUTE_USER : PORT_ATTRIBUTE_TRANSPARENT);
-	esw_port_egress_mode_set(WAN_PORT_CPU, (pvlan_member_cpu_wan.tagg) ? PVLAN_EGRESS_TAG : PVLAN_EGRESS_UNTAG);
 	esw_port_ingress_mode_set(WAN_PORT_CPU, PVLAN_INGRESS_MODE_SECURITY);
 #endif
 
-	/* fill VLAN table */
+	/* reset VLAN table */
 	esw_vlan_reset_table();
+
+	/* fill VLAN table */
 	for (i = 0; i <= VLAN_ENTRY_ID_MAX; i++) {
 		if (!vlan_entry[i].valid)
 			continue;
 #if !defined (CONFIG_MT7530_GSW)
-		esw_vlan_set_idx(i, vlan_entry[i].cvid, vlan_entry[i].svid, vlan_entry[i].port_member, vlan_entry[i].fid);
+		esw_vlan_set_idx(i, vlan_entry[i].cvid, vlan_entry[i].svid,
+			vlan_entry[i].port_member, vlan_entry[i].port_untag, vlan_entry[i].port_swap, vlan_entry[i].fid);
 #else
-		esw_vlan_set(vlan_entry[i].cvid, vlan_entry[i].svid, vlan_entry[i].port_member, vlan_entry[i].fid);
+		esw_vlan_set(vlan_entry[i].cvid, vlan_entry[i].svid,
+			vlan_entry[i].port_member, vlan_entry[i].port_untag, 0, vlan_entry[i].fid);
 #endif
 	}
 
@@ -877,17 +915,17 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 
 static void esw_vlan_init_vid1(void)
 {
-	u32 i, port_member;
+	u32 i, port_member, port_untag;
 
 	port_member = 0xFF;
 	port_member &= ~(ESW_MASK_EXCLUDE);
+	port_untag = port_member;
 
 	/* configure LAN ports */
 	for (i = 0; i <= ESW_PORT_ID_MAX; i++) {
 		esw_vlan_pvid_set(i, 1, 0);
 		esw_port_attrib_set(i, PORT_ATTRIBUTE_TRANSPARENT);
 		esw_port_accept_set(i, PORT_ACCEPT_FRAMES_UNTAGGED);
-		esw_port_egress_mode_set(i, PVLAN_EGRESS_UNTAG);
 	}
 
 	/* configure CPU port */
@@ -897,21 +935,20 @@ static void esw_vlan_init_vid1(void)
     defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
 	/* [MT7620 P4 -> MT7530 P5] or [MT7621 GE2 -> MT7530 P5] */
 	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_TRANSPARENT);
-	esw_port_egress_mode_set(LAN_PORT_CPU, PVLAN_EGRESS_UNTAG);
 #else
+	port_untag &= ~(1u << LAN_PORT_CPU);
 	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_USER);
-	esw_port_egress_mode_set(LAN_PORT_CPU, PVLAN_EGRESS_TAG);
 #endif
 	esw_port_ingress_mode_set(LAN_PORT_CPU, PVLAN_INGRESS_MODE_SECURITY);
 
 	/* reset VLAN table */
 	esw_vlan_reset_table();
 
-	/* set all ports to VLAN 1 member (no SVID) */
+	/* set all ports to VLAN 1 member (no SVID, no SWAP) */
 #if !defined (CONFIG_MT7530_GSW)
-	esw_vlan_set_idx(0, 1, 0, port_member, 1);
+	esw_vlan_set_idx(0, 1, 0, port_member, port_untag, 0, 1);
 #else
-	esw_vlan_set(1, 0, port_member, 1);
+	esw_vlan_set(1, 0, port_member, port_untag, 0, 1);
 #endif
 }
 
@@ -1559,7 +1596,7 @@ static void vlan_accept_port_mode(u32 accept_mode, u32 port_mask)
 
 static void vlan_create_entry(u32 vlan4k_info, u32 vlan4k_mask, int set_port_vid)
 {
-	u32 i, cvid, svid, prio, fid;
+	u32 i, cvid, prio, fid;
 	u32 mask_member, mask_untag;
 #if !defined (CONFIG_MT7530_GSW)
 	u32 vlan_table_idx;
@@ -1574,8 +1611,8 @@ static void vlan_create_entry(u32 vlan4k_info, u32 vlan4k_mask, int set_port_vid
 	if (mask_member & (1u << ESW_PORT_CPU))
 		mask_member |= (1u << ESW_PORT_PPE);
 #endif
-	if (cvid < 1) cvid = 1;
-	svid = (cvid > 2) ? cvid : 0;
+	if (cvid < 1)
+		cvid = 1;
 
 #if !defined (CONFIG_MT7530_GSW)
 	/* get vlan slot idx */
@@ -1590,10 +1627,10 @@ static void vlan_create_entry(u32 vlan4k_info, u32 vlan4k_mask, int set_port_vid
 	}
 
 	/* set vlan table */
-	esw_vlan_set_idx(vlan_table_idx, cvid, svid, mask_member, fid);
+	esw_vlan_set_idx(vlan_table_idx, cvid, 0, mask_member, mask_untag, 0, fid);
 #else
 	/* set vlan table */
-	esw_vlan_set(cvid, svid, mask_member, fid);
+	esw_vlan_set(cvid, 0, mask_member, mask_untag, 0, fid);
 #endif
 
 	/* set phy ports attrib */
@@ -1601,12 +1638,10 @@ static void vlan_create_entry(u32 vlan4k_info, u32 vlan4k_mask, int set_port_vid
 		if ((1u << i) & mask_member) {
 			if (!((1u << i) & mask_untag)) {
 				esw_port_attrib_set(i, PORT_ATTRIBUTE_USER);
-				esw_port_egress_mode_set(i, (i == WAN_PORT_MAC) ? PVLAN_EGRESS_SWAP : PVLAN_EGRESS_TAG);
 			} else {
 				if (set_port_vid)
 					esw_vlan_pvid_set(i, cvid, prio);
 				esw_port_attrib_set(i, PORT_ATTRIBUTE_TRANSPARENT);
-				esw_port_egress_mode_set(i, PVLAN_EGRESS_UNTAG);
 			}
 		}
 	}

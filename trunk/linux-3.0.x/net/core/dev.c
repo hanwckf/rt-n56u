@@ -146,16 +146,16 @@
 #include "pthrough/pthrough.h"
 #endif
 
-#if defined (CONFIG_RTL8367)
-#if !defined (CONFIG_RAETH_GMAC2)
+#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if !defined(CONFIG_RAETH_GMAC2)
+#if defined(CONFIG_RTL8367)
 extern int rtl8367_get_traffic_port_wan(struct rtnl_link_stats64 *stats);
-#endif
-#if defined (CONFIG_RTL8367_USE_INIC_EXT)
+#if defined(CONFIG_RTL8367_USE_INIC_EXT)
 extern int rtl8367_get_traffic_port_inic(struct rtnl_link_stats64 *stats);
 #endif
-#elif defined (CONFIG_RAETH_ESW_CONTROL)
-#if !defined (CONFIG_RAETH_GMAC2)
+#elif defined(CONFIG_RAETH_ESW_CONTROL)
 extern int esw_get_traffic_port_wan(struct rtnl_link_stats64 *stats);
+#endif
 #endif
 #endif
 
@@ -4186,19 +4186,19 @@ static void dev_seq_printf_stats(struct seq_file *seq, struct net_device *dev)
 	struct rtnl_link_stats64 temp;
 	const struct rtnl_link_stats64 *stats = dev_get_stats(dev, &temp);
 
+#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if !defined(CONFIG_RAETH_GMAC2)
 #if defined (CONFIG_RTL8367)
-#if !defined (CONFIG_RAETH_GMAC2)
 	if(strcmp(dev->name, "eth2.2") == 0)
 		rtl8367_get_traffic_port_wan(&temp);
-#endif
 #if defined (CONFIG_RTL8367_USE_INIC_EXT)
 	else if(strcmp(dev->name, "rai0") == 0)
 		rtl8367_get_traffic_port_inic(&temp);
 #endif
 #elif defined (CONFIG_RAETH_ESW_CONTROL)
-#if !defined (CONFIG_RAETH_GMAC2)
 	if(strcmp(dev->name, "eth2.2") == 0)
 		esw_get_traffic_port_wan(&temp);
+#endif
 #endif
 #endif
 

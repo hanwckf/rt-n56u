@@ -3,4 +3,6 @@
 
 void rt305x_esw_init(void);
 
+void mt7628_esw_eee_enable(int is_eee_enabled);
+
 #endif

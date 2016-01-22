@@ -258,6 +258,23 @@ void mt7530_gsw_eee_on_link(u32 port_id, int port_link, int is_eee_enabled)
 	}
 }
 
+int mt7530_gsw_mac_table_clear(void)
+{
+	u32 i, reg_atc;
+
+	mii_mgr_write(MT7530_MDIO_ADDR, REG_ESW_WT_MAC_ATC, 0x8002);
+
+	for (i = 0; i < 200; i++) {
+		udelay(100);
+		reg_atc = 0x8000;
+		mii_mgr_read(MT7530_MDIO_ADDR, REG_ESW_WT_MAC_ATC, &reg_atc);
+		if (!(reg_atc & 0x8000))
+			return 0;
+	}
+
+	return -1;
+}
+
 void mt7530_gsw_set_csr_delay(int is_link_100)
 {
 #if defined (CONFIG_RALINK_MT7621)

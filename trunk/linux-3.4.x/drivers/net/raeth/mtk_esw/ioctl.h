@@ -19,6 +19,7 @@
 #ifndef __MTK_ESW_IOCTL_H__
 #define __MTK_ESW_IOCTL_H__
 
+#define MTK_ESW_DEVNAME				"mtk_esw"
 #define MTK_ESW_DEVPATH				"/dev/mtk_esw"
 #define MTK_ESW_DEVMAJOR			(219)
 
@@ -184,7 +185,11 @@
 // LED MODES
 /////////////////////////////////////////////////
 
+#define SWAPI_LED_PHYMODE_100_ACT		(1)
+#define SWAPI_LED_PHYMODE_10_ACT		(2)
+#define SWAPI_LED_PHYMODE_100			(5)
 #define SWAPI_LED_LINK_ACT			(7)
+#define SWAPI_LED_DUPLEX_COLLISION		(10)
 #define SWAPI_LED_OFF				(11)
 
 /////////////////////////////////////////////////

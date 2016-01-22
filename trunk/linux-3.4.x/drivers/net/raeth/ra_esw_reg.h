@@ -130,6 +130,9 @@
 
 #define REG_ESW_ISR			0x00
 #define REG_ESW_IMR			0x04
+#define REG_ESW_PFC0			0x10
+#define REG_ESW_PFC1			0x14
+#define REG_ESW_PFC2			0x18
 #define REG_ESW_TABLE_SEARCH		0x24
 #define REG_ESW_TABLE_STATUS0		0x28
 #define REG_ESW_TABLE_STATUS1		0x2C
@@ -137,32 +140,46 @@
 #define REG_ESW_WT_MAC_AD0		0x34
 #define REG_ESW_WT_MAC_AD1		0x38
 #define REG_ESW_WT_MAC_AD2		0x3C
+#define REG_ESW_PVIDC_BASE		0x40
 #define REG_ESW_VLAN_ID_BASE		0x50
 #define REG_ESW_VLAN_MEMB_BASE		0x70
 #define REG_ESW_POA			0x80
+#define REG_ESW_POC0			0x90
+#define REG_ESW_POC1			0x94
+#define REG_ESW_POC2			0x98
 #define REG_ESW_STRT			0xA0
-
-#if defined (CONFIG_RALINK_RT3052)
-#define REG_ESW_MAX			0xFC
-#else
+#define REG_ESW_LEDP_BASE		0xA4
+#define REG_ESW_SGC2			0xE4
+#if !defined (CONFIG_RALINK_RT3052)
+#define REG_ESW_VLAN_UNTAG_BASE		0x100
+#define REG_ESW_BMU_CTRL		0x110
+#define REG_ESW_BMU_LMT_NUM1		0x114
+#define REG_ESW_BMU_LMT_NUM2		0x118
 #define REG_ESW_MAX			0x16C
+#else
+#define REG_ESW_MAX			0xFC
 #endif
 
 /* ESW interrupt mask */
-#define PORT0_QUEUE_FULL		BIT(14) //port0 queue full
-#define PORT1_QUEUE_FULL		BIT(15) //port1 queue full
-#define PORT2_QUEUE_FULL		BIT(16) //port2 queue full
-#define PORT3_QUEUE_FULL		BIT(17) //port3 queue full
-#define PORT4_QUEUE_FULL		BIT(18) //port4 queue full
-#define PORT5_QUEUE_FULL		BIT(19) //port5 queue full
-#define PORT6_QUEUE_FULL		BIT(20) //port6 queue full
-#define SHARED_QUEUE_FULL		BIT(23) //shared queue full
-#define QUEUE_EXHAUSTED			BIT(24) //global queue is used up and all packets are dropped
-#define BC_STROM			BIT(25) //the device is undergoing broadcast storm
-#define PORT_ST_CHG			BIT(26) //Port status change
-#define UNSECURED_ALERT			BIT(27) //Intruder alert
-#define ABNORMAL_ALERT			BIT(28) //Abnormal
-#define ESW_INT_ALL			(PORT_ST_CHG)
+#define INT_PORT0_QUEUE_FULL		BIT(14)
+#define INT_PORT1_QUEUE_FULL		BIT(15)
+#define INT_PORT2_QUEUE_FULL		BIT(16)
+#define INT_PORT3_QUEUE_FULL		BIT(17)
+#define INT_PORT4_QUEUE_FULL		BIT(18)
+#define INT_PORT5_QUEUE_FULL		BIT(19)
+#define INT_PORT6_QUEUE_FULL		BIT(20)
+#define INT_SHARED_QUEUE_FULL		BIT(23)
+#define INT_QUEUE_EXHAUSTED		BIT(24)
+#define INT_BC_STROM			BIT(25)
+#define INT_PORT_ST_CHG			BIT(26)
+#define INT_UNSECURED_ALERT		BIT(27)
+#define INT_ABNORMAL_ALERT		BIT(28)
+#if !defined (CONFIG_RALINK_RT3052)
+#define INT_PCT_CNT_RECYCLED		BIT(31)
+#else
+#define INT_PCT_CNT_RECYCLED		0
+#endif
+#define ESW_INT_ALL			(INT_PORT_ST_CHG|INT_PCT_CNT_RECYCLED)
 
 #endif
 

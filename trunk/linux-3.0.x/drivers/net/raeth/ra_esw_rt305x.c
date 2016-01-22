@@ -24,7 +24,7 @@ static void esw_ephy_reset(void)
 
 	val &= ~(RALINK_EPHY_RST);
 	sysRegWrite(REG_RSTCTRL, val);
-	udelay(100);
+	udelay(500);
 }
 
 #if defined (CONFIG_RT3052_ASIC)
@@ -207,9 +207,11 @@ static void mt7628_ephy_init(void)
 	u32 phy_val;
 
 	phy_val = sysRegRead(REG_AGPIOCFG);
-	phy_val &= ~(MT7628_P0_EPHY_AIO_EN | MT7628_P1_EPHY_AIO_EN | MT7628_P2_EPHY_AIO_EN | MT7628_P3_EPHY_AIO_EN | MT7628_P4_EPHY_AIO_EN);
+	phy_val &= ~(MT7628_P0_EPHY_AIO_EN);
 #if defined (CONFIG_RAETH_ESW_ONE_PORT)
 	phy_val |=  (MT7628_P1_EPHY_AIO_EN | MT7628_P2_EPHY_AIO_EN | MT7628_P3_EPHY_AIO_EN | MT7628_P4_EPHY_AIO_EN);
+#else
+	phy_val &= ~(MT7628_P1_EPHY_AIO_EN | MT7628_P2_EPHY_AIO_EN | MT7628_P3_EPHY_AIO_EN | MT7628_P4_EPHY_AIO_EN);
 #endif
 	sysRegWrite(REG_AGPIOCFG, phy_val);
 
@@ -219,7 +221,7 @@ static void mt7628_ephy_init(void)
 	phy_val = sysRegRead(RALINK_REG_GPIOMODE2);
 	phy_val &= 0xf003f003;
 #if defined (CONFIG_RAETH_ESW_ONE_PORT)
-	phy_val |= 0x05540554; // set P0 EPHY LED mode
+	phy_val |= 0x05500550; // set P0 EPHY LED mode
 #endif
 	sysRegWrite(RALINK_REG_GPIOMODE2, phy_val);
 
@@ -230,12 +232,7 @@ static void mt7628_ephy_init(void)
 
 	for(i=0; i<5; i++) {
 		mii_mgr_write(i, 31, 0x8000);	// change L0 page
-		mii_mgr_write(i,  0, 0x3100);
-#if 0
-		mii_mgr_read(i, 26, &phy_val);	// EEE setting
-		phy_val |= (1 << 5);
-		mii_mgr_write(i, 26, phy_val);
-#else
+#if !defined (CONFIG_RAETH_ESW_CONTROL)
 		/* disable EEE */
 		mii_mgr_write_cl45(i, 0x07, 0x3c, 0x0000);
 #endif
@@ -272,6 +269,16 @@ static void mt7628_ephy_init(void)
 	mii_mgr_write(0, 29, 0x000d);
 	mii_mgr_write(0, 30, 0x0500);
 }
+
+void mt7628_esw_eee_enable(int is_eee_enabled)
+{
+	u32 i;
+
+	for (i = 0; i <= 4; i++) {
+		/* EEE 100 LPI */
+		mii_mgr_write_cl45(i, 0x07, 0x003c, (is_eee_enabled) ? 0x0002 : 0x0000);
+	}
+}
 #endif
 #endif /* CONFIG_RAETH_ESW */
 
@@ -286,29 +293,18 @@ void rt305x_esw_init(void)
 	 * DROP_RLS=120, DROP_SET_TH=80
 	 */
 	sysRegWrite(RALINK_ETH_SW_BASE+0x0008, 0xC8A07850);
-	sysRegWrite(RALINK_ETH_SW_BASE+0x00E4, 0x00000000);
+	sysRegWrite(RALINK_ETH_SW_BASE+0x00E4, 0x0000003f);
 	sysRegWrite(RALINK_ETH_SW_BASE+0x0014, 0x00405555);
 	sysRegWrite(RALINK_ETH_SW_BASE+0x0050, 0x00002001);
 	sysRegWrite(RALINK_ETH_SW_BASE+0x0090, 0x00007f7f);
-	sysRegWrite(RALINK_ETH_SW_BASE+0x0098, 0x00007f3f); //disable VLAN
+	sysRegWrite(RALINK_ETH_SW_BASE+0x0098, 0x00007f3f);
 	sysRegWrite(RALINK_ETH_SW_BASE+0x00CC, 0x0002500c);
-#ifndef CONFIG_UNH_TEST
-	sysRegWrite(RALINK_ETH_SW_BASE+0x009C, 0x0008a301); //hashing algorithm=XOR48, aging interval=300sec
-#else
-	/*
-	 * bit[30]:1	Backoff Algorithm Option: The latest one to pass UNH test
-	 * bit[29]:1	Length of Received Frame Check Enable
-	 * bit[8]:0	Enable collision 16 packet abort and late collision abort
-	 * bit[7:6]:01	Maximum Packet Length: 1518
-	 */
-	sysRegWrite(RALINK_ETH_SW_BASE+0x009C, 0x6008a241);
-#endif
+	sysRegWrite(RALINK_ETH_SW_BASE+0x009C, 0x0008a301); // hashing algorithm=XOR48, pkt_max_len: 1536, aging interval=300sec
+
 	sysRegWrite(RALINK_ETH_SW_BASE+0x008C, 0x02404040);
-#if defined (CONFIG_RT3052_ASIC) || defined (CONFIG_RT3352_ASIC) || defined (CONFIG_RT5350_ASIC) || defined (CONFIG_MT7628_ASIC)
 	sysRegWrite(RALINK_ETH_SW_BASE+0x00C8, 0x3f502b28); //Change polling Ext PHY Addr=0x1F
 	sysRegWrite(RALINK_ETH_SW_BASE+0x0084, 0x00000000);
 	sysRegWrite(RALINK_ETH_SW_BASE+0x0110, 0x7d000000); //1us cycle number=125 (FE's clock=125Mhz)
-#endif
 
 	/*
 	 * set port 5 force to 1000M/Full when connecting to switch or iNIC

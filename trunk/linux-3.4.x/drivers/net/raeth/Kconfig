@@ -259,7 +259,7 @@ config  RAETH_SPECIAL_TAG
 
 config  RAETH_ESW_CONTROL
 	bool "Embedded (or MT7530) Switch Control Module (VLAN/Isolation/Status)"
-	depends on RAETH && (RAETH_ESW || MT7530_GSW) && (RALINK_MT7620 || RALINK_MT7621)
+	depends on RAETH && (RAETH_ESW || MT7530_GSW)
 	default y
 
 config  RAETH_ESW_PORT_WAN

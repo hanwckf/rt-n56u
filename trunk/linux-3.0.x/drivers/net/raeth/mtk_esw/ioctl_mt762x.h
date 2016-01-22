@@ -16,12 +16,10 @@
  *
  */
 
-#ifndef __MTK_ESW_IOCTL_DEF_H__
-#define __MTK_ESW_IOCTL_DEF_H__
+#ifndef __IOCTL_MT762X_H__
+#define __IOCTL_MT762X_H__
 
 ////////////////////////////////////////////////////////////////////////////////////
-
-#define MTK_ESW_DEVNAME			"mtk_esw"
 
 #define LAN_PORT_1			CONFIG_RAETH_ESW_PORT_LAN1	/* 8P8C LAN1 */
 #define LAN_PORT_2			CONFIG_RAETH_ESW_PORT_LAN2	/* 8P8C LAN2 */
@@ -94,7 +92,7 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #define MIN_EXT_VLAN_VID		2
-#define ESW_USE_IVL_MODE		1	/* always use IVL instead of SVL */
+#define ESW_USE_IVL_MODE		1	/* always use IVL (instead of SVL) */
 #define ESW_PRINT_LINK_ALL		0	/* printk only WAN link changed */
 
 ////////////////////////////////////////////////////////////////////////////////////

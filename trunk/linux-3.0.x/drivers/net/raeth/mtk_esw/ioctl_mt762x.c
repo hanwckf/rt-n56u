@@ -26,19 +26,19 @@
 #include <linux/slab.h>
 #include <linux/string.h>
 
-#include "ra_eth_reg.h"
-#include "ra_esw_reg.h"
-#include "mii_mgr.h"
+#include "../ra_eth_reg.h"
+#include "../ra_esw_reg.h"
+#include "../mii_mgr.h"
 
-#include "ra_esw_base.h"
-#include "ra_esw_mt7620.h"
-#include "ra_gsw_mt7530.h"
-#include "ra_esw_ioctl.h"
-#include "ra_esw_ioctl_def.h"
+#include "../ra_esw_base.h"
+#include "../ra_esw_mt7620.h"
+#include "../ra_gsw_mt7530.h"
+#include "ioctl.h"
+#include "ioctl_mt762x.h"
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-#include "../../../net/nat/hw_nat/ra_nat.h"
-#include "../../../net/nat/hw_nat/foe_fdb.h"
+#include "../../../../net/nat/hw_nat/ra_nat.h"
+#include "../../../../net/nat/hw_nat/foe_fdb.h"
 extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
 #endif
 
@@ -385,21 +385,17 @@ static void esw_igmp_mld_snooping(u32 enable_igmp, u32 enable_mld)
 	esw_reg_set(REG_ESW_PORT_PIC_P0 + 0x100*LAN_PORT_CPU, reg_pic | dst_igmp);
 }
 
-static int esw_mac_table_clear(void)
+static void esw_mac_table_clear(void)
 {
-	u32 i, reg_atc;
-
-	esw_reg_set(REG_ESW_WT_MAC_ATC, 0x8002);
-
-	for (i = 0; i < 200; i++) {
-		udelay(100);
-		reg_atc = esw_reg_get(REG_ESW_WT_MAC_ATC);
-		if (!(reg_atc & 0x8000))
-			return 0;
-	}
-
-	printk("%s: ATC timeout!\n", MTK_ESW_DEVNAME);
-	return -1;
+#if defined (CONFIG_MT7530_GSW)
+	mt7530_gsw_mac_table_clear();
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || \
+    defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5)
+	mt7620_esw_mac_table_clear();
+#endif
+#else
+	mt7620_esw_mac_table_clear();
+#endif
 }
 
 static int esw_write_vtcr(u32 vtcr_cmd, u32 vtcr_val)
@@ -1029,10 +1025,6 @@ static void esw_vlan_bridge_isolate(u32 wan_bridge_mode, u32 wan_bwan_isolation,
 	}
 
 	esw_mac_table_clear();
-#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || \
-    defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5)
-	mt7620_esw_mac_table_clear();
-#endif
 }
 
 static void esw_mac_to_phy_enable(void)
@@ -1836,10 +1828,10 @@ static void change_storm_control_broadcast(u32 control_rate_mbps)
 
 static void change_jumbo_frames_accept(u32 jumbo_frames_enabled)
 {
-	if (jumbo_frames_enabled) jumbo_frames_enabled = 1;
+	if (jumbo_frames_enabled)
+		jumbo_frames_enabled = 1;
 
-	if (g_jumbo_frames_enabled != jumbo_frames_enabled)
-	{
+	if (g_jumbo_frames_enabled != jumbo_frames_enabled) {
 		g_jumbo_frames_enabled = jumbo_frames_enabled;
 		printk("%s - jumbo frames accept: %d bytes\n", MTK_ESW_DEVNAME, (jumbo_frames_enabled) ? 9000 : 1536);
 		
@@ -1849,10 +1841,10 @@ static void change_jumbo_frames_accept(u32 jumbo_frames_enabled)
 
 static void change_green_ethernet_mode(u32 green_ethernet_enabled)
 {
-	if (green_ethernet_enabled) green_ethernet_enabled = 1;
+	if (green_ethernet_enabled)
+		green_ethernet_enabled = 1;
 
-	if (g_green_ethernet_enabled != green_ethernet_enabled)
-	{
+	if (g_green_ethernet_enabled != green_ethernet_enabled) {
 		g_green_ethernet_enabled = green_ethernet_enabled;
 		printk("%s - 802.3az EEE: %s\n", MTK_ESW_DEVNAME, (green_ethernet_enabled) ? "on" : "off");
 		
@@ -1864,8 +1856,7 @@ static void change_igmp_static_ports(u32 ports_mask)
 {
 	ports_mask = get_ports_mask_from_user(ports_mask & 0xFF, 0);
 
-	if (g_igmp_static_ports != ports_mask)
-	{
+	if (g_igmp_static_ports != ports_mask) {
 		g_igmp_static_ports = ports_mask;
 		
 		if (g_igmp_snooping_enabled) {
@@ -1877,10 +1868,10 @@ static void change_igmp_static_ports(u32 ports_mask)
 
 static void change_igmp_snooping_control(u32 igmp_snooping_enabled)
 {
-	if (igmp_snooping_enabled) igmp_snooping_enabled = 1;
+	if (igmp_snooping_enabled)
+		igmp_snooping_enabled = 1;
 
-	if (g_igmp_snooping_enabled != igmp_snooping_enabled)
-	{
+	if (g_igmp_snooping_enabled != igmp_snooping_enabled) {
 		g_igmp_snooping_enabled = igmp_snooping_enabled;
 		printk("%s - IGMP/MLD snooping: %s\n", MTK_ESW_DEVNAME, (igmp_snooping_enabled) ? "on" : "off");
 		
@@ -1894,8 +1885,7 @@ static void change_led_mode(u32 led_mode)
 	if (led_mode != SWAPI_LED_OFF)
 		led_mode = SWAPI_LED_LINK_ACT;
 
-	if (g_led_phy_mode != led_mode)
-	{
+	if (g_led_phy_mode != led_mode) {
 		g_led_phy_mode = led_mode;
 		esw_led_mode(led_mode);
 	}
@@ -2163,10 +2153,6 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 		break;
 	case MTK_ESW_IOCTL_MAC_TABLE_CLEAR:
 		esw_mac_table_clear();
-#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || \
-    defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5)
-		mt7620_esw_mac_table_clear();
-#endif
 		break;
 
 	case MTK_ESW_IOCTL_BRIDGE_MODE:
@@ -2264,6 +2250,7 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 	return ioctl_result;
 }
 
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 #if !defined (CONFIG_RAETH_GMAC2)
 int esw_get_traffic_port_wan(struct rtnl_link_stats64 *stats)
 {
@@ -2281,6 +2268,7 @@ int esw_get_traffic_port_wan(struct rtnl_link_stats64 *stats)
 	return 0;
 }
 EXPORT_SYMBOL(esw_get_traffic_port_wan);
+#endif
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////////

@@ -183,6 +183,8 @@ int mt7620_esw_vlan_set_idx(u32 idx, u32 cvid, u32 port_member)
 	reg_val |= (port_member << 16);		// PORT_MEM
 
 	sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_VLAN_VAWD1, reg_val);
+	sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_VLAN_VAWD2, 0);
+
 	return mt7620_esw_write_vtcr(1, idx);
 }
 

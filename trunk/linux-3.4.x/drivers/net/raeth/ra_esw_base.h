@@ -22,7 +22,6 @@ void esw_irq_init(void);
 void esw_irq_enable(void);
 void esw_irq_disable(void);
 void esw_irq_cancel_wq(void);
-void esw_mib_init(void);
 irqreturn_t esw_interrupt(int irq, void *dev_id);
 
 extern void esw_link_status_changed(u32 port_id, int port_link);

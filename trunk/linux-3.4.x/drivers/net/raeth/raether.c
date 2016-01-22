@@ -15,7 +15,7 @@
 #include "ra_phy.h"
 #include "ra_ioctl.h"
 #if defined (CONFIG_RAETH_ESW_CONTROL)
-#include "ra_esw_ioctl.h"
+#include "mtk_esw/ioctl.h"
 #endif
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
 #include "ra_esw_base.h"

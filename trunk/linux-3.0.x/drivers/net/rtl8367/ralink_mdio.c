@@ -21,7 +21,6 @@
 #include <linux/sched.h>
 
 #include "ralink_mdio.h"
-#include "ralink_gpp.h"
 
 #if defined(CONFIG_RTL8367_API_8370)
 #include "api_8370/rtk_error.h"
@@ -41,7 +40,7 @@
 #define MDC_MDIO_READ_OP		0x0001
 #define MDC_MDIO_WRITE_OP		0x0003
 
-static spinlock_t g_mdio_lock;
+static DEFINE_SPINLOCK(g_mdio_lock);
 static u32 g_phy_id = 0;
 
 extern u32 mii_mgr_init(void);
@@ -53,8 +52,6 @@ extern u32 mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data);
 void mdio_init(u32 phy_id)
 {
 	g_phy_id = phy_id;
-
-	spin_lock_init(&g_mdio_lock);
 
 	mii_mgr_init();
 }

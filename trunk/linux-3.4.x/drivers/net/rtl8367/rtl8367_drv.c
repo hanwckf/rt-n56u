@@ -28,7 +28,9 @@
 #include "rtl8367_def.h"
 #include "rtl8367_ioctl.h"
 
-#include "ralink_gpp.h"
+#if defined(CONFIG_RTL8367_CIF_SMI)
+#include "ralink_smi.h"
+#endif
 #if defined(CONFIG_RTL8367_CIF_MDIO)
 #include "ralink_mdio.h"
 #endif
@@ -1974,15 +1976,13 @@ int __init rtl8367_init(void)
 
 	printk("Realtek RTL8367 GigaPHY Switch Driver %s.\n", RTL8367_VERSION);
 
-	mutex_init(&asic_access_mutex);
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
 	igmp_init();
 #endif
-	gpio_init();
 #if defined(CONFIG_RTL8367_CIF_MDIO)
 	mdio_init(MDIO_RTL8367_PHYID);
 #else
-	gpio_smi_init(SMI_RALINK_GPIO_SDA, SMI_RALINK_GPIO_SCK, SMI_RTL8367_DELAY_NS, SMI_RTL8367_SMI_ADDR);
+	smi_init(SMI_RALINK_GPIO_SDA, SMI_RALINK_GPIO_SCK);
 #endif
 	fill_bridge_members();
 
@@ -2013,8 +2013,4 @@ module_exit(rtl8367_exit);
 
 MODULE_DESCRIPTION("Realtek RTL8367 GigaPHY Switch");
 MODULE_LICENSE("GPL");
-
-// for iNIC_mii.ko
-EXPORT_SYMBOL(ralink_initGpioPin);
-EXPORT_SYMBOL(ralink_gpio_write_bit);
 

@@ -28,8 +28,6 @@
 #if defined(CONFIG_RTL8367_CIF_MDIO)
  #define MDIO_RTL8367_PHYID			0
 #else
- #define SMI_RTL8367_SMI_ADDR			0xB8
- #define SMI_RTL8367_DELAY_NS			1700
  #define SMI_RALINK_GPIO_SDA			CONFIG_RTL8367_SMI_BUS_CPU_GPIO_DATA	/* GPIO used for SMI Data signal */
  #define SMI_RALINK_GPIO_SCK			CONFIG_RTL8367_SMI_BUS_CPU_GPIO_CLCK	/* GPIO used for SMI Clock signal */
 #endif

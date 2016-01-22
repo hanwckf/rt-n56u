@@ -25,17 +25,6 @@
 #define MTK_ESW_IOCTL_CMD_LENGTH_BITS		(8)
 
 /////////////////////////////////////////////////
-// GPIO CONTROL
-/////////////////////////////////////////////////
-
-#define MTK_ESW_IOCTL_GPIO_MODE_SET		0
-#define MTK_ESW_IOCTL_GPIO_MODE_SET_BIT		1
-#define MTK_ESW_IOCTL_GPIO_MODE_GET		2
-#define MTK_ESW_IOCTL_GPIO_PIN_SET_DIRECTION	3
-#define MTK_ESW_IOCTL_GPIO_PIN_SET_VAL		4
-#define MTK_ESW_IOCTL_GPIO_PIN_GET_VAL		5
-
-/////////////////////////////////////////////////
 // SWITCH STATUS
 /////////////////////////////////////////////////
 

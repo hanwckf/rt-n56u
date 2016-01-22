@@ -1445,11 +1445,13 @@ static const applet_rc_t applets_rc[] = {
 
 	{ "watchdog",		watchdog_main		},
 	{ "rstats",		rstats_main		},
-#if defined (USE_RTL8367)
-	{ "rtl8367",		rtl8367_main		},
-#endif
+
+	{ "mtk_gpio",		cpu_gpio_main		},
 #if defined (USE_MTK_ESW) || defined (USE_MTK_GSW)
 	{ "mtk_esw",		mtk_esw_main		},
+#endif
+#if defined (USE_RTL8367)
+	{ "rtl8367",		rtl8367_main		},
 #endif
 #if defined (USE_RT3352_MII)
 	{ "inicd",		inicd_main		},

@@ -49,6 +49,8 @@
 
 /////////////////////////////////////////////////////////////////////////////////
 
+static DEFINE_SPINLOCK(g_gpio_lock);
+
 static int ralink_gpio_major = 252;
 
 #ifdef CONFIG_RALINK_GPIO_IRQ
@@ -314,6 +316,20 @@ ralink_gpio_set_pin_irq_fall(u32 pin, u32 is_enabled)
 /////////////////////////////////////////////////////////////////////////////////
 
 void
+ralink_gpio_lock(void)
+{
+	spin_lock(&g_gpio_lock);
+}
+
+void
+ralink_gpio_unlock(void)
+{
+	spin_unlock(&g_gpio_lock);
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+void
 ralink_gpio_set_pin_direction(u32 pin, u32 is_output)
 {
 	u32 tmp;
@@ -430,7 +446,6 @@ ralink_gpio_set_pin_direction(u32 pin, u32 is_output)
 #endif
 #endif
 }
-EXPORT_SYMBOL(ralink_gpio_set_pin_direction);
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -539,7 +554,6 @@ ralink_gpio_set_pin_value(u32 pin, u32 value)
 #endif
 #endif
 }
-EXPORT_SYMBOL(ralink_gpio_set_pin_value);
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -614,7 +628,6 @@ ralink_gpio_get_pin_value(u32 pin)
 
 	return tmp;
 }
-EXPORT_SYMBOL(ralink_gpio_get_pin_value);
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -641,7 +654,6 @@ ralink_gpio_mode_set_bit(u32 idx, u32 value)
 		tmp &= ~(1u << idx);
 	*(volatile u32 *)(reg) = cpu_to_le32(tmp);
 }
-EXPORT_SYMBOL(ralink_gpio_mode_set_bit);
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -666,25 +678,25 @@ ralink_gpio_mode_get_bit(u32 idx)
 
 	return tmp;
 }
-EXPORT_SYMBOL(ralink_gpio_mode_get_bit);
 
 /////////////////////////////////////////////////////////////////////////////////
 
-void
-ralink_gpio_mode_set(u32 value)
+#if defined (CONFIG_RT3352_INIC_MII_MODULE)
+// for iNIC_mii.ko
+int ralink_initGpioPin(u32 pin, u32 is_output)
 {
-	*(volatile u32 *)(RALINK_REG_GPIOMODE) = cpu_to_le32(value);
+	ralink_gpio_set_pin_direction(pin, is_output);
+	return 0;
 }
-EXPORT_SYMBOL(ralink_gpio_mode_set);
+EXPORT_SYMBOL(ralink_initGpioPin);
 
-/////////////////////////////////////////////////////////////////////////////////
-
-u32
-ralink_gpio_mode_get(void)
+int ralink_gpio_write_bit(u32 pin, u32 value)
 {
-	return le32_to_cpu(*(volatile u32 *)(RALINK_REG_GPIOMODE));
+	ralink_gpio_set_pin_value(pin, value);
+	return 0;
 }
-EXPORT_SYMBOL(ralink_gpio_mode_get);
+EXPORT_SYMBOL(ralink_gpio_write_bit);
+#endif
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -1029,7 +1041,7 @@ ralink_gpio_init_led(void)
 	setup_timer(&ralink_gpio_led_timer, ralink_gpio_led_do_timer, 0);
 }
 
-int
+static int
 ralink_gpio_led_set(u32 led_gpio, const ralink_gpio_led_info *led)
 {
 	if (led_gpio >= RALINK_GPIO_NUMBER)
@@ -1050,9 +1062,8 @@ ralink_gpio_led_set(u32 led_gpio, const ralink_gpio_led_info *led)
 
 	return 0;
 }
-EXPORT_SYMBOL(ralink_gpio_led_set);
 
-int
+static int
 ralink_gpio_led_enabled(u32 led_gpio, u32 enabled)
 {
 	u32 i;
@@ -1068,10 +1079,6 @@ ralink_gpio_led_enabled(u32 led_gpio, u32 enabled)
 		return 0;
 
 	del_timer_sync(&ralink_gpio_led_timer);
-
-	/* set gpio direction to 'out' */
-	if (enabled)
-		ralink_gpio_set_pin_direction(led_gpio, RALINK_GPIO_DIR_OUT);
 
 	/* reset led status */
 	atomic_set(&ls->state, 0);
@@ -1091,7 +1098,6 @@ ralink_gpio_led_enabled(u32 led_gpio, u32 enabled)
 
 	return 0;
 }
-EXPORT_SYMBOL(ralink_gpio_led_enabled);
 
 int
 ralink_gpio_led_blink(u32 led_gpio)
@@ -1421,7 +1427,9 @@ ralink_gpio_ioctl(struct file *file, unsigned int req, unsigned long arg)
 	{
 	case IOCTL_GPIO_DIR_OUT:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		spin_lock_bh(&g_gpio_lock);
 		ralink_gpio_set_pin_direction(uint_param, uint_value);
+		spin_unlock_bh(&g_gpio_lock);
 		break;
 	case IOCTL_GPIO_READ:
 		uint_value = ralink_gpio_get_pin_value(uint_param);
@@ -1430,6 +1438,16 @@ ralink_gpio_ioctl(struct file *file, unsigned int req, unsigned long arg)
 	case IOCTL_GPIO_WRITE:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
 		ralink_gpio_set_pin_value(uint_param, uint_value);
+		break;
+	case IOCTL_GPIO_MODE_GET:
+		uint_value = ralink_gpio_mode_get_bit(uint_param);
+		put_user(uint_value, (int __user *)arg);
+		break;
+	case IOCTL_GPIO_MODE_SET:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		spin_lock_bh(&g_gpio_lock);
+		ralink_gpio_mode_set_bit(uint_param, uint_value);
+		spin_unlock_bh(&g_gpio_lock);
 		break;
 #ifdef CONFIG_RALINK_GPIO_IRQ
 	case IOCTL_GPIO_IRQ_SET:

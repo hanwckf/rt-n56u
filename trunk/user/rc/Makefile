@@ -80,6 +80,7 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc shutdown
 	cd $(INSTALLDIR)/sbin && ln -sf rc halt
 	cd $(INSTALLDIR)/sbin && ln -sf rc reboot
+	cd $(INSTALLDIR)/sbin && ln -sf rc mtk_gpio
 	cd $(INSTALLDIR)/sbin && ln -sf rc ddns_updated
 	cd $(INSTALLDIR)/sbin && ln -sf rc ntpc_updated
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_ddns

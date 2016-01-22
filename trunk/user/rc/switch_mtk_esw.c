@@ -408,30 +408,6 @@ int phy_vlan_rule_set(unsigned int rule_id, int vid, int priority, int tagged)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// RALINK CPU GPIO CONTROL
-////////////////////////////////////////////////////////////////////////////////
-
-int cpu_gpio_mode_set_bit(int idx, unsigned int value)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_GPIO_MODE_SET_BIT, idx, &value);
-}
-
-int cpu_gpio_set_pin_direction(int pin, unsigned int use_output_direction)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_GPIO_PIN_SET_DIRECTION, pin, &use_output_direction);
-}
-
-int cpu_gpio_set_pin(int pin, unsigned int value)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_GPIO_PIN_SET_VAL, pin, &value);
-}
-
-int cpu_gpio_get_pin(int pin, unsigned int *p_value)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_GPIO_PIN_GET_VAL, pin, p_value);
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // STATUS
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -439,13 +415,6 @@ static int show_usage(char *cmd)
 {
 	printf("Usage: %s COMMAND [ARG1] [ARG2]\n"
 	" COMMAND:\n"
-	"    0 [MODE]        Set GPIO mode RAW DWORD\n"
-	"    1 [0|1] [BIT]   Set GPIO mode bit\n"
-	"    2               Show GPIO mode RAW\n"
-	"    3 [0|1] [PIN]   Set GPIO pin direction (0=Input, 1=Output)\n"
-	"    4 [0|1] [PIN]   Set GPIO pin value\n"
-	"    5 [PIN]         Show GPIO pin value\n"
-	"\n"
 	"   10               Show WAN port link status\n"
 	"   11               Show WAN ports link status\n"
 	"   12               Show LAN ports link status\n"
@@ -504,30 +473,6 @@ static int show_usage(char *cmd)
 	, cmd);
 
 	return 1;
-}
-
-static int show_status_gpio_mode(void)
-{
-	int retVal;
-	unsigned int arg = 0;
-
-	retVal = mtk_esw_ioctl(MTK_ESW_IOCTL_GPIO_MODE_GET, 0, &arg);
-	if (retVal == 0)
-		printf("GPIO Mode = 0x%08X\n", arg);
-
-	return retVal;
-}
-
-static int show_status_gpio_pin(unsigned int par)
-{
-	int retVal;
-	unsigned int arg = 0;
-
-	retVal = mtk_esw_ioctl(MTK_ESW_IOCTL_GPIO_PIN_GET_VAL, par, &arg);
-	if (retVal == 0)
-		printf("GPIO Pin %d = %d\n", par, arg);
-
-	return retVal;
 }
 
 static int show_status_link(unsigned int cmd)
@@ -792,12 +737,6 @@ int mtk_esw_main(int argc, char **argv)
 
 	switch (cmd)
 	{
-	case MTK_ESW_IOCTL_GPIO_MODE_GET:
-		return show_status_gpio_mode();
-	
-	case MTK_ESW_IOCTL_GPIO_PIN_GET_VAL:
-		return show_status_gpio_pin(arg);
-	
 	case MTK_ESW_IOCTL_STATUS_PORT_BYTES:
 		return 1;
 	

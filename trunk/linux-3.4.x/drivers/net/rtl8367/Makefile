@@ -11,7 +11,6 @@ obj-$(CONFIG_RTL8367_API_8370)		+= api_8370/
 obj-$(CONFIG_RTL8367_API_8367B)		+= api_8367b/
 
 # common driver
-obj-y					+= ralink_gpp.o
 obj-$(CONFIG_RTL8367_CIF_SMI)		+= ralink_smi.o
 obj-$(CONFIG_RTL8367_CIF_MDIO)		+= ralink_mdio.o
 obj-$(CONFIG_RTL8367_IGMP_SNOOPING)	+= rtl8367_igmp.o

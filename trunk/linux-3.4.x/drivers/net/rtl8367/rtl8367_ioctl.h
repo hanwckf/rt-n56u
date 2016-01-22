@@ -25,17 +25,6 @@
 #define RTL8367_IOCTL_CMD_LENGTH_BITS		(8)
 
 /////////////////////////////////////////////////
-// GPIO CONTROL (ATOMIC WITH SMI)
-/////////////////////////////////////////////////
-
-#define RTL8367_IOCTL_GPIO_MODE_SET		0
-#define RTL8367_IOCTL_GPIO_MODE_SET_BIT		1
-#define RTL8367_IOCTL_GPIO_MODE_GET		2
-#define RTL8367_IOCTL_GPIO_PIN_SET_DIRECTION	3
-#define RTL8367_IOCTL_GPIO_PIN_SET_VAL		4
-#define RTL8367_IOCTL_GPIO_PIN_GET_VAL		5
-
-/////////////////////////////////////////////////
 // SWITCH STATUS
 /////////////////////////////////////////////////
 

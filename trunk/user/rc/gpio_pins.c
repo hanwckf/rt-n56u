@@ -55,6 +55,35 @@ ralink_gpio_ioctl(unsigned int cmd, unsigned int par, void *value)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// RALINK CPU GPIO CONTROL
+////////////////////////////////////////////////////////////////////////////////
+
+int cpu_gpio_mode_set_bit(int bit, unsigned int value)
+{
+	return ralink_gpio_ioctl(IOCTL_GPIO_MODE_SET, bit, &value);
+}
+
+int cpu_gpio_mode_get_bit(int bit, unsigned int *p_value)
+{
+	return ralink_gpio_ioctl(IOCTL_GPIO_MODE_GET, bit, p_value);
+}
+
+int cpu_gpio_set_pin_direction(int pin, unsigned int use_output_direction)
+{
+	return ralink_gpio_ioctl(IOCTL_GPIO_DIR_OUT, pin, &use_output_direction);
+}
+
+int cpu_gpio_set_pin(int pin, unsigned int value)
+{
+	return ralink_gpio_ioctl(IOCTL_GPIO_WRITE, pin, &value);
+}
+
+int cpu_gpio_get_pin(int pin, unsigned int *p_value)
+{
+	return ralink_gpio_ioctl(IOCTL_GPIO_READ, pin, p_value);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // GPIO LED
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -92,3 +121,75 @@ int cpu_gpio_irq_set(unsigned int irq_pin, int rising_edge, int falling_edge, pi
 	return ralink_gpio_ioctl(IOCTL_GPIO_IRQ_SET, irq_pin, &gii);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// GPIO PROCESS
+////////////////////////////////////////////////////////////////////////////////
+
+static void show_usage(char *cmd)
+{
+	printf("Usage: %s -d <pin> <in/out> - gpio pin set direction (in=0, out=1)\n", cmd);
+	printf("       %s -r <pin> - gpio pin read value\n", cmd);
+	printf("       %s -w <pin> <value> - gpio pin write value (0/1)\n\n", cmd);
+	printf("       %s -m <bit> - gpio mode get bit\n", cmd);
+	printf("       %s -s <bit> <value> - gpio mode set bit (0/1)\n", cmd);
+}
+
+int cpu_gpio_main(int argc, char **argv)
+{
+	int ret = 1, idx;
+	unsigned int value = 0;
+
+	if (argc < 2) {
+		show_usage(argv[0]);
+		return 1;
+	}
+
+	if (strlen(argv[1]) < 2 || argv[1][0] != '-') {
+		show_usage(argv[0]);
+		return 1;
+	}
+
+	switch (argv[1][1])
+	{
+	case 'd':
+		if (argc == 4)
+			ret = cpu_gpio_set_pin_direction(atoi(argv[2]), atoi(argv[3]));
+		else
+			show_usage(argv[0]);
+		break;
+	case 'r':
+		if (argc == 3) {
+			idx = atoi(argv[2]);
+			ret = cpu_gpio_get_pin(idx, &value);
+			if (ret == 0)
+				printf("gpio pin %d = %d\n", idx, value);
+		} else
+			show_usage(argv[0]);
+		break;
+	case 'w':
+		if (argc == 4)
+			ret = cpu_gpio_set_pin(atoi(argv[2]), atoi(argv[3]));
+		else
+			show_usage(argv[0]);
+		break;
+	case 'm':
+		if (argc == 3) {
+			idx = atoi(argv[2]);
+			ret = cpu_gpio_mode_get_bit(idx, &value);
+			if (ret == 0)
+				printf("gpio mode bit [%d] = %d\n", idx, value);
+		} else
+			show_usage(argv[0]);
+		break;
+	case 's':
+		if (argc == 4)
+			ret = cpu_gpio_mode_set_bit(atoi(argv[2]), atoi(argv[3]));
+		else
+			show_usage(argv[0]);
+		break;
+	default:
+		show_usage(argv[0]);
+	}
+
+	return ret;
+}

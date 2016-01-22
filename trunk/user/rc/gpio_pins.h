@@ -22,7 +22,8 @@
 // Ralink CPU GPIO CONTROL
 ////////////////////////////////////////////////////////////////////////////////
 
-int cpu_gpio_mode_set_bit(int idx, unsigned int value);
+int cpu_gpio_mode_set_bit(int bit, unsigned int value);
+int cpu_gpio_mode_get_bit(int bit, unsigned int *p_value);
 int cpu_gpio_set_pin_direction(int pin, unsigned int use_output_direction);
 int cpu_gpio_set_pin(int pin, unsigned int value);
 int cpu_gpio_get_pin(int pin, unsigned int *p_value);
@@ -32,5 +33,9 @@ int cpu_gpio_get_pin(int pin, unsigned int *p_value);
 int cpu_gpio_led_set(unsigned int led_pin, int blink_inverted);
 int cpu_gpio_led_enabled(unsigned int led_pin, int enabled);
 int cpu_gpio_irq_set(unsigned int irq_pin, int rising_edge, int falling_edge, pid_t pid);
+
+////////////////////////////////////////////////////////////////////////////////
+
+int cpu_gpio_main(int argc, char **argv);
 
 #endif

@@ -2055,31 +2055,6 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 
 	switch(req)
 	{
-	case MTK_ESW_IOCTL_GPIO_MODE_SET:
-		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		ralink_gpio_mode_set(uint_value);
-		break;
-	case MTK_ESW_IOCTL_GPIO_MODE_SET_BIT:
-		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		ralink_gpio_mode_set_bit(uint_param, uint_value);
-		break;
-	case MTK_ESW_IOCTL_GPIO_MODE_GET:
-		uint_result = ralink_gpio_mode_get();
-		put_user(uint_result, (unsigned int __user *)arg);
-		break;
-	case MTK_ESW_IOCTL_GPIO_PIN_SET_DIRECTION:
-		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		ralink_gpio_set_pin_direction(uint_param, uint_value);
-		break;
-	case MTK_ESW_IOCTL_GPIO_PIN_SET_VAL:
-		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		ralink_gpio_set_pin_value(uint_param, uint_value);
-		break;
-	case MTK_ESW_IOCTL_GPIO_PIN_GET_VAL:
-		uint_result = ralink_gpio_get_pin_value(uint_param);
-		put_user(uint_result, (unsigned int __user *)arg);
-		break;
-
 	case MTK_ESW_IOCTL_STATUS_LINK_PORT_WAN:
 		uint_result = esw_status_link_port(WAN_PORT_MAC);
 		put_user(uint_result, (unsigned int __user *)arg);
@@ -2337,8 +2312,6 @@ static const struct file_operations mtk_esw_fops =
 int esw_ioctl_init(void)
 {
 	int r;
-
-	mutex_init(&esw_access_mutex);
 
 	fill_bridge_members();
 

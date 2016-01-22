@@ -2100,10 +2100,16 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #endif
 #if defined (USE_RTL8367)
 	int has_switch_type = 0; // Realtek RTL8367
-#elif defined (USE_MTK_ESW)
-	int has_switch_type = 1; // Mediatek MT7620 Embedded ESW
 #elif defined (USE_MTK_GSW)
-	int has_switch_type = 2; // Mediatek MT7621 Internal GSW (or MT7530)
+	int has_switch_type = 5; // MT7621/MT7623 Internal GSW (or External MT7530)
+#elif defined (USE_MTK_ESW)
+#if defined (CONFIG_RALINK_MT7620)
+	int has_switch_type = 12; // MT7620 Embedded ESW
+#elif defined (CONFIG_RALINK_MT7628)
+	int has_switch_type = 11; // MT7628 Embedded ESW
+#else
+	int has_switch_type = 10; // RT3052/RT3352/RT5350 Embedded ESW
+#endif
 #endif
 #if defined (BOARD_GPIO_BTN_ROUTER) || defined (BOARD_GPIO_BTN_AP)
 	int has_btn_mode = 1;

@@ -26,7 +26,7 @@
 
 #include "httpd.h"
 
-#include <ra_esw_ioctl.h>
+#include <mtk_esw/ioctl.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // MIB COUNTERS
@@ -53,7 +53,7 @@ typedef struct esw_mib_counters_s
 	uint32_t RxCRCError;
 	uint32_t RxAligmentError;
 } esw_mib_counters_t;
-#else
+#elif defined (CONFIG_RALINK_MT7620)
 typedef struct esw_mib_counters_s
 {
 	uint64_t TxGoodOctets;
@@ -67,6 +67,15 @@ typedef struct esw_mib_counters_s
 	uint32_t RxBadFrames;
 	uint32_t RxDropFramesFilter;
 	uint32_t RxDropFramesErr;
+} esw_mib_counters_t;
+#else
+#define ESW_RT3X5X
+typedef struct esw_mib_counters_s
+{
+	uint32_t TxGoodFrames;
+	uint32_t TxBadFrames;
+	uint32_t RxGoodFrames;
+	uint32_t RxBadFrames;
 } esw_mib_counters_t;
 #endif
 
@@ -255,7 +264,7 @@ static int fill_eth_status(int port_id, webs_t wp)
 		ret += websWrite(wp, "RxFilterFrames			: %u\n", mibc.RxFilterFrames);
 		ret += websWrite(wp, "RxCRCError			: %u\n", mibc.RxCRCError);
 		ret += websWrite(wp, "RxAligmentError			: %u", mibc.RxAligmentError);
-#else
+#elif !defined (ESW_RT3X5X)
 		ret += websWrite(wp, "TxGoodOctets			: %llu\n", mibc.TxGoodOctets);
 		ret += websWrite(wp, "TxGoodFrames			: %u\n", mibc.TxGoodFrames);
 		ret += websWrite(wp, "TxBadOctets			: %u\n", mibc.TxBadOctets);
@@ -267,6 +276,11 @@ static int fill_eth_status(int port_id, webs_t wp)
 		ret += websWrite(wp, "RxBadFrames			: %u\n", mibc.RxBadFrames);
 		ret += websWrite(wp, "RxDropFramesFilter		: %u\n", mibc.RxDropFramesFilter);
 		ret += websWrite(wp, "RxDropFramesErr			: %u", mibc.RxDropFramesErr);
+#else
+		ret += websWrite(wp, "TxGoodFrames			: %u\n", mibc.TxGoodFrames);
+		ret += websWrite(wp, "TxBadFrames			: %u\n", mibc.TxBadFrames);
+		ret += websWrite(wp, "RxGoodFrames			: %u\n", mibc.RxGoodFrames);
+		ret += websWrite(wp, "RxBadFrames			: %u\n", mibc.RxBadFrames);
 #endif
 	}
 

@@ -27,7 +27,7 @@ int rtl8367_main(int argc, char **argv);
 #endif
 
 #if defined(USE_MTK_ESW) || defined(USE_MTK_GSW)
-#include <ra_esw_ioctl.h>
+#include <mtk_esw/ioctl.h>
 int mtk_esw_node(void);
 int mtk_esw_main(int argc, char **argv);
 #endif

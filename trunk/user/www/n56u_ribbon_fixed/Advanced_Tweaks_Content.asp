@@ -137,7 +137,7 @@ function initial(){
 	}
 
 	var switch_type = support_switch_type();
-	if (switch_type != 0) {
+	if (switch_type > 1) {
 		var o3 = document.form.ether_led0;
 		o3.remove(0);
 		o3.remove(0);

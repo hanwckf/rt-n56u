@@ -46,7 +46,7 @@ function initial(){
 	show_footer();
 
 	var switch_type = support_switch_type();
-	if (switch_type == 1){
+	if (switch_type >= 10){
 		if (!support_ephy_w1000()){
 			document.form.ether_link_wan.remove(1);
 			document.form.ether_flow_wan.remove(1);
@@ -61,25 +61,28 @@ function initial(){
 		document.form.ether_flow_lan4.remove(1);
 	}
 
-	if (switch_type != 0){
+	if (switch_type > 1){
 		document.form.ether_jumbo.options[1].text = "Up to 9000 bytes";
 		$("col_ether_green").innerHTML = "<#btn_Enable#> Energy Efficient Ethernet (802.3az)?";
 	}else{
 		$("col_ether_green").innerHTML = "<#btn_Enable#> Green Ethernet?";
 	}
 
+	if (switch_type == 10 || switch_type == 11)
+		showhide_div("row_jumbo", 0);
+
 	var num_ephy = support_num_ephy();
 	if (num_ephy < 5)
-		showhide_div('tbl_ephy_l4', 0);
+		showhide_div("tbl_ephy_l4", 0);
 	if (num_ephy < 4)
-		showhide_div('tbl_ephy_l3', 0);
+		showhide_div("tbl_ephy_l3", 0);
 	if (num_ephy < 3)
-		showhide_div('tbl_ephy_l2', 0);
+		showhide_div("tbl_ephy_l2", 0);
 
 	var arr_speeds = [1000, 100, 10, 100, 1000, 100, 10, 0, 0, 0, 0, 0];
 
-	var led_color_green = (switch_type == 1) ? 1 : 3;
-	var led_color_orange = (switch_type == 1) ? 2 : 0;
+	var led_color_green = (switch_type >= 10) ? 1 : 3;
+	var led_color_orange = (switch_type >= 10) ? 2 : 0;
 
 	if (support_led_phy() > 0)
 		led_color_green = parseInt("<% nvram_get_x("","ether_led0"); %>");
@@ -172,8 +175,8 @@ function done_validating(action){
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#SwitchBase#></th>
                                         </tr>
-                                        <tr>
-                                            <th width="50%"><#SwitchJumbo#></th>
+                                        <tr id="row_jumbo">
+                                            <th><#SwitchJumbo#></th>
                                             <td>
                                                 <select name="ether_jumbo" class="input">
                                                     <option value="0" <% nvram_match_x("","ether_jumbo", "0","selected"); %>>Up to 1536 bytes</option>
@@ -182,7 +185,7 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th id="col_ether_green">&nbsp;</th>
+                                            <th id="col_ether_green" width="50%">&nbsp;</th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ether_green_on_of">

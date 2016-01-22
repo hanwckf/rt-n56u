@@ -53,7 +53,7 @@ typedef struct esw_mib_counters_s
 	uint32_t RxCRCError;
 	uint32_t RxAligmentError;
 } esw_mib_counters_t;
-#else
+#elif defined (CONFIG_RALINK_MT7620)
 typedef struct esw_mib_counters_s
 {
 	uint64_t TxGoodOctets;
@@ -67,6 +67,15 @@ typedef struct esw_mib_counters_s
 	uint32_t RxBadFrames;
 	uint32_t RxDropFramesFilter;
 	uint32_t RxDropFramesErr;
+} esw_mib_counters_t;
+#else
+#define ESW_RT3X5X
+typedef struct esw_mib_counters_s
+{
+	uint32_t TxGoodFrames;
+	uint32_t TxBadFrames;
+	uint32_t RxGoodFrames;
+	uint32_t RxBadFrames;
 } esw_mib_counters_t;
 #endif
 
@@ -438,7 +447,7 @@ static int show_usage(char *cmd)
 	"   35               Show CPU WAN port MIB counters\n"
 	"   36               Show CPU LAN port MIB counters\n"
 	"   38               Reset all ports MIB counters\n"
-#else
+#else !defined (ESW_RT3X5X)
 	"   36               Show CPU WAN/LAN port MIB counters\n"
 #endif
 	"\n"
@@ -459,10 +468,14 @@ static int show_usage(char *cmd)
 	"   64 [MASK] [DATA] Create VLAN entry\n"
 	"\n"
 	"   73 [0..1000]     Set Broadcast storm rate limit for all PHY ports\n"
+#if !defined (ESW_RT3X5X)
 	"   75 [1|0]         Set Jumbo Frames accept on/off\n"
+#endif
 	"   76 [1|0]         Set 802.3az EEE on/off\n"
+#if !defined (ESW_RT3X5X)
 	"   77 [MASK]        Set IGMP/MLD static ports mask\n"
 	"   78 [1|0]         Set IGMP/MLD snooping on/off\n"
+#endif
 	"   80 [7,11]        Set EPHY LED action\n"
 	"\n"
 	"   90 [MODE]        Set WAN port link mode (flow|link)\n"
@@ -659,7 +672,7 @@ static int show_mib_counters(unsigned int cmd)
 			mibc.RxCRCError,
 			mibc.RxAligmentError
 			);
-#else
+#elif !defined (ESW_RT3X5X)
 		printf("%s MIB counters:\n"
 			"  TxGoodOctets: %llu\n"
 			"  TxGoodFrames: %u\n"
@@ -685,6 +698,19 @@ static int show_mib_counters(unsigned int cmd)
 			mibc.RxBadFrames,
 			mibc.RxDropFramesFilter,
 			mibc.RxDropFramesErr
+			);
+#else
+		printf("%s MIB counters:\n"
+			"  TxGoodFrames: %u\n"
+			"  TxBadFrames: %u\n"
+			"  RxGoodFrames: %u\n"
+			"  RxBadFrames: %u\n"
+			,
+			portname,
+			mibc.TxGoodFrames,
+			mibc.TxBadFrames,
+			mibc.RxGoodFrames,
+			mibc.RxBadFrames
 			);
 #endif
 	}

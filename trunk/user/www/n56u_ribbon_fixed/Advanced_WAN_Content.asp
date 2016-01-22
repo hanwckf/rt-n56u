@@ -75,6 +75,11 @@ function initial(){
 		o2.remove(2);
 	}
 
+	var switch_type = support_switch_type();
+	if (switch_type == 10 || switch_type == 11){
+		document.form.wan_stb_iso.remove(2);
+	}
+
 	change_wan_type(document.form.wan_proto.value, 0);
 	fixed_change_wan_type(document.form.wan_proto.value);
 

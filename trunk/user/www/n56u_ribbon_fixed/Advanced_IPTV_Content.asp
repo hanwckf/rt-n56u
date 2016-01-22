@@ -60,13 +60,13 @@ function initial(){
 		o1.remove(3);
 
 	var switch_type = support_switch_type();
-	if (switch_type != 0) {
+	if (switch_type > 1) {
 		showhide_div('row_storm_ucast', 0);
 		showhide_div('row_storm_mcast_unk', 0);
 		showhide_div('row_storm_mcast', 0);
 	}
 
-	if (switch_type == 1)
+	if (switch_type >= 10)
 		$("lbl_bcast").innerHTML = "[0..100]";
 
 	if(document.form.udpxy_enable_x.value == 0)
@@ -117,20 +117,20 @@ function validForm(){
 	}
 
 	var switch_type = support_switch_type();
-	if(document.form.controlrate_unknown_unicast.value != 0 && switch_type == 0){
+	if(document.form.controlrate_unknown_unicast.value != 0 && switch_type < 2){
 		if(!validate_range(document.form.controlrate_unknown_unicast, 0, 1000))
 			return false;
 	}
-	if(document.form.controlrate_unknown_multicast.value != 0 && switch_type == 0){
+	if(document.form.controlrate_unknown_multicast.value != 0 && switch_type < 2){
 		if(!validate_range(document.form.controlrate_unknown_multicast, 0, 1000))
 			return false;
 	}
-	if(document.form.controlrate_multicast.value != 0 && switch_type == 0){
+	if(document.form.controlrate_multicast.value != 0 && switch_type < 2){
 		if(!validate_range(document.form.controlrate_multicast, 0, 1000))
 			return false;
 	}
 	if(document.form.controlrate_broadcast.value != 0){
-		var max_rate = (switch_type == 1) ? 100 : 1000;
+		var max_rate = (switch_type >= 10) ? 100 : 1000;
 		if(!validate_range(document.form.controlrate_broadcast, 0, max_rate))
 			return false;
 	}

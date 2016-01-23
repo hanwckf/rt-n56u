@@ -259,7 +259,9 @@ ifeq ($(DDR_ACT_SETTING), y)
 		echo "0 10"|xxd -r|dd bs=1 count=1 seek=38 of=uboot_a.bin conv=notrunc
 endif
 		echo "0 $(MT7621_DDR_SPEED)"|xxd -r|dd bs=1 count=1 seek=39 of=uboot_a.bin conv=notrunc
+ifneq ($(CONFIG_BAUDRATE_57600), y)
 		echo "0 00c20100"|xxd -r|dd bs=1 seek=304 of=uboot_a.bin conv=notrunc
+endif
 		chmod 777 uboot_a.bin
 		dd if=uboot.bin of=uboot_a.bin bs=1 count=$(shell stat -c %s uboot.bin) \
 		seek=$(shell echo "(($(shell stat -c %s mt7621_stage_L2.bin)+4095)/4096)*4096-64" |bc) conv=notrunc
@@ -285,7 +287,9 @@ ifeq ($(DDR_ACT_SETTING), y)
 		./mt7621_ddr.sh uboot_a.bin uboot_a.bin mt7621_ddr_param.txt $(DDR_CHIP) $(CFG_ENV_IS)
 		echo "0 10"|xxd -r|dd bs=1 count=1 of=uboot_a.bin seek=$(shell echo "(($(shell stat -c %s uboot.bin)+38))" |bc) conv=notrunc
 endif
+ifneq ($(CONFIG_BAUDRATE_57600), y)
 		echo "0 00c20100"|xxd -r|dd bs=1 of=uboot_a.bin seek=$(shell echo "(($(shell stat -c %s uboot.bin)+304))" |bc) conv=notrunc
+endif
 		mv uboot_a.bin uboot.bin
 endif
 endif

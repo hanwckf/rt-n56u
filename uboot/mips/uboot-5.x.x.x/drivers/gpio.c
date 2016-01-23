@@ -31,7 +31,7 @@
 #define GPIO_VAL_USB_5V_ON	1
 #define GPIO_VAL_BTN_PRESSED	0
 
-#if defined(RT3052_MP)
+#if defined(RT3052_MP2)
 
 //RT3052
 #define RALINK_GPIOMODE_I2C		(1U << 0)
@@ -167,7 +167,7 @@ const static struct gpio_reg_offset_s {
 	unsigned short set_offset;
 	unsigned short reset_offset;
 } s_gpio_reg_offset[] = {
-#if defined(RT3052_MP) || defined(RT3352_MP) || defined(RT3883_MP) || defined(MT7620_MP)
+#if defined(RT3052_MP2) || defined(RT3352_MP) || defined(RT3883_MP) || defined(MT7620_MP)
 	{  0, 23, 0x00, 0x04, 0x08, 0x0c, 0x20, 0x24, 0x28, 0x2c, 0x30 },
 	{ 24, 39, 0x38, 0x3c, 0x40, 0x44, 0x48, 0x4c, 0x50, 0x54, 0x58 },
 	{ 40, 71, 0x60, 0x64, 0x68, 0x6c, 0x70, 0x74, 0x78, 0x7c, 0x80 },
@@ -184,7 +184,7 @@ const static struct gpio_reg_offset_s {
 
 static int is_valid_gpio_nr(unsigned short gpio_nr)
 {
-#if defined(RT3052_MP)
+#if defined(RT3052_MP2)
 	return (gpio_nr > 51)? 0:1;
 #elif defined(RT3352_MP)
 	return (gpio_nr > 45)? 0:1;
@@ -528,7 +528,7 @@ int mtk_set_gpio_pin(unsigned short gpio_nr, unsigned int val)
 void gpio_init(void)
 {
 	unsigned int gm = RALINK_GPIOMODE_I2C;
-#if defined(RT3052_MP) || defined(RT3352_MP) || defined(RT5350_MP) || defined(RT3883_MP)
+#if defined(RT3052_MP2) || defined(RT3352_MP) || defined(RT5350_MP) || defined(RT3883_MP)
 	gm |= RALINK_GPIOMODE_UARTF|RALINK_GPIOMODE_JTAG;
 #elif defined(MT7620_MP)
 	gm |= RALINK_GPIOMODE_UARTF|RALINK_GPIOMODE_WDT|RALINK_GPIOMODE_SPI_REFCLK;

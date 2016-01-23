@@ -1824,11 +1824,6 @@ void mt7628_ephy_init(void)
 	for(i=0; i<5; i++){
 		mii_mgr_write(i, 31, 0x8000);//change L0 page
 //		mii_mgr_write(i, 0, 0x3100);
-#if 0
-		mii_mgr_read(i, 26, &phy_val);// EEE setting
-		phy_val |= (1 << 5);
-		mii_mgr_write(i, 26, phy_val);
-#endif
 		mii_mgr_write(i, 30, 0xa000);
 		mii_mgr_write(i, 31, 0xa000);// change L2 page
 		mii_mgr_write(i, 16, 0x0606);
@@ -1866,7 +1861,6 @@ void mt7628_ephy_init(void)
 	for(i=0; i<5; i++)
 		mii_mgr_write(i, 0, 0x3900);
 }
-
 #endif
 
 
@@ -2704,13 +2698,13 @@ static int rt2880_eth_setup(struct eth_device* dev)
 
 #endif
 
-#if defined (RT3052_MP)
+#if defined (RT3052_MP2)
 	RALINK_REG(PSE_FQFC_CFG)=0x80504000;
 #elif defined (RT3883_MP)
 	RALINK_REG(PSE_FQFC_CFG)=0xff908000;
 #endif
 
-#if defined (RT3052_MP) || defined (RT3883_MP)
+#if defined (RT3052_MP2) || defined (RT3883_MP)
 	RALINK_REG(FE_RST_GLO) = 0x1;
 	udelay(10);
 	RALINK_REG(FE_RST_GLO) = 0x0;

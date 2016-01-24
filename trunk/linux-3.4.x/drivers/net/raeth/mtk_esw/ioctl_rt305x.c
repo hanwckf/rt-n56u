@@ -433,7 +433,7 @@ static void esw_vlan_set_idx(u32 idx, u32 cvid, u32 mask_member, u32 mask_untag)
 		reg_val |= (mask_untag << 14);
 	} else {
 		reg_val &= ~(0x7f << 21);
-		reg_val |= (mask_member << 21);
+		reg_val |= (mask_untag << 21);
 	}
 	esw_reg_set(REG_ESW_VLAN_UNTAG_BASE + 4*(idx/4), reg_val);
 #endif

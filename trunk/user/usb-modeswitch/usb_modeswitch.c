@@ -2006,10 +2006,7 @@ void close_all()
 		libusb_free_config_descriptor(active_config);
 	if (devh)
 		libusb_close(devh);
-	// libusb_exit will crash on Raspbian 7, crude protection
-#ifndef __ARMEL__
-	libusb_exit(NULL);
-#endif
+	libusb_exit(ctx);
 	if (sysmode)
 		closelog();
 }

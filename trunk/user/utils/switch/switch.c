@@ -69,7 +69,11 @@ void usage(char *cmd)
 	printf(" %s del [mac]                            - delete an entry from switch table\n", cmd);
 	printf(" %s del [mac] [vlan idx]                 - delete an entry from switch table\n", cmd);
 	printf(" %s vlan dump                            - dump switch table\n", cmd);
-	printf(" %s vlan set [vlan idx] [vid] [portmap]  - set vlan id and associated member\n", cmd);
+#if defined (CONFIG_RALINK_RT3052)
+	printf(" %s vlan set [idx] [vid] [portmap]       - set vlan id and associated member\n", cmd);
+#else
+	printf(" %s vlan set [idx] [vid] [portmap] <untag> - set vlan id and associated member\n", cmd);
+#endif
 	printf(" %s reg r [offset]                       - register read from offset\n", cmd);
 	printf(" %s reg w [offset] [value]               - register write value to offset\n", cmd);
 	printf(" %s phy [phy_addr]                       - dump phy register of specific port\n", cmd);
@@ -441,67 +445,109 @@ void vlan_dump(void)
 
 void vlan_set(int argc, char *argv[])
 {
-	int i, j, value;
-	int idx, vid;
+	int i, mask_member, vid, value, mask_untag;
+	int idx;
 
-	if (argc != 6) {
+	if (argc < 6) {
 		printf("insufficient arguments!\n");
 		return;
 	}
+
 	idx = strtoul(argv[3], NULL, 0);
 	if (idx < 0 || 15 < idx) {
 		printf("wrong member index range, should be within 0~15\n");
 		return;
 	}
+
 	vid = strtoul(argv[4], NULL, 0);
-	if (vid < 0 || 0xfff < vid) {
+	if (vid > 0xfff) {
 		printf("wrong vlan id range, should be within 0~4095\n");
 		return;
 	}
+
 	if (strlen(argv[5]) != 7) {
-		printf("portmap format error, should be of length 7\n");
+		printf("portmap format error, should be of length 7 (e.g. 1111001)\n");
 		return;
 	}
-	j = 0;
+
+	mask_member = 0;
 	for (i = 0; i < 7; i++) {
 		if (argv[5][i] != '0' && argv[5][i] != '1') {
 			printf("portmap format error, should be of combination of 0 or 1\n");
 			return;
 		}
-		j += (argv[5][i] - '0') * (1 << i);
+		mask_member += (argv[5][i] - '0') * (1u << i);
 	}
 
-	//set vlan identifier
+#if !defined (CONFIG_RALINK_RT3052)
+	mask_untag = 0;
+	if (argc > 6) {
+		if (strlen(argv[6]) != 7) {
+			printf("untag per port format error, should be of length 7 (e.g. 11111-0)\n");
+			return;
+		}
+		
+		for (i = 0; i < 7; i++) {
+			if (argv[6][i] == '1')
+				mask_untag |= (1u << i);
+			else if (argv[6][i] == '0' || argv[6][i] == '-')
+				;
+			else {
+				printf("untag format error, should be of '1' (untag) or '0' (tag)\n");
+				return;
+			}
+		}
+	}
+#endif
+
+	// set vlan identifier
 	reg_read(REG_ESW_VLAN_ID_BASE + 4*(idx/2), &value);
-	if (idx % 2 == 0) {
+	if ((idx % 2) == 0) {
 		value &= 0xfff000;
 		value |= vid;
-	}
-	else {
+	} else {
 		value &= 0xfff;
 		value |= (vid << 12);
 	}
 	reg_write(REG_ESW_VLAN_ID_BASE + 4*(idx/2), value);
 
-	//set vlan member
+	// set vlan member
 	reg_read(REG_ESW_VLAN_MEMB_BASE + 4*(idx/4), &value);
-	if (idx % 4 == 0) {
+	if ((idx % 4) == 0) {
 		value &= 0xffffff00;
-		value |= j;
-	}
-	else if (idx % 4 == 1) {
+		value |= mask_member;
+	} else if ((idx % 4) == 1) {
 		value &= 0xffff00ff;
-		value |= (j << 8);
-	}
-	else if (idx % 4 == 2) {
+		value |= (mask_member << 8);
+	} else if ((idx % 4) == 2) {
 		value &= 0xff00ffff;
-		value |= (j << 16);
-	}
-	else {
+		value |= (mask_member << 16);
+	} else {
 		value &= 0x00ffffff;
-		value |= (j << 24);
+		value |= (mask_member << 24);
 	}
 	reg_write(REG_ESW_VLAN_MEMB_BASE + 4*(idx/4), value);
+
+	// set vlan untag ports
+#if !defined (CONFIG_RALINK_RT3052)
+	if (argc > 6) {
+		reg_read(REG_ESW_VLAN_UNTAG_BASE + 4*(idx/4), &value);
+		if ((idx % 4) == 0) {
+			value &= ~(0x7f);
+			value |= mask_untag;
+		} else if ((idx % 4) == 1) {
+			value &= ~(0x7f << 7);
+			value |= (mask_untag << 7);
+		} else if ((idx % 4) == 2) {
+			value &= ~(0x7f << 14);
+			value |= (mask_untag << 14);
+		} else {
+			value &= ~(0x7f << 21);
+			value |= (mask_untag << 21);
+		}
+		reg_write(REG_ESW_VLAN_UNTAG_BASE + 4*(idx/4), value);
+	}
+#endif
 }
 #endif
 

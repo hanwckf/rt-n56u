@@ -1,25 +1,23 @@
 EXEC = switch mii_mgr mii_mgr_cl45
 CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)/drivers/net/raeth
 
-ifdef CONFIG_RALINK_MT7628
-SRC = switch.c
-else
+ifdef CONFIG_RALINK_MT7620
 SRC = switch_gsw.c
+CFLAGS += -DCONFIG_RALINK_MT7620
 endif
 
-ifdef CONFIG_RALINK_MT7620
-CFLAGS += -DCONFIG_RALINK_MT7620
-else
 ifdef CONFIG_RALINK_MT7621
+SRC = switch_gsw.c
 CFLAGS += -DCONFIG_RALINK_MT7621
-else
+endif
+
 ifdef CONFIG_RALINK_MT7628
+SRC = switch.c
 CFLAGS += -DCONFIG_RALINK_MT7628
-endif
-endif
 endif
 
 ifdef CONFIG_MT7530_GSW
+SRC = switch_gsw.c
 CFLAGS += -DCONFIG_MT7530_GSW
 endif
 

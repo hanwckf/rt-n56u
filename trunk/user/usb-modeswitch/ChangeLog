@@ -2,6 +2,15 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.3.0, 2016/01/12
+    ATTENTION: -I flag is now history and being ignored - determining SCSI
+    attributes is really an 'outside task'; -n flag (NeedResponse) is being
+    ignored, CSW response will now always be read; introduction of parameter
+    "OptionMode", wrapping the standard bulk message for all newer Huawei
+    devices; fixed missing variable initialization in dispatcher script which
+    could lead to crash (thanks, Dmitry Kunilov!); fixed bug which prevented
+    early logging; fixed success report for Cisco AM10; some source code
+    formatting and clean-up
 Version 2.2.6, 2015/11/01
     Renamed function abort(), avoiding possible conflicts in static builds
     with libjim (thanks, Gustavo Zacharias); removed storage class check of

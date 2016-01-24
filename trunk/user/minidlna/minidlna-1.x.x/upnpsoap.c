@@ -1064,7 +1064,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 									     "http://%s:%d/Captions/%s.srt"
 									   "&lt;/res&gt;",
 									   lan_addr[passed_args->iface].str, runtime_vars.port, detailID);
-						else if( passed_args->filter & FILTER_SEC_CAPTION_INFO_EX )
+						if( passed_args->filter & FILTER_SEC_CAPTION_INFO_EX )
 							ret = strcatf(str, "&lt;sec:CaptionInfoEx sec:type=\"srt\"&gt;"
 							                     "http://%s:%d/Captions/%s.srt"
 							                   "&lt;/sec:CaptionInfoEx&gt;",

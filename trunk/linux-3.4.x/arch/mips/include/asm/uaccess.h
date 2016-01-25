@@ -473,7 +473,7 @@ extern void __put_user_unknown(void);
  * On error, the variable @x is set to zero.
  */
 #define __get_user_unaligned(x,ptr) \
-	__get_user__unalignednocheck((x),(ptr),sizeof(*(ptr)))
+	__get_user_unaligned_nocheck((x),(ptr),sizeof(*(ptr)))
 
 /*
  * Yuck.  We need two variants, one for 64bit operation and one

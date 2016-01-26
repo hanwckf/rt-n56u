@@ -1161,24 +1161,20 @@ void AsicSetFreqOffset(
 	IN  PRTMP_ADAPTER   pAd,
 	IN	ULONG			freqOffset)
 {
-	UCHAR diff;
-	UCHAR RFValue, RFValue2 = 0;
+	UCHAR RFValue = 0, RFValue2;
+
+	freqOffset &= 0x7f;
 
 	// Set RF offset  RF_R17=RF_R23 (RT30xx)
 	RT30xxReadRFRegister(pAd, RF_R17, (PUCHAR)&RFValue);
-	//DBGPRINT(2, ("offset = %lx\n", freqOffset));
-	RFValue2 = (RFValue & 0x80) | freqOffset;
+	if ((UCHAR)freqOffset == (RFValue & 0x7f))
+		return;
 
-	if (RFValue2 > RFValue)
-	{
-		for (diff = 1; diff <= (RFValue2 - RFValue); diff++)
-			RT30xxWriteRFRegister(pAd, RF_R17, (UCHAR)(RFValue + diff));
-	}
-	else
-	{
-		for (diff = 1; diff <= (RFValue - RFValue2); diff++)
-			RT30xxWriteRFRegister(pAd, RF_R17, (UCHAR)(RFValue - diff));
-	}
+	RFValue2 = (RFValue & 0x80) | (UCHAR)freqOffset;
+
+	RT30xxWriteRFRegister(pAd, RF_R17, RFValue2);
+
+	RtmpOsMsDelay(1);
 }
 
 #endif // RT3883 //

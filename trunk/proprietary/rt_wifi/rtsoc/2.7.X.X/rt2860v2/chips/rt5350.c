@@ -545,8 +545,11 @@ VOID NICInitRT5350RFRegisters(
 	// Set RF offset  RF_R17=RF_R23 (RT30xx)
 	RFValue = pAd->RfFreqOffset & 0x7F; // bit7 = 0
 	RT30xxReadRFRegister(pAd, RF_R17, &RfValue1);
-	if (RFValue != RfValue1)
-		RT30xxWriteRFRegister(pAd, RF_R17, (UCHAR)RFValue);
+	if (RFValue != (RfValue1 & 0x7f))
+	{
+		RFValue |= (RfValue1 & 0x80);
+		RT30xxWriteRFRegister(pAd, RF_R17, RFValue);
+	}
 
 	// Initialize RF register to default value
 	for (i = 0; i < RT5350_NUM_RF_REG_PARMS; i++)

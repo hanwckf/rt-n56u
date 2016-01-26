@@ -788,19 +788,19 @@ int
 launch_usb_modeswitch(int vid, int pid, int inquire)
 {
 	char eject_file[64], addon[32];
-	char *arg_inq = "";
+	const char *arg_inq = "";
 	const struct ums_ma_addon_t *ua;
 	int i;
 
 	addon[0] = 0;
 
-	for (ua = &ums_ma_addon[0]; ua->pid; ua++) {
+	for (ua = &ums_ma_addon[0]; ua->vid; ua++) {
 		if (ua->vid == vid && ua->pid == pid) {
 			usb_info_t *usb_info, *follow_usb;
 			
 			usb_info = get_usb_info();
 			for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
-				if (follow_usb->dev_vid == vid && follow_usb->dev_pid == pid) {
+				if (follow_usb->dev_vid == vid && follow_usb->dev_pid == pid && follow_usb->manuf) {
 					for (i = 0; ua->uMa[i]; i++) {
 						if (strncmp(follow_usb->manuf, ua->uMa[i], strlen(ua->uMa[i])) == 0) {
 							snprintf(addon, sizeof(addon), ":uMa=%s", ua->uMa[i]);

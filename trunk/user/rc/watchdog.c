@@ -1013,6 +1013,8 @@ ntpc_updated_main(int argc, char *argv[])
 static void
 watchdog_on_sighup(void)
 {
+	setenv_tz();
+
 	if (!is_ntpc_updated()) {
 		ntpc_tries = 0;
 		ntpc_timer = -1; // want call now

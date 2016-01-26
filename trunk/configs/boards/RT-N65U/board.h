@@ -27,3 +27,4 @@
 #define BOARD_HAS_EPHY_L1000	1
 #define BOARD_HAS_EPHY_W1000	1
 #define BOARD_NUM_UPHY_USB3	2
+#define USE_IWPRIV_RADIO_5G	1	/* workaround for N65U HW issue (sometimes RT3883 hungs) on ra0 up */

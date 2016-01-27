@@ -688,14 +688,13 @@ include_masquerade(FILE *fp, char *wan_if, char *wan_ip, char *lan_net)
 }
 
 static int
-is_need_tcp_mss_wan(int unit, char *man_if)
+is_need_tcp_mss_wan(int unit, int wan_proto, char *man_if)
 {
 	if (get_usb_modem_wan(unit) ) {
 		int modem_mtu = nvram_safe_get_int("modem_mtu", 1500, 1000, 1500);
 		if (modem_mtu != 1500)
 			return 1;
 	} else {
-		int wan_proto = get_wan_proto(unit);
 		if (wan_proto == IPV4_WAN_PROTO_PPPOE ||
 		    wan_proto == IPV4_WAN_PROTO_PPTP ||
 		    wan_proto == IPV4_WAN_PROTO_L2TP)
@@ -1705,7 +1704,7 @@ static int
 ipt_nat_rules(char *man_if, char *man_ip,
               char *wan_if, char *wan_ip,
               char *lan_if, char *lan_ip, char *lan_net,
-              int use_man)
+              int use_man, int wan_proto)
 {
 	FILE *fp;
 	char *dtype, *vpnc_if;
@@ -1897,80 +1896,129 @@ ipt_nat_rules(char *man_if, char *man_ip,
 			}
 		}
 		
-		/* check DMZ host is set, pre-route several traffic to router local first */
-		if (is_use_dmz) {
-#if defined (USE_IPV6)
-			int ipv6_type;
-#endif
-			/* pre-route for local VPN server */
-			if (nvram_match("vpns_enable", "1")) {
-				int i_vpns_type = nvram_get_int("vpns_type");
-#if defined (APP_OPENVPN)
-				if (i_vpns_type == 2) {
-					char *ov_prot = "udp";
-					int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
-					if (nvram_get_int("vpns_ov_prot") > 0)
-						ov_prot = "tcp";
-					fprintf(fp, "-A %s -p %s --dport %d -j DNAT --to-destination %s\n", 
-							dtype, ov_prot, i_ov_port, lan_ip);
-				} else
-#endif
-				if (i_vpns_type == 1) {
-					fprintf(fp, "-A %s -p udp --dport %d -j DNAT --to-destination %s\n", dtype, 1701, lan_ip);
-				} else {
-					fprintf(fp, "-A %s -p %d -j DNAT --to-destination %s\n", dtype, 47, lan_ip);
-					fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s\n", dtype, 1723, lan_ip);
-				}
-			}
-#if defined (APP_TRMD)
-			/* pre-route for local Transmission */
-			if (nvram_match("trmd_enable", "1") && is_torrent_support()) {
-				wport = nvram_get_int("trmd_pport");
-				if (wport < 1024 || wport > 65535) wport = TRANSMISSION_PPORT;
-				fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s\n", dtype, wport, lan_ip);
-				fprintf(fp, "-A %s -p udp --dport %d -j DNAT --to-destination %s\n", dtype, wport, lan_ip);
-				
-				if (nvram_match("trmd_ropen", "1")) {
-					wport = nvram_get_int("trmd_rport");
-					if (wport < 1024 || wport > 65535) wport = TRANSMISSION_RPORT;
-					fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s\n", dtype, wport, lan_ip);
-				}
-			}
-#endif
-#if defined (APP_ARIA)
-			/* pre-route for local Aria2 */
-			if (nvram_match("aria_enable", "1") && is_aria_support()) {
-				wport = nvram_get_int("aria_pport");
-				if (wport < 1024 || wport > 65535) wport = ARIA_PPORT;
-				fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s\n", dtype, wport, lan_ip);
-				fprintf(fp, "-A %s -p udp --dport %d -j DNAT --to-destination %s\n", dtype, wport, lan_ip);
-				
-				if (nvram_match("aria_ropen", "1")) {
-					wport = nvram_get_int("aria_rport");
-					if (wport < 1024 || wport > 65535) wport = ARIA_RPORT;
-					fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s\n", dtype, wport, lan_ip);
-				}
-			}
-#endif
-#if defined (USE_IPV6)
-			/* pre-route for local IPv6 (SIT) */
-			ipv6_type = get_ipv6_type();
-			if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD)
-				fprintf(fp, "-A %s -p %d -j DNAT --to-destination %s\n", dtype, 41, lan_ip);
-#endif
-		}
-		
 		/* Port Forwarding (Virtual Server) mappings */
 		if (nvram_match("vts_enable_x", "1"))
 			include_vts_nat(fp);
 		
-		/* IGD UPnP */
+		/* IGD UPnP mappings */
 		if (nvram_invmatch("upnp_enable_x", "0"))
 			fprintf(fp, "-A %s -j %s\n", dtype, MINIUPNPD_CHAIN_IP4_NAT);
 		
-		/* Exposed station (DMZ), DNAT all packets, except ICMP (use Port Forwarding to redirect ICMP) */
-		if (is_use_dmz)
+		/* Exposed station (DMZ), skip local traffic first */
+		if (is_use_dmz) {
+			unsigned int vpn_proto_mask = 0;
+#if defined (APP_OPENVPN)
+			unsigned int ovpns_hash = 0, ovpnc_hash = 0;
+#endif
+			/* skip DMZ for local VPN server */
+			if (i_vpns_enable) {
+#if defined (APP_OPENVPN)
+				if (i_vpns_type == 2) {
+					/* OpenVPN */
+					vpn_proto_mask |= 0x04;
+					ovpns_hash = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
+					if (nvram_get_int("vpns_ov_prot") > 0)
+						ovpns_hash |= (1u << 16);
+				} else
+#endif
+				if (i_vpns_type == 1) {
+					/* L2TP */
+					vpn_proto_mask |= 0x02;
+				} else {
+					/* PPTP */
+					vpn_proto_mask |= 0x01;
+				}
+			}
+			
+			/* skip DMZ for local VPN client */
+			if (i_vpnc_enable) {
+#if defined (APP_OPENVPN)
+				if (i_vpnc_type == 2) {
+					/* OpenVPN */
+					vpn_proto_mask |= 0x04;
+					ovpnc_hash = nvram_safe_get_int("vpnc_ov_port", 1194, 1, 65535);
+					if (nvram_get_int("vpnc_ov_prot") > 0)
+						ovpnc_hash |= (1u << 16);
+				} else
+#endif
+				if (i_vpnc_type == 1) {
+					/* L2TP */
+					vpn_proto_mask |= 0x02;
+				} else {
+					/* PPTP */
+					vpn_proto_mask |= 0x01;
+				}
+			}
+			
+			/* skip DMZ for WAN VPN client */
+			if (wan_proto == IPV4_WAN_PROTO_L2TP)
+				vpn_proto_mask |= 0x02;
+			else if (wan_proto == IPV4_WAN_PROTO_PPTP)
+				vpn_proto_mask |= 0x01;
+			
+#if defined (APP_OPENVPN)
+			if (vpn_proto_mask & 0x04) {
+				if (ovpns_hash != 0) {
+					const char *ov_prot = (ovpns_hash & (1u << 16)) ? "tcp" : "udp";
+					fprintf(fp, "-A %s -p %s --dport %d -j RETURN\n",
+							dtype, ov_prot, (ovpns_hash & 0xffff));
+				}
+				if (ovpnc_hash != 0 && ovpnc_hash != ovpns_hash) {
+					const char *ov_prot = (ovpnc_hash & (1u << 16)) ? "tcp" : "udp";
+					fprintf(fp, "-A %s -p %s --dport %d -j RETURN\n",
+							dtype, ov_prot, (ovpnc_hash & 0xffff));
+				}
+			}
+#endif
+			if (vpn_proto_mask & 0x02) {
+				fprintf(fp, "-A %s -p %s --dport %d -j RETURN\n", dtype, "udp", 1701);
+			}
+			
+			if (vpn_proto_mask & 0x01) {
+				fprintf(fp, "-A %s -p %d -j RETURN\n", dtype, 47);
+				fprintf(fp, "-A %s -p %s --dport %d -j RETURN\n", dtype, "tcp", 1723);
+			}
+#if defined (USE_IPV6)
+			/* skip DMZ for local IPv6 (SIT) */
+			{
+				int ipv6_type = get_ipv6_type();
+				if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD)
+					fprintf(fp, "-A %s -p %d -j RETURN\n", dtype, 41);
+			}
+#endif
+#if defined (APP_TRMD)
+			/* skip DMZ for local Transmission */
+			if (nvram_match("trmd_enable", "1") && is_torrent_support()) {
+				wport = nvram_get_int("trmd_pport");
+				if (wport < 1024 || wport > 65535) wport = TRANSMISSION_PPORT;
+				fprintf(fp, "-A %s -p %s --dport %d -j RETURN\n", dtype, "tcp", wport);
+				fprintf(fp, "-A %s -p %s --dport %d -j RETURN\n", dtype, "udp", wport);
+				
+				if (nvram_match("trmd_ropen", "1")) {
+					wport = nvram_get_int("trmd_rport");
+					if (wport < 1024 || wport > 65535) wport = TRANSMISSION_RPORT;
+					fprintf(fp, "-A %s -p %s --dport %d -j RETURN\n", dtype, "tcp", wport);
+				}
+			}
+#endif
+#if defined (APP_ARIA)
+			/* skip DMZ for local Aria2 */
+			if (nvram_match("aria_enable", "1") && is_aria_support()) {
+				wport = nvram_get_int("aria_pport");
+				if (wport < 1024 || wport > 65535) wport = ARIA_PPORT;
+				fprintf(fp, "-A %s -p %s --dport %d -j RETURN\n", dtype, "tcp", wport);
+				fprintf(fp, "-A %s -p %s --dport %d -j RETURN\n", dtype, "udp", wport);
+				
+				if (nvram_match("aria_ropen", "1")) {
+					wport = nvram_get_int("aria_rport");
+					if (wport < 1024 || wport > 65535) wport = ARIA_RPORT;
+					fprintf(fp, "-A %s -p %s --dport %d -j RETURN\n", dtype, "tcp", wport);
+				}
+			}
+#endif
+			/* DNAT all other packets to DMZ host (except ICMP - use Port Forwarding to redirect ICMP) */
 			fprintf(fp, "-A %s ! -p icmp -j DNAT --to %s\n", dtype, dmz_ip);
+		}
 	}
 
 	fprintf(fp, "COMMIT\n\n");
@@ -2024,7 +2072,7 @@ ipt_nat_default(void)
 void
 start_firewall_ex(void)
 {
-	int unit, i_tcp_mss, i_use_man;
+	int unit, wan_proto, i_tcp_mss, i_use_man;
 	char rp_path[64], logaccept[16], logdrop[16];
 	char wan_if[16], man_if[16], lan_if[16];
 	char wan_ip[16], man_ip[16], lan_ip[16], lan_net[24] = {0};
@@ -2046,11 +2094,12 @@ start_firewall_ex(void)
 
 	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_net, sizeof(lan_net));
 
-	i_tcp_mss = is_need_tcp_mss_wan(unit, man_if);
+	wan_proto = get_wan_proto(unit);
+	i_tcp_mss = is_need_tcp_mss_wan(unit, wan_proto, man_if);
 
 	i_use_man = 0;
 	if (ppp_ifindex(wan_if) >= 0 && strcmp(man_if, wan_if)) {
-		if (get_wan_proto(unit) != IPV4_WAN_PROTO_PPPOE || get_wan_unit_value_int(unit, "pppoe_man") > 0)
+		if (wan_proto != IPV4_WAN_PROTO_PPPOE || get_wan_unit_value_int(unit, "pppoe_man") > 0)
 			i_use_man = 1;
 	}
 
@@ -2083,7 +2132,7 @@ start_firewall_ex(void)
 	ipt_mangle_rules(man_if, wan_if, i_use_man);
 
 	/* IPv4 NAT rules */
-	ipt_nat_rules(man_if, man_ip, wan_if, wan_ip, lan_if, lan_ip, lan_net, i_use_man);
+	ipt_nat_rules(man_if, man_ip, wan_if, wan_ip, lan_if, lan_ip, lan_net, i_use_man, wan_proto);
 
 	/* IPv4 Filter rules */
 	ipt_filter_rules(man_if, wan_if, lan_if, lan_ip, logaccept, logdrop, i_tcp_mss);

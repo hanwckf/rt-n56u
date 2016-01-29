@@ -578,6 +578,7 @@ struct nvram_pair router_defaults[] = {
 	{ "lltd_enable", "1" },
 	{ "adsc_enable", "0" },
 	{ "crond_enable", "0" },
+	{ "crond_log", "0" },
 
 #if defined(BOARD_N65U)
 	{ "inic_disable", "0" },

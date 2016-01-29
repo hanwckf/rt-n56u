@@ -1269,6 +1269,7 @@ handle_notifications(void)
 			notify_watchdog_time();
 			notify_rstats_time();
 			start_logger(0);
+			restart_crond();
 		}
 		else if (strcmp(entry->d_name, RCN_RESTART_SYSCTL) == 0)
 		{

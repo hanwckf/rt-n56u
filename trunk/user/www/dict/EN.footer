@@ -212,6 +212,7 @@ Adm_Svc_wins=WINS Service?
 Adm_Svc_lltd=LLTD (Link Layer Topology Discovery)?
 Adm_Svc_adsc=ASUS Info Discovery Service?
 Adm_Svc_crond=Cron Daemon (Scheduler)?
+Adm_Svc_crontabs=Scheduler tasks (Crontab)
 Adm_System_webs=HTTP Web Server
 Adm_System_term=Terminal Services
 Adm_System_misc=Miscellaneous Services

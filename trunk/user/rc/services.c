@@ -111,10 +111,21 @@ stop_crond(void)
 int
 start_crond(void)
 {
+	char *crond_argv[] = {
+		"/usr/sbin/crond",
+		NULL,			/* -d8 */
+		NULL
+	};
+
 	if (nvram_invmatch("crond_enable", "1"))
 		return 1;
 
-	return eval("/usr/sbin/crond");
+	if (nvram_match("crond_log", "0"))
+		crond_argv[1] = "-d8";
+
+	setenv_tz();
+
+	return _eval(crond_argv, NULL, 0, NULL);
 }
 
 void

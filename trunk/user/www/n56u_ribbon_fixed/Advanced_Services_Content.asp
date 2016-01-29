@@ -28,7 +28,7 @@ $j(document).ready(function() {
 	init_itoggle('wins_enable', change_wins_enabled);
 	init_itoggle('lltd_enable');
 	init_itoggle('adsc_enable');
-	init_itoggle('crond_enable');
+	init_itoggle('crond_enable', change_crond_enabled);
 	init_itoggle('watchdog_cpu');
 	
 });
@@ -67,6 +67,7 @@ function initial(){
 			showhide_div('row_https_gen', 1);
 		http_proto_change();
 	}
+	change_crond_enabled();
 }
 
 function applyRule(){
@@ -124,6 +125,10 @@ function textarea_https_enabled(v){
 
 function textarea_sshd_enabled(v){
 	inputCtrl(document.form['scripts.authorized_keys'], v);
+}
+
+function textarea_crond_enabled(v){
+	inputCtrl(document.form['crontab.login'], v);
 }
 
 function http_proto_change(){
@@ -200,11 +205,9 @@ function create_server_cert() {
 function sshd_auth_change(){
 	var auth = document.form.sshd_enable.value;
 	var v = (auth != "0") ? 1 : 0;
-
+	showhide_div('row_ssh_keys', v);
 	if (!login_safe())
 		v = 0;
-
-	showhide_div('row_ssh_keys', v);
 	textarea_sshd_enabled(v);
 }
 
@@ -212,6 +215,14 @@ function change_wins_enabled(){
 	var v = document.form.wins_enable[0].checked;
 	showhide_div('row_smb_wgrp', v);
 	showhide_div('row_smb_lmb', v);
+}
+
+function change_crond_enabled(){
+	var v = document.form.crond_enable[0].checked;
+	showhide_div('row_crontabs', v);
+	if (!login_safe())
+		v = 0;
+	textarea_crond_enabled(v);
 }
 </script>
 <style>
@@ -495,6 +506,14 @@ function change_wins_enabled(){
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" name="crond_enable" id="crond_enable_1" class="input" value="1" <% nvram_match_x("", "crond_enable", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="crond_enable" id="crond_enable_0" class="input" value="0" <% nvram_match_x("", "crond_enable", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_crontabs" style="display:none">
+                                            <td colspan="2">
+                                                <a href="javascript:spoiler_toggle('crond_crontabs')"><span><#Adm_Svc_crontabs#></span></a>
+                                                <div id="crond_crontabs" style="display:none;">
+                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="crontab.login" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("crontab.login",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>

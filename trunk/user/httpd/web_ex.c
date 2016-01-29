@@ -719,6 +719,8 @@ ej_dump(int eid, webs_t wp, int argc, char **argv)
 		snprintf(filename, sizeof(filename), "%s/%s", STORAGE_DNSMASQ_DIR, file+8);
 	else if (strncmp(file, "scripts.", 8)==0)
 		snprintf(filename, sizeof(filename), "%s/%s", STORAGE_SCRIPTS_DIR, file+8);
+	else if (strncmp(file, "crontab.", 8)==0)
+		snprintf(filename, sizeof(filename), "%s/%s", STORAGE_CRONTAB_DIR, nvram_safe_get("http_username"));
 	else
 		snprintf(filename, sizeof(filename), "%s/%s", "/tmp", file);
 
@@ -872,7 +874,7 @@ validate_asp_apply(webs_t wp, int sid)
 	struct variable *v;
 	char *value;
 	char name[64];
-	char buff[100];
+	char buff[160];
 
 	/* Validate and set variables in table order */
 	for (v = GetVariables(sid); v->name != NULL; ++v) {
@@ -898,6 +900,9 @@ validate_asp_apply(webs_t wp, int sid)
 					restart_needed_bits |= event_mask;
 			} else if (!strncmp(v->name, "scripts.", 8)) {
 				if (write_textarea_to_file(value, STORAGE_SCRIPTS_DIR, file_name))
+					restart_needed_bits |= event_mask;
+			} else if (!strncmp(v->name, "crontab.", 8)) {
+				if (write_textarea_to_file(value, STORAGE_CRONTAB_DIR, nvram_safe_get("http_username")))
 					restart_needed_bits |= event_mask;
 			}
 #if defined (SUPPORT_HTTPS)
@@ -925,6 +930,13 @@ validate_asp_apply(webs_t wp, int sid)
 		if (!strcmp(v->name, "http_username") || !strcmp(v->name, "http_passwd")) {
 			if (strlen(value) == 0)
 				continue;
+		}
+		
+		if (!strcmp(v->name, "http_username")) {
+			size_t buf_div = sizeof(buff)/2;
+			snprintf(buff, buf_div, "%s/%s", STORAGE_CRONTAB_DIR, nvram_safe_get(v->name));
+			snprintf(buff+buf_div, buf_div, "%s/%s", STORAGE_CRONTAB_DIR, value);
+			rename(buff, buff+buf_div);
 		}
 		
 		nvram_set(v->name, value);

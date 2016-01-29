@@ -32,6 +32,7 @@
 #define STORAGE_OVPNCLI_DIR	"/etc/storage/openvpn/client"
 #define STORAGE_DNSMASQ_DIR	"/etc/storage/dnsmasq"
 #define STORAGE_SCRIPTS_DIR	"/etc/storage"
+#define STORAGE_CRONTAB_DIR	"/etc/storage/cron/crontabs"
 
 #define PROFILE_FIFO_UPLOAD	"/tmp/settings_u.prf"
 #define PROFILE_FIFO_DOWNLOAD	"/tmp/settings_d.prf"

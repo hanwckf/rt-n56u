@@ -384,14 +384,14 @@ function on_xupnpd_link(){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#SwitchStorm#></th>
                                         </tr>
                                         <tr id="row_storm_ucast">
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 7);"><#RouterConfig_GWMulticast_unknownUni_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 7);"><#RouterConfig_GWMulticast_unknownUni_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_unknown_unicast" value="<% nvram_get_x("", "controlrate_unknown_unicast"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_storm_mcast_unk">
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 8);"><#RouterConfig_GWMulticast_unknownMul_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 8);"><#RouterConfig_GWMulticast_unknownMul_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_unknown_multicast" value="<% nvram_get_x("", "controlrate_unknown_multicast"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;"></span>
@@ -405,14 +405,13 @@ function on_xupnpd_link(){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 10);"><#RouterConfig_GWMulticast_Broadcast_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 10);"><#RouterConfig_GWMulticast_Broadcast_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_broadcast" value="<% nvram_get_x("", "controlrate_broadcast"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span id="lbl_bcast" style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
                                     </table>
-
 
                                     <table class="table">
                                         <tr>

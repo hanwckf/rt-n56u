@@ -1209,22 +1209,21 @@ __init raeth_init(void)
 	struct net_device *dev;
 	END_DEVICE *ei_local;
 
-	/* MT7620 has FrameEngine CDM bugs: */
 #if defined (CONFIG_RALINK_MT7620)
-	/* ECO_ID < 4: TX Csum_Gen raise abnormal TX flood and FrameEngine hungs */
-	if ((ralink_asic_rev_id & 0xf) < 4) {
+	/* MT7620 has Frame Engine bugs (probably in CDM unit).
+	   ECO_ID < 5:
+	   1. TX Csum_Gen raise abnormal TX flood and FE hungs
+	   2. TSO stuck and FE hungs
+	*/
+	if ((ralink_asic_rev_id & 0xf) < 5) {
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
 		hw_offload_csg = 0;
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 		hw_offload_gso = 0;
-#endif
-#endif
-	}
-
-	/* ECO_ID < 5: TSO stuck */
-	if ((ralink_asic_rev_id & 0xf) < 5) {
 #if defined (CONFIG_RAETH_TSO)
 		hw_offload_tso = 0;
+#endif
+#endif
 #endif
 	}
 #endif

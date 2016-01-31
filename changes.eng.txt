@@ -1,4 +1,4 @@
-    ASUS RT-N11P/N14U/N56U/N65U/AC51U/AC54U/AC1200HP custom firmware by Padavan
+    ASUS RT-N11P/N14U/N56U/N65U/AC51U/AC54U/AC1200/AC1200HP custom firmware by Padavan
 
 
 Project sources:
@@ -33,6 +33,36 @@ After manual NVRAM reset:
 
 
                               LIST OF CHANGES
+
+3.X.3.9-099:
+----------------------------------------------------------
+[RT-AC1200]
+- Added support the MT7628 SoC.
+- Initial release (please report any issues).
+[Common changes]
+- Updated busybox to 1.24.1+.
+- Updated OpenSSL to 1.0.1r.
+- Updated OpenVPN to 2.3.10.
+- Updated OpenSSH to 7.1p2.
+- Updated ipset to 6.27.
+- Updated miniupnpd to 1.9.20160119.
+- Updated usb-modeswitch to 2.3.0, updated usb-modeswitch-data up to 2016-01-12.
+- Minidlna: fixed external subtitles on Samsung Series J.
+- Scripts: fixed broken Entware-ng script in the -098 build.
+- Linux kernel: fixed short UDP reads regression introduced in the -098 build.
+- Linux kernel: updated USB unusual_devs quirks.
+- Linux kernel: updated USB modem tables.
+- Linux kernel: fixed SD card driver issue on MT7621/MT7628.
+- Ethernet switch: added support MT762x/MT7530 per-VLAN untag control.
+- Ethernet switch: use only broadcast storm rate limit for MT762x/MT7530.
+- Ethernet switch: fixed isolation after change WAN bridge mode to disable.
+- Control: improved skip pre-DMZ rules logic.
+- Control: enabled LAN DHCP client by default for AP Mode.
+- Wireless: increase CE SKU TxPower limits for 2.4GHz (up to 100mW).
+- WebUI: accept ecdsa and ed25519 to 'authorized_keys' textarea.
+- WebUI: add control of Cron daemon and Crontabs.
+- WebUI: add support SD card and SATA control.
+
 
 3.X.3.9-098:
 ----------------------------------------------------------
@@ -1245,5 +1275,5 @@ After manual NVRAM reset:
 
 
 -
-12/30/2015
+01/31/2016
 Padavan

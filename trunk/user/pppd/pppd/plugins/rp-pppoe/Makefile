@@ -23,7 +23,7 @@ PPPDVERSION = $(shell awk -F '"' '/VERSION/ { print $$2; }' ../../patchlevel.h)
 INSTALL	= install
 
 # Version is set ONLY IN THE MAKEFILE!  Don't delete this!
-RP_VERSION=3.11
+RP_VERSION=3.12
 
 COPTS=-O2 -g
 CFLAGS=$(COPTS) -I../../../include '-DRP_VERSION="$(RP_VERSION)"' -DPLUGIN=1

@@ -284,7 +284,6 @@ typedef struct PPPoEConnectionStruct {
     unsigned char req_peer_mac[ETH_ALEN]; /* required peer MAC address */
     unsigned char req_peer;     /* require mac addr to match req_peer_mac */
 #endif
-
     UINT16_t session;		/* Session ID */
     char *ifName;		/* Interface name */
     char *serviceName;		/* Desired service name, if any */
@@ -295,7 +294,9 @@ typedef struct PPPoEConnectionStruct {
     int skipDiscovery;		/* Skip discovery */
     int noDiscoverySocket;	/* Don't even open discovery socket */
     int killSession;		/* Kill session and exit */
+#ifdef DEBUGGING_ENABLED
     FILE *debugFile;		/* Debug file for dumping packets */
+#endif
     int numPADOs;		/* Number of PADO packets received */
     PPPoETag cookie;		/* We have to send this if we get it */
     PPPoETag relayId;		/* Ditto */

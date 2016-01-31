@@ -4,7 +4,7 @@
 *
 * pppd plugin for kernel-mode PPPoE on Linux
 *
-* Copyright (C) 2001-2012 by Roaring Penguin Software Inc.
+* Copyright (C) 2001-2015 by Roaring Penguin Software Inc.
 * Portions copyright 2000 Michal Ostrowski and Jamal Hadi Salim.
 *
 * Much code and many ideas derived from pppoe plugin by Michal
@@ -94,6 +94,35 @@ static option_t Options[] = {
 int (*OldDevnameHook)(char *cmd, char **argv, int doit) = NULL;
 static PPPoEConnection *conn = NULL;
 
+static void
+close_conn(int send_padt)
+{
+    if (!conn)
+	return;
+
+    if (conn->sessionSocket != -1) {
+	close(conn->sessionSocket);
+	conn->sessionSocket = -1;
+    }
+    if (send_padt) {
+	/* Send PADT to reset the session unresponsive at buggy nas */
+	sendPADT(conn, NULL);
+    }
+    if (!existingSession && conn->discoverySocket != -1) {
+	close(conn->discoverySocket);
+	conn->discoverySocket = -1;
+    }
+}
+
+static void
+cleanup_conn(void)
+{
+    if (conn) {
+	free(conn);
+	conn = NULL;
+    }
+}
+
 /**********************************************************************
  * %FUNCTION: PPPOEInitDevice
  * %ARGUMENTS:
@@ -106,18 +135,17 @@ static PPPoEConnection *conn = NULL;
 static int
 PPPOEInitDevice(void)
 {
+    cleanup_conn();
+    if (strlen(devnam) >= IFNAMSIZ) {
+	fatal("Device name %s is too long - max length %d",
+	      devnam, (int) IFNAMSIZ);
+    }
     conn = malloc(sizeof(PPPoEConnection));
     if (!conn) {
 	fatal("Could not allocate memory for PPPoE session");
     }
     memset(conn, 0, sizeof(PPPoEConnection));
-    if (acName) {
-	SET_STRING(conn->acName, acName);
-    }
-    if (pppd_pppoe_service) {
-	SET_STRING(conn->serviceName, pppd_pppoe_service);
-    }
-    SET_STRING(conn->ifName, devnam);
+    conn->ifName = devnam;
     conn->discoverySocket = -1;
     conn->sessionSocket = -1;
     conn->useHostUniq = 1;
@@ -178,12 +206,8 @@ PPPOEConnectDevice(void)
 	return -1;
     }
 
-    if (acName) {
-	SET_STRING(conn->acName, acName);
-    }
-    if (pppd_pppoe_service) {
-	SET_STRING(conn->serviceName, pppd_pppoe_service);
-    }
+    conn->acName = acName;
+    conn->serviceName = pppd_pppoe_service;
 
     strlcpy(ppp_devnam, devnam, sizeof(ppp_devnam));
     if (existingSession) {
@@ -214,7 +238,8 @@ PPPOEConnectDevice(void)
     sp.sa_family = AF_PPPOX;
     sp.sa_protocol = PX_PROTO_OE;
     sp.sa_addr.pppoe.sid = conn->session;
-    memcpy(sp.sa_addr.pppoe.dev, conn->ifName, IFNAMSIZ);
+    memset(sp.sa_addr.pppoe.dev, 0, IFNAMSIZ);
+    memcpy(sp.sa_addr.pppoe.dev, conn->ifName, strlen(conn->ifName));
     memcpy(sp.sa_addr.pppoe.remote, conn->peerEth, ETH_ALEN);
 
     /* Set remote_number for ServPoET */
@@ -246,14 +271,7 @@ PPPOEConnectDevice(void)
     return conn->sessionSocket;
 
  ERROR:
-    close(conn->sessionSocket);
-    conn->sessionSocket = -1;
-    /* Send PADT to reset the session unresponsive at buggy nas */
-    sendPADT(conn, NULL);
-    if (!existingSession) {
-	close(conn->discoverySocket);
-	conn->discoverySocket = -1;
-    }
+    close_conn(0);
     return -1;
 }
 
@@ -313,21 +331,16 @@ PPPOEDisconnectDevice(void)
     sp.sa_family = AF_PPPOX;
     sp.sa_protocol = PX_PROTO_OE;
     sp.sa_addr.pppoe.sid = 0;
-    memcpy(sp.sa_addr.pppoe.dev, conn->ifName, IFNAMSIZ);
+    memset(sp.sa_addr.pppoe.dev, 0, IFNAMSIZ);
+    memcpy(sp.sa_addr.pppoe.dev, conn->ifName, strlen(conn->ifName));
     memcpy(sp.sa_addr.pppoe.remote, conn->peerEth, ETH_ALEN);
     if (connect(conn->sessionSocket, (struct sockaddr *) &sp,
 		sizeof(struct sockaddr_pppox)) < 0) {
 	if (errno != EALREADY)
 	    warn("Failed to disconnect PPPoE socket: %d %m", errno);
     }
-    close(conn->sessionSocket);
-    conn->sessionSocket = -1;
     /* Send PADT to reset the session unresponsive at buggy nas */
-    sendPADT(conn, NULL);
-    if (!existingSession) {
-	close(conn->discoverySocket);
-	conn->discoverySocket = -1;
-    }
+    close_conn(1);
 }
 
 static void
@@ -492,6 +505,8 @@ fatalSys(char const *str)
     printErr(buf);
     sprintf(buf, "RP-PPPoE: %.256s: %.256s", str, strerror(i));
     sendPADT(conn, buf);
+    close_conn(0);
+    cleanup_conn();
     exit(1);
 }
 
@@ -509,6 +524,8 @@ rp_fatal(char const *str)
 {
     printErr(str);
     sendPADTf(conn, "RP-PPPoE: %.256s", str);
+    close_conn(0);
+    cleanup_conn();
     exit(1);
 }
 

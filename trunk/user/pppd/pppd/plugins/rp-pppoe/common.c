@@ -45,8 +45,8 @@ static char const RCSID[] =
 /* Are we running SUID or SGID? */
 int IsSetID = 0;
 
-static uid_t saved_uid = -2;
-static uid_t saved_gid = -2;
+static uid_t saved_uid = (uid_t) -2;
+static uid_t saved_gid = (uid_t) -2;
 
 /**********************************************************************
 *%FUNCTION: parsePacket

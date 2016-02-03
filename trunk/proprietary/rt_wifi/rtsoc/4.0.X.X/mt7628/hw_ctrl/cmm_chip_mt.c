@@ -157,9 +157,8 @@ VOID APCheckBcnQHandler(RTMP_ADAPTER *pAd, INT apidx, BOOLEAN *is_pretbtt_int)
 #ifdef TXRXCR_DEBUG_SUPPORT
 			}else if (check_point_num == 7) {
 				SetTxRxCr_Proc(pAd, "0");
-			}
 #endif /* TXRXCR_DEBUG_SUPPORT */
-            else if (check_point_num % 5 == 4) {
+			}else if (check_point_num % 5 == 4) {
                 if (MTK_REV_GTE(pAd, MT7628, MT7628E2)) {
                     dma_sch_reset(pAd, NULL);
 

@@ -2040,6 +2040,7 @@ err:
 	return TRUE;
 }
 
+#ifdef TXRXCR_DEBUG_SUPPORT
 INT SetTxRxCr_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	UINT32 Dbg;
@@ -2216,6 +2217,7 @@ INT SetTxRxCr_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	
 	return TRUE;
 }
+#endif /* TXRXCR_DEBUG_SUPPORT */
 
 INT set_fw_log(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {

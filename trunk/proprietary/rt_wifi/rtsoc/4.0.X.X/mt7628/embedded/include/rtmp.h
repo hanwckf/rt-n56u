@@ -8115,7 +8115,9 @@ INT SetManualTxOPLowBound(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT SetManualRdg(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT SetManualProtection(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT SetPSEWatchDog_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+#ifdef TXRXCR_DEBUG_SUPPORT
 INT SetTxRxCr_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+#endif /* TXRXCR_DEBUG_SUPPORT */
 INT dma_sch_reset(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 #endif
 INT SetPsmDbg_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);

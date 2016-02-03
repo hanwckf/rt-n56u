@@ -71,7 +71,9 @@ static VOID DumpBcnQMessage(RTMP_ADAPTER *pAd, INT apidx)
 	}
 	if (DBG_LVL_ERROR <= RTDebugLevel) {
 		show_trinfo_proc(pAd, NULL);
+#ifdef TXRXCR_DEBUG_SUPPORT
 		SetTxRxCr_Proc(pAd, "1");
+#endif /* TXRXCR_DEBUG_SUPPORT */
 	}
 #endif /*DBG*/
 }
@@ -152,9 +154,11 @@ VOID APCheckBcnQHandler(RTMP_ADAPTER *pAd, INT apidx, BOOLEAN *is_pretbtt_int)
 			}
 #endif	/* DMA_RESET_SUPPORT */				
 				check_point_num = 0;
+#ifdef TXRXCR_DEBUG_SUPPORT
 			}else if (check_point_num == 7) {
 				SetTxRxCr_Proc(pAd, "0");
 			}
+#endif /* TXRXCR_DEBUG_SUPPORT */
             else if (check_point_num % 5 == 4) {
                 if (MTK_REV_GTE(pAd, MT7628, MT7628E2)) {
                     dma_sch_reset(pAd, NULL);
@@ -249,9 +253,11 @@ VOID APCheckBcnQHandler(RTMP_ADAPTER *pAd, INT apidx, BOOLEAN *is_pretbtt_int)
 #endif
 		*is_pretbtt_int = TRUE;
 	}
+#ifdef TXRXCR_DEBUG_SUPPORT
 	else if (pMbss->bcn_not_idle_time % 10 ==  7) {
 		SetTxRxCr_Proc(pAd, "0");
 	}	
+#endif /* TXRXCR_DEBUG_SUPPORT */
 	else {
 		pMbss->bcn_not_idle_time++;
 		*is_pretbtt_int = FALSE;

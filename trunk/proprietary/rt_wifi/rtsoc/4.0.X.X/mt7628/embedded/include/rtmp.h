@@ -4565,6 +4565,7 @@ struct _RTMP_ADAPTER {
 #ifdef MT_MAC
 	struct rtmp_mac_ctrl mac_ctrl;
 	USHORT rx_pspoll_filter;
+	BOOLEAN iwpriv_command;
 #endif /* MT_MAC */
 
 	/* --------------------------- */

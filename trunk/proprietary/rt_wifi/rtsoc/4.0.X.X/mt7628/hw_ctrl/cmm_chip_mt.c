@@ -359,7 +359,14 @@ VOID MTPciMlmeRadioOn(PRTMP_ADAPTER pAd)
 	MtAsicSetWPDMA(pAd, PDMA_TX_RX, 1);
 
 	/*  Send radio on command and wait for ack */
-	CmdRadioOnOffCtrl(pAd, WIFI_RADIO_ON);
+	if (pAd->iwpriv_command)
+	{
+		; // 7603 control reg AGG_TEMP direct
+	}
+	else
+	{
+		CmdRadioOnOffCtrl(pAd, WIFI_RADIO_ON);
+	}
 
 	/* Send Led on command */
 #ifdef LED_CONTROL_SUPPORT
@@ -506,6 +513,16 @@ VOID MTPciMlmeRadioOff(PRTMP_ADAPTER pAd)
 #ifdef LED_CONTROL_SUPPORT
 	RTMPSetLED(pAd, LED_RADIO_OFF);
 #endif /* LED_CONTROL_SUPPORT */
+
+	/*  Send radio off command and wait for ack */
+	if (pAd->iwpriv_command)
+	{
+		; // 7603 control reg AGG_TEMP direct
+	}
+	else
+	{
+		CmdRadioOnOffCtrl(pAd, WIFI_RADIO_OFF);
+	}
 
 	/*  Disable PDMA */
 	MtAsicSetWPDMA(pAd, PDMA_TX_RX, 0);

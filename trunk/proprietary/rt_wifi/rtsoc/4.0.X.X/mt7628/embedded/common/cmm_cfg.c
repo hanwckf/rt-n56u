@@ -1838,6 +1838,10 @@ INT	Set_RadioOn_Proc(
 
 	radio = simple_strtol(arg, 0, 10);
 
+#ifdef MT_MAC
+	pAd->iwpriv_command = TRUE;
+#endif /* MT_MAC */
+
 	if (radio)
 	{
 		MlmeRadioOn(pAd);
@@ -1848,6 +1852,10 @@ INT	Set_RadioOn_Proc(
 		MlmeRadioOff(pAd);
 		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("==>Set_RadioOn_Proc (OFF)\n"));
 	}
+
+#ifdef MT_MAC
+	pAd->iwpriv_command = FALSE;
+#endif /* MT_MAC */
 
 	return TRUE;
 }

@@ -50,6 +50,7 @@
 #include <asm/rt2880/surfboardint.h>
 #include <asm/rt2880/rt_mmap.h>
 #include <asm/rt2880/rt_serial.h>
+#include <asm/rt2880/eureka_ep430.h>
 
 #define UART_BAUDRATE		CONFIG_RALINK_UART_BRATE
 

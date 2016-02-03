@@ -4452,15 +4452,7 @@ NDIS_STATUS	RTMPSetProfileParameters(
          pAd->bPS_Retrieve = PS_RETRIEVE;
          MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("PS_RETRIEVE = %lx\n",PS_RETRIEVE));
       }
-#ifdef LED_CONTROL_SUPPORT
-      if (RTMPGetKeyParameter("LEDMethod", tmpbuf, 10, pBuffer, TRUE))
-      {
-         UINT32 LedMethod;
-         LedMethod = simple_strtol(tmpbuf, 0, 10);
-         pAd->LedCntl.LedMethod= LedMethod;
-         MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("LEDMethod = %d\n",pAd->LedCntl.LedMethod));
-      }
-#endif
+
 	}while(0);
 
 	os_free_mem(NULL, tmpbuf);

@@ -4504,14 +4504,14 @@ INT AndesLedEnhanceOP(
 	led_enhance.word = 0;
 	led_enhance.field.on_time=on_time;
 	led_enhance.field.off_time=off_time;
-	led_enhance.field.tx_blink=0;
-	led_enhance.field.reverse_polarity=0;
-	if (pAd->LedCntl.LedMethod == 1)
+	led_enhance.field.tx_blink=2;		// 2 : data only
+	if (IS_MT7628(pAd))
 	{
-		led_enhance.field.tx_blink=2;
-		led_enhance.field.reverse_polarity=1;	
+		/* invert polarity for Open-Drain WLED */
+		led_enhance.field.reverse_polarity=1;
 	}
 	led_enhance.field.idx = Led_Parameter;
+
 	os_alloc_mem(pAd, (UCHAR **)&pBuf, VarLen);
 	if (pBuf == NULL)
 	{

@@ -114,8 +114,9 @@ VOID RTMPSetLEDStatus(RTMP_ADAPTER *pAd, UCHAR Status)
 	{
 		if (LedMode < 0 || Status <0 || LedMode > 15 || Status > 11)
 			return;
-		else
-			LED_CMD = LED_Array[LedMode][Status];
+		LED_CMD = LED_Array[LedMode][Status];
+		if (LED_CMD < 0)
+			return;
 	}
 #endif /*MT7628*/
 	switch (Status)

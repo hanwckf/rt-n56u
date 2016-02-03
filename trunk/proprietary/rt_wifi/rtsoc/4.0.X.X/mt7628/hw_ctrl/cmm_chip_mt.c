@@ -362,6 +362,13 @@ VOID MTPciMlmeRadioOn(PRTMP_ADAPTER pAd)
 	CmdRadioOnOffCtrl(pAd, WIFI_RADIO_ON);
 
 	/* Send Led on command */
+#ifdef LED_CONTROL_SUPPORT
+	RTMPSetLED(pAd, LED_RADIO_ON);
+#ifdef CONFIG_AP_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+		RTMPSetLED(pAd, LED_LINK_UP);
+#endif /* CONFIG_AP_SUPPORT */
+#endif /* LED_CONTROL_SUPPORT */
 
 	/* Enable RX */
 	MtAsicSetMacTxRx(pAd, ASIC_MAC_RX, TRUE);
@@ -496,7 +503,9 @@ VOID MTPciMlmeRadioOff(PRTMP_ADAPTER pAd)
 	MTPciPollTxRxEmpty(pAd);
 
 	/*  Send Led off command */
-
+#ifdef LED_CONTROL_SUPPORT
+	RTMPSetLED(pAd, LED_RADIO_OFF);
+#endif /* LED_CONTROL_SUPPORT */
 
 	/*  Disable PDMA */
 	MtAsicSetWPDMA(pAd, PDMA_TX_RX, 0);

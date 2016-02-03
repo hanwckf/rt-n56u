@@ -287,10 +287,10 @@ static void esw_vlan_pvid_set(u32 port_id, u32 pvid, u32 prio)
 
 	reg_pvid = esw_reg_get(REG_ESW_PVIDC_BASE + 4*(port_id/2));
 	if ((port_id % 2) == 0) {
-		reg_pvid &= 0xfff000;
+		reg_pvid &= 0xfffff000;
 		reg_pvid |= pvid;
 	} else {
-		reg_pvid &= 0x000fff;
+		reg_pvid &= 0xff000fff;
 		reg_pvid |= (pvid << 12);
 	}
 	esw_reg_set(REG_ESW_PVIDC_BASE + 4*(port_id/2), reg_pvid);

@@ -588,7 +588,7 @@
 			{"ovpncli.ta.key", "File", NULL, EVM_RESTART_VPNCLI},
 #endif
 			{"scripts.vpns_client_script.sh", "File", NULL, FALSE},
-			{"scripts.vpnc_server_script.sh", "File", NULL, FALSE},
+			{"scripts.vpnc_server_script.sh", "File", NULL, EVM_RESTART_VPNCLI},
 			{"log_ipaddr", "", NULL, EVM_RESTART_SYSLOG},
 			{"log_port", "", NULL, EVM_RESTART_SYSLOG},
 			{"log_float_ui", "", NULL, FALSE},

@@ -82,6 +82,12 @@
 #endif
 #endif
 
+#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P0) || \
+    defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P4) || \
+    defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
+#define MT7530_P5_ENABLED
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 #define ESW_DEFAULT_JUMBO_FRAMES	0

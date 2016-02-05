@@ -672,6 +672,8 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	for (i = 0; i <= VLAN_ENTRY_ID_MAX; i++) {
 		if (!vlan_entry[i].valid)
 			continue;
+		if (!vlan_entry[i].port_member)
+			continue;
 		esw_vlan_set_idx(i, vlan_entry[i].cvid, vlan_entry[i].port_member, vlan_entry[i].port_untag);
 	}
 

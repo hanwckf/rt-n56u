@@ -653,7 +653,7 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	vlan_entry[0].fid = 1;
 	vlan_entry[0].cvid = 1;
 	vlan_entry[0].port_member |= (1u << LAN_PORT_CPU);
-#if defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
+#if defined (MT7530_P5_ENABLED)
 	vlan_entry[0].port_untag  |= (1u << LAN_PORT_CPU);
 #endif
 
@@ -865,10 +865,7 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	/* configure CPU LAN port */
 	esw_vlan_pvid_set(LAN_PORT_CPU, 1, 0);
 	esw_port_accept_set(LAN_PORT_CPU, PORT_ACCEPT_FRAMES_ALL);
-#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P0) || \
-    defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P4) || \
-    defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
-	/* [MT7620 P5 -> MT7530 P6] or [MT7621 GE1 -> MT7530 P6] */
+#if defined (MT7530_P5_ENABLED)
 	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_TRANSPARENT);
 #else
 	/* P6 always is trunk port */
@@ -899,6 +896,8 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	/* fill VLAN table */
 	for (i = 0; i <= VLAN_ENTRY_ID_MAX; i++) {
 		if (!vlan_entry[i].valid)
+			continue;
+		if (!vlan_entry[i].port_member)
 			continue;
 #if !defined (CONFIG_MT7530_GSW)
 		esw_vlan_set_idx(i, vlan_entry[i].cvid, vlan_entry[i].svid,
@@ -931,10 +930,7 @@ static void esw_vlan_init_vid1(void)
 
 	/* configure CPU port */
 	esw_port_accept_set(LAN_PORT_CPU, PORT_ACCEPT_FRAMES_ALL);
-#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P0) || \
-    defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P4) || \
-    defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
-	/* [MT7620 P4 -> MT7530 P5] or [MT7621 GE2 -> MT7530 P5] */
+#if defined (MT7530_P5_ENABLED) || defined (CONFIG_RALINK_MT7621)
 	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_TRANSPARENT);
 #else
 	port_untag &= ~(1u << LAN_PORT_CPU);
@@ -2033,6 +2029,7 @@ static void fill_bridge_members(void)
 {
 #if defined (CONFIG_MT7530_GSW)
 	set_bit(1, g_vlan_pool);
+	set_bit(2, g_vlan_pool); // VID2 filled on U-Boot
 #endif
 	memset(g_bwan_member, 0, sizeof(g_bwan_member));
 

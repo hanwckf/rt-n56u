@@ -206,6 +206,8 @@ static int good_hostname(const char *name)
 			//Do we want this?
 			//return ((name - start) < 1025); /* NS_MAXDNAME */
 		name++;
+		if (*name == '\0')
+			return 1; // We allow trailing dot too
 	}
 }
 #else

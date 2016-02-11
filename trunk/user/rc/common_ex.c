@@ -156,7 +156,7 @@ get_eeprom_params(void)
 #endif
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
 	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
-	if (i_ret >= 0 && buffer[0] != 0xff)
+	if (i_ret >= 0 && !(buffer[0] & 0x01))
 		ether_etoa(buffer, macaddr_wl);
 
 #if BOARD_2G_AS_WSOC
@@ -166,13 +166,13 @@ get_eeprom_params(void)
 #endif
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
 	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
-	if (i_ret >= 0 && buffer[0] != 0xff)
+	if (i_ret >= 0 && !(buffer[0] & 0x01))
 		ether_etoa(buffer, macaddr_rt);
 
 	i_offset = get_wired_mac_e2p_offset(0);
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
 	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
-	if (buffer[0] == 0xff) {
+	if (buffer[0] & 0x01) {
 		if (ether_atoe(macaddr_wl, ea)) {
 			memcpy(buffer, ea, ETHER_ADDR_LEN);
 			strcpy(macaddr_lan, macaddr_wl);
@@ -183,6 +183,9 @@ get_eeprom_params(void)
 		ether_etoa(buffer, macaddr_lan);
 	}
 
+	/* store wired LAN MAC */
+	memcpy(buffer+ETHER_ADDR_LEN, buffer, ETHER_ADDR_LEN);
+
 	if (get_wired_mac_is_single()) {
 		buffer[5] |= 0x03;	// last 2 bits reserved for MBSSID, use 0x03 for WAN (ra1: 0x01, apcli0: 0x02)
 		ether_etoa(buffer, macaddr_wan);
@@ -190,15 +193,19 @@ get_eeprom_params(void)
 		i_offset = get_wired_mac_e2p_offset(1);
 		memset(buffer, 0xff, ETHER_ADDR_LEN);
 		i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
-		if (buffer[0] == 0xff) {
-			if (ether_atoe(macaddr_rt, ea)) {
-				memcpy(buffer, ea, ETHER_ADDR_LEN);
-				strcpy(macaddr_wan, macaddr_rt);
-#if !defined (USE_SINGLE_MAC)
-				if (i_ret >= 0)
-					flash_mtd_write(MTD_PART_NAME_FACTORY, i_offset, ea, ETHER_ADDR_LEN);
+		if ((buffer[0] & 0x01)
+#if defined (USE_SINGLE_MAC)
+		    /* compare LAN/WAN MAC OID */
+		    || memcmp(buffer, buffer+ETHER_ADDR_LEN, 3) != 0
 #endif
-			}
+		    ) {
+			memcpy(buffer, buffer+ETHER_ADDR_LEN, ETHER_ADDR_LEN);
+			buffer[5] |= 0x03;
+			ether_etoa(buffer, macaddr_wan);
+#if !defined (USE_SINGLE_MAC)
+			if (i_ret >= 0)
+				flash_mtd_write(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
+#endif
 		} else {
 			ether_etoa(buffer, macaddr_wan);
 		}
@@ -676,7 +683,7 @@ set_cpu_affinity(int is_ap_mode)
 		irq_affinity_set(GIC_IRQ_FE,    2);	/* GMAC  -> CPU:0, VPE:1 */
 		irq_affinity_set(GIC_IRQ_PCIE0, 4);	/* PCIe0 -> CPU:1, VPE:0 (usually rai0) */
 		irq_affinity_set(GIC_IRQ_PCIE1, 8);	/* PCIe1 -> CPU:1, VPE:1 (usually ra0) */
-		irq_affinity_set(GIC_IRQ_PCIE2, 1);	/* PCIe2 -> CPU:0, VPE:0 */
+		irq_affinity_set(GIC_IRQ_PCIE2, 1);	/* PCIe2 -> CPU:0, VPE:0 (usually ahci) */
 		irq_affinity_set(GIC_IRQ_SDXC,  4);	/* SDXC  -> CPU:1, VPE:0 */
 		irq_affinity_set(GIC_IRQ_XHCI,  8);	/* xHCI  -> CPU:1, VPE:1 */
 		
@@ -704,7 +711,7 @@ set_cpu_affinity(int is_ap_mode)
 		irq_affinity_set(GIC_IRQ_FE,    1);	/* GMAC  -> CPU:0, VPE:0 */
 		irq_affinity_set(GIC_IRQ_PCIE0, 2);	/* PCIe0 -> CPU:0, VPE:1 (usually rai0) */
 		irq_affinity_set(GIC_IRQ_PCIE1, 2);	/* PCIe1 -> CPU:0, VPE:1 (usually ra0) */
-		irq_affinity_set(GIC_IRQ_PCIE2, 1);	/* PCIe2 -> CPU:0, VPE:0 */
+		irq_affinity_set(GIC_IRQ_PCIE2, 1);	/* PCIe2 -> CPU:0, VPE:0 (usually ahci) */
 		irq_affinity_set(GIC_IRQ_SDXC,  2);	/* SDXC  -> CPU:0, VPE:1 */
 		irq_affinity_set(GIC_IRQ_XHCI,  2);	/* xHCI  -> CPU:0, VPE:1 */
 		

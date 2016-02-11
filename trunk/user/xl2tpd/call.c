@@ -407,7 +407,7 @@ void destroy_call (struct call *c)
      * voluntarily
      */
     pid = c->pppd;
-    if (pid)
+    if (pid > 0)
     {
       /* Set c->pppd to zero to prevent recursion with child_handler */
       c->pppd = 0;

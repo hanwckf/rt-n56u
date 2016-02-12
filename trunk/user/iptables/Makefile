@@ -44,6 +44,11 @@ ifdef CONFIG_NETFILTER_XT_MATCH_PHYSDEV
 else
 	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_physdev.*
 endif
+ifdef CONFIG_NETFILTER_XT_MATCH_STRING
+	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libxt_string.* $(THISDIR)/$(SRC_NAME)/extensions
+else
+	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_string.*
+endif
 	( cd $(SRC_NAME) ; \
 	./configure \
 		--prefix= \

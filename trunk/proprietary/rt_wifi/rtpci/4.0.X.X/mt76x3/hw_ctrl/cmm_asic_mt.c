@@ -2509,12 +2509,13 @@ UCHAR aucHtMaxRetryLimit[]={
 	MCS_14, 12,
 	MCS_15, 12,
 };
+
 VOID asic_mcs_lut_update(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 {
 	union  WTBL_2_DW9 wtbl_2_d9 = {.word = 0};
 	UINT32 /*reg_val,*/ rate[8];
 	UCHAR stbc, bw, nss, preamble/*, wait_cnt = 0*/;
-	CHAR rssi;
+//	CHAR rssi;
 	UCHAR ucMaxTxRetryCnt = 0;
 
 	// TODO: shiang-MT7603, shall we use MaxHTPhyMode.field.BW or HTPhyMode.field.BW here??
@@ -2572,8 +2573,8 @@ VOID asic_mcs_lut_update(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 #endif /* THERMAL_PROTECT_SUPPORT */
             )
 	{
-		rssi = RTMPMaxRssi(pAd, pEntry->RssiSample.AvgRssi[0], pEntry->RssiSample.AvgRssi[1], pEntry->RssiSample.AvgRssi[2]);
-		if (rssi < -50 )
+//		rssi = RTMPMaxRssi(pAd, pEntry->RssiSample.AvgRssi[0], pEntry->RssiSample.AvgRssi[1], pEntry->RssiSample.AvgRssi[2]);
+//		if (rssi < -50 )
 		{
 			wtbl_2_d9.field.spe_en = 1;
 		}

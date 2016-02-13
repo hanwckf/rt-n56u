@@ -1120,12 +1120,12 @@ UINT32 MtAsicGetWmmParam(RTMP_ADAPTER *pAd, UINT32 ac, UINT32 type)
 		pAcParam->u2WinMax= (UINT16)val;
 		break;
 	default:
-	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s(%d): Error type=%d\n", __FUNCTION__, __LINE__, type));
-	break;
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s(%d): Error type=%d\n", __FUNCTION__, __LINE__, type));
+		break;
 	}
 
-    NdisCopyMemory(&pAd->CurrEdcaParam[ac], pAcParam, sizeof(TX_AC_PARAM_T));
-	RTEnqueueInternalCmd(pAd, CMDTHREAD_EDCA_PARAM_SET, (VOID *)&EdcaParam, sizeof(CMD_EDCA_SET_T));
+	NdisCopyMemory(&pAd->CurrEdcaParam[ac], pAcParam, sizeof(TX_AC_PARAM_T));
+	CmdEdcaParameterSet(pAd,EdcaParam);
 	return TRUE;
 }
 
@@ -1150,9 +1150,10 @@ static INT MtAsicSetAllWmmParam(RTMP_ADAPTER *pAd,PEDCA_PARM pEdcaParm)
 		pAcParam->u2WinMax= (1 << pEdcaParm->Cwmax[index]) -1;
 		pAcParam->u2Txop= pEdcaParm->Txop[index];
 
-        NdisCopyMemory(&pAd->CurrEdcaParam[index], pAcParam, sizeof(TX_AC_PARAM_T));
+		NdisCopyMemory(&pAd->CurrEdcaParam[index], pAcParam, sizeof(TX_AC_PARAM_T));
 	}
-	RTEnqueueInternalCmd(pAd, CMDTHREAD_EDCA_PARAM_SET, (VOID *)&EdcaParam, sizeof(CMD_EDCA_SET_T));
+
+	CmdEdcaParameterSet(pAd,EdcaParam);
 
 	return TRUE;
 

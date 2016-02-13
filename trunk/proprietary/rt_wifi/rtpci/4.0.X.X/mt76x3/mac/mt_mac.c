@@ -1010,10 +1010,6 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 	TMAC_TXD_1 *txd_1 = &txd_s->txd_1;
 	UCHAR txd_size;
 	BOOLEAN txd_long = FALSE;
-	struct rtmp_mac_ctrl *wtbl_ctrl = &pAd->mac_ctrl;
-	//STA_TR_ENTRY *tr_entry;
-	struct wtbl_entry tb_entry;
-	union WTBL_1_DW0 *dw0 = (union WTBL_1_DW0 *)&tb_entry.wtbl_1.wtbl_1_d0.word;
 	TXS_CTL *TxSCtl = &pAd->TxSCtl;
 
 		wcid = pTxBlk->Wcid;
@@ -1073,12 +1069,11 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 	else
 	txd_1->protect_frm = 0;
 	if (pMacEntry && IS_ENTRY_APCLI(pMacEntry)) {
-		//tr_entry = &pAd->MacTab.tr_entry[pMacEntry->wcid];
-		tb_entry.wtbl_addr[0] = wtbl_ctrl->wtbl_base_addr[0] +
-							pMacEntry->wcid * wtbl_ctrl->wtbl_entry_size[0];
-		RTMP_IO_READ32(pAd, tb_entry.wtbl_addr[0], &tb_entry.wtbl_1.wtbl_1_d0.word);
-		txd_1->own_mac = dw0->field.muar_idx; //Carter, refine this
-		//printk("txd_1->own_mac = %x\n", txd_1->own_mac);
+#ifdef MULTI_APCLI_SUPPORT
+		txd_1->own_mac = (0x1 + pMacEntry->func_tb_idx);
+#else /* MULTI_APCLI_SUPPORT */
+		txd_1->own_mac = 0x1;
+#endif /* !MULTI_APCLI_SUPPORT */
 	}
 	else if (pMacEntry && IS_ENTRY_CLIENT(pMacEntry)) {
 		if (pMacEntry->func_tb_idx == 0)

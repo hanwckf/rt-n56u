@@ -738,6 +738,23 @@ static u32 find_free_min_pvid(u32 *pvid_list, u32 vid)
 	return vid_new;
 }
 
+static int is_vlan_rule_included(u32 wan_bridge_mode, u32 rule_id)
+{
+	u32 i;
+
+	if (rule_id == SWAPI_VLAN_RULE_WAN_INET ||
+	    rule_id == SWAPI_VLAN_RULE_WAN_IPTV)
+		return 1;
+
+	for (i = 0; i <= RTK_PHY_ID_MAX; i++) {
+		if (g_bwan_member[wan_bridge_mode][i].bwan &&
+		    g_bwan_member[wan_bridge_mode][i].rule == (u8)rule_id)
+			return 1;
+	}
+
+	return 0;
+}
+
 static int is_wan_vid_valid(u32 vid)
 {
 	return (vid == 2 || vid >= MIN_EXT_VLAN_VID) ? 1 : 0;
@@ -747,9 +764,9 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 {
 	vlan_entry_t vlan_entry[VLAN_ENTRY_ID_MAX+1];
 	pvlan_member_t pvlan_member[RTK_PHY_ID_MAX+1];
-	u32 pvid[SWAPI_VLAN_RULE_NUM];
-	u32 prio[SWAPI_VLAN_RULE_NUM];
-	u32 tagg[SWAPI_VLAN_RULE_NUM];
+	u32 pvid[SWAPI_VLAN_RULE_NUM] = {0};
+	u32 prio[SWAPI_VLAN_RULE_NUM] = {0};
+	u32 tagg[SWAPI_VLAN_RULE_NUM] = {0};
 	u32 i, cvid, untg_vid, next_idx, vlan_idx, mask_ingress, vlan_filter_on;
 #if !defined(RTL8367_SINGLE_EXTIF)
 	pvlan_member_t pvlan_member_cpu_wan;
@@ -763,6 +780,8 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	memset(pvlan_member, 0, sizeof(pvlan_member));
 
 	for (i = 0; i < SWAPI_VLAN_RULE_NUM; i++) {
+		if (!is_vlan_rule_included(wan_bridge_mode, i))
+			continue;
 		pvid[i] =  (g_vlan_rule_user[i] & 0xFFF);
 		prio[i] = ((g_vlan_rule_user[i] >> 16) & 0x7);
 		tagg[i] = ((g_vlan_rule_user[i] >> 24) & 0x1);

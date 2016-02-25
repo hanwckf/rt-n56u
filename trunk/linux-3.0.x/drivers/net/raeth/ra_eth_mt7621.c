@@ -14,19 +14,25 @@
 
 extern u32 ralink_asic_rev_id;
 
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_RGMII_AN) || \
+    defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 static void ge2_int2_wq_handler(struct work_struct *work)
 {
 #if defined (CONFIG_GE2_INTERNAL_GPHY_P0)
 	u32 port_id = 0;
-#else
+#elif defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 	u32 port_id = 4;
+#else
+	u32 port_id = 5;
 #endif
 	u32 link_state = sysRegRead(REG_ETH_GE2_MAC_STATUS);
+
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 	if (link_state & 0x1) {
 		u32 link_speed = (link_state >> 2) & 0x3;
 		mt7530_gsw_set_csr_delay((link_speed == 1) ? 1 : 0);
 	}
+#endif
 
 	esw_link_status_changed(port_id, link_state & 0x1);
 }

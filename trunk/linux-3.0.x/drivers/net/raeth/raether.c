@@ -535,7 +535,8 @@ dispatch_int_status2(END_DEVICE *ei_local)
 	if (!ei_local->active)
 		return;
 
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_RGMII_AN) || \
+    defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 	if (reg_int_val & GE2_LINK_INT) {
 		/* do not touch MDIO registers in hardirq/softirq context */
 		ge2_int2_schedule_wq();
@@ -762,7 +763,8 @@ VirtualIF_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
 }
 
 #if defined (CONFIG_RAETH_ESW_CONTROL)
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P0)
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_RGMII_AN) || \
+    defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 int
 VirtualIF_get_bytes(port_bytes_t *pb)
 {
@@ -1156,7 +1158,8 @@ ei_close(struct net_device *dev)
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
 	esw_irq_cancel_wq();
 #endif
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_RGMII_AN) || \
+    defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 	ge2_int2_cancel_wq();
 #endif
 

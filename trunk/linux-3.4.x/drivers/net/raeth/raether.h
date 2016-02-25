@@ -109,6 +109,8 @@ int  raeth_ioctl(struct ifreq *ifr, int cmd);
 int  esw_ioctl_init(void);
 int  esw_control_post_init(void);
 void esw_ioctl_uninit(void);
+#elif defined (CONFIG_RAETH_DHCP_TOUCH)
+void esw_dhcpc_init(void);
 #endif
 
 ///////////////////////////////////////////////////////////////

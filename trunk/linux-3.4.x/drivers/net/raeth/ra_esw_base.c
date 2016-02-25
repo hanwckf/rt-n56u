@@ -54,6 +54,9 @@ static atomic_t esw_ports_link_state = ATOMIC_INIT(0);
 #endif
 #endif
 
+void (*esw_link_status_hook)(u32 port_id, int port_link) = NULL;
+EXPORT_SYMBOL(esw_link_status_hook);
+
 u32 esw_reg_get(u32 addr)
 {
 #if defined (CONFIG_MT7530_GSW)
@@ -389,16 +392,6 @@ static void esw_event_pcri(void)
 #endif
 #endif
 
-#if !defined (CONFIG_RAETH_ESW_CONTROL) && !defined (CONFIG_RAETH_DHCP_TOUCH)
-/* stub for esw link dispatcher */
-void esw_link_status_changed(u32 port_id, int port_link)
-{
-	const char *port_state_desc = (port_link) ? "Up" : "Down";
-
-	printk("ESW: Link Status Changed - Port%d Link %s\n", port_id, port_state_desc);
-}
-#endif
-
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_MT7530_GSW)
 static void gsw_event_link(u32 port_id)
 {
@@ -411,7 +404,8 @@ static void gsw_event_link(u32 port_id)
 #endif
 #endif
 
-	esw_link_status_changed(port_id, reg_val & 0x1);
+	if (esw_link_status_hook)
+		esw_link_status_hook(port_id, reg_val & 0x1);
 }
 #elif defined (ESW_RT3X5X)
 static void esw_event_link(void)
@@ -430,8 +424,10 @@ static void esw_event_link(void)
 		port_mask = (1u << i);
 		phy_link[0] = reg_poa[0] & port_mask;
 		phy_link[1] = reg_poa[1] & port_mask;
-		if (phy_link[0] != phy_link[1])
-			esw_link_status_changed(i, (phy_link[0]) ? 1 : 0);
+		if (phy_link[0] != phy_link[1]) {
+			if (esw_link_status_hook)
+				esw_link_status_hook(i, (phy_link[0]) ? 1 : 0);
+		}
 	}
 }
 #endif

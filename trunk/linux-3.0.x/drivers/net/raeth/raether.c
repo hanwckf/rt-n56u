@@ -1277,6 +1277,8 @@ __init raeth_init(void)
 
 #if defined (CONFIG_RAETH_ESW_CONTROL)
 	esw_ioctl_init();
+#elif defined (CONFIG_RAETH_DHCP_TOUCH)
+	esw_dhcpc_init();
 #endif
 
 	printk("Ralink APSoC Ethernet Driver %s (%s)\n", RAETH_VERSION, RAETH_DEV_NAME);

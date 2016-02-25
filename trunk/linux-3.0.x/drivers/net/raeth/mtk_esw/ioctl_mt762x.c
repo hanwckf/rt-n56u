@@ -1980,7 +1980,7 @@ static int change_vlan_rule(u32 vlan_rule_id, u32 vlan_rule)
 	return 0;
 }
 
-void esw_link_status_changed(u32 port_id, int port_link)
+static void esw_link_status_changed(u32 port_id, int port_link)
 {
 	const char *port_state;
 
@@ -2385,11 +2385,15 @@ int esw_ioctl_init(void)
 		return r;
 	}
 
+	esw_link_status_hook = esw_link_status_changed;
+
 	return 0;
 }
 
 void esw_ioctl_uninit(void)
 {
+	esw_link_status_hook = NULL;
+
 	unregister_chrdev(MTK_ESW_DEVMAJOR, MTK_ESW_DEVNAME);
 }
 

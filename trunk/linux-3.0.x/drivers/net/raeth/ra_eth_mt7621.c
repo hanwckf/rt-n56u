@@ -34,7 +34,8 @@ static void ge2_int2_wq_handler(struct work_struct *work)
 	}
 #endif
 
-	esw_link_status_changed(port_id, link_state & 0x1);
+	if (esw_link_status_hook)
+		esw_link_status_hook(port_id, link_state & 0x1);
 }
 
 static DECLARE_WORK(ge2_int2_wq, ge2_int2_wq_handler);

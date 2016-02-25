@@ -4,7 +4,7 @@
 ##################################################################
 
 CFLAGS += $(if $(CONFIG_IPV6),-DUSE_IPV6,)
-CFLAGS += $(if $(CONFIG_RAETH_GMAC2),,-DUSE_SINGLE_MAC)
+CFLAGS += $(if $(CONFIG_RAETH_BOTH_GMAC),,-DUSE_SINGLE_MAC)
 CFLAGS += $(if $(CONFIG_RT2860V2_AP),-DUSE_RT2860V2_AP,)
 CFLAGS += $(if $(CONFIG_RT3090_AP),-DUSE_RT3090_AP,)
 CFLAGS += $(if $(CONFIG_RT5392_AP),-DUSE_RT5392_AP,)

@@ -1940,7 +1940,7 @@ int rtl8367_get_traffic_port_inic(struct rtnl_link_stats64 *stats)
 EXPORT_SYMBOL(rtl8367_get_traffic_port_inic);
 #endif
 
-#if defined(RTL8367_SINGLE_EXTIF) || !defined(CONFIG_RAETH_GMAC2)
+#if !defined(CONFIG_RAETH_BOTH_GMAC)
 int rtl8367_get_traffic_port_wan(struct rtnl_link_stats64 *stats)
 {
 	rtk_api_ret_t retVal;

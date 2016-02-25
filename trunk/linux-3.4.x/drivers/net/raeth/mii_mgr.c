@@ -471,9 +471,11 @@ u32 mii_mgr_init(void)
 	/* early config MDIO port for external switch/PHY control */
 
 #if defined (CONFIG_RALINK_RT3883)
-#if defined (CONFIG_GE1_RGMII_FORCE_1000)
 	/* set MDIO clock to 4 MHz, disable PHY auto-polling */
+#if defined (CONFIG_GE1_RGMII_FORCE_1000)
 	sysRegWrite(MDIO_CFG, INIT_VALUE_OF_FORCE_1000_FD);
+#elif defined (CONFIG_GE1_RGMII_NONE)
+	sysRegWrite(MDIO_CFG, 0x1d201);
 #endif
 #if defined (CONFIG_GE2_RGMII_FORCE_1000)
 	sysRegWrite(MDIO_CFG2, INIT_VALUE_OF_FORCE_1000_FD);

@@ -483,6 +483,8 @@ static void rt3883_eth_init(void)
 #elif defined (CONFIG_GE1_RVMII_FORCE_100)
 	ge1_set_mode(2, 0);
 	sysRegWrite(MDIO_CFG, INIT_VALUE_OF_FORCE_100_FD);
+#elif defined (CONFIG_GE1_RGMII_NONE)
+	sysRegWrite(MDIO_CFG, 0x1d201);
 #endif
 
 	/* RT3883 GE2 */

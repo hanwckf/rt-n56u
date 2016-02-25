@@ -64,7 +64,7 @@ ifeq ($(CONFIG_ETHTOOL),y)
 raeth-objs += ra_ethtool.o
 endif
 
-ifeq ($(CONFIG_RAETH_GMAC2),y)
+ifeq ($(CONFIG_RAETH_BOTH_GMAC),y)
 EXTRA_CFLAGS += -DCONFIG_PSEUDO_SUPPORT
 endif
 

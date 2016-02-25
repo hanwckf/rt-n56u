@@ -101,7 +101,7 @@ choice
 
 	config  GE1_RGMII_NONE
 		bool "NONE (Not used)"
-		depends on (RALINK_MT7621)
+		depends on (RALINK_RT3883 || RALINK_MT7621)
 
 	config  GE1_MAC_ESW
 		bool "Integrated ESW"
@@ -239,6 +239,11 @@ config  MAC_TO_GIGAPHY_MODE_ADDR2
 	default 0x0 if (P4_MAC_TO_MT7530_GPHY_P0)
 	default 0x4 if (P4_MAC_TO_MT7530_GPHY_P4)
 	depends on RAETH && (P4_MAC_TO_MT7530_GPHY_P0 || P4_MAC_TO_MT7530_GPHY_P4)
+
+config  RAETH_BOTH_GMAC
+	bool
+	default y if (RAETH_GMAC2 && !GE1_RGMII_NONE)
+	depends on RAETH && RAETH_GMAC2
 
 config  RAETH_SWAP_GDMA
 	bool "Swap GDMA1<->GDMA2 ports"

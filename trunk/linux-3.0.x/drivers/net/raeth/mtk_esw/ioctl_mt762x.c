@@ -2325,7 +2325,7 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 }
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-#if !defined (CONFIG_RAETH_GMAC2)
+#if !defined (CONFIG_RAETH_BOTH_GMAC)
 int esw_get_traffic_port_wan(struct rtnl_link_stats64 *stats)
 {
 	ULARGE_INTEGER rx_goct, tx_goct;

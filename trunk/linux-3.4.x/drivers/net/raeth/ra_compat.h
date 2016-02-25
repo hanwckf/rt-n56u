@@ -72,8 +72,13 @@ static inline dma_addr_t skb_frag_dma_map(struct device *dev,
 #define MTD_GMAC2_OFFSET	0x22
 #endif
 
+#if defined (CONFIG_RAETH_SWAP_GDMA)
+#define PSE_PORT_GMAC1		2
+#define PSE_PORT_GMAC2		1
+#else
 #define PSE_PORT_GMAC1		1
 #define PSE_PORT_GMAC2		2
+#endif
 #if defined (CONFIG_RALINK_MT7621)
 #define PSE_PORT_PPE		4
 #else

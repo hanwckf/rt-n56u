@@ -118,7 +118,7 @@ choice
 	default P5_RGMII_TO_MAC_MODE
 
 	config P5_MAC_TO_PHY_MODE
-		bool "Giga_Phy (RGMII)"
+		bool "Giga_Phy (RGMII + AN)"
 
 	config P5_RGMII_TO_MAC_MODE
 		bool "Giga_SW/iNIC (RGMII)"
@@ -322,28 +322,15 @@ config  RAETH_DEBUG
 	depends on RAETH
 	default n
 
-
-#force 100M
+#force 100M (obsolete, used only in wireless driver)
 config RAETH_ROUTER
 bool
 default y if (GE1_MII_FORCE_100 || GE2_MII_FORCE_100 || GE1_RVMII_FORCE_100 || GE2_RVMII_FORCE_100)
 depends on RAETH
 
-#force 1000M
+#force 1000M (obsolete, used only in wireless driver)
 config MAC_TO_MAC_MODE
 bool
 default y if (GE1_RGMII_FORCE_1000 || GE2_RGMII_FORCE_1000)
 depends on RAETH && (RALINK_RT3883)
-
-#AN
-config GIGAPHY
-bool
-default y if (GE1_RGMII_AN || GE2_RGMII_AN)
-depends on RAETH
-
-#AN
-config 100PHY
-bool
-default y if (GE1_MII_AN || GE2_MII_AN)
-depends on RAETH
 

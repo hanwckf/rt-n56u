@@ -8,9 +8,12 @@
 #include "ra_eth_reg.h"
 #include "mii_mgr.h"
 
-/*  PHY Vender ID list */
+/* EPHY Vendor ID list */
 #define EV_ICPLUS_PHY_ID0		0x0243
 #define EV_ICPLUS_PHY_ID1		0x0D90
+
+#define EV_REALTEK_PHY_ID0		0x001C
+#define EV_REALTEK_PHY_ID1		0xC910
 
 #define EV_MARVELL_PHY_ID0		0x0141
 #define EV_MARVELL_PHY_ID1		0x0CC2
@@ -20,35 +23,65 @@
 
 #if defined (CONFIG_GE1_RGMII_AN) || defined (CONFIG_P5_MAC_TO_PHY_MODE) || \
     defined (CONFIG_GE2_RGMII_AN) || defined (CONFIG_P4_MAC_TO_PHY_MODE)
-void init_ext_giga_phy(int ge)
+void ext_gphy_init(u32 phy_addr)
 {
-	u32 phy_id0 = 0, phy_id1 = 0, phy_val = 0;
-#if defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2) && defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR)
-	u32 phy_addr = (ge == 2) ? CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2 : CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
-#elif defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2)
-	u32 phy_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
-#else
-	u32 phy_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
-#endif
+	const char *phy_devn = NULL;
+	u32 phy_id0 = 0, phy_id1 = 0, phy_val = 0, phy_rev;
 
 	if (!mii_mgr_read(phy_addr, 2, &phy_id0))
 		return;
 	if (!mii_mgr_read(phy_addr, 3, &phy_id1))
 		return;
 
+	phy_rev = phy_id1 & 0xf;
+
 	if ((phy_id0 == EV_ICPLUS_PHY_ID0) && ((phy_id1 & 0xfff0) == EV_ICPLUS_PHY_ID1)) {
-		printk("%s GigaPHY detected\n", "IC+");
+		phy_devn = "IC+ IP1001";
 		mii_mgr_read(phy_addr, 4, &phy_val);
 		phy_val |= (1<<10);			// enable pause ability
 		mii_mgr_write(phy_addr, 4, phy_val);
-#if !defined (CONFIG_RAETH_ESW_CONTROL)
 		mii_mgr_read(phy_addr, 0, &phy_val);
-		phy_val |= (1<<9);			// restart AN
-		mii_mgr_write(phy_addr, 0, phy_val);
-#endif
+		if (!(phy_val & (1<<11))) {
+			phy_val |= (1<<9);		// restart AN
+			mii_mgr_write(phy_addr, 0, phy_val);
+		}
+	} else
+	if ((phy_id0 == EV_REALTEK_PHY_ID0) && ((phy_id1 & 0xfff0) == EV_REALTEK_PHY_ID1)) {
+		phy_devn = "RTL8211";
+		if (phy_rev == 0x6) {
+			phy_devn = "RTL8211F";
+			
+			/* Disable response on MDIO addr 0 (!) */
+			mii_mgr_read(phy_addr, 24, &phy_val);
+			phy_val &= ~(1<<13);		// PHYAD_0 Disable
+			mii_mgr_write(phy_addr, 24, phy_val);
+			
+			/* set RGMII mode */
+			mii_mgr_write(phy_addr, 31, 0x0d08);
+			mii_mgr_read(phy_addr, 17, &phy_val);
+			phy_val |= (1<<8);		// enable TXDLY
+			mii_mgr_write(phy_addr, 17, phy_val);
+			mii_mgr_write(phy_addr, 31, 0x0000);
+			
+			/* Disable Green Ethernet */
+			mii_mgr_write(phy_addr, 27, 0x8011);
+			mii_mgr_write(phy_addr, 28, 0x573f);
+		} else if (phy_rev == 0x5) {
+			phy_devn = "RTL8211E";
+			
+			/* Disable Green Ethernet */
+			mii_mgr_write(phy_addr, 31, 0x0003);
+			mii_mgr_write(phy_addr, 25, 0x3246);
+			mii_mgr_write(phy_addr, 16, 0xa87c);
+			mii_mgr_write(phy_addr, 31, 0x0000);
+		}
+		if (phy_rev >= 0x4) {
+			/* disable EEE LPI 1000/100 advert (for D/E/F) */
+			mii_mgr_write_cl45(phy_addr, 0x07, 0x003c, 0x0000);
+		}
 	} else
 	if ((phy_id0 == EV_MARVELL_PHY_ID0) && (phy_id1 == EV_MARVELL_PHY_ID1)) {
-		printk("%s GigaPHY detected\n", "Marvell");
+		phy_devn = "Marvell";
 		mii_mgr_read(phy_addr, 20, &phy_val);
 		phy_val |= (1<<7);			// add delay to RX_CLK for RXD Outputs
 		mii_mgr_write(phy_addr, 20, phy_val);
@@ -57,16 +90,38 @@ void init_ext_giga_phy(int ge)
 		mii_mgr_write(phy_addr, 0, phy_val);
 	} else
 	if ((phy_id0 == EV_VTSS_PHY_ID0) && (phy_id1 == EV_VTSS_PHY_ID1)) {
-		printk("%s GigaPHY detected\n", "Vitesse");
+		phy_devn = "Vitesse VSC8601";
 		mii_mgr_write(phy_addr, 31, 0x0001);	// extended page
 		mii_mgr_read(phy_addr, 28, &phy_val);
 		phy_val |=  (0x3<<12);			// RGMII RX skew compensation= 2.0 ns
 		phy_val &= ~(0x3<<14);			// RGMII TX skew compensation= 0 ns
 		mii_mgr_write(phy_addr, 28, phy_val);
 		mii_mgr_write(phy_addr, 31, 0x0000);	// main registers
-	} else {
-		printk("Unknown EPHY detected (ID0: 0x%04X, ID1: 0x%04X)\n",
-			phy_id0, phy_id1);
+	}
+
+	if (phy_devn)
+		printk("%s GPHY detected on MDIO addr 0x%02X\n", phy_devn, phy_addr);
+	else
+		printk("Unknown EPHY (%04X:%04X) detected on MDIO addr 0x%02X\n",
+			phy_id0, phy_id1, phy_addr);
+}
+
+void ext_gphy_eee_enable(u32 phy_addr, int is_eee_enabled)
+{
+	u32 phy_id0 = 0, phy_id1 = 0, phy_rev;
+
+	if (!mii_mgr_read(phy_addr, 2, &phy_id0))
+		return;
+	if (!mii_mgr_read(phy_addr, 3, &phy_id1))
+		return;
+
+	phy_rev = phy_id1 & 0xf;
+
+	if ((phy_id0 == EV_REALTEK_PHY_ID0) && ((phy_id1 & 0xfff0) == EV_REALTEK_PHY_ID1)) {
+		if (phy_rev >= 0x4) {
+			/* EEE LPI 1000/100 advert (for D/E/F) */
+			mii_mgr_write_cl45(phy_addr, 0x07, 0x003c, (is_eee_enabled) ? 0x0006 : 0x0000);
+		}
 	}
 }
 #endif
@@ -147,8 +202,9 @@ void early_phy_init(void)
 	u32 i, phy_mdio_addr, phy_reg_mcr;
 #endif
 
-#if defined (CONFIG_P5_MAC_TO_PHY_MODE) || defined (CONFIG_MT7530_GSW) || \
-    defined (CONFIG_P4_MAC_TO_PHY_MODE) || defined (CONFIG_GE2_RGMII_AN)
+#if defined (CONFIG_P5_MAC_TO_PHY_MODE) || defined (CONFIG_GE1_RGMII_AN) || \
+    defined (CONFIG_P4_MAC_TO_PHY_MODE) || defined (CONFIG_GE2_RGMII_AN) || \
+    defined (CONFIG_MT7530_GSW)
 	/* enable MDIO port */
 	mii_mgr_init();
 #endif

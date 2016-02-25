@@ -83,7 +83,7 @@ static void esw_ephy_reset(void)
 
 	val &= ~(RALINK_EPHY_RST);
 	sysRegWrite(REG_RSTCTRL, val);
-	udelay(500);
+	udelay(1000);
 }
 
 #if defined (CONFIG_RT3052_ASIC)
@@ -384,7 +384,7 @@ void rt305x_esw_init(void)
 #elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
 	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~(1 << 9);		// set RGMII to Normal mode
 	*(volatile u32 *)(RALINK_REG_GPIOMODE) &= ~RALINK_GPIOMODE_MDIO;// set MDIO to Normal mode
-	init_ext_giga_phy(1);
+	ext_gphy_init(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR);
 #if defined (CONFIG_RT3052_ASIC) || defined (CONFIG_RT3352_ASIC)
 	enable_autopoll_phy(1);
 #endif

@@ -234,6 +234,21 @@ int mt7620_esw_mac_table_clear(int static_only)
 /* MT7620 embedded switch */
 void mt7620_esw_init(void)
 {
+	/* disable internal EPHY 4 */
+#if defined (CONFIG_RAETH_ESW) && defined (CONFIG_RAETH_HAS_PORT4)
+	sysRegWrite(RALINK_ETH_SW_BASE+0x7014, 0x10e0000c);
+#endif
+
+	/* init GPHY first */
+#if defined (CONFIG_P5_MAC_TO_PHY_MODE)
+	ge1_set_mode(0, 1);
+	ext_gphy_init(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR);
+#endif
+#if defined (CONFIG_P4_MAC_TO_PHY_MODE)
+	ge2_set_mode(0, 1);
+	ext_gphy_init(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2);
+#endif
+
 #if defined (CONFIG_RAETH_ESW)
 	/* init EPHY only internal switch is used */
 	mt7620_ephy_init();
@@ -322,9 +337,7 @@ void mt7620_esw_init(void)
 	sysRegWrite(RALINK_ETH_SW_BASE+0x3500, 0x0005e337);	// (P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
 #elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
 	/* Use P5 for connect to external GigaPHY (with autopolling) */
-	ge1_set_mode(0, 1);
 	sysRegWrite(RALINK_ETH_SW_BASE+0x3500, 0x00056330);	// (P5, AN)
-	init_ext_giga_phy(1);
 	enable_autopoll_phy(1);
 #else
 	/* Disable P5 */
@@ -351,9 +364,7 @@ void mt7620_esw_init(void)
 	sysRegWrite(RALINK_ETH_SW_BASE+0x3400, 0x0005e337);	// (P4, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
 #elif defined (CONFIG_P4_MAC_TO_PHY_MODE)
 	/* Use P4 for connect to external GigaPHY (with autopolling) */
-	ge2_set_mode(0, 1);
 	sysRegWrite(RALINK_ETH_SW_BASE+0x3400, 0x00056330);	// (P4, AN)
-	init_ext_giga_phy(2);
 	enable_autopoll_phy(1);
 #elif defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0)
 	/* Use P4 for connect to external MT7530 GigaPHY P4 or P0 (with autopolling) */

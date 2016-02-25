@@ -173,6 +173,16 @@ void mt7621_eth_init(void)
 	reg_val &= ~(0x3 <<  4);	// MDIO driving = 2mA
 	sysRegWrite(REG_PAD_RGMII2_MDIO_CFG, reg_val);
 
+	/* Init GPHY first */
+#if defined (CONFIG_GE1_RGMII_AN)
+	ge1_set_mode(0, 1);
+	ext_gphy_init(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR);
+#endif
+#if defined (CONFIG_GE2_RGMII_AN)
+	ge2_set_mode(0, 1);
+	ext_gphy_init(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2);
+#endif
+
 	/* MT7621 GE1 + Internal MCM (MT7530) GSW */
 #if defined (CONFIG_GE1_RGMII_FORCE_1000) || defined (CONFIG_GE1_TRGMII_FORCE_1000) || defined (CONFIG_GE1_TRGMII_FORCE_1200)
 	ge1_set_mode(0, 1);
@@ -204,9 +214,7 @@ void mt7621_eth_init(void)
 
 	/* MT7621 GE1 + External PHY or CPU */
 #if defined (CONFIG_GE1_RGMII_AN)
-	ge1_set_mode(0, 1);
 	sysRegWrite(REG_ETH_GE1_MAC_CONTROL, 0x21056300);
-	init_ext_giga_phy(1);
 #elif defined (CONFIG_GE1_MII_AN)
 	ge1_set_mode(1, 1);
 	sysRegWrite(REG_ETH_GE1_MAC_CONTROL, 0x21056300);
@@ -222,9 +230,7 @@ void mt7621_eth_init(void)
 
 	/* MT7621 GE2 + External PHY or CPU */
 #if defined (CONFIG_GE2_RGMII_AN)
-	ge2_set_mode(0, 1);
 	sysRegWrite(REG_ETH_GE2_MAC_CONTROL, 0x21056300);
-	init_ext_giga_phy(2);
 #elif defined (CONFIG_GE2_MII_AN)
 	ge2_set_mode(1, 1);
 	sysRegWrite(REG_ETH_GE2_MAC_CONTROL, 0x21056300);

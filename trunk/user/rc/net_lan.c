@@ -433,9 +433,9 @@ void
 switch_config_vlan(int first_call)
 {
 	int bridge_mode, bwan_isolation, is_vlan_filter;
-	int vlan_vid[SWAPI_VLAN_RULE_NUM];
-	int vlan_pri[SWAPI_VLAN_RULE_NUM];
-	int vlan_tag[SWAPI_VLAN_RULE_NUM];
+	int vlan_vid[SWAPI_VLAN_RULE_NUM] = {0};
+	int vlan_pri[SWAPI_VLAN_RULE_NUM] = {0};
+	int vlan_tag[SWAPI_VLAN_RULE_NUM] = {0};
 	unsigned int vrule;
 
 	if (get_ap_mode())
@@ -451,8 +451,11 @@ switch_config_vlan(int first_call)
 
 	is_vlan_filter = (nvram_match("vlan_filter", "1")) ? 1 : 0;
 	if (is_vlan_filter) {
-		bwan_isolation = SWAPI_WAN_BWAN_ISOLATION_FROM_CPU;
-		
+#if defined(USE_MTK_ESW)
+		/* MT7620 and MT7628 ESW not support port matrix + security */
+		if (bwan_isolation == SWAPI_WAN_BWAN_ISOLATION_BETWEEN)
+			bwan_isolation = SWAPI_WAN_BWAN_ISOLATION_NONE;
+#endif
 		vlan_vid[SWAPI_VLAN_RULE_WAN_INET] = nvram_get_int("vlan_vid_cpu");
 		vlan_vid[SWAPI_VLAN_RULE_WAN_IPTV] = nvram_get_int("vlan_vid_iptv");
 		vlan_vid[SWAPI_VLAN_RULE_WAN_LAN1] = nvram_get_int("vlan_vid_lan1");
@@ -483,10 +486,6 @@ switch_config_vlan(int first_call)
 			vlan_tag[SWAPI_VLAN_RULE_WAN_IPTV] = 1;
 		else
 			vlan_vid[SWAPI_VLAN_RULE_WAN_IPTV] = 0;
-	} else {
-		memset(vlan_vid, 0, sizeof(vlan_vid));
-		memset(vlan_pri, 0, sizeof(vlan_pri));
-		memset(vlan_tag, 0, sizeof(vlan_tag));
 	}
 
 	/* set vlan rule before change bridge mode! */

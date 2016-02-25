@@ -85,7 +85,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wan_route_x", "IP_Routed" },
 	{ "wan_src_phy", "0" },
 	{ "wan_stb_x", "0" },
-	{ "wan_stb_iso", "0" },
+	{ "wan_stb_iso", "1" },
 	{ "vlan_filter", "0" },
 	{ "vlan_vid_cpu", "" },
 	{ "vlan_pri_cpu", "0" },

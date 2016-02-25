@@ -646,6 +646,8 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 				vlan_entry[vlan_idx].valid = 1;
 				vlan_entry[vlan_idx].cvid = cvid;
 				vlan_entry[vlan_idx].port_member |= ((1u << i) | (1u << WAN_PORT_1));
+				if (wan_bwan_isolation != SWAPI_WAN_BWAN_ISOLATION_FROM_CPU)
+					vlan_entry[vlan_idx].port_member |= (1u << WAN_PORT_CPU);
 				if (!tagg[rule_id])
 					vlan_entry[vlan_idx].port_untag |= (1u << i);
 				
@@ -1018,6 +1020,10 @@ static int change_bridge_mode(u32 wan_bwan_isolation, u32 wan_bridge_mode)
 
 	if (wan_bwan_isolation > SWAPI_WAN_BWAN_ISOLATION_BETWEEN)
 		return -EINVAL;
+
+	/* this isolation mode not possible for this switch */
+	if (wan_bwan_isolation == SWAPI_WAN_BWAN_ISOLATION_BETWEEN)
+		wan_bwan_isolation = SWAPI_WAN_BWAN_ISOLATION_NONE;
 
 	if (wan_bridge_mode == SWAPI_WAN_BRIDGE_DISABLE)
 		wan_bwan_isolation = SWAPI_WAN_BWAN_ISOLATION_NONE;

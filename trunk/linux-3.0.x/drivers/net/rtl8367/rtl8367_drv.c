@@ -954,6 +954,13 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 					vlan_entry[vlan_idx].cvid = cvid;
 				}
 				vlan_entry[vlan_idx].port_member |= ((1u << i) | (1u << WAN_PORT_X));
+				if (g_wan_bridge_isolated_mode != SWAPI_WAN_BWAN_ISOLATION_FROM_CPU) {
+					vlan_entry[vlan_idx].port_member |= (1u << WAN_PORT_CPU);
+#if !defined(RTL8367_SINGLE_EXTIF)
+					/* mark CPU WAN as tagged */
+					pvlan_member_cpu_wan.tagg = 1;
+#endif
+				}
 				if (!tagg[rule_id])
 					vlan_entry[vlan_idx].port_untag |= (1u << i);
 				
@@ -982,7 +989,8 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 		
 		if (!vlan_entry[i].valid)
 			continue;
-		
+		if (!vlan_entry[i].port_member)
+			continue;
 		mask_member.bits[0] = vlan_entry[i].port_member;
 		mask_untag.bits[0]  = vlan_entry[i].port_untag;
 #if defined(CONFIG_RTL8367_API_8370)

@@ -540,7 +540,7 @@ function change_stb_port_and_vlan(){
 	free_options(o_wsp);
 	add_option(o_wsp, "WAN", "0", 0);
 
-	showhide_div("wan_stb_iso", !(wan_stb_x == 0 || vlan_filter));
+	showhide_div("wan_stb_iso", (wan_stb_x != 0));
 	showhide_div("wan_src_phy", (wan_stb_x != 0));
 
 	if(wan_stb_x == 0) {

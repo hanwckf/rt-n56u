@@ -1485,7 +1485,7 @@ do_add_counters(struct net *net, const void __user *user,
 		struct xt_entry_target *f = ipt_get_target(e);
 		if ((strlen(e->ip.outiface) > 0) && (strcmp(f->u.kernel.target->name, "MASQUERADE") == 0 ||
 		                                     strcmp(f->u.kernel.target->name, "SNAT") == 0)) {
-#if defined(CONFIG_RAETH_GMAC2)
+#if defined(CONFIG_RAETH_BOTH_GMAC)
 			/* ralink 2xGMAC - wan */
 			if (strncmp(e->ip.outiface, "eth3", 4) == 0) {
 #elif IS_ENABLED(CONFIG_RAETH)

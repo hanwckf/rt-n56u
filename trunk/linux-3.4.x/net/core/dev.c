@@ -149,7 +149,7 @@
 #endif
 
 #if IS_ENABLED(CONFIG_RA_HW_NAT)
-#if !defined(CONFIG_RAETH_GMAC2)
+#if !defined(CONFIG_RAETH_BOTH_GMAC)
 #if defined(CONFIG_RTL8367)
 extern int rtl8367_get_traffic_port_wan(struct rtnl_link_stats64 *stats);
 #if defined(CONFIG_RTL8367_USE_INIC_EXT)
@@ -4372,7 +4372,7 @@ static void dev_seq_printf_stats(struct seq_file *seq, struct net_device *dev)
 	const struct rtnl_link_stats64 *stats = dev_get_stats(dev, &temp);
 
 #if IS_ENABLED(CONFIG_RA_HW_NAT)
-#if !defined(CONFIG_RAETH_GMAC2)
+#if !defined(CONFIG_RAETH_BOTH_GMAC)
 #if defined(CONFIG_RTL8367)
 	if(strcmp(dev->name, "eth2.2") == 0)
 		rtl8367_get_traffic_port_wan(&temp);

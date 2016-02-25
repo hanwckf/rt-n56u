@@ -250,7 +250,7 @@ void esw_irq_init(void)
 {
 #if !defined (CONFIG_MT7530_GSW)
 #if defined (ESW_RT3X5X)
-	u32 reg_val = (esw_reg_get(REG_ESW_POA) >> 25) & 0x1f;
+	u32 reg_val = (esw_reg_get(REG_ESW_POA) >> 25) & 0x3f;
 	atomic_set(&esw_ports_link_state, reg_val);
 #endif
 
@@ -418,7 +418,7 @@ static void esw_event_link(void)
 {
 	u32 i, port_mask, reg_poa[2], phy_link[2];
 
-	reg_poa[0] = (esw_reg_get(REG_ESW_POA) >> 25) & 0x1f;
+	reg_poa[0] = (esw_reg_get(REG_ESW_POA) >> 25) & 0x3f;
 	reg_poa[1] = atomic_read(&esw_ports_link_state);
 
 	if (reg_poa[0] == reg_poa[1])
@@ -460,6 +460,10 @@ static void esw_isr_wq_handler(struct work_struct *work)
 		gsw_event_link(3);
 	if (val_isr & P4_LINK_CHG)
 		gsw_event_link(4);
+#if defined (CONFIG_P5_MAC_TO_PHY_MODE)
+	if (val_isr & P5_LINK_CHG)
+		gsw_event_link(5);
+#endif
 #elif defined (ESW_RT3X5X)
 	if (val_isr & INT_PORT_ST_CHG)
 		esw_event_link();
@@ -488,7 +492,7 @@ irqreturn_t esw_interrupt(int irq, void *dev_id)
 	if (val_isr & MIB_INT)
 		gsw_event_mib();
 
-	if (!(val_isr & (P0_LINK_CHG|P1_LINK_CHG|P2_LINK_CHG|P3_LINK_CHG|P4_LINK_CHG)))
+	if (!(val_isr & PHY_LINK_CHG))
 		return IRQ_HANDLED;
 #else
 #if !defined (CONFIG_RALINK_RT3052)

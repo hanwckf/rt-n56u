@@ -216,7 +216,8 @@ void early_phy_init(void)
 #if defined (CONFIG_P4_MAC_TO_PHY_MODE)
 		if (i == 4)
 			phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
-#elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
+#endif
+#if defined (CONFIG_P5_MAC_TO_PHY_MODE)
 		if (i == 5)
 			phy_mdio_addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
 #elif defined (CONFIG_GE2_RGMII_AN)

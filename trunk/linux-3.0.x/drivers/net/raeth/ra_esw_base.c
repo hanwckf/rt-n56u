@@ -32,7 +32,7 @@ typedef struct
 	u16 rx_filter;
 } mib_threshold_t;
 
-static mib_threshold_t mib_threholds[ESW_PORT_ID_MAX+1];
+static mib_threshold_t mib_thresholds[ESW_PORT_ID_MAX+1];
 #elif !defined (CONFIG_RALINK_RT3052)
 typedef struct
 {
@@ -42,7 +42,7 @@ typedef struct
 	u16 rx_bad;
 } mib_threshold_t;
 
-static mib_threshold_t mib_threholds[ESW_PORT_ID_MAX];
+static mib_threshold_t mib_thresholds[ESW_PORT_ID_MAX];
 #endif
 
 static atomic_t esw_isr_state = ATOMIC_INIT(0);
@@ -85,7 +85,7 @@ u32 esw_get_port_mib_tgoc(u32 port_id, u32 *HighPart)
 	*HighPart = esw_reg_get(0x404C + 0x100*port_id);
 #elif defined (CONFIG_RALINK_MT7620)
 	mib_val   = esw_reg_get(REG_ESW_MIB_TGOC_P0 + 0x100*port_id);
-	*HighPart = mib_threholds[port_id].tx_goct;
+	*HighPart = mib_thresholds[port_id].tx_goct;
 #endif
 	return mib_val;
 }
@@ -98,7 +98,7 @@ u32 esw_get_port_mib_rgoc(u32 port_id, u32 *HighPart)
 	*HighPart = esw_reg_get(0x40AC + 0x100*port_id);
 #elif defined (CONFIG_RALINK_MT7620)
 	mib_val   = esw_reg_get(REG_ESW_MIB_RGOC_P0 + 0x100*port_id);
-	*HighPart = mib_threholds[port_id].rx_goct;
+	*HighPart = mib_thresholds[port_id].rx_goct;
 #endif
 	return mib_val;
 }
@@ -112,11 +112,11 @@ u32 esw_get_port_mib_tgpc(u32 port_id)
 	mib_val += esw_reg_get(0x4010 + 0x100*port_id); // Bcast
 #elif defined (CONFIG_RALINK_MT7620)
 	mib_val  = esw_reg_get(REG_ESW_MIB_TGPC_P0 + 0x100*port_id) & 0xffff;
-	mib_val |= (u32)mib_threholds[port_id].tx_good << 16;
+	mib_val |= (u32)mib_thresholds[port_id].tx_good << 16;
 #elif !defined (CONFIG_RALINK_RT3052)
 	if (port_id < ESW_PORT_ID_MAX) {
 		mib_val  = esw_reg_get(0x150 + 4*port_id) & 0xFFFF;
-		mib_val |= (u32)mib_threholds[port_id].tx_good << 16;
+		mib_val |= (u32)mib_thresholds[port_id].tx_good << 16;
 	}
 #endif
 	return mib_val;
@@ -131,12 +131,12 @@ u32 esw_get_port_mib_rgpc(u32 port_id)
 	mib_val += esw_reg_get(0x4040 + 0x100*port_id); // Bcast
 #elif defined (CONFIG_RALINK_MT7620)
 	mib_val  = esw_reg_get(REG_ESW_MIB_RGPC_P0 + 0x100*port_id) & 0xffff;
-	mib_val |= (u32)mib_threholds[port_id].rx_good << 16;
+	mib_val |= (u32)mib_thresholds[port_id].rx_good << 16;
 #elif defined (ESW_RT3X5X)
 	if (port_id < ESW_PORT_ID_MAX) {
 		mib_val  = esw_reg_get(0xE8 + 4*port_id) & 0xFFFF;
 #if !defined (CONFIG_RALINK_RT3052)
-		mib_val |= (u32)mib_threholds[port_id].rx_good << 16;
+		mib_val |= (u32)mib_thresholds[port_id].rx_good << 16;
 #endif
 	}
 #endif
@@ -172,11 +172,11 @@ u32 esw_get_port_mib_tbpc(u32 port_id)
 	mib_val  = esw_reg_get(0x4004 + 0x100*port_id);
 #elif defined (CONFIG_RALINK_MT7620)
 	mib_val  = esw_reg_get(REG_ESW_MIB_TGPC_P0 + 0x100*port_id) >> 16;
-	mib_val |= (u32)mib_threholds[port_id].tx_bad << 16;
+	mib_val |= (u32)mib_thresholds[port_id].tx_bad << 16;
 #elif !defined (CONFIG_RALINK_RT3052)
 	if (port_id < ESW_PORT_ID_MAX) {
 		mib_val  = esw_reg_get(0x150 + 4*port_id) >> 16;
-		mib_val |= (u32)mib_threholds[port_id].tx_bad << 16;
+		mib_val |= (u32)mib_thresholds[port_id].tx_bad << 16;
 	}
 #endif
 	return mib_val;
@@ -189,12 +189,12 @@ u32 esw_get_port_mib_rbpc(u32 port_id)
 	mib_val  = esw_reg_get(0x4078 + 0x100*port_id);
 #elif defined (CONFIG_RALINK_MT7620)
 	mib_val  = esw_reg_get(REG_ESW_MIB_RGPC_P0 + 0x100*port_id) >> 16;
-	mib_val |= (u32)mib_threholds[port_id].rx_bad << 16;
+	mib_val |= (u32)mib_thresholds[port_id].rx_bad << 16;
 #elif defined (ESW_RT3X5X)
 	if (port_id < ESW_PORT_ID_MAX) {
 		mib_val  = esw_reg_get(0xE8 + 4*port_id) >> 16;
 #if !defined (CONFIG_RALINK_RT3052)
-		mib_val |= (u32)mib_threholds[port_id].rx_bad << 16;
+		mib_val |= (u32)mib_thresholds[port_id].rx_bad << 16;
 #endif
 	}
 #endif
@@ -208,7 +208,7 @@ u32 esw_get_port_mib_tepc(u32 port_id)
 	mib_val  = esw_reg_get(0x4000 + 0x100*port_id);
 #elif defined (CONFIG_RALINK_MT7620)
 	mib_val  = esw_reg_get(REG_ESW_MIB_TEPC_P0 + 0x100*port_id) & 0xffff;
-	mib_val |= (u32)mib_threholds[port_id].tx_drop << 16;
+	mib_val |= (u32)mib_thresholds[port_id].tx_drop << 16;
 #endif
 	return mib_val;
 }
@@ -220,7 +220,7 @@ u32 esw_get_port_mib_repc(u32 port_id)
 	mib_val  = esw_reg_get(0x4060 + 0x100*port_id);
 #elif defined (CONFIG_RALINK_MT7620)
 	mib_val  = esw_reg_get(REG_ESW_MIB_REPC1_P0 + 0x100*port_id) >> 16;
-	mib_val |= (u32)mib_threholds[port_id].rx_drop_ctrl << 16;
+	mib_val |= (u32)mib_thresholds[port_id].rx_drop_ctrl << 16;
 #endif
 	return mib_val;
 }
@@ -232,9 +232,18 @@ u32 esw_get_port_mib_rfpc(u32 port_id)
 	mib_val  = esw_reg_get(0x4064 + 0x100*port_id);
 #elif defined (CONFIG_RALINK_MT7620)
 	mib_val  = esw_reg_get(REG_ESW_MIB_REPC2_P0 + 0x100*port_id) & 0xffff;
-	mib_val |= (u32)mib_threholds[port_id].rx_filter << 16;
+	mib_val |= (u32)mib_thresholds[port_id].rx_filter << 16;
 #endif
 	return mib_val;
+}
+
+void esw_mib_init(void)
+{
+#if !defined (CONFIG_MT7530_GSW)
+#if !defined (CONFIG_RALINK_RT3052)
+	memset(mib_thresholds, 0, sizeof(mib_thresholds));
+#endif
+#endif
 }
 
 void esw_irq_init(void)
@@ -333,25 +342,25 @@ static void gsw_event_mib(void)
 			esw_reg_set(REG_ESW_MIB_INTS_P0 + 0x100*i, val_mibs);
 			
 			if (val_mibs & MSK_TX_GOOD_CNT)
-				mib_threholds[i].tx_good++;
+				mib_thresholds[i].tx_good++;
 			if (val_mibs & MSK_RX_GOOD_CNT)
-				mib_threholds[i].rx_good++;
+				mib_thresholds[i].rx_good++;
 			if (val_mibs & MSK_TX_GOCT_CNT)
-				mib_threholds[i].tx_goct++;
+				mib_thresholds[i].tx_goct++;
 			if (val_mibs & MSK_RX_GOCT_CNT)
-				mib_threholds[i].rx_goct++;
+				mib_thresholds[i].rx_goct++;
 			if (val_mibs & MSK_TX_BAD_CNT)
-				mib_threholds[i].tx_bad++;
+				mib_thresholds[i].tx_bad++;
 			if (val_mibs & MSK_RX_BAD_CNT)
-				mib_threholds[i].rx_bad++;
+				mib_thresholds[i].rx_bad++;
 			if (val_mibs & MSK_TX_DROP_CNT)
-				mib_threholds[i].tx_drop++;
+				mib_thresholds[i].tx_drop++;
 			if (val_mibs & MSK_RX_FILTER_CNT)
-				mib_threholds[i].rx_filter++;
+				mib_thresholds[i].rx_filter++;
 			if (val_mibs & MSK_RX_ARL_DROP_CNT)
-				mib_threholds[i].rx_drop_arl++;
+				mib_thresholds[i].rx_drop_arl++;
 			if (val_mibs & MSK_RX_CTRL_DROP_CNT)
-				mib_threholds[i].rx_drop_ctrl++;
+				mib_thresholds[i].rx_drop_ctrl++;
 		}
 	}
 }
@@ -367,13 +376,13 @@ static void esw_event_pcri(void)
 		for (i = 0; i < ESW_PORT_ID_MAX; i++) {
 			port_mask = (1u << i);
 			if (val_pcri & port_mask)
-				mib_threholds[i].rx_good++;
+				mib_thresholds[i].rx_good++;
 			if ((val_pcri >> 8) & port_mask)
-				mib_threholds[i].rx_bad++;
+				mib_thresholds[i].rx_bad++;
 			if ((val_pcri >> 16) & port_mask)
-				mib_threholds[i].tx_good++;
+				mib_thresholds[i].tx_good++;
 			if ((val_pcri >> 24) & port_mask)
-				mib_threholds[i].tx_bad++;
+				mib_thresholds[i].tx_bad++;
 		}
 	}
 }

@@ -18,6 +18,7 @@ u32 esw_get_port_mib_tepc(u32 port_id);
 u32 esw_get_port_mib_repc(u32 port_id);
 u32 esw_get_port_mib_rfpc(u32 port_id);
 
+void esw_mib_init(void);
 void esw_irq_init(void);
 void esw_irq_enable(void);
 void esw_irq_disable(void);

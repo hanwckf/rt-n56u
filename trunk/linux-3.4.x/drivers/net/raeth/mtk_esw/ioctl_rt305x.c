@@ -981,6 +981,14 @@ static void esw_status_mib_port(u32 port_id, esw_mib_counters_t *mibc)
 	mibc->RxBadFrames	= esw_get_port_mib_rbpc(port_id);
 }
 
+static void esw_status_mib_reset(void)
+{
+#if !defined (CONFIG_RALINK_RT3052)
+	esw_reg_set(0x14c, 0xff7f7f7f);
+	esw_mib_init();
+#endif
+}
+
 static void change_ports_power(u32 power_on, u32 ports_mask)
 {
 	u32 i;
@@ -1507,6 +1515,9 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 	case MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN4:
 		esw_status_mib_port(LAN_PORT_4, &port_counters);
 		copy_to_user((esw_mib_counters_t __user *)arg, &port_counters, sizeof(esw_mib_counters_t));
+		break;
+	case MTK_ESW_IOCTL_STATUS_CNT_RESET_ALL:
+		esw_status_mib_reset();
 		break;
 
 	case MTK_ESW_IOCTL_RESET_SWITCH:

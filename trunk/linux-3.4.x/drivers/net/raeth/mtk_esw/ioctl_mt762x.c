@@ -1493,9 +1493,16 @@ static int esw_status_port_bytes(u32 port_mask, port_bytes_t *pb)
 
 static void esw_status_mib_reset(void)
 {
+	u32 mib_val;
 #if defined (CONFIG_MT7530_GSW)
-	esw_reg_set(0x4fe0, 0x000000f0);
-	esw_reg_set(0x4fe0, 0x800000f0);
+	mib_val = esw_reg_get(0x4fe0);
+	esw_reg_set(0x4fe0, mib_val & ~BIT(31));
+	esw_reg_set(0x4fe0, mib_val |  BIT(31));
+#else
+	mib_val = esw_reg_get(REG_ESW_MIB_MIBCNTEN);
+	esw_reg_set(REG_ESW_MIB_MIBCNTEN, mib_val & ~(0xff << 24));
+	esw_reg_set(REG_ESW_MIB_MIBCNTEN, mib_val |  (0xff << 24));
+	esw_mib_init();
 #endif
 }
 

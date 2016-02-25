@@ -446,10 +446,10 @@ static int show_usage(char *cmd)
 #if defined (USE_MTK_GSW)
 	"   35               Show CPU WAN port MIB counters\n"
 	"   36               Show CPU LAN port MIB counters\n"
-	"   38               Reset all ports MIB counters\n"
 #else !defined (ESW_RT3X5X)
 	"   36               Show CPU WAN/LAN port MIB counters\n"
 #endif
+	"   38               Reset all ports MIB counters\n"
 	"\n"
 	"   40 [0x25252525]  Full reset and reinit switch\n"
 	"   41 [MASK] [0|1]  Set power off/on for ports mask\n"

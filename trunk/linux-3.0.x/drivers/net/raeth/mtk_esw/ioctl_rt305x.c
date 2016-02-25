@@ -301,55 +301,9 @@ static void esw_vlan_pvid_set(u32 port_id, u32 pvid, u32 prio)
 	esw_reg_set(REG_ESW_PFC1, reg_pfc1);
 }
 
-static int esw_wait_wt_mac(void)
-{
-	int i;
-	u32 value;
-
-	for (i = 0; i < 200; i++) {
-		value = esw_reg_get(REG_ESW_WT_MAC_AD0);
-		if (value & 0x2)
-			return 0;
-		udelay(100);
-	}
-
-	return -1;
-}
-
 static void esw_mac_table_clear(void)
 {
-	int i, j;
-	u32 value, mac;
-
-	esw_reg_set(REG_ESW_TABLE_SEARCH, 0x1);
-	for (i = 0; i < 0x400; i++) {
-		for (j = 0; j < 1000; j++) {
-			value = esw_reg_get(REG_ESW_TABLE_STATUS0);
-			if (value & 0x1) {
-				if ((value & 0x70) == 0)
-					return;
-				mac = esw_reg_get(REG_ESW_TABLE_STATUS2);
-				esw_reg_set(REG_ESW_WT_MAC_AD2, mac);
-				mac = esw_reg_get(REG_ESW_TABLE_STATUS1);
-				esw_reg_set(REG_ESW_WT_MAC_AD1, mac & 0xffff);
-				esw_reg_set(REG_ESW_WT_MAC_AD0, (value & 0x780) | 0x01);
-				
-				esw_wait_wt_mac();
-				
-				if (value & 0x2) {
-					/* end of table */
-					return;
-				}
-				break;
-			}
-			else if (value & 0x2) {
-				/* end of table */
-				return;
-			}
-			udelay(100);
-		}
-		esw_reg_set(REG_ESW_TABLE_SEARCH, 0x2);
-	}
+	rt305x_esw_mac_table_clear(0);
 }
 
 static u32 esw_get_vlan_slot(u32 idx)

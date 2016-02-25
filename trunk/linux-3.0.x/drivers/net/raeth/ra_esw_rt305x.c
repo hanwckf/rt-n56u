@@ -13,6 +13,65 @@
 #include "ra_phy.h"
 
 #if defined (CONFIG_RAETH_ESW)
+int rt305x_esw_wait_wt_mac(void)
+{
+	int i;
+	u32 value;
+
+	for (i = 0; i < 200; i++) {
+		udelay(100);
+		value = sysRegRead(RALINK_ETH_SW_BASE+REG_ESW_WT_MAC_AD0);
+		if (value & 0x2)
+			return 0;
+	}
+
+	return -1;
+}
+
+void rt305x_esw_mac_table_clear(int static_only)
+{
+	int i, j;
+	u32 value, mac_esw[2];
+
+	sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_TABLE_SEARCH, 0x1);
+
+	for (i = 0; i < 0x400; i++) {
+		for (j = 0; j < 200; j++) {
+			udelay(100);
+			value = sysRegRead(RALINK_ETH_SW_BASE+REG_ESW_TABLE_STATUS0);
+			if (value & 0x1) {
+				/* check invalid entry */
+				if ((value & 0x70) == 0)
+					goto next_entry;
+				/* skip (non)static entries */
+				if (static_only) {
+					if ((value & 0x70) != 0x70)
+						goto next_entry;
+				}
+				mac_esw[0] = sysRegRead(RALINK_ETH_SW_BASE+REG_ESW_TABLE_STATUS2);
+				mac_esw[1] = sysRegRead(RALINK_ETH_SW_BASE+REG_ESW_TABLE_STATUS1) & 0xffff;
+				sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_WT_MAC_AD2, mac_esw[0]);
+				sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_WT_MAC_AD1, mac_esw[1]);
+				sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_WT_MAC_AD0, (value & 0x780) | 0x01);
+				
+				rt305x_esw_wait_wt_mac();
+				
+				if (value & 0x2) {
+					/* end of table */
+					return;
+				}
+				break;
+			}
+			else if (value & 0x2) {
+				/* end of table */
+				return;
+			}
+		}
+next_entry:
+		sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_TABLE_SEARCH, 0x2);
+	}
+}
+
 static void esw_ephy_reset(void)
 {
 	/* reset EPHY */

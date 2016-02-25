@@ -141,6 +141,7 @@ void mt7620_esw_eee_on_link(u32 port_id, int port_link, int is_eee_enabled)
 }
 #endif
 
+#if !defined (CONFIG_RAETH_ESW)
 static int mt7620_esw_write_vtcr(u32 vtcr_cmd, u32 vtcr_val)
 {
 	u32 i, reg_vtcr;
@@ -201,21 +202,33 @@ void mt7620_esw_pvid_set(u32 port_id, u32 pvid, u32 prio)
 
 	sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_PORT_PPBV1_P0+0x100*port_id, reg_ppbv);
 }
+#endif
 
-int mt7620_esw_mac_table_clear(void)
+int mt7620_esw_wait_wt_mac(void)
 {
-	u32 i, reg_atc;
-
-	sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_WT_MAC_ATC, 0x8002);
+	u32 i, atc_val;
 
 	for (i = 0; i < 200; i++) {
 		udelay(100);
-		reg_atc = sysRegRead(RALINK_ETH_SW_BASE+REG_ESW_WT_MAC_ATC);
-		if (!(reg_atc & 0x8000))
+		atc_val = sysRegRead(RALINK_ETH_SW_BASE+REG_ESW_WT_MAC_ATC);
+		if (!(atc_val & BIT(15)))
 			return 0;
 	}
 
 	return -1;
+}
+
+int mt7620_esw_mac_table_clear(int static_only)
+{
+	u32 atc_val;
+
+	/* clear all (non)static MAC entries */
+	atc_val = (static_only) ? 0x8602 : 0x8002;
+
+	/* clear all non-static MAC entries */
+	sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_WT_MAC_ATC, atc_val);
+
+	return mt7620_esw_wait_wt_mac();
 }
 
 /* MT7620 embedded switch */

@@ -378,13 +378,13 @@ static void esw_igmp_mld_snooping(u32 enable_igmp, u32 enable_mld)
 static void esw_mac_table_clear(void)
 {
 #if defined (CONFIG_MT7530_GSW)
-	mt7530_gsw_mac_table_clear();
+	mt7530_gsw_mac_table_clear(0);
 #if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || \
     defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5)
-	mt7620_esw_mac_table_clear();
+	mt7620_esw_mac_table_clear(0);
 #endif
 #else
-	mt7620_esw_mac_table_clear();
+	mt7620_esw_mac_table_clear(0);
 #endif
 }
 

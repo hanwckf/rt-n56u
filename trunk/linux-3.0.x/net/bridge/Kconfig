@@ -53,6 +53,11 @@ config BRIDGE_IGMP_SNOOPING
 
 	  If unsure, say Y.
 
+config BRIDGE_IGMP_EVENT_HOOK
+	bool "IGMP/MLD events to external Ethernet switch"
+	depends on BRIDGE && BRIDGE_IGMP_SNOOPING
+	default n
+
 config BRIDGE_EAP
 	bool "Bridge 802.1x/EAP workaround"
 	depends on BRIDGE

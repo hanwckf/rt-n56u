@@ -33,6 +33,7 @@
 #include "../ra_esw_base.h"
 #include "../ra_esw_rt305x.h"
 #include "ioctl.h"
+#include "ioctl_igmp.h"
 #include "ioctl_rt305x.h"
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -78,7 +79,7 @@ const char *g_port_desc_lan4  = "LAN4";
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-static u32 get_ports_mask_lan(u32 include_cpu)
+u32 get_ports_mask_lan(u32 include_cpu)
 {
 	u32 i, wan_bridge_mode, portmask_lan;
 
@@ -1259,11 +1260,24 @@ static void change_green_ethernet_mode(u32 green_ethernet_enabled)
 }
 #endif
 
+static void change_igmp_static_ports(u32 ports_mask)
+{
+#if defined (CONFIG_RAETH_ESW_IGMP_SNOOP_SW)
+	ports_mask = get_ports_mask_from_user(ports_mask);
+
+	igmp_sn_set_static_ports(ports_mask);
+#endif
+}
+
+static void change_igmp_snooping_control(u32 igmp_snooping_enabled)
+{
+#if defined (CONFIG_RAETH_ESW_IGMP_SNOOP_SW)
+	igmp_sn_set_enable(igmp_snooping_enabled);
+#endif
+}
+
 static void change_led_mode(u32 led_mode)
 {
-	if (led_mode != SWAPI_LED_OFF)
-		led_mode = SWAPI_LED_LINK_ACT;
-
 	if (g_led_phy_mode != led_mode) {
 		g_led_phy_mode = led_mode;
 		esw_led_mode(led_mode);
@@ -1538,10 +1552,13 @@ long mtk_esw_ioctl(struct file *file, unsigned int req, unsigned long arg)
 #endif
 		break;
 
-	case MTK_ESW_IOCTL_IGMP_STATIC_PORTS:
-		break;
-
 	case MTK_ESW_IOCTL_IGMP_SNOOPING:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		change_igmp_snooping_control(uint_value);
+		break;
+	case MTK_ESW_IOCTL_IGMP_STATIC_PORTS:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		change_igmp_static_ports(uint_value);
 		break;
 
 	case MTK_ESW_IOCTL_LED_MODE:
@@ -1637,12 +1654,20 @@ int esw_ioctl_init(void)
 
 	esw_link_status_hook = esw_link_status_changed;
 
+#if defined (CONFIG_RAETH_ESW_IGMP_SNOOP_SW)
+	igmp_sn_init();
+#endif
+
 	return 0;
 }
 
 void esw_ioctl_uninit(void)
 {
 	esw_link_status_hook = NULL;
+
+#if defined (CONFIG_RAETH_ESW_IGMP_SNOOP_SW)
+	igmp_sn_uninit();
+#endif
 
 	unregister_chrdev(MTK_ESW_DEVMAJOR, MTK_ESW_DEVNAME);
 }

@@ -34,6 +34,7 @@
 #include "../ra_esw_mt7620.h"
 #include "../ra_gsw_mt7530.h"
 #include "ioctl.h"
+#include "ioctl_igmp.h"
 #include "ioctl_mt762x.h"
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
@@ -56,8 +57,10 @@ static u32 g_led_phy_mode                        = SWAPI_LED_LINK_ACT;
 
 static u32 g_jumbo_frames_enabled                = ESW_DEFAULT_JUMBO_FRAMES;
 static u32 g_green_ethernet_enabled              = ESW_DEFAULT_GREEN_ETHERNET;
+#if defined (CONFIG_RAETH_ESW_IGMP_SNOOP_HW)
 static u32 g_igmp_snooping_enabled               = ESW_DEFAULT_IGMP_SNOOPING;
 static u32 g_igmp_static_ports                   = 0;
+#endif
 
 static u32 g_storm_rate_limit                    = ESW_DEFAULT_STORM_RATE;
 
@@ -89,7 +92,7 @@ const char *g_port_desc_rgmii = "RGMII";
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-static u32 get_ports_mask_lan(u32 include_cpu)
+u32 get_ports_mask_lan(u32 include_cpu)
 {
 	u32 i, wan_bridge_mode, portmask_lan;
 
@@ -307,6 +310,7 @@ static void esw_vlan_pvid_set(u32 port_id, u32 pvid, u32 prio)
 	esw_reg_set(REG_ESW_PORT_PPBV1_P0 + 0x100*port_id, reg_ppbv);
 }
 
+#if defined (CONFIG_RAETH_ESW_IGMP_SNOOP_HW)
 static void esw_igmp_ports_config(u32 wan_bridge_mode)
 {
 	u32 i, reg_isc, mask_no_learn;
@@ -374,6 +378,7 @@ static void esw_igmp_mld_snooping(u32 enable_igmp, u32 enable_mld)
 	/* make CPU port always static */
 	esw_reg_set(REG_ESW_PORT_PIC_P0 + 0x100*LAN_PORT_CPU, reg_pic | dst_igmp);
 }
+#endif
 
 static void esw_mac_table_clear(void)
 {
@@ -1086,10 +1091,12 @@ static void esw_vlan_bridge_isolate(u32 wan_bridge_mode, u32 wan_bwan_isolation,
 	}
 
 	if (bridge_changed) {
+#if defined (CONFIG_RAETH_ESW_IGMP_SNOOP_HW)
 		esw_igmp_ports_config(wan_bridge_mode);
-		esw_show_bridge_partitions(wan_bridge_mode);
 		if (g_igmp_snooping_enabled)
 			esw_igmp_mld_snooping(1, 1);
+#endif
+		esw_show_bridge_partitions(wan_bridge_mode);
 	}
 
 	esw_mac_table_clear();
@@ -1929,6 +1936,7 @@ static void change_igmp_static_ports(u32 ports_mask)
 {
 	ports_mask = get_ports_mask_from_user(ports_mask & 0xFF, 0);
 
+#if defined (CONFIG_RAETH_ESW_IGMP_SNOOP_HW)
 	if (g_igmp_static_ports != ports_mask) {
 		g_igmp_static_ports = ports_mask;
 		
@@ -1937,10 +1945,14 @@ static void change_igmp_static_ports(u32 ports_mask)
 			esw_igmp_mld_snooping(1, 1);
 		}
 	}
+#elif defined (CONFIG_RAETH_ESW_IGMP_SNOOP_SW)
+	igmp_sn_set_static_ports(ports_mask);
+#endif
 }
 
 static void change_igmp_snooping_control(u32 igmp_snooping_enabled)
 {
+#if defined (CONFIG_RAETH_ESW_IGMP_SNOOP_HW)
 	if (igmp_snooping_enabled)
 		igmp_snooping_enabled = 1;
 
@@ -1951,6 +1963,9 @@ static void change_igmp_snooping_control(u32 igmp_snooping_enabled)
 		esw_igmp_ports_config(g_wan_bridge_mode);
 		esw_igmp_mld_snooping(igmp_snooping_enabled, igmp_snooping_enabled);
 	}
+#elif defined (CONFIG_RAETH_ESW_IGMP_SNOOP_SW)
+	igmp_sn_set_enable(igmp_snooping_enabled);
+#endif
 }
 
 static void change_led_mode(u32 led_mode)
@@ -2026,8 +2041,10 @@ int esw_control_post_init(void)
 	/* configure bridge isolation mode via VLAN */
 	esw_vlan_bridge_isolate(g_wan_bridge_mode, g_wan_bwan_isolation, 1, 1, 1);
 
+#if defined (CONFIG_RAETH_ESW_IGMP_SNOOP_HW)
 	/* configure igmp/mld snooping */
 	esw_igmp_mld_snooping(g_igmp_snooping_enabled, g_igmp_snooping_enabled);
+#endif
 
 	/* configure leds */
 	esw_led_mode(g_led_phy_mode);
@@ -2387,12 +2404,20 @@ int esw_ioctl_init(void)
 
 	esw_link_status_hook = esw_link_status_changed;
 
+#if defined (CONFIG_RAETH_ESW_IGMP_SNOOP_SW)
+	igmp_sn_init();
+#endif
+
 	return 0;
 }
 
 void esw_ioctl_uninit(void)
 {
 	esw_link_status_hook = NULL;
+
+#if defined (CONFIG_RAETH_ESW_IGMP_SNOOP_SW)
+	igmp_sn_uninit();
+#endif
 
 	unregister_chrdev(MTK_ESW_DEVMAJOR, MTK_ESW_DEVNAME);
 }

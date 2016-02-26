@@ -272,6 +272,24 @@ config  RAETH_ESW_CONTROL
 	depends on RAETH && (RAETH_ESW || MT7530_GSW)
 	default y
 
+choice
+	prompt "IGMP/MLD snooping support"
+	depends on RAETH_ESW_CONTROL
+	default RAETH_ESW_IGMP_SNOOP_HW
+
+	config RAETH_ESW_IGMP_SNOOP_OFF
+	bool "Disable IGMP/MLD snooping"
+
+	config RAETH_ESW_IGMP_SNOOP_SW
+	bool "Software mode IGMP/MLD snooping"
+	depends on BRIDGE_IGMP_SNOOPING
+	select BRIDGE_IGMP_EVENT_HOOK
+
+	config RAETH_ESW_IGMP_SNOOP_HW
+	bool "Hardware mode IGMP/MLD snooping"
+	depends on !(RALINK_RT3052 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7628)
+endchoice
+
 config  RAETH_ESW_PORT_WAN
 	int "ESW WAN Port ID (0..5)"
 	depends on RAETH_ESW_CONTROL

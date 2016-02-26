@@ -45,6 +45,10 @@ raeth-objs += mtk_esw/ioctl_rt305x.o
 endif
 endif
 
+ifeq ($(CONFIG_RAETH_ESW_IGMP_SNOOP_SW),y)
+raeth-objs += mtk_esw/ioctl_igmp.o
+endif
+
 ifeq ($(CONFIG_RAETH_ESW),y)
 raeth-objs += ra_esw_base.o
 endif

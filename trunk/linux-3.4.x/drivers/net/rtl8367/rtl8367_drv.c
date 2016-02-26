@@ -2007,9 +2007,6 @@ int __init rtl8367_init(void)
 
 	printk("Realtek RTL8367 GigaPHY Switch Driver %s.\n", RTL8367_VERSION);
 
-#if defined(CONFIG_RTL8367_IGMP_SNOOPING)
-	igmp_init();
-#endif
 #if defined(CONFIG_RTL8367_CIF_MDIO)
 	mdio_init(MDIO_RTL8367_PHYID);
 #else
@@ -2025,6 +2022,9 @@ int __init rtl8367_init(void)
 
 	mutex_lock(&asic_access_mutex);
 	reset_and_init_switch(1);
+#if defined(CONFIG_RTL8367_IGMP_SNOOPING)
+	igmp_sn_init();
+#endif
 	mutex_unlock(&asic_access_mutex);
 
 	return 0;
@@ -2035,7 +2035,7 @@ void __exit rtl8367_exit(void)
 	unregister_chrdev(RTL8367_DEVMAJOR, RTL8367_DEVNAME);
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
-	igmp_uninit();
+	igmp_sn_uninit();
 #endif
 }
 

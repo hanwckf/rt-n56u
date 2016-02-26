@@ -273,16 +273,13 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		break;
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
-	case RTL8367_IOCTL_IGMP_STATIC_PORTS:
-		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		change_igmp_static_ports(uint_value);
-		break;
 	case RTL8367_IOCTL_IGMP_SNOOPING:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		change_igmp_snooping_control(uint_value);
+		igmp_sn_set_enable(uint_value);
 		break;
-	case RTL8367_IOCTL_IGMP_RESET:
-		reset_igmp_snooping_table();
+	case RTL8367_IOCTL_IGMP_STATIC_PORTS:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		igmp_sn_set_static_ports(uint_value);
 		break;
 #endif
 
@@ -335,7 +332,7 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		break;
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
 	case RTL8367_IOCTL_MCAST_LUT_DUMP:
-		dump_mcast_table();
+		igmp_sn_dump_mcast_table();
 		break;
 #endif
 	case RTL8367_IOCTL_ISOLATION_DUMP:

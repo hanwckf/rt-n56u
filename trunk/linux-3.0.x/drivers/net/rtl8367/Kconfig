@@ -1,6 +1,5 @@
 config RTL8367
 	tristate "Realtek RTL8367 Ethernet PHY Giga-Switch"
-	select RALINK_GPIO
 
 config RTL8367_API_8370
 	bool
@@ -54,9 +53,10 @@ choice
 	config  RTL8367_CIF_SMI
 	bool "SMI Bus (emulation via GPIO)"
 	depends on RTL8367
+	select RALINK_GPIO
 
 	config  RTL8367_CIF_MDIO
-	bool "MDIO Bus (on GE1)"
+	bool "MDIO Bus"
 	depends on RTL8367
 endchoice
 
@@ -151,4 +151,5 @@ config  RTL8367_RGMII_DELAY_RX
 config  RTL8367_IGMP_SNOOPING
 	bool "Enable IGMP Snooping Feature"
 	depends on RTL8367 && BRIDGE_IGMP_SNOOPING
+	select BRIDGE_IGMP_EVENT_HOOK
 	default y

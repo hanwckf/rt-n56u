@@ -149,12 +149,11 @@ u32 get_phy_ports_mask_wan(u32 include_cpu);
 u32 get_ports_mask_from_user(u32 user_port_mask);
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
-void igmp_init(void);
-void igmp_uninit(void);
-void dump_mcast_table(void);
-void change_igmp_static_ports(u32 ports_mask);
-void change_igmp_snooping_control(u32 igmp_snooping_enabled);
-void reset_igmp_snooping_table(void);
+void igmp_sn_init(void);
+void igmp_sn_uninit(void);
+void igmp_sn_set_enable(u32 igmp_sn_enabled);
+void igmp_sn_set_static_ports(u32 ports_mask);
+void igmp_sn_dump_mcast_table(void);
 #endif
 
 

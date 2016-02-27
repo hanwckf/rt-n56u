@@ -388,10 +388,21 @@ set_pagecache_reclaim(void)
 	int pagecache_ratio = 100;
 	int pagecache_reclaim = nvram_get_int("pcache_reclaim");
 
-	if (pagecache_reclaim == 1)
-		pagecache_ratio = 50;
-	else if (pagecache_reclaim == 2)
+	switch (pagecache_reclaim)
+	{
+	case 1:
 		pagecache_ratio = 30;
+		break;
+	case 2:
+		pagecache_ratio = 50;
+		break;
+	case 3:
+		pagecache_ratio = 70;
+		break;
+	case 4:
+		pagecache_ratio = 85;
+		break;
+	}
 
 	fput_int("/proc/sys/vm/pagecache_ratio", pagecache_ratio);
 }

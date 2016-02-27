@@ -418,8 +418,10 @@ function done_validating(action){
                                             <td>
                                                 <select name="pcache_reclaim" class="input">
                                                     <option value="0" <% nvram_match_x("", "pcache_reclaim", "0", "selected"); %>><#checkbox_No#></option>
-                                                    <option value="1" <% nvram_match_x("", "pcache_reclaim", "1", "selected"); %>>50% RAM</option>
-                                                    <option value="2" <% nvram_match_x("", "pcache_reclaim", "2", "selected"); %>>70% RAM</option>
+                                                    <option value="1" <% nvram_match_x("", "pcache_reclaim", "1", "selected"); %>>70% RAM</option>
+                                                    <option value="2" <% nvram_match_x("", "pcache_reclaim", "2", "selected"); %>>50% RAM</option>
+                                                    <option value="3" <% nvram_match_x("", "pcache_reclaim", "3", "selected"); %>>30% RAM</option>
+                                                    <option value="4" <% nvram_match_x("", "pcache_reclaim", "4", "selected"); %>>15% RAM</option>
                                                 </select>
                                             </td>
                                         </tr>

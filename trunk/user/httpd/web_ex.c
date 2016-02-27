@@ -681,21 +681,11 @@ ej_dump(int eid, webs_t wp, int argc, char **argv)
 
 #if BOARD_HAS_5G_RADIO
 	if (strcmp(file, "wlan11b.log")==0)
-		return (ej_wl_status_5g(eid, wp, 0, NULL));
+		return ej_wl_status_5g(eid, wp, 0, NULL);
 	else
 #endif
 	if (strcmp(file, "wlan11b_2g.log")==0)
-		return (ej_wl_status_2g(eid, wp, 0, NULL));
-	else if (strcmp(file, "eth_wan.log")==0)
-		return ej_eth_status_wan(eid, wp, 0, NULL);
-	else if (strcmp(file, "eth_lan1.log")==0)
-		return ej_eth_status_lan1(eid, wp, 0, NULL);
-	else if (strcmp(file, "eth_lan2.log")==0)
-		return ej_eth_status_lan2(eid, wp, 0, NULL);
-	else if (strcmp(file, "eth_lan3.log")==0)
-		return ej_eth_status_lan3(eid, wp, 0, NULL);
-	else if (strcmp(file, "eth_lan4.log")==0)
-		return ej_eth_status_lan4(eid, wp, 0, NULL);
+		return ej_wl_status_2g(eid, wp, 0, NULL);
 	else if (strcmp(file, "leases.log")==0)
 		return (ej_lan_leases(eid, wp, 0, NULL));
 	else if (strcmp(file, "vpns_list.log")==0)
@@ -1808,23 +1798,35 @@ wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 static int
 lanlink_hook(int eid, webs_t wp, int argc, char **argv)
 {
-	char etherlink0[40] = {0};
-	char etherlink1[40] = {0};
-	char etherlink2[40] = {0};
-	char etherlink3[40] = {0};
-	char etherlink4[40] = {0};
+	int i;
+	char nvram_param[20], port_status[40] = {0};
 
-	fill_eth_port_status(0, etherlink0);
-	fill_eth_port_status(1, etherlink1);
-	fill_eth_port_status(2, etherlink2);
-	fill_eth_port_status(3, etherlink3);
-	fill_eth_port_status(4, etherlink4);
+	websWrite(wp, "function ether_link_mode(idx){\n");
+	websWrite(wp, " if(idx==%d) return %d;\n", 0, nvram_get_int("ether_link_wan"));
+	for (i = 0; i < BOARD_NUM_ETH_EPHY-1; i++) {
+		snprintf(nvram_param, sizeof(nvram_param), "ether_link_lan%d", i+1);
+		websWrite(wp, " if(idx==%d) return %d;\n", i+1, nvram_get_int(nvram_param));
+	}
+	websWrite(wp, " return %d;\n", 0);
+	websWrite(wp, "}\n\n");
 
-	websWrite(wp, "function lanlink_etherlink_wan()  { return '%s';}\n", etherlink0);
-	websWrite(wp, "function lanlink_etherlink_lan1() { return '%s';}\n", etherlink1);
-	websWrite(wp, "function lanlink_etherlink_lan2() { return '%s';}\n", etherlink2);
-	websWrite(wp, "function lanlink_etherlink_lan3() { return '%s';}\n", etherlink3);
-	websWrite(wp, "function lanlink_etherlink_lan4() { return '%s';}\n", etherlink4);
+	websWrite(wp, "function ether_flow_mode(idx){\n");
+	websWrite(wp, " if(idx==%d) return %d;\n", 0, nvram_get_int("ether_flow_wan"));
+	for (i = 0; i < BOARD_NUM_ETH_EPHY-1; i++) {
+		snprintf(nvram_param, sizeof(nvram_param), "ether_flow_lan%d", i+1);
+		websWrite(wp, " if(idx==%d) return %d;\n", i+1, nvram_get_int(nvram_param));
+	}
+	websWrite(wp, " return %d;\n", 0);
+	websWrite(wp, "}\n\n");
+
+	websWrite(wp, "function ether_link_status(idx){\n");
+	for (i = 0; i < BOARD_NUM_ETH_EPHY; i++) {
+		port_status[0] = '\0';
+		fill_eth_port_status(i, port_status);
+		websWrite(wp, " if(idx==%d) return '%s';\n", i, port_status);
+	}
+	websWrite(wp, " return '%s';\n", "No link");
+	websWrite(wp, "}\n");
 
 	return 0;
 }
@@ -2123,6 +2125,11 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 	int has_switch_type = 10; // RT3052/RT3352/RT5350 Embedded ESW
 #endif
 #endif
+#if defined (USE_GMAC2_TO_GPHY) || defined (USE_GMAC2_TO_GSW)
+	int has_wan_bridge = 0;
+#else
+	int has_wan_bridge = 1;
+#endif
 #if defined (BOARD_GPIO_BTN_ROUTER) || defined (BOARD_GPIO_BTN_AP)
 	int has_btn_mode = 1;
 #else
@@ -2191,8 +2198,10 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_num_usb() { return %d;}\n"
 		"function support_storage() { return %d;}\n"
 		"function support_switch_type() { return %d;}\n"
+		"function support_wan_bridge() { return %d;}\n"
 		"function support_num_ephy() { return %d;}\n"
 		"function support_ephy_w1000() { return %d;}\n"
+		"function support_ephy_l1000() { return %d;}\n"
 		"function support_2g_inic_mii() { return %d;}\n"
 		"function support_5g_radio() { return %d;}\n"
 		"function support_5g_11ac() { return %d;}\n"
@@ -2217,8 +2226,10 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		BOARD_NUM_USB_PORTS,
 		has_stor,
 		has_switch_type,
+		has_wan_bridge,
 		BOARD_NUM_ETH_EPHY,
 		BOARD_HAS_EPHY_W1000,
+		BOARD_HAS_EPHY_L1000,
 		has_inic_mii,
 		BOARD_HAS_5G_RADIO,
 		has_5g_vht,
@@ -2785,6 +2796,20 @@ static int ej_dump_syslog_hook(int eid, webs_t wp, int argc, char **argv)
 	fflush(wp);
 
 	return 0;
+}
+
+static int ej_dump_eth_mib_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int eth_port_id = 0;
+	const char *port_id = get_cgi("port_id");
+
+	if (port_id)
+		eth_port_id = atoi(port_id);
+
+	if (eth_port_id < 0)
+		eth_port_id = 0;
+
+	return fill_eth_status(eth_port_id, wp);
 }
 
 #define MAX_DICT_LANGS (15)
@@ -3744,6 +3769,7 @@ struct ej_handler ej_handlers[] =
 	{ "hardware_pins", ej_hardware_pins_hook},
 	{ "detect_internet", ej_detect_internet_hook},
 	{ "dump_syslog", ej_dump_syslog_hook},
+	{ "dump_eth_mib", ej_dump_eth_mib_hook},
 	{ "get_usb_ports_info", ej_get_usb_ports_info},
 	{ "get_ext_ports_info", ej_get_ext_ports_info},
 	{ "disk_pool_mapping_info", ej_disk_pool_mapping_info},

@@ -51,6 +51,12 @@ function initial(){
 	var o1 = document.form.ether_uport;
 	var num_ephy = support_num_ephy();
 	if (!support_2g_inic_mii())
+		o1.remove(9);
+	if (num_ephy < 8)
+		o1.remove(8);
+	if (num_ephy < 7)
+		o1.remove(7);
+	if (num_ephy < 6)
 		o1.remove(6);
 	if (num_ephy < 5)
 		o1.remove(5);
@@ -349,13 +355,16 @@ function on_xupnpd_link(){
                                             <th><#SwitchUport#></th>
                                             <td>
                                                 <select name="ether_uport" class="input">
-                                                    <option value="0" <% nvram_match_x("", "ether_uport", "0", "selected"); %>><#checkbox_No#></option>
-                                                    <option value="5" <% nvram_match_x("", "ether_uport", "5", "selected"); %>>WAN (*)</option>
+                                                    <option value="-1" <% nvram_match_x("", "ether_uport", "-1", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="0" <% nvram_match_x("", "ether_uport", "0", "selected"); %>>WAN (*)</option>
                                                     <option value="1" <% nvram_match_x("", "ether_uport", "1", "selected"); %>>LAN1</option>
                                                     <option value="2" <% nvram_match_x("", "ether_uport", "2", "selected"); %>>LAN2</option>
                                                     <option value="3" <% nvram_match_x("", "ether_uport", "3", "selected"); %>>LAN3</option>
                                                     <option value="4" <% nvram_match_x("", "ether_uport", "4", "selected"); %>>LAN4</option>
-                                                    <option value="7" <% nvram_match_x("", "ether_uport", "7", "selected"); %>>iNIC (2.4GHz)</option>
+                                                    <option value="5" <% nvram_match_x("", "ether_uport", "5", "selected"); %>>LAN5</option>
+                                                    <option value="6" <% nvram_match_x("", "ether_uport", "6", "selected"); %>>LAN6</option>
+                                                    <option value="7" <% nvram_match_x("", "ether_uport", "7", "selected"); %>>LAN7</option>
+                                                    <option value="13" <% nvram_match_x("", "ether_uport", "13", "selected"); %>>iNIC (2.4GHz)</option>
                                                 </select>
                                             </td>
                                         </tr>

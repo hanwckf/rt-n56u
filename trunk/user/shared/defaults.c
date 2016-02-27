@@ -609,32 +609,42 @@ struct nvram_pair router_defaults[] = {
 	{ "front_led_pwr", "1" },
 
 	{ "ether_igmp", "1" },
-	{ "ether_uport", "5" },		/* WAN port in AP mode is static upstream by default */
+	{ "ether_uport", "0" },		/* WAN port in AP mode is static upstream by default */
 	{ "ether_m2u", "2" },
-#if defined(USE_RTL8367_API_8367B)
 	{ "ether_green", "1" },
-#else
-	{ "ether_green", "0" },
-#endif
+	{ "ether_eee", "0" },
 #if defined(USE_RTL8367)
 	{ "ether_jumbo", "1" },
-	{ "ether_led0", "3" },
 #else
 	{ "ether_jumbo", "0" },
+#endif
+#if (BOARD_NUM_ETH_LEDS > 1)
+	{ "ether_led0", "3" },
+#else
 	{ "ether_led0", "7" },
 #endif
 	{ "ether_led1", "0" },
 
 	{ "ether_link_wan",  "0" },
-	{ "ether_link_lan1", "0" },
-	{ "ether_link_lan2", "0" },
-	{ "ether_link_lan3", "0" },
-	{ "ether_link_lan4", "0" },
 	{ "ether_flow_wan",  "0" },
+	{ "ether_link_lan1", "0" },
 	{ "ether_flow_lan1", "0" },
+	{ "ether_link_lan2", "0" },
 	{ "ether_flow_lan2", "0" },
+	{ "ether_link_lan3", "0" },
 	{ "ether_flow_lan3", "0" },
+	{ "ether_link_lan4", "0" },
 	{ "ether_flow_lan4", "0" },
+#if BOARD_NUM_ETH_EPHY > 5
+	{ "ether_link_lan5", "0" },
+	{ "ether_flow_lan5", "0" },
+#if BOARD_NUM_ETH_EPHY > 6
+	{ "ether_link_lan6", "0" },
+	{ "ether_flow_lan6", "0" },
+	{ "ether_link_lan7", "0" },
+	{ "ether_flow_lan7", "0" },
+#endif
+#endif
 
 #if defined(CONFIG_RALINK_MT7621) || (defined(CONFIG_RALINK_MT7620) && !defined(BOARD_N14U))
 	{ "hw_nat_mode", "4" },

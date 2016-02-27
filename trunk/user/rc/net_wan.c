@@ -281,7 +281,7 @@ static void
 config_vinet_wan(void)
 {
 	char vinet_ifname[32];
-	int vlan_vid[2], vlan_pri;
+	int vlan_vid[2], vlan_pri, pvid_wan;
 	int is_vlan_filter, is_vlan_ifname;
 	char *vinet_iflast;
 #if defined (USE_SINGLE_MAC)
@@ -301,13 +301,15 @@ config_vinet_wan(void)
 		vlan_pri = 0;
 	}
 
+	pvid_wan = phy_vlan_pvid_wan_get();
+
 	if (!is_vlan_vid_valid(vlan_vid[0])) {
-		vlan_vid[0] = phy_vlan_pvid_wan_get();
+		vlan_vid[0] = pvid_wan;
 		vlan_pri = 0;
 	}
 
 	if (!is_vlan_vid_valid(vlan_vid[1]))
-		vlan_vid[1] = phy_vlan_pvid_wan_get();
+		vlan_vid[1] = pvid_wan;
 
 	/* update VLAN VID for raeth (HW_VLAN_TX) */
 	hw_vlan_tx_map(6, vlan_vid[0]);
@@ -316,9 +318,15 @@ config_vinet_wan(void)
 	is_vlan_ifname = 1;
 	snprintf(vinet_ifname, sizeof(vinet_ifname), "%s.%d", ifname_wan_cpu, vlan_vid[0]);
 #if !defined (USE_SINGLE_MAC)
-	if (vlan_vid[0] == vlan_vid[1]) {
-		/* case1: CPU Internet tagged: n, CPU IPTV tagged: n */
-		/* case2: CPU Internet tagged: y, CPU IPTV tagged: y (common VID) */
+#if !defined (USE_GMAC2_TO_GPHY)
+	/* case1: CPU Internet tagged: n, CPU IPTV tagged: n */
+	/* case2: CPU Internet tagged: y, CPU IPTV tagged: y (common VID) */
+	if (vlan_vid[0] == vlan_vid[1])
+#else
+	/* case1: CPU Internet tagged: n, CPU IPTV tagged: y or n */
+	if (vlan_vid[0] == pvid_wan)
+#endif
+	{
 		is_vlan_ifname = 0;
 		snprintf(vinet_ifname, sizeof(vinet_ifname), "%s", IFNAME_MAC2);
 	}
@@ -389,8 +397,7 @@ wait_apcli_connected(const char *ifname, int wait_sec)
 static void
 launch_viptv_wan(void)
 {
-	int vlan_vid[2];
-	int vlan_pri;
+	int vlan_vid[2], vlan_pri, pvid_wan;
 	int is_vlan_filter, viptv_mode;
 	char *viptv_iflast, *vinet_iflast, *viptv_addr, *viptv_mask, *viptv_gate;
 	char viptv_ifname[32], rp_path[64];
@@ -411,11 +418,13 @@ launch_viptv_wan(void)
 		vlan_pri = 0;
 	}
 
+	pvid_wan = phy_vlan_pvid_wan_get();
+
 	if (!is_vlan_vid_valid(vlan_vid[0]))
-		vlan_vid[0] = phy_vlan_pvid_wan_get();
+		vlan_vid[0] = pvid_wan;
 
 	if (!is_vlan_vid_valid(vlan_vid[1])) {
-		vlan_vid[1] = phy_vlan_pvid_wan_get();
+		vlan_vid[1] = pvid_wan;
 		vlan_pri = 0;
 	}
 
@@ -1714,31 +1723,16 @@ select_usb_modem_to_wan(void)
 int
 get_wan_ether_link_direct(int is_ap_mode)
 {
-	int ret = 0, wan_src_phy = 0;
+	int ret = 0, wan_src_phy = SWAPI_PORT_WAN;
 	unsigned int phy_link = 0;
 
 	if (!is_ap_mode)
 		wan_src_phy = nvram_get_int("wan_src_phy");
 
-	switch (wan_src_phy)
-	{
-	case 4:
-		ret = phy_status_port_link_lan4(&phy_link);
-		break;
-	case 3:
-		ret = phy_status_port_link_lan3(&phy_link);
-		break;
-	case 2:
-		ret = phy_status_port_link_lan2(&phy_link);
-		break;
-	case 1:
-		ret = phy_status_port_link_lan1(&phy_link);
-		break;
-	default:
-		ret = phy_status_port_link_wan(&phy_link);
-		break;
-	}
+	if (wan_src_phy < 0)
+		wan_src_phy = SWAPI_PORT_WAN;
 
+	ret = phy_status_port_link(wan_src_phy, &phy_link);
 	if (ret != 0)
 		return -1;
 

@@ -204,6 +204,16 @@ init_bridge(int is_ap_mode)
 		/* add only eth2 to bridge */
 		doSystem("brctl addif %s %s", IFNAME_BR, IFNAME_MAC);
 #endif
+#if defined (USE_GMAC2_TO_GPHY) || defined (USE_GMAC2_TO_GSW)
+		/* add eth3 to bridge */
+		doSystem("ifconfig %s %s", IFNAME_MAC2, "up");
+		doSystem("brctl addif %s %s", IFNAME_BR, IFNAME_MAC2);
+#if defined (USE_HW_NAT)
+		/* enable PPE to forward bridge traffic */
+		module_smart_load("hw_nat", "ttl_regen=0");
+		logmessage(LOGNAME, "%s: %s", "Hardware NAT/Routing", "Enabled, L2 bridge offload");
+#endif
+#endif
 	}
 
 #if defined(USE_RT3352_MII)
@@ -292,7 +302,7 @@ config_bridge(int is_ap_mode)
 	int wired_m2u = nvram_get_int("ether_m2u");
 
 	if (!is_ap_mode) {
-		igmp_static_port = 0;
+		igmp_static_port = -1;
 		if (nvram_match("mr_enable_x", "1")) {
 			multicast_router = 2;   // bridge is mcast router path (br0 <--igmpproxy--> eth3)
 			multicast_querier = 0;  // bridge is not needed internal mcast querier (igmpproxy is mcast querier)
@@ -334,43 +344,25 @@ config_bridge(int is_ap_mode)
 void
 switch_config_link(void)
 {
-	int i_flow_mode;
-	int i_link_mode;
+	int i, i_flow_mode, i_link_mode;
+	char nvram_param[20];
 
 	// WAN
 	i_link_mode = nvram_safe_get_int("ether_link_wan", SWAPI_LINK_SPEED_MODE_AUTO,
 			SWAPI_LINK_SPEED_MODE_AUTO, SWAPI_LINK_SPEED_MODE_FORCE_POWER_OFF);
 	i_flow_mode = nvram_safe_get_int("ether_flow_wan", SWAPI_LINK_FLOW_CONTROL_TX_RX,
 			SWAPI_LINK_FLOW_CONTROL_TX_RX, SWAPI_LINK_FLOW_CONTROL_DISABLE);
-	phy_link_port_wan(i_link_mode, i_flow_mode);
+	phy_set_link_port(SWAPI_PORT_WAN, i_link_mode, i_flow_mode);
 
-	// LAN1
-	i_link_mode = nvram_safe_get_int("ether_link_lan1", SWAPI_LINK_SPEED_MODE_AUTO,
-			SWAPI_LINK_SPEED_MODE_AUTO, SWAPI_LINK_SPEED_MODE_FORCE_POWER_OFF);
-	i_flow_mode = nvram_safe_get_int("ether_flow_lan1", SWAPI_LINK_FLOW_CONTROL_TX_RX,
-			SWAPI_LINK_FLOW_CONTROL_TX_RX, SWAPI_LINK_FLOW_CONTROL_DISABLE);
-	phy_link_port_lan1(i_link_mode, i_flow_mode);
-
-	// LAN2
-	i_link_mode = nvram_safe_get_int("ether_link_lan2", SWAPI_LINK_SPEED_MODE_AUTO,
-			SWAPI_LINK_SPEED_MODE_AUTO, SWAPI_LINK_SPEED_MODE_FORCE_POWER_OFF);
-	i_flow_mode = nvram_safe_get_int("ether_flow_lan2", SWAPI_LINK_FLOW_CONTROL_TX_RX,
-			SWAPI_LINK_FLOW_CONTROL_TX_RX, SWAPI_LINK_FLOW_CONTROL_DISABLE);
-	phy_link_port_lan2(i_link_mode, i_flow_mode);
-
-	// LAN3
-	i_link_mode = nvram_safe_get_int("ether_link_lan3", SWAPI_LINK_SPEED_MODE_AUTO,
-			SWAPI_LINK_SPEED_MODE_AUTO, SWAPI_LINK_SPEED_MODE_FORCE_POWER_OFF);
-	i_flow_mode = nvram_safe_get_int("ether_flow_lan3", SWAPI_LINK_FLOW_CONTROL_TX_RX,
-			SWAPI_LINK_FLOW_CONTROL_TX_RX, SWAPI_LINK_FLOW_CONTROL_DISABLE);
-	phy_link_port_lan3(i_link_mode, i_flow_mode);
-
-	// LAN4
-	i_link_mode = nvram_safe_get_int("ether_link_lan4", SWAPI_LINK_SPEED_MODE_AUTO,
-			SWAPI_LINK_SPEED_MODE_AUTO, SWAPI_LINK_SPEED_MODE_FORCE_POWER_OFF);
-	i_flow_mode = nvram_safe_get_int("ether_flow_lan4", SWAPI_LINK_FLOW_CONTROL_TX_RX,
-			SWAPI_LINK_FLOW_CONTROL_TX_RX, SWAPI_LINK_FLOW_CONTROL_DISABLE);
-	phy_link_port_lan4(i_link_mode, i_flow_mode);
+	for (i = 0; i < BOARD_NUM_ETH_EPHY-1; i++) {
+		snprintf(nvram_param, sizeof(nvram_param), "ether_link_lan%d", i+1);
+		i_link_mode = nvram_safe_get_int(nvram_param, SWAPI_LINK_SPEED_MODE_AUTO,
+				SWAPI_LINK_SPEED_MODE_AUTO, SWAPI_LINK_SPEED_MODE_FORCE_POWER_OFF);
+		snprintf(nvram_param, sizeof(nvram_param), "ether_flow_lan%d", i+1);
+		i_flow_mode = nvram_safe_get_int(nvram_param, SWAPI_LINK_FLOW_CONTROL_TX_RX,
+				SWAPI_LINK_FLOW_CONTROL_TX_RX, SWAPI_LINK_FLOW_CONTROL_DISABLE);
+		phy_set_link_port(SWAPI_PORT_LAN1+i, i_link_mode, i_flow_mode);
+	}
 }
 
 void
@@ -393,6 +385,7 @@ switch_config_base(void)
 #endif
 	phy_jumbo_frames(nvram_get_int("ether_jumbo"));
 	phy_green_ethernet(nvram_get_int("ether_green"));
+	phy_eee_lpi(nvram_get_int("ether_eee"));
 }
 
 void

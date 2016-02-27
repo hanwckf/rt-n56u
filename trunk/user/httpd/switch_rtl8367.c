@@ -100,29 +100,12 @@ static int rtl8367_ioctl(unsigned int cmd, unsigned int par, unsigned int *value
 	return retVal;
 }
 
-int get_eth_port_bytes(int port_id, uint64_t *rx, uint64_t *tx)
+int get_eth_port_bytes(int port_id_uapi, uint64_t *rx, uint64_t *tx)
 {
 	port_bytes_t pb;
 	int ioctl_result;
-	unsigned int port_mask = SWAPI_PORTMASK_WAN;
 
-	switch (port_id)
-	{
-	case 1:
-		port_mask = SWAPI_PORTMASK_LAN1;
-		break;
-	case 2:
-		port_mask = SWAPI_PORTMASK_LAN2;
-		break;
-	case 3:
-		port_mask = SWAPI_PORTMASK_LAN3;
-		break;
-	case 4:
-		port_mask = SWAPI_PORTMASK_LAN4;
-		break;
-	}
-
-	ioctl_result = rtl8367_ioctl(RTL8367_IOCTL_STATUS_PORT_BYTES, port_mask, (unsigned int *)&pb);
+	ioctl_result = rtl8367_ioctl(RTL8367_IOCTL_STATUS_BYTES_PORT, port_id_uapi, (unsigned int *)&pb);
 	if (ioctl_result < 0)
 		return ioctl_result;
 
@@ -132,29 +115,12 @@ int get_eth_port_bytes(int port_id, uint64_t *rx, uint64_t *tx)
 	return ioctl_result;
 }
 
-int fill_eth_port_status(int port_id, char linkstate[40])
+int fill_eth_port_status(int port_id_uapi, char linkstate[40])
 {
-	unsigned int cmd = RTL8367_IOCTL_STATUS_SPEED_PORT_WAN;
 	unsigned int link_value = 0;
 	int has_link = 0;
 
-	switch (port_id)
-	{
-	case 1:
-		cmd = RTL8367_IOCTL_STATUS_SPEED_PORT_LAN1;
-		break;
-	case 2:
-		cmd = RTL8367_IOCTL_STATUS_SPEED_PORT_LAN2;
-		break;
-	case 3:
-		cmd = RTL8367_IOCTL_STATUS_SPEED_PORT_LAN3;
-		break;
-	case 4:
-		cmd = RTL8367_IOCTL_STATUS_SPEED_PORT_LAN4;
-		break;
-	}
-
-	if (rtl8367_ioctl(cmd, 0, &link_value) < 0) {
+	if (rtl8367_ioctl(RTL8367_IOCTL_STATUS_SPEED_PORT, port_id_uapi, &link_value) < 0) {
 		strcpy(linkstate, "I/O Error");
 		return 0;
 	}
@@ -165,6 +131,7 @@ int fill_eth_port_status(int port_id, char linkstate[40])
 		int lspeed;
 		const char *text_fc = "";
 		const char *text_dup = "Half Duplex";
+		const char *text_eee = "";
 		
 		switch (link_value & 0x03)
 		{
@@ -192,44 +159,29 @@ int fill_eth_port_status(int port_id, char linkstate[40])
 			text_dup = "Full Duplex, FC ";
 		}
 		
+		if ((link_value >> 11) & 0x03)
+			text_eee = ", EEE";
+		
 		/* 1000 Mbps, Full Duplex, FC TX/RX */
-		sprintf(linkstate, "%d Mbps, %s%s", lspeed, text_dup, text_fc);
+		sprintf(linkstate, "%d Mbps, %s%s%s", lspeed, text_dup, text_fc, text_eee);
 	} else
 		strcpy(linkstate, "No Link");
 
 	return has_link;
 }
 
-static int fill_eth_status(int port_id, webs_t wp)
+int fill_eth_status(int port_id_uapi, webs_t wp)
 {
 	int ret = 0;
-	unsigned int cmd = RTL8367_IOCTL_STATUS_CNT_PORT_WAN;
 	char etherlink[40] = {0};
 	mib_counters_t mibc;
 
-	switch (port_id)
-	{
-	case 1:
-		cmd = RTL8367_IOCTL_STATUS_CNT_PORT_LAN1;
-		break;
-	case 2:
-		cmd = RTL8367_IOCTL_STATUS_CNT_PORT_LAN2;
-		break;
-	case 3:
-		cmd = RTL8367_IOCTL_STATUS_CNT_PORT_LAN3;
-		break;
-	case 4:
-		cmd = RTL8367_IOCTL_STATUS_CNT_PORT_LAN4;
-		break;
-	}
-
-	fill_eth_port_status(port_id, etherlink);
+	fill_eth_port_status(port_id_uapi, etherlink);
 
 	ret += websWrite(wp, "Port Link			: %s\n", etherlink);
 
 	memset(&mibc, 0, sizeof(mib_counters_t));
-	if (rtl8367_ioctl(cmd, 0, (unsigned int *)&mibc) == 0)
-	{
+	if (rtl8367_ioctl(RTL8367_IOCTL_STATUS_MIB_PORT, port_id_uapi, (unsigned int *)&mibc) == 0) {
 		ret += websWrite(wp, "\nMIB Counters\n");
 		ret += websWrite(wp, "----------------------------------------\n");
 		ret += websWrite(wp, "ifInOctets			: %llu\n", mibc.ifInOctets);
@@ -251,27 +203,3 @@ static int fill_eth_status(int port_id, webs_t wp)
 	return ret;
 }
 
-int ej_eth_status_wan(int eid, webs_t wp, int argc, char **argv)
-{
-	return fill_eth_status(0, wp);
-}
-
-int ej_eth_status_lan1(int eid, webs_t wp, int argc, char **argv)
-{
-	return fill_eth_status(1, wp);
-}
-
-int ej_eth_status_lan2(int eid, webs_t wp, int argc, char **argv)
-{
-	return fill_eth_status(2, wp);
-}
-
-int ej_eth_status_lan3(int eid, webs_t wp, int argc, char **argv)
-{
-	return fill_eth_status(3, wp);
-}
-
-int ej_eth_status_lan4(int eid, webs_t wp, int argc, char **argv)
-{
-	return fill_eth_status(4, wp);
-}

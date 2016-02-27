@@ -14726,6 +14726,7 @@ static rtk_api_ret_t _get_asic_mib_idx(rtk_stat_port_type_t cnt_idx, RTL8367B_MI
         outOampduPkts,                  /* STAT_OutOampduPkts */
         inOampduPkts,                   /* STAT_InOampduPkts */
         MIB_NOT_SUPPORT,                /* STAT_PktgenPkts */
+#if 0
         inMldChecksumError,             /* STAT_InMldChecksumError */
         inIgmpChecksumError,            /* STAT_InIgmpChecksumError */
         inMldSpecificQuery,             /* STAT_InMldSpecificQuery */
@@ -14751,6 +14752,7 @@ static rtk_api_ret_t _get_asic_mib_idx(rtk_stat_port_type_t cnt_idx, RTL8367B_MI
         inKnownMulticastPkts,           /* STAT_InKnownMulticastPkts */
         ifInMulticastPkts,              /* STAT_IfInMulticastPkts */
         ifInBroadcastPkts,              /* STAT_IfInBroadcastPkts */
+#endif
     };
 
     if(cnt_idx >= STAT_PORT_CNTR_END)
@@ -14851,8 +14853,11 @@ rtk_api_ret_t rtk_stat_port_getAll(rtk_port_t port, rtk_stat_port_cntr_t *pPort_
     CONST_T rtk_uint16 mibLength[STAT_PORT_CNTR_END]= {
         2,1,1,1,1,1,1,1,1,
         2,1,1,1,1,1,1,1,1,1,1,
-        2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+        2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+#if 0
+        ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+#endif
+    };
 
     if (port > RTK_PORT_ID_MAX)
         return RT_ERR_PORT_ID;

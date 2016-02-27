@@ -32,72 +32,6 @@
 // MIB COUNTERS
 ////////////////////////////////////////////////////////////////////////////////
 
-#if defined(USE_RTL8367_API_8367B)
-typedef struct mib_counters_s
-{
-    uint64_t ifInOctets;
-    uint32_t dot3StatsFCSErrors;
-    uint32_t dot3StatsSymbolErrors;
-    uint32_t dot3InPauseFrames;
-    uint32_t dot3ControlInUnknownOpcodes;
-    uint32_t etherStatsFragments;
-    uint32_t etherStatsJabbers;
-    uint32_t ifInUcastPkts;
-    uint32_t etherStatsDropEvents;
-    uint64_t etherStatsOctets;
-    uint32_t etherStatsUndersizePkts;
-    uint32_t etherStatsOversizePkts;
-    uint32_t etherStatsPkts64Octets;
-    uint32_t etherStatsPkts65to127Octets;
-    uint32_t etherStatsPkts128to255Octets;
-    uint32_t etherStatsPkts256to511Octets;
-    uint32_t etherStatsPkts512to1023Octets;
-    uint32_t etherStatsPkts1024toMaxOctets;
-    uint32_t etherStatsMcastPkts;
-    uint32_t etherStatsBcastPkts;
-    uint64_t ifOutOctets;
-    uint32_t dot3StatsSingleCollisionFrames;
-    uint32_t dot3StatsMultipleCollisionFrames;
-    uint32_t dot3StatsDeferredTransmissions;
-    uint32_t dot3StatsLateCollisions;
-    uint32_t etherStatsCollisions;
-    uint32_t dot3StatsExcessiveCollisions;
-    uint32_t dot3OutPauseFrames;
-    uint32_t dot1dBasePortDelayExceededDiscards;
-    uint32_t dot1dTpPortInDiscards;
-    uint32_t ifOutUcastPkts;
-    uint32_t ifOutMulticastPkts;
-    uint32_t ifOutBrocastPkts;
-    uint32_t outOampduPkts;
-    uint32_t inOampduPkts;
-    uint32_t pktgenPkts;
-    uint32_t inMldChecksumError;
-    uint32_t inIgmpChecksumError;
-    uint32_t inMldSpecificQuery;
-    uint32_t inMldGeneralQuery;
-    uint32_t inIgmpSpecificQuery;
-    uint32_t inIgmpGeneralQuery;
-    uint32_t inMldLeaves;
-    uint32_t inIgmpLeaves;
-    uint32_t inIgmpJoinsSuccess;
-    uint32_t inIgmpJoinsFail;
-    uint32_t inMldJoinsSuccess;
-    uint32_t inMldJoinsFail;
-    uint32_t inReportSuppressionDrop;
-    uint32_t inLeaveSuppressionDrop;
-    uint32_t outIgmpReports;
-    uint32_t outIgmpLeaves;
-    uint32_t outIgmpGeneralQuery;
-    uint32_t outIgmpSpecificQuery;
-    uint32_t outMldReports;
-    uint32_t outMldLeaves;
-    uint32_t outMldGeneralQuery;
-    uint32_t outMldSpecificQuery;
-    uint32_t inKnownMulticastPkts;
-    uint32_t ifInMulticastPkts;
-    uint32_t ifInBroadcastPkts;
-} mib_counters_t;
-#else
 typedef struct mib_counters_s
 {
     uint64_t ifInOctets;
@@ -137,7 +71,6 @@ typedef struct mib_counters_s
     uint32_t inOampduPkts;
     uint32_t pktgenPkts;
 } mib_counters_t;
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // IOCTL

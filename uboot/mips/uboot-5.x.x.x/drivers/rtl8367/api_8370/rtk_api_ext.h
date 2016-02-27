@@ -91,8 +91,6 @@ extern rtk_api_ret_t rtk_trap_rmaAction_set(rtk_mac_t *pRma_frame, rtk_trap_rma_
 extern rtk_api_ret_t rtk_trap_rmaAction_get(rtk_mac_t *pRma_frame, rtk_trap_rma_action_t *pRma_action);
 extern rtk_api_ret_t rtk_trap_ethernetAv_set(rtk_enable_t enable);
 extern rtk_api_ret_t rtk_trap_ethernetAv_get(rtk_data_t *pEnable);
-extern rtk_api_ret_t rtk_trap_reasonTrapToCPUPriority_get(rtk_trap_reason_type_t type, rtk_pri_t *pPriority); 
-extern rtk_api_ret_t rtk_trap_reasonTrapToCPUPriority_set(rtk_trap_reason_type_t type, rtk_pri_t priority);   
 
 /* Leaky */
 extern rtk_api_ret_t rtk_leaky_vlan_set(rtk_leaky_type_t type, rtk_enable_t enable);

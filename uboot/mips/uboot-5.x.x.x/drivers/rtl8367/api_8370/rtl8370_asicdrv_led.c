@@ -63,7 +63,6 @@ ret_t rtl8370_setAsicLedOperationMode(uint32 mode)
     return RT_ERR_OK;
 }
 
-
 /*
 @func ret_t | rtl8370_getAsicLedOperationMode | Get LED serial mode setup
 @parm uint32*| mode | LED mode. 1:scan mode 1, 2:parallel mode, 3:mdx mode (serial mode)  

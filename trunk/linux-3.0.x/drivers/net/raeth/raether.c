@@ -1072,7 +1072,7 @@ ei_open(struct net_device *dev)
 #endif
 
 #if defined (CONFIG_RAETH_ESW_CONTROL)
-	esw_control_post_init();
+	esw_ioctl_init_post();
 #endif
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)

@@ -60,7 +60,7 @@ struct mcast_member_entry
 struct mcast_group_entry
 {
 	struct mcast_group_entry*	next;
-	struct mcast_member_entry*	members[ESW_MAC_ID_MAX+1];
+	struct mcast_member_entry*	members[ESW_EPHY_ID_MAX+1];
 	unsigned long			last_time;
 	u16				valid:1;
 	u16				unused:3;
@@ -480,7 +480,7 @@ mcast_group_has_members(struct mcast_group_entry *mge)
 	u32 port_id;
 
 	/* check group members exist for each port */
-	for (port_id = 0; port_id <= ESW_MAC_ID_MAX; port_id++) {
+	for (port_id = 0; port_id <= ESW_EPHY_ID_MAX; port_id++) {
 		if (mcast_group_has_members_for_port(mge, port_id))
 			return 1;
 	}
@@ -495,7 +495,7 @@ mcast_group_members_clear(struct mcast_group_entry *mge, int update_esw_port)
 	int port_has_members;
 	struct mcast_member_entry *mme, *next;
 
-	for (port_id = 0; port_id <= ESW_MAC_ID_MAX; port_id++) {
+	for (port_id = 0; port_id <= ESW_EPHY_ID_MAX; port_id++) {
 		port_has_members = 0;
 		for (mme = mge->members[port_id]; mme; mme = next) {
 			next = mme->next;
@@ -677,8 +677,12 @@ mcast_group_event_wq(struct work_struct *work)
 	mutex_unlock(&g_lut_lock);
 
 	/* check valid port_id */
-	if (port_id >= 0 && port_id <= ESW_MAC_ID_MAX) {
+	if (port_id >= 0 && port_id <= ESW_EPHY_ID_MAX) {
+#if defined (CONFIG_MT7530_GSW) || defined (CONFIG_RALINK_MT7620)
+		lan_grp_mask = get_ports_mask_lan(0, 0);
+#else
 		lan_grp_mask = get_ports_mask_lan(0);
+#endif
 		/* check this port_id in LAN group */
 		if ((1u << port_id) & lan_grp_mask)
 			on_mcast_group_event(mw->mac_dst, mw->mac_src, mw->port_cvid, (u32)port_id, (int)mw->is_leave);
@@ -779,8 +783,11 @@ igmp_sn_set_static_ports(u32 ports_mask)
 	u32 lan_grp_mask;
 	int flood_to_cpu = 0;
 
+#if defined (CONFIG_MT7530_GSW) || defined (CONFIG_RALINK_MT7620)
+	lan_grp_mask = get_ports_mask_lan(0, 0);
+#else
 	lan_grp_mask = get_ports_mask_lan(0);
-
+#endif
 	g_igmp_sn_static_ports = (ports_mask & lan_grp_mask);
 
 	if (g_igmp_sn_enabled && !g_igmp_sn_static_ports)

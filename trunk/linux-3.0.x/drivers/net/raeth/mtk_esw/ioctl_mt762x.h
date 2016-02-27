@@ -21,63 +21,74 @@
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-#define LAN_PORT_1			CONFIG_RAETH_ESW_PORT_LAN1	/* 8P8C LAN1 */
-#define LAN_PORT_2			CONFIG_RAETH_ESW_PORT_LAN2	/* 8P8C LAN2 */
-#define LAN_PORT_3			CONFIG_RAETH_ESW_PORT_LAN3	/* 8P8C LAN3 */
-#define LAN_PORT_4			CONFIG_RAETH_ESW_PORT_LAN4	/* 8P8C LAN4 */
+#define LAN_PORT_1			CONFIG_RAETH_ESW_PORT_LAN1
+#define LAN_PORT_2			CONFIG_RAETH_ESW_PORT_LAN2
+#define LAN_PORT_3			CONFIG_RAETH_ESW_PORT_LAN3
+#define LAN_PORT_4			CONFIG_RAETH_ESW_PORT_LAN4
+
+#define MASK_LAN_PORT_1			(1u << LAN_PORT_1)
+#define MASK_LAN_PORT_2			(1u << LAN_PORT_2)
+#define MASK_LAN_PORT_3			(1u << LAN_PORT_3)
+#define MASK_LAN_PORT_4			(1u << LAN_PORT_4)
+
+#if defined (CONFIG_RAETH_ESW_PORT_LAN5) && (CONFIG_RAETH_ESW_PORT_LAN5 >= 0)
+#define LAN_PORT_5			CONFIG_RAETH_ESW_PORT_LAN5
+#define MASK_LAN_PORT_5			(1u << LAN_PORT_5)
+#else
+#define MASK_LAN_PORT_5			0
+#endif
 
 #define ESW_PORT_CPU			6
 #define LAN_PORT_CPU			6
+#define MASK_LAN_PORT_CPU		(1u << LAN_PORT_CPU)
 
 #if defined (CONFIG_MT7530_GSW)
-#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P0)
-#define WAN_PORT_PHY			0	/* P0 PHY */
-#define WAN_PORT_MAC			0	/* fake */
+#if defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
+#define WAN_PORT_X			CONFIG_RAETH_ESW_PORT_WAN
+#define WAN_PORT_CPU			5	/* P5 = CPU WAN */
+#define MASK_WAN_PORT_X			(1u << WAN_PORT_X)
+#define MASK_WAN_PORT_CPU		(1u << WAN_PORT_CPU)
+#define ESW_EPHY_ID_MAX			4
+#define ESW_MASK_EXCLUDE		0
+#elif defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P0)
+#define WAN_PORT_X			0	/* P0 PHY */
 #define WAN_PORT_CPU			5	/* fake */
-#define ESW_MAC_ID_MAX			4
-#define ESW_PHY_ID_MAX			4
+#define MASK_WAN_PORT_X			0
+#define MASK_WAN_PORT_CPU		0
+#define ESW_EPHY_ID_MAX			4
 #define ESW_MASK_EXCLUDE		((1<<5)|(1<<0))	/* P5/P0 excluded */
 #elif defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
-#define WAN_PORT_PHY			4	/* P4 PHY */
-#define WAN_PORT_MAC			4	/* fake */
+#define WAN_PORT_X			4	/* P4 PHY */
 #define WAN_PORT_CPU			5	/* fake */
-#define ESW_MAC_ID_MAX			4
-#define ESW_PHY_ID_MAX			4
+#define MASK_WAN_PORT_X			0
+#define MASK_WAN_PORT_CPU		0
+#define ESW_EPHY_ID_MAX			4
 #define ESW_MASK_EXCLUDE		((1<<5)|(1<<4))	/* P5/P4 excluded */
-#elif defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
-#define WAN_PORT_PHY			CONFIG_RAETH_ESW_PORT_WAN	/* 8P8C WAN */
-#define WAN_PORT_MAC			WAN_PORT_PHY
-#define WAN_PORT_CPU			5	/* P5 = CPU WAN */
-#define ESW_MAC_ID_MAX			4
-#define ESW_PHY_ID_MAX			4
-#define ESW_MASK_EXCLUDE		0
+#elif defined (CONFIG_GE2_RGMII_AN)
+#define WAN_PORT_X			5	/* External PHY */
+#define WAN_PORT_CPU			5	/* fake */
+#define MASK_WAN_PORT_X			0
+#define MASK_WAN_PORT_CPU		0
+#define ESW_EPHY_ID_MAX			5
+#define ESW_MASK_EXCLUDE		(1<<5)	/* P5 excluded */
 #else
-#define WAN_PORT_PHY			CONFIG_RAETH_ESW_PORT_WAN	/* 8P8C WAN */
-#define WAN_PORT_MAC			WAN_PORT_PHY
+#define WAN_PORT_X			CONFIG_RAETH_ESW_PORT_WAN
 #define WAN_PORT_CPU			6	/* P6 = CPU LAN + WAN */
-#define ESW_MAC_ID_MAX			4
-#if defined (CONFIG_GE2_RGMII_AN)
-#define ESW_PHY_ID_MAX			5
-#else
-#define ESW_PHY_ID_MAX			4
-#endif
+#define MASK_WAN_PORT_X			(1u << WAN_PORT_X)
+#define MASK_WAN_PORT_CPU		(1u << WAN_PORT_CPU)
+#define ESW_EPHY_ID_MAX			4
 #define ESW_MASK_EXCLUDE		(1<<5)	/* P5 excluded */
 #endif
 #else /* !CONFIG_MT7530_GSW */
-#define WAN_PORT_PHY			CONFIG_RAETH_ESW_PORT_WAN	/* 8P8C WAN */
-#define WAN_PORT_MAC			WAN_PORT_PHY
+#define WAN_PORT_X			CONFIG_RAETH_ESW_PORT_WAN
 #define WAN_PORT_CPU			6	/* P6 = CPU LAN + WAN */
-#if defined (CONFIG_RAETH_HAS_PORT5)
-#define ESW_MAC_ID_MAX			5
-#define ESW_PHY_ID_MAX			5
-#if (LAN_PORT_1 != 4) && (LAN_PORT_2 != 4) && (LAN_PORT_3 != 4) && (LAN_PORT_4 != 4) && (WAN_PORT_PHY != 4)
-#define ESW_MASK_EXCLUDE		(1<<4)	/* P4 excluded */
-#else
+#define MASK_WAN_PORT_X			(1u << WAN_PORT_X)
+#define MASK_WAN_PORT_CPU		(1u << WAN_PORT_CPU)
+#if defined (CONFIG_P5_MAC_TO_PHY_MODE)
+#define ESW_EPHY_ID_MAX			5
 #define ESW_MASK_EXCLUDE		0
-#endif
 #else
-#define ESW_MAC_ID_MAX			4
-#define ESW_PHY_ID_MAX			4
+#define ESW_EPHY_ID_MAX			4
 #define ESW_MASK_EXCLUDE		(1<<5)	/* P5 excluded */
 #endif
 #endif
@@ -88,10 +99,19 @@
 #define MT7530_P5_ENABLED
 #endif
 
+#if defined (MT7530_P5_ENABLED) || defined (CONFIG_RAETH_GMAC2)
+#define MT7530_P6_UNTAGGED
+#endif
+
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_RGMII_AN) || \
+    defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+#define RAETH_GE2_MAC_TO_GPHY
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 #define ESW_DEFAULT_JUMBO_FRAMES	0
-#define ESW_DEFAULT_GREEN_ETHERNET	0
+#define ESW_DEFAULT_EEE_LPI		0
 #define ESW_DEFAULT_STORM_RATE		0
 #define ESW_DEFAULT_IGMP_SNOOPING	1
 
@@ -204,7 +224,7 @@ typedef struct esw_mib_counters_s
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-u32 get_ports_mask_lan(u32 include_cpu);
+u32 get_ports_mask_lan(u32 include_cpu, int is_phy_id);
 
 ////////////////////////////////////////////////////////////////////////////////////
 

@@ -305,25 +305,32 @@ config  RAETH_ESW_PORT_LAN1
 	  please choose port ID from range 0..5
 
 config  RAETH_ESW_PORT_LAN2
-	int "ESW LAN2 Port ID (0..4)"
+	int "ESW LAN2 Port ID (0..5)"
 	depends on RAETH_ESW_CONTROL
 	default 2
 	help
-	  please choose port ID from range 0..4
+	  please choose port ID from range 0..5
 
 config  RAETH_ESW_PORT_LAN3
-	int "ESW LAN3 Port ID (0..4)"
+	int "ESW LAN3 Port ID (0..5)"
 	depends on RAETH_ESW_CONTROL
 	default 1
 	help
-	  please choose port ID from range 0..4
+	  please choose port ID from range 0..5
 
 config  RAETH_ESW_PORT_LAN4
-	int "ESW LAN4 Port ID (0..4)"
+	int "ESW LAN4 Port ID (0..5)"
 	depends on RAETH_ESW_CONTROL
 	default 0
 	help
-	  please choose port ID from range 0..4
+	  please choose port ID from range 0..5
+
+config  RAETH_ESW_PORT_LAN5
+	int "ESW LAN5 Port ID (0..5), -1 is disabled"
+	depends on RAETH_ESW_CONTROL && (GE2_RGMII_AN || P5_MAC_TO_PHY_MODE)
+	default -1
+	help
+	  please choose port ID from range 0..5
 
 config  RAETH_DHCP_TOUCH
 	bool "Send SIGUSR1/2 to udhcpc at media state changed"

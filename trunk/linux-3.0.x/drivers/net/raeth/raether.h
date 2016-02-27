@@ -14,7 +14,7 @@
 
 ///////////////////////////////////////////////////////////////
 
-#define RAETH_VERSION		"v3.2.2"
+#define RAETH_VERSION		"v3.2.3"
 #define RAETH_DEV_NAME		"raeth"
 
 #define DEV_NAME		"eth2"
@@ -106,8 +106,8 @@ typedef struct _PSEUDO_ADAPTER
 
 int  raeth_ioctl(struct ifreq *ifr, int cmd);
 #if defined (CONFIG_RAETH_ESW_CONTROL)
+int  esw_ioctl_init_post(void);
 int  esw_ioctl_init(void);
-int  esw_control_post_init(void);
 void esw_ioctl_uninit(void);
 #elif defined (CONFIG_RAETH_DHCP_TOUCH)
 void esw_dhcpc_init(void);

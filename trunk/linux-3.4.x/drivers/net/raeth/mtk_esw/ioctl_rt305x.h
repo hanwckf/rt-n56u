@@ -21,28 +21,39 @@
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+#define WAN_PORT_X			CONFIG_RAETH_ESW_PORT_WAN
 #define LAN_PORT_1			CONFIG_RAETH_ESW_PORT_LAN1	/* 8P8C LAN1 */
 #define LAN_PORT_2			CONFIG_RAETH_ESW_PORT_LAN2	/* 8P8C LAN2 */
 #define LAN_PORT_3			CONFIG_RAETH_ESW_PORT_LAN3	/* 8P8C LAN3 */
 #define LAN_PORT_4			CONFIG_RAETH_ESW_PORT_LAN4	/* 8P8C LAN4 */
-#define WAN_PORT_1			CONFIG_RAETH_ESW_PORT_WAN	/* 8P8C WAN */
 
-#define LAN_PORT_CPU			6
-#define WAN_PORT_CPU			LAN_PORT_CPU	/* P6 = CPU LAN + WAN */
+#define MASK_WAN_PORT_X			(1u << WAN_PORT_X)
+#define MASK_LAN_PORT_1			(1u << LAN_PORT_1)
+#define MASK_LAN_PORT_2			(1u << LAN_PORT_2)
+#define MASK_LAN_PORT_3			(1u << LAN_PORT_3)
+#define MASK_LAN_PORT_4			(1u << LAN_PORT_4)
 
-#if defined (CONFIG_RAETH_HAS_PORT5)
-#define ESW_MAC_ID_MAX			5
-#define ESW_PHY_ID_MAX			5
-#define ESW_MASK_EXCLUDE		(1<<4)	/* P4 excluded */
+#if defined (CONFIG_RAETH_ESW_PORT_LAN5) && (CONFIG_RAETH_ESW_PORT_LAN5 >= 0)
+#define LAN_PORT_5			CONFIG_RAETH_ESW_PORT_LAN5
+#define MASK_LAN_PORT_5			(1u << LAN_PORT_5)
 #else
-#define ESW_MAC_ID_MAX			4
-#define ESW_PHY_ID_MAX			4
+#define MASK_LAN_PORT_5			0
+#endif
+
+#define ESW_PORT_CPU			6
+#define MASK_ESW_PORT_CPU		(1u << ESW_PORT_CPU)
+
+#if defined (CONFIG_P5_MAC_TO_PHY_MODE)
+#define ESW_EPHY_ID_MAX			5
+#define ESW_MASK_EXCLUDE		0
+#else
+#define ESW_EPHY_ID_MAX			4
 #define ESW_MASK_EXCLUDE		(1<<5)	/* P5 excluded */
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-#define ESW_DEFAULT_GREEN_ETHERNET	0
+#define ESW_DEFAULT_EEE_LPI		0
 #define ESW_DEFAULT_STORM_RATE		0
 
 ////////////////////////////////////////////////////////////////////////////////////

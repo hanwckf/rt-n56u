@@ -37,7 +37,7 @@
 #endif
 
 #if defined(CONFIG_RTL8365_ASIC_MB) || defined(CONFIG_RTL8367_ASIC_RVB) || defined(CONFIG_RTL8367_ASIC_R) || \
-   !defined(RAETH_USE_BOTH_RGMII)
+   !defined(RAETH_USE_BOTH_RGMII) || defined(CONFIG_RTL8367_MCM_WAN_PORT)
  #define RTL8367_SINGLE_EXTIF
 #endif
 
@@ -108,13 +108,19 @@
 #define LAN_PORT_3				CONFIG_RTL8367_PORT_LAN3		/* 8P8C LAN3 */
 #define LAN_PORT_4				CONFIG_RTL8367_PORT_LAN4		/* 8P8C LAN4 */
 
-#define MASK_WAN_PORT_X				(1u << WAN_PORT_X)
 #define MASK_WAN_PORT_CPU			(1u << WAN_PORT_CPU)
 #define MASK_LAN_PORT_CPU			(1u << LAN_PORT_CPU)
 #define MASK_LAN_PORT_1				(1u << LAN_PORT_1)
 #define MASK_LAN_PORT_2				(1u << LAN_PORT_2)
 #define MASK_LAN_PORT_3				(1u << LAN_PORT_3)
 #define MASK_LAN_PORT_4				(1u << LAN_PORT_4)
+
+#if defined(CONFIG_RTL8367_MCM_WAN_PORT)
+ #define MCM_WAN_PORT_X				CONFIG_RTL8367_MCM_WAN_PORT_ID
+ #define MASK_WAN_PORT_X			0
+#else
+ #define MASK_WAN_PORT_X			(1u << WAN_PORT_X)
+#endif
 
 #if defined(CONFIG_RTL8370_ASIC_M)
  #define LAN_PORT_5				CONFIG_RTL8367_PORT_LAN5

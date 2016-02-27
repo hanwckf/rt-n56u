@@ -119,4 +119,7 @@ rtl8367-$(CONFIG_RTL8367_CIF_MDIO)	+= ralink_mdio.o
 rtl8367-$(CONFIG_RTL8367_IGMP_SNOOPING)	+= rtl8367_igmp.o
 rtl8367-y				+= rtl8367_drv.o
 
+# MT7621/MT7623 MCM (MT7530 GSW) stuff
+rtl8367-$(CONFIG_RTL8367_MCM_WAN_PORT)	+= mt7530_mcm.o
+
 obj-$(CONFIG_RTL8367)			+= rtl8367.o

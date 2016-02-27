@@ -154,6 +154,55 @@ void mt7621_apll_trgmii_enable(void)
 }
 #endif
 
+void mt7621_eth_gdma_vlan_pvid(int ge2, u32 vlan_id, u32 prio)
+{
+	u32 gdm_addr = (ge2) ? GDMA2_VLAN_GEN : GDMA1_VLAN_GEN;
+	u32 gdm_vlan_gen = 0x81000000;
+
+	vlan_id &= 0xfff;
+	prio &= 0x7;
+
+	if (vlan_id > 0)
+		gdm_vlan_gen |= (prio << 13) | vlan_id;
+
+	sysRegWrite(gdm_addr, gdm_vlan_gen);
+}
+
+void mt7621_eth_gdma_vlan_insv(int ge2, int insv_en)
+{
+	u32 gdm_addr = (ge2) ? GDMA2_FWD_CFG : GDMA1_FWD_CFG;
+	u32 gdm_ig_ctrl;
+
+	gdm_ig_ctrl = sysRegRead(gdm_addr);
+	if (insv_en)
+		gdm_ig_ctrl |=  BIT(25);
+	else
+		gdm_ig_ctrl &= ~BIT(25);
+	sysRegWrite(gdm_addr, gdm_ig_ctrl);
+}
+
+void mt7621_eth_gdma_vlan_untag(int ge2, int untag_en)
+{
+	u32 gdm_addr = (ge2) ? GDMA2_SHPR_CFG : GDMA1_SHPR_CFG;
+	u32 gdm_eg_ctrl;
+
+	gdm_eg_ctrl = sysRegRead(gdm_addr);
+	if (untag_en)
+		gdm_eg_ctrl |=  BIT(30);
+	else
+		gdm_eg_ctrl &= ~BIT(30);
+	sysRegWrite(gdm_addr, gdm_eg_ctrl);
+}
+
+void mt7621_eth_init_ge2(void)
+{
+	/* MT7621 GE2 + External GSW */
+#if defined (CONFIG_GE2_RGMII_FORCE_1000)
+	ge2_set_mode(0, 1);
+	sysRegWrite(REG_ETH_GE2_MAC_CONTROL, 0x2105e33b);
+#endif
+}
+
 void mt7621_eth_init(void)
 {
 	u32 reg_val;
@@ -214,10 +263,7 @@ void mt7621_eth_init(void)
 #endif
 
 	/* MT7621 GE2 + External GSW */
-#if defined (CONFIG_GE2_RGMII_FORCE_1000)
-	ge2_set_mode(0, 1);
-	sysRegWrite(REG_ETH_GE2_MAC_CONTROL, 0x2105e33b);
-#endif
+	mt7621_eth_init_ge2();
 
 	/* MT7621 GE1 + External PHY or CPU */
 #if defined (CONFIG_GE1_RGMII_AN)

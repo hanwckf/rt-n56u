@@ -190,3 +190,17 @@ config  RTL8367_IGMP_SNOOPING
 	select BRIDGE_IGMP_EVENT_HOOK
 	default y
 
+comment "MT7621 GSW port control"
+	depends on RTL8367 && RAETH && (RALINK_MT7621)
+
+config  RTL8367_MCM_WAN_PORT
+	bool "MT7621 GSW: use one Ethernet port as WAN"
+	depends on RTL8367 && RAETH && (RALINK_MT7621)
+	select MT7530_GSW
+
+config  RTL8367_MCM_WAN_PORT_ID
+	int "MT7621 GSW: WAN Port ID (0..4)"
+	depends on RTL8367_MCM_WAN_PORT
+	default 4
+	help
+	  please choose port ID from range 0..4

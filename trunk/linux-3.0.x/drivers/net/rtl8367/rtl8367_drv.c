@@ -89,6 +89,10 @@
 #include "../raeth/ra_esw_mt7620.h"
 #endif
 
+#if defined (CONFIG_RTL8367_MCM_WAN_PORT)
+#include "mt7530_mcm.h"
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 static DEFINE_MUTEX(asic_access_mutex);
@@ -269,6 +273,9 @@ static void asic_clear_mac_table(void)
 #endif
 #if defined(CONFIG_P5_RGMII_TO_MAC_MODE) && defined(CONFIG_P4_RGMII_TO_MAC_MODE)
 	mt7620_esw_mac_table_clear();
+#endif
+#if defined(MCM_WAN_PORT_X)
+	mcm_mac_table_clear();
 #endif
 }
 
@@ -851,7 +858,7 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	u32 prio[SWAPI_VLAN_RULE_NUM] = {0};
 	u32 tagg[SWAPI_VLAN_RULE_NUM] = {0};
 	u32 i, cvid, untg_vid, next_idx, vlan_idx, mask_ingress, vlan_filter_on;
-#if !defined(RTL8367_SINGLE_EXTIF)
+#if !defined(RTL8367_SINGLE_EXTIF) || defined(MCM_WAN_PORT_X)
 	pvlan_member_t pvlan_member_cpu_wan;
 #endif
 
@@ -899,7 +906,7 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	/* fill WAN port (use PVID 2 for handle untagged traffic -> VID2) */
 	pvlan_member[WAN_PORT_X].pvid = untg_vid;
 
-#if !defined(RTL8367_SINGLE_EXTIF)
+#if !defined(RTL8367_SINGLE_EXTIF) || defined(MCM_WAN_PORT_X)
 	/* fill CPU WAN port (use PVID 2 for handle untagged traffic -> VID2) */
 	pvlan_member_cpu_wan.pvid = untg_vid;
 	pvlan_member_cpu_wan.prio = 0;
@@ -911,7 +918,7 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	vlan_entry[0].fid = 1;
 	vlan_entry[0].cvid = 1;
 	vlan_entry[0].port_member |= MASK_LAN_PORT_CPU;
-#if !defined(RTL8367_SINGLE_EXTIF)
+#if !defined(RTL8367_SINGLE_EXTIF) || defined(MCM_WAN_PORT_X)
 	vlan_entry[0].port_untag  |= MASK_LAN_PORT_CPU;
 #endif
 
@@ -984,7 +991,7 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 		}
 	}
 
-#if !defined(RTL8367_SINGLE_EXTIF)
+#if !defined(RTL8367_SINGLE_EXTIF) || defined(MCM_WAN_PORT_X)
 	/* if INET and IPTV tagged with common VID, untag WAN_CPU + use PVID */
 	if (tagg[SWAPI_VLAN_RULE_WAN_INET] && pvid[SWAPI_VLAN_RULE_WAN_INET] == pvid[SWAPI_VLAN_RULE_WAN_IPTV]) {
 		/* update VID #2 members (do not forward untagged packets to WAN_CPU) */
@@ -1064,6 +1071,27 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 			}
 		}
 	}
+
+#if defined(MCM_WAN_PORT_X)
+	mcm_vlan_reset_table();
+	mcm_vlan_set_port_wan(pvlan_member[WAN_PORT_X].pvid, pvlan_member[WAN_PORT_X].prio, pvlan_member[WAN_PORT_X].tagg);
+	mcm_vlan_set_port_cpu(pvlan_member_cpu_wan.pvid, pvlan_member_cpu_wan.prio, pvlan_member_cpu_wan.tagg);
+	mcm_vlan_set_entries(vlan_entry, VLAN_ENTRY_ID_MAX+1);
+
+	/* remove WAN mask from RTL8367 */
+	for (i = 0; i <= VLAN_ENTRY_ID_MAX; i++) {
+		if (!vlan_entry[i].valid)
+			continue;
+		if (vlan_entry[i].port_member & (1u << WAN_PORT_X))
+			vlan_entry[i].port_member &= ~(1u << WAN_PORT_X);
+		if (vlan_entry[i].port_untag & (1u << WAN_PORT_X))
+			vlan_entry[i].port_untag &= ~(1u << WAN_PORT_X);
+		if (vlan_entry[i].port_member == MASK_WAN_PORT_CPU) {
+			vlan_entry[i].port_member = 0;
+			vlan_entry[i].port_untag = 0;
+		}
+	}
+#endif
 
 	/* fill VLAN table */
 	if (!g_vlan_cleared)
@@ -1173,6 +1201,11 @@ static void asic_vlan_init_vid1(void)
 
 	/* set CPU port accept mask */
 	rtk_vlan_portAcceptFrameType_set(LAN_PORT_CPU, ACCEPT_FRAME_TYPE_ALL);
+
+#if defined(MCM_WAN_PORT_X)
+	mcm_vlan_reset_table();
+	mcm_vlan_set_mode_matrix();
+#endif
 }
 
 static void asic_vlan_bridge_isolate(u32 wan_bridge_mode, int bridge_changed, int vlan_rule_changed)
@@ -1322,6 +1355,13 @@ static int asic_status_speed_port_uapi(u32 port_id_uapi, u32 *port_status)
 	rtk_api_ret_t retVal;
 	rtk_port_t port_id;
 
+#if defined(MCM_WAN_PORT_X)
+	if (port_id_uapi == SWAPI_PORT_WAN) {
+		*port_status = mcm_status_speed_port(MCM_WAN_PORT_X);
+		return 0;
+	}
+#endif
+
 	port_id = get_port_from_uapi(port_id_uapi);
 	if (port_id > RTK_PHY_ID_MAX)
 		return -EINVAL;
@@ -1360,6 +1400,13 @@ static int asic_status_link_port_uapi(u32 port_id_uapi, rtk_port_linkStatus_t *p
 	rtk_api_ret_t retVal;
 	rtk_port_t port_id;
 
+#if defined(MCM_WAN_PORT_X)
+	if (port_id_uapi == SWAPI_PORT_WAN) {
+		*pLinkStatus = mcm_status_link_port(MCM_WAN_PORT_X);
+		return 0;
+	}
+#endif
+
 	port_id = get_port_from_uapi(port_id_uapi);
 	if (port_id > RTK_PHY_ID_MAX)
 		return -EINVAL;
@@ -1375,6 +1422,15 @@ static int asic_status_link_ports(int is_wan, rtk_port_linkStatus_t *pLinkStatus
 {
 	rtk_api_ret_t retVal;
 	u32 i, portmask;
+
+#if defined(MCM_WAN_PORT_X)
+	if (is_wan) {
+		if (mcm_status_link_port(MCM_WAN_PORT_X)) {
+			*pLinkStatus = 1;
+			return 0;
+		}
+	}
+#endif
 
 	if (is_wan)
 		portmask = get_phy_ports_mask_wan(0);
@@ -1399,6 +1455,11 @@ static u32 asic_status_link_changed(void)
 {
 	u32 link_changed = 0, int_mask = 0;
 
+#if defined(MCM_WAN_PORT_X)
+	if (mcm_status_link_changed())
+		link_changed = 1;
+#endif
+
 #if defined(CONFIG_RTL8367_API_8370)
 	if (rtl8370_getAsicInterruptStatus(&int_mask) == RT_ERR_OK) {
 		if (int_mask & (1u << INT_TYPE_LINK_STATUS)) {
@@ -1422,6 +1483,11 @@ static int asic_status_bytes_port_uapi(u32 port_id_uapi, port_bytes_t *pb)
 	rtk_api_ret_t retVal;
 	rtk_port_t port_id;
 
+#if defined(MCM_WAN_PORT_X)
+	if (port_id_uapi == SWAPI_PORT_WAN)
+		return mcm_status_bytes_port(MCM_WAN_PORT_X, pb);
+#endif
+
 	port_id = get_port_from_uapi(port_id_uapi);
 	if (port_id >= RTK_MAX_NUM_OF_PORT)
 		return -EINVAL;
@@ -1441,6 +1507,11 @@ static int asic_status_mib_port_uapi(u32 port_id_uapi, rtk_stat_port_cntr_t *pc)
 {
 	rtk_api_ret_t retVal;
 	rtk_port_t port_id;
+
+#if defined(MCM_WAN_PORT_X)
+	if (port_id_uapi == SWAPI_PORT_WAN)
+		return mcm_status_mib_port(MCM_WAN_PORT_X, pc);
+#endif
 
 	port_id = get_port_from_uapi(port_id_uapi);
 	if (port_id >= RTK_MAX_NUM_OF_PORT)
@@ -1464,6 +1535,10 @@ static void asic_reset_mib_all(void)
 	portmask |= (1u << EXT_PORT_INIC);
 #endif
 
+#if defined(MCM_WAN_PORT_X)
+	mcm_mib_reset();
+#endif
+
 	for (i = 0; i < RTK_MAX_NUM_OF_PORT; i++) {
 		if ((portmask >> i) & 0x1)
 			rtk_stat_port_reset(i);
@@ -1474,6 +1549,11 @@ static void change_ports_power(u32 power_on, u32 ports_mask)
 {
 	u32 i;
 	rtk_enable_t is_enable = (power_on) ? ENABLED : DISABLED;
+
+#if defined(MCM_WAN_PORT_X)
+	if (ports_mask & SWAPI_PORTMASK_WAN)
+		mcm_set_port_phy_power(MCM_WAN_PORT_X, power_on);
+#endif
 
 	ports_mask = get_ports_mask_from_uapi(ports_mask);
 
@@ -1488,6 +1568,13 @@ static int change_wan_lan_ports_power(u32 power_on, u32 is_wan)
 	int power_changed = 0;
 	u32 i, ports_mask;
 	rtk_enable_t is_enable = (power_on) ? ENABLED : DISABLED;
+
+#if defined(MCM_WAN_PORT_X)
+	if (is_wan) {
+		if (mcm_set_port_phy_power(MCM_WAN_PORT_X, power_on))
+			power_changed = 1;
+	}
+#endif
 
 	if (is_wan)
 		ports_mask = get_phy_ports_mask_wan(0);
@@ -1560,6 +1647,9 @@ static int change_led_mode_group0(u32 led_mode)
 		g_led_phy_mode_group0 = led_mode;
 		
 		asic_led_mode(LED_GROUP_0, led_mode);
+#if defined(MCM_WAN_PORT_X)
+		mcm_led_mode(led_mode);
+#endif
 	}
 
 	return 0;
@@ -1574,6 +1664,9 @@ static int change_led_mode_group1(u32 led_mode)
 		g_led_phy_mode_group1 = led_mode;
 		
 		asic_led_mode(LED_GROUP_1, led_mode);
+#if defined(MCM_WAN_PORT_X)
+		mcm_led_mode(led_mode);
+#endif
 	}
 
 	return 0;
@@ -1600,6 +1693,11 @@ static int change_port_link_mode_uapi(u32 port_id_uapi, u32 port_link_mode)
 	rtk_api_ret_t retVal;
 	rtk_port_phy_ability_t phy_cfg;
 	rtk_port_t port_id;
+
+#if defined(MCM_WAN_PORT_X)
+	if (port_id_uapi == SWAPI_PORT_WAN)
+		return mcm_set_port_link_mode(MCM_WAN_PORT_X, port_link_mode);
+#endif
 
 	port_id = get_port_from_uapi(port_id_uapi);
 	if (port_id > RTK_PHY_ID_MAX)
@@ -1854,6 +1952,9 @@ static int change_storm_control_broadcast(u32 control_rate_mbps)
 		if (rate_kbps < 1 || rate_kbps > MAX_STORM_RATE_VAL)
 			rate_kbps = MAX_STORM_RATE_VAL;
 		
+#if defined(MCM_WAN_PORT_X)
+		mcm_storm_control(MCM_WAN_PORT_X, 1, 0, 0, control_rate_mbps);
+#endif
 		for (i = 0; i <= RTK_PHY_ID_MAX; i++)
 			rtk_storm_controlRate_set(i, STORM_GROUP_BROADCAST, rate_kbps, 1, MODE0);
 		
@@ -2166,6 +2267,9 @@ int __init rtl8367_init(void)
 		return r;
 	}
 
+#if defined(MCM_WAN_PORT_X)
+	mcm_init();
+#endif
 	reset_and_init_switch(1);
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
 	igmp_sn_init();
@@ -2180,6 +2284,9 @@ void __exit rtl8367_exit(void)
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
 	igmp_sn_uninit();
+#endif
+#if defined(MCM_WAN_PORT_X)
+	mcm_uninit();
 #endif
 }
 

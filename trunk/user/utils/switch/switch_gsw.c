@@ -102,7 +102,7 @@ void usage(char *cmd)
 	printf(" %s tag off [port]                       - egress untag on port 0~6\n", cmd);
 	printf(" %s tag swap [port]                      - egress swap cvid<->stag on port 0~6\n", cmd);
 	printf(" %s tag stack [port]                     - egress stack stag on port 0~6\n", cmd);
-	printf(" %s pvid on [port] [pvid]                - set pvid on port 0~6\n", cmd);
+	printf(" %s pvid [port] [pvid]                   - set pvid on port 0~6\n", cmd);
 #if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_MT7530_GSW)
 	printf(" %s vlan set [vid] [portmap] <stag> <eg_con> <eg_tag> - set vlan id and associated member\n", cmd);
 #else
@@ -1719,6 +1719,22 @@ void vlan_dump(int max_vid)
 				printf("  %3d\n", ((value & 0xe)>>1));
 		}
 	}
+
+	printf("\nPVID:\n");
+	printf("port  pvid  prio  matrix\n");
+//                 0     1     3  ----1--
+	for (i = 0; i < 7; i++) {
+		reg_read(0x2014 + i*0x100, &value);
+		reg_read(0x2004 + i*0x100, &value2);
+		printf("%4d  %4d  %4d  ", i, value & 0xfff, (value >> 13) & 0x7);
+		value2 >>= 16;
+		value2  &= 0xff;
+		for (j = 0; j < 7; j++) {
+			mask = (1u << j);
+			printf("%c", (value2 & mask)? '1':'-');
+		}
+		printf("\n");
+	}
 }
 #else
 void vlan_dump(void)
@@ -1780,6 +1796,14 @@ void vlan_dump(void)
 				printf(" invalid\n");
 			}
 		}
+	}
+
+	printf("\nPVID:\n");
+	printf("port  pvid  prio\n");
+//                 0     1     3
+	for (i = 0; i < 8; i++) {
+		reg_read(0x2014 + i*0x100, &value);
+		printf("%4d  %4d  %4d\n", i, value & 0xfff, (value >> 13) & 0x7);
 	}
 }
 #endif

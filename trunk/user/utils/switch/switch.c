@@ -11,6 +11,7 @@
 #define RT_SWITCH_HELP		1
 #define RT_TABLE_MANIPULATE	1
 
+#define REG_ESW_PFC1			0x14
 #define REG_ESW_TABLE_SEARCH		0x24
 #define REG_ESW_TABLE_STATUS0		0x28
 #define REG_ESW_TABLE_STATUS1		0x2C
@@ -18,6 +19,7 @@
 #define REG_ESW_WT_MAC_AD0		0x34
 #define REG_ESW_WT_MAC_AD1		0x38
 #define REG_ESW_WT_MAC_AD2		0x3C
+#define REG_ESW_PVIDC_BASE		0x40
 #define REG_ESW_VLAN_ID_BASE		0x50
 #define REG_ESW_VLAN_MEMB_BASE		0x70
 #define REG_ESW_POC2			0x98
@@ -440,6 +442,25 @@ void vlan_dump(void)
 				printf("%s", "  -------\n");
 			}
 		}
+	}
+
+	printf("\nPVID:\n");
+	printf("port  pvid  prio\n");
+//                 0     1     7
+
+	reg_read(REG_ESW_PFC1, &value);
+	reg_read(REG_ESW_PVIDC_BASE + 0xC, &value2);
+
+	for (i = 0; i < 7; i++) {
+		reg_read(REG_ESW_PVIDC_BASE + 4*(i/2), &vid);
+		if ((i % 2) != 0)
+			vid >>= 12;
+		
+		vid &= 0xfff;
+		mask = (value >> (i*2)) & 0x3;
+		mask2 = ((value2 >> 16) >> (mask * 4)) & 0x7;
+		
+		printf("%4d  %4d  %4d\n", i, vid, mask2);
 	}
 }
 

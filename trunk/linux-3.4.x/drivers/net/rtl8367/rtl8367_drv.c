@@ -44,7 +44,19 @@
 #include "api_8370/rtl8370_asicdrv_green.h"
 #include "api_8370/rtl8370_asicdrv_interrupt.h"
 #include "api_8370/rtl8370_asicdrv_lut.h"
-#define MAX_STORM_RATE_VAL			RTK_MAX_INPUT_RATE
+ #define REG_CHIP_RESET				RTL8370_REG_CHIP_RESET
+ #define REG_VLAN_INGRESS			RTL8370_REG_VLAN_INGRESS
+ #define REG_PORT_STATUS(port)			(RTL8370_REG_PORT0_STATUS + (port))
+ #define REG_PORT_EEE_CFG_REG(port)		(RTL8370_REG_PORT0_EEECFG + ((port) << 5))
+ #define PORT0_STATUS_LINK_STATE_MASK		RTL8370_PORT0_STATUS_LINK_STATE_MASK
+ #define PORT0_STATUS_LINK_SPEED_MASK		RTL8370_PORT0_STATUS_LINK_SPEED_MASK
+ #define PORT0_STATUS_FULL_DUPLEX_CAP_MASK	RTL8370_PORT0_STATUS_FULL_DUPLUX_CAP_MASK
+ #define PORT0_STATUS_TX_FLOWCTRL_CAP_MASK	RTL8370_PORT0_STATUS_TX_FLOWCTRL_CAP_MASK
+ #define PORT0_STATUS_RX_FLOWCTRL_CAP_MASK	RTL8370_PORT0_STATUS_RX_FLOWCTRL_CAP_MASK
+ #define PORT0_EEECFG_EEE_LPI_MASK		RTL8370_PORT0_EEECFG_EEE_LPI_MASK
+ #define PORT0_EEECFG_EEE_TX_LPI_MASK		RTL8370_PORT0_EEECFG_EEE_TX_LPI_MASK
+ #define PORT0_EEECFG_EEE_RX_LPI_MASK		RTL8370_PORT0_EEECFG_EEE_RX_LPI_MASK
+ #define MAX_STORM_RATE_VAL			RTK_MAX_INPUT_RATE
 #undef RTK_PHY_ID_MAX
 #define RTK_PHY_ID_MAX				4	/* API 8370 used 0..7 ports, redefine to 0..4 */
 #else
@@ -56,7 +68,19 @@
 #include "api_8367b/rtl8367b_asicdrv_green.h"
 #include "api_8367b/rtl8367b_asicdrv_interrupt.h"
 #include "api_8367b/rtl8367b_asicdrv_lut.h"
-#define MAX_STORM_RATE_VAL			RTL8367B_QOS_RATE_INPUT_MAX
+ #define REG_CHIP_RESET				RTL8367B_REG_CHIP_RESET
+ #define REG_VLAN_INGRESS			RTL8367B_REG_VLAN_INGRESS
+ #define REG_PORT_STATUS(port)			(RTL8367B_REG_PORT0_STATUS + (port))
+ #define REG_PORT_EEE_CFG_REG(port)		(RTL8367B_REG_PORT0_EEECFG + ((port) << 5))
+ #define PORT0_STATUS_LINK_STATE_MASK		RTL8367B_PORT0_STATUS_LINK_STATE_MASK
+ #define PORT0_STATUS_LINK_SPEED_MASK		RTL8367B_PORT0_STATUS_LINK_SPEED_MASK
+ #define PORT0_STATUS_FULL_DUPLEX_CAP_MASK	RTL8367B_PORT0_STATUS_FULL_DUPLUX_CAP_MASK
+ #define PORT0_STATUS_TX_FLOWCTRL_CAP_MASK	RTL8367B_PORT0_STATUS_TX_FLOWCTRL_CAP_MASK
+ #define PORT0_STATUS_RX_FLOWCTRL_CAP_MASK	RTL8367B_PORT0_STATUS_RX_FLOWCTRL_CAP_MASK
+ #define PORT0_EEECFG_EEE_LPI_MASK		RTL8367B_PORT0_EEECFG_EEE_LPI_MASK
+ #define PORT0_EEECFG_EEE_TX_LPI_MASK		RTL8367B_PORT0_EEECFG_EEE_TX_LPI_MASK
+ #define PORT0_EEECFG_EEE_RX_LPI_MASK		RTL8367B_PORT0_EEECFG_EEE_RX_LPI_MASK
+ #define MAX_STORM_RATE_VAL			RTL8367B_QOS_RATE_INPUT_MAX
 #endif
 
 #if defined(CONFIG_P5_RGMII_TO_MAC_MODE) && defined(CONFIG_P4_RGMII_TO_MAC_MODE)
@@ -76,6 +100,7 @@ static u32 g_led_phy_mode_group2                 = SWAPI_LED_OFF;
 
 static u32 g_jumbo_frames_enabled                = RTL8367_DEFAULT_JUMBO_FRAMES;
 static u32 g_green_ethernet_enabled              = RTL8367_DEFAULT_GREEN_ETHERNET;
+static u32 g_eee_lpi_enabled                     = RTL8367_DEFAULT_EEE_LPI;
 
 static u32 g_storm_rate_unicast_unknown          = RTL8367_DEFAULT_STORM_RATE;
 static u32 g_storm_rate_multicast_unknown        = RTL8367_DEFAULT_STORM_RATE;
@@ -108,6 +133,44 @@ const char *g_port_desc_lan1  = "LAN1";
 const char *g_port_desc_lan2  = "LAN2";
 const char *g_port_desc_lan3  = "LAN3";
 const char *g_port_desc_lan4  = "LAN4";
+
+////////////////////////////////////////////////////////////////////////////////////
+
+static inline ret_t asic_reg_set(u32 reg, u32 value)
+{
+#if defined(CONFIG_RTL8367_API_8370)
+	return rtl8370_setAsicReg(reg, value);
+#else
+	return rtl8367b_setAsicReg(reg, value);
+#endif
+}
+
+static inline ret_t asic_reg_get(u32 reg, u32 *pvalue)
+{
+#if defined(CONFIG_RTL8367_API_8370)
+	return rtl8370_getAsicReg(reg, pvalue);
+#else
+	return rtl8367b_getAsicReg(reg, pvalue);
+#endif
+}
+
+static inline ret_t asic_phy_reg_set(rtk_port_t port, u32 reg, u32 value)
+{
+#if defined(CONFIG_RTL8367_API_8370)
+	return rtl8370_setAsicPHYReg(port, reg, value);
+#else
+	return rtl8367b_setAsicPHYReg(port, reg, value);
+#endif
+}
+
+static inline ret_t asic_phy_reg_get(rtk_port_t port, u32 reg, u32 *pvalue)
+{
+#if defined(CONFIG_RTL8367_API_8370)
+	return rtl8370_getAsicPHYReg(port, reg, pvalue);
+#else
+	return rtl8367b_getAsicPHYReg(port, reg, pvalue);
+#endif
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -539,11 +602,7 @@ static int asic_port_forward_mask(u32 port_mask, u32 fwd_ports_mask)
 
 static void asic_vlan_set_ingress_ports(u32 reg_ingress)
 {
-#if defined(CONFIG_RTL8367_API_8370)
-	rtl8370_setAsicReg(RTL8370_REG_VLAN_INGRESS, reg_ingress);
-#else
-	rtl8367b_setAsicReg(RTL8367B_REG_VLAN_INGRESS, reg_ingress);
-#endif
+	asic_reg_set(REG_VLAN_INGRESS, reg_ingress);
 }
 
 static void asic_vlan_accept_port_mode(u32 accept_mode, u32 port_mask)
@@ -1167,7 +1226,7 @@ static void asic_soft_reset(void)
 		msleep(50);
 }
 
-static rtk_api_ret_t rtk_port_Enable_set(rtk_port_t port, rtk_enable_t enable_phy)
+static rtk_api_ret_t rtk_port_Enable_set(rtk_port_t port, rtk_enable_t enable_phy, int restart_an)
 {
 	rtk_api_ret_t retVal;
 	rtk_port_phy_data_t data, new_data;
@@ -1180,21 +1239,28 @@ static rtk_api_ret_t rtk_port_Enable_set(rtk_port_t port, rtk_enable_t enable_ph
 	if (i_port_speed == SWAPI_LINK_SPEED_MODE_FORCE_POWER_OFF)
 		enable_phy = DISABLED;
 
+	retVal = asic_phy_reg_set(port, 31, 0);
+	if (retVal != RT_ERR_OK)
+		return retVal;
+
 	data = 0;
-	if ((retVal = rtk_port_phyReg_get(port, PHY_CONTROL_REG, &data)) != RT_ERR_OK)
+	retVal = asic_phy_reg_get(port, 0, &data);
+	if (retVal != RT_ERR_OK)
 		return retVal;
 
 	new_data = data;
+	new_data &= ~(1u << 11);
 
 	if (enable_phy == DISABLED)
-		new_data |=  (1 << 11);
-	else
-		new_data &= ~(1 << 11);
+		new_data |= (1u << 11);
+	else if (restart_an && (new_data & (1u << 12)))
+		new_data |= (1u << 9);
 
 	if (new_data != data) {
-		if (!(new_data & (1 << 11)) && (new_data & (1 << 12)))
-			new_data |= (1 << 9); // restart AN
-		if ((retVal = rtk_port_phyReg_set(port, PHY_CONTROL_REG, new_data)) != RT_ERR_OK)
+		if (!(new_data & (1u << 11)) && (new_data & (1u << 12)))
+			new_data |= (1u << 9); // restart AN
+		retVal = asic_phy_reg_set(port, 0, new_data);
+		if (retVal != RT_ERR_OK)
 			return retVal;
 	}
 
@@ -1203,30 +1269,28 @@ static rtk_api_ret_t rtk_port_Enable_set(rtk_port_t port, rtk_enable_t enable_ph
 	return RT_ERR_OK;
 }
 
+static void asic_eee_control(u32 is_eee_enabled)
+{
+	u32 i;
+
+	/* set EEE and restart negotiation */
+	for (i = 0; i <= RTK_PHY_ID_MAX; i++) {
+		rtk_eee_portEnable_set(i, is_eee_enabled);
+		if (g_port_phy_power[i])
+			rtk_port_Enable_set(i, ENABLED, 1);
+	}
+}
+
 static rtk_api_ret_t asic_status_link_port(rtk_port_t port, rtk_port_linkStatus_t *pLinkStatus)
 {
 	u32 regData = 0;
+	rtk_api_ret_t retVal;
 
-#if defined(CONFIG_RTL8367_API_8370)
-	rtk_api_ret_t retVal = rtl8370_getAsicReg(RTL8370_REG_PORT0_STATUS + port, &regData);
-#else
-	rtk_api_ret_t retVal = rtl8367b_getAsicReg(RTL8367B_REG_PORT0_STATUS + port, &regData);
-#endif
+	retVal = asic_reg_get(REG_PORT_STATUS(port), &regData);
 	if (retVal != RT_ERR_OK)
 		return retVal;
 
-#if defined(CONFIG_RTL8367_API_8370)
-	if (regData & RTL8370_PORT0_STATUS_LINK_STATE_MASK)
-#else
-	if (regData & RTL8367B_PORT0_STATUS_LINK_STATE_MASK)
-#endif
-	{
-		*pLinkStatus = 1;
-	}
-	else
-	{
-		*pLinkStatus = 0;
-	}
+	*pLinkStatus = (regData & PORT0_STATUS_LINK_STATE_MASK) ? 1 : 0;
 
 	return RT_ERR_OK;
 }
@@ -1234,40 +1298,32 @@ static rtk_api_ret_t asic_status_link_port(rtk_port_t port, rtk_port_linkStatus_
 static rtk_api_ret_t asic_status_speed_port(rtk_port_t port, u32 *port_status)
 {
 	u32 regData = 0;
-#if defined(CONFIG_RTL8367_API_8370)
-	rtk_api_ret_t retVal = rtl8370_getAsicReg(RTL8370_REG_PORT0_STATUS + port, &regData);
-#else
-	rtk_api_ret_t retVal = rtl8367b_getAsicReg(RTL8367B_REG_PORT0_STATUS + port, &regData);
-#endif
+	rtk_api_ret_t retVal;
+
+	retVal = asic_reg_get(REG_PORT_STATUS(port), &regData);
 	if (retVal != RT_ERR_OK)
-		return retVal;
+		return -EIO;
 
 	*port_status = 0;
 
-#if defined(CONFIG_RTL8367_API_8370)
-	if (regData & RTL8370_PORT0_STATUS_LINK_STATE_MASK)
-#else
-	if (regData & RTL8367B_PORT0_STATUS_LINK_STATE_MASK)
-#endif
-	{
+	if (regData & PORT0_STATUS_LINK_STATE_MASK) {
 		*port_status |= (1 << 16);
-#if defined(CONFIG_RTL8367_API_8370)
-		*port_status |= (regData & RTL8370_PORT0_STATUS_LINK_SPEED_MASK);
-		if (regData & RTL8370_PORT0_STATUS_FULL_DUPLUX_CAP_MASK)
+		*port_status |= (regData & PORT0_STATUS_LINK_SPEED_MASK);
+		if (regData & PORT0_STATUS_FULL_DUPLEX_CAP_MASK)
 			*port_status |= (1 << 8);
-		if (regData & RTL8370_PORT0_STATUS_TX_FLOWCTRL_CAP_MASK)
+		if (regData & PORT0_STATUS_TX_FLOWCTRL_CAP_MASK)
 			*port_status |= (1 << 9);
-		if (regData & RTL8370_PORT0_STATUS_RX_FLOWCTRL_CAP_MASK)
+		if (regData & PORT0_STATUS_RX_FLOWCTRL_CAP_MASK)
 			*port_status |= (1 << 10);
-#else
-		*port_status |= (regData & RTL8367B_PORT0_STATUS_LINK_SPEED_MASK);
-		if (regData & RTL8367B_PORT0_STATUS_FULL_DUPLUX_CAP_MASK)
-			*port_status |= (1 << 8);
-		if (regData & RTL8367B_PORT0_STATUS_TX_FLOWCTRL_CAP_MASK)
-			*port_status |= (1 << 9);
-		if (regData & RTL8367B_PORT0_STATUS_RX_FLOWCTRL_CAP_MASK)
-			*port_status |= (1 << 10);
-#endif
+		
+		if (g_eee_lpi_enabled) {
+			regData = 0;
+			retVal = asic_reg_get(REG_PORT_EEE_CFG_REG(port), &regData);
+			if (retVal == RT_ERR_OK) {
+				if (regData & (PORT0_EEECFG_EEE_LPI_MASK|PORT0_EEECFG_EEE_TX_LPI_MASK|PORT0_EEECFG_EEE_RX_LPI_MASK))
+					*port_status |= (1 << 11);
+			}
+		}
 	}
 
 	return RT_ERR_OK;
@@ -1355,7 +1411,7 @@ static void change_ports_power(u32 power_on, u32 ports_mask)
 	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
 	{
 		if ((ports_mask >> i) & 0x1)
-			rtk_port_Enable_set(i, is_enable);
+			rtk_port_Enable_set(i, is_enable, 0);
 	}
 }
 
@@ -1374,7 +1430,7 @@ static int change_wan_lan_ports_power(u32 power_on, u32 is_wan)
 	{
 		if (((ports_mask >> i) & 0x1) && (g_port_phy_power[i] ^ power_on)) {
 			power_changed = 1;
-			rtk_port_Enable_set(i, is_enable);
+			rtk_port_Enable_set(i, is_enable, 0);
 		}
 	}
 
@@ -1593,7 +1649,7 @@ static void change_port_link_mode(rtk_port_t port, u32 port_link_mode)
 	{
 		link_desc = "Power OFF";
 		flow_desc = "N/A";
-		retVal = rtk_port_Enable_set(port, DISABLED);
+		retVal = rtk_port_Enable_set(port, DISABLED, 0);
 	}
 	else
 	{
@@ -1630,14 +1686,27 @@ static void change_jumbo_frames_accept(u32 jumbo_frames_enabled)
 
 static void change_green_ethernet_mode(u32 green_ethernet_enabled)
 {
-	if (green_ethernet_enabled) green_ethernet_enabled = 1;
+	if (green_ethernet_enabled)
+		green_ethernet_enabled = 1;
 
-	if (g_green_ethernet_enabled != green_ethernet_enabled)
-	{
+	if (g_green_ethernet_enabled != green_ethernet_enabled) {
 		g_green_ethernet_enabled = green_ethernet_enabled;
-		printk("%s - green ethernet: %s\n", RTL8367_DEVNAME, (green_ethernet_enabled) ? "on" : "off");
-		
 		rtk_switch_greenEthernet_set(green_ethernet_enabled);
+		
+		printk("%s - green ethernet: %s\n", RTL8367_DEVNAME, (green_ethernet_enabled) ? "on" : "off");
+	}
+}
+
+static void change_eee_lpi_mode(u32 eee_lpi_enabled)
+{
+	if (eee_lpi_enabled)
+		eee_lpi_enabled = 1;
+
+	if (g_eee_lpi_enabled != eee_lpi_enabled) {
+		g_eee_lpi_enabled = eee_lpi_enabled;
+		asic_eee_control(eee_lpi_enabled);
+		
+		printk("%s - 802.3az EEE: %s\n", RTL8367_DEVNAME, (eee_lpi_enabled) ? "on" : "off");
 	}
 }
 
@@ -1852,8 +1921,25 @@ static void reset_and_init_switch(int first_call)
 	if (first_call) {
 		/* disable link for all PHY ports (please enable from user-level) */
 		for (i = 0; i <= RTK_PHY_ID_MAX; i++)
-			rtk_port_Enable_set(i, DISABLED);
+			rtk_port_Enable_set(i, DISABLED, 0);
 	}
+
+#if !RTL8367_DEFAULT_EEE_LPI
+	/* disable EEE by default */
+	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
+		rtk_eee_portEnable_set(i, DISABLED);
+#else
+#if defined(CONFIG_RTL8367_API_8370)
+	/* rtl8370 API not enabled EEE CFG by default */
+	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
+		rtl8370_setAsicReg(RTL8370_PORT_EEE_CFG_REG(i), RTL8370_PORT_EEE_100M_MASK|RTL8370_PORT_EEE_GIGA_MASK);
+#endif
+#endif
+
+#if !RTL8367_DEFAULT_GREEN_ETHERNET
+	/* disable Green Ethernet by default */
+	rtk_switch_greenEthernet_set(DISABLED);
+#endif
 
 	/* configure ExtIf */
 #if defined (CONFIG_GE1_RGMII_FORCE_100)
@@ -1913,6 +1999,12 @@ static void reset_and_init_switch(int first_call)
 	asic_led_mode(LED_GROUP_0, g_led_phy_mode_group0);	// group 0 - 8P8C usually green LED
 	asic_led_mode(LED_GROUP_1, g_led_phy_mode_group1);	// group 1 - 8P8C usually yellow LED
 	asic_led_mode(LED_GROUP_2, g_led_phy_mode_group2);
+
+	if (!first_call) {
+		/* restart auto-negotiation */
+		for (i = 0; i <= RTK_PHY_ID_MAX; i++)
+			rtk_port_Enable_set(i, ENABLED, 1);
+	}
 }
 
 #if defined(EXT_PORT_INIC)

@@ -25,7 +25,6 @@
  #include "rtl8367b_asicdrv_fc.h"
  #include "rtl8367b_asicdrv_mirror.h"
  #include "rtl8367b_asicdrv_eav.h"
- #include "rtl8367b_asicdrv_eee.h"
  #include "rtl8367b_asicdrv_scheduling.h"
  #include "rtl8367b_asicdrv_igmp.h"
  #include "rtl8367b_asicdrv_rma.h"
@@ -48,6 +47,7 @@
 #include "rtl8367b_asicdrv_interrupt.h"
 #include "rtl8367b_asicdrv_hsb.h"
 #include "rtl8367b_asicdrv_green.h"
+#include "rtl8367b_asicdrv_eee.h"
 
 #include "rtk_api.h"
 
@@ -17561,6 +17561,8 @@ rtk_api_ret_t rtk_eee_init(void)
     return RT_ERR_OK;
 }
 
+#endif
+
 /* Function Name:
  *      rtk_eee_portEnable_set
  * Description:
@@ -17585,7 +17587,6 @@ rtk_api_ret_t rtk_eee_init(void)
 rtk_api_ret_t rtk_eee_portEnable_set(rtk_port_t port, rtk_enable_t enable)
 {
     rtk_api_ret_t   retVal;
-    rtk_uint32      regData;
 
     if (port > RTK_PORT_ID_MAX)
         return RT_ERR_PORT_ID;
@@ -17610,17 +17611,10 @@ rtk_api_ret_t rtk_eee_portEnable_set(rtk_port_t port, rtk_enable_t enable)
     if ((retVal = rtl8367b_setAsicPHYReg(port, 21, (enable == ENABLED) ? 0x0100 : 0x0000))!=RT_ERR_OK)
         return retVal;
 
-    if ((retVal = rtl8367b_setAsicPHYReg(port, RTL8367B_PHY_PAGE_ADDRESS, 0))!=RT_ERR_OK)
-        return retVal;
-    if ((retVal = rtl8367b_getAsicPHYReg(port, 0, &regData))!=RT_ERR_OK)
-        return retVal;
-    regData |= 0x0200;
-    if ((retVal = rtl8367b_setAsicPHYReg(port, 0, regData))!=RT_ERR_OK)
-        return retVal;
-
     return RT_ERR_OK;
 }
 
+#if !defined(_REDUCE_CODE)
 /* Function Name:
  *      rtk_eee_portEnable_get
  * Description:

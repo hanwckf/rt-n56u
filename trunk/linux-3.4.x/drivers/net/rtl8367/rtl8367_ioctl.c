@@ -271,6 +271,10 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
 		change_green_ethernet_mode(uint_value);
 		break;
+	case RTL8367_IOCTL_EEE_LPI:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		change_eee_lpi_mode(uint_value);
+		break;
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
 	case RTL8367_IOCTL_IGMP_SNOOPING:

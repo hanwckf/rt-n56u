@@ -28,7 +28,6 @@
  #include "rtl8370_asicdrv_svlan.h"
  #include "rtl8370_asicdrv_inbwctrl.h"
  #include "rtl8370_asicdrv_mirror.h"
- #include "rtl8370_asicdrv_eee.h"
  #include "rtl8370_asicdrv_igmp.h"
  #include "rtl8370_asicdrv_rma.h"
  #include "rtl8370_asicdrv_cputag.h"
@@ -47,6 +46,7 @@
 #include "rtl8370_asicdrv_mib.h"
 #include "rtl8370_asicdrv_interrupt.h"
 #include "rtl8370_asicdrv_green.h"
+#include "rtl8370_asicdrv_eee.h"
 
 #include "rtk_api.h"
 
@@ -15108,6 +15108,7 @@ rtk_api_ret_t rtk_eee_init(void)
 
     return RT_ERR_OK;
 }
+#endif
 
 /* Function Name:
  *      rtk_eee_portEnable_set
@@ -15183,6 +15184,7 @@ rtk_api_ret_t rtk_eee_portEnable_set(rtk_port_t port, rtk_enable_t enable)
     return RT_ERR_OK;
 }
 
+#if !defined(_REDUCE_CODE)
 /* Function Name:
  *      rtk_eee_portEnable_get
  * Description:

@@ -9,8 +9,8 @@
  * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER 
  * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED. 
  *
- * $Revision: 1.1.1.1 $
- * $Date: 2010/12/02 04:34:28 $
+ * $Revision: 13305 $
+ * $Date: 2010-10-13 11:08:57 +0800 (星期三, 13 十月 2010) $
  *
  * Purpose : RTL8370 switch high-level API for RTL8367B
  * Feature : 
@@ -524,6 +524,7 @@ ret_t rtl8370_getAsicL2LookupTb(enum RTL8370_LUTREADMETHOD method, rtl8370_luttb
     uint32 regData;
     uint16* accessPtr;
     uint32 i;
+    uint32 cam_parser;
     rtl8370_fdbtb smil2Table;
 
 
@@ -575,7 +576,6 @@ ret_t rtl8370_getAsicL2LookupTb(enum RTL8370_LUTREADMETHOD method, rtl8370_luttb
         l2Table->lookup_hit = regData;
         if(!l2Table->lookup_hit)
             return RT_ERR_L2_ENTRY_NOTFOUND;
-    }
 
     /*Read access address*/
     retVal = rtl8370_getAsicRegBits(RTL8370_REG_TABLE_LUT_ADDR, RTL8370_TYPE_MASK | RTL8370_TABLE_LUT_ADDR_ADDRESS_MASK,&regData);
@@ -583,21 +583,34 @@ ret_t rtl8370_getAsicL2LookupTb(enum RTL8370_LUTREADMETHOD method, rtl8370_luttb
         return retVal;
 
     l2Table->address = regData;
+    }
 
     /*read L2 entry */
        memset(&smil2Table,0x00,sizeof(rtl8370_fdbtb));
 
-    accessPtr = (uint16*)&smil2Table;
-
-    for(i=0;i<7;i++)
+    cam_parser = 0;
+    if ((LUTREADMETHOD_ADDRESS== method)&&(l2Table->address & 0x2000))
     {
-        retVal = rtl8370_getAsicReg(RTL8370_TABLE_ACCESS_DATA_BASE+i,&regData);
+        /*Check CAM Table Valid Bit*/
+        retVal = rtl8370_getAsicReg(RTL8370_REG_TABLE_ACCESS_DATA6,&regData);
         if(retVal !=  RT_ERR_OK)
             return retVal;
+        cam_parser = regData&0x0001;
+    }
 
-        *accessPtr = regData;
+    if ((LUTREADMETHOD_MAC==method)||(l2Table->address<0x2000)||(cam_parser!=0))
+    {
+        accessPtr = (uint16*)&smil2Table;
+        for(i=0;i<7;i++)
+        {
+            retVal = rtl8370_getAsicReg(RTL8370_TABLE_ACCESS_DATA_BASE+i,&regData);
+            if(retVal !=  RT_ERR_OK)
+                return retVal;
 
-        accessPtr ++;
+            *accessPtr = regData;
+
+            accessPtr ++;
+        }
     }
 
     _rtl8370_fdbStSmi2User(l2Table, &smil2Table);

@@ -11,6 +11,12 @@
 #define	RTL8370_MAC7		7
 #define    RTL8370_EXTNO       2
 
+#define RTL8370_RTCT_PAGE          (11)
+#define RTL8370_RTCT_RESULT_A_REG  (27)
+#define RTL8370_RTCT_RESULT_B_REG  (28)
+#define RTL8370_RTCT_RESULT_C_REG  (29)
+#define RTL8370_RTCT_RESULT_D_REG  (30)
+#define RTL8370_RTCT_STATUS_REG    (26)
 
 /* enum for port current link speed */
 enum SPEEDMODE
@@ -117,6 +123,35 @@ typedef struct  rtl8370_port_status_s{
 #endif
 }rtl8370_port_status_t;
 
+typedef struct rtct_result_s
+{
+    uint32      channelAShort;
+    uint32      channelBShort;
+    uint32      channelCShort;
+    uint32      channelDShort;
+
+    uint32      channelAOpen;
+    uint32      channelBOpen;
+    uint32      channelCOpen;
+    uint32      channelDOpen;
+
+    uint32      channelAMismatch;
+    uint32      channelBMismatch;
+    uint32      channelCMismatch;
+    uint32      channelDMismatch;
+
+    uint32      channelALinedriver;
+    uint32      channelBLinedriver;
+    uint32      channelCLinedriver;
+    uint32      channelDLinedriver;
+
+    uint32      channelALen;
+    uint32      channelBLen;
+    uint32      channelCLen;
+    uint32      channelDLen;
+} rtl8370_port_rtct_result_t;
+
+
 
 /****************************************************************/
 /* Driver Proto Type Definition                                 */
@@ -148,6 +183,8 @@ extern ret_t rtl8370_setAsicPortExtMode(uint32 id, uint32 mode);
 extern ret_t rtl8370_getAsicPortExtMode(uint32 id, uint32 *mode);
 extern ret_t rtl8370_setAsicPortEnableAll(uint32 enable);
 extern ret_t rtl8370_getAsicPortEnableAll(uint32 *enable);
+extern ret_t rtl8370_setAsicPortRTCT(uint32 portmask);
+extern ret_t rtl8370_getAsicPortRTCTResult(uint32 port, rtl8370_port_rtct_result_t *pResult);
 
 #endif /*_RTL8370_ASICDRV_PORTSECURITY_H_*/
 

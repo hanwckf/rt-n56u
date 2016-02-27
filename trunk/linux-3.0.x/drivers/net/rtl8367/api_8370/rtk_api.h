@@ -73,8 +73,6 @@
 
 #define LED_GROUP_MAX                               3
 
-#define RTK_FILTER_RAW_FIELD_NUMBEER                8
-
 #define ACL_DEFAULT_ABILITY                         0
 #define ACL_DEFAULT_UNMATCH_PERMIT                  1
 
@@ -168,7 +166,6 @@
 
 #define RTK_IPV6_ADDR_WORD_LENGTH                   4UL
 
-#define ALLPORT 0xFF
 
 typedef enum rtk_cpu_insert_e
 {
@@ -556,6 +553,7 @@ typedef enum rtk_filter_flag_care_type_e
 } rtk_filter_flag_care_type_t;
 
 typedef uint32  rtk_filter_id_t;    /* filter id type */
+typedef uint32  rtk_filter_template_index_t;
 
 typedef enum rtk_filter_invert_e
 {
@@ -586,15 +584,22 @@ typedef struct
 
 typedef struct
 {
-    rtk_filter_field_raw_t      dataFieldRaw[RTK_FILTER_RAW_FIELD_NUMBEER];     
-    rtk_filter_field_raw_t      careFieldRaw[RTK_FILTER_RAW_FIELD_NUMBEER];     	
-	rtk_filter_field_type_raw_t fieldRawType[RTK_FILTER_RAW_FIELD_NUMBEER];
+    rtk_filter_field_raw_t      dataFieldRaw[RTK_MAX_NUM_OF_FILTER_FIELD];
+    rtk_filter_field_raw_t      careFieldRaw[RTK_MAX_NUM_OF_FILTER_FIELD];
+    rtk_filter_field_type_raw_t fieldRawType[RTK_MAX_NUM_OF_FILTER_FIELD];
     rtk_filter_care_tag_t       careTag;
     rtk_filter_value_t          activeport;	
     	
     rtk_filter_invert_t         invert;
 	rtk_enable_t                valid;
 } rtk_filter_cfg_raw_t;
+
+typedef struct
+{
+    uint32 index;
+    rtk_filter_field_type_raw_t fieldType[RTK_MAX_NUM_OF_FILTER_FIELD];
+} rtk_filter_template_t;
+
 
 typedef enum rtk_igmp_type_e
 {
@@ -969,7 +974,7 @@ typedef struct rtk_priority_select_s
     uint32 dot1q_pri;
     uint32 acl_pri;
     uint32 dscp_pri;
-    uint16 cvlan_pri;
+    uint32 cvlan_pri;
     uint32 svlan_pri;
     uint32 dmac_pri;
     uint32 smac_pri;
@@ -1321,6 +1326,62 @@ typedef enum rtk_vlan_tagMode_e
     VLAN_TAG_MODE_REAL_KEEP_FORMAT,
     VLAN_TAG_MODE_END
 } rtk_vlan_tagMode_t;
+
+typedef enum rtk_rldp_transmitMode_e
+{
+    RLDP_TRANSMIT_MODE_0 = 0,
+    RLDP_TRANSMIT_MODE_1,
+    RLDP_TRANSMIT_MODE_END
+} rtk_rldp_transmitMode_t;
+
+typedef struct rtk_rtctResult_s
+{
+    rtk_port_speed_t    linkType;
+    union
+    {
+        struct fe_result_s
+        {
+            uint32      isRxShort;
+            uint32      isTxShort;
+            uint32      isRxOpen;
+            uint32      isTxOpen;
+            uint32      isRxMismatch;
+            uint32      isTxMismatch;
+            uint32      isRxLinedriver;
+            uint32      isTxLinedriver;
+            uint32      rxLen;
+            uint32      txLen;
+        } fe_result;
+
+        struct ge_result_s
+        {
+            uint32      channelAShort;
+            uint32      channelBShort;
+            uint32      channelCShort;
+            uint32      channelDShort;
+
+            uint32      channelAOpen;
+            uint32      channelBOpen;
+            uint32      channelCOpen;
+            uint32      channelDOpen;
+
+            uint32      channelAMismatch;
+            uint32      channelBMismatch;
+            uint32      channelCMismatch;
+            uint32      channelDMismatch;
+
+            uint32      channelALinedriver;
+            uint32      channelBLinedriver;
+            uint32      channelCLinedriver;
+            uint32      channelDLinedriver;
+
+            uint32      channelALen;
+            uint32      channelBLen;
+            uint32      channelCLen;
+            uint32      channelDLen;
+        } ge_result;
+    };
+} rtk_rtctResult_t;
 
 #endif /* __RTK_API_H__ */
 

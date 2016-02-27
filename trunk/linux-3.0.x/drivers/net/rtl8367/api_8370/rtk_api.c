@@ -9,8 +9,8 @@
  * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER 
  * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED. 
  *
- * $Revision: 1.1.1.1 $
- * $Date: 2010/12/02 04:34:37 $
+ * $Revision: 23355 $
+ * $Date: 2011-09-27 18:33:58 +0800 (星期二, 27 九月 2011) $
  *
  * Purpose : RTK switch high-level API for RTL8370/RTL8367
  * Feature : Here is a list of all functions and variables in this module.
@@ -72,14 +72,14 @@ typedef enum rtk_filter_data_type_e
  * Description:
  *      Set meter configuration
  * Input:
- *      index       - shared meter index
- *      rate        - rate of share meter
- *      ifg_include - include IFG or not, ENABLE:include DISABLE:exclude
+ *      index       - Shared meter index
+ *      rate        - Rate of share meter
+ *      ifg_include - Include IFG or not, ENABLE:include DISABLE:exclude
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_FILTER_METER_ID - Invalid meter
  *      RT_ERR_RATE            - Invalid rate
@@ -114,13 +114,13 @@ rtk_api_ret_t rtk_rate_shareMeter_set(rtk_meter_id_t index, rtk_rate_t rate, rtk
  * Description:
  *      Get meter configuration
  * Input:
- *      index        - shared meter index
+ *      index        - Shared meter index
  * Output:
- *      pRate        - pointer of rate of share meter
- *      pIfg_include - include IFG or not, ENABLE:include DISABLE:exclude
+ *      pRate        - Pointer of rate of share meter
+ *      pIfg_include - Include IFG or not, ENABLE:include DISABLE:exclude
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_FILTER_METER_ID - Invalid meter
  * Note:
@@ -154,13 +154,13 @@ rtk_api_ret_t rtk_rate_shareMeter_get(rtk_meter_id_t index, rtk_rate_t *pRate ,r
  * Input:
  *      port - Port id
  *      rate - Rate of share meter
- *      ifg_include - include IFG or not, ENABLE:include DISABLE:exclude
- *      fc_enable - enable flow control or not, ENABLE:use flow control DISABLE:drop
+ *      ifg_include - Include IFG or not, ENABLE:include DISABLE:exclude
+ *      fc_enable - Enable flow control or not, ENABLE:use flow control DISABLE:drop
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_ENABLE - Invalid IFG parameter.
@@ -198,10 +198,10 @@ rtk_api_ret_t rtk_rate_igrBandwidthCtrlRate_set(rtk_port_t port, rtk_rate_t rate
  * Output:
  *      pRate - Rate of share meter
  *      pIfg_include - Rate's calculation including IFG, ENABLE:include DISABLE:exclude
- *      pFc_enable - enable flow control or not, ENABLE:use flow control DISABLE:drop
+ *      pFc_enable - Enable flow control or not, ENABLE:use flow control DISABLE:drop
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_INPUT - Invalid input parameters.
@@ -233,12 +233,12 @@ rtk_api_ret_t rtk_rate_igrBandwidthCtrlRate_get(rtk_port_t port, rtk_rate_t *pRa
  * Input:
  *      port - Port id
  *      rate - Rate of egress bandwidth
- *      ifg_include - include IFG or not, ENABLE:include DISABLE:exclude
+ *      ifg_include - Include IFG or not, ENABLE:include DISABLE:exclude
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_INPUT - Invalid input parameters.
@@ -280,8 +280,8 @@ rtk_api_ret_t rtk_rate_egrBandwidthCtrlRate_set( rtk_port_t port, rtk_rate_t rat
  *      pRate - Rate of egress bandwidth
  *      pIfg_include - Rate's calculation including IFG, ENABLE:include DISABLE:exclude
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_INPUT - Invalid input parameters.
@@ -315,9 +315,8 @@ rtk_api_ret_t rtk_rate_egrBandwidthCtrlRate_get(rtk_port_t port, rtk_rate_t *pRa
  * Description:
  *      Get enable status of egress bandwidth control on specified queue.
  * Input:
- *      unit    - unit id
- *      port    - port id
- *      queue   - queue id
+ *      port    - Port id
+ *      queue   - Queue id
  * Output:
  *      pEnable - Pointer to enable status of egress queue bandwidth control
  * Return:
@@ -351,9 +350,9 @@ rtk_api_ret_t rtk_rate_egrQueueBwCtrlEnable_get(rtk_port_t port, rtk_qid_t queue
  * Description:
  *      Set enable status of egress bandwidth control on specified queue.
  * Input:
- *      port   - port id
- *      queue  - queue id
- *      enable - enable status of egress queue bandwidth control
+ *      port   - Port id
+ *      queue  - Queue id
+ *      enable - Enable status of egress queue bandwidth control
  * Output:
  *      None
  * Return:
@@ -390,11 +389,10 @@ rtk_api_ret_t rtk_rate_egrQueueBwCtrlEnable_set(rtk_port_t port, rtk_qid_t queue
  * Description:
  *      Get rate of egress bandwidth control on specified queue.
  * Input:
- *      port  - port id
- *      queue - queue id
- *      pIndex - shared meter index
+ *      port  - Port id
+ *      queue - Queue id
  * Output:
- *      pRate - pointer to rate of egress queue bandwidth control
+ *      pIndex - shared meter index
  * Return:
  *      RT_ERR_OK
  *      RT_ERR_FAILED
@@ -431,9 +429,9 @@ rtk_api_ret_t rtk_rate_egrQueueBwCtrlRate_get(rtk_port_t port, rtk_qid_t queue, 
  * Description:
  *      Set rate of egress bandwidth control on specified queue.
  * Input:
- *      port  - port id
- *      queue - queue id
- *      index - shared meter index
+ *      port  - Port id
+ *      queue - Queue id
+ *      index - Shared meter index
  * Output:
  *      None
  * Return:
@@ -472,6 +470,7 @@ rtk_api_ret_t rtk_rate_egrQueueBwCtrlRate_set(rtk_port_t port, rtk_qid_t queue, 
 }
 
 
+
 /* Function Name:
  *      rtk_qos_init
  * Description:
@@ -481,8 +480,8 @@ rtk_api_ret_t rtk_rate_egrQueueBwCtrlRate_set(rtk_port_t port, rtk_qid_t queue, 
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_QUEUE_NUM - Invalid queue number.
  *      RT_ERR_INPUT - Invalid input parameters.
@@ -601,8 +600,8 @@ rtk_api_ret_t rtk_qos_init(rtk_queue_num_t queueNum)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_QOS_SEL_PRI_SOURCE - Invalid priority decision source parameter.
  * Note:
@@ -704,8 +703,8 @@ rtk_api_ret_t rtk_qos_priSel_set(rtk_priority_select_t *pPriDec)
  * Output:
  *      pPriDec - Priority assign for port, dscp, 802.1p, cvlan, svlan, acl based priority decision .
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      ASIC will follow user priority setting of mechanisms to select mapped queue priority for receiving frame. 
@@ -839,13 +838,13 @@ rtk_api_ret_t rtk_qos_priSel_get(rtk_priority_select_t *pPriDec)
  * Description:
  *      Configure 1Q priorities mapping to internal absolute priority.
  * Input:
- *      int_pri - internal priority value.
  *      dot1p_pri - 802.1p priority value.
+ *      int_pri - internal priority value.
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_VLAN_PRIORITY - Invalid 1p priority.
@@ -853,7 +852,7 @@ rtk_api_ret_t rtk_qos_priSel_get(rtk_priority_select_t *pPriDec)
  * Note:
  *      Priority of 802.1Q assignment for internal asic priority, and it is used for queue usage and packet scheduling.
  */
-rtk_api_ret_t rtk_qos_1pPriRemap_set(rtk_pri_t int_pri, rtk_pri_t dot1p_pri)
+rtk_api_ret_t rtk_qos_1pPriRemap_set(rtk_pri_t dot1p_pri, rtk_pri_t int_pri)
 {
     rtk_api_ret_t retVal;
 
@@ -863,7 +862,7 @@ rtk_api_ret_t rtk_qos_1pPriRemap_set(rtk_pri_t int_pri, rtk_pri_t dot1p_pri)
     if (dot1p_pri>RTK_DOT1P_PRIORITY_MAX||int_pri>RTK_DOT1P_PRIORITY_MAX)
         return  RT_ERR_VLAN_PRIORITY;
     
-    if ((retVal = rtl8370_setAsicPriorityDot1qRemapping(int_pri, dot1p_pri))!=RT_ERR_OK)
+    if ((retVal = rtl8370_setAsicPriorityDot1qRemapping(dot1p_pri, int_pri))!=RT_ERR_OK)
         return retVal;
     
     return RT_ERR_OK;
@@ -878,23 +877,23 @@ rtk_api_ret_t rtk_qos_1pPriRemap_set(rtk_pri_t int_pri, rtk_pri_t dot1p_pri)
  * Output:
  *      pInt_pri - internal priority value.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_VLAN_PRIORITY - Invalid priority.
  *      RT_ERR_QOS_INT_PRIORITY - Invalid priority. 
  * Note:
  *      Priority of 802.1Q assigment for internal asic priority, and it is uesed for queue usage and packet scheduling.
  */
-rtk_api_ret_t rtk_qos_1pPriRemap_get(rtk_pri_t int_pri, rtk_pri_t *pDot1p_pri)
+rtk_api_ret_t rtk_qos_1pPriRemap_get(rtk_pri_t dot1p_pri, rtk_pri_t *pInt_pri)
 {
     rtk_api_ret_t retVal;
 
-    if (int_pri>RTK_DOT1P_PRIORITY_MAX)
+    if (dot1p_pri>RTK_DOT1P_PRIORITY_MAX)
         return  RT_ERR_QOS_INT_PRIORITY;
     
 
-    if ((retVal = rtl8370_getAsicPriorityDot1qRemapping(int_pri, pDot1p_pri))!=RT_ERR_OK)
+    if ((retVal = rtl8370_getAsicPriorityDot1qRemapping(dot1p_pri, pInt_pri))!=RT_ERR_OK)
         return retVal;
     
     return RT_ERR_OK;
@@ -910,8 +909,8 @@ rtk_api_ret_t rtk_qos_1pPriRemap_get(rtk_pri_t int_pri, rtk_pri_t *pDot1p_pri)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_QOS_DSCP_VALUE - Invalid DSCP value. 
@@ -947,8 +946,8 @@ rtk_api_ret_t rtk_qos_dscpPriRemap_set(rtk_dscp_t dscp, rtk_pri_t int_pri)
  * Output:
  *      pInt_pri - internal priority value. 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_QOS_DSCP_VALUE - Invalid DSCP value. 
  * Note:
@@ -975,12 +974,12 @@ rtk_api_ret_t rtk_qos_dscpPriRemap_get(rtk_dscp_t dscp, rtk_pri_t *pInt_pri)
  *      Configure priority usage to each port.
  * Input:
  *      port - Port id.
- *      int_pri - internal priority value. 
+ *      int_pri - Internal priority value. 
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_QOS_SEL_PORT_PRI - Invalid port priority.
@@ -1011,10 +1010,10 @@ rtk_api_ret_t rtk_qos_portPri_set(rtk_port_t port, rtk_pri_t int_pri)
  * Input:
  *      port - Port id.
  * Output:
- *      pInt_pri - internal priority value. 
+ *      pInt_pri - Internal priority value. 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number. 
  *      RT_ERR_INPUT - Invalid input parameters.
@@ -1040,12 +1039,12 @@ rtk_api_ret_t rtk_qos_portPri_get(rtk_port_t port, rtk_pri_t *pInt_pri)
  *      Set output queue number for each port.
  * Input:
  *      port - Port id.
- *      index - Mapping queue number (1~8)
+ *      queue_num - Queue number
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_QUEUE_NUM - Invalid queue number. 
@@ -1080,8 +1079,8 @@ rtk_api_ret_t rtk_qos_queueNum_set(rtk_port_t port, rtk_queue_num_t queue_num)
  * Output:
  *      pQueue_num - Mapping queue number
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number. 
  * Note:
@@ -1116,8 +1115,8 @@ rtk_api_ret_t rtk_qos_queueNum_get(rtk_port_t port, rtk_queue_num_t *pQueue_num)
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_QUEUE_NUM - Invalid queue number. 
@@ -1157,8 +1156,8 @@ rtk_api_ret_t rtk_qos_priMap_set(rtk_queue_num_t queue_num, rtk_qos_pri2queue_t 
  * Output:
  *      pPri2qid - Priority mapping to queue ID.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_QUEUE_NUM - Invalid queue number.
@@ -1193,8 +1192,8 @@ rtk_api_ret_t rtk_qos_priMap_get(rtk_queue_num_t queue_num, rtk_qos_pri2queue_t 
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_QOS_QUEUE_WEIGHT - Invalid queue weight. 
@@ -1248,8 +1247,8 @@ rtk_api_ret_t rtk_qos_schedulingQueue_set(rtk_port_t port,rtk_qos_queue_weights_
  * Output:
  *      pQweights - The array of weights for WRR/WFQ queue (0 for STRICT_PRIORITY queue).
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_PORT_ID - Invalid port number.
@@ -1286,17 +1285,17 @@ rtk_api_ret_t rtk_qos_schedulingQueue_get(rtk_port_t port, rtk_qos_queue_weights
 }
 
 /* Function Name:
- *      rtk_qos_schedulingQueue_set
+ *      rtk_qos_1pRemarkEnable_set
  * Description:
  *      Set weight and type of queues in dedicated port.
  * Input:
  *      port - Port id.
- *      pQweights - The array of weights for WRR/WFQ queue (0 for STRICT_PRIORITY queue).
+ *      enable - Status of 802.1p remark.
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_ENABLE - Invalid enable parameter.
@@ -1332,8 +1331,8 @@ rtk_api_ret_t rtk_qos_1pRemarkEnable_set(rtk_port_t port, rtk_enable_t enable)
  * Output:
  *      pEnable - Status of 802.1p remark.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  * Note:
@@ -1366,8 +1365,8 @@ rtk_api_ret_t rtk_qos_1pRemarkEnable_get(rtk_port_t port, rtk_data_t *pEnable)
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_VLAN_PRIORITY - Invalid 1p priority.
  *      RT_ERR_QOS_INT_PRIORITY - Invalid priority.
@@ -1399,8 +1398,8 @@ rtk_api_ret_t rtk_qos_1pRemark_set(rtk_pri_t int_pri, rtk_pri_t dot1p_pri)
  * Output:
  *      pDot1p_pri - 802.1p priority value.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_QOS_INT_PRIORITY - Invalid priority. 
  * Note:
@@ -1429,8 +1428,8 @@ rtk_api_ret_t rtk_qos_1pRemark_get(rtk_pri_t int_pri, rtk_pri_t *pDot1p_pri)
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_QOS_INT_PRIORITY - Invalid priority.
@@ -1467,8 +1466,8 @@ rtk_api_ret_t rtk_qos_dscpRemarkEnable_set(rtk_port_t port, rtk_enable_t enable)
  * Output:
  *      pEnable - status of DSCP remarking.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  * Note:
@@ -1501,8 +1500,8 @@ rtk_api_ret_t rtk_qos_dscpRemarkEnable_get(rtk_port_t port, rtk_data_t *pEnable)
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_QOS_INT_PRIORITY - Invalid priority. 
  *      RT_ERR_QOS_DSCP_VALUE - Invalid DSCP value. 
@@ -1535,8 +1534,8 @@ rtk_api_ret_t rtk_qos_dscpRemark_set(rtk_pri_t int_pri, rtk_dscp_t dscp)
  * Output:
  *      Dscp |DSCP value.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_QOS_INT_PRIORITY - Invalid priority. 
  * Note:
@@ -1565,8 +1564,8 @@ rtk_api_ret_t rtk_qos_dscpRemark_get(rtk_pri_t int_pri, rtk_dscp_t *pDscp)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_NOT_ALLOWED - Invalid action.
  *      RT_ERR_INPUT - Invalid input parameters.
@@ -1622,8 +1621,8 @@ rtk_api_ret_t rtk_trap_unknownUnicastPktAction_set(rtk_trap_ucast_type_t type, r
  * Output:
  *      pUcast_action - unknown unicast action. 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -1676,8 +1675,8 @@ rtk_api_ret_t rtk_trap_unknownUnicastPktAction_get(rtk_trap_ucast_type_t type, r
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_NOT_ALLOWED - Invalid action.
  *      RT_ERR_INPUT - Invalid input parameters.
@@ -1744,8 +1743,8 @@ rtk_api_ret_t rtk_trap_rmaAction_set(rtk_mac_t *pRma_frame, rtk_trap_rma_action_
  * Output:
  *      pRma_action - RMA action. 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -1806,8 +1805,8 @@ rtk_api_ret_t rtk_trap_rmaAction_get(rtk_mac_t *pRma_frame, rtk_data_t *pRma_act
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_NOT_ALLOWED - Invalid igmp action.
@@ -1873,8 +1872,8 @@ rtk_api_ret_t rtk_trap_igmpCtrlPktAction_set(rtk_igmp_type_t type, rtk_trap_igmp
  * Output:
  *      pIgmp_action - IGMP/MLD action. 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -1933,8 +1932,8 @@ rtk_api_ret_t rtk_trap_igmpCtrlPktAction_get(rtk_igmp_type_t type, rtk_data_t *p
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_NOT_ALLOWED - Invalid action.
@@ -1990,12 +1989,13 @@ rtk_api_ret_t rtk_trap_unknownMcastPktAction_set(rtk_port_t port, rtk_mcast_type
  * Description:
  *      Get behavior of unknown multicast
  * Input:
- *      type - unknown multicast packet type.
+ *      port - Port id.
+ *      type - Unknown multicast packet type.
  * Output:
  *      pMcast_action - unknown multicast action. 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_NOT_ALLOWED - Invalid operation.
@@ -2050,8 +2050,8 @@ rtk_api_ret_t rtk_trap_unknownMcastPktAction_get(rtk_port_t port, rtk_mcast_type
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_QOS_INT_PRIORITY - Invalid priority.
@@ -2084,8 +2084,8 @@ rtk_api_ret_t rtk_trap_ethernetAv_set(rtk_enable_t enable)
  * Output:
  *      pEnable - status of ethernet AV.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  * Note:
@@ -2121,8 +2121,8 @@ rtk_api_ret_t rtk_trap_ethernetAv_get(rtk_data_t *pEnable)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_INPUT - Invalid input parameters.
@@ -2275,8 +2275,8 @@ rtk_api_ret_t rtk_storm_controlRate_set(rtk_port_t port, rtk_rate_storm_group_t 
  *      pRate - Rate of storm filter control.
  *      pIfg_include - Rate's calculation including IFG, ENABLE:include DISABLE:exclude
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_INPUT - Invalid input parameters.
@@ -2431,8 +2431,8 @@ rtk_api_ret_t rtk_storm_controlRate_get(rtk_port_t port, rtk_rate_storm_group_t 
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_ENABLE - Invalid IFG parameter
@@ -2537,8 +2537,8 @@ rtk_api_ret_t rtk_storm_bypass_set(rtk_storm_bypass_t type, rtk_enable_t enable)
  * Output:
  *      enable - Bypass status. 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -2636,8 +2636,8 @@ rtk_api_ret_t rtk_storm_bypass_get(rtk_storm_bypass_t type, rtk_data_t *pEnable)
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_PHY_REG_ID - Invalid PHY address
@@ -2763,8 +2763,8 @@ rtk_api_ret_t rtk_port_phyAutoNegoAbility_set(rtk_port_t port, rtk_port_phy_abil
  * Output:
  *      pAbility - Ability structure
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_PHY_REG_ID - Invalid PHY address
@@ -3035,8 +3035,8 @@ rtk_api_ret_t rtk_port_phyLink_get(rtk_port_t port, rtk_port_linkStatus_t *pLink
  *      speed - PHY link speed
  *      duplex - PHY duplex mode
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_PHY_REG_ID - Invalid PHY address
@@ -3101,8 +3101,8 @@ rtk_api_ret_t rtk_port_phyStatus_get(rtk_port_t port, rtk_port_linkStatus_t *pLi
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_BUSYWAIT_TIMEOUT - PHY access busy
@@ -3564,8 +3564,8 @@ rtk_api_ret_t rtk_port_phyTestMode_set(rtk_port_t port, rtk_port_phy_test_mode_t
  * Output:
  *      mode - PHY test mode 0:normal 1:test mode 1 2:test mode 2 3: test mode 3 4:test mode 4 5~7:reserved
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_INPUT - Invalid input parameters.
@@ -3603,8 +3603,8 @@ rtk_api_ret_t rtk_port_phyTestMode_get(rtk_port_t port, rtk_data_t *mode)
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_BUSYWAIT_TIMEOUT - PHY access busy
@@ -3663,8 +3663,8 @@ rtk_api_ret_t rtk_port_phy1000BaseTMasterSlave_set(rtk_port_t port, rtk_enable_t
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  * Note:
@@ -3708,8 +3708,8 @@ rtk_api_ret_t rtk_port_macForceLink_set(rtk_port_t port, rtk_port_mac_ability_t 
  * Output:
  *      pPortability - port ability configuration
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_INPUT - Invalid input parameters.
@@ -3748,8 +3748,8 @@ rtk_api_ret_t rtk_port_macForceLink_get(rtk_port_t port, rtk_port_mac_ability_t 
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -3806,8 +3806,8 @@ rtk_api_ret_t rtk_port_macForceLinkExt0_set(rtk_mode_ext_t mode, rtk_port_mac_ab
  *      pMode - external interface mode
  *      pPortability - port ability configuration
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -3846,8 +3846,8 @@ rtk_api_ret_t rtk_port_macForceLinkExt0_get(rtk_data_t *pMode, rtk_port_mac_abil
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -3904,8 +3904,8 @@ rtk_api_ret_t rtk_port_macForceLinkExt1_set(rtk_mode_ext_t mode, rtk_port_mac_ab
  *      pMode - external interface mode
  *      pPortability - port ability configuration
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -3942,8 +3942,8 @@ rtk_api_ret_t rtk_port_macForceLinkExt1_get(rtk_mode_ext_t *pMode, rtk_port_mac_
  * Output:
  *      pPortstatus - port ability configuration
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  * Note:
@@ -3983,8 +3983,8 @@ rtk_api_ret_t rtk_port_macStatus_get(rtk_port_t port, rtk_port_mac_ability_t *pP
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_PHY_REG_ID - Invalid PHY address
@@ -3995,22 +3995,16 @@ rtk_api_ret_t rtk_port_macStatus_get(rtk_port_t port, rtk_port_mac_ability_t *pP
 rtk_api_ret_t rtk_port_phyReg_set(rtk_port_t port, rtk_port_phy_reg_t reg, rtk_port_phy_data_t regData)
 {
     rtk_api_ret_t retVal;
-    
-    if (port > RTK_PORT_ID_MAX)
+
+    if (port > RTK_PHY_ID_MAX)
         return RT_ERR_PORT_ID;
 
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal; 	
-
-    if (reg==0&&((regData&0x1000)>0)&&((regData&0x0800)>0))
-        regData = regData | 0x0200;
+        return retVal;
 
     if ((retVal = rtl8370_setAsicPHYReg(port,reg,regData))!=RT_ERR_OK)
         return retVal;
 
-    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal; 	
-   
     return RT_ERR_OK;
 }
 
@@ -4024,8 +4018,8 @@ rtk_api_ret_t rtk_port_phyReg_set(rtk_port_t port, rtk_port_phy_reg_t reg, rtk_p
  * Output:
  *      pData - Register data
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_PHY_REG_ID - Invalid PHY address
@@ -4037,7 +4031,7 @@ rtk_api_ret_t rtk_port_phyReg_get(rtk_port_t port, rtk_port_phy_reg_t reg, rtk_p
 {
     rtk_api_ret_t retVal;
 
-    if (port > RTK_PORT_ID_MAX)
+    if (port > RTK_PHY_ID_MAX)
         return RT_ERR_PORT_ID;
 
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
@@ -4045,9 +4039,6 @@ rtk_api_ret_t rtk_port_phyReg_get(rtk_port_t port, rtk_port_phy_reg_t reg, rtk_p
 
     if ((retVal = rtl8370_getAsicPHYReg(port,reg,pData))!=RT_ERR_OK)
         return retVal;
-
-    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal; 
 
     return RT_ERR_OK;
 }
@@ -4062,8 +4053,8 @@ rtk_api_ret_t rtk_port_phyReg_get(rtk_port_t port, rtk_port_phy_reg_t reg, rtk_p
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_ENABLE - Invalid enable input.
@@ -4099,8 +4090,8 @@ rtk_api_ret_t rtk_port_backpressureEnable_set(rtk_port_t port, rtk_enable_t enab
  * Output:
  *      pEnable - Back pressure status.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  * Note:
@@ -4135,8 +4126,8 @@ rtk_api_ret_t rtk_port_backpressureEnable_get(rtk_port_t port, rtk_data_t *pEnab
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_ENABLE - Invalid enable input.
@@ -4150,6 +4141,7 @@ rtk_api_ret_t rtk_port_adminEnable_set(rtk_port_t port, rtk_enable_t enable)
 {
     rtk_api_ret_t retVal;
     rtl8370_port_ability_t ability;
+    uint32 regData, extif;
 
     if (port > RTK_PORT_ID_MAX)
         return RT_ERR_PORT_ID;
@@ -4157,23 +4149,70 @@ rtk_api_ret_t rtk_port_adminEnable_set(rtk_port_t port, rtk_enable_t enable)
     if (enable>=RTK_ENABLE_END)
         return RT_ERR_INPUT;
 
+    if (port <= RTK_PHY_ID_MAX)
+    {
+
+        if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
+            return retVal; 
+    
+        if ((retVal = rtl8370_getAsicPHYReg(port,PHY_CONTROL_REG,&regData))!=RT_ERR_OK)
+            return retVal;
+
     if ((retVal = rtl8370_getAsicPortForceLink(port,&ability))!=RT_ERR_OK)
         return retVal;
 
-    if (ENABLED == enable)
-    {
-        ability.link = 1;
+        if (ENABLED == enable)
+        {
+            regData = regData & (~(1<<11)); 
+            ability.forcemode= 0;
+        }
+        else if (DISABLED == enable)
+        {
+            regData = regData | (1<<11);
+            ability.forcemode= 1;
+            ability.link = 0;
+        }
+        else
+            return RT_ERR_FAILED;
+    
+        if ((retVal = rtl8370_setAsicPHYReg(port,PHY_CONTROL_REG,regData))!=RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
+            return retVal; 
+
+        if ((retVal = rtl8370_setAsicPortForceLink(port,&ability))!=RT_ERR_OK)
+            return retVal;
+    
     }
-    else if (DISABLED == enable)
+    else if (port <= RTK_PORT_ID_MAX )
     {
-        ability.link = 0;
+        if (port == RTK_EXT_0_MAC9)
+            extif =  RTK_EXT_0;
+        else
+            extif =  RTK_EXT_1;
+        
+        if ((retVal = rtl8370_getAsicPortForceLinkExt(extif,&ability))!=RT_ERR_OK)
+            return retVal;
+    
+        if (ENABLED == enable)
+        {
+            ability.link = 1;
+        }
+        else if (DISABLED == enable)
+        {
+            ability.link = 0;
+        }
+        else
+            return RT_ERR_FAILED;
+
+        ability.forcemode = 1;
+        
+        if ((retVal = rtl8370_setAsicPortForceLinkExt(extif,&ability))!=RT_ERR_OK)
+            return retVal;
     }
     else
         return RT_ERR_FAILED;
-    
-    if ((retVal = rtl8370_setAsicPortForceLink(port,&ability))!=RT_ERR_OK)
-        return retVal;
-
 
     return RT_ERR_OK;
 }
@@ -4188,8 +4227,8 @@ rtk_api_ret_t rtk_port_adminEnable_set(rtk_port_t port, rtk_enable_t enable)
  * Output:
  *      pEnable - Back pressure status.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  * Note:
@@ -4203,14 +4242,37 @@ rtk_api_ret_t rtk_port_adminEnable_get(rtk_port_t port, rtk_data_t *pEnable)
 {
     rtk_api_ret_t retVal;
     rtl8370_port_ability_t ability;
+    uint32 regData, extif;
 
     if (port > RTK_PORT_ID_MAX)
         return RT_ERR_PORT_ID;
 
-    if ((retVal = rtl8370_getAsicPortForceLink(port,&ability))!=RT_ERR_OK)
-        return retVal;
-
-    *pEnable = ability.link;
+    if (port <= RTK_PHY_ID_MAX)
+    {
+        if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
+            return retVal;    
+        if ((retVal = rtl8370_getAsicPHYReg(port,PHY_CONTROL_REG,&regData))!=RT_ERR_OK)
+            return retVal;
+        if (regData& (1<<11))
+           *pEnable = 0;
+        else
+           *pEnable = 1;
+        if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
+            return retVal;     
+    }
+    else if (port <= RTK_PORT_ID_MAX )
+    {
+        if (port == RTK_EXT_0_MAC9)
+            extif =  RTK_EXT_0;
+        else
+            extif =  RTK_EXT_1;
+    
+        if ((retVal = rtl8370_getAsicPortForceLinkExt(extif,&ability))!=RT_ERR_OK)
+            return retVal;
+        *pEnable = ability.link;
+    }
+    else
+        return RT_ERR_FAILED;
     
     return RT_ERR_OK;
 }
@@ -4225,8 +4287,8 @@ rtk_api_ret_t rtk_port_adminEnable_get(rtk_port_t port, rtk_data_t *pEnable)
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_PORT_MASK - Invalid portmask.
@@ -4259,8 +4321,8 @@ rtk_api_ret_t rtk_port_isolation_set(rtk_port_t port, rtk_portmask_t portmask)
  * Output:
  *      pPortmask - Permit port mask
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  * Note:
@@ -4291,14 +4353,14 @@ rtk_api_ret_t rtk_port_isolation_get(rtk_port_t port, rtk_portmask_t *pPortmask)
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
  *      This API can set external interface 0 RGMII delay. 
  *      In TX delay, there are 2 selection: no-delay and 2ns delay.
- *      In RX dekay, there are 8 steps for delay tunning. 0 for n0-delay, and 7 for maximum delay.  
+ *      In RX dekay, there are 8 steps for delay tunning. 0 for no-delay, and 7 for maximum delay.  
  */
 rtk_api_ret_t rtk_port_rgmiiDelayExt0_set(rtk_data_t txDelay, rtk_data_t rxDelay)
 {
@@ -4329,8 +4391,8 @@ rtk_api_ret_t rtk_port_rgmiiDelayExt0_set(rtk_data_t txDelay, rtk_data_t rxDelay
  *      pTxDelay - TX delay value
  *      pRxDelay - RX delay value
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -4363,8 +4425,8 @@ rtk_api_ret_t rtk_port_rgmiiDelayExt0_get(rtk_data_t *pTxDelay, rtk_data_t *pRxD
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -4401,8 +4463,8 @@ rtk_api_ret_t rtk_port_rgmiiDelayExt1_set(rtk_data_t txDelay, rtk_data_t rxDelay
  *      pTxDelay - TX delay value
  *      pRxDelay - RX delay value
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -4434,8 +4496,8 @@ rtk_api_ret_t rtk_port_rgmiiDelayExt1_get(rtk_data_t *pTxDelay, rtk_data_t *pRxD
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_ENABLE - Invalid enable input.
  * Note:
@@ -4468,8 +4530,8 @@ rtk_api_ret_t rtk_port_phyEnableAll_set(rtk_enable_t enable)
  * Output:
  *      pEnable - Back pressure status.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      This API can set all PHY status.
@@ -4499,8 +4561,8 @@ rtk_api_ret_t rtk_port_phyEnableAll_get(rtk_data_t *pEnable)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_L2_FID - Invalid fid.
  *      RT_ERR_INPUT - Invalid input parameter.
@@ -4534,8 +4596,8 @@ rtk_api_ret_t rtk_port_efid_set(rtk_port_t port, rtk_data_t efid)
  * Output:
  *      pEfid - Specified enhanced filtering database.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_PORT_ID - Invalid port ID.
@@ -4566,8 +4628,8 @@ rtk_api_ret_t rtk_port_efid_get(rtk_port_t port, rtk_data_t *pEfid)
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_ENABLE - Invalid enable input.
@@ -4681,8 +4743,8 @@ rtk_api_ret_t rtk_leaky_vlan_set(rtk_leaky_type_t type, rtk_enable_t enable)
  * Output:
  *      pEnable - Leaky status.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -4789,8 +4851,8 @@ rtk_api_ret_t rtk_leaky_vlan_set(rtk_leaky_type_t type, rtk_enable_t enable)
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_ENABLE - Invalid enable input.
@@ -4903,8 +4965,8 @@ rtk_api_ret_t rtk_leaky_portIsolation_set(rtk_leaky_type_t type, rtk_enable_t en
  * Output:
  *      pEnable - Leaky status.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -5013,8 +5075,8 @@ rtk_api_ret_t rtk_leaky_portIsolation_get(rtk_leaky_type_t type, rtk_data_t *pEn
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      VLAN is disabled by default. User has to call this API to enable VLAN before
@@ -5092,8 +5154,8 @@ rtk_api_ret_t rtk_vlan_init(void)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_L2_FID - Invalid FID.
@@ -5146,8 +5208,8 @@ rtk_api_ret_t rtk_vlan_set(rtk_vlan_t vid, rtk_portmask_t mbrmsk, rtk_portmask_t
  *      pUntagmsk - VLAN untag set portmask.
  *      pFid - filtering database. 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_VLAN_VID - Invalid VID parameter.
@@ -5185,8 +5247,8 @@ rtk_api_ret_t rtk_vlan_get(rtk_vlan_t vid, rtk_portmask_t *pMbrmsk, rtk_portmask
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_VLAN_PRIORITY - Invalid priority. 
@@ -5348,8 +5410,8 @@ rtk_api_ret_t rtk_vlan_portPvid_set(rtk_port_t port, rtk_vlan_t pvid, rtk_pri_t 
  *      pPvid - Specified VLAN ID.
  *      pPriority - 802.1p priority for the PVID.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_PORT_ID - Invalid port number.
@@ -5387,8 +5449,8 @@ rtk_api_ret_t rtk_vlan_portPvid_get(rtk_port_t port, rtk_vlan_t *pPvid, rtk_pri_
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_ENABLE - Invalid enable input.
@@ -5424,8 +5486,8 @@ rtk_api_ret_t rtk_vlan_portIgrFilterEnable_set(rtk_port_t port, rtk_enable_t igr
  * Output:
  *      pIgr_filter - VLAN ingress function enable status.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_PORT_ID - Invalid port number.
@@ -5459,8 +5521,8 @@ rtk_api_ret_t rtk_vlan_portIgrFilterEnable_get(rtk_port_t port, rtk_data_t *pIgr
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_VLAN_ACCEPT_FRAME_TYPE - Invalid frame type.
@@ -5496,8 +5558,8 @@ rtk_api_ret_t rtk_vlan_portAcceptFrameType_set(rtk_port_t port, rtk_vlan_acceptF
  * Output:
  *      pAccept_frame_type - accept frame type
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_PORT_ID - Invalid port number.
@@ -5531,8 +5593,8 @@ rtk_api_ret_t rtk_vlan_portAcceptFrameType_get(rtk_port_t port, rtk_data_t *pAcc
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_VLAN_VID - Invalid VID parameter.
  *      RT_ERR_VLAN_PRIORITY - Invalid priority. 
@@ -5574,8 +5636,8 @@ rtk_api_ret_t rtk_vlan_vlanBasedPriority_set(rtk_vlan_t vid, rtk_pri_t priority)
  * Output:
  *      pPriority - 802.1p priority for the PVID.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_VLAN_VID - Invalid VID parameter.
  *      RT_ERR_PORT_ID - Invalid port number.
@@ -5614,8 +5676,8 @@ rtk_api_ret_t rtk_vlan_vlanBasedPriority_get(rtk_vlan_t vid, rtk_pri_t *pPriorit
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_VLAN_VID - Invalid VID parameter.
@@ -5853,8 +5915,8 @@ rtk_api_ret_t rtk_vlan_protoAndPortBasedVlan_add(rtk_port_t port, rtk_vlan_proto
  * Output:
  *      pInfo - Protocol and port based VLAN configuration information.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_OUT_OF_RANGE - input out of range.
@@ -5928,8 +5990,8 @@ rtk_api_ret_t rtk_vlan_protoAndPortBasedVlan_get(rtk_port_t port, rtk_vlan_proto
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_OUT_OF_RANGE - input out of range.
@@ -6009,8 +6071,8 @@ rtk_api_ret_t rtk_vlan_protoAndPortBasedVlan_del(rtk_port_t port, rtk_vlan_proto
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_OUT_OF_RANGE - input out of range.
@@ -6081,8 +6143,8 @@ rtk_api_ret_t rtk_vlan_protoAndPortBasedVlan_delAll(rtk_port_t port)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_INPUT - Invalid input parameter.
@@ -6119,8 +6181,8 @@ rtk_api_ret_t rtk_vlan_tagMode_set(rtk_port_t port, rtk_vlan_tagMode_t tag_mode)
  * Output:
  *      pTag_mode - The egress tag mode.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_PORT_ID - Invalid port number.
@@ -6154,8 +6216,8 @@ rtk_api_ret_t rtk_vlan_tagMode_get(rtk_port_t port, rtk_data_t *pTag_mode)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_MSTI - Invalid msti parameter
  *      RT_ERR_INPUT - Invalid input parameter.
@@ -6198,8 +6260,8 @@ rtk_api_ret_t rtk_vlan_stg_set(rtk_vlan_t vid, rtk_stg_t stg)
  * Output:
  *      pStg - spanning tree group instance.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_VLAN_VID - Invalid VID parameter.
@@ -6236,8 +6298,8 @@ rtk_api_ret_t rtk_vlan_stg_get(rtk_vlan_t vid, rtk_stg_t *pStg)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_L2_FID - Invalid fid.
  *      RT_ERR_INPUT - Invalid input parameter.
@@ -6279,8 +6341,8 @@ rtk_api_ret_t rtk_vlan_portFid_set(rtk_port_t port, rtk_enable_t enable, rtk_fid
  *      pEnable - ebable port-based FID
  *      pFid - Specified filtering database.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_PORT_ID - Invalid port ID.
@@ -6314,8 +6376,8 @@ rtk_api_ret_t rtk_vlan_portFid_get(rtk_port_t port, rtk_data_t *pEnable, rtk_dat
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      Initialize stp module before calling any vlan APIs
@@ -6348,8 +6410,8 @@ rtk_api_ret_t rtk_stp_init(void)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_MSTI - Invalid msti parameter.
@@ -6391,8 +6453,8 @@ rtk_api_ret_t rtk_stp_mstpState_set(rtk_stp_msti_id_t msti, rtk_port_t port, rtk
  * Output:
  *      pStp_state - Spanning tree state for msti
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_MSTI - Invalid msti parameter.
@@ -6426,8 +6488,8 @@ rtk_api_ret_t rtk_stp_mstpState_get(rtk_stp_msti_id_t msti, rtk_port_t port, rtk
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      Initialize l2 module before calling any l2 APIs.
@@ -6465,8 +6527,8 @@ rtk_api_ret_t rtk_l2_init(void)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameter.
  *      RT_ERR_CHIP_NOT_SUPPORTED - functions not supported by this chip model.
@@ -6501,8 +6563,8 @@ rtk_api_ret_t rtk_l2_ipMcastAddrLookup_set(rtk_l2_lookup_type_t type)
  * Output:
  *      pType - IP mulcast lookup type
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -6529,8 +6591,8 @@ rtk_api_ret_t rtk_l2_ipMcastAddrLookup_get(rtk_data_t *pType)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_MAC - Invalid MAC address.
@@ -6617,12 +6679,12 @@ rtk_api_ret_t rtk_l2_addr_add(rtk_mac_t *pMac, rtk_l2_ucastAddr_t *pL2_data)
  *      Get LUT unicast entry.
  * Input:
  *      pMac - 6 bytes unicast(I/G bit is 0) mac address to be written into LUT.
- *      pL2_data - fid (filtering database) should be added as input parameter
+ *      pL2_data - Unicast entry parameter. The fid (filtering database) should be added as input parameter
  * Output:
  *      pL2_data - Unicast entry parameter
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_MAC - Invalid MAC address.
@@ -6671,12 +6733,12 @@ rtk_api_ret_t rtk_l2_addr_get(rtk_mac_t *pMac, rtk_l2_ucastAddr_t *pL2_data)
  *      Delete LUT unicast entry.
  * Input:
  *      pMac - 6 bytes unicast(I/G bit is 0) mac address to be written into LUT.
- *      pL2_data - fid (filtering database) should be added as input parameter
+ *      pL2_data - Unicast entry parameter. The fid (filtering database) should be added as input parameter
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_MAC - Invalid MAC address.
@@ -6734,8 +6796,8 @@ rtk_api_ret_t rtk_l2_addr_del(rtk_mac_t *pMac, rtk_l2_ucastAddr_t *pL2_data)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_MAC - Invalid MAC address.
@@ -6815,8 +6877,8 @@ rtk_api_ret_t rtk_l2_mcastAddr_add(rtk_mac_t *pMac, rtk_fid_t fid, rtk_portmask_
  * Output:
  *      pPortmask - Port mask to be forwarded to.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_MAC - Invalid MAC address.
  *      RT_ERR_L2_FID - Invalid FID .
@@ -6863,8 +6925,8 @@ rtk_api_ret_t rtk_l2_mcastAddr_get(rtk_mac_t *pMac, rtk_fid_t fid, rtk_portmask_
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_MAC - Invalid MAC address.
  *      RT_ERR_L2_FID - Invalid FID .
@@ -6914,14 +6976,14 @@ rtk_api_ret_t rtk_l2_mcastAddr_del(rtk_mac_t *pMac, rtk_fid_t fid)
  * Description:
  *      Add Lut IP multicast entry
  * Input:
- *      dip - Destination IP Address. 
  *      sip - Source IP Address.
+ *      dip - Destination IP Address.
  *      portmask - Destination port mask.
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_L2_INDEXTBL_FULL - hashed index is full of entries.
@@ -6985,13 +7047,13 @@ rtk_api_ret_t rtk_l2_ipMcastAddr_add(ipaddr_t sip, ipaddr_t dip, rtk_portmask_t 
  * Description:
  *      Get LUT IP multicast entry.
  * Input:
- *      dip - Destination IP Address. 
  *      sip - Source IP Address.
+ *      dip - Destination IP Address.
  * Output:
  *      pPortmask - Destination port mask. 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_L2_ENTRY_NOTFOUND - No such LUT entry.
  *      RT_ERR_INPUT - Invalid input parameters. 
@@ -7021,13 +7083,13 @@ rtk_api_ret_t rtk_l2_ipMcastAddr_get(ipaddr_t sip, ipaddr_t dip, rtk_portmask_t 
  * Description:
  *      Delete a ip multicast address entry from the specified device.
  * Input:
- *      pMac - 6 bytes multicast(I/G bit is 1) mac address to be written into LUT.
- *      fid - Filtering database
+ *      sip - Source IP Address.
+ *      dip - Destination IP Address. 
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_L2_ENTRY_NOTFOUND - No such LUT entry.
  *      RT_ERR_INPUT - Invalid input parameters. 
@@ -7071,8 +7133,8 @@ rtk_api_ret_t rtk_l2_ipMcastAddr_del(ipaddr_t sip, ipaddr_t dip)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_VLAN_VID - Invalid VID parameter.
@@ -7119,8 +7181,8 @@ rtk_api_ret_t rtk_l2_flushType_set(rtk_l2_flushType_t type, rtk_vlan_t vid, rtk_
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_ENABLE - Invalid enable input.
@@ -7155,8 +7217,8 @@ rtk_api_ret_t rtk_l2_flushLinkDownPortAddrEnable_set(rtk_port_t port, rtk_enable
  * Output:
  *      pEnable - link down flush status
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number. 
  * Note:
@@ -7187,8 +7249,8 @@ rtk_api_ret_t rtk_l2_flushLinkDownPortAddrEnable_get(rtk_port_t port, rtk_data_t
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_ENABLE - Invalid enable input.
@@ -7220,8 +7282,8 @@ rtk_api_ret_t rtk_l2_agingEnable_set(rtk_port_t port, rtk_enable_t enable)
  * Output:
  *      pEnable - Aging status
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number. 
  * Note:
@@ -7251,8 +7313,8 @@ rtk_api_ret_t rtk_l2_agingEnable_get(rtk_port_t port, rtk_data_t *pEnable)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_LIMITED_L2ENTRY_NUM - Invalid auto learning limit number
@@ -7285,8 +7347,8 @@ rtk_api_ret_t rtk_l2_limitLearningCnt_set(rtk_port_t port, rtk_mac_cnt_t mac_cnt
  * Output:
  *      pMac_cnt - Auto learning entries limit number
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number. 
  * Note:
@@ -7316,8 +7378,8 @@ rtk_api_ret_t rtk_l2_limitLearningCnt_get(rtk_port_t port, rtk_mac_cnt_t *pMac_c
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_NOT_ALLOWED - Invalid learn over action
@@ -7361,8 +7423,8 @@ rtk_api_ret_t rtk_l2_limitLearningCntAction_set(rtk_port_t port, rtk_l2_limitLea
  * Output:
  *      pAction - Learn over action
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number. 
  * Note:
@@ -7405,8 +7467,8 @@ rtk_api_ret_t rtk_l2_limitLearningCntAction_get(rtk_port_t port, rtk_data_t *pAc
  * Output:
  *      pMac_cnt - ASIC auto learning entries number
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number. 
  * Note:
@@ -7435,8 +7497,8 @@ rtk_api_ret_t rtk_l2_learningCnt_get(rtk_port_t port, rtk_mac_cnt_t *pMac_cnt)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_MASK - Invalid portmask.
  *      RT_ERR_INPUT - Invalid input parameters.
@@ -7488,8 +7550,8 @@ rtk_api_ret_t rtk_l2_floodPortMask_set(rtk_l2_flood_type_t floood_type, rtk_port
  * Output:
  *      pFlood_portmask - flooding porkmask
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number. 
  * Note:
@@ -7537,8 +7599,8 @@ rtk_api_ret_t rtk_l2_floodPortMask_get(rtk_l2_flood_type_t floood_type, rtk_port
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_ENABLE - Invalid permit value.
@@ -7570,8 +7632,8 @@ rtk_api_ret_t rtk_l2_localPktPermit_set(rtk_port_t port, rtk_enable_t permit)
  * Output:
  *      pPermit - permittion status
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number. 
  * Note:
@@ -7599,8 +7661,8 @@ rtk_api_ret_t rtk_l2_localPktPermit_get(rtk_port_t port, rtk_data_t *pPermit)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_OUT_OF_RANGE - input out of range.
  * Note:
@@ -7637,8 +7699,8 @@ rtk_api_ret_t rtk_l2_aging_set(rtk_data_t aging_time)
  * Output:
  *      pEnable - Aging status
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number. 
  * Note:
@@ -7677,8 +7739,8 @@ rtk_api_ret_t rtk_l2_aging_get(rtk_data_t *pAging_time)
  * Output:
  *      pL2_entry - other fields such as MAC, port, age...
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_L2_EMPTY_ENTRY - Empty LUT entry.
  *      RT_ERR_INPUT - Invalid input parameters. 
@@ -7766,8 +7828,8 @@ rtk_api_ret_t rtk_l2_entry_get(rtk_l2_addr_table_t *pL2_entry)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      Ether type of S-tag in 802.1ad is 0x88a8 and there are existed ether type 0x9100 and 0x9200 for Q-in-Q SLAN design. 
@@ -7844,8 +7906,8 @@ rtk_api_ret_t rtk_svlan_init(void)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_INPUT - Invalid input parameters. 
@@ -7881,8 +7943,8 @@ rtk_api_ret_t rtk_svlan_servicePort_add(rtk_port_t port)
  * Output:
  *      pSvlan_portmask - pointer buffer of svlan ports.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      This API is setting which port is connected to provider switch. All frames receiving from this port must 
@@ -7907,8 +7969,8 @@ rtk_api_ret_t rtk_svlan_servicePort_get(rtk_portmask_t *pSvlan_portmask)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number. 
  * Note:
@@ -7942,8 +8004,8 @@ rtk_api_ret_t rtk_svlan_servicePort_del(rtk_port_t port)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameter.
  * Note:
@@ -7972,8 +8034,8 @@ rtk_api_ret_t rtk_svlan_tpidEntry_set(rtk_svlan_tpid_t svlan_tag_id)
  * Output:
  *      pSvlan_tag_id -  Ether type of S-tag frame parsing in uplink ports.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      This API is setting which port is connected to provider switch. All frames receiving from this port must 
@@ -7998,8 +8060,8 @@ rtk_api_ret_t rtk_svlan_tpidEntry_get(rtk_svlan_tpid_t *pSvlan_tag_id)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameter.
  * Note:
@@ -8031,8 +8093,8 @@ rtk_api_ret_t rtk_svlan_priorityRef_set(rtk_svlan_pri_ref_t ref)
  * Output:
  *      pRef - reference selection parameter.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      The API can get the upstream SVLAN tag priority reference source. The related priority
@@ -8061,8 +8123,8 @@ rtk_api_ret_t rtk_svlan_priorityRef_get(rtk_data_t *pRef)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameter.
  *      RT_ERR_SVLAN_VID - Invalid SVLAN VID parameter.
@@ -8121,6 +8183,7 @@ rtk_api_ret_t rtk_svlan_memberPortEntry_set(rtk_vlan_t svid, rtk_svlan_memberCfg
             svlanMemConf.vs_priority = pSvlan_cfg->priority;
             svlanMemConf.vs_efiden = pSvlan_cfg->efiden;
             svlanMemConf.vs_efid= pSvlan_cfg->efid;
+            svlanMemConf.vs_relaysvid = pSvlan_cfg->svid;
             
             if ((retVal = rtl8370_setAsicSvlanMemberConfiguration(i, &svlanMemConf))!=RT_ERR_OK)
                 return retVal;
@@ -8143,6 +8206,7 @@ rtk_api_ret_t rtk_svlan_memberPortEntry_set(rtk_vlan_t svid, rtk_svlan_memberCfg
         svlanMemConf.vs_priority = pSvlan_cfg->priority;
         svlanMemConf.vs_efiden = pSvlan_cfg->efiden;
         svlanMemConf.vs_efid= pSvlan_cfg->efid;
+        svlanMemConf.vs_relaysvid = pSvlan_cfg->svid;
         
         if ((retVal = rtl8370_setAsicSvlanMemberConfiguration(empty_idx, &svlanMemConf))!=RT_ERR_OK)
         {
@@ -8200,6 +8264,7 @@ rtk_api_ret_t rtk_svlan_memberPortEntry_set(rtk_vlan_t svid, rtk_svlan_memberCfg
             svlanMemConf.vs_priority = pSvlan_cfg->priority;
             svlanMemConf.vs_efiden = pSvlan_cfg->efiden;
             svlanMemConf.vs_efid= pSvlan_cfg->efid;
+            svlanMemConf.vs_relaysvid = pSvlan_cfg->svid;
         
             if ((retVal = rtl8370_setAsicSvlanMemberConfiguration(i, &svlanMemConf))!=RT_ERR_OK)
                 return retVal;  
@@ -8220,8 +8285,8 @@ rtk_api_ret_t rtk_svlan_memberPortEntry_set(rtk_vlan_t svid, rtk_svlan_memberCfg
  * Output:
  *      pSvlan_cfg - SVLAN member configuration
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_SVLAN_ENTRY_NOT_FOUND - specified svlan entry not found.
  *      RT_ERR_INPUT - Invalid input parameters.
@@ -8268,8 +8333,8 @@ rtk_api_ret_t rtk_svlan_memberPortEntry_get(rtk_vlan_t svid, rtk_svlan_memberCfg
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameter.
  *      RT_ERR_SVLAN_VID - Invalid SVLAN VID parameter.
@@ -8314,8 +8379,8 @@ rtk_api_ret_t rtk_svlan_defaultSvlan_set(rtk_vlan_t svid)
  * Output:
  *      pSvid - SVLAN VID
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -8343,18 +8408,18 @@ rtk_api_ret_t rtk_svlan_defaultSvlan_get(rtk_vlan_t *pSvid)
 /* Function Name:
  *      rtk_svlan_c2s_add
  * Description:
- *      Configure SVLAN C2S table 
+ *      Configure SVLAN function CVLAN-to-SVLAN table 
  * Input:
  *      vid - VLAN ID
+ *      port - available c2s service port
  *      svid - SVLAN VID
- *      c2s_portmask - available c2s port mask
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
- *      RT_ERR_PORT_MASK - Invalid portmask.
+ *      RT_ERR_PORT_ID - Invalid port id.
  *      RT_ERR_SVLAN_VID - Invalid SVLAN VID parameter.
  *      RT_ERR_VLAN_VID - Invalid VID parameter.
  *      RT_ERR_OUT_OF_RANGE - input out of range.
@@ -8363,7 +8428,7 @@ rtk_api_ret_t rtk_svlan_defaultSvlan_get(rtk_vlan_t *pSvid)
  *      The API can set system C2S configuration. ASIC will check upstream's VID and assign related
  *      SVID to mathed packet. There are 128 SVLAN C2S configurations.
  */
-rtk_api_ret_t rtk_svlan_c2s_add(rtk_vlan_t vid, rtk_vlan_t svid, rtk_portmask_t c2s_portmask)
+rtk_api_ret_t rtk_svlan_c2s_add(rtk_vlan_t vid, rtk_port_t port, rtk_vlan_t svid)
 {
     rtk_api_ret_t retVal,i;
     uint32 empty_idx;
@@ -8376,8 +8441,8 @@ rtk_api_ret_t rtk_svlan_c2s_add(rtk_vlan_t vid, rtk_vlan_t svid, rtk_portmask_t 
     if (svid > RTK_VLAN_ID_MAX)
         return RT_ERR_SVLAN_VID;
 
-    if (c2s_portmask.bits[0] > RTK_MAX_PORT_MASK)
-        return RT_ERR_PORT_MASK; 
+    if (port > RTK_PORT_ID_MAX)
+        return RT_ERR_PORT_ID;
 
     empty_idx = 0xFFFF;
     svidx = 0xFFFF;
@@ -8406,7 +8471,7 @@ rtk_api_ret_t rtk_svlan_c2s_add(rtk_vlan_t vid, rtk_vlan_t svid, rtk_portmask_t 
         {          
             if (svidx == c2s_svidx)
             {
-                pmsk = pmsk | c2s_portmask.bits[0];  
+                pmsk = pmsk | (1<<port);
                 if ((retVal = rtl8370_setAsicSvlanC2SConf(i,vid,pmsk,svidx))!=RT_ERR_OK)
                     return retVal;
                 return RT_ERR_OK;
@@ -8421,7 +8486,7 @@ rtk_api_ret_t rtk_svlan_c2s_add(rtk_vlan_t vid, rtk_vlan_t svid, rtk_portmask_t 
 
     if (0xFFFF != empty_idx)
     {
-       if ((retVal = rtl8370_setAsicSvlanC2SConf(empty_idx,vid,c2s_portmask.bits[0],svidx))!=RT_ERR_OK)
+       if ((retVal = rtl8370_setAsicSvlanC2SConf(empty_idx,vid,(1<<port),svidx))!=RT_ERR_OK)
            return retVal;
        return RT_ERR_OK;
     }
@@ -8430,35 +8495,34 @@ rtk_api_ret_t rtk_svlan_c2s_add(rtk_vlan_t vid, rtk_vlan_t svid, rtk_portmask_t 
 }
 
 /* Function Name:
- *      rtk_svlan_servicePort_del
+ *      rtk_svlan_c2s_del
  * Description:
- *      Delete one service port in the specified device
+ *      Delete one service port in CVLAN-to-SVLAN table
  * Input:
  *      vid - VLAN ID
- *      svid - SVLAN VID
+ *      port - available c2s service port
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_VLAN_VID - Invalid VID parameter.
- *      RT_ERR_OUT_OF_RANGE - input out of range.
+ *      RT_ERR_OUT_OF_RANGE - Input out of range.
  * Note:
  *      The API can delete system C2S configuration. There are 128 SVLAN C2S configurations.
  */
-rtk_api_ret_t rtk_svlan_c2s_del(rtk_vlan_t vid, rtk_vlan_t svid)
+rtk_api_ret_t rtk_svlan_c2s_del(rtk_vlan_t vid, rtk_port_t port)
 {
     rtk_api_ret_t retVal;
     uint32 i;
     uint32 evid, pmsk, svidx;
-    rtl8370_svlan_memconf_t svlanMemConf;
 
     if (vid > RTK_VLAN_ID_MAX)
         return RT_ERR_VLAN_VID;
 
-    if (svid > RTK_VLAN_ID_MAX)
-        return RT_ERR_SVLAN_VID; 
+    if (port > RTK_PORT_ID_MAX)
+        return RT_ERR_PORT_ID;
     
     for (i = 0; i < RTK_MAX_NUM_OF_C2S_INDEX; i++)
     {       
@@ -8467,18 +8531,16 @@ rtk_api_ret_t rtk_svlan_c2s_del(rtk_vlan_t vid, rtk_vlan_t svid)
         
         if (evid == vid)
         {          
-            if ((retVal = rtl8370_getAsicSvlanMemberConfiguration(svidx,&svlanMemConf))!=RT_ERR_OK)
-                return retVal;
-
-            if (svid == svlanMemConf.vs_svid)
+            pmsk = pmsk & ~(1<<port);
+            if (pmsk == 0)
             {
-                pmsk = 0;
                 vid = 0;
                 svidx = 0;
-                if ((retVal = rtl8370_setAsicSvlanC2SConf(i,vid,pmsk,svidx))!=RT_ERR_OK)
-                    return retVal;
-                return RT_ERR_OK;
             }
+            if ((retVal = rtl8370_setAsicSvlanC2SConf(i,vid,pmsk,svidx))!=RT_ERR_OK)
+                return retVal;
+
+            return RT_ERR_OK;
         }
     }
     
@@ -8491,19 +8553,19 @@ rtk_api_ret_t rtk_svlan_c2s_del(rtk_vlan_t vid, rtk_vlan_t svid)
  *      Get configure SVLAN C2S table 
  * Input:
  *      vid - VLAN ID
- *      svid - SVLAN VID
+ *      port - available c2s service port
  * Output:
- *      pC2s_portmask - available c2s port mask
+ *      pSvid - SVLAN VID
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_OUT_OF_RANGE - input out of range.
  * Note:
  *     The API can get system C2S configuration. There are 128 SVLAN C2S configurations.
  */
-rtk_api_ret_t rtk_svlan_c2s_get(rtk_vlan_t vid, rtk_vlan_t svid, rtk_portmask_t *pC2s_portmask)
+rtk_api_ret_t rtk_svlan_c2s_get(rtk_vlan_t vid, rtk_port_t port, rtk_vlan_t *pSvid)
 {
     rtk_api_ret_t retVal;
     uint32 i;
@@ -8513,24 +8575,21 @@ rtk_api_ret_t rtk_svlan_c2s_get(rtk_vlan_t vid, rtk_vlan_t svid, rtk_portmask_t 
     if (vid > RTK_VLAN_ID_MAX)
         return RT_ERR_VLAN_VID;
 
-    if (svid > RTK_VLAN_ID_MAX)
-        return RT_ERR_SVLAN_VID; 
+    if (port > RTK_PORT_ID_MAX)
+        return RT_ERR_PORT_ID;
     
     for (i = 0; i < RTK_MAX_NUM_OF_C2S_INDEX; i++)
     {       
         if ((retVal = rtl8370_getAsicSvlanC2SConf(i,&evid,&pmsk,&svidx))!=RT_ERR_OK)
             return retVal;
         
-        if (evid == vid)
+        if ((evid == vid)&&(pmsk&(1<<port)))
         {          
             if ((retVal = rtl8370_getAsicSvlanMemberConfiguration(svidx,&svlanMemConf))!=RT_ERR_OK)
                 return retVal;
 
-            if (svid == svlanMemConf.vs_svid)
-            {
-                pC2s_portmask->bits[0] = pmsk;
+            *pSvid = svlanMemConf.vs_svid;
                 return RT_ERR_OK;
-            }
         }
     }
     
@@ -8547,8 +8606,8 @@ rtk_api_ret_t rtk_svlan_c2s_get(rtk_vlan_t vid, rtk_vlan_t svid, rtk_portmask_t 
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_SVLAN_VID - Invalid SVLAN VID parameter.
  *      RT_ERR_SVLAN_ENTRY_NOT_FOUND - specified svlan entry not found.
@@ -8636,8 +8695,8 @@ rtk_api_ret_t rtk_svlan_ipmc2s_add(ipaddr_t ipmc, rtk_vlan_t svid)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_SVLAN_VID - Invalid SVLAN VID parameter.
  *      RT_ERR_OUT_OF_RANGE - input out of range.
@@ -8680,8 +8739,8 @@ rtk_api_ret_t rtk_svlan_ipmc2s_del(ipaddr_t ipmc)
  * Output:
  *      pSvid - SVLAN VID
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_OUT_OF_RANGE - input out of range.
@@ -8722,8 +8781,8 @@ rtk_api_ret_t rtk_svlan_ipmc2s_get(ipaddr_t ipmc, rtk_vlan_t *pSvid)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_SVLAN_VID - Invalid SVLAN VID parameter.
  *      RT_ERR_SVLAN_ENTRY_NOT_FOUND - specified svlan entry not found.
@@ -8815,8 +8874,8 @@ rtk_api_ret_t rtk_svlan_l2mc2s_add(rtk_vlan_t svid, rtk_mac_t mac)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_SVLAN_VID - Invalid SVLAN VID parameter.
  *      RT_ERR_OUT_OF_RANGE - input out of range.
@@ -8866,8 +8925,8 @@ rtk_api_ret_t rtk_svlan_l2mc2s_del(rtk_mac_t mac)
  * Output:
  *      pSvid - SVLAN VID
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_OUT_OF_RANGE - input out of range.
@@ -8919,8 +8978,8 @@ rtk_api_ret_t rtk_svlan_l2mc2s_get(rtk_mac_t mac, rtk_vlan_t *pSvid)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_SVLAN_VID - Invalid SVLAN VID parameter.
@@ -9009,8 +9068,8 @@ rtk_api_ret_t rtk_svlan_sp2c_add(rtk_vlan_t svid, rtk_port_t dst_port, rtk_vlan_
  * Output:
  *      pCvid - VLAN ID
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_OUT_OF_RANGE - input out of range.
@@ -9058,8 +9117,8 @@ rtk_api_ret_t rtk_svlan_sp2c_get(rtk_vlan_t svid, rtk_port_t dst_port, rtk_vlan_
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_SVLAN_VID - Invalid SVLAN VID parameter.
@@ -9111,8 +9170,8 @@ rtk_api_ret_t rtk_svlan_sp2c_del(rtk_vlan_t svid, rtk_port_t dst_port)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_ENABLE - Invalid enable parameter.
  * Note:
@@ -9146,8 +9205,8 @@ rtk_api_ret_t rtk_cpu_enable_set(rtk_enable_t enable)
  * Output:
  *      pEnable - CPU port function enable
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      The API can get CPU port function enable/disable.
@@ -9173,8 +9232,8 @@ rtk_api_ret_t rtk_cpu_enable_get(rtk_data_t *pEnable)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameter.
  *      RT_ERR_PORT_ID - Invalid port number.
@@ -9218,8 +9277,8 @@ rtk_api_ret_t rtk_cpu_tagPort_set(rtk_port_t port, rtk_cpu_insert_t mode)
  *      pPort - Port id.
  *      pMode - CPU tag insert for packets egress from CPU port, 0:all insert 1:Only for trapped packets 2:no insert.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_L2_NO_CPU_PORT - CPU port is not exist
@@ -9268,8 +9327,8 @@ rtk_api_ret_t rtk_cpu_tagPort_get(rtk_port_t *pPort, rtk_data_t *pMode)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_INPUT - Invalid input parameter.
@@ -9305,8 +9364,8 @@ rtk_api_ret_t rtk_dot1x_unauthPacketOper_set(rtk_port_t port, rtk_dot1x_unauth_a
  * Output:
  *      pUnauth_action - 802.1X unauth action. 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_PORT_ID - Invalid port number.
@@ -9339,8 +9398,8 @@ rtk_api_ret_t rtk_dot1x_unauthPacketOper_get(rtk_port_t port, rtk_data_t *pUnaut
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_ENABLE - Invalid enable input.
  * Note:
@@ -9383,8 +9442,8 @@ rtk_api_ret_t rtk_dot1x_eapolFrame2CpuEnable_set(rtk_enable_t enable)
  * Output:
  *      pEnable - The status of 802.1x EAPOL packet.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -9420,8 +9479,8 @@ rtk_api_ret_t rtk_dot1x_eapolFrame2CpuEnable_get(rtk_data_t *pEnable)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_ENABLE - Invalid enable input.
@@ -9459,8 +9518,8 @@ rtk_api_ret_t rtk_dot1x_portBasedEnable_set(rtk_port_t port, rtk_enable_t enable
  * Output:
  *      pEnable - The status of 802.1x port.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_PORT_ID - Invalid port number.
@@ -9490,8 +9549,8 @@ rtk_api_ret_t rtk_dot1x_portBasedEnable_get(rtk_port_t port, rtk_data_t *pEnable
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *     RT_ERR_DOT1X_PORTBASEDAUTH - 802.1X port-based auth error
@@ -9526,8 +9585,8 @@ rtk_api_ret_t rtk_dot1x_portBasedAuthStatus_set(rtk_port_t port, rtk_dot1x_auth_
  * Output:
  *      pPort_auth - The status of 802.1x port.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_PORT_ID - Invalid port number.
@@ -9556,8 +9615,8 @@ rtk_api_ret_t rtk_dot1x_portBasedAuthStatus_get(rtk_port_t port, rtk_data_t *pPo
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_DOT1X_PORTBASEDOPDIR - 802.1X port-based operation direction error
@@ -9591,8 +9650,8 @@ rtk_api_ret_t rtk_dot1x_portBasedDirection_set(rtk_port_t port, rtk_dot1x_direct
  * Output:
  *      pPort_direction - Operation direction
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_PORT_ID - Invalid port number.
@@ -9622,8 +9681,8 @@ rtk_api_ret_t rtk_dot1x_portBasedDirection_get(rtk_port_t port, rtk_data_t *pPor
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_ENABLE - Invalid enable input.
@@ -9660,8 +9719,8 @@ rtk_api_ret_t rtk_dot1x_macBasedEnable_set(rtk_port_t port, rtk_enable_t enable)
  * Output:
  *      pEnable - The status of 802.1x port.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_PORT_ID - Invalid port number.
@@ -9696,8 +9755,8 @@ rtk_api_ret_t rtk_dot1x_macBasedEnable_get(rtk_port_t port, rtk_data_t *pEnable)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_ENABLE - Invalid enable input.
@@ -9757,8 +9816,8 @@ rtk_api_ret_t rtk_dot1x_macBasedAuthMac_add(rtk_port_t port, rtk_mac_t *pAuth_ma
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_MAC - Invalid MAC address.
  *      RT_ERR_PORT_ID - Invalid port number.
@@ -9814,8 +9873,8 @@ rtk_api_ret_t rtk_dot1x_macBasedAuthMac_del(rtk_port_t port, rtk_mac_t *pAuth_ma
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameter.
  *      RT_ERR_DOT1X_MACBASEDOPDIR - 802.1X mac-based operation direction error
@@ -9846,8 +9905,8 @@ rtk_api_ret_t rtk_dot1x_macBasedDirection_set(rtk_dot1x_direction_t mac_directio
  * Output:
  *      pMac_direction - Operation direction 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -9872,8 +9931,8 @@ rtk_api_ret_t rtk_dot1x_macBasedDirection_get(rtk_data_t *pMac_direction)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameter.
  * Note:
@@ -10005,8 +10064,8 @@ rtk_api_ret_t rtk_dot1x_guestVlan_set(rtk_vlan_t vid)
  * Output:
  *      pVid - 802.1x guest VLAN ID
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -10038,8 +10097,8 @@ rtk_api_ret_t rtk_dot1x_guestVlan_get(rtk_vlan_t *pVid)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameter.
  * Note:
@@ -10069,8 +10128,8 @@ rtk_api_ret_t rtk_dot1x_guestVlan2Auth_set(rtk_enable_t enable)
  * Output:
  *      pEnable - The status of guest VLAN to auth host.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -10098,8 +10157,8 @@ rtk_api_ret_t rtk_dot1x_guestVlan2Auth_get(rtk_data_t *pEnable)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_LA_TRUNK_ID - Invalid trunking group
  *      RT_ERR_PORT_MASK - Invalid portmask.
@@ -10144,8 +10203,8 @@ rtk_api_ret_t rtk_trunk_port_set(rtk_trunk_group_t trk_gid, rtk_portmask_t trunk
  * Output:
  *      pTrunk_member_portmask - Logic trunking member port mask
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_LA_TRUNK_ID - Invalid trunking group
  * Note:
@@ -10184,8 +10243,8 @@ rtk_api_ret_t rtk_trunk_port_get(rtk_trunk_group_t trk_gid, rtk_portmask_t *pTru
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_LA_TRUNK_ID - Invalid trunking group
  *      RT_ERR_LA_HASHMASK - Hash algorithm selection error.
@@ -10229,8 +10288,8 @@ rtk_api_ret_t rtk_trunk_distributionAlgorithm_set(rtk_trunk_group_t trk_gid, rtk
  * Output:
  *      pAlgo_bitmask -  Bitmask of the distribution algorithm
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_LA_TRUNK_ID - Invalid trunking group
  * Note:
@@ -10259,8 +10318,8 @@ rtk_api_ret_t rtk_trunk_distributionAlgorithm_get(rtk_trunk_group_t trk_gid, rtk
  * Output:
  *      pPortmask - queue empty port mask, 1 for empty and 0 for not empty
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      The API can get queues are empty port mask
@@ -10275,6 +10334,7 @@ rtk_api_ret_t rtk_trunk_qeueuEmptyStatus_get(rtk_portmask_t *pPortmask)
     return RT_ERR_OK;
 }
 
+#if !defined(_REDUCE_CODE)
 static rtk_api_ret_t _rtk_switch_init0(void)
 {
     rtk_api_ret_t retVal;
@@ -10319,7 +10379,7 @@ static rtk_api_ret_t _rtk_switch_init0(void)
                                      {0x0802,0x0100},{0x1700,0x014C},{0x0301,0x00FF},{0x12AA,0x0096},
                                      {0x133f,0x0030},{0x133e,0x000e},{0x221f,0x0005},{0x2200,0x00C4},
                                      {0x221f,0x0000},{0x2210,0x05EF},{0x2204,0x05E1},{0x2200,0x1340},
-                                     {0x133f,0x0010},{0x20A0,0x1940},{0x20C0,0x1940},{0x20E0,0x1940},
+                                     {0x133f,0x0010},{0x20A0,0x0940},{0x20C0,0x0940},{0x20E0,0x0940},
                                      {0xFFFF, 0xABCD}};
  
     CONST_T uint16 chipData1[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221f,0x0000},{0x2215,0x1006}, 
@@ -10387,24 +10447,6 @@ static rtk_api_ret_t _rtk_switch_init0(void)
                 }
                 if (5 == cnt)
                     return RT_ERR_BUSYWAIT_TIMEOUT;
-
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                    return retVal;
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                    return retVal;    
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                    return retVal; 
-
-                cnt = 0;
-                busyFlag = 1;
-                while (busyFlag&&cnt<5)
-                {
-                    cnt++;
-                    if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                        return retVal;
-                }
-                if (5 == cnt)
-                    return RT_ERR_BUSYWAIT_TIMEOUT;
             
                 if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)chipData0[index][1])) !=  RT_ERR_OK)
                     return retVal;
@@ -10425,24 +10467,6 @@ static rtk_api_ret_t _rtk_switch_init0(void)
         {    
             if ((chipData1[index][0]&0xF000)==0x2000)
             {
-                cnt = 0;
-                busyFlag = 1;
-                while (busyFlag&&cnt<5)
-                {
-                    cnt++;
-                    if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                        return retVal;
-                }
-                if (5 == cnt)
-                    return RT_ERR_BUSYWAIT_TIMEOUT;
-
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                    return retVal;
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                    return retVal;    
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                    return retVal; 
-
                 cnt = 0;
                 busyFlag = 1;
                 while (busyFlag&&cnt<5)
@@ -10477,24 +10501,6 @@ static rtk_api_ret_t _rtk_switch_init0(void)
         {    
             if ((chipData1[index][0]&0xF000)==0x2000)
             {
-                cnt = 0;
-                busyFlag = 1;
-                while (busyFlag&&cnt<5)
-                {
-                    cnt++;
-                    if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                        return retVal;
-                }
-                if (5 == cnt)
-                    return RT_ERR_BUSYWAIT_TIMEOUT;
-
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                    return retVal;
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                    return retVal;    
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                    return retVal; 
-
                 cnt = 0;
                 busyFlag = 1;
                 while (busyFlag&&cnt<5)
@@ -10654,6 +10660,7 @@ static rtk_api_ret_t _rtk_switch_init0(void)
     
     return RT_ERR_OK;
 }
+#endif
 
 static rtk_api_ret_t _rtk_switch_init1(void)
 {
@@ -10663,111 +10670,114 @@ static rtk_api_ret_t _rtk_switch_init1(void)
     uint32 busyFlag,cnt;
 #endif
     CONST_T uint16 chipData0[][2] ={{0x1B24, 0x0000},{0x1B25, 0x0000},{0x1B26, 0x0000},{0x1B27, 0x0000},
-                                    {0x207F, 0x0002},{0x2079, 0x0200},{0x207F, 0x0000},{0x133F, 0x0030},
-                                    {0x133E, 0x000E},{0x221F, 0x0005},{0x2201, 0x0700},{0x2205, 0x8B82},
-                                    {0x2206, 0x05CB},{0x221F, 0x0002},{0x2204, 0x80C2},{0x2205, 0x0938},
-                                    {0x221F, 0x0003},{0x2212, 0xC4D2},{0x220D, 0x0207},{0x221F, 0x0001},
-                                    {0x2207, 0x267E},{0x221C, 0xE5F7},{0x221B, 0x0424},{0x221F, 0x0007},
-                                    {0x221E, 0x0040},{0x2218, 0x0000},{0x221F, 0x0007},{0x221E, 0x002C},
-                                    {0x2218, 0x008B},{0x221F, 0x0005},{0x2205, 0xFFF6},{0x2206, 0x0080},
-                                    {0x2205, 0x8000},{0x2206, 0xF8E0},{0x2206, 0xE000},{0x2206, 0xE1E0},
-                                    {0x2206, 0x01AC},{0x2206, 0x2408},{0x2206, 0xE08B},{0x2206, 0x84F7},
-                                    {0x2206, 0x20E4},{0x2206, 0x8B84},{0x2206, 0xFC05},{0x2206, 0xF8FA},
-                                    {0x2206, 0xEF69},{0x2206, 0xE08B},{0x2206, 0x86AC},{0x2206, 0x201A},
-                                    {0x2206, 0xBF80},{0x2206, 0x59D0},{0x2206, 0x2402},{0x2206, 0x803D},
-                                    {0x2206, 0xE0E0},{0x2206, 0xE4E1},{0x2206, 0xE0E5},{0x2206, 0x5806},
-                                    {0x2206, 0x68C0},{0x2206, 0xD1D2},{0x2206, 0xE4E0},{0x2206, 0xE4E5},
-                                    {0x2206, 0xE0E5},{0x2206, 0xEF96},{0x2206, 0xFEFC},{0x2206, 0x05FB},
-                                    {0x2206, 0x0BFB},{0x2206, 0x58FF},{0x2206, 0x9E11},{0x2206, 0x06F0},
-                                    {0x2206, 0x0C81},{0x2206, 0x8AE0},{0x2206, 0x0019},{0x2206, 0x1B89},
-                                    {0x2206, 0xCFEB},{0x2206, 0x19EB},{0x2206, 0x19B0},{0x2206, 0xEFFF},
-                                    {0x2206, 0x0BFF},{0x2206, 0x0425},{0x2206, 0x0807},{0x2206, 0x2640},
-                                    {0x2206, 0x7227},{0x2206, 0x267E},{0x2206, 0x2804},{0x2206, 0xB729},
-                                    {0x2206, 0x2576},{0x2206, 0x2A68},{0x2206, 0xE52B},{0x2206, 0xAD00},
-                                    {0x2206, 0x2CDB},{0x2206, 0xF02D},{0x2206, 0x67BB},{0x2206, 0x2E7B},
-                                    {0x2206, 0x0F2F},{0x2206, 0x7365},{0x2206, 0x31AC},{0x2206, 0xCC32},
-                                    {0x2206, 0x2300},{0x2206, 0x332D},{0x2206, 0x1734},{0x2206, 0x7F52},
-                                    {0x2206, 0x3510},{0x2206, 0x0036},{0x2206, 0x0600},{0x2206, 0x370C},
-                                    {0x2206, 0xC038},{0x2206, 0x7FCE},{0x2206, 0x3CE5},{0x2206, 0xF73D},
-                                    {0x2206, 0x3DA4},{0x2206, 0x6530},{0x2206, 0x3E67},{0x2206, 0x0053},
-                                    {0x2206, 0x69D2},{0x2206, 0x0F6A},{0x2206, 0x012C},{0x2206, 0x6C2B},
-                                    {0x2206, 0x136E},{0x2206, 0xE100},{0x2206, 0x6F12},{0x2206, 0xF771},
-                                    {0x2206, 0x006B},{0x2206, 0x7306},{0x2206, 0xEB74},{0x2206, 0x94C7},
-                                    {0x2206, 0x7698},{0x2206, 0x0A77},{0x2206, 0x5000},{0x2206, 0x788A},
-                                    {0x2206, 0x1579},{0x2206, 0x7F6F},{0x2206, 0x7A06},{0x2206, 0xA600},
-                                    {0x2205, 0x8B90},{0x2206, 0x8000},{0x2205, 0x8B92},{0x2206, 0x8000},
-                                    {0x2205, 0x8B94},{0x2206, 0x8014},{0x2208, 0xFFFA},{0x2202, 0x3C65},
-                                    {0x2205, 0xFFF6},{0x2206, 0x00F7},{0x221F, 0x0000},{0x221F, 0x0007},
-                                    {0x221E, 0x0042},{0x2218, 0x0000},{0x221E, 0x002D},{0x2218, 0xF010},
-                                    {0x221E, 0x0020},{0x2215, 0x0000},{0x221E, 0x0023},{0x2216, 0x8000},
-                                    {0x221F, 0x0000},{0x133F, 0x0010},{0x133E, 0x0FFE},{0x1362, 0x0115},
-                                    {0x1363, 0x0002},{0x1363, 0x0000},{0x1306, 0x000C},{0x1307, 0x000C},
-                                    {0x1303, 0x0067},{0x1304, 0x4444},{0x1203, 0xFF00},{0x1200, 0x7FC4},
-                                    {0x121D, 0x7D16},{0x121E, 0x03E8},{0x121F, 0x024E},{0x1220, 0x0230},
-                                    {0x1221, 0x0244},{0x1222, 0x0226},{0x1223, 0x024E},{0x1224, 0x0230},
-                                    {0x1225, 0x0244},{0x1226, 0x0226},{0x1227, 0x00C0},{0x1228, 0x00B4},
-                                    {0x122F, 0x00C0},{0x1230, 0x00B4},{0x0208, 0x03E8},{0x0209, 0x03E8},
-                                    {0x020A, 0x03E8},{0x020B, 0x03E8},{0x020C, 0x03E8},{0x020D, 0x03E8},
-                                    {0x020E, 0x03E8},{0x020F, 0x03E8},{0x0210, 0x03E8},{0x0211, 0x03E8},
-                                    {0x0212, 0x03E8},{0x0213, 0x03E8},{0x0214, 0x03E8},{0x0215, 0x03E8},
-                                    {0x0216, 0x03E8},{0x0217, 0x03E8},{0x0900, 0x0000},{0x0901, 0x0000},
-                                    {0x0902, 0x0000},{0x0903, 0x0000},{0x0865, 0x3210},{0x087B, 0x0000},
-                                    {0x087C, 0xFF00},{0x087D, 0x0000},{0x087E, 0x0000},{0x0801, 0x0100},
-                                    {0x0802, 0x0100},{0x0A20, 0x2040},{0x0A21, 0x2040},{0x0A22, 0x2040},
-                                    {0x0A23, 0x2040},{0x0A24, 0x2040},{0x0A28, 0x2040},{0x0A29, 0x2040},
-                                    {0x133F, 0x0030},{0x133E, 0x000E},{0x221F, 0x0000},{0x2200, 0x1340},
-                                    {0x221F, 0x0000},{0x133F, 0x0010},{0x133E, 0x0FFE},{0x20A0, 0x1940},
-                                    {0x20C0, 0x1940},{0x20E0, 0x1940},{0x130c, 0x0050},{0xFFFF, 0xABCD}};
+                                    {0x207F, 0x0007},{0x207E, 0x000B},{0x2076, 0x1A00},{0x207F, 0x0000},
+                                    {0x205F, 0x0007},{0x205E, 0x000A},{0x2059, 0x0000},{0x205A, 0x0000},
+                                    {0x205B, 0x0000},{0x205C, 0x0000},{0x205E, 0x000B},{0x2055, 0x0500},
+                                    {0x2056, 0x0000},{0x2057, 0x0000},{0x2058, 0x0000},{0x205F, 0x0000},
+                                    {0x133F, 0x0030},{0x133E, 0x000E},{0x221F, 0x0005},{0x2201, 0x0700},
+                                    {0x2205, 0x8B82},{0x2206, 0x05CB},{0x221F, 0x0007},{0x221E, 0x0008},
+                                    {0x2219, 0x80C2},{0x221A, 0x0938},{0x221F, 0x0000},{0x221F, 0x0003},
+                                    {0x2212, 0xC4D2},{0x220D, 0x0207},{0x221F, 0x0001},{0x2207, 0x267E},
+                                    {0x221C, 0xE5F7},{0x221B, 0x0424},{0x221F, 0x0007},{0x221E, 0x0040},
+                                    {0x2218, 0x0000},{0x221F, 0x0007},{0x221E, 0x002C},{0x2218, 0x008B},
+                                    {0x221F, 0x0005},{0x2205, 0xFFF6},{0x2206, 0x0080},{0x2205, 0x8000},
+                                    {0x2206, 0xF8E0},{0x2206, 0xE000},{0x2206, 0xE1E0},{0x2206, 0x01AC},
+                                    {0x2206, 0x2408},{0x2206, 0xE08B},{0x2206, 0x84F7},{0x2206, 0x20E4},
+                                    {0x2206, 0x8B84},{0x2206, 0xFC05},{0x2206, 0xF8FA},{0x2206, 0xEF69},
+                                    {0x2206, 0xE08B},{0x2206, 0x86AC},{0x2206, 0x201A},{0x2206, 0xBF80},
+                                    {0x2206, 0x59D0},{0x2206, 0x2402},{0x2206, 0x803D},{0x2206, 0xE0E0},
+                                    {0x2206, 0xE4E1},{0x2206, 0xE0E5},{0x2206, 0x5806},{0x2206, 0x68C0},
+                                    {0x2206, 0xD1D2},{0x2206, 0xE4E0},{0x2206, 0xE4E5},{0x2206, 0xE0E5},
+                                    {0x2206, 0xEF96},{0x2206, 0xFEFC},{0x2206, 0x05FB},{0x2206, 0x0BFB},
+                                    {0x2206, 0x58FF},{0x2206, 0x9E11},{0x2206, 0x06F0},{0x2206, 0x0C81},
+                                    {0x2206, 0x8AE0},{0x2206, 0x0019},{0x2206, 0x1B89},{0x2206, 0xCFEB},
+                                    {0x2206, 0x19EB},{0x2206, 0x19B0},{0x2206, 0xEFFF},{0x2206, 0x0BFF},
+                                    {0x2206, 0x0425},{0x2206, 0x0807},{0x2206, 0x2640},{0x2206, 0x7227},
+                                    {0x2206, 0x267E},{0x2206, 0x2804},{0x2206, 0xB729},{0x2206, 0x2576},
+                                    {0x2206, 0x2A68},{0x2206, 0xE52B},{0x2206, 0xAD00},{0x2206, 0x2CDB},
+                                    {0x2206, 0xF02D},{0x2206, 0x67BB},{0x2206, 0x2E7B},{0x2206, 0x0F2F},
+                                    {0x2206, 0x7365},{0x2206, 0x31AC},{0x2206, 0xCC32},{0x2206, 0x2300},
+                                    {0x2206, 0x332D},{0x2206, 0x1734},{0x2206, 0x7F52},{0x2206, 0x3510},
+                                    {0x2206, 0x0036},{0x2206, 0x1000},{0x2206, 0x3710},{0x2206, 0x0038},
+                                    {0x2206, 0x7FCE},{0x2206, 0x3CE5},{0x2206, 0xF73D},{0x2206, 0x3DA4},
+                                    {0x2206, 0x6530},{0x2206, 0x3E67},{0x2206, 0x0053},{0x2206, 0x69D2},
+                                    {0x2206, 0x0F6A},{0x2206, 0x012C},{0x2206, 0x6C2B},{0x2206, 0x136E},
+                                    {0x2206, 0xE100},{0x2206, 0x6F12},{0x2206, 0xF771},{0x2206, 0x006B},
+                                    {0x2206, 0x7306},{0x2206, 0xEB74},{0x2206, 0x94C7},{0x2206, 0x7698},
+                                    {0x2206, 0x0A77},{0x2206, 0x5000},{0x2206, 0x788A},{0x2206, 0x1579},
+                                    {0x2206, 0x7F6F},{0x2206, 0x7A06},{0x2206, 0xA600},{0x2205, 0x8B90},
+                                    {0x2206, 0x8000},{0x2205, 0x8B92},{0x2206, 0x8000},{0x2205, 0x8B94},
+                                    {0x2206, 0x8014},{0x2208, 0xFFFA},{0x2202, 0x3C65},{0x2205, 0xFFF6},
+                                    {0x2206, 0x00F7},{0x221F, 0x0000},{0x221F, 0x0007},{0x221E, 0x0042},
+                                    {0x2218, 0x0000},{0x221E, 0x002D},{0x2218, 0xF010},{0x221E, 0x0020},
+                                    {0x2215, 0x0000},{0x221E, 0x0023},{0x2216, 0x8000},{0x221F, 0x0000},
+                                    {0x133F, 0x0010},{0x133E, 0x0FFE},{0x1362, 0x0115},{0x1363, 0x0002},
+                                    {0x1363, 0x0000},{0x1306, 0x000C},{0x1307, 0x000C},{0x1303, 0x0367},
+                                    {0x1304, 0x7777},{0x1203, 0xFF00},{0x1200, 0x7FC4},{0x121D, 0x7D16},
+                                    {0x121E, 0x03E8},{0x121F, 0x024E},{0x1220, 0x0230},{0x1221, 0x0244},
+                                    {0x1222, 0x0226},{0x1223, 0x024E},{0x1224, 0x0230},{0x1225, 0x0244},
+                                    {0x1226, 0x0226},{0x1227, 0x00C0},{0x1228, 0x00B4},{0x122F, 0x00C0},
+                                    {0x1230, 0x00B4},{0x0208, 0x03E8},{0x0209, 0x03E8},{0x020A, 0x03E8},
+                                    {0x020B, 0x03E8},{0x020C, 0x03E8},{0x020D, 0x03E8},{0x020E, 0x03E8},
+                                    {0x020F, 0x03E8},{0x0210, 0x03E8},{0x0211, 0x03E8},{0x0212, 0x03E8},
+                                    {0x0213, 0x03E8},{0x0214, 0x03E8},{0x0215, 0x03E8},{0x0216, 0x03E8},
+                                    {0x0217, 0x03E8},{0x0865, 0x3210},{0x087B, 0x0000},{0x087C, 0xFF00},
+                                    {0x087D, 0x0000},{0x087E, 0x0000},{0x0801, 0x0100},{0x0802, 0x0100},
+                                    {0x0A20, 0x2040},{0x0A21, 0x2040},{0x0A22, 0x2040},{0x0A23, 0x2040},
+                                    {0x0A24, 0x2040},{0x0A28, 0x2040},{0x0A29, 0x2040},{0x20A0, 0x0940},
+                                    {0x20C0, 0x0940},{0x20E0, 0x0940},{0x130C, 0x0050},{0x1B03, 0x0876},
+                                    {0xFFFF, 0xABCD}};
 
-    CONST_T uint16 chipData1[][2] ={{0x1B24, 0x0000},{0x1B25, 0x0000},{0x1B26, 0x0000},{0x1B27, 0x0000},    
-                                    {0x207F, 0x0002},{0x2079, 0x0200},{0x207F, 0x0000},{0x133F, 0x0030},     
-                                    {0x133E, 0x000E},{0x221F, 0x0005},{0x2201, 0x0700},{0x2205, 0x8B82},     
-                                    {0x2206, 0x05CB},{0x221F, 0x0002},{0x2204, 0x80C2},{0x2205, 0x0938},     
-                                    {0x221F, 0x0003},{0x2212, 0xC4D2},{0x220D, 0x0207},{0x221F, 0x0001},     
-                                    {0x2207, 0x267E},{0x221C, 0xE5F7},{0x221B, 0x0424},{0x221F, 0x0007},     
-                                    {0x221E, 0x0040},{0x2218, 0x0000},{0x221F, 0x0007},{0x221E, 0x002C},     
-                                    {0x2218, 0x008B},{0x221F, 0x0005},{0x2205, 0xFFF6},{0x2206, 0x0080},     
-                                    {0x2205, 0x8000},{0x2206, 0xF8E0},{0x2206, 0xE000},{0x2206, 0xE1E0},     
-                                    {0x2206, 0x01AC},{0x2206, 0x2408},{0x2206, 0xE08B},{0x2206, 0x84F7},     
-                                    {0x2206, 0x20E4},{0x2206, 0x8B84},{0x2206, 0xFC05},{0x2206, 0xF8FA},     
-                                    {0x2206, 0xEF69},{0x2206, 0xE08B},{0x2206, 0x86AC},{0x2206, 0x201A},     
-                                    {0x2206, 0xBF80},{0x2206, 0x59D0},{0x2206, 0x2402},{0x2206, 0x803D},     
-                                    {0x2206, 0xE0E0},{0x2206, 0xE4E1},{0x2206, 0xE0E5},{0x2206, 0x5806},     
-                                    {0x2206, 0x68C0},{0x2206, 0xD1D2},{0x2206, 0xE4E0},{0x2206, 0xE4E5},     
-                                    {0x2206, 0xE0E5},{0x2206, 0xEF96},{0x2206, 0xFEFC},{0x2206, 0x05FB},     
-                                    {0x2206, 0x0BFB},{0x2206, 0x58FF},{0x2206, 0x9E11},{0x2206, 0x06F0},     
-                                    {0x2206, 0x0C81},{0x2206, 0x8AE0},{0x2206, 0x0019},{0x2206, 0x1B89},     
-                                    {0x2206, 0xCFEB},{0x2206, 0x19EB},{0x2206, 0x19B0},{0x2206, 0xEFFF},     
-                                    {0x2206, 0x0BFF},{0x2206, 0x0425},{0x2206, 0x0807},{0x2206, 0x2640},     
-                                    {0x2206, 0x7227},{0x2206, 0x267E},{0x2206, 0x2804},{0x2206, 0xB729},     
-                                    {0x2206, 0x2576},{0x2206, 0x2A68},{0x2206, 0xE52B},{0x2206, 0xAD00},     
-                                    {0x2206, 0x2CDB},{0x2206, 0xF02D},{0x2206, 0x67BB},{0x2206, 0x2E7B},     
-                                    {0x2206, 0x0F2F},{0x2206, 0x7365},{0x2206, 0x31AC},{0x2206, 0xCC32},     
-                                    {0x2206, 0x2300},{0x2206, 0x332D},{0x2206, 0x1734},{0x2206, 0x7F52},     
-                                    {0x2206, 0x3510},{0x2206, 0x0036},{0x2206, 0x0600},{0x2206, 0x370C},     
-                                    {0x2206, 0xC038},{0x2206, 0x7FCE},{0x2206, 0x3CE5},{0x2206, 0xF73D},      
-                                    {0x2206, 0x3DA4},{0x2206, 0x6530},{0x2206, 0x3E67},{0x2206, 0x0053},     
-                                    {0x2206, 0x69D2},{0x2206, 0x0F6A},{0x2206, 0x012C},{0x2206, 0x6C2B},     
-                                    {0x2206, 0x136E},{0x2206, 0xE100},{0x2206, 0x6F12},{0x2206, 0xF771},     
-                                    {0x2206, 0x006B},{0x2206, 0x7306},{0x2206, 0xEB74},{0x2206, 0x94C7},     
-                                    {0x2206, 0x7698},{0x2206, 0x0A77},{0x2206, 0x5000},{0x2206, 0x788A},     
-                                    {0x2206, 0x1579},{0x2206, 0x7F6F},{0x2206, 0x7A06},{0x2206, 0xA600},     
-                                    {0x2205, 0x8B90},{0x2206, 0x8000},{0x2205, 0x8B92},{0x2206, 0x8000},     
-                                    {0x2205, 0x8B94},{0x2206, 0x8014},{0x2208, 0xFFFA},{0x2202, 0x3C65},     
-                                    {0x2205, 0xFFF6},{0x2206, 0x00F7},{0x221F, 0x0000},{0x221F, 0x0007},     
-                                    {0x221E, 0x0042},{0x2218, 0x0000},{0x221E, 0x002D},{0x2218, 0xF010},     
-                                    {0x221E, 0x0020},{0x2215, 0x0000},{0x221E, 0x0023},{0x2216, 0x8000},     
-                                    {0x221F, 0x0000},{0x133F, 0x0010},{0x133E, 0x0FFE},{0x1362, 0x0115},     
-                                    {0x1363, 0x0002},{0x1363, 0x0000},{0x1306, 0x000C},{0x1307, 0x000C},     
-                                    {0x1303, 0x0067},{0x1304, 0x4444},{0x1203, 0xFF00},{0x1200, 0x7FC4},
-                                    {0x0900, 0x0000},{0x0901, 0x0000},{0x0902, 0x0000},{0x0903, 0x0000},
-                                    {0x0865, 0x3210},{0x087B, 0x0000},{0x087C, 0xFF00},{0x087D, 0x0000},
-                                    {0x087E, 0x0000},{0x0801, 0x0100},{0x0802, 0x0100},{0x0A20, 0x2040},
-                                    {0x0A21, 0x2040},{0x0A22, 0x2040},{0x0A23, 0x2040},{0x0A24, 0x2040},
-                                    {0x0A25, 0x2040},{0x0A26, 0x2040},{0x0A27, 0x2040},{0x0A28, 0x2040},
-                                    {0x0A29, 0x2040},{0x133F, 0x0030},{0x133E, 0x000E},{0x221F, 0x0000},
-                                    {0x2200, 0x1340},{0x221F, 0x0000},{0x133F, 0x0010},{0x133E, 0x0FFE},
-                                    {0x1B03, 0x0876},{0xFFFF, 0xABCD}};
+    CONST_T uint16 chipData1[][2] ={{0x1B24, 0x0000},{0x1B25, 0x0000},{0x1B26, 0x0000},{0x1B27, 0x0000},
+                                    {0x207F, 0x0007},{0x207E, 0x000B},{0x2076, 0x1A00},{0x207F, 0x0000},
+                                    {0x205F, 0x0007},{0x205E, 0x000A},{0x2059, 0x0000},{0x205A, 0x0000},
+                                    {0x205B, 0x0000},{0x205C, 0x0000},{0x205E, 0x000B},{0x2055, 0x0500},
+                                    {0x2056, 0x0000},{0x2057, 0x0000},{0x2058, 0x0000},{0x205F, 0x0000},
+                                    {0x133F, 0x0030},{0x133E, 0x000E},{0x221F, 0x0005},{0x2201, 0x0700},
+                                    {0x2205, 0x8B82},{0x2206, 0x05CB},{0x221F, 0x0007},{0x221E, 0x0008},
+                                    {0x2219, 0x80C2},{0x221A, 0x0938},{0x221F, 0x0000},{0x221F, 0x0003},
+                                    {0x2212, 0xC4D2},{0x220D, 0x0207},{0x221F, 0x0001},{0x2207, 0x267E},
+                                    {0x221C, 0xE5F7},{0x221B, 0x0424},{0x221F, 0x0007},{0x221E, 0x0040},
+                                    {0x2218, 0x0000},{0x221F, 0x0007},{0x221E, 0x002C},{0x2218, 0x008B},
+                                    {0x221F, 0x0005},{0x2205, 0xFFF6},{0x2206, 0x0080},{0x2205, 0x8000},
+                                    {0x2206, 0xF8E0},{0x2206, 0xE000},{0x2206, 0xE1E0},{0x2206, 0x01AC},
+                                    {0x2206, 0x2408},{0x2206, 0xE08B},{0x2206, 0x84F7},{0x2206, 0x20E4},
+                                    {0x2206, 0x8B84},{0x2206, 0xFC05},{0x2206, 0xF8FA},{0x2206, 0xEF69},
+                                    {0x2206, 0xE08B},{0x2206, 0x86AC},{0x2206, 0x201A},{0x2206, 0xBF80},
+                                    {0x2206, 0x59D0},{0x2206, 0x2402},{0x2206, 0x803D},{0x2206, 0xE0E0},
+                                    {0x2206, 0xE4E1},{0x2206, 0xE0E5},{0x2206, 0x5806},{0x2206, 0x68C0},
+                                    {0x2206, 0xD1D2},{0x2206, 0xE4E0},{0x2206, 0xE4E5},{0x2206, 0xE0E5},
+                                    {0x2206, 0xEF96},{0x2206, 0xFEFC},{0x2206, 0x05FB},{0x2206, 0x0BFB},
+                                    {0x2206, 0x58FF},{0x2206, 0x9E11},{0x2206, 0x06F0},{0x2206, 0x0C81},
+                                    {0x2206, 0x8AE0},{0x2206, 0x0019},{0x2206, 0x1B89},{0x2206, 0xCFEB},
+                                    {0x2206, 0x19EB},{0x2206, 0x19B0},{0x2206, 0xEFFF},{0x2206, 0x0BFF},
+                                    {0x2206, 0x0425},{0x2206, 0x0807},{0x2206, 0x2640},{0x2206, 0x7227},
+                                    {0x2206, 0x267E},{0x2206, 0x2804},{0x2206, 0xB729},{0x2206, 0x2576},
+                                    {0x2206, 0x2A68},{0x2206, 0xE52B},{0x2206, 0xAD00},{0x2206, 0x2CDB},
+                                    {0x2206, 0xF02D},{0x2206, 0x67BB},{0x2206, 0x2E7B},{0x2206, 0x0F2F},
+                                    {0x2206, 0x7365},{0x2206, 0x31AC},{0x2206, 0xCC32},{0x2206, 0x2300},
+                                    {0x2206, 0x332D},{0x2206, 0x1734},{0x2206, 0x7F52},{0x2206, 0x3510},
+                                    {0x2206, 0x0036},{0x2206, 0x1000},{0x2206, 0x3710},{0x2206, 0x0038},
+                                    {0x2206, 0x7FCE},{0x2206, 0x3CE5},{0x2206, 0xF73D},{0x2206, 0x3DA4},
+                                    {0x2206, 0x6530},{0x2206, 0x3E67},{0x2206, 0x0053},{0x2206, 0x69D2},
+                                    {0x2206, 0x0F6A},{0x2206, 0x012C},{0x2206, 0x6C2B},{0x2206, 0x136E},
+                                    {0x2206, 0xE100},{0x2206, 0x6F12},{0x2206, 0xF771},{0x2206, 0x006B},
+                                    {0x2206, 0x7306},{0x2206, 0xEB74},{0x2206, 0x94C7},{0x2206, 0x7698},
+                                    {0x2206, 0x0A77},{0x2206, 0x5000},{0x2206, 0x788A},{0x2206, 0x1579},
+                                    {0x2206, 0x7F6F},{0x2206, 0x7A06},{0x2206, 0xA600},{0x2205, 0x8B90},
+                                    {0x2206, 0x8000},{0x2205, 0x8B92},{0x2206, 0x8000},{0x2205, 0x8B94},
+                                    {0x2206, 0x8014},{0x2208, 0xFFFA},{0x2202, 0x3C65},{0x2205, 0xFFF6},
+                                    {0x2206, 0x00F7},{0x221F, 0x0000},{0x221F, 0x0007},{0x221E, 0x0042},
+                                    {0x2218, 0x0000},{0x221E, 0x002D},{0x2218, 0xF010},{0x221E, 0x0020},
+                                    {0x2215, 0x0000},{0x221E, 0x0023},{0x2216, 0x8000},{0x221F, 0x0000},
+                                    {0x133F, 0x0010},{0x133E, 0x0FFE},{0x1362, 0x0115},{0x1363, 0x0002},
+                                    {0x1363, 0x0000},{0x1306, 0x000C},{0x1307, 0x000C},{0x1303, 0x0367},
+                                    {0x1304, 0x7777},{0x1203, 0xFF00},{0x1200, 0x7FC4},{0x0865, 0x3210},
+                                    {0x087B, 0x0000},{0x087C, 0xFF00},{0x087D, 0x0000},{0x087E, 0x0000},
+                                    {0x0801, 0x0100},{0x0802, 0x0100},{0x0A20, 0x2040},{0x0A21, 0x2040},
+                                    {0x0A22, 0x2040},{0x0A23, 0x2040},{0x0A24, 0x2040},{0x0A25, 0x2040},
+                                    {0x0A26, 0x2040},{0x0A27, 0x2040},{0x0A28, 0x2040},{0x0A29, 0x2040},
+                                    {0x130C, 0x0050},{0x1B03, 0x0876},{0xFFFF, 0xABCD}};
 
     if ((retVal = rtl8370_setAsicReg(0x13C2,0x0249))!=RT_ERR_OK)
         return retVal;
@@ -10826,24 +10836,6 @@ static rtk_api_ret_t _rtk_switch_init1(void)
                     }
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
-        
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-        
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
                     
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)chipData0[index][1])) !=  RT_ERR_OK)
                         return retVal;
@@ -10875,24 +10867,6 @@ static rtk_api_ret_t _rtk_switch_init1(void)
                     }
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
-      
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-        
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
         
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)chipData1[index][1])) !=  RT_ERR_OK)
                         return retVal;
@@ -10914,24 +10888,6 @@ static rtk_api_ret_t _rtk_switch_init1(void)
             {    
                 if ((chipData1[index][0]&0xF000)==0x2000)
                 {
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-      
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-        
                     cnt = 0;
                     busyFlag = 1;
                     while (busyFlag&&cnt<5)
@@ -10974,103 +10930,167 @@ static rtk_api_ret_t _rtk_switch_init2(void)
 #ifndef MDC_MDIO_OPERATION 
     uint32 busyFlag,cnt;
 #endif
-    CONST_T uint16 chipData0[][2] ={{0x1b24,0x0000},{0x1b25,0x0000},{0x1b26,0x0000},{0x1b27,0x0000},
-                                     {0x133f,0x0030},{0x133e,0x000e},{0x221f,0x0007},{0x221e,0x0048},
-                                     {0x2219,0x4012},{0x221f,0x0003},{0x2201,0x3554},{0x2202,0x63e8},
-                                     {0x2203,0x99c2},{0x2204,0x0113},{0x2205,0x303e},{0x220d,0x0207},
-                                     {0x220e,0xe100},{0x221f,0x0007},{0x221e,0x0040},{0x2218,0x0000},
-                                     {0x221f,0x0007},{0x221e,0x002c},{0x2218,0x008b},{0x221f,0x0005},
-                                     {0x2205,0xfff6},{0x2206,0x0080},{0x221f,0x0005},{0x2205,0x8000},
-                                     {0x2206,0x0280},{0x2206,0x2bf7},{0x2206,0x00e0},{0x2206,0xfff7},
-                                     {0x2206,0xa080},{0x2206,0x02ae},{0x2206,0xf602},{0x2206,0x804e},
-                                     {0x2206,0x0201},{0x2206,0x5002},{0x2206,0x0163},{0x2206,0x0201},
-                                     {0x2206,0x79e0},{0x2206,0x8b8c},{0x2206,0xe18b},{0x2206,0x8d1e},
-                                     {0x2206,0x01e1},{0x2206,0x8b8e},{0x2206,0x1e01},{0x2206,0xa000},
-                                     {0x2206,0xe4ae},{0x2206,0xd8bf},{0x2206,0x8b88},{0x2206,0xec00},
-                                     {0x2206,0x19a9},{0x2206,0x8b90},{0x2206,0xf9ee},{0x2206,0xfff6},
-                                     {0x2206,0x00ee},{0x2206,0xfff7},{0x2206,0xfce0},{0x2206,0xe140},
-                                     {0x2206,0xe1e1},{0x2206,0x41f7},{0x2206,0x2ff6},{0x2206,0x28e4},
-                                     {0x2206,0xe140},{0x2206,0xe5e1},{0x2206,0x4104},{0x2206,0xf8fa},
-                                     {0x2206,0xef69},{0x2206,0xe08b},{0x2206,0x86ac},{0x2206,0x201a},
-                                     {0x2206,0xbf80},{0x2206,0x77d0},{0x2206,0x6c02},{0x2206,0x2978},
-                                     {0x2206,0xe0e0},{0x2206,0xe4e1},{0x2206,0xe0e5},{0x2206,0x5806},
-                                     {0x2206,0x68c0},{0x2206,0xd1d2},{0x2206,0xe4e0},{0x2206,0xe4e5},
-                                     {0x2206,0xe0e5},{0x2206,0xef96},{0x2206,0xfefc},{0x2206,0x0425},
-                                     {0x2206,0x0807},{0x2206,0x2640},{0x2206,0x7227},{0x2206,0x267e},
-                                     {0x2206,0x2804},{0x2206,0xb729},{0x2206,0x2576},{0x2206,0x2a68},
-                                     {0x2206,0xe52b},{0x2206,0xad00},{0x2206,0x2cdb},{0x2206,0xf02d},
-                                     {0x2206,0x67bb},{0x2206,0x2e7b},{0x2206,0x0f2f},{0x2206,0x7365},
-                                     {0x2206,0x31ac},{0x2206,0xcc32},{0x2206,0x2300},{0x2206,0x332d},
-                                     {0x2206,0x1734},{0x2206,0x7f52},{0x2206,0x3510},{0x2206,0x0036},
-                                     {0x2206,0x0600},{0x2206,0x370c},{0x2206,0xc038},{0x2206,0x7fce},
-                                     {0x2206,0x3ce5},{0x2206,0xf73d},{0x2206,0x3da4},{0x2206,0x6530},
-                                     {0x2206,0x3e67},{0x2206,0x0053},{0x2206,0x69d2},{0x2206,0x0f6a},
-                                     {0x2206,0x012c},{0x2206,0x6c2b},{0x2206,0x136e},{0x2206,0xe100},
-                                     {0x2206,0x6f12},{0x2206,0xf771},{0x2206,0x006b},{0x2206,0x7306},
-                                     {0x2206,0xeb74},{0x2206,0x94c7},{0x2206,0x7698},{0x2206,0x0a77},
-                                     {0x2206,0x5000},{0x2206,0x788a},{0x2206,0x1579},{0x2206,0x7f6f},
-                                     {0x2206,0x7a06},{0x2206,0xa600},{0x2201,0x0701},{0x2200,0x0405},
-                                     {0x221f,0x0000},{0x2200,0x1340},{0x221f,0x0000},{0x133f,0x0010},
-                                     {0x133e,0x0ffe},{0x1203,0xff00},{0x1200,0x7fc4},{0x121d,0x7D16},
-                                     {0x121e,0x03e8},{0x121f,0x024e},{0x1220,0x0230},{0x1221,0x0244},
-                                     {0x1222,0x0226},{0x1223,0x024e},{0x1224,0x0230},{0x1225,0x0244},
-                                     {0x1226,0x0226},{0x1227,0x00c0},{0x1228,0x00b4},{0x122f,0x00c0},
-                                     {0x1230,0x00b4},{0x0208,0x03e8},{0x0209,0x03e8},{0x020a,0x03e8},
-                                     {0x020b,0x03e8},{0x020c,0x03e8},{0x020d,0x03e8},{0x020e,0x03e8},
-                                     {0x020f,0x03e8},{0x0210,0x03e8},{0x0211,0x03e8},{0x0212,0x03e8},
-                                     {0x0213,0x03e8},{0x0214,0x03e8},{0x0215,0x03e8},{0x0216,0x03e8},
-                                     {0x0217,0x03e8},{0x0900,0x0000},{0x0901,0x0000},{0x0902,0x0000},
-                                     {0x0903,0x0000},{0x0865,0x3210},{0x087b,0x0000},{0x087c,0xff00},
-                                     {0x087d,0x0000},{0x087e,0x0000},{0x0801,0x0100},{0x0802,0x0100},
-                                     {0x0A20,0x2040},{0x0A21,0x2040},{0x0A22,0x2040},{0x0A23,0x2040},
-                                     {0x0A24,0x2040},{0x0A28,0x2040},{0x0A29,0x2040},{0x20A0,0x1940},
-                                     {0x20C0,0x1940},{0x20E0,0x1940},{0x130c,0x0050},{0xFFFF,0xABCD}};
+    CONST_T uint16 chipData0[][2] ={{0x1B24, 0x0000},{0x1B25, 0x0000},{0x1B26, 0x0000},{0x1B27, 0x0000},
+                                    {0x207F, 0x0007},{0x207E, 0x000B},{0x2076, 0x1A00},{0x207E, 0x000A},
+                                    {0x2078, 0x1D22},{0x207F, 0x0000},{0x205F, 0x0007},{0x205E, 0x000A},
+                                    {0x2059, 0x0000},{0x205A, 0x0000},{0x205B, 0x0000},{0x205C, 0x0000},
+                                    {0x205E, 0x000B},{0x2055, 0x0500},{0x2056, 0x0000},{0x2057, 0x0000},
+                                    {0x2058, 0x0000},{0x205F, 0x0000},{0x1362, 0x0115},{0x1363, 0x0002},
+                                    {0x1363, 0x0000},{0x133F, 0x0030},{0x133E, 0x000E},{0x221F, 0x0007},
+                                    {0x221E, 0x0040},{0x2218, 0x0000},{0x221F, 0x0007},{0x221E, 0x002C},
+                                    {0x2218, 0x008B},{0x221F, 0x0005},{0x2205, 0x8B6E},{0x2206, 0x0000},
+                                    {0x220F, 0x0100},{0x2205, 0xFFF6},{0x2206, 0x0080},{0x2205, 0x8000},
+                                    {0x2206, 0x0280},{0x2206, 0x1EF7},{0x2206, 0x00E0},{0x2206, 0xFFF7},
+                                    {0x2206, 0xA080},{0x2206, 0x02AE},{0x2206, 0xF602},{0x2206, 0x8046},
+                                    {0x2206, 0x0201},{0x2206, 0x5002},{0x2206, 0x0163},{0x2206, 0x0280},
+                                    {0x2206, 0xCD02},{0x2206, 0x0179},{0x2206, 0xAEE7},{0x2206, 0xBF80},
+                                    {0x2206, 0x61D7},{0x2206, 0x8580},{0x2206, 0xD06C},{0x2206, 0x0229},
+                                    {0x2206, 0x71EE},{0x2206, 0x8B64},{0x2206, 0x00EE},{0x2206, 0x8570},
+                                    {0x2206, 0x00EE},{0x2206, 0x8571},{0x2206, 0x00EE},{0x2206, 0x8AFC},
+                                    {0x2206, 0x07EE},{0x2206, 0x8AFD},{0x2206, 0x73EE},{0x2206, 0xFFF6},
+                                    {0x2206, 0x00EE},{0x2206, 0xFFF7},{0x2206, 0xFC04},{0x2206, 0xBF85},
+                                    {0x2206, 0x80D0},{0x2206, 0x6C02},{0x2206, 0x2978},{0x2206, 0xE0E0},
+                                    {0x2206, 0xE4E1},{0x2206, 0xE0E5},{0x2206, 0x5806},{0x2206, 0x68C0},
+                                    {0x2206, 0xD1D2},{0x2206, 0xE4E0},{0x2206, 0xE4E5},{0x2206, 0xE0E5},
+                                    {0x2206, 0x0425},{0x2206, 0x0807},{0x2206, 0x2640},{0x2206, 0x7227},
+                                    {0x2206, 0x267E},{0x2206, 0x2804},{0x2206, 0xB729},{0x2206, 0x2576},
+                                    {0x2206, 0x2A68},{0x2206, 0xE52B},{0x2206, 0xAD00},{0x2206, 0x2CDB},
+                                    {0x2206, 0xF02D},{0x2206, 0x67BB},{0x2206, 0x2E7B},{0x2206, 0x0F2F},
+                                    {0x2206, 0x7365},{0x2206, 0x31AC},{0x2206, 0xCC32},{0x2206, 0x2300},
+                                    {0x2206, 0x332D},{0x2206, 0x1734},{0x2206, 0x7F52},{0x2206, 0x3510},
+                                    {0x2206, 0x0036},{0x2206, 0x1000},{0x2206, 0x3710},{0x2206, 0x0038},
+                                    {0x2206, 0x7FCE},{0x2206, 0x3CE5},{0x2206, 0xF73D},{0x2206, 0x3DA4},
+                                    {0x2206, 0x6530},{0x2206, 0x3E67},{0x2206, 0x0053},{0x2206, 0x69D2},
+                                    {0x2206, 0x0F6A},{0x2206, 0x012C},{0x2206, 0x6C2B},{0x2206, 0x136E},
+                                    {0x2206, 0xE100},{0x2206, 0x6F12},{0x2206, 0xF771},{0x2206, 0x006B},
+                                    {0x2206, 0x7306},{0x2206, 0xEB74},{0x2206, 0x94C7},{0x2206, 0x7698},
+                                    {0x2206, 0x0A77},{0x2206, 0x5000},{0x2206, 0x788A},{0x2206, 0x1579},
+                                    {0x2206, 0x7F6F},{0x2206, 0x7A06},{0x2206, 0xA6F8},{0x2206, 0xE08B},
+                                    {0x2206, 0x8EAD},{0x2206, 0x2006},{0x2206, 0x0280},{0x2206, 0xDC02},
+                                    {0x2206, 0x8109},{0x2206, 0xFC04},{0x2206, 0xF8F9},{0x2206, 0xE08B},
+                                    {0x2206, 0x87AD},{0x2206, 0x2022},{0x2206, 0xE0E2},{0x2206, 0x00E1},
+                                    {0x2206, 0xE201},{0x2206, 0xAD20},{0x2206, 0x11E2},{0x2206, 0xE022},
+                                    {0x2206, 0xE3E0},{0x2206, 0x23AD},{0x2206, 0x3908},{0x2206, 0x5AC0},
+                                    {0x2206, 0x9F04},{0x2206, 0xF724},{0x2206, 0xAE02},{0x2206, 0xF624},
+                                    {0x2206, 0xE4E2},{0x2206, 0x00E5},{0x2206, 0xE201},{0x2206, 0xFDFC},
+                                    {0x2206, 0x04F8},{0x2206, 0xF9E0},{0x2206, 0x8B85},{0x2206, 0xAD25},
+                                    {0x2206, 0x48E0},{0x2206, 0x8AD2},{0x2206, 0xE18A},{0x2206, 0xD37C},
+                                    {0x2206, 0x0000},{0x2206, 0x9E35},{0x2206, 0xEE8A},{0x2206, 0xD200},
+                                    {0x2206, 0xEE8A},{0x2206, 0xD300},{0x2206, 0xE08A},{0x2206, 0xFCE1},
+                                    {0x2206, 0x8AFD},{0x2206, 0xE285},{0x2206, 0x70E3},{0x2206, 0x8571},
+                                    {0x2206, 0x0229},{0x2206, 0x3AAD},{0x2206, 0x2012},{0x2206, 0xEE8A},
+                                    {0x2206, 0xD203},{0x2206, 0xEE8A},{0x2206, 0xD3B7},{0x2206, 0xEE85},
+                                    {0x2206, 0x7000},{0x2206, 0xEE85},{0x2206, 0x7100},{0x2206, 0xAE11},
+                                    {0x2206, 0x15E6},{0x2206, 0x8570},{0x2206, 0xE785},{0x2206, 0x71AE},
+                                    {0x2206, 0x08EE},{0x2206, 0x8570},{0x2206, 0x00EE},{0x2206, 0x8571},
+                                    {0x2206, 0x00FD},{0x2206, 0xFC04},{0x2206, 0xCCE2},{0x2206, 0x0000},
+                                    {0x2205, 0xE142},{0x2206, 0x0701},{0x2205, 0xE140},{0x2206, 0x0405},
+                                    {0x220F, 0x0000},{0x221F, 0x0000},{0x221F, 0x0005},{0x2205, 0x85E4},
+                                    {0x2206, 0x8A14},{0x2205, 0x85E7},{0x2206, 0x7F6E},{0x221F, 0x0007},
+                                    {0x221E, 0x002D},{0x2218, 0xF030},{0x221E, 0x0023},{0x2216, 0x0005},
+                                    {0x2215, 0x005C},{0x2219, 0x0068},{0x2215, 0x0082},{0x2219, 0x000A},
+                                    {0x2215, 0x00A1},{0x2219, 0x0081},{0x2215, 0x00AF},{0x2219, 0x0080},
+                                    {0x2215, 0x00D4},{0x2219, 0x0000},{0x2215, 0x00E4},{0x2219, 0x0081},
+                                    {0x2215, 0x00E7},{0x2219, 0x0080},{0x2215, 0x010D},{0x2219, 0x0083},
+                                    {0x2215, 0x0118},{0x2219, 0x0083},{0x2215, 0x0120},{0x2219, 0x0082},
+                                    {0x2215, 0x019C},{0x2219, 0x0081},{0x2215, 0x01A4},{0x2219, 0x0080},
+                                    {0x2215, 0x01CD},{0x2219, 0x0000},{0x2215, 0x01DD},{0x2219, 0x0081},
+                                    {0x2215, 0x01E0},{0x2219, 0x0080},{0x2215, 0x0147},{0x2219, 0x0096},
+                                    {0x2216, 0x0000},{0x221E, 0x002D},{0x2218, 0xF010},{0x221F, 0x0005},
+                                    {0x2205, 0x8B84},{0x2206, 0x0062},{0x221F, 0x0000},{0x220D, 0x0003},
+                                    {0x220E, 0x0015},{0x220D, 0x4003},{0x220E, 0x0006},{0x133F, 0x0010},
+                                    {0x133E, 0x0FFE},{0x12A4, 0x380A},{0x1303, 0x0367},{0x1304, 0x7777},
+                                    {0x1203, 0xFF00},{0x1200, 0x7FC4},{0x121D, 0x7D16},{0x121E, 0x03E8},
+                                    {0x121F, 0x024E},{0x1220, 0x0230},{0x1221, 0x0244},{0x1222, 0x0226},
+                                    {0x1223, 0x024E},{0x1224, 0x0230},{0x1225, 0x0244},{0x1226, 0x0226},
+                                    {0x1227, 0x00C0},{0x1228, 0x00B4},{0x122F, 0x00C0},{0x1230, 0x00B4},
+                                    {0x0208, 0x03E8},{0x0209, 0x03E8},{0x020A, 0x03E8},{0x020B, 0x03E8},
+                                    {0x020C, 0x03E8},{0x020D, 0x03E8},{0x020E, 0x03E8},{0x020F, 0x03E8},
+                                    {0x0210, 0x03E8},{0x0211, 0x03E8},{0x0212, 0x03E8},{0x0213, 0x03E8},
+                                    {0x0214, 0x03E8},{0x0215, 0x03E8},{0x0216, 0x03E8},{0x0217, 0x03E8},
+                                    {0x0865, 0x3210},{0x087B, 0x0000},{0x087C, 0xFF00},{0x087D, 0x0000},
+                                    {0x087E, 0x0000},{0x0801, 0x0100},{0x0802, 0x0100},{0x0A20, 0x2040},
+                                    {0x0A21, 0x2040},{0x0A22, 0x2040},{0x0A23, 0x2040},{0x0A24, 0x2040},
+                                    {0x0A28, 0x2040},{0x0A29, 0x2040},{0x20A0, 0x0940},{0x20C0, 0x0940},
+                                    {0x20E0, 0x0940},{0x1B03, 0x0876},{0xFFFF, 0xABCD}};
 
 
-    CONST_T uint16 chipData1[][2] ={{0x1b24,0x0000},{0x1b25,0x0000},{0x1b26,0x0000},{0x1b27,0x0000},
-                                     {0x133f,0x0030},{0x133e,0x000e},{0x221f,0x0007},{0x221e,0x0048},
-                                     {0x2219,0x4012},{0x221f,0x0003},{0x2201,0x3554},{0x2202,0x63e8},
-                                     {0x2203,0x99c2},{0x2204,0x0113},{0x2205,0x303e},{0x220d,0x0207},
-                                     {0x220e,0xe100},{0x221f,0x0007},{0x221e,0x0040},{0x2218,0x0000},
-                                     {0x221f,0x0007},{0x221e,0x002c},{0x2218,0x008b},{0x221f,0x0005},
-                                     {0x2205,0xfff6},{0x2206,0x0080},{0x221f,0x0005},{0x2205,0x8000},
-                                     {0x2206,0x0280},{0x2206,0x2bf7},{0x2206,0x00e0},{0x2206,0xfff7},
-                                     {0x2206,0xa080},{0x2206,0x02ae},{0x2206,0xf602},{0x2206,0x804e},
-                                     {0x2206,0x0201},{0x2206,0x5002},{0x2206,0x0163},{0x2206,0x0201},
-                                     {0x2206,0x79e0},{0x2206,0x8b8c},{0x2206,0xe18b},{0x2206,0x8d1e},
-                                     {0x2206,0x01e1},{0x2206,0x8b8e},{0x2206,0x1e01},{0x2206,0xa000},
-                                     {0x2206,0xe4ae},{0x2206,0xd8bf},{0x2206,0x8b88},{0x2206,0xec00},
-                                     {0x2206,0x19a9},{0x2206,0x8b90},{0x2206,0xf9ee},{0x2206,0xfff6},
-                                     {0x2206,0x00ee},{0x2206,0xfff7},{0x2206,0xfce0},{0x2206,0xe140},
-                                     {0x2206,0xe1e1},{0x2206,0x41f7},{0x2206,0x2ff6},{0x2206,0x28e4},
-                                     {0x2206,0xe140},{0x2206,0xe5e1},{0x2206,0x4104},{0x2206,0xf8fa},
-                                     {0x2206,0xef69},{0x2206,0xe08b},{0x2206,0x86ac},{0x2206,0x201a},
-                                     {0x2206,0xbf80},{0x2206,0x77d0},{0x2206,0x6c02},{0x2206,0x2978},
-                                     {0x2206,0xe0e0},{0x2206,0xe4e1},{0x2206,0xe0e5},{0x2206,0x5806},
-                                     {0x2206,0x68c0},{0x2206,0xd1d2},{0x2206,0xe4e0},{0x2206,0xe4e5},
-                                     {0x2206,0xe0e5},{0x2206,0xef96},{0x2206,0xfefc},{0x2206,0x0425},
-                                     {0x2206,0x0807},{0x2206,0x2640},{0x2206,0x7227},{0x2206,0x267e},
-                                     {0x2206,0x2804},{0x2206,0xb729},{0x2206,0x2576},{0x2206,0x2a68},
-                                     {0x2206,0xe52b},{0x2206,0xad00},{0x2206,0x2cdb},{0x2206,0xf02d},
-                                     {0x2206,0x67bb},{0x2206,0x2e7b},{0x2206,0x0f2f},{0x2206,0x7365},
-                                     {0x2206,0x31ac},{0x2206,0xcc32},{0x2206,0x2300},{0x2206,0x332d},
-                                     {0x2206,0x1734},{0x2206,0x7f52},{0x2206,0x3510},{0x2206,0x0036},
-                                     {0x2206,0x0600},{0x2206,0x370c},{0x2206,0xc038},{0x2206,0x7fce},
-                                     {0x2206,0x3ce5},{0x2206,0xf73d},{0x2206,0x3da4},{0x2206,0x6530},
-                                     {0x2206,0x3e67},{0x2206,0x0053},{0x2206,0x69d2},{0x2206,0x0f6a},
-                                     {0x2206,0x012c},{0x2206,0x6c2b},{0x2206,0x136e},{0x2206,0xe100},
-                                     {0x2206,0x6f12},{0x2206,0xf771},{0x2206,0x006b},{0x2206,0x7306},
-                                     {0x2206,0xeb74},{0x2206,0x94c7},{0x2206,0x7698},{0x2206,0x0a77},
-                                     {0x2206,0x5000},{0x2206,0x788a},{0x2206,0x1579},{0x2206,0x7f6f},
-                                     {0x2206,0x7a06},{0x2206,0xa600},{0x2201,0x0701},{0x2200,0x0405},
-                                     {0x221f,0x0000},{0x2200,0x1340},{0x221f,0x0000},{0x133f,0x0010},
-                                     {0x133e,0x0ffe},{0x1203,0xff00},{0x1200,0x7fc4},{0x0900,0x0000},
-                                     {0x0901,0x0000},{0x0902,0x0000},{0x0903,0x0000},{0x0865,0x3210},
-                                     {0x087b,0x0000},{0x087c,0xff00},{0x087d,0x0000},{0x087e,0x0000},
-                                     {0x0801,0x0100},{0x0802,0x0100},{0x0A20,0x2040},{0x0A21,0x2040},
-                                     {0x0A22,0x2040},{0x0A23,0x2040},{0x0A24,0x2040},{0x0A25,0x2040},
-                                     {0x0A26,0x2040},{0x0A27,0x2040},{0x0A28,0x2040},{0x0A29,0x2040},
-                                     {0x130c,0x0050},{0xFFFF,0xABCD}};
+    CONST_T uint16 chipData1[][2] ={{0x1B24, 0x0000},{0x1B25, 0x0000},{0x1B26, 0x0000},{0x1B27, 0x0000},
+                                    {0x207F, 0x0007},{0x207E, 0x000B},{0x2076, 0x1A00},{0x207E, 0x000A},
+                                    {0x2078, 0x1D22},{0x207F, 0x0000},{0x205F, 0x0007},{0x205E, 0x000A},
+                                    {0x2059, 0x0000},{0x205A, 0x0000},{0x205B, 0x0000},{0x205C, 0x0000},
+                                    {0x205E, 0x000B},{0x2055, 0x0500},{0x2056, 0x0000},{0x2057, 0x0000},
+                                    {0x2058, 0x0000},{0x205F, 0x0000},{0x1362, 0x0115},{0x1363, 0x0002},
+                                    {0x1363, 0x0000},{0x133F, 0x0030},{0x133E, 0x000E},{0x221F, 0x0007},
+                                    {0x221E, 0x0040},{0x2218, 0x0000},{0x221F, 0x0007},{0x221E, 0x002C},
+                                    {0x2218, 0x008B},{0x221F, 0x0005},{0x2205, 0x8B6E},{0x2206, 0x0000},
+                                    {0x220F, 0x0100},{0x2205, 0xFFF6},{0x2206, 0x0080},{0x2205, 0x8000},
+                                    {0x2206, 0x0280},{0x2206, 0x1EF7},{0x2206, 0x00E0},{0x2206, 0xFFF7},
+                                    {0x2206, 0xA080},{0x2206, 0x02AE},{0x2206, 0xF602},{0x2206, 0x8046},
+                                    {0x2206, 0x0201},{0x2206, 0x5002},{0x2206, 0x0163},{0x2206, 0x0280},
+                                    {0x2206, 0xCD02},{0x2206, 0x0179},{0x2206, 0xAEE7},{0x2206, 0xBF80},
+                                    {0x2206, 0x61D7},{0x2206, 0x8580},{0x2206, 0xD06C},{0x2206, 0x0229},
+                                    {0x2206, 0x71EE},{0x2206, 0x8B64},{0x2206, 0x00EE},{0x2206, 0x8570},
+                                    {0x2206, 0x00EE},{0x2206, 0x8571},{0x2206, 0x00EE},{0x2206, 0x8AFC},
+                                    {0x2206, 0x07EE},{0x2206, 0x8AFD},{0x2206, 0x73EE},{0x2206, 0xFFF6},
+                                    {0x2206, 0x00EE},{0x2206, 0xFFF7},{0x2206, 0xFC04},{0x2206, 0xBF85},
+                                    {0x2206, 0x80D0},{0x2206, 0x6C02},{0x2206, 0x2978},{0x2206, 0xE0E0},
+                                    {0x2206, 0xE4E1},{0x2206, 0xE0E5},{0x2206, 0x5806},{0x2206, 0x68C0},
+                                    {0x2206, 0xD1D2},{0x2206, 0xE4E0},{0x2206, 0xE4E5},{0x2206, 0xE0E5},
+                                    {0x2206, 0x0425},{0x2206, 0x0807},{0x2206, 0x2640},{0x2206, 0x7227},
+                                    {0x2206, 0x267E},{0x2206, 0x2804},{0x2206, 0xB729},{0x2206, 0x2576},
+                                    {0x2206, 0x2A68},{0x2206, 0xE52B},{0x2206, 0xAD00},{0x2206, 0x2CDB},
+                                    {0x2206, 0xF02D},{0x2206, 0x67BB},{0x2206, 0x2E7B},{0x2206, 0x0F2F},
+                                    {0x2206, 0x7365},{0x2206, 0x31AC},{0x2206, 0xCC32},{0x2206, 0x2300},
+                                    {0x2206, 0x332D},{0x2206, 0x1734},{0x2206, 0x7F52},{0x2206, 0x3510},
+                                    {0x2206, 0x0036},{0x2206, 0x1000},{0x2206, 0x3710},{0x2206, 0x0038},
+                                    {0x2206, 0x7FCE},{0x2206, 0x3CE5},{0x2206, 0xF73D},{0x2206, 0x3DA4},
+                                    {0x2206, 0x6530},{0x2206, 0x3E67},{0x2206, 0x0053},{0x2206, 0x69D2},
+                                    {0x2206, 0x0F6A},{0x2206, 0x012C},{0x2206, 0x6C2B},{0x2206, 0x136E},
+                                    {0x2206, 0xE100},{0x2206, 0x6F12},{0x2206, 0xF771},{0x2206, 0x006B},
+                                    {0x2206, 0x7306},{0x2206, 0xEB74},{0x2206, 0x94C7},{0x2206, 0x7698},
+                                    {0x2206, 0x0A77},{0x2206, 0x5000},{0x2206, 0x788A},{0x2206, 0x1579},
+                                    {0x2206, 0x7F6F},{0x2206, 0x7A06},{0x2206, 0xA6F8},{0x2206, 0xE08B},
+                                    {0x2206, 0x8EAD},{0x2206, 0x2006},{0x2206, 0x0280},{0x2206, 0xDC02},
+                                    {0x2206, 0x8109},{0x2206, 0xFC04},{0x2206, 0xF8F9},{0x2206, 0xE08B},
+                                    {0x2206, 0x87AD},{0x2206, 0x2022},{0x2206, 0xE0E2},{0x2206, 0x00E1},
+                                    {0x2206, 0xE201},{0x2206, 0xAD20},{0x2206, 0x11E2},{0x2206, 0xE022},
+                                    {0x2206, 0xE3E0},{0x2206, 0x23AD},{0x2206, 0x3908},{0x2206, 0x5AC0},
+                                    {0x2206, 0x9F04},{0x2206, 0xF724},{0x2206, 0xAE02},{0x2206, 0xF624},
+                                    {0x2206, 0xE4E2},{0x2206, 0x00E5},{0x2206, 0xE201},{0x2206, 0xFDFC},
+                                    {0x2206, 0x04F8},{0x2206, 0xF9E0},{0x2206, 0x8B85},{0x2206, 0xAD25},
+                                    {0x2206, 0x48E0},{0x2206, 0x8AD2},{0x2206, 0xE18A},{0x2206, 0xD37C},
+                                    {0x2206, 0x0000},{0x2206, 0x9E35},{0x2206, 0xEE8A},{0x2206, 0xD200},
+                                    {0x2206, 0xEE8A},{0x2206, 0xD300},{0x2206, 0xE08A},{0x2206, 0xFCE1},
+                                    {0x2206, 0x8AFD},{0x2206, 0xE285},{0x2206, 0x70E3},{0x2206, 0x8571},
+                                    {0x2206, 0x0229},{0x2206, 0x3AAD},{0x2206, 0x2012},{0x2206, 0xEE8A},
+                                    {0x2206, 0xD203},{0x2206, 0xEE8A},{0x2206, 0xD3B7},{0x2206, 0xEE85},
+                                    {0x2206, 0x7000},{0x2206, 0xEE85},{0x2206, 0x7100},{0x2206, 0xAE11},
+                                    {0x2206, 0x15E6},{0x2206, 0x8570},{0x2206, 0xE785},{0x2206, 0x71AE},
+                                    {0x2206, 0x08EE},{0x2206, 0x8570},{0x2206, 0x00EE},{0x2206, 0x8571},
+                                    {0x2206, 0x00FD},{0x2206, 0xFC04},{0x2206, 0xCCE2},{0x2206, 0x0000},
+                                    {0x2205, 0xE142},{0x2206, 0x0701},{0x2205, 0xE140},{0x2206, 0x0405},
+                                    {0x220F, 0x0000},{0x221F, 0x0000},{0x221F, 0x0005},{0x2205, 0x85E4},
+                                    {0x2206, 0x8A14},{0x2205, 0x85E7},{0x2206, 0x7F6E},{0x221F, 0x0007},
+                                    {0x221E, 0x002D},{0x2218, 0xF030},{0x221E, 0x0023},{0x2216, 0x0005},
+                                    {0x2215, 0x005C},{0x2219, 0x0068},{0x2215, 0x0082},{0x2219, 0x000A},
+                                    {0x2215, 0x00A1},{0x2219, 0x0081},{0x2215, 0x00AF},{0x2219, 0x0080},
+                                    {0x2215, 0x00D4},{0x2219, 0x0000},{0x2215, 0x00E4},{0x2219, 0x0081},
+                                    {0x2215, 0x00E7},{0x2219, 0x0080},{0x2215, 0x010D},{0x2219, 0x0083},
+                                    {0x2215, 0x0118},{0x2219, 0x0083},{0x2215, 0x0120},{0x2219, 0x0082},
+                                    {0x2215, 0x019C},{0x2219, 0x0081},{0x2215, 0x01A4},{0x2219, 0x0080},
+                                    {0x2215, 0x01CD},{0x2219, 0x0000},{0x2215, 0x01DD},{0x2219, 0x0081},
+                                    {0x2215, 0x01E0},{0x2219, 0x0080},{0x2215, 0x0147},{0x2219, 0x0096},
+                                    {0x2216, 0x0000},{0x221E, 0x002D},{0x2218, 0xF010},{0x221F, 0x0005},
+                                    {0x2205, 0x8B84},{0x2206, 0x0062},{0x221F, 0x0000},{0x220D, 0x0003},
+                                    {0x220E, 0x0015},{0x220D, 0x4003},{0x220E, 0x0006},{0x133F, 0x0010},
+                                    {0x133E, 0x0FFE},{0x12A4, 0x380A},{0x1303, 0x0367},{0x1304, 0x7777},
+                                    {0x1203, 0xFF00},{0x1200, 0x7FC4},{0x0865, 0x3210},{0x087B, 0x0000},
+                                    {0x087C, 0xFF00},{0x087D, 0x0000},{0x087E, 0x0000},{0x0801, 0x0100},
+                                    {0x0802, 0x0100},{0x0A20, 0x2040},{0x0A21, 0x2040},{0x0A22, 0x2040},
+                                    {0x0A23, 0x2040},{0x0A24, 0x2040},{0x0A25, 0x2040},{0x0A26, 0x2040},
+                                    {0x0A27, 0x2040},{0x0A28, 0x2040},{0x0A29, 0x2040},{0x1B03, 0x0876},
+                                    {0xFFFF, 0xABCD}};
 
 
     if ((retVal = rtl8370_setAsicReg(0x13C2,0x0249))!=RT_ERR_OK)
@@ -11130,24 +11150,6 @@ static rtk_api_ret_t _rtk_switch_init2(void)
                     }
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
-        
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-        
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
                     
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)chipData0[index][1])) !=  RT_ERR_OK)
                         return retVal;
@@ -11164,29 +11166,11 @@ static rtk_api_ret_t _rtk_switch_init2(void)
                 index ++;    
             } 
             break;
-        case 0x0001:    
+        case 0x0001:
             while (chipData1[index][0] != 0xFFFF && chipData1[index][1] != 0xABCD)
             {    
                 if ((chipData1[index][0]&0xF000)==0x2000)
                 {
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-      
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-        
                     cnt = 0;
                     busyFlag = 1;
                     while (busyFlag&&cnt<5)
@@ -11213,29 +11197,11 @@ static rtk_api_ret_t _rtk_switch_init2(void)
                 index ++;    
             }            
             break;
-        case 0x0002:    
+        case 0x0002:
             while (chipData1[index][0] != 0xFFFF && chipData1[index][1] != 0xABCD)
             {    
                 if ((chipData1[index][0]&0xF000)==0x2000)
                 {
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-      
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-        
                     cnt = 0;
                     busyFlag = 1;
                     while (busyFlag&&cnt<5)
@@ -11282,8 +11248,8 @@ static rtk_api_ret_t _rtk_switch_init2(void)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      The API can set chip registers to default configuration for different release chip model.
@@ -11292,6 +11258,7 @@ static rtk_api_ret_t _rtk_switch_init2(void)
 
 rtk_api_ret_t rtk_switch_init(void)
 {
+
     rtk_api_ret_t retVal;
     uint32 regData1,regData2;
 
@@ -11310,8 +11277,12 @@ rtk_api_ret_t rtk_switch_init(void)
 
     if (0 == regData1)
     {
+#if !defined(_REDUCE_CODE)
         if ((retVal = _rtk_switch_init0()) != RT_ERR_OK)
             return retVal;
+#else
+        return RT_ERR_CHIP_NOT_SUPPORTED;
+#endif
     }
     else if (1 == regData1)
     {
@@ -11327,10 +11298,11 @@ rtk_api_ret_t rtk_switch_init(void)
         }
     }
 
+
     /*Enable System Based LED*/
     if ((retVal = rtl8370_setAsicRegBit(RTL8370_REG_LED_SYS_CONFIG, RTL8370_LED_IO_DISABLE_OFFSET, 0))!=RT_ERR_OK)
         return retVal;  
-    
+
     return RT_ERR_OK;
 }
 
@@ -11343,8 +11315,8 @@ rtk_api_ret_t rtk_switch_init(void)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -11377,8 +11349,8 @@ rtk_api_ret_t rtk_switch_maxPktLen_set(rtk_switch_maxPktLen_t len)
  * Output:
  *      pLen - pointer to the max packet length
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      The API can set max packet length of the specific unit.
@@ -11403,8 +11375,8 @@ rtk_api_ret_t rtk_switch_maxPktLen_get(rtk_data_t *pLen)
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_ENABLE - Invalid enable input.
  * Note:
@@ -11421,21 +11393,22 @@ rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
 #ifndef MDC_MDIO_OPERATION 
     uint32 busyFlag,cnt;
 #endif
-    
-    CONST_T uint32 Para0En[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221F,0x0003},{0x2218,0x8A15},
-                                   {0x221F,0x0000},{0x133f,0x0010},{0x133e,0x0ffe},{0xFFFF, 0xABCD}};
-    
-    CONST_T uint32 Para0Dis[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221F,0x0003},{0x2218,0x8A14},
-                                    {0x221F,0x0000},{0x133f,0x0010},{0x133e,0x0ffe},{0xFFFF, 0xABCD}};
+    CONST_T uint32 Para0En[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221F,0x0005},{0x2205,0x80BD},
+                                   {0x2206,0x8A15},{0x2205,0x80C0},{0x2206,0x7F6F},{0x221F,0x0000},
+                                   {0x133f,0x0010},{0x133e,0x0ffe},{0xFFFF, 0xABCD}};
 
-    CONST_T uint32 Para1En[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221F,0x0005},{0x2205,0x80D8},
-                                   {0x2206,0x8A15},{0x221F,0x0000},{0x133f,0x0010},{0x133e,0x0ffe},
-                                   {0xFFFF, 0xABCD}};
-    
-    CONST_T uint32 Para1Dis[][2] = {{0x133f,0x0030},{0x133e,0x000E},{0x221F,0x0005},{0x2205,0x80D8},
-                                    {0x2206,0x8A14},{0x221F,0x0000},{0x133f,0x0010},{0x133e,0x0ffe},
-                                    {0xFFFF, 0xABCD}};
+    CONST_T uint32 Para0Dis[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221F,0x0005},{0x2205,0x80BD},
+                                   {0x2206,0x8A14},{0x2205,0x80C0},{0x2206,0x7F6E},{0x221F,0x0000},
+                                   {0x133f,0x0010},{0x133e,0x0ffe},{0xFFFF, 0xABCD}};
 
+    CONST_T uint32 Para1En[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221F,0x0005},{0x2201,0x0701},
+                                   {0x2205,0x85E4},{0x2206,0x8A15},{0x2205,0x85E7},{0x2206,0x7F6F},
+                                   {0x221F,0x0000},{0x133f,0x0010},{0x133e,0x0ffe},{0xFFFF,0xABCD}};
+
+    CONST_T uint32 Para1Dis[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221F,0x0005},{0x2201,0x0601},
+                                    {0x2205,0x85E4},{0x2206,0x8A14},{0x2205,0x85E7},{0x2206,0x7F6E},
+                                    {0x221F,0x0000},{0x133f,0x0010},{0x133e,0x0ffe},{0xFFFF,0xABCD}};
+ 
 
 
     if (enable >=RTK_ENABLE_END)
@@ -11520,24 +11493,6 @@ rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
                     }
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
-    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal; 
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal;
-    
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
                 
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, Para0En[index][1])) !=  RT_ERR_OK)
                         return retVal;
@@ -11561,24 +11516,6 @@ rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
             {    
                 if ((Para1En[index][0]&0xF000)==0x2000)
                 {
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-    
                     cnt = 0;
                     busyFlag = 1;
                     while (busyFlag&&cnt<5)
@@ -11625,24 +11562,6 @@ rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
                     }
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
-    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal; 
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal;
-    
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
                 
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, Para0Dis[index][1])) !=  RT_ERR_OK)
                         return retVal;
@@ -11666,24 +11585,6 @@ rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
             {    
                 if ((Para1Dis[index][0]&0xF000)==0x2000)
                 {
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-    
                     cnt = 0;
                     busyFlag = 1;
                     while (busyFlag&&cnt<5)
@@ -11741,8 +11642,8 @@ rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
  * Output:
  *      pEnable - Back pressure status.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      This API can set all PHY status.
@@ -11794,8 +11695,8 @@ rtk_api_ret_t rtk_switch_greenEthernet_get(rtk_data_t *pEnable)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_PORT_MASK - Invalid portmask.
@@ -11886,8 +11787,8 @@ rtk_api_ret_t rtk_mirror_portBased_set(rtk_port_t mirroring_port, rtk_portmask_t
  *      pMirrored_rx_portmask - Rx mirror port mask.
  *      pMirrored_tx_portmask - Tx mirror port mask.  
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -11931,8 +11832,8 @@ rtk_api_ret_t rtk_mirror_portBased_get(rtk_port_t* pMirroring_port, rtk_portmask
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_ENABLE - Invalid enable input.
  * Note:
@@ -11960,8 +11861,8 @@ rtk_api_ret_t rtk_mirror_portIso_set(rtk_enable_t enable)
  * Output:
  *      pEnable |Mirror isolation status. 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -11988,8 +11889,8 @@ rtk_api_ret_t rtk_mirror_portIso_get(rtk_data_t *pEnable)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      Reset MIB counter of ports. API will use global reset while port mask is all-ports.
@@ -12013,8 +11914,8 @@ rtk_api_ret_t rtk_stat_global_reset(void)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      Reset MIB counter of ports. API will use global reset while port mask is all-ports.
@@ -12075,8 +11976,8 @@ rtk_api_ret_t rtk_stat_port_get(rtk_port_t port, rtk_stat_port_type_t cntr_idx, 
  * Output:
  *      pCntr - global counter value.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12104,8 +12005,8 @@ rtk_api_ret_t rtk_stat_global_get(rtk_stat_global_type_t cntr_idx, rtk_stat_coun
  * Output:
  *      pGlobal_cntrs - global counter structure.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12131,8 +12032,8 @@ rtk_api_ret_t rtk_stat_global_getAll(rtk_stat_global_cntr_t *pGlobal_cntrs)
  * Output:
  *      pCntr - MIB retrived counter.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      Get per port MIB counter by index definition. 
@@ -12162,8 +12063,8 @@ rtk_api_ret_t rtk_stat_port_get(rtk_port_t port, rtk_stat_port_type_t cntr_idx, 
  * Output:
  *      pPort_cntrs - buffer pointer of counter value.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12214,8 +12115,8 @@ rtk_api_ret_t rtk_stat_port_getAll(rtk_port_t port, rtk_stat_port_cntr_t *pPort_
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12240,8 +12141,8 @@ rtk_api_ret_t rtk_int_polarity_set(rtk_int_polarity_t type)
  * Output:
  *      pType - Interruptpolarity type.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      The API can get interrupt polarity configuration.
@@ -12266,8 +12167,8 @@ rtk_api_ret_t rtk_int_polarity_get(rtk_data_t *pType)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  *      RT_ERR_ENABLE - Invalid enable input.
@@ -12316,8 +12217,8 @@ rtk_api_ret_t rtk_int_control_set(rtk_int_type_t type, rtk_enable_t enable)
  * Output:
  *      pEnable - Interrupt status.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12355,8 +12256,8 @@ rtk_api_ret_t rtk_int_control_get(rtk_int_type_t type, rtk_data_t* pEnable)
  * Output:
  *      pStatusMask - Interrupt status bit mask.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12389,8 +12290,8 @@ rtk_api_ret_t rtk_int_status_set(rtk_int_status_t statusMask)
  * Output:
  *      pStatusMask - Interrupt status bit mask.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12403,7 +12304,6 @@ rtk_api_ret_t rtk_int_status_set(rtk_int_status_t statusMask)
  *      INT_TYPE_CONGEST        (Bit4)
  *      INT_TYPE_GREEN_FEATURE  (Bit5)
  *      INT_TYPE_LOOP_DETECT    (Bit6)
- *      The status will be cleared after execute this API.
  */
 rtk_api_ret_t rtk_int_status_get(rtk_int_status_t* pStatusMask)
 {
@@ -12424,8 +12324,8 @@ rtk_api_ret_t rtk_int_status_get(rtk_int_status_t* pStatusMask)
  * Output:
  *      info - Information per type.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12464,8 +12364,8 @@ rtk_api_ret_t rtk_int_status_get(rtk_int_status_t* pStatusMask)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12479,11 +12379,11 @@ rtk_api_ret_t rtk_led_enable_set(rtk_led_group_t group, rtk_portmask_t portmask)
     if (group >= LED_GROUP_END)
         return RT_ERR_INPUT;
 
-    if (portmask.bits[0] > (1<<RTK_PHY_ID_MAX))
-        return RT_ERR_INPUT;  
+    if (portmask.bits[0] >= (1 << (RTK_PHY_ID_MAX + 1)))
+        return RT_ERR_INPUT;
 
-    if ((retVal = rtl8370_setAsicLedGroupEnable(group, portmask.bits[0]))!=RT_ERR_OK)        
-        return retVal;    
+    if ((retVal = rtl8370_setAsicLedGroupEnable(group, portmask.bits[0]))!=RT_ERR_OK)
+        return retVal;
 
     return RT_ERR_OK;
 }
@@ -12498,8 +12398,8 @@ rtk_api_ret_t rtk_led_enable_set(rtk_led_group_t group, rtk_portmask_t portmask)
  * Output:
  *      pPortmask - LED enable port mask.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12530,8 +12430,8 @@ rtk_api_ret_t rtk_led_enable_get(rtk_led_group_t group, rtk_portmask_t *pPortmas
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12583,8 +12483,8 @@ rtk_api_ret_t rtk_led_operation_set(rtk_led_operation_t mode)
  * Output:
  *      pMode - Support LED operation mode.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12624,8 +12524,8 @@ rtk_api_ret_t rtk_led_operation_get(rtk_data_t *pMode)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12676,8 +12576,8 @@ rtk_api_ret_t rtk_led_mode_set(rtk_led_mode_t mode)
  * Output:
  *      pMode - Support LED mode.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12705,8 +12605,8 @@ rtk_api_ret_t rtk_led_mode_get(rtk_data_t *pMode)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12740,13 +12640,12 @@ rtk_api_ret_t rtk_led_modeForce_set(rtk_led_group_t group, rtk_led_force_mode_t 
  * Description:
  *      Get Led group to congiuration force mode
  * Input:
- *      pGroupmask - Support LED group id.
- *      pMode - Support LED force mode.
+ *      group - Support LED group id..
  * Output:
- *      None
+ *      pMode - Support LED force mode
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12776,8 +12675,8 @@ rtk_api_ret_t rtk_led_modeForce_get(rtk_data_t *pGroupmask, rtk_data_t *pMode)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12805,8 +12704,8 @@ rtk_api_ret_t rtk_led_blinkRate_set(rtk_led_blink_rate_t blinkRate)
  * Output:
  *      pBlinkRate - blinking rate.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12832,8 +12731,8 @@ rtk_api_ret_t rtk_led_blinkRate_get(rtk_data_t *pBlinkRate)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12882,8 +12781,8 @@ rtk_api_ret_t rtk_led_groupConfig_set(rtk_led_group_t group, rtk_led_congig_t co
  * Output:
  *      pConfig - LED configuration.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12911,8 +12810,8 @@ rtk_api_ret_t rtk_led_groupConfig_get(rtk_led_group_t group, rtk_data_t *pConfig
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12941,8 +12840,8 @@ rtk_api_ret_t rtk_led_serialMode_set(rtk_led_active_t active)
  * Output:
  *      pConfig - LED configuration.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -12978,8 +12877,8 @@ CONST_T uint32 filter_templateField[RTK_MAX_NUM_OF_FILTER_TYPE][RTK_MAX_NUM_OF_F
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_NULL_POINTER    - Pointer pFilter_field or pFilter_cfg point to NULL.
  * Note:
@@ -13025,8 +12924,8 @@ rtk_api_ret_t rtk_filter_igrAcl_init(void)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_NULL_POINTER    - Pointer pFilter_field or pFilter_cfg point to NULL.
  *      RT_ERR_INPUT - Invalid input parameters. 
@@ -13254,8 +13153,8 @@ static rtk_api_ret_t _rtk_filter_igrAcl_writeDataField(rtl8370_acl_rule_t *aclRu
  * Output:
  *      ruleNum - number of rules written in acl table
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_NULL_POINTER    - Pointer pFilter_field or pFilter_cfg point to NULL.
  *      RT_ERR_INPUT - Invalid input parameters. 
@@ -13574,20 +13473,19 @@ rtk_api_ret_t rtk_filter_igrAcl_cfg_add(rtk_filter_id_t filter_id, rtk_filter_cf
     for(i = 0; i < RTK_MAX_NUM_OF_FILTER_TYPE;i++)
     {
         if(aclRule[i].valid == TRUE )
-        {
-            /* write ACL rule */
-            if((ret = rtl8370_setAsicAclRule(filter_id + i, &aclRule[i])) != SUCCESS )
-                return ret;
-            /* write ACL not */
-            if((ret = rtl8370_setAsicAclNot(filter_id + i, pFilter_cfg->invert)) != SUCCESS )
-                return ret;            
+        {         
             /* write ACL action control */
             if((ret = rtl8370_setAsicAclActCtrl(filter_id + i, aclActCtrl)) != SUCCESS )
                 return ret;
             /* write ACL action */
             if((ret = rtl8370_setAsicAclAct(filter_id + i, aclAct)) != SUCCESS )
                 return ret;
-            
+            /* write ACL not */
+            if((ret = rtl8370_setAsicAclNot(filter_id + i, pFilter_cfg->invert)) != SUCCESS )
+                return ret;
+            /* write ACL rule */
+            if((ret = rtl8370_setAsicAclRule(filter_id + i, &aclRule[i])) != SUCCESS )
+                return ret;
             /* only the first rule will be written with input action control, aclActCtrl of other rules will be zero */
             aclActCtrl = 0;            
             memset(&aclAct, 0, sizeof(rtl8370_acl_act_t));
@@ -13606,8 +13504,8 @@ rtk_api_ret_t rtk_filter_igrAcl_cfg_add(rtk_filter_id_t filter_id, rtk_filter_cf
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_FILTER_ENTRYIDX - Invalid filter_id.
  * Note:
@@ -13642,12 +13540,12 @@ rtk_api_ret_t rtk_filter_igrAcl_cfg_del(rtk_filter_id_t filter_id)
  * Description:
  *      Delete all ACL entries from ASIC
  * Input:
- *      filter_id | Start index of ACL configuration.
+ *      None
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      This function delete all ACL configuration from ASIC.
@@ -13678,6 +13576,221 @@ rtk_api_ret_t rtk_filter_igrAcl_cfg_delAll(void)
 }
 
 /* Function Name:
+ *      rtk_filter_igrAcl_cfg_set
+ * Description:
+ *      Set one ingress acl configuration to ASIC.
+ * Input:
+ *      filter_id - Start index of ACL configuration.
+ *      pFilter_cfg - buffer pointer of ingress acl data
+ *      pFilter_action - buffer pointer of ingress acl action
+ * Output:
+ *      None
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
+ *      RT_ERR_SMI             - SMI access error
+ * Note:
+ *      This function delete all ACL configuration from ASIC.  
+ */
+rtk_api_ret_t rtk_filter_igrAcl_cfg_set(rtk_filter_id_t filter_id, rtk_filter_template_index_t template_index, rtk_filter_cfg_raw_t *pFilter_cfg, rtk_filter_action_t *pFilter_action)
+{
+    rtk_api_ret_t   retVal;
+    uint32  i, j, aclActCtrl;
+    rtl8370_acl_act_t   aclAct;
+    uint32  cpuPort;
+    rtl8370_svlan_memconf_t svlanMemConf;
+    uint32 matchIdx;
+    rtl8370_acl_rule_t aclRule;
+    uint32 careTagData = 0, careTagMask = 0;
+    
+    if(filter_id >= RTK_MAX_NUM_OF_ACL_RULE)
+        return RT_ERR_ENTRY_INDEX;
+
+    if(NULL == pFilter_cfg)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pFilter_action )
+        return RT_ERR_NULL_POINTER;
+
+    memset(&aclAct, 0, sizeof(rtl8370_acl_act_t));
+    aclActCtrl = 0;
+    for(i = 0; i < FILTER_ENACT_MAX;i++)
+    {    
+        if(pFilter_action->actEnable[i] > TRUE )
+            return RT_ERR_INPUT;
+
+        if(pFilter_action->actEnable[i] == TRUE )
+        {
+            switch (i)
+            {
+            case FILTER_ENACT_INGRESS_CVLAN_INDEX:
+                if(pFilter_action->filterIngressCvlanIdx > RTK_VLAN_ID_MAX )
+                    return RT_ERR_INPUT;
+                aclAct.ct = TRUE;
+                aclAct.aclcvid = pFilter_action->filterIngressCvlanIdx;
+                aclActCtrl |= ACL_ACT_CVLAN_ENABLE_MASK;
+                break;
+            case FILTER_ENACT_INGRESS_CVLAN_VID:
+                if(pFilter_action->filterIngressCvlanIdx >= RTK_MAX_NUM_OF_VLAN_INDEX )
+                    return RT_ERR_INPUT;
+                aclAct.ct = FALSE;
+                aclAct.aclcvid = pFilter_action->filterIngressCvlanVid;
+                aclActCtrl |= ACL_ACT_CVLAN_ENABLE_MASK;
+                break;
+            case FILTER_ENACT_EGRESS_SVLAN_INDEX:
+                if(pFilter_action->filterEgressSvlanIdx >= RTK_MAX_NUM_OF_SVLAN_INDEX )
+                    return RT_ERR_INPUT;
+                aclAct.aclsvidx = pFilter_action->filterEgressSvlanIdx;
+                aclActCtrl |= ACL_ACT_SVLAN_ENABLE_MASK;
+                break;
+            case FILTER_ENACT_POLICING_0:
+                if(pFilter_action->filterPolicingIdx[0] >= RTK_MAX_NUM_OF_METER )
+                    return RT_ERR_INPUT;
+                aclAct.aclmeteridx = pFilter_action->filterPolicingIdx[0];
+                aclActCtrl |= ACL_ACT_POLICING_ENABLE_MASK;
+                break;
+            case FILTER_ENACT_PRIORITY:
+                if(pFilter_action->filterPriority > RTK_DOT1P_PRIORITY_MAX )
+                    return RT_ERR_INPUT;
+                aclAct.aclpri= pFilter_action->filterPriority;
+                aclActCtrl |= ACL_ACT_PRIORITY_ENABLE_MASK;
+                break;
+            case FILTER_ENACT_DROP:
+                aclAct.arpmsk = 0;
+                aclAct.mrat = RTK_FILTER_FWD_REDIRECT;
+                aclActCtrl |= ACL_ACT_FWD_ENABLE_MASK;
+                break;
+            case FILTER_ENACT_REDIRECT:
+                if(pFilter_action->filterRedirectPortmask >= 1 << 10 )
+                    return RT_ERR_INPUT;
+                aclAct.arpmsk = pFilter_action->filterRedirectPortmask;
+                aclAct.mrat = RTK_FILTER_FWD_REDIRECT;
+                aclActCtrl |= ACL_ACT_FWD_ENABLE_MASK;
+                break;
+            case FILTER_ENACT_ADD_DSTPORT:
+                if(pFilter_action->filterAddDstPortmask>= 1 << RTK_MAX_NUM_OF_FILTER_PORT )
+                    return RT_ERR_INPUT;
+                aclAct.arpmsk = pFilter_action->filterAddDstPortmask;
+                aclAct.mrat = RTK_FILTER_FWD_MIRROR;
+                aclActCtrl |= ACL_ACT_FWD_ENABLE_MASK;
+                break;
+            case FILTER_ENACT_MIRROR:
+                aclAct.mrat = RTK_FILTER_FWD_MIRRORFUNTION;
+                aclActCtrl |= ACL_ACT_FWD_ENABLE_MASK;
+                break;
+            case FILTER_ENACT_TRAP_CPU:
+                aclAct.mrat = RTK_FILTER_FWD_TRAP;
+                aclActCtrl |= ACL_ACT_FWD_ENABLE_MASK;
+                break;
+            case FILTER_ENACT_COPY_CPU:
+                aclAct.mrat = RTK_FILTER_FWD_MIRROR;
+                if((retVal = rtl8370_getAsicCputagTrapPort(&cpuPort)) != SUCCESS)
+                    return retVal;
+                aclAct.arpmsk = 1 << cpuPort;
+                aclActCtrl |= ACL_ACT_FWD_ENABLE_MASK;
+                break;
+            case FILTER_ENACT_EGRESS_SVLAN_VID:
+               if (pFilter_action->actEnable[FILTER_ENACT_EGRESS_SVLAN_INDEX] != TRUE)
+                {
+                    if (pFilter_action->filterEgressSvlanVid > RTK_VLAN_ID_MAX )
+                        return RT_ERR_INPUT;
+                    matchIdx = 0xFF;
+                    for (j = 0; j <= RTK_MAX_NUM_OF_SVLAN_INDEX; j++)
+                    {       
+                        if ((retVal = rtl8370_getAsicSvlanMemberConfiguration(j,&svlanMemConf))!=RT_ERR_OK)
+                            return retVal;
+                        if ((pFilter_action->filterEgressSvlanVid==svlanMemConf.vs_svid) && (svlanMemConf.vs_member!=0))
+                        { 
+                            matchIdx = j;
+                            aclAct.aclsvidx = j;
+                            aclActCtrl |= ACL_ACT_SVLAN_ENABLE_MASK;
+                            break;
+                        }
+                    }
+                    if (matchIdx == 0xFF)
+                        return RT_ERR_SVLAN_ENTRY_NOT_FOUND;
+                }
+                else
+                    return RT_ERR_INPUT;
+                break;
+            default:
+                return RT_ERR_FILTER_INACL_ACT_NOT_SUPPORT;                
+            }
+        }
+    }
+
+    if(pFilter_cfg->invert >= FILTER_INVERT_END )
+        return RT_ERR_INPUT;
+
+
+    for(i = 0; i < CARE_TAG_MAX;i++)
+    {
+        if(0 == pFilter_cfg->careTag.tagType[i].mask )
+        {
+            careTagMask &=  ~(1 << i);
+        }
+        else
+        {
+            careTagMask |= (1 << i);
+            if(0 == pFilter_cfg->careTag.tagType[i].value )
+                careTagData &= ~(1 << i);
+            else
+                careTagData |= (1 << i);
+        }
+    }
+
+    aclRule.data_bits.tag_exist = (careTagData) & 0x1FF;
+    aclRule.care_bits.tag_exist = (careTagMask) & 0x1FF;
+    
+    if(FILTER_FIELD_DATA_RANGE == pFilter_cfg->activeport.dataType )
+    {
+
+        if(pFilter_cfg->activeport.rangeStart >= RTK_MAX_NUM_OF_FILTER_PORT || pFilter_cfg->activeport.rangeEnd >= RTK_MAX_NUM_OF_FILTER_PORT 
+          || pFilter_cfg->activeport.rangeEnd > pFilter_cfg->activeport.rangeStart)
+            return RT_ERR_INPUT;
+    
+        for(i = pFilter_cfg->activeport.rangeStart;i <= pFilter_cfg->activeport.rangeEnd;i++)
+            aclRule.data_bits.active_portmsk |= 1 << i;
+
+        aclRule.care_bits.active_portmsk = 0xFFFF;
+    }
+    else if(FILTER_FIELD_DATA_MASK == pFilter_cfg->activeport.dataType )
+    {   
+        if(pFilter_cfg->activeport.value >= (1 << RTK_MAX_NUM_OF_FILTER_PORT) || pFilter_cfg->activeport.mask >= (1 << RTK_MAX_NUM_OF_FILTER_PORT))
+            return RT_ERR_INPUT;            
+        aclRule.data_bits.active_portmsk = pFilter_cfg->activeport.value;
+        aclRule.care_bits.active_portmsk = pFilter_cfg->activeport.mask;
+    }
+    else
+        return RT_ERR_INPUT;
+    
+
+    aclRule.data_bits.type = template_index;
+    aclRule.care_bits.type = 0x7;
+    for(i = 0; i < RTK_MAX_NUM_OF_FILTER_FIELD; i ++)
+    {
+        aclRule.data_bits.field[i] = pFilter_cfg->dataFieldRaw[i];
+        aclRule.care_bits.field[i] = pFilter_cfg->careFieldRaw[i];
+    }
+
+    aclRule.valid = ENABLED;
+    
+    /* write ACL action control */
+    if((retVal = rtl8370_setAsicAclActCtrl(filter_id, aclActCtrl)) != SUCCESS )
+        return retVal;
+    /* write ACL action */
+    if((retVal = rtl8370_setAsicAclAct(filter_id, aclAct)) != SUCCESS )
+        return retVal;
+    /* write ACL not */
+    if((retVal = rtl8370_setAsicAclNot(filter_id, pFilter_cfg->invert)) != SUCCESS )
+        return retVal;  
+    /* write ACL rule */
+    if((retVal = rtl8370_setAsicAclRule(filter_id, &aclRule)) != SUCCESS )
+        return retVal;           
+    
+    return RT_ERR_OK;
+}
+/* Function Name:
  *      rtk_filter_igrAcl_cfg_get
  * Description:
  *      Get one ingress acl configuration from ASIC.
@@ -13687,8 +13800,8 @@ rtk_api_ret_t rtk_filter_igrAcl_cfg_delAll(void)
  *      pFilter_cfg - buffer pointer of ingress acl data
  *      pFilter_action - buffer pointer of ingress acl action
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_NULL_POINTER - Pointer pFilter_action or pFilter_cfg point to NULL.
  *      RT_ERR_FILTER_ENTRYIDX - Invalid entry index.
@@ -13863,8 +13976,8 @@ rtk_api_ret_t rtk_filter_igrAcl_cfg_get(rtk_filter_id_t filter_id, rtk_filter_cf
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port id.
  *      RT_ERR_INPUT - Invalid input parameters.
@@ -13895,8 +14008,8 @@ rtk_api_ret_t rtk_filter_igrAcl_unmatchAction_set(rtk_port_t port, rtk_filter_un
  * Output:
  *      pAction - Action.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID         - Invalid port id.
  *      RT_ERR_INPUT           - Invalid input parameters.
@@ -13926,8 +14039,8 @@ rtk_api_ret_t rtk_filter_igrAcl_unmatchAction_get(rtk_port_t port, rtk_filter_un
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID         - Invalid port id.
  *      RT_ERR_INPUT           - Invalid input parameters.
@@ -13958,8 +14071,8 @@ rtk_api_ret_t rtk_filter_igrAcl_state_set(rtk_port_t port, rtk_filter_state_t st
  * Output:
  *      pState - Ingress ACL state.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID         - Invalid port id.
  *      RT_ERR_INPUT           - Invalid input parameters.
@@ -13978,6 +14091,77 @@ rtk_api_ret_t rtk_filter_igrAcl_state_get(rtk_port_t port, rtk_filter_state_t* p
 
    return RT_ERR_OK;   
 }
+/* Function Name:
+ *      rtk_filter_igrAcl_template_set
+ * Description:
+ *      Set template of ingress ACL.
+ * Input:
+ *      template - Ingress ACL template
+ * Output:
+ *      None
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
+ *      RT_ERR_SMI             - SMI access error
+ *      RT_ERR_INPUT           - Invalid input parameters.
+ * Note:
+ *      This function set ACL template.
+ */
+rtk_api_ret_t rtk_filter_igrAcl_template_set(rtk_filter_template_t *aclTemplate)
+{
+    rtk_api_ret_t ret;
+    uint32 idxField;
+    rtl8370_acl_template_t aclType;
+    
+    if(aclTemplate->index >= RTK_MAX_NUM_OF_FILTER_TYPE)
+        return RT_ERR_INPUT;
+
+    for(idxField = 0; idxField < RTK_MAX_NUM_OF_FILTER_FIELD; idxField ++)
+    {
+        if(aclTemplate->fieldType[idxField] >= FILTER_FIELD_RAW_MAX)
+            return RT_ERR_INPUT;
+        
+        aclType.field[idxField] = aclTemplate->fieldType[idxField];
+    }    
+
+    ret = rtl8370_setAsicAclType(aclTemplate->index, aclType);
+
+    return RT_ERR_OK;
+}
+/* Function Name:
+ *      rtk_filter_igrAcl_template_get
+ * Description:
+ *      Get template of ingress ACL.
+ * Input:
+ *      template - Ingress ACL template
+ * Output:
+ *      None
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
+ *      RT_ERR_SMI             - SMI access error
+ * Note:
+ *      This function gets template of ACL.
+ */
+rtk_api_ret_t rtk_filter_igrAcl_template_get(rtk_filter_template_t *aclTemplate)
+{
+    rtk_api_ret_t ret;
+    uint32 idxField;
+    rtl8370_acl_template_t aclType;
+    
+    if(aclTemplate->index >= RTK_MAX_NUM_OF_FILTER_TYPE)
+        return RT_ERR_INPUT;
+
+   if((ret = rtl8370_getAsicAclType(aclTemplate->index, &aclType)) != RT_ERR_OK)
+       return ret;
+
+    for(idxField = 0; idxField < RTK_MAX_NUM_OF_FILTER_FIELD; idxField ++)
+    {
+        aclTemplate->fieldType[idxField] = aclType.field[idxField];
+    }  
+
+    return RT_ERR_OK;
+}
 
 /* Function Name:
  *      rtk_eee_init
@@ -13988,8 +14172,8 @@ rtk_api_ret_t rtk_filter_igrAcl_state_get(rtk_port_t port, rtk_filter_state_t* p
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      This API is used to initialize EEE status.
@@ -14803,7 +14987,7 @@ rtk_api_ret_t rtk_eee_init(void)
     {0x2206, 0x7494},{0x2206, 0xC776},{0x2206, 0x980A},{0x2206, 0x7750},
     {0x2206, 0x0078},{0x2206, 0x8A15},{0x2206, 0x797F},{0x2206, 0x6F7A},
     {0x2206, 0x06A6},{0x2205, 0x8BF0},{0x2206, 0x0000},{0x2206, 0x0000},
-    {0x2206,0x0000},{0x2206,0x0000},{0x2206,0x0000},{0x2206,0x0000},
+    {0x2206, 0x0000},{0x2206, 0x0000},{0x2206 ,0x0000},{0x2206, 0x0000},
     {0x2206, 0x0000},{0x2206, 0x0000},{0x2201, 0x0701},{0x2200, 0x0405},
     {0x221F, 0x0000},{0x221F, 0x0005},{0x2205, 0x8B84},{0x2206, 0x0062},
     {0x221F, 0x0000},{0x133F, 0x0010},{0x133E, 0x0FFE},{0x12A4, 0x380A},
@@ -14812,21 +14996,10 @@ rtk_api_ret_t rtk_eee_init(void)
     {0x133F, 0x0010},{0x133E, 0x0FFE},{0xFFFF,0xABCD}};
 
     CONST_T uint16 ParaB[][2] = {
-    {0x133f,0x0030},{0x133e,0x000e},{0x221f,0x0007},{0x221e,0x002d},
-    {0x2218,0xf030},{0x221e,0x0023},{0x2216,0x0005},{0x2215,0x005c},
-    {0x2219,0x0068},{0x2215,0x0082},{0x2219,0x000a},{0x2215,0x00a1},
-    {0x2219,0x0081},{0x2215,0x00af},{0x2219,0x0080},{0x2215,0x00d4},
-    {0x2219,0x0000},{0x2215,0x00e4},{0x2219,0x0081},{0x2215,0x00e7},
-    {0x2219,0x0080},{0x2215,0x010d},{0x2219,0x0083},{0x2215,0x0118},
-    {0x2219,0x0083},{0x2215,0x0120},{0x2219,0x0082},{0x2215,0x019c},
-    {0x2219,0x0081},{0x2215,0x01a4},{0x2219,0x0080},{0x2215,0x01cd},
-    {0x2219,0x0000},{0x2215,0x01dd},{0x2219,0x0081},{0x2215,0x01e0},
-    {0x2219,0x0080},{0x2216,0x0000},{0x221e,0x002d},{0x2218,0xf010},
-    {0x221f,0x0007},{0x221e,0x0020},{0x2215,0x0100},{0x221f,0x0005},
-    {0x2205,0x8b84},{0x2206,0x0062},{0x221f,0x0000},{0x2200,0x1340},
-    {0x221f,0x0000},{0x133f,0x0010},{0x133e,0x0ffe},{0x12a4,0x380a},
-    {0x1362,0x0115},{0x1363,0x0002},{0x1363,0x0000},{0xFFFF, 0xABCD}};
-
+    {0x133F, 0x0030},{0x133E, 0x000E},{0x221F, 0x0005},{0x2205, 0x8B84},
+    {0x2206, 0x0062},{0x221F, 0x0007},{0x221E, 0x0020},{0x2215, 0x0100},
+    {0x221F, 0x0000},{0x133F, 0x0010},{0x133E, 0x0FFE},{0x12A4, 0x380A},
+    {0xFFFF, 0xABCD}};
 
     if ((retVal = rtl8370_setAsicPHYReg(0,PHY_PAGE_ADDRESS,5))!=RT_ERR_OK)
         return retVal; 
@@ -14834,7 +15007,6 @@ rtk_api_ret_t rtk_eee_init(void)
         return retVal; 
     if ((retVal = rtl8370_getAsicPHYReg(0,6,&regData))!=RT_ERR_OK)
         return retVal; 
-
 
 #ifdef MDC_MDIO_OPERATION 
     if (regData == 0x94eb)
@@ -14879,24 +15051,6 @@ rtk_api_ret_t rtk_eee_init(void)
                 }
                 if (5 == cnt)
                     return RT_ERR_BUSYWAIT_TIMEOUT;
-
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                    return retVal;
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                    return retVal; 
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                    return retVal;
-
-                cnt = 0;
-                busyFlag = 1;
-                while (busyFlag&&cnt<5)
-                {
-                    cnt++;
-                    if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                        return retVal;
-                }
-                if (5 == cnt)
-                    return RT_ERR_BUSYWAIT_TIMEOUT;
             
                 if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)ParaA[index][1])) !=  RT_ERR_OK)
                     return retVal;
@@ -14930,24 +15084,6 @@ rtk_api_ret_t rtk_eee_init(void)
                 }
                 if (5 == cnt)
                     return RT_ERR_BUSYWAIT_TIMEOUT;
-
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                    return retVal;
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                    return retVal;    
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                    return retVal; 
-
-                cnt = 0;
-                busyFlag = 1;
-                while (busyFlag&&cnt<5)
-                {
-                    cnt++;
-                    if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                        return retVal;
-                }
-                if (5 == cnt)
-                    return RT_ERR_BUSYWAIT_TIMEOUT;
             
                 if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)ParaB[index][1])) !=  RT_ERR_OK)
                     return retVal;
@@ -14970,26 +15106,8 @@ rtk_api_ret_t rtk_eee_init(void)
     
 #endif /*End of #ifdef MDC_MDIO_OPERATION*/
 
-
-    if ((retVal = rtl8370_setAsicReg(0x13C2,0x0249))!=RT_ERR_OK)
-        return retVal;
-
-    if ((retVal = rtl8370_getAsicRegBits(0x1302, 0x7,&regData))!=RT_ERR_OK)
-        return retVal;   
-
-    if (regData == 0)
-    {
-        if ((retVal = rtk_port_phyReg_set(5, 0, 0x0940))!=RT_ERR_OK)
-            return retVal; 
-        if ((retVal = rtk_port_phyReg_set(6, 0, 0x0940))!=RT_ERR_OK)
-            return retVal; 
-        if ((retVal = rtk_port_phyReg_set(7, 0, 0x0940))!=RT_ERR_OK)
-            return retVal;  
-    }
-
     return RT_ERR_OK;
 }
-
 
 /* Function Name:
  *      rtk_eee_portEnable_set
@@ -15001,8 +15119,8 @@ rtk_api_ret_t rtk_eee_init(void)
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_ENABLE - Invalid enable input.
@@ -15015,6 +15133,7 @@ rtk_api_ret_t rtk_eee_init(void)
 rtk_api_ret_t rtk_eee_portEnable_set(rtk_port_t port, rtk_enable_t enable)
 {
     rtk_api_ret_t retVal;
+    uint32 eee_cfg = 0;
 
     if (port > RTK_PORT_ID_MAX)
         return RT_ERR_PORT_ID;
@@ -15022,14 +15141,47 @@ rtk_api_ret_t rtk_eee_portEnable_set(rtk_port_t port, rtk_enable_t enable)
     if (enable>=RTK_ENABLE_END)
         return RT_ERR_INPUT;
 
-    if ((retVal = rtl8370_setAsicEee100M(port,enable))!=RT_ERR_OK)
+    if (enable == ENABLED)
+        eee_cfg = RTL8370_PORT_EEE_100M_MASK|RTL8370_PORT_EEE_GIGA_MASK;
+
+    if ((retVal = rtl8370_setAsicReg(RTL8370_PORT_EEE_CFG_REG(port), eee_cfg))!=RT_ERR_OK)
         return retVal;
-    if ((retVal = rtl8370_setAsicEeeGiga(port,enable))!=RT_ERR_OK)
+
+    if ((retVal = rtl8370_setAsicPHYReg(port,31,5))!=RT_ERR_OK)
         return retVal;
-   
+
+    if (enable == ENABLED)
+    {
+        if ((retVal = rtl8370_setAsicPHYReg(port,5,0x8B84))!=RT_ERR_OK)
+            return retVal;
+        if ((retVal = rtl8370_setAsicPHYReg(port,6,0x0062))!=RT_ERR_OK)
+            return retVal;
+        if ((retVal = rtl8370_setAsicPHYReg(port,31,7))!=RT_ERR_OK)
+            return retVal;
+        if ((retVal = rtl8370_setAsicPHYReg(port,30,32))!=RT_ERR_OK)
+            return retVal;
+        if ((retVal = rtl8370_setAsicPHYReg(port,21,0x0100))!=RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        if ((retVal = rtl8370_setAsicPHYReg(port,5,0x8B84))!=RT_ERR_OK)
+            return retVal;
+        if ((retVal = rtl8370_setAsicPHYReg(port,6,0x0042))!=RT_ERR_OK)
+            return retVal;
+        if ((retVal = rtl8370_setAsicPHYReg(port,31,7))!=RT_ERR_OK)
+            return retVal;
+        if ((retVal = rtl8370_setAsicPHYReg(port,30,32))!=RT_ERR_OK)
+            return retVal;
+        if ((retVal = rtl8370_setAsicPHYReg(port,21,0x0000))!=RT_ERR_OK)
+            return retVal;
+    }
+
+    if ((retVal = rtl8370_setAsicPHYReg(port,31,0))!=RT_ERR_OK)
+        return retVal;
+
     return RT_ERR_OK;
 }
-
 
 /* Function Name:
  *      rtk_eee_portEnable_get
@@ -15040,8 +15192,8 @@ rtk_api_ret_t rtk_eee_portEnable_set(rtk_port_t port, rtk_enable_t enable)
  * Output:
  *      pEnable - Back pressure status.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  * Note:
@@ -15072,4 +15224,140 @@ rtk_api_ret_t rtk_eee_portEnable_get(rtk_port_t port, rtk_data_t *pEnable)
     return RT_ERR_OK;
 }
 
+
+/* Function Name:
+ *      rtk_aldp_init
+ * Description:
+ *      Initialize Advanced Link Down Power Saving (ALDP) mode.
+ * Input:
+ *      None
+ * Output:
+ *      None
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
+ *      RT_ERR_SMI             - SMI access error
+ *      RT_ERR_PORT_ID - Invalid port number.
+ *      RT_ERR_QOS_INT_PRIORITY - Invalid priority.
+ *      RT_ERR_ENABLE - Invalid enable parameter.
+ * Note:
+ *      The API is used to initialize ALDP mode.
+ */
+rtk_api_ret_t rtk_aldp_init(void)
+{
+    rtk_api_ret_t retVal;
+    uint32 index;
+#ifndef MDC_MDIO_OPERATION
+    uint32 busyFlag,cnt;
 #endif
+    CONST_T uint16 chipData[][2] ={ {0x203f,0x0002},{0x202c,0x6b64},{0x203f,0x0000},{0x209f,0x0002},
+                                    {0x208c,0x6b64},{0x209f,0x0000},{0x1326,0x2d1e},{0x1364,0x31f0},
+                                    {0x1365,0x3a80},{0x133e,0x000e},{0x133f,0x0030},{0x221f,0x0005},
+                                    {0x2201,0x0500},{0x2210,0x0000},{0x221f,0x0000},{0x133e,0x000e},
+                                    {0x133f,0x0010},{0xFFFF,0xABCD}};
+
+#ifdef MDC_MDIO_OPERATION  
+    index = 0;
+    while (chipData[index][0] != 0xFFFF && chipData[index][1] != 0xABCD)
+    {
+        if (RT_ERR_OK != rtl8370_setAsicReg((uint32)chipData[index][0],(uint32)chipData[index][1]))
+            return RT_ERR_FAILED;
+        index ++;
+    } 
+#else 
+    index = 0;
+    while (chipData[index][0] != 0xFFFF && chipData[index][1] != 0xABCD)
+    {
+        if ((chipData[index][0]&0xF000)==0x2000)
+        {
+            cnt = 0;
+            busyFlag = 1;
+            while (busyFlag&&cnt<5)
+            {
+                cnt++;
+                if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
+                    return retVal;
+            }
+            if (5 == cnt)
+               return RT_ERR_BUSYWAIT_TIMEOUT;
+
+            if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)chipData[index][1])) !=  RT_ERR_OK)
+                return retVal;
+            if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, (uint32)chipData[index][0])) !=  RT_ERR_OK)
+                return retVal;    
+            if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
+                return retVal; 
+        }
+        else
+        {
+            if (RT_ERR_OK != rtl8370_setAsicReg((uint32)chipData[index][0],(uint32)chipData[index][1]))
+               return RT_ERR_FAILED;
+        }
+        index ++;
+    }
+#endif /*End of #ifdef MDC_MDIO_OPERATION*/
+
+    return RT_ERR_OK;
+}
+
+
+
+/* Function Name:
+ *      rtk_aldp_enable_set
+ * Description:
+ *      Set Advanced Link Down Power Saving (ALDP) enable/disable.
+ * Input:
+ *      enable - enable ALDP
+ * Output:
+ *      None 
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
+ *      RT_ERR_SMI             - SMI access error
+ *      RT_ERR_PORT_ID - Invalid port number.
+ *      RT_ERR_QOS_INT_PRIORITY - Invalid priority.
+ *      RT_ERR_ENABLE - Invalid enable parameter.
+ * Note:
+ *      The API can enable or disable ALDP function.
+ *      The status of ALDP:
+ *      DISABLED
+ *      ENABLED 
+ */
+rtk_api_ret_t rtk_aldp_enable_set(rtk_enable_t enable)
+{
+    if (RT_ERR_OK != rtl8370_setAsicRegBit(RTL8370_ALDP_CFG_REG, RTL8370_ALDP_ENABLE_OFFSET, enable))
+       return RT_ERR_FAILED;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtk_aldp_enable_get
+ * Description:
+ *      Get Advanced Link Down Power Saving (ALDP setup.
+ * Input:
+ * Output:
+ *      pEnable - status of ALDP.
+ * Return:
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - Failed
+ *      RT_ERR_SMI             - SMI access error
+ *      RT_ERR_PORT_ID - Invalid port number.
+ * Note:
+ *      The API can get ALDP status.
+ *      The status of ALDP:
+ *      DISABLED
+ *      ENABLED
+ */
+rtk_api_ret_t rtk_aldp_enable_get(rtk_data_t *pEnable)
+{
+    rtk_api_ret_t retVal;
+
+    if ((retVal =  rtl8370_getAsicRegBit(RTL8370_ALDP_CFG_REG, RTL8370_ALDP_ENABLE_OFFSET, pEnable))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}
+
+#endif
+

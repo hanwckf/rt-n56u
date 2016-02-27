@@ -9,8 +9,8 @@
  * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER 
  * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED. 
  *
- * $Revision: 1.1.1.1 $
- * $Date: 2010/12/02 04:34:40 $
+ * $Revision: 14372 $
+ * $Date: 2010-11-22 16:22:35 +0800 (星期一, 22 十一月 2010) $
  *
  * Purpose : RTL8370 switch high-level API for RTL8367B
  * Feature : 
@@ -119,6 +119,19 @@ void _rtl8370_aclRuleStSmi2User( rtl8370_acl_rule_t *aclUser, rtl8370_acl_rule_s
     aclUser->data_bits.type = aclSmi->data_bits.type;
     aclUser->data_bits.tag_exist = aclSmi->data_bits.tag_exist;
 
+    care_ptr = (uint16*)&aclSmi->care_bits;
+    data_ptr = (uint16*)&aclSmi->data_bits;
+    
+    for ( i = 0; i < 9;i++)    
+    {
+        care_tmp = *(care_ptr + i) ^ (*(data_ptr + i));
+        data_tmp = *(data_ptr + i);
+
+        *(care_ptr + i) = care_tmp;
+        *(data_ptr + i) = data_tmp;
+    }
+
+
     for( i = 0; i < RTL8370_ACLTYPEFIELDMAX; i++ )
     {
         aclUser->data_bits.field[i] = aclSmi->data_bits.field[i];
@@ -135,7 +148,7 @@ void _rtl8370_aclRuleStSmi2User( rtl8370_acl_rule_t *aclUser, rtl8370_acl_rule_s
     {
         aclUser->care_bits.field[i] = aclSmi->care_bits.field[i];
     }
-
+/*
     care_ptr = (uint16*)&aclUser->care_bits;
     data_ptr = (uint16*)&aclUser->data_bits;
     for ( i = 0; i < 9;i++)    
@@ -146,6 +159,7 @@ void _rtl8370_aclRuleStSmi2User( rtl8370_acl_rule_t *aclUser, rtl8370_acl_rule_s
         *(care_ptr + i) = care_tmp;
         *(data_ptr + i) = data_tmp;
     }    
+*/    
 }
 
 /*
@@ -267,33 +281,16 @@ ret_t rtl8370_setAsicAclRule(uint32 index, rtl8370_acl_rule_t *aclRule)
     if(retVal !=RT_ERR_OK)
         return retVal;
 
-    /* Write Data Bits to ACS_DATA registers */
-     tableAddr = (uint16*)&aclRuleSmi.data_bits;
-     regAddr = RTL8370_TABLE_ACCESS_DATA_BASE;
-
-    for(i=0;i<RTL8370_ACLRULETBLEN;i++)
-    {
-        regData = *tableAddr;
-        retVal = rtl8370_setAsicReg(regAddr,regData);
-        if(retVal !=RT_ERR_OK)
-            return retVal;
-
-        regAddr++;
-        tableAddr++;
-    }
-
-    /* Write Valid Bit */
-    retVal = rtl8370_setAsicRegBits(RTL8370_TABLE_ACCESS_DATA_REG(RTL8370_ACLRULETBLEN), 0x1, aclRuleSmi.valid);
+    retVal = rtl8370_setAsicRegBits(RTL8370_TABLE_ACCESS_DATA_REG(RTL8370_ACLRULETBLEN), 0x1, 0);
     if(retVal !=RT_ERR_OK)
         return retVal;
 
-    /* Write ACS_CMD register for care bits*/
     regAddr = RTL8370_TABLE_ACCESS_CTRL_REG;
     regData = RTL8370_TABLE_ACCESS_REG_DATA(TB_OP_WRITE, TB_TARGET_ACLRULE);
     retVal = rtl8370_setAsicReg(regAddr, regData);
     if(retVal !=RT_ERR_OK)
         return retVal;
-    
+
 
     /* Write ACS_ADR register */
     regAddr = RTL8370_TABLE_ACCESS_ADDR_REG;
@@ -323,6 +320,40 @@ ret_t rtl8370_setAsicAclRule(uint32 index, rtl8370_acl_rule_t *aclRule)
     }
     
     /* Write ACS_CMD register */
+    regAddr = RTL8370_TABLE_ACCESS_CTRL_REG;
+    regData = RTL8370_TABLE_ACCESS_REG_DATA(TB_OP_WRITE, TB_TARGET_ACLRULE);
+    retVal = rtl8370_setAsicReg(regAddr, regData);
+    if(retVal !=RT_ERR_OK)
+        return retVal;
+
+    /* Write ACS_ADR register for data bits */
+    regAddr = RTL8370_TABLE_ACCESS_ADDR_REG;
+    regData = RTL8370_ACLRULETBADDR(DATABITS, index);
+    retVal = rtl8370_setAsicReg(regAddr,regData);
+    if(retVal !=RT_ERR_OK)
+        return retVal;
+
+    /* Write Data Bits to ACS_DATA registers */
+     tableAddr = (uint16*)&aclRuleSmi.data_bits;
+     regAddr = RTL8370_TABLE_ACCESS_DATA_BASE;
+
+    for(i=0;i<RTL8370_ACLRULETBLEN;i++)
+    {
+        regData = *tableAddr;
+        retVal = rtl8370_setAsicReg(regAddr,regData);
+        if(retVal !=RT_ERR_OK)
+            return retVal;
+
+        regAddr++;
+        tableAddr++;
+    }
+
+    /* Write Valid Bit */
+    retVal = rtl8370_setAsicRegBits(RTL8370_TABLE_ACCESS_DATA_REG(RTL8370_ACLRULETBLEN), 0x1, aclRuleSmi.valid);
+    if(retVal !=RT_ERR_OK)
+        return retVal;
+
+    /* Write ACS_CMD register for care bits*/
     regAddr = RTL8370_TABLE_ACCESS_CTRL_REG;
     regData = RTL8370_TABLE_ACCESS_REG_DATA(TB_OP_WRITE, TB_TARGET_ACLRULE);
     retVal = rtl8370_setAsicReg(regAddr, regData);

@@ -20,6 +20,8 @@
 #include <linux/kernel.h>
 #include <linux/sched.h>
 
+#include "../raeth/mii_mgr.h"
+
 #include "ralink_mdio.h"
 
 #if defined(CONFIG_RTL8367_API_8370)
@@ -42,10 +44,6 @@
 
 static DEFINE_SPINLOCK(g_mdio_lock);
 static u32 g_phy_id = 0;
-
-extern u32 mii_mgr_init(void);
-extern u32 mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data);
-extern u32 mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data);
 
 /////////////////////////////////////////////////////////////////////////////////
 

@@ -15,22 +15,27 @@ choice
 	default RTL8367_ASIC_M
 
 	config  RTL8367_ASIC_R
-	bool "RTL8367R (LQFP128 EPAD, 5+1 Ports, old ASIC)"
+	bool "RTL8367R (LQFP128, 5+1 Ports, old ASIC)"
 	depends on RTL8367
 	select RTL8367_API_8370
 
 	config  RTL8367_ASIC_M
-	bool "RTL8367M (TQFP176 EPAD, 5+2 Ports, old ASIC)"
+	bool "RTL8367M (TQFP176, 5+2 Ports, old ASIC)"
+	depends on RTL8367
+	select RTL8367_API_8370
+
+	config  RTL8370_ASIC_M
+	bool "RTL8370M (TQFP176, 8+2 Ports, old ASIC)"
 	depends on RTL8367
 	select RTL8367_API_8370
 
 	config  RTL8367_ASIC_RB
-	bool "RTL8367RB (LQFP128 EPAD, 5+2 Ports)"
+	bool "RTL8367RB (LQFP128, 5+2 Ports)"
 	depends on RTL8367
 	select RTL8367_API_8367B
 
 	config  RTL8367_ASIC_RVB
-	bool "RTL8367R-VB (LQFP128 EPAD, 5+1 Ports)"
+	bool "RTL8367R-VB (LQFP128, 5+1 Ports, pin-to-pin with RTL8367R)"
 	depends on RTL8367
 	select RTL8367_API_8367B
 
@@ -40,7 +45,17 @@ choice
 	select RTL8367_API_8367B
 
 	config  RTL8367_ASIC_MVB
-	bool "RTL8367M-VB (TQFP176 EPAD, 5+2 Ports)"
+	bool "RTL8367M-VB (TQFP176, 5+2 Ports, pin-to-pin with RTL8367M)"
+	depends on RTL8367
+	select RTL8367_API_8367B
+
+	config  RTL8365_ASIC_MB
+	bool "RTL8365MB (LQFP128, 4+1 Ports)"
+	depends on RTL8367
+	select RTL8367_API_8367B
+
+	config  RTL8368_ASIC_MB
+	bool "RTL8368MB (TQFP176, 5+3 Ports)"
 	depends on RTL8367
 	select RTL8367_API_8367B
 endchoice
@@ -61,18 +76,18 @@ choice
 endchoice
 
 config  RTL8367_SMI_BUS_CPU_GPIO_DATA
-	int "Ralink GPIO Pin for SMI Bus Data (1..51)"
+	int "Ralink GPIO Pin for SMI Bus Data"
 	depends on RTL8367 && RTL8367_CIF_SMI
 	default 1
 	help
-	please choose Ralink SoC GPIO pin from range 1..51
+	please choose Ralink SoC GPIO pin
 
 config  RTL8367_SMI_BUS_CPU_GPIO_CLCK
-	int "Ralink GPIO Pin for SMI Bus Clock (1..51)"
+	int "Ralink GPIO Pin for SMI Bus Clock"
 	depends on RTL8367 && RTL8367_CIF_SMI
 	default 2
 	help
-	please choose Ralink SoC GPIO pin from range 1..51
+	please choose Ralink SoC GPIO pin
 
 config  RTL8367_PORT_WAN
 	int "WAN Port ID (0..4)"
@@ -108,6 +123,27 @@ config  RTL8367_PORT_LAN4
 	default 0
 	help
 	please choose port ID from range 0..4
+
+config  RTL8367_PORT_LAN5
+	int "LAN5 Port ID (0..7)"
+	depends on RTL8367 && RTL8370_ASIC_M
+	default 5
+	help
+	please choose port ID from range 0..7
+
+config  RTL8367_PORT_LAN6
+	int "LAN6 Port ID (0..7)"
+	depends on RTL8367 && RTL8370_ASIC_M
+	default 6
+	help
+	please choose port ID from range 0..7
+
+config  RTL8367_PORT_LAN7
+	int "LAN7 Port ID (0..7)"
+	depends on RTL8367 && RTL8370_ASIC_M
+	default 7
+	help
+	please choose port ID from range 0..7
 
 choice
 	prompt "Select Ext CPU Port for handle LAN Ports"
@@ -153,3 +189,4 @@ config  RTL8367_IGMP_SNOOPING
 	depends on RTL8367 && BRIDGE_IGMP_SNOOPING
 	select BRIDGE_IGMP_EVENT_HOOK
 	default y
+

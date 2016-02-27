@@ -127,7 +127,7 @@ asic_update_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_cvid_fid, u3
 	rtk_api_ret_t retVal;
 	u16 portmask_old;
 	u16 port_dst_msk = (1u << port_id);
-	u16 uports_static = (1u << LAN_PORT_CPU) | (u16)g_igmp_static_ports;
+	u16 uports_static = MASK_LAN_PORT_CPU | (u16)g_igmp_static_ports;
 #if defined(CONFIG_RTL8367_API_8370)
 	rtl8370_luttb l2t;
 
@@ -696,7 +696,7 @@ igmp_sn_set_static_ports(u32 ports_mask)
 {
 	u32 lan_grp_mask = get_phy_ports_mask_lan(0);
 
-	g_igmp_static_ports = get_ports_mask_from_user(ports_mask) & lan_grp_mask;
+	g_igmp_static_ports = get_ports_mask_from_uapi(ports_mask) & lan_grp_mask;
 }
 
 void

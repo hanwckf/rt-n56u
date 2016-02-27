@@ -21,7 +21,7 @@
 
 //#define RTL8367_DBG 1
 
-#define RTL8367_VERSION				"v2.9"
+#define RTL8367_VERSION				"v3.0"
 
 #define RTL8367_DEVNAME				"rtl8367"
 
@@ -32,68 +32,58 @@
  #define SMI_RALINK_GPIO_SCK			CONFIG_RTL8367_SMI_BUS_CPU_GPIO_CLCK	/* GPIO used for SMI Clock signal */
 #endif
 
-#define WAN_PORT_X				CONFIG_RTL8367_PORT_WAN			/* 8P8C WAN  */
-#define LAN_PORT_1				CONFIG_RTL8367_PORT_LAN1		/* 8P8C LAN1 */
-#define LAN_PORT_2				CONFIG_RTL8367_PORT_LAN2		/* 8P8C LAN2 */
-#define LAN_PORT_3				CONFIG_RTL8367_PORT_LAN3		/* 8P8C LAN3 */
-#define LAN_PORT_4				CONFIG_RTL8367_PORT_LAN4		/* 8P8C LAN4 */
-
 #if defined(CONFIG_RAETH_BOTH_GMAC) || (defined(CONFIG_P5_RGMII_TO_MAC_MODE) && defined(CONFIG_P4_RGMII_TO_MAC_MODE))
  #define RAETH_USE_BOTH_RGMII
 #endif
 
-#if defined(CONFIG_RTL8367_ASIC_RVB) || defined(CONFIG_RTL8367_ASIC_R) || \
+#if defined(CONFIG_RTL8365_ASIC_MB) || defined(CONFIG_RTL8367_ASIC_RVB) || defined(CONFIG_RTL8367_ASIC_R) || \
    !defined(RAETH_USE_BOTH_RGMII)
- #define RTL8367_SINGLE_EXTIF 1
+ #define RTL8367_SINGLE_EXTIF
 #endif
 
 #if defined(CONFIG_RTL8367_LAN_CPU_EXT2)
- #if defined(CONFIG_RTL8367_ASIC_RB)
-  #define LAN_PORT_CPU				(RTK_EXT_2_MAC)		/* ExtIf2 -> RG2 (7) */
-  #define SEC_PORT_MAC				(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
-  #define LAN_EXT_ID				(EXT_PORT_2)
-  #define WAN_EXT_ID				(EXT_PORT_1)
- #endif
+#if defined(CONFIG_RTL8367_ASIC_RB) || defined(CONFIG_RTL8368_ASIC_MB)
+ #define LAN_PORT_CPU				(RTK_EXT_2_MAC)		/* ExtIf2 -> RG2 (7) */
+ #define SEC_PORT_MAC				(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
+ #define LAN_EXT_ID				(EXT_PORT_2)
+ #define WAN_EXT_ID				(EXT_PORT_1)
+#endif
 #elif defined(CONFIG_RTL8367_LAN_CPU_EXT0)
- #if defined(CONFIG_RTL8367_ASIC_MB)
-  #define LAN_PORT_CPU				(RTK_EXT_0_MAC)		/* ExtIf0 -> GMAC0 (5) */
-  #define SEC_PORT_MAC				(RTK_EXT_1_MAC)		/* ExtIf1 -> GMAC1 (6) */
-  #define LAN_EXT_ID				(EXT_PORT_0)
-  #define WAN_EXT_ID				(EXT_PORT_1)
- #elif defined(CONFIG_RTL8367_ASIC_MVB)
-  #define LAN_PORT_CPU				(RTK_EXT_0_MAC)		/* ExtIf0 -> GMAC0 (5) */
-  #define SEC_PORT_MAC				(RTK_EXT_1_MAC)		/* ExtIf1 -> GMAC1 (6) */
-  #define LAN_EXT_ID				(EXT_PORT_1)
-  #define WAN_EXT_ID				(EXT_PORT_0)
- #elif defined(CONFIG_RTL8367_ASIC_M)
-  #define LAN_PORT_CPU				(RTK_EXT_0_MAC9)	/* ExtIf0 -> GMAC2 (9) */
-  #define SEC_PORT_MAC				(RTK_EXT_1_MAC8)	/* ExtIf1 -> GMAC1 (8) */
- #endif
+#if defined(CONFIG_RTL8367_ASIC_MB) || defined(CONFIG_RTL8367_ASIC_MVB) || defined(CONFIG_RTL8368_ASIC_MB)
+ #define LAN_PORT_CPU				(RTK_EXT_0_MAC)		/* ExtIf0 -> RG0 (5) */
+ #define SEC_PORT_MAC				(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
+ #define LAN_EXT_ID				(EXT_PORT_0)
+ #define WAN_EXT_ID				(EXT_PORT_1)
+#elif defined(CONFIG_RTL8367_ASIC_M) || defined(CONFIG_RTL8370_ASIC_M)
+ #define LAN_PORT_CPU				(RTK_EXT_0_MAC9)	/* ExtIf0 -> GMAC2 (9) */
+ #define SEC_PORT_MAC				(RTK_EXT_1_MAC8)	/* ExtIf1 -> GMAC1 (8) */
+#endif
 #else
- #if defined(CONFIG_RTL8367_ASIC_RB)
-  #define LAN_PORT_CPU				(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
-  #define SEC_PORT_MAC				(RTK_EXT_2_MAC)		/* ExtIf2 -> RG2 (7) */
-  #define LAN_EXT_ID				(EXT_PORT_1)
-  #define WAN_EXT_ID				(EXT_PORT_2)
- #elif defined(CONFIG_RTL8367_ASIC_RVB)
-  #define LAN_PORT_CPU				(RTK_EXT_0_MAC)		/* ExtIf1 -> GMAC0 (5) */
-  #define LAN_EXT_ID				(EXT_PORT_1)
- #elif defined(CONFIG_RTL8367_ASIC_R)
-  #define LAN_PORT_CPU				(RTK_EXT_0_MAC9)	/* ExtIf1 -> GMAC2 (9) */
- #elif defined(CONFIG_RTL8367_ASIC_MB)
-  #define LAN_PORT_CPU				(RTK_EXT_1_MAC)		/* ExtIf1 -> GMAC1 (6) */
-  #define SEC_PORT_MAC				(RTK_EXT_0_MAC)		/* ExtIf0 -> GMAC0 (5) */
-  #define LAN_EXT_ID				(EXT_PORT_1)
-  #define WAN_EXT_ID				(EXT_PORT_0)
- #elif defined(CONFIG_RTL8367_ASIC_MVB)
-  #define LAN_PORT_CPU				(RTK_EXT_1_MAC)		/* ExtIf1 -> GMAC1 (6) */
-  #define SEC_PORT_MAC				(RTK_EXT_0_MAC)		/* ExtIf0 -> GMAC0 (5) */
-  #define LAN_EXT_ID				(EXT_PORT_0)
-  #define WAN_EXT_ID				(EXT_PORT_1)
- #elif defined(CONFIG_RTL8367_ASIC_M)
-  #define LAN_PORT_CPU				(RTK_EXT_1_MAC8)	/* ExtIf1 -> GMAC1 (8) */
-  #define SEC_PORT_MAC				(RTK_EXT_0_MAC9)	/* ExtIf0 -> GMAC2 (9) */
- #endif
+#if defined(CONFIG_RTL8367_ASIC_RB)
+ #define LAN_PORT_CPU				(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
+ #define SEC_PORT_MAC				(RTK_EXT_2_MAC)		/* ExtIf2 -> RG2 (7) */
+ #define LAN_EXT_ID				(EXT_PORT_1)
+ #define WAN_EXT_ID				(EXT_PORT_2)
+#elif defined(CONFIG_RTL8367_ASIC_MB) || defined(CONFIG_RTL8367_ASIC_MVB) || defined(CONFIG_RTL8368_ASIC_MB)
+ #define LAN_PORT_CPU				(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
+ #define SEC_PORT_MAC				(RTK_EXT_0_MAC)		/* ExtIf0 -> RG0 (5) */
+ #define LAN_EXT_ID				(EXT_PORT_1)
+ #define WAN_EXT_ID				(EXT_PORT_0)
+#elif defined(CONFIG_RTL8367_ASIC_M) || defined(CONFIG_RTL8370_ASIC_M)
+ #define LAN_PORT_CPU				(RTK_EXT_1_MAC8)	/* ExtIf1 -> GMAC1 (8) */
+ #define SEC_PORT_MAC				(RTK_EXT_0_MAC9)	/* ExtIf0 -> GMAC2 (9) */
+#endif
+#endif
+
+/* single Ext port */
+#if defined(CONFIG_RTL8365_ASIC_MB)
+ #define LAN_PORT_CPU				(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
+ #define LAN_EXT_ID				(EXT_PORT_1)
+#elif defined(CONFIG_RTL8367_ASIC_RVB)
+ #define LAN_PORT_CPU				(RTK_EXT_0_MAC)		/* ExtIf1 -> RG0 (5) */
+ #define LAN_EXT_ID				(EXT_PORT_1)
+#elif defined(CONFIG_RTL8367_ASIC_R)
+ #define LAN_PORT_CPU				(RTK_EXT_0_MAC9)	/* ExtIf1 -> GMAC2 (9) */
 #endif
 
 #if defined(RTL8367_SINGLE_EXTIF)
@@ -111,6 +101,57 @@
  #define WAN_PORT_CPU				SEC_PORT_MAC
  #define MIN_EXT_VLAN_VID			2
 #endif
+
+#define WAN_PORT_X				CONFIG_RTL8367_PORT_WAN			/* 8P8C WAN  */
+#define LAN_PORT_1				CONFIG_RTL8367_PORT_LAN1		/* 8P8C LAN1 */
+#define LAN_PORT_2				CONFIG_RTL8367_PORT_LAN2		/* 8P8C LAN2 */
+#define LAN_PORT_3				CONFIG_RTL8367_PORT_LAN3		/* 8P8C LAN3 */
+#define LAN_PORT_4				CONFIG_RTL8367_PORT_LAN4		/* 8P8C LAN4 */
+
+#define MASK_WAN_PORT_X				(1u << WAN_PORT_X)
+#define MASK_WAN_PORT_CPU			(1u << WAN_PORT_CPU)
+#define MASK_LAN_PORT_CPU			(1u << LAN_PORT_CPU)
+#define MASK_LAN_PORT_1				(1u << LAN_PORT_1)
+#define MASK_LAN_PORT_2				(1u << LAN_PORT_2)
+#define MASK_LAN_PORT_3				(1u << LAN_PORT_3)
+#define MASK_LAN_PORT_4				(1u << LAN_PORT_4)
+
+#if defined(CONFIG_RTL8370_ASIC_M)
+ #define LAN_PORT_5				CONFIG_RTL8367_PORT_LAN5
+ #define LAN_PORT_6				CONFIG_RTL8367_PORT_LAN6
+ #define LAN_PORT_7				CONFIG_RTL8367_PORT_LAN7
+ #define MASK_LAN_PORT_5			(1u << LAN_PORT_5)
+ #define MASK_LAN_PORT_6			(1u << LAN_PORT_6)
+ #define MASK_LAN_PORT_7			(1u << LAN_PORT_7)
+#else
+ #define MASK_LAN_PORT_5			0
+ #define MASK_LAN_PORT_6			0
+ #define MASK_LAN_PORT_7			0
+#endif
+
+#if defined(CONFIG_RTL8367_ASIC_RB)
+ #define ASIC_NAME "RTL8367RB"
+#elif defined(CONFIG_RTL8367_ASIC_RVB)
+ #define ASIC_NAME "RTL8367R-VB"
+#elif defined(CONFIG_RTL8367_ASIC_MVB)
+ #define ASIC_NAME "RTL8367M-VB"
+#elif defined(CONFIG_RTL8367_ASIC_MB)
+ #define ASIC_NAME "RTL8367MB"
+#elif defined(CONFIG_RTL8365_ASIC_MB)
+ #define ASIC_NAME "RTL8365MB"
+#elif defined(CONFIG_RTL8368_ASIC_MB)
+ #define ASIC_NAME "RTL8368MB"
+#elif defined(CONFIG_RTL8367_ASIC_R)
+ #define ASIC_NAME "RTL8367R"
+#elif defined(CONFIG_RTL8367_ASIC_M)
+ #define ASIC_NAME "RTL8367M"
+#elif defined(CONFIG_RTL8370_ASIC_M)
+ #define ASIC_NAME "RTL8370M"
+#else
+ #define ASIC_NAME "RTL8367"
+#endif
+
+////////////////////////////////////////////////////////////////////////////////////
 
 #define RTL8367_DEFAULT_JUMBO_FRAMES		1
 #define RTL8367_DEFAULT_GREEN_ETHERNET		1
@@ -147,7 +188,7 @@ typedef struct
 
 u32 get_phy_ports_mask_lan(u32 include_cpu);
 u32 get_phy_ports_mask_wan(u32 include_cpu);
-u32 get_ports_mask_from_user(u32 user_port_mask);
+u32 get_ports_mask_from_uapi(u32 user_port_mask);
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
 void igmp_sn_init(void);

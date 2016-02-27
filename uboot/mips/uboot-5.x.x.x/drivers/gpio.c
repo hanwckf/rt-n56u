@@ -182,7 +182,7 @@ const static struct gpio_reg_offset_s {
 #endif
 };
 
-static int is_valid_gpio_nr(unsigned short gpio_nr)
+static inline int is_valid_gpio_nr(unsigned short gpio_nr)
 {
 #if defined(RT3052_MP2)
 	return (gpio_nr > 51)? 0:1;
@@ -483,7 +483,7 @@ int mtk_get_gpio_pin(unsigned short gpio_nr)
 {
 	int shift;
 	unsigned int reg;
-	unsigned long val = 0;
+	unsigned int val = 0;
 
 	if (!is_valid_gpio_nr(gpio_nr))
 		return -1;
@@ -491,7 +491,8 @@ int mtk_get_gpio_pin(unsigned short gpio_nr)
 	reg = get_gpio_reg_addr(gpio_nr, GPIO_DATA);
 	shift = get_gpio_reg_bit_shift(gpio_nr);
 
-	val = !!(ra_inl(reg) & (1U << shift));
+	val = ra_inl(reg);
+	val = (val >> shift) & 1U;
 
 	return val;
 }
@@ -514,13 +515,10 @@ int mtk_set_gpio_pin(unsigned short gpio_nr, unsigned int val)
 	if (!is_valid_gpio_nr(gpio_nr))
 		return -1;
 
-	reg = get_gpio_reg_addr(gpio_nr, GPIO_DATA);
+	reg = get_gpio_reg_addr(gpio_nr, (val) ? GPIO_SET : GPIO_RESET);
 	shift = get_gpio_reg_bit_shift(gpio_nr);
 
-	if (!val)
-		ra_and(reg, ~(1U << shift));
-	else
-		ra_or(reg, 1U << shift);
+	ra_outl(reg, (1U << shift));
 
 	return 0;
 }

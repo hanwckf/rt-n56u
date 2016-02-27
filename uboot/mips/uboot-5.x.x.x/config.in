@@ -322,20 +322,37 @@ fi
 if [ "$GE_RGMII_FORCE_RTL8367" = "y" ]; then
     define_bool  MAC_TO_RTL8367_MODE y
 
-    choice 'ASIC type' "RTL8367M	SWITCH_ASIC_RTL8367M \
-			RTL8367R	SWITCH_ASIC_RTL8367R \
+    choice 'ASIC type' "RTL8367R	SWITCH_ASIC_RTL8367R \
+			RTL8367M	SWITCH_ASIC_RTL8367M \
+			RTL8370M	SWITCH_ASIC_RTL8370M \
 			RTL8367R-VB	SWITCH_ASIC_RTL8367RVB \
-			RTL8367RB	SWITCH_ASIC_RTL8367RB
+			RTL8367RB	SWITCH_ASIC_RTL8367RB \
+			RTL8367M-VB	SWITCH_ASIC_RTL8367MVB \
+			RTL8367MB	SWITCH_ASIC_RTL8367MB \
+			RTL8365MB	SWITCH_ASIC_RTL8365MB \
+			RTL8368MB	SWITCH_ASIC_RTL8368MB
 			"
 
     choice 'Control IF' "SMI		SWITCH_CTRLIF_SMI \
 			 MDIO		SWITCH_CTRLIF_MDIO
 			"
 
+if [ "$SWITCH_CTRLIF_SMI" = "y" ]; then
+    int  'SMI SDA GPIO Pin'		SWITCH_SMI_GPIO_SDA	1
+    int  'SMI SCK GPIO Pin'		SWITCH_SMI_GPIO_SCK	2
+fi
+
     choice 'CPU Port' "Ext0		SWITCH_CPU_PORT_EXT0 \
 			Ext1		SWITCH_CPU_PORT_EXT1 \
 			Ext2		SWITCH_CPU_PORT_EXT2
 			"
+
+    int  'RGMII delay TX (0..1)'	SWITCH_RGMII_DELAY_TX	1
+    int  'RGMII delay RX (0..7)'	SWITCH_RGMII_DELAY_RX	0
+
+    bool  'LED group 0'			SWITCH_LED_GROUP0
+    bool  'LED group 1'			SWITCH_LED_GROUP1
+    bool  'LED group 2'			SWITCH_LED_GROUP2
 fi
 
 if [ "$GE_RGMII_FORCE_1000" = "y" ]; then
@@ -871,6 +888,7 @@ define_bool MT7620_MP y
 choice 'Port 5 Connect to' "None		P5_MAC_TO_NONE_MODE \
 			    Giga_Phy(RGMII)	P5_MAC_TO_PHY_MODE \
 	       	      	    Giga_SW/iNIC(RGMII)	P5_RGMII_TO_MAC_MODE \
+			    Giga_SW(RTL8367)	P5_RGMII_FORCE_RTL8367 \
 		            External_CPU(MII_RvMII) P5_MII_TO_MAC_MODE \
 		            External_CPU(RvMII_MII) P5_RMII_TO_MAC_MODE
 		      	   " None
@@ -886,12 +904,49 @@ fi
 choice 'Port 4 Connect to' "None		P4_MAC_TO_NONE_MODE \
 			    Giga_Phy(RGMII)	P4_MAC_TO_PHY_MODE \
 	       	      	    Giga_SW/iNIC(RGMII)	P4_RGMII_TO_MAC_MODE \
+			    Giga_SW(RTL8367)	P4_RGMII_FORCE_RTL8367 \
 		            External_CPU(MII_RvMII) P4_MII_TO_MAC_MODE \
 		            External_CPU(RvMII_MII) P4_RMII_TO_MAC_MODE
 		      	   " None
                        
 if [ "$P4_MAC_TO_PHY_MODE" = "y" ]; then
    hex "GigaPHY address for Auto Polling" MAC_TO_GIGAPHY_MODE_ADDR2 0x4
+fi
+
+if [ "$P5_RGMII_FORCE_RTL8367" = "y" -o "$P4_RGMII_FORCE_RTL8367" = "y" ]; then
+    define_bool  MAC_TO_RTL8367_MODE y
+
+    choice 'ASIC type' "RTL8367R	SWITCH_ASIC_RTL8367R \
+			RTL8367M	SWITCH_ASIC_RTL8367M \
+			RTL8370M	SWITCH_ASIC_RTL8370M \
+			RTL8367R-VB	SWITCH_ASIC_RTL8367RVB \
+			RTL8367RB	SWITCH_ASIC_RTL8367RB \
+			RTL8367M-VB	SWITCH_ASIC_RTL8367MVB \
+			RTL8367MB	SWITCH_ASIC_RTL8367MB \
+			RTL8365MB	SWITCH_ASIC_RTL8365MB \
+			RTL8368MB	SWITCH_ASIC_RTL8368MB
+			"
+
+    choice 'Control IF' "SMI		SWITCH_CTRLIF_SMI \
+			 MDIO		SWITCH_CTRLIF_MDIO
+			"
+
+if [ "$SWITCH_CTRLIF_SMI" = "y" ]; then
+    int  'SMI SDA GPIO Pin'		SWITCH_SMI_GPIO_SDA	1
+    int  'SMI SCK GPIO Pin'		SWITCH_SMI_GPIO_SCK	2
+fi
+
+    choice 'CPU Port' "Ext0		SWITCH_CPU_PORT_EXT0 \
+			Ext1		SWITCH_CPU_PORT_EXT1 \
+			Ext2		SWITCH_CPU_PORT_EXT2
+			"
+
+    int  'RGMII delay TX (0..1)'	SWITCH_RGMII_DELAY_TX	1
+    int  'RGMII delay RX (0..7)'	SWITCH_RGMII_DELAY_RX	0
+
+    bool  'LED group 0'			SWITCH_LED_GROUP0
+    bool  'LED group 1'			SWITCH_LED_GROUP1
+    bool  'LED group 2'			SWITCH_LED_GROUP2
 fi
 
 comment ""
@@ -1150,6 +1205,7 @@ choice 'GE2 connected to' " GE_MII_FORCE_100		GE_MII_FORCE_100 \
 			    GE_RVMII_FORCE_100		GE_RVMII_FORCE_100 \
   			    GE_MII_AN			GE_MII_AN \
 			    GE_RGMII_FORCE_1000		GE_RGMII_FORCE_1000 \
+			    GE_RGMII_FORCE_RTL8367	GE_RGMII_FORCE_RTL8367 \
 			    GE_RGMII_AN			GE_RGMII_AN \
 			    GE_RGMII_INTERNAL_P0_AN	GE_RGMII_INTERNAL_P0_AN \
 			    GE_RGMII_INTERNAL_P4_AN	GE_RGMII_INTERNAL_P4_AN 
@@ -1171,7 +1227,7 @@ if [ "$GE_MII_AN" = "y" -a "$MT7621_USE_GE2" = "y" ]; then
 fi
 
 if [ "$GE_RGMII_FORCE_1000" = "y" ]; then
-    define_bool  MAC_TO_MT7530_MODE y
+    define_bool MAC_TO_MT7530_MODE y
     define_bool GPIOx_RESET_MODE y
 fi
 
@@ -1192,6 +1248,42 @@ fi
 if [ "$GE_RGMII_INTERNAL_P4_AN" = "y" -a "$MT7621_USE_GE2" = "y" ]; then
     define_bool  MAC_TO_GIGAPHY_MODE y
     define_hex   MAC_TO_GIGAPHY_MODE_ADDR 0x4
+fi
+
+if [ "$GE_RGMII_FORCE_RTL8367" = "y" ]; then
+    define_bool  MAC_TO_RTL8367_MODE y
+
+    choice 'ASIC type' "RTL8367R	SWITCH_ASIC_RTL8367R \
+			RTL8367M	SWITCH_ASIC_RTL8367M \
+			RTL8370M	SWITCH_ASIC_RTL8370M \
+			RTL8367R-VB	SWITCH_ASIC_RTL8367RVB \
+			RTL8367RB	SWITCH_ASIC_RTL8367RB \
+			RTL8367M-VB	SWITCH_ASIC_RTL8367MVB \
+			RTL8367MB	SWITCH_ASIC_RTL8367MB \
+			RTL8365MB	SWITCH_ASIC_RTL8365MB \
+			RTL8368MB	SWITCH_ASIC_RTL8368MB
+			"
+
+    choice 'Control IF' "SMI		SWITCH_CTRLIF_SMI \
+			 MDIO		SWITCH_CTRLIF_MDIO
+			"
+
+if [ "$SWITCH_CTRLIF_SMI" = "y" ]; then
+    int  'SMI SDA GPIO Pin'		SWITCH_SMI_GPIO_SDA	3
+    int  'SMI SCK GPIO Pin'		SWITCH_SMI_GPIO_SCK	4
+fi
+
+    choice 'CPU Port' "Ext0		SWITCH_CPU_PORT_EXT0 \
+			Ext1		SWITCH_CPU_PORT_EXT1 \
+			Ext2		SWITCH_CPU_PORT_EXT2
+			"
+
+    int  'RGMII delay TX (0..1)'	SWITCH_RGMII_DELAY_TX	1
+    int  'RGMII delay RX (0..7)'	SWITCH_RGMII_DELAY_RX	0
+
+    bool  'LED group 0'			SWITCH_LED_GROUP0
+    bool  'LED group 1'			SWITCH_LED_GROUP1
+    bool  'LED group 2'			SWITCH_LED_GROUP2
 fi
 
 comment ""

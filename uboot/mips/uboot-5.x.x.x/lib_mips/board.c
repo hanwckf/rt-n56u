@@ -87,7 +87,6 @@ extern void rt3883_gsw_init(void);
 extern void rt305x_esw_init(void);
 #endif
 extern void LANWANPartition(void);
-extern int rtl8367_gsw_init_pre(void);
 
 extern struct eth_device* 	rt2880_pdev;
 
@@ -1034,7 +1033,7 @@ int tftp_config(int type, char *argv[])
 	return 0;
 }
 
-void trigger_hw_reset(void)
+static inline void trigger_hw_reset(void)
 {
 #ifdef GPIO14_RESET_MODE
         //set GPIO14 as output to trigger hw reset circuit
@@ -1519,6 +1518,7 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 	int i;
 	int timer1= CONFIG_BOOTDELAY;
 	unsigned char confirm=0;
+	int is_soft_reset=0;
 	int my_tmp;
 	char addr_str[16];
 #if defined (CFG_ENV_IS_IN_FLASH)
@@ -1530,7 +1530,7 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 #else
 	char *uboot_file = "uboot.bin";
 #endif
-
+	u32 reg;
 #if defined (RT2880_FPGA_BOARD) || defined (RT2880_ASIC_BOARD)
 	u32 value,kk;
 
@@ -1553,15 +1553,14 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 	rw_rf_reg(0, 29, &i);
 
 	/* print SSC for confirmation */ /* TODO: remove these in formanl release*/
-	u32 value = RALINK_REG(0xb0000054);
-	value = value >> 4;
-	if(value & 0x00000008){
-		unsigned long swing = ((value & 0x00000007) + 1) * 1250;
-		printf("SSC enabled. swing=%d, upperbound=%d\n", swing, (value >> 4) & 0x3);
+	reg = RALINK_REG(0xb0000054);
+	reg >>= 4;
+	if(reg & 0x00000008){
+		unsigned long swing = ((reg & 0x00000007) + 1) * 1250;
+		printf("SSC enabled. swing=%d, upperbound=%d\n", swing, (reg >> 4) & 0x3);
 	}else{
 		printf("SSC disabled.\n");
 	}
-
 #endif
 
 #if defined(RT3052_ASIC_BOARD)
@@ -1584,7 +1583,7 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 
 #if defined(MT7628_ASIC_BOARD)	/* Enable WLED share pin */
 	RALINK_REG(RALINK_SYSCTL_BASE+0x3C)|= (1<<8);	
-#endif	
+#endif
 #if defined(RT3052_ASIC_BOARD) || defined(RT3352_ASIC_BOARD) || defined(RT5350_ASIC_BOARD)
 	//turn on all Ethernet LEDs around 0.5sec.
 #if 0
@@ -1619,27 +1618,29 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 	disable_pcie();
 #endif
 
-	u32 reg = RALINK_REG(RT2880_RSTSTAT_REG);
+	reg = RALINK_REG(RT2880_RSTSTAT_REG);
 	if(reg & RT2880_WDRST ){
 		printf("***********************\n");
 		printf("Watchdog Reset Occurred\n");
 		printf("***********************\n");
 		RALINK_REG(RT2880_RSTSTAT_REG)|=RT2880_WDRST;
 		RALINK_REG(RT2880_RSTSTAT_REG)&=~RT2880_WDRST;
-		trigger_hw_reset();
 	}else if(reg & RT2880_SWSYSRST){
 		printf("******************************\n");
 		printf("Software System Reset Occurred\n");
 		printf("******************************\n");
 		RALINK_REG(RT2880_RSTSTAT_REG)|=RT2880_SWSYSRST;
 		RALINK_REG(RT2880_RSTSTAT_REG)&=~RT2880_SWSYSRST;
-		trigger_hw_reset();
 	}else if (reg & RT2880_SWCPURST){
 		printf("***************************\n");
 		printf("Software CPU Reset Occurred\n");
 		printf("***************************\n");
 		RALINK_REG(RT2880_RSTSTAT_REG)|=RT2880_SWCPURST;
 		RALINK_REG(RT2880_RSTSTAT_REG)&=~RT2880_SWCPURST;
+	}
+
+	if(reg & (RT2880_WDRST|RT2880_SWSYSRST|RT2880_SWCPURST)){
+		is_soft_reset=1;
 		trigger_hw_reset();
 	}
 
@@ -2126,6 +2127,8 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 	debug(" estimate memory size = %d Mbytes\n", gd->ram_size/1024/1024 );
 #endif
 
+	LED_HIDE_ALL();
+
 #if defined (RT3052_ASIC_BOARD) || defined (RT3052_FPGA_BOARD)  || \
     defined (RT3352_ASIC_BOARD) || defined (RT3352_FPGA_BOARD)  || \
     defined (RT5350_ASIC_BOARD) || defined (RT5350_FPGA_BOARD)  || \
@@ -2140,26 +2143,17 @@ __attribute__((nomips16)) void board_init_r (gd_t *id, ulong dest_addr)
 #endif
 	rt6855A_gsw_init();
 #elif defined (MT7621_ASIC_BOARD) || defined (MT7621_FPGA_BOARD)
-#if defined (MAC_TO_MT7530_MODE) || defined (GE_RGMII_INTERNAL_P0_AN) || defined (GE_RGMII_INTERNAL_P4_AN)
-	//enable MDIO
-	RALINK_REG(0xbe000060) &= ~(3 << 12); //set MDIO to Normal mode
-	RALINK_REG(0xbe000060) &= ~(1 << 14); //set RGMII1 to Normal mode
-#if defined (GE_RGMII_INTERNAL_P0_AN) || defined (GE_RGMII_INTERNAL_P4_AN)
-	RALINK_REG(0xbe000060) &= ~(1 << 15); //set RGMII2 to Normal mode
-#endif
 	setup_internal_gsw();
-#endif
 #elif defined (RT3883_ASIC_BOARD) && defined (MAC_TO_MT7530_MODE)
 	rt3883_gsw_init();
 #endif
 
 #if defined (MAC_TO_RTL8367_MODE)
-	rtl8367_gsw_init_pre();
+	extern int rtl8367_gsw_init_pre(int sw_reset);
+	rtl8367_gsw_init_pre(is_soft_reset);
 #else
 	LANWANPartition();
 #endif
-
-	LED_HIDE_ALL();
 
 #ifdef DUAL_IMAGE_SUPPORT
 	check_image_validation();
@@ -2576,8 +2570,6 @@ void adjust_rf_r17(void)
 	r17 = *(volatile u32 *)(CFG_FACTORY_ADDR+r17_offs);
 #endif
 	r17 &= 0xff;
-
-//	printf("EE offset 0x%02X is 0x%02X\n", r17_offs, r17);
 
 	if ((r17 == 0) || (r17 == 0xff)){
 		r17 = 0x26;

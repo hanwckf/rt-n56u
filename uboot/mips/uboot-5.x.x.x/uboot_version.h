@@ -6,4 +6,4 @@
  * y = minor change		(bug fix release)
  * z = internal change		(internal debuging)
  */
-#define RALINK_LOCAL_VERSION    "5.0.0.4"
+#define RALINK_LOCAL_VERSION    "5.0.0.5"

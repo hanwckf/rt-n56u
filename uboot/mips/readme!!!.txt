@@ -1,8 +1,17 @@
                 Ralink/MediaTek U-Boot for MIPS SoC
-          RT3052/RT3352/RT3883/RT5350/MT7620/MT7621/MT7628
+        RT3052/RT3352/RT3883/RT5350/MT7620/MT7621/MT7628/MT7688
                   Based on MediaTek SDK 5.0.0.0
 
                           LIST OF CHANGES
+
+5.0.0.5:
+----------------------------------------------------------
+- Updated Realtek RTL8370 API (RTL8367R/RTL8367M/RTL8370M).
+- Added support RTL8367/RTL8370 GSW with MT7620 & MT7621 SoC.
+- Enhanced RTL8367/RTL8370 configurations.
+- Enhanced external GPHY support.
+- Fixed redudant re-init of RTL8367/RTL8370 on soft-reboot.
+
 
 5.0.0.4:
 ----------------------------------------------------------
@@ -122,4 +131,4 @@ NOTE:
 
 -
 Padavan
-12/16/2015
+02/28/2016

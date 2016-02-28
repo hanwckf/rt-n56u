@@ -272,7 +272,7 @@ static void asic_clear_mac_table(void)
 	rtl8367b_setAsicLutForceFlush(RTL8367B_PORTMASK);
 #endif
 #if defined(CONFIG_P5_RGMII_TO_MAC_MODE) && defined(CONFIG_P4_RGMII_TO_MAC_MODE)
-	mt7620_esw_mac_table_clear();
+	mt7620_esw_mac_table_clear(0);
 #endif
 #if defined(MCM_WAN_PORT_X)
 	mcm_mac_table_clear();

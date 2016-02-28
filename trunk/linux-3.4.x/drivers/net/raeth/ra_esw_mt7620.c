@@ -308,7 +308,7 @@ void mt7620_esw_init(void)
 	mt7620_esw_vlan_set_idx(1, 2, 0xd0);			// VID=2 members (P7|P6|P4)
 	mt7620_esw_pvid_set(5, 1, 0);				// P5 PVID=1
 	mt7620_esw_pvid_set(4, 2, 0);				// P4 PVID=2
-	mt7620_esw_mac_table_clear();
+	mt7620_esw_mac_table_clear(0);
 #endif
 #endif
 

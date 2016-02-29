@@ -423,11 +423,10 @@ static void set_phy_for_ssc(void)
 	if (reg <= 5 && reg >= 3) {
 		/* 40MHz Xtal */
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x490),  6, 2, 0x01);	// RG_PE1_H_PLL_PREDIV             //Pre-divider ratio (for host mode)
-#ifdef PCIE_PHY_SSC
-		/* SSC option tune for CH14 RX de-sense */
+		
+		/* SSC option tune from -5000ppm to -1000ppm */
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x4a8),  0,12, 0x1a);	// RG_LC_DDS_SSC_DELTA
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x4a8), 16,12, 0x1a);	// RG_LC_DDS_SSC_DELTA1
-#endif
 	} else {
 		/* 25MHz or 20MHz Xtal */
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x490),  6, 2, 0x00);	// RG_PE1_H_PLL_PREDIV             //Pre-divider ratio (for host mode)
@@ -438,18 +437,16 @@ static void set_phy_for_ssc(void)
 			set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x4a4),  0,16, 0x18d);	// RG_PE1_H_LCDDS_SSC_PRD          //DDS SSC dither period control
 			set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x4a8),  0,12, 0x4a);	// RG_PE1_H_LCDDS_SSC_DELTA        //DDS SSC dither amplitude control
 			set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x4a8), 16,12, 0x4a);	// RG_PE1_H_LCDDS_SSC_DELTA1       //DDS SSC dither amplitude control for initial
-#ifdef PCIE_PHY_SSC
-			/* SSC option tune for CH14 RX de-sense */
+			
+			/* SSC option tune from -5000ppm to -1000ppm */
 			set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x4a8),  0,12, 0x11);	// RG_LC_DDS_SSC_DELTA
 			set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x4a8), 16,12, 0x11);	// RG_LC_DDS_SSC_DELTA1
-#endif
 		} else {
 			/* 20MHz Xtal */
-#ifdef PCIE_PHY_SSC
-			/* SSC option tune for CH14 RX de-sense */
+			
+			/* SSC option tune from -5000ppm to -1000ppm */
 			set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x4a8),  0,12, 0x1a);	// RG_LC_DDS_SSC_DELTA
 			set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x4a8), 16,12, 0x1a);	// RG_LC_DDS_SSC_DELTA1
-#endif
 		}
 	}
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x4a0),  5, 1, 0x01);	// RG_PE1_LCDDS_CLK_PH_INV         //DDS clock inversion
@@ -494,11 +491,10 @@ static void set_phy_for_ssc(void)
 	if (reg <= 5 && reg >= 3) {
 		/* 40MHz Xtal */
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x490),  6, 2, 0x01);	// RG_PE1_H_PLL_PREDIV             //Pre-divider ratio (for host mode)
-#ifdef PCIE_PHY_SSC
-		/* SSC option tune for CH14 RX de-sense */
+		
+		/* SSC option tune from -5000ppm to -1000ppm */
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x4a8),  0,12, 0x1a);	// RG_LC_DDS_SSC_DELTA
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x4a8), 16,12, 0x1a);	// RG_LC_DDS_SSC_DELTA1
-#endif
 	} else {
 		/* 25MHz or 20MHz Xtal */
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x490),  6, 2, 0x00);	// RG_PE1_H_PLL_PREDIV             //Pre-divider ratio (for host mode)
@@ -509,18 +505,16 @@ static void set_phy_for_ssc(void)
 			set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x4a4),  0,16, 0x18d);	// RG_PE1_H_LCDDS_SSC_PRD          //DDS SSC dither period control
 			set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x4a8),  0,12, 0x4a);	// RG_PE1_H_LCDDS_SSC_DELTA        //DDS SSC dither amplitude control
 			set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x4a8), 16,12, 0x4a);	// RG_PE1_H_LCDDS_SSC_DELTA1       //DDS SSC dither amplitude control for initial
-#ifdef PCIE_PHY_SSC
-			 /* SSC option tune for CH14 RX de-sense */
+			
+			 /* SSC option tune from -5000ppm to -1000ppm */
 			set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x4a8),  0,12, 0x11);	// RG_LC_DDS_SSC_DELTA
 			set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x4a8), 16,12, 0x11);	// RG_LC_DDS_SSC_DELTA1
-#endif
 		} else {
 			/* 20MHz Xtal */
-#ifdef PCIE_PHY_SSC
-			/* SSC option tune for CH14 RX de-sense */
+			
+			/* SSC option tune from -5000ppm to -1000ppm */
 			set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x4a8),  0,12, 0x1a);	// RG_LC_DDS_SSC_DELTA
 			set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x4a8), 16,12, 0x1a);	// RG_LC_DDS_SSC_DELTA1
-#endif
 		}
 	}
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x4a0),  5, 1, 0x01);	// RG_PE1_LCDDS_CLK_PH_INV         //DDS clock inversion
@@ -560,12 +554,14 @@ void pcie_phy_config(void)
 	u32 reg = (*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x10));
 
 	reg = (reg >> 6) & 0x1;
+
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x400), 8, 1, 0x01);		// [rg_pe1_frc_h_xtal_type]: Enable Crystal type force mode
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x400), 9, 2, 0x00);		// [rg_pe1_h_xtal_type]: Force Crystal type = 20MHz 
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x000), 4, 1, 0x01);		// [rg_pe1_frc_phy_en]: Enable Port 0 force mode
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x000), 5, 1, 0x00);		// [rg_pe1_phy_en]: Port 0 disable
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4AC),16, 3, 0x03);		// [RG_PE1_H_PLL_BR]
 	if (reg == 1) {
+		/* 40MHz Xtal */
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4BC),24, 8, 0x7D);	// [RG_PE1_H_PLL_FBKDIV]
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x490),12, 4, 0x08);	// [RG_PE1_H_PLL_IR]
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x490), 6, 2, 0x01);	// [RG_PE1_H_PLL_PREDIV]: Pre-divider ratio (for host mode)
@@ -574,6 +570,7 @@ void pcie_phy_config(void)
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4A8),16,16, 0x74);	// [RG_PE1_H_LCDDS_SSC_DELTA1]: For SSC=4500ppm
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4A8), 0,16, 0x74);	// [RG_PE1_H_LCDDS_SSC_DELTA]: For SSC=4500ppm
 	} else {
+		/* 25MHz Xtal */
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x4BC),24, 8, 0x64);	// [RG_PE1_H_PLL_FBKDIV]
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x490),12, 4, 0x0A);	// [RG_PE1_H_PLL_IR]
 		set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET + 0x490), 6, 2, 0x00);	// [RG_PE1_H_PLL_PREDIV]: Pre-divider ratio (for host mode)

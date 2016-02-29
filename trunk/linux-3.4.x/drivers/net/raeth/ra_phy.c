@@ -133,25 +133,33 @@ void enable_autopoll_phy(int unused)
 {
 	u32 regValue, addr_s, addr_e;
 
-#if defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR) && defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2)
-#if (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2 > CONFIG_MAC_TO_GIGAPHY_MODE_ADDR)
+
+#if defined (CONFIG_RALINK_MT7621)
+	// PHY_ST_ADDR  = always GE1->EPHY address
+	// PHY_END_ADDR = always GE2->EPHY address
+#if defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2) && defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR)
 	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
 	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
-#else
-	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
-	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
-#endif
 #elif defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2)
-#if defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4)
-	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
-	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2+1;
-#else
-	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2-1;
+	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2-1;	// not used
 	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
-#endif
 #else
-	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR-1;
+	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
+	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR+1;	// not used
+#endif
+#elif defined (CONFIG_RALINK_MT7620)
+	// PHY_ST_ADDR  = always P4->EPHY address
+	// PHY_END_ADDR = always P5->EPHY address
+#if defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2) && defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR)
+	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
 	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
+#elif defined (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2)
+	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2;
+	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2+1;	// not used
+#else
+	addr_s = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR-1;	// not used
+	addr_e = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;
+#endif
 #endif
 
 	regValue = sysRegRead(REG_MDIO_PHY_POLLING);

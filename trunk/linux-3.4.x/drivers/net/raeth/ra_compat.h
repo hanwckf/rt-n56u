@@ -37,6 +37,10 @@ static inline dma_addr_t skb_frag_dma_map(struct device *dev,
 }
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0)
+typedef u32 netdev_features_t;
+#endif
+
 #if defined (CONFIG_MIPS)
 #define phys_to_bus(a)			((a) & 0x1FFFFFFF)
 #else

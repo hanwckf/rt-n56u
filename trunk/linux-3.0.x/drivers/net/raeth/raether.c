@@ -202,13 +202,13 @@ fill_dev_features(struct net_device *dev)
 	dev->vlan_features = dev->features & ~(NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX);
 }
 
-static void
-calc_dev_features(struct net_device *dev)
+static netdev_features_t
+ei_fix_features(struct net_device *dev, netdev_features_t features)
 {
 #if defined (RAETH_SDMA)
 
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
-	dev->features |= NETIF_F_RXCSUM;
+	features |= NETIF_F_RXCSUM;
 #endif
 
 #else /* !RAETH_SDMA */
@@ -216,51 +216,53 @@ calc_dev_features(struct net_device *dev)
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
 #if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
 	if (vlan_double_tag)
-		dev->features &= ~(NETIF_F_HW_VLAN_CTAG_RX);
+		features &= ~(NETIF_F_HW_VLAN_CTAG_RX);
 	else
 #endif
-		dev->features |= NETIF_F_HW_VLAN_CTAG_RX;
+		features |= NETIF_F_HW_VLAN_CTAG_RX;
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
 #if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
 	if (vlan_double_tag)
-		dev->features &= ~(NETIF_F_HW_VLAN_CTAG_TX);
+		features &= ~(NETIF_F_HW_VLAN_CTAG_TX);
 	else
 #endif
-		dev->features |= NETIF_F_HW_VLAN_CTAG_TX;
+		features |= NETIF_F_HW_VLAN_CTAG_TX;
 #endif
 
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
-	dev->features |= NETIF_F_RXCSUM;
+	features |= NETIF_F_RXCSUM;
 	if (hw_offload_csg)
-		dev->features |= NETIF_F_IP_CSUM;
+		features |= NETIF_F_IP_CSUM;
 	else
-		dev->features &= ~NETIF_F_IP_CSUM;
+		features &= ~NETIF_F_IP_CSUM;
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	if (hw_offload_gso && hw_offload_csg) {
-		dev->features |= NETIF_F_SG;
+		features |= NETIF_F_SG;
 #if defined (CONFIG_RAETH_TSO)
 		if (hw_offload_tso) {
-			dev->features |= NETIF_F_TSO;
+			features |= NETIF_F_TSO;
 #if defined (CONFIG_RAETH_TSOV6)
-			dev->features |= NETIF_F_TSO6;
-			dev->features |= NETIF_F_IPV6_CSUM;
+			features |= NETIF_F_TSO6;
+			features |= NETIF_F_IPV6_CSUM;
 #endif
 		} else {
-			dev->features &= ~(NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
+			features &= ~(NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
 		}
 #endif /* CONFIG_RAETH_TSO */
 	} else {
-		dev->features &= ~(NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
+		features &= ~(NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
 	}
 #endif /* CONFIG_RAETH_SG_DMA_TX */
 
 #else /* !CONFIG_RAETH_CHECKSUM_OFFLOAD */
-	dev->features &= ~(NETIF_F_IP_CSUM | NETIF_F_RXCSUM);
+	features &= ~(NETIF_F_IP_CSUM | NETIF_F_RXCSUM);
 #endif
 
 #endif /* RAETH_SDMA */
+
+	return features;
 }
 
 static void
@@ -794,7 +796,7 @@ VirtualIF_get_bytes(port_bytes_t *pb)
 static int
 VirtualIF_open(struct net_device *dev)
 {
-	calc_dev_features(dev);
+	netdev_update_features(dev);
 
 	fe_gdm2_set_mac(dev->dev_addr);
 
@@ -839,6 +841,7 @@ static const struct net_device_ops VirtualIF_netdev_ops = {
 	.ndo_get_stats64	= VirtualIF_get_stats64,
 	.ndo_do_ioctl		= ei_ioctl,
 	.ndo_change_mtu		= ei_change_mtu,
+	.ndo_fix_features	= ei_fix_features,
 	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_validate_addr	= eth_validate_addr,
 };
@@ -1041,7 +1044,7 @@ ei_open(struct net_device *dev)
 
 	ei_local = netdev_priv(dev);
 
-	calc_dev_features(dev);
+	netdev_update_features(dev);
 	show_dev_features(dev);
 #if !defined (RAETH_HW_PADPKT)
 	calc_dev_min_pkt_len(dev, ei_local);
@@ -1195,6 +1198,7 @@ static const struct net_device_ops ei_netdev_ops = {
 	.ndo_get_stats64	= ei_get_stats64,
 	.ndo_do_ioctl		= ei_ioctl,
 	.ndo_change_mtu		= ei_change_mtu,
+	.ndo_fix_features	= ei_fix_features,
 	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_validate_addr	= eth_validate_addr,
 };

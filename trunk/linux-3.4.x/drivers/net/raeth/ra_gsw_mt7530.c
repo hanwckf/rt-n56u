@@ -13,6 +13,7 @@ extern u32 ralink_asic_rev_id;
 
 static u8 mt7530_xtal_fsel = 0;
 static u8 mt7530_standalone = 0;
+static u8 mt7530_eee_enabled = 0;
 static u8 mt7530_phy_patched[5] = {0};
 
 #if defined (CONFIG_RALINK_MT7620)
@@ -151,10 +152,30 @@ static void mt7530_gsw_set_pll(void)
 #endif
 }
 
+static void mt7530_gsw_auto_downshift_phy(u32 port_id, int is_ads_enabled)
+{
+	u32 regValue = 0x3a14;	// 0x3a14 is default
+
+#if defined (MT7530_P5_MODE_GPHY_P4)
+	if (port_id == 4)
+		is_ads_enabled = 1;	// EEE on P4 always off
+#elif defined (MT7530_P5_MODE_GPHY_P0)
+	if (port_id == 0)
+		is_ads_enabled = 1;	// EEE on P0 always off
+#endif
+	/* HW auto downshift control */
+	mii_mgr_write(port_id, 31, 0x1);
+	mii_mgr_read(port_id, 20, &regValue);
+	if (is_ads_enabled)
+		regValue |=  (1<<4);
+	else
+		regValue &= ~(1<<4);
+	mii_mgr_write(port_id, 20, regValue);
+	mii_mgr_write(port_id, 31, 0x0);
+}
+
 static void mt7530_gsw_patch_port_phy(u32 port_id)
 {
-	u32 regValue;
-
 /*
  *	Note 1: forced slave mode is bad idea, this needed poll 'MASTER/SLAVE configuration fault'
  *	        (reg 10, bit 15), when both link partners is forced to slave, link failed.
@@ -178,13 +199,8 @@ static void mt7530_gsw_patch_port_phy(u32 port_id)
 	/* Disable mcc */
 	mii_mgr_write_cl45(port_id, 0x1e, 0x00a6, 0x0300);	// 0x03e0 is default
 
-	/* Disable HW auto downshift */
-	regValue = 0x3a14;
-	mii_mgr_write(port_id, 31, 0x1);
-	mii_mgr_read(port_id, 20, &regValue);	// 0x3a14 is default
-	regValue &= ~(1<<4);
-	mii_mgr_write(port_id, 20, regValue);
-	mii_mgr_write(port_id, 31, 0x0);
+	/* HW auto downshift control */
+	mt7530_gsw_auto_downshift_phy(port_id, (mt7530_eee_enabled) ? 0 : 1);
 
 #if 0
 	/* Increase 10M mode RX gain for long cable */
@@ -211,6 +227,8 @@ void mt7530_gsw_eee_enable(int is_eee_enabled)
 {
 	u32 i;
 
+	mt7530_eee_enabled = (is_eee_enabled) ? 1 : 0;
+
 	for (i = 0; i <= 4; i++) {
 #if defined (MT7530_P5_MODE_GPHY_P4)
 		if (i == 4 && is_eee_enabled) continue;
@@ -219,6 +237,9 @@ void mt7530_gsw_eee_enable(int is_eee_enabled)
 #endif
 		/* EEE 1000/100 LPI */
 		mii_mgr_write_cl45(i, 0x07, 0x003c, (is_eee_enabled) ? 0x0006 : 0x0000);
+		
+		/* HW auto downshift control */
+		mt7530_gsw_auto_downshift_phy(i, (is_eee_enabled) ? 0 : 1);
 	}
 
 	/* EEE 10Base-Te (global) */
@@ -245,6 +266,8 @@ void mt7530_gsw_eee_on_link(u32 port_id, int port_link, int is_eee_enabled)
 		mii_mgr_write(port_id, 16, 0x8fae);
 	}
 
+#if 0
+	/* this workaround removed in SDK 5.0.1.0 */
 	if (is_eee_enabled) {
 #if defined (MT7530_P5_MODE_GPHY_P4)
 		if (port_id == 4) return;
@@ -256,6 +279,7 @@ void mt7530_gsw_eee_on_link(u32 port_id, int port_link, int is_eee_enabled)
 		mii_mgr_write(port_id, 17, (port_link) ? 0x00e0 : 0x0000);
 		mii_mgr_write(port_id, 16, 0x9780);
 	}
+#endif
 }
 
 void mt7530_gsw_set_csr_delay(int is_link_100)

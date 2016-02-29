@@ -103,20 +103,20 @@ typedef u32 netdev_features_t;
 #endif
 #endif
 
-#if defined (CONFIG_RAETH_QDMA) || defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-#define NUM_TX_DESC		512
-#else
-#define NUM_TX_DESC		256
-#endif
-
 #if defined (CONFIG_RAETH_QDMA)
 #define NUM_QRX_DESC		16	/* for memory save (P5 SW RX is not used) */
+#define NUM_PQ_RESV		4
+#define NUM_TX_DESC		1024
 #if defined (CONFIG_RA_HW_NAT_QDMA)
 #define NUM_QDMA_PAGE		512
 #else
 #define NUM_QDMA_PAGE		16	/* for memory save (P5 HW TX is not used) */
 #endif
 #define QDMA_PAGE_SIZE		2048
+#elif defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
+#define NUM_TX_DESC		512
+#else
+#define NUM_TX_DESC		256
 #endif
 
 #if (NUM_RX_DESC < 256)

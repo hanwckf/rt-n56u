@@ -230,6 +230,10 @@ fe_dma_init(END_DEVICE *ei_local)
 #endif
 	sysRegWrite(QDMA_RST_CFG, PST_DRX_IDX0);
 
+	/* Reserve 4 TXD for each physical queue */
+	for (i = 0; i < 16; i++)
+		sysRegWrite(QTX_CFG_0 + 0x10*i, ((NUM_PQ_RESV << 8) | NUM_PQ_RESV));
+
 	/* get free txd from pool for RLS (release) */
 	get_free_txd(ei_local, &txd_free_phy);
 	sysRegWrite(QTX_CRX_PTR, (u32)txd_free_phy);

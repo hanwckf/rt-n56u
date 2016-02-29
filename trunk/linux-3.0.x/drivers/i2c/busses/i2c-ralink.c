@@ -43,11 +43,11 @@ ralink_i2c_master_init(struct i2c_msg *msg)
 	RT2880_REG(RT2880_I2C_CONFIG_REG) = I2C_CFG_DEFAULT;
 
 #if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_RALINK_MT7628)
-	reg  = (1 << 31);			// the output is pulled hight by SIF master 0
-	reg |= (1 << 28);			// allow triggered in VSYNC pulse
-	reg |= (CLKDIV_VALUE<<16);		// clk div
-	reg |= (1 << 6);			// output H when SIF master 0 is in WAIT state
-	reg |= (1 << 1);			// enable SIF master 0
+	reg  = (CLKDIV_VALUE << 16);		// clk div
+	reg |= I2C_CTL0_ODRAIN;			// the output is pulled hight by SIF master 0
+	reg |= I2C_CTL0_VSYNC_MODE;		// allow triggered in VSYNC pulse
+	reg |= I2C_CTL0_SM0_WAIT_LEVEL;		// output H when SIF master 0 is in WAIT state
+	reg |= I2C_CTL0_SM0_EN;			// enable SIF master 0
 	RT2880_REG(RT2880_I2C_SM0CTL0) = reg;
 	RT2880_REG(RT2880_I2C_SM0_IS_AUTOMODE) = 1; // auto mode
 #else
@@ -160,9 +160,9 @@ ralink_i2c_handle_msg(struct i2c_adapter *i2c_adap, struct i2c_msg* msg)
 		}
 	} else {
 		ralink_i2c_wait_idle();
-		RT2880_REG(RT2880_I2C_BYTECNT_REG) = rem-1;
+		RT2880_REG(RT2880_I2C_BYTECNT_REG) = msg->len-1;
 
-		for(i=0; i< rem; i++) {
+		for(i=0; i< msg->len; i++) {
 			RT2880_REG(RT2880_I2C_DATAOUT_REG) = msg->buf[i];
 
 			if (i==0)

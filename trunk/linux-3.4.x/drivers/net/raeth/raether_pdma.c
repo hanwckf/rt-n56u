@@ -84,10 +84,11 @@ fe_dma_init(END_DEVICE *ei_local)
 
 	/* init PDMA RX ring */
 	for (i = 0; i < NUM_RX_DESC; i++) {
-		ei_local->rxd_ring[i].rxd_info1 = (u32)dma_map_single(NULL, ei_local->rxd_buff[i]->data, MAX_RX_LENGTH, DMA_FROM_DEVICE);
 #if defined (RAETH_PDMA_V2)
+		ei_local->rxd_ring[i].rxd_info1 = (u32)dma_map_single(NULL, ei_local->rxd_buff[i]->data, MAX_RX_LENGTH + NET_IP_ALIGN, DMA_FROM_DEVICE);
 		ei_local->rxd_ring[i].rxd_info2 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
 #else
+		ei_local->rxd_ring[i].rxd_info1 = (u32)dma_map_single(NULL, ei_local->rxd_buff[i]->data, MAX_RX_LENGTH, DMA_FROM_DEVICE);
 		ei_local->rxd_ring[i].rxd_info2 = RX2_DMA_LS0;
 #endif
 		ei_local->rxd_ring[i].rxd_info3 = 0;

@@ -408,6 +408,8 @@ dma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 #else
 			rxd_ring->rxd_info2 = RX2_DMA_LS0;
 #endif
+			wmb();
+			
 			/* move CPU pointer to next RXD */
 			sysRegWrite(DMA_RX_CALC_IDX0, cpu_to_le32(rxd_dma_owner_idx));
 			
@@ -429,10 +431,11 @@ dma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 		ei_local->rxd_buff[rxd_dma_owner_idx] = new_skb;
 		
 		/* map new skb to ring (unmap is not required on generic mips mm) */
-		rxd_ring->rxd_info1 = (u32)dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH, DMA_FROM_DEVICE);
 #if defined (RAETH_PDMA_V2)
+		rxd_ring->rxd_info1 = (u32)dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH + NET_IP_ALIGN, DMA_FROM_DEVICE);
 		rxd_ring->rxd_info2 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
 #else
+		rxd_ring->rxd_info1 = (u32)dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH, DMA_FROM_DEVICE);
 		rxd_ring->rxd_info2 = RX2_DMA_LS0;
 #endif
 		wmb();

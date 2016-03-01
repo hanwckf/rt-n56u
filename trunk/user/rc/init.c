@@ -253,8 +253,11 @@ reset_signals(void)
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = SIG_DFL;
 	sigemptyset(&sa.sa_mask);
-	for (i = 0; i < (_NSIG-1); i++)
+	for (i = 0; i < (_NSIG-1); i++) {
+		if (i == SIGCHLD)
+			continue;
 		sigaction(i, &sa, NULL);
+	}
 
 	/* Unblock all signals */
 	sigfillset(&set);

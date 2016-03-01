@@ -197,6 +197,11 @@ static int xhci_plat_remove(struct platform_device *dev)
 	struct usb_hcd	*hcd = platform_get_drvdata(dev);
 	struct xhci_hcd	*xhci = hcd_to_xhci(hcd);
 
+#if defined (CONFIG_MTK_XHCI)
+	if (xhci->quirks & XHCI_COMP_MODE_QUIRK)
+		del_timer_sync(&xhci->comp_mode_recovery_timer);
+#endif
+
 	usb_remove_hcd(xhci->shared_hcd);
 	usb_put_hcd(xhci->shared_hcd);
 

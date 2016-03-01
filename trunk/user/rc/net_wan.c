@@ -1172,7 +1172,7 @@ wan_up(char *wan_ifname, int unit, int is_static)
 
 	/* call custom user script */
 	if (check_if_file_exist(script_postw))
-		doSystem("%s %s %s", script_postw, "up", wan_ifname);
+		doSystem("%s %s %s %s", script_postw, "up", wan_ifname, wan_addr);
 }
 
 void
@@ -1232,6 +1232,8 @@ wan_down(char *wan_ifname, int unit, int is_static)
 	wan_addr = get_wan_unit_value(unit, "ipaddr");
 	if (is_valid_ipv4(wan_addr))
 		flush_conntrack_table(wan_addr);
+	else
+		wan_addr = "0.0.0.0";
 
 	control_wan_led_isp_state(0, 0);
 
@@ -1241,7 +1243,7 @@ wan_down(char *wan_ifname, int unit, int is_static)
 	set_wan_unit_value_int(unit, "bytes_tx", 0);
 
 	if (check_if_file_exist(script_postw))
-		doSystem("%s %s %s", script_postw, "down", wan_ifname);
+		doSystem("%s %s %s %s", script_postw, "down", wan_ifname, wan_addr);
 }
 
 void

@@ -3488,6 +3488,11 @@ struct mime_handler mime_handlers[] = {
 	/* cached css  */
 	{ "**.css", "text/css", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 
+#if defined(APP_ARIA)
+	/* cached font */
+	{ "**.woff", "application/font-woff", NULL, NULL, do_file, 0 }, // 2016.01 Volt1
+#endif
+
 	/* cached images */
 	{ "**.png", "image/png", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "**.gif", "image/gif", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23

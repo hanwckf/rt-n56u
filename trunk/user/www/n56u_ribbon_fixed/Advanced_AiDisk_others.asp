@@ -107,6 +107,10 @@ function initial(){
 		$("web_rpc_link").style.display = "none";
 	}
 
+	if (!document.form.aria_enable[0].checked){
+		$("web_aria_link").style.display = "none";
+	}
+
 	show_usb_share_list(0);
 	show_usb_share_list(1);
 	show_usb_share_list(2);
@@ -115,12 +119,19 @@ function initial(){
 var window_rpc;
 var window_dms;
 var window_ffly;
+var window_aria;
 var window_params="toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=800,height=600";
 
 function on_rpc_link(){
 	var rpc_url="http://" + lan_ipaddr + ":" + document.form.trmd_rport.value;
 	window_rpc = window.open(rpc_url, "Transmission", window_params);
 	window_rpc.focus();
+}
+
+function on_aria_link(){
+	var aria_url="http://" + lan_ipaddr + "/ariaweb/index.html";
+	window_aria = window.open(aria_url, "Aria2", window_params);
+	window_aria.focus();
 }
 
 function on_dms_link(){
@@ -778,13 +789,13 @@ function done_validating(action){
 
                                     <table width="100%" id="tbl_aria" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#StorageAria#></th>
+                                            <th colspan="3" style="background-color: #E3E3E3;"><#StorageAria#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%">
                                                 <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17,12);"><#StorageEnableAria#></a>
                                             </th>
-                                            <td>
+                                            <td colspan="2">
                                                 <div class="main_itoggle">
                                                     <div id="aria_enable_on_of">
                                                         <input type="checkbox" id="aria_enable_fake" <% nvram_match_x("", "aria_enable", "1", "value=1 checked"); %><% nvram_match_x("", "aria_enable", "0", "value=0"); %>>
@@ -801,16 +812,19 @@ function done_validating(action){
                                             <th>
                                                 <#StoragePPortTRMD#>
                                             </th>
-                                            <td>
+                                            <td colspan="2">
                                                 <input type="text" maxlength="5" size="5" name="aria_pport" class="input" value="<% nvram_get_x("", "aria_pport"); %>" onkeypress="return is_number(this,event);"/>
                                             </td>
                                         </tr>
                                         <tr id="row_aria_rport">
-                                            <th>
+                                            <th width="50%">
                                                 <#StorageRPortTRMD#>
                                             </th>
                                             <td>
                                                <input type="text" maxlength="5" size="5" name="aria_rport" class="input" value="<% nvram_get_x("", "aria_rport"); %>" onkeypress="return is_number(this,event);"/>
+                                            </td>
+                                            <td>
+                                               <a href="javascript:on_aria_link();" id="web_aria_link">Web control</a>
                                             </td>
                                         </tr>
                                     </table>

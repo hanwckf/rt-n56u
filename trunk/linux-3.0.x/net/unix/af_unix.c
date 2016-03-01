@@ -2047,15 +2047,17 @@ static int unix_stream_recvmsg(struct kiocb *iocb, struct socket *sock,
 	int err = 0;
 	long timeo;
 
-	err = -EINVAL;
-	if (sk->sk_state != TCP_ESTABLISHED)
+	if (unlikely(sk->sk_state != TCP_ESTABLISHED)) {
+		err = -EINVAL;
 		goto out;
+	}
 
-	err = -EOPNOTSUPP;
-	if (flags&MSG_OOB)
+	if (unlikely(flags & MSG_OOB)) {
+		err = -EOPNOTSUPP;
 		goto out;
+	}
 
-	target = sock_rcvlowat(sk, flags&MSG_WAITALL, size);
+	target = sock_rcvlowat(sk, flags & MSG_WAITALL, size);
 	timeo = sock_rcvtimeo(sk, noblock);
 
 	/* Lock the socket to prevent queue disordering
@@ -2095,9 +2097,10 @@ static int unix_stream_recvmsg(struct kiocb *iocb, struct socket *sock,
 				goto unlock;
 
 			unix_state_unlock(sk);
-			err = -EAGAIN;
-			if (!timeo)
+			if (!timeo) {
+				err = -EAGAIN;
 				break;
+			}
 			mutex_unlock(&u->readlock);
 
 			timeo = unix_stream_data_wait(sk, timeo);

@@ -373,10 +373,13 @@ nvram_convert_misc_values(void)
 #if defined (BOARD_GPIO_BTN_ROUTER)
 	int i_router_switch = BTN_PRESSED;
 
-	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_ROUTER, &i_router_switch) >= 0) {
-		if (i_router_switch != BTN_PRESSED)
-			nvram_set_int("sw_mode", 3);
-	}
+	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_ROUTER, &i_router_switch) < 0)
+		i_router_switch = BTN_PRESSED;
+
+	if (i_router_switch != BTN_PRESSED)
+		nvram_set_int("sw_mode", 3);
+	else if (nvram_get_int("sw_mode") == 3)
+		nvram_set_int("sw_mode", 1);
 #endif
 
 	/* check router mode */
@@ -391,7 +394,6 @@ nvram_convert_misc_values(void)
 		nvram_set("wan_route_x", "IP_Routed");
 	} else if (sw_mode == 3) {
 		/* AP mode (Ethernet convertor) */
-		nvram_set_int("wan_nat_x", 0);
 		nvram_set("wan_route_x", "IP_Bridged");
 	} else {
 		sw_mode = 1;

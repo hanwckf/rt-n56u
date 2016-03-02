@@ -88,14 +88,13 @@
 #define SURFBOARDINT_PCTRL		9	/* Performance counter */
 #define SURFBOARDINT_I2S		10	/* I2S */
 #define SURFBOARDINT_SPI		11	/* SPI */
-#define SURFBOARDINT_UARTL		12	/* UART Lite */
 
 #if defined (CONFIG_RALINK_RT3883)
 #define SURFBOARDINT_PCI0		15	/* PCI Slot0 */
 #define SURFBOARDINT_PCI1		16	/* PCI Slot1 */
 #endif
 
-#if defined (CONFIG_RALINK_MT7620)
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7628)
 #define SURFBOARDINT_SDXC		14	/* SDXC */
 #define SURFBOARDINT_R2P		15	/* Rbus to Pbus */
 #endif
@@ -103,7 +102,6 @@
 #if defined (CONFIG_RALINK_MT7628)
 #define SURFBOARDINT_AES		13	/* AES */
 #define SURFBOARDINT_AESENGINE		13	/* AES Engine */
-#define SURFBOARDINT_SDXC		14	/* SDXC */
 #define SURFBOARDINT_UART_LITE1		20	/* UART Lite 1 */
 #define SURFBOARDINT_UART_LITE2		21	/* UART Lite 2 */
 #define SURFBOARDINT_UART_LITE3		22	/* UART Lite 3 */
@@ -123,6 +121,7 @@
 #define SURFBOARDINT_PCM		36	/* PCM */
 
 #if !defined (CONFIG_RALINK_MT7628)
+#define SURFBOARDINT_UARTL		12	/* UART Lite */
 #define SURFBOARDINT_TIMER0		33	/* Timer0 */
 #define SURFBOARDINT_WDG		34	/* Watchdog timer */
 #define SURFBOARDINT_UARTF		37	/* UART Full */

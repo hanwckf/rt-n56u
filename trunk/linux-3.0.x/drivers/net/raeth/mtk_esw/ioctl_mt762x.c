@@ -984,11 +984,11 @@ static void esw_vlan_init_vid1(void)
 	/* configure CPU port */
 	esw_vlan_pvid_set(LAN_PORT_CPU, 1, 0);
 	esw_port_accept_set(LAN_PORT_CPU, PORT_ACCEPT_FRAMES_ALL);
-#if defined (MT7530_P6_UNTAGGED)
-	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_TRANSPARENT);
-#else
+#if defined (CONFIG_RALINK_MT7620) && !defined (MT7530_P5_ENABLED)
 	port_untag &= ~(MASK_LAN_PORT_CPU);
 	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_USER);
+#else
+	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_TRANSPARENT);
 #endif
 	esw_port_ingress_mode_set(LAN_PORT_CPU, PVLAN_INGRESS_MODE_SECURITY);
 

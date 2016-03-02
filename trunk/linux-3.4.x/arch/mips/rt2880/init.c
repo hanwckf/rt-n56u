@@ -227,19 +227,40 @@ static inline void prom_init_pcie(void)
 	(*((volatile u32 *)(RALINK_PCIEPHY_P0_CTL_OFFSET))) = 0x10;
 #endif
 #elif defined (CONFIG_RALINK_MT7621)
-#if !defined (CONFIG_PCI)
-	/* assert PCIe RC RST */
-	if ((ralink_asic_rev_id & 0xFFFF) == 0x0101)
-		RALINK_RSTCTRL |=  (RALINK_PCIE0_RST | RALINK_PCIE1_RST | RALINK_PCIE2_RST);
-	else
-		RALINK_RSTCTRL &= ~(RALINK_PCIE0_RST | RALINK_PCIE1_RST | RALINK_PCIE2_RST);
-
-	/* disable PCIe clock */
-	RALINK_CLKCFG1 &= ~(RALINK_PCIE0_CLK_EN | RALINK_PCIE1_CLK_EN | RALINK_PCIE2_CLK_EN);
-
-	/* set PCIe PHY P0P1/P2 to 1.3mA for power saving */
+	u32 val = 0;
+#if !defined (CONFIG_PCI) || !defined (CONFIG_PCIE_PORT0)
+	val |= RALINK_PCIE0_RST;
+#endif
+#if !defined (CONFIG_PCI) || !defined (CONFIG_PCIE_PORT1)
+	val |= RALINK_PCIE1_RST;
+#endif
+#if !defined (CONFIG_PCI) || !defined (CONFIG_PCIE_PORT2)
+	val |= RALINK_PCIE2_RST;
+#endif
+	if (val) {
+		/* deassert PCIe RC RST for disabled ports */
+		if ((ralink_asic_rev_id & 0xFFFF) == 0x0101)
+			RALINK_RSTCTRL &= ~(val);
+		else
+			RALINK_RSTCTRL |=  (val);
+		udelay(100);
+	}
+#if !defined (CONFIG_PCI) || !(defined (CONFIG_PCIE_PORT0) || defined (CONFIG_PCIE_PORT1))
+	/* set PCIe PHY P0P1 to 1.3mA for power saving */
 	(*((volatile u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET))) = 0x10;
+#endif
+#if !defined (CONFIG_PCI) || !defined (CONFIG_PCIE_PORT2)
+	/* set PCIe PHY P2 to 1.3mA for power saving */
 	(*((volatile u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET))) = 0x10;
+#endif
+#if !defined (CONFIG_PCI)
+	/* assert PCIe RC RST for disabled ports */
+	if ((ralink_asic_rev_id & 0xFFFF) == 0x0101)
+		RALINK_RSTCTRL |=  (val);
+	else
+		RALINK_RSTCTRL &= ~(val);
+	/* disable PCIe clock for disabled ports */
+	RALINK_CLKCFG1 &= ~val;
 #endif
 #endif
 }

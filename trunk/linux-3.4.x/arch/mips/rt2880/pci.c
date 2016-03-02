@@ -477,9 +477,6 @@ static void set_phy_for_ssc(void)
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x100),  5, 1, 0x01);	// rg_pe1_phy_en                   //Port 1 enable
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x000),  4, 1, 0x00);	// rg_pe1_frc_phy_en               //Force Port 0 disable control
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET + 0x100),  4, 1, 0x00);	// rg_pe1_frc_phy_en               //Force Port 1 disable control
-#else
-	/* set PCIe P0/P1 PHY to 1.3mA for power saving */
-	(*((volatile u32 *)(RALINK_PCIEPHY_P0P1_CTL_OFFSET))) = 0x10;
 #endif
 #if defined (CONFIG_PCIE_PORT2)
 	/* Set PCIe Port2 PHY to disable SSC */
@@ -541,9 +538,6 @@ static void set_phy_for_ssc(void)
 	/* Enable PHY and disable force mode */
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x000),  5, 1, 0x01);	// rg_pe1_phy_en                   //Port 0 enable
 	set_pcie_phy((u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET + 0x000),  4, 1, 0x00);	// rg_pe1_frc_phy_en               //Force Port 0 disable control
-#else
-	/* set PCIe P2 PHY to 1.3mA for power saving */
-	(*((volatile u32 *)(RALINK_PCIEPHY_P2_CTL_OFFSET))) = 0x10;
 #endif
 }
 #endif

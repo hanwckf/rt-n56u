@@ -73,8 +73,16 @@
 #define SURFBOARDINT_UART1		SURFBOARDINT_UART_LITE1
 #define SURFBOARDINT_UART2		SURFBOARDINT_UART_LITE2
 
-/* 32 + 3 + IPI*NR_CPU (max 64) */
+/* 32 + 3 + 8xIPI (max 64) */
 #define SURFBOARDINT_END		63
+
+/*
+ * GIC IPI offsets is hardcoded for MT7621A/S as U-Boot:
+ * PIN #1: 56..59 for VPE0..VPE3
+ * PIN #2: 60..63 for VPE0..VPE3
+ */
+#define GIC_IPI_CALL_VPE0		(60)
+#define GIC_IPI_RESCHED_VPE0		(56)
 
 #else
 

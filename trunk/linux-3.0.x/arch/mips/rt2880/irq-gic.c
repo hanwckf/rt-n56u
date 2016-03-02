@@ -272,8 +272,8 @@ void __init arch_init_irq(void)
 
 	if (gic_present) {
 #if defined (CONFIG_MIPS_GIC_IPI)
-		gic_call_int_base = GIC_NUM_INTRS - nr_cpu_ids;
-		gic_resched_int_base = gic_call_int_base - nr_cpu_ids;
+		gic_call_int_base = GIC_IPI_CALL_VPE0;
+		gic_resched_int_base = GIC_IPI_RESCHED_VPE0;
 		fill_ipi_map();
 #endif
 		gic_init(GIC_BASE_ADDR, GIC_ADDRSPACE_SZ, gic_intr_map,

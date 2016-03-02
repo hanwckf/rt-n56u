@@ -166,14 +166,14 @@ static irqreturn_t ipi_call_interrupt(int irq, void *dev_id)
 	if (cd_event)
 		ra_percpu_event_handler();
 
-	smp_call_function_interrupt();
+	generic_smp_call_function_interrupt();
 
 	return IRQ_HANDLED;
 }
 #else
 static irqreturn_t ipi_call_interrupt(int irq, void *dev_id)
 {
-	smp_call_function_interrupt();
+	generic_smp_call_function_interrupt();
 
 	return IRQ_HANDLED;
 }

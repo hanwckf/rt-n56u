@@ -37,6 +37,9 @@ $j(document).ready(function() {
 <script>
 
 var lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
+var http_proto = '<% nvram_get_x("", "http_proto"); %>';
+var http_port = '<% nvram_get_x("", "http_lanport"); %>';
+var https_port = '<% nvram_get_x("", "https_lport"); %>';
 var ddns_enable = '<% nvram_get_x("", "ddns_enable_x"); %>';
 var ddns_server = '<% nvram_get_x("", "ddns_server_x"); %>';
 var ddns_hostname = '<% nvram_get_x("", "ddns_hostname_x"); %>';
@@ -122,16 +125,25 @@ var window_ffly;
 var window_aria;
 var window_params="toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=800,height=600";
 
+function on_aria_link(){
+	var aria_url="http";
+	var http_url=lan_ipaddr;
+	if (http_proto=='1'){
+		aria_url+="s";
+		if (https_port!='443')
+			http_url+=":"+https_port;
+	}else if (http_port!='80'){
+		http_url+=":"+http_port;
+	}
+	aria_url+="://"+http_url+"/ariaweb/index.html";
+	window_aria = window.open(aria_url, "Aria2", window_params);
+	window_aria.focus();
+}
+
 function on_rpc_link(){
 	var rpc_url="http://" + lan_ipaddr + ":" + document.form.trmd_rport.value;
 	window_rpc = window.open(rpc_url, "Transmission", window_params);
 	window_rpc.focus();
-}
-
-function on_aria_link(){
-	var aria_url="http://" + lan_ipaddr + "/ariaweb/index.html";
-	window_aria = window.open(aria_url, "Aria2", window_params);
-	window_aria.focus();
 }
 
 function on_dms_link(){

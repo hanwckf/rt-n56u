@@ -274,6 +274,9 @@ init_bridge(int is_ap_mode)
 		doSystem("ifconfig %s %s", IFNAME_5G_MAIN, "down");
 		gen_ralink_config_5g(0);
 	}
+
+	if (wl_radio_on)
+		update_vga_clamp_wl(1);
 #endif
 
 #if !defined(USE_RT3352_MII)

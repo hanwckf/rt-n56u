@@ -972,6 +972,16 @@ validate_asp_apply(webs_t wp, int sid)
 				
 				wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 			}
+#if defined (USE_MT76X2_AP)
+			else if (!strcmp(v->name, "wl_VgaClamp"))
+			{
+				const char *wifn = find_wlan_if_up(1);
+				if (wifn)
+					set_wifi_param_int(wifn, "VgaClamp", value, 0, 4);
+				
+				wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
+			}
+#endif
 #if 0
 			else if (!strcmp(v->name, "wl_IgmpSnEnable"))
 			{
@@ -1035,7 +1045,7 @@ validate_asp_apply(webs_t wp, int sid)
 				
 				rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 			}
-#if (BOARD_NUM_UPHY_USB3 > 0)
+#if defined (USE_MT76X2_AP)
 			else if (!strcmp(v->name, "rt_VgaClamp"))
 			{
 				const char *wifn = find_wlan_if_up(0);
@@ -2135,20 +2145,20 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_btn_mode = 0;
 #endif
-#if defined (USE_WID_2G) && (USE_WID_2G==7602 || USE_WID_2G==7612)
-	int has_2g_ldpc = 1;
-#else
-	int has_2g_ldpc = 0;
-#endif
-#if defined (USE_WID_5G) && (USE_WID_5G==7612)
-	int has_5g_ldpc = 1;
-#else
-	int has_5g_ldpc = 0;
-#endif
 #if defined (USE_WID_5G) && (USE_WID_5G==7610 || USE_WID_5G==7612) && BOARD_HAS_5G_11AC
 	int has_5g_vht = 1;
 #else
 	int has_5g_vht = 0;
+#endif
+#if defined (USE_WID_2G)
+	int wid_2g = USE_WID_2G;
+#else
+	int wid_2g = 0;
+#endif
+#if defined (USE_WID_5G)
+	int wid_5g = USE_WID_5G;
+#else
+	int wid_5g = 0;
 #endif
 
 	websWrite(wp,
@@ -2205,8 +2215,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_2g_inic_mii() { return %d;}\n"
 		"function support_5g_radio() { return %d;}\n"
 		"function support_5g_11ac() { return %d;}\n"
-		"function support_5g_ldpc() { return %d;}\n"
-		"function support_2g_ldpc() { return %d;}\n"
+		"function support_5g_wid() { return %d;}\n"
+		"function support_2g_wid() { return %d;}\n"
 		"function support_5g_stream_tx() { return %d;}\n"
 		"function support_5g_stream_rx() { return %d;}\n"
 		"function support_2g_stream_tx() { return %d;}\n"
@@ -2233,8 +2243,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		has_inic_mii,
 		BOARD_HAS_5G_RADIO,
 		has_5g_vht,
-		has_5g_ldpc,
-		has_2g_ldpc,
+		wid_5g,
+		wid_2g,
 		BOARD_NUM_ANT_5G_TX,
 		BOARD_NUM_ANT_5G_RX,
 		BOARD_NUM_ANT_2G_TX,

@@ -315,15 +315,32 @@ check_inic_mii_rebooted(void)
 #endif
 
 void
-update_vga_clamp_rt(int first_call)
+update_vga_clamp_wl(int first_call)
 {
-#if (BOARD_NUM_UPHY_USB3 > 0)
-#if !defined (USE_RT3352_MII)
+#if BOARD_HAS_5G_RADIO
+#if defined (USE_MT76X2_AP)
 	int i_val;
 	const char *wifname;
 
-	if (nvram_get_int("usb3_disable"))
+	wifname = find_wlan_if_up(1);
+	if (!wifname)
 		return;
+
+	i_val = nvram_wlan_get_int(1, "VgaClamp");
+	if (i_val == 0 && first_call)
+		return;
+
+	doSystem("iwpriv %s set %s=%d", wifname, "VgaClamp", i_val);
+#endif
+#endif
+}
+
+void
+update_vga_clamp_rt(int first_call)
+{
+#if defined (USE_MT76X2_AP)
+	int i_val;
+	const char *wifname;
 
 	wifname = find_wlan_if_up(0);
 	if (!wifname)
@@ -334,7 +351,6 @@ update_vga_clamp_rt(int first_call)
 		return;
 
 	doSystem("iwpriv %s set %s=%d", wifname, "VgaClamp", i_val);
-#endif
 #endif
 }
 
@@ -670,6 +686,9 @@ restart_wifi_wl(int radio_on, int need_reload_conf)
 	restart_guest_lan_isolation();
 
 	check_apcli_wan(1, radio_on);
+
+	if (radio_on)
+		update_vga_clamp_wl(0);
 
 #if defined (BOARD_GPIO_LED_SW5G)
 	if (radio_on)

@@ -48,8 +48,13 @@ function initial(){
 		o2.options[2].text = "3R (1300Mbps)";
 	}
 
-	if (support_5g_ldpc())
-		showhide_div("row_ldpc", 1);
+	if (typeof(support_5g_wid) === 'function'){
+		wid = support_5g_wid();
+		if (wid==7612){
+			showhide_div("row_vga_clamp", 1);
+			showhide_div("row_ldpc", 1);
+		}
+	}
 
 	if (support_5g_stream_tx()<3)
 		document.form.wl_stream_tx.remove(2);
@@ -178,6 +183,18 @@ function done_validating(action){
                                                     <option value="1" <% nvram_match_x("", "wl_stream_rx", "1", "selected"); %>>1R (150Mbps)</option>
                                                     <option value="2" <% nvram_match_x("", "wl_stream_rx", "2", "selected"); %>>2R (300Mbps)</option>
                                                     <option value="3" <% nvram_match_x("", "wl_stream_rx", "3", "selected"); %>>3R (450Mbps)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_vga_clamp" style="display:none">
+                                            <th><#WIFIVgaClamp#></th>
+                                            <td>
+                                                <select name="wl_VgaClamp" class="input">
+                                                    <option value="0" <% nvram_match_x("","wl_VgaClamp", "0","selected"); %>><#checkbox_No#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("","wl_VgaClamp", "1","selected"); %>>-4 dB</option>
+                                                    <option value="2" <% nvram_match_x("","wl_VgaClamp", "2","selected"); %>>-8 dB</option>
+                                                    <option value="3" <% nvram_match_x("","wl_VgaClamp", "3","selected"); %>>-12 dB</option>
+                                                    <option value="4" <% nvram_match_x("","wl_VgaClamp", "4","selected"); %>>-16 dB</option>
                                                 </select>
                                             </td>
                                         </tr>

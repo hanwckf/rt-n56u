@@ -220,6 +220,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_HT_MpduDensity", "5" },
 	{ "wl_HT_BAWinSize", "64" },
 	{ "wl_HT_AutoBA", "1" },
+	{ "wl_VgaClamp", "0" },
 
 	// guest AP 5Ghz
 	{ "wl_guest_enable", "0" },

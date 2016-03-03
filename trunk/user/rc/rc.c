@@ -838,9 +838,10 @@ init_router(void)
 
 	notify_leds_detect_link();
 
+	start_rwfs_optware();
+
 	// system ready
 	system("/etc/storage/started_script.sh &");
-	start_rwfs_optware();
 }
 
 /*

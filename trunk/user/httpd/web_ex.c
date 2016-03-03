@@ -972,7 +972,7 @@ validate_asp_apply(webs_t wp, int sid)
 				
 				wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 			}
-#if defined (USE_MT76X2_AP)
+#if defined (USE_WID_5G) && (USE_WID_5G==7612)
 			else if (!strcmp(v->name, "wl_VgaClamp"))
 			{
 				const char *wifn = find_wlan_if_up(1);
@@ -1045,7 +1045,7 @@ validate_asp_apply(webs_t wp, int sid)
 				
 				rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 			}
-#if defined (USE_MT76X2_AP)
+#if defined (USE_WID_2G) && (USE_WID_2G==7602 || USE_WID_2G==7612)
 			else if (!strcmp(v->name, "rt_VgaClamp"))
 			{
 				const char *wifn = find_wlan_if_up(0);

@@ -318,7 +318,7 @@ void
 update_vga_clamp_wl(int first_call)
 {
 #if BOARD_HAS_5G_RADIO
-#if defined (USE_MT76X2_AP)
+#if defined (USE_WID_5G) && (USE_WID_5G==7612)
 	int i_val;
 	const char *wifname;
 
@@ -338,7 +338,7 @@ update_vga_clamp_wl(int first_call)
 void
 update_vga_clamp_rt(int first_call)
 {
-#if defined (USE_MT76X2_AP)
+#if defined (USE_WID_2G) && (USE_WID_2G==7602 || USE_WID_2G==7612)
 	int i_val;
 	const char *wifname;
 

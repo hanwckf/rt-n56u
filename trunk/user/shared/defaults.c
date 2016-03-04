@@ -500,6 +500,8 @@ struct nvram_pair router_defaults[] = {
 	{ "ddns_hostname2_x", "" },
 	{ "ddns_hostname3_x", "" },
 	{ "ddns_wildcard_x", "0" },
+	{ "ddns_cst_svr", "" },
+	{ "ddns_cst_url", "" },
 	{ "ddns_period", "24" },
 	{ "ddns_forced", "10" },
 	{ "ddns_verbose", "1" },

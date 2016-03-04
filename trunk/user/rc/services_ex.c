@@ -843,11 +843,18 @@ static const struct inadyn_system_t {
 	{ "WWW.DTDNS.COM",        "default@dtdns.com"          },
 	{ "WWW.OVH.COM",          "default@ovh.com"            },
 	{ "WWW.LOOPIA.COM",       "default@loopia.com"         },
+	{ "WWW.DUIADNS.NET",      "default@duiadns.net"        },
 	{ "WWW.TUNNELBROKER.NET", "default@tunnelbroker.net"   },
 	{ "DNS.HE.NET",           "dyndns@he.net"              },
+	{ "DDNSS.DE",             "default@ddnss.de"           },
+	{ "HOMESERVER.GIRA.DE",   "default@gira.de"            },
+	{ "DOMAINS.GOOGLE.COM",   "default@domains.google.com" },
+	{ "IPV4.DYNV6.COM",       "default@ipv4.dynv6.com"     },
+	{ "DYNV6.COM",            "default@dynv6.com"          },
 	{ "TB.NETASSIST.UA",      "ipv6tb@netassist.ua"        },
 	{ "IPV4.NSUPDATE.INFO",   "ipv4@nsupdate.info"         },
 	{ "FREEDNS.AFRAID.ORG",   "default@freedns.afraid.org" },
+	{ "CUSTOM",               "custom@http_srv_basic_auth" },
 	{ NULL, NULL }
 };
 
@@ -890,7 +897,7 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 {
 	FILE *fp;
 	int i_max, i_ddns_source, i_ddns_checkip, i_ddns_period, i_ddns_forced, i_ddns1_ssl;
-	char *ddns1_hname[3], *ddns1_user, *ddns1_pass;
+	char *ddns1_hname[3], *ddns1_user, *ddns1_pass, *ddns1_svr, *ddns1_url;
 	char *ddns2_hname,    *ddns2_user, *ddns2_pass;
 	const char *ddns1_svc, *ddns2_svc;
 	char wan_ifname[16];
@@ -926,6 +933,9 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 	ddns1_user     = nvram_safe_get("ddns_username_x");
 	ddns1_pass     = nvram_safe_get("ddns_passwd_x");
 
+	ddns1_svr = NULL;
+	ddns1_url = NULL;
+
 	if (strcmp(ddns1_svc, "update@asus.com") == 0) {
 		char *mac_nvram, mac_str[16] = {0};
 		unsigned char mac_bin[ETHER_ADDR_LEN] = {0};
@@ -944,6 +954,9 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 		ddns1_hname[2] = "";
 		ddns1_user = ether_etoa3(mac_bin, mac_str);
 		ddns1_pass = nvram_safe_get("secret_code");
+	} else if (strcmp(ddns1_svc, "custom@http_srv_basic_auth") == 0) {
+		ddns1_svr = nvram_safe_get("ddns_cst_svr");
+		ddns1_url = nvram_safe_get("ddns_cst_url");
 	}
 
 	ddns2_svc = get_inadyn_system(nvram_safe_get("ddns2_server"));
@@ -978,6 +991,10 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 			fprintf(fp, "  username %s\n", ddns1_user);
 		if (strlen(ddns1_pass) > 0)
 			fprintf(fp, "  password %s\n", ddns1_pass);
+		if (ddns1_svr && *ddns1_svr && ddns1_url && *ddns1_url) {
+			fprintf(fp, "  server-name %s\n", ddns1_svr);
+			fprintf(fp, "  server-url /%s\n", ddns1_url);
+		}
 		fprintf(fp, "  alias %s\n", ddns1_hname[0]);
 		if (strlen(ddns1_hname[1]) > 2)
 			fprintf(fp, "  alias %s\n", ddns1_hname[1]);

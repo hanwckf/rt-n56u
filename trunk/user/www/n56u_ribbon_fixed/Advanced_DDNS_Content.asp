@@ -32,6 +32,41 @@ $j(document).ready(function() {
 
 <% wanlink(); %>
 
+var ddns_prov1 = '<% nvram_get_x("","ddns_server_x"); %>';
+var ddns_prov2 = '<% nvram_get_x("","ddns2_server"); %>';
+var ddns_hname = '<% nvram_get_x("","ddns_hostname_x"); %>';
+var ddns_list = [
+	[ 0x01, "WWW.ASUS.COM",         "(asuscomm)", "" ],
+	[ 0x0f, "WWW.DYNDNS.ORG",       "", "https://account.dyn.com/entrance/" ],
+	[ 0x0f, "WWW.TZO.COM",          "", "http://signup.tzo.com" ],
+	[ 0x0f, "WWW.ZONEEDIT.COM",     "", "http://www.zoneedit.com/signUp.html" ],
+	[ 0x01, "WWW.EASYDNS.COM",      "", "https://web.easydns.com/Open_Account/" ],
+	[ 0x0f, "WWW.NO-IP.COM",        "", "http://www.noip.com/newUser.php" ],
+	[ 0x0f, "WWW.DNSOMATIC.COM",    "", "https://www.dnsomatic.com/create/" ],
+	[ 0x0f, "WWW.DNSEXIT.COM",      "", "https://www.dnsexit.com/Direct.sv?cmd=signup" ],
+	[ 0x0f, "WWW.CHANGEIP.COM",     "", "https://www.changeip.com/accounts/register.php" ],
+	[ 0x0f, "WWW.SITELUTIONS.COM",  "", "https://sitelutions.com/signup" ],
+	[ 0x0f, "WWW.ZERIGO.COM",       "", "https://www.zerigo.com/managed-dns/" ],
+	[ 0x0f, "WWW.DHIS.ORG",         "", "http://dhis.org/WebEngine.ipo?context=dhis.website.register" ],
+	[ 0x0f, "WWW.NIC.RU",           "(RU-CENTER)", "https://www.nic.ru/dns/service/dns_hosting/dns_master/dynamic_dns.html" ],
+	[ 0x0f, "WWW.DUCKDNS.ORG",      "", "https://www.duckdns.org/" ],
+	[ 0x0f, "WWW.DTDNS.COM",        "", "https://www.dtdns.com/dtsite/register" ],
+	[ 0x0f, "WWW.OVH.COM",          "", "https://www.ovh.com/" ],
+	[ 0x0f, "WWW.LOOPIA.COM",       "", "https://www.loopia.com/loopiadns/" ],
+	[ 0x0f, "WWW.DUIADNS.NET",      "", "https://www.duiadns.net/services" ],
+	[ 0x0f, "WWW.TUNNELBROKER.NET", "(HE)", "http://www.tunnelbroker.net/register.php" ],
+	[ 0x0f, "DNS.HE.NET",           "(HE)", "http://ipv6.he.net/certification/register.php" ],
+	[ 0x0f, "DDNSS.DE",             "", "https://www.ddnss.de/user_new.php" ],
+	[ 0x0f, "HOMESERVER.GIRA.DE",   "", "https://homeserver.gira.de/en/registrierung/index.html" ],
+	[ 0x0f, "DOMAINS.GOOGLE.COM",   "", "https://domains.google.com/registrar" ],
+	[ 0x0f, "IPV4.DYNV6.COM",       "", "https://ipv4.dynv6.com/users/sign_up" ],
+	[ 0x0f, "DYNV6.COM",            "", "https://dynv6.com/users/sign_up" ],
+	[ 0x0f, "TB.NETASSIST.UA",      "", "http://tb.netassist.ua/reg.php" ],
+	[ 0x0f, "IPV4.NSUPDATE.INFO",   "", "https://nsupdate.info/account/register/" ],
+	[ 0x0f, "FREEDNS.AFRAID.ORG",   "", "http://freedns.afraid.org/signup/" ],
+	[ 0x01, "CUSTOM",               "(http basic auth)", "" ]
+];
+
 function init()
 {
 	var id_menu = 5;
@@ -44,9 +79,9 @@ function init()
 	show_footer();
 	show_menu(5,4,id_menu);
 
-	hideLoading();
+	ddns_init();
 
-	ddns_load_body();
+	hideLoading();
 }
 
 function test_wan_ip()
@@ -79,6 +114,20 @@ function test_wan_ip()
 	showhide("wan_ip_hide3", 0);
 }
 
+function get_url_link(ddns)
+{
+	var url = "";
+	if (ddns == "")
+		return url;
+	for(var i = 0; i < ddns_list.length; i++){
+		if (ddns == ddns_list[i][1]){
+			url = ddns_list[i][3];
+			break;
+		}
+	}
+	return url;
+}
+
 function disable_update()
 {
 	document.form.x_DDNSStatus.disabled = 1;
@@ -89,10 +138,11 @@ function change_ddns_server(man)
 	var v = document.form.ddns_server_x.value;
 	var o = document.form.x_DDNSHostCheck;
 	var e = (v == "WWW.ASUS.COM") ? 0 : 1;
+	var tourl = get_url_link(v);
 
 	showhide("ddnsname_input", e);
 	showhide("asusddnsname_input", !e);
-	showhide_div("ddns_link", e);
+	showhide_div("ddns_link", (tourl != ""));
 	showhide_div("row_ddns_hname2", e);
 	showhide_div("row_ddns_hname3", e);
 	showhide_div("row_ddns_user", e);
@@ -102,14 +152,21 @@ function change_ddns_server(man)
 
 	e = (v == "WWW.EASYDNS.COM") ? 1 : 0;
 	showhide_div("row_ddns_wcard", e);
+
+	e = (v == "CUSTOM") ? 1 : 0;
+	showhide_div("row_ddns_cst_svr", e);
+	showhide_div("row_ddns_cst_url", e);
 	if (man)
 		disable_update();
 }
 
 function change_ddns2_server(man)
 {
-	var e = (document.form.ddns2_server.value == "") ? 0 : 1;
-	showhide_div("ddns2_link", e);
+	var v = document.form.ddns2_server.value;
+	var e = (v == "") ? 0 : 1;
+	var tourl = get_url_link(v);
+
+	showhide_div("ddns2_link", (tourl != ""));
 	showhide_div("row_ddns2_hname", e);
 	showhide_div("row_ddns2_user", e);
 	showhide_div("row_ddns2_pass", e);
@@ -143,6 +200,8 @@ function ddns_disable()
 	showhide("wan_ip_hide2", 0);
 	showhide("wan_ip_hide3", 0);
 	showhide_div("row_ddns_server", 0);
+	showhide_div("row_ddns_cst_svr", 0);
+	showhide_div("row_ddns_cst_url", 0);
 	showhide_div("row_ddns_hname1", 0);
 	showhide_div("row_ddns_hname2", 0);
 	showhide_div("row_ddns_hname3", 0);
@@ -162,28 +221,42 @@ function change_ddns_enabled()
 		ddns_disable();
 }
 
-function ddns_load_body()
+function ddns_init()
 {
-	var ddns_server_x = '<% nvram_get_x("","ddns_server_x"); %>';
-	var ddns_hostname_x = '<% nvram_get_x("","ddns_hostname_x"); %>';
+	if (ddns_prov1 == '')
+		ddns_prov1 = "WWW.ASUS.COM";
 
-	if (ddns_server_x == ""){
-		ddns_server_x = "WWW.ASUS.COM";
-		document.form.ddns_server_x.selectedIndex = 0;
-	}
+	fill_provider_list("ddns_server_x", ddns_prov1, 0x01);
+	fill_provider_list("ddns2_server",  ddns_prov2, 0x02);
 
 	if(document.form.ddns_server_x.selectedIndex == 0){
-		if(ddns_hostname_x != '')
-			$("DDNSName").value = ddns_hostname_x.substring(0, ddns_hostname_x.indexOf('.'));
+		if(ddns_hname != '')
+			$("DDNSName").value = ddns_hname.substring(0, ddns_hname.indexOf('.'));
 	}else
-		$("ddns_hostname_x").value = ddns_hostname_x;
+		$("ddns_hostname_x").value = ddns_hname;
 
 	if (document.form.ddns_enable_x[0].checked) {
 		ddns_enable(0);
-		if (ddns_server_x == "WWW.ASUS.COM")
-			show_asus_alert(ddns_hostname_x);
+		if (ddns_prov1 == "WWW.ASUS.COM")
+			show_asus_alert(ddns_hname);
 	}else
 		ddns_disable();
+}
+
+function fill_provider_list(oname,sel,mask){
+	var o = document.form[oname];
+	if(o === undefined)
+		return;
+	if(!(mask&0x01))
+		add_option(o, "<#btn_Disable#>", "", (sel=="") ? 1 : 0);
+	for(var i = 0; i < ddns_list.length; i++){
+		if (!(ddns_list[i][0]&mask))
+			continue;
+		var caption = ddns_list[i][1].toLowerCase();
+		if(ddns_list[i][2] != "")
+			caption += " " + ddns_list[i][2];
+		add_option(o, caption, ddns_list[i][1], (sel==ddns_list[i][1]) ? 1 : 0);
+	}
 }
 
 function show_asus_alert(hname)
@@ -233,46 +306,10 @@ function show_asus_alert(hname)
 }
 
 function openLink(s) {
-	var tourl = "";
 	var link_params = "toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=640,height=480";
-	var o1 = (s == 'x_DDNSServer2') ? document.form.ddns2_server : document.form.ddns_server_x;
-	if (o1.value == "WWW.DYNDNS.ORG")
-		tourl = "https://account.dyn.com/entrance/";
-	else if (o1.value == 'WWW.TZO.COM')
-		tourl = "http://signup.tzo.com";
-	else if (o1.value == 'WWW.ZONEEDIT.COM')
-		tourl = "http://www.zoneedit.com/signUp.html";
-	else if (o1.value == 'WWW.EASYDNS.COM')
-		tourl = "https://web.easydns.com/Open_Account/";
-	else if (o1.value == 'WWW.NO-IP.COM')
-		tourl = "http://www.noip.com/newUser.php";
-	else if (o1.value == 'WWW.TUNNELBROKER.NET')
-		tourl = "http://www.tunnelbroker.net/register.php";
-	else if (o1.value == 'DNS.HE.NET')
-		tourl = "http://ipv6.he.net/certification/register.php";
-	else if (o1.value == 'WWW.DNSEXIT.COM')
-		tourl = "https://www.dnsexit.com/Direct.sv?cmd=signup";
-	else if (o1.value == 'WWW.CHANGEIP.COM')
-		tourl = "https://www.changeip.com/accounts/register.php";
-	else if (o1.value == 'WWW.DNSOMATIC.COM')
-		tourl = "https://www.dnsomatic.com/create/";
-	else if (o1.value == 'WWW.SITELUTIONS.COM')
-		tourl = "https://sitelutions.com/signup";
-	else if (o1.value == 'WWW.NIC.RU')
-		tourl = "https://www.nic.ru/dns/service/dns_hosting/dns_master/dynamic_dns.html";
-	else if (o1.value == 'WWW.DUCKDNS.ORG')
-		tourl = "https://duckdns.org/";
-	else if (o1.value == 'WWW.DTDNS.COM')
-		tourl = "https://www.dtdns.com/dtsite/register";
-	else if (o1.value == 'WWW.DHIS.ORG')
-		tourl = "http://dhis.org/WebEngine.ipo?context=dhis.website.register";
-	else if (o1.value == 'TB.NETASSIST.UA')
-		tourl = "http://tb.netassist.ua/reg.php";
-	else if (o1.value == 'IPV4.NSUPDATE.INFO')
-		tourl = "https://nsupdate.info/account/register/";
-	else if (o1.value == 'FREEDNS.AFRAID.ORG')
-		tourl = "http://freedns.afraid.org/signup/";
-	else
+	var o = (s == 'x_DDNSServer2') ? document.form.ddns2_server : document.form.ddns_server_x;
+	var tourl = get_url_link(o.value);
+	if (tourl == "")
 		return;
 	link = window.open(tourl, "DDNSLink", link_params);
 	if (!link.opener) link.opener = self;
@@ -280,28 +317,49 @@ function openLink(s) {
 
 function validForm(){
 	if(document.form.ddns_enable_x[0].checked){
-		if(document.form.ddns_server_x.selectedIndex == 0){
-			if(document.form.DDNSName.value == "" || !validate_ddns_hostname(document.form.DDNSName)){
+		var o1 = document.form.ddns_server_x;
+		var o2 = document.form.ddns2_server;
+		var o3 = document.form.ddns_hostname_x;
+		if(o1.value == "WWW.ASUS.COM"){
+			var o4 = document.form.DDNSName;
+			if(o4.value == "" || !validate_ddns_hostname(o4)){
 				alert("<#LANHostConfig_x_DDNS_alarm_14#>");
-				document.form.DDNSName.focus();
-				document.form.DDNSName.select();
+				o4.focus();
+				o4.select();
 				return false;
 			}else{
-				document.form.ddns_hostname_x.value = document.form.DDNSName.value+".asuscomm.com";
+				o3.value = o4.value+".asuscomm.com";
 			}
 		}else{
-			if(document.form.ddns_hostname_x.value == ""){
+			if(o3.value == ""){
 				alert("<#LANHostConfig_x_DDNS_alarm_14#>");
-				document.form.ddns_hostname_x.focus();
-				document.form.ddns_hostname_x.select();
+				o3.focus();
+				o3.select();
+				return false;
+			}
+		}
+		if(o1.value == "CUSTOM"){
+			var o5 = document.form.ddns_cst_svr;
+			if(o5.value == ""){
+				alert("<#JS_fieldblank#>");
+				o5.focus();
+				o5.select();
+				return false;
+			}
+			var o6 = document.form.ddns_cst_url;
+			if(o6.value == ""){
+				alert("<#JS_fieldblank#>");
+				o6.focus();
+				o6.select();
 				return false;
 			}
 		}
 		if(document.form.ddns2_server.value != ""){
-			if(document.form.ddns2_hname.value == ""){
+			var o8 = document.form.ddns2_hname;
+			if(o8.value == ""){
 				alert("<#LANHostConfig_x_DDNS_alarm_14#>");
-				document.form.ddns2_hname.focus();
-				document.form.ddns2_hname.select();
+				o8.focus();
+				o8.select();
 				return false;
 			}
 		}
@@ -411,30 +469,20 @@ function checkDDNSReturnCode(){
                                             <th><#LANHostConfig_x_DDNSServer_itemname#></th>
                                             <td>
                                                 <select name="ddns_server_x" class="input" onchange="change_ddns_server(1)">
-                                                    <option value="WWW.ASUS.COM"         <% nvram_match_x("","ddns_server_x", "WWW.ASUS.COM","selected"); %>>www.asuscomm.com</option>
-                                                    <option value="WWW.DYNDNS.ORG"       <% nvram_match_x("","ddns_server_x", "WWW.DYNDNS.ORG","selected"); %>>www.dyndns.org</option>
-                                                    <option value="WWW.TZO.COM"          <% nvram_match_x("","ddns_server_x", "WWW.TZO.COM","selected"); %>>www.tzo.com</option>
-                                                    <option value="WWW.ZONEEDIT.COM"     <% nvram_match_x("","ddns_server_x", "WWW.ZONEEDIT.COM","selected"); %>>www.zoneedit.com</option>
-                                                    <option value="WWW.EASYDNS.COM"      <% nvram_match_x("","ddns_server_x", "WWW.EASYDNS.COM","selected"); %>>www.easydns.com</option>
-                                                    <option value="WWW.NO-IP.COM"        <% nvram_match_x("","ddns_server_x", "WWW.NO-IP.COM","selected"); %>>www.no-ip.com</option>
-                                                    <option value="WWW.DNSOMATIC.COM"    <% nvram_match_x("","ddns_server_x", "WWW.DNSOMATIC.COM","selected"); %>>www.dnsomatic.com</option>
-                                                    <option value="WWW.DNSEXIT.COM"      <% nvram_match_x("","ddns_server_x", "WWW.DNSEXIT.COM","selected"); %>>www.dnsexit.com</option>
-                                                    <option value="WWW.CHANGEIP.COM"     <% nvram_match_x("","ddns_server_x", "WWW.CHANGEIP.COM","selected"); %>>www.changeip.com</option>
-                                                    <option value="WWW.SITELUTIONS.COM"  <% nvram_match_x("","ddns_server_x", "WWW.SITELUTIONS.COM","selected"); %>>www.sitelutions.com</option>
-                                                    <option value="WWW.ZERIGO.COM"       <% nvram_match_x("","ddns_server_x", "WWW.ZERIGO.COM","selected"); %>>www.zerigo.com</option>
-                                                    <option value="WWW.DHIS.ORG"         <% nvram_match_x("","ddns_server_x", "WWW.DHIS.ORG","selected"); %>>www.dhis.org</option>
-                                                    <option value="WWW.NIC.RU"           <% nvram_match_x("","ddns_server_x", "WWW.NIC.RU","selected"); %>>www.nic.ru (RU-CENTER)</option>
-                                                    <option value="WWW.DUCKDNS.ORG"      <% nvram_match_x("","ddns_server_x", "WWW.DUCKDNS.ORG","selected"); %>>www.duckdns.org</option>
-                                                    <option value="WWW.DTDNS.COM"        <% nvram_match_x("","ddns_server_x", "WWW.DTDNS.COM","selected"); %>>www.dtdns.com</option>
-                                                    <option value="WWW.OVH.COM"          <% nvram_match_x("","ddns_server_x", "WWW.OVH.COM","selected"); %>>www.ovh.com</option>
-                                                    <option value="WWW.LOOPIA.COM"       <% nvram_match_x("","ddns_server_x", "WWW.LOOPIA.COM","selected"); %>>www.loopia.com</option>
-                                                    <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("","ddns_server_x", "WWW.TUNNELBROKER.NET","selected"); %>>www.tunnelbroker.net (HE)</option>
-                                                    <option value="DNS.HE.NET"           <% nvram_match_x("","ddns_server_x", "DNS.HE.NET","selected"); %>>dns.he.net (HE)</option>
-                                                    <option value="TB.NETASSIST.UA"      <% nvram_match_x("","ddns_server_x", "TB.NETASSIST.UA","selected"); %>>tb.netassist.ua</option>
-                                                    <option value="IPV4.NSUPDATE.INFO"   <% nvram_match_x("","ddns_server_x", "IPV4.NSUPDATE.INFO","selected"); %>>ipv4.nsupdate.info</option>
-                                                    <option value="FREEDNS.AFRAID.ORG"   <% nvram_match_x("","ddns_server_x", "FREEDNS.AFRAID.ORG","selected"); %>>freedns.afraid.org</option>
                                                 </select>&nbsp;
                                                 <a id="ddns_link" href="javascript:openLink('x_DDNSServer')" class="label label-info" name="x_DDNS_link"><#LANHostConfig_x_DDNSServer_linkname#></a>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_ddns_cst_svr" style="display:none;">
+                                            <th><#DDNS_SVR#></th>
+                                            <td>
+                                                <input type="text" class="input" maxlength="64" size="48" name="ddns_cst_svr" value="<% nvram_get_x("","ddns_cst_svr"); %>" onKeyPress="return is_string(this,event);" />
+                                            </td>
+                                        </tr>
+                                        <tr id="row_ddns_cst_url" style="display:none;">
+                                            <th><#DDNS_URL#></th>
+                                            <td>
+                                                <input type="text" class="input" maxlength="64" size="48" style="width: 286px;" name="ddns_cst_url" value="<% nvram_get_x("","ddns_cst_url"); %>" onKeyPress="return is_string(this,event);" />
                                             </td>
                                         </tr>
                                         <tr id="row_ddns_hname1">
@@ -504,26 +552,6 @@ function checkDDNSReturnCode(){
                                             <th width="50%"><#LANHostConfig_x_DDNSServer_itemname#></th>
                                             <td>
                                                 <select name="ddns2_server" class="input" onchange="change_ddns2_server(1)">
-                                                    <option value=""                     <% nvram_match_x("","ddns2_server", "","selected"); %>><#btn_Disable#></option>
-                                                    <option value="WWW.DYNDNS.ORG"       <% nvram_match_x("","ddns2_server", "WWW.DYNDNS.ORG","selected"); %>>www.dyndns.org</option>
-                                                    <option value="WWW.TZO.COM"          <% nvram_match_x("","ddns2_server", "WWW.TZO.COM","selected"); %>>www.tzo.com</option>
-                                                    <option value="WWW.ZONEEDIT.COM"     <% nvram_match_x("","ddns2_server", "WWW.ZONEEDIT.COM","selected"); %>>www.zoneedit.com</option>
-                                                    <option value="WWW.NO-IP.COM"        <% nvram_match_x("","ddns2_server", "WWW.NO-IP.COM","selected"); %>>www.no-ip.com</option>
-                                                    <option value="WWW.DNSOMATIC.COM"    <% nvram_match_x("","ddns2_server", "WWW.DNSOMATIC.COM","selected"); %>>www.dnsomatic.com</option>
-                                                    <option value="WWW.DNSEXIT.COM"      <% nvram_match_x("","ddns2_server", "WWW.DNSEXIT.COM","selected"); %>>www.dnsexit.com</option>
-                                                    <option value="WWW.CHANGEIP.COM"     <% nvram_match_x("","ddns2_server", "WWW.CHANGEIP.COM","selected"); %>>www.changeip.com</option>
-                                                    <option value="WWW.SITELUTIONS.COM"  <% nvram_match_x("","ddns2_server", "WWW.SITELUTIONS.COM","selected"); %>>www.sitelutions.com</option>
-                                                    <option value="WWW.ZERIGO.COM"       <% nvram_match_x("","ddns2_server", "WWW.ZERIGO.COM","selected"); %>>www.zerigo.com</option>
-                                                    <option value="WWW.DHIS.ORG"         <% nvram_match_x("","ddns2_server", "WWW.DHIS.ORG","selected"); %>>www.dhis.org</option>
-                                                    <option value="WWW.DUCKDNS.ORG"      <% nvram_match_x("","ddns2_server", "WWW.DUCKDNS.ORG","selected"); %>>www.duckdns.org</option>
-                                                    <option value="WWW.DTDNS.COM"        <% nvram_match_x("","ddns2_server", "WWW.DTDNS.COM","selected"); %>>www.dtdns.com</option>
-                                                    <option value="WWW.OVH.COM"          <% nvram_match_x("","ddns2_server", "WWW.OVH.COM","selected"); %>>www.ovh.com</option>
-                                                    <option value="WWW.LOOPIA.COM"       <% nvram_match_x("","ddns2_server", "WWW.LOOPIA.COM","selected"); %>>www.loopia.com</option>
-                                                    <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("","ddns2_server", "WWW.TUNNELBROKER.NET","selected"); %>>www.tunnelbroker.net (HE)</option>
-                                                    <option value="DNS.HE.NET"           <% nvram_match_x("","ddns2_server", "DNS.HE.NET","selected"); %>>dns.he.net (HE)</option>
-                                                    <option value="TB.NETASSIST.UA"      <% nvram_match_x("","ddns2_server", "TB.NETASSIST.UA","selected"); %>>tb.netassist.ua</option>
-                                                    <option value="IPV4.NSUPDATE.INFO"   <% nvram_match_x("","ddns2_server", "IPV4.NSUPDATE.INFO","selected"); %>>ipv4.nsupdate.info</option>
-                                                    <option value="FREEDNS.AFRAID.ORG"   <% nvram_match_x("","ddns2_server", "FREEDNS.AFRAID.ORG","selected"); %>>freedns.afraid.org</option>
                                                 </select>&nbsp;
                                                 <a id="ddns2_link" href="javascript:openLink('x_DDNSServer2')" class="label label-info" name="x_DDNS2_link"><#LANHostConfig_x_DDNSServer_linkname#></a>
                                             </td>

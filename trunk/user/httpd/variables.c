@@ -617,6 +617,8 @@
 			{"ddns_hostname2_x", "", NULL, EVM_RESTART_DDNS},
 			{"ddns_hostname3_x", "", NULL, EVM_RESTART_DDNS},
 			{"ddns_wildcard_x", "", NULL, EVM_RESTART_DDNS},
+			{"ddns_cst_svr", "", NULL, EVM_RESTART_DDNS },
+			{"ddns_cst_url", "", NULL, EVM_RESTART_DDNS },
 			{"ddns_period", "", NULL, EVM_RESTART_DDNS },
 			{"ddns_forced", "", NULL, EVM_RESTART_DDNS },
 			{"ddns_verbose", "", NULL, EVM_RESTART_DDNS },

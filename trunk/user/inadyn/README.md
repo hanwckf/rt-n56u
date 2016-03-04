@@ -68,6 +68,9 @@ DDNS plugin.  See below for configuration examples.
 * <https://www.dtdns.com>
 * <http://giradns.com>
 * <https://www.duiadns.net>
+* <https://ddnss.de>
+* <http://dynv6.com>
+* <http://ipv4.dynv6.com>
 
 Some of these services are free of charge for non-commercial use, others
 take a small fee, but also provide more domains to choose from.
@@ -98,24 +101,29 @@ Example `/etc/inadyn.conf`:
     startup-delay  60
     #logfile /var/log/ddns.log
     #pidfile /var/run/ddns.pid
-    
+
     system default@dyndns.org
       ssl
       username yxxx
       password xyxx
       alias yyy
       alias zzz
-    
+
     system default@no-ip.com
       username xxyx
       password xxxy
       alias yyy
-    
+
     system default@tunnelbroker.net
       ssl
       username xyzzy
       password update-key-in-advanced-tab
       alias tunnel-id
+
+    system default@dynv6.com
+      username your_token
+      password n/a
+      alias host1.dynv6.net
 
 In a multi-user setup, make sure to chmod your .conf to 600 (read-write
 only by you/root) to prevent other users from accessing your DDNS server

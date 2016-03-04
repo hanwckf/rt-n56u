@@ -1,8 +1,6 @@
-/* Generic DDNS plugin
+/* Plugin for dynv6.com
  *
- * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
- * Copyright (C) 2006       Steve Horbachuk
- * Copyright (C) 2010-2014  Joachim Nilsson <troglobit@gmail.com>
+ * Copyright (C) 2016  Sven Hoefer <sven@svenhoefer.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,26 +21,21 @@
 
 #include "plugin.h"
 
-/*
- * Generic update format for sites that perform the update using:
- *
- *	http://some.address.domain/somesubdir?some_param_name=ALIAS
- *
- * With the standard http stuff and basic base64 encoded auth.
- * The parameter here is the entire request, except the the alias.
- */
-#define GENERIC_BASIC_AUTH_UPDATE_IP_REQUEST				\
-	"GET %s%s "							\
+#define DYNV6_UPDATE_IP_REQUEST						\
+	"GET %s?"							\
+	"ipv6=auto&"							\
+	"hostname=%s&"							\
+	"token=%s"							\
+	" "								\
 	"HTTP/1.0\r\n"							\
 	"Host: %s\r\n"							\
-	"Authorization: Basic %s\r\n"					\
 	"User-Agent: " AGENT_NAME " " SUPPORT_ADDR "\r\n\r\n"
 
 static int request  (ddns_t       *ctx,   ddns_info_t *info, ddns_alias_t *alias);
 static int response (http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias);
 
-static ddns_system_t generic = {
-	.name         = "custom@http_srv_basic_auth",
+static ddns_system_t plugin = {
+	.name         = "default@dynv6.com",
 
 	.request      = (req_fn_t)request,
 	.response     = (rsp_fn_t)response,
@@ -50,66 +43,40 @@ static ddns_system_t generic = {
 	.checkip_name = DYNDNS_MY_IP_SERVER,
 	.checkip_url  = DYNDNS_MY_CHECKIP_URL,
 
-	.server_name  = "",
-	.server_url   = ""
-};
-
-/* Compatiblity entry, new canonical is @http_srv */
-static ddns_system_t compat = {
-	.name         = "custom@http_svr_basic_auth",
-
-	.request      = (req_fn_t)request,
-	.response     = (rsp_fn_t)response,
-
-	.checkip_name = DYNDNS_MY_IP_SERVER,
-	.checkip_url  = DYNDNS_MY_CHECKIP_URL,
-
-	.server_name  = "",
-	.server_url   = ""
+	.server_name  = "dynv6.com",
+	.server_url   =  "/api/update"
 };
 
 static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 {
-	char *arg = alias->name; /* Backwards compat, default to append hostname */
-
-	if (info->append_myip)	 /* New, append client's IP address instead. */
-		arg = alias->address;
-
 	return snprintf(ctx->request_buf, ctx->request_buflen,
-			GENERIC_BASIC_AUTH_UPDATE_IP_REQUEST,
-			info->server_url, arg,
-			info->server_name.name,
-			info->creds.encoded_password);
+			DYNV6_UPDATE_IP_REQUEST,
+			info->server_url,
+			alias->name,
+			info->creds.username,
+			info->server_name.name);
 }
 
-/*
- * generic response validator
- * parses a given string. If found is ok, returns OK (0)
- *
- * Example: 'SUCCESS CODE='
- */
 static int response(http_trans_t *trans, ddns_info_t *UNUSED(info), ddns_alias_t *UNUSED(alias))
 {
 	char *resp = trans->p_rsp_body;
 
 	DO(http_status_valid(trans->status));
 
-	if (strstr(resp, "OK") || strstr(resp, "good") || strstr(resp, "true") || strcasestr(resp, "updated"))
-		return RC_OK;
+	if (strstr(resp, "updated"))
+		return 0;
 
 	return RC_DYNDNS_RSP_NOTOK;
 }
 
 PLUGIN_INIT(plugin_init)
 {
-	plugin_register(&generic);
-	plugin_register(&compat);
+	plugin_register(&plugin);
 }
 
 PLUGIN_EXIT(plugin_exit)
 {
-	plugin_unregister(&generic);
-	plugin_unregister(&compat);
+	plugin_unregister(&plugin);
 }
 
 /**

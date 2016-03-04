@@ -1,4 +1,4 @@
-SRC_NAME=transmission-2.84
+SRC_NAME=transmission-2.9x
 
 CFLAGS   += -O2 -ffunction-sections -fdata-sections -D_LARGEFILE64_SOURCE -D_LFS64_LARGEFILE
 LDFLAGS  += -Wl,--gc-sections
@@ -25,11 +25,11 @@ configure:
 		--enable-daemon \
 		--enable-lightweight \
 		--disable-utp \
-		--with-inotify \
-		--without-gtk \
 		--disable-nls \
 		--disable-cli \
 		--disable-mac \
+		--without-gtk \
+		--with-inotify \
 		--with-zlib=$(STAGEDIR) \
 		OPENSSL_CFLAGS="-I$(STAGEDIR)/include" \
 		OPENSSL_LIBS="-L$(STAGEDIR)/lib -lssl -lcrypto" \

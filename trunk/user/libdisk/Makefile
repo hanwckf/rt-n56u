@@ -28,7 +28,6 @@ test_share: test_share.o libdisk.so
 
 romfs:
 	$(ROMFSINST) /lib/libdisk.so
-	$(ROMFSINST) /sbin/disk_test
 	if [ "$(CONFIG_FIRMWARE_INCLUDE_SMBD)" = "y" ] || [ "$(CONFIG_FIRMWARE_INCLUDE_FTPD)" = "y" ] ; then \
 		$(ROMFSINST) /sbin/test_share ; \
 	fi;

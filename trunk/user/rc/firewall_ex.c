@@ -37,12 +37,8 @@
 
 #define MODULE_WEBSTR_MASK	0x01
 
-/* state match - xt_conntrack or xt_state (xt_conntrack more slower than xt_state) */
-#if defined (USE_MATCH_CONNTRACK)
-#define CT_STATE		"conntrack --ctstate"
-#else
+/* state match - use xt_state (xt_conntrack more slower than xt_state) */
 #define CT_STATE		"state --state"
-#endif
 
 static char *g_buf;
 static char g_buf_pool[1024];
@@ -1146,7 +1142,7 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 			
 #if defined (USE_MATCH_CONNTRACK)
 			/* Accept to Virtual Servers, UPnP, DMZ */
-			fprintf(fp, "-A %s -m %s %s -j %s\n", dtype, CT_STATE, "DNAT", logaccept);
+			fprintf(fp, "-A %s -m %s %s -j %s\n", dtype, "conntrack --ctstate", "DNAT", logaccept);
 #else
 			/* Accept to exposed station (DMZ) */
 			dmz_ip = nvram_safe_get("dmz_ip");

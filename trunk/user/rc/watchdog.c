@@ -746,12 +746,9 @@ ez_action_user_script(int script_param)
 static void
 ez_action_led_toggle(void)
 {
-	int front_led_x = (nvram_get_int("front_led_all")) ? 0 : 1;
+	int is_show = (nvram_get_int("led_front_t")) ? 0 : 1;
 
-	nvram_set_int("front_led_all", front_led_x);
-	nvram_set_int("front_led_pwr", front_led_x);
-
-	notify_leds_detect_link();
+	show_hide_front_leds(is_show);
 }
 
 void

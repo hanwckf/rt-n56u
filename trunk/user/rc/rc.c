@@ -465,6 +465,9 @@ nvram_convert_misc_values(void)
 	nvram_set_int_temp("link_internet", 2);
 	nvram_set_int_temp("link_wan", 0);
 
+	nvram_set_int_temp("led_front_t", 1);
+	nvram_set_int_temp("led_ether_t", 1);
+
 	nvram_set_int_temp("reload_svc_wl", 0);
 	nvram_set_int_temp("reload_svc_rt", 0);
 
@@ -729,6 +732,9 @@ LED_CONTROL(int gpio_led, int flag)
 	)
 		flag = LED_OFF;
 #endif
+
+	if (flag != LED_OFF && !nvram_get_int("led_front_t"))
+		flag = LED_OFF;
 
 #if defined (BOARD_GPIO_LED_WIFI)
 #if defined (CONFIG_RALINK_MT7620) && (BOARD_GPIO_LED_WIFI == 72)
@@ -1722,20 +1728,36 @@ main(int argc, char **argv)
 			ret = get_wired_mac(1);
 		}
 	}
+	else if (!strcmp(base, "leds_front")) {
+		if (argc > 1) {
+			int power_on = atoi(argv[1]);
+			show_hide_front_leds(power_on);
+		} else {
+			printf("Usage: %s <show>\n\n", base);
+		}
+	}
+	else if (!strcmp(base, "leds_ether")) {
+		if (argc > 1) {
+			int power_on = atoi(argv[1]);
+			show_hide_ether_leds(power_on);
+		} else {
+			printf("Usage: %s <show>\n\n", base);
+		}
+	}
 #if defined (USE_USB_SUPPORT)
-#if defined (BOARD_GPIO_PWR_USB) || defined (BOARD_GPIO_PWR_USB2)
 	else if (!strcmp(base, "usb5v")) {
 		if (argc > 1) {
+#if defined (BOARD_GPIO_PWR_USB) || defined (BOARD_GPIO_PWR_USB2)
 			int port = 0;
 			int power_on = atoi(argv[1]);
 			if (argc > 2)
 				port = atoi(argv[2]);
 			power_control_usb_port(port, power_on);
+#endif
 		} else {
-			printf("Usage: %s power [port]\n\n", base);
+			printf("Usage: %s <power> [port]\n\n", base);
 		}
 	}
-#endif
 	else if (!strcmp(base, "ejusb")) {
 		int port = 0;
 		char *devn = NULL;

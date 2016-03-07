@@ -101,6 +101,8 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc reset_to_defaults
 	cd $(INSTALLDIR)/sbin && ln -sf rc lan_eeprom_mac
 	cd $(INSTALLDIR)/sbin && ln -sf rc wan_eeprom_mac
+	cd $(INSTALLDIR)/sbin && ln -sf rc leds_front
+	cd $(INSTALLDIR)/sbin && ln -sf rc leds_ether
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_restart
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle_off

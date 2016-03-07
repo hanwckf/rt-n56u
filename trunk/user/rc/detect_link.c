@@ -404,6 +404,20 @@ notify_leds_detect_link(void)
 	kill_pidfile_s(DL_PID_FILE, SIGHUP);
 }
 
+void
+show_hide_front_leds(int is_show)
+{
+	nvram_set_int_temp("led_front_t", (is_show) ? 1 : 0);
+	notify_leds_detect_link();
+}
+
+void
+show_hide_ether_leds(int is_show)
+{
+	nvram_set_int_temp("led_ether_t", (is_show) ? 1 : 0);
+	update_ether_leds();
+}
+
 int
 detect_link_main(int argc, char *argv[])
 {

@@ -243,6 +243,7 @@ void switch_config_base(void);
 void switch_config_storm(void);
 void switch_config_link(void);
 void switch_config_vlan(int first_call);
+void update_ether_leds(void);
 int  is_vlan_vid_valid(int vlan_vid);
 int  start_udhcpc_lan(char *lan_ifname);
 int  stop_udhcpc_lan();
@@ -666,6 +667,8 @@ int start_detect_link(void);
 void stop_detect_link(void);
 void notify_reset_detect_link(void);
 void notify_leds_detect_link(void);
+void show_hide_front_leds(int is_show);
+void show_hide_ether_leds(int is_show);
 
 /* detect_internet.c */
 int detect_internet_main(int argc, char *argv[]);

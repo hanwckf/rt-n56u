@@ -371,21 +371,8 @@ switch_config_link(void)
 void
 switch_config_base(void)
 {
-#if (BOARD_NUM_ETH_LEDS > 1)
-#if BOARD_ETH_LED_SWAP
-	phy_led_mode_green(nvram_get_int("ether_led1"));
-	phy_led_mode_yellow(nvram_get_int("ether_led0"));
-#else
-	phy_led_mode_green(nvram_get_int("ether_led0"));
-	phy_led_mode_yellow(nvram_get_int("ether_led1"));
-#endif
-#elif (BOARD_NUM_ETH_LEDS == 1)
-#if BOARD_ETH_LED_SWAP
-	phy_led_mode_yellow(nvram_get_int("ether_led0"));
-#else
-	phy_led_mode_green(nvram_get_int("ether_led0"));
-#endif
-#endif
+	update_ether_leds();
+
 	phy_jumbo_frames(nvram_get_int("ether_jumbo"));
 	phy_green_ethernet(nvram_get_int("ether_green"));
 	phy_eee_lpi(nvram_get_int("ether_eee"));
@@ -505,6 +492,37 @@ is_vlan_vid_valid(int vlan_vid)
 	if (vlan_vid == 2)
 		return 1;
 	return (vlan_vid >= MIN_EXT_VLAN_VID && vlan_vid < 4095) ? 1 : 0;
+}
+
+void
+update_ether_leds(void)
+{
+#if (BOARD_NUM_ETH_LEDS > 1)
+	int led0 = nvram_get_int("ether_led0");
+	int led1 = nvram_get_int("ether_led1");
+
+	if (!nvram_get_int("led_ether_t")) {
+		led0 = SWAPI_LED_OFF;
+		led1 = SWAPI_LED_OFF;
+	}
+#if BOARD_ETH_LED_SWAP
+	phy_led_mode_green(led1);
+	phy_led_mode_yellow(led0);
+#else
+	phy_led_mode_green(led0);
+	phy_led_mode_yellow(led1);
+#endif
+#elif (BOARD_NUM_ETH_LEDS == 1)
+	int led0 = nvram_get_int("ether_led0");
+
+	if (!nvram_get_int("led_ether_t"))
+		led0 = SWAPI_LED_OFF;
+#if BOARD_ETH_LED_SWAP
+	phy_led_mode_yellow(led0);
+#else
+	phy_led_mode_green(led0);
+#endif
+#endif
 }
 
 void

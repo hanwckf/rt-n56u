@@ -1723,6 +1723,19 @@ main(int argc, char **argv)
 		}
 	}
 #if defined (USE_USB_SUPPORT)
+#if defined (BOARD_GPIO_PWR_USB) || defined (BOARD_GPIO_PWR_USB2)
+	else if (!strcmp(base, "usb5v")) {
+		if (argc > 1) {
+			int port = 0;
+			int power_on = atoi(argv[1]);
+			if (argc > 2)
+				port = atoi(argv[2]);
+			power_control_usb_port(port, power_on);
+		} else {
+			printf("Usage: %s power [port]\n\n", base);
+		}
+	}
+#endif
 	else if (!strcmp(base, "ejusb")) {
 		int port = 0;
 		char *devn = NULL;

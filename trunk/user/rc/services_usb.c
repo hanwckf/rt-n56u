@@ -86,6 +86,25 @@ safe_remove_usb_device(int port, const char *dev_name)
 	}
 }
 
+#if defined (BOARD_GPIO_PWR_USB) || defined (BOARD_GPIO_PWR_USB2)
+void
+power_control_usb_port(int port, int power_on)
+{
+	unsigned int pin_power_1 = (BOARD_GPIO_PWR_USB_ON != 0) ? 1 : 0;
+	unsigned int pin_power_0 = (BOARD_GPIO_PWR_USB_ON != 0) ? 0 : 1;
+	unsigned int pin_power = (power_on) ? pin_power_1 : pin_power_0;
+
+#if defined (BOARD_GPIO_PWR_USB)
+	if (port == 0 || port == 1)
+		cpu_gpio_set_pin(BOARD_GPIO_PWR_USB, pin_power);
+#endif
+#if defined (BOARD_GPIO_PWR_USB2)
+	if (port == 0 || port == 2)
+		cpu_gpio_set_pin(BOARD_GPIO_PWR_USB2, pin_power);
+#endif
+}
+#endif
+
 #if defined(SRV_U2EC)
 void
 start_u2ec(void)

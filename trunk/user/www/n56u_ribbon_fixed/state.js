@@ -530,7 +530,7 @@ function show_menu(L1, L2, L3){
 				continue;
 			if(L3 == i){
 				tab_ref = "javascript: void(0)";
-				if (L2==9 && i>2)
+				if (L2==9 && i>0 && tablink[L2-1][i].indexOf("#")>0)
 					tab_ref = tablink[L2-1][i];
 				tab_code += '<li class="active"><a href="' +tab_ref+ '">'+tabtitle[L2-1][i]+'</a></li>\n';
 			}else

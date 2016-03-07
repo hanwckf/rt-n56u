@@ -777,9 +777,9 @@ init_router(void)
 
 	get_eeprom_params();
 
-	init_gpio_leds_buttons();
-
 	nvram_convert_misc_values();
+
+	init_gpio_leds_buttons();
 
 	if (nvram_need_commit)
 		nvram_commit();

@@ -1,4 +1,4 @@
-# $Id: Makefile.linux,v 1.91 2015/10/26 16:53:25 nanard Exp $
+# $Id: Makefile.linux,v 1.93 2016/02/12 14:28:01 nanard Exp $
 # MiniUPnP project
 # (c) 2006-2015 Thomas Bernard
 # http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
@@ -26,6 +26,7 @@ CFLAGS ?= -Os
 CFLAGS += -fno-strict-aliasing
 CFLAGS += -fno-common
 CFLAGS += -D_GNU_SOURCE
+CPPFLAGS += -D_GNU_SOURCE
 CFLAGS += -Wall
 CFLAGS += -Wextra -Wstrict-prototypes -Wdeclaration-after-statement
 #CFLAGS += -Wno-missing-field-initializers

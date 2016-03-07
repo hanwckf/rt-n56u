@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.7 2013/12/13 13:10:48 nanard Exp $
+# $Id: Makefile,v 1.8 2016/02/09 09:36:30 nanard Exp $
 CFLAGS?=-Wall -g -D_GNU_SOURCE -DDEBUG -Wstrict-prototypes -Wdeclaration-after-statement
 CC?=gcc
 
@@ -42,3 +42,8 @@ upnpglobalvars.o:	../upnpglobalvars.c ../upnpglobalvars.h
 	$(CC) -c -o $@ $<
 
 
+#depends
+testiptcrdr.o: testiptcrdr.c iptcrdr.c
+testiptcrdr_dscp.o:	testiptcrdr_dscp.c iptcrdr.c
+testiptcrdr_peer.o:	testiptcrdr_peer.c iptcrdr.c
+test_nfct_get.o:	test_nfct_get.c nfct_get.c

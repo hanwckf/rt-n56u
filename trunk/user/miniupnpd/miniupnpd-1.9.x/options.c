@@ -1,4 +1,4 @@
-/* $Id: options.c,v 1.32 2014/05/22 07:52:45 nanard Exp $ */
+/* $Id: options.c,v 1.33 2016/02/09 09:37:44 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * author: Ryan Wagoner
@@ -61,6 +61,7 @@ static const struct {
 #ifdef USE_NETFILTER
 	{ UPNPFORWARDCHAIN, "upnp_forward_chain"},
 	{ UPNPNATCHAIN, "upnp_nat_chain"},
+	{ UPNPNATPOSTCHAIN, "upnp_nat_postrouting_chain"},
 #endif
 #ifdef ENABLE_NATPMP
 	{ UPNPENABLENATPMP, "enable_natpmp"},

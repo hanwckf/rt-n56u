@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: iptables_init.sh,v 1.8 2014/04/15 13:45:08 nanard Exp $
+# $Id: iptables_init.sh,v 1.9 2016/02/09 09:37:44 nanard Exp $
 IPTABLES="`which iptables`" || exit 1
 IP="`which ip`" || exit 1
 
@@ -26,5 +26,5 @@ $IPTABLES -t filter -N MINIUPNPD
 $IPTABLES -t filter -A FORWARD -i $EXTIF ! -o $EXTIF -j MINIUPNPD
 
 #adding the MINIUPNPD chain for nat
-$IPTABLES -t nat -N MINIUPNPD-PCP-PEER
-$IPTABLES -t nat -A POSTROUTING -o $EXTIF -j MINIUPNPD-PCP-PEER
+$IPTABLES -t nat -N MINIUPNPD-POSTROUTING
+$IPTABLES -t nat -A POSTROUTING -o $EXTIF -j MINIUPNPD-POSTROUTING

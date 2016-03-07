@@ -1,4 +1,4 @@
-/* $Id: iptpinhole.c,v 1.15 2016/01/13 15:54:42 nanard Exp $ */
+/* $Id: iptpinhole.c,v 1.16 2016/01/19 10:03:30 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2012-2016 Thomas Bernard

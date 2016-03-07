@@ -1,4 +1,4 @@
-/* $Id: miniupnpd.c,v 1.214 2016/01/01 11:15:56 nanard Exp $ */
+/* $Id: miniupnpd.c,v 1.215 2016/02/09 09:37:43 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2015 Thomas Bernard
@@ -1192,6 +1192,9 @@ init(int argc, char * * argv, struct runtime_vars * v)
 				break;
 			case UPNPNATCHAIN:
 				miniupnpd_nat_chain = ary_options[i].value;
+				break;
+			case UPNPNATPOSTCHAIN:
+				miniupnpd_nat_postrouting_chain = ary_options[i].value;
 				break;
 #endif	/* USE_NETFILTER */
 			case UPNPNOTIFY_INTERVAL:

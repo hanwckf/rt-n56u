@@ -1,7 +1,7 @@
-/* $Id: upnpsoap.c,v 1.142 2015/12/15 11:12:37 nanard Exp $ */
+/* $Id: upnpsoap.c,v 1.147 2016/02/20 19:12:00 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2015 Thomas Bernard
+ * (c) 2006-2016 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -30,6 +30,16 @@
 #include "getifstats.h"
 #include "getconnstatus.h"
 #include "upnpurns.h"
+
+/* utility function */
+static int is_numeric(const char * s)
+{
+	while(*s) {
+		if(*s < '0' || *s > '9') return 0;
+		s++;
+	}
+	return 1;
+}
 
 static void
 BuildSendAndCloseSoapResp(struct upnphttp * h,
@@ -89,6 +99,9 @@ GetConnectionTypeInfo(struct upnphttp * h, const char * action, const char * ns)
 	BuildSendAndCloseSoapResp(h, body, bodylen);
 }
 
+/* maximum value for a UPNP ui4 type variable */
+#define UPNP_UI4_MAX (4294967295ul)
+
 static void
 GetTotalBytesSent(struct upnphttp * h, const char * action, const char * ns)
 {
@@ -107,7 +120,11 @@ GetTotalBytesSent(struct upnphttp * h, const char * action, const char * ns)
 	r = getifstats(ext_if_name, &data);
 	bodylen = snprintf(body, sizeof(body), resp,
 	         action, ns, /* was "urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1" */
+#ifdef UPNP_STRICT
+             r<0?0:(data.obytes & UPNP_UI4_MAX), action);
+#else /* UPNP_STRICT */
              r<0?0:data.obytes, action);
+#endif /* UPNP_STRICT */
 	BuildSendAndCloseSoapResp(h, body, bodylen);
 }
 
@@ -127,9 +144,18 @@ GetTotalBytesReceived(struct upnphttp * h, const char * action, const char * ns)
 	struct ifdata data;
 
 	r = getifstats(ext_if_name, &data);
+	/* TotalBytesReceived
+	 * This variable represents the cumulative counter for total number of
+	 * bytes received downstream across all connection service instances on
+	 * WANDevice. The count rolls over to 0 after it reaching the maximum
+	 * value (2^32)-1. */
 	bodylen = snprintf(body, sizeof(body), resp,
 	         action, ns, /* was "urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1" */
+#ifdef UPNP_STRICT
+	         r<0?0:(data.ibytes & UPNP_UI4_MAX), action);
+#else /* UPNP_STRICT */
 	         r<0?0:data.ibytes, action);
+#endif /* UPNP_STRICT */
 	BuildSendAndCloseSoapResp(h, body, bodylen);
 }
 
@@ -151,7 +177,11 @@ GetTotalPacketsSent(struct upnphttp * h, const char * action, const char * ns)
 	r = getifstats(ext_if_name, &data);
 	bodylen = snprintf(body, sizeof(body), resp,
 	         action, ns,/*"urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1",*/
+#ifdef UPNP_STRICT
+	         r<0?0:(data.opackets & UPNP_UI4_MAX), action);
+#else /* UPNP_STRICT */
 	         r<0?0:data.opackets, action);
+#endif /* UPNP_STRICT */
 	BuildSendAndCloseSoapResp(h, body, bodylen);
 }
 
@@ -173,7 +203,11 @@ GetTotalPacketsReceived(struct upnphttp * h, const char * action, const char * n
 	r = getifstats(ext_if_name, &data);
 	bodylen = snprintf(body, sizeof(body), resp,
 	         action, ns, /* was "urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1" */
+#ifdef UPNP_STRICT
+	         r<0?0:(data.ipackets & UPNP_UI4_MAX), action);
+#else /* UPNP_STRICT */
 	         r<0?0:data.ipackets, action);
+#endif /* UPNP_STRICT */
 	BuildSendAndCloseSoapResp(h, body, bodylen);
 }
 
@@ -427,6 +461,13 @@ AddPortMapping(struct upnphttp * h, const char * action, const char * ns)
 	eport = (unsigned short)atoi(ext_port);
 	iport = (unsigned short)atoi(int_port);
 
+	if (strcmp(ext_port, "*") == 0 || eport == 0)
+	{
+		ClearNameValueList(&data);
+		SoapError(h, 716, "Wildcard not permited in ExtPort");
+		return;
+	}
+
 	leaseduration = leaseduration_str ? atoi(leaseduration_str) : 0;
 #ifdef IGD_V2
 	/* PortMappingLeaseDuration can be either a value between 1 and
@@ -445,14 +486,6 @@ AddPortMapping(struct upnphttp * h, const char * action, const char * ns)
 	       action, eport, int_ip, iport, protocol, desc, leaseduration,
 	       r_host ? r_host : "NULL");
 
-	/* TODO : be compliant with IGD spec for updating existing port mappings.
-	See "WANIPConnection:1 Service Template Version 1.01" 2.2.20.PortMappingDescription :
-	Overwriting Previous / Existing Port Mappings:
-	If the RemoteHost, ExternalPort, PortMappingProtocol and InternalClient are
-	exactly the same as an existing mapping, the existing mapping values for InternalPort,
-	PortMappingDescription, PortMappingEnabled and PortMappingLeaseDuration are
-	overwritten.
-	*/
 	r = upnp_redirect(r_host, eport, int_ip, iport, protocol, desc, leaseduration);
 
 	ClearNameValueList(&data);
@@ -474,7 +507,7 @@ AddPortMapping(struct upnphttp * h, const char * action, const char * ns)
              ExternalPort must be a wildcard and cannot be a specific port
              value (deprecated in IGD v2)
      * 728 - NoPortMapsAvailable
-             There are not enough free prots available to complete the mapping
+             There are not enough free ports available to complete the mapping
              (added in IGD v2)
 	 * 729 - ConflictWithOtherMechanisms (added in IGD v2) */
 	switch(r)
@@ -484,6 +517,11 @@ AddPortMapping(struct upnphttp * h, const char * action, const char * ns)
 		                   action, ns/*SERVICE_TYPE_WANIPC*/);
 		BuildSendAndCloseSoapResp(h, body, bodylen);
 		break;
+	case -4:
+#ifdef IGD_V2
+		SoapError(h, 729, "ConflictWithOtherMechanisms");
+		break;
+#endif /* IGD_V2 */
 	case -2:	/* already redirected */
 	case -3:	/* not permitted */
 		SoapError(h, 718, "ConflictInMappingEntry");
@@ -541,6 +579,11 @@ AddAnyPortMapping(struct upnphttp * h, const char * action, const char * ns)
 
 	eport = (unsigned short)atoi(ext_port);
 	iport = (unsigned short)atoi(int_port);
+	if(iport == 0 || !is_numeric(ext_port)) {
+		ClearNameValueList(&data);
+		SoapError(h, 402, "Invalid Args");
+		return;
+	}
 #ifndef SUPPORT_REMOTEHOST
 #ifdef UPNP_STRICT
 	if (r_host && (strlen(r_host) > 0) && (0 != strcmp(r_host, "*")))
@@ -671,6 +714,12 @@ GetSpecificPortMappingEntry(struct upnphttp * h, const char * action, const char
 #endif
 
 	eport = (unsigned short)atoi(ext_port);
+	if(eport == 0)
+	{
+		ClearNameValueList(&data);
+		SoapError(h, 402, "Invalid Args");
+		return;
+	}
 
 	/* TODO : add r_host as an input parameter ...
 	 * We prevent several Port Mapping with same external port
@@ -754,6 +803,12 @@ DeletePortMapping(struct upnphttp * h, const char * action, const char * ns)
 #endif /* SUPPORT_REMOTEHOST */
 
 	eport = (unsigned short)atoi(ext_port);
+	if(eport == 0)
+	{
+		ClearNameValueList(&data);
+		SoapError(h, 402, "Invalid Args");
+		return;
+	}
 
 	syslog(LOG_INFO, "%s: external port: %hu, protocol: %s",
 		action, eport, protocol);
@@ -831,7 +886,8 @@ DeletePortMappingRange(struct upnphttp * h, const char * action, const char * ns
 	endport_s = GetValueFromNameValueList(&data, "NewEndPort");
 	protocol = GetValueFromNameValueList(&data, "NewProtocol");
 	/*manage = atoi(GetValueFromNameValueList(&data, "NewManage"));*/
-	if(startport_s == NULL || endport_s == NULL || protocol == NULL) {
+	if(startport_s == NULL || endport_s == NULL || protocol == NULL ||
+	   !is_numeric(startport_s) || !is_numeric(endport_s)) {
 		SoapError(h, 402, "Invalid Args");
 		ClearNameValueList(&data);
 		return;
@@ -900,7 +956,7 @@ GetGenericPortMappingEntry(struct upnphttp * h, const char * action, const char 
 	unsigned short eport, iport;
 	const char * m_index;
 	char * endptr;
-	char protocol[4], iaddr[32];
+	char protocol[8], iaddr[32];
 	char desc[64];
 	char rhost[40];
 	unsigned int leaseduration = 0;
@@ -1019,7 +1075,8 @@ GetListOfPortMappings(struct upnphttp * h, const char * action, const char * ns)
 	/*manage_s = GetValueFromNameValueList(&data, "NewManage");*/
 	number_s = GetValueFromNameValueList(&data, "NewNumberOfPorts");
 	if(startport_s == NULL || endport_s == NULL || protocol == NULL ||
-	   number_s == NULL) {
+	   number_s == NULL || !is_numeric(number_s) ||
+	   !is_numeric(startport_s) || !is_numeric(endport_s)) {
 		SoapError(h, 402, "Invalid Args");
 		ClearNameValueList(&data);
 		return;

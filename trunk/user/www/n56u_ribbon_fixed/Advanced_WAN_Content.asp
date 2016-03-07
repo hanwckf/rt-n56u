@@ -282,121 +282,69 @@ function change_wan_type(wan_type, flag){
 	change_wan_dhcp_enable(wan_type);
 	change_wan_dns_enable(wan_type);
 
-	if(wan_type == "pppoe"){
-		
+	var is_static = (wan_type == "static") ? 1 : 0;
+	var is_pppoe = (wan_type == "pppoe") ? 1 : 0;
+	var is_pptp = (wan_type == "pptp") ? 1 : 0;
+	var is_l2tp = (wan_type == "l2tp") ? 1 : 0;
+	var is_dhcp = !(is_static||is_pppoe||is_pptp||is_l2tp);
+	var o_mtu, o_mru;
+
+	if(is_pppoe){
+		o_mtu = document.form.wan_pppoe_mtu;
+		o_mru = document.form.wan_pppoe_mru;
+		if (parseInt(o_mtu.value) > 1492)
+			o_mtu.value = "1492";
+		if (parseInt(o_mru.value) > 1492)
+			o_mru.value = "1492";
+	}else if(is_pptp){
+		o_mtu = document.form.wan_pptp_mtu;
+		o_mru = document.form.wan_pptp_mru;
+		if (parseInt(o_mtu.value) > 1476)
+			o_mtu.value = "1476";
+		if (parseInt(o_mru.value) > 1500)
+			o_mru.value = "1500";
+	}else if(is_l2tp){
+		o_mtu = document.form.wan_l2tp_mtu;
+		o_mru = document.form.wan_l2tp_mru;
+		if (parseInt(o_mtu.value) > 1460)
+			o_mtu.value = "1460";
+		if (parseInt(o_mru.value) > 1500)
+			o_mru.value = "1500";
+	}
+
+	showhide_div("row_wan_poller", is_dhcp);
+	showhide_div("row_pppoe_dhcp", is_pppoe);
+	showhide_div("row_dhcp_toggle", is_pppoe||is_pptp||is_l2tp);
+	showhide_div("row_dns_toggle", !is_static);
+	showhide_div("tbl_vpn_control", is_pppoe||is_pptp||is_l2tp);
+	showhide_div("row_auth_type", is_static||is_dhcp);
+
+	if(is_pppoe||is_pptp||is_l2tp){
 		$("dhcp_sect_desc").innerHTML = "<#WAN_MAN_desc#>";
 		$("dhcp_auto_desc").innerHTML = "<#WAN_MAN_DHCP#>";
 		
-		if (parseInt(document.form.wan_pppoe_mtu.value) > 1492)
-			document.form.wan_pppoe_mtu.value = "1492";
-		if (parseInt(document.form.wan_pppoe_mru.value) > 1492)
-			document.form.wan_pppoe_mru.value = "1492";
+		var dhcp_sect = 1;
+		if (is_pppoe && document.form.wan_pppoe_man.value != "1")
+			dhcp_sect = 0;
+		showhide_div("tbl_dhcp_sect", dhcp_sect);
 		
-		showhide_div("tbl_dhcp_sect", (document.form.wan_pppoe_man.value == "1")?1:0);
-		
-		$("row_wan_poller").style.display = "none";
-		$("row_dhcp_toggle").style.display = "";
-		$("row_dns_toggle").style.display = "";
-		$("tbl_vpn_control").style.display = "";
-		$("row_pppoe_dhcp").style.display = "";
-		$("row_pppoe_svc").style.display = "";
-		$("row_pppoe_it").style.display = "";
-		$("row_pppoe_ac").style.display = "";
-		$("row_pppoe_mtu").style.display = "";
-		$("row_pppoe_mru").style.display = "";
-		$("row_pptp_mtu").style.display = "none";
-		$("row_pptp_mru").style.display = "none";
-		$("row_l2tp_mtu").style.display = "none";
-		$("row_l2tp_mru").style.display = "none";
-		$("row_l2tp_cli").style.display = "none";
-		$("row_ppp_peer").style.display = "none";
-		$("row_ppp_mppe").style.display = "none";
-		$("row_auth_type").style.display = "none";
-	}
-	else if(wan_type == "pptp"){
-		
-		$("dhcp_sect_desc").innerHTML = "<#WAN_MAN_desc#>";
-		$("dhcp_auto_desc").innerHTML = "<#WAN_MAN_DHCP#>";
-		
-		if (parseInt(document.form.wan_pptp_mtu.value) > 1476)
-			document.form.wan_pptp_mtu.value = "1476";
-		if (parseInt(document.form.wan_pptp_mru.value) > 1500)
-			document.form.wan_pptp_mru.value = "1500";
-		
-		$("row_wan_poller").style.display = "none";
-		$("tbl_dhcp_sect").style.display = "";
-		$("row_dhcp_toggle").style.display = "";
-		$("row_dns_toggle").style.display = "";
-		$("tbl_vpn_control").style.display = "";
-		$("row_pppoe_dhcp").style.display = "none";
-		$("row_pppoe_svc").style.display = "none";
-		$("row_pppoe_it").style.display = "none";
-		$("row_pppoe_ac").style.display = "none";
-		$("row_pppoe_mtu").style.display = "none";
-		$("row_pppoe_mru").style.display = "none";
-		$("row_pptp_mtu").style.display = "";
-		$("row_pptp_mru").style.display = "";
-		$("row_l2tp_mtu").style.display = "none";
-		$("row_l2tp_mru").style.display = "none";
-		$("row_l2tp_cli").style.display = "none";
-		$("row_ppp_peer").style.display = "";
-		$("row_ppp_mppe").style.display = "";
-		$("row_auth_type").style.display = "none";
-	}
-	else if(wan_type == "l2tp"){
-		
-		$("dhcp_sect_desc").innerHTML = "<#WAN_MAN_desc#>";
-		$("dhcp_auto_desc").innerHTML = "<#WAN_MAN_DHCP#>";
-		
-		if (parseInt(document.form.wan_l2tp_mtu.value) > 1460)
-			document.form.wan_l2tp_mtu.value = "1460";
-		if (parseInt(document.form.wan_l2tp_mru.value) > 1500)
-			document.form.wan_l2tp_mru.value = "1500";
-		
-		$("row_wan_poller").style.display = "none";
-		$("tbl_dhcp_sect").style.display = "";
-		$("row_dhcp_toggle").style.display = "";
-		$("row_dns_toggle").style.display = "";
-		$("tbl_vpn_control").style.display = "";
-		$("row_pppoe_dhcp").style.display = "none";
-		$("row_pppoe_svc").style.display = "none";
-		$("row_pppoe_it").style.display = "none";
-		$("row_pppoe_ac").style.display = "none";
-		$("row_pppoe_mtu").style.display = "none";
-		$("row_pppoe_mru").style.display = "none";
-		$("row_pptp_mtu").style.display = "none";
-		$("row_pptp_mru").style.display = "none";
-		$("row_l2tp_mtu").style.display = "";
-		$("row_l2tp_mru").style.display = "";
-		$("row_l2tp_cli").style.display = "";
-		$("row_ppp_peer").style.display = "";
-		$("row_ppp_mppe").style.display = "";
-		$("row_auth_type").style.display = "none";
-	}
-	else if(wan_type == "static"){
-		
+		showhide_div("row_ppp_peer", is_pptp||is_l2tp);
+		showhide_div("row_ppp_mppe", is_pptp||is_l2tp);
+		showhide_div("row_pppoe_svc", is_pppoe);
+		showhide_div("row_pppoe_it", is_pppoe);
+		showhide_div("row_pppoe_ac", is_pppoe);
+		showhide_div("row_pppoe_mtu", is_pppoe);
+		showhide_div("row_pppoe_mru", is_pppoe);
+		showhide_div("row_pptp_mtu", is_pptp);
+		showhide_div("row_pptp_mru", is_pptp);
+		showhide_div("row_l2tp_mtu", is_l2tp);
+		showhide_div("row_l2tp_mru", is_l2tp);
+		showhide_div("row_l2tp_cli", is_l2tp&&found_app_l2tp());
+	}else{
 		$("dhcp_sect_desc").innerHTML = "<#IPConnection_ExternalIPAddress_sectionname#>";
 		$("dhcp_auto_desc").innerHTML = "<#Layer3Forwarding_x_DHCPClient_itemname#>";
 		
-		$("row_wan_poller").style.display = "none";
-		$("tbl_dhcp_sect").style.display = "";
-		$("row_pppoe_dhcp").style.display = "none";
-		$("row_dhcp_toggle").style.display = "none";
-		$("row_dns_toggle").style.display = "none";
-		$("tbl_vpn_control").style.display = "none";
-		$("row_auth_type").style.display = "";
-	}
-	else{
-		$("dhcp_sect_desc").innerHTML = "<#IPConnection_ExternalIPAddress_sectionname#>";
-		$("dhcp_auto_desc").innerHTML = "<#Layer3Forwarding_x_DHCPClient_itemname#>";
-		
-		$("row_wan_poller").style.display = "";
-		$("tbl_dhcp_sect").style.display = "none";
-		$("row_pppoe_dhcp").style.display = "none";
-		$("row_dhcp_toggle").style.display = "none";
-		$("row_dns_toggle").style.display = "";
-		$("tbl_vpn_control").style.display = "none";
-		$("row_auth_type").style.display = "";
+		showhide_div("tbl_dhcp_sect", is_static);
 	}
 
 	AuthSelection(document.form.wan_auth_mode.value);
@@ -877,8 +825,8 @@ function simplyMAC(fullMAC){
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#PPPConnection_UserName_sectionname#></th>
                                         </tr>
-                                        <tr id="row_l2tp_cli">
-                                            <th width="50%"><#PPP_L2TPD#></th>
+                                        <tr id="row_l2tp_cli" style="display:none">
+                                            <th><#PPP_L2TPD#></th>
                                             <td>
                                                 <select name="wan_l2tpd" class="input">
                                                     <option value="0" <% nvram_match_x("","wan_l2tpd", "0","selected"); %>>xL2TPD</option>

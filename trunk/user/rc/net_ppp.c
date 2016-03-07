@@ -97,7 +97,11 @@ safe_start_xl2tpd(void)
 	}
 
 	unit = 0; // todo
-	if (nvram_match("wan_l2tpd", "0") && get_wan_proto(unit) == IPV4_WAN_PROTO_L2TP)
+	if (get_wan_proto(unit) == IPV4_WAN_PROTO_L2TP
+#if defined (APP_RPL2TP)
+	    && nvram_invmatch("wan_l2tpd", "1")
+#endif
+	    )
 	{
 		char options[64], lac_name[8];
 		
@@ -153,6 +157,7 @@ safe_start_xl2tpd(void)
 	return 1;
 }
 
+#if defined (APP_RPL2TP)
 static int
 start_rpl2tp(int unit)
 {
@@ -199,6 +204,7 @@ start_rpl2tp(int unit)
 	/* start-session */
 	return system("/usr/sbin/l2tp-control \"start-session 0.0.0.0\"");
 }
+#endif
 
 char *
 safe_pppd_line(const char *line, char *buf, size_t buf_size)
@@ -409,9 +415,17 @@ launch_wan_pppd(int unit, int wan_proto)
 
 	chmod(options, 0600);
 
-	if (wan_proto == IPV4_WAN_PROTO_L2TP)
-	{
-		if (nvram_match("wan_l2tpd", "0"))
+	if (wan_proto == IPV4_WAN_PROTO_L2TP) {
+#if defined (APP_RPL2TP)
+		if (nvram_match("wan_l2tpd", "1")) {
+			svcs[0] = "l2tpd";
+			kill_services(svcs, 5, 1);
+			
+			nvram_set_int_temp("l2tp_wan_t", 0);
+			
+			start_rpl2tp(unit);
+		} else
+#endif
 		{
 			svcs[0] = "xl2tpd";
 			kill_services(svcs, 5, 1);
@@ -420,18 +434,7 @@ launch_wan_pppd(int unit, int wan_proto)
 			
 			safe_start_xl2tpd();
 		}
-		else
-		{
-			svcs[0] = "l2tpd";
-			kill_services(svcs, 5, 1);
-			
-			nvram_set_int_temp("l2tp_wan_t", 0);
-			
-			start_rpl2tp(unit);
-		}
-	}
-	else
-	{
+	} else {
 		eval("/usr/sbin/pppd", "file", options);
 	}
 

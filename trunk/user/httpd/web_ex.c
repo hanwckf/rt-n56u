@@ -1661,7 +1661,11 @@ wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 			wan_uptime = 0;
 			if (ppp_mode) {
 				if (ppp_mode == 2) {
-					char *l2tpd = (nvram_match("wan_l2tpd", "0")) ? "xl2tpd" : "l2tpd";
+					char *l2tpd = "xl2tpd";
+#if defined (APP_RPL2TP)
+					if (nvram_match("wan_l2tpd", "1"))
+						l2tpd = "l2tpd";
+#endif
 					status_code = (pids(l2tpd)) ? INET_STATE_PPP_WAIT : INET_STATE_PPP_INACTIVE;
 				} else
 					status_code = (pids("pppd")) ? INET_STATE_PPP_WAIT : INET_STATE_PPP_INACTIVE;
@@ -2030,6 +2034,11 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int found_app_ftpd = 0;
 #endif
+#if defined(APP_RPL2TP)
+	int found_app_l2tp = 1;
+#else
+	int found_app_l2tp = 0;
+#endif
 #if defined(SRV_U2EC)
 	int found_srv_u2ec = 1;
 #else
@@ -2172,6 +2181,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function found_app_smbd() { return %d;}\n"
 		"function found_app_nmbd() { return %d;}\n"
 		"function found_app_ftpd() { return %d;}\n"
+		"function found_app_l2tp() { return %d;}\n"
 		"function found_srv_u2ec() { return %d;}\n"
 		"function found_srv_lprd() { return %d;}\n"
 		"function found_app_sshd() { return %d;}\n"
@@ -2186,6 +2196,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		found_app_smbd,
 		found_app_nmbd,
 		found_app_ftpd,
+		found_app_l2tp,
 		found_srv_u2ec,
 		found_srv_lprd,
 		found_app_sshd,

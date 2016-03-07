@@ -372,7 +372,9 @@
 			{"wan_pptp_mru", "", NULL, EVM_RESTART_WAN},
 			{"wan_l2tp_mtu", "", NULL, EVM_RESTART_WAN},
 			{"wan_l2tp_mru", "", NULL, EVM_RESTART_WAN},
+#if defined (APP_RPL2TP)
 			{"wan_l2tpd", "", NULL, EVM_RESTART_WAN},
+#endif
 			{"wan_ppp_peer", "", NULL, EVM_RESTART_WAN},
 			{"wan_ppp_auth", "", NULL, EVM_RESTART_WAN},
 			{"wan_ppp_mppe", "", NULL, EVM_RESTART_WAN},

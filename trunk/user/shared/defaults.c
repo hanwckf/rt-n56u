@@ -126,7 +126,9 @@ struct nvram_pair router_defaults[] = {
 	{ "wan_pptp_mru", "1400" },		/* Negotiate MRU to this value */
 	{ "wan_l2tp_mtu", "1460" },		/* Negotiate MTU to the smaller of this value or the peer MRU */
 	{ "wan_l2tp_mru", "1460" },		/* Negotiate MRU to this value */
+#if defined (APP_RPL2TP)
 	{ "wan_l2tpd", "0" },			/* L2TP control daemon (xL2TPD/RP-L2TP) */
+#endif
 	{ "wan_ppp_peer", "" },			/* VPN server address */
 	{ "wan_ppp_auth", "0" },		/* PPP authentication */
 	{ "wan_ppp_mppe", "0" },		/* MPPE encryption */

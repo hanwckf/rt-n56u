@@ -703,6 +703,7 @@ start_upnp(void)
 		"enable_natpmp=%s\n"
 		"upnp_forward_chain=%s\n"
 		"upnp_nat_chain=%s\n"
+		"upnp_nat_postrouting_chain=%s\n"
 		"secure_mode=%s\n"
 		"lease_file=%s\n"
 		"presentation_url=http://%s/\n"
@@ -730,6 +731,7 @@ start_upnp(void)
 		proto_npmp,
 		MINIUPNPD_CHAIN_IP4_FORWARD,
 		MINIUPNPD_CHAIN_IP4_NAT,
+		MINIUPNPD_CHAIN_IP4_NAT_POST,
 		secured,
 		UPNPD_LEASE_FILE,
 		lan_url,

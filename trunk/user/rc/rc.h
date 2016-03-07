@@ -96,7 +96,7 @@
 #define MAX_CLIENTS_NUM			(50)
 
 #define MINIUPNPD_CHAIN_IP4_NAT		"upnp"
-#define MINIUPNPD_CHAIN_IP4_NAT_PEER	"upnp-peer"
+#define MINIUPNPD_CHAIN_IP4_NAT_POST	"upnp-post"
 #define MINIUPNPD_CHAIN_IP4_FORWARD	"upnp"
 #define MINIUPNPD_CHAIN_IP6_FORWARD	"upnp"
 

@@ -1705,7 +1705,7 @@ ipt_nat_rules(char *man_if, char *man_ip,
 	FILE *fp;
 	char *dtype, *vpnc_if;
 	const char *ipt_file = "/tmp/ipt_nat.rules";
-	int wport, lport, is_nat_enabled, is_fw_enabled;
+	int wport, lport, is_nat_enabled, is_fw_enabled, is_upnp_enabled;
 	int i_vpns_enable, i_vpnc_enable, i_vpns_type, i_vpnc_type, i_vpnc_sfw, i_http_proto;
 #if defined (APP_OPENVPN)
 	int i_vpns_ov_mode = nvram_get_int("vpns_ov_mode");
@@ -1713,6 +1713,7 @@ ipt_nat_rules(char *man_if, char *man_ip,
 
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
+	is_upnp_enabled = nvram_invmatch("upnp_enable_x", "0");
 
 	i_vpns_enable = nvram_get_int("vpns_enable");
 	i_vpnc_enable = nvram_get_int("vpnc_enable");
@@ -1748,6 +1749,7 @@ ipt_nat_rules(char *man_if, char *man_ip,
 	fprintf(fp, ":%s %s [0:0]\n", "OUTPUT", "ACCEPT");
 	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_VSERVER);
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP4_NAT);
+	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP4_NAT_POST);
 
 	// VSERVER chain
 	dtype = IPT_CHAIN_NAME_VSERVER;
@@ -1777,12 +1779,24 @@ ipt_nat_rules(char *man_if, char *man_ip,
 			fprintf(fp, "-A %s -p udp -s %s --dport %d -j NETMAP --to %s\n", "POSTROUTING", lan_net, BATTLENET_PORT, wan_ip);
 		}
 		
+#if 0
+		/* miniupnpd postrouting chain (is really needed for XBox One?) */
+		if (is_upnp_enabled)
+			fprintf(fp, "-A %s -o %s -j %s\n", "POSTROUTING", wan_if, MINIUPNPD_CHAIN_IP4_NAT_POST);
+#endif
+		
 		/* masquerade WAN connection for LAN clients */
 		include_masquerade(fp, wan_if, wan_ip, lan_net);
 		
 		/* masquerade MAN connection for LAN clients */
-		if (use_man)
+		if (use_man) {
+#if 0
+			/* miniupnpd postrouting chain (is really needed for XBox One?) */
+			if (is_upnp_enabled)
+				fprintf(fp, "-A %s -o %s -j %s\n", "POSTROUTING", man_if, MINIUPNPD_CHAIN_IP4_NAT_POST);
+#endif
 			include_masquerade(fp, man_if, man_ip, lan_net);
+		}
 		
 		/* masquerade VPN client connection for LAN clients */
 		if (vpnc_if && i_vpnc_sfw != 2)
@@ -1897,7 +1911,7 @@ ipt_nat_rules(char *man_if, char *man_ip,
 			include_vts_nat(fp);
 		
 		/* IGD UPnP mappings */
-		if (nvram_invmatch("upnp_enable_x", "0"))
+		if (is_upnp_enabled)
 			fprintf(fp, "-A %s -j %s\n", dtype, MINIUPNPD_CHAIN_IP4_NAT);
 		
 		/* Exposed station (DMZ), skip local traffic first */
@@ -2043,6 +2057,7 @@ ipt_nat_default(void)
 	fprintf(fp, ":%s %s [0:0]\n", "OUTPUT", "ACCEPT");
 	fprintf(fp, ":%s - [0:0]\n", IPT_CHAIN_NAME_VSERVER);
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP4_NAT);
+	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP4_NAT_POST);
 
 	if (is_nat_enabled) {
 		char *lan_if = IFNAME_BR;

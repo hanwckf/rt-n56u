@@ -1208,7 +1208,7 @@ static void asic_vlan_init_vid1(void)
 #endif
 }
 
-static void asic_vlan_bridge_isolate(u32 wan_bridge_mode, int bridge_changed, int vlan_rule_changed)
+static void asic_vlan_bridge_isolate(u32 wan_bridge_mode, int bridge_changed, int br_iso_changed, int vlan_rule_changed)
 {
 	if (wan_bridge_mode == SWAPI_WAN_BRIDGE_DISABLE_WAN) {
 		if (!bridge_changed)
@@ -1216,7 +1216,7 @@ static void asic_vlan_bridge_isolate(u32 wan_bridge_mode, int bridge_changed, in
 		
 		asic_vlan_init_vid1();
 	} else {
-		if (!bridge_changed && !vlan_rule_changed)
+		if (!bridge_changed && !br_iso_changed && !vlan_rule_changed)
 			return;
 		
 		asic_vlan_apply_rules(wan_bridge_mode);
@@ -1630,7 +1630,7 @@ static int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 	if (bridge_changed || br_iso_changed)
 		asic_bridge_isolate(wan_bridge_mode, isolated_mode);
 
-	asic_vlan_bridge_isolate(wan_bridge_mode, bridge_changed, vlan_rule_changed);
+	asic_vlan_bridge_isolate(wan_bridge_mode, bridge_changed, br_iso_changed, vlan_rule_changed);
 
 	if (power_changed)
 		change_wan_lan_ports_power(1, 1);
@@ -2144,7 +2144,7 @@ static void reset_and_init_switch(int first_call)
 	asic_bridge_isolate(g_wan_bridge_mode, g_wan_bridge_isolated_mode);
 
 	/* configure bridge isolation mode via VLAN */
-	asic_vlan_bridge_isolate(g_wan_bridge_mode, 1, 1);
+	asic_vlan_bridge_isolate(g_wan_bridge_mode, 1, 1, 1);
 
 	/* configure leds */
 	portmask.bits[0] = ports_mask_wan | ports_mask_lan;

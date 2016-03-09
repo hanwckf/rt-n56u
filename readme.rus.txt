@@ -21,23 +21,24 @@
 
 Для сборки прошивки из под Linux дистрибутива Debian 'wheezy'/'jessie' требуются
 пакеты (на других дистрибутивах состав и наименования пакетов могут отличаться):
-- sudo
-- build-essential
-- gawk
-- pkg-config
-- gettext
 - autoconf
 - automake
-- libtool
 - bison
+- build-essential
 - flex
+- gawk
+- gettext
+- gperf
+- libtool
+- pkg-config
+- sudo
 - zlib1g-dev
 
 Для сборки кросс-toolchain требуются дополнительные пакеты:
-- texinfo
 - libgmp3-dev
-- libmpfr-dev
 - libmpc-dev
+- libmpfr-dev
+- texinfo
 
 
 

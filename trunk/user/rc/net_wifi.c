@@ -1039,11 +1039,11 @@ ebtables_filter_guest_ap(const char *wifname, int is_aband, int i_need_dhcp)
 #if defined(USE_RT3352_MII)
 		doSystem("ebtables -A %s -i %s -o %s -j %s", "FORWARD", wifname, IFNAME_INIC_GUEST_VLAN, "DROP");
 #else
-		doSystem("ebtables -A %s -i %s -o %s -j %s", "FORWARD", wifname, IFNAME_2G, "DROP");
+		doSystem("ebtables -A %s -i %s -o %s -j %s", "FORWARD", wifname, IFNAME_2G_MAIN, "DROP");
 		doSystem("ebtables -A %s -i %s -o %s -j %s", "FORWARD", wifname, IFNAME_2G_GUEST, "DROP");
 #endif
 	} else {
-		doSystem("ebtables -A %s -i %s -o %s -j %s", "FORWARD", wifname, IFNAME_5G, "DROP");
+		doSystem("ebtables -A %s -i %s -o %s -j %s", "FORWARD", wifname, IFNAME_5G_MAIN, "DROP");
 		doSystem("ebtables -A %s -i %s -o %s -j %s", "FORWARD", wifname, IFNAME_5G_GUEST, "DROP");
 	}
 #endif

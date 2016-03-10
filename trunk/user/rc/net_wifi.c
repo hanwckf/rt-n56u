@@ -1019,14 +1019,8 @@ control_guest_rt(int guest_on, int manual)
 }
 
 static void
-ebtables_filter_guest_ap(const char *wifname, int i_need_dhcp)
+ebtables_filter_guest_ap(const char *wifname, int is_aband, int i_need_dhcp)
 {
-#if !defined (AP_MODE_LAN_TAGGED)
-	const char *eifname = IFNAME_MAC;
-#else
-	const char *eifname = IFNAME_LAN;
-#endif
-
 	if (i_need_dhcp) {
 		/* drop all IPv4 traffic to router host (exclude DHCPv4)  */
 		doSystem("ebtables -A %s -i %s -p IPv4 --ip-protocol ! %s -j %s",
@@ -1039,8 +1033,20 @@ ebtables_filter_guest_ap(const char *wifname, int i_need_dhcp)
 				"INPUT", wifname, "DROP");
 	}
 
-	/* drop forwards between wireless ifs */
-	doSystem("ebtables -A %s -i %s -o ! %s -j %s", "FORWARD", wifname, eifname, "DROP");
+	/* drop forwards between 2.4/5Ghz AP wifs */
+#if BOARD_HAS_5G_RADIO
+	if (is_aband) {
+#if defined(USE_RT3352_MII)
+		doSystem("ebtables -A %s -i %s -o %s -j %s", "FORWARD", wifname, IFNAME_INIC_GUEST_VLAN, "DROP");
+#else
+		doSystem("ebtables -A %s -i %s -o %s -j %s", "FORWARD", wifname, IFNAME_2G, "DROP");
+		doSystem("ebtables -A %s -i %s -o %s -j %s", "FORWARD", wifname, IFNAME_2G_GUEST, "DROP");
+#endif
+	} else {
+		doSystem("ebtables -A %s -i %s -o %s -j %s", "FORWARD", wifname, IFNAME_5G, "DROP");
+		doSystem("ebtables -A %s -i %s -o %s -j %s", "FORWARD", wifname, IFNAME_5G_GUEST, "DROP");
+	}
+#endif
 }
 
 void
@@ -1094,10 +1100,10 @@ restart_guest_lan_isolation(void)
 		doSystem("ebtables %s", "-X");
 #if BOARD_HAS_5G_RADIO
 		if (is_need_ebtables & 0x10)
-			ebtables_filter_guest_ap(wl_ifname_guest, i_need_dhcp);
+			ebtables_filter_guest_ap(wl_ifname_guest, 1, i_need_dhcp);
 #endif
 		if (is_need_ebtables & 0x01)
-			ebtables_filter_guest_ap(rt_ifname_guest, i_need_dhcp);
+			ebtables_filter_guest_ap(rt_ifname_guest, 0, i_need_dhcp);
 	}
 	else if (is_module_loaded("ebtables")) {
 		doSystem("ebtables %s", "-F");
@@ -1232,7 +1238,6 @@ manual_change_guest_wl(int radio_on)
 	return 0;
 #endif
 }
-
 
 int 
 timecheck_wifi(int is_aband, const char *nv_date, const char *nv_time1, const char *nv_time2)

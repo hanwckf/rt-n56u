@@ -38,6 +38,17 @@
 #include <crypto/authenc.h>
 #include "cryptodev_int.h"
 
+#if !defined (CONFIG_CRYPTO_AEAD) && !defined (CONFIG_CRYPTO_AEAD_MODULE)
+struct crypto_aead *crypto_alloc_aead(const char *alg_name, u32 type, u32 mask)
+{
+	return ERR_PTR(-ENOENT);
+}
+
+int crypto_aead_setauthsize(struct crypto_aead *tfm, unsigned int authsize)
+{
+	return -EINVAL;
+}
+#endif
 
 static void cryptodev_complete(struct crypto_async_request *req, int err)
 {

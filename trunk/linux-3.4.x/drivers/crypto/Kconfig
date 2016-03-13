@@ -17,6 +17,17 @@ config CRYPTO_DEV_LINUX
 	select CRYPTO_BLKCIPHER
 	default n
 
+config CRYPTO_DEV_MTK_AES
+	tristate "Support for MT7628 AES Engine"
+	depends on RALINK_MT7628
+	help
+	  Turn on the configuration will include MediaTek AES Engine driver.
+
+config CRYPTO_DEV_MTK_AES_INT
+	bool "Use Interrupt to wait completion"
+	depends on CRYPTO_DEV_MTK_AES
+	default n
+
 config CRYPTO_DEV_PADLOCK
 	tristate "Support for VIA PadLock ACE"
 	depends on X86 && !UML

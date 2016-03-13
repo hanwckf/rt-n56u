@@ -9,12 +9,19 @@ COPTS+=-DOPENSSL_SMALL_FOOTPRINT
 
 LOPTS=-Wl,--gc-sections -L$(DESTDIR)/lib
 
-OPENSSL_APPS = no-speed
+OPENSSL_APPS =
 
 OPENSSL_CIPHERS = no-camellia no-capieng no-cms no-gmp no-jpake no-rfc3779 no-seed \
                   no-ec2m no-err no-threads no-idea no-rc2 no-rc5 no-ripemd no-rmd160 \
-                  no-engine no-hw no-md2 no-sse2 no-dso no-ts no-sha0 no-mdc2 no-krb5 \
+                  no-static-engine no-hw no-md2 no-sse2 no-dso no-ts no-sha0 no-mdc2 no-krb5 \
                   no-smime no-ans1 no-cast no-whirlpool no-sctp no-srp no-ssl2 no-ssl3
+
+ifdef CONFIG_CRYPTO_DEV_LINUX
+COPTS+=-DHAVE_CRYPTODEV
+else
+OPENSSL_APPS += no-speed
+OPENSSL_CIPHERS += no-engine
+endif
 
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC),y)
 OPENSSL_CIPHERS += no-ec

@@ -948,7 +948,6 @@ comment "Random Number Generation"
 config CRYPTO_ANSI_CPRNG
 	tristate "Pseudo Random Number Generation for Cryptographic modules"
 	default m
-	select CRYPTO_AES
 	select CRYPTO_RNG
 	help
 	  This option enables the generic pseudo random number generator

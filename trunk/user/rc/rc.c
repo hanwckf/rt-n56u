@@ -170,6 +170,18 @@ load_mmc_modules(void)
 }
 #endif
 
+#if defined (USE_MTK_AES)
+static void
+load_crypto_modules(void)
+{
+	/* start aes engine */
+	module_smart_load("mtk_aes", NULL);
+
+	/* start cryptodev-linux */
+	module_smart_load("cryptodev", NULL);
+}
+#endif
+
 static void
 set_timezone(void)
 {
@@ -797,6 +809,9 @@ init_router(void)
 #endif
 #if defined (USE_ATA_SUPPORT)
 	load_ata_modules();
+#endif
+#if defined (USE_MTK_AES)
+	load_crypto_modules();
 #endif
 
 	recreate_passwd_unix(1);

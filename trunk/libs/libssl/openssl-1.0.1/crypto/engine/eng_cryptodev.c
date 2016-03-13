@@ -161,6 +161,15 @@ static struct {
         CRYPTO_AES_CBC, NID_aes_256_cbc, 16, 32,
     },
     {
+        CRYPTO_AES_ECB, NID_aes_128_ecb, 16, 16,
+    },
+    {
+        CRYPTO_AES_ECB, NID_aes_192_ecb, 16, 24,
+    },
+    {
+        CRYPTO_AES_ECB, NID_aes_256_ecb, 16, 32,
+    },
+    {
         CRYPTO_BLF_CBC, NID_bf_cbc, 8, 16,
     },
     {
@@ -630,6 +639,45 @@ const EVP_CIPHER cryptodev_aes_256_cbc = {
     NULL
 };
 
+const EVP_CIPHER cryptodev_aes_ecb = {
+    NID_aes_128_ecb,
+    16, 16, 16,
+    EVP_CIPH_ECB_MODE,
+    cryptodev_init_key,
+    cryptodev_cipher,
+    cryptodev_cleanup,
+    sizeof(struct dev_crypto_state),
+    NULL,
+    NULL,
+    NULL
+};
+
+const EVP_CIPHER cryptodev_aes_192_ecb = {
+    NID_aes_192_ecb,
+    16, 24, 16,
+    EVP_CIPH_ECB_MODE,
+    cryptodev_init_key,
+    cryptodev_cipher,
+    cryptodev_cleanup,
+    sizeof(struct dev_crypto_state),
+    NULL,
+    NULL,
+    NULL
+};
+
+const EVP_CIPHER cryptodev_aes_256_ecb = {
+    NID_aes_256_ecb,
+    16, 32, 16,
+    EVP_CIPH_ECB_MODE,
+    cryptodev_init_key,
+    cryptodev_cipher,
+    cryptodev_cleanup,
+    sizeof(struct dev_crypto_state),
+    NULL,
+    NULL,
+    NULL
+};
+
 /*
  * Registered by the ENGINE when used to find out how to deal with
  * a particular NID in the ENGINE. this says what we'll do at the
@@ -666,6 +714,15 @@ cryptodev_engine_ciphers(ENGINE *e, const EVP_CIPHER **cipher,
         break;
     case NID_aes_256_cbc:
         *cipher = &cryptodev_aes_256_cbc;
+        break;
+    case NID_aes_128_ecb:
+        *cipher = &cryptodev_aes_ecb;
+        break;
+    case NID_aes_192_ecb:
+        *cipher = &cryptodev_aes_192_ecb;
+        break;
+    case NID_aes_256_ecb:
+        *cipher = &cryptodev_aes_256_ecb;
         break;
     default:
         *cipher = NULL;

@@ -10,6 +10,13 @@ menuconfig CRYPTO_HW
 
 if CRYPTO_HW
 
+config CRYPTO_DEV_LINUX
+	tristate "Cryptodev-linux driver to handle /dev/crypto from OpenSSL/GnuTLS"
+	select CRYPTO_AEAD
+	select CRYPTO_HASH
+	select CRYPTO_BLKCIPHER
+	default n
+
 config CRYPTO_DEV_PADLOCK
 	tristate "Support for VIA PadLock ACE"
 	depends on X86 && !UML

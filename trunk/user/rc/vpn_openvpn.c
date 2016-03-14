@@ -628,7 +628,7 @@ static void
 call_client_script(const char *script_name, const char *arg)
 {
 	int i;
-	static const char *env;
+	const char *env;
 
 	if (!check_if_file_exist(script_name))
 		return;

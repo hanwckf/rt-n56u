@@ -218,9 +218,13 @@ dir_ppe_dst="$ROOTDIR/$CONFIG_LINUXDIR/net/nat"
 rm -rf "$dir_ppe_dst/hw_nat"
 cp -rf "$dir_ppe_src/hw_nat" "$dir_ppe_dst/"
 ############################# CPU #####################################
-if [ "$CONFIG_FIRMWARE_CPU_SLEEP" = "y" ] ; then
+if [ "$CONFIG_FIRMWARE_CPU_SLEEP" = "y" -o "$CONFIG_RALINK_SYSTICK_COUNTER" = "y" ] ; then
 	func_enable_kernel_param "CONFIG_RALINK_SYSTICK_COUNTER"
 	func_enable_kernel_param "CONFIG_RALINK_CPUSLEEP"
+	func_enable_kernel_param "CONFIG_HZ_1000"
+	func_disable_kernel_param "CONFIG_HZ_250"
+	func_disable_kernel_param "CONFIG_HZ_100"
+	func_disable_kernel_param "CONFIG_HIGH_RES_TIMERS"
 fi
 if [ "$CONFIG_RALINK_MT7620" = "y" ] ; then
 	if [ "$CONFIG_FIRMWARE_CPU_600MHZ" = "y" ] ; then
@@ -230,9 +234,6 @@ fi
 if [ "$CONFIG_RALINK_MT7621" = "y" ] ; then
 	if [ "$CONFIG_FIRMWARE_CPU_900MHZ" = "y" ] ; then
 		func_enable_kernel_param "CONFIG_RALINK_MT7621_PLL900"
-	fi
-	if [ "$CONFIG_FIRMWARE_CPU_SLEEP" = "y" ] ; then
-		func_disable_kernel_param "CONFIG_HIGH_RES_TIMERS"
 	fi
 	if [ "$CONFIG_FIRMWARE_RAM_MOD_256" = "y" ] ; then
 		func_disable_kernel_param "CONFIG_RT2880_DRAM_64M"

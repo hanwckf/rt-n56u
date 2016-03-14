@@ -62,7 +62,7 @@ static const char *openvpn_client_keys[4] = {
 static const char *env_ovpn[3] = {
 	"dev",
 	"ifconfig_local",
-	"ifconfig_remote"
+	"route_vpn_gateway"
 };
 
 static const char *env_pppd[3] = {

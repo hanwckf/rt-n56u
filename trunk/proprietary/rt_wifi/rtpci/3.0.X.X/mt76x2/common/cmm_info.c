@@ -3104,7 +3104,7 @@ VOID RTMPIoctlGetSiteSurvey(
 	sprintf(msg,"%s","\n");
 
 	sprintf(msg+strlen(msg),"%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n",
-	    "Ch", "SSID", "BSSID", "Security", "Siganl(%)", "W-Mode", " ExtCH"," NT");	
+	    "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", " ExtCH"," NT");	
 #ifdef CUSTOMER_DCC_FEATURE
 	sprintf(msg+strlen(msg)-1,"%-11s%-10s%-6s%-7s\n", " STA_COUNT", " MED_UTIL", " SNR0", " SNR1");
 	sprintf(msg+strlen(msg)-1,"%-4s\n"," Nss");

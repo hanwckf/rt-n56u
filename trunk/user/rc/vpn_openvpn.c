@@ -62,6 +62,12 @@ static const char *openvpn_client_keys[4] = {
 static const char *env_ovpn[3] = {
 	"dev",
 	"ifconfig_local",
+	"ifconfig_remote"
+};
+
+static const char *env_ovpn_alt[3] = {
+	NULL,
+	NULL,
 	"route_vpn_gateway"
 };
 
@@ -619,12 +625,33 @@ on_server_client_disconnect(int is_tun)
 }
 
 static void
+call_client_script(const char *script_name, const char *arg)
+{
+	int i;
+	static const char *env;
+
+	if (!check_if_file_exist(script_name))
+		return;
+
+	for (i = 0; i < ARRAY_SIZE(env_ovpn); i++) {
+		env = env_ovpn[i];
+		if (strlen(safe_getenv(env) < 1) && env_ovpn_alt[i])
+			env = env_ovpn_alt[i];
+		setenv(env_pppd[i], safe_getenv(env), 1);
+	}
+
+	doSystem("%s %s", script_name, arg);
+
+	for (i = 0; i < ARRAY_SIZE(env_ovpn); i++)
+		unsetenv(env_pppd[i]);
+}
+
+static void
 on_client_ifup(void)
 {
 #define ENV_SCAN_MAX 20
 	int i, i_dns = 0, i_wins = 0, i_dom = 0, vpnc_pdns;
 	char buf[256], foption[32], fvalue[128], *value;
-	const char *script_name = VPN_CLIENT_UPDOWN_SCRIPT;
 
 	nvram_set_int_temp("vpnc_state_t", 1);
 
@@ -669,13 +696,7 @@ on_client_ifup(void)
 	if (strlen(buf) > 0)
 		update_resolvconf(0, 0);
 
-	if (check_if_file_exist(script_name)) {
-		for (i = 0; i < ARRAY_SIZE(env_ovpn); i++)
-			setenv(env_pppd[i], safe_getenv(env_ovpn[i]), 1);
-		doSystem("%s %s", script_name, "up");
-		for (i = 0; i < ARRAY_SIZE(env_ovpn); i++)
-			unsetenv(env_pppd[i]);
-	}
+	call_client_script(VPN_CLIENT_UPDOWN_SCRIPT, "up");
 
 	if (i_dom > 0)
 		unsetenv("DOMAIN");
@@ -692,20 +713,11 @@ on_client_ifup(void)
 static void
 on_client_ifdown(void)
 {
-	int i;
-	const char *script_name = VPN_CLIENT_UPDOWN_SCRIPT;
-
 	nvram_set_int_temp("vpnc_state_t", 0);
 
 	restore_dns_from_vpnc();
 
-	if (check_if_file_exist(script_name)) {
-		for (i = 0; i < ARRAY_SIZE(env_ovpn); i++)
-			setenv(env_pppd[i], safe_getenv(env_ovpn[i]), 1);
-		doSystem("%s %s", script_name, "down");
-		for (i = 0; i < ARRAY_SIZE(env_ovpn); i++)
-			unsetenv(env_pppd[i]);
-	}
+	call_client_script(VPN_CLIENT_UPDOWN_SCRIPT, "down");
 }
 
 int
@@ -935,6 +947,7 @@ ovpn_server_expcli_main(int argc, char **argv)
 	fprintf(fp, "proto %s\n", (nvram_get_int("vpns_ov_prot") > 0) ? "tcp-client" : "udp");
 	fprintf(fp, "remote %s %d\n", wan_addr, nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535));
 	fprintf(fp, "resolv-retry %s\n", "infinite");
+	fprintf(fp, ";float\n");
 	fprintf(fp, "nobind\n");
 	fprintf(fp, "persist-key\n");
 	fprintf(fp, "persist-tun\n");

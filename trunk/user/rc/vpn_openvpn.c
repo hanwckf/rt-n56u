@@ -635,7 +635,7 @@ call_client_script(const char *script_name, const char *arg)
 
 	for (i = 0; i < ARRAY_SIZE(env_ovpn); i++) {
 		env = env_ovpn[i];
-		if (strlen(safe_getenv(env) < 1) && env_ovpn_alt[i])
+		if (strlen(safe_getenv(env)) < 1 && env_ovpn_alt[i])
 			env = env_ovpn_alt[i];
 		setenv(env_pppd[i], safe_getenv(env), 1);
 	}

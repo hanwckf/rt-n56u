@@ -756,6 +756,9 @@ set_vpn_balancing(const char *vpn_ifname)
 	if (ncpu == 4) {
 		rps_queue_set(vpn_ifname, 0x8);	/* CPU:1, VPE:1 */
 		xps_queue_set(vpn_ifname, 0x8);	/* CPU:1, VPE:1 */
+	} else if (ncpu == 2) {
+		rps_queue_set(vpn_ifname, 0x2);	/* CPU:0, VPE:1 */
+		xps_queue_set(vpn_ifname, 0x2);	/* CPU:0, VPE:1 */
 	}
 }
 #else

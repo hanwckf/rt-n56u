@@ -1483,6 +1483,9 @@ struct napi_gro_cb {
 
 	/* jiffies when first packet was created/queued */
 	unsigned long age;
+
+	/* Used in ipv6_gro_receive() */
+	int	proto;
 };
 
 #define NAPI_GRO_CB(skb) ((struct napi_gro_cb *)(skb)->cb)

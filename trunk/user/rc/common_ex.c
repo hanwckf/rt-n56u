@@ -733,13 +733,13 @@ set_cpu_affinity(int is_ap_mode)
 			rps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
 			xps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
 		} else {
-			rps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 */
-			xps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 */
-			rps_queue_set(IFNAME_WAN, 0x4);	/* CPU:1, VPE:0 */
-			xps_queue_set(IFNAME_WAN, 0x4);	/* CPU:1, VPE:0 */
+			rps_queue_set(IFNAME_LAN, 0x2);	/* CPU:0, VPE:1 */
+			xps_queue_set(IFNAME_LAN, 0x2);	/* CPU:0, VPE:1 */
+			rps_queue_set(IFNAME_WAN, 0x2);	/* CPU:0, VPE:1 */
+			xps_queue_set(IFNAME_WAN, 0x2);	/* CPU:0, VPE:1 */
 #if defined (USE_SINGLE_MAC)
-			rps_queue_set(IFNAME_MAC, 0x5);	/* CPU:0, VPE:0 + CPU:1, VPE:0 */
-			xps_queue_set(IFNAME_MAC, 0x5);	/* CPU:0, VPE:0 + CPU:1, VPE:0 */
+			rps_queue_set(IFNAME_MAC, 0x2);	/* CPU:0, VPE:1 */
+			xps_queue_set(IFNAME_MAC, 0x2);	/* CPU:0, VPE:1 */
 #endif
 		}
 		
@@ -786,13 +786,13 @@ set_cpu_affinity(int is_ap_mode)
 			rps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
 			xps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
 		} else {
-			rps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 */
-			xps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 */
-			rps_queue_set(IFNAME_WAN, 0x2);	/* CPU:0, VPE:1 */
-			xps_queue_set(IFNAME_WAN, 0x2);	/* CPU:0, VPE:1 */
+			rps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 (GMAC) */
+			xps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 (GMAC) */
+			rps_queue_set(IFNAME_WAN, 0x1);	/* CPU:0, VPE:0 (GMAC) */
+			xps_queue_set(IFNAME_WAN, 0x1);	/* CPU:0, VPE:0 (GMAC) */
 #if defined (USE_SINGLE_MAC)
-			rps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
-			xps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
+			rps_queue_set(IFNAME_MAC, 0x1);	/* CPU:0, VPE:0 (GMAC) */
+			xps_queue_set(IFNAME_MAC, 0x1);	/* CPU:0, VPE:0 (GMAC) */
 #endif
 		}
 	}

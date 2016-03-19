@@ -688,6 +688,7 @@ set_cpu_affinity(int is_ap_mode)
 #define GIC_IRQ_PCIE2	(GIC_OFFSET+25)
 #define GIC_IRQ_SDXC	(GIC_OFFSET+20)
 #define GIC_IRQ_XHCI	(GIC_OFFSET+22)
+#define GIC_IRQ_EIP93	(GIC_OFFSET+19)
 
 	if (ncpu == 4) {
 		irq_affinity_set(GIC_IRQ_FE,    2);	/* GMAC  -> CPU:0, VPE:1 */
@@ -696,12 +697,37 @@ set_cpu_affinity(int is_ap_mode)
 		irq_affinity_set(GIC_IRQ_PCIE2, 1);	/* PCIe2 -> CPU:0, VPE:0 (usually ahci) */
 		irq_affinity_set(GIC_IRQ_SDXC,  4);	/* SDXC  -> CPU:1, VPE:0 */
 		irq_affinity_set(GIC_IRQ_XHCI,  8);	/* xHCI  -> CPU:1, VPE:1 */
+		irq_affinity_set(GIC_IRQ_EIP93, 8);	/* EIP93 -> CPU:1, VPE:1 */
 		
-		rps_queue_set(IFNAME_2G_MAIN, 0x8);	/* CPU:1, VPE:1 */
-		xps_queue_set(IFNAME_2G_MAIN, 0x8);	/* CPU:1, VPE:1 */
+		rps_queue_set(IFNAME_2G_MAIN,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		xps_queue_set(IFNAME_2G_MAIN,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		rps_queue_set(IFNAME_2G_GUEST, 0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		xps_queue_set(IFNAME_2G_GUEST, 0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		rps_queue_set(IFNAME_2G_APCLI, 0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		xps_queue_set(IFNAME_2G_APCLI, 0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS0,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS0,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS1,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS1,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS2,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS2,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS3,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS3,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
 #if BOARD_HAS_5G_RADIO
-		rps_queue_set(IFNAME_5G_MAIN, 0x4);	/* CPU:1, VPE:0 */
-		xps_queue_set(IFNAME_5G_MAIN, 0x4);	/* CPU:1, VPE:0 */
+		rps_queue_set(IFNAME_5G_MAIN,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		xps_queue_set(IFNAME_5G_MAIN,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		rps_queue_set(IFNAME_5G_GUEST, 0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		xps_queue_set(IFNAME_5G_GUEST, 0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		rps_queue_set(IFNAME_5G_APCLI, 0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		xps_queue_set(IFNAME_5G_APCLI, 0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS0,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS0,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS1,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS1,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS2,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS2,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS3,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS3,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
 #endif
 		if (is_ap_mode) {
 			rps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
@@ -720,16 +746,41 @@ set_cpu_affinity(int is_ap_mode)
 	} else if (ncpu == 2) {
 		irq_affinity_set(GIC_IRQ_FE,    1);	/* GMAC  -> CPU:0, VPE:0 */
 		irq_affinity_set(GIC_IRQ_PCIE0, 2);	/* PCIe0 -> CPU:0, VPE:1 (usually rai0) */
-		irq_affinity_set(GIC_IRQ_PCIE1, 2);	/* PCIe1 -> CPU:0, VPE:1 (usually ra0) */
+		irq_affinity_set(GIC_IRQ_PCIE1, 1);	/* PCIe1 -> CPU:0, VPE:0 (usually ra0) */
 		irq_affinity_set(GIC_IRQ_PCIE2, 1);	/* PCIe2 -> CPU:0, VPE:0 (usually ahci) */
 		irq_affinity_set(GIC_IRQ_SDXC,  2);	/* SDXC  -> CPU:0, VPE:1 */
 		irq_affinity_set(GIC_IRQ_XHCI,  2);	/* xHCI  -> CPU:0, VPE:1 */
+		irq_affinity_set(GIC_IRQ_EIP93, 2);	/* EIP93 -> CPU:0, VPE:1 */
 		
-		rps_queue_set(IFNAME_2G_MAIN, 0x2);	/* CPU:0, VPE:1 */
-		xps_queue_set(IFNAME_2G_MAIN, 0x2);	/* CPU:0, VPE:1 */
+		rps_queue_set(IFNAME_2G_MAIN,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		xps_queue_set(IFNAME_2G_MAIN,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		rps_queue_set(IFNAME_2G_GUEST, 0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		xps_queue_set(IFNAME_2G_GUEST, 0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		rps_queue_set(IFNAME_2G_APCLI, 0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		xps_queue_set(IFNAME_2G_APCLI, 0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS0,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS0,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS1,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS1,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS2,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS2,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS3,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS3,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
 #if BOARD_HAS_5G_RADIO
-		rps_queue_set(IFNAME_5G_MAIN, 0x2);	/* CPU:0, VPE:1 */
-		xps_queue_set(IFNAME_5G_MAIN, 0x2);	/* CPU:0, VPE:1 */
+		rps_queue_set(IFNAME_5G_MAIN,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		xps_queue_set(IFNAME_5G_MAIN,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		rps_queue_set(IFNAME_5G_GUEST, 0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		xps_queue_set(IFNAME_5G_GUEST, 0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		rps_queue_set(IFNAME_5G_APCLI, 0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		xps_queue_set(IFNAME_5G_APCLI, 0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS0,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS0,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS1,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS1,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS2,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS2,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS3,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS3,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
 #endif
 		if (is_ap_mode) {
 			rps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */

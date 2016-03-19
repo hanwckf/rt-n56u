@@ -503,7 +503,8 @@ dma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 		{
 #if defined (CONFIG_RAETH_NAPI)
 #if defined (CONFIG_RAETH_NAPI_GRO)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
+			/* our 3.4 tree has already backported GRO changes > 3.7 */
 			napi_gro_receive(&ei_local->napi, rx_skb);
 #else
 			if (rx_skb->ip_summed == CHECKSUM_UNNECESSARY)
@@ -570,7 +571,8 @@ ei_napi_poll(struct napi_struct *napi, int budget)
 		dispatch_int_status2(ei_local);
 		
 #if defined (CONFIG_RAETH_NAPI_GRO)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
+		/* our 3.4 tree has already backported GRO changes > 3.7 */
 		napi_gro_flush(napi, false);
 #else
 		napi_gro_flush(napi);

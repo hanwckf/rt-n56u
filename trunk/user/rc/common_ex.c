@@ -682,7 +682,6 @@ set_cpu_affinity(int is_ap_mode)
 	/* set initial IRQ affinity and RPS/XPS balancing */
 	int ncpu = sysconf(_SC_NPROCESSORS_ONLN);
 
-#define GIC_OFFSET	0
 #define GIC_IRQ_FE	(GIC_OFFSET+3)
 #define GIC_IRQ_PCIE0	(GIC_OFFSET+4)
 #define GIC_IRQ_PCIE1	(GIC_OFFSET+24)

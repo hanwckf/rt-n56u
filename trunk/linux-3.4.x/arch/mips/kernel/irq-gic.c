@@ -10,6 +10,7 @@
 #include <linux/init.h>
 #include <linux/smp.h>
 #include <linux/irq.h>
+#include <linux/clocksource.h>
 
 #include <asm/io.h>
 #include <asm/gic.h>
@@ -17,6 +18,7 @@
 #include <linux/hardirq.h>
 #include <asm-generic/bitops/find.h>
 
+unsigned int gic_frequency;
 unsigned int gic_present;
 unsigned long _gic_base;
 unsigned int gic_irq_base;
@@ -28,9 +30,88 @@ struct gic_pcpu_mask {
 
 static struct gic_pcpu_mask pcpu_masks[NR_CPUS];
 
+#if defined(CONFIG_CSRC_GIC) || defined(CONFIG_CEVT_GIC)
+cycle_t gic_read_count(void)
+{
+	unsigned int hi, hi2, lo;
+
+	do {
+		GICREAD(GIC_REG(SHARED, GIC_SH_COUNTER_63_32), hi);
+		GICREAD(GIC_REG(SHARED, GIC_SH_COUNTER_31_00), lo);
+		GICREAD(GIC_REG(SHARED, GIC_SH_COUNTER_63_32), hi2);
+	} while (hi2 != hi);
+
+	return (((cycle_t) hi) << 32) + lo;
+}
+
+unsigned int gic_get_count_width(void)
+{
+	unsigned int bits, config;
+
+	GICREAD(GIC_REG(SHARED, GIC_SH_CONFIG), config);
+	bits = 32 + 4 * ((config & GIC_SH_CONFIG_COUNTBITS_MSK) >>
+			 GIC_SH_CONFIG_COUNTBITS_SHF);
+
+	return bits;
+}
+
+void gic_write_compare(cycle_t cnt)
+{
+	GICWRITE(GIC_REG(VPE_LOCAL, GIC_VPE_COMPARE_HI),
+				(int)(cnt >> 32));
+	GICWRITE(GIC_REG(VPE_LOCAL, GIC_VPE_COMPARE_LO),
+				(int)(cnt & 0xffffffff));
+}
+
+void gic_write_cpu_compare(cycle_t cnt, int cpu)
+{
+	unsigned long flags;
+
+	local_irq_save(flags);
+
+	GICWRITE(GIC_REG(VPE_LOCAL, GIC_VPE_OTHER_ADDR), cpu);
+	GICWRITE(GIC_REG(VPE_OTHER, GIC_VPE_COMPARE_HI),
+				(int)(cnt >> 32));
+	GICWRITE(GIC_REG(VPE_OTHER, GIC_VPE_COMPARE_LO),
+				(int)(cnt & 0xffffffff));
+
+	local_irq_restore(flags);
+}
+
+cycle_t gic_read_compare(void)
+{
+	unsigned int hi, lo;
+
+	GICREAD(GIC_REG(VPE_LOCAL, GIC_VPE_COMPARE_HI), hi);
+	GICREAD(GIC_REG(VPE_LOCAL, GIC_VPE_COMPARE_LO), lo);
+
+	return (((cycle_t) hi) << 32) + lo;
+}
+
+void gic_start_count(void)
+{
+	unsigned int gicconfig;
+
+	/* Start the counter */
+	GICREAD(GIC_REG(SHARED, GIC_SH_CONFIG), gicconfig);
+	gicconfig &= ~(1 << GIC_SH_CONFIG_COUNTSTOP_SHF);
+	GICWRITE(GIC_REG(SHARED, GIC_SH_CONFIG), gicconfig);
+}
+
+void gic_stop_count(void)
+{
+	unsigned int gicconfig;
+
+	/* Stop the counter */
+	GICREAD(GIC_REG(SHARED, GIC_SH_CONFIG), gicconfig);
+	gicconfig |= 1 << GIC_SH_CONFIG_COUNTSTOP_SHF;
+	GICWRITE(GIC_REG(SHARED, GIC_SH_CONFIG), gicconfig);
+}
+#endif
+
 void gic_send_ipi(unsigned int intr)
 {
-	GICWRITE(GIC_REG(SHARED, GIC_SH_WEDGE), 0x80000000 | intr);
+	GICWRITE(GIC_REG(SHARED, GIC_SH_WEDGE), GIC_SH_WEDGE_SET(intr));
 }
 
 static void __init vpe_local_setup(unsigned int numvpes)
@@ -65,6 +146,19 @@ static void __init vpe_local_setup(unsigned int numvpes)
 	}
 }
 
+#if defined (CONFIG_CEVT_GIC)
+static inline unsigned int gic_compare_int(void)
+{
+	unsigned int pending_local = 0;
+
+	GICREAD(GIC_REG(VPE_LOCAL, GIC_VPE_PEND), pending_local);
+	if (pending_local & GIC_VPE_PEND_CMP_MSK)
+		return 1;
+	else
+		return 0;
+}
+#endif
+
 void gic_irq_dispatch(void)
 {
 	unsigned int i, intr;
@@ -72,6 +166,11 @@ void gic_irq_dispatch(void)
 	unsigned long *pending_abs, *intrmask_abs;
 	DECLARE_BITMAP(pending, GIC_NUM_INTRS);
 	DECLARE_BITMAP(intrmask, GIC_NUM_INTRS);
+
+#if defined (CONFIG_CEVT_GIC)
+	if (gic_compare_int())
+		do_IRQ(gic_irq_base + MIPS_GIC_LOCAL_INT_COMPARE);
+#endif
 
 	/* Get per-cpu bitmaps */
 	pcpu_mask = pcpu_masks[smp_processor_id()].pcpu_mask;
@@ -93,7 +192,7 @@ void gic_irq_dispatch(void)
 
 	intr = find_first_bit(pending, GIC_NUM_INTRS);
 	while (intr < GIC_NUM_INTRS) {
-		do_IRQ(MIPS_GIC_IRQ_BASE + intr);
+		do_IRQ(gic_irq_base + intr);
 		
 		/* go to next pending bit */
 		bitmap_clear(pending, intr, 1);
@@ -103,11 +202,27 @@ void gic_irq_dispatch(void)
 
 static void gic_mask_irq(struct irq_data *d)
 {
+#if defined (CONFIG_CEVT_GIC)
+	/* handle GIC local compare */
+	if (d->irq == (gic_irq_base + MIPS_GIC_LOCAL_INT_COMPARE)) {
+		GICWRITE(GIC_REG(VPE_LOCAL, GIC_VPE_RMASK), GIC_VPE_RMASK_CMP_MSK);
+		return;
+	}
+#endif
+
 	GIC_CLR_INTR_MASK(d->irq - gic_irq_base);
 }
 
 static void gic_unmask_irq(struct irq_data *d)
 {
+#if defined (CONFIG_CEVT_GIC)
+	/* handle GIC local compare */
+	if (d->irq == (gic_irq_base + MIPS_GIC_LOCAL_INT_COMPARE)) {
+		GICWRITE(GIC_REG(VPE_LOCAL, GIC_VPE_SMASK), GIC_VPE_SMASK_CMP_MSK);
+		return;
+	}
+#endif
+
 	GIC_SET_INTR_MASK(d->irq - gic_irq_base);
 }
 
@@ -117,7 +232,7 @@ static void gic_ack_irq(struct irq_data *d)
 
 	/* Clear edge detector */
 	if (gic_irq_flags[irq] & GIC_TRIG_EDGE)
-		GICWRITE(GIC_REG(SHARED, GIC_SH_WEDGE), irq);
+		GICWRITE(GIC_REG(SHARED, GIC_SH_WEDGE), GIC_SH_WEDGE_CLR(irq));
 }
 
 #ifdef CONFIG_SMP

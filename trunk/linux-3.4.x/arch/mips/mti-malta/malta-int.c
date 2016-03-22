@@ -131,13 +131,7 @@ static void malta_hw0_irqdispatch(void)
 
 static void malta_ipi_irqdispatch(void)
 {
-	int irq;
-
-	irq = gic_get_int();
-	if (irq < 0)
-		return;  /* interrupt has already been cleared */
-
-	do_IRQ(MIPS_GIC_IRQ_BASE + irq);
+	gic_irq_dispatch();
 }
 
 static void corehi_irqdispatch(void)

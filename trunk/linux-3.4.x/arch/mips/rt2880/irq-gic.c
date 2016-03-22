@@ -229,6 +229,23 @@ unsigned int plat_ipi_resched_int_xlate(unsigned int cpu)
 }
 #endif /* CONFIG_MIPS_GIC_IPI */
 
+static int mips_cpu_timer_irq = CP0_LEGACY_COMPARE_IRQ;
+
+static void mips_timer_dispatch(void)
+{
+	do_IRQ(mips_cpu_timer_irq);
+}
+
+unsigned int __cpuinit get_c0_compare_int(void)
+{
+	if (cpu_has_vint)
+		set_vi_handler(cp0_compare_irq, mips_timer_dispatch);
+
+	mips_cpu_timer_irq = MIPS_CPU_IRQ_BASE + cp0_compare_irq;
+
+	return mips_cpu_timer_irq;
+}
+
 void __init gic_platform_init(int irqs, struct irq_chip *irq_controller)
 {
 	int i;
@@ -276,6 +293,17 @@ void __init arch_init_irq(void)
 
 		GICREAD(GIC_REG(SHARED, GIC_SH_REVISIONID), gic_rev);
 		printk("MIPS GIC RevID: %d.%d\n", (gic_rev >> 8) & 0xff, gic_rev & 0xff);
+
+		if (cpu_has_vint) {
+			pr_info("Setting up vectored interrupts\n");
+			set_vi_handler(2 + GIC_CPU_INT0, gic_irq_dispatch);	// CPU
+#if defined (CONFIG_MIPS_GIC_IPI)
+			set_vi_handler(2 + GIC_CPU_INT1, gic_irq_dispatch);	// IPI resched
+			set_vi_handler(2 + GIC_CPU_INT2, gic_irq_dispatch);	// IPI call
+#endif
+			set_vi_handler(2 + GIC_CPU_INT3, gic_irq_dispatch);	// FE
+			set_vi_handler(2 + GIC_CPU_INT4, gic_irq_dispatch);	// PCIe
+		}
 
 #if defined (CONFIG_MIPS_GIC_IPI)
 		set_c0_status(STATUSF_IP7 | STATUSF_IP6 | STATUSF_IP5 | STATUSF_IP4 | STATUSF_IP3 | STATUSF_IP2);

@@ -50,6 +50,7 @@
 #include <asm/gcmpregs.h>
 
 #include <asm/irq.h>
+#include <asm/setup.h>
 
 #include <asm/rt2880/surfboard.h>
 #include <asm/rt2880/surfboardint.h>

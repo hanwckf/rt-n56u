@@ -2020,7 +2020,7 @@ config MIPS_MT_SMP
 	select CPU_MIPSR2_IRQ_VI if !RALINK_MT7621
 	select CPU_MIPSR2_IRQ_EI if !RALINK_MT7621
 	select SYNC_R4K
-	select MIPS_GIC_IPI
+	select MIPS_GIC_IPI if IRQ_GIC
 	select MIPS_MT
 	select SMP
 	select SMP_UP
@@ -2137,7 +2137,7 @@ config MIPS_APSP_KSPD
 config MIPS_CMP
 	bool "MIPS CMP framework support"
 	depends on SYS_SUPPORTS_MIPS_CMP && !MIPS_MT_SMTC
-	select MIPS_GIC_IPI
+	select MIPS_GIC_IPI if IRQ_GIC
 	select SYNC_R4K
 	select WEAK_ORDERING
 	default n
@@ -2147,6 +2147,7 @@ config MIPS_CMP
 	  its ability to start secondary CPUs.
 
 config MIPS_GIC_IPI
+	depends on IRQ_GIC
 	bool
 
 config SB1_PASS_1_WORKAROUNDS

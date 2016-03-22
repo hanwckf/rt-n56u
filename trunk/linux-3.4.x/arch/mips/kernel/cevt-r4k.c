@@ -50,7 +50,7 @@ int cp0_timer_irq_installed;
 
 #ifndef CONFIG_MIPS_MT_SMTC
 
-#if defined (CONFIG_RALINK_SYSTICK_COUNTER) && defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_SYSTICK_COUNTER) && defined (CONFIG_RALINK_MT7621) && defined (CONFIG_MIPS_GIC_IPI)
 extern void ra_systick_event_broadcast(const struct cpumask *mask);
 
 void ra_percpu_event_handler(void)
@@ -201,7 +201,7 @@ int __cpuinit r4k_clockevent_init(void)
 
 	cd->features		= CLOCK_EVT_FEAT_ONESHOT;
 
-#if defined (CONFIG_RALINK_SYSTICK_COUNTER) && defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_SYSTICK_COUNTER) && defined (CONFIG_RALINK_MT7621) && defined (CONFIG_MIPS_GIC_IPI)
 	cd->features		= cd->features | CLOCK_EVT_FEAT_DUMMY;
 	cd->broadcast		= ra_systick_event_broadcast;
 #endif

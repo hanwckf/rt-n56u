@@ -229,11 +229,6 @@ unsigned int plat_ipi_resched_int_xlate(unsigned int cpu)
 }
 #endif /* CONFIG_MIPS_GIC_IPI */
 
-unsigned int __cpuinit get_c0_compare_int(void)
-{
-	return SURFBOARDINT_MIPS_TIMER;
-}
-
 void __init gic_platform_init(int irqs, struct irq_chip *irq_controller)
 {
 	int i;
@@ -295,11 +290,10 @@ void __init arch_init_irq(void)
 #endif
 	}
 
-	/* set hardware irq */
+	/* set hardware irq (skip 0, 1, 2, 5, 7) */
 	for (i = 3; i <= 31; i++) {
-		if (i != SURFBOARDINT_AUX_TIMER &&
-		    i != SURFBOARDINT_MIPS_TIMER)
-			irq_set_handler(i, handle_level_irq);
+		if (i != 5 && i != 7)
+			irq_set_handler(MIPS_GIC_IRQ_BASE + i, handle_level_irq);
 	}
 }
 
@@ -313,9 +307,8 @@ asmlinkage void plat_irq_dispatch(void)
 		return;
 	}
 
-	if (pending & CAUSEF_IP7) {
-		do_IRQ(cp0_compare_irq);	// MIPS Timer
-	}
+	if (pending & CAUSEF_IP7)
+		do_IRQ(MIPS_CPU_IRQ_BASE + cp0_compare_irq);	// MIPS Timer
 
 	if (pending & (CAUSEF_IP6 | CAUSEF_IP5 | CAUSEF_IP4 | CAUSEF_IP3 | CAUSEF_IP2))
 		gic_irq_dispatch();

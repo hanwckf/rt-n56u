@@ -50,8 +50,8 @@
 #include <asm/div64.h>
 #include <asm/cpu.h>
 #include <asm/time.h>
-#if defined (CONFIG_RALINK_SYSTICK_COUNTER) && defined (CONFIG_RALINK_MT7621)
-#include <asm/gic.h>		/* to turn off(mask) each VPE's local timer interrupt */
+#if defined (CONFIG_IRQ_GIC)
+#include <asm/gic.h>
 #endif
 
 #include <asm/rt2880/generic.h>
@@ -91,7 +91,7 @@ static int ra_systick_clocksource_init(void)
 /*
  * === Ralink systick clockevent device implementation ===
  */
-struct clock_event_device ra_systick;
+static struct clock_event_device ra_systick;
 extern int cp0_timer_irq_installed;
 
 /* Ralink Systick clockevent handler on CPU0. */
@@ -113,7 +113,7 @@ irqreturn_t ra_systick_interrupt(int irq, void *dev_id)
 /* In broadcast mode, timer interrupt only happens on the first CPU. */
 struct irqaction ra_systick_irqaction = {
 	.handler	= ra_systick_interrupt,
-	.flags		= IRQF_PERCPU | IRQF_TIMER,
+	.flags		= IRQF_NOBALANCING | IRQF_TIMER,
 	.name		= "ralink_timer",
 };
 
@@ -142,7 +142,7 @@ static void ra_systick_event_handler(struct clock_event_device *dev)
 	/* shouldn't be here  */
 }
 
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) && defined (CONFIG_MIPS_GIC_IPI)
 DEFINE_SPINLOCK(ra_teststat_lock);
 
 /*
@@ -174,11 +174,9 @@ void ra_systick_event_broadcast(const struct cpumask *mask)
 	(*((volatile u32 *)(RALINK_TESTSTAT))) = reg;
 	spin_unlock_irqrestore(&ra_teststat_lock, flags);
 
-#if defined (CONFIG_MIPS_GIC_IPI)
 	/* send IPI to other VPEs, using "ipi_call" GIC(60~63), MIPS int#2  */
 	for_each_cpu(i, mask)
 		gic_send_ipi(plat_ipi_call_int_xlate(i));
-#endif
 }
 #endif
 
@@ -202,7 +200,7 @@ static int ra_systick_clockevent_init(void)
 	clockevent_set_clock(cd, 50000);
 	cd->max_delta_ns	= clockevent_delta2ns(0x7fff, cd);
 	cd->min_delta_ns	= clockevent_delta2ns(0x3, cd);
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621) && defined (CONFIG_MIPS_GIC_IPI)
 	/* must be lower than MIPS original cd rating(300) to activate "broadcast mode" */
 	cd->rating		= 250;
 #else
@@ -216,7 +214,7 @@ static int ra_systick_clockevent_init(void)
 	cd->event_handler	= ra_systick_event_handler;
 
 	/* install timer irq handler before MIPS BSP code. */
-	if (!cp0_timer_irq_installed){
+	if (!cp0_timer_irq_installed) {
 		cp0_timer_irq_installed = 1;
 		setup_irq(irq, &ra_systick_irqaction);
 	}
@@ -297,6 +295,13 @@ device_initcall(udelay_recal);
 void __init plat_time_init(void)
 {
 	mips_hpt_frequency = mips_cpu_feq / 2;
+
+#if defined (CONFIG_CSRC_GIC)
+	if (gic_present) {
+		gic_clocksource_init(mips_cpu_feq);
+		gic_start_count();
+	}
+#endif
 
 #if defined (CONFIG_RALINK_SYSTICK_COUNTER)
 	ra_systick_clockevent_init();

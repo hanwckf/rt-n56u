@@ -26,9 +26,6 @@
 
 #if defined (CONFIG_RALINK_MT7621)
 
-/* MIPS GIC controller */
-#define MIPS_GIC_IRQ_BASE		(MIPS_CPU_IRQ_BASE)
-
 /* GCMP specific definitions */
 #define GCMP_BASE_ADDR			0x1fbf8000
 #define GCMP_ADDRSPACE_SZ		(256 * 1024)
@@ -41,40 +38,43 @@
 #define GIC_BASE_ADDR			0x1fbc0000
 #define GIC_ADDRSPACE_SZ		(128 * 1024)
 
-#define SURFBOARDINT_FE			3	/* FE */
-#define SURFBOARDINT_PCIE0		4	/* PCIE0 */
-#define SURFBOARDINT_AUX_TIMER		5	/* AUX timer (systick) */
-#define SURFBOARDINT_SYSCTL		6	/* SYSCTL */
-#define SURFBOARDINT_MIPS_TIMER		7	/* MIPS timer */
-#define SURFBOARDINT_I2C		8	/* I2C */
-#define SURFBOARDINT_DRAMC		9	/* DRAMC */
-#define SURFBOARDINT_PCM		10	/* PCM */
-#define SURFBOARDINT_HSGDMA		11	/* HSGDMA */
-#define SURFBOARDINT_GPIO		12	/* GPIO */
-#define SURFBOARDINT_DMA		13	/* GDMA */
-#define SURFBOARDINT_NAND		14	/* NAND */
-#define SURFBOARDINT_NAND_ECC		15	/* NFI ECC */
-#define SURFBOARDINT_I2S		16	/* I2S */
-#define SURFBOARDINT_SPI		17	/* SPI */
-#define SURFBOARDINT_SPDIF		18	/* SPDIF */
-#define SURFBOARDINT_CRYPTO		19	/* CryptoEngine */
-#define SURFBOARDINT_SDXC		20	/* SDXC */
-#define SURFBOARDINT_PCTRL		21	/* Performance counter */
-#define SURFBOARDINT_USB		22	/* USB */
-#define SURFBOARDINT_ESW		23	/* Switch */
-#define SURFBOARDINT_PCIE1		24	/* PCIE1 */
-#define SURFBOARDINT_PCIE2		25	/* PCIE2 */
-#define SURFBOARDINT_UART_LITE1		26	/* UART Lite */
-#define SURFBOARDINT_UART_LITE2		27	/* UART Lite */
-#define SURFBOARDINT_UART_LITE3		28	/* UART Lite */
-#define SURFBOARDINT_WDG		29	/* WDG timer */
-#define SURFBOARDINT_TIMER0		30	/* Timer0 */
-#define SURFBOARDINT_TIMER1		31	/* Timer1 */
+/* MIPS GIC controller */
+#define GIC_NUM_INTRS			64
+#define MIPS_GIC_IRQ_BASE		(MIPS_CPU_IRQ_BASE + 8)
+#define MIPS_GIC_LOCAL_INT_COMPARE	1				/* can be 0, 1, 2, 7 */
+
+#define SURFBOARDINT_FE			(MIPS_GIC_IRQ_BASE + 3)		/* FE */
+#define SURFBOARDINT_PCIE0		(MIPS_GIC_IRQ_BASE + 4)		/* PCIE0 */
+#define SURFBOARDINT_AUX_TIMER		(MIPS_GIC_IRQ_BASE + 5)		/* AUX timer (systick) */
+#define SURFBOARDINT_SYSCTL		(MIPS_GIC_IRQ_BASE + 6)		/* SYSCTL */
+#define SURFBOARDINT_I2C		(MIPS_GIC_IRQ_BASE + 8)		/* I2C */
+#define SURFBOARDINT_DRAMC		(MIPS_GIC_IRQ_BASE + 9)		/* DRAMC */
+#define SURFBOARDINT_PCM		(MIPS_GIC_IRQ_BASE + 10)	/* PCM */
+#define SURFBOARDINT_HSGDMA		(MIPS_GIC_IRQ_BASE + 11)	/* HSGDMA */
+#define SURFBOARDINT_GPIO		(MIPS_GIC_IRQ_BASE + 12)	/* GPIO */
+#define SURFBOARDINT_DMA		(MIPS_GIC_IRQ_BASE + 13)	/* GDMA */
+#define SURFBOARDINT_NAND		(MIPS_GIC_IRQ_BASE + 14)	/* NAND */
+#define SURFBOARDINT_NAND_ECC		(MIPS_GIC_IRQ_BASE + 15)	/* NFI ECC */
+#define SURFBOARDINT_I2S		(MIPS_GIC_IRQ_BASE + 16)	/* I2S */
+#define SURFBOARDINT_SPI		(MIPS_GIC_IRQ_BASE + 17)	/* SPI */
+#define SURFBOARDINT_SPDIF		(MIPS_GIC_IRQ_BASE + 18)	/* SPDIF */
+#define SURFBOARDINT_CRYPTO		(MIPS_GIC_IRQ_BASE + 19)	/* CryptoEngine */
+#define SURFBOARDINT_SDXC		(MIPS_GIC_IRQ_BASE + 20)	/* SDXC */
+#define SURFBOARDINT_PCTRL		(MIPS_GIC_IRQ_BASE + 21)	/* Performance counter */
+#define SURFBOARDINT_USB		(MIPS_GIC_IRQ_BASE + 22)	/* USB */
+#define SURFBOARDINT_ESW		(MIPS_GIC_IRQ_BASE + 23)	/* Switch */
+#define SURFBOARDINT_PCIE1		(MIPS_GIC_IRQ_BASE + 24)	/* PCIE1 */
+#define SURFBOARDINT_PCIE2		(MIPS_GIC_IRQ_BASE + 25)	/* PCIE2 */
+#define SURFBOARDINT_UART_LITE1		(MIPS_GIC_IRQ_BASE + 26)	/* UART Lite */
+#define SURFBOARDINT_UART_LITE2		(MIPS_GIC_IRQ_BASE + 27)	/* UART Lite */
+#define SURFBOARDINT_UART_LITE3		(MIPS_GIC_IRQ_BASE + 28)	/* UART Lite */
+#define SURFBOARDINT_WDG		(MIPS_GIC_IRQ_BASE + 29)	/* WDG timer */
+#define SURFBOARDINT_TIMER0		(MIPS_GIC_IRQ_BASE + 30)	/* Timer0 */
+#define SURFBOARDINT_TIMER1		(MIPS_GIC_IRQ_BASE + 31)	/* Timer1 */
 #define SURFBOARDINT_UART1		SURFBOARDINT_UART_LITE1
 #define SURFBOARDINT_UART2		SURFBOARDINT_UART_LITE2
 
-/* 32 + 3 + 8xIPI (max 64) */
-#define SURFBOARDINT_END		63
+#define SURFBOARDINT_END		(MIPS_GIC_IRQ_BASE + GIC_NUM_INTRS - 1)
 
 /*
  * GIC IPI offsets is hardcoded for MT7621A/S as U-Boot:
@@ -139,16 +139,10 @@
 
 #define SURFBOARDINT_END		39
 
-#endif
-
 /* Global interrupt bit definitions */
-#define C_SURFBOARD_GLOBAL_INT		31
-#define M_SURFBOARD_GLOBAL_INT		(1 << C_SURFBOARD_GLOBAL_INT)
+#define M_SURFBOARD_GLOBAL_INT		(1u << 31)
 
-/* added ??? */
-#define RALINK_SDRAM_ILL_ACC_ADDR	*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x310)
-#define RALINK_SDRAM_ILL_ACC_TYPE	*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x314)
-/* end of added, bobtseng */
+#endif
 
 /*
  * Surfboard registers are memory mapped on 32-bit aligned boundaries and

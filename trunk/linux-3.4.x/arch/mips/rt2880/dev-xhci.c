@@ -9,6 +9,7 @@
 #include <linux/usb/xhci_pdriver.h>
 #endif
 
+#include <asm/irq.h>
 #include <asm/rt2880/surfboardint.h>
 #include <asm/rt2880/rt_mmap.h>
 

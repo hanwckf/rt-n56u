@@ -10,8 +10,6 @@
 
 #include <asm/rt2880/surfboardint.h>
 
-/* GIC_NUM_INTRS is hardcoded for MT7621A/S */
-#define GIC_NUM_INTRS	(64)
 #define NR_IRQS		(SURFBOARDINT_END + 1)
 
 #include_next <irq.h>

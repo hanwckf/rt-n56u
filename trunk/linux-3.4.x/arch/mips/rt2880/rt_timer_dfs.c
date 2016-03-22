@@ -52,6 +52,7 @@
 #include <asm/uaccess.h>
 #include <linux/interrupt.h>
 
+#include <asm/irq.h>
 #include <asm/rt2880/surfboard.h>
 #include <asm/rt2880/surfboardint.h>
 

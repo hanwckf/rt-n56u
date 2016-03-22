@@ -301,6 +301,8 @@ isdn_ppp_open(int min, struct file *file)
 	is->compflags = 0;
 
 	is->reset = isdn_ppp_ccp_reset_alloc(is);
+	if (!is->reset)
+		return -ENOMEM;
 
 	is->lp = NULL;
 	is->mp_seqno = 0;       /* MP sequence number */

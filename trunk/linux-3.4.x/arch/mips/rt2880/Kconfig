@@ -142,8 +142,8 @@ config  RALINK_MT7621_PLL900
 	default n
 
 config  RALINK_SYSTICK_COUNTER
-	bool "Use 50KHz System Tick Counter instead of MIPS counter"
-	depends on (RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620 || RALINK_MT7621 || RALINK_MT7628)
+	bool "Use 50KHz SoC Systick Counter (Independent from CPU frequency)"
+	depends on !(CEVT_GIC || RALINK_RT3052 || RALINK_RT3883)
 	select GENERIC_CLOCKEVENTS_BROADCAST if MIPS_GIC_IPI
 	default n
 
@@ -151,6 +151,13 @@ config  RALINK_CPUSLEEP
 	bool "Enable MIPS sleep mode (Dynamic CPU Frequency)"
 	depends on (RALINK_SYSTICK_COUNTER && (RALINK_MT7620 || RALINK_MT7621 || RALINK_MT7628))
 	default n
+
+config  CLKSRC_MIPS_GIC
+	bool "Use MIPS GIC Counter (64 bit)"
+	depends on IRQ_GIC
+	select CSRC_GIC
+	select CEVT_GIC
+	default y
 
 #--------------------------
 

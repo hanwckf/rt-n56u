@@ -1172,7 +1172,7 @@ ei_close(struct net_device *dev)
 #endif
 
 	free_irq(dev->irq, dev);
-#if defined (CONFIG_RAETH_ESW) || defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RAETH_ESW) || (defined (CONFIG_RALINK_MT7621) && defined (CONFIG_MT7530_GSW))
 	free_irq(SURFBOARDINT_ESW, dev);
 #elif defined (CONFIG_MT7530_INT_GPIO)
 	// todo, needed capture GPIO interrupt for external MT7530

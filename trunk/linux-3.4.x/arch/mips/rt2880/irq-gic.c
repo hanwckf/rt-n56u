@@ -239,9 +239,6 @@ static void mips_timer_dispatch(void)
 
 unsigned int __cpuinit get_c0_compare_int(void)
 {
-	if (cpu_has_vint)
-		set_vi_handler(cp0_compare_irq, mips_timer_dispatch);
-
 	mips_cpu_timer_irq = MIPS_CPU_IRQ_BASE + cp0_compare_irq;
 
 	return mips_cpu_timer_irq;
@@ -277,6 +274,9 @@ void __init arch_init_irq(void)
 	unsigned int gic_rev;
 
 	mips_cpu_irq_init();
+
+	if (cpu_has_vint)
+		set_vi_handler(cp0_compare_irq, mips_timer_dispatch);
 
 	if (gcmp_present) {
 		GCMPGCB(GICBA) = GIC_BASE_ADDR | GCMP_GCB_GICBA_EN_MSK;

@@ -121,6 +121,11 @@ static void __init vpe_local_setup(unsigned int numvpes)
 	unsigned int vpe_ctl;
 	int i;
 
+#if defined (CONFIG_CEVT_GIC)
+	GICWRITE(GIC_REG(VPE_LOCAL, GIC_VPE_COMPARE_MAP),
+		GIC_MAP_TO_PIN_MSK | GIC_CPU_INT0);
+#endif
+
 	/*
 	 * Setup the default performance counter timer interrupts
 	 * for all VPEs
@@ -138,10 +143,12 @@ static void __init vpe_local_setup(unsigned int numvpes)
 			GICWRITE(GIC_REG(VPE_OTHER, GIC_VPE_PERFCTR_MAP),
 				 GIC_MAP_TO_PIN_MSK | perf_interrupt);
 
-#if defined (CONFIG_RALINK_MT7621) && defined (CONFIG_RALINK_SYSTICK_COUNTER)
+#if defined (CONFIG_CEVT_GIC) || defined (CONFIG_RALINK_SYSTICK_COUNTER)
 		/* Program MIPS GIC to turn off(mask) each VPE's local timer interrupt. */
-		GICWRITE(GIC_REG(VPE_OTHER, GIC_VPE_RMASK),
-			 GIC_VPE_SMASK_TIMER_MSK);
+		GICWRITE(GIC_REG(VPE_OTHER, GIC_VPE_RMASK), GIC_VPE_RMASK_TIMER_MSK);
+#else
+		/* Program MIPS GIC to turn on(unmask) each VPE's local timer interrupt. */
+		GICWRITE(GIC_REG(VPE_OTHER, GIC_VPE_SMASK), GIC_VPE_SMASK_TIMER_MSK);
 #endif
 	}
 }

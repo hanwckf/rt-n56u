@@ -294,14 +294,13 @@ device_initcall(udelay_recal);
 
 void __init plat_time_init(void)
 {
-	mips_hpt_frequency = mips_cpu_feq / 2;
-
 #if defined (CONFIG_CSRC_GIC)
 	if (gic_present) {
 		gic_clocksource_init(mips_cpu_feq);
 		gic_start_count();
-	}
+	} else
 #endif
+		mips_hpt_frequency = mips_cpu_feq / 2;
 
 #if defined (CONFIG_RALINK_SYSTICK_COUNTER)
 	ra_systick_clockevent_init();

@@ -94,9 +94,6 @@ int __cpuinit gic_clockevent_init(void)
 
 	gic_timer_irq_installed = 1;
 
-	GICWRITE(GIC_REG(VPE_LOCAL, GIC_VPE_COMPARE_MAP),
-		GIC_MAP_TO_PIN_MSK | GIC_CPU_INT0);
-
 	setup_irq(irq, &gic_compare_irqaction);
 	irq_set_handler(irq, handle_percpu_irq);
 

@@ -18,6 +18,7 @@
 #include <linux/spinlock.h>
 #include <linux/clockchips.h>
 #include <linux/clocksource.h>
+#include <asm/gic.h>
 
 extern spinlock_t rtc_lock;
 
@@ -76,10 +77,12 @@ extern int init_r4k_clocksource(void);
 static inline int init_mips_clocksource(void)
 {
 #ifdef CONFIG_CSRC_R4K
-	return init_r4k_clocksource();
-#else
-	return 0;
+#ifdef CONFIG_CSRC_GIC
+	if (!gic_present)
 #endif
+		return init_r4k_clocksource();
+#endif
+	return 0;
 }
 
 static inline void clockevent_set_clock(struct clock_event_device *cd,
